@@ -331,13 +331,12 @@ set_presence(User, Resource, Priority) ->
     mnesia:transaction(F).
 
 unset_presence(User, Resource, Status) ->
-    LUser = jlib:nodeprep(User),
     F = fun() ->
 		UR = {User, Resource},
 		mnesia:delete({presence, UR})
 	end,
     mnesia:transaction(F),
-    catch mod_last:on_presence_update(LUser, Status).
+    ejabberd_hooks:run(unset_presence_hook, [User, Resource, Status]).
 
 get_user_present_resources(LUser) ->
     case catch mnesia:dirty_index_read(presence, LUser, #presence.user) of

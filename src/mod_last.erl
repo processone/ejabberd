@@ -16,7 +16,7 @@
 	 stop/0,
 	 process_local_iq/3,
 	 process_sm_iq/3,
-	 on_presence_update/2,
+	 on_presence_update/3,
 	 remove_user/1]).
 
 -include("ejabberd.hrl").
@@ -34,7 +34,9 @@ start(Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_LAST,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_LAST,
-				  ?MODULE, process_sm_iq, IQDisc).
+				  ?MODULE, process_sm_iq, IQDisc),
+    ejabberd_hooks:add(unset_presence_hook,
+		       ?MODULE, on_presence_update, 50).
 
 stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_LAST),
@@ -107,7 +109,8 @@ get_last(IQ, SubEl, LUser) ->
 
 
 
-on_presence_update(LUser, Status) ->
+on_presence_update(User, _Resource, Status) ->
+    LUser = jlib:nodeprep(User),
     {MegaSecs, Secs, _MicroSecs} = now(),
     TimeStamp = MegaSecs * 1000000 + Secs,
     F = fun() ->
