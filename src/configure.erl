@@ -15,11 +15,46 @@
 -include("ejabberd.hrl").
 
 start() ->
-    EIDirS = "EI_DIR = " ++ code:lib_dir("erl_interface") ++ "\n",
+    Static = case os:getenv("arg") of
+		 false ->
+		     false;
+		 "static" ->
+		     true;
+		 _ ->
+		     false
+	     end,
+    case Static of
+	true ->
+	    ExpatLib  = "EXPAT_LIB = $(EXPAT_DIR)\\StaticLibs\\libexpatMT.lib\n",
+	    ExpatFlag = "EXPAT_FLAG = -DXML_STATIC\n",
+	    IconvDir  = "ICONV_DIR = c:\\progra~1\\libiconv-1.9.1-static\n",
+	    IconvLib  = "ICONV_LIB = $(ICONV_DIR)\\lib\\iconv.lib\n";
+	false ->
+	    ExpatLib  = "EXPAT_LIB = $(EXPAT_DIR)\\Libs\\libexpat.lib\n",
+	    ExpatFlag = "",
+	    IconvDir  = "ICONV_DIR = c:\\progra~1\\libiconv-1.9.1\n",
+	    IconvLib  = "ICONV_LIB = $(ICONV_DIR)\\lib\\iconv.lib\n"
+    end,
+
+    EIDirS   = "EI_DIR = " ++ code:lib_dir("erl_interface") ++ "\n",
     RootDirS = "ERLANG_DIR = " ++ code:root_dir() ++ "\n",
-    Version = "EJABBERD_VERSION = " ++ ?VERSION ++ "\n",
+    Version  = "EJABBERD_VERSION = " ++ ?VERSION ++ "\n",
+    ExpatDir = "EXPAT_DIR = c:\\progra~1\\expat-1.95.7\n",
+
+    SSLDir    = "SSLDIR = " ++ code:lib_dir("ssl") ++ "\n",
+    StdLibDir = "STDLIBDIR = " ++ code:lib_dir("stdlib") ++ "\n",
+
     file:write_file("Makefile.inc",
-		    list_to_binary(EIDirS ++ RootDirS ++ Version)),
+		    list_to_binary(EIDirS ++
+				   RootDirS ++
+				   Version ++
+				   SSLDir ++
+				   StdLibDir ++
+				   ExpatDir ++
+				   ExpatLib ++
+				   ExpatFlag ++
+				   IconvDir ++
+				   IconvLib)),
     halt().
 
 

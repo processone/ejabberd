@@ -130,11 +130,10 @@ packages:
 \item \footahref{http://www.erlang.org/download/otp_win32_R9C-0.exe}{Erlang emulator version~5.3}
 \item \footahref{http://prdownloads.sourceforge.net/expat/expat_win32bin_1_95_7.exe?download}{Expat~1.95.7}
 \item
-\footahref{http://prdownloads.sourceforge.net/gnuwin32/libiconv-1.8-1-bin.exe?download}{Iconv~1.8
-binaries} and
-\footahref{http://prdownloads.sourceforge.net/gnuwin32/libiconv-1.8-1-lib.exe?download}{Iconv~1.8
-development libraries}
+\footahref{http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.9.1.tar.gz}{Iconv~1.9.1}
 (optional)
+\item \footahref{http://www.slproweb.com/download/Win32OpenSSL-v0.9.7d.exe}{Shining Light OpenSSL}
+(to enable SSL connections)
 \end{itemize}
 
 
@@ -169,45 +168,31 @@ TBD
 \label{sec:compilationwin}
 
 \begin{enumerate}
-\item Install Erlang emulator (for example, into \verb|C:\Program Files\erl5.1.2|).
-\item Install Expat library into \verb|C:\Program Files\Expat-1.95.6|
-  directory.  Copy file \verb|C:\Program Files\Expat-1.95.6\Libs\libexpat.dll|
+\item Install Erlang emulator (for example, into \verb|C:\Program Files\erl5.3|).
+\item Install Expat library into \verb|C:\Program Files\Expat-1.95.7|
+  directory.  Copy file \verb|C:\Program Files\Expat-1.95.7\Libs\libexpat.dll|
   to your Windows system directory (for example, \verb|C:\WINNT| or
   \verb|C:\WINNT\System32|)
-\item Install Iconv library into \verb|C:\Program Files\GnuWin32| directory.
-  Copy file \verb|C:\Program Files\GnuWin32\bin\libiconv-2.dll| to your
+\item Build and install Iconv library into \verb|C:\Program Files\iconv-1.9.1| directory.
+  Copy file \verb|C:\Program Files\iconv-1.9.1\bin\iconv.dll| to your
   Windows system directory.
   
-  Note: Instead of copying libexpat.dll and libiconv-2.dll to Windows
+  Note: Instead of copying libexpat.dll and iconv.dll to Windows
   directory, you can add directories
-  \verb|C:\Program Files\Expat-1.95.6\Libs| and
-  \verb|C:\Program Files\GnuWin32\bin| to \verb|PATH| environment
+  \verb|C:\Program Files\Expat-1.95.7\Libs| and
+  \verb|C:\Program Files\iconv-1.9.1\bin| to \verb|PATH| environment
   variable.
 \item Being in \verb|ejabberd\src| directory run:
 \begin{verbatim}
 configure
 nmake -f Makefile.win32
 \end{verbatim}
-\item To build MUC, IRC and pub/sub modules run
-\begin{verbatim}
-nmake -f Makefile.win32
-\end{verbatim}
-  in \verb|ejabberd\src\mod_muc|, \verb|ejabberd\src\mod_muc| and
-  \verb|ejabberd\src\mod_pubsub| directories
 \item Edit file \verb|ejabberd\src\ejabberd.cfg| and run
 \begin{verbatim}
 werl -s ejabberd -name ejabberd
 \end{verbatim}
 \item Enjoy!
 \end{enumerate}
-
-Some recent versions of Erlang distribution it seems have bug in crypto
-application, so ejabberd could be built but users can't use digest
-authentication (only plain-text).  Also it seems SSL support is broken in
-Windows distribution of Erlang emulator.
-
-
-
 
 %\subsection{Initial Configuration}
 %\label{sec:initconfig}

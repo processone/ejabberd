@@ -1,8 +1,6 @@
 
 include ..\Makefile.inc
 
-GNUWIN_DIR="c:\progra~1\gnuwin32"
-
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
@@ -34,10 +32,10 @@ $(OUTDIR)\mod_irc_connection.beam : mod_irc_connection.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) mod_irc_connection.erl
 
 CC=cl.exe
-CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include" -I"$(GNUWIN_DIR)\include"
+CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include" -I"$(ICONV_DIR)\include"
 
 LD=link.exe
-LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" "$(GNUWIN_DIR)\lib\libiconv.lib" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
+LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" "$(ICONV_LIB)" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
 
 $(DLL) : $(OBJECT)
 	$(LD) $(LD_FLAGS) -out:$(DLL) $(OBJECT)

@@ -1,3 +1,18 @@
+2004-04-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/translate.erl: Search translations directory in priv_dir
+	instead of lib_dir (thanks to Sergei Golovan)
+
+	* src/**/Makefile.in: Updated (thanks to Sergei Golovan)
+
+	* src/win32/: Win32 installer stuff (thanks to Sergei Golovan)
+
+	* src/**/Makefile.win32: Updated (thanks to Sergei Golovan)
+	* src/configure.bat: Likewise
+	* src/configure.erl: Likewise
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
 2004-04-26  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_web_admin.erl: Better design for administration

@@ -1,8 +1,6 @@
 
 include Makefile.inc
 
-EXPAT_DIR="c:\progra~1\expat-1.95.7"
-
 ALL : build
 
 REL=..\release
@@ -12,7 +10,19 @@ MSGS_DIR=$(EREL)\msgs
 SRC_DIR=$(EREL)\src
 PRIV_DIR=$(EREL)\priv
 SO_DIR=$(PRIV_DIR)\lib
+WIN32_DIR=$(EREL)\win32
 DOC_DIR=$(EREL)\doc
+
+NSIS_SCRIPT=win32\ejabberd.nsi
+NSIS_HEADER=win32\ejabberd.nsh
+
+installer : $(NSIS_SCRIPT) $(NSIS_HEADER)
+	makensis $(NSIS_SCRIPT)
+
+$(NSIS_HEADER) : Makefile.inc
+	echo !define OUTFILEDIR "..\$(REL)" >$(NSIS_HEADER)
+	echo !define TESTDIR "..\$(REL)\ejabberd-$(EJABBERD_VERSION)" >>$(NSIS_HEADER)
+	echo !define VERSION "$(EJABBERD_VERSION)" >>$(NSIS_HEADER)
 
 release_clean :
 	if exist $(REL) rd /s /q $(REL)
@@ -29,6 +39,11 @@ release : build release_clean
 	copy *.dll $(SO_DIR)
 	mkdir $(MSGS_DIR)
 	copy msgs\*.msg $(MSGS_DIR)
+	mkdir $(WIN32_DIR)
+	copy win32\ejabberd.cfg $(EREL)
+	copy win32\ejabberd.ico $(WIN32_DIR)
+	mkdir $(WIN32_DIR)\5.3
+	copy win32\5.3\*.beam $(WIN32_DIR)\5.3
 	mkdir $(SRC_DIR)
 	copy *.app $(SRC_DIR)
 	copy *.erl $(SRC_DIR)
@@ -50,6 +65,9 @@ release : build release_clean
 	copy stringprep\*.tcl $(SRC_DIR)\stringprep
 	mkdir $(SRC_DIR)\web
 	copy web\*.erl $(SRC_DIR)\web
+	mkdir $(SRC_DIR)\win32
+	mkdir $(SRC_DIR)\win32\5.3
+	copy win32\5.3\*.erl $(SRC_DIR)\win32\5.3
 	mkdir $(DOC_DIR)
 	copy ..\doc\*.html $(DOC_DIR)
 	copy ..\doc\*.png $(DOC_DIR)
@@ -73,7 +91,9 @@ all-recursive :
 	nmake -nologo -f Makefile.win32
 	cd ..\web
 	nmake -nologo -f Makefile.win32
-	cd ..
+	cd ..\win32\5.3
+	nmake -nologo -f Makefile.win32
+	cd ..\..
 
 compile-beam : 
 	erl -s make all report -noinput -s erlang halt
@@ -100,16 +120,18 @@ clean-recursive :
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\web
 	nmake -nologo -f Makefile.win32 clean
-	cd ..
+	cd ..\win32\5.3
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\..
 
 distclean : release_clean clean
 	-@erase Makefile.inc
 
 CC=cl.exe
-CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include" -I"$(EXPAT_DIR)\source\lib"
+CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT $(EXPAT_FLAG) -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include" -I"$(EXPAT_DIR)\source\lib"
 
 LD=link.exe
-LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" "$(EXPAT_DIR)\libs\libexpat.lib" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
+LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" "$(EXPAT_LIB)" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
 
 $(DLL) : $(OBJECT)
 	$(LD) $(LD_FLAGS) -out:$(DLL) $(OBJECT)
