@@ -21,7 +21,11 @@
 	 register_feature/1,
 	 unregister_feature/1,
 	 register_extra_domain/1,
-	 unregister_extra_domain/1]).
+	 unregister_extra_domain/1,
+	 register_sm_feature/1,
+	 unregister_sm_feature/1,
+	 register_sm_node/4,
+	 unregister_sm_node/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -53,6 +57,8 @@ start(Opts) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
     lists:foreach(fun register_extra_domain/1, ExtraDomains),
+    catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
+    catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
     ok.
 
 stop() ->
@@ -463,43 +469,108 @@ get_stopped_nodes(Lang) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_sm_iq_items(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    #jid{user = User} = To,
-    case {acl:match_rule(configure, From), Type} of
-	{deny, _} ->
+register_sm_feature(Feature) ->
+    catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
+    ets:insert(disco_sm_features, {Feature}).
+
+unregister_sm_feature(Feature) ->
+    catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
+    ets:delete(disco_sm_features, Feature).
+
+register_sm_node(Node, Name, Module, Function) ->
+    catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
+    ets:insert(disco_sm_nodes, {Node, Name, Module, Function}).
+
+unregister_sm_node(Node) ->
+    catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
+    ets:delete(disco_sm_nodes, Node).
+
+process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
+    #jid{user = User, luser = LTo} = To,
+    #jid{luser = LFrom, lserver = LServer} = From,
+    Self = (LTo == LFrom) andalso (LServer == ?MYNAME),
+    Node = xml:get_tag_attr_s("node", SubEl),
+    case {acl:match_rule(configure, From), Type, Self, Node} of
+	{_, set, _, _} ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-	{allow, set} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-	{allow, get} ->
-	    case xml:get_tag_attr_s("node", SubEl) of
-		"" ->
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query",
-				     [{"xmlns", ?NS_DISCO_ITEMS}],
-				     get_user_resources(User)
-				    }]};
-		_ ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
-	    end
+	{_, get, true, []}  ->
+	    Nodes = lists:map(fun({Nod, Name, _, _}) ->
+					node_to_xml(User,
+					Nod,
+					translate:translate(Lang, Name))
+			      end, ets:tab2list(disco_sm_nodes)),
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "query",
+			     [{"xmlns", ?NS_DISCO_ITEMS}],
+			     get_user_resources(User) ++ Nodes}]};
+	{allow, get, _, []} ->
+	    Nodes = lists:map(fun({Nod, Name, _, _}) ->
+					node_to_xml(User,
+					Nod,
+					translate:translate(Lang, Name))
+			      end, ets:tab2list(disco_sm_nodes)),
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "query",
+			     [{"xmlns", ?NS_DISCO_ITEMS}],
+			     get_user_resources(User) ++ Nodes}]};
+	{A, get, S, _} when (A == allow) or (S == true) ->
+	    case ets:lookup(disco_sm_nodes, Node) of
+		[] ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
+		[{Node, _Name, Module, Function}] ->
+		    case Module:Function(From, To, IQ) of
+			{error, Err} ->
+			    IQ#iq{type = error, sub_el = [SubEl, Err]};
+			{result, Res} ->
+			    IQ#iq{type = result,
+				  sub_el = [{xmlelement, "query",
+					     [{"xmlns", ?NS_DISCO_ITEMS},
+					      {"node", Node}],
+					     Res}]}
+		    end
+	    end;
+	{_, get, _, _} ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]};
+	_ ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
     end.
 
 
 process_sm_iq_info(From, To, #iq{type = Type, xmlns = XMLNS,
 				 sub_el = SubEl} = IQ) ->
-    case {acl:match_rule(configure, From), Type} of
-	{deny, _} ->
+    #jid{luser = LTo} = To,
+    #jid{luser = LFrom, lserver = LServer} = From,
+    Self = (LTo == LFrom) andalso (LServer == ?MYNAME),
+    Node = xml:get_tag_attr_s("node", SubEl),
+    case {acl:match_rule(configure, From), Type, Self, Node} of
+	{_, set, _, _} ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-	{allow, set} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-	{allow, get} ->
-	    case xml:get_tag_attr_s("node", SubEl) of
-		"" ->
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query", [{"xmlns", XMLNS}],
-				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
+	{allow, get, _, []} ->
+	    Features = lists:map(fun feature_to_xml/1,
+				 ets:tab2list(disco_sm_features)),
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "query", [{"xmlns", XMLNS}],
+			     [feature_to_xml({?NS_EJABBERD_CONFIG})] ++
+			     Features}]};
+	{_, get, _, []} ->
+	    Features = lists:map(fun feature_to_xml/1,
+				 ets:tab2list(disco_sm_features)),
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "query", [{"xmlns", XMLNS}],
+			    Features}]};
+	{A, get, S, _} when (A == allow) or (S == true) ->
+	    case ets:lookup(disco_sm_nodes, Node) of
+		[] ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
 		_ ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
-	    end
+		    IQ#iq{type = result, sub_el = [{xmlelement, "query",
+						   [{"xmlns", XMLNS},
+						    {"node", Node}], []}]}
+	    end;
+	{_, get, _, _} ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]};
+	_ ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
     end.
 
 
@@ -511,4 +582,9 @@ get_user_resources(User) ->
 		       [{"jid", User ++ "@" ++ ?MYNAME ++ "/" ++ R},
 			{"name", User}], []}
 	      end, lists:sort(Rs)).
+
+node_to_xml(User, Node, Name) ->
+    {xmlelement, "item", [{"jid", User ++ "@" ++ ?MYNAME},
+			  {"node", Node},
+			  {"name", Name}], []}.
 

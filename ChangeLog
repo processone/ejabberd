@@ -1,3 +1,28 @@
+2004-09-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Send password in room invitation
+	(thanks to Sergei Golovan)
+
+	* src/mod_disco.erl: Added registration of sm features and nodes
+	(thanks to Sergei Golovan)
+	* src/mod_vcard.erl: Register vcard-temp feature (thanks to Sergei
+	Golovan)
+
+	* src/jlib.erl: Added functions now_to_utc_string/1,
+	now_to_local_string/1, and datetime_string_to_timestamp/1 (thanks
+	to Sergei Golovan)
+	* src/mod_muc/mod_muc_room.erl: Use time parsing functions from
+	jlib (thanks to Sergei Golovan)
+
+2004-09-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* ejabberd/src/mod_pubsub/mod_pubsub.erl: Bugfix (thanks to
+	Mickael Remond)
+
+2004-09-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Bugfix
+
 2004-09-10  Alexey Shchepin  <alexey@sevcom.net>
 
 	* tools/ejabberdctl: Added call to "exec" (thanks to Sergei

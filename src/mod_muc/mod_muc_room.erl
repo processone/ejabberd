@@ -1079,23 +1079,18 @@ extract_history([{xmlelement, _Name, Attrs, _SubEls} = El | Els], Type) ->
 		       [{elem, "history"}, {attr, Type}]),
 	    case Type of
 		"since" ->
-		    case catch parse_datetime(AttrVal) of
-			{'EXIT', _Err} ->
+		    case jlib:datetime_string_to_timestamp(AttrVal) of
+			undefined ->
 			    false;
-			Res ->
-			    Res
+			TS ->
+			    calendar:now_to_universal_time(TS)
 		    end;
 		_ ->
 		    case catch list_to_integer(AttrVal) of
-			{'EXIT', _} ->
-			    false;
-			IntVal ->
-			    if
-				IntVal >= 0 ->
-				    IntVal;
-				true ->
-				    false
-			    end
+			IntVal when is_integer(IntVal) and IntVal >= 0 ->
+			    IntVal;
+			_ ->
+			    false
 		    end
 	    end;
 	_ ->
@@ -1104,80 +1099,6 @@ extract_history([{xmlelement, _Name, Attrs, _SubEls} = El | Els], Type) ->
 extract_history([_ | Els], Type) ->
     extract_history(Els, Type).
 
-% JEP-0082
-% yyyy-mm-ddThh:mm:ss[.sss]{Z|{+|-}hh:mm} -> {{yyyy, mm, dd}, {hh, mm, ss}} (UTC)
-parse_datetime(TimeStr) ->
-    [Date, Time] = string:tokens(TimeStr, "T"),
-    D = parse_date(Date),
-    {T, TZH, TZM} = parse_time(Time),
-    S = calendar:datetime_to_gregorian_seconds({D, T}),
-    calendar:gregorian_seconds_to_datetime(S - TZH * 60 * 60 - TZM * 60).
-
-% yyyy-mm-dd
-parse_date(Date) ->
-    YearMonthDay = string:tokens(Date, "-"),
-    [Y, M, D] = lists:map(
-		  fun(L)->
-		      list_to_integer(L)
-		  end, YearMonthDay),
-    {Y, M, D}.
-
-% hh:mm:ss[.sss]TZD
-parse_time(Time) ->
-    case string:str(Time, "Z") of
-	0 ->
-	    parse_time_with_timezone(Time);
-	_ ->
-	    [T | _] = string:tokens(Time, "Z"),
-	    {parse_time1(T), 0, 0}
-    end.
-
-parse_time_with_timezone(Time) ->
-    case string:str(Time, "+") of
-	0 ->
-	    case string:str(Time, "-") of
-		0 ->
-		    false;
-		_ ->
-		    parse_time_with_timezone(Time, "-")
-	    end;
-	_ ->
-	    parse_time_with_timezone(Time, "+")
-    end.
-
-parse_time_with_timezone(Time, Delim) ->
-    [T, TZ] = string:tokens(Time, Delim),
-    {TZH, TZM} = parse_timezone(TZ),
-    TT = parse_time1(T),
-    case Delim of
-	"-" ->
-	    {TT, -TZH, -TZM};
-	"+" ->
-	    {TT, TZH, TZM}
-    end.
-
-parse_timezone(TZ) ->
-    [H, M] = string:tokens(TZ, ":"),
-    {[H1, M1], true} = check_list([{H, 12}, {M, 60}]),
-    {H1, M1}.
-
-parse_time1(Time) ->
-    [HMS | _] =  string:tokens(Time, "."),
-    [H, M, S] = string:tokens(HMS, ":"),
-    {[H1, M1, S1], true} = check_list([{H, 24}, {M, 60}, {S, 60}]),
-    {H1, M1, S1}.
-
-check_list(List) ->
-    lists:mapfoldl(
-      fun({L, N}, B)->
-	  V = list_to_integer(L),
-	  if
-	      (V >= 0) and (V =< N) ->
-		  {V, B};
-	      true ->
-		  {false, false}
-	  end
-      end, true, List).
 
 send_update_presence(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -2316,7 +2237,14 @@ check_invitation(From, Els, StateData) ->
 						    jlib:jid_to_string(From)}],
 						  [{xmlelement, "reason", [],
 						    [{xmlcdata, Reason}]}]}],
-					    PasswdEl = [],
+					    PasswdEl = 
+						case (StateData#state.config)#config.password_protected of
+						    true ->
+							[{xmlelement, "password", [],
+							[{xmlcdata, (StateData#state.config)#config.password}]}];
+						    _ ->
+							[]
+						end,
 					    Msg =
 						{xmlelement, "message",
 						 [{"type", "normal"}],

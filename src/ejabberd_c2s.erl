@@ -1354,7 +1354,7 @@ update_priority(El, StateData) ->
     ejabberd_sm:set_presence(StateData#state.user,
 			     StateData#state.resource,
 			     Pri).
-		  
+
 
 
 process_privacy_iq(From, To,

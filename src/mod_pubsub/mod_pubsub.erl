@@ -452,6 +452,8 @@ iq_pubsub(Host, From, Type, SubEl) ->
 	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
 
 
+%% Create new pubsub nodes
+%% This function is used during init to create the first bootstrap nodes
 create_new_node(Host, Node, Owner) ->
     case Node of
 	[] ->
@@ -867,7 +869,7 @@ set_entities(OJID, Node, EntitiesEls) ->
 				      (Subscription == false) ->
 					  error;
 				      true ->
-					  [{JID,
+					  [{jlib:jid_tolower(JID),
 					    #entity{
 					      affiliation = Affiliation,
 					      subscription = Subscription}} |
@@ -984,7 +986,7 @@ subscription_to_string(Subscription) ->
 
 check_create_permission(Host, Node, Owner) ->
     if
-	#jid{lserver = Host} == Owner ->
+	Owner#jid.lserver == Host ->
 	    true;
 	true ->
 	    #jid{luser = User, lserver = Server} = Owner,

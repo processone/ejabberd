@@ -64,6 +64,7 @@ start(Opts) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
+    catch mod_disco:register_sm_feature(?NS_VCARD),
     Host = gen_mod:get_opt(host, Opts, "vjud." ++ ?MYNAME),
     Search = gen_mod:get_opt(search, Opts, true),
     register(ejabberd_mod_vcard, spawn(?MODULE, init, [Host, Search])).
@@ -98,6 +99,7 @@ loop(Host) ->
 stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_VCARD),
+    catch mod_disco:unregister_sm_feature(?NS_VCARD),
     ejabberd_mod_vcard ! stop,
     ok.
 
