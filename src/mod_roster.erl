@@ -44,8 +44,28 @@ start(Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
+-define(PSI_ROSTER_WORKAROUND, true).
+
+-ifdef(PSI_ROSTER_WORKAROUND).
+
 process_iq(From, To, IQ) ->
-    {iq, ID, Type, XMLNS, SubEl} = IQ,
+    {iq, ID, _Type, XMLNS, SubEl} = IQ,
+    #jid{lserver = LServer} = From,
+    case ?MYNAME of
+	LServer ->
+	    ResIQ = process_local_iq(From, To, IQ),
+	    ejabberd_router:route(From, From,
+				  jlib:iq_to_xml(ResIQ)),
+	    ignore;
+	_ ->
+	    {iq, ID, error, XMLNS,
+	     [SubEl, ?ERR_ITEM_NOT_FOUND]}
+    end.
+
+-else.
+
+process_iq(From, To, IQ) ->
+    {iq, ID, _Type, XMLNS, SubEl} = IQ,
     #jid{lserver = LServer} = From,
     case ?MYNAME of
 	LServer ->
@@ -55,6 +75,7 @@ process_iq(From, To, IQ) ->
 	     [SubEl, ?ERR_ITEM_NOT_FOUND]}
     end.
 
+-endif.
 
 process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->
     case Type of
@@ -66,7 +87,7 @@ process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->
 
 
 
-process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_iq_get(From, _To, {iq, ID, _Type, XMLNS, SubEl}) ->
     #jid{luser = LUser} = From,
     F = fun() ->
 		mnesia:index_read(roster, LUser, #roster.user)
@@ -118,12 +139,12 @@ item_to_xml(Item) ->
     {xmlelement, "item", Attrs, SubEls}.
 
 
-process_iq_set(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
-    {xmlelement, Name, Attrs, Els} = SubEl,
+process_iq_set(From, To, {iq, ID, _Type, XMLNS, SubEl}) ->
+    {xmlelement, _Name, _Attrs, Els} = SubEl,
     lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els),
     {iq, ID, result, XMLNS, []}.
 
-process_item_set(From, To, {xmlelement, Name, Attrs, Els} = XItem) ->
+process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
     #jid{user = User, luser = LUser} = From,
     case JID1 of
@@ -197,7 +218,7 @@ process_item_set(From, To, {xmlelement, Name, Attrs, Els} = XItem) ->
 		    ok
 	    end
     end;
-process_item_set(From, To, _) ->
+process_item_set(_From, _To, _) ->
     ok.
 
 process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
@@ -264,6 +285,20 @@ push_item(User, From, Item) ->
 		  end, ejabberd_sm:get_user_resources(User)).
 
 % TODO: don't push to those who not load roster
+-ifdef(PSI_ROSTER_WORKAROUND).
+
+push_item(User, Resource, From, Item) ->
+    ResIQ = {iq, "", set, ?NS_ROSTER,
+	     [{xmlelement, "query",
+	       [{"xmlns", ?NS_ROSTER}],
+	       [item_to_xml(Item)]}]},
+    ejabberd_router ! {route,
+		       jlib:make_jid(User, ?MYNAME, Resource),
+		       jlib:make_jid(User, ?MYNAME, Resource),
+		       jlib:iq_to_xml(ResIQ)}.
+
+-else.
+
 push_item(User, Resource, From, Item) ->
     ResIQ = {iq, "", set, ?NS_ROSTER,
 	     [{xmlelement, "query",
@@ -274,6 +309,7 @@ push_item(User, Resource, From, Item) ->
 		       jlib:make_jid(User, ?MYNAME, Resource),
 		       jlib:iq_to_xml(ResIQ)}.
 
+-endif.
 
 get_subscription_lists(User) ->
     LUser = jlib:nodeprep(User),
@@ -322,7 +358,7 @@ in_subscription(User, From, Type) ->
 				       From#jid.resource},
 				NewItem = #roster{uj = {LUser, LFrom},
 						  user = LUser,
-						  jid = From},
+						  jid = JID},
 				mnesia:write(NewItem),
 				true
 			end;
@@ -485,14 +521,14 @@ remove_user(User) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 set_items(User, SubEl) ->
-    {xmlelement, Name, Attrs, Els} = SubEl,
+    {xmlelement, _Name, _Attrs, Els} = SubEl,
     LUser = jlib:nodeprep(User),
     F = fun() ->
 		lists:foreach(fun(El) -> process_item_set_t(LUser, El) end, Els)
 	end,
     mnesia:transaction(F).
 
-process_item_set_t(LUser, {xmlelement, Name, Attrs, Els} = XItem) ->
+process_item_set_t(LUser, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
     case JID1 of
 	error ->
@@ -512,7 +548,7 @@ process_item_set_t(LUser, {xmlelement, Name, Attrs, Els} = XItem) ->
 		    mnesia:write(Item2)
 	    end
     end;
-process_item_set_t(LUser, _) ->
+process_item_set_t(_LUser, _) ->
     ok.
 
 process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->

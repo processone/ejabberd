@@ -5,7 +5,6 @@ admin interface
 	node management
 		node restart/shutdown
 		statistics about memory usage
-	backup management
 
 S2S:
 	rewrite S2S key validation
@@ -13,11 +12,8 @@ S2S:
 
 more correctly work with SRV DNS records (priority, weight, etc...)
 TLS
-Privacy rules
 make roster set to work in one transaction
 add traffic shapers to c2s connection before authentification
 add traffic shapers to s2s connections
 more traffic shapers
 SNMP
-MUC: remove a lot of debugging output
-iq:last

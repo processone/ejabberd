@@ -1,5 +1,9 @@
 2003-10-27  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_auth.erl: Minor change in check_password/4
+
+	* src/mod_roster.erl: Workaround for PSI bug with roster
+
 	* src/ejabberd_logger_h.erl: Added support for log rotation
 
 2003-10-24  Alexey Shchepin  <alexey@sevcom.net>

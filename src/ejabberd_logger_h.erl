@@ -64,7 +64,7 @@ handle_call(_Request, State) ->
 %%----------------------------------------------------------------------
 handle_info({'EXIT', _Fd, _Reason}, _State) ->
     remove_handler;
-handle_info({emulator, GL, reopen}, State) ->
+handle_info({emulator, _GL, reopen}, State) ->
     file:close(State#state.fd),
     case file:open(State#state.file, [append]) of
 	{ok, Fd} ->

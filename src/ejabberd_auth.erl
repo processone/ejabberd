@@ -70,7 +70,7 @@ init([]) ->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
-handle_call(Request, From, State) ->
+handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
@@ -80,11 +80,11 @@ handle_call(Request, From, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
-handle_cast(Msg, State) ->
+handle_cast(_Msg, State) ->
     {noreply, State}.
 
 
-code_change(OldVsn, State, Extra) ->
+code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%----------------------------------------------------------------------
@@ -93,7 +93,7 @@ code_change(OldVsn, State, Extra) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
-handle_info(Info, State) ->
+handle_info(_Info, State) ->
     {noreply, State}.
 
 %%----------------------------------------------------------------------
@@ -101,7 +101,7 @@ handle_info(Info, State) ->
 %% Purpose: Shutdown the server
 %% Returns: any (ignored by gen_server)
 %%----------------------------------------------------------------------
-terminate(Reason, State) ->
+terminate(_Reason, _State) ->
     ok.
 
 %%%----------------------------------------------------------------------
@@ -119,14 +119,8 @@ check_password(User, Password) ->
 
 check_password(User, Password, StreamID, Digest) ->
     LUser = jlib:nodeprep(User),
-    F = fun() ->
-		case mnesia:read({passwd, LUser}) of
-		    [E] ->
-			E#passwd.password
-		end
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Passwd} ->
+    case catch mnesia:dirty_read({passwd, LUser}) of
+	[#passwd{password = Passwd}] ->
 	    DigRes = if
 			 Digest /= "" ->
 			     Digest == sha:sha(StreamID ++ Passwd);
@@ -164,7 +158,7 @@ try_register(User, Password) ->
 				mnesia:write(#passwd{user = LUser,
 						     password = Password}),
 				ok;
-			    [E] ->
+			    [_E] ->
 				exists
 			end
 		end,
