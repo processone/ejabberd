@@ -152,17 +152,17 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    int i, j, pos=1;
    unsigned char c;
    int bad = 0;
-   int uc, ruc;
+   int uc = 0, ruc;
    int size;
    int info;
-   int prohibit, tolower;
+   int prohibit = 0, tolower = 0;
    char *rstring;
    int *mc;
    int *str32;
    int str32len, str32pos = 0;
    int decomp_len, decomp_shift;
-   int comp_pos;
-   int cclass1, cclass2;
+   int comp_pos, comp_starter_pos;
+   int cclass1, cclass2, cclass_prev;
    int ch1, ch2;
 
    size = len + 1;
@@ -214,7 +214,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       } else if(c < 0xF0) {
 	 if(i+2 < len && (buf[i+1] & 0xC0) == 0x80 &&
 	    (buf[i+2] & 0xC0) == 0x80) {
-	    uc = ((c & 0x1F) << 12) | ((buf[i+1] & 0x1F) << 6)
+	    uc = ((c & 0x0F) << 12) | ((buf[i+1] & 0x3F) << 6)
 	       | (buf[i+2] & 0x3F);
 	    i += 2;
 	 } else {
@@ -232,12 +232,13 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       }
       
       info = GetUniCharInfo(uc);
-      if(info & prohibit) {
-	 *rbuf = rstring;
-	 driver_free(str32);
-	 return 1;
-      }
+      //if(info & prohibit) {
+      //   *rbuf = rstring;
+      //   driver_free(str32);
+      //   return 1;
+      //}
 
+      //printf("Got %x\r\n", uc);
 
       if(!(info & B1Mask)) 
       {
@@ -291,31 +292,60 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       return 1;
    }
 
+   //printf("\r\n");
+   //printf("DECOMPOSED:\t");
+   //for(i = 0; i < str32pos; i++)
+   //   printf("%4x ", str32[i]);
+   //printf("\r\n");
+
    canonical_ordering(str32, str32pos);
 
-   comp_pos = 0;
+   //printf("ORDERED:\t");
+   //for(i = 0; i < str32pos; i++)
+   //   printf("%4x ", str32[i]);
+   //printf("\r\n");
+
+   comp_pos = 1;
+   comp_starter_pos = 0;
    ch1 = str32[0];
    cclass1 = GetUniCharCClass(ch1);
+   cclass_prev = cclass1;
    for(i = 1; i < str32pos; i++)
    {
       ch2 = str32[i];
       cclass2 = GetUniCharCClass(ch2);
       //printf("Compose: %x + %x = %x\r\n", ch1, ch2, compose(ch1, ch2));
-      if(cclass1 == 0 && cclass1 < cclass2 && (ruc = compose(ch1, ch2))) {
+      if(cclass1 == 0 && cclass2 > cclass_prev && (ruc = compose(ch1, ch2))) {
 	 ch1 = ruc;
       } else {
-	 str32[comp_pos] = ch1;
-	 comp_pos++;
-	 ch1 = ch2;
+	 if(cclass2 == 0) {
+	    str32[comp_starter_pos] = ch1;
+	    comp_starter_pos = comp_pos++;
+	    ch1 = ch2;
+	    cclass1 = cclass_prev = 0;
+	 } else {
+	    str32[comp_pos++] = ch2;
+	    cclass_prev = cclass2;
+	 }
       }
    }
-   str32[comp_pos] = ch1;
-   str32pos = comp_pos+1;
+   str32[comp_starter_pos] = ch1;
+   str32pos = comp_pos;
    
+   //printf("COMPOSED:\t");
+   //for(i = 0; i < str32pos; i++)
+   //   printf("%4x ", str32[i]);
+   //printf("\r\n");
    
    for(i = 0; i < str32pos; i++)
    {
       ruc = str32[i];
+      info = GetUniCharInfo(ruc);
+      if(info & prohibit) {
+	 *rbuf = rstring;
+	 driver_free(str32);
+	 return 1;
+      }
       ADD_UCHAR(ruc);
    }
    

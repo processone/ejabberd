@@ -131,7 +131,7 @@ proc uni::load_tables {data} {
 			    lappend tablemap($val) $table
 			}
 		    }
-		} elseif {$table == "B.3"} {
+		} elseif {$table == "B.2"} {
 		    if {[regexp {^   ([[:xdigit:]]+); ([[:xdigit:]]+);} $line \
 			     temp from to]} {
 			scan $from %x from
@@ -165,7 +165,7 @@ proc uni::load_tables {data} {
 			#puts "missed: $line"
 		    }
 		    
-		} elseif {$table != "B.2"} {
+		} elseif {$table != "B.3"} {
 		    if {[regexp {^   ([[:xdigit:]]+)-([[:xdigit:]]+)} $line \
 			     temp from to]} {
 			scan $from %x from

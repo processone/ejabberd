@@ -476,7 +476,8 @@ session_established({xmlstreamelement, El}, StateData) ->
     NewState =
 	case ToJID of
 	    error ->
-		% TODO
+		Err = jlib:make_error_reply(El, ?ERR_JID_MALFORMED),
+		send_element(StateData, Err),
 		StateData;
 	    _ ->
 		case Name of
