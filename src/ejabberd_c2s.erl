@@ -326,16 +326,16 @@ terminate(Reason, StateName, StateData) ->
 	    ok;
 	_ ->
 	    ejabberd_sm:close_session(StateData#state.user,
-				      StateData#state.resource)
+				      StateData#state.resource),
+            From = {StateData#state.user,
+                    StateData#state.server,
+                    StateData#state.resource},
+            Packet = {xmlelement, "presence", [{"type", "unavailable"}], []},
+            ejabberd_sm:unset_presence(StateData#state.user,
+                		       StateData#state.resource),
+            presence_broadcast(From, StateData#state.pres_a, Packet),
+            presence_broadcast(From, StateData#state.pres_i, Packet)
     end,
-    From = {StateData#state.user,
-	    StateData#state.server,
-	    StateData#state.resource},
-    Packet = {xmlelement, "presence", [{"type", "unavailable"}], []},
-    ejabberd_sm:unset_presence(StateData#state.user,
-			       StateData#state.resource),
-    presence_broadcast(From, StateData#state.pres_a, Packet),
-    presence_broadcast(From, StateData#state.pres_i, Packet),
     StateData#state.sender ! close,
     ok.
 
