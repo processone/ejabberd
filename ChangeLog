@@ -1,3 +1,12 @@
+2003-11-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl.erl: Updated SASL authentification
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/ejabberd_sm.erl: Better resource handling
+
+	* src/jlib.hrl: Added NS_BIND macros
+
 2003-11-06  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_configure2.erl: Added reporting of outgoing S2S

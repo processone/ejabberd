@@ -104,7 +104,8 @@ close_session(User, Resource) ->
 
 register_connection(User, Resource, Pid) ->
     LUser = jlib:nodeprep(User),
-    UR = {LUser, Resource},
+    LResource = jlib:nodeprep(Resource),
+    UR = {LUser, LResource},
     F = fun() ->
 		Ss = mnesia:wread({session, UR}),
 		Ls = mnesia:wread({local_session, UR}),
@@ -134,8 +135,9 @@ register_connection(User, Resource, Pid) ->
 
 replace_my_connection(User, Resource) ->
     LUser = jlib:nodeprep(User),
+    LResource = jlib:nodeprep(Resource),
+    UR = {LUser, LResource},
     F = fun() ->
-		UR = {LUser, Resource},
 		Es = mnesia:read({local_session, UR}),
 		mnesia:delete({local_session, UR}),
 		Es
@@ -153,8 +155,9 @@ replace_my_connection(User, Resource) ->
 
 remove_connection(User, Resource) ->
     LUser = jlib:nodeprep(User),
+    LResource = jlib:nodeprep(Resource),
     F = fun() ->
-		UR = {LUser, Resource},
+		UR = {LUser, LResource},
 		mnesia:delete({local_session, UR}),
 		mnesia:delete({session, UR})
         end,
@@ -178,10 +181,10 @@ clean_table_from_bad_node(Node) ->
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    #jid{user = User, resource = Resource,
+    #jid{user = User,
 	 luser = LUser, lserver = LServer, lresource = LResource} = To,
     {xmlelement, Name, Attrs, _Els} = Packet,
-    case Resource of
+    case LResource of
 	"" ->
 	    case Name of
 		"presence" ->

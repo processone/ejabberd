@@ -64,6 +64,17 @@ check_authzid(State, Props) ->
 	    end
     end.
 
+check_credentials(State, Props) ->
+    User = xml:get_attr_s(username, Props),
+    case jlib:nodeprep(User) of
+	error ->
+	    {error, "not-authorized"};
+	"" ->
+	    {error, "not-authorized"};
+	LUser ->
+	    ok
+    end.
+
 listmech() ->
     ets:select(sasl_mechanism,
 	       [{#sasl_mechanism{mechanism = '$1', _ = '_'}, [], ['$1']}]).
@@ -90,7 +101,7 @@ server_step(State, ClientIn) ->
     MechState = State#sasl_state.mech_state,
     case Module:mech_step(MechState, ClientIn) of
 	{ok, Props} ->
-	    case check_authzid(State, Props) of
+	    case check_credentials(State, Props) of
 		ok ->
 		    {ok, Props};
 		{error, Error} ->

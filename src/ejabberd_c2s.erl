@@ -24,6 +24,7 @@
 	 wait_for_stream/2,
 	 wait_for_auth/2,
 	 wait_for_sasl_auth/2,
+	 wait_for_bind/2,
 	 wait_for_session/2,
 	 wait_for_sasl_response/2,
 	 session_established/2,
@@ -152,10 +153,20 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 			    {next_state, wait_for_sasl_auth,
 			     StateData#state{sasl_state = SASLState}};
 			_ ->
-			    send_element(
-			      StateData,
-			      {xmlelement, "stream:features", [], []}),
-			    {next_state, wait_for_session, StateData}
+			    case StateData#state.resource of
+				"" ->
+				    send_element(
+				      StateData,
+				      {xmlelement, "stream:features", [],
+				       [{xmlelement, "bind",
+					 [{"xmlns", ?NS_SASL}], []}]}),
+				    {next_state, wait_for_bind, StateData};
+				_ ->
+				    send_element(
+				      StateData,
+				      {xmlelement, "stream:features", [], []}),
+				    {next_state, wait_for_session, StateData}
+			    end
 		    end;
 		_ ->
 		    Header = io_lib:format(
@@ -296,17 +307,12 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
-		    JID = #jid{user = U, resource = R} =
-			jlib:string_to_jid(
-			  xml:get_attr_s(authzid, Props)),
+		    U = xml:get_attr_s(username, Props),
 		    ?INFO_MSG("(~w) Accepted authentification for ~s",
-			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
+			      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
-				     user = U,
-				     resource = R,
-				     jid = JID
+				     user = U
 				    }};
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
@@ -364,16 +370,12 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
-		    JID = #jid{user = U, resource = R} =
-			jlib:string_to_jid(xml:get_attr_s(authzid, Props)),
+		    U = xml:get_attr_s(username, Props),
 		    ?INFO_MSG("(~w) Accepted authentification for ~s",
-			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
+			      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
-				     user = U,
-				     resource = R,
-				     jid = JID
+				     user = U
 				    }};
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
@@ -416,6 +418,51 @@ wait_for_sasl_response({xmlstreamerror, _}, StateData) ->
     {stop, normal, StateData};
 
 wait_for_sasl_response(closed, StateData) ->
+    {stop, normal, StateData}.
+
+
+
+wait_for_bind({xmlstreamelement, El}, StateData) ->
+    case jlib:iq_query_info(El) of
+	{iq, ID, set, ?NS_BIND, SubEl} ->
+	    U = StateData#state.user,
+	    R1 = xml:get_path_s(SubEl, [{elem, "resource"}, cdata]),
+	    R = case jlib:resourceprep(R1) of
+		    error -> error;
+		    "" ->
+			lists:concat(
+			  [randoms:get_string() | tuple_to_list(now())]);
+		    Resource -> Resource
+		end,
+	    case R of
+		error ->
+		    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
+		    send_element(StateData, Err),
+		    {next_state, wait_for_bind, StateData};
+		_ ->
+		    JID = jlib:make_jid(U, StateData#state.server, R),
+		    Res = {iq, ID, result, ?NS_BIND,
+			   [{xmlelement, "bind",
+			     [{"xmlns", ?NS_BIND}],
+			     [{xmlelement, "jid", [],
+			       [{xmlcdata, jlib:jid_to_string(JID)}]}]}]},
+		    send_element(StateData, jlib:iq_to_xml(Res)),
+		    {next_state, wait_for_session,
+		     StateData#state{resource = R, jid = JID}}
+	    end;
+	_ ->
+	    {next_state, wait_for_bind, StateData}
+    end;
+
+wait_for_bind({xmlstreamend, Name}, StateData) ->
+    send_text(StateData, ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_bind({xmlstreamerror, _}, StateData) ->
+    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_bind(closed, StateData) ->
     {stop, normal, StateData}.
 
 
@@ -742,10 +789,8 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
-    case StateData#state.user of
-	"" ->
-	    ok;
-	_ ->
+    case StateName of
+	session_established ->
 	    ?INFO_MSG("(~w) Close session for ~s",
 		      [StateData#state.socket,
 		       jlib:jid_to_string(StateData#state.jid)]),
@@ -756,7 +801,9 @@ terminate(Reason, StateName, StateData) ->
             ejabberd_sm:unset_presence(StateData#state.user,
                 		       StateData#state.resource),
             presence_broadcast(StateData, From, StateData#state.pres_a, Packet),
-            presence_broadcast(StateData, From, StateData#state.pres_i, Packet)
+            presence_broadcast(StateData, From, StateData#state.pres_i, Packet);
+	_ ->
+	    ok
     end,
     (StateData#state.sockmod):close(StateData#state.socket),
     ok.

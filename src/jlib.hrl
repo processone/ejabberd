@@ -40,6 +40,7 @@
 
 -define(NS_SASL,         "urn:ietf:params:xml:ns:xmpp-sasl").
 -define(NS_SESSION,      "urn:ietf:params:xml:ns:xmpp-session").
+-define(NS_BIND,         "urn:ietf:params:xml:ns:xmpp-bind").
 
 % TODO: remove "code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),
