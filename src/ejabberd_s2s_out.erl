@@ -201,7 +201,8 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 	    case Type of
 		"valid" ->
 		    send_queue(StateData#state.socket, StateData#state.queue),
-		    {next_state, stream_established, StateData};
+		    {next_state, stream_established,
+		     StateData#state{queue = queue:new()}};
 		_ ->
 		    % TODO: bounce packets
 		    {stop, normal, StateData}
