@@ -104,6 +104,9 @@ ErlDrvEntry iconv_driver_entry = {
    NULL                        /* F_PTR outputv, reserved */
 };
 
+#ifdef WIN32
+__declspec(dllexport)
+#endif
 DRIVER_INIT(iconv_erl) /* must match name in driver_entry */
 {
    return &iconv_driver_entry;

@@ -1,3 +1,20 @@
+2003-07-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+	* src/expat_erl.c: Added #ifdef for WIN32 (thanks to Sergei
+	Golovan)
+	* src/mod_irc/iconv_erl.c: Likewise
+
+	* src/configure.erl: Defines ERLANG_DIR variable (thanks to Sergei
+	Golovan)
+	* **/Makefile: Use ERLANG_DIR (thanks to Sergei Golovan)
+
+	* **/Makefile.win32: Makefiles for windows build (thanks to Sergei
+	Golovan)
+	* src/configure.bat: Configuration script for windows (thanks to
+	Sergei Golovan)
+
 2003-07-09  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Added suport for meta-node

@@ -1,0 +1,20 @@
+
+include ..\Makefile.inc
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+OBJS = \
+	$(OUTDIR)\mod_muc.beam \
+	$(OUTDIR)\mod_muc_room.beam
+
+ALL : $(OBJS)
+
+CLEAN :
+	-@erase *.beam
+
+$(OUTDIR)\mod_muc.beam : mod_muc.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_muc.erl
+
+$(OUTDIR)\mod_muc_room.beam : mod_muc_room.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_muc_room.erl

@@ -18,7 +18,5 @@ add traffic shapers to c2s connection before authentification
 add traffic shapers to s2s connections
 more traffic shapers
 SNMP
-PubSub
-MUC: remove empty non-persistent conferences after timeout
 MUC: remove a lot of debugging output
 iq:last

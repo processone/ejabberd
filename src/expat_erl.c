@@ -10,7 +10,6 @@ typedef struct {
       XML_Parser parser;
 } expat_data;
 
-
 void *erlXML_StartElementHandler(expat_data *d,
 				 const XML_Char *name,
 				 const XML_Char **atts)
@@ -147,6 +146,9 @@ ErlDrvEntry expat_driver_entry = {
    NULL                        /* F_PTR outputv, reserved */
 };
 
+#ifdef WIN32
+__declspec(dllexport)
+#endif
 DRIVER_INIT(expat_erl) /* must match name in driver_entry */
 {
    return &expat_driver_entry;

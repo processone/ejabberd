@@ -3,7 +3,7 @@
 <HTML>
 <HEAD><TITLE>Ejabberd Installation and Operation Guide</TITLE>
 
-<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<META http-equiv="Content-Type" content="text/html; charset=KOI8-R">
 <META name="GENERATOR" content="hevea 1.06">
 </HEAD>
 <BODY >
@@ -21,7 +21,7 @@
 <A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
 <A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
-<H3 ALIGN=center>February 11, 2003</H3><DIV ALIGN=center>
+<H3 ALIGN=center>July 12, 2003</H3><DIV ALIGN=center>
 
  <IMG SRC="logo.png">
  
@@ -39,59 +39,68 @@
 <LI><A HREF="#htoc2">2&nbsp;&nbsp;Installation</A>
 <UL><LI>
 <A HREF="#htoc3">2.1&nbsp;&nbsp;Installation Requirements</A>
-<LI><A HREF="#htoc4">2.2&nbsp;&nbsp;Obtaining</A>
-<LI><A HREF="#htoc5">2.3&nbsp;&nbsp;Compilation</A>
-<LI><A HREF="#htoc6">2.4&nbsp;&nbsp;Starting</A>
-</UL>
-<LI><A HREF="#htoc7">3&nbsp;&nbsp;Configuration</A>
 <UL><LI>
-<A HREF="#htoc8">3.1&nbsp;&nbsp;Initial Configuration</A>
+<A HREF="#htoc4">2.1.1&nbsp;&nbsp;Unix</A>
+<LI><A HREF="#htoc5">2.1.2&nbsp;&nbsp;Windows</A>
+</UL>
+<LI><A HREF="#htoc6">2.2&nbsp;&nbsp;Obtaining</A>
+<LI><A HREF="#htoc7">2.3&nbsp;&nbsp;Compilation</A>
 <UL><LI>
-<A HREF="#htoc9">3.1.1&nbsp;&nbsp;Host Name</A>
-<LI><A HREF="#htoc10">3.1.2&nbsp;&nbsp;Access Rules</A>
-<LI><A HREF="#htoc11">3.1.3&nbsp;&nbsp;Listened Sockets</A>
-<LI><A HREF="#htoc12">3.1.4&nbsp;&nbsp;Modules</A>
+<A HREF="#htoc8">2.3.1&nbsp;&nbsp;Unix</A>
+<LI><A HREF="#htoc9">2.3.2&nbsp;&nbsp;Windows</A>
 </UL>
-<LI><A HREF="#htoc13">3.2&nbsp;&nbsp;Online Configuration and Monitoring</A>
+<LI><A HREF="#htoc10">2.4&nbsp;&nbsp;Starting</A>
+</UL>
+<LI><A HREF="#htoc11">3&nbsp;&nbsp;Configuration</A>
 <UL><LI>
-<A HREF="#htoc14">3.2.1&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</A>
-<LI><A HREF="#htoc15">3.2.2&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</A>
-<LI><A HREF="#htoc16">3.2.3&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</A>
-<LI><A HREF="#htoc17">3.2.4&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</A>
-<LI><A HREF="#htoc18">3.2.5&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</A>
-<LI><A HREF="#htoc19">3.2.6&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</A>
-</UL>
-</UL>
-<LI><A HREF="#htoc20">4&nbsp;&nbsp;Distribution</A>
+<A HREF="#htoc12">3.1&nbsp;&nbsp;Initial Configuration</A>
 <UL><LI>
-<A HREF="#htoc21">4.1&nbsp;&nbsp;How it works</A>
+<A HREF="#htoc13">3.1.1&nbsp;&nbsp;Host Name</A>
+<LI><A HREF="#htoc14">3.1.2&nbsp;&nbsp;Access Rules</A>
+<LI><A HREF="#htoc15">3.1.3&nbsp;&nbsp;Shapers Configuration</A>
+<LI><A HREF="#htoc16">3.1.4&nbsp;&nbsp;Listened Sockets</A>
+<LI><A HREF="#htoc17">3.1.5&nbsp;&nbsp;Modules</A>
+</UL>
+<LI><A HREF="#htoc18">3.2&nbsp;&nbsp;Online Configuration and Monitoring</A>
 <UL><LI>
-<A HREF="#htoc22">4.1.1&nbsp;&nbsp;Router</A>
-<LI><A HREF="#htoc23">4.1.2&nbsp;&nbsp;Local Router</A>
-<LI><A HREF="#htoc24">4.1.3&nbsp;&nbsp;Session Manager</A>
-<LI><A HREF="#htoc25">4.1.4&nbsp;&nbsp;S2S Manager</A>
+<A HREF="#htoc19">3.2.1&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</A>
+<LI><A HREF="#htoc20">3.2.2&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</A>
+<LI><A HREF="#htoc21">3.2.3&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</A>
+<LI><A HREF="#htoc22">3.2.4&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</A>
+<LI><A HREF="#htoc23">3.2.5&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</A>
+<LI><A HREF="#htoc24">3.2.6&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</A>
 </UL>
 </UL>
-<LI><A HREF="#htoc26">A&nbsp;&nbsp;Built-in Modules</A>
+<LI><A HREF="#htoc25">4&nbsp;&nbsp;Distribution</A>
 <UL><LI>
-<A HREF="#htoc27">A.1&nbsp;&nbsp;Common Options</A>
+<A HREF="#htoc26">4.1&nbsp;&nbsp;How it works</A>
 <UL><LI>
-<A HREF="#htoc28">A.1.1&nbsp;&nbsp;Option <TT>iqdisc</TT></A>
-<LI><A HREF="#htoc29">A.1.2&nbsp;&nbsp;Option <TT>host</TT></A>
+<A HREF="#htoc27">4.1.1&nbsp;&nbsp;Router</A>
+<LI><A HREF="#htoc28">4.1.2&nbsp;&nbsp;Local Router</A>
+<LI><A HREF="#htoc29">4.1.3&nbsp;&nbsp;Session Manager</A>
+<LI><A HREF="#htoc30">4.1.4&nbsp;&nbsp;S2S Manager</A>
 </UL>
-<LI><A HREF="#htoc30">A.2&nbsp;&nbsp;<TT>mod_register</TT></A>
-<LI><A HREF="#htoc31">A.3&nbsp;&nbsp;<TT>mod_roster</TT></A>
-<LI><A HREF="#htoc32">A.4&nbsp;&nbsp;<TT>mod_configure</TT></A>
-<LI><A HREF="#htoc33">A.5&nbsp;&nbsp;<TT>mod_disco</TT></A>
-<LI><A HREF="#htoc34">A.6&nbsp;&nbsp;<TT>mod_stats</TT></A>
-<LI><A HREF="#htoc35">A.7&nbsp;&nbsp;<TT>mod_vcard</TT></A>
-<LI><A HREF="#htoc36">A.8&nbsp;&nbsp;<TT>mod_offline</TT></A>
-<LI><A HREF="#htoc37">A.9&nbsp;&nbsp;<TT>mod_echo</TT></A>
-<LI><A HREF="#htoc38">A.10&nbsp;&nbsp;<TT>mod_private</TT></A>
-<LI><A HREF="#htoc39">A.11&nbsp;&nbsp;<TT>mod_time</TT></A>
-<LI><A HREF="#htoc40">A.12&nbsp;&nbsp;<TT>mod_version</TT></A>
 </UL>
-<LI><A HREF="#htoc41">B&nbsp;&nbsp;I18n/L10n</A>
+<LI><A HREF="#htoc31">A&nbsp;&nbsp;Built-in Modules</A>
+<UL><LI>
+<A HREF="#htoc32">A.1&nbsp;&nbsp;Common Options</A>
+<UL><LI>
+<A HREF="#htoc33">A.1.1&nbsp;&nbsp;Option <TT>iqdisc</TT></A>
+<LI><A HREF="#htoc34">A.1.2&nbsp;&nbsp;Option <TT>host</TT></A>
+</UL>
+<LI><A HREF="#htoc35">A.2&nbsp;&nbsp;<TT>mod_register</TT></A>
+<LI><A HREF="#htoc36">A.3&nbsp;&nbsp;<TT>mod_roster</TT></A>
+<LI><A HREF="#htoc37">A.4&nbsp;&nbsp;<TT>mod_configure</TT></A>
+<LI><A HREF="#htoc38">A.5&nbsp;&nbsp;<TT>mod_disco</TT></A>
+<LI><A HREF="#htoc39">A.6&nbsp;&nbsp;<TT>mod_stats</TT></A>
+<LI><A HREF="#htoc40">A.7&nbsp;&nbsp;<TT>mod_vcard</TT></A>
+<LI><A HREF="#htoc41">A.8&nbsp;&nbsp;<TT>mod_offline</TT></A>
+<LI><A HREF="#htoc42">A.9&nbsp;&nbsp;<TT>mod_echo</TT></A>
+<LI><A HREF="#htoc43">A.10&nbsp;&nbsp;<TT>mod_private</TT></A>
+<LI><A HREF="#htoc44">A.11&nbsp;&nbsp;<TT>mod_time</TT></A>
+<LI><A HREF="#htoc45">A.12&nbsp;&nbsp;<TT>mod_version</TT></A>
+</UL>
+<LI><A HREF="#htoc46">B&nbsp;&nbsp;I18n/L10n</A>
 </UL>
 
 <!--TOC section Introduction-->
@@ -104,21 +113,29 @@ server. It is writen mostly in Erlang.<BR>
 <BR>
 The main features of <TT>ejabberd</TT> is:
 <UL><LI>
-Distributed: You may run <TT>ejabberd</TT> on a cluster of machines and all of
+Works on most of popular platforms: *nix (tested on Linux and FreeBSD)
+ and Win32
+<LI>Distributed: You may run <TT>ejabberd</TT> on a cluster of machines and all of
  them will serve one Jabber domain.
 <LI>Fault-tolerance: You may setup an <TT>ejabberd</TT> cluster so that all the
  information required for a properly working service will be stored
- permanently on more then one node. This means that if one of the nodes
+ permanently on more than one node. This means that if one of the nodes
  crashes, then the others will continue working without disruption.
  You can also add or replace more nodes ``on the fly''.
+<LI>Built-in <A HREF="http://www.jabber.org/jeps/jep-0045.html">Multi-User
+ Chat</A> service
+<LI>Built-in IRC transport
+<LI>Built-in
+ <A HREF="http://www.jabber.org/jeps/jep-0060.html">Publish-Subscribe</A>
+ service
+<LI>Built-in Jabber Users Directory service based on users vCards
 <LI>Support for
  <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A>
  (Service Discovery).
 <LI>Support for
  <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>
  (Statistics Gathering).
-<LI>Support for <TT>xml:lang</TT> attribute in many XML elements.
-<LI>JUD based on users vCards.
+<LI>Support for <TT>xml:lang</TT> attribute in many XML elements
 </UL>
 <!--TOC section Installation-->
 
@@ -130,6 +147,11 @@ Distributed: You may run <TT>ejabberd</TT> on a cluster of machines and all of
 <H3><A NAME="htoc3">2.1</A>&nbsp;&nbsp;Installation Requirements</H3><!--SEC END -->
 
 <A NAME="sec:installreq"></A>
+<!--TOC subsubsection Unix-->
+
+<H4><A NAME="htoc4">2.1.1</A>&nbsp;&nbsp;Unix</H4><!--SEC END -->
+
+<A NAME="sec:installrequnix"></A>
 To compile <TT>ejabberd</TT>, you will need the following packages:
 <UL><LI>
 GNU Make;
@@ -137,37 +159,89 @@ GNU Make;
 <LI>libexpat 1.95 or later;
 <LI>Erlang/OTP R8B or later.
 </UL>
+<!--TOC subsubsection Windows-->
+
+<H4><A NAME="htoc5">2.1.2</A>&nbsp;&nbsp;Windows</H4><!--SEC END -->
+
+<A NAME="sec:installreqwin"></A>
+To compile <TT>ejabberd</TT> in MS Windows environment, you will need the following
+packages:
+<UL><LI>
+MS Visual C++&nbsp;6.0 Compiler
+<LI><A HREF="http://www.erlang.org/download/otp_win32_R8B-2.exe">Erlang
+ emulator version&nbsp;5.1.2</A>
+<LI><A HREF="http://prdownloads.sourceforge.net/expat/expat_win32bin_1_95_6.exe?download">Expat&nbsp;1.95.6</A>
+<LI><A HREF="http://prdownloads.sourceforge.net/gnuwin32/libiconv-1.8-1-lib.exe?download">Iconv&nbsp;1.8</A> (optional)
+</UL>
 <!--TOC subsection Obtaining-->
 
-<H3><A NAME="htoc4">2.2</A>&nbsp;&nbsp;Obtaining</H3><!--SEC END -->
+<H3><A NAME="htoc6">2.2</A>&nbsp;&nbsp;Obtaining</H3><!--SEC END -->
 
 <A NAME="sec:obtaining"></A>
 Currently no stable version has been released.<BR>
 <BR>
 The latest alpha version can be retrieved from CVS.
 <UL><LI>
-<TT>export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs</TT>
+<TT>export CVSROOT=:pserver:anonymous@jabberstudio.org:/home/cvs</TT>
 <LI><TT>cvs login</TT>
 <LI>Press Enter when asked for a password
 <LI><TT>cvs -z3 co ejabberd</TT>
 </UL>
 <!--TOC subsection Compilation-->
 
-<H3><A NAME="htoc5">2.3</A>&nbsp;&nbsp;Compilation</H3><!--SEC END -->
+<H3><A NAME="htoc7">2.3</A>&nbsp;&nbsp;Compilation</H3><!--SEC END -->
 
 <A NAME="sec:compilation"></A>
+<!--TOC subsubsection Unix-->
+
+<H4><A NAME="htoc8">2.3.1</A>&nbsp;&nbsp;Unix</H4><!--SEC END -->
+
+<A NAME="sec:compilationunix"></A>
 <PRE>
 ./configure
 make
 </PRE>
 TBD<BR>
 <BR>
+<!--TOC subsubsection Windows-->
+
+<H4><A NAME="htoc9">2.3.2</A>&nbsp;&nbsp;Windows</H4><!--SEC END -->
+
+<A NAME="sec:compilationwin"></A>
+<OL type=1><LI>
+Install Erlang emulator (for example, into <CODE>C:\Program Files\erl5.1.2</CODE>).
+<LI>Install Expat library into <CODE>C:\Program Files\Expat-1.95.6</CODE>
+ directory. Copy file <CODE>C:\Program Files\Expat-1.95.6\Libs\libexpat.dll</CODE> to your Windows system directory (for
+ example, <CODE>C:\WINNT</CODE> or <CODE>C:\WINNT\System32</CODE>)
+<LI>Install Iconv library into <CODE>C:\Program Files\GnuWin32</CODE> directory.
+ Copy file <CODE>C:\Program Files\GnuWin32\bin\libiconv-2.dll</CODE> to your
+ Windows system directory.<BR>
+<BR>
+Note: Instead of copying libexpat.dll and libiconv-2.dll to Windows
+ directory, you can add directories
+ <CODE>C:\Program Files\Expat-1.95.6\Libs</CODE> and
+ <CODE>C:\Program Files\GnuWin32\bin</CODE> to <CODE>PATH</CODE> environment
+ variable.
+<LI>Being in <CODE>ejabberd\src</CODE> directory run:
+<PRE>
+configure
+nmake -f Makefile.win32
+</PRE><LI>To build MUC, IRC and pub/sub modules run
+<PRE>
+nmake -f Makefile.win32
+</PRE>in <CODE>ejabberd\src\mod_muc</CODE>, <CODE>ejabberd\src\mod_muc</CODE> and
+ <CODE>ejabberd\src\mod_pubsub</CODE> directories
+<LI>Edit file <CODE>ejabberd\src\ejabberd.cfg</CODE> and run
+<PRE>
+werl -s ejabberd -name ejabberd
+</PRE><LI>Enjoy!
+</OL>
 <!--TOC subsection Starting-->
 
-<H3><A NAME="htoc6">2.4</A>&nbsp;&nbsp;Starting</H3><!--SEC END -->
+<H3><A NAME="htoc10">2.4</A>&nbsp;&nbsp;Starting</H3><!--SEC END -->
 
 <A NAME="sec:starting"></A>
-... To use more then 1024 connections, you will need to set environment
+... To use more than 1024 connections, you will need to set environment
 variable <TT>ERL_MAX_PORTS</TT>:
 <PRE>
 export ERL_MAX_PORTS=32000
@@ -180,12 +254,12 @@ TBD<BR>
 <BR>
 <!--TOC section Configuration-->
 
-<H2><A NAME="htoc7">3</A>&nbsp;&nbsp;Configuration</H2><!--SEC END -->
+<H2><A NAME="htoc11">3</A>&nbsp;&nbsp;Configuration</H2><!--SEC END -->
 
 <A NAME="sec:configuration"></A>
 <!--TOC subsection Initial Configuration-->
 
-<H3><A NAME="htoc8">3.1</A>&nbsp;&nbsp;Initial Configuration</H3><!--SEC END -->
+<H3><A NAME="htoc12">3.1</A>&nbsp;&nbsp;Initial Configuration</H3><!--SEC END -->
 
 <A NAME="sec:initconfig"></A>
 The configuration file is initially loaded the first time <TT>ejabberd</TT> is
@@ -208,7 +282,7 @@ adding new ones.<BR>
 <BR>
 <!--TOC subsubsection Host Name-->
 
-<H4><A NAME="htoc9">3.1.1</A>&nbsp;&nbsp;Host Name</H4><!--SEC END -->
+<H4><A NAME="htoc13">3.1.1</A>&nbsp;&nbsp;Host Name</H4><!--SEC END -->
 
 <A NAME="sec:confighostname"></A>
 Option <TT>hostname</TT> defines name of Jabber domain that <TT>ejabberd</TT>
@@ -218,7 +292,7 @@ serves. E.&nbsp;g. to use <TT>jabber.org</TT> domain add following line in confi
 </PRE>
 <!--TOC subsubsection Access Rules-->
 
-<H4><A NAME="htoc10">3.1.2</A>&nbsp;&nbsp;Access Rules</H4><!--SEC END -->
+<H4><A NAME="htoc14">3.1.2</A>&nbsp;&nbsp;Access Rules</H4><!--SEC END -->
 
 <A NAME="sec:configaccess"></A>
 Access control in <TT>ejabberd</TT> is performed via Access Control Lists (ACL). The
@@ -304,7 +378,7 @@ Following access rules pre-defined:
 </DL>
 <!--TOC subsubsection Shapers Configuration-->
 
-<H4><A NAME="htoc11">3.1.3</A>&nbsp;&nbsp;Shapers Configuration</H4><!--SEC END -->
+<H4><A NAME="htoc15">3.1.3</A>&nbsp;&nbsp;Shapers Configuration</H4><!--SEC END -->
 
 <A NAME="sec:configshaper"></A>
 With shapers is possible to bound connection traffic. The declarations of
@@ -323,7 +397,7 @@ E.&nbsp;g. to define shaper with name ``<TT>normal</TT>'' and maximum allowed ra
 </PRE>
 <!--TOC subsubsection Listened Sockets-->
 
-<H4><A NAME="htoc12">3.1.4</A>&nbsp;&nbsp;Listened Sockets</H4><!--SEC END -->
+<H4><A NAME="htoc16">3.1.4</A>&nbsp;&nbsp;Listened Sockets</H4><!--SEC END -->
 
 <A NAME="sec:configlistened"></A>
 Option <TT>listen</TT> defines list of listened sockets and what services
@@ -331,7 +405,8 @@ runned on them. Each element of list is a tuple with following elements:
 <UL><LI>
 Port number;
 <LI>Module that serves this port;
-<LI>Function in this module that starts connection (likely will be removed);
+<LI>Function in this module that starts connection (likely will be removed in
+ future versions of <TT>ejabberd</TT>);
 <LI>Options to this module.
 </UL>
 Currently three modules are implemented:
@@ -347,7 +422,7 @@ Following options defined:
  value is ``<TT>none</TT>''.
  </DL>
 <DT><B><TT>ejabberd_s2s_in</TT></B><DD> This module serves incoming S2S connections.
-<DT><B><TT>ejabberd_service</TT></B><DD> This module serves connections to Jabber
+<DT><B><TT>ejabberd_service</TT></B><DD> This module serves connections from Jabber
  services (i.&nbsp;e. that use the <TT>jabber:component:accept</TT> namespace).
 </DL>
 For example, the following configuration defines that C2S connections are
@@ -371,7 +446,7 @@ limit 1000&nbsp;b/s.
 </PRE>
 <!--TOC subsubsection Modules-->
 
-<H4><A NAME="htoc13">3.1.5</A>&nbsp;&nbsp;Modules</H4><!--SEC END -->
+<H4><A NAME="htoc17">3.1.5</A>&nbsp;&nbsp;Modules</H4><!--SEC END -->
 
 <A NAME="sec:configmodules"></A>
 Option <TT>modules</TT> defines the list of modules that will be loaded after
@@ -397,7 +472,7 @@ Example:
 </PRE>
 <!--TOC subsection Online Configuration and Monitoring-->
 
-<H3><A NAME="htoc14">3.2</A>&nbsp;&nbsp;Online Configuration and Monitoring</H3><!--SEC END -->
+<H3><A NAME="htoc18">3.2</A>&nbsp;&nbsp;Online Configuration and Monitoring</H3><!--SEC END -->
 
 <A NAME="sec:onlineconfig"></A>
 To perform online reconfiguration of <TT>ejabberd</TT> you will need to have
@@ -428,7 +503,7 @@ Identity of server.
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC subsubsection Node <TT>config</TT>: Global Configuration-->
 
-<H4><A NAME="htoc15">3.2.1</A>&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
+<H4><A NAME="htoc19">3.2.1</A>&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
 
 Under this node the following nodes exists:<BR>
 <BR>
@@ -482,11 +557,11 @@ removed user is online, then he will be disconnected. Also user-related data
 <BR>
 <!--TOC subsubsection Node <TT>online users</TT>: List of Online Users-->
 
-<H4><A NAME="htoc16">3.2.2</A>&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
+<H4><A NAME="htoc20">3.2.2</A>&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
 
 <!--TOC subsubsection Node <TT>all users</TT>: List of Registered User-->
 
-<H4><A NAME="htoc17">3.2.3</A>&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</H4><!--SEC END -->
+<H4><A NAME="htoc21">3.2.3</A>&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</H4><!--SEC END -->
 
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
@@ -500,11 +575,11 @@ removed user is online, then he will be disconnected. Also user-related data
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC subsubsection Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections-->
 
-<H4><A NAME="htoc18">3.2.4</A>&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</H4><!--SEC END -->
+<H4><A NAME="htoc22">3.2.4</A>&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</H4><!--SEC END -->
 
 <!--TOC subsubsection Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes-->
 
-<H4><A NAME="htoc19">3.2.5</A>&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</H4><!--SEC END -->
+<H4><A NAME="htoc23">3.2.5</A>&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</H4><!--SEC END -->
 
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
@@ -518,18 +593,18 @@ removed user is online, then he will be disconnected. Also user-related data
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC subsubsection Node <TT>stopped nodes</TT>: List of Stopped Nodes-->
 
-<H4><A NAME="htoc20">3.2.6</A>&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</H4><!--SEC END -->
+<H4><A NAME="htoc24">3.2.6</A>&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</H4><!--SEC END -->
 
 TBD<BR>
 <BR>
 <!--TOC section Distribution-->
 
-<H2><A NAME="htoc21">4</A>&nbsp;&nbsp;Distribution</H2><!--SEC END -->
+<H2><A NAME="htoc25">4</A>&nbsp;&nbsp;Distribution</H2><!--SEC END -->
 
 <A NAME="sec:distribution"></A>
 <!--TOC subsection How it works-->
 
-<H3><A NAME="htoc22">4.1</A>&nbsp;&nbsp;How it works</H3><!--SEC END -->
+<H3><A NAME="htoc26">4.1</A>&nbsp;&nbsp;How it works</H3><!--SEC END -->
 
 <A NAME="sec:howitworks"></A>
 A Jabber domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
@@ -540,7 +615,7 @@ the same magic cookie (see Erlang/OTP documentation, in other words the file
 needed because all nodes exchange information about connected users, S2S
 connections, registered services, etc...<BR>
 <BR>
-Each <TT>ejabberd</TT> node must run following modules:
+Each <TT>ejabberd</TT> node have following modules:
 <UL><LI>
 router;
 <LI>local router.
@@ -549,27 +624,27 @@ router;
 </UL>
 <!--TOC subsubsection Router-->
 
-<H4><A NAME="htoc23">4.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
+<H4><A NAME="htoc27">4.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
 
 This module is the main router of Jabber packets on each node. It routes
 them based on their destinations domains. It has two tables: local and global
 routes. First, domain of packet destination searched in local table, and if it
 found, then the packet is routed to appropriate process. If no, then it
 searches in global table, and is routed to the appropriate <TT>ejabberd</TT> node or
-process. If itdoes not exists in either table, then it sent to the S2S
+process. If it does not exists in either tables, then it sent to the S2S
 manager.<BR>
 <BR>
 <!--TOC subsubsection Local Router-->
 
-<H4><A NAME="htoc24">4.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
+<H4><A NAME="htoc28">4.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
 
 This module routes packets which have a destination domain equal to this server
-name. If destination JID has a node, then it routed to the session manager,
-else it is processed depending on it's content.<BR>
+name. If destination JID has a non-empty user part, then it routed to the
+session manager, else it is processed depending on it's content.<BR>
 <BR>
 <!--TOC subsubsection Session Manager-->
 
-<H4><A NAME="htoc25">4.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
+<H4><A NAME="htoc29">4.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
 
 This module routes packets to local users. It searches for what user resource
 packet must be sended via presence table. If this resource is connected to
@@ -578,7 +653,7 @@ the packet is sent to session manager on that node.<BR>
 <BR>
 <!--TOC subsubsection S2S Manager-->
 
-<H4><A NAME="htoc26">4.1.4</A>&nbsp;&nbsp;S2S Manager</H4><!--SEC END -->
+<H4><A NAME="htoc30">4.1.4</A>&nbsp;&nbsp;S2S Manager</H4><!--SEC END -->
 
 This module routes packets to other Jabber servers. First, it checks if an
 open S2S connection from the domain of the packet source to the domain of
@@ -589,19 +664,19 @@ does not exist, then it is opened and registered.<BR>
 <BR>
 <!--TOC section Built-in Modules-->
 
-<H2><A NAME="htoc27">A</A>&nbsp;&nbsp;Built-in Modules</H2><!--SEC END -->
+<H2><A NAME="htoc31">A</A>&nbsp;&nbsp;Built-in Modules</H2><!--SEC END -->
 
 <A NAME="sec:modules"></A>
 <!--TOC subsection Common Options-->
 
-<H3><A NAME="htoc28">A.1</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
+<H3><A NAME="htoc32">A.1</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
 
 <A NAME="sec:modcommonopts"></A>
 Following options used by many modules, so they described in separate section.<BR>
 <BR>
 <!--TOC subsubsection Option <TT>iqdisc</TT>-->
 
-<H4><A NAME="htoc29">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
+<H4><A NAME="htoc33">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
 
 Many modules define handlers for processing IQ queries of different namespaces
 to this server or to user (e.&nbsp;g. to <TT>myjabber.org</TT> or to
@@ -616,10 +691,10 @@ these queries. Possible values are:
  IQ queries of namespace with this discipline, and processing of this queue
  done in parallel with processing of other packets. This discipline is most
  recommended.
-<DT><B><TT>parallel</TT></B><DD> In this case for all packets of namespace with this
- discipline spawned separate Erlang process, so all this packets processed in
- parallel. Although spawning of Erlang process have relative low cost, this
- can broke server normal work, because Erlang have limit of 32000 processes.
+<DT><B><TT>parallel</TT></B><DD> In this case for all packets with this discipline
+ spawned separate Erlang process, so all these packets processed in parallel.
+ Although spawning of Erlang process have relative low cost, this can broke
+ server normal work, because Erlang have limit of 32000 processes.
 </DL>
 Example:
 <PRE>
@@ -631,7 +706,7 @@ Example:
 </PRE>
 <!--TOC subsubsection Option <TT>host</TT>-->
 
-<H4><A NAME="htoc30">A.1.2</A>&nbsp;&nbsp;Option <TT>host</TT></H4><!--SEC END -->
+<H4><A NAME="htoc34">A.1.2</A>&nbsp;&nbsp;Option <TT>host</TT></H4><!--SEC END -->
 
 Some modules may act as services, and wants to have different domain name.
 This option explicitly defines this name.<BR>
@@ -646,27 +721,27 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_register</TT>-->
 
-<H3><A NAME="htoc31">A.2</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
+<H3><A NAME="htoc35">A.2</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="sec:modregister"></A>
 <!--TOC subsection <TT>mod_roster</TT>-->
 
-<H3><A NAME="htoc32">A.3</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
+<H3><A NAME="htoc36">A.3</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
 
 <A NAME="sec:modroster"></A>
 <!--TOC subsection <TT>mod_configure</TT>-->
 
-<H3><A NAME="htoc33">A.4</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
+<H3><A NAME="htoc37">A.4</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
 
 <A NAME="sec:modconfigure"></A>
 <!--TOC subsection <TT>mod_disco</TT>-->
 
-<H3><A NAME="htoc34">A.5</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
+<H3><A NAME="htoc38">A.5</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
 
 <A NAME="sec:moddisco"></A>
 <!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3><A NAME="htoc35">A.6</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
+<H3><A NAME="htoc39">A.6</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A>
 This module adds support of
@@ -681,22 +756,22 @@ TBD about access.<BR>
 <BR>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3><A NAME="htoc36">A.7</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
+<H3><A NAME="htoc40">A.7</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="sec:modvcard"></A>
 <!--TOC subsection <TT>mod_offline</TT>-->
 
-<H3><A NAME="htoc37">A.8</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
+<H3><A NAME="htoc41">A.8</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
 
 <A NAME="sec:modoffline"></A>
 <!--TOC subsection <TT>mod_echo</TT>-->
 
-<H3><A NAME="htoc38">A.9</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
+<H3><A NAME="htoc42">A.9</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
 
 <A NAME="sec:modecho"></A>
 <!--TOC subsection <TT>mod_private</TT>-->
 
-<H3><A NAME="htoc39">A.10</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
+<H3><A NAME="htoc43">A.10</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
 
 <A NAME="sec:modprivate"></A>
 This module adds support of
@@ -709,7 +784,7 @@ Options:
 </DL>
 <!--TOC subsection <TT>mod_time</TT>-->
 
-<H3><A NAME="htoc40">A.11</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
+<H3><A NAME="htoc44">A.11</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="sec:modtime"></A>
 This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
@@ -720,7 +795,7 @@ Options:
 </DL>
 <!--TOC subsection <TT>mod_version</TT>-->
 
-<H3><A NAME="htoc41">A.12</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
+<H3><A NAME="htoc45">A.12</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="sec:modversion"></A>
 This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
@@ -731,7 +806,7 @@ Options:
 </DL>
 <!--TOC section I18n/L10n-->
 
-<H2><A NAME="htoc42">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
+<H2><A NAME="htoc46">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
 
 <A NAME="sec:i18nl10n"></A>
 Many modules supports <TT>xml:lang</TT> attribute inside IQ queries. E.&nbsp;g. 
@@ -739,8 +814,8 @@ on figure&nbsp;<A HREF="#fig:discorus">6</A> (compare with figure&nbsp;<A HREF="
 on following query:
 <PRE>
 &lt;iq id='5'
-        to='e.localhost'
-        type='get'&gt;
+    to='e.localhost'
+    type='get'&gt;
   &lt;query xmlns='http://jabber.org/protocol/disco#items'
          xml:lang='ru'/&gt;
 &lt;/iq&gt;

@@ -1,0 +1,52 @@
+
+include ..\Makefile.inc
+
+GNUWIN_DIR="c:\progra~1\gnuwin32"
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+OBJS = \
+	$(OUTDIR)\iconv.beam \
+	$(OUTDIR)\mod_irc.beam \
+	$(OUTDIR)\mod_irc_connection.beam
+
+ALL : $(OUTDIR)\iconv_erl.dll $(OBJS)
+
+CLEAN :
+	-@erase $(OUTDIR)\iconv_erl.dll
+	-@erase $(OUTDIR)\iconv_erl.exp
+	-@erase $(OUTDIR)\iconv_erl.lib
+	-@erase iconv_erl.obj
+	-@erase iconv_erl.pch
+	-@erase vc60.idb
+	-@erase *.beam
+
+$(OUTDIR)\iconv.beam : iconv.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) iconv.erl
+
+$(OUTDIR)\mod_irc.beam : mod_irc.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_irc.erl
+
+$(OUTDIR)\mod_irc_connection.beam : mod_irc_connection.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_irc_connection.erl
+
+CPP=cl.exe
+CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\include" /I "$(GNUWIN_DIR)\include" /D "WIN32" /D "NDEBUG" /D "_USRDLL" /D "_MBCS" /Fpiconv_erl.pch /YX /FD /c 
+
+.c.obj::
+    $(CPP) @<<
+    $(CPP_PROJ) $< 
+<<
+
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib "$(ERLANG_DIR)\usr\lib\erl_dll.lib" "$(EI_DIR)\lib\ei.lib" "$(EI_DIR)\lib\erl_interface.lib" "$(GNUWIN_DIR)\lib\libiconv.lib" /nologo /subsystem:console /dll /pdb:none /machine:I386 /out:$(OUTDIR)\iconv_erl.dll 
+LINK32_OBJS=iconv_erl.obj
+
+$(OUTDIR)\iconv_erl.dll : $(LINK32_OBJS)
+    $(LINK32) @<<
+    $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+iconv_erl.obj : iconv_erl.c
+

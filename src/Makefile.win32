@@ -1,0 +1,38 @@
+
+include Makefile.inc
+
+EXPAT_DIR="c:\progra~1\expat-1.95.6"
+
+ALL : expat_erl.dll
+	erl -s make all report -noinput -s erlang halt
+
+CLEAN :
+	-@erase expat_erl.obj
+	-@erase vc60.idb
+	-@erase expat_erl.dll
+	-@erase expat_erl.exp
+	-@erase expat_erl.lib
+	-@erase expat_erl.pch
+	-@erase *.beam
+
+CPP=cl.exe
+CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\include" /I "$(EXPAT_DIR)\source\lib" /D "WIN32" /D "NDEBUG" /D "_USRDLL" /D "_MBCS" /Fpexpat_erl.pch /YX /FD /c 
+
+.c.obj::
+    $(CPP) @<<
+    $(CPP_PROJ) $< 
+<<
+
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib "$(ERLANG_DIR)\usr\lib\erl_dll.lib" "$(EI_DIR)\lib\ei.lib" "$(EI_DIR)\lib\erl_interface.lib" "$(EXPAT_DIR)\libs\libexpat.lib" /nologo /subsystem:console /dll /pdb:none /machine:I386 /out:expat_erl.dll 
+LINK32_OBJS=expat_erl.obj
+
+expat_erl.dll : $(LINK32_OBJS)
+    $(LINK32) @<<
+    $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+SOURCE=expat_erl.c
+
+expat_erl.obj : $(SOURCE)
+

@@ -14,7 +14,8 @@
 
 start() ->
     EIDirS = "EI_DIR = " ++ code:lib_dir("erl_interface") ++ "\n",
-    file:write_file("Makefile.inc", list_to_binary(EIDirS)),
+    RootDirS = "ERLANG_DIR = " ++ code:root_dir() ++ "\n",
+    file:write_file("Makefile.inc", list_to_binary(EIDirS ++ RootDirS)),
     halt().
 
 

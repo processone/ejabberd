@@ -31,7 +31,7 @@
 \newcommand{\modprivate}{\texttt{mod\_private}}
 \newcommand{\modtime}{\texttt{mod\_time}}
 \newcommand{\modversion}{\texttt{mod\_version}}
-
+c
 %\setcounter{tocdepth}{3}
 
 
@@ -39,7 +39,7 @@
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{February 11, 2003}
+\date{July 12, 2003}
 
 \begin{document}
 \begin{titlepage}
@@ -62,21 +62,29 @@ server.  It is writen mostly in Erlang.
 
 The main features of \ejabberd{} is:
 \begin{itemize}
+\item Works on most of popular platforms: *nix (tested on Linux and FreeBSD)
+  and Win32
 \item Distributed: You may run \ejabberd{} on a cluster of machines and all of
   them will serve one Jabber domain.
 \item Fault-tolerance: You may setup an \ejabberd{} cluster so that all the
   information required for a properly working service will be stored
-  permanently on more then one node.  This means that if one of the nodes
+  permanently on more than one node.  This means that if one of the nodes
   crashes, then the others will continue working without disruption.
   You can also add or replace more nodes ``on the fly''.
+\item Built-in \footahref{http://www.jabber.org/jeps/jep-0045.html}{Multi-User
+    Chat} service
+\item Built-in IRC transport
+\item Built-in
+  \footahref{http://www.jabber.org/jeps/jep-0060.html}{Publish-Subscribe}
+  service
+\item Built-in Jabber Users Directory service based on users vCards
 \item Support for
   \footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030}
   (Service Discovery).
 \item Support for
   \footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039}
   (Statistics Gathering).
-\item Support for \ns{xml:lang} attribute in many XML elements.
-\item JUD based on users vCards.
+\item Support for \ns{xml:lang} attribute in many XML elements
 \end{itemize}
 
 
@@ -89,6 +97,9 @@ The main features of \ejabberd{} is:
 \subsection{Installation Requirements}
 \label{sec:installreq}
 
+\subsubsection{Unix}
+\label{sec:installrequnix}
+
 To compile \ejabberd{}, you will need the following packages:
 \begin{itemize}
 \item GNU Make;
@@ -96,6 +107,21 @@ To compile \ejabberd{}, you will need the following packages:
 \item libexpat 1.95 or later;
 \item Erlang/OTP R8B or later.
 \end{itemize}
+
+\subsubsection{Windows}
+\label{sec:installreqwin}
+
+To compile \ejabberd{} in MS Windows environment, you will need the following
+packages:
+\begin{itemize}
+\item MS Visual C++~6.0 Compiler
+\item \footahref{http://www.erlang.org/download/otp_win32_R8B-2.exe}{Erlang
+    emulator version~5.1.2}
+\item \footahref{http://prdownloads.sourceforge.net/expat/expat_win32bin_1_95_6.exe?download}{Expat~1.95.6}
+\item \footahref{http://prdownloads.sourceforge.net/gnuwin32/libiconv-1.8-1-lib.exe?download}{Iconv~1.8} (optional)
+\end{itemize}
+
+
 
 \subsection{Obtaining}
 \label{sec:obtaining}
@@ -112,11 +138,10 @@ The latest alpha version can be retrieved from CVS\@.
 
 
 
-
-
-
 \subsection{Compilation}
 \label{sec:compilation}
+\subsubsection{Unix}
+\label{sec:compilationunix}
 
 \begin{verbatim}
 ./configure
@@ -124,6 +149,48 @@ make
 \end{verbatim}
 
 TBD
+
+\subsubsection{Windows}
+\label{sec:compilationwin}
+
+\begin{enumerate}
+\item Install Erlang emulator (for example, into \verb|C:\Program Files\erl5.1.2|).
+\item Install Expat library into \verb|C:\Program Files\Expat-1.95.6|
+  directory.  Copy file \verb|C:\Program Files\Expat-1.95.6\Libs\libexpat.dll|
+  to your Windows system directory (for example, \verb|C:\WINNT| or
+  \verb|C:\WINNT\System32|)
+\item Install Iconv library into \verb|C:\Program Files\GnuWin32| directory.
+  Copy file \verb|C:\Program Files\GnuWin32\bin\libiconv-2.dll| to your
+  Windows system directory.
+  
+  Note: Instead of copying libexpat.dll and libiconv-2.dll to Windows
+  directory, you can add directories
+  \verb|C:\Program Files\Expat-1.95.6\Libs| and
+  \verb|C:\Program Files\GnuWin32\bin| to \verb|PATH| environment
+  variable.
+\item Being in \verb|ejabberd\src| directory run:
+\begin{verbatim}
+configure
+nmake -f Makefile.win32
+\end{verbatim}
+\item To build MUC, IRC and pub/sub modules run
+\begin{verbatim}
+nmake -f Makefile.win32
+\end{verbatim}
+  in \verb|ejabberd\src\mod_muc|, \verb|ejabberd\src\mod_muc| and
+  \verb|ejabberd\src\mod_pubsub| directories
+\item Edit file \verb|ejabberd\src\ejabberd.cfg| and run
+\begin{verbatim}
+werl -s ejabberd -name ejabberd
+\end{verbatim}
+\item Enjoy!
+\end{enumerate}
+
+Some recent versions of Erlang distribution it seems have bug in crypto
+application, so ejabberd could be built but users can't use digest
+authentication (only plain-text).  Also it seems SSL support is broken in
+Windows distribution of Erlang emulator.
+
 
 
 
@@ -134,7 +201,7 @@ TBD
 \subsection{Starting}
 \label{sec:starting}
 
-\ldots{} To use more then 1024 connections, you will need to set environment
+\ldots{} To use more than 1024 connections, you will need to set environment
 variable \texttt{ERL\_MAX\_PORTS}:
 \begin{verbatim}
 export ERL_MAX_PORTS=32000
@@ -323,7 +390,8 @@ runned on them.  Each element of list is a tuple with following elements:
 \begin{itemize}
 \item Port number;
 \item Module that serves this port;
-\item Function in this module that starts connection (likely will be removed);
+\item Function in this module that starts connection (likely will be removed in
+  future versions of \ejabberd);
 \item Options to this module.
 \end{itemize}
 
@@ -340,7 +408,7 @@ Currently three modules are implemented:
     value is ``\texttt{none}''.
   \end{description}
 \item[\texttt{ejabberd\_s2s\_in}] This module serves incoming S2S connections.
-\item[\texttt{ejabberd\_service}] This module serves connections to \Jabber{}
+\item[\texttt{ejabberd\_service}] This module serves connections from \Jabber{}
   services (i.\,e.\ that use the \texttt{jabber:component:accept} namespace).
 \end{description}
 
@@ -521,7 +589,7 @@ connections, registered services, etc\ldots
 
 
 
-Each \ejabberd{} node must run following modules:
+Each \ejabberd{} node have following modules:
 \begin{itemize}
 \item router;
 \item local router.
@@ -537,15 +605,15 @@ them based on their destinations domains.  It has two tables: local and global
 routes.  First, domain of packet destination searched in local table, and if it
 found, then the packet is routed to appropriate process.  If no, then it
 searches in global table, and is routed to the appropriate \ejabberd{} node or
-process.  If itdoes not exists in either table, then it sent to the S2S
+process.  If it does not exists in either tables, then it sent to the S2S
 manager.
 
 
 \subsubsection{Local Router}
 
 This module routes packets which have a destination domain equal to this server
-name.  If destination JID has a node, then it routed to the session manager,
-else it is processed depending on it's content.
+name.  If destination JID has a non-empty user part, then it routed to the
+session manager, else it is processed depending on it's content.
 
 
 \subsubsection{Session Manager}
@@ -595,10 +663,10 @@ these queries.  Possible values are:
   IQ queries of namespace with this discipline, and processing of this queue
   done in parallel with processing of other packets. This discipline is most
   recommended.
-\item[\texttt{parallel}] In this case for all packets of namespace with this
-  discipline spawned separate Erlang process, so all this packets processed in
-  parallel.  Although spawning of Erlang process have relative low cost, this
-  can broke server normal work, because Erlang have limit of 32000 processes.
+\item[\texttt{parallel}] In this case for all packets with this discipline
+  spawned separate Erlang process, so all these packets processed in parallel.
+  Although spawning of Erlang process have relative low cost, this can broke
+  server normal work, because Erlang have limit of 32000 processes.
 \end{description}
 
 Example:
@@ -720,8 +788,8 @@ on figure~\ref{fig:discorus} (compare with figure~\ref{fig:disco}) showed reply
 on following query:
 \begin{verbatim}
 <iq id='5'
-        to='e.localhost'
-        type='get'>
+    to='e.localhost'
+    type='get'>
   <query xmlns='http://jabber.org/protocol/disco#items'
          xml:lang='ru'/>
 </iq>

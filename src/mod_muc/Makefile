@@ -2,7 +2,7 @@
 
 include ../Makefile.inc
 
-INCLUDES = -I/usr/lib/erlang/usr/include \
+INCLUDES = -I$(ERLANG_DIR)/usr/include \
 	   -I$(EI_DIR)/include \
 	   -I/usr/local/include
 
