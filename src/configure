@@ -830,13 +830,15 @@ Optional Features:
   --enable-mod_muc        enable mod_muc (default: yes)
   --enable-eldap        enable eldap (default: yes)
   --enable-web        enable web (default: yes)
+  --enable-tls        enable tls (default: yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-erlang=PREFIX    path to erlc and erl
-  --with-libiconv-prefix=DIR Search for libiconv in DIR/include and DIR/lib
-  --with-expat=PREFIX     path to expat library
+  --with-libiconv-prefix=PREFIX	prefix where libiconv is installed
+  --with-expat=PREFIX	prefix where EXPAT is installed
+  --with-openssl=PREFIX    prefix where OPENSSL is installed
 
 Some influential environment variables:
   CC          C compiler command
@@ -2235,7 +2237,6 @@ echo "$as_me: error: erlang program was not properly executed, (conftest.out was
 
 
 
-
 # Check whether --with-libiconv-prefix or --without-libiconv-prefix was given.
 if test "${with_libiconv_prefix+set}" = set; then
   withval="$with_libiconv_prefix"
@@ -3090,9 +3091,6 @@ echo "$as_me: error: Could not find expat.h" >&2;}
 
 
 
-
-
-
 # Checks for typedefs, structures, and compiler characteristics.
 echo "$as_me:$LINENO: checking for $CC option to accept ANSI C" >&5
 echo $ECHO_N "checking for $CC option to accept ANSI C... $ECHO_C" >&6
@@ -3610,7 +3608,6 @@ fi
 
 
 
-
 mod_pubsub=
 make_mod_pubsub=
 echo "$as_me:$LINENO: checking whether build mod_pubsub" >&5
@@ -3721,8 +3718,243 @@ echo "${ECHO_T}$mr_enable_web" >&6
 
 
 
+tls=
+make_tls=
+echo "$as_me:$LINENO: checking whether build tls" >&5
+echo $ECHO_N "checking whether build tls... $ECHO_C" >&6
+# Check whether --enable-tls or --disable-tls was given.
+if test "${enable_tls+set}" = set; then
+  enableval="$enable_tls"
+  mr_enable_tls="$enableval"
+else
+  mr_enable_tls=yes
+fi;
+if test "$mr_enable_tls" = yes; then
+tls=tls
+make_tls=tls/Makefile
+fi
+echo "$as_me:$LINENO: result: $mr_enable_tls" >&5
+echo "${ECHO_T}$mr_enable_tls" >&6
 
-ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_eldap $make_web stringprep/Makefile"
+
+
+
+
+ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_eldap $make_web stringprep/Makefile $make_tls"
+
+#openssl
+
+# Check whether --with-openssl or --without-openssl was given.
+if test "${with_openssl+set}" = set; then
+  withval="$with_openssl"
+
+fi;
+
+if test x"$tls" != x; then
+	if test "x$with_openssl" == x; then
+	    ssl_prefix=/usr
+	else
+	    ssl_prefix=$with_openssl
+	fi
+        SSL_CFLAGS="-I$ssl_prefix/include/openssl"
+        SSL_LIBS="-L$ssl_prefix/lib"
+    echo "$as_me:$LINENO: checking for SSL_new in -lssl" >&5
+echo $ECHO_N "checking for SSL_new in -lssl... $ECHO_C" >&6
+if test "${ac_cv_lib_ssl_SSL_new+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lssl "-lcrypto" $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char SSL_new ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+SSL_new ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_ssl_SSL_new=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_ssl_SSL_new=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_ssl_SSL_new" >&5
+echo "${ECHO_T}$ac_cv_lib_ssl_SSL_new" >&6
+if test $ac_cv_lib_ssl_SSL_new = yes; then
+   have_openssl=yes
+else
+   have_openssl=no
+fi
+
+    if test x"$have_openssl" = xyes; then
+
+for ac_header in openssl/ssl.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_header_compiler=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc in
+  yes:no )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;};;
+  no:yes )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header: check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;};;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ have_openssl_h=yes
+fi
+
+done
+
+        if test x"$have_openssl_h" = xyes; then
+            with_openssl=yes
+    	    SSL_LIBS="$SSL_LIBS -lssl -lcrypto"
+        else
+	    unset SSL_LIBS
+	    unset SSL_CFLAGS
+	    with_openssl=no
+	    { { echo "$as_me:$LINENO: error: openssl library cannot be found. Install openssl or disable \`tls' module (--disable-tls)." >&5
+echo "$as_me: error: openssl library cannot be found. Install openssl or disable \`tls' module (--disable-tls)." >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+    fi
+    echo -n openssl support ..... : $with_openssl
+    if test x"$with_openssl" != xno; then
+	echo , libs: $SSL_LIBS, includes: $SSL_CFLAGS
+    else
+	echo ""
+    fi
+fi
+
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4227,6 +4459,7 @@ do
   "$make_eldap" ) CONFIG_FILES="$CONFIG_FILES $make_eldap" ;;
   "$make_web" ) CONFIG_FILES="$CONFIG_FILES $make_web" ;;
   "stringprep/Makefile" ) CONFIG_FILES="$CONFIG_FILES stringprep/Makefile" ;;
+  "$make_tls" ) CONFIG_FILES="$CONFIG_FILES $make_tls" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
@@ -4335,6 +4568,10 @@ s,@eldap@,$eldap,;t t
 s,@make_eldap@,$make_eldap,;t t
 s,@web@,$web,;t t
 s,@make_web@,$make_web,;t t
+s,@tls@,$tls,;t t
+s,@make_tls@,$make_tls,;t t
+s,@SSL_LIBS@,$SSL_LIBS,;t t
+s,@SSL_CFLAGS@,$SSL_CFLAGS,;t t
 CEOF
 
 _ACEOF

@@ -1,19 +1,14 @@
 # $Id$
 
 CC = @CC@
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ @ERLANG_CFLAGS@ @EXPAT_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
+LIBS = @LIBS@ @ERLANG_LIBS@ @EXPAT_LIBS@
 
 prefix = @prefix@
 
-INCLUDES = @ERLANG_CFLAGS@ @EXPAT_CFLAGS@
-
-LIBDIRS = @ERLANG_LIBS@ @EXPAT_LIBS@
-
-SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ @web@ stringprep 
-
+SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ @web@ stringprep @tls@
 ERLSHLIBS = expat_erl.so
 
 DESTDIR =
@@ -43,7 +38,7 @@ mostlyclean-recursive maintainer-clean-recursive:
 
 
 $(ERLSHLIBS):	%.so:	%.c
-			gcc -Wall $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LIBDIRS) \
+			gcc -Wall $(CFLAGS) $(LDFLAGS) $(LIBS) \
 			$(subst ../,,$(subst .so,.c,$@)) \
 			-lexpat \
 			-lerl_interface \

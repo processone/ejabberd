@@ -1,6 +1,6 @@
 AC_DEFUN(AM_WITH_EXPAT,
 [ AC_ARG_WITH(expat,
-	      [  --with-expat=PREFIX     path to expat library],
+	      [  --with-expat=PREFIX	prefix where EXPAT is installed],
 	      , with_expat=no)
 
   EXPAT_CFLAGS=
@@ -110,9 +110,8 @@ AC_DEFUN([AM_ICONV],
 [
   dnl Some systems have iconv in libc, some have it in libiconv (OSF/1 and
   dnl those with the standalone portable GNU libiconv installed).
-
   AC_ARG_WITH([libiconv-prefix],
-[  --with-libiconv-prefix=DIR Search for libiconv in DIR/include and DIR/lib], [
+[  --with-libiconv-prefix=PREFIX	prefix where libiconv is installed], [
     for dir in `echo "$withval" | tr : ' '`; do
       if test -d $dir/include; then CPPFLAGS="$CPPFLAGS -I$dir/include"; fi
       if test -d $dir/include; then CFLAGS="$CFLAGS -I$dir/include"; fi
@@ -193,3 +192,41 @@ size_t iconv();
   fi
   AC_SUBST(LIBICONV)
 ])
+
+dnl <openssl>
+AC_DEFUN(AM_WITH_OPENSSL,
+[ AC_ARG_WITH(openssl,
+          [  --with-openssl=PREFIX    prefix where OPENSSL is installed ])
+
+if test x"$tls" != x; then
+	if test "x$with_openssl" == x; then
+	    ssl_prefix=/usr
+	else
+	    ssl_prefix=$with_openssl
+	fi
+        SSL_CFLAGS="-I$ssl_prefix/include/openssl"
+        SSL_LIBS="-L$ssl_prefix/lib"
+    AC_CHECK_LIB(ssl, SSL_new, [ have_openssl=yes ], [ have_openssl=no ], "-lcrypto")
+    if test x"$have_openssl" = xyes; then
+        AC_CHECK_HEADERS(openssl/ssl.h, have_openssl_h=yes)
+        if test x"$have_openssl_h" = xyes; then
+            with_openssl=yes
+    	    SSL_LIBS="$SSL_LIBS -lssl -lcrypto"
+        else
+	    unset SSL_LIBS
+	    unset SSL_CFLAGS
+	    with_openssl=no
+	    AC_MSG_ERROR([openssl library cannot be found. Install openssl or disable `tls' module (--disable-tls).])
+	fi
+    fi
+    echo -n openssl support ..... : $with_openssl
+    if test x"$with_openssl" != xno; then
+	echo , libs: $SSL_LIBS, includes: $SSL_CFLAGS
+    else
+	echo ""
+    fi
+fi
+AC_SUBST(SSL_LIBS)
+AC_SUBST(SSL_CFLAGS)
+])
+dnl <openssl/>

@@ -1,3 +1,12 @@
+2004-08-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/aclocal.m4: Updated to check for openssl library (thanks to
+	AV)
+	* src/configure.ac: Likewise
+	* src/configure: Likewise
+	* src/Makefile.in: Likewise
+	* src/tls/Makefile.in: Likewise
+
 2004-08-03  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_web_admin.erl: Added user's roster page

@@ -1,0 +1,41 @@
+# $Id$
+
+CC = @CC@
+CFLAGS = @CFLAGS@ @SSL_CFLAGS@  @ERLANG_CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@ @SSL_LIBS@ @ERLANG_LIBS@
+
+SUBDIRS = 
+
+ERLSHLIBS = ../tls_drv.so
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+OBJS   = \
+	$(OUTDIR)/tls.beam
+
+all:    $(OBJS) $(ERLSHLIBS)
+
+$(OUTDIR)/%.beam:       %.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) $<
+
+#all:	$(ERLSHLIBS)
+#	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
+
+$(ERLSHLIBS):	../%.so:	%.c
+			$(CC) -Wall $(CFLAGS) $(LDFLAGS) $(LIBS) \
+			$(subst ../,,$(subst .so,.c,$@)) \
+			-lerl_interface @LIBICONV@ \
+			-lei \
+			-o $@ -fpic -shared \
+
+clean:
+	rm -f $(OBJS) $(ERLSHLIBS)
+
+distclean: clean
+	rm -f Makefile
+
+TAGS:
+	etags *.erl
+
