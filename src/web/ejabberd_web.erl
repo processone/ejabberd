@@ -65,6 +65,12 @@ process_get(#request{user = User,
 				       [{xmlcdata, "401 Unauthorized"}]}])}
     end;
 
+process_get(#request{user = User,
+		     path = ["http-poll" | RPath],
+		     q = Query,
+		     lang = Lang} = Request) ->
+    ejabberd_http_poll:process_request(Request#request{path = RPath});
+
 process_get(_Request) ->
     {404, [], make_xhtml([?XC("h1", "Not found")])}.
 

@@ -120,7 +120,12 @@ process_request(#state{request_method = 'GET',
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
 			{Status, Headers, El} ->
-			    make_xhtml_output(Status, Headers, El)
+			    make_xhtml_output(Status, Headers, El);
+			Text when is_list(Text) ->
+			    make_text_output(200, [], Text);
+			{Status, Headers, Text} when
+			      is_list(Text) ->
+			    make_text_output(Status, Headers, Text)
 		    end
 	    end
     end;
@@ -174,8 +179,14 @@ process_request(#state{request_method = 'POST',
 		    case ejabberd_web:process_get(Request) of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
-			{Status, Headers, El} ->
-			    make_xhtml_output(Status, Headers, El)
+			{Status, Headers, El} when
+			      element(1, El) == xmlelement ->
+			    make_xhtml_output(Status, Headers, El);
+			Text when is_list(Text) ->
+			    make_text_output(200, [], Text);
+			{Status, Headers, Text} when
+			      is_list(Text) ->
+			    make_text_output(Status, Headers, Text)
 		    end
 	    end
     end;
@@ -204,6 +215,17 @@ recv_data(State, Len, Acc) ->
 
 make_xhtml_output(Status, Headers, XHTML) ->
     Data = list_to_binary([?XHTML_DOCTYPE, xml:element_to_string(XHTML)]),
+    Headers1 = [{"Content-Type", "text/html; charset=utf-8"},
+		{"Content-Length", integer_to_list(size(Data))} | Headers],
+    H = lists:map(fun({Attr, Val}) ->
+			  [Attr, ": ", Val, "\r\n"]
+		  end, Headers1),
+    SL = ["HTTP/1.1 ", integer_to_list(Status), " ",
+	  code_to_phrase(Status), "\r\n"],
+    [SL, H, "\r\n", Data].
+
+make_text_output(Status, Headers, Text) ->
+    Data = list_to_binary(Text),
     Headers1 = [{"Content-Type", "text/html; charset=utf-8"},
 		{"Content-Length", integer_to_list(size(Data))} | Headers],
     H = lists:map(fun({Attr, Val}) ->
