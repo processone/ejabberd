@@ -676,7 +676,7 @@ handle_info({send_text, Text}, StateName, StateData) ->
 handle_info(replaced, StateName, StateData) ->
     % TODO
     %send_text(StateData#state.sender, Text),
-    {stop, normal, StateData#state{user = ""}};
+    {stop, normal, StateData#state{authentificated = replaced}};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
     {Pass, NewAttrs, NewState} =
@@ -811,17 +811,38 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 terminate(Reason, StateName, StateData) ->
     case StateName of
 	session_established ->
-	    ?INFO_MSG("(~w) Close session for ~s",
-		      [StateData#state.socket,
-		       jlib:jid_to_string(StateData#state.jid)]),
-	    ejabberd_sm:close_session(StateData#state.user,
-				      StateData#state.resource),
-            From = StateData#state.jid,
-            Packet = {xmlelement, "presence", [{"type", "unavailable"}], []},
-            ejabberd_sm:unset_presence(StateData#state.user,
-                		       StateData#state.resource),
-            presence_broadcast(StateData, From, StateData#state.pres_a, Packet),
-            presence_broadcast(StateData, From, StateData#state.pres_i, Packet);
+	    case StateData#state.authentificated of
+		replaced ->
+		    ?INFO_MSG("(~w) Replaced session for ~s",
+			      [StateData#state.socket,
+			       jlib:jid_to_string(StateData#state.jid)]),
+		    From = StateData#state.jid,
+		    Packet = {xmlelement, "presence",
+			      [{"type", "unavailable"}],
+			      [{xmlelement, "status", [],
+				[{xmlcdata, "Replaced by new connection"}]}]},
+		    ejabberd_sm:unset_presence(StateData#state.user,
+					       StateData#state.resource),
+		    presence_broadcast(
+		      StateData, From, StateData#state.pres_a, Packet),
+		    presence_broadcast(
+		      StateData, From, StateData#state.pres_i, Packet);
+		_ ->
+		    ?INFO_MSG("(~w) Close session for ~s",
+			      [StateData#state.socket,
+			       jlib:jid_to_string(StateData#state.jid)]),
+		    ejabberd_sm:close_session(StateData#state.user,
+					      StateData#state.resource),
+		    From = StateData#state.jid,
+		    Packet = {xmlelement, "presence",
+			      [{"type", "unavailable"}], []},
+		    ejabberd_sm:unset_presence(StateData#state.user,
+					       StateData#state.resource),
+		    presence_broadcast(
+		      StateData, From, StateData#state.pres_a, Packet),
+		    presence_broadcast(
+		      StateData, From, StateData#state.pres_i, Packet)
+	    end;
 	_ ->
 	    ok
     end,
