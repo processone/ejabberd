@@ -404,12 +404,12 @@ process_subscription(Direction, User, JID1, Type) ->
 			    unsubscribed -> "unsubscribed"
 			end,
 		    ejabberd_router:route(
-		      {User, ?MYNAME, ""}, JID1,
+		      jlib:make_jid(User, ?MYNAME, ""), JID1,
 		      {xmlelement, "presence", [{"type", T}], []})
 	    end,
 	    case Push of
 		{push, Item} ->
-		    push_item(User, {"", ?MYNAME, ""}, Item),
+		    push_item(User, jlib:make_jid("", ?MYNAME, ""), Item),
 		    true;
 		none ->
 		    false
