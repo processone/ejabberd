@@ -12,7 +12,12 @@
 
 -behaviour(gen_server).
 
--export([start/0, start_link/0, tcp_to_tls/2, tls_to_tcp/1, test/0]).
+-export([start/0, start_link/0,
+	 tcp_to_tls/2, tls_to_tcp/1,
+	 send/2,
+	 recv/2, recv/3,
+	 close/1,
+	 test/0]).
 
 %% Internal exports, call-back functions.
 -export([init/1,
@@ -101,15 +106,47 @@ recv(Socket, Length) ->
 recv(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Length, Timeout) ->
     case gen_tcp:recv(TCPSocket, Length, Timeout) of
 	{ok, Packet} ->
-	    todo;
+	    case port_control(Port, ?SET_ENCRYPTED_INPUT, Packet) of
+		[0] ->
+		    case port_control(Port, ?GET_DECRYPTED_INPUT, []) of
+			[0 | In] ->
+			    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
+				[0 | Out] ->
+				    case gen_tcp:send(TCPSocket, Out) of
+					ok ->
+					    {ok, In};
+					Error ->
+					    Error
+				    end;
+				[1 | Error] ->
+				    {error, Error}
+			    end;
+			[1 | Error] ->
+			    {error, Error}
+		    end;
+		[1 | Error] ->
+		    {error, Error}
+	    end;
 	{error, _Reason} = Error ->
 	    Error
     end.
-send(#tlssock) ->
-    
+send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
+    case port_control(Port, ?SET_DECRYPTED_OUTPUT, Packet) of
+	[0] ->
+	    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
+		[0 | Out] ->
+		    gen_tcp:send(TCPSocket, Out);
+		[1 | Error] ->
+		    {error, Error}
+	    end;
+	[1 | Error] ->
+	    {error, Error}
+    end.
 
-close(#tlssock) ->
-    
+
+close(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
+    gen_tcp:close(TCPSocket),
+    port_close(Port).
 
 
 test() ->
