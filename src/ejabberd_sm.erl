@@ -264,9 +264,15 @@ do_route(From, To, Packet) ->
 			"message" ->
 			    route_message(From, To, Packet);
 			"iq" ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_RECIPIENT_UNAVAILABLE),
-			    ejabberd_router:route(To, From, Err);
+			    case xml:get_attr_s("type", Attrs) of
+				"error" -> ok;
+				"result" -> ok;
+				_ ->
+				    Err =
+					jlib:make_error_reply(
+					  Packet, ?ERR_RECIPIENT_UNAVAILABLE),
+				    ejabberd_router:route(To, From, Err)
+			    end;
 			_ ->
 			    ?DEBUG("packet droped~n", [])
 		    end;

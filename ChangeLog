@@ -1,3 +1,7 @@
+2003-10-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Bugfix
+
 2003-10-27  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_auth.erl: Minor change in check_password/4
