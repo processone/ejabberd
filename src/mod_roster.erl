@@ -351,8 +351,6 @@ out_subscription(User, JID, Type) ->
     process_subscription(out, User, JID, Type).
 
 process_subscription(Direction, User, JID1, Type) ->
-    io:format("S10N: Dir=~p User=~p JID=~p Type=~p~n",
-	      [Direction, User, JID1, Type]),
     LUser = jlib:nodeprep(User),
     LJID = jlib:jid_tolower(JID1),
     F = fun() ->
@@ -391,7 +389,6 @@ process_subscription(Direction, User, JID1, Type) ->
 	{atomic, ok} ->
 	    false;
 	{atomic, {push, Item}} ->
-	    io:format("S10N: Item=~p~n", [Item]),
 	    push_item(User, {"", ?MYNAME, ""}, Item),
 	    true;
 	_ ->
