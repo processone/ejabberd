@@ -84,7 +84,7 @@ do_route(State, From, To, Packet) ->
 		    ok
 	    end;
 	{"", _, _} ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_JID_NOT_FOUND),
+	    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
 	    ejabberd_router ! {route,
 			       {"", State#state.mydomain, ""}, From, Err},
 	    ok;

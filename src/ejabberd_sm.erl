@@ -309,7 +309,7 @@ route_message(From, To, Packet) ->
 		    end;
 		_ ->
 		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_JID_NOT_FOUND),
+			    Packet, ?ERR_ITEM_NOT_FOUND),
 		    ejabberd_router:route(To, From, Err)
 	    end;
 	{_, R} ->

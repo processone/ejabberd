@@ -36,40 +36,47 @@
 -define(NS_SESSION, "urn:ietf:params:xml:ns:xmpp-session").
 
 % TODO: remove "code" attribute (currently it used for backward-compatibility)
--define(STANZA_ERROR(Code, Class, Condition),
+-define(STANZA_ERROR(Code, Type, Condition),
 	{xmlelement, "error",
-	 [{"code", Code}, {"class", Class}],
-	 [{xmlelement, "stanza-condition",
-	   [{"xmlns", ?NS_STANZAS}],
-	   [{xmlelement, Condition, [], []}]}]}).
+	 [{"code", Code}, {"type", Type}],
+	 [{xmlelement, Condition, [{"xmlns", ?NS_STANZAS}], []}]}).
 
 -define(ERR_BAD_REQUEST,
-	?STANZA_ERROR("400", "format",    "bad-request")).
+	?STANZA_ERROR("400", "modify",    "bad-request")).
+-define(ERR_CONFLICT,
+	?STANZA_ERROR("409", "cancel",    "cancel")).
 -define(ERR_FEATURE_NOT_IMPLEMENTED,
-	?STANZA_ERROR("501", "recipient", "feature-not-implemented")).
+	?STANZA_ERROR("501", "cancel",    "feature-not-implemented")).
 -define(ERR_FORBIDDEN,
-	?STANZA_ERROR("403", "format",    "forbidden")).
+	?STANZA_ERROR("403", "auth",      "forbidden")).
 -define(ERR_INTERNAL_SERVER_ERROR,
-	?STANZA_ERROR("403", "server",    "internal-server-error")).
+	?STANZA_ERROR("500", "wait",      "internal-server-error")).
+-define(ERR_ITEM_NOT_FOUND,
+	?STANZA_ERROR("404", "cancel",    "item-not-found")).
 -define(ERR_JID_MALFORMED,
-	?STANZA_ERROR("400", "address",   "jid-malformed")).
--define(ERR_JID_NOT_FOUND,
-	?STANZA_ERROR("404", "address",   "jid-not-found")).
+	?STANZA_ERROR("400", "modify",    "jid-malformed")).
 -define(ERR_NOT_ALLOWED,
-	?STANZA_ERROR("405", "access",    "not-allowed")).
+	?STANZA_ERROR("405", "cancel",    "not-allowed")).
 -define(ERR_RECIPIENT_UNAVAILABLE,
-	?STANZA_ERROR("503", "recipient", "recipient-unavailable")).
+	?STANZA_ERROR("404", "wait",      "recipient-unavailable")).
 -define(ERR_REGISTRATION_REQUIRED,
-	?STANZA_ERROR("407", "access",    "registration-required")).
+	?STANZA_ERROR("407", "auth",      "registration-required")).
 -define(ERR_REMOTE_SERVER_NOT_FOUND,
-	?STANZA_ERROR("502", "address",   "remote-server-not-found")).
+	?STANZA_ERROR("404", "cancel",    "remote-server-not-found")).
 -define(ERR_REMOTE_SERVER_TIMEOUT,
-	?STANZA_ERROR("504", "server",    "remote-server-timeout")).
+	?STANZA_ERROR("504", "wait",      "remote-server-timeout")).
+-define(ERR_RESOURCE_CONSTRAINT,
+	?STANZA_ERROR("0",   "wait",      "resource-constraint")).
 -define(ERR_SERVICE_UNAVAILABLE,
-	?STANZA_ERROR("503", "server",    "service-unavailable")).
+	?STANZA_ERROR("503", "cancel",    "service-unavailable")).
+-define(ERR_SUBSCRIPTION_REQUIRED,
+	?STANZA_ERROR("0", "auth", "subscription-required")).
+-define(ERR_UNEXPECTED_REQUEST,
+	?STANZA_ERROR("0", "wait", "unexpected-request")).
 %-define(ERR_,
 %	?STANZA_ERROR("", "", "")).
 
+% TODO: update to new-style
 % Application-specific stanza errors
 -define(AUTH_STANZA_ERROR(Condition),
 	{xmlelement, "error",
@@ -86,36 +93,44 @@
 	?AUTH_STANZA_ERROR("resource-conflict")).
 
 
--define(STREAM_ERROR(Class, Condition),
+-define(STREAM_ERROR(Condition),
 	{xmlelement, "stream:error",
-	 [{"class", Class}],
-	 [{xmlelement, "stream-condition",
-	   [{"xmlns", ?NS_STANZAS}],
-	   [{xmlelement, Condition, [], []}]}]}).
+	 [],
+	 [{xmlelement, Condition, [{"xmlns", ?NS_STANZAS}], []}]}).
 
 -define(SERR_HOST_GONE,
-	?STREAM_ERROR("address",  "host-gone")).
+	?STREAM_ERROR("host-gone")).
 -define(SERR_HOST_UNKNOWN,
-	?STREAM_ERROR("address",  "host-unknown")).
+	?STREAM_ERROR("host-unknown")).
+-define(SERR_IMPROPER_ADDRESSING,
+	?STREAM_ERROR("improper-addressing")).
 -define(SERR_INTERNAL_SERVER_ERROR,
-	?STREAM_ERROR("server",   "internal-server-error")).
+	?STREAM_ERROR("internal-server-error")).
+-define(SERR_INVALID_ID,
+	?STREAM_ERROR("invalid-id")).
 -define(SERR_INVALID_NAMESPACE,
-	?STREAM_ERROR("format",   "invalid-namespace")).
+	?STREAM_ERROR("invalid-namespace")).
+-define(SERR_NONMATCHING_HOSTS,
+	?STREAM_ERROR("nonmatching-hosts")).
+-define(SERR_NOT_AUTHORIZED,
+	?STREAM_ERROR("not-authorized")).
+-define(SERR_REMOTE_CONNECTION_FAILED,
+	?STREAM_ERROR("remote-connection-failed")).
 -define(SERR_RESOURSE_CONSTRAINT,
-	?STREAM_ERROR("server",   "resource-constraint")).
+	?STREAM_ERROR("resource-constraint")).
 % TODO: include hostname or IP
 -define(SERR_SEE_OTHER_HOST,
-	?STREAM_ERROR("redirect", "see-other-host")).
+	?STREAM_ERROR("see-other-host")).
 -define(SERR_SYSTEM_SHUTDOWN,
-	?STREAM_ERROR("server",   "system-shutdown")).
+	?STREAM_ERROR("system-shutdown")).
 -define(SERR_UNSUPPORTED_STANZA_TYPE,
-	?STREAM_ERROR("format",   "unsupported-stanza-type")).
+	?STREAM_ERROR("unsupported-stanza-type")).
 -define(SERR_UNSUPPORTED_VERSION,
-	?STREAM_ERROR("format",   "unsupported-version")).
+	?STREAM_ERROR("unsupported-version")).
 -define(SERR_XML_NOT_WELL_FORMED,
-	?STREAM_ERROR("format",   "xml-not-well-formed")).
+	?STREAM_ERROR("xml-not-well-formed")).
 %-define(SERR_,
-%	?STREAM_ERROR("", "")).
+%	?STREAM_ERROR("")).
 
 
 

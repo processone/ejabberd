@@ -62,7 +62,7 @@ process_iq(From, To, IQ) ->
 	    ignore;
 	_ ->
 	    {iq, ID, error, XMLNS,
-	     [SubEl, ?ERR_JID_NOT_FOUND]}
+	     [SubEl, ?ERR_ITEM_NOT_FOUND]}
     end.
 
 process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
