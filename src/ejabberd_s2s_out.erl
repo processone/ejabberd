@@ -357,7 +357,7 @@ receiver(Socket, C2SPid, XMLStreamPid) ->
         {ok, Text} ->
 	    xml_stream:send_text(XMLStreamPid, Text),
 	    receiver(Socket, C2SPid, XMLStreamPid);
-        {error, closed} ->
+        {error, Reason} ->
 	    exit(XMLStreamPid, closed),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok

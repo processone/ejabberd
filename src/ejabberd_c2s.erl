@@ -352,7 +352,7 @@ receiver(Socket, C2SPid, XMLStreamPid) ->
         {ok, Text} ->
 	    xml_stream:send_text(XMLStreamPid, Text),
 	    receiver(Socket, C2SPid, XMLStreamPid);
-        {error, closed} ->
+        {error, Reason} ->
 	    exit(XMLStreamPid, closed),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok
@@ -610,7 +610,9 @@ roster_change(IJID, ISubscription, StateData) ->
 	    StateData;
 	P ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
-	    From = {StateData#state.user, StateData#state.server, ""},
+	    From = {StateData#state.user,
+		    StateData#state.server,
+		    StateData#state.resource},
 	    Cond1 = (not StateData#state.pres_invis)
 		and ((ISubscription == both) or (ISubscription == from)),
 	    Cond2 = ((ISubscription == none) or (ISubscription == to))

@@ -359,7 +359,7 @@ record_to_item(R) ->
 search(Data) ->
     MatchSpec = make_matchspec(Data),
     F = fun() ->
-		mnesia:match_object(MatchSpec)
+		mnesia:select(vcard_search, [{MatchSpec, [], ['$_']}])
 	end,
     case mnesia:transaction(F) of
 	{atomic, Rs} ->
@@ -370,19 +370,7 @@ search(Data) ->
 
 
 make_matchspec(Data) ->
-    GlobMatch = #vcard_search{user     = '_',
-			      fn       = '_',
-			      family   = '_',
-			      given    = '_',
-			      middle   = '_',
-			      nickname = '_',
-			      bday     = '_',
-			      ctry     = '_',
-			      locality = '_',
-			      email    = '_',
-			      orgname  = '_',
-			      orgunit  = '_'
-			     },
+    GlobMatch = #vcard_search{_ = '_'},
     Match = filter_fields(Data, GlobMatch),
     Match.
 
