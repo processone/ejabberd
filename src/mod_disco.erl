@@ -26,7 +26,8 @@
 
 -define(EMPTY_INFO_RESULT,
 	{iq, ID, result, XMLNS, [{xmlelement, "query",
-				  [{"xmlns", ?NS_DISCO_INFO}], []}]}).
+				  [{"xmlns", ?NS_DISCO_INFO},
+				   {"node", SNode}], []}]}).
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -64,17 +65,30 @@ process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	set ->
 	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    Node = string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
+	    SNode = xml:get_tag_attr_s("node", SubEl),
+	    Node = string:tokens(SNode, "/"),
 
-	    case get_local_items(Node, jlib:jid_to_string(To), Lang) of
-		{result, Res} ->
+	    case acl:match_rule(configure, From) of
+		deny when Node /= [] ->
+		    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+		deny ->
 		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		       Res
+		     [{xmlelement, "query",
+		       [{"xmlns", ?NS_DISCO_ITEMS}],
+		       get_services_only()
 		      }]};
-		{error, Error} ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, Error]}
+		_ ->
+		    case get_local_items(Node, jlib:jid_to_string(To), Lang) of
+			{result, Res} ->
+			    {iq, ID, result, XMLNS,
+			     [{xmlelement, "query",
+			       [{"xmlns", ?NS_DISCO_ITEMS},
+				{"node", SNode}],
+			       Res
+			      }]};
+			{error, Error} ->
+			    {iq, ID, error, XMLNS, [SubEl, Error]}
+		    end
 	    end
     end.
 
@@ -84,8 +98,10 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	set ->
 	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    case string:tokens(xml:get_tag_attr_s("node", SubEl), "/") of
-		[] ->
+	    SNode = xml:get_tag_attr_s("node", SubEl),
+	    Node = string:tokens(SNode, "/"),
+	    case {acl:match_rule(configure, From), Node} of
+		{_, []} ->
 		    Features = lists:map(fun feature_to_xml/1,
 					 ets:tab2list(disco_features)),
 		    {iq, ID, result, XMLNS, [{xmlelement,
@@ -97,17 +113,20 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 						 {"name", "ejabberd"}], []}] ++
 					      Features
 					     }]};
-		["config"] -> ?EMPTY_INFO_RESULT;
-		["online users"] -> ?EMPTY_INFO_RESULT;
-		["all users"] -> ?EMPTY_INFO_RESULT;
-		["all users", [$@ | _]] -> ?EMPTY_INFO_RESULT;
-		["outgoing s2s" | _] -> ?EMPTY_INFO_RESULT;
-		["running nodes"] -> ?EMPTY_INFO_RESULT;
-		["stopped nodes"] -> ?EMPTY_INFO_RESULT;
-		["running nodes", ENode] ->
+		{deny, _} ->
+		    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+		{allow, ["config"]} -> ?EMPTY_INFO_RESULT;
+		{allow, ["online users"]} -> ?EMPTY_INFO_RESULT;
+		{allow, ["all users"]} -> ?EMPTY_INFO_RESULT;
+		{allow, ["all users", [$@ | _]]} -> ?EMPTY_INFO_RESULT;
+		{allow, ["outgoing s2s" | _]} -> ?EMPTY_INFO_RESULT;
+		{allow, ["running nodes"]} -> ?EMPTY_INFO_RESULT;
+		{allow, ["stopped nodes"]} -> ?EMPTY_INFO_RESULT;
+		{allow, ["running nodes", ENode]} ->
 		    {iq, ID, result, XMLNS, [{xmlelement,
 					      "query",
-					      [{"xmlns", XMLNS}],
+					      [{"xmlns", XMLNS},
+					       {"node", SNode}],
 					      [{xmlelement, "identity",
 						[{"category", "ejabberd"},
 						 {"type", "node"},
@@ -115,35 +134,45 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					       feature_to_xml({?NS_STATS})
 					      ]
 					     }]};
-		["running nodes", ENode, "DB"] ->
+		{allow, ["running nodes", ENode, "DB"]} ->
 		    {iq, ID, result, XMLNS, [{xmlelement,
 					      "query",
-					      [{"xmlns", XMLNS}],
-					      [feature_to_xml({?NS_IQDATA})
-					      ]
-					     }]};
-		["running nodes", ENode, "modules"] -> ?EMPTY_INFO_RESULT;
-		["running nodes", ENode, "modules", _] ->
+					      [{"xmlns", XMLNS},
+					       {"node", SNode}],
+					      [feature_to_xml({?NS_IQDATA})]}]};
+		{allow, ["running nodes", ENode, "modules"]} ->
+		    ?EMPTY_INFO_RESULT;
+		{allow, ["running nodes", ENode, "modules", _]} ->
 		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		     [{xmlelement, "query",
+		       [{"xmlns", XMLNS},
+			{"node", SNode}],
 		       [feature_to_xml({?NS_IQDATA})]}]};
-		["running nodes", ENode, "backup"] -> ?EMPTY_INFO_RESULT;
-		["running nodes", ENode, "backup", _] ->
+		{allow, ["running nodes", ENode, "backup"]} ->
+		    ?EMPTY_INFO_RESULT;
+		{allow, ["running nodes", ENode, "backup", _]} ->
 		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		     [{xmlelement, "query",
+		       [{"xmlns", XMLNS},
+			{"node", SNode}],
 		       [feature_to_xml({?NS_IQDATA})]}]};
-		["running nodes", ENode, "import"] -> ?EMPTY_INFO_RESULT;
-		["running nodes", ENode, "import", _] ->
+		{allow, ["running nodes", ENode, "import"]} ->
+		    ?EMPTY_INFO_RESULT;
+		{allow, ["running nodes", ENode, "import", _]} ->
 		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		     [{xmlelement, "query",
+		       [{"xmlns", XMLNS},
+			{"node", SNode}],
 		       [feature_to_xml({?NS_IQDATA})]}]};
-		["config", _] ->
+		{allow, ["config", _]} ->
 		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		     [{xmlelement, "query",
+		       [{"xmlns", XMLNS},
+			{"node", SNode}],
 		       [feature_to_xml({?NS_IQDATA})]}]};
 		_ ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
+		     [SubEl, ?ERR_ITEM_NOT_FOUND]}
 	    end
     end.
 
@@ -161,6 +190,10 @@ domain_to_xml(Domain) ->
 	  {"name", translate:translate(Lang, Name)},
 	  {"node", Node}], []}).
 
+
+get_services_only() ->
+    lists:map(fun domain_to_xml/1,
+	      ejabberd_router:dirty_get_all_routes()).
 
 get_local_items([], Server, Lang) ->
     Domains =
@@ -404,10 +437,12 @@ get_stopped_nodes(Lang) ->
 
 process_sm_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     {User, _, _} = To,
-    case Type of
-	set ->
+    case {acl:match_rule(configure, From), Type} of
+	{deny, _} ->
 	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
-	get ->
+	{allow, set} ->
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	{allow, get} ->
 	    case xml:get_tag_attr_s("node", SubEl) of
 		"" ->
 		    {iq, ID, result, XMLNS,
@@ -416,16 +451,18 @@ process_sm_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		      }]};
 		_ ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
+		     [SubEl, ?ERR_ITEM_NOT_FOUND]}
 	    end
     end.
 
 
 process_sm_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
-    case Type of
-	set ->
+    case {acl:match_rule(configure, From), Type} of
+	{deny, _} ->
 	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
-	get ->
+	{allow, set} ->
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	{allow, get} ->
 	    case xml:get_tag_attr_s("node", SubEl) of
 		"" ->
 		    {iq, ID, result, XMLNS,

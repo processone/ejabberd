@@ -1,3 +1,8 @@
+2003-09-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_disco.erl: Now only admin can discovery some nodes,
+	fixed "node" attribute in replies
+
 2003-09-10  Alexey Shchepin  <alexey@sevcom.net>
 
 	* examples/mtr/ejabberd.cfg: Updated (thanks to Marshall T. Rose)
