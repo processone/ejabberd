@@ -43,6 +43,9 @@ $(ERLSHLIBS):	../%.so:	%.c
 clean:
 	rm -f $(OBJS) $(ERLSHLIBS)
 
+distclean: clean
+	rm -f Makefile
+
 TAGS:
 	etags *.erl
 

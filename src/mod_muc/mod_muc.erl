@@ -13,7 +13,7 @@
 -behaviour(gen_mod).
 
 -export([start/1,
-	 init/1,
+	 init/2,
 	 stop/0,
 	 room_destroyed/1,
 	 store_room/2,
@@ -40,43 +40,63 @@ start(Opts) ->
 			 {attributes, record_info(fields, muc_registered)}]),
     mnesia:add_table_index(muc_registered, nick),
     Host = gen_mod:get_opt(host, Opts, "conference." ++ ?MYNAME),
-    register(ejabberd_mod_muc, spawn(?MODULE, init, [Host])).
+    Access = gen_mod:get_opt(access, Opts, all),
+    AccessCreate = gen_mod:get_opt(access_create, Opts, all),
+    AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
+    register(ejabberd_mod_muc,
+	     spawn(?MODULE, init, [Host, {Access, AccessCreate, AccessAdmin}])).
 
 
 
-init(Host) ->
+init(Host, Access) ->
     catch ets:new(muc_online_room, [named_table,
 				    public,
 				    {keypos, #muc_online_room.name}]),
     ejabberd_router:register_route(Host),
-    load_permanent_rooms(Host),
-    loop(Host).
+    load_permanent_rooms(Host, Access),
+    loop(Host, Access).
 
-loop(Host) ->
+loop(Host, Access) ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(Host, From, To, Packet) of
+	    case catch do_route(Host, Access, From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop(Host);
+	    loop(Host, Access);
 	{room_destroyed, Room} ->
 	    ets:delete(muc_online_room, Room),
-	    loop(Host);
+	    loop(Host, Access);
 	stop ->
 	    % TODO
 	    ejabberd_router:unregister_global_route(Host),
 	    ok;
 	_ ->
-	    loop(Host)
+	    loop(Host, Access)
     end.
 
 
-do_route(Host, From, To, Packet) ->
+do_route(Host, Access, From, To, Packet) ->
+    {AccessRoute, _AccessCreate, _AccessAdmin} = Access,
+    case acl:match_rule(AccessRoute, From) of
+	allow ->
+	    do_route1(Host, Access, From, To, Packet);
+	_ ->
+	    {xmlelement, _Name, Attrs, _Els} = Packet,
+	    Lang = xml:get_attr_s("xml:lang", Attrs),
+	    ErrText = "Access denied by service policy",
+	    Err = jlib:make_error_reply(Packet,
+					?ERRT_FORBIDDEN(Lang, ErrText)),
+	    ejabberd_router:route(To, From, Err)
+    end.
+
+
+do_route1(Host, Access, From, To, Packet) ->
+    {_AccessRoute, AccessCreate, AccessAdmin} = Access,
     {Room, _, Nick} = jlib:jid_tolower(To),
-    {xmlelement, Name, Attrs, Els} = Packet,
+    {xmlelement, Name, Attrs, _Els} = Packet,
     case Room of
 	"" ->
 	    case Nick of
@@ -155,7 +175,7 @@ do_route(Host, From, To, Packet) ->
 				"error" ->
 				    ok;
 				_ ->
-				    case acl:match_rule(muc_admin, From) of
+				    case acl:match_rule(AccessAdmin, From) of
 					allow ->
 					    Msg = xml:get_path_s(
 						    Packet,
@@ -193,14 +213,23 @@ do_route(Host, From, To, Packet) ->
 		    Type = xml:get_attr_s("type", Attrs),
 		    case {Name, Type} of
 			{"presence", ""} ->
-			    ?DEBUG("MUC: open new room '~s'~n", [Room]),
-			    {ok, Pid} = mod_muc_room:start(
-					  Host, Room, From, Nick),
-			    ets:insert(
-			      muc_online_room,
-			      #muc_online_room{name = Room, pid = Pid}),
-			    mod_muc_room:route(Pid, From, Nick, Packet),
-			    ok;
+			    case acl:match_rule(AccessCreate, From) of
+				allow ->
+				    ?DEBUG("MUC: open new room '~s'~n", [Room]),
+				    {ok, Pid} = mod_muc_room:start(
+						  Host, Access, Room, From, Nick),
+				    ets:insert(
+				      muc_online_room,
+				      #muc_online_room{name = Room, pid = Pid}),
+				    mod_muc_room:route(Pid, From, Nick, Packet),
+				    ok;
+				_ ->
+				    Lang = xml:get_attr_s("xml:lang", Attrs),
+				    ErrText = "Room creation is denied by service policy",
+				    Err = jlib:make_error_reply(
+					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+				    ejabberd_router:route(To, From, Err)
+			    end;
 			_ ->
 			    Lang = xml:get_attr_s("xml:lang", Attrs),
 			    ErrText = "Conference room does not exist",
@@ -251,7 +280,7 @@ forget_room(Name) ->
     mnesia:transaction(F).
 
 
-load_permanent_rooms(Host) ->
+load_permanent_rooms(Host, Access) ->
     case catch mnesia:dirty_select(muc_room, [{'_', [], ['$_']}]) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]),
@@ -261,6 +290,7 @@ load_permanent_rooms(Host) ->
 				  Room = R#muc_room.name,
 				  {ok, Pid} = mod_muc_room:start(
 						Host,
+						Access,
 						Room,
 						R#muc_room.opts),
 				  ets:insert(
@@ -314,7 +344,7 @@ iq_get_register_info(From, Host, Lang) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     LUS = {LUser, LServer},
     {Nick, Registered} = case catch mnesia:dirty_read(muc_registered, LUS) of
-	       {'EXIT', Reason} ->
+	       {'EXIT', _Reason} ->
 		   {"", []};
 	       [] ->
 		   {"", []};
@@ -384,9 +414,9 @@ iq_set_register_info(From, XData, Lang) ->
     end.
 
 process_iq_register_set(From, SubEl, Lang) ->
-    {xmlelement, Name, Attrs, Els} = SubEl,
+    {xmlelement, _Name, _Attrs, Els} = SubEl,
     case xml:remove_cdata(Els) of
-	[{xmlelement, "x", Attrs1, Els1} = XEl] ->
+	[{xmlelement, "x", _Attrs1, _Els1} = XEl] ->
 	    case {xml:get_tag_attr_s("xmlns", XEl),
 		  xml:get_tag_attr_s("type", XEl)} of
 		{?NS_XDATA, "cancel"} ->
@@ -419,14 +449,14 @@ iq_get_vcard(Lang) ->
 
 broadcast_service_message(Msg) ->
     lists:foreach(
-      fun(#muc_online_room{name = Name, pid = Pid}) ->
+      fun(#muc_online_room{pid = Pid}) ->
 	      gen_fsm:send_all_state_event(
 		Pid, {service_message, Msg})
       end, ets:tab2list(muc_online_room)).
 
 
 
-can_use_nick(JID, "") ->
+can_use_nick(_JID, "") ->
     false;
 can_use_nick(JID, Nick) ->
     {LUser, LServer, _} = jlib:jid_tolower(JID),
@@ -434,7 +464,7 @@ can_use_nick(JID, Nick) ->
     case catch mnesia:dirty_index_read(muc_registered,
 				       Nick,
 				       #muc_registered.nick) of
-	{'EXIT', Reason} ->
+	{'EXIT', _Reason} ->
 	    true;
 	[] ->
 	    true;

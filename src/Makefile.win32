@@ -6,10 +6,10 @@ ALL : build
 REL=..\release
 EREL=$(REL)\ejabberd-$(EJABBERD_VERSION)
 EBIN_DIR=$(EREL)\ebin
-MSGS_DIR=$(EREL)\msgs
 SRC_DIR=$(EREL)\src
 PRIV_DIR=$(EREL)\priv
 SO_DIR=$(PRIV_DIR)\lib
+MSGS_DIR=$(PRIV_DIR)\msgs
 WIN32_DIR=$(EREL)\win32
 DOC_DIR=$(EREL)\doc
 
@@ -41,6 +41,8 @@ release : build release_clean
 	copy msgs\*.msg $(MSGS_DIR)
 	mkdir $(WIN32_DIR)
 	copy win32\ejabberd.cfg $(EREL)
+	copy $(SYSTEMROOT)\system32\libeay32.dll $(EREL)
+	copy $(SYSTEMROOT)\system32\ssleay32.dll $(EREL)
 	copy win32\ejabberd.ico $(WIN32_DIR)
 	mkdir $(WIN32_DIR)\5.3
 	copy win32\5.3\*.beam $(WIN32_DIR)\5.3
@@ -125,6 +127,7 @@ clean-recursive :
 	cd ..\..
 
 distclean : release_clean clean
+	-@erase $(NSIS_HEADER)
 	-@erase Makefile.inc
 
 CC=cl.exe

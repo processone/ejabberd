@@ -104,7 +104,10 @@
  "ejabberd MUC модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
 {"Only service administrators are allowed to send service messages",
  "Только администратор службы может посылать служебные сообщения"}.
+{"Room creation is not allowed by service policy",
+ "Cоздавать конференцию не разрешено политикой службы"}.
 {"Conference room does not exist", "Конференция не существует"}.
+{"Access denied by service policy", "Доступ запрещён политикой службы"}.
 {"You must fill in field \"nick\" in the form",
  "Вы должны заполнить поле \"nick\" в форме"}.
 {"Specified nickname is already registered", "Указанный псевдоним уже зарегистрирован"}.

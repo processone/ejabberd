@@ -43,6 +43,9 @@ $(ERLSHLIBS):	../%.so:	%.c uni_data.c uni_norm.c
 clean:
 	rm -f $(OBJS) $(ERLSHLIBS)
 
+distclean: clean
+	rm -f Makefile
+
 TAGS:
 	etags *.erl
 

@@ -21,7 +21,7 @@ start() ->
     Dir = 
 	case os:getenv("EJABBERD_MSGS_PATH") of
 	    false ->
-		case code:lib_dir(ejabberd) of
+		case code:priv_dir(ejabberd) of
 		    {error, _} ->
 			?MSGS_DIR;
 		    Path ->

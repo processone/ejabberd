@@ -19,12 +19,12 @@ ERLSHLIBS = expat_erl.so
 DESTDIR =
 
 EJABBERDDIR = $(DESTDIR)/var/lib/ejabberd
-BEAMDIR = $(EJABBERDDIR)/beam
+BEAMDIR = $(EJABBERDDIR)/ebin
 PRIVDIR = $(EJABBERDDIR)/priv
-SODIR = $(PRIVDIR)
+SODIR = $(PRIVDIR)/lib
 MSGSDIR = $(PRIVDIR)/msgs
 
-all: all-recursive $(ERLSHLIBS) compile-beam
+all: $(ERLSHLIBS) compile-beam all-recursive
 
 compile-beam:
 	@erl -s make all report -noinput -s erlang halt
@@ -49,15 +49,24 @@ $(ERLSHLIBS):	%.so:	%.c
 			-o $@ -fpic -shared \
 
 install: all
-	mkdir -p $(BEAMDIR)
-	cp *.beam $(BEAMDIR)
-	mkdir -p $(SODIR)
-	cp *.so $(SODIR)
-	mkdir -p $(MSGSDIR)
-	cp msgs/*.msg $(MSGSDIR)
+	install -d $(BEAMDIR)
+	install -m 644 *.beam $(BEAMDIR)
+	rm -f $(BEAMDIR)/configure.beam
+	install -m 644 *.app $(BEAMDIR)
+	install -d $(SODIR)
+	install -m 644 *.so $(SODIR)
+	install -d $(MSGSDIR)
+	install -m 644 msgs/*.msg $(MSGSDIR)
 
-clean: clean-recursive
+clean: clean-recursive clean-local
+
+clean-local:
 	rm -f *.beam $(ERLSHLIBS)
+
+distclean: distclean-recursive clean-local
+	rm -f config.status
+	rm -f config.log
+	rm -f Makefile
 
 TAGS:
 	etags *.erl

@@ -14,8 +14,8 @@
 
 
 %% External exports
--export([start/4,
-	 start/3,
+-export([start/5,
+	 start/4,
 	 route/4]).
 
 %% gen_fsm callbacks
@@ -59,6 +59,7 @@
 
 -record(state, {room,
 		host,
+		access,
 		jid,
 		config = #config{},
 		users = ?DICT:new(),
@@ -81,11 +82,11 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Host, Room, Creator, Nick) ->
-    gen_fsm:start(?MODULE, [Host, Room, Creator, Nick], ?FSMOPTS).
+start(Host, Access, Room, Creator, Nick) ->
+    gen_fsm:start(?MODULE, [Host, Access, Room, Creator, Nick], ?FSMOPTS).
 
-start(Host, Room, Opts) ->
-    gen_fsm:start(?MODULE, [Host, Room, Opts], ?FSMOPTS).
+start(Host, Access, Room, Opts) ->
+    gen_fsm:start(?MODULE, [Host, Access, Room, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -98,16 +99,17 @@ start(Host, Room, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Host, Room, Creator, Nick]) ->
-    LCreator = jlib:jid_tolower(Creator),
+init([Host, Access, Room, Creator, Nick]) ->
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
+				   access = Access,
 				   room = Room,
 				   jid = jlib:make_jid(Room, Host, ""),
 				   just_created = true}),
     {ok, normal_state, State};
-init([Host, Room, Opts]) ->
+init([Host, Access, Room, Opts]) ->
     State = set_opts(Opts, #state{host = Host,
+				  access = Access,
 				  room = Room,
 				  jid = jlib:make_jid(Room, Host, "")}),
     {ok, normal_state, State}.
@@ -160,7 +162,7 @@ normal_state({route, From, "",
 			    case IsAllowed of
 				true ->
 				    lists:foreach(
-				      fun({LJID, Info}) ->
+				      fun({_LJID, Info}) ->
 					      ejabberd_router:route(
 						jlib:jid_replace_resource(
 						  StateData#state.jid,
@@ -275,7 +277,7 @@ normal_state({route, From, "",
     end;
 
 normal_state({route, From, "",
-	      {xmlelement, "iq", Attrs, Els} = Packet},
+	      {xmlelement, "iq", _Attrs, _Els} = Packet},
 	     StateData) ->
     case jlib:iq_query_info(Packet) of
 	#iq{type = Type, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ when
@@ -326,7 +328,7 @@ normal_state({route, From, "",
     end;
 
 normal_state({route, From, Nick,
-	      {xmlelement, "presence", Attrs, Els} = Packet},
+	      {xmlelement, "presence", Attrs, _Els} = Packet},
 	     StateData) ->
     Type = xml:get_attr_s("type", Attrs),
     Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -413,7 +415,7 @@ normal_state({route, From, Nick,
     end;
 
 normal_state({route, From, ToNick,
-	      {xmlelement, "message", Attrs, Els} = Packet},
+	      {xmlelement, "message", Attrs, _Els} = Packet},
 	     StateData) ->
     Type = xml:get_attr_s("type", Attrs),
     Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -484,7 +486,7 @@ normal_state({route, From, ToNick,
     end;
 
 normal_state({route, From, ToNick,
-	      {xmlelement, "iq", Attrs, Els} = Packet},
+	      {xmlelement, "iq", Attrs, _Els} = Packet},
 	     StateData) ->
     Lang = xml:get_attr_s("xml:lang", Attrs),
     case {(StateData#state.config)#config.allow_query_users,
@@ -556,12 +558,12 @@ normal_state(Event, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_event({service_message, Msg}, StateName, StateData) ->
+handle_event({service_message, Msg}, _StateName, StateData) ->
     MessagePkt = {xmlelement, "message",
 		  [{"type", "groupchat"}],
 		  [{xmlelement, "body", [], [{xmlcdata, Msg}]}]},
     lists:foreach(
-      fun({LJID, Info}) ->
+      fun({_LJID, Info}) ->
 	      ejabberd_router:route(
 		StateData#state.jid,
 		Info#user.jid,
@@ -573,7 +575,7 @@ handle_event({service_message, Msg}, StateName, StateData) ->
 				 StateData),
     {next_state, normal_state, NSD};
 
-handle_event(Event, StateName, StateData) ->
+handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -585,7 +587,7 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event({get_disco_item, JID, Lang}, From, StateName, StateData) ->
+handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
     FAffiliation = get_affiliation(JID, StateData),
     FRole = get_role(JID, StateData),
     Tail =
@@ -615,11 +617,11 @@ handle_sync_event({get_disco_item, JID, Lang}, From, StateName, StateData) ->
 		    false
 	    end,
     {reply, Reply, StateName, StateData};
-handle_sync_event(Event, From, StateName, StateData) ->
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
 
-code_change(OldVsn, StateName, StateData, Extra) ->
+code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -628,7 +630,7 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_info(Info, StateName, StateData) ->
+handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -636,7 +638,7 @@ handle_info(Info, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(Reason, StateName, StateData) ->
+terminate(_Reason, _StateName, StateData) ->
     mod_muc:room_destroyed(StateData#state.room),
     ok.
 
@@ -702,7 +704,8 @@ set_affiliation(JID, Affiliation, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
 get_affiliation(JID, StateData) ->
-    case acl:match_rule(muc_admin, JID) of
+    {_AccessRoute, _AccessCreate, AccessAdmin} = StateData#state.access,
+    case acl:match_rule(AccessAdmin, JID) of
 	allow ->
 	    owner;
 	_ ->
@@ -803,7 +806,7 @@ filter_presence({xmlelement, "presence", Attrs, Els}) ->
 		     case El of
 			 {xmlcdata, _} ->
 			     false;
-			 {xmlelement, Name1, Attrs1, Els1} ->
+			 {xmlelement, Name1, _Attrs1, _Els1} ->
 			     XMLNS = xml:get_attr_s("xmlns", Attrs),
 			     case {Name1, XMLNS} of
 				 {"show", ""} ->
@@ -1067,9 +1070,9 @@ calc_shift(MaxSize, Size, Shift, [S | TSizes]) ->
 	    calc_shift(MaxSize, Size - S, Shift + 1, TSizes)
     end.
 
-extract_history([], Type) ->
+extract_history([], _Type) ->
     false;
-extract_history([{xmlelement, Name, Attrs, SubEls} = El | Els], Type) ->
+extract_history([{xmlelement, _Name, Attrs, _SubEls} = El | Els], Type) ->
     case xml:get_attr_s("xmlns", Attrs) of
 	?NS_MUC ->
 	    AttrVal = xml:get_path_s(El,
@@ -1077,7 +1080,7 @@ extract_history([{xmlelement, Name, Attrs, SubEls} = El | Els], Type) ->
 	    case Type of
 		"since" ->
 		    case catch parse_datetime(AttrVal) of
-			{'EXIT', Err} ->
+			{'EXIT', _Err} ->
 			    false;
 			Res ->
 			    Res
@@ -1211,7 +1214,7 @@ send_new_presence(NJID, StateData) ->
     SAffiliation = affiliation_to_list(Affiliation),
     SRole = role_to_list(Role),
     lists:foreach(
-      fun({LJID, Info}) ->
+      fun({_LJID, Info}) ->
 	      ItemAttrs =
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
@@ -1311,7 +1314,7 @@ send_nick_changing(JID, OldNick, StateData) ->
     SAffiliation = affiliation_to_list(Affiliation),
     SRole = role_to_list(Role),
     lists:foreach(
-      fun({LJID, Info}) ->
+      fun({_LJID, Info}) ->
 	      ItemAttrs1 =
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
@@ -1391,7 +1394,6 @@ add_message_to_history(FromNick, Packet, StateData) ->
     TimeStamp = calendar:now_to_universal_time(now()),
     TSPacket = append_subtags(Packet,
 			      [jlib:timestamp_to_xml(TimeStamp)]),
-    {xmlelement, Name, Attrs, Els} = TSPacket,
     SPacket = jlib:replace_from_to(
 		jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		StateData#state.jid,
@@ -1605,13 +1607,13 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
     end.
 
     
-find_changed_items(UJID, UAffiliation, URole, [], Lang, StateData, Res) ->
+find_changed_items(UJID, UAffiliation, URole, [], _Lang, StateData, Res) ->
     {result, Res};
 find_changed_items(UJID, UAffiliation, URole, [{xmlcdata, _} | Items],
 		   Lang, StateData, Res) ->
     find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, Res);
 find_changed_items(UJID, UAffiliation, URole,
-		   [{xmlelement, "item", Attrs, Els} = Item | Items],
+		   [{xmlelement, "item", Attrs, _Els} = Item | Items],
 		   Lang, StateData, Res) ->
     TJID = case xml:get_attr("jid", Attrs) of
 	       {value, S} ->
@@ -1728,7 +1730,8 @@ find_changed_items(UJID, UAffiliation, URole,
 	Err ->
 	    Err
     end;
-find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, Res) ->
+find_changed_items(_UJID, _UAffiliation, _URole, _Items,
+		   _Lang, _StateData, _Res) ->
     {error, ?ERR_BAD_REQUEST}.
 
 

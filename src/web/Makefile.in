@@ -30,6 +30,9 @@ $(OUTDIR)/%.beam:       %.erl
 clean:
 	rm -f $(OBJS)
 
+distclean: clean
+	rm -f Makefile
+
 TAGS:
 	etags *.erl
 

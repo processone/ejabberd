@@ -14,6 +14,8 @@
     !define PRODUCT "Ejabberd"
     Name ${PRODUCT}
     OutFile "${OUTFILEDIR}\${PRODUCT}-${VERSION}.exe"
+    ShowInstDetails show
+    ShowUninstDetails show
 
     !define MUI_ICON "ejabberd.ico"
     !define MUI_UNICON "ejabberd.ico"
@@ -26,7 +28,11 @@
 ;--------------------------------
 ;Reserve Files
   
-    ReserveFile "CheckUser.ini"
+    !ifdef HACKED_INSTALLOPTIONS
+	ReserveFile "CheckUserH.ini"
+    !else
+	ReserveFile "CheckUser.ini"
+    !endif
     ReserveFile "CheckReqs.ini"
     !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
 
@@ -40,6 +46,53 @@
     Var ERLANG_VERSION
     Var REQUIRED_ERLANG_VERSION
     Var ERLSRV
+
+;----------------------------------------------------------
+;.onInit uses UserInfo plugin, so it's as high as possible
+
+Function .onInit
+
+    StrCpy $REQUIRED_ERLANG_VERSION "5.3"
+
+    ;Default installation folder
+    StrCpy $INSTDIR "$PROGRAMFILES\${PRODUCT}"
+
+    ;Get installation folder from registry if available
+    ClearErrors
+    ReadRegStr $0 HKLM "SOFTWARE\${PRODUCT}" ""
+    IfErrors 0 copydir
+    ReadRegStr $0 HKCU "SOFTWARE\${PRODUCT}" ""
+    IfErrors skipdir
+    copydir:
+	StrCpy $INSTDIR "$0"
+
+    skipdir:
+    ;Extract InstallOptions INI files
+    !ifdef HACKED_INSTALLOPTIONS
+	!insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckUserH.ini"
+    !else
+	!insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckUser.ini"
+    !endif
+    !insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckReqs.ini"
+  
+    ClearErrors
+    UserInfo::GetName
+    IfErrors admin
+    Pop $0
+    UserInfo::GetAccountType
+    Pop $1
+    StrCmp $1 "Admin" admin user
+
+    admin:
+	StrCpy $ADMIN 1
+	Goto skip
+
+    user:
+	StrCpy $ADMIN 0
+
+    skip:
+
+FunctionEnd
 
 ;--------------------------------
 ;Interface Settings
@@ -85,9 +138,10 @@ SectionIn 1 RO
     SetOutPath "$INSTDIR"
     File /r "${TESTDIR}\doc"
     File /r "${TESTDIR}\ebin"
-    File /r "${TESTDIR}\msgs"
     File /r "${TESTDIR}\priv"
     File /r "${TESTDIR}\win32"
+    File "${TESTDIR}\libeay32.dll"
+    File "${TESTDIR}\ssleay32.dll"
     SetOverwrite off
     File "${TESTDIR}\ejabberd.cfg"
     SetOverwrite on
@@ -125,8 +179,15 @@ SectionIn 1 RO
 
     StrCmp $ERLSRV "" skipservice
 
+    nsExec::Exec '"$ERLSRV" list ejabberd'
+    Pop $0
+    StrCmp $0 "error" skipservice
+    StrCmp $0 "0" 0 installsrv
+
     nsExec::ExecToLog '"$ERLSRV" remove ejabberd'
     Pop $0
+
+    installsrv:
     nsExec::ExecToLog '"$ERLSRV" add ejabberd -stopaction "init:stop()." \
 	-onfail reboot -workdir "$INSTDIR" \
 	-args "-s ejabberd -pa ebin -pa win32/$ERLANG_VERSION \
@@ -136,11 +197,12 @@ SectionIn 1 RO
 	-sasl sasl_error_logger {file,\\\"log/sasl.log\\\"} \
 	-mnesia dir \\\"spool\\\"" -d'
     Pop $0
-    nsExec::ExecToLog '"$ERLSRV" disable ejabberd'
+    ;nsExec::ExecToLog '"$ERLSRV" disable ejabberd'
+    ;Pop $0
 
     skipservice:
 
-;Create uninstaller
+    ;Create uninstaller
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 
     StrCpy $1 "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}"
@@ -201,17 +263,23 @@ Section "Uninstall"
 	StrCpy $ADMIN 1
 	ReadRegStr $ERLSRV HKLM "Software\${PRODUCT}" "Erlsrv"
 
+	nsExec::Exec '"$ERLSRV" list ejabberd'
+	Pop $0
+	StrCmp $0 "error" skipservice
+	StrCmp $0 "0" 0 skipservice
+	
 	nsExec::ExecToLog '"$ERLSRV" remove ejabberd'
 	Pop $0
 
     skipservice:
     RMDir /r "$INSTDIR\doc"
     RMDir /r "$INSTDIR\ebin"
-    RMDir /r "$INSTDIR\msgs"
     RMDir /r "$INSTDIR\priv"
     RMDir /r "$INSTDIR\win32"
     ;RMDir /r "$INSTDIR\src"
     RMDir /r "$INSTDIR\log"
+    Delete "$INSTDIR\libeay32.dll"
+    Delete "$INSTDIR\ssleay32.dll"
     Delete "$INSTDIR\Uninstall.exe"
     RMDir "$INSTDIR"  
 
@@ -247,59 +315,46 @@ Section "Uninstall"
 
 SectionEnd
 
-Function .onInit
-
-    StrCpy $REQUIRED_ERLANG_VERSION "5.3"
-
-    ;Default installation folder
-    StrCpy $INSTDIR "$PROGRAMFILES\${PRODUCT}"
-
-    ;Get installation folder from registry if available
-    ClearErrors
-    ReadRegStr $0 HKLM "SOFTWARE\${PRODUCT}" ""
-    IfErrors 0 copydir
-    ReadRegStr $0 HKCU "SOFTWARE\${PRODUCT}" ""
-    IfErrors skipdir
-    copydir:
-	StrCpy $INSTDIR "$0"
-
-    skipdir:
-
-    ;Extract InstallOptions INI files
-    !insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckUser.ini"
-    !insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckReqs.ini"
-  
-FunctionEnd
-
 LangString TEXT_CU_TITLE ${LANG_ENGLISH} "Checking User Privileges"
 LangString TEXT_CU_SUBTITLE ${LANG_ENGLISH} "Checking user privileged required to install Ejabberd."
 
 Function CheckUser
 
-    ClearErrors
-    UserInfo::GetName
-    IfErrors Abort
-    Pop $0
-    UserInfo::GetAccountType
-    Pop $1
-    StrCmp $1 "Admin" Abort User
+    StrCmp $ADMIN 1 0 showpage
+    Abort
 
-    Abort:
-	StrCpy $ADMIN 1
-	Abort
-
-    User:
-	StrCpy $ADMIN 0
-
+    showpage:
 	!insertmacro MUI_HEADER_TEXT $(TEXT_CU_TITLE) $(TEXT_CU_SUBTITLE)
 
-	!insertmacro MUI_INSTALLOPTIONS_INITDIALOG "CheckUser.ini"
+	!ifdef HACKED_INSTALLOPTIONS
+	    !insertmacro MUI_INSTALLOPTIONS_INITDIALOG "CheckUserH.ini"
+	    !insertmacro MUI_INSTALLOPTIONS_READ $0 "CheckUserH.ini" "Field 2" "State"
+	    GetDlgItem $1 $HWNDPARENT 1
+	    EnableWindow $1 $0
+	!else
+	    !insertmacro MUI_INSTALLOPTIONS_INITDIALOG "CheckUser.ini"
+	!endif
 	
 	!insertmacro MUI_INSTALLOPTIONS_SHOW
 
 FunctionEnd
 
 Function LeaveCheckUser
+
+    !ifdef HACKED_INSTALLOPTIONS
+	!insertmacro MUI_INSTALLOPTIONS_READ $0 "CheckUserH.ini" "Settings" "State"
+	StrCmp $0 0 validate  ;Next button?
+	StrCmp $0 2 checkbox  ;checkbox?
+	Abort                 ;Return to the page
+
+	checkbox:
+	    !insertmacro MUI_INSTALLOPTIONS_READ $0 "CheckUserH.ini" "Field 2" "State"
+	    GetDlgItem $1 $HWNDPARENT 1
+	    EnableWindow $1 $0
+	    Abort
+
+	validate:
+    !endif
 
 FunctionEnd
 

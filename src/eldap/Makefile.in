@@ -29,7 +29,14 @@ $(OUTDIR)/%.beam:	%.erl ELDAPv3.erl
 
 
 clean:
+	rm -f ELDAPv3.asn1db
+	rm -f ELDAPv3.erl
+	rm -f ELDAPv3.hrl
+	rm -f ELDAPv3.beam
 	rm -f $(OBJS)
+
+distclean: clean
+	rm -f Makefile
 
 TAGS:
 	etags *.erl
