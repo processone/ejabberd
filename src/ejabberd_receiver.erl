@@ -24,7 +24,7 @@ start(Socket, SockMod, Shaper) ->
 
 
 receiver(Socket, SockMod, Shaper, C2SPid) ->
-    XMLStreamPid = xml_stream:start(self(), C2SPid),
+    XMLStreamState = xml_stream:new(C2SPid),
     ShaperState = shaper:new(Shaper),
     Timeout = case SockMod of
 		  ssl ->
@@ -32,32 +32,32 @@ receiver(Socket, SockMod, Shaper, C2SPid) ->
 		  _ ->
 		      infinity
 	      end,
-    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout).
+    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamState, Timeout).
 
-receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout) ->
+receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamState, Timeout) ->
     Res = (catch SockMod:recv(Socket, 0, Timeout)),
     case Res of
         {ok, Data} ->
 	    receive
 		{starttls, TLSSocket} ->
-		    exit(XMLStreamPid, closed),
-		    XMLStreamPid1 = xml_stream:start(self(), C2SPid),
+		    xml_stream:close(XMLStreamState),
+		    XMLStreamState1 = xml_stream:new(C2SPid),
 		    TLSRes = tls:recv_data(TLSSocket, Data),
 		    receiver1(TLSSocket, tls,
-			      ShaperState, C2SPid, XMLStreamPid1, Timeout,
+			      ShaperState, C2SPid, XMLStreamState1, Timeout,
 			      TLSRes)
 	    after 0 ->
 		    receiver1(Socket, SockMod,
-			      ShaperState, C2SPid, XMLStreamPid, Timeout,
+			      ShaperState, C2SPid, XMLStreamState, Timeout,
 			      Res)
 	    end;
 	_ ->
 	    receiver1(Socket, SockMod,
-		      ShaperState, C2SPid, XMLStreamPid, Timeout, Res)
+		      ShaperState, C2SPid, XMLStreamState, Timeout, Res)
     end.
 
 
-receiver1(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout, Res) ->
+receiver1(Socket, SockMod, ShaperState, C2SPid, XMLStreamState, Timeout, Res) ->
     case Res of
         {ok, Text} ->
 	    ShaperSt1 = receive
@@ -67,27 +67,27 @@ receiver1(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout, Res) ->
 				ShaperState
 			end,
 	    NewShaperState = shaper:update(ShaperSt1, size(Text)),
-	    XMLStreamPid1 = receive
-				reset_stream ->
-				    exit(XMLStreamPid, closed),
-				    xml_stream:start(self(), C2SPid)
-			    after 0 ->
-				    XMLStreamPid
-			    end,
-	    xml_stream:send_text(XMLStreamPid1, Text),
-	    receiver(Socket, SockMod, NewShaperState, C2SPid, XMLStreamPid1,
+	    XMLStreamState1 = receive
+				  reset_stream ->
+				      xml_stream:close(XMLStreamState),
+				      xml_stream:new(C2SPid)
+			      after 0 ->
+				      XMLStreamState
+			      end,
+	    XMLStreamState2 = xml_stream:parse(XMLStreamState1, Text),
+	    receiver(Socket, SockMod, NewShaperState, C2SPid, XMLStreamState2,
 		     Timeout);
 	{error, timeout} ->
-	    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid,
+	    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamState,
 		     Timeout);
         {error, Reason} ->
-	    exit(XMLStreamPid, closed),
+	    xml_stream:close(XMLStreamState),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok;
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("(~w) abnormal ~w:recv termination:~n\t~p~n",
 		       [Socket, SockMod, Reason]),
-	    exit(XMLStreamPid, closed),
+	    xml_stream:close(XMLStreamState),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok
     end.

@@ -70,7 +70,8 @@ init(Port, Module, Opts) ->
 				{packet, 0}, 
 				{active, false},
 				{reuseaddr, true},
-				{nodelay, true} |
+				{nodelay, true},
+				{keepalive, true} |
 				SockOpts]),
     case Res of
 	{ok, ListenSocket} ->

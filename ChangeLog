@@ -1,3 +1,12 @@
+2004-12-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_listener.erl: Enable keepalive option
+
+	* src/xml_stream.erl: Added API for managing xml streams without
+	creating process
+	* src/ejabberd_receiver.erl: Use this API, now 2 processes are
+	created per C2S connection
+
 2004-12-01  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/expat_erl.c: Now uses port control instead of port output
