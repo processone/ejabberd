@@ -1,5 +1,8 @@
 2004-10-15  Alexey Shchepin  <alexey@sevcom.net>
 
+	* examples/transport-configs/: Transport config examples (thanks
+	to Sander Devrieze)
+
 	* src/msgs/de.msg: German translation (thanks to Marina Hahn)
 
 2004-10-12  Alexey Shchepin  <alexey@sevcom.net>

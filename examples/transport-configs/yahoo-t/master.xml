@@ -1,0 +1,81 @@
+<!-- yahoo-t master.xml of SERVERNAME by Sander Devrieze -->
+
+<jabber>
+
+  <!-- You need to add elogger and rlogger entries here when using ejabberd. In this case the transport will do the logging. -->
+
+  <log id='elogger'>
+    <host/>
+    <logtype/>
+    <format>%d: [%t] (%h): %s</format>
+    <file>ERROR_LOG_DIRECTORY/yahoo-t.log</file>
+    <stderr/>
+  </log>
+
+  <!--
+     Some Jabber server implementations do not provide
+     XDB services (for example jabberd 2.0 and ejabberd).
+     xdb_file.so is loaded in to handle all XDB requests.
+  -->
+
+  <xdb id="xdb">
+    <host/>
+    <load>
+      <xdb_file>JABBER_LIBS_DIRECTORYxdb_file.so</xdb_file>
+      </load>
+    <xdb_file xmlns="jabber:config:xdb_file">
+      <spool><jabberd:cmdline flag='s'>JABBERD14-SPOOL-DIRECTORY</jabberd:cmdline></spool>
+    </xdb_file>
+  </xdb>
+
+  <!--
+     localhost is your jabber host.
+     Replace "localhost" by the full host name of your server
+     and have all host names here resolveable via DNS if you
+     want the transport to be available to the public.
+  -->
+
+  <service id="yahoo.SERVERNAME">
+    <!-- yahoo-t configuration -->
+    <config xmlns="jabber:config:yahoo">
+      <jabberd:include>./vCard.xml</jabberd:include>
+      <instructions>Fill in your YAHOO! Messenger username and password to register on this transport.</instructions>
+      <server>scs.msg.yahoo.com</server>
+      <port>5050</port>
+      <!--
+         The character map. This provides character set translation from UTF-8
+         to the indicated character map. See the man page for 'iconv' for available
+         character maps on your platform. CP1252 is the standard Windows character
+         set.
+      -->
+      <charmap>CP1252</charmap>
+      <!--
+         When this element exists, the transport will send new mail notifications as
+         well as a count of unread messages when the user initially logs in.
+      -->
+      <newmail/>
+    </config>
+    <!-- yahoo-t module -->
+    <load>
+      <yahoo_transport>JABBER_LIBS_DIRECTORY/yahoo-t.so</yahoo_transport>
+    </load>
+  </service>
+
+  <!--
+     The settings here have to match the setting you made
+     in your main Jabber server's configuration file.
+     Replace localhost with your main jabber server host name.
+  -->
+
+  <service id="yahoo.SERVERNAME-linker">
+    <uplink/>
+    <connect>
+      <ip>127.0.0.1</ip>
+      <port>5236</port>
+      <jabberd:include>./secret.xml</jabberd:include>
+    </connect>
+  </service>
+
+  <pidfile>PID_FILE_DIRECTORY/yahoo-t.pid</pidfile>
+
+</jabber>
