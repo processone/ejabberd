@@ -138,13 +138,13 @@ remove_attr(Attr, {xmlelement, Name, Attrs, Els}) ->
 
 
 make_jid(User, Server, Resource) ->
-    case stringprep:nodeprep(User) of
+    case nodeprep(User) of
 	error -> error;
 	LUser ->
-	    case stringprep:nameprep(Server) of
+	    case nameprep(Server) of
 		error -> error;
 		LServer ->
-		    case stringprep:resourceprep(Resource) of
+		    case resourceprep(Resource) of
 			error -> error;
 			LResource ->
 			    #jid{user = User,
@@ -163,11 +163,11 @@ make_jid({User, Server, Resource}) ->
 string_to_jid(J) ->
     string_to_jid1(J, "").
 
-string_to_jid1([$@ | J], "") ->
+string_to_jid1([$@ | _J], "") ->
     error;
 string_to_jid1([$@ | J], N) ->
     string_to_jid2(J, lists:reverse(N), "");
-string_to_jid1([$/ | J], "") ->
+string_to_jid1([$/ | _J], "") ->
     error;
 string_to_jid1([$/ | J], N) ->
     string_to_jid3(J, "", lists:reverse(N), "");
@@ -178,13 +178,13 @@ string_to_jid1([], "") ->
 string_to_jid1([], N) ->
     make_jid("", lists:reverse(N), "").
 
-string_to_jid2([$/ | J], N, "") ->
+string_to_jid2([$/ | _J], _N, "") ->
     error;
 string_to_jid2([$/ | J], N, S) ->
     string_to_jid3(J, N, lists:reverse(S), "");
 string_to_jid2([C | J], N, S) ->
     string_to_jid2(J, N, [C | S]);
-string_to_jid2([], N, "") ->
+string_to_jid2([], _N, "") ->
     error;
 string_to_jid2([], N, S) ->
     make_jid(N, lists:reverse(S), "").
@@ -220,7 +220,6 @@ is_nodename(J) ->
 
 
 
-% TODO: UNICODE support
 %tolower_c(C) when C >= $A, C =< $Z ->
 %    C + 32;
 %tolower_c(C) ->
@@ -259,26 +258,44 @@ tolower([]) ->
 %    [].
 
 
-nodeprep(S) ->
-    stringprep:nodeprep(S).
+nodeprep(S) when length(S) < 1024 ->
+    R = stringprep:nodeprep(S),
+    if
+	length(R) < 1024 -> R;
+	true -> error
+    end;
+nodeprep(_) ->
+    error.
 
-nameprep(S) ->
-    stringprep:nameprep(S).
+nameprep(S) when length(S) < 1024 ->
+    R = stringprep:nameprep(S),
+    if
+	length(R) < 1024 -> R;
+	true -> error
+    end;
+nameprep(_) ->
+    error.
 
-resourceprep(S) ->
-    stringprep:resourceprep(S).
+resourceprep(S) when length(S) < 1024 ->
+    R = stringprep:resourceprep(S),
+    if
+	length(R) < 1024 -> R;
+	true -> error
+    end;
+resourceprep(_) ->
+    error.
 
 
 jid_tolower(#jid{luser = U, lserver = S, lresource = R}) ->
     {U, S, R};
 jid_tolower({U, S, R}) ->
-    case stringprep:nodeprep(U) of
+    case nodeprep(U) of
 	error -> error;
 	LUser ->
-	    case stringprep:nameprep(S) of
+	    case nameprep(S) of
 		error -> error;
 		LServer ->
-		    case stringprep:resourceprep(R) of
+		    case resourceprep(R) of
 			error -> error;
 			LResource ->
 			    {LUser, LServer, LResource}
@@ -288,20 +305,20 @@ jid_tolower({U, S, R}) ->
 
 jid_remove_resource(#jid{} = JID) ->
     JID#jid{resource = "", lresource = ""};
-jid_remove_resource({U, S, R}) ->
+jid_remove_resource({U, S, _R}) ->
     {U, S, ""}.
 
 jid_replace_resource(JID, Resource) ->
-    case stringprep:resourceprep(Resource) of
+    case resourceprep(Resource) of
 	error -> error;
 	LResource ->
 	    JID#jid{resource = Resource, lresource = LResource}
     end.
 
 
-get_iq_namespace({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
+get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == "iq" ->
     case xml:remove_cdata(Els) of
-	[{xmlelement, Name2, Attrs2, Els2}] ->
+	[{xmlelement, _Name2, Attrs2, _Els2}] ->
 	    xml:get_attr_s("xmlns", Attrs2);
 	_ ->
 	    ""
@@ -362,7 +379,7 @@ iq_to_xml({iq, ID, Type, _, SubEl}) ->
 
 
 parse_xdata_submit(El) ->
-    {xmlelement, Name, Attrs, Els} = El,
+    {xmlelement, _Name, Attrs, Els} = El,
     case xml:get_attr_s("type", Attrs) of
 	"submit" ->
 	    lists:reverse(parse_xdata_fields(Els, []));
@@ -391,7 +408,7 @@ parse_xdata_fields([_ | Els], Res) ->
 
 parse_xdata_values([], Res) ->
     Res;
-parse_xdata_values([{xmlelement, Name, Attrs, SubEls} | Els], Res) ->
+parse_xdata_values([{xmlelement, Name, _Attrs, SubEls} | Els], Res) ->
     case Name of
 	"value" ->
 	    Val = xml:get_cdata(SubEls),
@@ -454,7 +471,7 @@ decode1_base64([Sextet1,Sextet2,Sextet3,Sextet4|Rest]) ->
     Octet2=(Bits4x6 bsr 8) band 16#ff,
     Octet3=Bits4x6 band 16#ff,
     [Octet1,Octet2,Octet3|decode_base64(Rest)];
-decode1_base64(CatchAll) ->
+decode1_base64(_CatchAll) ->
     "".
 
 d(X) when X >= $A, X =<$Z ->

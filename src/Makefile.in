@@ -6,6 +6,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
+prefix = @prefix@
+
 INCLUDES = @ERLANG_CFLAGS@ @EXPAT_CFLAGS@
 
 LIBDIRS = @ERLANG_LIBS@ @EXPAT_LIBS@
@@ -13,6 +15,13 @@ LIBDIRS = @ERLANG_LIBS@ @EXPAT_LIBS@
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ stringprep 
 
 ERLSHLIBS = expat_erl.so
+
+DESTDIR =
+
+EJABBERDDIR = $(DESTDIR)/var/lib/ejabberd
+BEAMDIR = $(EJABBERDDIR)/beam
+PRIVDIR = $(EJABBERDDIR)/priv
+SODIR = $(PRIVDIR)/lib
 
 all: all-recursive $(ERLSHLIBS) compile-beam
 
@@ -37,6 +46,12 @@ $(ERLSHLIBS):	%.so:	%.c
 			-lerl_interface \
 			-lei \
 			-o $@ -fpic -shared \
+
+install: all
+	mkdir -p $(BEAMDIR)
+	cp *.beam $(BEAMDIR)
+	mkdir -p $(SODIR)
+	cp *.so $(SODIR)
 
 clean: clean-recursive
 	rm -f *.beam $(ERLSHLIBS)
