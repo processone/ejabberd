@@ -36,3 +36,6 @@
 -define(CONFIG_PATH, "ejabberd.cfg").
 -define(LOG_PATH, "ejabberd.log").
 
+
+-define(PRIVACY_SUPPORT, true).
+

@@ -624,12 +624,42 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 					      From,
 					      jlib:iq_to_xml(ResIQ)),
 			{false, Attrs, StateData};
-		    %{iq, ID, Type, ?NS_VCARD, SubEl} ->
-			% TODO: don't pass packets until roster loaded
-			%{true, Attrs, StateData};
+%-ifdef(PRIVACY_SUPPORT).
+		    {iq, _ID, Type, _XMLNS, _SubEl} ->
+			case catch mod_privacy:check_packet(
+				     StateData#state.user,
+				     StateData#state.privacy_list,
+				     {From, To, Packet},
+				     in) of
+			    {'EXIT', _Reason} ->
+				{true, Attrs, StateData};
+			    allow ->
+				{true, Attrs, StateData};
+			    deny ->
+				Err = jlib:make_error_reply(
+					Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+				ejabberd_router:route(To, From, Err),
+				{false, Attrs, StateData}
+			end;
+%-endif.
 		    _ ->
 			{true, Attrs, StateData}
 		end;
+%-ifdef(PRIVACY_SUPPORT).
+	    "message" ->
+		case catch mod_privacy:check_packet(
+			     StateData#state.user,
+			     StateData#state.privacy_list,
+			     {From, To, Packet},
+			     in) of
+		    {'EXIT', _Reason} ->
+			{true, Attrs, StateData};
+		    allow ->
+			{true, Attrs, StateData};
+		    deny ->
+			{false, Attrs, StateData}
+		end;
+%-endif.
 	    _ ->
 		{true, Attrs, StateData}
 	end,

@@ -192,7 +192,6 @@ do_route(From, To, Packet) ->
     {xmlelement, Name, Attrs, Els} = Packet,
     case Resource of
 	"" ->
-	    % TODO
 	    case Name of
 		"presence" ->
 		    {FU, FS, FR} = From,
