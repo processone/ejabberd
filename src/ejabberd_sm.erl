@@ -15,6 +15,7 @@
 	 set_presence/3,
 	 unset_presence/2,
 	 dirty_get_sessions_list/0,
+	 dirty_get_my_sessions_list/0,
 	 register_iq_handler/3]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
@@ -250,8 +251,8 @@ do_route(From, To, Packet) ->
 		    ok
 	    end;
 	_ ->
-	    UR = {User, Resource},
-	    Sess = mnesia:dirty_read({session, UR}),
+	    LUR = {jlib:tolower(User), Resource},
+	    Sess = mnesia:dirty_read({session, LUR}),
 	    case Sess of
 		[] ->
 		    if
@@ -261,7 +262,7 @@ do_route(From, To, Packet) ->
 			    ?DEBUG("packet droped~n", [])
 		    end;
 		[Ses] ->
-		    case mnesia:dirty_read({mysession, UR}) of
+		    case mnesia:dirty_read({mysession, LUR}) of
 			[] ->
 			    Node = Ses#session.node,
 			    ?DEBUG("sending to node ~p~n", [Node]),
@@ -343,6 +344,9 @@ get_user_present_resources(User) ->
 
 dirty_get_sessions_list() ->
     mnesia:dirty_all_keys(session).
+
+dirty_get_my_sessions_list() ->
+    mnesia:dirty_all_keys(mysession).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

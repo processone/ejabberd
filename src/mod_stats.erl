@@ -31,49 +31,16 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	    Node = string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
 	    Names = get_names(Els, []),
 	    
-	    {T, Res} = get_local_stats(Node, Names),
-	    case T of
-		result ->
-		    {iq, ID, result, ?NS_STATS, Res};
-		error ->
-		    {iq, ID, error, ?NS_STATS, [SubEl ++ Res]}
+	    case get_local_stats(Node, Names) of
+		{result, Res} ->
+		    {iq, ID, result, XMLNS,
+		     [{xmlelement, "query", [{"xmlns", XMLNS}], Res}]};
+		{error, Code, Desc} ->
+		    {iq, ID, error, XMLNS,
+		     [SubEl, {xmlelement, "error",
+			      [{"code", Code}],
+			      [{xmlcdata, Desc}]}]}
 	    end
-
-	    %case Node of
-		%[] ->
-		%    {iq, ID, result, XMLNS,
-		%     [{xmlelement,
-		%       "query",
-		%       [{"xmlns", ?NS_STATS}],
-		%       [{xmlelement, "stat", [{"name", "time/uptime"}], []},
-		%	{xmlelement, "stat", [{"name", "time/cputime"}], []}
-		%       ]}]};
-		%["online users"] ->
-		%    {iq, ID, result, XMLNS,
-		%     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		%       get_online_users()
-		%      }]};
-		%["all users"] ->
-		%    {iq, ID, result, XMLNS,
-		%     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		%       get_all_users()
-		%      }]};
-		%["outgoing s2s"] ->
-		%    {iq, ID, result, XMLNS,
-		%     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		%       get_outgoing_s2s(Lang)
-		%      }]};
-		%["outgoing s2s", Host] ->
-		%    {iq, ID, result, XMLNS,
-		%     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		%       get_outgoing_s2s(Lang, Host)
-		%      }]};
-		%_ ->
-		%    {iq, ID, error, XMLNS,
-		%     [SubEl, {xmlelement, "error",
-		%	      [{"code", "501"}],
-		%	      [{xmlcdata, "Not Implemented"}]}]}
-	    %end
     end.
 
 
@@ -91,31 +58,39 @@ get_names([_ | Els], Res) ->
     get_names(Els, Res).
 
 
+-define(STAT(Name), {xmlelement, "stat", [{"name", Name}], []}).
+
 get_local_stats([], []) ->
     {result,
-     [{xmlelement,
-       "query",
-       [{"xmlns", ?NS_STATS}],
-       [{xmlelement, "stat", [{"name", "time/uptime"}], []},
-	{xmlelement, "stat", [{"name", "time/cputime"}], []},
-	{xmlelement, "stat", [{"name", "users/online"}], []},
-	{xmlelement, "stat", [{"name", "users/total"}], []}
-       ]}]};
+     [?STAT("users/online"),
+      ?STAT("users/total")
+     ]};
+
 get_local_stats([], Names) ->
+    {result, lists:map(fun(Name) -> get_local_stat([], Name) end, Names)};
+
+get_local_stats(["running nodes", _], []) ->
     {result,
-     [{xmlelement,
-       "query",
-       [{"xmlns", ?NS_STATS}],
-       lists:map(fun(Name) -> get_local_stat([], Name) end, Names)
-      }]};
+     [?STAT("time/uptime"),
+      ?STAT("time/cputime"),
+      ?STAT("users/online")
+     ]};
+
+get_local_stats(["running nodes", ENode], Names) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    {result,
+	     lists:map(fun(Name) -> get_node_stat(Node, Name) end, Names)}
+    end;
+
 get_local_stats(_, _) ->
-    {error,
-     [{xmlelement, "error",
-       [{"code", "501"}],
-       [{xmlcdata, "Not Implemented"}]}]}.
+    {error, "501", "Not Implemented"}.
 
 
--define(STAT(Val, Unit),
+
+-define(STATVAL(Val, Unit),
 	{xmlelement, "stat",
 	 [{"name", Name},
 	  {"units", Unit},
@@ -130,25 +105,70 @@ get_local_stats(_, _) ->
 	   [{xmlcdata, Desc}]}]}).
 
 
-get_local_stat([], Name) when Name == "time/uptime" ->
-    ?STAT(io_lib:format("~.3f", [element(1, statistics(wall_clock))/1000]),
-	  "seconds");
-get_local_stat([], Name) when Name == "time/cputime" ->
-    ?STAT(io_lib:format("~.3f", [element(1, statistics(runtime))/1000]),
-	  "seconds");
+%get_local_stat([], Name) when Name == "time/uptime" ->
+%    ?STATVAL(io_lib:format("~.3f", [element(1, statistics(wall_clock))/1000]),
+%	     "seconds");
+%get_local_stat([], Name) when Name == "time/cputime" ->
+%    ?STATVAL(io_lib:format("~.3f", [element(1, statistics(runtime))/1000]),
+%	     "seconds");
 get_local_stat([], Name) when Name == "users/online" ->
     case catch ejabberd_sm:dirty_get_sessions_list() of
 	{'EXIT', Reason} ->
 	    ?STATERR("500", "Internal Server Error");
 	Users ->
-	    ?STAT(integer_to_list(length(Users)), "users")
+	    ?STATVAL(integer_to_list(length(Users)), "users")
     end;
 get_local_stat([], Name) when Name == "users/total" ->
     case catch ejabberd_auth:dirty_get_registered_users() of
 	{'EXIT', Reason} ->
 	    ?STATERR("500", "Internal Server Error");
 	Users ->
-	    ?STAT(integer_to_list(length(Users)), "users")
+	    ?STATVAL(integer_to_list(length(Users)), "users")
     end;
 get_local_stat(_, Name) ->
     ?STATERR("404", "Not Found").
+
+
+
+get_node_stat(Node, Name) when Name == "time/uptime" ->
+    case catch rpc:call(Node, erlang, statistics, [wall_clock]) of
+	{badrpc, Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	CPUTime ->
+	    ?STATVAL(
+	       io_lib:format("~.3f", [element(1, CPUTime)/1000]), "seconds")
+    end;
+
+get_node_stat(Node, Name) when Name == "time/cputime" ->
+    case catch rpc:call(Node, erlang, statistics, [runtime]) of
+	{badrpc, Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	RunTime ->
+	    ?STATVAL(
+	       io_lib:format("~.3f", [element(1, RunTime)/1000]), "seconds")
+    end;
+
+get_node_stat(Node, Name) when Name == "users/online" ->
+    case catch rpc:call(Node, ejabberd_sm, dirty_get_my_sessions_list, []) of
+	{badrpc, Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	Users ->
+	    ?STATVAL(integer_to_list(length(Users)), "users")
+    end;
+get_node_stat(_, Name) ->
+    ?STATERR("404", "Not Found").
+
+
+search_running_node(SNode) ->
+    search_running_node(SNode, mnesia:system_info(running_db_nodes)).
+
+search_running_node(_, []) ->
+    false;
+search_running_node(SNode, [Node | Nodes]) ->
+    case atom_to_list(Node) of
+	SNode ->
+	    Node;
+	_ ->
+	    search_running_node(SNode, Nodes)
+    end.
+

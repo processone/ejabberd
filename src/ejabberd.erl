@@ -19,7 +19,7 @@ start() ->
 
 init() ->
     register(ejabberd, self()),
-    erlang:system_flag(fullsweep_after, 0),
+    %erlang:system_flag(fullsweep_after, 0),
     error_logger:logfile({open, ?ERROR_LOG_PATH}),
     randoms:start(),
     ok = erl_ddll:load_driver(".", expat_erl),
@@ -27,6 +27,7 @@ init() ->
     db_init(),
     sha:start(),
     translate:start(),
+    acl:start(),
     ejabberd_config:start(),
     ejabberd_auth:start(),
     ejabberd_router:start(),

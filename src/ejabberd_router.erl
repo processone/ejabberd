@@ -101,9 +101,10 @@ loop() ->
 do_route(From, To, Packet) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n", [From, To, Packet]),
     {DstNode, DstDomain, DstResourse} = To,
-    case mnesia:dirty_read({local_route, DstDomain}) of
+    LDstDomain = jlib:tolower(DstDomain),
+    case mnesia:dirty_read({local_route, LDstDomain}) of
 	[] ->
-	    case mnesia:dirty_read({route, DstDomain}) of
+	    case mnesia:dirty_read({route, LDstDomain}) of
 		[] ->
 		    ejabberd_s2s ! {route, From, To, Packet};
 		[R] ->

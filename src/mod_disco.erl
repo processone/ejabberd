@@ -53,55 +53,19 @@ process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					    [{"code", "405"}],
 					    [{xmlcdata, "Not Allowed"}]}]};
 	get ->
-	    case string:tokens(xml:get_tag_attr_s("node", SubEl), "/") of
-		[] ->
-		    Domains =
-			lists:map(fun domain_to_xml/1,
-				  ejabberd_router:dirty_get_all_routes()),
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement,
-		       "query",
-		       [{"xmlns", ?NS_DISCO_ITEMS}],
-		       Domains ++
-		       [{xmlelement, "item",
-			 [{"jid", jlib:jid_to_string(To)},
-			  {"name", translate:translate(Lang, "Online Users")},
-			  {"node", "online users"}], []},
-			{xmlelement, "item",
-			 [{"jid", jlib:jid_to_string(To)},
-			  {"name", translate:translate(Lang, "All Users")},
-			  {"node", "all users"}], []},
-			{xmlelement, "item",
-			 [{"jid", jlib:jid_to_string(To)},
-			  {"name", translate:translate(
-				     Lang, "Outgoing S2S connections")},
-			  {"node", "outgoing s2s"}], []}
-		       ]}]};
-		["online users"] ->
+	    Node = string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
+
+	    case get_local_items(Node, jlib:jid_to_string(To), Lang) of
+		{result, Res} ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		       get_online_users()
+		       Res
 		      }]};
-		["all users"] ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		       get_all_users()
-		      }]};
-		["outgoing s2s"] ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		       get_outgoing_s2s(Lang)
-		      }]};
-		["outgoing s2s", Host] ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		       get_outgoing_s2s(Lang, Host)
-		      }]};
-		_ ->
+		{error, Code, Desc} ->
 		    {iq, ID, error, XMLNS,
 		     [SubEl, {xmlelement, "error",
-			      [{"code", "501"}],
-			      [{xmlcdata, "Not Implemented"}]}]}
+			      [{"code", Code}],
+			      [{xmlcdata, Desc}]}]}
 	    end
     end.
 
@@ -129,6 +93,19 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		["online users"] -> ?EMPTY_INFO_RESULT;
 		["all users"] -> ?EMPTY_INFO_RESULT;
 		["outgoing s2s" | _] -> ?EMPTY_INFO_RESULT;
+		["running nodes"] -> ?EMPTY_INFO_RESULT;
+		["stopped nodes"] -> ?EMPTY_INFO_RESULT;
+		["running nodes", ENode] ->
+		    {iq, ID, result, XMLNS, [{xmlelement,
+					      "query",
+					      [{"xmlns", ?NS_DISCO_INFO}],
+					      [{xmlelement, "identity",
+						[{"category", "ejabberd"},
+						 {"type", "node"},
+						 {"name", ENode}], []},
+					       feature_to_xml({?NS_STATS})
+					      ]
+					     }]};
 		_ ->
 		    {iq, ID, error, XMLNS,
 		     [SubEl, {xmlelement, "error",
@@ -143,6 +120,51 @@ feature_to_xml({Feature}) ->
 
 domain_to_xml(Domain) ->
     {xmlelement, "item", [{"jid", Domain}], []}.
+
+
+-define(TOP_NODE(Name, Node),
+	{xmlelement, "item",
+	 [{"jid", Server},
+	  {"name", translate:translate(Lang, Name)},
+	  {"node", Node}], []}).
+
+
+get_local_items([], Server, Lang) ->
+    Domains =
+	lists:map(fun domain_to_xml/1,
+		  ejabberd_router:dirty_get_all_routes()),
+    {result,
+       Domains ++
+       [?TOP_NODE("Online Users",             "online users"),
+	?TOP_NODE("All Users",                "all users"),
+	?TOP_NODE("Outgoing S2S connections", "outgoing s2s"),
+	?TOP_NODE("Running Nodes",            "running nodes"),
+	?TOP_NODE("Stopped Nodes",            "stopped nodes")
+       ]};
+
+get_local_items(["online users"], Server, Lang) ->
+    {result, get_online_users()};
+
+get_local_items(["all users"], Server, Lang) ->
+    {result, get_all_users()};
+
+get_local_items(["outgoing s2s"], Server, Lang) ->
+    {result, get_outgoing_s2s(Lang)};
+
+get_local_items(["running nodes"], Server, Lang) ->
+    {result, get_running_nodes(Lang)};
+
+get_local_items(["stopped nodes"], Server, Lang) ->
+    {result, get_stopped_nodes(Lang)};
+
+get_local_items(["running nodes", _], Server, Lang) ->
+    {result, []};
+
+get_local_items(_, _, _) ->
+    {error, "501", "Not Implemented"}.
+
+
+
 
 
 get_online_users() ->
@@ -207,6 +229,44 @@ get_outgoing_s2s(Lang, To) ->
 						 end, Connections)))
     end.
 
+
+get_running_nodes(Lang) ->
+    case catch mnesia:system_info(running_db_nodes) of
+	{'EXIT', Reason} ->
+	    [];
+	DBNodes ->
+	    lists:map(
+	      fun(N) ->
+		      S = atom_to_list(N),
+		      {xmlelement, "item",
+		       [{"jid", ?MYNAME},
+			{"node", "running nodes/" ++ S},
+			{"name", S}],
+		       []}
+	      end, lists:sort(DBNodes))
+    end.
+
+get_stopped_nodes(Lang) ->
+    case catch (lists:usort(mnesia:system_info(db_nodes) ++
+			    mnesia:system_info(extra_db_nodes)) --
+		mnesia:system_info(running_db_nodes)) of
+	{'EXIT', Reason} ->
+	    [];
+	DBNodes ->
+	    lists:map(
+	      fun(N) ->
+		      S = atom_to_list(N),
+		      {xmlelement, "item",
+		       [{"jid", ?MYNAME},
+			{"node", "stopped nodes/" ++ S},
+			{"name", S}],
+		       []}
+	      end, lists:sort(DBNodes))
+    end.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 process_sm_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     {User, _, _} = To,

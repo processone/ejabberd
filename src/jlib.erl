@@ -27,6 +27,7 @@
 	 is_iq_request_type/1,
 	 iq_to_xml/1,
 	 parse_xdata_submit/1,
+	 timestamp_to_iso/1,
 	 timestamp_to_xml/1]).
 
 -include("namespaces.hrl").
@@ -293,6 +294,11 @@ parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
 
 
+timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
+    lists:flatten(
+      io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
+		    [Year, Month, Day, Hour, Minute, Second])).
+
 timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     {xmlelement, "x",
      [{"xmlns", ?NS_DELAY},
@@ -300,3 +306,4 @@ timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 		  io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
 				[Year, Month, Day, Hour, Minute, Second]))}],
      []}.
+

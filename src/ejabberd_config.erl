@@ -22,11 +22,17 @@ start() ->
 load_file(File) ->
     case file:consult(File) of
 	{ok, Terms} ->
-	    lists:foreach(fun({Opt, Val}) ->
-				  ets:insert(ejabberd_config, {Opt, Val})
-			  end, Terms);
+	    lists:foreach(fun process_term/1, Terms);
 	{error, Reason} ->
 	    exit(file:format_error(Reason))
+    end.
+
+process_term(Term) ->
+    case Term of
+	{acl, ACLName, ACLData} ->
+	    acl:add(ACLName, ACLData);
+	{Opt, Val} ->
+	    ets:insert(ejabberd_config, {Opt, Val})
     end.
 
 

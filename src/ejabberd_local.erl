@@ -28,6 +28,8 @@ start() ->
     mod_offline:start(),
     mod_echo:start(),
     mod_private:start(),
+    mod_time:start(),
+    mod_version:start(),
     ok.
 
 init() ->
@@ -60,10 +62,8 @@ do_route(State, From, To, Packet) ->
 		"message" ->
 		    ok;
 		"presence" ->
-		    % TODO
 		    ok;
 		_ ->
-		    % DROP
 		    ok
 	    end;
 	{"", _, _} ->
