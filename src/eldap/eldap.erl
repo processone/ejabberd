@@ -765,7 +765,7 @@ retry_connect() ->
 cmd_timeout(Timer, Id, S) ->
     Dict = S#eldap.dict,
     case dict:find(Id, Dict) of
-	{ok, [{Id, Timer, From, Name}|Res]} ->
+	{ok, [{Timer, From, Name}|Res]} ->
 	    case Name of
 		searchRequest ->
 		    {Res1, Ref1} = polish(Res),
