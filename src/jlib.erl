@@ -18,12 +18,18 @@
 	 replace_from_to_attrs/3,
 	 replace_from_to/3,
 	 remove_attr/2,
+	 make_jid/3,
+	 make_jid/1,
 	 string_to_jid/1,
 	 jid_to_string/1,
 	 is_nodename/1,
 	 tolower/1,
+	 nodeprep/1,
+	 nameprep/1,
+	 resourceprep/1,
 	 jid_tolower/1,
 	 jid_remove_resource/1,
+	 jid_replace_resource/2,
 	 get_iq_namespace/1,
 	 iq_query_info/1,
 	 is_iq_request_type/1,
@@ -130,6 +136,30 @@ remove_attr(Attr, {xmlelement, Name, Attrs, Els}) ->
     NewAttrs = lists:keydelete(Attr, 1, Attrs),
     {xmlelement, Name, NewAttrs, Els}.
 
+
+make_jid(User, Server, Resource) ->
+    case stringprep:nodeprep(User) of
+	error -> error;
+	LUser ->
+	    case stringprep:nameprep(Server) of
+		error -> error;
+		LServer ->
+		    case stringprep:resourceprep(Resource) of
+			error -> error;
+			LResource ->
+			    #jid{user = User,
+				 server = Server,
+				 resource = Resource,
+				 luser = LUser,
+				 lserver = LServer,
+				 lresource = LResource}
+		    end
+	    end
+    end.
+
+make_jid({User, Server, Resource}) ->
+    make_jid(User, Server, Resource).
+
 string_to_jid(J) ->
     string_to_jid1(J, "").
 
@@ -157,7 +187,7 @@ string_to_jid1([C | J], N) ->
 string_to_jid1([], "") ->
     error;
 string_to_jid1([], N) ->
-    {"", lists:reverse(N), ""}.
+    make_jid("", lists:reverse(N), "").
 
 string_to_jid2([$/ | J], N, "") ->
     error;
@@ -168,13 +198,15 @@ string_to_jid2([C | J], N, S) ->
 string_to_jid2([], N, "") ->
     error;
 string_to_jid2([], N, S) ->
-    {N, lists:reverse(S), ""}.
+    make_jid(N, lists:reverse(S), "").
 
 string_to_jid3([C | J], N, S, R) ->
     string_to_jid3(J, N, S, [C | R]);
 string_to_jid3([], N, S, R) ->
-    {N, S, lists:reverse(R)}.
+    make_jid(N, S, lists:reverse(R)).
 
+jid_to_string(#jid{user = User, server = Server, resource = Resource}) ->
+    jid_to_string({User, Server, Resource});
 jid_to_string({Node, Server, Resource}) ->
     S1 = case Node of
 	     "" ->
@@ -256,12 +288,33 @@ tolower([]) ->
 %    [].
 
 
+nodeprep(S) ->
+    stringprep:nodeprep(S).
 
+nameprep(S) ->
+    stringprep:nameprep(S).
+
+resourceprep(S) ->
+    stringprep:resourceprep(S).
+
+
+jid_tolower(#jid{luser = U, lserver = S, lresource = R}) ->
+    {U, S, R};
 jid_tolower({U, S, R}) ->
     {tolower(U), tolower(S), R}.
 
+jid_remove_resource(#jid{} = JID) ->
+    JID#jid{resource = "", lresource = ""};
 jid_remove_resource({U, S, R}) ->
     {U, S, ""}.
+
+jid_replace_resource(JID, Resource) ->
+    case stringprep:resourceprep(Resource) of
+	error -> error;
+	LResource ->
+	    JID#jid{resource = Resource, lresource = LResource}
+    end.
+
 
 get_iq_namespace({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
     case xml:remove_cdata(Els) of
@@ -276,29 +329,29 @@ get_iq_namespace(_) ->
 iq_query_info({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
     ID = xml:get_attr_s("id", Attrs),
     Type = xml:get_attr_s("type", Attrs),
-    case xml:remove_cdata(Els) of
-	[{xmlelement, Name2, Attrs2, Els2}] ->
-	    XMLNS = xml:get_attr_s("xmlns", Attrs2),
-	    Type1 = case Type of
-			"set" -> set;
-			"get" -> get;
-			"result" -> reply;
-			"error" -> reply;
-			_ -> invalid
-		    end,
-	    if
-		(Type1 /= invalid) and (Type1 /= reply) and (XMLNS /= "") ->
-		    {iq, ID, Type1, XMLNS, {xmlelement, Name2, Attrs2, Els2}};
-		true ->
+    Type1 = case Type of
+		"set" -> set;
+		"get" -> get;
+		"result" -> reply;
+		"error" -> reply;
+		_ -> invalid
+	    end,
+    if
+	(Type1 /= invalid) and (Type1 /= reply) ->
+	    case xml:remove_cdata(Els) of
+		[{xmlelement, Name2, Attrs2, Els2}] ->
+		    XMLNS = xml:get_attr_s("xmlns", Attrs2),
 		    if
-			Type1 == reply ->
-			    reply;
+			XMLNS /= "" ->
+			    {iq, ID, Type1, XMLNS, {xmlelement, Name2, Attrs2, Els2}};
 			true ->
 			    invalid
-		    end
+		    end;
+		_ ->
+		    invalid
 	    end;
-	_ ->
-	    invalid
+	true ->
+	    Type1
     end;
 iq_query_info(_) ->
     not_iq.

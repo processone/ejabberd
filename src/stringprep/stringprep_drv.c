@@ -32,8 +32,38 @@ static void stringprep_erl_stop(ErlDrvData handle)
    driver_free((char*)handle);
 }
 
+/*
+ * "canonical_ordering" and "compose" functions are based on nfkc.c from Gnome
+ * library
+ */
 
-static int combine(int ch1, int ch2)
+void canonical_ordering(int *str, int len)
+{
+   int i, j, t;
+   int last, next;
+
+   last = GetUniCharCClass(str[0]);
+   for (i = 0; i < len - 1; i++)
+   {
+      next = GetUniCharCClass(str[i + 1]);
+      if (next != 0 && last > next)
+      {
+	 for(j = i; j > 0; j--)
+	 {
+	    if (GetUniCharCClass(str[j]) <= next)
+	       break;
+	    t = str[j + 1];
+	    str[j + 1] = str[j];
+	    str[j] = t;
+	 }
+	 next = last;
+      }
+      last = next;
+   }
+}
+
+
+static int compose(int ch1, int ch2)
 {
    int info1, info2;
 
@@ -90,6 +120,29 @@ static int combine(int ch1, int ch2)
 	    pos += 3;							\
 	 }
 
+#define ADD_UCHAR32(str, pos, len, ch)				\
+	    if(pos >= len) {					\
+	       len = 2*len + 1;					\
+	       str = driver_realloc(str, len * sizeof(int));	\
+	    }							\
+	    str[pos] = ch;					\
+	    pos++;
+
+
+#define ADD_DECOMP(ruc)						\
+	       info = GetUniCharDecompInfo(ruc);		\
+	       if(info >= 0) {					\
+		  decomp_len = GetDecompLen(info);		\
+		  decomp_shift = GetDecompShift(info);		\
+		  for(j = 0; j < decomp_len; j++) {		\
+	             ADD_UCHAR32(str32, str32pos, str32len,	\
+				 decompList[decomp_shift + j]);	\
+		  }						\
+	       } else {						\
+		  ADD_UCHAR32(str32, str32pos, str32len, ruc);	\
+	       }
+
+
 
 static int stringprep_erl_control(ErlDrvData drv_data,
 				  unsigned int command,
@@ -105,11 +158,21 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    int prohibit, tolower;
    char *rstring;
    int *mc;
-   
+   int *str32;
+   int str32len, str32pos = 0;
+   int decomp_len, decomp_shift;
+   int comp_pos;
+   int cclass1, cclass2;
+   int ch1, ch2;
+
    size = len + 1;
 
    rstring = driver_alloc(size);
    rstring[0] = 0;
+
+   str32len = len + 1;
+
+   str32 = driver_alloc(str32len * sizeof(int));
 
    switch (command)
    {
@@ -134,7 +197,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 	 break;
    }
 
-   for(i=0; i < len; i++)
+   for(i = 0; i < len; i++)
    {
       c = buf[i];
       if(c < 0x80) {
@@ -164,12 +227,14 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 
       if(bad) {
 	 *rbuf = rstring;
+	 driver_free(str32);
 	 return 1;
       }
       
       info = GetUniCharInfo(uc);
       if(info & prohibit) {
 	 *rbuf = rstring;
+	 driver_free(str32);
 	 return 1;
       }
 
@@ -180,6 +245,19 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 	    if(!(info & MCMask)) 
 	    {
 	       ruc = uc + GetDelta(info);
+	       ADD_DECOMP(ruc);
+
+	       //info = GetUniCharDecompInfo(ruc);
+	       //if(info >= 0) {
+	       //   decomp_len = GetDecompLen(info);
+	       //   decomp_shift = GetDecompShift(info);
+	       //   for(j = 0; j < decomp_len; j++) {
+	       //      ADD_UCHAR32(str32, str32pos, str32len,
+	       // 		 decompList[decomp_shift + j]);
+	       //   }
+	       //} else {
+	       //   ADD_UCHAR32(str32, str32pos, str32len, ruc);
+	       //}
 
 	       //info = GetUniCharDecompInfo(ruc);
 	       //if(info >= 0) {
@@ -190,26 +268,63 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 	       //   printf("\r\n");
 	       //}
 	       
-	       ADD_UCHAR(ruc);
+	       //ADD_UCHAR(ruc);
 	    } else {
 	       mc = GetMC(info);
 	       for(j = 1; j <= mc[0]; j++) {
 		  ruc = mc[j];
 		  //printf("Char %x cclass %d\r\n", ruc, GetUniCharCClass(ruc));
-		  ADD_UCHAR(ruc);
+		  ADD_DECOMP(ruc);
 	       }
 	    }
 	 } else {
 	    ruc = uc;
-	    ADD_UCHAR(ruc);
+	    ADD_DECOMP(ruc);
 	 }
       }
    }
 
-   //printf("Combine: %x\r\n", combine(0x438, 0x301));
+   if (str32pos == 0) {
+      rstring[0] = 1;
+      *rbuf = rstring;
+      driver_free(str32);
+      return 1;
+   }
+
+   canonical_ordering(str32, str32pos);
+
+   comp_pos = 0;
+   ch1 = str32[0];
+   cclass1 = GetUniCharCClass(ch1);
+   for(i = 1; i < str32pos; i++)
+   {
+      ch2 = str32[i];
+      cclass2 = GetUniCharCClass(ch2);
+      //printf("Compose: %x + %x = %x\r\n", ch1, ch2, compose(ch1, ch2));
+      if(cclass1 == 0 && cclass1 < cclass2 && (ruc = compose(ch1, ch2))) {
+	 ch1 = ruc;
+      } else {
+	 str32[comp_pos] = ch1;
+	 comp_pos++;
+	 ch1 = ch2;
+      }
+   }
+   str32[comp_pos] = ch1;
+   str32pos = comp_pos+1;
+   
+   
+   for(i = 0; i < str32pos; i++)
+   {
+      ruc = str32[i];
+      ADD_UCHAR(ruc);
+   }
+   
+   //printf("Compose: %x\r\n", compose(0x438, 0x301));
+   //printf("Pos: %d\r\n", pos);
 
    rstring[0] = 1;
    *rbuf = rstring;
+   driver_free(str32);
    
    return pos;
 }

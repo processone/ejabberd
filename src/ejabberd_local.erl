@@ -71,7 +71,7 @@ do_route(State, From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
     case To of
-	{"", _, ""} ->
+	#jid{luser = "", lresource = ""} ->
 	    {xmlelement, Name, Attrs, Els} = Packet,
 	    case Name of
 		"iq" ->
@@ -83,11 +83,12 @@ do_route(State, From, To, Packet) ->
 		_ ->
 		    ok
 	    end;
-	{"", _, _} ->
+	#jid{luser = ""} ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
 	    ejabberd_router ! {route,
-			       {"", State#state.mydomain, ""}, From, Err},
-	    ok;
+			       jlib:make_jid("", State#state.mydomain, ""),
+			       From,
+			       Err};
 	_ ->
 	    ejabberd_sm ! {route, From, To, Packet}
     end.

@@ -436,7 +436,7 @@ get_stopped_nodes(Lang) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 process_sm_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
-    {User, _, _} = To,
+    #jid{user = User} = To,
     case {acl:match_rule(configure, From), Type} of
 	{deny, _} ->
 	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};

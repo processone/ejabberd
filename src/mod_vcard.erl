@@ -72,7 +72,12 @@ init(Host) ->
 loop() ->
     receive
 	{route, From, To, Packet} ->
-	    do_route(From, To, Packet),
+	    case catch do_route(From, To, Packet) of
+		{'EXIT', Reason} ->
+		    ?ERROR_MSG("~p", [Reason]);
+		_ ->
+		    ok
+	    end,
 	    loop();
 	_ ->
 	    loop()
@@ -104,9 +109,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
-	    {User, Server, _} = From,
-	    LUser = jlib:tolower(User),
-	    LServer = jlib:tolower(Server),
+	    #jid{user = User, lserver = LServer, luser = LUser} = From,
 	    case ?MYNAME of
 		LServer ->
 		    set_vcard(User, SubEl),
@@ -116,8 +119,7 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		     [SubEl, ?ERR_NOT_ALLOWED]}
 	    end;
 	get ->
-	    {User, _, _} = To,
-	    LUser = jlib:tolower(User),
+	    #jid{luser = LUser} = To,
 	    F = fun() ->
 			mnesia:read({vcard, LUser})
 		end,
@@ -145,18 +147,18 @@ set_vcard(User, VCARD) ->
     OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
     OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
 
-    LUser     = jlib:tolower(User),
-    LFN       = jlib:tolower(FN),
-    LFamily   = jlib:tolower(Family),
-    LGiven    = jlib:tolower(Given),
-    LMiddle   = jlib:tolower(Middle),
-    LNickname = jlib:tolower(Nickname),
-    LBDay     = jlib:tolower(BDay),
-    LCTRY     = jlib:tolower(CTRY),
-    LLocality = jlib:tolower(Locality),
-    LEMail    = jlib:tolower(EMail),
-    LOrgName  = jlib:tolower(OrgName),
-    LOrgUnit  = jlib:tolower(OrgUnit),
+    LUser     = jlib:nodeprep(User),
+    LFN       = stringprep:tolower(FN),
+    LFamily   = stringprep:tolower(Family),
+    LGiven    = stringprep:tolower(Given),
+    LMiddle   = stringprep:tolower(Middle),
+    LNickname = stringprep:tolower(Nickname),
+    LBDay     = stringprep:tolower(BDay),
+    LCTRY     = stringprep:tolower(CTRY),
+    LLocality = stringprep:tolower(Locality),
+    LEMail    = stringprep:tolower(EMail),
+    LOrgName  = stringprep:tolower(OrgName),
+    LOrgUnit  = stringprep:tolower(OrgUnit),
 
     F = fun() ->
 		mnesia:write(#vcard{user = LUser, vcard = VCARD}),
@@ -210,7 +212,7 @@ set_vcard(User, VCARD) ->
 
 
 do_route(From, To, Packet) ->
-    {User, Server, Resource} = To,
+    #jid{user = User, resource = Resource} = To,
     if
 	(User /= "") or (Resource /= "") ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
@@ -400,7 +402,7 @@ filter_fields([], Match) ->
     Match;
 filter_fields([{SVar, [Val]} | Ds], Match)
   when is_list(Val) and (Val /= "") ->
-    LVal = jlib:tolower(Val),
+    LVal = stringprep:tolower(Val),
     NewMatch = case SVar of
                    "user"     -> Match#vcard_search{luser     = LVal};
                    "fn"       -> Match#vcard_search{lfn       = LVal};
@@ -439,18 +441,18 @@ set_vcard_t(R, _) ->
     OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
     OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
 
-    LUser     = jlib:tolower(User),
-    LFN       = jlib:tolower(FN),
-    LFamily   = jlib:tolower(Family),
-    LGiven    = jlib:tolower(Given),
-    LMiddle   = jlib:tolower(Middle),
-    LNickname = jlib:tolower(Nickname),
-    LBDay     = jlib:tolower(BDay),
-    LCTRY     = jlib:tolower(CTRY),
-    LLocality = jlib:tolower(Locality),
-    LEMail    = jlib:tolower(EMail),
-    LOrgName  = jlib:tolower(OrgName),
-    LOrgUnit  = jlib:tolower(OrgUnit),
+    LUser     = jlib:nodeprep(User),
+    LFN       = stringprep:tolower(FN),
+    LFamily   = stringprep:tolower(Family),
+    LGiven    = stringprep:tolower(Given),
+    LMiddle   = stringprep:tolower(Middle),
+    LNickname = stringprep:tolower(Nickname),
+    LBDay     = stringprep:tolower(BDay),
+    LCTRY     = stringprep:tolower(CTRY),
+    LLocality = stringprep:tolower(Locality),
+    LEMail    = stringprep:tolower(EMail),
+    LOrgName  = stringprep:tolower(OrgName),
+    LOrgUnit  = stringprep:tolower(OrgUnit),
 
     mnesia:write(
       #vcard_search{user      = User,     luser      = LUser,     
@@ -476,7 +478,7 @@ reindex_vcards() ->
 
 
 remove_user(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		mnesia:delete({vcard, LUser}),
 		lists:foreach(fun(R) ->

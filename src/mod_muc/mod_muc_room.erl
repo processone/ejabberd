@@ -59,6 +59,7 @@
 
 -record(state, {room,
 		host,
+		jid,
 		config = #config{},
 		users = ?DICT:new(),
 		affiliations = ?DICT:new(),
@@ -117,11 +118,13 @@ init([Host, Room, Creator, Nick]) ->
     LCreator = jlib:jid_tolower(Creator),
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
-				   room = Room}),
+				   room = Room,
+				   jid = jlib:make_jid(Room, Host, "")}),
     {ok, normal_state, State};
 init([Host, Room, Opts]) ->
     State = set_opts(Opts, #state{host = Host,
-				  room = Room}),
+				  room = Room,
+				  jid = jlib:make_jid(Room, Host, "")}),
     {ok, normal_state, State}.
 
 %%----------------------------------------------------------------------
@@ -173,9 +176,9 @@ normal_state({route, From, "",
 				    lists:foreach(
 				      fun({LJID, Info}) ->
 					      ejabberd_router:route(
-						{StateData#state.room,
-						 StateData#state.host,
-						 FromNick},
+						jlib:jid_replace_resource(
+						  StateData#state.jid,
+						  FromNick),
 						Info#user.jid,
 						Packet)
 				      end,
@@ -189,8 +192,7 @@ normal_state({route, From, "",
 				    Err = jlib:make_error_reply(
 					    Packet, ?ERR_NOT_ALLOWED),
 				    ejabberd_router:route(
-				      {StateData#state.room,
-				       StateData#state.host, ""},
+				      StateData#state.jid,
 				      From, Err),
 			    {next_state, normal_state, StateData}
 			    end;
@@ -198,7 +200,7 @@ normal_state({route, From, "",
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(
-			      {StateData#state.room, StateData#state.host, ""},
+			      StateData#state.jid,
 			      From, Err),
 			    {next_state, normal_state, StateData}
 		    end;
@@ -223,7 +225,7 @@ normal_state({route, From, "",
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(
-			      {StateData#state.room, StateData#state.host, ""},
+			      StateData#state.jid,
 			      From, Err),
 			    {next_state, normal_state, StateData};
 			IJID ->
@@ -249,15 +251,14 @@ normal_state({route, From, "",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERR_NOT_ALLOWED),
 		    ejabberd_router:route(
-		      {StateData#state.room, StateData#state.host, ""},
+		      StateData#state.jid,
 		      From, Err),
 		    {next_state, normal_state, StateData}
 	    end;
 	_ ->
 	    Err = jlib:make_error_reply(
 		    Packet, ?ERR_NOT_ALLOWED),
-	    ejabberd_router:route(
-	      {StateData#state.room, StateData#state.host, ""}, From, Err),
+	    ejabberd_router:route(StateData#state.jid, From, Err),
 	    {next_state, normal_state, StateData}
     end;
 
@@ -293,9 +294,7 @@ normal_state({route, From, "",
 			  [SubEl, Error]},
 			 StateData}
 		end,
-	    ejabberd_router:route({StateData#state.room,
-				   StateData#state.host,
-				   ""},
+	    ejabberd_router:route(StateData#state.jid,
 				  From,
 				  jlib:iq_to_xml(IQRes)),
 	    case NewStateData of
@@ -307,8 +306,7 @@ normal_state({route, From, "",
 	_ ->
 	    Err = jlib:make_error_reply(
 		    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-	    ejabberd_router:route(
-	      {StateData#state.room, StateData#state.host, ""}, From, Err),
+	    ejabberd_router:route(StateData#state.jid, From, Err),
 	    {next_state, normal_state, StateData}
     end;
 
@@ -353,9 +351,9 @@ normal_state({route, From, Nick,
 						Packet,
 						?ERR_MUC_NICK_CHANGE_CONFLICT),
 					ejabberd_router:route(
-					  {StateData#state.room,
-					   StateData#state.host,
-					   Nick}, % TODO: s/Nick/""/
+					  jlib:jid_replace_resource(
+					    StateData#state.jid,
+					    Nick), % TODO: s/Nick/""/
 					  From, Err),
 					StateData;
 				    _ ->
@@ -411,18 +409,18 @@ normal_state({route, From, ToNick,
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_ITEM_NOT_FOUND),
 			    ejabberd_router:route(
-			      {StateData#state.room,
-			       StateData#state.host,
-			       ToNick},
+			      jlib:jid_replace_resource(
+				StateData#state.jid,
+				ToNick),
 			      From, Err);
 			ToJID ->
 			    {ok, #user{nick = FromNick}} =
 				?DICT:find(jlib:jid_tolower(From),
 					   StateData#state.users),
 			    ejabberd_router:route(
-			      {StateData#state.room,
-			       StateData#state.host,
-			       FromNick},
+			      jlib:jid_replace_resource(
+				StateData#state.jid,
+				FromNick),
 			      ToJID, Packet)
 		    end,
 		    {next_state, normal_state, StateData};
@@ -430,9 +428,9 @@ normal_state({route, From, ToNick,
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERR_NOT_ALLOWED),
 		    ejabberd_router:route(
-		      {StateData#state.room,
-		       StateData#state.host,
-		       ToNick}, From, Err),
+		      jlib:jid_replace_resource(
+			StateData#state.jid,
+			ToNick), From, Err),
 		    {next_state, normal_state, StateData}
 	    end
     end;
@@ -448,21 +446,22 @@ normal_state({route, From, ToNick,
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERR_ITEM_NOT_FOUND),
 		    ejabberd_router:route(
-		      {StateData#state.room, StateData#state.host, ToNick},
+		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
 		      From, Err);
 		ToJID ->
 		    {ok, #user{nick = FromNick}} =
 			?DICT:find(jlib:jid_tolower(From),
 				   StateData#state.users),
 		    ejabberd_router:route(
-		      {StateData#state.room, StateData#state.host, FromNick},
+		      jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		      ToJID, Packet)
 	    end;
 	_ ->
 	    Err = jlib:make_error_reply(
 		    Packet, ?ERR_NOT_ALLOWED),
 	    ejabberd_router:route(
-	      {StateData#state.room, StateData#state.host, ToNick}, From, Err)
+	      jlib:jid_replace_resource(StateData#state.jid, ToNick), From,
+	      Err)
     end,
     {next_state, normal_state, StateData};
 
@@ -490,9 +489,7 @@ handle_event({service_message, Msg}, StateName, StateData) ->
     lists:foreach(
       fun({LJID, Info}) ->
 	      ejabberd_router:route(
-		{StateData#state.room,
-		 StateData#state.host,
-		 ""},
+		StateData#state.jid,
 		Info#user.jid,
 		MessagePkt)
       end,
@@ -792,9 +789,8 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	true ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_MUC_NICK_CONFLICT),
 	    ejabberd_router:route(
-	      {StateData#state.room,
-	       StateData#state.host,
-	       Nick}, % TODO: s/Nick/""/
+	      % TODO: s/Nick/""/
+	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
 	_ ->
@@ -809,7 +805,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 				_ -> ?ERR_MUC_NOT_MEMBER
 			    end),
 		    ejabberd_router:route( % TODO: s/Nick/""/
-		      {StateData#state.room, StateData#state.host, Nick},
+		      jlib:jid_replace_resource(StateData#state.jid, Nick),
 		      From, Err),
 		    StateData;
 		_ ->
@@ -833,7 +829,8 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_MUC_BAD_PASSWORD),
 			    ejabberd_router:route( % TODO: s/Nick/""/
-			      {StateData#state.room, StateData#state.host, Nick},
+			      jlib:jid_replace_resource(
+				StateData#state.jid, Nick),
 			      From, Err),
 			    StateData
 		    end
@@ -922,7 +919,7 @@ send_new_presence(NJID, StateData) ->
 			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			   [{xmlelement, "item", ItemAttrs, []}]}]),
 	      ejabberd_router:route(
-		{StateData#state.room, StateData#state.host, Nick},
+		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
       end, ?DICT:to_list(StateData#state.users)).
@@ -963,7 +960,8 @@ send_existing_presences(ToJID, StateData) ->
 				 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 				   [{xmlelement, "item", ItemAttrs, []}]}]),
 		      ejabberd_router:route(
-			{StateData#state.room, StateData#state.host, FromNick},
+			jlib:jid_replace_resource(
+			  StateData#state.jid, FromNick),
 			RealToJID,
 			Packet)
 	      end
@@ -1033,11 +1031,11 @@ send_nick_changing(JID, OldNick, StateData) ->
 			  [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			    [{xmlelement, "item", ItemAttrs2, []}]}]),
 	      ejabberd_router:route(
-		{StateData#state.room, StateData#state.host, OldNick},
+		jlib:jid_replace_resource(StateData#state.jid, OldNick),
 		Info#user.jid,
 		Packet1),
 	      ejabberd_router:route(
-		{StateData#state.room, StateData#state.host, Nick},
+		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet2)
       end, ?DICT:to_list(StateData#state.users)).
@@ -1086,7 +1084,7 @@ send_history(JID, StateData) ->
     lists:foldl(
       fun({Nick, Packet, HaveSubject}, B) ->
 	      ejabberd_router:route(
-		{StateData#state.room, StateData#state.host, Nick},
+		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		JID,
 		Packet),
 	      B or HaveSubject
@@ -1105,7 +1103,7 @@ send_subject(JID, StateData) ->
 			[{xmlcdata,
 			  Nick ++ " has set the topic to: " ++ Subject}]}]},
 	    ejabberd_router:route(
-	      {StateData#state.room, StateData#state.host, ""},
+	      StateData#state.jid,
 	      JID,
 	      Packet)
     end.
@@ -1123,7 +1121,7 @@ send_join_messages_end(JID, StateData) ->
 	      [{xmlelement, "body", [],
 		[{xmlcdata, "-"}]}]},
     ejabberd_router:route(
-      {StateData#state.room, StateData#state.host, ""},
+      StateData#state.jid,
       JID,
       Packet).
 
@@ -1550,7 +1548,7 @@ send_kickban_presence1(UJID, Reason, Code, StateData) ->
 			  [{xmlelement, "item", ItemAttrs, ItemEls},
 			   {xmlelement, "status", [{"code", Code}], []}]}]},
 	      ejabberd_router:route(
-		{StateData#state.room, StateData#state.host, Nick},
+		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
       end, ?DICT:to_list(StateData#state.users)).
@@ -1842,7 +1840,7 @@ destroy_room(DEls, StateData) ->
 			   {xmlelement, "destroy", [],
 			    DEls}]}]},
 	      ejabberd_router:route(
-		{StateData#state.room, StateData#state.host, Nick},
+		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
       end, ?DICT:to_list(StateData#state.users)),
@@ -1950,9 +1948,7 @@ check_invitation(From, Els, StateData) ->
 							""})}],
 						   [{xmlcdata, Reason}]}]},
 					    ejabberd_router:route(
-					      {StateData#state.room,
-					       StateData#state.host,
-					       ""},
+					      StateData#state.jid,
 					      JID,
 					      Msg),
 					    JID;

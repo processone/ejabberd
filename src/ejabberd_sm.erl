@@ -102,7 +102,7 @@ close_session(User, Resource) ->
 
 
 register_connection(User, Resource, Pid) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     UR = {LUser, Resource},
     F = fun() ->
 		Ss = mnesia:wread({session, UR}),
@@ -132,7 +132,7 @@ register_connection(User, Resource, Pid) ->
 
 
 replace_my_connection(User, Resource) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		UR = {LUser, Resource},
 		Es = mnesia:read({local_session, UR}),
@@ -151,7 +151,7 @@ replace_my_connection(User, Resource) ->
 
 
 remove_connection(User, Resource) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		UR = {LUser, Resource},
 		mnesia:delete({local_session, UR}),
@@ -177,33 +177,34 @@ clean_table_from_bad_node(Node) ->
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    {User, Server, Resource} = To,
+    #jid{user = User, server =  Server, resource = Resource,
+	 luser = LUser, lserver = LServer, lresource = LResource} = To,
     {xmlelement, Name, Attrs, Els} = Packet,
     case Resource of
 	"" ->
 	    case Name of
 		"presence" ->
-		    {FU, FS, FR} = From,
+		    FromU = jlib:jid_replace_resource(From, ""),
 		    {Pass, Subsc} =
 			case xml:get_attr_s("type", Attrs) of
 			    "subscribe" ->
 				{mod_roster:in_subscription(User,
-							    {FU, FS, ""},
+							    FromU,
 							    subscribe),
 				 true};
 			    "subscribed" ->
 				{mod_roster:in_subscription(User,
-							    {FU, FS, ""},
+							    FromU,
 							    subscribed),
 				 true};
 			    "unsubscribe" ->
 				{mod_roster:in_subscription(User,
-							    {FU, FS, ""},
+							    FromU,
 							    unsubscribe),
 				 true};
 			    "unsubscribed" ->
 				{mod_roster:in_subscription(User,
-							    {FU, FS, ""},
+							    FromU,
 							    unsubscribed),
 				 true};
 			    _ ->
@@ -211,8 +212,6 @@ do_route(From, To, Packet) ->
 			end,
 		    if Pass ->
 			    LFrom = jlib:jid_tolower(From),
-			    LUser = jlib:tolower(User),
-			    LServer = jlib:tolower(Server),
 			    Resources = get_user_resources(User),
 			    if
 				Resources /= [] ->
@@ -223,7 +222,7 @@ do_route(From, To, Packet) ->
 						      ejabberd_sm !
 							  {route,
 							   From,
-							   {User, Server, R},
+							   jlib:jid_replace_resource(To, R),
 							   Packet};
 						 true ->
 						      ok
@@ -250,21 +249,25 @@ do_route(From, To, Packet) ->
 		      fun(R) ->
 			      ejabberd_sm ! {route,
 					     From,
-					     {User, Server, R},
+					     jlib:jid_replace_resource(To, R),
 					     Packet}
 		      end, get_user_resources(User));
 		_ ->
 		    ok
 	    end;
 	_ ->
-	    LUR = {jlib:tolower(User), Resource},
+	    LUR = {LUser, LResource},
 	    Sess = mnesia:dirty_read({session, LUR}),
 	    case Sess of
 		[] ->
-		    if
-			Name == "message" ->
+		    case Name of
+			"message" ->
 			    route_message(From, To, Packet);
-			true ->
+			"iq" ->
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERR_RECIPIENT_UNAVAILABLE),
+			    ejabberd_router:route(To, From, Err);
+			_ ->
 			    ?DEBUG("packet droped~n", [])
 		    end;
 		[Ses] ->
@@ -282,10 +285,10 @@ do_route(From, To, Packet) ->
     end.
 
 route_message(From, To, Packet) ->
-    {User, Server, Resource} = To,
-    case catch lists:max(get_user_present_resources(User)) of
+    #jid{luser = LUser} = To,
+    case catch lists:max(get_user_present_resources(LUser)) of
 	{'EXIT', _} ->
-	    case ejabberd_auth:is_user_exists(User) of
+	    case ejabberd_auth:is_user_exists(LUser) of
 		true ->
 		    case catch mod_offline:store_packet(From, To, Packet) of
 			{'EXIT', _} ->
@@ -303,7 +306,7 @@ route_message(From, To, Packet) ->
 	{_, R} ->
 	    ejabberd_sm ! {route,
 			   From,
-			   {User, Server, R},
+			   jlib:jid_replace_resource(To, R),
 			   Packet}
     end.
 
@@ -311,7 +314,7 @@ route_message(From, To, Packet) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_user_resources(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_index_read(session, LUser, #session.user) of
 	{'EXIT', Reason} ->
 	    [];
@@ -325,7 +328,7 @@ get_user_resources(User) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 set_presence(User, Resource, Priority) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		UR = {User, Resource},
 		mnesia:write(#presence{ur = UR, user = LUser,
@@ -334,15 +337,14 @@ set_presence(User, Resource, Priority) ->
     mnesia:transaction(F).
 
 unset_presence(User, Resource) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		UR = {User, Resource},
 		mnesia:delete({presence, UR})
 	end,
     mnesia:transaction(F).
 
-get_user_present_resources(User) ->
-    LUser = jlib:tolower(User),
+get_user_present_resources(LUser) ->
     case catch mnesia:dirty_index_read(presence, LUser, #presence.user) of
 	{'EXIT', Reason} ->
 	    [];
@@ -367,7 +369,7 @@ process_iq(From, To, Packet) ->
 	{iq, ID, Type, XMLNS, SubEl} ->
 	    case ets:lookup(sm_iqtable, XMLNS) of
 		[{_, Module, Function}] ->
-		    ResIQ = apply(Module, Function, [From, To, IQ]),
+		    ResIQ = Module:Function(From, To, IQ),
 		    if
 			ResIQ /= ignore ->
 			    ejabberd_router ! {route,

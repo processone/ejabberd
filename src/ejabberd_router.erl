@@ -22,6 +22,7 @@
 -export([start_link/0, init/0]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -record(route, {domain, node, pid}).
 -record(local_route, {domain, pid}).
@@ -101,8 +102,7 @@ loop() ->
 
 do_route(From, To, Packet) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n", [From, To, Packet]),
-    {DstNode, DstDomain, DstResourse} = To,
-    LDstDomain = jlib:tolower(DstDomain),
+    #jid{lserver = LDstDomain} = To,
     case mnesia:dirty_read({local_route, LDstDomain}) of
 	[] ->
 	    case mnesia:dirty_read({route, LDstDomain}) of

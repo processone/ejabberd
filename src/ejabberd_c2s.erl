@@ -45,6 +45,7 @@
 		access,
 		shaper,
 		authentificated = false,
+		jid,
 		user = "", server = ?MYNAME, resource = "",
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
@@ -205,7 +206,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    {next_state, wait_for_auth, StateData};
 	{auth, ID, set, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
-	    JID = {U, ?MYNAME, R},
+	    JID = jlib:make_jid(U, StateData#state.server, R),
 	    case acl:match_rule(StateData#state.access, JID) of
 		allow ->
 		    case ejabberd_auth:check_password(
@@ -224,6 +225,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    {next_state, session_established,
 			     StateData#state{user = U,
 					     resource = R,
+					     jid = JID,
 					     pres_f = ?SETS:from_list(Fs),
 					     pres_t = ?SETS:from_list(Ts),
 					     privacy_list = PrivList}};
@@ -281,12 +283,14 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
-		    {U, _, R} = jlib:string_to_jid(
-				  xml:get_attr_s(authzid, Props)),
+		    JID = #jid{user = U, resource = R} =
+			jlib:string_to_jid(
+			  xml:get_attr_s(authzid, Props)),
 		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
 				     user = U,
-				     resource = R
+				     resource = R,
+				     jid = JID
 				    }};
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
@@ -344,12 +348,13 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
-		    {U, _, R} = jlib:string_to_jid(
-				  xml:get_attr_s(authzid, Props)),
+		    JID = #jid{user = U, resource = R} =
+			jlib:string_to_jid(xml:get_attr_s(authzid, Props)),
 		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
 				     user = U,
-				     resource = R
+				     resource = R,
+				     jid = JID
 				    }};
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
@@ -402,7 +407,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 	    U = StateData#state.user,
 	    R = StateData#state.resource,
 	    io:format("SASLAUTH: ~p~n", [{U, R}]),
-	    JID = {U, ?MYNAME, R},
+	    JID = jlib:make_jid(U, StateData#state.server, R),
 	    case acl:match_rule(StateData#state.access, JID) of
 		allow ->
 		    ejabberd_sm:open_session(U, R),
@@ -457,13 +462,14 @@ session_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     User = StateData#state.user,
     Server = StateData#state.server,
-    FromJID = {User,
-	       Server,
-	       StateData#state.resource},
+    %FromJID = {User,
+    %           Server,
+    %           StateData#state.resource},
+    FromJID = StateData#state.jid,
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of
 		"" ->
-		    {User, Server, ""};
+		    jlib:make_jid(User, Server, "");
 		_ ->
 		    jlib:string_to_jid(To)
 	    end,
@@ -476,7 +482,9 @@ session_established({xmlstreamelement, El}, StateData) ->
 		case Name of
 		    "presence" ->
 			case ToJID of
-			    {User, Server, ""} ->
+			    #jid{user = User,
+				 server = Server,
+				 resource = ""} ->
 				?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
 				       [FromJID, El, StateData]),
 				presence_update(FromJID, El, StateData);
@@ -573,7 +581,6 @@ handle_info(replaced, StateName, StateData) ->
     {stop, normal, StateData#state{user = ""}};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
-    {FU, FS, FR} = From,
     {Pass, NewAttrs, NewState} =
 	case Name of
 	    "presence" ->
@@ -694,9 +701,7 @@ terminate(Reason, StateName, StateData) ->
 	_ ->
 	    ejabberd_sm:close_session(StateData#state.user,
 				      StateData#state.resource),
-            From = {StateData#state.user,
-                    StateData#state.server,
-                    StateData#state.resource},
+            From = StateData#state.jid,
             Packet = {xmlelement, "presence", [{"type", "unavailable"}], []},
             ejabberd_sm:unset_presence(StateData#state.user,
                 		       StateData#state.resource),
@@ -797,16 +802,17 @@ get_auth_tags([], U, P, D, R) ->
 
 
 process_presence_probe(From, To, StateData) ->
+    LFrom = jlib:jid_tolower(From),
     case StateData#state.pres_last of
 	undefined ->
 	    ok;
 	_ ->
 	    Cond1 = (not StateData#state.pres_invis)
-		and ?SETS:is_element(From, StateData#state.pres_f)
-		and (not ?SETS:is_element(From, StateData#state.pres_i)),
+		and ?SETS:is_element(LFrom, StateData#state.pres_f)
+		and (not ?SETS:is_element(LFrom, StateData#state.pres_i)),
 	    Cond2 = StateData#state.pres_invis
-		and ?SETS:is_element(From, StateData#state.pres_f)
-		and ?SETS:is_element(From, StateData#state.pres_a),
+		and ?SETS:is_element(LFrom, StateData#state.pres_f)
+		and ?SETS:is_element(LFrom, StateData#state.pres_a),
 	    if
 		Cond1 ->
 		    ejabberd_router:route(To, From,
@@ -934,14 +940,16 @@ presence_track(From, To, Packet, StateData) ->
 
 presence_broadcast(From, JIDSet, Packet) ->
     lists:foreach(fun(JID) ->
-			  ejabberd_router:route(From, JID, Packet)
+			  ejabberd_router:route(
+			    From, jlib:make_jid(JID), Packet)
 		  end, ?SETS:to_list(JIDSet)).
 
 presence_broadcast_to_trusted(From, T, A, Packet) ->
     lists:foreach(fun(JID) ->
 			  case ?SETS:is_element(JID, T) of
 			      true ->
-				  ejabberd_router:route(From, JID, Packet);
+				  ejabberd_router:route(
+				    From, jlib:make_jid(JID), Packet);
 			      _ ->
 				  ok
 			  end
@@ -949,12 +957,13 @@ presence_broadcast_to_trusted(From, T, A, Packet) ->
 
 
 presence_broadcast_first(From, StateData, Packet) ->
-    {U, S, _} = From,
     ?SETS:fold(fun(JID, X) ->
-		       ejabberd_router:route({U, S, ""}, JID,
-					     {xmlelement, "presence",
-					      [{"type", "probe"}],
-					      []}),
+		       ejabberd_router:route(
+			 jlib:jid_replace_resource(From, ""),
+			 jlib:make_jid(JID),
+			 {xmlelement, "presence",
+			  [{"type", "probe"}],
+			  []}),
 		       X
 	       end,
 	       [],
@@ -964,7 +973,9 @@ presence_broadcast_first(From, StateData, Packet) ->
 	    StateData;
 	true ->
 	    As = ?SETS:fold(fun(JID, A) ->
-				    ejabberd_router:route(From, JID, Packet),
+				    ejabberd_router:route(From,
+							  jlib:make_jid(JID),
+							  Packet),
 				    ?SETS:add_element(JID, A)
 			    end,
 			    StateData#state.pres_a,
@@ -1003,9 +1014,7 @@ roster_change(IJID, ISubscription, StateData) ->
 	    StateData#state{pres_f = FSet, pres_t = TSet};
 	P ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
-	    From = {StateData#state.user,
-		    StateData#state.server,
-		    StateData#state.resource},
+	    From = StateData#state.jid,
 	    Cond1 = (not StateData#state.pres_invis) and IsFrom,
 	    Cond2 = (not IsFrom)
 		and (?SETS:is_element(LIJID, StateData#state.pres_a) or
@@ -1013,7 +1022,7 @@ roster_change(IJID, ISubscription, StateData) ->
 	    if
 		Cond1 ->
 		    ?DEBUG("C1: ~p~n", [LIJID]),
-		    ejabberd_router:route(From, IJID, P),
+		    ejabberd_router:route(From, jlib:make_jid(IJID), P),
 		    A = ?SETS:add_element(LIJID,
 					  StateData#state.pres_a),
 		    StateData#state{pres_a = A,
@@ -1021,7 +1030,7 @@ roster_change(IJID, ISubscription, StateData) ->
 				    pres_t = TSet};
 		Cond2 ->
 		    ?DEBUG("C2: ~p~n", [LIJID]),
-		    ejabberd_router:route(From, IJID,
+		    ejabberd_router:route(From, jlib:make_jid(IJID),
 					  {xmlelement, "presence",
 					   [{"type", "unavailable"}], []}),
 		    I = remove_element(LIJID,

@@ -47,14 +47,16 @@ start(Opts) ->
 	     proc_lib:spawn_link(?MODULE, init, [Host, ServedHosts, self()])).
 
 
+-define(MYJID, #jid{user = "", server = Host, resource = "",
+		    luser = "", lserver = Host, lresource = ""}).
 
 init(Host, ServedHosts, Parent) ->
     ejabberd_router:register_route(Host),
-    create_new_node(Host, ["pubsub"], {"", Host, ""}),
-    create_new_node(Host, ["pubsub", "nodes"], {"", Host, ""}),
-    create_new_node(Host, ["home"], {"", Host, ""}),
+    create_new_node(Host, ["pubsub"], ?MYJID),
+    create_new_node(Host, ["pubsub", "nodes"], ?MYJID),
+    create_new_node(Host, ["home"], ?MYJID),
     lists:foreach(fun(H) ->
-			  create_new_node(Host, ["home", H], {"", Host, ""})
+			  create_new_node(Host, ["home", H], ?MYJID)
 		  end, ServedHosts),
     loop(Host, Parent).
 
@@ -86,7 +88,7 @@ loop(Host, Parent) ->
 do_route(Host, From, To, Packet) ->
     {xmlelement, Name, Attrs, Els} = Packet,
     case To of
-	{"", _, ""} ->
+	#jid{luser = "", lresource = ""} ->
 	    case Name of
 		"iq" ->
 		    case jlib:iq_query_info(Packet) of
@@ -115,9 +117,7 @@ do_route(Host, From, To, Packet) ->
 					jlib:make_error_reply(
 					  Packet, Error)
 				end,
-			    ejabberd_router:route(To,
-						  From,
-						  Res);
+			    ejabberd_router:route(To, From, Res);
 			%{iq, ID, get, ?NS_REGISTER = XMLNS, SubEl} ->
 			%    Lang = xml:get_tag_attr_s(
 			%	     "xml:lang", SubEl),
@@ -155,9 +155,7 @@ do_route(Host, From, To, Packet) ->
 					jlib:make_error_reply(
 					  Packet, Error)
 				end,
-			    ejabberd_router:route(To,
-						  From,
-						  Res);
+			    ejabberd_router:route(To, From, Res);
 			{iq, ID, get, ?NS_VCARD = XMLNS, SubEl} ->
 			    Lang = xml:get_tag_attr_s(
 				     "xml:lang", SubEl),
@@ -982,10 +980,10 @@ subscription_to_string(Subscription) ->
 
 check_create_permission(Host, Node, Owner) ->
     if
-	{"", Host, ""} == Owner ->
+	#jid{lserver = Host} == Owner ->
 	    true;
 	true ->
-	    {User, Server, _} = Owner,
+	    #jid{luser = User, lserver = Server} = Owner,
 	    case Node of
 		["home", Server, User | _] ->
 		    true;
@@ -1087,8 +1085,8 @@ broadcast_publish_item(Host, Node, ItemID, Payload) ->
 					[{xmlelement, "item",
 					  ItemAttrs,
 					  Payload}]}]}]},
-			       ejabberd_router:route({"", Host, ""},
-						     JID, Stanza);
+			       ejabberd_router:route(
+				 ?MYJID, jlib:make_jid(JID), Stanza);
 			   true ->
 			       ok
 		       end
@@ -1118,8 +1116,8 @@ broadcast_retract_item(Host, Node, ItemID) ->
 					[{"node", node_to_string(Node)}],
 					[{xmlelement, "retract",
 					 ItemAttrs, []}]}]}]},
-			       ejabberd_router:route({"", Host, ""},
-						     JID, Stanza);
+			       ejabberd_router:route(
+				 ?MYJID, jlib:make_jid(JID), Stanza);
 			   true ->
 			       ok
 		       end
@@ -1144,8 +1142,8 @@ broadcast_removed_node(Host, Removed) ->
 					[{xmlelement, "delete",
 					  [{"node", node_to_string(Node)}],
 					    []}]}]},
-				 ejabberd_router:route({"", Host, ""},
-						       JID, Stanza);
+				 ejabberd_router:route(
+				   ?MYJID, jlib:make_jid(JID), Stanza);
 			     true ->
 				 ok
 			 end

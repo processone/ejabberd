@@ -49,7 +49,7 @@ check_authzid(State, Props) ->
 	error ->
 	    {error, "invalid-authzid"};
 	JID ->
-	    LUser = xml:get_attr_s(username, Props),
+	    LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
 	    {U, S, R} = jlib:jid_tolower(JID),
 	    case R of
 		"" ->

@@ -18,6 +18,7 @@
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -record(s2s, {fromto, node, key}).
 -record(local_s2s, {fromto, pid}).
@@ -148,8 +149,8 @@ try_register(FromTo) ->
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    {_, MyServer, _} = From,
-    {User, Server, Resource} = To,
+    #jid{lserver = MyServer} = From,
+    #jid{lserver = Server} = To,
     FromTo = {MyServer, Server},
     Key = randoms:get_string(),
     case find_connection(FromTo, Key) of

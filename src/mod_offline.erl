@@ -66,8 +66,7 @@ store_packet(From, To, Packet) ->
     true = is_process_alive(whereis(?PROCNAME)),
     case check_event(From, To, Packet) of
 	true ->
-	    {User, Server, Resource} = To,
-	    LUser = jlib:tolower(User),
+	    #jid{luser = LUser} = To,
 	    TimeStamp = now(),
 	    ?PROCNAME ! #offline_msg{user = LUser,
 				     timestamp = TimeStamp,
@@ -125,7 +124,7 @@ find_x_event([El | Els]) ->
 
 
 resend_offline_messages(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		Rs = mnesia:read({offline_msg, LUser}),
 		mnesia:delete({offline_msg, LUser}),
@@ -152,7 +151,7 @@ resend_offline_messages(User) ->
     end.
 
 remove_user(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		mnesia:delete({offline_msg, LUser})
 	end,

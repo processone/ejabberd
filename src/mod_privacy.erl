@@ -61,7 +61,7 @@ start(Opts) ->
 %
 process_iq(From, To, IQ) ->
     {iq, ID, Type, XMLNS, SubEl} = IQ,
-    {_, Server, _} = From,
+    #jid{lserver = Server} = From,
     Res =
 	case ?MYNAME of
 	    Server ->
@@ -85,16 +85,16 @@ process_iq(From, To, IQ) ->
 
 process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl},
 	       #userlist{name = Active}) ->
-    {User, _, _} = From,
+    #jid{luser = LUser} = From,
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
 	[] ->
-	    process_lists_get(User, Active);
+	    process_lists_get(LUser, Active);
 	[{xmlelement, Name, Attrs, SubEls}] ->
 	    case Name of
 		"list" ->
 		    ListName = xml:get_attr("name", Attrs),
-		    process_list_get(User, ListName);
+		    process_list_get(LUser, ListName);
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end;
@@ -103,8 +103,7 @@ process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl},
     end.
 
 
-process_lists_get(User, Active) ->
-    LUser = jlib:tolower(User),
+process_lists_get(LUser, Active) ->
     case catch mnesia:dirty_read(privacy, LUser) of
 	{'EXIT', Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -143,13 +142,13 @@ process_lists_get(User, Active) ->
 	    end
     end.
 
-process_list_get(User, {value, Name}) ->
-    LUser = jlib:tolower(User),
-    case catch mnesia:dirty_read(privacy, User) of
+process_list_get(LUser, {value, Name}) ->
+    case catch mnesia:dirty_read(privacy, LUser) of
 	{'EXIT', Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
-	    {result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+	    {error, ?ERR_ITEM_NOT_FOUND};
+	    %{result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
 	[#privacy{lists = Lists}] ->
 	    case lists:keysearch(Name, 1, Lists) of
 		{value, {_, List}} ->
@@ -163,7 +162,7 @@ process_list_get(User, {value, Name}) ->
 	    end
     end;
 
-process_list_get(_User, false) ->
+process_list_get(_LUser, false) ->
     {error, ?ERR_BAD_REQUEST}.
 
 item_to_xml(Item) ->
@@ -250,18 +249,18 @@ list_to_action(S) ->
 
 
 process_iq_set(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
-    {User, _, _} = From,
+    #jid{luser = LUser} = From,
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
 	[{xmlelement, Name, Attrs, SubEls}] ->
 	    ListName = xml:get_attr("name", Attrs),
 	    case Name of
 		"list" ->
-		    process_list_set(User, ListName, xml:remove_cdata(SubEls));
+		    process_list_set(LUser, ListName, xml:remove_cdata(SubEls));
 		"active" ->
-		    process_active_set(User, ListName);
+		    process_active_set(LUser, ListName);
 		"default" ->
-		    process_default_set(User, ListName);
+		    process_default_set(LUser, ListName);
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end;
@@ -270,8 +269,7 @@ process_iq_set(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     end.
 
 
-process_default_set(User, {value, Name}) ->
-    LUser = jlib:tolower(User),
+process_default_set(LUser, {value, Name}) ->
     F = fun() ->
 		case mnesia:read({privacy, LUser}) of
 		    [] ->
@@ -296,8 +294,7 @@ process_default_set(User, {value, Name}) ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end;
 
-process_default_set(User, false) ->
-    LUser = jlib:tolower(User),
+process_default_set(LUser, false) ->
     F = fun() ->
 		case mnesia:read({privacy, LUser}) of
 		    [] ->
@@ -317,8 +314,7 @@ process_default_set(User, false) ->
     end.
 
 
-process_active_set(User, {value, Name}) ->
-    LUser = jlib:tolower(User),
+process_active_set(LUser, {value, Name}) ->
     case catch mnesia:dirty_read(privacy, LUser) of
 	[] ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -331,7 +327,7 @@ process_active_set(User, {value, Name}) ->
 	    end
     end;
 
-process_active_set(User, false) ->
+process_active_set(LUser, false) ->
     {result, [], #userlist{}}.
 
 
@@ -339,8 +335,7 @@ process_active_set(User, false) ->
 
 
 
-process_list_set(User, {value, Name}, Els) ->
-    LUser = jlib:tolower(User),
+process_list_set(LUser, {value, Name}, Els) ->
     case parse_items(Els) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
@@ -369,8 +364,8 @@ process_list_set(User, {value, Name}, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      {User, ?MYNAME, ""},
-		      {User, ?MYNAME, ""},
+		      jlib:make_jid(LUser, ?MYNAME, ""),
+		      jlib:make_jid(LUser, ?MYNAME, ""),
 		      {xmlelement, "broadcast", [],
 		       [{privacy_list, #userlist{name = Name, list = []}}]}),
 		    Res;
@@ -398,8 +393,8 @@ process_list_set(User, {value, Name}, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      {User, ?MYNAME, ""},
-		      {User, ?MYNAME, ""},
+		      jlib:make_jid(LUser, ?MYNAME, ""),
+		      jlib:make_jid(LUser, ?MYNAME, ""),
 		      {xmlelement, "broadcast", [],
 		       [{privacy_list, #userlist{name = Name, list = List}}]}),
 		    Res;
@@ -408,7 +403,7 @@ process_list_set(User, {value, Name}, Els) ->
 	    end
     end;
 
-process_list_set(_User, false, _Els) ->
+process_list_set(_LUser, false, _Els) ->
     {error, ?ERR_BAD_REQUEST}.
 
 
@@ -523,7 +518,7 @@ parse_matches1(Item, [{xmlelement, _, _, _} | Els]) ->
 
 
 get_user_list(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_read(privacy, LUser) of
 	[] ->
 	    #userlist{};

@@ -57,7 +57,7 @@ loop(Host) ->
 
 
 do_route(Host, From, To, Packet) ->
-    {ChanServ, _, Resource} = To,
+    #jid{user = ChanServ, resource = Resource} = To,
     case ChanServ of
 	"" ->
 	    case Resource of
@@ -75,12 +75,11 @@ do_route(Host, From, To, Packet) ->
 			    iq_data(From, To, ID, XMLNS, Type, SubEl);
 			_ ->
 			    Err = jlib:make_error_reply(
-				    Packet, "503", "Service Unavailable"),
+				    Packet, ?ERR_SERVICE_UNAVAILABLE),
 			    ejabberd_router:route(To, From, Err)
 		    end;
 		_ ->
-		    Err = jlib:make_error_reply(Packet,
-						"406", "Not Acceptable"),
+		    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
 		    ejabberd_router:route(To, From, Err)
 	    end;
 	_ ->
@@ -115,8 +114,7 @@ do_route(Host, From, To, Packet) ->
 			    case ets:lookup(irc_connection, {From, Server}) of
 				[] ->
 				    Err = jlib:make_error_reply(
-					    Packet,
-					    "503", "Service Unavailable"),
+					    Packet, ?ERR_SERVICE_UNAVAILABLE),
 				    ejabberd_router:route(To, From, Err);
 				[R] ->
 				    Pid = R#irc_connection.pid,
@@ -128,7 +126,7 @@ do_route(Host, From, To, Packet) ->
 			    end;
 			_ ->
 			    Err = jlib:make_error_reply(
-				    Packet, "406", "Not Acceptable"),
+				    Packet, ?ERR_BAD_REQUEST),
 			    ejabberd_router:route(To, From, Err)
 		    end
 	    end
@@ -185,9 +183,7 @@ process_iq_data(From, To, ID, XMLNS, Type, SubEl) ->
 		    case XData of
 			invalid ->
 			    {iq, ID, error, XMLNS,
-			     [SubEl, {xmlelement, "error",
-				      [{"code", "400"}],
-				      [{xmlcdata, "Bad Request"}]}]};
+			     [SubEl, ?ERR_BAD_REQUEST]};
 			_ ->
 			    Node =
 				string:tokens(
@@ -227,8 +223,8 @@ process_iq_data(From, To, ID, XMLNS, Type, SubEl) ->
 
 
 get_form(From, [], Lang) ->
-    {User, Server, _} = From,
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    #jid{user = User, server = Server,
+	 luser = LUser, lserver = LServer} = From,
     Customs =
 	case catch mnesia:dirty_read({irc_custom, {LUser, LServer}}) of
 	    {'EXIT', Reason} ->
@@ -345,8 +341,8 @@ set_form(_, _, Lang, XData) ->
 
 
 get_user_and_encoding(From, IRCServer) ->
-    {User, Server, _} = From,
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    #jid{user = User, server = Server,
+	 luser = LUser, lserver = LServer} = From,
     case catch mnesia:dirty_read({irc_custom, {LUser, LServer}}) of
 	{'EXIT', Reason} ->
 	    {User, ?DEFAULT_IRC_ENCODING};

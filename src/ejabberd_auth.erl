@@ -109,7 +109,7 @@ terminate(Reason, State) ->
 %%%----------------------------------------------------------------------
 
 check_password(User, Password) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_read({passwd, LUser}) of
 	[#passwd{password = Password}] ->
 	    true;
@@ -118,7 +118,7 @@ check_password(User, Password) ->
     end.
 
 check_password(User, Password, StreamID, Digest) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		case mnesia:read({passwd, LUser}) of
 		    [E] ->
@@ -144,14 +144,14 @@ check_password(User, Password, StreamID, Digest) ->
 
 
 set_password(User, Password) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		mnesia:write(#passwd{user = LUser, password = Password})
         end,
     mnesia:transaction(F).
 
 try_register(User, Password) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		case mnesia:read({passwd, LUser}) of
 		    [] ->
@@ -168,7 +168,7 @@ dirty_get_registered_users() ->
     mnesia:dirty_all_keys(passwd).
 
 get_password(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_read(passwd, LUser) of
 	[#passwd{password = Password}] ->
 	    Password;
@@ -177,7 +177,7 @@ get_password(User) ->
     end.
 
 get_password_s(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_read(passwd, LUser) of
 	[#passwd{password = Password}] ->
 	    Password;
@@ -186,7 +186,7 @@ get_password_s(User) ->
     end.
 
 is_user_exists(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_read({passwd, LUser}) of
 	[] ->
 	    false;
@@ -197,14 +197,14 @@ is_user_exists(User) ->
     end.
 
 remove_user(User) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		mnesia:delete({passwd, LUser})
         end,
     mnesia:transaction(F).
 
 remove_user(User, Password) ->
-    LUser = jlib:tolower(User),
+    LUser = jlib:nodeprep(User),
     F = fun() ->
 		case mnesia:read({passwd, LUser}) of
 		    [#passwd{password = Password}] ->

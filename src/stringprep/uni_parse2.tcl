@@ -283,6 +283,12 @@ proc uni::buildTables {} {
 
 	if {[info exists decomp_map($i)]} {
 	    set decomp $decomp_map($i)
+	    #puts -$decomp
+	    while {[info exists decomp_map([set ch1 [lindex $decomp 0]])]} {
+		set decomp [concat $decomp_map($ch1) [lreplace $decomp 0 0]]
+		#puts +$decomp
+	    }
+
 	    if {[info exists decomp_used($decomp)]} {
 		lappend decomp_info $decomp_used($decomp)
 	    } else {
@@ -437,75 +443,6 @@ static unsigned char cclassGroupMap\[\] = {"
 		puts $f $line
 		set line "    "
 	    }
-	}
-    }
-    puts $f $line
-    puts $f "};
-
-/*
- * Each group represents a unique set of character attributes.  The attributes
- * are encoded into a 32-bit value as follows:
- *
- * Bits 0-4	Character category: see the constants listed below.
- *
- * Bits 5-7	Case delta type: 000 = identity
- *				 010 = add delta for lower
- *				 011 = add delta for lower, add 1 for title
- *				 100 = sutract delta for title/upper
- *				 101 = sub delta for upper, sub 1 for title
- *				 110 = sub delta for upper, add delta for lower
- *
- * Bits 8-21	Reserved for future use.
- *
- * Bits 22-31	Case delta: delta for case conversions.  This should be the
- *			    highest field so we can easily sign extend.
- */
-
-static int cclass_groups\[\] = {"
-    set line "    "
-    set last [expr {[llength $groups] - 1}]
-    for {set i 0} {$i <= $last} {incr i} {
-	foreach {type toupper tolower totitle} [split [lindex $groups $i] ,] {}
-	
-	# Compute the case conversion type and delta
-
-	if {$totitle != ""} {
-	    if {$totitle == $toupper} {
-		# subtract delta for title or upper
-		set case 4
-		set delta $toupper
-	    } elseif {$toupper != ""} {
-		# subtract delta for upper, subtract 1 for title
-		set case 5
-		set delta $toupper
-	    } else {
-		# add delta for lower, add 1 for title
-		set case 3
-		set delta $tolower
-	    }
-	} elseif {$toupper != ""} {
-	    # subtract delta for upper, add delta for lower
-	    set case 6
-	    set delta $toupper
-	} elseif {$tolower != ""} {
-	    # add delta for lower
-	    set case 2
-	    set delta $tolower
-	} else {
-	    # noop
-	    set case 0
-	    set delta 0
-	}
-
-	set val [expr {($delta << 22) | ($case << 5) | $type}]
-
-	append line [format "%d" $val]
-	if {$i != $last} {
-	    append line ", "
-	}
-	if {[string length $line] > 65} {
-	    puts $f $line
-	    set line "    "
 	}
     }
     puts $f $line

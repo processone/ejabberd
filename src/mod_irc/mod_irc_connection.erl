@@ -36,7 +36,7 @@
 		channels = dict:new(),
 		inbuf = "", outbuf = ""}).
 
--define(DBGFSM, true).
+%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
@@ -411,7 +411,7 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 	    [From, "NICK", Nick | _] ->
 		process_nick(StateData, From, Nick);
 	    _ ->
-		io:format("unknown irc command '~s'~n", [String]),
+		?DEBUG("unknown irc command '~s'~n", [String]),
 		StateData
 	end,
     NewStateData1 =
@@ -431,7 +431,7 @@ handle_info({ircstring, [$E, $R, $R, $O, $R | _] = String},
 
 
 handle_info({ircstring, String}, StateName, StateData) ->
-    io:format("unknown irc command '~s'~n", [String]),
+    ?DEBUG("unknown irc command '~s'~n", [String]),
     {next_state, StateName, StateData};
 
 
@@ -441,7 +441,7 @@ handle_info({send_text, Text}, StateName, StateData) ->
 handle_info({tcp, Socket, Data}, StateName, StateData) ->
     Buf = StateData#state.inbuf ++ binary_to_list(Data),
     {ok, Strings} = regexp:split([C || C <- Buf, C /= $\r], "\n"),
-    io:format("strings=~p~n", [Strings]),
+    ?DEBUG("strings=~p~n", [Strings]),
     NewBuf = process_lines(StateData#state.encoding, Strings),
     {next_state, StateName, StateData#state{inbuf = NewBuf}};
 handle_info({tcp_closed, Socket}, StateName, StateData) ->
@@ -499,7 +499,7 @@ receiver(Socket, C2SPid, XMLStreamPid) ->
 
 send_text(#state{socket = Socket, encoding = Encoding}, Text) ->
     CText = iconv:convert("utf-8", Encoding, lists:flatten(Text)),
-    %io:format("IRC OUTu: ~s~nIRC OUTk: ~s~n", [Text, CText]),
+    %?DEBUG("IRC OUTu: ~s~nIRC OUTk: ~s~n", [Text, CText]),
     gen_tcp:send(Socket, CText).
 
 

@@ -34,7 +34,8 @@ mech_new() ->
 mech_step(#state{step = 1, nonce = Nonce} = State, "") ->
     {continue,
      "nonce=\"" ++ jlib:encode_base64(Nonce) ++
-     "\",qop=\"auth,auth-int\",charset=utf-8,algorithm=md5-sess",
+     "\",qop=\"auth\",charset=utf-8,algorithm=md5-sess",
+     %"\",qop=\"auth,auth-int\",charset=utf-8,algorithm=md5-sess",
      State#state{step = 3}};
 mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
     case parse(ClientIn) of

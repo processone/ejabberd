@@ -266,7 +266,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    From = xml:get_attr_s("from", Attrs),
 	    FromJID1 = jlib:string_to_jid(From),
 	    FromJID = case FromJID1 of
-			  {Node, Server, Resource} ->
+			  #jid{lserver = Server} ->
 			      if Server == StateData#state.server -> FromJID1;
 				 true -> error
 			      end;

@@ -34,9 +34,7 @@ stop() ->
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
-    {User, Server, _} = From,
-    LUser = jlib:tolower(User),
-    LServer = jlib:tolower(Server),
+    #jid{luser = LUser, lserver = LServer} = From,
     case ?MYNAME of
 	Server ->
 	    {xmlelement, Name, Attrs, Els} = SubEl,

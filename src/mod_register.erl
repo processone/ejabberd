@@ -39,7 +39,7 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		(UTag /= false) and (RTag /= false) ->
 		    User = xml:get_tag_cdata(UTag),
 		    case From of
-			{User, Server, _} ->
+			#jid{user = User, lserver = Server} ->
 			    ejabberd_auth:remove_user(User),
 			    {iq, ID, result, XMLNS, [SubEl]};
 			_ ->
@@ -71,14 +71,18 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			    end
 		    end;
 		(UTag == false) and (RTag /= false) ->
-		    {User, Server, _} = From,
-		    ejabberd_auth:remove_user(User),
-		    {iq, ID, result, XMLNS, [SubEl]};
+		    case From of
+			#jid{user = User, lserver = Server} ->
+			    ejabberd_auth:remove_user(User),
+			    {iq, ID, result, XMLNS, [SubEl]};
+			_ ->
+			    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]}
+		    end;
 		(UTag /= false) and (PTag /= false) ->
 		    User = xml:get_tag_cdata(UTag),
 		    Password = xml:get_tag_cdata(PTag),
 		    case From of
-			{User, Server, _} ->
+			#jid{user = User, lserver = Server} ->
 			    ejabberd_auth:set_password(User, Password),
 			    {iq, ID, result, XMLNS, [SubEl]};
 			_ ->
@@ -117,7 +121,7 @@ try_register(User, Password) ->
 		    ok;
 		{atomic, exists} ->
 		    % TODO: replace to "username unavailable"
-		    {error, ?ERR_BAD_REQUEST};
+		    {error, ?ERR_NOT_ALLOWED};
 		{error, Reason} ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
 	    end

@@ -138,4 +138,6 @@
 %	?STREAM_ERROR("")).
 
 
+-record(jid, {user, server, resource,
+	      luser, lserver, lresource}).
 
