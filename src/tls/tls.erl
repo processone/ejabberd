@@ -12,7 +12,7 @@
 
 -behaviour(gen_server).
 
--export([start/0, start_link/0, convert/3, test/0]).
+-export([start/0, start_link/0, tcp_to_tls/2, tls_to_tcp/1, test/0]).
 
 %% Internal exports, call-back functions.
 -export([init/1,
@@ -28,9 +28,7 @@
 -define(GET_ENCRYPTED_OUTPUT, 4).
 -define(GET_DECRYPTED_INPUT,  5).
 
--define(DECRYPTED_INPUT, 1).
--define(ENCRYPTED_OUTPUT, 2).
-
+-record(tlssock, {tcpsock, tlsport}).
 
 start() ->
     gen_server:start({local, ?MODULE}, ?MODULE, [], []).
@@ -78,12 +76,40 @@ terminate(_Reason, Port) ->
     ok.
 
 
+tcp_to_tls(TCPSocket, Options) ->
+    case lists:keysearch(certfile, 1, Options) of
+	{value, {certfile, CertFile}} ->
+	    Port = open_port({spawn, tls_drv}, [binary]),
+	    io:format("open_port: ~p~n", [Port]),
+	    case port_control(Port, ?SET_CERTIFICATE_FILE,
+			      CertFile ++ [0]) of
+		[0] ->
+		    {ok, #tlssock{tcpsock = TCPSocket, tlsport = Port}};
+		[1 | Error] ->
+		    {error, Error}
+	    end;
+	false ->
+	    {error, no_certfile}
+    end.
+    
+tls_to_tcp(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
+    port_close(Port),
+    TCPSocket.
 
-convert(From, To, String) ->
-    [{port, Port} | _] = ets:lookup(iconv_table, port),
-    Bin = term_to_binary({From, To, String}),
-    BRes = port_control(Port, 1, Bin),
-    binary_to_list(BRes).
+recv(Socket, Length) ->
+    recv(Socket, Length, infinity).
+recv(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Length, Timeout) ->
+    case gen_tcp:recv(TCPSocket, Length, Timeout) of
+	{ok, Packet} ->
+	    todo;
+	{error, _Reason} = Error ->
+	    Error
+    end.
+send(#tlssock) ->
+    
+
+close(#tlssock) ->
+    
 
 
 test() ->
