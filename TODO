@@ -21,4 +21,3 @@ SNMP
 PubSub
 MUC: remove empty non-persistent conferences after timeout
 MUC: remove a lot of debugging output
-IRC: disconnect on receiving of error message or presence
