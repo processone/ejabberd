@@ -25,7 +25,13 @@ load_dir(Dir) ->
     {ok, Files} = file:list_dir(Dir),
     MsgFiles = lists:filter(
 		 fun(FN) ->
-			 string:substr(FN, string:len(FN) - 3) == ".msg"
+			 case string:len(FN) > 4 of
+			     true ->
+				 string:substr(FN,
+					       string:len(FN) - 3) == ".msg";
+			     _ ->
+				 false
+			 end
 		 end, Files),
     lists:foreach(
       fun(FN) ->
