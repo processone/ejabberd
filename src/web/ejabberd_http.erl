@@ -55,7 +55,7 @@ send_text(State, Text) ->
 
 receive_headers(State) ->
     Data = (State#state.sockmod):recv(State#state.socket, 0, 300000),
-    ?INFO_MSG("recv: ~p~n", [Data]),
+    ?DEBUG("recv: ~p~n", [Data]),
     case Data of
 	{ok, {http_request, Method, Path, _Version}} ->
 	    receive_headers(State#state{request_method = Method,
@@ -72,6 +72,10 @@ receive_headers(State) ->
 	{ok, {http_header, _, _, _, _}} ->
 	    receive_headers(State);
 	{ok, http_eoh} ->
+	    ?INFO_MSG("(~w) http query: ~w ~s~n",
+		      [State#state.socket,
+		       State#state.request_method,
+		       element(2, State#state.request_path)]),
 	    Out = process_request(State),
 	    send_text(State, Out),
 	    ok;
@@ -110,7 +114,6 @@ process_request(#state{request_method = 'GET',
 		    process_request(false);
 		{NPath, Query} ->
 		    LQuery = parse_urlencoded(Query),
-		    ?INFO_MSG("path: ~p, query: ~p~n", [NPath, LQuery]),
 		    LPath = string:tokens(NPath, "/"),
 		    Request = #request{method = 'GET',
 				       path = LPath,
@@ -162,15 +165,13 @@ process_request(#state{request_method = 'POST',
 		    ssl:setopts(Socket, [{packet, 0}])
 	    end,
 	    Data = recv_data(State, Len),
-	    ?INFO_MSG("client data: ~p~n", [Data]),
+	    ?DEBUG("client data: ~p~n", [Data]),
 	    case (catch url_decode_q_split(Path)) of
 		{'EXIT', _} ->
 		    process_request(false);
 		{NPath, Query} ->
-		    ?INFO_MSG("path: ~p, query: ~p~n", [NPath, Query]),
 		    LPath = string:tokens(NPath, "/"),
 		    LQuery = parse_urlencoded(Data),
-		    ?INFO_MSG("client query: ~p~n", [LQuery]),
 		    Request = #request{method = 'POST',
 				       path = LPath,
 				       q = LQuery,

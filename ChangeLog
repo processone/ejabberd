@@ -1,3 +1,10 @@
+2004-03-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Removed debugging output
+
+	* src/ejabberd_c2s.erl: Fixed processing of get_presence request
+	(thanks to Mickael Remond)
+
 2004-03-08  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)

@@ -668,23 +668,18 @@ handle_event(_Event, StateName, StateData) ->
 %%----------------------------------------------------------------------
 handle_sync_event({get_presence}, _From, StateName, StateData) ->
     User = StateData#state.user,
-    Status =
-	case StateData#state.pres_last of
-	    undefined ->
-		"unavailable";
-	    PresLast ->
-		case xml:get_path_s(PresLast, [{elem, "status"}, cdata]) of
-		    "" ->
-			"available";
-		    Stat ->
-			Stat
-		end
-	end,
-    Reply = {User, Status},
+    PresLast = StateData#state.pres_last,
+
+    Show = get_showtag(PresLast),
+    Status = get_statustag(PresLast),
+
+    Reply  = {User, Show, Status},
     {reply, Reply, StateName, StateData};
+
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
+
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
@@ -1322,4 +1317,17 @@ resend_offline_messages(StateData) ->
 	      end, Rs)
     end.
 
+get_showtag(undefined) ->
+    "unavailable";
+get_showtag(Presence) ->
+    case xml:get_path_s(Presence, [{elem, "show"}, cdata]) of
+	""      -> "available";
+	ShowTag -> ShowTag
+    end.
 
+get_statustag(undefined) ->
+    "";
+get_statustag(Presence) ->
+    case xml:get_path_s(Presence, [{elem, "status"}, cdata]) of
+	ShowTag -> ShowTag
+    end.
