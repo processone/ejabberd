@@ -84,7 +84,7 @@
 	?OLD_ERROR("401", "Bad password.")).
 
 
--define(DBGFSM, true).
+%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).

@@ -109,7 +109,7 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					      [{"xmlns", ?NS_DISCO_INFO}],
 					      [{xmlelement, "identity",
 						[{"category", "service"},
-						 {"type", "jabber"},
+						 {"type", "im"},
 						 {"name", "ejabberd"}], []}] ++
 					      Features
 					     }]};

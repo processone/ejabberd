@@ -62,8 +62,9 @@ loop() ->
 	    end,
 	    loop();
 	{open_session, User, Resource, From} ->
-	    replace_and_register_my_connection(User, Resource, From),
-	    replace_alien_connection(User, Resource),
+	    register_connection(User, Resource, From),
+	    %replace_and_register_my_connection(User, Resource, From),
+	    %replace_alien_connection(User, Resource),
 	    loop();
 	{close_session, User, Resource} ->
 	    remove_connection(User, Resource),
@@ -100,6 +101,38 @@ open_session(User, Resource) ->
 
 close_session(User, Resource) ->
     ejabberd_sm ! {close_session, User, Resource}.
+
+
+register_connection(User, Resource, Pid) ->
+    LUser = jlib:tolower(User),
+    UR = {LUser, Resource},
+    F = fun() ->
+		Ss = mnesia:wread({session, UR}),
+		Ls = mnesia:wread({local_session, UR}),
+		mnesia:write(#session{ur = UR, user = LUser, node = node()}),
+		mnesia:write(#local_session{ur = UR, pid = Pid}),
+		{Ss, Ls}
+        end,
+    case mnesia:transaction(F) of
+	{atomic, {Ss, Ls}} ->
+	    lists:foreach(
+	      fun(R) ->
+		      if R#session.node /= node() ->
+			      {ejabberd_sm, R#session.node} !
+				  {replace, User, Resource};
+			 true ->
+			      ok
+		      end
+	      end, Ss),
+	    lists:foreach(
+	      fun(R) ->
+		      R#local_session.pid ! replaced
+	      end, Ls);
+	_ ->
+	    false
+    end.
+
+
 
 replace_alien_connection(User, Resource) ->
     LUser = jlib:tolower(User),

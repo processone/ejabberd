@@ -21,6 +21,8 @@ start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_REGISTER,
 				  ?MODULE, process_iq, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_REGISTER,
+				  ?MODULE, process_iq, IQDisc),
     ok.
 
 init() ->
@@ -68,6 +70,10 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					     [SubEl, ?ERR_BAD_REQUEST]}
 			    end
 		    end;
+		(UTag == false) and (RTag /= false) ->
+		    {User, Server, _} = From,
+		    ejabberd_auth:remove_user(User),
+		    {iq, ID, result, XMLNS, [SubEl]};
 		(UTag /= false) and (PTag /= false) ->
 		    User = xml:get_tag_cdata(UTag),
 		    Password = xml:get_tag_cdata(PTag),
