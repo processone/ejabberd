@@ -65,6 +65,8 @@ stop() ->
 
 store_packet(From, To, Packet) ->
     true = is_process_alive(whereis(?PROCNAME)),
+    Type = xml:get_tag_attr_s("type", Packet),
+    true = Type /= "error" andalso Type /= "groupchat",
     case check_event(From, To, Packet) of
 	true ->
 	    #jid{luser = LUser} = To,

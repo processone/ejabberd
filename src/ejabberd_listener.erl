@@ -67,16 +67,11 @@ accept(ListenSocket, Module, Opts) ->
 		    ok
 	    end,
 	    {ok, Pid} = Module:start({gen_tcp, Socket}, Opts),
-	    %{ok, Pid} =
-	    %    supervisor:start_child(
-	    %      ejabberd_tmp_sup,
-	    %      {{Module, Socket},
-	    %       {Module, start_link, [{gen_tcp, Socket}, Opts]},
-	    %       transient,
-	    %       brutal_kill,
-	    %       worker,
-	    %       [Module]}),
 	    gen_tcp:controlling_process(Socket, Pid),
+	    accept(ListenSocket, Module, Opts);
+	{error, Reason} ->
+	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
+		      [ListenSocket, Reason]),
 	    accept(ListenSocket, Module, Opts)
     end.
 
@@ -90,7 +85,7 @@ init_ssl(Port, Module, Opts, SSLOpts) ->
     accept_ssl(ListenSocket, Module, Opts).
 
 accept_ssl(ListenSocket, Module, Opts) ->
-    case ssl:accept(ListenSocket) of
+    case ssl:accept(ListenSocket, 200) of
 	{ok, Socket} ->
 	    case {ssl:sockname(Socket), ssl:peername(Socket)} of
 		{{ok, Addr}, {ok, PAddr}} ->
@@ -99,7 +94,13 @@ accept_ssl(ListenSocket, Module, Opts) ->
 		_ ->
 		    ok
 	    end,
-	    apply(Module, start_link, [{ssl, Socket}, Opts]),
+	    Module:start_link({ssl, Socket}, Opts),
+	    accept_ssl(ListenSocket, Module, Opts);
+	{error, timeout} ->
+	    accept_ssl(ListenSocket, Module, Opts);
+	{error, Reason} ->
+	    ?INFO_MSG("(~w) Failed SSL handshake: ~w",
+		      [ListenSocket, Reason]),
 	    accept_ssl(ListenSocket, Module, Opts)
     end.
 

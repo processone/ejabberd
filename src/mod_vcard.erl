@@ -22,6 +22,8 @@
 -include("jlib.hrl").
 
 
+%-define(JUD_ALLOW_RETURN_ALL, true)
+
 -record(vcard_search, {user,     luser,
 		       fn,	 lfn,
 		       family,	 lfamily,
@@ -386,6 +388,7 @@ record_to_item(R) ->
       ]
      }.
 
+-ifdef(JUD_ALLOW_RETURN_ALL).
 
 search(Data) ->
     MatchSpec = make_matchspec(Data),
@@ -396,6 +399,27 @@ search(Data) ->
 	Rs ->
 	    Rs
     end.
+
+-else.
+
+search(Data) ->
+    MatchSpec = make_matchspec(Data),
+    if
+	MatchSpec == #vcard_search{_ = '_'} ->
+	    [];
+	true ->
+	    case catch mnesia:dirty_select(vcard_search,
+					   [{MatchSpec, [], ['$_']}]) of
+		{'EXIT', Reason} ->
+		    ?ERROR_MSG("~p", [Reason]),
+		    [];
+		Rs ->
+		    Rs
+	    end
+    end.
+
+-endif.
+
 
 % TODO: remove
 %    F = fun() ->
