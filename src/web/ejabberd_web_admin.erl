@@ -56,56 +56,67 @@ make_xhtml(Els, Lang) ->
 			       {"rel", "stylesheet"}], []}]},
        ?XE("body",
 	   [?XAE("table",
-		 [{"id", "top"}],
-		 [?XE("tr",
+		 [{"id", "main"}],
+		 [?XAE("tr",
+			    [{"id", "top"}],
+			    [?XE("td",
+				 [?XE("table",
+				      [?XE("tbody",
+					   [?XE("tr",
+						[?XE("td",
+						     [?XA("img", [{"src", "/admin/logo.png"},
+								  {"width", "343"},
+								  {"height", "55"},
+								  {"alt", "ejabberd"},
+								  {"border", "0"}])]),
+						 ?XAE("td", [{"width", "100%"},
+							     {"background", "/admin/logo-fill.png"}],
+						      [?XA("img", [{"src", "/admin/1x1tr.gif"},
+								   {"width", "100%"},
+								   {"height", "55"},
+								   {"alt", ""},
+								   {"border", "0"}])]
+						     )])])
+				      ])])]),
+		  ?XAE("tr",
+		       [{"id", "middle"}],
 		      [?XE("td",
-			   [?XA("img", [{"src", "/admin/logo.png"},
-					{"width", "343"},
-					{"height", "55"},
-					{"alt", "ejabberd"},
-					{"border", "0"}])]),
-		       ?XAE("td", [{"width", "100%"},
-				   {"background", "/admin/logo-fill.png"}],
-			    [?XA("img", [{"src", "/admin/1x1tr.gif"},
-					 {"width", "100%"},
-					 {"height", "55"},
-					 {"alt", ""},
-					 {"border", "0"}])])])
-		 ]),
-	    ?XAE("table",
-		 [{"id", "middle"}],
-		 [?XE("tr",
-		      [?XAE("td",
-			    [{"width", "1"},
-			     {"bgcolor", "#d47911"}],
-			    [?C(" ")]),
-		       ?XAE("td",
-			    [{"height", "100%"},
-			     %{"width", "100%"},
-			     {"bgcolor", "#ffffff"},
-			     {"valign", "top"}],
-			    [?XAE("ul",
-				  [{"id", "navlist"}],
-				  [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
-				   ?LI([?ACT("/admin/access/", "Access Rules")]),
-				   ?LI([?ACT("/admin/users/", "Users")]),
-				   ?LI([?ACT("/admin/nodes/", "Nodes")]),
-				   ?LI([?ACT("/admin/stats/", "Statistics")])
-				  ])]),
-		       ?XAE("td",
-			    [{"height", "100%"},
-			     {"width", "100%"},
-			     {"bgcolor", "#ffffff"},
-			     {"valign", "top"}],
-			    [?XAE("div", [{"id", "content"}], Els)])])
-		 ]),
-	    ?XAE("table",
-		 [{"id", "bottom"}],
-		 [?XE("tr",
-		      [?XCT("td",
-			    "ejabberd (c) 2002-2004 Alexey Shchepin")
-		      ])
-		 ])])
+			    [?XAE("table",
+				  [{"id", "middle-table"}],
+				 [?XE("tbody",
+				      [?XE("tr",
+					   [?XAE("td",
+						 [%{"height", "100%"},
+						%{"width", "100%"},
+						  {"id", "middle-td1"},
+						  {"bgcolor", "#ffffff"},
+						  {"valign", "top"}],
+						 [?XAE("ul",
+						       [{"id", "navlist"}],
+						       [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
+							?LI([?ACT("/admin/access/", "Access Rules")]),
+							?LI([?ACT("/admin/users/", "Users")]),
+							?LI([?ACT("/admin/nodes/", "Nodes")]),
+							?LI([?ACT("/admin/stats/", "Statistics")])
+						       ])]),
+					    ?XAE("td",
+						 [%{"height", "100%"},
+						  {"width", "100%"},
+						  {"id", "middle-td2"},
+						  {"bgcolor", "#ffffff"},
+						  {"valign", "top"}],
+						 [?XAE("div", [{"id", "content"}], Els)])])])
+				 ])])]),
+		  ?XAE("tr",
+		       [{"id", "bottom"}],
+		       [?XE("td",
+			    [?XE("table",
+				 [?XE("tbody",
+				      [?XE("tr",
+					   [?XCT("td",
+						 "ejabberd (c) 2002-2004 Alexey Shchepin")
+					   ])])
+				 ])])])])])
       ]}}.
 
 css() -> "
@@ -113,46 +124,92 @@ body {
   margin-left: 0;
   margin-right: 0;
   margin-top: 0;
+  margin-bottom: 0;
 }
 
-table#top {
+#main {
   border: none;
   border-spacing: 0;
+  border-collapse: collapse;
+  background-color: #fe8a00;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+#main > tbody > tr > td {
+  padding: 0;
+}
+
+#top > td > table {
+  border: none;
+  border-spacing: 0;
+  border-collapse: collapse;
   background-color: #fe8a00;
   width: 100%;
   padding-top: 2px;
 }
 
-table#top td {
+#top table {
+  border: none;
+  border-spacing: 0;
+  border-collapse: collapse;
+  background-color: #fe8a00;
+  width: 100%;
+  padding-top: 2px;
+}
+
+/*
+#top > td > table > tbody > tr > td {
+  padding: 0;
+}
+*/
+
+#top td {
   padding: 0;
 }
 
-table#top td img {
+/*
+#top > td > table > tbody > tr > td > img {
+  margin-bottom: 0px;
+}
+*/
+
+#top img {
   margin-bottom: 0px;
 }
 
-table#middle {
+#middle {
+  height: 100%;
+}
+
+#middle-table {
   border: none;
   border-spacing: 0;
+  border-collapse: collapse;
   width: 100%;
   height: 100%;
   empty-cells: show;
 }
 
-table#middle td {
+#middle-td1, #middle-td1 {
   padding: 0;
-  //background-color: #fe8a00;
 }
 
-table#bottom {
+#bottom table {
   border: none;
   border-spacing: 0;
+  border-collapse: collapse;
   width: 100%;
 }
 
-table#bottom td {
+#bottom table td {
   padding: 0;
+  color: #ffffff;
   background-color: #fe8a00;
+  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-size: 7pt;
+  font-weight: bold;
   text-align: center;
 }
 
