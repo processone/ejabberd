@@ -1178,7 +1178,7 @@ roster_change(IJID, ISubscription, StateData) ->
 		   remove_element(LIJID, StateData#state.pres_t)
 	   end,
     case StateData#state.pres_last of
-	unknown ->
+	undefined ->
 	    StateData#state{pres_f = FSet, pres_t = TSet};
 	P ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
