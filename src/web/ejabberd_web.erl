@@ -12,10 +12,11 @@
 
 %% External exports
 -export([make_xhtml/1,
-	 process_get/4]).
+	 process_get/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("ejabberd_http.hrl").
 
 
 make_xhtml(Els) ->
@@ -44,20 +45,35 @@ make_xhtml(Els) ->
 -define(BR, ?X("br")).
 
 
-process_get(User, ["config" | RPath], Query, Lang) ->
-    case acl:match_rule(configure, jlib:make_jid(User, ?MYNAME, "")) of
-	deny ->
-	    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
-	allow ->
-	    process_config(User, RPath, Query, Lang)
+
+process_get(#request{user = User,
+		     path = ["config" | RPath],
+		     q = Query,
+		     lang = Lang} = Request) ->
+    if
+	User /= undefined ->
+	    case acl:match_rule(configure, jlib:make_jid(User, ?MYNAME, "")) of
+		deny ->
+		    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
+		allow ->
+		    process_config(Request#request{path = RPath})
+	    end;
+	true ->
+	    {401,
+	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
+	     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
+				       [{xmlcdata, "401 Unauthorized"}]}])}
     end;
 
-process_get(User, Path, Query, Lang) ->
+process_get(_Request) ->
     {404, [], make_xhtml([?XC("h1", "Not found")])}.
 
 
 
-process_config(User, [], Query, Lang) ->
+process_config(#request{user = User,
+			path = [],
+			q = Query,
+			lang = Lang} = Request) ->
     make_xhtml([?XC("h1", "ejabberd configuration"),
 		?XE("ul",
 		    [?LI([?AC("acls/", "Access Control Lists")]),
@@ -67,7 +83,10 @@ process_config(User, [], Query, Lang) ->
 		    ])
 	       ]);
 
-process_config(User, ["acls"], Query, Lang) ->
+process_config(#request{user = User,
+			path = ["acls"],
+			q = Query,
+			lang = Lang} = Request) ->
     case acl:match_rule(configure, jlib:make_jid(User, ?MYNAME, "")) of
 	deny ->
 	    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
@@ -111,7 +130,7 @@ process_config(User, ["acls"], Query, Lang) ->
 		       ])
     end;
 
-process_config(User, Path, Query, Lang) ->
+process_config(_Request) ->
     {404, [], make_xhtml([?XC("h1", "Not found")])}.
 
 

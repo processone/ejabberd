@@ -17,6 +17,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("ejabberd_http.hrl").
 
 -record(state, {sockmod,
 		socket,
@@ -81,20 +82,29 @@ receive_headers(State) ->
     end.
 
 
-process_request(#state{request_method = 'GET',
-		       request_path = {abs_path, Path},
-		       request_auth = undefined}) ->
-    make_xhtml_output(
-      401,
-      [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-      ejabberd_web:make_xhtml([{xmlelement, "h1", [],
-				[{xmlcdata, "401 Unauthorized"}]}]));
 
 process_request(#state{request_method = 'GET',
 		       request_path = {abs_path, Path},
-		       request_auth = {User, Pass}}) ->
-    case ejabberd_auth:check_password(User, Pass) of
-	true ->
+		       request_auth = Auth}) ->
+    User = case Auth of
+	       {U, P} ->
+		   case ejabberd_auth:check_password(U, P) of
+		       true ->
+			   U;
+		       false ->
+			   unauthorized
+		   end;
+	       _ ->
+		   undefined
+	   end,
+    case User of
+	unauthorized ->
+	    make_xhtml_output(
+	      401,
+	      [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
+	      ejabberd_web:make_xhtml([{xmlelement, "h1", [],
+					[{xmlcdata, "401 Unauthorized"}]}]));
+	_ ->
 	    case (catch url_decode_q_split(Path)) of
 		{'EXIT', _} ->
 		    process_request(false);
@@ -102,30 +112,45 @@ process_request(#state{request_method = 'GET',
 		    LQuery = parse_urlencoded(Query),
 		    ?INFO_MSG("path: ~p, query: ~p~n", [NPath, LQuery]),
 		    LPath = string:tokens(NPath, "/"),
-		    case ejabberd_web:process_get(User, LPath, LQuery, "") of
+		    Request = #request{method = 'GET',
+				       path = LPath,
+				       q = LQuery,
+				       user = User},
+		    case ejabberd_web:process_get(Request) of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
 			{Status, Headers, El} ->
 			    make_xhtml_output(Status, Headers, El)
 		    end
-	    end;
-	_ ->
-	    make_xhtml_output(
-	      401,
-	      [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-	      ejabberd_web:make_xhtml([{xmlelement, "h1", [],
-					[{xmlcdata, "401 Unauthorized"}]}]))
+	    end
     end;
 
 process_request(#state{request_method = 'POST',
 		       request_path = {abs_path, Path},
-		       request_auth = {User, Pass},
+		       request_auth = Auth,
 		       request_content_length = Len,
 		       sockmod = SockMod,
 		       socket = Socket} = State) when is_integer(Len) ->
-    case ejabberd_auth:check_password(User, Pass) of
-	true ->
-	    case SockMod of
+    User = case Auth of
+	       {U, P} ->
+		   case ejabberd_auth:check_password(U, P) of
+		       true ->
+			   U;
+		       false ->
+			   unauthorized
+		   end;
+	       _ ->
+		   undefined
+	   end,
+    case User of
+	unauthorized ->
+	    make_xhtml_output(
+	      401,
+	      [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
+	      ejabberd_web:make_xhtml([{xmlelement, "h1", [],
+					[{xmlcdata, "401 Unauthorized"}]}]));
+	_ ->
+    	    case SockMod of
 		gen_tcp ->
 		    inet:setopts(Socket, [{packet, 0}]);
 		ssl ->
@@ -141,19 +166,18 @@ process_request(#state{request_method = 'POST',
 		    LPath = string:tokens(NPath, "/"),
 		    LQuery = parse_urlencoded(Data),
 		    ?INFO_MSG("client query: ~p~n", [LQuery]),
-		    case ejabberd_web:process_get(User, LPath, LQuery, "") of
+		    Request = #request{method = 'POST',
+				       path = LPath,
+				       q = LQuery,
+				       user = User,
+				       data = Data},
+		    case ejabberd_web:process_get(Request) of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
 			{Status, Headers, El} ->
 			    make_xhtml_output(Status, Headers, El)
 		    end
-	    end;
-	_ ->
-	    make_xhtml_output(
-	      401,
-	      [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-	      ejabberd_web:make_xhtml([{xmlelement, "h1", [],
-					[{xmlcdata, "401 Unauthorized"}]}]))
+	    end
     end;
 
 process_request(State) ->
