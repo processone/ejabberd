@@ -673,12 +673,17 @@ session_established({xmlstreamelement, El}, StateData) ->
 					process_privacy_iq(
 					  FromJID, ToJID, IQ, StateData);
 				    _ ->
+					ejabberd_hooks:run(
+					  user_send_packet,
+					  [FromJID, ToJID, NewEl]),
 					ejabberd_router:route(
 					  FromJID, ToJID, NewEl),
 					StateData
 				end
 			end;
 		    "message" ->
+			ejabberd_hooks:run(user_send_packet,
+					   [FromJID, ToJID, NewEl]),
 			ejabberd_router:route(FromJID, ToJID, NewEl),
 			StateData;
 		    _ ->
@@ -882,8 +887,11 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						jlib:jid_to_string(To),
 						NewAttrs),
-	    Text = xml:element_to_string({xmlelement, Name, Attrs2, Els}),
+	    FixedPacket = {xmlelement, Name, Attrs2, Els},
+	    Text = xml:element_to_string(FixedPacket),
 	    send_text(StateData, Text),
+	    ejabberd_hooks:run(user_receive_packet,
+			       [StateData#state.jid, From, To, FixedPacket]),
 	    {next_state, StateName, NewState};
 	true ->
 	    {next_state, StateName, NewState}
@@ -1102,6 +1110,8 @@ presence_update(From, Packet, StateData) ->
 	    NewState =
 		if
 		    FromUnavail ->
+			ejabberd_hooks:run(user_available_hook,
+					   [StateData#state.jid]),
 			resend_offline_messages(StateData),
 			presence_broadcast_first(
 			  From, StateData#state{pres_last = Packet,
@@ -1385,17 +1395,37 @@ process_privacy_iq(From, To,
     NewStateData.
 
 
-resend_offline_messages(StateData) ->
+resend_offline_messages(#state{user = User,
+			       privacy_list = PrivList} = StateData) ->
     case ejabberd_hooks:run_fold(resend_offline_messages_hook, [],
-				 [StateData#state.user]) of
+				 [User]) of
 	Rs when list(Rs) ->
 	    lists:foreach(
-	      fun({route, From, To, {xmlelement, Name, Attrs, Els}}) ->
-		      Attrs2 = jlib:replace_from_to_attrs(
-				 jlib:jid_to_string(From),
-				 jlib:jid_to_string(To),
-				 Attrs),
-		      send_element(StateData, {xmlelement, Name, Attrs2, Els})
+	      fun({route,
+		   From, To, {xmlelement, Name, Attrs, Els} = Packet}) ->
+		      Pass = case catch mod_privacy:check_packet(
+					  User,
+					  PrivList,
+					  {From, To, Packet},
+					  in) of
+				 {'EXIT', _Reason} ->
+				     true;
+				 allow ->
+				     true;
+				 deny ->
+				     false
+			     end,
+		      if
+			  Pass ->
+			      Attrs2 = jlib:replace_from_to_attrs(
+					 jlib:jid_to_string(From),
+					 jlib:jid_to_string(To),
+					 Attrs),
+			      send_element(StateData,
+					   {xmlelement, Name, Attrs2, Els});
+			  true ->
+			      ok
+		      end
 	      end, Rs)
     end.
 

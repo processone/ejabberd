@@ -34,6 +34,7 @@
 \newcommand{\Jabber}{Jabber}
 
 \newcommand{\module}[1]{\texttt{#1}}
+\newcommand{\modannounce}{\module{mod\_announce}}
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
 \newcommand{\modirc}{\module{mod\_irc}}
@@ -807,6 +808,31 @@ Example:
    [
     ...
     {mod_echo, [{host, "echo.example.org"}]},
+    ...
+   ]}.
+\end{verbatim}
+
+
+\subsection{\modannounce{}}
+\label{sec:modannounce}
+
+This module adds support for broadcast announce messages and MOTD.
+
+Options:
+\begin{description}
+\titem{access} Specifies who is allowed to send announce messages
+and set MOTD (default value is \term{none}).
+\end{description}
+
+Example:
+\begin{verbatim}
+  % Only admins can send announcement messages:
+  {access, announce, [{allow, admin}]}.
+
+  {modules,
+   [
+    ...
+    {mod_announce, [{access, announce}]},
     ...
    ]}.
 \end{verbatim}

@@ -15,7 +15,8 @@
 -export([register_iq_handler/3,
 	 register_iq_handler/4,
 	 unregister_iq_handler/1,
-	 refresh_iq_handlers/0
+	 refresh_iq_handlers/0,
+	 bounce_resource_packet/3
 	]).
 
 -include("ejabberd.hrl").
@@ -32,6 +33,8 @@ init() ->
     MyDomain = ?MYNAME,
     ejabberd_router:register_route(MyDomain),
     catch ets:new(local_iqtable, [named_table, public]),
+    ejabberd_hooks:add(local_send_to_resource_hook,
+		       ?MODULE, bounce_resource_packet, 100),
     loop(#state{mydomain = MyDomain,
 		iqtable = local_iqtable}).
 
@@ -104,14 +107,8 @@ do_route(State, From, To, Packet) ->
 		"error" -> ok;
 		"result" -> ok;
 		_ ->
-		    case {Res, Name} of
-			{"announce/online", "message"} ->
-			    announce_online(From, To, Packet);
-			_ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_ITEM_NOT_FOUND),
-			    ejabberd_router:route(To, From, Err)
-		    end
+		    ejabberd_hooks:run(local_send_to_resource_hook,
+				       [From, To, Packet])
 	    end;
 	_ ->
 	    ejabberd_sm ! {route, From, To, Packet}
@@ -159,17 +156,7 @@ unregister_iq_handler(XMLNS) ->
 refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.
 
-announce_online(From, To, Packet) ->
-    case acl:match_rule(announce, From) of
-	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
-	    ejabberd_router:route(To, From, Err);
-	allow ->
-	    Local = jlib:make_jid("", ?MYNAME, ""),
-	    lists:foreach(
-	      fun({U, R}) ->
-		      Dest = jlib:make_jid(U, ?MYNAME, R),
-		      ejabberd_router:route(Local, Dest, Packet)
-	      end, ejabberd_sm:dirty_get_sessions_list())
-    end.
-
+bounce_resource_packet(From, To, Packet) ->
+    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
+    ejabberd_router:route(To, From, Err),
+    stop.

@@ -121,6 +121,7 @@
   {mod_stats,      []},
   {mod_vcard,      []},
   {mod_offline,    []},
+  {mod_announce,   [{access, announce}]},
   {mod_echo,       [{host, "echo.localhost"}]},
   {mod_private,    []},
   {mod_irc,        []},

@@ -85,24 +85,25 @@
 <A HREF="#htoc30">A.1.1&nbsp;&nbsp;Option <TT>iqdisc</TT></A>
 <LI><A HREF="#htoc31">A.1.2&nbsp;&nbsp;Option <TT>host</TT></A>
 </UL>
-<LI><A HREF="#htoc32">A.2&nbsp;&nbsp;<TT>mod_configure</TT></A>
-<LI><A HREF="#htoc33">A.3&nbsp;&nbsp;<TT>mod_disco</TT></A>
-<LI><A HREF="#htoc34">A.4&nbsp;&nbsp;<TT>mod_echo</TT></A>
-<LI><A HREF="#htoc35">A.5&nbsp;&nbsp;<TT>mod_irc</TT></A>
-<LI><A HREF="#htoc36">A.6&nbsp;&nbsp;<TT>mod_last</TT></A>
-<LI><A HREF="#htoc37">A.7&nbsp;&nbsp;<TT>mod_muc</TT></A>
-<LI><A HREF="#htoc38">A.8&nbsp;&nbsp;<TT>mod_offline</TT></A>
-<LI><A HREF="#htoc39">A.9&nbsp;&nbsp;<TT>mod_privacy</TT></A>
-<LI><A HREF="#htoc40">A.10&nbsp;&nbsp;<TT>mod_private</TT></A>
-<LI><A HREF="#htoc41">A.11&nbsp;&nbsp;<TT>mod_pubsub</TT></A>
-<LI><A HREF="#htoc42">A.12&nbsp;&nbsp;<TT>mod_register</TT></A>
-<LI><A HREF="#htoc43">A.13&nbsp;&nbsp;<TT>mod_roster</TT></A>
-<LI><A HREF="#htoc44">A.14&nbsp;&nbsp;<TT>mod_stats</TT></A>
-<LI><A HREF="#htoc45">A.15&nbsp;&nbsp;<TT>mod_time</TT></A>
-<LI><A HREF="#htoc46">A.16&nbsp;&nbsp;<TT>mod_vcard</TT></A>
-<LI><A HREF="#htoc47">A.17&nbsp;&nbsp;<TT>mod_version</TT></A>
+<LI><A HREF="#htoc32">A.2&nbsp;&nbsp;<TT>mod_announce</TT></A>
+<LI><A HREF="#htoc33">A.3&nbsp;&nbsp;<TT>mod_configure</TT></A>
+<LI><A HREF="#htoc34">A.4&nbsp;&nbsp;<TT>mod_disco</TT></A>
+<LI><A HREF="#htoc35">A.5&nbsp;&nbsp;<TT>mod_echo</TT></A>
+<LI><A HREF="#htoc36">A.6&nbsp;&nbsp;<TT>mod_irc</TT></A>
+<LI><A HREF="#htoc37">A.7&nbsp;&nbsp;<TT>mod_last</TT></A>
+<LI><A HREF="#htoc38">A.8&nbsp;&nbsp;<TT>mod_muc</TT></A>
+<LI><A HREF="#htoc39">A.9&nbsp;&nbsp;<TT>mod_offline</TT></A>
+<LI><A HREF="#htoc40">A.10&nbsp;&nbsp;<TT>mod_privacy</TT></A>
+<LI><A HREF="#htoc41">A.11&nbsp;&nbsp;<TT>mod_private</TT></A>
+<LI><A HREF="#htoc42">A.12&nbsp;&nbsp;<TT>mod_pubsub</TT></A>
+<LI><A HREF="#htoc43">A.13&nbsp;&nbsp;<TT>mod_register</TT></A>
+<LI><A HREF="#htoc44">A.14&nbsp;&nbsp;<TT>mod_roster</TT></A>
+<LI><A HREF="#htoc45">A.15&nbsp;&nbsp;<TT>mod_stats</TT></A>
+<LI><A HREF="#htoc46">A.16&nbsp;&nbsp;<TT>mod_time</TT></A>
+<LI><A HREF="#htoc47">A.17&nbsp;&nbsp;<TT>mod_vcard</TT></A>
+<LI><A HREF="#htoc48">A.18&nbsp;&nbsp;<TT>mod_version</TT></A>
 </UL>
-<LI><A HREF="#htoc48">B&nbsp;&nbsp;I18n/L10n</A>
+<LI><A HREF="#htoc49">B&nbsp;&nbsp;I18n/L10n</A>
 </UL>
 
 <!--TOC section Introduction-->
@@ -474,15 +475,15 @@ The following options are defined:
  <DT><B><TT>{ip, IPAddress}</TT></B><DD> This option specifies which network interface to
  listen on. For example <CODE>{ip, {192, 168, 1, 1}}</CODE>.
  <DT><B><TT>inet6</TT></B><DD> Set up the socket for IPv6.
- <DT><B><TT>tls</TT></B><DD> This option specifies that STARTTLS extension is available on
- connections to this port. You should also set ``<CODE>certfile</CODE>'' option.
- <DT><B><TT>tls_from_start</TT></B><DD> Among with <TT>tls</TT> this option specifies that
- traffic on this port will be encrypted using SSL immediately after
- connecting.
+ <DT><B><TT>starttls</TT></B><DD> This option specifies that STARTTLS extension is available
+ on connections to this port. You should also set ``<CODE>certfile</CODE>''
+ option.
+ <DT><B><TT>tls</TT></B><DD> This option specifies that traffic on this port will be
+ encrypted using SSL immediately after connecting. You should also set
+ ``<CODE>certfile</CODE>'' option.
  <DT><B><TT>ssl</TT></B><DD> This option specifies that traffic on this port will be
  encrypted using SSL. You should also set ``<CODE>certfile</CODE>'' option. It
- is recommended to use <TT>tls</TT> and <TT>tls_from_start</TT> options
- instead.
+ is recommended to use <TT>tls</TT> option instead.
  <DT><B><TT>{certfile, Path}</TT></B><DD> Path to a file containing the SSL certificate.
  </DL>
  <DT><B><TT>ejabberd_s2s_in</TT></B><DD> This module serves incoming S2S connections.
@@ -818,9 +819,33 @@ Example:
     ...
    ]}.
 </PRE>
+<!--TOC subsection <TT>mod_announce</TT>-->
+
+<H3><A NAME="htoc32">A.2</A>&nbsp;&nbsp;<TT>mod_announce</TT></H3><!--SEC END -->
+
+<A NAME="sec:modannounce"></A>
+This module adds support for broadcast announce messages and MOTD.<BR>
+<BR>
+Options:
+<DL COMPACT=compact><DT>
+<B><TT>access</TT></B><DD> Specifies who is allowed to send announce messages
+and set MOTD (default value is <TT>none</TT>).
+</DL>
+Example:
+<PRE>
+  % Only admins can send announcement messages:
+  {access, announce, [{allow, admin}]}.
+
+  {modules,
+   [
+    ...
+    {mod_announce, [{access, announce}]},
+    ...
+   ]}.
+</PRE>
 <!--TOC subsection <TT>mod_configure</TT>-->
 
-<H3><A NAME="htoc32">A.2</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
+<H3><A NAME="htoc33">A.3</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
 
 <A NAME="sec:modconfigure"></A>
 Options:
@@ -830,7 +855,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_disco</TT>-->
 
-<H3><A NAME="htoc33">A.3</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
+<H3><A NAME="htoc34">A.4</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
 
 <A NAME="sec:moddisco"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A> (Service Discovery).<BR>
@@ -855,7 +880,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_echo</TT>-->
 
-<H3><A NAME="htoc34">A.4</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
+<H3><A NAME="htoc35">A.5</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
 
 <A NAME="sec:modecho"></A>
 This module acts as a service and simply returns to sender any Jabber packet. Module may be
@@ -869,7 +894,7 @@ then prefix <TT>echo.</TT> is added to main <TT>ejabberd</TT> hostname.
 </DL>
 <!--TOC subsection <TT>mod_irc</TT>-->
 
-<H3><A NAME="htoc35">A.5</A>&nbsp;&nbsp;<TT>mod_irc</TT></H3><!--SEC END -->
+<H3><A NAME="htoc36">A.6</A>&nbsp;&nbsp;<TT>mod_irc</TT></H3><!--SEC END -->
 
 <A NAME="sec:modirc"></A>
 This module implements IRC transport.<BR>
@@ -892,7 +917,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_last</TT>-->
 
-<H3><A NAME="htoc36">A.6</A>&nbsp;&nbsp;<TT>mod_last</TT></H3><!--SEC END -->
+<H3><A NAME="htoc37">A.7</A>&nbsp;&nbsp;<TT>mod_last</TT></H3><!--SEC END -->
 
 <A NAME="sec:modlast"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0012.html">JEP-0012</A> (Last Activity)<BR>
@@ -904,7 +929,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_muc</TT>-->
 
-<H3><A NAME="htoc37">A.7</A>&nbsp;&nbsp;<TT>mod_muc</TT></H3><!--SEC END -->
+<H3><A NAME="htoc38">A.8</A>&nbsp;&nbsp;<TT>mod_muc</TT></H3><!--SEC END -->
 
 <A NAME="sec:modmuc"></A>
 This module implements <A HREF="http://www.jabber.org/jeps/jep-0045.html">JEP-0045</A> (Multi-User Chat) service.<BR>
@@ -939,14 +964,14 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_offline</TT>-->
 
-<H3><A NAME="htoc38">A.8</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
+<H3><A NAME="htoc39">A.9</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
 
 <A NAME="sec:modoffline"></A>
 This module implements offline message storage.<BR>
 <BR>
 <!--TOC subsection <TT>mod_privacy</TT>-->
 
-<H3><A NAME="htoc39">A.9</A>&nbsp;&nbsp;<TT>mod_privacy</TT></H3><!--SEC END -->
+<H3><A NAME="htoc40">A.10</A>&nbsp;&nbsp;<TT>mod_privacy</TT></H3><!--SEC END -->
 
 <A NAME="sec:modprivacy"></A>
 This module implements Privacy Rules as defined in XMPP IM
@@ -959,7 +984,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_private</TT>-->
 
-<H3><A NAME="htoc40">A.10</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
+<H3><A NAME="htoc41">A.11</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
 
 <A NAME="sec:modprivate"></A>
 This module adds support of <A HREF="http://www.jabber.org/jeps/jep-0049.html">JEP-0049</A> (Private XML Storage).<BR>
@@ -971,7 +996,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_pubsub</TT>-->
 
-<H3><A NAME="htoc41">A.11</A>&nbsp;&nbsp;<TT>mod_pubsub</TT></H3><!--SEC END -->
+<H3><A NAME="htoc42">A.12</A>&nbsp;&nbsp;<TT>mod_pubsub</TT></H3><!--SEC END -->
 
 <A NAME="sec:modpubsub"></A>
 This module implements <A HREF="http://www.jabber.org/jeps/jep-0060.html">JEP-0060</A> (Publish-Subscribe Service).<BR>
@@ -996,7 +1021,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_register</TT>-->
 
-<H3><A NAME="htoc42">A.12</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
+<H3><A NAME="htoc43">A.13</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="sec:modregister"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0077.html">JEP-0077</A> (In-Band Registration).<BR>
@@ -1029,7 +1054,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_roster</TT>-->
 
-<H3><A NAME="htoc43">A.13</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
+<H3><A NAME="htoc44">A.14</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
 
 <A NAME="sec:modroster"></A>
 This module implements roster management.<BR>
@@ -1041,7 +1066,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3><A NAME="htoc44">A.14</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
+<H3><A NAME="htoc45">A.15</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
@@ -1055,7 +1080,7 @@ TBD about access.<BR>
 <BR>
 <!--TOC subsection <TT>mod_time</TT>-->
 
-<H3><A NAME="htoc45">A.15</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
+<H3><A NAME="htoc46">A.16</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="sec:modtime"></A>
 This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
@@ -1067,7 +1092,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3><A NAME="htoc46">A.16</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
+<H3><A NAME="htoc47">A.17</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="sec:modvcard"></A>
 This module implements simple Jabber User Directory (based on user vCards)
@@ -1095,7 +1120,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_version</TT>-->
 
-<H3><A NAME="htoc47">A.17</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
+<H3><A NAME="htoc48">A.18</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="sec:modversion"></A>
 This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
@@ -1107,7 +1132,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC section I18n/L10n-->
 
-<H2><A NAME="htoc48">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
+<H2><A NAME="htoc49">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
 
 <A NAME="sec:i18nl10n"></A>
 All built-in modules support <TT>xml:lang</TT> attribute inside IQ queries.

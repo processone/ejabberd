@@ -51,7 +51,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	    AuthzId = xml:get_attr_s("authzid", KeyVals),
 	    case ejabberd_auth:get_password(UserName) of
 		false ->
-		    {error, "no-user"};
+		    {error, "not-authorized"};
 		Passwd ->
 		    Response = response(KeyVals, UserName, Passwd,
 					Nonce, AuthzId, "AUTHENTICATE"),
@@ -66,7 +66,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 					 username = UserName,
 					 authzid = AuthzId}};
 			_ ->
-			    {error, "bad-auth"}
+			    {error, "not-authorized"}
 		    end
 	    end
     end;
