@@ -112,7 +112,7 @@ do_route(From, To, Packet) ->
 		    Node = R#route.node,
 		    case node() of
 			Node ->
-			    Pid = R#local_route.pid,
+			    Pid = R#route.pid,
 			    ?DEBUG("routed to process ~p~n", [Pid]),
 			    Pid ! {route, From, To, Packet};
 			_ ->

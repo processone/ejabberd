@@ -19,5 +19,7 @@
 -define(NS_DELAY,       "jabber:x:delay").
 -define(NS_EVENT,       "jabber:x:event").
 -define(NS_STATS,       "http://jabber.org/protocol/stats").
+-define(NS_MUC,         "http://jabber.org/protocol/muc").
+-define(NS_MUC_USER,    "http://jabber.org/protocol/muc#user").
 
 
