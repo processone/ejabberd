@@ -11,13 +11,16 @@
 -vsn('$Revision$ ').
 
 -export([start/0, init/0, open_session/2, close_session/2,
-	get_user_resources/1]).
+	 get_user_resources/1,
+	 set_presence/3,
+	 unset_presence/2]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
 
 -record(session, {ur, user, node}).
 -record(mysession, {ur, pid}).
+-record(presence, {ur, user, priority}).
 
 
 start() ->
@@ -25,14 +28,18 @@ start() ->
 
 init() ->
     register(ejabberd_sm, self()),
-    mnesia:create_table(session,[{ram_copies, [node()]},
-				 {attributes, record_info(fields, session)}]),
+    mnesia:create_table(session, [{ram_copies, [node()]},
+				  {attributes, record_info(fields, session)}]),
     mnesia:add_table_index(session, user),
     mnesia:add_table_index(session, node),
     mnesia:create_table(mysession,
 			[{ram_copies, [node()]},
 			 {local_content, true},
 			 {attributes, record_info(fields, mysession)}]),
+    mnesia:create_table(presence,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, presence)}]),
+    mnesia:add_table_index(presence, user),
     mnesia:subscribe(system),
     loop().
 
@@ -66,10 +73,11 @@ close_session(User, Resource) ->
     ejabberd_sm ! {close_session, User, Resource}.
 
 replace_alien_connection(User, Resource) ->
+    LUser = jlib:tolower(User),
     F = fun() ->
-		UR = {User, Resource},
+		UR = {LUser, Resource},
 		Es = mnesia:read({session, UR}),
-		mnesia:write(#session{ur = UR, user = User, node = node()}),
+		mnesia:write(#session{ur = UR, user = LUser, node = node()}),
 		Es
         end,
     case mnesia:transaction(F) of
@@ -89,8 +97,9 @@ replace_alien_connection(User, Resource) ->
 
 
 replace_my_connection(User, Resource) ->
+    LUser = jlib:tolower(User),
     F = fun() ->
-		UR = {User, Resource},
+		UR = {LUser, Resource},
 		Es = mnesia:read({mysession, UR}),
 		mnesia:delete({mysession, UR}),
 		Es
@@ -106,16 +115,18 @@ replace_my_connection(User, Resource) ->
     end.
 
 remove_connection(User, Resource) ->
+    LUser = jlib:tolower(User),
     F = fun() ->
-		UR = {User, Resource},
+		UR = {LUser, Resource},
 		mnesia:delete({mysession, UR}),
 		mnesia:delete({session, UR})
         end,
     mnesia:transaction(F).
 
 replace_and_register_my_connection(User, Resource, Pid) ->
+    LUser = jlib:tolower(User),
     F = fun() ->
-		UR = {User, Resource},
+		UR = {LUser, Resource},
 		Es = mnesia:read({mysession, UR}),
 		mnesia:write(#mysession{ur = UR, pid = Pid}),
 		Es
@@ -209,8 +220,16 @@ do_route(From, To, Packet) ->
 			    ok
 		    end;
 		"message" ->
-		    % TODO
-		    ok;
+		    case catch lists:max(get_user_present_resources(User)) of
+			{'EXIT', _} ->
+			    % TODO
+			    ok;
+			{_, R} ->
+			    ejabberd_sm ! {route,
+					   From,
+					   {User, Server, R},
+					   Packet}
+		    end;
 		"iq" ->
 		    % TODO
 		    ok;
@@ -248,17 +267,49 @@ do_route(From, To, Packet) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_user_resources(User) ->
+    LUser = jlib:tolower(User),
     F = fun() ->
 		mnemosyne:eval(query [X.ur || X <- table(session),
-					      X.user = User]
+					      X.user = LUser]
 			       end)
 	end,
     case mnesia:transaction(F) of
 	{atomic, Rs} ->
 	    lists:map(fun(R) -> element(2, R) end, Rs);
 	{aborted, Reason} ->
-	    ?DEBUG("delivery failed: ~p~n", [Reason]),
 	    []
     end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+set_presence(User, Resource, Priority) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		UR = {User, Resource},
+		mnesia:write(#presence{ur = UR, user = LUser,
+				       priority = Priority})
+	end,
+    mnesia:transaction(F).
+
+unset_presence(User, Resource) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		UR = {User, Resource},
+		mnesia:delete({presence, UR})
+	end,
+    mnesia:transaction(F).
+
+get_user_present_resources(User) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		mnesia:index_read(presence, LUser, #presence.user)
+	end,
+    case mnesia:transaction(F) of
+	{atomic, Rs} ->
+	    lists:map(fun(R) ->
+			      {R#presence.priority, element(2, R#presence.ur)}
+		      end, Rs);
+	{aborted, Reason} ->
+	    []
+    end.
 

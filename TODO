@@ -1,5 +1,3 @@
-presence
-iq:register
 S2S timeouts
 ...
 iq:browse
@@ -7,4 +5,4 @@ iq:disco
 ...
 services support
 JUD
-
+SVR DNS records

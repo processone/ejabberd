@@ -427,6 +427,8 @@ presence_update(From, Packet, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
     case xml:get_attr_s("type", Attrs) of
 	"unavailable" ->
+	    ejabberd_sm:unset_presence(StateData#state.user,
+				       StateData#state.resource),
 	    presence_broadcast(From, StateData#state.pres_a, Packet),
 	    presence_broadcast(From, StateData#state.pres_i, Packet),
 	    StateData#state{pres_last = undefined,
@@ -461,6 +463,7 @@ presence_update(From, Packet, StateData) ->
 	"unsubscribed" ->
 	    StateData;
 	_ ->
+	    update_priority(jlib:get_subtag(Packet, "priority"), StateData),
 	    FromUnavail = (StateData#state.pres_last == undefined) or
 		StateData#state.pres_invis,
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
@@ -612,3 +615,19 @@ roster_change(IJID, ISubscription, StateData) ->
     end.
 
 
+update_priority(El, StateData) ->
+    Pri = case El of
+	      false ->
+		  0;
+	      _ ->
+		  case catch list_to_integer(xml:get_tag_cdata(El)) of
+		      P when is_integer(P) ->
+			  P;
+		      _ ->
+			  0
+		  end
+	  end,
+    ejabberd_sm:set_presence(StateData#state.user,
+			     StateData#state.resource,
+			     Pri).
+		  
