@@ -10,6 +10,7 @@ S2S:
 	rewrite S2S key validation
 	check "id" attributes in db:verify packets
 
+last presence
 more correctly work with SRV DNS records (priority, weight, etc...)
 TLS
 make roster set to work in one transaction

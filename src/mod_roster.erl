@@ -193,7 +193,8 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 				     end,
 			    if IsTo ->
 				    ejabberd_router:route(
-				      From, jlib:make_jid(OldItem#roster.jid),
+				      jlib:jid_remove_resource(From),
+				      jlib:make_jid(OldItem#roster.jid),
 				      {xmlelement, "presence",
 				       [{"type", "unsubscribe"}],
 				       []});
@@ -201,7 +202,8 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			    end,
 			    if IsFrom ->
 				    ejabberd_router:route(
-				      From, jlib:make_jid(OldItem#roster.jid),
+				      jlib:jid_remove_resource(From),
+				      jlib:make_jid(OldItem#roster.jid),
 				      {xmlelement, "presence",
 				       [{"type", "unsubscribed"}],
 				       []});

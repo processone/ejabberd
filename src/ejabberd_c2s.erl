@@ -1114,7 +1114,7 @@ presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
 presence_broadcast_first(From, StateData, Packet) ->
     ?SETS:fold(fun(JID, X) ->
 		       ejabberd_router:route(
-			 jlib:jid_replace_resource(From, ""),
+			 From,
 			 jlib:make_jid(JID),
 			 {xmlelement, "presence",
 			  [{"type", "probe"}],

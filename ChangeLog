@@ -1,3 +1,9 @@
+2003-12-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Presence probe now sended from full JID
+
+	* src/mod_roster.erl: Bugfix
+
 2003-12-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: Bugfix
