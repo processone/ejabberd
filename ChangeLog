@@ -1,3 +1,16 @@
+2003-12-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_app.erl: Now possible to specify path to log file
+	via "EJABBERD_LOG_PATH" environment variable
+
+	* src/translate.erl: Now possible to specify path to "msgs"
+	directory via "EJABBERD_MSGS_PATH" environment variable
+
+	* src/ejabberd.erl: Added get_so_path/0 function
+	* src/ejabberd_app.erl: Use ejabberd:get_so_path/0 to load .so
+	* src/mod_irc/iconv.erl: Likewise
+	* src/stringprep/stringprep.erl: Likewise
+
 2003-12-24  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: Presence probe now sended from full JID
