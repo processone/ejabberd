@@ -24,7 +24,8 @@
 		request_method,
 		request_path,
 		request_auth,
-		request_content_length
+		request_content_length,
+		request_lang = "en"
 	       }).
 
 
@@ -74,6 +75,8 @@ receive_headers(State) ->
 		_ ->
 		    receive_headers(State)
 	    end;
+	{ok, {http_header, _, 'Accept-Language', _, Langs}} ->
+	    receive_headers(State#state{request_lang = parse_lang(Langs)});
 	{ok, {http_header, _, _, _, _}} ->
 	    receive_headers(State);
 	{ok, http_eoh} ->
@@ -100,7 +103,8 @@ receive_headers(State) ->
 
 process_request(#state{request_method = 'GET',
 		       request_path = {abs_path, Path},
-		       request_auth = Auth}) ->
+		       request_auth = Auth,
+		       request_lang = Lang}) ->
     User = case Auth of
 	       {U, P} ->
 		   case ejabberd_auth:check_password(U, P) of
@@ -129,7 +133,8 @@ process_request(#state{request_method = 'GET',
 		    Request = #request{method = 'GET',
 				       path = LPath,
 				       q = LQuery,
-				       user = User},
+				       user = User,
+				       lang = Lang},
 		    case ejabberd_web:process_get(Request) of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
@@ -149,6 +154,7 @@ process_request(#state{request_method = 'POST',
 		       request_path = {abs_path, Path},
 		       request_auth = Auth,
 		       request_content_length = Len,
+		       request_lang = Lang,
 		       sockmod = SockMod,
 		       socket = Socket} = State) when is_integer(Len) ->
     User = case Auth of
@@ -188,7 +194,8 @@ process_request(#state{request_method = 'POST',
 				       path = LPath,
 				       q = LQuery,
 				       user = User,
-				       data = Data},
+				       data = Data,
+				       lang = Lang},
 		    case ejabberd_web:process_get(Request) of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
@@ -271,6 +278,15 @@ make_text_output(Status, Headers, Text) ->
 	  code_to_phrase(Status), "\r\n"],
     [SL, H, "\r\n", Data].
     
+
+parse_lang(Langs) ->
+    case string:tokens(Langs, ",; ") of
+	[First | _] ->
+	    First;
+	[] ->
+	    "en"
+    end.
+
 
 
 % Code below is taken (with some modifications) from the yaws webserver, which

@@ -182,6 +182,13 @@
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Примеры: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Кодировки"}.
 
+% web/ejabberd_web_admin.erl
+{"Users", "Пользователи"}.
+{"Nodes", "Узлы"}.
+{"Statistics", "Статистика"}.
+{"", ""}.
+{"", ""}.
+
 % Local Variables:
 % mode: erlang
 % End:

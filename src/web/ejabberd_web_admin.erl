@@ -25,17 +25,25 @@
 -define(XC(Name, Text), ?XE(Name, [?C(Text)])).
 -define(XAC(Name, Attrs, Text), ?XAE(Name, Attrs, [?C(Text)])).
 
+-define(T(Text), translate:translate(Lang, Text)).
+-define(CT(Text), ?C(?T(Text))).
+-define(XCT(Name, Text), ?XC(Name, ?T(Text))).
+-define(XACT(Name, Attrs, Text), ?XAC(Name, Attrs, ?T(Text))).
+
+
 -define(LI(Els), ?XE("li", Els)).
 -define(A(URL, Els), ?XAE("a", [{"href", URL}], Els)).
 -define(AC(URL, Text), ?A(URL, [?C(Text)])).
+-define(ACT(URL, Text), ?AC(URL, ?T(Text))).
 -define(P, ?X("p")).
 -define(BR, ?X("br")).
 -define(INPUT(Type, Name, Value),
 	?XA("input", [{"type", Type},
 		      {"name", Name},
 		      {"value", Value}])).
+-define(INPUTT(Type, Name, Value), ?INPUT(Type, Name, ?T(Value))).
 
-make_xhtml(Els) ->
+make_xhtml(Els, Lang) ->
     {200, [html],
      {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
 			   {"xml:lang", "en"},
@@ -104,11 +112,11 @@ make_xhtml(Els) ->
 			  {"valign", "top"}],
 			 [?XAE("ul",
 			       [{"id", "navlist"}],
-			       [?LI([?AC("/admin/acls/", "Access Control Lists")]),
-				?LI([?AC("/admin/access/", "Access Rules")]),
-				?LI([?AC("/admin/users/", "Users")]),
-				?LI([?AC("/admin/nodes/", "Nodes")]),
-				?LI([?AC("/admin/stats/", "Statistics")])
+			       [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
+				?LI([?ACT("/admin/access/", "Access Rules")]),
+				?LI([?ACT("/admin/users/", "Users")]),
+				?LI([?ACT("/admin/nodes/", "Nodes")]),
+				?LI([?ACT("/admin/stats/", "Statistics")])
 			       ])]),
 		    ?XAE("td",
 			 [{"height", "100%"},
@@ -401,15 +409,15 @@ process_admin(#request{user = User,
 			lang = Lang} = Request) ->
     make_xhtml([?XC("h1", "ejabberd administration"),
 		?XE("ul",
-		    [?LI([?AC("acls/", "Access Control Lists"), ?C(" "),
-			  ?AC("acls-raw/", "(raw)")]),
-		     ?LI([?AC("access/", "Access Rules"), ?C(" "),
-			  ?AC("access-raw/", "(raw)")]),
-		     ?LI([?AC("users/", "Users")]),
-		     ?LI([?AC("nodes/", "Nodes")]),
-		     ?LI([?AC("stats/", "Statistics")])
+		    [?LI([?ACT("acls/", "Access Control Lists"), ?C(" "),
+			  ?ACT("acls-raw/", "(raw)")]),
+		     ?LI([?ACT("access/", "Access Rules"), ?C(" "),
+			  ?ACT("access-raw/", "(raw)")]),
+		     ?LI([?ACT("users/", "Users")]),
+		     ?LI([?ACT("nodes/", "Nodes")]),
+		     ?LI([?ACT("stats/", "Statistics")])
 		    ])
-	       ]);
+	       ], Lang);
 
 process_admin(#request{user = User,
 		       path = ["style.css"],
@@ -461,10 +469,10 @@ process_admin(#request{user = User,
 		  nothing
 	  end,
     ACLs = lists:flatten(io_lib:format("~p.", [ets:tab2list(acl)])),
-    make_xhtml([?XC("h1", "ejabberd ACLs configuration")] ++
+    make_xhtml([?XCT("h1", "ejabberd ACLs configuration")] ++
 	       case Res of
-		   ok -> [?C("submited"), ?P];
-		   error -> [?C("bad format"), ?P];
+		   ok -> [?CT("submited"), ?P];
+		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XAE("form", [{"method", "post"}],
@@ -475,7 +483,7 @@ process_admin(#request{user = User,
 		      ?BR,
 		      ?INPUT("submit", "", "")
 		     ])
-	       ]);
+	       ], Lang);
 
 process_admin(#request{method = Method,
 			user = User,
@@ -502,20 +510,20 @@ process_admin(#request{method = Method,
 		  nothing
 	  end,
     ACLs = lists:keysort(2, ets:tab2list(acl)),
-    make_xhtml([?XC("h1", "ejabberd ACLs configuration")] ++
+    make_xhtml([?XCT("h1", "ejabberd ACLs configuration")] ++
 	       case Res of
-		   ok -> [?C("submited"), ?P];
-		   error -> [?C("bad format"), ?P];
+		   ok -> [?CT("submited"), ?P];
+		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XAE("form", [{"method", "post"}],
 		     [acls_to_xhtml(ACLs),
 		      ?BR,
-		      ?INPUT("submit", "delete", "Delete Selected"),
+		      ?INPUTT("submit", "delete", "Delete Selected"),
 		      ?C(" "),
-		      ?INPUT("submit", "submit", "Submit")
+		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ]);
+	       ], Lang);
 
 process_admin(#request{user = User,
 			path = ["access-raw"],
@@ -582,7 +590,7 @@ process_admin(#request{user = User,
 		      ?BR,
 		      ?INPUT("submit", "", "")
 		     ])
-	       ]);
+	       ], Lang);
 
 process_admin(#request{method = Method,
 		       user = User,
@@ -613,11 +621,11 @@ process_admin(#request{method = Method,
 		   nothing -> []
 	       end ++
 	       [?XAE("form", [{"method", "post"}],
-		     [access_rules_to_xhtml(AccessRules),
+		     [access_rules_to_xhtml(AccessRules, Lang),
 		      ?BR,
-		      ?INPUT("submit", "delete", "Delete Selected")
+		      ?INPUTT("submit", "delete", "Delete Selected")
 		     ])
-	       ]);
+	       ], Lang);
 
 process_admin(#request{method = Method,
 		       user = User,
@@ -657,31 +665,31 @@ process_admin(#request{method = Method,
 		      ?BR,
 		      ?INPUT("submit", "submit", "")
 		     ])
-	       ]);
+	       ], Lang);
 
 process_admin(#request{user = User,
 			path = ["users"],
 			q = Query,
 			lang = Lang} = Request) ->
     Res = list_users(),
-    make_xhtml([?XC("h1", "ejabberd users")] ++ Res);
+    make_xhtml([?XC("h1", "ejabberd users")] ++ Res, Lang);
 
 process_admin(#request{user = User,
 			path = ["users", Diap],
 			q = Query,
 			lang = Lang} = Request) ->
     Res = list_users_in_diapason(Diap),
-    make_xhtml([?XC("h1", "ejabberd users")] ++ Res);
+    make_xhtml([?XC("h1", "ejabberd users")] ++ Res, Lang);
 
 process_admin(#request{user = User,
 			path = ["stats"],
 			q = Query,
 			lang = Lang} = Request) ->
-    Res = get_stats(),
-    make_xhtml([?XC("h1", "ejabberd stats")] ++ Res);
+    Res = get_stats(Lang),
+    make_xhtml([?XC("h1", "ejabberd stats")] ++ Res, Lang);
 
-process_admin(_Request) ->
-    setelement(1, make_xhtml([?XC("h1", "Not found")]), 404).
+process_admin(#request{lang = Lang}) ->
+    setelement(1, make_xhtml([?XC("h1", "Not found")], Lang), 404).
 
 
 
@@ -816,7 +824,7 @@ acl_parse_delete(ACLs, Query) ->
     NewACLs.
 
 
-access_rules_to_xhtml(AccessRules) ->
+access_rules_to_xhtml(AccessRules, Lang) ->
     ?XAE("table", [],
 	 [?XE("tbody",
 	      lists:map(
@@ -833,7 +841,7 @@ access_rules_to_xhtml(AccessRules) ->
 	      [?XE("tr",
 		   [?X("td"),
 		    ?XE("td", [?INPUT("text", "namenew", "")]),
-		    ?XE("td", [?INPUT("submit", "addnew", "Add New")])
+		    ?XE("td", [?INPUTT("submit", "addnew", "Add New")])
 		   ]
 		  )]
 	     )]).
@@ -953,7 +961,7 @@ list_users_in_diapason(Diap) ->
 
 
 
-get_stats() ->
+get_stats(Lang) ->
     OnlineUsers = mnesia:table_info(presence, size),
     AuthUsers = mnesia:table_info(session, size),
     RegisteredUsers = mnesia:table_info(passwd, size),
@@ -963,15 +971,15 @@ get_stats() ->
     
     [?XAE("table", [],
 	  [?XE("tbody",
-	       [?XE("tr", [?XC("td", "Registered users"),
+	       [?XE("tr", [?XCT("td", "Registered users"),
 			   ?XC("td", integer_to_list(RegisteredUsers))]),
-		?XE("tr", [?XC("td", "Authentificated users"),
+		?XE("tr", [?XCT("td", "Authentificated users"),
 			   ?XC("td", integer_to_list(AuthUsers))]),
-		?XE("tr", [?XC("td", "Online users"),
+		?XE("tr", [?XCT("td", "Online users"),
 			   ?XC("td", integer_to_list(OnlineUsers))]),
-		?XE("tr", [?XC("td", "Outgoing S2S connections"),
+		?XE("tr", [?XCT("td", "Outgoing S2S connections"),
 			   ?XC("td", integer_to_list(S2SConnections))]),
-		?XE("tr", [?XC("td", "Outgoing S2S servers"),
+		?XE("tr", [?XCT("td", "Outgoing S2S servers"),
 			   ?XC("td", integer_to_list(S2SServers))])
 	       ])
 	  ])].

@@ -65,7 +65,8 @@
 		affiliations = ?DICT:new(),
 		history = lqueue_new(20),
 		subject = "",
-		subject_author = ""}).
+		subject_author = "",
+		just_created = false}).
 
 
 %-define(DBGFSM, true).
@@ -102,7 +103,8 @@ init([Host, Room, Creator, Nick]) ->
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
 				   room = Room,
-				   jid = jlib:make_jid(Room, Host, "")}),
+				   jid = jlib:make_jid(Room, Host, ""),
+				   just_created = true}),
     {ok, normal_state, State};
 init([Host, Room, Opts]) ->
     State = set_opts(Opts, #state{host = Host,
@@ -919,7 +921,12 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 				_ ->
 				    send_subject(From, Lang, StateData)
 			    end,
-			    NewState;
+			    case NewState#state.just_created of
+				true ->
+				    NewState#state{just_created = false};
+				false ->
+				    NewState
+			    end;
 			nopass ->
 			    ErrText = "Password required to enter this room",
 			    Err = jlib:make_error_reply(
@@ -1216,10 +1223,16 @@ send_new_presence(NJID, StateData) ->
 			  [{"affiliation", SAffiliation},
 			   {"role", SRole}]
 		  end,
+	      Status = case StateData#state.just_created of
+			   true ->
+			       [{xmlelement, "status", [{"code", "201"}], []}];
+			   false ->
+			       []
+		       end,
 	      Packet = append_subtags(
 			 Presence,
 			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			   [{xmlelement, "item", ItemAttrs, []}]}]),
+			   [{xmlelement, "item", ItemAttrs, []} | Status]}]),
 	      ejabberd_router:route(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
