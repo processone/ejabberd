@@ -1,3 +1,16 @@
+2004-07-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/extauth/check_pass_null.pl: A reference "null"
+	implementation of external authentification script (thanks to Leif
+	Johansson)
+
+	* src/extauth.erl: Support for external authentification
+	(thanks to Leif Johansson)
+	* src/ejabberd_auth.erl: Likewise
+
+	* src/mod_vcard_ldap.erl: A drop-in replacement for mod_vcard.erl
+	which uses ldap for JUD and vCard (thanks to Leif Johansson)
+
 2004-07-28  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/tls/tls_drv.c: Added freeing of SSL stuff

@@ -47,7 +47,14 @@
 %%% API
 %%%----------------------------------------------------------------------
 start() ->
+    case auth_method() of
+	external ->
+	    extauth:start(ejabberd_config:get_local_option(extauth_program));
+	_ ->
+	    ok
+    end,
     gen_server:start({local, ejabberd_auth}, ejabberd_auth, [], []).
+
 start_link() ->
     gen_server:start_link({local, ejabberd_auth}, ejabberd_auth, [], []).
 
@@ -67,6 +74,8 @@ init([]) ->
 				{attributes, record_info(fields, passwd)}]),
     case auth_method() of
 	internal ->
+	    ok;
+	external ->
 	    ok;
 	ldap ->
 	    LDAPServers = ejabberd_config:get_local_option(ldap_servers),
@@ -124,6 +133,16 @@ terminate(_Reason, _State) ->
 
 auth_method() ->
     case ejabberd_config:get_local_option(auth_method) of
+	external ->
+	    external;
+	ldap ->
+	    ldap;
+	_ ->
+	    internal
+    end.
+
+user_method() ->
+    case ejabberd_config:get_local_option(user_method) of
 	ldap ->
 	    ldap;
 	_ ->
@@ -134,18 +153,30 @@ plain_password_required() ->
     case auth_method() of
 	internal ->
 	    false;
+	external ->
+	    true;
 	ldap ->
 	    true
     end.
-
 
 check_password(User, Password) ->
     case auth_method() of
 	internal ->
 	    check_password_internal(User, Password);
+	external ->
+	    check_password_external(User, Password);
 	ldap ->
 	    check_password_ldap(User, Password)
     end.
+
+check_password_external(User, Password) ->
+    extauth:check_password(User, Password).
+
+set_password_external(User, Password) ->
+    extauth:set_password(User, Password).
+
+is_user_exists_external(User) ->
+    extauth:is_user_exists(User).
 
 check_password_internal(User, Password) ->
     LUser = jlib:nodeprep(User),
@@ -160,6 +191,8 @@ check_password(User, Password, StreamID, Digest) ->
     case auth_method() of
 	internal ->
 	    check_password_internal(User, Password, StreamID, Digest);
+	external ->
+	    check_password_external(User, Password, StreamID, Digest);
 	ldap ->
 	    check_password_ldap(User, Password, StreamID, Digest)
     end.
@@ -183,8 +216,16 @@ check_password_internal(User, Password, StreamID, Digest) ->
 	    false
     end.
 
-
 set_password(User, Password) ->
+    case auth_method() of
+	internal ->
+	    set_password_internal(User,Password);
+	external ->
+	    set_password_external(User,Password);
+	ldap -> {error, not_allowed}
+    end.
+
+set_password_internal(User, Password) ->
     case jlib:nodeprep(User) of
 	error -> {error, invalid_jid};
 	LUser ->
@@ -200,6 +241,8 @@ try_register(User, Password) ->
     case auth_method() of
 	internal ->
 	    try_register_internal(User, Password);
+	external ->
+	    {error, not_allowed};
 	ldap ->
 	    {error, not_allowed}
     end.
@@ -246,6 +289,8 @@ is_user_exists(User) ->
     case auth_method() of
 	internal ->
 	    is_user_exists_internal(User);
+	external ->
+	    is_user_exists_external(User);
 	ldap ->
 	    is_user_exists_ldap(User)
     end.
@@ -262,13 +307,13 @@ is_user_exists_internal(User) ->
     end.
 
 remove_user(User) ->
-    case auth_method() of
+    case user_method() of
 	internal ->
 	    remove_user_internal(User);
 	ldap ->
 	    {error, not_allowed}
     end.
-
+    
 remove_user_internal(User) ->
     LUser = jlib:nodeprep(User),
     F = fun() ->
@@ -282,7 +327,7 @@ remove_user_internal(User) ->
     catch mod_private:remove_user(User).
 
 remove_user(User, Password) ->
-    case auth_method() of
+    case user_method() of
 	internal ->
 	    remove_user_internal(User, Password);
 	ldap ->
@@ -321,6 +366,9 @@ remove_user_internal(User, Password) ->
 
 check_password_ldap(User, Password, StreamID, Digest) ->
     check_password_ldap(User, Password).
+
+check_password_external(User, Password, StreamID, Digest) ->
+    check_password_external(User, Password).
 
 check_password_ldap(User, Password) ->
     case find_user_dn(User) of
