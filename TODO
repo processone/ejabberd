@@ -1,14 +1,20 @@
 admin interface
 	users management
+		statistics about each user
+		statistics about each connection
 	node management
+		node restart/shutdown
+		statistics about memory usage
 	backup management
 S2S timeouts
 rewrite S2S key validation
 iq:browse (?)
-more correctly work  with SRV DNS records (priority, weight, etc...)
-karma
+more correctly work with SRV DNS records (priority, weight, etc...)
 SSL
 SASL
 JEP-62,63 (?)
 make roster set to work in one transaction
-
+add traffic shapers to to c2s connection before authentification
+add traffic shapers to s2s connections
+more traffic shapers
+SNMP

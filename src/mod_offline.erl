@@ -12,6 +12,7 @@
 -behaviour(gen_mod).
 
 -export([start/1,
+	 init/0,
 	 stop/0,
 	 store_packet/3,
 	 resend_offline_messages/1,
@@ -21,12 +22,41 @@
 
 -record(offline_msg, {user, timestamp, from, to, packet}).
 
+-define(PROCNAME, ejabberd_offline).
 
 start(_) ->
     mnesia:create_table(offline_msg,
 			[{disc_only_copies, [node()]},
 			 {type, bag},
-			 {attributes, record_info(fields, offline_msg)}]).
+			 {attributes, record_info(fields, offline_msg)}]),
+    register(?PROCNAME, spawn(?MODULE, init, [])).
+
+init() ->
+    loop().
+
+loop() ->
+    receive
+	#offline_msg{} = Msg ->
+	    Msgs = receive_all([Msg]),
+	    F = fun() ->
+			lists:foreach(fun(M) ->
+					      mnesia:write(M)
+				      end, Msgs)
+		end,
+	    mnesia:transaction(F),
+	    loop();
+	_ ->
+	    loop()
+    end.
+
+receive_all(Msgs) ->
+    receive
+	#offline_msg{} = Msg ->
+	    receive_all([Msg | Msgs])
+    after 0 ->
+	    Msgs
+    end.
+
 
 stop() ->
     % TODO: maybe throw error that this module can't be removed?
@@ -38,14 +68,11 @@ store_packet(From, To, Packet) ->
 	    {User, Server, Resource} = To,
 	    LUser = jlib:tolower(User),
 	    TimeStamp = now(),
-	    F = fun() ->
-			mnesia:write(#offline_msg{user = LUser,
-						  timestamp = TimeStamp,
-						  from = From,
-						  to = To,
-						  packet = Packet})
-		end,
-	    mnesia:transaction(F);
+	    ?PROCNAME ! #offline_msg{user = LUser,
+				     timestamp = TimeStamp,
+				     from = From,
+				     to = To,
+				     packet = Packet};
 	_ ->
 	    ok
     end.

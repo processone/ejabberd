@@ -364,6 +364,7 @@ terminate(Reason, StateName, StateData) ->
             presence_broadcast(From, StateData#state.pres_a, Packet),
             presence_broadcast(From, StateData#state.pres_i, Packet)
     end,
+    gen_tcp:close(StateData#state.socket),
     ok.
 
 %%%----------------------------------------------------------------------
