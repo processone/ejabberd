@@ -171,17 +171,6 @@ string_to_jid1([$/ | J], "") ->
     error;
 string_to_jid1([$/ | J], N) ->
     string_to_jid3(J, "", lists:reverse(N), "");
-string_to_jid1([C | J], N)
-  when (C =< 32) or
-       (C == $") or
-       (C == $&) or
-       (C == $') or
-       (C == $:) or
-       (C == $<) or
-       (C == $>) or
-       (C == 127)
-       ->
-    error;
 string_to_jid1([C | J], N) ->
     string_to_jid1(J, [C | N]);
 string_to_jid1([], "") ->

@@ -113,8 +113,8 @@ server. It is writen mostly in Erlang.<BR>
 <BR>
 The main features of <TT>ejabberd</TT> is:
 <UL><LI>
-Works on most of popular platforms: *nix (tested on Linux and FreeBSD)
- and Win32
+Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
+ NetBSD) and Win32
 <LI>Distributed: You can run <TT>ejabberd</TT> on a cluster of machines and all of
  them will serve one Jabber domain.
 <LI>Fault-tolerance: You can setup an <TT>ejabberd</TT> cluster so that all the
@@ -247,16 +247,31 @@ Windows distribution of Erlang emulator.<BR>
 <H3><A NAME="htoc10">2.4</A>&nbsp;&nbsp;Starting</H3><!--SEC END -->
 
 <A NAME="sec:starting"></A>
-... To use more than 1024 connections, you will need to set environment
-variable <TT>ERL_MAX_PORTS</TT>:
+To start <TT>ejabberd</TT>, use the following command:
+<PRE>
+erl -name ejabberd -s ejabberd
+</PRE>or
+<PRE>
+erl -sname ejabberd -s ejabberd
+</PRE>In second case Erlang node will be identified using only first part of host
+name, i.&nbsp;e. other Erlang nodes not inside this domain can't contact this node.<BR>
+<BR>
+To specify path to config file, use command like this:
+<PRE>
+erl -sname ejabberd -s ejabberd -ejabberd config \"/etc/ejabberd/ejabberd.cfg\"
+</PRE>
+To use more than 1024 connections, you will need to set environment variable
+<CODE>ERL_MAX_PORTS</CODE>:
 <PRE>
 export ERL_MAX_PORTS=32000
 </PRE>Note that with this value <TT>ejabberd</TT> will use more memory (approximately 6MB
-more)...
+more).<BR>
+<BR>
+To reduce memory usage, you can set environment variable
+<CODE>ERL_FULLSWEEP_AFTER</CODE>:
 <PRE>
-erl -name ejabberd -s ejabberd
-</PRE>
-TBD<BR>
+export ERL_FULLSWEEP_AFTER=0
+</PRE>But in this case <TT>ejabberd</TT> can start to work slower.<BR>
 <BR>
 <!--TOC section Configuration-->
 
@@ -415,18 +430,21 @@ Port number;
 </UL>
 Currently three modules are implemented:
 <DL COMPACT=compact><DT>
-<B><TT>ejabberd_c2s</TT></B><DD> This module serves C2S connections.<BR>
+<CODE><B>ejabberd_c2s</B></CODE><DD> This module serves C2S connections.<BR>
 <BR>
 The following options are defined:
  <DL COMPACT=compact><DT>
- <B><TT>{access, &lt;access rule&gt;}</TT></B><DD> This option defines access of users
+ <CODE><B>{access, &lt;access rule&gt;}</B></CODE><DD> This option defines access of users
  to this C2S port. Default value is ``<TT>all</TT>''.
- <DT><B><TT>{shaper, &lt;access rule&gt;}</TT></B><DD> This option is like previous, but
+ <DT><CODE><B>{shaper, &lt;access rule&gt;}</B></CODE><DD> This option is like previous, but
  use shapers instead of ``<TT>allow</TT>'' and ``<TT>deny</TT>''. Default
  value is ``<TT>none</TT>''.
+ <DT><CODE><B>{ssl, SSLOpts}</B></CODE><DD> This option defines that traffic on this port
+ will be encrypted using SSL. SSL options are the same as described by
+ ``<CODE>erl -man ssl</CODE>'' command
  </DL>
-<DT><B><TT>ejabberd_s2s_in</TT></B><DD> This module serves incoming S2S connections.
-<DT><B><TT>ejabberd_service</TT></B><DD> This module serves connections from Jabber
+<DT><CODE><B>ejabberd_s2s_in</B></CODE><DD> This module serves incoming S2S connections.
+<DT><CODE><B>ejabberd_service</B></CODE><DD> This module serves connections from Jabber
  services (i.&nbsp;e. that use the <TT>jabber:component:accept</TT> namespace).
 </DL>
 For example, the following configuration defines that C2S connections are

@@ -34,7 +34,11 @@ start() ->
 			 {local_content, true},
 			 {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
-    load_file(?CONFIG_PATH).
+    Config = case application:get_env(config) of
+		 {ok, Path} -> Path;
+		 undefined -> ?CONFIG_PATH
+	     end,
+    load_file(Config).
 
 
 load_file(File) ->
@@ -43,7 +47,7 @@ load_file(File) ->
 	    Res = lists:foldl(fun process_term/2, #state{}, Terms),
 	    set_opts(Res);
 	{error, Reason} ->
-	    ?ERROR_MSG("~p", [Reason]),
+	    ?ERROR_MSG("Can't load config file ~p: ~p", [File, Reason]),
 	    exit(file:format_error(Reason))
     end.
 

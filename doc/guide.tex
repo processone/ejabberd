@@ -62,8 +62,8 @@ server.  It is writen mostly in Erlang.
 
 The main features of \ejabberd{} is:
 \begin{itemize}
-\item Works on most of popular platforms: *nix (tested on Linux and FreeBSD)
-  and Win32
+\item Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
+  NetBSD) and Win32
 \item Distributed: You can run \ejabberd{} on a cluster of machines and all of
   them will serve one Jabber domain.
 \item Fault-tolerance: You can setup an \ejabberd{} cluster so that all the
@@ -201,19 +201,40 @@ Windows distribution of Erlang emulator.
 \subsection{Starting}
 \label{sec:starting}
 
-\ldots{} To use more than 1024 connections, you will need to set environment
-variable \texttt{ERL\_MAX\_PORTS}:
+To start \ejabberd{}, use the following command:
+\begin{verbatim}
+erl -name ejabberd -s ejabberd
+\end{verbatim}
+or
+\begin{verbatim}
+erl -sname ejabberd -s ejabberd
+\end{verbatim}
+In second case Erlang node will be identified using only first part of host
+name, i.\,e. other Erlang nodes not inside this domain can't contact this node.
+
+To specify path to config file, use command like this:
+\begin{verbatim}
+erl -sname ejabberd -s ejabberd -ejabberd config \"/etc/ejabberd/ejabberd.cfg\"
+\end{verbatim}
+
+
+To use more than 1024 connections, you will need to set environment variable
+\verb|ERL_MAX_PORTS|:
 \begin{verbatim}
 export ERL_MAX_PORTS=32000
 \end{verbatim}
 Note that with this value \ejabberd{} will use more memory (approximately 6MB
-more)\ldots{}
+more).
 
+To reduce memory usage, you can set environment variable
+\verb|ERL_FULLSWEEP_AFTER|:
 \begin{verbatim}
-erl -name ejabberd -s ejabberd
+export ERL_FULLSWEEP_AFTER=0
 \end{verbatim}
+But in this case \ejabberd{} can start to work slower.
 
-TBD
+
+
 
 \section{Configuration}
 \label{sec:configuration}
@@ -395,18 +416,21 @@ runned on them.  Each element of list is a tuple with following elements:
 
 Currently three modules are implemented:
 \begin{description}
-\item[\texttt{ejabberd\_c2s}] This module serves C2S connections.
+\item[\verb|ejabberd_c2s|] This module serves C2S connections.
   
   The following options are defined:
   \begin{description}
-  \item[\texttt{\{access, <access rule>\}}] This option defines access of users
+  \item[\verb|{access, <access rule>}|] This option defines access of users
     to this C2S port.  Default value is ``\texttt{all}''.
-  \item[\texttt{\{shaper, <access rule>\}}] This option is like previous, but
+  \item[\verb|{shaper, <access rule>}|] This option is like previous, but
     use shapers instead of ``\texttt{allow}'' and ``\texttt{deny}''.  Default
     value is ``\texttt{none}''.
+  \item[\verb|{ssl, SSLOpts}|] This option defines that traffic on this port
+    will be encrypted using SSL.  SSL options are the same as described by
+    ``\verb|erl -man ssl|'' command
   \end{description}
-\item[\texttt{ejabberd\_s2s\_in}] This module serves incoming S2S connections.
-\item[\texttt{ejabberd\_service}] This module serves connections from \Jabber{}
+\item[\verb|ejabberd_s2s_in|] This module serves incoming S2S connections.
+\item[\verb|ejabberd_service|] This module serves connections from \Jabber{}
   services (i.\,e.\ that use the \texttt{jabber:component:accept} namespace).
 \end{description}
 

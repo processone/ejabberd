@@ -107,9 +107,16 @@ init([From, Server, Type]) ->
 open_socket(init, StateData) ->
     {Addr, Port} = get_addr_port(StateData#state.server),
     ?DEBUG("s2s_out: connecting to ~s:~p~n", [Addr, Port]),
-    case gen_tcp:connect(Addr,
-			 Port,
-			 [binary, {packet, 0}]) of
+    Res = case gen_tcp:connect(Addr, Port,
+			       [binary, {packet, 0}]) of
+	      {ok, _Socket} = R -> R;
+	      {error, Reason1} ->
+		  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
+		  gen_tcp:connect(Addr, Port,
+				  [binary, {packet, 0},
+				   {tcp_module, inet6_tcp}])
+	  end,
+    case Res of
 	{ok, Socket} ->
 	    XMLStreamPid = xml_stream:start(self()),
 	    send_text(Socket, io_lib:format(?STREAM_HEADER,
@@ -120,11 +127,8 @@ open_socket(init, StateData) ->
 			     streamid = new_id()},
 	     ?S2STIMEOUT};
 	{error, Reason} ->
-	    ?DEBUG("s2s_out: connect return ~p~n", [Reason]),
-	    Error = case Reason of
-			timeout -> ?ERR_REMOTE_SERVER_TIMEOUT;
-			_ -> ?ERR_REMOTE_SERVER_NOT_FOUND
-		    end,
+	    ?DEBUG("s2s_out: inet6 connect return ~p~n", [Reason]),
+	    Error = ?ERR_REMOTE_SERVER_NOT_FOUND,
 	    bounce_messages(Error),
 	    {stop, normal, StateData}
     end.
@@ -439,7 +443,12 @@ is_verify_res(_) ->
 -include_lib("kernel/include/inet.hrl").
 
 get_addr_port(Server) ->
-    case inet_res:getbyname("_jabber._tcp." ++ Server, srv) of
+    Res = case inet_res:getbyname("_jabber-server._tcp." ++ Server, srv) of
+	      {error, _Reason} ->
+		  inet_res:getbyname("_jabber._tcp." ++ Server, srv);
+	      {ok, _HEnt} = R -> R
+	  end,
+    case Res of
 	{error, Reason} ->
 	    ?DEBUG("srv lookup of '~s' failed: ~p~n", [Server, Reason]),
 	    {Server, ejabberd_config:get_local_option(outgoing_s2s_port)};

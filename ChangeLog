@@ -1,3 +1,15 @@
+2003-10-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+	* src/ejabberd_s2s_out.erl: Added support for IPv6 and
+	"_jabber-server.tcp" lookups
+
+	* src/jlib.erl (string_to_jid1): Bugfix
+
+	* src/ejabberd_config.erl: Now possible to specify path to config
+	file in command line
+
 2003-10-11  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Updated

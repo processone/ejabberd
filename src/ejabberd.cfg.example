@@ -14,7 +14,7 @@
 % Another examples of ACLs:
 %{acl, jabberorg, {server, "jabber.org"}}.
 %{acl, aleksey, {user, "aleksey", "jabber.ru"}}.
-%{acl, test,  {user_regexp, "^test"}}.
+%{acl, test, {user_regexp, "^test"}}.
 %{acl, test, {user_glob, "test*"}}.
 
 
