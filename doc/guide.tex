@@ -6,7 +6,12 @@
 
 
 \newcommand{\imgscale}{0.7}
-
+\newcommand{\insimg}[1]{
+  \imgsrc{#1}{}
+  \begin{latexonly}
+    \scalebox{\imgscale}{\includegraphics{#1}}
+  \end{latexonly}
+}
 
 \newcommand{\ns}[1]{\texttt{#1}}
 \newcommand{\ejabberd}{\texttt{ejabberd}}
@@ -30,17 +35,14 @@
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{January 29, 2003}
+\date{February 3, 2003}
 
 \begin{document}
 \begin{titlepage}
   \maketitle{}
   
   {\centering
-    \imgsrc{logo.png}{}
-    \begin{latexonly}
-      \scalebox{\imgscale}{\includegraphics{logo.png}}
-    \end{latexonly}
+    \insimg{logo.png}
     \par
   }
 \end{titlepage}
@@ -54,7 +56,23 @@
 \ejabberd{} is a Free and Open Source distributed fault-tolerant \Jabber{}
 server.  It writen mostly in Erlang.
 
-TBD
+Main features of ejabberd is:
+\begin{itemize}
+\item Distribution.  You can run ejaberd on cluster of machines and all them
+  will serve one Jabber domain.
+\item   Fault-tolerance.  You can setup ejabberd cluster in such way, that all
+  information required for properly working will be stored permanently on more
+  then one machine, so if one of them crashed, then all other ones continue
+  working without any pauses.  Also you can replace or add more machines ``on
+  the fly''.
+\item Support of \footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030}
+  (Service Discovery).
+\item Support of \footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039}
+  (Statistics Gathering).
+\item Support of \ns{xml:lang} attribute in many XML elements.
+\item JUD based on users vCards.
+\end{itemize}
+
 
 
 
@@ -158,8 +176,8 @@ serves.  E.\,g.\ to use \texttt{jabber.org} domain add following line in config:
 \subsubsection{Access Rules}
 \label{sec:configaccess}
 
-Access control in \ejabberd{} is done via Access Control Lists (ACL).  In
-config file they looks like this:
+Access control in \ejabberd{} is done via Access Control Lists (ACL).
+Declaration of ACL in config file have following syntax:
 \begin{verbatim}
 {acl, <aclname>, {<acltype>, ...}}.
 \end{verbatim}
@@ -245,7 +263,7 @@ Allowing or denying of different services is like this:
 \end{verbatim}
 When JID is checked to have access to \texttt{<accessname>}, server
 sequentially checks if this JID in one of the ACLs that are second elements in
-eache tuple in list.  If one of them matched, then returned first element of
+each tuple in list.  If one of them matched, then returned first element of
 matched tuple.  Else returned ``\texttt{deny}''.
 
 Example:
@@ -334,7 +352,7 @@ Example:
 \end{verbatim}
 
 
-\subsection{Online Configuration}
+\subsection{Online Configuration and Monitoring}
 \label{sec:onlineconfig}
 
 To use facility of online reconfiguration of \ejabberd{} needed to have
@@ -345,6 +363,77 @@ xdata-capable client
 (\footahref{http://www.jabber.ru/projects/tkabber/index\_en.html}{Tkabber}
 developed synchronously with \ejabberd{}, its CVS version use most of
 \ejabberd{} features).
+
+On disco query \ejabberd{} returns following items:
+\begin{itemize}
+\item Identity of server.
+\item List of features, including defined namespaces.
+\item List of JIDs from route table.
+\item List of disco-nodes described in following subsections.
+\end{itemize}
+
+
+\subsubsection{Node \texttt{config}: Global Configuration}
+
+Under this node exists following nodes:
+
+\paragraph{Node \texttt{config/hostname}}
+
+Via \ns{jabber:x:data} queries to this node possible to change host name of
+this \ejabberd{} server. (See figure~\ref{fig:hostname}) (Currently will work
+correctly only after restart)
+\begin{figure}[htbp]
+  \centering
+  [hostname editing window]
+  \caption{Editing of hostname}
+  \label{fig:hostname}
+\end{figure}
+
+
+\paragraph{Node \texttt{config/acls}}
+
+Via \ns{jabber:x:data} queries to this node possible edit ACLs list.  (See
+figure~\ref{fig:acls})
+\begin{figure}[htbp]
+  \centering
+  [acls editing window]
+  \caption{Editing of ACLs}
+  \label{fig:acls}
+\end{figure}
+
+
+\paragraph{Node \texttt{config/access}}
+
+Via \ns{jabber:x:data} queries to this node possible edit access rules.
+\textbf{Not work yet}.
+
+\paragraph{Node \texttt{config/remusers}}
+
+Via \ns{jabber:x:data} queries to this node possible to remove users.  If
+removed user is online, then he will be disconnected.  Also user-related data
+(e.g. his roster) is removed (but appropriate module must be loaded).
+
+
+
+
+\subsubsection{Node \texttt{online users}: List of Online Users}
+
+
+
+
+\subsubsection{Node \texttt{all users}: List of Connected User}
+
+\subsubsection{Node \texttt{outgoing s2s}: List of Outgoing S2S connections}
+
+\subsubsection{Node \texttt{running nodes}: List of Running \ejabberd{} Nodes}
+
+\subsubsection{Node \texttt{stopped nodes}: List of Stopped Nodes}
+
+
+
+
+
+
 
 TBD
 

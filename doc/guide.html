@@ -17,8 +17,10 @@
 
 <H3 ALIGN=center>Alexey Shchepin<BR><A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR><A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
-<H3 ALIGN=center>January 29, 2003</H3> <DIV ALIGN=center><IMG SRC="logo.png">
+<H3 ALIGN=center>February 3, 2003</H3> <DIV ALIGN=center>
+ <IMG SRC="logo.png">
  
+
  </DIV><BR>
 <BR>
 
@@ -32,9 +34,28 @@
 <A NAME="sec:intro"></A><TT>ejabberd</TT> is a Free and Open Source distributed fault-tolerant Jabber
 server. It writen mostly in Erlang.<BR>
 <BR>
-TBD<BR>
-<BR>
-<!--TOC section Installation-->
+Main features of ejabberd is:
+<UL>
+<LI>
+ Distribution. You can run ejaberd on cluster of machines and all them
+ will serve one Jabber domain.
+
+<LI> Fault-tolerance. You can setup ejabberd cluster in such way, that all
+ information required for properly working will be stored permanently on more
+ then one machine, so if one of them crashed, then all other ones continue
+ working without any pauses. Also you can replace or add more machines ``on
+ the fly''.
+
+<LI> Support of <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A>
+ (Service Discovery).
+
+<LI> Support of <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>
+ (Statistics Gathering).
+
+<LI> Support of <TT>xml:lang</TT> attribute in many XML elements.
+
+<LI> JUD based on users vCards.
+</UL><!--TOC section Installation-->
 
 <H2>2&nbsp;&nbsp; Installation</H2><!--SEC END -->
 
@@ -121,8 +142,8 @@ serves. E.&nbsp;g. to use <TT>jabber.org</TT> domain add following line in confi
 
 <H4>3.1.2&nbsp;&nbsp; Access Rules</H4><!--SEC END -->
 
-<A NAME="sec:configaccess"></A>Access control in <TT>ejabberd</TT> is done via Access Control Lists (ACL). In
-config file they looks like this:
+<A NAME="sec:configaccess"></A>Access control in <TT>ejabberd</TT> is done via Access Control Lists (ACL).
+Declaration of ACL in config file have following syntax:
 <PRE>
 {acl, &lt;aclname&gt;, {&lt;acltype&gt;, ...}}.
 </PRE><TT>&lt;acltype&gt;</TT> can be one of following:
@@ -202,7 +223,7 @@ config file they looks like this:
                        ]}.
 </PRE>When JID is checked to have access to <TT>&lt;accessname&gt;</TT>, server
 sequentially checks if this JID in one of the ACLs that are second elements in
-eache tuple in list. If one of them matched, then returned first element of
+each tuple in list. If one of them matched, then returned first element of
 matched tuple. Else returned ``<TT>deny</TT>''.<BR>
 <BR>
 Example:
@@ -285,9 +306,9 @@ Example:
            {mod_time,      [{iqdisc, no_queue}]},
            {mod_version,   []}
           ]}.
-</PRE><!--TOC subsection Online Configuration-->
+</PRE><!--TOC subsection Online Configuration and Monitoring-->
 
-<H3>3.2&nbsp;&nbsp; Online Configuration</H3><!--SEC END -->
+<H3>3.2&nbsp;&nbsp; Online Configuration and Monitoring</H3><!--SEC END -->
 
 <A NAME="sec:onlineconfig"></A>To use facility of online reconfiguration of <TT>ejabberd</TT> needed to have
 <TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">5.4</A>). Also highly
@@ -298,6 +319,74 @@ xdata-capable client
 developed synchronously with <TT>ejabberd</TT>, its CVS version use most of
 <TT>ejabberd</TT> features).<BR>
 <BR>
+On disco query <TT>ejabberd</TT> returns following items:
+<UL>
+<LI>
+ Identity of server.
+
+<LI> List of features, including defined namespaces.
+
+<LI> List of JIDs from route table.
+
+<LI> List of disco-nodes described in following subsections.
+</UL><!--TOC subsubsection Node <TT>config</TT>: Global Configuration-->
+
+<H4>3.2.1&nbsp;&nbsp; Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
+Under this node exists following nodes:<BR>
+<BR>
+<!--TOC paragraph Node <TT>config/hostname</TT>-->
+
+<H5> Node <TT>config/hostname</TT></H5><!--SEC END -->
+Via <TT>jabber:x:data</TT> queries to this node possible to change host name of
+this <TT>ejabberd</TT> server. (See figure&nbsp;<A HREF="#fig:hostname">1</A>) (Currently will work
+correctly only after restart)
+<BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ [hostname editing window]
+ <BR>
+<BR>
+<DIV ALIGN=center>Figure 1: Editing of hostname</DIV><BR>
+
+ <A NAME="fig:hostname"></A>
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC paragraph Node <TT>config/acls</TT>-->
+
+<H5> Node <TT>config/acls</TT></H5><!--SEC END -->
+Via <TT>jabber:x:data</TT> queries to this node possible edit ACLs list. (See
+figure&nbsp;<A HREF="#fig:acls">2</A>)
+<BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ [acls editing window]
+ <BR>
+<BR>
+<DIV ALIGN=center>Figure 2: Editing of ACLs</DIV><BR>
+
+ <A NAME="fig:acls"></A>
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC paragraph Node <TT>config/access</TT>-->
+
+<H5> Node <TT>config/access</TT></H5><!--SEC END -->
+Via <TT>jabber:x:data</TT> queries to this node possible edit access rules.
+<B>Not work yet</B>.<BR>
+<BR>
+<!--TOC paragraph Node <TT>config/remusers</TT>-->
+
+<H5> Node <TT>config/remusers</TT></H5><!--SEC END -->
+Via <TT>jabber:x:data</TT> queries to this node possible to remove users. If
+removed user is online, then he will be disconnected. Also user-related data
+(e.g. his roster) is removed (but appropriate module must be loaded).<BR>
+<BR>
+<!--TOC subsubsection Node <TT>online users</TT>: List of Online Users-->
+
+<H4>3.2.2&nbsp;&nbsp; Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
+<!--TOC subsubsection Node <TT>all users</TT>: List of Connected User-->
+
+<H4>3.2.3&nbsp;&nbsp; Node <TT>all users</TT>: List of Connected User</H4><!--SEC END -->
+<!--TOC subsubsection Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections-->
+
+<H4>3.2.4&nbsp;&nbsp; Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</H4><!--SEC END -->
+<!--TOC subsubsection Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes-->
+
+<H4>3.2.5&nbsp;&nbsp; Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</H4><!--SEC END -->
+<!--TOC subsubsection Node <TT>stopped nodes</TT>: List of Stopped Nodes-->
+
+<H4>3.2.6&nbsp;&nbsp; Node <TT>stopped nodes</TT>: List of Stopped Nodes</H4><!--SEC END -->
 TBD<BR>
 <BR>
 <!--TOC section Distribution-->
