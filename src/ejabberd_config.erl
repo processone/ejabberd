@@ -50,17 +50,18 @@ load_file(File) ->
 process_term(Term, State) ->
     case Term of
 	override_global ->
-	    #state{override_global = true};
+	    State#state{override_global = true};
 	override_local ->
-	    #state{override_local = true};
+	    State#state{override_local = true};
 	override_acls ->
-	    #state{override_acls = true};
+	    State#state{override_acls = true};
 	{acl, ACLName, ACLData} ->
-	    #state{opts =
+	    State#state{opts =
 		   [acl:to_record(ACLName, ACLData) | State#state.opts]};
 	{access, RuleName, Rules} ->
-	    #state{opts = [#config{key = {access, RuleName}, value = Rules} |
-			   State#state.opts]};
+	    State#state{opts = [#config{key = {access, RuleName},
+					value = Rules} |
+				State#state.opts]};
 	{Opt, Val} ->
 	    add_option(Opt, Val, State)
     end.
@@ -74,49 +75,49 @@ add_option(Opt, Val, State) ->
 	    end,
     case Table of
 	config ->
-	    #state{opts = [#config{key = Opt, value = Val} |
-			   State#state.opts]};
+	    State#state{opts = [#config{key = Opt, value = Val} |
+				State#state.opts]};
 	local_config ->
-	    #state{opts = [#local_config{key = Opt, value = Val} |
-			   State#state.opts]}
+	    State#state{opts = [#local_config{key = Opt, value = Val} |
+				State#state.opts]}
     end.
 
 
 set_opts(State) ->
     Opts = lists:reverse(State#state.opts),
-    mnesia:transaction(
-      fun() ->
-	      if
-		  State#state.override_global ->
-		      Ksg = mnesia:all_keys(config),
-		      lists:foreach(fun(K) ->
-					    mnesia:delete({config, K})
-				    end, Ksg);
-		  true ->
-		      ok
-	      end,
-	      if
-		  State#state.override_local ->
-		      Ksl = mnesia:all_keys(local_config),
-		      lists:foreach(fun(K) ->
-					    mnesia:delete({local_config, K})
-				    end, Ksl);
-		  true ->
-		      ok
-	      end,
-	      if
-		  State#state.override_acls ->
-		      Ksa = mnesia:all_keys(acl),
-		      lists:foreach(fun(K) ->
-					    mnesia:delete({acl, K})
-				    end, Ksa);
-		  true ->
-		      ok
-	      end,
-	      lists:foreach(fun(R) ->
-				    mnesia:write(R)
-			    end, Opts)
-      end).
+    F = fun() ->
+		if
+		    State#state.override_global ->
+			Ksg = mnesia:all_keys(config),
+			lists:foreach(fun(K) ->
+					      mnesia:delete({config, K})
+				      end, Ksg);
+		    true ->
+			ok
+		end,
+		if
+		    State#state.override_local ->
+			Ksl = mnesia:all_keys(local_config),
+			lists:foreach(fun(K) ->
+					      mnesia:delete({local_config, K})
+				      end, Ksl);
+		    true ->
+			ok
+		end,
+		if
+		    State#state.override_acls ->
+			Ksa = mnesia:all_keys(acl),
+			lists:foreach(fun(K) ->
+					      mnesia:delete({acl, K})
+				      end, Ksa);
+		    true ->
+			ok
+		end,
+		lists:foreach(fun(R) ->
+				      mnesia:write(R)
+			      end, Opts)
+	end,
+    {atomic, _} = mnesia:transaction(F).
 
 
 add_global_option(Opt, Val) ->

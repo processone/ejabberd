@@ -18,6 +18,7 @@
 	 get_subscription_lists/1,
 	 in_subscription/3,
 	 out_subscription/3,
+	 set_items/2,
 	 remove_user/1]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
@@ -470,3 +471,76 @@ remove_user(User) ->
         end,
     mnesia:transaction(F).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+set_items(User, SubEl) ->
+    {xmlelement, Name, Attrs, Els} = SubEl,
+    F = fun() ->
+		lists:foreach(fun(El) -> process_item_set_t(User, El) end, Els)
+	end,
+    mnesia:transaction(F).
+
+process_item_set_t(User, XItem) ->
+    {xmlelement, Name, Attrs, Els} = XItem,
+    JID = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
+    LUser = jlib:tolower(User),
+    case JID of
+	error ->
+	    ok;
+	_ ->
+	    LJID = jlib:jid_tolower(JID),
+	    Res = mnesia:read({roster, {LUser, LJID}}),
+	    Item = #roster{uj = {LUser, LJID},
+			   user = LUser,
+			   jid = JID},
+	    Item1 = process_item_attrs_ws(Item, Attrs),
+	    Item2 = process_item_els(Item1, Els),
+	    case Item2#roster.subscription of
+		remove ->
+		    mnesia:delete({roster, {LUser, LJID}});
+		_ ->
+		    mnesia:write(Item2)
+	    end
+    end.
+
+
+process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
+    case Attr of
+	"jid" ->
+	    case jlib:string_to_jid(Val) of
+		error ->
+		    process_item_attrs_ws(Item, Attrs);
+		JID ->
+		    process_item_attrs_ws(Item#roster{jid = JID}, Attrs)
+	    end;
+	"name" ->
+	    process_item_attrs_ws(Item#roster{name = Val}, Attrs);
+	"subscription" ->
+	    case Val of
+		"remove" ->
+		    process_item_attrs_ws(Item#roster{subscription = remove},
+					  Attrs);
+		"none" ->
+		    process_item_attrs_ws(Item#roster{subscription = none},
+					  Attrs);
+		"both" ->
+		    process_item_attrs_ws(Item#roster{subscription = both},
+					  Attrs);
+		"from" ->
+		    process_item_attrs_ws(Item#roster{subscription = from},
+					  Attrs);
+		"to" ->
+		    process_item_attrs_ws(Item#roster{subscription = to},
+					  Attrs);
+		_ ->
+		    process_item_attrs_ws(Item, Attrs)
+	    end;
+	"ask" ->
+	    process_item_attrs_ws(Item, Attrs);
+	_ ->
+	    XAttrs = Item#roster.xattrs,
+	    process_item_attrs_ws(Item#roster{xattrs = [{Attr, Val} | XAttrs]},
+				  Attrs)
+    end;
+process_item_attrs_ws(Item, []) ->
+    Item.

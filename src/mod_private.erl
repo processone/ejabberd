@@ -58,7 +58,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 				      [{"code", "500"}],
 				      [{xmlcdata, "Internal Server Error"}]}]};
 			Res ->
-			    {iq, ID, error, XMLNS,
+			    {iq, ID, result, XMLNS,
 			     [{xmlelement, Name, Attrs, Res}]}
 		    end
 	    end;

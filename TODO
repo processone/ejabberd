@@ -9,3 +9,5 @@ SRV DNS records
 karma
 SSL
 JEP-62,63 (?)
+make roster set work in one transaction
+
