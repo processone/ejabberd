@@ -200,25 +200,29 @@ process_request(#state{request_method = 'GET',
 		{'EXIT', _} ->
 		    process_request(false);
 		{NPath, Query} ->
-		    LQuery = parse_urlencoded(Query),
-		    LPath = string:tokens(NPath, "/"),
-		    Request = #request{method = 'GET',
-				       path = LPath,
-				       q = LQuery,
-				       user = User,
-				       lang = Lang},
-		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
-						  Request) of
-			El when element(1, El) == xmlelement ->
-			    make_xhtml_output(200, [], El);
-			{Status, Headers, El} when
-			      element(1, El) == xmlelement ->
-			    make_xhtml_output(Status, Headers, El);
-			Text when is_list(Text) ->
-			    make_text_output(200, [], Text);
-			{Status, Headers, Text} when
-			      is_list(Text) ->
-			    make_text_output(Status, Headers, Text)
+		    case (catch parse_urlencoded(Query)) of
+			{'EXIT', _Reason} ->
+			    process_request(false);
+			LQuery ->
+			    LPath = string:tokens(NPath, "/"),
+			    Request = #request{method = 'GET',
+					       path = LPath,
+					       q = LQuery,
+					       user = User,
+					       lang = Lang},
+			    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
+							  Request) of
+				El when element(1, El) == xmlelement ->
+				    make_xhtml_output(200, [], El);
+				{Status, Headers, El} when
+				      element(1, El) == xmlelement ->
+				    make_xhtml_output(Status, Headers, El);
+				Text when is_list(Text) ->
+				    make_text_output(200, [], Text);
+				{Status, Headers, Text} when
+				      is_list(Text) ->
+				    make_text_output(Status, Headers, Text)
+			    end
 		    end
 	    end
     end;
@@ -265,30 +269,33 @@ process_request(#state{request_method = 'POST',
 		    process_request(false);
 		{NPath, Query} ->
 		    LPath = string:tokens(NPath, "/"),
-		    LQuery = parse_urlencoded(Data),
-		    Request = #request{method = 'POST',
-				       path = LPath,
-				       q = LQuery,
-				       user = User,
-				       data = Data,
-				       lang = Lang},
-		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
-						  Request) of
-			El when element(1, El) == xmlelement ->
-			    make_xhtml_output(200, [], El);
-			{Status, Headers, El} when
-			      element(1, El) == xmlelement ->
-			    make_xhtml_output(Status, Headers, El);
-			Text when is_list(Text) ->
-			    make_text_output(200, [], Text);
-			{Status, Headers, Text} when
-			      is_list(Text) ->
-			    make_text_output(Status, Headers, Text)
+		    case (catch parse_urlencoded(Data)) of
+			{'EXIT', _Reason} ->
+			    process_request(false);
+			LQuery ->
+			    Request = #request{method = 'POST',
+					       path = LPath,
+					       q = LQuery,
+					       user = User,
+					       data = Data,
+					       lang = Lang},
+			    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
+							  Request) of
+				El when element(1, El) == xmlelement ->
+				    make_xhtml_output(200, [], El);
+				{Status, Headers, El} when
+				      element(1, El) == xmlelement ->
+				    make_xhtml_output(Status, Headers, El);
+				Text when is_list(Text) ->
+				    make_text_output(200, [], Text);
+				{Status, Headers, Text} when is_list(Text) ->
+				    make_text_output(Status, Headers, Text)
+			    end
 		    end
 	    end
     end;
 
-process_request(State) ->
+process_request(_) ->
     make_xhtml_output(
       400,
       [],
