@@ -1,3 +1,9 @@
+2004-10-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http_poll.erl: Properly handle bad requests
+
+	* src/web/ejabberd_web_admin.erl: Ported features from J-EAI
+
 2004-09-30  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_http.erl: Fixed processing of POST body for

@@ -5,6 +5,9 @@
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
+%%% Copyright (c) 2004 Alexey Shchepin
+%%% Copyright (c) 2004 Process One
+%%%----------------------------------------------------------------------
 
 -module(ejabberd_web_admin).
 -author('alexey@sevcom.net').
@@ -101,6 +104,7 @@ make_xhtml(Els, Lang) ->
 							     [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
 							      ?LI([?ACT("/admin/access/", "Access Rules")]),
 							      ?LI([?ACT("/admin/users/", "Users")]),
+							      ?LI([?ACT("/admin/online-users/", "Online Users")]),
 							      ?LI([?ACT("/admin/nodes/", "Nodes")]),
 							      ?LI([?ACT("/admin/stats/", "Statistics")])
 							     ])]),
@@ -115,7 +119,7 @@ make_xhtml(Els, Lang) ->
 				      [?XE("tbody",
 					   [?XE("tr",
 						[?XCT("td",
-						      "ejabberd (c) 2002-2004 Alexey Shchepin")
+						      "ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One")
 						])])
 				      ])])])])])])
       ]}}.
@@ -494,6 +498,7 @@ process_admin(#request{user = User,
 		     ?LI([?ACT("access/", "Access Rules"), ?C(" "),
 			  ?ACT("access-raw/", "(raw)")]),
 		     ?LI([?ACT("users/", "Users")]),
+		     ?LI([?ACT("online-users/", "Online Users")]),
 		     ?LI([?ACT("nodes/", "Nodes")]),
 		     ?LI([?ACT("stats/", "Statistics")])
 		    ])
@@ -753,14 +758,21 @@ process_admin(#request{user = User,
 			path = ["users"],
 			q = Query,
 			lang = Lang} = Request) ->
-    Res = list_users(),
+    Res = list_users(Query, Lang),
     make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
 
 process_admin(#request{user = User,
 		       path = ["users", Diap],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    Res = list_users_in_diapason(Diap),
+    Res = list_users_in_diapason(Diap, Lang),
+    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
+
+process_admin(#request{user = User,
+			path = ["online-users"],
+			q = Query,
+			lang = Lang} = Request) ->
+    Res = list_online_users(Lang),
     make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
 
 process_admin(#request{user = User,
@@ -778,10 +790,17 @@ process_admin(#request{user = User,
     make_xhtml(Res, Lang);
 
 process_admin(#request{user = User,
+		       path = ["user", U, "queue"],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    Res = user_queue(U, Query, Lang),
+    make_xhtml(Res, Lang);
+
+process_admin(#request{user = User,
 		       path = ["user", U, "roster"],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    Res = user_roster(U, Query, Lang),
+    Res = user_roster(U, Query, Lang, true),
     make_xhtml(Res, Lang);
 
 process_admin(#request{user = User,
@@ -1036,44 +1055,123 @@ parse_access_rule(Text) ->
 
 
 
-list_users() ->
+list_users(Query, Lang) ->
+    Res = list_users_parse_query(Query),
     Users = ejabberd_auth:dirty_get_registered_users(),
     SUsers = lists:sort(Users),
-    case length(SUsers) of
-	N when N =< 100 ->
-	    lists:flatmap(
-	      fun(U) ->
-		      [?AC("../user/" ++ U ++ "/", U), ?BR]
-	      end, SUsers);
-	N ->
-	    NParts = trunc(math:sqrt(N * 0.618)) + 1,
-	    M = trunc(N / NParts) + 1,
-	    lists:flatmap(
-	      fun(K) ->
-		      L = K + M - 1,
-		      Node = integer_to_list(K) ++ "-" ++ integer_to_list(L),
-		      Last = if L < N -> lists:nth(L, SUsers);
-				true -> lists:last(SUsers)
-			     end,
-		      Name = 
-			  lists:nth(K, SUsers) ++ [$\s, 226, 128, 148, $\s] ++
-			  Last,
-		      [?AC(Node ++ "/", Name), ?BR]
-	      end, lists:seq(1, N, M))
+    FUsers =
+	case length(SUsers) of
+	    N when N =< 100 ->
+		[list_given_users(SUsers, Lang)];
+	    N ->
+		NParts = trunc(math:sqrt(N * 0.618)) + 1,
+		M = trunc(N / NParts) + 1,
+		lists:flatmap(
+		  fun(K) ->
+			  L = K + M - 1,
+			  Node = integer_to_list(K) ++ "-" ++ integer_to_list(L),
+			  Last = if L < N -> lists:nth(L, SUsers);
+				    true -> lists:last(SUsers)
+				 end,
+			  Name = 
+			      lists:nth(K, SUsers) ++ [$\s, 226, 128, 148, $\s] ++
+			      Last,
+			  [?AC(Node ++ "/", Name), ?BR]
+		  end, lists:seq(1, N, M))
+	end,
+    case Res of
+	ok -> [?CT("submitted"), ?P];
+	error -> [?CT("bad format"), ?P];
+	nothing -> []
+    end ++
+	[?XAE("form", [{"method", "post"}],
+	      [?XE("table",
+		   [?XE("tr",
+			[?XC("td", ?T("User") ++ ":"),
+			 ?XE("td", [?INPUT("text", "newusername", "")])
+			]),
+		    ?XE("tr",
+			[?XC("td", ?T("Password") ++ ":"),
+			 ?XE("td", [?INPUT("password", "newuserpassword", "")])
+			]),
+		    ?XE("tr",
+			[?X("td"),
+			 ?XAE("td", [{"class", "alignright"}],
+			      [?INPUTT("submit", "addnewuser", "Add User")])
+			])]),
+	       ?P] ++
+	      FUsers)].
+
+list_users_parse_query(Query) ->
+    case lists:keysearch("addnewuser", 1, Query) of
+	{value, _} ->
+	    {value, {_, User}} =
+		lists:keysearch("newusername", 1, Query),
+	    {value, {_, Password}} =
+		lists:keysearch("newuserpassword", 1, Query),
+	    case jlib:nodeprep(User) of
+		error ->
+		    error;
+		"" ->
+		    error;
+		_ ->
+		    ejabberd_auth:try_register(User, Password),
+		    ok
+	    end;
+	false ->
+	    nothing
     end.
 
-list_users_in_diapason(Diap) ->
+list_users_in_diapason(Diap, Lang) ->
     Users = ejabberd_auth:dirty_get_registered_users(),
     SUsers = lists:sort(Users),
     {ok, [S1, S2]} = regexp:split(Diap, "-"),
     N1 = list_to_integer(S1),
     N2 = list_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
-    lists:flatmap(
-      fun(U) ->
-	      [?AC("../../user/" ++ U ++ "/", U), ?BR]
-      end, Sub).
+    [list_given_users(Sub, Lang)].
 
+list_given_users(Users, Lang) ->
+    ?XE("table",
+	[?XE("thead",
+	     [?XE("tr",
+		  [?XCT("td", "User"),
+		   ?XCT("td", "Offline messages"),
+		   ?XCT("td", "Last Activity")])]),
+	 ?XE("tbody",
+	     lists:map(
+	       fun(User) ->
+		       QueueLen = length(mnesia:dirty_read({offline_msg, User})),
+		       FQueueLen = [?AC("../../user/" ++ User ++ "/queue/",
+					integer_to_list(QueueLen))],
+		       FLast =
+			   case ejabberd_sm:get_user_resources(User) of
+			       [] ->
+				   case mnesia:dirty_read({last_activity, User}) of
+				       [] ->
+					   ?T("Never");
+				       [E] ->
+					   Shift = element(3, E),
+					   TimeStamp = {Shift div 1000000,
+							Shift rem 1000000,
+							0},
+					   {{Year, Month, Day}, {Hour, Minute, Second}} =
+					       calendar:now_to_local_time(TimeStamp),
+					   lists:flatten(
+					     io_lib:format(
+					       "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+					       [Year, Month, Day, Hour, Minute, Second]))
+				   end;
+			       _ ->
+				   ?T("Online")
+			   end,
+		       ?XE("tr",
+			   [?XE("td", [?AC("../../user/" ++ User ++ "/",
+					   User)]),
+			    ?XE("td", FQueueLen),
+			    ?XC("td", FLast)])
+	       end, Users)
+	    )]).
 
 
 get_stats(Lang) ->
@@ -1100,6 +1198,15 @@ get_stats(Lang) ->
 	  ])].
 
 
+list_online_users(_Lang) ->
+    Users = lists:map(fun({U, R}) -> U end,
+		      ejabberd_sm:dirty_get_sessions_list()),
+    SUsers = lists:usort(Users),
+    lists:flatmap(
+      fun(U) ->
+	      [?AC("../user/" ++ U ++ "/", U), ?BR]
+      end, SUsers).
+
 user_info(User, Query, Lang) ->
     Res = user_parse_query(User, Query),
     Resources = ejabberd_sm:get_user_resources(User),
@@ -1116,6 +1223,9 @@ user_info(User, Query, Lang) ->
     Password = ejabberd_auth:get_password_s(User),
     FPassword = [?INPUT("text", "password", Password), ?C(" "),
 		 ?INPUTT("submit", "chpassword", "Change Password")],
+    QueueLen = length(mnesia:dirty_read({offline_msg, User})),
+    FQueueLen = [?AC("queue/",
+		     integer_to_list(QueueLen))],
     [?XC("h1", "User: " ++ User)] ++
 	case Res of
 	    ok -> [?CT("submitted"), ?P];
@@ -1124,13 +1234,18 @@ user_info(User, Query, Lang) ->
 	end ++
 	[?XAE("form", [{"method", "post"}],
 	      [?XCT("h3", "Connected Resources:")] ++ FResources ++
-	      [?XCT("h3", "Password:")] ++ FPassword)].
+	      [?XCT("h3", "Password:")] ++ FPassword ++
+	      [?XCT("h3", "Offline messages:")] ++ FQueueLen ++
+	      [?XE("h3", [?ACT("roster/", "Roster")])] ++
+	      [?BR, ?INPUTT("submit", "removeuser", "Remove User")])].
 
 
 user_parse_query(User, Query) ->
     case lists:keysearch("chpassword", 1, Query) of
 	{value, _} ->
 	    case lists:keysearch("password", 1, Query) of
+		{value, {_, undefined}} ->
+		    error;
 		{value, {_, Password}} ->
 		    ejabberd_auth:set_password(User, Password),
 		    ok;
@@ -1138,8 +1253,88 @@ user_parse_query(User, Query) ->
 		    error
 	    end;
 	_ ->
+	    case lists:keysearch("removeuser", 1, Query) of
+		{value, _} ->
+		    ejabberd_auth:remove_user(User),
+		    ok;
+		false ->
+		    nothing
+	    end
+    end.
+
+
+user_queue(User, Query, Lang) ->
+    Res = user_queue_parse_query(User, Query),
+    Msgs = lists:keysort(3, mnesia:dirty_read({offline_msg, User})),
+    FMsgs =
+	lists:map(
+	  fun({offline_msg, _User, TimeStamp, _Expire, From, To,
+	       {xmlelement, Name, Attrs, Els}} = Msg) ->
+		  ID = jlib:encode_base64(binary_to_list(term_to_binary(Msg))),
+		  {{Year, Month, Day}, {Hour, Minute, Second}} =
+		      calendar:now_to_local_time(TimeStamp),
+		  Time = lists:flatten(
+			   io_lib:format(
+			     "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+			     [Year, Month, Day, Hour, Minute, Second])),
+		  SFrom = jlib:jid_to_string(From),
+		  STo = jlib:jid_to_string(To),
+		  Attrs2 = jlib:replace_from_to_attrs(SFrom, STo, Attrs),
+		  Packet = jlib:remove_attr(
+			     "jeai-id", {xmlelement, Name, Attrs2, Els}),
+		  FPacket = pretty_print(Packet),
+		  ?XE("tr",
+		      [?XAE("td", [{"class", "valign"}], [?INPUT("checkbox", "selected", ID)]),
+		       ?XAC("td", [{"class", "valign"}], Time),
+		       ?XAC("td", [{"class", "valign"}], SFrom),
+		       ?XAC("td", [{"class", "valign"}], STo),
+		       ?XAE("td", [{"class", "valign"}], [?XC("pre", FPacket)])]
+		     )
+	  end, Msgs),
+    [?XC("h1", User ++ " offline messages queue")] ++
+	case Res of
+	    ok -> [?CT("submitted"), ?P];
+	    error -> [?CT("bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"method", "post"}],
+	      [?XE("table",
+		   [?XE("thead",
+			[?XE("tr",
+			     [?X("td"),
+			      ?XCT("td", "Time"),
+			      ?XCT("td", "From"),
+			      ?XCT("td", "To"),
+			      ?XCT("td", "Packet")
+			     ])]),
+		    ?XE("tbody", FMsgs)]),
+	       ?BR,
+	       ?INPUTT("submit", "delete", "Delete Selected")
+	      ])].
+
+user_queue_parse_query(User, Query) ->
+    case lists:keysearch("delete", 1, Query) of
+	{value, _} ->
+	    Msgs = lists:keysort(3, mnesia:dirty_read({offline_msg, User})),
+	    F = fun() ->
+			lists:foreach(
+			  fun(Msg) ->
+				  ID = jlib:encode_base64(
+					 binary_to_list(term_to_binary(Msg))),
+				  case lists:member({"selected", ID}, Query) of
+				      true ->
+					  mnesia:delete_object(Msg);
+				      false ->
+					  ok
+				  end
+			  end, Msgs)
+		end,
+	    mnesia:transaction(F),
+	    ok;
+	false ->
 	    nothing
     end.
+
 
 
 -record(roster, {uj,
@@ -1156,10 +1351,11 @@ ask_to_pending(subscribe) -> out;
 ask_to_pending(unsubscribe) -> none;
 ask_to_pending(Ask) -> Ask.
 
-user_roster(User, Query, Lang) ->
-    %Res = user_parse_query(User, Query),
-    Res = nothing, % TODO
+
+user_roster(User, Query, Lang, Admin) ->
     LUser = jlib:nameprep(User),
+    Items1 = mnesia:dirty_index_read(roster, LUser, #roster.user),
+    Res = user_roster_parse_query(User, Items1, Query, Admin),
     Items = mnesia:dirty_index_read(roster, LUser, #roster.user),
     SItems = lists:sort(Items),
     FItems =
@@ -1173,22 +1369,43 @@ user_roster(User, Query, Lang) ->
 			       [?XCT("td", "JID"),
 				?XCT("td", "Name"),
 				?XCT("td", "Subscription"),
-				?XCT("td", "Pending")
+				?XCT("td", "Pending"),
+				?XCT("td", "Groups")
 			       ])]),
 		      ?XE("tbody",
 			  lists:map(
 			    fun(R) ->
+				    Groups =
+					lists:flatmap(
+					  fun(Group) ->
+						  [?C(Group), ?BR]
+					  end, R#roster.groups),
+				    Pending = ask_to_pending(R#roster.ask),
 				    ?XE("tr",
-					[?XE("td", [?C(jlib:jid_to_string(
-							 R#roster.jid))]),
-					 ?XE("td", [?C(R#roster.name)]),
-					 ?XE("td",
-					     [?C(atom_to_list(
-						   R#roster.subscription))]),
-					 ?XE("td",
-					     [?C(atom_to_list(
-						   ask_to_pending(
-						     R#roster.ask)))])])
+					[?XAC("td", [{"class", "valign"}],
+					      jlib:jid_to_string(R#roster.jid)),
+					 ?XAC("td", [{"class", "valign"}],
+					      R#roster.name),
+					 ?XAC("td", [{"class", "valign"}],
+					      atom_to_list(R#roster.subscription)),
+					 ?XAC("td", [{"class", "valign"}],
+					      atom_to_list(Pending)),
+					 ?XAE("td", [{"class", "valign"}], Groups),
+					 if
+					     Pending == in ->
+						 ?XAE("td", [{"class", "valign"}],
+						      [?INPUTT("submit",
+							       "validate" ++
+							       term_to_id(R#roster.jid),
+							       "Validate")]);
+					     true ->
+						 ?X("td")
+					 end,
+					 ?XAE("td", [{"class", "valign"}],
+					      [?INPUTT("submit",
+						       "remove" ++
+						       term_to_id(R#roster.jid),
+						       "Remove")])])
 			    end, SItems))])]
 	end,
     [?XC("h1", "Roster of " ++ User)] ++
@@ -1198,7 +1415,129 @@ user_roster(User, Query, Lang) ->
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"method", "post"}],
-	      FItems)].
+	      FItems ++
+	      [?P,
+	       ?INPUT("text", "newjid", ""), ?C(" "),
+	       ?INPUTT("submit", "addjid", "Add JID")
+	      ])].
+
+user_roster_parse_query(User, Items, Query, Admin) ->
+    case lists:keysearch("addjid", 1, Query) of
+	{value, _} ->
+	    case lists:keysearch("newjid", 1, Query) of
+		{value, {_, undefined}} ->
+		    error;
+		{value, {_, SJID}} ->
+		    case jlib:string_to_jid(SJID) of
+			JID when is_record(JID, jid) ->
+			    user_roster_subscribe_jid(User, JID),
+			    ok;
+			error ->
+			    error
+		    end;
+		false ->
+		    error
+	    end;
+	false ->
+	    case lists:keysearch("adduser", 1, Query) of
+		{value, _} ->
+		    case lists:keysearch("newuser", 1, Query) of
+			{value, {_, undefined}} ->
+			    error;
+			{value, {_, U}} ->
+			    if
+				Admin ->
+				    user_roster_subscribe_users(User, U);
+				true ->
+				    case jlib:make_jid(U, ?MYNAME, "") of
+					JID when is_record(JID, jid) ->
+					    user_roster_subscribe_jid(
+					      User, JID),
+					    ok;
+					false ->
+					    error
+				    end
+			    end;
+			false ->
+			    error
+		    end;
+		false ->
+		    case catch user_roster_item_parse_query(
+				 User, Items, Query) of
+			submitted ->
+			    ok;
+			{'EXIT', _Reason} ->
+			    error;
+			_ ->
+			    nothing
+		    end
+	    end
+    end.
+
+user_roster_subscribe_users(User1, User2) ->
+    case jlib:make_jid(User1, ?MYNAME, "") of
+	JID1 when is_record(JID1, jid) ->
+	    case jlib:make_jid(User2, ?MYNAME, "") of
+		JID2 when is_record(JID2, jid) ->
+		    mod_roster:out_subscription(User1, JID2, subscribe),
+		    mod_roster:in_subscription(User2, JID1, subscribe),
+		    mod_roster:out_subscription(User2, JID1, subscribe),
+		    mod_roster:in_subscription(User1, JID2, subscribe),
+		    mod_roster:out_subscription(User1, JID2, subscribed),
+		    mod_roster:in_subscription(User2, JID1, subscribed),
+		    mod_roster:out_subscription(User2, JID1, subscribed),
+		    mod_roster:in_subscription(User1, JID2, subscribed),
+		    ok;
+		false ->
+		    error
+	    end;
+	false ->
+	    error
+    end.
+
+user_roster_subscribe_jid(User, JID) ->
+    mod_roster:out_subscription(User, JID, subscribe),
+    UJID = jlib:make_jid(User, ?MYNAME, ""),
+    ejabberd_router:route(
+      UJID, JID, {xmlelement, "presence", [{"type", "subscribe"}], []}).
+
+user_roster_item_parse_query(User, Items, Query) ->
+    lists:foreach(
+      fun(R) ->
+	      JID = R#roster.jid,
+	      case lists:keysearch(
+		     "validate" ++ term_to_id(JID), 1, Query) of
+		  {value, _} ->
+		      JID1 = jlib:make_jid(JID),
+		      mod_roster:out_subscription(User, JID1, subscribed),
+		      UJID = jlib:make_jid(User, ?MYNAME, ""),
+		      ejabberd_router:route(
+			UJID, JID1, {xmlelement, "presence",
+				     [{"type", "subscribed"}], []}),
+		      throw(submitted);
+		  false ->
+		      case lists:keysearch(
+			     "remove" ++ term_to_id(JID), 1, Query) of
+			  {value, _} ->
+			      UJID = jlib:make_jid(User, ?MYNAME, ""),
+			      mod_roster:process_iq(
+				UJID, UJID,
+				#iq{type = set,
+				    sub_el = {xmlelement, "query",
+					      [{"xmlns", ?NS_ROSTER}],
+					      [{xmlelement, "item",
+						[{"jid", jlib:jid_to_string(JID)},
+						 {"subscription", "remove"}],
+						[]}]}}),
+			      throw(submitted);
+			  false ->
+			      ok
+		      end
+
+	      end
+      end, Items),
+    nothing.
+
 
 
 get_nodes(Lang) ->
@@ -1649,4 +1988,46 @@ node_ports_parse_query(Node, Ports, Query) ->
     end.
 
 
+
+pretty_print(El) ->
+    lists:flatten(pretty_print(El, "")).
+
+pretty_print({xmlcdata, CData}, Prefix) ->
+    [Prefix, CData, $\n];
+pretty_print({xmlelement, Name, Attrs, Els}, Prefix) ->
+    [Prefix, $<, Name,
+     case Attrs of
+	 [] ->
+	     [];
+	 [{Attr, Val} | RestAttrs] ->
+	     AttrPrefix = [Prefix,
+			   string:copies(" ", length(Name) + 2)],
+	     [$\s, Attr, $=, $', xml:crypt(Val), $' |
+	      lists:map(fun({Attr1, Val1}) ->
+				[$\n, AttrPrefix,
+				 Attr1, $=, $', xml:crypt(Val1), $']
+			end, RestAttrs)]
+     end,
+     if
+	 Els == [] ->
+	     "/>\n";
+	 true ->
+	     OnlyCData = lists:all(fun({xmlcdata, _}) -> true;
+				      ({xmlelement, _, _, _}) -> false
+				   end, Els),
+	     if
+		 OnlyCData ->
+		     [$>,
+		      xml:get_cdata(Els),
+		      $<, $/, Name, $>, $\n
+		     ];
+		 true ->
+		     [$>, $\n,
+		      lists:map(fun(E) ->
+					pretty_print(E, [Prefix, "  "])
+				end, Els),
+		      Prefix, $<, $/, Name, $>, $\n
+		     ]
+	     end
+     end].
 

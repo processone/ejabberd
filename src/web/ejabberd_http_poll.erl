@@ -119,8 +119,10 @@ process_request(#request{path = [],
 	    end;
 	_ ->
 	    {200, [?CT, {"Set-Cookie", "ID=-2:0; expires=-1"}], ""}
-    end.
-
+    end;
+process_request(_Request) ->
+    {400, [], {xmlelement, "h1", [],
+	       [{xmlcdata, "400 Bad Request"}]}}.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
