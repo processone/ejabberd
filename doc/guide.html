@@ -21,7 +21,7 @@
 <A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
 <A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
-<H3 ALIGN=center>July 12, 2003</H3><DIV ALIGN=center>
+<H3 ALIGN=center>May 8, 2004</H3><DIV ALIGN=center>
 
  <IMG SRC="logo.png">
  
@@ -181,10 +181,12 @@ To compile <TT>ejabberd</TT> in MS Windows environment, you will need the follow
 packages:
 <UL><LI>
 MS Visual C++&nbsp;6.0 Compiler
-<LI><A HREF="http://www.erlang.org/download/otp_win32_R8B-2.exe">Erlang
- emulator version&nbsp;5.1.2</A>
-<LI><A HREF="http://prdownloads.sourceforge.net/expat/expat_win32bin_1_95_6.exe?download">Expat&nbsp;1.95.6</A>
-<LI><A HREF="http://prdownloads.sourceforge.net/gnuwin32/libiconv-1.8-1-lib.exe?download">Iconv&nbsp;1.8</A> (optional)
+<LI><A HREF="http://www.erlang.org/download/otp_win32_R9C-0.exe">Erlang emulator version&nbsp;5.3</A>
+<LI><A HREF="http://prdownloads.sourceforge.net/expat/expat_win32bin_1_95_7.exe?download">Expat&nbsp;1.95.7</A>
+<LI><A HREF="http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.9.1.tar.gz">Iconv&nbsp;1.9.1</A>
+(optional)
+<LI><A HREF="http://www.slproweb.com/download/Win32OpenSSL-v0.9.7d.exe">Shining Light OpenSSL</A>
+(to enable SSL connections)
 </UL>
 <!--TOC subsection Obtaining-->
 
@@ -222,39 +224,29 @@ TBD<BR>
 
 <A NAME="sec:compilationwin"></A>
 <OL type=1><LI>
-Install Erlang emulator (for example, into <CODE>C:\Program Files\erl5.1.2</CODE>).
-<LI>Install Expat library into <CODE>C:\Program Files\Expat-1.95.6</CODE>
- directory. Copy file <CODE>C:\Program Files\Expat-1.95.6\Libs\libexpat.dll</CODE>
+Install Erlang emulator (for example, into <CODE>C:\Program Files\erl5.3</CODE>).
+<LI>Install Expat library into <CODE>C:\Program Files\Expat-1.95.7</CODE>
+ directory. Copy file <CODE>C:\Program Files\Expat-1.95.7\Libs\libexpat.dll</CODE>
  to your Windows system directory (for example, <CODE>C:\WINNT</CODE> or
  <CODE>C:\WINNT\System32</CODE>)
-<LI>Install Iconv library into <CODE>C:\Program Files\GnuWin32</CODE> directory.
- Copy file <CODE>C:\Program Files\GnuWin32\bin\libiconv-2.dll</CODE> to your
+<LI>Build and install Iconv library into <CODE>C:\Program Files\iconv-1.9.1</CODE> directory.
+ Copy file <CODE>C:\Program Files\iconv-1.9.1\bin\iconv.dll</CODE> to your
  Windows system directory.<BR>
 <BR>
-Note: Instead of copying libexpat.dll and libiconv-2.dll to Windows
+Note: Instead of copying libexpat.dll and iconv.dll to Windows
  directory, you can add directories
- <CODE>C:\Program Files\Expat-1.95.6\Libs</CODE> and
- <CODE>C:\Program Files\GnuWin32\bin</CODE> to <CODE>PATH</CODE> environment
+ <CODE>C:\Program Files\Expat-1.95.7\Libs</CODE> and
+ <CODE>C:\Program Files\iconv-1.9.1\bin</CODE> to <CODE>PATH</CODE> environment
  variable.
 <LI>Being in <CODE>ejabberd\src</CODE> directory run:
 <PRE>
 configure
 nmake -f Makefile.win32
-</PRE><LI>To build MUC, IRC and pub/sub modules run
-<PRE>
-nmake -f Makefile.win32
-</PRE>in <CODE>ejabberd\src\mod_muc</CODE>, <CODE>ejabberd\src\mod_muc</CODE> and
- <CODE>ejabberd\src\mod_pubsub</CODE> directories
-<LI>Edit file <CODE>ejabberd\src\ejabberd.cfg</CODE> and run
+</PRE><LI>Edit file <CODE>ejabberd\src\ejabberd.cfg</CODE> and run
 <PRE>
 werl -s ejabberd -name ejabberd
 </PRE><LI>Enjoy!
 </OL>
-Some recent versions of Erlang distribution it seems have bug in crypto
-application, so ejabberd could be built but users can't use digest
-authentication (only plain-text). Also it seems SSL support is broken in
-Windows distribution of Erlang emulator.<BR>
-<BR>
 <!--TOC subsection Starting-->
 
 <H3><A NAME="htoc10">2.4</A>&nbsp;&nbsp;Starting</H3><!--SEC END -->
@@ -452,9 +444,12 @@ The following options are defined:
  <DT><CODE><B>{shaper, &lt;access rule&gt;}</B></CODE><DD> This option is like previous, but
  use shapers instead of ``<TT>allow</TT>'' and ``<TT>deny</TT>''. Default
  value is ``<TT>none</TT>''.
- <DT><CODE><B>{ssl, SSLOpts}</B></CODE><DD> This option defines that traffic on this port
- will be encrypted using SSL. SSL options are the same as described by
- ``<CODE>erl -man ssl</CODE>'' command
+ <DT><CODE><B>{ip, IPAddress}</B></CODE><DD> This option specifies which network interface to
+ listen on.
+ <DT><CODE><B>inet6</B></CODE><DD> Set up the socket for IPv6.
+ <DT><CODE><B>ssl</B></CODE><DD> This option specifies that traffic on this port will be
+ encrypted using SSL. You should also set ``<CODE>certfile</CODE>'' option.
+ <DT><CODE><B>{certfile, Path}</B></CODE><DD> Path to a file containing the SSL certificate.
  </DL>
 <DT><CODE><B>ejabberd_s2s_in</B></CODE><DD> This module serves incoming S2S connections.
 <DT><CODE><B>ejabberd_service</B></CODE><DD> This module serves connections from Jabber

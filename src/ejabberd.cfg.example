@@ -87,7 +87,7 @@
 {listen, [{5222, ejabberd_c2s,     [{access, c2s},
 				    {shaper, c2s_shaper}]},
 	  {5223, ejabberd_c2s,     [{access, c2s},
-				    {ssl, [{certfile, "./ssl.pem"}]}]},
+				    ssl, {certfile, "./ssl.pem"}]},
           {5269, ejabberd_s2s_in,  [{shaper, s2s_shaper}]},
           {8888, ejabberd_service, [%{access, local},
 				    {hosts,

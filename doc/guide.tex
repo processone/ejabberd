@@ -39,7 +39,7 @@ c
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{July 12, 2003}
+\date{May 8, 2004}
 
 \begin{document}
 \begin{titlepage}
@@ -425,9 +425,12 @@ Currently three modules are implemented:
   \item[\verb|{shaper, <access rule>}|] This option is like previous, but
     use shapers instead of ``\texttt{allow}'' and ``\texttt{deny}''.  Default
     value is ``\texttt{none}''.
-  \item[\verb|{ssl, SSLOpts}|] This option defines that traffic on this port
-    will be encrypted using SSL.  SSL options are the same as described by
-    ``\verb|erl -man ssl|'' command
+  \item[\verb|{ip, IPAddress}|] This option specifies which network interface to
+    listen on.
+  \item[\verb|inet6|] Set up the socket for IPv6.
+  \item[\verb|ssl|] This option specifies that traffic on this port will be
+    encrypted using SSL.  You should also set ``\verb|certfile|'' option.
+  \item[\verb|{certfile, Path}|] Path to a file containing the SSL certificate.
   \end{description}
 \item[\verb|ejabberd_s2s_in|] This module serves incoming S2S connections.
 \item[\verb|ejabberd_service|] This module serves connections from \Jabber{}
@@ -449,7 +452,7 @@ except admins have traffic limit 1000\,b/s.
 {listen, [{5222, ejabberd_c2s,     [{access, c2s},
                                     {shaper, c2s_shaper}]},
           {5223, ejabberd_c2s,     [{access, c2s},
-                                    {ssl, [{certfile, "/path/to/ssl.pem"}]}]},
+                                    ssl, {certfile, "/path/to/ssl.pem"}]},
           {5269, ejabberd_s2s_in,  []},
           {8888, ejabberd_service,
            [{hosts, ["conference.example.org"], [{password, "secret"}]}]}

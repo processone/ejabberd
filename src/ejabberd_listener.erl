@@ -45,15 +45,28 @@ start(Port, Module, Opts) ->
 	    {ok, proc_lib:spawn_link(?MODULE, init_ssl,
 				     [Port, Module, Opts, SSLOpts])};
 	_ ->
-	    {ok, proc_lib:spawn_link(?MODULE, init, [Port, Module, Opts])}
+	    case lists:member(ssl, Opts) of
+		true ->
+		    {ok, proc_lib:spawn_link(?MODULE, init_ssl,
+					     [Port, Module, Opts, []])};
+		false ->
+		    {ok, proc_lib:spawn_link(?MODULE, init,
+					     [Port, Module, Opts])}
+	    end
     end.
 
 init(Port, Module, Opts) ->
+    SockOpts = lists:filter(fun({ip, _}) -> true;
+			       (inet6) -> true;
+			       (inet) -> true;
+			       (_) -> false
+			    end, Opts),
     {ok, ListenSocket} = gen_tcp:listen(Port, [binary,
 					       {packet, 0}, 
 					       {active, false},
 					       {reuseaddr, true},
-					       {nodelay, true}]),
+					       {nodelay, true} |
+					       SockOpts]),
     accept(ListenSocket, Module, Opts).
 
 accept(ListenSocket, Module, Opts) ->
@@ -77,11 +90,23 @@ accept(ListenSocket, Module, Opts) ->
 
 
 init_ssl(Port, Module, Opts, SSLOpts) ->
+    SockOpts = lists:filter(fun({ip, _}) -> true;
+			       (inet6) -> true;
+			       (inet) -> true;
+			       ({verify, _}) -> true;
+			       ({depth, _}) -> true;
+			       ({certfile, _}) -> true;
+			       ({keyfile, _}) -> true;
+			       ({password, _}) -> true;
+			       ({cacertfile, _}) -> true;
+			       ({ciphers, _}) -> true;
+			       (_) -> false
+			    end, Opts),
     {ok, ListenSocket} = ssl:listen(Port, [binary,
 					   {packet, 0}, 
 					   {active, false},
 					   {nodelay, true} |
-					   SSLOpts]),
+					   SockOpts ++ SSLOpts]),
     accept_ssl(ListenSocket, Module, Opts).
 
 accept_ssl(ListenSocket, Module, Opts) ->
