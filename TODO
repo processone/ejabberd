@@ -1,4 +1,7 @@
 admin interface
+	users management
+	node management
+	backup management
 S2S timeouts
 iq:browse(?)
 SVR DNS records
