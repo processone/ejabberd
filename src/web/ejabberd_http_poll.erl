@@ -105,7 +105,9 @@ process_request(#request{path = [],
 			{ok, OutPacket} ->
 			    if
 				ID == ID1 ->
-				    {200, [?CT], OutPacket};
+				    Cookie = "ID=" ++ ID ++ "; expires=-1",
+				    {200, [?CT, {"Set-Cookie", Cookie}],
+				     OutPacket};
 				ID1 == "mobile" ->
 				    {200, [?CT], [ID, $\n, OutPacket]};
 				true ->
