@@ -55,7 +55,9 @@ start)
         if [ -x $D/src ]; then
             echo "Starting ${name}."
             cd $D/src
-            su jabber -c "/usr/pkg/bin/erl -sname ejabberd -s ejabberd -heart -detached &" \
+            ERL_MAX_PORTS=32000 export ERL_MAX_PORTS
+            ulimit -n $ERL_MAX_PORTS
+            su jabber -c "/usr/pkg/bin/erl -sname ejabberd -s ejabberd -heart -detached -sasl sasl_error_logger '{file, \"ejabberd-sasl.log\"}' &" \
                       1>/dev/null 2>&1
         fi
         ;;

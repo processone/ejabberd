@@ -21,7 +21,8 @@ DESTDIR =
 EJABBERDDIR = $(DESTDIR)/var/lib/ejabberd
 BEAMDIR = $(EJABBERDDIR)/beam
 PRIVDIR = $(EJABBERDDIR)/priv
-SODIR = $(PRIVDIR)/lib
+SODIR = $(PRIVDIR)
+MSGSDIR = $(PRIVDIR)/msgs
 
 all: all-recursive $(ERLSHLIBS) compile-beam
 
@@ -52,6 +53,8 @@ install: all
 	cp *.beam $(BEAMDIR)
 	mkdir -p $(SODIR)
 	cp *.so $(SODIR)
+	mkdir -p $(MSGSDIR)
+	cp msgs/*.msg $(MSGSDIR)
 
 clean: clean-recursive
 	rm -f *.beam $(ERLSHLIBS)

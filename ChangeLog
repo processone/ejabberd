@@ -1,3 +1,9 @@
+2003-11-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/mtr/ejabberd: Updated (thanks to Marshall T. Rose)
+
+	* src/Makefile.in: Added installation of msgs/ directory
+
 2003-11-11  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/dev.tex: Developers documentation (not completed)
