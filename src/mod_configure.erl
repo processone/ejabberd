@@ -211,6 +211,42 @@ get_form(["running nodes", ENode, "modules", "start"], Lang) ->
 	      }
 	     ]};
 
+get_form(["running nodes", ENode, "import", "file"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Import User from File")}]},
+	      {xmlelement, "instructions", [],
+	       [{xmlcdata,
+	         translate:translate(
+	           Lang, "Enter path to jabberd1.4 spool file")}]},
+	      {xmlelement, "field", [{"type", "text-single"},
+				     {"label",
+				      translate:translate(
+					Lang, "Path to File")},
+				     {"var", "path"}],
+	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	      }
+	     ]};
+
+get_form(["running nodes", ENode, "import", "dir"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Import User from Dir")}]},
+	      {xmlelement, "instructions", [],
+	       [{xmlcdata,
+	         translate:translate(
+	           Lang, "Enter path to jabberd1.4 spool dir")}]},
+	      {xmlelement, "field", [{"type", "text-single"},
+				     {"label",
+				      translate:translate(
+					Lang, "Path to Dir")},
+				     {"var", "path"}],
+	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	      }
+	     ]};
+
 get_form(["config", "hostname"], Lang) ->
     {result, [{xmlelement, "title", [],
 	       [{xmlcdata,
@@ -357,6 +393,38 @@ set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
 			_ ->
 			    {error, "406", "Not Acceptable"}
 		    end;
+		_ ->
+		    {error, "406", "Not Acceptable"}
+	    end
+    end;
+
+
+set_form(["running nodes", ENode, "import", "file"], Lang, XData) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    case lists:keysearch("path", 1, XData) of
+		false ->
+		    {error, "406", "Not Acceptable"};
+		{value, {_, [String]}} ->
+		    rpc:call(Node, jd2ejd, import_file, [String]);
+		_ ->
+		    {error, "406", "Not Acceptable"}
+	    end
+    end;
+
+
+set_form(["running nodes", ENode, "import", "dir"], Lang, XData) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    case lists:keysearch("path", 1, XData) of
+		false ->
+		    {error, "406", "Not Acceptable"};
+		{value, {_, [String]}} ->
+		    rpc:call(Node, jd2ejd, import_dir, [String]);
 		_ ->
 		    {error, "406", "Not Acceptable"}
 	    end

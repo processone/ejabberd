@@ -132,6 +132,11 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
 		       [feature_to_xml({?NS_XDATA})]}]};
+		["running nodes", ENode, "import"] -> ?EMPTY_INFO_RESULT;
+		["running nodes", ENode, "import", _] ->
+		    {iq, ID, result, XMLNS,
+		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		       [feature_to_xml({?NS_XDATA})]}]};
 		["config", _] ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
@@ -205,7 +210,9 @@ get_local_items(["stopped nodes"], Server, Lang) ->
 get_local_items(["running nodes", ENode], Server, Lang) ->
     {result,
      [?NODE("DB", "running nodes/" ++ ENode ++ "/DB"),
-      ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules")
+      ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules"),
+      ?NODE("Import users from jabberd1.4 spool files",
+	    "running nodes/" ++ ENode ++ "/import")
      ]};
 
 get_local_items(["running nodes", ENode, "DB"], Server, Lang) ->
@@ -218,6 +225,15 @@ get_local_items(["running nodes", ENode, "modules"], Server, Lang) ->
      ]};
 
 get_local_items(["running nodes", ENode, "modules", _], Server, Lang) ->
+    {result, []};
+
+get_local_items(["running nodes", ENode, "import"], Server, Lang) ->
+    {result,
+     [?NODE("Import File", "running nodes/" ++ ENode ++ "/import/file"),
+      ?NODE("Import Directory",  "running nodes/" ++ ENode ++ "/import/dir")
+     ]};
+
+get_local_items(["running nodes", ENode, "import", _], Server, Lang) ->
     {result, []};
 
 get_local_items(_, _, _) ->

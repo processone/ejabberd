@@ -29,8 +29,9 @@ start_link() ->
 init() ->
     MyDomain = ?MYNAME,
     ejabberd_router:register_local_route(MyDomain),
+    catch ets:new(local_iqtable, [named_table, public]),
     loop(#state{mydomain = MyDomain,
-		iqtable = ets:new(local_iqtable, [named_table])}).
+		iqtable = local_iqtable}).
 
 loop(State) ->
     receive

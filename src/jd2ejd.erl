@@ -13,7 +13,10 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/1, start/2, receiver/2]).
+-export([start/1,
+	 start/2,
+	 import_file/1,
+	 import_dir/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -28,7 +31,7 @@
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
 
--record(state, {socket, receiver,
+-record(state, {socket,
 		user = "", server = ?MYNAME, resource = ""
 	       }).
 
@@ -63,7 +66,6 @@ start(File, User) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([File, User]) ->
-    %ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
     XMLStreamPid = xml_stream:start(self()),
     {ok, Text} = file:read_file(File),
     xml_stream:send_text(XMLStreamPid, Text),
@@ -106,6 +108,14 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 		%		      {iq, "", set, ?NS_ROSTER, El}),
 		mod_roster:set_items(StateData#state.user, El),
 		StateData;
+	    ?NS_VCARD ->
+		Res = mod_vcard:process_local_iq(From,
+						 {"", ?MYNAME, ""},
+						 {iq, "", set, ?NS_VCARD, El}),
+		StateData;
+	    "jabber:x:offline" ->
+		process_offline(From, El),
+		StateData;
 	    %?NS_REGISTER ->
 	    %    mod_register:process_iq(
 	    %      {"", "", ""}, {"", ?MYNAME, ""},
@@ -114,7 +124,7 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 	    %    io:format("user ~s~n", [User]),
 	    %    StateData;
 	    XMLNS ->
-		io:format("Unknown namespace \"~s\"~n", [XMLNS]),
+		io:format("jd2ejd: Unknown namespace \"~s\"~n", [XMLNS]),
 		StateData
 	end,
     {next_state, xdb_data, NewState};
@@ -187,18 +197,44 @@ terminate(Reason, StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-receiver(Socket, C2SPid) ->
-    XMLStreamPid = xml_stream:start(C2SPid),
-    receiver(Socket, C2SPid, XMLStreamPid).
+process_offline(To, {xmlelement, _, _, Els}) ->
+    lists:foreach(fun({xmlelement, _, Attrs, _} = El) ->
+			  FromS = xml:get_attr_s("from", Attrs),
+			  From = case FromS of
+				     "" ->
+					 {"", ?MYNAME, ""};
+				     _ ->
+					 jlib:string_to_jid(FromS)
+				 end,
+			  case From of
+			      error ->
+				  ok;
+			      _ ->
+				  mod_offline:store_packet(From, To, El)
+			  end
+		  end, Els).
 
-receiver(Socket, C2SPid, XMLStreamPid) ->
-    case gen_tcp:recv(Socket, 0) of
-        {ok, Text} ->
-	    xml_stream:send_text(XMLStreamPid, Text),
-	    receiver(Socket, C2SPid, XMLStreamPid);
-        {error, Reason} ->
-	    exit(XMLStreamPid, closed),
-	    gen_fsm:send_event(C2SPid, closed),
-	    ok
-    end.
+
+import_file(File) ->
+    start(File).
+
+import_dir(Dir) ->
+    {ok, Files} = file:list_dir(Dir),
+    MsgFiles = lists:filter(
+		 fun(FN) ->
+			 case string:len(FN) > 4 of
+			     true ->
+				 string:substr(FN,
+					       string:len(FN) - 3) == ".xml";
+			     _ ->
+				 false
+			 end
+		 end, Files),
+    lists:foreach(
+      fun(FN) ->
+	      import_file(filename:join([Dir, FN]))
+      end, MsgFiles),
+    ok.
+
+
 

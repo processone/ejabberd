@@ -97,8 +97,10 @@ init([From, Server, Type]) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
-    case gen_tcp:connect(StateData#state.server,
-			 ejabberd_config:get_local_option(outgoing_s2s_port),
+    {Addr, Port} = get_addr_port(StateData#state.server),
+    ?DEBUG("s2s_out: connecting to ~s:~p~n", [Addr, Port]),
+    case gen_tcp:connect(Addr,
+			 Port,
 			 [binary, {packet, 0}]) of
 	{ok, Socket} ->
 	    XMLStreamPid = xml_stream:start(self()),
@@ -437,4 +439,29 @@ is_verify_res({xmlelement, Name, Attrs, Els}) when Name == "db:verify" ->
      xml:get_attr_s("type", Attrs)};
 is_verify_res(_) ->
     false.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SRV support
+
+-include_lib("kernel/include/inet.hrl").
+
+get_addr_port(Server) ->
+    case inet_res:getbyname("_jabber._tcp." ++ Server, srv) of
+	{error, Reason} ->
+	    ?DEBUG("srv lookup of '~s' failed: ~p~n", [Server, Reason]),
+	    {Server, ejabberd_config:get_local_option(outgoing_s2s_port)};
+	{ok, HEnt} ->
+	    ?DEBUG("srv lookup of '~s': ~p~n",
+		   [Server, HEnt#hostent.h_addr_list]),
+	    case HEnt#hostent.h_addr_list of
+		[] ->
+		    {Server,
+		     ejabberd_config:get_local_option(outgoing_s2s_port)};
+		[{_, _, Port, Host} | _] ->
+		    {Host, Port}
+	    end
+    end.
+
+
 
