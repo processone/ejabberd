@@ -6,7 +6,8 @@
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
--define(ejabberd_debug, true).
+%-define(ejabberd_debug, true).
+%-define(DBGFSM, true).
 
 -ifdef(ejabberd_debug).
 -define(DEBUG(Format, Args), io:format("D(~p:~p:~p) : "++Format++"~n",

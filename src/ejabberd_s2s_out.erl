@@ -30,7 +30,7 @@
 		myname, server, xmlpid, queue,
 		new = false, verify = false}).
 
--define(DBGFSM, true).
+%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).

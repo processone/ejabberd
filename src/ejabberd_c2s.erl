@@ -246,6 +246,10 @@ handle_sync_event(Event, From, StateName, StateData) ->
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData#state.sender, Text),
     {next_state, StateName, StateData};
+handle_info(replaced, StateName, StateData) ->
+    % TODO
+    %send_text(StateData#state.sender, Text),
+    {stop, normal, StateData#state{user = ""}};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
     {FU, FS, FR} = From,

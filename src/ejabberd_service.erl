@@ -31,7 +31,7 @@
 -record(state, {socket, receiver, streamid,
 		host, password}).
 
--define(DBGFSM, true).
+%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
