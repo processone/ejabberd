@@ -40,6 +40,9 @@ process(Node, ["restart"]) ->
 	    ok
     end;
 
+process(Node, ["reopen-log"]) ->
+    {error_logger, Node} ! {emulator, noproc, reopen};
+
 process(Node, ["register", User, Password]) ->
     case rpc:call(Node, ejabberd_auth, try_register, [User, Password]) of
 	{atomic, ok} ->
@@ -115,6 +118,7 @@ print_usage() ->
 	      "Available commands:~n"
 	      "  stop\t\t\t\tstop ejabberd~n"
 	      "  restart\t\t\trestart ejabberd~n"
+	      "  reopen-log\t\t\treopen log file~n"
 	      "  register user password\tregister a user~n"
 	      "  unregister user\t\tunregister a user~n"
 	      "  backup file\t\t\tstore a backup in file~n"
