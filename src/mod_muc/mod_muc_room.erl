@@ -43,8 +43,8 @@
 		 persistent = false,
 		 moderated = false, % TODO
 		 members_by_default = true,
-		 members_only = false, % TODO
-		 allow_user_invites = false, % TODO
+		 members_only = false,
+		 allow_user_invites = false,
 		 password_protected = false, % TODO
 		 anonymous = true,
 		 logging = false % TODO
@@ -76,6 +76,8 @@
 	?OLD_ERROR("409", "Nickname already in use.")).
 -define(ERR_MUC_BANNED,
 	?OLD_ERROR("403", "You have been banned from this room.")).
+-define(ERR_MUC_NOT_MEMBER,
+	?OLD_ERROR("407", "Membership required to enter this room.")).
 
 
 -define(DBGFSM, true).
@@ -188,6 +190,34 @@ normal_state({route, From, "",
 		    end;
 		"error" ->
 		    {next_state, normal_state, StateData};
+		Type when (Type == "") or (Type == "normal") ->
+		    case check_invitation(From, Els, StateData) of
+			error ->
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERR_NOT_ALLOWED),
+			    ejabberd_router:route(
+			      {StateData#state.room, StateData#state.host, ""},
+			      From, Err),
+			    {next_state, normal_state, StateData};
+			IJID ->
+			    Config = StateData#state.config,
+			    case Config#config.members_only of
+				true ->
+				    case get_affiliation(IJID, StateData) of
+					none ->
+					    NSD = set_affiliation(
+						    IJID,
+						    member,
+						    StateData),
+					    {next_state, normal_state, NSD};
+					_ ->
+					    {next_state, normal_state,
+					     StateData}
+				    end;
+				false ->
+				    {next_state, normal_state, StateData}
+			    end
+		    end;
 		_ ->
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERR_NOT_ALLOWED),
@@ -311,7 +341,13 @@ normal_state({route, From, Nick,
 				case Role of
 				    none ->
 					Err = jlib:make_error_reply(
-					Packet, ?ERR_MUC_BANNED),
+						Packet,
+						case Affiliation of
+						    outcast ->
+							?ERR_MUC_BANNED;
+						    _ ->
+							?ERR_MUC_NOT_MEMBER
+						end),
 					ejabberd_router:route(
 					  {StateData#state.room,
 					   StateData#state.host,
@@ -544,15 +580,38 @@ get_affiliation(JID, StateData) ->
 
 set_role(JID, Role, StateData) ->
     LJID = jlib:jid_tolower(JID),
+    LJIDs = case LJID of
+		{U, S, ""} ->
+		    ?DICT:fold(
+		       fun(J, _, Js) ->
+			       case J of
+				   {U, S, _} ->
+				       [J | Js];
+				   _ ->
+				       Js
+			       end
+		       end, [], StateData#state.users);
+		_ ->
+		    case ?DICT:is_key(LJID, StateData#state.users) of
+			true ->
+			    [LJID];
+			_ ->
+			    []
+		    end
+	    end,
     Users = case Role of
 		none ->
-		    ?DICT:erase(LJID,
-				StateData#state.users);
+		    lists:foldl(fun(J, Us) ->
+					?DICT:erase(J,
+						    Us)
+				end, StateData#state.users, LJIDs);
 		_ ->
-		    {ok, User} = ?DICT:find(LJID, StateData#state.users),
-		    ?DICT:store(LJID,
-				User#user{role = Role},
-				StateData#state.users)
+		    lists:foldl(fun(J, Us) ->
+					{ok, User} = ?DICT:find(J, Us),
+					?DICT:store(J,
+						    User#user{role = Role},
+						    Us)
+				end, StateData#state.users, LJIDs)
 	    end,
     StateData#state{users = Users}.
 
@@ -572,11 +631,16 @@ get_default_role(Affiliation, StateData) ->
 	member ->  participant;
 	outcast -> none;
 	none ->
-	    case (StateData#state.config)#config.members_by_default of
+	    case (StateData#state.config)#config.members_only of
 		true ->
-		    participant;
+		    none;
 		_ ->
-		    visitor
+		    case (StateData#state.config)#config.members_by_default of
+			true ->
+			    participant;
+			_ ->
+			    visitor
+		    end
 	    end
     end.
 
@@ -665,6 +729,30 @@ is_nick_change(JID, Nick, StateData) ->
 	    Nick /= OldNick
     end.
 
+send_update_presence(JID, StateData) ->
+    LJID = jlib:jid_tolower(JID),
+    LJIDs = case LJID of
+		{U, S, ""} ->
+		    ?DICT:fold(
+		       fun(J, _, Js) ->
+			       case J of
+				   {U, S, _} ->
+				       [J | Js];
+				   _ ->
+				       Js
+			       end
+		       end, [], StateData#state.users);
+		_ ->
+		    case ?DICT:is_key(LJID, StateData#state.users) of
+			true ->
+			    [LJID];
+			_ ->
+			    []
+		    end
+	    end,
+    lists:foreach(fun(J) ->
+			  send_new_presence(J, StateData)
+		  end, LJIDs).
 
 send_new_presence(NJID, StateData) ->
     {ok, #user{jid = RealJID,
@@ -1022,13 +1110,13 @@ process_admin_items_set(UJID, Items, StateData) ->
 					   (A == admin) or (A == owner)->
 					 SD1 = set_affiliation(JID, A, SD),
 					 SD2 = set_role(JID, moderator, SD1),
-					 catch send_new_presence(JID, SD2),
+					 send_update_presence(JID, SD2),
 					 SD2;
 				     {JID, affiliation, member, Reason} ->
 					 SD1 = set_affiliation(
 						 JID, member, SD),
 					 SD2 = set_role(JID, participant, SD1),
-					 catch send_new_presence(JID, SD2),
+					 send_update_presence(JID, SD2),
 					 SD2;
 				     {JID, role, R, Reason} ->
 					 SD1 = set_role(JID, R, SD),
@@ -1036,7 +1124,7 @@ process_admin_items_set(UJID, Items, StateData) ->
 					 SD1;
 				     {JID, affiliation, A, Reason} ->
 					 SD1 = set_affiliation(JID, A, SD),
-					 catch send_new_presence(JID, SD1),
+					 send_update_presence(JID, SD1),
 					 SD1
 				       end
 				) of
@@ -1119,7 +1207,7 @@ find_changed_items(UJID, UAffiliation, URole,
 					      UJID,
 					      UAffiliation, URole,
 					      Items, StateData,
-					      [{JID,
+					      [{jlib:jid_remove_resource(JID),
 						affiliation,
 						SAffiliation,
 						xml:get_path_s(
@@ -1274,7 +1362,32 @@ can_change_ra(FAffiliation, FRole,
     false.
 
 
-send_kickban_presence(UJID, Reason, Code, StateData) ->
+send_kickban_presence(JID, Reason, Code, StateData) ->
+    LJID = jlib:jid_tolower(JID),
+    LJIDs = case LJID of
+		{U, S, ""} ->
+		    ?DICT:fold(
+		       fun(J, _, Js) ->
+			       case J of
+				   {U, S, _} ->
+				       [J | Js];
+				   _ ->
+				       Js
+			       end
+		       end, [], StateData#state.users);
+		_ ->
+		    case ?DICT:is_key(LJID, StateData#state.users) of
+			true ->
+			    [LJID];
+			_ ->
+			    []
+		    end
+	    end,
+    lists:foreach(fun(J) ->
+			  send_kickban_presence1(J, Reason, Code, StateData)
+		  end, LJIDs).
+
+send_kickban_presence1(UJID, Reason, Code, StateData) ->
     {ok, #user{jid = RealJID,
 	       nick = Nick}} =
 	?DICT:find(jlib:jid_tolower(UJID), StateData#state.users),
@@ -1317,7 +1430,6 @@ process_iq_owner(From, set, SubEl, StateData) ->
 		    case {xml:get_tag_attr_s("xmlns", XEl),
 			  xml:get_tag_attr_s("type", XEl)} of
 			{?NS_XDATA, "cancel"} ->
-			    %{error, ?ERR_FEATURE_NOT_IMPLEMENTED};
 			    {result, [], StateData};
 			{?NS_XDATA, "submit"} ->
 			    set_config(XEl, StateData);
@@ -1366,48 +1478,6 @@ process_iq_owner(From, get, SubEl, StateData) ->
 	    {error, ?ERR_NOT_ALLOWED}
     end.
 
-
-%    case xml:get_subtag(SubEl, "item") of
-%	false ->
-%	    {error, ?ERR_BAD_REQUEST};
-%	Item ->
-%	    FAffiliation = get_affiliation(From, StateData),
-%	    FRole = get_role(From, StateData),
-%	    case xml:get_tag_attr("role", Item) of
-%		false ->
-%		    case xml:get_tag_attr("affiliation", Item) of
-%			false ->
-%			    {error, ?ERR_BAD_REQUEST};
-%			{value, StrAffiliation} ->
-%			    case catch list_to_affiliation(StrAffiliation) of
-%				{'EXIT', _} ->
-%				    {error, ?ERR_BAD_REQUEST};
-%				SAffiliation ->
-%				    if
-%					FAffiliation == owner ->
-%					    Items = items_with_affiliation(
-%						      SAffiliation, StateData),
-%					    {result, Items, StateData};
-%					true ->
-%					    {error, ?ERR_NOT_ALLOWED}
-%				    end
-%			    end
-%		    end;
-%		{value, StrRole} ->
-%		    case catch list_to_role(StrRole) of
-%			{'EXIT', _} ->
-%			    {error, ?ERR_BAD_REQUEST};
-%			SRole ->
-%			    if
-%				FAffiliation == owner ->
-%				    Items = items_with_role(SRole, StateData),
-%				    {result, Items, StateData};
-%				true ->
-%				    {error, ?ERR_NOT_ALLOWED}
-%			    end
-%		    end
-%	    end
-%    end.
 
 
 -define(XFIELD(Type, Label, Var, Val),
@@ -1675,5 +1745,75 @@ get_title(StateData) ->
 	Name ->
 	    Name
     end.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Invitation support
+
+check_invitation(From, Els, StateData) ->
+    FAffiliation = get_affiliation(From, StateData),
+    CanInvite = (StateData#state.config)#config.allow_user_invites
+	orelse (FAffiliation == admin) orelse (FAffiliation == owner),
+    case xml:remove_cdata(Els) of
+	[{xmlelement, "x", Attrs1, Els1} = XEl] ->
+	    case xml:get_tag_attr_s("xmlns", XEl) of
+		?NS_MUC_USER ->
+		    case xml:remove_cdata(Els1) of
+			[{xmlelement, "invite", Attrs2, Els2} = InviteEl] ->
+			    case jlib:string_to_jid(
+				   xml:get_attr_s("to", Attrs2)) of
+				error ->
+				    error;
+				JID ->
+				    case CanInvite of
+					true ->
+					    Reason =
+						xml:get_path_s(
+						  InviteEl,
+						  [{elem, "reason"}, cdata]),
+					    IEl =
+						[{xmlelement, "invite",
+						  [{"from",
+						    jlib:jid_to_string(From)}],
+						  [{xmlelement, "reason", [],
+						    [{xmlcdata, Reason}]}]}],
+					    PasswdEl = [],
+					    Msg =
+						{xmlelement, "message",
+						 [{"type", "normal"}],
+						 [{xmlelement, "x",
+						   [{"xmlns", ?NS_MUC_USER}],
+						   IEl ++ PasswdEl},
+						  {xmlelement, "x",
+						   [{"xmlns",
+						     ?NS_XCONFERENCE},
+						    {"jid",
+						     jlib:jid_to_string(
+						       {StateData#state.room,
+							StateData#state.host,
+							""})}],
+						   [{xmlcdata, Reason}]}]},
+					    ejabberd_router:route(
+					      {StateData#state.room,
+					       StateData#state.host,
+					       ""},
+					      JID,
+					      Msg),
+					    JID;
+					_ ->
+					    error
+				    end
+			    end;
+			_ ->
+			    error
+		    end;
+		_ ->
+		    error
+	    end;
+	_ ->
+	    error
+    end.
+
+
 
 
