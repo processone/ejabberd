@@ -62,6 +62,10 @@ process_term(Term, State) ->
 	    State#state{opts = [#config{key = {access, RuleName},
 					value = Rules} |
 				State#state.opts]};
+	{shaper, Name, Data} ->
+	    State#state{opts = [#config{key = {shaper, Name},
+					value = Data} |
+				State#state.opts]};
 	{Opt, Val} ->
 	    add_option(Opt, Val, State)
     end.
