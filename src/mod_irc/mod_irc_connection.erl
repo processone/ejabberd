@@ -303,8 +303,8 @@ handle_info({route_chan, Channel, Resource,
 	     {xmlelement, "iq", Attrs, Els} = El},
 	    StateName, StateData) ->
     From = StateData#state.user,
-    To = {lists:concat([Channel, "%", StateData#state.server]),
-	  StateData#state.myname, StateData#state.nick},
+    To = jlib:make_jid(lists:concat([Channel, "%", StateData#state.server]),
+		       StateData#state.myname, StateData#state.nick),
     case jlib:iq_query_info(El) of
 	#iq{xmlns = ?NS_MUC_ADMIN} = IQ ->
 	    iq_admin(StateData, Channel, From, To, IQ);

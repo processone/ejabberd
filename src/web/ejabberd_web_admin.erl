@@ -778,6 +778,13 @@ process_admin(#request{user = User,
     make_xhtml(Res, Lang);
 
 process_admin(#request{user = User,
+		       path = ["user", U, "roster"],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    Res = user_roster(U, Query, Lang),
+    make_xhtml(Res, Lang);
+
+process_admin(#request{user = User,
 		       path = ["nodes"],
 		       q = Query,
 		       lang = Lang} = Request) ->
@@ -1133,6 +1140,65 @@ user_parse_query(User, Query) ->
 	_ ->
 	    nothing
     end.
+
+
+-record(roster, {uj,
+		 user,
+		 jid,
+		 name = "",
+		 subscription = none,
+		 ask = none,
+		 groups = [],
+		 xattrs = [],
+		 xs = []}).
+
+ask_to_pending(subscribe) -> out;
+ask_to_pending(unsubscribe) -> none;
+ask_to_pending(Ask) -> Ask.
+
+user_roster(User, Query, Lang) ->
+    %Res = user_parse_query(User, Query),
+    Res = nothing, % TODO
+    LUser = jlib:nameprep(User),
+    Items = mnesia:dirty_index_read(roster, LUser, #roster.user),
+    SItems = lists:sort(Items),
+    FItems =
+	case SItems of
+	    [] ->
+		[?CT("None")];
+	    _ ->
+		[?XE("table",
+		     [?XE("thead",
+			  [?XE("tr",
+			       [?XCT("td", "JID"),
+				?XCT("td", "Name"),
+				?XCT("td", "Subscription"),
+				?XCT("td", "Pending")
+			       ])]),
+		      ?XE("tbody",
+			  lists:map(
+			    fun(R) ->
+				    ?XE("tr",
+					[?XE("td", [?C(jlib:jid_to_string(
+							 R#roster.jid))]),
+					 ?XE("td", [?C(R#roster.name)]),
+					 ?XE("td",
+					     [?C(atom_to_list(
+						   R#roster.subscription))]),
+					 ?XE("td",
+					     [?C(atom_to_list(
+						   ask_to_pending(
+						     R#roster.ask)))])])
+			    end, SItems))])]
+	end,
+    [?XC("h1", "Roster of " ++ User)] ++
+	case Res of
+	    ok -> [?CT("submitted"), ?P];
+	    error -> [?CT("bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"method", "post"}],
+	      FItems)].
 
 
 get_nodes(Lang) ->
