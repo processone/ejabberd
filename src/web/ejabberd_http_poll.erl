@@ -33,7 +33,8 @@
 		key,
 		output = "",
 		input = "",
-		waiting_input = false}).
+		waiting_input = false,
+		timer}).
 
 %-define(DBGFSM, true).
 
@@ -43,6 +44,7 @@
 -define(FSMOPTS, []).
 -endif.
 
+-define(HTTP_POLL_TIMEOUT, 300000).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -63,7 +65,7 @@ recv({http_poll, FsmRef}, _Length, Timeout) ->
     gen_fsm:sync_send_all_state_event(FsmRef, recv, Timeout).
 
 close({http_poll, FsmRef}) ->
-    gen_fsm:sync_send_all_state_event(FsmRef, close).
+    catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
 
 process_request(#request{path = [],
@@ -120,7 +122,10 @@ init([ID, Key]) ->
     ?INFO_MSG("started: ~p", [{ID, Key}]),
     Opts = [], % TODO
     ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
-    {ok, loop, #state{id = ID, key = Key}}.
+    Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
+    {ok, loop, #state{id = ID,
+		      key = Key,
+		      timer = Timer}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -176,6 +181,10 @@ handle_sync_event(recv, From, StateName, StateData) ->
 						      waiting_input = false}}
     end;
 
+handle_sync_event(stop, From, StateName, StateData) ->
+    Reply = ok,
+    {stop, normal, Reply, StateData};
+
 handle_sync_event({http_put, Key, NewKey, Packet},
 		  From, StateName, StateData) ->
     Allow = case StateData#state.key of
@@ -201,10 +210,13 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 							      key = NewKey}};
 		Receiver ->
 		    gen_fsm:reply(Receiver, {ok, list_to_binary(Packet)}),
+		    cancel_timer(StateData#state.timer),
+		    Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
 		    Reply = ok,
 		    {reply, Reply, StateName,
 		     StateData#state{waiting_input = false,
-				     key = NewKey}}
+				     key = NewKey,
+				     timer = Timer}}
 	    end;
 	true ->
 	    Reply = {error, bad_key},
@@ -228,6 +240,10 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_info({timeout, Timer, _}, StateName,
+	    #state{timer = Timer} = StateData) ->
+    {stop, normal, StateData};
+
 handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -287,4 +303,13 @@ parse_request(Data) ->
 	end,
     {ok, ID, Key, NewKey, Packet}.
 
+
+cancel_timer(Timer) ->
+    erlang:cancel_timer(Timer),
+    receive
+	{timeout, Timer, _} ->
+	    ok
+    after 0 ->
+	    ok
+    end.
 

@@ -17,7 +17,8 @@ OUTDIR = ..
 EFLAGS = -I .. -pz ..
 OBJS   = \
 	$(OUTDIR)/ejabberd_http.beam \
-	$(OUTDIR)/ejabberd_web.beam
+	$(OUTDIR)/ejabberd_web.beam  \
+	$(OUTDIR)/ejabberd_http_poll.beam
 
 all:    $(OBJS)
 
