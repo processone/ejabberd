@@ -145,7 +145,8 @@ clean_table_from_bad_node(Node) ->
 			 [{'==', {node, '$1'}, Node}],
 			 ['$_']}]),
 		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E)
+				      mnesia:delete_object(E),
+				      mnesia:delete({presence, E#session.ur})
 			      end, Es)
         end,
     mnesia:transaction(F).

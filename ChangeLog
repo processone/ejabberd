@@ -1,3 +1,7 @@
+2005-03-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Bugfix
+
 2005-03-12  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_router.erl: Bugfix
