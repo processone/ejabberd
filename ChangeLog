@@ -1,5 +1,7 @@
 2004-10-06  Alexey Shchepin  <alexey@sevcom.net>
 
+	* doc/guide.tex: Updated
+
 	* src/ejabberd_s2s_out.erl: Fixed socket closing condition
 
 2004-10-05  Alexey Shchepin  <alexey@sevcom.net>

@@ -77,34 +77,35 @@
 <LI><A HREF="#htoc26">4.1.3&nbsp;&nbsp;Session Manager</A>
 <LI><A HREF="#htoc27">4.1.4&nbsp;&nbsp;S2S Manager</A>
 </UL>
+<LI><A HREF="#htoc28">4.2&nbsp;&nbsp;How to setup ejabberd cluster</A>
 </UL>
-<LI><A HREF="#htoc28">A&nbsp;&nbsp;Built-in Modules</A>
+<LI><A HREF="#htoc29">A&nbsp;&nbsp;Built-in Modules</A>
 <UL><LI>
-<A HREF="#htoc29">A.1&nbsp;&nbsp;Common Options</A>
+<A HREF="#htoc30">A.1&nbsp;&nbsp;Common Options</A>
 <UL><LI>
-<A HREF="#htoc30">A.1.1&nbsp;&nbsp;Option <TT>iqdisc</TT></A>
-<LI><A HREF="#htoc31">A.1.2&nbsp;&nbsp;Option <TT>host</TT></A>
+<A HREF="#htoc31">A.1.1&nbsp;&nbsp;Option <TT>iqdisc</TT></A>
+<LI><A HREF="#htoc32">A.1.2&nbsp;&nbsp;Option <TT>host</TT></A>
 </UL>
-<LI><A HREF="#htoc32">A.2&nbsp;&nbsp;<TT>mod_announce</TT></A>
-<LI><A HREF="#htoc33">A.3&nbsp;&nbsp;<TT>mod_configure</TT></A>
-<LI><A HREF="#htoc34">A.4&nbsp;&nbsp;<TT>mod_disco</TT></A>
-<LI><A HREF="#htoc35">A.5&nbsp;&nbsp;<TT>mod_echo</TT></A>
-<LI><A HREF="#htoc36">A.6&nbsp;&nbsp;<TT>mod_irc</TT></A>
-<LI><A HREF="#htoc37">A.7&nbsp;&nbsp;<TT>mod_last</TT></A>
-<LI><A HREF="#htoc38">A.8&nbsp;&nbsp;<TT>mod_muc</TT></A>
-<LI><A HREF="#htoc39">A.9&nbsp;&nbsp;<TT>mod_offline</TT></A>
-<LI><A HREF="#htoc40">A.10&nbsp;&nbsp;<TT>mod_privacy</TT></A>
-<LI><A HREF="#htoc41">A.11&nbsp;&nbsp;<TT>mod_private</TT></A>
-<LI><A HREF="#htoc42">A.12&nbsp;&nbsp;<TT>mod_pubsub</TT></A>
-<LI><A HREF="#htoc43">A.13&nbsp;&nbsp;<TT>mod_register</TT></A>
-<LI><A HREF="#htoc44">A.14&nbsp;&nbsp;<TT>mod_roster</TT></A>
-<LI><A HREF="#htoc45">A.15&nbsp;&nbsp;<TT>mod_service_log</TT></A>
-<LI><A HREF="#htoc46">A.16&nbsp;&nbsp;<TT>mod_stats</TT></A>
-<LI><A HREF="#htoc47">A.17&nbsp;&nbsp;<TT>mod_time</TT></A>
-<LI><A HREF="#htoc48">A.18&nbsp;&nbsp;<TT>mod_vcard</TT></A>
-<LI><A HREF="#htoc49">A.19&nbsp;&nbsp;<TT>mod_version</TT></A>
+<LI><A HREF="#htoc33">A.2&nbsp;&nbsp;<TT>mod_announce</TT></A>
+<LI><A HREF="#htoc34">A.3&nbsp;&nbsp;<TT>mod_configure</TT></A>
+<LI><A HREF="#htoc35">A.4&nbsp;&nbsp;<TT>mod_disco</TT></A>
+<LI><A HREF="#htoc36">A.5&nbsp;&nbsp;<TT>mod_echo</TT></A>
+<LI><A HREF="#htoc37">A.6&nbsp;&nbsp;<TT>mod_irc</TT></A>
+<LI><A HREF="#htoc38">A.7&nbsp;&nbsp;<TT>mod_last</TT></A>
+<LI><A HREF="#htoc39">A.8&nbsp;&nbsp;<TT>mod_muc</TT></A>
+<LI><A HREF="#htoc40">A.9&nbsp;&nbsp;<TT>mod_offline</TT></A>
+<LI><A HREF="#htoc41">A.10&nbsp;&nbsp;<TT>mod_privacy</TT></A>
+<LI><A HREF="#htoc42">A.11&nbsp;&nbsp;<TT>mod_private</TT></A>
+<LI><A HREF="#htoc43">A.12&nbsp;&nbsp;<TT>mod_pubsub</TT></A>
+<LI><A HREF="#htoc44">A.13&nbsp;&nbsp;<TT>mod_register</TT></A>
+<LI><A HREF="#htoc45">A.14&nbsp;&nbsp;<TT>mod_roster</TT></A>
+<LI><A HREF="#htoc46">A.15&nbsp;&nbsp;<TT>mod_service_log</TT></A>
+<LI><A HREF="#htoc47">A.16&nbsp;&nbsp;<TT>mod_stats</TT></A>
+<LI><A HREF="#htoc48">A.17&nbsp;&nbsp;<TT>mod_time</TT></A>
+<LI><A HREF="#htoc49">A.18&nbsp;&nbsp;<TT>mod_vcard</TT></A>
+<LI><A HREF="#htoc50">A.19&nbsp;&nbsp;<TT>mod_version</TT></A>
 </UL>
-<LI><A HREF="#htoc50">B&nbsp;&nbsp;I18n/L10n</A>
+<LI><A HREF="#htoc51">B&nbsp;&nbsp;I18n/L10n</A>
 </UL>
 
 <!--TOC section Introduction-->
@@ -723,50 +724,119 @@ router;
 
 <H4><A NAME="htoc24">4.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
 
-This module is the main router of Jabber packets on each node. It routes
-them based on their destinations domains. It has two tables: local and global
-routes. First, domain of packet destination searched in local table, and if it
-found, then the packet is routed to appropriate process. If no, then it
-searches in global table, and is routed to the appropriate <TT>ejabberd</TT> node or
-process. If it does not exists in either tables, then it sent to the S2S
-manager.<BR>
+This module is the main router of Jabber packets on each node. It
+routes them based on their destinations domains. It uses a global
+routing table. A domain of packet destination is searched in the
+routing table, and if it is found, then the packet is routed to
+appropriate process. If no, then it is sent to the S2S manager.<BR>
 <BR>
 <!--TOC subsubsection Local Router-->
 
 <H4><A NAME="htoc25">4.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
 
-This module routes packets which have a destination domain equal to this server
-name. If destination JID has a non-empty user part, then it routed to the
-session manager, else it is processed depending on it's content.<BR>
+This module routes packets which have a destination domain equal to
+this server name. If destination JID has a non-empty user part, then
+it is routed to the session manager, else it is processed depending on
+its content.<BR>
 <BR>
 <!--TOC subsubsection Session Manager-->
 
 <H4><A NAME="htoc26">4.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
 
-This module routes packets to local users. It searches for what user resource
-packet must be sended via presence table. If this resource is connected to
-this node, it is routed to C2S process, if it connected via another node, then
-the packet is sent to session manager on that node.<BR>
+This module routes packets to local users. It searches to what user
+resource a packet must be sent via a presence table. Then packet is
+either routed to appropriate C2S process, or stored in offline
+storage, or bounced back.<BR>
 <BR>
 <!--TOC subsubsection S2S Manager-->
 
 <H4><A NAME="htoc27">4.1.4</A>&nbsp;&nbsp;S2S Manager</H4><!--SEC END -->
 
-This module routes packets to other Jabber servers. First, it checks if an
-open S2S connection from the domain of the packet source to the domain of
-packet destination already exists. If it is open on another node, then it
-routes the packet to S2S manager on that node, if it is open on this node, then
-it is routed to the process that serves this connection, and if a connection
-does not exist, then it is opened and registered.<BR>
+This module routes packets to other Jabber servers. First, it
+checks if an opened S2S connection from the domain of the packet
+source to the domain of packet destination is existing. If it is
+existing, then the S2S manager routes the packet to the process
+serving this connection, else a new connection is opened.<BR>
+<BR>
+<!--TOC subsection How to setup ejabberd cluster-->
+
+<H3><A NAME="htoc28">4.2</A>&nbsp;&nbsp;How to setup ejabberd cluster</H3><!--SEC END -->
+
+<A NAME="sec:cluster"></A>
+Suppose you already setuped ejabberd on one of machines (<TT>first</TT>), and
+you need to setup another one to make <TT>ejabberd</TT> cluster. Then do
+following steps:
+<OL type=1><LI>
+Copy <CODE>~ejabberd/.erlang.cookie</CODE> file from <TT>first</TT> to
+ <TT>second</TT>.<BR>
+<BR>
+(alt) You can also add ``<CODE>-cookie content_of_.erlang.cookie</CODE>''
+ option to all ``<TT>erl</TT>'' commands below.<BR>
+<BR>
+<LI>On <TT>second</TT> run under `<TT>ejabberd</TT>' user in a directory
+ where ejabberd will work later the following command:
+<PRE>
+erl -sname ejabberd \
+    -mnesia extra_db_nodes "['ejabberd@first']" \
+    -s mnesia
+</PRE>This will start mnesia serving same DB as <TT>ejabberd@first</TT>.
+ You can check this running ``<CODE>mnesia:info().</CODE>'' command. You
+ should see a lot of remote tables and a line like the following:
+<PRE>
+running db nodes   = [ejabberd@first, ejabberd@second]
+</PRE>
+ 
+<LI>Now run the following in the same ``<TT>erl</TT>'' session:
+<PRE>
+mnesia:change_table_copy_type(schema, node(), disc_copies).
+</PRE>
+ This will create local disc storage for DB.<BR>
+<BR>
+(alt) Change storage type of `<TT>scheme</TT>' table to ``RAM and disc
+ copy'' on second node via web interface.<BR>
+<BR>
+<LI>Now you can add replicas of various tables to this node with
+ ``<CODE>mnesia:add_table_copy</CODE>'' or
+ ``<CODE>mnesia:change_table_copy_type</CODE>'' as above (just replace
+ ``<CODE>schema</CODE>'' with another table name and ``<CODE>disc_copies</CODE>''
+ can be replaced with ``<CODE>ram_copies</CODE>'' or
+ ``<CODE>disc_only_copies</CODE>'').<BR>
+<BR>
+What tables to replicate is very depend on your needs, you can get
+ some hints from ``<CODE>mnesia:info().</CODE>'' command, by looking at
+ size of tables and default storage type for each table on 'first'.<BR>
+<BR>
+Replicating of table makes lookup in this table faster on this node,
+ but writing will be slower. And of course if machine with one of
+ replicas is down, other replicas will be used.<BR>
+<BR>
+Also section ``5.3 Table Fragmentation''
+ <A HREF="http://erlang.org/doc/r9c/lib/mnesia-4.1.4/doc/html/part_frame.html">here</A>
+ can be useful.<BR>
+<BR>
+(alt) Same as in previous item, but for other tables.<BR>
+<BR>
+<LI>Run ``<CODE>init:stop().</CODE>'' or just ``<CODE>q().</CODE>'' to exit from
+ erlang shell. This probably can take some time if mnesia is not yet
+ transfer and process all data it needed from <TT>first</TT>.<BR>
+<BR>
+<LI>Now run ejabberd on <TT>second</TT> with almost the same config as
+ on <TT>first</TT> (you probably don't need to duplicate ``<CODE>acl</CODE>''
+ and ``<CODE>access</CODE>'' options --- they will be taken from
+ <TT>first</TT>, and <CODE>mod_muc</CODE> and <CODE>mod_irc</CODE> should be
+ enabled only on one machine in cluster).
+</OL>
+You can repeat these steps for other machines supposed to serve this
+domain.<BR>
 <BR>
 <!--TOC section Built-in Modules-->
 
-<H2><A NAME="htoc28">A</A>&nbsp;&nbsp;Built-in Modules</H2><!--SEC END -->
+<H2><A NAME="htoc29">A</A>&nbsp;&nbsp;Built-in Modules</H2><!--SEC END -->
 
 <A NAME="sec:modules"></A>
 <!--TOC subsection Common Options-->
 
-<H3><A NAME="htoc29">A.1</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
+<H3><A NAME="htoc30">A.1</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
 
 <A NAME="sec:modcommonopts"></A>
 The following options are used by many modules, so they are described in
@@ -774,7 +844,7 @@ separate section.<BR>
 <BR>
 <!--TOC subsubsection Option <TT>iqdisc</TT>-->
 
-<H4><A NAME="htoc30">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
+<H4><A NAME="htoc31">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
 
 <A NAME="sec:modiqdiscoption"></A>
 Many modules define handlers for processing IQ queries of different namespaces
@@ -807,7 +877,7 @@ Example:
 </PRE>
 <!--TOC subsubsection Option <TT>host</TT>-->
 
-<H4><A NAME="htoc31">A.1.2</A>&nbsp;&nbsp;Option <TT>host</TT></H4><!--SEC END -->
+<H4><A NAME="htoc32">A.1.2</A>&nbsp;&nbsp;Option <TT>host</TT></H4><!--SEC END -->
 
 <A NAME="sec:modhostoption"></A>
 This option explicitly defines hostname for the module which acts as a service.<BR>
@@ -823,7 +893,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_announce</TT>-->
 
-<H3><A NAME="htoc32">A.2</A>&nbsp;&nbsp;<TT>mod_announce</TT></H3><!--SEC END -->
+<H3><A NAME="htoc33">A.2</A>&nbsp;&nbsp;<TT>mod_announce</TT></H3><!--SEC END -->
 
 <A NAME="sec:modannounce"></A>
 This module adds support for broadcast announce messages and MOTD.
@@ -866,7 +936,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_configure</TT>-->
 
-<H3><A NAME="htoc33">A.3</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
+<H3><A NAME="htoc34">A.3</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
 
 <A NAME="sec:modconfigure"></A>
 Options:
@@ -876,7 +946,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_disco</TT>-->
 
-<H3><A NAME="htoc34">A.4</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
+<H3><A NAME="htoc35">A.4</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
 
 <A NAME="sec:moddisco"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A> (Service Discovery).<BR>
@@ -901,7 +971,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_echo</TT>-->
 
-<H3><A NAME="htoc35">A.5</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
+<H3><A NAME="htoc36">A.5</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
 
 <A NAME="sec:modecho"></A>
 This module acts as a service and simply returns to sender any Jabber packet. Module may be
@@ -915,7 +985,7 @@ then prefix <TT>echo.</TT> is added to main <TT>ejabberd</TT> hostname.
 </DL>
 <!--TOC subsection <TT>mod_irc</TT>-->
 
-<H3><A NAME="htoc36">A.6</A>&nbsp;&nbsp;<TT>mod_irc</TT></H3><!--SEC END -->
+<H3><A NAME="htoc37">A.6</A>&nbsp;&nbsp;<TT>mod_irc</TT></H3><!--SEC END -->
 
 <A NAME="sec:modirc"></A>
 This module implements IRC transport.<BR>
@@ -938,7 +1008,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_last</TT>-->
 
-<H3><A NAME="htoc37">A.7</A>&nbsp;&nbsp;<TT>mod_last</TT></H3><!--SEC END -->
+<H3><A NAME="htoc38">A.7</A>&nbsp;&nbsp;<TT>mod_last</TT></H3><!--SEC END -->
 
 <A NAME="sec:modlast"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0012.html">JEP-0012</A> (Last Activity)<BR>
@@ -950,7 +1020,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_muc</TT>-->
 
-<H3><A NAME="htoc38">A.8</A>&nbsp;&nbsp;<TT>mod_muc</TT></H3><!--SEC END -->
+<H3><A NAME="htoc39">A.8</A>&nbsp;&nbsp;<TT>mod_muc</TT></H3><!--SEC END -->
 
 <A NAME="sec:modmuc"></A>
 This module implements <A HREF="http://www.jabber.org/jeps/jep-0045.html">JEP-0045</A> (Multi-User Chat) service.<BR>
@@ -985,14 +1055,14 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_offline</TT>-->
 
-<H3><A NAME="htoc39">A.9</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
+<H3><A NAME="htoc40">A.9</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
 
 <A NAME="sec:modoffline"></A>
 This module implements offline message storage.<BR>
 <BR>
 <!--TOC subsection <TT>mod_privacy</TT>-->
 
-<H3><A NAME="htoc40">A.10</A>&nbsp;&nbsp;<TT>mod_privacy</TT></H3><!--SEC END -->
+<H3><A NAME="htoc41">A.10</A>&nbsp;&nbsp;<TT>mod_privacy</TT></H3><!--SEC END -->
 
 <A NAME="sec:modprivacy"></A>
 This module implements Privacy Rules as defined in XMPP IM
@@ -1005,7 +1075,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_private</TT>-->
 
-<H3><A NAME="htoc41">A.11</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
+<H3><A NAME="htoc42">A.11</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
 
 <A NAME="sec:modprivate"></A>
 This module adds support of <A HREF="http://www.jabber.org/jeps/jep-0049.html">JEP-0049</A> (Private XML Storage).<BR>
@@ -1017,7 +1087,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_pubsub</TT>-->
 
-<H3><A NAME="htoc42">A.12</A>&nbsp;&nbsp;<TT>mod_pubsub</TT></H3><!--SEC END -->
+<H3><A NAME="htoc43">A.12</A>&nbsp;&nbsp;<TT>mod_pubsub</TT></H3><!--SEC END -->
 
 <A NAME="sec:modpubsub"></A>
 This module implements <A HREF="http://www.jabber.org/jeps/jep-0060.html">JEP-0060</A> (Publish-Subscribe Service).<BR>
@@ -1042,7 +1112,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_register</TT>-->
 
-<H3><A NAME="htoc43">A.13</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
+<H3><A NAME="htoc44">A.13</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="sec:modregister"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0077.html">JEP-0077</A> (In-Band Registration).<BR>
@@ -1075,7 +1145,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_roster</TT>-->
 
-<H3><A NAME="htoc44">A.14</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
+<H3><A NAME="htoc45">A.14</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
 
 <A NAME="sec:modroster"></A>
 This module implements roster management.<BR>
@@ -1087,7 +1157,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_service_log</TT>-->
 
-<H3><A NAME="htoc45">A.15</A>&nbsp;&nbsp;<TT>mod_service_log</TT></H3><!--SEC END -->
+<H3><A NAME="htoc46">A.15</A>&nbsp;&nbsp;<TT>mod_service_log</TT></H3><!--SEC END -->
 
 <A NAME="sec:modservicelog"></A>
 This module adds support for logging of user packets via any jabber service.
@@ -1110,7 +1180,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3><A NAME="htoc46">A.16</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
+<H3><A NAME="htoc47">A.16</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
@@ -1124,7 +1194,7 @@ TBD about access.<BR>
 <BR>
 <!--TOC subsection <TT>mod_time</TT>-->
 
-<H3><A NAME="htoc47">A.17</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
+<H3><A NAME="htoc48">A.17</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="sec:modtime"></A>
 This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
@@ -1136,7 +1206,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3><A NAME="htoc48">A.18</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
+<H3><A NAME="htoc49">A.18</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="sec:modvcard"></A>
 This module implements simple Jabber User Directory (based on user vCards)
@@ -1152,19 +1222,21 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 <DT><B><TT>search</TT></B><DD> Specifies wheather search is enabled (value is <TT>true</TT>, default) or
 disabled (value is <TT>false</TT>) by the service. If <TT>search</TT> is set to <TT>false</TT>,
 option <TT>host</TT> is ignored and service does not appear in Jabber Discovery items.
+<DT><B><TT>matches</TT></B><DD> Limits the number of reported search results. If value is set to
+<TT>infinity</TT> then all search results are reported. Default value is <TT>30</TT>.
 </DL>
 Example:
 <PRE>
   {modules,
    [
     ...
-    {mod_vcard, [{search, false}]}
+    {mod_vcard, [{search, false}, {matches, 20}]}
     ...
    ]}.
 </PRE>
 <!--TOC subsection <TT>mod_version</TT>-->
 
-<H3><A NAME="htoc49">A.19</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
+<H3><A NAME="htoc50">A.19</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="sec:modversion"></A>
 This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
@@ -1176,7 +1248,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC section I18n/L10n-->
 
-<H2><A NAME="htoc50">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
+<H2><A NAME="htoc51">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
 
 <A NAME="sec:i18nl10n"></A>
 All built-in modules support <TT>xml:lang</TT> attribute inside IQ queries.

@@ -721,38 +721,118 @@ Each \ejabberd{} node have following modules:
 
 \subsubsection{Router}
 
-This module is the main router of \Jabber{} packets on each node.  It routes
-them based on their destinations domains.  It has two tables: local and global
-routes.  First, domain of packet destination searched in local table, and if it
-found, then the packet is routed to appropriate process.  If no, then it
-searches in global table, and is routed to the appropriate \ejabberd{} node or
-process.  If it does not exists in either tables, then it sent to the S2S
-manager.
+This module is the main router of \Jabber{} packets on each node.  It
+routes them based on their destinations domains.  It uses a global
+routing table.  A domain of packet destination is searched in the
+routing table, and if it is found, then the packet is routed to
+appropriate process.  If no, then it is sent to the S2S manager.
 
 
 \subsubsection{Local Router}
 
-This module routes packets which have a destination domain equal to this server
-name.  If destination JID has a non-empty user part, then it routed to the
-session manager, else it is processed depending on it's content.
+This module routes packets which have a destination domain equal to
+this server name.  If destination JID has a non-empty user part, then
+it is routed to the session manager, else it is processed depending on
+its content.
 
 
 \subsubsection{Session Manager}
 
-This module routes packets to local users.  It searches for what user resource
-packet must be sended via presence table.  If this resource is connected to
-this node, it is routed to C2S process, if it connected via another node, then
-the packet is sent to session manager on that node.
+This module routes packets to local users.  It searches to what user
+resource a packet must be sent via a presence table.  Then packet is
+either routed to appropriate C2S process, or stored in offline
+storage, or bounced back.
 
 
 \subsubsection{S2S Manager}
 
-This module routes packets to other \Jabber{} servers.  First, it checks if an
-open S2S connection from the domain of the packet source to the domain of
-packet destination already exists. If it is open on another node, then it
-routes the packet to S2S manager on that node, if it is open on this node, then
-it is routed to the process that serves this connection, and if a connection
-does not exist, then it is opened and registered.
+This module routes packets to other \Jabber{} servers.  First, it
+checks if an opened S2S connection from the domain of the packet
+source to the domain of packet destination is existing.  If it is
+existing, then the S2S manager routes the packet to the process
+serving this connection, else a new connection is opened.
+
+
+\subsection{How to setup ejabberd cluster}
+\label{sec:cluster}
+
+Suppose you already setuped ejabberd on one of machines (\term{first}), and
+you need to setup another one to make \ejabberd{} cluster.  Then do
+following steps:
+
+\begin{enumerate}
+\item Copy \verb|~ejabberd/.erlang.cookie| file from \term{first} to
+  \term{second}.
+  
+  (alt) You can also add ``\verb|-cookie content_of_.erlang.cookie|''
+  option to all ``\shell{erl}'' commands below.
+  
+\item On \term{second} run under `\term{ejabberd}' user in a directory
+  where ejabberd will work later the following command:
+
+\begin{verbatim}
+erl -sname ejabberd \
+    -mnesia extra_db_nodes "['ejabberd@first']" \
+    -s mnesia
+\end{verbatim}
+  
+  This will start mnesia serving same DB as \node{ejabberd@first}.
+  You can check this running ``\verb|mnesia:info().|'' command.  You
+  should see a lot of remote tables and a line like the following:
+
+\begin{verbatim}
+running db nodes   = [ejabberd@first, ejabberd@second]
+\end{verbatim}
+
+  
+\item Now run the following in the same ``\shell{erl}'' session:
+
+\begin{verbatim}
+mnesia:change_table_copy_type(schema, node(), disc_copies).
+\end{verbatim}
+
+  This will create local disc storage for DB.
+  
+  (alt) Change storage type of `\term{scheme}' table to ``RAM and disc
+  copy'' on second node via web interface.
+
+  
+\item Now you can add replicas of various tables to this node with
+  ``\verb|mnesia:add_table_copy|'' or
+  ``\verb|mnesia:change_table_copy_type|'' as above (just replace
+  ``\verb|schema|'' with another table name and ``\verb|disc_copies|''
+  can be replaced with ``\verb|ram_copies|'' or
+  ``\verb|disc_only_copies|'').
+  
+  What tables to replicate is very depend on your needs, you can get
+  some hints from ``\verb|mnesia:info().|'' command, by looking at
+  size of tables and default storage type for each table on 'first'.
+  
+  Replicating of table makes lookup in this table faster on this node,
+  but writing will be slower.  And of course if machine with one of
+  replicas is down, other replicas will be used.
+  
+  Also section ``5.3 Table Fragmentation''
+  \footahref{http://erlang.org/doc/r9c/lib/mnesia-4.1.4/doc/html/part_frame.html}{here}
+  can be useful.
+  
+  (alt) Same as in previous item, but for other tables.
+
+  
+\item Run ``\verb|init:stop().|'' or just ``\verb|q().|'' to exit from
+  erlang shell.  This probably can take some time if mnesia is not yet
+  transfer and process all data it needed from \term{first}.
+
+  
+\item Now run ejabberd on \term{second} with almost the same config as
+  on \term{first} (you probably don't need to duplicate ``\verb|acl|''
+  and ``\verb|access|'' options --- they will be taken from
+  \term{first}, and \verb|mod_muc| and \verb|mod_irc| should be
+  enabled only on one machine in cluster).
+\end{enumerate}
+
+You can repeat these steps for other machines supposed to serve this
+domain.
 
 
 \appendix{}
