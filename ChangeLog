@@ -1,3 +1,14 @@
+2003-03-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Fixed ports leak
+	* src/ejabberd_listener.erl: Likewise
+
+	* src/ejabberd_c2s.erl: Fixes for SASL support
+
+	* src/cyrsasl.erl: Fixes
+
+	* src/cyrsasl_digest.erl: DIGEST-MD5 SASL mechanism support
+
 2003-03-09  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/cyrsasl*.erl: SASL support (currently support only PLAIN

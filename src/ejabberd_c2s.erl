@@ -21,6 +21,7 @@
 	 wait_for_auth/2,
 	 wait_for_sasl_auth/2,
 	 wait_for_resource_auth/2,
+	 wait_for_sasl_response/2,
 	 session_established/2,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -258,7 +259,8 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 				  [{"xmlns", ?NS_SASL_MECHANISMS}],
 				  [{xmlcdata,
 				    jlib:encode_base64(ServerOut)}]}),
-		    {next_state, wait_for_sasl_response, StateData};
+		    {next_state, wait_for_sasl_response,
+		     StateData#state{sasl_state = NewSASLState}};
 		{error, Code} ->
 		    send_element(StateData#state.socket,
 				 {xmlelement, "failure",
@@ -373,6 +375,63 @@ wait_for_resource_auth(closed, StateData) ->
 
 
 % TODO: wait_for_sasl_response
+wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
+    {xmlelement, Name, Attrs, Els} = El,
+    case {xml:get_attr_s("xmlns", Attrs), Name} of
+	{?NS_SASL_MECHANISMS, "response"} ->
+	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
+	    case cyrsasl:server_step(StateData#state.sasl_state,
+				     ClientIn) of
+		{ok, Props} ->
+		    send_element(StateData#state.socket,
+				 {xmlelement, "success",
+				  [{"xmlns", ?NS_SASL_MECHANISMS}], []}),
+		    {next_state, wait_for_resource_auth,
+		     StateData#state{user = xml:get_attr_s(username, Props)}};
+		{continue, ServerOut, NewSASLState} ->
+		    send_element(StateData#state.socket,
+				 {xmlelement, "challenge",
+				  [{"xmlns", ?NS_SASL_MECHANISMS}],
+				  [{xmlcdata,
+				    jlib:encode_base64(ServerOut)}]}),
+		    {next_state, wait_for_sasl_response,
+		     StateData#state{sasl_state = NewSASLState}};
+		{error, Code} ->
+		    send_element(StateData#state.socket,
+				 {xmlelement, "failure",
+				  [{"xmlns", ?NS_SASL_MECHANISMS},
+				   {"code", Code}],
+				  []}),
+		    {next_state, wait_for_sasl_auth, StateData}
+	    end;
+	_ ->
+	    case jlib:iq_query_info(El) of
+		{iq, ID, Type, ?NS_REGISTER, SubEl} ->
+		    ResIQ = mod_register:process_iq(
+			      {"", "", ""}, {"", ?MYNAME, ""},
+			      {iq, ID, Type, ?NS_REGISTER, SubEl}),
+		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
+						{"", "", ""},
+						jlib:iq_to_xml(ResIQ)),
+		    Res = jlib:remove_attr("to", Res1),
+		    send_element(StateData#state.socket, Res),
+		    {next_state, wait_for_sasl_auth, StateData};
+		_ ->
+		    {next_state, wait_for_sasl_auth, StateData}
+	    end
+    end;
+
+wait_for_sasl_response({xmlstreamend, Name}, StateData) ->
+    send_text(StateData#state.socket, ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_sasl_response({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_sasl_response(closed, StateData) ->
+    {stop, normal, StateData}.
+
 
 
 

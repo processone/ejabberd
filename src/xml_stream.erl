@@ -16,6 +16,7 @@ start(CallbackPid) ->
     spawn(?MODULE, init, [CallbackPid]).
 
 init(CallbackPid) ->
+    link(CallbackPid),
     Port = open_port({spawn, expat_erl}, [binary]),
     loop(CallbackPid, Port, []).
 

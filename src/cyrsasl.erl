@@ -33,6 +33,7 @@ start() ->
 			     public,
 			     {keypos, #sasl_mechanism.mechanism}]),
     cyrsasl_plain:start([]),
+    cyrsasl_digest:start([]),
     ok.
 
 register_mechanism(Mechanism, Module) ->
@@ -52,7 +53,7 @@ server_new(Service, ServerFQDN, UserRealm, SecFlags) ->
 server_start(State, Mech, ClientIn) ->
     case ets:lookup(sasl_mechanism, Mech) of
 	[#sasl_mechanism{module = Module}] ->
-	    MechState = Module:mech_new(),
+	    {ok, MechState} = Module:mech_new(),
 	    server_step(State#sasl_state{mech_mod = Module,
 					 mech_state = MechState},
 			ClientIn);

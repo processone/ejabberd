@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/3, receiver/2, send_text/2, send_element/2]).
+-export([start/3, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -350,28 +350,14 @@ terminate(Reason, StateName, StateData) ->
 	undefined ->
 	    ok;
 	Socket ->
-	    gen_tcp:close(Socket)
+	    gen_tcp:close(Socket),
+	    exit(StateData#state.xmlpid, closed)
     end,
     ok.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-
-receiver(Socket, C2SPid) ->
-    XMLStreamPid = xml_stream:start(C2SPid),
-    receiver(Socket, C2SPid, XMLStreamPid).
-
-receiver(Socket, C2SPid, XMLStreamPid) ->
-    case gen_tcp:recv(Socket, 0) of
-        {ok, Text} ->
-	    xml_stream:send_text(XMLStreamPid, Text),
-	    receiver(Socket, C2SPid, XMLStreamPid);
-        {error, Reason} ->
-	    exit(XMLStreamPid, closed),
-	    gen_fsm:send_event(C2SPid, closed),
-	    ok
-    end.
 
 send_text(Socket, Text) ->
     gen_tcp:send(Socket,Text).

@@ -55,8 +55,9 @@ init(Port, Module, Fun, Opts) ->
 
 accept(ListenSocket, Module, Fun, Opts) ->
     case gen_tcp:accept(ListenSocket) of
-	{ok,Socket} ->
-	    apply(Module, Fun, [{gen_tcp, Socket}, Opts]),
+	{ok, Socket} ->
+	    {ok, Pid} = apply(Module, Fun, [{gen_tcp, Socket}, Opts]),
+	    gen_tcp:controlling_process(Socket, Pid),
 	    accept(ListenSocket, Module, Fun, Opts)
     end.
 
@@ -73,7 +74,7 @@ init_ssl(Port, Module, Fun, Opts, SSLOpts) ->
 
 accept_ssl(ListenSocket, Module, Fun, Opts) ->
     case ssl:accept(ListenSocket) of
-	{ok,Socket} ->
+	{ok, Socket} ->
 	    apply(Module, Fun, [{ssl, Socket}, Opts]),
 	    accept_ssl(ListenSocket, Module, Fun, Opts)
     end.
