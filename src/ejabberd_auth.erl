@@ -74,6 +74,8 @@ auth_module() ->
 	    ejabberd_auth_external;
 	ldap ->
 	    ejabberd_auth_ldap;
+	odbc ->
+	    ejabberd_auth_odbc;
 	_ ->
 	    ejabberd_auth_internal
     end.

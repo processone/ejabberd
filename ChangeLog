@@ -1,3 +1,13 @@
+2004-12-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/pg.sql: DB creation script for postgres
+
+	* src/odbc/ejabberd_odbc.erl: Experimental support for ODBC
+	* src/mod_last_odbc.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_auth.erl: Likewise
+
 2004-12-12  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_stats.erl: Minor optimizations
