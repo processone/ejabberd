@@ -260,7 +260,19 @@ do_route(From, To, Packet) ->
 route_message(From, To, Packet) ->
     LUser = To#jid.luser,
     case catch lists:max(get_user_present_resources(LUser)) of
-	{'EXIT', _} ->
+	{Priority, R} when is_integer(Priority),
+			   Priority >= 0 ->
+	    LResource = jlib:resourceprep(R),
+	    LUR = {LUser, LResource},
+	    case mnesia:dirty_read({session, LUR}) of
+		[] ->
+		    ok;				% Race condition
+		[Sess] ->
+		    Pid = Sess#session.pid,
+		    ?DEBUG("sending to process ~p~n", [Pid]),
+		    Pid ! {route, From, To, Packet}
+	    end;
+	_ ->
 	    case xml:get_tag_attr_s("type", Packet) of
 		"error" ->
 		    ok;
@@ -274,17 +286,6 @@ route_message(From, To, Packet) ->
 				    Packet, ?ERR_SERVICE_UNAVAILABLE),
 			    ejabberd_router:route(To, From, Err)
 		    end
-	    end;
-	{_, R} ->
-	    LResource = jlib:resourceprep(R),
-	    LUR = {LUser, LResource},
-	    case mnesia:dirty_read({session, LUR}) of
-		[] ->
-		    ok;				% Race condition
-		[Sess] ->
-		    Pid = Sess#session.pid,
-		    ?DEBUG("sending to process ~p~n", [Pid]),
-		    Pid ! {route, From, To, Packet}
 	    end
     end.
 

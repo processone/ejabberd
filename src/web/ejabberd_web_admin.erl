@@ -324,6 +324,13 @@ select {
     padding: 0.1em;
 }
 
+thead {
+  color: #000000;
+  background-color: #ffffff;
+  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-size: 10pt;
+  font-weight: bold;
+}
 
 tr.head {
   color: #ffffff;
@@ -1226,7 +1233,7 @@ user_info(User, Query, Lang) ->
     QueueLen = length(mnesia:dirty_read({offline_msg, User})),
     FQueueLen = [?AC("queue/",
 		     integer_to_list(QueueLen))],
-    [?XC("h1", "User: " ++ User)] ++
+    [?XC("h1", ?T("User ") ++ User)] ++
 	case Res of
 	    ok -> [?CT("submitted"), ?P];
 	    error -> [?CT("bad format"), ?P];
@@ -1291,7 +1298,7 @@ user_queue(User, Query, Lang) ->
 		       ?XAE("td", [{"class", "valign"}], [?XC("pre", FPacket)])]
 		     )
 	  end, Msgs),
-    [?XC("h1", User ++ " offline messages queue")] ++
+    [?XC("h1", io_lib:format(?T("~s offline messages queue"), [User]))] ++
 	case Res of
 	    ok -> [?CT("submitted"), ?P];
 	    error -> [?CT("bad format"), ?P];
@@ -1367,7 +1374,7 @@ user_roster(User, Query, Lang, Admin) ->
 		     [?XE("thead",
 			  [?XE("tr",
 			       [?XCT("td", "JID"),
-				?XCT("td", "Name"),
+				?XCT("td", "Nickname"),
 				?XCT("td", "Subscription"),
 				?XCT("td", "Pending"),
 				?XCT("td", "Groups")
@@ -1408,7 +1415,7 @@ user_roster(User, Query, Lang, Admin) ->
 						       "Remove")])])
 			    end, SItems))])]
 	end,
-    [?XC("h1", "Roster of " ++ User)] ++
+    [?XC("h1", ?T("Roster of ") ++ User)] ++
 	case Res of
 	    ok -> [?CT("submitted"), ?P];
 	    error -> [?CT("bad format"), ?P];

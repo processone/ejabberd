@@ -2126,6 +2126,12 @@ destroy_room(DEls, StateData) ->
 		Info#user.jid,
 		Packet)
       end, ?DICT:to_list(StateData#state.users)),
+    case (StateData#state.config)#config.persistent of
+	true ->
+	    mod_muc:forget_room(StateData#state.room);
+	false ->
+	    ok
+	end,
     {result, [], stop}.
 
 

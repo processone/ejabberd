@@ -1,3 +1,17 @@
+2004-10-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fixed room destroying
+
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_sm.erl: Fixed message routing when all resources
+	have negative priority
+
+	* src/msgs/*.msg: Updated (thanks to Sergei Golovan)
+
+	* src/web/ejabberd_web_admin.erl: Table titles now bold (thanks to
+	Sergei Golovan)
+
 2004-10-06  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Updated

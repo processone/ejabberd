@@ -248,7 +248,26 @@
 {"Options", "Параметры"}.
 {"Update", "Обновить"}.
 {"Delete", "Удалить"}.
-{"", ""}.
+{"Add User", "Добавить пользователя"}.
+{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", "ejabberd (c) 2002-2004 Алексей Щепин, 2004 Process One"}.
+{"Offline messages", "Офлайновые сообщения"}.
+{"Last Activity", "Последнее подключение"}.
+{"Never", "Никогда"}.
+{"~s offline messages queue", "Oчередь офлайновых сообщений ~s"}.
+{"Time", "Время"}.
+{"From", "От кого"}.
+{"To", "Кому"}.
+{"Packet", "Пакет"}.
+{"Offline messages:", "Офлайновые сообщения:"}.
+{"Roster", "Ростер"}.
+{"Nickname", "Псевдоним"}.
+{"Subscription", "Подписка"}.
+{"Pending", "Ожидание"}.
+{"Groups", "Группы"}.
+{"Remove", "Удалить"}.
+{"Add JID", "Добавить JID"}.
+{"User ", "Пользователь "}.
+{"Roster of ", "Ростер пользователя "}.
 
 % Local Variables:
 % mode: erlang

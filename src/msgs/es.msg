@@ -220,7 +220,26 @@
 {"Options", "Opciones"}.
 {"Update", "Actualizar"}.
 {"Delete", "Eliminar"}.
-{"", ""}.
+{"Add User", ""}.
+{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", ""}.
+{"Offline messages", ""}.
+{"Last Activity", ""}.
+{"Never", ""}.
+{"~s offline messages queue", ""}.
+{"Time", ""}.
+{"From", ""}.
+{"To", ""}.
+{"Packet", ""}.
+{"Offline messages:", ""}.
+{"Roster", ""}.
+{"Nickname", ""}.
+{"Subscription", ""}.
+{"Pending", ""}.
+{"Groups", ""}.
+{"Remove", ""}.
+{"Add JID", ""}.
+{"User ", ""}.
+{"Roster of ", ""}.
 
 % Local Variables:
 % mode: erlang
