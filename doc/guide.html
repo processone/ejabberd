@@ -116,7 +116,7 @@ runned on them. Each element of list is a tuple with following elements:
 <LI> <TT>ejabberd_s2s_in</TT>: serves incoming S2S connections;
 
 <LI> <TT>ejabberd_service</TT>: serves connections to Jabber services (i.e.
- that used <TT>jabber:component:accept</TT> namespace).
+ that use <TT>jabber:component:accept</TT> namespace).
 </UL>For example, following configuration defines that C2S connections listened on
 port 5222, S2S on port 5269 and that service <TT>conference.jabber.org</TT>
 must be connected to port 8888 with password ``<TT>secret</TT>''.<BR>
@@ -130,7 +130,48 @@ must be connected to port 8888 with password ``<TT>secret</TT>''.<BR>
 
 <H4>3.1.3&nbsp;&nbsp; Access Rules</H4><!--SEC END -->
 
-<A NAME="sec:configaccess"></A>TBD<BR>
+<A NAME="sec:configaccess"></A>Access control in <TT>ejabberd</TT> is done via Access Control Lists (ACL). In
+config file they looks like this:
+<PRE>
+{acl, &lt;aclname&gt;, {&lt;acltype&gt;, ...}}.
+</PRE><TT>&lt;acltype&gt;</TT> can be one of following:
+<DL COMPACT=compact>
+<DT>
+<TT>all</TT><DD> Matches all JIDs. Example:
+<PRE>
+{acl, all, all}.
+</PRE>
+<DT><TT>{user, &lt;username&gt;}</TT><DD> Matches local user with name
+ <TT>&lt;username&gt;</TT>. Example:
+<PRE>
+{acl, admin, {user, "aleksey"}}.
+</PRE>
+<DT><TT>{user, &lt;username&gt;, &lt;server&gt;}</TT><DD> Matches user with JID
+ <TT>&lt;username&gt;@&lt;server&gt;</TT>. Example:
+<PRE>
+{acl, admin, {user, "aleksey", "jabber.ru"}}.
+</PRE>
+<DT><TT>{server, &lt;server&gt;}</TT><DD> Matches any JID from server
+ <TT>&lt;server&gt;</TT>. Example:
+<PRE>
+{acl, jabberorg, {server, "jabber.org"}}.
+</PRE></DL>Allowing or denying of different services is like this:
+<PRE>
+{access, &lt;accessname&gt;, [{allow, &lt;aclname&gt;},
+                        {deny, &lt;aclname&gt;},
+                        ...
+                       ]}.
+</PRE>When JID is checked to have access to <TT>&lt;accessname&gt;</TT>, server
+sequentially checks if this JID in one of the ACLs that are second elements in
+eache tuple in list. If one of them matched, then returned first element of
+matched tuple. Else returned ``<TT>deny</TT>''.<BR>
+<BR>
+Example:
+<PRE>
+{access, configure, [{allow, admin}]}.
+{access, something, [{deny, badmans},
+                     {allow, all}]}.
+</PRE>TBD<BR>
 <BR>
 <!--TOC subsubsection Modules-->
 
@@ -151,9 +192,9 @@ Example:
            {mod_stats,     []},
            {mod_vcard,     []},
            {mod_offline,   []},
-           {mod_echo,      [{host, "echo.e.localhost"}]},
+           {mod_echo,      [{host, "echo.localhost"}]},
            {mod_private,   []},
-           {mod_time,      [{pdisc, no_queue}]},
+           {mod_time,      [{iqdisc, no_queue}]},
            {mod_version,   []}
           ]}.
 </PRE><!--TOC subsection Online Configuration-->
@@ -172,7 +213,63 @@ TBD<BR>
 
 <H2>4&nbsp;&nbsp; Distribution</H2><!--SEC END -->
 
-<A NAME="sec:distribution"></A><!--TOC section Built-in Modules-->
+<A NAME="sec:distribution"></A><!--TOC subsection How it works-->
+
+<H3>4.1&nbsp;&nbsp; How it works</H3><!--SEC END -->
+
+<A NAME="sec:howitworks"></A>Jabber domain is served by one or more <TT>ejabberd</TT> nodes. This nodes can be
+runned on different computers that can be connected via network. They all must
+have access to connect to port 4369 of all another nodes, and must have same
+magic cookie (see Erlang/OTP documentation, in short file
+<TT>ejabberd/.erlang.cookie</TT> must be the same on all nodes). This is
+needed because all nodes exchange information about connected users, S2S
+connection ,registered services, etc...<BR>
+<BR>
+Each <TT>ejabberd</TT> node run following modules:
+<UL>
+<LI>
+ router;
+
+<LI> local router.
+
+<LI> session manager;
+
+<LI> S2S manager;
+</UL><!--TOC subsubsection Router-->
+
+<H4>4.1.1&nbsp;&nbsp; Router</H4><!--SEC END -->
+This module is the main router of Jabber packets on each node. It route
+them based on their destanations domains. It have two tables: local and global
+routes. First, domain of packet destination searched in local table, and if it
+finded, then packet routed to appropriate process. If no, then it searched in
+global table, and routed to appropriate <TT>ejabberd</TT> node or process. If it not
+exists in both tables, then it sended to S2S manager.<BR>
+<BR>
+<!--TOC subsubsection Local Router-->
+
+<H4>4.1.2&nbsp;&nbsp; Local Router</H4><!--SEC END -->
+This module route packets which have destination domain equal to this server
+name. If destination JID have node, then it routed to session manager, else it
+processed depending on it content.<BR>
+<BR>
+<!--TOC subsubsection Session Manager-->
+
+<H4>4.1.3&nbsp;&nbsp; Session Manager</H4><!--SEC END -->
+This module route packets to local users. It search to what user resource
+packet must be sended via presence table. If this reseouce connected to this
+node, it routed to C2S process, if it connected via another node, then packet
+sended to session manager on it.<BR>
+<BR>
+<!--TOC subsubsection S2S Manager-->
+
+<H4>4.1.4&nbsp;&nbsp; S2S Manager</H4><!--SEC END -->
+This module route packets to another Jabber servers. First, it check if
+to domain of packet destination from domain of source already opened S2S
+connection. If it opened on another node, then it routed to S2S manager on
+that node, if it opened on this node, then it routed to process that serve this
+connection, and if this connection not exists, then it opened and registered.<BR>
+<BR>
+<!--TOC section Built-in Modules-->
 
 <H2>5&nbsp;&nbsp; Built-in Modules</H2><!--SEC END -->
 
@@ -209,7 +306,20 @@ queries. Possible values are:
 <PRE>
 {modules, [
            ...
-           {mod_time,      [{pdisc, no_queue}]},
+           {mod_time,      [{iqdisc, no_queue}]},
+           ...
+          ]}.
+</PRE><!--TOC subsubsection Option <TT>host</TT>-->
+
+<H4>5.1.2&nbsp;&nbsp; Option <TT>host</TT></H4><!--SEC END -->
+Some modules may act as services, and wants to have different domain name.
+This option explicitly defines this name.<BR>
+<BR>
+Example:
+<PRE>
+{modules, [
+           ...
+           {mod_echo,      [{host, "echo.myjabber.org"}]},
            ...
           ]}.
 </PRE><!--TOC subsection <TT>mod_register</TT>-->
@@ -232,7 +342,17 @@ queries. Possible values are:
 
 <H3>5.6&nbsp;&nbsp; <TT>mod_stats</TT></H3><!--SEC END -->
 
-<A NAME="sec:modstats"></A><!--TOC subsection <TT>mod_vcard</TT>-->
+<A NAME="sec:modstats"></A>This module adds support of
+<A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
+<BR>
+Options:
+<DL COMPACT=compact>
+<DT>
+<TT>iqdisc</TT><DD> <TT>http://jabber.org/protocol/stats</TT> IQ queries
+ processing discipline.
+</DL>TBD about access.<BR>
+<BR>
+<!--TOC subsection <TT>mod_vcard</TT>-->
 
 <H3>5.7&nbsp;&nbsp; <TT>mod_vcard</TT></H3><!--SEC END -->
 
@@ -248,15 +368,35 @@ queries. Possible values are:
 
 <H3>5.10&nbsp;&nbsp; <TT>mod_private</TT></H3><!--SEC END -->
 
-<A NAME="sec:modprivate"></A><!--TOC subsection <TT>mod_time</TT>-->
+<A NAME="sec:modprivate"></A>This module adds support of
+<A HREF="http://www.jabber.org/jeps/jep-0049.html">JEP-0049</A> (Private XML
+Storage).<BR>
+<BR>
+Options:
+<DL COMPACT=compact>
+<DT>
+<TT>iqdisc</TT><DD> <TT>jabber:iq:private</TT> IQ queries processing discipline.
+</DL><!--TOC subsection <TT>mod_time</TT>-->
 
 <H3>5.11&nbsp;&nbsp; <TT>mod_time</TT></H3><!--SEC END -->
 
-<A NAME="sec:modtime"></A><!--TOC subsection <TT>mod_version</TT>-->
+<A NAME="sec:modtime"></A>This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
+<BR>
+Options:
+<DL COMPACT=compact>
+<DT>
+<TT>iqdisc</TT><DD> <TT>jabber:iq:time</TT> IQ queries processing discipline.
+</DL><!--TOC subsection <TT>mod_version</TT>-->
 
 <H3>5.12&nbsp;&nbsp; <TT>mod_version</TT></H3><!--SEC END -->
 
-<A NAME="sec:modversion"></A><!--HTMLFOOT-->
+<A NAME="sec:modversion"></A>This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
+<BR>
+Options:
+<DL COMPACT=compact>
+<DT>
+<TT>iqdisc</TT><DD> <TT>jabber:iq:version</TT> IQ queries processing discipline.
+</DL><!--HTMLFOOT-->
 <!--ENDHTML-->
 
 <!--FOOTER-->

@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass[10pt]{article}
 
 \usepackage{graphics}
 \usepackage{hevea}
@@ -8,6 +8,7 @@
 \newcommand{\imgscale}{0.7}
 
 
+\newcommand{\ns}[1]{\texttt{#1}}
 \newcommand{\ejabberd}{\texttt{ejabberd}}
 \newcommand{\Jabber}{Jabber}
 
@@ -144,7 +145,7 @@ Currently three modules implemented:
 \item \texttt{ejabberd\_c2s}: serves C2S connections;
 \item \texttt{ejabberd\_s2s\_in}: serves incoming S2S connections;
 \item \texttt{ejabberd\_service}: serves connections to \Jabber{} services (i.e.
-  that used \texttt{jabber:component:accept} namespace).
+  that use \texttt{jabber:component:accept} namespace).
 \end{itemize}
 
 For example, following configuration defines that C2S connections listened on
@@ -162,7 +163,54 @@ must be connected to port 8888 with password ``\texttt{secret}''.
 \subsubsection{Access Rules}
 \label{sec:configaccess}
 
-TBD
+Access control in \ejabberd{} is done via Access Control Lists (ACL).  In
+config file they looks like this:
+\begin{verbatim}
+{acl, <aclname>, {<acltype>, ...}}.
+\end{verbatim}
+
+\texttt{<acltype>} can be one of following:
+\begin{description}
+\item[\texttt{all}] Matches all JIDs.  Example:
+\begin{verbatim}
+{acl, all, all}.
+\end{verbatim}
+\item[\texttt{\{user, <username>\}}] Matches local user with name
+  \texttt{<username>}.  Example:
+\begin{verbatim}
+{acl, admin, {user, "aleksey"}}.
+\end{verbatim}
+\item[\texttt{\{user, <username>, <server>\}}] Matches user with JID
+  \texttt{<username>@<server>}.  Example:
+\begin{verbatim}
+{acl, admin, {user, "aleksey", "jabber.ru"}}.
+\end{verbatim}
+\item[\texttt{\{server, <server>\}}] Matches any JID from server
+  \texttt{<server>}.  Example:
+\begin{verbatim}
+{acl, jabberorg, {server, "jabber.org"}}.
+\end{verbatim}
+\end{description}
+
+Allowing or denying of different services is like this:
+\begin{verbatim}
+{access, <accessname>, [{allow, <aclname>},
+                        {deny, <aclname>},
+                        ...
+                       ]}.
+\end{verbatim}
+When JID is checked to have access to \texttt{<accessname>}, server
+sequentially checks if this JID in one of the ACLs that are second elements in
+eache tuple in list.  If one of them matched, then returned first element of
+matched tuple.  Else returned ``\texttt{deny}''.
+
+Example:
+\begin{verbatim}
+{access, configure, [{allow, admin}]}.
+{access, something, [{deny, badmans},
+                     {allow, all}]}.
+\end{verbatim}
+
 
 
 \subsubsection{Modules}
@@ -183,7 +231,7 @@ Example:
            {mod_stats,     []},
            {mod_vcard,     []},
            {mod_offline,   []},
-           {mod_echo,      [{host, "echo.e.localhost"}]},
+           {mod_echo,      [{host, "echo.localhost"}]},
            {mod_private,   []},
            {mod_time,      [{iqdisc, no_queue}]},
            {mod_version,   []}
@@ -206,7 +254,58 @@ TBD
 \label{sec:distribution}
 
 
+\subsection{How it works}
+\label{sec:howitworks}
 
+\Jabber{} domain is served by one or more \ejabberd{} nodes.  This nodes can be
+runned on different computers that can be connected via network.  They all must
+have access to connect to port 4369 of all another nodes, and must have same
+magic cookie (see Erlang/OTP documentation, in short file
+\texttt{\~ejabberd/.erlang.cookie} must be the same on all nodes).  This is
+needed because all nodes exchange information about connected users, S2S
+connection ,registered services, etc...
+
+Each \ejabberd{} node run following modules:
+\begin{itemize}
+\item router;
+\item local router.
+\item session manager;
+\item S2S manager;
+\end{itemize}
+
+
+\subsubsection{Router}
+
+This module is the main router of \Jabber{} packets on each node.  It route
+them based on their destanations domains.  It have two tables: local and global
+routes.  First, domain of packet destination searched in local table, and if it
+finded, then packet routed to appropriate process.  If no, then it searched in
+global table, and routed to appropriate \ejabberd{} node or process.  If it not
+exists in both tables, then it sended to S2S manager.
+
+
+\subsubsection{Local Router}
+
+This module route packets which have destination domain equal to this server
+name.  If destination JID have node, then it routed to session manager, else it
+processed depending on it content.
+
+
+\subsubsection{Session Manager}
+
+This module route packets to local users.  It search to what user resource
+packet must be sended via presence table.  If this reseouce connected to this
+node, it routed to C2S process, if it connected via another node, then packet
+sended to session manager on it.
+
+
+\subsubsection{S2S Manager}
+
+This module route packets to another \Jabber{} servers.  First, it check if
+to domain of packet destination from domain of source already opened S2S
+connection.  If it opened on another node, then it routed to S2S manager on
+that node, if it opened on this node, then it routed to process that serve this
+connection, and if this connection not exists, then it opened and registered.
 
 
 \section{Built-in Modules}
@@ -250,6 +349,23 @@ Example:
           ]}.
 \end{verbatim}
 
+
+\subsubsection{Option \texttt{host}}
+
+Some modules may act as services, and wants to have different domain name.
+This option explicitly defines this name.
+
+Example:
+\begin{verbatim}
+{modules, [
+           ...
+           {mod_echo,      [{host, "echo.myjabber.org"}]},
+           ...
+          ]}.
+\end{verbatim}
+
+
+
 \subsection{\modregister{}}
 \label{sec:modregister}
 
@@ -273,7 +389,16 @@ Example:
 \subsection{\modstats{}}
 \label{sec:modstats}
 
+This module adds support of
+\footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039} (Statistics Gathering).
 
+Options:
+\begin{description}
+\item[\texttt{iqdisc}] \ns{http://jabber.org/protocol/stats} IQ queries
+  processing discipline.
+\end{description}
+
+TBD about access.
 
 \subsection{\modvcard{}}
 \label{sec:modvcard}
@@ -293,15 +418,35 @@ Example:
 \subsection{\modprivate{}}
 \label{sec:modprivate}
 
+This module adds support of
+\footahref{http://www.jabber.org/jeps/jep-0049.html}{JEP-0049} (Private XML
+Storage).
 
+Options:
+\begin{description}
+\item[\texttt{iqdisc}] \ns{jabber:iq:private} IQ queries processing discipline.
+\end{description}
 
 \subsection{\modtime{}}
 \label{sec:modtime}
 
+This module answers UTC time on \ns{jabber:iq:time} queries.
+
+Options:
+\begin{description}
+\item[\texttt{iqdisc}] \ns{jabber:iq:time} IQ queries processing discipline.
+\end{description}
 
 
 \subsection{\modversion{}}
 \label{sec:modversion}
+
+This module answers \ejabberd{} version on \ns{jabber:iq:version} queries.
+
+Options:
+\begin{description}
+\item[\texttt{iqdisc}] \ns{jabber:iq:version} IQ queries processing discipline.
+\end{description}
 
 
 

@@ -21,17 +21,6 @@
 
 start() ->
     register(ejabberd_local, spawn(ejabberd_local, init, [])),
-    %mod_register:start(one_queue),
-    %mod_roster:start(one_queue),
-    %mod_configure:start(one_queue),
-    %mod_disco:start(one_queue),
-    %mod_stats:start(one_queue),
-    %mod_vcard:start(one_queue),
-    %mod_offline:start(),
-    %mod_echo:start(),
-    %mod_private:start(one_queue),
-    %mod_time:start(one_queue),
-    %mod_version:start(one_queue),
     ok.
 
 init() ->
