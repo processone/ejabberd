@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/1, stop/0]).
+-export([start/1, init/1, stop/0, closed_conection/2]).
 
 -include("ejabberd.hrl").
 
@@ -91,3 +91,7 @@ do_route(Host, From, To, Packet) ->
 stop() ->
     ejabberd_mod_irc ! stop,
     ok.
+
+closed_conection(From, Server) ->
+    ets:delete(irc_connection, {From, Server}).
+

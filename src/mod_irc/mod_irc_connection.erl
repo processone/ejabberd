@@ -29,8 +29,11 @@
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
 
+-define(SETS, gb_sets).
+
 -record(state, {socket, receiver, queue,
 		user, myname, server, nick,
+		channels = ?SETS:new(),
 		inbuf = "", outbuf = ""}).
 
 -define(IRC_ENCODING, "koi8-r").
@@ -176,15 +179,24 @@ handle_info({route, Channel, Resource, {xmlelement, "presence", Attrs, Els}},
     NewStateData =
 	case xml:get_attr_s("type", Attrs) of
 	    "unavailable" ->
-		?SEND(io_lib:format("PART #~s\r\n", [Channel]));
+		S1 = ?SEND(io_lib:format("PART #~s\r\n", [Channel])),
+		S1#state{channels =
+			 remove_element(Channel, S1#state.channels)};
 	    "subscribe" -> StateData;
 	    "subscribed" -> StateData;
 	    "unsubscribe" -> StateData;
 	    "unsubscribed" -> StateData;
 	    _ ->
-		?SEND(io_lib:format("JOIN #~s\r\n", [Channel]))
+		S1 = ?SEND(io_lib:format("JOIN #~s\r\n", [Channel])),
+		S1#state{channels =
+			 ?SETS:add_element(Channel, S1#state.channels)}
 	end,
-    {next_state, StateName, NewStateData};
+    case ?SETS:is_empty(NewStateData#state.channels) of
+	true ->
+	    {stop, normal, NewStateData};
+	_ ->
+	    {next_state, StateName, NewStateData}
+    end;
 
 handle_info({route, Channel, Resource,
 	     {xmlelement, "message", Attrs, Els} = El},
@@ -213,33 +225,44 @@ handle_info({ircstring, [$P, $I, $N, $G, $  | ID]}, StateName, StateData) ->
 
 handle_info({ircstring, [$: | String]}, StateName, StateData) ->
     Words = string:tokens(String, " "),
-    case Words of
-	[_, "353" | Items] ->
-	    process_channel_list(StateData, Items);
-	[From, "PRIVMSG", [$# | Chan] | _] ->
-	    process_privmsg(StateData, Chan, From, String);
-	[From, "PART", [$# | Chan] | _] ->
-	    process_part(StateData, Chan, From, String);
-	[From, "JOIN", Chan | _] ->
-	    process_join(StateData, Chan, From, String);
-	[From, "MODE", [$# | Chan], "+o", Nick | _] ->
-	    process_mode_o(StateData, Chan, From, Nick,
-			   "admin", "moderator");
-	[From, "MODE", [$# | Chan], "-o", Nick | _] ->
-	    process_mode_o(StateData, Chan, From, Nick,
-			   "member", "participant");
-	_ ->
-	    io:format("unknown irc command '~s'~n", [String])
-    end,
     NewStateData =
+	case Words of
+	    [_, "353" | Items] ->
+		process_channel_list(StateData, Items),
+		StateData;
+	    [From, "PRIVMSG", [$# | Chan] | _] ->
+		process_privmsg(StateData, Chan, From, String),
+		StateData;
+	    [From, "PART", [$# | Chan] | _] ->
+		process_part(StateData, Chan, From, String),
+		StateData;
+	    [From, "JOIN", Chan | _] ->
+		process_join(StateData, Chan, From, String),
+		StateData;
+	    [From, "MODE", [$# | Chan], "+o", Nick | _] ->
+		process_mode_o(StateData, Chan, From, Nick,
+			       "admin", "moderator"),
+		StateData;
+	    [From, "MODE", [$# | Chan], "-o", Nick | _] ->
+		process_mode_o(StateData, Chan, From, Nick,
+			       "member", "participant"),
+		StateData;
+	    [From, "KICK", [$# | Chan], Nick | _] ->
+		process_kick(StateData, Chan, From, Nick),
+		StateData;
+	    _ ->
+		io:format("unknown irc command '~s'~n", [String]),
+		StateData
+	end,
+    NewStateData1 =
 	case StateData#state.outbuf of
 	    "" ->
-		StateData;
+		NewStateData;
 	    Data ->
-		send_text(StateData#state.socket, Data),
-		StateData#state{outbuf = ""}
+		send_text(NewStateData#state.socket, Data),
+		NewStateData#state{outbuf = ""}
 	end,
-    {next_state, stream_established, NewStateData};
+    {next_state, stream_established, NewStateData1};
 
 
 handle_info({ircstring, String}, StateName, StateData) ->
@@ -278,8 +301,8 @@ handle_info({tcp_error, Socket, Reason}, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
-    ejabberd_mod_irc ! {closed_conection, {StateData#state.user,
-					   StateData#state.server}},
+    mod_irc:closed_conection(StateData#state.user,
+			     StateData#state.server),
     case StateData#state.socket of
 	undefined ->
 	    ok;
@@ -394,11 +417,27 @@ process_channel_list_user(StateData, Chan, User) ->
 process_privmsg(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
     Msg = lists:last(string:tokens(String, ":")),
+    Msg1 = case Msg of
+	       [1, $A, $C, $T, $I, $O, $N, $  | Rest] ->
+		   "/me " ++ Rest;
+	       _ ->
+		   Msg
+	   end,
+    Msg2 = lists:filter(
+	     fun(C) ->
+		     if (C < 32) and
+			(C /= 9) and
+			(C /= 10) and
+			(C /= 13) ->
+			     false;
+			true -> true
+		     end
+	     end, Msg1),
     ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
 			   StateData#state.myname, FromUser},
 			  StateData#state.user,
 			  {xmlelement, "message", [{"type", "groupchat"}],
-			   [{xmlelement, "body", [], [{xmlcdata, Msg}]}]}).
+			   [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
 
 process_part(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
@@ -440,4 +479,25 @@ process_mode_o(StateData, Chan, From, Nick, Affiliation, Role) ->
 				{"role", Role}],
 			       []}]}]}).
 
+process_kick(StateData, Chan, From, Nick) ->
+    %Msg = lists:last(string:tokens(String, ":")),
+    ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
+			   StateData#state.myname, Nick},
+			  StateData#state.user,
+			  {xmlelement, "presence", [{"type", "unavailable"}],
+			   [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
+			     [{xmlelement, "item",
+			       [{"affiliation", "none"},
+				{"role", "none"}],
+			       []},
+			      {xmlelement, "status", [{"code", "307"}], []}
+			     ]}]}).
 
+
+remove_element(E, Set) ->
+    case ?SETS:is_element(E, Set) of
+	true ->
+	    ?SETS:del_element(E, Set);
+	_ ->
+	    Set
+    end.
