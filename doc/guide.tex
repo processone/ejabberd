@@ -5,11 +5,14 @@
 \usepackage{verbatim}
 
 
-\newcommand{\imgscale}{0.7}
-\newcommand{\insimg}[1]{
-  \imgsrc{#1}{}
+\newcommand{\logoscale}{0.7}
+\newcommand{\imgscale}{0.58}
+\newcommand{\insimg}[1]{\insscaleimg{\imgscale}{#1}}
+
+\newcommand{\insscaleimg}[2]{
+  \imgsrc{#2}{}
   \begin{latexonly}
-    \scalebox{\imgscale}{\includegraphics{#1}}
+    \scalebox{#1}{\includegraphics{#2}}
   \end{latexonly}
 }
 
@@ -42,7 +45,7 @@
   \maketitle{}
   
   {\centering
-    \insimg{logo.png}
+    \insscaleimg{\logoscale}{logo.png}
     \par
   }
 \end{titlepage}
@@ -381,7 +384,12 @@ On disco query \ejabberd{} returns following items:
 \item List of JIDs from route table.
 \item List of disco-nodes described in following subsections.
 \end{itemize}
-
+\begin{figure}[htbp]
+  \centering
+  \insimg{disco.png}
+  \caption{Tkabber Discovery window}
+  \label{fig:disco}
+\end{figure}
 
 \subsubsection{Node \texttt{config}: Global Configuration}
 
@@ -394,7 +402,7 @@ this \ejabberd{} server. (See figure~\ref{fig:hostname}) (Currently will work
 correctly only after restart)
 \begin{figure}[htbp]
   \centering
-  [hostname editing window]
+  \insimg{confhostname.png}
   \caption{Editing of hostname}
   \label{fig:hostname}
 \end{figure}
@@ -406,7 +414,7 @@ Via \ns{jabber:x:data} queries to this node possible to edit ACLs list.  (See
 figure~\ref{fig:acls})
 \begin{figure}[htbp]
   \centering
-  [acls editing window]
+  \insimg{confacls.png}
   \caption{Editing of ACLs}
   \label{fig:acls}
 \end{figure}
@@ -431,11 +439,26 @@ removed user is online, then he will be disconnected.  Also user-related data
 
 
 
-\subsubsection{Node \texttt{all users}: List of Connected User}
+\subsubsection{Node \texttt{all users}: List of Registered User}
+
+\begin{figure}[htbp]
+  \centering
+  \insimg{discoallusers.png}
+  \caption{Discovery all users}
+  \label{fig:discoallusers}
+\end{figure}
+
 
 \subsubsection{Node \texttt{outgoing s2s}: List of Outgoing S2S connections}
 
 \subsubsection{Node \texttt{running nodes}: List of Running \ejabberd{} Nodes}
+
+\begin{figure}[htbp]
+  \centering
+  \insimg{discorunnodes.png}
+  \caption{Discovery running nodes}
+  \label{fig:discorunnodes}
+\end{figure}
 
 \subsubsection{Node \texttt{stopped nodes}: List of Stopped Nodes}
 
@@ -504,6 +527,9 @@ destination.  If it opened on another node, then it routed to S2S manager on
 that node, if it opened on this node, then it routed to process that serve this
 connection, and if this connection not exists, then it opened and registered.
 
+
+
+\appendix{}
 
 \section{Built-in Modules}
 \label{sec:modules}
@@ -648,6 +674,27 @@ Options:
 
 
 
+\section{I18n/L10n}
+\label{sec:i18nl10n}
+
+Many modules supports \texttt{xml:lang} attribute inside IQ queries.  E.\,g.\ 
+on figure~\ref{fig:discorus} (compare with figure~\ref{fig:disco}) showed reply
+on following query:
+\begin{verbatim}
+<iq id='5'
+        to='e.localhost'
+        type='get'>
+  <query xmlns='http://jabber.org/protocol/disco#items'
+         xml:lang='ru'/>
+</iq>
+\end{verbatim}
+
+\begin{figure}[htbp]
+  \centering
+  \insimg{discorus.png}
+  \caption{Discovery result when \texttt{xml:lang='ru'}}
+  \label{fig:discorus}
+\end{figure}
 
 
 \end{document}

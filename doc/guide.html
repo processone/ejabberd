@@ -296,7 +296,7 @@ password ``<TT>secret</TT>''.<BR>
 <A NAME="sec:configmodules"></A>Option <TT>modules</TT> defines list of modules that will be loaded after
 <TT>ejabberd</TT> startup. Each list element is a tuple where first element is a
 name of module and second is list of options to this module. See
-section&nbsp;<A HREF="#sec:modules">5</A> for detailed information on each module.<BR>
+section&nbsp;<A HREF="#sec:modules">A</A> for detailed information on each module.<BR>
 <BR>
 Example:
 <PRE>
@@ -318,8 +318,8 @@ Example:
 <H3>3.2&nbsp;&nbsp; Online Configuration and Monitoring</H3><!--SEC END -->
 
 <A NAME="sec:onlineconfig"></A>To use facility of online reconfiguration of <TT>ejabberd</TT> needed to have
-<TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">5.4</A>). Also highly
-recommended to load <TT>mod_disco</TT> (see section&nbsp;<A HREF="#sec:moddisco">5.5</A>), because
+<TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">A.4</A>). Also highly
+recommended to load <TT>mod_disco</TT> (see section&nbsp;<A HREF="#sec:moddisco">A.5</A>), because
 <TT>mod_configure</TT> highly integrates with it. Also recommended to use disco- and
 xdata-capable client
 (<A HREF="http://www.jabber.ru/projects/tkabber/index_en.html">Tkabber</A>
@@ -336,7 +336,18 @@ On disco query <TT>ejabberd</TT> returns following items:
 <LI> List of JIDs from route table.
 
 <LI> List of disco-nodes described in following subsections.
-</UL><!--TOC subsubsection Node <TT>config</TT>: Global Configuration-->
+</UL>
+<BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ 
+ <IMG SRC="disco.png">
+ 
+
+ <BR>
+<BR>
+<DIV ALIGN=center>Figure 1: Tkabber Discovery window</DIV><BR>
+
+ <A NAME="fig:disco"></A>
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC subsubsection Node <TT>config</TT>: Global Configuration-->
 
 <H4>3.2.1&nbsp;&nbsp; Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
 Under this node exists following nodes:<BR>
@@ -345,25 +356,31 @@ Under this node exists following nodes:<BR>
 
 <H5> Node <TT>config/hostname</TT></H5><!--SEC END -->
 Via <TT>jabber:x:data</TT> queries to this node possible to change host name of
-this <TT>ejabberd</TT> server. (See figure&nbsp;<A HREF="#fig:hostname">1</A>) (Currently will work
+this <TT>ejabberd</TT> server. (See figure&nbsp;<A HREF="#fig:hostname">2</A>) (Currently will work
 correctly only after restart)
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
- [hostname editing window]
+ 
+ <IMG SRC="confhostname.png">
+ 
+
  <BR>
 <BR>
-<DIV ALIGN=center>Figure 1: Editing of hostname</DIV><BR>
+<DIV ALIGN=center>Figure 2: Editing of hostname</DIV><BR>
 
  <A NAME="fig:hostname"></A>
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC paragraph Node <TT>config/acls</TT>-->
 
 <H5> Node <TT>config/acls</TT></H5><!--SEC END -->
 Via <TT>jabber:x:data</TT> queries to this node possible to edit ACLs list. (See
-figure&nbsp;<A HREF="#fig:acls">2</A>)
+figure&nbsp;<A HREF="#fig:acls">3</A>)
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
- [acls editing window]
+ 
+ <IMG SRC="confacls.png">
+ 
+
  <BR>
 <BR>
-<DIV ALIGN=center>Figure 2: Editing of ACLs</DIV><BR>
+<DIV ALIGN=center>Figure 3: Editing of ACLs</DIV><BR>
 
  <A NAME="fig:acls"></A>
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC paragraph Node <TT>config/access</TT>-->
@@ -381,16 +398,36 @@ removed user is online, then he will be disconnected. Also user-related data
 <!--TOC subsubsection Node <TT>online users</TT>: List of Online Users-->
 
 <H4>3.2.2&nbsp;&nbsp; Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
-<!--TOC subsubsection Node <TT>all users</TT>: List of Connected User-->
+<!--TOC subsubsection Node <TT>all users</TT>: List of Registered User-->
 
-<H4>3.2.3&nbsp;&nbsp; Node <TT>all users</TT>: List of Connected User</H4><!--SEC END -->
-<!--TOC subsubsection Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections-->
+<H4>3.2.3&nbsp;&nbsp; Node <TT>all users</TT>: List of Registered User</H4><!--SEC END -->
+<BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ 
+ <IMG SRC="discoallusers.png">
+ 
+
+ <BR>
+<BR>
+<DIV ALIGN=center>Figure 4: Discovery all users</DIV><BR>
+
+ <A NAME="fig:discoallusers"></A>
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC subsubsection Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections-->
 
 <H4>3.2.4&nbsp;&nbsp; Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</H4><!--SEC END -->
 <!--TOC subsubsection Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes-->
 
 <H4>3.2.5&nbsp;&nbsp; Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</H4><!--SEC END -->
-<!--TOC subsubsection Node <TT>stopped nodes</TT>: List of Stopped Nodes-->
+<BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ 
+ <IMG SRC="discorunnodes.png">
+ 
+
+ <BR>
+<BR>
+<DIV ALIGN=center>Figure 5: Discovery running nodes</DIV><BR>
+
+ <A NAME="fig:discorunnodes"></A>
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC subsubsection Node <TT>stopped nodes</TT>: List of Stopped Nodes-->
 
 <H4>3.2.6&nbsp;&nbsp; Node <TT>stopped nodes</TT>: List of Stopped Nodes</H4><!--SEC END -->
 TBD<BR>
@@ -455,19 +492,21 @@ destination. If it opened on another node, then it routed to S2S manager on
 that node, if it opened on this node, then it routed to process that serve this
 connection, and if this connection not exists, then it opened and registered.<BR>
 <BR>
+<BR>
+<BR>
 <!--TOC section Built-in Modules-->
 
-<H2>5&nbsp;&nbsp; Built-in Modules</H2><!--SEC END -->
+<H2>A&nbsp;&nbsp; Built-in Modules</H2><!--SEC END -->
 
 <A NAME="sec:modules"></A><!--TOC subsection Common Options-->
 
-<H3>5.1&nbsp;&nbsp; Common Options</H3><!--SEC END -->
+<H3>A.1&nbsp;&nbsp; Common Options</H3><!--SEC END -->
 
 <A NAME="sec:modcommonopts"></A>Following options used by many modules, so they described in separate section.<BR>
 <BR>
 <!--TOC subsubsection Option <TT>iqdisc</TT>-->
 
-<H4>5.1.1&nbsp;&nbsp; Option <TT>iqdisc</TT></H4><!--SEC END -->
+<H4>A.1.1&nbsp;&nbsp; Option <TT>iqdisc</TT></H4><!--SEC END -->
 Many modules define handlers for processing IQ queries of different namespaces
 to this server or to user (e.&nbsp;g. to <TT>myjabber.org</TT> or to
 <TT>user@myjabber.org</TT>). This option defines processing discipline of this
@@ -497,7 +536,7 @@ queries. Possible values are:
           ]}.
 </PRE><!--TOC subsubsection Option <TT>host</TT>-->
 
-<H4>5.1.2&nbsp;&nbsp; Option <TT>host</TT></H4><!--SEC END -->
+<H4>A.1.2&nbsp;&nbsp; Option <TT>host</TT></H4><!--SEC END -->
 Some modules may act as services, and wants to have different domain name.
 This option explicitly defines this name.<BR>
 <BR>
@@ -510,23 +549,23 @@ Example:
           ]}.
 </PRE><!--TOC subsection <TT>mod_register</TT>-->
 
-<H3>5.2&nbsp;&nbsp; <TT>mod_register</TT></H3><!--SEC END -->
+<H3>A.2&nbsp;&nbsp; <TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="sec:modregister"></A><!--TOC subsection <TT>mod_roster</TT>-->
 
-<H3>5.3&nbsp;&nbsp; <TT>mod_roster</TT></H3><!--SEC END -->
+<H3>A.3&nbsp;&nbsp; <TT>mod_roster</TT></H3><!--SEC END -->
 
 <A NAME="sec:modroster"></A><!--TOC subsection <TT>mod_configure</TT>-->
 
-<H3>5.4&nbsp;&nbsp; <TT>mod_configure</TT></H3><!--SEC END -->
+<H3>A.4&nbsp;&nbsp; <TT>mod_configure</TT></H3><!--SEC END -->
 
 <A NAME="sec:modconfigure"></A><!--TOC subsection <TT>mod_disco</TT>-->
 
-<H3>5.5&nbsp;&nbsp; <TT>mod_disco</TT></H3><!--SEC END -->
+<H3>A.5&nbsp;&nbsp; <TT>mod_disco</TT></H3><!--SEC END -->
 
 <A NAME="sec:moddisco"></A><!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3>5.6&nbsp;&nbsp; <TT>mod_stats</TT></H3><!--SEC END -->
+<H3>A.6&nbsp;&nbsp; <TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A>This module adds support of
 <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
@@ -540,19 +579,19 @@ Options:
 <BR>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3>5.7&nbsp;&nbsp; <TT>mod_vcard</TT></H3><!--SEC END -->
+<H3>A.7&nbsp;&nbsp; <TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="sec:modvcard"></A><!--TOC subsection <TT>mod_offline</TT>-->
 
-<H3>5.8&nbsp;&nbsp; <TT>mod_offline</TT></H3><!--SEC END -->
+<H3>A.8&nbsp;&nbsp; <TT>mod_offline</TT></H3><!--SEC END -->
 
 <A NAME="sec:modoffline"></A><!--TOC subsection <TT>mod_echo</TT>-->
 
-<H3>5.9&nbsp;&nbsp; <TT>mod_echo</TT></H3><!--SEC END -->
+<H3>A.9&nbsp;&nbsp; <TT>mod_echo</TT></H3><!--SEC END -->
 
 <A NAME="sec:modecho"></A><!--TOC subsection <TT>mod_private</TT>-->
 
-<H3>5.10&nbsp;&nbsp; <TT>mod_private</TT></H3><!--SEC END -->
+<H3>A.10&nbsp;&nbsp; <TT>mod_private</TT></H3><!--SEC END -->
 
 <A NAME="sec:modprivate"></A>This module adds support of
 <A HREF="http://www.jabber.org/jeps/jep-0049.html">JEP-0049</A> (Private XML
@@ -564,7 +603,7 @@ Options:
 <TT>iqdisc</TT><DD> <TT>jabber:iq:private</TT> IQ queries processing discipline.
 </DL><!--TOC subsection <TT>mod_time</TT>-->
 
-<H3>5.11&nbsp;&nbsp; <TT>mod_time</TT></H3><!--SEC END -->
+<H3>A.11&nbsp;&nbsp; <TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="sec:modtime"></A>This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
 <BR>
@@ -574,7 +613,7 @@ Options:
 <TT>iqdisc</TT><DD> <TT>jabber:iq:time</TT> IQ queries processing discipline.
 </DL><!--TOC subsection <TT>mod_version</TT>-->
 
-<H3>5.12&nbsp;&nbsp; <TT>mod_version</TT></H3><!--SEC END -->
+<H3>A.12&nbsp;&nbsp; <TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="sec:modversion"></A>This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
 <BR>
@@ -582,7 +621,31 @@ Options:
 <DL COMPACT=compact>
 <DT>
 <TT>iqdisc</TT><DD> <TT>jabber:iq:version</TT> IQ queries processing discipline.
-</DL><!--HTMLFOOT-->
+</DL><!--TOC section I18n/L10n-->
+
+<H2>B&nbsp;&nbsp; I18n/L10n</H2><!--SEC END -->
+
+<A NAME="sec:i18nl10n"></A>Many modules supports <TT>xml:lang</TT> attribute inside IQ queries. E.&nbsp;g. 
+on figure&nbsp;<A HREF="#fig:discorus">6</A> (compare with figure&nbsp;<A HREF="#fig:disco">1</A>) showed reply
+on following query:
+<PRE>
+&lt;iq id='5'
+        to='e.localhost'
+        type='get'&gt;
+  &lt;query xmlns='http://jabber.org/protocol/disco#items'
+         xml:lang='ru'/&gt;
+&lt;/iq&gt;
+</PRE><BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ 
+ <IMG SRC="discorus.png">
+ 
+
+ <BR>
+<BR>
+<DIV ALIGN=center>Figure 6: Discovery result when <TT>xml:lang='ru'</TT></DIV><BR>
+
+ <A NAME="fig:discorus"></A>
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--HTMLFOOT-->
 <!--ENDHTML-->
 
 <!--FOOTER-->
