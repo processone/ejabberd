@@ -1,3 +1,7 @@
+2004-08-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/xml_stream.erl: Few optimizations
+
 2004-08-24  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_service_log.erl: Support for logging of user packets via

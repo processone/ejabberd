@@ -47,41 +47,43 @@ loop(CallbackPid, Port, Stack) ->
 process_data(CallbackPid, Stack, Data) ->
     case Data of
 	{?XML_START, {Name, Attrs}} ->
-	    if Stack == [] ->
+	    if
+		Stack == [] ->
 		    gen_fsm:send_event(CallbackPid,
 				       {xmlstreamstart, Name, Attrs});
-	       true -> true
+		true ->
+		    ok
 	    end,
 	    [{xmlelement, Name, Attrs, []} | Stack];
 	{?XML_END, EndName} ->
 	    case Stack of
 		[{xmlelement, Name, Attrs, Els} | Tail] ->
 		    NewEl = {xmlelement, Name, Attrs, lists:reverse(Els)},
-		    Len = length(Tail),
-		    if
-			Len >  1 -> add_subelement(NewEl, Tail);
-			Len == 1 ->
+		    case Tail of
+			[] ->
+			    gen_fsm:send_event(CallbackPid,
+					       {xmlstreamend, EndName}),
+			    Tail;
+			[_] ->
 			    gen_fsm:send_event(CallbackPid,
 					       {xmlstreamelement, NewEl}),
 			    Tail;
-			Len == 0 ->
-			    gen_fsm:send_event(CallbackPid,
-					       {xmlstreamend, EndName}),
-			    Tail
+			[{xmlelement, Name1, Attrs1, Els1} | Tail1] ->
+			    [{xmlelement, Name1, Attrs1, [NewEl | Els1]} |
+			     Tail1]
 		    end
 	    end;
 	{?XML_CDATA, CData} ->
-	    add_subelement({xmlcdata, CData}, Stack);
-	{?XML_ERROR, Err} -> gen_fsm:send_event(CallbackPid,
-						{xmlstreamerror, Err})
-    end.
-
-
-add_subelement(El, Stack) ->
-    case Stack of
-	[{xmlelement, Name, Attrs, Els} | Tail] ->
-	    [{xmlelement, Name, Attrs, [El | Els]} | Tail];
-	[] -> []
+	    case Stack of
+		[El] ->
+		    [El];
+		[{xmlelement, Name, Attrs, Els} | Tail] ->
+		    [{xmlelement, Name, Attrs, [{xmlcdata, CData} | Els]} |
+		     Tail];
+		[] -> []
+	    end;
+	{?XML_ERROR, Err} ->
+	    gen_fsm:send_event(CallbackPid, {xmlstreamerror, Err})
     end.
 
 
