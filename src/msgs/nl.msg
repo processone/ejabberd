@@ -2,46 +2,46 @@
 
 % mod_configure.erl
 {"DB Tables Configuration at ", "Databasetabellenconfiguratie op "}.
-{"Choose storage type of tables", "Kies opslagmethode voor tabellen"}.
-{"RAM copy", "Kopieer naar RAM"}.
+{"Choose storage type of tables", "Opslagmethode voor tabellen kiezen"}.
+{"RAM copy", "Naar RAM kopiëren"}.
 {"RAM and disc copy", "RAM- en schijfkopie"}.
 {"Disc only copy", "Enkel schijfkopie"}.
 {"Remote copy", "Afstandskopie"}.
-{"Stop Modules at ", "Stop modules op "}.
+{"Stop Modules at ", "Modules stoppen op "}.
 {"Choose modules to stop", "Selecteer de modules die u wilt stoppen"}.
-{"Start Modules at ", "Start modules op "}.
+{"Start Modules at ", "Modules starten op "}.
 {"Enter list of {Module, [Options]}", "Voer lijst met op te starten modules in in volgende vorm: {Module, [Opties]}"}.
 {"List of modules to start", "Lijst met op te starten modules"}.
-{"Backup to File at ", "Maak een backup naar een bestand op "}.
+{"Backup to File at ", "Backup naar bestand maken op "}.
 {"Enter path to backup file", "Voer pad naar backupbestand in"}.
 {"Path to File", "Pad naar bestand"}.
-{"Restore Backup from File at ", "Herstel backup vanaf bestand op "}.
-{"Dump Backup to Text File at ", "Dump backup naar tekstbestand op "}.
+{"Restore Backup from File at ", "Backup herstellen vanaf bestand op "}.
+{"Dump Backup to Text File at ", "Backup dumpen naar tekstbestand op "}.
 {"Enter path to text file", "Voer pad naar tekstbestand in"}.
 {"Import User from File at ", "Importeer gebruiker via bestand op "}.
 {"Enter path to jabberd1.4 spool file", "Voer pad van jabberd1.4-spool-bestand in"}.
-{"Import Users from Dir at ", "Importeer gebruikers vanaf directory op "}.
+{"Import Users from Dir at ", "Gebruikers importeren vanaf directory op "}.
 {"Enter path to jabberd1.4 spool dir", "Voer pad naar jabberd1.4-spool-directory in"}.
 {"Path to Dir", "Pad naar directory"}.
 {"Hostname Configuration", "Hostnaam configuratie"}.
-{"Choose host name", "Kies hostnaam"}.
+{"Choose host name", "Hostnaam kiezen"}.
 {"Host name", "Hostnaam"}.
 {"Access Control List Configuration", "Access Control List Configuratie"}.
 {"Access control lists", "Access control lists"}.
 {"Access Configuration", "Toegangsconfiguratie"}.
 {"Access rules", "Access rules"}.
-{"Remove Users", "Verwijder gebruikers"}.
+{"Remove Users", "Gebruikers verwijderen"}.
 {"Choose users to remove", "Selecteer de gebruikers die u wilt verwijderen"}.
 {"Administration of ", "Beheer van "}.
 {"Action on user", "Actie op gebruiker"}.
-{"Edit Properties", "Bewerk eigenschappen"}.
-{"Remove User", "Verwijder gebruiker"}.
+{"Edit Properties", "Eigenschappen bewerken"}.
+{"Remove User", "Gebruiker verwijderen"}.
 
 % mod_disco.erl
 {"Configuration", "Configuratie"}.
 {"Online Users", "Online gebruikers"}.
 {"All Users", "Alle gebruikers"}.
-{"Outgoing S2S connections", "Uitgaande S2S connecties"}.
+{"Outgoing S2S connections", "Uitgaande S2S verbindingen"}.
 {"To ~s", "Naar ~s"}.
 {"From ~s", "Van ~s"}.
 {"Running Nodes", "Draaiende nodes"}.
@@ -49,18 +49,18 @@
 {"Host Name", "Hostnaam"}.
 {"Access Control Lists", "Access Control Lists"}.
 {"Access Rules", "Access Rules"}.
-{"Remove Users", "Verwijder gebruikers"}.
+{"Remove Users", "Gebruikers verwijderen"}.
 {"DB", "Database"}.
 {"Modules", "Modules"}.
-{"Start Modules", "Start modules"}.
-{"Stop Modules", "Stop modules"}.
+{"Start Modules", "Modules starten"}.
+{"Stop Modules", "Modules stoppen"}.
 {"Backup Management", "Backupbeheer"}.
 {"Import users from jabberd1.4 spool files", "Importeer jabberd1.4 gebruikers via spool-bestanden"}.
 {"Backup", "Backup"}.
-{"Restore", "Herstel backup"}.
-{"Dump to Text File", "Dump naar tekstbestand"}.
-{"Import File", "Importeer bestand"}.
-{"Import Directory", "Importeer directory"}.
+{"Restore", "Backup herstellen"}.
+{"Dump to Text File", "Naar tekstbestand dumpen"}.
+{"Import File", "Bestand importeren"}.
+{"Import Directory", "Directory importeren"}.
 
 % mod_register.erl
 {"Choose a username and password to register with this server",
@@ -73,7 +73,7 @@
  "ejabberd vCard module\nCopyright (c) 2003-2004 Alexey Shchepin"}.
 {"You need an x:data capable client to search",
  "U hebt een x:data compatibele client nodig om te kunnen zoeken"}.
-{"Search users in ", "Zoek gebruikers in "}.
+{"Search users in ", "Gebruikers zoeken in "}.
 {"Fill in fields to search for any matching Jabber User",
  "Vul de velden in om te zoeken naar Jabbergebruikers op deze server"}.
 {"Results of search in ", "Zoekresultaten van "}.
@@ -144,7 +144,7 @@
 {"Visitors are not allowed to send messages to all occupants",
  "Bezoekers hebben geen toelating om berichten te sturen naar alle aanwezigen"}.
 {"Only occupants are allowed to send messages to the conference",
- "Alleen aanwezigen zijn toegelaten om berichten naar de conferentie te sturen"}.
+ "Alleen aanwezigen hebben de toeglating om berichten naar de conferentie te sturen"}.
 {"It is not allowed to send normal messages to the conference",
  "Het is niet toegelaten om normale berichten naar de kamer te sturen"}.
 {"It is not allowed to send private messages to the conference",
@@ -154,22 +154,22 @@
 {"Nickname is registered by another person", "Bijnaam is al geregistreerd door iemand anders"}.
 {"It is not allowed to send private messages of type \"groupchat\"",
  "Het is niet toegelaten om privéberichten van het type \"groupchat\" te versturen"}.
-{"Recipient is not in the conference room", "Ontvanger is niet in conferentiekamer"}.
+{"Recipient is not in the conference room", "Ontvanger is niet in de conferentiekamer"}.
 {"Only occupants are allowed to send queries to the conference",
- "Alleen aanwezeigen zijn toegelaten om verzoeken te zenden naar de conferentie"}.
+ "Alleen aanwezeigen hebben de toegelating om verzoeken te verzenden naar de conferentie"}.
 {"Queries to the conference members are not allowed in this room",
  "Verzoeken aan de conferentieleden zijn niet toegelaten in deze kamer"}.
 {"You have been banned from this room", "U bent verbannen uit deze kamer"}.
-{"Membership required to enter this room", "Lidmaatschap vereist om deze kamer te kunnen betreden"}.
-{"Password required to enter this room", "Wachtwoord vereist om deze kamer te kunnen betreden"}.
+{"Membership required to enter this room", "Lidmaatschap is vereist om deze kamer te kunnen betreden"}.
+{"Password required to enter this room", "Wachtwoord is vereist om deze kamer te kunnen betreden"}.
 {"Incorrect password", "Foutief wachtwoord"}.
-{"Administrator privileges required", "Beheerdersprivileges vereist"}.
-{"Moderator privileges required", "Moderatorprivileges vereist"}.
+{"Administrator privileges required", "Beheerdersprivileges zijn vereist"}.
+{"Moderator privileges required", "Moderatorprivileges zijn vereist"}.
 {"JID ~s is invalid", "JID ~s is ongeldig"}.
 {"Nickname ~s does not exist in the room", "Bijnaam ~s bestaat niet in de kamer"}.
 {"Invalid affiliation: ~s", "Ongeldige aansluiting: ~s"}.
 {"Invalid role: ~s", "Ongeldige rol: ~s"}.
-{"Owner privileges required", "Eigenaarsprivileges vereist"}.
+{"Owner privileges required", "Eigenaarsprivileges zijn vereist"}.
 {"private, ", "privé, "}.
 
 % mod_irc/mod_irc.erl
@@ -181,68 +181,68 @@
 {"Enter username and encodings you wish to use for connecting to IRC servers",
  "Voer de gebruikersnaam en coderingen in die u wilt gebruiken voor de verbindingen met IRC servers"}.
 {"IRC Username", "IRC gebruikersnaam"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Indien u verschillende coderingen wilt specificeren voor IRC servers, dan moet u in deze lijst waaren in het formaat: '{\"irc server\", \"encoding\"}'. Standaard gebruikt deze service codering \"~s\" invullen."}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Indien u verschillende coderingen wilt specificeren voor IRC servers, dan moet u in deze lijst waaren in het formaat: '{\"irc server\", \"codering\"}'. Standaard gebruikt deze service codering \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Voorbeeld: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Coderingen"}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd administration", ""}.
+{"ejabberd administration", "Beheer van ejabberd"}.
 {"Users", "Gebruikers"}.
 {"Nodes", "Nodes"}.
 {"Statistics", "Statistieken"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin", ""}.
-{"(raw)", ""}.
-{"submitted", ""}.
-{"bad format", ""}.
-{"raw", ""}.
-{"ejabberd access control lists configuration", ""}.
-{"Delete Selected", ""}.
-{"Submit", ""}.
-{"ejabberd access rules configuration", ""}.
-{"~s access rule configuration", ""}.
-{"ejabberd users", ""}.
-{"ejabberd stats", ""}.
-{"Node not found", ""}.
-{"Add New", ""}.
-{"Registered users", ""}.
-{"Authentificated users", ""}.
-{"Online users", ""}.
-{"Outgoing S2S servers", ""}.
-{"Change Password", ""}.
-{"Connected Resources:", ""}.
-{"Password:", ""}.
-{"None", ""}.
-{"Node ", ""}.
-{"DB Management", ""}.
-{"Listened Ports Management", ""}.
-{"Restart", ""}.
-{"Stop", ""}.
-{"RPC call error", ""}.
-{"DB Tables at ", ""}.
-{"Name", ""}.
-{"Storage Type", ""}.
-{"Size", ""}.
-{"Memory", ""}.
-{"Backup Management at ", ""}.
-{"Store a backup in a file", ""}.
-{"OK", ""}.
-{"Restore a backup from a file", ""}.
-{"Install a database fallback from a file", ""}.
-{"Dump a database in a text file", ""}.
-{"Restore a database from a text file", ""}.
-{"Listened Ports at ", ""}.
-{"~p statistics", ""}.
-{"Uptime", ""}.
-{"CPU Time", ""}.
-{"Transactions commited", ""}.
-{"Transactions aborted", ""}.
-{"Transactions restarted", ""}.
-{"Transactions logged", ""}.
-{"Port", ""}.
-{"Module", ""}.
-{"Options", ""}.
-{"Update", ""}.
-{"Delete", ""}.
+{"ejabberd (c) 2002-2004 Alexey Shchepin", "ejabberd (c) 2002-2004 Alexey Shchepin"}.
+{"(raw)", "(ruw)"}.
+{"submitted", "verzonden"}.
+{"bad format", "slecht formaat"}.
+{"raw", "ruw"}.
+{"ejabberd access control lists configuration", "ejabberd access control lists configuratie"}.
+{"Delete Selected", "Geselecteerde verwijderen"}.
+{"Submit", "Verzenden"}.
+{"ejabberd access rules configuration", "ejabberd access rules configuratie"}.
+{"~s access rule configuration", "~s access rule configuratie"}.
+{"ejabberd users", "ejabberd-gebruikers"}.
+{"ejabberd stats", "Statistieken van ejabberd"}.
+{"Node not found", "Node niet gevonden"}.
+{"Add New", "Nieuw toevoegen"}.
+{"Registered users", "Geregistreerde gebruikers"}.
+{"Authentificated users", "Aangemelde gebruikers"}.
+{"Online users", "Online gebruikers"}.
+{"Outgoing S2S servers", "Uitgaande S2S verbindingen"}.
+{"Change Password", "Wachtwoord wijzigen"}.
+{"Connected Resources:", "Verbonden bronnen:"}.
+{"Password:", "Wachtwoord:"}.
+{"None", "Geen"}.
+{"Node ", "Node"}.
+{"DB Management", "Databasebeheer"}.
+{"Listened Ports Management", "Beheer van openstaande poorten"}.
+{"Restart", "Herstarten"}.
+{"Stop", "Stoppen"}.
+{"RPC call error", "RPC oproepfout"}.
+{"DB Tables at ", "Databasetabellen op "}.
+{"Name", "Naam"}.
+{"Storage Type", "Opslagmethode"}.
+{"Size", "Grootte"}.
+{"Memory", "Geheugen"}.
+{"Backup Management at ", "Backupbeheer op "}.
+{"Store a backup in a file", "Backup opslaan in een bestand"}.
+{"OK", "OK"}.
+{"Restore a backup from a file", "Backup herstellen vanaf een bestand"}.
+{"Install a database fallback from a file", "Reservedatabase installeren vanaf een bestand"}.
+{"Dump a database in a text file", "Database dumpen in een tekstbestand"}.
+{"Restore a database from a text file", "Database herstellen vanaf een tekstbestand"}.
+{"Listened Ports at ", "Geopende poorten op "}.
+{"~p statistics", "~p statistieken"}.
+{"Uptime", "Uptime"}.
+{"CPU Time", "Processortijd"}.
+{"Transactions commited", "Transacties bevestigd"}.
+{"Transactions aborted", "Transacties afgebroken"}.
+{"Transactions restarted", "Transacties herstart"}.
+{"Transactions logged", "Transacties gelogd"}.
+{"Port", "Poort"}.
+{"Module", "Module"}.
+{"Options", "Opties"}.
+{"Update", "Bijwerken"}.
+{"Delete", "Verwijderen"}.
 {"", ""}.
 
 % Local Variables:

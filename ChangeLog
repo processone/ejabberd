@@ -1,5 +1,7 @@
 2004-08-14  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
 	* src/web/ejabberd_http_poll.erl: Fixed sending of Set-Cookie
 	header
 
