@@ -457,6 +457,10 @@ div#content {
   margin-top: 5px;
 }
 
+*.alignright {
+  text-align: right;
+}
+
 ".
 
 logo() ->
@@ -780,7 +784,7 @@ process_admin(#request{user = User,
 	false ->
 	    make_xhtml([?XC("h1", "Node not found")], Lang);
 	Node ->
-	    Res = get_node(Node, NPath, Lang),
+	    Res = get_node(Node, NPath, Query, Lang),
 	    make_xhtml(Res, Lang)
     end;
 
@@ -1169,7 +1173,7 @@ search_running_node(SNode, [Node | Nodes]) ->
 	    search_running_node(SNode, Nodes)
     end.
 
-get_node(Node, [], Lang) ->
+get_node(Node, [], Query, Lang) ->
     [?XC("h1", "Node: " ++ atom_to_list(Node)),
      ?XE("ul",
 	 [?LI([?ACT("db/", "DB Management")]),
@@ -1177,43 +1181,118 @@ get_node(Node, [], Lang) ->
 	  ?LI([?ACT("statistics/", "Statistics")])
 	 ])];
 
-get_node(Node, ["db"], Lang) ->
+get_node(Node, ["db"], Query, Lang) ->
     case rpc:call(Node, mnesia, system_info, [tables]) of
 	{badrpc, _Reason} ->
 	    [?XC("h1", "RPC call error")];
 	Tables ->
+	    Res = node_db_parse_query(Node, Tables, Query),
 	    STables = lists:sort(Tables),
 	    Rows = lists:map(
 		     fun(Table) ->
-			     Type = case rpc:call(Node,
-						  mnesia,
-						  table_info,
-						  [Table, storage_type]) of
-					{badrpc, _} ->
-					    unknown;
-					T ->
-					    T
-				    end,
 			     STable = atom_to_list(Table),
+			     TInfo =
+				 case rpc:call(Node,
+					       mnesia,
+					       table_info,
+					       [Table, all]) of
+				     {badrpc, _} ->
+					 [];
+				     I ->
+					 I
+				 end,
+			     {Type, Size, Memory} =
+				 case {lists:keysearch(storage_type, 1, TInfo),
+				       lists:keysearch(size, 1, TInfo),
+				       lists:keysearch(memory, 1, TInfo)} of
+				     {{value, {storage_type, T}},
+				      {value, {size, S}},
+				      {value, {memory, M}}} ->
+					 {T, S, M};
+				     _ ->
+					 {unknown, 0, 0}
+				 end,
 			     ?XE("tr",
 				 [?XC("td", STable),
 				  ?XE("td", [db_storage_select(
-					       STable, Type, Lang)])
+					       STable, Type, Lang)]),
+				  ?XAC("td", [{"class", "alignright"}],
+				       integer_to_list(Size)),
+				  ?XAC("td", [{"class", "alignright"}],
+				       integer_to_list(Memory))
 				 ])
 		     end, STables),
-	    [?XC("h1", "DB Tables at " ++ atom_to_list(Node)),
-	     ?XAE("table", [],
-		   [?XE("tbody",
-			Rows ++
-			[?XE("tr",
-			     [?X("td"),
-			      ?XE("td", [?INPUTT("submit", "submit", "Submit")])
-			     ]
-			    )]
-		       )])]
+	    [?XC("h1", "DB Tables at " ++ atom_to_list(Node))] ++
+		case Res of
+		    ok -> [?C("submited"), ?P];
+		    error -> [?C("bad format"), ?P];
+		    nothing -> []
+		end ++
+		[?XAE("form", [{"method", "post"}],
+		      [?XAE("table", [],
+			    [?XE("thead",
+				 [?XE("tr",
+				      [?XCT("td", "Name"),
+				       ?XCT("td", "Storage Type"),
+				       ?XCT("td", "Size"),
+				       ?XCT("td", "Memory")
+				      ])]),
+			     ?XE("tbody",
+				 Rows ++
+				 [?XE("tr",
+				      [?XAE("td", [{"colspan", "4"},
+						   {"class", "alignright"}],
+					    [?INPUTT("submit", "submit",
+						     "Submit")])
+				      ])]
+				)])])]
     end;
 
-get_node(Node, NPath, Lang) ->
+get_node(Node, ["backup"], Query, Lang) ->
+    [?XC("h1", "Backup Management at " ++ atom_to_list(Node)),
+     ?XAE("form", [{"method", "post"}],
+	  [?XAE("table", [],
+		[?XE("tbody",
+		     [?XE("tr",
+			  [?XCT("td", "Store a backup in a file"),
+			   ?XE("td", [?INPUT("text", "storepath",
+					     "ejabberd.backup")]),
+			   ?XE("td", [?INPUTT("submit", "store",
+					      "OK")])
+			  ]),
+		      ?XE("tr",
+			  [?XCT("td", "Restore a backup from a file"),
+			   ?XE("td", [?INPUT("text", "restorepath",
+					     "ejabberd.backup")]),
+			   ?XE("td", [?INPUTT("submit", "restore",
+					      "OK")])
+			  ]),
+		      ?XE("tr",
+			  [?XCT("td",
+				"Install a database fallback from a file"),
+			   ?XE("td", [?INPUT("text", "fallbackpath",
+					     "ejabberd.backup")]),
+			   ?XE("td", [?INPUTT("submit", "fallback",
+					      "OK")])
+			  ]),
+		      ?XE("tr",
+			  [?XCT("td", "Dump a database in a text file"),
+			   ?XE("td", [?INPUT("text", "dumppath",
+					     "ejabberd.dump")]),
+			   ?XE("td", [?INPUTT("submit", "dump",
+					      "OK")])
+			  ]),
+		      ?XE("tr",
+			  [?XCT("td", "Restore a database from a text file"),
+			   ?XE("td", [?INPUT("text", "loadpath",
+					     "ejabberd.dump")]),
+			   ?XE("td", [?INPUTT("submit", "load",
+					      "OK")])
+			  ])
+		     ])
+		])])];
+
+get_node(Node, NPath, Query, Lang) ->
     [?XC("h1", "Not found")].
 
 
@@ -1232,4 +1311,37 @@ db_storage_select(ID, Opt, Lang) ->
 		 {disc_copies, "RAM and disc copy"},
 		 {disc_only_copies, "Disc only copy"},
 		 {unknown, "Remote copy"}])).
+
+node_db_parse_query(Node, Tables, Query) ->
+    lists:foreach(
+      fun(Table) ->
+	      STable = atom_to_list(Table),
+	      case lists:keysearch("table" ++ STable, 1, Query) of
+		  {value, {_, SType}} ->
+		      Type = case SType of
+				 "unknown" -> unknown;
+				 "ram_copies" -> ram_copies;
+				 "disc_copies" -> disc_copies;
+				 "disc_only_copies" -> disc_only_copies;
+				 _ -> false
+			     end,
+		      if
+			  Type == false ->
+			      ok;
+			  Type == unknown ->
+			      mnesia:del_table_copy(Table, Node);
+			  true ->
+			      case mnesia:add_table_copy(Table, Node, Type) of
+				  {aborted, _} ->
+				      mnesia:change_table_copy_type(
+					Table, Node, Type);
+				  _ ->
+				      ok
+			      end
+		      end;
+		  _ ->
+		      ok
+	      end
+      end, Tables),
+    ok.
 

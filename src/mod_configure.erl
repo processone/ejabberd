@@ -415,7 +415,7 @@ set_form(["running nodes", ENode, "DB"], Lang, XData) ->
 	Node ->
 	    lists:foreach(
 	      fun({SVar, SVals}) ->
-		      % We believe that this is allowed only for good peoples
+		      % We believe that this is allowed only for good people
 		      Table = list_to_atom(SVar),
 		      Type = case SVals of
 				 ["unknown"] -> unknown;
