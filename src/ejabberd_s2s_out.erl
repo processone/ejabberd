@@ -114,8 +114,8 @@ open_socket(init, StateData) ->
 	      {ok, _Socket} = R -> R;
 	      {error, Reason1} ->
 		  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
-		  gen_tcp:connect(Addr, Port,
-				  [binary, {packet, 0}, inet6])
+		  catch gen_tcp:connect(Addr, Port,
+					[binary, {packet, 0}, inet6])
 	  end,
     case Res of
 	{ok, Socket} ->
@@ -128,6 +128,11 @@ open_socket(init, StateData) ->
 			     streamid = new_id()}};
 	{error, Reason} ->
 	    ?DEBUG("s2s_out: inet6 connect return ~p~n", [Reason]),
+	    Error = ?ERR_REMOTE_SERVER_NOT_FOUND,
+	    bounce_messages(Error),
+	    {stop, normal, StateData};
+	{'EXIT', Reason} ->
+	    ?DEBUG("s2s_out: inet6 connect crashed ~p~n", [Reason]),
 	    Error = ?ERR_REMOTE_SERVER_NOT_FOUND,
 	    bounce_messages(Error),
 	    {stop, normal, StateData}

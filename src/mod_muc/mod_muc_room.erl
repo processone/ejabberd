@@ -583,7 +583,7 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event({get_disco_item, JID}, From, StateName, StateData) ->
+handle_sync_event({get_disco_item, JID, Lang}, From, StateName, StateData) ->
     FAffiliation = get_affiliation(JID, StateData),
     FRole = get_role(JID, StateData),
     Tail =
@@ -592,12 +592,21 @@ handle_sync_event({get_disco_item, JID}, From, StateName, StateData) ->
 	    (FAffiliation == admin) orelse
 	    (FAffiliation == owner) of
 	    true ->
+		Desc = case (StateData#state.config)#config.public of
+			   true ->
+			       "";
+			   _ ->
+			       translate:translate(Lang, "private, ")
+		       end,
 		Len = length(?DICT:to_list(StateData#state.users)),
-		" (" ++ integer_to_list(Len) ++ ")";
+		" (" ++ Desc ++ integer_to_list(Len) ++ ")";
 	    _ ->
 		""
 	end,
-    Reply = case (StateData#state.config)#config.public of
+    Reply = case ((StateData#state.config)#config.public == true) orelse
+		(FRole /= none) orelse
+		(FAffiliation == admin) orelse
+		(FAffiliation == owner) of
 		true ->
 		    {item, get_title(StateData) ++ Tail};
 		_ ->

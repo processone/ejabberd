@@ -167,6 +167,7 @@
 {"Invalid affiliation: ~s", "Недопустимый ранг: ~s"}.
 {"Invalid role: ~s", "Недопустимая роль: ~s"}.
 {"Owner privileges required", "Требуются права владельца"}.
+{"private, ", "приватная, "}.
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin",

@@ -147,9 +147,16 @@ set_vcard(User, VCARD) ->
     BDay     = xml:get_path_s(VCARD, [{elem, "BDAY"},                   cdata]),
     CTRY     = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "CTRY"},    cdata]),
     Locality = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "LOCALITY"},cdata]),
-    EMail    = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
+    EMail1   = xml:get_path_s(VCARD, [{elem, "EMAIL"}, {elem, "USERID"},cdata]),
+    EMail2   = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
     OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
     OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
+    EMail = case EMail1 of
+		"" ->
+		    EMail2;
+		_ ->
+		    EMail1
+	    end,
 
     LUser     = jlib:nodeprep(User),
     LFN       = stringprep:tolower(FN),

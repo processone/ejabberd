@@ -280,19 +280,19 @@ iq_disco_info() ->
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
 
 
-process_iq_disco_items(Host, From, To, IQ) ->
+process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
     Res = IQ#iq{type = result,
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_DISCO_ITEMS}],
-			   iq_disco_items(Host, From)}]},
+			   iq_disco_items(Host, From, Lang)}]},
     ejabberd_router:route(To,
 			  From,
 			  jlib:iq_to_xml(Res)).
 
-iq_disco_items(Host, From) ->
+iq_disco_items(Host, From, Lang) ->
     lists:zf(fun(#muc_online_room{name = Name, pid = Pid}) ->
 		     case catch gen_fsm:sync_send_all_state_event(
-				  Pid, {get_disco_item, From}, 100) of
+				  Pid, {get_disco_item, From, Lang}, 100) of
 			 {item, Desc} ->
 			     {true,
 			      {xmlelement, "item",
