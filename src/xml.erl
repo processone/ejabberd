@@ -17,7 +17,8 @@
 	 get_attr/2, get_attr_s/2,
 	 get_tag_attr/2, get_tag_attr_s/2,
 	 get_subtag/2,
-	 get_path_s/2]).
+	 get_path_s/2,
+	 replace_tag_attr/3]).
 
 element_to_string(El) ->
     case El of
@@ -189,4 +190,11 @@ get_path_s(El, [{attr, Name}]) ->
     get_tag_attr_s(Name, El);
 get_path_s(El, [cdata]) ->
     get_tag_cdata(El).
+
+
+replace_tag_attr(Attr, Value, {xmlelement, Name, Attrs, Els}) ->
+    Attrs1 = lists:keydelete(Attr, 1, Attrs),
+    Attrs2 = [{Attr, Value} | Attrs1],
+    {xmlelement, Name, Attrs2, Els}.
+
 

@@ -67,6 +67,43 @@ process(Node, ["unregister", User]) ->
 		      [User, Node, Reason])
     end;
 
+process(Node, ["backup", Path]) ->
+    case rpc:call(Node, mnesia, backup, [Path]) of
+	{atomic, ok} ->
+	    ok;
+	{error, Reason} ->
+	    io:format("Can't store backup in ~p on node ~p: ~p~n",
+		      [Path, Node, Reason]);
+	{badrpc, Reason} ->
+	    io:format("Can't store backup in ~p on node ~p: ~p~n",
+		      [Path, Node, Reason])
+    end;
+
+process(Node, ["restore", Path]) ->
+    case rpc:call(Node,
+		  mnesia, restore, [Path, [{default_op, keep_tables}]]) of
+	{atomic, ok} ->
+	    ok;
+	{error, Reason} ->
+	    io:format("Can't restore backup from ~p on node ~p: ~p~n",
+		      [Path, Node, Reason]);
+	{badrpc, Reason} ->
+	    io:format("Can't restore backup from ~p on node ~p: ~p~n",
+		      [Path, Node, Reason])
+    end;
+
+process(Node, ["install-fallback", Path]) ->
+    case rpc:call(Node, mnesia, install_fallback, [Path]) of
+	{atomic, ok} ->
+	    ok;
+	{error, Reason} ->
+	    io:format("Can't install fallback from ~p on node ~p: ~p~n",
+		      [Path, Node, Reason]);
+	{badrpc, Reason} ->
+	    io:format("Can't install fallback from ~p on node ~p: ~p~n",
+		      [Path, Node, Reason])
+    end;
+
 process(_Node, _Args) ->
     print_usage().
 
@@ -78,8 +115,11 @@ print_usage() ->
 	      "Available commands:~n"
 	      "  stop\t\t\t\tstop ejabberd~n"
 	      "  restart\t\t\trestart ejabberd~n"
-	      "  register user password\tregister user~n"
-	      "  unregister user\t\tunregister user~n"
+	      "  register user password\tregister a user~n"
+	      "  unregister user\t\tunregister a user~n"
+	      "  backup file\t\t\tstore a backup in file~n"
+	      "  restore file\t\t\trestore a backup from file~n"
+	      "  install-fallback file\t\tinstall a fallback from file~n"
 	      "~n"
 	      "Example:~n"
 	      "  ejabberdctl ejabberd@host restart~n"

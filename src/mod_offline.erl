@@ -16,6 +16,7 @@
 	 stop/0,
 	 store_packet/3,
 	 resend_offline_messages/1,
+	 pop_offline_messages/1,
 	 remove_old_messages/1,
 	 remove_user/1]).
 
@@ -129,7 +130,7 @@ find_x_event([El | Els]) ->
 resend_offline_messages(User) ->
     LUser = jlib:nodeprep(User),
     F = fun() ->
-		Rs = mnesia:read({offline_msg, LUser}),
+		Rs = mnesia:wread({offline_msg, LUser}),
 		mnesia:delete({offline_msg, LUser}),
 		Rs
 	end,
@@ -151,6 +152,32 @@ resend_offline_messages(User) ->
 	      lists:keysort(#offline_msg.timestamp, Rs));
 	_ ->
 	    ok
+    end.
+
+pop_offline_messages(User) ->
+    LUser = jlib:nodeprep(User),
+    F = fun() ->
+		Rs = mnesia:wread({offline_msg, LUser}),
+		mnesia:delete({offline_msg, LUser}),
+		Rs
+	end,
+    case mnesia:transaction(F) of
+	{atomic, Rs} ->
+	    lists:map(
+	      fun(R) ->
+		      {xmlelement, Name, Attrs, Els} = R#offline_msg.packet,
+		      {route,
+		       R#offline_msg.from,
+		       R#offline_msg.to,
+		       {xmlelement, Name, Attrs,
+			Els ++
+			[jlib:timestamp_to_xml(
+			   calendar:now_to_universal_time(
+			     R#offline_msg.timestamp))]}}
+	      end,
+	      lists:keysort(#offline_msg.timestamp, Rs));
+	_ ->
+	    []
     end.
 
 remove_old_messages(Days) ->

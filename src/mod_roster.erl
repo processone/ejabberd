@@ -375,22 +375,45 @@ process_subscription(Direction, User, JID1, Type) ->
 						   Item#roster.ask,
 						   Type)
 			   end,
+		AutoReply = case Direction of
+				out ->
+				    none;
+				in ->
+				    in_auto_reply(Item#roster.subscription,
+						  Item#roster.ask,
+						  Type)
+			    end,
 		case NewState of
 		    none ->
-			none;
+			{none, AutoReply};
 		    {Subscription, Pending} ->
 			NewItem = Item#roster{subscription = Subscription,
 					      ask = Pending},
 			mnesia:write(NewItem),
-			{push, NewItem}
+			{{push, NewItem}, AutoReply}
 		end
 	end,
     case mnesia:transaction(F) of
-	{atomic, ok} ->
-	    false;
-	{atomic, {push, Item}} ->
-	    push_item(User, {"", ?MYNAME, ""}, Item),
-	    true;
+	{atomic, {Push, AutoReply}} ->
+	    case AutoReply of
+		none ->
+		    ok;
+		_ ->
+		    T = case AutoReply of
+			    subscribed -> "subscribed";
+			    unsubscribed -> "unsubscribed"
+			end,
+		    ejabberd_router:route(
+		      {User, ?MYNAME, ""}, JID1,
+		      {xmlelement, "presence", [{"type", T}], []})
+	    end,
+	    case Push of
+		{push, Item} ->
+		    push_item(User, {"", ?MYNAME, ""}, Item),
+		    true;
+		none ->
+		    false
+	    end;
 	_ ->
 	    false
     end.
@@ -473,6 +496,17 @@ out_state_change(both, none, subscribe)    -> none;
 out_state_change(both, none, subscribed)   -> none;
 out_state_change(both, none, unsubscribe)  -> {from, none};
 out_state_change(both, none, unsubscribed) -> {to, none}.
+
+in_auto_reply(from, none, subscribe)    -> subscribed;
+in_auto_reply(from, out,  subscribe)    -> subscribed;
+in_auto_reply(both, none, subscribe)    -> subscribed;
+in_auto_reply(none, in,   unsubscribe)  -> unsubscribed;
+in_auto_reply(none, both, unsubscribe)  -> unsubscribed;
+in_auto_reply(to,   in,   unsubscribe)  -> unsubscribed;
+in_auto_reply(from, none, unsubscribe)  -> unsubscribed;
+in_auto_reply(from, out,  unsubscribe)  -> unsubscribed;
+in_auto_reply(both, none, unsubscribe)  -> unsubscribed;
+in_auto_reply(_,    _,    _)  ->           none.
 
 
 remove_user(User) ->

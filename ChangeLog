@@ -1,3 +1,18 @@
+2004-01-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_ctl.erl: Added commands for backup processing
+
+	* src/ejabberd_c2s.erl: Added processing of xml:lang according to
+	latest XMPP-IM draft
+
+	* src/xml.erl: Added replace_tag_attr/3 function
+
+	* src/mod_roster.erl: Added auto-reply on incoming subscription
+	request according to latest XMPP-IM draft
+
+	* src/mod_offline.erl: Added pop_offline_messages/1 function
+	* src/ejabberd_c2s.erl: Updated sending of offline messages
+
 2004-01-17  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_muc/mod_muc_room.erl: Bugfix, updated error codes

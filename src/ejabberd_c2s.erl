@@ -54,7 +54,8 @@
 		pres_last, pres_pri,
 		pres_timestamp,
 		pres_invis = false,
-		privacy_list = none}).
+		privacy_list = none,
+		lang}).
 
 %-define(DBGFSM, true).
 
@@ -127,6 +128,7 @@ init([{SockMod, Socket}, Opts]) ->
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case xml:get_attr_s("xmlns:stream", Attrs) of
 	?NS_STREAM ->
+	    Lang = xml:get_attr_s("xml:lang", Attrs),
 	    case xml:get_attr_s("version", Attrs) of
 		"1.0" ->
 		    Header = io_lib:format(?STREAM_HEADER,
@@ -149,7 +151,8 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					    [{"xmlns", ?NS_SASL}],
 					    Mechs}]}),
 			    {next_state, wait_for_sasl_auth,
-			     StateData#state{sasl_state = SASLState}};
+			     StateData#state{sasl_state = SASLState,
+					     lang = Lang}};
 			_ ->
 			    case StateData#state.resource of
 				"" ->
@@ -158,12 +161,14 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				      {xmlelement, "stream:features", [],
 				       [{xmlelement, "bind",
 					 [{"xmlns", ?NS_BIND}], []}]}),
-				    {next_state, wait_for_bind, StateData};
+				    {next_state, wait_for_bind,
+				     StateData#state{lang = Lang}};
 				_ ->
 				    send_element(
 				      StateData,
 				      {xmlelement, "stream:features", [], []}),
-				    {next_state, wait_for_session, StateData}
+				    {next_state, wait_for_session,
+				     StateData#state{lang = Lang}}
 			    end
 		    end;
 		_ ->
@@ -171,7 +176,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			       ?STREAM_HEADER,
 			       [StateData#state.streamid, ?MYNAME, ""]),
 		    send_text(StateData, Header),
-		    {next_state, wait_for_auth, StateData}
+		    {next_state, wait_for_auth, StateData#state{lang = Lang}}
 	    end;
 	_ ->
 	    Header = io_lib:format(
@@ -541,9 +546,7 @@ session_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, _Els} = El,
     User = StateData#state.user,
     Server = StateData#state.server,
-    %FromJID = {User,
-    %           Server,
-    %           StateData#state.resource},
+    % TODO: check 'from' attribute in stanza
     FromJID = StateData#state.jid,
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of
@@ -552,6 +555,16 @@ session_established({xmlstreamelement, El}, StateData) ->
 		_ ->
 		    jlib:string_to_jid(To)
 	    end,
+    NewEl = case xml:get_attr_s("xml:lang", Attrs) of
+		"" ->
+		    case StateData#state.lang of
+			"" -> El;
+			Lang ->
+			    xml:replace_tag_attr("xml:lang", Lang, El)
+		    end;
+		_ ->
+		    El
+	    end,
     NewState =
 	case ToJID of
 	    error ->
@@ -559,7 +572,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 		    "error" -> StateData;
 		    "result" -> StateData;
 		    _ ->
-			Err = jlib:make_error_reply(El, ?ERR_JID_MALFORMED),
+			Err = jlib:make_error_reply(NewEl, ?ERR_JID_MALFORMED),
 			send_element(StateData, Err),
 			StateData
 		end;
@@ -571,29 +584,29 @@ session_established({xmlstreamelement, El}, StateData) ->
 				 server = Server,
 				 resource = ""} ->
 				?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
-				       [FromJID, El, StateData]),
-				presence_update(FromJID, El, StateData);
+				       [FromJID, NewEl, StateData]),
+				presence_update(FromJID, NewEl, StateData);
 			    _ ->
-				presence_track(FromJID, ToJID, El, StateData)
+				presence_track(FromJID, ToJID, NewEl, StateData)
 			end;
 		    "iq" ->
 			case StateData#state.privacy_list of
 			    none ->
-				ejabberd_router:route(FromJID, ToJID, El),
+				ejabberd_router:route(FromJID, ToJID, NewEl),
 				StateData;
 			    _PrivList ->
-				case jlib:iq_query_info(El) of
+				case jlib:iq_query_info(NewEl) of
 				    #iq{xmlns = ?NS_PRIVACY} = IQ ->
 					process_privacy_iq(
 					  FromJID, ToJID, IQ, StateData);
 				    _ ->
 					ejabberd_router:route(
-					  FromJID, ToJID, El),
+					  FromJID, ToJID, NewEl),
 					StateData
 				end
 			end;
 		    "message" ->
-			ejabberd_router:route(FromJID, ToJID, El),
+			ejabberd_router:route(FromJID, ToJID, NewEl),
 			StateData;
 		    _ ->
 			StateData
@@ -987,8 +1000,7 @@ presence_update(From, Packet, StateData) ->
 		    FromUnavail ->
 			% TODO: watching ourself
 			
-			catch mod_offline:resend_offline_messages(
-				StateData#state.user),
+			resend_offline_messages(StateData),
 			presence_broadcast_first(
 			  From, StateData#state{pres_last = Packet,
 						pres_invis = false
@@ -1269,5 +1281,21 @@ process_privacy_iq(From, To,
     ejabberd_router:route(
       To, From, jlib:iq_to_xml(IQRes)),
     NewStateData.
+
+
+resend_offline_messages(StateData) ->
+    case catch mod_offline:pop_offline_messages(StateData#state.user) of
+	{'EXIT', _Reason} ->
+	    ok;
+	Rs when list(Rs) ->
+	    lists:foreach(
+	      fun({route, From, To, {xmlelement, Name, Attrs, Els}}) ->
+		      Attrs2 = jlib:replace_from_to_attrs(
+				 jlib:jid_to_string(From),
+				 jlib:jid_to_string(To),
+				 Attrs),
+		      send_element(StateData, {xmlelement, Name, Attrs2, Els})
+	      end, Rs)
+    end.
 
 
