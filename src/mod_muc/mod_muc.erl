@@ -329,7 +329,9 @@ process_iq_register_set(From, SubEl) ->
 			    {error, ?ERR_BAD_REQUEST};
 			_ ->
 			    iq_set_register_info(From, XData)
-		    end
+		    end;
+		_ ->
+		    {error, ?ERR_BAD_REQUEST}
 	    end;
 	_ ->
 	    {error, ?ERR_BAD_REQUEST}
