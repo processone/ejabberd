@@ -36,6 +36,7 @@
 	ReserveFile "CheckReqs1.ini"
     !endif
     ReserveFile "CheckReqs.ini"
+    ReserveFile "CheckService.ini"
     !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
 
 ;--------------------------------
@@ -44,6 +45,7 @@
     Var MUI_TEMP
     Var STARTMENU_FOLDER
     Var ADMIN
+    Var ENABLE_SERVICE
     Var ERLANG_PATH
     Var ERLANG_VERSION
     Var REQUIRED_ERLANG_VERSION
@@ -82,6 +84,7 @@ Function .onInit
 	!insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckReqs1.ini"
     !endif
     !insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckReqs.ini"
+    !insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckService.ini"
   
     ClearErrors
     UserInfo::GetName
@@ -112,6 +115,7 @@ FunctionEnd
 
     !insertmacro MUI_PAGE_WELCOME
     Page custom CheckUser LeaveCheckUser
+    Page custom CheckService LeaveCheckService
     !insertmacro MUI_PAGE_LICENSE "..\..\COPYING"
     Page custom CheckReqs LeaveCheckReqs
     Page custom CheckReqs1 LeaveCheckReqs1
@@ -200,7 +204,7 @@ SectionIn 1 RO
 
     installsrv:
     nsExec::ExecToLog '"$ERLSRV" add ejabberd -stopaction "init:stop()." \
-	-onfail reboot -workdir "$INSTDIR" \
+	-onfail restart -workdir "$INSTDIR" \
 	-args "-s ejabberd -pa ebin \
 	-ejabberd config \\\"ejabberd.cfg\\\" \
 	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH msgs \
@@ -208,8 +212,10 @@ SectionIn 1 RO
 	-sasl sasl_error_logger {file,\\\"log/sasl.log\\\"} \
 	-mnesia dir \\\"spool\\\"" -d'
     Pop $0
-    ;nsExec::ExecToLog '"$ERLSRV" disable ejabberd'
-    ;Pop $0
+
+    StrCmp $ENABLE_SERVICE 0 0 skipservice
+    nsExec::ExecToLog '"$ERLSRV" disable ejabberd'
+    Pop $0
 
     skipservice:
 
@@ -366,6 +372,37 @@ Function LeaveCheckUser
 
 	validate:
     !endif
+
+FunctionEnd
+
+LangString TEXT_CU_TITLE ${LANG_ENGLISH} "Configuring Ejabberd Service"
+LangString TEXT_CU_SUBTITLE ${LANG_ENGLISH} "Configuring Ejabberd Service."
+
+Function CheckService
+
+    StrCmp $ADMIN 0 0 showpage
+    Abort
+
+    showpage:
+	!insertmacro MUI_HEADER_TEXT $(TEXT_CU_TITLE) $(TEXT_CU_SUBTITLE)
+
+	!insertmacro MUI_INSTALLOPTIONS_INITDIALOG "CheckService.ini"
+	
+	!insertmacro MUI_INSTALLOPTIONS_SHOW
+
+FunctionEnd
+
+Function LeaveCheckService
+
+    !insertmacro MUI_INSTALLOPTIONS_READ $0 "CheckService.ini" "Field 2" "State"
+    StrCmp $0 0 0 autostart
+    StrCpy $ENABLE_SERVICE 0
+    Goto endfun
+
+    autostart:
+    StrCpy $ENABLE_SERVICE 1
+
+    endfun:
 
 FunctionEnd
 

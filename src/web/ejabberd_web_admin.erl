@@ -1069,7 +1069,7 @@ list_users(Query, Lang) ->
     FUsers =
 	case length(SUsers) of
 	    N when N =< 100 ->
-		[list_given_users(SUsers, Lang)];
+		[list_given_users(SUsers, "../", Lang)];
 	    N ->
 		NParts = trunc(math:sqrt(N * 0.618)) + 1,
 		M = trunc(N / NParts) + 1,
@@ -1136,9 +1136,9 @@ list_users_in_diapason(Diap, Lang) ->
     N1 = list_to_integer(S1),
     N2 = list_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
-    [list_given_users(Sub, Lang)].
+    [list_given_users(Sub, "../../", Lang)].
 
-list_given_users(Users, Lang) ->
+list_given_users(Users, Prefix, Lang) ->
     ?XE("table",
 	[?XE("thead",
 	     [?XE("tr",
@@ -1149,7 +1149,7 @@ list_given_users(Users, Lang) ->
 	     lists:map(
 	       fun(User) ->
 		       QueueLen = length(mnesia:dirty_read({offline_msg, User})),
-		       FQueueLen = [?AC("../../user/" ++ User ++ "/queue/",
+		       FQueueLen = [?AC(Prefix ++ "user/" ++ User ++ "/queue/",
 					integer_to_list(QueueLen))],
 		       FLast =
 			   case ejabberd_sm:get_user_resources(User) of
@@ -1173,7 +1173,7 @@ list_given_users(Users, Lang) ->
 				   ?T("Online")
 			   end,
 		       ?XE("tr",
-			   [?XE("td", [?AC("../../user/" ++ User ++ "/",
+			   [?XE("td", [?AC(Prefix ++ "user/" ++ User ++ "/",
 					   User)]),
 			    ?XE("td", FQueueLen),
 			    ?XC("td", FLast)])
