@@ -116,12 +116,14 @@ try_register(User, Password) ->
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
-	    case acl:match_rule(register, jlib:make_jid(User, ?MYNAME, "")) of
+	    JID = jlib:make_jid(User, ?MYNAME, ""),
+	    case acl:match_rule(register, JID) of
 		deny ->
 		    {error, ?ERR_CONFLICT};
 		allow ->
 		    case ejabberd_auth:try_register(User, Password) of
 			{atomic, ok} ->
+			    send_welcome_message(JID),
 			    ok;
 			{atomic, exists} ->
 			    {error, ?ERR_CONFLICT};
@@ -132,4 +134,18 @@ try_register(User, Password) ->
     end.
 
 
+send_welcome_message(JID) ->
+    case ejabberd_config:get_local_option(welcome_message) of
+	{"", ""} ->
+	    ok;
+	{Subj, Body} ->
+	    ejabberd_router:route(
+	      jlib:make_jid("", ?MYNAME, ""),
+	      JID,
+	      {xmlelement, "message", [{"type", "normal"}],
+	       [{xmlelement, "subject", [], [{xmlcdata, Subj}]},
+		{xmlelement, "body", [], [{xmlcdata, Body}]}]});
+	_ ->
+	    ok
+    end.
 

@@ -24,6 +24,15 @@
 % Every username can be registered via in-band registration:
 {access, register, [{allow, all}]}.
 
+% After successful registration user will get message with following subject
+% and body:
+{welcome_message,
+ {"Welcome!",
+  "Welcome to Jabber Service.  "
+  "For information about Jabber visit http://jabber.org"}}.
+% Replace them with 'none' if you don't want to send such message:
+%{welcome_message, none}.
+
 
 % Only non-blocked users can use c2s connections:
 {access, c2s, [{deny, blocked},

@@ -84,11 +84,15 @@ do_route(State, From, To, Packet) ->
 		    ok
 	    end;
 	#jid{luser = ""} ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
-	    ejabberd_router ! {route,
-			       jlib:make_jid("", State#state.mydomain, ""),
-			       From,
-			       Err};
+	    {xmlelement, _Name, Attrs, _Els} = Packet,
+	    case xml:get_attr_s("type", Attrs) of
+		"error" -> ok;
+		"result" -> ok;
+		_ ->
+		    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
+		    ejabberd_router:route(
+		      jlib:make_jid("", State#state.mydomain, ""), From, Err)
+	    end;
 	_ ->
 	    ejabberd_sm ! {route, From, To, Packet}
     end.

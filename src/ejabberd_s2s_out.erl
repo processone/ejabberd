@@ -443,7 +443,7 @@ is_verify_res(_) ->
 -include_lib("kernel/include/inet.hrl").
 
 get_addr_port(Server) ->
-    Res = case inet_res:getbyname("_jabber-server._tcp." ++ Server, srv) of
+    Res = case inet_res:getbyname("_xmpp-server._tcp." ++ Server, srv) of
 	      {error, _Reason} ->
 		  inet_res:getbyname("_jabber._tcp." ++ Server, srv);
 	      {ok, _HEnt} = R -> R

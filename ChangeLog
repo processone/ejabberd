@@ -1,3 +1,14 @@
+2003-10-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_local.erl: Bugfix
+
+	* src/mod_register.erl: Added support for sending of "welcome"
+	message
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_s2s_out.erl: Replaced "_jabber-server" with
+	"_xmpp-server"
+
 2003-10-12  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Updated
