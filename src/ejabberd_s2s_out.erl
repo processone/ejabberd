@@ -108,14 +108,18 @@ init([From, Server, Type]) ->
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
     {Addr, Port} = get_addr_port(StateData#state.server),
-    ?DEBUG("s2s_out: connecting to ~s:~p~n", [Addr, Port]),
-    Res = case gen_tcp:connect(Addr, Port,
-			       [binary, {packet, 0}]) of
-	      {ok, _Socket} = R -> R;
-	      {error, Reason1} ->
-		  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
-		  catch gen_tcp:connect(Addr, Port,
-					[binary, {packet, 0}, inet6])
+    Res = case idna:domain_utf8_to_ascii(Addr) of
+	      false -> {error, badarg};
+	      ASCIIAddr ->
+		  ?DEBUG("s2s_out: connecting to ~s:~p~n", [ASCIIAddr, Port]),
+		  case gen_tcp:connect(ASCIIAddr, Port,
+				       [binary, {packet, 0}]) of
+		      {ok, _Socket} = R -> R;
+		      {error, Reason1} ->
+			  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
+			  catch gen_tcp:connect(Addr, Port,
+						[binary, {packet, 0}, inet6])
+		  end
 	  end,
     case Res of
 	{ok, Socket} ->

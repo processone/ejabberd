@@ -1383,7 +1383,7 @@ add_message_to_history(FromNick, Packet, StateData) ->
 		jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		StateData#state.jid,
 		TSPacket),
-    Size = string:len(xml:element_to_string(SPacket)),
+    Size = lists:flatlength(xml:element_to_string(SPacket)),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
 		   StateData#state.history),
     StateData#state{history = Q1}.
