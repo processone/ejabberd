@@ -32,6 +32,9 @@
 	"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" "
 	"\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n").
 
+-define(HTML_DOCTYPE,
+	"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">").
+
 
 start(SockData, Opts) ->
     supervisor:start_child(ejabberd_http_sup, [SockData, Opts]).
@@ -54,7 +57,9 @@ send_text(State, Text) ->
 
 
 receive_headers(State) ->
-    Data = (State#state.sockmod):recv(State#state.socket, 0, 300000),
+    SockMod = State#state.sockmod,
+    Socket = State#state.socket,
+    Data = SockMod:recv(Socket, 0, 300000),
     ?DEBUG("recv: ~p~n", [Data]),
     case Data of
 	{ok, {http_request, Method, Path, _Version}} ->
@@ -78,7 +83,13 @@ receive_headers(State) ->
 		       element(2, State#state.request_path)]),
 	    Out = process_request(State),
 	    send_text(State, Out),
-	    ok;
+	    case SockMod of
+		gen_tcp ->
+		    inet:setopts(Socket, [{packet, http}]);
+		ssl ->
+		    ssl:setopts(Socket, [{packet, http}])
+	    end,
+	    receive_headers(#state{sockmod = SockMod, socket = Socket});
 	{error, _Reason} ->
 	    ok;
 	_ ->
@@ -216,7 +227,14 @@ recv_data(State, Len, Acc) ->
 
 
 make_xhtml_output(Status, Headers, XHTML) ->
-    Data = list_to_binary([?XHTML_DOCTYPE, xml:element_to_string(XHTML)]),
+    Data = case lists:member(html, Headers) of
+	       true ->
+		   list_to_binary([?HTML_DOCTYPE,
+				   xml:element_to_string(XHTML)]);
+	       _ ->
+		   list_to_binary([?XHTML_DOCTYPE,
+				   xml:element_to_string(XHTML)])
+	   end,
     Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
 		   {value, _} ->
 		       [{"Content-Length", integer_to_list(size(Data))} |
@@ -227,7 +245,9 @@ make_xhtml_output(Status, Headers, XHTML) ->
 			Headers]
 	       end,
     H = lists:map(fun({Attr, Val}) ->
-			  [Attr, ": ", Val, "\r\n"]
+			  [Attr, ": ", Val, "\r\n"];
+		     (_) ->
+			  []
 		  end, Headers1),
     SL = ["HTTP/1.1 ", integer_to_list(Status), " ",
 	  code_to_phrase(Status), "\r\n"],
