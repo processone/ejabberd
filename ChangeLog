@@ -1,5 +1,7 @@
 2004-05-22  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/nl.msg: Dutch translation (thanks to Sander Devrieze)
+
 	* src/web/ejabberd_http.erl: Added options for enabling HTTP
 	polling and admin interface
 	* src/web/ejabberd_web.erl: Likewise
