@@ -390,8 +390,6 @@ runned on them.  Each element of list is a tuple with following elements:
 \begin{itemize}
 \item Port number;
 \item Module that serves this port;
-\item Function in this module that starts connection (likely will be removed in
-  future versions of \ejabberd);
 \item Options to this module.
 \end{itemize}
 
@@ -399,7 +397,7 @@ Currently three modules are implemented:
 \begin{description}
 \item[\texttt{ejabberd\_c2s}] This module serves C2S connections.
   
-  Following options defined:
+  The following options are defined:
   \begin{description}
   \item[\texttt{\{access, <access rule>\}}] This option defines access of users
     to this C2S port.  Default value is ``\texttt{all}''.
@@ -413,10 +411,10 @@ Currently three modules are implemented:
 \end{description}
 
 For example, the following configuration defines that C2S connections are
-listened on port 5222 and denied for user ``\texttt{bad}'', S2S on port 5269
-and that service \texttt{conference.jabber.org} must be connected to port 8888
-with a password ``\texttt{secret}''.  Also all users except admins have traffic
-limit 1000\,b/s.
+listened on port 5222 and 5223 (SSL) and denied for user ``\texttt{bad}'', S2S
+on port 5269, and that service \texttt{conference.example.org} must be
+connected to port 8888 with a password ``\texttt{secret}''.  Also all users
+except admins have traffic limit 1000\,b/s.
 \begin{verbatim}
 {acl, blocked, {user, "bad"}}.
 {access, c2s, [{deny, blocked},
@@ -424,11 +422,13 @@ limit 1000\,b/s.
 {shaper, normal, {maxrate, 1000}}.
 {access, c2s_shaper, [{none, admin},
                       {normal, all}]}.
-{listen, [{5222, ejabberd_c2s,     start, [{access, c2s},
-                                           {shaper, c2s_shaper}]},
-          {5269, ejabberd_s2s_in,  start, []},
-          {8888, ejabberd_service, start,
-           [{host, "conference.jabber.org", [{password, "secret"}]}]}
+{listen, [{5222, ejabberd_c2s,     [{access, c2s},
+                                    {shaper, c2s_shaper}]},
+          {5223, ejabberd_c2s,     [{access, c2s},
+                                    {ssl, [{certfile, "/path/to/ssl.pem"}]}]},
+          {5269, ejabberd_s2s_in,  []},
+          {8888, ejabberd_service,
+           [{host, "conference.example.org", [{password, "secret"}]}]}
          ]}.
 \end{verbatim}
 
@@ -539,7 +539,7 @@ removed user is online, then he will be disconnected.  Also user-related data
 
 
 
-\subsubsection{Node \texttt{all users}: List of Registered User}
+\subsubsection{Node \texttt{all users}: List of Registered Users}
 
 \begin{figure}[htbp]
   \centering
@@ -640,19 +640,17 @@ does not exist, then it is opened and registered.
 \section{Built-in Modules}
 \label{sec:modules}
 
-
-
 \subsection{Common Options}
 \label{sec:modcommonopts}
 
-Following options used by many modules, so they described in separate section.
-
+The following options are used by many modules, so they are described in
+separate section.
 
 \subsubsection{Option \texttt{iqdisc}}
 
 Many modules define handlers for processing IQ queries of different namespaces
-to this server or to user (e.\,g.\ to \texttt{myjabber.org} or to
-\texttt{user@myjabber.org}).  This option defines processing discipline of
+to this server or to user (e.\,g.\ to \texttt{example.org} or to
+\texttt{user@example.org}).  This option defines processing discipline of
 these queries.  Possible values are:
 \begin{description}
 \item[\texttt{no\_queue}] All queries of namespace with this processing
@@ -688,7 +686,7 @@ Example:
 \begin{verbatim}
 {modules, [
            ...
-           {mod_echo,      [{host, "echo.myjabber.org"}]},
+           {mod_echo,      [{host, "echo.example.org"}]},
            ...
           ]}.
 \end{verbatim}
@@ -713,12 +711,33 @@ Example:
 \subsection{\moddisco{}}
 \label{sec:moddisco}
 
+This module adds support for
+\footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030} (Service
+Discovery).
+
+Options:
+\begin{description}
+\item[\texttt{iqdisc}] \ns{http://jabber.org/protocol/disco#items} and
+  \ns{http://jabber.org/protocol/disco#info} IQ queries processing discipline.
+\item[\texttt{extra\_domains}] List of domains that will be added to server
+  items reply
+\end{description}
+
+Example:
+\begin{verbatim}
+{modules, [
+           ...
+           {mod_disco, [[{extra_domains, ["jit.example.com",
+                                          "etc.example.com"]}]]},
+           ...
+          ]}.
+\end{verbatim}
 
 
 \subsection{\modstats{}}
 \label{sec:modstats}
 
-This module adds support of
+This module adds support for
 \footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039} (Statistics Gathering).
 
 Options:
@@ -784,8 +803,8 @@ Options:
 \label{sec:i18nl10n}
 
 Many modules supports \texttt{xml:lang} attribute inside IQ queries.  E.\,g.\ 
-on figure~\ref{fig:discorus} (compare with figure~\ref{fig:disco}) showed reply
-on following query:
+on figure~\ref{fig:discorus} (compare it with figure~\ref{fig:disco}) showed
+reply on following query:
 \begin{verbatim}
 <iq id='5'
     to='e.localhost'

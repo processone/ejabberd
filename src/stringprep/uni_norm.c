@@ -77,9 +77,8 @@ static unsigned char cclassPageMap[] = {
 };
 
 /*
- * The groupMap is indexed by combining the alternate page number with
- * the page offset and returns a group number that identifies a unique
- * set of character attributes.
+ * The cclassGroupMap is indexed by combining the alternate page number with
+ * the page offset and returns a combining class number.
  */
 
 static unsigned char cclassGroupMap[] = {
@@ -297,9 +296,9 @@ static unsigned char decompPageMap[] = {
 };
 
 /*
- * The groupMap is indexed by combining the alternate page number with
- * the page offset and returns a group number that identifies a unique
- * set of character attributes.
+ * The decompGroupMap is indexed by combining the alternate page number with
+ * the page offset and returns a group number that identifies a length and
+ * shift of decomposition sequence in decompList
  */
 
 static int decompGroupMap[] = {
@@ -839,7 +838,7 @@ static int decompGroupMap[] = {
 };
 
 /*
- * Each group represents a unique set of character attributes.  The attributes...
+ * List of decomposition sequences
  */
 
 static int decompList[] = {
@@ -1295,8 +1294,6 @@ static int decompList[] = {
  * Unicode character tables.
  */
 
-//#define GetUniCharInfo(ch) (groups[groupMap[(pageMap[(((int)(ch)) & 0xffff) >> CCLASS_OFFSET_BITS] << CCLASS_OFFSET_BITS) | ((ch) & ((1 << CCLASS_OFFSET_BITS)-1))]])
-
 #define GetUniCharDecompInfo(ch) (decompGroupMap[(decompPageMap[(((int)(ch)) & 0xffff) >> DECOMP_OFFSET_BITS] << DECOMP_OFFSET_BITS) | ((ch) & ((1 << DECOMP_OFFSET_BITS)-1))])
 
 #define GetDecompShift(info) ((info) & 0xffff)
@@ -1556,7 +1553,7 @@ static int compGroupMap[] = {
 };
 
 /*
- * ...
+ * Lists of compositions for characters that appears only in one composition
  */
 
 static int compFirstList[][2] = {
@@ -1611,6 +1608,10 @@ static int compSecondList[][2] = {
     {2887, 2891}, {2887, 2888}, {2887, 2892}, {3270, 3274}, {3270, 3272}, 
     {1575, 1570}, {1575, 1573}
 };
+
+/*
+ * Compositions matrix
+ */
 
 static int compBothList[144][37] = {
     {

@@ -19,7 +19,9 @@
 	 process_sm_iq_items/3,
 	 process_sm_iq_info/3,
 	 register_feature/1,
-	 unregister_feature/1]).
+	 unregister_feature/1,
+	 register_extra_domain/1,
+	 unregister_extra_domain/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -42,6 +44,9 @@ start(Opts) ->
     register_feature("iq"),
     register_feature("presence"),
     register_feature("presence-invisible"),
+    catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
+    ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
+    lists:foreach(fun register_extra_domain/1, ExtraDomains),
     ok.
 
 stop() ->
@@ -58,6 +63,14 @@ register_feature(Feature) ->
 unregister_feature(Feature) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
     ets:delete(disco_features, Feature).
+
+register_extra_domain(Domain) ->
+    catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
+    ets:insert(disco_extra_domains, {Domain}).
+
+unregister_extra_domain(Domain) ->
+    catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
+    ets:delete(disco_extra_domains, Domain).
 
 process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     Lang = xml:get_tag_attr_s("xml:lang", SubEl),
@@ -180,9 +193,10 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 feature_to_xml({Feature}) ->
     {xmlelement, "feature", [{"var", Feature}], []}.
 
+domain_to_xml({Domain}) ->
+    {xmlelement, "item", [{"jid", Domain}], []};
 domain_to_xml(Domain) ->
     {xmlelement, "item", [{"jid", Domain}], []}.
-
 
 -define(NODE(Name, Node),
 	{xmlelement, "item",
@@ -193,12 +207,14 @@ domain_to_xml(Domain) ->
 
 get_services_only() ->
     lists:map(fun domain_to_xml/1,
-	      ejabberd_router:dirty_get_all_routes()).
+	      ejabberd_router:dirty_get_all_routes()) ++
+	lists:map(fun domain_to_xml/1, ets:tab2list(disco_extra_domains)).
 
 get_local_items([], Server, Lang) ->
     Domains =
 	lists:map(fun domain_to_xml/1,
-		  ejabberd_router:dirty_get_all_routes()),
+		  ejabberd_router:dirty_get_all_routes()) ++
+	lists:map(fun domain_to_xml/1, ets:tab2list(disco_extra_domains)),
     {result,
      Domains ++
      [?NODE("Configuration",            "config"),

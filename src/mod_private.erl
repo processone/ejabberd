@@ -14,7 +14,8 @@
 
 -export([start/1,
 	 stop/0,
-	 process_local_iq/3]).
+	 process_local_iq/3,
+	 remove_user/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -95,3 +96,20 @@ get_data(LUser, [El | Els], Res) ->
 	_ ->
 	    get_data(LUser, Els, Res)
     end.
+
+
+remove_user(User) ->
+    LUser = jlib:nodeprep(User),
+    F = fun() ->
+		lists:foreach(
+		  fun({U, _} = Key) ->
+			  if
+			      U == LUser ->
+				  mnesia:delete({private_storage, Key});
+			      true ->
+				  ok
+			  end
+		  end, mnesia:all_keys(private_storage))
+        end,
+    mnesia:transaction(F).
+

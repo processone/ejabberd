@@ -65,7 +65,7 @@
 <UL><LI>
 <A HREF="#htoc19">3.2.1&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</A>
 <LI><A HREF="#htoc20">3.2.2&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</A>
-<LI><A HREF="#htoc21">3.2.3&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</A>
+<LI><A HREF="#htoc21">3.2.3&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered Users</A>
 <LI><A HREF="#htoc22">3.2.4&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</A>
 <LI><A HREF="#htoc23">3.2.5&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</A>
 <LI><A HREF="#htoc24">3.2.6&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</A>
@@ -411,15 +411,13 @@ runned on them. Each element of list is a tuple with following elements:
 <UL><LI>
 Port number;
 <LI>Module that serves this port;
-<LI>Function in this module that starts connection (likely will be removed in
- future versions of <TT>ejabberd</TT>);
 <LI>Options to this module.
 </UL>
 Currently three modules are implemented:
 <DL COMPACT=compact><DT>
 <B><TT>ejabberd_c2s</TT></B><DD> This module serves C2S connections.<BR>
 <BR>
-Following options defined:
+The following options are defined:
  <DL COMPACT=compact><DT>
  <B><TT>{access, &lt;access rule&gt;}</TT></B><DD> This option defines access of users
  to this C2S port. Default value is ``<TT>all</TT>''.
@@ -432,10 +430,10 @@ Following options defined:
  services (i.&nbsp;e. that use the <TT>jabber:component:accept</TT> namespace).
 </DL>
 For example, the following configuration defines that C2S connections are
-listened on port 5222 and denied for user ``<TT>bad</TT>'', S2S on port 5269
-and that service <TT>conference.jabber.org</TT> must be connected to port 8888
-with a password ``<TT>secret</TT>''. Also all users except admins have traffic
-limit 1000&nbsp;b/s.
+listened on port 5222 and 5223 (SSL) and denied for user ``<TT>bad</TT>'', S2S
+on port 5269, and that service <TT>conference.example.org</TT> must be
+connected to port 8888 with a password ``<TT>secret</TT>''. Also all users
+except admins have traffic limit 1000&nbsp;b/s.
 <PRE>
 {acl, blocked, {user, "bad"}}.
 {access, c2s, [{deny, blocked},
@@ -443,11 +441,13 @@ limit 1000&nbsp;b/s.
 {shaper, normal, {maxrate, 1000}}.
 {access, c2s_shaper, [{none, admin},
                       {normal, all}]}.
-{listen, [{5222, ejabberd_c2s,     start, [{access, c2s},
-                                           {shaper, c2s_shaper}]},
-          {5269, ejabberd_s2s_in,  start, []},
-          {8888, ejabberd_service, start,
-           [{host, "conference.jabber.org", [{password, "secret"}]}]}
+{listen, [{5222, ejabberd_c2s,     [{access, c2s},
+                                    {shaper, c2s_shaper}]},
+          {5223, ejabberd_c2s,     [{access, c2s},
+                                    {ssl, [{certfile, "/path/to/ssl.pem"}]}]},
+          {5269, ejabberd_s2s_in,  []},
+          {8888, ejabberd_service,
+           [{host, "conference.example.org", [{password, "secret"}]}]}
          ]}.
 </PRE>
 <!--TOC subsubsection Modules-->
@@ -565,9 +565,9 @@ removed user is online, then he will be disconnected. Also user-related data
 
 <H4><A NAME="htoc20">3.2.2</A>&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
 
-<!--TOC subsubsection Node <TT>all users</TT>: List of Registered User-->
+<!--TOC subsubsection Node <TT>all users</TT>: List of Registered Users-->
 
-<H4><A NAME="htoc21">3.2.3</A>&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</H4><!--SEC END -->
+<H4><A NAME="htoc21">3.2.3</A>&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered Users</H4><!--SEC END -->
 
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
@@ -678,15 +678,16 @@ does not exist, then it is opened and registered.<BR>
 <H3><A NAME="htoc32">A.1</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
 
 <A NAME="sec:modcommonopts"></A>
-Following options used by many modules, so they described in separate section.<BR>
+The following options are used by many modules, so they are described in
+separate section.<BR>
 <BR>
 <!--TOC subsubsection Option <TT>iqdisc</TT>-->
 
 <H4><A NAME="htoc33">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
 
 Many modules define handlers for processing IQ queries of different namespaces
-to this server or to user (e.&nbsp;g. to <TT>myjabber.org</TT> or to
-<TT>user@myjabber.org</TT>). This option defines processing discipline of
+to this server or to user (e.&nbsp;g. to <TT>example.org</TT> or to
+<TT>user@example.org</TT>). This option defines processing discipline of
 these queries. Possible values are:
 <DL COMPACT=compact><DT>
 <B><TT>no_queue</TT></B><DD> All queries of namespace with this processing
@@ -721,7 +722,7 @@ Example:
 <PRE>
 {modules, [
            ...
-           {mod_echo,      [{host, "echo.myjabber.org"}]},
+           {mod_echo,      [{host, "echo.example.org"}]},
            ...
           ]}.
 </PRE>
@@ -745,12 +746,32 @@ Example:
 <H3><A NAME="htoc38">A.5</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
 
 <A NAME="sec:moddisco"></A>
+This module adds support for
+<A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A> (Service
+Discovery).<BR>
+<BR>
+Options:
+<DL COMPACT=compact><DT>
+<B><TT>iqdisc</TT></B><DD> <TT>http://jabber.org/protocol/disco#items</TT> and
+ <TT>http://jabber.org/protocol/disco#info</TT> IQ queries processing discipline.
+<DT><B><TT>extra_domains</TT></B><DD> List of domains that will be added to server
+ items reply
+</DL>
+Example:
+<PRE>
+{modules, [
+           ...
+           {mod_disco, [[{extra_domains, ["jit.example.com",
+                                          "etc.example.com"]}]]},
+           ...
+          ]}.
+</PRE>
 <!--TOC subsection <TT>mod_stats</TT>-->
 
 <H3><A NAME="htoc39">A.6</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A>
-This module adds support of
+This module adds support for
 <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
 <BR>
 Options:
@@ -816,8 +837,8 @@ Options:
 
 <A NAME="sec:i18nl10n"></A>
 Many modules supports <TT>xml:lang</TT> attribute inside IQ queries. E.&nbsp;g. 
-on figure&nbsp;<A HREF="#fig:discorus">6</A> (compare with figure&nbsp;<A HREF="#fig:disco">1</A>) showed reply
-on following query:
+on figure&nbsp;<A HREF="#fig:discorus">6</A> (compare it with figure&nbsp;<A HREF="#fig:disco">1</A>) showed
+reply on following query:
 <PRE>
 &lt;iq id='5'
     to='e.localhost'

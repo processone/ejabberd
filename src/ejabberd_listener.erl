@@ -15,6 +15,8 @@
 	 init_ssl/4
 	]).
 
+-include("ejabberd.hrl").
+
 start_link() ->
     supervisor:start_link({local, ejabberd_listeners}, ?MODULE, []).
 
@@ -56,6 +58,13 @@ init(Port, Module, Opts) ->
 accept(ListenSocket, Module, Opts) ->
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
+	    case {inet:sockname(Socket), inet:peername(Socket)} of
+		{{ok, Addr}, {ok, PAddr}} ->
+		    ?INFO_MSG("(~w) Accepted connection ~w -> ~w",
+			      [Socket, PAddr, Addr]);
+		_ ->
+		    ok
+	    end,
 	    {ok, Pid} = Module:start({gen_tcp, Socket}, Opts),
 	    %{ok, Pid} =
 	    %    supervisor:start_child(
@@ -82,6 +91,13 @@ init_ssl(Port, Module, Opts, SSLOpts) ->
 accept_ssl(ListenSocket, Module, Opts) ->
     case ssl:accept(ListenSocket) of
 	{ok, Socket} ->
+	    case {ssl:sockname(Socket), ssl:peername(Socket)} of
+		{{ok, Addr}, {ok, PAddr}} ->
+		    ?INFO_MSG("(~w) Accepted SSL connection ~w -> ~w",
+			      [Socket, PAddr, Addr]);
+		_ ->
+		    ok
+	    end,
 	    apply(Module, start_link, [{ssl, Socket}, Opts]),
 	    accept_ssl(ListenSocket, Module, Opts)
     end.

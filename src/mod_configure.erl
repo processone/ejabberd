@@ -665,13 +665,16 @@ set_form(["config", "remusers"], Lang, XData) ->
       fun({Var, Vals}) ->
 	      case Vals of
 		  ["1"] ->
-		      ejabberd_sm ! {route, {"", "", ""}, {Var, "", ""},
+		      ejabberd_sm ! {route,
+				     jlib:make_jid("", "", ""),
+				     jlib:make_jid(Var, "", ""),
 				     {xmlelement, "broadcast", [],
 				      [{exit, "User removed"}]}},
 		      catch ejabberd_auth:remove_user(Var),
 		      catch mod_roster:remove_user(Var),
 		      catch mod_offline:remove_user(Var),
-		      catch mod_vcard:remove_user(Var);
+		      catch mod_vcard:remove_user(Var),
+		      catch mod_private:remove_user(Var);
 		  _ ->
 		      ok
 	      end
@@ -703,7 +706,7 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	deny ->
 	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
-	    {User, _, _} = To,
+	    #jid{user = User} = To,
 	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case Type of
 		set ->
@@ -790,5 +793,24 @@ get_sm_form(_, _, Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
+set_sm_form(User, [], Lang, XData) ->
+    case lists:keysearch("action", 1, XData) of
+	{value, {_, ["edit"]}} ->
+	    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+	{value, {_, ["remove"]}} ->
+	    ejabberd_sm ! {route,
+			   jlib:make_jid("", "", ""),
+			   jlib:make_jid(User, "", ""),
+			   {xmlelement, "broadcast", [],
+			    [{exit, "User removed"}]}},
+	    catch ejabberd_auth:remove_user(User),
+	    catch mod_roster:remove_user(User),
+	    catch mod_offline:remove_user(User),
+	    catch mod_vcard:remove_user(User),
+	    catch mod_private:remove_user(User),
+	    {result, []};
+	_ ->
+	    {error, ?ERR_BAD_REQUEST}
+    end;
 set_sm_form(_, _, Lang, XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.

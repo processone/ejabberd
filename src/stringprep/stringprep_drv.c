@@ -37,7 +37,7 @@ static void stringprep_erl_stop(ErlDrvData handle)
  * library
  */
 
-void canonical_ordering(int *str, int len)
+static void canonical_ordering(int *str, int len)
 {
    int i, j, t;
    int last, next;
@@ -232,13 +232,6 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       }
       
       info = GetUniCharInfo(uc);
-      //if(info & prohibit) {
-      //   *rbuf = rstring;
-      //   driver_free(str32);
-      //   return 1;
-      //}
-
-      //printf("Got %x\r\n", uc);
 
       if(!(info & B1Mask)) 
       {
@@ -247,34 +240,10 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 	    {
 	       ruc = uc + GetDelta(info);
 	       ADD_DECOMP(ruc);
-
-	       //info = GetUniCharDecompInfo(ruc);
-	       //if(info >= 0) {
-	       //   decomp_len = GetDecompLen(info);
-	       //   decomp_shift = GetDecompShift(info);
-	       //   for(j = 0; j < decomp_len; j++) {
-	       //      ADD_UCHAR32(str32, str32pos, str32len,
-	       // 		 decompList[decomp_shift + j]);
-	       //   }
-	       //} else {
-	       //   ADD_UCHAR32(str32, str32pos, str32len, ruc);
-	       //}
-
-	       //info = GetUniCharDecompInfo(ruc);
-	       //if(info >= 0) {
-	       //   printf("Decomposition %x: ", ruc);
-	       //   for(j = 0; j < GetDecompLen(info); j++) {
-	       //      printf("%x ", decompList[GetDecompShift(info) + j]);
-	       //   }
-	       //   printf("\r\n");
-	       //}
-	       
-	       //ADD_UCHAR(ruc);
 	    } else {
 	       mc = GetMC(info);
 	       for(j = 1; j <= mc[0]; j++) {
 		  ruc = mc[j];
-		  //printf("Char %x cclass %d\r\n", ruc, GetUniCharCClass(ruc));
 		  ADD_DECOMP(ruc);
 	       }
 	    }
@@ -292,18 +261,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       return 1;
    }
 
-   //printf("\r\n");
-   //printf("DECOMPOSED:\t");
-   //for(i = 0; i < str32pos; i++)
-   //   printf("%4x ", str32[i]);
-   //printf("\r\n");
-
    canonical_ordering(str32, str32pos);
-
-   //printf("ORDERED:\t");
-   //for(i = 0; i < str32pos; i++)
-   //   printf("%4x ", str32[i]);
-   //printf("\r\n");
 
    comp_pos = 1;
    comp_starter_pos = 0;
@@ -314,7 +272,6 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    {
       ch2 = str32[i];
       cclass2 = GetUniCharCClass(ch2);
-      //printf("Compose: %x + %x = %x\r\n", ch1, ch2, compose(ch1, ch2));
       if(cclass1 == 0 && cclass2 > cclass_prev && (ruc = compose(ch1, ch2))) {
 	 ch1 = ruc;
       } else {
@@ -332,11 +289,6 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    str32[comp_starter_pos] = ch1;
    str32pos = comp_pos;
    
-   //printf("COMPOSED:\t");
-   //for(i = 0; i < str32pos; i++)
-   //   printf("%4x ", str32[i]);
-   //printf("\r\n");
-   
    for(i = 0; i < str32pos; i++)
    {
       ruc = str32[i];
@@ -349,9 +301,6 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       ADD_UCHAR(ruc);
    }
    
-   //printf("Compose: %x\r\n", compose(0x438, 0x301));
-   //printf("Pos: %d\r\n", pos);
-
    rstring[0] = 1;
    *rbuf = rstring;
    driver_free(str32);

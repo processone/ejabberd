@@ -423,9 +423,8 @@ static unsigned char cclassPageMap\[\] = {"
     puts $f "};
 
 /*
- * The groupMap is indexed by combining the alternate page number with
- * the page offset and returns a group number that identifies a unique
- * set of character attributes.
+ * The cclassGroupMap is indexed by combining the alternate page number with
+ * the page offset and returns a combining class number.
  */
 
 static unsigned char cclassGroupMap\[\] = {"
@@ -476,9 +475,9 @@ static unsigned char decompPageMap\[\] = {"
     puts $f "};
 
 /*
- * The groupMap is indexed by combining the alternate page number with
- * the page offset and returns a group number that identifies a unique
- * set of character attributes.
+ * The decompGroupMap is indexed by combining the alternate page number with
+ * the page offset and returns a group number that identifies a length and
+ * shift of decomposition sequence in decompList
  */
 
 static int decompGroupMap\[\] = {"
@@ -502,7 +501,7 @@ static int decompGroupMap\[\] = {"
     puts $f "};
 
 /*
- * Each group represents a unique set of character attributes.  The attributes...
+ * List of decomposition sequences
  */
 
 static int decompList\[\] = {"
@@ -528,8 +527,6 @@ static int decompList\[\] = {"
  * This macro extracts the information about a character from the
  * Unicode character tables.
  */
-
-//#define GetUniCharInfo(ch) (groups\[groupMap\[(pageMap\[(((int)(ch)) & 0xffff) >> CCLASS_OFFSET_BITS\] << CCLASS_OFFSET_BITS) | ((ch) & ((1 << CCLASS_OFFSET_BITS)-1))\]\])
 
 #define GetUniCharDecompInfo(ch) (decompGroupMap\[(decompPageMap\[(((int)(ch)) & 0xffff) >> DECOMP_OFFSET_BITS\] << DECOMP_OFFSET_BITS) | ((ch) & ((1 << DECOMP_OFFSET_BITS)-1))\])
 
@@ -588,7 +585,7 @@ static int compGroupMap\[\] = {"
     puts $f "};
 
 /*
- * ...
+ * Lists of compositions for characters that appears only in one composition
  */
 
 static int compFirstList\[\]\[2\] = {"
@@ -626,6 +623,10 @@ static int compSecondList\[\]\[2\] = {"
     }
     puts $f $line
     puts $f "};
+
+/*
+ * Compositions matrix
+ */
 
 static int compBothList\[[llength $comp_x_list]\]\[[llength $comp_y_list]\] = {"
     set lastx [expr {[llength $comp_x_list] - 1}]

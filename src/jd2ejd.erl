@@ -93,9 +93,7 @@ wait_for_xdb(closed, StateData) ->
 xdb_data({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     Server = StateData#state.server,
-    From = {StateData#state.user,
-	    Server,
-	    ""},
+    From = jlib:make_jid(StateData#state.user, Server, ""),
     NewState =
 	case xml:get_attr_s("xmlns", Attrs) of
 	    ?NS_AUTH ->
@@ -109,9 +107,9 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 		mod_roster:set_items(StateData#state.user, El),
 		StateData;
 	    ?NS_VCARD ->
-		Res = mod_vcard:process_local_iq(From,
-						 {"", ?MYNAME, ""},
-						 {iq, "", set, ?NS_VCARD, El}),
+		Res = mod_vcard:process_sm_iq(From,
+					      jlib:make_jid("", ?MYNAME, ""),
+					      {iq, "", set, ?NS_VCARD, El}),
 		StateData;
 	    "jabber:x:offline" ->
 		process_offline(From, El),
@@ -124,8 +122,22 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 	    %    io:format("user ~s~n", [User]),
 	    %    StateData;
 	    XMLNS ->
-		io:format("jd2ejd: Unknown namespace \"~s\"~n", [XMLNS]),
-		StateData
+		case xml:get_attr_s("j_private_flag", Attrs) of
+		    "1" ->
+			mod_private:process_local_iq(
+			  From,
+			  jlib:make_jid("", ?MYNAME, ""),
+			  {iq, "", set, ?NS_PRIVATE,
+			   {xmlelement, "query", [],
+			    [jlib:remove_attr(
+			       "j_private_flag",
+			       jlib:remove_attr("xdbns", El))]}}),
+			StateData;
+		    _ ->
+			io:format("jd2ejd: Unknown namespace \"~s\"~n",
+				  [XMLNS]),
+			StateData
+		end
 	end,
     {next_state, xdb_data, NewState};
 
@@ -191,7 +203,7 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
-    StateData#state.pid ! {jd2ejd, exited},
+    StateData#state.pid ! {jd2ejd, Reason},
     ok.
 
 %%%----------------------------------------------------------------------
@@ -217,11 +229,19 @@ process_offline(To, {xmlelement, _, _, Els}) ->
 
 
 import_file(File) ->
+    clear_queue(),
     start(File),
     receive
-	M -> M
-	after 1000 -> ok
+	{jd2ejd, Result} -> Result
+	after 4000 -> timeout
     end.
+
+clear_queue() ->
+    receive
+	{jd2ejd, _Result} -> clear_queue
+	after 0 -> ok
+    end.
+    
 
 import_dir(Dir) ->
     {ok, Files} = file:list_dir(Dir),

@@ -212,6 +212,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		    case ejabberd_auth:check_password(
 			   U, P, StateData#state.streamid, D) of
 			true ->
+			    ?INFO_MSG(
+			       "(~w) Accepted legacy authentification for ~s",
+			       [StateData#state.socket,
+				jlib:jid_to_string(JID)]),
 			    ejabberd_sm:open_session(U, R),
 			    Res = jlib:make_result_iq_reply(El),
 			    send_element(StateData, Res),
@@ -230,12 +234,19 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     pres_t = ?SETS:from_list(Ts),
 					     privacy_list = PrivList}};
 			_ ->
+			    ?INFO_MSG(
+			       "(~w) Failed legacy authentification for ~s",
+			       [StateData#state.socket,
+				jlib:jid_to_string(JID)]),
 			    Err = jlib:make_error_reply(
 				    El, ?ERR_FORBIDDEN),
 			    send_element(StateData, Err),
 			    {next_state, wait_for_auth, StateData}
 		    end;
 		_ ->
+		    ?INFO_MSG("(~w) Forbidden legacy authentification for ~s",
+			      [StateData#state.socket,
+			       jlib:jid_to_string(JID)]),
 		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 		    send_element(StateData, Err),
 		    {next_state, wait_for_auth, StateData}
@@ -286,6 +297,9 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 		    JID = #jid{user = U, resource = R} =
 			jlib:string_to_jid(
 			  xml:get_attr_s(authzid, Props)),
+		    ?INFO_MSG("(~w) Accepted authentification for ~s",
+			      [StateData#state.socket,
+			       jlib:jid_to_string(JID)]),
 		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
 				     user = U,
@@ -350,6 +364,9 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				  [{"xmlns", ?NS_SASL}], []}),
 		    JID = #jid{user = U, resource = R} =
 			jlib:string_to_jid(xml:get_attr_s(authzid, Props)),
+		    ?INFO_MSG("(~w) Accepted authentification for ~s",
+			      [StateData#state.socket,
+			       jlib:jid_to_string(JID)]),
 		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
 				     user = U,
@@ -410,6 +427,9 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 	    JID = jlib:make_jid(U, StateData#state.server, R),
 	    case acl:match_rule(StateData#state.access, JID) of
 		allow ->
+		    ?INFO_MSG("(~w) Opened session for ~s",
+			      [StateData#state.socket,
+			       jlib:jid_to_string(JID)]),
 		    ejabberd_sm:open_session(U, R),
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData, Res),
@@ -425,6 +445,9 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				     pres_t = ?SETS:from_list(Ts),
 				     privacy_list = PrivList}};
 		_ ->
+		    ?INFO_MSG("(~w) Forbidden session for ~s",
+			      [StateData#state.socket,
+			       jlib:jid_to_string(JID)]),
 		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 		    send_element(StateData, Err),
 		    {next_state, wait_for_session, StateData}
@@ -700,6 +723,9 @@ terminate(Reason, StateName, StateData) ->
 	"" ->
 	    ok;
 	_ ->
+	    ?INFO_MSG("(~w) Close session for ~s",
+		      [StateData#state.socket,
+		       jlib:jid_to_string(StateData#state.jid)]),
 	    ejabberd_sm:close_session(StateData#state.user,
 				      StateData#state.resource),
             From = StateData#state.jid,

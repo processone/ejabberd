@@ -1,3 +1,21 @@
+2003-10-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Added authentification logging
+
+	* src/ejabberd_listener.erl: Added logging of accepted connections
+
+	* src/stringprep/stringprep_drv.c: Cleanup
+
+	* src/jd2ejd.erl: Added support for iq:private importing
+
+	* src/mod_configure.erl: Fixed user removal
+
+	* src/mod_private.erl: Added remove_user/1
+
+	* doc/guide.tex: Updated
+
+	* src/mod_disco.erl: Added "extra_domains" option
+
 2003-10-08  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: Added support for "jid-malformed" error
