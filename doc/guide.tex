@@ -126,7 +126,7 @@ The main features of \ejabberd{} are:
 The misfeatures of \ejabberd{} are:
 \begin{itemize}
 \item No support for virtual domains
-\item No support for STARTTLS
+\item No support for authentification and STARTTLS in S2S connections
 \end{itemize}
 
 
@@ -144,7 +144,8 @@ To compile \ejabberd{}, you will need the following packages:
 \item GNU Make;
 \item GCC;
 \item libexpat 1.95 or later;
-\item Erlang/OTP R8B or later.
+\item Erlang/OTP R8B or later;
+\item OpenSSL 0.9.6 or later (optional).
 \end{itemize}
 
 \subsubsection{Windows}
@@ -284,8 +285,6 @@ But in this case \ejabberd{} can start to work slower.
 
 \subsection{Initial Configuration}
 \label{sec:initconfig}
-
-%\verbatiminput{../src/ejabberd.cfg}
 
 The configuration file is initially loaded the first time \ejabberd{} is
 executed, when it is parsed and stored in a database.  Subsequently the
@@ -477,8 +476,15 @@ Currently these modules are implemented:
     \titem{\{ip, IPAddress\}} This option specifies which network interface to
     listen on. For example \verb|{ip, {192, 168, 1, 1}}|.
     \titem{inet6} Set up the socket for IPv6.
+    \titem{starttls} This option specifies that STARTTLS extension is available
+    on connections to this port.  You should also set ``\verb|certfile|''
+    option.
+    \titem{tls} This option specifies that traffic on this port will be
+    encrypted using SSL immediately after connecting.  You should also set
+    ``\verb|certfile|'' option.
     \titem{ssl} This option specifies that traffic on this port will be
-    encrypted using SSL.  You should also set ``\verb|certfile|'' option.
+    encrypted using SSL.  You should also set ``\verb|certfile|'' option.  It
+    is recommended to use \term{tls} option instead.
     \titem{\{certfile, Path\}} Path to a file containing the SSL certificate.
   \end{description}
   \titem{ejabberd\_s2s\_in} This module serves incoming S2S connections.
@@ -499,7 +505,7 @@ Currently these modules are implemented:
 
   The following options are defined:
   \begin{description}
-    \titem{http\_poll} This option enables \tjepref{0025}{HTTP Polling} .
+    \titem{http\_poll} This option enables \tjepref{0025}{HTTP Polling}
     support.  It is available then at \verb|http://server:port/http-poll/|.
     
     \titem{web\_admin} This option enables web-based interface for \ejabberd{}

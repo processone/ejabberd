@@ -16,7 +16,7 @@
 	 stop/0,
 	 store_packet/3,
 	 resend_offline_messages/1,
-	 pop_offline_messages/1,
+	 pop_offline_messages/2,
 	 remove_old_messages/1,
 	 remove_user/1]).
 
@@ -31,6 +31,10 @@ start(_) ->
 			[{disc_only_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, offline_msg)}]),
+    ejabberd_hooks:add(offline_message_hook,
+		       ?MODULE, store_packet, 50),
+    ejabberd_hooks:add(resend_offline_messages_hook,
+		       ?MODULE, pop_offline_messages, 50),
     register(?PROCNAME, spawn(?MODULE, init, [])).
 
 init() ->
@@ -61,23 +65,31 @@ receive_all(Msgs) ->
 
 
 stop() ->
+    ejabberd_hooks:delete(offline_message_hook,
+			  ?MODULE, store_packet, 50),
+    ejabberd_hooks:delete(resend_offline_messages_hook,
+			  ?MODULE, pop_offline_messages, 50),
     exit(whereis(?PROCNAME), stop),
     ok.
 
 store_packet(From, To, Packet) ->
-    true = is_process_alive(whereis(?PROCNAME)),
     Type = xml:get_tag_attr_s("type", Packet),
-    true = Type /= "error" andalso Type /= "groupchat",
-    case check_event(From, To, Packet) of
+    if
+	(Type /= "error") and (Type /= "groupchat") ->
+	    case check_event(From, To, Packet) of
+		true ->
+		    #jid{luser = LUser} = To,
+		    TimeStamp = now(),
+		    ?PROCNAME ! #offline_msg{user = LUser,
+					     timestamp = TimeStamp,
+					     from = From,
+					     to = To,
+					     packet = Packet},
+		    stop;
+		_ ->
+		    ok
+	    end;
 	true ->
-	    #jid{luser = LUser} = To,
-	    TimeStamp = now(),
-	    ?PROCNAME ! #offline_msg{user = LUser,
-				     timestamp = TimeStamp,
-				     from = From,
-				     to = To,
-				     packet = Packet};
-	_ ->
 	    ok
     end.
 
@@ -154,7 +166,7 @@ resend_offline_messages(User) ->
 	    ok
     end.
 
-pop_offline_messages(User) ->
+pop_offline_messages(Ls, User) ->
     LUser = jlib:nodeprep(User),
     F = fun() ->
 		Rs = mnesia:wread({offline_msg, LUser}),
@@ -175,9 +187,9 @@ pop_offline_messages(User) ->
 			   calendar:now_to_universal_time(
 			     R#offline_msg.timestamp))]}}
 	      end,
-	      lists:keysort(#offline_msg.timestamp, Rs));
+	      Ls ++ lists:keysort(#offline_msg.timestamp, Rs));
 	_ ->
-	    []
+	    Ls
     end.
 
 remove_old_messages(Days) ->
@@ -187,6 +199,7 @@ remove_old_messages(Days) ->
     Secs1 = S rem 1000000,
     TimeStamp = {MegaSecs1, Secs1, 0},
     F = fun() ->
+		mnesia:write_lock_table(offline_msg),
 		mnesia:foldl(
 		  fun(#offline_msg{timestamp = TS} = Rec, _Acc)
 		     when TS < TimeStamp ->

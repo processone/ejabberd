@@ -91,8 +91,13 @@
 
 % Listened ports:
 {listen,
- [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
-  {5223, ejabberd_c2s,     [{access, c2s}, ssl, {certfile, "./ssl.pem"}]},
+ [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper},
+			    starttls, {certfile, "./ssl.pem"}]},
+  {5223, ejabberd_c2s,     [{access, c2s},
+			    tls, {certfile, "./ssl.pem"}]},
+  % Use these two lines instead if TLS support is not compiled
+  %{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
+  %{5223, ejabberd_c2s,     [{access, c2s}, ssl, {certfile, "./ssl.pem"}]},
   {5269, ejabberd_s2s_in,  [{shaper, s2s_shaper}]},
   {5280, ejabberd_http,    [http_poll, web_admin]},
   {8888, ejabberd_service, [{access, all},

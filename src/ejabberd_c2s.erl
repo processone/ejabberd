@@ -80,8 +80,6 @@
 
 -define(INVALID_NS_ERR,
 	xml:element_to_string(?SERR_INVALID_NAMESPACE)).
-%-define(INVALID_XML_ERR,
-%	"<stream:error code='400'>Invalid XML</stream:error>").
 -define(INVALID_XML_ERR,
 	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
 
@@ -118,8 +116,9 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
-    TLS = lists:member(tls, Opts),
-    TLSEnabled = lists:member(tls_from_start, Opts),
+    StartTLS = lists:member(starttls, Opts),
+    TLSEnabled = lists:member(tls, Opts),
+    TLS = StartTLS orelse TLSEnabled,
     TLSOpts = lists:filter(fun({certfile, _}) -> true;
 			      (_) -> false
 			   end, Opts),
@@ -1387,9 +1386,8 @@ process_privacy_iq(From, To,
 
 
 resend_offline_messages(StateData) ->
-    case catch mod_offline:pop_offline_messages(StateData#state.user) of
-	{'EXIT', _Reason} ->
-	    ok;
+    case ejabberd_hooks:run_fold(resend_offline_messages_hook, [],
+				 [StateData#state.user]) of
 	Rs when list(Rs) ->
 	    lists:foreach(
 	      fun({route, From, To, {xmlelement, Name, Attrs, Els}}) ->

@@ -142,7 +142,7 @@ Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
 The misfeatures of <TT>ejabberd</TT> are:
 <UL><LI>
 No support for virtual domains
-<LI>No support for STARTTLS
+<LI>No support for authentification and STARTTLS in S2S connections
 </UL>
 <!--TOC section Installation-->
 
@@ -164,7 +164,8 @@ To compile <TT>ejabberd</TT>, you will need the following packages:
 GNU Make;
 <LI>GCC;
 <LI>libexpat 1.95 or later;
-<LI>Erlang/OTP R8B or later.
+<LI>Erlang/OTP R8B or later;
+<LI>OpenSSL 0.9.6 or later (optional).
 </UL>
 <!--TOC subsubsection Windows-->
 
@@ -473,8 +474,15 @@ The following options are defined:
  <DT><B><TT>{ip, IPAddress}</TT></B><DD> This option specifies which network interface to
  listen on. For example <CODE>{ip, {192, 168, 1, 1}}</CODE>.
  <DT><B><TT>inet6</TT></B><DD> Set up the socket for IPv6.
+ <DT><B><TT>tls</TT></B><DD> This option specifies that STARTTLS extension is available on
+ connections to this port. You should also set ``<CODE>certfile</CODE>'' option.
+ <DT><B><TT>tls_from_start</TT></B><DD> Among with <TT>tls</TT> this option specifies that
+ traffic on this port will be encrypted using SSL immediately after
+ connecting.
  <DT><B><TT>ssl</TT></B><DD> This option specifies that traffic on this port will be
- encrypted using SSL. You should also set ``<CODE>certfile</CODE>'' option.
+ encrypted using SSL. You should also set ``<CODE>certfile</CODE>'' option. It
+ is recommended to use <TT>tls</TT> and <TT>tls_from_start</TT> options
+ instead.
  <DT><B><TT>{certfile, Path}</TT></B><DD> Path to a file containing the SSL certificate.
  </DL>
  <DT><B><TT>ejabberd_s2s_in</TT></B><DD> This module serves incoming S2S connections.
@@ -495,7 +503,7 @@ The following additional options are defined for <TT>ejabberd_service</TT>
 <BR>
 The following options are defined:
  <DL COMPACT=compact><DT>
- <B><TT>http_poll</TT></B><DD> This option enables <A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A> .
+ <B><TT>http_poll</TT></B><DD> This option enables <A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A>
  support. It is available then at <CODE>http://server:port/http-poll/</CODE>.<BR>
 <BR>
 <DT><B><TT>web_admin</TT></B><DD> This option enables web-based interface for <TT>ejabberd</TT>

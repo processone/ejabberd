@@ -11,6 +11,7 @@
 -vsn('$Revision$ ').
 
 -export([start_link/0, init/0, open_session/2, close_session/2,
+	 bounce_offline_message/3,
 	 get_user_resources/1,
 	 set_presence/3,
 	 unset_presence/3,
@@ -44,6 +45,8 @@ init() ->
     mnesia:add_table_index(presence, user),
     mnesia:subscribe(system),
     ets:new(sm_iqtable, [named_table]),
+    ejabberd_hooks:add(offline_message_hook,
+		       ejabberd_sm, bounce_offline_message, 100),
     loop().
 
 loop() ->
@@ -263,18 +266,11 @@ route_message(From, To, Packet) ->
 		_ ->
 		    case ejabberd_auth:is_user_exists(LUser) of
 			true ->
-			    case catch mod_offline:store_packet(
-					 From, To, Packet) of
-				{'EXIT', _} ->
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERR_SERVICE_UNAVAILABLE),
-				    ejabberd_router:route(To, From, Err);
-				_ ->
-				    ok
-			    end;
+			    ejabberd_hooks:run(offline_message_hook,
+					       [From, To, Packet]);
 			_ ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_ITEM_NOT_FOUND),
+				    Packet, ?ERR_SERVICE_UNAVAILABLE),
 			    ejabberd_router:route(To, From, Err)
 		    end
 	    end;
@@ -291,6 +287,10 @@ route_message(From, To, Packet) ->
 	    end
     end.
 
+bounce_offline_message(From, To, Packet) ->
+    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
+    ejabberd_router:route(To, From, Err),
+    stop.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
