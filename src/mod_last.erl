@@ -36,7 +36,8 @@ start(Opts) ->
 				  ?MODULE, process_sm_iq, IQDisc).
 
 stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_LAST).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_LAST),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_LAST).
 
 process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
@@ -66,11 +67,13 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			{'EXIT', _Reason} ->
 			    get_last(IQ, SubEl, User);
 			List ->
-			    case mod_privacy:check_packet(
-				   User, List,
-				   {From, To,
-				    {xmlelement, "presence", [], []}},
-				   out) of
+			    case catch mod_privacy:check_packet(
+					 User, List,
+					 {From, To,
+					  {xmlelement, "presence", [], []}},
+					 out) of
+				{'EXIT', _Reason} ->
+				    get_last(IQ, SubEl, User);
 				allow ->
 				    get_last(IQ, SubEl, User);
 				deny ->

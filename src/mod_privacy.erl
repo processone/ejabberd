@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
+-export([start/1, stop/0,
 	 process_iq/3,
 	 process_iq_set/3,
 	 process_iq_get/4,
@@ -49,6 +49,8 @@ start(Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_PRIVACY).
 
 process_iq(From, _To, IQ) ->
     #iq{type = Type, sub_el = SubEl} = IQ,

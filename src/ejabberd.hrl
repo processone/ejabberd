@@ -31,6 +31,7 @@
 -define(MYNAME, ejabberd_config:get_global_option(host)).
 -define(S2STIMEOUT, 600000).
 %-define(S2STIMEOUT, 6000).
+-define(MYLANG, ejabberd_config:get_global_option(language)).
 
 -define(MSGS_DIR, "msgs").
 -define(CONFIG_PATH, "ejabberd.cfg").

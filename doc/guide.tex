@@ -111,6 +111,7 @@ The main features of \ejabberd{} are:
 \item Built-in IRC transport
 \item Built-in \tjepref{0060}{Publish-Subscribe} service
 \item Built-in Jabber Users Directory service based on users vCards
+\item Built-in web-based administration interface
 \item Built-in \tjepref{0025}{HTTP Polling} service
 \item SSL support
 \item Support for LDAP authentification
@@ -311,12 +312,23 @@ adding new ones.
 \label{sec:confighostname}
 
 Option \option{hostname} defines name of \Jabber{} domain that \ejabberd{}
-serves.  E.\,g.\ to use \jid{jabber.org} domain add following line in config:
+serves.  E.\,g.\ to use \jid{jabber.org} domain add the following line in the config:
 \begin{verbatim}
   {host, "jabber.org"}.
 \end{verbatim}
 
 %This option is mandatory.
+
+\subsubsection{Default Language}
+\label{sec:configlanguage}
+
+Option \option{language} defines default language of \ejabberd{} messages, sent
+to users. Default value is \term{"en"}. In order to take effect there must be a
+translation file \term{<language>.msg} in \ejabberd{} \term{msgs} directory.
+E.\,g.\ to use Russian as default language add the following line in the config:
+\begin{verbatim}
+  {language, "ru"}.
+\end{verbatim}
 
 
 \subsubsection{Access Rules}
@@ -505,18 +517,20 @@ For example, the following configuration defines that:
 \item HTTP connections are listened on port 5280 and administration interface
   and HTTP Polling support are enabled
 \item All users except admins have traffic limit 1000\,B/s
-\item AIM service \jid{aim.example.org} is connected to port 5233 with
+\item AIM transport \jid{aim.example.org} is connected to port 5233 with
   password ``\term{aimsecret}''
-\item JIT services \jid{icq.example.org} and \jid{sms.example.org} are
+\item JIT transports \jid{icq.example.org} and \jid{sms.example.org} are
   connected to port 5234 with password ``\term{jitsecret}''
-\item MSN service \jid{msn.example.org} is connected to port 5235 with
+\item MSN transport \jid{msn.example.org} is connected to port 5235 with
   password ``\term{msnsecret}''
-\item Yahoo! service \jid{yahoo.example.org} is connected to port 5236 with
+\item Yahoo! transport \jid{yahoo.example.org} is connected to port 5236 with
   password ``\term{yahoosecret}''
-\item ILE service \jid{ile.example.org} is connected to port 5237 with
+\item Gadu-Gadu transport \jid{gg.example.org} is connected to port 5237 with
+  password ``\term{ggsecret}''
+\item ILE service \jid{ile.example.org} is connected to port 5238 with
   password ``\term{ilesecret}''
 \end{itemize}
-  \begin{verbatim}
+\begin{verbatim}
   {acl, blocked, {user, "bad"}}.
   {access, c2s, [{deny, blocked},
                  {allow, all}]}.
@@ -612,102 +626,34 @@ Example:
 \subsection{Online Configuration and Monitoring}
 \label{sec:onlineconfig}
 
-To perform online reconfiguration of \ejabberd{} you will need to have
-\modconfigure{} loaded (see section~\ref{sec:modconfigure}). It is also highly
-recommended to load \moddisco{} as well (see section~\ref{sec:moddisco}),
-because \modconfigure{} is highly integrated with it.  Additionally it is
-recommended to use a disco- and xdata-capable client such as
-\footahref{http://tkabber.jabber.ru/}{Tkabber}
-(which was developed synchronously with \ejabberd{}, its CVS version
-supports most of \ejabberd{} features).
-
-
-On disco query \ejabberd{} returns following items (see figure~\ref{fig:disco}):
-\begin{itemize}
-\item Identity of server.
-\item List of features, including defined namespaces.
-\item List of JIDs from route table.
-\item List of disco-nodes described in following subsections.
-\end{itemize}
+To perform online reconfiguration of \ejabberd{} you need to enable
+\term{ejabberd\_http} listener with option \term{web\_admin} (see
+section~\ref{sec:configlistened}).  After that you can open URL
+\verb|http://server:port/admin/| with you favorite web-browser and enter
+username and password of \ejabberd{} administrator.  E.\,g. with such config:
+\begin{verbatim}
+  ...
+  {host, "example.org"}.
+  ...
+  {listen,
+   [...
+    {5280, ejabberd_http, [web_admin]},
+    ...
+   ]
+  }.
+\end{verbatim}
+you should enter URL \verb|http://example.org:5280/admin/|.  After
+authentification you should see something like in figure~\ref{fig:webadmmain}.
 \begin{figure}[htbp]
   \centering
-  \insimg{disco.png}
-  \caption{Tkabber Discovery window}
-  \label{fig:disco}
+  \insimg{webadmmain.png}
+  \caption{Web-administration top page}
+  \label{fig:webadmmain}
 \end{figure}
-
-\subsubsection{Node \node{config}: Global Configuration}
-
-Under this node the following nodes exist:
-
-\paragraph{Node \node{config/hostname}}
-
-Via \ns{ejabberd:config} queries to this node possible to change host name of
-this \ejabberd{} server. (See figure~\ref{fig:hostname}) (Currently this works
-correctly only after a restart)
-\begin{figure}[htbp]
-  \centering
-  \insimg{confhostname.png}
-  \caption{Editing of hostname}
-  \label{fig:hostname}
-\end{figure}
-
-\paragraph{Node \node{config/acls}}
-
-Via \ns{ejabberd:config} queries to this node it is possible to edit ACLs list.
-(See figure~\ref{fig:acls})
-\begin{figure}[htbp]
-  \centering
-  \insimg{confacls.png}
-  \caption{Editing of ACLs}
-  \label{fig:acls}
-\end{figure}
+Here you can edit access restrictions, manage users, create backup files,
+manage DB, enable/disable listened ports, and view statistics.
 
 
-\paragraph{Node \node{config/access}}
-
-Via \ns{ejabberd:config} queries to this node it is possible to edit access
-rules.
-
-
-\paragraph{Node \node{config/remusers}}
-
-Via \ns{ejabberd:config} queries to this node it is possible to remove users.  If
-removed user is online, then he will be disconnected.  Also user-related data
-(e.g. his roster) is removed (but appropriate module must be loaded).
-
-\subsubsection{Node \node{online users}: List of Online Users}
-
-\subsubsection{Node \node{all users}: List of Registered Users}
-
-\begin{figure}[htbp]
-  \centering
-  \insimg{discoallusers.png}
-  \caption{Discovery all users}
-  \label{fig:discoallusers}
-\end{figure}
-
-
-\subsubsection{Node \node{outgoing s2s}: List of Outgoing S2S connections}
-
-\subsubsection{Node \node{running nodes}: List of Running \ejabberd{} Nodes}
-
-\begin{figure}[htbp]
-  \centering
-  \insimg{discorunnodes.png}
-  \caption{Discovery running nodes}
-  \label{fig:discorunnodes}
-\end{figure}
-
-\subsubsection{Node \node{stopped nodes}: List of Stopped Nodes}
-
-
-
-
-
-
-
-TBD
 
 \section{Distribution}
 \label{sec:distribution}
@@ -717,10 +663,10 @@ TBD
 \label{sec:howitworks}
 
 A \Jabber{} domain is served by one or more \ejabberd{} nodes.  These nodes can
-be run on different machines that are connected via a network.  They all must
-have the ability to connect to port 4369 of all another nodes, and must have
-the same magic cookie (see Erlang/OTP documentation, in other words the file
-\term{\~{}ejabberd/.erlang.cookie} must be the same on all nodes). This is
+be runned on different machines that are connected via a network.  They all
+must have the ability to connect to port 4369 of all another nodes, and must
+have the same magic cookie (see Erlang/OTP documentation, in other words the
+file \term{\~{}ejabberd/.erlang.cookie} must be the same on all nodes). This is
 needed because all nodes exchange information about connected users, S2S
 connections, registered services, etc\ldots
 
@@ -1061,7 +1007,20 @@ Options:
 \begin{description}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
+\titem{search} Specifies wheather search is enabled (value is \term{true}, default) or
+disabled (value is \term{false}) by the service. If \term{search} is set to \term{false},
+option \term{host} is ignored and service does not appear in Jabber Discovery items.
 \end{description}
+
+Example:
+\begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_vcard, [{search, false}]}
+    ...
+   ]}.
+\end{verbatim}
 
 
 \subsection{\modversion{}}
@@ -1079,8 +1038,7 @@ Options:
 \label{sec:i18nl10n}
 
 All built-in modules support \texttt{xml:lang} attribute inside IQ queries.
-E.\,g.\ on figure~\ref{fig:discorus} (compare it with figure~\ref{fig:disco})
-showed reply on following query:
+E.\,g.\ on figure~\ref{fig:discorus} showed the reply on the following query:
 \begin{verbatim}
   <iq id='5'
       to='e.localhost'
@@ -1095,6 +1053,17 @@ showed reply on following query:
   \insimg{discorus.png}
   \caption{Discovery result when \texttt{xml:lang='ru'}}
   \label{fig:discorus}
+\end{figure}
+
+Also web-interface supports \verb|Accept-Language| HTTP header (see
+figure~\ref{fig:webadmmainru}, compare it with figure~\ref{fig:webadmmain})
+
+\begin{figure}[htbp]
+  \centering
+  \insimg{webadmmainru.png}
+  \caption{Web-administration top page with HTTP header
+    ``\verb|Accept-Language: ru|''}
+  \label{fig:webadmmainru}
 \end{figure}
 
 

@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
+-export([start/1, stop/0,
 	 process_iq/3,
 	 process_local_iq/3,
 	 get_subscription_lists/1,
@@ -43,6 +43,10 @@ start(Opts) ->
     mnesia:add_table_index(roster, user),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
+
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_ROSTER).
+
 
 -define(PSI_ROSTER_WORKAROUND, true).
 

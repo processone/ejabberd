@@ -70,7 +70,7 @@
 	"<?xml version='1.0'?>"
 	"<stream:stream xmlns='jabber:client' "
 	"xmlns:stream='http://etherx.jabber.org/streams' "
-	"id='~s' from='~s'~s>"
+	"id='~s' from='~s'~s~s>"
        ).
 
 -define(STREAM_TRAILER, "</stream:stream>").
@@ -131,6 +131,12 @@ init([{SockMod, Socket}, Opts]) ->
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
+    DefaultLang = case ?MYLANG of
+		      undefined ->
+			  " xml:lang='en'";
+		      DL ->
+			  " xml:lang='" ++ DL ++ "'"
+		  end,
     case xml:get_attr_s("xmlns:stream", Attrs) of
 	?NS_STREAM ->
 	    Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -139,7 +145,8 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		    Header = io_lib:format(?STREAM_HEADER,
 					   [StateData#state.streamid,
 					    ?MYNAME,
-					    " version='1.0'"]),
+					    " version='1.0'",
+					    DefaultLang]),
 		    send_text(StateData, Header),
 		    case StateData#state.authentificated of
 			false ->
@@ -181,14 +188,14 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		_ ->
 		    Header = io_lib:format(
 			       ?STREAM_HEADER,
-			       [StateData#state.streamid, ?MYNAME, ""]),
+			       [StateData#state.streamid, ?MYNAME, "", DefaultLang]),
 		    send_text(StateData, Header),
 		    {next_state, wait_for_auth, StateData#state{lang = Lang}}
 	    end;
 	_ ->
 	    Header = io_lib:format(
 		       ?STREAM_HEADER,
-		       [StateData#state.streamid, ?MYNAME, ""]),
+		       [StateData#state.streamid, ?MYNAME, "", ""]),
 	    send_text(StateData,
 		      Header ++ ?INVALID_NS_ERR ++ ?STREAM_TRAILER),
 	    {stop, normal, StateData}
@@ -196,7 +203,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
     Header = io_lib:format(?STREAM_HEADER,
-			   ["none", ?MYNAME, " version='1.0'"]),
+			   ["none", ?MYNAME, " version='1.0'", ""]),
     send_text(StateData,
 	      Header ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};

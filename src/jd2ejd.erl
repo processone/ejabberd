@@ -105,38 +105,39 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 		ejabberd_auth:set_password(StateData#state.user, Password),
 		StateData;
 	    ?NS_ROSTER ->
-		%mod_roster:process_iq(From,
-		%		      {"", ?MYNAME, ""},
-		%		      #iq{type = set, xmlns = ?NS_ROSTER, sub_el = El}),
-		mod_roster:set_items(StateData#state.user, El),
+		%catch mod_roster:process_iq(
+		%	 From,
+		%	 {"", ?MYNAME, ""},
+		%	 #iq{type = set, xmlns = ?NS_ROSTER, sub_el = El}),
+		catch mod_roster:set_items(StateData#state.user, El),
 		StateData;
 	    ?NS_VCARD ->
-		mod_vcard:process_sm_iq(
-		  From,
-		  jlib:make_jid("", ?MYNAME, ""),
-		  #iq{type = set, xmlns = ?NS_VCARD, sub_el = El}),
+		catch mod_vcard:process_sm_iq(
+			From,
+			jlib:make_jid("", ?MYNAME, ""),
+			#iq{type = set, xmlns = ?NS_VCARD, sub_el = El}),
 		StateData;
 	    "jabber:x:offline" ->
 		process_offline(From, El),
 		StateData;
 	    %?NS_REGISTER ->
-	    %    mod_register:process_iq(
-	    %      {"", "", ""}, {"", ?MYNAME, ""},
-	    %      #iq{type =set, xmlns = ?NS_REGISTER, xub_el = El}),
+	    %    catch mod_register:process_iq(
+	    %		 {"", "", ""}, {"", ?MYNAME, ""},
+	    %		 #iq{type =set, xmlns = ?NS_REGISTER, xub_el = El}),
 	    %    User = xml:get_path_s(El, [{elem, "username"}, cdata]),
 	    %    io:format("user ~s~n", [User]),
 	    %    StateData;
 	    XMLNS ->
 		case xml:get_attr_s("j_private_flag", Attrs) of
 		    "1" ->
-			mod_private:process_local_iq(
-			  From,
-			  jlib:make_jid("", ?MYNAME, ""),
-			  #iq{type = set, xmlns = ?NS_PRIVATE,
-			      sub_el = {xmlelement, "query", [],
-					[jlib:remove_attr(
-					   "j_private_flag",
-					   jlib:remove_attr("xdbns", El))]}}),
+			catch mod_private:process_local_iq(
+				From,
+				jlib:make_jid("", ?MYNAME, ""),
+				#iq{type = set, xmlns = ?NS_PRIVATE,
+				    sub_el = {xmlelement, "query", [],
+					      [jlib:remove_attr(
+						 "j_private_flag",
+						 jlib:remove_attr("xdbns", El))]}}),
 			StateData;
 		    _ ->
 			io:format("jd2ejd: Unknown namespace \"~s\"~n",
@@ -232,7 +233,7 @@ process_offline(To, {xmlelement, _, _, Els}) ->
 			      error ->
 				  ok;
 			      _ ->
-				  mod_offline:store_packet(From, To, El)
+				  catch mod_offline:store_packet(From, To, El)
 			  end
 		  end, Els).
 

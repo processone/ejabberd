@@ -73,6 +73,14 @@ do_route(Host, From, To, Packet) ->
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
+			#iq{type = get, xmlns = ?NS_DISCO_ITEMS = XMLNS} = IQ ->
+			    Res = IQ#iq{type = result,
+					sub_el = [{xmlelement, "query",
+						   [{"xmlns", XMLNS}],
+						   []}]},
+			    ejabberd_router:route(To,
+						  From,
+						  jlib:iq_to_xml(Res));
 			#iq{xmlns = ?NS_REGISTER} = IQ ->
 			    process_register(From, To, IQ);
 			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,

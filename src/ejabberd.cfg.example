@@ -86,6 +86,9 @@
 {host, "localhost"}.
 
 
+% Default language for server messages
+{language, "en"}.
+
 % Listened ports:
 {listen,
  [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},

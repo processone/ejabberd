@@ -14,7 +14,8 @@
 
 -export([register_iq_handler/3,
 	 register_iq_handler/4,
-	 unregister_iq_handler/1
+	 unregister_iq_handler/1,
+	 refresh_iq_handlers/0
 	]).
 
 -include("ejabberd.hrl").
@@ -47,11 +48,11 @@ loop(State) ->
 	    loop(State);
 	{register_iq_handler, XMLNS, Module, Function} ->
 	    ets:insert(State#state.iqtable, {XMLNS, Module, Function}),
-	    mod_disco:register_feature(XMLNS),
+	    catch mod_disco:register_feature(XMLNS),
 	    loop(State);
 	{register_iq_handler, XMLNS, Module, Function, Opts} ->
 	    ets:insert(State#state.iqtable, {XMLNS, Module, Function, Opts}),
-	    mod_disco:register_feature(XMLNS),
+	    catch mod_disco:register_feature(XMLNS),
 	    loop(State);
 	{unregister_iq_handler, XMLNS} ->
 	    case ets:lookup(State#state.iqtable, XMLNS) of
@@ -61,7 +62,20 @@ loop(State) ->
 		    ok
 	    end,
 	    ets:delete(State#state.iqtable, XMLNS),
-	    mod_disco:unregister_feature(XMLNS),
+	    catch mod_disco:unregister_feature(XMLNS),
+	    loop(State);
+	refresh_iq_handlers ->
+	    lists:map(
+	      fun(T) ->
+		  case T of
+		      {XMLNS, _Module, _Function, _Opts} ->
+			  catch mod_disco:register_feature(XMLNS);
+		      {XMLNS, _Module, _Function} ->
+			  catch mod_disco:register_feature(XMLNS);
+		      _ ->
+			  ok
+		  end
+	      end, ets:tab2list(State#state.iqtable)),
 	    loop(State);
 	_ ->
 	    loop(State)
@@ -142,6 +156,8 @@ register_iq_handler(XMLNS, Module, Fun, Opts) ->
 unregister_iq_handler(XMLNS) ->
     ejabberd_local ! {unregister_iq_handler, XMLNS}.
 
+refresh_iq_handlers() ->
+    ejabberd_local ! refresh_iq_handlers.
 
 announce_online(From, To, Packet) ->
     case acl:match_rule(announce, From) of

@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/1,
+-export([start/1, init/2, stop/0,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 reindex_vcards/0,
@@ -64,14 +64,20 @@ start(Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     Host = gen_mod:get_opt(host, Opts, "vjud." ++ ?MYNAME),
-    spawn(?MODULE, init, [Host]).
+    Search = gen_mod:get_opt(search, Opts, true),
+    register(ejabberd_mod_vcard, spawn(?MODULE, init, [Host, Search])).
 
 
-init(Host) ->
-    ejabberd_router:register_route(Host),
-    loop().
+init(Host, Search) ->
+    case Search of
+	true ->
+	    ejabberd_router:register_route(Host),
+	    loop(Host);
+	_ ->
+	    loop(Host)
+    end.
 
-loop() ->
+loop(Host) ->
     receive
 	{route, From, To, Packet} ->
 	    case catch do_route(From, To, Packet) of
@@ -80,11 +86,19 @@ loop() ->
 		_ ->
 		    ok
 	    end,
-	    loop();
+	    loop(Host);
+	stop ->
+	    catch ejabberd_router:unregister_route(Host),
+	    ok;
 	_ ->
-	    loop()
+	    loop(Host)
     end.
 
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_VCARD),
+    ejabberd_mod_vcard ! stop,
+    ok.
 
 process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of

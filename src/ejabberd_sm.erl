@@ -80,7 +80,6 @@ loop() ->
 		    ok
 	    end,
 	    ets:delete(sm_iqtable, XMLNS),
-	    mod_disco:unregister_feature(XMLNS),
 	    loop();
 	_ ->
 	    loop()

@@ -28,8 +28,7 @@ start(Opts) ->
     ok.
 
 stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_IQDATA),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_IQDATA).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_ECONFIGURE).
 
 
 process_local_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->

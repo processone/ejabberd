@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/0, process_iq/3]).
+-export([start/1, stop/0, process_iq/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -25,8 +25,9 @@ start(Opts) ->
 				  ?MODULE, process_iq, IQDisc),
     ok.
 
-init() ->
-    ok.
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_REGISTER).
 
 process_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of

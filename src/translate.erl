@@ -60,8 +60,14 @@ load_file(Lang, File) ->
     case file:consult(File) of
 	{ok, Terms} ->
 	    lists:foreach(fun({Orig, Trans}) ->
-				  ets:insert(translations,
-					     {{Lang, Orig}, Trans})
+			      Trans1 = case Trans of
+					   "" ->
+					       Orig;
+					   _ ->
+					       Trans
+				       end,
+			      ets:insert(translations,
+					     {{Lang, Orig}, Trans1})
 			  end, Terms);
 	{error, Reason} ->
 	    exit(file:format_error(Reason))
@@ -72,6 +78,47 @@ translate(Lang, Msg) ->
 	[{_, Trans}] ->
 	    Trans;
 	_ ->
-	    Msg
+	    ShortLang = string:substr(Lang, 1, 2),
+	    case ShortLang of
+		"en" ->
+		    Msg;
+		Lang ->
+		    translate(Msg);
+		_ ->
+		    case ets:lookup(translations, {ShortLang, Msg}) of
+			[{_, Trans}] ->
+			    Trans;
+			_ ->
+			    translate(Msg)
+		    end
+	    end
+    end.
+
+translate(Msg) ->
+    case ?MYLANG of
+	undefined ->
+	    Msg;
+	"en" ->
+	    Msg;
+	Lang ->
+	    case ets:lookup(translations, {Lang, Msg}) of
+		[{_, Trans}] ->
+		    Trans;
+		_ ->
+		    ShortLang = string:substr(Lang, 1, 2),
+		    case ShortLang of
+			"en" ->
+			    Msg;
+			Lang ->
+			    Msg;
+			_ ->
+			    case ets:lookup(translations, {ShortLang, Msg}) of
+				[{_, Trans}] ->
+				    Trans;
+				_ ->
+				    Msg
+			    end
+		    end
+	    end
     end.
 

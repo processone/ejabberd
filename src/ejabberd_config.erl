@@ -78,6 +78,8 @@ add_option(Opt, Val, State) ->
     Table = case Opt of
 		host ->
 		    config;
+		language ->
+		    config;
 		_ ->
 		    local_config
 	    end,

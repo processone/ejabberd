@@ -33,6 +33,8 @@
 			  {"node", SNode}], []}]}).
 
 start(Opts) ->
+    ejabberd_local:refresh_iq_handlers(),
+
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_DISCO_ITEMS,
 				  ?MODULE, process_local_iq_items, IQDisc),
@@ -42,9 +44,12 @@ start(Opts) ->
 				  ?MODULE, process_sm_iq_items, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_DISCO_INFO,
 				  ?MODULE, process_sm_iq_info, IQDisc),
+
+    catch ets:new(disco_features, [named_table, ordered_set, public]),
     register_feature("iq"),
     register_feature("presence"),
     register_feature("presence-invisible"),
+
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
     lists:foreach(fun register_extra_domain/1, ExtraDomains),
@@ -54,7 +59,10 @@ stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_DISCO_INFO).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_DISCO_INFO),
+    catch ets:delete(disco_features),
+    catch ets:delete(disco_extra_domains),
+    ok.
 
 
 register_feature(Feature) ->
