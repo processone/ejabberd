@@ -300,13 +300,19 @@ route_message(From, To, Packet) ->
 	{'EXIT', _} ->
 	    case ejabberd_auth:is_user_exists(LUser) of
 		true ->
-		    case catch mod_offline:store_packet(From, To, Packet) of
-			{'EXIT', _} ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_SERVICE_UNAVAILABLE),
-			    ejabberd_router:route(To, From, Err);
+		    case xml:get_tag_attr_s("type", Packet) of
+			"error" ->
+			    ok;
 			_ ->
-			    ok
+			    case catch mod_offline:store_packet(
+					 From, To, Packet) of
+				{'EXIT', _} ->
+				    Err = jlib:make_error_reply(
+					    Packet, ?ERR_SERVICE_UNAVAILABLE),
+				    ejabberd_router:route(To, From, Err);
+				_ ->
+				    ok
+			    end
 		    end;
 		_ ->
 		    Err = jlib:make_error_reply(

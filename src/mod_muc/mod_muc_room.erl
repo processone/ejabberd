@@ -256,9 +256,14 @@ normal_state({route, From, "",
 		    {next_state, normal_state, StateData}
 	    end;
 	_ ->
-	    Err = jlib:make_error_reply(
-		    Packet, ?ERR_NOT_ALLOWED),
-	    ejabberd_router:route(StateData#state.jid, From, Err),
+	    case xml:get_attr_s("type", Attrs) of
+		"error" ->
+		    ok;
+		_ ->
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERR_NOT_ALLOWED),
+		    ejabberd_router:route(StateData#state.jid, From, Err)
+	    end,
 	    {next_state, normal_state, StateData}
     end;
 
