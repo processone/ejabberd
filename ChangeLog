@@ -1,5 +1,7 @@
 2003-10-19  Alexey Shchepin  <alexey@sevcom.net>
 
+	* doc/guide.tex: Fixed typo
+
 	* src/ejabberd_local.erl: Added support for announce/online
 	messages
 
