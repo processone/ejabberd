@@ -323,7 +323,8 @@ normal_state({route, From, Nick,
 				NewState
 			end;
 		    _ ->
-			case is_nick_exists(Nick, StateData) of
+			case is_nick_exists(Nick, StateData) or
+			    not mod_muc:can_use_nick(From, Nick) of
 			    true ->
 				Err = jlib:make_error_reply(
 					Packet, ?ERR_MUC_NICK_CONFLICT),

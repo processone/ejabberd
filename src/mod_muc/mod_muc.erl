@@ -19,7 +19,8 @@
 	 store_room/2,
 	 restore_room/1,
 	 forget_room/1,
-	 process_iq_disco_items/5]).
+	 process_iq_disco_items/5,
+	 can_use_nick/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -27,11 +28,17 @@
 
 -record(muc_room, {name, opts}).
 -record(muc_online_room, {name, pid}).
+-record(muc_registered, {user, nick}).
+
 
 start(Opts) ->
     mnesia:create_table(muc_room,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, muc_room)}]),
+    mnesia:create_table(muc_registered,
+			[{disc_copies, [node()]},
+			 {attributes, record_info(fields, muc_registered)}]),
+    mnesia:add_table_index(muc_registered, nick),
     Host = gen_mod:get_opt(host, Opts, "conference." ++ ?MYNAME),
     register(ejabberd_mod_muc, spawn(?MODULE, init, [Host])).
 
@@ -85,14 +92,36 @@ do_route(Host, From, To, Packet) ->
 			    spawn(?MODULE,
 				  process_iq_disco_items,
 				  [Host, From, To, ID, SubEl]);
+			{iq, ID, get, ?NS_REGISTER = XMLNS, SubEl} ->
+			    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
+			    Res = {iq, ID, result, XMLNS,
+				   [{xmlelement, "query",
+				     [{"xmlns", XMLNS}],
+				     iq_get_register_info(From, Lang)}]},
+			    ejabberd_router:route(To,
+						  From,
+						  jlib:iq_to_xml(Res));
+			{iq, ID, set, ?NS_REGISTER = XMLNS, SubEl} ->
+			    case process_iq_register_set(From, SubEl) of
+				{result, IQRes} ->
+				    Res = {iq, ID, result, XMLNS,
+					   [{xmlelement, "query",
+					     [{"xmlns", XMLNS}],
+					     IQRes}]},
+				    ejabberd_router:route(
+				      To, From, jlib:iq_to_xml(Res));
+				{error, Error} ->
+				    Err = jlib:make_error_reply(
+					    Packet, Error),
+				    ejabberd_router:route(To, From, Err)
+			    end;
 			_ ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_SERVICE_UNAVAILABLE),
 			    ejabberd_router:route(To, From, Err)
 		    end;
 		_ ->
-		    Err = jlib:make_error_reply(Packet,
-						?ERR_JID_NOT_FOUND),
+		    Err = jlib:make_error_reply(Packet, ?ERR_JID_NOT_FOUND),
 		    ejabberd_router:route(To, From, Err)
 	    end;
 	_ ->
@@ -182,8 +211,8 @@ iq_disco_info() ->
       [{"category", "conference"},
        {"type", "text"},
        {"name", "ejabberd/mod_muc"}], []},
-     {xmlelement, "feature",
-      [{"var", ?NS_MUC}], []}].
+     {xmlelement, "feature", [{"var", ?NS_MUC}], []},
+     {xmlelement, "feature", [{"var", ?NS_REGISTER}], []}].
 
 
 process_iq_disco_items(Host, From, To, ID, SubEl) ->
@@ -195,7 +224,6 @@ process_iq_disco_items(Host, From, To, ID, SubEl) ->
 			  From,
 			  jlib:iq_to_xml(Res)).
 
-% TODO: ask more info from room processes
 iq_disco_items(Host, From) ->
     lists:zf(fun(#muc_online_room{name = Name, pid = Pid}) ->
 		     case catch gen_fsm:sync_send_all_state_event(
@@ -210,6 +238,117 @@ iq_disco_items(Host, From) ->
 		     end
 	     end, ets:tab2list(muc_online_room)).
 
+
+-define(XFIELD(Type, Label, Var, Val),
+	{xmlelement, "field", [{"type", Type},
+			       {"label", translate:translate(Lang, Label)},
+			       {"var", Var}],
+	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+
+iq_get_register_info(From, Lang) ->
+    {LUser, LServer, _} = jlib:jid_tolower(From),
+    LUS = {LUser, LServer},
+    Nick = case catch mnesia:dirty_read(muc_registered, LUS) of
+	       {'EXIT', Reason} ->
+		   "";
+	       [] ->
+		   "";
+	       [#muc_registered{nick = N}] ->
+		   N
+	   end,
+    [{xmlelement, "instructions", [],
+      [{xmlcdata, translate:translate(
+		    Lang, "You need a x:data capable client to register.")}]},
+     {xmlelement, "x",
+      [{"xmlns", ?NS_XDATA}],
+      [{xmlelement, "title", [],
+	[{xmlcdata,
+	  translate:translate(
+	    Lang, "Nick Registration")}]},
+       {xmlelement, "instructions", [],
+	[{xmlcdata,
+	  translate:translate(
+	    Lang, "Enter nick you want to register.")}]},
+       ?XFIELD("text-single", "Nick", "nick", Nick)]}].
+
+iq_set_register_info(From, XData) ->
+    {LUser, LServer, _} = jlib:jid_tolower(From),
+    LUS = {LUser, LServer},
+    case lists:keysearch("nick", 1, XData) of
+	false ->
+	    {error, ?ERR_BAD_REQUEST};
+	{value, {_, [Nick]}} ->
+	    F = fun() ->
+			case Nick of
+			    "" ->
+				mnesia:delete({muc_registered, LUS}),
+				ok;
+			    _ ->
+				Allow = case mnesia:index_read(
+					       muc_registered,
+					       Nick,
+					       #muc_registered.nick) of
+					    [] ->
+						true;
+					    [#muc_registered{user = U}] ->
+						U == LUS
+					end,
+				if
+				    Allow ->
+					mnesia:write(
+					  #muc_registered{user = LUS,
+							  nick = Nick}),
+					ok;
+				    true ->
+					false
+				end
+			end
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, ok} ->
+		    {result, []};
+		{atomic, false} ->
+		    {error, ?ERR_NOT_ALLOWED};
+		_ ->
+		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    end
+    end.
+
+process_iq_register_set(From, SubEl) ->
+    {xmlelement, Name, Attrs, Els} = SubEl,
+    case xml:remove_cdata(Els) of
+	[{xmlelement, "x", Attrs1, Els1} = XEl] ->
+	    case {xml:get_tag_attr_s("xmlns", XEl),
+		  xml:get_tag_attr_s("type", XEl)} of
+		{?NS_XDATA, "cancel"} ->
+		    {result, []};
+		{?NS_XDATA, "submit"} ->
+		    XData = jlib:parse_xdata_submit(XEl),
+		    case XData of
+			invalid ->
+			    {error, ?ERR_BAD_REQUEST};
+			_ ->
+			    iq_set_register_info(From, XData)
+		    end
+	    end;
+	_ ->
+	    {error, ?ERR_BAD_REQUEST}
+    end.
+
+
+can_use_nick(JID, Nick) ->
+    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    LUS = {LUser, LServer},
+    case catch mnesia:dirty_index_read(muc_registered,
+				       Nick,
+				       #muc_registered.nick) of
+	{'EXIT', Reason} ->
+	    true;
+	[] ->
+	    true;
+	[#muc_registered{user = U}] ->
+	    U == LUS
+    end.
 
 
 
