@@ -1,3 +1,14 @@
+2004-09-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Fixed processing of POST body for
+	HTTP Polling
+
+	* src/web/ejabberd_http.erl: Support for "Connection" HTTP header
+	(thanks to Sergei Golovan)
+
+	* src/translate.erl: Much better handling of xml:lang (thanks to
+	Sergei Golovan)
+
 2004-09-29  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_listener.erl: Check result of controlling_process

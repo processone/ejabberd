@@ -40,16 +40,18 @@ load_dir(Dir) ->
 			 fun(FN) ->
 				 case string:len(FN) > 4 of
 				     true ->
-					 string:substr(FN,
-						       string:len(FN) - 3) == ".msg";
+					 string:substr(
+					   FN,
+					   string:len(FN) - 3) == ".msg";
 				     _ ->
 					 false
 				 end
 			 end, Files),
 	    lists:foreach(
 	      fun(FN) ->
-		      load_file(string:substr(FN, 1, string:len(FN) - 4),
-				Dir ++ "/" ++ FN)
+		      L = ascii_tolower(
+			    string:substr(FN, 1, string:len(FN) - 4)),
+		      load_file(L, Dir ++ "/" ++ FN)
 	      end, MsgFiles),
 	    ok;
 	{error, Reason} ->
@@ -74,15 +76,21 @@ load_file(Lang, File) ->
     end.
 
 translate(Lang, Msg) ->
-    case ets:lookup(translations, {Lang, Msg}) of
+    LLang = ascii_tolower(Lang),
+    case ets:lookup(translations, {LLang, Msg}) of
 	[{_, Trans}] ->
 	    Trans;
 	_ ->
-	    ShortLang = string:substr(Lang, 1, 2),
+	    ShortLang = case string:tokens(LLang, "-") of
+			    [] ->
+				LLang;
+			    [SL | _] ->
+				SL
+			end,
 	    case ShortLang of
 		"en" ->
 		    Msg;
-		Lang ->
+		LLang ->
 		    translate(Msg);
 		_ ->
 		    case ets:lookup(translations, {ShortLang, Msg}) of
@@ -101,11 +109,17 @@ translate(Msg) ->
 	"en" ->
 	    Msg;
 	Lang ->
-	    case ets:lookup(translations, {Lang, Msg}) of
+	    LLang = ascii_tolower(Lang),
+	    case ets:lookup(translations, {LLang, Msg}) of
 		[{_, Trans}] ->
 		    Trans;
 		_ ->
-		    ShortLang = string:substr(Lang, 1, 2),
+		    ShortLang = case string:tokens(LLang, "-") of
+				    [] ->
+					LLang;
+				    [SL | _] ->
+					SL
+				end,
 		    case ShortLang of
 			"en" ->
 			    Msg;
@@ -121,4 +135,11 @@ translate(Msg) ->
 		    end
 	    end
     end.
+
+ascii_tolower([C | Cs]) when C >= $A, C =< $Z ->
+    [C + ($a - $A) | ascii_tolower(Cs)];
+ascii_tolower([C | Cs]) ->
+    [C | ascii_tolower(Cs)];
+ascii_tolower([]) ->
+    [].
 
