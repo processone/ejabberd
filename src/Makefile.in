@@ -30,7 +30,7 @@ ETCDIR = $(DESTDIR)/etc/ejabberd
 all: $(ERLSHLIBS) compile-beam all-recursive
 
 compile-beam:
-	@erl -s make all report -noinput -s erlang halt
+	@ERL@ -s make all report -noinput -s erlang halt
 
 
 all-recursive install-recursive uninstall-recursive \

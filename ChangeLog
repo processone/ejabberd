@@ -1,3 +1,7 @@
+2004-09-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/Makefile.in: Updated (thanks to Badlop)
+
 2004-09-26  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/aclocal.m4: Better expat and openssl detection (thanks to
@@ -11,8 +15,8 @@
 	* src/jlib.hrl: Added namespace for iq-register stream feature
 	* src/ejabberd_c2s.erl: Send iq-register feature
 
-	* src/ejabberd_config.erl: Config file can be configured from the
-	command line (thanks to Mickael Remond)
+	* src/ejabberd_config.erl: Config file can be configured via
+	environment variable (thanks to Mickael Remond)
 
 	* src/web/ejabberd_http.erl: Added SSL support (thanks to Sergei
 	Golovan)
