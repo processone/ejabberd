@@ -1,3 +1,7 @@
+2004-08-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Fix (thanks to Sander Devrieze)
+
 2004-08-27  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/xml_stream.erl: Few optimizations
