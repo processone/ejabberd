@@ -47,7 +47,7 @@
 		pres_timestamp,
 		pres_invis = false}).
 
-%-define(DBGFSM, true).
+-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
@@ -64,7 +64,8 @@
 
 -define(STREAM_TRAILER, "</stream:stream>").
 
--define(INVALID_NS_ERR, "<stream:error>Invalid Namespace</stream:error>").
+-define(INVALID_NS_ERR,
+	xml:element_to_string(?SERR_INVALID_NAMESPACE)).
 %-define(INVALID_XML_ERR,
 %	"<stream:error code='400'>Invalid XML</stream:error>").
 -define(INVALID_XML_ERR,
@@ -144,7 +145,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 		       ?STREAM_HEADER,
 		       [StateData#state.streamid, ?MYNAME, ""]),
 	    send_text(StateData#state.socket,
-		      Header ++ ?INVALID_NS_ERR ?STREAM_TRAILER),
+		      Header ++ ?INVALID_NS_ERR ++ ?STREAM_TRAILER),
 	    {stop, normal, StateData}
     end;
 

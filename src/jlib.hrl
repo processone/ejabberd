@@ -82,6 +82,8 @@
 	?STREAM_ERROR("address",  "host-unknown")).
 -define(SERR_INTERNAL_SERVER_ERROR,
 	?STREAM_ERROR("server",   "internal-server-error")).
+-define(SERR_INVALID_NAMESPACE,
+	?STREAM_ERROR("format",   "invalid-namespace")).
 -define(SERR_RESOURSE_CONSTRAINT,
 	?STREAM_ERROR("server",   "resource-constraint")).
 % TODO: include hostname or IP
