@@ -42,12 +42,12 @@
 -endif.
 
 -define(STREAM_HEADER,
-	"<?xml version='1.0'?>"
-	"<stream:stream "
-	"xmlns:stream='http://etherx.jabber.org/streams' "
-	"xmlns='jabber:server' "
-	"xmlns:db='jabber:server:dialback' "
-	"id='todo'>"
+	("<?xml version='1.0'?>"
+	 "<stream:stream "
+	 "xmlns:stream='http://etherx.jabber.org/streams' "
+	 "xmlns='jabber:server' "
+	 "xmlns:db='jabber:server:dialback' "
+	 "id='" ++ StateData#state.streamid ++ "'>")
        ).
 
 -define(STREAM_TRAILER, "</stream:stream>").
@@ -139,7 +139,8 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
 	    case lists:member(To, ejabberd_router:dirty_get_all_domains()) of
 		true ->
 		    ejabberd_s2s_out:start(To, From,
-					   {verify, self(), Key}),
+					   {verify, self(),
+					    Key, StateData#state.streamid}),
 		    {next_state,
 		     wait_for_verification,
 		     StateData#state{myname = To,

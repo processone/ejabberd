@@ -133,13 +133,15 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 					    ?MYNAME,
 					    " version='1.0'"]),
 		    send_text(StateData, Header),
-		    SASLState = cyrsasl:server_new("jabber", ?MYNAME, "", []),
-		    Mechs = lists:map(fun(S) ->
+		    case StateData#state.authentificated of
+			false ->
+			    SASLState =
+				cyrsasl:server_new("jabber", ?MYNAME, "", []),
+			    Mechs = lists:map(
+				      fun(S) ->
 					      {xmlelement, "mechanism", [],
 					       [{xmlcdata, S}]}
 				      end, cyrsasl:listmech()),
-		    case StateData#state.authentificated of
-			false ->
 			    send_element(StateData,
 					 {xmlelement, "stream:features", [],
 					  [{xmlelement, "mechanisms",
@@ -148,6 +150,9 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 			    {next_state, wait_for_sasl_auth,
 			     StateData#state{sasl_state = SASLState}};
 			_ ->
+			    send_element(
+			      StateData,
+			      {xmlelement, "stream:features", [], []}),
 			    {next_state, wait_for_session, StateData}
 		    end;
 		_ ->

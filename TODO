@@ -8,7 +8,8 @@ admin interface
 	backup management
 
 S2S:
-	* rewrite S2S key validation
+	rewrite S2S key validation
+	check "id" attributes in db:verify packets
 
 more correctly work with SRV DNS records (priority, weight, etc...)
 TLS

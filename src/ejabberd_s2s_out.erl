@@ -88,8 +88,8 @@ init([From, Server, Type]) ->
     {New, Verify} = case Type of
 			{new, Key} ->
 			    {Key, false};
-			{verify, Pid, Key} ->
-			    {false, {Pid, Key}}
+			{verify, Pid, Key, SID} ->
+			    {false, {Pid, Key, SID}}
 		    end,
     {ok, open_socket, #state{queue = queue:new(),
 			     myname = From,
@@ -162,13 +162,13 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    case StateData#state.verify of
 		false ->
 		    ok;
-		{Pid, Key2} ->
+		{Pid, Key2, SID} ->
 		    send_element(StateData#state.socket,
 				 {xmlelement,
 				  "db:verify",
 				  [{"from", StateData#state.myname},
 				   {"to", StateData#state.server},
-				   {"id", "todo"}],
+				   {"id", SID}],
 				  [{xmlcdata, Key2}]})
 	    end,
 	    {next_state, wait_for_validation,
@@ -208,7 +208,7 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 	    case StateData#state.verify of
 		false ->
 		    {next_state, wait_for_validation, StateData, ?S2STIMEOUT};
-		{Pid, Key} ->
+		{Pid, _Key, _SID} ->
 		    case Type of
 			"valid" ->
 			    gen_fsm:send_event(Pid, valid);
@@ -242,7 +242,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	{verify, VTo, VFrom, VId, VType} ->
 	    ?INFO_MSG("recv verify: ~p", [{VFrom, VTo, VId, VType}]),
 	    case StateData#state.verify of
-		{VPid, VKey} ->
+		{VPid, _VKey, _SID} ->
 		    case VType of
 			"valid" ->
 			    gen_fsm:send_event(VPid, valid);
@@ -255,27 +255,6 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	_ ->
 	    ok
     end,
-    %{xmlelement, Name, Attrs, Els} = El,
-    %From = xml:get_attr_s("from", Attrs),
-    %FromJID1 = jlib:string_to_jid(From),
-    %FromJID = case FromJID1 of
-    %    	  {Node, Server, Resource} ->
-    %    	      if Server == StateData#state.server -> FromJID1;
-    %    		 true -> error
-    %    	      end;
-    %    	  _ -> error
-    %          end,
-    %To = xml:get_attr_s("to", Attrs),
-    %ToJID = case To of
-    %    	"" -> error;
-    %    	_ -> jlib:string_to_jid(To)
-    %        end,
-    %if ((Name == "iq") or (Name == "message") or (Name == "presence")) and
-    %   (ToJID /= error) and (FromJID /= error) ->
-    %        ejabberd_router:route(FromJID, ToJID, El);
-    %   true ->
-    %        error
-    %end,
     {next_state, stream_established, StateData, ?S2STIMEOUT};
 
 stream_established({xmlstreamend, Name}, StateData) ->
