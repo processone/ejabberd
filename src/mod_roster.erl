@@ -125,9 +125,7 @@ process_iq_set(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     lists:foreach(fun(El) -> process_item_set(User, From, To, El) end, Els),
     {iq, ID, result, XMLNS, []}.
 
-process_item_set(User, From, To, XItem) ->
-    {xmlelement, Name, Attrs, Els} = XItem,
-    % TODO: load existing item
+process_item_set(User, From, To, {xmlelement, Name, Attrs, Els} = XItem) ->
     JID = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
     LUser = jlib:tolower(User),
     case JID of
@@ -199,7 +197,9 @@ process_item_set(User, From, To, XItem) ->
 		    ?DEBUG("ROSTER: roster item set error: ~p~n", [E]),
 		    ok
 	    end
-    end.
+    end;
+process_item_set(User, From, To, _) ->
+    ok.
 
 process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
     case Attr of
@@ -231,7 +231,6 @@ process_item_attrs(Item, []) ->
     Item.
 
 
-% {user, jid, name, subscription, groups, xattrs, xs}
 process_item_els(Item, [{xmlelement, Name, Attrs, SEls} | Els]) ->
     case Name of
 	"group" ->
@@ -480,8 +479,7 @@ set_items(User, SubEl) ->
 	end,
     mnesia:transaction(F).
 
-process_item_set_t(User, XItem) ->
-    {xmlelement, Name, Attrs, Els} = XItem,
+process_item_set_t(User, {xmlelement, Name, Attrs, Els} = XItem) ->
     JID = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
     LUser = jlib:tolower(User),
     case JID of
@@ -501,8 +499,9 @@ process_item_set_t(User, XItem) ->
 		_ ->
 		    mnesia:write(Item2)
 	    end
-    end.
-
+    end;
+process_item_set_t(User, _) ->
+    ok.
 
 process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
     case Attr of

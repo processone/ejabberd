@@ -365,7 +365,7 @@ handle_info({send_element, El}, StateName, StateData) ->
     end;
 handle_info({tcp, Socket, Data}, StateName, StateData) ->
     Buf = StateData#state.inbuf ++ binary_to_list(Data),
-    {ok, Strings} = regexp:split(Buf, "\r\n"),
+    {ok, Strings} = regexp:split([C || C <- Buf, C /= $\r], "\n"),
     io:format("strings=~p~n", [Strings]),
     NewBuf = process_lines(Strings),
     {next_state, StateName, StateData#state{inbuf = NewBuf}};

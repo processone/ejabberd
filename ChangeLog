@@ -1,3 +1,11 @@
+2003-02-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Fixed bug with handling of roster set
+	stanzas that contains CDATA
+
+	* src/mod_irc/mod_irc_connection.erl (handle_info/3): Fixed
+	parsing of string that have "\n" line separators (not "\r\n")
+
 2003-02-18  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_irc/: Added support for private chats, nicks changes and
