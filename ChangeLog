@@ -1,3 +1,8 @@
+2003-11-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Fixed processing of presence probe from
+	client
+
 2003-11-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/cyrsasl_digest.erl: Bugfix (thanks to Sergei Golovan)

@@ -879,16 +879,24 @@ get_auth_tags([], U, P, D, R) ->
 
 process_presence_probe(From, To, StateData) ->
     LFrom = jlib:jid_tolower(From),
+    LBFrom = setelement(3, LFrom, ""),
     case StateData#state.pres_last of
 	undefined ->
 	    ok;
 	_ ->
 	    Cond1 = (not StateData#state.pres_invis)
-		and ?SETS:is_element(LFrom, StateData#state.pres_f)
-		and (not ?SETS:is_element(LFrom, StateData#state.pres_i)),
+		andalso (?SETS:is_element(LFrom, StateData#state.pres_f)
+			 orelse
+			 ((LFrom /= LBFrom) andalso
+			  ?SETS:is_element(LBFrom, StateData#state.pres_f)))
+		andalso (not
+			 (?SETS:is_element(LFrom, StateData#state.pres_i)
+			  orelse
+			  ((LFrom /= LBFrom) andalso
+			   ?SETS:is_element(LBFrom, StateData#state.pres_i)))),
 	    Cond2 = StateData#state.pres_invis
-		and ?SETS:is_element(LFrom, StateData#state.pres_f)
-		and ?SETS:is_element(LFrom, StateData#state.pres_a),
+		andalso ?SETS:is_element(LFrom, StateData#state.pres_f)
+		andalso ?SETS:is_element(LFrom, StateData#state.pres_a),
 	    if
 		Cond1 ->
 		    Packet = StateData#state.pres_last,
@@ -948,6 +956,8 @@ presence_update(From, Packet, StateData) ->
 		end,
 	    NewState;
 	"error" ->
+	    StateData;
+	"probe" ->
 	    StateData;
 	"subscribe" ->
 	    StateData;
@@ -1020,6 +1030,9 @@ presence_track(From, To, Packet, StateData) ->
 	    mod_roster:out_subscription(User, To, unsubscribed),
 	    StateData;
 	"error" ->
+	    ejabberd_router:route(From, To, Packet),
+	    StateData;
+	"probe" ->
 	    ejabberd_router:route(From, To, Packet),
 	    StateData;
 	_ ->
