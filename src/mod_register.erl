@@ -109,6 +109,7 @@ try_register(User, Password) ->
 		{atomic, ok} ->
 		    ok;
 		{atomic, exists} ->
+		    % TODO: replace to "username unavailable"
 		    {error, ?ERR_BAD_REQUEST};
 		{error, Reason} ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}

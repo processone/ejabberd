@@ -521,6 +521,25 @@ normal_state(Event, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_event({service_message, Msg}, StateName, StateData) ->
+    MessagePkt = {xmlelement, "message",
+		  [{"type", "groupchat"}],
+		  [{xmlelement, "body", [], [{xmlcdata, Msg}]}]},
+    lists:foreach(
+      fun({LJID, Info}) ->
+	      ejabberd_router:route(
+		{StateData#state.room,
+		 StateData#state.host,
+		 ""},
+		Info#user.jid,
+		MessagePkt)
+      end,
+      ?DICT:to_list(StateData#state.users)),
+    NSD = add_message_to_history("",
+				 MessagePkt,
+				 StateData),
+    {next_state, normal_state, NSD};
+
 handle_event(Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 

@@ -20,7 +20,3 @@ add traffic shapers to c2s connection before authentification
 add traffic shapers to s2s connections
 more traffic shapers
 SNMP
-
-mod_muc:
-
-	* broadcast messages from admin

@@ -75,68 +75,107 @@ loop(Host) ->
 
 do_route(Host, From, To, Packet) ->
     {Room, _, Nick} = To,
+    {xmlelement, Name, Attrs, Els} = Packet,
     case Room of
 	"" ->
 	    case Nick of
 		"" ->
-		    case jlib:iq_query_info(Packet) of
-			{iq, ID, get, ?NS_DISCO_INFO = XMLNS, SubEl} ->
-			    Res = {iq, ID, result, XMLNS,
-				   [{xmlelement, "query",
-				     [{"xmlns", XMLNS}],
-				     iq_disco_info()}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(Res));
-			{iq, ID, get, ?NS_DISCO_ITEMS = XMLNS, SubEl} ->
-			    spawn(?MODULE,
-				  process_iq_disco_items,
-				  [Host, From, To, ID, SubEl]);
-			{iq, ID, get, ?NS_REGISTER = XMLNS, SubEl} ->
-			    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
-			    Res = {iq, ID, result, XMLNS,
-				   [{xmlelement, "query",
-				     [{"xmlns", XMLNS}],
-				     iq_get_register_info(From, Lang)}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(Res));
-			{iq, ID, set, ?NS_REGISTER = XMLNS, SubEl} ->
-			    case process_iq_register_set(From, SubEl) of
-				{result, IQRes} ->
+		    case Name of
+			"iq" ->
+			    case jlib:iq_query_info(Packet) of
+				{iq, ID, get, ?NS_DISCO_INFO = XMLNS, SubEl} ->
 				    Res = {iq, ID, result, XMLNS,
 					   [{xmlelement, "query",
 					     [{"xmlns", XMLNS}],
-					     IQRes}]},
-				    ejabberd_router:route(
-				      To, From, jlib:iq_to_xml(Res));
-				{error, Error} ->
+					     iq_disco_info()}]},
+				    ejabberd_router:route(To,
+							  From,
+							  jlib:iq_to_xml(Res));
+				{iq, ID, get, ?NS_DISCO_ITEMS = XMLNS, SubEl} ->
+				    spawn(?MODULE,
+					  process_iq_disco_items,
+					  [Host, From, To, ID, SubEl]);
+				{iq, ID, get, ?NS_REGISTER = XMLNS, SubEl} ->
+				    Lang = xml:get_tag_attr_s(
+					     "xml:lang", SubEl),
+				    Res = {iq, ID, result, XMLNS,
+					   [{xmlelement, "query",
+					     [{"xmlns", XMLNS}],
+					     iq_get_register_info(
+					       From, Lang)}]},
+				    ejabberd_router:route(To,
+							  From,
+							  jlib:iq_to_xml(Res));
+				{iq, ID, set, ?NS_REGISTER = XMLNS, SubEl} ->
+				    case process_iq_register_set(From, SubEl) of
+					{result, IQRes} ->
+					    Res = {iq, ID, result, XMLNS,
+						   [{xmlelement, "query",
+						     [{"xmlns", XMLNS}],
+						     IQRes}]},
+					    ejabberd_router:route(
+					      To, From, jlib:iq_to_xml(Res));
+					{error, Error} ->
+					    Err = jlib:make_error_reply(
+						    Packet, Error),
+					    ejabberd_router:route(
+					      To, From, Err)
+				    end;
+				{iq, ID, get, ?NS_VCARD = XMLNS, SubEl} ->
+				    Lang = xml:get_tag_attr_s(
+					     "xml:lang", SubEl),
+				    Res = {iq, ID, result, XMLNS,
+					   [{xmlelement, "query",
+					     [{"xmlns", XMLNS}],
+					     iq_get_vcard(Lang)}]},
+				    ejabberd_router:route(To,
+							  From,
+							  jlib:iq_to_xml(Res));
+				reply ->
+				    ok;
+				_ ->
 				    Err = jlib:make_error_reply(
-					    Packet, Error),
+					    Packet,
+					    ?ERR_FEATURE_NOT_IMPLEMENTED),
 				    ejabberd_router:route(To, From, Err)
 			    end;
-			{iq, ID, get, ?NS_VCARD = XMLNS, SubEl} ->
-			    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
-			    Res = {iq, ID, result, XMLNS,
-				   [{xmlelement, "query",
-				     [{"xmlns", XMLNS}],
-				     iq_get_vcard(Lang)}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(Res));
-			_ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-			    ejabberd_router:route(To, From, Err)
+			"message" ->
+			    case xml:get_attr_s("type", Attrs) of
+				"error" ->
+				    ok;
+				_ ->
+				    case acl:match_rule(muc_admin, From) of
+					allow ->
+					    Msg = xml:get_path_s(
+						    Packet,
+						    [{elem, "body"}, cdata]),
+					    broadcast_service_message(Msg);
+					_ ->
+					    Err = jlib:make_error_reply(
+						    Packet,
+						    ?ERR_NOT_ALLOWED),
+					    ejabberd_router:route(
+					      To, From, Err)
+				    end
+			    end;
+			"presence" ->
+			    ok
 		    end;
 		_ ->
-		    Err = jlib:make_error_reply(Packet, ?ERR_JID_NOT_FOUND),
-		    ejabberd_router:route(To, From, Err)
+		    case xml:get_attr_s("type", Attrs) of
+			"error" ->
+			    ok;
+			"result" ->
+			    ok;
+			_ ->
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERR_JID_NOT_FOUND),
+			    ejabberd_router:route(To, From, Err)
+		    end
 	    end;
 	_ ->
 	    case ets:lookup(muc_online_room, Room) of
 		[] ->
-		    {xmlelement, Name, Attrs, Els} = Packet,
 		    Type = xml:get_attr_s("type", Attrs),
 		    case {Name, Type} of
 			{"presence", ""} ->
@@ -356,6 +395,14 @@ iq_get_vcard(Lang) ->
      {xmlelement, "DESC", [],
       [{xmlcdata, "ejabberd MUC module\n"
 	"Copyright (c) 2003 Alexey Shchepin"}]}].
+
+
+broadcast_service_message(Msg) ->
+    lists:foreach(
+      fun(#muc_online_room{name = Name, pid = Pid}) ->
+	      gen_fsm:send_all_state_event(
+		Pid, {service_message, Msg})
+      end, ets:tab2list(muc_online_room)).
 
 
 

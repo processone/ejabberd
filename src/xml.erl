@@ -40,6 +40,31 @@ attrs_to_string(Attrs) ->
 attr_to_string({Name, Value}) ->
     " " ++ crypt(Name) ++ "='" ++ crypt(Value) ++ "'".
 
+
+%element_to_string2(El) ->
+%    lists:flatten(element_to_string21(El)).
+%
+%element_to_string21(El) ->
+%    case El of
+%	{xmlelement, Name, Attrs, Els} ->
+%	    if length(Els) > 0 ->
+%		    [[$< | Name], attrs_to_list(Attrs), ">",
+%		     lists:map(fun(E) -> element_to_string21(E) end, Els),
+%		     "</", Name, ">"];
+%	       true ->
+%		    ["<", Name, attrs_to_list(Attrs), "/>"]
+%	       end;
+%	{xmlcdata, CData} -> crypt(CData)
+%    end.
+%
+%attrs_to_list(Attrs) ->
+%    lists:map(fun(A) -> attr_to_list(A) end, Attrs).
+%
+%attr_to_list({Name, Value}) ->
+%    [" ", crypt(Name), "='", crypt(Value), "'"].
+
+
+
 %crypt(S) ->
 %    lists:reverse(crypt(S, "")).
 %
