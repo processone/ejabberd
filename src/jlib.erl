@@ -14,9 +14,15 @@
 	 make_error_reply/3,
 	 make_correct_from_to_attrs/3,
 	 replace_from_to_attrs/3,
+	 replace_from_to/3,
+	 remove_attr/2,
 	 string_to_jid/1,
 	 jid_to_string/1,
-	 tolower/1]).
+	 tolower/1,
+	 get_iq_namespace/1,
+	 iq_query_info/1,
+	 iq_to_xml/1,
+	 get_subtag/2]).
 
 
 %send_iq(From, To, ID, SubTags) ->
@@ -93,6 +99,16 @@ replace_from_to_attrs(From, To, Attrs) ->
     Attrs4 = [{"from", From} | Attrs3],
     Attrs4.
 
+replace_from_to(From, To, {xmlelement, Name, Attrs, Els}) ->
+    NewAttrs = replace_from_to_attrs(jlib:jid_to_string(From),
+				     jlib:jid_to_string(To),
+				     Attrs),
+    {xmlelement, Name, NewAttrs, Els}.
+
+
+remove_attr(Attr, {xmlelement, Name, Attrs, Els}) ->
+    NewAttrs = lists:keydelete(Attr, 1, Attrs),
+    {xmlelement, Name, NewAttrs, Els}.
 
 string_to_jid(J) ->
     string_to_jid1(J, "").
@@ -154,4 +170,71 @@ tolower_c(C) ->
 
 tolower(S) ->
     lists:map(fun tolower_c/1, S).
+
+
+
+get_iq_namespace({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
+    case xml:remove_cdata(Els) of
+	[{xmlelement, Name2, Attrs2, Els2}] ->
+	    xml:get_attr_s("xmlns", Attrs2);
+	_ ->
+	    ""
+    end;
+get_iq_namespace(_) ->
+    "".
+
+iq_query_info({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
+    ID = xml:get_attr_s("id", Attrs),
+    Type = xml:get_attr_s("type", Attrs),
+    case xml:remove_cdata(Els) of
+	[{xmlelement, Name2, Attrs2, Els2}] ->
+	    XMLNS = xml:get_attr_s("xmlns", Attrs2),
+	    Type1 = case Type of
+			"set" -> set;
+			"get" -> get;
+			_ -> invalid
+		    end,
+	    if
+		(Type1 /= invalid) and (XMLNS /= "") ->
+		    {iq, ID, Type1, XMLNS, {xmlelement, Name2, Attrs2, Els2}};
+		true ->
+		    invalid
+	    end;
+	_ ->
+	    invalid
+    end;
+iq_query_info(_) ->
+    not_iq.
+
+iq_type_to_string(set) -> "set";
+iq_type_to_string(get) -> "get";
+iq_type_to_string(result) -> "result";
+iq_type_to_string(error) -> "error";
+iq_type_to_string(_) -> invalid.
+
+
+iq_to_xml({iq, ID, Type, _, SubEl}) ->
+    if
+	ID /= "" ->
+	    {xmlelement, "iq",
+	     [{"id", ID}, {"type", iq_type_to_string(Type)}], SubEl};
+	true ->
+	    {xmlelement, "iq",
+	     [{"type", iq_type_to_string(Type)}], SubEl}
+    end.
+
+
+get_subtag({xmlelement, _, _, Els}, Name) ->
+    get_subtag1(Els, Name).
+
+get_subtag1([El | Els], Name) ->
+    case El of
+	{xmlelement, Name, _, _} ->
+	    El;
+	_ ->
+	    get_subtag1(Els, Name)
+    end;
+get_subtag1([], _) ->
+    false.
+
 

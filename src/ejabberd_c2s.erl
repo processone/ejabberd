@@ -118,7 +118,20 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		    {next_state, wait_for_auth, StateData}
 	    end;
 	_ ->
-	    {next_state, wait_for_auth, StateData}
+	    case jlib:iq_query_info(El) of
+		{iq, ID, Type, "jabber:iq:register", SubEl} ->
+		    ResIQ = mod_register:process_iq(
+			      {"", "", ""}, {"", ?MYNAME, ""},
+			      {iq, ID, Type, "jabber:iq:register", SubEl}),
+		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
+						{"", "", ""},
+						jlib:iq_to_xml(ResIQ)),
+		    Res = jlib:remove_attr("to", Res1),
+		    send_element(StateData#state.sender, Res),
+		    {next_state, wait_for_auth, StateData};
+		_ ->
+		    {next_state, wait_for_auth, StateData}
+	    end
     end;
 
 wait_for_auth({xmlstreamend, Name}, StateData) ->

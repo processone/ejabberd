@@ -16,14 +16,17 @@
 -behaviour(gen_server).
 
 %% External exports
--export([start/0, start_link/0, set_password/2, check_password/2]).
+-export([start/0, start_link/0,
+	 set_password/2,
+	 check_password/2,
+	 try_register/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
 
 -record(state, {}).
 
--record(passwd, {jid, password}).
+-record(passwd, {user, password}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -92,9 +95,11 @@ terminate(Reason, State) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-check_password(Jid, Password) ->
+% TODO: lowercase user name
+
+check_password(User, Password) ->
     F = fun() ->
-		case mnesia:read({passwd, Jid}) of
+		case mnesia:read({passwd, User}) of
 		    [E] ->
 			E#passwd.password
 		end
@@ -107,16 +112,21 @@ check_password(Jid, Password) ->
     end.
 
 
-set_password(Jid, Password) ->
+set_password(User, Password) ->
     F = fun() ->
-		case mnesia:read({passwd, Jid}) of
-		    [] ->
-			New = #passwd{jid = Jid, password = Password},
-			mnesia:write(New);
-		    [E] ->
-			New = E#passwd{password = Password},
-			mnesia:write(New)
-		end
+		mnesia:write(#passwd{user = User, password = Password})
         end,
     mnesia:transaction(F).
 
+try_register(User, Password) ->
+    F = fun() ->
+		case mnesia:read({passwd, User}) of
+		    [] ->
+			mnesia:write(#passwd{user = User, password = Password}),
+			ok;
+		    [E] ->
+			exists
+		end
+        end,
+    mnesia:transaction(F).
+    

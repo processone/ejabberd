@@ -10,7 +10,8 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([element_to_string/1, crypt/1, remove_cdata/1, get_cdata/1,
+-export([element_to_string/1, crypt/1, remove_cdata/1,
+	 get_cdata/1, get_tag_cdata/1,
 	 get_attr/2, get_attr_s/2]).
 
 element_to_string(El) ->
@@ -72,7 +73,9 @@ get_cdata([_ | L], S) ->
     get_cdata(L, S);
 get_cdata([], S) ->
     S.
-    
+
+get_tag_cdata({xmlelement, Name, Attrs, Els}) ->
+    get_cdata(Els).
 
 get_attr(AttrName, Attrs) ->
     case lists:keysearch(AttrName, 1, Attrs) of
