@@ -13,8 +13,8 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/1,
-	 start_link/2,
+-export([start/1,
+	 start/2,
 	 import_file/1,
 	 import_dir/1]).
 
@@ -47,12 +47,12 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start_link(File) ->
+start(File) ->
     User = filename:rootname(filename:basename(File)),
-    start_link(File, User).
+    start(File, User).
 
-start_link(File, User) ->
-    gen_fsm:start_link(?MODULE, [File, User, self()], ?FSMOPTS).
+start(File, User) ->
+    gen_fsm:start(?MODULE, [File, User, self()], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -217,7 +217,7 @@ process_offline(To, {xmlelement, _, _, Els}) ->
 
 
 import_file(File) ->
-    start_link(File),
+    start(File),
     receive
 	M -> M
 	after 1000 -> ok
