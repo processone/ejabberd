@@ -13,13 +13,14 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/1, receiver/2, sender/1, send_text/2]).
+-export([start/1, receiver/2, sender/1, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 %-export([init/1, state_name/2, state_name/3, handle_event/3,
 %	 handle_sync_event/4, handle_info/3, terminate/3]).
 %
 -export([init/1, wait_for_stream/2, wait_for_auth/2, session_established/2,
+	 handle_info/3,
 	 terminate/3]).
 
 -record(state, {socket, sender, receiver, streamid,
@@ -106,6 +107,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    case ejabberd_auth:check_password(U, P) of
 		true ->
 		    % TODO
+		    ejabberd_sm:open_session(U, R),
+		    Res = jlib:make_result_iq_reply(El),
+		    send_element(StateData#state.sender, Res),
 		    {next_state, session_established,
 		     StateData#state{user = U, resource = R}};
 		_ ->
@@ -127,9 +131,24 @@ wait_for_auth(closed, StateData) ->
 session_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     % TODO
-    FromJID = {StateData#state.user, "localhost", StateData#state.resource},
-    ToJID = jlib:string_to_jid(xml:get_attr_s("to", Attrs)),
-    ejabberd_router:route(FromJID, ToJID, El),
+    FromJID = {StateData#state.user,
+	       StateData#state.server,
+	       StateData#state.resource},
+    To = xml:get_attr_s("to", Attrs),
+    ToJID = case To of
+		"" ->
+		    {"", StateData#state.server, ""};
+		_ ->
+		    jlib:string_to_jid(To)
+	    end,
+    case ToJID of
+	error ->
+	    % TODO
+	    error;
+	_ ->
+	    %?DEBUG("FromJID=~w, ToJID=~w, El=~w~n", [FromJID, ToJID, El]),
+	    ejabberd_router:route(FromJID, ToJID, El)
+    end,
     {next_state, session_established, StateData};
 
 session_established(closed, StateData) ->
@@ -179,7 +198,8 @@ handle_sync_event(Event, From, StateName, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_info(Info, StateName, StateData) ->
+handle_info({send_text, Text}, StateName, StateData) ->
+    send_text(StateData#state.sender, Text),
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -188,6 +208,13 @@ handle_info(Info, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
+    case StateData#state.user of
+	"" ->
+	    ok;
+	_ ->
+	    ejabberd_sm:close_session(StateData#state.user,
+				      StateData#state.resource)
+    end,
     StateData#state.sender ! close,
     ok.
 
@@ -212,7 +239,7 @@ receiver(Socket, C2SPid, XMLStreamPid) ->
 
 sender(Socket) ->
     receive
-	{text, Text} ->
+	{send_text, Text} ->
 	    gen_tcp:send(Socket,Text),
 	    sender(Socket);
 	close ->
@@ -221,7 +248,7 @@ sender(Socket) ->
     end.
 
 send_text(Pid, Text) ->
-    Pid ! {text, Text}.
+    Pid ! {send_text, Text}.
 
 send_element(Pid, El) ->
     send_text(Pid, xml:element_to_string(El)).

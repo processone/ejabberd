@@ -10,12 +10,42 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([make_error_reply/3, make_correct_from_to_attrs/3,
-	 replace_from_to_attrs/3, string_to_jid/1, tolower/1]).
+-export([make_result_iq_reply/1,
+	 make_error_reply/3,
+	 make_correct_from_to_attrs/3,
+	 replace_from_to_attrs/3,
+	 string_to_jid/1,
+	 jid_to_string/1,
+	 tolower/1]).
 
 
 %send_iq(From, To, ID, SubTags) ->
 %    ok.
+
+make_result_iq_reply({xmlelement, Name, Attrs, SubTags}) ->
+    NewAttrs = make_result_iq_reply_attrs(Attrs),
+    {xmlelement, Name, NewAttrs, SubTags}.
+
+make_result_iq_reply_attrs(Attrs) ->
+    To = xml:get_attr("to", Attrs),
+    From = xml:get_attr("from", Attrs),
+    Attrs1 = lists:keydelete("to", 1, Attrs),
+    Attrs2 = lists:keydelete("from", 1, Attrs1),
+    Attrs3 = case To of
+		 {value, ToVal} ->
+		      [{"from", ToVal} | Attrs2];
+		 _ ->
+		     Attrs2
+	     end,
+    Attrs4 = case From of
+		 {value, FromVal} ->
+		      [{"to", FromVal} | Attrs3];
+		 _ ->
+		     Attrs3
+	     end,
+    Attrs5 = lists:keydelete("type", 1, Attrs4),
+    Attrs6 = [{"type", "result"} | Attrs5],
+    Attrs6.
 
 make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
     NewAttrs = make_error_reply_attrs(Attrs),
@@ -56,7 +86,7 @@ make_correct_from_to_attrs(From, To, Attrs) ->
     Attrs3.
 
 
-replace_from_to_attrs(From,To,Attrs) ->
+replace_from_to_attrs(From, To, Attrs) ->
     Attrs1 = lists:keydelete("to", 1, Attrs),
     Attrs2 = lists:keydelete("from", 1, Attrs1),
     Attrs3 = [{"to", To} | Attrs2],
@@ -97,6 +127,23 @@ string_to_jid3([C | J], N, S, R) ->
     string_to_jid3(J, N, S, [C | R]);
 string_to_jid3([], N, S, R) ->
     {N, S, lists:reverse(R)}.
+
+jid_to_string({Node, Server, Resource}) ->
+    S1 = case Node of
+	     "" ->
+		 "";
+	     _ ->
+		 Node ++ "@"
+	 end,
+    S2 = S1 ++ Server,
+    S3 = case Resource of
+	     "" ->
+		 S2;
+	     _ ->
+		 S2 ++ "/" ++ Resource
+	 end,
+    S3.
+
 
 
 % TODO: UNICODE support
