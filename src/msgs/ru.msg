@@ -72,6 +72,7 @@
 {"Allow users to send private messages?",
  "Разрешить приватные сообщения?"}.
 {"Make room public searchable?", "Сделать комнату видимой всем?"}.
+{"Make participants list public?", "Сделать список участников видимым всем?"}.
 {"Make room persistent?", "Сделать комнату постоянной?"}.
 {"Make room moderated?", "Сделать комнату модерируемой?"}.
 {"Default users as members?",

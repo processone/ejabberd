@@ -37,7 +37,12 @@ init() ->
 loop(State) ->
     receive
 	{route, From, To, Packet} ->
-	    do_route(State, From, To, Packet),
+	    case catch do_route(State, From, To, Packet) of
+		{'EXIT', Reason} ->
+		    ?ERROR_MSG("~p", [Reason]);
+		_ ->
+		    ok
+	    end,
 	    loop(State);
 	{register_iq_handler, XMLNS, Module, Function} ->
 	    ets:insert(State#state.iqtable, {XMLNS, Module, Function}),

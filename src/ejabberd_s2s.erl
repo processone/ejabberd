@@ -55,7 +55,12 @@ loop() ->
 	    clean_table_from_bad_node(Node),
 	    loop();
 	{route, From, To, Packet} ->
-	    do_route(From, To, Packet),
+	    case catch do_route(From, To, Packet) of
+		{'EXIT', Reason} ->
+		    ?ERROR_MSG("~p", [Reason]);
+		_ ->
+		    ok
+	    end,
 	    loop();
 	_ ->
 	    loop()

@@ -40,6 +40,7 @@
 		 allow_query_users = true,
 		 allow_private_messages = true,
 		 public = true,
+		 public_list = true,
 		 persistent = false,
 		 moderated = false, % TODO
 		 members_by_default = true,
@@ -146,10 +147,20 @@ normal_state({route, From, "",
 					case can_change_subject(Role,
 								StateData) of
 					    true ->
-						{StateData#state{
-						   subject = Subject,
-						   subject_author = FromNick},
-						 true};
+						NSD =
+						    StateData#state{
+						      subject = Subject,
+						      subject_author =
+						      FromNick},
+						case (NSD#state.config)#config.persistent of
+						    true ->
+							mod_muc:store_room(
+							  NSD#state.room,
+							  make_opts(NSD));
+						    _ ->
+							ok
+						end,
+						{NSD, true};
 					    _ ->
 						{StateData, false}
 					end
@@ -272,7 +283,7 @@ normal_state({route, From, "",
 			{{iq, ID, result, XMLNS,
 			  [{xmlelement, "query", [{"xmlns", XMLNS}],
 			    Res
-			 }]},
+			   }]},
 			 SD};
 		    {error, Error} ->
 			{{iq, ID, error, XMLNS,
@@ -1496,9 +1507,6 @@ process_iq_owner(From, set, SubEl, StateData) ->
 	_ ->
 	    {error, ?ERR_FORBIDDEN}
     end;
-%    {xmlelement, _, _, Items} = SubEl,
-%    process_admin_items_set(From, Items, StateData);
-%    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
 
 process_iq_owner(From, get, SubEl, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
@@ -1567,6 +1575,9 @@ get_config(Lang, StateData) ->
 	 ?BOOLXFIELD("Make room public searchable?",
 		     "public",
 		     Config#config.public),
+	 ?BOOLXFIELD("Make participants list public?",
+		     "public_list",
+		     Config#config.public_list),
 	 ?BOOLXFIELD("Make room persistent?",
 		     "persistent",
 		     Config#config.persistent),
@@ -1634,6 +1645,8 @@ set_xoption([{"allow_private_messages", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_private_messages, Val);
 set_xoption([{"public", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(public, Val);
+set_xoption([{"public_list", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(public_list, Val);
 set_xoption([{"persistent", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(persistent, Val);
 set_xoption([{"moderated", [Val]} | Opts], Config) ->
@@ -1681,6 +1694,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      ?CASE_CONFIG_OPT(allow_query_users);
 	      ?CASE_CONFIG_OPT(allow_private_messages);
 	      ?CASE_CONFIG_OPT(public);
+	      ?CASE_CONFIG_OPT(public_list);
 	      ?CASE_CONFIG_OPT(persistent);
 	      ?CASE_CONFIG_OPT(moderated);
 	      ?CASE_CONFIG_OPT(members_by_default);
@@ -1691,6 +1705,10 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      ?CASE_CONFIG_OPT(logging);
 	      affiliations ->
 		  StateData#state{affiliations = ?DICT:from_list(Val)};
+	      subject ->
+		  StateData#state{subject = Val};
+	      subject_author ->
+		  StateData#state{subject_author = Val};
 	      _ -> StateData
 	  end,
     set_opts(Opts, NSD).
@@ -1705,6 +1723,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(allow_query_users),
      ?MAKE_CONFIG_OPT(allow_private_messages),
      ?MAKE_CONFIG_OPT(public),
+     ?MAKE_CONFIG_OPT(public_list),
      ?MAKE_CONFIG_OPT(persistent),
      ?MAKE_CONFIG_OPT(moderated),
      ?MAKE_CONFIG_OPT(members_by_default),
@@ -1713,7 +1732,9 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(password_protected),
      ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging),
-     {affiliations, ?DICT:to_list(StateData#state.affiliations)}
+     {affiliations, ?DICT:to_list(StateData#state.affiliations)},
+     {subject, StateData#state.subject},
+     {subject_author, StateData#state.subject_author}
     ].
 
 
@@ -1760,8 +1781,9 @@ process_iq_disco_items(From, set, StateData) ->
 process_iq_disco_items(From, get, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     FRole = get_role(From, StateData),
-    case (FRole /= none) or
-	(FAffiliation == admin) or
+    case ((StateData#state.config)#config.public_list == true) orelse
+	(FRole /= none) orelse
+	(FAffiliation == admin) orelse
 	(FAffiliation == owner) of
 	true ->
 	    UList =
