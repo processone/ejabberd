@@ -157,7 +157,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 				     "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_IQDATA})]}]};
+				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
 		{allow, ["running nodes", ENode, "modules"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "modules", _]} ->
@@ -165,7 +165,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_IQDATA})]}]};
+				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
 		{allow, ["running nodes", ENode, "backup"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "backup", _]} ->
@@ -173,7 +173,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_IQDATA})]}]};
+				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
 		{allow, ["running nodes", ENode, "import"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "import", _]} ->
@@ -181,13 +181,13 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_IQDATA})]}]};
+				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
 		{allow, ["config", _]} ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_IQDATA})]}]};
+				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
 		_ ->
 		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
 	    end
@@ -489,7 +489,7 @@ process_sm_iq_info(From, To, #iq{type = Type, xmlns = XMLNS,
 		"" ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query", [{"xmlns", XMLNS}],
-				     [feature_to_xml({?NS_IQDATA})]}]};
+				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
 		_ ->
 		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
 	    end

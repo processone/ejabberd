@@ -23,15 +23,15 @@
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_IQDATA,
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_EJABBERD_CONFIG,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_IQDATA,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_EJABBERD_CONFIG,
 				  ?MODULE, process_sm_iq, IQDisc),
     ok.
 
 stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_IQDATA),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_IQDATA).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_EJABBERD_CONFIG),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_EJABBERD_CONFIG).
 
 
 process_local_iq(From, _To, #iq{id = ID, type = Type,
@@ -43,38 +43,44 @@ process_local_iq(From, _To, #iq{id = ID, type = Type,
 	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case Type of
 		set ->
-		    case xml:get_tag_attr_s("type", SubEl) of
-			"cancel" ->
-			    IQ#iq{type = result,
-				  sub_el = [{xmlelement, "query",
-					     [{"xmlns", XMLNS}], []}]};
-			"submit" ->
-			    XData = jlib:parse_xdata_submit(SubEl),
-			    case XData of
-				invalid ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-				_ ->
-				    Node =
-					string:tokens(
-					  xml:get_tag_attr_s("node", SubEl),
-					  "/"),
-				    case set_form(Node, Lang, XData) of
-					{result, Res} ->
-					    IQ#iq{type = result,
-						  sub_el =
-						  [{xmlelement, "query",
-						    [{"xmlns", XMLNS}],
-						    Res
-						   }]};
-					{error, Error} ->
+		    XDataEl = find_xdata_el(SubEl),
+		    case XDataEl of
+			false ->
+			    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
+			{xmlelement, _Name, Attrs, SubEls} ->
+			    case xml:get_attr_s("type", Attrs) of
+				"cancel" ->
+				    IQ#iq{type = result,
+					  sub_el = [{xmlelement, "query",
+						     [{"xmlns", XMLNS}], []}]};
+				"submit" ->
+				    XData = jlib:parse_xdata_submit(XDataEl),
+				    case XData of
+					invalid ->
 					    IQ#iq{type = error,
-						  sub_el = [SubEl, Error]}
-				    end
-			    end;
-			_ ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+						  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+					_ ->
+					    Node =
+						string:tokens(
+						  xml:get_tag_attr_s("node", SubEl),
+						  "/"),
+					    case set_form(Node, Lang, XData) of
+						{result, Res} ->
+						    IQ#iq{type = result,
+							  sub_el =
+							  [{xmlelement, "query",
+							    [{"xmlns", XMLNS}],
+							    Res
+							   }]};
+						{error, Error} ->
+						    IQ#iq{type = error,
+							  sub_el = [SubEl, Error]}
+					    end
+				    end;
+				_ ->
+				    IQ#iq{type = error,
+					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+			    end
 		    end;
 		get ->
 		    Node =
@@ -137,27 +143,28 @@ get_form(["running nodes", ENode, "DB"], Lang) ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR};
 		Tables ->
 		    STables = lists:sort(Tables),
-		    {result, [{xmlelement, "title", [],
-			       [{xmlcdata,
-				 translate:translate(
-				   Lang, "DB Tables Configuration")}]},
-			      {xmlelement, "instructions", [],
-			       [{xmlcdata,
-				 translate:translate(
-				   Lang, "Choose storage type of tables")}]} |
-			      lists:map(
-				fun(Table) ->
-					case rpc:call(Node,
-						      mnesia,
-						      table_info,
-						      [Table, storage_type]) of
-					    {badrpc, _} ->
-						?TABLEFIELD(Table, unknown);
-					    Type ->
-						?TABLEFIELD(Table, Type)
-					end
-				end, STables)
-			     ]}
+		    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+			       [{xmlelement, "title", [],
+			         [{xmlcdata,
+				   translate:translate(
+				     Lang, "DB Tables Configuration")}]},
+			        {xmlelement, "instructions", [],
+			         [{xmlcdata,
+				   translate:translate(
+				     Lang, "Choose storage type of tables")}]} |
+			        lists:map(
+				  fun(Table) ->
+					  case rpc:call(Node,
+						        mnesia,
+						        table_info,
+						        [Table, storage_type]) of
+					      {badrpc, _} ->
+						  ?TABLEFIELD(Table, unknown);
+					      Type ->
+						  ?TABLEFIELD(Table, Type)
+					  end
+				  end, STables)
+			     ]}]}
 	    end
     end;
 
@@ -171,217 +178,228 @@ get_form(["running nodes", ENode, "modules", "stop"], Lang) ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR};
 		Modules ->
 		    SModules = lists:sort(Modules),
-		    {result, [{xmlelement, "title", [],
-			       [{xmlcdata,
-				 translate:translate(
-				   Lang, "Stop Modules")}]},
-			      {xmlelement, "instructions", [],
-			       [{xmlcdata,
-				 translate:translate(
-				   Lang, "Choose modules to stop")}]} |
-			      lists:map(fun(M) ->
-						S = atom_to_list(M),
-						?XFIELD("boolean", S, S, "0")
-					end, SModules)
-			     ]}
+		    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+			       [{xmlelement, "title", [],
+			         [{xmlcdata,
+				   translate:translate(
+				     Lang, "Stop Modules")}]},
+			        {xmlelement, "instructions", [],
+			         [{xmlcdata,
+				   translate:translate(
+				     Lang, "Choose modules to stop")}]} |
+			        lists:map(fun(M) ->
+						  S = atom_to_list(M),
+						  ?XFIELD("boolean", S, S, "0")
+					  end, SModules)
+			     ]}]}
 	    end
     end;
 
 get_form(["running nodes", ENode, "modules", "start"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Start Modules")}]},
-	      {xmlelement, "instructions", [],
-	       [{xmlcdata,
-	         translate:translate(
-	           Lang, "Enter list of {Module, [Options]}")}]},
-	      {xmlelement, "field", [{"type", "text-multi"},
-				     {"label",
-				      translate:translate(
-					Lang, "List of modules to start")},
-				     {"var", "modules"}],
-	       [{xmlelement, "value", [], [{xmlcdata, "[]."}]}]
-	      }
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Start Modules")}]},
+	        {xmlelement, "instructions", [],
+	         [{xmlcdata,
+	           translate:translate(
+	             Lang, "Enter list of {Module, [Options]}")}]},
+	        {xmlelement, "field", [{"type", "text-multi"},
+				       {"label",
+				        translate:translate(
+					  Lang, "List of modules to start")},
+				       {"var", "modules"}],
+	         [{xmlelement, "value", [], [{xmlcdata, "[]."}]}]
+	        }
+	     ]}]};
 
 get_form(["running nodes", ENode, "backup", "backup"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Backup to File")}]},
-	      {xmlelement, "instructions", [],
-	       [{xmlcdata,
-	         translate:translate(
-	           Lang, "Enter path to backup file")}]},
-	      {xmlelement, "field", [{"type", "text-single"},
-				     {"label",
-				      translate:translate(
-					Lang, "Path to File")},
-				     {"var", "path"}],
-	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
-	      }
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Backup to File")}]},
+	        {xmlelement, "instructions", [],
+	         [{xmlcdata,
+	           translate:translate(
+	             Lang, "Enter path to backup file")}]},
+	        {xmlelement, "field", [{"type", "text-single"},
+				       {"label",
+				        translate:translate(
+					  Lang, "Path to File")},
+				       {"var", "path"}],
+	         [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	        }
+	     ]}]};
 
 get_form(["running nodes", ENode, "backup", "restore"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Restore Backup from File")}]},
-	      {xmlelement, "instructions", [],
-	       [{xmlcdata,
-	         translate:translate(
-	           Lang, "Enter path to backup file")}]},
-	      {xmlelement, "field", [{"type", "text-single"},
-				     {"label",
-				      translate:translate(
-					Lang, "Path to File")},
-				     {"var", "path"}],
-	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
-	      }
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Restore Backup from File")}]},
+	        {xmlelement, "instructions", [],
+	         [{xmlcdata,
+	           translate:translate(
+	             Lang, "Enter path to backup file")}]},
+	        {xmlelement, "field", [{"type", "text-single"},
+				       {"label",
+				        translate:translate(
+					  Lang, "Path to File")},
+				       {"var", "path"}],
+	         [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	        }
+	     ]}]};
 
 get_form(["running nodes", ENode, "backup", "textfile"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Dump Backup to Text File")}]},
-	      {xmlelement, "instructions", [],
-	       [{xmlcdata,
-	         translate:translate(
-	           Lang, "Enter path to text file")}]},
-	      {xmlelement, "field", [{"type", "text-single"},
-				     {"label",
-				      translate:translate(
-					Lang, "Path to File")},
-				     {"var", "path"}],
-	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
-	      }
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Dump Backup to Text File")}]},
+	        {xmlelement, "instructions", [],
+	         [{xmlcdata,
+	           translate:translate(
+	             Lang, "Enter path to text file")}]},
+	        {xmlelement, "field", [{"type", "text-single"},
+				       {"label",
+				        translate:translate(
+					  Lang, "Path to File")},
+				       {"var", "path"}],
+	         [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	        }
+	     ]}]};
 
 get_form(["running nodes", ENode, "import", "file"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Import User from File")}]},
-	      {xmlelement, "instructions", [],
-	       [{xmlcdata,
-	         translate:translate(
-	           Lang, "Enter path to jabberd1.4 spool file")}]},
-	      {xmlelement, "field", [{"type", "text-single"},
-				     {"label",
-				      translate:translate(
-					Lang, "Path to File")},
-				     {"var", "path"}],
-	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
-	      }
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Import User from File")}]},
+	        {xmlelement, "instructions", [],
+	         [{xmlcdata,
+	           translate:translate(
+	             Lang, "Enter path to jabberd1.4 spool file")}]},
+	        {xmlelement, "field", [{"type", "text-single"},
+				       {"label",
+				        translate:translate(
+					  Lang, "Path to File")},
+				       {"var", "path"}],
+	         [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	        }
+	     ]}]};
 
 get_form(["running nodes", ENode, "import", "dir"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Import User from Dir")}]},
-	      {xmlelement, "instructions", [],
-	       [{xmlcdata,
-	         translate:translate(
-	           Lang, "Enter path to jabberd1.4 spool dir")}]},
-	      {xmlelement, "field", [{"type", "text-single"},
-				     {"label",
-				      translate:translate(
-					Lang, "Path to Dir")},
-				     {"var", "path"}],
-	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
-	      }
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Import User from Dir")}]},
+	        {xmlelement, "instructions", [],
+	         [{xmlcdata,
+	           translate:translate(
+	             Lang, "Enter path to jabberd1.4 spool dir")}]},
+	        {xmlelement, "field", [{"type", "text-single"},
+				       {"label",
+				        translate:translate(
+					  Lang, "Path to Dir")},
+				       {"var", "path"}],
+	         [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	        }
+	     ]}]};
 
 get_form(["config", "hostname"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Hostname Configuration")}]},
-	      {xmlelement, "instructions", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Choose host name")}]},
-	      {xmlelement, "field", [{"type", "text-single"},
-				     {"label",
-				      translate:translate(Lang, "Host name")},
-				     {"var", "hostname"}],
-	       [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+		 [{xmlcdata,
+		   translate:translate(
+		     Lang, "Hostname Configuration")}]},
+	        {xmlelement, "instructions", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Choose host name")}]},
+	        {xmlelement, "field", [{"type", "text-single"},
+				       {"label",
+				        translate:translate(Lang, "Host name")},
+				       {"var", "hostname"}],
+	         [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
+	     ]}]};
 
 get_form(["config", "acls"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "ACLs Configuration")}]},
-	      %{xmlelement, "instructions", [],
-	      % [{xmlcdata,
-	      %   translate:translate(
-	      %     Lang, "")}]},
-	      {xmlelement, "field", [{"type", "text-multi"},
-				     {"label",
-				      translate:translate(Lang, "ACLs")},
-				     {"var", "acls"}],
-	       lists:map(fun(S) ->
-				 {xmlelement, "value", [], [{xmlcdata, S}]}
-			 end,
-			 string:tokens(
-			   lists:flatten(io_lib:format("~p.",
-						       [ets:tab2list(acl)])),
-			   "\n"))
-	      }
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "ACLs Configuration")}]},
+	        %{xmlelement, "instructions", [],
+	        % [{xmlcdata,
+	        %   translate:translate(
+	        %     Lang, "")}]},
+	        {xmlelement, "field", [{"type", "text-multi"},
+				       {"label",
+				        translate:translate(Lang, "ACLs")},
+				       {"var", "acls"}],
+	         lists:map(fun(S) ->
+			       {xmlelement, "value", [], [{xmlcdata, S}]}
+			   end,
+			   string:tokens(
+			     lists:flatten(io_lib:format("~p.",
+						         [ets:tab2list(acl)])),
+			     "\n"))
+	        }
+	     ]}]};
 
 get_form(["config", "access"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Access Configuration")}]},
-	      %{xmlelement, "instructions", [],
-	      % [{xmlcdata,
-	      %   translate:translate(
-	      %     Lang, "")}]},
-	      {xmlelement, "field", [{"type", "text-multi"},
-				     {"label",
-				      translate:translate(
-					Lang, "Access Rules")},
-				     {"var", "access"}],
-	       lists:map(fun(S) ->
-				 {xmlelement, "value", [], [{xmlcdata, S}]}
-			 end,
-			 string:tokens(
-			   lists:flatten(
-			     io_lib:format(
-			       "~p.",
-			       [ets:select(config,
-					   [{{config, {access, '$1'}, '$2'},
-					     [],
-					     [{{access, '$1', '$2'}}]}])
-			       ])),
-			   "\n"))
-	      }
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Access Configuration")}]},
+	        %{xmlelement, "instructions", [],
+	        % [{xmlcdata,
+	        %   translate:translate(
+	        %     Lang, "")}]},
+	        {xmlelement, "field", [{"type", "text-multi"},
+				       {"label",
+				        translate:translate(
+					  Lang, "Access Rules")},
+				       {"var", "access"}],
+	         lists:map(fun(S) ->
+			       {xmlelement, "value", [], [{xmlcdata, S}]}
+			   end,
+			   string:tokens(
+			     lists:flatten(
+			       io_lib:format(
+			         "~p.",
+			         [ets:select(config,
+					     [{{config, {access, '$1'}, '$2'},
+					       [],
+					       [{{access, '$1', '$2'}}]}])
+			         ])),
+			     "\n"))
+	        }
+	     ]}]};
 
 get_form(["config", "remusers"], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Remove Users")}]},
-	      {xmlelement, "instructions", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Choose users to remove")}]}] ++
-     case catch ejabberd_auth:dirty_get_registered_users() of
-	 {'EXIT', Reason} ->
-	     [];
-	 Users ->
-	     lists:map(fun(U) ->
-			       ?XFIELD("boolean", U, U, "0")
-		       end, lists:sort(Users))
-     end
-    };
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Remove Users")}]},
+	        {xmlelement, "instructions", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Choose users to remove")}]}] ++
+      case catch ejabberd_auth:dirty_get_registered_users() of
+	  {'EXIT', Reason} ->
+	      [];
+	  Users ->
+	      lists:map(fun(U) ->
+			    ?XFIELD("boolean", U, U, "0")
+		        end, lists:sort(Users))
+      end
+    }]};
 
 get_form(_, Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
@@ -712,39 +730,45 @@ process_sm_iq(From, To,
 	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case Type of
 		set ->
-		    case xml:get_tag_attr_s("type", SubEl) of
-			"cancel" ->
-			    IQ#iq{type = result,
-				  sub_el = [{xmlelement, "query",
-					     [{"xmlns", XMLNS}], []}]};
-			"submit" ->
-			    XData = jlib:parse_xdata_submit(SubEl),
-			    case XData of
-				invalid ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-				_ ->
-				    Node =
-					string:tokens(
-					  xml:get_tag_attr_s("node", SubEl),
-					  "/"),
-				    case set_sm_form(
-					   User, Node, Lang, XData) of
-					{result, Res} ->
-					    IQ#iq{type = result,
-						  sub_el =
-						  [{xmlelement, "query",
-						    [{"xmlns", XMLNS}],
-						    Res
-						   }]};
-					{error, Error} ->
+		    XDataEl = find_xdata_el(SubEl),
+		    case XDataEl of
+		        false ->
+			    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
+			{xmlelement, _Name, Attrs, SubEls} ->
+			    case xml:get_attr_s("type", Attrs) of
+				"cancel" ->
+				    IQ#iq{type = result,
+					sub_el = [{xmlelement, "query",
+						   [{"xmlns", XMLNS}], []}]};
+				"submit" ->
+				    XData = jlib:parse_xdata_submit(XDataEl),
+				    case XData of
+					invalid ->
 					    IQ#iq{type = error,
-						  sub_el = [SubEl, Error]}
-				    end
-			    end;
-			_ ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+						  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+					_ ->
+					    Node =
+						string:tokens(
+						  xml:get_tag_attr_s("node", SubEl),
+						  "/"),
+					    case set_sm_form(
+						   User, Node, Lang, XData) of
+						{result, Res} ->
+						    IQ#iq{type = result,
+							sub_el =
+							    [{xmlelement, "query",
+							      [{"xmlns", XMLNS}],
+							      Res
+							     }]};
+						{error, Error} ->
+						    IQ#iq{type = error,
+							  sub_el = [SubEl, Error]}
+					    end
+				    end;
+				_ ->
+				    IQ#iq{type = error,
+					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+			    end
 		    end;
 		get ->
 		    Node =
@@ -764,34 +788,35 @@ process_sm_iq(From, To,
 
 
 get_sm_form(User, [], Lang) ->
-    {result, [{xmlelement, "title", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "Administration of " ++ User)}]},
-	      %{xmlelement, "instructions", [],
-	      % [{xmlcdata,
-	      %   translate:translate(
-	      %     Lang, "Choose host name")}]},
-	      {xmlelement, "field",
-	       [{"type", "list-single"},
-		{"label", translate:translate(Lang, "Action on user")},
-		{"var", "action"}],
-	       [{xmlelement, "value", [], [{xmlcdata, "edit"}]},
-		{xmlelement, "option",
-		 [{"label", translate:translate(Lang, "Edit Properties")}],
-		 [{xmlelement, "value", [], [{xmlcdata, "edit"}]}]},
-		{xmlelement, "option",
-		 [{"label", translate:translate(Lang, "Remove User")}],
-		 [{xmlelement, "value", [], [{xmlcdata, "remove"}]}]}
-	       ]},
-	      ?XFIELD("text-private", "Password", "password",
-		      ejabberd_auth:get_password_s(User))
-	      %{xmlelement, "field", [{"type", "text-single"},
-	      %  		     {"label",
-	      %  		      translate:translate(Lang, "Host name")},
-	      %  		     {"var", "hostname"}],
-	      % [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
-	     ]};
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(
+		     Lang, "Administration of " ++ User)}]},
+	        %{xmlelement, "instructions", [],
+	        % [{xmlcdata,
+	        %   translate:translate(
+	        %     Lang, "Choose host name")}]},
+	        {xmlelement, "field",
+	         [{"type", "list-single"},
+		  {"label", translate:translate(Lang, "Action on user")},
+		  {"var", "action"}],
+	         [{xmlelement, "value", [], [{xmlcdata, "edit"}]},
+		  {xmlelement, "option",
+		   [{"label", translate:translate(Lang, "Edit Properties")}],
+		   [{xmlelement, "value", [], [{xmlcdata, "edit"}]}]},
+		  {xmlelement, "option",
+		   [{"label", translate:translate(Lang, "Remove User")}],
+		   [{xmlelement, "value", [], [{xmlcdata, "remove"}]}]}
+	         ]},
+	        ?XFIELD("text-private", "Password", "password",
+		        ejabberd_auth:get_password_s(User))
+	        %{xmlelement, "field", [{"type", "text-single"},
+	        %  		     {"label",
+	        %  		      translate:translate(Lang, "Host name")},
+	        %  		     {"var", "hostname"}],
+	        % [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
+	     ]}]};
 
 get_sm_form(_, _, Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
@@ -820,3 +845,20 @@ set_sm_form(User, [], Lang, XData) ->
     end;
 set_sm_form(_, _, Lang, XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
+
+find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
+    find_xdata_el1(SubEls).
+
+find_xdata_el1([]) ->
+    false;
+
+find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
+    case xml:get_attr_s("xmlns", Attrs) of
+	?NS_XDATA ->
+	    {xmlelement, Name, Attrs, SubEls};
+	_ ->
+	    find_xdata_el1(Els)
+    end;
+
+find_xdata_el1([_ | Els]) ->
+    find_xdata_el1(Els).

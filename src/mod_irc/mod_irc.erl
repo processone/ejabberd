@@ -358,16 +358,16 @@ set_form(From, [], Lang, XData) ->
 				{atomic, _} ->
 				    {result, []};
 				_ ->
-				    {error, "406", "Not Acceptable"}
+				    {error, ?ERR_NOT_ACCEPTABLE}
 			    end;
 			_ ->
-			    {error, "406", "Not Acceptable"}
+			    {error, ?ERR_NOT_ACCEPTABLE}
 		    end;
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_NOT_ACCEPTABLE}
 	    end;
 	_ ->
-	    {error, "406", "Not Acceptable"}
+	    {error, ?ERR_NOT_ACCEPTABLE}
     end;
 
 

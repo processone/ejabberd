@@ -89,7 +89,7 @@ get_local_stats(["running nodes", _], []) ->
 get_local_stats(["running nodes", ENode], Names) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    {result,
 	     lists:map(fun(Name) -> get_node_stat(Node, Name) end, Names)}

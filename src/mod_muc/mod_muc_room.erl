@@ -63,7 +63,7 @@
 		config = #config{},
 		users = ?DICT:new(),
 		affiliations = ?DICT:new(),
-		history = lqueue_new(10),
+		history = lqueue_new(20),
 		subject = "",
 		subject_author = ""}).
 
@@ -831,7 +831,8 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 				  add_online_user(From, Nick, Role, StateData)),
 			    send_new_presence(From, NewState),
 			    send_existing_presences(From, NewState),
-			    case send_history(From, NewState) of
+			    Shift = count_stanza_shift(Nick, Els, NewState),
+			    case send_history(From, Shift, NewState) of
 				true ->
 				    ok;
 				_ ->
@@ -879,7 +880,259 @@ extract_password([{xmlelement, Name, Attrs, SubEls} = El | Els]) ->
 extract_password([_ | Els]) ->
     extract_password(Els).
 
+count_stanza_shift(Nick, Els, StateData) ->
+    HL = lqueue_to_list(StateData#state.history),
+    Since = extract_history(Els, "since"),
+    Shift0 = case Since of
+		 false ->
+		     0;
+		 _ ->
+		     Sin = calendar:datetime_to_gregorian_seconds(Since),
+		     count_seconds_shift(Sin, HL)
+	     end,
+    Seconds = extract_history(Els, "seconds"),
+    Shift1 = case Seconds of
+		 false ->
+		     0;
+		 _ ->
+		     Sec = calendar:datetime_to_gregorian_seconds(
+			     calendar:now_to_universal_time(now())) - Seconds,
+		     count_seconds_shift(Sec, HL)
+	     end,
+    MaxStanzas = extract_history(Els, "maxstanzas"),
+    Shift2 = case MaxStanzas of
+		 false ->
+		     0;
+		 _ ->
+		     count_maxstanzas_shift(MaxStanzas, HL)
+	     end,
+    MaxChars = extract_history(Els, "maxchars"),
+    Shift3 = case MaxChars of
+		 false ->
+		     0;
+		 _ ->
+		     count_maxchars_shift(Nick, MaxChars, HL)
+	     end,
+    lists:max([Shift0, Shift1, Shift2, Shift3]).
 
+count_seconds_shift(Seconds, HistoryList) ->
+    lists:sum(
+      lists:map(
+	fun({_Nick, _Packet, _HaveSubject, TimeStamp, _Size}) ->
+	    T = calendar:datetime_to_gregorian_seconds(TimeStamp),
+	    if
+		T < Seconds ->
+		    1;
+		true ->
+		    0
+	    end
+	end, HistoryList)).
+
+count_maxstanzas_shift(MaxStanzas, HistoryList) ->
+    S = length(HistoryList) - MaxStanzas,
+    if
+	S =< 0 ->
+	    0;
+	true ->
+	    S
+    end.
+
+count_maxchars_shift(Nick, MaxSize, HistoryList) ->
+    NLen = string:len(Nick) + 1,
+    Sizes = lists:map(
+	      fun({_Nick, _Packet, _HaveSubject, _TimeStamp, Size}) ->
+		  Size + NLen
+	      end, HistoryList),
+    calc_shift(MaxSize, Sizes).
+
+calc_shift(MaxSize, Sizes) ->
+    Total = lists:sum(Sizes),
+    calc_shift(MaxSize, Total, 0, Sizes).
+
+calc_shift(_MaxSize, _Size, Shift, []) ->
+    Shift;
+calc_shift(MaxSize, Size, Shift, [S | TSizes]) ->
+    if
+	MaxSize >= Size ->
+	    Shift;
+	true ->
+	    calc_shift(MaxSize, Size - S, Shift + 1, TSizes)
+    end.
+
+extract_history([], Type) ->
+    false;
+extract_history([{xmlelement, Name, Attrs, SubEls} = El | Els], Type) ->
+    case xml:get_attr_s("xmlns", Attrs) of
+	?NS_MUC ->
+	    AttrVal = xml:get_path_s(El,
+		       [{elem, "history"}, {attr, Type}]),
+	    case Type of
+		"since" ->
+		    parse_datetime(AttrVal);
+		_ ->
+		    case catch list_to_integer(AttrVal) of
+			{'EXIT', _} ->
+			    false;
+			IntVal ->
+			    if
+				IntVal >= 0 ->
+				    IntVal;
+				true ->
+				    false
+			    end
+		    end
+	    end;
+	_ ->
+	    extract_history(Els, Type)
+    end;
+extract_history([_ | Els], Type) ->
+    extract_history(Els, Type).
+
+% JEP-0082
+% yyyy-mm-ddThh:mm:ss[.sss]{Z|{+|-}hh:mm} -> {{yyyy, mm, dd}, {hh, mm, ss}} (UTC)
+parse_datetime(TimeStr) ->
+    DateTime = string:tokens(TimeStr, "T"),
+    case DateTime of
+	[Date, Time] ->
+	    case parse_date(Date) of
+		false ->
+		    false;
+		D ->
+		    case parse_time(Time) of
+			false ->
+			    false;
+			{T, TZH, TZM} ->
+			    S = calendar:datetime_to_gregorian_seconds(
+				  {D, T}),
+			    calendar:gregorian_seconds_to_datetime(
+			      S - TZH * 60 * 60 - TZM * 60 * 30)
+		    end
+	    end;
+	_ ->
+	    false
+    end.
+
+% yyyy-mm-dd
+parse_date(Date) ->
+    YearMonthDay = string:tokens(Date, "-"),
+    case length(YearMonthDay) of
+	3 ->
+	    [Y, M, D] = lists:map(
+			  fun(L)->
+			      case catch list_to_integer(L) of
+				  {'EXIT', _} ->
+				      false;
+				  Int ->
+				      Int
+			      end
+			  end, YearMonthDay),
+	    case catch calendar:valid_date(Y, M, D) of
+		true ->
+		    {Y, M, D};
+		_ ->
+		    false
+	    end;
+	_ ->
+	    false
+    end.
+
+% hh:mm:ss[.sss]TZD
+parse_time(Time) ->
+    case string:str(Time, "Z") of
+	0 ->
+	    parse_time_with_timezone(Time);
+	_ ->
+	    [T | _] = string:tokens(Time, "Z"),
+	    case parse_time1(T) of
+		false ->
+		    false;
+		TT ->
+		    {TT, 0, 0}
+	    end
+    end.
+
+parse_time_with_timezone(Time) ->
+    case string:str(Time, "+") of
+	0 ->
+	    case string:str(Time, "-") of
+		0 ->
+		    false;
+		_ ->
+		    parse_time_with_timezone(Time, "-")
+	    end;
+	_ ->
+	    parse_time_with_timezone(Time, "+")
+    end.
+
+parse_time_with_timezone(Time, Delim) ->
+    TTZ = string:tokens(Time, Delim),
+    case TTZ of
+	[T, TZ] ->
+	    case parse_timezone(TZ) of
+		false ->
+		    false;
+		{TZH, TZM} ->
+		    case parse_time1(T) of
+			false ->
+			    false;
+			TT ->
+			    case Delim of
+				"-" ->
+				    {TT, -TZH, -TZM};
+				"+" ->
+				    {TT, TZH, TZM};
+				_ ->
+				    false
+			    end
+		    end
+	    end;
+	_ ->
+	    false
+    end.
+
+parse_timezone(TZ) ->
+    case string:tokens(TZ, ":") of
+	[H, M] ->
+	    case check_list([{H, 12}, {M, 60}]) of
+		{[H, M], true} ->
+		    {H, M};
+		_ ->
+		    false
+	    end;
+	_ ->
+	    false
+    end.
+
+parse_time1(Time) ->
+    case string:tokens(Time, ".") of
+	[HMS | _] ->
+	    case string:tokens(HMS, ":") of
+		[H, M, S] ->
+		    case check_list([{H, 24}, {M, 60}, {S, 60}]) of
+			{[H1, M1, S1], true} ->
+			    {H1, M1, S1};
+			_ ->
+			    false
+		    end;
+		_ ->
+		    false
+	    end;
+	_ ->
+	    false
+    end.
+
+check_list(List) ->
+    lists:mapfoldl(
+      fun({L, N}, B)->
+	  case catch list_to_integer(L) of
+	      {'EXIT', _} ->
+		  {false, false};
+	      Int when (Int >= 0) and (Int =< N) ->
+		  {Int, B};
+	      _ ->
+		  {false, false}
+	  end
+      end, true, List).
 
 send_update_presence(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -1087,22 +1340,28 @@ add_message_to_history(FromNick, Packet, StateData) ->
 		      _ ->
 			  true
 		  end,
+    TimeStamp = calendar:now_to_universal_time(now()),
     TSPacket = append_subtags(Packet,
-			      [jlib:timestamp_to_xml(
-				 calendar:now_to_universal_time(
-				   now()))]),
-    Q1 = lqueue_in({FromNick, TSPacket, HaveSubject}, StateData#state.history),
+			      [jlib:timestamp_to_xml(TimeStamp)]),
+    {xmlelement, Name, Attrs, Els} = TSPacket,
+    SPacket = jlib:replace_from_to(
+		jlib:jid_replace_resource(StateData#state.jid, FromNick),
+		StateData#state.jid,
+		TSPacket),
+    Size = string:len(xml:element_to_string(SPacket)),
+    Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
+		   StateData#state.history),
     StateData#state{history = Q1}.
 
-send_history(JID, StateData) ->
+send_history(JID, Shift, StateData) ->
     lists:foldl(
-      fun({Nick, Packet, HaveSubject}, B) ->
+      fun({Nick, Packet, HaveSubject, _TimeStamp, _Size}, B) ->
 	      ejabberd_router:route(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		JID,
 		Packet),
 	      B or HaveSubject
-      end, false, lqueue_to_list(StateData#state.history)).
+      end, false, lists:nthtail(Shift, lqueue_to_list(StateData#state.history))).
 
 
 send_subject(JID, StateData) ->
