@@ -21,8 +21,11 @@
 	 wait_for_stream/2,
 	 wait_for_validation/2,
 	 stream_established/2,
+	 handle_event/3,
+	 handle_sync_event/4,
 	 handle_info/3,
-	 terminate/3]).
+	 terminate/3,
+	 code_change/4]).
 
 -include("ejabberd.hrl").
 
@@ -268,9 +271,9 @@ stream_established(closed, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-state_name(Event, From, StateData) ->
-    Reply = ok,
-    {reply, Reply, state_name, StateData}.
+%state_name(Event, From, StateData) ->
+%    Reply = ok,
+%    {reply, Reply, state_name, StateData}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_event/3
@@ -293,6 +296,9 @@ handle_event(Event, StateName, StateData) ->
 handle_sync_event(Event, From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
+
+code_change(OldVsn, StateName, StateData, Extra) ->
+    {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_info/3
@@ -400,20 +406,20 @@ bounce_messages(Reason) ->
 	    ok
     end.
 
-is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:result" ->
-    {key,
-     xml:get_attr_s("to", Attrs),
-     xml:get_attr_s("from", Attrs),
-     xml:get_attr_s("id", Attrs),
-     xml:get_cdata(Els)};
-is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:verify" ->
-    {verify,
-     xml:get_attr_s("to", Attrs),
-     xml:get_attr_s("from", Attrs),
-     xml:get_attr_s("id", Attrs),
-     xml:get_cdata(Els)};
-is_key_packet(_) ->
-    false.
+%is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:result" ->
+%    {key,
+%     xml:get_attr_s("to", Attrs),
+%     xml:get_attr_s("from", Attrs),
+%     xml:get_attr_s("id", Attrs),
+%     xml:get_cdata(Els)};
+%is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:verify" ->
+%    {verify,
+%     xml:get_attr_s("to", Attrs),
+%     xml:get_attr_s("from", Attrs),
+%     xml:get_attr_s("id", Attrs),
+%     xml:get_cdata(Els)};
+%is_key_packet(_) ->
+%    false.
 
 is_verify_res({xmlelement, Name, Attrs, Els}) when Name == "db:result" ->
     {result,

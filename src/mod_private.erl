@@ -10,6 +10,8 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
+-behaviour(gen_mod).
+
 -export([start/1,
 	 process_local_iq/3]).
 
@@ -18,12 +20,13 @@
 
 -record(private_storage, {userns, xml}).
 
-start(Type) ->
+start(Opts) ->
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, private_storage)}]),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_PRIVATE,
-				  ?MODULE, process_local_iq, Type).
+				  ?MODULE, process_local_iq, IQDisc).
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->

@@ -20,6 +20,9 @@
 %	 handle_sync_event/4, handle_info/3, terminate/3]).
 %
 -export([init/1, wait_for_stream/2, wait_for_auth/2, session_established/2,
+	 handle_event/3,
+	 handle_sync_event/4,
+	 code_change/4,
 	 handle_info/3,
 	 terminate/3]).
 
@@ -88,8 +91,6 @@ init([Socket]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-state_name(Event, StateData) ->
-    {next_state, state_name, StateData}.
 
 wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     % TODO
@@ -212,9 +213,9 @@ session_established(closed, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-state_name(Event, From, StateData) ->
-    Reply = ok,
-    {reply, Reply, state_name, StateData}.
+%state_name(Event, From, StateData) ->
+%    Reply = ok,
+%    {reply, Reply, state_name, StateData}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_event/3
@@ -237,6 +238,9 @@ handle_event(Event, StateName, StateData) ->
 handle_sync_event(Event, From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
+
+code_change(OldVsn, StateName, StateData, Extra) ->
+    {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_info/3

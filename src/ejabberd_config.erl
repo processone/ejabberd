@@ -38,6 +38,7 @@ load_file(File) ->
 	{ok, Terms} ->
 	    lists:foreach(fun process_term/1, Terms);
 	{error, Reason} ->
+	    ?ERROR_MSG("~p", [Reason]),
 	    exit(file:format_error(Reason))
     end.
 

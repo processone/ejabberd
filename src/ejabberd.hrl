@@ -19,7 +19,7 @@
 -endif.
 
 -define(ERROR_MSG(Format, Args),
-	error_logger:format("D(~p:~p:~p) : "++Format++"~n",
+	error_logger:format("E(~p:~p:~p): "++Format++"~n",
 			    [self(),?MODULE,?LINE]++Args)).
 
 

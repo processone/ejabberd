@@ -10,18 +10,22 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0]).
+-behaviour(gen_mod).
+
+-export([start/1, init/1]).
 
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
 
 
 
-start() ->
-    spawn(?MODULE, init, []).
+start(Opts) ->
+    %Host = gen_mod:get_opt(host, Opts),
+    Host = gen_mod:get_opt(host, Opts, "echo." ++ ?MYNAME),
+    spawn(?MODULE, init, [Host]).
 
-init() ->
-    ejabberd_router:register_local_route("echo." ++ ?MYNAME),
+init(Host) ->
+    ejabberd_router:register_local_route(Host),
     loop().
 
 loop() ->

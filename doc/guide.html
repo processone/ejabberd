@@ -18,7 +18,10 @@
 <H3 ALIGN=center>Alexey Shchepin<BR><A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR><A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
 <H3 ALIGN=center>January 23, 2003</H3> <DIV ALIGN=center><IMG SRC="logo.png">
- </DIV>
+ 
+ </DIV><BR>
+<BR>
+
 
 <BR>
 <BR>
@@ -90,9 +93,7 @@ values.<BR>
 serves. E.&nbsp;g. to use <TT>jabber.org</TT> domain add following line in config:
 <PRE>
 {host, "jabber.org"}.
-</PRE>This option is mandatory.<BR>
-<BR>
-<!--TOC subsubsection Listened Sockets-->
+</PRE><!--TOC subsubsection Listened Sockets-->
 
 <H4>3.1.2&nbsp;&nbsp; Listened Sockets</H4><!--SEC END -->
 
@@ -143,27 +144,29 @@ section&nbsp;<A HREF="#sec:modules">5</A> for detailed information on each modul
 Example:
 <PRE>
 {modules, [
-           {mod_register,  [one_queue]},
-           {mod_roster,    [one_queue]},
-           {mod_configure, [one_queue]},
-           {mod_disco,     [one_queue]},
-           {mod_stats,     [one_queue]},
-           {mod_vcard,     [one_queue]},
+           {mod_register,  []},
+           {mod_roster,    []},
+           {mod_configure, []},
+           {mod_disco,     []},
+           {mod_stats,     []},
+           {mod_vcard,     []},
            {mod_offline,   []},
-           {mod_echo,      []},
-           {mod_private,   [one_queue]},
-           {mod_time,      [one_queue]},
-           {mod_version,   [one_queue]}
+           {mod_echo,      [{host, "echo.e.localhost"}]},
+           {mod_private,   []},
+           {mod_time,      [{pdisc, no_queue}]},
+           {mod_version,   []}
           ]}.
 </PRE><!--TOC subsection Online Configuration-->
 
 <H3>3.2&nbsp;&nbsp; Online Configuration</H3><!--SEC END -->
 
 <A NAME="sec:onlineconfig"></A>To use facility of online reconfiguration of <TT>ejabberd</TT> needed to have
-<TT>mod_configure</TT> loaded (section&nbsp;<A HREF="#sec:modconfigure">5.3</A>). Also highly
-recommended to load <TT>mod_disco</TT> (section&nbsp;<A HREF="#sec:moddisco">5.4</A>), because
+<TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">5.4</A>). Also highly
+recommended to load <TT>mod_disco</TT> (see section&nbsp;<A HREF="#sec:moddisco">5.5</A>), because
 <TT>mod_configure</TT> highly integrates with it. Also recommended to use
 disco-capable client.<BR>
+<BR>
+TBD<BR>
 <BR>
 <!--TOC section Distribution-->
 
@@ -173,49 +176,85 @@ disco-capable client.<BR>
 
 <H2>5&nbsp;&nbsp; Built-in Modules</H2><!--SEC END -->
 
-<A NAME="sec:modules"></A><!--TOC subsection <TT>mod_register</TT>-->
+<A NAME="sec:modules"></A><!--TOC subsection Common Options-->
 
-<H3>5.1&nbsp;&nbsp; <TT>mod_register</TT></H3><!--SEC END -->
+<H3>5.1&nbsp;&nbsp; Common Options</H3><!--SEC END -->
+
+<A NAME="sec:modcommonopts"></A>Following options used by many modules, so they described in separate section.<BR>
+<BR>
+<!--TOC subsubsection Option <TT>iqdisc</TT>-->
+
+<H4>5.1.1&nbsp;&nbsp; Option <TT>iqdisc</TT></H4><!--SEC END -->
+Many modules define handlers for processing IQ queries of different namespaces
+to this server or to user (e.&nbsp;g. to <TT>myjabber.org</TT> or to
+<TT>user@myjabber.org</TT>). This option defines processing discipline of this
+queries. Possible values are:
+<DL COMPACT=compact>
+<DT>
+<TT>no_queue</TT><DD> All queries of namespace with this processing
+ discipline processed immediately. This also means that no other packets can
+ be processed until finished this. Hence this discipline is not recommended
+ if processing of query can take relative many time.
+
+<DT><TT>one_queue</TT><DD> In this case created separate queue for processing
+ IQ queries of namespace with this discipline, and processing of this queue
+ done in parallel with processing of other packets. This discipline is most
+ recommended.
+
+<DT><TT>parallel</TT><DD> In this case for all packets of namespace with this
+ discipline spawned separate Erlang process, so all this packets processed in
+ parallel. Although spawning of Erlang process have relative low cost, this
+ can broke server normal work, because Erlang have limit of 32000 processes.
+</DL>Example:
+<PRE>
+{modules, [
+           ...
+           {mod_time,      [{pdisc, no_queue}]},
+           ...
+          ]}.
+</PRE><!--TOC subsection <TT>mod_register</TT>-->
+
+<H3>5.2&nbsp;&nbsp; <TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="sec:modregister"></A><!--TOC subsection <TT>mod_roster</TT>-->
 
-<H3>5.2&nbsp;&nbsp; <TT>mod_roster</TT></H3><!--SEC END -->
+<H3>5.3&nbsp;&nbsp; <TT>mod_roster</TT></H3><!--SEC END -->
 
 <A NAME="sec:modroster"></A><!--TOC subsection <TT>mod_configure</TT>-->
 
-<H3>5.3&nbsp;&nbsp; <TT>mod_configure</TT></H3><!--SEC END -->
+<H3>5.4&nbsp;&nbsp; <TT>mod_configure</TT></H3><!--SEC END -->
 
 <A NAME="sec:modconfigure"></A><!--TOC subsection <TT>mod_disco</TT>-->
 
-<H3>5.4&nbsp;&nbsp; <TT>mod_disco</TT></H3><!--SEC END -->
+<H3>5.5&nbsp;&nbsp; <TT>mod_disco</TT></H3><!--SEC END -->
 
 <A NAME="sec:moddisco"></A><!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3>5.5&nbsp;&nbsp; <TT>mod_stats</TT></H3><!--SEC END -->
+<H3>5.6&nbsp;&nbsp; <TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A><!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3>5.6&nbsp;&nbsp; <TT>mod_vcard</TT></H3><!--SEC END -->
+<H3>5.7&nbsp;&nbsp; <TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="sec:modvcard"></A><!--TOC subsection <TT>mod_offline</TT>-->
 
-<H3>5.7&nbsp;&nbsp; <TT>mod_offline</TT></H3><!--SEC END -->
+<H3>5.8&nbsp;&nbsp; <TT>mod_offline</TT></H3><!--SEC END -->
 
 <A NAME="sec:modoffline"></A><!--TOC subsection <TT>mod_echo</TT>-->
 
-<H3>5.8&nbsp;&nbsp; <TT>mod_echo</TT></H3><!--SEC END -->
+<H3>5.9&nbsp;&nbsp; <TT>mod_echo</TT></H3><!--SEC END -->
 
 <A NAME="sec:modecho"></A><!--TOC subsection <TT>mod_private</TT>-->
 
-<H3>5.9&nbsp;&nbsp; <TT>mod_private</TT></H3><!--SEC END -->
+<H3>5.10&nbsp;&nbsp; <TT>mod_private</TT></H3><!--SEC END -->
 
 <A NAME="sec:modprivate"></A><!--TOC subsection <TT>mod_time</TT>-->
 
-<H3>5.10&nbsp;&nbsp; <TT>mod_time</TT></H3><!--SEC END -->
+<H3>5.11&nbsp;&nbsp; <TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="sec:modtime"></A><!--TOC subsection <TT>mod_version</TT>-->
 
-<H3>5.11&nbsp;&nbsp; <TT>mod_version</TT></H3><!--SEC END -->
+<H3>5.12&nbsp;&nbsp; <TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="sec:modversion"></A><!--HTMLFOOT-->
 <!--ENDHTML-->

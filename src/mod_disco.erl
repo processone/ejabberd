@@ -10,6 +10,8 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
+-behaviour(gen_mod).
+
 -export([start/1,
 	 process_local_iq_items/3,
 	 process_local_iq_info/3,
@@ -24,23 +26,16 @@
 	{iq, ID, result, XMLNS, [{xmlelement, "query",
 				  [{"xmlns", ?NS_DISCO_INFO}], []}]}).
 
-start(Type) ->
+start(Opts) ->
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_local_iq_items, Type),
+				  ?MODULE, process_local_iq_items, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_DISCO_INFO,
-				  ?MODULE, process_local_iq_info, Type),
+				  ?MODULE, process_local_iq_info, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_sm_iq_items, Type),
+				  ?MODULE, process_sm_iq_items, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_DISCO_INFO,
-				  ?MODULE, process_sm_iq_info, Type),
-    %ejabberd_local:register_iq_handler(?NS_DISCO_ITEMS,
-    %    			       ?MODULE, process_local_iq_items),
-    %ejabberd_local:register_iq_handler(?NS_DISCO_INFO,
-    %    			       ?MODULE, process_local_iq_info),
-    %ejabberd_sm:register_iq_handler(?NS_DISCO_ITEMS,
-    %    			    ?MODULE, process_sm_iq_items),
-    %ejabberd_sm:register_iq_handler(?NS_DISCO_INFO,
-    %    			    ?MODULE, process_sm_iq_info),
+				  ?MODULE, process_sm_iq_info, IQDisc),
     register_feature("iq"),
     register_feature("presence"),
     register_feature("presence-invisible"),

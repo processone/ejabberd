@@ -61,7 +61,7 @@ load_modules() ->
 	    ok;
 	Modules ->
 	    lists:foreach(fun({Module, Args}) ->
-				  apply(Module, start, Args)
+				  gen_mod:start_module(Module, Args)
 			  end, Modules)
     end.
 

@@ -1,8 +1,11 @@
 \documentclass[12pt]{article}
 
-%\usepackage{graphics}
+\usepackage{graphics}
 \usepackage{hevea}
 \usepackage{verbatim}
+
+
+\newcommand{\imgscale}{0.7}
 
 
 \newcommand{\ejabberd}{\texttt{ejabberd}}
@@ -32,11 +35,12 @@
 \begin{titlepage}
   \maketitle{}
   
-
-
-  %\includegraphics{logo.png}
   {\centering
     \imgsrc{logo.png}{}
+    \begin{latexonly}
+      \scalebox{\imgscale}{\includegraphics{logo.png}}
+    \end{latexonly}
+    \par
   }
 \end{titlepage}
 %\newpage
@@ -119,7 +123,7 @@ serves.  E.\,g. to use \texttt{jabber.org} domain add following line in config:
 {host, "jabber.org"}.
 \end{verbatim}
 
-This option is mandatory.
+%This option is mandatory.
 
 
 
@@ -172,17 +176,17 @@ section~\ref{sec:modules} for detailed information on each module.
 Example:
 \begin{verbatim}
 {modules, [
-           {mod_register,  [one_queue]},
-           {mod_roster,    [one_queue]},
-           {mod_configure, [one_queue]},
-           {mod_disco,     [one_queue]},
-           {mod_stats,     [one_queue]},
-           {mod_vcard,     [one_queue]},
+           {mod_register,  []},
+           {mod_roster,    []},
+           {mod_configure, []},
+           {mod_disco,     []},
+           {mod_stats,     []},
+           {mod_vcard,     []},
            {mod_offline,   []},
-           {mod_echo,      []},
-           {mod_private,   [one_queue]},
-           {mod_time,      [one_queue]},
-           {mod_version,   [one_queue]}
+           {mod_echo,      [{host, "echo.e.localhost"}]},
+           {mod_private,   []},
+           {mod_time,      [{iqdisc, no_queue}]},
+           {mod_version,   []}
           ]}.
 \end{verbatim}
 
@@ -210,6 +214,41 @@ TBD
 
 
 
+\subsection{Common Options}
+\label{sec:modcommonopts}
+
+Following options used by many modules, so they described in separate section.
+
+
+\subsubsection{Option \texttt{iqdisc}}
+
+Many modules define handlers for processing IQ queries of different namespaces
+to this server or to user (e.\,g. to \texttt{myjabber.org} or to
+\texttt{user@myjabber.org}).  This option defines processing discipline of this
+queries.  Possible values are:
+\begin{description}
+\item[\texttt{no\_queue}] All queries of namespace with this processing
+  discipline processed immediately.  This also means that no other packets can
+  be processed until finished this.  Hence this discipline is not recommended
+  if processing of query can take relative many time.
+\item[\texttt{one\_queue}] In this case created separate queue for processing
+  IQ queries of namespace with this discipline, and processing of this queue
+  done in parallel with processing of other packets. This discipline is most
+  recommended.
+\item[\texttt{parallel}] In this case for all packets of namespace with this
+  discipline spawned separate Erlang process, so all this packets processed in
+  parallel.  Although spawning of Erlang process have relative low cost, this
+  can broke server normal work, because Erlang have limit of 32000 processes.
+\end{description}
+
+Example:
+\begin{verbatim}
+{modules, [
+           ...
+           {mod_time,      [{iqdisc, no_queue}]},
+           ...
+          ]}.
+\end{verbatim}
 
 \subsection{\modregister{}}
 \label{sec:modregister}

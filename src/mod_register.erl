@@ -10,14 +10,17 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
+-behaviour(gen_mod).
+
 -export([start/1, init/0, process_iq/3]).
 
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
 
-start(Type) ->
+start(Opts) ->
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_REGISTER,
-				  ?MODULE, process_iq, Type),
+				  ?MODULE, process_iq, IQDisc),
     ok.
 
 init() ->
@@ -71,8 +74,8 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 
 
 try_register(User, Password) ->
-    case jlib:string_to_jid(User ++ "@" ++ "x") of
-	error ->
+    case jlib:is_nodename(User) of
+	false ->
 	    {error, "406", "Not Acceptable"};
 	_ ->
 	    case ejabberd_auth:try_register(User, Password) of

@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([]).
+-behaviour(gen_mod).
 
 -export([start/1,
 	 process_iq/3,
@@ -33,12 +33,13 @@
 		 xattrs = [],
 		 xs = []}).
 
-start(Type) ->
+start(Opts) ->
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
     mnesia:add_table_index(roster, user),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_ROSTER,
-				  ?MODULE, process_local_iq, Type).
+				  ?MODULE, process_local_iq, IQDisc).
 
 process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->
     case Type of

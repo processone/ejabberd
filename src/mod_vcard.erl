@@ -10,7 +10,9 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/1, init/0,
+-behaviour(gen_mod).
+
+-export([start/1, init/1,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 reindex_vcards/0]).
@@ -35,7 +37,7 @@
 -record(vcard, {user, vcard}).
 
 
-start(Type) ->
+start(Opts) ->
     mnesia:create_table(vcard, [{disc_only_copies, [node()]},
 				{attributes, record_info(fields, vcard)}]),
     mnesia:create_table(vcard_search,
@@ -53,15 +55,17 @@ start(Type) ->
     mnesia:add_table_index(vcard_search, lorgname),
     mnesia:add_table_index(vcard_search, lorgunit),
 
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_VCARD,
-				  ?MODULE, process_local_iq, Type),
+				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_VCARD,
-				  ?MODULE, process_sm_iq, Type),
-    spawn(?MODULE, init, []).
+				  ?MODULE, process_sm_iq, IQDisc),
+    Host = gen_mod:get_opt(host, Opts, "vjud." ++ ?MYNAME),
+    spawn(?MODULE, init, [Host]).
 
 
-init() ->
-    ejabberd_router:register_local_route("vjud." ++ ?MYNAME),
+init(Host) ->
+    ejabberd_router:register_local_route(Host),
     loop().
 
 loop() ->

@@ -9,7 +9,9 @@
 -module(mod_offline).
 -author('alexey@sevcom.net').
 
--export([start/0,
+-behaviour(gen_mod).
+
+-export([start/1,
 	 store_packet/3,
 	 resend_offline_messages/1]).
 
@@ -18,7 +20,7 @@
 -record(offline_msg, {user, timestamp, from, to, packet}).
 
 
-start() ->
+start(_) ->
     mnesia:create_table(offline_msg,
 			[{disc_only_copies, [node()]},
 			 {type, bag},

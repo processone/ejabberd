@@ -19,6 +19,7 @@
 	 remove_attr/2,
 	 string_to_jid/1,
 	 jid_to_string/1,
+	 is_nodename/1,
 	 tolower/1,
 	 jid_tolower/1,
 	 jid_remove_resource/1,
@@ -133,6 +134,17 @@ string_to_jid1([$/ | J], "") ->
     error;
 string_to_jid1([$/ | J], N) ->
     string_to_jid3(J, "", lists:reverse(N), "");
+string_to_jid1([C | J], N)
+  when (C =< 32) or
+       (C == $") or
+       (C == $&) or
+       (C == $') or
+       (C == $:) or
+       (C == $<) or
+       (C == $>) or
+       (C == 127)
+       ->
+    error;
 string_to_jid1([C | J], N) ->
     string_to_jid1(J, [C | N]);
 string_to_jid1([], "") ->
@@ -171,6 +183,30 @@ jid_to_string({Node, Server, Resource}) ->
 		 S2 ++ "/" ++ Resource
 	 end,
     S3.
+
+
+is_nodename([]) ->
+    false;
+is_nodename(J) ->
+    is_nodename1(J).
+
+is_nodename1([C | J])
+  when (C =< 32) or
+       (C == $") or
+       (C == $&) or
+       (C == $') or
+       (C == $:) or
+       (C == $<) or
+       (C == $>) or
+       (C == $@) or
+       (C == $/) or
+       (C == 127)
+       ->
+    false;
+is_nodename1([C | J]) ->
+    is_nodename1(J);
+is_nodename1([]) ->
+    true.
 
 
 

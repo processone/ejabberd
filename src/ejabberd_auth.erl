@@ -26,7 +26,12 @@
 	 is_user_exists/1]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
+-export([init/1,
+	 handle_call/3,
+	 handle_cast/2,
+	 code_change/3,
+	 handle_info/2,
+	 terminate/2]).
 
 -record(state, {}).
 
@@ -77,6 +82,10 @@ handle_call(Request, From, State) ->
 %%----------------------------------------------------------------------
 handle_cast(Msg, State) ->
     {noreply, State}.
+
+
+code_change(OldVsn, State, Extra) ->
+    {ok, State}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_info/2

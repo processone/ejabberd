@@ -10,14 +10,17 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
+-behaviour(gen_mod).
+
 -export([start/1,
 	 process_local_iq/3]).
 
 -include("namespaces.hrl").
 
-start(Type) ->
+start(Opts) ->
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_STATS,
-				  ?MODULE, process_local_iq, Type).
+				  ?MODULE, process_local_iq, IQDisc).
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
