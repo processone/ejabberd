@@ -298,6 +298,20 @@ handle_info({route_chan, Channel, Resource,
 		     From,
 		     To,
 		     ID, XMLNS, Type, SubEl);
+	{iq, ID, get, ?NS_VERSION = XMLNS, SubEl} ->
+	    Res = io_lib:format("PRIVMSG ~s :\001VERSION\001\r\n",
+				[Resource]),
+	    ?SEND(Res),
+	    Err = jlib:make_error_reply(
+		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    ejabberd_router:route(To, From, Err);
+	{iq, ID, get, ?NS_TIME = XMLNS, SubEl} ->
+	    Res = io_lib:format("PRIVMSG ~s :\001TIME\001\r\n",
+				[Resource]),
+	    ?SEND(Res),
+	    Err = jlib:make_error_reply(
+		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    ejabberd_router:route(To, From, Err);
 	_ ->
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
@@ -826,7 +840,9 @@ process_join(StateData, Channel, From, String) ->
 			     [{xmlelement, "item",
 			       [{"affiliation", "member"},
 				{"role", "participant"}],
-			       []}]}]}),
+			       []}]},
+			    {xmlelement, "status", [],
+			     [{xmlcdata, FromIdent}]}]}),
     {ok, Msg, _} = regexp:sub(String, ".*JOIN[^:]*:", ""),    
     ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
 			   StateData#state.myname, FromUser},
