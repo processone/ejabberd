@@ -28,7 +28,7 @@ start(Opts) ->
 init() ->
     ok.
 
-process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_iq(From, _To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
 	    UTag = xml:get_subtag(SubEl, "username"),
@@ -124,6 +124,7 @@ try_register(User, Password) ->
 		    case ejabberd_auth:try_register(User, Password) of
 			{atomic, ok} ->
 			    send_welcome_message(JID),
+			    send_registration_notifications(JID),
 			    ok;
 			{atomic, exists} ->
 			    {error, ?ERR_CONFLICT};
@@ -145,6 +146,31 @@ send_welcome_message(JID) ->
 	      {xmlelement, "message", [{"type", "normal"}],
 	       [{xmlelement, "subject", [], [{xmlcdata, Subj}]},
 		{xmlelement, "body", [], [{xmlcdata, Body}]}]});
+	_ ->
+	    ok
+    end.
+
+send_registration_notifications(UJID) ->
+    case ejabberd_config:get_local_option(registration_watchers) of
+	[] -> ok;
+	JIDs when is_list(JIDs) ->
+	    Body = lists:flatten(
+		     io_lib:format(
+		       "The user '~s' was just created on node ~w.",
+		       [jlib:jid_to_string(UJID), node()])),
+	    lists:foreach(
+	      fun(S) ->
+		      case jlib:string_to_jid(S) of
+			  error -> ok;
+			  JID ->
+			      ejabberd_router:route(
+				jlib:make_jid("", ?MYNAME, ""),
+				JID,
+				{xmlelement, "message", [{"type", "chat"}],
+				 [{xmlelement, "body", [],
+				   [{xmlcdata, Body}]}]})
+		      end
+	      end, JIDs);
 	_ ->
 	    ok
     end.

@@ -72,7 +72,7 @@ do_route(State, From, To, Packet) ->
 	   [From, To, Packet, 8]),
     case To of
 	#jid{luser = "", lresource = ""} ->
-	    {xmlelement, Name, Attrs, Els} = Packet,
+	    {xmlelement, Name, Attrs, _Els} = Packet,
 	    case Name of
 		"iq" ->
 		    process_iq(State, From, To, Packet);
@@ -83,15 +83,20 @@ do_route(State, From, To, Packet) ->
 		_ ->
 		    ok
 	    end;
-	#jid{luser = ""} ->
-	    {xmlelement, _Name, Attrs, _Els} = Packet,
+	#jid{luser = "", lresource = Res} ->
+	    {xmlelement, Name, Attrs, _Els} = Packet,
 	    case xml:get_attr_s("type", Attrs) of
 		"error" -> ok;
 		"result" -> ok;
 		_ ->
-		    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
-		    ejabberd_router:route(
-		      jlib:make_jid("", State#state.mydomain, ""), From, Err)
+		    case {Res, Name} of
+			{"announce/online", "message"} ->
+			    announce_online(From, To, Packet);
+			_ ->
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERR_ITEM_NOT_FOUND),
+			    ejabberd_router:route(To, From, Err)
+		    end
 	    end;
 	_ ->
 	    ejabberd_sm ! {route, From, To, Packet}
@@ -100,7 +105,7 @@ do_route(State, From, To, Packet) ->
 process_iq(State, From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
-	{iq, ID, Type, XMLNS, SubEl} ->
+	{iq, _ID, Type, XMLNS, _SubEl} ->
 	    case jlib:is_iq_request_type(Type) of
 		true ->
 		    case ets:lookup(State#state.iqtable, XMLNS) of
@@ -121,10 +126,7 @@ process_iq(State, From, To, Packet) ->
 			[] ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-			    ejabberd_router ! {route,
-					       {"", State#state.mydomain, ""},
-					       From,
-					       Err}
+			    ejabberd_router:route(To, From, Err)
 		    end;
 		_ ->
 		    ok
@@ -133,8 +135,7 @@ process_iq(State, From, To, Packet) ->
 	    ok;
 	_ ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
-	    ejabberd_router ! {route,
-			       {"", State#state.mydomain, ""}, From, Err},
+	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
 
@@ -146,4 +147,19 @@ register_iq_handler(XMLNS, Module, Fun, Opts) ->
 
 unregister_iq_handler(XMLNS) ->
     ejabberd_local ! {unregister_iq_handler, XMLNS}.
+
+
+announce_online(From, To, Packet) ->
+    case acl:match_rule(announce, From) of
+	deny ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    ejabberd_router:route(To, From, Err);
+	allow ->
+	    Local = jlib:make_jid("", ?MYNAME, ""),
+	    lists:foreach(
+	      fun({U, R}) ->
+		      Dest = jlib:make_jid(U, ?MYNAME, R),
+		      ejabberd_router:route(Local, Dest, Packet)
+	      end, ejabberd_sm:dirty_get_sessions_list())
+    end.
 

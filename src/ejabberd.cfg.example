@@ -33,6 +33,13 @@
 % Replace them with 'none' if you don't want to send such message:
 %{welcome_message, none}.
 
+% List of people who will get notifications about registered users
+%{registration_watchers, ["admin1@localhost",
+%                         "admin2@localhost"]}.
+
+% Only admins can send announcement messages:
+{access, announce, [{allow, admin}]}.
+
 
 % Only non-blocked users can use c2s connections:
 {access, c2s, [{deny, blocked},
@@ -58,12 +65,13 @@
 	  {5223, ejabberd_c2s,     [{access, c2s},
 				    {ssl, [{certfile, "./ssl.pem"}]}]},
           {5269, ejabberd_s2s_in,  []},
-          {8888, ejabberd_service, [{host,
-				     "conference.e.localhost",
-				     [{password, "asdqwe"}]}]}
+          {8888, ejabberd_service, [{hosts,
+				     ["conference.e.localhost",
+				      "muc.e.localhost"],
+				     [{password, "secret"}]}]}
          ]}.
 
-% If SRV lookup fails, then port 5269 used to communicate with other servers
+% If SRV lookup fails, then port 5269 is used to communicate with remote server
 {outgoing_s2s_port, 5269}.
 
 

@@ -452,7 +452,7 @@ except admins have traffic limit 1000\,b/s.
                                     {ssl, [{certfile, "/path/to/ssl.pem"}]}]},
           {5269, ejabberd_s2s_in,  []},
           {8888, ejabberd_service,
-           [{host, "conference.example.org", [{password, "secret"}]}]}
+           [{hosts, ["conference.example.org"], [{password, "secret"}]}]}
          ]}.
 \end{verbatim}
 
