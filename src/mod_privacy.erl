@@ -551,25 +551,29 @@ check_packet(User,
 		{message, in} ->
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
-			mod_roster:get_jid_info(User, LJID),
+			ejabberd_hooks:run_fold(
+			  roster_get_jid_info, {none, []}, [User, LJID]),
 		    check_packet_aux(List, message,
 				     LJID, Subscription, Groups);
 		{iq, in} ->
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
-			mod_roster:get_jid_info(User, LJID),
+			ejabberd_hooks:run_fold(
+			  roster_get_jid_info, {none, []}, [User, LJID]),
 		    check_packet_aux(List, iq,
 				     LJID, Subscription, Groups);
 		{presence, in} ->
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
-			mod_roster:get_jid_info(User, LJID),
+			ejabberd_hooks:run_fold(
+			  roster_get_jid_info, {none, []}, [User, LJID]),
 		    check_packet_aux(List, presence_in,
 				     LJID, Subscription, Groups);
 		{presence, out} ->
 		    LJID = jlib:jid_tolower(To),
 		    {Subscription, Groups} =
-			mod_roster:get_jid_info(User, LJID),
+			ejabberd_hooks:run_fold(
+			  roster_get_jid_info, {none, []}, [User, LJID]),
 		    check_packet_aux(List, presence_out,
 				     LJID, Subscription, Groups);
 		_ ->

@@ -27,10 +27,14 @@ start(Opts) ->
     mnesia:create_table(private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, private_storage)}]),
+    ejabberd_hooks:add(remove_user,
+		       ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVATE,
 				  ?MODULE, process_sm_iq, IQDisc).
 
 stop() ->
+    ejabberd_hooks:delete(remove_user,
+			  ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_PRIVATE).
 
 

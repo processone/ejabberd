@@ -41,6 +41,8 @@ start(_) ->
 		       ?MODULE, store_packet, 50),
     ejabberd_hooks:add(resend_offline_messages_hook,
 		       ?MODULE, pop_offline_messages, 50),
+    ejabberd_hooks:add(remove_user,
+		       ?MODULE, remove_user, 50),
     register(?PROCNAME, spawn(?MODULE, init, [])).
 
 init() ->
@@ -84,6 +86,8 @@ stop() ->
 			  ?MODULE, store_packet, 50),
     ejabberd_hooks:delete(resend_offline_messages_hook,
 			  ?MODULE, pop_offline_messages, 50),
+    ejabberd_hooks:delete(remove_user,
+			  ?MODULE, remove_user, 50),
     exit(whereis(?PROCNAME), stop),
     ok.
 

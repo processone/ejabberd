@@ -29,10 +29,16 @@ start(Opts) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_LAST,
 				  ?MODULE, process_sm_iq, IQDisc),
+    ejabberd_hooks:add(remove_user,
+		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(unset_presence_hook,
 		       ?MODULE, on_presence_update, 50).
 
 stop() ->
+    ejabberd_hooks:delete(remove_user,
+			  ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(unset_presence_hook,
+			  ?MODULE, on_presence_update, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_LAST),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_LAST).
 
@@ -57,7 +63,8 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	get ->
 	    User = To#jid.luser,
 	    {Subscription, _Groups} =
-		mod_roster:get_jid_info(User, From),
+		ejabberd_hooks:run_fold(
+		  roster_get_jid_info, {none, []}, [User, From]),
 	    if
 		(Subscription == both) or (Subscription == from) ->
 		    case catch mod_privacy:get_user_list(User) of

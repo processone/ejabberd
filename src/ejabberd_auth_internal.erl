@@ -133,11 +133,7 @@ remove_user(User) ->
 		mnesia:delete({passwd, LUser})
         end,
     mnesia:transaction(F),
-    catch mod_roster:remove_user(User),
-    catch mod_offline:remove_user(User),
-    catch mod_last:remove_user(User),
-    catch mod_vcard:remove_user(User),
-    catch mod_private:remove_user(User).
+    ejabberd_hooks:run(remove_user, [User]).
 
 remove_user(User, Password) ->
     LUser = jlib:nodeprep(User),
@@ -154,11 +150,7 @@ remove_user(User, Password) ->
         end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    catch mod_roster:remove_user(User),
-	    catch mod_offline:remove_user(User),
-	    catch mod_last:remove_user(User),
-	    catch mod_vcard:remove_user(User),
-	    catch mod_private:remove_user(User),
+	    ejabberd_hooks:run(remove_user, [User]),
 	    ok;
 	{atomic, Res} ->
 	    Res;

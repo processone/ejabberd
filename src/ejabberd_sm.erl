@@ -166,24 +166,28 @@ do_route(From, To, Packet) ->
 		    {Pass, Subsc} =
 			case xml:get_attr_s("type", Attrs) of
 			    "subscribe" ->
-				{mod_roster:in_subscription(User,
-							    From,
-							    subscribe),
+				{ejabberd_hooks:run_fold(
+				   roster_in_subscription,
+				   false,
+				   [User, From, subscribe]),
 				 true};
 			    "subscribed" ->
-				{mod_roster:in_subscription(User,
-							    From,
-							    subscribed),
+				{ejabberd_hooks:run_fold(
+				   roster_in_subscription,
+				   false,
+				   [User, From, subscribed]),
 				 true};
 			    "unsubscribe" ->
-				{mod_roster:in_subscription(User,
-							    From,
-							    unsubscribe),
+				{ejabberd_hooks:run_fold(
+				   roster_in_subscription,
+				   false,
+				   [User, From, unsubscribe]),
 				 true};
 			    "unsubscribed" ->
-				{mod_roster:in_subscription(User,
-							    From,
-							    unsubscribed),
+				{ejabberd_hooks:run_fold(
+				   roster_in_subscription,
+				   false,
+				   [User, From, unsubscribed]),
 				 true};
 			    _ ->
 				{true, false}

@@ -1,3 +1,25 @@
+2004-12-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Roster support via ODBC (not completed)
+
+	* src/ejabberd_auth_internal.erl: Added remove_user hook
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/mod_roster.erl: Use remove_user hook
+	* src/mod_offline.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+	* src/mod_last.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+	* src/mod_private.erl: Likewise
+
+	* src/mod_roster.erl: Added hooks for functions exported by
+	mod_roster
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_sm.erl: Likewise
+	* src/mod_privacy.erl: Likewise
+	* src/mod_last.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+
 2004-12-14  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_sm.erl: Updated missed message passing from

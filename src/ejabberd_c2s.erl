@@ -314,7 +314,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    Res = setelement(4, Res1, []),
 			    send_element(StateData, Res),
 			    change_shaper(StateData, JID),
-			    {Fs, Ts} = mod_roster:get_subscription_lists(U),
+			    {Fs, Ts} = ejabberd_hooks:run_fold(
+					 roster_get_subscription_lists,
+					 {[], []},
+					 [U]),
 			    LJID = jlib:jid_tolower(
 				     jlib:jid_remove_resource(JID)),
 			    Fs1 = [LJID | Fs],
@@ -606,7 +609,10 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
-		    {Fs, Ts} = mod_roster:get_subscription_lists(U),
+		    {Fs, Ts} = ejabberd_hooks:run_fold(
+				 roster_get_subscription_lists,
+				 {[], []},
+				 [U]),
 		    LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
 		    Fs1 = [LJID | Fs],
 		    Ts1 = [LJID | Ts],
@@ -1179,19 +1185,23 @@ presence_track(From, To, Packet, StateData) ->
 			    pres_a = A};
 	"subscribe" ->
 	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
-	    mod_roster:out_subscription(User, To, subscribe),
+	    ejabberd_hooks:run(roster_out_subscription,
+			       [User, To, subscribe]),
 	    StateData;
 	"subscribed" ->
 	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
-	    mod_roster:out_subscription(User, To, subscribed),
+	    ejabberd_hooks:run(roster_out_subscription,
+			       [User, To, subscribed]),
 	    StateData;
 	"unsubscribe" ->
 	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
-	    mod_roster:out_subscription(User, To, unsubscribe),
+	    ejabberd_hooks:run(roster_out_subscription,
+			       [User, To, unsubscribe]),
 	    StateData;
 	"unsubscribed" ->
 	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
-	    mod_roster:out_subscription(User, To, unsubscribed),
+	    ejabberd_hooks:run(roster_out_subscription,
+			       [User, To, unsubscribed]),
 	    StateData;
 	"error" ->
 	    ejabberd_router:route(From, To, Packet),

@@ -174,11 +174,7 @@ remove_user(User) ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    catch ejabberd_odbc:sql_query(
 		    ["delete from users where username='", Username ,"'"]),
-	    catch mod_roster:remove_user(User),
-	    catch mod_offline:remove_user(User),
-	    catch mod_last:remove_user(User),
-	    catch mod_vcard:remove_user(User),
-	    catch mod_private:remove_user(User)
+	    ejabberd_hooks:run(remove_user, [User])
     end.
 
 remove_user(User, Password) ->
@@ -196,11 +192,7 @@ remove_user(User, Password) ->
 		   "where username='", Username, "' and password='", Pass, "';"
 		   "commit"]) of
 		{selected, ["password"], [{Password}]} ->
-		    catch mod_roster:remove_user(User),
-		    catch mod_offline:remove_user(User),
-		    catch mod_last:remove_user(User),
-		    catch mod_vcard:remove_user(User),
-		    catch mod_private:remove_user(User),
+		    ejabberd_hooks:run(remove_user, [User]),
 		    ok;
 		{selected, ["password"], []} ->
 		    not_exists;

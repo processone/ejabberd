@@ -1,12 +1,12 @@
 %%%----------------------------------------------------------------------
-%%% File    : mod_roster.erl
+%%% File    : mod_roster_odbc.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Roster management
-%%% Created : 11 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
+%%% Created : 15 Dec 2004 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
--module(mod_roster).
+-module(mod_roster_odbc).
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
@@ -25,21 +25,16 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(roster, {uj,
-		 user,
+-record(roster, {user,
 		 jid,
 		 name = "",
 		 subscription = none,
-		 ask = none,
-		 groups = [],
-		 xattrs = [],
-		 xs = []}).
+		 ask = none}).
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mnesia:create_table(roster,[{disc_copies, [node()]},
-				{attributes, record_info(fields, roster)}]),
-    mnesia:add_table_index(roster, user),
+    ejabberd_hooks:add(roster_out_subscription,
+		       ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(roster_in_subscription,
 		       ?MODULE, in_subscription, 50),
     ejabberd_hooks:add(roster_out_subscription,
@@ -109,10 +104,24 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
 
 
 process_iq_get(From, _To, #iq{sub_el = SubEl} = IQ) ->
-    #jid{luser = LUser} = From,
-    case catch mnesia:dirty_index_read(roster, LUser, #roster.user) of
-	Items when is_list(Items) ->
-	    XItems = lists:map(fun item_to_xml/1, Items),
+    LUser = From#jid.luser,
+    Username = ejabberd_odbc:escape(LUser),
+    case catch ejabberd_odbc:sql_query(
+		 ["select username, jid, nick, subscription, ask, "
+		  "server, subscribe, type from rosterusers "
+		  "where username='", Username, "'"]) of
+	{selected, ["username", "jid", "nick", "subscription", "ask",
+		    "server", "subscribe", "type"],
+	 Items} when is_list(Items) ->
+	    XItems = lists:flatmap(
+		       fun(I) ->
+			       case raw_to_record(I) of
+				   error ->
+				       [];
+				   R ->
+				       [item_to_xml(R)]
+			       end
+		       end, Items),
 	    IQ#iq{type = result,
 		  sub_el = [{xmlelement, "query",
 			     [{"xmlns", ?NS_ROSTER}],
@@ -141,19 +150,19 @@ item_to_xml(Item) ->
 		 remove ->
 		     [{"subscription", "remove"} | Attrs2]
 	     end,
-    Attrs4 = case ask_to_pending(Item#roster.ask) of
-		 out ->
-		     [{"ask", "subscribe"} | Attrs3];
-		 both ->
-		     [{"ask", "subscribe"} | Attrs3];
-		 _ ->
-		     Attrs3
-	     end,
-    Attrs = Attrs4 ++ Item#roster.xattrs,
-    SubEls1 = lists:map(fun(G) ->
-				{xmlelement, "group", [], [{xmlcdata, G}]}
-			end, Item#roster.groups),
-    SubEls = SubEls1 ++ Item#roster.xs,
+    Attrs = case ask_to_pending(Item#roster.ask) of
+		out ->
+		    [{"ask", "subscribe"} | Attrs3];
+		both ->
+		    [{"ask", "subscribe"} | Attrs3];
+		_ ->
+		    Attrs3
+	    end,
+    % TODO
+    %SubEls = lists:map(fun(G) ->
+    %    		       {xmlelement, "group", [], [{xmlcdata, G}]}
+    %    	       end, Item#roster.groups),
+    SubEls = [],
     {xmlelement, "item", Attrs, SubEls}.
 
 
@@ -171,42 +180,66 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 	_ ->
 	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
 	    LJID = jlib:jid_tolower(JID1),
-	    F = fun() ->
-			Res = mnesia:read({roster, {LUser, LJID}}),
-			Item = case Res of
-				   [] ->
-				       #roster{uj = {LUser, LJID},
-					       user = LUser,
-					       jid = JID};
-				   [I] ->
-				       I#roster{user = LUser,
-						jid = JID,
-						name = "",
-						groups = [],
-						xattrs = [],
-						xs = []}
-			       end,
-			Item1 = process_item_attrs(Item, Attrs),
-			Item2 = process_item_els(Item1, Els),
-			case Item2#roster.subscription of
-			    remove ->
-				mnesia:delete({roster, {LUser, LJID}});
-			    _ ->
-				mnesia:write(Item2)
-			end,
-			{Item, Item2}
-		end,
-	    case mnesia:transaction(F) of
-		{atomic, {OldItem, Item}} ->
-		    push_item(User, To, Item),
-		    case Item#roster.subscription of
+	    Username = ejabberd_odbc:escape(LUser),
+	    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+	    case catch ejabberd_odbc:sql_query(
+			 ["select username, jid, nick, subscription, ask, "
+			  "server, subscribe, type from rosterusers "
+			  "where username='", Username, "' "
+			  "and jid='", SJID, "'"]) of
+		{selected, ["username", "jid", "nick", "subscription", "ask",
+			    "server", "subscribe", "type"],
+		 Res} ->
+		    Item = case Res of
+			       [] ->
+				   #roster{user = LUser,
+					   jid = LJID};
+			       [I] ->
+				   (raw_to_record(I))#roster{user = LUser,
+							     jid = JID,
+							     name = ""}
+			   end,
+		    Item1 = process_item_attrs(Item, Attrs),
+		    case Item1#roster.subscription of
 			remove ->
-			    IsTo = case OldItem#roster.subscription of
+			    catch ejabberd_odbc:sql_query(
+				    ["begin;"
+				     "delete from rosterusers "
+				     "      where username='", Username, "' "
+				     "        and jid='", SJID, "';"
+				     "delete from rostergroups "
+				     "      where username='", Username, "' "
+				     "        and jid='", SJID, "';"
+				     "commit"]);
+			_ ->
+			    ItemVals = record_to_string(Item1),
+			    catch ejabberd_odbc:sql_query(
+				    ["begin;"
+				     "delete from rosterusers "
+				     "      where username='", Username, "' "
+				     "        and jid='", SJID, "';"
+				     "insert into rosterusers("
+				     "              username, jid, nick, "
+				     "              subscription, ask, "
+				     "              server, subscribe, type) "
+				     " values ", ItemVals, ";"
+				     "delete from rostergroups "
+				     "      where username='", Username, "' "
+				     "        and jid='", SJID, "';"
+				     % TODO
+				     "commit"])
+
+			    %mnesia:write(Item1)
+		    end,
+		    push_item(User, To, Item1),
+		    case Item1#roster.subscription of
+			remove ->
+			    IsTo = case Item#roster.subscription of
 				       both -> true;
 				       to -> true;
 				       _ -> false
 				   end,
-			    IsFrom = case OldItem#roster.subscription of
+			    IsFrom = case Item#roster.subscription of
 					 both -> true;
 					 from -> true;
 					 _ -> false
@@ -214,7 +247,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			    if IsTo ->
 				    ejabberd_router:route(
 				      jlib:jid_remove_resource(From),
-				      jlib:make_jid(OldItem#roster.jid),
+				      jlib:make_jid(Item#roster.jid),
 				      {xmlelement, "presence",
 				       [{"type", "unsubscribe"}],
 				       []});
@@ -223,7 +256,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			    if IsFrom ->
 				    ejabberd_router:route(
 				      jlib:jid_remove_resource(From),
-				      jlib:make_jid(OldItem#roster.jid),
+				      jlib:make_jid(Item#roster.jid),
 				      {xmlelement, "presence",
 				       [{"type", "unsubscribed"}],
 				       []});
@@ -264,28 +297,27 @@ process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
 	"ask" ->
 	    process_item_attrs(Item, Attrs);
 	_ ->
-	    XAttrs = Item#roster.xattrs,
-	    process_item_attrs(Item#roster{xattrs = [{Attr, Val} | XAttrs]},
-			       Attrs)
+	    process_item_attrs(Item, Attrs)
     end;
 process_item_attrs(Item, []) ->
     Item.
 
 
-process_item_els(Item, [{xmlelement, Name, Attrs, SEls} | Els]) ->
-    case Name of
-	"group" ->
-	    Groups = [xml:get_cdata(SEls) | Item#roster.groups],
-	    process_item_els(Item#roster{groups = Groups}, Els);
-	_ ->
-	    case xml:get_attr_s("xmlns", Attrs) of
-		"" ->
-		    process_item_els(Item, Els);
-		_ ->
-		    XEls = [{xmlelement, Name, Attrs, SEls} | Item#roster.xs],
-		    process_item_els(Item#roster{xs = XEls}, Els)
-	    end
-    end;
+% TODO
+%process_item_els(Item, [{xmlelement, Name, Attrs, SEls} | Els]) ->
+%    case Name of
+%	"group" ->
+%	    Groups = [xml:get_cdata(SEls) | Item#roster.groups],
+%	    process_item_els(Item#roster{groups = Groups}, Els);
+%	_ ->
+%	    case xml:get_attr_s("xmlns", Attrs) of
+%		"" ->
+%		    process_item_els(Item, Els);
+%		_ ->
+%		    XEls = [{xmlelement, Name, Attrs, SEls} | Item#roster.xs],
+%		    process_item_els(Item#roster{xs = XEls}, Els)
+%	    end
+%    end;
 process_item_els(Item, [{xmlcdata, _} | Els]) ->
     process_item_els(Item, Els);
 process_item_els(Item, []) ->
@@ -332,15 +364,21 @@ push_item(User, Resource, From, Item) ->
 
 get_subscription_lists(_, User) ->
     LUser = jlib:nodeprep(User),
-    case mnesia:dirty_index_read(roster, LUser, #roster.user) of
-	Items when is_list(Items) ->
+    Username = ejabberd_odbc:escape(LUser),
+    case catch ejabberd_odbc:sql_query(
+		 ["select username, jid, nick, subscription, ask, "
+		  "server, subscribe, type from rosterusers "
+		  "where username='", Username, "'"]) of
+	{selected, ["username", "jid", "nick", "subscription", "ask",
+		    "server", "subscribe", "type"],
+	 Items} when is_list(Items) ->
 	    fill_subscription_lists(Items, [], []);
 	_ ->
 	    {[], []}
     end.
 
 fill_subscription_lists([I | Is], F, T) ->
-    J = element(2, I#roster.uj),
+    J = I#roster.jid,
     case I#roster.subscription of
 	both ->
 	    fill_subscription_lists(Is, [J | F], [J | T]);
@@ -369,70 +407,79 @@ out_subscription(User, JID, Type) ->
 process_subscription(Direction, User, JID1, Type) ->
     LUser = jlib:nodeprep(User),
     LJID = jlib:jid_tolower(JID1),
-    F = fun() ->
-		Item = case mnesia:read({roster, {LUser, LJID}}) of
-			   [] ->
-			       JID = {JID1#jid.user,
-				      JID1#jid.server,
-				      JID1#jid.resource},
-			       #roster{uj = {LUser, LJID},
-				       user = LUser,
-				       jid = JID};
-			   [I] ->
-			       I
-		       end,
-		NewState = case Direction of
-			       out ->
-				   out_state_change(Item#roster.subscription,
-						    Item#roster.ask,
-						    Type);
-			       in ->
-				   in_state_change(Item#roster.subscription,
-						   Item#roster.ask,
-						   Type)
-			   end,
-		AutoReply = case Direction of
-				out ->
-				    none;
-				in ->
-				    in_auto_reply(Item#roster.subscription,
-						  Item#roster.ask,
-						  Type)
-			    end,
-		case NewState of
-		    none ->
-			{none, AutoReply};
-		    {Subscription, Pending} ->
-			NewItem = Item#roster{subscription = Subscription,
-					      ask = Pending},
-			mnesia:write(NewItem),
-			{{push, NewItem}, AutoReply}
-		end
-	end,
-    case mnesia:transaction(F) of
-	{atomic, {Push, AutoReply}} ->
-	    case AutoReply of
-		none ->
-		    ok;
-		_ ->
-		    T = case AutoReply of
-			    subscribed -> "subscribed";
-			    unsubscribed -> "unsubscribed"
-			end,
-		    ejabberd_router:route(
-		      jlib:make_jid(User, ?MYNAME, ""), JID1,
-		      {xmlelement, "presence", [{"type", T}], []})
-	    end,
-	    case Push of
-		{push, Item} ->
-		    push_item(User, jlib:make_jid("", ?MYNAME, ""), Item),
-		    true;
-		none ->
-		    false
-	    end;
+    Username = ejabberd_odbc:escape(LUser),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+    Item = case catch ejabberd_odbc:sql_query(
+			["select username, jid, nick, subscription, ask, "
+			 "server, subscribe, type from rosterusers "
+			 "where username='", Username, "' "
+			 "and jid='", SJID, "'"]) of
+	       {selected, ["username", "jid", "nick", "subscription", "ask",
+			   "server", "subscribe", "type"],
+		[I]} ->
+		   raw_to_record(I);
+	       _ ->
+		   #roster{user = LUser,
+			   jid = LJID}
+	   end,
+    NewState = case Direction of
+		   out ->
+		       out_state_change(Item#roster.subscription,
+					Item#roster.ask,
+					Type);
+		   in ->
+		       in_state_change(Item#roster.subscription,
+				       Item#roster.ask,
+				       Type)
+	       end,
+    AutoReply = case Direction of
+		    out ->
+			none;
+		    in ->
+			in_auto_reply(Item#roster.subscription,
+				      Item#roster.ask,
+				      Type)
+		end,
+    Push = case NewState of
+	       none ->
+		   none;
+	       {Subscription, Pending} ->
+		   NewItem = Item#roster{subscription = Subscription,
+					 ask = Pending},
+		   ItemVals = record_to_string(NewItem),
+		   catch ejabberd_odbc:sql_query(
+			   ["begin;"
+			    "delete from rosterusers "
+			    "      where username='", Username, "' "
+			    "        and jid='", SJID, "';"
+			    "insert into rosterusers("
+			    "              username, jid, nick, "
+			    "              subscription, ask, "
+			    "              server, subscribe, type) "
+			    " values ", ItemVals, ";"
+			    "commit"]),
+		   {push, NewItem}
+	   end,
+    case AutoReply of
+	none ->
+	    ok;
 	_ ->
+	    T = case AutoReply of
+		    subscribed -> "subscribed";
+		    unsubscribed -> "unsubscribed"
+		end,
+	    ejabberd_router:route(
+	      jlib:make_jid(User, ?MYNAME, ""), JID1,
+	      {xmlelement, "presence", [{"type", T}], []})
+    end,
+    case Push of
+	{push, PushItem} ->
+	    push_item(User, jlib:make_jid("", ?MYNAME, ""), PushItem),
+	    true;
+	none ->
 	    false
     end.
+
 
 %% in_state_change(Subscription, Pending, Type) -> NewState
 %% NewState = none | {NewSubscription, NewPending}
@@ -527,13 +574,15 @@ in_auto_reply(_,    _,    _)  ->           none.
 
 remove_user(User) ->
     LUser = jlib:nodeprep(User),
-    F = fun() ->
-		lists:foreach(fun(R) ->
-				      mnesia:delete_object(R)
-			      end,
-			      mnesia:index_read(roster, LUser, #roster.user))
-        end,
-    mnesia:transaction(F).
+    Username = ejabberd_odbc:escape(LUser),
+    catch ejabberd_odbc:sql_query(
+	    ["begin;"
+	     "delete from rosterusers "
+	     "      where username='", Username, "';"
+	     "delete from rostergroups "
+	     "      where username='", Username, "';"
+	     "commit"]),
+    ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -553,9 +602,8 @@ process_item_set_t(LUser, {xmlelement, _Name, Attrs, Els}) ->
 	_ ->
 	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
 	    LJID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
-	    Item = #roster{uj = {LUser, LJID},
-			   user = LUser,
-			   jid = JID},
+	    Item = #roster{user = LUser,
+			   jid = LJID},
 	    Item1 = process_item_attrs_ws(Item, Attrs),
 	    Item2 = process_item_els(Item1, Els),
 	    case Item2#roster.subscription of
@@ -603,9 +651,7 @@ process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
 	"ask" ->
 	    process_item_attrs_ws(Item, Attrs);
 	_ ->
-	    XAttrs = Item#roster.xattrs,
-	    process_item_attrs_ws(Item#roster{xattrs = [{Attr, Val} | XAttrs]},
-				  Attrs)
+	    process_item_attrs_ws(Item, Attrs)
     end;
 process_item_attrs_ws(Item, []) ->
     Item.
@@ -614,25 +660,86 @@ process_item_attrs_ws(Item, []) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_jid_info(_, User, JID) ->
-    LUser = jlib:nodeprep(User),
-    LJID = jlib:jid_tolower(JID),
-    case catch mnesia:dirty_read(roster, {LUser, LJID}) of
-	[#roster{subscription = Subscription, groups = Groups}] ->
-	    {Subscription, Groups};
-	_ ->
-	    LRJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
-	    if
-		LRJID == LJID ->
-		    {none, []};
-		true ->
-		    case catch mnesia:dirty_read(roster, {LUser, LRJID}) of
-			[#roster{subscription = Subscription,
-				 groups = Groups}] ->
-			    {Subscription, Groups};
-			_ ->
-			    {none, []}
-		    end
-	    end
+% TODO
+%    LUser = jlib:nodeprep(User),
+%    LJID = jlib:jid_tolower(JID),
+%    case catch mnesia:dirty_read(roster, {LUser, LJID}) of
+%	[#roster{subscription = Subscription, groups = Groups}] ->
+%	    {Subscription, Groups};
+%	_ ->
+%	    LRJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+%	    if
+%		LRJID == LJID ->
+%		    {none, []};
+%		true ->
+%		    case catch mnesia:dirty_read(roster, {LUser, LRJID}) of
+%			[#roster{subscription = Subscription,
+%				 groups = Groups}] ->
+%			    {Subscription, Groups};
+%			_ ->
+%			    {none, []}
+%		    end
+%	    end
+%    end.
+{none, []}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+raw_to_record({User, SJID, Nick, SSubscription, SAsk,
+	       _SServer, _SSubscribe, _SType}) ->
+    case jlib:string_to_jid(SJID) of
+	error ->
+	    error;
+	JID ->
+	    LJID = jlib:jid_tolower(JID),
+	    Subscription = case SSubscription of
+			       "B" -> both;
+			       "T" -> to;
+			       "F" -> from;
+			       _ -> none
+			   end,
+	    Ask = case SAsk of
+		      "S" -> subscribe;
+		      "U" -> unsubscribe;
+		      "B" -> both;
+		      "O" -> out;
+		      "I" -> in;
+		      _ -> none
+		  end,
+	    #roster{user = User,
+		    jid = LJID,
+		    name = Nick,
+		    subscription = Subscription,
+		    ask = Ask}
     end.
 
+record_to_string(#roster{user = User,
+			 jid = JID,
+			 name = Name,
+			 subscription = Subscription,
+			 ask = Ask}) ->
+    Username = ejabberd_odbc:escape(User),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_string(JID)),
+    Nick = ejabberd_odbc:escape(Name),
+    SSubscription = case Subscription of
+			both -> "B";
+			to   -> "T";
+			from -> "F";
+			none -> "N"
+		    end,
+    SAsk = case Ask of
+	       subscribe   -> "S";
+	       unsubscribe -> "U";
+	       both	   -> "B";
+	       out	   -> "O";
+	       in	   -> "I";
+	       none	   -> "N"
+	   end,
+    ["("
+     "'", Username, "',"
+     "'", SJID, "',"
+     "'", Nick, "',"
+     "'", SSubscription, "',"
+     "'", SAsk, "',"
+     "'N', '', 'item')"].
 

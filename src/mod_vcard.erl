@@ -60,6 +60,8 @@ start(Opts) ->
     mnesia:add_table_index(vcard_search, lorgname),
     mnesia:add_table_index(vcard_search, lorgunit),
 
+    ejabberd_hooks:add(remove_user,
+		       ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
@@ -98,6 +100,8 @@ loop(Host) ->
     end.
 
 stop() ->
+    ejabberd_hooks:delete(remove_user,
+			  ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_VCARD),
     catch mod_disco:unregister_sm_feature(?NS_VCARD),
