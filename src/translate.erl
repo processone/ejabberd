@@ -18,7 +18,13 @@
 
 start() ->
     ets:new(translations, [named_table, public]),
-    load_dir(?MSGS_DIR),
+    Dir = case os:getenv("EJABBERD_MSGS_PATH") of
+	      false ->
+		  ?MSGS_DIR;
+	      Path ->
+		  Path
+	  end,
+    load_dir(Dir),
     ok.
 
 load_dir(Dir) ->

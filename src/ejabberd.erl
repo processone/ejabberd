@@ -10,7 +10,8 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, stop/0]).
+-export([start/0, stop/0,
+	 get_so_path/0]).
 
 start() ->
     application:start(ejabberd).
@@ -19,3 +20,10 @@ stop() ->
     application:stop(ejabberd).
 
 
+get_so_path() ->
+    case os:getenv("EJABBERD_SO_PATH") of
+	false ->
+	    ".";
+	Path ->
+	    Path
+    end.
