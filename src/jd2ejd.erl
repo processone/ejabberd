@@ -218,7 +218,10 @@ process_offline(To, {xmlelement, _, _, Els}) ->
 
 import_file(File) ->
     start_link(File),
-    receive M -> M end.
+    receive
+	M -> M
+	after 1000 -> ok
+    end.
 
 import_dir(Dir) ->
     {ok, Files} = file:list_dir(Dir),
