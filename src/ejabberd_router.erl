@@ -142,8 +142,15 @@ do_route(From, To, Packet) ->
 		    ejabberd_s2s ! {route, From, To, Packet};
 		[R] ->
 		    Node = R#route.node,
-		    ?DEBUG("routed to node ~p~n", [Node]),
-		    {ejabberd_router, Node} ! {route, From, To, Packet}
+		    case node() of
+			Node ->
+			    Pid = R#local_route.pid,
+			    ?DEBUG("routed to process ~p~n", [Pid]),
+			    Pid ! {route, From, To, Packet};
+			_ ->
+			    ?DEBUG("routed to node ~p~n", [Node]),
+			    {ejabberd_router, Node} ! {route, From, To, Packet}
+		    end
 	    end;
 	[R] ->
 	    Pid = R#local_route.pid,

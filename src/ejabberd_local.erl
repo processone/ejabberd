@@ -27,6 +27,7 @@ start() ->
     mod_vcard:start(),
     mod_offline:start(),
     mod_echo:start(),
+    mod_private:start(),
     ok.
 
 init() ->

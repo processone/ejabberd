@@ -53,12 +53,12 @@ start() ->
     mnesia:add_table_index(vcard_search, lorgname),
     mnesia:add_table_index(vcard_search, lorgunit),
 
-
     ejabberd_local:register_iq_handler(?NS_VCARD,
 				       ?MODULE, process_local_iq),
     ejabberd_sm:register_iq_handler(?NS_VCARD,
         			    ?MODULE, process_sm_iq),
     spawn(?MODULE, init, []).
+
 
 init() ->
     ejabberd_router:register_local_route("vjud." ++ ?MYNAME),

@@ -136,10 +136,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    end;
 	_ ->
 	    case jlib:iq_query_info(El) of
-		{iq, ID, Type, "jabber:iq:register", SubEl} ->
+		{iq, ID, Type, ?NS_REGISTER, SubEl} ->
 		    ResIQ = mod_register:process_iq(
 			      {"", "", ""}, {"", ?MYNAME, ""},
-			      {iq, ID, Type, "jabber:iq:register", SubEl}),
+			      {iq, ID, Type, ?NS_REGISTER, SubEl}),
 		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
 						{"", "", ""},
 						jlib:iq_to_xml(ResIQ)),
@@ -388,26 +388,16 @@ new_id() ->
     randoms:get_string().
 
 
-is_auth_packet({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
-    case xml:get_attr_s("type", Attrs) of
-	"set" ->
-	    case xml:remove_cdata(Els) of
-		[{xmlelement, "query", Attrs2, Els2}] ->
-		    case xml:get_attr_s("xmlns", Attrs2) of
-			"jabber:iq:auth" ->
-			    {auth,
-			     xml:get_attr_s("id", Attrs),
-			     get_auth_tags(Els2, "", "", "", "")};
-			_ -> false
-		    end;
-		_ ->
-		    false
-	    end;
-	true ->
+is_auth_packet(El) ->
+    case jlib:iq_query_info(El) of
+	{iq, ID, Type, ?NS_AUTH, SubEl} ->
+	    {xmlelement, _, _, Els} = SubEl,
+	    {auth, ID,
+	     get_auth_tags(Els, "", "", "", "")};
+	_ ->
 	    false
-    end;
-is_auth_packet(_) ->
-    false.
+    end.
+
 
 get_auth_tags([{xmlelement, Name, Attrs, Els}| L], U, P, D, R) ->
     CData = xml:get_cdata(Els),

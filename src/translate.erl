@@ -41,21 +41,14 @@ load_dir(Dir) ->
     ok.
 
 load_file(Lang, File) ->
-    {ok, Bin} = file:read_file(File),
-    Content = binary_to_list(Bin),
-    parse(Lang, Content).
-
-
-parse(Lang, String) ->
-    case erl_scan:tokens([], String, 0) of
-	{done, Result, Left} ->
-	    {ok, Tokens, _} = Result,
-	    {ok, Term} = erl_parse:parse_term(Tokens),
-	    {Orig, Trans} = Term,
-	    ets:insert(translations, {{Lang, Orig}, Trans}),
-	    parse(Lang, Left);
-	_ ->
-	    ok
+    case file:consult(File) of
+	{ok, Terms} ->
+	    lists:foreach(fun({Orig, Trans}) ->
+				  ets:insert(translations,
+					     {{Lang, Orig}, Trans})
+			  end, Terms);
+	{error, Reason} ->
+	    exit(file:format_error(Reason))
     end.
 
 translate(Lang, Msg) ->

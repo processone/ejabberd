@@ -1,8 +1,5 @@
 S2S timeouts
-...
-iq:browse
-iq:disco
-...
-services support
-JUD
+iq:browse(?)
 SVR DNS records
+karma
+SSL

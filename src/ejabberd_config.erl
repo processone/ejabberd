@@ -20,22 +20,15 @@ start() ->
 
 
 load_file(File) ->
-    {ok, Bin} = file:read_file(File),
-    Content = binary_to_list(Bin),
-    parse(Content).
-
-
-parse(String) ->
-    case erl_scan:tokens([], String, 0) of
-	{done, Result, Left} ->
-	    {ok, Tokens, _} = Result,
-	    {ok, Term} = erl_parse:parse_term(Tokens),
-	    {Opt, Val} = Term,
-	    ets:insert(ejabberd_config, {Opt, Val}),
-	    parse(Left);
-	_ ->
-	    ok
+    case file:consult(File) of
+	{ok, Terms} ->
+	    lists:foreach(fun({Opt, Val}) ->
+				  ets:insert(ejabberd_config, {Opt, Val})
+			  end, Terms);
+	{error, Reason} ->
+	    exit(file:format_error(Reason))
     end.
+
 
 get_option(Opt) ->
     case ets:lookup(ejabberd_config, Opt) of
