@@ -157,7 +157,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				      StateData,
 				      {xmlelement, "stream:features", [],
 				       [{xmlelement, "bind",
-					 [{"xmlns", ?NS_SASL}], []}]}),
+					 [{"xmlns", ?NS_BIND}], []}]}),
 				    {next_state, wait_for_bind, StateData};
 				_ ->
 				    send_element(

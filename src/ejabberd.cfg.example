@@ -11,6 +11,9 @@
 % Blocked users:
 %{acl, blocked, {user, "test"}}.
 
+% Local users:
+{acl, local, {user_regexp, ""}}.
+
 % Another examples of ACLs:
 %{acl, jabberorg, {server, "jabber.org"}}.
 %{acl, aleksey, {user, "aleksey", "jabber.ru"}}.
@@ -61,6 +64,9 @@
 % Admins of this server are also admins of MUC service:
 {access, muc_admin, [{allow, admin}]}.
 
+% This rule allows access only for local users:
+{access, local, [{allow, local}]}.
+
 
 % Authentification method.  If you want to use internal user base, then use
 % this line:
@@ -83,7 +89,8 @@
 	  {5223, ejabberd_c2s,     [{access, c2s},
 				    {ssl, [{certfile, "./ssl.pem"}]}]},
           {5269, ejabberd_s2s_in,  [{shaper, s2s_shaper}]},
-          {8888, ejabberd_service, [{hosts,
+          {8888, ejabberd_service, [%{access, local},
+				    {hosts,
 				     ["conference.e.localhost",
 				      "muc.e.localhost"],
 				     [{password, "secret"}]}]}

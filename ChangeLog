@@ -1,3 +1,16 @@
+2004-01-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Fixed bind namespace
+
+	* src/ejabberd_ctl.erl: New module for ejabberd administration
+	* tools/ejabberdctl: Shell script for ejabberd administration
+
+	* src/mod_vcard.erl: Copyright update
+
+	* src/ejabberd_service.erl: Now possible to specify access rules
+	for service
+	* src/ejabberd.cfg.example: Updated
+
 2004-01-06  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_router.erl: Added monitoring of processess that

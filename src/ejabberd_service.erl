@@ -30,7 +30,7 @@
 -include("jlib.hrl").
 
 -record(state, {socket, receiver, streamid, sockmod,
-		hosts, password}).
+		hosts, password, access}).
 
 %-define(DBGFSM, true).
 
@@ -87,6 +87,10 @@ start_link(SockData, Opts) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
+    Access = case lists:keysearch(access, 1, Opts) of
+		 {value, {_, A}} -> A;
+		 _ -> all
+	     end,
     {Hosts, Password} =
 	case lists:keysearch(hosts, 1, Opts) of
 	    {value, {_, Hs, HOpts}} ->
@@ -118,7 +122,8 @@ init([{SockMod, Socket}, Opts]) ->
 				 streamid = new_id(),
 				 sockmod = SockMod,
 				 hosts = Hosts,
-				 password = Password
+				 password = Password,
+				 access = Access
 				 }}.
 
 %%----------------------------------------------------------------------
@@ -127,8 +132,6 @@ init([{SockMod, Socket}, Opts]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-%state_name(Event, StateData) ->
-%    {next_state, state_name, StateData}.
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     % TODO
@@ -280,12 +283,18 @@ handle_info({send_element, El}, StateName, StateData) ->
     send_element(StateData, El),
     {next_state, StateName, StateData};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
-    {xmlelement, Name, Attrs, Els} = Packet,
-    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-					jlib:jid_to_string(To),
-					Attrs),
-    Text = xml:element_to_string({xmlelement, Name, Attrs2, Els}),
-    send_text(StateData, Text),
+    case acl:match_rule(StateData#state.access, From) of
+	allow ->
+	    {xmlelement, Name, Attrs, Els} = Packet,
+	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
+						jlib:jid_to_string(To),
+						Attrs),
+	    Text = xml:element_to_string({xmlelement, Name, Attrs2, Els}),
+	    send_text(StateData, Text);
+	deny ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    ejabberd_router:route(To, From, Err)
+    end,
     {next_state, StateName, StateData}.
 
 

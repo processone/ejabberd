@@ -101,7 +101,7 @@ process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 				 "http://ejabberd.jabberstudio.org/"}]},
 			      {xmlelement, "DESC", [],
 			       [{xmlcdata, "Erlang Jabber Server\n"
-				 "Copyright (c) 2002, 2003 Alexey Shchepin"}]},
+				 "Copyright (c) 2002-2004 Alexey Shchepin"}]},
 			      {xmlelement, "BDAY", [],
 			       [{xmlcdata, "2002-11-16"}]}
 			     ]}]}
