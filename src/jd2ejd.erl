@@ -13,8 +13,8 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/1,
-	 start/2,
+-export([start_link/1,
+	 start_link/2,
 	 import_file/1,
 	 import_dir/1]).
 
@@ -31,7 +31,7 @@
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
 
--record(state, {socket,
+-record(state, {socket, pid,
 		user = "", server = ?MYNAME, resource = ""
 	       }).
 
@@ -47,12 +47,12 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(File) ->
+start_link(File) ->
     User = filename:rootname(filename:basename(File)),
-    start(File, User).
+    start_link(File, User).
 
-start(File, User) ->
-    gen_fsm:start(?MODULE, [File, User], ?FSMOPTS).
+start_link(File, User) ->
+    gen_fsm:start_link(?MODULE, [File, User, self()], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -65,11 +65,11 @@ start(File, User) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([File, User]) ->
+init([File, User, Pid]) ->
     XMLStreamPid = xml_stream:start(self()),
     {ok, Text} = file:read_file(File),
     xml_stream:send_text(XMLStreamPid, Text),
-    {ok, wait_for_xdb, #state{user = User}}.
+    {ok, wait_for_xdb, #state{user = User, pid = Pid}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -191,6 +191,7 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
+    StateData#state.pid ! {jd2ejd, exited},
     ok.
 
 %%%----------------------------------------------------------------------
@@ -216,7 +217,8 @@ process_offline(To, {xmlelement, _, _, Els}) ->
 
 
 import_file(File) ->
-    start(File).
+    start_link(File),
+    receive M -> M end.
 
 import_dir(Dir) ->
     {ok, Files} = file:list_dir(Dir),

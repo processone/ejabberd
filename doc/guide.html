@@ -102,7 +102,14 @@ make
 
 <H3>2.4&nbsp;&nbsp; Starting</H3><!--SEC END -->
 
-<A NAME="sec:starting"></A><PRE>
+<A NAME="sec:starting"></A>... To use more then 1024 connections, you need to set environment
+variable <TT>ERL_MAX_PORTS</TT>:
+<PRE>
+export ERL_MAX_PORTS=32000
+</PRE>Note that with this value <TT>ejabberd</TT> will use more memory (approximately 6MB
+more)...<BR>
+<BR>
+<PRE>
 erl -name ejabberd -s ejabberd
 </PRE>TBD<BR>
 <BR>

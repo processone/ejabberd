@@ -85,6 +85,8 @@ check_event(From, To, Packet) ->
 
 find_x_event([]) ->
     false;
+find_x_event([{xmlcdata, _} | Els]) ->
+    find_x_event(Els);
 find_x_event([El | Els]) ->
     case xml:get_tag_attr_s("xmlns", El) of
 	?NS_EVENT ->
