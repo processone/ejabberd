@@ -10,5 +10,5 @@ karma
 SSL
 SASL
 JEP-62,63 (?)
-make roster set work in one transaction
+make roster set to work in one transaction
 

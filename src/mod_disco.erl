@@ -106,6 +106,7 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		["config"] -> ?EMPTY_INFO_RESULT;
 		["online users"] -> ?EMPTY_INFO_RESULT;
 		["all users"] -> ?EMPTY_INFO_RESULT;
+		["all users", [$@ | _]] -> ?EMPTY_INFO_RESULT;
 		["outgoing s2s" | _] -> ?EMPTY_INFO_RESULT;
 		["running nodes"] -> ?EMPTY_INFO_RESULT;
 		["stopped nodes"] -> ?EMPTY_INFO_RESULT;
@@ -195,6 +196,30 @@ get_local_items(["online users"], Server, Lang) ->
 get_local_items(["all users"], Server, Lang) ->
     {result, get_all_users()};
 
+get_local_items(["all users", [$@ | Diap]], Server, Lang) ->
+    case catch ejabberd_auth:dirty_get_registered_users() of
+	{'EXIT', Reason} ->
+	    {error, "500", "Internal Server Error"};
+	Users ->
+	    SUsers = lists:sort(Users),
+	    case catch begin
+			   {ok, [S1, S2]} = regexp:split(Diap, "-"),
+			   N1 = list_to_integer(S1),
+			   N2 = list_to_integer(S2),
+			   Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
+			   lists:map(fun(U) ->
+					     {xmlelement, "item",
+					      [{"jid", U ++ "@" ++ ?MYNAME},
+					       {"name", U}], []}
+				     end, Sub)
+		       end of
+		{'EXIT', Reason} ->
+		    {error, "406", "Not Acceptable"};
+		Res ->
+		    {result, Res}
+	    end
+    end;
+
 get_local_items(["outgoing s2s"], Server, Lang) ->
     {result, get_outgoing_s2s(Lang)};
 
@@ -260,11 +285,34 @@ get_all_users() ->
 	{'EXIT', Reason} ->
 	    [];
 	Users ->
-	    lists:map(fun(U) ->
-			      {xmlelement, "item",
-			       [{"jid", U ++ "@" ++ ?MYNAME},
-				{"name", U}], []}
-		      end, lists:sort(Users))
+	    SUsers = lists:sort(Users),
+	    case length(SUsers) of
+		N when N =< 100 ->
+		    lists:map(fun(U) ->
+				      {xmlelement, "item",
+				       [{"jid", U ++ "@" ++ ?MYNAME},
+					{"name", U}], []}
+			      end, SUsers);
+		N ->
+		    NParts = trunc(math:sqrt(N * 0.618)) + 1,
+		    M = trunc(N / NParts) + 1,
+		    lists:map(fun(K) ->
+				      L = K + M - 1,
+				      Node =
+					  "@" ++ integer_to_list(K) ++
+					  "-" ++ integer_to_list(L),
+				      Last = if L < N -> lists:nth(L, SUsers);
+						true -> lists:last(SUsers)
+					     end,
+				      Name = 
+					  lists:nth(K, SUsers) ++ " -- " ++
+					  Last,
+				      {xmlelement, "item",
+				       [{"jid", ?MYNAME},
+					{"node", "all users/" ++ Node},
+					{"name", Name}], []}
+			      end, lists:seq(1, N, M))
+	    end
     end.
 
 get_outgoing_s2s(Lang) ->
