@@ -1,0 +1,24 @@
+
+include ..\Makefile.inc
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+OBJS = \
+	$(OUTDIR)\eldap.beam \
+	$(OUTDIR)\ELDAPv3.beam
+
+ALL : $(OBJS)
+
+CLEAN :
+	-@erase ELDAPv3.asn1db ELDAPv3.erl ELDAPv3.hrl
+	-@erase $(OBJS)
+
+ELDAPv3.erl : ELDAPv3.asn
+	erlc -bber_bin -W $(EFLAGS) ELDAPv3.asn
+
+$(OUTDIR)\eldap.beam : eldap.erl ELDAPv3.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) eldap.erl
+
+$(OUTDIR)\ELDAPv3.beam : ELDAPv3.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) ELDAPv3.erl

@@ -1,3 +1,10 @@
+2004-03-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Updated win32 stuff (thanks to Sergei Golovan)
+
+	* src/web/ejabberd_web.erl: Added interface for access rules
+	configuration
+
 2004-03-20  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Updated

@@ -3,10 +3,29 @@ include Makefile.inc
 
 EXPAT_DIR="c:\progra~1\expat-1.95.6"
 
-ALL : expat_erl.dll
+ALL : expat_erl.dll compile-beam all-recursive
+
+all-recursive :
+	cd eldap
+	nmake -nologo -f Makefile.win32
+	cd ..\mod_irc
+	nmake -nologo -f Makefile.win32
+	cd ..\mod_muc
+	nmake -nologo -f Makefile.win32
+	cd ..\mod_pubsub
+	nmake -nologo -f Makefile.win32
+	cd ..\stringprep
+	nmake -nologo -f Makefile.win32
+	cd ..\web
+	nmake -nologo -f Makefile.win32
+	cd ..
+
+compile-beam : 
 	erl -s make all report -noinput -s erlang halt
 
-CLEAN :
+CLEAN : clean-recursive clean-local
+
+clean-local :
 	-@erase expat_erl.obj
 	-@erase vc60.idb
 	-@erase expat_erl.dll
@@ -15,8 +34,23 @@ CLEAN :
 	-@erase expat_erl.pch
 	-@erase *.beam
 
+clean-recursive :
+	cd eldap
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\mod_irc
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\mod_muc
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\mod_pubsub
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\stringprep
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\web
+	nmake -nologo -f Makefile.win32 clean
+	cd ..
+
 CPP=cl.exe
-CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\include" /I "$(EXPAT_DIR)\source\lib" /D "WIN32" /D "NDEBUG" /D "_USRDLL" /D "_MBCS" /Fpexpat_erl.pch /YX /FD /c 
+CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\include" /I "$(EXPAT_DIR)\source\lib" /D "__WIN32__" /D "WIN32" /D "NDEBUG" /D "_USRDLL" /D "_MBCS" /Fpexpat_erl.pch /YX /FD /c 
 
 .c.obj::
     $(CPP) @<<
@@ -24,7 +58,7 @@ CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\in
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib "$(ERLANG_DIR)\usr\lib\erl_dll.lib" "$(EI_DIR)\lib\ei.lib" "$(EI_DIR)\lib\erl_interface.lib" "$(EXPAT_DIR)\libs\libexpat.lib" /nologo /subsystem:console /dll /pdb:none /machine:I386 /out:expat_erl.dll 
+LINK32_FLAGS=kernel32.lib "$(EI_DIR)\lib\ei.lib" "$(EI_DIR)\lib\erl_interface.lib" "$(EXPAT_DIR)\libs\libexpat.lib" /nologo /subsystem:console /dll /pdb:none /machine:I386 /out:expat_erl.dll /nodefaultlib:libcmt
 LINK32_OBJS=expat_erl.obj
 
 expat_erl.dll : $(LINK32_OBJS)

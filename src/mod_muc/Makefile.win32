@@ -11,7 +11,7 @@ OBJS = \
 ALL : $(OBJS)
 
 CLEAN :
-	-@erase *.beam
+	-@erase $(OBJS)
 
 $(OUTDIR)\mod_muc.beam : mod_muc.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) mod_muc.erl

@@ -19,7 +19,7 @@ $(OUTDIR)\stringprep.beam : stringprep.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) stringprep.erl
 
 CPP=cl.exe
-CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\include" /D "WIN32" /D "NDEBUG" /D "_USRDLL" /D "_MBCS" /Fpstringprep_drv.pch /YX /FD /c 
+CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\include" /D "__WIN32__" /D "WIN32" /D "NDEBUG" /D "_USRDLL" /D "_MBCS" /Fpstringprep_drv.pch /YX /FD /c 
 
 .c.obj::
     $(CPP) @<<
@@ -27,7 +27,7 @@ CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\in
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib "$(ERLANG_DIR)\usr\lib\erl_dll.lib" "$(EI_DIR)\lib\ei.lib" "$(EI_DIR)\lib\erl_interface.lib" /nologo /subsystem:console /dll /pdb:none /machine:I386 /out:$(OUTDIR)\stringprep_drv.dll
+LINK32_FLAGS=kernel32.lib "$(EI_DIR)\lib\ei.lib" "$(EI_DIR)\lib\erl_interface.lib" /nologo /subsystem:console /dll /pdb:none /machine:I386 /out:$(OUTDIR)\stringprep_drv.dll /nodefaultlib:libcmt
 
 LINK32_OBJS=stringprep_drv.obj
 

@@ -43,7 +43,10 @@ make_xhtml(Els) ->
 -define(AC(URL, Text), ?A(URL, [?C(Text)])).
 -define(P, ?X("p")).
 -define(BR, ?X("br")).
-
+-define(INPUT(Type, Name, Value),
+	?XA("input", [{"type", Type},
+		      {"name", Name},
+		      {"value", Value}])).
 
 
 process_get(#request{user = User,
@@ -130,7 +133,7 @@ process_admin(#request{user = User,
 					{"cols", "80"}],
 			   ACLs),
 		      ?BR,
-		      ?XA("input", [{"type", "submit"}])
+		      ?INPUT("submit", "", "")
 		     ])
 	       ]);
 
@@ -168,13 +171,9 @@ process_admin(#request{method = Method,
 	       [?XAE("form", [{"method", "post"}],
 		     [acls_to_xhtml(ACLs),
 		      ?BR,
-		      ?XA("input", [{"type", "submit"},
-				    {"name", "delete"},
-				    {"value", "Delete Selected"}]),
+		      ?INPUT("submit", "delete", "Delete Selected"),
 		      ?C(" "),
-		      ?XA("input", [{"type", "submit"},
-				    {"name", "submit"},
-				    {"value", "Submit"}])
+		      ?INPUT("submit", "submit", "Submit")
 		     ])
 	       ]);
 
@@ -241,17 +240,27 @@ process_admin(#request{user = User,
 					{"cols", "80"}],
 			   Access),
 		      ?BR,
-		      ?XA("input", [{"type", "submit"}])
+		      ?INPUT("submit", "", "")
 		     ])
 	       ]);
 
 process_admin(#request{method = Method,
-			user = User,
-			path = ["access"],
-			q = Query,
-			lang = Lang} = Request) ->
+		       user = User,
+		       path = ["access"],
+		       q = Query,
+		       lang = Lang} = Request) ->
     ?INFO_MSG("query: ~p", [Query]),
-    Res = nothing,
+    Res = case Method of
+	      'POST' ->
+		  case catch access_parse_query(Query) of
+		      {'EXIT', _} ->
+			  error;
+		      ok ->
+			  ok
+		  end;
+	      _ ->
+		  nothing
+	  end,
     AccessRules =
 	ets:select(config,
 		   [{{config, {access, '$1'}, '$2'},
@@ -266,9 +275,47 @@ process_admin(#request{method = Method,
 	       [?XAE("form", [{"method", "post"}],
 		     [access_rules_to_xhtml(AccessRules),
 		      ?BR,
-		      ?XA("input", [{"type", "submit"},
-				    {"name", "delete"},
-				    {"value", "Delete Selected"}])
+		      ?INPUT("submit", "delete", "Delete Selected")
+		     ])
+	       ]);
+
+process_admin(#request{method = Method,
+		       user = User,
+		       path = ["access", SName],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    ?INFO_MSG("query: ~p", [Query]),
+    Name = list_to_atom(SName),
+    Res = case lists:keysearch("rules", 1, Query) of
+	      {value, {_, String}} ->
+		  case parse_access_rule(String) of
+		      {ok, Rs} ->
+			  ejabberd_config:add_global_option(
+			    {access, Name}, Rs),
+			  ok;
+		      _ ->
+			  error
+		  end;
+	      _ ->
+		  nothing
+	  end,
+    Rules = case ejabberd_config:get_global_option({access, Name}) of
+		undefined ->
+		    [];
+		Rs1 ->
+		    Rs1
+	    end,
+    make_xhtml([?XC("h1",
+		    "ejabberd access rule '" ++ SName ++ "' configuration")] ++
+	       case Res of
+		   ok -> [?C("submited"), ?P];
+		   error -> [?C("bad format"), ?P];
+		   nothing -> []
+	       end ++
+	       [?XAE("form", [{"method", "post"}],
+		     [access_rule_to_xhtml(Rules),
+		      ?BR,
+		      ?INPUT("submit", "submit", "")
 		     ])
 	       ]);
 
@@ -306,28 +353,20 @@ acls_to_xhtml(ACLs) ->
 			SName = atom_to_list(Name),
 			ID = term_to_id(ACL),
 			?XE("tr",
-			    [?XE("td",
-				 [?XA("input", [{"type", "checkbox"},
-						{"name", "selected"},
-						{"value", ID}])]),
+			    [?XE("td", [?INPUT("checkbox", "selected", ID)]),
 			     ?XC("td", SName)] ++
 			    acl_spec_to_xhtml(ID, Spec)
 			   )
 		end, ACLs) ++
 	      [?XE("tr",
 		   [?X("td"),
-		    ?XE("td", 
-			[?XA("input", [{"type", "text"},
-				       {"name", "namenew"},
-				       {"value", ""}])]
-		       )] ++
+		    ?XE("td", [?INPUT("text", "namenew", "")])
+		   ] ++
 		   acl_spec_to_xhtml("new", {user, ""})
 		  )]
 	     )]).
 
--define(ACLINPUT(Text), ?XE("td", [?XA("input", [{"type", "text"},
-						 {"name", "value" ++ ID},
-						 {"value", Text}])])).
+-define(ACLINPUT(Text), ?XE("td", [?INPUT("text", "value" ++ ID, Text)])).
 
 acl_spec_to_text({user, U}) ->
     {user, U};
@@ -445,10 +484,7 @@ access_rules_to_xhtml(AccessRules) ->
 			SName = atom_to_list(Name),
 			ID = term_to_id(Access),
 			?XE("tr",
-			    [?XE("td",
-				 [?XA("input", [{"type", "checkbox"},
-						{"name", "selected"},
-						{"value", ID}])]),
+			    [?XE("td", [?INPUT("checkbox", "selected", ID)]),
 			     ?XE("td", [?AC(SName ++ "/", SName)]),
 			     ?XC("td", term_to_string(Rules))
 			    ]
@@ -456,18 +492,83 @@ access_rules_to_xhtml(AccessRules) ->
 		end, AccessRules) ++
 	      [?XE("tr",
 		   [?X("td"),
-		    ?XE("td",
-			[?XA("input", [{"type", "text"},
-				       {"name", "namenew"},
-				       {"value", ""}])]
-		       ),
-		    ?XE("td",
-			[?XA("input", [{"type", "submit"},
-				       {"name", "addnew"},
-				       {"value", "Add New"}])])
+		    ?XE("td", [?INPUT("text", "namenew", "")]),
+		    ?XE("td", [?INPUT("submit", "addnew", "Add New")])
 		   ]
 		  )]
 	     )]).
+
+access_parse_query(Query) ->
+    AccessRules =
+	ets:select(config,
+		   [{{config, {access, '$1'}, '$2'},
+		     [],
+		     [{{access, '$1', '$2'}}]}]),
+    case lists:keysearch("addnew", 1, Query) of
+	{value, _} ->
+	    access_parse_addnew(AccessRules, Query);
+	_ ->
+	    case lists:keysearch("delete", 1, Query) of
+		{value, _} ->
+		    access_parse_delete(AccessRules, Query)
+	    end
+    end.
+
+access_parse_addnew(AccessRules, Query) ->
+    case lists:keysearch("namenew", 1, Query) of
+	{value, {_, String}} when String /= "" ->
+	    Name = list_to_atom(String),
+	    ejabberd_config:add_global_option({access, Name}, []),
+	    ok
+    end.
+
+access_parse_delete(AccessRules, Query) ->
+    lists:foreach(
+      fun({access, Name, _Rules} = AccessRule) ->
+	      ID = term_to_id(AccessRule),
+	      case lists:member({"selected", ID}, Query) of
+		  true ->
+		      mnesia:transaction(
+			fun() ->
+				mnesia:delete({config, {access, Name}})
+			end);
+		  _ ->
+		      ok
+	      end
+      end, AccessRules),
+    ok.
+
+
+
+
+access_rule_to_xhtml(Rules) ->
+    Text = lists:flatmap(
+	     fun({Access, ACL} = Rule) ->
+		     SAccess = atom_to_list(Access),
+		     SACL = atom_to_list(ACL),
+		     SAccess ++ "\t" ++ SACL ++ "\n"
+	     end, Rules),
+    ?XAC("textarea", [{"name", "rules"},
+		      {"rows", "16"},
+		      {"cols", "80"}],
+	 Text).
+
+parse_access_rule(Text) ->
+    Strings = string:tokens(Text, "\r\n"),
+    case catch lists:flatmap(
+		 fun(String) ->
+			 case string:tokens(String, "\s\t") of
+			     [Access, ACL] ->
+				 [{list_to_atom(Access), list_to_atom(ACL)}];
+			     [] ->
+				 []
+			 end
+		 end, Strings) of
+	{'EXIT', _Reason} ->
+	    error;
+	Rs ->
+	    {ok, Rs}
+    end.
 
 
 
