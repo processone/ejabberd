@@ -17,17 +17,18 @@
 
 %% gen_fsm callbacks
 -export([init/1,
+	 open_socket/2,
 	 wait_for_stream/2,
-	 wait_for_key/2,
+	 wait_for_validation/2,
 	 wait_for_verification/2,
-	 session_established/2,
+	 stream_established/2,
 	 handle_info/3,
 	 terminate/3]).
 
--record(state, {socket, receiver, streamid,
-		myself = "localhost", server, type, xmlpid}).
-
 -include("ejabberd.hrl").
+
+-record(state, {socket, receiver, streamid,
+		myself = ?MYNAME, server, type, xmlpid, queue}).
 
 -define(DBGFSM, true).
 
@@ -57,7 +58,8 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host, Type) ->
-    gen_fsm:start(ejabberd_s2s_out, [Host, Type], ?FSMOPTS).
+    {ok, Pid} = gen_fsm:start(ejabberd_s2s_out, [Host, Type], ?FSMOPTS),
+    Pid.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -70,17 +72,11 @@ start(Host, Type) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Host, Type]) ->
-    {ok, Socket} = gen_tcp:connect(Host, 5569,
-				   [binary, {packet, 0}]),
-    XMLStreamPid = xml_stream:start(self()),
-    %ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
-    send_text(Socket, ?STREAM_HEADER),
-    {ok, wait_for_stream, #state{socket = Socket,
-				 xmlpid = XMLStreamPid,
-				 streamid = new_id(),
-				 server = Host,
-				 type = Type}}.
+init([Server, Type]) ->
+    gen_fsm:send_event(self(), init),
+    {ok, open_socket, #state{queue = queue:new(),
+			     server = Server,
+			     type = Type}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -88,22 +84,46 @@ init([Host, Type]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-state_name(Event, StateData) ->
-    {next_state, state_name, StateData}.
+open_socket(init, StateData) ->
+    case gen_tcp:connect(StateData#state.server, 5569,
+			 [binary, {packet, 0}]) of
+	{ok, Socket} ->
+	    XMLStreamPid = xml_stream:start(self()),
+	    send_text(Socket, ?STREAM_HEADER),
+	    {next_state, wait_for_stream,
+	     StateData#state{socket = Socket,
+			     xmlpid = XMLStreamPid,
+			     streamid = new_id()}};
+	{error, Reason} ->
+	    ?DEBUG("s2s_out: connect return ~p~n", [Reason]),
+	    Text = case Reason of
+		       timeout -> "Server Connect Timeout";
+		       _ -> "Server Connect Failed"
+		   end,
+	    bounce_messages(Text),
+	    {stop, normal, StateData}
+    end.
+
 
 wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     % TODO
     case {xml:get_attr_s("xmlns", Attrs), xml:get_attr_s("xmlns:db", Attrs)} of
 	{"jabber:server", "jabber:server:dialback"} ->
 	    case StateData#state.type of
-		new ->
+		{new, Key} ->
+		    send_element(StateData#state.socket,
+				 {xmlelement,
+				  "db:result",
+				  [{"from", ?MYNAME},
+				   {"to", StateData#state.server}],
+				  [{xmlcdata, Key}]}),
 		    % TODO
-		    {next_state, wait_for_key, StateData};
+		    {next_state, wait_for_validation, StateData};
 		{verify, Pid, Key} ->
 		    send_element(StateData#state.socket,
 				 {xmlelement,
 				  "db:verify",
-				  [{"from", "127.0.0.1"},
+				  [{"from", ?MYNAME},
 				   {"to", StateData#state.server}],
 				  [{xmlcdata, Key}]}),
 		    {next_state, wait_for_verification, StateData}
@@ -117,37 +137,43 @@ wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
 
 
-wait_for_key({xmlstreamelement, El}, StateData) ->
-    case is_key_packet(El) of
-	{key, To, From, Id, Key} ->
-	    io:format("GET KEY: ~p~n", [{To, From, Id, Key}]),
-	    % TODO
-	    {next_state, wait_for_key, StateData};
-	{verify, To, From, Id, Key} ->
-	    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
-	    % TODO
-	    {next_state, wait_for_key, StateData};
-	_ ->
-	    {next_state, wait_for_key, StateData}
-    end;
 
-wait_for_key({xmlstreamend, Name}, StateData) ->
-    % TODO
-    {stop, normal, StateData};
-
-wait_for_key(closed, StateData) ->
-    {stop, normal, StateData}.
-
-wait_for_verification({xmlstreamelement, El}, StateData) ->
+wait_for_validation({xmlstreamelement, El}, StateData) ->
     case is_verify_res(El) of
 	{result, To, From, Id, Type} ->
 	    case Type of
 		"valid" ->
-		    io:format("VALID KEY~n", []);
+		    % TODO
+		    send_queue(StateData#state.socket, StateData#state.queue),
+		    {next_state, stream_established, StateData};
+		_ ->
+		    % TODO: bounce packets
+		    {stop, normal, StateData}
+	    end;
+	_ ->
+	    {next_state, wait_for_validation, StateData}
+    end;
+
+wait_for_validation({xmlstreamend, Name}, StateData) ->
+    % TODO
+    {stop, normal, StateData};
+
+wait_for_validation(closed, StateData) ->
+    {stop, normal, StateData}.
+
+
+wait_for_verification({xmlstreamelement, El}, StateData) ->
+    case is_verify_res(El) of
+	{result, To, From, Id, Type} ->
+	    {verify, Pid, Key} = StateData#state.type,
+	    case Type of
+		"valid" ->
+		    io:format("VALID KEY~n", []),
+		    gen_fsm:send_event(Pid, valid);
 		    % TODO
 		_ ->
 		    % TODO
-		    ok
+		    gen_fsm:send_event(Pid, invalid)
 	    end,
 	    {stop, normal, StateData};
 	_ ->
@@ -161,28 +187,37 @@ wait_for_verification({xmlstreamend, Name}, StateData) ->
 wait_for_verification(closed, StateData) ->
     {stop, normal, StateData}.
 
-session_established({xmlstreamelement, El}, StateData) ->
+
+stream_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     % TODO
-    FromJID = {StateData#state.server},
+    From = xml:get_attr_s("from", Attrs),
+    FromJID1 = jlib:string_to_jid(From),
+    FromJID = case FromJID1 of
+		  {Node, Server, Resource} ->
+		      if Server == StateData#state.server -> FromJID1;
+			 true -> error
+		      end;
+		  _ -> error
+	      end,
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of
-		"" ->
-		    {"", StateData#state.server, ""};
-		_ ->
-		    jlib:string_to_jid(To)
+		"" -> error;
+		_ -> jlib:string_to_jid(To)
 	    end,
-    case ToJID of
-	error ->
-	    % TODO
-	    error;
-	_ ->
-	    %?DEBUG("FromJID=~w, ToJID=~w, El=~w~n", [FromJID, ToJID, El]),
-	    ejabberd_router:route(FromJID, ToJID, El)
+    if ((Name == "iq") or (Name == "message") or (Name == "presence")) and
+       (ToJID /= error) and (FromJID /= error) ->
+	    ejabberd_router:route(FromJID, ToJID, El);
+       true ->
+	    error
     end,
-    {next_state, session_established, StateData};
+    {next_state, stream_established, StateData};
 
-session_established(closed, StateData) ->
+stream_established({xmlstreamend, Name}, StateData) ->
+    % TODO
+    {stop, normal, StateData};
+
+stream_established(closed, StateData) ->
     % TODO
     {stop, normal, StateData}.
 
@@ -232,14 +267,23 @@ handle_sync_event(Event, From, StateName, StateData) ->
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData#state.socket, Text),
     {next_state, StateName, StateData};
+handle_info({send_element, El}, StateName, StateData) ->
+    case StateName of
+	stream_established ->
+	    send_element(StateData#state.socket, El),
+	    {next_state, StateName, StateData};
+	_ ->
+	    Q = queue:in(El, StateData#state.queue),
+	    {next_state, StateName, StateData#state{queue = Q}}
+    end;
 handle_info({tcp, Socket, Data}, StateName, StateData) ->
     xml_stream:send_text(StateData#state.xmlpid, Data),
     {next_state, StateName, StateData};
 handle_info({tcp_closed, Socket}, StateName, StateData) ->
-    self() ! closed,
+    gen_fsm:send_event(self(), closed),
     {next_state, StateName, StateData};
 handle_info({tcp_error, Socket, Reason}, StateName, StateData) ->
-    self() ! closed,
+    gen_fsm:send_event(self(), closed),
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -248,14 +292,19 @@ handle_info({tcp_error, Socket, Reason}, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
-%    case StateData#state.user of
-%	"" ->
-%	    ok;
-%	_ ->
-%	    %ejabberd_sm:close_session(StateData#state.user,
-%	    %    		      StateData#state.resource)
-%    end,
-    gen_tcp:close(StateData#state.socket),
+    ?DEBUG("s2s_out: terminate ~p~n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!~n", [[Reason, StateName, StateData]]),
+    case StateData#state.type of
+	{new, Key} ->
+	    ejabberd_s2s ! {closed_conection, StateData#state.server};
+	_ ->
+	    ok
+    end,
+    case StateData#state.socket of
+	undefined ->
+	    ok;
+	Socket ->
+	    gen_tcp:close(Socket)
+    end,
     ok.
 
 %%%----------------------------------------------------------------------
@@ -283,9 +332,36 @@ send_text(Socket, Text) ->
 send_element(Socket, El) ->
     send_text(Socket, xml:element_to_string(El)).
 
+send_queue(Socket, Q) ->
+    case queue:out(Q) of
+	{{value, El}, Q1} ->
+	    send_element(Socket, El),
+	    send_queue(Socket, Q1);
+	{empty, Q1} ->
+	    ok
+    end.
+
 new_id() ->
     lists:flatten(io_lib:format("~p", [random:uniform(65536*65536)])).
 
+bounce_messages(Reason) ->
+    receive
+	{send_element, El} ->
+	    {xmlelement, Name, Attrs, SubTags} = El,
+	    case xml:get_attr_s("type", Attrs) of
+	        "error" ->
+	            ok;
+	        _ ->
+	            Err = jlib:make_error_reply(El,
+	        				"502", Reason),
+		    From = jlib:string_to_jid(xml:get_attr_s("from", Attrs)),
+		    To = jlib:string_to_jid(xml:get_attr_s("to", Attrs)),
+		    ejabberd_router ! {route, To, From, Err}
+	    end,
+	    bounce_messages(Reason)
+    after 0 ->
+	    ok
+    end.
 
 is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:result" ->
     {key,
@@ -316,26 +392,4 @@ is_verify_res({xmlelement, Name, Attrs, Els}) when Name == "db:verify" ->
      xml:get_attr_s("type", Attrs)};
 is_verify_res(_) ->
     false.
-
-get_auth_tags([{xmlelement, Name, Attrs, Els}| L], U, P, D, R) ->
-    CData = xml:get_cdata(Els),
-    case Name of
-	"username" ->
-	    get_auth_tags(L, CData, P, D, R);
-	"password" ->
-	    get_auth_tags(L, U, CData, D, R);
-	"digest" ->
-	    get_auth_tags(L, U, P, CData, R);
-	"resource" ->
-	    get_auth_tags(L, U, P, D, CData);
-	_ ->
-	    get_auth_tags(L, U, P, D, R)
-    end;
-get_auth_tags([_ | L], U, P, D, R) ->
-    get_auth_tags(L, U, P, D, R);
-get_auth_tags([], U, P, D, R) ->
-    {U, P, D, R}.
-
-
-
 

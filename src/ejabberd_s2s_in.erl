@@ -16,14 +16,18 @@
 -export([start/1, receiver/2, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
--export([init/1, wait_for_stream/2, wait_for_key/2, session_established/2,
+-export([init/1,
+	 wait_for_stream/2,
+	 wait_for_key/2,
+	 wait_for_verification/2,
+	 stream_established/2,
 	 handle_info/3,
 	 terminate/3]).
 
--record(state, {socket, receiver, streamid,
-		myself = "localhost", server}).
-
 -include("ejabberd.hrl").
+
+-record(state, {socket, receiver, streamid,
+		myself = ?MYNAME, server, queue}).
 
 -define(DBGFSM, true).
 
@@ -70,7 +74,8 @@ init([Socket]) ->
     ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
     {ok, wait_for_stream, #state{socket = Socket,
 				 receiver = ReceiverPid,
-				 streamid = new_id()}}.
+				 streamid = new_id(),
+				 queue = queue:new()}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -100,12 +105,24 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
 	{key, To, From, Id, Key} ->
 	    io:format("GET KEY: ~p~n", [{To, From, Id, Key}]),
-	    % TODO
 	    ejabberd_s2s_out:start(From, {verify, self(), Key}),
-	    {next_state, wait_for_key, StateData};
+	    {next_state,
+	     wait_for_verification,
+	     StateData#state{server = From}};
 	{verify, To, From, Id, Key} ->
 	    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
-	    % TODO
+	    Key1 = ejabberd_s2s:get_key(From),
+	    Type = if Key == Key1 -> "valid";
+		      true -> "invalid"
+		   end,
+	    send_element(StateData#state.socket,
+			 {xmlelement,
+			  "db:verify",
+			  [{"from", ?MYNAME},
+			   {"to", From},
+			   {"id", Id},
+			   {"type", Type}],
+			  []}),
 	    {next_state, wait_for_key, StateData};
 	_ ->
 	    {next_state, wait_for_key, StateData}
@@ -118,28 +135,85 @@ wait_for_key({xmlstreamend, Name}, StateData) ->
 wait_for_key(closed, StateData) ->
     {stop, normal, StateData}.
 
-session_established({xmlstreamelement, El}, StateData) ->
+wait_for_verification(valid, StateData) ->
+    send_element(StateData#state.socket,
+		 {xmlelement,
+		  "db:result",
+		  [{"from", ?MYNAME},
+		   {"to", StateData#state.server},
+		   {"type", "valid"}],
+		  []}),
+    send_queue(StateData#state.socket, StateData#state.queue),
+    {next_state, stream_established, StateData};
+
+wait_for_verification(invalid, StateData) ->
+    send_element(StateData#state.socket,
+		 {xmlelement,
+		  "db:result",
+		  [{"from", ?MYNAME},
+		   {"to", StateData#state.server},
+		   {"type", "invalid"}],
+		  []}),
+    {stop, normal, StateData};
+
+wait_for_verification({xmlstreamelement, El}, StateData) ->
+    case is_key_packet(El) of
+	{verify, To, From, Id, Key} ->
+	    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
+	    Key1 = ejabberd_s2s:get_key(From),
+	    Type = if Key == Key1 -> "valid";
+		      true -> "invalid"
+		   end,
+	    send_element(StateData#state.socket,
+			 {xmlelement,
+			  "db:verify",
+			  [{"from", ?MYNAME},
+			   {"to", From},
+			   {"id", Id},
+			   {"type", Type}],
+			  []}),
+	    {next_state, wait_for_verification, StateData};
+	_ ->
+	    {next_state, wait_for_verification, StateData}
+    end;
+
+wait_for_verification({xmlstreamend, Name}, StateData) ->
+    % TODO
+    {stop, normal, StateData};
+
+wait_for_verification(closed, StateData) ->
+    {stop, normal, StateData}.
+
+stream_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     % TODO
-    FromJID = {StateData#state.server},
+    From = xml:get_attr_s("from", Attrs),
+    FromJID1 = jlib:string_to_jid(From),
+    FromJID = case FromJID1 of
+		  {Node, Server, Resource} ->
+		      if Server == StateData#state.server -> FromJID1;
+			 true -> error
+		      end;
+		  _ -> error
+	      end,
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of
-		"" ->
-		    {"", StateData#state.server, ""};
-		_ ->
-		    jlib:string_to_jid(To)
+		"" -> error;
+		_ -> jlib:string_to_jid(To)
 	    end,
-    case ToJID of
-	error ->
-	    % TODO
-	    error;
-	_ ->
-	    %?DEBUG("FromJID=~w, ToJID=~w, El=~w~n", [FromJID, ToJID, El]),
-	    ejabberd_router:route(FromJID, ToJID, El)
+    if ((Name == "iq") or (Name == "message") or (Name == "presence")) and
+       (ToJID /= error) and (FromJID /= error) ->
+	    ejabberd_router:route(FromJID, ToJID, El);
+       true ->
+	    error
     end,
-    {next_state, session_established, StateData};
+    {next_state, stream_established, StateData};
 
-session_established(closed, StateData) ->
+stream_established({xmlstreamend, Name}, StateData) ->
+    % TODO
+    {stop, normal, StateData};
+
+stream_established(closed, StateData) ->
     % TODO
     {stop, normal, StateData}.
 
@@ -188,7 +262,17 @@ handle_sync_event(Event, From, StateName, StateData) ->
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData#state.socket, Text),
-    {next_state, StateName, StateData}.
+    {next_state, StateName, StateData};
+handle_info({send_element, El}, StateName, StateData) ->
+    case StateName of
+	stream_established ->
+	    send_element(StateData#state.socket, El),
+	    {next_state, StateName, StateData};
+	_ ->
+	    Q = queue:in(El, StateData#state.queue),
+	    {next_state, StateName, StateData#state{queue = Q}}
+    end.
+
 
 %%----------------------------------------------------------------------
 %% Func: terminate/3
@@ -203,6 +287,7 @@ terminate(Reason, StateName, StateData) ->
 %	    %ejabberd_sm:close_session(StateData#state.user,
 %	    %    		      StateData#state.resource)
 %    end,
+    %ejabberd_s2s ! {closed_conection, StateData#state.server},
     gen_tcp:close(StateData#state.socket),
     ok.
 
@@ -231,6 +316,16 @@ send_text(Socket, Text) ->
 send_element(Socket, El) ->
     send_text(Socket, xml:element_to_string(El)).
 
+send_queue(Socket, Q) ->
+    case queue:out(Q) of
+	{{value, El}, Q1} ->
+	    send_element(Socket, El),
+	    send_queue(Socket, Q1);
+	{empty, Q1} ->
+	    ok
+    end.
+
+
 new_id() ->
     lists:flatten(io_lib:format("~p", [random:uniform(65536*65536)])).
 
@@ -249,26 +344,6 @@ is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:verify" ->
      xml:get_cdata(Els)};
 is_key_packet(_) ->
     false.
-
-get_auth_tags([{xmlelement, Name, Attrs, Els}| L], U, P, D, R) ->
-    CData = xml:get_cdata(Els),
-    case Name of
-	"username" ->
-	    get_auth_tags(L, CData, P, D, R);
-	"password" ->
-	    get_auth_tags(L, U, CData, D, R);
-	"digest" ->
-	    get_auth_tags(L, U, P, CData, R);
-	"resource" ->
-	    get_auth_tags(L, U, P, D, CData);
-	_ ->
-	    get_auth_tags(L, U, P, D, R)
-    end;
-get_auth_tags([_ | L], U, P, D, R) ->
-    get_auth_tags(L, U, P, D, R);
-get_auth_tags([], U, P, D, R) ->
-    {U, P, D, R}.
-
 
 
 

@@ -23,10 +23,10 @@
 	 handle_info/3,
 	 terminate/3]).
 
--record(state, {socket, sender, receiver, streamid,
-		user = "", server = "localhost", resource = ""}).
-
 -include("ejabberd.hrl").
+
+-record(state, {socket, sender, receiver, streamid,
+		user = "", server = ?MYNAME, resource = ""}).
 
 -define(DBGFSM, true).
 
@@ -84,7 +84,7 @@ state_name(Event, StateData) ->
 wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     % TODO
     Header = io_lib:format(?STREAM_HEADER,
-			   [StateData#state.streamid, "localhost"]),
+			   [StateData#state.streamid, ?MYNAME]),
     send_text(StateData#state.sender, Header),
     case lists:keysearch("xmlns:stream", 1, Attrs) of
 	{value, {"xmlns:stream", "http://etherx.jabber.org/streams"}} ->

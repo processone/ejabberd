@@ -25,6 +25,7 @@ init() ->
     ejabberd_auth:start(),
     ejabberd_router:start(),
     ejabberd_sm:start(),
+    ejabberd_s2s:start(),
     ejabberd_local:start(),
     ejabberd_listener:start(),
     loop(Port).

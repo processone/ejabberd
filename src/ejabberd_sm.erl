@@ -45,7 +45,6 @@ init() ->
 			 {local_content, true},
 			 {attributes, record_info(fields, mysession)}]),
     mnesia:subscribe(system),
-    %ejabberd_router:register_local_route("localhost"),
     loop().
 
 loop() ->

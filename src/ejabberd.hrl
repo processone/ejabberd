@@ -15,3 +15,6 @@
 -define(DEBUG(F,A),[]).
 -endif.
 
+
+-define(MYNAME,"127.0.0.1").
+

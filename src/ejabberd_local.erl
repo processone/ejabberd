@@ -21,7 +21,7 @@ start() ->
     spawn(ejabberd_local, init, []).
 
 init() ->
-    ejabberd_router:register_local_route("localhost"),
+    ejabberd_router:register_local_route(?MYNAME),
     loop().
 
 loop() ->
