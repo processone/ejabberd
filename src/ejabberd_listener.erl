@@ -10,33 +10,27 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0]).
+-export([start/0, init/2]).
 
 start() ->
-    register(ejabberd_listener, spawn(?MODULE, init, [])).
+    register(ejabberd_listener_c2s,
+	     spawn(?MODULE, init, [5522, ejabberd_c2s])),
+    register(ejabberd_listener_s2s,
+	     spawn(?MODULE, init, [5269, ejabberd_s2s_in])).
 
-init() ->
-    {ok, ListenSocket} = gen_tcp:listen(5522, [binary,
+init(Port, CallbackModule) ->
+    {ok, ListenSocket} = gen_tcp:listen(Port, [binary,
 					       {packet, 0}, 
 					       {active, false},
 					       {reuseaddr, true}]),
-    accept(ListenSocket).
+    accept(ListenSocket, CallbackModule).
 
-accept(ListenSocket) ->
+accept(ListenSocket, CallbackModule) ->
     case gen_tcp:accept(ListenSocket) of
 	{ok,Socket} ->
-	    ejabberd_c2s:start(Socket),
-	    accept(ListenSocket)
-    end.
-
-
-
-do_recv(Sock, Bs) ->
-    case gen_tcp:recv(Sock, 0) of
-        {ok, B} ->
-	    do_recv(Sock, [Bs, B]);
-        {error, closed} ->
-	    {ok, list_to_binary(Bs)}
+	    apply(CallbackModule, start, [Socket]),
+	    %ejabberd_c2s:start(Socket),
+	    accept(ListenSocket, CallbackModule)
     end.
 
 
