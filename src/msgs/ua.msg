@@ -1,21 +1,21 @@
 % $Id$
 
 % jlib.hrl
-{"No resource provided", ""}.
-{"Illegal resource format", ""}.
-{"Resource conflict", ""}.
+{"No resource provided", "Не вказаний ресурс"}.
+{"Illegal resource format", "Неправильний формат ресурсу"}.
+{"Resource conflict", "Конфлікт ресурсів"}.
 
 % mod_configure.erl
 {"DB Tables Configuration at ", "Конфігурація таблиць БД на "}.
 {"Choose storage type of tables", "Оберіть тип збереження таблиць"}.
-{"RAM copy", "ОЗУ"}.
-{"RAM and disc copy", "ОЗУ та диск"}.
+{"RAM copy", "ОЗП"}.
+{"RAM and disc copy", "ОЗП та диск"}.
 {"Disc only copy", "тільки диск"}.
 {"Remote copy", "не зберігаеться локально"}.
 {"Stop Modules at ", "Зупинка модулів на "}.
-{"Choose modules to stop", "Оберіть модулі, які необхідно зупинити"}.
+{"Choose modules to stop", "Виберіть модулі, які необхідно зупинити"}.
 {"Start Modules at ", "Запуск модулів на "}.
-{"Enter list of {Module, [Options]}", "Введіть список такого виду {Module, [Options]}"}.
+{"Enter list of {Module, [Options]}", "Введіть перелік такого виду {Module, [Options]}"}.
 {"List of modules to start", "Список завантажуваних модулів"}.
 {"Backup to File at ", "Резервне копіювання в файл на "}.
 {"Enter path to backup file", "Введіть шлях до резервного файла"}.
@@ -31,8 +31,8 @@
 {"Hostname Configuration", "Конфігурація назви хоста"}.
 {"Choose host name", "Оберіть назву хоста"}.
 {"Host name", "Назва хоста"}.
-{"Access Control List Configuration", "Конфігурація списків управління доступом"}.
-{"Access control lists", "Списки управління доступом"}.
+{"Access Control List Configuration", "Конфігурація списків керування доступом"}.
+{"Access control lists", "Списки керування доступом"}.
 {"Access Configuration", "Конфігурація доступа"}.
 {"Access rules", "Правила доступу"}.
 {"Remove Users", "Видалення користувачів"}.
@@ -40,27 +40,27 @@
 {"Administration of ", "Адміністрування "}.
 {"Action on user", "Дія над користувачем"}.
 {"Edit Properties", "Змінити параметри"}.
-{"Remove User", "Видалити коростувача"}.
+{"Remove User", "Видалити користувача"}.
 
 % mod_disco.erl
 {"Configuration", "Конфігурація"}.
 {"Online Users", "Підключені користувачі"}.
-{"All Users", "Всі коритстувачі"}.
-{"Outgoing S2S connections", "Вихідні S2S-з`єднання"}.
+{"All Users", "Всі користувачі"}.
+{"Outgoing S2S connections", "Вихідні S2S-з'єднання"}.
 {"To ~s", "До ~s"}.
 {"From ~s", "Від ~s"}.
-{"Running Nodes", "Рабочі вузли"}.
+{"Running Nodes", "Працюючі вузли"}.
 {"Stopped Nodes", "Зупинені вузли"}.
 {"Host Name", "Назва хоста"}.
-{"Access Control Lists", "Списки управління доступом"}.
+{"Access Control Lists", "Списки керування доступом"}.
 {"Access Rules", "Правила доступу"}.
 {"Remove Users", "Видалення користувачів"}.
 {"DB", "БД"}.
 {"Modules", "Модулі"}.
 {"Start Modules", "Запуск модулів"}.
 {"Stop Modules", "Зупинка модулів"}.
-{"Backup Management", "Управління резервним копіюванням"}.
-{"Import users from jabberd1.4 spool files", "Імпортування користувачів зі спулу jabberd1.4"}.
+{"Backup Management", "Керування резервним копіюванням"}.
+{"Import users from jabberd1.4 spool files", "Імпорт користувачів зі спулу jabberd1.4"}.
 {"Backup", "Резервне копіювання"}.
 {"Restore", "Відновлення з резервної копії"}.
 {"Dump to Text File", "Копіювання в текстовий файл"}.
@@ -69,40 +69,40 @@
 
 % mod_register.erl
 {"Choose a username and password to register with this server",
- "Оберіь назву користувача та пароль для реєстрації на цьому сервері"}.
+ "Виберіть назву користувача та пароль для реєстрації на цьому сервері"}.
 
 % mod_vcard.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2004 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2004 Алексей Щепин"}.
+ "Erlang Jabber Server\nCopyright (c) 2002-2004 Олексій Щепін"}.
 {"ejabberd vCard module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd vCard модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
+ "ejabberd vCard модуль\nCopyright (c) 2003-2004 Олексій Щепін"}.
 {"You need an x:data capable client to search",
- "Для пошуку необхідний x:data-сумісний кліент"}.
+ "Для пошуку необхідний x:data-придатний клієнт"}.
 {"Search users in ", "Пошук користувачів в "}.
 {"Fill in fields to search for any matching Jabber User",
  "Заповніть поля для пошуку користувача Jabber"}.
 {"Results of search in ", "Результати пошуку в "}.
 
 {"User",              "Користувач"}.
-{"Full Name", 	      "Повне ім`я"}.
-{"Name", 	      "Ім`я"}.
+{"Full Name", 	      "Повне ім'я"}.
+{"Name", 	      "Ім'я"}.
 {"Middle Name",       "По-батькові"}.
-{"Family Name",       "Фамілія"}.
+{"Family Name",       "Прізвище"}.
 {"Nickname", 	      "Псевдонім"}.
-{"Birthday", 	      "День нарождення"}.
+{"Birthday", 	      "День народження"}.
 {"Country", 	      "Країна"}.
 {"City", 	      "Місто"}.
 {"email", 	      "email"}.
-{"Organization Name", "Назва организації"}.
-{"Organization Unit", "Відділ организації"}.
+{"Organization Name", "Назва організації"}.
+{"Organization Unit", "Відділ організації"}.
 
 % mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd pub/sub модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
+ "ejabberd pub/sub модуль\nCopyright (c) 2003-2004 Олексій Щепін"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname",
- "Для реєстрації псевдоніму необхідний x:data-сумісний кліент"}.
+ "Для реєстрації псевдоніму необхідний x:data-придатний клієнт"}.
 {"Nickname Registration at ", "Реєстрація псевдоніма на "}.
 {"Enter nickname you want to register", "Введіть псевдонім, який ви хочете зареєструвати"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2004 Alexey Shchepin",
@@ -110,9 +110,9 @@
 {"Only service administrators are allowed to send service messages",
  "Тільки адміністратор сервісу може надсилати службові повідомлення"}.
 {"Room creation is not allowed by service policy",
- "Створювати конференцію не дозволяється політикою сервіса"}.
+ "Створювати конференцію не дозволяється політикою служби"}.
 {"Conference room does not exist", "Конференція не існує"}.
-{"Access denied by service policy", "Доступ зоборонений політикою сервіса"}.
+{"Access denied by service policy", "Доступ заборонений політикою служби"}.
 {"You must fill in field \"nick\" in the form",
  "Вам необхідно заповнити поле \"nick\" у формі"}.
 {"Specified nickname is already registered", "Вказаний псевдонім вже зареєстрований"}.
@@ -120,7 +120,7 @@
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " встановив(ла) тему: "}.
 {"You need an x:data capable client to configure room",
- "Для конфігурування кімнати необхідний x:data-сумісний кліент"}.
+ "Для конфігурування кімнати необхідний x:data-придатний кліент"}.
 {"Configuration for ", "Конфігурація "}.
 {"Room title", "Назва кімнати"}.
 {"Allow users to change subject?", "Дозволити користувачам змінювати тему?"}.
@@ -129,13 +129,13 @@
 {"Allow users to send private messages?",
  "Дозволити приватні повідомлення?"}.
 {"Make room public searchable?", "Зробити кімнату видимою всім?"}.
-{"Make participants list public?", "Зробити список участників видимим всім?"}.
+{"Make participants list public?", "Зробити список учасників видимим всім?"}.
 {"Make room persistent?", "Зробити кімнату постійною?"}.
 {"Make room moderated?", "Зробити кімнату модерованою?"}.
 {"Default users as members?",
- "Зробити користувачів участниками за замовчуванням?"}.
+ "Зробити користувачів учасниками за замовчуванням?"}.
 {"Make room members only?",
- "Кімната тільки для зареєтрованых участників?"}.
+ "Кімната тільки для зареєтрованых учасників?"}.
 {"Allow users to send invites?",
  "Дозволити користувачам посилати запрошення?"}.
 {"Make room password protected?", "Зробити кімнату захищеною паролем?"}.
@@ -143,20 +143,20 @@
 {"Make room anonymous?", "Зробити кімнату анонімною?"}.
 {"Enable logging?", "Включити журнал роботи?"}.
 {"Only moderators and participants are allowed to change subject in this room",
- "Тільки модератори та участники можуть змінювати тему в цій комнаті"}.
+ "Тільки модератори та учасники можуть змінювати тему в цій кімнаті"}.
 {"Only moderators are allowed to change subject in this room",
- "Тільки модератори можуть змінювати тему в цій комнаті"}.
+ "Тільки модератори можуть змінювати тему в цій кімнаті"}.
 {"Visitors are not allowed to send messages to all occupants",
  "Відвідувачам не дозволяється посилати повідомлення всім присутнім"}.
 {"Only occupants are allowed to send messages to the conference",
  "Тільки присутнім дозволяється посилати повідомленняя в конференцію"}.
 {"It is not allowed to send normal messages to the conference",
- "Не дозволяється посилати звичайні повідомленняя в конференцію"}.
+ "Не дозволяється посилати звичайні повідомлення в конференцію"}.
 {"It is not allowed to send private messages to the conference",
  "Не дозволяється посилати приватні повідомлення  в конференцію"}.
 {"Improper message type", "Неправильний тип повідомлення"}.
 {"Nickname is already in use by another occupant", "Псевдонім зайнятий кимось з присутніх"}.
-{"Nickname is registered by another person", "Псевдонім зайнятий кимось іншим"}.
+{"Nickname is registered by another person", "Псевдонім зареєстрований кимось іншим"}.
 {"It is not allowed to send private messages of type \"groupchat\"",
  "Не дозволяється посилати приватні повідомлення типу \"groupchat\""}.
 {"Recipient is not in the conference room", "Адресата немає в конференції"}.
@@ -179,13 +179,13 @@
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd IRC модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
+ "ejabberd IRC модуль\nCopyright (c) 2003-2004 Олексій Щепін"}.
 {"You need an x:data capable client to configure mod_irc settings",
- "Для налагодження параметрів mod_irc необхідний x:data-сумісний кліент"}.
+ "Для налагодження параметрів mod_irc необхідний x:data-придатний клієнт"}.
 {"Registration in mod_irc for ", "Реєстрація в mod_irc для "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers",
- "Введіть ім`я користувача та кодування, які будуть використовуватися при підключенні до IRC-серверів"}.
-{"IRC Username", "Ім`я користувача IRC"}.
+ "Введіть ім'я користувача та кодування, які будуть використовуватися при підключенні до IRC-серверів"}.
+{"IRC Username", "Ім'я користувача IRC"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Щоб вказати різні кодування для різних серверів IRC, заповніть список значеннями в форматі '{\"irc server\", \"encoding\"}'. За замовчуванням ця служба використовує кодування \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Приклад: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Кодування"}.
@@ -195,12 +195,12 @@
 {"Users", "Користувачі"}.
 {"Nodes", "Вузли"}.
 {"Statistics", "Статистика"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin", "ejabberd (c) 2002-2004 Алексей Щепин"}.
+{"ejabberd (c) 2002-2004 Alexey Shchepin", "ejabberd (c) 2002-2004 Олексій Щепін"}.
 {"(raw)", "(необроблений формат)"}.
 {"submitted", "відправлено"}.
 {"bad format", "неправильний формат"}.
 {"raw", "необроблений формат"}.
-{"ejabberd access control lists configuration", "Конфігурація списків управління доступом ejabberd"}.
+{"ejabberd access control lists configuration", "Конфігурація списків керування доступом ejabberd"}.
 {"Delete Selected", "Видалити виділені"}.
 {"Submit", "Відправити"}.
 {"ejabberd access rules configuration", "Конфігурація правил доступу ejabberd"}.
@@ -222,14 +222,14 @@
 {"Listened Ports Management", "Управління відкритими портами"}.
 {"Restart", "Перезапустити"}.
 {"Stop", "Зупинити"}.
-{"RPC call error", "Помилка визову RPC"}.
+{"RPC call error", "Помилка виклику RPC"}.
 {"DB Tables at ", "Таблиці БД на "}.
 {"Name", "Назва"}.
 {"Storage Type", "Тип таблиці"}.
 {"Size", "Розмір"}.
-{"Memory", "Пам`ять"}.
+{"Memory", "Пам'ять"}.
 {"Backup Management at ", "Управління резервним копіюванням на "}.
-{"Store a backup in a file", "Зберігти резервну копію в файл"}.
+{"Store a backup in a file", "Зберегти резервну копію в файл"}.
 {"OK", "Продовжити"}.
 {"Restore a backup from a file", "Відновити резервну копію з файла"}.
 {"Install a database fallback from a file", "Встановити базу даних для відновлення при слідуючому запуску"}.
@@ -248,26 +248,26 @@
 {"Options", "Параметри"}.
 {"Update", "Обновити"}.
 {"Delete", "Видалити"}.
-{"Add User", ""}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", ""}.
-{"Offline messages", ""}.
-{"Last Activity", ""}.
-{"Never", ""}.
-{"~s offline messages queue", ""}.
-{"Time", ""}.
-{"From", ""}.
-{"To", ""}.
-{"Packet", ""}.
-{"Offline messages:", ""}.
-{"Roster", ""}.
-{"Nickname", ""}.
-{"Subscription", ""}.
-{"Pending", ""}.
-{"Groups", ""}.
-{"Remove", ""}.
-{"Add JID", ""}.
-{"User ", ""}.
-{"Roster of ", ""}.
+{"Add User", "Додати користувача"}.
+{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", "ejabberd (c) 2002-2004 Олексій Щепін, 2004 Process One"}.
+{"Offline messages", "Офлайнові повідомлення"}.
+{"Last Activity", "Останнє підключення"}.
+{"Never", "Ніколи"}.
+{"~s offline messages queue", "Черга офлайнових повідомлень ~s"}.
+{"Time", "Час"}.
+{"From", "Від кого"}.
+{"To", "Кому"}.
+{"Packet", "Пакет"}.
+{"Offline messages:", "Офлайнові повідомлення:"}.
+{"Roster", "Ростер"}.
+{"Nickname", "Псевдонім"}.
+{"Subscription", "Підписка"}.
+{"Pending", "Очікування"}.
+{"Groups", "Групи"}.
+{"Remove", "Видалити"}.
+{"Add JID", "Додати JID"}.
+{"User ", "Користувач"}.
+{"Roster of ", "Ростер користувача "}.
 
 % Local Variables:
 % mode: erlang
