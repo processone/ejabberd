@@ -19,7 +19,8 @@
 %-export([init/1, state_name/2, state_name/3, handle_event/3,
 %	 handle_sync_event/4, handle_info/3, terminate/3]).
 %
--export([init/1, wait_for_stream/2, wait_for_auth/2, terminate/3]).
+-export([init/1, wait_for_stream/2, wait_for_auth/2, session_established/2,
+	 terminate/3]).
 
 -record(state, {socket, sender, receiver, streamid,
 		user = "", server = "localhost", resource = ""}).
@@ -89,8 +90,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    % TODO
 	    {next_state, wait_for_auth, StateData};
 	_ ->
-	    send_text(StateData#state.sender, ?INVALID_NS_ERR),
-	    send_text(StateData#state.sender, ?STREAM_TRAILER),
+	    send_text(StateData#state.sender, ?INVALID_NS_ERR ?STREAM_TRAILER),
 	    {stop, normal, StateData}
     end;
 
@@ -109,7 +109,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		    {next_state, session_established,
 		     StateData#state{user = U, resource = R}};
 		_ ->
-		    Err = jlib:make_error_iq_reply(El, "404", "Unauthorized"),
+		    Err = jlib:make_error_reply(El, "404", "Unauthorized"),
 		    send_element(StateData#state.sender, Err),
 		    {next_state, wait_for_auth, StateData}
 	    end;
@@ -127,6 +127,9 @@ wait_for_auth(closed, StateData) ->
 session_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     % TODO
+    FromJID = {StateData#state.user, "localhost", StateData#state.resource},
+    ToJID = jlib:string_to_jid(xml:get_attr_s("to", Attrs)),
+    ejabberd_router:route(FromJID, ToJID, El),
     {next_state, session_established, StateData};
 
 session_established(closed, StateData) ->

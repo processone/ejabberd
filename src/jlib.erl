@@ -10,21 +10,20 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([make_error_iq_reply/3, make_correct_from_to_attrs/3,
+-export([make_error_reply/3, make_correct_from_to_attrs/3,
 	 replace_from_to_attrs/3, string_to_jid/1, tolower/1]).
 
 
 %send_iq(From, To, ID, SubTags) ->
 %    ok.
 
-make_error_iq_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc)
-  when Name == "iq" ->
-    NewAttrs = make_error_iq_reply_attrs(Attrs),
+make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
+    NewAttrs = make_error_reply_attrs(Attrs),
     {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, "error",
 					      [{"code", Code}],
 					      [{xmlcdata, Desc}]}]}.
 
-make_error_iq_reply_attrs(Attrs) ->
+make_error_reply_attrs(Attrs) ->
     To = xml:get_attr("to", Attrs),
     From = xml:get_attr("from", Attrs),
     Attrs1 = lists:keydelete("to", 1, Attrs),
