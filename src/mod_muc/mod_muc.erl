@@ -18,7 +18,8 @@
 	 room_destroyed/1,
 	 store_room/2,
 	 restore_room/1,
-	 forget_room/1]).
+	 forget_room/1,
+	 process_iq_disco_items/5]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -76,10 +77,14 @@ do_route(Host, From, To, Packet) ->
 			    Res = {iq, ID, result, XMLNS,
 				   [{xmlelement, "query",
 				     [{"xmlns", XMLNS}],
-				     iq_disco()}]},
+				     iq_disco_info()}]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
+			{iq, ID, get, ?NS_DISCO_ITEMS = XMLNS, SubEl} ->
+			    spawn(?MODULE,
+				  process_iq_disco_items,
+				  [Host, From, To, ID, SubEl]);
 			_ ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_SERVICE_UNAVAILABLE),
@@ -130,15 +135,6 @@ stop() ->
     ok.
 
 
-iq_disco() ->
-    [{xmlelement, "identity",
-      [{"category", "conference"},
-       {"type", "text"},
-       {"name", "ejabberd/mod_muc"}], []},
-     {xmlelement, "feature",
-      [{"var", ?NS_MUC}], []}].
-
-
 store_room(Name, Opts) ->
     F = fun() ->
 		mnesia:write(#muc_room{name = Name,
@@ -179,4 +175,41 @@ load_permanent_rooms(Host) ->
 				    #muc_online_room{name = Room, pid = Pid})
 			  end, Rs)
     end.
+
+
+iq_disco_info() ->
+    [{xmlelement, "identity",
+      [{"category", "conference"},
+       {"type", "text"},
+       {"name", "ejabberd/mod_muc"}], []},
+     {xmlelement, "feature",
+      [{"var", ?NS_MUC}], []}].
+
+
+process_iq_disco_items(Host, From, To, ID, SubEl) ->
+    Res = {iq, ID, result, ?NS_DISCO_ITEMS,
+	   [{xmlelement, "query",
+	     [{"xmlns", ?NS_DISCO_ITEMS}],
+	     iq_disco_items(Host, From)}]},
+    ejabberd_router:route(To,
+			  From,
+			  jlib:iq_to_xml(Res)).
+
+% TODO: ask more info from room processes
+iq_disco_items(Host, From) ->
+    lists:zf(fun(#muc_online_room{name = Name, pid = Pid}) ->
+		     case catch gen_fsm:sync_send_all_state_event(
+				  Pid, get_disco_item, 100) of
+			 {'EXIT', _} ->
+			     false;
+			 {item, Desc} ->
+			     {true,
+			      {xmlelement, "item",
+			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
+				{"name", Desc}], []}}
+		     end
+	     end, ets:tab2list(muc_online_room)).
+
+
+
 

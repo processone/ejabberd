@@ -35,17 +35,17 @@
 
 -record(lqueue, {queue, len, max}).
 
--record(config, {allow_change_subj = true, % TODO
+-record(config, {allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
 		 public = true, % TODO
-		 persistent = false, % TODO
+		 persistent = false,
 		 moderated = false, % TODO
-		 members_by_default = true, % TODO
+		 members_by_default = true,
 		 members_only = false, % TODO
 		 allow_user_invites = false, % TODO
 		 password_protected = false, % TODO
-		 anonymous = true, % TODO
+		 anonymous = true,
 		 logging = false % TODO
 		}).
 
@@ -426,6 +426,14 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
+handle_sync_event(get_disco_item, From, StateName, StateData) ->
+    Reply = case (StateData#state.config)#config.public of
+		true ->
+		    {item, StateData#state.room};
+		_ ->
+		    false
+	    end,
+    {reply, Reply, StateName, StateData};
 handle_sync_event(Event, From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
@@ -656,15 +664,17 @@ send_new_presence(NJID, StateData) ->
     SRole = role_to_list(Role),
     lists:foreach(
       fun({LJID, Info}) ->
-	      ItemAttrs = case Info#user.role of
-			      moderator ->
-				  [{"jid", jlib:jid_to_string(RealJID)},
-				   {"affiliation", SAffiliation},
-				   {"role", SRole}];
-			      _ ->
-				  [{"affiliation", SAffiliation},
-				   {"role", SRole}]
-			  end,
+	      ItemAttrs =
+		  case (Info#user.role == moderator) orelse
+		      ((StateData#state.config)#config.anonymous == false) of
+		      true ->
+			  [{"jid", jlib:jid_to_string(RealJID)},
+			   {"affiliation", SAffiliation},
+			   {"role", SRole}];
+		      _ ->
+			  [{"affiliation", SAffiliation},
+			   {"role", SRole}]
+		  end,
 	      Packet = append_subtags(
 			 Presence,
 			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -692,19 +702,20 @@ send_existing_presences(ToJID, StateData) ->
 		      ok;
 		  _ ->
 		      FromAffiliation = get_affiliation(LJID, StateData),
-		      ItemAttrs = case Role of
-				      moderator ->
-					  [{"jid",
-					    jlib:jid_to_string(FromJID)},
-					   {"affiliation",
-					    affiliation_to_list(
-					      FromAffiliation)},
-					   {"role", role_to_list(FromRole)}];
-				      _ ->
-					  [{"affiliation", affiliation_to_list(
-							     FromAffiliation)},
-					   {"role", role_to_list(FromRole)}]
-				  end,
+		      ItemAttrs =
+			  case (Role == moderator) orelse
+			      ((StateData#state.config)#config.anonymous ==
+			       false) of
+			      true ->
+				  [{"jid", jlib:jid_to_string(FromJID)},
+				   {"affiliation",
+				    affiliation_to_list(FromAffiliation)},
+				   {"role", role_to_list(FromRole)}];
+			      _ ->
+				  [{"affiliation",
+				    affiliation_to_list(FromAffiliation)},
+				   {"role", role_to_list(FromRole)}]
+			  end,
 		      Packet = append_subtags(
 				 Presence,
 				 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -746,26 +757,30 @@ send_nick_changing(JID, OldNick, StateData) ->
     SRole = role_to_list(Role),
     lists:foreach(
       fun({LJID, Info}) ->
-	      ItemAttrs1 = case Info#user.role of
-			       moderator ->
-				   [{"jid", jlib:jid_to_string(RealJID)},
-				    {"affiliation", SAffiliation},
-				    {"role", SRole},
-				    {"nick", Nick}];
-			       _ ->
-				   [{"affiliation", SAffiliation},
-				    {"role", SRole},
-				    {"nick", Nick}]
-			   end,
-	      ItemAttrs2 = case Info#user.role of
-			       moderator ->
-				   [{"jid", jlib:jid_to_string(RealJID)},
-				    {"affiliation", SAffiliation},
-				    {"role", SRole}];
-			       _ ->
-				   [{"affiliation", SAffiliation},
-				    {"role", SRole}]
-			   end,
+	      ItemAttrs1 =
+		  case (Info#user.role == moderator) orelse
+		      ((StateData#state.config)#config.anonymous == false) of
+		      true ->
+			  [{"jid", jlib:jid_to_string(RealJID)},
+			   {"affiliation", SAffiliation},
+			   {"role", SRole},
+			   {"nick", Nick}];
+		      _ ->
+			  [{"affiliation", SAffiliation},
+			   {"role", SRole},
+			   {"nick", Nick}]
+		  end,
+	      ItemAttrs2 =
+		  case (Info#user.role == moderator) orelse
+		      ((StateData#state.config)#config.anonymous == false) of
+		      true ->
+			  [{"jid", jlib:jid_to_string(RealJID)},
+			   {"affiliation", SAffiliation},
+			   {"role", SRole}];
+		      _ ->
+			  [{"affiliation", SAffiliation},
+			   {"role", SRole}]
+		  end,
 	      Packet1 =
 		  {xmlelement, "presence", [{"type", "unavailable"}],
 		   [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -871,7 +886,12 @@ send_join_messages_end(JID, StateData) ->
       Packet).
 
 can_change_subject(Role, StateData) ->
-    (Role == moderator) orelse (Role == participant).
+    case (StateData#state.config)#config.allow_change_subj of
+	true ->
+	    (Role == moderator) orelse (Role == participant);
+	_ ->
+	    Role == moderator
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Admin stuff
