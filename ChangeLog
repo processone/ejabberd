@@ -1,3 +1,7 @@
+2004-03-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s.erl: More verbose error handling
+
 2004-03-15  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_web.erl: Minor update
