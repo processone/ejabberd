@@ -13,7 +13,10 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/2, start_link/2, receiver/2, send_text/2, send_element/2]).
+-export([start/2,
+	 start_link/2,
+	 send_text/2,
+	 send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -30,7 +33,10 @@
 
 -define(DICT, dict).
 
--record(state, {socket, receiver, streamid,
+-record(state, {socket,
+		receiver,
+		streamid,
+		shaper,
 	        connections = ?DICT:new()}).
 
 
@@ -68,8 +74,8 @@
 start(SockData, Opts) ->
     supervisor:start_child(ejabberd_s2s_in_sup, [SockData, Opts]).
 
-start_link(SockData, _Opts) ->
-    gen_fsm:start_link(ejabberd_s2s_in, [SockData], ?FSMOPTS).
+start_link(SockData, Opts) ->
+    gen_fsm:start_link(ejabberd_s2s_in, [SockData, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -82,13 +88,18 @@ start_link(SockData, _Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([{SockMod, Socket}]) ->
+init([{SockMod, Socket}, Opts]) ->
     ?INFO_MSG("started: ~p", [{SockMod, Socket}]),
-    ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
+    ReceiverPid = ejabberd_receiver:start(Socket, SockMod, none),
+    Shaper = case lists:keysearch(shaper, 1, Opts) of
+		 {value, {_, S}} -> S;
+		 _ -> none
+	     end,
     {ok, wait_for_stream,
      #state{socket = Socket,
 	    receiver = ReceiverPid,
-	    streamid = new_id()},
+	    streamid = new_id(),
+	    shaper = Shaper},
      ?S2STIMEOUT}.
 
 %%----------------------------------------------------------------------
@@ -133,6 +144,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					    Key, StateData#state.streamid}),
 		    Conns = ?DICT:store({LFrom, LTo}, wait_for_verification,
 					StateData#state.connections),
+		    change_shaper(StateData, jlib:make_jid("", LFrom, "")),
 		    {next_state,
 		     stream_established,
 		     StateData#state{connections = Conns},
@@ -306,27 +318,16 @@ terminate(Reason, _StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-receiver(Socket, C2SPid) ->
-    XMLStreamPid = xml_stream:start(C2SPid),
-    receiver(Socket, C2SPid, XMLStreamPid).
-
-receiver(Socket, C2SPid, XMLStreamPid) ->
-    case gen_tcp:recv(Socket, 0) of
-        {ok, Text} ->
-	    xml_stream:send_text(XMLStreamPid, Text),
-	    receiver(Socket, C2SPid, XMLStreamPid);
-        {error, _Reason} ->
-	    exit(XMLStreamPid, closed),
-	    gen_fsm:send_event(C2SPid, closed),
-	    ok
-    end.
-
 send_text(Socket, Text) ->
     gen_tcp:send(Socket,Text).
 
 send_element(Socket, El) ->
     send_text(Socket, xml:element_to_string(El)).
 
+
+change_shaper(StateData, JID) ->
+    Shaper = acl:match_rule(StateData#state.shaper, JID),
+    ejabberd_receiver:change_shaper(StateData#state.receiver, Shaper).
 
 
 new_id() ->

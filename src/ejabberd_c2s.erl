@@ -15,7 +15,6 @@
 %% External exports
 -export([start/2,
 	 start_link/2,
-	 receiver/4,
 	 send_text/2,
 	 send_element/2]).
 
@@ -102,8 +101,7 @@ start_link(SockData, Opts) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
-    ReceiverPid = proc_lib:spawn(
-		    ?MODULE, receiver, [Socket, SockMod, none, self()]),
+    ReceiverPid = ejabberd_receiver:start(Socket, SockMod, none),
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -303,7 +301,7 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 				      Mech,
 				      ClientIn) of
 		{ok, Props} ->
-		    StateData#state.receiver ! reset_stream,
+		    ejabberd_receiver:reset_stream(StateData#state.receiver),
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
@@ -366,7 +364,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 	    case cyrsasl:server_step(StateData#state.sasl_state,
 				     ClientIn) of
 		{ok, Props} ->
-		    StateData#state.receiver ! reset_stream,
+		    ejabberd_receiver:reset_stream(StateData#state.receiver),
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
@@ -812,55 +810,9 @@ terminate(Reason, StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-receiver(Socket, SockMod, Shaper, C2SPid) ->
-    XMLStreamPid = xml_stream:start(C2SPid),
-    ShaperState = shaper:new(Shaper),
-    Timeout = case SockMod of
-		  ssl ->
-		      20;
-		  _ ->
-		      infinity
-	      end,
-    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout).
-
-receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout) ->
-    case catch SockMod:recv(Socket, 0, Timeout) of
-        {ok, Text} ->
-	    ShaperSt1 = receive
-			    {change_shaper, Shaper} ->
-				shaper:new(Shaper)
-			after 0 ->
-				ShaperState
-			end,
-	    NewShaperState = shaper:update(ShaperSt1, size(Text)),
-	    XMLStreamPid1 = receive
-				reset_stream ->
-				    exit(XMLStreamPid, closed),
-				    xml_stream:start(C2SPid)
-			    after 0 ->
-				    XMLStreamPid
-			    end,
-	    xml_stream:send_text(XMLStreamPid1, Text),
-	    receiver(Socket, SockMod, NewShaperState, C2SPid, XMLStreamPid1,
-		     Timeout);
-	{error, timeout} ->
-	    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid,
-		     Timeout);
-        {error, Reason} ->
-	    exit(XMLStreamPid, closed),
-	    gen_fsm:send_event(C2SPid, closed),
-	    ok;
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("(~w) abnormal ~w:recv termination:~n\t~p~n",
-		       [Socket, SockMod, Reason]),
-	    exit(XMLStreamPid, closed),
-	    gen_fsm:send_event(C2SPid, closed),
-	    ok
-    end.
-
 change_shaper(StateData, JID) ->
-    Shaper =  acl:match_rule(StateData#state.shaper, JID),
-    StateData#state.receiver ! {change_shaper, Shaper}.
+    Shaper = acl:match_rule(StateData#state.shaper, JID),
+    ejabberd_receiver:change_shaper(StateData#state.receiver, Shaper).
 
 send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket, Text).
