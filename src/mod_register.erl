@@ -57,15 +57,15 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		    end
 	    end;
 	get ->
-	    {iq, ID, error, XMLNS, [{xmlelement,
-				     "query",
-				     [{"xmlns", "jabber:iq:register"}],
-				     [{xmlelement, "instructions", [],
-				       {xmlcdata,
-					"Choose a username and password "
-					"to register with this server."}},
-				      {xmlelement, "username", [], []},
-				      {xmlelement, "password", [], []}]}]}
+	    {iq, ID, result, XMLNS, [{xmlelement,
+				      "query",
+				      [{"xmlns", "jabber:iq:register"}],
+				      [{xmlelement, "instructions", [],
+					[{xmlcdata,
+					  "Choose a username and password "
+					  "to register with this server."}]},
+				       {xmlelement, "username", [], []},
+				       {xmlelement, "password", [], []}]}]}
     end.
 
 

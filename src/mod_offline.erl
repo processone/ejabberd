@@ -3,6 +3,7 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : 
 %%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_offline).

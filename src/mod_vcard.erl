@@ -166,18 +166,19 @@ set_vcard(LUser, VCARD) ->
 
 -define(TLFIELD(Type, Label, Var),
 	{xmlelement, "field", [{"type", Type},
-			       {"label", Label},
+			       {"label", translate:translate(Lang, Label)},
 			       {"var", Var}], []}).
 
 
 -define(FORM,
 	[{xmlelement, "instructions", [],
-	  [{xmlcdata, "You need a x:data capable client to search"}]},
+	  [{xmlcdata, translate:translate(Lang, "You need a x:data capable client to search")}]},
 	 {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-	  [{xmlelement, "title", [], [{xmlcdata, "Users Search"}]},
+	  [{xmlelement, "title", [],
+	    [{xmlcdata, translate:translate(Lang, "Users Search")}]},
 	   {xmlelement, "instructions", [],
-	    [{xmlcdata, "Fill in fields to search "
-	      "for any matching Jabber User"}]},
+	    [{xmlcdata, translate:translate(Lang, "Fill in fields to search "
+					    "for any matching Jabber User")}]},
 	   ?TLFIELD("text-single", "User", "user"),
 	   ?TLFIELD("text-single", "Full Name", "fn"),
 	   ?TLFIELD("text-single", "Name", "given"),
@@ -205,6 +206,7 @@ do_route(From, To, Packet) ->
 	    IQ = jlib:iq_query_info(Packet),
 	    case IQ of
 		{iq, ID, Type, ?NS_SEARCH, SubEl} ->
+		    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 		    case Type of
 			set ->
 			    XDataEl = find_xdata_el(SubEl),
@@ -231,7 +233,7 @@ do_route(From, To, Packet) ->
 						   [{xmlelement, "x",
 						     [{"xmlns", ?NS_XDATA},
 						      {"type", "result"}],
-						     search_result(XData)
+						     search_result(Lang, XData)
 						    }]}]},
 					    ejabberd_router:route(
 					      To, From, jlib:iq_to_xml(ResIQ))
@@ -309,10 +311,12 @@ find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
 -define(LFIELD(Label, Var),
-	{xmlelement, "field", [{"label", Label}, {"var", Var}], []}).
+	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},
+			       {"var", Var}], []}).
 
-search_result(Data) ->
-    [{xmlelement, "title", [], [{xmlcdata, "Users Search Results"}]},
+search_result(Lang, Data) ->
+    [{xmlelement, "title", [],
+      [{xmlcdata, translate:translate(Lang, "Users Search Results")}]},
      {xmlelement, "reported", [],
       [?LFIELD("JID", "jid"),
        ?LFIELD("Full Name", "fn"),

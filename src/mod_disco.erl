@@ -46,6 +46,7 @@ register_feature(Feature) ->
     ets:insert(disco_features, {Feature}).
 
 process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
     case Type of
 	set ->
 	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
@@ -64,11 +65,11 @@ process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		       Domains ++
 		       [{xmlelement, "item",
 			 [{"jid", jlib:jid_to_string(To)},
-			  {"name", "Online Users"},
+			  {"name", translate:translate(Lang, "Online Users")},
 			  {"node", "online users"}], []},
 			{xmlelement, "item",
 			 [{"jid", jlib:jid_to_string(To)},
-			  {"name", "All Users"},
+			  {"name", translate:translate(Lang, "All Users")},
 			  {"node", "all users"}], []}]
 		      }]};
 		"online users" ->

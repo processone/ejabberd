@@ -18,3 +18,5 @@
 
 -define(MYNAME,"e.localhost").
 
+-define(MSGS_DIR, "msgs").
+

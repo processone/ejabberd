@@ -22,6 +22,7 @@ init() ->
     Port = open_port({spawn, expat_erl}, [binary]),
     db_init(),
     sha:start(),
+    translate:start(),
     ejabberd_auth:start(),
     ejabberd_router:start(),
     ejabberd_sm:start(),
