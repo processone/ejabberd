@@ -3,9 +3,9 @@
 % Ejabberd - Spanish - badlop AT jabberes.org
 
 % jlib.hrl
-{"No resource provided", ""}.
-{"Illegal resource format", ""}.
-{"Resource conflict", ""}.
+{"No resource provided", "No se ha proporcionado recurso"}.
+{"Illegal resource format", "Formato de recurso ilegal"}.
+{"Resource conflict", "Conflicto de recursos"}.
 
 % mod_configure.erl
 {"DB Tables Configuration at ", "Configuración de tablas de la BD en "}.
@@ -220,26 +220,26 @@
 {"Options", "Opciones"}.
 {"Update", "Actualizar"}.
 {"Delete", "Eliminar"}.
-{"Add User", ""}.
+{"Add User", "Añadir usuario"}.
 {"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", ""}.
-{"Offline messages", ""}.
-{"Last Activity", ""}.
-{"Never", ""}.
-{"~s offline messages queue", ""}.
-{"Time", ""}.
-{"From", ""}.
-{"To", ""}.
-{"Packet", ""}.
-{"Offline messages:", ""}.
-{"Roster", ""}.
-{"Nickname", ""}.
-{"Subscription", ""}.
-{"Pending", ""}.
-{"Groups", ""}.
-{"Remove", ""}.
-{"Add JID", ""}.
-{"User ", ""}.
-{"Roster of ", ""}.
+{"Offline messages", "Mensajes diferidos"}.
+{"Last Activity", "Última actividad"}.
+{"Never", "Nunca"}.
+{"~s offline messages queue", "~s cola de mensajes diferidos"}.
+{"Time", "Fecha"}.
+{"From", "De"}.
+{"To", "Para"}.
+{"Packet", "Paquete"}.
+{"Offline messages:", "Mensajes diferidos:"}.
+{"Roster", "Lista de contactos"}.
+{"Nickname", "Apodo"}.
+{"Subscription", "Subscripción"}.
+{"Pending", "Pendiente"}.
+{"Groups", "Grupos"}.
+{"Remove", "Borrar"}.
+{"Add JID", "Añadir JID"}.
+{"User ", "Usuario"}.
+{"Roster of ", "Lista de contactos de "}.
 
 % Local Variables:
 % mode: erlang

@@ -37,7 +37,7 @@ static int iconv_erl_control(ErlDrvData drv_data,
    int size;
    int index = 0;
    int avail;
-   int inleft, outleft;
+   size_t inleft, outleft;
    ErlDrvBinary *b;
    char *from, *to, *string, *stmp, *rstring, *rtmp;
    iconv_t cd;

@@ -170,7 +170,7 @@ SectionIn 1 RO
     CreateDirectory "$0"
     CreateShortCut "$0\Start Ejabberd.lnk" "$ERLANG_PATH\bin\werl.exe" \
 	'-sname ejabberd -pa ebin \
-	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH msgs \
+	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH priv/msgs \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
 	-s ejabberd -ejabberd config \"ejabberd.cfg\" -mnesia dir \"spool\" \
 	-sasl sasl_error_logger {file,\"log/sasl.log\"}' \
@@ -207,7 +207,7 @@ SectionIn 1 RO
 	-onfail restart -workdir "$INSTDIR" \
 	-args "-s ejabberd -pa ebin \
 	-ejabberd config \\\"ejabberd.cfg\\\" \
-	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH msgs \
+	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH priv/msgs \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
 	-sasl sasl_error_logger {file,\\\"log/sasl.log\\\"} \
 	-mnesia dir \\\"spool\\\"" -d'
