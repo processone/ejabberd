@@ -23,7 +23,7 @@ start(Socket, SockMod, Shaper) ->
 
 
 receiver(Socket, SockMod, Shaper, C2SPid) ->
-    XMLStreamPid = xml_stream:start(C2SPid),
+    XMLStreamPid = xml_stream:start(self(), C2SPid),
     ShaperState = shaper:new(Shaper),
     Timeout = case SockMod of
 		  ssl ->
@@ -46,7 +46,7 @@ receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout) ->
 	    XMLStreamPid1 = receive
 				reset_stream ->
 				    exit(XMLStreamPid, closed),
-				    xml_stream:start(C2SPid)
+				    xml_stream:start(self(), C2SPid)
 			    after 0 ->
 				    XMLStreamPid
 			    end,

@@ -1,3 +1,17 @@
+2004-07-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls_drv.c: Added freeing of SSL stuff
+
+	* src/xml_stream.erl: Added start/2 function
+	* src/ejabberd_receiver.erl: Now using xml_stream:start/2
+
+2004-07-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Support for TLS library (not completed)
+
+	* src/tls/tls_drv.c: Updated to return binaries instead of lists
+	* src/tls/tls.erl: Likewise
+
 2004-07-26  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/tls/tls.erl: Updated

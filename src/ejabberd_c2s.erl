@@ -45,6 +45,9 @@
 		sasl_state,
 		access,
 		shaper,
+		tls = false,
+		tls_enabled = false,
+		tls_options = [],
 		authentificated = false,
 		jid,
 		user = "", server = ?MYNAME, resource = "",
@@ -107,7 +110,6 @@ get_presence(FsmRef) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
-    ReceiverPid = ejabberd_receiver:start(Socket, SockMod, none),
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -116,12 +118,31 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
-    {ok, wait_for_stream, #state{socket   = Socket,
-				 sockmod  = SockMod,
-				 receiver = ReceiverPid,
-				 streamid = new_id(),
-				 access   = Access,
-				 shaper   = Shaper}}.
+    TLS = lists:member(tls, Opts),
+    TLSEnabled = lists:member(tls_from_start, Opts),
+    TLSOpts = lists:filter(fun({certfile, _}) -> true;
+			      (_) -> false
+			   end, Opts),
+    {SockMod1, Socket1, ReceiverPid} =
+	if
+	    TLSEnabled ->
+		{ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
+		RecPid = ejabberd_receiver:start(TLSSocket, tls, none),
+		{tls, TLSSocket, RecPid};
+	    true ->
+		RecPid = ejabberd_receiver:start(Socket, SockMod, none),
+		{SockMod, Socket, RecPid}
+	end,
+    {ok, wait_for_stream, #state{socket      = Socket1,
+				 sockmod     = SockMod1,
+				 receiver    = ReceiverPid,
+				 tls         = TLS,
+				 tls_enabled = TLSEnabled,
+				 tls_options = TLSOpts,
+				 streamid    = new_id(),
+				 access      = Access,
+				 shaper      = Shaper}}.
+
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2

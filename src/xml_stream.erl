@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/1, init/1, send_text/2]).
+-export([start/1, start/2, init/1, init/2, send_text/2]).
 
 -define(XML_START, 0).
 -define(XML_END,   1).
@@ -20,7 +20,15 @@
 start(CallbackPid) ->
     spawn(?MODULE, init, [CallbackPid]).
 
+start(Receiver, CallbackPid) ->
+    spawn(?MODULE, init, [Receiver, CallbackPid]).
+
 init(CallbackPid) ->
+    Port = open_port({spawn, expat_erl}, [binary]),
+    loop(CallbackPid, Port, []).
+
+init(Receiver, CallbackPid) ->
+    erlang:monitor(process, Receiver),
     Port = open_port({spawn, expat_erl}, [binary]),
     loop(CallbackPid, Port, []).
 
@@ -31,7 +39,9 @@ loop(CallbackPid, Port, Stack) ->
 	    loop(CallbackPid, Port, process_data(CallbackPid, Stack, Data));
 	{_From, {send, Str}} ->
 	    Port ! {self(), {command, Str}},
-	    loop(CallbackPid, Port, Stack)
+	    loop(CallbackPid, Port, Stack);
+	{'DOWN', _Ref, _Type, _Object, _Info} ->
+	    ok
     end.
 
 process_data(CallbackPid, Stack, Data) ->

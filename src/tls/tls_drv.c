@@ -26,13 +26,21 @@ static ErlDrvData tls_drv_start(ErlDrvPort port, char *buff)
    d->bio_write = NULL;
    d->ssl = NULL;
 
+   set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
+
    return (ErlDrvData)d;
 }
 
 static void tls_drv_stop(ErlDrvData handle)
 {
-   // TODO
-   //XML_ParserFree(((tls_data *)handle)->parser);
+   tls_data *d = (tls_data *)handle;
+
+   if (d->ssl != NULL)
+      SSL_free(d->ssl);
+
+   if (d->ctx != NULL)
+      SSL_CTX_free(d->ctx);
+
    driver_free((char *)handle);
 }
 
@@ -43,17 +51,16 @@ static void tls_drv_stop(ErlDrvData handle)
 #define GET_ENCRYPTED_OUTPUT 4
 #define GET_DECRYPTED_INPUT  5
 
-#define DECRYPTED_INPUT 1
-#define ENCRYPTED_OUTPUT 2
 
-#define die_unless(cond, errstr)			\
-	 if (!(cond))					\
-	 {						\
-	    rlen = strlen(errstr) + 1;			\
-	    *rbuf = driver_alloc(rlen);			\
-	    *rbuf[0] = 1;				\
-	    strncpy(*rbuf + 1, errstr, rlen - 1);	\
-	    return rlen;				\
+#define die_unless(cond, errstr)				\
+	 if (!(cond))						\
+	 {							\
+	    rlen = strlen(errstr) + 1;				\
+	    b = driver_alloc_binary(rlen);			\
+	    b->orig_bytes[0] = 1;				\
+	    strncpy(b->orig_bytes + 1, errstr, rlen - 1);	\
+	    *rbuf = (char *)b;					\
+	    return rlen;					\
 	 }
 
 
@@ -65,6 +72,7 @@ static int tls_drv_control(ErlDrvData handle,
    tls_data *d = (tls_data *)handle;
    int res;
    int size;
+   ErlDrvBinary *b;
 
    switch (command)
    {
@@ -92,48 +100,54 @@ static int tls_drv_control(ErlDrvData handle,
 	 SSL_set_accept_state(d->ssl);
 	 break;
       case SET_ENCRYPTED_INPUT:
+	 die_unless(d->ssl, "SSL not initialized");
 	 BIO_write(d->bio_read, buf, len);
 	 break;
       case SET_DECRYPTED_OUTPUT:
+	 die_unless(d->ssl, "SSL not initialized");
 	 res = SSL_write(d->ssl, buf, len);
 	 break;
       case GET_ENCRYPTED_OUTPUT:
+	 die_unless(d->ssl, "SSL not initialized");
 	 size = BUF_SIZE + 1;
 	 rlen = 1;
-	 *rbuf = driver_alloc(size);
-	 *rbuf[0] = 0;
-	 while ((res = BIO_read(d->bio_write, *rbuf + rlen, BUF_SIZE)) > 0)
+	 b = driver_alloc_binary(size);
+	 b->orig_bytes[0] = 0;
+	 while ((res = BIO_read(d->bio_write,
+				b->orig_bytes + rlen, BUF_SIZE)) > 0)
 	 {
-	    printf("%d bytes of encrypted data read from state machine\r\n", res);
+	    //printf("%d bytes of encrypted data read from state machine\r\n", res);
 
 	    rlen += res;
 	    size += BUF_SIZE;
-	    *rbuf = driver_realloc(*rbuf, size);
+	    b = driver_realloc_binary(b, size);
 	 }
+	 b = driver_realloc_binary(b, rlen);
+	 *rbuf = (char *)b;
 	 return rlen;
       case GET_DECRYPTED_INPUT:
 	 if (!SSL_is_init_finished(d->ssl))
 	 {
-	    printf("Doing SSL_accept\r\n");
+	    //printf("Doing SSL_accept\r\n");
 	    res = SSL_accept(d->ssl);
-	    if (res == 0)
-	       printf("SSL_accept returned zero\r\n");
+	    //if (res == 0)
+	    //   printf("SSL_accept returned zero\r\n");
 	    if (res < 0)
 	       die_unless(SSL_get_error(d->ssl, res) == SSL_ERROR_WANT_READ,
 			  "SSL_accept failed");
 	 } else {
 	    size = BUF_SIZE + 1;
 	    rlen = 1;
-	    *rbuf = driver_alloc(size);
-	    *rbuf[0] = 0;
+	    b = driver_alloc_binary(size);
+	    b->orig_bytes[0] = 0;
 
-
-	    while ((res = SSL_read(d->ssl, *rbuf + rlen, BUF_SIZE)) > 0)
+	    while ((res = SSL_read(d->ssl,
+				   b->orig_bytes + rlen, BUF_SIZE)) > 0)
 	    {
-	       printf("%d bytes of decrypted data read from state machine\r\n",res);
+	       //printf("%d bytes of decrypted data read from state machine\r\n",res);
 	       rlen += res;
 	       size += BUF_SIZE;
-	       *rbuf = driver_realloc(*rbuf, size);
+	       b = driver_realloc_binary(b, size);
 	    }
 
 	    if (res < 0)
@@ -142,23 +156,21 @@ static int tls_drv_control(ErlDrvData handle,
 
 	       if (err == SSL_ERROR_WANT_READ)
 	       {
-		  printf("SSL_read wants more data\r\n");
+		  //printf("SSL_read wants more data\r\n");
 		  //return 0;
 	       }
 	       // TODO
 	    }
+	    b = driver_realloc_binary(b, rlen);
+	    *rbuf = (char *)b;
 	    return rlen;
 	 }
 	 break;
    }
 
-   if (command == SET_ENCRYPTED_INPUT || command == SET_DECRYPTED_OUTPUT)
-   {
-
-   }
-
-   *rbuf = driver_alloc(1);
-   *rbuf[0] = 0;
+   b = driver_alloc_binary(1);
+   b->orig_bytes[0] = 0;
+   *rbuf = (char *)b;
    return 1;
 }
 

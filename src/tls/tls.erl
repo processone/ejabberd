@@ -46,12 +46,12 @@ init([]) ->
     Port = open_port({spawn, tls_drv}, [binary]),
     Res = port_control(Port, ?SET_CERTIFICATE_FILE, "./ssl.pem" ++ [0]),
     case Res of
-	[0] ->
+	<<0>> ->
 	    %ets:new(iconv_table, [set, public, named_table]),
 	    %ets:insert(iconv_table, {port, Port}),
 	    {ok, Port};
-	[1 | Error] ->
-	    {error, Error}
+	<<1, Error/binary>> ->
+	    {error, binary_to_list(Error)}
     end.
 
 
@@ -84,14 +84,15 @@ terminate(_Reason, Port) ->
 tcp_to_tls(TCPSocket, Options) ->
     case lists:keysearch(certfile, 1, Options) of
 	{value, {certfile, CertFile}} ->
+	    ok = erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
 	    Port = open_port({spawn, tls_drv}, [binary]),
 	    io:format("open_port: ~p~n", [Port]),
 	    case port_control(Port, ?SET_CERTIFICATE_FILE,
 			      CertFile ++ [0]) of
-		[0] ->
+		<<0>> ->
 		    {ok, #tlssock{tcpsock = TCPSocket, tlsport = Port}};
-		[1 | Error] ->
-		    {error, Error}
+		<<1, Error/binary>> ->
+		    {error, binary_to_list(Error)}
 	    end;
 	false ->
 	    {error, no_certfile}
@@ -107,40 +108,41 @@ recv(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Length, Timeout) ->
     case gen_tcp:recv(TCPSocket, Length, Timeout) of
 	{ok, Packet} ->
 	    case port_control(Port, ?SET_ENCRYPTED_INPUT, Packet) of
-		[0] ->
+		<<0>> ->
 		    case port_control(Port, ?GET_DECRYPTED_INPUT, []) of
-			[0 | In] ->
+			<<0, In/binary>> ->
 			    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
-				[0 | Out] ->
+				<<0, Out/binary>> ->
 				    case gen_tcp:send(TCPSocket, Out) of
 					ok ->
 					    {ok, In};
 					Error ->
 					    Error
 				    end;
-				[1 | Error] ->
-				    {error, Error}
+				<<1, Error/binary>> ->
+				    {error, binary_to_list(Error)}
 			    end;
-			[1 | Error] ->
-			    {error, Error}
+			<<1, Error/binary>> ->
+			    {error, binary_to_list(Error)}
 		    end;
-		[1 | Error] ->
-		    {error, Error}
+		<<1, Error/binary>> ->
+		    {error, binary_to_list(Error)}
 	    end;
 	{error, _Reason} = Error ->
 	    Error
     end.
+
 send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
     case port_control(Port, ?SET_DECRYPTED_OUTPUT, Packet) of
-	[0] ->
+	<<0>> ->
 	    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
-		[0 | Out] ->
+		<<0, Out/binary>> ->
 		    gen_tcp:send(TCPSocket, Out);
-		[1 | Error] ->
-		    {error, Error}
+		<<1, Error/binary>> ->
+		    {error, binary_to_list(Error)}
 	    end;
-	[1 | Error] ->
-	    {error, Error}
+	<<1, Error/binary>> ->
+	    {error, binary_to_list(Error)}
     end.
 
 
@@ -171,24 +173,24 @@ loop(Port, Socket) ->
 	{tcp, Socket, Data} ->
 	    %io:format("read: ~p~n", [Data]),
 	    Res = port_control(Port, ?SET_ENCRYPTED_INPUT, Data),
-	    %io:format("SET_ENCRYPTED_INPUT: ~p~n", [Res]),
+	    io:format("SET_ENCRYPTED_INPUT: ~p~n", [Res]),
 
 	    DIRes = port_control(Port, ?GET_DECRYPTED_INPUT, Data),
-	    %io:format("GET_DECRYPTED_INPUT: ~p~n", [DIRes]),
+	    io:format("GET_DECRYPTED_INPUT: ~p~n", [DIRes]),
 	    case DIRes of
-		[0 | In] ->
-		    io:format("input: ~s~n", [In]);
-		[1 | DIError] ->
-		    io:format("GET_DECRYPTED_INPUT error: ~p~n", [DIError])
+		<<0, In/binary>> ->
+		    io:format("input: ~s~n", [binary_to_list(In)]);
+		<<1, DIError/binary>> ->
+		    io:format("GET_DECRYPTED_INPUT error: ~p~n", [binary_to_list(DIError)])
 	    end,
 
 	    EORes = port_control(Port, ?GET_ENCRYPTED_OUTPUT, Data),
-	    %io:format("GET_ENCRYPTED_OUTPUT: ~p~n", [EORes]),
+	    io:format("GET_ENCRYPTED_OUTPUT: ~p~n", [EORes]),
 	    case EORes of
-		[0 | Out] ->
+		<<0, Out/binary>> ->
 		    gen_tcp:send(Socket, Out);
-		[1 | EOError] ->
-		    io:format("GET_ENCRYPTED_OUTPUT error: ~p~n", [EOError])
+		<<1, EOError/binary>> ->
+		    io:format("GET_ENCRYPTED_OUTPUT error: ~p~n", [binary_to_list(EOError)])
 	    end,
 		    
 
