@@ -17,6 +17,8 @@
 -define(XML_CDATA, 2).
 -define(XML_ERROR, 3).
 
+-define(PARSE_COMMAND, 0).
+
 start(CallbackPid) ->
     spawn(?MODULE, init, [CallbackPid]).
 
@@ -38,8 +40,12 @@ loop(CallbackPid, Port, Stack) ->
 	    Data = binary_to_term(Bin),
 	    loop(CallbackPid, Port, process_data(CallbackPid, Stack, Data));
 	{_From, {send, Str}} ->
-	    Port ! {self(), {command, Str}},
-	    loop(CallbackPid, Port, Stack);
+	    Res = port_control(Port, ?PARSE_COMMAND, Str),
+	    NewStack = lists:foldl(
+			 fun(Data, St) ->
+				 process_data(CallbackPid, St, Data)
+			 end, Stack, binary_to_term(Res)),
+	    loop(CallbackPid, Port, NewStack);
 	{'DOWN', _Ref, _Type, _Object, _Info} ->
 	    ok
     end.

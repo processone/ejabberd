@@ -26,6 +26,8 @@
 	 code_change/3,
 	 terminate/2]).
 
+-define(STRINGPREP_PORT, stringprep_port).
+
 -define(NAMEPREP_COMMAND, 1).
 -define(NODEPREP_COMMAND, 2).
 -define(RESOURCEPREP_COMMAND, 3).
@@ -39,8 +41,7 @@ start_link() ->
 init([]) ->
     ok = erl_ddll:load_driver(ejabberd:get_so_path(), stringprep_drv),
     Port = open_port({spawn, stringprep_drv}, []),
-    ets:new(stringprep_table, [set, public, named_table]),
-    ets:insert(stringprep_table, {port, Port}),
+    register(?STRINGPREP_PORT, Port),
     {ok, Port}.
 
 
@@ -84,8 +85,7 @@ resourceprep(String) ->
     control(?RESOURCEPREP_COMMAND, String).
 
 control(Command, String) ->
-    [{port, Port} | _] = ets:lookup(stringprep_table, port),
-    case port_control(Port, Command, String) of
+    case port_control(?STRINGPREP_PORT, Command, String) of
 	[0 | _] -> error;
 	[1 | Res] -> Res
     end.

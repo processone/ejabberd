@@ -157,7 +157,7 @@ To compile \ejabberd{} in MS Windows environment, you will need the following
 packages:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
-\item \footahref{http://www.erlang.org/download/otp\_win32\_R9C-0.exe}{Erlang/OTP R9C-0}
+\item \footahref{http://erlang.org/download/otp_win32_R10B-1a.exe}{Erlang/OTP R10B-1a}
 \item \footahref{http://prdownloads.sourceforge.net/expat/expat\_win32bin\_1\_95\_7.exe?download}{Expat 1.95.7}
 \item
 \footahref{http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.9.1.tar.gz}{Iconv 1.9.1}
@@ -406,7 +406,8 @@ The following ACLs pre-defined:
 \titem{none} Matches none JIDs.
 \end{description}
 
-An entry allowing or denying different services would look similar to this:
+An entry allowing or denying access to different services would look similar to
+this:
 \begin{verbatim}
   {access, <accessname>, [{allow, <aclname>},
                           {deny, <aclname>},
@@ -813,7 +814,7 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
   replicas is down, other replicas will be used.
   
   Also section ``5.3 Table Fragmentation''
-  \footahref{http://erlang.org/doc/r9c/lib/mnesia-4.1.4/doc/html/part_frame.html}{here}
+  \footahref{http://www.erlang.se/doc/doc-5.4/lib/mnesia-4.2/doc/html/index.html}{here}
   can be useful.
   
   (alt) Same as in previous item, but for other tables.

@@ -1,3 +1,17 @@
+2004-12-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/expat_erl.c: Now uses port control instead of port output
+	* src/xml_stream.erl: Likewise
+
+2004-11-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/stringprep.erl: Now register port instead of
+	storing it in ets table
+
+2004-11-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated URLs to R10C release
+
 2004-11-20  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_vcard.erl: Added missed index
