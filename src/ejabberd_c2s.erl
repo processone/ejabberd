@@ -16,7 +16,8 @@
 -export([start/2,
 	 start_link/2,
 	 send_text/2,
-	 send_element/2]).
+	 send_element/2,
+	 get_presence/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -89,6 +90,10 @@ start(SockData, Opts) ->
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_c2s, [SockData, Opts], ?FSMOPTS).
+
+%% Return Username, Resource and presence information
+get_presence(FsmRef) ->
+    gen_fsm:sync_send_all_state_event(FsmRef, {get_presence}, 1000).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -661,6 +666,22 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
+handle_sync_event({get_presence}, _From, StateName, StateData) ->
+    User = StateData#state.user,
+    Status =
+	case StateData#state.pres_last of
+	    undefined ->
+		"unavailable";
+	    PresLast ->
+		case xml:get_path_s(PresLast, [{elem, "status"}, cdata]) of
+		    "" ->
+			"available";
+		    Stat ->
+			Stat
+		end
+	end,
+    Reply = {User, Status},
+    {reply, Reply, StateName, StateData};
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.

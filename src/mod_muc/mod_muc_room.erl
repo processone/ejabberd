@@ -119,6 +119,7 @@ init([Host, Room, Opts]) ->
 normal_state({route, From, "",
 	      {xmlelement, "message", Attrs, Els} = Packet},
 	     StateData) ->
+    Lang = xml:get_attr_s("xml:lang", Attrs),
     case is_user_online(From, StateData) of
 	true ->
 	    case xml:get_attr_s("type", Attrs) of
@@ -172,16 +173,26 @@ normal_state({route, From, "",
 							       NewStateData1),
 				    {next_state, normal_state, NewStateData2};
 				_ ->
+				    ErrText = 
+					case (StateData#state.config)#config.allow_change_subj of
+					    true ->
+						"Only moderators and participants "
+						"are allowed to change subject in this room";
+					    _ ->
+						"Only moderators "
+						"are allowed to change subject in this room"
+					end,
 				    Err = jlib:make_error_reply(
-					    Packet, ?ERR_FORBIDDEN),
+					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
 				    ejabberd_router:route(
 				      StateData#state.jid,
 				      From, Err),
 			    {next_state, normal_state, StateData}
 			    end;
 			true ->
+			    ErrText = "Visitors are not allowed to send messages to all occupants",
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_FORBIDDEN),
+				    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
 			    ejabberd_router:route(
 			      StateData#state.jid,
 			      From, Err),
@@ -202,11 +213,20 @@ normal_state({route, From, "",
 			_ ->
 			    {next_state, normal_state, StateData}
 		    end;
+		"chat" ->
+		    ErrText = "It is not allowed to send private messages to the conference",
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+		    ejabberd_router:route(
+		      StateData#state.jid,
+		      From, Err),
+		    {next_state, normal_state, StateData};
 		Type when (Type == "") or (Type == "normal") ->
 		    case check_invitation(From, Els, StateData) of
 			error ->
+			    ErrText = "It is not allowed to send normal messages to the conference",
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_NOT_ALLOWED),
+				    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
 			    ejabberd_router:route(
 			      StateData#state.jid,
 			      From, Err),
@@ -231,8 +251,9 @@ normal_state({route, From, "",
 			    end
 		    end;
 		_ ->
+		    ErrText = "Improper message type",
 		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_NOT_ALLOWED),
+			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
 		    ejabberd_router:route(
 		      StateData#state.jid,
 		      From, Err),
@@ -243,8 +264,9 @@ normal_state({route, From, "",
 		"error" ->
 		    ok;
 		_ ->
+		    ErrText = "Only occupants are allowed to send messages to the conference",
 		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_NOT_ACCEPTABLE),
+			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
 		    ejabberd_router:route(StateData#state.jid, From, Err)
 	    end,
 	    {next_state, normal_state, StateData}
@@ -305,6 +327,7 @@ normal_state({route, From, Nick,
 	      {xmlelement, "presence", Attrs, Els} = Packet},
 	     StateData) ->
     Type = xml:get_attr_s("type", Attrs),
+    Lang = xml:get_attr_s("xml:lang", Attrs),
     StateData1 =
 	case Type of
 	    "unavailable" ->
@@ -336,15 +359,30 @@ normal_state({route, From, Nick,
 		    true ->
 			case is_nick_change(From, Nick, StateData) of
 			    true ->
-				case is_nick_exists(Nick, StateData) of
-				    true ->
+				case {is_nick_exists(Nick, StateData),
+				      mod_muc:can_use_nick(From, Nick)} of
+				    {true, _} ->
+					Lang = xml:get_attr_s("xml:lang", Attrs),
+					ErrText = "Nickname is already in use by another occupant",
 					Err = jlib:make_error_reply(
 						Packet,
-						?ERR_CONFLICT),
+						?ERRT_CONFLICT(Lang, ErrText)),
 					ejabberd_router:route(
 					  jlib:jid_replace_resource(
 					    StateData#state.jid,
 					    Nick), % TODO: s/Nick/""/
+					  From, Err),
+					StateData;
+				    {_, false} ->
+					ErrText = "Nickname is registered by another person",
+					Err = jlib:make_error_reply(
+						Packet,
+						?ERRT_CONFLICT(Lang, ErrText)),
+					ejabberd_router:route(
+					  % TODO: s/Nick/""/
+					  jlib:jid_replace_resource(
+					    StateData#state.jid,
+					    Nick),
 					  From, Err),
 					StateData;
 				    _ ->
@@ -376,6 +414,7 @@ normal_state({route, From, ToNick,
 	      {xmlelement, "message", Attrs, Els} = Packet},
 	     StateData) ->
     Type = xml:get_attr_s("type", Attrs),
+    Lang = xml:get_attr_s("xml:lang", Attrs),
     case Type of
 	"error" ->
 	    case is_user_online(From, StateData) of
@@ -398,8 +437,10 @@ normal_state({route, From, ToNick,
 		true ->
 		    case Type of
 			"groupchat" ->
+			    ErrText = "It is not allowed to send private "
+				      "messages of type \"groupchat\"",
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_BAD_REQUEST),
+				    Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
 			    ejabberd_router:route(
 				jlib:jid_replace_resource(
 				    StateData#state.jid,
@@ -408,8 +449,9 @@ normal_state({route, From, ToNick,
 			_ ->
 			    case find_jid_by_nick(ToNick, StateData) of
 				false ->
+				    ErrText = "Recipient is not in the conference room",
 				    Err = jlib:make_error_reply(
-					    Packet, ?ERR_ITEM_NOT_FOUND),
+					    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
 				    ejabberd_router:route(
 					jlib:jid_replace_resource(
 					    StateData#state.jid,
@@ -427,8 +469,9 @@ normal_state({route, From, ToNick,
 			    end
 		    end;
 		_ ->
+		    ErrText = "Only occupants are allowed to send messages to the conference",
 		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_NOT_ALLOWED),
+			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
 		    ejabberd_router:route(
 			jlib:jid_replace_resource(
 			    StateData#state.jid,
@@ -441,17 +484,19 @@ normal_state({route, From, ToNick,
 normal_state({route, From, ToNick,
 	      {xmlelement, "iq", Attrs, Els} = Packet},
 	     StateData) ->
-    case (StateData#state.config)#config.allow_query_users
-	andalso is_user_online(From, StateData) of
-	true ->
+    Lang = xml:get_attr_s("xml:lang", Attrs),
+    case {(StateData#state.config)#config.allow_query_users,
+	  is_user_online(From, StateData)} of
+	{true, true} ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
 		    case jlib:iq_query_info(Packet) of
 			reply ->
 			    ok;
 			_ ->
+			    ErrText = "Recipient is not in the conference room",
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_ITEM_NOT_FOUND),
+				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
 			    ejabberd_router:route(
 			      jlib:jid_replace_resource(
 				StateData#state.jid, ToNick),
@@ -465,13 +510,26 @@ normal_state({route, From, ToNick,
 		      jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		      ToJID, Packet)
 	    end;
+	{_, false} ->
+	    case jlib:iq_query_info(Packet) of
+		reply ->
+		    ok;
+		_ ->
+		    ErrText = "Only occupants are allowed to send queries to the conference",
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+		    ejabberd_router:route(
+		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
+		      From, Err)
+	    end;
 	_ ->
 	    case jlib:iq_query_info(Packet) of
 		reply ->
 		    ok;
 		_ ->
+		    ErrText = "Queries to the conference members are not allowed in this room",
 		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_NOT_ALLOWED),
+			    Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
 		    ejabberd_router:route(
 		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
 		      From, Err)
@@ -798,10 +856,20 @@ is_nick_change(JID, Nick, StateData) ->
     end.
 
 add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
-    case is_nick_exists(Nick, StateData) or
-	not mod_muc:can_use_nick(From, Nick) of
-	true ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_CONFLICT),
+    Lang = xml:get_attr_s("xml:lang", Attrs),
+    case {is_nick_exists(Nick, StateData),
+	  mod_muc:can_use_nick(From, Nick)} of
+	{true, _} ->
+	    ErrText = "Nickname is already in use by another occupant",
+	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
+	    ejabberd_router:route(
+	      % TODO: s/Nick/""/
+	      jlib:jid_replace_resource(StateData#state.jid, Nick),
+	      From, Err),
+	    StateData;
+	{_, false} ->
+	    ErrText = "Nickname is registered by another person",
+	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
 	    ejabberd_router:route(
 	      % TODO: s/Nick/""/
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
@@ -815,8 +883,12 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		    Err = jlib:make_error_reply(
 			    Packet,
 			    case Affiliation of
-				outcast -> ?ERR_FORBIDDEN;
-				_ -> ?ERR_REGISTRATION_REQUIRED
+				outcast ->
+				    ErrText = "You have been banned from this room",
+				    ?ERRT_FORBIDDEN(Lang, ErrText);
+				_ ->
+				    ErrText = "Membership required to enter this room",
+				    ?ERRT_REGISTRATION_REQUIRED(Lang, ErrText)
 			    end),
 		    ejabberd_router:route( % TODO: s/Nick/""/
 		      jlib:jid_replace_resource(StateData#state.jid, Nick),
@@ -836,13 +908,22 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 				true ->
 				    ok;
 				_ ->
-				    Lang = xml:get_attr_s("xml:lang", Attrs),
 				    send_subject(From, Lang, StateData)
 			    end,
 			    NewState;
-			_ ->
+			nopass ->
+			    ErrText = "Password required to enter this room",
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_NOT_AUTHORIZED),
+				    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
+			    ejabberd_router:route( % TODO: s/Nick/""/
+			      jlib:jid_replace_resource(
+				StateData#state.jid, Nick),
+			      From, Err),
+			    StateData;
+			_ ->
+			    ErrText = "Incorrect password",
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
 			    ejabberd_router:route( % TODO: s/Nick/""/
 			      jlib:jid_replace_resource(
 				StateData#state.jid, Nick),
@@ -860,20 +941,30 @@ check_password(_Affiliation, Els, StateData) ->
 	    true;
 	true ->
 	    Pass = extract_password(Els),
-	    case (StateData#state.config)#config.password of
-		Pass ->
-		    true;
+	    case Pass of
+		false ->
+		    nopass;
 		_ ->
-		    false
+		    case (StateData#state.config)#config.password of
+			Pass ->
+			    true;
+			_ ->
+			false
+		    end
 	    end
     end.
 
 extract_password([]) ->
-    "";
-extract_password([{xmlelement, Name, Attrs, SubEls} = El | Els]) ->
+    false;
+extract_password([{xmlelement, _Name, Attrs, _SubEls} = El | Els]) ->
     case xml:get_attr_s("xmlns", Attrs) of
 	?NS_MUC ->
-	    xml:get_path_s(El, [{elem, "password"}, cdata]);
+	    case xml:get_subtag(El, "password") of
+		false ->
+		    false;
+		SubEl ->
+		    xml:get_tag_cdata(SubEl)
+	    end;
 	_ ->
 	    extract_password(Els)
     end;
@@ -913,6 +1004,7 @@ count_stanza_shift(Nick, Els, StateData) ->
 		 _ ->
 		     count_maxchars_shift(Nick, MaxChars, HL)
 	     end,
+   
     lists:max([Shift0, Shift1, Shift2, Shift3]).
 
 count_seconds_shift(Seconds, HistoryList) ->
@@ -968,7 +1060,12 @@ extract_history([{xmlelement, Name, Attrs, SubEls} = El | Els], Type) ->
 		       [{elem, "history"}, {attr, Type}]),
 	    case Type of
 		"since" ->
-		    parse_datetime(AttrVal);
+		    case catch parse_datetime(AttrVal) of
+			{'EXIT', Err} ->
+			    false;
+			Res ->
+			    Res
+		    end;
 		_ ->
 		    case catch list_to_integer(AttrVal) of
 			{'EXIT', _} ->
@@ -991,50 +1088,20 @@ extract_history([_ | Els], Type) ->
 % JEP-0082
 % yyyy-mm-ddThh:mm:ss[.sss]{Z|{+|-}hh:mm} -> {{yyyy, mm, dd}, {hh, mm, ss}} (UTC)
 parse_datetime(TimeStr) ->
-    DateTime = string:tokens(TimeStr, "T"),
-    case DateTime of
-	[Date, Time] ->
-	    case parse_date(Date) of
-		false ->
-		    false;
-		D ->
-		    case parse_time(Time) of
-			false ->
-			    false;
-			{T, TZH, TZM} ->
-			    S = calendar:datetime_to_gregorian_seconds(
-				  {D, T}),
-			    calendar:gregorian_seconds_to_datetime(
-			      S - TZH * 60 * 60 - TZM * 60 * 30)
-		    end
-	    end;
-	_ ->
-	    false
-    end.
+    [Date, Time] = string:tokens(TimeStr, "T"),
+    D = parse_date(Date),
+    {T, TZH, TZM} = parse_time(Time),
+    S = calendar:datetime_to_gregorian_seconds({D, T}),
+    calendar:gregorian_seconds_to_datetime(S - TZH * 60 * 60 - TZM * 60).
 
 % yyyy-mm-dd
 parse_date(Date) ->
     YearMonthDay = string:tokens(Date, "-"),
-    case length(YearMonthDay) of
-	3 ->
-	    [Y, M, D] = lists:map(
-			  fun(L)->
-			      case catch list_to_integer(L) of
-				  {'EXIT', _} ->
-				      false;
-				  Int ->
-				      Int
-			      end
-			  end, YearMonthDay),
-	    case catch calendar:valid_date(Y, M, D) of
-		true ->
-		    {Y, M, D};
-		_ ->
-		    false
-	    end;
-	_ ->
-	    false
-    end.
+    [Y, M, D] = lists:map(
+		  fun(L)->
+		      list_to_integer(L)
+		  end, YearMonthDay),
+    {Y, M, D}.
 
 % hh:mm:ss[.sss]TZD
 parse_time(Time) ->
@@ -1043,12 +1110,7 @@ parse_time(Time) ->
 	    parse_time_with_timezone(Time);
 	_ ->
 	    [T | _] = string:tokens(Time, "Z"),
-	    case parse_time1(T) of
-		false ->
-		    false;
-		TT ->
-		    {TT, 0, 0}
-	    end
+	    {parse_time1(T), 0, 0}
     end.
 
 parse_time_with_timezone(Time) ->
@@ -1065,71 +1127,35 @@ parse_time_with_timezone(Time) ->
     end.
 
 parse_time_with_timezone(Time, Delim) ->
-    TTZ = string:tokens(Time, Delim),
-    case TTZ of
-	[T, TZ] ->
-	    case parse_timezone(TZ) of
-		false ->
-		    false;
-		{TZH, TZM} ->
-		    case parse_time1(T) of
-			false ->
-			    false;
-			TT ->
-			    case Delim of
-				"-" ->
-				    {TT, -TZH, -TZM};
-				"+" ->
-				    {TT, TZH, TZM};
-				_ ->
-				    false
-			    end
-		    end
-	    end;
-	_ ->
-	    false
+    [T, TZ] = string:tokens(Time, Delim),
+    {TZH, TZM} = parse_timezone(TZ),
+    TT = parse_time1(T),
+    case Delim of
+	"-" ->
+	    {TT, -TZH, -TZM};
+	"+" ->
+	    {TT, TZH, TZM}
     end.
 
 parse_timezone(TZ) ->
-    case string:tokens(TZ, ":") of
-	[H, M] ->
-	    case check_list([{H, 12}, {M, 60}]) of
-		{[H, M], true} ->
-		    {H, M};
-		_ ->
-		    false
-	    end;
-	_ ->
-	    false
-    end.
+    [H, M] = string:tokens(TZ, ":"),
+    {[H1, M1], true} = check_list([{H, 12}, {M, 60}]),
+    {H1, M1}.
 
 parse_time1(Time) ->
-    case string:tokens(Time, ".") of
-	[HMS | _] ->
-	    case string:tokens(HMS, ":") of
-		[H, M, S] ->
-		    case check_list([{H, 24}, {M, 60}, {S, 60}]) of
-			{[H1, M1, S1], true} ->
-			    {H1, M1, S1};
-			_ ->
-			    false
-		    end;
-		_ ->
-		    false
-	    end;
-	_ ->
-	    false
-    end.
+    [HMS | _] =  string:tokens(Time, "."),
+    [H, M, S] = string:tokens(HMS, ":"),
+    {[H1, M1, S1], true} = check_list([{H, 24}, {M, 60}, {S, 60}]),
+    {H1, M1, S1}.
 
 check_list(List) ->
     lists:mapfoldl(
       fun({L, N}, B)->
-	  case catch list_to_integer(L) of
-	      {'EXIT', _} ->
-		  {false, false};
-	      Int when (Int >= 0) and (Int =< N) ->
-		  {Int, B};
-	      _ ->
+	  V = list_to_integer(L),
+	  if
+	      (V >= 0) and (V =< N) ->
+		  {V, B};
+	      true ->
 		  {false, false}
 	  end
       end, true, List).
@@ -1405,7 +1431,7 @@ can_change_subject(Role, StateData) ->
 
 process_iq_admin(From, set, Lang, SubEl, StateData) ->
     {xmlelement, _, _, Items} = SubEl,
-    process_admin_items_set(From, Items, StateData);
+    process_admin_items_set(From, Items, Lang, StateData);
 
 process_iq_admin(From, get, Lang, SubEl, StateData) ->
     case xml:get_subtag(SubEl, "item") of
@@ -1431,7 +1457,8 @@ process_iq_admin(From, get, Lang, SubEl, StateData) ->
 						      SAffiliation, StateData),
 					    {result, Items, StateData};
 					true ->
-					    {error, ?ERR_NOT_ALLOWED}
+					    ErrText = "Administrator privileges required",
+					    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
 				    end
 			    end
 		    end;
@@ -1445,7 +1472,8 @@ process_iq_admin(From, get, Lang, SubEl, StateData) ->
 				    Items = items_with_role(SRole, StateData),
 				    {result, Items, StateData};
 				true ->
-				    {error, ?ERR_NOT_ALLOWED}
+				    ErrText = "Moderator privileges required",
+				    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
 			    end
 		    end
 	    end
@@ -1492,10 +1520,10 @@ search_affiliation(Affiliation, StateData) ->
       end, ?DICT:to_list(StateData#state.affiliations)).
 
 
-process_admin_items_set(UJID, Items, StateData) ->
+process_admin_items_set(UJID, Items, Lang, StateData) ->
     UAffiliation = get_affiliation(UJID, StateData),
     URole = get_role(UJID, StateData),
-    case find_changed_items(UJID, UAffiliation, URole, Items, StateData, []) of
+    case find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, []) of
 	{result, Res} ->
 	    NSD =
 		lists:foldl(
@@ -1555,19 +1583,23 @@ process_admin_items_set(UJID, Items, StateData) ->
     end.
 
     
-find_changed_items(UJID, UAffiliation, URole, [], StateData, Res) ->
+find_changed_items(UJID, UAffiliation, URole, [], Lang, StateData, Res) ->
     {result, Res};
 find_changed_items(UJID, UAffiliation, URole, [{xmlcdata, _} | Items],
-		   StateData, Res) ->
-    find_changed_items(UJID, UAffiliation, URole, Items, StateData, Res);
+		   Lang, StateData, Res) ->
+    find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, Res);
 find_changed_items(UJID, UAffiliation, URole,
 		   [{xmlelement, "item", Attrs, Els} = Item | Items],
-		   StateData, Res) ->
+		   Lang, StateData, Res) ->
     TJID = case xml:get_attr("jid", Attrs) of
 	       {value, S} ->
 		   case jlib:string_to_jid(S) of
 		       error ->
-			   {error, ?ERR_BAD_REQUEST};
+			   ErrText = io_lib:format(
+				       translate:translate(
+					 Lang,
+					 "JID ~s is invalid"), [S]),
+			   {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 		       J ->
 			   {value, J}
 		   end;
@@ -1576,7 +1608,13 @@ find_changed_items(UJID, UAffiliation, URole,
 		       {value, N} ->
 			   case find_jid_by_nick(N, StateData) of
 			       false ->
-				   {error, ?ERR_NOT_ALLOWED};
+				   ErrText =
+				       io_lib:format(
+					 translate:translate(
+					   Lang,
+					   "Nickname ~s does not exist in the room"),
+					 [N]),
+				   {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 			       J ->
 				   {value, J}
 			   end;
@@ -1596,7 +1634,13 @@ find_changed_items(UJID, UAffiliation, URole,
 			{value, StrAffiliation} ->
 			    case catch list_to_affiliation(StrAffiliation) of
 				{'EXIT', _} ->
-				    {error, ?ERR_BAD_REQUEST};
+				    ErrText1 =
+					io_lib:format(
+					  translate:translate(
+					    Lang,
+					    "Invalid affiliation: ~s"),
+					    [StrAffiliation]),
+				    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText1)};
 				SAffiliation ->
 				    case can_change_ra(
 					   UAffiliation, URole,
@@ -1606,13 +1650,13 @@ find_changed_items(UJID, UAffiliation, URole,
 					    find_changed_items(
 					      UJID,
 					      UAffiliation, URole,
-					      Items, StateData,
+					      Items, Lang, StateData,
 					      Res);
 					true ->
 					    find_changed_items(
 					      UJID,
 					      UAffiliation, URole,
-					      Items, StateData,
+					      Items, Lang, StateData,
 					      [{jlib:jid_remove_resource(JID),
 						affiliation,
 						SAffiliation,
@@ -1627,7 +1671,13 @@ find_changed_items(UJID, UAffiliation, URole,
 		{value, StrRole} ->
 		    case catch list_to_role(StrRole) of
 			{'EXIT', _} ->
-			    {error, ?ERR_BAD_REQUEST};
+			    ErrText1 =
+				io_lib:format(
+				  translate:translate(
+				    Lang,
+				    "Invalid role: ~s"),
+				  [StrRole]),
+			    {error, ?ERRT_BAD_REQUEST(Lang, ErrText1)};
 			SRole ->
 			    case can_change_ra(
 				   UAffiliation, URole,
@@ -1637,13 +1687,13 @@ find_changed_items(UJID, UAffiliation, URole,
 				    find_changed_items(
 				      UJID,
 				      UAffiliation, URole,
-				      Items, StateData,
+				      Items, Lang, StateData,
 				      Res);
 				true ->
 				    find_changed_items(
 				      UJID,
 				      UAffiliation, URole,
-				      Items, StateData,
+				      Items, Lang, StateData,
 				      [{JID, role, SRole,
 					xml:get_path_s(
 					  Item, [{elem, "reason"},
@@ -1656,7 +1706,7 @@ find_changed_items(UJID, UAffiliation, URole,
 	Err ->
 	    Err
     end;
-find_changed_items(UJID, UAffiliation, URole, Items, StateData, Res) ->
+find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, Res) ->
     {error, ?ERR_BAD_REQUEST}.
 
 
@@ -1851,10 +1901,11 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 		[{xmlelement, "destroy", Attrs1, Els1}] ->
 		    destroy_room(Els1, StateData);
 		Items ->
-		    process_admin_items_set(From, Items, StateData)
+		    process_admin_items_set(From, Items, Lang, StateData)
 	    end;
 	_ ->
-	    {error, ?ERR_FORBIDDEN}
+	    ErrText = "Owner privileges required",
+	    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
     end;
 
 process_iq_owner(From, get, Lang, SubEl, StateData) ->
@@ -1872,7 +1923,13 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 			{value, StrAffiliation} ->
 			    case catch list_to_affiliation(StrAffiliation) of
 				{'EXIT', _} ->
-				    {error, ?ERR_BAD_REQUEST};
+				    ErrText =
+					io_lib:format(
+					  translate:translate(
+					    Lang,
+					    "Invalid affiliation: ~s"),
+					  [StrAffiliation]),
+				    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 				SAffiliation ->
 				    Items = items_with_affiliation(
 					      SAffiliation, StateData),
@@ -1883,7 +1940,8 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
 	    end;
 	_ ->
-	    {error, ?ERR_NOT_ALLOWED}
+	    ErrText = "Owner privileges required",
+	    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
     end.
 
 
@@ -2191,7 +2249,7 @@ process_iq_disco_items(From, get, Lang, StateData) ->
 		  ?DICT:to_list(StateData#state.users)),
 	    {result, UList, StateData};
 	_ ->
-	    {error, ?ERR_NOT_ALLOWED}
+	    {error, ?ERR_FORBIDDEN}
     end.
 
 get_title(StateData) ->

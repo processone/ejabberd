@@ -113,8 +113,9 @@ do_route(Host, From, To, Packet) ->
 							  jlib:iq_to_xml(Res));
 				#iq{type = set,
 				    xmlns = ?NS_REGISTER = XMLNS,
+				    lang = Lang,
 				    sub_el = SubEl} = IQ ->
-				    case process_iq_register_set(From, SubEl) of
+				    case process_iq_register_set(From, SubEl, Lang) of
 					{result, IQRes} ->
 					    Res = IQ#iq{type = result,
 							sub_el =
@@ -135,7 +136,7 @@ do_route(Host, From, To, Packet) ->
 				    sub_el = SubEl} = IQ ->
 				    Res = IQ#iq{type = result,
 						sub_el =
-						[{xmlelement, "query",
+						[{xmlelement, "vCard",
 						  [{"xmlns", XMLNS}],
 						  iq_get_vcard(Lang)}]},
 				    ejabberd_router:route(To,
@@ -161,9 +162,12 @@ do_route(Host, From, To, Packet) ->
 						    [{elem, "body"}, cdata]),
 					    broadcast_service_message(Msg);
 					_ ->
+					    Lang = xml:get_attr_s("xml:lang", Attrs),
+					    ErrText = "Only service administrators "
+						      "are allowed to send service messages",
 					    Err = jlib:make_error_reply(
 						    Packet,
-						    ?ERR_NOT_ALLOWED),
+						    ?ERRT_FORBIDDEN(Lang, ErrText)),
 					    ejabberd_router:route(
 					      To, From, Err)
 				    end
@@ -198,8 +202,10 @@ do_route(Host, From, To, Packet) ->
 			    mod_muc_room:route(Pid, From, Nick, Packet),
 			    ok;
 			_ ->
+			    Lang = xml:get_attr_s("xml:lang", Attrs),
+			    ErrText = "Conference room does not exist",
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_SERVICE_UNAVAILABLE),
+				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
 			    ejabberd_router:route(To, From, Err)
 		    end;
 		[R] ->
@@ -332,12 +338,13 @@ iq_get_register_info(From, Host, Lang) ->
 		Lang, "Enter nickname you want to register")}]},
 	   ?XFIELD("text-single", "Nickname", "nick", Nick)]}].
 
-iq_set_register_info(From, XData) ->
+iq_set_register_info(From, XData, Lang) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     LUS = {LUser, LServer},
     case lists:keysearch("nick", 1, XData) of
 	false ->
-	    {error, ?ERR_BAD_REQUEST};
+	    ErrText = "You must fill in field \"nick\" in the form",
+	    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 	{value, {_, [Nick]}} ->
 	    F = fun() ->
 			case Nick of
@@ -369,13 +376,14 @@ iq_set_register_info(From, XData) ->
 		{atomic, ok} ->
 		    {result, []};
 		{atomic, false} ->
-		    {error, ?ERR_CONFLICT};
+		    ErrText = "Specified nickname is already registered",
+		    {error, ?ERRT_CONFLICT(Lang, ErrText)};
 		_ ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
 	    end
     end.
 
-process_iq_register_set(From, SubEl) ->
+process_iq_register_set(From, SubEl, Lang) ->
     {xmlelement, Name, Attrs, Els} = SubEl,
     case xml:remove_cdata(Els) of
 	[{xmlelement, "x", Attrs1, Els1} = XEl] ->
@@ -389,7 +397,7 @@ process_iq_register_set(From, SubEl) ->
 			invalid ->
 			    {error, ?ERR_BAD_REQUEST};
 			_ ->
-			    iq_set_register_info(From, XData)
+			    iq_set_register_info(From, XData, Lang)
 		    end;
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}

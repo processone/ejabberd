@@ -97,6 +97,56 @@
 %-define(ERR_,
 %	?STANZA_ERROR("", "", "")).
 
+-define(STANZA_ERRORT(Code, Type, Condition, Lang, Text),
+	{xmlelement, "error",
+	 [{"code", Code}, {"type", Type}],
+	 [{xmlelement, Condition, [{"xmlns", ?NS_STANZAS}], []},
+	  {xmlelement, "text", [{"xmlns", ?NS_STANZAS}],
+	   [{xmlcdata, translate:translate(Lang, Text)}]}]}).
+
+-define(ERRT_BAD_REQUEST(Lang, Text),
+	?STANZA_ERRORT("400", "modify", "bad-request", Lang, Text)).
+-define(ERRT_CONFLICT(Lang, Text),
+	?STANZA_ERRORT("409", "cancel", "conflict", Lang, Text)).
+-define(ERRT_FEATURE_NOT_IMPLEMENTED(Lang, Text),
+	?STANZA_ERRORT("501", "cancel", "feature-not-implemented", Lang, Text)).
+-define(ERRT_FORBIDDEN(Lang, Text),
+	?STANZA_ERRORT("403", "auth",   "forbidden", Lang, Text)).
+-define(ERRT_GONE(Lang, Text),
+	?STANZA_ERRORT("302", "modify", "gone", Lang, Text)).
+-define(ERRT_INTERNAL_SERVER_ERROR(Lang, Text),
+	?STANZA_ERRORT("500", "wait",   "internal-server-error", Lang, Text)).
+-define(ERRT_ITEM_NOT_FOUND(Lang, Text),
+	?STANZA_ERRORT("404", "cancel", "item-not-found", Lang, Text)).
+-define(ERRT_JID_MALFORMED(Lang, Text),
+	?STANZA_ERRORT("400", "modify", "jid-malformed", Lang, Text)).
+-define(ERRT_NOT_ACCEPTABLE(Lang, Text),
+	?STANZA_ERRORT("406", "modify", "not-acceptable", Lang, Text)).
+-define(ERRT_NOT_ALLOWED(Lang, Text),
+	?STANZA_ERRORT("405", "cancel", "not-allowed", Lang, Text)).
+-define(ERRT_NOT_AUTHORIZED(Lang, Text),
+	?STANZA_ERRORT("401", "auth",   "not-authorized", Lang, Text)).
+-define(ERRT_PAYMENT_REQUIRED(Lang, Text),
+	?STANZA_ERRORT("402", "auth",   "payment-required", Lang, Text)).
+-define(ERRT_RECIPIENT_UNAVAILABLE(Lang, Text),
+	?STANZA_ERRORT("404", "wait",   "recipient-unavailable", Lang, Text)).
+-define(ERRT_REDIRECT(Lang, Text),
+	?STANZA_ERRORT("302", "modify", "redirect", Lang, Text)).
+-define(ERRT_REGISTRATION_REQUIRED(Lang, Text),
+	?STANZA_ERRORT("407", "auth",   "registration-required", Lang, Text)).
+-define(ERRT_REMOTE_SERVER_NOT_FOUND(Lang, Text),
+	?STANZA_ERRORT("404", "cancel", "remote-server-not-found", Lang, Text)).
+-define(ERRT_REMOTE_SERVER_TIMEOUT(Lang, Text),
+	?STANZA_ERRORT("504", "wait",   "remote-server-timeout", Lang, Text)).
+-define(ERRT_RESOURCE_CONSTRAINT(Lang, Text),
+	?STANZA_ERRORT("500", "wait",   "resource-constraint", Lang, Text)).
+-define(ERRT_SERVICE_UNAVAILABLE(Lang, Text),
+	?STANZA_ERRORT("503", "cancel", "service-unavailable", Lang, Text)).
+-define(ERRT_SUBSCRIPTION_REQUIRED(Lang, Text),
+	?STANZA_ERRORT("407", "auth",   "subscription-required", Lang, Text)).
+-define(ERRT_UNEXPECTED_REQUEST(Lang, Text),
+	?STANZA_ERRORT("400", "wait",   "unexpected-request", Lang, Text)).
+
 % TODO: update to new-style
 % Application-specific stanza errors
 -define(AUTH_STANZA_ERROR(Condition),

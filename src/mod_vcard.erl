@@ -336,7 +336,7 @@ do_route(From, To, Packet) ->
 		    ResIQ = 
 			IQ#iq{type = result,
 			      sub_el = [{xmlelement,
-					 "query",
+					 "vCard",
 					 [{"xmlns", ?NS_VCARD}],
 					 iq_get_vcard(Lang)}]},
 		    ejabberd_router:route(To,
@@ -356,8 +356,10 @@ iq_get_vcard(Lang) ->
       [{xmlcdata,
         "http://ejabberd.jabberstudio.org/"}]},
      {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(Lang, "ejabberd vCard module\n"
-        "Copyright (c) 2003-2004 Alexey Shchepin")}]}].
+      [{xmlcdata, translate:translate(
+		    Lang,
+		    "ejabberd vCard module\n"
+		    "Copyright (c) 2003-2004 Alexey Shchepin")}]}].
 
 find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).

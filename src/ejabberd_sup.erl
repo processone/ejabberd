@@ -87,6 +87,14 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
+    HTTPSupervisor =
+	{ejabberd_http_sup,
+	 {ejabberd_tmp_sup, start_link,
+	  [ejabberd_http_sup, ejabberd_http]},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [ejabberd_tmp_sup]},
     IQSupervisor =
 	{ejabberd_iq_sup,
 	 {ejabberd_tmp_sup, start_link,
@@ -102,6 +110,7 @@ init([]) ->
 	   S2SInSupervisor,
 	   S2SOutSupervisor,
 	   ServiceSupervisor,
+	   HTTPSupervisor,
 	   IQSupervisor,
 	   Listener]}}.
 

@@ -162,7 +162,7 @@ do_route(Host, From, To, Packet) ->
 			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
 			    lang = Lang, sub_el = SubEl} = IQ ->
 			    Res = IQ#iq{type = result,
-					sub_el = [{xmlelement, "query",
+					sub_el = [{xmlelement, "vCard",
 						   [{"xmlns", XMLNS}],
 						   iq_get_vcard(Lang)}]},
 			    ejabberd_router:route(To,

@@ -102,6 +102,12 @@
 {"Enter nickname you want to register", "Введите псевдоним, который Вы хотели бы зарегистрировать"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2004 Alexey Shchepin",
  "ejabberd MUC модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
+{"Only service administrators are allowed to send service messages",
+ "Только администратор службы может посылать служебные сообщения"}.
+{"Conference room does not exist", "Конференция не существует"}.
+{"You must fill in field \"nick\" in the form",
+ "Вы должны заполнить поле \"nick\" в форме"}.
+{"Specified nickname is already registered", "Указанный псевдоним уже зарегистрирован"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " установил(а) тему: "}.
@@ -128,6 +134,39 @@
 {"Password", "Пароль"}.
 {"Make room anonymous?", "Сделать комнату анонимной?"}.
 {"Enable logging?", "Включить журналирование?"}.
+{"Only moderators and participants are allowed to change subject in this room",
+ "Только модераторы и участники могут изменять тему в этой комнате"}.
+{"Only moderators are allowed to change subject in this room",
+ "Только модераторы могут изменять тему в этой комнате"}.
+{"Visitors are not allowed to send messages to all occupants",
+ "Посетителям не разрешается посылать сообщения всем присутствующим"}.
+{"Only occupants are allowed to send messages to the conference",
+ "Только присутствующим разрешается посылать сообщения в конференцию"}.
+{"It is not allowed to send normal messages to the conference",
+ "Нельзя посылать обычные сообщения в конференцию"}.
+{"It is not allowed to send private messages to the conference",
+ "Не разрешается посылать частные сообщения прямо в конференцию"}.
+{"Improper message type", "Неправильный тип сообщения"}.
+{"Nickname is already in use by another occupant", "Псевдоним занят кем-то из присутствующих"}.
+{"Nickname is registered by another person", "Псевдоним зарегистирован кем-то другим"}.
+{"It is not allowed to send private messages of type \"groupchat\"",
+ "Нельзя посылать частные сообщения типа \"groupchat\""}.
+{"Recipient is not in the conference room", "Адресата нет в конференции"}.
+{"Only occupants are allowed to send queries to the conference",
+ "Только присутствующим разрешается посылать запросы в конференцию"}.
+{"Queries to the conference members are not allowed in this room",
+ "Запросы к пользователям в этой конференции запрещены"}.
+{"You have been banned from this room", "Вам запрещено входить в эту конференцию"}.
+{"Membership required to enter this room", "В эту конференцию могут входить только её члены"}.
+{"Password required to enter this room", "Чтобы войти в эту конференцию, нужен пароль"}.
+{"Incorrect password", "Неправильный пароль"}.
+{"Administrator privileges required", "Требуются права администратора"}.
+{"Moderator privileges required", "Требуются права модератора"}.
+{"JID ~s is invalid", "JID ~s недопустимый"}.
+{"Nickname ~s does not exist in the room", "Псевдоним ~s в комнате отсутствует"}.
+{"Invalid affiliation: ~s", "Недопустимый ранг: ~s"}.
+{"Invalid role: ~s", "Недопустимая роль: ~s"}.
+{"Owner privileges required", "Требуются права владельца"}.
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin",
