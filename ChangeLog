@@ -1,3 +1,11 @@
+2004-10-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
+	* src/msgs/ua.msg: Renamed to uk.msg
+
+	* COPYING: Added permission to link with OpenSSL
+
 2004-10-08  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/ua.msg: Updated (thanks to Sergei Golovan)

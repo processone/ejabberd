@@ -1,9 +1,9 @@
 % $Id$
 
 % jlib.hrl
-{"No resource provided", ""}.
-{"Illegal resource format", ""}.
-{"Resource conflict", ""}.
+{"No resource provided", "Geen bron opgegeven"}.
+{"Illegal resource format", "Ongeldig bronformaat"}.
+{"Resource conflict", "Bronnenconflict"}.
 
 % mod_configure.erl
 {"DB Tables Configuration at ", "Databasetabellenconfiguratie op "}.
@@ -248,26 +248,26 @@
 {"Options", "Opties"}.
 {"Update", "Bijwerken"}.
 {"Delete", "Verwijderen"}.
-{"Add User", ""}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", ""}.
-{"Offline messages", ""}.
-{"Last Activity", ""}.
-{"Never", ""}.
-{"~s offline messages queue", ""}.
-{"Time", ""}.
-{"From", ""}.
-{"To", ""}.
-{"Packet", ""}.
-{"Offline messages:", ""}.
-{"Roster", ""}.
-{"Nickname", ""}.
-{"Subscription", ""}.
-{"Pending", ""}.
-{"Groups", ""}.
-{"Remove", ""}.
-{"Add JID", ""}.
-{"User ", ""}.
-{"Roster of ", ""}.
+{"Add User", "Gebruiker toevoegen"}.
+{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", "ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One"}.
+{"Offline messages", "Offline berichten"}.
+{"Last Activity", "Laatste activiteit"}.
+{"Never", "Nooit"}.
+{"~s offline messages queue", "~s offline berichten in de wachtrij"}.
+{"Time", "Tijd"}.
+{"From", "Van"}.
+{"To", "Aan"}.
+{"Packet", "Pakket"}.
+{"Offline messages:", "Offline berichten:"}.
+{"Roster", "Roster"}.
+{"Nickname", "Bijnaam"}.
+{"Subscription", "Inschrijving"}.
+{"Pending", "Bezig"}.
+{"Groups", "Groepen"}.
+{"Remove", "Verwijderen"}.
+{"Add JID", "JID toevoegen"}.
+{"User ", "Gebruiker "}.
+{"Roster of ", "Roster van "}.
 
 % Local Variables:
 % mode: erlang
