@@ -379,8 +379,9 @@ get_outgoing_s2s(Lang) ->
 	{'EXIT', Reason} ->
 	    [];
 	Connections ->
+	    TConns = [element(2, C) || C <- Connections],
 	    lists:map(
-	      fun({F, T}) ->
+	      fun(T) ->
 		      {xmlelement, "item",
 		       [{"jid", ?MYNAME},
 			{"node", "outgoing s2s/" ++ T},
@@ -389,7 +390,7 @@ get_outgoing_s2s(Lang) ->
 			   io_lib:format(
 			     translate:translate(Lang, "To ~s"), [T]))}],
 		       []}
-	      end, lists:keysort(2, Connections))
+	      end, lists:usort(TConns))
     end.
 
 get_outgoing_s2s(Lang, To) ->

@@ -85,6 +85,8 @@ process_local_iq(From, _To, {iq, ID, Type, XMLNS, SubEl}) ->
 
 
 process_get({xmlelement, "info", _Attrs, _SubEls}) ->
+    S2SConns = ejabberd_s2s:dirty_get_connections(),
+    TConns = lists:usort([element(2, C) || C <- S2SConns]),
     Attrs = [{"registered-users",
 	      integer_to_list(mnesia:table_info(passwd, size))},
 	     {"online-users",
@@ -95,7 +97,8 @@ process_get({xmlelement, "info", _Attrs, _SubEls}) ->
 	      integer_to_list(
 		length(lists:usort(mnesia:system_info(db_nodes) ++
 				   mnesia:system_info(extra_db_nodes)) --
-		       mnesia:system_info(running_db_nodes)))}],
+		       mnesia:system_info(running_db_nodes)))},
+	     {"outgoing-s2s-servers", integer_to_list(length(TConns))}],
     {result, {xmlelement, "info",
 	      [{"xmlns", ?NS_ECONFIGURE} | Attrs], []}};
 process_get({xmlelement, "welcome-message", Attrs, _SubEls}) ->

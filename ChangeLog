@@ -1,3 +1,10 @@
+2003-11-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_configure2.erl: Added reporting of outgoing S2S
+	connections number
+
+	* src/mod_disco.erl (get_outgoing_s2s): Minor fix
+
 2003-11-02  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_configure2.erl: Yet another configure interface (not
