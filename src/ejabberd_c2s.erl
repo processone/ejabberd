@@ -160,7 +160,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				      StateData,
 				      {xmlelement, "stream:features", [],
 				       [{xmlelement, "bind",
-					 [{"xmlns", ?NS_BIND}], []}]}),
+					 [{"xmlns", ?NS_BIND}], []},
+					{xmlelement, "session",
+					 [{"xmlns", ?NS_SESSION}], []}]}),
 				    {next_state, wait_for_bind,
 				     StateData#state{lang = Lang}};
 				_ ->
