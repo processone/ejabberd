@@ -1,3 +1,12 @@
+2003-10-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline.erl: Added function remove_old_messages/1
+
+	* src/mod_last.erl: jabber:iq:last support (JEP-0012)
+	* src/ejabberd_sm.erl: Likewise
+
+	* src/jlib.hrl: Added NS_LAST macros
+
 2003-10-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_logger_h.erl: New error_logger handler

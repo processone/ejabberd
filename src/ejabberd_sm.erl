@@ -177,9 +177,9 @@ clean_table_from_bad_node(Node) ->
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    #jid{user = User, server =  Server, resource = Resource,
+    #jid{user = User, resource = Resource,
 	 luser = LUser, lserver = LServer, lresource = LResource} = To,
-    {xmlelement, Name, Attrs, Els} = Packet,
+    {xmlelement, Name, Attrs, _Els} = Packet,
     case Resource of
 	"" ->
 	    case Name of
@@ -316,7 +316,7 @@ route_message(From, To, Packet) ->
 get_user_resources(User) ->
     LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_index_read(session, LUser, #session.user) of
-	{'EXIT', Reason} ->
+	{'EXIT', _Reason} ->
 	    [];
 	Rs ->
 	    lists:map(fun(R) ->
@@ -342,11 +342,12 @@ unset_presence(User, Resource) ->
 		UR = {User, Resource},
 		mnesia:delete({presence, UR})
 	end,
-    mnesia:transaction(F).
+    mnesia:transaction(F),
+    catch mod_last:on_presence_update(LUser).
 
 get_user_present_resources(LUser) ->
     case catch mnesia:dirty_index_read(presence, LUser, #presence.user) of
-	{'EXIT', Reason} ->
+	{'EXIT', _Reason} ->
 	    [];
 	Rs ->
 	    lists:map(fun(R) ->
@@ -366,7 +367,7 @@ dirty_get_my_sessions_list() ->
 process_iq(From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
-	{iq, ID, Type, XMLNS, SubEl} ->
+	{iq, _ID, _Type, XMLNS, _SubEl} ->
 	    case ets:lookup(sm_iqtable, XMLNS) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ),

@@ -16,6 +16,7 @@
 	 stop/0,
 	 store_packet/3,
 	 resend_offline_messages/1,
+	 remove_old_messages/1,
 	 remove_user/1]).
 
 -include("jlib.hrl").
@@ -149,6 +150,22 @@ resend_offline_messages(User) ->
 	_ ->
 	    ok
     end.
+
+remove_old_messages(Days) ->
+    {MegaSecs, Secs, _MicroSecs} = now(),
+    S = MegaSecs * 1000000 + Secs - 60 * 60 * 24 * Days,
+    MegaSecs1 = S div 1000000,
+    Secs1 = S rem 1000000,
+    TimeStamp = {MegaSecs1, Secs1, 0},
+    F = fun() ->
+		mnesia:foldl(
+		  fun(#offline_msg{timestamp = TS} = Rec, _Acc)
+		     when TS < TimeStamp ->
+			  mnesia:delete_object(Rec);
+		     (_Rec, _Acc) -> ok
+		  end, ok, offline_msg)
+	end,
+    mnesia:transaction(F).
 
 remove_user(User) ->
     LUser = jlib:nodeprep(User),

@@ -90,7 +90,8 @@
            {mod_irc,       []},
            {mod_muc,       []},
            {mod_pubsub,    []},
-           {mod_time,      [{iqdisc, no_queue}]},
+           {mod_time,      []},
+           {mod_last,      []},
            {mod_version,   []}
           ]}.
 

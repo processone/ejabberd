@@ -17,6 +17,7 @@
 -define(NS_PRIVATE,      "jabber:iq:private").
 -define(NS_VERSION,      "jabber:iq:version").
 -define(NS_TIME,         "jabber:iq:time").
+-define(NS_LAST,         "jabber:iq:last").
 -define(NS_XDATA,        "jabber:x:data").
 -define(NS_IQDATA,       "jabber:iq:data").
 -define(NS_DELAY,        "jabber:x:delay").
