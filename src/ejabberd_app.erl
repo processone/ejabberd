@@ -20,7 +20,7 @@ start(normal, Args) ->
     randoms:start(),
     db_init(),
     sha:start(),
-    ssl:start(),
+    catch ssl:start(),
     translate:start(),
     acl:start(),
     gen_mod:start(),
