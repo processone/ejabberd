@@ -258,13 +258,13 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 				      Mech,
 				      ClientIn) of
 		{ok, Props} ->
-		    %StateData#state.receiver ! reset_stream,
+		    StateData#state.receiver ! reset_stream,
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    {U, _, R} = jlib:string_to_jid(
 				  xml:get_attr_s(authzid, Props)),
-		    {next_state, wait_for_session,
+		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
 				     user = U,
 				     resource = R
@@ -321,13 +321,13 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 	    case cyrsasl:server_step(StateData#state.sasl_state,
 				     ClientIn) of
 		{ok, Props} ->
-		    %StateData#state.receiver ! reset_stream,
+		    StateData#state.receiver ! reset_stream,
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    {U, _, R} = jlib:string_to_jid(
 				  xml:get_attr_s(authzid, Props)),
-		    {next_state, wait_for_session,
+		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
 				     user = U,
 				     resource = R
