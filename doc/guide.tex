@@ -47,6 +47,7 @@
 \newcommand{\modpubsub}{\module{mod\_pubsub}}
 \newcommand{\modregister}{\module{mod\_register}}
 \newcommand{\modroster}{\module{mod\_roster}}
+\newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modstats}{\module{mod\_stats}}
 \newcommand{\modtime}{\module{mod\_time}}
 \newcommand{\modvcard}{\module{mod\_vcard}}
@@ -1066,6 +1067,30 @@ Options:
 \begin{description}
 \iqdiscitem{\ns{jabber:iq:roster}}
 \end{description}
+
+
+\subsection{\modservicelog{}}
+\label{sec:modservicelog}
+
+This module adds support for logging of user packets via any jabber service.
+These packets encapsulated in <route/> element and sended to specified
+services.
+
+Options:
+\begin{description}
+  \titem{loggers} Specifies a list of services which will receive users
+  packets.
+\end{description}
+
+Example:
+\begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_service_log, [{loggers, ["bandersnatch.example.com"]}]},
+    ...
+   ]}.
+\end{verbatim}
 
 
 \subsection{\modstats{}}

@@ -98,12 +98,13 @@
 <LI><A HREF="#htoc42">A.12&nbsp;&nbsp;<TT>mod_pubsub</TT></A>
 <LI><A HREF="#htoc43">A.13&nbsp;&nbsp;<TT>mod_register</TT></A>
 <LI><A HREF="#htoc44">A.14&nbsp;&nbsp;<TT>mod_roster</TT></A>
-<LI><A HREF="#htoc45">A.15&nbsp;&nbsp;<TT>mod_stats</TT></A>
-<LI><A HREF="#htoc46">A.16&nbsp;&nbsp;<TT>mod_time</TT></A>
-<LI><A HREF="#htoc47">A.17&nbsp;&nbsp;<TT>mod_vcard</TT></A>
-<LI><A HREF="#htoc48">A.18&nbsp;&nbsp;<TT>mod_version</TT></A>
+<LI><A HREF="#htoc45">A.15&nbsp;&nbsp;<TT>mod_service_log</TT></A>
+<LI><A HREF="#htoc46">A.16&nbsp;&nbsp;<TT>mod_stats</TT></A>
+<LI><A HREF="#htoc47">A.17&nbsp;&nbsp;<TT>mod_time</TT></A>
+<LI><A HREF="#htoc48">A.18&nbsp;&nbsp;<TT>mod_vcard</TT></A>
+<LI><A HREF="#htoc49">A.19&nbsp;&nbsp;<TT>mod_version</TT></A>
 </UL>
-<LI><A HREF="#htoc49">B&nbsp;&nbsp;I18n/L10n</A>
+<LI><A HREF="#htoc50">B&nbsp;&nbsp;I18n/L10n</A>
 </UL>
 
 <!--TOC section Introduction-->
@@ -1083,9 +1084,32 @@ Options:
 <B><TT>iqdisc</TT></B><DD> <TT>jabber:iq:roster</TT> IQ queries processing
 discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
+<!--TOC subsection <TT>mod_service_log</TT>-->
+
+<H3><A NAME="htoc45">A.15</A>&nbsp;&nbsp;<TT>mod_service_log</TT></H3><!--SEC END -->
+
+<A NAME="sec:modservicelog"></A>
+This module adds support for logging of user packets via any jabber service.
+These packets encapsulated in &lt;route/&gt; element and sended to specified
+services.<BR>
+<BR>
+Options:
+<DL COMPACT=compact><DT>
+ <B><TT>loggers</TT></B><DD> Specifies a list of services which will receive users
+ packets.
+</DL>
+Example:
+<PRE>
+  {modules,
+   [
+    ...
+    {mod_service_log, [{loggers, ["bandersnatch.example.com"]}]},
+    ...
+   ]}.
+</PRE>
 <!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3><A NAME="htoc45">A.15</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
+<H3><A NAME="htoc46">A.16</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
@@ -1099,7 +1123,7 @@ TBD about access.<BR>
 <BR>
 <!--TOC subsection <TT>mod_time</TT>-->
 
-<H3><A NAME="htoc46">A.16</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
+<H3><A NAME="htoc47">A.17</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="sec:modtime"></A>
 This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
@@ -1111,7 +1135,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3><A NAME="htoc47">A.17</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
+<H3><A NAME="htoc48">A.18</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="sec:modvcard"></A>
 This module implements simple Jabber User Directory (based on user vCards)
@@ -1139,7 +1163,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_version</TT>-->
 
-<H3><A NAME="htoc48">A.18</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
+<H3><A NAME="htoc49">A.19</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="sec:modversion"></A>
 This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
@@ -1151,7 +1175,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC section I18n/L10n-->
 
-<H2><A NAME="htoc49">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
+<H2><A NAME="htoc50">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
 
 <A NAME="sec:i18nl10n"></A>
 All built-in modules support <TT>xml:lang</TT> attribute inside IQ queries.
