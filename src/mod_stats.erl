@@ -122,18 +122,18 @@ get_local_stats(_, _) ->
 %    ?STATVAL(io_lib:format("~.3f", [element(1, statistics(runtime))/1000]),
 %	     "seconds");
 get_local_stat([], Name) when Name == "users/online" ->
-    case catch ejabberd_sm:dirty_get_sessions_list() of
+    case catch mnesia:table_info(session, size) of
 	{'EXIT', Reason} ->
 	    ?STATERR("500", "Internal Server Error");
 	Users ->
-	    ?STATVAL(integer_to_list(length(Users)), "users")
+	    ?STATVAL(integer_to_list(Users), "users")
     end;
 get_local_stat([], Name) when Name == "users/total" ->
-    case catch ejabberd_auth:dirty_get_registered_users() of
+    case catch mnesia:table_info(passwd, size) of
 	{'EXIT', Reason} ->
 	    ?STATERR("500", "Internal Server Error");
 	Users ->
-	    ?STATVAL(integer_to_list(length(Users)), "users")
+	    ?STATVAL(integer_to_list(Users), "users")
     end;
 get_local_stat(_, Name) ->
     ?STATERR("404", "Not Found").

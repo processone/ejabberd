@@ -1,5 +1,7 @@
 2004-12-12  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_stats.erl: Minor optimizations
+
 	* src/ejabberd_sm.erl: Added unset_presence_hook
 	* src/mod_last.erl: Use unset_presence_hook instead of direct call
 
