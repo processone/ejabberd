@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/1, receiver/2, send_text/2, send_element/2]).
+-export([start/2, receiver/2, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -65,7 +65,7 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Socket) ->
+start(Socket, Opts) ->
     gen_fsm:start(ejabberd_s2s_in, [Socket], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------

@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0, open_session/2, close_session/2,
+-export([start_link/0, init/0, open_session/2, close_session/2,
 	 get_user_resources/1,
 	 set_presence/3,
 	 unset_presence/2,
@@ -28,8 +28,8 @@
 -record(local_session, {ur, pid}).
 -record(presence, {ur, user, priority}).
 
-start() ->
-    spawn(ejabberd_sm, init, []).
+start_link() ->
+    {ok, proc_lib:spawn_link(ejabberd_sm, init, [])}.
 
 init() ->
     register(ejabberd_sm, self()),

@@ -132,6 +132,15 @@ database, and in next time they will be APPENDED to existing values.  E.\,g.\
 if this file will not contain ``host'' definition, then old value will be
 used.
 
+To override old values following lines can be added in config:
+\begin{verbatim}
+override_global.
+override_local.
+override_acls.
+\end{verbatim}
+With this lines old global or local options or ACLs will be removed before
+adding new ones.
+
 
 \subsubsection{Host Name}
 \label{sec:confighostname}
@@ -144,38 +153,6 @@ serves.  E.\,g.\ to use \texttt{jabber.org} domain add following line in config:
 
 %This option is mandatory.
 
-
-
-\subsubsection{Listened Sockets}
-\label{sec:configlistened}
-
-Option \texttt{listen} defines list of listened sockets and what services
-runned on them.  Each element of list is a tuple with following elements:
-\begin{itemize}
-\item Port number;
-\item Module that serves this port;
-\item Function in this module that starts connection (likely will be removed);
-\item Options to this module.
-\end{itemize}
-
-Currently three modules implemented:
-\begin{itemize}
-\item \texttt{ejabberd\_c2s}: serves C2S connections;
-\item \texttt{ejabberd\_s2s\_in}: serves incoming S2S connections;
-\item \texttt{ejabberd\_service}: serves connections to \Jabber{} services
-  (i.\,e.\ that use \texttt{jabber:component:accept} namespace).
-\end{itemize}
-
-For example, following configuration defines that C2S connections listened on
-port 5222, S2S on port 5269 and that service \texttt{conference.jabber.org}
-must be connected to port 8888 with password ``\texttt{secret}''.
-
-\begin{verbatim}
-{listen, [{5222, ejabberd_c2s,     start, []},
-          {5269, ejabberd_s2s_in,  start, []},
-          {8888, ejabberd_service, start, ["conference.jabber.org", "secret"]}
-         ]}.
-\end{verbatim}
 
 
 \subsubsection{Access Rules}
@@ -253,6 +230,12 @@ config file they looks like this:
   \end{description}
 \end{description}
 
+Following ACLs pre-defined:
+\begin{description}
+\item[\texttt{all}] Matches all JIDs.
+\item[\texttt{none}] Matches none JIDs.
+\end{description}
+
 Allowing or denying of different services is like this:
 \begin{verbatim}
 {access, <accessname>, [{allow, <aclname>},
@@ -271,6 +254,57 @@ Example:
 {access, something, [{deny, badmans},
                      {allow, all}]}.
 \end{verbatim}
+
+Following access rules pre-defined:
+\begin{description}
+\item[\texttt{all}] Always return ``\texttt{allow}''
+\item[\texttt{none}] Always return ``\texttt{deny}''
+\end{description}
+
+
+\subsubsection{Listened Sockets}
+\label{sec:configlistened}
+
+Option \texttt{listen} defines list of listened sockets and what services
+runned on them.  Each element of list is a tuple with following elements:
+\begin{itemize}
+\item Port number;
+\item Module that serves this port;
+\item Function in this module that starts connection (likely will be removed);
+\item Options to this module.
+\end{itemize}
+
+Currently three modules implemented:
+\begin{description}
+\item[\texttt{ejabberd\_c2s}] This module serves C2S connections.
+  
+  Following options defined:
+  \begin{description}
+  \item[\texttt{\{access, <access rule>\}}] This option defines access of users
+    to this C2S port.  Default value is ``\texttt{all}''.
+  \end{description}
+\item[\texttt{ejabberd\_s2s\_in}] This module serves incoming S2S connections.
+\item[\texttt{ejabberd\_service}] This module serves connections to \Jabber{}
+  services (i.\,e.\ that use \texttt{jabber:component:accept} namespace).
+\end{description}
+
+For example, following configuration defines that C2S connections listened on
+port 5222 and denied for user ``\texttt{bad}'', S2S on port 5269 and that
+service \texttt{conference.jabber.org} must be connected to port 8888 with
+password ``\texttt{secret}''.
+
+\begin{verbatim}
+{acl, blocked, {user, "bad"}}.
+{access, c2s, [{deny, blocked},
+               {allow, all}]}.
+{listen, [{5222, ejabberd_c2s,     start, [{access, c2s}]},
+          {5269, ejabberd_s2s_in,  start, []},
+          {8888, ejabberd_service, start,
+           [{host, "conference.jabber.org", [{password, "secret"}]}]}
+         ]}.
+\end{verbatim}
+
+
 
 
 

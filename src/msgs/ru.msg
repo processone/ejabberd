@@ -1,11 +1,44 @@
 % $Id$
 
+% mod_configure.erl
+{"DB Tables Configuration", "Конфигурация таблиц БД"}.
+{"Choose storage type of tables", "Выберите тип хранения таблиц"}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+{"", ""}.
+
 % mod_disco.erl
+{"Configuration", "Конфигурация"}.
 {"Online Users", "Подключённые пользователи"}.
 {"All Users", "Все пользователи"}.
 {"Outgoing S2S connections", "Исходящие S2S-соединения"}.
 {"To ~s", "К ~s"}.
 {"From ~s", "От ~s"}.
+{"Running Nodes", "Работающие узлы"}.
+{"Stopped Nodes", "Остановленные узлы"}.
+{"Host Name", "Имя хоста"}.
+{"ACLs", "ACLs"}.
+{"Access Rules", "Правила доступа"}.
+{"Remove Users", "Удаление пользователей"}.
+{"DB", "БД"}.
+{"Modules", "Модули"}.
+{"Start Modules", "Запуск модулей"}.
+{"Stop Modules", "Остановка модулей"}.
+
+
 
 
 % mod_vcard.erl

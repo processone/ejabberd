@@ -101,6 +101,14 @@ database, and in next time they will be APPENDED to existing values. E.&nbsp;g.
 if this file will not contain ``host'' definition, then old value will be
 used.<BR>
 <BR>
+To override old values following lines can be added in config:
+<PRE>
+override_global.
+override_local.
+override_acls.
+</PRE>With this lines old global or local options or ACLs will be removed before
+adding new ones.<BR>
+<BR>
 <!--TOC subsubsection Host Name-->
 
 <H4>3.1.1&nbsp;&nbsp; Host Name</H4><!--SEC END -->
@@ -109,42 +117,9 @@ used.<BR>
 serves. E.&nbsp;g. to use <TT>jabber.org</TT> domain add following line in config:
 <PRE>
 {host, "jabber.org"}.
-</PRE><!--TOC subsubsection Listened Sockets-->
-
-<H4>3.1.2&nbsp;&nbsp; Listened Sockets</H4><!--SEC END -->
-
-<A NAME="sec:configlistened"></A>Option <TT>listen</TT> defines list of listened sockets and what services
-runned on them. Each element of list is a tuple with following elements:
-<UL>
-<LI>
- Port number;
-
-<LI> Module that serves this port;
-
-<LI> Function in this module that starts connection (likely will be removed);
-
-<LI> Options to this module.
-</UL>Currently three modules implemented:
-<UL>
-<LI>
- <TT>ejabberd_c2s</TT>: serves C2S connections;
-
-<LI> <TT>ejabberd_s2s_in</TT>: serves incoming S2S connections;
-
-<LI> <TT>ejabberd_service</TT>: serves connections to Jabber services
- (i.&nbsp;e. that use <TT>jabber:component:accept</TT> namespace).
-</UL>For example, following configuration defines that C2S connections listened on
-port 5222, S2S on port 5269 and that service <TT>conference.jabber.org</TT>
-must be connected to port 8888 with password ``<TT>secret</TT>''.<BR>
-<BR>
-<PRE>
-{listen, [{5222, ejabberd_c2s,     start, []},
-          {5269, ejabberd_s2s_in,  start, []},
-          {8888, ejabberd_service, start, ["conference.jabber.org", "secret"]}
-         ]}.
 </PRE><!--TOC subsubsection Access Rules-->
 
-<H4>3.1.3&nbsp;&nbsp; Access Rules</H4><!--SEC END -->
+<H4>3.1.2&nbsp;&nbsp; Access Rules</H4><!--SEC END -->
 
 <A NAME="sec:configaccess"></A>Access control in <TT>ejabberd</TT> is done via Access Control Lists (ACL). In
 config file they looks like this:
@@ -213,6 +188,12 @@ config file they looks like this:
  If the first character after <TT>`['</TT> is a <TT>`!'</TT>, then any
  character not enclosed is matched.
  </DL>
+</DL>Following ACLs pre-defined:
+<DL COMPACT=compact>
+<DT>
+<TT>all</TT><DD> Matches all JIDs.
+
+<DT><TT>none</TT><DD> Matches none JIDs.
 </DL>Allowing or denying of different services is like this:
 <PRE>
 {access, &lt;accessname&gt;, [{allow, &lt;aclname&gt;},
@@ -229,6 +210,57 @@ Example:
 {access, configure, [{allow, admin}]}.
 {access, something, [{deny, badmans},
                      {allow, all}]}.
+</PRE>Following access rules pre-defined:
+<DL COMPACT=compact>
+<DT>
+<TT>all</TT><DD> Always return ``<TT>allow</TT>''
+
+<DT><TT>none</TT><DD> Always return ``<TT>deny</TT>''
+</DL><!--TOC subsubsection Listened Sockets-->
+
+<H4>3.1.3&nbsp;&nbsp; Listened Sockets</H4><!--SEC END -->
+
+<A NAME="sec:configlistened"></A>Option <TT>listen</TT> defines list of listened sockets and what services
+runned on them. Each element of list is a tuple with following elements:
+<UL>
+<LI>
+ Port number;
+
+<LI> Module that serves this port;
+
+<LI> Function in this module that starts connection (likely will be removed);
+
+<LI> Options to this module.
+</UL>Currently three modules implemented:
+<DL COMPACT=compact>
+<DT>
+<TT>ejabberd_c2s</TT><DD> This module serves C2S connections.<BR>
+<BR>
+ Following options defined:
+ <DL COMPACT=compact>
+<DT>
+ <TT>{access, &lt;access rule&gt;}</TT><DD> This option defines access of users
+ to this C2S port. Default value is ``<TT>all</TT>''.
+ </DL>
+
+<DT><TT>ejabberd_s2s_in</TT><DD> This module serves incoming S2S connections.
+
+<DT><TT>ejabberd_service</TT><DD> This module serves connections to Jabber
+ services (i.&nbsp;e. that use <TT>jabber:component:accept</TT> namespace).
+</DL>For example, following configuration defines that C2S connections listened on
+port 5222 and denied for user ``<TT>bad</TT>'', S2S on port 5269 and that
+service <TT>conference.jabber.org</TT> must be connected to port 8888 with
+password ``<TT>secret</TT>''.<BR>
+<BR>
+<PRE>
+{acl, blocked, {user, "bad"}}.
+{access, c2s, [{deny, blocked},
+               {allow, all}]}.
+{listen, [{5222, ejabberd_c2s,     start, [{access, c2s}]},
+          {5269, ejabberd_s2s_in,  start, []},
+          {8888, ejabberd_service, start,
+           [{host, "conference.jabber.org", [{password, "secret"}]}]}
+         ]}.
 </PRE><!--TOC subsubsection Modules-->
 
 <H4>3.1.4&nbsp;&nbsp; Modules</H4><!--SEC END -->
@@ -282,7 +314,7 @@ have access to connect to port 4369 of all another nodes, and must have same
 magic cookie (see Erlang/OTP documentation, in short file
 <TT>~ejabberd/.erlang.cookie</TT> must be the same on all nodes). This is
 needed because all nodes exchange information about connected users, S2S
-connection, registered services, etc...<BR>
+connections, registered services, etc...<BR>
 <BR>
 Each <TT>ejabberd</TT> node run following modules:
 <UL>

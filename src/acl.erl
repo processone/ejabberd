@@ -11,7 +11,9 @@
 -vsn('$Revision$ ').
 
 -export([start/0,
+	 to_record/2,
 	 add/2,
+	 add_list/2,
 	 match_rule/2,
 	 % for debugging only
 	 match_acl/2]).
@@ -28,6 +30,8 @@ start() ->
     mnesia:add_table_copy(acl, node(), ram_copies),
     ok.
 
+to_record(ACLName, ACLSpec) ->
+    #acl{aclname = ACLName, aclspec = ACLSpec}.
 
 add(ACLName, ACLSpec) ->
     F = fun() ->
@@ -35,12 +39,44 @@ add(ACLName, ACLSpec) ->
 	end,
     mnesia:transaction(F).
 
+add_list(ACLs, Clear) ->
+    F = fun() ->
+		if
+		    Clear ->
+			Ks = mnesia:all_keys(acl),
+			lists:foreach(fun(K) ->
+					      mnesia:delete({acl, K})
+				      end, Ks);
+		    true ->
+			ok
+		end,
+		lists:foreach(fun(ACL) ->
+				      case ACL of
+					  #acl{} ->
+					      mnesia:write(ACL)
+				      end
+			      end, ACLs)
+	end,
+    case mnesia:transaction(F) of
+	{atomic, _} ->
+	    ok;
+	_ ->
+	    false
+    end.
+
+
+
 match_rule(Rule, JID) ->
-    case ejabberd_config:get_global_option({access, Rule}) of
-	undefined ->
-	    deny;
-	ACLs ->
-	    match_acls(ACLs, JID)
+    case Rule of
+	all -> allow;
+	none -> deny;
+	_ ->
+	    case ejabberd_config:get_global_option({access, Rule}) of
+		undefined ->
+		    deny;
+		ACLs ->
+		    match_acls(ACLs, JID)
+	    end
     end.
 
 match_acls([], _) ->
@@ -54,41 +90,46 @@ match_acls([{Access, ACL} | ACLs], JID) ->
     end.
 
 match_acl(ACL, JID) ->
-    {User, Server, Resource} = jlib:jid_tolower(JID),
-    lists:any(fun(#acl{aclspec = Spec}) ->
-		      case Spec of
-			  all ->
-			      true;
-			  {user, U} ->
-			      (U == User) andalso (?MYNAME == Server);
-			  {user, U, S} ->
-			      (U == User) andalso (S == Server);
-			  {server, S} ->
-			      S == Server;
-			  {user_regexp, UR} ->
-			      (?MYNAME == Server) andalso
-				  is_regexp_match(User, UR);
-			  {user_regexp, UR, S} ->
-			      (S == Server) andalso
-				  is_regexp_match(User, UR);
-			  {server_regexp, SR} ->
-			      is_regexp_match(Server, SR);
-			  {node_regexp, UR, SR} ->
-			      is_regexp_match(Server, SR) andalso
-				  is_regexp_match(User, UR);
-			  {user_glob, UR} ->
-			      (?MYNAME == Server) andalso
-				  is_glob_match(User, UR);
-			  {user_glob, UR, S} ->
-			      (S == Server) andalso
-				  is_glob_match(User, UR);
-			  {server_glob, SR} ->
-			      is_glob_match(Server, SR);
-			  {node_glob, UR, SR} ->
-			      is_glob_match(Server, SR) andalso
-				  is_glob_match(User, UR)
-		      end
-	      end, ets:lookup(acl, ACL)).
+    case ACL of
+	all -> true;
+	none -> false;
+	_ ->
+	    {User, Server, Resource} = jlib:jid_tolower(JID),
+	    lists:any(fun(#acl{aclspec = Spec}) ->
+			      case Spec of
+				  all ->
+				      true;
+				  {user, U} ->
+				      (U == User) andalso (?MYNAME == Server);
+				  {user, U, S} ->
+				      (U == User) andalso (S == Server);
+				  {server, S} ->
+				      S == Server;
+				  {user_regexp, UR} ->
+				      (?MYNAME == Server) andalso
+					  is_regexp_match(User, UR);
+				  {user_regexp, UR, S} ->
+				      (S == Server) andalso
+					  is_regexp_match(User, UR);
+				  {server_regexp, SR} ->
+				      is_regexp_match(Server, SR);
+				  {node_regexp, UR, SR} ->
+				      is_regexp_match(Server, SR) andalso
+					  is_regexp_match(User, UR);
+				  {user_glob, UR} ->
+				      (?MYNAME == Server) andalso
+					  is_glob_match(User, UR);
+				  {user_glob, UR, S} ->
+				      (S == Server) andalso
+					  is_glob_match(User, UR);
+				  {server_glob, SR} ->
+				      is_glob_match(Server, SR);
+				  {node_glob, UR, SR} ->
+				      is_glob_match(Server, SR) andalso
+					  is_glob_match(User, UR)
+			      end
+		      end, ets:lookup(acl, ACL))
+    end.
 
 is_regexp_match(String, RegExp) ->
     case regexp:first_match(String, RegExp) of

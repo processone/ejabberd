@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0,
+-export([start_link/0, init/0,
 	 have_connection/1,
 	 get_key/1,
 	 try_register/1,
@@ -23,8 +23,8 @@
 -record(local_s2s, {fromto, pid}).
 
 
-start() ->
-    spawn(ejabberd_s2s, init, []).
+start_link() ->
+    {ok, proc_lib:spawn_link(ejabberd_s2s, init, [])}.
 
 init() ->
     register(ejabberd_s2s, self()),

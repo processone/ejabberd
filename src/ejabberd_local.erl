@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0]).
+-export([start_link/0, init/0]).
 
 -export([register_iq_handler/3,
 	 register_iq_handler/4,
@@ -21,9 +21,10 @@
 
 -record(state, {mydomain, iqtable}).
 
-start() ->
-    register(ejabberd_local, spawn(ejabberd_local, init, [])),
-    ok.
+start_link() ->
+    register(ejabberd_local,
+	     Pid = proc_lib:spawn_link(ejabberd_local, init, [])),
+    {ok, Pid}.
 
 init() ->
     MyDomain = ?MYNAME,

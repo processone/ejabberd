@@ -10,9 +10,9 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/1, start/4, init/4]).
+-export([start_link/0, init/1, start/4, init/4]).
 
-start() ->
+start_link() ->
     supervisor:start_link({local, ejabberd_listeners}, ?MODULE, []).
 
 
@@ -23,9 +23,9 @@ init(_) ->
 	Ls ->
 	    {ok, {{one_for_one, 10, 1},
 		  lists:map(
-		    fun({Port, Module, Fun, Args}) ->
+		    fun({Port, Module, Fun, Opts}) ->
 			    {Port,
-			     {?MODULE, start, [Port, Module, Fun, Args]},
+			     {?MODULE, start, [Port, Module, Fun, [Opts]]},
 			     permanent,
 			     brutal_kill,
 			     worker,

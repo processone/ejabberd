@@ -19,7 +19,7 @@
 	 dirty_get_all_domains/0
 	]).
 
--export([start/0, init/0]).
+-export([start_link/0, init/0]).
 
 -include("ejabberd.hrl").
 
@@ -27,8 +27,8 @@
 -record(local_route, {domain, pid}).
 
 
-start() ->
-    spawn(ejabberd_router, init, []).
+start_link() ->
+    {ok, proc_lib:spawn_link(ejabberd_router, init, [])}.
 
 init() ->
     register(ejabberd_router, self()),

@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/3, receiver/2, send_text/2, send_element/2]).
+-export([start/2, receiver/2, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -63,8 +63,8 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Socket, Host, Password) ->
-    gen_fsm:start(ejabberd_service, [Socket, Host, Password], ?FSMOPTS).
+start(Socket, Opts) ->
+    gen_fsm:start(ejabberd_service, [Socket, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -77,7 +77,21 @@ start(Socket, Host, Password) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket, Host, Password]) ->
+init([Socket, Opts]) ->
+    {Host, Password} =
+	case lists:keysearch(host, 1, Opts) of
+	    {value, {_, H, HOpts}} ->
+		case lists:keysearch(password, 1, HOpts) of
+		    {value, {_, P}} ->
+			{H, P};
+		    _ ->
+			% TODO: generate error
+			false
+		end;
+	    _ ->
+		% TODO: generate error
+		false
+	end,
     ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
     {ok, wait_for_stream, #state{socket = Socket,
 				 receiver = ReceiverPid,

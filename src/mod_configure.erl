@@ -244,7 +244,7 @@ get_form(["config", "acls"], Lang) ->
 				 {xmlelement, "value", [], [{xmlcdata, S}]}
 			 end,
 			 string:tokens(
-			   lists:flatten(io_lib:format("~p",
+			   lists:flatten(io_lib:format("~p.",
 						       [ets:tab2list(acl)])),
 			   "\n"))
 		%{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}
@@ -343,22 +343,19 @@ set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
 			{ok, Tokens, _} ->
 			    case erl_parse:parse_term(Tokens) of
 				{ok, Modules} ->
-				    case catch lists:foreach(
-						 fun({Module, Args}) ->
-							 gen_mod:start_module(
-							   Module, Args)
-						 end, Modules) of
-					{'EXIT', Reason} ->
-					    {error,
-					     "500", "Internal Server Error"};
-					_ ->
-					    {result, []}
-				    end;
+				    lists:foreach(
+				      fun({Module, Args}) ->
+					      rpc:call(Node,
+						       gen_mod,
+						       start_module,
+						       [Module, Args])
+				      end, Modules),
+				    {result, []};
 				_ ->
-				    {error, "500", "Internal Server Error"}
+				    {error, "406", "Not Acceptable"}
 			    end;
 			_ ->
-			    {error, "500", "Internal Server Error"}
+			    {error, "406", "Not Acceptable"}
 		    end;
 		_ ->
 		    {error, "406", "Not Acceptable"}
@@ -375,6 +372,32 @@ set_form(["config", "hostname"], Lang, XData) ->
 	{value, {_, [NewName]}} ->
 	    ejabberd_config:add_global_option(hostname, NewName),
 	    {result, []};
+	_ ->
+	    {error, "406", "Not Acceptable"}
+    end;
+
+set_form(["config", "acls"], Lang, XData) ->
+    case lists:keysearch("acls", 1, XData) of
+	{value, {_, Strings}} ->
+		    String = lists:foldl(fun(S, Res) ->
+						 Res ++ S ++ "\n"
+					 end, "", Strings),
+		    case erl_scan:string(String) of
+			{ok, Tokens, _} ->
+			    case erl_parse:parse_term(Tokens) of
+				{ok, ACLs} ->
+				    case acl:add_list(ACLs, true) of
+					ok ->
+					    {result, []};
+					_ ->
+					    {error, "406", "Not Acceptable"}
+				    end;
+				_ ->
+				    {error, "406", "Not Acceptable"}
+			    end;
+			_ ->
+			    {error, "406", "Not Acceptable"}
+		    end;
 	_ ->
 	    {error, "406", "Not Acceptable"}
     end;

@@ -13,12 +13,9 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/1, receiver/2, sender/1, send_text/2, send_element/2]).
+-export([start/2, receiver/2, sender/1, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
-%-export([init/1, state_name/2, state_name/3, handle_event/3,
-%	 handle_sync_event/4, handle_info/3, terminate/3]).
-%
 -export([init/1, wait_for_stream/2, wait_for_auth/2, session_established/2,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -32,6 +29,7 @@
 -define(SETS, gb_sets).
 
 -record(state, {socket, sender, receiver, streamid,
+		access,
 		user = "", server = ?MYNAME, resource = "",
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
@@ -63,8 +61,8 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Socket) ->
-    gen_fsm:start(ejabberd_c2s, [Socket], ?FSMOPTS).
+start(Socket, Opts) ->
+    gen_fsm:start(ejabberd_c2s, [Socket, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -77,13 +75,20 @@ start(Socket) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket]) ->
+init([Socket, Opts]) ->
     SenderPid = spawn(?MODULE, sender, [Socket]),
     ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
-    {ok, wait_for_stream, #state{socket = Socket,
+    Access = case lists:keysearch(access, 1, Opts) of
+		 {value, {_, A}} ->
+		     A;
+		 _ ->
+		     all
+	     end,
+    {ok, wait_for_stream, #state{socket   = Socket,
 				 receiver = ReceiverPid,
-				 sender = SenderPid,
-				 streamid = new_id()}}.
+				 sender   = SenderPid,
+				 streamid = new_id(),
+				 access   = Access}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -118,20 +123,28 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    {next_state, wait_for_auth, StateData};
 	{auth, ID, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
-	    case ejabberd_auth:check_password(U, P,
-					      StateData#state.streamid, D) of
-		true ->
-		    ejabberd_sm:open_session(U, R),
-		    Res = jlib:make_result_iq_reply(El),
-		    send_element(StateData#state.sender, Res),
-		    {Fs, Ts} = mod_roster:get_subscription_lists(U),
-		    {next_state, session_established,
-		     StateData#state{user = U,
-				     resource = R,
-				     pres_f = ?SETS:from_list(Fs),
-				     pres_t = ?SETS:from_list(Ts)}};
+	    case acl:match_rule(StateData#state.access, {U, ?MYNAME, R}) of
+		allow ->
+		    case ejabberd_auth:check_password(
+			   U, P, StateData#state.streamid, D) of
+			true ->
+			    ejabberd_sm:open_session(U, R),
+			    Res = jlib:make_result_iq_reply(El),
+			    send_element(StateData#state.sender, Res),
+			    {Fs, Ts} = mod_roster:get_subscription_lists(U),
+			    {next_state, session_established,
+			     StateData#state{user = U,
+					     resource = R,
+					     pres_f = ?SETS:from_list(Fs),
+					     pres_t = ?SETS:from_list(Ts)}};
+			_ ->
+			    Err = jlib:make_error_reply(
+				    El, "401", "Unauthorized"),
+			    send_element(StateData#state.sender, Err),
+			    {next_state, wait_for_auth, StateData}
+		    end;
 		_ ->
-		    Err = jlib:make_error_reply(El, "401", "Unauthorized"),
+		    Err = jlib:make_error_reply(El, "405", "Not Allowed"),
 		    send_element(StateData#state.sender, Err),
 		    {next_state, wait_for_auth, StateData}
 	    end;

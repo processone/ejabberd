@@ -3,9 +3,10 @@
 include Makefile.inc
 
 INCLUDES = -I/usr/lib/erlang/usr/include \
-	   -I$(EI_DIR)/include
+	   -I$(EI_DIR)/include \
+	   -I/usr/local/include
 
-LIBDIRS = -L$(EI_DIR)/lib
+LIBDIRS = -L$(EI_DIR)/lib -L/usr/local/lib
 
 ERLSHLIBS = expat_erl.so
 
