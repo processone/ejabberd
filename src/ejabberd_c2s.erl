@@ -99,10 +99,21 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
-	{auth, {U, P, D, R}} ->
+	{auth, ID, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
-	    % TODO
-	    {next_state, session_established, StateData};
+	    case ejabberd_auth:check_password(U, P) of
+		true ->
+		    {next_state, session_established, StateData};
+		_ ->
+		    {xmlelement, _, _, SubTags} = El,
+		    Err = {xmlelement, "iq",
+			   [{"id", "0"}, {"type", "error"}],
+			   SubTags ++ [{xmlelement, "error",
+					[{"code", "404"}],
+					[{xmlcdata, "Unauthorized"}]}]},
+		    send_element(StateData#state.sender, Err),
+		    {next_state, wait_for_auth, StateData}
+	    end;
 	_ ->
 	    {next_state, wait_for_auth, StateData}
 end;
@@ -202,6 +213,9 @@ sender(Socket) ->
 send_text(Pid, Text) ->
     Pid ! {text, Text}.
 
+send_element(Pid, El) ->
+    send_text(Pid, xml:element_to_string(El)).
+
 new_id() ->
     io_lib:format("~p", [random:uniform(65536*65536)]).
 
@@ -213,7 +227,9 @@ is_auth_packet({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
 		[{xmlelement, "query", Attrs2, Els2}] ->
 		    case xml:get_attr_s("xmlns", Attrs2) of
 			"jabber:iq:auth" ->
-			    {auth, get_auth_tags(Els2, "", "", "", "")};
+			    {auth,
+			     xml:get_attr_s("id", Attrs),
+			     get_auth_tags(Els2, "", "", "", "")};
 			_ -> false
 		    end;
 		_ ->
