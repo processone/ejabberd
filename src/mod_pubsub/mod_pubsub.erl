@@ -120,24 +120,24 @@ do_route(Host, From, To, Packet) ->
 					  Packet, Error)
 				end,
 			    ejabberd_router:route(To, From, Res);
-			%{iq, ID, get, ?NS_REGISTER = XMLNS, SubEl} ->
-			%    Lang = xml:get_tag_attr_s(
-			%	     "xml:lang", SubEl),
-			%    Res = {iq, ID, result, XMLNS,
-			%	   [{xmlelement, "query",
-			%	     [{"xmlns", XMLNS}],
-			%	     iq_get_register_info(
-			%	       From, Lang)}]},
+			%#iq{type = get, xmlns = ?NS_REGISTER = XMLNS,
+			%    lang = Lang, sub_el = SubEl} = IQ ->
+			%    Res = IQ#iq{type = result,
+			%		 sub_el = [{xmlelement, "query",
+			%			    [{"xmlns", XMLNS}],
+			%			    iq_get_register_info(
+			%			      From, Lang)}]},
 			%    ejabberd_router:route(To,
 			%			  From,
 			%			  jlib:iq_to_xml(Res));
-			%{iq, ID, set, ?NS_REGISTER = XMLNS, SubEl} ->
+			%#iq{type = set, xmlns = ?NS_REGISTER = XMLNS,
+			%    sub_el = SubEl} = IQ ->
 			%    case process_iq_register_set(From, SubEl) of
 			%	{result, IQRes} ->
-			%	    Res = {iq, ID, result, XMLNS,
-			%		   [{xmlelement, "query",
-			%		     [{"xmlns", XMLNS}],
-			%		     IQRes}]},
+			%	    Res = IQ#iq{type = result,
+			%			sub_el = [{xmlelement, "query",
+			%				   [{"xmlns", XMLNS}],
+			%				   IQRes}]},
 			%	    ejabberd_router:route(
 			%	      To, From, jlib:iq_to_xml(Res));
 			%	{error, Error} ->
@@ -160,9 +160,7 @@ do_route(Host, From, To, Packet) ->
 				end,
 			    ejabberd_router:route(To, From, Res);
 			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
-			    sub_el = SubEl} = IQ ->
-			    Lang = xml:get_tag_attr_s(
-				     "xml:lang", SubEl),
+			    lang = Lang, sub_el = SubEl} = IQ ->
 			    Res = IQ#iq{type = result,
 					sub_el = [{xmlelement, "query",
 						   [{"xmlns", XMLNS}],
@@ -389,8 +387,10 @@ iq_get_vcard(Lang) ->
       [{xmlcdata,
 	"http://ejabberd.jabberstudio.org/"}]},
      {xmlelement, "DESC", [],
-      [{xmlcdata, "ejabberd pub/sub module\n"
-	"Copyright (c) 2003 Alexey Shchepin"}]}].
+      [{xmlcdata, translate:translate(
+		    Lang,
+		    "ejabberd pub/sub module\n"
+		    "Copyright (c) 2003-2004 Alexey Shchepin")}]}].
 
 
 iq_pubsub(Host, From, Type, SubEl) ->

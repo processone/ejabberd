@@ -73,8 +73,7 @@ unregister_extra_domain(Domain) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ets:delete(disco_extra_domains, Domain).
 
-process_local_iq_items(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
+process_local_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
@@ -231,10 +230,10 @@ get_local_items([], Server, Lang) ->
 
 get_local_items(["config"], Server, Lang) ->
     {result,
-     [?NODE("Host Name",      "config/hostname"),
-      ?NODE("ACLs",           "config/acls"),
-      ?NODE("Access Rules",   "config/access"),
-      ?NODE("Remove Users",   "config/remusers")
+     [?NODE("Host Name",            "config/hostname"),
+      ?NODE("Access Control Lists", "config/acls"),
+      ?NODE("Access Rules",         "config/access"),
+      ?NODE("Remove Users",         "config/remusers")
      ]};
 
 get_local_items(["config", _], Server, Lang) ->

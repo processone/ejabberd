@@ -34,13 +34,12 @@ stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_EJABBERD_CONFIG).
 
 
-process_local_iq(From, _To, #iq{id = ID, type = Type,
-				xmlns = XMLNS, sub_el = SubEl} = IQ) ->
+process_local_iq(From, _To, #iq{id = ID, type = Type, xmlns = XMLNS,
+				lang = Lang, sub_el = SubEl} = IQ) ->
     case acl:match_rule(configure, From) of
 	deny ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
-	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case Type of
 		set ->
 		    XDataEl = find_xdata_el(SubEl),
@@ -147,7 +146,8 @@ get_form(["running nodes", ENode, "DB"], Lang) ->
 			       [{xmlelement, "title", [],
 			         [{xmlcdata,
 				   translate:translate(
-				     Lang, "DB Tables Configuration")}]},
+				     Lang, "DB Tables Configuration at ") ++
+				     ENode}]},
 			        {xmlelement, "instructions", [],
 			         [{xmlcdata,
 				   translate:translate(
@@ -182,7 +182,7 @@ get_form(["running nodes", ENode, "modules", "stop"], Lang) ->
 			       [{xmlelement, "title", [],
 			         [{xmlcdata,
 				   translate:translate(
-				     Lang, "Stop Modules")}]},
+				     Lang, "Stop Modules at ") ++ ENode}]},
 			        {xmlelement, "instructions", [],
 			         [{xmlcdata,
 				   translate:translate(
@@ -200,7 +200,7 @@ get_form(["running nodes", ENode, "modules", "start"], Lang) ->
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
-		     Lang, "Start Modules")}]},
+		     Lang, "Start Modules at ") ++ ENode}]},
 	        {xmlelement, "instructions", [],
 	         [{xmlcdata,
 	           translate:translate(
@@ -219,7 +219,7 @@ get_form(["running nodes", ENode, "backup", "backup"], Lang) ->
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
-		     Lang, "Backup to File")}]},
+		     Lang, "Backup to File at ") ++ ENode}]},
 	        {xmlelement, "instructions", [],
 	         [{xmlcdata,
 	           translate:translate(
@@ -238,7 +238,7 @@ get_form(["running nodes", ENode, "backup", "restore"], Lang) ->
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
-		     Lang, "Restore Backup from File")}]},
+		     Lang, "Restore Backup from File at ") ++ ENode}]},
 	        {xmlelement, "instructions", [],
 	         [{xmlcdata,
 	           translate:translate(
@@ -257,7 +257,7 @@ get_form(["running nodes", ENode, "backup", "textfile"], Lang) ->
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
-		     Lang, "Dump Backup to Text File")}]},
+		     Lang, "Dump Backup to Text File at ") ++ ENode}]},
 	        {xmlelement, "instructions", [],
 	         [{xmlcdata,
 	           translate:translate(
@@ -276,7 +276,7 @@ get_form(["running nodes", ENode, "import", "file"], Lang) ->
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
-		     Lang, "Import User from File")}]},
+		     Lang, "Import User from File at ") ++ ENode}]},
 	        {xmlelement, "instructions", [],
 	         [{xmlcdata,
 	           translate:translate(
@@ -295,7 +295,7 @@ get_form(["running nodes", ENode, "import", "dir"], Lang) ->
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
-		     Lang, "Import User from Dir")}]},
+		     Lang, "Import Users from Dir at ") ++ ENode}]},
 	        {xmlelement, "instructions", [],
 	         [{xmlcdata,
 	           translate:translate(
@@ -321,7 +321,8 @@ get_form(["config", "hostname"], Lang) ->
 		     Lang, "Choose host name")}]},
 	        {xmlelement, "field", [{"type", "text-single"},
 				       {"label",
-				        translate:translate(Lang, "Host name")},
+				        translate:translate(Lang,
+							    "Host name")},
 				       {"var", "hostname"}],
 	         [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
 	     ]}]};
@@ -331,14 +332,15 @@ get_form(["config", "acls"], Lang) ->
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
-		     Lang, "ACLs Configuration")}]},
+		     Lang, "Access Control List Configuration")}]},
 	        %{xmlelement, "instructions", [],
 	        % [{xmlcdata,
 	        %   translate:translate(
 	        %     Lang, "")}]},
 	        {xmlelement, "field", [{"type", "text-multi"},
 				       {"label",
-				        translate:translate(Lang, "ACLs")},
+				        translate:translate(
+					  Lang, "Access control lists")},
 				       {"var", "acls"}],
 	         lists:map(fun(S) ->
 			       {xmlelement, "value", [], [{xmlcdata, S}]}
@@ -363,7 +365,7 @@ get_form(["config", "access"], Lang) ->
 	        {xmlelement, "field", [{"type", "text-multi"},
 				       {"label",
 				        translate:translate(
-					  Lang, "Access Rules")},
+					  Lang, "Access rules")},
 				       {"var", "access"}],
 	         lists:map(fun(S) ->
 			       {xmlelement, "value", [], [{xmlcdata, S}]}
@@ -721,13 +723,12 @@ search_running_node(SNode, [Node | Nodes]) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 process_sm_iq(From, To,
-	      #iq{type = Type, xmlns = XMLNS, sub_el = SubEl} = IQ) ->
+	      #iq{type = Type, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ) ->
     case acl:match_rule(configure, From) of
 	deny ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
 	    #jid{user = User} = To,
-	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case Type of
 		set ->
 		    XDataEl = find_xdata_el(SubEl),
@@ -792,7 +793,7 @@ get_sm_form(User, [], Lang) ->
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
-		     Lang, "Administration of " ++ User)}]},
+		     Lang, "Administration of ") ++ User}]},
 	        %{xmlelement, "instructions", [],
 	        % [{xmlcdata,
 	        %   translate:translate(

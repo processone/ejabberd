@@ -28,7 +28,7 @@ start(Opts) ->
 init() ->
     ok.
 
-process_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
+process_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    UTag = xml:get_subtag(SubEl, "username"),
@@ -100,7 +100,6 @@ process_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
 	    end;
 	get ->
-	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    IQ#iq{type = result,
 		  sub_el = [{xmlelement,
 			     "query",
@@ -110,7 +109,7 @@ process_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 				 translate:translate(
 				   Lang,
 				   "Choose a username and password "
-				   "to register with this server.")}]},
+				   "to register with this server")}]},
 			      {xmlelement, "username", [], []},
 			      {xmlelement, "password", [], []}]}]}
     end.

@@ -173,7 +173,7 @@ normal_state({route, From, "",
 				    {next_state, normal_state, NewStateData2};
 				_ ->
 				    Err = jlib:make_error_reply(
-					    Packet, ?ERR_NOT_ALLOWED),
+					    Packet, ?ERR_FORBIDDEN),
 				    ejabberd_router:route(
 				      StateData#state.jid,
 				      From, Err),
@@ -181,7 +181,7 @@ normal_state({route, From, "",
 			    end;
 			true ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_NOT_ALLOWED),
+				    Packet, ?ERR_FORBIDDEN),
 			    ejabberd_router:route(
 			      StateData#state.jid,
 			      From, Err),
@@ -244,7 +244,7 @@ normal_state({route, From, "",
 		    ok;
 		_ ->
 		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_NOT_ALLOWED),
+			    Packet, ?ERR_NOT_ACCEPTABLE),
 		    ejabberd_router:route(StateData#state.jid, From, Err)
 	    end,
 	    {next_state, normal_state, StateData}
@@ -254,20 +254,20 @@ normal_state({route, From, "",
 	      {xmlelement, "iq", Attrs, Els} = Packet},
 	     StateData) ->
     case jlib:iq_query_info(Packet) of
-	#iq{type = Type, xmlns = XMLNS, sub_el = SubEl} = IQ when
+	#iq{type = Type, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ when
 	      (XMLNS == ?NS_MUC_ADMIN) or
 	      (XMLNS == ?NS_MUC_OWNER) or
 	      (XMLNS == ?NS_DISCO_INFO) or
 	      (XMLNS == ?NS_DISCO_ITEMS) ->
 	    Res1 = case XMLNS of
 		       ?NS_MUC_ADMIN ->
-			   process_iq_admin(From, Type, SubEl, StateData);
+			   process_iq_admin(From, Type, Lang, SubEl, StateData);
 		       ?NS_MUC_OWNER ->
-			   process_iq_owner(From, Type, SubEl, StateData);
+			   process_iq_owner(From, Type, Lang, SubEl, StateData);
 		       ?NS_DISCO_INFO ->
-			   process_iq_disco_info(From, Type, StateData);
+			   process_iq_disco_info(From, Type, Lang, StateData);
 		       ?NS_DISCO_ITEMS ->
-			   process_iq_disco_items(From, Type, StateData)
+			   process_iq_disco_items(From, Type, Lang, StateData)
 		   end,
 	    {IQRes, NewStateData} =
 		case Res1 of
@@ -836,9 +836,9 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 				true ->
 				    ok;
 				_ ->
-				    send_subject(From, StateData)
+				    Lang = xml:get_attr_s("xml:lang", Attrs),
+				    send_subject(From, Lang, StateData)
 			    end,
-			    send_join_messages_end(From, StateData),
 			    NewState;
 			_ ->
 			    Err = jlib:make_error_reply(
@@ -1364,7 +1364,7 @@ send_history(JID, Shift, StateData) ->
       end, false, lists:nthtail(Shift, lqueue_to_list(StateData#state.history))).
 
 
-send_subject(JID, StateData) ->
+send_subject(JID, Lang, StateData) ->
     case StateData#state.subject_author of
 	"" ->
 	    ok;
@@ -1374,7 +1374,10 @@ send_subject(JID, StateData) ->
 		      [{xmlelement, "subject", [], [{xmlcdata, Subject}]},
 		       {xmlelement, "body", [],
 			[{xmlcdata,
-			  Nick ++ " has set the topic to: " ++ Subject}]}]},
+			  Nick ++
+			  translate:translate(Lang,
+					      " has set the subject to: ") ++
+			  Subject}]}]},
 	    ejabberd_router:route(
 	      StateData#state.jid,
 	      JID,
@@ -1389,15 +1392,6 @@ check_subject(Packet) ->
 	    xml:get_tag_cdata(SubjEl)
     end.
 
-send_join_messages_end(JID, StateData) ->
-    Packet = {xmlelement, "message", [{"type", "groupchat"}],
-	      [{xmlelement, "body", [],
-		[{xmlcdata, "-"}]}]},
-    ejabberd_router:route(
-      StateData#state.jid,
-      JID,
-      Packet).
-
 can_change_subject(Role, StateData) ->
     case (StateData#state.config)#config.allow_change_subj of
 	true ->
@@ -1409,11 +1403,11 @@ can_change_subject(Role, StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Admin stuff
 
-process_iq_admin(From, set, SubEl, StateData) ->
+process_iq_admin(From, set, Lang, SubEl, StateData) ->
     {xmlelement, _, _, Items} = SubEl,
     process_admin_items_set(From, Items, StateData);
 
-process_iq_admin(From, get, SubEl, StateData) ->
+process_iq_admin(From, get, Lang, SubEl, StateData) ->
     case xml:get_subtag(SubEl, "item") of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
@@ -1838,12 +1832,11 @@ send_kickban_presence1(UJID, Reason, Code, StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Owner stuff
 
-process_iq_owner(From, set, SubEl, StateData) ->
+process_iq_owner(From, set, Lang, SubEl, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     case FAffiliation of
 	owner ->
 	    {xmlelement, Name, Attrs, Els} = SubEl,
-	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case xml:remove_cdata(Els) of
 		[{xmlelement, "x", Attrs1, Els1} = XEl] ->
 		    case {xml:get_tag_attr_s("xmlns", XEl),
@@ -1864,12 +1857,11 @@ process_iq_owner(From, set, SubEl, StateData) ->
 	    {error, ?ERR_FORBIDDEN}
     end;
 
-process_iq_owner(From, get, SubEl, StateData) ->
+process_iq_owner(From, get, Lang, SubEl, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     case FAffiliation of
 	owner ->
 	    {xmlelement, Name, Attrs, Els} = SubEl,
-	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case xml:remove_cdata(Els) of
 		[] ->
 		    get_config(Lang, StateData);
@@ -1919,7 +1911,10 @@ process_iq_owner(From, get, SubEl, StateData) ->
 get_config(Lang, StateData) ->
     Config = StateData#state.config,
     Res =
-	[?STRINGXFIELD("Room title",
+	[{xmlelement, "title", [],
+	  [{xmlcdata, translate:translate(Lang, "Configuration for ") ++
+	    jlib:jid_to_string(StateData#state.jid)}]},
+	 ?STRINGXFIELD("Room title",
 		     "title",
 		     Config#config.title),
 	 ?BOOLXFIELD("Allow users to change subject?",
@@ -1968,7 +1963,11 @@ get_config(Lang, StateData) ->
 		     "logging",
 		     Config#config.logging)
 	],
-    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}], Res}], StateData}.
+    {result, [{xmlelement, "instructions", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "You need an x:data capable client to configure room")}]}, 
+	      {xmlelement, "x", [{"xmlns", ?NS_XDATA}], Res}], StateData}.
 
 
 
@@ -2141,10 +2140,10 @@ destroy_room(DEls, StateData) ->
 	    ?FEATURE(Fiffalse)
     end).
 
-process_iq_disco_info(From, set, StateData) ->
+process_iq_disco_info(From, set, Lang, StateData) ->
     {error, ?ERR_NOT_ALLOWED};
 
-process_iq_disco_info(From, get, StateData) ->
+process_iq_disco_info(From, get, Lang, StateData) ->
     Config = StateData#state.config,
     {result, [{xmlelement, "identity",
 	       [{"category", "conference"},
@@ -2167,10 +2166,10 @@ process_iq_disco_info(From, get, StateData) ->
 	     ], StateData}.
 
 
-process_iq_disco_items(From, set, StateData) ->
+process_iq_disco_items(From, set, Lang, StateData) ->
     {error, ?ERR_NOT_ALLOWED};
 
-process_iq_disco_items(From, get, StateData) ->
+process_iq_disco_items(From, get, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     FRole = get_role(From, StateData),
     case ((StateData#state.config)#config.public_list == true) orelse

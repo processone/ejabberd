@@ -221,7 +221,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			  {xmlelement, Name, Attrs,
 			   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
 			     [{xmlelement, "username", [], [{xmlcdata, U}]},
-			      {xmlelement, "password", [], []}
+			      {xmlelement, "password", [], []},
+			      {xmlelement, "resource", [], []}
 			     ]}]}
 		  end,
 	    send_element(StateData, Res),

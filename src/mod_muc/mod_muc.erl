@@ -100,15 +100,14 @@ do_route(Host, From, To, Packet) ->
 					  [Host, From, To, IQ]);
 				#iq{type = get,
 				    xmlns = ?NS_REGISTER = XMLNS,
+				    lang = Lang,
 				    sub_el = SubEl} = IQ ->
-				    Lang = xml:get_tag_attr_s(
-					     "xml:lang", SubEl),
 				    Res = IQ#iq{type = result,
 						sub_el =
 						[{xmlelement, "query",
 						  [{"xmlns", XMLNS}],
 						  iq_get_register_info(
-						    From, Lang)}]},
+						    From, Host, Lang)}]},
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res));
@@ -132,9 +131,8 @@ do_route(Host, From, To, Packet) ->
 				    end;
 				#iq{type = get,
 				    xmlns = ?NS_VCARD = XMLNS,
+				    lang = Lang,
 				    sub_el = SubEl} = IQ ->
-				    Lang = xml:get_tag_attr_s(
-					     "xml:lang", SubEl),
 				    Res = IQ#iq{type = result,
 						sub_el =
 						[{xmlelement, "query",
@@ -306,7 +304,7 @@ iq_disco_items(Host, From) ->
 			       {"var", Var}],
 	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
 
-iq_get_register_info(From, Lang) ->
+iq_get_register_info(From, Host, Lang) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     LUS = {LUser, LServer},
     {Nick, Registered} = case catch mnesia:dirty_read(muc_registered, LUS) of
@@ -321,17 +319,17 @@ iq_get_register_info(From, Lang) ->
 	[{xmlelement, "instructions", [],
 	  [{xmlcdata,
 	    translate:translate(
-	      Lang, "You need a x:data capable client to register.")}]},
+	      Lang, "You need an x:data capable client to register nickname")}]},
 	 {xmlelement, "x",
 	  [{"xmlns", ?NS_XDATA}],
 	  [{xmlelement, "title", [],
 	    [{xmlcdata,
 	      translate:translate(
-		Lang, "Nickname Registration")}]},
+		Lang, "Nickname Registration at ") ++ Host}]},
 	   {xmlelement, "instructions", [],
 	    [{xmlcdata,
 	      translate:translate(
-		Lang, "Enter nickname you want to register.")}]},
+		Lang, "Enter nickname you want to register")}]},
 	   ?XFIELD("text-single", "Nickname", "nick", Nick)]}].
 
 iq_set_register_info(From, XData) ->
@@ -408,7 +406,7 @@ iq_get_vcard(Lang) ->
 	"http://ejabberd.jabberstudio.org/"}]},
      {xmlelement, "DESC", [],
       [{xmlcdata, translate:translate(Lang, "ejabberd MUC module\n"
-	"Copyright (c) 2003 Alexey Shchepin")}]}].
+	"Copyright (c) 2003-2004 Alexey Shchepin")}]}].
 
 
 broadcast_service_message(Msg) ->

@@ -32,26 +32,26 @@ stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_IQDATA).
 
 
-process_local_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
+process_local_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case acl:match_rule(configure, From) of
 	deny ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
-	    %Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case Type of
 		set ->
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
 		    %case xml:get_tag_attr_s("type", SubEl) of
 		    %    "cancel" ->
-		    %        {iq, ID, result, XMLNS,
-		    %         [{xmlelement, "query", [{"xmlns", XMLNS}], []}]};
+		    %        IQ#iq{type = result,
+		    %		   sub_el = [{xmlelement, "query",
+		    %			      [{"xmlns", XMLNS}], []}]};
 		    %    "submit" ->
 		    %        XData = jlib:parse_xdata_submit(SubEl),
 		    %        case XData of
 		    %    	invalid ->
-		    %    	    {iq, ID, error, XMLNS,
-		    %    	     [SubEl, ?ERR_BAD_REQUEST]};
+		    %    	    IQ#iq{type = error,
+		    %			  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
 		    %    	_ ->
 		    %    	    Node =
 		    %    		string:tokens(
@@ -59,19 +59,19 @@ process_local_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 		    %    		  "/"),
 		    %    	    case set_form(Node, Lang, XData) of
 		    %    		{result, Res} ->
-		    %    		    {iq, ID, result, XMLNS,
-		    %    		     [{xmlelement, "query",
-		    %    		       [{"xmlns", XMLNS}],
-		    %    		       Res
-		    %    		      }]};
+		    %    		    IQ#iq{type = result,
+		    %				  sub_el = [{xmlelement, "query",
+		    %					     [{"xmlns", XMLNS}],
+		    %					     Res
+		    %					    }]};
 		    %    		{error, Error} ->
-		    %    		    {iq, ID, error, XMLNS,
-		    %    		     [SubEl, Error]}
+		    %    		    IQ#iq{type = error,
+		    %				  sub_el = [SubEl, Error]}
 		    %    	    end
 		    %        end;
 		    %    _ ->
-		    %        {iq, ID, error, XMLNS,
-		    %         [SubEl, ?ERR_NOT_ALLOWED]}
+		    %        IQ#iq{type = error,
+		    %		   sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 		    %end;
 		get ->
 		    case process_get(SubEl) of

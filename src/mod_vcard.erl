@@ -86,7 +86,7 @@ loop() ->
     end.
 
 
-process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
+process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
@@ -100,8 +100,11 @@ process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			       [{xmlcdata,
 				 "http://ejabberd.jabberstudio.org/"}]},
 			      {xmlelement, "DESC", [],
-			       [{xmlcdata, "Erlang Jabber Server\n"
-				 "Copyright (c) 2002-2004 Alexey Shchepin"}]},
+			       [{xmlcdata,
+				 translate:translate(
+				   Lang,
+				   "Erlang Jabber Server\n"
+				   "Copyright (c) 2002-2004 Alexey Shchepin")}]},
 			      {xmlelement, "BDAY", [],
 			       [{xmlcdata, "2002-11-16"}]}
 			     ]}]}
@@ -202,12 +205,13 @@ set_vcard(User, VCARD) ->
 			       {"var", Var}], []}).
 
 
--define(FORM,
+-define(FORM(JID),
 	[{xmlelement, "instructions", [],
-	  [{xmlcdata, translate:translate(Lang, "You need a x:data capable client to search")}]},
+	  [{xmlcdata, translate:translate(Lang, "You need an x:data capable client to search")}]},
 	 {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
 	  [{xmlelement, "title", [],
-	    [{xmlcdata, translate:translate(Lang, "Users Search")}]},
+	    [{xmlcdata, translate:translate(Lang, "Search users in ") ++
+	      jlib:jid_to_string(JID)}]},
 	   {xmlelement, "instructions", [],
 	    [{xmlcdata, translate:translate(Lang, "Fill in fields to search "
 					    "for any matching Jabber User")}]},
@@ -237,8 +241,7 @@ do_route(From, To, Packet) ->
 	true ->
 	    IQ = jlib:iq_query_info(Packet),
 	    case IQ of
-		#iq{type = Type, xmlns = ?NS_SEARCH, sub_el = SubEl} ->
-		    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
+		#iq{type = Type, xmlns = ?NS_SEARCH, lang = Lang, sub_el = SubEl} ->
 		    case Type of
 			set ->
 			    XDataEl = find_xdata_el(SubEl),
@@ -267,7 +270,7 @@ do_route(From, To, Packet) ->
 						    [{xmlelement, "x",
 						      [{"xmlns", ?NS_XDATA},
 						       {"type", "result"}],
-						      search_result(Lang, XData)
+						      search_result(Lang, To, XData)
 						     }]}]},
 					    ejabberd_router:route(
 					      To, From, jlib:iq_to_xml(ResIQ))
@@ -278,7 +281,7 @@ do_route(From, To, Packet) ->
 					  sub_el = [{xmlelement,
 						     "query",
 						     [{"xmlns", ?NS_SEARCH}],
-						     ?FORM
+						     ?FORM(To)
 						    }]},
 			    ejabberd_router:route(To,
 						  From,
@@ -303,7 +306,9 @@ do_route(From, To, Packet) ->
 						     "vCard User Search"}],
 						   []},
 						  {xmlelement, "feature",
-						   [{"var", ?NS_SEARCH}], []}
+						   [{"var", ?NS_SEARCH}], []},
+						  {xmlelement, "feature",
+						   [{"var", ?NS_VCARD}], []}
 						 ]
 						}]},
 			    ejabberd_router:route(To,
@@ -327,12 +332,32 @@ do_route(From, To, Packet) ->
 						  From,
 						  jlib:iq_to_xml(ResIQ))
 		    end;
+		#iq{type = get, xmlns = ?NS_VCARD, lang = Lang} ->
+		    ResIQ = 
+			IQ#iq{type = result,
+			      sub_el = [{xmlelement,
+					 "query",
+					 [{"xmlns", ?NS_VCARD}],
+					 iq_get_vcard(Lang)}]},
+		    ejabberd_router:route(To,
+					  From,
+					  jlib:iq_to_xml(ResIQ));
 		_ ->
 		    Err = jlib:make_error_reply(Packet,
 						?ERR_SERVICE_UNAVAILABLE),
 		    ejabberd_router:route(To, From, Err)
 	    end
     end.
+
+iq_get_vcard(Lang) ->
+    [{xmlelement, "FN", [],
+      [{xmlcdata, "ejabberd/mod_vcard"}]},
+     {xmlelement, "URL", [],
+      [{xmlcdata,
+        "http://ejabberd.jabberstudio.org/"}]},
+     {xmlelement, "DESC", [],
+      [{xmlcdata, translate:translate(Lang, "ejabberd vCard module\n"
+        "Copyright (c) 2003-2004 Alexey Shchepin")}]}].
 
 find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
@@ -353,9 +378,10 @@ find_xdata_el1([_ | Els]) ->
 	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},
 			       {"var", Var}], []}).
 
-search_result(Lang, Data) ->
+search_result(Lang, JID, Data) ->
     [{xmlelement, "title", [],
-      [{xmlcdata, translate:translate(Lang, "Users Search Results")}]},
+      [{xmlcdata, translate:translate(Lang, "Results of search in ") ++
+	jlib:jid_to_string(JID)}]},
      {xmlelement, "reported", [],
       [?LFIELD("JID", "jid"),
        ?LFIELD("Full Name", "fn"),

@@ -58,6 +58,7 @@ loop(Host) ->
 
 do_route(Host, From, To, Packet) ->
     #jid{user = ChanServ, resource = Resource} = To,
+    {xmlelement, _Name, Attrs, _Els} = Packet,
     case ChanServ of
 	"" ->
 	    case Resource of
@@ -72,9 +73,18 @@ do_route(Host, From, To, Packet) ->
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
-			#iq{type = Type, xmlns = ?NS_EJABBERD_CONFIG,
-			    sub_el = SubEl} = IQ ->
-			    ejabberd_config(From, To, IQ);
+			#iq{xmlns = ?NS_REGISTER} = IQ ->
+			    process_register(From, To, IQ);
+			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
+			    lang = Lang} = IQ ->
+			    Res = IQ#iq{type = result,
+					sub_el =
+                                            [{xmlelement, "query",
+                                              [{"xmlns", XMLNS}],
+                                              iq_get_vcard(Lang)}]},
+                            ejabberd_router:route(To,
+                                                  From,
+                                                  jlib:iq_to_xml(Res));
 			#iq{} = IQ ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
@@ -155,12 +165,22 @@ iq_disco() ->
      {xmlelement, "feature",
       [{"var", ?NS_MUC}], []},
      {xmlelement, "feature",
-      [{"var", ?NS_EJABBERD_CONFIG}], []}].
+      [{"var", ?NS_REGISTER}], []},
+     {xmlelement, "feature",
+      [{"var", ?NS_VCARD}], []}].
 
+iq_get_vcard(Lang) ->
+    [{xmlelement, "FN", [],
+      [{xmlcdata, "ejabberd/mod_irc"}]},                  
+     {xmlelement, "URL", [],
+      [{xmlcdata,
+        "http://ejabberd.jabberstudio.org/"}]},
+     {xmlelement, "DESC", [],
+      [{xmlcdata, translate:translate(Lang, "ejabberd IRC module\n"
+        "Copyright (c) 2003-2004 Alexey Shchepin")}]}].
 
-
-ejabberd_config(From, To, #iq{type = Type} = IQ) ->
-    case catch process_ejabberd_config(From, To, IQ) of
+process_register(From, To, #iq{} = IQ) ->
+    case catch process_irc_register(From, To, IQ) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	ResIQ ->
@@ -190,9 +210,9 @@ find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
-process_ejabberd_config(From, To,
-		#iq{type = Type, xmlns = XMLNS, sub_el = SubEl} = IQ) ->
-    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
+process_irc_register(From, To,
+		     #iq{type = Type, xmlns = XMLNS,
+			 lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    XDataEl = find_xdata_el(SubEl),
@@ -277,12 +297,15 @@ get_form(From, [], Lang) ->
 	      {xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
-		   translate:translate(Lang, "mod_irc configuration for") ++
-		   " " ++ User ++ "@" ++ Server}]},
-	              %{xmlelement, "instructions", [],
-	              % [{xmlcdata,
-	              %   translate:translate(
-	              %     Lang, "")}]},
+		   translate:translate(
+		     Lang,
+		     "Registration in mod_irc for ") ++ User ++ "@" ++ Server}]},
+	              {xmlelement, "instructions", [],
+	               [{xmlcdata,
+	                 translate:translate(
+	                   Lang,
+			   "Enter username and encodings you wish to use for "
+			   "connecting to IRC servers")}]},
 	        {xmlelement, "field", [{"type", "text-single"},
 				       {"label",
 				        translate:translate(

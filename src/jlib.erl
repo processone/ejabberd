@@ -329,6 +329,7 @@ get_iq_namespace(_) ->
 iq_query_info({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
     ID = xml:get_attr_s("id", Attrs),
     Type = xml:get_attr_s("type", Attrs),
+    Lang = xml:get_attr_s("xml:lang", Attrs),
     Type1 = case Type of
 		"set" -> set;
 		"get" -> get;
@@ -343,7 +344,10 @@ iq_query_info({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
 		    XMLNS = xml:get_attr_s("xmlns", Attrs2),
 		    if
 			XMLNS /= "" ->
-			    #iq{id = ID, type = Type1, xmlns = XMLNS,
+			    #iq{id = ID,
+				type = Type1,
+				xmlns = XMLNS,
+				lang = Lang,
 				sub_el = {xmlelement, Name2, Attrs2, Els2}};
 			true ->
 			    invalid

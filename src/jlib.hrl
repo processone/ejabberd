@@ -44,6 +44,8 @@
 -define(NS_SESSION,      "urn:ietf:params:xml:ns:xmpp-session").
 -define(NS_BIND,         "urn:ietf:params:xml:ns:xmpp-bind").
 
+-define(NS_FEATURE_IQAUTH, "http://jabber.org/features/iq-auth").
+
 % TODO: remove "code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),
 	{xmlelement, "error",
@@ -174,5 +176,6 @@
 -record(iq, {id = "",
 	     type,
 	     xmlns = "",
+	     lang = "",
 	     sub_el}).
 

@@ -196,8 +196,15 @@ do_route(From, To, Packet) ->
 				true ->
 				    if
 					Subsc ->
-					    catch mod_offline:store_packet(
-						    From, To, Packet);
+					    case ejabberd_auth:is_user_exists(LUser) of
+						true ->
+						    catch mod_offline:store_packet(
+							    From, To, Packet);
+						_ ->
+						    Err = jlib:make_error_reply(
+							    Packet, ?ERR_SERVICE_UNAVAILABLE),
+						    ejabberd_router:route(To, From, Err)
+					    end;
 					true ->
 					    ok
 				    end
