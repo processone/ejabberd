@@ -1,3 +1,11 @@
+2004-09-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/aclocal.m4: Better expat and openssl detection (thanks to
+	Anton Vanin)
+
+	* src/**/Makefile.in: Updated (thanks to Anton Vanin)
+	* src/configure.ac: Likewise
+
 2004-09-25  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/jlib.hrl: Added namespace for iq-register stream feature

@@ -2226,7 +2226,7 @@ echo "$as_me: error: erlang program was not properly executed, (conftest.out was
    ERLANG_DIR=`cat conftest.out | tail -n 1`
 
    ERLANG_CFLAGS="-I$ERLANG_EI_DIR/include -I$ERLANG_DIR/usr/include"
-   ERLANG_LIBS="-L$ERLANG_EI_DIR/lib"
+   ERLANG_LIBS="-L$ERLANG_EI_DIR/lib -lerl_interface -lei"
 
 
 
@@ -2883,17 +2883,15 @@ done
 if test "${with_expat+set}" = set; then
   withval="$with_expat"
 
-else
-  with_expat=no
 fi;
 
   EXPAT_CFLAGS=
   EXPAT_LIBS=
-  if test $with_expat != no; then
-	if test $with_expat != yes; then
+	if test x"$with_expat" != x; then
 		EXPAT_CFLAGS="-I$with_expat/include"
 		EXPAT_LIBS="-L$with_expat/lib"
 	fi
+
 	echo "$as_me:$LINENO: checking for XML_ParserCreate in -lexpat" >&5
 echo $ECHO_N "checking for XML_ParserCreate in -lexpat... $ECHO_C" >&6
 if test "${ac_cv_lib_expat_XML_ParserCreate+set}" = set; then
@@ -3085,7 +3083,6 @@ echo "$as_me: error: Could not find expat.h" >&2;}
    { (exit 1); exit 1; }; }
 	fi
 	CFLAGS="$expat_save_CFLAGS"
-  fi
 
 
 
@@ -3749,22 +3746,21 @@ if test "${with_openssl+set}" = set; then
   withval="$with_openssl"
 
 fi;
-
+unset SSL_LIBS;
+unset SSL_CFLAGS;
+have_openssl=no
 if test x"$tls" != x; then
-	if test "x$with_openssl" == x; then
-	    ssl_prefix=/usr
-	else
-	    ssl_prefix=$with_openssl
-	fi
+    for ssl_prefix in $withval /usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr; do
+        printf "looking for openssl in $ssl_prefix...\n"
         SSL_CFLAGS="-I$ssl_prefix/include/openssl"
-        SSL_LIBS="-L$ssl_prefix/lib"
-    echo "$as_me:$LINENO: checking for SSL_new in -lssl" >&5
+        SSL_LIBS="-L$ssl_prefix/lib -lcrypto"
+        echo "$as_me:$LINENO: checking for SSL_new in -lssl" >&5
 echo $ECHO_N "checking for SSL_new in -lssl... $ECHO_C" >&6
 if test "${ac_cv_lib_ssl_SSL_new+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lssl "-lcrypto" $LIBS"
+LIBS="-lssl  $SSL_LIBS $SSL_CFLAGS  $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
@@ -3819,9 +3815,9 @@ else
    have_openssl=no
 fi
 
-    if test x"$have_openssl" = xyes; then
+        if test x"$have_openssl" = xyes; then
 
-for ac_header in openssl/ssl.h
+for ac_header in $ssl_prefix/include/openssl/ssl.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -3934,27 +3930,23 @@ fi
 
 done
 
-        if test x"$have_openssl_h" = xyes; then
-            with_openssl=yes
-    	    SSL_LIBS="$SSL_LIBS -lssl -lcrypto"
-        else
-	    unset SSL_LIBS
-	    unset SSL_CFLAGS
-	    with_openssl=no
-	    { { echo "$as_me:$LINENO: error: openssl library cannot be found. Install openssl or disable \`tls' module (--disable-tls)." >&5
+            if test x"$have_openssl_h" = xyes; then
+                have_openssl=yes
+                printf "openssl found in $ssl_prefix\n";
+                SSL_LIBS="-L$ssl_prefix/lib -lssl -lcrypto"
+                SSL_CFLAGS="-I$ssl_prefix/include/openssl -DHAVE_SSL"
+                break
+            fi
+        fi
+    done
+if test x${have_openssl} != xyes; then
+    { { echo "$as_me:$LINENO: error: openssl library cannot be found. Install openssl or disable \`tls' module (--disable-tls)." >&5
 echo "$as_me: error: openssl library cannot be found. Install openssl or disable \`tls' module (--disable-tls)." >&2;}
    { (exit 1); exit 1; }; }
-	fi
-    fi
-    echo -n openssl support ..... : $with_openssl
-    if test x"$with_openssl" != xno; then
-	echo , libs: $SSL_LIBS, includes: $SSL_CFLAGS
-    else
-	echo ""
-    fi
 fi
 
 
+fi
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

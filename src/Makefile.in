@@ -1,10 +1,16 @@
 # $Id$
 
 CC = @CC@
-CFLAGS = @CFLAGS@ @ERLANG_CFLAGS@ @EXPAT_CFLAGS@
+CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ @ERLANG_LIBS@ @EXPAT_LIBS@
+LIBS = @LIBS@
+
+EXPAT_CFLAGS = @EXPAT_CFLAGS@
+ERLANG_CFLAGS= @ERLANG_CFLAGS@
+
+EXPAT_LIBS = @EXPAT_LIBS@
+ERLANG_LIBS = @ERLANG_LIBS@
 
 prefix = @prefix@
 
@@ -40,10 +46,9 @@ mostlyclean-recursive maintainer-clean-recursive:
 $(ERLSHLIBS):	%.so:	%.c
 			gcc -Wall $(CFLAGS) $(LDFLAGS) $(LIBS) \
 			$(subst ../,,$(subst .so,.c,$@)) \
-			-lexpat \
-			-lerl_interface \
-			-lei \
-			-o $@ -fpic -shared \
+			$(EXPAT_LIBS) $(EXPAT_CFLAGS) \
+			$(ERLANG_LIBS) $(ERLANG_CFLAGS) \
+			-o $@ -fpic -shared
 
 install: all
 	install -d $(BEAMDIR)

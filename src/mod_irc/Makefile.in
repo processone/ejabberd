@@ -1,20 +1,14 @@
 # $Id$
 
 CC = @CC@
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ @ERLANG_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
-
-INCLUDES = @ERLANG_CFLAGS@
-
-LIBDIRS = @ERLANG_LIBS@
+LIBS = @LIBS@ @ERLANG_LIBS@ @LIBICONV@
 
 SUBDIRS = 
 
 ERLSHLIBS = ../iconv_erl.so
-
-
 
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
@@ -28,17 +22,13 @@ all:    $(OBJS) $(ERLSHLIBS)
 $(OUTDIR)/%.beam:       %.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) $<
 
-
-
 #all:	$(ERLSHLIBS)
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
 $(ERLSHLIBS):	../%.so:	%.c
-			$(CC) -Wall $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LIBDIRS) \
-			$(subst ../,,$(subst .so,.c,$@)) \
-			-lerl_interface @LIBICONV@ \
-			-lei \
-			-o $@ -fpic -shared \
+			$(CC) -Wall $(INCLUDES) $(CFLAGS) $(LDFLAGS) \
+			$(subst ../,,$(subst .so,.c,$@)) $(LIBS) \
+			-o $@ -fpic -shared
 
 clean:
 	rm -f $(OBJS) $(ERLSHLIBS)

@@ -1,15 +1,14 @@
 AC_DEFUN(AM_WITH_EXPAT,
 [ AC_ARG_WITH(expat,
-	      [  --with-expat=PREFIX	prefix where EXPAT is installed],
-	      , with_expat=no)
+	      [  --with-expat=PREFIX	prefix where EXPAT is installed])
 
   EXPAT_CFLAGS=
   EXPAT_LIBS=
-  if test $with_expat != no; then
-	if test $with_expat != yes; then
+	if test x"$with_expat" != x; then
 		EXPAT_CFLAGS="-I$with_expat/include"
 		EXPAT_LIBS="-L$with_expat/lib"
 	fi
+	
 	AC_CHECK_LIB(expat, XML_ParserCreate,
 		     [ EXPAT_LIBS="$EXPAT_LIBS -lexpat"
 		       expat_found=yes ],
@@ -25,7 +24,6 @@ AC_DEFUN(AM_WITH_EXPAT,
 		AC_MSG_ERROR([Could not find expat.h])
 	fi
 	CFLAGS="$expat_save_CFLAGS"
-  fi
 
   AC_SUBST(EXPAT_CFLAGS)
   AC_SUBST(EXPAT_LIBS)
@@ -75,7 +73,7 @@ _EOF
    ERLANG_DIR=`cat conftest.out | tail -n 1`
    
    ERLANG_CFLAGS="-I$ERLANG_EI_DIR/include -I$ERLANG_DIR/usr/include"
-   ERLANG_LIBS="-L$ERLANG_EI_DIR/lib"
+   ERLANG_LIBS="-L$ERLANG_EI_DIR/lib -lerl_interface -lei"
    
    AC_SUBST(ERLANG_CFLAGS)
    AC_SUBST(ERLANG_LIBS)
@@ -197,36 +195,31 @@ dnl <openssl>
 AC_DEFUN(AM_WITH_OPENSSL,
 [ AC_ARG_WITH(openssl,
           [  --with-openssl=PREFIX    prefix where OPENSSL is installed ])
-
+unset SSL_LIBS;
+unset SSL_CFLAGS;
+have_openssl=no
 if test x"$tls" != x; then
-	if test "x$with_openssl" == x; then
-	    ssl_prefix=/usr
-	else
-	    ssl_prefix=$with_openssl
-	fi
+    for ssl_prefix in $withval /usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr; do
+        printf "looking for openssl in $ssl_prefix...\n"
         SSL_CFLAGS="-I$ssl_prefix/include/openssl"
-        SSL_LIBS="-L$ssl_prefix/lib"
-    AC_CHECK_LIB(ssl, SSL_new, [ have_openssl=yes ], [ have_openssl=no ], "-lcrypto")
-    if test x"$have_openssl" = xyes; then
-        AC_CHECK_HEADERS(openssl/ssl.h, have_openssl_h=yes)
-        if test x"$have_openssl_h" = xyes; then
-            with_openssl=yes
-    	    SSL_LIBS="$SSL_LIBS -lssl -lcrypto"
-        else
-	    unset SSL_LIBS
-	    unset SSL_CFLAGS
-	    with_openssl=no
-	    AC_MSG_ERROR([openssl library cannot be found. Install openssl or disable `tls' module (--disable-tls).])
-	fi
-    fi
-    echo -n openssl support ..... : $with_openssl
-    if test x"$with_openssl" != xno; then
-	echo , libs: $SSL_LIBS, includes: $SSL_CFLAGS
-    else
-	echo ""
-    fi
+        SSL_LIBS="-L$ssl_prefix/lib -lcrypto"
+        AC_CHECK_LIB(ssl, SSL_new, [ have_openssl=yes ], [ have_openssl=no ], [ $SSL_LIBS $SSL_CFLAGS ])
+        if test x"$have_openssl" = xyes; then
+            AC_CHECK_HEADERS($ssl_prefix/include/openssl/ssl.h, have_openssl_h=yes)
+            if test x"$have_openssl_h" = xyes; then
+                have_openssl=yes
+                printf "openssl found in $ssl_prefix\n";
+                SSL_LIBS="-L$ssl_prefix/lib -lssl -lcrypto"
+                SSL_CFLAGS="-I$ssl_prefix/include/openssl -DHAVE_SSL"
+                break
+            fi
+        fi
+    done
+if test x${have_openssl} != xyes; then
+    AC_MSG_ERROR([openssl library cannot be found. Install openssl or disable `tls' module (--disable-tls).])
 fi
 AC_SUBST(SSL_LIBS)
 AC_SUBST(SSL_CFLAGS)
+fi
 ])
 dnl <openssl/>

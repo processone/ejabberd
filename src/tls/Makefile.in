@@ -1,7 +1,7 @@
 # $Id$
 
 CC = @CC@
-CFLAGS = @CFLAGS@ @SSL_CFLAGS@  @ERLANG_CFLAGS@
+CFLAGS = @CFLAGS@ @SSL_CFLAGS@ @ERLANG_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ @SSL_LIBS@ @ERLANG_LIBS@
@@ -24,11 +24,9 @@ $(OUTDIR)/%.beam:       %.erl
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
 $(ERLSHLIBS):	../%.so:	%.c
-			$(CC) -Wall $(CFLAGS) $(LDFLAGS) $(LIBS) \
-			$(subst ../,,$(subst .so,.c,$@)) \
-			-lerl_interface @LIBICONV@ \
-			-lei \
-			-o $@ -fpic -shared \
+			$(CC) -Wall $(CFLAGS) $(LDFLAGS) \
+			$(subst ../,,$(subst .so,.c,$@)) $(LIBS) \
+			-o $@ -fpic -shared
 
 clean:
 	rm -f $(OBJS) $(ERLSHLIBS)
@@ -38,4 +36,3 @@ distclean: clean
 
 TAGS:
 	etags *.erl
-
