@@ -297,17 +297,15 @@ route_message(From, To, Packet) ->
 
 get_user_resources(User) ->
     LUser = jlib:tolower(User),
-    F = fun() ->
-		mnemosyne:eval(query [X.ur || X <- table(session),
-					      X.user = LUser]
-			       end)
-	end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    lists:map(fun(R) -> element(2, R) end, Rs);
-	{aborted, Reason} ->
-	    []
+    case catch mnesia:dirty_index_read(session, LUser, #session.user) of
+	{'EXIT', Reason} ->
+	    [];
+	Rs ->
+	    lists:map(fun(R) ->
+			      element(2, R#session.ur)
+		      end, Rs)
     end.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -330,16 +328,13 @@ unset_presence(User, Resource) ->
 
 get_user_present_resources(User) ->
     LUser = jlib:tolower(User),
-    F = fun() ->
-		mnesia:index_read(presence, LUser, #presence.user)
-	end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
+    case catch mnesia:dirty_index_read(presence, LUser, #presence.user) of
+	{'EXIT', Reason} ->
+	    [];
+	Rs ->
 	    lists:map(fun(R) ->
 			      {R#presence.priority, element(2, R#presence.ur)}
-		      end, Rs);
-	{aborted, Reason} ->
-	    []
+		      end, Rs)
     end.
 
 dirty_get_sessions_list() ->

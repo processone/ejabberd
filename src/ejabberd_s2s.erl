@@ -86,24 +86,40 @@ clean_table_from_bad_node(Node) ->
         end,
     mnesia:transaction(F).
 
+%have_connection(FromTo) ->
+%    F = fun() ->
+%		[E] = mnesia:read({s2s, FromTo})
+%        end,
+%    case mnesia:transaction(F) of
+%	{atomic, _} ->
+%	    true;
+%	_ ->
+%	    false
+%    end.
+
 have_connection(FromTo) ->
-    F = fun() ->
-		[E] = mnesia:read({s2s, FromTo})
-        end,
-    case mnesia:transaction(F) of
-	{atomic, _} ->
+    case catch mnesia:dirty_read(s2s, FromTo) of
+	[_] ->
 	    true;
 	_ ->
 	    false
     end.
 
+%get_key(FromTo) ->
+%    F = fun() ->
+%		[E] = mnesia:read({s2s, FromTo}),
+%		E
+%        end,
+%    case mnesia:transaction(F) of
+%	{atomic, E} ->
+%	    E#s2s.key;
+%	_ ->
+%	    ""
+%    end.
+
 get_key(FromTo) ->
-    F = fun() ->
-		[E] = mnesia:read({s2s, FromTo}),
-		E
-        end,
-    case mnesia:transaction(F) of
-	{atomic, E} ->
+    case catch mnesia:dirty_read(s2s, FromTo) of
+	[E] ->
 	    E#s2s.key;
 	_ ->
 	    ""

@@ -22,8 +22,12 @@ add(ACLName, ACLData) ->
     ets:insert(acls, {ACLName, ACLData}).
 
 match_rule(Rule, JID) ->
-    ACLs = ejabberd_config:get_option(Rule),
-    match_acls(ACLs, JID).
+    case ejabberd_config:get_option(Rule) of
+	undefined ->
+	    deny;
+	ACLs ->
+	    match_acls(ACLs, JID)
+    end.
 
 match_acls([], _) ->
     deny;

@@ -22,6 +22,7 @@ start() ->
     register(ejabberd_local, spawn(ejabberd_local, init, [])),
     mod_register:start(),
     mod_roster:start(),
+    mod_configure:start(),
     mod_disco:start(),
     mod_stats:start(),
     mod_vcard:start(),

@@ -106,6 +106,13 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					       feature_to_xml({?NS_STATS})
 					      ]
 					     }]};
+		["running nodes", ENode, "DB"] ->
+		    {iq, ID, result, XMLNS, [{xmlelement,
+					      "query",
+					      [{"xmlns", ?NS_DISCO_INFO}],
+					      [feature_to_xml({?NS_XDATA})
+					      ]
+					     }]};
 		_ ->
 		    {iq, ID, error, XMLNS,
 		     [SubEl, {xmlelement, "error",
@@ -122,7 +129,7 @@ domain_to_xml(Domain) ->
     {xmlelement, "item", [{"jid", Domain}], []}.
 
 
--define(TOP_NODE(Name, Node),
+-define(NODE(Name, Node),
 	{xmlelement, "item",
 	 [{"jid", Server},
 	  {"name", translate:translate(Lang, Name)},
@@ -135,11 +142,11 @@ get_local_items([], Server, Lang) ->
 		  ejabberd_router:dirty_get_all_routes()),
     {result,
        Domains ++
-       [?TOP_NODE("Online Users",             "online users"),
-	?TOP_NODE("All Users",                "all users"),
-	?TOP_NODE("Outgoing S2S connections", "outgoing s2s"),
-	?TOP_NODE("Running Nodes",            "running nodes"),
-	?TOP_NODE("Stopped Nodes",            "stopped nodes")
+       [?NODE("Online Users",             "online users"),
+	?NODE("All Users",                "all users"),
+	?NODE("Outgoing S2S connections", "outgoing s2s"),
+	?NODE("Running Nodes",            "running nodes"),
+	?NODE("Stopped Nodes",            "stopped nodes")
        ]};
 
 get_local_items(["online users"], Server, Lang) ->
@@ -157,7 +164,11 @@ get_local_items(["running nodes"], Server, Lang) ->
 get_local_items(["stopped nodes"], Server, Lang) ->
     {result, get_stopped_nodes(Lang)};
 
-get_local_items(["running nodes", _], Server, Lang) ->
+get_local_items(["running nodes", ENode], Server, Lang) ->
+    {result,
+     [?NODE("DB", "running nodes/" ++ ENode ++ "/DB")]};
+
+get_local_items(["running nodes", ENode, "DB"], Server, Lang) ->
     {result, []};
 
 get_local_items(_, _, _) ->
