@@ -69,6 +69,7 @@
 % For LDAP uthentification use these lines instead of above one:
 %{auth_method, ldap}.
 %{ldap_servers, ["localhost"]}.    % List of LDAP servers
+%{ldap_uidattr, "uid"}.            % LDAP attribute that holds user ID
 %{ldap_base, "dc=example,dc=com"}. % Base of LDAP directory
 
 

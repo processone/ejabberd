@@ -343,7 +343,8 @@ is_user_exists_ldap(User) ->
     end.
 
 find_user_dn(User) ->
-    Filter = eldap:equalityMatch("uid", User),
+    Attr = ejabberd_config:get_local_option(ldap_uidattr),
+    Filter = eldap:equalityMatch(Attr, User),
     Base = ejabberd_config:get_local_option(ldap_base),
     case eldap:search("ejabberd", [{base, Base},
 				   {filter, Filter},
