@@ -1,3 +1,7 @@
+2003-03-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/: Small fixes in discovering
+
 2003-03-26  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_muc/: Support for discovering service and more

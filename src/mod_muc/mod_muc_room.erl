@@ -38,7 +38,7 @@
 -record(config, {allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
-		 public = true, % TODO
+		 public = true,
 		 persistent = false,
 		 moderated = false, % TODO
 		 members_by_default = true,
@@ -208,12 +208,19 @@ normal_state({route, From, "",
 	     StateData) ->
     case jlib:iq_query_info(Packet) of
 	{iq, ID, Type, XMLNS, SubEl} when
-	      (XMLNS == ?NS_MUC_ADMIN) or (XMLNS == ?NS_MUC_OWNER) ->
+	      (XMLNS == ?NS_MUC_ADMIN) or
+	      (XMLNS == ?NS_MUC_OWNER) or
+	      (XMLNS == ?NS_DISCO_INFO) or
+	      (XMLNS == ?NS_DISCO_ITEMS) ->
 	    Res1 = case XMLNS of
 		       ?NS_MUC_ADMIN ->
 			   process_iq_admin(From, Type, SubEl, StateData);
 		       ?NS_MUC_OWNER ->
-			   process_iq_owner(From, Type, SubEl, StateData)
+			   process_iq_owner(From, Type, SubEl, StateData);
+		       ?NS_DISCO_INFO ->
+			   process_iq_disco_info(From, Type, StateData);
+		       ?NS_DISCO_ITEMS ->
+			   process_iq_disco_items(From, Type, StateData)
 		   end,
 	    {IQRes, NewStateData} =
 		case Res1 of
@@ -1519,5 +1526,57 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(logging),
      {affiliations, ?DICT:to_list(StateData#state.affiliations)}
     ].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Disco
+
+process_iq_disco_info(From, set, StateData) ->
+    {error, ?ERR_NOT_ALLOWED};
+
+process_iq_disco_info(From, get, StateData) ->
+    FAffiliation = get_affiliation(From, StateData),
+    FRole = get_role(From, StateData),
+    case (FRole /= none) or
+	(FAffiliation == admin) or
+	(FAffiliation == owner) of
+	true ->
+	    {result, [{xmlelement, "identity",
+		       [{"category", "conference"},
+			{"type", "text"},
+			{"name", StateData#state.room}], []},
+		      {xmlelement, "feature",
+		       [{"var", ?NS_MUC}], []}], StateData};
+	_ ->
+	    {error, ?ERR_NOT_ALLOWED}
+    end.
+
+
+process_iq_disco_items(From, set, StateData) ->
+    {error, ?ERR_NOT_ALLOWED};
+
+process_iq_disco_items(From, get, StateData) ->
+    FAffiliation = get_affiliation(From, StateData),
+    FRole = get_role(From, StateData),
+    case (FRole /= none) or
+	(FAffiliation == admin) or
+	(FAffiliation == owner) of
+	true ->
+	    UList =
+		lists:map(
+		  fun({LJID, Info}) ->
+			  Nick = Info#user.nick,
+			  {xmlelement, "item",
+			   [{"jid", jlib:jid_to_string(
+				      {StateData#state.room,
+				       StateData#state.host,
+				       Nick})},
+			    {"name", Nick}], []}
+		  end,
+		  ?DICT:to_list(StateData#state.users)),
+	    {result, UList, StateData};
+	_ ->
+	    {error, ?ERR_NOT_ALLOWED}
+    end.
 
 
