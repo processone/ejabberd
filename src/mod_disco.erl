@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_disco.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Service Discovery (JEP-0030) support
 %%% Created :  1 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -114,6 +114,11 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					      [feature_to_xml({?NS_XDATA})
 					      ]
 					     }]};
+		["running nodes", ENode, "modules"] -> ?EMPTY_INFO_RESULT;
+		["running nodes", ENode, "modules", _] ->
+		    {iq, ID, result, XMLNS,
+		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		       [feature_to_xml({?NS_XDATA})]}]};
 		["config", _] ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
@@ -160,7 +165,6 @@ get_local_items(["config"], Server, Lang) ->
      [?NODE("Host Name",      "config/hostname"),
       ?NODE("ACLs",           "config/acls"),
       ?NODE("Access Rules",   "config/access"),
-      ?NODE("Loaded Modules", "config/modules"),
       ?NODE("Remove Users",   "config/remusers")
      ]};
 
@@ -187,9 +191,20 @@ get_local_items(["stopped nodes"], Server, Lang) ->
 
 get_local_items(["running nodes", ENode], Server, Lang) ->
     {result,
-     [?NODE("DB", "running nodes/" ++ ENode ++ "/DB")]};
+     [?NODE("DB", "running nodes/" ++ ENode ++ "/DB"),
+      ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules")
+     ]};
 
 get_local_items(["running nodes", ENode, "DB"], Server, Lang) ->
+    {result, []};
+
+get_local_items(["running nodes", ENode, "modules"], Server, Lang) ->
+    {result,
+     [?NODE("Start Modules", "running nodes/" ++ ENode ++ "/modules/start"),
+      ?NODE("Stop Modules",  "running nodes/" ++ ENode ++ "/modules/stop")
+     ]};
+
+get_local_items(["running nodes", ENode, "modules", _], Server, Lang) ->
     {result, []};
 
 get_local_items(_, _, _) ->

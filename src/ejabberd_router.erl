@@ -56,13 +56,13 @@ loop() ->
 	    loop();
 	{register_route, Domain, Pid, Node} ->
 	    F = fun() ->
-			case mnesia:wread({route, Domain}) of
-			    [] ->
-				ok;
-			    [Old] ->
-				% TODO: notify
-				ok
-			end,
+			%case mnesia:wread({route, Domain}) of
+			%    [] ->
+			%	ok;
+			%    [Old] ->
+			%	% TODO: notify
+			%	ok
+			%end,
 			mnesia:write(#route{domain = Domain,
 					    node = Node,
 					    pid = Pid})
@@ -78,13 +78,13 @@ loop() ->
 	    loop();
 	{unregister_route, Domain} ->
 	    F = fun() ->
-			case mnesia:wread({route, Domain}) of
-			    [] ->
-				ok;
-			    [Old] ->
-				% TODO: notify
-				ok
-			end,
+			%case mnesia:wread({route, Domain}) of
+			%    [] ->
+			%	ok;
+			%    [Old] ->
+			%	% TODO: notify
+			%	ok
+			%end,
 			mnesia:delete({route, Domain})
 		end,
 	    mnesia:transaction(F),

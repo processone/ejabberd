@@ -1,9 +1,11 @@
 # $Id$
 
-INCLUDES = -I/usr/lib/erlang/usr/include \
-	   -I/usr/lib/erlang/lib/erl_interface-3.3.0/include
+include Makefile.inc
 
-LIBDIRS = -L/usr/lib/erlang/lib/erl_interface-3.3.0/lib
+INCLUDES = -I/usr/lib/erlang/usr/include \
+	   -I$(EI_DIR)/include
+
+LIBDIRS = -L$(EI_DIR)/lib
 
 ERLSHLIBS = expat_erl.so
 
@@ -22,3 +24,5 @@ $(ERLSHLIBS):	%.so:	%.c
 clean:
 	rm -f *.beam
 
+Makefile.inc:
+	./configure

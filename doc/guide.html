@@ -72,7 +72,20 @@ Latest alpha version can be retrieved via CVS. Do following steps:
 
 <H3>2.3&nbsp;&nbsp; Compilation</H3><!--SEC END -->
 
-<A NAME="sec:compilation"></A><!--TOC section Configuration-->
+<A NAME="sec:compilation"></A><PRE>
+./configure
+make
+</PRE>TBD<BR>
+<BR>
+<!--TOC subsection Starting-->
+
+<H3>2.4&nbsp;&nbsp; Starting</H3><!--SEC END -->
+
+<A NAME="sec:starting"></A><PRE>
+erl -name ejabberd -s ejabberd
+</PRE>TBD<BR>
+<BR>
+<!--TOC section Configuration-->
 
 <H2>3&nbsp;&nbsp; Configuration</H2><!--SEC END -->
 
@@ -216,12 +229,12 @@ TBD<BR>
 <H3>4.1&nbsp;&nbsp; How it works</H3><!--SEC END -->
 
 <A NAME="sec:howitworks"></A>Jabber domain is served by one or more <TT>ejabberd</TT> nodes. This nodes can be
-runned on different computers that can be connected via network. They all must
+runned on different machines that can be connected via network. They all must
 have access to connect to port 4369 of all another nodes, and must have same
 magic cookie (see Erlang/OTP documentation, in short file
 <TT>ejabberd/.erlang.cookie</TT> must be the same on all nodes). This is
 needed because all nodes exchange information about connected users, S2S
-connection ,registered services, etc...<BR>
+connection, registered services, etc...<BR>
 <BR>
 Each <TT>ejabberd</TT> node run following modules:
 <UL>

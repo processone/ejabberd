@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_configure.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Support for online configuration of ejabberd via x:data
 %%% Created : 19 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -162,6 +162,50 @@ get_form(["running nodes", ENode, "DB"], Lang) ->
 	    end
     end;
 
+get_form(["running nodes", ENode, "modules", "stop"], Lang) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    case rpc:call(Node, gen_mod, loaded_modules, []) of
+		{badrpc, Reason} ->
+		    {error, "500", "Internal Server Error"};
+		Modules ->
+		    SModules = lists:sort(Modules),
+		    {result, [{xmlelement, "title", [],
+			       [{xmlcdata,
+				 translate:translate(
+				   Lang, "Stop Modules")}]},
+			      {xmlelement, "instructions", [],
+			       [{xmlcdata,
+				 translate:translate(
+				   Lang, "Choose modules to stop")}]} |
+			      lists:map(fun(M) ->
+						S = atom_to_list(M),
+						?XFIELD("boolean", S, S, "0")
+					end, SModules)
+			     ]}
+	    end
+    end;
+
+get_form(["running nodes", ENode, "modules", "start"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Start Modules")}]},
+	      {xmlelement, "instructions", [],
+	       [{xmlcdata,
+	         translate:translate(
+	           Lang, "Enter list of {Module, [Options]}")}]},
+	      {xmlelement, "field", [{"type", "text-multi"},
+				     {"label",
+				      translate:translate(
+					Lang, "List of modules to start")},
+				     {"var", "modules"}],
+	       [{xmlelement, "value", [], [{xmlcdata, "[]."}]}]
+	      }
+	     ]};
+
 get_form(["config", "hostname"], Lang) ->
     {result, [{xmlelement, "title", [],
 	       [{xmlcdata,
@@ -259,6 +303,63 @@ set_form(["running nodes", ENode, "DB"], Lang, XData) ->
 	      end, XData),
 	    {result, []}
     end;
+
+set_form(["running nodes", ENode, "modules", "stop"], Lang, XData) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    lists:foreach(
+	      fun({Var, Vals}) ->
+		      case Vals of
+			  ["1"] ->
+			      Module = list_to_atom(Var),
+			      rpc:call(Node, gen_mod, stop_module, [Module]);
+			  _ ->
+			      ok
+		      end
+	      end, XData),
+	    {result, []}
+    end;
+
+set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    case lists:keysearch("modules", 1, XData) of
+		false ->
+		    {error, "406", "Not Acceptable"};
+		{value, {_, Strings}} ->
+		    String = lists:foldl(fun(S, Res) ->
+						 Res ++ S ++ "\n"
+					 end, "", Strings),
+		    case erl_scan:string(String) of
+			{ok, Tokens, _} ->
+			    case erl_parse:parse_term(Tokens) of
+				{ok, Modules} ->
+				    case catch lists:foreach(
+						 fun({Module, Args}) ->
+							 gen_mod:start_module(
+							   Module, Args)
+						 end, Modules) of
+					{'EXIT', Reason} ->
+					    {error,
+					     "500", "Internal Server Error"};
+					_ ->
+					    {result, []}
+				    end;
+				_ ->
+				    {error, "500", "Internal Server Error"}
+			    end;
+			_ ->
+			    {error, "500", "Internal Server Error"}
+		    end;
+		_ ->
+		    {error, "406", "Not Acceptable"}
+	    end
+    end;
+
 
 set_form(["config", "hostname"], Lang, XData) ->
     case lists:keysearch("hostname", 1, XData) of

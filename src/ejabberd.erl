@@ -31,6 +31,7 @@ init() ->
     sha:start(),
     translate:start(),
     acl:start(),
+    gen_mod:start(),
     ejabberd_config:start(),
     ejabberd_auth:start(),
     ejabberd_router:start(),

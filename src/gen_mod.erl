@@ -10,15 +10,18 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start_module/2,
+-export([start/0,
+	 start_module/2,
 	 stop_module/1,
 	 get_opt/2,
-	 get_opt/3]).
+	 get_opt/3,
+	 loaded_modules/0]).
 
 -export([behaviour_info/1]).
 
 -include("ejabberd.hrl").
 
+-record(ejabberd_module, {module, opts}).
 
 behaviour_info(callbacks) ->
     [{start, 1},
@@ -26,17 +29,31 @@ behaviour_info(callbacks) ->
 behaviour_info(Other) ->
     undefined.
 
+start() ->
+    ets:new(ejabberd_modules, [named_table,
+			       public,
+			       {keypos, #ejabberd_module.module}]),
+    ok.
+
 
 start_module(Module, Opts) ->
     case catch Module:start(Opts) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
+	    ets:insert(ejabberd_modules, #ejabberd_module{module = Module,
+							  opts = Opts}),
 	    ok
     end.
 
 stop_module(Module) ->
-    Module:stop().
+    case catch Module:stop() of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p", [Reason]);
+	_ ->
+	    ets:delete(ejabberd_modules, Module),
+	    ok
+    end.
 
 
 get_opt(Opt, Opts) ->
@@ -56,3 +73,6 @@ get_opt(Opt, Opts, Default) ->
 	    Val
     end.
 
+loaded_modules() ->
+    ets:select(ejabberd_modules,
+	       [{#ejabberd_module{_ = '_', module = '$1'}, [],['$1']}]).

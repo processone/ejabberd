@@ -8,8 +8,8 @@
 
 -define(VERSION, "0.0.1-alpha").
 
--define(ejabberd_debug, true).
--define(DBGFSM, true).
+%-define(ejabberd_debug, true).
+%-define(DBGFSM, true).
 
 -ifdef(ejabberd_debug).
 -define(DEBUG(Format, Args), io:format("D(~p:~p:~p) : "++Format++"~n",
@@ -25,7 +25,8 @@
 
 %-define(MYNAME,"e.localhost").
 -define(MYNAME, ejabberd_config:get_global_option(host)).
--define(S2STIMEOUT, 1200000).
+-define(S2STIMEOUT, 600000).
+%-define(S2STIMEOUT, 6000).
 
 -define(MSGS_DIR, "msgs").
 -define(CONFIG_PATH, "ejabberd.cfg").
