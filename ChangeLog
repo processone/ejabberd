@@ -1,3 +1,12 @@
+2003-07-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Pub/sub implementation (not
+	completed yet)
+
+2003-07-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Added pub/sub nemaspaces
+
 2003-07-03  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_irc/iconv_erl.c (iconv_erl_control): Bugfix
