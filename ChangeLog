@@ -1,3 +1,7 @@
+2004-10-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/de.msg: German translation (thanks to Marina Hahn)
+
 2004-10-12  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/win32/: Updated (thanks to Sergei Golovan)
