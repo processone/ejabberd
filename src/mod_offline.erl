@@ -13,7 +13,8 @@
 
 -export([start/1,
 	 store_packet/3,
-	 resend_offline_messages/1]).
+	 resend_offline_messages/1,
+	 remove_user/1]).
 
 -include("namespaces.hrl").
 
@@ -115,3 +116,10 @@ resend_offline_messages(User) ->
 	_ ->
 	    ok
     end.
+
+remove_user(User) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		mnesia:delete({offline_msg, LUser})
+	end,
+    mnesia:transaction(F).

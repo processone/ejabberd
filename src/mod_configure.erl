@@ -202,6 +202,25 @@ get_form(["config", "acls"], Lang) ->
 	      }
 	     ]};
 
+get_form(["config", "remusers"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Remove Users")}]},
+	      {xmlelement, "instructions", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Choose users to remove")}]}] ++
+     case catch ejabberd_auth:dirty_get_registered_users() of
+	 {'EXIT', Reason} ->
+	     [];
+	 Users ->
+	     lists:map(fun(U) ->
+			       ?XFIELD("boolean", U, U, "0")
+		       end, lists:sort(Users))
+     end
+    };
+
 get_form(_, Lang) ->
     {error, "503", "Service Unavailable"}.
 
@@ -253,6 +272,21 @@ set_form(["config", "hostname"], Lang, XData) ->
 	_ ->
 	    {error, "406", "Not Acceptable"}
     end;
+
+set_form(["config", "remusers"], Lang, XData) ->
+    lists:foreach(
+      fun({Var, Vals}) ->
+	      case Vals of
+		  ["1"] ->
+		      catch ejabberd_auth:remove_user(Var),
+		      catch mod_roster:remove_user(Var),
+		      catch mod_offline:remove_user(Var),
+		      catch mod_vcard:remove_user(Var);
+		  _ ->
+		      ok
+	      end
+      end, XData),
+    {result, []};
 
 set_form(_, Lang, XData) ->
     {error, "503", "Service Unavailable"}.

@@ -160,7 +160,8 @@ get_local_items(["config"], Server, Lang) ->
      [?NODE("Host Name",      "config/hostname"),
       ?NODE("ACLs",           "config/acls"),
       ?NODE("Access Rules",   "config/access"),
-      ?NODE("Loaded Modules", "config/modules")
+      ?NODE("Loaded Modules", "config/modules"),
+      ?NODE("Remove Users",   "config/remusers")
      ]};
 
 get_local_items(["config", _], Server, Lang) ->

@@ -19,6 +19,9 @@ start() ->
 
 init() ->
     register(ejabberd, self()),
+    % Profiling
+    %eprof:start(),
+    %eprof:profile([self()]),
     %erlang:system_flag(fullsweep_after, 0),
     error_logger:logfile({open, ?ERROR_LOG_PATH}),
     randoms:start(),

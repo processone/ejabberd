@@ -15,7 +15,8 @@
 -export([start/1, init/1,
 	 process_local_iq/3,
 	 process_sm_iq/3,
-	 reindex_vcards/0]).
+	 reindex_vcards/0,
+	 remove_user/1]).
 
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
@@ -477,4 +478,17 @@ reindex_vcards() ->
 	end,
     mnesia:transaction(F).
 
+
+remove_user(User) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		mnesia:delete({vcard, LUser}),
+		lists:foreach(fun(R) ->
+				      mnesia:delete_object(R)
+			      end,
+			      mnesia:index_read(vcard_search,
+						LUser,
+						#vcard_search.luser))
+	end,
+    mnesia:transaction(F).
 

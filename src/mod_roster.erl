@@ -17,7 +17,8 @@
 	 process_local_iq/3,
 	 get_subscription_lists/1,
 	 in_subscription/3,
-	 out_subscription/3]).
+	 out_subscription/3,
+	 remove_user/1]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -458,4 +459,14 @@ out_subscription(User, JID, Type) ->
 	_ ->
 	    false
     end.
+
+remove_user(User) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		lists:foreach(fun(R) ->
+				      mnesia:delete_object(R)
+			      end,
+			      mnesia:index_read(roster, LUser, #roster.user))
+        end,
+    mnesia:transaction(F).
 

@@ -175,7 +175,7 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 	    case Type of
 		"valid" ->
 		    send_queue(StateData#state.socket, StateData#state.queue),
-		    {next_state, stream_established, StateData};
+		    {next_state, stream_established, StateData, ?S2STIMEOUT};
 		_ ->
 		    % TODO: bounce packets
 		    {stop, normal, StateData}
@@ -212,6 +212,7 @@ wait_for_validation(closed, StateData) ->
 
 
 stream_established({xmlstreamelement, El}, StateData) ->
+    io:format("s2s out~n"),
     case is_verify_res(El) of
 	{verify, VTo, VFrom, VId, VType} ->
 	    case StateData#state.verify of
@@ -228,36 +229,36 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	_ ->
 	    ok
     end,
-    {xmlelement, Name, Attrs, Els} = El,
-    % TODO
-    From = xml:get_attr_s("from", Attrs),
-    FromJID1 = jlib:string_to_jid(From),
-    FromJID = case FromJID1 of
-		  {Node, Server, Resource} ->
-		      if Server == StateData#state.server -> FromJID1;
-			 true -> error
-		      end;
-		  _ -> error
-	      end,
-    To = xml:get_attr_s("to", Attrs),
-    ToJID = case To of
-		"" -> error;
-		_ -> jlib:string_to_jid(To)
-	    end,
-    if ((Name == "iq") or (Name == "message") or (Name == "presence")) and
-       (ToJID /= error) and (FromJID /= error) ->
-	    ejabberd_router:route(FromJID, ToJID, El);
-       true ->
-	    error
-    end,
-    {next_state, stream_established, StateData};
+    %{xmlelement, Name, Attrs, Els} = El,
+    %From = xml:get_attr_s("from", Attrs),
+    %FromJID1 = jlib:string_to_jid(From),
+    %FromJID = case FromJID1 of
+    %    	  {Node, Server, Resource} ->
+    %    	      if Server == StateData#state.server -> FromJID1;
+    %    		 true -> error
+    %    	      end;
+    %    	  _ -> error
+    %          end,
+    %To = xml:get_attr_s("to", Attrs),
+    %ToJID = case To of
+    %    	"" -> error;
+    %    	_ -> jlib:string_to_jid(To)
+    %        end,
+    %if ((Name == "iq") or (Name == "message") or (Name == "presence")) and
+    %   (ToJID /= error) and (FromJID /= error) ->
+    %        ejabberd_router:route(FromJID, ToJID, El);
+    %   true ->
+    %        error
+    %end,
+    {next_state, stream_established, StateData, ?S2STIMEOUT};
 
 stream_established({xmlstreamend, Name}, StateData) ->
-    % TODO
+    {stop, normal, StateData};
+
+stream_established(timeout, StateData) ->
     {stop, normal, StateData};
 
 stream_established(closed, StateData) ->
-    % TODO
     {stop, normal, StateData}.
 
 

@@ -250,10 +250,13 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error
 	    end
     end,
-    {next_state, stream_established, StateData};
+    {next_state, stream_established, StateData, ?S2STIMEOUT};
 
 stream_established({xmlstreamend, Name}, StateData) ->
     % TODO
+    {stop, normal, StateData};
+
+stream_established(timeout, StateData) ->
     {stop, normal, StateData};
 
 stream_established(closed, StateData) ->

@@ -17,7 +17,7 @@
 
 <H3 ALIGN=center>Alexey Shchepin<BR><A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR><A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
-<H3 ALIGN=center>January 23, 2003</H3> <DIV ALIGN=center><IMG SRC="logo.png">
+<H3 ALIGN=center>January 26, 2003</H3> <DIV ALIGN=center><IMG SRC="logo.png">
  
  </DIV><BR>
 <BR>
@@ -115,8 +115,8 @@ runned on them. Each element of list is a tuple with following elements:
 
 <LI> <TT>ejabberd_s2s_in</TT>: serves incoming S2S connections;
 
-<LI> <TT>ejabberd_service</TT>: serves connections to Jabber services (i.e.
- that use <TT>jabber:component:accept</TT> namespace).
+<LI> <TT>ejabberd_service</TT>: serves connections to Jabber services
+ (i.&nbsp;e. that use <TT>jabber:component:accept</TT> namespace).
 </UL>For example, following configuration defines that C2S connections listened on
 port 5222, S2S on port 5269 and that service <TT>conference.jabber.org</TT>
 must be connected to port 8888 with password ``<TT>secret</TT>''.<BR>
@@ -171,15 +171,13 @@ Example:
 {access, configure, [{allow, admin}]}.
 {access, something, [{deny, badmans},
                      {allow, all}]}.
-</PRE>TBD<BR>
-<BR>
-<!--TOC subsubsection Modules-->
+</PRE><!--TOC subsubsection Modules-->
 
 <H4>3.1.4&nbsp;&nbsp; Modules</H4><!--SEC END -->
 
 <A NAME="sec:configmodules"></A>Option <TT>modules</TT> defines list of modules that will be loaded after
 <TT>ejabberd</TT> startup. Each list element is a tuple where first element is a
-name of module and second is list of options to this module. Refer to
+name of module and second is list of options to this module. See
 section&nbsp;<A HREF="#sec:modules">5</A> for detailed information on each module.<BR>
 <BR>
 Example:
@@ -205,7 +203,7 @@ Example:
 <TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">5.4</A>). Also highly
 recommended to load <TT>mod_disco</TT> (see section&nbsp;<A HREF="#sec:moddisco">5.5</A>), because
 <TT>mod_configure</TT> highly integrates with it. Also recommended to use
-disco-capable client.<BR>
+disco- and xdata-capable client.<BR>
 <BR>
 TBD<BR>
 <BR>

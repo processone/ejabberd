@@ -30,7 +30,7 @@
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{January 23, 2003}
+\date{January 26, 2003}
 
 \begin{document}
 \begin{titlepage}
@@ -78,7 +78,7 @@ To compile \ejabberd{}, you need following packages:
 
 Currently no stable version released.
 
-Latest alpha version can be retrieved via CVS.  Do following steps:
+Latest alpha version can be retrieved via CVS\@.  Do following steps:
 \begin{itemize}
 \item \texttt{export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs}
 \item \texttt{cvs login}
@@ -119,7 +119,7 @@ values.
 \label{sec:confighostname}
 
 Option \texttt{hostname} defines name of \Jabber{} domain that \ejabberd{}
-serves.  E.\,g. to use \texttt{jabber.org} domain add following line in config:
+serves.  E.\,g.\ to use \texttt{jabber.org} domain add following line in config:
 \begin{verbatim}
 {host, "jabber.org"}.
 \end{verbatim}
@@ -144,8 +144,8 @@ Currently three modules implemented:
 \begin{itemize}
 \item \texttt{ejabberd\_c2s}: serves C2S connections;
 \item \texttt{ejabberd\_s2s\_in}: serves incoming S2S connections;
-\item \texttt{ejabberd\_service}: serves connections to \Jabber{} services (i.e.
-  that use \texttt{jabber:component:accept} namespace).
+\item \texttt{ejabberd\_service}: serves connections to \Jabber{} services
+  (i.\,e.\ that use \texttt{jabber:component:accept} namespace).
 \end{itemize}
 
 For example, following configuration defines that C2S connections listened on
@@ -218,7 +218,7 @@ Example:
 
 Option \texttt{modules} defines list of modules that will be loaded after
 \ejabberd{} startup.  Each list element is a tuple where first element is a
-name of module and second is list of options to this module.  Refer to
+name of module and second is list of options to this module.  See
 section~\ref{sec:modules} for detailed information on each module.
 
 Example:
@@ -246,7 +246,7 @@ To use facility of online reconfiguration of \ejabberd{} needed to have
 \modconfigure{} loaded (see section~\ref{sec:modconfigure}).  Also highly
 recommended to load \moddisco{} (see section~\ref{sec:moddisco}), because
 \modconfigure{} highly integrates with it.  Also recommended to use
-disco-capable client.
+disco- and xdata-capable client.
 
 TBD
 
@@ -258,12 +258,12 @@ TBD
 \label{sec:howitworks}
 
 \Jabber{} domain is served by one or more \ejabberd{} nodes.  This nodes can be
-runned on different computers that can be connected via network.  They all must
+runned on different machines that can be connected via network.  They all must
 have access to connect to port 4369 of all another nodes, and must have same
 magic cookie (see Erlang/OTP documentation, in short file
 \texttt{\~ejabberd/.erlang.cookie} must be the same on all nodes).  This is
 needed because all nodes exchange information about connected users, S2S
-connection ,registered services, etc...
+connection, registered services, etc\ldots
 
 Each \ejabberd{} node run following modules:
 \begin{itemize}
@@ -322,7 +322,7 @@ Following options used by many modules, so they described in separate section.
 \subsubsection{Option \texttt{iqdisc}}
 
 Many modules define handlers for processing IQ queries of different namespaces
-to this server or to user (e.\,g. to \texttt{myjabber.org} or to
+to this server or to user (e.\,g.\ to \texttt{myjabber.org} or to
 \texttt{user@myjabber.org}).  This option defines processing discipline of this
 queries.  Possible values are:
 \begin{description}

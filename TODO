@@ -5,6 +5,6 @@ admin interface
 S2S timeouts
 rewrite S2S key validation
 iq:browse(?)
-SVR DNS records
+SRV DNS records
 karma
 SSL

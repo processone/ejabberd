@@ -106,18 +106,6 @@ have_connection(FromTo) ->
 	    false
     end.
 
-%get_key(FromTo) ->
-%    F = fun() ->
-%		[E] = mnesia:read({s2s, FromTo}),
-%		E
-%        end,
-%    case mnesia:transaction(F) of
-%	{atomic, E} ->
-%	    E#s2s.key;
-%	_ ->
-%	    ""
-%    end.
-
 get_key(FromTo) ->
     case catch mnesia:dirty_read(s2s, FromTo) of
 	[E] ->
@@ -159,24 +147,7 @@ do_route(From, To, Packet) ->
     {User, Server, Resource} = To,
     FromTo = {MyServer, Server},
     Key = randoms:get_string(),
-    F = fun() ->
-		case mnesia:read({local_s2s, FromTo}) of
-		    [] ->
-			case mnesia:read({s2s, FromTo}) of
-			    [Er] ->
-				{remote, Er#s2s.node};
-			    [] ->
-				% TODO
-				mnesia:write(#s2s{fromto = FromTo,
-						  node = node(),
-						  key = Key}),
-				new
-			end;
-		    [El] ->
-			{local, El#local_s2s.pid}
-		end
-        end,
-    case mnesia:transaction(F) of
+    case find_connection(FromTo, Key) of
 	{atomic, {local, Pid}} ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
 	    % TODO
@@ -210,6 +181,38 @@ do_route(From, To, Packet) ->
 	    ?DEBUG("delivery failed: ~p~n", [Reason]),
 	    false
     end.
+
+find_connection(FromTo, Key) ->
+    F = fun() ->
+		case mnesia:read({local_s2s, FromTo}) of
+		    [] ->
+			case mnesia:read({s2s, FromTo}) of
+			    [Er] ->
+				{remote, Er#s2s.node};
+			    [] ->
+				mnesia:write(#s2s{fromto = FromTo,
+						  node = node(),
+						  key = Key}),
+				new
+			end;
+		    [El] ->
+			{local, El#local_s2s.pid}
+		end
+        end,
+    case catch mnesia:dirty_read({local_s2s, FromTo}) of
+	{'EXIT', Reason} ->
+	    {aborted, Reason};
+	[] ->
+	    case catch mnesia:dirty_read({s2s, FromTo}) of
+		[Er] ->
+		    {atomic, {remote, Er#s2s.node}};
+		[] ->
+		    mnesia:transaction(F)
+	    end;
+	[El] ->
+	    {atomic, {local, El#local_s2s.pid}}
+    end.
+
 
 send_element(Pid, El) ->
     Pid ! {send_element, El}.

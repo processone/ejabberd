@@ -23,7 +23,8 @@
 	 try_register/2,
 	 dirty_get_registered_users/0,
 	 get_password_s/1,
-	 is_user_exists/1]).
+	 is_user_exists/1,
+	 remove_user/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -198,3 +199,10 @@ is_user_exists(User) ->
 	_ ->
 	    false
     end.
+
+remove_user(User) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		mnesia:delete({passwd, LUser})
+        end,
+    mnesia:transaction(F).

@@ -10,7 +10,9 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([element_to_string/1, crypt/1, remove_cdata/1,
+-export([element_to_string/1,
+	 crypt/1,
+	 remove_cdata/1,
 	 get_cdata/1, get_tag_cdata/1,
 	 get_attr/2, get_attr_s/2,
 	 get_tag_attr/2, get_tag_attr_s/2,
@@ -38,24 +40,51 @@ attrs_to_string(Attrs) ->
 attr_to_string({Name, Value}) ->
     " " ++ crypt(Name) ++ "='" ++ crypt(Value) ++ "'".
 
-crypt(S) ->
-    lists:reverse(crypt(S, "")).
+%crypt(S) ->
+%    lists:reverse(crypt(S, "")).
+%
+%crypt([$& | S], R) ->
+%    crypt(S, [$;, $p, $m, $a, $& | R]);
+%crypt([$< | S], R) ->
+%    crypt(S, [$;, $t, $l, $& | R]);
+%crypt([$> | S], R) ->
+%    crypt(S, [$;, $t, $g, $& | R]);
+%crypt([$" | S], R) ->
+%    crypt(S, [$;, $t, $o, $u, $q, $& | R]);
+%crypt([$' | S], R) ->
+%    crypt(S, [$;, $s, $o, $p, $a, $& | R]);
+%crypt([C | S], R) ->
+%    crypt(S, [C | R]);
+%crypt([], R) ->
+%    R.
 
-crypt([$& | S], R) ->
-    crypt(S, [$;, $p, $m, $a, $& | R]);
-crypt([$< | S], R) ->
-    crypt(S, [$;, $t, $l, $& | R]);
-crypt([$> | S], R) ->
-    crypt(S, [$;, $t, $g, $& | R]);
-crypt([$" | S], R) ->
-    crypt(S, [$;, $t, $o, $u, $q, $& | R]);
-crypt([$' | S], R) ->
-    crypt(S, [$;, $s, $o, $p, $a, $& | R]);
-crypt([C | S], R) ->
-    crypt(S, [C | R]);
-crypt([], R) ->
-    R.
-    
+%crypt1(S) ->
+%    lists:flatten([case C of
+%		       $& -> "&amp;";
+%		       $< -> "&lt;";
+%		       $> -> "&gt;";
+%		       $" -> "&quot;";
+%		       $' -> "&apos;";
+%		       _ -> C
+%		   end || C <- S]).
+
+% Not tail-recursive but it seems works faster than variants above
+crypt([$& | S]) ->
+    [$&, $a, $m, $p, $; | crypt(S)];
+crypt([$< | S]) ->
+    [$&, $l, $t, $; | crypt(S)];
+crypt([$> | S]) ->
+    [$&, $g, $t, $; | crypt(S)];
+crypt([$" | S]) ->
+    [$&, $q, $u, $o, $t, $; | crypt(S)];
+crypt([$' | S]) ->
+    [$&, $a, $p, $o, $s, $; | crypt(S)];
+crypt([C | S]) ->
+    [C | crypt(S)];
+crypt([]) ->
+    [].
+
+	 
 
 remove_cdata_p({xmlelement, Name, Attrs, Els}) -> true;
 remove_cdata_p(_) -> false.

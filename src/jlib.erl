@@ -211,13 +211,32 @@ is_nodename1([]) ->
 
 
 % TODO: UNICODE support
-tolower_c(C) when C >= $A, C =< $Z ->
-    C + 32;
-tolower_c(C) ->
-    C.
+%tolower_c(C) when C >= $A, C =< $Z ->
+%    C + 32;
+%tolower_c(C) ->
+%    C.
 
-tolower(S) ->
-    lists:map(fun tolower_c/1, S).
+-define(LOWER(Char),
+        if
+            Char >= $A, Char =< $Z ->
+                Char + 32;
+            true ->
+                Char
+        end).
+
+%tolower(S) ->
+%    lists:map(fun tolower_c/1, S).
+
+%tolower(S) ->
+%    [?LOWER(Char) || Char <- S].
+
+% Not tail-recursive but it seems works faster than variants above
+tolower([C | Cs]) when C >= $A, C =< $Z ->
+    [C + 32 | tolower(Cs)];
+tolower([C | Cs]) ->
+    [C | tolower(Cs)];
+tolower([]) ->
+    [].
 
 
 jid_tolower({U, S, R}) ->
