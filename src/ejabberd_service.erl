@@ -61,6 +61,11 @@
 	"</stream:stream>"
        ).
 
+-define(INVALID_XML_ERR,
+	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
+-define(INVALID_NS_ERR,
+	xml:element_to_string(?SERR_INVALID_NAMESPACE)).
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -123,6 +128,13 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    {stop, normal, StateData}
     end;
 
+wait_for_stream({xmlstreamerror, _}, StateData) ->
+    Header = io_lib:format(?STREAM_HEADER,
+			   ["none", ?MYNAME]),
+    send_text(StateData#state.socket,
+	      Header ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
 
@@ -146,6 +158,10 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
     end;
 
 wait_for_handshake({xmlstreamend, Name}, StateData) ->
+    {stop, normal, StateData};
+
+wait_for_handshake({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 wait_for_handshake(closed, StateData) ->
@@ -182,6 +198,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 
 stream_established({xmlstreamend, Name}, StateData) ->
     % TODO
+    {stop, normal, StateData};
+
+stream_established({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 stream_established(closed, StateData) ->

@@ -552,10 +552,23 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event(get_disco_item, From, StateName, StateData) ->
+handle_sync_event({get_disco_item, JID}, From, StateName, StateData) ->
+    FAffiliation = get_affiliation(JID, StateData),
+    FRole = get_role(JID, StateData),
+    Tail =
+	case ((StateData#state.config)#config.public_list == true) orelse
+	    (FRole /= none) orelse
+	    (FAffiliation == admin) orelse
+	    (FAffiliation == owner) of
+	    true ->
+		Len = length(?DICT:to_list(StateData#state.users)),
+		" (" ++ integer_to_list(Len) ++ ")";
+	    _ ->
+		""
+	end,
     Reply = case (StateData#state.config)#config.public of
 		true ->
-		    {item, get_title(StateData)};
+		    {item, get_title(StateData) ++ Tail};
 		_ ->
 		    false
 	    end,

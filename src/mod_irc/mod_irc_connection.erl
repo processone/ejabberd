@@ -184,6 +184,7 @@ handle_info({route_chan, Channel, Resource,
 	    "subscribed" -> StateData;
 	    "unsubscribe" -> StateData;
 	    "unsubscribed" -> StateData;
+	    "error" -> stop;
 	    _ ->
 		Nick = case Resource of
 			   "" ->
@@ -204,11 +205,16 @@ handle_info({route_chan, Channel, Resource,
 					    S1#state.channels)}
 		end
 	end,
-    case length(dict:fetch_keys(NewStateData#state.channels)) of
-	0 ->
-	    {stop, normal, NewStateData};
-	_ ->
-	    {next_state, StateName, NewStateData}
+    if
+	NewStateData == stop ->
+	    {stop, normal, StateData};
+	true ->
+	    case length(dict:fetch_keys(NewStateData#state.channels)) of
+		0 ->
+		    {stop, normal, NewStateData};
+		_ ->
+		    {next_state, StateName, NewStateData}
+	    end
     end;
 
 handle_info({route_chan, Channel, Resource,
@@ -265,10 +271,17 @@ handle_info({route_chan, Channel, Resource,
 						[Resource, S])
 			  end, Strings)),
 		?SEND(Res);
+	    "error" ->
+		stop;
 	    _ ->
 		StateData
 	end,
-    {next_state, StateName, NewStateData};
+    if
+	NewStateData == stop ->
+	    {stop, normal, StateData};
+	true ->
+	    {next_state, StateName, NewStateData}
+    end;
 
 
 handle_info({route_chan, Channel, Resource,
@@ -285,7 +298,7 @@ handle_info({route_chan, Channel, Resource,
 		     ID, XMLNS, Type, SubEl);
 	_ ->
 	    Err = jlib:make_error_reply(
-		    El, ?ERR_SERVICE_UNAVAILABLE),
+		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err)
     end,
     {next_state, StateName, StateData};
@@ -315,10 +328,17 @@ handle_info({route_nick, Nick,
 						[Nick, S])
 			  end, Strings)),
 		?SEND(Res);
+	    "error" ->
+		stop;
 	    _ ->
 		StateData
 	end,
-    {next_state, StateName, NewStateData};
+    if
+	NewStateData == stop ->
+	    {stop, normal, StateData};
+	true ->
+	    {next_state, StateName, NewStateData}
+    end;
 
 handle_info({route_nick, Nick, Packet}, StateName, StateData) ->
     {next_state, StateName, StateData};

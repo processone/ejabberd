@@ -8,15 +8,17 @@ admin interface
 	backup management
 
 S2S:
-	* timeouts
-
 	* rewrite S2S key validation
 
 more correctly work with SRV DNS records (priority, weight, etc...)
-SSL
-JEP-62,63 (?)
+TLS
+Privacy rules
 make roster set to work in one transaction
 add traffic shapers to c2s connection before authentification
 add traffic shapers to s2s connections
 more traffic shapers
 SNMP
+PubSub
+MUC: remove empty non-persistent conferences after timeout
+MUC: remove a lot of debugging output
+IRC: disconnect on receiving of error message or presence

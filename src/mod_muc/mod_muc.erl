@@ -276,7 +276,7 @@ process_iq_disco_items(Host, From, To, ID, SubEl) ->
 iq_disco_items(Host, From) ->
     lists:zf(fun(#muc_online_room{name = Name, pid = Pid}) ->
 		     case catch gen_fsm:sync_send_all_state_event(
-				  Pid, get_disco_item, 100) of
+				  Pid, {get_disco_item, From}, 100) of
 			 {item, Desc} ->
 			     {true,
 			      {xmlelement, "item",
