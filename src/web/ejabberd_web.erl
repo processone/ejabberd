@@ -12,7 +12,7 @@
 
 %% External exports
 -export([make_xhtml/1,
-	 process_get/3]).
+	 process_get/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -43,7 +43,21 @@ make_xhtml(Els) ->
 -define(P, ?X("p")).
 -define(BR, ?X("br")).
 
-process_get(User, [], Query) ->
+
+process_get(User, ["config" | RPath], Query, Lang) ->
+    case acl:match_rule(configure, jlib:make_jid(User, ?MYNAME, "")) of
+	deny ->
+	    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
+	allow ->
+	    process_config(User, RPath, Query, Lang)
+    end;
+
+process_get(User, Path, Query, Lang) ->
+    {404, [], make_xhtml([?XC("h1", "Not found")])}.
+
+
+
+process_config(User, [], Query, Lang) ->
     make_xhtml([?XC("h1", "ejabberd configuration"),
 		?XE("ul",
 		    [?LI([?AC("acls/", "Access Control Lists")]),
@@ -53,7 +67,7 @@ process_get(User, [], Query) ->
 		    ])
 	       ]);
 
-process_get(User, ["acls"], Query) ->
+process_config(User, ["acls"], Query, Lang) ->
     case acl:match_rule(configure, jlib:make_jid(User, ?MYNAME, "")) of
 	deny ->
 	    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
@@ -97,7 +111,7 @@ process_get(User, ["acls"], Query) ->
 		       ])
     end;
 
-process_get(User, Path, Query) ->
+process_config(User, Path, Query, Lang) ->
     {404, [], make_xhtml([?XC("h1", "Not found")])}.
 
 

@@ -102,7 +102,7 @@ process_request(#state{request_method = 'GET',
 		    LQuery = parse_urlencoded(Query),
 		    ?INFO_MSG("path: ~p, query: ~p~n", [NPath, LQuery]),
 		    LPath = string:tokens(NPath, "/"),
-		    case ejabberd_web:process_get(User, LPath, LQuery) of
+		    case ejabberd_web:process_get(User, LPath, LQuery, "") of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
 			{Status, Headers, El} ->
@@ -141,7 +141,7 @@ process_request(#state{request_method = 'POST',
 		    LPath = string:tokens(NPath, "/"),
 		    LQuery = parse_urlencoded(Data),
 		    ?INFO_MSG("client query: ~p~n", [LQuery]),
-		    case ejabberd_web:process_get(User, LPath, LQuery) of
+		    case ejabberd_web:process_get(User, LPath, LQuery, "") of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
 			{Status, Headers, El} ->
