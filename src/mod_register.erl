@@ -116,14 +116,18 @@ try_register(User, Password) ->
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
-	    case ejabberd_auth:try_register(User, Password) of
-		{atomic, ok} ->
-		    ok;
-		{atomic, exists} ->
-		    % TODO: replace to "username unavailable"
-		    {error, ?ERR_NOT_ALLOWED};
-		{error, Reason} ->
-		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    case acl:match_rule(register, jlib:make_jid(User, ?MYNAME, "")) of
+		deny ->
+		    {error, ?ERR_CONFLICT};
+		allow ->
+		    case ejabberd_auth:try_register(User, Password) of
+			{atomic, ok} ->
+			    ok;
+			{atomic, exists} ->
+			    {error, ?ERR_CONFLICT};
+			{error, _Reason} ->
+			    {error, ?ERR_INTERNAL_SERVER_ERROR}
+		    end
 	    end
     end.
 

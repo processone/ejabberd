@@ -695,13 +695,14 @@ these queries. Possible values are:
  be processed until finished this. Hence this discipline is not recommended
  if processing of query can take relative many time.
 <DT><B><TT>one_queue</TT></B><DD> In this case created separate queue for processing
- IQ queries of namespace with this discipline, and processing of this queue
- done in parallel with processing of other packets. This discipline is most
+ of IQ queries of namespace with this discipline, and processing of this queue
+ is done in parallel with processing of other packets. This discipline is most
  recommended.
 <DT><B><TT>parallel</TT></B><DD> In this case for all packets with this discipline
  spawned separate Erlang process, so all these packets processed in parallel.
- Although spawning of Erlang process have relative low cost, this can broke
- server normal work, because Erlang have limit of 32000 processes.
+ Although spawning of Erlang process have relatively low cost, this can broke
+ server normal work, because Erlang emulator have limit on number of processes
+ (32000 by default).
 </DL>
 Example:
 <PRE>
@@ -731,6 +732,33 @@ Example:
 <H3><A NAME="htoc35">A.2</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="sec:modregister"></A>
+This module adds support for
+<A HREF="http://www.jabber.org/jeps/jep-0077.html">JEP-0077</A> (In-Band
+Registration). There is possible to restrict registration via ``register''
+access rule. If this rule returns ``deny'' on requested user name, then
+registration is not allowed for it.<BR>
+<BR>
+Options:
+<DL COMPACT=compact><DT>
+<B><TT>iqdisc</TT></B><DD> <TT>jabber:iq:register</TT> IQ queries processing
+ discipline.
+</DL>
+Example:
+<PRE>
+% Deny registration for users with too short name
+{acl, shortname, {user_glob, "?"}}.
+{acl, shortname, {user_glob, "??"}}.
+% Another variant: {acl, shortname, {user_regexp, "^..?$"}}.
+
+{access, register, [{deny, shortname},
+                    {allow, all}]}.
+
+{modules, [
+           ...
+           {mod_register, []},
+           ...
+          ]}.
+</PRE>
 <!--TOC subsection <TT>mod_roster</TT>-->
 
 <H3><A NAME="htoc36">A.3</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
@@ -772,7 +800,8 @@ Example:
 
 <A NAME="sec:modstats"></A>
 This module adds support for
-<A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
+<A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics
+Gathering).<BR>
 <BR>
 Options:
 <DL COMPACT=compact><DT>

@@ -52,7 +52,8 @@ init(Port, Module, Opts) ->
     {ok, ListenSocket} = gen_tcp:listen(Port, [binary,
 					       {packet, 0}, 
 					       {active, false},
-					       {reuseaddr, true}]),
+					       {reuseaddr, true},
+					       {nodelay, true}]),
     accept(ListenSocket, Module, Opts).
 
 accept(ListenSocket, Module, Opts) ->

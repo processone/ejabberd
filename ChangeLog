@@ -1,4 +1,17 @@
+2003-10-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+	* src/ejabberd.cfg: Added "register" rule, added some comments,
+	this file renamed to ejabberd.cfg.example
+
+	* src/mod_register.erl (try_register): Fixed error reply, added
+	check for "register" access rule
+
 2003-10-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/Makefile.win32: Added Makefile for Win32 (thanks
+	to Sergei Golovan)
 
 	* src/stringprep/stringprep_drv.c: Removed needless iconv.h
 	include

@@ -1,0 +1,40 @@
+
+include ..\Makefile.inc
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+ALL : $(OUTDIR)\stringprep_drv.dll $(OUTDIR)\stringprep.beam
+
+CLEAN :
+	-@erase $(OUTDIR)\stringprep_drv.dll
+	-@erase $(OUTDIR)\stringprep_drv.exp
+	-@erase $(OUTDIR)\stringprep_drv.lib
+	-@erase stringprep_drv.obj
+	-@erase stringprep_drv.pch
+	-@erase vc60.idb
+	-@erase $(OUTDIR)\stringprep.beam
+
+$(OUTDIR)\stringprep.beam : stringprep.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) stringprep.erl
+
+CPP=cl.exe
+CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\include" /D "WIN32" /D "NDEBUG" /D "_USRDLL" /D "_MBCS" /Fpstringprep_drv.pch /YX /FD /c 
+
+.c.obj::
+    $(CPP) @<<
+    $(CPP_PROJ) $< 
+<<
+
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib "$(ERLANG_DIR)\usr\lib\erl_dll.lib" "$(EI_DIR)\lib\ei.lib" "$(EI_DIR)\lib\erl_interface.lib" /nologo /subsystem:console /dll /pdb:none /machine:I386 /out:$(OUTDIR)\stringprep_drv.dll
+
+LINK32_OBJS=stringprep_drv.obj
+
+$(OUTDIR)\stringprep_drv.dll : $(LINK32_OBJS)
+    $(LINK32) @<<
+    $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+stringprep_drv.obj : stringprep_drv.c
+

@@ -227,25 +227,7 @@ jid_to_string({Node, Server, Resource}) ->
 is_nodename([]) ->
     false;
 is_nodename(J) ->
-    is_nodename1(J).
-
-is_nodename1([C | J])
-  when (C =< 32) or
-       (C == $") or
-       (C == $&) or
-       (C == $') or
-       (C == $:) or
-       (C == $<) or
-       (C == $>) or
-       (C == $@) or
-       (C == $/) or
-       (C == 127)
-       ->
-    false;
-is_nodename1([C | J]) ->
-    is_nodename1(J);
-is_nodename1([]) ->
-    true.
+    nodeprep(J).
 
 
 
@@ -301,7 +283,19 @@ resourceprep(S) ->
 jid_tolower(#jid{luser = U, lserver = S, lresource = R}) ->
     {U, S, R};
 jid_tolower({U, S, R}) ->
-    {tolower(U), tolower(S), R}.
+    case stringprep:nodeprep(U) of
+	error -> error;
+	LUser ->
+	    case stringprep:nameprep(S) of
+		error -> error;
+		LServer ->
+		    case stringprep:resourceprep(R) of
+			error -> error;
+			LResource ->
+			    {LUser, LServer, LResource}
+		    end
+	    end
+    end.
 
 jid_remove_resource(#jid{} = JID) ->
     JID#jid{resource = "", lresource = ""};

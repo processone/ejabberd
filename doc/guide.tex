@@ -658,13 +658,14 @@ these queries.  Possible values are:
   be processed until finished this.  Hence this discipline is not recommended
   if processing of query can take relative many time.
 \item[\texttt{one\_queue}] In this case created separate queue for processing
-  IQ queries of namespace with this discipline, and processing of this queue
-  done in parallel with processing of other packets. This discipline is most
+  of IQ queries of namespace with this discipline, and processing of this queue
+  is done in parallel with processing of other packets. This discipline is most
   recommended.
 \item[\texttt{parallel}] In this case for all packets with this discipline
   spawned separate Erlang process, so all these packets processed in parallel.
-  Although spawning of Erlang process have relative low cost, this can broke
-  server normal work, because Erlang have limit of 32000 processes.
+  Although spawning of Erlang process have relatively low cost, this can broke
+  server normal work, because Erlang emulator have limit on number of processes
+  (32000 by default).
 \end{description}
 
 Example:
@@ -695,6 +696,36 @@ Example:
 
 \subsection{\modregister{}}
 \label{sec:modregister}
+
+This module adds support for
+\footahref{http://www.jabber.org/jeps/jep-0077.html}{JEP-0077} (In-Band
+Registration).  There is possible to restrict registration via ``register''
+access rule.  If this rule returns ``deny'' on requested user name, then
+registration is not allowed for it.
+
+Options:
+\begin{description}
+\item[\texttt{iqdisc}] \ns{jabber:iq:register} IQ queries processing
+  discipline.
+\end{description}
+
+Example:
+\begin{verbatim}
+% Deny registration for users with too short name
+{acl, shortname, {user_glob, "?"}}.
+{acl, shortname, {user_glob, "??"}}.
+% Another variant: {acl, shortname, {user_regexp, "^..?$"}}.
+
+{access, register, [{deny, shortname},
+                    {allow, all}]}.
+
+{modules, [
+           ...
+           {mod_register, []},
+           ...
+          ]}.
+\end{verbatim}
+
 
 
 
@@ -738,7 +769,8 @@ Example:
 \label{sec:modstats}
 
 This module adds support for
-\footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039} (Statistics Gathering).
+\footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039} (Statistics
+Gathering).
 
 Options:
 \begin{description}
