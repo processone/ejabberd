@@ -56,18 +56,15 @@ static int iconv_erl_control(ErlDrvData drv_data,
    ei_decode_string(buf, &index, string);
   
    cd = iconv_open(to, from);
-   // TODO: check result
-   /*
+
    if(cd == (iconv_t) -1)
    {
-      perror ("iconv_open");
+      cd = iconv_open("ascii", "ascii");
+      if(cd == (iconv_t) -1)
+	{
+	  cd = iconv_open("ascii", "ascii");
+	}
    }
-   else 
-   {
-      printf("iconv_open from=%s, to=%s OK\r\n", from, to);
-      printf("string=%s size=%d\r\n", string, size);
-   }
-   */
    
    outleft = avail = 4*size;
    inleft = size;
