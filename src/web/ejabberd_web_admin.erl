@@ -42,6 +42,12 @@
 		      {"name", Name},
 		      {"value", Value}])).
 -define(INPUTT(Type, Name, Value), ?INPUT(Type, Name, ?T(Value))).
+-define(INPUTS(Type, Name, Value, Size),
+	?XA("input", [{"type", Type},
+		      {"name", Name},
+		      {"value", Value},
+		      {"size", Size}])).
+-define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
 
 make_xhtml(Els, Lang) ->
     {200, [html],
@@ -1184,6 +1190,7 @@ get_node(Node, [], Query, Lang) ->
 	[?XE("ul",
 	     [?LI([?ACT("db/", "DB Management")]),
 	      ?LI([?ACT("backup/", "Backup Management")]),
+	      ?LI([?ACT("ports/", "Listened Ports Management")]),
 	      ?LI([?ACT("stats/", "Statistics")])
 	     ]),
 	 ?XAE("form", [{"method", "post"}],
@@ -1304,6 +1311,28 @@ get_node(Node, ["backup"], Query, Lang) ->
 		     ])
 		])])];
 
+get_node(Node, ["ports"], Query, Lang) ->
+    Ports = rpc:call(Node, ejabberd_config, get_local_option, [listen]),
+    Res = case catch node_ports_parse_query(Node, Ports, Query) of
+	      submitted ->
+		  ok;
+	      {'EXIT', _Reason} ->
+		  error;
+	      _ ->
+		  nothing
+	  end,
+    NewPorts = lists:sort(
+		 rpc:call(Node, ejabberd_config, get_local_option, [listen])),
+    [?XC("h1", "Listened Ports at " ++ atom_to_list(Node))] ++
+	case Res of
+	    ok -> [?C("submitted"), ?P];
+	    error -> [?C("bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"method", "post"}],
+	      [node_ports_to_xhtml(NewPorts, Lang)])
+	];
+
 get_node(Node, ["stats"], Query, Lang) ->
     UpTime = rpc:call(Node, erlang, statistics, [wall_clock]),
     UpTimeS = io_lib:format("~.3f", [element(1, UpTime)/1000]),
@@ -1361,9 +1390,9 @@ node_parse_query(Node, Query) ->
 		    ok
 	    end;
 	_ ->
-	    case lists:keysearch("delete", 1, Query) of
+	    case lists:keysearch("stop", 1, Query) of
 		{value, _} ->
-		    case rpc:call(Node, init, restart, []) of
+		    case rpc:call(Node, init, stop, []) of
 			{badrpc, _Reason} ->
 			    error;
 			_ ->
@@ -1468,5 +1497,88 @@ node_backup_parse_query(Node, Query) ->
 	 (_Action, Res) ->
 	      Res
       end, nothing, ["store", "restore", "fallback", "dump", "load"]).
+
+
+node_ports_to_xhtml(Ports, Lang) ->
+    ?XAE("table", [],
+	 [?XE("thead",
+	      [?XE("tr",
+		   [?XCT("td", "Port"),
+		    ?XCT("td", "Module"),
+		    ?XCT("td", "Options")
+		   ])]),
+	  ?XE("tbody",
+	      lists:map(
+		fun({Port, Module, Opts} = E) ->
+			SPort = integer_to_list(Port),
+			SModule = atom_to_list(Module),
+			ID = term_to_id(E),
+			?XE("tr",
+			    [?XC("td", SPort),
+			     ?XE("td", [?INPUT("text", "module" ++ SPort,
+					       SModule)]),
+			     ?XE("td", [?INPUTS("text", "opts" ++ SPort,
+						term_to_string(Opts), "40")]),
+			     ?XE("td", [?INPUTT("submit", "add" ++ SPort,
+						"Update")]),
+			     ?XE("td", [?INPUTT("submit", "delete" ++ SPort,
+						"Delete")])
+			    ]
+			   )
+		end, Ports) ++
+	      [?XE("tr",
+		   [?XE("td", [?INPUTS("text", "portnew", "", "6")]),
+		    ?XE("td", [?INPUT("text", "modulenew", "")]),
+		    ?XE("td", [?INPUTS("text", "optsnew", "", "40")]),
+		    ?XAE("td", [{"colspan", "2"}],
+			 [?INPUTT("submit", "addnew", "Add New")])
+		   ]
+		  )]
+	     )]).
+
+
+node_ports_parse_query(Node, Ports, Query) ->
+    lists:foreach(
+      fun({Port, _Module1, _Opts1}) ->
+	      SPort = integer_to_list(Port),
+	      case lists:keysearch("add" ++ SPort, 1, Query) of
+		  {value, _} ->
+		      {{value, {_, SModule}}, {value, {_, SOpts}}} =
+			  {lists:keysearch("module" ++ SPort, 1, Query),
+			   lists:keysearch("opts" ++ SPort, 1, Query)},
+		      Module = list_to_atom(SModule),
+		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
+		      {ok, Opts} = erl_parse:parse_term(Tokens),
+		      ejabberd_listener:delete_listener(Port),
+		      ejabberd_listener:add_listener(Port, Module, Opts),
+		      throw(submitted);
+		  _ ->
+		      case lists:keysearch("delete" ++ SPort, 1, Query) of
+			  {value, _} ->
+			      ejabberd_listener:delete_listener(Port),
+			      throw(submitted);
+			  _ ->
+			      ok
+		      end
+	      end
+      end, Ports),
+    case lists:keysearch("addnew", 1, Query) of
+	{value, _} ->
+	    {{value, {_, SPort}},
+	     {value, {_, SModule}},
+	     {value, {_, SOpts}}} =
+		{lists:keysearch("portnew", 1, Query),
+		 lists:keysearch("modulenew", 1, Query),
+		 lists:keysearch("optsnew", 1, Query)},
+	    Port = list_to_integer(SPort),
+	    Module = list_to_atom(SModule),
+	    {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
+	    {ok, Opts} = erl_parse:parse_term(Tokens),
+	    ejabberd_listener:add_listener(Port, Module, Opts),
+	    throw(submitted);
+	_ ->
+	    ok
+    end.
+
 
 

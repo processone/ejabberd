@@ -14,7 +14,9 @@
 	 init/3,
 	 init_ssl/4,
 	 start_listener/3,
-	 stop_listener/1
+	 stop_listener/1,
+	 add_listener/3,
+	 delete_listener/1
 	]).
 
 -include("ejabberd.hrl").
@@ -33,7 +35,7 @@ init(_) ->
 		    fun({Port, Module, Opts}) ->
 			    {Port,
 			     {?MODULE, start, [Port, Module, Opts]},
-			     permanent,
+			     transient,
 			     brutal_kill,
 			     worker,
 			     [?MODULE]}
@@ -63,13 +65,21 @@ init(Port, Module, Opts) ->
 			       (inet) -> true;
 			       (_) -> false
 			    end, Opts),
-    {ok, ListenSocket} = gen_tcp:listen(Port, [binary,
-					       {packet, 0}, 
-					       {active, false},
-					       {reuseaddr, true},
-					       {nodelay, true} |
-					       SockOpts]),
-    accept(ListenSocket, Module, Opts).
+
+    Res = gen_tcp:listen(Port, [binary,
+				{packet, 0}, 
+				{active, false},
+				{reuseaddr, true},
+				{nodelay, true} |
+				SockOpts]),
+    case Res of
+	{ok, ListenSocket} ->
+	    accept(ListenSocket, Module, Opts);
+	{error, Reason} ->
+	    ?ERROR_MSG("Failed to open socket for ~p: ~p",
+		       [{Port, Module, Opts}, Reason]),
+	    error
+    end.
 
 accept(ListenSocket, Module, Opts) ->
     case gen_tcp:accept(ListenSocket) of
@@ -104,12 +114,19 @@ init_ssl(Port, Module, Opts, SSLOpts) ->
 			       ({ciphers, _}) -> true;
 			       (_) -> false
 			    end, Opts),
-    {ok, ListenSocket} = ssl:listen(Port, [binary,
-					   {packet, 0}, 
-					   {active, false},
-					   {nodelay, true} |
-					   SockOpts ++ SSLOpts]),
-    accept_ssl(ListenSocket, Module, Opts).
+    Res = ssl:listen(Port, [binary,
+			    {packet, 0}, 
+			    {active, false},
+			    {nodelay, true} |
+			    SockOpts ++ SSLOpts]),
+    case Res of
+	{ok, ListenSocket} ->
+	    accept_ssl(ListenSocket, Module, Opts);
+	{error, Reason} ->
+	    ?ERROR_MSG("Failed to open socket for ~p: ~p",
+		       [{Port, Module, Opts}, Reason]),
+	    error
+    end.
 
 accept_ssl(ListenSocket, Module, Opts) ->
     case ssl:accept(ListenSocket, 200) of
@@ -136,7 +153,7 @@ accept_ssl(ListenSocket, Module, Opts) ->
 start_listener(Port, Module, Opts) ->
     ChildSpec = {Port,
 		 {?MODULE, start, [Port, Module, Opts]},
-		 permanent,
+		 transient,
 		 brutal_kill,
 		 worker,
 		 [?MODULE]},
@@ -145,4 +162,27 @@ start_listener(Port, Module, Opts) ->
 stop_listener(Port) ->
     supervisor:terminate_child(ejabberd_listeners, Port),
     supervisor:delete_child(ejabberd_listeners, Port).
+
+add_listener(Port, Module, Opts) ->
+    Ports = case ejabberd_config:get_local_option(listen) of
+		undefined ->
+		    [];
+		Ls ->
+		    Ls
+	    end,
+    Ports1 = lists:keydelete(Port, 1, Ports),
+    Ports2 = [{Port, Module, Opts} | Ports1],
+    ejabberd_config:add_local_option(listen, Ports2),
+    start_listener(Port, Module, Opts).
+
+delete_listener(Port) ->
+    Ports = case ejabberd_config:get_local_option(listen) of
+		undefined ->
+		    [];
+		Ls ->
+		    Ls
+	    end,
+    Ports1 = lists:keydelete(Port, 1, Ports),
+    ejabberd_config:add_local_option(listen, Ports1),
+    stop_listener(Port).
 

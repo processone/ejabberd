@@ -1,3 +1,13 @@
+2004-06-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Added configuration of listened
+	ports
+	* src/ejabberd_listener.erl: Added API for configuration of port
+	listeners
+
+	* src/web/ejabberd_web_admin.erl: Fixed "Stop" button on node
+	management page
+
 2004-05-22  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/nl.msg: Dutch translation (thanks to Sander Devrieze)
