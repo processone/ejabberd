@@ -217,25 +217,38 @@ handle_info({route_chan, Channel, Resource,
     NewStateData =
 	case xml:get_attr_s("type", Attrs) of
 	    "groupchat" ->
-		ejabberd_router:route(
-		  {lists:concat([Channel, "%", StateData#state.server]),
-		   StateData#state.myname, StateData#state.nick},
-		  StateData#state.user, El),
-		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
-		Body1 = case Body of
-			    [$/, $m, $e, $  | Rest] ->
-				"\001ACTION " ++ Rest ++ "\001";
-			    _ ->
-				Body
-			end,
-		Strings = string:tokens(Body1, "\n"),
-		Res = lists:concat(
-			lists:map(
-			  fun(S) ->
-				  io_lib:format("PRIVMSG #~s :~s\r\n",
-						[Channel, S])
-			  end, Strings)),
-		?SEND(Res);
+		case xml:get_path_s(El, [{elem, "subject"}, cdata]) of
+		    "" ->
+			ejabberd_router:route(
+			  {lists:concat(
+			     [Channel, "%", StateData#state.server]),
+			   StateData#state.myname, StateData#state.nick},
+			  StateData#state.user, El),
+			Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
+			Body1 = case Body of
+				    [$/, $m, $e, $  | Rest] ->
+					"\001ACTION " ++ Rest ++ "\001";
+				    _ ->
+					Body
+				end,
+			Strings = string:tokens(Body1, "\n"),
+			Res = lists:concat(
+				lists:map(
+				  fun(S) ->
+					  io_lib:format("PRIVMSG #~s :~s\r\n",
+							[Channel, S])
+				  end, Strings)),
+			?SEND(Res);
+		    Subject ->
+			Strings = string:tokens(Subject, "\n"),
+			Res = lists:concat(
+				lists:map(
+				  fun(S) ->
+					  io_lib:format("TOPIC #~s :~s\r\n",
+							[Channel, S])
+				  end, Strings)),
+			?SEND(Res)
+		end;
 	    "chat" ->
 		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
 		Body1 = case Body of
@@ -321,6 +334,9 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 	case Words of
 	    [_, "353" | Items] ->
 		process_channel_list(StateData, Items);
+	    [_, "332", Nick, [$# | Chan] | _] ->
+		process_channel_topic(StateData, Chan, String),
+		StateData;
 	    [From, "PRIVMSG", [$# | Chan] | _] ->
 		process_chanprivmsg(StateData, Chan, From, String),
 		StateData;
@@ -329,6 +345,9 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 		StateData;
 	    [From, "PRIVMSG", Nick | _] ->
 		process_privmsg(StateData, Nick, From, String),
+		StateData;
+	    [From, "TOPIC", [$# | Chan] | _] ->
+		process_topic(StateData, Chan, From, String),
 		StateData;
 	    [From, "PART", [$# | Chan] | _] ->
 		process_part(StateData, Chan, From, String);
@@ -530,6 +549,26 @@ process_channel_list_user(StateData, Chan, User) ->
     end.
 
 
+process_channel_topic(StateData, Chan, String) ->
+    FromUser = "someone",
+    {ok, Msg, _} = regexp:sub(String, ".*332[^:]*:", ""),
+    Msg1 = lists:filter(
+	     fun(C) ->
+		     if (C < 32) and
+			(C /= 9) and
+			(C /= 10) and
+			(C /= 13) ->
+			     false;
+			true -> true
+		     end
+	     end, Msg),
+    ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
+			   StateData#state.myname, FromUser},
+			  StateData#state.user,
+			  {xmlelement, "message", [{"type", "groupchat"}],
+			   [{xmlelement, "subject", [], [{xmlcdata, Msg1}]}]}).
+
+
 process_chanprivmsg(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
     {ok, Msg, _} = regexp:sub(String, ".*PRIVMSG[^:]*:", ""),
@@ -594,6 +633,28 @@ process_version(StateData, Nick, From) ->
 		    "\001\r\n",
 		    [FromUser])).
 
+
+process_topic(StateData, Chan, From, String) ->
+    [FromUser | _] = string:tokens(From, "!"),
+    {ok, Msg, _} = regexp:sub(String, ".*TOPIC[^:]*:", ""),
+    Msg1 = lists:filter(
+	     fun(C) ->
+		     if (C < 32) and
+			(C /= 9) and
+			(C /= 10) and
+			(C /= 13) ->
+			     false;
+			true -> true
+		     end
+	     end, Msg),
+    ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
+			   StateData#state.myname, FromUser},
+			  StateData#state.user,
+			  {xmlelement, "message", [{"type", "groupchat"}],
+			   [{xmlelement, "subject", [], [{xmlcdata, Msg1}]},
+			    {xmlelement, "body", [],
+			     [{xmlcdata, "/me has changed the subject to: " ++
+			       Msg1}]}]}).
 
 process_part(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
