@@ -16,6 +16,10 @@
 -define(DEBUG(F,A),[]).
 -endif.
 
+-define(ERROR_MSG(Format, Args),
+	error_logger:format("D(~p:~p:~p) : "++Format++"~n",
+			    [self(),?MODULE,?LINE]++Args)).
+
 
 %-define(MYNAME,"e.localhost").
 -define(MYNAME, ejabberd_config:get_option(host)).

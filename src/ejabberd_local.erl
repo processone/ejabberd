@@ -26,6 +26,7 @@ start() ->
     mod_stats:start(),
     mod_vcard:start(),
     mod_offline:start(),
+    mod_echo:start(),
     ok.
 
 init() ->

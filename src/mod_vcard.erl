@@ -370,15 +370,24 @@ record_to_item(R) ->
 
 search(Data) ->
     MatchSpec = make_matchspec(Data),
-    F = fun() ->
-		mnesia:select(vcard_search, [{MatchSpec, [], ['$_']}])
-	end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    Rs;
-	_ ->
-	    []
+    case catch mnesia:dirty_select(vcard_search, [{MatchSpec, [], ['$_']}]) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p", [Reason]),
+	    [];
+	Rs ->
+	    Rs
     end.
+
+% TODO: remove
+%    F = fun() ->
+%		mnesia:select(vcard_search, [{MatchSpec, [], ['$_']}])
+%	end,
+%    case mnesia:transaction(F) of
+%	{atomic, Rs} ->
+%	    Rs;
+%	_ ->
+%	    []
+%    end.
 
 
 make_matchspec(Data) ->

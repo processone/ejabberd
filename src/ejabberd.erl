@@ -19,6 +19,7 @@ start() ->
 
 init() ->
     register(ejabberd, self()),
+    erlang:system_flag(fullsweep_after, 0),
     error_logger:logfile({open, ?ERROR_LOG_PATH}),
     randoms:start(),
     ok = erl_ddll:load_driver(".", expat_erl),

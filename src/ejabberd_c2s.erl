@@ -111,9 +111,12 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
+	{auth, ID, {U, P, D, ""}} ->
+	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+	    send_element(StateData#state.sender, Err),
+	    {next_state, wait_for_auth, StateData};
 	{auth, ID, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
-	    % TODO: digested password
 	    case ejabberd_auth:check_password(U, P,
 					      StateData#state.streamid, D) of
 		true ->
