@@ -13,7 +13,9 @@
 -export([start/0, init/0, open_session/2, close_session/2,
 	 get_user_resources/1,
 	 set_presence/3,
-	 unset_presence/2]).
+	 unset_presence/2,
+	 dirty_get_sessions_list/0,
+	 register_iq_handler/3]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -41,6 +43,7 @@ init() ->
 			 {attributes, record_info(fields, presence)}]),
     mnesia:add_table_index(presence, user),
     mnesia:subscribe(system),
+    ets:new(sm_iqtable, [named_table]),
     loop().
 
 loop() ->
@@ -60,6 +63,9 @@ loop() ->
 	    loop();
 	{route, From, To, Packet} ->
 	    do_route(From, To, Packet),
+	    loop();
+	{register_iq_handler, XMLNS, Module, Function} ->
+	    ets:insert(sm_iqtable, {XMLNS, Module, Function}),
 	    loop();
 	_ ->
 	    loop()
@@ -231,6 +237,7 @@ do_route(From, To, Packet) ->
 					   Packet}
 		    end;
 		"iq" ->
+		    process_iq(From, To, Packet),
 		    % TODO
 		    ok;
 		"broadcast" ->
@@ -312,4 +319,42 @@ get_user_present_resources(User) ->
 	{aborted, Reason} ->
 	    []
     end.
+
+dirty_get_sessions_list() ->
+    mnesia:dirty_all_keys(session).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+process_iq(From, To, Packet) ->
+    IQ = jlib:iq_query_info(Packet),
+    case IQ of
+	{iq, ID, Type, XMLNS, SubEl} ->
+	    case ets:lookup(sm_iqtable, XMLNS) of
+		[{_, Module, Function}] ->
+		    ResIQ = apply(Module, Function, [From, To, IQ]),
+		    if
+			ResIQ /= ignore ->
+			    ejabberd_router ! {route,
+					       To,
+					       From,
+					       jlib:iq_to_xml(ResIQ)};
+			true ->
+			    ok
+		    end;
+		[] ->
+		    Err = jlib:make_error_reply(
+			    Packet, "501", "Not Implemented"),
+		    ejabberd_router ! {route, To, From, Err}
+	    end;
+	reply ->
+	    ok;
+	_ ->
+	    Err = jlib:make_error_reply(Packet, "400", "Bad Request"),
+	    ejabberd_router ! {route, To, From, Err},
+	    ok
+    end.
+
+register_iq_handler(XMLNS, Module, Fun) ->
+    ejabberd_sm ! {register_iq_handler, XMLNS, Module, Fun}.
 

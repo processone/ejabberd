@@ -23,7 +23,8 @@
 	 try_register/2]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
+	dirty_get_registered_users/0]).
 
 -record(state, {}).
 
@@ -157,4 +158,7 @@ try_register(User, Password) ->
 		end
         end,
     mnesia:transaction(F).
+
+dirty_get_registered_users() ->
+    mnesia:dirty_all_keys(passwd).
 

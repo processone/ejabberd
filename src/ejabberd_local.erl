@@ -22,13 +22,14 @@ start() ->
     register(ejabberd_local, spawn(ejabberd_local, init, [])),
     mod_register:start(),
     mod_roster:start(),
+    mod_disco:start(),
     ok.
 
 init() ->
     MyDomain = ?MYNAME,
     ejabberd_router:register_local_route(MyDomain),
     loop(#state{mydomain = MyDomain,
-		iqtable = ets:new(iqtable, [])}).
+		iqtable = ets:new(local_iqtable, [named_table])}).
 
 loop(State) ->
     receive
@@ -37,6 +38,7 @@ loop(State) ->
 	    loop(State);
 	{register_iq_handler, XMLNS, Module, Function} ->
 	    ets:insert(State#state.iqtable, {XMLNS, Module, Function}),
+	    mod_disco:register_feature(XMLNS),
 	    loop(State)
     end.
 

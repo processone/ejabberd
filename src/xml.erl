@@ -12,7 +12,8 @@
 
 -export([element_to_string/1, crypt/1, remove_cdata/1,
 	 get_cdata/1, get_tag_cdata/1,
-	 get_attr/2, get_attr_s/2]).
+	 get_attr/2, get_attr_s/2,
+	 get_tag_attr/2, get_tag_attr_s/2]).
 
 element_to_string(El) ->
     case El of
@@ -93,4 +94,9 @@ get_attr_s(AttrName, Attrs) ->
 	    ""
     end.
 
+get_tag_attr(AttrName, {xmlelement, Name, Attrs, Els}) ->
+    get_attr(AttrName, Attrs).
+
+get_tag_attr_s(AttrName, {xmlelement, Name, Attrs, Els}) ->
+    get_attr_s(AttrName, Attrs).
 
