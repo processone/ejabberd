@@ -150,27 +150,26 @@ do_route(From, To, Packet) ->
 	"" ->
 	    case Name of
 		"presence" ->
-		    FromU = jlib:jid_replace_resource(From, ""),
 		    {Pass, Subsc} =
 			case xml:get_attr_s("type", Attrs) of
 			    "subscribe" ->
 				{mod_roster:in_subscription(User,
-							    FromU,
+							    From,
 							    subscribe),
 				 true};
 			    "subscribed" ->
 				{mod_roster:in_subscription(User,
-							    FromU,
+							    From,
 							    subscribed),
 				 true};
 			    "unsubscribe" ->
 				{mod_roster:in_subscription(User,
-							    FromU,
+							    From,
 							    unsubscribe),
 				 true};
 			    "unsubscribed" ->
 				{mod_roster:in_subscription(User,
-							    FromU,
+							    From,
 							    unsubscribed),
 				 true};
 			    _ ->
