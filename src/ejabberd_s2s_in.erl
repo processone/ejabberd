@@ -109,7 +109,6 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 		    send_text(StateData#state.socket, ?INVALID_DOMAIN_ERR),
 		    {stop, normal, StateData}
 	    end;
-
 	_ ->
 	    send_text(StateData#state.socket, ?INVALID_HEADER_ERR),
 	    {stop, normal, StateData}
@@ -123,11 +122,18 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
 	{key, To, From, Id, Key} ->
 	    io:format("GET KEY: ~p~n", [{To, From, Id, Key}]),
-	    ejabberd_s2s_out:start(StateData#state.myname, From,
-				   {verify, self(), Key}),
-	    {next_state,
-	     wait_for_verification,
-	     StateData#state{server = From}};
+	    case lists:member(To, ejabberd_router:dirty_get_all_domains()) of
+		true ->
+		    ejabberd_s2s_out:start(To, From,
+					   {verify, self(), Key}),
+		    {next_state,
+		     wait_for_verification,
+		     StateData#state{myname = To,
+				     server = From}};
+		_ ->
+		    send_text(StateData#state.socket, ?INVALID_DOMAIN_ERR),
+		    {stop, normal, StateData}
+	    end;
 	{verify, To, From, Id, Key} ->
 	    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
 	    Key1 = ejabberd_s2s:get_key({StateData#state.myname, From}),
