@@ -30,6 +30,7 @@ AC_MOD_ENABLE(mod_pubsub, yes)
 AC_MOD_ENABLE(mod_irc, yes)
 AC_MOD_ENABLE(mod_muc, yes)
 AC_MOD_ENABLE(eldap, yes)
+AC_MOD_ENABLE(web, yes)
 
 	 
 AC_CONFIG_FILES([Makefile
@@ -37,5 +38,6 @@ AC_CONFIG_FILES([Makefile
                  $make_mod_muc
                  $make_mod_pubsub
                  $make_eldap
+                 $make_web
                  stringprep/Makefile])
 AC_OUTPUT
