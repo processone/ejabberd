@@ -78,13 +78,16 @@ process_iq(From, To, IQ) ->
 
 process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     {User, _, _} = From,
+    LUser = jlib:tolower(User),
     F = fun() ->
-		mnesia:read({roster, User})
+		mnesia:read({roster, LUser})
         end,
     case mnesia:transaction(F) of
 	{atomic, Items} ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
-	    {iq, ID, result, XMLNS, XItems};
+	    {iq, ID, result, XMLNS, [{xmlelement, "query",
+				      [{"xmlns", "jabber:iq:roster"}],
+				      XItems}]};
 	_ ->
 	    {iq, ID, error, XMLNS,
 	     [SubEl, jlib:make_error_element("500",
@@ -102,6 +105,8 @@ item_to_xml(Item) ->
     Attrs3 = case Item#roster.subscription of
 		 none ->
 		     [{"subscription", "none"} | Attrs2];
+		 remove ->
+		     [{"subscription", "remove"} | Attrs2];
 		 _ ->
 		     % TODO
 		     Attrs2
@@ -124,36 +129,45 @@ process_item_set(User, To, XItem) ->
     {xmlelement, Name, Attrs, Els} = XItem,
     % TODO: load existing item
     JID = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
+    LUser = jlib:tolower(User),
     case JID of
 	error ->
 	    ok;
 	_ ->
 	    F = fun() ->
 			Res = mnemosyne:eval(query [X || X <- table(roster),
-							 X.user = User,
+							 X.user = LUser,
 							 X.jid = JID]
 					     end),
 			Item = case Res of
 				   [] ->
-				       #roster{user = User,
+				       #roster{user = LUser,
 					       jid = JID,
 					       groups = [],
 					       xattrs = [],
 					       xs = []};
 				   [I] ->
 				       mnesia:delete_object(I),
-				       I
+				       I#roster{groups = [],
+						xattrs = [],
+						xs = []}
 			       end,
 			Item1 = process_item_attrs(Item, Attrs),
 			Item2 = process_item_els(Item1, Els),
-			mnesia:write(Item2),
+			case Item2#roster.subscription of
+			    remove ->
+				ok;
+			    _ ->
+				mnesia:write(Item2)
+			end,
 			Item2
 		end,
 	    case mnesia:transaction(F) of
 		{atomic, Item} ->
-		    io:format("ROSTER: push for user ~p: ~p~n", [User, Item]),
+		    push_item(User, To, Item),
 		    ok;
-		_ ->
+		E ->
+		    ?DEBUG("ROSTER: roster item set error: ~p~n", [E]),
 		    ok
 	    end
     end.
@@ -163,26 +177,26 @@ process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
 	"jid" ->
 	    case jlib:string_to_jid(Val) of
 		error ->
-		    process_item_attrs(Item, [Attrs]);
+		    process_item_attrs(Item, Attrs);
 		JID ->
-		    process_item_attrs(Item#roster{jid = JID}, [Attrs])
+		    process_item_attrs(Item#roster{jid = JID}, Attrs)
 	    end;
 	"name" ->
-	    process_item_attrs(Item#roster{name = Val}, [Attrs]);
+	    process_item_attrs(Item#roster{name = Val}, Attrs);
 	"subscription" ->
 	    case Val of
 		"remove" ->
 		    process_item_attrs(Item#roster{subscription = remove},
-				       [Attrs]);
+				       Attrs);
 		_ ->
-		    process_item_attrs(Item, [Attrs])
+		    process_item_attrs(Item, Attrs)
 	    end;
 	"ask" ->
-	    process_item_attrs(Item, [Attrs]);
+	    process_item_attrs(Item, Attrs);
 	_ ->
 	    XAttrs = Item#roster.xattrs,
 	    process_item_attrs(Item#roster{xattrs = [{Attr, Val} | XAttrs]},
-			       [Attrs])
+			       Attrs)
     end;
 process_item_attrs(Item, []) ->
     Item.
@@ -207,3 +221,22 @@ process_item_els(Item, [{xmlcdata, _} | Els]) ->
     process_item_els(Item, Els);
 process_item_els(Item, []) ->
     Item.
+
+
+push_item(User, From, Item) ->
+    lists:foreach(fun(Resource) ->
+			  push_item(User, Resource, From, Item)
+		  end, ejabberd_sm:get_user_resources(User)).
+
+% TODO: don't push to those who not load roster
+push_item(User, Resource, From, Item) ->
+    ResIQ = {iq, "", set, "jabber:iq:roster",
+	     [{xmlelement, "query",
+	       [{"xmlns", "jabber:iq:roster"}],
+	       [item_to_xml(Item)]}]},
+    ejabberd_router ! {route,
+		       From,
+		       {User, ?MYNAME, Resource},
+		       jlib:iq_to_xml(ResIQ)}.
+
+

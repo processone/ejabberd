@@ -95,11 +95,10 @@ terminate(Reason, State) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-% TODO: lowercase user name
-
 check_password(User, Password) ->
+    LUser = jlib:tolower(User),
     F = fun() ->
-		case mnesia:read({passwd, User}) of
+		case mnesia:read({passwd, LUser}) of
 		    [E] ->
 			E#passwd.password
 		end
@@ -113,20 +112,23 @@ check_password(User, Password) ->
 
 
 set_password(User, Password) ->
+    LUser = jlib:tolower(User),
     F = fun() ->
-		mnesia:write(#passwd{user = User, password = Password})
+		mnesia:write(#passwd{user = LUser, password = Password})
         end,
     mnesia:transaction(F).
 
 try_register(User, Password) ->
+    LUser = jlib:tolower(User),
     F = fun() ->
-		case mnesia:read({passwd, User}) of
+		case mnesia:read({passwd, LUser}) of
 		    [] ->
-			mnesia:write(#passwd{user = User, password = Password}),
+			mnesia:write(#passwd{user = LUser,
+					     password = Password}),
 			ok;
 		    [E] ->
 			exists
 		end
         end,
     mnesia:transaction(F).
-    
+

@@ -10,7 +10,8 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0, open_session/2, close_session/2]).
+-export([start/0, init/0, open_session/2, close_session/2,
+	get_user_resources/1]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -239,4 +240,21 @@ do_route(From, To, Packet) ->
 	    ?DEBUG("delivery failed: ~p~n", [Reason]),
 	    false
     end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+get_user_resources(User) ->
+    F = fun() ->
+		mnemosyne:eval(query [X.resource || X <- table(user_resource),
+						    X.user = User]
+			       end)
+	end,
+    case mnesia:transaction(F) of
+	{atomic, Rs} ->
+	    Rs;
+	{aborted, Reason} ->
+	    ?DEBUG("delivery failed: ~p~n", [Reason]),
+	    []
+    end.
+
 
