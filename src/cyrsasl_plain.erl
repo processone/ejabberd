@@ -27,15 +27,15 @@ mech_new() ->
 
 mech_step(State, ClientIn) ->
     case parse(ClientIn) of
-	[_, User, Password] ->
+	[AuthzId, User, Password] ->
 	    case ejabberd_auth:check_password(User, Password) of
 		true ->
-		    {ok, [{username, User}]};
+		    {ok, [{username, User}, {authzid, AuthzId}]};
 		_ ->
-		    {error, "454"}
+		    {error, "bad-auth"}
 	    end;
 	_ ->
-	    {error, "454"}
+	    {error, "bad-protocol"}
     end.
 
 

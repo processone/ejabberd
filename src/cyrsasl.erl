@@ -40,6 +40,30 @@ register_mechanism(Mechanism, Module) ->
     ets:insert(sasl_mechanism, #sasl_mechanism{mechanism = Mechanism,
 					       module = Module}).
 
+% TODO: use callbacks
+-include("ejabberd.hrl").
+-include("jlib.hrl").
+check_authzid(State, Props) ->
+    AuthzId = xml:get_attr_s(authzid, Props),
+    case jlib:string_to_jid(AuthzId) of
+	error ->
+	    {error, "invalid-authzid"};
+	JID ->
+	    LUser = xml:get_attr_s(username, Props),
+	    {U, S, R} = jlib:jid_tolower(JID),
+	    case R of
+		"" ->
+		    {error, "invalid-authzid"};
+		_ ->
+		    case {LUser, ?MYNAME} of
+			{U, S} ->
+			    ok;
+			_ ->
+			    {error, "invalid-authzid"}
+		    end
+	    end
+    end.
+
 listmech() ->
     ets:select(sasl_mechanism,
 	       [{#sasl_mechanism{mechanism = '$1', _ = '_'}, [], ['$1']}]).
@@ -58,7 +82,7 @@ server_start(State, Mech, ClientIn) ->
 					 mech_state = MechState},
 			ClientIn);
 	_ ->
-	    {error, "454"}
+	    {error, "no-mechanism"}
     end.
 
 server_step(State, ClientIn) ->
@@ -66,13 +90,16 @@ server_step(State, ClientIn) ->
     MechState = State#sasl_state.mech_state,
     case Module:mech_step(MechState, ClientIn) of
 	{ok, Props} ->
-	    {ok, Props};
+	    case check_authzid(State, Props) of
+		ok ->
+		    {ok, Props};
+		{error, Error} ->
+		    {error, Error}
+	    end;
 	{continue, ServerOut, NewMechState} ->
 	    {continue, ServerOut,
 	     State#sasl_state{mech_state = NewMechState}};
-	{error, Code} ->
-	    {error, Code}
+	{error, Error} ->
+	    {error, Error}
     end.
-
-
 

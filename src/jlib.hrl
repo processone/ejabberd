@@ -32,7 +32,8 @@
 -define(NS_STANZAS,     "urn:ietf:params:xml:ns:xmpp-stanzas").
 -define(NS_STREAMS,     "urn:ietf:params:xml:ns:xmpp-streams").
 
--define(NS_SASL_MECHANISMS, "urn:ietf:params:xml:ns:xmpp-sasl").
+-define(NS_SASL, "urn:ietf:params:xml:ns:xmpp-sasl").
+-define(NS_SESSION, "urn:ietf:params:xml:ns:xmpp-session").
 
 % TODO: remove "code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Class, Condition),

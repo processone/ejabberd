@@ -1,3 +1,11 @@
+2003-06-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: SASL support updated to xmpp-core-13
+
+2003-06-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl*.erl: Support for authzid
+
 2003-06-03  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/fr.msg: New french translation (thanks to Vincent Ricard)

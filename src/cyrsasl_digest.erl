@@ -18,7 +18,7 @@
 -behaviour(cyrsasl).
 %-behaviour(gen_mod).
 
--record(state, {step, nonce, username}).
+-record(state, {step, nonce, username, authzid}).
 
 start(Opts) ->
     cyrsasl:register_mechanism("DIGEST-MD5", ?MODULE),
@@ -39,31 +39,38 @@ mech_step(#state{step = 1, nonce = Nonce} = State, "") ->
 mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
     case parse(ClientIn) of
 	bad ->
-	    {error, "454"};
+	    {error, "bad-protocol"};
 	KeyVals ->
 	    UserName = xml:get_attr_s("username", KeyVals),
+	    AuthzId = xml:get_attr_s("authzid", KeyVals),
 	    case ejabberd_auth:get_password(UserName) of
 		false ->
-		    {error, "454"};
+		    {error, "no-user"};
 		Passwd ->
-		    Response = response(KeyVals, UserName, Passwd,
+		    Response = response(KeyVals, UserName, Passwd, AuthzId,
 					"AUTHENTICATE"),
 		    case xml:get_attr_s("response", KeyVals) of
 			Response ->
-			    RspAuth = response(KeyVals, UserName, Passwd, ""),
+			    RspAuth = response(KeyVals,
+					       UserName, Passwd,
+					       AuthzId, ""),
 			    {continue,
 			     "rspauth=" ++ RspAuth,
-			     State#state{step = 5, username = UserName}};
+			     State#state{step = 5,
+					 username = UserName,
+					 authzid = AuthzId}};
 			_ ->
-			    {error, "454"}
+			    {error, "bad-auth"}
 		    end
 	    end
     end;
-mech_step(#state{step = 5, username = UserName} = State, "") ->
-    {ok, [{username, UserName}]};
+mech_step(#state{step = 5,
+		 username = UserName,
+		 authzid = AuthzId} = State, "") ->
+    {ok, [{username, UserName}, {authzid, AuthzId}]};
 mech_step(A, B) ->
     io:format("SASL DIGEST: A ~p B ~p", [A,B]),
-    {error, "454"}.
+    {error, "bad-protocol"}.
 
 
 parse(S) ->
@@ -119,15 +126,23 @@ hex([N | Ns], Res) ->
 	     digit_to_xchar(N div 16) | Res]).
 
 
-response(KeyVals, User, Passwd, A2Prefix) ->
+response(KeyVals, User, Passwd, AuthzId, A2Prefix) ->
     Realm = xml:get_attr_s("realm", KeyVals),
     Nonce = xml:get_attr_s("nonce", KeyVals),
     CNonce = xml:get_attr_s("cnonce", KeyVals),
     DigestURI = xml:get_attr_s("digest-uri", KeyVals),
     NC = xml:get_attr_s("nc", KeyVals),
     QOP = xml:get_attr_s("qop", KeyVals),
-    A1 = binary_to_list(crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
-	":" ++ Nonce ++ ":" ++ CNonce,
+    A1 = case AuthzId of
+	     "" ->
+		 binary_to_list(
+		   crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
+		     ":" ++ Nonce ++ ":" ++ CNonce;
+	     _ ->
+		 binary_to_list(
+		   crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
+		     ":" ++ Nonce ++ ":" ++ CNonce ++ ":" ++ AuthzId
+	 end,
     case QOP of
 	"auth" ->
 	    A2 = A2Prefix ++ ":" ++ DigestURI;
