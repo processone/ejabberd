@@ -1,3 +1,12 @@
+2004-08-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls.erl: Added recv_data/2 function
+
+	* src/jlib.erl: Added NS_TLS macro
+
+	* src/ejabberd_receiver.erl: Support for STARTTLS
+	* src/ejabberd_c2s.erl: Likewise
+
 2004-07-30  Alexey Shchepin  <alexey@sevcom.net>
 
 	* examples/extauth/check_pass_null.pl: A reference "null"

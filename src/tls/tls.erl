@@ -15,7 +15,7 @@
 -export([start/0, start_link/0,
 	 tcp_to_tls/2, tls_to_tcp/1,
 	 send/2,
-	 recv/2, recv/3,
+	 recv/2, recv/3, recv_data/2,
 	 close/1,
 	 test/0]).
 
@@ -86,7 +86,6 @@ tcp_to_tls(TCPSocket, Options) ->
 	{value, {certfile, CertFile}} ->
 	    ok = erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
 	    Port = open_port({spawn, tls_drv}, [binary]),
-	    io:format("open_port: ~p~n", [Port]),
 	    case port_control(Port, ?SET_CERTIFICATE_FILE,
 			      CertFile ++ [0]) of
 		<<0>> ->
@@ -104,23 +103,27 @@ tls_to_tcp(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
 
 recv(Socket, Length) ->
     recv(Socket, Length, infinity).
-recv(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Length, Timeout) ->
+recv(#tlssock{tcpsock = TCPSocket, tlsport = Port} = TLSSock,
+     Length, Timeout) ->
     case gen_tcp:recv(TCPSocket, Length, Timeout) of
 	{ok, Packet} ->
-	    case port_control(Port, ?SET_ENCRYPTED_INPUT, Packet) of
-		<<0>> ->
-		    case port_control(Port, ?GET_DECRYPTED_INPUT, []) of
-			<<0, In/binary>> ->
-			    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
-				<<0, Out/binary>> ->
-				    case gen_tcp:send(TCPSocket, Out) of
-					ok ->
-					    {ok, In};
-					Error ->
-					    Error
-				    end;
-				<<1, Error/binary>> ->
-				    {error, binary_to_list(Error)}
+	    recv_data(TLSSock, Packet);
+	{error, _Reason} = Error ->
+	    Error
+    end.
+
+recv_data(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
+    case port_control(Port, ?SET_ENCRYPTED_INPUT, Packet) of
+	<<0>> ->
+	    case port_control(Port, ?GET_DECRYPTED_INPUT, []) of
+		<<0, In/binary>> ->
+		    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
+			<<0, Out/binary>> ->
+			    case gen_tcp:send(TCPSocket, Out) of
+				ok ->
+				    {ok, In};
+				Error ->
+				    Error
 			    end;
 			<<1, Error/binary>> ->
 			    {error, binary_to_list(Error)}
@@ -128,8 +131,8 @@ recv(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Length, Timeout) ->
 		<<1, Error/binary>> ->
 		    {error, binary_to_list(Error)}
 	    end;
-	{error, _Reason} = Error ->
-	    Error
+	<<1, Error/binary>> ->
+	    {error, binary_to_list(Error)}
     end.
 
 send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->

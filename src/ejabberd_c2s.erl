@@ -23,7 +23,7 @@
 -export([init/1,
 	 wait_for_stream/2,
 	 wait_for_auth/2,
-	 wait_for_sasl_auth/2,
+	 wait_for_feature_request/2,
 	 wait_for_bind/2,
 	 wait_for_session/2,
 	 wait_for_sasl_response/2,
@@ -178,12 +178,26 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					      {xmlelement, "mechanism", [],
 					       [{xmlcdata, S}]}
 				      end, cyrsasl:listmech()),
+			    TLS = StateData#state.tls,
+			    TLSEnabled = StateData#state.tls_enabled,
+			    SockMod = StateData#state.sockmod,
+			    TLSFeature =
+				case (TLS == true) andalso
+				    (TLSEnabled == false) andalso
+				    (SockMod == gen_tcp) of
+				    true ->
+					[{xmlelement, "starttls",
+					  [{"xmlns", ?NS_TLS}], []}];
+				    false ->
+					[]
+				end,
 			    send_element(StateData,
 					 {xmlelement, "stream:features", [],
+					  TLSFeature ++
 					  [{xmlelement, "mechanisms",
 					    [{"xmlns", ?NS_SASL}],
 					    Mechs}]}),
-			    {next_state, wait_for_sasl_auth,
+			    {next_state, wait_for_feature_request,
 			     StateData#state{sasl_state = SASLState,
 					     lang = Lang}};
 			_ ->
@@ -357,8 +371,11 @@ wait_for_auth(closed, StateData) ->
     {stop, normal, StateData}.
 
 
-wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
+wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
+    TLS = StateData#state.tls,
+    TLSEnabled = StateData#state.tls_enabled,
+    SockMod = StateData#state.sockmod,
     case {xml:get_attr_s("xmlns", Attrs), Name} of
 	{?NS_SASL, "auth"} ->
 	    Mech = xml:get_attr_s("mechanism", Attrs),
@@ -391,8 +408,22 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "failure",
 				  [{"xmlns", ?NS_SASL}],
 				  [{xmlelement, Error, [], []}]}),
-		    {next_state, wait_for_sasl_auth, StateData}
+		    {next_state, wait_for_feature_request, StateData}
 	    end;
+	{?NS_TLS, "starttls"} when TLS == true,
+				   TLSEnabled == false,
+				   SockMod == gen_tcp ->
+	    Socket = StateData#state.socket,
+	    TLSOpts = StateData#state.tls_options,
+	    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
+	    ejabberd_receiver:starttls(StateData#state.receiver, TLSSocket),
+	    send_element(StateData,
+			 {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []}),
+	    {next_state, wait_for_stream,
+	     StateData#state{sockmod = tls,
+			     socket = TLSSocket,
+			     tls_enabled = true
+			    }};
 	_ ->
 	    case jlib:iq_query_info(El) of
 		#iq{xmlns = ?NS_REGISTER} = IQ ->
@@ -403,21 +434,21 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 						jlib:iq_to_xml(ResIQ)),
 		    Res = jlib:remove_attr("to", Res1),
 		    send_element(StateData, Res),
-		    {next_state, wait_for_sasl_auth, StateData};
+		    {next_state, wait_for_feature_request, StateData};
 		_ ->
-		    {next_state, wait_for_sasl_auth, StateData}
+		    {next_state, wait_for_feature_request, StateData}
 	    end
     end;
 
-wait_for_sasl_auth({xmlstreamend, _Name}, StateData) ->
+wait_for_feature_request({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
     {stop, normal, StateData};
 
-wait_for_sasl_auth({xmlstreamerror, _}, StateData) ->
+wait_for_feature_request({xmlstreamerror, _}, StateData) ->
     send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
-wait_for_sasl_auth(closed, StateData) ->
+wait_for_feature_request(closed, StateData) ->
     {stop, normal, StateData}.
 
 
@@ -453,7 +484,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "failure",
 				  [{"xmlns", ?NS_SASL}],
 				  [{xmlelement, Error, [], []}]}),
-		    {next_state, wait_for_sasl_auth, StateData}
+		    {next_state, wait_for_feature_request, StateData}
 	    end;
 	_ ->
 	    case jlib:iq_query_info(El) of
@@ -465,9 +496,9 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 						jlib:iq_to_xml(ResIQ)),
 		    Res = jlib:remove_attr("to", Res1),
 		    send_element(StateData, Res),
-		    {next_state, wait_for_sasl_auth, StateData};
+		    {next_state, wait_for_feature_request, StateData};
 		_ ->
-		    {next_state, wait_for_sasl_auth, StateData}
+		    {next_state, wait_for_feature_request, StateData}
 	    end
     end;
 

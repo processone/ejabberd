@@ -13,7 +13,8 @@
 -export([start/3,
 	 receiver/4,
 	 change_shaper/2,
-	 reset_stream/1]).
+	 reset_stream/1,
+	 starttls/2]).
 
 -include("ejabberd.hrl").
 
@@ -34,7 +35,30 @@ receiver(Socket, SockMod, Shaper, C2SPid) ->
     receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout).
 
 receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout) ->
-    case catch SockMod:recv(Socket, 0, Timeout) of
+    Res = (catch SockMod:recv(Socket, 0, Timeout)),
+    case Res of
+        {ok, Data} ->
+	    receive
+		{starttls, TLSSocket} ->
+		    exit(XMLStreamPid, closed),
+		    XMLStreamPid1 = xml_stream:start(self(), C2SPid),
+		    TLSRes = tls:recv_data(TLSSocket, Data),
+		    receiver1(TLSSocket, tls,
+			      ShaperState, C2SPid, XMLStreamPid1, Timeout,
+			      TLSRes)
+	    after 0 ->
+		    receiver1(Socket, SockMod,
+			      ShaperState, C2SPid, XMLStreamPid, Timeout,
+			      Res)
+	    end;
+	_ ->
+	    receiver1(Socket, SockMod,
+		      ShaperState, C2SPid, XMLStreamPid, Timeout, Res)
+    end.
+
+
+receiver1(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout, Res) ->
+    case Res of
         {ok, Text} ->
 	    ShaperSt1 = receive
 			    {change_shaper, Shaper} ->
@@ -74,5 +98,8 @@ change_shaper(Pid, Shaper) ->
 
 reset_stream(Pid) ->
     Pid ! reset_stream.
+
+starttls(Pid, TLSSocket) ->
+    Pid ! {starttls, TLSSocket}.
 
 
