@@ -12,7 +12,9 @@
 
 -export([]).
 
--export([start/0, init/0, process_iq/3]).
+-export([start/0, init/0,
+	 process_iq/3,
+	 get_subscription_lists/1]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -105,6 +107,8 @@ item_to_xml(Item) ->
     Attrs3 = case Item#roster.subscription of
 		 none ->
 		     [{"subscription", "none"} | Attrs2];
+		 both ->
+		     [{"subscription", "both"} | Attrs2];
 		 remove ->
 		     [{"subscription", "remove"} | Attrs2];
 		 _ ->
@@ -148,7 +152,8 @@ process_item_set(User, To, XItem) ->
 					       xs = []};
 				   [I] ->
 				       mnesia:delete_object(I),
-				       I#roster{groups = [],
+				       I#roster{name = "",
+						groups = [],
 						xattrs = [],
 						xs = []}
 			       end,
@@ -238,5 +243,33 @@ push_item(User, Resource, From, Item) ->
 		       From,
 		       {User, ?MYNAME, Resource},
 		       jlib:iq_to_xml(ResIQ)}.
+
+
+get_subscription_lists(User) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		mnesia:read({roster, LUser})
+        end,
+    case mnesia:transaction(F) of
+	{atomic, Items} ->
+	    fill_subscription_lists(Items, [], []);
+	_ ->
+	    {[], []}
+    end.
+
+fill_subscription_lists([I | Is], F, T) ->
+    J = I#roster.jid,
+    case I#roster.subscription of
+	both ->
+	    fill_subscription_lists(Is, [J | F], [J | T]);
+	from ->
+	    fill_subscription_lists(Is, [J | F], T);
+	to ->
+	    fill_subscription_lists(Is, F, [J | T]);
+	_ ->
+	    fill_subscription_lists(Is, F, T)
+    end;
+fill_subscription_lists([], F, T) ->
+    {F, T}.
 
 

@@ -199,13 +199,20 @@ iq_query_info({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
 	    Type1 = case Type of
 			"set" -> set;
 			"get" -> get;
+			"result" -> reply;
+			"error" -> reply;
 			_ -> invalid
 		    end,
 	    if
-		(Type1 /= invalid) and (XMLNS /= "") ->
+		(Type1 /= invalid) and (Type1 /= reply) and (XMLNS /= "") ->
 		    {iq, ID, Type1, XMLNS, {xmlelement, Name2, Attrs2, Els2}};
 		true ->
-		    invalid
+		    if
+			Type1 == reply ->
+			    reply;
+			true ->
+			    invalid
+		    end
 	    end;
 	_ ->
 	    invalid

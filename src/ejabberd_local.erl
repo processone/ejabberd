@@ -99,6 +99,8 @@ process_iq(State, From, To, Packet) ->
 		    % TODO
 		    ok
 	    end;
+	reply ->
+	    ok;
 	_ ->
 	    Err = jlib:make_error_reply(Packet, "400", "Bad Request"),
 	    ejabberd_router ! {route,

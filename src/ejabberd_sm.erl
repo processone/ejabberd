@@ -16,12 +16,8 @@
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
 
--record(user_resource, {id, user, resource}).
--record(user_resource_id_seq, {name = value, id}).
--record(session, {id, node}).
--record(mysession, {id, info}).
-
--record(mysession_info, {pid}).
+-record(session, {ur, user, node}).
+-record(mysession, {ur, pid}).
 
 
 start() ->
@@ -29,17 +25,9 @@ start() ->
 
 init() ->
     register(ejabberd_sm, self()),
-    mnesia:create_table(user_resource_id_seq,
-			[{ram_copies, [node()]},
-			 {attributes,
-			  record_info(fields, user_resource_id_seq)}]),
-    init_seq(),
-    mnesia:create_table(user_resource,[{ram_copies, [node()]},
-				       {attributes,
-					record_info(fields, user_resource)}]),
-    mnesia:add_table_index(user_resource, user),
     mnesia:create_table(session,[{ram_copies, [node()]},
 				 {attributes, record_info(fields, session)}]),
+    mnesia:add_table_index(session, user),
     mnesia:add_table_index(session, node),
     mnesia:create_table(mysession,
 			[{ram_copies, [node()]},
@@ -79,12 +67,9 @@ close_session(User, Resource) ->
 
 replace_alien_connection(User, Resource) ->
     F = fun() ->
-		[ID] = mnemosyne:eval(query [X.id || X <- table(user_resource),
-						     X.user = User,
-						     X.resource = Resource]
-				      end),
-		Es = mnesia:read({session, ID}),
-		mnesia:write(#session{id = ID, node = node()}),
+		UR = {User, Resource},
+		Es = mnesia:read({session, UR}),
+		mnesia:write(#session{ur = UR, user = User, node = node()}),
 		Es
         end,
     case mnesia:transaction(F) of
@@ -105,20 +90,16 @@ replace_alien_connection(User, Resource) ->
 
 replace_my_connection(User, Resource) ->
     F = fun() ->
-		[ID] = mnemosyne:eval(query [X.id || X <- table(user_resource),
-						     X.user = User,
-						     X.resource = Resource]
-				      end),
-
-		Es = mnesia:read({mysession, ID}),
-		mnesia:delete({mysession, ID}),
+		UR = {User, Resource},
+		Es = mnesia:read({mysession, UR}),
+		mnesia:delete({mysession, UR}),
 		Es
         end,
     case mnesia:transaction(F) of
 	{atomic, Rs} ->
 	    lists:foreach(
 	      fun(R) ->
-		      (R#mysession.info)#mysession_info.pid ! replaced
+		      R#mysession.pid ! replaced
 	      end, Rs);
 	_ ->
 	    false
@@ -126,50 +107,24 @@ replace_my_connection(User, Resource) ->
 
 remove_connection(User, Resource) ->
     F = fun() ->
-		[ID] = mnemosyne:eval(query [X.id || X <- table(user_resource),
-						     X.user = User,
-						     X.resource = Resource]
-				      end),
-
-		mnesia:delete({mysession, ID}),
-		mnesia:delete({session, ID}),
-		mnesia:delete({user_resource, ID})
+		UR = {User, Resource},
+		mnesia:delete({mysession, UR}),
+		mnesia:delete({session, UR})
         end,
     mnesia:transaction(F).
 
 replace_and_register_my_connection(User, Resource, Pid) ->
     F = fun() ->
-		IDs = mnemosyne:eval(query [X.id || X <- table(user_resource),
-						    X.user = User,
-						    X.resource = Resource]
-				     end),
-
-		ID = case IDs of
-			 [Id] -> Id;
-			 [] ->
-			     [CurID] = 
-				 mnemosyne:eval(
-				   query [X.id ||
-					     X <- table(user_resource_id_seq)]
-				     end),
-			     mnesia:write(
-			       #user_resource_id_seq{id = CurID + 1}),
-			     mnesia:write(
-			       #user_resource{id = CurID,
-					      user = User,
-					      resource = Resource}),
-			     CurID
-		     end,
-		Es = mnesia:read({mysession, ID}),
-		mnesia:write(#mysession{id = ID,
-					info = #mysession_info{pid = Pid}}),
+		UR = {User, Resource},
+		Es = mnesia:read({mysession, UR}),
+		mnesia:write(#mysession{ur = UR, pid = Pid}),
 		Es
         end,
     case mnesia:transaction(F) of
 	{atomic, Rs} ->
 	    lists:foreach(
 	      fun(R) ->
-		      (R#mysession.info)#mysession_info.pid ! replaced
+		      R#mysession.pid ! replaced
 	      end, Rs);
 	_ ->
 	    false
@@ -182,15 +137,8 @@ clean_table_from_bad_node(Node) ->
 		lists:foreach(fun(E) ->
 				      mnesia:delete_object(session, E, write),
 				      mnesia:delete(
-					{user_resource, E#session.id})
+					{user_resource, E#session.ur})
 			      end, Es)
-        end,
-    mnesia:transaction(F).
-
-init_seq() ->
-    F = fun() ->
-		[] = mnesia:read({user_resource_id_seq, value}),
-		mnesia:write(#user_resource_id_seq{id = 0})
         end,
     mnesia:transaction(F).
 
@@ -199,59 +147,88 @@ init_seq() ->
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    {User, _, Resource} = To,
+    {User, Server, Resource} = To,
     F = fun() ->
-		IDs = mnemosyne:eval(query [X.id || X <- table(user_resource),
-						    X.user = User,
-						    X.resource = Resource]
-				     end),
-		case IDs of
+		UR = {User, Resource},
+		Sess = mnesia:read({session, UR}),
+		case Sess of
 		    [] ->
 			not_exists;
-		    [ID] ->
-			case mnesia:read({mysession, ID}) of
+		    [Ses] ->
+			case mnesia:read({mysession, UR}) of
 			    [] ->
-				[Er] = mnesia:read({session, ID}),
-				{remote, Er#session.node};
+				{remote, Ses#session.node};
 			    [El] ->
-				{local, (El#mysession.info)#mysession_info.pid}
+				{local, El#mysession.pid}
 			end
 		end
         end,
-    case mnesia:transaction(F) of
-	{atomic, {local, Pid}} ->
-	    ?DEBUG("sending to process ~p~n", [Pid]),
+    {xmlelement, Name, Attrs, Els} = Packet,
+    case Resource of
+	"" ->
 	    % TODO
-	    {xmlelement, Name, Attrs, Els} = Packet,
-	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-						  jlib:jid_to_string(To),
-						  Attrs),
-	    ejabberd_c2s:send_element(Pid, {xmlelement, Name, NewAttrs, Els}),
-	    ?DEBUG("sended~n", []),
-	    ok;
-	{atomic, {remote, Node}} ->
-	    ?DEBUG("sending to node ~p~n", [Node]),
-	    {ejabberd_sm, Node} ! {route, From, To, Packet},
-	    ok;
-	{atomic, not_exists} ->
-	    ?DEBUG("packet droped~n", []),
-	    ok;
-	{aborted, Reason} ->
-	    ?DEBUG("delivery failed: ~p~n", [Reason]),
-	    false
+	    case Name of
+		"presence" ->
+		    lists:foreach(
+		      fun(R) ->
+			      if From /= {User, Server, R} ->
+				      ejabberd_sm ! {route,
+						     From,
+						     {User, Server, R},
+						     Packet};
+				 true ->
+				      ok
+			      end
+		      end, get_user_resources(User)),
+		    ok;
+		"message" ->
+		    % TODO
+		    ok;
+		"iq" ->
+		    % TODO
+		    ok;
+		_ ->
+		    ok
+	    end;
+	_ ->
+	    case mnesia:transaction(F) of
+		{atomic, {local, Pid}} ->
+		    ?DEBUG("sending to process ~p~n", [Pid]),
+		    % TODO
+		    Pid ! {route, From, To, Packet},
+		    %NewAttrs =
+		    %    jlib:replace_from_to_attrs(jlib:jid_to_string(From),
+		    %    			   jlib:jid_to_string(To),
+		    %    			   Attrs),
+		    %ejabberd_c2s:send_element(
+		    %  Pid, {xmlelement, Name, NewAttrs, Els}),
+		    %?DEBUG("sended~n", []),
+		    ok;
+		{atomic, {remote, Node}} ->
+		    ?DEBUG("sending to node ~p~n", [Node]),
+		    {ejabberd_sm, Node} ! {route, From, To, Packet},
+		    ok;
+		{atomic, not_exists} ->
+		    % TODO
+		    ?DEBUG("packet droped~n", []),
+		    ok;
+		{aborted, Reason} ->
+		    ?DEBUG("delivery failed: ~p~n", [Reason]),
+		    false
+	    end
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_user_resources(User) ->
     F = fun() ->
-		mnemosyne:eval(query [X.resource || X <- table(user_resource),
-						    X.user = User]
+		mnemosyne:eval(query [X.ur || X <- table(session),
+					      X.user = User]
 			       end)
 	end,
     case mnesia:transaction(F) of
 	{atomic, Rs} ->
-	    Rs;
+	    lists:map(fun(R) -> element(2, R) end, Rs);
 	{aborted, Reason} ->
 	    ?DEBUG("delivery failed: ~p~n", [Reason]),
 	    []

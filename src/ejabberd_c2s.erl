@@ -25,10 +25,19 @@
 
 -include("ejabberd.hrl").
 
--record(state, {socket, sender, receiver, streamid,
-		user = "", server = ?MYNAME, resource = ""}).
+-define(SETS, gb_sets).
 
--define(DBGFSM, true).
+-record(state, {socket, sender, receiver, streamid,
+		user = "", server = ?MYNAME, resource = "",
+		pres_t = ?SETS:new(),
+		pres_f = ?SETS:new(),
+		pres_a = ?SETS:new(),
+		pres_i = ?SETS:new(),
+		pres_last, pres_pri,
+		pres_timestamp,
+		pres_invis = false}).
+
+%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
@@ -110,8 +119,12 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		    ejabberd_sm:open_session(U, R),
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData#state.sender, Res),
+		    {Fs, Ts} = mod_roster:get_subscription_lists(U),
 		    {next_state, session_established,
-		     StateData#state{user = U, resource = R}};
+		     StateData#state{user = U,
+				     resource = R,
+				     pres_f = ?SETS:from_list(Fs),
+				     pres_t = ?SETS:from_list(Ts)}};
 		_ ->
 		    Err = jlib:make_error_reply(El, "401", "Unauthorized"),
 		    send_element(StateData#state.sender, Err),
@@ -143,26 +156,39 @@ wait_for_auth(closed, StateData) ->
 
 session_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
-    % TODO
+    Server = StateData#state.server,
     FromJID = {StateData#state.user,
-	       StateData#state.server,
+	       Server,
 	       StateData#state.resource},
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of
 		"" ->
-		    {"", StateData#state.server, ""};
+		    {"", Server, ""};
 		_ ->
 		    jlib:string_to_jid(To)
 	    end,
-    case ToJID of
-	error ->
-	    % TODO
-	    error;
-	_ ->
-	    %?DEBUG("FromJID=~w, ToJID=~w, El=~w~n", [FromJID, ToJID, El]),
-	    ejabberd_router:route(FromJID, ToJID, El)
-    end,
-    {next_state, session_established, StateData};
+    NewState =
+	case ToJID of
+	    error ->
+		% TODO
+		StateData;
+	    _ ->
+		case Name of
+		    "presence" ->
+			case ToJID of
+			    {"", Server, ""} ->
+				?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
+				       [FromJID, El, StateData]),
+				presence_update(FromJID, El, StateData);
+			    _ ->
+				StateData
+			end;
+		    _ ->
+			ejabberd_router:route(FromJID, ToJID, El),
+			StateData
+		end
+	end,
+    {next_state, session_established, NewState};
 
 session_established({xmlstreamend, Name}, StateData) ->
     {stop, normal, StateData};
@@ -216,7 +242,51 @@ handle_sync_event(Event, From, StateName, StateData) ->
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData#state.sender, Text),
-    {next_state, StateName, StateData}.
+    {next_state, StateName, StateData};
+handle_info({route, From, To, Packet}, StateName, StateData) ->
+    {xmlelement, Name, Attrs, Els} = Packet,
+    % TODO
+    {Pass, NewAttrs, NewState} =
+	case Name of
+	    "presence" ->
+		case xml:get_attr_s("type", Attrs) of
+		    "probe" ->
+			process_presence_probe(From, To, StateData),
+			{false, Attrs, StateData};
+		    "error" ->
+			case ?SETS:is_element(From, StateData#state.pres_a) of
+			    true ->
+				A = ?SETS:del_element(From,
+						      StateData#state.pres_a),
+				{true, Attrs, StateData#state{pres_a = A}};
+			    _ ->
+				{true, Attrs, StateData}
+			end;
+		    "invisible" ->
+			Attrs1 = lists:keydelete("type", 1, Attrs),
+			{true, [{"type", "unavailable"} | Attrs1], StateData};
+		    "subscribe" ->
+			% TODO
+			{true, Attrs, StateData};
+		    "unsubscribe" ->
+			% TODO
+			{true, Attrs, StateData};
+		    _ ->
+			{true, Attrs, StateData}
+		end;
+	    _ ->
+		{true, Attrs, StateData}
+	end,
+    if Pass ->
+	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
+						jlib:jid_to_string(To),
+						NewAttrs),
+	    Text = xml:element_to_string({xmlelement, Name, Attrs2, Els}),
+	    send_text(StateData#state.sender, Text);
+       true ->
+	    ok
+    end,
+    {next_state, StateName, NewState}.
 
 %%----------------------------------------------------------------------
 %% Func: terminate/3
@@ -313,6 +383,128 @@ get_auth_tags([_ | L], U, P, D, R) ->
 get_auth_tags([], U, P, D, R) ->
     {U, P, D, R}.
 
+
+process_presence_probe(From, To, StateData) ->
+    case StateData#state.pres_last of
+	undefined ->
+	    ok;
+	_ ->
+	    Cond1 = (not StateData#state.pres_invis)
+		and ?SETS:is_element(From, StateData#state.pres_f)
+		and (not ?SETS:is_element(From, StateData#state.pres_i)),
+	    Cond2 = StateData#state.pres_invis
+		and ?SETS:is_element(From, StateData#state.pres_f)
+		and ?SETS:is_element(From, StateData#state.pres_a),
+	    if
+		Cond1 ->
+		    ejabberd_router:route(To, From,
+					  StateData#state.pres_last);
+		Cond2 ->
+		    ejabberd_router:route(To, From,
+					  {xmlelement, "presence",
+					   [],
+					   []});
+		true ->
+		    ok
+	    end
+    end.
+
+presence_update(From, Packet, StateData) ->
+    {xmlelement, Name, Attrs, Els} = Packet,
+    case xml:get_attr_s("type", Attrs) of
+	"unavailable" ->
+	    presence_broadcast(From, StateData#state.pres_a, Packet),
+	    presence_broadcast(From, StateData#state.pres_i, Packet),
+	    StateData#state{pres_last = undefined,
+			    pres_a = ?SETS:new(),
+			    pres_i = ?SETS:new(),
+			    pres_invis = false};
+	"invisible" ->
+	    NewState =
+		if
+		    not StateData#state.pres_invis ->
+			presence_broadcast(From, StateData#state.pres_a,
+					   Packet),
+			presence_broadcast(From, StateData#state.pres_i,
+					   Packet),
+			S1 = StateData#state{pres_last = undefined,
+					     pres_a = ?SETS:new(),
+					     pres_i = ?SETS:new(),
+					     pres_invis = false},
+			presence_broadcast_first(From, S1, Packet);
+		    true ->
+			StateData
+		end,
+	    
+	    StateData;
+	"error" ->
+	    StateData;
+	_ ->
+	    FromUnavail = (StateData#state.pres_last == undefined) or
+		StateData#state.pres_invis,
+	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
+	    NewState =
+		if
+		    FromUnavail ->
+			% TODO: watching ourself
+
+			presence_broadcast_first(From, StateData, Packet);
+		    true ->
+			presence_broadcast_to_trusted(From,
+						      StateData#state.pres_f,
+						      StateData#state.pres_a,
+						      Packet),
+			StateData
+		end,
+
+	    NewState#state{pres_last = Packet,
+			   pres_invis = false
+			  }
+    end.
+
+
+presence_broadcast(From, JIDSet, Packet) ->
+    lists:foreach(fun(JID) ->
+			  ejabberd_router:route(From, JID, Packet)
+		  end, ?SETS:to_list(JIDSet)).
+
+presence_broadcast_to_trusted(From, T, A, Packet) ->
+    lists:foreach(fun(JID) ->
+			  case ?SETS:is_element(JID, T) of
+			      true ->
+				  ejabberd_router:route(From, JID, Packet);
+			      _ ->
+				  ok
+			  end
+		  end, ?SETS:to_list(A)).
+
+
+presence_broadcast_first(From, StateData, Packet) ->
+    {U, S, _} = From,
+    ?SETS:fold(fun(JID, X) ->
+		       ejabberd_router:route({U, S, ""}, JID,
+					     {xmlelement, "presence",
+					      [{"type", "probe"}],
+					      []}),
+		       X
+	       end,
+	       [],
+	       StateData#state.pres_t),
+    if
+	StateData#state.pres_invis ->
+	    StateData;
+	true ->
+	    As = ?SETS:fold(fun(JID, A) ->
+				    ejabberd_router:route(From, JID, Packet),
+				    ?SETS:add_element(JID, A)
+			    end,
+			    StateData#state.pres_a,
+			    StateData#state.pres_f),
+	    StateData#state{pres_a = As}
+    end.
+
+
+    
 
 
 
