@@ -325,11 +325,8 @@ ErlDrvEntry stringprep_driver_entry = {
    NULL				/* F_PTR outputv, reserved */
 };
 
-#ifdef WIN32
-__declspec(dllexport)
-#endif
 DRIVER_INIT(stringprep_erl) /* must match name in driver_entry */
 {
-   return &stringprep_driver_entry;
+    return &stringprep_driver_entry;
 }
 

@@ -1,3 +1,21 @@
+2004-04-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd.erl: Added searching of files in code:priv_lib
+	(thanks to Sergei Golovan)
+	* src/translate.erl: Likewise
+
+	* src/ejabberd_app.erl: Added "log_path" configuration parameter
+	(thanks to Sergei Golovan)
+
+	* src/**/Makefile.win32: Updated (thanks to Sergei Golovan)
+
+	* src/**/*.c: Updated (thanks to Sergei Golovan)
+
+	* src/configure.erl: Added writing of version to Makefile.inc
+	(thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated link to expat (thanks to Sergei Golovan)
+
 2004-04-10  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/idna.erl: Support for IDNA (RFC3490)

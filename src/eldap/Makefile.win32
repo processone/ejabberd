@@ -11,7 +11,10 @@ OBJS = \
 ALL : $(OBJS)
 
 CLEAN :
-	-@erase ELDAPv3.asn1db ELDAPv3.erl ELDAPv3.hrl
+	-@erase ELDAPv3.asn1db
+	-@erase ELDAPv3.erl
+	-@erase ELDAPv3.hrl
+	-@erase ELDAPv3.beam
 	-@erase $(OBJS)
 
 ELDAPv3.erl : ELDAPv3.asn

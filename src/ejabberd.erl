@@ -23,7 +23,12 @@ stop() ->
 get_so_path() ->
     case os:getenv("EJABBERD_SO_PATH") of
 	false ->
-	    ".";
+	    case code:priv_dir(ejabberd) of
+		{error, _} ->
+		    ".";
+		Path ->
+		    filename:join([Path, "lib"])
+	    end;
 	Path ->
 	    Path
     end.

@@ -51,12 +51,18 @@ init() ->
     register(ejabberd, self()),
     %erlang:system_flag(fullsweep_after, 0),
     %error_logger:logfile({open, ?LOG_PATH}),
-    LogPath = case os:getenv("EJABBERD_LOG_PATH") of
-		  false ->
-		      ?LOG_PATH;
-		  Path ->
-		      Path
-	      end,
+    LogPath =
+	case application:get_env(log_path) of
+            {ok, Path} ->
+		Path;
+	    undefined ->
+		case os:getenv("EJABBERD_LOG_PATH") of
+		    false ->
+			?LOG_PATH;
+		    Path ->
+			Path
+		end
+	end,
     error_logger:add_report_handler(ejabberd_logger_h, LogPath),
     %timer:apply_interval(3600000, ?MODULE, dump_ports, []),
     ok = erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl),

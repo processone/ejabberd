@@ -12,10 +12,14 @@
 
 -export([start/0]).
 
+-include("ejabberd.hrl").
+
 start() ->
     EIDirS = "EI_DIR = " ++ code:lib_dir("erl_interface") ++ "\n",
     RootDirS = "ERLANG_DIR = " ++ code:root_dir() ++ "\n",
-    file:write_file("Makefile.inc", list_to_binary(EIDirS ++ RootDirS)),
+    Version = "EJABBERD_VERSION = " ++ ?VERSION ++ "\n",
+    file:write_file("Makefile.inc",
+		    list_to_binary(EIDirS ++ RootDirS ++ Version)),
     halt().
 
 

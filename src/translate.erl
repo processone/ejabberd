@@ -18,12 +18,18 @@
 
 start() ->
     ets:new(translations, [named_table, public]),
-    Dir = case os:getenv("EJABBERD_MSGS_PATH") of
-	      false ->
-		  ?MSGS_DIR;
-	      Path ->
-		  Path
-	  end,
+    Dir = 
+	case os:getenv("EJABBERD_MSGS_PATH") of
+	    false ->
+		case code:lib_dir(ejabberd) of
+		    {error, _} ->
+			?MSGS_DIR;
+		    Path ->
+			filename:join([Path, "msgs"])
+		end;
+	    Path ->
+		Path
+	end,
     load_dir(Dir),
     ok.
 

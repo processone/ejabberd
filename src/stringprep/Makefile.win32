@@ -4,37 +4,32 @@ include ..\Makefile.inc
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-ALL : $(OUTDIR)\stringprep_drv.dll $(OUTDIR)\stringprep.beam
+SOURCE = stringprep_drv.c
+AUXIL  = uni_data.c uni_norm.c
+OBJECT = stringprep_drv.o
+DLL    = $(OUTDIR)\stringprep_drv.dll
+
+ALL : $(DLL) $(OUTDIR)\stringprep.beam
 
 CLEAN :
-	-@erase $(OUTDIR)\stringprep_drv.dll
+	-@erase $(DLL)
 	-@erase $(OUTDIR)\stringprep_drv.exp
 	-@erase $(OUTDIR)\stringprep_drv.lib
-	-@erase stringprep_drv.obj
-	-@erase stringprep_drv.pch
-	-@erase vc60.idb
+	-@erase $(OBJECT)
 	-@erase $(OUTDIR)\stringprep.beam
 
 $(OUTDIR)\stringprep.beam : stringprep.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) stringprep.erl
 
-CPP=cl.exe
-CPP_PROJ=/nologo /ML /W3 /GX /O2 /I "$(ERLANG_DIR)\usr\include" /I "$(EI_DIR)\include" /D "__WIN32__" /D "WIN32" /D "NDEBUG" /D "_USRDLL" /D "_MBCS" /Fpstringprep_drv.pch /YX /FD /c 
+CC=cl.exe
+CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include"
 
-.c.obj::
-    $(CPP) @<<
-    $(CPP_PROJ) $< 
-<<
+LD=link.exe
+LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
 
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib "$(EI_DIR)\lib\ei.lib" "$(EI_DIR)\lib\erl_interface.lib" /nologo /subsystem:console /dll /pdb:none /machine:I386 /out:$(OUTDIR)\stringprep_drv.dll /nodefaultlib:libcmt
+$(DLL) : $(OBJECT)
+	$(LD) $(LD_FLAGS) -out:$(DLL) $(OBJECT)
 
-LINK32_OBJS=stringprep_drv.obj
-
-$(OUTDIR)\stringprep_drv.dll : $(LINK32_OBJS)
-    $(LINK32) @<<
-    $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-stringprep_drv.obj : stringprep_drv.c
+$(OBJECT) : $(SOURCE) $(AUXIL)
+    	$(CC) $(CC_FLAGS) -c -Fo$(OBJECT) $(SOURCE) 
 
