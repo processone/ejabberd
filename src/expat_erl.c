@@ -107,6 +107,7 @@ int ei_x_encode_string_fixed(ei_x_buff* x, const char* s)
 #define XML_ERROR 3
 
 #define PARSE_COMMAND 0
+#define PARSE_FINAL_COMMAND 1
 
 ei_x_buff event_buf;
 
@@ -208,8 +209,9 @@ static int expat_erl_control(ErlDrvData drv_data,
    switch (command)
    {
       case PARSE_COMMAND:
+      case PARSE_FINAL_COMMAND:
 	 ei_x_new_with_version(&event_buf);
-	 res = XML_Parse(d->parser, buf, len, 0);
+	 res = XML_Parse(d->parser, buf, len, command == PARSE_FINAL_COMMAND);
 
 	 if(!res)
 	 {

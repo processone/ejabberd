@@ -1023,7 +1023,6 @@ count_stanza_shift(Nick, Els, StateData) ->
 		 _ ->
 		     count_maxchars_shift(Nick, MaxChars, HL)
 	     end,
-   
     lists:max([Shift0, Shift1, Shift2, Shift3]).
 
 count_seconds_shift(Seconds, HistoryList) ->
@@ -1087,7 +1086,7 @@ extract_history([{xmlelement, _Name, Attrs, _SubEls} = El | Els], Type) ->
 		    end;
 		_ ->
 		    case catch list_to_integer(AttrVal) of
-			IntVal when is_integer(IntVal) and IntVal >= 0 ->
+			IntVal when is_integer(IntVal) and (IntVal >= 0) ->
 			    IntVal;
 			_ ->
 			    false
@@ -1486,7 +1485,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 					   JID, outcast,
 					   set_role(JID, none, SD));
 				     {JID, affiliation, A, Reason} when
-					   (A == admin) or (A == owner)->
+					   (A == admin) or (A == owner) ->
 					 SD1 = set_affiliation(JID, A, SD),
 					 SD2 = set_role(JID, moderator, SD1),
 					 send_update_presence(JID, SD2),

@@ -46,6 +46,7 @@
 		access,
 		shaper,
 		tls = false,
+		tls_required = false,
 		tls_enabled = false,
 		tls_options = [],
 		authentificated = false,
@@ -82,6 +83,8 @@
 	xml:element_to_string(?SERR_INVALID_NAMESPACE)).
 -define(INVALID_XML_ERR,
 	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
+-define(POLICY_VIOLATION_ERR(Lang, Text),
+	xml:element_to_string(?SERRT_POLICY_VIOLATION(Lang, Text))).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -117,8 +120,9 @@ init([{SockMod, Socket}, Opts]) ->
 		 _ -> none
 	     end,
     StartTLS = lists:member(starttls, Opts),
+    StartTLSRequired = lists:member(starttls_required, Opts),
     TLSEnabled = lists:member(tls, Opts),
-    TLS = StartTLS orelse TLSEnabled,
+    TLS = StartTLS orelse StartTLSRequired orelse TLSEnabled,
     TLSOpts = lists:filter(fun({certfile, _}) -> true;
 			      (_) -> false
 			   end, Opts),
@@ -132,15 +136,16 @@ init([{SockMod, Socket}, Opts]) ->
 		RecPid = ejabberd_receiver:start(Socket, SockMod, none),
 		{SockMod, Socket, RecPid}
 	end,
-    {ok, wait_for_stream, #state{socket      = Socket1,
-				 sockmod     = SockMod1,
-				 receiver    = ReceiverPid,
-				 tls         = TLS,
-				 tls_enabled = TLSEnabled,
-				 tls_options = TLSOpts,
-				 streamid    = new_id(),
-				 access      = Access,
-				 shaper      = Shaper}}.
+    {ok, wait_for_stream, #state{socket       = Socket1,
+				 sockmod      = SockMod1,
+				 receiver     = ReceiverPid,
+				 tls          = TLS,
+				 tls_required = StartTLSRequired,
+				 tls_enabled  = TLSEnabled,
+				 tls_options  = TLSOpts,
+				 streamid     = new_id(),
+				 access       = Access,
+				 shaper       = Shaper}}.
 
 
 %%----------------------------------------------------------------------
@@ -179,14 +184,23 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				      end, cyrsasl:listmech()),
 			    TLS = StateData#state.tls,
 			    TLSEnabled = StateData#state.tls_enabled,
+			    TLSRequired = StateData#state.tls_required,
 			    SockMod = StateData#state.sockmod,
 			    TLSFeature =
 				case (TLS == true) andalso
 				    (TLSEnabled == false) andalso
 				    (SockMod == gen_tcp) of
 				    true ->
-					[{xmlelement, "starttls",
-					  [{"xmlns", ?NS_TLS}], []}];
+					case TLSRequired of
+					    true ->
+						[{xmlelement, "starttls",
+						  [{"xmlns", ?NS_TLS}],
+						  [{xmlelement, "required",
+						    [], []}]}];
+					    _ ->
+						[{xmlelement, "starttls",
+						  [{"xmlns", ?NS_TLS}], []}]
+					end;
 				    false ->
 					[]
 				end,
@@ -379,9 +393,10 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
+    TLSRequired = StateData#state.tls_required,
     SockMod = StateData#state.sockmod,
     case {xml:get_attr_s("xmlns", Attrs), Name} of
-	{?NS_SASL, "auth"} ->
+	{?NS_SASL, "auth"} when not ((SockMod == gen_tcp) and TLSRequired) ->
 	    Mech = xml:get_attr_s("mechanism", Attrs),
 	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
 	    case cyrsasl:server_start(StateData#state.sasl_state,
@@ -429,18 +444,28 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			     tls_enabled = true
 			    }};
 	_ ->
-	    case jlib:iq_query_info(El) of
-		#iq{xmlns = ?NS_REGISTER} = IQ ->
-		    ResIQ = mod_register:process_iq(
-			      {"", "", ""}, {"", ?MYNAME, ""}, IQ),
-		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
-						{"", "", ""},
-						jlib:iq_to_xml(ResIQ)),
-		    Res = jlib:remove_attr("to", Res1),
-		    send_element(StateData, Res),
-		    {next_state, wait_for_feature_request, StateData};
-		_ ->
-		    {next_state, wait_for_feature_request, StateData}
+	    if
+		(SockMod == gen_tcp) and TLSRequired ->
+		    Lang = StateData#state.lang,
+		    send_text(StateData, ?POLICY_VIOLATION_ERR(
+					    Lang,
+					    "Use of STARTTLS required") ++
+					 ?STREAM_TRAILER),
+		    {stop, normal, StateData};
+		true ->
+		    case jlib:iq_query_info(El) of
+			#iq{xmlns = ?NS_REGISTER} = IQ ->
+			    ResIQ = mod_register:process_iq(
+				      {"", "", ""}, {"", ?MYNAME, ""}, IQ),
+			    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
+							{"", "", ""},
+							jlib:iq_to_xml(ResIQ)),
+			    Res = jlib:remove_attr("to", Res1),
+			    send_element(StateData, Res),
+			    {next_state, wait_for_feature_request, StateData};
+			_ ->
+			    {next_state, wait_for_feature_request, StateData}
+		    end
 	    end
     end;
 

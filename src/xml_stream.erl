@@ -15,7 +15,8 @@
 	 send_text/2,
 	 new/1,
 	 parse/2,
-	 close/1]).
+	 close/1,
+	 parse_element/1]).
 
 -define(XML_START, 0).
 -define(XML_END,   1).
@@ -23,6 +24,7 @@
 -define(XML_ERROR, 3).
 
 -define(PARSE_COMMAND, 0).
+-define(PARSE_FINAL_COMMAND, 1).
 
 -record(xml_stream_state, {callback_pid, port, stack}).
 
@@ -123,3 +125,54 @@ parse(#xml_stream_state{callback_pid = CallbackPid,
 
 close(#xml_stream_state{port = Port}) ->
     port_close(Port).
+
+
+parse_element(Str) ->
+    Port = open_port({spawn, expat_erl}, [binary]),
+    Res = port_control(Port, ?PARSE_FINAL_COMMAND, Str),
+    port_close(Port),
+    process_element_events(binary_to_term(Res)).
+
+process_element_events(Events) ->
+    process_element_events(Events, []).
+
+process_element_events([], _Stack) ->
+    {error, parse_error};
+process_element_events([Event | Events], Stack) ->
+    case Event of
+	{?XML_START, {Name, Attrs}} ->
+	    process_element_events(
+	      Events, [{xmlelement, Name, Attrs, []} | Stack]);
+	{?XML_END, _EndName} ->
+	    case Stack of
+		[{xmlelement, Name, Attrs, Els} | Tail] ->
+		    NewEl = {xmlelement, Name, Attrs, lists:reverse(Els)},
+		    case Tail of
+			[] ->
+			    if
+				Events == [] ->
+				    NewEl;
+				true ->
+				    {error, parse_error}
+			    end;
+			[{xmlelement, Name1, Attrs1, Els1} | Tail1] ->
+			    process_element_events(
+			      Events,
+			      [{xmlelement, Name1, Attrs1, [NewEl | Els1]} |
+			       Tail1])
+		    end
+	    end;
+	{?XML_CDATA, CData} ->
+	    case Stack of
+		[{xmlelement, Name, Attrs, Els} | Tail] ->
+		    process_element_events(
+		      Events, 
+		      [{xmlelement, Name, Attrs, [{xmlcdata, CData} | Els]} |
+		       Tail]);
+		[] ->
+		    process_element_events(Events, [])
+	    end;
+	{?XML_ERROR, Err} ->
+	    {error, Err}
+    end.
+

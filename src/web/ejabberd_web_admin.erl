@@ -1228,7 +1228,7 @@ user_info(User, Query, Lang) ->
 			       end, lists:sort(Resources)))]
 	end,
     Password = ejabberd_auth:get_password_s(User),
-    FPassword = [?INPUT("text", "password", Password), ?C(" "),
+    FPassword = [?INPUT("password", "password", Password), ?C(" "),
 		 ?INPUTT("submit", "chpassword", "Change Password")],
     QueueLen = length(mnesia:dirty_read({offline_msg, User})),
     FQueueLen = [?AC("queue/",

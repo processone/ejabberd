@@ -214,6 +214,63 @@
 %-define(SERR_,
 %	?STREAM_ERROR("")).
 
+-define(STREAM_ERRORT(Condition, Lang, Text),
+	{xmlelement, "stream:error",
+	 [],
+	 [{xmlelement, Condition, [{"xmlns", ?NS_STREAMS}], []},
+	  {xmlelement, "text", [{"xml:lang", Lang}, {"xmlns", ?NS_STREAMS}],
+	   [{xmlcdata, translate:translate(Lang, Text)}]}]}).
+
+-define(SERRT_BAD_FORMAT(Lang, Text),
+	?STREAM_ERRORT("bad-format", Lang, Text)).
+-define(SERRT_BAD_NAMESPACE_PREFIX(Lang, Text),
+	?STREAM_ERRORT("bad-namespace-prefix", Lang, Text)).
+-define(SERRT_CONFLICT(Lang, Text),
+	?STREAM_ERRORT("conflict", Lang, Text)).
+-define(SERRT_CONNECTION_TIMEOUT(Lang, Text),
+	?STREAM_ERRORT("connection-timeout", Lang, Text)).
+-define(SERRT_HOST_GONE(Lang, Text),
+	?STREAM_ERRORT("host-gone", Lang, Text)).
+-define(SERRT_HOST_UNKNOWN(Lang, Text),
+	?STREAM_ERRORT("host-unknown", Lang, Text)).
+-define(SERRT_IMPROPER_ADDRESSING(Lang, Text),
+	?STREAM_ERRORT("improper-addressing", Lang, Text)).
+-define(SERRT_INTERNAL_SERVER_ERROR(Lang, Text),
+	?STREAM_ERRORT("internal-server-error", Lang, Text)).
+-define(SERRT_INVALID_FROM(Lang, Text),
+	?STREAM_ERRORT("invalid-from", Lang, Text)).
+-define(SERRT_INVALID_ID(Lang, Text),
+	?STREAM_ERRORT("invalid-id", Lang, Text)).
+-define(SERRT_INVALID_NAMESPACE(Lang, Text),
+	?STREAM_ERRORT("invalid-namespace", Lang, Text)).
+-define(SERRT_INVALID_XML(Lang, Text),
+	?STREAM_ERRORT("invalid-xml", Lang, Text)).
+-define(SERRT_NOT_AUTHORIZED(Lang, Text),
+	?STREAM_ERRORT("not-authorized", Lang, Text)).
+-define(SERRT_POLICY_VIOLATION(Lang, Text),
+	?STREAM_ERRORT("policy-violation", Lang, Text)).
+-define(SERRT_REMOTE_CONNECTION_FAILED(Lang, Text),
+	?STREAM_ERRORT("remote-connection-failed", Lang, Text)).
+-define(SERRT_RESOURSE_CONSTRAINT(Lang, Text),
+	?STREAM_ERRORT("resource-constraint", Lang, Text)).
+-define(SERRT_RESTRICTED_XML(Lang, Text),
+	?STREAM_ERRORT("restricted-xml", Lang, Text)).
+% TODO: include hostname or IP
+-define(SERRT_SEE_OTHER_HOST(Lang, Text),
+	?STREAM_ERRORT("see-other-host", Lang, Text)).
+-define(SERRT_SYSTEM_SHUTDOWN(Lang, Text),
+	?STREAM_ERRORT("system-shutdown", Lang, Text)).
+-define(SERRT_UNSUPPORTED_ENCODING(Lang, Text),
+	?STREAM_ERRORT("unsupported-encoding", Lang, Text)).
+-define(SERRT_UNSUPPORTED_STANZA_TYPE(Lang, Text),
+	?STREAM_ERRORT("unsupported-stanza-type", Lang, Text)).
+-define(SERRT_UNSUPPORTED_VERSION(Lang, Text),
+	?STREAM_ERRORT("unsupported-version", Lang, Text)).
+-define(SERRT_XML_NOT_WELL_FORMED(Lang, Text),
+	?STREAM_ERRORT("xml-not-well-formed", Lang, Text)).
+%-define(SERRT_(Lang, Text),
+%	?STREAM_ERRORT("", Lang, Text)).
+
 
 -record(jid, {user, server, resource,
 	      luser, lserver, lresource}).
