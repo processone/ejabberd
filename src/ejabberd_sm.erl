@@ -214,6 +214,14 @@ do_route(From, To, Packet) ->
 		"iq" ->
 		    % TODO
 		    ok;
+		"broadcast" ->
+		    lists:foreach(
+		      fun(R) ->
+			      ejabberd_sm ! {route,
+					     From,
+					     {User, Server, R},
+					     Packet}
+		      end, get_user_resources(User));
 		_ ->
 		    ok
 	    end;
@@ -221,15 +229,7 @@ do_route(From, To, Packet) ->
 	    case mnesia:transaction(F) of
 		{atomic, {local, Pid}} ->
 		    ?DEBUG("sending to process ~p~n", [Pid]),
-		    % TODO
 		    Pid ! {route, From, To, Packet},
-		    %NewAttrs =
-		    %    jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-		    %    			   jlib:jid_to_string(To),
-		    %    			   Attrs),
-		    %ejabberd_c2s:send_element(
-		    %  Pid, {xmlelement, Name, NewAttrs, Els}),
-		    %?DEBUG("sended~n", []),
 		    ok;
 		{atomic, {remote, Node}} ->
 		    ?DEBUG("sending to node ~p~n", [Node]),

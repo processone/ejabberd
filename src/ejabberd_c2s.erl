@@ -279,6 +279,16 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    _ ->
 			{true, Attrs, StateData}
 		end;
+	    "broadcast" ->
+		?DEBUG("broadcast!!!!!!!!!!!~n~p~n", [Els]),
+		NewSt = case Els of
+			    [{item, IJID, ISubscription}] ->
+				roster_change(IJID, ISubscription,
+					      StateData);
+			    _ ->
+				StateData
+			end,
+		{false, Attrs, NewSt};
 	    _ ->
 		{true, Attrs, StateData}
 	end,
@@ -560,5 +570,38 @@ remove_element(E, Set) ->
     end.
 
 
+roster_change(IJID, ISubscription, StateData) ->
+    LIJID = jlib:jid_tolower(IJID),
+    case StateData#state.pres_last of
+	unknown ->
+	    StateData;
+	P ->
+	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
+	    From = {StateData#state.user, StateData#state.server, ""},
+	    Cond1 = (not StateData#state.pres_invis)
+		and ((ISubscription == both) or (ISubscription == from)),
+	    Cond2 = ((ISubscription == none) or (ISubscription == to))
+		and (?SETS:is_element(From, StateData#state.pres_a) or
+		     ?SETS:is_element(From, StateData#state.pres_i)),
+	    if
+		Cond1 ->
+		    ?DEBUG("C1: ~p~n", [LIJID]),
+		    ejabberd_router:route(From, IJID, P),
+		    A = ?SETS:add_element(LIJID,
+					  StateData#state.pres_a),
+		    StateData#state{pres_a = A};
+		Cond2 ->
+		    ?DEBUG("C2: ~p~n", [LIJID]),
+		    ejabberd_router:route(From, IJID, P),
+		    I = remove_element(LIJID,
+				       StateData#state.pres_i),
+		    A = remove_element(LIJID,
+				       StateData#state.pres_a),
+		    StateData#state{pres_i = I,
+				    pres_a = A};
+		true ->
+		    StateData
+	    end
+    end.
 
 

@@ -310,12 +310,10 @@ in_subscription(User, From, Type) ->
 				S = I#roster.subscription,
 				if
 				    (S == both) or (S == from) ->
-					ejabberd_router:route(
-					  {User, ?MYNAME, ""}, {FU, FS, ""},
-					  {xmlelement, "presence",
-					   [{"type", "subscribed"}], []}),
-					% TODO: update presence
-					false;
+					{update,
+					 {xmlelement, "presence",
+					  [{"type", "subscribed"}], []},
+					 I};
 				    true ->
 					true
 				end;
@@ -323,12 +321,10 @@ in_subscription(User, From, Type) ->
 				S = I#roster.subscription,
 				if
 				    (S == none) or (S == to) ->
-					ejabberd_router:route(
-					  {User, ?MYNAME, ""}, {FU, FS, ""},
-					  {xmlelement, "presence",
-					   [{"type", "unsubscribed"}], []}),
-					% TODO: update presence
-					false;
+					{update,
+					 {xmlelement, "presence",
+					  [{"type", "unsubscribed"}], []},
+					 I};
 				    true ->
 					true
 				end;
@@ -360,6 +356,14 @@ in_subscription(User, From, Type) ->
 	    true;
 	{atomic, false} ->
 	    false;
+	{atomic, {update, Presence, Item}} ->
+	    ejabberd_router:route({User, ?MYNAME, ""}, {FU, FS, ""}, Presence),
+	    ejabberd_sm ! {route, {"", "", ""}, {User, "", ""},
+			   {xmlelement, "broadcast", [],
+			    [{item,
+			      Item#roster.jid,
+			      Item#roster.subscription}]}},
+	    false;
 	{atomic, {push, Item}} ->
 	    push_item(User, {"", ?MYNAME, ""}, Item),
 	    true;
@@ -387,12 +391,12 @@ out_subscription(User, JID, Type) ->
 		if Item == false ->
 			ok;
 		   true ->
-			NewItem =
+			{NewItem, Update} =
 			    case Type of
 				subscribe ->
-				    Item#roster{ask = subscribe};
+				    {Item#roster{ask = subscribe}, false};
 				unsubscribe ->
-				    Item#roster{ask = unsubscribe};
+				    {Item#roster{ask = unsubscribe}, false};
 				subscribed ->
 				    S = Item#roster.subscription,
 				    NS = case S of
@@ -401,8 +405,9 @@ out_subscription(User, JID, Type) ->
 					     _    -> S
 					 end,
 					% TODO: update presence
-				    Item#roster{subscription = NS,
-						ask = none};
+				    {Item#roster{subscription = NS,
+						 ask = none},
+				     true};
 				unsubscribed ->
 				    S = Item#roster.subscription,
 				    NS = case S of
@@ -411,19 +416,29 @@ out_subscription(User, JID, Type) ->
 					     _    -> S
 					 end,
 					% TODO: update presence
-				    Item#roster{subscription = NS,
-						ask = none}
+				    {Item#roster{subscription = NS,
+						 ask = none},
+				     true}
 			    end,
 			mnesia:write(NewItem),
-			{push, NewItem}
+			{push, NewItem, Update}
 		end
 	end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
 	    ok;
-	{atomic, {push, Item}} ->
+	{atomic, {push, Item, Update}} ->
 	    push_item(User, {"", ?MYNAME, ""}, Item),
-	    true;
+	    if
+		Update ->
+		    ejabberd_sm ! {route, {"", "", ""}, {User, "", ""},
+				   {xmlelement, "broadcast", [],
+				    [{item,
+				      Item#roster.jid,
+				      Item#roster.subscription}]}};
+		true ->
+		    ok
+	    end;
 	_ ->
 	    false
     end.
