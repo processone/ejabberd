@@ -65,8 +65,8 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Socket, Opts) ->
-    gen_fsm:start(ejabberd_s2s_in, [Socket], ?FSMOPTS).
+start(SockData, Opts) ->
+    gen_fsm:start(ejabberd_s2s_in, [SockData], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -79,7 +79,7 @@ start(Socket, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket]) ->
+init([{SockMod, Socket}]) ->
     ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
     {ok, wait_for_stream, #state{socket = Socket,
 				 receiver = ReceiverPid,

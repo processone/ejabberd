@@ -283,7 +283,36 @@ get_form(["config", "acls"], Lang) ->
 			   lists:flatten(io_lib:format("~p.",
 						       [ets:tab2list(acl)])),
 			   "\n"))
-		%{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}
+	      }
+	     ]};
+
+get_form(["config", "access"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Access Configuration")}]},
+	      %{xmlelement, "instructions", [],
+	      % [{xmlcdata,
+	      %   translate:translate(
+	      %     Lang, "")}]},
+	      {xmlelement, "field", [{"type", "text-multi"},
+				     {"label",
+				      translate:translate(
+					Lang, "Access Rules")},
+				     {"var", "access"}],
+	       lists:map(fun(S) ->
+				 {xmlelement, "value", [], [{xmlcdata, S}]}
+			 end,
+			 string:tokens(
+			   lists:flatten(
+			     io_lib:format(
+			       "~p.",
+			       [ets:select(config,
+					   [{{config, {access, '$1'}, '$2'},
+					     [],
+					     [{{access, '$1', '$2'}}]}])
+			       ])),
+			   "\n"))
 	      }
 	     ]};
 
@@ -447,25 +476,71 @@ set_form(["config", "hostname"], Lang, XData) ->
 set_form(["config", "acls"], Lang, XData) ->
     case lists:keysearch("acls", 1, XData) of
 	{value, {_, Strings}} ->
-		    String = lists:foldl(fun(S, Res) ->
-						 Res ++ S ++ "\n"
-					 end, "", Strings),
-		    case erl_scan:string(String) of
-			{ok, Tokens, _} ->
-			    case erl_parse:parse_term(Tokens) of
-				{ok, ACLs} ->
-				    case acl:add_list(ACLs, true) of
-					ok ->
-					    {result, []};
-					_ ->
-					    {error, "406", "Not Acceptable"}
-				    end;
+	    String = lists:foldl(fun(S, Res) ->
+					 Res ++ S ++ "\n"
+				 end, "", Strings),
+	    case erl_scan:string(String) of
+		{ok, Tokens, _} ->
+		    case erl_parse:parse_term(Tokens) of
+			{ok, ACLs} ->
+			    case acl:add_list(ACLs, true) of
+				ok ->
+				    {result, []};
 				_ ->
 				    {error, "406", "Not Acceptable"}
 			    end;
 			_ ->
 			    {error, "406", "Not Acceptable"}
 		    end;
+		_ ->
+		    {error, "406", "Not Acceptable"}
+	    end;
+	_ ->
+	    {error, "406", "Not Acceptable"}
+    end;
+
+set_form(["config", "access"], Lang, XData) ->
+    SetAccess =
+	fun(Rs) ->
+		mnesia:transaction(
+		  fun() ->
+			  Os = mnesia:select(config,
+					     [{{config, {access, '$1'}, '$2'},
+					       [],
+					       ['$_']}]),
+			  lists:foreach(fun(O) ->
+						mnesia:delete_object(O)
+					end, Os),
+			  lists:foreach(
+			    fun({access, Name, Rules}) ->
+				    mnesia:write({config,
+						  {access, Name},
+						  Rules})
+			    end, Rs)
+		  end)
+	end,
+    case lists:keysearch("access", 1, XData) of
+	{value, {_, Strings}} ->
+	    String = lists:foldl(fun(S, Res) ->
+					 Res ++ S ++ "\n"
+				 end, "", Strings),
+	    case erl_scan:string(String) of
+		{ok, Tokens, _} ->
+		    case erl_parse:parse_term(Tokens) of
+			{ok, Rs} ->
+			    case SetAccess(Rs) of
+				{atomic, _} ->
+				    {result, []};
+				E ->
+				    io:format("A: ~p~n", [E]),
+				    {error, "406", "Not Acceptable"}
+			    end;
+			_ ->
+			    {error, "406", "Not Acceptable"}
+		    end;
+		_ ->
+		    {error, "406", "Not Acceptable"}
+	    end;
 	_ ->
 	    {error, "406", "Not Acceptable"}
     end;

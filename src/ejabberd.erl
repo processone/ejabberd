@@ -14,6 +14,8 @@
 
 start() ->
     application:start(mnesia),
+    application:start(crypto),
+    application:start(ssl),
     application:start(ejabberd).
 
 stop() ->

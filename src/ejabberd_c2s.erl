@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/2, receiver/2, sender/1, send_text/2, send_element/2]).
+-export([start/2, receiver/3, sender/2, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1, wait_for_stream/2, wait_for_auth/2, session_established/2,
@@ -61,8 +61,8 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Socket, Opts) ->
-    gen_fsm:start(ejabberd_c2s, [Socket, Opts], ?FSMOPTS).
+start(SockData, Opts) ->
+    gen_fsm:start(ejabberd_c2s, [SockData, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -75,9 +75,9 @@ start(Socket, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket, Opts]) ->
-    SenderPid = spawn(?MODULE, sender, [Socket]),
-    ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
+init([{SockMod, Socket}, Opts]) ->
+    SenderPid = spawn(?MODULE, sender, [Socket, SockMod]),
+    ReceiverPid = spawn(?MODULE, receiver, [Socket, SockMod, self()]),
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} ->
 		     A;
@@ -367,28 +367,28 @@ terminate(Reason, StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-receiver(Socket, C2SPid) ->
+receiver(Socket, SockMod, C2SPid) ->
     XMLStreamPid = xml_stream:start(C2SPid),
-    receiver(Socket, C2SPid, XMLStreamPid).
+    receiver(Socket, SockMod, C2SPid, XMLStreamPid).
 
-receiver(Socket, C2SPid, XMLStreamPid) ->
-    case gen_tcp:recv(Socket, 0) of
+receiver(Socket, SockMod, C2SPid, XMLStreamPid) ->
+    case SockMod:recv(Socket, 0) of
         {ok, Text} ->
 	    xml_stream:send_text(XMLStreamPid, Text),
-	    receiver(Socket, C2SPid, XMLStreamPid);
+	    receiver(Socket, SockMod, C2SPid, XMLStreamPid);
         {error, Reason} ->
 	    exit(XMLStreamPid, closed),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok
     end.
 
-sender(Socket) ->
+sender(Socket, SockMod) ->
     receive
 	{send_text, Text} ->
-	    gen_tcp:send(Socket,Text),
-	    sender(Socket);
+	    SockMod:send(Socket,Text),
+	    sender(Socket, SockMod);
 	close ->
-	    gen_tcp:close(Socket),
+	    SockMod:close(Socket),
 	    ok
     end.
 

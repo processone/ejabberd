@@ -218,27 +218,29 @@ Declaration of ACL in config file have following syntax:
 \item[\texttt{\{user\_regexp, <regexp>\}}] Matches local user with name that
   mathes \texttt{<regexp>}.  Example:
 \begin{verbatim}
-{acl, tests, {user, "test.*"}}.
+{acl, tests, {user, "^test[0-9]*$"}}.
 \end{verbatim}
+%$
 
 \item[\texttt{\{user\_regexp, <regexp>, <server>\}}] Matches user with name
   that mathes \texttt{<regexp>} and from server \texttt{<server>}.  Example:
 \begin{verbatim}
-{acl, tests, {user, "test.*", "localhost"}}.
+{acl, tests, {user, "^test", "localhost"}}.
 \end{verbatim}
 
 \item[\texttt{\{server\_regexp, <regexp>\}}] Matches any JID from server that
   matches \texttt{<regexp>}.  Example:
 \begin{verbatim}
-{acl, icq, {server, "icq.*"}}.
+{acl, icq, {server, "^icq\\."}}.
 \end{verbatim}
 
 \item[\texttt{\{node\_regexp, <user\_regexp>, <server\_regexp>\}}] Matches user
   with name that mathes \texttt{<user\_regexp>} and from server that matches
   \texttt{<server\_regexp>}.  Example:
 \begin{verbatim}
-{acl, aleksey, {node_regexp, "aleksey.*", "jabber.(ru|org)"}}.
+{acl, aleksey, {node_regexp, "^aleksey", "^jabber.(ru|org)$"}}.
 \end{verbatim}
+%$
 
 \item[\texttt{\{user\_glob, <glob>\}}]
 \item[\texttt{\{user\_glob, <glob>, <server>\}}]
@@ -400,7 +402,7 @@ correctly only after restart)
 
 \paragraph{Node \texttt{config/acls}}
 
-Via \ns{jabber:x:data} queries to this node possible edit ACLs list.  (See
+Via \ns{jabber:x:data} queries to this node possible to edit ACLs list.  (See
 figure~\ref{fig:acls})
 \begin{figure}[htbp]
   \centering
@@ -412,8 +414,8 @@ figure~\ref{fig:acls})
 
 \paragraph{Node \texttt{config/access}}
 
-Via \ns{jabber:x:data} queries to this node possible edit access rules.
-\textbf{Not work yet}.
+Via \ns{jabber:x:data} queries to this node possible to edit access rules.
+
 
 \paragraph{Node \texttt{config/remusers}}
 

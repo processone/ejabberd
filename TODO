@@ -5,9 +5,10 @@ admin interface
 S2S timeouts
 rewrite S2S key validation
 iq:browse (?)
-SRV DNS records
+more correctly work  with SRV DNS records (priority, weight, etc...)
 karma
 SSL
+SASL
 JEP-62,63 (?)
 make roster set work in one transaction
 

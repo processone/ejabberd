@@ -63,8 +63,8 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Socket, Opts) ->
-    gen_fsm:start(ejabberd_service, [Socket, Opts], ?FSMOPTS).
+start(SockData, Opts) ->
+    gen_fsm:start(ejabberd_service, [SockData, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -77,7 +77,7 @@ start(Socket, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket, Opts]) ->
+init([{SockMod, Socket}, Opts]) ->
     {Host, Password} =
 	case lists:keysearch(host, 1, Opts) of
 	    {value, {_, H, HOpts}} ->

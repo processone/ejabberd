@@ -43,7 +43,7 @@
 		ejabberd_mod_roster,
 		ejabberd_listeners
 	       ]},
-  {applications, [kernel, stdlib, mnesia]},
+  {applications, [kernel, stdlib, mnesia, crypto, ssl]},
   {env, []},
   {mod, {ejabberd_app, []}}]}.
 

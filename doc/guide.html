@@ -178,23 +178,23 @@ Declaration of ACL in config file have following syntax:
 <DT><TT>{user_regexp, &lt;regexp&gt;}</TT><DD> Matches local user with name that
  mathes <TT>&lt;regexp&gt;</TT>. Example:
 <PRE>
-{acl, tests, {user, "test.*"}}.
+{acl, tests, {user, "^test[0-9]*$"}}.
 </PRE>
 <DT><TT>{user_regexp, &lt;regexp&gt;, &lt;server&gt;}</TT><DD> Matches user with name
  that mathes <TT>&lt;regexp&gt;</TT> and from server <TT>&lt;server&gt;</TT>. Example:
 <PRE>
-{acl, tests, {user, "test.*", "localhost"}}.
+{acl, tests, {user, "^test", "localhost"}}.
 </PRE>
 <DT><TT>{server_regexp, &lt;regexp&gt;}</TT><DD> Matches any JID from server that
  matches <TT>&lt;regexp&gt;</TT>. Example:
 <PRE>
-{acl, icq, {server, "icq.*"}}.
+{acl, icq, {server, "^icq\\."}}.
 </PRE>
 <DT><TT>{node_regexp, &lt;user_regexp&gt;, &lt;server_regexp&gt;}</TT><DD> Matches user
  with name that mathes <TT>&lt;user_regexp&gt;</TT> and from server that matches
  <TT>&lt;server_regexp&gt;</TT>. Example:
 <PRE>
-{acl, aleksey, {node_regexp, "aleksey.*", "jabber.(ru|org)"}}.
+{acl, aleksey, {node_regexp, "^aleksey", "^jabber.(ru|org)$"}}.
 </PRE>
 <DT><TT>{user_glob, &lt;glob&gt;}</TT><DD>
 
@@ -357,7 +357,7 @@ correctly only after restart)
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC paragraph Node <TT>config/acls</TT>-->
 
 <H5> Node <TT>config/acls</TT></H5><!--SEC END -->
-Via <TT>jabber:x:data</TT> queries to this node possible edit ACLs list. (See
+Via <TT>jabber:x:data</TT> queries to this node possible to edit ACLs list. (See
 figure&nbsp;<A HREF="#fig:acls">2</A>)
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  [acls editing window]
@@ -369,8 +369,7 @@ figure&nbsp;<A HREF="#fig:acls">2</A>)
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC paragraph Node <TT>config/access</TT>-->
 
 <H5> Node <TT>config/access</TT></H5><!--SEC END -->
-Via <TT>jabber:x:data</TT> queries to this node possible edit access rules.
-<B>Not work yet</B>.<BR>
+Via <TT>jabber:x:data</TT> queries to this node possible to edit access rules.<BR>
 <BR>
 <!--TOC paragraph Node <TT>config/remusers</TT>-->
 
