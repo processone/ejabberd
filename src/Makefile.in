@@ -12,7 +12,7 @@ INCLUDES = @ERLANG_CFLAGS@ @EXPAT_CFLAGS@
 
 LIBDIRS = @ERLANG_LIBS@ @EXPAT_LIBS@
 
-SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ stringprep 
+SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ stringprep 
 
 ERLSHLIBS = expat_erl.so
 

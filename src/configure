@@ -828,6 +828,7 @@ Optional Features:
   --enable-mod_pubsub        enable mod_pubsub (default: yes)
   --enable-mod_irc        enable mod_irc (default: yes)
   --enable-mod_muc        enable mod_muc (default: yes)
+  --enable-eldap        enable eldap (default: yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3675,8 +3676,30 @@ echo "${ECHO_T}$mr_enable_mod_muc" >&6
 
 
 
+eldap=
+make_eldap=
+echo "$as_me:$LINENO: checking whether build eldap" >&5
+echo $ECHO_N "checking whether build eldap... $ECHO_C" >&6
+# Check whether --enable-eldap or --disable-eldap was given.
+if test "${enable_eldap+set}" = set; then
+  enableval="$enable_eldap"
+  mr_enable_eldap="$enableval"
+else
+  mr_enable_eldap=yes
+fi;
+if test "$mr_enable_eldap" = yes; then
+eldap=eldap
+make_eldap=eldap/Makefile
+fi
+echo "$as_me:$LINENO: result: $mr_enable_eldap" >&5
+echo "${ECHO_T}$mr_enable_eldap" >&6
 
-ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub stringprep/Makefile"
+
+
+
+
+
+ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_eldap stringprep/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4178,6 +4201,7 @@ do
   "$make_mod_irc" ) CONFIG_FILES="$CONFIG_FILES $make_mod_irc" ;;
   "$make_mod_muc" ) CONFIG_FILES="$CONFIG_FILES $make_mod_muc" ;;
   "$make_mod_pubsub" ) CONFIG_FILES="$CONFIG_FILES $make_mod_pubsub" ;;
+  "$make_eldap" ) CONFIG_FILES="$CONFIG_FILES $make_eldap" ;;
   "stringprep/Makefile" ) CONFIG_FILES="$CONFIG_FILES stringprep/Makefile" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -4283,6 +4307,8 @@ s,@mod_irc@,$mod_irc,;t t
 s,@make_mod_irc@,$make_mod_irc,;t t
 s,@mod_muc@,$mod_muc,;t t
 s,@make_mod_muc@,$make_mod_muc,;t t
+s,@eldap@,$eldap,;t t
+s,@make_eldap@,$make_eldap,;t t
 CEOF
 
 _ACEOF

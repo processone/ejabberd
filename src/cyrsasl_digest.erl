@@ -21,8 +21,13 @@
 -record(state, {step, nonce, username, authzid}).
 
 start(Opts) ->
-    cyrsasl:register_mechanism("DIGEST-MD5", ?MODULE),
-    ok.
+    case ejabberd_auth:plain_password_required() of
+	true ->
+	    ok;
+	false ->
+	    cyrsasl:register_mechanism("DIGEST-MD5", ?MODULE),
+	    ok
+    end.
 
 stop() ->
     ok.
@@ -31,7 +36,7 @@ mech_new() ->
     {ok, #state{step = 1,
 		nonce = randoms:get_string()}}.
 
-mech_step(#state{step = 1, nonce = Nonce} = State, "") ->
+mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
     {continue,
      "nonce=\"" ++ Nonce ++
      "\",qop=\"auth\",charset=utf-8,algorithm=md5-sess",

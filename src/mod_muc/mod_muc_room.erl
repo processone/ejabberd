@@ -308,6 +308,8 @@ normal_state({route, From, "",
 		_ ->
 		    {next_state, normal_state, NewStateData}
 	    end;
+	reply ->
+	    {next_state, normal_state, StateData};
 	_ ->
 	    Err = jlib:make_error_reply(
 		    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
@@ -448,11 +450,17 @@ normal_state({route, From, ToNick,
 	true ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_ITEM_NOT_FOUND),
-		    ejabberd_router:route(
-		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
-		      From, Err);
+		    case jlib:iq_query_info(Packet) of
+			reply ->
+			    ok;
+			_ ->
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERR_ITEM_NOT_FOUND),
+			    ejabberd_router:route(
+			      jlib:jid_replace_resource(
+				StateData#state.jid, ToNick),
+			      From, Err)
+		    end;
 		ToJID ->
 		    {ok, #user{nick = FromNick}} =
 			?DICT:find(jlib:jid_tolower(From),
@@ -462,11 +470,16 @@ normal_state({route, From, ToNick,
 		      ToJID, Packet)
 	    end;
 	_ ->
-	    Err = jlib:make_error_reply(
-		    Packet, ?ERR_NOT_ALLOWED),
-	    ejabberd_router:route(
-	      jlib:jid_replace_resource(StateData#state.jid, ToNick), From,
-	      Err)
+	    case jlib:iq_query_info(Packet) of
+		reply ->
+		    ok;
+		_ ->
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERR_NOT_ALLOWED),
+		    ejabberd_router:route(
+		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
+		      From, Err)
+	    end
     end,
     {next_state, normal_state, StateData};
 

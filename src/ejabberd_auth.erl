@@ -23,7 +23,11 @@
 	 get_password_s/1,
 	 is_user_exists/1,
 	 remove_user/1,
-	 remove_user/2]).
+	 remove_user/2,
+	 plain_password_required/0,
+	 check_password_ldap/2, % TODO: remove
+	 is_user_exists_ldap/1 % TODO: remove
+	]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -32,6 +36,8 @@
 	 code_change/3,
 	 handle_info/2,
 	 terminate/2]).
+
+-include("eldap/eldap.hrl").
 
 -record(state, {}).
 
@@ -59,6 +65,13 @@ start_link() ->
 init([]) ->
     mnesia:create_table(passwd,[{disc_copies, [node()]},
 				{attributes, record_info(fields, passwd)}]),
+    case auth_method() of
+	internal ->
+	    ok;
+	ldap ->
+	    LDAPServers = ejabberd_config:get_local_option(ldap_servers),
+	    eldap:start_link("ejabberd", LDAPServers, 389, "", "")
+    end,
     {ok, #state{}}.
 
 %%----------------------------------------------------------------------
@@ -108,7 +121,32 @@ terminate(_Reason, _State) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
+auth_method() ->
+    case ejabberd_config:get_local_option(auth_method) of
+	ldap ->
+	    ldap;
+	_ ->
+	    internal
+    end.
+
+plain_password_required() ->
+    case auth_method() of
+	internal ->
+	    false;
+	ldap ->
+	    true
+    end.
+
+
 check_password(User, Password) ->
+    case auth_method() of
+	internal ->
+	    check_password_internal(User, Password);
+	ldap ->
+	    check_password_ldap(User, Password)
+    end.
+
+check_password_internal(User, Password) ->
     LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_read({passwd, LUser}) of
 	[#passwd{password = Password}] ->
@@ -118,6 +156,14 @@ check_password(User, Password) ->
     end.
 
 check_password(User, Password, StreamID, Digest) ->
+    case auth_method() of
+	internal ->
+	    check_password_internal(User, Password, StreamID, Digest);
+	ldap ->
+	    check_password_ldap(User, Password, StreamID, Digest)
+    end.
+
+check_password_internal(User, Password, StreamID, Digest) ->
     LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_read({passwd, LUser}) of
 	[#passwd{password = Passwd}] ->
@@ -148,7 +194,16 @@ set_password(User, Password) ->
 	    mnesia:transaction(F)
     end.
 
+
 try_register(User, Password) ->
+    case auth_method() of
+	internal ->
+	    try_register_internal(User, Password);
+	ldap ->
+	    {error, not_allowed}
+    end.
+
+try_register_internal(User, Password) ->
     case jlib:nodeprep(User) of
 	error -> {error, invalid_jid};
 	LUser ->
@@ -187,6 +242,14 @@ get_password_s(User) ->
     end.
 
 is_user_exists(User) ->
+    case auth_method() of
+	internal ->
+	    is_user_exists_internal(User);
+	ldap ->
+	    is_user_exists_ldap(User)
+    end.
+
+is_user_exists_internal(User) ->
     LUser = jlib:nodeprep(User),
     case catch mnesia:dirty_read({passwd, LUser}) of
 	[] ->
@@ -198,6 +261,14 @@ is_user_exists(User) ->
     end.
 
 remove_user(User) ->
+    case auth_method() of
+	internal ->
+	    remove_user_internal(User);
+	ldap ->
+	    {error, not_allowed}
+    end.
+
+remove_user_internal(User) ->
     LUser = jlib:nodeprep(User),
     F = fun() ->
 		mnesia:delete({passwd, LUser})
@@ -210,6 +281,14 @@ remove_user(User) ->
     catch mod_private:remove_user(User).
 
 remove_user(User, Password) ->
+    case auth_method() of
+	internal ->
+	    remove_user_internal(User, Password);
+	ldap ->
+	    not_allowed
+    end.
+
+remove_user_internal(User, Password) ->
     LUser = jlib:nodeprep(User),
     F = fun() ->
 		case mnesia:read({passwd, LUser}) of
@@ -235,4 +314,45 @@ remove_user(User, Password) ->
 	_ ->
 	    bad_request
     end.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+check_password_ldap(User, Password, StreamID, Digest) ->
+    check_password_ldap(User, Password).
+
+check_password_ldap(User, Password) ->
+    case find_user_dn(User) of
+	false ->
+	    false;
+	DN ->
+	    case eldap:bind("ejabberd", DN, Password) of
+		ok ->
+		    true;
+		_ ->
+		    false
+	    end
+    end.
+
+is_user_exists_ldap(User) ->
+    case find_user_dn(User) of
+	false ->
+	    false;
+	_DN ->
+	    true
+    end.
+
+find_user_dn(User) ->
+    Filter = eldap:equalityMatch("uid", User),
+    Base = ejabberd_config:get_local_option(ldap_base),
+    case eldap:search("ejabberd", [{base, Base},
+				   {filter, Filter},
+				   {attributes, []}]) of
+	#eldap_search_result{entries = [E | _]} ->
+	    E#eldap_entry.object_name;
+	_ ->
+	    false
+    end.
+
+
 

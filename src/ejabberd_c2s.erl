@@ -201,13 +201,22 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    {next_state, wait_for_auth, StateData};
 	{auth, ID, get, {U, _, _, _}} ->
 	    {xmlelement, Name, Attrs, Els} = jlib:make_result_iq_reply(El),
-	    Res = {xmlelement, Name, Attrs,
-		   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
-		     [{xmlelement, "username", [], [{xmlcdata, U}]},
-		      {xmlelement, "password", [], []},
-		      {xmlelement, "digest", [], []},
-		      {xmlelement, "resource", [], []}
-		     ]}]},
+	    Res = case ejabberd_auth:plain_password_required() of
+		      false ->
+			  {xmlelement, Name, Attrs,
+			   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
+			     [{xmlelement, "username", [], [{xmlcdata, U}]},
+			      {xmlelement, "password", [], []},
+			      {xmlelement, "digest", [], []},
+			      {xmlelement, "resource", [], []}
+			     ]}]};
+		      true ->
+			  {xmlelement, Name, Attrs,
+			   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
+			     [{xmlelement, "username", [], [{xmlcdata, U}]},
+			      {xmlelement, "password", [], []}
+			     ]}]}
+		  end,
 	    send_element(StateData, Res),
 	    {next_state, wait_for_auth, StateData};
 	{auth, ID, set, {U, P, D, ""}} ->

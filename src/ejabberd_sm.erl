@@ -298,12 +298,12 @@ route_message(From, To, Packet) ->
     #jid{luser = LUser} = To,
     case catch lists:max(get_user_present_resources(LUser)) of
 	{'EXIT', _} ->
-	    case ejabberd_auth:is_user_exists(LUser) of
-		true ->
-		    case xml:get_tag_attr_s("type", Packet) of
-			"error" ->
-			    ok;
-			_ ->
+	    case xml:get_tag_attr_s("type", Packet) of
+		"error" ->
+		    ok;
+		_ ->
+		    case ejabberd_auth:is_user_exists(LUser) of
+			true ->
 			    case catch mod_offline:store_packet(
 					 From, To, Packet) of
 				{'EXIT', _} ->
@@ -312,12 +312,12 @@ route_message(From, To, Packet) ->
 				    ejabberd_router:route(To, From, Err);
 				_ ->
 				    ok
-			    end
-		    end;
-		_ ->
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_ITEM_NOT_FOUND),
-		    ejabberd_router:route(To, From, Err)
+			    end;
+			_ ->
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERR_ITEM_NOT_FOUND),
+			    ejabberd_router:route(To, From, Err)
+		    end
 	    end;
 	{_, R} ->
 	    ejabberd_sm ! {route,

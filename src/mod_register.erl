@@ -130,6 +130,8 @@ try_register(User, Password) ->
 			    {error, ?ERR_CONFLICT};
 			{error, invalid_jid} ->
 			    {error, ?ERR_JID_MALFORMED};
+			{error, not_allowed} ->
+			    {error, ?ERR_NOT_ALLOWED};
 			{error, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR}
 		    end

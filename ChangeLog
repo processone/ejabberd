@@ -1,3 +1,24 @@
+2003-11-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl_digest.erl: Bugfix (thanks to Sergei Golovan)
+
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_auth.erl: Support for LDAP authentification
+	* src/cyrsasl_digest.erl: Likewise
+	* src/mod_register.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/eldap/: Imported "eldap" package
+
+	* src/ejabberd_sm.erl: Bugfix
+
+2003-11-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Bugfixes
+
+	* (all): Version 0.5 released
+
 2003-11-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* examples/mtr/ejabberd: Updated (thanks to Marshall T. Rose)

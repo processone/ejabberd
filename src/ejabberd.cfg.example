@@ -61,6 +61,17 @@
 % Admins of this server are also admins of MUC service:
 {access, muc_admin, [{allow, admin}]}.
 
+
+% Authentification method.  If you want to use internal user base, then use
+% this line:
+{auth_method, internal}.
+
+% For LDAP uthentification use these lines instead of above one:
+%{auth_method, ldap}.
+%{ldap_servers, ["localhost"]}.    % List of LDAP servers
+%{ldap_base, "dc=example,dc=com"}. % Base of LDAP directory
+
+
 % Host name:
 {host, "localhost"}.
 
