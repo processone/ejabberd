@@ -806,8 +806,8 @@ filter_presence({xmlelement, "presence", Attrs, Els}) ->
 		     case El of
 			 {xmlcdata, _} ->
 			     false;
-			 {xmlelement, Name1, _Attrs1, _Els1} ->
-			     XMLNS = xml:get_attr_s("xmlns", Attrs),
+			 {xmlelement, Name1, Attrs1, _Els1} ->
+			     XMLNS = xml:get_attr_s("xmlns", Attrs1),
 			     case {Name1, XMLNS} of
 				 {"show", ""} ->
 				     true;
