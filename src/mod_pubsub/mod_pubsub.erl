@@ -455,13 +455,9 @@ create_new_node(Host, Node, Owner) ->
 	[] ->
 	    {LOU, LOS, _} = jlib:jid_tolower(Owner),
 	    HomeNode = ["home", LOS, LOU],
-	    case create_new_node(Host, HomeNode, Owner) of
-		{error, _} = Error ->
-		    Error;
-		_ ->
-		    NewNode = ["home", LOS, LOU, randoms:get_string()],
-		    create_new_node(Host, NewNode, Owner)
-	    end;
+	    create_new_node(Host, HomeNode, Owner),
+	    NewNode = ["home", LOS, LOU, randoms:get_string()],
+	    create_new_node(Host, NewNode, Owner);
 	_ ->
 	    LOwner = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
 	    Parent = lists:sublist(Node, length(Node) - 1),
