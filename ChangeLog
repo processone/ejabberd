@@ -1,3 +1,8 @@
+2003-09-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/mtr/ejabberd.cfg: Updated (thanks to Marshall T. Rose)
+	* examples/mtr/ejabberd: Likewise
+
 2003-09-06  Alexey Shchepin  <alexey@sevcom.net>
 
 	* examples/mtr/ejabberd.cfg: Updated (thanks to Marshall T. Rose)

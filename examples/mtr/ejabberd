@@ -61,11 +61,11 @@ start)
         ;;
 stop)
         echo "rpc:call('ejabberd@`hostname -s`', init, stop, [])." | \
-             su jabber -c "erl -sname ejabberdstop"
+             su jabber -c "/usr/pkg/bin/erl -sname ejabberdstop"
         ;;
 restart)
         echo "rpc:call('ejabberd@`hostname -s`', init, restart, [])." | \
-             su jabber -c "erl -sname ejabberdrestart"
+             su jabber -c "/usr/pkg/bin/erl -sname ejabberdrestart"
         ;;
 *)
         echo "Usage: $0 {start|stop|restart}"
