@@ -16,6 +16,7 @@
 -define(NS_VERSION,     "jabber:iq:version").
 -define(NS_TIME,        "jabber:iq:time").
 -define(NS_XDATA,       "jabber:x:data").
+-define(NS_IQDATA,      "jabber:iq:data").
 -define(NS_DELAY,       "jabber:x:delay").
 -define(NS_EVENT,       "jabber:x:event").
 -define(NS_STATS,       "http://jabber.org/protocol/stats").

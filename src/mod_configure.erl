@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_configure.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : Support for online configuration of ejabberd via x:data
+%%% Purpose : Support for online configuration of ejabberd
 %%% Created : 19 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -23,15 +23,15 @@
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_XDATA,
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_IQDATA,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_XDATA,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_IQDATA,
 				  ?MODULE, process_sm_iq, IQDisc),
     ok.
 
 stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_XDATA),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_XDATA).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_IQDATA),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_IQDATA).
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->

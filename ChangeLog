@@ -1,3 +1,11 @@
+2003-02-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/: Added configuration interface
+
+	* src/mod_configure.erl: Use jabber:iq:data instead of
+	jabber:x:data
+	* src/mod_disco.erl: Likewise
+
 2003-02-22  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_configure.erl: Backup management support

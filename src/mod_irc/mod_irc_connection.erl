@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/3, receiver/2, route_chan/4, route_nick/3]).
+-export([start/5, receiver/2, route_chan/4, route_nick/3]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -31,12 +31,10 @@
 
 -define(SETS, gb_sets).
 
--record(state, {socket, receiver, queue,
+-record(state, {socket, encoding, receiver, queue,
 		user, myname, server, nick,
 		channels = dict:new(),
 		inbuf = "", outbuf = ""}).
-
--define(IRC_ENCODING, "koi8-r").
 
 -define(DBGFSM, true).
 
@@ -49,8 +47,8 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(From, Host, Server) ->
-    gen_fsm:start(?MODULE, [From, Host, Server], ?FSMOPTS).
+start(From, Host, Server, Username, Encoding) ->
+    gen_fsm:start(?MODULE, [From, Host, Server, Username, Encoding], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -63,12 +61,12 @@ start(From, Host, Server) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([From, Host, Server]) ->
+init([From, Host, Server, Username, Encoding]) ->
     gen_fsm:send_event(self(), init),
-    {Nick, _, _} = From,
     {ok, open_socket, #state{queue = queue:new(),
+			     encoding = Encoding,
 			     user = From,
-			     nick = Nick,
+			     nick = Username,
 			     myname = Host,
 			     server = Server}}.
 
@@ -84,13 +82,10 @@ open_socket(init, StateData) ->
     ?DEBUG("connecting to ~s:~p~n", [Addr, Port]),
     case gen_tcp:connect(Addr, Port, [binary, {packet, 0}]) of
 	{ok, Socket} ->
-	    % TODO: send nick, etc...
-	    %send_text(Socket, io_lib:format(?STREAM_HEADER,
-	    %    			    [StateData#state.server])),
-	    %send_queue(StateData#state.socket, StateData#state.queue),
-	    send_text(Socket, io_lib:format("NICK ~s\r\n",
-					    [StateData#state.nick])),
-	    send_text(Socket,
+	    NewStateData = StateData#state{socket = Socket},
+	    send_text(NewStateData,
+		      io_lib:format("NICK ~s\r\n", [StateData#state.nick])),
+	    send_text(NewStateData,
 		      io_lib:format(
 			"USER ~s ~s ~s :~s\r\n",
 			[StateData#state.nick,
@@ -98,7 +93,7 @@ open_socket(init, StateData) ->
 			 StateData#state.myname,
 			 StateData#state.nick])),
 	    {next_state, wait_for_registration,
-	     StateData#state{socket = Socket}};
+	     NewStateData};
 	{error, Reason} ->
 	    ?DEBUG("connect return ~p~n", [Reason]),
 	    Text = case Reason of
@@ -164,7 +159,7 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 -define(SEND(S),
 	if
 	    StateName == stream_established ->
-		send_text(StateData#state.socket, S),
+		send_text(StateData, S),
 		StateData;
 	    true ->
 		StateData#state{outbuf = StateData#state.outbuf ++ S}
@@ -297,7 +292,7 @@ handle_info({route_nick, Nick, Packet}, StateName, StateData) ->
 
 
 handle_info({ircstring, [$P, $I, $N, $G, $  | ID]}, StateName, StateData) ->
-    send_text(StateData#state.socket, "PONG " ++ ID ++ "\r\n"),
+    send_text(StateData, "PONG " ++ ID ++ "\r\n"),
     {next_state, StateName, StateData};
 
 handle_info({ircstring, [$: | String]}, StateName, StateData) ->
@@ -343,7 +338,7 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 	    "" ->
 		NewStateData;
 	    Data ->
-		send_text(NewStateData#state.socket, Data),
+		send_text(NewStateData, Data),
 		NewStateData#state{outbuf = ""}
 	end,
     {next_state, stream_established, NewStateData1};
@@ -360,22 +355,13 @@ handle_info({ircstring, String}, StateName, StateData) ->
 
 
 handle_info({send_text, Text}, StateName, StateData) ->
-    send_text(StateData#state.socket, Text),
+    send_text(StateData, Text),
     {next_state, StateName, StateData};
-handle_info({send_element, El}, StateName, StateData) ->
-    case StateName of
-	stream_established ->
-	    send_element(StateData#state.socket, El),
-	    {next_state, StateName, StateData};
-	_ ->
-	    Q = queue:in(El, StateData#state.queue),
-	    {next_state, StateName, StateData#state{queue = Q}}
-    end;
 handle_info({tcp, Socket, Data}, StateName, StateData) ->
     Buf = StateData#state.inbuf ++ binary_to_list(Data),
     {ok, Strings} = regexp:split([C || C <- Buf, C /= $\r], "\n"),
     io:format("strings=~p~n", [Strings]),
-    NewBuf = process_lines(Strings),
+    NewBuf = process_lines(StateData#state.encoding, Strings),
     {next_state, StateName, StateData#state{inbuf = NewBuf}};
 handle_info({tcp_closed, Socket}, StateName, StateData) ->
     gen_fsm:send_event(self(), closed),
@@ -430,13 +416,11 @@ receiver(Socket, C2SPid, XMLStreamPid) ->
 	    ok
     end.
 
-send_text(Socket, Text) ->
-    CText = iconv:convert("utf-8", ?IRC_ENCODING, lists:flatten(Text)),
+send_text(#state{socket = Socket, encoding = Encoding}, Text) ->
+    CText = iconv:convert("utf-8", Encoding, lists:flatten(Text)),
     %io:format("IRC OUTu: ~s~nIRC OUTk: ~s~n", [Text, CText]),
     gen_tcp:send(Socket, CText).
 
-send_element(Socket, El) ->
-    send_text(Socket, xml:element_to_string(El)).
 
 %send_queue(Socket, Q) ->
 %    case queue:out(Q) of
@@ -474,11 +458,11 @@ route_nick(Pid, Nick, Packet) ->
     Pid ! {route_nick, Nick, Packet}.
 
 
-process_lines([S]) ->
+process_lines(Encoding, [S]) ->
     S;
-process_lines([S | Ss]) ->
-    self() ! {ircstring, iconv:convert(?IRC_ENCODING, "utf-8", S)},
-    process_lines(Ss).
+process_lines(Encoding, [S | Ss]) ->
+    self() ! {ircstring, iconv:convert(Encoding, "utf-8", S)},
+    process_lines(Encoding, Ss).
 
 process_channel_list(StateData, Items) ->
     process_channel_list_find_chan(StateData, Items).
@@ -580,7 +564,7 @@ process_privmsg(StateData, Nick, From, String) ->
 process_version(StateData, Nick, From) ->
     [FromUser | _] = string:tokens(From, "!"),
     send_text(
-      StateData#state.socket,
+      StateData,
       io_lib:format("NOTICE ~s :\001VERSION "
 		    "ejabberd IRC transport ~s (c) Alexey Shchepin"
 		    "\001\r\n",

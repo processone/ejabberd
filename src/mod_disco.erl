@@ -125,28 +125,28 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		    {iq, ID, result, XMLNS, [{xmlelement,
 					      "query",
 					      [{"xmlns", XMLNS}],
-					      [feature_to_xml({?NS_XDATA})
+					      [feature_to_xml({?NS_IQDATA})
 					      ]
 					     }]};
 		["running nodes", ENode, "modules"] -> ?EMPTY_INFO_RESULT;
 		["running nodes", ENode, "modules", _] ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
-		       [feature_to_xml({?NS_XDATA})]}]};
+		       [feature_to_xml({?NS_IQDATA})]}]};
 		["running nodes", ENode, "backup"] -> ?EMPTY_INFO_RESULT;
 		["running nodes", ENode, "backup", _] ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
-		       [feature_to_xml({?NS_XDATA})]}]};
+		       [feature_to_xml({?NS_IQDATA})]}]};
 		["running nodes", ENode, "import"] -> ?EMPTY_INFO_RESULT;
 		["running nodes", ENode, "import", _] ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
-		       [feature_to_xml({?NS_XDATA})]}]};
+		       [feature_to_xml({?NS_IQDATA})]}]};
 		["config", _] ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
-		       [feature_to_xml({?NS_XDATA})]}]};
+		       [feature_to_xml({?NS_IQDATA})]}]};
 		_ ->
 		    {iq, ID, error, XMLNS,
 		     [SubEl, {xmlelement, "error",
@@ -443,7 +443,7 @@ process_sm_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		"" ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
-		       [feature_to_xml({?NS_XDATA})]}]};
+		       [feature_to_xml({?NS_IQDATA})]}]};
 		_ ->
 		    {iq, ID, error, XMLNS,
 		     [SubEl, {xmlelement, "error",
