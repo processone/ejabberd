@@ -9,6 +9,7 @@
 -define(NS_DISCO_INFO,  "http://jabber.org/protocol/disco#info").
 -define(NS_VCARD,       "vcard-temp").
 -define(NS_AUTH,        "jabber:iq:auth").
+-define(NS_AUTH_ERROR,  "jabber:iq:auth:error").
 -define(NS_REGISTER,    "jabber:iq:register").
 -define(NS_SEARCH,      "jabber:iq:search").
 -define(NS_ROSTER,      "jabber:iq:roster").
@@ -27,9 +28,8 @@
 
 -define(NS_STREAM,      "http://etherx.jabber.org/streams").
 
-% TODO: replace "xmppcore-rfc-number" with real RFC number
--define(NS_STANZAS,     "urn:ietf:rfc:xmppcore-rfc-number:stanzas").
--define(NS_STREAMS,     "urn:ietf:rfc:xmppcore-rfc-number:streams").
+-define(NS_STANZAS,     "urn:ietf:params:xml:ns:xmpp-stanzas").
+-define(NS_STREAMS,     "urn:ietf:params:xml:ns:xmpp-streams").
 
 -define(NS_SASL_MECHANISMS, "http://www.iana.org/assignments/sasl-mechanisms").
 
@@ -67,6 +67,21 @@
 	?STANZA_ERROR("503", "server",    "service-unavailable")).
 %-define(ERR_,
 %	?STANZA_ERROR("", "", "")).
+
+% Application-specific stanza errors
+-define(AUTH_STANZA_ERROR(Condition),
+	{xmlelement, "error",
+	 [{"code", "406"}, {"class", "app"}],
+	 [{xmlelement, "auth-condition",
+	   [{"xmlns", ?NS_AUTH_ERROR}],
+	   [{xmlelement, Condition, [], []}]}]}).
+
+-define(ERR_AUTH_NO_RESOURCE_PROVIDED,
+	?AUTH_STANZA_ERROR("no-resource-provided")).
+-define(ERR_AUTH_BAD_RESOURCE_FORMAT,
+	?AUTH_STANZA_ERROR("bad-resource-format")).
+-define(ERR_AUTH_RESOURCE_CONFLICT,
+	?AUTH_STANZA_ERROR("resource-conflict")).
 
 
 -define(STREAM_ERROR(Class, Condition),

@@ -1,3 +1,12 @@
+2003-04-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Added jaber:iq:auth:error namespace and
+	appropriate errors
+	* src/ejabberd_c2s.erl: Use auth:error in appropriate places
+
+	* src/jlib.hrl: Changed stream error and stanza error namespace
+	names due to last XMPP Core changes
+
 2003-03-28  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_muc/mod_muc_room.erl: Added support for grant/revoke

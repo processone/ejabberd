@@ -178,7 +178,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    send_element(StateData#state.socket, Res),
 	    {next_state, wait_for_auth, StateData};
 	{auth, ID, set, {U, P, D, ""}} ->
-	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+	    Err = jlib:make_error_reply(El, ?ERR_AUTH_NO_RESOURCE_PROVIDED),
 	    send_element(StateData#state.socket, Err),
 	    {next_state, wait_for_auth, StateData};
 	{auth, ID, set, {U, P, D, R}} ->
@@ -316,7 +316,7 @@ wait_for_resource_auth({xmlstreamelement, El}, StateData) ->
 	    send_element(StateData#state.socket, Res),
 	    {next_state, wait_for_resource_auth, StateData};
 	{auth, ID, set, {U, _, _, ""}} ->
-	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+	    Err = jlib:make_error_reply(El, ?ERR_AUTH_NO_RESOURCE_PROVIDED),
 	    send_element(StateData#state.socket, Err),
 	    {next_state, wait_for_resource_auth, StateData};
 	{auth, ID, set, {U, _, _, R}} ->
