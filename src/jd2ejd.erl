@@ -31,7 +31,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(state, {socket, pid,
+-record(state, {socket, pid, xml_stream_pid,
 		user = "", server = ?MYNAME, resource = ""
 	       }).
 
@@ -66,10 +66,14 @@ start(File, User) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([File, User, Pid]) ->
+    % Profiling
+    %eprof:start(),
+    %eprof:profile([self()]),
     XMLStreamPid = xml_stream:start(self()),
     {ok, Text} = file:read_file(File),
     xml_stream:send_text(XMLStreamPid, Text),
-    {ok, wait_for_xdb, #state{user = User, pid = Pid}}.
+    {ok, wait_for_xdb, #state{user = User, pid = Pid,
+			      xml_stream_pid = XMLStreamPid}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -145,7 +149,6 @@ xdb_data({xmlstreamend, Name}, StateData) ->
     {stop, normal, StateData};
 
 xdb_data(closed, StateData) ->
-    % TODO
     {stop, normal, StateData}.
 
 
@@ -203,7 +206,12 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
+    exit(StateData#state.xml_stream_pid, closed),
     StateData#state.pid ! {jd2ejd, Reason},
+    % Profiling
+    %eprof:log("/tmp/eprof"),
+    %eprof:analyse(),
+    %eprof:stop(),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -233,7 +241,7 @@ import_file(File) ->
     start(File),
     receive
 	{jd2ejd, Result} -> Result
-	after 4000 -> timeout
+	%after 4000 -> timeout
     end.
 
 clear_queue() ->

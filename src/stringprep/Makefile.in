@@ -1,12 +1,18 @@
 # $Id$
 
-include ../Makefile.inc
 
-INCLUDES = -I$(ERLANG_DIR)/usr/include \
-	   -I$(EI_DIR)/include \
-	   -I/usr/local/include
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
 
-LIBDIRS = -L$(EI_DIR)/lib -L/usr/local/lib
+INCLUDES = @ERLANG_CFLAGS@
+
+LIBDIRS = @ERLANG_LIBS@
+
+SUBDIRS = 
+
 
 ERLSHLIBS = ../stringprep_drv.so
 
@@ -35,7 +41,7 @@ $(ERLSHLIBS):	../%.so:	%.c uni_data.c uni_norm.c
 			-o $@ -fpic -shared \
 
 clean:
-	rm -f *.beam
+	rm -f $(OBJS) $(ERLSHLIBS)
 
 TAGS:
 	etags *.erl

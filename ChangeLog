@@ -1,3 +1,18 @@
+2003-10-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/configure.ac: Build system now done using autoconf (thanks
+	to Balabanov Dmitry)
+	* src/aclocal.m4: Likewise
+	* src/**/Makefile.in: Likewise
+
+	* src/mod_roster.erl (process_item_set_t): Slightly improved
+	performance
+
+	* src/jd2ejd.erl: Added missed closing of XML stream process,
+	removed timeout value from import_file/1
+
+	* src/ejabberd_auth.erl: Added checks for invalid user name
+
 2003-10-16  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_configure.erl: Fixed some error codes

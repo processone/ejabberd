@@ -144,25 +144,32 @@ check_password(User, Password, StreamID, Digest) ->
 
 
 set_password(User, Password) ->
-    LUser = jlib:nodeprep(User),
-    F = fun() ->
-		mnesia:write(#passwd{user = LUser, password = Password})
-        end,
-    mnesia:transaction(F).
+    case jlib:nodeprep(User) of
+	error -> {error, invalid_jid};
+	LUser ->
+	    F = fun() ->
+			mnesia:write(#passwd{user = LUser,
+					     password = Password})
+		end,
+	    mnesia:transaction(F)
+    end.
 
 try_register(User, Password) ->
-    LUser = jlib:nodeprep(User),
-    F = fun() ->
-		case mnesia:read({passwd, LUser}) of
-		    [] ->
-			mnesia:write(#passwd{user = LUser,
-					     password = Password}),
-			ok;
-		    [E] ->
-			exists
-		end
-        end,
-    mnesia:transaction(F).
+    case jlib:nodeprep(User) of
+	error -> {error, invalid_jid};
+	LUser ->
+	    F = fun() ->
+			case mnesia:read({passwd, LUser}) of
+			    [] ->
+				mnesia:write(#passwd{user = LUser,
+						     password = Password}),
+				ok;
+			    [E] ->
+				exists
+			end
+		end,
+	    mnesia:transaction(F)
+    end.
 
 dirty_get_registered_users() ->
     mnesia:dirty_all_keys(passwd).

@@ -1,12 +1,16 @@
 # $Id$
 
-include ../Makefile.inc
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
 
-INCLUDES = -I$(ERLANG_DIR)/usr/include \
-	   -I$(EI_DIR)/include \
-	   -I/usr/local/include
+INCLUDES = @ERLANG_CFLAGS@
 
-LIBDIRS = -L$(EI_DIR)/lib -L/usr/local/lib
+LIBDIRS = @ERLANG_LIBS@
+
+SUBDIRS = 
 
 ERLSHLIBS = ../iconv_erl.so
 
@@ -30,14 +34,14 @@ $(OUTDIR)/%.beam:       %.erl
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
 $(ERLSHLIBS):	../%.so:	%.c
-			gcc -Wall $(INCLUDES) $(LIBDIRS) \
+			$(CC) -Wall $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LIBDIRS) \
 			$(subst ../,,$(subst .so,.c,$@)) \
-			-lerl_interface \
+			-lerl_interface @LIBICONV@ \
 			-lei \
 			-o $@ -fpic -shared \
 
 clean:
-	rm -f *.beam
+	rm -f $(OBJS) $(ERLSHLIBS)
 
 TAGS:
 	etags *.erl

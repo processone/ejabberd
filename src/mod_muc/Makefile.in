@@ -1,12 +1,16 @@
 # $Id$
 
-include ../Makefile.inc
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
 
-INCLUDES = -I$(ERLANG_DIR)/usr/include \
-	   -I$(EI_DIR)/include \
-	   -I/usr/local/include
+INCLUDES = @ERLANG_CFLAGS@
 
-LIBDIRS = -L$(EI_DIR)/lib -L/usr/local/lib
+LIBDIRS = @ERLANG_LIBS@
+
+SUBDIRS = 
 
 
 OUTDIR = ..
@@ -22,7 +26,7 @@ $(OUTDIR)/%.beam:       %.erl
 
 
 clean:
-	rm -f *.beam
+	rm -f $(OBJS)
 
 TAGS:
 	etags *.erl

@@ -486,21 +486,20 @@ remove_user(User) ->
 
 set_items(User, SubEl) ->
     {xmlelement, Name, Attrs, Els} = SubEl,
+    LUser = jlib:nodeprep(User),
     F = fun() ->
-		lists:foreach(fun(El) -> process_item_set_t(User, El) end, Els)
+		lists:foreach(fun(El) -> process_item_set_t(LUser, El) end, Els)
 	end,
     mnesia:transaction(F).
 
-process_item_set_t(User, {xmlelement, Name, Attrs, Els} = XItem) ->
+process_item_set_t(LUser, {xmlelement, Name, Attrs, Els} = XItem) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
-    LUser = jlib:nodeprep(User),
     case JID1 of
 	error ->
 	    ok;
 	_ ->
 	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
-	    LJID = jlib:jid_tolower(JID),
-	    Res = mnesia:read({roster, {LUser, LJID}}),
+	    LJID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
 	    Item = #roster{uj = {LUser, LJID},
 			   user = LUser,
 			   jid = JID},
@@ -513,7 +512,7 @@ process_item_set_t(User, {xmlelement, Name, Attrs, Els} = XItem) ->
 		    mnesia:write(Item2)
 	    end
     end;
-process_item_set_t(User, _) ->
+process_item_set_t(LUser, _) ->
     ok.
 
 process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->

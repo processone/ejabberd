@@ -1,0 +1,47 @@
+# $Id$
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+INCLUDES = @ERLANG_CFLAGS@ @EXPAT_CFLAGS@
+
+LIBDIRS = @ERLANG_LIBS@ @EXPAT_LIBS@
+
+SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ stringprep 
+
+ERLSHLIBS = expat_erl.so
+
+all: all-recursive $(ERLSHLIBS) compile-beam
+
+compile-beam:
+	@erl -s make all report -noinput -s erlang halt
+
+
+all-recursive install-recursive uninstall-recursive \
+clean-recursive distclean-recursive \
+mostlyclean-recursive maintainer-clean-recursive:
+	@subdirs="$(SUBDIRS)"; for subdir in $$subdirs; do \
+	target=`echo $@|sed 's,-recursive,,'`; \
+	echo making $$target in $$subdir; \
+	(cd $$subdir && $(MAKE) $$target) || exit 1; \
+	done
+
+
+$(ERLSHLIBS):	../%.so:	%.c
+			gcc -Wall $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LIBDIRS) \
+			$(subst ../,,$(subst .so,.c,$@)) \
+			-lerl_interface \
+			-lei \
+			-o $@ -fpic -shared \
+
+clean: clean-recursive
+	rm -f *.beam $(ERLSHLIBS)
+
+TAGS:
+	etags *.erl
+
+Makefile: Makefile.in
+    
