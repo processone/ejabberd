@@ -126,7 +126,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 get_form(["running nodes", ENode, "DB"], Lang) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    case rpc:call(Node, mnesia, system_info, [tables]) of
 		{badrpc, Reason} ->
@@ -160,7 +160,7 @@ get_form(["running nodes", ENode, "DB"], Lang) ->
 get_form(["running nodes", ENode, "modules", "stop"], Lang) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    case rpc:call(Node, gen_mod, loaded_modules, []) of
 		{badrpc, Reason} ->
@@ -387,7 +387,7 @@ get_form(_, Lang) ->
 set_form(["running nodes", ENode, "DB"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    lists:foreach(
 	      fun({SVar, SVals}) ->
@@ -421,7 +421,7 @@ set_form(["running nodes", ENode, "DB"], Lang, XData) ->
 set_form(["running nodes", ENode, "modules", "stop"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    lists:foreach(
 	      fun({Var, Vals}) ->
@@ -439,7 +439,7 @@ set_form(["running nodes", ENode, "modules", "stop"], Lang, XData) ->
 set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    case lists:keysearch("modules", 1, XData) of
 		false ->
@@ -475,7 +475,7 @@ set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
 set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
@@ -498,7 +498,7 @@ set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
 set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
@@ -522,7 +522,7 @@ set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
 set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
@@ -545,7 +545,7 @@ set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
 set_form(["running nodes", ENode, "import", "file"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
@@ -562,7 +562,7 @@ set_form(["running nodes", ENode, "import", "file"], Lang, XData) ->
 set_form(["running nodes", ENode, "import", "dir"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, "404", "Not Found"};
+	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->

@@ -33,7 +33,7 @@ mech_new() ->
 
 mech_step(#state{step = 1, nonce = Nonce} = State, "") ->
     {continue,
-     "nonce=\"" ++ jlib:encode_base64(Nonce) ++
+     "nonce=\"" ++ Nonce ++
      "\",qop=\"auth\",charset=utf-8,algorithm=md5-sess",
      %"\",qop=\"auth,auth-int\",charset=utf-8,algorithm=md5-sess",
      State#state{step = 3}};
@@ -48,13 +48,13 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 		false ->
 		    {error, "no-user"};
 		Passwd ->
-		    Response = response(KeyVals, UserName, Passwd, AuthzId,
-					"AUTHENTICATE"),
+		    Response = response(KeyVals, UserName, Passwd,
+					Nonce, AuthzId, "AUTHENTICATE"),
 		    case xml:get_attr_s("response", KeyVals) of
 			Response ->
 			    RspAuth = response(KeyVals,
 					       UserName, Passwd,
-					       AuthzId, ""),
+					       Nonce, AuthzId, ""),
 			    {continue,
 			     "rspauth=" ++ RspAuth,
 			     State#state{step = 5,
@@ -127,9 +127,8 @@ hex([N | Ns], Res) ->
 	     digit_to_xchar(N div 16) | Res]).
 
 
-response(KeyVals, User, Passwd, AuthzId, A2Prefix) ->
+response(KeyVals, User, Passwd, Nonce, AuthzId, A2Prefix) ->
     Realm = xml:get_attr_s("realm", KeyVals),
-    Nonce = xml:get_attr_s("nonce", KeyVals),
     CNonce = xml:get_attr_s("cnonce", KeyVals),
     DigestURI = xml:get_attr_s("digest-uri", KeyVals),
     NC = xml:get_attr_s("nc", KeyVals),

@@ -1,3 +1,9 @@
+2003-10-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_configure.erl: Fixed some error codes
+
+	* src/cyrsasl_digest.erl: Bugfix (thanks to Justin Karneges)
+
 2003-10-14  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_local.erl: Bugfix
