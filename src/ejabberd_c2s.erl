@@ -856,7 +856,8 @@ terminate(_Reason, StateName, StateData) ->
 			      [{xmlelement, "status", [],
 				[{xmlcdata, "Replaced by new connection"}]}]},
 		    ejabberd_sm:unset_presence(StateData#state.user,
-					       StateData#state.resource),
+					       StateData#state.resource,
+					       "Replaced by new connection"),
 		    presence_broadcast(
 		      StateData, From, StateData#state.pres_a, Packet),
 		    presence_broadcast(
@@ -867,15 +868,26 @@ terminate(_Reason, StateName, StateData) ->
 			       jlib:jid_to_string(StateData#state.jid)]),
 		    ejabberd_sm:close_session(StateData#state.user,
 					      StateData#state.resource),
-		    From = StateData#state.jid,
-		    Packet = {xmlelement, "presence",
-			      [{"type", "unavailable"}], []},
-		    ejabberd_sm:unset_presence(StateData#state.user,
-					       StateData#state.resource),
-		    presence_broadcast(
-		      StateData, From, StateData#state.pres_a, Packet),
-		    presence_broadcast(
-		      StateData, From, StateData#state.pres_i, Packet)
+
+		    Tmp = ?SETS:new(),
+		    case StateData of
+			#state{pres_last = undefined,
+			       pres_a = Tmp,
+			       pres_i = Tmp,
+			       pres_invis = false} ->
+			    ok;
+			_ ->
+			    From = StateData#state.jid,
+			    Packet = {xmlelement, "presence",
+				      [{"type", "unavailable"}], []},
+			    ejabberd_sm:unset_presence(StateData#state.user,
+						       StateData#state.resource,
+						       ""),
+			    presence_broadcast(
+			      StateData, From, StateData#state.pres_a, Packet),
+			    presence_broadcast(
+			      StateData, From, StateData#state.pres_i, Packet)
+		    end
 	    end;
 	_ ->
 	    ok
@@ -984,8 +996,15 @@ presence_update(From, Packet, StateData) ->
     {xmlelement, _Name, Attrs, _Els} = Packet,
     case xml:get_attr_s("type", Attrs) of
 	"unavailable" ->
+	    Status = case xml:get_subtag(Packet, "status") of
+			 false ->
+			    "";
+			 StatusTag ->
+			    xml:get_tag_cdata(StatusTag)
+		     end,
 	    ejabberd_sm:unset_presence(StateData#state.user,
-				       StateData#state.resource),
+				       StateData#state.resource,
+				       Status),
 	    presence_broadcast(StateData, From, StateData#state.pres_a, Packet),
 	    presence_broadcast(StateData, From, StateData#state.pres_i, Packet),
 	    StateData#state{pres_last = undefined,

@@ -871,7 +871,17 @@ Options:
 <B><TT>host</TT></B><DD> Defines hostname of service
 (see&nbsp;<A HREF="#sec:modhostoption">A.1.2</A>). If not present
 then prefix <TT>irc.</TT> is added to main <TT>ejabberd</TT> hostname.
+<DT><B><TT>access</TT></B><DD> Specifies who is allowed to use IRC transport (default value is <TT>all</TT>).
 </DL>
+Example:
+<PRE>
+  {modules,
+   [
+    ...
+    {mod_irc, [{access, all}]},
+    ...
+   ]}.
+</PRE>
 <!--TOC subsection <TT>mod_last</TT>-->
 
 <H3><A NAME="htoc36">A.6</A>&nbsp;&nbsp;<TT>mod_last</TT></H3><!--SEC END -->
@@ -981,14 +991,15 @@ Example:
 <H3><A NAME="htoc42">A.12</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="sec:modregister"></A>
-This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0077.html">JEP-0077</A> (In-Band Registration).
-It is possible to restrict registration via ``register''
-access rule. If this rule returns ``deny'' on requested user name, then
-registration is not allowed for it.<BR>
+This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0077.html">JEP-0077</A> (In-Band Registration).<BR>
 <BR>
 Options:
 <DL COMPACT=compact><DT>
-<B><TT>iqdisc</TT></B><DD> <TT>jabber:iq:register</TT> IQ queries processing
+<B><TT>access</TT></B><DD> Specifies rule to restrict registration.
+If this rule returns ``deny'' on requested user name, then
+registration is not allowed for it. (default value is <TT>all</TT>, which means
+no restrictions).
+<DT><B><TT>iqdisc</TT></B><DD> <TT>jabber:iq:register</TT> IQ queries processing
 discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 Example:
@@ -1004,7 +1015,7 @@ Example:
   {modules,
    [
     ...
-    {mod_register, []},
+    {mod_register, [{access, register}]},
     ...
    ]}.
 </PRE>

@@ -16,13 +16,13 @@
 	 stop/0,
 	 process_local_iq/3,
 	 process_sm_iq/3,
-	 on_presence_update/1,
+	 on_presence_update/2,
 	 remove_user/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(last_activity, {user, timestamp}).
+-record(last_activity, {user, timestamp, status}).
 
 
 start(Opts) ->
@@ -30,6 +30,7 @@ start(Opts) ->
     mnesia:create_table(last_activity,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, last_activity)}]),
+    update_table(),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_LAST,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_LAST,
@@ -93,7 +94,7 @@ get_last(IQ, SubEl, LUser) ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
 	[] ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
-	[#last_activity{timestamp = TimeStamp}] ->
+	[#last_activity{timestamp = TimeStamp, status = Status}] ->
 	    {MegaSecs, Secs, _MicroSecs} = now(),
 	    TimeStamp2 = MegaSecs * 1000000 + Secs,
 	    Sec = TimeStamp2 - TimeStamp,
@@ -101,17 +102,18 @@ get_last(IQ, SubEl, LUser) ->
 		  sub_el = [{xmlelement, "query",
 			     [{"xmlns", ?NS_LAST},
 			      {"seconds", integer_to_list(Sec)}],
-			     []}]}
+			     [{xmlcdata, Status}]}]}
     end.
 
 
 
-on_presence_update(LUser) ->
+on_presence_update(LUser, Status) ->
     {MegaSecs, Secs, _MicroSecs} = now(),
     TimeStamp = MegaSecs * 1000000 + Secs,
     F = fun() ->
 		mnesia:write(#last_activity{user = LUser,
-					    timestamp = TimeStamp})
+					    timestamp = TimeStamp,
+					    status = Status})
 	end,
     mnesia:transaction(F).
 
@@ -122,3 +124,22 @@ remove_user(User) ->
 		mnesia:delete({last_activity, LUser})
 	end,
     mnesia:transaction(F).
+
+
+update_table() ->
+    Fields = record_info(fields, last_activity),
+    case mnesia:table_info(last_activity, attributes) of
+	Fields ->
+	    ok;
+	[user, timestamp] ->
+	    ?INFO_MSG("Converting last_activity table from {user, timestamp} format", []),
+	    mnesia:transform_table(
+	      last_activity,
+	      fun({_, U, T}) ->
+		      #last_activity{user = U, timestamp = T, status = ""}
+	      end, Fields);
+	_ ->
+	    ?INFO_MSG("Recreating last_activity table", []),
+	    mnesia:transform_table(last_activity, ignore, Fields)
+    end.
+

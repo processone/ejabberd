@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/1, stop/0, closed_conection/2,
+-export([start/1, init/2, stop/0, closed_conection/2,
 	 get_user_and_encoding/2]).
 
 -include("ejabberd.hrl").
@@ -29,34 +29,48 @@ start(Opts) ->
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, irc_custom)}]),
     Host = gen_mod:get_opt(host, Opts, "irc." ++ ?MYNAME),
-    register(ejabberd_mod_irc, spawn(?MODULE, init, [Host])).
+    Access = gen_mod:get_opt(access, Opts, all),
+    register(ejabberd_mod_irc, spawn(?MODULE, init, [Host, Access])).
 
-init(Host) ->
+init(Host, Access) ->
     catch ets:new(irc_connection, [named_table,
 				   public,
 				   {keypos, #irc_connection.userserver}]),
     ejabberd_router:register_route(Host),
-    loop(Host).
+    loop(Host, Access).
 
-loop(Host) ->
+loop(Host, Access) ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(Host, From, To, Packet) of
+	    case catch do_route(Host, Access, From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop(Host);
+	    loop(Host, Access);
 	stop ->
 	    ejabberd_router:unregister_global_route(Host),
 	    ok;
 	_ ->
-	    loop(Host)
+	    loop(Host, Access)
     end.
 
 
-do_route(Host, From, To, Packet) ->
+do_route(Host, Access, From, To, Packet) ->
+    case acl:match_rule(Access, From) of
+	allow ->
+	    do_route1(Host, From, To, Packet);
+	_ ->
+	    {xmlelement, _Name, Attrs, _Els} = Packet,
+	    Lang = xml:get_attr_s("xml:lang", Attrs),
+	    ErrText = "Access denied by service policy",
+	    Err = jlib:make_error_reply(Packet,
+					?ERRT_FORBIDDEN(Lang, ErrText)),
+	    ejabberd_router:route(To, From, Err)
+    end.
+
+do_route1(Host, From, To, Packet) ->
     #jid{user = ChanServ, resource = Resource} = To,
     {xmlelement, _Name, Attrs, _Els} = Packet,
     case ChanServ of

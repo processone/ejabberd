@@ -15,6 +15,7 @@
 	 stop_module/1,
 	 get_opt/2,
 	 get_opt/3,
+	 get_module_opt/3,
 	 loaded_modules/0]).
 
 -export([behaviour_info/1]).
@@ -73,6 +74,16 @@ get_opt(Opt, Opts, Default) ->
 	    Val
     end.
 
+get_module_opt(Module, Opt, Default) ->
+    OptsList = ets:lookup(ejabberd_modules, Module),
+    case OptsList of
+	[] ->
+	    Default;
+	[#ejabberd_module{opts = Opts} | _] ->
+	    get_opt(Opt, Opts, Default)
+    end.
+
 loaded_modules() ->
     ets:select(ejabberd_modules,
 	       [{#ejabberd_module{_ = '_', module = '$1'}, [],['$1']}]).
+

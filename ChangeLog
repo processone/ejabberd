@@ -1,3 +1,29 @@
+2004-07-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_last.erl: Supprot for storing status from latest
+	unavailable presence (thanks to Sergei Golovan)
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/mod_vcard.erl: Minor update (thanks to Sergei Golovan)
+
+	* src/mod_register.erl: Added "access" option (thanks to Sergei
+	Golovan)
+	* src/mod_irc/mod_irc.erl: Likewise
+	* src/ejabberd.cfg.example: Updated
+	* src/win32/ejabberd.cfg: Likewise
+
+	* src/mod_privacy.erl: Fixed module stopping (thanks to Sergei
+	Golovan)
+	* src/mod_private.erl: Likewise
+
+	* src/gen_mod.erl: Added function get_module_opt/3 (thanks to
+	Sergei Golovan)
+
+	* src/ejabberd_local.erl: Minor fix (thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
 2004-07-10  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_roster.erl: Removed superfluous include_lib line

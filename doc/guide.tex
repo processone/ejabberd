@@ -860,7 +860,18 @@ This module implements IRC transport.
 Options:
 \begin{description}
 \hostitem{irc}
+\titem{access} Specifies who is allowed to use IRC transport (default value is \term{all}).
 \end{description}
+
+Example:
+\begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_irc, [{access, all}]},
+    ...
+   ]}.
+\end{verbatim}
 
 
 \subsection{\modlast{}}
@@ -965,12 +976,13 @@ Example:
 \label{sec:modregister}
 
 This module adds support for \jepref{0077} (In-Band Registration).
-It is possible to restrict registration via ``register''
-access rule.  If this rule returns ``deny'' on requested user name, then
-registration is not allowed for it.
 
 Options:
 \begin{description}
+\titem{access} Specifies rule to restrict registration.
+If this rule returns ``deny'' on requested user name, then
+registration is not allowed for it. (default value is \term{all}, which means
+no restrictions).
 \iqdiscitem{\ns{jabber:iq:register}}
 \end{description}
 
@@ -987,7 +999,7 @@ Example:
   {modules,
    [
     ...
-    {mod_register, []},
+    {mod_register, [{access, register}]},
     ...
    ]}.
 \end{verbatim}

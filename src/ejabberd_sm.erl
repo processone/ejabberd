@@ -13,7 +13,7 @@
 -export([start_link/0, init/0, open_session/2, close_session/2,
 	 get_user_resources/1,
 	 set_presence/3,
-	 unset_presence/2,
+	 unset_presence/3,
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
 	 register_iq_handler/3,
@@ -317,14 +317,14 @@ set_presence(User, Resource, Priority) ->
 	end,
     mnesia:transaction(F).
 
-unset_presence(User, Resource) ->
+unset_presence(User, Resource, Status) ->
     LUser = jlib:nodeprep(User),
     F = fun() ->
 		UR = {User, Resource},
 		mnesia:delete({presence, UR})
 	end,
     mnesia:transaction(F),
-    catch mod_last:on_presence_update(LUser).
+    catch mod_last:on_presence_update(LUser, Status).
 
 get_user_present_resources(LUser) ->
     case catch mnesia:dirty_index_read(presence, LUser, #presence.user) of

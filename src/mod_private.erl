@@ -14,7 +14,7 @@
 
 -export([start/1,
 	 stop/0,
-	 process_local_iq/3,
+	 process_sm_iq/3,
 	 remove_user/1]).
 
 -include("ejabberd.hrl").
@@ -28,13 +28,13 @@ start(Opts) ->
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, private_storage)}]),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVATE,
-				  ?MODULE, process_local_iq, IQDisc).
+				  ?MODULE, process_sm_iq, IQDisc).
 
 stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_PRIVATE).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_PRIVATE).
 
 
-process_local_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
+process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     #jid{luser = LUser, lserver = LServer} = From,
     case ?MYNAME of
 	LServer ->

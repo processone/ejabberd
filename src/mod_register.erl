@@ -122,7 +122,8 @@ try_register(User, Password) ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    JID = jlib:make_jid(User, ?MYNAME, ""),
-	    case acl:match_rule(register, JID) of
+	    Access = gen_mod:get_module_opt(?MODULE, access, all),
+	    case acl:match_rule(Access, JID) of
 		deny ->
 		    {error, ?ERR_CONFLICT};
 		allow ->

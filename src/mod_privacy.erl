@@ -50,7 +50,7 @@ start(Opts) ->
 				  ?MODULE, process_iq, IQDisc).
 
 stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_PRIVACY).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_PRIVACY).
 
 process_iq(From, _To, IQ) ->
     #iq{type = Type, sub_el = SubEl} = IQ,

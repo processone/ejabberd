@@ -70,10 +70,10 @@ start(Opts) ->
 
 init(Host, Search) ->
     case Search of
-	true ->
-	    ejabberd_router:register_route(Host),
+	false ->
 	    loop(Host);
 	_ ->
+	    ejabberd_router:register_route(Host),
 	    loop(Host)
     end.
 

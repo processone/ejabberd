@@ -65,16 +65,16 @@ loop(State) ->
 	    catch mod_disco:unregister_feature(XMLNS),
 	    loop(State);
 	refresh_iq_handlers ->
-	    lists:map(
+	    lists:foreach(
 	      fun(T) ->
-		  case T of
-		      {XMLNS, _Module, _Function, _Opts} ->
-			  catch mod_disco:register_feature(XMLNS);
-		      {XMLNS, _Module, _Function} ->
-			  catch mod_disco:register_feature(XMLNS);
-		      _ ->
-			  ok
-		  end
+		      case T of
+			  {XMLNS, _Module, _Function, _Opts} ->
+			      catch mod_disco:register_feature(XMLNS);
+			  {XMLNS, _Module, _Function} ->
+			      catch mod_disco:register_feature(XMLNS);
+			  _ ->
+			      ok
+		      end
 	      end, ets:tab2list(State#state.iqtable)),
 	    loop(State);
 	_ ->
