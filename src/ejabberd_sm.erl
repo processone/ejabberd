@@ -23,7 +23,7 @@
 -record(session, {ur, user, node}).
 -record(mysession, {ur, pid}).
 -record(presence, {ur, user, priority}).
-
+-record(offline_msg, {user, timestamp, xml}).
 
 start() ->
     spawn(ejabberd_sm, init, []).

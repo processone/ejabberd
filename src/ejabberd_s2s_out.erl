@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/2, receiver/2, send_text/2, send_element/2]).
+-export([start/3, receiver/2, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -27,7 +27,7 @@
 -include("ejabberd.hrl").
 
 -record(state, {socket, receiver, streamid,
-		myself = ?MYNAME, server, xmlpid, queue,
+		myname, server, xmlpid, queue,
 		new = false, verify = false}).
 
 -define(DBGFSM, true).
@@ -43,7 +43,8 @@
 	"<stream:stream "
 	"xmlns:stream='http://etherx.jabber.org/streams' "
 	"xmlns='jabber:server' "
-	"xmlns:db='jabber:server:dialback'>"
+	"xmlns:db='jabber:server:dialback' "
+	"to='~s'>"
        ).
 
 -define(STREAM_TRAILER, "</stream:stream>").
@@ -57,8 +58,8 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Host, Type) ->
-    {ok, Pid} = gen_fsm:start(ejabberd_s2s_out, [Host, Type], ?FSMOPTS),
+start(From, Host, Type) ->
+    {ok, Pid} = gen_fsm:start(ejabberd_s2s_out, [From, Host, Type], ?FSMOPTS),
     Pid.
 
 %%%----------------------------------------------------------------------
@@ -72,7 +73,7 @@ start(Host, Type) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Server, Type]) ->
+init([From, Server, Type]) ->
     gen_fsm:send_event(self(), init),
     {New, Verify} = case Type of
 			{new, Key} ->
@@ -81,6 +82,7 @@ init([Server, Type]) ->
 			    {false, {Pid, Key}}
 		    end,
     {ok, open_socket, #state{queue = queue:new(),
+			     myname = From,
 			     server = Server,
 			     new = New,
 			     verify = Verify}}.
@@ -96,7 +98,8 @@ open_socket(init, StateData) ->
 			 [binary, {packet, 0}]) of
 	{ok, Socket} ->
 	    XMLStreamPid = xml_stream:start(self()),
-	    send_text(Socket, ?STREAM_HEADER),
+	    send_text(Socket, io_lib:format(?STREAM_HEADER,
+					    [StateData#state.server])),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = Socket,
 			     xmlpid = XMLStreamPid,
@@ -135,7 +138,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 		    send_element(StateData#state.socket,
 				 {xmlelement,
 				  "db:result",
-				  [{"from", ?MYNAME},
+				  [{"from", StateData#state.myname},
 				   {"to", Server}],
 				  [{xmlcdata, Key1}]})
 	    end,
@@ -146,7 +149,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 		    send_element(StateData#state.socket,
 				 {xmlelement,
 				  "db:verify",
-				  [{"from", ?MYNAME},
+				  [{"from", StateData#state.myname},
 				   {"to", StateData#state.server}],
 				  [{xmlcdata, Key2}]})
 	    end,

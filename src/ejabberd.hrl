@@ -16,5 +16,5 @@
 -endif.
 
 
--define(MYNAME,"127.0.0.1").
+-define(MYNAME,"e.localhost").
 

@@ -137,6 +137,7 @@ try_register(Server) ->
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
+    {_, MyServer, _} = From,
     {User, Server, Resource} = To,
     Key = randoms:get_string(),
     F = fun() ->
@@ -172,7 +173,7 @@ do_route(From, To, Packet) ->
 	    ok;
 	{atomic, new} ->
 	    ?DEBUG("starting new s2s connection~n", []),
-	    Pid = ejabberd_s2s_out:start(Server, {new, Key}),
+	    Pid = ejabberd_s2s_out:start(MyServer, Server, {new, Key}),
 	    mnesia:transaction(fun() -> mnesia:write(#mys2s{server = Server,
 							    pid = Pid}) end),
 	    {xmlelement, Name, Attrs, Els} = Packet,

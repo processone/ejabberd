@@ -172,8 +172,8 @@ set_vcard(LUser, VCARD) ->
 	    [{xmlcdata, "Fill in fields to search "
 	      "for any matching Jabber User"}]},
 	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "JID"},
-				  {"var", "jid"}], []},
+	        		  {"label", "User"},
+	        		  {"var", "user"}], []},
 	   {xmlelement, "field", [{"type", "text-single"},
 				  {"label", "Full Name"},
 				  {"var", "fn"}], []},
@@ -403,7 +403,7 @@ filter_fields([], Match) ->
 filter_fields([{SVar, [Val]} | Ds], Match)
   when is_list(Val) and (Val /= "") ->
     NewMatch = case SVar of
-                   "jid"      -> Match;
+                   "user"     -> Match#vcard_search{user     = Val};
                    "fn"       -> Match#vcard_search{fn       = Val};
                    "family"   -> Match#vcard_search{family   = Val};
                    "given"    -> Match#vcard_search{given    = Val};

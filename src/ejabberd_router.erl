@@ -11,7 +11,9 @@
 -vsn('$Revision$ ').
 
 -export([route/3, register_route/1, register_local_route/1,
-	 dirty_get_all_routes/0]).
+	 dirty_get_all_routes/0,
+	 dirty_get_all_domains/0
+	]).
 
 -export([start/0, init/0]).
 
@@ -131,4 +133,8 @@ dirty_get_all_routes() ->
     lists:delete(?MYNAME,
 		 lists:umerge(lists:sort(mnesia:dirty_all_keys(route)),
 			      lists:sort(mnesia:dirty_all_keys(local_route)))).
+
+dirty_get_all_domains() ->
+    lists:umerge(lists:sort(mnesia:dirty_all_keys(route)),
+		 lists:sort(mnesia:dirty_all_keys(local_route))).
 

@@ -27,7 +27,7 @@
 -include("ejabberd.hrl").
 
 -record(state, {socket, receiver, streamid,
-		myself = ?MYNAME, server, queue}).
+		myname, server, queue}).
 
 -define(DBGFSM, true).
 
@@ -50,6 +50,12 @@
 -define(INVALID_HEADER_ERR,
 	"<stream:stream>"
 	"<stream:error>Invalid Stream Header</stream:error>"
+	"</stream:stream>"
+       ).
+
+-define(INVALID_DOMAIN_ERR,
+	"<stream:stream>"
+	"<stream:error>Invalid Destination</stream:error>"
 	"</stream:stream>"
        ).
 
@@ -90,8 +96,19 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     % TODO
     case {xml:get_attr_s("xmlns", Attrs), xml:get_attr_s("xmlns:db", Attrs)} of
 	{"jabber:server", "jabber:server:dialback"} ->
-	    send_text(StateData#state.socket, ?STREAM_HEADER),
-	    {next_state, wait_for_key, StateData};
+	    Me = case xml:get_attr_s("to", Attrs) of
+		     "" -> ?MYNAME;
+		     Dom -> Dom
+		 end,
+	    case lists:member(Me, ejabberd_router:dirty_get_all_domains()) of
+		true ->
+		    send_text(StateData#state.socket, ?STREAM_HEADER),
+		    {next_state, wait_for_key, StateData#state{myname = Me}};
+		_ ->
+		    send_text(StateData#state.socket, ?INVALID_DOMAIN_ERR),
+		    {stop, normal, StateData}
+	    end;
+
 	_ ->
 	    send_text(StateData#state.socket, ?INVALID_HEADER_ERR),
 	    {stop, normal, StateData}
@@ -105,7 +122,8 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
 	{key, To, From, Id, Key} ->
 	    io:format("GET KEY: ~p~n", [{To, From, Id, Key}]),
-	    ejabberd_s2s_out:start(From, {verify, self(), Key}),
+	    ejabberd_s2s_out:start(StateData#state.myname, From,
+				   {verify, self(), Key}),
 	    {next_state,
 	     wait_for_verification,
 	     StateData#state{server = From}};
@@ -118,7 +136,7 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
 	    send_element(StateData#state.socket,
 			 {xmlelement,
 			  "db:verify",
-			  [{"from", ?MYNAME},
+			  [{"from", StateData#state.myname},
 			   {"to", From},
 			   {"id", Id},
 			   {"type", Type}],
@@ -139,7 +157,7 @@ wait_for_verification(valid, StateData) ->
     send_element(StateData#state.socket,
 		 {xmlelement,
 		  "db:result",
-		  [{"from", ?MYNAME},
+		  [{"from", StateData#state.myname},
 		   {"to", StateData#state.server},
 		   {"type", "valid"}],
 		  []}),
@@ -150,7 +168,7 @@ wait_for_verification(invalid, StateData) ->
     send_element(StateData#state.socket,
 		 {xmlelement,
 		  "db:result",
-		  [{"from", ?MYNAME},
+		  [{"from", StateData#state.myname},
 		   {"to", StateData#state.server},
 		   {"type", "invalid"}],
 		  []}),
@@ -167,7 +185,7 @@ wait_for_verification({xmlstreamelement, El}, StateData) ->
 	    send_element(StateData#state.socket,
 			 {xmlelement,
 			  "db:verify",
-			  [{"from", ?MYNAME},
+			  [{"from", StateData#state.myname},
 			   {"to", From},
 			   {"id", Id},
 			   {"type", Type}],
@@ -198,7 +216,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData#state.socket,
 				 {xmlelement,
 				  "db:verify",
-				  [{"from", ?MYNAME},
+				  [{"from", StateData#state.myname},
 				   {"to", From},
 				   {"id", Id},
 				   {"type", Type}],
