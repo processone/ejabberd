@@ -32,16 +32,16 @@ stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_IQDATA).
 
 
-process_local_iq(From, _To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case acl:match_rule(configure, From) of
 	deny ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
 	    %Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case Type of
 		set ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
+		    IQ#iq{type = error,
+			  sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
 		    %case xml:get_tag_attr_s("type", SubEl) of
 		    %    "cancel" ->
 		    %        {iq, ID, result, XMLNS,
@@ -76,9 +76,9 @@ process_local_iq(From, _To, {iq, ID, Type, XMLNS, SubEl}) ->
 		get ->
 		    case process_get(SubEl) of
 			{result, Res} ->
-			    {iq, ID, result, XMLNS, [Res]};
+			    IQ#iq{type = result, sub_el = [Res]};
 			{error, Error} ->
-			    {iq, ID, error, XMLNS, [SubEl, Error]}
+			    IQ#iq{type = error, sub_el = [SubEl, Error]}
 		    end
 	    end
     end.

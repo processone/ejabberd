@@ -27,9 +27,10 @@
 -include("jlib.hrl").
 
 -define(EMPTY_INFO_RESULT,
-	{iq, ID, result, XMLNS, [{xmlelement, "query",
-				  [{"xmlns", ?NS_DISCO_INFO},
-				   {"node", SNode}], []}]}).
+	IQ#iq{type = result,
+	      sub_el = [{xmlelement, "query",
+			 [{"xmlns", ?NS_DISCO_INFO},
+			  {"node", SNode}], []}]}).
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -72,44 +73,45 @@ unregister_extra_domain(Domain) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ets:delete(disco_extra_domains, Domain).
 
-process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq_items(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     Lang = xml:get_tag_attr_s("xml:lang", SubEl),
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    SNode = xml:get_tag_attr_s("node", SubEl),
 	    Node = string:tokens(SNode, "/"),
 
 	    case acl:match_rule(configure, From) of
 		deny when Node /= [] ->
-		    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 		deny ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query",
-		       [{"xmlns", ?NS_DISCO_ITEMS}],
-		       get_services_only()
-		      }]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", ?NS_DISCO_ITEMS}],
+				     get_services_only()
+				    }]};
 		_ ->
 		    case get_local_items(Node, jlib:jid_to_string(To), Lang) of
 			{result, Res} ->
-			    {iq, ID, result, XMLNS,
-			     [{xmlelement, "query",
-			       [{"xmlns", ?NS_DISCO_ITEMS},
-				{"node", SNode}],
-			       Res
-			      }]};
+			    IQ#iq{type = result,
+				  sub_el = [{xmlelement, "query",
+					     [{"xmlns", ?NS_DISCO_ITEMS},
+					      {"node", SNode}],
+					     Res
+					    }]};
 			{error, Error} ->
-			    {iq, ID, error, XMLNS, [SubEl, Error]}
+			    IQ#iq{type = error, sub_el = [SubEl, Error]}
 		    end
 	    end
     end.
 
 
-process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
+				     sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    SNode = xml:get_tag_attr_s("node", SubEl),
 	    Node = string:tokens(SNode, "/"),
@@ -117,17 +119,18 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		{_, []} ->
 		    Features = lists:map(fun feature_to_xml/1,
 					 ets:tab2list(disco_features)),
-		    {iq, ID, result, XMLNS, [{xmlelement,
-					      "query",
-					      [{"xmlns", ?NS_DISCO_INFO}],
-					      [{xmlelement, "identity",
-						[{"category", "service"},
-						 {"type", "im"},
-						 {"name", "ejabberd"}], []}] ++
-					      Features
-					     }]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement,
+				     "query",
+				     [{"xmlns", ?NS_DISCO_INFO}],
+				     [{xmlelement, "identity",
+				       [{"category", "service"},
+					{"type", "im"},
+					{"name", "ejabberd"}], []}] ++
+				     Features
+				    }]};
 		{deny, _} ->
-		    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 		{allow, ["config"]} -> ?EMPTY_INFO_RESULT;
 		{allow, ["online users"]} -> ?EMPTY_INFO_RESULT;
 		{allow, ["all users"]} -> ?EMPTY_INFO_RESULT;
@@ -136,56 +139,57 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		{allow, ["running nodes"]} -> ?EMPTY_INFO_RESULT;
 		{allow, ["stopped nodes"]} -> ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode]} ->
-		    {iq, ID, result, XMLNS, [{xmlelement,
-					      "query",
-					      [{"xmlns", XMLNS},
-					       {"node", SNode}],
-					      [{xmlelement, "identity",
-						[{"category", "ejabberd"},
-						 {"type", "node"},
-						 {"name", ENode}], []},
-					       feature_to_xml({?NS_STATS})
-					      ]
-					     }]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement,
+				     "query",
+				     [{"xmlns", XMLNS},
+				      {"node", SNode}],
+				     [{xmlelement, "identity",
+				       [{"category", "ejabberd"},
+					{"type", "node"},
+					{"name", ENode}], []},
+				      feature_to_xml({?NS_STATS})
+				     ]
+				    }]};
 		{allow, ["running nodes", ENode, "DB"]} ->
-		    {iq, ID, result, XMLNS, [{xmlelement,
-					      "query",
-					      [{"xmlns", XMLNS},
-					       {"node", SNode}],
-					      [feature_to_xml({?NS_IQDATA})]}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement,
+				     "query",
+				     [{"xmlns", XMLNS},
+				      {"node", SNode}],
+				     [feature_to_xml({?NS_IQDATA})]}]};
 		{allow, ["running nodes", ENode, "modules"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "modules", _]} ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query",
-		       [{"xmlns", XMLNS},
-			{"node", SNode}],
-		       [feature_to_xml({?NS_IQDATA})]}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", XMLNS},
+				      {"node", SNode}],
+				     [feature_to_xml({?NS_IQDATA})]}]};
 		{allow, ["running nodes", ENode, "backup"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "backup", _]} ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query",
-		       [{"xmlns", XMLNS},
-			{"node", SNode}],
-		       [feature_to_xml({?NS_IQDATA})]}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", XMLNS},
+				      {"node", SNode}],
+				     [feature_to_xml({?NS_IQDATA})]}]};
 		{allow, ["running nodes", ENode, "import"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "import", _]} ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query",
-		       [{"xmlns", XMLNS},
-			{"node", SNode}],
-		       [feature_to_xml({?NS_IQDATA})]}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", XMLNS},
+				      {"node", SNode}],
+				     [feature_to_xml({?NS_IQDATA})]}]};
 		{allow, ["config", _]} ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query",
-		       [{"xmlns", XMLNS},
-			{"node", SNode}],
-		       [feature_to_xml({?NS_IQDATA})]}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", XMLNS},
+				      {"node", SNode}],
+				     [feature_to_xml({?NS_IQDATA})]}]};
 		_ ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_ITEM_NOT_FOUND]}
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
 	    end
     end.
 
@@ -452,42 +456,42 @@ get_stopped_nodes(Lang) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_sm_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_sm_iq_items(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     #jid{user = User} = To,
     case {acl:match_rule(configure, From), Type} of
 	{deny, _} ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	{allow, set} ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	{allow, get} ->
 	    case xml:get_tag_attr_s("node", SubEl) of
 		"" ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
-		       get_user_resources(User)
-		      }]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", ?NS_DISCO_ITEMS}],
+				     get_user_resources(User)
+				    }]};
 		_ ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_ITEM_NOT_FOUND]}
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
 	    end
     end.
 
 
-process_sm_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_sm_iq_info(From, To, #iq{type = Type, xmlns = XMLNS,
+				 sub_el = SubEl} = IQ) ->
     case {acl:match_rule(configure, From), Type} of
 	{deny, _} ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	{allow, set} ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	{allow, get} ->
 	    case xml:get_tag_attr_s("node", SubEl) of
 		"" ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", XMLNS}],
-		       [feature_to_xml({?NS_IQDATA})]}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query", [{"xmlns", XMLNS}],
+				     [feature_to_xml({?NS_IQDATA})]}]};
 		_ ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
 	    end
     end.
 

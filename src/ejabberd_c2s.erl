@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_c2s.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Serve C2S connection
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -124,7 +124,7 @@ init([{SockMod, Socket}, Opts]) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
+wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case xml:get_attr_s("xmlns:stream", Attrs) of
 	?NS_STREAM ->
 	    case xml:get_attr_s("version", Attrs) of
@@ -195,12 +195,12 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
-	{auth, ID, get, {"", _, _, _}} ->
+	{auth, _ID, get, {"", _, _, _}} ->
 	    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
 	    send_element(StateData, Err),
 	    {next_state, wait_for_auth, StateData};
-	{auth, ID, get, {U, _, _, _}} ->
-	    {xmlelement, Name, Attrs, Els} = jlib:make_result_iq_reply(El),
+	{auth, _ID, get, {U, _, _, _}} ->
+	    {xmlelement, Name, Attrs, _Els} = jlib:make_result_iq_reply(El),
 	    Res = case ejabberd_auth:plain_password_required() of
 		      false ->
 			  {xmlelement, Name, Attrs,
@@ -219,11 +219,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		  end,
 	    send_element(StateData, Res),
 	    {next_state, wait_for_auth, StateData};
-	{auth, ID, set, {U, P, D, ""}} ->
+	{auth, _ID, set, {U, P, D, ""}} ->
 	    Err = jlib:make_error_reply(El, ?ERR_AUTH_NO_RESOURCE_PROVIDED),
 	    send_element(StateData, Err),
 	    {next_state, wait_for_auth, StateData};
-	{auth, ID, set, {U, P, D, R}} ->
+	{auth, _ID, set, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
 	    JID = jlib:make_jid(U, StateData#state.server, R),
 	    case (JID /= error) andalso
@@ -286,10 +286,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    end;
 	_ ->
 	    case jlib:iq_query_info(El) of
-		{iq, ID, Type, ?NS_REGISTER, SubEl} ->
+		#iq{xmlns = ?NS_REGISTER} = IQ ->
 		    ResIQ = mod_register:process_iq(
-			      {"", "", ""}, {"", ?MYNAME, ""},
-			      {iq, ID, Type, ?NS_REGISTER, SubEl}),
+			      {"", "", ""}, {"", ?MYNAME, ""}, IQ),
 		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
 						{"", "", ""},
 						jlib:iq_to_xml(ResIQ)),
@@ -301,7 +300,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    end
     end;
 
-wait_for_auth({xmlstreamend, Name}, StateData) ->
+wait_for_auth({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
     {stop, normal, StateData};
 
@@ -351,10 +350,9 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 	    end;
 	_ ->
 	    case jlib:iq_query_info(El) of
-		{iq, ID, Type, ?NS_REGISTER, SubEl} ->
+		#iq{xmlns = ?NS_REGISTER} = IQ ->
 		    ResIQ = mod_register:process_iq(
-			      {"", "", ""}, {"", ?MYNAME, ""},
-			      {iq, ID, Type, ?NS_REGISTER, SubEl}),
+			      {"", "", ""}, {"", ?MYNAME, ""}, IQ),
 		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
 						{"", "", ""},
 						jlib:iq_to_xml(ResIQ)),
@@ -366,7 +364,7 @@ wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
 	    end
     end;
 
-wait_for_sasl_auth({xmlstreamend, Name}, StateData) ->
+wait_for_sasl_auth({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
     {stop, normal, StateData};
 
@@ -414,10 +412,9 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 	    end;
 	_ ->
 	    case jlib:iq_query_info(El) of
-		{iq, ID, Type, ?NS_REGISTER, SubEl} ->
+		#iq{xmlns = ?NS_REGISTER} = IQ ->
 		    ResIQ = mod_register:process_iq(
-			      {"", "", ""}, {"", ?MYNAME, ""},
-			      {iq, ID, Type, ?NS_REGISTER, SubEl}),
+			      {"", "", ""}, {"", ?MYNAME, ""}, IQ),
 		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
 						{"", "", ""},
 						jlib:iq_to_xml(ResIQ)),
@@ -429,7 +426,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 	    end
     end;
 
-wait_for_sasl_response({xmlstreamend, Name}, StateData) ->
+wait_for_sasl_response({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
     {stop, normal, StateData};
 
@@ -444,7 +441,7 @@ wait_for_sasl_response(closed, StateData) ->
 
 wait_for_bind({xmlstreamelement, El}, StateData) ->
     case jlib:iq_query_info(El) of
-	{iq, ID, set, ?NS_BIND, SubEl} ->
+	#iq{type = set, xmlns = ?NS_BIND, sub_el = SubEl} = IQ ->
 	    U = StateData#state.user,
 	    R1 = xml:get_path_s(SubEl, [{elem, "resource"}, cdata]),
 	    R = case jlib:resourceprep(R1) of
@@ -461,11 +458,12 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		    {next_state, wait_for_bind, StateData};
 		_ ->
 		    JID = jlib:make_jid(U, StateData#state.server, R),
-		    Res = {iq, ID, result, ?NS_BIND,
-			   [{xmlelement, "bind",
-			     [{"xmlns", ?NS_BIND}],
-			     [{xmlelement, "jid", [],
-			       [{xmlcdata, jlib:jid_to_string(JID)}]}]}]},
+		    Res = IQ#iq{type = result,
+				sub_el = [{xmlelement, "bind",
+					   [{"xmlns", ?NS_BIND}],
+					   [{xmlelement, "jid", [],
+					     [{xmlcdata,
+					       jlib:jid_to_string(JID)}]}]}]},
 		    send_element(StateData, jlib:iq_to_xml(Res)),
 		    {next_state, wait_for_session,
 		     StateData#state{resource = R, jid = JID}}
@@ -474,7 +472,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	    {next_state, wait_for_bind, StateData}
     end;
 
-wait_for_bind({xmlstreamend, Name}, StateData) ->
+wait_for_bind({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
     {stop, normal, StateData};
 
@@ -489,7 +487,7 @@ wait_for_bind(closed, StateData) ->
 
 wait_for_session({xmlstreamelement, El}, StateData) ->
     case jlib:iq_query_info(El) of
-	{iq, ID, set, ?NS_SESSION, SubEl} ->
+	#iq{type = set, xmlns = ?NS_SESSION} ->
 	    U = StateData#state.user,
 	    R = StateData#state.resource,
 	    io:format("SASLAUTH: ~p~n", [{U, R}]),
@@ -521,22 +519,11 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData, Err),
 		    {next_state, wait_for_session, StateData}
 	    end;
-	% TODO: is this needed?
-	{iq, ID, Type, ?NS_REGISTER, SubEl} ->
-	    ResIQ = mod_register:process_iq(
-		      {"", "", ""}, {"", ?MYNAME, ""},
-		      {iq, ID, Type, ?NS_REGISTER, SubEl}),
-	    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
-					{"", "", ""},
-					jlib:iq_to_xml(ResIQ)),
-	    Res = jlib:remove_attr("to", Res1),
-		    send_element(StateData, Res),
-	    {next_state, wait_for_session, StateData};
 	_ ->
 	    {next_state, wait_for_session, StateData}
     end;
 
-wait_for_session({xmlstreamend, Name}, StateData) ->
+wait_for_session({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
     {stop, normal, StateData};
 
@@ -551,7 +538,7 @@ wait_for_session(closed, StateData) ->
 
 
 session_established({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
+    {xmlelement, Name, Attrs, _Els} = El,
     User = StateData#state.user,
     Server = StateData#state.server,
     %FromJID = {User,
@@ -594,13 +581,14 @@ session_established({xmlstreamelement, El}, StateData) ->
 			    none ->
 				ejabberd_router:route(FromJID, ToJID, El),
 				StateData;
-			    PrivList ->
+			    _PrivList ->
 				case jlib:iq_query_info(El) of
-				    {iq, ID, Type, ?NS_PRIVACY = XMLNS, SubEl} = IQ ->
+				    #iq{xmlns = ?NS_PRIVACY} = IQ ->
 					process_privacy_iq(
 					  FromJID, ToJID, IQ, StateData);
 				    _ ->
-					ejabberd_router:route(FromJID, ToJID, El),
+					ejabberd_router:route(
+					  FromJID, ToJID, El),
 					StateData
 				end
 			end;
@@ -613,7 +601,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 	end,
     {next_state, session_established, NewState};
 
-session_established({xmlstreamend, Name}, StateData) ->
+session_established({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
     {stop, normal, StateData};
 
@@ -645,7 +633,7 @@ session_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_event(Event, StateName, StateData) ->
+handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -657,11 +645,11 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event(Event, From, StateName, StateData) ->
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
 
-code_change(OldVsn, StateName, StateData, Extra) ->
+code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -673,7 +661,7 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     {next_state, StateName, StateData};
-handle_info(replaced, StateName, StateData) ->
+handle_info(replaced, _StateName, StateData) ->
     % TODO
     %send_text(StateData#state.sender, Text),
     {stop, normal, StateData#state{authentificated = replaced}};
@@ -721,37 +709,37 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		end;
 	    "broadcast" ->
 		?DEBUG("broadcast~n~p~n", [Els]),
-		NewSt = case Els of
-			    [{item, IJID, ISubscription}] ->
-				{false, Attrs,
-				 roster_change(IJID, ISubscription,
-					       StateData)};
-			    [{exit, Reason}] ->
-				{exit, Attrs, Reason};
-			    [{privacy_list, PrivList}] ->
-				{false, Attrs,
-				 case catch mod_privacy:updated_list(
-					      StateData#state.privacy_list,
-					      PrivList) of
-				     {'EXIT', _} ->
-					 {false, Attrs, StateData};
-				     NewPL ->
-					 StateData#state{privacy_list = NewPL}
-				 end};
-			    _ ->
-				{false, Attrs, StateData}
-			end;
+		case Els of
+		    [{item, IJID, ISubscription}] ->
+			{false, Attrs,
+			 roster_change(IJID, ISubscription,
+				       StateData)};
+		    [{exit, Reason}] ->
+			{exit, Attrs, Reason};
+		    [{privacy_list, PrivList}] ->
+			{false, Attrs,
+			 case catch mod_privacy:updated_list(
+				      StateData#state.privacy_list,
+				      PrivList) of
+			     {'EXIT', _} ->
+				 {false, Attrs, StateData};
+			     NewPL ->
+				 StateData#state{privacy_list = NewPL}
+			 end};
+		    _ ->
+			{false, Attrs, StateData}
+		end;
 	    "iq" ->
 		IQ = jlib:iq_query_info(Packet),
 		case IQ of
-		    {iq, ID, Type, ?NS_VCARD, SubEl} ->
+		    #iq{xmlns = ?NS_VCARD} ->
 			ResIQ = mod_vcard:process_sm_iq(From, To, IQ),
 			ejabberd_router:route(To,
 					      From,
 					      jlib:iq_to_xml(ResIQ)),
 			{false, Attrs, StateData};
 %-ifdef(PRIVACY_SUPPORT).
-		    {iq, _ID, Type, _XMLNS, _SubEl} ->
+		    #iq{} ->
 			case catch mod_privacy:check_packet(
 				     StateData#state.user,
 				     StateData#state.privacy_list,
@@ -808,7 +796,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(Reason, StateName, StateData) ->
+terminate(_Reason, StateName, StateData) ->
     case StateName of
 	session_established ->
 	    case StateData#state.authentificated of
@@ -870,7 +858,7 @@ new_id() ->
 
 is_auth_packet(El) ->
     case jlib:iq_query_info(El) of
-	{iq, ID, Type, ?NS_AUTH, SubEl} ->
+	#iq{id = ID, type = Type, xmlns = ?NS_AUTH, sub_el = SubEl} ->
 	    {xmlelement, _, _, Els} = SubEl,
 	    {auth, ID, Type,
 	     get_auth_tags(Els, "", "", "", "")};
@@ -879,7 +867,7 @@ is_auth_packet(El) ->
     end.
 
 
-get_auth_tags([{xmlelement, Name, Attrs, Els}| L], U, P, D, R) ->
+get_auth_tags([{xmlelement, Name, _Attrs, Els}| L], U, P, D, R) ->
     CData = xml:get_cdata(Els),
     case Name of
 	"username" ->
@@ -947,7 +935,7 @@ process_presence_probe(From, To, StateData) ->
     end.
 
 presence_update(From, Packet, StateData) ->
-    {xmlelement, Name, Attrs, Els} = Packet,
+    {xmlelement, _Name, Attrs, _Els} = Packet,
     case xml:get_attr_s("type", Attrs) of
 	"unavailable" ->
 	    ejabberd_sm:unset_presence(StateData#state.user,
@@ -1019,7 +1007,7 @@ presence_update(From, Packet, StateData) ->
     end.
 
 presence_track(From, To, Packet, StateData) ->
-    {xmlelement, Name, Attrs, Els} = Packet,
+    {xmlelement, _Name, Attrs, _Els} = Packet,
     LTo = jlib:jid_tolower(To),
     User = StateData#state.user,
     case xml:get_attr_s("type", Attrs) of
@@ -1245,7 +1233,9 @@ update_priority(El, StateData) ->
 		  
 
 
-process_privacy_iq(From, To, {iq, ID, Type, XMLNS, SubEl} = IQ, StateData) ->
+process_privacy_iq(From, To,
+		   #iq{type = Type, sub_el = SubEl} = IQ,
+		   StateData) ->
     {Res, NewStateData} =
 	case Type of
 	    get ->
@@ -1272,10 +1262,9 @@ process_privacy_iq(From, To, {iq, ID, Type, XMLNS, SubEl} = IQ, StateData) ->
     IQRes =
 	case Res of
 	    {result, Result} ->
-		{iq, ID, result, XMLNS, Result};
+		IQ#iq{type = result, sub_el = Result};
 	    {error, Error} ->
-		{iq, ID, error, XMLNS,
-		 [SubEl, Error]}
+		IQ#iq{type = error, sub_el = [SubEl, Error]}
 	end,
     ejabberd_router:route(
       To, From, jlib:iq_to_xml(IQRes)),

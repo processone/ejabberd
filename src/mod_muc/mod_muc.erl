@@ -19,7 +19,7 @@
 	 store_room/2,
 	 restore_room/1,
 	 forget_room/1,
-	 process_iq_disco_items/5,
+	 process_iq_disco_items/4,
 	 can_use_nick/2]).
 
 -include("ejabberd.hrl").
@@ -84,36 +84,44 @@ do_route(Host, From, To, Packet) ->
 		    case Name of
 			"iq" ->
 			    case jlib:iq_query_info(Packet) of
-				{iq, ID, get, ?NS_DISCO_INFO = XMLNS, SubEl} ->
-				    Res = {iq, ID, result, XMLNS,
-					   [{xmlelement, "query",
-					     [{"xmlns", XMLNS}],
-					     iq_disco_info()}]},
+				#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
+				    sub_el = SubEl} = IQ ->
+				    Res = IQ#iq{type = result,
+						sub_el = [{xmlelement, "query",
+							   [{"xmlns", XMLNS}],
+							   iq_disco_info()}]},
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res));
-				{iq, ID, get, ?NS_DISCO_ITEMS = XMLNS, SubEl} ->
+				#iq{type = get,
+				    xmlns = ?NS_DISCO_ITEMS} = IQ ->
 				    spawn(?MODULE,
 					  process_iq_disco_items,
-					  [Host, From, To, ID, SubEl]);
-				{iq, ID, get, ?NS_REGISTER = XMLNS, SubEl} ->
+					  [Host, From, To, IQ]);
+				#iq{type = get,
+				    xmlns = ?NS_REGISTER = XMLNS,
+				    sub_el = SubEl} = IQ ->
 				    Lang = xml:get_tag_attr_s(
 					     "xml:lang", SubEl),
-				    Res = {iq, ID, result, XMLNS,
-					   [{xmlelement, "query",
-					     [{"xmlns", XMLNS}],
-					     iq_get_register_info(
-					       From, Lang)}]},
+				    Res = IQ#iq{type = result,
+						sub_el =
+						[{xmlelement, "query",
+						  [{"xmlns", XMLNS}],
+						  iq_get_register_info(
+						    From, Lang)}]},
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res));
-				{iq, ID, set, ?NS_REGISTER = XMLNS, SubEl} ->
+				#iq{type = set,
+				    xmlns = ?NS_REGISTER = XMLNS,
+				    sub_el = SubEl} = IQ ->
 				    case process_iq_register_set(From, SubEl) of
 					{result, IQRes} ->
-					    Res = {iq, ID, result, XMLNS,
-						   [{xmlelement, "query",
-						     [{"xmlns", XMLNS}],
-						     IQRes}]},
+					    Res = IQ#iq{type = result,
+							sub_el =
+							[{xmlelement, "query",
+							  [{"xmlns", XMLNS}],
+							  IQRes}]},
 					    ejabberd_router:route(
 					      To, From, jlib:iq_to_xml(Res));
 					{error, Error} ->
@@ -122,23 +130,26 @@ do_route(Host, From, To, Packet) ->
 					    ejabberd_router:route(
 					      To, From, Err)
 				    end;
-				{iq, ID, get, ?NS_VCARD = XMLNS, SubEl} ->
+				#iq{type = get,
+				    xmlns = ?NS_VCARD = XMLNS,
+				    sub_el = SubEl} = IQ ->
 				    Lang = xml:get_tag_attr_s(
 					     "xml:lang", SubEl),
-				    Res = {iq, ID, result, XMLNS,
-					   [{xmlelement, "query",
-					     [{"xmlns", XMLNS}],
-					     iq_get_vcard(Lang)}]},
+				    Res = IQ#iq{type = result,
+						sub_el =
+						[{xmlelement, "query",
+						  [{"xmlns", XMLNS}],
+						  iq_get_vcard(Lang)}]},
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res));
-				reply ->
-				    ok;
-				_ ->
+				#iq{} ->
 				    Err = jlib:make_error_reply(
 					    Packet,
 					    ?ERR_FEATURE_NOT_IMPLEMENTED),
-				    ejabberd_router:route(To, From, Err)
+				    ejabberd_router:route(To, From, Err);
+				_ ->
+				    ok
 			    end;
 			"message" ->
 			    case xml:get_attr_s("type", Attrs) of
@@ -265,11 +276,11 @@ iq_disco_info() ->
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
 
 
-process_iq_disco_items(Host, From, To, ID, SubEl) ->
-    Res = {iq, ID, result, ?NS_DISCO_ITEMS,
-	   [{xmlelement, "query",
-	     [{"xmlns", ?NS_DISCO_ITEMS}],
-	     iq_disco_items(Host, From)}]},
+process_iq_disco_items(Host, From, To, IQ) ->
+    Res = IQ#iq{type = result,
+		sub_el = [{xmlelement, "query",
+			   [{"xmlns", ?NS_DISCO_ITEMS}],
+			   iq_disco_items(Host, From)}]},
     ejabberd_router:route(To,
 			  From,
 			  jlib:iq_to_xml(Res)).

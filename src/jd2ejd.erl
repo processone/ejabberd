@@ -82,7 +82,7 @@ init([File, User, Pid]) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 
-wait_for_xdb({xmlstreamstart, Name, Attrs}, StateData) ->
+wait_for_xdb({xmlstreamstart, Name, _Attrs}, StateData) ->
     case Name of
 	"xdb" ->
 	    {next_state, xdb_data, StateData};
@@ -95,7 +95,7 @@ wait_for_xdb(closed, StateData) ->
 
 
 xdb_data({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
+    {xmlelement, _Name, Attrs, _Els} = El,
     Server = StateData#state.server,
     From = jlib:make_jid(StateData#state.user, Server, ""),
     NewState =
@@ -107,13 +107,14 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 	    ?NS_ROSTER ->
 		%mod_roster:process_iq(From,
 		%		      {"", ?MYNAME, ""},
-		%		      {iq, "", set, ?NS_ROSTER, El}),
+		%		      #iq{type = set, xmlns = ?NS_ROSTER, sub_el = El}),
 		mod_roster:set_items(StateData#state.user, El),
 		StateData;
 	    ?NS_VCARD ->
-		Res = mod_vcard:process_sm_iq(From,
-					      jlib:make_jid("", ?MYNAME, ""),
-					      {iq, "", set, ?NS_VCARD, El}),
+		mod_vcard:process_sm_iq(
+		  From,
+		  jlib:make_jid("", ?MYNAME, ""),
+		  #iq{type = set, xmlns = ?NS_VCARD, sub_el = El}),
 		StateData;
 	    "jabber:x:offline" ->
 		process_offline(From, El),
@@ -121,7 +122,7 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 	    %?NS_REGISTER ->
 	    %    mod_register:process_iq(
 	    %      {"", "", ""}, {"", ?MYNAME, ""},
-	    %      {iq, "", set, ?NS_REGISTER, El}),
+	    %      #iq{type =set, xmlns = ?NS_REGISTER, xub_el = El}),
 	    %    User = xml:get_path_s(El, [{elem, "username"}, cdata]),
 	    %    io:format("user ~s~n", [User]),
 	    %    StateData;
@@ -131,11 +132,11 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 			mod_private:process_local_iq(
 			  From,
 			  jlib:make_jid("", ?MYNAME, ""),
-			  {iq, "", set, ?NS_PRIVATE,
-			   {xmlelement, "query", [],
-			    [jlib:remove_attr(
-			       "j_private_flag",
-			       jlib:remove_attr("xdbns", El))]}}),
+			  #iq{type = set, xmlns = ?NS_PRIVATE,
+			      sub_el = {xmlelement, "query", [],
+					[jlib:remove_attr(
+					   "j_private_flag",
+					   jlib:remove_attr("xdbns", El))]}}),
 			StateData;
 		    _ ->
 			io:format("jd2ejd: Unknown namespace \"~s\"~n",
@@ -145,7 +146,7 @@ xdb_data({xmlstreamelement, El}, StateData) ->
 	end,
     {next_state, xdb_data, NewState};
 
-xdb_data({xmlstreamend, Name}, StateData) ->
+xdb_data({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 xdb_data(closed, StateData) ->
@@ -172,7 +173,7 @@ xdb_data(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_event(Event, StateName, StateData) ->
+handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -184,11 +185,11 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event(Event, From, StateName, StateData) ->
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
 
-code_change(OldVsn, StateName, StateData, Extra) ->
+code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -205,7 +206,7 @@ handle_info(_, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(Reason, StateName, StateData) ->
+terminate(Reason, _StateName, StateData) ->
     exit(StateData#state.xml_stream_pid, closed),
     StateData#state.pid ! {jd2ejd, Reason},
     % Profiling

@@ -143,3 +143,8 @@
 -record(jid, {user, server, resource,
 	      luser, lserver, lresource}).
 
+-record(iq, {id = "",
+	     type,
+	     xmlns = "",
+	     sub_el}).
+

@@ -63,20 +63,24 @@ do_route(Host, From, To, Packet) ->
 	    case Resource of
 		"" ->
 		    case jlib:iq_query_info(Packet) of
-			{iq, ID, get, ?NS_DISCO_INFO = XMLNS, SubEl} ->
-			    Res = {iq, ID, result, XMLNS,
-				   [{xmlelement, "query",
-				     [{"xmlns", XMLNS}],
-				     iq_disco()}]},
+			#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
+			    sub_el = SubEl} = IQ ->
+			    Res = IQ#iq{type = result,
+					sub_el = [{xmlelement, "query",
+						   [{"xmlns", XMLNS}],
+						   iq_disco()}]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
-			{iq, ID, Type, ?NS_IQDATA = XMLNS, SubEl} ->
-			    iq_data(From, To, ID, XMLNS, Type, SubEl);
-			_ ->
+			#iq{type = Type, xmlns = ?NS_IQDATA,
+			    sub_el = SubEl} = IQ ->
+			    iq_data(From, To, IQ);
+			#iq{} = IQ ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_SERVICE_UNAVAILABLE),
-			    ejabberd_router:route(To, From, Err)
+				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+			    ejabberd_router:route(To, From, Err);
+			_ ->
+			    ok
 		    end;
 		_ ->
 		    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
@@ -155,8 +159,8 @@ iq_disco() ->
 
 
 
-iq_data(From, To, ID, XMLNS, Type, SubEl) ->
-    case catch process_iq_data(From, To, ID, XMLNS, Type, SubEl) of
+iq_data(From, To, #iq{type = Type} = IQ) ->
+    case catch process_iq_data(From, To, IQ) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	ResIQ ->
@@ -170,20 +174,22 @@ iq_data(From, To, ID, XMLNS, Type, SubEl) ->
     end.
 
 
-process_iq_data(From, To, ID, XMLNS, Type, SubEl) ->
+process_iq_data(From, To,
+		#iq{type = Type, xmlns = XMLNS, sub_el = SubEl} = IQ) ->
     Lang = xml:get_tag_attr_s("xml:lang", SubEl),
     case Type of
 	set ->
 	    case xml:get_tag_attr_s("type", SubEl) of
 		"cancel" ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", XMLNS}], []}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", XMLNS}], []}]};
 		"submit" ->
 		    XData = jlib:parse_xdata_submit(SubEl),
 		    case XData of
 			invalid ->
-			    {iq, ID, error, XMLNS,
-			     [SubEl, ?ERR_BAD_REQUEST]};
+			    IQ#iq{type = error,
+				  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
 			_ ->
 			    Node =
 				string:tokens(
@@ -191,32 +197,32 @@ process_iq_data(From, To, ID, XMLNS, Type, SubEl) ->
 				  "/"),
 			    case set_form(From, Node, Lang, XData) of
 				{result, Res} ->
-				    {iq, ID, result, XMLNS,
-				     [{xmlelement, "query",
-				       [{"xmlns", XMLNS}],
-				       Res
-				      }]};
+				    IQ#iq{type = result,
+					  sub_el = [{xmlelement, "query",
+						     [{"xmlns", XMLNS}],
+						     Res
+						    }]};
 				{error, Error} ->
-				    {iq, ID, error, XMLNS,
-				     [SubEl, Error]}
+				    IQ#iq{type = error,
+					  sub_el = [SubEl, Error]}
 			    end
 		    end;
 		_ ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_NOT_ALLOWED]}
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 	    end;
 	get ->
 	    Node =
 		string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
 	    case get_form(From, Node, Lang) of
 		{result, Res} ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", XMLNS}],
-		       Res
-		      }]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", XMLNS}],
+				     Res
+				    }]};
 		{error, Error} ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, Error]}
+		    IQ#iq{type = error,
+			  sub_el = [SubEl, Error]}
 	    end
     end.
 

@@ -34,10 +34,10 @@ stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_PRIVATE).
 
 
-process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     #jid{luser = LUser, lserver = LServer} = From,
     case ?MYNAME of
-	Server ->
+	LServer ->
 	    {xmlelement, Name, Attrs, Els} = SubEl,
 	    case Type of
 		set ->
@@ -48,24 +48,26 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 				  end, Els)
 			end,
 		    mnesia:transaction(F),
-		    {iq, ID, result, XMLNS, [{xmlelement, Name, Attrs, []}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, Name, Attrs, []}]};
 		get ->
 		    case catch get_data(LUser, Els) of
-			{'EXIT', Reason} ->
-			    {iq, ID, error, XMLNS,
-			     [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+			{'EXIT', _Reason} ->
+			    IQ#iq{type = error,
+				  sub_el = [SubEl,
+					    ?ERR_INTERNAL_SERVER_ERROR]};
 			Res ->
-			    {iq, ID, result, XMLNS,
-			     [{xmlelement, Name, Attrs, Res}]}
+			    IQ#iq{type = result,
+				  sub_el = [{xmlelement, Name, Attrs, Res}]}
 		    end
 	    end;
 	_ ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]}
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
     end.
 
 set_data(LUser, El) ->
     case El of
-	{xmlelement, Name, Attrs, Els} ->
+	{xmlelement, _Name, Attrs, _Els} ->
 	    XMLNS = xml:get_attr_s("xmlns", Attrs),
 	    case XMLNS of
 		"" ->
@@ -81,11 +83,11 @@ set_data(LUser, El) ->
 get_data(LUser, Els) ->
     get_data(LUser, Els, []).
 
-get_data(LUser, [], Res) ->
+get_data(_LUser, [], Res) ->
     lists:reverse(Res);
 get_data(LUser, [El | Els], Res) ->
     case El of
-	{xmlelement, Name, Attrs, _} ->
+	{xmlelement, _Name, Attrs, _} ->
 	    XMLNS = xml:get_attr_s("xmlns", Attrs),
 	    case mnesia:dirty_read(private_storage, {LUser, XMLNS}) of
 		[R] ->

@@ -341,7 +341,7 @@ dirty_get_my_sessions_list() ->
 process_iq(From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
-	{iq, _ID, _Type, XMLNS, _SubEl} ->
+	#iq{xmlns = XMLNS} ->
 	    case ets:lookup(sm_iqtable, XMLNS) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ),
@@ -366,7 +366,7 @@ process_iq(From, To, Packet) ->
 	    ok;
 	_ ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
-	    ejabberd_router ! {route, To, From, Err},
+	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
 

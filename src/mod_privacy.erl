@@ -49,18 +49,9 @@ start(Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
-%process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->
-%    case Type of
-%	set ->
-%	    process_iq_set(From, To, IQ);
-%	get ->
-%	    process_iq_get(From, To, IQ)
-%    end.
-%
-%
-%
-process_iq(From, To, IQ) ->
-    {iq, ID, Type, XMLNS, SubEl} = IQ,
+
+process_iq(From, _To, IQ) ->
+    #iq{type = Type, sub_el = SubEl} = IQ,
     #jid{lserver = Server} = From,
     Res =
 	case ?MYNAME of
@@ -77,20 +68,20 @@ process_iq(From, To, IQ) ->
 	end,
     case Res of
 	{result, IQRes} ->
-	    {iq, ID, result, XMLNS, IQRes};
+	    IQ#iq{type = result, sub_el = IQRes};
 	{error, Error} ->
-	    {iq, ID, error, XMLNS, [SubEl, Error]}
+	    IQ#iq{type = error, sub_el = [SubEl, Error]}
     end.
 
 
-process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl},
+process_iq_get(From, _To, #iq{sub_el = SubEl},
 	       #userlist{name = Active}) ->
     #jid{luser = LUser} = From,
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
 	[] ->
 	    process_lists_get(LUser, Active);
-	[{xmlelement, Name, Attrs, SubEls}] ->
+	[{xmlelement, Name, Attrs, _SubEls}] ->
 	    case Name of
 		"list" ->
 		    ListName = xml:get_attr("name", Attrs),
@@ -105,7 +96,7 @@ process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl},
 
 process_lists_get(LUser, Active) ->
     case catch mnesia:dirty_read(privacy, LUser) of
-	{'EXIT', Reason} ->
+	{'EXIT', _Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
 	    {result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
@@ -144,7 +135,7 @@ process_lists_get(LUser, Active) ->
 
 process_list_get(LUser, {value, Name}) ->
     case catch mnesia:dirty_read(privacy, LUser) of
-	{'EXIT', Reason} ->
+	{'EXIT', _Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -248,7 +239,7 @@ list_to_action(S) ->
 
 
 
-process_iq_set(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_iq_set(From, _To, #iq{sub_el = SubEl}) ->
     #jid{luser = LUser} = From,
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
@@ -318,7 +309,7 @@ process_active_set(LUser, {value, Name}) ->
     case catch mnesia:dirty_read(privacy, LUser) of
 	[] ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
-	[#privacy{lists = Lists} = P] ->
+	[#privacy{lists = Lists}] ->
 	    case lists:keysearch(Name, 1, Lists) of
 		{value, {_, List}} ->
 		    {result, [], #userlist{name = Name, list = List}};
@@ -327,7 +318,7 @@ process_active_set(LUser, {value, Name}) ->
 	    end
     end;
 
-process_active_set(LUser, false) ->
+process_active_set(_LUser, false) ->
     {result, [], #userlist{}}.
 
 
@@ -490,7 +481,7 @@ parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
 	    false
     end;
 
-parse_items(_, Res) ->
+parse_items(_, _Res) ->
     false.
 
 
@@ -509,7 +500,7 @@ parse_matches1(Item, [{xmlelement, "presence-in", _, _} | Els]) ->
     parse_matches1(Item#listitem{match_presence_in = true}, Els);
 parse_matches1(Item, [{xmlelement, "presence-out", _, _} | Els]) ->
     parse_matches1(Item#listitem{match_presence_out = true}, Els);
-parse_matches1(Item, [{xmlelement, _, _, _} | Els]) ->
+parse_matches1(_Item, [{xmlelement, _, _, _} | _Els]) ->
     false.
 
 
@@ -584,7 +575,7 @@ check_packet(User,
 	    end
     end.
 
-check_packet_aux([], PType, JID, Subscription, Groups) ->
+check_packet_aux([], _PType, _JID, _Subscription, _Groups) ->
     allow;
 check_packet_aux([Item | List], PType, JID, Subscription, Groups) ->
     #listitem{type = Type, value = Value, action = Action} = Item,

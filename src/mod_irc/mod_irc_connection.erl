@@ -294,29 +294,28 @@ handle_info({route_chan, Channel, Resource,
     To = {lists:concat([Channel, "%", StateData#state.server]),
 	  StateData#state.myname, StateData#state.nick},
     case jlib:iq_query_info(El) of
-	{iq, ID, Type, ?NS_MUC_ADMIN = XMLNS, SubEl} ->
-	    iq_admin(StateData, Channel,
-		     From,
-		     To,
-		     ID, XMLNS, Type, SubEl);
-	{iq, ID, get, ?NS_VERSION = XMLNS, SubEl} ->
+	#iq{xmlns = ?NS_MUC_ADMIN} = IQ ->
+	    iq_admin(StateData, Channel, From, To, IQ);
+	#iq{xmlns = ?NS_VERSION} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001VERSION\001\r\n",
 				[Resource]),
 	    ?SEND(Res),
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
-	{iq, ID, get, ?NS_TIME = XMLNS, SubEl} ->
+	#iq{xmlns = ?NS_TIME} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001TIME\001\r\n",
 				[Resource]),
 	    ?SEND(Res),
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
-	_ ->
+	#iq{} ->
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
-	    ejabberd_router:route(To, From, Err)
+	    ejabberd_router:route(To, From, Err);
+	_ ->
+	    ok
     end,
     {next_state, StateName, StateData};
 
@@ -976,7 +975,8 @@ remove_element(E, Set) ->
 
 
 
-iq_admin(StateData, Channel, From, To, ID, XMLNS, Type, SubEl) ->
+iq_admin(StateData, Channel, From, To,
+	 #iq{type = Type, xmlns = XMLNS, sub_el = SubEl} = IQ) ->
     case catch process_iq_admin(StateData, Channel, Type, SubEl) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
@@ -985,14 +985,14 @@ iq_admin(StateData, Channel, From, To, ID, XMLNS, Type, SubEl) ->
 		Res /= ignore ->
 		    ResIQ = case Res of
 				{result, ResEls} ->
-				    {iq, ID, result, XMLNS,
-				     [{xmlelement, "query",
-				       [{"xmlns", XMLNS}],
-				       ResEls
-				      }]};
+				    IQ#iq{type = result,
+					  sub_el = [{xmlelement, "query",
+						     [{"xmlns", XMLNS}],
+						     ResEls
+						    }]};
 				{error, Error} ->
-				    {iq, ID, error, XMLNS,
-				     [SubEl, Error]}
+				    IQ#iq{type = error,
+					  sub_el = [SubEl, Error]}
 			    end,
 		    ejabberd_router:route(To, From,
 					  jlib:iq_to_xml(ResIQ));

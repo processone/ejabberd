@@ -92,27 +92,29 @@ do_route(Host, From, To, Packet) ->
 	    case Name of
 		"iq" ->
 		    case jlib:iq_query_info(Packet) of
-			{iq, ID, get, ?NS_DISCO_INFO = XMLNS, SubEl} ->
+			#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
+			    sub_el = SubEl} = IQ ->
 			    {xmlelement, _, QAttrs, _} = SubEl,
 			    Node = xml:get_attr_s("node", QAttrs),
-			    Res = {iq, ID, result, XMLNS,
-				   [{xmlelement, "query",
-				     QAttrs,
-				     iq_disco_info(Node)}]},
+			    Res = IQ#iq{type = result,
+					sub_el = [{xmlelement, "query",
+						   QAttrs,
+						   iq_disco_info(Node)}]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
-			{iq, ID, get, ?NS_DISCO_ITEMS = XMLNS, SubEl} ->
+			#iq{type = get, xmlns = ?NS_DISCO_ITEMS = XMLNS,
+			    sub_el = SubEl} = IQ ->
 			    {xmlelement, _, QAttrs, _} = SubEl,
 			    Node = xml:get_attr_s("node", QAttrs),
 			    Res =
 				case iq_disco_items(Host, From, Node) of
 				    {result, IQRes} ->
 					jlib:iq_to_xml(
-					  {iq, ID, result, XMLNS,
-					   [{xmlelement, "query",
-					     QAttrs,
-					     IQRes}]});
+					  IQ#iq{type = result,
+						sub_el = [{xmlelement, "query",
+							   QAttrs,
+							   IQRes}]});
 				    {error, Error} ->
 					jlib:make_error_reply(
 					  Packet, Error)
@@ -144,35 +146,37 @@ do_route(Host, From, To, Packet) ->
 			%	    ejabberd_router:route(
 			%	      To, From, Err)
 			%    end;
-			{iq, ID, Type, ?NS_PUBSUB = XMLNS, SubEl} ->
+			#iq{type = Type, xmlns = ?NS_PUBSUB = XMLNS,
+			    sub_el = SubEl} = IQ ->
 			    Res =
 				case iq_pubsub(Host, From, Type, SubEl) of
 				    {result, IQRes} ->
 					jlib:iq_to_xml(
-					  {iq, ID, result, XMLNS,
-					   IQRes});
+					  IQ#iq{type = result,
+						sub_el = IQRes});
 				    {error, Error} ->
 					jlib:make_error_reply(
 					  Packet, Error)
 				end,
 			    ejabberd_router:route(To, From, Res);
-			{iq, ID, get, ?NS_VCARD = XMLNS, SubEl} ->
+			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
+			    sub_el = SubEl} = IQ ->
 			    Lang = xml:get_tag_attr_s(
 				     "xml:lang", SubEl),
-			    Res = {iq, ID, result, XMLNS,
-				   [{xmlelement, "query",
-				     [{"xmlns", XMLNS}],
-				     iq_get_vcard(Lang)}]},
+			    Res = IQ#iq{type = result,
+					sub_el = [{xmlelement, "query",
+						   [{"xmlns", XMLNS}],
+						   iq_get_vcard(Lang)}]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
-			reply ->
-			    ok;
-			_ ->
+			#iq{} ->
 			    Err = jlib:make_error_reply(
 				    Packet,
 				    ?ERR_FEATURE_NOT_IMPLEMENTED),
-			    ejabberd_router:route(To, From, Err)
+			    ejabberd_router:route(To, From, Err);
+			_ ->
+			    ok
 		    end;
 		_ ->
 		    ok

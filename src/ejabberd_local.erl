@@ -106,31 +106,24 @@ do_route(State, From, To, Packet) ->
 process_iq(State, From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
-	{iq, _ID, Type, XMLNS, _SubEl} ->
-	    case jlib:is_iq_request_type(Type) of
-		true ->
-		    case ets:lookup(State#state.iqtable, XMLNS) of
-			[{_, Module, Function}] ->
-			    ResIQ = apply(Module, Function, [From, To, IQ]),
-			    if
-				ResIQ /= ignore ->
-				    ejabberd_router ! {route,
-						       To,
-						       From,
-						       jlib:iq_to_xml(ResIQ)};
-				true ->
-				    ok
-			    end;
-			[{_, Module, Function, Opts}] ->
-			    gen_iq_handler:handle(Module, Function, Opts,
-						  From, To, IQ);
-			[] ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-			    ejabberd_router:route(To, From, Err)
+	#iq{xmlns = XMLNS} ->
+	    case ets:lookup(State#state.iqtable, XMLNS) of
+		[{_, Module, Function}] ->
+		    ResIQ = Module:Function(From, To, IQ),
+		    if
+			ResIQ /= ignore ->
+			    ejabberd_router:route(
+			      To, From, jlib:iq_to_xml(ResIQ));
+			true ->
+			    ok
 		    end;
-		_ ->
-		    ok
+		[{_, Module, Function, Opts}] ->
+		    gen_iq_handler:handle(Module, Function, Opts,
+					  From, To, IQ);
+		[] ->
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+		    ejabberd_router:route(To, From, Err)
 	    end;
 	reply ->
 	    ok;

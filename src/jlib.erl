@@ -343,7 +343,8 @@ iq_query_info({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
 		    XMLNS = xml:get_attr_s("xmlns", Attrs2),
 		    if
 			XMLNS /= "" ->
-			    {iq, ID, Type1, XMLNS, {xmlelement, Name2, Attrs2, Els2}};
+			    #iq{id = ID, type = Type1, xmlns = XMLNS,
+				sub_el = {xmlelement, Name2, Attrs2, Els2}};
 			true ->
 			    invalid
 		    end;
@@ -367,7 +368,7 @@ iq_type_to_string(error) -> "error";
 iq_type_to_string(_) -> invalid.
 
 
-iq_to_xml({iq, ID, Type, _, SubEl}) ->
+iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
     if
 	ID /= "" ->
 	    {xmlelement, "iq",

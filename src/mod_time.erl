@@ -28,19 +28,17 @@ start(Opts) ->
 stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_TIME).
 
-process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS,
-	     [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    UTC = jlib:timestamp_to_iso(calendar:universal_time()),
-	    {iq, ID, result, XMLNS,
-	     [{xmlelement, "query",
-	       [{"xmlns", ?NS_TIME}],
-	       [{xmlelement, "utc", [],
-		 [{xmlcdata, UTC}]}
-	       ]}]}
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "query",
+			     [{"xmlns", ?NS_TIME}],
+			     [{xmlelement, "utc", [],
+			       [{xmlcdata, UTC}]}]}]}
     end.
 
 

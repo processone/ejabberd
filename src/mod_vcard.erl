@@ -86,39 +86,38 @@ loop() ->
     end.
 
 
-process_local_iq(_From, _To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    {iq, ID, result, XMLNS,
-	     [{xmlelement, "vCard",
-	       [{"xmlns", ?NS_VCARD}],
-	       [{xmlelement, "FN", [],
-		 [{xmlcdata, "ejabberd"}]},
-		{xmlelement, "URL", [],
-		 [{xmlcdata,
-		   "http://ejabberd.jabberstudio.org/"}]},
-		{xmlelement, "DESC", [],
-		 [{xmlcdata, "Erlang Jabber Server\n"
-		   "Copyright (c) 2002, 2003 Alexey Shchepin"}]},
-		{xmlelement, "BDAY", [],
-		 [{xmlcdata, "2002-11-16"}]}
-	       ]}]}
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "vCard",
+			     [{"xmlns", ?NS_VCARD}],
+			     [{xmlelement, "FN", [],
+			       [{xmlcdata, "ejabberd"}]},
+			      {xmlelement, "URL", [],
+			       [{xmlcdata,
+				 "http://ejabberd.jabberstudio.org/"}]},
+			      {xmlelement, "DESC", [],
+			       [{xmlcdata, "Erlang Jabber Server\n"
+				 "Copyright (c) 2002, 2003 Alexey Shchepin"}]},
+			      {xmlelement, "BDAY", [],
+			       [{xmlcdata, "2002-11-16"}]}
+			     ]}]}
     end.
 
 
-process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    #jid{user = User, lserver = LServer, luser = LUser} = From,
 	    case ?MYNAME of
 		LServer ->
 		    set_vcard(User, SubEl),
-		    {iq, ID, result, XMLNS, []};
+		    IQ#iq{type = result, sub_el = []};
 		_ ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_NOT_ALLOWED]}
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 	    end;
 	get ->
 	    #jid{luser = LUser} = To,
@@ -133,7 +132,7 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		      {aborted, _Reason} ->
 			  []
 		  end,
-	    {iq, ID, result, XMLNS, Els}
+	    IQ#iq{type = result, sub_el = Els}
     end.
 
 set_vcard(User, VCARD) ->
@@ -238,7 +237,7 @@ do_route(From, To, Packet) ->
 	true ->
 	    IQ = jlib:iq_query_info(Packet),
 	    case IQ of
-		{iq, ID, Type, ?NS_SEARCH, SubEl} ->
+		#iq{type = Type, xmlns = ?NS_SEARCH, sub_el = SubEl} ->
 		    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 		    case Type of
 			set ->
@@ -259,64 +258,71 @@ do_route(From, To, Packet) ->
 								  Err);
 					_ ->
 					    ResIQ =
-						{iq, ID, result, ?NS_SEARCH,
-						 [{xmlelement,
-						   "query",
-						   [{"xmlns", ?NS_SEARCH}],
-						   [{xmlelement, "x",
-						     [{"xmlns", ?NS_XDATA},
-						      {"type", "result"}],
-						     search_result(Lang, XData)
-						    }]}]},
+						IQ#iq{
+						  type = result,
+						  sub_el =
+						  [{xmlelement,
+						    "query",
+						    [{"xmlns", ?NS_SEARCH}],
+						    [{xmlelement, "x",
+						      [{"xmlns", ?NS_XDATA},
+						       {"type", "result"}],
+						      search_result(Lang, XData)
+						     }]}]},
 					    ejabberd_router:route(
 					      To, From, jlib:iq_to_xml(ResIQ))
 				    end
 			    end;
 			get ->
-			    ResIQ = {iq, ID, result, ?NS_SEARCH,
-				     [{xmlelement,
-				       "query",
-				       [{"xmlns", ?NS_SEARCH}],
-				       ?FORM
-				      }]},
+			    ResIQ = IQ#iq{type = result,
+					  sub_el = [{xmlelement,
+						     "query",
+						     [{"xmlns", ?NS_SEARCH}],
+						     ?FORM
+						    }]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(ResIQ))
 		    end;
-		{iq, ID, Type, ?NS_DISCO_INFO, SubEl} ->
+		#iq{type = Type, xmlns = ?NS_DISCO_INFO, sub_el = SubEl} ->
 		    case Type of
 			set ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(To, From, Err);
 			get ->
-			    ResIQ = {iq, ID, result, ?NS_DISCO_INFO,
-				     [{xmlelement,
-				       "query",
-				       [{"xmlns", ?NS_DISCO_INFO}],
-				       [{xmlelement, "identity",
-					 [{"category", "directory"},
-					  {"type", "user"},
-					  {"name", "vCard User Search"}], []},
-					{xmlelement, "feature",
-					 [{"var", ?NS_SEARCH}], []}
-				       ]
-				      }]},
+			    ResIQ =
+				IQ#iq{type = result,
+				      sub_el = [{xmlelement,
+						 "query",
+						 [{"xmlns", ?NS_DISCO_INFO}],
+						 [{xmlelement, "identity",
+						   [{"category", "directory"},
+						    {"type", "user"},
+						    {"name",
+						     "vCard User Search"}],
+						   []},
+						  {xmlelement, "feature",
+						   [{"var", ?NS_SEARCH}], []}
+						 ]
+						}]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(ResIQ))
 		    end;
-		{iq, ID, Type, ?NS_DISCO_ITEMS, SubEl} ->
+		#iq{type = Type, xmlns = ?NS_DISCO_ITEMS, sub_el = SubEl} ->
 		    case Type of
 			set ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(To, From, Err);
 			get ->
-			    ResIQ = {iq, ID, result, ?NS_DISCO_INFO,
-				     [{xmlelement,
-				       "query",
-				       [{"xmlns", ?NS_DISCO_INFO}], []}]},
+			    ResIQ = 
+				IQ#iq{type = result,
+				      sub_el = [{xmlelement,
+						 "query",
+						 [{"xmlns", ?NS_DISCO_INFO}],
+						 []}]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(ResIQ))

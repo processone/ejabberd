@@ -271,7 +271,7 @@ normal_state({route, From, "",
 	      {xmlelement, "iq", Attrs, Els} = Packet},
 	     StateData) ->
     case jlib:iq_query_info(Packet) of
-	{iq, ID, Type, XMLNS, SubEl} when
+	#iq{type = Type, xmlns = XMLNS, sub_el = SubEl} = IQ when
 	      (XMLNS == ?NS_MUC_ADMIN) or
 	      (XMLNS == ?NS_MUC_OWNER) or
 	      (XMLNS == ?NS_DISCO_INFO) or
@@ -289,14 +289,15 @@ normal_state({route, From, "",
 	    {IQRes, NewStateData} =
 		case Res1 of
 		    {result, Res, SD} ->
-			{{iq, ID, result, XMLNS,
-			  [{xmlelement, "query", [{"xmlns", XMLNS}],
-			    Res
-			   }]},
+			{IQ#iq{type = result,
+			       sub_el = [{xmlelement, "query",
+					  [{"xmlns", XMLNS}],
+					  Res
+					 }]},
 			 SD};
 		    {error, Error} ->
-			{{iq, ID, error, XMLNS,
-			  [SubEl, Error]},
+			{IQ#iq{type = error,
+			       sub_el = [SubEl, Error]},
 			 StateData}
 		end,
 	    ejabberd_router:route(StateData#state.jid,

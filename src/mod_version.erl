@@ -30,11 +30,11 @@ stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_VERSION).
 
 
-process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq(From, To, #iq{id = ID, type = Type,
+			       xmlns = XMLNS, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS,
-	     [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    OSType = case os:type() of
 			 {Osfamily, Osname} ->
@@ -52,16 +52,16 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 				VersionString
 			end,
 	    OS = OSType ++ " " ++ OSVersion,
-	    {iq, ID, result, XMLNS,
-	     [{xmlelement, "query",
-	       [{"xmlns", ?NS_VERSION}],
-	       [{xmlelement, "name", [],
-		 [{xmlcdata, "ejabberd"}]},
-		{xmlelement, "version", [],
-		 [{xmlcdata, ?VERSION}]},
-		{xmlelement, "os", [],
-		 [{xmlcdata, OS}]}
-	       ]}]}
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "query",
+			     [{"xmlns", ?NS_VERSION}],
+			     [{xmlelement, "name", [],
+			       [{xmlcdata, "ejabberd"}]},
+			      {xmlelement, "version", [],
+			       [{xmlcdata, ?VERSION}]},
+			      {xmlelement, "os", [],
+			       [{xmlcdata, OS}]}
+			     ]}]}
     end.
 
 

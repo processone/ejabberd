@@ -27,11 +27,12 @@ stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_STATS).
 
 
-process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq(From, To, #iq{id = ID, type = Type,
+			       xmlns = XMLNS, sub_el = SubEl} = IQ) ->
     Lang = xml:get_tag_attr_s("xml:lang", SubEl),
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    {xmlelement, _, Attrs, Els} = SubEl,
 	    Node = string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
@@ -39,11 +40,12 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	    
 	    case get_local_stats(Node, Names) of
 		{result, Res} ->
-		    {iq, ID, result, XMLNS,
-		     [{xmlelement, "query", [{"xmlns", XMLNS}], Res}]};
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", XMLNS}],
+				     Res}]};
 		{error, Error} ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, Error]}
+		    IQ#iq{type = error, sub_el =  [SubEl, Error]}
 	    end
     end.
 
