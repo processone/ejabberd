@@ -32,6 +32,7 @@
 \newcommand{\modtime}{\texttt{mod\_time}}
 \newcommand{\modversion}{\texttt{mod\_version}}
 
+%\setcounter{tocdepth}{3}
 
 
 \title{Ejabberd Installation and Operation Guide}
@@ -50,29 +51,31 @@
   }
 \end{titlepage}
 %\newpage
-\tableofcontents{}
+%\tableofcontents{}
 
 \newpage
 \section{Introduction}
 \label{sec:intro}
 
 \ejabberd{} is a Free and Open Source distributed fault-tolerant \Jabber{}
-server.  It writen mostly in Erlang.
+server.  It is writen mostly in Erlang.
 
 Main features of ejabberd is:
 \begin{itemize}
-\item Distribution.  You can run ejaberd on cluster of machines and all them
-  will serve one Jabber domain.
-\item   Fault-tolerance.  You can setup ejabberd cluster in such way, that all
-  information required for properly working will be stored permanently on more
-  then one machine, so if one of them crashed, then all other ones continue
-  working without any pauses.  Also you can replace or add more machines ``on
-  the fly''.
-\item Support of \footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030}
+\item Distributed.  You can run ejabberd on a cluster of machines and
+  all of them will serve one Jabber domain.
+\item Fault-tolerance. You can setup an ejabberd cluster so that all
+  information required for a properly working service will be stored
+  permanently on more then one node. This means that if one of the
+  nodes crashed, then the others continue working without disruption.
+  You can also add or replace more nodes ``on the fly''.
+\item Support for
+  \footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030}
   (Service Discovery).
-\item Support of \footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039}
+\item Support for
+  \footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039}
   (Statistics Gathering).
-\item Support of \ns{xml:lang} attribute in many XML elements.
+\item Support for \ns{xml:lang} attribute in many XML elements.
 \item JUD based on users vCards.
 \end{itemize}
 
@@ -97,13 +100,13 @@ To compile \ejabberd{}, you need following packages:
 \subsection{Obtaining}
 \label{sec:obtaining}
 
-Currently no stable version released.
+Currently no stable version has been released.
 
-Latest alpha version can be retrieved via CVS\@.  Do following steps:
+The latest alpha version can be retrieved via CVS\@.  Do following steps:
 \begin{itemize}
 \item \texttt{export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs}
 \item \texttt{cvs login}
-\item Enter empty password
+\item Press Enter when asked for a password
 \item \texttt{cvs -z3 co ejabberd}
 \end{itemize}
 
@@ -199,44 +202,37 @@ Declaration of ACL in config file have following syntax:
 \begin{verbatim}
 {acl, all, all}.
 \end{verbatim}
-
 \item[\texttt{\{user, <username>\}}] Matches local user with name
   \texttt{<username>}.  Example:
 \begin{verbatim}
 {acl, admin, {user, "aleksey"}}.
 \end{verbatim}
-
 \item[\texttt{\{user, <username>, <server>\}}] Matches user with JID
   \texttt{<username>@<server>} and any resource.  Example:
 \begin{verbatim}
 {acl, admin, {user, "aleksey", "jabber.ru"}}.
 \end{verbatim}
-
 \item[\texttt{\{server, <server>\}}] Matches any JID from server
   \texttt{<server>}.  Example:
 \begin{verbatim}
 {acl, jabberorg, {server, "jabber.org"}}.
 \end{verbatim}
-
 \item[\texttt{\{user\_regexp, <regexp>\}}] Matches local user with name that
   mathes \texttt{<regexp>}.  Example:
 \begin{verbatim}
 {acl, tests, {user, "^test[0-9]*$"}}.
 \end{verbatim}
 %$
-
 \item[\texttt{\{user\_regexp, <regexp>, <server>\}}] Matches user with name
   that mathes \texttt{<regexp>} and from server \texttt{<server>}.  Example:
 \begin{verbatim}
 {acl, tests, {user, "^test", "localhost"}}.
 \end{verbatim}
-
 \item[\texttt{\{server\_regexp, <regexp>\}}] Matches any JID from server that
   matches \texttt{<regexp>}.  Example:
 \begin{verbatim}
 {acl, icq, {server, "^icq\\."}}.
 \end{verbatim}
-
 \item[\texttt{\{node\_regexp, <user\_regexp>, <server\_regexp>\}}] Matches user
   with name that mathes \texttt{<user\_regexp>} and from server that matches
   \texttt{<server\_regexp>}.  Example:
@@ -244,7 +240,6 @@ Declaration of ACL in config file have following syntax:
 {acl, aleksey, {node_regexp, "^aleksey", "^jabber.(ru|org)$"}}.
 \end{verbatim}
 %$
-
 \item[\texttt{\{user\_glob, <glob>\}}]
 \item[\texttt{\{user\_glob, <glob>, <server>\}}]
 \item[\texttt{\{server\_glob, <glob>\}}]

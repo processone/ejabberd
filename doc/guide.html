@@ -2,22 +2,27 @@
             "http://www.w3.org/TR/REC-html40/loose.dtd">
 <HTML>
 <HEAD><TITLE>Ejabberd Installation and Operation Guide</TITLE>
+
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<META name="GENERATOR" content="hevea 1.05">
+<META name="GENERATOR" content="hevea 1.06">
 </HEAD>
 <BODY >
-<!--HEVEA command line is: hevea guide.tex -->
+<!--HEVEA command line is: /usr/bin/hevea guide.tex -->
 <!--HTMLHEAD-->
 <!--ENDHTML-->
+<!--PREFIX <ARG ></ARG>-->
 <!--CUT DEF section 1 -->
 
 
  
 <H1 ALIGN=center>Ejabberd Installation and Operation Guide</H1>
 
-<H3 ALIGN=center>Alexey Shchepin<BR><A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR><A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
+<H3 ALIGN=center>Alexey Shchepin<BR>
+<A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
+<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
-<H3 ALIGN=center>February 3, 2003</H3> <DIV ALIGN=center>
+<H3 ALIGN=center>February 3, 2003</H3><DIV ALIGN=center>
+
  <IMG SRC="logo.png">
  
 
@@ -29,99 +34,99 @@
 <BR>
 <!--TOC section Introduction-->
 
-<H2>1&nbsp;&nbsp; Introduction</H2><!--SEC END -->
+<H2><A NAME="htoc1">1</A>&nbsp;&nbsp;Introduction</H2><!--SEC END -->
 
-<A NAME="sec:intro"></A><TT>ejabberd</TT> is a Free and Open Source distributed fault-tolerant Jabber
-server. It writen mostly in Erlang.<BR>
+<A NAME="sec:intro"></A>
+<TT>ejabberd</TT> is a Free and Open Source distributed fault-tolerant Jabber
+server. It is writen mostly in Erlang.<BR>
 <BR>
 Main features of ejabberd is:
-<UL>
-<LI>
- Distribution. You can run ejaberd on cluster of machines and all them
- will serve one Jabber domain.
-
-<LI> Fault-tolerance. You can setup ejabberd cluster in such way, that all
- information required for properly working will be stored permanently on more
- then one machine, so if one of them crashed, then all other ones continue
- working without any pauses. Also you can replace or add more machines ``on
- the fly''.
-
-<LI> Support of <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A>
+<UL><LI>
+Distributed. You can run ejabberd on a cluster of machines and
+ all of them will serve one Jabber domain.
+<LI>Fault-tolerance. You can setup an ejabberd cluster so that all
+ information required for a properly working service will be stored
+ permanently on more then one node. This means that if one of the
+ nodes crashed, then the others continue working without disruption.
+ You can also add or replace more nodes ``on the fly''.
+<LI>Support for
+ <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A>
  (Service Discovery).
-
-<LI> Support of <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>
+<LI>Support for
+ <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>
  (Statistics Gathering).
+<LI>Support for <TT>xml:lang</TT> attribute in many XML elements.
+<LI>JUD based on users vCards.
+</UL>
+<!--TOC section Installation-->
 
-<LI> Support of <TT>xml:lang</TT> attribute in many XML elements.
+<H2><A NAME="htoc2">2</A>&nbsp;&nbsp;Installation</H2><!--SEC END -->
 
-<LI> JUD based on users vCards.
-</UL><!--TOC section Installation-->
+<A NAME="sec:installation"></A>
+<!--TOC subsection Installation Requirements-->
 
-<H2>2&nbsp;&nbsp; Installation</H2><!--SEC END -->
+<H3><A NAME="htoc3">2.1</A>&nbsp;&nbsp;Installation Requirements</H3><!--SEC END -->
 
-<A NAME="sec:installation"></A><!--TOC subsection Installation Requirements-->
+<A NAME="sec:installreq"></A>
+To compile <TT>ejabberd</TT>, you need following packages:
+<UL><LI>
+GNU Make;
+<LI>GCC;
+<LI>libexpat 1.95 or later;
+<LI>Erlang/OTP R8B or later.
+</UL>
+<!--TOC subsection Obtaining-->
 
-<H3>2.1&nbsp;&nbsp; Installation Requirements</H3><!--SEC END -->
+<H3><A NAME="htoc4">2.2</A>&nbsp;&nbsp;Obtaining</H3><!--SEC END -->
 
-<A NAME="sec:installreq"></A>To compile <TT>ejabberd</TT>, you need following packages:
-<UL>
-<LI>
- GNU Make;
-
-<LI> GCC;
-
-<LI> libexpat 1.95 or later;
-
-<LI> Erlang/OTP R8B or later.
-</UL><!--TOC subsection Obtaining-->
-
-<H3>2.2&nbsp;&nbsp; Obtaining</H3><!--SEC END -->
-
-<A NAME="sec:obtaining"></A>Currently no stable version released.<BR>
+<A NAME="sec:obtaining"></A>
+Currently no stable version has been released.<BR>
 <BR>
-Latest alpha version can be retrieved via CVS. Do following steps:
-<UL>
-<LI>
- <TT>export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs</TT>
+The latest alpha version can be retrieved via CVS. Do following steps:
+<UL><LI>
+<TT>export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs</TT>
+<LI><TT>cvs login</TT>
+<LI>Press Enter when asked for a password
+<LI><TT>cvs -z3 co ejabberd</TT>
+</UL>
+<!--TOC subsection Compilation-->
 
-<LI> <TT>cvs login</TT>
+<H3><A NAME="htoc5">2.3</A>&nbsp;&nbsp;Compilation</H3><!--SEC END -->
 
-<LI> Enter empty password
-
-<LI> <TT>cvs -z3 co ejabberd</TT>
-</UL><!--TOC subsection Compilation-->
-
-<H3>2.3&nbsp;&nbsp; Compilation</H3><!--SEC END -->
-
-<A NAME="sec:compilation"></A><PRE>
+<A NAME="sec:compilation"></A>
+<PRE>
 ./configure
 make
-</PRE>TBD<BR>
+</PRE>
+TBD<BR>
 <BR>
 <!--TOC subsection Starting-->
 
-<H3>2.4&nbsp;&nbsp; Starting</H3><!--SEC END -->
+<H3><A NAME="htoc6">2.4</A>&nbsp;&nbsp;Starting</H3><!--SEC END -->
 
-<A NAME="sec:starting"></A>... To use more then 1024 connections, you need to set environment
+<A NAME="sec:starting"></A>
+... To use more then 1024 connections, you need to set environment
 variable <TT>ERL_MAX_PORTS</TT>:
 <PRE>
 export ERL_MAX_PORTS=32000
 </PRE>Note that with this value <TT>ejabberd</TT> will use more memory (approximately 6MB
-more)...<BR>
-<BR>
+more)...
 <PRE>
 erl -name ejabberd -s ejabberd
-</PRE>TBD<BR>
+</PRE>
+TBD<BR>
 <BR>
 <!--TOC section Configuration-->
 
-<H2>3&nbsp;&nbsp; Configuration</H2><!--SEC END -->
+<H2><A NAME="htoc7">3</A>&nbsp;&nbsp;Configuration</H2><!--SEC END -->
 
-<A NAME="sec:configuration"></A><!--TOC subsection Initial Configuration-->
+<A NAME="sec:configuration"></A>
+<!--TOC subsection Initial Configuration-->
 
-<H3>3.1&nbsp;&nbsp; Initial Configuration</H3><!--SEC END -->
+<H3><A NAME="htoc8">3.1</A>&nbsp;&nbsp;Initial Configuration</H3><!--SEC END -->
 
-<A NAME="sec:initconfig"></A>Configuration file is loaded after first start of <TT>ejabberd</TT>. It consists of
+<A NAME="sec:initconfig"></A>
+Configuration file is loaded after first start of <TT>ejabberd</TT>. It consists of
 sequence of Erlang terms. Parts of lines after <TT>`%'</TT> sign are ignored.
 Each term is tuple, where first element is name of option, and other are option
 values. Note, that after first start all values from this file stored in
@@ -139,90 +144,79 @@ adding new ones.<BR>
 <BR>
 <!--TOC subsubsection Host Name-->
 
-<H4>3.1.1&nbsp;&nbsp; Host Name</H4><!--SEC END -->
+<H4><A NAME="htoc9">3.1.1</A>&nbsp;&nbsp;Host Name</H4><!--SEC END -->
 
-<A NAME="sec:confighostname"></A>Option <TT>hostname</TT> defines name of Jabber domain that <TT>ejabberd</TT>
+<A NAME="sec:confighostname"></A>
+Option <TT>hostname</TT> defines name of Jabber domain that <TT>ejabberd</TT>
 serves. E.&nbsp;g. to use <TT>jabber.org</TT> domain add following line in config:
 <PRE>
 {host, "jabber.org"}.
-</PRE><!--TOC subsubsection Access Rules-->
+</PRE>
+<!--TOC subsubsection Access Rules-->
 
-<H4>3.1.2&nbsp;&nbsp; Access Rules</H4><!--SEC END -->
+<H4><A NAME="htoc10">3.1.2</A>&nbsp;&nbsp;Access Rules</H4><!--SEC END -->
 
-<A NAME="sec:configaccess"></A>Access control in <TT>ejabberd</TT> is done via Access Control Lists (ACL).
+<A NAME="sec:configaccess"></A>
+Access control in <TT>ejabberd</TT> is done via Access Control Lists (ACL).
 Declaration of ACL in config file have following syntax:
 <PRE>
 {acl, &lt;aclname&gt;, {&lt;acltype&gt;, ...}}.
-</PRE><TT>&lt;acltype&gt;</TT> can be one of following:
-<DL COMPACT=compact>
-<DT>
-<TT>all</TT><DD> Matches all JIDs. Example:
+</PRE>
+<TT>&lt;acltype&gt;</TT> can be one of following:
+<DL COMPACT=compact><DT>
+<B><TT>all</TT></B><DD> Matches all JIDs. Example:
 <PRE>
 {acl, all, all}.
-</PRE>
-<DT><TT>{user, &lt;username&gt;}</TT><DD> Matches local user with name
+</PRE><DT><B><TT>{user, &lt;username&gt;}</TT></B><DD> Matches local user with name
  <TT>&lt;username&gt;</TT>. Example:
 <PRE>
 {acl, admin, {user, "aleksey"}}.
-</PRE>
-<DT><TT>{user, &lt;username&gt;, &lt;server&gt;}</TT><DD> Matches user with JID
+</PRE><DT><B><TT>{user, &lt;username&gt;, &lt;server&gt;}</TT></B><DD> Matches user with JID
  <TT>&lt;username&gt;@&lt;server&gt;</TT> and any resource. Example:
 <PRE>
 {acl, admin, {user, "aleksey", "jabber.ru"}}.
-</PRE>
-<DT><TT>{server, &lt;server&gt;}</TT><DD> Matches any JID from server
+</PRE><DT><B><TT>{server, &lt;server&gt;}</TT></B><DD> Matches any JID from server
  <TT>&lt;server&gt;</TT>. Example:
 <PRE>
 {acl, jabberorg, {server, "jabber.org"}}.
-</PRE>
-<DT><TT>{user_regexp, &lt;regexp&gt;}</TT><DD> Matches local user with name that
+</PRE><DT><B><TT>{user_regexp, &lt;regexp&gt;}</TT></B><DD> Matches local user with name that
  mathes <TT>&lt;regexp&gt;</TT>. Example:
 <PRE>
 {acl, tests, {user, "^test[0-9]*$"}}.
-</PRE>
-<DT><TT>{user_regexp, &lt;regexp&gt;, &lt;server&gt;}</TT><DD> Matches user with name
+</PRE><DT><B><TT>{user_regexp, &lt;regexp&gt;, &lt;server&gt;}</TT></B><DD> Matches user with name
  that mathes <TT>&lt;regexp&gt;</TT> and from server <TT>&lt;server&gt;</TT>. Example:
 <PRE>
 {acl, tests, {user, "^test", "localhost"}}.
-</PRE>
-<DT><TT>{server_regexp, &lt;regexp&gt;}</TT><DD> Matches any JID from server that
+</PRE><DT><B><TT>{server_regexp, &lt;regexp&gt;}</TT></B><DD> Matches any JID from server that
  matches <TT>&lt;regexp&gt;</TT>. Example:
 <PRE>
 {acl, icq, {server, "^icq\\."}}.
-</PRE>
-<DT><TT>{node_regexp, &lt;user_regexp&gt;, &lt;server_regexp&gt;}</TT><DD> Matches user
+</PRE><DT><B><TT>{node_regexp, &lt;user_regexp&gt;, &lt;server_regexp&gt;}</TT></B><DD> Matches user
  with name that mathes <TT>&lt;user_regexp&gt;</TT> and from server that matches
  <TT>&lt;server_regexp&gt;</TT>. Example:
 <PRE>
 {acl, aleksey, {node_regexp, "^aleksey", "^jabber.(ru|org)$"}}.
-</PRE>
-<DT><TT>{user_glob, &lt;glob&gt;}</TT><DD>
-
-<DT><TT>{user_glob, &lt;glob&gt;, &lt;server&gt;}</TT><DD>
-
-<DT><TT>{server_glob, &lt;glob&gt;}</TT><DD>
-
-<DT><TT>{node_glob, &lt;user_glob&gt;, &lt;server_glob&gt;}</TT><DD> This is same as
+</PRE><DT><B><TT>{user_glob, &lt;glob&gt;}</TT></B><DD>
+<DT><B><TT>{user_glob, &lt;glob&gt;, &lt;server&gt;}</TT></B><DD>
+<DT><B><TT>{server_glob, &lt;glob&gt;}</TT></B><DD>
+<DT><B><TT>{node_glob, &lt;user_glob&gt;, &lt;server_glob&gt;}</TT></B><DD> This is same as
  above, but use shell glob patterns instead of regexp. This patterns can have
  following special characters:
- <DL COMPACT=compact>
-<DT>
- <TT>*</TT><DD> matches any string including the null string.
- 
-<DT><TT>?</TT><DD> matches any single character.
- 
-<DT><TT>[...]</TT><DD> matches any of the enclosed characters. Character
+ <DL COMPACT=compact><DT>
+ <B><TT>*</TT></B><DD> matches any string including the null string.
+ <DT><B><TT>?</TT></B><DD> matches any single character.
+ <DT><B><TT>[...]</TT></B><DD> matches any of the enclosed characters. Character
  ranges are specified by a pair of characters separated by a <TT>`-'</TT>.
  If the first character after <TT>`['</TT> is a <TT>`!'</TT>, then any
  character not enclosed is matched.
  </DL>
-</DL>Following ACLs pre-defined:
-<DL COMPACT=compact>
-<DT>
-<TT>all</TT><DD> Matches all JIDs.
-
-<DT><TT>none</TT><DD> Matches none JIDs.
-</DL>Allowing or denying of different services is like this:
+</DL>
+Following ACLs pre-defined:
+<DL COMPACT=compact><DT>
+<B><TT>all</TT></B><DD> Matches all JIDs.
+<DT><B><TT>none</TT></B><DD> Matches none JIDs.
+</DL>
+Allowing or denying of different services is like this:
 <PRE>
 {access, &lt;accessname&gt;, [{allow, &lt;aclname&gt;},
                         {deny, &lt;aclname&gt;},
@@ -238,48 +232,42 @@ Example:
 {access, configure, [{allow, admin}]}.
 {access, something, [{deny, badmans},
                      {allow, all}]}.
-</PRE>Following access rules pre-defined:
-<DL COMPACT=compact>
-<DT>
-<TT>all</TT><DD> Always return ``<TT>allow</TT>''
+</PRE>
+Following access rules pre-defined:
+<DL COMPACT=compact><DT>
+<B><TT>all</TT></B><DD> Always return ``<TT>allow</TT>''
+<DT><B><TT>none</TT></B><DD> Always return ``<TT>deny</TT>''
+</DL>
+<!--TOC subsubsection Listened Sockets-->
 
-<DT><TT>none</TT><DD> Always return ``<TT>deny</TT>''
-</DL><!--TOC subsubsection Listened Sockets-->
+<H4><A NAME="htoc11">3.1.3</A>&nbsp;&nbsp;Listened Sockets</H4><!--SEC END -->
 
-<H4>3.1.3&nbsp;&nbsp; Listened Sockets</H4><!--SEC END -->
-
-<A NAME="sec:configlistened"></A>Option <TT>listen</TT> defines list of listened sockets and what services
+<A NAME="sec:configlistened"></A>
+Option <TT>listen</TT> defines list of listened sockets and what services
 runned on them. Each element of list is a tuple with following elements:
-<UL>
-<LI>
- Port number;
-
-<LI> Module that serves this port;
-
-<LI> Function in this module that starts connection (likely will be removed);
-
-<LI> Options to this module.
-</UL>Currently three modules implemented:
-<DL COMPACT=compact>
-<DT>
-<TT>ejabberd_c2s</TT><DD> This module serves C2S connections.<BR>
+<UL><LI>
+Port number;
+<LI>Module that serves this port;
+<LI>Function in this module that starts connection (likely will be removed);
+<LI>Options to this module.
+</UL>
+Currently three modules implemented:
+<DL COMPACT=compact><DT>
+<B><TT>ejabberd_c2s</TT></B><DD> This module serves C2S connections.<BR>
 <BR>
- Following options defined:
- <DL COMPACT=compact>
-<DT>
- <TT>{access, &lt;access rule&gt;}</TT><DD> This option defines access of users
+Following options defined:
+ <DL COMPACT=compact><DT>
+ <B><TT>{access, &lt;access rule&gt;}</TT></B><DD> This option defines access of users
  to this C2S port. Default value is ``<TT>all</TT>''.
  </DL>
-
-<DT><TT>ejabberd_s2s_in</TT><DD> This module serves incoming S2S connections.
-
-<DT><TT>ejabberd_service</TT><DD> This module serves connections to Jabber
+<DT><B><TT>ejabberd_s2s_in</TT></B><DD> This module serves incoming S2S connections.
+<DT><B><TT>ejabberd_service</TT></B><DD> This module serves connections to Jabber
  services (i.&nbsp;e. that use <TT>jabber:component:accept</TT> namespace).
-</DL>For example, following configuration defines that C2S connections listened on
+</DL>
+For example, following configuration defines that C2S connections listened on
 port 5222 and denied for user ``<TT>bad</TT>'', S2S on port 5269 and that
 service <TT>conference.jabber.org</TT> must be connected to port 8888 with
-password ``<TT>secret</TT>''.<BR>
-<BR>
+password ``<TT>secret</TT>''.
 <PRE>
 {acl, blocked, {user, "bad"}}.
 {access, c2s, [{deny, blocked},
@@ -289,11 +277,13 @@ password ``<TT>secret</TT>''.<BR>
           {8888, ejabberd_service, start,
            [{host, "conference.jabber.org", [{password, "secret"}]}]}
          ]}.
-</PRE><!--TOC subsubsection Modules-->
+</PRE>
+<!--TOC subsubsection Modules-->
 
-<H4>3.1.4&nbsp;&nbsp; Modules</H4><!--SEC END -->
+<H4><A NAME="htoc12">3.1.4</A>&nbsp;&nbsp;Modules</H4><!--SEC END -->
 
-<A NAME="sec:configmodules"></A>Option <TT>modules</TT> defines list of modules that will be loaded after
+<A NAME="sec:configmodules"></A>
+Option <TT>modules</TT> defines list of modules that will be loaded after
 <TT>ejabberd</TT> startup. Each list element is a tuple where first element is a
 name of module and second is list of options to this module. See
 section&nbsp;<A HREF="#sec:modules">A</A> for detailed information on each module.<BR>
@@ -313,11 +303,13 @@ Example:
            {mod_time,      [{iqdisc, no_queue}]},
            {mod_version,   []}
           ]}.
-</PRE><!--TOC subsection Online Configuration and Monitoring-->
+</PRE>
+<!--TOC subsection Online Configuration and Monitoring-->
 
-<H3>3.2&nbsp;&nbsp; Online Configuration and Monitoring</H3><!--SEC END -->
+<H3><A NAME="htoc13">3.2</A>&nbsp;&nbsp;Online Configuration and Monitoring</H3><!--SEC END -->
 
-<A NAME="sec:onlineconfig"></A>To use facility of online reconfiguration of <TT>ejabberd</TT> needed to have
+<A NAME="sec:onlineconfig"></A>
+To use facility of online reconfiguration of <TT>ejabberd</TT> needed to have
 <TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">A.4</A>). Also highly
 recommended to load <TT>mod_disco</TT> (see section&nbsp;<A HREF="#sec:moddisco">A.5</A>), because
 <TT>mod_configure</TT> highly integrates with it. Also recommended to use disco- and
@@ -327,15 +319,11 @@ developed synchronously with <TT>ejabberd</TT>, its CVS version use most of
 <TT>ejabberd</TT> features).<BR>
 <BR>
 On disco query <TT>ejabberd</TT> returns following items:
-<UL>
-<LI>
- Identity of server.
-
-<LI> List of features, including defined namespaces.
-
-<LI> List of JIDs from route table.
-
-<LI> List of disco-nodes described in following subsections.
+<UL><LI>
+Identity of server.
+<LI>List of features, including defined namespaces.
+<LI>List of JIDs from route table.
+<LI>List of disco-nodes described in following subsections.
 </UL>
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
@@ -343,18 +331,20 @@ On disco query <TT>ejabberd</TT> returns following items:
  
 
  <BR>
-<BR>
 <DIV ALIGN=center>Figure 1: Tkabber Discovery window</DIV><BR>
 
  <A NAME="fig:disco"></A>
-<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC subsubsection Node <TT>config</TT>: Global Configuration-->
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
+<!--TOC subsubsection Node <TT>config</TT>: Global Configuration-->
 
-<H4>3.2.1&nbsp;&nbsp; Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
+<H4><A NAME="htoc14">3.2.1</A>&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
+
 Under this node exists following nodes:<BR>
 <BR>
 <!--TOC paragraph Node <TT>config/hostname</TT>-->
 
-<H5> Node <TT>config/hostname</TT></H5><!--SEC END -->
+<H5>Node <TT>config/hostname</TT></H5><!--SEC END -->
+
 Via <TT>jabber:x:data</TT> queries to this node possible to change host name of
 this <TT>ejabberd</TT> server. (See figure&nbsp;<A HREF="#fig:hostname">2</A>) (Currently will work
 correctly only after restart)
@@ -364,13 +354,14 @@ correctly only after restart)
  
 
  <BR>
-<BR>
 <DIV ALIGN=center>Figure 2: Editing of hostname</DIV><BR>
 
  <A NAME="fig:hostname"></A>
-<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC paragraph Node <TT>config/acls</TT>-->
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
+<!--TOC paragraph Node <TT>config/acls</TT>-->
 
-<H5> Node <TT>config/acls</TT></H5><!--SEC END -->
+<H5>Node <TT>config/acls</TT></H5><!--SEC END -->
+
 Via <TT>jabber:x:data</TT> queries to this node possible to edit ACLs list. (See
 figure&nbsp;<A HREF="#fig:acls">3</A>)
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
@@ -379,68 +370,77 @@ figure&nbsp;<A HREF="#fig:acls">3</A>)
  
 
  <BR>
-<BR>
 <DIV ALIGN=center>Figure 3: Editing of ACLs</DIV><BR>
 
  <A NAME="fig:acls"></A>
-<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC paragraph Node <TT>config/access</TT>-->
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
+<!--TOC paragraph Node <TT>config/access</TT>-->
 
-<H5> Node <TT>config/access</TT></H5><!--SEC END -->
+<H5>Node <TT>config/access</TT></H5><!--SEC END -->
+
 Via <TT>jabber:x:data</TT> queries to this node possible to edit access rules.<BR>
 <BR>
 <!--TOC paragraph Node <TT>config/remusers</TT>-->
 
-<H5> Node <TT>config/remusers</TT></H5><!--SEC END -->
+<H5>Node <TT>config/remusers</TT></H5><!--SEC END -->
+
 Via <TT>jabber:x:data</TT> queries to this node possible to remove users. If
 removed user is online, then he will be disconnected. Also user-related data
 (e.g. his roster) is removed (but appropriate module must be loaded).<BR>
 <BR>
 <!--TOC subsubsection Node <TT>online users</TT>: List of Online Users-->
 
-<H4>3.2.2&nbsp;&nbsp; Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
+<H4><A NAME="htoc15">3.2.2</A>&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
+
 <!--TOC subsubsection Node <TT>all users</TT>: List of Registered User-->
 
-<H4>3.2.3&nbsp;&nbsp; Node <TT>all users</TT>: List of Registered User</H4><!--SEC END -->
+<H4><A NAME="htoc16">3.2.3</A>&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</H4><!--SEC END -->
+
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
  <IMG SRC="discoallusers.png">
  
 
  <BR>
-<BR>
 <DIV ALIGN=center>Figure 4: Discovery all users</DIV><BR>
 
  <A NAME="fig:discoallusers"></A>
-<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC subsubsection Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections-->
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
+<!--TOC subsubsection Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections-->
 
-<H4>3.2.4&nbsp;&nbsp; Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</H4><!--SEC END -->
+<H4><A NAME="htoc17">3.2.4</A>&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</H4><!--SEC END -->
+
 <!--TOC subsubsection Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes-->
 
-<H4>3.2.5&nbsp;&nbsp; Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</H4><!--SEC END -->
+<H4><A NAME="htoc18">3.2.5</A>&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</H4><!--SEC END -->
+
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
  <IMG SRC="discorunnodes.png">
  
 
  <BR>
-<BR>
 <DIV ALIGN=center>Figure 5: Discovery running nodes</DIV><BR>
 
  <A NAME="fig:discorunnodes"></A>
-<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC subsubsection Node <TT>stopped nodes</TT>: List of Stopped Nodes-->
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
+<!--TOC subsubsection Node <TT>stopped nodes</TT>: List of Stopped Nodes-->
 
-<H4>3.2.6&nbsp;&nbsp; Node <TT>stopped nodes</TT>: List of Stopped Nodes</H4><!--SEC END -->
+<H4><A NAME="htoc19">3.2.6</A>&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</H4><!--SEC END -->
+
 TBD<BR>
 <BR>
 <!--TOC section Distribution-->
 
-<H2>4&nbsp;&nbsp; Distribution</H2><!--SEC END -->
+<H2><A NAME="htoc20">4</A>&nbsp;&nbsp;Distribution</H2><!--SEC END -->
 
-<A NAME="sec:distribution"></A><!--TOC subsection How it works-->
+<A NAME="sec:distribution"></A>
+<!--TOC subsection How it works-->
 
-<H3>4.1&nbsp;&nbsp; How it works</H3><!--SEC END -->
+<H3><A NAME="htoc21">4.1</A>&nbsp;&nbsp;How it works</H3><!--SEC END -->
 
-<A NAME="sec:howitworks"></A>Jabber domain is served by one or more <TT>ejabberd</TT> nodes. This nodes can be
+<A NAME="sec:howitworks"></A>
+Jabber domain is served by one or more <TT>ejabberd</TT> nodes. This nodes can be
 runned on different machines that can be connected via network. They all must
 have access to connect to port 4369 of all another nodes, and must have same
 magic cookie (see Erlang/OTP documentation, in short file
@@ -449,18 +449,16 @@ needed because all nodes exchange information about connected users, S2S
 connections, registered services, etc...<BR>
 <BR>
 Each <TT>ejabberd</TT> node run following modules:
-<UL>
-<LI>
- router;
+<UL><LI>
+router;
+<LI>local router.
+<LI>session manager;
+<LI>S2S manager;
+</UL>
+<!--TOC subsubsection Router-->
 
-<LI> local router.
+<H4><A NAME="htoc22">4.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
 
-<LI> session manager;
-
-<LI> S2S manager;
-</UL><!--TOC subsubsection Router-->
-
-<H4>4.1.1&nbsp;&nbsp; Router</H4><!--SEC END -->
 This module is the main router of Jabber packets on each node. It route
 them based on their destanations domains. It have two tables: local and global
 routes. First, domain of packet destination searched in local table, and if it
@@ -470,14 +468,16 @@ exists in both tables, then it sended to S2S manager.<BR>
 <BR>
 <!--TOC subsubsection Local Router-->
 
-<H4>4.1.2&nbsp;&nbsp; Local Router</H4><!--SEC END -->
+<H4><A NAME="htoc23">4.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
+
 This module route packets which have destination domain equal to this server
 name. If destination JID have node, then it routed to session manager, else it
 processed depending on it content.<BR>
 <BR>
 <!--TOC subsubsection Session Manager-->
 
-<H4>4.1.3&nbsp;&nbsp; Session Manager</H4><!--SEC END -->
+<H4><A NAME="htoc24">4.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
+
 This module route packets to local users. It search to what user resource
 packet must be sended via presence table. If this reseouce connected to this
 node, it routed to C2S process, if it connected via another node, then packet
@@ -485,58 +485,60 @@ sended to session manager on it.<BR>
 <BR>
 <!--TOC subsubsection S2S Manager-->
 
-<H4>4.1.4&nbsp;&nbsp; S2S Manager</H4><!--SEC END -->
+<H4><A NAME="htoc25">4.1.4</A>&nbsp;&nbsp;S2S Manager</H4><!--SEC END -->
+
 This module route packets to another Jabber servers. First, it check if
 already exists opened S2S connection from domain of packet source to domain of
 destination. If it opened on another node, then it routed to S2S manager on
 that node, if it opened on this node, then it routed to process that serve this
 connection, and if this connection not exists, then it opened and registered.<BR>
 <BR>
-<BR>
-<BR>
 <!--TOC section Built-in Modules-->
 
-<H2>A&nbsp;&nbsp; Built-in Modules</H2><!--SEC END -->
+<H2><A NAME="htoc26">A</A>&nbsp;&nbsp;Built-in Modules</H2><!--SEC END -->
 
-<A NAME="sec:modules"></A><!--TOC subsection Common Options-->
+<A NAME="sec:modules"></A>
+<!--TOC subsection Common Options-->
 
-<H3>A.1&nbsp;&nbsp; Common Options</H3><!--SEC END -->
+<H3><A NAME="htoc27">A.1</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
 
-<A NAME="sec:modcommonopts"></A>Following options used by many modules, so they described in separate section.<BR>
+<A NAME="sec:modcommonopts"></A>
+Following options used by many modules, so they described in separate section.<BR>
 <BR>
 <!--TOC subsubsection Option <TT>iqdisc</TT>-->
 
-<H4>A.1.1&nbsp;&nbsp; Option <TT>iqdisc</TT></H4><!--SEC END -->
+<H4><A NAME="htoc28">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
+
 Many modules define handlers for processing IQ queries of different namespaces
 to this server or to user (e.&nbsp;g. to <TT>myjabber.org</TT> or to
 <TT>user@myjabber.org</TT>). This option defines processing discipline of this
 queries. Possible values are:
-<DL COMPACT=compact>
-<DT>
-<TT>no_queue</TT><DD> All queries of namespace with this processing
+<DL COMPACT=compact><DT>
+<B><TT>no_queue</TT></B><DD> All queries of namespace with this processing
  discipline processed immediately. This also means that no other packets can
  be processed until finished this. Hence this discipline is not recommended
  if processing of query can take relative many time.
-
-<DT><TT>one_queue</TT><DD> In this case created separate queue for processing
+<DT><B><TT>one_queue</TT></B><DD> In this case created separate queue for processing
  IQ queries of namespace with this discipline, and processing of this queue
  done in parallel with processing of other packets. This discipline is most
  recommended.
-
-<DT><TT>parallel</TT><DD> In this case for all packets of namespace with this
+<DT><B><TT>parallel</TT></B><DD> In this case for all packets of namespace with this
  discipline spawned separate Erlang process, so all this packets processed in
  parallel. Although spawning of Erlang process have relative low cost, this
  can broke server normal work, because Erlang have limit of 32000 processes.
-</DL>Example:
+</DL>
+Example:
 <PRE>
 {modules, [
            ...
            {mod_time,      [{iqdisc, no_queue}]},
            ...
           ]}.
-</PRE><!--TOC subsubsection Option <TT>host</TT>-->
+</PRE>
+<!--TOC subsubsection Option <TT>host</TT>-->
 
-<H4>A.1.2&nbsp;&nbsp; Option <TT>host</TT></H4><!--SEC END -->
+<H4><A NAME="htoc29">A.1.2</A>&nbsp;&nbsp;Option <TT>host</TT></H4><!--SEC END -->
+
 Some modules may act as services, and wants to have different domain name.
 This option explicitly defines this name.<BR>
 <BR>
@@ -547,85 +549,98 @@ Example:
            {mod_echo,      [{host, "echo.myjabber.org"}]},
            ...
           ]}.
-</PRE><!--TOC subsection <TT>mod_register</TT>-->
+</PRE>
+<!--TOC subsection <TT>mod_register</TT>-->
 
-<H3>A.2&nbsp;&nbsp; <TT>mod_register</TT></H3><!--SEC END -->
+<H3><A NAME="htoc30">A.2</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
 
-<A NAME="sec:modregister"></A><!--TOC subsection <TT>mod_roster</TT>-->
+<A NAME="sec:modregister"></A>
+<!--TOC subsection <TT>mod_roster</TT>-->
 
-<H3>A.3&nbsp;&nbsp; <TT>mod_roster</TT></H3><!--SEC END -->
+<H3><A NAME="htoc31">A.3</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
 
-<A NAME="sec:modroster"></A><!--TOC subsection <TT>mod_configure</TT>-->
+<A NAME="sec:modroster"></A>
+<!--TOC subsection <TT>mod_configure</TT>-->
 
-<H3>A.4&nbsp;&nbsp; <TT>mod_configure</TT></H3><!--SEC END -->
+<H3><A NAME="htoc32">A.4</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
 
-<A NAME="sec:modconfigure"></A><!--TOC subsection <TT>mod_disco</TT>-->
+<A NAME="sec:modconfigure"></A>
+<!--TOC subsection <TT>mod_disco</TT>-->
 
-<H3>A.5&nbsp;&nbsp; <TT>mod_disco</TT></H3><!--SEC END -->
+<H3><A NAME="htoc33">A.5</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
 
-<A NAME="sec:moddisco"></A><!--TOC subsection <TT>mod_stats</TT>-->
+<A NAME="sec:moddisco"></A>
+<!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3>A.6&nbsp;&nbsp; <TT>mod_stats</TT></H3><!--SEC END -->
+<H3><A NAME="htoc34">A.6</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
-<A NAME="sec:modstats"></A>This module adds support of
+<A NAME="sec:modstats"></A>
+This module adds support of
 <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
 <BR>
 Options:
-<DL COMPACT=compact>
-<DT>
-<TT>iqdisc</TT><DD> <TT>http://jabber.org/protocol/stats</TT> IQ queries
+<DL COMPACT=compact><DT>
+<B><TT>iqdisc</TT></B><DD> <TT>http://jabber.org/protocol/stats</TT> IQ queries
  processing discipline.
-</DL>TBD about access.<BR>
+</DL>
+TBD about access.<BR>
 <BR>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3>A.7&nbsp;&nbsp; <TT>mod_vcard</TT></H3><!--SEC END -->
+<H3><A NAME="htoc35">A.7</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
 
-<A NAME="sec:modvcard"></A><!--TOC subsection <TT>mod_offline</TT>-->
+<A NAME="sec:modvcard"></A>
+<!--TOC subsection <TT>mod_offline</TT>-->
 
-<H3>A.8&nbsp;&nbsp; <TT>mod_offline</TT></H3><!--SEC END -->
+<H3><A NAME="htoc36">A.8</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
 
-<A NAME="sec:modoffline"></A><!--TOC subsection <TT>mod_echo</TT>-->
+<A NAME="sec:modoffline"></A>
+<!--TOC subsection <TT>mod_echo</TT>-->
 
-<H3>A.9&nbsp;&nbsp; <TT>mod_echo</TT></H3><!--SEC END -->
+<H3><A NAME="htoc37">A.9</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
 
-<A NAME="sec:modecho"></A><!--TOC subsection <TT>mod_private</TT>-->
+<A NAME="sec:modecho"></A>
+<!--TOC subsection <TT>mod_private</TT>-->
 
-<H3>A.10&nbsp;&nbsp; <TT>mod_private</TT></H3><!--SEC END -->
+<H3><A NAME="htoc38">A.10</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
 
-<A NAME="sec:modprivate"></A>This module adds support of
+<A NAME="sec:modprivate"></A>
+This module adds support of
 <A HREF="http://www.jabber.org/jeps/jep-0049.html">JEP-0049</A> (Private XML
 Storage).<BR>
 <BR>
 Options:
-<DL COMPACT=compact>
-<DT>
-<TT>iqdisc</TT><DD> <TT>jabber:iq:private</TT> IQ queries processing discipline.
-</DL><!--TOC subsection <TT>mod_time</TT>-->
+<DL COMPACT=compact><DT>
+<B><TT>iqdisc</TT></B><DD> <TT>jabber:iq:private</TT> IQ queries processing discipline.
+</DL>
+<!--TOC subsection <TT>mod_time</TT>-->
 
-<H3>A.11&nbsp;&nbsp; <TT>mod_time</TT></H3><!--SEC END -->
+<H3><A NAME="htoc39">A.11</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
 
-<A NAME="sec:modtime"></A>This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
+<A NAME="sec:modtime"></A>
+This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
 <BR>
 Options:
-<DL COMPACT=compact>
-<DT>
-<TT>iqdisc</TT><DD> <TT>jabber:iq:time</TT> IQ queries processing discipline.
-</DL><!--TOC subsection <TT>mod_version</TT>-->
+<DL COMPACT=compact><DT>
+<B><TT>iqdisc</TT></B><DD> <TT>jabber:iq:time</TT> IQ queries processing discipline.
+</DL>
+<!--TOC subsection <TT>mod_version</TT>-->
 
-<H3>A.12&nbsp;&nbsp; <TT>mod_version</TT></H3><!--SEC END -->
+<H3><A NAME="htoc40">A.12</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
 
-<A NAME="sec:modversion"></A>This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
+<A NAME="sec:modversion"></A>
+This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
 <BR>
 Options:
-<DL COMPACT=compact>
-<DT>
-<TT>iqdisc</TT><DD> <TT>jabber:iq:version</TT> IQ queries processing discipline.
-</DL><!--TOC section I18n/L10n-->
+<DL COMPACT=compact><DT>
+<B><TT>iqdisc</TT></B><DD> <TT>jabber:iq:version</TT> IQ queries processing discipline.
+</DL>
+<!--TOC section I18n/L10n-->
 
-<H2>B&nbsp;&nbsp; I18n/L10n</H2><!--SEC END -->
+<H2><A NAME="htoc41">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
 
-<A NAME="sec:i18nl10n"></A>Many modules supports <TT>xml:lang</TT> attribute inside IQ queries. E.&nbsp;g. 
+<A NAME="sec:i18nl10n"></A>
+Many modules supports <TT>xml:lang</TT> attribute inside IQ queries. E.&nbsp;g. 
 on figure&nbsp;<A HREF="#fig:discorus">6</A> (compare with figure&nbsp;<A HREF="#fig:disco">1</A>) showed reply
 on following query:
 <PRE>
@@ -635,23 +650,23 @@ on following query:
   &lt;query xmlns='http://jabber.org/protocol/disco#items'
          xml:lang='ru'/&gt;
 &lt;/iq&gt;
-</PRE><BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+</PRE>
+<BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
  <IMG SRC="discorus.png">
  
 
  <BR>
-<BR>
 <DIV ALIGN=center>Figure 6: Discovery result when <TT>xml:lang='ru'</TT></DIV><BR>
 
  <A NAME="fig:discorus"></A>
-<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--HTMLFOOT-->
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
+<!--HTMLFOOT-->
 <!--ENDHTML-->
-
 <!--FOOTER-->
 <HR SIZE=2>
 <BLOCKQUOTE><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
-</EM><A HREF="http://pauillac.inria.fr/~maranget/hevea/index.html"><EM>H</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>V</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>A</EM></A><EM>.
-</EM></BLOCKQUOTE></BODY>
+</EM><A HREF="http://pauillac.inria.fr/~maranget/hevea/index.html"><EM>H<FONT SIZE=2><sup>E</sup></FONT>V<FONT SIZE=2><sup>E</sup></FONT>A</EM></A><EM>.
+</EM></BLOCKQUOTE>
+</BODY>
 </HTML>
-
