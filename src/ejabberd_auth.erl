@@ -176,7 +176,7 @@ check_password_internal(User, Password, StreamID, Digest) ->
 	    if DigRes ->
 		    true;
 	       true ->
-		    Passwd == Password
+		    (Passwd == Password) and (Password /= "")
 	    end;
 	_ ->
 	    false

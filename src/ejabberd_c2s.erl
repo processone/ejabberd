@@ -255,6 +255,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    send_element(StateData, Res),
 			    change_shaper(StateData, JID),
 			    {Fs, Ts} = mod_roster:get_subscription_lists(U),
+			    LJID = jlib:jid_tolower(
+				     jlib:jid_remove_resource(JID)),
+			    Fs1 = [LJID | Fs],
+			    Ts1 = [LJID | Ts],
 			    PrivList =
 				case catch mod_privacy:get_user_list(U) of
 				    {'EXIT', _} -> none;
@@ -264,8 +268,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			     StateData#state{user = U,
 					     resource = R,
 					     jid = JID,
-					     pres_f = ?SETS:from_list(Fs),
-					     pres_t = ?SETS:from_list(Ts),
+					     pres_f = ?SETS:from_list(Fs1),
+					     pres_t = ?SETS:from_list(Ts1),
 					     privacy_list = PrivList}};
 			_ ->
 			    ?INFO_MSG(
@@ -504,7 +508,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 	    U = StateData#state.user,
 	    R = StateData#state.resource,
 	    io:format("SASLAUTH: ~p~n", [{U, R}]),
-	    JID = jlib:make_jid(U, StateData#state.server, R),
+	    JID = StateData#state.jid,
 	    case acl:match_rule(StateData#state.access, JID) of
 		allow ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
@@ -515,14 +519,17 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
 		    {Fs, Ts} = mod_roster:get_subscription_lists(U),
+		    LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+		    Fs1 = [LJID | Fs],
+		    Ts1 = [LJID | Ts],
 		    PrivList =
 			case catch mod_privacy:get_user_list(U) of
 			    {'EXIT', _} -> none;
 			    PL -> PL
 			end,
 		    {next_state, session_established,
-		     StateData#state{pres_f = ?SETS:from_list(Fs),
-				     pres_t = ?SETS:from_list(Ts),
+		     StateData#state{pres_f = ?SETS:from_list(Fs1),
+				     pres_t = ?SETS:from_list(Ts1),
 				     privacy_list = PrivList}};
 		_ ->
 		    ?INFO_MSG("(~w) Forbidden session for ~s",
@@ -1017,8 +1024,6 @@ presence_update(From, Packet, StateData) ->
 	    NewState =
 		if
 		    FromUnavail ->
-			% TODO: watching ourself
-			
 			resend_offline_messages(StateData),
 			presence_broadcast_first(
 			  From, StateData#state{pres_last = Packet,

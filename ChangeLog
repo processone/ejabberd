@@ -1,3 +1,9 @@
+2004-07-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_auth.erl: Minor fix
+
+	* src/ejabberd_c2s.erl: Fixed sending of presence to own resources
+
 2004-06-18  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_web_admin.erl: Added configuration of listened
