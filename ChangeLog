@@ -1,3 +1,8 @@
+2003-09-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/mtr/*: Example config and scripts for NetBSD (thanks to
+	Marshall T. Rose)
+
 2003-09-03  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_s2s_in.erl: Fixed "id" attribute processing
