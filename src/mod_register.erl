@@ -99,13 +99,15 @@ process_iq(From, _To, {iq, ID, Type, XMLNS, SubEl}) ->
 		     [SubEl, ?ERR_BAD_REQUEST]}
 	    end;
 	get ->
+	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    {iq, ID, result, XMLNS, [{xmlelement,
 				      "query",
 				      [{"xmlns", "jabber:iq:register"}],
 				      [{xmlelement, "instructions", [],
 					[{xmlcdata,
-					  "Choose a username and password "
-					  "to register with this server."}]},
+					  translate:translate(Lang,
+					    "Choose a username and password "
+					    "to register with this server.")}]},
 				       {xmlelement, "username", [], []},
 				       {xmlelement, "password", [], []}]}]}
     end.

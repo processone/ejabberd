@@ -38,8 +38,9 @@
 {"Start Modules", "Запуск модулей"}.
 {"Stop Modules", "Остановка модулей"}.
 
-
-
+% mod_register.erl
+{"Choose a username and password to register with this server.",
+ "Выберите идентификатор пользователя и пароль для регистрации на этом сервере."}.
 
 % mod_vcard.erl
 {"You need a x:data capable client to search",
@@ -62,9 +63,13 @@
 {"Organization Name", "Название организации"}.
 {"Organization Unit", "Отдел организации"}.
 
+% mod_muc/mod_muc.erl
+{"Nickname Registration", "Регистрация псевдонима"}.
+{"Enter nickname you want to register.", "Введите псевдоним, который вы хотели бы зарегистрировать"}.
+{"ejabberd MUC module\nCopyright (c) 2003 Alexey Shchepin",
+ "ejabberd MUC модуль\nCopyright (c) 2003 Алексей Щепин"}.
 
 % mod_muc/mod_muc_room.erl
-
 {"Room title", "Название комнаты"}.
 {"Allow users to change subject?", "Разрешить пользователям изменять тему?"}.
 {"Allow users to query other users?",

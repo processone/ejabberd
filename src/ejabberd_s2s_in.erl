@@ -37,7 +37,8 @@
 		receiver,
 		streamid,
 		shaper,
-	        connections = ?DICT:new()}).
+	        connections = ?DICT:new(),
+		timer}).
 
 
 %-define(DBGFSM, true).
@@ -95,12 +96,13 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
+    Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, wait_for_stream,
      #state{socket = Socket,
 	    receiver = ReceiverPid,
 	    streamid = new_id(),
-	    shaper = Shaper},
-     ?S2STIMEOUT}.
+	    shaper = Shaper,
+	    timer = Timer}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -114,7 +116,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case {xml:get_attr_s("xmlns", Attrs), xml:get_attr_s("xmlns:db", Attrs)} of
 	{"jabber:server", "jabber:server:dialback"} ->
 	    send_text(StateData#state.socket, ?STREAM_HEADER),
-	    {next_state, stream_established, StateData#state{}, ?S2STIMEOUT};
+	    {next_state, stream_established, StateData#state{}};
 	_ ->
 	    send_text(StateData#state.socket, ?INVALID_NAMESPACE_ERR),
 	    {stop, normal, StateData}
@@ -132,6 +134,8 @@ wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
 
 stream_established({xmlstreamelement, El}, StateData) ->
+    cancel_timer(StateData#state.timer),
+    Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     case is_key_packet(El) of
 	{key, To, From, Id, Key} ->
 	    ?INFO_MSG("GET KEY: ~p", [{To, From, Id, Key}]),
@@ -147,8 +151,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    change_shaper(StateData, jlib:make_jid("", LFrom, "")),
 		    {next_state,
 		     stream_established,
-		     StateData#state{connections = Conns},
-		     ?S2STIMEOUT};
+		     StateData#state{connections = Conns,
+				     timer = Timer}};
 		_ ->
 		    send_text(StateData#state.socket, ?HOST_UNKNOWN_ERR),
 		    {stop, normal, StateData}
@@ -169,7 +173,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 			   {"id", Id},
 			   {"type", Type}],
 			  []}),
-	    {next_state, wait_for_key, StateData, ?S2STIMEOUT};
+	    {next_state, stream_established, StateData#state{timer = Timer}};
 	_ ->
 	    {xmlelement, Name, Attrs, _Els} = El,
 	    From_s = xml:get_attr_s("from", Attrs),
@@ -195,9 +199,9 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    end;
 		true ->
 		    error
-	    end
-    end,
-    {next_state, stream_established, StateData, ?S2STIMEOUT};
+	    end,
+	    {next_state, stream_established, StateData#state{timer = Timer}}
+    end;
 
 stream_established({valid, From, To}, StateData) ->
     send_element(StateData#state.socket,
@@ -212,7 +216,7 @@ stream_established({valid, From, To}, StateData) ->
     NSD = StateData#state{
 	    connections = ?DICT:store({LFrom, LTo}, established,
 				      StateData#state.connections)},
-    {next_state, stream_established, NSD, ?S2STIMEOUT};
+    {next_state, stream_established, NSD};
 
 stream_established({invalid, From, To}, StateData) ->
     send_element(StateData#state.socket,
@@ -225,9 +229,9 @@ stream_established({invalid, From, To}, StateData) ->
     LFrom = jlib:nameprep(From),
     LTo = jlib:nameprep(To),
     NSD = StateData#state{
-	    connections = ?DICT:store({LFrom, LTo}, established,
+	    connections = ?DICT:erase({LFrom, LTo},
 				      StateData#state.connections)},
-    {next_state, stream_established, NSD, ?S2STIMEOUT};
+    {next_state, stream_established, NSD};
 
 stream_established({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
@@ -265,7 +269,7 @@ stream_established(closed, StateData) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
-    {next_state, StateName, StateData, ?S2STIMEOUT}.
+    {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_sync_event/4
@@ -292,6 +296,11 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData#state.socket, Text),
     {next_state, StateName, StateData};
+
+handle_info({timeout, Timer, _}, StateName,
+	    #state{timer = Timer} = StateData) ->
+    {stop, normal, StateData};
+
 handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -332,6 +341,15 @@ change_shaper(StateData, JID) ->
 
 new_id() ->
     randoms:get_string().
+
+cancel_timer(Timer) ->
+    erlang:cancel_timer(Timer),
+    receive
+	{timeout, Timer, _} ->
+	    ok
+    after 0 ->
+	    ok
+    end.
 
 
 is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:result" ->

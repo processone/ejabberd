@@ -298,28 +298,30 @@ iq_disco_items(Host, From) ->
 iq_get_register_info(From, Lang) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     LUS = {LUser, LServer},
-    Nick = case catch mnesia:dirty_read(muc_registered, LUS) of
+    {Nick, Registered} = case catch mnesia:dirty_read(muc_registered, LUS) of
 	       {'EXIT', Reason} ->
-		   "";
+		   {"", []};
 	       [] ->
-		   "";
+		   {"", []};
 	       [#muc_registered{nick = N}] ->
-		   N
+		   {N, [{xmlelement, "registered", [], []}]}
 	   end,
-    [{xmlelement, "instructions", [],
-      [{xmlcdata, translate:translate(
-		    Lang, "You need a x:data capable client to register.")}]},
-     {xmlelement, "x",
-      [{"xmlns", ?NS_XDATA}],
-      [{xmlelement, "title", [],
-	[{xmlcdata,
-	  translate:translate(
-	    Lang, "Nick Registration")}]},
-       {xmlelement, "instructions", [],
-	[{xmlcdata,
-	  translate:translate(
-	    Lang, "Enter nick you want to register.")}]},
-       ?XFIELD("text-single", "Nick", "nick", Nick)]}].
+    Registered ++
+	[{xmlelement, "instructions", [],
+	  [{xmlcdata,
+	    translate:translate(
+	      Lang, "You need a x:data capable client to register.")}]},
+	 {xmlelement, "x",
+	  [{"xmlns", ?NS_XDATA}],
+	  [{xmlelement, "title", [],
+	    [{xmlcdata,
+	      translate:translate(
+		Lang, "Nickname Registration")}]},
+	   {xmlelement, "instructions", [],
+	    [{xmlcdata,
+	      translate:translate(
+		Lang, "Enter nickname you want to register.")}]},
+	   ?XFIELD("text-single", "Nickname", "nick", Nick)]}].
 
 iq_set_register_info(From, XData) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
@@ -358,7 +360,7 @@ iq_set_register_info(From, XData) ->
 		{atomic, ok} ->
 		    {result, []};
 		{atomic, false} ->
-		    {error, ?ERR_NOT_ALLOWED};
+		    {error, ?ERR_CONFLICT};
 		_ ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
 	    end
@@ -394,8 +396,8 @@ iq_get_vcard(Lang) ->
       [{xmlcdata,
 	"http://ejabberd.jabberstudio.org/"}]},
      {xmlelement, "DESC", [],
-      [{xmlcdata, "ejabberd MUC module\n"
-	"Copyright (c) 2003 Alexey Shchepin"}]}].
+      [{xmlcdata, translate:translate(Lang, "ejabberd MUC module\n"
+	"Copyright (c) 2003 Alexey Shchepin")}]}].
 
 
 broadcast_service_message(Msg) ->
