@@ -13,5 +13,6 @@
 -define(NS_XDATA, "jabber:x:data").
 -define(NS_DELAY, "jabber:x:delay").
 -define(NS_EVENT, "jabber:x:event").
+-define(NS_STATS, "http://jabber.org/protocol/stats").
 
 

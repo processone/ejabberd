@@ -70,13 +70,18 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 
 
 try_register(User, Password) ->
-    case ejabberd_auth:try_register(User, Password) of
-	{atomic, ok} ->
-	    ok;
-	{atomic, exists} ->
-	    {error, "400", "Bad Request"};
-	{error, Reason} ->
-	    {error, "500", "Internal Server Error"}
+    case jlib:string_to_jid(User ++ "@" ++ "x") of
+	error ->
+	    {error, "406", "Not Acceptable"};
+	_ ->
+	    case ejabberd_auth:try_register(User, Password) of
+		{atomic, ok} ->
+		    ok;
+		{atomic, exists} ->
+		    {error, "400", "Bad Request"};
+		{error, Reason} ->
+		    {error, "500", "Internal Server Error"}
+	    end
     end.
 
 

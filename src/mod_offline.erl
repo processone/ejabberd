@@ -15,7 +15,7 @@
 
 -include("namespaces.hrl").
 
--record(offline_msg, {user,  timestamp, from, to, packet}).
+-record(offline_msg, {user, timestamp, from, to, packet}).
 
 
 start() ->
@@ -30,7 +30,7 @@ store_packet(From, To, Packet) ->
 	true ->
 	    {User, Server, Resource} = To,
 	    LUser = jlib:tolower(User),
-	    TimeStamp = calendar:universal_time(),
+	    TimeStamp = now(),
 	    F = fun() ->
 			mnesia:write(#offline_msg{user = LUser,
 						  timestamp = TimeStamp,
@@ -105,7 +105,9 @@ resend_offline_messages(User) ->
 			   R#offline_msg.to,
 			   {xmlelement, Name, Attrs,
 			    Els ++
-			    [jlib:timestamp_to_xml(R#offline_msg.timestamp)]}}
+			    [jlib:timestamp_to_xml(
+			       calendar:now_to_universal_time(
+				 R#offline_msg.timestamp))]}}
 	      end,
 	      lists:keysort(#offline_msg.timestamp, Rs));
 	_ ->

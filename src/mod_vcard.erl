@@ -103,7 +103,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		 [{xmlcdata, "Erlang Jabber Server\n"
 		   "Copyright (c) 2002, 2003 Alexey Shchepin"}]},
 		{xmlelement, "BDAY", [],
-		 [{xmlcdata, "20021116"}]}
+		 [{xmlcdata, "2002-11-16"}]}
 	       ]}]}
     end.
 

@@ -23,6 +23,7 @@ start() ->
     mod_register:start(),
     mod_roster:start(),
     mod_disco:start(),
+    mod_stats:start(),
     mod_vcard:start(),
     mod_offline:start(),
     ok.
