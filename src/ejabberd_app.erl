@@ -18,7 +18,7 @@
 
 -include("ejabberd.hrl").
 
-start(normal, Args) ->
+start(normal, _Args) ->
     application:start(sasl),
     randoms:start(),
     db_init(),
@@ -33,6 +33,7 @@ start(normal, Args) ->
     % Profiling
     %eprof:start(),
     %eprof:profile([self()]),
+    %fprof:trace(start, "/tmp/fprof"),
     Sup = ejabberd_sup:start_link(),
     start(),
     load_modules(),
@@ -40,7 +41,7 @@ start(normal, Args) ->
 start(_, _) ->
     {error, badarg}.
 
-stop(StartArgs) ->
+stop(_StartArgs) ->
     ok.
 
 start() ->

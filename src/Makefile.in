@@ -30,9 +30,10 @@ mostlyclean-recursive maintainer-clean-recursive:
 	done
 
 
-$(ERLSHLIBS):	../%.so:	%.c
+$(ERLSHLIBS):	%.so:	%.c
 			gcc -Wall $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LIBDIRS) \
 			$(subst ../,,$(subst .so,.c,$@)) \
+			-lexpat \
 			-lerl_interface \
 			-lei \
 			-o $@ -fpic -shared \
@@ -44,4 +45,3 @@ TAGS:
 	etags *.erl
 
 Makefile: Makefile.in
-    

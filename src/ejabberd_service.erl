@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/2, start_link/2, receiver/2, send_text/2, send_element/2]).
+-export([start/2, start_link/2, receiver/3, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -29,8 +29,8 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(state, {socket, receiver, streamid,
-		host, password}).
+-record(state, {socket, receiver, streamid, sockmod,
+		hosts, password}).
 
 %-define(DBGFSM, true).
 
@@ -87,25 +87,37 @@ start_link(SockData, Opts) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
-    {Host, Password} =
-	case lists:keysearch(host, 1, Opts) of
-	    {value, {_, H, HOpts}} ->
+    {Hosts, Password} =
+	case lists:keysearch(hosts, 1, Opts) of
+	    {value, {_, Hs, HOpts}} ->
 		case lists:keysearch(password, 1, HOpts) of
 		    {value, {_, P}} ->
-			{H, P};
+			{Hs, P};
 		    _ ->
 			% TODO: generate error
 			false
 		end;
 	    _ ->
-		% TODO: generate error
-		false
+		case lists:keysearch(host, 1, Opts) of
+		    {value, {_, H, HOpts}} ->
+			case lists:keysearch(password, 1, HOpts) of
+			    {value, {_, P}} ->
+				{[H], P};
+			    _ ->
+				% TODO: generate error
+				false
+			end;
+		    _ ->
+			% TODO: generate error
+			false
+		end
 	end,
-    ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
+    ReceiverPid = spawn(?MODULE, receiver, [Socket, SockMod, self()]),
     {ok, wait_for_stream, #state{socket = Socket,
 				 receiver = ReceiverPid,
 				 streamid = new_id(),
-				 host = Host,
+				 sockmod = SockMod,
+				 hosts = Hosts,
 				 password = Password
 				 }}.
 
@@ -118,23 +130,23 @@ init([{SockMod, Socket}, Opts]) ->
 %state_name(Event, StateData) ->
 %    {next_state, state_name, StateData}.
 
-wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
+wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     % TODO
     case xml:get_attr_s("xmlns", Attrs) of
 	"jabber:component:accept" ->
 	    Header = io_lib:format(?STREAM_HEADER,
 				   [StateData#state.streamid, ?MYNAME]),
-	    send_text(StateData#state.socket, Header),
+	    send_text(StateData, Header),
 	    {next_state, wait_for_handshake, StateData};
 	_ ->
-	    send_text(StateData#state.socket, ?INVALID_HEADER_ERR),
+	    send_text(StateData, ?INVALID_HEADER_ERR),
 	    {stop, normal, StateData}
     end;
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
     Header = io_lib:format(?STREAM_HEADER,
 			   ["none", ?MYNAME]),
-    send_text(StateData#state.socket,
+    send_text(StateData,
 	      Header ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
@@ -143,28 +155,31 @@ wait_for_stream(closed, StateData) ->
 
 
 wait_for_handshake({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
+    {xmlelement, Name, _Attrs, Els} = El,
     case {Name, xml:get_cdata(Els)} of
 	{"handshake", Digest} ->
 	    case sha:sha(StateData#state.streamid ++
 			 StateData#state.password) of
 		Digest ->
-		    send_text(StateData#state.socket, "<handshake/>"),
-		    ejabberd_router:register_local_route(StateData#state.host),
+		    send_text(StateData, "<handshake/>"),
+		    lists:foreach(
+		      fun(H) ->
+			      ejabberd_router:register_local_route(H)
+		      end, StateData#state.hosts),
 		    {next_state, stream_established, StateData};
 		_ ->
-		    send_text(StateData#state.socket, ?INVALID_HEADER_ERR),
+		    send_text(StateData, ?INVALID_HEADER_ERR),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
 	    {next_state, wait_for_key, StateData}
     end;
 
-wait_for_handshake({xmlstreamend, Name}, StateData) ->
+wait_for_handshake({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 wait_for_handshake({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 wait_for_handshake(closed, StateData) ->
@@ -172,13 +187,14 @@ wait_for_handshake(closed, StateData) ->
 
 
 stream_established({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
+    {xmlelement, Name, Attrs, _Els} = El,
     From = xml:get_attr_s("from", Attrs),
     FromJID1 = jlib:string_to_jid(From),
     FromJID = case FromJID1 of
-		  {Node, Server, Resource} ->
-		      if Server == StateData#state.host -> FromJID1;
-			 true -> error
+		  #jid{lserver = Server} ->
+		      case lists:member(Server, StateData#state.hosts) of
+			  true -> FromJID1;
+			  false -> error
 		      end;
 		  _ -> error
 	      end,
@@ -194,17 +210,17 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    ejabberd_router:route(FromJID, ToJID, El);
        true ->
 	    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
-	    send_element(StateData#state.socket, Err),
+	    send_element(StateData, Err),
 	    error
     end,
     {next_state, stream_established, StateData};
 
-stream_established({xmlstreamend, Name}, StateData) ->
+stream_established({xmlstreamend, _Name}, StateData) ->
     % TODO
     {stop, normal, StateData};
 
 stream_established({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 stream_established(closed, StateData) ->
@@ -232,7 +248,7 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_event(Event, StateName, StateData) ->
+handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -244,11 +260,11 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event(Event, From, StateName, StateData) ->
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
 
-code_change(OldVsn, StateName, StateData, Extra) ->
+code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -258,10 +274,10 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
-    send_text(StateData#state.socket, Text),
+    send_text(StateData, Text),
     {next_state, StateName, StateData};
 handle_info({send_element, El}, StateName, StateData) ->
-    send_element(StateData#state.socket, El),
+    send_element(StateData, El),
     {next_state, StateName, StateData};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
@@ -269,7 +285,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 					jlib:jid_to_string(To),
 					Attrs),
     Text = xml:element_to_string({xmlelement, Name, Attrs2, Els}),
-    send_text(StateData#state.socket, Text),
+    send_text(StateData, Text),
     {next_state, StateName, StateData}.
 
 
@@ -278,40 +294,43 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(Reason, StateName, StateData) ->
+terminate(_Reason, StateName, StateData) ->
     case StateName of
 	stream_established ->
-	    ejabberd_router:unregister_local_route(StateData#state.host);
+	    lists:foreach(
+	      fun(H) ->
+		      ejabberd_router:unregister_local_route(H)
+	      end, StateData#state.hosts);
 	_ ->
 	    ok
     end,
-    gen_tcp:close(StateData#state.socket),
+    (StateData#state.sockmod):close(StateData#state.socket),
     ok.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-receiver(Socket, C2SPid) ->
+receiver(Socket, SockMod, C2SPid) ->
     XMLStreamPid = xml_stream:start(C2SPid),
-    receiver(Socket, C2SPid, XMLStreamPid).
+    receiver(Socket, SockMod, C2SPid, XMLStreamPid).
 
-receiver(Socket, C2SPid, XMLStreamPid) ->
-    case gen_tcp:recv(Socket, 0) of
+receiver(Socket, SockMod, C2SPid, XMLStreamPid) ->
+    case SockMod:recv(Socket, 0) of
         {ok, Text} ->
 	    xml_stream:send_text(XMLStreamPid, Text),
-	    receiver(Socket, C2SPid, XMLStreamPid);
-        {error, Reason} ->
+	    receiver(Socket, SockMod, C2SPid, XMLStreamPid);
+        {error, _Reason} ->
 	    exit(XMLStreamPid, closed),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok
     end.
 
-send_text(Socket, Text) ->
-    gen_tcp:send(Socket,Text).
+send_text(StateData, Text) ->
+    (StateData#state.sockmod):send(StateData#state.socket,Text).
 
-send_element(Socket, El) ->
-    send_text(Socket, xml:element_to_string(El)).
+send_element(StateData, El) ->
+    send_text(StateData, xml:element_to_string(El)).
 
 
 new_id() ->
