@@ -38,6 +38,7 @@ init() ->
 			 {attributes,
 			  record_info(fields, route)}]),
     mnesia:add_table_copy(route, node(), ram_copies),
+    mnesia:subscribe({table, route, simple}),
     loop().
 
 loop() ->
@@ -62,6 +63,22 @@ loop() ->
 	    F = fun() ->
 			mnesia:delete_object(#route{domain = Domain,
 						    pid = Pid})
+		end,
+	    mnesia:transaction(F),
+	    loop();
+	{mnesia_table_event, {write, #route{pid = Pid}, _ActivityId}} ->
+	    erlang:monitor(process, Pid),
+	    loop();
+	{'DOWN', _Ref, _Type, Pid, _Info} ->
+	    F = fun() ->
+	    		Es = mnesia:select(
+			       route,
+			       [{#route{pid = Pid, _ = '_'},
+				 [],
+				 ['$_']}]),
+			lists:foreach(fun(E) ->
+					      mnesia:delete_object(E)
+				      end, Es)
 		end,
 	    mnesia:transaction(F),
 	    loop();

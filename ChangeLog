@@ -1,5 +1,8 @@
 2004-01-06  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_router.erl: Added monitoring of processess that
+	serve domains
+
 	* src/ejabberd_app.erl: Bugfix
 
 2004-01-03  Alexey Shchepin  <alexey@sevcom.net>
