@@ -1,0 +1,128 @@
+<!-- jit.xml -->
+
+<jabber>
+
+  <!--
+     You need to add elogger and rlogger entries here when using ejabberd.
+     In this case the transport will do the logging.
+  -->
+
+  <log id='elogger'>
+    <host/>
+    <logtype/>
+    <file>/var/log/jabber/jit-error</file> <!-- WPJabber logs with date. -->
+  </log>
+
+  <log id='rlogger'>
+    <host/>
+    <logtype>record</logtype>
+    <file>/var/log/jabber/jit-record</file> <!-- WPJabber logs with date. -->
+  </log>
+
+  <!--
+     ejabberd do not provide XDB services.
+     xdb_file-jit.so (the renamed xdb_file.so from WPJabber) is
+     loaded in to handle all XDB requests.
+     Read also the documentation in xdb_file/README from the JIT package.
+  -->
+
+  <xdb id="xdb">
+    <host/>
+    <load>
+      <xdb_file>/usr/local/lib/jabber/xdb_file.so</xdb_file> <!-- The xdb_file.so from WPJabber/JIT. -->
+      </load>
+    <xdb_file xmlns="jabber:config:xdb_file">
+     <spool><jabberd:cmdline flag='s'>/var/spool/jabber</jabberd:cmdline></spool>
+    </xdb_file>
+  </xdb>
+
+  <!--
+     Make sure that all host names here are resolveable via DNS if you
+     want the transport to be available to the public.
+  -->
+
+  <service id="icq.SERVER.COM">
+    <!--
+       Replace SERVER.COM with the same as above to enable sms.
+    -->
+    <host>sms.icq.SERVER.COM</host>
+    <!-- JIT configuration. -->
+    <icqtrans xmlns="jabber:config:icqtrans">
+      <sms>
+        <host>sms.icq.SERVER.COM</host>
+        <!-- Status of virtual "sms-contacts". -->
+        <show>away</show>
+        <status/>
+      </sms>
+      <instructions>Fill in your UIN and password.</instructions>
+      <search>Search ICQ users.</search>
+      <vCard>
+        <FN>ICQ Transport (JIT)</FN>
+        <DESC>This is the Jabber ICQ Transport.</DESC>
+        <MAIL>EMAIL@ADDRESS.COM</MAIL>
+        <URL>http://jit.jabberstudio.org/</URL>
+      </vCard>
+      <!-- Hashtable for users. -->
+      <prime>3907</prime>
+      <!-- Send messages from ICQ as chat to Jabber clients. -->
+      <chat/>
+      <!-- Enable this for ICQ web presence. -->
+      <web/>
+      <!--
+         If you don't want jabber:x:data forms
+         in reg and search uncomment this tag
+         (Not recomended).
+      -->
+      <no_xdata/>
+      <!--
+         This tag is necessary when using ejabberd.
+         In this way JIT will have its own contact list.
+      -->
+      <own_roster/>
+      <!--
+         When present, this tag will tell JIT not to try to
+         get the user's roster (which will take a bit of time
+         to fail in scenarios described above).
+      -->
+      <no_jabber_roster/>
+      <!-- File with stats. -->
+      <user_count_file>/var/spool/jabber/jit-count</user_count_file>
+      <!--
+         Interval beetween checking sessions: ping, messages, acks.
+      -->
+      <session_check>5</session_check>
+      <!-- Reconnect retries. -->
+      <reconnects>5</reconnects>
+      <!--
+         Time in sec when session can be inactive, 0=disabled.
+      -->
+      <session_timeout>18000</session_timeout>
+      <charset>windows-1252</charset>
+      <server>
+        <host port="5190">login.icq.com</host>
+      </server>
+    </icqtrans>
+    <!-- JIT module. -->
+    <load>
+      <icqtrans>/usr/local/lib/jabber/jit.so</icqtrans>
+    </load>
+  </service>
+
+  <!--
+     The settings below have to match the settings you made
+     in your ejabberd.cfg configuration file.
+  -->
+
+  <service id="icq-linker">
+    <host>SERVER.COM</host>
+    <uplink/>
+    <connect>
+      <ip>127.0.0.1</ip>
+      <port>5234</port>
+      <secret>SECRET</secret>
+    </connect>
+  </service>
+
+  <pidfile>/var/run/jabber/jit.pid</pidfile>
+
+</jabber>

@@ -1,0 +1,45 @@
+#!/bin/sh
+#########################################################
+#
+#     jit -- script to start JIT.
+#
+#########################################################
+
+DAEMON=/usr/local/sbin/wpjabber-jit
+CONF=/etc/jabber/jit.xml
+NAME=wpjabber-jit
+HOME=/etc/jabber/
+USER=ejabberd
+
+#########################################################
+
+if [ "`/usr/bin/whoami`" != "$USER" ]; then
+
+       echo "You need to be" $USER "user to run this script."
+       exit 1
+fi
+
+case "$1" in
+  debug)
+        test -f $DAEMON -a -f $CONF || exit 0
+        echo "Starting $NAME in debugging mode."
+        $DAEMON -D -H $HOME -c $CONF &
+        ;;
+  start)
+	test -f $DAEMON -a -f $CONF || exit 0
+	echo "Starting $NAME."
+	$DAEMON -H $HOME -c $CONF &
+	;;
+  stop)
+	echo "Stopping $NAME."
+	killall $NAME &
+  	;;
+  restart|reload)
+	$0 stop
+        sleep 3
+	$0 start
+	;;
+  *)
+	echo "Usage: $0 {debug|start|stop|restart}"
+	exit 1
+esac

@@ -1,0 +1,149 @@
+<jggtrans>
+
+  <service jid="gg.SERVER.COM"/>
+
+  <!-- This connects the jabber-gg-transport process to ejabberd. -->
+  <connect id="gglinker">
+    <ip>127.0.0.1</ip>
+    <port>5237</port>
+    <secret>SECRET</secret>
+  </connect>
+
+  <register>
+    <!-- This tag contains the message displayed to users at registration time.
+         You can use <p/> and/or <br/> to break lines. Multiple spaces and newlines
+         are converted to just one, so formatting of config file doesn't really matter. -->
+    <instructions>
+            Fill in your GG number (after "username")
+            and password to register on the transport.
+            <p/>To change your information in the GaduGadu directory you need to fill in the other fields.
+            <p/>To remove registration you need to leave the form blank.
+    </instructions>
+  </register>
+
+  <search>
+    <!-- This tag contains the message displayed to users at search time. -->
+    <instructions>
+            To search people:<br/>
+            First fill in surname or family name, nickname, city, birthyear or range of birthyears (eg. 1950-1960)
+            and gender (you may fill in more fields at once).<br/>
+            or<br/>
+            Fill in phone number<br/>
+            or<br/>
+            Fill in the GG number of the person you are searching.
+    </instructions>
+  </search>
+
+  <gateway>
+    <!-- This is message, that may be displayed to user when adding gg contact. -->
+    <desc>Please fill in the GaduGadu number of the person you want to add.</desc>
+    <!-- And this is the prompt for GG number. -->
+    <prompt>GG Nummer</prompt>
+  </gateway>
+
+  <vCard>
+    <FN>Gadu-Gadu Transport</FN>
+    <DESC>This is the Gadu-Gadu Transport.</DESC>
+    <EMAIL>EMAIL@ADDRESS.COM</EMAIL>
+    <URL>http://www.jabberstudio.org/projects/jabber-gg-transport/</URL>
+  </vCard>
+
+ <!-- Default user locale (language).
+      Empty means system locale setting,
+      no (or commented-out) <default_locale> tag means no translations. -->
+ <!-- <default_locale>pl_PL</default_locale> -->
+
+ <!-- Logger configuration.
+      You may configure one logger of type "syslog" and/or one of type "file".
+      You may also not configure logging at all. -->
+ <log type="syslog" facility="local0"/>
+ <log type="file">/var/log/jabber/jabber-gg-transport.log</log>
+
+ <!-- Uncomment this, if you want proxy to be used for Gadu-Gadu connection. -->
+ <!--
+ <proxy>
+        <ip>127.0.0.1</ip>
+        <port>8080</port>
+ </proxy>
+ -->
+
+ <!-- You can change these values according to your needs. -->
+ <conn_timeout>60</conn_timeout>
+ <ping_interval>10</ping_interval>
+
+ <!-- Gadu-Gadu server doesn't seem to answer pings anymore :-(
+      So let's give it 10 year :-) -->
+ <pong_timeout>315360000</pong_timeout>
+
+ <!-- This time after disconnection from Gadu-Gadu server the transport
+      will try to connect again. -->
+ <reconnect>300</reconnect>
+
+ <!-- How long to wait before restart, after jabber server connection is broken
+      negative value means, that jggtrans should terminate. -->
+      <restart_timeout>60</restart_timeout>
+
+ <!-- Delay between the unavailable presence is received from user and loggin out 
+      from Gadu-Gadu - for nice <presence type="invisible"/> support. -->
+      <disconnect_delay>5</disconnect_delay>
+
+ <!-- list of Gadu-Gadu servers to use.
+ 	<hub/> means "use GG hub to find server"
+      	<server/> tag should contain server address and may contain "port"
+	attribute with port number. When TLS is available (supported by libgadu)
+	it will be used unless "tls" attribute is set to "no". Please notice,
+	that not all servers will accept TLS connections.
+	Servers (including hub) are tried in order as they appear in <servers/>
+	element.
+	A reasonable default server list is hardcoded in jggtrans.
+      -->
+ <!--
+ <servers>
+	<hub/>
+	<server port="443">217.17.41.90</server>
+	<server tls="no">217.17.41.85</server>
+	<server tls="no">217.17.41.88</server>
+ </servers>
+ -->
+
+ <!-- Spool directory. This is the place, where user info will be stored. -->
+ <!-- Be careful about permissions - users' Gadu-Gadu passwords are stored there. -->
+ <spool>/var/spool/jabber/gg.SERVER.COM/</spool>
+
+ <!-- Where to store pid file. This tag is optional. -->
+ <pidfile>/var/run/jabber/jabber-gg-transport.pid</pidfile>
+
+ <!-- jid allowed to do some administrative task (eg. discovering online users).
+      May be used multiple times. -->
+ <admin>GG_TRANSPORT_ADMIN@SERVER.COM</admin>
+
+ <!-- ACL gives detailed access control to the transport. -->
+ <acl>
+	<!-- Example entries: -->
+
+	<allow who="admin@SERVER.COM" what="iq/query?xmlns=http://jabber.org/protocol/stats"/>
+		<!-- will allow statistics gathering to admin@SERVER.COM -->
+
+	<deny who="*" what="iq/query?xmlns=http://jabber.org/protocol/stats"/>
+		<!-- will deny statistics gathering for anybody else -->
+
+	<!-- <allow who="*@SERVER.COM"/> -->
+		<!-- will allow anything else to users from "SERVER.COM" -->
+
+	<!-- <deny what="iq/query?xmlns=jabber:x:register"/> --> 
+		<!-- will deny registration for all other users -->
+
+	<!-- <allow what="presence"/> --> 
+		<!-- allow presence from anybody -->
+
+	<!-- <allow what="iq"/> --> 
+		<!-- allow iq from anybody -->
+
+	<!-- <allow what="message"/> --> 
+		<!-- allow message from anybody -->
+
+	<!-- <deny/> --> 
+		<!-- will deny anything else -->
+ </acl>
+
+</jggtrans>

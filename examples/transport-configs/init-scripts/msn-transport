@@ -1,0 +1,50 @@
+#!/bin/sh
+#########################################################
+#
+#     msn-transport -- script to start MSN Transport.
+#
+#########################################################
+
+DAEMON=/usr/local/sbin/jabberd-msn-transport
+CONF=/etc/jabber/msn-transport.xml
+NAME=jabberd-msn-transport
+HOME=/etc/jabber/
+USER=ejabberd
+
+#########################################################
+
+if [ "`/usr/bin/whoami`" != "$USER" ]; then
+
+       echo "You need to be" $USER "user to run this script."
+       exit 1
+fi
+
+case "$1" in
+  strace)
+	test -f $DAEMON -a -f $CONF || exit 0
+        echo "Starting $NAME in strace mode."
+        strace -o /opt/ejabberd/var/log/jabber/strace.log $DAEMON -H $HOME -c $CONF &
+        ;;
+  debug)
+        test -f $DAEMON -a -f $CONF || exit 0
+        echo "Starting $NAME in debugging mode."
+        $DAEMON -D -H $HOME -c $CONF &
+        ;;
+  start)
+	test -f $DAEMON -a -f $CONF || exit 0
+	echo "Starting $NAME."
+	$DAEMON -H $HOME -c $CONF &
+	;;
+  stop)
+	echo "Stopping $NAME."
+	killall $NAME &
+  	;;
+  restart|reload)
+	$0 stop
+        sleep 3
+	$0 start
+	;;
+  *)
+	echo "Usage: $0 {debug|start|stop|restart}"
+	exit 1
+esac
