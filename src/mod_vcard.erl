@@ -128,8 +128,8 @@ set_vcard(LUser, VCARD) ->
     Middle   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "MIDDLE"},    cdata]),
     Nickname = xml:get_path_s(VCARD, [{elem, "NICKNAME"},               cdata]),
     BDay     = xml:get_path_s(VCARD, [{elem, "BDAY"},                   cdata]),
-    %ctry     = xml:get_path_s(VCARD, [{elem, "CTRY"}, cdata]),
-    %locality = xml:get_path_s(VCARD, [{elem, "FN"}, cdata]),
+    CTRY     = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "CTRY"},    cdata]),
+    Locality = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "LOCALITY"},cdata]),
     EMail    = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
     OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
     OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
@@ -140,6 +140,8 @@ set_vcard(LUser, VCARD) ->
     LMiddle   = jlib:tolower(Middle),
     LNickname = jlib:tolower(Nickname),
     LBDay     = jlib:tolower(BDay),
+    LCTRY     = jlib:tolower(CTRY),
+    LLocality = jlib:tolower(Locality),
     LEMail    = jlib:tolower(EMail),
     LOrgName  = jlib:tolower(OrgName),
     LOrgUnit  = jlib:tolower(OrgUnit),
@@ -153,14 +155,19 @@ set_vcard(LUser, VCARD) ->
 					   middle    = LMiddle,
 					   nickname  = LNickname,
 					   bday      = LBDay,
-					   %ctry     = LCTRY,
-					   %locality = LLocality,
+					   ctry      = LCTRY,
+					   locality  = LLocality,
 					   email     = LEMail,
 					   orgname   = LOrgName,
 					   orgunit   = LOrgUnit
 					  })
 	end,
     mnesia:transaction(F).
+
+-define(TLFIELD(Type, Label, Var),
+	{xmlelement, "field", [{"type", Type},
+			       {"label", Label},
+			       {"var", Var}], []}).
 
 
 -define(FORM,
@@ -171,42 +178,18 @@ set_vcard(LUser, VCARD) ->
 	   {xmlelement, "instructions", [],
 	    [{xmlcdata, "Fill in fields to search "
 	      "for any matching Jabber User"}]},
-	   {xmlelement, "field", [{"type", "text-single"},
-	        		  {"label", "User"},
-	        		  {"var", "user"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Full Name"},
-				  {"var", "fn"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Name"},
-				  {"var", "given"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Middle Name"},
-				  {"var", "middle"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Family Name"},
-				  {"var", "family"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Nickname"},
-				  {"var", "nickname"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Birthday"},
-				  {"var", "bday"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Country"},
-				  {"var", "ctry"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "City"},
-				  {"var", "locality"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "email"},
-				  {"var", "email"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Organization Name"},
-				  {"var", "orgname"}], []},
-	   {xmlelement, "field", [{"type", "text-single"},
-				  {"label", "Organization Unit"},
-				  {"var", "orgunit"}], []}
+	   ?TLFIELD("text-single", "User", "user"),
+	   ?TLFIELD("text-single", "Full Name", "fn"),
+	   ?TLFIELD("text-single", "Name", "given"),
+	   ?TLFIELD("text-single", "Middle Name", "middle"),
+	   ?TLFIELD("text-single", "Family Name", "family"),
+	   ?TLFIELD("text-single", "Nickname", "nickname"),
+	   ?TLFIELD("text-single", "Birthday", "bday"),
+	   ?TLFIELD("text-single", "Country", "ctry"),
+	   ?TLFIELD("text-single", "City", "locality"),
+	   ?TLFIELD("text-single", "email", "email"),
+	   ?TLFIELD("text-single", "Organization Name", "orgname"),
+	   ?TLFIELD("text-single", "Organization Unit", "orgunit")
 	  ]}]).
 
 
@@ -325,23 +308,24 @@ find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
+-define(LFIELD(Label, Var),
+	{xmlelement, "field", [{"label", Label}, {"var", Var}], []}).
+
 search_result(Data) ->
     [{xmlelement, "title", [], [{xmlcdata, "Users Search Results"}]},
      {xmlelement, "reported", [],
-      [{xmlelement, "field", [{"label", "JID"},         {"var", "jid"}], []},
-       {xmlelement, "field", [{"label", "Full Name"},   {"var", "fn"}], []},
-       {xmlelement, "field", [{"label", "Name"},        {"var", "given"}], []},
-       {xmlelement, "field", [{"label", "Middle Name"}, {"var", "middle"}], []},
-       {xmlelement, "field", [{"label", "Family Name"}, {"var", "family"}], []},
-       {xmlelement, "field", [{"label", "Nickname"}, {"var", "nickname"}], []},
-       {xmlelement, "field", [{"label", "Birthday"}, {"var", "bday"}], []},
-       {xmlelement, "field", [{"label", "Country"},  {"var", "ctry"}], []},
-       {xmlelement, "field", [{"label", "City"},     {"var", "locality"}], []},
-       {xmlelement, "field", [{"label", "email"},    {"var", "email"}], []},
-       {xmlelement, "field", [{"label", "Organization Name"},
-			      {"var", "orgname"}], []},
-       {xmlelement, "field", [{"label", "Organization Unit"},
-			      {"var", "orgunit"}], []}
+      [?LFIELD("JID", "jid"),
+       ?LFIELD("Full Name", "fn"),
+       ?LFIELD("Name", "given"),
+       ?LFIELD("Middle Name", "middle"),
+       ?LFIELD("Family Name", "family"),
+       ?LFIELD("Nickname", "nickname"),
+       ?LFIELD("Birthday", "bday"),
+       ?LFIELD("Country", "ctry"),
+       ?LFIELD("City", "locality"),
+       ?LFIELD("email", "email"),
+       ?LFIELD("Organization Name", "orgname"),
+       ?LFIELD("Organization Unit", "orgunit")
       ]}] ++ lists:map(fun record_to_item/1, search(Data)).
 
 -define(FIELD(Var, Val),
@@ -402,19 +386,20 @@ filter_fields([], Match) ->
     Match;
 filter_fields([{SVar, [Val]} | Ds], Match)
   when is_list(Val) and (Val /= "") ->
+    LVal = jlib:tolower(Val),
     NewMatch = case SVar of
-                   "user"     -> Match#vcard_search{user     = Val};
-                   "fn"       -> Match#vcard_search{fn       = Val};
-                   "family"   -> Match#vcard_search{family   = Val};
-                   "given"    -> Match#vcard_search{given    = Val};
-                   "middle"   -> Match#vcard_search{middle   = Val};
-                   "nickname" -> Match#vcard_search{nickname = Val};
-                   "bday"     -> Match#vcard_search{bday     = Val};
-                   "ctry"     -> Match#vcard_search{ctry     = Val};
-                   "locality" -> Match#vcard_search{locality = Val};
-                   "email"    -> Match#vcard_search{email    = Val};
-                   "orgname"  -> Match#vcard_search{orgname  = Val};
-                   "orgunit"  -> Match#vcard_search{orgunit  = Val};
+                   "user"     -> Match#vcard_search{user     = LVal};
+                   "fn"       -> Match#vcard_search{fn       = LVal};
+                   "family"   -> Match#vcard_search{family   = LVal};
+                   "given"    -> Match#vcard_search{given    = LVal};
+                   "middle"   -> Match#vcard_search{middle   = LVal};
+                   "nickname" -> Match#vcard_search{nickname = LVal};
+                   "bday"     -> Match#vcard_search{bday     = LVal};
+                   "ctry"     -> Match#vcard_search{ctry     = LVal};
+                   "locality" -> Match#vcard_search{locality = LVal};
+                   "email"    -> Match#vcard_search{email    = LVal};
+                   "orgname"  -> Match#vcard_search{orgname  = LVal};
+                   "orgunit"  -> Match#vcard_search{orgunit  = LVal};
 		   _          -> Match
 	       end,
     filter_fields(Ds, NewMatch);

@@ -18,8 +18,8 @@
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
 
--record(s2s, {server, node, key}).
--record(mys2s, {server, pid}).
+-record(s2s, {fromto, node, key}).
+-record(mys2s, {fromto, pid}).
 
 
 start() ->
@@ -43,8 +43,8 @@ loop() ->
 	%    replace_and_register_my_connection(User, Resource, From),
 	%    replace_alien_connection(User, Resource),
 	%    loop();
-	{closed_conection, Server} ->
-	    remove_connection(Server),
+	{closed_conection, FromTo} ->
+	    remove_connection(FromTo),
 	    loop();
 	%{replace, User, Resource} ->
 	%    replace_my_connection(User, Resource),
@@ -67,10 +67,10 @@ loop() ->
 %    ejabberd_s2s ! {close_session, User, Resource}.
 
 
-remove_connection(Server) ->
+remove_connection(FromTo) ->
     F = fun() ->
-		mnesia:delete({mys2s, Server}),
-		mnesia:delete({s2s, Server})
+		mnesia:delete({mys2s, FromTo}),
+		mnesia:delete({s2s, FromTo})
 	end,
     mnesia:transaction(F).
 
@@ -85,9 +85,9 @@ clean_table_from_bad_node(Node) ->
         end,
     mnesia:transaction(F).
 
-have_connection(Server) ->
+have_connection(FromTo) ->
     F = fun() ->
-		[E] = mnesia:read({s2s, Server})
+		[E] = mnesia:read({s2s, FromTo})
         end,
     case mnesia:transaction(F) of
 	{atomic, _} ->
@@ -96,9 +96,9 @@ have_connection(Server) ->
 	    false
     end.
 
-get_key(Server) ->
+get_key(FromTo) ->
     F = fun() ->
-		[E] = mnesia:read({s2s, Server}),
+		[E] = mnesia:read({s2s, FromTo}),
 		E
         end,
     case mnesia:transaction(F) of
@@ -108,15 +108,15 @@ get_key(Server) ->
 	    ""
     end.
 
-try_register(Server) ->
+try_register(FromTo) ->
     Key = randoms:get_string(),
     F = fun() ->
-		case mnesia:read({s2s, Server}) of
+		case mnesia:read({s2s, FromTo}) of
 		    [] ->
-			mnesia:write(#s2s{server = Server,
+			mnesia:write(#s2s{fromto = FromTo,
 					  node = node(),
 					  key = Key}),
-			mnesia:write(#mys2s{server = Server,
+			mnesia:write(#mys2s{fromto = FromTo,
 					    pid = self()}),
 			{key, Key};
 		    _ ->
@@ -139,16 +139,17 @@ do_route(From, To, Packet) ->
 	   [From, To, Packet, 8]),
     {_, MyServer, _} = From,
     {User, Server, Resource} = To,
+    FromTo = {MyServer, Server},
     Key = randoms:get_string(),
     F = fun() ->
-		case mnesia:read({mys2s, Server}) of
+		case mnesia:read({mys2s, FromTo}) of
 		    [] ->
-			case mnesia:read({s2s, Server}) of
+			case mnesia:read({s2s, FromTo}) of
 			    [Er] ->
 				{remote, Er#s2s.node};
 			    [] ->
 				% TODO
-				mnesia:write(#s2s{server = Server,
+				mnesia:write(#s2s{fromto = FromTo,
 						  node = node(),
 						  key = Key}),
 				new
@@ -174,7 +175,7 @@ do_route(From, To, Packet) ->
 	{atomic, new} ->
 	    ?DEBUG("starting new s2s connection~n", []),
 	    Pid = ejabberd_s2s_out:start(MyServer, Server, {new, Key}),
-	    mnesia:transaction(fun() -> mnesia:write(#mys2s{server = Server,
+	    mnesia:transaction(fun() -> mnesia:write(#mys2s{fromto = FromTo,
 							    pid = Pid}) end),
 	    {xmlelement, Name, Attrs, Els} = Packet,
 	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),

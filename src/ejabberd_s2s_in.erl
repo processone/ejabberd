@@ -129,7 +129,7 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
 	     StateData#state{server = From}};
 	{verify, To, From, Id, Key} ->
 	    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
-	    Key1 = ejabberd_s2s:get_key(From),
+	    Key1 = ejabberd_s2s:get_key({StateData#state.myname, From}),
 	    Type = if Key == Key1 -> "valid";
 		      true -> "invalid"
 		   end,
@@ -178,7 +178,7 @@ wait_for_verification({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
 	{verify, To, From, Id, Key} ->
 	    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
-	    Key1 = ejabberd_s2s:get_key(From),
+	    Key1 = ejabberd_s2s:get_key({StateData#state.myname, From}),
 	    Type = if Key == Key1 -> "valid";
 		      true -> "invalid"
 		   end,
@@ -209,7 +209,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    case is_key_packet(El) of
 		{verify, To, From, Id, Key} ->
 		    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
-		    Key1 = ejabberd_s2s:get_key(From),
+		    Key1 = ejabberd_s2s:get_key({StateData#state.myname,
+						 From}),
 		    Type = if Key == Key1 -> "valid";
 			      true -> "invalid"
 			   end,

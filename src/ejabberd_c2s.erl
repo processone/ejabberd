@@ -492,7 +492,9 @@ presence_update(From, Packet, StateData) ->
 		if
 		    FromUnavail ->
 			% TODO: watching ourself
-
+			
+			mod_offline:resend_offline_messages(
+			  StateData#state.user),
 			presence_broadcast_first(From, StateData, Packet);
 		    true ->
 			presence_broadcast_to_trusted(From,

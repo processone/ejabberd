@@ -122,7 +122,9 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    Server = StateData#state.server,
 	    New = case StateData#state.new of
 		      false ->
-			  case ejabberd_s2s:try_register(Server) of
+			  case
+			      ejabberd_s2s:try_register(
+				{StateData#state.myname, Server}) of
 			      {key, Key} ->
 				  Key;
 			      false ->
@@ -331,7 +333,8 @@ terminate(Reason, StateName, StateData) ->
 	false ->
 	    ok;
 	Key ->
-	    ejabberd_s2s ! {closed_conection, StateData#state.server}
+	    ejabberd_s2s ! {closed_conection, {StateData#state.myname,
+					       StateData#state.server}}
     end,
     case StateData#state.socket of
 	undefined ->

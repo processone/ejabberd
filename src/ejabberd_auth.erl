@@ -20,11 +20,12 @@
 	 set_password/2,
 	 check_password/2,
 	 check_password/4,
-	 try_register/2]).
+	 try_register/2,
+	 dirty_get_registered_users/0,
+	 is_user_exists/1]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
-	dirty_get_registered_users/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
 
 -record(state, {}).
 
@@ -162,3 +163,19 @@ try_register(User, Password) ->
 dirty_get_registered_users() ->
     mnesia:dirty_all_keys(passwd).
 
+is_user_exists(User) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		case mnesia:read({passwd, LUser}) of
+		    [] ->
+			false;
+		    [_] ->
+			true
+		end
+        end,
+    case mnesia:transaction(F) of
+	{atomic, Res} ->
+	    Res;
+	_ ->
+	    false
+    end.

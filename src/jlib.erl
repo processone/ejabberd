@@ -26,8 +26,10 @@
 	 iq_query_info/1,
 	 is_iq_request_type/1,
 	 iq_to_xml/1,
-	 parse_xdata_submit/1]).
+	 parse_xdata_submit/1,
+	 timestamp_to_xml/1]).
 
+-include("namespaces.hrl").
 
 %send_iq(From, To, ID, SubTags) ->
 %    ok.
@@ -289,3 +291,12 @@ parse_xdata_values([{xmlelement, Name, Attrs, SubEls} | Els], Res) ->
     end;
 parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
+
+
+timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
+    {xmlelement, "x",
+     [{"xmlns", ?NS_DELAY},
+      {"stamp", lists:flatten(
+		  io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
+				[Year, Month, Day, Hour, Minute, Second]))}],
+     []}.

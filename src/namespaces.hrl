@@ -10,5 +10,7 @@
 -define(NS_VCARD, "vcard-temp").
 -define(NS_SEARCH, "jabber:iq:search").
 -define(NS_XDATA, "jabber:x:data").
+-define(NS_DELAY, "jabber:x:delay").
+-define(NS_EVENT, "jabber:x:event").
 
 

@@ -23,7 +23,6 @@
 -record(session, {ur, user, node}).
 -record(mysession, {ur, pid}).
 -record(presence, {ur, user, priority}).
--record(offline_msg, {user, timestamp, xml}).
 
 start() ->
     spawn(ejabberd_sm, init, []).
@@ -226,20 +225,9 @@ do_route(From, To, Packet) ->
 			    ok
 		    end;
 		"message" ->
-		    case catch lists:max(get_user_present_resources(User)) of
-			{'EXIT', _} ->
-			    % TODO
-			    ok;
-			{_, R} ->
-			    ejabberd_sm ! {route,
-					   From,
-					   {User, Server, R},
-					   Packet}
-		    end;
+		    route_message(From, To, Packet);
 		"iq" ->
-		    process_iq(From, To, Packet),
-		    % TODO
-		    ok;
+		    process_iq(From, To, Packet);
 		"broadcast" ->
 		    lists:foreach(
 		      fun(R) ->
@@ -262,14 +250,36 @@ do_route(From, To, Packet) ->
 		    {ejabberd_sm, Node} ! {route, From, To, Packet},
 		    ok;
 		{atomic, not_exists} ->
-		    % TODO
-		    ?DEBUG("packet droped~n", []),
+		    if
+			Name == "message" ->
+			    route_message(From, To, Packet);
+			true ->
+			    ?DEBUG("packet droped~n", [])
+		    end,
 		    ok;
 		{aborted, Reason} ->
 		    ?DEBUG("delivery failed: ~p~n", [Reason]),
 		    false
 	    end
     end.
+
+route_message(From, To, Packet) ->
+    {User, Server, Resource} = To,
+    case catch lists:max(get_user_present_resources(User)) of
+	{'EXIT', _} ->
+	    case ejabberd_auth:is_user_exists(User) of
+		true ->
+		    mod_offline:store_packet(From, To, Packet);
+		_ ->
+		    ?DEBUG("packet droped~n", [])
+	    end;
+	{_, R} ->
+	    ejabberd_sm ! {route,
+			   From,
+			   {User, Server, R},
+			   Packet}
+    end.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

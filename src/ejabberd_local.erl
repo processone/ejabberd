@@ -24,6 +24,7 @@ start() ->
     mod_roster:start(),
     mod_disco:start(),
     mod_vcard:start(),
+    mod_offline:start(),
     ok.
 
 init() ->
