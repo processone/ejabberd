@@ -1,3 +1,23 @@
+2003-07-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Close connection after key
+	verification
+
+	* src/ejabberd_c2s.erl: start replaced with start_link
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd_service.erl: Likewise
+
+	* src/ejabberd_listener.erl: Now uses proc_lib to spawn listeners,
+	removed 3rd parameter in listener configuration (assumed to equal
+	start_link)
+
+	* src/ejabberd.rel: Updated
+
+	* doc/guide.tex: Small changes
+
+	* doc/Makefile: Added implicit charset specification to hevea
+
 2003-07-12  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Updated (thanks to Sergei Golovan)

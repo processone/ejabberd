@@ -168,7 +168,7 @@ do_route(From, To, Packet) ->
 	    ok;
 	{atomic, new} ->
 	    ?DEBUG("starting new s2s connection~n", []),
-	    Pid = ejabberd_s2s_out:start(MyServer, Server, {new, Key}),
+	    Pid = ejabberd_s2s_out:start_link(MyServer, Server, {new, Key}),
 	    mnesia:transaction(fun() ->
 				       mnesia:write(#local_s2s{fromto = FromTo,
 							       pid = Pid})

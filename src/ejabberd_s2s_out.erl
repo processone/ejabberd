@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/3, send_text/2, send_element/2]).
+-export([start_link/3, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -65,8 +65,9 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(From, Host, Type) ->
-    {ok, Pid} = gen_fsm:start(ejabberd_s2s_out, [From, Host, Type], ?FSMOPTS),
+start_link(From, Host, Type) ->
+    {ok, Pid} = gen_fsm:start_link(ejabberd_s2s_out, [From, Host, Type],
+				   ?FSMOPTS),
     Pid.
 
 %%%----------------------------------------------------------------------
@@ -212,13 +213,7 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 			_ ->
 			    gen_fsm:send_event(Pid, invalid)
 		    end,
-		    case StateData#state.verify of
-			false ->
-			    {stop, normal, StateData};
-			_ ->
-			    {next_state, wait_for_validation,
-			     StateData#state{verify = false}, ?S2STIMEOUT}
-		    end
+		    {stop, normal, StateData}
 	    end;
 	_ ->
 	    {next_state, wait_for_validation, StateData, ?S2STIMEOUT}

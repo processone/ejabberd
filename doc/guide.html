@@ -3,11 +3,11 @@
 <HTML>
 <HEAD><TITLE>Ejabberd Installation and Operation Guide</TITLE>
 
-<META http-equiv="Content-Type" content="text/html; charset=KOI8-R">
+<META http-equiv="Content-Type" content="text/html; charset=ISO8859-1">
 <META name="GENERATOR" content="hevea 1.06">
 </HEAD>
 <BODY >
-<!--HEVEA command line is: /usr/bin/hevea guide.tex -->
+<!--HEVEA command line is: /usr/bin/hevea -charset ISO8859-1 guide.tex -->
 <!--HTMLHEAD-->
 <!--ENDHTML-->
 <!--PREFIX <ARG ></ARG>-->
@@ -115,9 +115,9 @@ The main features of <TT>ejabberd</TT> is:
 <UL><LI>
 Works on most of popular platforms: *nix (tested on Linux and FreeBSD)
  and Win32
-<LI>Distributed: You may run <TT>ejabberd</TT> on a cluster of machines and all of
+<LI>Distributed: You can run <TT>ejabberd</TT> on a cluster of machines and all of
  them will serve one Jabber domain.
-<LI>Fault-tolerance: You may setup an <TT>ejabberd</TT> cluster so that all the
+<LI>Fault-tolerance: You can setup an <TT>ejabberd</TT> cluster so that all the
  information required for a properly working service will be stored
  permanently on more than one node. This means that if one of the nodes
  crashes, then the others will continue working without disruption.
@@ -211,8 +211,9 @@ TBD<BR>
 <OL type=1><LI>
 Install Erlang emulator (for example, into <CODE>C:\Program Files\erl5.1.2</CODE>).
 <LI>Install Expat library into <CODE>C:\Program Files\Expat-1.95.6</CODE>
- directory. Copy file <CODE>C:\Program Files\Expat-1.95.6\Libs\libexpat.dll</CODE> to your Windows system directory (for
- example, <CODE>C:\WINNT</CODE> or <CODE>C:\WINNT\System32</CODE>)
+ directory. Copy file <CODE>C:\Program Files\Expat-1.95.6\Libs\libexpat.dll</CODE>
+ to your Windows system directory (for example, <CODE>C:\WINNT</CODE> or
+ <CODE>C:\WINNT\System32</CODE>)
 <LI>Install Iconv library into <CODE>C:\Program Files\GnuWin32</CODE> directory.
  Copy file <CODE>C:\Program Files\GnuWin32\bin\libiconv-2.dll</CODE> to your
  Windows system directory.<BR>
@@ -236,6 +237,11 @@ nmake -f Makefile.win32
 werl -s ejabberd -name ejabberd
 </PRE><LI>Enjoy!
 </OL>
+Some recent versions of Erlang distribution it seems have bug in crypto
+application, so ejabberd could be built but users can't use digest
+authentication (only plain-text). Also it seems SSL support is broken in
+Windows distribution of Erlang emulator.<BR>
+<BR>
 <!--TOC subsection Starting-->
 
 <H3><A NAME="htoc10">2.4</A>&nbsp;&nbsp;Starting</H3><!--SEC END -->

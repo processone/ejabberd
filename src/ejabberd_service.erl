@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/2, receiver/2, send_text/2, send_element/2]).
+-export([start_link/2, receiver/2, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -69,8 +69,8 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(SockData, Opts) ->
-    gen_fsm:start(ejabberd_service, [SockData, Opts], ?FSMOPTS).
+start_link(SockData, Opts) ->
+    gen_fsm:start_link(ejabberd_service, [SockData, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
