@@ -350,7 +350,7 @@ list_users() ->
 	N when N =< 100 ->
 	    lists:flatmap(
 	      fun(U) ->
-		      [?AC("../user/" ++ U, U), ?BR]
+		      [?AC("../user/" ++ U ++ "/", U), ?BR]
 	      end, SUsers);
 	N ->
 	    NParts = trunc(math:sqrt(N * 0.618)) + 1,
@@ -363,7 +363,7 @@ list_users() ->
 				true -> lists:last(SUsers)
 			     end,
 		      Name = 
-			  lists:nth(K, SUsers) ++ " -- " ++
+			  lists:nth(K, SUsers) ++ [$\s, 226, 128, 148, $\s] ++
 			  Last,
 		      [?AC(Node ++ "/", Name), ?BR]
 	      end, lists:seq(1, N, M))
@@ -378,7 +378,7 @@ list_users_in_diapason(Diap) ->
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
     lists:flatmap(
       fun(U) ->
-	      [?AC("../../user/" ++ U, U), ?BR]
+	      [?AC("../../user/" ++ U ++ "/", U), ?BR]
       end, Sub).
 
 
@@ -387,6 +387,9 @@ get_stats() ->
     OnlineUsers = mnesia:table_info(presence, size),
     AuthUsers = mnesia:table_info(session, size),
     RegisteredUsers = mnesia:table_info(passwd, size),
+    S2SConns = ejabberd_s2s:dirty_get_connections(),
+    S2SConnections = length(S2SConns),
+    S2SServers = length(lists:usort([element(2, C) || C <- S2SConns])),
     
     [?XAE("table", [],
 	  [?XE("tbody",
@@ -395,7 +398,10 @@ get_stats() ->
 		?XE("tr", [?XC("td", "Authentificated users"),
 			   ?XC("td", integer_to_list(AuthUsers))]),
 		?XE("tr", [?XC("td", "Online users"),
-			   ?XC("td", integer_to_list(OnlineUsers))])
+			   ?XC("td", integer_to_list(OnlineUsers))]),
+		?XE("tr", [?XC("td", "Outgoing S2S connections"),
+			   ?XC("td", integer_to_list(S2SConnections))]),
+		?XE("tr", [?XC("td", "Outgoing S2S servers"),
+			   ?XC("td", integer_to_list(S2SServers))])
 	       ])
-	   
 	  ])].

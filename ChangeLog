@@ -1,3 +1,7 @@
+2004-03-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web.erl: Minor update
+
 2004-03-14  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_web.erl: Added interface for users listsing and
