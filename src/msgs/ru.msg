@@ -90,7 +90,14 @@
 {"Make room anonymous?", "Сделать комнату анонимной?"}.
 {"Enable logging?", "Включить журналирование?"}.
 
-
+% mod_irc/mod_irc.erl
+{"You need an x:data capable client to configure mod_irc settings",
+ "Чтобы настроить параметры mod_irc, нужен x:data-совместимый клиент"}.
+{"mod_irc configuration for", "Конфигурация mod_irc для"}.
+{"IRC Username", "Имя пользователя IRC"}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Чтобы указать различные кодировки для разных серверов IRC, заполните список значениями в формате '{\"irc server\", \"encoding\"}'. По умолчанию эта служба использует кодировку \"~s\"."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Примеры: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
+{"Encodings", "Кодировки"}.
 
 % Local Variables:
 % mode: erlang

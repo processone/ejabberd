@@ -1,3 +1,17 @@
+2004-02-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_irc/mod_irc.erl: Now uses "ejabber:config" namespace
+	(thanks to Sergei Golovan)
+
+	* src/mod_disco.erl: Fixed disco category and type (thanks to
+	Sergei Golovan)
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+
+	* src/jlib.hrl: Added "ejabber:config" namespace (thanks to Sergei
+	Golovan)
+
 2004-01-27  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_ctl.erl: Added command for log reopening

@@ -33,6 +33,8 @@
 -define(NS_PUBSUB_OWNER, "http://jabber.org/protocol/pubsub#owner").
 -define(NS_PUBSUB_NMI,   "http://jabber.org/protocol/pubsub#node-meta-info").
 
+-define(NS_EJABBERD_CONFIG, "ejabberd:config").
+
 -define(NS_STREAM,       "http://etherx.jabber.org/streams").
 
 -define(NS_STANZAS,      "urn:ietf:params:xml:ns:xmpp-stanzas").

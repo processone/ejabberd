@@ -213,8 +213,8 @@ iq_disco_info(SNode) ->
     case Node of
 	[] ->
 	    [{xmlelement, "identity",
-	      [{"category", "service"},
-	       {"type", "pubsub"},
+	      [{"category", "pubsub"},
+	       {"type", "generic"},
 	       {"name", "ejabberd/mod_pubsub"}], []},
 	     %{xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},

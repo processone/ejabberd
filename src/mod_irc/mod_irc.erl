@@ -72,9 +72,9 @@ do_route(Host, From, To, Packet) ->
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
-			#iq{type = Type, xmlns = ?NS_IQDATA,
+			#iq{type = Type, xmlns = ?NS_EJABBERD_CONFIG,
 			    sub_el = SubEl} = IQ ->
-			    iq_data(From, To, IQ);
+			    ejabberd_config(From, To, IQ);
 			#iq{} = IQ ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
@@ -155,12 +155,12 @@ iq_disco() ->
      {xmlelement, "feature",
       [{"var", ?NS_MUC}], []},
      {xmlelement, "feature",
-      [{"var", ?NS_IQDATA}], []}].
+      [{"var", ?NS_EJABBERD_CONFIG}], []}].
 
 
 
-iq_data(From, To, #iq{type = Type} = IQ) ->
-    case catch process_iq_data(From, To, IQ) of
+ejabberd_config(From, To, #iq{type = Type} = IQ) ->
+    case catch process_ejabberd_config(From, To, IQ) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	ResIQ ->
@@ -173,42 +173,64 @@ iq_data(From, To, #iq{type = Type} = IQ) ->
 	    end
     end.
 
+find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
+    find_xdata_el1(SubEls).
 
-process_iq_data(From, To,
+find_xdata_el1([]) ->
+    false;
+
+find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
+    case xml:get_attr_s("xmlns", Attrs) of
+	?NS_XDATA ->
+	    {xmlelement, Name, Attrs, SubEls};
+	_ ->
+	    find_xdata_el1(Els)
+    end;
+
+find_xdata_el1([_ | Els]) ->
+    find_xdata_el1(Els).
+
+process_ejabberd_config(From, To,
 		#iq{type = Type, xmlns = XMLNS, sub_el = SubEl} = IQ) ->
     Lang = xml:get_tag_attr_s("xml:lang", SubEl),
     case Type of
 	set ->
-	    case xml:get_tag_attr_s("type", SubEl) of
-		"cancel" ->
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query",
-				     [{"xmlns", XMLNS}], []}]};
-		"submit" ->
-		    XData = jlib:parse_xdata_submit(SubEl),
-		    case XData of
-			invalid ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-			_ ->
-			    Node =
-				string:tokens(
-				  xml:get_tag_attr_s("node", SubEl),
-				  "/"),
-			    case set_form(From, Node, Lang, XData) of
-				{result, Res} ->
-				    IQ#iq{type = result,
-					  sub_el = [{xmlelement, "query",
-						     [{"xmlns", XMLNS}],
-						     Res
-						    }]};
-				{error, Error} ->
+	    XDataEl = find_xdata_el(SubEl),
+	    case XDataEl of
+		false ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
+		{xmlelement, _Name, Attrs, SubEls} ->
+		    case xml:get_attr_s("type", Attrs) of
+			"cancel" ->
+			    IQ#iq{type = result,
+				sub_el = [{xmlelement, "query",
+					   [{"xmlns", XMLNS}], []}]};
+			"submit" ->
+			    XData = jlib:parse_xdata_submit(XDataEl),
+			    case XData of
+				invalid ->
 				    IQ#iq{type = error,
-					  sub_el = [SubEl, Error]}
-			    end
-		    end;
-		_ ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+					  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+				_ ->
+				    Node = string:tokens(
+					     xml:get_tag_attr_s("node", SubEl),
+					     "/"),
+				    case set_form(From, Node, Lang, XData) of
+					{result, Res} ->
+					    IQ#iq{type = result,
+						  sub_el = [{xmlelement, "query",
+							     [{"xmlns", XMLNS}],
+							     Res
+							    }]};
+					{error, Error} ->
+					    IQ#iq{type = error,
+						  sub_el = [SubEl, Error]}
+				    end
+			    end;
+			_ ->
+			    IQ#iq{type = error,
+				  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+		    end
 	    end;
 	get ->
 	    Node =
@@ -246,54 +268,61 @@ get_form(From, [], Lang) ->
 	    Customs;
 	{Username, Encodings} ->
 	    {result,
-	     [{xmlelement, "title", [],
+	     [{xmlelement, "instructions", [],
 	       [{xmlcdata,
-		 User ++ "@" ++ Server ++ " " ++
-		 translate:translate(Lang, "Configuration")}]},
+	         translate:translate(
+		   Lang,
+		   "You need an x:data capable client "
+		   "to configure mod_irc settings")}]},
+	      {xmlelement, "x", [{"xmlns", ?NS_XDATA}],
+	       [{xmlelement, "title", [],
+	         [{xmlcdata,
+		   translate:translate(Lang, "mod_irc configuration for") ++
+		   " " ++ User ++ "@" ++ Server}]},
 	              %{xmlelement, "instructions", [],
 	              % [{xmlcdata,
 	              %   translate:translate(
 	              %     Lang, "")}]},
-	      {xmlelement, "field", [{"type", "text-single"},
-				     {"label",
-				      translate:translate(
-					Lang, "IRC Username")},
-				     {"var", "username"}],
-	       [{xmlelement, "value", [], [{xmlcdata, Username}]}]},
-	      {xmlelement, "field", [{"type", "fixed"}],
-	       [{xmlelement, "value", [],
-		 [{xmlcdata,
-		   lists:flatten(
-		     io_lib:format(
-		       translate:translate(
-			 Lang,
-			 "If you want to specify different encodings "
-			 "for IRC servers, fill this list with values "
-			 "in format '{\"irc server\", \"encoding\"}'.  "
-			 "By default this service use \"~s\" encoding."),
-		       [?DEFAULT_IRC_ENCODING]))}]}]},
-	      {xmlelement, "field", [{"type", "fixed"}],
-	       [{xmlelement, "value", [],
-		 [{xmlcdata,
-		   translate:translate(
-		     Lang,
-		     "Example: [{\"irc.lucky.net\", \"koi8-r\"}, "
-		     "{\"vendetta.fef.net\", \"iso8859-1\"}]."
-		  )}]}]},
-	      {xmlelement, "field", [{"type", "text-multi"},
-				     {"label",
-				      translate:translate(Lang, "Encodings")},
-				     {"var", "encodings"}],
-		       lists:map(
-			 fun(S) ->
-				 {xmlelement, "value", [], [{xmlcdata, S}]}
-			 end,
-			 string:tokens(
-			   lists:flatten(
-			     io_lib:format("~p.", [Encodings])),
-			   "\n"))
-	      }
-	     ]}
+	        {xmlelement, "field", [{"type", "text-single"},
+				       {"label",
+				        translate:translate(
+					  Lang, "IRC Username")},
+				       {"var", "username"}],
+	         [{xmlelement, "value", [], [{xmlcdata, Username}]}]},
+	        {xmlelement, "field", [{"type", "fixed"}],
+	         [{xmlelement, "value", [],
+		   [{xmlcdata,
+		     lists:flatten(
+		       io_lib:format(
+		         translate:translate(
+			   Lang,
+			   "If you want to specify different encodings "
+			   "for IRC servers, fill this list with values "
+			   "in format '{\"irc server\", \"encoding\"}'.  "
+			   "By default this service use \"~s\" encoding."),
+		         [?DEFAULT_IRC_ENCODING]))}]}]},
+	        {xmlelement, "field", [{"type", "fixed"}],
+	         [{xmlelement, "value", [],
+		   [{xmlcdata,
+		     translate:translate(
+		       Lang,
+		       "Example: [{\"irc.lucky.net\", \"koi8-r\"}, "
+		       "{\"vendetta.fef.net\", \"iso8859-1\"}]."
+		    )}]}]},
+	        {xmlelement, "field", [{"type", "text-multi"},
+				       {"label",
+				        translate:translate(Lang, "Encodings")},
+				       {"var", "encodings"}],
+		         lists:map(
+			   fun(S) ->
+				   {xmlelement, "value", [], [{xmlcdata, S}]}
+			   end,
+			   string:tokens(
+			     lists:flatten(
+			       io_lib:format("~p.", [Encodings])),
+			     "\n"))
+	        }
+	       ]}]}
     end;
 
 

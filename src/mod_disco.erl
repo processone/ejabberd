@@ -124,7 +124,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 				     "query",
 				     [{"xmlns", ?NS_DISCO_INFO}],
 				     [{xmlelement, "identity",
-				       [{"category", "service"},
+				       [{"category", "server"},
 					{"type", "im"},
 					{"name", "ejabberd"}], []}] ++
 				     Features
