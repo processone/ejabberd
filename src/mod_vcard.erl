@@ -82,17 +82,7 @@ loop() ->
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
-	    {User, Server, _} = From,
-	    LUser = jlib:tolower(User),
-	    LServer = jlib:tolower(Server),
-	    case ?MYNAME of
-		LServer ->
-		    set_vcard(User, SubEl),
-		    {iq, ID, result, XMLNS, []};
-		_ ->
-		    {iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_NOT_ALLOWED]}
-	    end;
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    {iq, ID, result, XMLNS,
 	     [{xmlelement, "vCard",
@@ -114,7 +104,17 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
+	    {User, Server, _} = From,
+	    LUser = jlib:tolower(User),
+	    LServer = jlib:tolower(Server),
+	    case ?MYNAME of
+		LServer ->
+		    set_vcard(User, SubEl),
+		    {iq, ID, result, XMLNS, []};
+		_ ->
+		    {iq, ID, error, XMLNS,
+		     [SubEl, ?ERR_NOT_ALLOWED]}
+	    end;
 	get ->
 	    {User, _, _} = To,
 	    LUser = jlib:tolower(User),

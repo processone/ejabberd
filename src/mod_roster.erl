@@ -41,7 +41,19 @@ start(Opts) ->
 				{attributes, record_info(fields, roster)}]),
     mnesia:add_table_index(roster, user),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_ROSTER,
-				  ?MODULE, process_local_iq, IQDisc).
+				  ?MODULE, process_iq, IQDisc).
+
+process_iq(From, To, IQ) ->
+    {iq, ID, Type, XMLNS, SubEl} = IQ,
+    {_, Server, _} = From,
+    case ?MYNAME of
+	Server ->
+	    process_local_iq(From, To, IQ);
+	_ ->
+	    {iq, ID, error, XMLNS,
+	     [SubEl, ?ERR_ITEM_NOT_FOUND]}
+    end.
+
 
 process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->
     case Type of
@@ -52,18 +64,6 @@ process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->
     end.
 
 
-
-process_iq(From, To, IQ) ->
-    {iq, ID, Type, XMLNS, SubEl} = IQ,
-    {_, Server, _} = From,
-    case ?MYNAME of
-	Server ->
-	    process_local_iq(From, To, IQ),
-	    ignore;
-	_ ->
-	    {iq, ID, error, XMLNS,
-	     [SubEl, ?ERR_ITEM_NOT_FOUND]}
-    end.
 
 process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     {User, _, _} = From,

@@ -92,6 +92,8 @@ open_socket(init, StateData) ->
 			 StateData#state.nick,
 			 StateData#state.myname,
 			 StateData#state.nick])),
+	    send_text(NewStateData,
+		      io_lib:format("CODEPAGE ~s\r\n", [StateData#state.encoding])),
 	    {next_state, wait_for_registration,
 	     NewStateData};
 	{error, Reason} ->
@@ -360,11 +362,17 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 	    [From, "PRIVMSG", [$# | Chan] | _] ->
 		process_chanprivmsg(StateData, Chan, From, String),
 		StateData;
+	    [From, "NOTICE", [$# | Chan] | _] ->
+		process_channotice(StateData, Chan, From, String),
+		StateData;
 	    [From, "PRIVMSG", Nick, ":\001VERSION\001" | _] ->
 		process_version(StateData, Nick, From),
 		StateData;
 	    [From, "PRIVMSG", Nick | _] ->
 		process_privmsg(StateData, Nick, From, String),
+		StateData;
+	    [From, "NOTICE", Nick | _] ->
+		process_notice(StateData, Nick, From, String),
 		StateData;
 	    [From, "TOPIC", [$# | Chan] | _] ->
 		process_topic(StateData, Chan, From, String),
@@ -547,6 +555,7 @@ process_channel_list_user(StateData, Chan, User) ->
     {User2, Affiliation, Role} =
 	case User1 of
 	    [$@ | U2] -> {U2, "admin", "moderator"};
+	    [$+ | U2] -> {U2, "member", "participant"};
 	    _ -> {User1, "member", "participant"}
 	end,
     ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
@@ -614,6 +623,36 @@ process_chanprivmsg(StateData, Chan, From, String) ->
 			  {xmlelement, "message", [{"type", "groupchat"}],
 			   [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
 
+
+
+process_channotice(StateData, Chan, From, String) ->
+    [FromUser | _] = string:tokens(From, "!"),
+    {ok, Msg, _} = regexp:sub(String, ".*NOTICE[^:]*:", ""),
+    Msg1 = case Msg of
+	       [1, $A, $C, $T, $I, $O, $N, $  | Rest] ->
+		   "/me " ++ Rest;
+	       _ ->
+		   Msg
+	   end,
+    Msg2 = lists:filter(
+	     fun(C) ->
+		     if (C < 32) and
+			(C /= 9) and
+			(C /= 10) and
+			(C /= 13) ->
+			     false;
+			true -> true
+		     end
+	     end, Msg1),
+    ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
+			   StateData#state.myname, FromUser},
+			  StateData#state.user,
+			  {xmlelement, "message", [{"type", "groupchat"}],
+			   [{xmlelement, "body", [], [{xmlcdata, "NOTICE: " ++ Msg2}]}]}).
+
+
+
+
 process_privmsg(StateData, Nick, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
     {ok, Msg, _} = regexp:sub(String, ".*PRIVMSG[^:]*:", ""),
@@ -639,6 +678,34 @@ process_privmsg(StateData, Nick, From, String) ->
       StateData#state.user,
       {xmlelement, "message", [{"type", "chat"}],
        [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+
+
+process_notice(StateData, Nick, From, String) ->
+    [FromUser | _] = string:tokens(From, "!"),
+    {ok, Msg, _} = regexp:sub(String, ".*NOTICE[^:]*:", ""),
+    Msg1 = case Msg of
+	       [1, $A, $C, $T, $I, $O, $N, $  | Rest] ->
+		   "/me " ++ Rest;
+	       _ ->
+		   Msg
+	   end,
+    Msg2 = lists:filter(
+	     fun(C) ->
+		     if (C < 32) and
+			(C /= 9) and
+			(C /= 10) and
+			(C /= 13) ->
+			     false;
+			true -> true
+		     end
+	     end, Msg1),
+    ejabberd_router:route(
+      {lists:concat([FromUser, "!", StateData#state.server]),
+       StateData#state.myname, ""},
+      StateData#state.user,
+      {xmlelement, "message", [{"type", "chat"}],
+       [{xmlelement, "body", [], [{xmlcdata, "NOTICE: " ++ Msg2}]}]}).
+
 
 process_version(StateData, Nick, From) ->
     [FromUser | _] = string:tokens(From, "!"),
@@ -677,8 +744,16 @@ process_topic(StateData, Chan, From, String) ->
 			       Msg1}]}]}).
 
 process_part(StateData, Chan, From, String) ->
-    [FromUser | _] = string:tokens(From, "!"),
-    %Msg = lists:last(string:tokens(String, ":")),
+    [FromUser | FromIdent] = string:tokens(From, "!"),
+    {ok, Msg, _} = regexp:sub(String, ".*PART[^:]*", ""),    
+    ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
+			   StateData#state.myname, FromUser},
+			  StateData#state.user,
+			  {xmlelement, "message", [{"type", "groupchat"}],
+			   [{xmlelement, "body", [],
+			     [{xmlcdata, "/me has part: " ++
+			       Msg ++ "("  ++ FromIdent ++ ")" }]}]}),
+
     ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
 			   StateData#state.myname, FromUser},
 			  StateData#state.user,
@@ -687,7 +762,10 @@ process_part(StateData, Chan, From, String) ->
 			     [{xmlelement, "item",
 			       [{"affiliation", "member"},
 				{"role", "none"}],
-			       []}]}]}),
+			       []}]},
+			    {xmlelement, "status", [],
+			     [{xmlcdata, Msg ++ "("  ++ FromIdent ++ ")"}]}]
+			  }),
     case catch dict:update(Chan,
 			   fun(Ps) ->
 				   remove_element(FromUser, Ps)
@@ -700,13 +778,22 @@ process_part(StateData, Chan, From, String) ->
 
 
 process_quit(StateData, From, String) ->
-    [FromUser | _] = string:tokens(From, "!"),
-    %Msg = lists:last(string:tokens(String, ":")),
+    [FromUser | FromIdent] = string:tokens(From, "!"),
+    
+    {ok, Msg, _} = regexp:sub(String, ".*QUIT[^:]*:", ""),
     NewChans =
 	dict:map(
 	  fun(Chan, Ps) ->
 		  case ?SETS:is_member(FromUser, Ps) of
 		      true ->
+		          ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
+			   StateData#state.myname, FromUser},
+			  StateData#state.user,
+			  {xmlelement, "message", [{"type", "groupchat"}],
+			   [{xmlelement, "body", [],
+			     [{xmlcdata, "/me has quit: " ++
+			       Msg ++ "("  ++ FromIdent ++ ")" }]}]}),
+
 			  ejabberd_router:route(
 			    {lists:concat([Chan, "%", StateData#state.server]),
 			     StateData#state.myname, FromUser},
@@ -716,7 +803,10 @@ process_quit(StateData, From, String) ->
 			       [{xmlelement, "item",
 				 [{"affiliation", "member"},
 				  {"role", "none"}],
-				 []}]}]}),
+				 []}]},
+			      {xmlelement, "status", [],
+			       [{xmlcdata, Msg ++ "("  ++ FromIdent ++ ")"}]}
+			     ]}),
 			  remove_element(FromUser, Ps);
 		      _ ->
 			  Ps
@@ -726,7 +816,7 @@ process_quit(StateData, From, String) ->
 
 
 process_join(StateData, Channel, From, String) ->
-    [FromUser | _] = string:tokens(From, "!"),
+    [FromUser | FromIdent] = string:tokens(From, "!"),
     Chan = lists:subtract(Channel, ":#"),
     ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
 			   StateData#state.myname, FromUser},
@@ -737,6 +827,15 @@ process_join(StateData, Channel, From, String) ->
 			       [{"affiliation", "member"},
 				{"role", "participant"}],
 			       []}]}]}),
+    {ok, Msg, _} = regexp:sub(String, ".*JOIN[^:]*:", ""),    
+    ejabberd_router:route({lists:concat([Chan, "%", StateData#state.server]),
+			   StateData#state.myname, FromUser},
+			  StateData#state.user,
+			  {xmlelement, "message", [{"type", "groupchat"}],
+			   [{xmlelement, "body", [],
+			     [{xmlcdata, "/me has joined " ++
+			       Msg ++ "("  ++ FromIdent ++ ")" }]}]}),
+
     case catch dict:update(Chan,
 			   fun(Ps) ->
 				   ?SETS:add_element(FromUser, Ps)

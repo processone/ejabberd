@@ -17,7 +17,7 @@
 	 loop/2,
 	 stop/0,
 	 system_continue/3,
-	 system_terminate/4, 
+	 system_terminate/4,
 	 system_code_change/4]).
 
 -include("ejabberd.hrl").
@@ -454,8 +454,14 @@ create_new_node(Host, Node, Owner) ->
     case Node of
 	[] ->
 	    {LOU, LOS, _} = jlib:jid_tolower(Owner),
-	    NewNode = ["home", LOS, LOU, randoms:get_string()],
-	    create_new_node(Host, NewNode, Owner);
+	    HomeNode = ["home", LOS, LOU],
+	    case create_new_node(Host, HomeNode, Owner) of
+		{error, _} = Error ->
+		    Error;
+		_ ->
+		    NewNode = ["home", LOS, LOU, randoms:get_string()],
+		    create_new_node(Host, NewNode, Owner)
+	    end;
 	_ ->
 	    LOwner = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
 	    Parent = lists:sublist(Node, length(Node) - 1),
