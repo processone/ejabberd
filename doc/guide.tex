@@ -817,6 +817,26 @@ Example:
 \label{sec:modannounce}
 
 This module adds support for broadcast announce messages and MOTD.
+When the module is loaded, it handles messages sent to the following JID's
+(suppose that main server has address \jid{example.org}):
+\begin{description}
+\titem{example.org/announce/all} Message is sent to all registered users.
+If the user is online and connected to several resources, only resource with
+the highest priority will receive the message. If the registered user is
+not connected, the message will be stored offline (if oflline storage is
+available).
+\titem{example.org/announce/online} Message is sent to all connected users.
+If the user is online and connected to several resources, all resources
+will receive the message.
+\titem{example.org/announce/motd} Message is set as MOTD (Message of the Day)
+and will be sent to users as they login. In addition the message is sent to
+all connected users (similar to \term{announce/online} resource).
+\titem{example.org/announce/motd/update} Message is set as MOTD (Message of the Day)
+and will be sent to users as they login. The message is \emph{not sent} to
+all connected users.
+\titem{example.org/announce/motd/delete} Any message sent to this JID
+removes existing MOTD.
+\end{description}
 
 Options:
 \begin{description}

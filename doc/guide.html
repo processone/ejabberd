@@ -824,8 +824,27 @@ Example:
 <H3><A NAME="htoc32">A.2</A>&nbsp;&nbsp;<TT>mod_announce</TT></H3><!--SEC END -->
 
 <A NAME="sec:modannounce"></A>
-This module adds support for broadcast announce messages and MOTD.<BR>
-<BR>
+This module adds support for broadcast announce messages and MOTD.
+When the module is loaded, it handles messages sent to the following JID's
+(suppose that main server has address <TT>example.org</TT>):
+<DL COMPACT=compact><DT>
+<B><TT>example.org/announce/all</TT></B><DD> Message is sent to all registered users.
+If the user is online and connected to several resources, only resource with
+the highest priority will receive the message. If the registered user is
+not connected, the message will be stored offline (if oflline storage is
+available).
+<DT><B><TT>example.org/announce/online</TT></B><DD> Message is sent to all connected users.
+If the user is online and connected to several resources, all resources
+will receive the message.
+<DT><B><TT>example.org/announce/motd</TT></B><DD> Message is set as MOTD (Message of the Day)
+and will be sent to users as they login. In addition the message is sent to
+all connected users (similar to <TT>announce/online</TT> resource).
+<DT><B><TT>example.org/announce/motd/update</TT></B><DD> Message is set as MOTD (Message of the Day)
+and will be sent to users as they login. The message is <EM>not sent</EM> to
+all connected users.
+<DT><B><TT>example.org/announce/motd/delete</TT></B><DD> Any message sent to this JID
+removes existing MOTD.
+</DL>
 Options:
 <DL COMPACT=compact><DT>
 <B><TT>access</TT></B><DD> Specifies who is allowed to send announce messages

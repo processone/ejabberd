@@ -45,8 +45,6 @@ release : build release_clean
 	copy $(SYSTEMROOT)\system32\libeay32.dll $(EREL)
 	copy $(SYSTEMROOT)\system32\ssleay32.dll $(EREL)
 	copy win32\ejabberd.ico $(WIN32_DIR)
-	mkdir $(WIN32_DIR)\5.3
-	copy win32\5.3\*.beam $(WIN32_DIR)\5.3
 	mkdir $(SRC_DIR)
 	copy *.app $(SRC_DIR)
 	copy *.erl $(SRC_DIR)
@@ -66,11 +64,10 @@ release : build release_clean
 	copy stringprep\*.erl $(SRC_DIR)\stringprep
 	copy stringprep\*.c $(SRC_DIR)\stringprep
 	copy stringprep\*.tcl $(SRC_DIR)\stringprep
+	mkdir $(SRC_DIR)\tls
+	copy tls\*.erl $(SRC_DIR)\tls
 	mkdir $(SRC_DIR)\web
 	copy web\*.erl $(SRC_DIR)\web
-	mkdir $(SRC_DIR)\win32
-	mkdir $(SRC_DIR)\win32\5.3
-	copy win32\5.3\*.erl $(SRC_DIR)\win32\5.3
 	mkdir $(DOC_DIR)
 	copy ..\doc\*.html $(DOC_DIR)
 	copy ..\doc\*.png $(DOC_DIR)
@@ -92,11 +89,11 @@ all-recursive :
 	nmake -nologo -f Makefile.win32
 	cd ..\stringprep
 	nmake -nologo -f Makefile.win32
+	cd ..\tls
+	nmake -nologo -f Makefile.win32
 	cd ..\web
 	nmake -nologo -f Makefile.win32
-	cd ..\win32\5.3
-	nmake -nologo -f Makefile.win32
-	cd ..\..
+	cd ..
 
 compile-beam : 
 	erl -s make all report -noinput -s erlang halt
@@ -121,11 +118,11 @@ clean-recursive :
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\stringprep
 	nmake -nologo -f Makefile.win32 clean
+	cd ..\tls
+	nmake -nologo -f Makefile.win32 clean
 	cd ..\web
 	nmake -nologo -f Makefile.win32 clean
-	cd ..\win32\5.3
-	nmake -nologo -f Makefile.win32 clean
-	cd ..\..
+	cd ..
 
 distclean : release_clean clean
 	-@erase $(NSIS_HEADER)

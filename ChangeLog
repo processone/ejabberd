@@ -1,3 +1,20 @@
+2004-08-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline.erl: Added entire table locking on large message
+	queue
+
+	* src/ejabberd_sm.erl: Added offline_subscription_hook
+	* src/mod_offline.erl: Use offline_subscription_hook
+
+	* src/configure.erl: Updated (thanks to Sergei Golovan)
+	* src/Makefile.win32: Likewise
+	* src/tls/Makefile.win32: Likewise
+	* src/win32/: Likewise
+
+	* src/mod_announce.erl: Added announce to all users (thanks to
+	Sergei Golovan)
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
 2004-08-14  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)

@@ -41,6 +41,9 @@ init() ->
 
 loop() ->
     receive
+	{announce_all, From, To, Packet} ->
+	    announce_all(From, To, Packet),
+	    loop();
 	{announce_online, From, To, Packet} ->
 	    announce_online(From, To, Packet),
 	    loop();
@@ -70,6 +73,9 @@ announce(From, To, Packet) ->
 	#jid{luser = "", lresource = Res} ->
 	    {xmlelement, Name, _Attrs, _Els} = Packet,
 		case {Res, Name} of
+		    {"announce/all", "message"} ->
+			?PROCNAME ! {announce_all, From, To, Packet},
+			stop;
 		    {"announce/online", "message"} ->
 			?PROCNAME ! {announce_online, From, To, Packet},
 			stop;
@@ -87,6 +93,22 @@ announce(From, To, Packet) ->
 	    end;
 	_ ->
 	    ok
+    end.
+
+announce_all(From, To, Packet) ->
+    Access = gen_mod:get_module_opt(?MODULE, access, none),
+    case acl:match_rule(Access, From) of
+	deny ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    ejabberd_router:route(To, From, Err);
+	allow ->
+	    Server = ?MYNAME,
+	    Local = jlib:make_jid("", Server, ""),
+	    lists:foreach(
+		fun(U) ->
+			Dest = jlib:make_jid(U, Server, ""),
+			ejabberd_router:route(Local, Dest, Packet)
+		end, ejabberd_auth:dirty_get_registered_users())
     end.
 
 announce_online(From, To, Packet) ->

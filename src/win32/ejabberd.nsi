@@ -30,8 +30,10 @@
   
     !ifdef HACKED_INSTALLOPTIONS
 	ReserveFile "CheckUserH.ini"
+	ReserveFile "CheckReqs1H.ini"
     !else
 	ReserveFile "CheckUser.ini"
+	ReserveFile "CheckReqs1.ini"
     !endif
     ReserveFile "CheckReqs.ini"
     !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
@@ -45,6 +47,9 @@
     Var ERLANG_PATH
     Var ERLANG_VERSION
     Var REQUIRED_ERLANG_VERSION
+    Var OPENSSL_PATH
+    Var OPENSSL_VERSION
+    Var REQUIRED_OPENSSL_VERSION
     Var ERLSRV
 
 ;----------------------------------------------------------
@@ -52,7 +57,8 @@
 
 Function .onInit
 
-    StrCpy $REQUIRED_ERLANG_VERSION "5.3"
+    StrCpy $REQUIRED_ERLANG_VERSION "5.3.6.2"
+    StrCpy $REQUIRED_OPENSSL_VERSION "0.9.7c"
 
     ;Default installation folder
     StrCpy $INSTDIR "$PROGRAMFILES\${PRODUCT}"
@@ -70,8 +76,10 @@ Function .onInit
     ;Extract InstallOptions INI files
     !ifdef HACKED_INSTALLOPTIONS
 	!insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckUserH.ini"
+	!insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckReqs1H.ini"
     !else
 	!insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckUser.ini"
+	!insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckReqs1.ini"
     !endif
     !insertmacro MUI_INSTALLOPTIONS_EXTRACT "CheckReqs.ini"
   
@@ -106,6 +114,7 @@ FunctionEnd
     Page custom CheckUser LeaveCheckUser
     !insertmacro MUI_PAGE_LICENSE "..\..\COPYING"
     Page custom CheckReqs LeaveCheckReqs
+    Page custom CheckReqs1 LeaveCheckReqs1
     ;!insertmacro MUI_PAGE_COMPONENTS
     !insertmacro MUI_PAGE_DIRECTORY
 
@@ -142,6 +151,7 @@ SectionIn 1 RO
     File /r "${TESTDIR}\win32"
     File "${TESTDIR}\libeay32.dll"
     File "${TESTDIR}\ssleay32.dll"
+    File /oname=ejabberd.cfg.example "${TESTDIR}\ejabberd.cfg"
     SetOverwrite off
     File "${TESTDIR}\ejabberd.cfg"
     SetOverwrite on
@@ -155,10 +165,11 @@ SectionIn 1 RO
     StrCpy $0 "$SMPROGRAMS\$STARTMENU_FOLDER"
     CreateDirectory "$0"
     CreateShortCut "$0\Start Ejabberd.lnk" "$ERLANG_PATH\bin\werl.exe" \
-	'-sname ejabberd -pa ebin -pa win32/$ERLANG_VERSION \
+	'-sname ejabberd -pa ebin \
 	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH msgs \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
-	-s ejabberd -ejabberd config \"ejabberd.cfg\" -mnesia dir \"spool\"' \
+	-s ejabberd -ejabberd config \"ejabberd.cfg\" -mnesia dir \"spool\" \
+	-sasl sasl_error_logger {file,\"log/sasl.log\"}' \
 	$INSTDIR\win32\ejabberd.ico
     CreateShortCut "$0\Edit Config.lnk" "%SystemRoot%\system32\notepad.exe" \
 	"$INSTDIR\ejabberd.cfg"
@@ -190,7 +201,7 @@ SectionIn 1 RO
     installsrv:
     nsExec::ExecToLog '"$ERLSRV" add ejabberd -stopaction "init:stop()." \
 	-onfail reboot -workdir "$INSTDIR" \
-	-args "-s ejabberd -pa ebin -pa win32/$ERLANG_VERSION \
+	-args "-s ejabberd -pa ebin \
 	-ejabberd config \\\"ejabberd.cfg\\\" \
 	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH msgs \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
@@ -394,6 +405,56 @@ Function LeaveCheckReqs
 
 FunctionEnd
 
+Function CheckReqs1
+
+    Push "HKLM"
+    Call FindOpenSSL
+    Pop $OPENSSL_PATH
+    Pop $OPENSSL_VERSION
+    StrCmp $OPENSSL_PATH "" 0 abort
+    Push "HKCU"
+    Call FindOpenSSL
+    Pop $OPENSSL_PATH
+    Pop $OPENSSL_VERSION
+    StrCmp $OPENSSL_PATH "" 0 abort
+
+    !insertmacro MUI_HEADER_TEXT $(TEXT_CR_TITLE) $(TEXT_CR_SUBTITLE)
+    
+    !ifdef HACKED_INSTALLOPTIONS
+	!insertmacro MUI_INSTALLOPTIONS_INITDIALOG "CheckReqs1H.ini"
+	!insertmacro MUI_INSTALLOPTIONS_READ $0 "CheckReqs1H.ini" "Field 3" "State"
+	GetDlgItem $1 $HWNDPARENT 1
+	EnableWindow $1 $0
+    !else
+	!insertmacro MUI_INSTALLOPTIONS_INITDIALOG "CheckReqs1.ini"
+    !endif
+
+    !insertmacro MUI_INSTALLOPTIONS_SHOW
+
+    abort:
+	Abort
+
+FunctionEnd
+
+Function LeaveCheckReqs1
+
+    !ifdef HACKED_INSTALLOPTIONS
+	!insertmacro MUI_INSTALLOPTIONS_READ $0 "CheckReqs1H.ini" "Settings" "State"
+	StrCmp $0 0 validate  ;Next button?
+	StrCmp $0 3 checkbox  ;checkbox?
+	Abort                 ;Return to the page
+
+	checkbox:
+	    !insertmacro MUI_INSTALLOPTIONS_READ $0 "CheckReqs1H.ini" "Field 3" "State"
+	    GetDlgItem $1 $HWNDPARENT 1
+	    EnableWindow $1 $0
+	    Abort
+
+	validate:
+    !endif
+
+FunctionEnd
+
 Function FindErlang
 
     Exch $R0
@@ -431,6 +492,53 @@ Function FindErlang
 	Goto loop
 
     endloop:
+	StrCpy $R4 ""
+
+    get:
+	StrCpy $R0 $R4
+	StrCpy $R1 $R3
+
+	Pop $R5
+	Pop $R4
+	Pop $R3
+	Pop $R2
+	Exch $R1
+	Exch
+	Exch $R0
+
+FunctionEnd
+
+Function FindOpenSSL
+
+    Exch $R0
+    Push $R1
+    Push $R2
+    Push $R3
+    Push $R4
+    Push $R5
+    
+    StrCpy $R1 0
+    StrCpy $R2 "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OpenSSL_is1"
+
+    StrCmp $R0 HKLM h1
+	ReadRegStr $R3 HKCU "$R2" "DisplayName"
+	ReadRegStr $R4 HKCU "$R2" "Inno Setup: App Path"
+	Goto l1
+    h1:
+	ReadRegStr $R3 HKLM "$R2" "DisplayName"
+	ReadRegStr $R4 HKLM "$R2" "Inno Setup: App Path"
+    l1:
+
+    IfFileExists "$R4\bin\openssl.exe" 0 notfound
+	Goto get
+	; TODO check version
+	;Push $REQUIRED_OPENSSL_VERSION
+	;Push $R3
+	;Call CompareVersions
+	;Pop $R5
+	;StrCmp $R5 1 get
+
+    notfound:
 	StrCpy $R4 ""
 
     get:

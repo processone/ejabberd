@@ -25,6 +25,7 @@
 -record(offline_msg, {user, timestamp, from, to, packet}).
 
 -define(PROCNAME, ejabberd_offline).
+-define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
 start(_) ->
     mnesia:create_table(offline_msg,
@@ -32,6 +33,8 @@ start(_) ->
 			 {type, bag},
 			 {attributes, record_info(fields, offline_msg)}]),
     ejabberd_hooks:add(offline_message_hook,
+		       ?MODULE, store_packet, 50),
+    ejabberd_hooks:add(offline_subscription_hook,
 		       ?MODULE, store_packet, 50),
     ejabberd_hooks:add(resend_offline_messages_hook,
 		       ?MODULE, pop_offline_messages, 50),
@@ -44,7 +47,14 @@ loop() ->
     receive
 	#offline_msg{} = Msg ->
 	    Msgs = receive_all([Msg]),
+	    Len = length(Msgs),
 	    F = fun() ->
+			if
+			    Len >= ?OFFLINE_TABLE_LOCK_THRESHOLD ->
+				mnesia:write_lock_table(offline_msg);
+			    true ->
+				ok
+			end,
 			lists:foreach(fun(M) ->
 					      mnesia:write(M)
 				      end, Msgs)

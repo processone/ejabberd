@@ -40,6 +40,7 @@ start() ->
     RootDirS = "ERLANG_DIR = " ++ code:root_dir() ++ "\n",
     Version  = "EJABBERD_VERSION = " ++ ?VERSION ++ "\n",
     ExpatDir = "EXPAT_DIR = c:\\progra~1\\expat-1.95.7\n",
+    OpenSSLDir = "OPENSSL_DIR = c:\\progra~1\\OpenSSL\n",
 
     SSLDir    = "SSLDIR = " ++ code:lib_dir("ssl") ++ "\n",
     StdLibDir = "STDLIBDIR = " ++ code:lib_dir("stdlib") ++ "\n",
@@ -50,6 +51,7 @@ start() ->
 				   Version ++
 				   SSLDir ++
 				   StdLibDir ++
+				   OpenSSLDir ++
 				   ExpatDir ++
 				   ExpatLib ++
 				   ExpatFlag ++
