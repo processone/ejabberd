@@ -1,5 +1,7 @@
 2004-03-12  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/web/ejabberd_web.erl: Experiments with web-interface
+
 	* src/configure.ac: Updated
 	* src/Makefile.in: Likewise
 

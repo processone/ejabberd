@@ -93,22 +93,15 @@ process_config(#request{user = User,
 			path = ["acls"],
 			q = Query,
 			lang = Lang} = Request) ->
-    case acl:match_rule(configure, jlib:make_jid(User, ?MYNAME, "")) of
-	deny ->
-	    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
-	allow ->
-	    Res = case lists:keysearch("acls", 1, Query) of
-		      {value, {_, String}} ->
-			  case erl_scan:string(String) of
-			      {ok, Tokens, _} ->
-				  case erl_parse:parse_term(Tokens) of
-				      {ok, NewACLs} ->
-					  case acl:add_list(NewACLs, true) of
-					      ok ->
-						  ok;
-					      _ ->
-						  error
-					  end;
+    Res = case lists:keysearch("acls", 1, Query) of
+	      {value, {_, String}} ->
+		  case erl_scan:string(String) of
+		      {ok, Tokens, _} ->
+			  case erl_parse:parse_term(Tokens) of
+			      {ok, NewACLs} ->
+				  case acl:add_list(NewACLs, true) of
+				      ok ->
+					  ok;
 				      _ ->
 					  error
 				  end;
@@ -116,28 +109,80 @@ process_config(#request{user = User,
 				  error
 			  end;
 		      _ ->
-			  nothing
-		  end,
-	    ACLs = lists:flatten(io_lib:format("~p.", [ets:tab2list(acl)])),
-	    make_xhtml([?XC("h1", "ejabberd ACLs configuration")] ++
-		       case Res of
-			   ok -> [?C("submited"), ?P];
-			   error -> [?C("bad format"), ?P];
-			   nothing -> []
-		       end ++
-		       [?XAE("form", [{"method", "post"}],
-			     [?XAC("textarea", [{"name", "acls"},
-						{"rows", "16"},
-						{"cols", "80"}],
-				   ACLs),
-			      ?BR,
-			      ?XA("input", [{"type", "submit"}])
-			     ])
-		       ])
-    end;
+			  error
+		  end;
+	      _ ->
+		  nothing
+	  end,
+    ACLs = lists:flatten(io_lib:format("~p.", [ets:tab2list(acl)])),
+    make_xhtml([?XC("h1", "ejabberd ACLs configuration")] ++
+	       case Res of
+		   ok -> [?C("submited"), ?P];
+		   error -> [?C("bad format"), ?P];
+		   nothing -> []
+	       end ++
+	       [?XAE("form", [{"method", "post"}],
+		     [?XAC("textarea", [{"name", "acls"},
+					{"rows", "16"},
+					{"cols", "80"}],
+			   ACLs),
+		      ?BR,
+		      ?XA("input", [{"type", "submit"}])
+		     ])
+	       ]);
+
+process_config(#request{user = User,
+			path = ["acls2"],
+			q = Query,
+			lang = Lang} = Request) ->
+    ACLs = ets:tab2list(acl),
+    make_xhtml([?XC("h1", "ejabberd ACLs configuration")] ++
+	       [?XAE("form", [{"method", "post"}],
+		     [acls_to_xhtml(ACLs),
+		      ?BR,
+		      ?XA("input", [{"type", "submit"}])
+		     ])
+	       ]);
 
 process_config(_Request) ->
     {404, [], make_xhtml([?XC("h1", "Not found")])}.
 
 
 
+acls_to_xhtml(ACLs) ->
+    ?XAE("table", [],
+	 [?XE("tbody",
+		lists:map(
+		  fun({acl, Name, Spec}) ->
+			  ?XE("tr",
+			      [?XC("td", atom_to_list(Name))] ++
+			      acl_spec_to_xhtml(Spec)
+			     )
+		  end, ACLs)
+	     )]).
+
+-define(ACLINPUT(Text), ?XE("td", [?XA("input", [{"type", "text"},
+						 {"name", ""},
+						 {"value", Text}])])).
+
+acl_spec_to_xhtml({user, U}) ->
+    [acl_spec_select(user), ?ACLINPUT(U)];
+
+acl_spec_to_xhtml(Spec) ->
+    [acl_spec_select(raw),
+     ?ACLINPUT(lists:flatten(io_lib:format("~p.", [Spec])))
+    ].
+
+acl_spec_select(Opt) ->
+    ?XE("td",
+	[?XAE("select", [{"name", ""}],
+	      lists:map(
+		fun(O) ->
+			Sel = if
+				  O == Opt -> [{"selected", "selected"}];
+				  true -> []
+			      end,
+			?XAC("option",
+			     Sel ++ [{"value", atom_to_list(O)}],
+			     atom_to_list(O))
+		end, [all, user, server, raw]))]).
