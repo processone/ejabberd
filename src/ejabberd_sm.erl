@@ -177,11 +177,11 @@ do_route(From, To, Packet) ->
 			end,
 		    if Pass ->
 			    LFrom = jlib:jid_tolower(From),
-			    Resources = get_user_resources(User),
+			    PResources = get_user_present_resources(User),
 			    if
-				Resources /= [] ->
+				PResources /= [] ->
 				    lists:foreach(
-				      fun(R) ->
+				      fun({_, R}) ->
 					      if LFrom /=
 						 {LUser, LServer, R} ->
 						      ejabberd_sm !
@@ -192,7 +192,7 @@ do_route(From, To, Packet) ->
 						 true ->
 						      ok
 					      end
-				      end, Resources);
+				      end, PResources);
 				true ->
 				    if
 					Subsc ->
@@ -248,7 +248,7 @@ do_route(From, To, Packet) ->
     end.
 
 route_message(From, To, Packet) ->
-    #jid{luser = LUser} = To,
+    LUser = To#jid.luser,
     case catch lists:max(get_user_present_resources(LUser)) of
 	{'EXIT', _} ->
 	    case xml:get_tag_attr_s("type", Packet) of
@@ -273,10 +273,16 @@ route_message(From, To, Packet) ->
 		    end
 	    end;
 	{_, R} ->
-	    ejabberd_sm ! {route,
-			   From,
-			   jlib:jid_replace_resource(To, R),
-			   Packet}
+	    LResource = jlib:resourceprep(R),
+	    LUR = {LUser, LResource},
+	    case mnesia:dirty_read({session, LUR}) of
+		[] ->
+		    ok;				% Race condition
+		[Sess] ->
+		    Pid = Sess#session.pid,
+		    ?DEBUG("sending to process ~p~n", [Pid]),
+		    Pid ! {route, From, To, Packet}
+	    end
     end.
 
 

@@ -1,3 +1,9 @@
+2004-01-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl (do_route/3): Minor fix
+
+	* src/ejabberd_sm.erl (route_message/3): Minor changes
+
 2003-12-28  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_app.erl: Now possible to specify path to log file
