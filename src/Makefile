@@ -5,14 +5,16 @@ INCLUDES = -I/usr/lib/erlang/usr/include \
 
 LIBDIRS = -L/usr/lib/erlang/lib/erl_interface-3.3.0/lib
 
-all:	expat_erl.so
+ERLSHLIBS = expat_erl.so sha_erl.so
+
+all:	$(ERLSHLIBS)
 	erl -make
 
-expat_erl.so:	expat_erl.c
-		gcc -Wall $(INCLUDES) $(LIBDIRS) \
-		-lexpat \
-		expat_erl.c \
-		-lerl_interface \
-		-lei \
-		-o expat_erl.so -fpic -shared \
+$(ERLSHLIBS):	%.so:	%.c
+			gcc -Wall $(INCLUDES) $(LIBDIRS) \
+			-lexpat \
+			$(subst .so,.c,$@) \
+			-lerl_interface \
+			-lei \
+			-o $@ -fpic -shared \
 

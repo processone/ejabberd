@@ -15,15 +15,18 @@
 -export([start/0, init/0,
 	 process_iq/3,
 	 get_subscription_lists/1,
-	 in_subscription/3]).
+	 in_subscription/3,
+	 out_subscription/3]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
 
--record(roster, {user,
+-record(roster, {uj,
+		 user,
 		 jid,
 		 name = "",
 		 subscription = none,
+		 ask = none,
 		 groups = [],
 		 xattrs = [],
 		 xs = []}).
@@ -35,9 +38,8 @@ start() ->
 
 init() ->
     mnesia:create_table(roster,[{disc_copies, [node()]},
-				{type, bag},
 				{attributes, record_info(fields, roster)}]),
-    mnesia:add_table_index(roster, jid),
+    mnesia:add_table_index(roster, user),
     ejabberd_local:register_iq_handler("jabber:iq:roster",
 				       ?MODULE, process_iq),
     loop().
@@ -83,7 +85,7 @@ process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     {User, _, _} = From,
     LUser = jlib:tolower(User),
     F = fun() ->
-		mnesia:read({roster, LUser})
+		mnesia:index_read(roster, LUser, #roster.user)
         end,
     case mnesia:transaction(F) of
 	{atomic, Items} ->
@@ -108,15 +110,24 @@ item_to_xml(Item) ->
     Attrs3 = case Item#roster.subscription of
 		 none ->
 		     [{"subscription", "none"} | Attrs2];
+		 from ->
+		     [{"subscription", "from"} | Attrs2];
+		 to ->
+		     [{"subscription", "to"} | Attrs2];
 		 both ->
 		     [{"subscription", "both"} | Attrs2];
 		 remove ->
-		     [{"subscription", "remove"} | Attrs2];
-		 _ ->
-		     % TODO
-		     Attrs2
+		     [{"subscription", "remove"} | Attrs2]
 	     end,
-    Attrs = Attrs3 ++ Item#roster.xattrs,
+    Attrs4 = case Item#roster.ask of
+		 none ->
+		     Attrs3;
+		 subscribe ->
+		     [{"ask", "subscribe"} | Attrs3];
+		 unsubscribe ->
+		     [{"ask", "unsubscribe"} | Attrs3]
+	     end,
+    Attrs = Attrs4 ++ Item#roster.xattrs,
     SubEls1 = lists:map(fun(G) ->
 				{xmlelement, "group", [], [{xmlcdata, G}]}
 			end, Item#roster.groups),
@@ -139,21 +150,18 @@ process_item_set(User, To, XItem) ->
 	error ->
 	    ok;
 	_ ->
+	    LJID = jlib:jid_tolower(JID),
 	    F = fun() ->
-			Res = mnemosyne:eval(query [X || X <- table(roster),
-							 X.user = LUser,
-							 X.jid = JID]
-					     end),
+			Res = mnesia:read({roster, {LUser, LJID}}),
 			Item = case Res of
 				   [] ->
-				       #roster{user = LUser,
-					       jid = JID,
-					       groups = [],
-					       xattrs = [],
-					       xs = []};
+				       #roster{uj = {LUser, LJID},
+					       user = LUser,
+					       jid = JID};
 				   [I] ->
-				       mnesia:delete_object(I),
-				       I#roster{name = "",
+				       I#roster{user = LUser,
+						jid = JID,
+						name = "",
 						groups = [],
 						xattrs = [],
 						xs = []}
@@ -162,7 +170,7 @@ process_item_set(User, To, XItem) ->
 			Item2 = process_item_els(Item1, Els),
 			case Item2#roster.subscription of
 			    remove ->
-				ok;
+				mnesia:delete({roster, {LUser, LJID}});
 			    _ ->
 				mnesia:write(Item2)
 			end,
@@ -249,7 +257,7 @@ push_item(User, Resource, From, Item) ->
 get_subscription_lists(User) ->
     LUser = jlib:tolower(User),
     F = fun() ->
-		mnesia:read({roster, LUser})
+		mnesia:index_read(roster, LUser, #roster.user)
         end,
     case mnesia:transaction(F) of
 	{atomic, Items} ->
@@ -259,7 +267,8 @@ get_subscription_lists(User) ->
     end.
 
 fill_subscription_lists([I | Is], F, T) ->
-    J = I#roster.jid,
+    %J = I#roster.jid,
+    J = element(2, I#roster.uj),
     case I#roster.subscription of
 	both ->
 	    fill_subscription_lists(Is, [J | F], [J | T]);
@@ -276,14 +285,146 @@ fill_subscription_lists([], F, T) ->
 
 in_subscription(User, From, Type) ->
     LUser = jlib:tolower(User),
+    LFrom = jlib:jid_tolower(From),
+    {FU, FS, FR} = From,
     F = fun() ->
-		mnesia:read({roster, LUser})
+		case mnesia:read({roster, {LUser, LFrom}}) of
+		    [] ->
+			case Type of
+			    subscribe ->
+				true;
+			    unsubscribe ->
+				true;
+			    unsubscribed ->
+				false;
+			    subscribed ->
+				NewItem = #roster{uj = {LUser, LFrom},
+						  user = LUser,
+						  jid = From},
+				mnesia:write(NewItem),
+				true
+			end;
+		    [I] ->
+			case Type of
+			    subscribe ->
+				S = I#roster.subscription,
+				if
+				    (S == both) or (S == from) ->
+					ejabberd_router:route(
+					  {User, ?MYNAME, ""}, {FU, FS, ""},
+					  {xmlelement, "presence",
+					   [{"type", "subscribed"}], []}),
+					% TODO: update presence
+					false;
+				    true ->
+					true
+				end;
+			    unsubscribe ->
+				S = I#roster.subscription,
+				if
+				    (S == none) or (S == to) ->
+					ejabberd_router:route(
+					  {User, ?MYNAME, ""}, {FU, FS, ""},
+					  {xmlelement, "presence",
+					   [{"type", "unsubscribed"}], []}),
+					% TODO: update presence
+					false;
+				    true ->
+					true
+				end;
+			    _ ->
+				S = I#roster.subscription,
+				NS = case Type of
+					 subscribed ->
+					     case S of
+						 from -> both;
+						 none -> to;
+						 _    -> S
+					     end;
+					 unsubscribed ->
+					     case S of
+						 both -> from;
+						 to   -> none;
+						 _    -> S
+					     end
+				     end,
+				NewItem = I#roster{subscription = NS,
+						   ask = none},
+				mnesia:write(NewItem),
+				{push, NewItem}
+			end
+		end
         end,
     case mnesia:transaction(F) of
-	{atomic, Items} ->
-	    % TODO
-	    ok;
+	{atomic, true} ->
+	    true;
+	{atomic, false} ->
+	    false;
+	{atomic, {push, Item}} ->
+	    push_item(User, {"", ?MYNAME, ""}, Item),
+	    true;
 	_ ->
-	    ok
+	    false
+    end.
+
+out_subscription(User, JID, Type) ->
+    LUser = jlib:tolower(User),
+    LJID = jlib:jid_tolower(JID),
+    F = fun() ->
+		Item = case mnesia:read({roster, {LUser, LJID}}) of
+			   [] ->
+			       if (Type == unsubscribe) or
+				  (Type == unsubscribed) ->
+				       false;
+				  true ->
+				       #roster{uj = {LUser, LJID},
+					       user = LUser,
+					       jid = JID}
+			       end;
+			   [I] ->
+			       I
+		       end,
+		if Item == false ->
+			ok;
+		   true ->
+			NewItem =
+			    case Type of
+				subscribe ->
+				    Item#roster{ask = subscribe};
+				unsubscribe ->
+				    Item#roster{ask = unsubscribe};
+				subscribed ->
+				    S = Item#roster.subscription,
+				    NS = case S of
+					     to   -> both;
+					     none -> from;
+					     _    -> S
+					 end,
+					% TODO: update presence
+				    Item#roster{subscription = NS,
+						ask = none};
+				unsubscribed ->
+				    S = Item#roster.subscription,
+				    NS = case S of
+					     both -> to;
+					     from -> none;
+					     _    -> S
+					 end,
+					% TODO: update presence
+				    Item#roster{subscription = NS,
+						ask = none}
+			    end,
+			mnesia:write(NewItem),
+			{push, NewItem}
+		end
+	end,
+    case mnesia:transaction(F) of
+	{atomic, ok} ->
+	    ok;
+	{atomic, {push, Item}} ->
+	    push_item(User, {"", ?MYNAME, ""}, Item),
+	    true;
+	_ ->
+	    false
     end.
 

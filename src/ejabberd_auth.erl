@@ -19,6 +19,7 @@
 -export([start/0, start_link/0,
 	 set_password/2,
 	 check_password/2,
+	 check_password/4,
 	 try_register/2]).
 
 %% gen_server callbacks
@@ -106,6 +107,31 @@ check_password(User, Password) ->
     case mnesia:transaction(F) of
 	{atomic, Password} ->
 	    true;
+	_ ->
+	    false
+    end.
+
+check_password(User, Password, StreamID, Digest) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		case mnesia:read({passwd, LUser}) of
+		    [E] ->
+			E#passwd.password
+		end
+        end,
+    case mnesia:transaction(F) of
+	{atomic, Passwd} ->
+	    DigRes = if
+			 Digest /= "" ->
+			     Digest == sha:sha(StreamID ++ Passwd);
+			 true ->
+			     false
+		     end,
+	    if DigRes ->
+		    true;
+	       true ->
+		    Passwd == Password
+	    end;
 	_ ->
 	    false
     end.

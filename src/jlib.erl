@@ -20,6 +20,7 @@
 	 string_to_jid/1,
 	 jid_to_string/1,
 	 tolower/1,
+	 jid_tolower/1,
 	 get_iq_namespace/1,
 	 iq_query_info/1,
 	 is_iq_request_type/1,
@@ -179,6 +180,8 @@ tolower(S) ->
     lists:map(fun tolower_c/1, S).
 
 
+jid_tolower({U, S, R}) ->
+    {tolower(U), tolower(S), R}.
 
 get_iq_namespace({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
     case xml:remove_cdata(Els) of

@@ -169,18 +169,45 @@ do_route(From, To, Packet) ->
 	    % TODO
 	    case Name of
 		"presence" ->
-		    lists:foreach(
-		      fun(R) ->
-			      if From /= {User, Server, R} ->
-				      ejabberd_sm ! {route,
-						     From,
-						     {User, Server, R},
-						     Packet};
-				 true ->
-				      ok
-			      end
-		      end, get_user_resources(User)),
-		    ok;
+		    {FU, FS, FR} = From,
+		    Pass = case xml:get_attr_s("type", Attrs) of
+			       "subscribe" ->
+				   mod_roster:in_subscription(User,
+							      {FU, FS, ""},
+							      subscribe);
+			       "subscribed" ->
+				   mod_roster:in_subscription(User,
+							      {FU, FS, ""},
+							      subscribed);
+			       "unsubscribe" ->
+				   mod_roster:in_subscription(User,
+							      {FU, FS, ""},
+							      unsubscribe);
+			       "unsubscribed" ->
+				   mod_roster:in_subscription(User,
+							      {FU, FS, ""},
+							      unsubscribed);
+			       _ ->
+				   true
+			   end,
+		    if Pass ->
+			    LFrom = jlib:jid_tolower(From),
+			    LUser = jlib:tolower(User),
+			    LServer = jlib:tolower(Server),
+			    lists:foreach(
+			      fun(R) ->
+				      if LFrom /= {LUser, LServer, R} ->
+					      ejabberd_sm ! {route,
+							     From,
+							     {User, Server, R},
+							     Packet};
+					 true ->
+					      ok
+				      end
+			      end, get_user_resources(User));
+		       true ->
+			    ok
+		    end;
 		"message" ->
 		    % TODO
 		    ok;

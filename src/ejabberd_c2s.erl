@@ -113,9 +113,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	{auth, ID, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
 	    % TODO: digested password
-	    case ejabberd_auth:check_password(U, P) of
+	    case ejabberd_auth:check_password(U, P,
+					      StateData#state.streamid, D) of
 		true ->
-		    % TODO
 		    ejabberd_sm:open_session(U, R),
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData#state.sender, Res),
@@ -181,7 +181,9 @@ session_established({xmlstreamelement, El}, StateData) ->
 				       [FromJID, El, StateData]),
 				presence_update(FromJID, El, StateData);
 			    _ ->
-				ejabberd_router:route(FromJID, ToJID, El),
+				ejabberd_router:route({StateData#state.user,
+						       Server, ""},
+						      ToJID, El),
 				presence_track(FromJID, ToJID, El, StateData)
 			end;
 		    _ ->
@@ -267,24 +269,12 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			Attrs1 = lists:keydelete("type", 1, Attrs),
 			{true, [{"type", "unavailable"} | Attrs1], StateData};
 		    "subscribe" ->
-			mod_roster:in_subscription(StateData#state.user,
-						   {FU, FS, ""},
-						   subscribe),
 			{true, Attrs, StateData};
 		    "subscribed" ->
-			mod_roster:in_subscription(StateData#state.user,
-						   {FU, FS, ""},
-						   subscribed),
 			{true, Attrs, StateData};
 		    "unsubscribe" ->
-			mod_roster:in_subscription(StateData#state.user,
-						   {FU, FS, ""},
-						   unsubscribe),
 			{true, Attrs, StateData};
 		    "unsubscribed" ->
-			mod_roster:in_subscription(StateData#state.user,
-						   {FU, FS, ""},
-						   unsubscribed),
 			{true, Attrs, StateData};
 		    _ ->
 			{true, Attrs, StateData}
@@ -450,9 +440,16 @@ presence_update(From, Packet, StateData) ->
 		    true ->
 			StateData
 		end,
-	    
 	    StateData;
 	"error" ->
+	    StateData;
+	"subscribe" ->
+	    StateData;
+	"subscribed" ->
+	    StateData;
+	"unsubscribe" ->
+	    StateData;
+	"unsubscribed" ->
 	    StateData;
 	_ ->
 	    FromUnavail = (StateData#state.pres_last == undefined) or
@@ -479,28 +476,36 @@ presence_update(From, Packet, StateData) ->
 
 presence_track(From, To, Packet, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
+    LTo = jlib:jid_tolower(To),
+    User = StateData#state.user,
     case xml:get_attr_s("type", Attrs) of
 	"unavailable" ->
-	    I = remove_element(To, StateData#state.pres_i),
-	    A = remove_element(To, StateData#state.pres_a),
+	    I = remove_element(LTo, StateData#state.pres_i),
+	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	"invisible" ->
-	    I = ?SETS:add_element(To, StateData#state.pres_i),
-	    A = remove_element(To, StateData#state.pres_a),
+	    I = ?SETS:add_element(LTo, StateData#state.pres_i),
+	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	"subscribe" ->
+	    mod_roster:out_subscription(User, To, subscribe),
 	    StateData;
 	"subscribed" ->
+	    mod_roster:out_subscription(User, To, subscribed),
 	    StateData;
 	"unsubscribe" ->
+	    mod_roster:out_subscription(User, To, unsubscribe),
 	    StateData;
 	"unsubscribed" ->
+	    mod_roster:out_subscription(User, To, unsubscribed),
+	    StateData;
+	"error" ->
 	    StateData;
 	_ ->
-	    I = remove_element(To, StateData#state.pres_i),
-	    A = ?SETS:add_element(To, StateData#state.pres_a),
+	    I = remove_element(LTo, StateData#state.pres_i),
+	    A = ?SETS:add_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A}
     end.

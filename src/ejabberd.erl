@@ -21,6 +21,7 @@ init() ->
     ok = erl_ddll:load_driver(".", expat_erl),
     Port = open_port({spawn, expat_erl}, [binary]),
     db_init(),
+    sha:start(),
     ejabberd_auth:start(),
     ejabberd_router:start(),
     ejabberd_sm:start(),

@@ -186,26 +186,49 @@ wait_for_verification(closed, StateData) ->
 
 stream_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
-    % TODO
-    From = xml:get_attr_s("from", Attrs),
-    FromJID1 = jlib:string_to_jid(From),
-    FromJID = case FromJID1 of
-		  {Node, Server, Resource} ->
-		      if Server == StateData#state.server -> FromJID1;
-			 true -> error
-		      end;
-		  _ -> error
-	      end,
-    To = xml:get_attr_s("to", Attrs),
-    ToJID = case To of
-		"" -> error;
-		_ -> jlib:string_to_jid(To)
-	    end,
-    if ((Name == "iq") or (Name == "message") or (Name == "presence")) and
-       (ToJID /= error) and (FromJID /= error) ->
-	    ejabberd_router:route(FromJID, ToJID, El);
-       true ->
-	    error
+    case Name of
+	"db:verify" ->
+	    case is_key_packet(El) of
+		{verify, To, From, Id, Key} ->
+		    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
+		    Key1 = ejabberd_s2s:get_key(From),
+		    Type = if Key == Key1 -> "valid";
+			      true -> "invalid"
+			   end,
+		    send_element(StateData#state.socket,
+				 {xmlelement,
+				  "db:verify",
+				  [{"from", ?MYNAME},
+				   {"to", From},
+				   {"id", Id},
+				   {"type", Type}],
+				  []});
+		_ ->
+		    ok
+	    end;
+	_ ->
+	    From = xml:get_attr_s("from", Attrs),
+	    FromJID1 = jlib:string_to_jid(From),
+	    FromJID = case FromJID1 of
+			  {Node, Server, Resource} ->
+			      if Server == StateData#state.server -> FromJID1;
+				 true -> error
+			      end;
+			  _ -> error
+		      end,
+	    To = xml:get_attr_s("to", Attrs),
+	    ToJID = case To of
+			"" -> error;
+			_ -> jlib:string_to_jid(To)
+		    end,
+	    if ((Name == "iq") or
+		(Name == "message") or
+		(Name == "presence")) and
+	       (ToJID /= error) and (FromJID /= error) ->
+		    ejabberd_router:route(FromJID, ToJID, El);
+	       true ->
+		    error
+	    end
     end,
     {next_state, stream_established, StateData};
 

@@ -100,17 +100,7 @@ do_route(From, To, Packet) ->
 	end,
     case mnesia:transaction(F) of
 	{atomic, error} ->
-	    % TODO: start s2s instead of below
 	    ejabberd_s2s ! {route, From, To, Packet};
-	    %{xmlelement, Name, Attrs, SubTags} = Packet,
-	    %case xml:get_attr_s("type", Attrs) of
-	    %    "error" ->
-	    %        ok;
-	    %    _ ->
-	    %        Err = jlib:make_error_reply(Packet,
-	    %    				"502", "Service Unavailable"),
-	    %        ejabberd_router ! {route, To, From, Err}
-	    %end;
 	{atomic, {ok, Node, Pid}} ->
 	    case node() of
 		Node ->
