@@ -68,23 +68,6 @@
 		subject_author = ""}).
 
 
--define(OLD_ERROR(Code, Desc),
-	{xmlelement, "error",
-	 [{"code", Code}],
-	 [{xmlcdata, Desc}]}).
-
--define(ERR_MUC_NICK_CONFLICT,
-	?OLD_ERROR("409", "Please choose a different nickname.")).
--define(ERR_MUC_NICK_CHANGE_CONFLICT,
-	?OLD_ERROR("409", "Nickname already in use.")).
--define(ERR_MUC_BANNED,
-	?OLD_ERROR("403", "You have been banned from this room.")).
--define(ERR_MUC_NOT_MEMBER,
-	?OLD_ERROR("407", "Membership required to enter this room.")).
--define(ERR_MUC_BAD_PASSWORD,
-	?OLD_ERROR("401", "Bad password.")).
-
-
 %-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
@@ -357,7 +340,7 @@ normal_state({route, From, Nick,
 				    true ->
 					Err = jlib:make_error_reply(
 						Packet,
-						?ERR_MUC_NICK_CHANGE_CONFLICT),
+						?ERR_CONFLICT),
 					ejabberd_router:route(
 					  jlib:jid_replace_resource(
 					    StateData#state.jid,
@@ -392,7 +375,8 @@ normal_state({route, From, Nick,
 normal_state({route, From, ToNick,
 	      {xmlelement, "message", Attrs, Els} = Packet},
 	     StateData) ->
-    case xml:get_attr_s("type", Attrs) of
+    Type = xml:get_attr_s("type", Attrs),
+    case Type of
 	"error" ->
 	    case is_user_online(From, StateData) of
 		true ->
@@ -412,35 +396,46 @@ normal_state({route, From, ToNick,
 	    case (StateData#state.config)#config.allow_private_messages
 		andalso is_user_online(From, StateData) of
 		true ->
-		    case find_jid_by_nick(ToNick, StateData) of
-			false ->
+		    case Type of
+			"groupchat" ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_ITEM_NOT_FOUND),
+				    Packet, ?ERR_BAD_REQUEST),
 			    ejabberd_router:route(
-			      jlib:jid_replace_resource(
-				StateData#state.jid,
-				ToNick),
-			      From, Err);
-			ToJID ->
-			    {ok, #user{nick = FromNick}} =
-				?DICT:find(jlib:jid_tolower(From),
-					   StateData#state.users),
-			    ejabberd_router:route(
-			      jlib:jid_replace_resource(
-				StateData#state.jid,
-				FromNick),
-			      ToJID, Packet)
-		    end,
-		    {next_state, normal_state, StateData};
+				jlib:jid_replace_resource(
+				    StateData#state.jid,
+				    ToNick),
+				From, Err);
+			_ ->
+			    case find_jid_by_nick(ToNick, StateData) of
+				false ->
+				    Err = jlib:make_error_reply(
+					    Packet, ?ERR_ITEM_NOT_FOUND),
+				    ejabberd_router:route(
+					jlib:jid_replace_resource(
+					    StateData#state.jid,
+					    ToNick),
+					From, Err);
+				ToJID ->
+				    {ok, #user{nick = FromNick}} =
+					?DICT:find(jlib:jid_tolower(From),
+						StateData#state.users),
+				    ejabberd_router:route(
+					jlib:jid_replace_resource(
+					    StateData#state.jid,
+					    FromNick),
+					ToJID, Packet)
+			    end
+		    end;
 		_ ->
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERR_NOT_ALLOWED),
 		    ejabberd_router:route(
-		      jlib:jid_replace_resource(
-			StateData#state.jid,
-			ToNick), From, Err),
-		    {next_state, normal_state, StateData}
-	    end
+			jlib:jid_replace_resource(
+			    StateData#state.jid,
+			    ToNick),
+			From, Err)
+	    end,
+	    {next_state, normal_state, StateData}
     end;
 
 normal_state({route, From, ToNick,
@@ -806,7 +801,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     case is_nick_exists(Nick, StateData) or
 	not mod_muc:can_use_nick(From, Nick) of
 	true ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_MUC_NICK_CONFLICT),
+	    Err = jlib:make_error_reply(Packet, ?ERR_CONFLICT),
 	    ejabberd_router:route(
 	      % TODO: s/Nick/""/
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
@@ -820,8 +815,8 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		    Err = jlib:make_error_reply(
 			    Packet,
 			    case Affiliation of
-				outcast -> ?ERR_MUC_BANNED;
-				_ -> ?ERR_MUC_NOT_MEMBER
+				outcast -> ?ERR_FORBIDDEN;
+				_ -> ?ERR_REGISTRATION_REQUIRED
 			    end),
 		    ejabberd_router:route( % TODO: s/Nick/""/
 		      jlib:jid_replace_resource(StateData#state.jid, Nick),
@@ -846,7 +841,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			    NewState;
 			_ ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_MUC_BAD_PASSWORD),
+				    Packet, ?ERR_NOT_AUTHORIZED),
 			    ejabberd_router:route( % TODO: s/Nick/""/
 			      jlib:jid_replace_resource(
 				StateData#state.jid, Nick),
@@ -1412,10 +1407,6 @@ find_changed_items(UJID, UAffiliation, URole, Items, StateData, Res) ->
     {error, ?ERR_BAD_REQUEST}.
 
 
-
-
-
-
 can_change_ra(FAffiliation, FRole,
 	      TAffiliation, TRole,
 	      affiliation, Value)
@@ -1510,9 +1501,20 @@ can_change_ra(FAffiliation, FRole,
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(FAffiliation, FRole,
+	      owner, moderator,
+	      role, participant) ->
+    false;
+can_change_ra(owner, FRole,
 	      TAffiliation, moderator,
-	      role, participant)
-  when (FAffiliation == owner) or (FAffiliation == admin) ->
+	      role, participant) ->
+    true;
+can_change_ra(FAffiliation, FRole,
+	      admin, moderator,
+	      role, participant) ->
+    false;
+can_change_ra(admin, FRole,
+	      TAffiliation, moderator,
+	      role, participant) ->
     true;
 can_change_ra(FAffiliation, FRole,
 	      TAffiliation, TRole,
@@ -1736,7 +1738,6 @@ set_config(XEl, StateData) ->
 	set_xoption(Opts, Config#config{Opt = Val})).
 
 
-
 set_xoption([], Config) ->
     Config;
 set_xoption([{"title", [Val]} | Opts], Config) ->
@@ -1871,16 +1872,40 @@ destroy_room(DEls, StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Disco
 
+-define(FEATURE(Var), {xmlelement, "feature", [{"var", Var}], []}).
+
+-define(CONFIG_OPT_TO_FEATURE(Opt, Fiftrue, Fiffalse),
+    case Opt of
+	true ->
+	    ?FEATURE(Fiftrue);
+	false ->
+	    ?FEATURE(Fiffalse)
+    end).
+
 process_iq_disco_info(From, set, StateData) ->
     {error, ?ERR_NOT_ALLOWED};
 
 process_iq_disco_info(From, get, StateData) ->
+    Config = StateData#state.config,
     {result, [{xmlelement, "identity",
 	       [{"category", "conference"},
 		{"type", "text"},
 		{"name", get_title(StateData)}], []},
 	      {xmlelement, "feature",
-	       [{"var", ?NS_MUC}], []}], StateData}.
+	       [{"var", ?NS_MUC}], []},
+	      ?CONFIG_OPT_TO_FEATURE(Config#config.public,
+				     "muc_public", "muc_hidden"),
+	      ?CONFIG_OPT_TO_FEATURE(Config#config.persistent,
+				     "muc_persistent", "muc_temporary"),
+	      ?CONFIG_OPT_TO_FEATURE(Config#config.members_only,
+				     "muc_membersonly", "muc_open"),
+	      ?CONFIG_OPT_TO_FEATURE(Config#config.anonymous,
+				     "muc_semianonymous", "muc_nonanonymous"),
+	      ?CONFIG_OPT_TO_FEATURE(Config#config.moderated,
+				     "muc_moderated", "muc_unmoderated"),
+	      ?CONFIG_OPT_TO_FEATURE(Config#config.password_protected,
+				     "muc_passwordprotected", "muc_unsecured")
+	     ], StateData}.
 
 
 process_iq_disco_items(From, set, StateData) ->
@@ -1984,7 +2009,4 @@ check_invitation(From, Els, StateData) ->
 	_ ->
 	    error
     end.
-
-
-
 

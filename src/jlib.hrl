@@ -49,37 +49,47 @@
 	 [{xmlelement, Condition, [{"xmlns", ?NS_STANZAS}], []}]}).
 
 -define(ERR_BAD_REQUEST,
-	?STANZA_ERROR("400", "modify",    "bad-request")).
+	?STANZA_ERROR("400", "modify", "bad-request")).
 -define(ERR_CONFLICT,
-	?STANZA_ERROR("409", "cancel",    "conflict")).
+	?STANZA_ERROR("409", "cancel", "conflict")).
 -define(ERR_FEATURE_NOT_IMPLEMENTED,
-	?STANZA_ERROR("501", "cancel",    "feature-not-implemented")).
+	?STANZA_ERROR("501", "cancel", "feature-not-implemented")).
 -define(ERR_FORBIDDEN,
-	?STANZA_ERROR("403", "auth",      "forbidden")).
+	?STANZA_ERROR("403", "auth",   "forbidden")).
+-define(ERR_GONE,
+	?STANZA_ERROR("302", "modify", "gone")).
 -define(ERR_INTERNAL_SERVER_ERROR,
-	?STANZA_ERROR("500", "wait",      "internal-server-error")).
+	?STANZA_ERROR("500", "wait",   "internal-server-error")).
 -define(ERR_ITEM_NOT_FOUND,
-	?STANZA_ERROR("404", "cancel",    "item-not-found")).
+	?STANZA_ERROR("404", "cancel", "item-not-found")).
 -define(ERR_JID_MALFORMED,
-	?STANZA_ERROR("400", "modify",    "jid-malformed")).
+	?STANZA_ERROR("400", "modify", "jid-malformed")).
+-define(ERR_NOT_ACCEPTABLE,
+	?STANZA_ERROR("406", "modify", "not-acceptable")).
 -define(ERR_NOT_ALLOWED,
-	?STANZA_ERROR("405", "cancel",    "not-allowed")).
+	?STANZA_ERROR("405", "cancel", "not-allowed")).
+-define(ERR_NOT_AUTHORIZED,
+	?STANZA_ERROR("401", "auth",   "not-authorized")).
+-define(ERR_PAYMENT_REQUIRED,
+	?STANZA_ERROR("402", "auth",   "payment-required")).
 -define(ERR_RECIPIENT_UNAVAILABLE,
-	?STANZA_ERROR("404", "wait",      "recipient-unavailable")).
+	?STANZA_ERROR("404", "wait",   "recipient-unavailable")).
+-define(ERR_REDIRECT,
+	?STANZA_ERROR("302", "modify", "redirect")).
 -define(ERR_REGISTRATION_REQUIRED,
-	?STANZA_ERROR("407", "auth",      "registration-required")).
+	?STANZA_ERROR("407", "auth",   "registration-required")).
 -define(ERR_REMOTE_SERVER_NOT_FOUND,
-	?STANZA_ERROR("404", "cancel",    "remote-server-not-found")).
+	?STANZA_ERROR("404", "cancel", "remote-server-not-found")).
 -define(ERR_REMOTE_SERVER_TIMEOUT,
-	?STANZA_ERROR("504", "wait",      "remote-server-timeout")).
+	?STANZA_ERROR("504", "wait",   "remote-server-timeout")).
 -define(ERR_RESOURCE_CONSTRAINT,
-	?STANZA_ERROR("0",   "wait",      "resource-constraint")).
+	?STANZA_ERROR("500", "wait",   "resource-constraint")).
 -define(ERR_SERVICE_UNAVAILABLE,
-	?STANZA_ERROR("503", "cancel",    "service-unavailable")).
+	?STANZA_ERROR("503", "cancel", "service-unavailable")).
 -define(ERR_SUBSCRIPTION_REQUIRED,
-	?STANZA_ERROR("0",   "auth",      "subscription-required")).
+	?STANZA_ERROR("407", "auth",   "subscription-required")).
 -define(ERR_UNEXPECTED_REQUEST,
-	?STANZA_ERROR("0",   "wait",      "unexpected-request")).
+	?STANZA_ERROR("400", "wait",   "unexpected-request")).
 %-define(ERR_,
 %	?STANZA_ERROR("", "", "")).
 
@@ -103,8 +113,16 @@
 -define(STREAM_ERROR(Condition),
 	{xmlelement, "stream:error",
 	 [],
-	 [{xmlelement, Condition, [{"xmlns", ?NS_STANZAS}], []}]}).
+	 [{xmlelement, Condition, [{"xmlns", ?NS_STREAMS}], []}]}).
 
+-define(SERR_BAD_FORMAT,
+	?STREAM_ERROR("bad-format")).
+-define(SERR_BAD_NAMESPACE_PREFIX,
+	?STREAM_ERROR("bad-namespace-prefix")).
+-define(SERR_CONFLICT,
+	?STREAM_ERROR("conflict")).
+-define(SERR_CONNECTION_TIMEOUT,
+	?STREAM_ERROR("connection-timeout")).
 -define(SERR_HOST_GONE,
 	?STREAM_ERROR("host-gone")).
 -define(SERR_HOST_UNKNOWN,
@@ -113,23 +131,31 @@
 	?STREAM_ERROR("improper-addressing")).
 -define(SERR_INTERNAL_SERVER_ERROR,
 	?STREAM_ERROR("internal-server-error")).
+-define(SERR_INVALID_FROM,
+	?STREAM_ERROR("invalid-from")).
 -define(SERR_INVALID_ID,
 	?STREAM_ERROR("invalid-id")).
 -define(SERR_INVALID_NAMESPACE,
 	?STREAM_ERROR("invalid-namespace")).
--define(SERR_NONMATCHING_HOSTS,
-	?STREAM_ERROR("nonmatching-hosts")).
+-define(SERR_INVALID_XML,
+	?STREAM_ERROR("invalid-xml")).
 -define(SERR_NOT_AUTHORIZED,
 	?STREAM_ERROR("not-authorized")).
+-define(SERR_POLICY_VIOLATION,
+	?STREAM_ERROR("policy-violation")).
 -define(SERR_REMOTE_CONNECTION_FAILED,
 	?STREAM_ERROR("remote-connection-failed")).
 -define(SERR_RESOURSE_CONSTRAINT,
 	?STREAM_ERROR("resource-constraint")).
+-define(SERR_RESTRICTED_XML,
+	?STREAM_ERROR("restricted-xml")).
 % TODO: include hostname or IP
 -define(SERR_SEE_OTHER_HOST,
 	?STREAM_ERROR("see-other-host")).
 -define(SERR_SYSTEM_SHUTDOWN,
 	?STREAM_ERROR("system-shutdown")).
+-define(SERR_UNSUPPORTED_ENCODING,
+	?STREAM_ERROR("unsupported-encoding")).
 -define(SERR_UNSUPPORTED_STANZA_TYPE,
 	?STREAM_ERROR("unsupported-stanza-type")).
 -define(SERR_UNSUPPORTED_VERSION,
