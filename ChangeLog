@@ -1,5 +1,7 @@
 2004-07-10  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_roster.erl: Removed superfluous include_lib line
+
 	* doc/guide.tex: Updated
 
 	* src/msgs/fr.msg: Updated (thanks to Sergei Golovan)

@@ -22,7 +22,6 @@
 	 remove_user/1,
 	 get_jid_info/2]).
 
--include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
