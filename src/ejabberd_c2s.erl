@@ -103,14 +103,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
 	    case ejabberd_auth:check_password(U, P) of
 		true ->
+		    % TODO
 		    {next_state, session_established, StateData};
 		_ ->
-		    {xmlelement, _, _, SubTags} = El,
-		    Err = {xmlelement, "iq",
-			   [{"id", "0"}, {"type", "error"}],
-			   SubTags ++ [{xmlelement, "error",
-					[{"code", "404"}],
-					[{xmlcdata, "Unauthorized"}]}]},
+		    Err = xml:make_error_iq_reply(El, "404", "Unauthorized"),
 		    send_element(StateData#state.sender, Err),
 		    {next_state, wait_for_auth, StateData}
 	    end;
@@ -238,7 +234,6 @@ is_auth_packet({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
 	true ->
 	    false
     end;
-
 is_auth_packet(_) ->
     false.
 
