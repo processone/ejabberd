@@ -47,7 +47,7 @@ make_xhtml(Els) ->
 
 
 process_get(#request{user = User,
-		     path = ["config" | RPath],
+		     path = ["admin" | RPath],
 		     q = Query,
 		     lang = Lang} = Request) ->
     if
@@ -56,7 +56,7 @@ process_get(#request{user = User,
 		deny ->
 		    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
 		allow ->
-		    process_config(Request#request{path = RPath})
+		    process_admin(Request#request{path = RPath})
 	    end;
 	true ->
 	    {401,
@@ -76,21 +76,22 @@ process_get(_Request) ->
 
 
 
-process_config(#request{user = User,
+process_admin(#request{user = User,
 			path = [],
 			q = Query,
 			lang = Lang} = Request) ->
-    make_xhtml([?XC("h1", "ejabberd configuration"),
+    make_xhtml([?XC("h1", "ejabberd administration"),
 		?XE("ul",
 		    [?LI([?AC("acls/", "Access Control Lists"), ?C(" "),
 			  ?AC("acls-raw/", "(raw)")]),
 		     ?LI([?AC("access/", "Access Rules")]),
 		     ?LI([?AC("users/", "Users")]),
-		     ?LI([?AC("nodes/", "Nodes")])
+		     ?LI([?AC("nodes/", "Nodes")]),
+		     ?LI([?AC("stats/", "Statistics")])
 		    ])
 	       ]);
 
-process_config(#request{user = User,
+process_admin(#request{user = User,
 			path = ["acls-raw"],
 			q = Query,
 			lang = Lang} = Request) ->
@@ -132,7 +133,7 @@ process_config(#request{user = User,
 		     ])
 	       ]);
 
-process_config(#request{method = Method,
+process_admin(#request{method = Method,
 			user = User,
 			path = ["acls"],
 			q = Query,
@@ -176,7 +177,28 @@ process_config(#request{method = Method,
 		     ])
 	       ]);
 
-process_config(_Request) ->
+process_admin(#request{user = User,
+			path = ["users"],
+			q = Query,
+			lang = Lang} = Request) ->
+    Res = list_users(),
+    make_xhtml([?XC("h1", "ejabberd users")] ++ Res);
+
+process_admin(#request{user = User,
+			path = ["users", Diap],
+			q = Query,
+			lang = Lang} = Request) ->
+    Res = list_users_in_diapason(Diap),
+    make_xhtml([?XC("h1", "ejabberd users")] ++ Res);
+
+process_admin(#request{user = User,
+			path = ["stats"],
+			q = Query,
+			lang = Lang} = Request) ->
+    Res = get_stats(),
+    make_xhtml([?XC("h1", "ejabberd stats")] ++ Res);
+
+process_admin(_Request) ->
     {404, [], make_xhtml([?XC("h1", "Not found")])}.
 
 
@@ -320,3 +342,60 @@ acl_parse_delete(ACLs, Query) ->
     NewACLs.
 
 
+
+list_users() ->
+    Users = ejabberd_auth:dirty_get_registered_users(),
+    SUsers = lists:sort(Users),
+    case length(SUsers) of
+	N when N =< 100 ->
+	    lists:flatmap(
+	      fun(U) ->
+		      [?AC("../user/" ++ U, U), ?BR]
+	      end, SUsers);
+	N ->
+	    NParts = trunc(math:sqrt(N * 0.618)) + 1,
+	    M = trunc(N / NParts) + 1,
+	    lists:flatmap(
+	      fun(K) ->
+		      L = K + M - 1,
+		      Node = integer_to_list(K) ++ "-" ++ integer_to_list(L),
+		      Last = if L < N -> lists:nth(L, SUsers);
+				true -> lists:last(SUsers)
+			     end,
+		      Name = 
+			  lists:nth(K, SUsers) ++ " -- " ++
+			  Last,
+		      [?AC(Node ++ "/", Name), ?BR]
+	      end, lists:seq(1, N, M))
+    end.
+
+list_users_in_diapason(Diap) ->
+    Users = ejabberd_auth:dirty_get_registered_users(),
+    SUsers = lists:sort(Users),
+    {ok, [S1, S2]} = regexp:split(Diap, "-"),
+    N1 = list_to_integer(S1),
+    N2 = list_to_integer(S2),
+    Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
+    lists:flatmap(
+      fun(U) ->
+	      [?AC("../../user/" ++ U, U), ?BR]
+      end, Sub).
+
+
+
+get_stats() ->
+    OnlineUsers = mnesia:table_info(presence, size),
+    AuthUsers = mnesia:table_info(session, size),
+    RegisteredUsers = mnesia:table_info(passwd, size),
+    
+    [?XAE("table", [],
+	  [?XE("tbody",
+	       [?XE("tr", [?XC("td", "Registered users"),
+			   ?XC("td", integer_to_list(RegisteredUsers))]),
+		?XE("tr", [?XC("td", "Authentificated users"),
+			   ?XC("td", integer_to_list(AuthUsers))]),
+		?XE("tr", [?XC("td", "Online users"),
+			   ?XC("td", integer_to_list(OnlineUsers))])
+	       ])
+	   
+	  ])].

@@ -1,3 +1,8 @@
+2004-03-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web.erl: Added interface for users listsing and
+	statistics
+
 2004-03-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_web.erl: New interface for ACLs editing
