@@ -77,6 +77,8 @@ receive_all(Msgs) ->
 stop() ->
     ejabberd_hooks:delete(offline_message_hook,
 			  ?MODULE, store_packet, 50),
+    ejabberd_hooks:delete(offline_subscription_hook,
+			  ?MODULE, store_packet, 50),
     ejabberd_hooks:delete(resend_offline_messages_hook,
 			  ?MODULE, pop_offline_messages, 50),
     exit(whereis(?PROCNAME), stop),
