@@ -19,7 +19,8 @@
 	 in_subscription/3,
 	 out_subscription/3,
 	 set_items/2,
-	 remove_user/1]).
+	 remove_user/1,
+	 get_jid_info/2]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -542,3 +543,18 @@ process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
     end;
 process_item_attrs_ws(Item, []) ->
     Item.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+get_jid_info(User, JID) ->
+    LUser = jlib:tolower(User),
+    LJID = jlib:jid_tolower(JID),
+    case catch mnesia:dirty_read(roster, {LUser, LJID}) of
+	[#roster{subscription = Subscription, groups = Groups}] ->
+	    {Subscription, Groups};
+	_ ->
+	    {none, []}
+    end.
+
+

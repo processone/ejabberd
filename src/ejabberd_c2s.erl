@@ -52,7 +52,8 @@
 		pres_i = ?SETS:new(),
 		pres_last, pres_pri,
 		pres_timestamp,
-		pres_invis = false}).
+		pres_invis = false,
+		privacy_list = none}).
 
 %-define(DBGFSM, true).
 
@@ -210,11 +211,17 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    send_element(StateData, Res),
 			    change_shaper(StateData, JID),
 			    {Fs, Ts} = mod_roster:get_subscription_lists(U),
+			    PrivList =
+				case catch mod_privacy:get_user_list(U) of
+				    {'EXIT', _} -> none;
+				    PL -> PL
+				end,
 			    {next_state, session_established,
 			     StateData#state{user = U,
 					     resource = R,
 					     pres_f = ?SETS:from_list(Fs),
-					     pres_t = ?SETS:from_list(Ts)}};
+					     pres_t = ?SETS:from_list(Ts),
+					     privacy_list = PrivList}};
 			_ ->
 			    Err = jlib:make_error_reply(
 				    El, ?ERR_FORBIDDEN),
@@ -398,9 +405,15 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
 		    {Fs, Ts} = mod_roster:get_subscription_lists(U),
+		    PrivList =
+			case catch mod_privacy:get_user_list(U) of
+			    {'EXIT', _} -> none;
+			    PL -> PL
+			end,
 		    {next_state, session_established,
 		     StateData#state{pres_f = ?SETS:from_list(Fs),
-				     pres_t = ?SETS:from_list(Ts)}};
+				     pres_t = ?SETS:from_list(Ts),
+				     privacy_list = PrivList}};
 		_ ->
 		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 		    send_element(StateData, Err),
@@ -465,8 +478,25 @@ session_established({xmlstreamelement, El}, StateData) ->
 			    _ ->
 				presence_track(FromJID, ToJID, El, StateData)
 			end;
-		    _ ->
+		    "iq" ->
+			case StateData#state.privacy_list of
+			    none ->
+				ejabberd_router:route(FromJID, ToJID, El),
+				StateData;
+			    PrivList ->
+				case jlib:iq_query_info(El) of
+				    {iq, ID, Type, ?NS_PRIVACY = XMLNS, SubEl} = IQ ->
+					process_privacy_iq(
+					  FromJID, ToJID, IQ, StateData);
+				    _ ->
+					ejabberd_router:route(FromJID, ToJID, El),
+					StateData
+				end
+			end;
+		    "message" ->
 			ejabberd_router:route(FromJID, ToJID, El),
+			StateData;
+		    _ ->
 			StateData
 		end
 	end,
@@ -564,7 +594,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			{true, Attrs, StateData}
 		end;
 	    "broadcast" ->
-		?DEBUG("broadcast!!!!!!!!!!!~n~p~n", [Els]),
+		?DEBUG("broadcast~n~p~n", [Els]),
 		NewSt = case Els of
 			    [{item, IJID, ISubscription}] ->
 				{false, Attrs,
@@ -572,6 +602,16 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 					       StateData)};
 			    [{exit, Reason}] ->
 				{exit, Attrs, Reason};
+			    [{privacy_list, PrivList}] ->
+				{false, Attrs,
+				 case catch mod_privacy:updated_list(
+					      StateData#state.privacy_list,
+					      PrivList) of
+				     {'EXIT', _} ->
+					 {false, Attrs, StateData};
+				     NewPL ->
+					 StateData#state{privacy_list = NewPL}
+				 end};
 			    _ ->
 				{false, Attrs, StateData}
 			end;
@@ -979,3 +1019,42 @@ update_priority(El, StateData) ->
 			     StateData#state.resource,
 			     Pri).
 		  
+
+
+process_privacy_iq(From, To, {iq, ID, Type, XMLNS, SubEl} = IQ, StateData) ->
+    {Res, NewStateData} =
+	case Type of
+	    get ->
+		case catch
+		    mod_privacy:process_iq_get(
+		      From, To, IQ,
+		      StateData#state.privacy_list) of
+		    {'EXIT', _} ->
+			{{error, ?ERR_FEATURE_NOT_IMPLEMENTED}, StateData};
+		    R -> {R, StateData}
+		end;
+	    set ->
+		case catch
+		    mod_privacy:process_iq_set(
+		      From, To, IQ) of
+		    {'EXIT', _} ->
+			{{error, ?ERR_FEATURE_NOT_IMPLEMENTED}, StateData};
+		    {result, R, NewPrivList} ->
+			{{result, R},
+			 StateData#state{privacy_list = NewPrivList}};
+		    R -> {R, StateData}
+		end
+	end,
+    IQRes =
+	case Res of
+	    {result, Result} ->
+		{iq, ID, result, XMLNS, Result};
+	    {error, Error} ->
+		{iq, ID, error, XMLNS,
+		 [SubEl, Error]}
+	end,
+    ejabberd_router:route(
+      To, From, jlib:iq_to_xml(IQRes)),
+    NewStateData.
+
+

@@ -1,3 +1,9 @@
+2003-08-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_privacy.erl: Privacy rules support
+	* src/ejabberd_c2s.erl: Likewise
+	* src/mod_roster.erl: Likewise
+
 2003-07-27  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_pubsub/mod_pubsub.erl (create_new_node): Bugfix
