@@ -15,7 +15,7 @@
 
 %% External exports
 -export([start/4,
-	 init/1,
+	 start/3,
 	 route/4]).
 
 %% gen_fsm callbacks
@@ -35,6 +35,20 @@
 
 -record(lqueue, {queue, len, max}).
 
+-record(config, {allow_change_subj = true, % TODO
+		 allow_query_users = true,
+		 allow_private_messages = true,
+		 public = true, % TODO
+		 persistent = false, % TODO
+		 moderated = false, % TODO
+		 members_by_default = true, % TODO
+		 members_only = false, % TODO
+		 allow_user_invites = false, % TODO
+		 password_protected = false, % TODO
+		 anonymous = true, % TODO
+		 logging = false % TODO
+		}).
+
 -record(user, {jid,
 	       nick,
 	       role,
@@ -42,7 +56,7 @@
 
 -record(state, {room,
 		host,
-		config,
+		config = #config{},
 		users = ?DICT:new(),
 		affiliations = ?DICT:new(),
 		history = lqueue_new(10),
@@ -78,6 +92,9 @@
 start(Host, Room, Creator, Nick) ->
     gen_fsm:start(?MODULE, [Host, Room, Creator, Nick], ?FSMOPTS).
 
+start(Host, Room, Opts) ->
+    gen_fsm:start(?MODULE, [Host, Room, Opts], ?FSMOPTS).
+
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
@@ -94,6 +111,10 @@ init([Host, Room, Creator, Nick]) ->
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
 				   room = Room}),
+    {ok, normal_state, State};
+init([Host, Room, Opts]) ->
+    State = set_opts(Opts, #state{host = Host,
+				  room = Room}),
     {ok, normal_state, State}.
 
 %%----------------------------------------------------------------------
@@ -186,14 +207,21 @@ normal_state({route, From, "",
 	      {xmlelement, "iq", Attrs, Els} = Packet},
 	     StateData) ->
     case jlib:iq_query_info(Packet) of
-	{iq, ID, Type, ?NS_MUC_ADMIN = XMLNS, SubEl} ->
+	{iq, ID, Type, XMLNS, SubEl} when
+	      (XMLNS == ?NS_MUC_ADMIN) or (XMLNS == ?NS_MUC_OWNER) ->
+	    Res1 = case XMLNS of
+		       ?NS_MUC_ADMIN ->
+			   process_iq_admin(From, Type, SubEl, StateData);
+		       ?NS_MUC_OWNER ->
+			   process_iq_owner(From, Type, SubEl, StateData)
+		   end,
 	    {IQRes, NewStateData} =
-		case process_iq_admin(From, Type, SubEl, StateData) of
+		case Res1 of
 		    {result, Res, SD} ->
 			{{iq, ID, result, XMLNS,
 			  [{xmlelement, "query", [{"xmlns", XMLNS}],
 			    Res
-			   }]},
+			 }]},
 			 SD};
 		    {error, Error} ->
 			{{iq, ID, error, XMLNS,
@@ -314,7 +342,8 @@ normal_state({route, From, Nick,
 normal_state({route, From, ToNick,
 	      {xmlelement, "message", Attrs, Els} = Packet},
 	     StateData) ->
-    case is_user_online(From, StateData) of
+    case (StateData#state.config)#config.allow_private_messages
+	andalso is_user_online(From, StateData) of
 	true ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
@@ -342,10 +371,30 @@ normal_state({route, From, ToNick,
 normal_state({route, From, ToNick,
 	      {xmlelement, "iq", Attrs, Els} = Packet},
 	     StateData) ->
-    Err = jlib:make_error_reply(
-	    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-    ejabberd_router:route(
-      {StateData#state.room, StateData#state.host, ToNick}, From, Err),
+    case (StateData#state.config)#config.allow_query_users
+	andalso is_user_online(From, StateData) of
+	true ->
+	    case find_jid_by_nick(ToNick, StateData) of
+		false ->
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERR_JID_NOT_FOUND),
+		    ejabberd_router:route(
+		      {StateData#state.room, StateData#state.host, ToNick},
+		      From, Err);
+		ToJID ->
+		    {ok, #user{nick = FromNick}} =
+			?DICT:find(jlib:jid_tolower(From),
+				   StateData#state.users),
+		    ejabberd_router:route(
+		      {StateData#state.room, StateData#state.host, FromNick},
+		      ToJID, Packet)
+	    end;
+	_ ->
+	    Err = jlib:make_error_reply(
+		    Packet, ?ERR_NOT_ALLOWED),
+	    ejabberd_router:route(
+	      {StateData#state.room, StateData#state.host, ToNick}, From, Err)
+    end,
     {next_state, normal_state, StateData};
 
 normal_state(Event, StateData) ->
@@ -501,7 +550,13 @@ get_default_role(Affiliation, StateData) ->
 	admin ->   moderator;
 	member ->  participant;
 	outcast -> none;
-	none ->    participant
+	none ->
+	    case (StateData#state.config)#config.members_by_default of
+		true ->
+		    participant;
+		_ ->
+		    visitor
+	    end
     end.
 
 
@@ -1183,5 +1238,266 @@ send_kickban_presence(UJID, Code, StateData) ->
       end, ?DICT:to_list(StateData#state.users)).
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Owner stuff
+
+process_iq_owner(From, set, SubEl, StateData) ->
+    FAffiliation = get_affiliation(From, StateData),
+    case FAffiliation of
+	owner ->
+	    {xmlelement, Name, Attrs, Els} = SubEl,
+	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
+	    case xml:remove_cdata(Els) of
+		[{xmlelement, "x", Attrs1, Els1} = XEl] ->
+		    case {xml:get_tag_attr_s("xmlns", XEl),
+			  xml:get_tag_attr_s("type", XEl)} of
+			{?NS_XDATA, "cancel"} ->
+			    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+			{?NS_XDATA, "submit"} ->
+			    set_config(XEl, StateData);
+			_ ->
+			    {error, ?ERR_BAD_REQUEST}
+		    end;
+		_ ->
+		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
+	    end;
+	_ ->
+	    {error, ?ERR_NOT_ALLOWED}
+    end;
+%    {xmlelement, _, _, Items} = SubEl,
+%    process_admin_items_set(From, Items, StateData);
+%    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+
+process_iq_owner(From, get, SubEl, StateData) ->
+    FAffiliation = get_affiliation(From, StateData),
+    case FAffiliation of
+	owner ->
+	    {xmlelement, Name, Attrs, Els} = SubEl,
+	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
+	    case xml:remove_cdata(Els) of
+		[] ->
+		    get_config(Lang, StateData);
+		_ ->
+		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
+	    end;
+	_ ->
+	    {error, ?ERR_NOT_ALLOWED}
+    end.
+
+
+%    case xml:get_subtag(SubEl, "item") of
+%	false ->
+%	    {error, ?ERR_BAD_REQUEST};
+%	Item ->
+%	    FAffiliation = get_affiliation(From, StateData),
+%	    FRole = get_role(From, StateData),
+%	    case xml:get_tag_attr("role", Item) of
+%		false ->
+%		    case xml:get_tag_attr("affiliation", Item) of
+%			false ->
+%			    {error, ?ERR_BAD_REQUEST};
+%			{value, StrAffiliation} ->
+%			    case catch list_to_affiliation(StrAffiliation) of
+%				{'EXIT', _} ->
+%				    {error, ?ERR_BAD_REQUEST};
+%				SAffiliation ->
+%				    if
+%					FAffiliation == owner ->
+%					    Items = items_with_affiliation(
+%						      SAffiliation, StateData),
+%					    {result, Items, StateData};
+%					true ->
+%					    {error, ?ERR_NOT_ALLOWED}
+%				    end
+%			    end
+%		    end;
+%		{value, StrRole} ->
+%		    case catch list_to_role(StrRole) of
+%			{'EXIT', _} ->
+%			    {error, ?ERR_BAD_REQUEST};
+%			SRole ->
+%			    if
+%				FAffiliation == owner ->
+%				    Items = items_with_role(SRole, StateData),
+%				    {result, Items, StateData};
+%				true ->
+%				    {error, ?ERR_NOT_ALLOWED}
+%			    end
+%		    end
+%	    end
+%    end.
+
+
+-define(XFIELD(Type, Label, Var, Val),
+	{xmlelement, "field", [{"type", Type},
+			       {"label", translate:translate(Lang, Label)},
+			       {"var", Var}],
+	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+
+-define(BOOLXFIELD(Label, Var, Val),
+	?XFIELD("boolean", Label, Var,
+		case Val of
+		    true -> "1";
+		    _ -> "0"
+		end)).
+
+
+get_config(Lang, StateData) ->
+    Config = StateData#state.config,
+    Res =
+	[?BOOLXFIELD("Allow users to change subject?",
+		     "allow_change_subj",
+		     Config#config.allow_change_subj),
+	 ?BOOLXFIELD("Allow users to query other users?",
+		     "allow_query_users",
+		     Config#config.allow_query_users),
+	 ?BOOLXFIELD("Allow users to send private messages?",
+		     "allow_private_messages",
+		     Config#config.allow_private_messages),
+	 ?BOOLXFIELD("Make room public searchable?",
+		     "public",
+		     Config#config.public),
+	 ?BOOLXFIELD("Make room persistent?",
+		     "persistent",
+		     Config#config.persistent),
+	 ?BOOLXFIELD("Make room moderated?",
+		     "moderated",
+		     Config#config.moderated),
+	 ?BOOLXFIELD("Default users as members?",
+		     "members_by_default",
+		     Config#config.members_by_default),
+	 ?BOOLXFIELD("Make room members only?",
+		     "members_only",
+		     Config#config.members_only),
+	 ?BOOLXFIELD("Allow users to send invites?",
+		     "allow_user_invites",
+		     Config#config.allow_user_invites),
+	 ?BOOLXFIELD("Make room password protected?",
+		     "password_protected",
+		     Config#config.password_protected),
+	 ?BOOLXFIELD("Make room anonymous?",
+		     "anonymous",
+		     Config#config.anonymous),
+	 ?BOOLXFIELD("Enable logging?",
+		     "logging",
+		     Config#config.logging)
+	],
+    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}], Res}], StateData}.
+
+
+
+set_config(XEl, StateData) ->
+    XData = jlib:parse_xdata_submit(XEl),
+    case XData of
+	invalid ->
+	    {error, ?ERR_BAD_REQUEST};
+	_ ->
+	    case set_xoption(XData, StateData#state.config) of
+		#config{} = Config ->
+		    change_config(Config, StateData);
+		Err ->
+		    Err
+	    end
+    end.
+
+-define(SET_BOOL_XOPT(Opt, Val),
+	case Val of
+	    "0" -> set_xoption(Opts, Config#config{Opt = false});
+	    "1" -> set_xoption(Opts, Config#config{Opt = true});
+	    _ -> {error, ?ERR_BAD_REQUEST}
+	end).
+
+
+
+set_xoption([], Config) ->
+    Config;
+set_xoption([{"allow_change_subj", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(allow_change_subj, Val);
+set_xoption([{"allow_query_users", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(allow_query_users, Val);
+set_xoption([{"allow_private_messages", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(allow_private_messages, Val);
+set_xoption([{"public", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(public, Val);
+set_xoption([{"persistent", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(persistent, Val);
+set_xoption([{"moderated", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(moderated, Val);
+set_xoption([{"members_by_default", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(members_by_default, Val);
+set_xoption([{"members_only", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(members_only, Val);
+set_xoption([{"allow_user_invites", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(allow_user_invites, Val);
+set_xoption([{"password_protected", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(password_protected, Val);
+set_xoption([{"anonymous", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(anonymous, Val);
+set_xoption([{"logging", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(logging, Val);
+set_xoption([_ | Opts], Config) ->
+    {error, ?ERR_BAD_REQUEST}.
+
+
+change_config(Config, StateData) ->
+    NSD = StateData#state{config = Config},
+    case {(StateData#state.config)#config.persistent,
+	  Config#config.persistent} of
+	{_, true} ->
+	    mod_muc:store_room(NSD#state.room, make_opts(NSD));
+	{true, false} ->
+	    mod_muc:forget_room(NSD#state.room);
+	{false, false} ->
+	    ok
+	end,
+    {result, [], NSD}.
+
+
+-define(CASE_CONFIG_OPT(Opt),
+	Opt -> StateData#state{
+		 config = (StateData#state.config)#config{Opt = Val}}).
+
+set_opts([], StateData) ->
+    StateData;
+set_opts([{Opt, Val} | Opts], StateData) ->
+    NSD = case Opt of
+	      ?CASE_CONFIG_OPT(allow_change_subj);
+	      ?CASE_CONFIG_OPT(allow_query_users);
+	      ?CASE_CONFIG_OPT(allow_private_messages);
+	      ?CASE_CONFIG_OPT(public);
+	      ?CASE_CONFIG_OPT(persistent);
+	      ?CASE_CONFIG_OPT(moderated);
+	      ?CASE_CONFIG_OPT(members_by_default);
+	      ?CASE_CONFIG_OPT(members_only);
+	      ?CASE_CONFIG_OPT(allow_user_invites);
+	      ?CASE_CONFIG_OPT(password_protected);
+	      ?CASE_CONFIG_OPT(anonymous);
+	      ?CASE_CONFIG_OPT(logging);
+	      affiliations ->
+		  StateData#state{affiliations = ?DICT:from_list(Val)};
+	      _ -> StateData
+	  end,
+    set_opts(Opts, NSD).
+
+-define(MAKE_CONFIG_OPT(Opt), {Opt, Config#config.Opt}).
+
+make_opts(StateData) ->
+    Config = StateData#state.config,
+    [
+     ?MAKE_CONFIG_OPT(allow_change_subj),
+     ?MAKE_CONFIG_OPT(allow_query_users),
+     ?MAKE_CONFIG_OPT(allow_private_messages),
+     ?MAKE_CONFIG_OPT(public),
+     ?MAKE_CONFIG_OPT(persistent),
+     ?MAKE_CONFIG_OPT(moderated),
+     ?MAKE_CONFIG_OPT(members_by_default),
+     ?MAKE_CONFIG_OPT(members_only),
+     ?MAKE_CONFIG_OPT(allow_user_invites),
+     ?MAKE_CONFIG_OPT(password_protected),
+     ?MAKE_CONFIG_OPT(anonymous),
+     ?MAKE_CONFIG_OPT(logging),
+     {affiliations, ?DICT:to_list(StateData#state.affiliations)}
+    ].
 
 

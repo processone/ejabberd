@@ -15,7 +15,10 @@
 -export([start/1,
 	 init/1,
 	 stop/0,
-	 room_destroyed/1]).
+	 room_destroyed/1,
+	 store_room/2,
+	 restore_room/1,
+	 forget_room/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -38,7 +41,7 @@ init(Host) ->
 				    public,
 				    {keypos, #muc_online_room.name}]),
     ejabberd_router:register_route(Host),
-    % TODO: load permanent groups
+    load_permanent_rooms(Host),
     loop(Host).
 
 loop(Host) ->
@@ -136,7 +139,44 @@ iq_disco() ->
       [{"var", ?NS_MUC}], []}].
 
 
+store_room(Name, Opts) ->
+    F = fun() ->
+		mnesia:write(#muc_room{name = Name,
+				       opts = Opts})
+	end,
+    mnesia:transaction(F).
+
+restore_room(Name) ->
+    case catch mnesia:dirty_read(muc_room, Name) of
+	[#muc_room{opts = Opts}] ->
+	    Opts;
+	_ ->
+	    error
+    end.
 
 
+forget_room(Name) ->
+    F = fun() ->
+		mnesia:delete({muc_room, Name})
+	end,
+    mnesia:transaction(F).
 
+
+load_permanent_rooms(Host) ->
+    case catch mnesia:dirty_select(muc_room, [{'_', [], ['$_']}]) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p", [Reason]),
+	    ok;
+	Rs ->
+	    lists:foreach(fun(R) ->
+				  Room = R#muc_room.name,
+				  {ok, Pid} = mod_muc_room:start(
+						Host,
+						Room,
+						R#muc_room.opts),
+				  ets:insert(
+				    muc_online_room,
+				    #muc_online_room{name = Room, pid = Pid})
+			  end, Rs)
+    end.
 
