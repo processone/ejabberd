@@ -65,23 +65,23 @@ attr_to_string({Name, Value}) ->
 
 
 
-%crypt(S) ->
-%    lists:reverse(crypt(S, "")).
-%
-%crypt([$& | S], R) ->
-%    crypt(S, [$;, $p, $m, $a, $& | R]);
-%crypt([$< | S], R) ->
-%    crypt(S, [$;, $t, $l, $& | R]);
-%crypt([$> | S], R) ->
-%    crypt(S, [$;, $t, $g, $& | R]);
-%crypt([$" | S], R) ->
-%    crypt(S, [$;, $t, $o, $u, $q, $& | R]);
-%crypt([$' | S], R) ->
-%    crypt(S, [$;, $s, $o, $p, $a, $& | R]);
-%crypt([C | S], R) ->
-%    crypt(S, [C | R]);
-%crypt([], R) ->
-%    R.
+crypt(S) ->
+    lists:reverse(crypt(S, "")).
+
+crypt([$& | S], R) ->
+    crypt(S, [$;, $p, $m, $a, $& | R]);
+crypt([$< | S], R) ->
+    crypt(S, [$;, $t, $l, $& | R]);
+crypt([$> | S], R) ->
+    crypt(S, [$;, $t, $g, $& | R]);
+crypt([$" | S], R) ->
+    crypt(S, [$;, $t, $o, $u, $q, $& | R]);
+crypt([$' | S], R) ->
+    crypt(S, [$;, $s, $o, $p, $a, $& | R]);
+crypt([C | S], R) ->
+    crypt(S, [C | R]);
+crypt([], R) ->
+    R.
 
 %crypt1(S) ->
 %    lists:flatten([case C of
@@ -93,21 +93,20 @@ attr_to_string({Name, Value}) ->
 %		       _ -> C
 %		   end || C <- S]).
 
-% Not tail-recursive but it seems works faster than variants above
-crypt([$& | S]) ->
-    [$&, $a, $m, $p, $; | crypt(S)];
-crypt([$< | S]) ->
-    [$&, $l, $t, $; | crypt(S)];
-crypt([$> | S]) ->
-    [$&, $g, $t, $; | crypt(S)];
-crypt([$" | S]) ->
-    [$&, $q, $u, $o, $t, $; | crypt(S)];
-crypt([$' | S]) ->
-    [$&, $a, $p, $o, $s, $; | crypt(S)];
-crypt([C | S]) ->
-    [C | crypt(S)];
-crypt([]) ->
-    [].
+%crypt([$& | S]) ->
+%    [$&, $a, $m, $p, $; | crypt(S)];
+%crypt([$< | S]) ->
+%    [$&, $l, $t, $; | crypt(S)];
+%crypt([$> | S]) ->
+%    [$&, $g, $t, $; | crypt(S)];
+%crypt([$" | S]) ->
+%    [$&, $q, $u, $o, $t, $; | crypt(S)];
+%crypt([$' | S]) ->
+%    [$&, $a, $p, $o, $s, $; | crypt(S)];
+%crypt([C | S]) ->
+%    [C | crypt(S)];
+%crypt([]) ->
+%    [].
 
 	 
 

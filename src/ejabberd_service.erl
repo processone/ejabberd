@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/2, receiver/2, send_text/2, send_element/2]).
+-export([start/2, start_link/2, receiver/2, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -69,6 +69,9 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+start(SockData, Opts) ->
+    supervisor:start_child(ejabberd_service_sup, [SockData, Opts]).
+
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_service, [SockData, Opts], ?FSMOPTS).
 

@@ -22,23 +22,27 @@ start() ->
     ok.
 
 load_dir(Dir) ->
-    {ok, Files} = file:list_dir(Dir),
-    MsgFiles = lists:filter(
-		 fun(FN) ->
-			 case string:len(FN) > 4 of
-			     true ->
-				 string:substr(FN,
-					       string:len(FN) - 3) == ".msg";
-			     _ ->
-				 false
-			 end
-		 end, Files),
-    lists:foreach(
-      fun(FN) ->
-	      load_file(string:substr(FN, 1, string:len(FN) - 4),
-			Dir ++ "/" ++ FN)
-      end, MsgFiles),
-    ok.
+    case file:list_dir(Dir) of
+	{ok, Files} ->
+	    MsgFiles = lists:filter(
+			 fun(FN) ->
+				 case string:len(FN) > 4 of
+				     true ->
+					 string:substr(FN,
+						       string:len(FN) - 3) == ".msg";
+				     _ ->
+					 false
+				 end
+			 end, Files),
+	    lists:foreach(
+	      fun(FN) ->
+		      load_file(string:substr(FN, 1, string:len(FN) - 4),
+				Dir ++ "/" ++ FN)
+	      end, MsgFiles),
+	    ok;
+	{error, Reason} ->
+	    ?ERROR_MSG("~p", [Reason])
+    end.
 
 load_file(Lang, File) ->
     case file:consult(File) of

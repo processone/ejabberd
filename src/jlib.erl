@@ -238,12 +238,23 @@ is_nodename1([]) ->
 %    [?LOWER(Char) || Char <- S].
 
 % Not tail-recursive but it seems works faster than variants above
-tolower([C | Cs]) when C >= $A, C =< $Z ->
-    [C + 32 | tolower(Cs)];
 tolower([C | Cs]) ->
-    [C | tolower(Cs)];
+    if
+	C >= $A, C =< $Z ->
+	    [C + 32 | tolower(Cs)];
+	true ->
+	    [C | tolower(Cs)]
+    end;
 tolower([]) ->
     [].
+
+%tolower([C | Cs]) when C >= $A, C =< $Z ->
+%    [C + 32 | tolower(Cs)];
+%tolower([C | Cs]) ->
+%    [C | tolower(Cs)];
+%tolower([]) ->
+%    [].
+
 
 
 jid_tolower({U, S, R}) ->

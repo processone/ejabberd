@@ -11,6 +11,7 @@
 -vsn('$Revision$ ').
 
 -export([start/0,
+	 start_link/2,
 	 add_iq_handler/5,
 	 remove_iq_handler/2,
 	 stop_iq_handler/3,
@@ -28,7 +29,8 @@ add_iq_handler(Component, NS, Module, Function, Type) ->
 	no_queue ->
 	    Component:register_iq_handler(NS, Module, Function, no_queue);
 	one_queue ->
-	    Pid = spawn(?MODULE, queue_init, [Module, Function]),
+	    {ok, Pid} = supervisor:start_child(ejabberd_iq_sup,
+					       [Module, Function]),
 	    Component:register_iq_handler(NS, Module, Function,
 					  {one_queue, Pid});
 	parallel ->
@@ -72,6 +74,9 @@ process_iq(Module, Function, From, To, IQ) ->
 		    ok
 	    end
     end.
+
+start_link(Module, Function) ->
+  {ok, proc_lib:spawn_link(?MODULE, queue_init, [Module, Function])}.
 
 queue_init(Module, Function) ->
     queue_loop(Module, Function).

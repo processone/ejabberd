@@ -26,7 +26,7 @@ start(Opts) ->
     mnesia:create_table(private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, private_storage)}]),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_PRIVATE,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVATE,
 				  ?MODULE, process_local_iq, IQDisc).
 
 stop() ->

@@ -19,6 +19,7 @@
 -include("ejabberd.hrl").
 
 start(normal, Args) ->
+    application:start(sasl),
     randoms:start(),
     db_init(),
     sha:start(),
@@ -29,6 +30,9 @@ start(normal, Args) ->
     ejabberd_config:start(),
     ejabberd_auth:start(),
     cyrsasl:start(),
+    % Profiling
+    %eprof:start(),
+    %eprof:profile([self()]),
     Sup = ejabberd_sup:start_link(),
     start(),
     load_modules(),
@@ -40,13 +44,10 @@ stop(StartArgs) ->
     ok.
 
 start() ->
-    spawn(?MODULE, init, []).
+    spawn_link(?MODULE, init, []).
 
 init() ->
     register(ejabberd, self()),
-    % Profiling
-    %eprof:start(),
-    %eprof:profile([self()]),
     %erlang:system_flag(fullsweep_after, 0),
     error_logger:logfile({open, ?LOG_PATH}),
     timer:apply_interval(3600000, ?MODULE, dump_ports, []),

@@ -40,7 +40,7 @@ start(Opts) ->
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
     mnesia:add_table_index(roster, user),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_ROSTER,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_ROSTER,
 				  ?MODULE, process_local_iq, IQDisc).
 
 process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->

@@ -32,7 +32,7 @@ init(_) ->
 			     permanent,
 			     brutal_kill,
 			     worker,
-			     [Module]}
+			     [?MODULE]}
 		    end, Ls)}}
     end.
 
@@ -56,7 +56,16 @@ init(Port, Module, Opts) ->
 accept(ListenSocket, Module, Opts) ->
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
-	    {ok, Pid} = apply(Module, start_link, [{gen_tcp, Socket}, Opts]),
+	    {ok, Pid} = Module:start({gen_tcp, Socket}, Opts),
+	    %{ok, Pid} =
+	    %    supervisor:start_child(
+	    %      ejabberd_tmp_sup,
+	    %      {{Module, Socket},
+	    %       {Module, start_link, [{gen_tcp, Socket}, Opts]},
+	    %       transient,
+	    %       brutal_kill,
+	    %       worker,
+	    %       [Module]}),
 	    gen_tcp:controlling_process(Socket, Pid),
 	    accept(ListenSocket, Module, Opts)
     end.

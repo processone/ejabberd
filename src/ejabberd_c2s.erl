@@ -13,7 +13,11 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/2, receiver/4, send_text/2, send_element/2]).
+-export([start/2,
+	 start_link/2,
+	 receiver/4,
+	 send_text/2,
+	 send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -77,6 +81,9 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+start(SockData, Opts) ->
+    supervisor:start_child(ejabberd_c2s_sup, [SockData, Opts]).
+
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_c2s, [SockData, Opts], ?FSMOPTS).
 
@@ -430,14 +437,15 @@ wait_for_session(closed, StateData) ->
 
 session_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
+    User = StateData#state.user,
     Server = StateData#state.server,
-    FromJID = {StateData#state.user,
+    FromJID = {User,
 	       Server,
 	       StateData#state.resource},
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of
 		"" ->
-		    {"", Server, ""};
+		    {User, Server, ""};
 		_ ->
 		    jlib:string_to_jid(To)
 	    end,
@@ -450,7 +458,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 		case Name of
 		    "presence" ->
 			case ToJID of
-			    {"", Server, ""} ->
+			    {User, Server, ""} ->
 				?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
 				       [FromJID, El, StateData]),
 				presence_update(FromJID, El, StateData);

@@ -1,3 +1,11 @@
+2003-07-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Reorganized supervision tree
+
+2003-07-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_register.erl: Bugfix
+
 2003-07-14  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_s2s_out.erl: Close connection after key

@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/3, send_text/2, send_element/2]).
+-export([start/3, start_link/3, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -65,10 +65,11 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+start(From, Host, Type) ->
+    supervisor:start_child(ejabberd_s2s_out_sup, [From, Host, Type]).
+
 start_link(From, Host, Type) ->
-    {ok, Pid} = gen_fsm:start_link(ejabberd_s2s_out, [From, Host, Type],
-				   ?FSMOPTS),
-    Pid.
+    gen_fsm:start_link(ejabberd_s2s_out, [From, Host, Type], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm

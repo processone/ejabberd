@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/2, receiver/2, send_text/2, send_element/2]).
+-export([start/2, start_link/2, receiver/2, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -63,6 +63,9 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+start(SockData, Opts) ->
+    supervisor:start_child(ejabberd_s2s_in_sup, [SockData, Opts]).
+
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_s2s_in, [SockData], ?FSMOPTS).
 
@@ -134,8 +137,8 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
 	    ?INFO_MSG("GET KEY: ~p", [{To, From, Id, Key}]),
 	    case lists:member(To, ejabberd_router:dirty_get_all_domains()) of
 		true ->
-		    ejabberd_s2s_out:start_link(To, From,
-						{verify, self(), Key}),
+		    ejabberd_s2s_out:start(To, From,
+					   {verify, self(), Key}),
 		    {next_state,
 		     wait_for_verification,
 		     StateData#state{myname = To,

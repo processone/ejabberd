@@ -13,12 +13,12 @@
 -behaviour(gen_mod).
 
 -export([start/1,
-	 init/2,
+	 init/3,
+	 loop/2,
 	 stop/0,
-	 % TODO: remove
-	 create_new_node/3,
-	 publish_item/5,
-	 delete_item/4]).
+	 system_continue/3,
+	 system_terminate/4, 
+	 system_code_change/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -43,11 +43,12 @@ start(Opts) ->
     mnesia:add_table_index(pubsub_node, parent),
     Host = gen_mod:get_opt(host, Opts, "pubsub." ++ ?MYNAME),
     ServedHosts = gen_mod:get_opt(served_hosts, Opts, [?MYNAME]),
-    register(ejabberd_mod_pubsub, spawn(?MODULE, init, [Host, ServedHosts])).
+    register(ejabberd_mod_pubsub,
+	     proc_lib:spawn_link(?MODULE, init, [Host, ServedHosts, self()])).
 
 
 
-init(Host, ServedHosts) ->
+init(Host, ServedHosts, Parent) ->
     ejabberd_router:register_route(Host),
     create_new_node(Host, ["pubsub"], {"", Host, ""}),
     create_new_node(Host, ["pubsub", "nodes"], {"", Host, ""}),
@@ -55,9 +56,9 @@ init(Host, ServedHosts) ->
     lists:foreach(fun(H) ->
 			  create_new_node(Host, ["home", H], {"", Host, ""})
 		  end, ServedHosts),
-    loop(Host).
+    loop(Host, Parent).
 
-loop(Host) ->
+loop(Host, Parent) ->
     receive
 	{route, From, To, Packet} ->
 	    case catch do_route(Host, From, To, Packet) of
@@ -66,17 +67,19 @@ loop(Host) ->
 		_ ->
 		    ok
 	    end,
-	    loop(Host);
+	    loop(Host, Parent);
 	{room_destroyed, Room} ->
 	    ets:delete(muc_online_room, Room),
-	    loop(Host);
+	    loop(Host, Parent);
 	stop ->
 	    ejabberd_router:unregister_global_route(Host),
 	    ok;
 	reload ->
-	    ?MODULE:loop(Host);
+	    ?MODULE:loop(Host, Parent);
+        {system, From, Request} ->
+            sys:handle_system_msg(Request, From, Parent, ?MODULE, [], Host);
 	_ ->
-	    loop(Host)
+	    loop(Host, Parent)
     end.
 
 
@@ -450,7 +453,9 @@ iq_pubsub(Host, From, Type, SubEl) ->
 create_new_node(Host, Node, Owner) ->
     case Node of
 	[] ->
-	    {error, ?ERR_CONFLICT};
+	    {LOU, LOS, _} = jlib:jid_tolower(Owner),
+	    NewNode = ["home", LOS, LOU, randoms:get_string()],
+	    create_new_node(Host, NewNode, Owner);
 	_ ->
 	    LOwner = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
 	    Parent = lists:sublist(Node, length(Node) - 1),
@@ -491,16 +496,20 @@ create_new_node(Host, Node, Owner) ->
 			{atomic, ok} ->
 			    Lang = "",
 			    broadcast_publish_item(
-			      Host, ["pubsub", "nodes"], "",
+			      Host, ["pubsub", "nodes"], node_to_string(Node),
 			      [{xmlelement, "x",
-				[{"xmlns", ?NS_PUBSUB_EVENT},
+				[{"xmlns", ?NS_XDATA},
 				 {"type", "result"}],
 				[?XFIELD("hidden", "", "FORM_TYPE",
 					 ?NS_PUBSUB_NMI),
 				 ?XFIELD("jid-single", "Node Creator",
 					 "creator",
 					 jlib:jid_to_string(LOwner))]}]),
-			    {result, []};
+			    {result,
+			     [{xmlelement, "pubsub",
+				[{"xmlns", ?NS_PUBSUB}],
+				[{xmlelement, "create",
+				  [{"node", node_to_string(Node)}], []}]}]};
 			{atomic, {error, _} = Error} ->
 			    Error;
 			_ ->
@@ -742,6 +751,9 @@ delete_node(Host, JID, Node) ->
 	    Error;
 	{atomic, {removed, Removed}} ->
 	    broadcast_removed_node(Host, Removed),
+	    Lang = "",
+	    broadcast_retract_item(
+	      Host, ["pubsub", "nodes"], node_to_string(Node)),
 	    {result, []};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
@@ -1100,9 +1112,10 @@ broadcast_retract_item(Host, Node, ItemID) ->
 				   {xmlelement, "message", [],
 				    [{xmlelement, "x",
 				      [{"xmlns", ?NS_PUBSUB_EVENT}],
-				      [{xmlelement, "retract",
+				      [{xmlelement, "items",
 					[{"node", node_to_string(Node)}],
-					[]}]}]},
+					[{xmlelement, "retract",
+					 ItemAttrs, []}]}]}]},
 			       ejabberd_router:route({"", Host, ""},
 						     JID, Stanza);
 			   true ->
@@ -1137,3 +1150,13 @@ broadcast_removed_node(Host, Removed) ->
 		 end, ok, Entities)
       end, Removed).
 
+
+
+system_continue(Parent, _, State) ->
+    loop(State, Parent).
+
+system_terminate(Reason, Parent, _, State) ->
+    exit(Reason).
+
+system_code_change(State, _Mod, Ver, _Extra) ->
+    {ok, State}.

@@ -68,8 +68,6 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					     [SubEl, ?ERR_BAD_REQUEST]}
 			    end
 		    end;
-		{iq, ID, error, XMLNS,
-		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
 		(UTag /= false) and (PTag /= false) ->
 		    User = xml:get_tag_cdata(UTag),
 		    Password = xml:get_tag_cdata(PTag),
@@ -85,7 +83,10 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 				    {iq, ID, error, XMLNS,
 				     [SubEl, Error]}
 			    end
-		    end
+		    end;
+		true ->
+		    {iq, ID, error, XMLNS,
+		     [SubEl, ?ERR_BAD_REQUEST]}
 	    end;
 	get ->
 	    {iq, ID, result, XMLNS, [{xmlelement,
