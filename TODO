@@ -1,0 +1,11 @@
+presence
+iq:register
+S2S
+...
+iq plugins
+iq:browse
+iq:disco
+...
+services support
+JUD
+
