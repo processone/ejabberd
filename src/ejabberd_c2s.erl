@@ -58,6 +58,8 @@
 -define(STREAM_TRAILER, "</stream:stream>").
 
 -define(INVALID_NS_ERR, "<stream:error>Invalid Namespace</stream:error>").
+-define(INVALID_XML_ERR,
+	"<stream:error code='400'>Invalid XML</stream:error>").
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -112,6 +114,10 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    send_text(StateData#state.socket, ?INVALID_NS_ERR ?STREAM_TRAILER),
 	    {stop, normal, StateData}
     end;
+
+wait_for_stream({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket, ?INVALID_XML_ERR),
+    {stop, normal, StateData};
 
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
@@ -170,7 +176,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
     end;
 
 wait_for_auth({xmlstreamend, Name}, StateData) ->
-    % TODO
+    send_text(StateData#state.socket, ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_auth({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 wait_for_auth(closed, StateData) ->
@@ -213,10 +223,14 @@ session_established({xmlstreamelement, El}, StateData) ->
     {next_state, session_established, NewState};
 
 session_established({xmlstreamend, Name}, StateData) ->
+    send_text(StateData#state.socket, ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+session_established({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 session_established(closed, StateData) ->
-    % TODO
     {stop, normal, StateData}.
 
 

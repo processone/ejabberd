@@ -1,3 +1,7 @@
+2003-03-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: More correct stream closing
+
 2003-02-27  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_irc/mod_irc_connection.erl: Support for topic changes
