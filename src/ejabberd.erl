@@ -12,11 +12,14 @@
 
 -export([start/0, init/0]).
 
+-include("ejabberd.hrl").
+
 start() ->
     spawn(?MODULE, init, []).
 
 init() ->
     register(ejabberd, self()),
+    error_logger:logfile({open, ?ERROR_LOG_PATH}),
     randoms:start(),
     ok = erl_ddll:load_driver(".", expat_erl),
     Port = open_port({spawn, expat_erl}, [binary]),

@@ -22,4 +22,5 @@
 
 -define(MSGS_DIR, "msgs").
 -define(CONFIG_PATH, "ejabberd.cfg").
+-define(ERROR_LOG_PATH, "error.log").
 
