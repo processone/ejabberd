@@ -1,3 +1,8 @@
+2005-04-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/transport-configs/configs/msn-transport.xml: Fixed typo
+	(thanks to Sander Devrieze)
+
 2005-04-02  Alexey Shchepin  <alexey@sevcom.net>
 
 	* examples/transport-configs/: Updated (thanks to Sander Devrieze)

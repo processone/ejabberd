@@ -29,7 +29,7 @@
   <xdb id="xdb">
     <host/>
     <load>
-      <xdb_file>/usr/local/lib/libjabberdxdbfile.so</xdb_file>
+      <xdb_file>/usr/local/lib/jabber/libjabberdxdbfile.so</xdb_file>
       </load>
     <xdb_file xmlns="jabber:config:xdb_file">
       <spool><jabberd:cmdline flag='s'>/var/spool/jabber</jabberd:cmdline></spool>
