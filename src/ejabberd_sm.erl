@@ -197,11 +197,10 @@ do_route(From, To, Packet) ->
 				      fun({_, R}) ->
 					      if LFrom /=
 						 {LUser, LServer, R} ->
-						      ejabberd_sm !
-							  {route,
-							   From,
-							   jlib:jid_replace_resource(To, R),
-							   Packet};
+						      do_route(
+							From,
+							jlib:jid_replace_resource(To, R),
+							Packet);
 						 true ->
 						      ok
 					      end
@@ -233,10 +232,9 @@ do_route(From, To, Packet) ->
 		"broadcast" ->
 		    lists:foreach(
 		      fun(R) ->
-			      ejabberd_sm ! {route,
-					     From,
-					     jlib:jid_replace_resource(To, R),
-					     Packet}
+			      do_route(From,
+				       jlib:jid_replace_resource(To, R),
+				       Packet)
 		      end, get_user_resources(User));
 		_ ->
 		    ok
@@ -370,10 +368,8 @@ process_iq(From, To, Packet) ->
 		    ResIQ = Module:Function(From, To, IQ),
 		    if
 			ResIQ /= ignore ->
-			    ejabberd_router ! {route,
-					       To,
-					       From,
-					       jlib:iq_to_xml(ResIQ)};
+			    ejabberd_router:route(To, From,
+						  jlib:iq_to_xml(ResIQ));
 			true ->
 			    ok
 		    end;
@@ -383,7 +379,7 @@ process_iq(From, To, Packet) ->
 		[] ->
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-		    ejabberd_router ! {route, To, From, Err}
+		    ejabberd_router:route(To, From, Err)
 	    end;
 	reply ->
 	    ok;
