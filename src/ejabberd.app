@@ -2,7 +2,7 @@
 
 {application, ejabberd,
  [{description, "ejabberd"},
-  {vsn, "0.0.1-alpha"},
+  {vsn, "0.1-alpha"},
   {modules, [acl,
 	     ejabberd,
 	     ejabberd_auth,

@@ -302,9 +302,28 @@ Following access rules pre-defined:
 <B><TT>all</TT></B><DD> Always return ``<TT>allow</TT>''
 <DT><B><TT>none</TT></B><DD> Always return ``<TT>deny</TT>''
 </DL>
+<!--TOC subsubsection Shapers Configuration-->
+
+<H4><A NAME="htoc11">3.1.3</A>&nbsp;&nbsp;Shapers Configuration</H4><!--SEC END -->
+
+<A NAME="sec:configshaper"></A>
+With shapers is possible to bound connection traffic. The declarations of
+shapers in config file have following syntax:
+<PRE>
+{shaper, &lt;shapername&gt;, &lt;kind&gt;}.
+</PRE>Currently implemented only one kind of shaper: <TT>maxrate</TT>. It have
+following syntax:
+<PRE>
+{maxrate, &lt;rate&gt;}
+</PRE>where <TT>&lt;rate&gt;</TT> means maximum allowed incomig rate in bytes/second.
+E.&nbsp;g. to define shaper with name ``<TT>normal</TT>'' and maximum allowed rate
+1000&nbsp;bytes/s, add following line in config:
+<PRE>
+{shaper, normal, {maxrate, 1000}}.
+</PRE>
 <!--TOC subsubsection Listened Sockets-->
 
-<H4><A NAME="htoc11">3.1.3</A>&nbsp;&nbsp;Listened Sockets</H4><!--SEC END -->
+<H4><A NAME="htoc12">3.1.4</A>&nbsp;&nbsp;Listened Sockets</H4><!--SEC END -->
 
 <A NAME="sec:configlistened"></A>
 Option <TT>listen</TT> defines list of listened sockets and what services
@@ -323,6 +342,9 @@ Following options defined:
  <DL COMPACT=compact><DT>
  <B><TT>{access, &lt;access rule&gt;}</TT></B><DD> This option defines access of users
  to this C2S port. Default value is ``<TT>all</TT>''.
+ <DT><B><TT>{shaper, &lt;access rule&gt;}</TT></B><DD> This option is like previous, but
+ use shapers instead of ``<TT>allow</TT>'' and ``<TT>deny</TT>''. Default
+ value is ``<TT>none</TT>''.
  </DL>
 <DT><B><TT>ejabberd_s2s_in</TT></B><DD> This module serves incoming S2S connections.
 <DT><B><TT>ejabberd_service</TT></B><DD> This module serves connections to Jabber
@@ -331,12 +353,17 @@ Following options defined:
 For example, the following configuration defines that C2S connections are
 listened on port 5222 and denied for user ``<TT>bad</TT>'', S2S on port 5269
 and that service <TT>conference.jabber.org</TT> must be connected to port 8888
-with a password ``<TT>secret</TT>''.
+with a password ``<TT>secret</TT>''. Also all users except admins have traffic
+limit 1000&nbsp;b/s.
 <PRE>
 {acl, blocked, {user, "bad"}}.
 {access, c2s, [{deny, blocked},
                {allow, all}]}.
-{listen, [{5222, ejabberd_c2s,     start, [{access, c2s}]},
+{shaper, normal, {maxrate, 1000}}.
+{access, c2s_shaper, [{none, admin},
+                      {normal, all}]}.
+{listen, [{5222, ejabberd_c2s,     start, [{access, c2s},
+                                           {shaper, c2s_shaper}]},
           {5269, ejabberd_s2s_in,  start, []},
           {8888, ejabberd_service, start,
            [{host, "conference.jabber.org", [{password, "secret"}]}]}
@@ -344,7 +371,7 @@ with a password ``<TT>secret</TT>''.
 </PRE>
 <!--TOC subsubsection Modules-->
 
-<H4><A NAME="htoc12">3.1.4</A>&nbsp;&nbsp;Modules</H4><!--SEC END -->
+<H4><A NAME="htoc13">3.1.5</A>&nbsp;&nbsp;Modules</H4><!--SEC END -->
 
 <A NAME="sec:configmodules"></A>
 Option <TT>modules</TT> defines the list of modules that will be loaded after
@@ -370,7 +397,7 @@ Example:
 </PRE>
 <!--TOC subsection Online Configuration and Monitoring-->
 
-<H3><A NAME="htoc13">3.2</A>&nbsp;&nbsp;Online Configuration and Monitoring</H3><!--SEC END -->
+<H3><A NAME="htoc14">3.2</A>&nbsp;&nbsp;Online Configuration and Monitoring</H3><!--SEC END -->
 
 <A NAME="sec:onlineconfig"></A>
 To perform online reconfiguration of <TT>ejabberd</TT> you will need to have
@@ -401,7 +428,7 @@ Identity of server.
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC subsubsection Node <TT>config</TT>: Global Configuration-->
 
-<H4><A NAME="htoc14">3.2.1</A>&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
+<H4><A NAME="htoc15">3.2.1</A>&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
 
 Under this node the following nodes exists:<BR>
 <BR>
@@ -455,11 +482,11 @@ removed user is online, then he will be disconnected. Also user-related data
 <BR>
 <!--TOC subsubsection Node <TT>online users</TT>: List of Online Users-->
 
-<H4><A NAME="htoc15">3.2.2</A>&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
+<H4><A NAME="htoc16">3.2.2</A>&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</H4><!--SEC END -->
 
 <!--TOC subsubsection Node <TT>all users</TT>: List of Registered User-->
 
-<H4><A NAME="htoc16">3.2.3</A>&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</H4><!--SEC END -->
+<H4><A NAME="htoc17">3.2.3</A>&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</H4><!--SEC END -->
 
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
@@ -473,11 +500,11 @@ removed user is online, then he will be disconnected. Also user-related data
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC subsubsection Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections-->
 
-<H4><A NAME="htoc17">3.2.4</A>&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</H4><!--SEC END -->
+<H4><A NAME="htoc18">3.2.4</A>&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</H4><!--SEC END -->
 
 <!--TOC subsubsection Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes-->
 
-<H4><A NAME="htoc18">3.2.5</A>&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</H4><!--SEC END -->
+<H4><A NAME="htoc19">3.2.5</A>&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</H4><!--SEC END -->
 
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
@@ -491,18 +518,18 @@ removed user is online, then he will be disconnected. Also user-related data
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC subsubsection Node <TT>stopped nodes</TT>: List of Stopped Nodes-->
 
-<H4><A NAME="htoc19">3.2.6</A>&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</H4><!--SEC END -->
+<H4><A NAME="htoc20">3.2.6</A>&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</H4><!--SEC END -->
 
 TBD<BR>
 <BR>
 <!--TOC section Distribution-->
 
-<H2><A NAME="htoc20">4</A>&nbsp;&nbsp;Distribution</H2><!--SEC END -->
+<H2><A NAME="htoc21">4</A>&nbsp;&nbsp;Distribution</H2><!--SEC END -->
 
 <A NAME="sec:distribution"></A>
 <!--TOC subsection How it works-->
 
-<H3><A NAME="htoc21">4.1</A>&nbsp;&nbsp;How it works</H3><!--SEC END -->
+<H3><A NAME="htoc22">4.1</A>&nbsp;&nbsp;How it works</H3><!--SEC END -->
 
 <A NAME="sec:howitworks"></A>
 A Jabber domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
@@ -522,7 +549,7 @@ router;
 </UL>
 <!--TOC subsubsection Router-->
 
-<H4><A NAME="htoc22">4.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
+<H4><A NAME="htoc23">4.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
 
 This module is the main router of Jabber packets on each node. It routes
 them based on their destinations domains. It has two tables: local and global
@@ -534,7 +561,7 @@ manager.<BR>
 <BR>
 <!--TOC subsubsection Local Router-->
 
-<H4><A NAME="htoc23">4.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
+<H4><A NAME="htoc24">4.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
 
 This module routes packets which have a destination domain equal to this server
 name. If destination JID has a node, then it routed to the session manager,
@@ -542,7 +569,7 @@ else it is processed depending on it's content.<BR>
 <BR>
 <!--TOC subsubsection Session Manager-->
 
-<H4><A NAME="htoc24">4.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
+<H4><A NAME="htoc25">4.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
 
 This module routes packets to local users. It searches for what user resource
 packet must be sended via presence table. If this resource is connected to
@@ -551,7 +578,7 @@ the packet is sent to session manager on that node.<BR>
 <BR>
 <!--TOC subsubsection S2S Manager-->
 
-<H4><A NAME="htoc25">4.1.4</A>&nbsp;&nbsp;S2S Manager</H4><!--SEC END -->
+<H4><A NAME="htoc26">4.1.4</A>&nbsp;&nbsp;S2S Manager</H4><!--SEC END -->
 
 This module routes packets to other Jabber servers. First, it checks if an
 open S2S connection from the domain of the packet source to the domain of
@@ -562,19 +589,19 @@ does not exist, then it is opened and registered.<BR>
 <BR>
 <!--TOC section Built-in Modules-->
 
-<H2><A NAME="htoc26">A</A>&nbsp;&nbsp;Built-in Modules</H2><!--SEC END -->
+<H2><A NAME="htoc27">A</A>&nbsp;&nbsp;Built-in Modules</H2><!--SEC END -->
 
 <A NAME="sec:modules"></A>
 <!--TOC subsection Common Options-->
 
-<H3><A NAME="htoc27">A.1</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
+<H3><A NAME="htoc28">A.1</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
 
 <A NAME="sec:modcommonopts"></A>
 Following options used by many modules, so they described in separate section.<BR>
 <BR>
 <!--TOC subsubsection Option <TT>iqdisc</TT>-->
 
-<H4><A NAME="htoc28">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
+<H4><A NAME="htoc29">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
 
 Many modules define handlers for processing IQ queries of different namespaces
 to this server or to user (e.&nbsp;g. to <TT>myjabber.org</TT> or to
@@ -604,7 +631,7 @@ Example:
 </PRE>
 <!--TOC subsubsection Option <TT>host</TT>-->
 
-<H4><A NAME="htoc29">A.1.2</A>&nbsp;&nbsp;Option <TT>host</TT></H4><!--SEC END -->
+<H4><A NAME="htoc30">A.1.2</A>&nbsp;&nbsp;Option <TT>host</TT></H4><!--SEC END -->
 
 Some modules may act as services, and wants to have different domain name.
 This option explicitly defines this name.<BR>
@@ -619,27 +646,27 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_register</TT>-->
 
-<H3><A NAME="htoc30">A.2</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
+<H3><A NAME="htoc31">A.2</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="sec:modregister"></A>
 <!--TOC subsection <TT>mod_roster</TT>-->
 
-<H3><A NAME="htoc31">A.3</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
+<H3><A NAME="htoc32">A.3</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
 
 <A NAME="sec:modroster"></A>
 <!--TOC subsection <TT>mod_configure</TT>-->
 
-<H3><A NAME="htoc32">A.4</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
+<H3><A NAME="htoc33">A.4</A>&nbsp;&nbsp;<TT>mod_configure</TT></H3><!--SEC END -->
 
 <A NAME="sec:modconfigure"></A>
 <!--TOC subsection <TT>mod_disco</TT>-->
 
-<H3><A NAME="htoc33">A.5</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
+<H3><A NAME="htoc34">A.5</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
 
 <A NAME="sec:moddisco"></A>
 <!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3><A NAME="htoc34">A.6</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
+<H3><A NAME="htoc35">A.6</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A>
 This module adds support of
@@ -654,22 +681,22 @@ TBD about access.<BR>
 <BR>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3><A NAME="htoc35">A.7</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
+<H3><A NAME="htoc36">A.7</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="sec:modvcard"></A>
 <!--TOC subsection <TT>mod_offline</TT>-->
 
-<H3><A NAME="htoc36">A.8</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
+<H3><A NAME="htoc37">A.8</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
 
 <A NAME="sec:modoffline"></A>
 <!--TOC subsection <TT>mod_echo</TT>-->
 
-<H3><A NAME="htoc37">A.9</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
+<H3><A NAME="htoc38">A.9</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
 
 <A NAME="sec:modecho"></A>
 <!--TOC subsection <TT>mod_private</TT>-->
 
-<H3><A NAME="htoc38">A.10</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
+<H3><A NAME="htoc39">A.10</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
 
 <A NAME="sec:modprivate"></A>
 This module adds support of
@@ -682,7 +709,7 @@ Options:
 </DL>
 <!--TOC subsection <TT>mod_time</TT>-->
 
-<H3><A NAME="htoc39">A.11</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
+<H3><A NAME="htoc40">A.11</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="sec:modtime"></A>
 This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
@@ -693,7 +720,7 @@ Options:
 </DL>
 <!--TOC subsection <TT>mod_version</TT>-->
 
-<H3><A NAME="htoc40">A.12</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
+<H3><A NAME="htoc41">A.12</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="sec:modversion"></A>
 This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
@@ -704,7 +731,7 @@ Options:
 </DL>
 <!--TOC section I18n/L10n-->
 
-<H2><A NAME="htoc41">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
+<H2><A NAME="htoc42">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
 
 <A NAME="sec:i18nl10n"></A>
 Many modules supports <TT>xml:lang</TT> attribute inside IQ queries. E.&nbsp;g. 

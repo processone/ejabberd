@@ -380,7 +380,6 @@ receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid) ->
         {ok, Text} ->
 	    ShaperSt1 = receive
 			    {change_shaper, Shaper} ->
-				io:format("RECV: ChShaper to ~p~n", [Shaper]),
 				shaper:new(Shaper)
 			after 0 ->
 				ShaperState

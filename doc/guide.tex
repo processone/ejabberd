@@ -291,6 +291,30 @@ Following access rules pre-defined:
 \end{description}
 
 
+
+\subsubsection{Shapers Configuration}
+\label{sec:configshaper}
+
+With shapers is possible to bound connection traffic.  The declarations of
+shapers in config file have following syntax:
+\begin{verbatim}
+{shaper, <shapername>, <kind>}.
+\end{verbatim}
+Currently implemented only one kind of shaper: \texttt{maxrate}.  It have
+following syntax:
+\begin{verbatim}
+{maxrate, <rate>}
+\end{verbatim}
+where \texttt{<rate>} means maximum allowed incomig rate in bytes/second.
+E.\,g.\ to define shaper with name ``\texttt{normal}'' and maximum allowed rate
+1000\,bytes/s, add following line in config:
+\begin{verbatim}
+{shaper, normal, {maxrate, 1000}}.
+\end{verbatim}
+
+
+
+
 \subsubsection{Listened Sockets}
 \label{sec:configlistened}
 
@@ -311,6 +335,9 @@ Currently three modules are implemented:
   \begin{description}
   \item[\texttt{\{access, <access rule>\}}] This option defines access of users
     to this C2S port.  Default value is ``\texttt{all}''.
+  \item[\texttt{\{shaper, <access rule>\}}] This option is like previous, but
+    use shapers instead of ``\texttt{allow}'' and ``\texttt{deny}''.  Default
+    value is ``\texttt{none}''.
   \end{description}
 \item[\texttt{ejabberd\_s2s\_in}] This module serves incoming S2S connections.
 \item[\texttt{ejabberd\_service}] This module serves connections to \Jabber{}
@@ -320,19 +347,22 @@ Currently three modules are implemented:
 For example, the following configuration defines that C2S connections are
 listened on port 5222 and denied for user ``\texttt{bad}'', S2S on port 5269
 and that service \texttt{conference.jabber.org} must be connected to port 8888
-with a password ``\texttt{secret}''.
-
+with a password ``\texttt{secret}''.  Also all users except admins have traffic
+limit 1000\,b/s.
 \begin{verbatim}
 {acl, blocked, {user, "bad"}}.
 {access, c2s, [{deny, blocked},
                {allow, all}]}.
-{listen, [{5222, ejabberd_c2s,     start, [{access, c2s}]},
+{shaper, normal, {maxrate, 1000}}.
+{access, c2s_shaper, [{none, admin},
+                      {normal, all}]}.
+{listen, [{5222, ejabberd_c2s,     start, [{access, c2s},
+                                           {shaper, c2s_shaper}]},
           {5269, ejabberd_s2s_in,  start, []},
           {8888, ejabberd_service, start,
            [{host, "conference.jabber.org", [{password, "secret"}]}]}
          ]}.
 \end{verbatim}
-
 
 
 
