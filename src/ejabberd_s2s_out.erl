@@ -167,7 +167,8 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 				 {xmlelement,
 				  "db:verify",
 				  [{"from", StateData#state.myname},
-				   {"to", StateData#state.server}],
+				   {"to", StateData#state.server},
+				   {"id", "todo"}],
 				  [{xmlcdata, Key2}]})
 	    end,
 	    {next_state, wait_for_validation,
