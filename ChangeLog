@@ -1,5 +1,7 @@
 2004-09-29  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_listener.erl: Check result of controlling_process
+
 	* src/web/ejabberd_http.erl: Bugfix
 
 2004-09-27  Alexey Shchepin  <alexey@sevcom.net>
