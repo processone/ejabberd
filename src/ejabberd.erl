@@ -23,6 +23,7 @@ init() ->
     Port = open_port({spawn, expat_erl}, [binary]),
     db_init(),
     ejabberd_auth:start(),
+    ejabberd_router:start(),
     ejabberd_sm:start(),
     ejabberd_listener:start(),
     loop(Port).

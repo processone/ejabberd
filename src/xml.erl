@@ -11,7 +11,7 @@
 -vsn('$Revision$ ').
 
 -export([element_to_string/1, crypt/1, remove_cdata/1, get_cdata/1,
-	 get_attr/2, get_attr_s/2, make_error_iq_reply/3]).
+	 get_attr/2, get_attr_s/2]).
 
 element_to_string(El) ->
     case El of
@@ -91,30 +91,3 @@ get_attr_s(AttrName, Attrs) ->
     end.
 
 
-make_error_iq_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc)
-  when Name == "iq" ->
-    NewAttrs = make_error_iq_reply_attrs(Attrs),
-    {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, "error",
-					      [{"code", Code}],
-					      [{xmlcdata, Desc}]}]}.
-
-make_error_iq_reply_attrs(Attrs) ->
-    To = get_attr("to", Attrs),
-    From = get_attr("from", Attrs),
-    Attrs1 = lists:keydelete("to", 1, Attrs),
-    Attrs2 = lists:keydelete("from", 1, Attrs1),
-    Attrs3 = case To of
-		 {value, ToVal} ->
-		      [{"from", ToVal} | Attrs2];
-		 _ ->
-		     Attrs2
-	     end,
-    Attrs4 = case From of
-		 {value, FromVal} ->
-		      [{"to", FromVal} | Attrs3];
-		 _ ->
-		     Attrs3
-	     end,
-    Attrs5 = lists:keydelete("type", 1, Attrs4),
-    Attrs6 = [{"type", "error"} | Attrs5],
-    Attrs6.

@@ -21,7 +21,8 @@
 %
 -export([init/1, wait_for_stream/2, wait_for_auth/2, terminate/3]).
 
--record(state, {socket, sender, receiver, streamid}).
+-record(state, {socket, sender, receiver, streamid,
+		user = "", server = "localhost", resource = ""}).
 
 -include("ejabberd.hrl").
 
@@ -101,18 +102,20 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
 	{auth, ID, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
+	    % TODO: digested password
 	    case ejabberd_auth:check_password(U, P) of
 		true ->
 		    % TODO
-		    {next_state, session_established, StateData};
+		    {next_state, session_established,
+		     StateData#state{user = U, resource = R}};
 		_ ->
-		    Err = xml:make_error_iq_reply(El, "404", "Unauthorized"),
+		    Err = jlib:make_error_iq_reply(El, "404", "Unauthorized"),
 		    send_element(StateData#state.sender, Err),
 		    {next_state, wait_for_auth, StateData}
 	    end;
 	_ ->
 	    {next_state, wait_for_auth, StateData}
-end;
+    end;
 
 wait_for_auth({xmlstreamend, Name}, StateData) ->
     % TODO
@@ -121,6 +124,14 @@ wait_for_auth({xmlstreamend, Name}, StateData) ->
 wait_for_auth(closed, StateData) ->
     {stop, normal, StateData}.
 
+session_established({xmlstreamelement, El}, StateData) ->
+    {xmlelement, Name, Attrs, Els} = El,
+    % TODO
+    {next_state, session_established, StateData};
+
+session_established(closed, StateData) ->
+    % TODO
+    {stop, normal, StateData}.
 
 
 
@@ -213,7 +224,7 @@ send_element(Pid, El) ->
     send_text(Pid, xml:element_to_string(El)).
 
 new_id() ->
-    io_lib:format("~p", [random:uniform(65536*65536)]).
+    lists:flatten(io_lib:format("~p", [random:uniform(65536*65536)])).
 
 
 is_auth_packet({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
@@ -255,5 +266,7 @@ get_auth_tags([_ | L], U, P, D, R) ->
     get_auth_tags(L, U, P, D, R);
 get_auth_tags([], U, P, D, R) ->
     {U, P, D, R}.
+
+
 
 
