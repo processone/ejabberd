@@ -15,7 +15,7 @@
 
 %% gen_event callbacks
 -export([init/1, handle_event/2, handle_call/2, handle_info/2, terminate/2,
-	 code_change/3]).
+	 code_change/3, reopen_log/0]).
 
 -record(state, {fd, file}).
 
@@ -88,6 +88,9 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+reopen_log() ->
+    error_logger ! {emulator, noproc, reopen}.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions

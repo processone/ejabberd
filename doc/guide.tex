@@ -1131,6 +1131,8 @@ Options:
 \titem{search} Specifies wheather search is enabled (value is \term{true}, default) or
 disabled (value is \term{false}) by the service. If \term{search} is set to \term{false},
 option \term{host} is ignored and service does not appear in Jabber Discovery items.
+\titem{matches} Limits the number of reported search results. If value is set to
+\term{infinity} then all search results are reported. Default value is \term{30}.
 \end{description}
 
 Example:
@@ -1138,7 +1140,7 @@ Example:
   {modules,
    [
     ...
-    {mod_vcard, [{search, false}]}
+    {mod_vcard, [{search, false}, {matches, 20}]}
     ...
    ]}.
 \end{verbatim}

@@ -17,12 +17,14 @@
 	 store_packet/3,
 	 resend_offline_messages/1,
 	 pop_offline_messages/2,
+	 remove_expired_messages/0,
 	 remove_old_messages/1,
 	 remove_user/1]).
 
+-include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(offline_msg, {user, timestamp, from, to, packet}).
+-record(offline_msg, {user, timestamp, expire, from, to, packet}).
 
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
@@ -32,6 +34,7 @@ start(_) ->
 			[{disc_only_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, offline_msg)}]),
+    update_table(),
     ejabberd_hooks:add(offline_message_hook,
 		       ?MODULE, store_packet, 50),
     ejabberd_hooks:add(offline_subscription_hook,
@@ -92,8 +95,11 @@ store_packet(From, To, Packet) ->
 		true ->
 		    #jid{luser = LUser} = To,
 		    TimeStamp = now(),
+		    {xmlelement, _Name, _Attrs, Els} = Packet,
+		    Expire = find_x_expire(TimeStamp, Els),
 		    ?PROCNAME ! #offline_msg{user = LUser,
 					     timestamp = TimeStamp,
+					     expire = Expire,
 					     from = From,
 					     to = To,
 					     packet = Packet},
@@ -150,6 +156,34 @@ find_x_event([El | Els]) ->
 	    find_x_event(Els)
     end.
 
+find_x_expire(_, []) ->
+    never;
+find_x_expire(TimeStamp, [{xmlcdata, _} | Els]) ->
+    find_x_expire(TimeStamp, Els);
+find_x_expire(TimeStamp, [El | Els]) ->
+    case xml:get_tag_attr_s("xmlns", El) of
+	?NS_EXPIRE ->
+	    case xml:get_tag_attr_s("seconds", El) of
+		Val ->
+		    case catch list_to_integer(Val) of
+		        {'EXIT', _} ->
+			    never;
+			Int when Int > 0 ->
+			    {MegaSecs, Secs, MicroSecs} = TimeStamp,
+			    S = MegaSecs * 1000000 + Secs + Int,
+			    MegaSecs1 = S div 1000000,
+			    Secs1 = S rem 1000000,
+			    {MegaSecs1, Secs1, MicroSecs};
+			_ ->
+			    never
+		    end;
+		_ ->
+		    never
+	    end;
+	_ ->
+	    find_x_expire(TimeStamp, Els)
+    end.
+
 
 resend_offline_messages(User) ->
     LUser = jlib:nodeprep(User),
@@ -187,22 +221,53 @@ pop_offline_messages(Ls, User) ->
 	end,
     case mnesia:transaction(F) of
 	{atomic, Rs} ->
-	    lists:map(
-	      fun(R) ->
-		      {xmlelement, Name, Attrs, Els} = R#offline_msg.packet,
-		      {route,
-		       R#offline_msg.from,
-		       R#offline_msg.to,
-		       {xmlelement, Name, Attrs,
-			Els ++
-			[jlib:timestamp_to_xml(
-			   calendar:now_to_universal_time(
-			     R#offline_msg.timestamp))]}}
-	      end,
-	      Ls ++ lists:keysort(#offline_msg.timestamp, Rs));
+	    TS = now(),
+	    Ls ++ lists:map(
+		    fun(R) ->
+			    {xmlelement, Name, Attrs, Els} = R#offline_msg.packet,
+			    {route,
+			     R#offline_msg.from,
+			     R#offline_msg.to,
+			     {xmlelement, Name, Attrs,
+			      Els ++
+			      [jlib:timestamp_to_xml(
+				 calendar:now_to_universal_time(
+				   R#offline_msg.timestamp))]}}
+		    end,
+		    lists:filter(
+		      fun(R) ->
+			    case R#offline_msg.expire of
+				never ->
+				    true;
+				TimeStamp ->
+				    TS < TimeStamp
+			    end
+		      end,
+		      lists:keysort(#offline_msg.timestamp, Rs)));
 	_ ->
 	    Ls
     end.
+
+remove_expired_messages() ->
+    TimeStamp = now(),
+    F = fun() ->
+		mnesia:write_lock_table(offline_msg),
+		mnesia:foldl(
+		  fun(Rec, _Acc) ->
+			  case Rec#offline_msg.expire of
+			      never ->
+				  ok;
+			      TS ->
+				  if
+				      TS < TimeStamp ->
+					  mnesia:delete_object(Rec);
+				      true ->
+					  ok
+				  end
+			  end
+		  end, ok, offline_msg)
+	end,
+    mnesia:transaction(F).
 
 remove_old_messages(Days) ->
     {MegaSecs, Secs, _MicroSecs} = now(),
@@ -227,3 +292,29 @@ remove_user(User) ->
 		mnesia:delete({offline_msg, LUser})
 	end,
     mnesia:transaction(F).
+
+update_table() ->
+    Fields = record_info(fields, offline_msg),
+    case mnesia:table_info(offline_msg, attributes) of
+	Fields ->
+	    ok;
+	[user, timestamp, from, to, packet] ->
+	    ?INFO_MSG("Converting offline_msg table from "
+		      "{user, timestamp, from, to, packet} format", []),
+	    mnesia:transform_table(
+	      offline_msg,
+	      fun({_, U, TS, F, T, P}) ->
+		      {xmlelement, _Name, _Attrs, Els} = P,
+		      Expire = find_x_expire(TS, Els),
+		      #offline_msg{user = U,
+				   timestamp = TS,
+				   expire = Expire,
+				   from = F,
+				   to = T,
+				   packet = P}
+	      end, Fields);
+	_ ->
+	    ?INFO_MSG("Recreating offline_msg table", []),
+	    mnesia:transform_table(last_activity, ignore, Fields)
+    end.
+

@@ -1,3 +1,30 @@
+2004-09-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* tools/ejabberdctl: Added call to "exec" (thanks to Sergei
+	Golovan)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_vcard.erl: Support for searching of prefix substring and
+	limiting of result items (thanks to Sergei Golovan)
+
+	* src/mod_offline.erl: Support for message expiration (JEP-0023)
+	(thanks to Sergei Golovan)
+	* src/jlib.hrl: Added NS_EXPIRE macros (thanks to Sergei Golovan)
+
+	* src/ejabberd_logger_h.erl: Added reopen_log/0 (thanks to Sergei
+	Golovan)
+
+	* src/ejabberd_ctl.erl: Added return codes, updated "reopen-log"
+	command, added "delete-expired-messages" and "status" commands
+	(thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+2004-09-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Removed useless transactions
+
 2004-08-28  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Fix (thanks to Sander Devrieze)

@@ -22,7 +22,8 @@
 -include("jlib.hrl").
 
 
-%-define(JUD_ALLOW_RETURN_ALL, true)
+%-define(JUD_ALLOW_RETURN_ALL, true).
+-define(JUD_MATCHES, 30).
 
 -record(vcard_search, {user,     luser,
 		       fn,	 lfn,
@@ -234,8 +235,10 @@ set_vcard(User, VCARD) ->
 	    [{xmlcdata, translate:translate(Lang, "Search users in ") ++
 	      jlib:jid_to_string(JID)}]},
 	   {xmlelement, "instructions", [],
-	    [{xmlcdata, translate:translate(Lang, "Fill in fields to search "
-					    "for any matching Jabber User")}]},
+	    [{xmlcdata, translate:translate(Lang, "Fill in the form to search "
+					    "for any matching Jabber User "
+					    "(Add * to the end of field to "
+					    "match substring)")}]},
 	   ?TLFIELD("text-single", "User", "user"),
 	   ?TLFIELD("text-single", "Full Name", "fn"),
 	   ?TLFIELD("text-single", "Name", "given"),
@@ -452,7 +455,17 @@ search(Data) ->
 	    ?ERROR_MSG("~p", [Reason]),
 	    [];
 	Rs ->
-	    Rs
+	    case gen_mod:get_module_opt(?MODULE, matches, 30) of
+		infinity ->
+		    Rs;
+		Val when is_integer(Val) and Val > 0 ->
+		    lists:sublist(Rs, Val);
+		Val ->
+		    ?ERROR_MSG("Illegal option value ~p. "
+			       "Default value ~p substituted.",
+			       [{matches, Val}, ?JUD_MATCHES]),
+		    lists:sublist(Rs, ?JUD_MATCHES)
+	    end
     end.
 
 -else.
@@ -469,7 +482,17 @@ search(Data) ->
 		    ?ERROR_MSG("~p", [Reason]),
 		    [];
 		Rs ->
-		    Rs
+		    case gen_mod:get_module_opt(?MODULE, matches, ?JUD_MATCHES) of
+			infinity ->
+			    Rs;
+			Val when is_integer(Val) and (Val > 0) ->
+			    lists:sublist(Rs, Val);
+			Val ->
+			    ?ERROR_MSG("Illegal option value ~p. "
+				       "Default value ~p substituted.",
+				       [{matches, Val}, ?JUD_MATCHES]),
+			    lists:sublist(Rs, ?JUD_MATCHES)
+		    end
 	    end
     end.
 
@@ -499,24 +522,31 @@ filter_fields([{SVar, [Val]} | Ds], Match)
   when is_list(Val) and (Val /= "") ->
     LVal = stringprep:tolower(Val),
     NewMatch = case SVar of
-                   "user"     -> Match#vcard_search{luser     = LVal};
-                   "fn"       -> Match#vcard_search{lfn       = LVal};
-                   "family"   -> Match#vcard_search{lfamily   = LVal};
-                   "given"    -> Match#vcard_search{lgiven    = LVal};
-                   "middle"   -> Match#vcard_search{lmiddle   = LVal};
-                   "nickname" -> Match#vcard_search{lnickname = LVal};
-                   "bday"     -> Match#vcard_search{lbday     = LVal};
-                   "ctry"     -> Match#vcard_search{lctry     = LVal};
-                   "locality" -> Match#vcard_search{llocality = LVal};
-                   "email"    -> Match#vcard_search{lemail    = LVal};
-                   "orgname"  -> Match#vcard_search{lorgname  = LVal};
-                   "orgunit"  -> Match#vcard_search{lorgunit  = LVal};
+                   "user"     -> Match#vcard_search{luser     = make_val(LVal)};
+                   "fn"       -> Match#vcard_search{lfn       = make_val(LVal)};
+                   "family"   -> Match#vcard_search{lfamily   = make_val(LVal)};
+                   "given"    -> Match#vcard_search{lgiven    = make_val(LVal)};
+                   "middle"   -> Match#vcard_search{lmiddle   = make_val(LVal)};
+                   "nickname" -> Match#vcard_search{lnickname = make_val(LVal)};
+                   "bday"     -> Match#vcard_search{lbday     = make_val(LVal)};
+                   "ctry"     -> Match#vcard_search{lctry     = make_val(LVal)};
+                   "locality" -> Match#vcard_search{llocality = make_val(LVal)};
+                   "email"    -> Match#vcard_search{lemail    = make_val(LVal)};
+                   "orgname"  -> Match#vcard_search{lorgname  = make_val(LVal)};
+                   "orgunit"  -> Match#vcard_search{lorgunit  = make_val(LVal)};
 		   _          -> Match
 	       end,
     filter_fields(Ds, NewMatch);
 filter_fields([_ | Ds], Match) ->
     filter_fields(Ds, Match).
 
+make_val(Val) ->
+    case lists:suffix("*", Val) of
+	true ->
+	    lists:sublist(Val, length(Val) - 1) ++ '_';
+	_ ->
+	    Val
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -74,8 +74,8 @@
 {"You need an x:data capable client to search",
  "Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Search users in ", "Поиск пользователей в "}.
-{"Fill in fields to search for any matching Jabber User",
- "Заполните поля для поиска пользователя Jabber"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)",
+"Заполните форму для поиска пользователя Jabber (Если добавить * в конец поля, то происходит поиск подстроки)"}.
 {"Results of search in ", "Результаты поиска в "}.
 
 {"User",              "Пользователь"}.

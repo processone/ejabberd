@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_roster.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Roster management
 %%% Created : 11 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -90,11 +90,8 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
 
 process_iq_get(From, _To, #iq{sub_el = SubEl} = IQ) ->
     #jid{luser = LUser} = From,
-    F = fun() ->
-		mnesia:index_read(roster, LUser, #roster.user)
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Items} ->
+    case catch mnesia:dirty_index_read(roster, LUser, #roster.user) of
+	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
 	    IQ#iq{type = result,
 		  sub_el = [{xmlelement, "query",
@@ -316,11 +313,8 @@ push_item(User, Resource, From, Item) ->
 
 get_subscription_lists(User) ->
     LUser = jlib:nodeprep(User),
-    F = fun() ->
-		mnesia:index_read(roster, LUser, #roster.user)
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Items} ->
+    case mnesia:dirty_index_read(roster, LUser, #roster.user) of
+	Items when is_list(Items) ->
 	    fill_subscription_lists(Items, [], []);
 	_ ->
 	    {[], []}
