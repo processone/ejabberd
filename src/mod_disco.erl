@@ -133,6 +133,11 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
 		       [feature_to_xml({?NS_XDATA})]}]};
+		["running nodes", ENode, "backup"] -> ?EMPTY_INFO_RESULT;
+		["running nodes", ENode, "backup", _] ->
+		    {iq, ID, result, XMLNS,
+		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		       [feature_to_xml({?NS_XDATA})]}]};
 		["running nodes", ENode, "import"] -> ?EMPTY_INFO_RESULT;
 		["running nodes", ENode, "import", _] ->
 		    {iq, ID, result, XMLNS,
@@ -236,6 +241,7 @@ get_local_items(["running nodes", ENode], Server, Lang) ->
     {result,
      [?NODE("DB", "running nodes/" ++ ENode ++ "/DB"),
       ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules"),
+      ?NODE("Backup Management", "running nodes/" ++ ENode ++ "/backup"),
       ?NODE("Import users from jabberd1.4 spool files",
 	    "running nodes/" ++ ENode ++ "/import")
      ]};
@@ -250,6 +256,17 @@ get_local_items(["running nodes", ENode, "modules"], Server, Lang) ->
      ]};
 
 get_local_items(["running nodes", ENode, "modules", _], Server, Lang) ->
+    {result, []};
+
+get_local_items(["running nodes", ENode, "backup"], Server, Lang) ->
+    {result,
+     [?NODE("Backup", "running nodes/" ++ ENode ++ "/backup/backup"),
+      ?NODE("Restore", "running nodes/" ++ ENode ++ "/backup/restore"),
+      ?NODE("Dump to Text File",
+	    "running nodes/" ++ ENode ++ "/backup/textfile")
+     ]};
+
+get_local_items(["running nodes", ENode, "backup", _], Server, Lang) ->
     {result, []};
 
 get_local_items(["running nodes", ENode, "import"], Server, Lang) ->

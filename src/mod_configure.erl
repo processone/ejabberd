@@ -211,6 +211,60 @@ get_form(["running nodes", ENode, "modules", "start"], Lang) ->
 	      }
 	     ]};
 
+get_form(["running nodes", ENode, "backup", "backup"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Backup to File")}]},
+	      {xmlelement, "instructions", [],
+	       [{xmlcdata,
+	         translate:translate(
+	           Lang, "Enter path to backup file")}]},
+	      {xmlelement, "field", [{"type", "text-single"},
+				     {"label",
+				      translate:translate(
+					Lang, "Path to File")},
+				     {"var", "path"}],
+	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	      }
+	     ]};
+
+get_form(["running nodes", ENode, "backup", "restore"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Restore Backup from File")}]},
+	      {xmlelement, "instructions", [],
+	       [{xmlcdata,
+	         translate:translate(
+	           Lang, "Enter path to backup file")}]},
+	      {xmlelement, "field", [{"type", "text-single"},
+				     {"label",
+				      translate:translate(
+					Lang, "Path to File")},
+				     {"var", "path"}],
+	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	      }
+	     ]};
+
+get_form(["running nodes", ENode, "backup", "textfile"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "Dump Backup to Text File")}]},
+	      {xmlelement, "instructions", [],
+	       [{xmlcdata,
+	         translate:translate(
+	           Lang, "Enter path to text file")}]},
+	      {xmlelement, "field", [{"type", "text-single"},
+				     {"label",
+				      translate:translate(
+					Lang, "Path to File")},
+				     {"var", "path"}],
+	       [{xmlelement, "value", [], [{xmlcdata, ""}]}]
+	      }
+	     ]};
+
 get_form(["running nodes", ENode, "import", "file"], Lang) ->
     {result, [{xmlelement, "title", [],
 	       [{xmlcdata,
@@ -428,6 +482,76 @@ set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
     end;
 
 
+set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    case lists:keysearch("path", 1, XData) of
+		false ->
+		    {error, "406", "Not Acceptable"};
+		{value, {_, [String]}} ->
+		    case rpc:call(Node, mnesia, backup, [String]) of
+			{badrpc, Reason} ->
+			    {error, "500", "Internal Server Error"};
+			{error, Reason} ->
+			    {error, "500", "Internal Server Error"};
+			_ ->
+			    {result, []}
+			end;
+		_ ->
+		    {error, "406", "Not Acceptable"}
+	    end
+    end;
+
+
+set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    case lists:keysearch("path", 1, XData) of
+		false ->
+		    {error, "406", "Not Acceptable"};
+		{value, {_, [String]}} ->
+		    case rpc:call(Node, mnesia, restore,
+				  [String, [{default_op, keep_tables}]]) of
+			{badrpc, Reason} ->
+			    {error, "500", "Internal Server Error"};
+			{error, Reason} ->
+			    {error, "500", "Internal Server Error"};
+			_ ->
+			    {result, []}
+			end;
+		_ ->
+		    {error, "406", "Not Acceptable"}
+	    end
+    end;
+
+
+set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
+    case search_running_node(ENode) of
+	false ->
+	    {error, "404", "Not Found"};
+	Node ->
+	    case lists:keysearch("path", 1, XData) of
+		false ->
+		    {error, "406", "Not Acceptable"};
+		{value, {_, [String]}} ->
+		    case rpc:call(Node, mnesia, dump_to_textfile, [String]) of
+			{badrpc, Reason} ->
+			    {error, "500", "Internal Server Error"};
+			{error, Reason} ->
+			    {error, "500", "Internal Server Error"};
+			_ ->
+			    {result, []}
+			end;
+		_ ->
+		    {error, "406", "Not Acceptable"}
+	    end
+    end;
+
+
 set_form(["running nodes", ENode, "import", "file"], Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
@@ -437,7 +561,8 @@ set_form(["running nodes", ENode, "import", "file"], Lang, XData) ->
 		false ->
 		    {error, "406", "Not Acceptable"};
 		{value, {_, [String]}} ->
-		    rpc:call(Node, jd2ejd, import_file, [String]);
+		    rpc:call(Node, jd2ejd, import_file, [String]),
+		    {result, []};
 		_ ->
 		    {error, "406", "Not Acceptable"}
 	    end
