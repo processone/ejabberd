@@ -12,6 +12,7 @@ ERLSHLIBS = expat_erl.so
 
 all:	$(ERLSHLIBS)
 	erl -s make all report -noinput -s erlang halt
+	cd stringprep; make
 
 $(ERLSHLIBS):	%.so:	%.c
 			gcc -Wall $(INCLUDES) $(LIBDIRS) \

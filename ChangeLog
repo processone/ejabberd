@@ -1,3 +1,13 @@
+2003-09-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/stringprep_drv.c: Added support for nameprep,
+	nodeprep and resourceprep
+	* src/stringprep/stringprep.erl: Likewise
+
+	* src/ejabberd_sup.erl: Added loading of stringprep
+
+	* src/ejabberd_sm.erl: Cleanup
+
 2003-09-26  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/stringprep/: Support for stringprep (not completed yet)

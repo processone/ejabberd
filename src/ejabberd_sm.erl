@@ -63,8 +63,6 @@ loop() ->
 	    loop();
 	{open_session, User, Resource, From} ->
 	    register_connection(User, Resource, From),
-	    %replace_and_register_my_connection(User, Resource, From),
-	    %replace_alien_connection(User, Resource),
 	    loop();
 	{close_session, User, Resource} ->
 	    remove_connection(User, Resource),
@@ -133,31 +131,6 @@ register_connection(User, Resource, Pid) ->
     end.
 
 
-
-replace_alien_connection(User, Resource) ->
-    LUser = jlib:tolower(User),
-    F = fun() ->
-		UR = {LUser, Resource},
-		Es = mnesia:read({session, UR}),
-		mnesia:write(#session{ur = UR, user = LUser, node = node()}),
-		Es
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    lists:foreach(
-	      fun(R) ->
-		      if R#session.node /= node() ->
-			      {ejabberd_sm, R#session.node} !
-				  {replace, User, Resource};
-			 true ->
-			      ok
-		      end
-	      end, Rs);
-	_ ->
-	    false
-    end.
-
-
 replace_my_connection(User, Resource) ->
     LUser = jlib:tolower(User),
     F = fun() ->
@@ -176,6 +149,7 @@ replace_my_connection(User, Resource) ->
 	    false
     end.
 
+
 remove_connection(User, Resource) ->
     LUser = jlib:tolower(User),
     F = fun() ->
@@ -184,24 +158,6 @@ remove_connection(User, Resource) ->
 		mnesia:delete({session, UR})
         end,
     mnesia:transaction(F).
-
-replace_and_register_my_connection(User, Resource, Pid) ->
-    LUser = jlib:tolower(User),
-    F = fun() ->
-		UR = {LUser, Resource},
-		Es = mnesia:read({local_session, UR}),
-		mnesia:write(#local_session{ur = UR, pid = Pid}),
-		Es
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    lists:foreach(
-	      fun(R) ->
-		      R#local_session.pid ! replaced
-	      end, Rs);
-	_ ->
-	    false
-    end.
 
 
 clean_table_from_bad_node(Node) ->
@@ -426,7 +382,7 @@ process_iq(From, To, Packet) ->
 					  From, To, IQ);
 		[] ->
 		    Err = jlib:make_error_reply(
-			    Packet, "501", "Not Implemented"),
+			    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
 		    ejabberd_router ! {route, To, From, Err}
 	    end;
 	reply ->

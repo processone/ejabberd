@@ -49,6 +49,13 @@ init([]) ->
 		infinity,
 		supervisor,
 		[ejabberd_listener]},
+    StringPrep =
+	{stringprep,
+	 {stringprep, start_link, []},
+	 permanent,
+	 brutal_kill,
+	 worker,
+	 [stringprep]},
     C2SSupervisor =
 	{ejabberd_c2s_sup,
 	 {ejabberd_tmp_sup, start_link, [ejabberd_c2s_sup, ejabberd_c2s]},
@@ -90,6 +97,7 @@ init([]) ->
 	 [ejabberd_tmp_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Router, SM, S2S, Local,
+	   StringPrep,
 	   C2SSupervisor,
 	   S2SInSupervisor,
 	   S2SOutSupervisor,

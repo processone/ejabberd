@@ -7,6 +7,10 @@
 
 #include "uni_data.c"
 
+#define NAMEPREP_COMMAND 1
+#define NODEPREP_COMMAND 2
+#define RESOURCEPREP_COMMAND 3
+
 typedef struct {
       ErlDrvPort port;
 } stringprep_data;
@@ -17,7 +21,7 @@ static ErlDrvData stringprep_erl_start(ErlDrvPort port, char *buff)
    stringprep_data* d = (stringprep_data*)driver_alloc(sizeof(stringprep_data));
    d->port = port;
 
-   set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
+   //set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
    
    return (ErlDrvData)d;
 }
@@ -32,18 +36,42 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 				  char *buf, int len,
 				  char **rbuf, int rlen)
 {
-   int i, j=0;
+   int i, j=1;
    unsigned char c;
    int bad = 0;
    int uc, ruc;
    int size;
    int info;
-   ErlDrvBinary *b;
+   int prohibit, tolower;
    char *rstring;
 
-   size = len;
+   size = len + 1;
 
-   rstring = malloc(size);
+   rstring = driver_alloc(size);
+   rstring[0] = 0;
+
+   switch (command)
+   {
+      case 0:
+	 prohibit = ACMask;
+	 tolower = 1;
+	 break;
+
+      case NAMEPREP_COMMAND:
+	 prohibit = ACMask;
+	 tolower = 1;
+	 break;
+
+      case NODEPREP_COMMAND:
+	 prohibit = ACMask | C11Mask | C21Mask | XNPMask;
+	 tolower = 1;
+	 break;
+
+      case RESOURCEPREP_COMMAND:
+	 prohibit = ACMask | C21Mask;
+	 tolower = 0;
+	 break;
+   }
 
    for(i=0; i < len; i++)
    {
@@ -74,48 +102,55 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       }
 
       if(bad) {
-	 *rbuf = (char*)(b = driver_alloc_binary(1));
-	 b->orig_bytes[0] = 0;
-	 free(rstring);
+	 *rbuf = rstring;
 	 return 1;
       }
       
-      
       info = GetUniCharInfo(uc);
-      ruc = uc + GetDelta(info);
+      if(info & prohibit) {
+	 *rbuf = rstring;
+	 return 1;
+      }
 
-      if(ruc < 0x80) {
-	 if(j >= size) {
-	    size = 2*size + 1;
-	    rstring = realloc(rstring, size);
+
+      if(!(info & B1Mask)) 
+      {
+	 if(tolower) {
+	    ruc = uc + GetDelta(info);
+	 } else {
+	    ruc = uc;
 	 }
-	 rstring[j] = (char) ruc;
-	 j++;
-      } else if(ruc < 0x7FF) {
-	 if(j >= size) {
-	    size = 2*size + 2;
-	    rstring = realloc(rstring, size);
+
+	 if(ruc < 0x80) {
+	    if(j >= size) {
+	       size = 2*size + 1;
+	       rstring = driver_realloc(rstring, size);
+	    }
+	    rstring[j] = (char) ruc;
+	    j++;
+	 } else if(ruc < 0x7FF) {
+	    if(j + 1 >= size) {
+	       size = 2*size + 2;
+	       rstring = driver_realloc(rstring, size);
+	    }
+	    rstring[j] = (char) ((ruc >> 6) | 0xC0);
+	    rstring[j+1] = (char) ((ruc | 0x80) & 0xBF);
+	    j += 2;
+	 } else if(ruc < 0xFFFF) {
+	    if(j + 2 >= size) {
+	       size = 2*size + 3;
+	       rstring = driver_realloc(rstring, size);
+	    }
+	    rstring[j] = (char) ((ruc >> 12) | 0xE0);
+	    rstring[j+1] = (char) (((ruc >> 6) | 0x80) & 0xBF);
+	    rstring[j+2] = (char) ((ruc | 0x80) & 0xBF);
+	    j += 3;
 	 }
-	 rstring[j] = (char) ((ruc >> 6) | 0xC0);
-	 rstring[j+1] = (char) ((ruc | 0x80) & 0xBF);
-	 j += 2;
-      } else if(ruc < 0xFFFF) {
-	 if(j >= size) {
-	    size = 2*size + 3;
-	    rstring = realloc(rstring, size);
-	 }
-	 rstring[j] = (char) ((ruc >> 12) | 0xE0);
-	 rstring[j+1] = (char) (((ruc >> 6) | 0x80) & 0xBF);
-	 rstring[j+2] = (char) ((ruc | 0x80) & 0xBF);
-	 j += 3;
       }
    }
    
-   
-   
-   *rbuf = (char*)(b = driver_alloc_binary(j));
-   memcpy(b->orig_bytes, rstring, j);
-   free(rstring);
+   rstring[0] = 1;
+   *rbuf = rstring;
    
    return j;
 }
@@ -123,18 +158,18 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 
 
 ErlDrvEntry stringprep_driver_entry = {
-   NULL,                       /* F_PTR init, N/A */
-   stringprep_erl_start,          /* L_PTR start, called when port is opened */
-   stringprep_erl_stop,           /* F_PTR stop, called when port is closed */
-   NULL,         /* F_PTR output, called when erlang has sent */
-   NULL,                       /* F_PTR ready_input, called when input descriptor ready */
-   NULL,                       /* F_PTR ready_output, called when output descriptor ready */
-   "stringprep_drv",              /* char *driver_name, the argument to open_port */
-   NULL,                       /* F_PTR finish, called when unloaded */
-   NULL,                       /* handle */
-   stringprep_erl_control,          /* F_PTR control, port_command callback */
-   NULL,                       /* F_PTR timeout, reserved */
-   NULL                        /* F_PTR outputv, reserved */
+   NULL,			/* F_PTR init, N/A */
+   stringprep_erl_start,	/* L_PTR start, called when port is opened */
+   stringprep_erl_stop,		/* F_PTR stop, called when port is closed */
+   NULL,			/* F_PTR output, called when erlang has sent */
+   NULL,			/* F_PTR ready_input, called when input descriptor ready */
+   NULL,			/* F_PTR ready_output, called when output descriptor ready */
+   "stringprep_drv",		/* char *driver_name, the argument to open_port */
+   NULL,			/* F_PTR finish, called when unloaded */
+   NULL,			/* handle */
+   stringprep_erl_control,	/* F_PTR control, port_command callback */
+   NULL,			/* F_PTR timeout, reserved */
+   NULL				/* F_PTR outputv, reserved */
 };
 
 #ifdef WIN32

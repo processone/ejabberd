@@ -12,7 +12,11 @@
 
 -behaviour(gen_server).
 
--export([start/0, start_link/0, tolower/1]).
+-export([start/0, start_link/0,
+	 tolower/1,
+	 nameprep/1,
+	 nodeprep/1,
+	 resourceprep/1]).
 
 %% Internal exports, call-back functions.
 -export([init/1,
@@ -22,7 +26,9 @@
 	 code_change/3,
 	 terminate/2]).
 
-
+-define(NAMEPREP_COMMAND, 1).
+-define(NODEPREP_COMMAND, 2).
+-define(RESOURCEPREP_COMMAND, 3).
 
 start() ->
     gen_server:start({local, ?MODULE}, ?MODULE, [], []).
@@ -66,9 +72,23 @@ terminate(_Reason, Port) ->
 
 
 tolower(String) ->
+    control(0, String).
+
+nameprep(String) ->
+    control(?NAMEPREP_COMMAND, String).
+
+nodeprep(String) ->
+    control(?NODEPREP_COMMAND, String).
+
+resourceprep(String) ->
+    control(?RESOURCEPREP_COMMAND, String).
+
+control(Command, String) ->
     [{port, Port} | _] = ets:lookup(stringprep_table, port),
-    Res = port_control(Port, 1, String),
-    binary_to_list(Res).
+    case port_control(Port, Command, String) of
+	[0 | _] -> error;
+	[1 | Res] -> Res
+    end.
 
 
 
