@@ -2,7 +2,7 @@
 %%% File    : mod_disco.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : 
-%%% Created :  1 Jan 2003 by Alexey Shchepin <alex@alex.sevcom.net>
+%%% Created :  1 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
@@ -18,9 +18,7 @@
 	 register_feature/1]).
 
 -include("ejabberd.hrl").
-
--define(NS_DISCO_ITEMS, "http://jabber.org/protocol/disco#items").
--define(NS_DISCO_INFO, "http://jabber.org/protocol/disco#info").
+-include("namespaces.hrl").
 
 -define(EMPTY_INFO_RESULT,
 	{iq, ID, result, XMLNS, [{xmlelement, "query",
@@ -56,7 +54,9 @@ process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	get ->
 	    case xml:get_tag_attr_s("node", SubEl) of
 		"" ->
-		    Domains = [],
+		    Domains =
+			lists:map(fun domain_to_xml/1,
+				  ejabberd_router:dirty_get_all_routes()),
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement,
 		       "query",
@@ -123,6 +123,9 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 
 feature_to_xml({Feature}) ->
     {xmlelement, "feature", [{"var", Feature}], []}.
+
+domain_to_xml(Domain) ->
+    {xmlelement, "item", [{"jid", Domain}], []}.
 
 
 get_online_users() ->

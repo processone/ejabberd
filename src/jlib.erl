@@ -25,8 +25,7 @@
 	 get_iq_namespace/1,
 	 iq_query_info/1,
 	 is_iq_request_type/1,
-	 iq_to_xml/1,
-	 get_subtag/2]).
+	 iq_to_xml/1]).
 
 
 %send_iq(From, To, ID, SubTags) ->
@@ -247,19 +246,5 @@ iq_to_xml({iq, ID, Type, _, SubEl}) ->
 	    {xmlelement, "iq",
 	     [{"type", iq_type_to_string(Type)}], SubEl}
     end.
-
-
-get_subtag({xmlelement, _, _, Els}, Name) ->
-    get_subtag1(Els, Name).
-
-get_subtag1([El | Els], Name) ->
-    case El of
-	{xmlelement, Name, _, _} ->
-	    El;
-	_ ->
-	    get_subtag1(Els, Name)
-    end;
-get_subtag1([], _) ->
-    false.
 
 

@@ -10,7 +10,8 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([route/3, register_route/1, register_local_route/1]).
+-export([route/3, register_route/1, register_local_route/1,
+	 dirty_get_all_routes/0]).
 
 -export([start/0, init/0]).
 
@@ -90,7 +91,7 @@ do_route(From, To, Packet) ->
 		    [] ->
 			case mnesia:read({route, DstDomain}) of
 			    [] ->
-				error;
+				false;
 			    [R] ->
 				{ok, R#route.node, R#route.pid}
 			end;
@@ -99,7 +100,7 @@ do_route(From, To, Packet) ->
 		end
 	end,
     case mnesia:transaction(F) of
-	{atomic, error} ->
+	{atomic, false} ->
 	    ejabberd_s2s ! {route, From, To, Packet};
 	{atomic, {ok, Node, Pid}} ->
 	    case node() of
@@ -124,4 +125,10 @@ register_route(Domain) ->
 
 register_local_route(Domain) ->
     ejabberd_router ! {register_local_route, Domain, self()}.
+
+
+dirty_get_all_routes() ->
+    lists:delete(?MYNAME,
+		 lists:umerge(lists:sort(mnesia:dirty_all_keys(route)),
+			      lists:sort(mnesia:dirty_all_keys(local_route)))).
 

@@ -24,6 +24,7 @@
 	 terminate/3]).
 
 -include("ejabberd.hrl").
+-include("namespaces.hrl").
 
 -define(SETS, gb_sets).
 
@@ -288,6 +289,18 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				StateData
 			end,
 		{false, Attrs, NewSt};
+	    "iq" ->
+		IQ = jlib:iq_query_info(Packet),
+		case IQ of
+		    {iq, ID, Type, ?NS_VCARD, SubEl} ->
+			ResIQ = mod_vcard:process_sm_iq(From, To, IQ),
+			ejabberd_router:route(To,
+					      From,
+					      jlib:iq_to_xml(ResIQ)),
+			{false, Attrs, StateData};
+		    _ ->
+			{true, Attrs, StateData}
+		end;
 	    _ ->
 		{true, Attrs, StateData}
 	end,
@@ -315,6 +328,14 @@ terminate(Reason, StateName, StateData) ->
 	    ejabberd_sm:close_session(StateData#state.user,
 				      StateData#state.resource)
     end,
+    From = {StateData#state.user,
+	    StateData#state.server,
+	    StateData#state.resource},
+    Packet = {xmlelement, "presence", [{"type", "unavailable"}], []},
+    ejabberd_sm:unset_presence(StateData#state.user,
+			       StateData#state.resource),
+    presence_broadcast(From, StateData#state.pres_a, Packet),
+    presence_broadcast(From, StateData#state.pres_i, Packet),
     StateData#state.sender ! close,
     ok.
 
@@ -463,7 +484,7 @@ presence_update(From, Packet, StateData) ->
 	"unsubscribed" ->
 	    StateData;
 	_ ->
-	    update_priority(jlib:get_subtag(Packet, "priority"), StateData),
+	    update_priority(xml:get_subtag(Packet, "priority"), StateData),
 	    FromUnavail = (StateData#state.pres_last == undefined) or
 		StateData#state.pres_invis,
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),

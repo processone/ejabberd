@@ -23,6 +23,7 @@ start() ->
     mod_register:start(),
     mod_roster:start(),
     mod_disco:start(),
+    mod_vcard:start(),
     ok.
 
 init() ->

@@ -25,9 +25,9 @@ init() ->
 process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
-	    UTag = jlib:get_subtag(SubEl, "username"),
-	    PTag = jlib:get_subtag(SubEl, "password"),
-	    RTag = jlib:get_subtag(SubEl, "remove"),
+	    UTag = xml:get_subtag(SubEl, "username"),
+	    PTag = xml:get_subtag(SubEl, "password"),
+	    RTag = xml:get_subtag(SubEl, "remove"),
 	    if
 		(UTag /= false) and (RTag /= false) ->
 		    {iq, ID, error, XMLNS,

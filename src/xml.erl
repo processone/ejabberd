@@ -13,7 +13,9 @@
 -export([element_to_string/1, crypt/1, remove_cdata/1,
 	 get_cdata/1, get_tag_cdata/1,
 	 get_attr/2, get_attr_s/2,
-	 get_tag_attr/2, get_tag_attr_s/2]).
+	 get_tag_attr/2, get_tag_attr_s/2,
+	 get_subtag/2,
+	 get_path_s/2]).
 
 element_to_string(El) ->
     case El of
@@ -99,4 +101,33 @@ get_tag_attr(AttrName, {xmlelement, Name, Attrs, Els}) ->
 
 get_tag_attr_s(AttrName, {xmlelement, Name, Attrs, Els}) ->
     get_attr_s(AttrName, Attrs).
+
+
+get_subtag({xmlelement, _, _, Els}, Name) ->
+    get_subtag1(Els, Name).
+
+get_subtag1([El | Els], Name) ->
+    case El of
+	{xmlelement, Name, _, _} ->
+	    El;
+	_ ->
+	    get_subtag1(Els, Name)
+    end;
+get_subtag1([], _) ->
+    false.
+
+
+get_path_s(El, []) ->
+    El;
+get_path_s(El, [{elem, Name} | Path]) ->
+    case get_subtag(El, Name) of
+	false ->
+	    "";
+	SubEl ->
+	    get_path_s(SubEl, Path)
+    end;
+get_path_s(El, [{attr, Name}]) ->
+    get_tag_attr_s(Name, El);
+get_path_s(El, [cdata]) ->
+    get_tag_cdata(El).
 
