@@ -16,7 +16,8 @@
 	 unset_presence/2,
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
-	 register_iq_handler/3]).
+	 register_iq_handler/3,
+	 register_iq_handler/4]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -72,6 +73,9 @@ loop() ->
 	    loop();
 	{register_iq_handler, XMLNS, Module, Function} ->
 	    ets:insert(sm_iqtable, {XMLNS, Module, Function}),
+	    loop();
+	{register_iq_handler, XMLNS, Module, Function, Opts} ->
+	    ets:insert(sm_iqtable, {XMLNS, Module, Function, Opts}),
 	    loop();
 	_ ->
 	    loop()
@@ -363,6 +367,9 @@ process_iq(From, To, Packet) ->
 			true ->
 			    ok
 		    end;
+		[{_, Module, Function, Opts}] ->
+		    gen_iq_handler:handle(Module, Function, Opts,
+					  From, To, IQ);
 		[] ->
 		    Err = jlib:make_error_reply(
 			    Packet, "501", "Not Implemented"),
@@ -378,4 +385,7 @@ process_iq(From, To, Packet) ->
 
 register_iq_handler(XMLNS, Module, Fun) ->
     ejabberd_sm ! {register_iq_handler, XMLNS, Module, Fun}.
+
+register_iq_handler(XMLNS, Module, Fun, Opts) ->
+    ejabberd_sm ! {register_iq_handler, XMLNS, Module, Fun, Opts}.
 

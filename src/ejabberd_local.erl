@@ -12,7 +12,8 @@
 
 -export([start/0, init/0]).
 
--export([register_iq_handler/3]).
+-export([register_iq_handler/3,
+	 register_iq_handler/4]).
 
 -include("ejabberd.hrl").
 
@@ -20,17 +21,17 @@
 
 start() ->
     register(ejabberd_local, spawn(ejabberd_local, init, [])),
-    mod_register:start(),
-    mod_roster:start(),
-    mod_configure:start(),
-    mod_disco:start(),
-    mod_stats:start(),
-    mod_vcard:start(),
-    mod_offline:start(),
-    mod_echo:start(),
-    mod_private:start(),
-    mod_time:start(),
-    mod_version:start(),
+    %mod_register:start(one_queue),
+    %mod_roster:start(one_queue),
+    %mod_configure:start(one_queue),
+    %mod_disco:start(one_queue),
+    %mod_stats:start(one_queue),
+    %mod_vcard:start(one_queue),
+    %mod_offline:start(),
+    %mod_echo:start(),
+    %mod_private:start(one_queue),
+    %mod_time:start(one_queue),
+    %mod_version:start(one_queue),
     ok.
 
 init() ->
@@ -46,6 +47,10 @@ loop(State) ->
 	    loop(State);
 	{register_iq_handler, XMLNS, Module, Function} ->
 	    ets:insert(State#state.iqtable, {XMLNS, Module, Function}),
+	    mod_disco:register_feature(XMLNS),
+	    loop(State);
+	{register_iq_handler, XMLNS, Module, Function, Opts} ->
+	    ets:insert(State#state.iqtable, {XMLNS, Module, Function, Opts}),
 	    mod_disco:register_feature(XMLNS),
 	    loop(State)
     end.
@@ -82,7 +87,6 @@ process_iq(State, From, To, Packet) ->
 	{iq, ID, Type, XMLNS, SubEl} ->
 	    case jlib:is_iq_request_type(Type) of
 		true ->
-		    % TODO
 		    case ets:lookup(State#state.iqtable, XMLNS) of
 			[{_, Module, Function}] ->
 			    ResIQ = apply(Module, Function, [From, To, IQ]),
@@ -95,6 +99,9 @@ process_iq(State, From, To, Packet) ->
 				true ->
 				    ok
 			    end;
+			[{_, Module, Function, Opts}] ->
+			    gen_iq_handler:handle(Module, Function, Opts,
+						  From, To, IQ);
 			[] ->
 			    Err = jlib:make_error_reply(
 				    Packet, "501", "Not Implemented"),
@@ -118,3 +125,6 @@ process_iq(State, From, To, Packet) ->
 
 register_iq_handler(XMLNS, Module, Fun) ->
     ejabberd_local ! {register_iq_handler, XMLNS, Module, Fun}.
+
+register_iq_handler(XMLNS, Module, Fun, Opts) ->
+    ejabberd_local ! {register_iq_handler, XMLNS, Module, Fun, Opts}.

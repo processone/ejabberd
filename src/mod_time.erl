@@ -10,19 +10,16 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0,
+-export([start/1,
 	 process_local_iq/3]).
 
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
 
 
-
-
-start() ->
-    ejabberd_local:register_iq_handler(?NS_TIME,
-				       ?MODULE, process_local_iq).
-
+start(Type) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_TIME,
+				  ?MODULE, process_local_iq, Type).
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->

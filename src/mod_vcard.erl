@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0,
+-export([start/1, init/0,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 reindex_vcards/0]).
@@ -35,7 +35,7 @@
 -record(vcard, {user, vcard}).
 
 
-start() ->
+start(Type) ->
     mnesia:create_table(vcard, [{disc_only_copies, [node()]},
 				{attributes, record_info(fields, vcard)}]),
     mnesia:create_table(vcard_search,
@@ -53,10 +53,10 @@ start() ->
     mnesia:add_table_index(vcard_search, lorgname),
     mnesia:add_table_index(vcard_search, lorgunit),
 
-    ejabberd_local:register_iq_handler(?NS_VCARD,
-				       ?MODULE, process_local_iq),
-    ejabberd_sm:register_iq_handler(?NS_VCARD,
-        			    ?MODULE, process_sm_iq),
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_VCARD,
+				  ?MODULE, process_local_iq, Type),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_VCARD,
+				  ?MODULE, process_sm_iq, Type),
     spawn(?MODULE, init, []).
 
 

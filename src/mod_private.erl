@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0,
+-export([start/1,
 	 process_local_iq/3]).
 
 -include("ejabberd.hrl").
@@ -18,11 +18,12 @@
 
 -record(private_storage, {userns, xml}).
 
-start() ->
+start(Type) ->
     mnesia:create_table(private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, private_storage)}]),
-    ejabberd_local:register_iq_handler(?NS_PRIVATE, ?MODULE, process_local_iq).
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_PRIVATE,
+				  ?MODULE, process_local_iq, Type).
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->

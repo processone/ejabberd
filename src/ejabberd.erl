@@ -35,6 +35,7 @@ init() ->
     ejabberd_s2s:start(),
     ejabberd_local:start(),
     ejabberd_listener:start(),
+    load_modules(),
     loop(Port).
 
 
@@ -53,3 +54,14 @@ db_init() ->
     end,
     mnesia:start(),
     mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
+
+load_modules() ->
+    case ejabberd_config:get_local_option(modules) of
+	undefined ->
+	    ok;
+	Modules ->
+	    lists:foreach(fun({Module, Args}) ->
+				  apply(Module, start, Args)
+			  end, Modules)
+    end.
+

@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0,
+-export([start/1,
 	 process_local_iq/3,
 	 process_sm_iq/3]).
 
@@ -18,11 +18,11 @@
 -include("namespaces.hrl").
 
 
-start() ->
-    ejabberd_local:register_iq_handler(?NS_XDATA,
-				       ?MODULE, process_local_iq),
-    ejabberd_sm:register_iq_handler(?NS_XDATA,
-				    ?MODULE, process_sm_iq),
+start(Type) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_XDATA,
+				  ?MODULE, process_local_iq, Type),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_XDATA,
+				  ?MODULE, process_sm_iq, Type),
     ok.
 
 
@@ -163,7 +163,7 @@ get_form(["config", "hostname"], Lang) ->
     {result, [{xmlelement, "title", [],
 	       [{xmlcdata,
 		 translate:translate(
-		   Lang, "DB Tables Configuration")}]},
+		   Lang, "Hostname Configuration")}]},
 	      {xmlelement, "instructions", [],
 	       [{xmlcdata,
 		 translate:translate(
@@ -173,6 +173,30 @@ get_form(["config", "hostname"], Lang) ->
 				      translate:translate(Lang, "Host name")},
 				     {"var", "hostname"}],
 	       [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
+	     ]};
+
+get_form(["config", "acls"], Lang) ->
+    {result, [{xmlelement, "title", [],
+	       [{xmlcdata,
+		 translate:translate(
+		   Lang, "ACLs Configuration")}]},
+	      %{xmlelement, "instructions", [],
+	      % [{xmlcdata,
+	      %   translate:translate(
+	      %     Lang, "")}]},
+	      {xmlelement, "field", [{"type", "text-multi"},
+				     {"label",
+				      translate:translate(Lang, "ACLs")},
+				     {"var", "acls"}],
+	       lists:map(fun(S) ->
+				 {xmlelement, "value", [], [{xmlcdata, S}]}
+			 end,
+			 string:tokens(
+			   lists:flatten(io_lib:format("~p",
+						       [ets:tab2list(acls)])),
+			   "\n"))
+		%{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}
+	      }
 	     ]};
 
 get_form(_, Lang) ->
@@ -324,6 +348,18 @@ get_sm_form(User, [], Lang) ->
 	      % [{xmlcdata,
 	      %   translate:translate(
 	      %     Lang, "Choose host name")}]},
+	      {xmlelement, "field",
+	       [{"type", "list-single"},
+		{"label", translate:translate(Lang, "Action on user")},
+		{"var", "action"}],
+	       [{xmlelement, "value", [], [{xmlcdata, "edit"}]},
+		{xmlelement, "option",
+		 [{"label", translate:translate(Lang, "Edit Properties")}],
+		 [{xmlelement, "value", [], [{xmlcdata, "edit"}]}]},
+		{xmlelement, "option",
+		 [{"label", translate:translate(Lang, "Remove User")}],
+		 [{xmlelement, "value", [], [{xmlcdata, "remove"}]}]}
+	       ]},
 	      ?XFIELD("text-private", "Password", "password",
 		      ejabberd_auth:get_password_s(User))
 	      %{xmlelement, "field", [{"type", "text-single"},

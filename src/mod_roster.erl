@@ -12,8 +12,9 @@
 
 -export([]).
 
--export([start/0, init/0,
+-export([start/1,
 	 process_iq/3,
+	 process_local_iq/3,
 	 get_subscription_lists/1,
 	 in_subscription/3,
 	 out_subscription/3]).
@@ -32,40 +33,19 @@
 		 xattrs = [],
 		 xs = []}).
 
--define(ME, ejabberd_mod_roster).
-
-start() ->
-    register(?ME, spawn(mod_roster, init, [])).
-
-init() ->
+start(Type) ->
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
     mnesia:add_table_index(roster, user),
-    ejabberd_local:register_iq_handler(?NS_ROSTER,
-				       ?MODULE, process_iq),
-    loop().
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_ROSTER,
+				  ?MODULE, process_local_iq, Type).
 
-loop() ->
-    receive
-	{process_iq, From, To, {iq, ID, Type, XMLNS, SubEl}} ->
-	    case Type of
-		set ->
-		    ResIQ = process_iq_set(From, To,
-					   {iq, ID, Type, XMLNS, SubEl}),
-		    ejabberd_router ! {route,
-				       To,
-				       From,
-				       jlib:iq_to_xml(ResIQ)},
-		    loop();
-		get ->
-		    ResIQ = process_iq_get(From, To,
-					   {iq, ID, Type, XMLNS, SubEl}),
-		    ejabberd_router ! {route,
-				       To,
-				       From,
-				       jlib:iq_to_xml(ResIQ)},
-		    loop()
-	    end
+process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->
+    case Type of
+	set ->
+	    process_iq_set(From, To, IQ);
+	get ->
+	    process_iq_get(From, To, IQ)
     end.
 
 
@@ -75,7 +55,7 @@ process_iq(From, To, IQ) ->
     {_, Server, _} = From,
     case ?MYNAME of
 	Server ->
-	    ?ME ! {process_iq, From, To, IQ},
+	    process_local_iq(From, To, IQ),
 	    ignore;
 	_ ->
 	    {iq, ID, error, XMLNS,

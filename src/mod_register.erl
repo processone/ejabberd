@@ -10,13 +10,14 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0, process_iq/3]).
+-export([start/1, init/0, process_iq/3]).
 
 -include("ejabberd.hrl").
+-include("namespaces.hrl").
 
-start() ->
-    ejabberd_local:register_iq_handler("jabber:iq:register",
-				       ?MODULE, process_iq),
+start(Type) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_REGISTER,
+				  ?MODULE, process_iq, Type),
     ok.
 
 init() ->

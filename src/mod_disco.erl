@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0,
+-export([start/1,
 	 process_local_iq_items/3,
 	 process_local_iq_info/3,
 	 process_sm_iq_items/3,
@@ -24,21 +24,26 @@
 	{iq, ID, result, XMLNS, [{xmlelement, "query",
 				  [{"xmlns", ?NS_DISCO_INFO}], []}]}).
 
-start() ->
-    ejabberd_local:register_iq_handler(?NS_DISCO_ITEMS,
-				       ?MODULE, process_local_iq_items),
-    ejabberd_local:register_iq_handler(?NS_DISCO_INFO,
-				       ?MODULE, process_local_iq_info),
-    ejabberd_sm:register_iq_handler(?NS_DISCO_ITEMS,
-        			    ?MODULE, process_sm_iq_items),
-    ejabberd_sm:register_iq_handler(?NS_DISCO_INFO,
-        			    ?MODULE, process_sm_iq_info),
+start(Type) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_local_iq_items, Type),
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_DISCO_INFO,
+				  ?MODULE, process_local_iq_info, Type),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_sm_iq_items, Type),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_DISCO_INFO,
+				  ?MODULE, process_sm_iq_info, Type),
+    %ejabberd_local:register_iq_handler(?NS_DISCO_ITEMS,
+    %    			       ?MODULE, process_local_iq_items),
+    %ejabberd_local:register_iq_handler(?NS_DISCO_INFO,
+    %    			       ?MODULE, process_local_iq_info),
+    %ejabberd_sm:register_iq_handler(?NS_DISCO_ITEMS,
+    %    			    ?MODULE, process_sm_iq_items),
+    %ejabberd_sm:register_iq_handler(?NS_DISCO_INFO,
+    %    			    ?MODULE, process_sm_iq_info),
     register_feature("iq"),
     register_feature("presence"),
     register_feature("presence-invisible"),
-    ok.
-
-init() ->
     ok.
 
 register_feature(Feature) ->
@@ -157,9 +162,10 @@ get_local_items([], Server, Lang) ->
 
 get_local_items(["config"], Server, Lang) ->
     {result,
-     [?NODE("Host Name",    "config/hostname"),
-      ?NODE("ACLs",         "config/acls"),
-      ?NODE("Access Rules", "config/access")
+     [?NODE("Host Name",      "config/hostname"),
+      ?NODE("ACLs",           "config/acls"),
+      ?NODE("Access Rules",   "config/access"),
+      ?NODE("Loaded Modules", "config/modules")
      ]};
 
 get_local_items(["config", _], Server, Lang) ->
@@ -173,6 +179,9 @@ get_local_items(["all users"], Server, Lang) ->
 
 get_local_items(["outgoing s2s"], Server, Lang) ->
     {result, get_outgoing_s2s(Lang)};
+
+get_local_items(["outgoing s2s", To], Server, Lang) ->
+    {result, get_outgoing_s2s(Lang, To)};
 
 get_local_items(["running nodes"], Server, Lang) ->
     {result, get_running_nodes(Lang)};
