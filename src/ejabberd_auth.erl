@@ -185,17 +185,11 @@ get_password_s(User) ->
 
 is_user_exists(User) ->
     LUser = jlib:tolower(User),
-    F = fun() ->
-		case mnesia:read({passwd, LUser}) of
-		    [] ->
-			false;
-		    [_] ->
-			true
-		end
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Res} ->
-	    Res;
+    case catch mnesia:dirty_read({passwd, LUser}) of
+	[] ->
+	    false;
+	[_] ->
+	    true;
 	_ ->
 	    false
     end.

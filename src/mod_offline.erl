@@ -12,6 +12,7 @@
 -behaviour(gen_mod).
 
 -export([start/1,
+	 stop/0,
 	 store_packet/3,
 	 resend_offline_messages/1,
 	 remove_user/1]).
@@ -27,6 +28,9 @@ start(_) ->
 			 {type, bag},
 			 {attributes, record_info(fields, offline_msg)}]).
 
+stop() ->
+    % TODO: maybe throw error that this module can't be removed?
+    ok.
 
 store_packet(From, To, Packet) ->
     case check_event(From, To, Packet) of

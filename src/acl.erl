@@ -14,13 +14,24 @@
 
 -include("ejabberd.hrl").
 
+-record(acl, {aclname, aclspec}).
+
 start() ->
-    ets:new(acls, [bag, named_table, public]),
+    %ets:new(acls, [bag, named_table, public]),
+    mnesia:create_table(acl,
+			[{disc_copies, [node()]},
+			 {type, bag},
+			 {attributes, record_info(fields, acl)}]),
+    mnesia:add_table_copy(acl, node(), ram_copies),
     ok.
 
 
-add(ACLName, ACLData) ->
-    ets:insert(acls, {ACLName, ACLData}).
+add(ACLName, ACLSpec) ->
+    F = fun() ->
+		mnesia:write(#acl{aclname = ACLName, aclspec = ACLSpec})
+	end,
+    mnesia:transaction(F).
+    %ets:insert(acls, {ACLName, ACLData}).
 
 match_rule(Rule, JID) ->
     case ejabberd_config:get_global_option({access, Rule}) of
@@ -42,7 +53,7 @@ match_acls([{Access, ACL} | ACLs], JID) ->
 
 match_acl(ACL, JID) ->
     {User, Server, Resource} = jlib:jid_tolower(JID),
-    lists:any(fun({_, Spec}) ->
+    lists:any(fun(#acl{aclspec = Spec}) ->
 		      case Spec of
 			  all ->
 			      true;
@@ -53,4 +64,4 @@ match_acl(ACL, JID) ->
 			  {server, S} ->
 			      S == Server
 		      end
-	      end, ets:lookup(acls, ACL)).
+	      end, ets:lookup(acl, ACL)).

@@ -286,12 +286,14 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		?DEBUG("broadcast!!!!!!!!!!!~n~p~n", [Els]),
 		NewSt = case Els of
 			    [{item, IJID, ISubscription}] ->
-				roster_change(IJID, ISubscription,
-					      StateData);
+				{false, Attrs,
+				 roster_change(IJID, ISubscription,
+					       StateData)};
+			    [{exit, Reason}] ->
+				{exit, Attrs, Reason};
 			    _ ->
-				StateData
-			end,
-		{false, Attrs, NewSt};
+				{false, Attrs, StateData}
+			end;
 	    "iq" ->
 		IQ = jlib:iq_query_info(Packet),
 		case IQ of
@@ -310,16 +312,19 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    _ ->
 		{true, Attrs, StateData}
 	end,
-    if Pass ->
+    if
+	Pass == exit ->
+	    {stop, normal, StateData};
+	Pass ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						jlib:jid_to_string(To),
 						NewAttrs),
 	    Text = xml:element_to_string({xmlelement, Name, Attrs2, Els}),
-	    send_text(StateData#state.sender, Text);
-       true ->
-	    ok
-    end,
-    {next_state, StateName, NewState}.
+	    send_text(StateData#state.sender, Text),
+	    {next_state, StateName, NewState};
+	true ->
+	    {next_state, StateName, NewState}
+    end.
 
 %%----------------------------------------------------------------------
 %% Func: terminate/3

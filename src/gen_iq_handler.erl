@@ -12,6 +12,8 @@
 
 -export([start/0,
 	 add_iq_handler/5,
+	 remove_iq_handler/2,
+	 stop_iq_handler/3,
 	 handle/6,
 	 process_iq/5,
 	 queue_init/2]).
@@ -31,6 +33,17 @@ add_iq_handler(Component, NS, Module, Function, Type) ->
 					  {one_queue, Pid});
 	parallel ->
 	    Component:register_iq_handler(NS, Module, Function, parallel)
+    end.
+
+remove_iq_handler(Component, NS) ->
+    Component:unregister_iq_handler(NS).
+
+stop_iq_handler(Module, Function, Opts) ->
+    case Opts of
+	{one_queue, Pid} ->
+	    exit(Pid, kill);
+	_ ->
+	    ok
     end.
 
 handle(Module, Function, Opts, From, To, IQ) ->

@@ -97,7 +97,8 @@ init([From, Server, Type]) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
-    case gen_tcp:connect(StateData#state.server, 5569,
+    case gen_tcp:connect(StateData#state.server,
+			 ejabberd_config:get_local_option(outgoing_s2s_port),
 			 [binary, {packet, 0}]) of
 	{ok, Socket} ->
 	    XMLStreamPid = xml_stream:start(self()),

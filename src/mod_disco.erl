@@ -13,11 +13,13 @@
 -behaviour(gen_mod).
 
 -export([start/1,
+	 stop/0,
 	 process_local_iq_items/3,
 	 process_local_iq_info/3,
 	 process_sm_iq_items/3,
 	 process_sm_iq_info/3,
-	 register_feature/1]).
+	 register_feature/1,
+	 unregister_feature/1]).
 
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
@@ -41,9 +43,20 @@ start(Opts) ->
     register_feature("presence-invisible"),
     ok.
 
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_DISCO_INFO).
+
+
 register_feature(Feature) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
     ets:insert(disco_features, {Feature}).
+
+unregister_feature(Feature) ->
+    catch ets:new(disco_features, [named_table, ordered_set, public]),
+    ets:delete(disco_features, Feature).
 
 process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     Lang = xml:get_tag_attr_s("xml:lang", SubEl),

@@ -13,6 +13,7 @@
 -behaviour(gen_mod).
 
 -export([start/1,
+	 stop/0,
 	 process_local_iq/3]).
 
 -include("ejabberd.hrl").
@@ -27,6 +28,9 @@ start(Opts) ->
 			 {attributes, record_info(fields, private_storage)}]),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_PRIVATE,
 				  ?MODULE, process_local_iq, IQDisc).
+
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_PRIVATE).
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->

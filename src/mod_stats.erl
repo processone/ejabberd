@@ -13,6 +13,7 @@
 -behaviour(gen_mod).
 
 -export([start/1,
+	 stop/0,
 	 process_local_iq/3]).
 
 -include("namespaces.hrl").
@@ -21,6 +22,9 @@ start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_STATS,
 				  ?MODULE, process_local_iq, IQDisc).
+
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_STATS).
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
@@ -77,7 +81,11 @@ get_local_stats(["running nodes", _], []) ->
     {result,
      [?STAT("time/uptime"),
       ?STAT("time/cputime"),
-      ?STAT("users/online")
+      ?STAT("users/online"),
+      ?STAT("transactions/commited"),
+      ?STAT("transactions/aborted"),
+      ?STAT("transactions/restarted"),
+      ?STAT("transactions/logged")
      ]};
 
 get_local_stats(["running nodes", ENode], Names) ->
@@ -159,6 +167,39 @@ get_node_stat(Node, Name) when Name == "users/online" ->
 	Users ->
 	    ?STATVAL(integer_to_list(length(Users)), "users")
     end;
+
+get_node_stat(Node, Name) when Name == "transactions/commited" ->
+    case catch rpc:call(Node, mnesia, system_info, [transaction_commits]) of
+	{badrpc, Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	Transactions ->
+	    ?STATVAL(integer_to_list(Transactions), "transactions")
+    end;
+
+get_node_stat(Node, Name) when Name == "transactions/aborted" ->
+    case catch rpc:call(Node, mnesia, system_info, [transaction_failures]) of
+	{badrpc, Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	Transactions ->
+	    ?STATVAL(integer_to_list(Transactions), "transactions")
+    end;
+
+get_node_stat(Node, Name) when Name == "transactions/restarted" ->
+    case catch rpc:call(Node, mnesia, system_info, [transaction_restarts]) of
+	{badrpc, Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	Transactions ->
+	    ?STATVAL(integer_to_list(Transactions), "transactions")
+    end;
+
+get_node_stat(Node, Name) when Name == "transactions/logged" ->
+    case catch rpc:call(Node, mnesia, system_info, [transaction_log_writes]) of
+	{badrpc, Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	Transactions ->
+	    ?STATVAL(integer_to_list(Transactions), "transactions")
+    end;
+
 get_node_stat(_, Name) ->
     ?STATERR("404", "Not Found").
 

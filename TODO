@@ -4,8 +4,8 @@ admin interface
 	backup management
 S2S timeouts
 rewrite S2S key validation
-iq:browse(?)
+iq:browse (?)
 SRV DNS records
 karma
 SSL
-JEP-62,63
+JEP-62,63 (?)

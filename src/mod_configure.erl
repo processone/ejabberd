@@ -13,6 +13,7 @@
 -behaviour(gen_mod).
 
 -export([start/1,
+	 stop/0,
 	 process_local_iq/3,
 	 process_sm_iq/3]).
 
@@ -27,6 +28,10 @@ start(Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_XDATA,
 				  ?MODULE, process_sm_iq, IQDisc),
     ok.
+
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_XDATA),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_XDATA).
 
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
@@ -240,7 +245,7 @@ get_form(["config", "acls"], Lang) ->
 			 end,
 			 string:tokens(
 			   lists:flatten(io_lib:format("~p",
-						       [ets:tab2list(acls)])),
+						       [ets:tab2list(acl)])),
 			   "\n"))
 		%{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}
 	      }
@@ -379,6 +384,9 @@ set_form(["config", "remusers"], Lang, XData) ->
       fun({Var, Vals}) ->
 	      case Vals of
 		  ["1"] ->
+		      ejabberd_sm ! {route, {"", "", ""}, {Var, "", ""},
+				     {xmlelement, "broadcast", [],
+				      [{exit, "User removed"}]}},
 		      catch ejabberd_auth:remove_user(Var),
 		      catch mod_roster:remove_user(Var),
 		      catch mod_offline:remove_user(Var),

@@ -13,7 +13,9 @@
 -export([start/0, init/0]).
 
 -export([register_iq_handler/3,
-	 register_iq_handler/4]).
+	 register_iq_handler/4,
+	 unregister_iq_handler/1
+	]).
 
 -include("ejabberd.hrl").
 
@@ -41,6 +43,18 @@ loop(State) ->
 	{register_iq_handler, XMLNS, Module, Function, Opts} ->
 	    ets:insert(State#state.iqtable, {XMLNS, Module, Function, Opts}),
 	    mod_disco:register_feature(XMLNS),
+	    loop(State);
+	{unregister_iq_handler, XMLNS} ->
+	    case ets:lookup(State#state.iqtable, XMLNS) of
+		[{_, Module, Function, Opts}] ->
+		    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
+		_ ->
+		    ok
+	    end,
+	    ets:delete(State#state.iqtable, XMLNS),
+	    mod_disco:unregister_feature(XMLNS),
+	    loop(State);
+	_ ->
 	    loop(State)
     end.
 
@@ -117,3 +131,7 @@ register_iq_handler(XMLNS, Module, Fun) ->
 
 register_iq_handler(XMLNS, Module, Fun, Opts) ->
     ejabberd_local ! {register_iq_handler, XMLNS, Module, Fun, Opts}.
+
+unregister_iq_handler(XMLNS) ->
+    ejabberd_local ! {unregister_iq_handler, XMLNS}.
+

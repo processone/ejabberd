@@ -11,7 +11,6 @@ ERLSHLIBS = expat_erl.so
 
 all:	$(ERLSHLIBS)
 	erl -s make all report -noinput -s erlang halt
-	etags *.erl
 
 $(ERLSHLIBS):	%.so:	%.c
 			gcc -Wall $(INCLUDES) $(LIBDIRS) \
@@ -26,3 +25,7 @@ clean:
 
 Makefile.inc:
 	./configure
+
+TAGS:
+	etags *.erl
+

@@ -17,7 +17,9 @@
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
 	 register_iq_handler/3,
-	 register_iq_handler/4]).
+	 register_iq_handler/4,
+	 unregister_iq_handler/1
+	]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -76,6 +78,16 @@ loop() ->
 	    loop();
 	{register_iq_handler, XMLNS, Module, Function, Opts} ->
 	    ets:insert(sm_iqtable, {XMLNS, Module, Function, Opts}),
+	    loop();
+	{unregister_iq_handler, XMLNS} ->
+	    case ets:lookup(sm_iqtable, XMLNS) of
+		[{_, Module, Function, Opts}] ->
+		    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
+		_ ->
+		    ok
+	    end,
+	    ets:delete(sm_iqtable, XMLNS),
+	    mod_disco:unregister_feature(XMLNS),
 	    loop();
 	_ ->
 	    loop()
@@ -388,4 +400,7 @@ register_iq_handler(XMLNS, Module, Fun) ->
 
 register_iq_handler(XMLNS, Module, Fun, Opts) ->
     ejabberd_sm ! {register_iq_handler, XMLNS, Module, Fun, Opts}.
+
+unregister_iq_handler(XMLNS) ->
+    ejabberd_sm ! {unregister_iq_handler, XMLNS}.
 
