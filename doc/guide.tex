@@ -39,7 +39,7 @@
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{February 3, 2003}
+\date{February 11, 2003}
 
 \begin{document}
 \begin{titlepage}
@@ -51,23 +51,23 @@
   }
 \end{titlepage}
 %\newpage
-%\tableofcontents{}
+\tableofcontents{}
 
 \newpage
 \section{Introduction}
 \label{sec:intro}
 
-\ejabberd{} is a Free and Open Source distributed fault-tolerant \Jabber{}
+\ejabberd{} is a Free and Open Source fault-tolerant distributed \Jabber{}
 server.  It is writen mostly in Erlang.
 
-Main features of ejabberd is:
+The main features of \ejabberd{} is:
 \begin{itemize}
-\item Distributed.  You can run ejabberd on a cluster of machines and
-  all of them will serve one Jabber domain.
-\item Fault-tolerance. You can setup an ejabberd cluster so that all
+\item Distributed: You may run \ejabberd{} on a cluster of machines and all of
+  them will serve one Jabber domain.
+\item Fault-tolerance: You may setup an \ejabberd{} cluster so that all the
   information required for a properly working service will be stored
-  permanently on more then one node. This means that if one of the
-  nodes crashed, then the others continue working without disruption.
+  permanently on more then one node.  This means that if one of the nodes
+  crashes, then the others will continue working without disruption.
   You can also add or replace more nodes ``on the fly''.
 \item Support for
   \footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030}
@@ -89,7 +89,7 @@ Main features of ejabberd is:
 \subsection{Installation Requirements}
 \label{sec:installreq}
 
-To compile \ejabberd{}, you need following packages:
+To compile \ejabberd{}, you will need the following packages:
 \begin{itemize}
 \item GNU Make;
 \item GCC;
@@ -102,7 +102,7 @@ To compile \ejabberd{}, you need following packages:
 
 Currently no stable version has been released.
 
-The latest alpha version can be retrieved via CVS\@.  Do following steps:
+The latest alpha version can be retrieved from CVS\@.
 \begin{itemize}
 \item \texttt{export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs}
 \item \texttt{cvs login}
@@ -134,7 +134,7 @@ TBD
 \subsection{Starting}
 \label{sec:starting}
 
-\ldots{} To use more then 1024 connections, you need to set environment
+\ldots{} To use more then 1024 connections, you will need to set environment
 variable \texttt{ERL\_MAX\_PORTS}:
 \begin{verbatim}
 export ERL_MAX_PORTS=32000
@@ -156,15 +156,18 @@ TBD
 
 %\verbatiminput{../src/ejabberd.cfg}
 
-Configuration file is loaded after first start of \ejabberd{}.  It consists of
-sequence of Erlang terms.  Parts of lines after \texttt{`\%'} sign are ignored.
-Each term is tuple, where first element is name of option, and other are option
-values.  Note, that after first start all values from this file stored in
-database, and in next time they will be APPENDED to existing values.  E.\,g.\
-if this file will not contain ``host'' definition, then old value will be
-used.
+The configuration file is initially loaded the first time \ejabberd{} is
+executed, when it is parsed and stored in a database.  Subsiquently the
+configuration is loaded from the database and any commands in the configuration
+file are appended to the entries in the database.  The configuration file
+consists of a sequence of Erlang terms. Parts of lines after \texttt{`\%'} sign
+are ignored.  Each term is tuple, where first element is name of option, and
+other are option values. E.\,g.\ if this file does not contain a ``host''
+definition, then old value stored in the database will be used.
 
-To override old values following lines can be added in config:
+
+To override old values stored in the database the following lines can be added
+in config:
 \begin{verbatim}
 override_global.
 override_local.
@@ -190,8 +193,8 @@ serves.  E.\,g.\ to use \texttt{jabber.org} domain add following line in config:
 \subsubsection{Access Rules}
 \label{sec:configaccess}
 
-Access control in \ejabberd{} is done via Access Control Lists (ACL).
-Declaration of ACL in config file have following syntax:
+Access control in \ejabberd{} is performed via Access Control Lists (ACL).  The
+declarations of ACL in config file have following syntax:
 \begin{verbatim}
 {acl, <aclname>, {<acltype>, ...}}.
 \end{verbatim}
@@ -218,13 +221,13 @@ Declaration of ACL in config file have following syntax:
 {acl, jabberorg, {server, "jabber.org"}}.
 \end{verbatim}
 \item[\texttt{\{user\_regexp, <regexp>\}}] Matches local user with name that
-  mathes \texttt{<regexp>}.  Example:
+  matches \texttt{<regexp>}.  Example:
 \begin{verbatim}
 {acl, tests, {user, "^test[0-9]*$"}}.
 \end{verbatim}
 %$
 \item[\texttt{\{user\_regexp, <regexp>, <server>\}}] Matches user with name
-  that mathes \texttt{<regexp>} and from server \texttt{<server>}.  Example:
+  that matches \texttt{<regexp>} and from server \texttt{<server>}.  Example:
 \begin{verbatim}
 {acl, tests, {user, "^test", "localhost"}}.
 \end{verbatim}
@@ -234,7 +237,7 @@ Declaration of ACL in config file have following syntax:
 {acl, icq, {server, "^icq\\."}}.
 \end{verbatim}
 \item[\texttt{\{node\_regexp, <user\_regexp>, <server\_regexp>\}}] Matches user
-  with name that mathes \texttt{<user\_regexp>} and from server that matches
+  with name that matches \texttt{<user\_regexp>} and from server that matches
   \texttt{<server\_regexp>}.  Example:
 \begin{verbatim}
 {acl, aleksey, {node_regexp, "^aleksey", "^jabber.(ru|org)$"}}.
@@ -244,8 +247,8 @@ Declaration of ACL in config file have following syntax:
 \item[\texttt{\{user\_glob, <glob>, <server>\}}]
 \item[\texttt{\{server\_glob, <glob>\}}]
 \item[\texttt{\{node\_glob, <user\_glob>, <server\_glob>\}}] This is same as
-  above, but use shell glob patterns instead of regexp.  This patterns can have
-  following special characters:
+  above, but uses shell glob patterns instead of regexp.  These patterns can
+  have following special characters:
   \begin{description}
   \item[\texttt{*}] matches any string including the null string.
   \item[\texttt{?}] matches any single character.
@@ -256,23 +259,23 @@ Declaration of ACL in config file have following syntax:
   \end{description}
 \end{description}
 
-Following ACLs pre-defined:
+The following ACLs pre-defined:
 \begin{description}
 \item[\texttt{all}] Matches all JIDs.
 \item[\texttt{none}] Matches none JIDs.
 \end{description}
 
-Allowing or denying of different services is like this:
+An entry allowing or denying different services would look similar to this:
 \begin{verbatim}
 {access, <accessname>, [{allow, <aclname>},
                         {deny, <aclname>},
                         ...
                        ]}.
 \end{verbatim}
-When JID is checked to have access to \texttt{<accessname>}, server
-sequentially checks if this JID in one of the ACLs that are second elements in
-each tuple in list.  If one of them matched, then returned first element of
-matched tuple.  Else returned ``\texttt{deny}''.
+When a JID is checked to have access to \texttt{<accessname>}, the server
+sequentially checks if this JID mathes one of the ACLs that are second elements
+in each tuple in list.  If it is matched, then the first element of matched
+tuple is returned else ``\texttt{deny}'' is returned.
 
 Example:
 \begin{verbatim}
@@ -300,7 +303,7 @@ runned on them.  Each element of list is a tuple with following elements:
 \item Options to this module.
 \end{itemize}
 
-Currently three modules implemented:
+Currently three modules are implemented:
 \begin{description}
 \item[\texttt{ejabberd\_c2s}] This module serves C2S connections.
   
@@ -311,13 +314,13 @@ Currently three modules implemented:
   \end{description}
 \item[\texttt{ejabberd\_s2s\_in}] This module serves incoming S2S connections.
 \item[\texttt{ejabberd\_service}] This module serves connections to \Jabber{}
-  services (i.\,e.\ that use \texttt{jabber:component:accept} namespace).
+  services (i.\,e.\ that use the \texttt{jabber:component:accept} namespace).
 \end{description}
 
-For example, following configuration defines that C2S connections listened on
-port 5222 and denied for user ``\texttt{bad}'', S2S on port 5269 and that
-service \texttt{conference.jabber.org} must be connected to port 8888 with
-password ``\texttt{secret}''.
+For example, the following configuration defines that C2S connections are
+listened on port 5222 and denied for user ``\texttt{bad}'', S2S on port 5269
+and that service \texttt{conference.jabber.org} must be connected to port 8888
+with a password ``\texttt{secret}''.
 
 \begin{verbatim}
 {acl, blocked, {user, "bad"}}.
@@ -337,9 +340,9 @@ password ``\texttt{secret}''.
 \subsubsection{Modules}
 \label{sec:configmodules}
 
-Option \texttt{modules} defines list of modules that will be loaded after
+Option \texttt{modules} defines the list of modules that will be loaded after
 \ejabberd{} startup.  Each list element is a tuple where first element is a
-name of module and second is list of options to this module.  See
+name of a module and second is list of options to this module.  See
 section~\ref{sec:modules} for detailed information on each module.
 
 Example:
@@ -363,14 +366,17 @@ Example:
 \subsection{Online Configuration and Monitoring}
 \label{sec:onlineconfig}
 
-To use facility of online reconfiguration of \ejabberd{} needed to have
-\modconfigure{} loaded (see section~\ref{sec:modconfigure}).  Also highly
-recommended to load \moddisco{} (see section~\ref{sec:moddisco}), because
-\modconfigure{} highly integrates with it.  Also recommended to use disco- and
-xdata-capable client
-(\footahref{http://www.jabber.ru/projects/tkabber/index\_en.html}{Tkabber}
-developed synchronously with \ejabberd{}, its CVS version use most of
-\ejabberd{} features).
+To perform online reconfiguration of \ejabberd{} you will need to have
+\modconfigure{} loaded (see section~\ref{sec:modconfigure}). It is also highly
+recommended to load \moddisco{} as well (see section~\ref{sec:moddisco}),
+because \modconfigure{} is highly integrated with it.  Additionally it is
+recommended to use a disco- and xdata-capable client such as
+\footahref{http://www.jabber.ru/projects/tkabber/index\_en.html}{Tkabber}
+(which was developed synchronously with \ejabberd{}, its CVS version
+supports most of \ejabberd{} features).
+
+
+
 
 On disco query \ejabberd{} returns following items:
 \begin{itemize}
@@ -388,13 +394,13 @@ On disco query \ejabberd{} returns following items:
 
 \subsubsection{Node \texttt{config}: Global Configuration}
 
-Under this node exists following nodes:
+Under this node the following nodes exists:
 
 \paragraph{Node \texttt{config/hostname}}
 
 Via \ns{jabber:x:data} queries to this node possible to change host name of
-this \ejabberd{} server. (See figure~\ref{fig:hostname}) (Currently will work
-correctly only after restart)
+this \ejabberd{} server. (See figure~\ref{fig:hostname}) (Currently this works
+correctly only after a restart)
 \begin{figure}[htbp]
   \centering
   \insimg{confhostname.png}
@@ -405,8 +411,8 @@ correctly only after restart)
 
 \paragraph{Node \texttt{config/acls}}
 
-Via \ns{jabber:x:data} queries to this node possible to edit ACLs list.  (See
-figure~\ref{fig:acls})
+Via \ns{jabber:x:data} queries to this node it is possible to edit ACLs list.
+(See figure~\ref{fig:acls})
 \begin{figure}[htbp]
   \centering
   \insimg{confacls.png}
@@ -417,12 +423,13 @@ figure~\ref{fig:acls})
 
 \paragraph{Node \texttt{config/access}}
 
-Via \ns{jabber:x:data} queries to this node possible to edit access rules.
+Via \ns{jabber:x:data} queries to this node it is possible to edit access
+rules.
 
 
 \paragraph{Node \texttt{config/remusers}}
 
-Via \ns{jabber:x:data} queries to this node possible to remove users.  If
+Via \ns{jabber:x:data} queries to this node it is possible to remove users.  If
 removed user is online, then he will be disconnected.  Also user-related data
 (e.g. his roster) is removed (but appropriate module must be loaded).
 
@@ -472,15 +479,19 @@ TBD
 \subsection{How it works}
 \label{sec:howitworks}
 
-\Jabber{} domain is served by one or more \ejabberd{} nodes.  This nodes can be
-runned on different machines that can be connected via network.  They all must
-have access to connect to port 4369 of all another nodes, and must have same
-magic cookie (see Erlang/OTP documentation, in short file
-\texttt{\~{}ejabberd/.erlang.cookie} must be the same on all nodes).  This is
+
+
+A \Jabber{} domain is served by one or more \ejabberd{} nodes.  These nodes can
+be run on different machines that are connected via a network.  They all must
+have the ability to connect to port 4369 of all another nodes, and must have
+the same magic cookie (see Erlang/OTP documentation, in other words the file
+\texttt{\~{}ejabberd/.erlang.cookie} must be the same on all nodes). This is
 needed because all nodes exchange information about connected users, S2S
 connections, registered services, etc\ldots
 
-Each \ejabberd{} node run following modules:
+
+
+Each \ejabberd{} node must run following modules:
 \begin{itemize}
 \item router;
 \item local router.
@@ -491,36 +502,38 @@ Each \ejabberd{} node run following modules:
 
 \subsubsection{Router}
 
-This module is the main router of \Jabber{} packets on each node.  It route
-them based on their destanations domains.  It have two tables: local and global
+This module is the main router of \Jabber{} packets on each node.  It routes
+them based on their destinations domains.  It has two tables: local and global
 routes.  First, domain of packet destination searched in local table, and if it
-finded, then packet routed to appropriate process.  If no, then it searched in
-global table, and routed to appropriate \ejabberd{} node or process.  If it not
-exists in both tables, then it sended to S2S manager.
+found, then the packet is routed to appropriate process.  If no, then it
+searches in global table, and is routed to the appropriate \ejabberd{} node or
+process.  If itdoes not exists in either table, then it sent to the S2S
+manager.
 
 
 \subsubsection{Local Router}
 
-This module route packets which have destination domain equal to this server
-name.  If destination JID have node, then it routed to session manager, else it
-processed depending on it content.
+This module routes packets which have a destination domain equal to this server
+name.  If destination JID has a node, then it routed to the session manager,
+else it is processed depending on it's content.
 
 
 \subsubsection{Session Manager}
 
-This module route packets to local users.  It search to what user resource
-packet must be sended via presence table.  If this reseouce connected to this
-node, it routed to C2S process, if it connected via another node, then packet
-sended to session manager on it.
+This module routes packets to local users.  It searches for what user resource
+packet must be sended via presence table.  If this resource is connected to
+this node, it is routed to C2S process, if it connected via another node, then
+the packet is sent to session manager on that node.
 
 
 \subsubsection{S2S Manager}
 
-This module route packets to another \Jabber{} servers.  First, it check if
-already exists opened S2S connection from domain of packet source to domain of
-destination.  If it opened on another node, then it routed to S2S manager on
-that node, if it opened on this node, then it routed to process that serve this
-connection, and if this connection not exists, then it opened and registered.
+This module routes packets to other \Jabber{} servers.  First, it checks if an
+open S2S connection from the domain of the packet source to the domain of
+packet destination already exists. If it is open on another node, then it
+routes the packet to S2S manager on that node, if it is open on this node, then
+it is routed to the process that serves this connection, and if a connection
+does not exist, then it is opened and registered.
 
 
 
@@ -541,8 +554,8 @@ Following options used by many modules, so they described in separate section.
 
 Many modules define handlers for processing IQ queries of different namespaces
 to this server or to user (e.\,g.\ to \texttt{myjabber.org} or to
-\texttt{user@myjabber.org}).  This option defines processing discipline of this
-queries.  Possible values are:
+\texttt{user@myjabber.org}).  This option defines processing discipline of
+these queries.  Possible values are:
 \begin{description}
 \item[\texttt{no\_queue}] All queries of namespace with this processing
   discipline processed immediately.  This also means that no other packets can

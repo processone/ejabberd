@@ -21,7 +21,7 @@
 <A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
 <A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
-<H3 ALIGN=center>February 3, 2003</H3><DIV ALIGN=center>
+<H3 ALIGN=center>February 11, 2003</H3><DIV ALIGN=center>
 
  <IMG SRC="logo.png">
  
@@ -30,24 +30,86 @@
 <BR>
 
 
-<BR>
-<BR>
+<!--TOC section Table of Contents-->
+
+<H2>Table of Contents</H2><!--SEC END -->
+
+<UL><LI>
+<A HREF="#htoc1">1&nbsp;&nbsp;Introduction</A>
+<LI><A HREF="#htoc2">2&nbsp;&nbsp;Installation</A>
+<UL><LI>
+<A HREF="#htoc3">2.1&nbsp;&nbsp;Installation Requirements</A>
+<LI><A HREF="#htoc4">2.2&nbsp;&nbsp;Obtaining</A>
+<LI><A HREF="#htoc5">2.3&nbsp;&nbsp;Compilation</A>
+<LI><A HREF="#htoc6">2.4&nbsp;&nbsp;Starting</A>
+</UL>
+<LI><A HREF="#htoc7">3&nbsp;&nbsp;Configuration</A>
+<UL><LI>
+<A HREF="#htoc8">3.1&nbsp;&nbsp;Initial Configuration</A>
+<UL><LI>
+<A HREF="#htoc9">3.1.1&nbsp;&nbsp;Host Name</A>
+<LI><A HREF="#htoc10">3.1.2&nbsp;&nbsp;Access Rules</A>
+<LI><A HREF="#htoc11">3.1.3&nbsp;&nbsp;Listened Sockets</A>
+<LI><A HREF="#htoc12">3.1.4&nbsp;&nbsp;Modules</A>
+</UL>
+<LI><A HREF="#htoc13">3.2&nbsp;&nbsp;Online Configuration and Monitoring</A>
+<UL><LI>
+<A HREF="#htoc14">3.2.1&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</A>
+<LI><A HREF="#htoc15">3.2.2&nbsp;&nbsp;Node <TT>online users</TT>: List of Online Users</A>
+<LI><A HREF="#htoc16">3.2.3&nbsp;&nbsp;Node <TT>all users</TT>: List of Registered User</A>
+<LI><A HREF="#htoc17">3.2.4&nbsp;&nbsp;Node <TT>outgoing s2s</TT>: List of Outgoing S2S connections</A>
+<LI><A HREF="#htoc18">3.2.5&nbsp;&nbsp;Node <TT>running nodes</TT>: List of Running <TT>ejabberd</TT> Nodes</A>
+<LI><A HREF="#htoc19">3.2.6&nbsp;&nbsp;Node <TT>stopped nodes</TT>: List of Stopped Nodes</A>
+</UL>
+</UL>
+<LI><A HREF="#htoc20">4&nbsp;&nbsp;Distribution</A>
+<UL><LI>
+<A HREF="#htoc21">4.1&nbsp;&nbsp;How it works</A>
+<UL><LI>
+<A HREF="#htoc22">4.1.1&nbsp;&nbsp;Router</A>
+<LI><A HREF="#htoc23">4.1.2&nbsp;&nbsp;Local Router</A>
+<LI><A HREF="#htoc24">4.1.3&nbsp;&nbsp;Session Manager</A>
+<LI><A HREF="#htoc25">4.1.4&nbsp;&nbsp;S2S Manager</A>
+</UL>
+</UL>
+<LI><A HREF="#htoc26">A&nbsp;&nbsp;Built-in Modules</A>
+<UL><LI>
+<A HREF="#htoc27">A.1&nbsp;&nbsp;Common Options</A>
+<UL><LI>
+<A HREF="#htoc28">A.1.1&nbsp;&nbsp;Option <TT>iqdisc</TT></A>
+<LI><A HREF="#htoc29">A.1.2&nbsp;&nbsp;Option <TT>host</TT></A>
+</UL>
+<LI><A HREF="#htoc30">A.2&nbsp;&nbsp;<TT>mod_register</TT></A>
+<LI><A HREF="#htoc31">A.3&nbsp;&nbsp;<TT>mod_roster</TT></A>
+<LI><A HREF="#htoc32">A.4&nbsp;&nbsp;<TT>mod_configure</TT></A>
+<LI><A HREF="#htoc33">A.5&nbsp;&nbsp;<TT>mod_disco</TT></A>
+<LI><A HREF="#htoc34">A.6&nbsp;&nbsp;<TT>mod_stats</TT></A>
+<LI><A HREF="#htoc35">A.7&nbsp;&nbsp;<TT>mod_vcard</TT></A>
+<LI><A HREF="#htoc36">A.8&nbsp;&nbsp;<TT>mod_offline</TT></A>
+<LI><A HREF="#htoc37">A.9&nbsp;&nbsp;<TT>mod_echo</TT></A>
+<LI><A HREF="#htoc38">A.10&nbsp;&nbsp;<TT>mod_private</TT></A>
+<LI><A HREF="#htoc39">A.11&nbsp;&nbsp;<TT>mod_time</TT></A>
+<LI><A HREF="#htoc40">A.12&nbsp;&nbsp;<TT>mod_version</TT></A>
+</UL>
+<LI><A HREF="#htoc41">B&nbsp;&nbsp;I18n/L10n</A>
+</UL>
+
 <!--TOC section Introduction-->
 
 <H2><A NAME="htoc1">1</A>&nbsp;&nbsp;Introduction</H2><!--SEC END -->
 
 <A NAME="sec:intro"></A>
-<TT>ejabberd</TT> is a Free and Open Source distributed fault-tolerant Jabber
+<TT>ejabberd</TT> is a Free and Open Source fault-tolerant distributed Jabber
 server. It is writen mostly in Erlang.<BR>
 <BR>
-Main features of ejabberd is:
+The main features of <TT>ejabberd</TT> is:
 <UL><LI>
-Distributed. You can run ejabberd on a cluster of machines and
- all of them will serve one Jabber domain.
-<LI>Fault-tolerance. You can setup an ejabberd cluster so that all
+Distributed: You may run <TT>ejabberd</TT> on a cluster of machines and all of
+ them will serve one Jabber domain.
+<LI>Fault-tolerance: You may setup an <TT>ejabberd</TT> cluster so that all the
  information required for a properly working service will be stored
- permanently on more then one node. This means that if one of the
- nodes crashed, then the others continue working without disruption.
+ permanently on more then one node. This means that if one of the nodes
+ crashes, then the others will continue working without disruption.
  You can also add or replace more nodes ``on the fly''.
 <LI>Support for
  <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A>
@@ -68,7 +130,7 @@ Distributed. You can run ejabberd on a cluster of machines and
 <H3><A NAME="htoc3">2.1</A>&nbsp;&nbsp;Installation Requirements</H3><!--SEC END -->
 
 <A NAME="sec:installreq"></A>
-To compile <TT>ejabberd</TT>, you need following packages:
+To compile <TT>ejabberd</TT>, you will need the following packages:
 <UL><LI>
 GNU Make;
 <LI>GCC;
@@ -82,7 +144,7 @@ GNU Make;
 <A NAME="sec:obtaining"></A>
 Currently no stable version has been released.<BR>
 <BR>
-The latest alpha version can be retrieved via CVS. Do following steps:
+The latest alpha version can be retrieved from CVS.
 <UL><LI>
 <TT>export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs</TT>
 <LI><TT>cvs login</TT>
@@ -105,7 +167,7 @@ TBD<BR>
 <H3><A NAME="htoc6">2.4</A>&nbsp;&nbsp;Starting</H3><!--SEC END -->
 
 <A NAME="sec:starting"></A>
-... To use more then 1024 connections, you need to set environment
+... To use more then 1024 connections, you will need to set environment
 variable <TT>ERL_MAX_PORTS</TT>:
 <PRE>
 export ERL_MAX_PORTS=32000
@@ -126,15 +188,17 @@ TBD<BR>
 <H3><A NAME="htoc8">3.1</A>&nbsp;&nbsp;Initial Configuration</H3><!--SEC END -->
 
 <A NAME="sec:initconfig"></A>
-Configuration file is loaded after first start of <TT>ejabberd</TT>. It consists of
-sequence of Erlang terms. Parts of lines after <TT>`%'</TT> sign are ignored.
-Each term is tuple, where first element is name of option, and other are option
-values. Note, that after first start all values from this file stored in
-database, and in next time they will be APPENDED to existing values. E.&nbsp;g.
-if this file will not contain ``host'' definition, then old value will be
-used.<BR>
+The configuration file is initially loaded the first time <TT>ejabberd</TT> is
+executed, when it is parsed and stored in a database. Subsiquently the
+configuration is loaded from the database and any commands in the configuration
+file are appended to the entries in the database. The configuration file
+consists of a sequence of Erlang terms. Parts of lines after <TT>`%'</TT> sign
+are ignored. Each term is tuple, where first element is name of option, and
+other are option values. E.&nbsp;g. if this file does not contain a ``host''
+definition, then old value stored in the database will be used.<BR>
 <BR>
-To override old values following lines can be added in config:
+To override old values stored in the database the following lines can be added
+in config:
 <PRE>
 override_global.
 override_local.
@@ -157,8 +221,8 @@ serves. E.&nbsp;g. to use <TT>jabber.org</TT> domain add following line in confi
 <H4><A NAME="htoc10">3.1.2</A>&nbsp;&nbsp;Access Rules</H4><!--SEC END -->
 
 <A NAME="sec:configaccess"></A>
-Access control in <TT>ejabberd</TT> is done via Access Control Lists (ACL).
-Declaration of ACL in config file have following syntax:
+Access control in <TT>ejabberd</TT> is performed via Access Control Lists (ACL). The
+declarations of ACL in config file have following syntax:
 <PRE>
 {acl, &lt;aclname&gt;, {&lt;acltype&gt;, ...}}.
 </PRE>
@@ -180,11 +244,11 @@ Declaration of ACL in config file have following syntax:
 <PRE>
 {acl, jabberorg, {server, "jabber.org"}}.
 </PRE><DT><B><TT>{user_regexp, &lt;regexp&gt;}</TT></B><DD> Matches local user with name that
- mathes <TT>&lt;regexp&gt;</TT>. Example:
+ matches <TT>&lt;regexp&gt;</TT>. Example:
 <PRE>
 {acl, tests, {user, "^test[0-9]*$"}}.
 </PRE><DT><B><TT>{user_regexp, &lt;regexp&gt;, &lt;server&gt;}</TT></B><DD> Matches user with name
- that mathes <TT>&lt;regexp&gt;</TT> and from server <TT>&lt;server&gt;</TT>. Example:
+ that matches <TT>&lt;regexp&gt;</TT> and from server <TT>&lt;server&gt;</TT>. Example:
 <PRE>
 {acl, tests, {user, "^test", "localhost"}}.
 </PRE><DT><B><TT>{server_regexp, &lt;regexp&gt;}</TT></B><DD> Matches any JID from server that
@@ -192,7 +256,7 @@ Declaration of ACL in config file have following syntax:
 <PRE>
 {acl, icq, {server, "^icq\\."}}.
 </PRE><DT><B><TT>{node_regexp, &lt;user_regexp&gt;, &lt;server_regexp&gt;}</TT></B><DD> Matches user
- with name that mathes <TT>&lt;user_regexp&gt;</TT> and from server that matches
+ with name that matches <TT>&lt;user_regexp&gt;</TT> and from server that matches
  <TT>&lt;server_regexp&gt;</TT>. Example:
 <PRE>
 {acl, aleksey, {node_regexp, "^aleksey", "^jabber.(ru|org)$"}}.
@@ -200,8 +264,8 @@ Declaration of ACL in config file have following syntax:
 <DT><B><TT>{user_glob, &lt;glob&gt;, &lt;server&gt;}</TT></B><DD>
 <DT><B><TT>{server_glob, &lt;glob&gt;}</TT></B><DD>
 <DT><B><TT>{node_glob, &lt;user_glob&gt;, &lt;server_glob&gt;}</TT></B><DD> This is same as
- above, but use shell glob patterns instead of regexp. This patterns can have
- following special characters:
+ above, but uses shell glob patterns instead of regexp. These patterns can
+ have following special characters:
  <DL COMPACT=compact><DT>
  <B><TT>*</TT></B><DD> matches any string including the null string.
  <DT><B><TT>?</TT></B><DD> matches any single character.
@@ -211,21 +275,21 @@ Declaration of ACL in config file have following syntax:
  character not enclosed is matched.
  </DL>
 </DL>
-Following ACLs pre-defined:
+The following ACLs pre-defined:
 <DL COMPACT=compact><DT>
 <B><TT>all</TT></B><DD> Matches all JIDs.
 <DT><B><TT>none</TT></B><DD> Matches none JIDs.
 </DL>
-Allowing or denying of different services is like this:
+An entry allowing or denying different services would look similar to this:
 <PRE>
 {access, &lt;accessname&gt;, [{allow, &lt;aclname&gt;},
                         {deny, &lt;aclname&gt;},
                         ...
                        ]}.
-</PRE>When JID is checked to have access to <TT>&lt;accessname&gt;</TT>, server
-sequentially checks if this JID in one of the ACLs that are second elements in
-each tuple in list. If one of them matched, then returned first element of
-matched tuple. Else returned ``<TT>deny</TT>''.<BR>
+</PRE>When a JID is checked to have access to <TT>&lt;accessname&gt;</TT>, the server
+sequentially checks if this JID mathes one of the ACLs that are second elements
+in each tuple in list. If it is matched, then the first element of matched
+tuple is returned else ``<TT>deny</TT>'' is returned.<BR>
 <BR>
 Example:
 <PRE>
@@ -251,7 +315,7 @@ Port number;
 <LI>Function in this module that starts connection (likely will be removed);
 <LI>Options to this module.
 </UL>
-Currently three modules implemented:
+Currently three modules are implemented:
 <DL COMPACT=compact><DT>
 <B><TT>ejabberd_c2s</TT></B><DD> This module serves C2S connections.<BR>
 <BR>
@@ -262,12 +326,12 @@ Following options defined:
  </DL>
 <DT><B><TT>ejabberd_s2s_in</TT></B><DD> This module serves incoming S2S connections.
 <DT><B><TT>ejabberd_service</TT></B><DD> This module serves connections to Jabber
- services (i.&nbsp;e. that use <TT>jabber:component:accept</TT> namespace).
+ services (i.&nbsp;e. that use the <TT>jabber:component:accept</TT> namespace).
 </DL>
-For example, following configuration defines that C2S connections listened on
-port 5222 and denied for user ``<TT>bad</TT>'', S2S on port 5269 and that
-service <TT>conference.jabber.org</TT> must be connected to port 8888 with
-password ``<TT>secret</TT>''.
+For example, the following configuration defines that C2S connections are
+listened on port 5222 and denied for user ``<TT>bad</TT>'', S2S on port 5269
+and that service <TT>conference.jabber.org</TT> must be connected to port 8888
+with a password ``<TT>secret</TT>''.
 <PRE>
 {acl, blocked, {user, "bad"}}.
 {access, c2s, [{deny, blocked},
@@ -283,9 +347,9 @@ password ``<TT>secret</TT>''.
 <H4><A NAME="htoc12">3.1.4</A>&nbsp;&nbsp;Modules</H4><!--SEC END -->
 
 <A NAME="sec:configmodules"></A>
-Option <TT>modules</TT> defines list of modules that will be loaded after
+Option <TT>modules</TT> defines the list of modules that will be loaded after
 <TT>ejabberd</TT> startup. Each list element is a tuple where first element is a
-name of module and second is list of options to this module. See
+name of a module and second is list of options to this module. See
 section&nbsp;<A HREF="#sec:modules">A</A> for detailed information on each module.<BR>
 <BR>
 Example:
@@ -309,14 +373,14 @@ Example:
 <H3><A NAME="htoc13">3.2</A>&nbsp;&nbsp;Online Configuration and Monitoring</H3><!--SEC END -->
 
 <A NAME="sec:onlineconfig"></A>
-To use facility of online reconfiguration of <TT>ejabberd</TT> needed to have
-<TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">A.4</A>). Also highly
-recommended to load <TT>mod_disco</TT> (see section&nbsp;<A HREF="#sec:moddisco">A.5</A>), because
-<TT>mod_configure</TT> highly integrates with it. Also recommended to use disco- and
-xdata-capable client
-(<A HREF="http://www.jabber.ru/projects/tkabber/index_en.html">Tkabber</A>
-developed synchronously with <TT>ejabberd</TT>, its CVS version use most of
-<TT>ejabberd</TT> features).<BR>
+To perform online reconfiguration of <TT>ejabberd</TT> you will need to have
+<TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">A.4</A>). It is also highly
+recommended to load <TT>mod_disco</TT> as well (see section&nbsp;<A HREF="#sec:moddisco">A.5</A>),
+because <TT>mod_configure</TT> is highly integrated with it. Additionally it is
+recommended to use a disco- and xdata-capable client such as
+<A HREF="http://www.jabber.ru/projects/tkabber/index_en.html">Tkabber</A>
+(which was developed synchronously with <TT>ejabberd</TT>, its CVS version
+supports most of <TT>ejabberd</TT> features).<BR>
 <BR>
 On disco query <TT>ejabberd</TT> returns following items:
 <UL><LI>
@@ -339,15 +403,15 @@ Identity of server.
 
 <H4><A NAME="htoc14">3.2.1</A>&nbsp;&nbsp;Node <TT>config</TT>: Global Configuration</H4><!--SEC END -->
 
-Under this node exists following nodes:<BR>
+Under this node the following nodes exists:<BR>
 <BR>
 <!--TOC paragraph Node <TT>config/hostname</TT>-->
 
 <H5>Node <TT>config/hostname</TT></H5><!--SEC END -->
 
 Via <TT>jabber:x:data</TT> queries to this node possible to change host name of
-this <TT>ejabberd</TT> server. (See figure&nbsp;<A HREF="#fig:hostname">2</A>) (Currently will work
-correctly only after restart)
+this <TT>ejabberd</TT> server. (See figure&nbsp;<A HREF="#fig:hostname">2</A>) (Currently this works
+correctly only after a restart)
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
  <IMG SRC="confhostname.png">
@@ -362,8 +426,8 @@ correctly only after restart)
 
 <H5>Node <TT>config/acls</TT></H5><!--SEC END -->
 
-Via <TT>jabber:x:data</TT> queries to this node possible to edit ACLs list. (See
-figure&nbsp;<A HREF="#fig:acls">3</A>)
+Via <TT>jabber:x:data</TT> queries to this node it is possible to edit ACLs list.
+(See figure&nbsp;<A HREF="#fig:acls">3</A>)
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
  <IMG SRC="confacls.png">
@@ -378,13 +442,14 @@ figure&nbsp;<A HREF="#fig:acls">3</A>)
 
 <H5>Node <TT>config/access</TT></H5><!--SEC END -->
 
-Via <TT>jabber:x:data</TT> queries to this node possible to edit access rules.<BR>
+Via <TT>jabber:x:data</TT> queries to this node it is possible to edit access
+rules.<BR>
 <BR>
 <!--TOC paragraph Node <TT>config/remusers</TT>-->
 
 <H5>Node <TT>config/remusers</TT></H5><!--SEC END -->
 
-Via <TT>jabber:x:data</TT> queries to this node possible to remove users. If
+Via <TT>jabber:x:data</TT> queries to this node it is possible to remove users. If
 removed user is online, then he will be disconnected. Also user-related data
 (e.g. his roster) is removed (but appropriate module must be loaded).<BR>
 <BR>
@@ -440,15 +505,15 @@ TBD<BR>
 <H3><A NAME="htoc21">4.1</A>&nbsp;&nbsp;How it works</H3><!--SEC END -->
 
 <A NAME="sec:howitworks"></A>
-Jabber domain is served by one or more <TT>ejabberd</TT> nodes. This nodes can be
-runned on different machines that can be connected via network. They all must
-have access to connect to port 4369 of all another nodes, and must have same
-magic cookie (see Erlang/OTP documentation, in short file
+A Jabber domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
+be run on different machines that are connected via a network. They all must
+have the ability to connect to port 4369 of all another nodes, and must have
+the same magic cookie (see Erlang/OTP documentation, in other words the file
 <TT>~ejabberd/.erlang.cookie</TT> must be the same on all nodes). This is
 needed because all nodes exchange information about connected users, S2S
 connections, registered services, etc...<BR>
 <BR>
-Each <TT>ejabberd</TT> node run following modules:
+Each <TT>ejabberd</TT> node must run following modules:
 <UL><LI>
 router;
 <LI>local router.
@@ -459,39 +524,41 @@ router;
 
 <H4><A NAME="htoc22">4.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
 
-This module is the main router of Jabber packets on each node. It route
-them based on their destanations domains. It have two tables: local and global
+This module is the main router of Jabber packets on each node. It routes
+them based on their destinations domains. It has two tables: local and global
 routes. First, domain of packet destination searched in local table, and if it
-finded, then packet routed to appropriate process. If no, then it searched in
-global table, and routed to appropriate <TT>ejabberd</TT> node or process. If it not
-exists in both tables, then it sended to S2S manager.<BR>
+found, then the packet is routed to appropriate process. If no, then it
+searches in global table, and is routed to the appropriate <TT>ejabberd</TT> node or
+process. If itdoes not exists in either table, then it sent to the S2S
+manager.<BR>
 <BR>
 <!--TOC subsubsection Local Router-->
 
 <H4><A NAME="htoc23">4.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
 
-This module route packets which have destination domain equal to this server
-name. If destination JID have node, then it routed to session manager, else it
-processed depending on it content.<BR>
+This module routes packets which have a destination domain equal to this server
+name. If destination JID has a node, then it routed to the session manager,
+else it is processed depending on it's content.<BR>
 <BR>
 <!--TOC subsubsection Session Manager-->
 
 <H4><A NAME="htoc24">4.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
 
-This module route packets to local users. It search to what user resource
-packet must be sended via presence table. If this reseouce connected to this
-node, it routed to C2S process, if it connected via another node, then packet
-sended to session manager on it.<BR>
+This module routes packets to local users. It searches for what user resource
+packet must be sended via presence table. If this resource is connected to
+this node, it is routed to C2S process, if it connected via another node, then
+the packet is sent to session manager on that node.<BR>
 <BR>
 <!--TOC subsubsection S2S Manager-->
 
 <H4><A NAME="htoc25">4.1.4</A>&nbsp;&nbsp;S2S Manager</H4><!--SEC END -->
 
-This module route packets to another Jabber servers. First, it check if
-already exists opened S2S connection from domain of packet source to domain of
-destination. If it opened on another node, then it routed to S2S manager on
-that node, if it opened on this node, then it routed to process that serve this
-connection, and if this connection not exists, then it opened and registered.<BR>
+This module routes packets to other Jabber servers. First, it checks if an
+open S2S connection from the domain of the packet source to the domain of
+packet destination already exists. If it is open on another node, then it
+routes the packet to S2S manager on that node, if it is open on this node, then
+it is routed to the process that serves this connection, and if a connection
+does not exist, then it is opened and registered.<BR>
 <BR>
 <!--TOC section Built-in Modules-->
 
@@ -511,8 +578,8 @@ Following options used by many modules, so they described in separate section.<B
 
 Many modules define handlers for processing IQ queries of different namespaces
 to this server or to user (e.&nbsp;g. to <TT>myjabber.org</TT> or to
-<TT>user@myjabber.org</TT>). This option defines processing discipline of this
-queries. Possible values are:
+<TT>user@myjabber.org</TT>). This option defines processing discipline of
+these queries. Possible values are:
 <DL COMPACT=compact><DT>
 <B><TT>no_queue</TT></B><DD> All queries of namespace with this processing
  discipline processed immediately. This also means that no other packets can
