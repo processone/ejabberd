@@ -186,8 +186,6 @@ session_established({xmlstreamelement, El}, StateData) ->
 				presence_update(FromJID, El, StateData);
 			    _ ->
 				presence_track(FromJID, ToJID, El, StateData)
-				%ejabberd_router:route(FrJID, ToJID, El),
-				%NewSt
 			end;
 		    _ ->
 			ejabberd_router:route(FromJID, ToJID, El),
@@ -264,14 +262,8 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			process_presence_probe(From, To, StateData),
 			{false, Attrs, StateData};
 		    "error" ->
-			case ?SETS:is_element(From, StateData#state.pres_a) of
-			    true ->
-				A = ?SETS:del_element(From,
-						      StateData#state.pres_a),
-				{true, Attrs, StateData#state{pres_a = A}};
-			    _ ->
-				{true, Attrs, StateData}
-			end;
+			NewA = remove_element(From, StateData#state.pres_a),
+			{true, Attrs, StateData#state{pres_a = NewA}};
 		    "invisible" ->
 			Attrs1 = lists:keydelete("type", 1, Attrs),
 			{true, [{"type", "unavailable"} | Attrs1], StateData};
@@ -467,12 +459,12 @@ presence_update(From, Packet, StateData) ->
 			S1 = StateData#state{pres_last = undefined,
 					     pres_a = ?SETS:new(),
 					     pres_i = ?SETS:new(),
-					     pres_invis = false},
+					     pres_invis = true},
 			presence_broadcast_first(From, S1, Packet);
 		    true ->
 			StateData
 		end,
-	    StateData;
+	    NewState;
 	"error" ->
 	    StateData;
 	"subscribe" ->
@@ -495,18 +487,20 @@ presence_update(From, Packet, StateData) ->
 			
 			mod_offline:resend_offline_messages(
 			  StateData#state.user),
-			presence_broadcast_first(From, StateData, Packet);
+			presence_broadcast_first(
+			  From, StateData#state{pres_last = Packet,
+						pres_invis = false
+					       }, Packet);
 		    true ->
 			presence_broadcast_to_trusted(From,
 						      StateData#state.pres_f,
 						      StateData#state.pres_a,
 						      Packet),
-			StateData
+			StateData#state{pres_last = Packet,
+					pres_invis = false
+				       }
 		end,
-
-	    NewState#state{pres_last = Packet,
-			   pres_invis = false
-			  }
+	    NewState
     end.
 
 presence_track(From, To, Packet, StateData) ->

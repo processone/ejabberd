@@ -139,10 +139,10 @@ item_to_xml(Item) ->
 process_iq_set(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     {User, _, _} = From,
     {xmlelement, Name, Attrs, Els} = SubEl,
-    lists:foreach(fun(El) -> process_item_set(User, To, El) end, Els),
+    lists:foreach(fun(El) -> process_item_set(User, From, To, El) end, Els),
     {iq, ID, result, XMLNS, []}.
 
-process_item_set(User, To, XItem) ->
+process_item_set(User, From, To, XItem) ->
     {xmlelement, Name, Attrs, Els} = XItem,
     % TODO: load existing item
     JID = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
@@ -175,12 +175,43 @@ process_item_set(User, To, XItem) ->
 			    _ ->
 				mnesia:write(Item2)
 			end,
-			Item2
+			{Item, Item2}
 		end,
 	    case mnesia:transaction(F) of
-		{atomic, Item} ->
+		{atomic, {OldItem, Item}} ->
 		    push_item(User, To, Item),
-		    ok;
+		    case Item#roster.subscription of
+			remove ->
+			    IsTo = case OldItem#roster.subscription of
+				       both -> true;
+				       to -> true;
+				       _ -> false
+				   end,
+			    IsFrom = case OldItem#roster.subscription of
+					 both -> true;
+					 from -> true;
+					 _ -> false
+				     end,
+			    if IsTo ->
+				    ejabberd_router:route(
+				      From, OldItem#roster.jid,
+				      {xmlelement, "presence",
+				       [{"type", "unsubscribe"}],
+				       []});
+			       true -> ok
+			    end,
+			    if IsFrom ->
+				    ejabberd_router:route(
+				      From, OldItem#roster.jid,
+				      {xmlelement, "presence",
+				       [{"type", "unsubscribed"}],
+				       []});
+			       true -> ok
+			    end,
+			    ok;
+			_ ->
+			    ok
+		    end;
 		E ->
 		    ?DEBUG("ROSTER: roster item set error: ~p~n", [E]),
 		    ok
@@ -410,7 +441,6 @@ out_subscription(User, JID, Type) ->
 					     none -> from;
 					     _    -> S
 					 end,
-					% TODO: update presence
 				    {Item#roster{subscription = NS,
 						 ask = none},
 				     true};
@@ -421,7 +451,6 @@ out_subscription(User, JID, Type) ->
 					     from -> none;
 					     _    -> S
 					 end,
-					% TODO: update presence
 				    {Item#roster{subscription = NS,
 						 ask = none},
 				     true}

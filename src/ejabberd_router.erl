@@ -98,40 +98,6 @@ loop() ->
 	    loop()
     end.
 
-
-%do_route(From, To, Packet) ->
-%    ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n", [From, To, Packet]),
-%    {DstNode, DstDomain, DstResourse} = To,
-%    F = fun() ->
-%		case mnesia:read({local_route, DstDomain}) of
-%		    [] ->
-%			case mnesia:read({route, DstDomain}) of
-%			    [] ->
-%				false;
-%			    [R] ->
-%				{ok, R#route.node, R#route.pid}
-%			end;
-%		    [R] ->
-%			{ok, node(), R#local_route.pid}
-%		end
-%	end,
-%    case mnesia:transaction(F) of
-%	{atomic, false} ->
-%	    ejabberd_s2s ! {route, From, To, Packet};
-%	{atomic, {ok, Node, Pid}} ->
-%	    case node() of
-%		Node ->
-%		    ?DEBUG("routed to process ~p~n", [Pid]),
-%		    Pid ! {route, From, To, Packet};
-%		_ ->
-%		    ?DEBUG("routed to node ~p~n", [Node]),
-%		    {ejabberd_router, Node} ! {route, From, To, Packet}
-%	    end;
-%	_ ->
-%	    % TODO
-%	    error
-%    end.
-
 do_route(From, To, Packet) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n", [From, To, Packet]),
     {DstNode, DstDomain, DstResourse} = To,
