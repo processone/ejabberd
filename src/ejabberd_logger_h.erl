@@ -64,6 +64,14 @@ handle_call(_Request, State) ->
 %%----------------------------------------------------------------------
 handle_info({'EXIT', _Fd, _Reason}, _State) ->
     remove_handler;
+handle_info({emulator, GL, reopen}, State) ->
+    file:close(State#state.fd),
+    case file:open(State#state.file, [append]) of
+	{ok, Fd} ->
+	    {ok, State#state{fd = Fd}};
+	Error ->
+	    Error
+    end;
 handle_info({emulator, GL, Chars}, State) ->
     write_event(State#state.fd, {erlang:localtime(), {emulator, GL, Chars}}),
     {ok, State};
