@@ -53,11 +53,14 @@
 
 -define(STREAM_TRAILER, "</stream:stream>").
 
--define(INVALID_HEADER_ERR,
-	"<stream:stream>"
-	"<stream:error>Invalid Stream Header</stream:error>"
-	"</stream:stream>"
-       ).
+-define(INVALID_NAMESPACE_ERR,
+	xml:element_to_string(?SERR_INVALID_NAMESPACE)).
+
+-define(HOST_UNKNOWN_ERR,
+	xml:element_to_string(?SERR_HOST_UNKNOWN)).
+
+-define(INVALID_XML_ERR,
+	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -90,7 +93,8 @@ init([From, Server, Type]) ->
 			     myname = From,
 			     server = Server,
 			     new = New,
-			     verify = Verify}}.
+			     verify = Verify},
+     ?S2STIMEOUT}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -111,7 +115,8 @@ open_socket(init, StateData) ->
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = Socket,
 			     xmlpid = XMLStreamPid,
-			     streamid = new_id()}};
+			     streamid = new_id()},
+	     ?S2STIMEOUT};
 	{error, Reason} ->
 	    ?DEBUG("s2s_out: connect return ~p~n", [Reason]),
 	    Error = case Reason of
@@ -163,11 +168,20 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 				   {"to", StateData#state.server}],
 				  [{xmlcdata, Key2}]})
 	    end,
-	    {next_state, wait_for_validation, StateData#state{new = New}};
+	    {next_state, wait_for_validation,
+	     StateData#state{new = New}, ?S2STIMEOUT};
 	_ ->
-	    send_text(StateData#state.socket, ?INVALID_HEADER_ERR),
+	    send_text(StateData#state.socket, ?INVALID_NAMESPACE_ERR),
 	    {stop, normal, StateData}
     end;
+
+wait_for_stream({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket,
+	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_stream(timeout, StateData) ->
+    {stop, normal, StateData};
 
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
@@ -190,7 +204,7 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 	    ?INFO_MSG("recv verify: ~p", [{From, To, Id, Type}]),
 	    case StateData#state.verify of
 		false ->
-		    {next_state, wait_for_validation, StateData};
+		    {next_state, wait_for_validation, StateData, ?S2STIMEOUT};
 		{Pid, Key} ->
 		    case Type of
 			"valid" ->
@@ -203,15 +217,22 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 			    {stop, normal, StateData};
 			_ ->
 			    {next_state, wait_for_validation,
-			     StateData#state{verify = false}}
+			     StateData#state{verify = false}, ?S2STIMEOUT}
 		    end
 	    end;
 	_ ->
-	    {next_state, wait_for_validation, StateData}
+	    {next_state, wait_for_validation, StateData, ?S2STIMEOUT}
     end;
 
 wait_for_validation({xmlstreamend, Name}, StateData) ->
-    % TODO
+    {stop, normal, StateData};
+
+wait_for_validation({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket,
+	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_validation(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_validation(closed, StateData) ->
@@ -261,6 +282,11 @@ stream_established({xmlstreamelement, El}, StateData) ->
     {next_state, stream_established, StateData, ?S2STIMEOUT};
 
 stream_established({xmlstreamend, Name}, StateData) ->
+    {stop, normal, StateData};
+
+stream_established({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket,
+	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 stream_established(timeout, StateData) ->

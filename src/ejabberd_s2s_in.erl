@@ -28,6 +28,7 @@
 	 terminate/3]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -record(state, {socket, receiver, streamid,
 		myname, server, queue}).
@@ -50,17 +51,14 @@
 
 -define(STREAM_TRAILER, "</stream:stream>").
 
--define(INVALID_HEADER_ERR,
-	"<stream:stream>"
-	"<stream:error>Invalid Stream Header</stream:error>"
-	"</stream:stream>"
-       ).
+-define(INVALID_NAMESPACE_ERR,
+	xml:element_to_string(?SERR_INVALID_NAMESPACE)).
 
--define(INVALID_DOMAIN_ERR,
-	"<stream:stream>"
-	"<stream:error>Invalid Destination</stream:error>"
-	"</stream:stream>"
-       ).
+-define(HOST_UNKNOWN_ERR,
+	xml:element_to_string(?SERR_HOST_UNKNOWN)).
+
+-define(INVALID_XML_ERR,
+	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -82,10 +80,12 @@ start(SockData, Opts) ->
 init([{SockMod, Socket}]) ->
     ?INFO_MSG("started: ~p", [{SockMod, Socket}]),
     ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
-    {ok, wait_for_stream, #state{socket = Socket,
-				 receiver = ReceiverPid,
-				 streamid = new_id(),
-				 queue = queue:new()}}.
+    {ok, wait_for_stream,
+     #state{socket = Socket,
+	    receiver = ReceiverPid,
+	    streamid = new_id(),
+	    queue = queue:new()},
+     ?S2STIMEOUT}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -105,15 +105,24 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    case lists:member(Me, ejabberd_router:dirty_get_all_domains()) of
 		true ->
 		    send_text(StateData#state.socket, ?STREAM_HEADER),
-		    {next_state, wait_for_key, StateData#state{myname = Me}};
+		    {next_state, wait_for_key,
+		     StateData#state{myname = Me}, ?S2STIMEOUT};
 		_ ->
-		    send_text(StateData#state.socket, ?INVALID_DOMAIN_ERR),
+		    send_text(StateData#state.socket, ?HOST_UNKNOWN_ERR),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
-	    send_text(StateData#state.socket, ?INVALID_HEADER_ERR),
+	    send_text(StateData#state.socket, ?INVALID_NAMESPACE_ERR),
 	    {stop, normal, StateData}
     end;
+
+wait_for_stream({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket,
+	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_stream(timeout, StateData) ->
+    {stop, normal, StateData};
 
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
@@ -130,9 +139,10 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
 		    {next_state,
 		     wait_for_verification,
 		     StateData#state{myname = To,
-				     server = From}};
+				     server = From},
+		     ?S2STIMEOUT};
 		_ ->
-		    send_text(StateData#state.socket, ?INVALID_DOMAIN_ERR),
+		    send_text(StateData#state.socket, ?HOST_UNKNOWN_ERR),
 		    {stop, normal, StateData}
 	    end;
 	{verify, To, From, Id, Key} ->
@@ -149,13 +159,20 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
 			   {"id", Id},
 			   {"type", Type}],
 			  []}),
-	    {next_state, wait_for_key, StateData};
+	    {next_state, wait_for_key, StateData, ?S2STIMEOUT};
 	_ ->
-	    {next_state, wait_for_key, StateData}
+	    {next_state, wait_for_key, StateData, ?S2STIMEOUT}
     end;
 
 wait_for_key({xmlstreamend, Name}, StateData) ->
-    % TODO
+    {stop, normal, StateData};
+
+wait_for_key({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket,
+	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_key(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_key(closed, StateData) ->
@@ -170,7 +187,7 @@ wait_for_verification(valid, StateData) ->
 		   {"type", "valid"}],
 		  []}),
     send_queue(StateData#state.socket, StateData#state.queue),
-    {next_state, stream_established, StateData};
+    {next_state, stream_established, StateData, ?S2STIMEOUT};
 
 wait_for_verification(invalid, StateData) ->
     send_element(StateData#state.socket,
@@ -198,13 +215,20 @@ wait_for_verification({xmlstreamelement, El}, StateData) ->
 			   {"id", Id},
 			   {"type", Type}],
 			  []}),
-	    {next_state, wait_for_verification, StateData};
+	    {next_state, wait_for_verification, StateData, ?S2STIMEOUT};
 	_ ->
-	    {next_state, wait_for_verification, StateData}
+	    {next_state, wait_for_verification, StateData, ?S2STIMEOUT}
     end;
 
 wait_for_verification({xmlstreamend, Name}, StateData) ->
-    % TODO
+    {stop, normal, StateData};
+
+wait_for_verification({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket,
+	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_verification(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_verification(closed, StateData) ->
@@ -260,14 +284,17 @@ stream_established({xmlstreamelement, El}, StateData) ->
     {next_state, stream_established, StateData, ?S2STIMEOUT};
 
 stream_established({xmlstreamend, Name}, StateData) ->
-    % TODO
+    {stop, normal, StateData};
+
+stream_established({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket,
+	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 stream_established(timeout, StateData) ->
     {stop, normal, StateData};
 
 stream_established(closed, StateData) ->
-    % TODO
     {stop, normal, StateData}.
 
 
@@ -292,7 +319,7 @@ stream_established(closed, StateData) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 handle_event(Event, StateName, StateData) ->
-    {next_state, StateName, StateData}.
+    {next_state, StateName, StateData, ?S2STIMEOUT}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_sync_event/4
@@ -323,10 +350,10 @@ handle_info({send_element, El}, StateName, StateData) ->
     case StateName of
 	stream_established ->
 	    send_element(StateData#state.socket, El),
-	    {next_state, StateName, StateData};
+	    {next_state, StateName, StateData, ?S2STIMEOUT};
 	_ ->
 	    Q = queue:in(El, StateData#state.queue),
-	    {next_state, StateName, StateData#state{queue = Q}}
+	    {next_state, StateName, StateData#state{queue = Q}, ?S2STIMEOUT}
     end.
 
 
