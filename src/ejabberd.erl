@@ -23,6 +23,7 @@ init() ->
     db_init(),
     sha:start(),
     translate:start(),
+    ejabberd_config:start(),
     ejabberd_auth:start(),
     ejabberd_router:start(),
     ejabberd_sm:start(),

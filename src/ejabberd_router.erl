@@ -10,7 +10,11 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([route/3, register_route/1, register_local_route/1,
+-export([route/3,
+	 register_route/1,
+	 register_local_route/1,
+	 unregister_route/1,
+	 unregister_local_route/1,
 	 dirty_get_all_routes/0,
 	 dirty_get_all_domains/0
 	]).
@@ -80,6 +84,12 @@ loop() ->
 		end,
 	    mnesia:transaction(F),
 	    loop();
+	{unregister_local_route, Domain} ->
+	    F = fun() ->
+			mnesia:delete({local_route, Domain})
+		end,
+	    mnesia:transaction(F),
+	    loop();
 	_ ->
 	    loop()
     end.
@@ -127,6 +137,12 @@ register_route(Domain) ->
 
 register_local_route(Domain) ->
     ejabberd_router ! {register_local_route, Domain, self()}.
+
+unregister_route(Domain) ->
+    ejabberd_router ! {unregister_route, Domain}.
+
+unregister_local_route(Domain) ->
+    ejabberd_router ! {unregister_local_route, Domain}.
 
 
 dirty_get_all_routes() ->
