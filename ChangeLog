@@ -1,3 +1,11 @@
+2003-11-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_last.erl: Added remove_user/1 function
+
+	* src/mod_configure.erl: Removing of user's stuff moved to
+	ejabberd_auth
+	* src/ejabberd_auth.erl: Likewise
+
 2003-10-31  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_irc/mod_irc_connection.erl: Updated to work more

@@ -671,11 +671,7 @@ set_form(["config", "remusers"], Lang, XData) ->
 				     jlib:make_jid(Var, "", ""),
 				     {xmlelement, "broadcast", [],
 				      [{exit, "User removed"}]}},
-		      catch ejabberd_auth:remove_user(Var),
-		      catch mod_roster:remove_user(Var),
-		      catch mod_offline:remove_user(Var),
-		      catch mod_vcard:remove_user(Var),
-		      catch mod_private:remove_user(Var);
+		      catch ejabberd_auth:remove_user(Var);
 		  _ ->
 		      ok
 	      end
@@ -805,10 +801,6 @@ set_sm_form(User, [], Lang, XData) ->
 			   {xmlelement, "broadcast", [],
 			    [{exit, "User removed"}]}},
 	    catch ejabberd_auth:remove_user(User),
-	    catch mod_roster:remove_user(User),
-	    catch mod_offline:remove_user(User),
-	    catch mod_vcard:remove_user(User),
-	    catch mod_private:remove_user(User),
 	    {result, []};
 	_ ->
 	    {error, ?ERR_BAD_REQUEST}

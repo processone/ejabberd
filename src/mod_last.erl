@@ -16,7 +16,8 @@
 	 stop/0,
 	 process_local_iq/3,
 	 process_sm_iq/3,
-	 on_presence_update/1]).
+	 on_presence_update/1,
+	 remove_user/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -112,3 +113,9 @@ on_presence_update(LUser) ->
     mnesia:transaction(F).
 
 
+remove_user(User) ->
+    LUser = jlib:nodeprep(User),
+    F = fun() ->
+		mnesia:delete({last_activity, LUser})
+	end,
+    mnesia:transaction(F).
