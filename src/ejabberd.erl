@@ -13,5 +13,17 @@
 -export([start/0]).
 
 start() ->
-    {ok, _} = erl_ddll:start(),
-    ejabberd_listener:start().
+    register(ejabberd, self()),
+    {A1, A2, A3} = now(),
+    random:seed(A1,A2,A3),
+    ok = erl_ddll:load_driver(".", expat_erl),
+    Port = open_port({spawn, expat_erl}, [binary]),
+    ejabberd_listener:start(),
+    loop(Port).
+
+
+loop(Port) ->
+    receive
+	_ ->
+	    loop(Port)
+    end.

@@ -94,7 +94,7 @@ static ErlDrvData expat_erl_start(ErlDrvPort port, char *buff)
 
 static void expat_erl_stop(ErlDrvData handle)
 {
-   /* TODO: free parser */
+   XML_ParserFree(((expat_data *)handle)->parser);
    driver_free((char*)handle);
 }
 

@@ -21,41 +21,9 @@
 %
 -export([init/1, wait_for_stream/2, wait_for_auth/2, terminate/3]).
 
--record(state, {socket, sender, receiver}).
+-record(state, {socket, sender, receiver, streamid}).
 
 -include("ejabberd.hrl").
-
-%start_old(Socket) ->
-%    spawn(?MODULE, init, [Socket]).
-
-%init_old(Socket) ->
-%    SenderPid = spawn(?MODULE, sender, [Socket]),
-%    ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
-%    loop_old(Socket, SenderPid, ReceiverPid).
-%
-%loop_old(Socket, SenderPid, ReceiverPid) ->
-%    receive
-%	{xmlstreamstart, Name, Attrs} ->
-%	    ?DEBUG("Socket(~p) -> XML Stream start~n"
-%		   "	Name: ~s~n"
-%		   "	Attrs: ~p~n", [Socket, Name, Attrs]),
-%	    loop_old(Socket, SenderPid, ReceiverPid);
-%	{xmlstreamend, Name} ->
-%	    ?DEBUG("Socket(~p) -> XML Stream end~n"
-%		   "	Name: ~s~n", [Socket, Name]),
-%	    loop_old(Socket, SenderPid, ReceiverPid);
-%	{xmlstreamelement, El} ->
-%	    ?DEBUG("Socket(~p) -> XML Stream element~n"
-%		   "	Element: ~p~n", [Socket, El]),
-%	    loop_old(Socket, SenderPid, ReceiverPid);
-%	{xmlstreamerror, Err} ->
-%	    ?DEBUG("Socket(~p) -> XML Stream error~n"
-%		   "	Error: ~p~n", [Socket, Err]),
-%	    loop_old(Socket, SenderPid, ReceiverPid)
-%    end.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -define(DBGFSM, true).
 
@@ -81,8 +49,6 @@
 %%%----------------------------------------------------------------------
 start(Socket) ->
     gen_fsm:start(ejabberd_c2s, [Socket], ?FSMOPTS).
-%start_old(Socket) ->
-%    spawn(?MODULE, init, [Socket]).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -100,7 +66,8 @@ init([Socket]) ->
     ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
     {ok, wait_for_stream, #state{socket = Socket,
 				 receiver = ReceiverPid,
-				 sender = SenderPid}}.
+				 sender = SenderPid,
+				 streamid = new_id()}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -113,7 +80,8 @@ state_name(Event, StateData) ->
 
 wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     % TODO
-    Header = io_lib:format(?STREAM_HEADER, ["SID", "localhost"]),
+    Header = io_lib:format(?STREAM_HEADER,
+			   [StateData#state.streamid, "localhost"]),
     send_text(StateData#state.sender, Header),
     case lists:keysearch("xmlns:stream", 1, Attrs) of
 	{value, {"xmlns:stream", "http://etherx.jabber.org/streams"}} ->
@@ -130,8 +98,14 @@ wait_for_stream(closed, StateData) ->
 
 
 wait_for_auth({xmlstreamelement, El}, StateData) ->
-    % TODO
-    {next_state, wait_for_auth, StateData};
+    case is_auth_packet(El) of
+	{auth, {U, P, D, R}} ->
+	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
+	    % TODO
+	    {next_state, session_established, StateData};
+	_ ->
+	    {next_state, wait_for_auth, StateData}
+end;
 
 wait_for_auth({xmlstreamend, Name}, StateData) ->
     % TODO
@@ -227,4 +201,48 @@ sender(Socket) ->
 
 send_text(Pid, Text) ->
     Pid ! {text, Text}.
+
+new_id() ->
+    io_lib:format("~p", [random:uniform(65536*65536)]).
+
+
+is_auth_packet({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
+    case xml:get_attr_s("type", Attrs) of
+	"set" ->
+	    case xml:remove_cdata(Els) of
+		[{xmlelement, "query", Attrs2, Els2}] ->
+		    case xml:get_attr_s("xmlns", Attrs2) of
+			"jabber:iq:auth" ->
+			    {auth, get_auth_tags(Els2, "", "", "", "")};
+			_ -> false
+		    end;
+		_ ->
+		    false
+	    end;
+	true ->
+	    false
+    end;
+
+is_auth_packet(_) ->
+    false.
+
+get_auth_tags([{xmlelement, Name, Attrs, Els}| L], U, P, D, R) ->
+    CData = xml:get_cdata(Els),
+    case Name of
+	"username" ->
+	    get_auth_tags(L, CData, P, D, R);
+	"password" ->
+	    get_auth_tags(L, U, CData, D, R);
+	"digest" ->
+	    get_auth_tags(L, U, P, CData, R);
+	"resource" ->
+	    get_auth_tags(L, U, P, D, CData);
+	_ ->
+	    get_auth_tags(L, U, P, D, R)
+    end;
+get_auth_tags([_ | L], U, P, D, R) ->
+    get_auth_tags(L, U, P, D, R);
+get_auth_tags([], U, P, D, R) ->
+    {U, P, D, R}.
+
 

@@ -16,7 +16,6 @@ start(CallbackPid) ->
     spawn(?MODULE, init, [CallbackPid]).
 
 init(CallbackPid) ->
-    ok = erl_ddll:load_driver(".", expat_erl),
     Port = open_port({spawn, expat_erl}, [binary]),
     loop(CallbackPid, Port, []).
 
