@@ -128,6 +128,8 @@ try_register(User, Password) ->
 			    ok;
 			{atomic, exists} ->
 			    {error, ?ERR_CONFLICT};
+			{error, invalid_jid} ->
+			    {error, ?ERR_JID_MALFORMED};
 			{error, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR}
 		    end

@@ -255,12 +255,24 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    {next_state, wait_for_auth, StateData}
 		    end;
 		_ ->
-		    ?INFO_MSG("(~w) Forbidden legacy authentification for ~s",
-			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
-		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
-		    send_element(StateData, Err),
-		    {next_state, wait_for_auth, StateData}
+		    if
+			JID == error ->
+			    ?INFO_MSG(
+			       "(~w) Forbidden legacy authentification for "
+			       "username '~s' with resource '~s'",
+			       [StateData#state.socket, U, R]),
+			    Err = jlib:make_error_reply(El, ?ERR_JID_MALFORMED),
+			    send_element(StateData, Err),
+			    {next_state, wait_for_auth, StateData};
+			true ->
+			    ?INFO_MSG(
+			       "(~w) Forbidden legacy authentification for ~s",
+			       [StateData#state.socket,
+				jlib:jid_to_string(JID)]),
+			    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
+			    send_element(StateData, Err),
+			    {next_state, wait_for_auth, StateData}
+		    end
 	    end;
 	_ ->
 	    case jlib:iq_query_info(El) of

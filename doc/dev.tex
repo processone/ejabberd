@@ -1,0 +1,378 @@
+\documentclass[10pt]{article}
+
+\usepackage{graphics}
+\usepackage{hevea}
+\usepackage{verbatim}
+
+
+\newcommand{\logoscale}{0.7}
+\newcommand{\imgscale}{0.58}
+\newcommand{\insimg}[1]{\insscaleimg{\imgscale}{#1}}
+
+\newcommand{\insscaleimg}[2]{
+  \imgsrc{#2}{}
+  \begin{latexonly}
+    \scalebox{#1}{\includegraphics{#2}}
+  \end{latexonly}
+}
+
+\newcommand{\ns}[1]{\texttt{#1}}
+\newcommand{\ejabberd}{\texttt{ejabberd}}
+\newcommand{\Jabber}{Jabber}
+
+\newcommand{\modregister}{\texttt{mod\_register}}
+\newcommand{\modroster}{\texttt{mod\_roster}}
+\newcommand{\modconfigure}{\texttt{mod\_configure}}
+\newcommand{\moddisco}{\texttt{mod\_disco}}
+\newcommand{\modstats}{\texttt{mod\_stats}}
+\newcommand{\modvcard}{\texttt{mod\_vcard}}
+\newcommand{\modoffline}{\texttt{mod\_offline}}
+\newcommand{\modecho}{\texttt{mod\_echo}}
+\newcommand{\modprivate}{\texttt{mod\_private}}
+\newcommand{\modtime}{\texttt{mod\_time}}
+\newcommand{\modversion}{\texttt{mod\_version}}
+c
+%\setcounter{tocdepth}{3}
+
+
+\title{Ejabberd Developers Guide}
+\author{Alexey Shchepin \\
+  \ahrefurl{mailto:alexey@sevcom.net} \\
+  \ahrefurl{xmpp:aleksey@jabber.ru}}
+\date{September 10, 2003}
+
+\begin{document}
+\begin{titlepage}
+  \maketitle{}
+  
+  {\centering
+    \insscaleimg{\logoscale}{logo.png}
+    \par
+  }
+\end{titlepage}
+%\newpage
+\tableofcontents{}
+
+\newpage
+\section{Introduction}
+\label{sec:intro}
+
+\ejabberd{} is a Free and Open Source fault-tolerant distributed \Jabber{}
+server.  It is writen mostly in Erlang.
+
+The main features of \ejabberd{} is:
+\begin{itemize}
+\item Works on most of popular platforms: *nix (tested on Linux and FreeBSD)
+  and Win32
+\item Distributed: You can run \ejabberd{} on a cluster of machines and all of
+  them will serve one Jabber domain.
+\item Fault-tolerance: You can setup an \ejabberd{} cluster so that all the
+  information required for a properly working service will be stored
+  permanently on more than one node.  This means that if one of the nodes
+  crashes, then the others will continue working without disruption.
+  You can also add or replace more nodes ``on the fly''.
+\item Built-in \footahref{http://www.jabber.org/jeps/jep-0045.html}{Multi-User
+    Chat} service
+\item Built-in IRC transport
+\item Built-in
+  \footahref{http://www.jabber.org/jeps/jep-0060.html}{Publish-Subscribe}
+  service
+\item Built-in Jabber Users Directory service based on users vCards
+\item Support for
+  \footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030}
+  (Service Discovery).
+\item Support for
+  \footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039}
+  (Statistics Gathering).
+\item Support for \ns{xml:lang} attribute in many XML elements
+\end{itemize}
+
+
+
+
+
+\subsection{How it works}
+\label{sec:howitworks}
+
+
+
+A \Jabber{} domain is served by one or more \ejabberd{} nodes.  These nodes can
+be run on different machines that are connected via a network.  They all must
+have the ability to connect to port 4369 of all another nodes, and must have
+the same magic cookie (see Erlang/OTP documentation, in other words the file
+\texttt{\~{}ejabberd/.erlang.cookie} must be the same on all nodes). This is
+needed because all nodes exchange information about connected users, S2S
+connections, registered services, etc\ldots
+
+
+
+Each \ejabberd{} node have following modules:
+\begin{itemize}
+\item router;
+\item local router.
+\item session manager;
+\item S2S manager;
+\end{itemize}
+
+
+\subsubsection{Router}
+
+This module is the main router of \Jabber{} packets on each node.  It routes
+them based on their destinations domains.  It has two tables: local and global
+routes.  First, domain of packet destination searched in local table, and if it
+found, then the packet is routed to appropriate process.  If no, then it
+searches in global table, and is routed to the appropriate \ejabberd{} node or
+process.  If it does not exists in either tables, then it sent to the S2S
+manager.
+
+
+\subsubsection{Local Router}
+
+This module routes packets which have a destination domain equal to this server
+name.  If destination JID has a non-empty user part, then it routed to the
+session manager, else it is processed depending on it's content.
+
+
+\subsubsection{Session Manager}
+
+This module routes packets to local users.  It searches for what user resource
+packet must be sended via presence table.  If this resource is connected to
+this node, it is routed to C2S process, if it connected via another node, then
+the packet is sent to session manager on that node.
+
+
+\subsubsection{S2S Manager}
+
+This module routes packets to other \Jabber{} servers.  First, it checks if an
+open S2S connection from the domain of the packet source to the domain of
+packet destination already exists. If it is open on another node, then it
+routes the packet to S2S manager on that node, if it is open on this node, then
+it is routed to the process that serves this connection, and if a connection
+does not exist, then it is opened and registered.
+
+
+
+
+\section{XML representation}
+\label{sec:xmlrepr}
+
+Each XML stanza represented as following tuple:
+\begin{verbatim}
+XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
+        Name = string()
+        Attrs = [Attr]
+        Attr = {Key, Val}
+        Key = string()
+        Val = string()
+        ElementOrCDATA = XMLElement | CDATA
+        CDATA = {xmlcdata, string()}
+\end{verbatim}
+E.\,g. this stanza:
+\begin{verbatim}
+<message to='test@conference.e.localhost' type='groupchat'>
+  <body>test</body>
+</message>
+\end{verbatim}
+represented as following structure:
+\begin{verbatim}
+{xmlelement, "message",
+    [{"to", "test@conference.e.localhost"},
+     {"type", "groupchat"}],
+    [{xmlelement, "body",
+         [],
+         [{xmlcdata, "test"}]}]}}
+\end{verbatim}
+
+
+
+\section{Module \texttt{xml}}
+\label{sec:xmlmod}
+
+\begin{description}
+\item[\verb|element_to_string(El) -> string()|]
+\begin{verbatim}
+El = XMLElement
+\end{verbatim}
+  Returns string representation of XML stanza \texttt{El}.
+
+\item[\verb|crypt(S) -> string()|]
+\begin{verbatim}
+S = string()
+\end{verbatim}
+  Returns string which correspond to \texttt{S} with encoded XML special
+  characters.
+
+\item[\verb|remove_cdata(ECList) -> EList|]
+\begin{verbatim}
+ECList = [ElementOrCDATA]
+EList = [XMLElement]
+\end{verbatim}
+  \texttt{EList} is a list of all non-CDATA elements of ECList.
+
+
+
+\item[\verb|get_path_s(El, Path) -> Res|]
+\begin{verbatim}
+El = XMLElement
+Path = [PathItem]
+PathItem = PathElem | PathAttr | PathCDATA
+PathElem = {elem, Name}
+PathAttr = {attr, Name}
+PathCDATA = cdata
+Name = string()
+Res = string() | XMLElement
+\end{verbatim}
+  If \texttt{Path} is empty, then returns \texttt{El}.  Else sequentially
+  consider elements of \texttt{Path}.  Each element is one of:
+  \begin{description}
+  \item[\verb|{elem, Name}|] \texttt{Name} is name of subelement of
+    \texttt{El}, if such element exists, then this element considered in
+    following steps, else returns empty string.
+  \item[\verb|{attr, Name}|] If \texttt{El} have attribute \texttt{Name}, then
+    returns value of this attribute, else returns empty string.
+  \item[\verb|cdata|] Returns CDATA of \texttt{El}.
+  \end{description}
+
+\item[TODO:]
+\begin{verbatim}
+         get_cdata/1, get_tag_cdata/1
+         get_attr/2, get_attr_s/2
+         get_tag_attr/2, get_tag_attr_s/2
+         get_subtag/2
+\end{verbatim}
+\end{description}
+
+
+
+
+\section{\ejabberd{} modules}
+\label{sec:emods}
+
+
+\subsection{\verb|gen_mod| behaviour}
+\label{sec:genmod}
+
+TBD
+
+\subsection{Module \verb|gen_iq_handler|}
+\label{sec:geniqhandl}
+
+The module \verb|gen_iq_handler| allows to easily write handlers for IQ packets
+of particular XML namespaces that addressed to server or to users bare JIDs.
+
+In this module the following functions are defined:
+\begin{description}
+\item[\verb|add_iq_handler(Component, NS, Module, Function, Type)|]
+\begin{verbatim}
+Component = Module = Function = atom()
+NS = string()
+Type = no_queue | one_queue | parallel
+\end{verbatim}
+  Registers function \verb|Module:Function| as handler for IQ packets that
+  contain child of namespace \verb|NS| in \verb|Component|.  Queueing
+  discipline is \verb|Type|.  There are at least two components defined:
+  \begin{description}
+  \item[\verb|ejabberd_local|] Handles packets that addressed to server JID;
+  \item[\verb|ejabberd_sm|] Handles packets that addressed to users bare JIDs.
+  \end{description}
+\item[\verb|remove_iq_handler(Component, NS)|]
+\begin{verbatim}
+Component = atom()
+NS = string()
+\end{verbatim}
+  Removes IQ handler for namespace \verb|NS| from \verb|Component|.
+\end{description}
+
+Handler function must have the following type:
+\begin{description}
+\item[\verb|Module:Function(From, To, IQ)|]
+\begin{verbatim}
+From = To = jid()
+\end{verbatim}
+\end{description}
+
+
+
+\begin{verbatim}
+-module(mod_cputime).
+
+-behaviour(gen_mod).
+
+-export([start/1,
+         stop/0,
+         process_local_iq/3]).
+
+-include("ejabberd.hrl").
+-include("jlib.hrl").
+
+-define(NS_CPUTIME, "ejabberd:cputime").
+
+start(Opts) ->
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_CPUTIME,
+                                  ?MODULE, process_local_iq, IQDisc).
+
+stop() ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_CPUTIME).
+
+process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+    case Type of
+        set ->
+            {iq, ID, error, XMLNS,
+             [SubEl, ?ERR_NOT_ALLOWED]};
+        get ->
+            CPUTime = element(1, erlang:statistics(runtime))/1000,
+            SCPUTime = lists:flatten(io_lib:format("~.3f", CPUTime)),
+            {iq, ID, result, XMLNS,
+             [{xmlelement, "query",
+               [{"xmlns", ?NS_CPUTIME}],
+               [{xmlelement, "cputime", [], [{xmlcdata, SCPUTime}]}]}]}
+    end.
+\end{verbatim}
+
+
+\subsection{Services}
+\label{sec:services}
+
+TBD
+
+
+TODO: use \verb|proc_lib|
+\begin{verbatim}
+-module(mod_echo).
+
+-behaviour(gen_mod).
+
+-export([start/1, init/1, stop/0]).
+
+-include("ejabberd.hrl").
+-include("jlib.hrl").
+
+start(Opts) ->
+    Host = gen_mod:get_opt(host, Opts, "echo." ++ ?MYNAME),
+    register(ejabberd_mod_echo, spawn(?MODULE, init, [Host])).
+
+init(Host) ->
+    ejabberd_router:register_local_route(Host),
+    loop(Host).
+
+loop(Host) ->
+    receive
+        {route, From, To, Packet} ->
+            ejabberd_router:route(To, From, Packet),
+            loop(Host);
+        stop ->
+            ejabberd_router:unregister_local_route(Host),
+            ok;
+        _ ->
+            loop(Host)
+    end.
+
+stop() ->
+    ejabberd_mod_echo ! stop,
+    ok.
+\end{verbatim}
+
+
+
+\end{document}
