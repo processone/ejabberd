@@ -338,6 +338,8 @@ process_iq_register_set(From, SubEl) ->
     end.
 
 
+can_use_nick(JID, "") ->
+    false;
 can_use_nick(JID, Nick) ->
     {LUser, LServer, _} = jlib:jid_tolower(JID),
     LUS = {LUser, LServer},
