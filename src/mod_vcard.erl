@@ -12,15 +12,26 @@
 
 -export([start/0, init/0,
 	 process_local_iq/3,
-	 process_sm_iq/3]).
+	 process_sm_iq/3,
+	 reindex_vcards/0]).
 
 -include("ejabberd.hrl").
 -include("namespaces.hrl").
 
 
--record(vcard_search, {user, fn, family, given, middle, nickname,
-		       bday, ctry="", locality="", email,
-		       orgname, orgunit}).
+-record(vcard_search, {user,     luser,
+		       fn,	 lfn,
+		       family,	 lfamily,
+		       given,	 lgiven,
+		       middle,	 lmiddle,
+		       nickname, lnickname,
+		       bday,	 lbday,
+		       ctry,	 lctry,
+		       locality, llocality,
+		       email,	 lemail,
+		       orgname,	 lorgname,
+		       orgunit,	 lorgunit
+		      }).
 -record(vcard, {user, vcard}).
 
 
@@ -30,17 +41,17 @@ start() ->
     mnesia:create_table(vcard_search,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, vcard_search)}]),
-    mnesia:add_table_index(vcard_search, fn),
-    mnesia:add_table_index(vcard_search, family),
-    mnesia:add_table_index(vcard_search, given),
-    mnesia:add_table_index(vcard_search, middle),
-    mnesia:add_table_index(vcard_search, nickname),
-    mnesia:add_table_index(vcard_search, bday),
-    mnesia:add_table_index(vcard_search, ctry),
-    mnesia:add_table_index(vcard_search, locality),
-    mnesia:add_table_index(vcard_search, email),
-    mnesia:add_table_index(vcard_search, orgname),
-    mnesia:add_table_index(vcard_search, orgunit),
+    mnesia:add_table_index(vcard_search, lfn),
+    mnesia:add_table_index(vcard_search, lfamily),
+    mnesia:add_table_index(vcard_search, lgiven),
+    mnesia:add_table_index(vcard_search, lmiddle),
+    mnesia:add_table_index(vcard_search, lnickname),
+    mnesia:add_table_index(vcard_search, lbday),
+    mnesia:add_table_index(vcard_search, lctry),
+    mnesia:add_table_index(vcard_search, llocality),
+    mnesia:add_table_index(vcard_search, lemail),
+    mnesia:add_table_index(vcard_search, lorgname),
+    mnesia:add_table_index(vcard_search, lorgunit),
 
 
     ejabberd_local:register_iq_handler(?NS_VCARD,
@@ -71,7 +82,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	    LServer = jlib:tolower(Server),
 	    case ?MYNAME of
 		LServer ->
-		    set_vcard(LUser, SubEl),
+		    set_vcard(User, SubEl),
 		    {iq, ID, result, XMLNS, []};
 		_ ->
 		    {iq, ID, error, XMLNS,
@@ -120,8 +131,7 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	    {iq, ID, result, XMLNS, Els}
     end.
 
-
-set_vcard(LUser, VCARD) ->
+set_vcard(User, VCARD) ->
     FN       = xml:get_path_s(VCARD, [{elem, "FN"},                     cdata]),
     Family   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "FAMILY"},    cdata]),
     Given    = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "GIVEN"},     cdata]),
@@ -134,6 +144,7 @@ set_vcard(LUser, VCARD) ->
     OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
     OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
 
+    LUser     = jlib:tolower(User),
     LFN       = jlib:tolower(FN),
     LFamily   = jlib:tolower(Family),
     LGiven    = jlib:tolower(Given),
@@ -148,19 +159,20 @@ set_vcard(LUser, VCARD) ->
 
     F = fun() ->
 		mnesia:write(#vcard{user = LUser, vcard = VCARD}),
-		mnesia:write(#vcard_search{user      = LUser,
-					   fn        = LFN,
-					   family    = LFamily,
-					   given     = LGiven,
-					   middle    = LMiddle,
-					   nickname  = LNickname,
-					   bday      = LBDay,
-					   ctry      = LCTRY,
-					   locality  = LLocality,
-					   email     = LEMail,
-					   orgname   = LOrgName,
-					   orgunit   = LOrgUnit
-					  })
+		mnesia:write(
+		  #vcard_search{user      = User,     luser      = LUser,     
+				fn        = FN,       lfn        = LFN,       
+				family    = Family,   lfamily    = LFamily,   
+				given     = Given,    lgiven     = LGiven,    
+				middle    = Middle,   lmiddle    = LMiddle,   
+				nickname  = Nickname, lnickname  = LNickname, 
+				bday      = BDay,     lbday      = LBDay,     
+				ctry      = CTRY,     lctry      = LCTRY,     
+				locality  = Locality, llocality  = LLocality, 
+				email     = EMail,    lemail     = LEMail,    
+				orgname   = OrgName,  lorgname   = LOrgName,  
+				orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
+			       })
 	end,
     mnesia:transaction(F).
 
@@ -380,20 +392,76 @@ filter_fields([{SVar, [Val]} | Ds], Match)
   when is_list(Val) and (Val /= "") ->
     LVal = jlib:tolower(Val),
     NewMatch = case SVar of
-                   "user"     -> Match#vcard_search{user     = LVal};
-                   "fn"       -> Match#vcard_search{fn       = LVal};
-                   "family"   -> Match#vcard_search{family   = LVal};
-                   "given"    -> Match#vcard_search{given    = LVal};
-                   "middle"   -> Match#vcard_search{middle   = LVal};
-                   "nickname" -> Match#vcard_search{nickname = LVal};
-                   "bday"     -> Match#vcard_search{bday     = LVal};
-                   "ctry"     -> Match#vcard_search{ctry     = LVal};
-                   "locality" -> Match#vcard_search{locality = LVal};
-                   "email"    -> Match#vcard_search{email    = LVal};
-                   "orgname"  -> Match#vcard_search{orgname  = LVal};
-                   "orgunit"  -> Match#vcard_search{orgunit  = LVal};
+                   "user"     -> Match#vcard_search{luser     = LVal};
+                   "fn"       -> Match#vcard_search{lfn       = LVal};
+                   "family"   -> Match#vcard_search{lfamily   = LVal};
+                   "given"    -> Match#vcard_search{lgiven    = LVal};
+                   "middle"   -> Match#vcard_search{lmiddle   = LVal};
+                   "nickname" -> Match#vcard_search{lnickname = LVal};
+                   "bday"     -> Match#vcard_search{lbday     = LVal};
+                   "ctry"     -> Match#vcard_search{lctry     = LVal};
+                   "locality" -> Match#vcard_search{llocality = LVal};
+                   "email"    -> Match#vcard_search{lemail    = LVal};
+                   "orgname"  -> Match#vcard_search{lorgname  = LVal};
+                   "orgunit"  -> Match#vcard_search{lorgunit  = LVal};
 		   _          -> Match
 	       end,
     filter_fields(Ds, NewMatch);
 filter_fields([_ | Ds], Match) ->
     filter_fields(Ds, Match).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+set_vcard_t(R, _) ->
+    User  = R#vcard.user,
+    VCARD = R#vcard.vcard,
+
+    FN       = xml:get_path_s(VCARD, [{elem, "FN"},                     cdata]),
+    Family   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "FAMILY"},    cdata]),
+    Given    = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "GIVEN"},     cdata]),
+    Middle   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "MIDDLE"},    cdata]),
+    Nickname = xml:get_path_s(VCARD, [{elem, "NICKNAME"},               cdata]),
+    BDay     = xml:get_path_s(VCARD, [{elem, "BDAY"},                   cdata]),
+    CTRY     = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "CTRY"},    cdata]),
+    Locality = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "LOCALITY"},cdata]),
+    EMail    = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
+    OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
+    OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
+
+    LUser     = jlib:tolower(User),
+    LFN       = jlib:tolower(FN),
+    LFamily   = jlib:tolower(Family),
+    LGiven    = jlib:tolower(Given),
+    LMiddle   = jlib:tolower(Middle),
+    LNickname = jlib:tolower(Nickname),
+    LBDay     = jlib:tolower(BDay),
+    LCTRY     = jlib:tolower(CTRY),
+    LLocality = jlib:tolower(Locality),
+    LEMail    = jlib:tolower(EMail),
+    LOrgName  = jlib:tolower(OrgName),
+    LOrgUnit  = jlib:tolower(OrgUnit),
+
+    mnesia:write(
+      #vcard_search{user      = User,     luser      = LUser,     
+		    fn        = FN,       lfn        = LFN,       
+		    family    = Family,   lfamily    = LFamily,   
+		    given     = Given,    lgiven     = LGiven,    
+		    middle    = Middle,   lmiddle    = LMiddle,   
+		    nickname  = Nickname, lnickname  = LNickname, 
+		    bday      = BDay,     lbday      = LBDay,     
+		    ctry      = CTRY,     lctry      = LCTRY,     
+		    locality  = Locality, llocality  = LLocality, 
+		    email     = EMail,    lemail     = LEMail,    
+		    orgname   = OrgName,  lorgname   = LOrgName,  
+		    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
+		   }).
+
+
+reindex_vcards() ->
+    F = fun() ->
+		mnesia:foldl(fun set_vcard_t/2, [], vcard)
+	end,
+    mnesia:transaction(F).
+
+

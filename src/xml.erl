@@ -57,15 +57,21 @@ crypt([], R) ->
     R.
     
 
-remove_cdata(L) ->
-    lists:reverse(remove_cdata(L, [])).
+remove_cdata_p({xmlelement, Name, Attrs, Els}) -> true;
+remove_cdata_p(_) -> false.
 
-remove_cdata([{xmlelement, Name, Attrs, Els} | L], R) ->
-    remove_cdata(L, [{xmlelement, Name, Attrs, Els} | R]);
-remove_cdata([{xmlcdata, CData} | L], R) ->
-    remove_cdata(L, R);
-remove_cdata([], R) ->
-    R.
+remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
+
+
+%remove_cdata(L) ->
+%    lists:reverse(remove_cdata(L, [])).
+%
+%remove_cdata([{xmlelement, Name, Attrs, Els} | L], R) ->
+%    remove_cdata(L, [{xmlelement, Name, Attrs, Els} | R]);
+%remove_cdata([{xmlcdata, CData} | L], R) ->
+%    remove_cdata(L, R);
+%remove_cdata([], R) ->
+%    R.
 
 get_cdata(L) ->
     get_cdata(L, "").

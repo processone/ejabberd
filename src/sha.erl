@@ -10,33 +10,23 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0, sha/1]).
+-export([start/0, sha/1]).
 
 start() ->
-    register(sha, spawn(?MODULE, init, [])).
+    crypto:start().
 
-init() ->
-    ok = erl_ddll:load_driver(".", sha_erl),
-    Port = open_port({spawn, sha_erl}, [binary]),
-    loop(Port).
-
-loop(Port) ->
-    receive
-	{From, {text, Str}} ->
-	    Port ! {self(), {command, Str}},
-	    SHA = receive
-		      {Port, {data, Bin}} ->
-			  binary_to_term(Bin)
-		  end,
-	    From ! {sha, SHA},
-	    loop(Port)
-    end.
+digit_to_xchar(D) when (D >= 0) and (D < 10) ->
+    D + 48;
+digit_to_xchar(D) ->
+    D + 87.
 
 sha(Text) ->
-    sha ! {self(), {text, Text}},
-    receive
-	{sha, S} ->
-	    S
-    end.
+    Bin = crypto:sha(Text),
+    lists:reverse(ints_to_rxstr(binary_to_list(Bin), [])).
 
+ints_to_rxstr([], Res) ->
+    Res;
+ints_to_rxstr([N | Ns], Res) ->
+    ints_to_rxstr(Ns, [digit_to_xchar(N rem 16),
+		       digit_to_xchar(N div 16) | Res]).
 

@@ -9,6 +9,7 @@
 -define(NS_DISCO_INFO, "http://jabber.org/protocol/disco#info").
 -define(NS_VCARD, "vcard-temp").
 -define(NS_SEARCH, "jabber:iq:search").
+-define(NS_ROSTER, "jabber:iq:roster").
 -define(NS_XDATA, "jabber:x:data").
 -define(NS_DELAY, "jabber:x:delay").
 -define(NS_EVENT, "jabber:x:event").

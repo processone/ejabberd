@@ -20,6 +20,7 @@
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
+-include("namespaces.hrl").
 
 -record(roster, {uj,
 		 user,
@@ -40,7 +41,7 @@ init() ->
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
     mnesia:add_table_index(roster, user),
-    ejabberd_local:register_iq_handler("jabber:iq:roster",
+    ejabberd_local:register_iq_handler(?NS_ROSTER,
 				       ?MODULE, process_iq),
     loop().
 
@@ -91,7 +92,7 @@ process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	{atomic, Items} ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
 	    {iq, ID, result, XMLNS, [{xmlelement, "query",
-				      [{"xmlns", "jabber:iq:roster"}],
+				      [{"xmlns", ?NS_ROSTER}],
 				      XItems}]};
 	_ ->
 	    {iq, ID, error, XMLNS,
@@ -244,9 +245,9 @@ push_item(User, From, Item) ->
 
 % TODO: don't push to those who not load roster
 push_item(User, Resource, From, Item) ->
-    ResIQ = {iq, "", set, "jabber:iq:roster",
+    ResIQ = {iq, "", set, ?NS_ROSTER,
 	     [{xmlelement, "query",
-	       [{"xmlns", "jabber:iq:roster"}],
+	       [{"xmlns", ?NS_ROSTER}],
 	       [item_to_xml(Item)]}]},
     ejabberd_router ! {route,
 		       From,
