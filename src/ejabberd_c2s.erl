@@ -298,6 +298,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 					      From,
 					      jlib:iq_to_xml(ResIQ)),
 			{false, Attrs, StateData};
+		    %{iq, ID, Type, ?NS_VCARD, SubEl} ->
+			% TODO: don't pass packets until roster loaded
+			%{true, Attrs, StateData};
 		    _ ->
 			{true, Attrs, StateData}
 		end;
@@ -605,37 +608,56 @@ remove_element(E, Set) ->
 
 roster_change(IJID, ISubscription, StateData) ->
     LIJID = jlib:jid_tolower(IJID),
+    IsFrom = (ISubscription == both) or (ISubscription == from),
+    IsTo   = (ISubscription == both) or (ISubscription == to),
+    FSet = if
+	       IsFrom ->
+		   ?SETS:add_element(LIJID, StateData#state.pres_f);
+	       true ->
+		   remove_element(LIJID, StateData#state.pres_f)
+	   end,
+    TSet = if
+	       IsTo ->
+		   ?SETS:add_element(LIJID, StateData#state.pres_t);
+	       true ->
+		   remove_element(LIJID, StateData#state.pres_t)
+	   end,
     case StateData#state.pres_last of
 	unknown ->
-	    StateData;
+	    StateData#state{pres_f = FSet, pres_t = TSet};
 	P ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
 	    From = {StateData#state.user,
 		    StateData#state.server,
 		    StateData#state.resource},
-	    Cond1 = (not StateData#state.pres_invis)
-		and ((ISubscription == both) or (ISubscription == from)),
-	    Cond2 = ((ISubscription == none) or (ISubscription == to))
-		and (?SETS:is_element(From, StateData#state.pres_a) or
-		     ?SETS:is_element(From, StateData#state.pres_i)),
+	    Cond1 = (not StateData#state.pres_invis) and IsFrom,
+	    Cond2 = (not IsFrom)
+		and (?SETS:is_element(LIJID, StateData#state.pres_a) or
+		     ?SETS:is_element(LIJID, StateData#state.pres_i)),
 	    if
 		Cond1 ->
 		    ?DEBUG("C1: ~p~n", [LIJID]),
 		    ejabberd_router:route(From, IJID, P),
 		    A = ?SETS:add_element(LIJID,
 					  StateData#state.pres_a),
-		    StateData#state{pres_a = A};
+		    StateData#state{pres_a = A,
+				    pres_f = FSet,
+				    pres_t = TSet};
 		Cond2 ->
 		    ?DEBUG("C2: ~p~n", [LIJID]),
-		    ejabberd_router:route(From, IJID, P),
+		    ejabberd_router:route(From, IJID,
+					  {xmlelement, "presence",
+					   [{"type", "unavailable"}], []}),
 		    I = remove_element(LIJID,
 				       StateData#state.pres_i),
 		    A = remove_element(LIJID,
 				       StateData#state.pres_a),
 		    StateData#state{pres_i = I,
-				    pres_a = A};
+				    pres_a = A,
+				    pres_f = FSet,
+				    pres_t = TSet};
 		true ->
-		    StateData
+		    StateData#state{pres_f = FSet, pres_t = TSet}
 	    end
     end.
 

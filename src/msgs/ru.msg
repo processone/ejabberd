@@ -3,6 +3,9 @@
 % mod_disco.erl
 {"Online Users", "Подключённые пользователи"}.
 {"All Users", "Все пользователи"}.
+{"Outgoing S2S connections", "Исходящие S2S-соединения"}.
+{"To ~s", "К ~s"}.
+{"From ~s", "От ~s"}.
 
 
 % mod_vcard.erl

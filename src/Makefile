@@ -5,7 +5,7 @@ INCLUDES = -I/usr/lib/erlang/usr/include \
 
 LIBDIRS = -L/usr/lib/erlang/lib/erl_interface-3.3.0/lib
 
-ERLSHLIBS = expat_erl.so sha_erl.so
+ERLSHLIBS = expat_erl.so
 
 all:	$(ERLSHLIBS)
 	erl -make

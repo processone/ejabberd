@@ -239,6 +239,11 @@ process_item_els(Item, []) ->
 
 
 push_item(User, From, Item) ->
+    ejabberd_sm ! {route, {"", "", ""}, {User, "", ""},
+		   {xmlelement, "broadcast", [],
+		    [{item,
+		      Item#roster.jid,
+		      Item#roster.subscription}]}},
     lists:foreach(fun(Resource) ->
 			  push_item(User, Resource, From, Item)
 		  end, ejabberd_sm:get_user_resources(User)).

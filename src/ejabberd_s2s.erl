@@ -13,7 +13,8 @@
 -export([start/0, init/0,
 	 have_connection/1,
 	 get_key/1,
-	 try_register/1]).
+	 try_register/1,
+	 dirty_get_connections/0]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -193,3 +194,8 @@ do_route(From, To, Packet) ->
 
 send_element(Pid, El) ->
     Pid ! {send_element, El}.
+
+
+dirty_get_connections() ->
+    mnesia:dirty_all_keys(s2s).
+
