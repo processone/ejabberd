@@ -40,9 +40,9 @@ start_link({SockMod, Socket}, Opts) ->
     ?INFO_MSG("started: ~p", [{SockMod, Socket}]),
     case SockMod of
 	gen_tcp ->
-	    inet:setopts(Socket, [{packet, http}]);
+	    inet:setopts(Socket, [{packet, http}, {recbuf, 8192}]);
 	ssl ->
-	    ssl:setopts(Socket, [{packet, http}])
+	    ssl:setopts(Socket, [{packet, http}, {recbuf, 8192}])
     end,
     {ok, proc_lib:spawn_link(ejabberd_http,
 			     receive_headers,

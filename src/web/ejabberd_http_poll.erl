@@ -77,19 +77,19 @@ process_request(#request{path = [],
 			 data = Data} = Request) ->
     case catch parse_request(Data) of
 	{ok, ID1, Key, NewKey, Packet} ->
-	    ID = case ID1 of
-		      "0" ->
-			  NewID = sha:sha(term_to_binary({now(), make_ref()})),
-			  {ok, Pid} = start(NewID, ""),
-			  mnesia:transaction(
-			    fun() ->
-				    mnesia:write(#http_poll{id = NewID,
-							    pid = Pid})
-			    end),
-			  NewID;
-		      _ ->
-			  ID1
-		  end,
+	    ID = if
+		     (ID1 == "0") or (ID1 == "mobile") ->
+			 NewID = sha:sha(term_to_binary({now(), make_ref()})),
+			 {ok, Pid} = start(NewID, ""),
+			 mnesia:transaction(
+			   fun() ->
+				   mnesia:write(#http_poll{id = NewID,
+							   pid = Pid})
+			   end),
+			 NewID;
+		     true ->
+			 ID1
+		 end,
 	    case http_put(ID, Key, NewKey, Packet) of
 		{error, not_exists} ->
 		    {200, ?BAD_REQUEST, ""};
@@ -106,6 +106,8 @@ process_request(#request{path = [],
 			    if
 				ID == ID1 ->
 				    {200, [?CT], OutPacket};
+				ID1 == "mobile" ->
+				    {200, [?CT], [ID, $\n, OutPacket]};
 				true ->
 				    Cookie = "ID=" ++ ID ++ "; expires=-1",
 				    {200, [?CT, {"Set-Cookie", Cookie}],

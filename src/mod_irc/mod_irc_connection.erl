@@ -234,20 +234,27 @@ handle_info({route_chan, Channel, Resource,
 			    StateData#state.myname, StateData#state.nick),
 			  StateData#state.user, El),
 			Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
-			Body1 = case Body of
-				    [$/, $m, $e, $  | Rest] ->
-					"\001ACTION " ++ Rest ++ "\001";
-				    _ ->
-					Body
-				end,
-			Strings = string:tokens(Body1, "\n"),
-			Res = lists:concat(
-				lists:map(
-				  fun(S) ->
-					  io_lib:format("PRIVMSG #~s :~s\r\n",
-							[Channel, S])
-				  end, Strings)),
-			?SEND(Res);
+			case Body of
+			    "/quote " ++ Rest ->
+				?SEND(Rest ++ "\r\n");
+			    _ ->
+				Body1 =
+				    case Body of
+					[$/, $m, $e, $  | Rest] ->
+					    "\001ACTION " ++ Rest ++ "\001";
+					_ ->
+					    Body
+				    end,
+				Strings = string:tokens(Body1, "\n"),
+				Res = lists:concat(
+					lists:map(
+					  fun(S) ->
+						  io_lib:format(
+						    "PRIVMSG #~s :~s\r\n",
+						    [Channel, S])
+					  end, Strings)),
+				?SEND(Res)
+			end;
 		    Subject ->
 			Strings = string:tokens(Subject, "\n"),
 			Res = lists:concat(
@@ -260,20 +267,25 @@ handle_info({route_chan, Channel, Resource,
 		end;
 	    "chat" ->
 		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
-		Body1 = case Body of
-			    [$/, $m, $e, $  | Rest] ->
-				"\001ACTION " ++ Rest ++ "\001";
-			    _ ->
-				Body
-			end,
-		Strings = string:tokens(Body1, "\n"),
-		Res = lists:concat(
-			lists:map(
-			  fun(S) ->
-				  io_lib:format("PRIVMSG ~s :~s\r\n",
-						[Resource, S])
-			  end, Strings)),
-		?SEND(Res);
+		case Body of
+		    "/quote " ++ Rest ->
+			?SEND(Rest ++ "\r\n");
+		    _ ->
+			Body1 = case Body of
+				    [$/, $m, $e, $  | Rest] ->
+					"\001ACTION " ++ Rest ++ "\001";
+				    _ ->
+					Body
+				end,
+			Strings = string:tokens(Body1, "\n"),
+			Res = lists:concat(
+				lists:map(
+				  fun(S) ->
+					  io_lib:format("PRIVMSG ~s :~s\r\n",
+							[Resource, S])
+				  end, Strings)),
+			?SEND(Res)
+		end;
 	    "error" ->
 		stop;
 	    _ ->
@@ -330,20 +342,25 @@ handle_info({route_nick, Nick,
 	case xml:get_attr_s("type", Attrs) of
 	    "chat" ->
 		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
-		Body1 = case Body of
-			    [$/, $m, $e, $  | Rest] ->
-				"\001ACTION " ++ Rest ++ "\001";
-			    _ ->
-				Body
-			end,
-		Strings = string:tokens(Body1, "\n"),
-		Res = lists:concat(
-			lists:map(
-			  fun(S) ->
-				  io_lib:format("PRIVMSG ~s :~s\r\n",
-						[Nick, S])
-			  end, Strings)),
-		?SEND(Res);
+		case Body of
+		    "/quote " ++ Rest ->
+			?SEND(Rest ++ "\r\n");
+		    _ ->
+			Body1 = case Body of
+				    [$/, $m, $e, $  | Rest] ->
+					"\001ACTION " ++ Rest ++ "\001";
+				    _ ->
+					Body
+				end,
+			Strings = string:tokens(Body1, "\n"),
+			Res = lists:concat(
+				lists:map(
+				  fun(S) ->
+					  io_lib:format("PRIVMSG ~s :~s\r\n",
+							[Nick, S])
+				  end, Strings)),
+			?SEND(Res)
+		end;
 	    "error" ->
 		stop;
 	    _ ->

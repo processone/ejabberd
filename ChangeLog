@@ -1,3 +1,9 @@
+2004-04-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Increased receive buffer
+
+	* src/mod_irc/mod_irc_connection.erl: Support for "/quote" command
+
 2004-04-15  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd.erl: Added searching of files in code:priv_lib
