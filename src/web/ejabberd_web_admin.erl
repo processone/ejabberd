@@ -119,7 +119,7 @@ make_xhtml(Els, Lang) ->
 				      [?XE("tbody",
 					   [?XE("tr",
 						[?XCT("td",
-						      "ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One")
+						      "ejabberd (c) 2002-2005 Alexey Shchepin, 2004 Process One")
 						])])
 				      ])])])])])])
       ]}}.

@@ -614,16 +614,7 @@ process_channel_list_user(StateData, Chan, User) ->
 process_channel_topic(StateData, Chan, String) ->
     FromUser = "someone",
     {ok, Msg, _} = regexp:sub(String, ".*332[^:]*:", ""),
-    Msg1 = lists:filter(
-	     fun(C) ->
-		     if (C < 32) and
-			(C /= 9) and
-			(C /= 10) and
-			(C /= 13) ->
-			     false;
-			true -> true
-		     end
-	     end, Msg),
+    Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(
 	lists:concat([Chan, "%", StateData#state.server]),
@@ -642,16 +633,7 @@ process_chanprivmsg(StateData, Chan, From, String) ->
 	       _ ->
 		   Msg
 	   end,
-    Msg2 = lists:filter(
-	     fun(C) ->
-		     if (C < 32) and
-			(C /= 9) and
-			(C /= 10) and
-			(C /= 13) ->
-			     false;
-			true -> true
-		     end
-	     end, Msg1),
+    Msg2 = filter_message(Msg1),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.myname, FromUser),
@@ -670,16 +652,7 @@ process_channotice(StateData, Chan, From, String) ->
 	       _ ->
 		   Msg
 	   end,
-    Msg2 = lists:filter(
-	     fun(C) ->
-		     if (C < 32) and
-			(C /= 9) and
-			(C /= 10) and
-			(C /= 13) ->
-			     false;
-			true -> true
-		     end
-	     end, Msg1),
+    Msg2 = filter_message(Msg1),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.myname, FromUser),
@@ -699,16 +672,7 @@ process_privmsg(StateData, Nick, From, String) ->
 	       _ ->
 		   Msg
 	   end,
-    Msg2 = lists:filter(
-	     fun(C) ->
-		     if (C < 32) and
-			(C /= 9) and
-			(C /= 10) and
-			(C /= 13) ->
-			     false;
-			true -> true
-		     end
-	     end, Msg1),
+    Msg2 = filter_message(Msg1),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
 		    StateData#state.myname, ""),
@@ -726,16 +690,7 @@ process_notice(StateData, Nick, From, String) ->
 	       _ ->
 		   Msg
 	   end,
-    Msg2 = lists:filter(
-	     fun(C) ->
-		     if (C < 32) and
-			(C /= 9) and
-			(C /= 10) and
-			(C /= 13) ->
-			     false;
-			true -> true
-		     end
-	     end, Msg1),
+    Msg2 = filter_message(Msg1),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
 		    StateData#state.myname, ""),
@@ -761,16 +716,7 @@ process_version(StateData, Nick, From) ->
 process_topic(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
     {ok, Msg, _} = regexp:sub(String, ".*TOPIC[^:]*:", ""),
-    Msg1 = lists:filter(
-	     fun(C) ->
-		     if (C < 32) and
-			(C /= 9) and
-			(C /= 10) and
-			(C /= 13) ->
-			     false;
-			true -> true
-		     end
-	     end, Msg),
+    Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.myname, FromUser),
@@ -784,6 +730,7 @@ process_topic(StateData, Chan, From, String) ->
 process_part(StateData, Chan, From, String) ->
     [FromUser | FromIdent] = string:tokens(From, "!"),
     {ok, Msg, _} = regexp:sub(String, ".*PART[^:]*", ""),    
+    Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.myname, FromUser),
@@ -791,7 +738,7 @@ process_part(StateData, Chan, From, String) ->
       {xmlelement, "message", [{"type", "groupchat"}],
        [{xmlelement, "body", [],
 	 [{xmlcdata, "/me has part: " ++
-	   Msg ++ "("  ++ FromIdent ++ ")" }]}]}),
+	   Msg1 ++ "("  ++ FromIdent ++ ")" }]}]}),
 
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
@@ -804,7 +751,7 @@ process_part(StateData, Chan, From, String) ->
 	    {"role", "none"}],
 	   []}]},
 	{xmlelement, "status", [],
-	 [{xmlcdata, Msg ++ "("  ++ FromIdent ++ ")"}]}]
+	 [{xmlcdata, Msg1 ++ "("  ++ FromIdent ++ ")"}]}]
       }),
     case catch dict:update(Chan,
 			   fun(Ps) ->
@@ -821,6 +768,7 @@ process_quit(StateData, From, String) ->
     [FromUser | FromIdent] = string:tokens(From, "!"),
     
     {ok, Msg, _} = regexp:sub(String, ".*QUIT[^:]*:", ""),
+    Msg1 = filter_message(Msg),
     NewChans =
 	dict:map(
 	  fun(Chan, Ps) ->
@@ -834,7 +782,7 @@ process_quit(StateData, From, String) ->
 			    {xmlelement, "message", [{"type", "groupchat"}],
 			     [{xmlelement, "body", [],
 			       [{xmlcdata, "/me has quit: " ++
-				 Msg ++ "("  ++ FromIdent ++ ")" }]}]}),
+				 Msg1 ++ "("  ++ FromIdent ++ ")" }]}]}),
 
 			  ejabberd_router:route(
 			    jlib:make_jid(
@@ -848,7 +796,7 @@ process_quit(StateData, From, String) ->
 				  {"role", "none"}],
 				 []}]},
 			      {xmlelement, "status", [],
-			       [{xmlcdata, Msg ++ "("  ++ FromIdent ++ ")"}]}
+			       [{xmlcdata, Msg1 ++ "("  ++ FromIdent ++ ")"}]}
 			     ]}),
 			  remove_element(FromUser, Ps);
 		      _ ->
@@ -874,6 +822,7 @@ process_join(StateData, Channel, From, String) ->
 	{xmlelement, "status", [],
 	 [{xmlcdata, FromIdent}]}]}),
     {ok, Msg, _} = regexp:sub(String, ".*JOIN[^:]*:", ""),    
+    Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.myname, FromUser),
@@ -881,7 +830,7 @@ process_join(StateData, Channel, From, String) ->
       {xmlelement, "message", [{"type", "groupchat"}],
        [{xmlelement, "body", [],
 	 [{xmlcdata, "/me has joined " ++
-	   Msg ++ "("  ++ FromIdent ++ ")" }]}]}),
+	   Msg1 ++ "("  ++ FromIdent ++ ")" }]}]}),
 
     case catch dict:update(Chan,
 			   fun(Ps) ->
@@ -1058,7 +1007,14 @@ process_admin(StateData, Channel, Nick, Affiliation, Role, Reason) ->
 
 
 
-
-
-
-
+filter_message(Msg) ->
+    lists:filter(
+      fun(C) ->
+	      if (C < 32) and
+		 (C /= 9) and
+		 (C /= 10) and
+		 (C /= 13) ->
+		      false;
+		 true -> true
+	      end
+      end, Msg).
