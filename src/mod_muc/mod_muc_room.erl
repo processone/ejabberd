@@ -189,7 +189,20 @@ normal_state({route, From, "",
 			    {next_state, normal_state, StateData}
 		    end;
 		"error" ->
-		    {next_state, normal_state, StateData};
+		    case is_user_online(From, StateData) of
+			true ->
+			    NewState =
+				add_user_presence_un(
+				  From,
+				  {xmlelement, "presence",
+				   [{"type", "unavailable"}], []},
+			      StateData),
+			    send_new_presence(From, NewState),
+			    {next_state, normal_state,
+			     remove_online_user(From, NewState)};
+			_ ->
+			    {next_state, normal_state, StateData}
+		    end;
 		Type when (Type == "") or (Type == "normal") ->
 		    case check_invitation(From, Els, StateData) of
 			error ->
@@ -296,8 +309,20 @@ normal_state({route, From, Nick,
 		    _ ->
 			StateData
 		end;
-	    "error" -> % TODO
-		StateData;
+	    "error" ->
+		case is_user_online(From, StateData) of
+		    true ->
+			NewState =
+			    add_user_presence_un(
+			      From,
+			      {xmlelement, "presence",
+			       [{"type", "unavailable"}], []},
+			      StateData),
+			send_new_presence(From, NewState),
+			remove_online_user(From, NewState);
+		    _ ->
+			StateData
+		end;
 	    "" ->
 		case is_user_online(From, StateData) of
 		    true ->
@@ -388,31 +413,56 @@ normal_state({route, From, Nick,
 normal_state({route, From, ToNick,
 	      {xmlelement, "message", Attrs, Els} = Packet},
 	     StateData) ->
-    case (StateData#state.config)#config.allow_private_messages
-	andalso is_user_online(From, StateData) of
-	true ->
-	    case find_jid_by_nick(ToNick, StateData) of
-		false ->
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_JID_NOT_FOUND),
-		    ejabberd_router:route(
-		      {StateData#state.room, StateData#state.host, ToNick},
-		      From, Err);
-		ToJID ->
-		    {ok, #user{nick = FromNick}} =
-			?DICT:find(jlib:jid_tolower(From),
-				   StateData#state.users),
-		    ejabberd_router:route(
-		      {StateData#state.room, StateData#state.host, FromNick},
-		      ToJID, Packet)
+    case xml:get_attr_s("type", Attrs) of
+	"error" ->
+	    case is_user_online(From, StateData) of
+		true ->
+		    NewState =
+			add_user_presence_un(
+			  From,
+			  {xmlelement, "presence",
+			   [{"type", "unavailable"}], []},
+			  StateData),
+		    send_new_presence(From, NewState),
+		    {next_state, normal_state,
+		     remove_online_user(From, NewState)};
+		_ ->
+		    {next_state, normal_state, StateData}
 	    end;
 	_ ->
-	    Err = jlib:make_error_reply(
-		    Packet, ?ERR_NOT_ALLOWED),
-	    ejabberd_router:route(
-	      {StateData#state.room, StateData#state.host, ToNick}, From, Err)
-    end,
-    {next_state, normal_state, StateData};
+	    case (StateData#state.config)#config.allow_private_messages
+		andalso is_user_online(From, StateData) of
+		true ->
+		    case find_jid_by_nick(ToNick, StateData) of
+			false ->
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERR_JID_NOT_FOUND),
+			    ejabberd_router:route(
+			      {StateData#state.room,
+			       StateData#state.host,
+			       ToNick},
+			      From, Err);
+			ToJID ->
+			    {ok, #user{nick = FromNick}} =
+				?DICT:find(jlib:jid_tolower(From),
+					   StateData#state.users),
+			    ejabberd_router:route(
+			      {StateData#state.room,
+			       StateData#state.host,
+			       FromNick},
+			      ToJID, Packet)
+		    end,
+		    {next_state, normal_state, StateData};
+		_ ->
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERR_NOT_ALLOWED),
+		    ejabberd_router:route(
+		      {StateData#state.room,
+		       StateData#state.host,
+		       ToNick}, From, Err),
+		    {next_state, normal_state, StateData}
+	    end
+    end;
 
 normal_state({route, From, ToNick,
 	      {xmlelement, "iq", Attrs, Els} = Packet},
