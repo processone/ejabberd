@@ -66,10 +66,15 @@
 -endif.
 
 -define(STREAM_HEADER,
+	"<?xml version='1.0'?>"
 	"<stream:stream xmlns='jabber:client' "
 	"xmlns:stream='http://etherx.jabber.org/streams' "
 	"id='~s' from='~s'>"
        ).
+
+-define(STREAM_TRAILER, "</stream:stream>").
+
+-define(INVALID_NS_ERR, "<stream:error>Invalid Namespace</stream:error>").
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -107,14 +112,17 @@ state_name(Event, StateData) ->
     {next_state, state_name, StateData}.
 
 wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
+    % TODO
+    Header = io_lib:format(?STREAM_HEADER, ["SID", "localhost"]),
+    send_text(StateData#state.sender, Header),
     case lists:keysearch("xmlns:stream", 1, Attrs) of
 	{value, {"xmlns:stream", "http://etherx.jabber.org/streams"}} ->
 	    % TODO
-	    Header = io_lib:format(?STREAM_HEADER, ["SID", "localhost"]),
-	    StateData#state.sender ! {text, Header},
 	    {next_state, wait_for_auth, StateData};
 	_ ->
-	    {stop, error, StateData}
+	    send_text(StateData#state.sender, ?INVALID_NS_ERR),
+	    send_text(StateData#state.sender, ?STREAM_TRAILER),
+	    {stop, normal, StateData}
     end;
 
 wait_for_stream(closed, StateData) ->
@@ -184,7 +192,8 @@ handle_info(Info, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(Reason, StateName, StatData) ->
+terminate(Reason, StateName, StateData) ->
+    StateData#state.sender ! close,
     ok.
 
 %%%----------------------------------------------------------------------
@@ -201,6 +210,7 @@ receiver(Socket, C2SPid, XMLStreamPid) ->
 	    xml_stream:send_text(XMLStreamPid, Text),
 	    receiver(Socket, C2SPid, XMLStreamPid);
         {error, closed} ->
+	    exit(XMLStreamPid, closed),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok
     end.
@@ -210,7 +220,8 @@ sender(Socket) ->
 	{text, Text} ->
 	    gen_tcp:send(Socket,Text),
 	    sender(Socket);
-	closed ->
+	close ->
+	    gen_tcp:close(Socket),
 	    ok
     end.
 
