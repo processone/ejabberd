@@ -6,6 +6,7 @@
 #include <iconv.h>
 
 #include "uni_data.c"
+#include "uni_norm.c"
 
 #define NAMEPREP_COMMAND 1
 #define NODEPREP_COMMAND 2
@@ -31,12 +32,71 @@ static void stringprep_erl_stop(ErlDrvData handle)
    driver_free((char*)handle);
 }
 
+
+static int combine(int ch1, int ch2)
+{
+   int info1, info2;
+
+   info1 = GetUniCharCompInfo(ch1);
+   if(info1 != -1) {
+      if(info1 & CompSingleMask) {
+	 if (ch2 == compFirstList[info1 & CompMask][0]) {
+	    return compFirstList[info1 & CompMask][1];
+	 } else
+	    return 0;
+      }
+   } else
+      return 0;
+   
+   info2 = GetUniCharCompInfo(ch2);
+   if(info2 != -1) {
+      if (info2 & CompSingleMask) {
+	 if (ch1 == compSecondList[info2 & CompMask][0]) {
+	    return compSecondList[info2 & CompMask][1];
+	 } else
+	    return 0;
+      }
+   } else
+      return 0;
+
+   return compBothList[info1][info2];
+}
+
+
+#define ADD_UCHAR(ruc)							\
+	 if(ruc < 0x80) {						\
+	    if(pos >= size) {						\
+	       size = 2*size + 1;					\
+	       rstring = driver_realloc(rstring, size);			\
+	    }								\
+	    rstring[pos] = (char) ruc;					\
+	    pos++;							\
+	 } else if(ruc < 0x7FF) {					\
+	    if(pos + 1 >= size) {					\
+	       size = 2*size + 2;					\
+	       rstring = driver_realloc(rstring, size);			\
+	    }								\
+	    rstring[pos] = (char) ((ruc >> 6) | 0xC0);			\
+	    rstring[pos+1] = (char) ((ruc | 0x80) & 0xBF);		\
+	    pos += 2;							\
+	 } else if(ruc < 0xFFFF) {					\
+	    if(pos + 2 >= size) {					\
+	       size = 2*size + 3;					\
+	       rstring = driver_realloc(rstring, size);			\
+	    }								\
+	    rstring[pos] = (char) ((ruc >> 12) | 0xE0);			\
+	    rstring[pos+1] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
+	    rstring[pos+2] = (char) ((ruc | 0x80) & 0xBF);		\
+	    pos += 3;							\
+	 }
+
+
 static int stringprep_erl_control(ErlDrvData drv_data,
 				  unsigned int command,
 				  char *buf, int len,
 				  char **rbuf, int rlen)
 {
-   int i, j=1;
+   int i, j, pos=1;
    unsigned char c;
    int bad = 0;
    int uc, ruc;
@@ -44,7 +104,8 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    int info;
    int prohibit, tolower;
    char *rstring;
-
+   int *mc;
+   
    size = len + 1;
 
    rstring = driver_alloc(size);
@@ -116,43 +177,41 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       if(!(info & B1Mask)) 
       {
 	 if(tolower) {
-	    ruc = uc + GetDelta(info);
+	    if(!(info & MCMask)) 
+	    {
+	       ruc = uc + GetDelta(info);
+
+	       //info = GetUniCharDecompInfo(ruc);
+	       //if(info >= 0) {
+	       //   printf("Decomposition %x: ", ruc);
+	       //   for(j = 0; j < GetDecompLen(info); j++) {
+	       //      printf("%x ", decompList[GetDecompShift(info) + j]);
+	       //   }
+	       //   printf("\r\n");
+	       //}
+	       
+	       ADD_UCHAR(ruc);
+	    } else {
+	       mc = GetMC(info);
+	       for(j = 1; j <= mc[0]; j++) {
+		  ruc = mc[j];
+		  //printf("Char %x cclass %d\r\n", ruc, GetUniCharCClass(ruc));
+		  ADD_UCHAR(ruc);
+	       }
+	    }
 	 } else {
 	    ruc = uc;
-	 }
-
-	 if(ruc < 0x80) {
-	    if(j >= size) {
-	       size = 2*size + 1;
-	       rstring = driver_realloc(rstring, size);
-	    }
-	    rstring[j] = (char) ruc;
-	    j++;
-	 } else if(ruc < 0x7FF) {
-	    if(j + 1 >= size) {
-	       size = 2*size + 2;
-	       rstring = driver_realloc(rstring, size);
-	    }
-	    rstring[j] = (char) ((ruc >> 6) | 0xC0);
-	    rstring[j+1] = (char) ((ruc | 0x80) & 0xBF);
-	    j += 2;
-	 } else if(ruc < 0xFFFF) {
-	    if(j + 2 >= size) {
-	       size = 2*size + 3;
-	       rstring = driver_realloc(rstring, size);
-	    }
-	    rstring[j] = (char) ((ruc >> 12) | 0xE0);
-	    rstring[j+1] = (char) (((ruc >> 6) | 0x80) & 0xBF);
-	    rstring[j+2] = (char) ((ruc | 0x80) & 0xBF);
-	    j += 3;
+	    ADD_UCHAR(ruc);
 	 }
       }
    }
-   
+
+   //printf("Combine: %x\r\n", combine(0x438, 0x301));
+
    rstring[0] = 1;
    *rbuf = rstring;
    
-   return j;
+   return pos;
 }
 
 

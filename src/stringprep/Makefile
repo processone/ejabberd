@@ -27,7 +27,7 @@ $(OUTDIR)/%.beam:       %.erl
 #all:	$(ERLSHLIBS)
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
-$(ERLSHLIBS):	../%.so:	%.c
+$(ERLSHLIBS):	../%.so:	%.c uni_data.c uni_norm.c
 			gcc -Wall $(INCLUDES) $(LIBDIRS) \
 			$(subst ../,,$(subst .so,.c,$@)) \
 			-lerl_interface \

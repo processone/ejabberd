@@ -28,7 +28,20 @@ namespace eval uni {
 				# unassigned character group
 }
 
-proc uni::getValue {tables delta} {
+proc uni::getValue {i} {
+    variable casemap
+    variable casemap2
+    variable tablemap
+
+    set tables $tablemap($i)
+    if {[info exists casemap2($i)]} {
+	set multicase 1
+	set delta $casemap2($i)
+    } else {
+	set multicase 0
+	set delta $casemap($i)
+    }
+
     set ac 0
     set c11 0
     set c21 0
@@ -57,6 +70,7 @@ proc uni::getValue {tables delta} {
 		   ($d1  << 4) |
 		   ($d2  << 5) |
 		   ($xnp << 6) |
+		   ($multicase << 7) |
 		   ($delta << 16)}]
 
     return $val
@@ -88,6 +102,8 @@ proc uni::addPage {info} {
 
 proc uni::load_tables {data} {
     variable casemap
+    variable casemap2
+    variable multicasemap
     variable tablemap
 
     for {set i 0} {$i <= 0xffff} {incr i} {
@@ -95,6 +111,7 @@ proc uni::load_tables {data} {
 	set tablemap($i) {}
     }
 
+    set multicasemap {}
     set table ""
 
     foreach line [split $data \n] {
@@ -122,8 +139,30 @@ proc uni::load_tables {data} {
 			if {$from <= 0xffff && $to <= 0xffff} {
 			    set casemap($from) [expr {$to - $from}]
 			}
+		    } elseif {[regexp {^   ([[:xdigit:]]+); ([[:xdigit:]]+) ([[:xdigit:]]+);} $line \
+			     temp from to1 to2]} {
+			scan $from %x from
+			scan $to1 %x to1
+			scan $to2 %x to2
+			if {$from <= 0xffff && \
+				$to1 <= 0xffff && $to2 <= 0xffff} {
+			    set casemap2($from) [llength $multicasemap]
+			    lappend multicasemap [list $to1 $to2]
+			}
+		    } elseif {[regexp {^   ([[:xdigit:]]+); ([[:xdigit:]]+) ([[:xdigit:]]+) ([[:xdigit:]]+);} $line \
+			     temp from to1 to2 to3]} {
+			scan $from %x from
+			scan $to1 %x to1
+			scan $to2 %x to2
+			scan $to3 %x to3
+			if {$from <= 0xffff && \
+				$to1 <= 0xffff && $to2 <= 0xffff && \
+				$to3 <= 0xffff} {
+			    set casemap2($from) [llength $multicasemap]
+			    lappend multicasemap [list $to1 $to2 $to3]
+			}
 		    } else {
-			# TODO
+			#puts "missed: $line"
 		    }
 		    
 		} elseif {$table != "B.2"} {
@@ -169,7 +208,7 @@ proc uni::buildTables {} {
     set next 0
 
     for {set i 0} {$i <= 0xffff} {incr i} {
-	set gIndex [getGroup [getValue $tablemap($i) $casemap($i)]]
+	set gIndex [getGroup [getValue $i]]
 
 	# Split character index into offset and page number
 	set offset [expr {$i & $mask}]
@@ -193,6 +232,7 @@ proc uni::main {} {
     variable pages
     variable groups
     variable shift
+    variable multicasemap
 
     if {$argc != 2} {
 	puts stderr "\nusage: $argv0 <datafile> <outdir>\n"
@@ -299,7 +339,9 @@ static unsigned char groupMap\[\] = {"
  *
  * Bit  6	D.2
  *
- * Bits 7-15	Reserved for future use.
+ * Bit  7	Case maps to several characters
+ *
+ * Bits 8-15	Reserved for future use.
  *
  * Bits 16-31	Case delta: delta for case conversions.  This should be the
  *			    highest field so we can easily sign extend.
@@ -324,6 +366,24 @@ static int groups\[\] = {"
     puts $f "};
 
 /*
+ * Table for characters that lowercased to multiple ones
+ */
+
+static int multiCaseTable\[\]\[4\] = {"
+    set last [expr {[llength $multicasemap] - 1}]
+    for {set i 0} {$i <= $last} {incr i} {
+	set val [lindex $multicasemap $i]
+
+	set line "    "
+	append line [format "{%d, %s}" [llength $val] [join $val ", "]]
+	if {$i != $last} {
+	    append line ", "
+	}
+	puts $f $line
+    }
+    puts $f "};
+
+/*
  * The following constants are used to determine the category of a
  * Unicode character.
  */
@@ -335,6 +395,7 @@ static int groups\[\] = {"
 #define D1Mask  (1 << 4)
 #define D2Mask  (1 << 5)
 #define XNPMask (1 << 6)
+#define MCMask  (1 << 7)
 
 /*
  * The following macros extract the fields of the character info.  The
@@ -345,6 +406,7 @@ static int groups\[\] = {"
 #define GetCaseType(info) (((info) & 0xE0) >> 5)
 #define GetCategory(info) ((info) & 0x1F)
 #define GetDelta(info) (((info) > 0) ? ((info) >> 16) : (~(~((info)) >> 16)))
+#define GetMC(info) (multiCaseTable\[GetDelta(info)\])
 
 /*
  * This macro extracts the information about a character from the
