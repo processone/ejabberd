@@ -19,7 +19,7 @@
 
 
 -record(vcard_search, {user, fn, family, given, middle, nickname,
-		       bday, ctry, locality, email,
+		       bday, ctry="", locality="", email,
 		       orgname, orgunit}).
 -record(vcard, {user, vcard}).
 
@@ -30,15 +30,17 @@ start() ->
     mnesia:create_table(vcard_search,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, vcard_search)}]),
-    %mnesia:add_table_index(vcard_search, fn),
-    %mnesia:add_table_index(vcard_search, n),
-    %mnesia:add_table_index(vcard_search, nickname),
-    %mnesia:add_table_index(vcard_search, bday),
-    %mnesia:add_table_index(vcard_search, ctry),
-    %mnesia:add_table_index(vcard_search, locality),
-    %mnesia:add_table_index(vcard_search, email),
-    %mnesia:add_table_index(vcard_search, orgname),
-    %mnesia:add_table_index(vcard_search, orgunit),
+    mnesia:add_table_index(vcard_search, fn),
+    mnesia:add_table_index(vcard_search, family),
+    mnesia:add_table_index(vcard_search, given),
+    mnesia:add_table_index(vcard_search, middle),
+    mnesia:add_table_index(vcard_search, nickname),
+    mnesia:add_table_index(vcard_search, bday),
+    mnesia:add_table_index(vcard_search, ctry),
+    mnesia:add_table_index(vcard_search, locality),
+    mnesia:add_table_index(vcard_search, email),
+    mnesia:add_table_index(vcard_search, orgname),
+    mnesia:add_table_index(vcard_search, orgunit),
 
 
     ejabberd_local:register_iq_handler(?NS_VCARD,
@@ -48,7 +50,7 @@ start() ->
     spawn(?MODULE, init, []).
 
 init() ->
-    ejabberd_router:register_local_route("ejud." ++ ?MYNAME),
+    ejabberd_router:register_local_route("vjud." ++ ?MYNAME),
     loop().
 
 loop() ->
@@ -131,23 +133,35 @@ set_vcard(LUser, VCARD) ->
     EMail    = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
     OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
     OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
+
+    LFN       = jlib:tolower(FN),
+    LFamily   = jlib:tolower(Family),
+    LGiven    = jlib:tolower(Given),
+    LMiddle   = jlib:tolower(Middle),
+    LNickname = jlib:tolower(Nickname),
+    LBDay     = jlib:tolower(BDay),
+    LEMail    = jlib:tolower(EMail),
+    LOrgName  = jlib:tolower(OrgName),
+    LOrgUnit  = jlib:tolower(OrgUnit),
+
     F = fun() ->
 		mnesia:write(#vcard{user = LUser, vcard = VCARD}),
-		mnesia:write(#vcard_search{user = LUser,
-					   fn = FN,
-					   family = Family,
-					   given = Given,
-					   middle = Middle,
-					   nickname = Nickname,
-					   bday = BDay,
-					   %ctry = CTRY,
-					   %locality = Locality,
-					   email = EMail,
-					   orgname = OrgName,
-					   orgunit = OrgUnit
+		mnesia:write(#vcard_search{user      = LUser,
+					   fn        = LFN,
+					   family    = LFamily,
+					   given     = LGiven,
+					   middle    = LMiddle,
+					   nickname  = LNickname,
+					   bday      = LBDay,
+					   %ctry     = LCTRY,
+					   %locality = LLocality,
+					   email     = LEMail,
+					   orgname   = LOrgName,
+					   orgunit   = LOrgUnit
 					  })
 	end,
     mnesia:transaction(F).
+
 
 -define(FORM,
 	[{xmlelement, "instructions", [],
@@ -158,8 +172,41 @@ set_vcard(LUser, VCARD) ->
 	    [{xmlcdata, "Fill in fields to search "
 	      "for any matching Jabber User"}]},
 	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "JID"},
+				  {"var", "jid"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
 				  {"label", "Full Name"},
-				  {"var", "fn"}], []}
+				  {"var", "fn"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "Name"},
+				  {"var", "given"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "Middle Name"},
+				  {"var", "middle"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "Family Name"},
+				  {"var", "family"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "Nickname"},
+				  {"var", "nickname"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "Birthday"},
+				  {"var", "bday"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "Country"},
+				  {"var", "ctry"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "City"},
+				  {"var", "locality"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "email"},
+				  {"var", "email"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "Organization Name"},
+				  {"var", "orgname"}], []},
+	   {xmlelement, "field", [{"type", "text-single"},
+				  {"label", "Organization Unit"},
+				  {"var", "orgunit"}], []}
 	  ]}]).
 
 
@@ -177,10 +224,36 @@ do_route(From, To, Packet) ->
 		{iq, ID, Type, ?NS_SEARCH, SubEl} ->
 		    case Type of
 			set ->
-			    % TODO
-			    Err = jlib:make_error_reply(
-				    Packet, "501", "Not Implemented"),
-			    ejabberd_router:route(To, From, Err);
+			    XDataEl = find_xdata_el(SubEl),
+			    case XDataEl of
+				false ->
+				    Err = jlib:make_error_reply(
+					    Packet, "400", "Bad Request"),
+				    ejabberd_router:route(To, From, Err);
+				_ ->
+				    XData = jlib:parse_xdata_submit(XDataEl),
+				    case XData of
+					invalid ->
+					    Err = jlib:make_error_reply(
+						    Packet,
+						    "400", "Bad Request"),
+					    ejabberd_router:route(To, From,
+								  Err);
+					_ ->
+					    ResIQ =
+						{iq, ID, result, ?NS_SEARCH,
+						 [{xmlelement,
+						   "query",
+						   [{"xmlns", ?NS_SEARCH}],
+						   [{xmlelement, "x",
+						     [{"xmlns", ?NS_XDATA},
+						      {"type", "result"}],
+						     search_result(XData)
+						    }]}]},
+					    ejabberd_router:route(
+					      To, From, jlib:iq_to_xml(ResIQ))
+				    end
+			    end;
 			get ->
 			    ResIQ = {iq, ID, result, ?NS_SEARCH,
 				     [{xmlelement,
@@ -206,7 +279,7 @@ do_route(From, To, Packet) ->
 				       [{xmlelement, "identity",
 					 [{"category", "directory"},
 					  {"type", "user"},
-					  {"name", "EJUD"}], []},
+					  {"name", "vCard User Search"}], []},
 					{xmlelement, "feature",
 					 [{"var", ?NS_SEARCH}], []}
 				       ]
@@ -237,3 +310,113 @@ do_route(From, To, Packet) ->
 	    end
     end.
 
+find_xdata_el({xmlelement, Name, Attrs, SubEls}) ->
+    find_xdata_el1(SubEls).
+
+find_xdata_el1([]) ->
+    false;
+find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
+    case xml:get_attr_s("xmlns", Attrs) of
+	?NS_XDATA ->
+	    {xmlelement, Name, Attrs, SubEls};
+	_ ->
+	    find_xdata_el1(Els)
+    end;
+find_xdata_el1([_ | Els]) ->
+    find_xdata_el1(Els).
+
+search_result(Data) ->
+    [{xmlelement, "title", [], [{xmlcdata, "Users Search Results"}]},
+     {xmlelement, "reported", [],
+      [{xmlelement, "field", [{"label", "JID"},         {"var", "jid"}], []},
+       {xmlelement, "field", [{"label", "Full Name"},   {"var", "fn"}], []},
+       {xmlelement, "field", [{"label", "Name"},        {"var", "given"}], []},
+       {xmlelement, "field", [{"label", "Middle Name"}, {"var", "middle"}], []},
+       {xmlelement, "field", [{"label", "Family Name"}, {"var", "family"}], []},
+       {xmlelement, "field", [{"label", "Nickname"}, {"var", "nickname"}], []},
+       {xmlelement, "field", [{"label", "Birthday"}, {"var", "bday"}], []},
+       {xmlelement, "field", [{"label", "Country"},  {"var", "ctry"}], []},
+       {xmlelement, "field", [{"label", "City"},     {"var", "locality"}], []},
+       {xmlelement, "field", [{"label", "email"},    {"var", "email"}], []},
+       {xmlelement, "field", [{"label", "Organization Name"},
+			      {"var", "orgname"}], []},
+       {xmlelement, "field", [{"label", "Organization Unit"},
+			      {"var", "orgunit"}], []}
+      ]}] ++ lists:map(fun record_to_item/1, search(Data)).
+
+-define(FIELD(Var, Val),
+	{xmlelement, "field", [{"var", Var}],
+	 [{xmlelement, "value", [],
+	   [{xmlcdata, Val}]}]}).
+
+record_to_item(R) ->
+     {xmlelement, "item", [],
+      [
+       ?FIELD("jid",      R#vcard_search.user ++ "@" ++ ?MYNAME),
+       ?FIELD("fn",       R#vcard_search.fn),
+       ?FIELD("family",   R#vcard_search.family),
+       ?FIELD("given",    R#vcard_search.given),
+       ?FIELD("middle",   R#vcard_search.middle),
+       ?FIELD("nickname", R#vcard_search.nickname),
+       ?FIELD("bday",     R#vcard_search.bday),
+       ?FIELD("ctry",     R#vcard_search.ctry),
+       ?FIELD("locality", R#vcard_search.locality),
+       ?FIELD("email",    R#vcard_search.email),
+       ?FIELD("orgname",  R#vcard_search.orgname),
+       ?FIELD("orgunit",  R#vcard_search.orgunit)
+      ]
+     }.
+
+
+search(Data) ->
+    MatchSpec = make_matchspec(Data),
+    F = fun() ->
+		mnesia:match_object(MatchSpec)
+	end,
+    case mnesia:transaction(F) of
+	{atomic, Rs} ->
+	    Rs;
+	_ ->
+	    []
+    end.
+
+
+make_matchspec(Data) ->
+    GlobMatch = #vcard_search{user     = '_',
+			      fn       = '_',
+			      family   = '_',
+			      given    = '_',
+			      middle   = '_',
+			      nickname = '_',
+			      bday     = '_',
+			      ctry     = '_',
+			      locality = '_',
+			      email    = '_',
+			      orgname  = '_',
+			      orgunit  = '_'
+			     },
+    Match = filter_fields(Data, GlobMatch),
+    Match.
+
+filter_fields([], Match) ->
+    Match;
+filter_fields([{SVar, [Val]} | Ds], Match)
+  when is_list(Val) and (Val /= "") ->
+    NewMatch = case SVar of
+                   "jid"      -> Match;
+                   "fn"       -> Match#vcard_search{fn       = Val};
+                   "family"   -> Match#vcard_search{family   = Val};
+                   "given"    -> Match#vcard_search{given    = Val};
+                   "middle"   -> Match#vcard_search{middle   = Val};
+                   "nickname" -> Match#vcard_search{nickname = Val};
+                   "bday"     -> Match#vcard_search{bday     = Val};
+                   "ctry"     -> Match#vcard_search{ctry     = Val};
+                   "locality" -> Match#vcard_search{locality = Val};
+                   "email"    -> Match#vcard_search{email    = Val};
+                   "orgname"  -> Match#vcard_search{orgname  = Val};
+                   "orgunit"  -> Match#vcard_search{orgunit  = Val};
+		   _          -> Match
+	       end,
+    filter_fields(Ds, NewMatch);
+filter_fields([_ | Ds], Match) ->
+    filter_fields(Ds, Match).

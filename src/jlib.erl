@@ -25,7 +25,8 @@
 	 get_iq_namespace/1,
 	 iq_query_info/1,
 	 is_iq_request_type/1,
-	 iq_to_xml/1]).
+	 iq_to_xml/1,
+	 parse_xdata_submit/1]).
 
 
 %send_iq(From, To, ID, SubTags) ->
@@ -248,3 +249,43 @@ iq_to_xml({iq, ID, Type, _, SubEl}) ->
     end.
 
 
+parse_xdata_submit(El) ->
+    {xmlelement, Name, Attrs, Els} = El,
+    case xml:get_attr_s("type", Attrs) of
+	"submit" ->
+	    lists:reverse(parse_xdata_fields(Els, []));
+	_ ->
+	    invalid
+    end.
+
+parse_xdata_fields([], Res) ->
+    Res;
+parse_xdata_fields([{xmlelement, Name, Attrs, SubEls} | Els], Res) ->
+    case Name of
+	"field" ->
+	    case xml:get_attr_s("var", Attrs) of
+		"" ->
+		    parse_xdata_fields(Els, Res);
+		Var ->
+		    Field =
+			{Var, lists:reverse(parse_xdata_values(SubEls, []))},
+		    parse_xdata_fields(Els, [Field | Res])
+	    end;
+	_ ->
+	    parse_xdata_fields(Els, Res)
+    end;
+parse_xdata_fields([_ | Els], Res) ->
+    parse_xdata_fields(Els, Res).
+
+parse_xdata_values([], Res) ->
+    Res;
+parse_xdata_values([{xmlelement, Name, Attrs, SubEls} | Els], Res) ->
+    case Name of
+	"value" ->
+	    Val = xml:get_cdata(SubEls),
+	    parse_xdata_values(Els, [Val | Res]);
+	_ ->
+	    parse_xdata_values(Els, Res)
+    end;
+parse_xdata_values([_ | Els], Res) ->
+    parse_xdata_values(Els, Res).
