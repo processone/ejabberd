@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/3, receiver/2, route/4]).
+-export([start/3, receiver/2, route_chan/4, route_nick/3]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -33,7 +33,7 @@
 
 -record(state, {socket, receiver, queue,
 		user, myname, server, nick,
-		channels = ?SETS:new(),
+		channels = dict:new(),
 		inbuf = "", outbuf = ""}).
 
 -define(IRC_ENCODING, "koi8-r").
@@ -110,17 +110,6 @@ open_socket(init, StateData) ->
     end.
 
 wait_for_registration(closed, StateData) ->
-    bounce_messages("Server Connect Failed"),
-    lists:foreach(
-      fun(Chan) ->
-	      ejabberd_router:route(
-		{lists:concat([Chan, "%", StateData#state.server]),
-		 StateData#state.myname, StateData#state.nick},
-		StateData#state.user,
-		{xmlelement, "presence", [{"type", "error"}],
-		 [{xmlelement, "error", [{"code", "502"}],
-		   [{xmlcdata, "Server Connect Failed"}]}]})
-      end, ?SETS:to_list(StateData#state.channels)),
     {stop, normal, StateData}.
 
 stream_established({xmlstreamend, Name}, StateData) ->
@@ -187,31 +176,41 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_info({route, Channel, Resource, {xmlelement, "presence", Attrs, Els}},
+handle_info({route_chan, Channel, Resource,
+	     {xmlelement, "presence", Attrs, Els}},
 	    StateName, StateData) ->
     NewStateData =
 	case xml:get_attr_s("type", Attrs) of
 	    "unavailable" ->
 		S1 = ?SEND(io_lib:format("PART #~s\r\n", [Channel])),
 		S1#state{channels =
-			 remove_element(Channel, S1#state.channels)};
+			 dict:erase(Channel, S1#state.channels)};
 	    "subscribe" -> StateData;
 	    "subscribed" -> StateData;
 	    "unsubscribe" -> StateData;
 	    "unsubscribed" -> StateData;
 	    _ ->
-		S1 = ?SEND(io_lib:format("JOIN #~s\r\n", [Channel])),
-		S1#state{channels =
-			 ?SETS:add_element(Channel, S1#state.channels)}
+		S1 = ?SEND(io_lib:format("NICK ~s\r\n"
+					 "JOIN #~s\r\n",
+					 [Resource, Channel])),
+		case dict:is_key(Channel, S1#state.channels) of
+		    true ->
+			S1#state{nick = Resource};
+		    _ ->
+			S1#state{nick = Resource,
+				 channels =
+				 dict:store(Channel, ?SETS:new(),
+					    S1#state.channels)}
+		end
 	end,
-    case ?SETS:is_empty(NewStateData#state.channels) of
-	true ->
+    case length(dict:fetch_keys(NewStateData#state.channels)) of
+	0 ->
 	    {stop, normal, NewStateData};
 	_ ->
 	    {next_state, StateName, NewStateData}
     end;
 
-handle_info({route, Channel, Resource,
+handle_info({route_chan, Channel, Resource,
 	     {xmlelement, "message", Attrs, Els} = El},
 	    StateName, StateData) ->
     NewStateData =
@@ -236,11 +235,58 @@ handle_info({route, Channel, Resource,
 						[Channel, S])
 			  end, Strings)),
 		?SEND(Res);
-	    _ -> StateData
+	    "chat" ->
+		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
+		Body1 = case Body of
+			    [$/, $m, $e, $  | Rest] ->
+				"\001ACTION " ++ Rest ++ "\001";
+			    _ ->
+				Body
+			end,
+		Strings = string:tokens(Body1, "\n"),
+		Res = lists:concat(
+			lists:map(
+			  fun(S) ->
+				  io_lib:format("PRIVMSG ~s :~s\r\n",
+						[Resource, S])
+			  end, Strings)),
+		?SEND(Res);
+	    _ ->
+		StateData
 	end,
     {next_state, StateName, NewStateData};
 
-handle_info({route, Channel, Resource, Packet}, StateName, StateData) ->
+handle_info({route_chan, Channel, Resource, Packet}, StateName, StateData) ->
+    {next_state, StateName, StateData};
+
+
+handle_info({route_nick, Nick,
+	     {xmlelement, "message", Attrs, Els} = El},
+	    StateName, StateData) ->
+    NewStateData =
+	case xml:get_attr_s("type", Attrs) of
+	    "chat" ->
+		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
+		Body1 = case Body of
+			    [$/, $m, $e, $  | Rest] ->
+				"\001ACTION " ++ Rest ++ "\001";
+			    _ ->
+				Body
+			end,
+		Strings = string:tokens(Body1, "\n"),
+		Res = lists:concat(
+			lists:map(
+			  fun(S) ->
+				  io_lib:format("PRIVMSG ~s :~s\r\n",
+						[Nick, S])
+			  end, Strings)),
+		?SEND(Res);
+	    _ ->
+		StateData
+	end,
+    {next_state, StateName, NewStateData};
+
+handle_info({route_nick, Nick, Packet}, StateName, StateData) ->
     {next_state, StateName, StateData};
 
 
@@ -253,20 +299,20 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
     NewStateData =
 	case Words of
 	    [_, "353" | Items] ->
-		process_channel_list(StateData, Items),
-		StateData;
+		process_channel_list(StateData, Items);
 	    [From, "PRIVMSG", [$# | Chan] | _] ->
 		process_chanprivmsg(StateData, Chan, From, String),
 		StateData;
 	    [From, "PRIVMSG", Nick, ":\001VERSION\001" | _] ->
 		process_version(StateData, Nick, From),
 		StateData;
+	    [From, "PRIVMSG", Nick | _] ->
+		process_privmsg(StateData, Nick, From, String),
+		StateData;
 	    [From, "PART", [$# | Chan] | _] ->
-		process_part(StateData, Chan, From, String),
-		StateData;
+		process_part(StateData, Chan, From, String);
 	    [From, "JOIN", Chan | _] ->
-		process_join(StateData, Chan, From, String),
-		StateData;
+		process_join(StateData, Chan, From, String);
 	    [From, "MODE", [$# | Chan], "+o", Nick | _] ->
 		process_mode_o(StateData, Chan, From, Nick,
 			       "admin", "moderator"),
@@ -278,6 +324,8 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 	    [From, "KICK", [$# | Chan], Nick | _] ->
 		process_kick(StateData, Chan, From, Nick),
 		StateData;
+	    [From, "NICK", Nick | _] ->
+		process_nick(StateData, From, Nick);
 	    _ ->
 		io:format("unknown irc command '~s'~n", [String]),
 		StateData
@@ -291,6 +339,11 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 		NewStateData#state{outbuf = ""}
 	end,
     {next_state, stream_established, NewStateData1};
+
+handle_info({ircstring, [$E, $R, $R, $O, $R | _] = String},
+	    StateName, StateData) ->
+    process_error(StateData, String),
+    {next_state, StateName, StateData};
 
 
 handle_info({ircstring, String}, StateName, StateData) ->
@@ -331,6 +384,17 @@ handle_info({tcp_error, Socket, Reason}, StateName, StateData) ->
 terminate(Reason, StateName, StateData) ->
     mod_irc:closed_conection(StateData#state.user,
 			     StateData#state.server),
+    bounce_messages("Server Connect Failed"),
+    lists:foreach(
+      fun(Chan) ->
+	      ejabberd_router:route(
+		{lists:concat([Chan, "%", StateData#state.server]),
+		 StateData#state.myname, StateData#state.nick},
+		StateData#state.user,
+		{xmlelement, "presence", [{"type", "error"}],
+		 [{xmlelement, "error", [{"code", "502"}],
+		   [{xmlcdata, "Server Connect Failed"}]}]})
+      end, dict:fetch_keys(StateData#state.channels)),
     case StateData#state.socket of
 	undefined ->
 	    ok;
@@ -395,8 +459,11 @@ bounce_messages(Reason) ->
     end.
 
 
-route(Pid, Channel, Resource, Packet) ->
-    Pid ! {route, Channel, Resource, Packet}.
+route_chan(Pid, Channel, Resource, Packet) ->
+    Pid ! {route_chan, Channel, Resource, Packet}.
+
+route_nick(Pid, Nick, Packet) ->
+    Pid ! {route_nick, Nick, Packet}.
 
 
 process_lines([S]) ->
@@ -409,17 +476,17 @@ process_channel_list(StateData, Items) ->
     process_channel_list_find_chan(StateData, Items).
 
 process_channel_list_find_chan(StateData, []) ->
-    ok;
+    StateData;
 process_channel_list_find_chan(StateData, [[$# | Chan] | Items]) ->
     process_channel_list_users(StateData, Chan, Items);
 process_channel_list_find_chan(StateData, [_ | Items]) ->
     process_channel_list_find_chan(StateData, Items).
 
 process_channel_list_users(StateData, Chan, []) ->
-    ok;
+    StateData;
 process_channel_list_users(StateData, Chan, [User | Items]) ->
-    process_channel_list_user(StateData, Chan, User),
-    process_channel_list_users(StateData, Chan, Items).
+    NewStateData = process_channel_list_user(StateData, Chan, User),
+    process_channel_list_users(NewStateData, Chan, Items).
 
 process_channel_list_user(StateData, Chan, User) ->
     User1 = case User of
@@ -439,13 +506,21 @@ process_channel_list_user(StateData, Chan, User) ->
 			     [{xmlelement, "item",
 			       [{"affiliation", Affiliation},
 				{"role", Role}],
-			       []}]}]}).
+			       []}]}]}),
+    case catch dict:update(Chan,
+			   fun(Ps) ->
+				   ?SETS:add_element(User2, Ps)
+			   end, StateData#state.channels) of
+	{'EXIT', _} ->
+	    StateData;
+	NS ->
+	    StateData#state{channels = NS}
+    end.
 
 
 process_chanprivmsg(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
     {ok, Msg, _} = regexp:sub(String, ".*PRIVMSG[^:]*:", ""),
-    %Msg = lists:last(string:tokens(String, ":")),
     Msg1 = case Msg of
 	       [1, $A, $C, $T, $I, $O, $N, $  | Rest] ->
 		   "/me " ++ Rest;
@@ -468,23 +543,44 @@ process_chanprivmsg(StateData, Chan, From, String) ->
 			  {xmlelement, "message", [{"type", "groupchat"}],
 			   [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
 
+process_privmsg(StateData, Nick, From, String) ->
+    [FromUser | _] = string:tokens(From, "!"),
+    {ok, Msg, _} = regexp:sub(String, ".*PRIVMSG[^:]*:", ""),
+    Msg1 = case Msg of
+	       [1, $A, $C, $T, $I, $O, $N, $  | Rest] ->
+		   "/me " ++ Rest;
+	       _ ->
+		   Msg
+	   end,
+    Msg2 = lists:filter(
+	     fun(C) ->
+		     if (C < 32) and
+			(C /= 9) and
+			(C /= 10) and
+			(C /= 13) ->
+			     false;
+			true -> true
+		     end
+	     end, Msg1),
+    ejabberd_router:route(
+      {lists:concat([FromUser, "!", StateData#state.server]),
+       StateData#state.myname, ""},
+      StateData#state.user,
+      {xmlelement, "message", [{"type", "chat"}],
+       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+
 process_version(StateData, Nick, From) ->
-    case StateData#state.nick of
-	Nick ->
-	    [FromUser | _] = string:tokens(From, "!"),
-	    send_text(
-	      StateData#state.socket,
-	      io_lib:format("NOTICE ~s :\001VERSION "
-			    "ejabberd IRC transport ~s (c) Alexey Shchepin"
-			    "\001\r\n",
-			    [FromUser, ?VERSION]) ++
-	      io_lib:format("NOTICE ~s :\001VERSION "
-			    "http://www.jabber.ru/projects/ejabberd/"
-			    "\001\r\n",
-			    [FromUser]));
-	_ ->
-	    ok
-    end.
+    [FromUser | _] = string:tokens(From, "!"),
+    send_text(
+      StateData#state.socket,
+      io_lib:format("NOTICE ~s :\001VERSION "
+		    "ejabberd IRC transport ~s (c) Alexey Shchepin"
+		    "\001\r\n",
+		    [FromUser, ?VERSION]) ++
+      io_lib:format("NOTICE ~s :\001VERSION "
+		    "http://www.jabber.ru/projects/ejabberd/"
+		    "\001\r\n",
+		    [FromUser])).
 
 
 process_part(StateData, Chan, From, String) ->
@@ -498,7 +594,16 @@ process_part(StateData, Chan, From, String) ->
 			     [{xmlelement, "item",
 			       [{"affiliation", "member"},
 				{"role", "none"}],
-			       []}]}]}).
+			       []}]}]}),
+    case catch dict:update(Chan,
+			   fun(Ps) ->
+				   remove_element(FromUser, Ps)
+			   end, StateData#state.channels) of
+	{'EXIT', _} ->
+	    StateData;
+	NS ->
+	    StateData#state{channels = NS}
+    end.
 
 
 process_join(StateData, Channel, From, String) ->
@@ -512,7 +617,17 @@ process_join(StateData, Channel, From, String) ->
 			     [{xmlelement, "item",
 			       [{"affiliation", "member"},
 				{"role", "participant"}],
-			       []}]}]}).
+			       []}]}]}),
+    case catch dict:update(Chan,
+			   fun(Ps) ->
+				   ?SETS:add_element(FromUser, Ps)
+			   end, StateData#state.channels) of
+	{'EXIT', _} ->
+	    StateData;
+	NS ->
+	    StateData#state{channels = NS}
+    end.
+
 
 
 process_mode_o(StateData, Chan, From, Nick, Affiliation, Role) ->
@@ -540,6 +655,61 @@ process_kick(StateData, Chan, From, Nick) ->
 			       []},
 			      {xmlelement, "status", [{"code", "307"}], []}
 			     ]}]}).
+
+process_nick(StateData, From, NewNick) ->
+    [FromUser | _] = string:tokens(From, "!"),
+    Nick = lists:subtract(NewNick, ":"),
+    NewChans =
+	dict:map(
+	  fun(Chan, Ps) ->
+		  case ?SETS:is_member(FromUser, Ps) of
+		      true ->
+			  ejabberd_router:route(
+			    {lists:concat([Chan, "%", StateData#state.server]),
+			     StateData#state.myname, FromUser},
+			    StateData#state.user,
+			    {xmlelement, "presence", [{"type", "unavailable"}],
+			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
+			       [{xmlelement, "item",
+				 [{"affiliation", "member"},
+				  {"role", "participant"},
+				  {"nick", Nick}],
+				 []},
+				{xmlelement, "status", [{"code", "303"}], []}
+			       ]}]}),
+			  ejabberd_router:route(
+			    {lists:concat([Chan, "%", StateData#state.server]),
+			     StateData#state.myname, Nick},
+			    StateData#state.user,
+			    {xmlelement, "presence", [],
+			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
+			       [{xmlelement, "item",
+				 [{"affiliation", "member"},
+				  {"role", "participant"}],
+				 []}
+			       ]}]}),
+			  ?SETS:add_element(Nick,
+					    remove_element(FromUser, Ps));
+		      _ ->
+			  Ps
+		  end
+	  end, StateData#state.channels),
+    StateData#state{channels = NewChans}.
+
+
+process_error(StateData, String) ->
+    lists:foreach(
+      fun(Chan) ->
+	      ejabberd_router:route(
+		{lists:concat([Chan, "%", StateData#state.server]),
+		 StateData#state.myname, StateData#state.nick},
+		StateData#state.user,
+		{xmlelement, "presence", [{"type", "error"}],
+		 [{xmlelement, "error", [{"code", "502"}],
+		   [{xmlcdata, String}]}]})
+      end, dict:fetch_keys(StateData#state.channels)).
+
+
 
 
 remove_element(E, Set) ->

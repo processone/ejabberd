@@ -91,21 +91,39 @@ do_route(Host, From, To, Packet) ->
 			      irc_connection,
 			      #irc_connection{userserver = {From, Server},
 					      pid = Pid}),
-			    mod_irc_connection:route(
+			    mod_irc_connection:route_chan(
 			      Pid, Channel, Resource, Packet),
 			    ok;
 			[R] ->
 			    Pid = R#irc_connection.pid,
 			    io:format("send to process ~p~n",
 				      [Pid]),
-			    mod_irc_connection:route(
+			    mod_irc_connection:route_chan(
 			      Pid, Channel, Resource, Packet),
 			    ok
 		    end;
 		_ ->
-		    Err = jlib:make_error_reply(
-			    Packet, "406", "Not Acceptable"),
-		    ejabberd_router:route(To, From, Err)
+		    case string:tokens(ChanServ, "!") of
+			[[_ | _] = Nick, [_ | _] = Server] ->
+			    case ets:lookup(irc_connection, {From, Server}) of
+				[] ->
+				    Err = jlib:make_error_reply(
+					    Packet,
+					    "503", "Service Unavailable"),
+				    ejabberd_router:route(To, From, Err);
+				[R] ->
+				    Pid = R#irc_connection.pid,
+				    io:format("send to process ~p~n",
+					      [Pid]),
+				    mod_irc_connection:route_nick(
+				      Pid, Nick, Packet),
+				    ok
+			    end;
+			_ ->
+			    Err = jlib:make_error_reply(
+				    Packet, "406", "Not Acceptable"),
+			    ejabberd_router:route(To, From, Err)
+		    end
 	    end
     end.
 
