@@ -15,6 +15,7 @@
 -export([start/1, init/1, stop/0, closed_conection/2]).
 
 -include("ejabberd.hrl").
+-include("namespaces.hrl").
 
 -record(irc_connection, {userserver, pid}).
 
@@ -52,9 +53,32 @@ do_route(Host, From, To, Packet) ->
     {ChanServ, _, Resource} = To,
     case ChanServ of
 	"" ->
-	    % TODO
-	    Err = jlib:make_error_reply(Packet, "406", "Not Acceptable"),
-	    ejabberd_router:route(To, From, Err);
+	    case Resource of
+		"" ->
+		    case jlib:iq_query_info(Packet) of
+			{iq, ID, get, ?NS_DISCO_INFO = XMLNS, SubEl} ->
+			    Res = {iq, ID, result, XMLNS,
+				   [{xmlelement, "query",
+				     [{"xmlns", XMLNS}],
+				     [{xmlelement, "identity",
+				       [{"category", "conference"},
+					{"type", "irc"},
+					{"name", "ejabberd"}], []},
+				      {xmlelement, "feature",
+				       [{"var", ?NS_MUC}], []}]}]},
+			    ejabberd_router:route(To,
+						  From,
+						  jlib:iq_to_xml(Res));
+			_ ->
+			    Err = jlib:make_error_reply(
+				    Packet, "503", "Service Unavailable"),
+			    ejabberd_router:route(To, From, Err)
+		    end;
+		_ ->
+		    Err = jlib:make_error_reply(Packet,
+						"406", "Not Acceptable"),
+		    ejabberd_router:route(To, From, Err)
+	    end;
 	_ ->
 	    case string:tokens(ChanServ, "%") of
 		[[_ | _] = Channel, [_ | _] = Server] ->

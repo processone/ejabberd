@@ -18,7 +18,7 @@
 %% gen_fsm callbacks
 -export([init/1,
 	 open_socket/2,
-	 %wait_for_registration/2,
+	 wait_for_registration/2,
 	 stream_established/2,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -109,6 +109,19 @@ open_socket(init, StateData) ->
 	    {stop, normal, StateData}
     end.
 
+wait_for_registration(closed, StateData) ->
+    bounce_messages("Server Connect Failed"),
+    lists:foreach(
+      fun(Chan) ->
+	      ejabberd_router:route(
+		{lists:concat([Chan, "%", StateData#state.server]),
+		 StateData#state.myname, StateData#state.nick},
+		StateData#state.user,
+		{xmlelement, "presence", [{"type", "error"}],
+		 [{xmlelement, "error", [{"code", "502"}],
+		   [{xmlcdata, "Server Connect Failed"}]}]})
+      end, ?SETS:to_list(StateData#state.channels)),
+    {stop, normal, StateData}.
 
 stream_established({xmlstreamend, Name}, StateData) ->
     {stop, normal, StateData};
@@ -208,9 +221,21 @@ handle_info({route, Channel, Resource,
 		  {lists:concat([Channel, "%", StateData#state.server]),
 		   StateData#state.myname, StateData#state.nick},
 		  StateData#state.user, El),
-		% TODO: remove newlines from body
 		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
-		?SEND(io_lib:format("PRIVMSG #~s :~s\r\n", [Channel, Body]));
+		Body1 = case Body of
+			    [$/, $m, $e, $  | Rest] ->
+				"\001ACTION " ++ Rest ++ "\001";
+			    _ ->
+				Body
+			end,
+		Strings = string:tokens(Body1, "\n"),
+		Res = lists:concat(
+			lists:map(
+			  fun(S) ->
+				  io_lib:format("PRIVMSG #~s :~s\r\n",
+						[Channel, S])
+			  end, Strings)),
+		?SEND(Res);
 	    _ -> StateData
 	end,
     {next_state, StateName, NewStateData};
@@ -231,7 +256,10 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 		process_channel_list(StateData, Items),
 		StateData;
 	    [From, "PRIVMSG", [$# | Chan] | _] ->
-		process_privmsg(StateData, Chan, From, String),
+		process_chanprivmsg(StateData, Chan, From, String),
+		StateData;
+	    [From, "PRIVMSG", Nick, ":\001VERSION\001" | _] ->
+		process_version(StateData, Nick, From),
 		StateData;
 	    [From, "PART", [$# | Chan] | _] ->
 		process_part(StateData, Chan, From, String),
@@ -338,14 +366,14 @@ send_text(Socket, Text) ->
 send_element(Socket, El) ->
     send_text(Socket, xml:element_to_string(El)).
 
-send_queue(Socket, Q) ->
-    case queue:out(Q) of
-	{{value, El}, Q1} ->
-	    send_element(Socket, El),
-	    send_queue(Socket, Q1);
-	{empty, Q1} ->
-	    ok
-    end.
+%send_queue(Socket, Q) ->
+%    case queue:out(Q) of
+%	{{value, El}, Q1} ->
+%	    send_element(Socket, El),
+%	    send_queue(Socket, Q1);
+%	{empty, Q1} ->
+%	    ok
+%    end.
 
 bounce_messages(Reason) ->
     receive
@@ -414,7 +442,7 @@ process_channel_list_user(StateData, Chan, User) ->
 			       []}]}]}).
 
 
-process_privmsg(StateData, Chan, From, String) ->
+process_chanprivmsg(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
     Msg = lists:last(string:tokens(String, ":")),
     Msg1 = case Msg of
@@ -438,6 +466,25 @@ process_privmsg(StateData, Chan, From, String) ->
 			  StateData#state.user,
 			  {xmlelement, "message", [{"type", "groupchat"}],
 			   [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+
+process_version(StateData, Nick, From) ->
+    case StateData#state.nick of
+	Nick ->
+	    [FromUser | _] = string:tokens(From, "!"),
+	    send_text(
+	      StateData#state.socket,
+	      io_lib:format("NOTICE ~s :\001VERSION "
+			    "ejabberd IRC transport ~s (c) Alexey Shchepin"
+			    "\001\r\n",
+			    [FromUser, ?VERSION]) ++
+	      io_lib:format("NOTICE ~s :\001VERSION "
+			    "http://www.jabber.ru/projects/ejabberd/"
+			    "\001\r\n",
+			    [FromUser]));
+	_ ->
+	    ok
+    end.
+
 
 process_part(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
