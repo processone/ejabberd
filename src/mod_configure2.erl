@@ -135,7 +135,7 @@ process_get({xmlelement, "access", Attrs, _SubEls}) ->
     {result, {xmlelement, "access", Attrs, [{xmlcdata, Str}]}};
 process_get({xmlelement, "last", Attrs, _SubEls}) ->
     case catch mnesia:dirty_select(
-		 last_activity, [{{last_activity, '_', '$1'}, [], ['$1']}]) of
+		 last_activity, [{{last_activity, '_', '$1', '_'}, [], ['$1']}]) of
 	{'EXIT', _Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	Vals ->

@@ -686,8 +686,9 @@ handle_sync_event({get_presence}, _From, StateName, StateData) ->
 
     Show = get_showtag(PresLast),
     Status = get_statustag(PresLast),
+    Resource = StateData#state.resource,
 
-    Reply  = {User, Show, Status},
+    Reply = {User, Resource, Show, Status},
     {reply, Reply, StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->

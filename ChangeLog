@@ -1,8 +1,25 @@
+2004-07-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/: Library for TLS support (not completed)
+
+	* src/ejabberd_auth.erl: Now uses two LDAP connections
+
+	* src/ejabberd_c2s.erl: Return resource on get_presence request
+	(thanks to Mickael Remond)
+
+	* src/mod_configure2.erl: Bugfix (thanks to Sergei Golovan)
+
+	* src/msgs/ua.msg: New Ukrainian translation (thanks to usercard)
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
 2004-07-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/eldap/eldap.erl: Bugfix
 
 2004-07-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): ejabberd-0.7 released
 
 	* src/web/ejabberd_web_admin.erl: Better i18n support (thanks to
 	Sergei Golovan)

@@ -70,7 +70,8 @@ init([]) ->
 	    ok;
 	ldap ->
 	    LDAPServers = ejabberd_config:get_local_option(ldap_servers),
-	    eldap:start_link("ejabberd", LDAPServers, 389, "", "")
+	    eldap:start_link("ejabberd", LDAPServers, 389, "", ""),
+	    eldap:start_link("ejabberd_bind", LDAPServers, 389, "", "")
     end,
     {ok, #state{}}.
 
@@ -326,7 +327,7 @@ check_password_ldap(User, Password) ->
 	false ->
 	    false;
 	DN ->
-	    case eldap:bind("ejabberd", DN, Password) of
+	    case eldap:bind("ejabberd_bind", DN, Password) of
 		ok ->
 		    true;
 		_ ->
