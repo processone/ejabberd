@@ -1,5 +1,7 @@
 2004-10-09  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/uk.msg: Updated (thanks to Sergei Golovan)
+
 	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
 
 	* src/msgs/ua.msg: Renamed to uk.msg

@@ -216,7 +216,7 @@
 {"Change Password", "Змінити пароль"}.
 {"Connected Resources:", "Підключені ресурси:"}.
 {"Password:", "Пароль:"}.
-{"None", "Ні"}.
+{"None", "Немає"}.
 {"Node ", "Вузол "}.
 {"DB Management", "Управління БД"}.
 {"Listened Ports Management", "Управління відкритими портами"}.
