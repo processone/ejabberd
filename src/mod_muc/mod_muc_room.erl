@@ -516,7 +516,7 @@ list_to_affiliation(Affiliation) ->
 
 
 set_affiliation(JID, Affiliation, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
     Affiliations = case Affiliation of
 		       none ->
 			   ?DICT:erase(LJID,
@@ -533,7 +533,7 @@ get_affiliation(JID, StateData) ->
 	allow ->
 	    owner;
 	_ ->
-	    LJID = jlib:jid_tolower(JID),
+	    LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
 	    case ?DICT:find(LJID, StateData#state.affiliations) of
 		{ok, Affiliation} ->
 		    Affiliation;
@@ -1018,6 +1018,18 @@ process_admin_items_set(UJID, Items, StateData) ->
 					 set_affiliation(
 					   JID, outcast,
 					   set_role(JID, none, SD));
+				     {JID, affiliation, A, Reason} when
+					   (A == admin) or (A == owner)->
+					 SD1 = set_affiliation(JID, A, SD),
+					 SD2 = set_role(JID, moderator, SD1),
+					 catch send_new_presence(JID, SD2),
+					 SD2;
+				     {JID, affiliation, member, Reason} ->
+					 SD1 = set_affiliation(
+						 JID, member, SD),
+					 SD2 = set_role(JID, participant, SD1),
+					 catch send_new_presence(JID, SD2),
+					 SD2;
 				     {JID, role, R, Reason} ->
 					 SD1 = set_role(JID, R, SD),
 					 catch send_new_presence(JID, SD1),
@@ -1314,8 +1326,8 @@ process_iq_owner(From, set, SubEl, StateData) ->
 		    end;
 		[{xmlelement, "destroy", Attrs1, Els1}] ->
 		    destroy_room(Els1, StateData);
-		_ ->
-		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
+		Items ->
+		    process_admin_items_set(From, Items, StateData)
 	    end;
 	_ ->
 	    {error, ?ERR_FORBIDDEN}
@@ -1333,6 +1345,20 @@ process_iq_owner(From, get, SubEl, StateData) ->
 	    case xml:remove_cdata(Els) of
 		[] ->
 		    get_config(Lang, StateData);
+		[Item] ->
+		    case xml:get_tag_attr("affiliation", Item) of
+			false ->
+			    {error, ?ERR_BAD_REQUEST};
+			{value, StrAffiliation} ->
+			    case catch list_to_affiliation(StrAffiliation) of
+				{'EXIT', _} ->
+				    {error, ?ERR_BAD_REQUEST};
+				SAffiliation ->
+				    Items = items_with_affiliation(
+					      SAffiliation, StateData),
+				    {result, Items, StateData}
+			    end
+		    end;
 		_ ->
 		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
 	    end;
