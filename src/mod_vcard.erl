@@ -47,6 +47,7 @@ start(Opts) ->
     mnesia:create_table(vcard_search,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, vcard_search)}]),
+    mnesia:add_table_index(vcard_search, luser),
     mnesia:add_table_index(vcard_search, lfn),
     mnesia:add_table_index(vcard_search, lfamily),
     mnesia:add_table_index(vcard_search, lgiven),

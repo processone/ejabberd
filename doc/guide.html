@@ -36,7 +36,7 @@
 
 <UL><LI>
 <A HREF="#htoc1">1&nbsp;&nbsp;Introduction</A>
-<LI><A HREF="#htoc2">2&nbsp;&nbsp;Installation</A>
+<LI><A HREF="#htoc2">2&nbsp;&nbsp;Installation from Source</A>
 <UL><LI>
 <A HREF="#htoc3">2.1&nbsp;&nbsp;Installation Requirements</A>
 <UL><LI>
@@ -68,7 +68,7 @@
 <LI><A HREF="#htoc21">3.2.2&nbsp;&nbsp;<TT>ejabberdctl</TT> tool</A>
 </UL>
 </UL>
-<LI><A HREF="#htoc22">4&nbsp;&nbsp;Distribution</A>
+<LI><A HREF="#htoc22">4&nbsp;&nbsp;Clustering</A>
 <UL><LI>
 <A HREF="#htoc23">4.1&nbsp;&nbsp;How it works</A>
 <UL><LI>
@@ -83,8 +83,8 @@
 <UL><LI>
 <A HREF="#htoc30">A.1&nbsp;&nbsp;Common Options</A>
 <UL><LI>
-<A HREF="#htoc31">A.1.1&nbsp;&nbsp;Option <TT>iqdisc</TT></A>
-<LI><A HREF="#htoc32">A.1.2&nbsp;&nbsp;Option <TT>host</TT></A>
+<A HREF="#htoc31">A.1.1&nbsp;&nbsp;<TT>iqdisc</TT></A>
+<LI><A HREF="#htoc32">A.1.2&nbsp;&nbsp;<TT>host</TT></A>
 </UL>
 <LI><A HREF="#htoc33">A.2&nbsp;&nbsp;<TT>mod_announce</TT></A>
 <LI><A HREF="#htoc34">A.3&nbsp;&nbsp;<TT>mod_configure</TT></A>
@@ -134,7 +134,7 @@ Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
 <LI>Built-in web-based administration interface
 <LI>Built-in <A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A> service
 <LI>SSL support
-<LI>Support for LDAP authentification
+<LI>Support for LDAP authentication
 <LI>Ability to interface with external components (JIT, MSN-t, Yahoo-t, etc.)
 <LI>Migration from jabberd14 is possible
 <LI>Mostly XMPP-compliant
@@ -145,11 +145,11 @@ Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
 The misfeatures of <TT>ejabberd</TT> are:
 <UL><LI>
 No support for virtual domains
-<LI>No support for authentification and STARTTLS in S2S connections
+<LI>No support for authentication and STARTTLS in S2S connections
 </UL>
-<!--TOC section Installation-->
+<!--TOC section Installation from Source-->
 
-<H2><A NAME="htoc2">2</A>&nbsp;&nbsp;Installation</H2><!--SEC END -->
+<H2><A NAME="htoc2">2</A>&nbsp;&nbsp;Installation from Source</H2><!--SEC END -->
 
 <A NAME="sec:installation"></A>
 <!--TOC subsection Installation Requirements-->
@@ -653,7 +653,7 @@ with such config:
    ]
   }.
 </PRE>you should enter URL <CODE>http://example.org:5280/admin/</CODE>. After
-authentification you should see something like in figure&nbsp;<A HREF="#fig:webadmmain">1</A>.
+authentication you should see something like in figure&nbsp;<A HREF="#fig:webadmmain">1</A>.
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
  
  <IMG SRC="webadmmain.png">
@@ -695,11 +695,11 @@ Available commands:
 Example:
   ejabberdctl ejabberd@host restart
 </PRE>
-<!--TOC section Distribution-->
+<!--TOC section Clustering-->
 
-<H2><A NAME="htoc22">4</A>&nbsp;&nbsp;Distribution</H2><!--SEC END -->
+<H2><A NAME="htoc22">4</A>&nbsp;&nbsp;Clustering</H2><!--SEC END -->
 
-<A NAME="sec:distribution"></A>
+<A NAME="sec:clustering"></A>
 <!--TOC subsection How it works-->
 
 <H3><A NAME="htoc23">4.1</A>&nbsp;&nbsp;How it works</H3><!--SEC END -->
@@ -842,9 +842,9 @@ domain.<BR>
 The following options are used by many modules, so they are described in
 separate section.<BR>
 <BR>
-<!--TOC subsubsection Option <TT>iqdisc</TT>-->
+<!--TOC subsubsection <TT>iqdisc</TT>-->
 
-<H4><A NAME="htoc31">A.1.1</A>&nbsp;&nbsp;Option <TT>iqdisc</TT></H4><!--SEC END -->
+<H4><A NAME="htoc31">A.1.1</A>&nbsp;&nbsp;<TT>iqdisc</TT></H4><!--SEC END -->
 
 <A NAME="sec:modiqdiscoption"></A>
 Many modules define handlers for processing IQ queries of different namespaces
@@ -875,9 +875,9 @@ Example:
     ...
    ]}.
 </PRE>
-<!--TOC subsubsection Option <TT>host</TT>-->
+<!--TOC subsubsection <TT>host</TT>-->
 
-<H4><A NAME="htoc32">A.1.2</A>&nbsp;&nbsp;Option <TT>host</TT></H4><!--SEC END -->
+<H4><A NAME="htoc32">A.1.2</A>&nbsp;&nbsp;<TT>host</TT></H4><!--SEC END -->
 
 <A NAME="sec:modhostoption"></A>
 This option explicitly defines hostname for the module which acts as a service.<BR>
@@ -1190,8 +1190,6 @@ Options:
 <B><TT>iqdisc</TT></B><DD> <TT>http://jabber.org/protocol/stats</TT> IQ queries processing
 discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
-TBD about access.<BR>
-<BR>
 <!--TOC subsection <TT>mod_time</TT>-->
 
 <H3><A NAME="htoc48">A.17</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
