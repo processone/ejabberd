@@ -274,18 +274,21 @@ body {
     }
 
 input {
-    border: 1px solid #93a6c7;  
-    color: #556655;
-    background-color: #ffffff;
+    border: 1px solid #d6760e;
+    color: #723202;
+    background-color: #fff2e8;
     vertical-align: middle;
     margin-bottom: 0px;
     padding: 0.1em;
 }
 
-input.button {
+input[type=submit] {
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 7pt;
   font-weight: bold;
+  color: #ffffff;
+  background-color: #fe8a00;
+  border: 1px solid #d6760e;
 }
 
 textarea {
@@ -301,9 +304,9 @@ textarea {
 }
 
 select {
-    border: 1px solid #93a6c7;  
-    color: #556655;
-    background-color: #ffffff;
+    border: 1px solid #d6760e;
+    color: #723202;
+    background-color: #fff2e8;
     vertical-align: middle;
     margin-bottom: 0px; 
     padding: 0.1em;
@@ -769,6 +772,18 @@ process_admin(#request{user = User,
     Res = get_nodes(Lang),
     make_xhtml(Res, Lang);
 
+process_admin(#request{user = User,
+		       path = ["node", SNode | NPath],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    case search_running_node(SNode) of
+	false ->
+	    make_xhtml([?XC("h1", "Node not found")], Lang);
+	Node ->
+	    Res = get_node(Node, NPath, Lang),
+	    make_xhtml(Res, Lang)
+    end;
+
 process_admin(#request{lang = Lang}) ->
     setelement(1, make_xhtml([?XC("h1", "Not found")], Lang), 404).
 
@@ -1113,21 +1128,108 @@ get_nodes(Lang) ->
     StoppedNodes = lists:usort(mnesia:system_info(db_nodes) ++
 			       mnesia:system_info(extra_db_nodes)) --
 	RunningNodes,
-    FRN = lists:map(
-	    fun(N) ->
-		    S = atom_to_list(N),
-		    ?LI([?AC("../node/" ++ S ++ "/", S)])
-	    end, lists:sort(RunningNodes)),
-    FSN = lists:map(
-	    fun(N) ->
-		    S = atom_to_list(N),
-		    ?LI([?C(S)])
-	    end, lists:sort(StoppedNodes)),
+    FRN = if
+	      RunningNodes == [] ->
+		  ?CT("None");
+	      true ->
+		  ?XE("ul",
+		      lists:map(
+			fun(N) ->
+				S = atom_to_list(N),
+				?LI([?AC("../node/" ++ S ++ "/", S)])
+			end, lists:sort(RunningNodes)))
+	  end,
+    FSN = if
+	      StoppedNodes == [] ->
+		  ?CT("None");
+	      true ->
+		  ?XE("ul",
+		      lists:map(
+			fun(N) ->
+				S = atom_to_list(N),
+				?LI([?C(S)])
+			end, lists:sort(StoppedNodes)))
+	  end,
     [?XC("h1", "Nodes"),
      ?XC("h3", "Running Nodes"),
-     ?XE("ul", FRN),
+     FRN,
      ?XC("h3", "Stopped Nodes"),
-     ?XE("ul", FSN)].
+     FSN].
+
+search_running_node(SNode) ->
+    search_running_node(SNode, mnesia:system_info(running_db_nodes)).
+
+search_running_node(_, []) ->
+    false;
+search_running_node(SNode, [Node | Nodes]) ->
+    case atom_to_list(Node) of
+	SNode ->
+	    Node;
+	_ ->
+	    search_running_node(SNode, Nodes)
+    end.
+
+get_node(Node, [], Lang) ->
+    [?XC("h1", "Node: " ++ atom_to_list(Node)),
+     ?XE("ul",
+	 [?LI([?ACT("db/", "DB Management")]),
+	  ?LI([?ACT("backup/", "Backup Management")]),
+	  ?LI([?ACT("statistics/", "Statistics")])
+	 ])];
+
+get_node(Node, ["db"], Lang) ->
+    case rpc:call(Node, mnesia, system_info, [tables]) of
+	{badrpc, _Reason} ->
+	    [?XC("h1", "RPC call error")];
+	Tables ->
+	    STables = lists:sort(Tables),
+	    Rows = lists:map(
+		     fun(Table) ->
+			     Type = case rpc:call(Node,
+						  mnesia,
+						  table_info,
+						  [Table, storage_type]) of
+					{badrpc, _} ->
+					    unknown;
+					T ->
+					    T
+				    end,
+			     STable = atom_to_list(Table),
+			     ?XE("tr",
+				 [?XC("td", STable),
+				  ?XE("td", [db_storage_select(
+					       STable, Type, Lang)])
+				 ])
+		     end, STables),
+	    [?XC("h1", "DB Tables at " ++ atom_to_list(Node)),
+	     ?XAE("table", [],
+		   [?XE("tbody",
+			Rows ++
+			[?XE("tr",
+			     [?X("td"),
+			      ?XE("td", [?INPUTT("submit", "submit", "Submit")])
+			     ]
+			    )]
+		       )])]
+    end;
+
+get_node(Node, NPath, Lang) ->
+    [?XC("h1", "Not found")].
 
 
+db_storage_select(ID, Opt, Lang) ->
+    ?XAE("select", [{"name", "table" ++ ID}],
+	 lists:map(
+	   fun({O, Desc}) ->
+		   Sel = if
+			     O == Opt -> [{"selected", "selected"}];
+			     true -> []
+			 end,
+		   ?XACT("option",
+			 Sel ++ [{"value", atom_to_list(O)}],
+			 Desc)
+	   end, [{ram_copies, "RAM copy"},
+		 {disc_copies, "RAM and disc copy"},
+		 {disc_only_copies, "Disc only copy"},
+		 {unknown, "Remote copy"}])).
 
