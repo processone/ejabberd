@@ -181,10 +181,9 @@ session_established({xmlstreamelement, El}, StateData) ->
 				       [FromJID, El, StateData]),
 				presence_update(FromJID, El, StateData);
 			    _ ->
-				ejabberd_router:route({StateData#state.user,
-						       Server, ""},
-						      ToJID, El),
 				presence_track(FromJID, ToJID, El, StateData)
+				%ejabberd_router:route(FrJID, ToJID, El),
+				%NewSt
 			end;
 		    _ ->
 			ejabberd_router:route(FromJID, ToJID, El),
@@ -490,30 +489,38 @@ presence_track(From, To, Packet, StateData) ->
     User = StateData#state.user,
     case xml:get_attr_s("type", Attrs) of
 	"unavailable" ->
+	    ejabberd_router:route(From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	"invisible" ->
+	    ejabberd_router:route(From, To, Packet),
 	    I = ?SETS:add_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	"subscribe" ->
+	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    mod_roster:out_subscription(User, To, subscribe),
 	    StateData;
 	"subscribed" ->
+	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    mod_roster:out_subscription(User, To, subscribed),
 	    StateData;
 	"unsubscribe" ->
+	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    mod_roster:out_subscription(User, To, unsubscribe),
 	    StateData;
 	"unsubscribed" ->
+	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    mod_roster:out_subscription(User, To, unsubscribed),
 	    StateData;
 	"error" ->
+	    ejabberd_router:route(From, To, Packet),
 	    StateData;
 	_ ->
+	    ejabberd_router:route(From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = ?SETS:add_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
