@@ -205,12 +205,16 @@ if test x"$tls" != x; then
         SSL_LIBS="-L$ssl_prefix/lib -lcrypto"
         AC_CHECK_LIB(ssl, SSL_new, [ have_openssl=yes ], [ have_openssl=no ], [ $SSL_LIBS $SSL_CFLAGS ])
         if test x"$have_openssl" = xyes; then
-            AC_CHECK_HEADERS($ssl_prefix/include/openssl/ssl.h, have_openssl_h=yes)
+            save_CPPFLAGS=$CPPFLAGS
+            CPPFLAGS="-I$ssl_prefix/lib $CPPFLAGS"
+            AC_CHECK_HEADERS(openssl/ssl.h, have_openssl_h=yes)
+            CPPFLAGS=$save_CPPFLAGS
             if test x"$have_openssl_h" = xyes; then
                 have_openssl=yes
                 printf "openssl found in $ssl_prefix\n";
                 SSL_LIBS="-L$ssl_prefix/lib -lssl -lcrypto"
-                SSL_CFLAGS="-I$ssl_prefix/include/openssl -DHAVE_SSL"
+                CPPFLAGS="-I$ssl_prefix/lib $CPPFLAGS"
+                SSL_CFLAGS="-DHAVE_SSL"
                 break
             fi
         fi

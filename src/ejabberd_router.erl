@@ -12,6 +12,7 @@
 
 -export([route/3,
 	 register_route/1,
+	 register_route/2,
 	 unregister_route/1,
 	 dirty_get_all_routes/0,
 	 dirty_get_all_domains/0
@@ -22,15 +23,10 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(route, {domain, pid}).
+-record(route, {domain, pid, local_hint}).
 
 
 start_link() ->
-    Pid = proc_lib:spawn_link(ejabberd_router, init, []),
-    register(ejabberd_router, Pid),
-    {ok, Pid}.
-
-init() ->
     update_tables(),
     mnesia:create_table(route,
 			[{ram_copies, [node()]},
@@ -38,6 +34,11 @@ init() ->
 			 {attributes,
 			  record_info(fields, route)}]),
     mnesia:add_table_copy(route, node(), ram_copies),
+    Pid = proc_lib:spawn_link(ejabberd_router, init, []),
+    register(ejabberd_router, Pid),
+    {ok, Pid}.
+
+init() ->
     mnesia:subscribe({table, route, simple}),
     loop().
 
@@ -51,20 +52,6 @@ loop() ->
 		_ ->
 		    ok
 	    end,
-	    loop();
-	{register_route, Domain, Pid} ->
-	    F = fun() ->
-			mnesia:write(#route{domain = Domain,
-					    pid = Pid})
-		end,
-	    mnesia:transaction(F),
-	    loop();
-	{unregister_route, Domain, Pid} ->
-	    F = fun() ->
-			mnesia:delete_object(#route{domain = Domain,
-						    pid = Pid})
-		end,
-	    mnesia:transaction(F),
 	    loop();
 	{mnesia_table_event, {write, #route{pid = Pid}, _ActivityId}} ->
 	    erlang:monitor(process, Pid),
@@ -91,31 +78,76 @@ do_route(From, To, Packet) ->
     LDstDomain = To#jid.lserver,
     case mnesia:dirty_read(route, LDstDomain) of
 	[] ->
-	    ejabberd_s2s ! {route, From, To, Packet};
+	    ejabberd_s2s:route(From, To, Packet);
 	[R] ->
 	    Pid = R#route.pid,
-	    ?DEBUG("routed to process ~p~n", [Pid]),
-	    Pid ! {route, From, To, Packet};
+	    if
+		node(Pid) == node() ->
+		    case R#route.local_hint of
+			{apply, Module, Function} ->
+			    Module:Function(From, To, Packet);
+			_ ->
+			    Pid ! {route, From, To, Packet}
+		    end;
+		true ->
+		    Pid ! {route, From, To, Packet}
+	    end;
 	Rs ->
-	    Rs1 = case [R || R <- Rs, node(R#route.pid) == node()] of
-		      [] -> Rs;
-		      LRs -> LRs
-		  end,
-	    R = lists:nth(erlang:phash(now(), length(Rs1)), Rs1),
-	    Pid = R#route.pid,
-	    ?DEBUG("routed to process ~p~n", [Pid]),
-	    Pid ! {route, From, To, Packet}
+	    case [R || R <- Rs, node(R#route.pid) == node()] of
+		[] ->
+		    R = lists:nth(erlang:phash(now(), length(Rs)), Rs),
+		    Pid = R#route.pid,
+		    Pid ! {route, From, To, Packet};
+		LRs ->
+		    LRs,
+		    R = lists:nth(erlang:phash(now(), length(LRs)), LRs),
+		    Pid = R#route.pid,
+		    case R#route.local_hint of
+			{apply, Module, Function} ->
+			    Module:Function(From, To, Packet);
+			_ ->
+			    Pid ! {route, From, To, Packet}
+		    end
+	    end
     end.
 
 
+%route(From, To, Packet) ->
+%    ejabberd_router ! {route, From, To, Packet}.
+
 route(From, To, Packet) ->
-    ejabberd_router ! {route, From, To, Packet}.
+    case catch do_route(From, To, Packet) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p~nwhen processing: ~p",
+		       [Reason, {From, To, Packet}]);
+	_ ->
+	    ok
+    end.
 
 register_route(Domain) ->
-    ejabberd_router ! {register_route, Domain, self()}.
+    Pid = self(),
+    F = fun() ->
+		mnesia:write(#route{domain = Domain,
+				    pid = Pid})
+	end,
+    mnesia:transaction(F).
+
+register_route(Domain, LocalHint) ->
+    Pid = self(),
+    F = fun() ->
+		mnesia:write(#route{domain = Domain,
+				    pid = Pid,
+				    local_hint = LocalHint})
+	end,
+    mnesia:transaction(F).
 
 unregister_route(Domain) ->
-    ejabberd_router ! {unregister_route, Domain, self()}.
+    Pid = self(),
+    F = fun() ->
+		mnesia:delete_object(#route{domain = Domain,
+					    pid = Pid})
+	end,
+    mnesia:transaction(F).
 
 
 dirty_get_all_routes() ->
@@ -131,6 +163,8 @@ update_tables() ->
 	[domain, node, pid] ->
 	    mnesia:delete_table(route);
 	[domain, pid] ->
+	    mnesia:delete_table(route);
+	[domain, pid, local_hint] ->
 	    ok;
 	{'EXIT', _} ->
 	    ok

@@ -292,7 +292,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			   U, P, StateData#state.streamid, D) of
 			true ->
 			    ?INFO_MSG(
-			       "(~w) Accepted legacy authentification for ~s",
+			       "(~w) Accepted legacy authentication for ~s",
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
 			    ejabberd_sm:open_session(U, R),
@@ -319,7 +319,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     privacy_list = PrivList}};
 			_ ->
 			    ?INFO_MSG(
-			       "(~w) Failed legacy authentification for ~s",
+			       "(~w) Failed legacy authentication for ~s",
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
 			    Err = jlib:make_error_reply(
@@ -331,7 +331,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		    if
 			JID == error ->
 			    ?INFO_MSG(
-			       "(~w) Forbidden legacy authentification for "
+			       "(~w) Forbidden legacy authentication for "
 			       "username '~s' with resource '~s'",
 			       [StateData#state.socket, U, R]),
 			    Err = jlib:make_error_reply(El, ?ERR_JID_MALFORMED),
@@ -339,7 +339,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    {next_state, wait_for_auth, StateData};
 			true ->
 			    ?INFO_MSG(
-			       "(~w) Forbidden legacy authentification for ~s",
+			       "(~w) Forbidden legacy authentication for ~s",
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
 			    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
@@ -393,7 +393,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
-		    ?INFO_MSG("(~w) Accepted authentification for ~s",
+		    ?INFO_MSG("(~w) Accepted authentication for ~s",
 			      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,
@@ -469,7 +469,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
-		    ?INFO_MSG("(~w) Accepted authentification for ~s",
+		    ?INFO_MSG("(~w) Accepted authentication for ~s",
 			      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
 		     StateData#state{authentificated = true,

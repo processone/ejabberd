@@ -10,7 +10,9 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start_link/0, init/0, open_session/2, close_session/2,
+-export([start_link/0, init/0,
+	 route/3,
+	 open_session/2, close_session/2,
 	 bounce_offline_message/3,
 	 get_user_resources/1,
 	 set_presence/3,
@@ -89,11 +91,20 @@ loop() ->
     end.
 
 
+route(From, To, Packet) ->
+    case catch do_route(From, To, Packet) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p~nwhen processing: ~p",
+		       [Reason, {From, To, Packet}]);
+	_ ->
+	    ok
+    end.
+
 open_session(User, Resource) ->
-    ejabberd_sm ! {open_session, User, Resource, self()}.
+    register_connection(User, Resource, self()).
 
 close_session(User, Resource) ->
-    ejabberd_sm ! {close_session, User, Resource}.
+    remove_connection(User, Resource).
 
 
 register_connection(User, Resource, Pid) ->

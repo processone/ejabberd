@@ -16,7 +16,7 @@ OBJS   = \
 all:    $(OBJS)
 
 $(OUTDIR)/%.beam:       %.erl
-	erlc -W $(EFLAGS) -o $(OUTDIR) $<
+	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
 
 clean:
 	rm -f $(OBJS)

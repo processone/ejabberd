@@ -29,7 +29,9 @@ start(Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     LDAPServers = ejabberd_config:get_local_option(ldap_servers),
-    eldap:start_link("mod_vcard_ldap", LDAPServers, 389, "", ""),
+    RootDN = ejabberd_config:get_local_option(ldap_rootdn),
+    Password = ejabberd_config:get_local_option(ldap_password),			
+    eldap:start_link("mod_vcard_ldap", LDAPServers, 389, RootDN, Password),
     Host = gen_mod:get_opt(host, Opts, "vjud." ++ ?MYNAME),
     Search = gen_mod:get_opt(search, Opts, true),
     register(ejabberd_mod_vcard_ldap, spawn(?MODULE, init, [Host, Search])).

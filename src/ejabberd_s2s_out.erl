@@ -397,8 +397,8 @@ terminate(Reason, StateName, StateData) ->
 	false ->
 	    ok;
 	Key ->
-	    ejabberd_s2s ! {closed_conection, {StateData#state.myname,
-					       StateData#state.server}}
+	    ejabberd_s2s:remove_connection({StateData#state.myname,
+	        			    StateData#state.server})
     end,
     case StateData#state.socket of
 	undefined ->

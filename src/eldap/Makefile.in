@@ -17,10 +17,10 @@ OBJS   = \
 all:    $(OBJS)
 
 ELDAPv3.erl:       ELDAPv3.asn
-	erlc -bber_bin -W $(EFLAGS) $<
+	@ERLC@ -bber_bin -W $(EFLAGS) $<
 
 $(OUTDIR)/%.beam:	%.erl ELDAPv3.erl
-	erlc -W $(EFLAGS) -o $(OUTDIR) $<
+	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
 
 
 clean:

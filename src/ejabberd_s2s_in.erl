@@ -311,14 +311,6 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
-%    case StateData#state.user of
-%	"" ->
-%	    ok;
-%	_ ->
-%	    %ejabberd_sm:close_session(StateData#state.user,
-%	    %    		      StateData#state.resource)
-%    end,
-    %ejabberd_s2s ! {closed_conection, StateData#state.server},
     ?INFO_MSG("terminated: ~p", [Reason]),
     gen_tcp:close(StateData#state.socket),
     ok.

@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_local.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Route local packets
 %%% Created : 30 Nov 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -12,7 +12,8 @@
 
 -export([start_link/0, init/0]).
 
--export([register_iq_handler/3,
+-export([route/3,
+	 register_iq_handler/3,
 	 register_iq_handler/4,
 	 unregister_iq_handler/1,
 	 refresh_iq_handlers/0,
@@ -22,7 +23,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(state, {mydomain, iqtable}).
+-define(IQTABLE, local_iqtable).
 
 start_link() ->
     register(ejabberd_local,
@@ -30,43 +31,41 @@ start_link() ->
     {ok, Pid}.
 
 init() ->
-    MyDomain = ?MYNAME,
-    ejabberd_router:register_route(MyDomain),
-    catch ets:new(local_iqtable, [named_table, public]),
+    ejabberd_router:register_route(?MYNAME, {apply, ?MODULE, route}),
+    catch ets:new(?IQTABLE, [named_table, public]),
     ejabberd_hooks:add(local_send_to_resource_hook,
 		       ?MODULE, bounce_resource_packet, 100),
-    loop(#state{mydomain = MyDomain,
-		iqtable = local_iqtable}).
+    loop().
 
-loop(State) ->
+loop() ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(State, From, To, Packet) of
+	    case catch do_route(From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p~nwhen processing: ~p",
 			       [Reason, {From, To, Packet}]);
 		_ ->
 		    ok
 	    end,
-	    loop(State);
+	    loop();
 	{register_iq_handler, XMLNS, Module, Function} ->
-	    ets:insert(State#state.iqtable, {XMLNS, Module, Function}),
+	    ets:insert(?IQTABLE, {XMLNS, Module, Function}),
 	    catch mod_disco:register_feature(XMLNS),
-	    loop(State);
+	    loop();
 	{register_iq_handler, XMLNS, Module, Function, Opts} ->
-	    ets:insert(State#state.iqtable, {XMLNS, Module, Function, Opts}),
+	    ets:insert(?IQTABLE, {XMLNS, Module, Function, Opts}),
 	    catch mod_disco:register_feature(XMLNS),
-	    loop(State);
+	    loop();
 	{unregister_iq_handler, XMLNS} ->
-	    case ets:lookup(State#state.iqtable, XMLNS) of
+	    case ets:lookup(?IQTABLE, XMLNS) of
 		[{_, Module, Function, Opts}] ->
 		    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
 		_ ->
 		    ok
 	    end,
-	    ets:delete(State#state.iqtable, XMLNS),
+	    ets:delete(?IQTABLE, XMLNS),
 	    catch mod_disco:unregister_feature(XMLNS),
-	    loop(State);
+	    loop();
 	refresh_iq_handlers ->
 	    lists:foreach(
 	      fun(T) ->
@@ -78,22 +77,24 @@ loop(State) ->
 			  _ ->
 			      ok
 		      end
-	      end, ets:tab2list(State#state.iqtable)),
-	    loop(State);
+	      end, ets:tab2list(?IQTABLE)),
+	    loop();
 	_ ->
-	    loop(State)
+	    loop()
     end.
 
 
-do_route(State, From, To, Packet) ->
+do_route(From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    case To of
-	#jid{luser = "", lresource = ""} ->
+    if
+	To#jid.luser /= "" ->
+	    ejabberd_sm:route(From, To, Packet);
+	To#jid.lresource == "" ->
 	    {xmlelement, Name, Attrs, _Els} = Packet,
 	    case Name of
 		"iq" ->
-		    process_iq(State, From, To, Packet);
+		    process_iq(From, To, Packet);
 		"message" ->
 		    ok;
 		"presence" ->
@@ -101,7 +102,7 @@ do_route(State, From, To, Packet) ->
 		_ ->
 		    ok
 	    end;
-	#jid{luser = "", lresource = Res} ->
+	true ->
 	    {xmlelement, Name, Attrs, _Els} = Packet,
 	    case xml:get_attr_s("type", Attrs) of
 		"error" -> ok;
@@ -109,16 +110,14 @@ do_route(State, From, To, Packet) ->
 		_ ->
 		    ejabberd_hooks:run(local_send_to_resource_hook,
 				       [From, To, Packet])
-	    end;
-	_ ->
-	    ejabberd_sm ! {route, From, To, Packet}
-    end.
+	    end
+	end.
 
-process_iq(State, From, To, Packet) ->
+process_iq(From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
 	#iq{xmlns = XMLNS} ->
-	    case ets:lookup(State#state.iqtable, XMLNS) of
+	    case ets:lookup(?IQTABLE, XMLNS) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ),
 		    if
@@ -141,6 +140,15 @@ process_iq(State, From, To, Packet) ->
 	_ ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
 	    ejabberd_router:route(To, From, Err),
+	    ok
+    end.
+
+route(From, To, Packet) ->
+    case catch do_route(From, To, Packet) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p~nwhen processing: ~p",
+		       [Reason, {From, To, Packet}]);
+	_ ->
 	    ok
     end.
 

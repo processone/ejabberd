@@ -11,9 +11,11 @@
 -vsn('$Revision$ ').
 
 -export([start_link/0, init/0,
+	 route/3,
 	 have_connection/1,
 	 get_key/1,
 	 try_register/1,
+	 remove_connection/1,
 	 dirty_get_connections/0]).
 
 -include("ejabberd.hrl").
@@ -29,17 +31,14 @@ start_link() ->
 
 init() ->
     update_tables(),
-    mnesia:create_table(s2s,[{ram_copies, [node()]},
-			     {attributes, record_info(fields, s2s)}]),
+    mnesia:create_table(s2s, [{ram_copies, [node()]},
+			      {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
     loop().
 
 loop() ->
     receive
-	{closed_conection, FromTo} ->
-	    remove_connection(FromTo),
-	    loop();
 	{mnesia_system_event, {mnesia_down, Node}} ->
 	    clean_table_from_bad_node(Node),
 	    loop();
@@ -56,6 +55,15 @@ loop() ->
 	    loop()
     end.
 
+
+route(From, To, Packet) ->
+    case catch do_route(From, To, Packet) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p~nwhen processing: ~p",
+		       [Reason, {From, To, Packet}]);
+	_ ->
+	    ok
+    end.
 
 
 remove_connection(FromTo) ->

@@ -79,8 +79,10 @@ init([]) ->
 	    ok;
 	ldap ->
 	    LDAPServers = ejabberd_config:get_local_option(ldap_servers),
-	    eldap:start_link("ejabberd", LDAPServers, 389, "", ""),
-	    eldap:start_link("ejabberd_bind", LDAPServers, 389, "", "")
+	    RootDN = ejabberd_config:get_local_option(ldap_rootdn),
+	    Password = ejabberd_config:get_local_option(ldap_password),
+	    eldap:start_link("ejabberd", LDAPServers, 389, RootDN, Password),
+	    eldap:start_link("ejabberd_bind", LDAPServers, 389, RootDN, Password)
     end,
     {ok, #state{}}.
 

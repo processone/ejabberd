@@ -1,4 +1,31 @@
+2004-11-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/aclocal.m4: Fixed headers detecting in AM_WITH_OPENSSL
+	(thanks to Leif Johansson)
+
+	* src/ejabberd_auth.erl: Added support for ldap_rootdn and
+	ldap_password options (thanks to Stefan de Konink)
+	* src/mod_vcard_ldap.erl: Likewise
+
+	* src/ejabberd_router.erl: Now possible to route packet via
+	function call instead of message sending
+	* src/ejabberd_sm.erl: Added function route/3, use it in route
+	table
+	* src/ejabberd_local.erl: Likewise
+	* src/ejabberd_s2s.erl: Likewise
+
+2004-10-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Fixed spelling of word "authentication"
+
+	* src/*/Makefile.in: Replaced erlc with @ERLC@
+
 2004-10-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s.erl: Added remove_connection/1
+	* src/ejabberd_s2s_out.erl: Use ejabberd_s2s:remove_connection/1
+
+	* src/ejabberd_s2s_in.erl: Minor cleanup
 
 	* examples/transport-configs/: Transport config examples (thanks
 	to Sander Devrieze)
