@@ -29,6 +29,7 @@
 -define(NS_PUBSUB,       "http://jabber.org/protocol/pubsub").
 -define(NS_PUBSUB_EVENT, "http://jabber.org/protocol/pubsub#event").
 -define(NS_PUBSUB_OWNER, "http://jabber.org/protocol/pubsub#owner").
+-define(NS_PUBSUB_NMI,   "http://jabber.org/protocol/pubsub#node-meta-info").
 
 -define(NS_STREAM,       "http://etherx.jabber.org/streams").
 

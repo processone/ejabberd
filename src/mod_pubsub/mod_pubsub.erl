@@ -16,7 +16,7 @@
 	 init/2,
 	 stop/0,
 	 % TODO: remove
-	 create_new_node/2,
+	 create_new_node/3,
 	 publish_item/5,
 	 delete_item/4]).
 
@@ -28,6 +28,7 @@
 
 -record(pubsub_node, {node, parent, info}).
 -record(nodeinfo, {items = [],
+		   options = [],
 		   entities = ?DICT:new()
 		  }).
 -record(entity, {affiliation = none,
@@ -48,11 +49,11 @@ start(Opts) ->
 
 init(Host, ServedHosts) ->
     ejabberd_router:register_route(Host),
-    create_new_node(["pubsub"], {"", Host, ""}),
-    create_new_node(["pubsub", "nodes"], {"", Host, ""}),
-    create_new_node(["home"], {"", Host, ""}),
+    create_new_node(Host, ["pubsub"], {"", Host, ""}),
+    create_new_node(Host, ["pubsub", "nodes"], {"", Host, ""}),
+    create_new_node(Host, ["home"], {"", Host, ""}),
     lists:foreach(fun(H) ->
-			  create_new_node(["home", H], {"", Host, ""})
+			  create_new_node(Host, ["home", H], {"", Host, ""})
 		  end, ServedHosts),
     loop(Host).
 
@@ -72,6 +73,8 @@ loop(Host) ->
 	stop ->
 	    ejabberd_router:unregister_global_route(Host),
 	    ok;
+	reload ->
+	    ?MODULE:loop(Host);
 	_ ->
 	    loop(Host)
     end.
@@ -393,7 +396,7 @@ iq_pubsub(Host, From, Type, SubEl) ->
 	    Node = string:tokens(SNode, "/"),
 	    case {Type, Name} of
 		{set, "create"} ->
-		    create_new_node(Node, From);
+		    create_new_node(Host, Node, From);
 		{set, "publish"} ->
 		    case xml:remove_cdata(Els) of
 			[{xmlelement, "item", ItemAttrs, Payload}] ->
@@ -427,6 +430,8 @@ iq_pubsub(Host, From, Type, SubEl) ->
 		    get_entities(From, Node);
 		{set, "entities"} ->
 		    set_entities(From, Node, xml:remove_cdata(Els));
+		%{get, "configure"} ->
+		%    get_node_config(From, Node);
 		_ ->
 		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
 	    end;
@@ -435,8 +440,14 @@ iq_pubsub(Host, From, Type, SubEl) ->
     end.
 
 
+-define(XFIELD(Type, Label, Var, Val),
+	{xmlelement, "field", [{"type", Type},
+			       {"label", translate:translate(Lang, Label)},
+			       {"var", Var}],
+	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
 
-create_new_node(Node, Owner) ->
+
+create_new_node(Host, Node, Owner) ->
     case Node of
 	[] ->
 	    {error, ?ERR_CONFLICT};
@@ -474,10 +485,21 @@ create_new_node(Node, Owner) ->
 				end
 			end
 		end,
-	    case check_create_permission(Node, Owner) of
+	    case check_create_permission(Host, Node, Owner) of
 		true ->
 		    case mnesia:transaction(F) of
 			{atomic, ok} ->
+			    Lang = "",
+			    broadcast_publish_item(
+			      Host, ["pubsub", "nodes"], "",
+			      [{xmlelement, "x",
+				[{"xmlns", ?NS_PUBSUB_EVENT},
+				 {"type", "result"}],
+				[?XFIELD("hidden", "", "FORM_TYPE",
+					 ?NS_PUBSUB_NMI),
+				 ?XFIELD("jid-single", "Node Creator",
+					 "creator",
+					 jlib:jid_to_string(LOwner))]}]),
 			    {result, []};
 			{atomic, {error, _} = Error} ->
 			    Error;
@@ -870,6 +892,40 @@ set_entities(OJID, Node, EntitiesEls) ->
     end.
 
 
+%get_node_config(OJID, Node) ->
+%    Owner = jlib:jid_tolower(jlib:jid_remove_resource(OJID)),
+%    case catch mnesia:dirty_read(pubsub_node, Node) of
+%	[#pubsub_node{info = Info}] ->
+%	    case get_affiliation(Info, Owner) of
+%		owner ->
+%		    Entities = Info#nodeinfo.entities,
+%		    EntitiesEls =
+%			?DICT:fold(
+%			  fun(JID,
+%			      #entity{affiliation = Affiliation,
+%				      subscription = Subscription},
+%			      Acc) ->
+%				  [{xmlelement, "entity",
+%				    [{"jid", jlib:jid_to_string(JID)},
+%				     {"affiliation",
+%				      affiliation_to_string(Affiliation)},
+%				     {"subscription",
+%				      subscription_to_string(Subscription)}],
+%				    []} | Acc]
+%			  end, [], Entities),
+%		    {result, [{xmlelement, "pubsub",
+%			       [{"xmlns", ?NS_PUBSUB_EVENT}],
+%			       [{xmlelement, "entities",
+%				 [{"node", node_to_string(Node)}],
+%				 EntitiesEls}]}]};
+%		_ ->
+%		    {error, ?ERR_NOT_ALLOWED}
+%	    end;
+%	_ ->
+%	    {error, ?ERR_ITEM_NOT_FOUND}
+%    end.
+
+
 
 
 
@@ -910,13 +966,18 @@ subscription_to_string(Subscription) ->
     end.
 
 
-check_create_permission(Node, Owner) ->
-    {User, Server, _} = Owner,
-    case Node of
-	["home", Server, User | _] ->
+check_create_permission(Host, Node, Owner) ->
+    if
+	{"", Host, ""} == Owner ->
 	    true;
-	_ ->
-	    false
+	true ->
+	    {User, Server, _} = Owner,
+	    case Node of
+		["home", Server, User | _] ->
+		    true;
+		_ ->
+		    false
+	    end
     end.
 
 insert_item(Info, ItemID, Publisher, Payload) ->
