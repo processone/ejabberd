@@ -75,9 +75,7 @@ init_ssl(Port, Module, Opts, SSLOpts) ->
     {ok, ListenSocket} = ssl:listen(Port, [binary,
 					   {packet, 0}, 
 					   {active, false},
-					   {nodelay, true},
-					   {backlog, 0},
-					   {cachetimout, 0} |
+					   {nodelay, true} |
 					   SSLOpts]),
     accept_ssl(ListenSocket, Module, Opts).
 
