@@ -46,99 +46,116 @@
 make_xhtml(Els, Lang) ->
     {200, [html],
      {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
-			   {"xml:lang", "en"},
-			   {"lang", "en"}],
+			   {"xml:lang", Lang},
+			   {"lang", Lang}],
       [{xmlelement, "head", [],
 	[{xmlelement, "meta", [{"http-equiv", "Content-Type"},
 			       {"content", "text/html; charset=utf-8"}], []},
 	 {xmlelement, "link", [{"href", "/admin/style.css"},
 			       {"type", "text/css"},
-			       {"rel", "StyleSheet"}], []}]},
-       {xmlelement, "body",
-	[{"topmargin", "0"},
-	 {"marginheight", "0"},
-	 {"leftmargin", "0"},
-	 {"marginwidth", "0"},
-	 {"rightmargin", "0"}],
-	[?XAE("table",
-	      [{"cellpadding", "0"},
-	       {"cellspacing", "0"},
-	       {"border", "0"},
-	       {"bgcolor", "#fe8a00"},
-	       {"width", "100%"}],
-	      [?XE("tr",
-		   [?XAE("td", [{"height", "2"}],
-			 [?XA("img", [{"src", "/admin/1x1tr.gif"},
-				      {"width", "1"},
-				      {"height", "2"},
-				      {"alt", ""},
-				      {"border", "0"}])]),
-		    ?XAE("td", [{"height", "2"}],
-			 [?XA("img", [{"src", "/admin/1x1tr.gif"},
-				      {"width", "1"},
-				      {"height", "2"},
-				      {"alt", ""},
-				      {"border", "0"}])])]),
-	       ?XE("tr",
-		   [?XE("td",
-			[?XA("img", [{"src", "/admin/logo.png"},
-				     {"width", "343"},
-				     {"height", "55"},
-				     {"alt", "ejabberd"},
-				     {"border", "0"}])]),
-		    ?XAE("td", [{"width", "100%"},
-				{"background", "/admin/logo-fill.png"}],
-			 [?XA("img", [{"src", "/admin/1x1tr.gif"},
-				      {"width", "100%"},
-				      {"height", "55"},
-				      {"alt", ""},
-				      {"border", "0"}])])])
-	      ]),
-	 ?XAE("table",
-	      [{"cellpadding", "0"},
-	       {"cellspacing", "0"},
-	       {"border", "0"},
-	       {"width", "100%"},
-	       {"height", "100%"}],
-	      [?XE("tr",
-		   [?XAE("td",
-			 [{"width", "1"},
-			  {"bgcolor", "#d47911"}],
-			 [?C(" ")]),
-		    ?XAE("td",
-			 [{"height", "100%"},
-						%{"width", "100%"},
-			  {"bgcolor", "#ffffff"},
-			  {"valign", "top"}],
-			 [?XAE("ul",
-			       [{"id", "navlist"}],
-			       [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
-				?LI([?ACT("/admin/access/", "Access Rules")]),
-				?LI([?ACT("/admin/users/", "Users")]),
-				?LI([?ACT("/admin/nodes/", "Nodes")]),
-				?LI([?ACT("/admin/stats/", "Statistics")])
-			       ])]),
-		    ?XAE("td",
-			 [{"height", "100%"},
-			  {"width", "100%"},
-			  {"bgcolor", "#ffffff"},
-			  {"valign", "top"}],
-			 [?XAE("span", [{"id", "content"}], Els)])])
-	      ]),
-	 ?XAE("table",
-	      [{"cellpadding", "0"},
-	       {"cellspacing", "0"},
-	       {"border", "0"},
-	       {"width", "100%"}],
-	      [?XE("tr",
-		   [?XA("td",
-			[{"height", "1"},
-			 {"bgcolor", "#d47911"}])
-		   ])
-	      ])]}
+			       {"rel", "stylesheet"}], []}]},
+       ?XE("body",
+	   [?XAE("table",
+		 [{"id", "top"}],
+		 [?XE("tr",
+		      [?XE("td",
+			   [?XA("img", [{"src", "/admin/logo.png"},
+					{"width", "343"},
+					{"height", "55"},
+					{"alt", "ejabberd"},
+					{"border", "0"}])]),
+		       ?XAE("td", [{"width", "100%"},
+				   {"background", "/admin/logo-fill.png"}],
+			    [?XA("img", [{"src", "/admin/1x1tr.gif"},
+					 {"width", "100%"},
+					 {"height", "55"},
+					 {"alt", ""},
+					 {"border", "0"}])])])
+		 ]),
+	    ?XAE("table",
+		 [{"id", "middle"}],
+		 [?XE("tr",
+		      [?XAE("td",
+			    [{"width", "1"},
+			     {"bgcolor", "#d47911"}],
+			    [?C(" ")]),
+		       ?XAE("td",
+			    [{"height", "100%"},
+			     %{"width", "100%"},
+			     {"bgcolor", "#ffffff"},
+			     {"valign", "top"}],
+			    [?XAE("ul",
+				  [{"id", "navlist"}],
+				  [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
+				   ?LI([?ACT("/admin/access/", "Access Rules")]),
+				   ?LI([?ACT("/admin/users/", "Users")]),
+				   ?LI([?ACT("/admin/nodes/", "Nodes")]),
+				   ?LI([?ACT("/admin/stats/", "Statistics")])
+				  ])]),
+		       ?XAE("td",
+			    [{"height", "100%"},
+			     {"width", "100%"},
+			     {"bgcolor", "#ffffff"},
+			     {"valign", "top"}],
+			    [?XAE("div", [{"id", "content"}], Els)])])
+		 ]),
+	    ?XAE("table",
+		 [{"id", "bottom"}],
+		 [?XE("tr",
+		      [?XCT("td",
+			    "ejabberd (c) 2002-2004 Alexey Shchepin")
+		      ])
+		 ])])
       ]}}.
 
 css() -> "
+body {
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 0;
+}
+
+table#top {
+  border: none;
+  border-spacing: 0;
+  background-color: #fe8a00;
+  width: 100%;
+  padding-top: 2px;
+}
+
+table#top td {
+  padding: 0;
+}
+
+table#top td img {
+  margin-bottom: 0px;
+}
+
+table#middle {
+  border: none;
+  border-spacing: 0;
+  width: 100%;
+  height: 100%;
+  empty-cells: show;
+}
+
+table#middle td {
+  padding: 0;
+  //background-color: #fe8a00;
+}
+
+table#bottom {
+  border: none;
+  border-spacing: 0;
+  width: 100%;
+}
+
+table#bottom td {
+  padding: 0;
+  background-color: #fe8a00;
+  text-align: center;
+}
+
     /*td{
       font-size: 3pt;
     }
@@ -249,7 +266,7 @@ select {
 }
 
 
-tr.head{
+tr.head {
   color: #ffffff;
   background-color: #3b547a;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
@@ -258,7 +275,7 @@ tr.head{
   text-align: center;
 }
 
-tr.oddraw{
+tr.oddraw {
   color: #412c75;
   background-color: #ccd4df;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
@@ -267,7 +284,7 @@ tr.oddraw{
   text-align: center;
 }
 
-tr.evenraw{
+tr.evenraw {
   color: #412c75;
   background-color: #dbe0e8;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
@@ -276,7 +293,7 @@ tr.evenraw{
   text-align: center;
 }
 
-td.leftheader{
+td.leftheader {
   color: #412c75;
   background-color: #ccccc1;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
@@ -289,7 +306,7 @@ td.leftheader{
   margin-bottom: 0px;
 }
 
-td.leftcontent{
+td.leftcontent {
   color: #000044;
   background-color: #e6e6df;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
@@ -303,7 +320,7 @@ td.leftcontent{
   margin-bottom: 0px;
 }
 
-td.rightcontent{
+td.rightcontent {
   color: #000044;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
@@ -315,7 +332,7 @@ td.rightcontent{
 }
 
 
-h1{
+h1 {
   color: #000044;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 14pt;
@@ -328,7 +345,7 @@ h1{
   margin-bottom: 0px;
 }
 
-h2{
+h2 {
   color: #000044;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 12pt;
@@ -341,7 +358,7 @@ h2{
   margin-bottom: 0px;
 }
 
-h3{
+h3 {
   color: #000044;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
@@ -354,21 +371,21 @@ h3{
   margin-bottom: 0px;
 }
 
-*#content a:link {
+#content a:link {
   color: #444466; 
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
   font-weight: bold;
   text-decoration: underlined;
 }
-*#content a:visited {
+#content a:visited {
   color: #444466;  
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
   font-weight: bold;
   text-decoration: underlined;
 }
-*#content a:hover {
+#content a:hover {
   color: #222266;  
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
@@ -377,17 +394,20 @@ h3{
 }
 
 
-*#content li{
+#content li {
   list-style-type: dot;
   font-size: 7pt;
   padding-left: 10px;
 }
 
-*#content li.big{
+#content li.big {
   font-size: 10pt;
 }
 
-
+div#content {
+  margin-left: 10px;
+  margin-top: 5px;
+}
 
 ".
 
@@ -516,6 +536,7 @@ process_admin(#request{method = Method,
 		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
+	       [?XE("p", [?ACT("../acls-raw/", "raw")])] ++
 	       [?XAE("form", [{"method", "post"}],
 		     [acls_to_xhtml(ACLs),
 		      ?BR,
@@ -620,6 +641,7 @@ process_admin(#request{method = Method,
 		   error -> [?C("bad format"), ?P];
 		   nothing -> []
 	       end ++
+	       [?XE("p", [?ACT("../access-raw/", "raw")])] ++
 	       [?XAE("form", [{"method", "post"}],
 		     [access_rules_to_xhtml(AccessRules, Lang),
 		      ?BR,
@@ -654,7 +676,7 @@ process_admin(#request{method = Method,
 		    Rs1
 	    end,
     make_xhtml([?XC("h1",
-		    "ejabberd access rule '" ++ SName ++ "' configuration")] ++
+		    "'" ++ SName ++ "' access rule configuration")] ++
 	       case Res of
 		   ok -> [?C("submited"), ?P];
 		   error -> [?C("bad format"), ?P];
@@ -675,18 +697,25 @@ process_admin(#request{user = User,
     make_xhtml([?XC("h1", "ejabberd users")] ++ Res, Lang);
 
 process_admin(#request{user = User,
-			path = ["users", Diap],
-			q = Query,
-			lang = Lang} = Request) ->
+		       path = ["users", Diap],
+		       q = Query,
+		       lang = Lang} = Request) ->
     Res = list_users_in_diapason(Diap),
     make_xhtml([?XC("h1", "ejabberd users")] ++ Res, Lang);
 
 process_admin(#request{user = User,
-			path = ["stats"],
-			q = Query,
-			lang = Lang} = Request) ->
+		       path = ["stats"],
+		       q = Query,
+		       lang = Lang} = Request) ->
     Res = get_stats(Lang),
     make_xhtml([?XC("h1", "ejabberd stats")] ++ Res, Lang);
+
+process_admin(#request{user = User,
+		       path = ["user", U],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    Res = user_info(U, Query, Lang),
+    make_xhtml(Res, Lang);
 
 process_admin(#request{lang = Lang}) ->
     setelement(1, make_xhtml([?XC("h1", "Not found")], Lang), 404).
@@ -723,7 +752,7 @@ acl_spec_to_text({server, S}) ->
     {server, S};
 
 acl_spec_to_text({user, U, S}) ->
-    {user, U ++ "@" ++ S};
+    {user_server, U ++ "@" ++ S};
 
 acl_spec_to_text(Spec) ->
     {raw, term_to_string(Spec)}.
@@ -983,3 +1012,46 @@ get_stats(Lang) ->
 			   ?XC("td", integer_to_list(S2SServers))])
 	       ])
 	  ])].
+
+
+user_info(User, Query, Lang) ->
+    Res = user_parse_query(User, Query),
+    Resources = ejabberd_sm:get_user_resources(User),
+    FResources =
+	case Resources of
+	    [] ->
+		[?CT("None")];
+	    _ ->
+		[?XE("ul",
+		     lists:map(fun(R) ->
+				       ?LI([?C(R)])
+			       end, lists:sort(Resources)))]
+	end,
+    Password = ejabberd_auth:get_password_s(User),
+    FPassword = [?INPUT("text", "password", Password), ?C(" "),
+		 ?INPUTT("submit", "chpassword", "Change Password")],
+    [?XC("h1", "User: " ++ User)] ++
+	case Res of
+	    ok -> [?C("submited"), ?P];
+	    error -> [?C("bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"method", "post"}],
+	      [?XCT("h3", "Connected Resources:")] ++ FResources ++
+	      [?XCT("h3", "Password:")] ++ FPassword)].
+
+
+user_parse_query(User, Query) ->
+    case lists:keysearch("chpassword", 1, Query) of
+	{value, _} ->
+	    case lists:keysearch("password", 1, Query) of
+		{value, {_, Password}} ->
+		    ejabberd_auth:set_password(User, Password),
+		    ok;
+		_ ->
+		    error
+	    end;
+	_ ->
+	    nothing
+    end.
+
