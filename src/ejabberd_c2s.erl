@@ -181,7 +181,8 @@ session_established({xmlstreamelement, El}, StateData) ->
 				       [FromJID, El, StateData]),
 				presence_update(FromJID, El, StateData);
 			    _ ->
-				StateData
+				ejabberd_router:route(FromJID, ToJID, El),
+				presence_track(FromJID, ToJID, El, StateData)
 			end;
 		    _ ->
 			ejabberd_router:route(FromJID, ToJID, El),
@@ -245,7 +246,7 @@ handle_info({send_text, Text}, StateName, StateData) ->
     {next_state, StateName, StateData};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
-    % TODO
+    {FU, FS, FR} = From,
     {Pass, NewAttrs, NewState} =
 	case Name of
 	    "presence" ->
@@ -266,10 +267,24 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			Attrs1 = lists:keydelete("type", 1, Attrs),
 			{true, [{"type", "unavailable"} | Attrs1], StateData};
 		    "subscribe" ->
-			% TODO
+			mod_roster:in_subscription(StateData#state.user,
+						   {FU, FS, ""},
+						   subscribe),
+			{true, Attrs, StateData};
+		    "subscribed" ->
+			mod_roster:in_subscription(StateData#state.user,
+						   {FU, FS, ""},
+						   subscribed),
 			{true, Attrs, StateData};
 		    "unsubscribe" ->
-			% TODO
+			mod_roster:in_subscription(StateData#state.user,
+						   {FU, FS, ""},
+						   unsubscribe),
+			{true, Attrs, StateData};
+		    "unsubscribed" ->
+			mod_roster:in_subscription(StateData#state.user,
+						   {FU, FS, ""},
+						   unsubscribed),
 			{true, Attrs, StateData};
 		    _ ->
 			{true, Attrs, StateData}
@@ -462,6 +477,33 @@ presence_update(From, Packet, StateData) ->
 			  }
     end.
 
+presence_track(From, To, Packet, StateData) ->
+    {xmlelement, Name, Attrs, Els} = Packet,
+    case xml:get_attr_s("type", Attrs) of
+	"unavailable" ->
+	    I = remove_element(To, StateData#state.pres_i),
+	    A = remove_element(To, StateData#state.pres_a),
+	    StateData#state{pres_i = I,
+			    pres_a = A};
+	"invisible" ->
+	    I = ?SETS:add_element(To, StateData#state.pres_i),
+	    A = remove_element(To, StateData#state.pres_a),
+	    StateData#state{pres_i = I,
+			    pres_a = A};
+	"subscribe" ->
+	    StateData;
+	"subscribed" ->
+	    StateData;
+	"unsubscribe" ->
+	    StateData;
+	"unsubscribed" ->
+	    StateData;
+	_ ->
+	    I = remove_element(To, StateData#state.pres_i),
+	    A = ?SETS:add_element(To, StateData#state.pres_a),
+	    StateData#state{pres_i = I,
+			    pres_a = A}
+    end.
 
 presence_broadcast(From, JIDSet, Packet) ->
     lists:foreach(fun(JID) ->
@@ -504,7 +546,14 @@ presence_broadcast_first(From, StateData, Packet) ->
     end.
 
 
-    
+remove_element(E, Set) ->
+    case ?SETS:is_element(E, Set) of
+	true ->
+	    ?SETS:del_element(E, Set);
+	_ ->
+	    Set
+    end.
+
 
 
 

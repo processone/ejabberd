@@ -14,7 +14,8 @@
 
 -export([start/0, init/0,
 	 process_iq/3,
-	 get_subscription_lists/1]).
+	 get_subscription_lists/1,
+	 in_subscription/3]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -272,4 +273,17 @@ fill_subscription_lists([I | Is], F, T) ->
 fill_subscription_lists([], F, T) ->
     {F, T}.
 
+
+in_subscription(User, From, Type) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		mnesia:read({roster, LUser})
+        end,
+    case mnesia:transaction(F) of
+	{atomic, Items} ->
+	    % TODO
+	    ok;
+	_ ->
+	    ok
+    end.
 
