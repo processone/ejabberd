@@ -37,7 +37,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    ok = erl_ddll:load_driver(".", stringprep_drv),
+    ok = erl_ddll:load_driver(ejabberd:get_so_path(), stringprep_drv),
     Port = open_port({spawn, stringprep_drv}, []),
     ets:new(stringprep_table, [set, public, named_table]),
     ets:insert(stringprep_table, {port, Port}),
