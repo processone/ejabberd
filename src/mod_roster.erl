@@ -123,13 +123,13 @@ item_to_xml(Item) ->
 		 remove ->
 		     [{"subscription", "remove"} | Attrs2]
 	     end,
-    Attrs4 = case Item#roster.ask of
-		 none ->
-		     Attrs3;
-		 subscribe ->
+    Attrs4 = case ask_to_pending(Item#roster.ask) of
+		 out ->
 		     [{"ask", "subscribe"} | Attrs3];
-		 unsubscribe ->
-		     [{"ask", "unsubscribe"} | Attrs3]
+		 both ->
+		     [{"ask", "subscribe"} | Attrs3];
+		 _ ->
+		     Attrs3
 	     end,
     Attrs = Attrs4 ++ Item#roster.xattrs,
     SubEls1 = lists:map(fun(G) ->
@@ -338,175 +338,143 @@ fill_subscription_lists([I | Is], F, T) ->
 fill_subscription_lists([], F, T) ->
     {F, T}.
 
+ask_to_pending(subscribe) -> out;
+ask_to_pending(unsubscribe) -> none;
+ask_to_pending(Ask) -> Ask.
 
-in_subscription(User, From, Type) ->
-    LUser = jlib:nodeprep(User),
-    LFrom = jlib:jid_tolower(From),
-    F = fun() ->
-		case mnesia:read({roster, {LUser, LFrom}}) of
-		    [] ->
-			case Type of
-			    subscribe ->
-				true;
-			    unsubscribe ->
-				true;
-			    unsubscribed ->
-				false;
-			    subscribed ->
-				JID = {From#jid.user,
-				       From#jid.server,
-				       From#jid.resource},
-				NewItem = #roster{uj = {LUser, LFrom},
-						  user = LUser,
-						  jid = JID},
-				mnesia:write(NewItem),
-				true
-			end;
-		    [I] ->
-			case Type of
-			    subscribe ->
-				S = I#roster.subscription,
-				if
-				    (S == both) or (S == from) ->
-					{update,
-					 {xmlelement, "presence",
-					  [{"type", "subscribed"}], []},
-					 I};
-				    true ->
-					true
-				end;
-			    unsubscribe ->
-				S = I#roster.subscription,
-				if
-				    (S == none) or (S == to) ->
-					{update,
-					 {xmlelement, "presence",
-					  [{"type", "unsubscribed"}], []},
-					 I};
-				    true ->
-					true
-				end;
-			    _ ->
-				S = I#roster.subscription,
-				NS = case Type of
-					 subscribed ->
-					     case S of
-						 from -> both;
-						 none -> to;
-						 _    -> S
-					     end;
-					 unsubscribed ->
-					     case S of
-						 both -> from;
-						 to   -> none;
-						 _    -> S
-					     end
-				     end,
-				NewItem = I#roster{subscription = NS,
-						   ask = none},
-				mnesia:write(NewItem),
-				{push, NewItem}
-			end
-		end
-        end,
-    case mnesia:transaction(F) of
-	{atomic, true} ->
-	    true;
-	{atomic, false} ->
-	    false;
-	{atomic, {update, Presence, Item}} ->
-	    ejabberd_router:route(jlib:make_jid(User, ?MYNAME, ""),
-				  jlib:jid_replace_resource(From, ""),
-				  Presence),
-	    ejabberd_sm ! {route,
-			   jlib:make_jid("", "", ""),
-			   jlib:make_jid(User, "", ""),
-			   {xmlelement, "broadcast", [],
-			    [{item,
-			      Item#roster.jid,
-			      Item#roster.subscription}]}},
-	    false;
-	{atomic, {push, Item}} ->
-	    push_item(User, {"", ?MYNAME, ""}, Item),
-	    true;
-	_ ->
-	    false
-    end.
 
-out_subscription(User, JID1, Type) ->
+
+in_subscription(User, JID, Type) ->
+    process_subscription(in, User, JID, Type).
+
+out_subscription(User, JID, Type) ->
+    process_subscription(out, User, JID, Type).
+
+process_subscription(Direction, User, JID1, Type) ->
+    io:format("S10N: Dir=~p User=~p JID=~p Type=~p~n",
+	      [Direction, User, JID1, Type]),
     LUser = jlib:nodeprep(User),
     LJID = jlib:jid_tolower(JID1),
     F = fun() ->
 		Item = case mnesia:read({roster, {LUser, LJID}}) of
 			   [] ->
-			       if (Type == unsubscribe) or
-				  (Type == unsubscribed) ->
-				       false;
-				  true ->
-				       JID = {JID1#jid.user,
-					      JID1#jid.server,
-					      JID1#jid.resource},
-				       #roster{uj = {LUser, LJID},
-					       user = LUser,
-					       jid = JID}
-			       end;
+			       JID = {JID1#jid.user,
+				      JID1#jid.server,
+				      JID1#jid.resource},
+			       #roster{uj = {LUser, LJID},
+				       user = LUser,
+				       jid = JID};
 			   [I] ->
 			       I
 		       end,
-		if Item == false ->
-			ok;
-		   true ->
-			{NewItem, Update} =
-			    case Type of
-				subscribe ->
-				    {Item#roster{ask = subscribe}, false};
-				unsubscribe ->
-				    {Item#roster{ask = unsubscribe}, false};
-				subscribed ->
-				    S = Item#roster.subscription,
-				    NS = case S of
-					     to   -> both;
-					     none -> from;
-					     _    -> S
-					 end,
-				    {Item#roster{subscription = NS,
-						 ask = none},
-				     true};
-				unsubscribed ->
-				    S = Item#roster.subscription,
-				    NS = case S of
-					     both -> to;
-					     from -> none;
-					     _    -> S
-					 end,
-				    {Item#roster{subscription = NS,
-						 ask = none},
-				     true}
-			    end,
+		NewState = case Direction of
+			       out ->
+				   out_state_change(Item#roster.subscription,
+						    Item#roster.ask,
+						    Type);
+			       in ->
+				   in_state_change(Item#roster.subscription,
+						   Item#roster.ask,
+						   Type)
+			   end,
+		case NewState of
+		    none ->
+			none;
+		    {Subscription, Pending} ->
+			NewItem = Item#roster{subscription = Subscription,
+					      ask = Pending},
 			mnesia:write(NewItem),
-			{push, NewItem, Update}
+			{push, NewItem}
 		end
 	end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    ok;
-	{atomic, {push, Item, Update}} ->
+	    false;
+	{atomic, {push, Item}} ->
+	    io:format("S10N: Item=~p~n", [Item]),
 	    push_item(User, {"", ?MYNAME, ""}, Item),
-	    if
-		Update ->
-		    ejabberd_sm ! {route,
-				   jlib:make_jid("", "", ""),
-				   jlib:make_jid(User, "", ""),
-				   {xmlelement, "broadcast", [],
-				    [{item,
-				      Item#roster.jid,
-				      Item#roster.subscription}]}};
-		true ->
-		    ok
-	    end;
+	    true;
 	_ ->
 	    false
     end.
+
+%% in_state_change(Subscription, Pending, Type) -> NewState
+%% NewState = none | {NewSubscription, NewPending}
+
+in_state_change(none, none, subscribe)    -> {none, in};
+in_state_change(none, none, subscribed)   -> none;
+in_state_change(none, none, unsubscribe)  -> none;
+in_state_change(none, none, unsubscribed) -> none;
+in_state_change(none, out,  subscribe)    -> {none, both};
+in_state_change(none, out,  subscribed)   -> {to, none};
+in_state_change(none, out,  unsubscribe)  -> none;
+in_state_change(none, out,  unsubscribed) -> {none, none};
+in_state_change(none, in,   subscribe)    -> none;
+in_state_change(none, in,   subscribed)   -> none;
+in_state_change(none, in,   unsubscribe)  -> {none, none};
+in_state_change(none, in,   unsubscribed) -> none;
+in_state_change(none, both, subscribe)    -> none;
+in_state_change(none, both, subscribed)   -> {to, in};
+in_state_change(none, both, unsubscribe)  -> {none, out};
+in_state_change(none, both, unsubscribed) -> {none, in};
+in_state_change(to,   none, subscribe)    -> {to, in};
+in_state_change(to,   none, subscribed)   -> none;
+in_state_change(to,   none, unsubscribe)  -> none;
+in_state_change(to,   none, unsubscribed) -> {none, none};
+in_state_change(to,   in,   subscribe)    -> none;
+in_state_change(to,   in,   subscribed)   -> none;
+in_state_change(to,   in,   unsubscribe)  -> {to, none};
+in_state_change(to,   in,   unsubscribed) -> {none, in};
+in_state_change(from, none, subscribe)    -> none;
+in_state_change(from, none, subscribed)   -> none;
+in_state_change(from, none, unsubscribe)  -> {none, none};
+in_state_change(from, none, unsubscribed) -> none;
+in_state_change(from, out,  subscribe)    -> none;
+in_state_change(from, out,  subscribed)   -> {both, none};
+in_state_change(from, out,  unsubscribe)  -> {none, out};
+in_state_change(from, out,  unsubscribed) -> {from, none};
+in_state_change(both, none, subscribe)    -> none;
+in_state_change(both, none, subscribed)   -> none;
+in_state_change(both, none, unsubscribe)  -> {to, none};
+in_state_change(both, none, unsubscribed) -> {from, none}.
+
+out_state_change(none, none, subscribe)    -> {none, out};
+out_state_change(none, none, subscribed)   -> none;
+out_state_change(none, none, unsubscribe)  -> none;
+out_state_change(none, none, unsubscribed) -> none;
+out_state_change(none, out,  subscribe)    -> none;
+out_state_change(none, out,  subscribed)   -> none;
+out_state_change(none, out,  unsubscribe)  -> {none, none};
+out_state_change(none, out,  unsubscribed) -> none;
+out_state_change(none, in,   subscribe)    -> {none, both};
+out_state_change(none, in,   subscribed)   -> {from, none};
+out_state_change(none, in,   unsubscribe)  -> none;
+out_state_change(none, in,   unsubscribed) -> {none, none};
+out_state_change(none, both, subscribe)    -> none;
+out_state_change(none, both, subscribed)   -> {from, out};
+out_state_change(none, both, unsubscribe)  -> {none, in};
+out_state_change(none, both, unsubscribed) -> {none, out};
+out_state_change(to,   none, subscribe)    -> none;
+out_state_change(to,   none, subscribed)   -> none;
+out_state_change(to,   none, unsubscribe)  -> {none, none};
+out_state_change(to,   none, unsubscribed) -> none;
+out_state_change(to,   in,   subscribe)    -> none;
+out_state_change(to,   in,   subscribed)   -> {both, none};
+out_state_change(to,   in,   unsubscribe)  -> {none, in};
+out_state_change(to,   in,   unsubscribed) -> {to, none};
+out_state_change(from, none, subscribe)    -> {from, out};
+out_state_change(from, none, subscribed)   -> none;
+out_state_change(from, none, unsubscribe)  -> none;
+out_state_change(from, none, unsubscribed) -> {none, none};
+out_state_change(from, out,  subscribe)    -> none;
+out_state_change(from, out,  subscribed)   -> none;
+out_state_change(from, out,  unsubscribe)  -> {from, none};
+out_state_change(from, out,  unsubscribed) -> {none, out};
+out_state_change(both, none, subscribe)    -> none;
+out_state_change(both, none, subscribed)   -> none;
+out_state_change(both, none, unsubscribe)  -> {from, none};
+out_state_change(both, none, unsubscribed) -> {to, none}.
+
 
 remove_user(User) ->
     LUser = jlib:nodeprep(User),
