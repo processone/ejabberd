@@ -295,7 +295,12 @@ normal_state({route, From, "",
 				   ""},
 				  From,
 				  jlib:iq_to_xml(IQRes)),
-	    {next_state, normal_state, NewStateData};
+	    case NewStateData of
+		stop ->
+		    {stop, normal, StateData};
+		_ ->
+		    {next_state, normal_state, NewStateData}
+	    end;
 	_ ->
 	    Err = jlib:make_error_reply(
 		    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
@@ -419,7 +424,14 @@ normal_state({route, From, Nick,
 	end,
     %io:format("STATE1: ~p~n", [?DICT:to_list(StateData#state.users)]),
     %io:format("STATE2: ~p~n", [?DICT:to_list(StateData1#state.users)]),
-    {next_state, normal_state, StateData1};
+
+    case (not (StateData1#state.config)#config.persistent) andalso
+	(?DICT:to_list(StateData1#state.users) == []) of
+	true ->
+	    {stop, normal, StateData1};
+	_ ->
+	    {next_state, normal_state, StateData1}
+    end;
 
 normal_state({route, From, ToNick,
 	      {xmlelement, "message", Attrs, Els} = Packet},
@@ -447,7 +459,7 @@ normal_state({route, From, ToNick,
 		    case find_jid_by_nick(ToNick, StateData) of
 			false ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_JID_NOT_FOUND),
+				    Packet, ?ERR_ITEM_NOT_FOUND),
 			    ejabberd_router:route(
 			      {StateData#state.room,
 			       StateData#state.host,
@@ -484,7 +496,7 @@ normal_state({route, From, ToNick,
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
 		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_JID_NOT_FOUND),
+			    Packet, ?ERR_ITEM_NOT_FOUND),
 		    ejabberd_router:route(
 		      {StateData#state.room, StateData#state.host, ToNick},
 		      From, Err);
@@ -1787,7 +1799,7 @@ destroy_room(DEls, StateData) ->
 		Info#user.jid,
 		Packet)
       end, ?DICT:to_list(StateData#state.users)),
-    {result, [], StateData}.
+    {result, [], stop}.
 
 
 

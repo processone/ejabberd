@@ -63,7 +63,8 @@ loop(Host) ->
 	    end,
 	    loop(Host);
 	{room_destroyed, Room} ->
-	    ets:delete(muc_online_room, Room);
+	    ets:delete(muc_online_room, Room),
+	    loop(Host);
 	stop ->
 	    % TODO
 	    ejabberd_router:unregister_global_route(Host),
@@ -169,7 +170,7 @@ do_route(Host, From, To, Packet) ->
 			    ok;
 			_ ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_JID_NOT_FOUND),
+				    Packet, ?ERR_ITEM_NOT_FOUND),
 			    ejabberd_router:route(To, From, Err)
 		    end
 	    end;
