@@ -10,9 +10,17 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([process_iq/3]).
+-export([start/0, init/0, process_iq/3]).
 
 -include("ejabberd.hrl").
+
+start() ->
+    ejabberd_local:register_iq_handler("jabber:iq:register",
+				       ?MODULE, process_iq),
+    ok.
+
+init() ->
+    ok.
 
 process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of

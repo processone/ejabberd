@@ -113,7 +113,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		    {next_state, session_established,
 		     StateData#state{user = U, resource = R}};
 		_ ->
-		    Err = jlib:make_error_reply(El, "404", "Unauthorized"),
+		    Err = jlib:make_error_reply(El, "401", "Unauthorized"),
 		    send_element(StateData#state.sender, Err),
 		    {next_state, wait_for_auth, StateData}
 	    end;
@@ -163,6 +163,9 @@ session_established({xmlstreamelement, El}, StateData) ->
 	    ejabberd_router:route(FromJID, ToJID, El)
     end,
     {next_state, session_established, StateData};
+
+session_established({xmlstreamend, Name}, StateData) ->
+    {stop, normal, StateData};
 
 session_established(closed, StateData) ->
     % TODO

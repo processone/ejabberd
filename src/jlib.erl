@@ -21,6 +21,7 @@
 	 tolower/1,
 	 get_iq_namespace/1,
 	 iq_query_info/1,
+	 is_iq_request_type/1,
 	 iq_to_xml/1,
 	 get_subtag/2]).
 
@@ -205,6 +206,10 @@ iq_query_info({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
     end;
 iq_query_info(_) ->
     not_iq.
+
+is_iq_request_type(set) -> true;
+is_iq_request_type(get) -> true;
+is_iq_request_type(_) -> false.
 
 iq_type_to_string(set) -> "set";
 iq_type_to_string(get) -> "get";
