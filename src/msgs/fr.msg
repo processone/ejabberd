@@ -1,5 +1,10 @@
 % $Id$
 
+% jlib.hrl
+{"No resource provided", ""}.
+{"Illegal resource format", ""}.
+{"Resource conflict", ""}.
+
 % mod_configure.erl
 {"DB Tables Configuration", "Configuration des tables de BD"}.
 {"Choose storage type of tables", "Choisissez un type de stockage pour les tables"}.

@@ -47,6 +47,7 @@
 -define(NS_BIND,         "urn:ietf:params:xml:ns:xmpp-bind").
 
 -define(NS_FEATURE_IQAUTH, "http://jabber.org/features/iq-auth").
+-define(NS_FEATURE_IQREGISTER, "http://jabber.org/features/iq-register").
 
 % TODO: remove "code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),
@@ -149,21 +150,13 @@
 -define(ERRT_UNEXPECTED_REQUEST(Lang, Text),
 	?STANZA_ERRORT("400", "wait",   "unexpected-request", Lang, Text)).
 
-% TODO: update to new-style
-% Application-specific stanza errors
--define(AUTH_STANZA_ERROR(Condition),
-	{xmlelement, "error",
-	 [{"code", "406"}, {"class", "app"}],
-	 [{xmlelement, "auth-condition",
-	   [{"xmlns", ?NS_AUTH_ERROR}],
-	   [{xmlelement, Condition, [], []}]}]}).
-
--define(ERR_AUTH_NO_RESOURCE_PROVIDED,
-	?AUTH_STANZA_ERROR("no-resource-provided")).
--define(ERR_AUTH_BAD_RESOURCE_FORMAT,
-	?AUTH_STANZA_ERROR("bad-resource-format")).
--define(ERR_AUTH_RESOURCE_CONFLICT,
-	?AUTH_STANZA_ERROR("resource-conflict")).
+% Auth stanza errors
+-define(ERR_AUTH_NO_RESOURCE_PROVIDED(Lang),
+	?ERRT_NOT_ACCEPTABLE(Lang, "No resource provided")).
+-define(ERR_AUTH_BAD_RESOURCE_FORMAT(Lang),
+	?ERRT_NOT_ACCEPTABLE(Lang, "Illegal resource format")).
+-define(ERR_AUTH_RESOURCE_CONFLICT(Lang),
+	?ERRT_CONFLICT(Lang, "Resource conflict")).
 
 
 -define(STREAM_ERROR(Condition),

@@ -28,7 +28,9 @@
 		request_content_length,
 		request_lang = "en",
 		use_http_poll = false,
-		use_web_admin = false
+		use_web_admin = false,
+		end_of_request = false,
+		trail = ""
 	       }).
 
 
@@ -45,20 +47,33 @@ start(SockData, Opts) ->
     supervisor:start_child(ejabberd_http_sup, [SockData, Opts]).
 
 start_link({SockMod, Socket}, Opts) ->
-    ?INFO_MSG("started: ~p", [{SockMod, Socket}]),
-    case SockMod of
+    TLSEnabled = lists:member(tls, Opts),
+    TLSOpts = lists:filter(fun({certfile, _}) -> true;
+			      (_) -> false
+			   end, Opts),
+    {SockMod1, Socket1} =
+	if
+	    TLSEnabled ->
+		inet:setopts(Socket, [{recbuf, 8192}]),
+		{ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
+		{tls, TLSSocket};
+	    true ->
+		{SockMod, Socket}
+	end,
+    case SockMod1 of
 	gen_tcp ->
-	    inet:setopts(Socket, [{packet, http}, {recbuf, 8192}]);
-	ssl ->
-	    ssl:setopts(Socket, [{packet, http}, {recbuf, 8192}])
+	    inet:setopts(Socket1, [{packet, http}, {recbuf, 8192}]);
+	_ ->
+	    ok
     end,
     UseHTTPPoll = lists:member(http_poll, Opts),
     UseWebAdmin = lists:member(web_admin, Opts),
-    io:format("S: ~p~n", [{UseHTTPPoll, UseWebAdmin}]),
+    ?DEBUG("S: ~p~n", [{UseHTTPPoll, UseWebAdmin}]),
+    ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     {ok, proc_lib:spawn_link(ejabberd_http,
 			     receive_headers,
-			     [#state{sockmod = SockMod,
-				     socket = Socket,
+			     [#state{sockmod = SockMod1,
+				     socket = Socket1,
 				     use_http_poll = UseHTTPPoll,
 				     use_web_admin = UseWebAdmin}])}.
 
@@ -71,25 +86,63 @@ receive_headers(State) ->
     SockMod = State#state.sockmod,
     Socket = State#state.socket,
     Data = SockMod:recv(Socket, 0, 300000),
-    ?DEBUG("recv: ~p~n", [Data]),
+    case State#state.sockmod of
+	gen_tcp ->
+	    NewState = process_header(State, Data),
+	    case NewState#state.end_of_request of
+		true ->
+		    ok;
+		_ ->
+		    receive_headers(NewState)
+	    end;
+	_ ->
+	    case Data of
+		{ok, Binary} ->
+		    {Request, Trail} = parse_request(
+					 State,
+					 State#state.trail ++ binary_to_list(Binary)),
+		    State1 = State#state{trail = Trail},
+		    NewState = lists:foldl(
+				 fun(D, S) ->
+					case S#state.end_of_request of
+					    true ->
+						S;
+					    _ ->
+						process_header(S, D)
+					end
+				 end, State1, Request),
+		    case NewState#state.end_of_request of
+			true ->
+			    ok;
+			_ ->
+			    receive_headers(NewState)
+		    end;
+		_ ->
+		    ok
+	    end
+    end.
+
+process_header(State, Data) ->
+    SockMod = State#state.sockmod,
+    Socket = State#state.socket,
     case Data of
 	{ok, {http_request, Method, Path, Version}} ->
-	    receive_headers(State#state{request_method = Method,
-					request_version = Version,
-					request_path = Path});
+	    State#state{request_method = Method,
+			request_version = Version,
+			request_path = Path};
 	{ok, {http_header, _, 'Authorization', _, Auth}} ->
-	    receive_headers(State#state{request_auth = parse_auth(Auth)});
+	    State#state{request_auth = parse_auth(Auth)};
 	{ok, {http_header, _, 'Content-Length', _, SLen}} ->
 	    case catch list_to_integer(SLen) of
 		Len when is_integer(Len) ->
-		    receive_headers(State#state{request_content_length = Len});
+		    State#state{request_content_length = Len};
 		_ ->
-		    receive_headers(State)
+		    State
 	    end;
 	{ok, {http_header, _, 'Accept-Language', _, Langs}} ->
-	    receive_headers(State#state{request_lang = parse_lang(Langs)});
+	    State#state{request_lang = parse_lang(Langs)};
 	{ok, {http_header, _, _, _, _}} ->
-	    receive_headers(State);
+	    State;
 	{ok, http_eoh} ->
 	    ?INFO_MSG("(~w) http query: ~w ~s~n",
 		      [State#state.socket,
@@ -102,24 +155,21 @@ receive_headers(State) ->
 		    case SockMod of
 			gen_tcp ->
 			    inet:setopts(Socket, [{packet, http}]);
-			ssl ->
-			    ssl:setopts(Socket, [{packet, http}])
+			_ ->
+			    ok
 		    end,
-		    receive_headers(
-		      #state{sockmod = SockMod,
-			     socket = Socket,
-			     use_http_poll = State#state.use_http_poll,
-			     use_web_admin = State#state.use_web_admin});
+		    #state{sockmod = SockMod,
+			   socket = Socket,
+			   use_http_poll = State#state.use_http_poll,
+			   use_web_admin = State#state.use_web_admin};
 		_ ->
-		    ok
+		    #state{end_of_request = true}
 	    end;
 	{error, _Reason} ->
-	    ok;
+	    #state{end_of_request = true};
 	_ ->
-	    ok
+	    #state{end_of_request = true}
     end.
-
-
 
 process_request(#state{request_method = 'GET',
 		       request_path = {abs_path, Path},
@@ -157,8 +207,6 @@ process_request(#state{request_method = 'GET',
 				       q = LQuery,
 				       user = User,
 				       lang = Lang},
-		    io:format("~p~n", [{{UseHTTPPoll, UseWebAdmin},
-						  Request}]),
 		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
 						  Request) of
 			El when element(1, El) == xmlelement ->
@@ -207,8 +255,8 @@ process_request(#state{request_method = 'POST',
     	    case SockMod of
 		gen_tcp ->
 		    inet:setopts(Socket, [{packet, 0}]);
-		ssl ->
-		    ssl:setopts(Socket, [{packet, 0}])
+		_ ->
+		    ok
 	    end,
 	    Data = recv_data(State, Len),
 	    ?DEBUG("client data: ~p~n", [Data]),
@@ -254,11 +302,17 @@ recv_data(State, Len) ->
 recv_data(State, 0, Acc) ->
     binary_to_list(list_to_binary(Acc));
 recv_data(State, Len, Acc) ->
-    case (State#state.sockmod):recv(State#state.socket, Len, 300000) of
-	{ok, Data} ->
-	    recv_data(State, Len - size(Data), [Acc | Data]);
+    case State#state.trail of
+	[] ->
+	    case (State#state.sockmod):recv(State#state.socket, Len, 300000) of
+		{ok, Data} ->
+		    recv_data(State, Len - size(Data), [Acc | Data]);
+		_ ->
+		    ""
+	    end;
 	_ ->
-	    ""
+	    Trail = State#state.trail,
+	    recv_data(State#state{trail = ""}, Len - length(Trail), [Acc | Trail])
     end.
 
 
@@ -525,4 +579,217 @@ parse_urlencoded([], Last, Cur, _State) ->
 parse_urlencoded(undefined, _, _, _) ->
     [].
 
+
+% The following code is mostly taken from yaws_ssl.erl
+
+parse_request(State, Data) ->
+    case Data of
+	[] ->
+	    {[], []};
+	_ ->
+	    ?DEBUG("GOT ssl data ~p~n", [Data]),
+	    {R, Trail} = case State#state.request_method of
+			     undefined ->
+				 {R1, Trail1} = get_req(Data),
+				 ?DEBUG("Parsed request ~p~n", [R1]),
+				 {[R1], Trail1};
+			     _ ->
+				 {[], Data}
+			 end,
+	    {H, Trail2} = get_headers(Trail),
+	    {R ++ H, Trail2}
+    end.
+
+get_req("\r\n\r\n" ++ _) ->
+    bad_request;
+get_req("\r\n" ++ Data) ->
+    get_req(Data);
+get_req(Data) ->
+    {FirstLine, Trail} = lists:splitwith(fun not_eol/1, Data),
+    R = parse_req(FirstLine),
+    {R, Trail}.
+	    
+
+not_eol($\r)->
+    false;
+not_eol($\n) ->
+    false;
+not_eol(_) ->
+    true.
+
+
+get_word(Line)->
+    {Word, T} = lists:splitwith(fun(X)-> X /= $\  end, Line),
+    {Word, lists:dropwhile(fun(X) -> X == $\  end, T)}.
+
+
+parse_req(Line) ->
+    {MethodStr, L1} = get_word(Line),
+    ?DEBUG("Method: ~p~n", [MethodStr]),
+    case L1 of
+	[] ->
+	    bad_request;
+	_ ->
+	    {URI, L2} = get_word(L1),
+	    {VersionStr, L3} = get_word(L2),
+	    ?DEBUG("URI: ~p~nVersion: ~p~nL3: ~p~n",
+		[URI, VersionStr, L3]),
+	    case L3 of
+		[] ->
+		    Method = case MethodStr of
+				 "GET" -> 'GET';
+				 "POST" -> 'POST';
+				 "HEAD" -> 'HEAD';
+				 "OPTIONS" -> 'OPTIONS';
+				 "TRACE" -> 'TRACE';
+				 "PUT" -> 'PUT';
+				 "DELETE" -> 'DELETE';
+				 S -> S
+			     end,
+		    Path = case URI of
+			       "*" ->
+			       % Is this correct?
+				   "*";
+			       P ->
+			       % FIXME: Handle
+			       % absolute URIs
+				   {abs_path, P}
+			   end,
+		    case VersionStr of
+			[] ->
+			    {ok, {http_request, Method, Path, {0,9}}};
+			"HTTP/1.0" ->
+			    {ok, {http_request, Method, Path, {1,0}}};
+			"HTTP/1.1" ->
+			    {ok, {http_request, Method, Path, {1,1}}};
+			_ ->
+			    bad_request
+		    end;
+		_ ->
+		    bad_request
+	    end
+    end.
+
+
+get_headers(Tail) ->
+    get_headers([], Tail).
+
+get_headers(H, Tail) ->
+    case get_line(Tail) of
+	{incomplete, Tail2} ->
+	    {H, Tail2};
+	{line, Line, Tail2} ->
+	    get_headers(H ++ parse_line(Line), Tail2);
+	{lastline, Line, Tail2} ->
+	    {H ++ parse_line(Line) ++ [{ok, http_eoh}], Tail2}
+    end.
+
+
+parse_line("Connection:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'Connection', undefined, strip_spaces(Con)}}];
+parse_line("Host:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'Host', undefined, strip_spaces(Con)}}];
+parse_line("Accept:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'Accept', undefined, strip_spaces(Con)}}];
+parse_line("If-Modified-Since:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'If-Modified-Since', undefined, strip_spaces(Con)}}];
+parse_line("If-Match:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'If-Match', undefined, strip_spaces(Con)}}];
+parse_line("If-None-Match:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'If-None-Match', undefined, strip_spaces(Con)}}];
+parse_line("If-Range:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'If-Range', undefined, strip_spaces(Con)}}];
+parse_line("If-Unmodified-Since:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'If-Unmodified-Since', undefined, strip_spaces(Con)}}];
+parse_line("Range:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'Range', undefined, strip_spaces(Con)}}];
+parse_line("User-Agent:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'User-Agent', undefined, strip_spaces(Con)}}];
+parse_line("Accept-Ranges:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'Accept-Ranges', undefined, strip_spaces(Con)}}];
+parse_line("Authorization:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'Authorization', undefined, strip_spaces(Con)}}];
+parse_line("Keep-Alive:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'Keep-Alive', undefined, strip_spaces(Con)}}];
+parse_line("Referer:" ++ Con) ->
+    [{ok, {http_header,  undefined, 'Referer', undefined, strip_spaces(Con)}}];
+parse_line("Content-type:"++Con) ->
+    [{ok, {http_header,  undefined, 'Content-Type', undefined, strip_spaces(Con)}}];
+parse_line("Content-Type:"++Con) ->
+    [{ok, {http_header,  undefined, 'Content-Type', undefined, strip_spaces(Con)}}];
+parse_line("Content-Length:"++Con) ->
+    [{ok, {http_header,  undefined, 'Content-Length', undefined, strip_spaces(Con)}}];
+parse_line("Content-length:"++Con) ->
+    [{ok, {http_header,  undefined, 'Content-Length', undefined, strip_spaces(Con)}}];
+parse_line("Cookie:"++Con) ->
+    [{ok, {http_header,  undefined, 'Cookie', undefined, strip_spaces(Con)}}];
+parse_line("Accept-Language:"++Con) ->
+    [{ok, {http_header,  undefined, 'Accept-Language', undefined, strip_spaces(Con)}}];
+parse_line("Accept-Encoding:"++Con) ->
+    [{ok, {http_header,  undefined, 'Accept-Encoding', undefined, strip_spaces(Con)}}];
+parse_line(S) ->
+    case lists:splitwith(fun(C)->C /= $: end, S) of
+	{Name, [$:|Val]} ->
+	    [{ok, {http_header,  undefined, Name, undefined, strip_spaces(Val)}}];
+	_ ->
+	    []
+    end.
+
+
+is_space($\s) ->
+    true;
+is_space($\r) ->
+    true;
+is_space($\n) ->
+    true;
+is_space($\r) ->
+    true;
+is_space(_) ->
+    false.
+
+
+strip_spaces(String) ->
+    strip_spaces(String, both).
+
+strip_spaces(String, left) ->
+    drop_spaces(String);
+strip_spaces(String, right) ->
+    lists:reverse(drop_spaces(lists:reverse(String)));
+strip_spaces(String, both) ->
+    strip_spaces(drop_spaces(String), right).
+
+drop_spaces([]) ->
+    [];
+drop_spaces(YS=[X|XS]) ->
+    case is_space(X) of
+	true ->
+	    drop_spaces(XS);
+	false ->
+	    YS
+    end.
+
+is_nb_space(X) ->
+    lists:member(X, [$\s, $\t]).
+    
+
+% ret: {line, Line, Trail} | {lastline, Line, Trail}
+
+get_line(L) ->    
+    get_line(L, []).
+get_line("\r\n\r\n" ++ Tail, Cur) ->
+    {lastline, lists:reverse(Cur), Tail};
+get_line("\r\n" ++ Tail, Cur) ->
+    case Tail of
+	[] ->
+	    {incomplete, lists:reverse(Cur) ++ "\r\n"};
+	_ ->
+	    case is_nb_space(hd(Tail)) of
+		true ->  %% multiline ... continue 
+		    get_line(Tail, [$\n, $\r | Cur]);
+		false ->
+		    {line, lists:reverse(Cur), Tail}
+	    end
+    end;
+get_line([H|T], Cur) ->
+    get_line(T, [H|Cur]).
 

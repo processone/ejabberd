@@ -2,6 +2,11 @@
 
 % Ejabberd - Spanish - badlop AT jabberes.org
 
+% jlib.hrl
+{"No resource provided", ""}.
+{"Illegal resource format", ""}.
+{"Resource conflict", ""}.
+
 % mod_configure.erl
 {"DB Tables Configuration at ", "Configuración de tablas de la BD en "}.
 {"Choose storage type of tables", "Selecciona tipo de almacenamiento de las tablas"}.

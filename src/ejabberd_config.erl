@@ -34,9 +34,17 @@ start() ->
 			 {local_content, true},
 			 {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
+
+    %% mremond: Config file can be configured from the command line
     Config = case application:get_env(config) of
 		 {ok, Path} -> Path;
-		 undefined -> ?CONFIG_PATH
+		 undefined -> 
+		     case os:getenv("EJABBERD_CONFIG_PATH") of
+			 false ->
+			     ?CONFIG_PATH;
+			 Path ->
+			     Path
+		     end
 	     end,
     load_file(Config).
 

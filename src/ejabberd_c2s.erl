@@ -195,7 +195,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					  TLSFeature ++
 					  [{xmlelement, "mechanisms",
 					    [{"xmlns", ?NS_SASL}],
-					    Mechs}]}),
+					    Mechs},
+					   {xmlelement, "register",
+					    [{"xmlns", ?NS_FEATURE_IQREGISTER}],
+					    []}]}),
 			    {next_state, wait_for_feature_request,
 			     StateData#state{sasl_state = SASLState,
 					     lang = Lang}};
@@ -274,7 +277,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    send_element(StateData, Res),
 	    {next_state, wait_for_auth, StateData};
 	{auth, _ID, set, {U, P, D, ""}} ->
-	    Err = jlib:make_error_reply(El, ?ERR_AUTH_NO_RESOURCE_PROVIDED),
+	    Err = jlib:make_error_reply(
+		    El,
+		    ?ERR_AUTH_NO_RESOURCE_PROVIDED(StateData#state.lang)),
 	    send_element(StateData, Err),
 	    {next_state, wait_for_auth, StateData};
 	{auth, _ID, set, {U, P, D, R}} ->
@@ -318,7 +323,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
 			    Err = jlib:make_error_reply(
-				    El, ?ERR_FORBIDDEN),
+				    El, ?ERR_NOT_AUTHORIZED),
 			    send_element(StateData, Err),
 			    {next_state, wait_for_auth, StateData}
 		    end;
