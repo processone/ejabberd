@@ -164,9 +164,64 @@
 {"Encodings", ""}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd administration", ""}.
 {"Users", ""}.
 {"Nodes", ""}.
 {"Statistics", ""}.
+{"ejabberd (c) 2002-2004 Alexey Shchepin", ""}.
+{"(raw)", ""}.
+{"submitted", ""}.
+{"bad format", ""}.
+{"raw", ""}.
+{"ejabberd access control lists configuration", ""}.
+{"Delete Selected", ""}.
+{"Submit", ""}.
+{"ejabberd access rules configuration", ""}.
+{"~s access rule configuration", ""}.
+{"ejabberd users", ""}.
+{"ejabberd stats", ""}.
+{"Node not found", ""}.
+{"Add New", ""}.
+{"Registered users", ""}.
+{"Authentificated users", ""}.
+{"Online users", ""}.
+{"Outgoing S2S servers", ""}.
+{"Change Password", ""}.
+{"Connected Resources:", ""}.
+{"Password:", ""}.
+{"None", ""}.
+{"Node ", ""}.
+{"DB Management", ""}.
+{"Listened Ports Management", ""}.
+{"Restart", ""}.
+{"Stop", ""}.
+{"RPC call error", ""}.
+{"DB Tables at ", ""}.
+{"Name", ""}.
+{"Storage Type", ""}.
+{"Size", ""}.
+{"Memory", ""}.
+{"Backup Management at ", ""}.
+{"Store a backup in a file", ""}.
+{"OK", ""}.
+{"Restore a backup from a file", ""}.
+{"Install a database fallback from a file", ""}.
+{"Dump a database in a text file", ""}.
+{"Restore a database from a text file", ""}.
+{"Listened Ports at ", ""}.
+{"~p statistics", ""}.
+{"Uptime", ""}.
+{"CPU Time", ""}.
+{"Transactions commited", ""}.
+{"Transactions aborted", ""}.
+{"Transactions restarted", ""}.
+{"Transactions logged", ""}.
+{"Port", ""}.
+{"Module", ""}.
+{"Options", ""}.
+{"Update", ""}.
+{"Delete", ""}.
+{"", ""}.
 
 % Local Variables:
 % mode: erlang

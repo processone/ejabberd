@@ -71,18 +71,20 @@ make_xhtml(Els, Lang) ->
 				      [?XE("tbody",
 					   [?XE("tr",
 						[?XE("td",
-						     [?XA("img", [{"src", "/admin/logo.png"},
-								  {"width", "343"},
-								  {"height", "55"},
-								  {"alt", "ejabberd"},
-								  {"border", "0"}])]),
+						     [?XAE("a", [{"href", "/admin/"}],
+							   [?XA("img", [{"src", "/admin/logo.png"},
+									{"width", "343"},
+									{"height", "55"},
+									{"alt", "ejabberd"},
+									{"border", "0"}])])]),
 						 ?XAE("td", [{"width", "100%"},
 							     {"background", "/admin/logo-fill.png"}],
-						      [?XA("img", [{"src", "/admin/1x1tr.gif"},
-								   {"width", "100%"},
-								   {"height", "55"},
-								   {"alt", ""},
-								   {"border", "0"}])]
+						     [?XAE("a", [{"href", "/admin/"}],
+							   [?XA("img", [{"src", "/admin/1x1tr.gif"},
+									{"width", "100%"},
+									{"height", "55"},
+									{"alt", ""},
+									{"border", "0"}])])]
 						     )])])
 				      ])])]),
 		       ?XAE("tr",
@@ -485,7 +487,7 @@ process_admin(#request{user = User,
 			path = [],
 			q = Query,
 			lang = Lang} = Request) ->
-    make_xhtml([?XC("h1", "ejabberd administration"),
+    make_xhtml([?XCT("h1", "ejabberd administration"),
 		?XE("ul",
 		    [?LI([?ACT("acls/", "Access Control Lists"), ?C(" "),
 			  ?ACT("acls-raw/", "(raw)")]),
@@ -547,7 +549,7 @@ process_admin(#request{user = User,
 		  nothing
 	  end,
     ACLs = lists:flatten(io_lib:format("~p.", [ets:tab2list(acl)])),
-    make_xhtml([?XCT("h1", "ejabberd ACLs configuration")] ++
+    make_xhtml([?XCT("h1", "ejabberd access control lists configuration")] ++
 	       case Res of
 		   ok -> [?CT("submitted"), ?P];
 		   error -> [?CT("bad format"), ?P];
@@ -559,7 +561,7 @@ process_admin(#request{user = User,
 					{"cols", "80"}],
 			   ACLs),
 		      ?BR,
-		      ?INPUT("submit", "", "")
+		      ?INPUT("submit", "submit", "Submit")
 		     ])
 	       ], Lang);
 
@@ -588,7 +590,7 @@ process_admin(#request{method = Method,
 		  nothing
 	  end,
     ACLs = lists:keysort(2, ets:tab2list(acl)),
-    make_xhtml([?XCT("h1", "ejabberd ACLs configuration")] ++
+    make_xhtml([?XCT("h1", "ejabberd access control lists configuration")] ++
 	       case Res of
 		   ok -> [?CT("submitted"), ?P];
 		   error -> [?CT("bad format"), ?P];
@@ -655,10 +657,10 @@ process_admin(#request{user = User,
 			       [{{config, {access, '$1'}, '$2'},
 				 [],
 				 [{{access, '$1', '$2'}}]}])])),
-    make_xhtml([?XC("h1", "ejabberd access rules configuration")] ++
+    make_xhtml([?XCT("h1", "ejabberd access rules configuration")] ++
 	       case Res of
-		   ok -> [?C("submitted"), ?P];
-		   error -> [?C("bad format"), ?P];
+		   ok -> [?CT("submitted"), ?P];
+		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XAE("form", [{"method", "post"}],
@@ -667,7 +669,7 @@ process_admin(#request{user = User,
 					{"cols", "80"}],
 			   Access),
 		      ?BR,
-		      ?INPUT("submit", "", "")
+		      ?INPUT("submit", "submit", "Submit")
 		     ])
 	       ], Lang);
 
@@ -693,10 +695,10 @@ process_admin(#request{method = Method,
 		   [{{config, {access, '$1'}, '$2'},
 		     [],
 		     [{{access, '$1', '$2'}}]}]),
-    make_xhtml([?XC("h1", "ejabberd access rules configuration")] ++
+    make_xhtml([?XCT("h1", "ejabberd access rules configuration")] ++
 	       case Res of
-		   ok -> [?C("submitted"), ?P];
-		   error -> [?C("bad format"), ?P];
+		   ok -> [?CT("submitted"), ?P];
+		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XE("p", [?ACT("../access-raw/", "raw")])] ++
@@ -734,16 +736,16 @@ process_admin(#request{method = Method,
 		    Rs1
 	    end,
     make_xhtml([?XC("h1",
-		    "'" ++ SName ++ "' access rule configuration")] ++
+		    io_lib:format(?T("~s access rule configuration"), [SName]))] ++
 	       case Res of
-		   ok -> [?C("submitted"), ?P];
-		   error -> [?C("bad format"), ?P];
+		   ok -> [?CT("submitted"), ?P];
+		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XAE("form", [{"method", "post"}],
 		     [access_rule_to_xhtml(Rules),
 		      ?BR,
-		      ?INPUT("submit", "submit", "")
+		      ?INPUTT("submit", "submit", "Submit")
 		     ])
 	       ], Lang);
 
@@ -752,21 +754,21 @@ process_admin(#request{user = User,
 			q = Query,
 			lang = Lang} = Request) ->
     Res = list_users(),
-    make_xhtml([?XC("h1", "ejabberd users")] ++ Res, Lang);
+    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
 
 process_admin(#request{user = User,
 		       path = ["users", Diap],
 		       q = Query,
 		       lang = Lang} = Request) ->
     Res = list_users_in_diapason(Diap),
-    make_xhtml([?XC("h1", "ejabberd users")] ++ Res, Lang);
+    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
 
 process_admin(#request{user = User,
 		       path = ["stats"],
 		       q = Query,
 		       lang = Lang} = Request) ->
     Res = get_stats(Lang),
-    make_xhtml([?XC("h1", "ejabberd stats")] ++ Res, Lang);
+    make_xhtml([?XCT("h1", "ejabberd stats")] ++ Res, Lang);
 
 process_admin(#request{user = User,
 		       path = ["user", U],
@@ -788,7 +790,7 @@ process_admin(#request{user = User,
 		       lang = Lang} = Request) ->
     case search_running_node(SNode) of
 	false ->
-	    make_xhtml([?XC("h1", "Node not found")], Lang);
+	    make_xhtml([?XCT("h1", "Node not found")], Lang);
 	Node ->
 	    Res = get_node(Node, NPath, Query, Lang),
 	    make_xhtml(Res, Lang)
@@ -1109,8 +1111,8 @@ user_info(User, Query, Lang) ->
 		 ?INPUTT("submit", "chpassword", "Change Password")],
     [?XC("h1", "User: " ++ User)] ++
 	case Res of
-	    ok -> [?C("submitted"), ?P];
-	    error -> [?C("bad format"), ?P];
+	    ok -> [?CT("submitted"), ?P];
+	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"method", "post"}],
@@ -1160,10 +1162,10 @@ get_nodes(Lang) ->
 				?LI([?C(S)])
 			end, lists:sort(StoppedNodes)))
 	  end,
-    [?XC("h1", "Nodes"),
-     ?XC("h3", "Running Nodes"),
+    [?XCT("h1", "Nodes"),
+     ?XCT("h3", "Running Nodes"),
      FRN,
-     ?XC("h3", "Stopped Nodes"),
+     ?XCT("h3", "Stopped Nodes"),
      FSN].
 
 search_running_node(SNode) ->
@@ -1181,10 +1183,10 @@ search_running_node(SNode, [Node | Nodes]) ->
 
 get_node(Node, [], Query, Lang) ->
     Res = node_parse_query(Node, Query),
-    [?XC("h1", "Node: " ++ atom_to_list(Node))] ++
+    [?XC("h1", ?T("Node ") ++ atom_to_list(Node))] ++
 	case Res of
-	    ok -> [?C("submitted"), ?P];
-	    error -> [?C("bad format"), ?P];
+	    ok -> [?CT("submitted"), ?P];
+	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XE("ul",
@@ -1202,7 +1204,7 @@ get_node(Node, [], Query, Lang) ->
 get_node(Node, ["db"], Query, Lang) ->
     case rpc:call(Node, mnesia, system_info, [tables]) of
 	{badrpc, _Reason} ->
-	    [?XC("h1", "RPC call error")];
+	    [?XCT("h1", "RPC call error")];
 	Tables ->
 	    Res = node_db_parse_query(Node, Tables, Query),
 	    STables = lists:sort(Tables),
@@ -1240,10 +1242,10 @@ get_node(Node, ["db"], Query, Lang) ->
 				       integer_to_list(Memory))
 				 ])
 		     end, STables),
-	    [?XC("h1", "DB Tables at " ++ atom_to_list(Node))] ++
+	    [?XC("h1", ?T("DB Tables at ") ++ atom_to_list(Node))] ++
 		case Res of
-		    ok -> [?C("submitted"), ?P];
-		    error -> [?C("bad format"), ?P];
+		    ok -> [?CT("submitted"), ?P];
+		    error -> [?CT("bad format"), ?P];
 		    nothing -> []
 		end ++
 		[?XAE("form", [{"method", "post"}],
@@ -1268,7 +1270,7 @@ get_node(Node, ["db"], Query, Lang) ->
 
 get_node(Node, ["backup"], Query, Lang) ->
     Res = node_backup_parse_query(Node, Query),
-    [?XC("h1", "Backup Management at " ++ atom_to_list(Node)),
+    [?XC("h1", ?T("Backup Management at ") ++ atom_to_list(Node)),
      ?XAE("form", [{"method", "post"}],
 	  [?XAE("table", [],
 		[?XE("tbody",
@@ -1323,10 +1325,10 @@ get_node(Node, ["ports"], Query, Lang) ->
 	  end,
     NewPorts = lists:sort(
 		 rpc:call(Node, ejabberd_config, get_local_option, [listen])),
-    [?XC("h1", "Listened Ports at " ++ atom_to_list(Node))] ++
+    [?XC("h1", ?T("Listened Ports at ") ++ atom_to_list(Node))] ++
 	case Res of
-	    ok -> [?C("submitted"), ?P];
-	    error -> [?C("bad format"), ?P];
+	    ok -> [?CT("submitted"), ?P];
+	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"method", "post"}],
@@ -1349,7 +1351,7 @@ get_node(Node, ["stats"], Query, Lang) ->
     TransactionsLogged =
 	rpc:call(Node, mnesia, system_info, [transaction_log_writes]),
     
-    [?XC("h1", atom_to_list(Node) ++ " statistics"),
+    [?XC("h1", io_lib:format(?T("~p statistics"), [Node])),
      ?XAE("table", [],
 	  [?XE("tbody",
 	       [?XE("tr", [?XCT("td", "Uptime"),
@@ -1377,7 +1379,7 @@ get_node(Node, ["stats"], Query, Lang) ->
 	  ])];
 
 get_node(Node, NPath, Query, Lang) ->
-    [?XC("h1", "Not found")].
+    [?XCT("h1", "Not found")].
 
 
 node_parse_query(Node, Query) ->

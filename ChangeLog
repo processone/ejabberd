@@ -1,3 +1,15 @@
+2004-07-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Better i18n support (thanks to
+	Sergei Golovan)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/msgs/fr.msg: Added missed entries (thanks to Sergei Golovan)
+	* src/msgs/nl.msg: Likewise
+
+	* src/msgs/es.msg: New spanish translation (thanks to Badlop)
+
 2004-07-11  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_last.erl: Supprot for storing status from latest

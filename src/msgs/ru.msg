@@ -186,10 +186,63 @@
 {"Encodings", "Кодировки"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd administration", "Администрирование ejabberd"}.
 {"Users", "Пользователи"}.
 {"Nodes", "Узлы"}.
 {"Statistics", "Статистика"}.
-{"", ""}.
+{"ejabberd (c) 2002-2004 Alexey Shchepin", "ejabberd (c) 2002-2004 Алексей Щепин"}.
+{"(raw)", "(необработанный формат)"}.
+{"submitted", "отправлено"}.
+{"bad format", "неправильный формат"}.
+{"raw", "необработанный формат"}.
+{"ejabberd access control lists configuration", "Конфигурация списков управления доступом ejabberd"}.
+{"Delete Selected", "Удалить выделенные"}.
+{"Submit", "Отправить"}.
+{"ejabberd access rules configuration", "Конфигурация правил доступа ejabberd"}.
+{"~s access rule configuration", "Конфигурация правила доступа ~s"}.
+{"ejabberd users", "Пользователи ejabberd"}.
+{"ejabberd stats", "Статистика ejabberd"}.
+{"Node not found", "Узел не найден"}.
+{"Add New", "Добавить"}.
+{"Registered users", "Зарегистрированные пользователи"}.
+{"Authentificated users", "Аутентифицированные пользователи"}.
+{"Online users", "Подключённые пользователи"}.
+{"Outgoing S2S servers", "Исходящие S2S-серверы"}.
+{"Change Password", "Сменить пароль"}.
+{"Connected Resources:", "Подключённые ресурсы:"}.
+{"Password:", "Пароль:"}.
+{"None", "Нет"}.
+{"Node ", "Узел "}.
+{"DB Management", "Управление БД"}.
+{"Listened Ports Management", "Управление прослушиваемыми портами"}.
+{"Restart", "Перезапустить"}.
+{"Stop", "Остановить"}.
+{"RPC call error", "Ошибка вызова RPC"}.
+{"DB Tables at ", "Таблицы БД на "}.
+{"Name", "Название"}.
+{"Storage Type", "Тип таблицы"}.
+{"Size", "Размер"}.
+{"Memory", "Память"}.
+{"Backup Management at ", "Управление резервным копированием на "}.
+{"Store a backup in a file", "Сохранить резервную копию в файл"}.
+{"OK", "Продолжить"}.
+{"Restore a backup from a file", "Восстановить из резервной копии из файла"}.
+{"Install a database fallback from a file", "Установить базу данных для восстановления при следующем запуске"}.
+{"Dump a database in a text file", "Копировать базу данных в текстовый файл"}.
+{"Restore a database from a text file", "Восстановить базу данных из текстового файла"}.
+{"Listened Ports at ", "Прослушиваемые порты на "}.
+{"~p statistics", "статистика узла ~p"}.
+{"Uptime", "Время работы"}.
+{"CPU Time", "Процессорное время"}.
+{"Transactions commited", "Транзакции завершенные"}.
+{"Transactions aborted", "Транзакции отмененные"}.
+{"Transactions restarted", "Транзакции перезапущенные"}.
+{"Transactions logged", "Транзакции запротоколированные"}.
+{"Port", "Порт"}.
+{"Module", "Модуль"}.
+{"Options", "Параметры"}.
+{"Update", "Обновить"}.
+{"Delete", "Удалить"}.
 {"", ""}.
 
 % Local Variables:
