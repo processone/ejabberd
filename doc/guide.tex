@@ -626,6 +626,9 @@ Example:
 \subsection{Online Configuration and Monitoring}
 \label{sec:onlineconfig}
 
+\subsubsection{Web-based Administration Interface}
+\label{sec:webadm}
+
 To perform online reconfiguration of \ejabberd{} you need to enable
 \term{ejabberd\_http} listener with option \term{web\_admin} (see
 section~\ref{sec:configlistened}).  After that you can open URL
@@ -652,6 +655,34 @@ authentification you should see something like in figure~\ref{fig:webadmmain}.
 \end{figure}
 Here you can edit access restrictions, manage users, create backup files,
 manage DB, enable/disable listened ports, and view statistics.
+
+
+\subsubsection{\term{ejabberdctl} tool}
+\label{sec:ejabberdctl}
+
+It is possible to do some administration operations using \term{ejabberdctl}
+command-line tool.  You can check available options running this command
+without arguments:
+\begin{verbatim}
+% ejabberdctl
+Usage: ejabberdctl node command
+
+Available commands:
+  stop                          stop ejabberd
+  restart                       restart ejabberd
+  reopen-log                    reopen log file
+  register user password        register a user
+  unregister user               unregister a user
+  backup file                   store a database backup in file
+  restore file                  restore a database backup from file
+  install-fallback file         install a database fallback from file
+  dump file                     dump a database in a text file
+  load file                     restore a database from a text file
+  registered-users              list all registered users
+
+Example:
+  ejabberdctl ejabberd@host restart
+\end{verbatim}
 
 
 
