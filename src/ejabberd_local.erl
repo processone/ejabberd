@@ -18,6 +18,7 @@
 	]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -record(state, {mydomain, iqtable}).
 
@@ -78,7 +79,7 @@ do_route(State, From, To, Packet) ->
 		    ok
 	    end;
 	{"", _, _} ->
-	    Err = jlib:make_error_reply(Packet, "404", "Not Found"),
+	    Err = jlib:make_error_reply(Packet, ?ERR_JID_NOT_FOUND),
 	    ejabberd_router ! {route,
 			       {"", State#state.mydomain, ""}, From, Err},
 	    ok;
@@ -116,13 +117,12 @@ process_iq(State, From, To, Packet) ->
 					       Err}
 		    end;
 		_ ->
-		    % TODO
 		    ok
 	    end;
 	reply ->
 	    ok;
 	_ ->
-	    Err = jlib:make_error_reply(Packet, "400", "Bad Request"),
+	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
 	    ejabberd_router ! {route,
 			       {"", State#state.mydomain, ""}, From, Err},
 	    ok

@@ -18,7 +18,7 @@
 	 process_sm_iq/3]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 
 start(Opts) ->
@@ -37,9 +37,7 @@ stop() ->
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case acl:match_rule(configure, From) of
 	deny ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]};
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
 	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
 	    case Type of
@@ -68,11 +66,9 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					       [{"xmlns", XMLNS}],
 					       Res
 					      }]};
-					{error, Code, Desc} ->
+					{error, Error} ->
 					    {iq, ID, error, XMLNS,
-					     [SubEl, {xmlelement, "error",
-						      [{"code", Code}],
-						      [{xmlcdata, Desc}]}]}
+					     [SubEl, Error]}
 				    end
 			    end;
 			_ ->
@@ -90,11 +86,9 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			     [{xmlelement, "query", [{"xmlns", XMLNS}],
 			       Res
 			      }]};
-			{error, Code, Desc} ->
+			{error, Error} ->
 			    {iq, ID, error, XMLNS,
-			     [SubEl, {xmlelement, "error",
-				      [{"code", Code}],
-				      [{xmlcdata, Desc}]}]}
+			     [SubEl, Error]}
 		    end
 	    end
     end.
@@ -140,7 +134,7 @@ get_form(["running nodes", ENode, "DB"], Lang) ->
 	Node ->
 	    case rpc:call(Node, mnesia, system_info, [tables]) of
 		{badrpc, Reason} ->
-		    {error, "500", "Internal Server Error"};
+		    {error, ?ERR_INTERNAL_SERVER_ERROR};
 		Tables ->
 		    STables = lists:sort(Tables),
 		    {result, [{xmlelement, "title", [],
@@ -174,7 +168,7 @@ get_form(["running nodes", ENode, "modules", "stop"], Lang) ->
 	Node ->
 	    case rpc:call(Node, gen_mod, loaded_modules, []) of
 		{badrpc, Reason} ->
-		    {error, "500", "Internal Server Error"};
+		    {error, ?ERR_INTERNAL_SERVER_ERROR};
 		Modules ->
 		    SModules = lists:sort(Modules),
 		    {result, [{xmlelement, "title", [],
@@ -390,7 +384,7 @@ get_form(["config", "remusers"], Lang) ->
     };
 
 get_form(_, Lang) ->
-    {error, "503", "Service Unavailable"}.
+    {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 
@@ -493,9 +487,9 @@ set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
 		{value, {_, [String]}} ->
 		    case rpc:call(Node, mnesia, backup, [String]) of
 			{badrpc, Reason} ->
-			    {error, "500", "Internal Server Error"};
+			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			{error, Reason} ->
-			    {error, "500", "Internal Server Error"};
+			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			_ ->
 			    {result, []}
 			end;
@@ -517,9 +511,9 @@ set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
 		    case rpc:call(Node, mnesia, restore,
 				  [String, [{default_op, keep_tables}]]) of
 			{badrpc, Reason} ->
-			    {error, "500", "Internal Server Error"};
+			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			{error, Reason} ->
-			    {error, "500", "Internal Server Error"};
+			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			_ ->
 			    {result, []}
 			end;
@@ -540,9 +534,9 @@ set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
 		{value, {_, [String]}} ->
 		    case rpc:call(Node, mnesia, dump_to_textfile, [String]) of
 			{badrpc, Reason} ->
-			    {error, "500", "Internal Server Error"};
+			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			{error, Reason} ->
-			    {error, "500", "Internal Server Error"};
+			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			_ ->
 			    {result, []}
 			end;
@@ -689,7 +683,7 @@ set_form(["config", "remusers"], Lang, XData) ->
     {result, []};
 
 set_form(_, Lang, XData) ->
-    {error, "503", "Service Unavailable"}.
+    {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 
@@ -744,11 +738,9 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					       [{"xmlns", XMLNS}],
 					       Res
 					      }]};
-					{error, Code, Desc} ->
+					{error, Error} ->
 					    {iq, ID, error, XMLNS,
-					     [SubEl, {xmlelement, "error",
-						      [{"code", Code}],
-						      [{xmlcdata, Desc}]}]}
+					     [SubEl, Error]}
 				    end
 			    end;
 			_ ->
@@ -766,11 +758,9 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			     [{xmlelement, "query", [{"xmlns", XMLNS}],
 			       Res
 			      }]};
-			{error, Code, Desc} ->
+			{error, Error} ->
 			    {iq, ID, error, XMLNS,
-			     [SubEl, {xmlelement, "error",
-				      [{"code", Code}],
-				      [{xmlcdata, Desc}]}]}
+			     [SubEl, Error]}
 		    end
 	    end
     end.
@@ -807,8 +797,8 @@ get_sm_form(User, [], Lang) ->
 	     ]};
 
 get_sm_form(_, _, Lang) ->
-    {error, "503", "Service Unavailable"}.
+    {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 set_sm_form(_, _, Lang, XData) ->
-    {error, "503", "Service Unavailable"}.
+    {error, ?ERR_SERVICE_UNAVAILABLE}.

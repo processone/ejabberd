@@ -16,7 +16,7 @@
 	 stop/0,
 	 process_local_iq/3]).
 
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -43,11 +43,9 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		{result, Res} ->
 		    {iq, ID, result, XMLNS,
 		     [{xmlelement, "query", [{"xmlns", XMLNS}], Res}]};
-		{error, Code, Desc} ->
+		{error, Error} ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement, "error",
-			      [{"code", Code}],
-			      [{xmlcdata, Desc}]}]}
+		     [SubEl, Error]}
 	    end
     end.
 
@@ -98,7 +96,7 @@ get_local_stats(["running nodes", ENode], Names) ->
     end;
 
 get_local_stats(_, _) ->
-    {error, "501", "Not Implemented"}.
+    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
 
 
 

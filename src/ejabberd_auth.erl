@@ -109,14 +109,8 @@ terminate(Reason, State) ->
 
 check_password(User, Password) ->
     LUser = jlib:tolower(User),
-    F = fun() ->
-		case mnesia:read({passwd, LUser}) of
-		    [E] ->
-			E#passwd.password
-		end
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Password} ->
+    case catch mnesia:dirty_read({passwd, LUser}) of
+	[#passwd{password = Password}] ->
 	    true;
 	_ ->
 	    false

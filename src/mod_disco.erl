@@ -22,7 +22,7 @@
 	 unregister_feature/1]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 -define(EMPTY_INFO_RESULT,
 	{iq, ID, result, XMLNS, [{xmlelement, "query",
@@ -62,9 +62,7 @@ process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     Lang = xml:get_tag_attr_s("xml:lang", SubEl),
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]};
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    Node = string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
 
@@ -74,11 +72,9 @@ process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		     [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}],
 		       Res
 		      }]};
-		{error, Code, Desc} ->
+		{error, Error} ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement, "error",
-			      [{"code", Code}],
-			      [{xmlcdata, Desc}]}]}
+		     [SubEl, Error]}
 	    end
     end.
 
@@ -86,9 +82,7 @@ process_local_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]};
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    case string:tokens(xml:get_tag_attr_s("node", SubEl), "/") of
 		[] ->
@@ -149,9 +143,7 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		       [feature_to_xml({?NS_IQDATA})]}]};
 		_ ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement, "error",
-			      [{"code", "501"}],
-			      [{xmlcdata, "Not Implemented"}]}]}
+		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
 	    end
     end.
 
@@ -204,7 +196,7 @@ get_local_items(["all users"], Server, Lang) ->
 get_local_items(["all users", [$@ | Diap]], Server, Lang) ->
     case catch ejabberd_auth:dirty_get_registered_users() of
 	{'EXIT', Reason} ->
-	    {error, "500", "Internal Server Error"};
+	    ?ERR_INTERNAL_SERVER_ERROR;
 	Users ->
 	    SUsers = lists:sort(Users),
 	    case catch begin
@@ -219,7 +211,8 @@ get_local_items(["all users", [$@ | Diap]], Server, Lang) ->
 				     end, Sub)
 		       end of
 		{'EXIT', Reason} ->
-		    {error, "406", "Not Acceptable"};
+		    % TODO: must be "not acceptable"
+		    ?ERR_BAD_REQUEST;
 		Res ->
 		    {result, Res}
 	    end
@@ -279,7 +272,7 @@ get_local_items(["running nodes", ENode, "import", _], Server, Lang) ->
     {result, []};
 
 get_local_items(_, _, _) ->
-    {error, "501", "Not Implemented"}.
+    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
 
 
 
@@ -413,9 +406,7 @@ process_sm_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     {User, _, _} = To,
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]};
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    case xml:get_tag_attr_s("node", SubEl) of
 		"" ->
@@ -425,9 +416,7 @@ process_sm_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		      }]};
 		_ ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement, "error",
-			      [{"code", "501"}],
-			      [{xmlcdata, "Not Implemented"}]}]}
+		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
 	    end
     end.
 
@@ -435,9 +424,7 @@ process_sm_iq_items(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 process_sm_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]};
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    case xml:get_tag_attr_s("node", SubEl) of
 		"" ->
@@ -446,9 +433,7 @@ process_sm_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		       [feature_to_xml({?NS_IQDATA})]}]};
 		_ ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement, "error",
-			      [{"code", "501"}],
-			      [{xmlcdata, "Not Implemented"}]}]}
+		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
 	    end
     end.
 

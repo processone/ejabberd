@@ -15,7 +15,7 @@
 -export([start/1, init/0, process_iq/3]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -97,12 +97,9 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			    case try_register(User, Password) of
 				ok ->
 				    {iq, ID, result, XMLNS, [SubEl]};
-				{error, Code, Reason} ->
+				{error, Error} ->
 				    {iq, ID, error, XMLNS,
-				     [SubEl, {xmlelement,
-					      "error",
-					      [{"code", Code}],
-					      [{xmlcdata, Reason}]}]}
+				     [SubEl, Error]}
 			    end
 		    end
 	    end;
@@ -128,9 +125,9 @@ try_register(User, Password) ->
 		{atomic, ok} ->
 		    ok;
 		{atomic, exists} ->
-		    {error, "400", "Bad Request"};
+		    {error, ?ERR_BAD_REQUEST};
 		{error, Reason} ->
-		    {error, "500", "Internal Server Error"}
+		    {error, ?ERR_INTERNAL_SERVER_ERROR}
 	    end
     end.
 

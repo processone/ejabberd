@@ -19,7 +19,7 @@
 	 remove_user/1]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 
 -record(vcard_search, {user,     luser,

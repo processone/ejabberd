@@ -17,7 +17,7 @@
 	 process_local_iq/3]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 
 

@@ -27,7 +27,7 @@
 	 code_change/4]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 -define(SETS, gb_sets).
 
@@ -285,7 +285,7 @@ handle_info({route_chan, Channel, Resource,
 		     ID, XMLNS, Type, SubEl);
 	_ ->
 	    Err = jlib:make_error_reply(
-		    El, "503", "Service Unavailable"),
+		    El, ?ERR_SERVICE_UNAVAILABLE),
 	    ejabberd_router:route(To, From, Err)
     end,
     {next_state, StateName, StateData};
@@ -835,11 +835,9 @@ iq_admin(StateData, Channel, From, To, ID, XMLNS, Type, SubEl) ->
 				       [{"xmlns", XMLNS}],
 				       ResEls
 				      }]};
-				{error, Code, Desc} ->
+				{error, Error} ->
 				    {iq, ID, error, XMLNS,
-				     [SubEl, {xmlelement, "error",
-					      [{"code", Code}],
-					      [{xmlcdata, Desc}]}]}
+				     [SubEl, Error]}
 			    end,
 		    ejabberd_router:route(To, From,
 					  jlib:iq_to_xml(ResIQ));
@@ -852,7 +850,7 @@ iq_admin(StateData, Channel, From, To, ID, XMLNS, Type, SubEl) ->
 process_iq_admin(StateData, Channel, set, SubEl) ->
     case xml:get_subtag(SubEl, "item") of
 	false ->
-	    {error, "400", "Bad Request"};
+	    {error, ?ERR_BAD_REQUEST};
 	ItemEl ->
 	    Nick = xml:get_tag_attr_s("nick", ItemEl),
 	    Affiliation = xml:get_tag_attr_s("affiliation", ItemEl),
@@ -861,12 +859,12 @@ process_iq_admin(StateData, Channel, set, SubEl) ->
 	    process_admin(StateData, Channel, Nick, Affiliation, Role, Reason)
     end;
 process_iq_admin(StateData, Channel, get, SubEl) ->
-    {error, "501", "Not Implemented"}.
+    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
 
 
 
 process_admin(StateData, Channel, "", Affiliation, Role, Reason) ->
-    {error, "501", "Not Implemented"};
+    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
 
 process_admin(StateData, Channel, Nick, Affiliation, "none", Reason) ->
     case Reason of
@@ -884,7 +882,7 @@ process_admin(StateData, Channel, Nick, Affiliation, "none", Reason) ->
 
 
 process_admin(StateData, Channel, Nick, Affiliation, Role, Reason) ->
-    {error, "501", "Not Implemented"}.
+    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
 
 
 

@@ -12,6 +12,7 @@
 
 -export([make_result_iq_reply/1,
 	 make_error_reply/3,
+	 make_error_reply/2,
 	 make_error_element/2,
 	 make_correct_from_to_attrs/3,
 	 replace_from_to_attrs/3,
@@ -29,9 +30,11 @@
 	 iq_to_xml/1,
 	 parse_xdata_submit/1,
 	 timestamp_to_iso/1,
-	 timestamp_to_xml/1]).
+	 timestamp_to_xml/1,
+	 decode_base64/1,
+	 encode_base64/1]).
 
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 %send_iq(From, To, ID, SubTags) ->
 %    ok.
@@ -66,6 +69,10 @@ make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
     {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, "error",
 					      [{"code", Code}],
 					      [{xmlcdata, Desc}]}]}.
+
+make_error_reply({xmlelement, Name, Attrs, SubTags}, Error) ->
+    NewAttrs = make_error_reply_attrs(Attrs),
+    {xmlelement, Name, NewAttrs, SubTags ++ [Error]}.
 
 make_error_reply_attrs(Attrs) ->
     To = xml:get_attr("to", Attrs),
@@ -362,3 +369,74 @@ timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 				[Year, Month, Day, Hour, Minute, Second]))}],
      []}.
 
+
+%
+% Base64 stuff (based on httpd_util.erl)
+%
+
+decode_base64(S) ->
+    decode1_base64([C || C <- S,
+			 C /= $ ,
+			 C /= $\t,
+			 C /= $\n,
+			 C /= $\r]).
+
+decode1_base64([]) ->
+    [];
+decode1_base64([Sextet1,Sextet2,$=,$=|Rest]) ->
+    Bits2x6=
+	(d(Sextet1) bsl 18) bor
+	(d(Sextet2) bsl 12),
+    Octet1=Bits2x6 bsr 16,
+    [Octet1|decode_base64(Rest)];
+decode1_base64([Sextet1,Sextet2,Sextet3,$=|Rest]) ->
+    Bits3x6=
+	(d(Sextet1) bsl 18) bor
+	(d(Sextet2) bsl 12) bor
+	(d(Sextet3) bsl 6),
+    Octet1=Bits3x6 bsr 16,
+    Octet2=(Bits3x6 bsr 8) band 16#ff,
+    [Octet1,Octet2|decode_base64(Rest)];
+decode1_base64([Sextet1,Sextet2,Sextet3,Sextet4|Rest]) ->
+    Bits4x6=
+	(d(Sextet1) bsl 18) bor
+	(d(Sextet2) bsl 12) bor
+	(d(Sextet3) bsl 6) bor
+	d(Sextet4),
+    Octet1=Bits4x6 bsr 16,
+    Octet2=(Bits4x6 bsr 8) band 16#ff,
+    Octet3=Bits4x6 band 16#ff,
+    [Octet1,Octet2,Octet3|decode_base64(Rest)];
+decode1_base64(CatchAll) ->
+    "".
+
+d(X) when X >= $A, X =<$Z ->
+    X-65;
+d(X) when X >= $a, X =<$z ->
+    X-71;
+d(X) when X >= $0, X =<$9 ->
+    X+4;
+d($+) -> 62;
+d($/) -> 63;
+d(_) -> 63.
+
+
+encode_base64([]) ->
+    [];
+encode_base64([A]) ->
+    [e(A bsr 2), e((A band 3) bsl 4), $=, $=];
+encode_base64([A,B]) ->
+    [e(A bsr 2), e(((A band 3) bsl 4) bor (B bsr 4)), e((B band 15) bsl 2), $=];
+encode_base64([A,B,C|Ls]) ->
+    encode_base64_do(A,B,C, Ls).
+encode_base64_do(A,B,C, Rest) ->
+    BB = (A bsl 16) bor (B bsl 8) bor C,
+    [e(BB bsr 18), e((BB bsr 12) band 63), 
+     e((BB bsr 6) band 63), e(BB band 63)|encode_base64(Rest)].
+
+e(X) when X >= 0, X < 26 -> X+65;
+e(X) when X>25, X<52 ->     X+71;
+e(X) when X>51, X<62 ->     X-4;
+e(62) ->                    $+;
+e(63) ->                    $/;
+e(X) ->                     exit({bad_encode_base64_token, X}).

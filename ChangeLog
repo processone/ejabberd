@@ -1,3 +1,13 @@
+2003-03-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl*.erl: SASL support (currently support only PLAIN
+	mechanism)
+	* src/ejabberd_c2s.erl: Likewise
+
+	(all): Support for new-style error elements (except old errors
+	"Not Acceptable", "Not Found", "Invalid Namespace" and "Server
+	Connect Failed", so ejabberd may work unstable)
+
 2003-03-02  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: More correct stream closing

@@ -16,7 +16,12 @@
 -export([start/2, receiver/4, send_text/2, send_element/2]).
 
 %% gen_fsm callbacks
--export([init/1, wait_for_stream/2, wait_for_auth/2, session_established/2,
+-export([init/1,
+	 wait_for_stream/2,
+	 wait_for_auth/2,
+	 wait_for_sasl_auth/2,
+	 wait_for_resource_auth/2,
+	 session_established/2,
 	 handle_event/3,
 	 handle_sync_event/4,
 	 code_change/4,
@@ -24,11 +29,12 @@
 	 terminate/3]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 -define(SETS, gb_sets).
 
 -record(state, {socket, receiver, streamid,
+		sasl_state,
 		access,
 		shaper,
 		user = "", server = ?MYNAME, resource = "",
@@ -52,14 +58,16 @@
 	"<?xml version='1.0'?>"
 	"<stream:stream xmlns='jabber:client' "
 	"xmlns:stream='http://etherx.jabber.org/streams' "
-	"id='~s' from='~s'>"
+	"id='~s' from='~s'~s>"
        ).
 
 -define(STREAM_TRAILER, "</stream:stream>").
 
 -define(INVALID_NS_ERR, "<stream:error>Invalid Namespace</stream:error>").
+%-define(INVALID_XML_ERR,
+%	"<stream:error code='400'>Invalid XML</stream:error>").
 -define(INVALID_XML_ERR,
-	"<stream:error code='400'>Invalid XML</stream:error>").
+	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -102,21 +110,48 @@ init([{SockMod, Socket}, Opts]) ->
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
-    % TODO
-    Header = io_lib:format(?STREAM_HEADER,
-			   [StateData#state.streamid, ?MYNAME]),
-    send_text(StateData#state.socket, Header),
-    case lists:keysearch("xmlns:stream", 1, Attrs) of
-	{value, {"xmlns:stream", "http://etherx.jabber.org/streams"}} ->
-	    % TODO
-	    {next_state, wait_for_auth, StateData};
+    case xml:get_attr_s("xmlns:stream", Attrs) of
+	?NS_STREAM ->
+	    case xml:get_attr_s("version", Attrs) of
+		"1.0" ->
+		    Header = io_lib:format(?STREAM_HEADER,
+					   [StateData#state.streamid,
+					    ?MYNAME,
+					    " version='1.0'"]),
+		    send_text(StateData#state.socket, Header),
+		    SASLState = cyrsasl:server_new("jabber", ?MYNAME, "", []),
+		    Mechs = lists:map(fun(S) ->
+					      {xmlelement, "mechanism", [],
+					       [{xmlcdata, S}]}
+				      end, cyrsasl:listmech()),
+		    send_element(StateData#state.socket,
+				 {xmlelement, "stream:features", [],
+				  [{xmlelement, "mechanisms",
+				    [{"xmlns", ?NS_SASL_MECHANISMS}],
+				    Mechs}]}),
+		    {next_state, wait_for_sasl_auth,
+		     StateData#state{sasl_state = SASLState}};
+		_ ->
+		    Header = io_lib:format(
+			       ?STREAM_HEADER,
+			       [StateData#state.streamid, ?MYNAME, ""]),
+		    send_text(StateData#state.socket, Header),
+		    {next_state, wait_for_auth, StateData}
+	    end;
 	_ ->
-	    send_text(StateData#state.socket, ?INVALID_NS_ERR ?STREAM_TRAILER),
+	    Header = io_lib:format(
+		       ?STREAM_HEADER,
+		       [StateData#state.streamid, ?MYNAME, ""]),
+	    send_text(StateData#state.socket,
+		      Header ++ ?INVALID_NS_ERR ?STREAM_TRAILER),
 	    {stop, normal, StateData}
     end;
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket, ?INVALID_XML_ERR),
+    Header = io_lib:format(?STREAM_HEADER,
+			   ["none", ?MYNAME, " version='1.0'"]),
+    send_text(StateData#state.socket,
+	      Header ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 wait_for_stream(closed, StateData) ->
@@ -125,11 +160,26 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
-	{auth, ID, {U, P, D, ""}} ->
+	{auth, ID, get, {"", _, _, _}} ->
 	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
 	    send_element(StateData#state.socket, Err),
 	    {next_state, wait_for_auth, StateData};
-	{auth, ID, {U, P, D, R}} ->
+	{auth, ID, get, {U, _, _, _}} ->
+	    {xmlelement, Name, Attrs, Els} = jlib:make_result_iq_reply(El),
+	    Res = {xmlelement, Name, Attrs,
+		   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
+		     [{xmlelement, "username", [], [{xmlcdata, U}]},
+		      {xmlelement, "password", [], []},
+		      {xmlelement, "digest", [], []},
+		      {xmlelement, "resource", [], []}
+		     ]}]},
+	    send_element(StateData#state.socket, Res),
+	    {next_state, wait_for_auth, StateData};
+	{auth, ID, set, {U, P, D, ""}} ->
+	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+	    send_element(StateData#state.socket, Err),
+	    {next_state, wait_for_auth, StateData};
+	{auth, ID, set, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
 	    JID = {U, ?MYNAME, R},
 	    case acl:match_rule(StateData#state.access, JID) of
@@ -149,12 +199,12 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     pres_t = ?SETS:from_list(Ts)}};
 			_ ->
 			    Err = jlib:make_error_reply(
-				    El, "401", "Unauthorized"),
+				    El, ?ERR_FORBIDDEN),
 			    send_element(StateData#state.socket, Err),
 			    {next_state, wait_for_auth, StateData}
 		    end;
 		_ ->
-		    Err = jlib:make_error_reply(El, "405", "Not Allowed"),
+		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 		    send_element(StateData#state.socket, Err),
 		    {next_state, wait_for_auth, StateData}
 	    end;
@@ -180,11 +230,151 @@ wait_for_auth({xmlstreamend, Name}, StateData) ->
     {stop, normal, StateData};
 
 wait_for_auth({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket, ?INVALID_XML_ERR ?STREAM_TRAILER),
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 wait_for_auth(closed, StateData) ->
     {stop, normal, StateData}.
+
+
+wait_for_sasl_auth({xmlstreamelement, El}, StateData) ->
+    {xmlelement, Name, Attrs, Els} = El,
+    case {xml:get_attr_s("xmlns", Attrs), Name} of
+	{?NS_SASL_MECHANISMS, "auth"} ->
+	    Mech = xml:get_attr_s("mechanism", Attrs),
+	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
+	    case cyrsasl:server_start(StateData#state.sasl_state,
+				      Mech,
+				      ClientIn) of
+		{ok, Props} ->
+		    send_element(StateData#state.socket,
+				 {xmlelement, "success",
+				  [{"xmlns", ?NS_SASL_MECHANISMS}], []}),
+		    {next_state, wait_for_resource_auth,
+		     StateData#state{user = xml:get_attr_s(username, Props)}};
+		{continue, ServerOut, NewSASLState} ->
+		    send_element(StateData#state.socket,
+				 {xmlelement, "challenge",
+				  [{"xmlns", ?NS_SASL_MECHANISMS}],
+				  [{xmlcdata,
+				    jlib:encode_base64(ServerOut)}]}),
+		    {next_state, wait_for_sasl_response, StateData};
+		{error, Code} ->
+		    send_element(StateData#state.socket,
+				 {xmlelement, "failure",
+				  [{"xmlns", ?NS_SASL_MECHANISMS},
+				   {"code", Code}],
+				  []}),
+		    {next_state, wait_for_sasl_auth, StateData}
+	    end;
+	_ ->
+	    case jlib:iq_query_info(El) of
+		{iq, ID, Type, ?NS_REGISTER, SubEl} ->
+		    ResIQ = mod_register:process_iq(
+			      {"", "", ""}, {"", ?MYNAME, ""},
+			      {iq, ID, Type, ?NS_REGISTER, SubEl}),
+		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
+						{"", "", ""},
+						jlib:iq_to_xml(ResIQ)),
+		    Res = jlib:remove_attr("to", Res1),
+		    send_element(StateData#state.socket, Res),
+		    {next_state, wait_for_sasl_auth, StateData};
+		_ ->
+		    {next_state, wait_for_sasl_auth, StateData}
+	    end
+    end;
+
+wait_for_sasl_auth({xmlstreamend, Name}, StateData) ->
+    send_text(StateData#state.socket, ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_sasl_auth({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_sasl_auth(closed, StateData) ->
+    {stop, normal, StateData}.
+
+
+wait_for_resource_auth({xmlstreamelement, El}, StateData) ->
+    case is_auth_packet(El) of
+	{auth, ID, get, {"", _, _, _}} ->
+	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+	    send_element(StateData#state.socket, Err),
+	    {next_state, wait_for_resource_auth, StateData};
+	{auth, ID, get, {U, _, _, _}} ->
+	    {xmlelement, Name, Attrs, Els} = jlib:make_result_iq_reply(El),
+	    Res = {xmlelement, Name, Attrs,
+		   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
+		     [{xmlelement, "username", [],
+		       [{xmlcdata, StateData#state.user}]},
+		      {xmlelement, "resource", [], []}
+		     ]}]},
+	    send_element(StateData#state.socket, Res),
+	    {next_state, wait_for_resource_auth, StateData};
+	{auth, ID, set, {U, _, _, ""}} ->
+	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+	    send_element(StateData#state.socket, Err),
+	    {next_state, wait_for_resource_auth, StateData};
+	{auth, ID, set, {U, _, _, R}} ->
+	    case StateData#state.user of
+		U ->
+		    io:format("SASLAUTH: ~p~n", [{U, R}]),
+		    JID = {U, ?MYNAME, R},
+		    case acl:match_rule(StateData#state.access, JID) of
+			allow ->
+			    ejabberd_sm:open_session(U, R),
+			    Res = jlib:make_result_iq_reply(El),
+			    send_element(StateData#state.socket, Res),
+			    change_shaper(StateData, JID),
+			    {Fs, Ts} = mod_roster:get_subscription_lists(U),
+			    {next_state, session_established,
+			     StateData#state{user = U,
+					     resource = R,
+					     pres_f = ?SETS:from_list(Fs),
+					     pres_t = ?SETS:from_list(Ts)}};
+			_ ->
+			    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
+			    send_element(StateData#state.socket, Err),
+			    {next_state, wait_for_resource_auth, StateData}
+		    end;
+		_ ->
+		    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+		    send_element(StateData#state.socket, Err),
+		    {next_state, wait_for_resource_auth, StateData}
+	    end;
+	_ ->
+	    case jlib:iq_query_info(El) of
+		{iq, ID, Type, ?NS_REGISTER, SubEl} ->
+		    ResIQ = mod_register:process_iq(
+			      {"", "", ""}, {"", ?MYNAME, ""},
+			      {iq, ID, Type, ?NS_REGISTER, SubEl}),
+		    Res1 = jlib:replace_from_to({"", ?MYNAME, ""},
+						{"", "", ""},
+						jlib:iq_to_xml(ResIQ)),
+		    Res = jlib:remove_attr("to", Res1),
+		    send_element(StateData#state.socket, Res),
+		    {next_state, wait_for_resource_auth, StateData};
+		_ ->
+		    {next_state, wait_for_resource_auth, StateData}
+	    end
+    end;
+
+wait_for_resource_auth({xmlstreamend, Name}, StateData) ->
+    send_text(StateData#state.socket, ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_resource_auth({xmlstreamerror, _}, StateData) ->
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_resource_auth(closed, StateData) ->
+    {stop, normal, StateData}.
+
+
+% TODO: wait_for_sasl_response
+
+
 
 session_established({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
@@ -227,7 +417,7 @@ session_established({xmlstreamend, Name}, StateData) ->
     {stop, normal, StateData};
 
 session_established({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket, ?INVALID_XML_ERR ?STREAM_TRAILER),
+    send_text(StateData#state.socket, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 session_established(closed, StateData) ->
@@ -427,7 +617,7 @@ is_auth_packet(El) ->
     case jlib:iq_query_info(El) of
 	{iq, ID, Type, ?NS_AUTH, SubEl} ->
 	    {xmlelement, _, _, Els} = SubEl,
-	    {auth, ID,
+	    {auth, ID, Type,
 	     get_auth_tags(Els, "", "", "", "")};
 	_ ->
 	    false

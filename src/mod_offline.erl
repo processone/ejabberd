@@ -18,7 +18,7 @@
 	 resend_offline_messages/1,
 	 remove_user/1]).
 
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 -record(offline_msg, {user, timestamp, from, to, packet}).
 

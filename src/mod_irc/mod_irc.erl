@@ -16,7 +16,7 @@
 	 get_user_and_encoding/2]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 -define(DEFAULT_IRC_ENCODING, "koi8-r").
 
@@ -200,18 +200,14 @@ process_iq_data(From, To, ID, XMLNS, Type, SubEl) ->
 				       [{"xmlns", XMLNS}],
 				       Res
 				      }]};
-				{error, Code, Desc} ->
+				{error, Error} ->
 				    {iq, ID, error, XMLNS,
-				     [SubEl, {xmlelement, "error",
-					      [{"code", Code}],
-					      [{xmlcdata, Desc}]}]}
+				     [SubEl, Error]}
 			    end
 		    end;
 		_ ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement, "error",
-			      [{"code", "405"}],
-			      [{xmlcdata, "Not Allowed"}]}]}
+		     [SubEl, ?ERR_NOT_ALLOWED]}
 	    end;
 	get ->
 	    Node =
@@ -222,11 +218,9 @@ process_iq_data(From, To, ID, XMLNS, Type, SubEl) ->
 		     [{xmlelement, "query", [{"xmlns", XMLNS}],
 		       Res
 		      }]};
-		{error, Code, Desc} ->
+		{error, Error} ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement, "error",
-			      [{"code", Code}],
-			      [{xmlcdata, Desc}]}]}
+		     [SubEl, Error]}
 	    end
     end.
 
@@ -238,7 +232,7 @@ get_form(From, [], Lang) ->
     Customs =
 	case catch mnesia:dirty_read({irc_custom, {LUser, LServer}}) of
 	    {'EXIT', Reason} ->
-		{error, "500", "Internal Server Error"};
+		{error, ?ERR_INTERNAL_SERVER_ERROR};
 	    [] ->
 		{User, []};
 	    [#irc_custom{data = Data}] ->
@@ -302,7 +296,7 @@ get_form(From, [], Lang) ->
 
 
 get_form(_, _, Lang) ->
-    {error, "503", "Service Unavailable"}.
+    {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 
@@ -347,7 +341,7 @@ set_form(From, [], Lang, XData) ->
 
 
 set_form(_, _, Lang, XData) ->
-    {error, "503", "Service Unavailable"}.
+    {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 get_user_and_encoding(From, IRCServer) ->

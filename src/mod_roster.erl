@@ -23,7 +23,7 @@
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 -record(roster, {uj,
 		 user,

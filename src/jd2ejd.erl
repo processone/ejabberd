@@ -29,7 +29,7 @@
 	 terminate/3]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 -record(state, {socket, pid,
 		user = "", server = ?MYNAME, resource = ""

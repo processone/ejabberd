@@ -15,7 +15,7 @@
 -export([start/1, init/1, stop/0]).
 
 -include("ejabberd.hrl").
--include("namespaces.hrl").
+-include("jlib.hrl").
 
 
 

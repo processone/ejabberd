@@ -26,6 +26,7 @@ start(normal, Args) ->
     gen_mod:start(),
     ejabberd_config:start(),
     ejabberd_auth:start(),
+    cyrsasl:start(),
     Sup = ejabberd_sup:start_link(),
     start(),
     load_modules(),
