@@ -173,6 +173,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
        (ToJID /= error) and (FromJID /= error) ->
 	    ejabberd_router:route(FromJID, ToJID, El);
        true ->
+	    Err = jlib:make_error_reply(El, "400", "Bad Request"),
+	    send_element(StateData#state.socket, Err),
 	    error
     end,
     {next_state, stream_established, StateData};
