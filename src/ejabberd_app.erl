@@ -50,7 +50,7 @@ init() ->
     register(ejabberd, self()),
     %erlang:system_flag(fullsweep_after, 0),
     error_logger:logfile({open, ?LOG_PATH}),
-    timer:apply_interval(3600000, ?MODULE, dump_ports, []),
+    %timer:apply_interval(3600000, ?MODULE, dump_ports, []),
     ok = erl_ddll:load_driver(".", expat_erl),
     Port = open_port({spawn, expat_erl}, [binary]),
     loop(Port).

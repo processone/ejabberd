@@ -1,3 +1,15 @@
+2003-10-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/stringprep_drv.c: Removed needless iconv.h
+	include
+
+	* src/ejabberd_c2s.erl: Added filtering of presence packets with
+	privacy rules
+
+	* src/mod_roster.erl (get_jid_info): Bugfix
+
+	* src/ejabberd_app.erl: Removed periodical dumping of opened ports
+
 2003-10-09  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: Added authentification logging

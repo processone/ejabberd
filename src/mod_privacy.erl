@@ -445,8 +445,9 @@ parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
 				     error ->
 					 false;
 				     JID ->
-					 I1#listitem{type = jid,
-						     value = JID}
+					 I1#listitem{
+					   type = jid,
+					   value = jlib:jid_tolower(JID)}
 				 end;
 			     "group" ->
 				 I1#listitem{type = group,

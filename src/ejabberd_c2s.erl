@@ -499,9 +499,14 @@ session_established({xmlstreamelement, El}, StateData) ->
     NewState =
 	case ToJID of
 	    error ->
-		Err = jlib:make_error_reply(El, ?ERR_JID_MALFORMED),
-		send_element(StateData, Err),
-		StateData;
+		case xml:get_attr_s("type", Attrs) of
+		    "error" -> StateData;
+		    "result" -> StateData;
+		    _ ->
+			Err = jlib:make_error_reply(El, ?ERR_JID_MALFORMED),
+			send_element(StateData, Err),
+			StateData
+		end;
 	    _ ->
 		case Name of
 		    "presence" ->
@@ -627,7 +632,22 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    "unsubscribed" ->
 			{true, Attrs, StateData};
 		    _ ->
-			{true, Attrs, StateData}
+%-ifdef(PRIVACY_SUPPORT).
+			case catch mod_privacy:check_packet(
+				     StateData#state.user,
+				     StateData#state.privacy_list,
+				     {From, To, Packet},
+				     in) of
+			    {'EXIT', _Reason} ->
+				{true, Attrs, StateData};
+			    allow ->
+				{true, Attrs, StateData};
+			    deny ->
+				{false, Attrs, StateData}
+			end
+%-elseif.
+%			{true, Attrs, StateData}
+%-endif.
 		end;
 	    "broadcast" ->
 		?DEBUG("broadcast~n~p~n", [Els]),
@@ -732,8 +752,8 @@ terminate(Reason, StateName, StateData) ->
             Packet = {xmlelement, "presence", [{"type", "unavailable"}], []},
             ejabberd_sm:unset_presence(StateData#state.user,
                 		       StateData#state.resource),
-            presence_broadcast(From, StateData#state.pres_a, Packet),
-            presence_broadcast(From, StateData#state.pres_i, Packet)
+            presence_broadcast(StateData, From, StateData#state.pres_a, Packet),
+            presence_broadcast(StateData, From, StateData#state.pres_i, Packet)
     end,
     (StateData#state.sockmod):close(StateData#state.socket),
     ok.
@@ -842,8 +862,21 @@ process_presence_probe(From, To, StateData) ->
 		and ?SETS:is_element(LFrom, StateData#state.pres_a),
 	    if
 		Cond1 ->
-		    ejabberd_router:route(To, From,
-					  StateData#state.pres_last);
+		    Packet = StateData#state.pres_last,
+%-ifdef(PRIVACY_SUPPORT).
+		    case catch mod_privacy:check_packet(
+				 StateData#state.user,
+				 StateData#state.privacy_list,
+				 {To, From, Packet},
+				 out) of
+			deny ->
+			    ok;
+			_ ->
+%-endif.
+			    ejabberd_router:route(To, From, Packet)
+%-ifdef(PRIVACY_SUPPORT).
+		    end;
+%-endif.
 		Cond2 ->
 		    ejabberd_router:route(To, From,
 					  {xmlelement, "presence",
@@ -860,8 +893,8 @@ presence_update(From, Packet, StateData) ->
 	"unavailable" ->
 	    ejabberd_sm:unset_presence(StateData#state.user,
 				       StateData#state.resource),
-	    presence_broadcast(From, StateData#state.pres_a, Packet),
-	    presence_broadcast(From, StateData#state.pres_i, Packet),
+	    presence_broadcast(StateData, From, StateData#state.pres_a, Packet),
+	    presence_broadcast(StateData, From, StateData#state.pres_i, Packet),
 	    StateData#state{pres_last = undefined,
 			    pres_a = ?SETS:new(),
 			    pres_i = ?SETS:new(),
@@ -870,9 +903,11 @@ presence_update(From, Packet, StateData) ->
 	    NewState =
 		if
 		    not StateData#state.pres_invis ->
-			presence_broadcast(From, StateData#state.pres_a,
+			presence_broadcast(StateData, From,
+					   StateData#state.pres_a,
 					   Packet),
-			presence_broadcast(From, StateData#state.pres_i,
+			presence_broadcast(StateData, From,
+					   StateData#state.pres_i,
 					   Packet),
 			S1 = StateData#state{pres_last = undefined,
 					     pres_a = ?SETS:new(),
@@ -910,7 +945,8 @@ presence_update(From, Packet, StateData) ->
 						pres_invis = false
 					       }, Packet);
 		    true ->
-			presence_broadcast_to_trusted(From,
+			presence_broadcast_to_trusted(StateData,
+						      From,
 						      StateData#state.pres_f,
 						      StateData#state.pres_a,
 						      Packet),
@@ -958,29 +994,69 @@ presence_track(From, To, Packet, StateData) ->
 	    ejabberd_router:route(From, To, Packet),
 	    StateData;
 	_ ->
-	    ejabberd_router:route(From, To, Packet),
+%-ifdef(PRIVACY_SUPPORT).
+	    case catch mod_privacy:check_packet(
+			 StateData#state.user,
+			 StateData#state.privacy_list,
+			 {From, To, Packet},
+			 out) of
+		deny ->
+		    ok;
+		_ ->
+%-endif.
+		    ejabberd_router:route(From, To, Packet)
+%-ifdef(PRIVACY_SUPPORT).
+	    end,
+%-endif.
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = ?SETS:add_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A}
     end.
 
-presence_broadcast(From, JIDSet, Packet) ->
+presence_broadcast(StateData, From, JIDSet, Packet) ->
     lists:foreach(fun(JID) ->
-			  ejabberd_router:route(
-			    From, jlib:make_jid(JID), Packet)
+			  FJID = jlib:make_jid(JID),
+%-ifdef(PRIVACY_SUPPORT).
+			  case catch mod_privacy:check_packet(
+				       StateData#state.user,
+				       StateData#state.privacy_list,
+				       {From, FJID, Packet},
+				       out) of
+			      deny ->
+				  ok;
+			      _ ->
+%-endif.
+				  ejabberd_router:route(From, FJID, Packet)
+%-ifdef(PRIVACY_SUPPORT).
+			  end
+%-endif.
 		  end, ?SETS:to_list(JIDSet)).
 
-presence_broadcast_to_trusted(From, T, A, Packet) ->
-    lists:foreach(fun(JID) ->
-			  case ?SETS:is_element(JID, T) of
-			      true ->
-				  ejabberd_router:route(
-				    From, jlib:make_jid(JID), Packet);
-			      _ ->
-				  ok
-			  end
-		  end, ?SETS:to_list(A)).
+presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
+    lists:foreach(
+      fun(JID) ->
+	      case ?SETS:is_element(JID, T) of
+		  true ->
+		      FJID = jlib:make_jid(JID),
+%-ifdef(PRIVACY_SUPPORT).
+		      case catch mod_privacy:check_packet(
+				   StateData#state.user,
+				   StateData#state.privacy_list,
+				   {From, FJID, Packet},
+				   out) of
+			  deny ->
+			      ok;
+			  _ ->
+%-endif.
+			      ejabberd_router:route(From, FJID, Packet)
+%-ifdef(PRIVACY_SUPPORT).
+		      end;
+%-endif.
+		  _ ->
+		      ok
+	      end
+      end, ?SETS:to_list(A)).
 
 
 presence_broadcast_first(From, StateData, Packet) ->
@@ -999,14 +1075,27 @@ presence_broadcast_first(From, StateData, Packet) ->
 	StateData#state.pres_invis ->
 	    StateData;
 	true ->
-	    As = ?SETS:fold(fun(JID, A) ->
-				    ejabberd_router:route(From,
-							  jlib:make_jid(JID),
-							  Packet),
-				    ?SETS:add_element(JID, A)
+	    As = ?SETS:fold(
+		    fun(JID, A) ->
+			    FJID = jlib:make_jid(JID),
+%-ifdef(PRIVACY_SUPPORT).
+			    case catch mod_privacy:check_packet(
+					 StateData#state.user,
+					 StateData#state.privacy_list,
+					 {From, FJID, Packet},
+					 out) of
+				deny ->
+				    ok;
+				_ ->
+%-endif.
+				    ejabberd_router:route(From, FJID, Packet)
+%-ifdef(PRIVACY_SUPPORT).
 			    end,
-			    StateData#state.pres_a,
-			    StateData#state.pres_f),
+%-endif.
+			    ?SETS:add_element(JID, A)
+		    end,
+		    StateData#state.pres_a,
+		    StateData#state.pres_f),
 	    StateData#state{pres_a = As}
     end.
 

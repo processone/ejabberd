@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <erl_driver.h>
 #include <ei.h>
-#include <iconv.h>
 
 #include "uni_data.c"
 #include "uni_norm.c"

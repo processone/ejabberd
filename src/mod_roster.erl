@@ -568,7 +568,19 @@ get_jid_info(User, JID) ->
 	[#roster{subscription = Subscription, groups = Groups}] ->
 	    {Subscription, Groups};
 	_ ->
-	    {none, []}
+	    LRJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+	    if
+		LRJID == LJID ->
+		    {none, []};
+		true ->
+		    case catch mnesia:dirty_read(roster, {LUser, LRJID}) of
+			[#roster{subscription = Subscription,
+				 groups = Groups}] ->
+			    {Subscription, Groups};
+			_ ->
+			    {none, []}
+		    end
+	    end
     end.
 
 
