@@ -80,7 +80,11 @@ do_route(From, To, Packet) ->
 	    ?DEBUG("routed to process ~p~n", [Pid]),
 	    Pid ! {route, From, To, Packet};
 	Rs ->
-	    R = lists:nth(erlang:phash(now(), length(Rs)), Rs),
+	    Rs1 = case [R || R <- Rs, node(R#route.pid) == node()] of
+		      [] -> Rs;
+		      LRs -> LRs
+		  end,
+	    R = lists:nth(erlang:phash(now(), length(Rs1)), Rs1),
 	    Pid = R#route.pid,
 	    ?DEBUG("routed to process ~p~n", [Pid]),
 	    Pid ! {route, From, To, Packet}
