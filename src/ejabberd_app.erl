@@ -14,6 +14,8 @@
 
 -export([start/2, stop/1, init/0]).
 
+-export([dump_ports/0]).
+
 -include("ejabberd.hrl").
 
 start(normal, Args) ->
@@ -46,10 +48,10 @@ init() ->
     %eprof:start(),
     %eprof:profile([self()]),
     %erlang:system_flag(fullsweep_after, 0),
-    error_logger:logfile({open, ?ERROR_LOG_PATH}),
+    error_logger:logfile({open, ?LOG_PATH}),
+    timer:apply_interval(3600000, ?MODULE, dump_ports, []),
     ok = erl_ddll:load_driver(".", expat_erl),
     Port = open_port({spawn, expat_erl}, [binary]),
-
     loop(Port).
 
 
@@ -78,4 +80,9 @@ load_modules() ->
 				  gen_mod:start_module(Module, Args)
 			  end, Modules)
     end.
+
+
+dump_ports() ->
+    ?INFO_MSG("ports:~n ~p",
+	      [lists:map(fun(P) -> erlang:port_info(P) end, erlang:ports())]).
 

@@ -19,8 +19,12 @@
 -endif.
 
 -define(ERROR_MSG(Format, Args),
-	error_logger:format("E(~p:~p:~p): "++Format++"~n",
-			    [self(),?MODULE,?LINE]++Args)).
+	error_logger:error_msg("E(~p:~p:~p): "++Format++"~n",
+			       [self(),?MODULE,?LINE]++Args)).
+
+-define(INFO_MSG(Format, Args),
+	error_logger:info_msg("I(~p:~p:~p): "++Format++"~n",
+			      [self(),?MODULE,?LINE]++Args)).
 
 
 %-define(MYNAME,"e.localhost").
@@ -30,5 +34,5 @@
 
 -define(MSGS_DIR, "msgs").
 -define(CONFIG_PATH, "ejabberd.cfg").
--define(ERROR_LOG_PATH, "error.log").
+-define(LOG_PATH, "ejabberd.log").
 

@@ -50,11 +50,7 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					    {iq, ID, result, XMLNS, [SubEl]};
 					not_allowed ->
 					    {iq, ID, error, XMLNS,
-					     [SubEl, {xmlelement,
-						      "error",
-						      [{"code", "405"}],
-						      [{xmlcdata,
-							"Not Allowed"}]}]};
+					     [SubEl, ?ERR_NOT_ALLOWED]};
 					not_exists ->
 					    {iq, ID, error, XMLNS,
 					     [SubEl, {xmlelement,
@@ -65,27 +61,15 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					_ ->
 					    {iq, ID, error, XMLNS,
 					     [SubEl,
-					      {xmlelement,
-					       "error",
-					       [{"code", "500"}],
-					       [{xmlcdata,
-						 "Internal Server Error"}]}]}
+					      ?ERR_INTERNAL_SERVER_ERROR]}
 				    end;
 				true ->
 				    {iq, ID, error, XMLNS,
-					     [SubEl,
-					      {xmlelement,
-					       "error",
-					       [{"code", "400"}],
-					       [{xmlcdata,
-						 "Bad Request"}]}]}
+					     [SubEl, ?ERR_BAD_REQUEST]}
 			    end
 		    end;
 		{iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement,
-			      "error",
-			      [{"code", "501"}],
-			      [{xmlcdata, "Not Implemented"}]}]};
+		     [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
 		(UTag /= false) and (PTag /= false) ->
 		    User = xml:get_tag_cdata(UTag),
 		    Password = xml:get_tag_cdata(PTag),
@@ -119,7 +103,7 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 try_register(User, Password) ->
     case jlib:is_nodename(User) of
 	false ->
-	    {error, "406", "Not Acceptable"};
+	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    case ejabberd_auth:try_register(User, Password) of
 		{atomic, ok} ->

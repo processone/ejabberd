@@ -110,7 +110,7 @@ process_iq(State, From, To, Packet) ->
 						  From, To, IQ);
 			[] ->
 			    Err = jlib:make_error_reply(
-				    Packet, "501", "Not Implemented"),
+				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
 			    ejabberd_router ! {route,
 					       {"", State#state.mydomain, ""},
 					       From,

@@ -28,6 +28,7 @@
 	 code_change/4]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -record(state, {socket, receiver, streamid,
 		myname, server, xmlpid, queue,
@@ -77,6 +78,7 @@ start(From, Host, Type) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([From, Server, Type]) ->
+    ?INFO_MSG("started: ~p", [{From, Server, Type}]),
     gen_fsm:send_event(self(), init),
     {New, Verify} = case Type of
 			{new, Key} ->
@@ -112,11 +114,11 @@ open_socket(init, StateData) ->
 			     streamid = new_id()}};
 	{error, Reason} ->
 	    ?DEBUG("s2s_out: connect return ~p~n", [Reason]),
-	    Text = case Reason of
-		       timeout -> "Server Connect Timeout";
-		       _ -> "Server Connect Failed"
-		   end,
-	    bounce_messages(Text),
+	    Error = case Reason of
+			timeout -> ?ERR_REMOTE_SERVER_TIMEOUT;
+			_ -> ?ERR_REMOTE_SERVER_NOT_FOUND
+		    end,
+	    bounce_messages(Error),
 	    {stop, normal, StateData}
     end.
 
@@ -175,6 +177,7 @@ wait_for_stream(closed, StateData) ->
 wait_for_validation({xmlstreamelement, El}, StateData) ->
     case is_verify_res(El) of
 	{result, To, From, Id, Type} ->
+	    ?INFO_MSG("recv result: ~p", [{From, To, Id, Type}]),
 	    case Type of
 		"valid" ->
 		    send_queue(StateData#state.socket, StateData#state.queue),
@@ -184,6 +187,7 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 		    {stop, normal, StateData}
 	    end;
 	{verify, To, From, Id, Type} ->
+	    ?INFO_MSG("recv verify: ~p", [{From, To, Id, Type}]),
 	    case StateData#state.verify of
 		false ->
 		    {next_state, wait_for_validation, StateData};
@@ -215,9 +219,10 @@ wait_for_validation(closed, StateData) ->
 
 
 stream_established({xmlstreamelement, El}, StateData) ->
-    io:format("s2s out~n"),
+    ?INFO_MSG("stream established", []),
     case is_verify_res(El) of
 	{verify, VTo, VFrom, VId, VType} ->
+	    ?INFO_MSG("recv verify: ~p", [{VFrom, VTo, VId, VType}]),
 	    case StateData#state.verify of
 		{VPid, VKey} ->
 		    case VType of
@@ -338,7 +343,7 @@ handle_info({tcp_error, Socket, Reason}, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
-    ?DEBUG("s2s_out: terminate ~p~n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!~n", [[Reason, StateName, StateData]]),
+    ?INFO_MSG("terminated: ~p", [Reason]),
     case StateData#state.new of
 	false ->
 	    ok;
@@ -377,7 +382,7 @@ send_queue(Socket, Q) ->
 new_id() ->
     randoms:get_string().
 
-bounce_messages(Reason) ->
+bounce_messages(Error) ->
     receive
 	{send_element, El} ->
 	    {xmlelement, Name, Attrs, SubTags} = El,
@@ -385,13 +390,12 @@ bounce_messages(Reason) ->
 	        "error" ->
 	            ok;
 	        _ ->
-	            Err = jlib:make_error_reply(El,
-	        				"502", Reason),
+	            Err = jlib:make_error_reply(El, Error),
 		    From = jlib:string_to_jid(xml:get_attr_s("from", Attrs)),
 		    To = jlib:string_to_jid(xml:get_attr_s("to", Attrs)),
 		    ejabberd_router ! {route, To, From, Err}
 	    end,
-	    bounce_messages(Reason)
+	    bounce_messages(Error)
     after 0 ->
 	    ok
     end.

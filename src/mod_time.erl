@@ -32,9 +32,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
 	    {iq, ID, error, XMLNS,
-	     [SubEl, {xmlelement, "error",
-		      [{"code", "405"}],
-		      [{xmlcdata, "Not Allowed"}]}]};
+	     [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    UTC = jlib:timestamp_to_iso(calendar:universal_time()),
 	    {iq, ID, result, XMLNS,

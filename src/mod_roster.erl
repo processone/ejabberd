@@ -62,7 +62,7 @@ process_iq(From, To, IQ) ->
 	    ignore;
 	_ ->
 	    {iq, ID, error, XMLNS,
-	     [SubEl, jlib:make_error_element("404", "Not Found")]}
+	     [SubEl, ?ERR_JID_NOT_FOUND]}
     end.
 
 process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
@@ -79,8 +79,7 @@ process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 				      XItems}]};
 	_ ->
 	    {iq, ID, error, XMLNS,
-	     [SubEl, jlib:make_error_element("500",
-					     "Internal Server Error")]}
+	     [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
     end.
 
 item_to_xml(Item) ->

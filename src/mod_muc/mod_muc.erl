@@ -115,9 +115,18 @@ do_route(Host, From, To, Packet) ->
 					    Packet, Error),
 				    ejabberd_router:route(To, From, Err)
 			    end;
+			{iq, ID, get, ?NS_VCARD = XMLNS, SubEl} ->
+			    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
+			    Res = {iq, ID, result, XMLNS,
+				   [{xmlelement, "query",
+				     [{"xmlns", XMLNS}],
+				     iq_get_vcard(Lang)}]},
+			    ejabberd_router:route(To,
+						  From,
+						  jlib:iq_to_xml(Res));
 			_ ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_SERVICE_UNAVAILABLE),
+				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
 			    ejabberd_router:route(To, From, Err)
 		    end;
 		_ ->
@@ -212,7 +221,8 @@ iq_disco_info() ->
        {"type", "text"},
        {"name", "ejabberd/mod_muc"}], []},
      {xmlelement, "feature", [{"var", ?NS_MUC}], []},
-     {xmlelement, "feature", [{"var", ?NS_REGISTER}], []}].
+     {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
+     {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
 
 
 process_iq_disco_items(Host, From, To, ID, SubEl) ->
@@ -336,6 +346,17 @@ process_iq_register_set(From, SubEl) ->
 	_ ->
 	    {error, ?ERR_BAD_REQUEST}
     end.
+
+iq_get_vcard(Lang) ->
+    [{xmlelement, "FN", [],
+      [{xmlcdata, "ejabberd/mod_muc"}]},
+     {xmlelement, "URL", [],
+      [{xmlcdata,
+	"http://ejabberd.jabberstudio.org/"}]},
+     {xmlelement, "DESC", [],
+      [{xmlcdata, "ejabberd MUC module\n"
+	"Copyright (c) 2003 Alexey Shchepin"}]}].
+
 
 
 can_use_nick(JID, "") ->

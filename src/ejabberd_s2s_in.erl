@@ -80,6 +80,7 @@ start(SockData, Opts) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}]) ->
+    ?INFO_MSG("started: ~p", [{SockMod, Socket}]),
     ReceiverPid = spawn(?MODULE, receiver, [Socket, self()]),
     {ok, wait_for_stream, #state{socket = Socket,
 				 receiver = ReceiverPid,
@@ -121,7 +122,7 @@ wait_for_stream(closed, StateData) ->
 wait_for_key({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
 	{key, To, From, Id, Key} ->
-	    io:format("GET KEY: ~p~n", [{To, From, Id, Key}]),
+	    ?INFO_MSG("GET KEY: ~p", [{To, From, Id, Key}]),
 	    case lists:member(To, ejabberd_router:dirty_get_all_domains()) of
 		true ->
 		    ejabberd_s2s_out:start(To, From,
@@ -135,7 +136,7 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
 		    {stop, normal, StateData}
 	    end;
 	{verify, To, From, Id, Key} ->
-	    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
+	    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
 	    Key1 = ejabberd_s2s:get_key({StateData#state.myname, From}),
 	    Type = if Key == Key1 -> "valid";
 		      true -> "invalid"
@@ -184,7 +185,7 @@ wait_for_verification(invalid, StateData) ->
 wait_for_verification({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
 	{verify, To, From, Id, Key} ->
-	    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
+	    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
 	    Key1 = ejabberd_s2s:get_key({StateData#state.myname, From}),
 	    Type = if Key == Key1 -> "valid";
 		      true -> "invalid"
@@ -215,7 +216,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	"db:verify" ->
 	    case is_key_packet(El) of
 		{verify, To, From, Id, Key} ->
-		    io:format("VERIFY KEY: ~p~n", [{To, From, Id, Key}]),
+		    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
 		    Key1 = ejabberd_s2s:get_key({StateData#state.myname,
 						 From}),
 		    Type = if Key == Key1 -> "valid";
@@ -343,6 +344,7 @@ terminate(Reason, StateName, StateData) ->
 %	    %    		      StateData#state.resource)
 %    end,
     %ejabberd_s2s ! {closed_conection, StateData#state.server},
+    ?INFO_MSG("terminated: ~p", [Reason]),
     gen_tcp:close(StateData#state.socket),
     ok.
 

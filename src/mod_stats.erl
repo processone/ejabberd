@@ -31,9 +31,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     Lang = xml:get_tag_attr_s("xml:lang", SubEl),
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]};
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    {xmlelement, _, Attrs, Els} = SubEl,
 	    Node = string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),

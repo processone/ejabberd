@@ -54,18 +54,14 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		    case catch get_data(LUser, Els) of
 			{'EXIT', Reason} ->
 			    {iq, ID, error, XMLNS,
-			     [SubEl, {xmlelement, "error",
-				      [{"code", "500"}],
-				      [{xmlcdata, "Internal Server Error"}]}]};
+			     [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
 			Res ->
 			    {iq, ID, result, XMLNS,
 			     [{xmlelement, Name, Attrs, Res}]}
 		    end
 	    end;
 	_ ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]}
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]}
     end.
 
 set_data(LUser, El) ->

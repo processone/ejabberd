@@ -27,6 +27,7 @@
 	 terminate/3]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -record(state, {socket, receiver, streamid,
 		host, password}).
@@ -173,7 +174,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
        (ToJID /= error) and (FromJID /= error) ->
 	    ejabberd_router:route(FromJID, ToJID, El);
        true ->
-	    Err = jlib:make_error_reply(El, "400", "Bad Request"),
+	    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
 	    send_element(StateData#state.socket, Err),
 	    error
     end,

@@ -51,9 +51,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			    case XData of
 				invalid ->
 				    {iq, ID, error, XMLNS,
-				     [SubEl, {xmlelement, "error",
-					      [{"code", "400"}],
-					      [{xmlcdata, "Bad Request"}]}]};
+				     [SubEl, ?ERR_BAD_REQUEST]};
 				_ ->
 				    Node =
 					string:tokens(
@@ -73,9 +71,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			    end;
 			_ ->
 			    {iq, ID, error, XMLNS,
-			     [SubEl, {xmlelement, "error",
-				      [{"code", "405"}],
-				      [{xmlcdata, "Not Allowed"}]}]}
+			     [SubEl, ?ERR_NOT_ALLOWED]}
 		    end;
 		get ->
 		    Node =
@@ -447,7 +443,7 @@ set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
 	Node ->
 	    case lists:keysearch("modules", 1, XData) of
 		false ->
-		    {error, "406", "Not Acceptable"};
+		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, Strings}} ->
 		    String = lists:foldl(fun(S, Res) ->
 						 Res ++ S ++ "\n"
@@ -465,13 +461,13 @@ set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
 				      end, Modules),
 				    {result, []};
 				_ ->
-				    {error, "406", "Not Acceptable"}
+				    {error, ?ERR_BAD_REQUEST}
 			    end;
 			_ ->
-			    {error, "406", "Not Acceptable"}
+			    {error, ?ERR_BAD_REQUEST}
 		    end;
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_BAD_REQUEST}
 	    end
     end;
 
@@ -483,7 +479,7 @@ set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
-		    {error, "406", "Not Acceptable"};
+		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
 		    case rpc:call(Node, mnesia, backup, [String]) of
 			{badrpc, Reason} ->
@@ -494,7 +490,7 @@ set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
 			    {result, []}
 			end;
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_BAD_REQUEST}
 	    end
     end;
 
@@ -506,7 +502,7 @@ set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
-		    {error, "406", "Not Acceptable"};
+		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
 		    case rpc:call(Node, mnesia, restore,
 				  [String, [{default_op, keep_tables}]]) of
@@ -518,7 +514,7 @@ set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
 			    {result, []}
 			end;
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_BAD_REQUEST}
 	    end
     end;
 
@@ -530,7 +526,7 @@ set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
-		    {error, "406", "Not Acceptable"};
+		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
 		    case rpc:call(Node, mnesia, dump_to_textfile, [String]) of
 			{badrpc, Reason} ->
@@ -541,7 +537,7 @@ set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
 			    {result, []}
 			end;
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_BAD_REQUEST}
 	    end
     end;
 
@@ -553,12 +549,12 @@ set_form(["running nodes", ENode, "import", "file"], Lang, XData) ->
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
-		    {error, "406", "Not Acceptable"};
+		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
 		    rpc:call(Node, jd2ejd, import_file, [String]),
 		    {result, []};
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_BAD_REQUEST}
 	    end
     end;
 
@@ -570,11 +566,11 @@ set_form(["running nodes", ENode, "import", "dir"], Lang, XData) ->
 	Node ->
 	    case lists:keysearch("path", 1, XData) of
 		false ->
-		    {error, "406", "Not Acceptable"};
+		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
 		    rpc:call(Node, jd2ejd, import_dir, [String]);
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_BAD_REQUEST}
 	    end
     end;
 
@@ -582,14 +578,14 @@ set_form(["running nodes", ENode, "import", "dir"], Lang, XData) ->
 set_form(["config", "hostname"], Lang, XData) ->
     case lists:keysearch("hostname", 1, XData) of
 	false ->
-	    {error, "406", "Not Acceptable"};
+	    {error, ?ERR_BAD_REQUEST};
 	{value, {_, [""]}} ->
-	    {error, "406", "Not Acceptable"};
+	    {error, ?ERR_BAD_REQUEST};
 	{value, {_, [NewName]}} ->
 	    ejabberd_config:add_global_option(hostname, NewName),
 	    {result, []};
 	_ ->
-	    {error, "406", "Not Acceptable"}
+	    {error, ?ERR_BAD_REQUEST}
     end;
 
 set_form(["config", "acls"], Lang, XData) ->
@@ -606,16 +602,16 @@ set_form(["config", "acls"], Lang, XData) ->
 				ok ->
 				    {result, []};
 				_ ->
-				    {error, "406", "Not Acceptable"}
+				    {error, ?ERR_BAD_REQUEST}
 			    end;
 			_ ->
-			    {error, "406", "Not Acceptable"}
+			    {error, ?ERR_BAD_REQUEST}
 		    end;
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_BAD_REQUEST}
 	    end;
 	_ ->
-	    {error, "406", "Not Acceptable"}
+	    {error, ?ERR_BAD_REQUEST}
     end;
 
 set_form(["config", "access"], Lang, XData) ->
@@ -652,16 +648,16 @@ set_form(["config", "access"], Lang, XData) ->
 				    {result, []};
 				E ->
 				    io:format("A: ~p~n", [E]),
-				    {error, "406", "Not Acceptable"}
+				    {error, ?ERR_BAD_REQUEST}
 			    end;
 			_ ->
-			    {error, "406", "Not Acceptable"}
+			    {error, ?ERR_BAD_REQUEST}
 		    end;
 		_ ->
-		    {error, "406", "Not Acceptable"}
+		    {error, ?ERR_BAD_REQUEST}
 	    end;
 	_ ->
-	    {error, "406", "Not Acceptable"}
+	    {error, ?ERR_BAD_REQUEST}
     end;
 
 set_form(["config", "remusers"], Lang, XData) ->
@@ -705,9 +701,7 @@ search_running_node(SNode, [Node | Nodes]) ->
 process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case acl:match_rule(configure, From) of
 	deny ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]};
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
 	    {User, _, _} = To,
 	    Lang = xml:get_tag_attr_s("xml:lang", SubEl),
@@ -722,9 +716,7 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			    case XData of
 				invalid ->
 				    {iq, ID, error, XMLNS,
-				     [SubEl, {xmlelement, "error",
-					      [{"code", "400"}],
-					      [{xmlcdata, "Bad Request"}]}]};
+				     [SubEl, ?ERR_BAD_REQUEST]};
 				_ ->
 				    Node =
 					string:tokens(
@@ -745,9 +737,7 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			    end;
 			_ ->
 			    {iq, ID, error, XMLNS,
-			     [SubEl, {xmlelement, "error",
-				      [{"code", "405"}],
-				      [{xmlcdata, "Not Allowed"}]}]}
+			     [SubEl, ?ERR_NOT_ALLOWED]}
 		    end;
 		get ->
 		    Node =

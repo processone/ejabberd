@@ -166,7 +166,7 @@ wait_for_stream(closed, StateData) ->
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
 	{auth, ID, get, {"", _, _, _}} ->
-	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+	    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
 	    send_element(StateData, Err),
 	    {next_state, wait_for_auth, StateData};
 	{auth, ID, get, {U, _, _, _}} ->
@@ -305,7 +305,7 @@ wait_for_sasl_auth(closed, StateData) ->
 wait_for_resource_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
 	{auth, ID, get, {"", _, _, _}} ->
-	    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+	    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
 	    send_element(StateData, Err),
 	    {next_state, wait_for_resource_auth, StateData};
 	{auth, ID, get, {U, _, _, _}} ->
@@ -345,7 +345,7 @@ wait_for_resource_auth({xmlstreamelement, El}, StateData) ->
 			    {next_state, wait_for_resource_auth, StateData}
 		    end;
 		_ ->
-		    Err = jlib:make_error_reply(El, "406", "Not Acceptable"),
+		    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
 		    send_element(StateData, Err),
 		    {next_state, wait_for_resource_auth, StateData}
 	    end;

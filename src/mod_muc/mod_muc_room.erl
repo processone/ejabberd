@@ -306,7 +306,8 @@ normal_state({route, From, Nick,
 				case is_nick_exists(Nick, StateData) of
 				    true ->
 					Err = jlib:make_error_reply(
-					Packet, ?ERR_MUC_NICK_CHANGE_CONFLICT),
+						Packet,
+						?ERR_MUC_NICK_CHANGE_CONFLICT),
 					ejabberd_router:route(
 					  {StateData#state.room,
 					   StateData#state.host,

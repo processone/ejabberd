@@ -91,9 +91,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		    {iq, ID, result, XMLNS, []};
 		_ ->
 		    {iq, ID, error, XMLNS,
-		     [SubEl, {xmlelement, "error",
-			      [{"code", "405"}],
-			      [{xmlcdata, "Not Allowed"}]}]}
+		     [SubEl, ?ERR_NOT_ALLOWED]}
 	    end;
 	get ->
 	    {iq, ID, result, XMLNS,
@@ -116,9 +114,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
-	    {iq, ID, error, XMLNS, [SubEl, {xmlelement, "error",
-					    [{"code", "405"}],
-					    [{xmlcdata, "Not Allowed"}]}]};
+	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    {User, _, _} = To,
 	    LUser = jlib:tolower(User),
@@ -217,7 +213,7 @@ do_route(From, To, Packet) ->
     {User, Server, Resource} = To,
     if
 	(User /= "") or (Resource /= "") ->
-	    Err = jlib:make_error_reply(Packet, "503", "Service Unavailable"),
+	    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
 	    ejabberd_router ! {route, To, From, Err};
 	true ->
 	    IQ = jlib:iq_query_info(Packet),
@@ -230,7 +226,7 @@ do_route(From, To, Packet) ->
 			    case XDataEl of
 				false ->
 				    Err = jlib:make_error_reply(
-					    Packet, "400", "Bad Request"),
+					    Packet, ?ERR_BAD_REQUEST),
 				    ejabberd_router:route(To, From, Err);
 				_ ->
 				    XData = jlib:parse_xdata_submit(XDataEl),
@@ -238,7 +234,7 @@ do_route(From, To, Packet) ->
 					invalid ->
 					    Err = jlib:make_error_reply(
 						    Packet,
-						    "400", "Bad Request"),
+						    ?ERR_BAD_REQUEST),
 					    ejabberd_router:route(To, From,
 								  Err);
 					_ ->
@@ -271,7 +267,7 @@ do_route(From, To, Packet) ->
 		    case Type of
 			set ->
 			    Err = jlib:make_error_reply(
-				    Packet, "405", "Not Allowed"),
+				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(To, From, Err);
 			get ->
 			    ResIQ = {iq, ID, result, ?NS_DISCO_INFO,
@@ -294,7 +290,7 @@ do_route(From, To, Packet) ->
 		    case Type of
 			set ->
 			    Err = jlib:make_error_reply(
-				    Packet, "405", "Not Allowed"),
+				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(To, From, Err);
 			get ->
 			    ResIQ = {iq, ID, result, ?NS_DISCO_INFO,
@@ -307,7 +303,7 @@ do_route(From, To, Packet) ->
 		    end;
 		_ ->
 		    Err = jlib:make_error_reply(Packet,
-						"503", "Service Unavailable"),
+						?ERR_SERVICE_UNAVAILABLE),
 		    ejabberd_router:route(To, From, Err)
 	    end
     end.
