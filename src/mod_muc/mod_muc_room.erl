@@ -35,7 +35,8 @@
 
 -record(lqueue, {queue, len, max}).
 
--record(config, {allow_change_subj = true,
+-record(config, {title = "",
+		 allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
 		 public = true,
@@ -436,7 +437,7 @@ handle_event(Event, StateName, StateData) ->
 handle_sync_event(get_disco_item, From, StateName, StateData) ->
     Reply = case (StateData#state.config)#config.public of
 		true ->
-		    {item, StateData#state.room};
+		    {item, get_title(StateData)};
 		_ ->
 		    false
 	    end,
@@ -528,12 +529,17 @@ set_affiliation(JID, Affiliation, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
 get_affiliation(JID, StateData) ->
-    LJID = jlib:jid_tolower(JID),
-    case ?DICT:find(LJID, StateData#state.affiliations) of
-	{ok, Affiliation} ->
-	    Affiliation;
+    case acl:match_rule(muc_admin, JID) of
+	allow ->
+	    owner;
 	_ ->
-	    none
+	    LJID = jlib:jid_tolower(JID),
+	    case ?DICT:find(LJID, StateData#state.affiliations) of
+		{ok, Affiliation} ->
+		    Affiliation;
+		_ ->
+		    none
+	    end
     end.
 
 set_role(JID, Role, StateData) ->
@@ -1002,35 +1008,41 @@ process_admin_items_set(UJID, Items, StateData) ->
 		  fun(E, SD) ->
 			  case catch (
 				 case E of
-				     {JID, role, none} ->
+				     {JID, role, none, Reason} ->
 					 catch send_kickban_presence(
-						 JID, "307", SD),
+						 JID, Reason, "307", SD),
 					 set_role(JID, none, SD);
-				     {JID, affiliation, outcast} ->
+				     {JID, affiliation, outcast, Reason} ->
 					 catch send_kickban_presence(
-						 JID, "301", SD),
+						 JID, Reason, "301", SD),
 					 set_affiliation(
 					   JID, outcast,
 					   set_role(JID, none, SD));
-				     {JID, role, R} ->
+				     {JID, role, R, Reason} ->
 					 SD1 = set_role(JID, R, SD),
 					 catch send_new_presence(JID, SD1),
 					 SD1;
-				     {JID, affiliation, A} ->
+				     {JID, affiliation, A, Reason} ->
 					 SD1 = set_affiliation(JID, A, SD),
 					 catch send_new_presence(JID, SD1),
 					 SD1
 				       end
 				) of
-			      {'EXIT', Reason} ->
+			      {'EXIT', ErrReason} ->
 				  io:format("MUC ITEMS SET ERR: ~p~n",
-					    [Reason]),
+					    [ErrReason]),
 				  SD;
 			      NSD ->
 				  NSD
 			  end
 		  end, StateData, Res),
 	    io:format("MUC SET: ~p~n", [Res]),
+	    case (NSD#state.config)#config.persistent of
+		true ->
+		    mod_muc:store_room(NSD#state.room, make_opts(NSD));
+		_ ->
+		    ok
+	    end,
 	    {result, [], NSD};
 	Err ->
 	    Err
@@ -1043,7 +1055,7 @@ find_changed_items(UJID, UAffiliation, URole, [{xmlcdata, _} | Items],
 		   StateData, Res) ->
     find_changed_items(UJID, UAffiliation, URole, Items, StateData, Res);
 find_changed_items(UJID, UAffiliation, URole,
-		   [{xmlelement, "item", Attrs, Els} | Items],
+		   [{xmlelement, "item", Attrs, Els} = Item | Items],
 		   StateData, Res) ->
     TJID = case xml:get_attr("jid", Attrs) of
 	       {value, S} ->
@@ -1097,7 +1109,10 @@ find_changed_items(UJID, UAffiliation, URole,
 					      Items, StateData,
 					      [{JID,
 						affiliation,
-						SAffiliation} | Res]);
+						SAffiliation,
+						xml:get_path_s(
+						  Item, [{elem, "reason"},
+							 cdata])} | Res]);
 					_ ->
 					    {error, ?ERR_NOT_ALLOWED}
 				    end
@@ -1123,7 +1138,10 @@ find_changed_items(UJID, UAffiliation, URole,
 				      UJID,
 				      UAffiliation, URole,
 				      Items, StateData,
-				      [{JID, role, SRole} | Res]);
+				      [{JID, role, SRole,
+					xml:get_path_s(
+					  Item, [{elem, "reason"},
+						 cdata])} | Res]);
 				_ ->
 				    {error, ?ERR_NOT_ALLOWED}
 			    end
@@ -1244,7 +1262,7 @@ can_change_ra(FAffiliation, FRole,
     false.
 
 
-send_kickban_presence(UJID, Code, StateData) ->
+send_kickban_presence(UJID, Reason, Code, StateData) ->
     {ok, #user{jid = RealJID,
 	       nick = Nick}} =
 	?DICT:find(jlib:jid_tolower(UJID), StateData#state.users),
@@ -1254,9 +1272,16 @@ send_kickban_presence(UJID, Code, StateData) ->
       fun({LJID, Info}) ->
 	      ItemAttrs = [{"affiliation", SAffiliation},
 			   {"role", "none"}],
+	      ItemEls = case Reason of
+			    "" ->
+				[];
+			    _ ->
+				[{xmlelement, "reason", [],
+				  [{xmlcdata, Reason}]}]
+			end,
 	      Packet = {xmlelement, "presence", [{"type", "unavailable"}],
 			[{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			  [{xmlelement, "item", ItemAttrs, []},
+			  [{xmlelement, "item", ItemAttrs, ItemEls},
 			   {xmlelement, "status", [{"code", Code}], []}]}]},
 	      ejabberd_router:route(
 		{StateData#state.room, StateData#state.host, Nick},
@@ -1280,17 +1305,20 @@ process_iq_owner(From, set, SubEl, StateData) ->
 		    case {xml:get_tag_attr_s("xmlns", XEl),
 			  xml:get_tag_attr_s("type", XEl)} of
 			{?NS_XDATA, "cancel"} ->
-			    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+			    %{error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+			    {result, [], StateData};
 			{?NS_XDATA, "submit"} ->
 			    set_config(XEl, StateData);
 			_ ->
 			    {error, ?ERR_BAD_REQUEST}
 		    end;
+		[{xmlelement, "destroy", Attrs1, Els1}] ->
+		    destroy_room(Els1, StateData);
 		_ ->
 		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
 	    end;
 	_ ->
-	    {error, ?ERR_NOT_ALLOWED}
+	    {error, ?ERR_FORBIDDEN}
     end;
 %    {xmlelement, _, _, Items} = SubEl,
 %    process_admin_items_set(From, Items, StateData);
@@ -1369,11 +1397,17 @@ process_iq_owner(From, get, SubEl, StateData) ->
 		    _ -> "0"
 		end)).
 
+-define(STRINGXFIELD(Label, Var, Val),
+	?XFIELD("text-single", Label, Var, Val)).
+
 
 get_config(Lang, StateData) ->
     Config = StateData#state.config,
     Res =
-	[?BOOLXFIELD("Allow users to change subject?",
+	[?STRINGXFIELD("Room title",
+		     "title",
+		     Config#config.title),
+	 ?BOOLXFIELD("Allow users to change subject?",
 		     "allow_change_subj",
 		     Config#config.allow_change_subj),
 	 ?BOOLXFIELD("Allow users to query other users?",
@@ -1435,10 +1469,15 @@ set_config(XEl, StateData) ->
 	    _ -> {error, ?ERR_BAD_REQUEST}
 	end).
 
+-define(SET_STRING_XOPT(Opt, Val),
+	set_xoption(Opts, Config#config{Opt = Val})).
+
 
 
 set_xoption([], Config) ->
     Config;
+set_xoption([{"title", [Val]} | Opts], Config) ->
+    ?SET_STRING_XOPT(title, Val);
 set_xoption([{"allow_change_subj", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_change_subj, Val);
 set_xoption([{"allow_query_users", [Val]} | Opts], Config) ->
@@ -1489,6 +1528,7 @@ set_opts([], StateData) ->
     StateData;
 set_opts([{Opt, Val} | Opts], StateData) ->
     NSD = case Opt of
+	      ?CASE_CONFIG_OPT(title);
 	      ?CASE_CONFIG_OPT(allow_change_subj);
 	      ?CASE_CONFIG_OPT(allow_query_users);
 	      ?CASE_CONFIG_OPT(allow_private_messages);
@@ -1512,6 +1552,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 make_opts(StateData) ->
     Config = StateData#state.config,
     [
+     ?MAKE_CONFIG_OPT(title),
      ?MAKE_CONFIG_OPT(allow_change_subj),
      ?MAKE_CONFIG_OPT(allow_query_users),
      ?MAKE_CONFIG_OPT(allow_private_messages),
@@ -1526,6 +1567,28 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(logging),
      {affiliations, ?DICT:to_list(StateData#state.affiliations)}
     ].
+
+
+
+destroy_room(DEls, StateData) ->
+    lists:foreach(
+      fun({LJID, Info}) ->
+	      Nick = Info#user.nick,
+	      ItemAttrs = [{"affiliation", "none"},
+			   {"role", "none"}],
+	      Packet = {xmlelement, "presence", [{"type", "unavailable"}],
+			[{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
+			  [{xmlelement, "item", ItemAttrs, []},
+			   {xmlelement, "destroy", [],
+			    DEls}]}]},
+	      ejabberd_router:route(
+		{StateData#state.room, StateData#state.host, Nick},
+		Info#user.jid,
+		Packet)
+      end, ?DICT:to_list(StateData#state.users)),
+    {result, [], StateData}.
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1544,7 +1607,7 @@ process_iq_disco_info(From, get, StateData) ->
 	    {result, [{xmlelement, "identity",
 		       [{"category", "conference"},
 			{"type", "text"},
-			{"name", StateData#state.room}], []},
+			{"name", get_title(StateData)}], []},
 		      {xmlelement, "feature",
 		       [{"var", ?NS_MUC}], []}], StateData};
 	_ ->
@@ -1577,6 +1640,14 @@ process_iq_disco_items(From, get, StateData) ->
 	    {result, UList, StateData};
 	_ ->
 	    {error, ?ERR_NOT_ALLOWED}
+    end.
+
+get_title(StateData) ->
+    case (StateData#state.config)#config.title of
+	"" ->
+	    StateData#state.room;
+	Name ->
+	    Name
     end.
 
 

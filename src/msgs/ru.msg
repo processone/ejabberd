@@ -63,6 +63,29 @@
 {"Organization Unit", "Отдел организации"}.
 
 
+% mod_muc/mod_muc_room.erl
+
+{"Room title", "Название комнаты"}.
+{"Allow users to change subject?", "Разрешить пользователям изменять тему?"}.
+{"Allow users to query other users?",
+ "Разрешить iq-запросы к пользователям?"}.
+{"Allow users to send private messages?",
+ "Разрешить приватные сообщения?"}.
+{"Make room public searchable?", "Сделать комнату видимой всем?"}.
+{"Make room persistent?", "Сделать комнату постоянной?"}.
+{"Make room moderated?", "Сделать комнату модерируемой?"}.
+{"Default users as members?",
+ "Сделать пользователей участниками по умолчанию?"}.
+{"Make room members only?",
+ "Комната только для зарегистрированных участников?"}.
+{"Allow users to send invites?",
+ "Разрешить пользователям посылать приглашения?"}.
+{"Make room password protected?", "Сделать комнату защищённой паролем?"}.
+{"Make room anonymous?", "Сделать комнату анонимной?"}.
+{"Enable logging?", "Включить журналирование?"}.
+
+
+
 % Local Variables:
 % mode: erlang
 % End:
