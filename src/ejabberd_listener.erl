@@ -94,7 +94,8 @@ accept_ssl(ListenSocket, Module, Opts) ->
 		_ ->
 		    ok
 	    end,
-	    Module:start_link({ssl, Socket}, Opts),
+	    {ok, Pid} = Module:start({ssl, Socket}, Opts),
+	    ssl:controlling_process(Socket, Pid),
 	    accept_ssl(ListenSocket, Module, Opts);
 	{error, timeout} ->
 	    accept_ssl(ListenSocket, Module, Opts);

@@ -1,3 +1,17 @@
+2003-10-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_listener.erl: Fixed starting of SSL connection
+
+	* src/ejabberd_s2s_in.erl: Partially rewriten
+
+	* src/ejabberd_router.erl: More verbose error report
+	* src/ejabberd_local.erl: Likewise
+	* src/ejabberd_sm.erl: Likewise
+
+	* src/ejabberd_s2s_out.erl: Updated to be compatible with R9C
+
+	* src/ejabberd_c2s.erl: Minor fix
+
 2003-10-28  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_listener.erl: Added handling of accept errors,

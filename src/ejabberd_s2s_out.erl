@@ -113,8 +113,7 @@ open_socket(init, StateData) ->
 	      {error, Reason1} ->
 		  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
 		  gen_tcp:connect(Addr, Port,
-				  [binary, {packet, 0},
-				   {tcp_module, inet6_tcp}])
+				  [binary, {packet, 0}, inet6])
 	  end,
     case Res of
 	{ok, Socket} ->
@@ -215,9 +214,15 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 		{Pid, _Key, _SID} ->
 		    case Type of
 			"valid" ->
-			    gen_fsm:send_event(Pid, valid);
+			    gen_fsm:send_event(
+			      Pid, {valid,
+				    StateData#state.server,
+				    StateData#state.myname});
 			_ ->
-			    gen_fsm:send_event(Pid, invalid)
+			    gen_fsm:send_event(
+			      Pid, {invalid,
+				    StateData#state.server,
+				    StateData#state.myname})
 		    end,
 		    {stop, normal, StateData}
 	    end;
@@ -249,9 +254,15 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		{VPid, _VKey, _SID} ->
 		    case VType of
 			"valid" ->
-			    gen_fsm:send_event(VPid, valid);
+			    gen_fsm:send_event(
+			      VPid, {valid,
+				     StateData#state.server,
+				     StateData#state.myname});
 			_ ->
-			    gen_fsm:send_event(VPid, invalid)
+			    gen_fsm:send_event(
+			      VPid, {invalid,
+				     StateData#state.server,
+				     StateData#state.myname})
 		    end;
 		_ ->
 		    ok

@@ -101,7 +101,8 @@ start_link(SockData, Opts) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
-    ReceiverPid = spawn(?MODULE, receiver, [Socket, SockMod, none, self()]),
+    ReceiverPid = proc_lib:spawn(
+		    ?MODULE, receiver, [Socket, SockMod, none, self()]),
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -618,7 +619,8 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			process_presence_probe(From, To, StateData),
 			{false, Attrs, StateData};
 		    "error" ->
-			NewA = remove_element(From, StateData#state.pres_a),
+			NewA = remove_element(jlib:jid_tolower(From),
+					      StateData#state.pres_a),
 			{true, Attrs, StateData#state{pres_a = NewA}};
 		    "invisible" ->
 			Attrs1 = lists:keydelete("type", 1, Attrs),
@@ -774,7 +776,7 @@ receiver(Socket, SockMod, Shaper, C2SPid) ->
     receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout).
 
 receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout) ->
-    case SockMod:recv(Socket, 0, Timeout) of
+    case catch SockMod:recv(Socket, 0, Timeout) of
         {ok, Text} ->
 	    ShaperSt1 = receive
 			    {change_shaper, Shaper} ->
@@ -797,6 +799,12 @@ receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout) ->
 	    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid,
 		     Timeout);
         {error, Reason} ->
+	    exit(XMLStreamPid, closed),
+	    gen_fsm:send_event(C2SPid, closed),
+	    ok;
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("(~w) abnormal ~w:recv termination:~n\t~p~n",
+		       [Socket, SockMod, Reason]),
 	    exit(XMLStreamPid, closed),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok

@@ -117,7 +117,7 @@ get_key(FromTo) ->
 	[E] ->
 	    E#s2s.key;
 	_ ->
-	    ""
+	    error
     end.
 
 try_register(FromTo) ->

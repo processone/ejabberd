@@ -39,7 +39,8 @@ loop(State) ->
 	{route, From, To, Packet} ->
 	    case catch do_route(State, From, To, Packet) of
 		{'EXIT', Reason} ->
-		    ?ERROR_MSG("~p", [Reason]);
+		    ?ERROR_MSG("~p~nwhen processing: ~p",
+			       [Reason, {From, To, Packet}]);
 		_ ->
 		    ok
 	    end,

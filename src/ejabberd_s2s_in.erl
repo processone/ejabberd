@@ -18,8 +18,6 @@
 %% gen_fsm callbacks
 -export([init/1,
 	 wait_for_stream/2,
-	 wait_for_key/2,
-	 wait_for_verification/2,
 	 stream_established/2,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -30,8 +28,11 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
+-define(DICT, dict).
+
 -record(state, {socket, receiver, streamid,
-		myname, server, queue}).
+	        connections = ?DICT:new()}).
+
 
 %-define(DBGFSM, true).
 
@@ -67,7 +68,7 @@
 start(SockData, Opts) ->
     supervisor:start_child(ejabberd_s2s_in_sup, [SockData, Opts]).
 
-start_link(SockData, Opts) ->
+start_link(SockData, _Opts) ->
     gen_fsm:start_link(ejabberd_s2s_in, [SockData], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -87,8 +88,7 @@ init([{SockMod, Socket}]) ->
     {ok, wait_for_stream,
      #state{socket = Socket,
 	    receiver = ReceiverPid,
-	    streamid = new_id(),
-	    queue = queue:new()},
+	    streamid = new_id()},
      ?S2STIMEOUT}.
 
 %%----------------------------------------------------------------------
@@ -98,23 +98,12 @@ init([{SockMod, Socket}]) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
+wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     % TODO
     case {xml:get_attr_s("xmlns", Attrs), xml:get_attr_s("xmlns:db", Attrs)} of
 	{"jabber:server", "jabber:server:dialback"} ->
-	    Me = case xml:get_attr_s("to", Attrs) of
-		     "" -> ?MYNAME;
-		     Dom -> Dom
-		 end,
-	    case lists:member(Me, ejabberd_router:dirty_get_all_domains()) of
-		true ->
-		    send_text(StateData#state.socket, ?STREAM_HEADER),
-		    {next_state, wait_for_key,
-		     StateData#state{myname = Me}, ?S2STIMEOUT};
-		_ ->
-		    send_text(StateData#state.socket, ?HOST_UNKNOWN_ERR),
-		    {stop, normal, StateData}
-	    end;
+	    send_text(StateData#state.socket, ?STREAM_HEADER),
+	    {next_state, stream_established, StateData#state{}, ?S2STIMEOUT};
 	_ ->
 	    send_text(StateData#state.socket, ?INVALID_NAMESPACE_ERR),
 	    {stop, normal, StateData}
@@ -131,20 +120,22 @@ wait_for_stream(timeout, StateData) ->
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
 
-
-wait_for_key({xmlstreamelement, El}, StateData) ->
+stream_established({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
 	{key, To, From, Id, Key} ->
 	    ?INFO_MSG("GET KEY: ~p", [{To, From, Id, Key}]),
-	    case lists:member(To, ejabberd_router:dirty_get_all_domains()) of
+	    LTo = jlib:nameprep(To),
+	    LFrom = jlib:nameprep(From),
+	    case lists:member(LTo, ejabberd_router:dirty_get_all_domains()) of
 		true ->
 		    ejabberd_s2s_out:start(To, From,
 					   {verify, self(),
 					    Key, StateData#state.streamid}),
+		    Conns = ?DICT:store({LFrom, LTo}, wait_for_verification,
+					StateData#state.connections),
 		    {next_state,
-		     wait_for_verification,
-		     StateData#state{myname = To,
-				     server = From},
+		     stream_established,
+		     StateData#state{connections = Conns},
 		     ?S2STIMEOUT};
 		_ ->
 		    send_text(StateData#state.socket, ?HOST_UNKNOWN_ERR),
@@ -152,143 +143,81 @@ wait_for_key({xmlstreamelement, El}, StateData) ->
 	    end;
 	{verify, To, From, Id, Key} ->
 	    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
-	    Key1 = ejabberd_s2s:get_key({StateData#state.myname, From}),
+	    LTo = jlib:nameprep(To),
+	    LFrom = jlib:nameprep(From),
+	    Key1 = ejabberd_s2s:get_key({LTo, LFrom}),
 	    Type = if Key == Key1 -> "valid";
 		      true -> "invalid"
 		   end,
 	    send_element(StateData#state.socket,
 			 {xmlelement,
 			  "db:verify",
-			  [{"from", StateData#state.myname},
+			  [{"from", To},
 			   {"to", From},
 			   {"id", Id},
 			   {"type", Type}],
 			  []}),
 	    {next_state, wait_for_key, StateData, ?S2STIMEOUT};
 	_ ->
-	    {next_state, wait_for_key, StateData, ?S2STIMEOUT}
-    end;
-
-wait_for_key({xmlstreamend, Name}, StateData) ->
-    {stop, normal, StateData};
-
-wait_for_key({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket,
-	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
-    {stop, normal, StateData};
-
-wait_for_key(timeout, StateData) ->
-    {stop, normal, StateData};
-
-wait_for_key(closed, StateData) ->
-    {stop, normal, StateData}.
-
-wait_for_verification(valid, StateData) ->
-    send_element(StateData#state.socket,
-		 {xmlelement,
-		  "db:result",
-		  [{"from", StateData#state.myname},
-		   {"to", StateData#state.server},
-		   {"type", "valid"}],
-		  []}),
-    send_queue(StateData#state.socket, StateData#state.queue),
-    {next_state, stream_established, StateData, ?S2STIMEOUT};
-
-wait_for_verification(invalid, StateData) ->
-    send_element(StateData#state.socket,
-		 {xmlelement,
-		  "db:result",
-		  [{"from", StateData#state.myname},
-		   {"to", StateData#state.server},
-		   {"type", "invalid"}],
-		  []}),
-    {stop, normal, StateData};
-
-wait_for_verification({xmlstreamelement, El}, StateData) ->
-    case is_key_packet(El) of
-	{verify, To, From, Id, Key} ->
-	    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
-	    Key1 = ejabberd_s2s:get_key({StateData#state.myname, From}),
-	    Type = if Key == Key1 -> "valid";
-		      true -> "invalid"
-		   end,
-	    send_element(StateData#state.socket,
-			 {xmlelement,
-			  "db:verify",
-			  [{"from", StateData#state.myname},
-			   {"to", From},
-			   {"id", Id},
-			   {"type", Type}],
-			  []}),
-	    {next_state, wait_for_verification, StateData, ?S2STIMEOUT};
-	_ ->
-	    {next_state, wait_for_verification, StateData, ?S2STIMEOUT}
-    end;
-
-wait_for_verification({xmlstreamend, Name}, StateData) ->
-    {stop, normal, StateData};
-
-wait_for_verification({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket,
-	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
-    {stop, normal, StateData};
-
-wait_for_verification(timeout, StateData) ->
-    {stop, normal, StateData};
-
-wait_for_verification(closed, StateData) ->
-    {stop, normal, StateData}.
-
-stream_established({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
-    case Name of
-	"db:verify" ->
-	    case is_key_packet(El) of
-		{verify, To, From, Id, Key} ->
-		    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
-		    Key1 = ejabberd_s2s:get_key({StateData#state.myname,
-						 From}),
-		    Type = if Key == Key1 -> "valid";
-			      true -> "invalid"
-			   end,
-		    send_element(StateData#state.socket,
-				 {xmlelement,
-				  "db:verify",
-				  [{"from", StateData#state.myname},
-				   {"to", From},
-				   {"id", Id},
-				   {"type", Type}],
-				  []});
-		_ ->
-		    ok
-	    end;
-	_ ->
-	    From = xml:get_attr_s("from", Attrs),
-	    FromJID1 = jlib:string_to_jid(From),
-	    FromJID = case FromJID1 of
-			  #jid{lserver = Server} ->
-			      if Server == StateData#state.server -> FromJID1;
-				 true -> error
-			      end;
-			  _ -> error
-		      end,
-	    To = xml:get_attr_s("to", Attrs),
-	    ToJID = case To of
-			"" -> error;
-			_ -> jlib:string_to_jid(To)
-		    end,
-	    if ((Name == "iq") or
-		(Name == "message") or
-		(Name == "presence")) and
-	       (ToJID /= error) and (FromJID /= error) ->
-		    ejabberd_router:route(FromJID, ToJID, El);
-	       true ->
+	    {xmlelement, Name, Attrs, _Els} = El,
+	    From_s = xml:get_attr_s("from", Attrs),
+	    From = jlib:string_to_jid(From_s),
+	    To_s = xml:get_attr_s("to", Attrs),
+	    To = jlib:string_to_jid(To_s),
+	    if
+		(To /= error) and (From /= error) ->
+		    LFrom = From#jid.lserver,
+		    LTo = To#jid.lserver,
+		    case ?DICT:find({LFrom, LTo},
+				    StateData#state.connections) of
+			{ok, established} ->
+			    if ((Name == "iq") or
+				(Name == "message") or
+				(Name == "presence")) ->
+				    ejabberd_router:route(From, To, El);
+			       true ->
+				    error
+			    end;
+			_ ->
+			    error
+		    end;
+		true ->
 		    error
 	    end
     end,
     {next_state, stream_established, StateData, ?S2STIMEOUT};
 
-stream_established({xmlstreamend, Name}, StateData) ->
+stream_established({valid, From, To}, StateData) ->
+    send_element(StateData#state.socket,
+		 {xmlelement,
+		  "db:result",
+		  [{"from", To},
+		   {"to", From},
+		   {"type", "valid"}],
+		  []}),
+    LFrom = jlib:nameprep(From),
+    LTo = jlib:nameprep(To),
+    NSD = StateData#state{
+	    connections = ?DICT:store({LFrom, LTo}, established,
+				      StateData#state.connections)},
+    {next_state, stream_established, NSD, ?S2STIMEOUT};
+
+stream_established({invalid, From, To}, StateData) ->
+    send_element(StateData#state.socket,
+		 {xmlelement,
+		  "db:result",
+		  [{"from", To},
+		   {"to", From},
+		   {"type", "invalid"}],
+		  []}),
+    LFrom = jlib:nameprep(From),
+    LTo = jlib:nameprep(To),
+    NSD = StateData#state{
+	    connections = ?DICT:store({LFrom, LTo}, established,
+				      StateData#state.connections)},
+    {next_state, stream_established, NSD, ?S2STIMEOUT};
+
+stream_established({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 stream_established({xmlstreamerror, _}, StateData) ->
@@ -323,7 +252,7 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_event(Event, StateName, StateData) ->
+handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData, ?S2STIMEOUT}.
 
 %%----------------------------------------------------------------------
@@ -335,11 +264,11 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event(Event, From, StateName, StateData) ->
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
 
-code_change(OldVsn, StateName, StateData, Extra) ->
+code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -351,15 +280,8 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData#state.socket, Text),
     {next_state, StateName, StateData};
-handle_info({send_element, El}, StateName, StateData) ->
-    case StateName of
-	stream_established ->
-	    send_element(StateData#state.socket, El),
-	    {next_state, StateName, StateData, ?S2STIMEOUT};
-	_ ->
-	    Q = queue:in(El, StateData#state.queue),
-	    {next_state, StateName, StateData#state{queue = Q}, ?S2STIMEOUT}
-    end.
+handle_info(_, StateName, StateData) ->
+    {next_state, StateName, StateData}.
 
 
 %%----------------------------------------------------------------------
@@ -367,7 +289,7 @@ handle_info({send_element, El}, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(Reason, StateName, StateData) ->
+terminate(Reason, _StateName, StateData) ->
 %    case StateData#state.user of
 %	"" ->
 %	    ok;
@@ -393,7 +315,7 @@ receiver(Socket, C2SPid, XMLStreamPid) ->
         {ok, Text} ->
 	    xml_stream:send_text(XMLStreamPid, Text),
 	    receiver(Socket, C2SPid, XMLStreamPid);
-        {error, Reason} ->
+        {error, _Reason} ->
 	    exit(XMLStreamPid, closed),
 	    gen_fsm:send_event(C2SPid, closed),
 	    ok
@@ -405,14 +327,6 @@ send_text(Socket, Text) ->
 send_element(Socket, El) ->
     send_text(Socket, xml:element_to_string(El)).
 
-send_queue(Socket, Q) ->
-    case queue:out(Q) of
-	{{value, El}, Q1} ->
-	    send_element(Socket, El),
-	    send_queue(Socket, Q1);
-	{empty, Q1} ->
-	    ok
-    end.
 
 
 new_id() ->
