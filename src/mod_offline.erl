@@ -59,10 +59,11 @@ receive_all(Msgs) ->
 
 
 stop() ->
-    % TODO: maybe throw error that this module can't be removed?
+    exit(whereis(?PROCNAME), stop),
     ok.
 
 store_packet(From, To, Packet) ->
+    true = is_process_alive(whereis(?PROCNAME)),
     case check_event(From, To, Packet) of
 	true ->
 	    {User, Server, Resource} = To,

@@ -243,8 +243,8 @@ do_route(From, To, Packet) ->
 				true ->
 				    if
 					Subsc ->
-					    mod_offline:store_packet(
-					      From, To, Packet);
+					    catch mod_offline:store_packet(
+						    From, To, Packet);
 					true ->
 					    ok
 				    end
@@ -298,9 +298,18 @@ route_message(From, To, Packet) ->
 	{'EXIT', _} ->
 	    case ejabberd_auth:is_user_exists(User) of
 		true ->
-		    mod_offline:store_packet(From, To, Packet);
+		    case catch mod_offline:store_packet(From, To, Packet) of
+			{'EXIT', _} ->
+			    Err = jlib:make_error_reply(
+				    Packet, "503", "Service Unavailable"),
+			    ejabberd_router:route(To, From, Err);
+			_ ->
+			    ok
+		    end;
 		_ ->
-		    ?DEBUG("packet droped~n", [])
+		    Err = jlib:make_error_reply(
+			    Packet, "404", "Not Found"),
+		    ejabberd_router:route(To, From, Err)
 	    end;
 	{_, R} ->
 	    ejabberd_sm ! {route,

@@ -32,9 +32,56 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 	    UTag = xml:get_subtag(SubEl, "username"),
 	    PTag = xml:get_subtag(SubEl, "password"),
 	    RTag = xml:get_subtag(SubEl, "remove"),
+	    Server = ?MYNAME,
 	    if
 		(UTag /= false) and (RTag /= false) ->
-		    {iq, ID, error, XMLNS,
+		    User = xml:get_tag_cdata(UTag),
+		    case From of
+			{User, Server, _} ->
+			    ejabberd_auth:remove_user(User),
+			    {iq, ID, result, XMLNS, [SubEl]};
+			_ ->
+			    if
+				PTag /= false ->
+				    Password = xml:get_tag_cdata(PTag),
+				    case ejabberd_auth:remove_user(User,
+								   Password) of
+					ok ->
+					    {iq, ID, result, XMLNS, [SubEl]};
+					not_allowed ->
+					    {iq, ID, error, XMLNS,
+					     [SubEl, {xmlelement,
+						      "error",
+						      [{"code", "405"}],
+						      [{xmlcdata,
+							"Not Allowed"}]}]};
+					not_exists ->
+					    {iq, ID, error, XMLNS,
+					     [SubEl, {xmlelement,
+						      "error",
+						      [{"code", "404"}],
+						      [{xmlcdata,
+							"Not Found"}]}]};
+					_ ->
+					    {iq, ID, error, XMLNS,
+					     [SubEl,
+					      {xmlelement,
+					       "error",
+					       [{"code", "500"}],
+					       [{xmlcdata,
+						 "Internal Server Error"}]}]}
+				    end;
+				true ->
+				    {iq, ID, error, XMLNS,
+					     [SubEl,
+					      {xmlelement,
+					       "error",
+					       [{"code", "400"}],
+					       [{xmlcdata,
+						 "Bad Request"}]}]}
+			    end
+		    end;
+		{iq, ID, error, XMLNS,
 		     [SubEl, {xmlelement,
 			      "error",
 			      [{"code", "501"}],
@@ -42,7 +89,6 @@ process_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		(UTag /= false) and (PTag /= false) ->
 		    User = xml:get_tag_cdata(UTag),
 		    Password = xml:get_tag_cdata(PTag),
-		    Server = ?MYNAME,
 		    case From of
 			{User, Server, _} ->
 			    ejabberd_auth:set_password(User, Password),

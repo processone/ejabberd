@@ -1,7 +1,22 @@
+2003-02-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline.erl: Now possible to unload this module
+	* src/ejabberd_sm.erl: Added checks to work correctly when
+	mod_offline not loaded
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/mod_register.erl: Added support for users removal
+
+	* src/ejabberd_auth.erl: Added function to remove user only if
+	specified password correct
+
+	* src/mod_irc/mod_irc_connection.erl: Fixed bug with changing
+	availability status, added processing of "QUIT" message
+
 2003-02-20  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_roster.erl: Fixed bug with handling of roster set
-	stanzas that contains CDATA
+	stanzas which contains CDATA
 
 	* src/mod_irc/mod_irc_connection.erl (handle_info/3): Fixed
 	parsing of string that have "\n" line separators (not "\r\n")

@@ -190,14 +190,20 @@ handle_info({route_chan, Channel, Resource,
 	    "unsubscribe" -> StateData;
 	    "unsubscribed" -> StateData;
 	    _ ->
+		Nick = case Resource of
+			   "" ->
+			       StateData#state.nick;
+			   _ ->
+			       Resource
+		       end,
 		S1 = ?SEND(io_lib:format("NICK ~s\r\n"
 					 "JOIN #~s\r\n",
-					 [Resource, Channel])),
+					 [Nick, Channel])),
 		case dict:is_key(Channel, S1#state.channels) of
 		    true ->
-			S1#state{nick = Resource};
+			S1#state{nick = Nick};
 		    _ ->
-			S1#state{nick = Resource,
+			S1#state{nick = Nick,
 				 channels =
 				 dict:store(Channel, ?SETS:new(),
 					    S1#state.channels)}
@@ -311,6 +317,8 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 		StateData;
 	    [From, "PART", [$# | Chan] | _] ->
 		process_part(StateData, Chan, From, String);
+	    [From, "QUIT" | _] ->
+		process_quit(StateData, From, String);
 	    [From, "JOIN", Chan | _] ->
 		process_join(StateData, Chan, From, String);
 	    [From, "MODE", [$# | Chan], "+o", Nick | _] ->
@@ -604,6 +612,32 @@ process_part(StateData, Chan, From, String) ->
 	NS ->
 	    StateData#state{channels = NS}
     end.
+
+
+process_quit(StateData, From, String) ->
+    [FromUser | _] = string:tokens(From, "!"),
+    %Msg = lists:last(string:tokens(String, ":")),
+    NewChans =
+	dict:map(
+	  fun(Chan, Ps) ->
+		  case ?SETS:is_member(FromUser, Ps) of
+		      true ->
+			  ejabberd_router:route(
+			    {lists:concat([Chan, "%", StateData#state.server]),
+			     StateData#state.myname, FromUser},
+			    StateData#state.user,
+			    {xmlelement, "presence", [{"type", "unavailable"}],
+			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
+			       [{xmlelement, "item",
+				 [{"affiliation", "member"},
+				  {"role", "none"}],
+				 []}]}]}),
+			  remove_element(FromUser, Ps);
+		      _ ->
+			  Ps
+		  end
+	  end, StateData#state.channels),
+    StateData.
 
 
 process_join(StateData, Channel, From, String) ->

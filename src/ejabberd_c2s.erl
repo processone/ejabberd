@@ -514,8 +514,8 @@ presence_update(From, Packet, StateData) ->
 		    FromUnavail ->
 			% TODO: watching ourself
 			
-			mod_offline:resend_offline_messages(
-			  StateData#state.user),
+			catch mod_offline:resend_offline_messages(
+				StateData#state.user),
 			presence_broadcast_first(
 			  From, StateData#state{pres_last = Packet,
 						pres_invis = false

@@ -10,9 +10,6 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
-%%-compile(export_all).
-%%-export([Function/Arity, ...]).
-
 -behaviour(gen_server).
 
 %% External exports
@@ -24,7 +21,8 @@
 	 dirty_get_registered_users/0,
 	 get_password_s/1,
 	 is_user_exists/1,
-	 remove_user/1]).
+	 remove_user/1,
+	 remove_user/2]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -200,3 +198,24 @@ remove_user(User) ->
 		mnesia:delete({passwd, LUser})
         end,
     mnesia:transaction(F).
+
+remove_user(User, Password) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		case mnesia:read({passwd, LUser}) of
+		    [#passwd{password = Password}] ->
+			mnesia:delete({passwd, LUser}),
+			ok;
+		    [_] ->
+			not_allowed;
+		    _ ->
+			not_exists
+		end
+        end,
+    case mnesia:transaction(F) of
+	{atomic, Res} ->
+	    Res;
+	_ ->
+	    bad_request
+    end.
+
