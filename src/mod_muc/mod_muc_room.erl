@@ -1970,7 +1970,10 @@ get_config(Lang, StateData) ->
 	       [{xmlcdata,
 		 translate:translate(
 		   Lang, "You need an x:data capable client to configure room")}]}, 
-	      {xmlelement, "x", [{"xmlns", ?NS_XDATA}], Res}], StateData}.
+	      {xmlelement, "x", [{"xmlns", ?NS_XDATA},
+				 {"type", "form"}],
+	       Res}],
+     StateData}.
 
 
 

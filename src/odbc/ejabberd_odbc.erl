@@ -31,13 +31,14 @@
 %%% API
 %%%----------------------------------------------------------------------
 start() ->
-    gen_server:start({local, ejabberd_odbc}, ejabberd_odbc, [], []).
+    gen_server:start(ejabberd_odbc, [], []).
 
 start_link() ->
-    gen_server:start_link({local, ejabberd_odbc}, ejabberd_odbc, [], []).
+    gen_server:start_link(ejabberd_odbc, [], []).
 
 sql_query(Query) ->
-    gen_server:call(ejabberd_odbc, {sql_query, Query}, 60000).
+    gen_server:call(ejabberd_odbc_sup:get_random_pid(),
+		    {sql_query, Query}, 60000).
 
 escape(S) ->
     [case C of
