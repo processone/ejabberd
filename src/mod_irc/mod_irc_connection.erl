@@ -444,7 +444,8 @@ process_channel_list_user(StateData, Chan, User) ->
 
 process_chanprivmsg(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
-    Msg = lists:last(string:tokens(String, ":")),
+    {ok, Msg, _} = regexp:sub(String, ".*PRIVMSG[^:]*:", ""),
+    %Msg = lists:last(string:tokens(String, ":")),
     Msg1 = case Msg of
 	       [1, $A, $C, $T, $I, $O, $N, $  | Rest] ->
 		   "/me " ++ Rest;
