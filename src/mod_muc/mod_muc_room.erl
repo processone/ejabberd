@@ -46,7 +46,8 @@
 		 members_by_default = true,
 		 members_only = false,
 		 allow_user_invites = false,
-		 password_protected = false, % TODO
+		 password_protected = false,
+		 password = "",
 		 anonymous = true,
 		 logging = false % TODO
 		}).
@@ -79,6 +80,8 @@
 	?OLD_ERROR("403", "You have been banned from this room.")).
 -define(ERR_MUC_NOT_MEMBER,
 	?OLD_ERROR("407", "Membership required to enter this room.")).
+-define(ERR_MUC_BAD_PASSWORD,
+	?OLD_ERROR("401", "Bad password.")).
 
 
 -define(DBGFSM, true).
@@ -365,66 +368,13 @@ normal_state({route, From, Nick,
 				NewState
 			end;
 		    _ ->
-			case is_nick_exists(Nick, StateData) or
-			    not mod_muc:can_use_nick(From, Nick) of
-			    true ->
-				Err = jlib:make_error_reply(
-					Packet, ?ERR_MUC_NICK_CONFLICT),
-				ejabberd_router:route(
-				  {StateData#state.room,
-				   StateData#state.host,
-				   Nick}, % TODO: s/Nick/""/
-				  From, Err),
-				StateData;
-			    _ ->
-				Affiliation =
-				    get_affiliation(From, StateData),
-				Role =
-				    get_default_role(Affiliation, StateData),
-				case Role of
-				    none ->
-					Err = jlib:make_error_reply(
-						Packet,
-						case Affiliation of
-						    outcast ->
-							?ERR_MUC_BANNED;
-						    _ ->
-							?ERR_MUC_NOT_MEMBER
-						end),
-					ejabberd_router:route(
-					  {StateData#state.room,
-					   StateData#state.host,
-					   Nick}, % TODO: s/Nick/""/
-					  From, Err),
-					StateData;
-				    _ ->
-					NewState =
-					    add_user_presence(
-					      From, Packet,
-					      add_online_user(
-						From, Nick, Role,
-						StateData)),
-					send_new_presence(From, NewState),
-					send_existing_presences(
-					  From, NewState),
-					case send_history(From, NewState) of
-					    true ->
-						ok;
-					    _ ->
-						send_subject(From, StateData)
-					end,
-					send_join_messages_end(
-					  From, StateData),
-					NewState
-				end
-			end
+			add_new_user(From, Nick, Packet, StateData)
 		end;
 	    _ ->
 		StateData
 	end,
     %io:format("STATE1: ~p~n", [?DICT:to_list(StateData#state.users)]),
     %io:format("STATE2: ~p~n", [?DICT:to_list(StateData1#state.users)]),
-
     case (not (StateData1#state.config)#config.persistent) andalso
 	(?DICT:to_list(StateData1#state.users) == []) of
 	true ->
@@ -835,6 +785,90 @@ is_nick_change(JID, Nick, StateData) ->
 		?DICT:find(LJID, StateData#state.users),
 	    Nick /= OldNick
     end.
+
+add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
+    case is_nick_exists(Nick, StateData) or
+	not mod_muc:can_use_nick(From, Nick) of
+	true ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_MUC_NICK_CONFLICT),
+	    ejabberd_router:route(
+	      {StateData#state.room,
+	       StateData#state.host,
+	       Nick}, % TODO: s/Nick/""/
+	      From, Err),
+	    StateData;
+	_ ->
+	    Affiliation = get_affiliation(From, StateData),
+	    Role = get_default_role(Affiliation, StateData),
+	    case Role of
+		none ->
+		    Err = jlib:make_error_reply(
+			    Packet,
+			    case Affiliation of
+				outcast -> ?ERR_MUC_BANNED;
+				_ -> ?ERR_MUC_NOT_MEMBER
+			    end),
+		    ejabberd_router:route( % TODO: s/Nick/""/
+		      {StateData#state.room, StateData#state.host, Nick},
+		      From, Err),
+		    StateData;
+		_ ->
+		    case check_password(Affiliation, Els, StateData) of
+			true ->
+			    NewState =
+				add_user_presence(
+				  From, Packet,
+				  add_online_user(From, Nick, Role, StateData)),
+			    send_new_presence(From, NewState),
+			    send_existing_presences(From, NewState),
+			    case send_history(From, NewState) of
+				true ->
+				    ok;
+				_ ->
+				    send_subject(From, StateData)
+			    end,
+			    send_join_messages_end(From, StateData),
+			    NewState;
+			_ ->
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERR_MUC_BAD_PASSWORD),
+			    ejabberd_router:route( % TODO: s/Nick/""/
+			      {StateData#state.room, StateData#state.host, Nick},
+			      From, Err),
+			    StateData
+		    end
+	    end
+    end.
+
+check_password(owner, _Els, _StateData) ->
+    true;
+check_password(_Affiliation, Els, StateData) ->
+    case (StateData#state.config)#config.password_protected of
+	false ->
+	    true;
+	true ->
+	    Pass = extract_password(Els),
+	    case (StateData#state.config)#config.password of
+		Pass ->
+		    true;
+		_ ->
+		    false
+	    end
+    end.
+
+extract_password([]) ->
+    "";
+extract_password([{xmlelement, Name, Attrs, SubEls} = El | Els]) ->
+    case xml:get_attr_s("xmlns", Attrs) of
+	?NS_MUC ->
+	    xml:get_path_s(El, [{elem, "password"}, cdata]);
+	_ ->
+	    extract_password(Els)
+    end;
+extract_password([_ | Els]) ->
+    extract_password(Els).
+
+
 
 send_update_presence(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -1600,6 +1634,9 @@ process_iq_owner(From, get, SubEl, StateData) ->
 -define(STRINGXFIELD(Label, Var, Val),
 	?XFIELD("text-single", Label, Var, Val)).
 
+-define(PRIVATEXFIELD(Label, Var, Val),
+	?XFIELD("text-private", Label, Var, Val)).
+
 
 get_config(Lang, StateData) ->
     Config = StateData#state.config,
@@ -1640,6 +1677,12 @@ get_config(Lang, StateData) ->
 	 ?BOOLXFIELD("Make room password protected?",
 		     "password_protected",
 		     Config#config.password_protected),
+	 ?PRIVATEXFIELD("Password",
+			"password",
+			case Config#config.password_protected of
+			    true -> Config#config.password;
+			    false -> ""
+			end),
 	 ?BOOLXFIELD("Make room anonymous?",
 		     "anonymous",
 		     Config#config.anonymous),
@@ -1703,6 +1746,8 @@ set_xoption([{"allow_user_invites", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_user_invites, Val);
 set_xoption([{"password_protected", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(password_protected, Val);
+set_xoption([{"password", [Val]} | Opts], Config) ->
+    ?SET_STRING_XOPT(password, Val);
 set_xoption([{"anonymous", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(anonymous, Val);
 set_xoption([{"logging", [Val]} | Opts], Config) ->
@@ -1745,6 +1790,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      ?CASE_CONFIG_OPT(members_only);
 	      ?CASE_CONFIG_OPT(allow_user_invites);
 	      ?CASE_CONFIG_OPT(password_protected);
+	      ?CASE_CONFIG_OPT(password);
 	      ?CASE_CONFIG_OPT(anonymous);
 	      ?CASE_CONFIG_OPT(logging);
 	      affiliations ->
@@ -1774,6 +1820,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(members_only),
      ?MAKE_CONFIG_OPT(allow_user_invites),
      ?MAKE_CONFIG_OPT(password_protected),
+     ?MAKE_CONFIG_OPT(password),
      ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging),
      {affiliations, ?DICT:to_list(StateData#state.affiliations)},

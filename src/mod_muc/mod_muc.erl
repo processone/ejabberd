@@ -75,7 +75,7 @@ loop(Host) ->
 
 
 do_route(Host, From, To, Packet) ->
-    {Room, _, Nick} = To,
+    {Room, _, Nick} = jlib:jid_tolower(To),
     {xmlelement, Name, Attrs, Els} = Packet,
     case Room of
 	"" ->
