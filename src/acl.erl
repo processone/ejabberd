@@ -15,14 +15,15 @@
 -include("ejabberd.hrl").
 
 start() ->
-    ets:new(acls, [bag, named_table, public]).
+    ets:new(acls, [bag, named_table, public]),
+    ok.
 
 
 add(ACLName, ACLData) ->
     ets:insert(acls, {ACLName, ACLData}).
 
 match_rule(Rule, JID) ->
-    case ejabberd_config:get_option(Rule) of
+    case ejabberd_config:get_global_option({access, Rule}) of
 	undefined ->
 	    deny;
 	ACLs ->

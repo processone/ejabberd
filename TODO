@@ -3,6 +3,7 @@ admin interface
 	node management
 	backup management
 S2S timeouts
+rewrite S2S key validation
 iq:browse(?)
 SVR DNS records
 karma

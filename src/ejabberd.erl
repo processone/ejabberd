@@ -45,6 +45,11 @@ loop(Port) ->
     end.
 
 db_init() ->
-    mnesia:create_schema([node()]),
+    case mnesia:system_info(extra_db_nodes) of
+	[] ->
+	    mnesia:create_schema([node()]);
+	_ ->
+	    ok
+    end,
     mnesia:start(),
-    mnesia:wait_for_tables(mnesia:system_info(tables), infinity).
+    mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).

@@ -20,7 +20,7 @@
 -include("ejabberd.hrl").
 
 -record(s2s, {fromto, node, key}).
--record(mys2s, {fromto, pid}).
+-record(local_s2s, {fromto, pid}).
 
 
 start() ->
@@ -31,10 +31,11 @@ init() ->
     mnesia:create_table(s2s,[{ram_copies, [node()]},
 			     {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_index(session, node),
-    mnesia:create_table(mys2s,
+    mnesia:create_table(local_s2s,
 			[{ram_copies, [node()]},
 			 {local_content, true},
-			 {attributes, record_info(fields, mys2s)}]),
+			 {attributes, record_info(fields, local_s2s)}]),
+    mnesia:add_table_copy(local_s2s, node(), ram_copies),
     mnesia:subscribe(system),
     loop().
 
@@ -70,7 +71,7 @@ loop() ->
 
 remove_connection(FromTo) ->
     F = fun() ->
-		mnesia:delete({mys2s, FromTo}),
+		mnesia:delete({local_s2s, FromTo}),
 		mnesia:delete({s2s, FromTo})
 	end,
     mnesia:transaction(F).
@@ -133,8 +134,8 @@ try_register(FromTo) ->
 			mnesia:write(#s2s{fromto = FromTo,
 					  node = node(),
 					  key = Key}),
-			mnesia:write(#mys2s{fromto = FromTo,
-					    pid = self()}),
+			mnesia:write(#local_s2s{fromto = FromTo,
+						pid = self()}),
 			{key, Key};
 		    _ ->
 			false
@@ -159,7 +160,7 @@ do_route(From, To, Packet) ->
     FromTo = {MyServer, Server},
     Key = randoms:get_string(),
     F = fun() ->
-		case mnesia:read({mys2s, FromTo}) of
+		case mnesia:read({local_s2s, FromTo}) of
 		    [] ->
 			case mnesia:read({s2s, FromTo}) of
 			    [Er] ->
@@ -172,7 +173,7 @@ do_route(From, To, Packet) ->
 				new
 			end;
 		    [El] ->
-			{local, El#mys2s.pid}
+			{local, El#local_s2s.pid}
 		end
         end,
     case mnesia:transaction(F) of
@@ -192,8 +193,10 @@ do_route(From, To, Packet) ->
 	{atomic, new} ->
 	    ?DEBUG("starting new s2s connection~n", []),
 	    Pid = ejabberd_s2s_out:start(MyServer, Server, {new, Key}),
-	    mnesia:transaction(fun() -> mnesia:write(#mys2s{fromto = FromTo,
-							    pid = Pid}) end),
+	    mnesia:transaction(fun() ->
+				       mnesia:write(#local_s2s{fromto = FromTo,
+							       pid = Pid})
+			       end),
 	    {xmlelement, Name, Attrs, Els} = Packet,
 	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						  jlib:jid_to_string(To),

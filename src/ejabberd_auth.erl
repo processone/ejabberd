@@ -22,6 +22,7 @@
 	 check_password/4,
 	 try_register/2,
 	 dirty_get_registered_users/0,
+	 get_password_s/1,
 	 is_user_exists/1]).
 
 %% gen_server callbacks
@@ -162,6 +163,15 @@ try_register(User, Password) ->
 
 dirty_get_registered_users() ->
     mnesia:dirty_all_keys(passwd).
+
+get_password_s(User) ->
+    LUser = jlib:tolower(User),
+    case catch mnesia:dirty_read(passwd, LUser) of
+	[#passwd{password = Password}] ->
+	    Password;
+	_ ->
+	    []
+    end.
 
 is_user_exists(User) ->
     LUser = jlib:tolower(User),

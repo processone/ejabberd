@@ -17,7 +17,7 @@ start() ->
 
 
 init(_) ->
-    case ejabberd_config:get_option(listen) of
+    case ejabberd_config:get_local_option(listen) of
 	undefined ->
 	    ignore;
 	Ls ->

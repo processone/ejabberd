@@ -24,7 +24,7 @@
 
 
 %-define(MYNAME,"e.localhost").
--define(MYNAME, ejabberd_config:get_option(host)).
+-define(MYNAME, ejabberd_config:get_global_option(host)).
 
 -define(MSGS_DIR, "msgs").
 -define(CONFIG_PATH, "ejabberd.cfg").

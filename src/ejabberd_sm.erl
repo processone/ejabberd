@@ -22,7 +22,7 @@
 -include("ejabberd.hrl").
 
 -record(session, {ur, user, node}).
--record(mysession, {ur, pid}).
+-record(local_session, {ur, pid}).
 -record(presence, {ur, user, priority}).
 
 start() ->
@@ -34,10 +34,11 @@ init() ->
 				  {attributes, record_info(fields, session)}]),
     mnesia:add_table_index(session, user),
     mnesia:add_table_index(session, node),
-    mnesia:create_table(mysession,
+    mnesia:create_table(local_session,
 			[{ram_copies, [node()]},
 			 {local_content, true},
-			 {attributes, record_info(fields, mysession)}]),
+			 {attributes, record_info(fields, local_session)}]),
+    mnesia:add_table_copy(local_session, node(), ram_copies),
     mnesia:create_table(presence,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, presence)}]),
@@ -111,15 +112,15 @@ replace_my_connection(User, Resource) ->
     LUser = jlib:tolower(User),
     F = fun() ->
 		UR = {LUser, Resource},
-		Es = mnesia:read({mysession, UR}),
-		mnesia:delete({mysession, UR}),
+		Es = mnesia:read({local_session, UR}),
+		mnesia:delete({local_session, UR}),
 		Es
         end,
     case mnesia:transaction(F) of
 	{atomic, Rs} ->
 	    lists:foreach(
 	      fun(R) ->
-		      R#mysession.pid ! replaced
+		      R#local_session.pid ! replaced
 	      end, Rs);
 	_ ->
 	    false
@@ -129,7 +130,7 @@ remove_connection(User, Resource) ->
     LUser = jlib:tolower(User),
     F = fun() ->
 		UR = {LUser, Resource},
-		mnesia:delete({mysession, UR}),
+		mnesia:delete({local_session, UR}),
 		mnesia:delete({session, UR})
         end,
     mnesia:transaction(F).
@@ -138,15 +139,15 @@ replace_and_register_my_connection(User, Resource, Pid) ->
     LUser = jlib:tolower(User),
     F = fun() ->
 		UR = {LUser, Resource},
-		Es = mnesia:read({mysession, UR}),
-		mnesia:write(#mysession{ur = UR, pid = Pid}),
+		Es = mnesia:read({local_session, UR}),
+		mnesia:write(#local_session{ur = UR, pid = Pid}),
 		Es
         end,
     case mnesia:transaction(F) of
 	{atomic, Rs} ->
 	    lists:foreach(
 	      fun(R) ->
-		      R#mysession.pid ! replaced
+		      R#local_session.pid ! replaced
 	      end, Rs);
 	_ ->
 	    false
@@ -262,13 +263,13 @@ do_route(From, To, Packet) ->
 			    ?DEBUG("packet droped~n", [])
 		    end;
 		[Ses] ->
-		    case mnesia:dirty_read({mysession, LUR}) of
+		    case mnesia:dirty_read({local_session, LUR}) of
 			[] ->
 			    Node = Ses#session.node,
 			    ?DEBUG("sending to node ~p~n", [Node]),
 			    {ejabberd_sm, Node} ! {route, From, To, Packet};
 			[El] ->
-			    Pid = El#mysession.pid,
+			    Pid = El#local_session.pid,
 			    ?DEBUG("sending to process ~p~n", [Pid]),
 			    Pid ! {route, From, To, Packet}
 		    end
@@ -341,7 +342,7 @@ dirty_get_sessions_list() ->
     mnesia:dirty_all_keys(session).
 
 dirty_get_my_sessions_list() ->
-    mnesia:dirty_all_keys(mysession).
+    mnesia:dirty_all_keys(local_session).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

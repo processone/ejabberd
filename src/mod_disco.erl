@@ -90,6 +90,7 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 						 {"name", "ejabberd"}], []}] ++
 					      Features
 					     }]};
+		["config"] -> ?EMPTY_INFO_RESULT;
 		["online users"] -> ?EMPTY_INFO_RESULT;
 		["all users"] -> ?EMPTY_INFO_RESULT;
 		["outgoing s2s" | _] -> ?EMPTY_INFO_RESULT;
@@ -98,7 +99,7 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		["running nodes", ENode] ->
 		    {iq, ID, result, XMLNS, [{xmlelement,
 					      "query",
-					      [{"xmlns", ?NS_DISCO_INFO}],
+					      [{"xmlns", XMLNS}],
 					      [{xmlelement, "identity",
 						[{"category", "ejabberd"},
 						 {"type", "node"},
@@ -109,10 +110,14 @@ process_local_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		["running nodes", ENode, "DB"] ->
 		    {iq, ID, result, XMLNS, [{xmlelement,
 					      "query",
-					      [{"xmlns", ?NS_DISCO_INFO}],
+					      [{"xmlns", XMLNS}],
 					      [feature_to_xml({?NS_XDATA})
 					      ]
 					     }]};
+		["config", _] ->
+		    {iq, ID, result, XMLNS,
+		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		       [feature_to_xml({?NS_XDATA})]}]};
 		_ ->
 		    {iq, ID, error, XMLNS,
 		     [SubEl, {xmlelement, "error",
@@ -141,13 +146,24 @@ get_local_items([], Server, Lang) ->
 	lists:map(fun domain_to_xml/1,
 		  ejabberd_router:dirty_get_all_routes()),
     {result,
-       Domains ++
-       [?NODE("Online Users",             "online users"),
-	?NODE("All Users",                "all users"),
-	?NODE("Outgoing S2S connections", "outgoing s2s"),
-	?NODE("Running Nodes",            "running nodes"),
-	?NODE("Stopped Nodes",            "stopped nodes")
-       ]};
+     Domains ++
+     [?NODE("Configuration",            "config"),
+      ?NODE("Online Users",             "online users"),
+      ?NODE("All Users",                "all users"),
+      ?NODE("Outgoing S2S connections", "outgoing s2s"),
+      ?NODE("Running Nodes",            "running nodes"),
+      ?NODE("Stopped Nodes",            "stopped nodes")
+     ]};
+
+get_local_items(["config"], Server, Lang) ->
+    {result,
+     [?NODE("Host Name",    "config/hostname"),
+      ?NODE("ACLs",         "config/acls"),
+      ?NODE("Access Rules", "config/access")
+     ]};
+
+get_local_items(["config", _], Server, Lang) ->
+    {result, []};
 
 get_local_items(["online users"], Server, Lang) ->
     {result, get_online_users()};
@@ -310,7 +326,10 @@ process_sm_iq_info(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 					    [{xmlcdata, "Not Allowed"}]}]};
 	get ->
 	    case xml:get_tag_attr_s("node", SubEl) of
-		"" -> ?EMPTY_INFO_RESULT;
+		"" ->
+		    {iq, ID, result, XMLNS,
+		     [{xmlelement, "query", [{"xmlns", XMLNS}],
+		       [feature_to_xml({?NS_XDATA})]}]};
 		_ ->
 		    {iq, ID, error, XMLNS,
 		     [SubEl, {xmlelement, "error",

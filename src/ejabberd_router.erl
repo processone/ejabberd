@@ -41,6 +41,7 @@ init() ->
 			 {local_content, true},
 			 {attributes,
 			  record_info(fields, local_route)}]),
+    mnesia:add_table_copy(local_route, node(), ram_copies),
     loop().
 
 loop() ->
