@@ -1,0 +1,272 @@
+\documentclass[12pt]{article}
+
+%\usepackage{graphics}
+\usepackage{hevea}
+\usepackage{verbatim}
+
+
+\newcommand{\ejabberd}{\texttt{ejabberd}}
+\newcommand{\Jabber}{Jabber}
+
+\newcommand{\modregister}{\texttt{mod\_register}}
+\newcommand{\modroster}{\texttt{mod\_roster}}
+\newcommand{\modconfigure}{\texttt{mod\_configure}}
+\newcommand{\moddisco}{\texttt{mod\_disco}}
+\newcommand{\modstats}{\texttt{mod\_stats}}
+\newcommand{\modvcard}{\texttt{mod\_vcard}}
+\newcommand{\modoffline}{\texttt{mod\_offline}}
+\newcommand{\modecho}{\texttt{mod\_echo}}
+\newcommand{\modprivate}{\texttt{mod\_private}}
+\newcommand{\modtime}{\texttt{mod\_time}}
+\newcommand{\modversion}{\texttt{mod\_version}}
+
+
+
+\title{Ejabberd Installation and Operation Guide}
+\author{Alexey Shchepin \\
+  \ahrefurl{mailto:alexey@sevcom.net} \\
+  \ahrefurl{xmpp:aleksey@jabber.ru}}
+\date{January 23, 2003}
+
+\begin{document}
+\begin{titlepage}
+  \maketitle{}
+  
+
+
+  %\includegraphics{logo.png}
+  {\centering
+    \imgsrc{logo.png}{}
+  }
+\end{titlepage}
+%\newpage
+\tableofcontents{}
+
+\newpage
+\section{Introduction}
+\label{sec:intro}
+
+\ejabberd{} is a Free and Open Source distributed fault-tolerant \Jabber{}
+server.  It writen mostly in Erlang.
+
+TBD
+
+
+
+\section{Installation}
+\label{sec:installation}
+
+
+\subsection{Installation Requirements}
+\label{sec:installreq}
+
+To compile \ejabberd{}, you need following packages:
+\begin{itemize}
+\item GNU Make;
+\item GCC;
+\item libexpat 1.95 or later;
+\item Erlang/OTP R8B or later.
+\end{itemize}
+
+\subsection{Obtaining}
+\label{sec:obtaining}
+
+Currently no stable version released.
+
+Latest alpha version can be retrieved via CVS.  Do following steps:
+\begin{itemize}
+\item \texttt{export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs}
+\item \texttt{cvs login}
+\item Enter empty password
+\item \texttt{cvs -z3 co ejabberd}
+\end{itemize}
+
+
+
+
+
+
+\subsection{Compilation}
+\label{sec:compilation}
+
+
+
+
+%\subsection{Initial Configuration}
+%\label{sec:initconfig}
+
+
+\section{Configuration}
+\label{sec:configuration}
+
+\subsection{Initial Configuration}
+\label{sec:initconfig}
+
+%\verbatiminput{../src/ejabberd.cfg}
+
+Configuration file is loaded after first start of \ejabberd{}.  It consists of
+sequence of Erlang terms.  Parts of lines after \texttt{`\%'} sign are ignored.
+Each term is tuple, where first element is name of option, and other are option
+values.
+
+
+\subsubsection{Host Name}
+\label{sec:confighostname}
+
+Option \texttt{hostname} defines name of \Jabber{} domain that \ejabberd{}
+serves.  E.\,g. to use \texttt{jabber.org} domain add following line in config:
+\begin{verbatim}
+{host, "jabber.org"}.
+\end{verbatim}
+
+This option is mandatory.
+
+
+
+\subsubsection{Listened Sockets}
+\label{sec:configlistened}
+
+Option \texttt{listen} defines list of listened sockets and what services
+runned on them.  Each element of list is a tuple with following elements:
+\begin{itemize}
+\item Port number;
+\item Module that serves this port;
+\item Function in this module that starts connection (likely will be removed);
+\item Options to this module.
+\end{itemize}
+
+Currently three modules implemented:
+\begin{itemize}
+\item \texttt{ejabberd\_c2s}: serves C2S connections;
+\item \texttt{ejabberd\_s2s\_in}: serves incoming S2S connections;
+\item \texttt{ejabberd\_service}: serves connections to \Jabber{} services (i.e.
+  that used \texttt{jabber:component:accept} namespace).
+\end{itemize}
+
+For example, following configuration defines that C2S connections listened on
+port 5222, S2S on port 5269 and that service \texttt{conference.jabber.org}
+must be connected to port 8888 with password ``\texttt{secret}''.
+
+\begin{verbatim}
+{listen, [{5222, ejabberd_c2s,     start, []},
+          {5269, ejabberd_s2s_in,  start, []},
+          {8888, ejabberd_service, start, ["conference.jabber.org", "secret"]}
+         ]}.
+\end{verbatim}
+
+
+\subsubsection{Access Rules}
+\label{sec:configaccess}
+
+TBD
+
+
+\subsubsection{Modules}
+\label{sec:configmodules}
+
+Option \texttt{modules} defines list of modules that will be loaded after
+\ejabberd{} startup.  Each list element is a tuple where first element is a
+name of module and second is list of options to this module.  Refer to
+section~\ref{sec:modules} for detailed information on each module.
+
+Example:
+\begin{verbatim}
+{modules, [
+           {mod_register,  [one_queue]},
+           {mod_roster,    [one_queue]},
+           {mod_configure, [one_queue]},
+           {mod_disco,     [one_queue]},
+           {mod_stats,     [one_queue]},
+           {mod_vcard,     [one_queue]},
+           {mod_offline,   []},
+           {mod_echo,      []},
+           {mod_private,   [one_queue]},
+           {mod_time,      [one_queue]},
+           {mod_version,   [one_queue]}
+          ]}.
+\end{verbatim}
+
+
+\subsection{Online Configuration}
+\label{sec:onlineconfig}
+
+To use facility of online reconfiguration of \ejabberd{} needed to have
+\modconfigure{} loaded (see section~\ref{sec:modconfigure}).  Also highly
+recommended to load \moddisco{} (see section~\ref{sec:moddisco}), because
+\modconfigure{} highly integrates with it.  Also recommended to use
+disco-capable client.
+
+TBD
+
+\section{Distribution}
+\label{sec:distribution}
+
+
+
+
+
+\section{Built-in Modules}
+\label{sec:modules}
+
+
+
+
+\subsection{\modregister{}}
+\label{sec:modregister}
+
+
+
+\subsection{\modroster{}}
+\label{sec:modroster}
+
+
+
+\subsection{\modconfigure{}}
+\label{sec:modconfigure}
+
+
+
+\subsection{\moddisco{}}
+\label{sec:moddisco}
+
+
+
+\subsection{\modstats{}}
+\label{sec:modstats}
+
+
+
+\subsection{\modvcard{}}
+\label{sec:modvcard}
+
+
+
+\subsection{\modoffline{}}
+\label{sec:modoffline}
+
+
+
+\subsection{\modecho{}}
+\label{sec:modecho}
+
+
+
+\subsection{\modprivate{}}
+\label{sec:modprivate}
+
+
+
+\subsection{\modtime{}}
+\label{sec:modtime}
+
+
+
+\subsection{\modversion{}}
+\label{sec:modversion}
+
+
+
+
+
+
+\end{document}

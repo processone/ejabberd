@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD><TITLE>Ejabberd Installation and Operation Guide</TITLE>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<META name="GENERATOR" content="hevea 1.05">
+</HEAD>
+<BODY >
+<!--HEVEA command line is: hevea guide.tex -->
+<!--HTMLHEAD-->
+<!--ENDHTML-->
+<!--CUT DEF section 1 -->
+
+
+ 
+<H1 ALIGN=center>Ejabberd Installation and Operation Guide</H1>
+
+<H3 ALIGN=center>Alexey Shchepin<BR><A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR><A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
+
+<H3 ALIGN=center>January 23, 2003</H3> <DIV ALIGN=center><IMG SRC="logo.png">
+ </DIV>
+
+<BR>
+<BR>
+<!--TOC section Introduction-->
+
+<H2>1&nbsp;&nbsp; Introduction</H2><!--SEC END -->
+
+<A NAME="sec:intro"></A><TT>ejabberd</TT> is a Free and Open Source distributed fault-tolerant Jabber
+server. It writen mostly in Erlang.<BR>
+<BR>
+TBD<BR>
+<BR>
+<!--TOC section Installation-->
+
+<H2>2&nbsp;&nbsp; Installation</H2><!--SEC END -->
+
+<A NAME="sec:installation"></A><!--TOC subsection Installation Requirements-->
+
+<H3>2.1&nbsp;&nbsp; Installation Requirements</H3><!--SEC END -->
+
+<A NAME="sec:installreq"></A>To compile <TT>ejabberd</TT>, you need following packages:
+<UL>
+<LI>
+ GNU Make;
+
+<LI> GCC;
+
+<LI> libexpat 1.95 or later;
+
+<LI> Erlang/OTP R8B or later.
+</UL><!--TOC subsection Obtaining-->
+
+<H3>2.2&nbsp;&nbsp; Obtaining</H3><!--SEC END -->
+
+<A NAME="sec:obtaining"></A>Currently no stable version released.<BR>
+<BR>
+Latest alpha version can be retrieved via CVS. Do following steps:
+<UL>
+<LI>
+ <TT>export CVSROOT=:pserver:cvs@www.jabber.ru:/var/spool/cvs</TT>
+
+<LI> <TT>cvs login</TT>
+
+<LI> Enter empty password
+
+<LI> <TT>cvs -z3 co ejabberd</TT>
+</UL><!--TOC subsection Compilation-->
+
+<H3>2.3&nbsp;&nbsp; Compilation</H3><!--SEC END -->
+
+<A NAME="sec:compilation"></A><!--TOC section Configuration-->
+
+<H2>3&nbsp;&nbsp; Configuration</H2><!--SEC END -->
+
+<A NAME="sec:configuration"></A><!--TOC subsection Initial Configuration-->
+
+<H3>3.1&nbsp;&nbsp; Initial Configuration</H3><!--SEC END -->
+
+<A NAME="sec:initconfig"></A>Configuration file is loaded after first start of <TT>ejabberd</TT>. It consists of
+sequence of Erlang terms. Parts of lines after <TT>`%'</TT> sign are ignored.
+Each term is tuple, where first element is name of option, and other are option
+values.<BR>
+<BR>
+<!--TOC subsubsection Host Name-->
+
+<H4>3.1.1&nbsp;&nbsp; Host Name</H4><!--SEC END -->
+
+<A NAME="sec:confighostname"></A>Option <TT>hostname</TT> defines name of Jabber domain that <TT>ejabberd</TT>
+serves. E.&nbsp;g. to use <TT>jabber.org</TT> domain add following line in config:
+<PRE>
+{host, "jabber.org"}.
+</PRE>This option is mandatory.<BR>
+<BR>
+<!--TOC subsubsection Listened Sockets-->
+
+<H4>3.1.2&nbsp;&nbsp; Listened Sockets</H4><!--SEC END -->
+
+<A NAME="sec:configlistened"></A>Option <TT>listen</TT> defines list of listened sockets and what services
+runned on them. Each element of list is a tuple with following elements:
+<UL>
+<LI>
+ Port number;
+
+<LI> Module that serves this port;
+
+<LI> Function in this module that starts connection (likely will be removed);
+
+<LI> Options to this module.
+</UL>Currently three modules implemented:
+<UL>
+<LI>
+ <TT>ejabberd_c2s</TT>: serves C2S connections;
+
+<LI> <TT>ejabberd_s2s_in</TT>: serves incoming S2S connections;
+
+<LI> <TT>ejabberd_service</TT>: serves connections to Jabber services (i.e.
+ that used <TT>jabber:component:accept</TT> namespace).
+</UL>For example, following configuration defines that C2S connections listened on
+port 5222, S2S on port 5269 and that service <TT>conference.jabber.org</TT>
+must be connected to port 8888 with password ``<TT>secret</TT>''.<BR>
+<BR>
+<PRE>
+{listen, [{5222, ejabberd_c2s,     start, []},
+          {5269, ejabberd_s2s_in,  start, []},
+          {8888, ejabberd_service, start, ["conference.jabber.org", "secret"]}
+         ]}.
+</PRE><!--TOC subsubsection Access Rules-->
+
+<H4>3.1.3&nbsp;&nbsp; Access Rules</H4><!--SEC END -->
+
+<A NAME="sec:configaccess"></A>TBD<BR>
+<BR>
+<!--TOC subsubsection Modules-->
+
+<H4>3.1.4&nbsp;&nbsp; Modules</H4><!--SEC END -->
+
+<A NAME="sec:configmodules"></A>Option <TT>modules</TT> defines list of modules that will be loaded after
+<TT>ejabberd</TT> startup. Each list element is a tuple where first element is a
+name of module and second is list of options to this module. Refer to
+section&nbsp;<A HREF="#sec:modules">5</A> for detailed information on each module.<BR>
+<BR>
+Example:
+<PRE>
+{modules, [
+           {mod_register,  [one_queue]},
+           {mod_roster,    [one_queue]},
+           {mod_configure, [one_queue]},
+           {mod_disco,     [one_queue]},
+           {mod_stats,     [one_queue]},
+           {mod_vcard,     [one_queue]},
+           {mod_offline,   []},
+           {mod_echo,      []},
+           {mod_private,   [one_queue]},
+           {mod_time,      [one_queue]},
+           {mod_version,   [one_queue]}
+          ]}.
+</PRE><!--TOC subsection Online Configuration-->
+
+<H3>3.2&nbsp;&nbsp; Online Configuration</H3><!--SEC END -->
+
+<A NAME="sec:onlineconfig"></A>To use facility of online reconfiguration of <TT>ejabberd</TT> needed to have
+<TT>mod_configure</TT> loaded (section&nbsp;<A HREF="#sec:modconfigure">5.3</A>). Also highly
+recommended to load <TT>mod_disco</TT> (section&nbsp;<A HREF="#sec:moddisco">5.4</A>), because
+<TT>mod_configure</TT> highly integrates with it. Also recommended to use
+disco-capable client.<BR>
+<BR>
+<!--TOC section Distribution-->
+
+<H2>4&nbsp;&nbsp; Distribution</H2><!--SEC END -->
+
+<A NAME="sec:distribution"></A><!--TOC section Built-in Modules-->
+
+<H2>5&nbsp;&nbsp; Built-in Modules</H2><!--SEC END -->
+
+<A NAME="sec:modules"></A><!--TOC subsection <TT>mod_register</TT>-->
+
+<H3>5.1&nbsp;&nbsp; <TT>mod_register</TT></H3><!--SEC END -->
+
+<A NAME="sec:modregister"></A><!--TOC subsection <TT>mod_roster</TT>-->
+
+<H3>5.2&nbsp;&nbsp; <TT>mod_roster</TT></H3><!--SEC END -->
+
+<A NAME="sec:modroster"></A><!--TOC subsection <TT>mod_configure</TT>-->
+
+<H3>5.3&nbsp;&nbsp; <TT>mod_configure</TT></H3><!--SEC END -->
+
+<A NAME="sec:modconfigure"></A><!--TOC subsection <TT>mod_disco</TT>-->
+
+<H3>5.4&nbsp;&nbsp; <TT>mod_disco</TT></H3><!--SEC END -->
+
+<A NAME="sec:moddisco"></A><!--TOC subsection <TT>mod_stats</TT>-->
+
+<H3>5.5&nbsp;&nbsp; <TT>mod_stats</TT></H3><!--SEC END -->
+
+<A NAME="sec:modstats"></A><!--TOC subsection <TT>mod_vcard</TT>-->
+
+<H3>5.6&nbsp;&nbsp; <TT>mod_vcard</TT></H3><!--SEC END -->
+
+<A NAME="sec:modvcard"></A><!--TOC subsection <TT>mod_offline</TT>-->
+
+<H3>5.7&nbsp;&nbsp; <TT>mod_offline</TT></H3><!--SEC END -->
+
+<A NAME="sec:modoffline"></A><!--TOC subsection <TT>mod_echo</TT>-->
+
+<H3>5.8&nbsp;&nbsp; <TT>mod_echo</TT></H3><!--SEC END -->
+
+<A NAME="sec:modecho"></A><!--TOC subsection <TT>mod_private</TT>-->
+
+<H3>5.9&nbsp;&nbsp; <TT>mod_private</TT></H3><!--SEC END -->
+
+<A NAME="sec:modprivate"></A><!--TOC subsection <TT>mod_time</TT>-->
+
+<H3>5.10&nbsp;&nbsp; <TT>mod_time</TT></H3><!--SEC END -->
+
+<A NAME="sec:modtime"></A><!--TOC subsection <TT>mod_version</TT>-->
+
+<H3>5.11&nbsp;&nbsp; <TT>mod_version</TT></H3><!--SEC END -->
+
+<A NAME="sec:modversion"></A><!--HTMLFOOT-->
+<!--ENDHTML-->
+
+<!--FOOTER-->
+<HR SIZE=2>
+<BLOCKQUOTE><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</EM><A HREF="http://pauillac.inria.fr/~maranget/hevea/index.html"><EM>H</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>V</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>A</EM></A><EM>.
+</EM></BLOCKQUOTE></BODY>
+</HTML>
+
