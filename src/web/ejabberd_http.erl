@@ -22,6 +22,7 @@
 -record(state, {sockmod,
 		socket,
 		request_method,
+		request_version,
 		request_path,
 		request_auth,
 		request_content_length,
@@ -72,8 +73,9 @@ receive_headers(State) ->
     Data = SockMod:recv(Socket, 0, 300000),
     ?DEBUG("recv: ~p~n", [Data]),
     case Data of
-	{ok, {http_request, Method, Path, _Version}} ->
+	{ok, {http_request, Method, Path, Version}} ->
 	    receive_headers(State#state{request_method = Method,
+					request_version = Version,
 					request_path = Path});
 	{ok, {http_header, _, 'Authorization', _, Auth}} ->
 	    receive_headers(State#state{request_auth = parse_auth(Auth)});
@@ -95,16 +97,22 @@ receive_headers(State) ->
 		       element(2, State#state.request_path)]),
 	    Out = process_request(State),
 	    send_text(State, Out),
-	    case SockMod of
-		gen_tcp ->
-		    inet:setopts(Socket, [{packet, http}]);
-		ssl ->
-		    ssl:setopts(Socket, [{packet, http}])
-	    end,
-	    receive_headers(#state{sockmod = SockMod,
-				   socket = Socket,
-				   use_http_poll = State#state.use_http_poll,
-				   use_web_admin = State#state.use_web_admin});
+	    case State#state.request_version of
+		{1,1} ->
+		    case SockMod of
+			gen_tcp ->
+			    inet:setopts(Socket, [{packet, http}]);
+			ssl ->
+			    ssl:setopts(Socket, [{packet, http}])
+		    end,
+		    receive_headers(
+		      #state{sockmod = SockMod,
+			     socket = Socket,
+			     use_http_poll = State#state.use_http_poll,
+			     use_web_admin = State#state.use_web_admin});
+		_ ->
+		    ok
+	    end;
 	{error, _Reason} ->
 	    ok;
 	_ ->

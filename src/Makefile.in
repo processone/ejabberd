@@ -23,6 +23,8 @@ BEAMDIR = $(EJABBERDDIR)/ebin
 PRIVDIR = $(EJABBERDDIR)/priv
 SODIR = $(PRIVDIR)/lib
 MSGSDIR = $(PRIVDIR)/msgs
+LOGDIR = $(DESTDIR)/var/log/ejabberd
+ETCDIR = $(DESTDIR)/etc/ejabberd
 
 all: $(ERLSHLIBS) compile-beam all-recursive
 
@@ -57,6 +59,9 @@ install: all
 	install -m 644 *.so $(SODIR)
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
+	install -d $(ETCDIR)
+	install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
+	install -d $(LOGDIR)
 
 clean: clean-recursive clean-local
 

@@ -33,6 +33,7 @@ release : build release_clean
 	mkdir $(EREL)
 	mkdir $(EBIN_DIR)
 	copy *.beam $(EBIN_DIR)
+	@erase $(EBIN_DIR)\configure.beam
 	copy *.app $(EBIN_DIR)
 	mkdir $(PRIV_DIR)
 	mkdir $(SO_DIR)

@@ -1,9 +1,14 @@
-\documentclass[10pt]{article}
+\documentclass[a4paper,10pt]{article}
 
 \usepackage{graphics}
 \usepackage{hevea}
 \usepackage{verbatim}
 
+\usepackage[twosideshift=0pt]{geometry}
+
+\usepackage[pdftex,colorlinks,unicode,urlcolor=blue,linkcolor=blue,pdftitle=Ejabberd\
+        Installation\ and\ Operation\ Guide,pdfauthor=Alexey\
+        Shchepin,pdfsubject=ejabberd,pdfkeywords=ejabberd]{hyperref}
 
 \newcommand{\logoscale}{0.7}
 \newcommand{\imgscale}{0.58}
@@ -16,30 +21,61 @@
   \end{latexonly}
 }
 
+\newcommand{\bracehack}{\def\{{\char"7B}\def\}{\char"7D}}
+
 \newcommand{\ns}[1]{\texttt{#1}}
+\newcommand{\jid}[1]{\texttt{#1}}
+\newcommand{\option}[1]{\texttt{#1}}
+\newcommand{\poption}[1]{{\bracehack\texttt{#1}}}
+\newcommand{\node}[1]{\texttt{#1}}
+\newcommand{\term}[1]{\texttt{#1}}
+\newcommand{\shell}[1]{\texttt{#1}}
 \newcommand{\ejabberd}{\texttt{ejabberd}}
 \newcommand{\Jabber}{Jabber}
 
-\newcommand{\modregister}{\texttt{mod\_register}}
-\newcommand{\modroster}{\texttt{mod\_roster}}
-\newcommand{\modconfigure}{\texttt{mod\_configure}}
-\newcommand{\moddisco}{\texttt{mod\_disco}}
-\newcommand{\modstats}{\texttt{mod\_stats}}
-\newcommand{\modvcard}{\texttt{mod\_vcard}}
-\newcommand{\modoffline}{\texttt{mod\_offline}}
-\newcommand{\modecho}{\texttt{mod\_echo}}
-\newcommand{\modprivate}{\texttt{mod\_private}}
-\newcommand{\modtime}{\texttt{mod\_time}}
-\newcommand{\modversion}{\texttt{mod\_version}}
-c
-%\setcounter{tocdepth}{3}
+\newcommand{\module}[1]{\texttt{#1}}
+\newcommand{\modconfigure}{\module{mod\_configure}}
+\newcommand{\moddisco}{\module{mod\_disco}}
+\newcommand{\modirc}{\module{mod\_irc}}
+\newcommand{\modlast}{\module{mod\_last}}
+\newcommand{\modmuc}{\module{mod\_muc}}
+\newcommand{\modecho}{\module{mod\_echo}}
+\newcommand{\modoffline}{\module{mod\_offline}}
+\newcommand{\modprivacy}{\module{mod\_privacy}}
+\newcommand{\modprivate}{\module{mod\_private}}
+\newcommand{\modpubsub}{\module{mod\_pubsub}}
+\newcommand{\modregister}{\module{mod\_register}}
+\newcommand{\modroster}{\module{mod\_roster}}
+\newcommand{\modstats}{\module{mod\_stats}}
+\newcommand{\modtime}{\module{mod\_time}}
+\newcommand{\modvcard}{\module{mod\_vcard}}
+\newcommand{\modversion}{\module{mod\_version}}
 
+\newcommand{\titem}[1]{\item[\bracehack\texttt{#1}]}
+
+%\setcounter{tocdepth}{3}
+\begin{latexonly}
+\global\parskip=9pt plus 3pt minus 1pt
+\global\parindent=0pt
+
+\gdef\ahrefurl#1{\href{#1}{\texttt{#1}}}
+\gdef\footahref#1#2{#2\footnote{\href{#1}{\texttt{#1}}}}
+\end{latexonly}
+
+\newcommand{\tjepref}[2]{\footahref{http://www.jabber.org/jeps/jep-#1.html}{#2}}
+\newcommand{\jepref}[1]{\tjepref{#1}{JEP-#1}}
+
+\newcommand{\iqdiscitem}[1]{\titem{iqdisc} #1 IQ queries processing
+discipline (see~\ref{sec:modiqdiscoption}).}
+\newcommand{\hostitem}[1]{\titem{host} Defines hostname of service
+(see~\ref{sec:modhostoption}). If not present
+then prefix \jid{#1.} is added to main \ejabberd{} hostname.}
 
 \title{Ejabberd Installation and Operation Guide}
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{May 8, 2004}
+\date{June 24, 2004}
 
 \begin{document}
 \begin{titlepage}
@@ -58,44 +94,35 @@ c
 \label{sec:intro}
 
 \ejabberd{} is a Free and Open Source fault-tolerant distributed \Jabber{}
-server.  It is writen mostly in Erlang.
+server.  It is written mostly in Erlang.
 
-The main features of \ejabberd{} is:
+The main features of \ejabberd{} are:
 \begin{itemize}
 \item Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
   NetBSD) and Win32
-\item Distributed: You can run \ejabberd{} on a cluster of machines and all of
-  them will serve one Jabber domain.
+\item Distributed: You can run \ejabberd{} on a cluster of machines to let all of
+  them serve one Jabber domain.
 \item Fault-tolerance: You can setup an \ejabberd{} cluster so that all the
   information required for a properly working service will be stored
   permanently on more than one node.  This means that if one of the nodes
   crashes, then the others will continue working without disruption.
-  You can also add or replace more nodes ``on the fly''.
-\item Built-in \footahref{http://www.jabber.org/jeps/jep-0045.html}{Multi-User
-    Chat} service
+  You can also add or replace nodes ``on the fly''.
+\item Built-in \tjepref{0045}{Multi-User Chat} service
 \item Built-in IRC transport
-\item Built-in
-  \footahref{http://www.jabber.org/jeps/jep-0060.html}{Publish-Subscribe}
-  service
+\item Built-in \tjepref{0060}{Publish-Subscribe} service
 \item Built-in Jabber Users Directory service based on users vCards
-\item Built-in
-  \footahref{http://www.jabber.org/jeps/jep-0025.html}{HTTP Polling}
-  service
+\item Built-in \tjepref{0025}{HTTP Polling} service
 \item SSL support
 \item Support for LDAP authentification
-\item Ability to interface with external components (JIT, MSN-t, Yahoo-t, etc)
+\item Ability to interface with external components (JIT, MSN-t, Yahoo-t, etc.)
 \item Migration from jabberd14 is possible
 \item Mostly XMPP-compliant
-\item Support for
-  \footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030}
-  (Service Discovery).
-\item Support for
-  \footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039}
-  (Statistics Gathering).
+\item Support for \jepref{0030} (Service Discovery).
+\item Support for \jepref{0039} (Statistics Gathering).
 \item Support for \ns{xml:lang}
 \end{itemize}
 
-The misfeatures of \ejabberd{} is:
+The misfeatures of \ejabberd{} are:
 \begin{itemize}
 \item No support for virtual domains
 \item No support for STARTTLS
@@ -104,7 +131,6 @@ The misfeatures of \ejabberd{} is:
 
 \section{Installation}
 \label{sec:installation}
-
 
 \subsection{Installation Requirements}
 \label{sec:installreq}
@@ -126,13 +152,13 @@ To compile \ejabberd{}, you will need the following packages:
 To compile \ejabberd{} in MS Windows environment, you will need the following
 packages:
 \begin{itemize}
-\item MS Visual C++~6.0 Compiler
-\item \footahref{http://www.erlang.org/download/otp_win32_R9C-0.exe}{Erlang emulator version~5.3}
-\item \footahref{http://prdownloads.sourceforge.net/expat/expat_win32bin_1_95_7.exe?download}{Expat~1.95.7}
+\item MS Visual C++ 6.0 Compiler
+\item \footahref{http://www.erlang.org/download/otp\_win32\_R9C-0.exe}{Erlang/OTP R9C-0}
+\item \footahref{http://prdownloads.sourceforge.net/expat/expat\_win32bin\_1\_95\_7.exe?download}{Expat 1.95.7}
 \item
-\footahref{http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.9.1.tar.gz}{Iconv~1.9.1}
+\footahref{http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.9.1.tar.gz}{Iconv 1.9.1}
 (optional)
-\item \footahref{http://www.slproweb.com/download/Win32OpenSSL-v0.9.7d.exe}{Shining Light OpenSSL}
+\item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL}
 (to enable SSL connections)
 \end{itemize}
 
@@ -140,16 +166,16 @@ packages:
 \subsection{Obtaining}
 \label{sec:obtaining}
 
-Currently no stable version has been released.
+Stable \ejabberd{} release can be obtained at
+\ahrefurl{http://www.jabberstudio.org/projects/ejabberd/releases/}.
 
 The latest alpha version can be retrieved from CVS\@.
-\begin{itemize}
-\item \texttt{export CVSROOT=:pserver:anonymous@jabberstudio.org:/home/cvs}
-\item \texttt{cvs login}
-\item Press Enter when asked for a password
-\item \texttt{cvs -z3 co ejabberd}
-\end{itemize}
-
+\begin{verbatim}
+  export CVSROOT=:pserver:anonymous@jabberstudio.org:/home/cvs
+  cvs login
+  <press Enter when asked for a password>
+  cvs -z3 co ejabberd
+\end{verbatim}
 
 
 \subsection{Compilation}
@@ -158,22 +184,29 @@ The latest alpha version can be retrieved from CVS\@.
 \label{sec:compilationunix}
 
 \begin{verbatim}
-./configure
-make
+  ./configure
+  make
+  su
+  make install
 \end{verbatim}
 
-TBD
+This will install \ejabberd{} to \verb|/var/lib/ejabberd| directory,
+\verb|ejabberd.cfg| to \verb|/etc/ejabberd| directory and create
+\verb|/var/log/ejabberd| directory for log files.
 
 \subsubsection{Windows}
 \label{sec:compilationwin}
 
-\begin{enumerate}
+\begin{itemize}
 \item Install Erlang emulator (for example, into \verb|C:\Program Files\erl5.3|).
 \item Install Expat library into \verb|C:\Program Files\Expat-1.95.7|
-  directory.  Copy file \verb|C:\Program Files\Expat-1.95.7\Libs\libexpat.dll|
+  directory.
+  
+  Copy file \verb|C:\Program Files\Expat-1.95.7\Libs\libexpat.dll|
   to your Windows system directory (for example, \verb|C:\WINNT| or
   \verb|C:\WINNT\System32|)
 \item Build and install Iconv library into \verb|C:\Program Files\iconv-1.9.1| directory.
+  
   Copy file \verb|C:\Program Files\iconv-1.9.1\bin\iconv.dll| to your
   Windows system directory.
   
@@ -184,15 +217,14 @@ TBD
   variable.
 \item Being in \verb|ejabberd\src| directory run:
 \begin{verbatim}
-configure
+configure.bat
 nmake -f Makefile.win32
 \end{verbatim}
 \item Edit file \verb|ejabberd\src\ejabberd.cfg| and run
 \begin{verbatim}
 werl -s ejabberd -name ejabberd
 \end{verbatim}
-\item Enjoy!
-\end{enumerate}
+\end{itemize}
 
 %\subsection{Initial Configuration}
 %\label{sec:initconfig}
@@ -203,37 +235,47 @@ werl -s ejabberd -name ejabberd
 
 To start \ejabberd{}, use the following command:
 \begin{verbatim}
-erl -name ejabberd -s ejabberd
+  erl -pa /var/lib/ejabberd/ebin -name ejabberd -s ejabberd
 \end{verbatim}
 or
 \begin{verbatim}
-erl -sname ejabberd -s ejabberd
+  erl -pa /var/lib/ejabberd/ebin -sname ejabberd -s ejabberd
 \end{verbatim}
-In second case Erlang node will be identified using only first part of host
-name, i.\,e. other Erlang nodes not inside this domain can't contact this node.
+In the latter case Erlang node will be identified using only first part of host
+name, i.\,e. other Erlang nodes outside this domain can't contact this node.
 
-To specify path to config file, use command like this:
+Note that when using above command \ejabberd{} will search for config file
+in current directory and will use current directory for storing user database
+and logging.
+
+To specify path to config file, log files and Mnesia database directory,
+you may use the following command:
 \begin{verbatim}
-erl -sname ejabberd -s ejabberd -ejabberd config \"/etc/ejabberd/ejabberd.cfg\"
+  erl -pa /var/lib/ejabberd/ebin \
+      -sname ejabberd \
+      -s ejabberd \
+      -ejabberd config \"/etc/ejabberd/ejabberd.cfg\" \
+                log_path \"/var/log/ejabberd/ejabberd.log\" \
+      -sasl sasl_error_logger \{file,\"/var/log/ejabberd/sasl.log\"\} \
+      -mnesia dir \"/var/lib/ejabberd/spool\"
 \end{verbatim}
 
+You can find other useful options in Erlang manual page (\shell{erl -man erl}).
 
-To use more than 1024 connections, you will need to set environment variable
+To use more than 1024 connections, you should set environment variable
 \verb|ERL_MAX_PORTS|:
 \begin{verbatim}
-export ERL_MAX_PORTS=32000
+  export ERL_MAX_PORTS=32000
 \end{verbatim}
 Note that with this value \ejabberd{} will use more memory (approximately 6MB
 more).
 
-To reduce memory usage, you can set environment variable
+To reduce memory usage, you may set environment variable
 \verb|ERL_FULLSWEEP_AFTER|:
 \begin{verbatim}
-export ERL_FULLSWEEP_AFTER=0
+  export ERL_FULLSWEEP_AFTER=0
 \end{verbatim}
 But in this case \ejabberd{} can start to work slower.
-
-
 
 
 \section{Configuration}
@@ -245,10 +287,10 @@ But in this case \ejabberd{} can start to work slower.
 %\verbatiminput{../src/ejabberd.cfg}
 
 The configuration file is initially loaded the first time \ejabberd{} is
-executed, when it is parsed and stored in a database.  Subsiquently the
+executed, when it is parsed and stored in a database.  Subsequently the
 configuration is loaded from the database and any commands in the configuration
 file are appended to the entries in the database.  The configuration file
-consists of a sequence of Erlang terms. Parts of lines after \texttt{`\%'} sign
+consists of a sequence of Erlang terms. Parts of lines after \term{`\%'} sign
 are ignored.  Each term is tuple, where first element is name of option, and
 other are option values. E.\,g.\ if this file does not contain a ``host''
 definition, then old value stored in the database will be used.
@@ -257,9 +299,9 @@ definition, then old value stored in the database will be used.
 To override old values stored in the database the following lines can be added
 in config:
 \begin{verbatim}
-override_global.
-override_local.
-override_acls.
+  override_global.
+  override_local.
+  override_acls.
 \end{verbatim}
 With this lines old global or local options or ACLs will be removed before
 adding new ones.
@@ -268,14 +310,13 @@ adding new ones.
 \subsubsection{Host Name}
 \label{sec:confighostname}
 
-Option \texttt{hostname} defines name of \Jabber{} domain that \ejabberd{}
-serves.  E.\,g.\ to use \texttt{jabber.org} domain add following line in config:
+Option \option{hostname} defines name of \Jabber{} domain that \ejabberd{}
+serves.  E.\,g.\ to use \jid{jabber.org} domain add following line in config:
 \begin{verbatim}
-{host, "jabber.org"}.
+  {host, "jabber.org"}.
 \end{verbatim}
 
 %This option is mandatory.
-
 
 
 \subsubsection{Access Rules}
@@ -284,100 +325,98 @@ serves.  E.\,g.\ to use \texttt{jabber.org} domain add following line in config:
 Access control in \ejabberd{} is performed via Access Control Lists (ACL).  The
 declarations of ACL in config file have following syntax:
 \begin{verbatim}
-{acl, <aclname>, {<acltype>, ...}}.
+  {acl, <aclname>, {<acltype>, ...}}.
 \end{verbatim}
 
-\texttt{<acltype>} can be one of following:
+\term{<acltype>} can be one of following:
 \begin{description}
-\item[\texttt{all}] Matches all JIDs.  Example:
+\titem{all} Matches all JIDs.  Example:
 \begin{verbatim}
 {acl, all, all}.
 \end{verbatim}
-\item[\texttt{\{user, <username>\}}] Matches local user with name
-  \texttt{<username>}.  Example:
+\titem{\{user, <username>\}} Matches local user with name
+  \term{<username>}.  Example:
 \begin{verbatim}
 {acl, admin, {user, "aleksey"}}.
 \end{verbatim}
-\item[\texttt{\{user, <username>, <server>\}}] Matches user with JID
-  \texttt{<username>@<server>} and any resource.  Example:
+\titem{\{user, <username>, <server>\}} Matches user with JID
+  \term{<username>@<server>} and any resource.  Example:
 \begin{verbatim}
 {acl, admin, {user, "aleksey", "jabber.ru"}}.
 \end{verbatim}
-\item[\texttt{\{server, <server>\}}] Matches any JID from server
-  \texttt{<server>}.  Example:
+\titem{\{server, <server>\}} Matches any JID from server
+  \term{<server>}.  Example:
 \begin{verbatim}
 {acl, jabberorg, {server, "jabber.org"}}.
 \end{verbatim}
-\item[\texttt{\{user\_regexp, <regexp>\}}] Matches local user with name that
-  matches \texttt{<regexp>}.  Example:
+\titem{\{user\_regexp, <regexp>\}} Matches local user with name that
+  matches \term{<regexp>}.  Example:
 \begin{verbatim}
 {acl, tests, {user, "^test[0-9]*$"}}.
 \end{verbatim}
 %$
-\item[\texttt{\{user\_regexp, <regexp>, <server>\}}] Matches user with name
-  that matches \texttt{<regexp>} and from server \texttt{<server>}.  Example:
+\titem{\{user\_regexp, <regexp>, <server>\}} Matches user with name
+  that matches \term{<regexp>} and from server \term{<server>}.  Example:
 \begin{verbatim}
 {acl, tests, {user, "^test", "localhost"}}.
 \end{verbatim}
-\item[\texttt{\{server\_regexp, <regexp>\}}] Matches any JID from server that
-  matches \texttt{<regexp>}.  Example:
+\titem{\{server\_regexp, <regexp>\}} Matches any JID from server that
+  matches \term{<regexp>}.  Example:
 \begin{verbatim}
 {acl, icq, {server, "^icq\\."}}.
 \end{verbatim}
-\item[\texttt{\{node\_regexp, <user\_regexp>, <server\_regexp>\}}] Matches user
-  with name that matches \texttt{<user\_regexp>} and from server that matches
-  \texttt{<server\_regexp>}.  Example:
+\titem{\{node\_regexp, <user\_regexp>, <server\_regexp>\}} Matches user
+  with name that matches \term{<user\_regexp>} and from server that matches
+  \term{<server\_regexp>}.  Example:
 \begin{verbatim}
-{acl, aleksey, {node_regexp, "^aleksey", "^jabber.(ru|org)$"}}.
+{acl, aleksey, {node_regexp, "^aleksey$", "^jabber.(ru|org)$"}}.
 \end{verbatim}
-%$
-\item[\texttt{\{user\_glob, <glob>\}}]
-\item[\texttt{\{user\_glob, <glob>, <server>\}}]
-\item[\texttt{\{server\_glob, <glob>\}}]
-\item[\texttt{\{node\_glob, <user\_glob>, <server\_glob>\}}] This is same as
+\titem{\{user\_glob, <glob>\}}
+\titem{\{user\_glob, <glob>, <server>\}}
+\titem{\{server\_glob, <glob>\}}
+\titem{\{node\_glob, <user\_glob>, <server\_glob>\}} This is same as
   above, but uses shell glob patterns instead of regexp.  These patterns can
   have following special characters:
   \begin{description}
-  \item[\texttt{*}] matches any string including the null string.
-  \item[\texttt{?}] matches any single character.
-  \item[\texttt{[\ldots{}]}] matches any of the enclosed characters.  Character
-    ranges are specified by a pair of characters separated by a \texttt{`-'}.
-    If the first character after \texttt{`['} is a \texttt{`!'}, then any
+  \titem{*} matches any string including the null string.
+  \titem{?} matches any single character.
+  \titem{[...]} matches any of the enclosed characters.  Character
+    ranges are specified by a pair of characters separated by a \term{`-'}.
+    If the first character after \term{`['} is a \term{`!'}, then any
     character not enclosed is matched.
   \end{description}
 \end{description}
 
 The following ACLs pre-defined:
 \begin{description}
-\item[\texttt{all}] Matches all JIDs.
-\item[\texttt{none}] Matches none JIDs.
+\titem{all} Matches all JIDs.
+\titem{none} Matches none JIDs.
 \end{description}
 
 An entry allowing or denying different services would look similar to this:
 \begin{verbatim}
-{access, <accessname>, [{allow, <aclname>},
-                        {deny, <aclname>},
-                        ...
-                       ]}.
+  {access, <accessname>, [{allow, <aclname>},
+                          {deny, <aclname>},
+                          ...
+                         ]}.
 \end{verbatim}
-When a JID is checked to have access to \texttt{<accessname>}, the server
+When a JID is checked to have access to \term{<accessname>}, the server
 sequentially checks if this JID mathes one of the ACLs that are second elements
 in each tuple in list.  If it is matched, then the first element of matched
-tuple is returned else ``\texttt{deny}'' is returned.
+tuple is returned else ``\term{deny}'' is returned.
 
 Example:
 \begin{verbatim}
-{access, configure, [{allow, admin}]}.
-{access, something, [{deny, badmans},
-                     {allow, all}]}.
+  {access, configure, [{allow, admin}]}.
+  {access, something, [{deny, badmans},
+                       {allow, all}]}.
 \end{verbatim}
 
 Following access rules pre-defined:
 \begin{description}
-\item[\texttt{all}] Always return ``\texttt{allow}''
-\item[\texttt{none}] Always return ``\texttt{deny}''
+\titem{all} Always return ``\term{allow}''
+\titem{none} Always return ``\term{deny}''
 \end{description}
-
 
 
 \subsubsection{Shapers Configuration}
@@ -386,27 +425,25 @@ Following access rules pre-defined:
 With shapers is possible to bound connection traffic.  The declarations of
 shapers in config file have following syntax:
 \begin{verbatim}
-{shaper, <shapername>, <kind>}.
+  {shaper, <shapername>, <kind>}.
 \end{verbatim}
-Currently implemented only one kind of shaper: \texttt{maxrate}.  It have
+Currently implemented only one kind of shaper: \term{maxrate}.  It have
 following syntax:
 \begin{verbatim}
-{maxrate, <rate>}
+  {maxrate, <rate>}
 \end{verbatim}
-where \texttt{<rate>} means maximum allowed incomig rate in bytes/second.
-E.\,g.\ to define shaper with name ``\texttt{normal}'' and maximum allowed rate
+where \term{<rate>} means maximum allowed incomig rate in bytes/second.
+E.\,g.\ to define shaper with name ``\term{normal}'' and maximum allowed rate
 1000\,bytes/s, add following line in config:
 \begin{verbatim}
-{shaper, normal, {maxrate, 1000}}.
+  {shaper, normal, {maxrate, 1000}}.
 \end{verbatim}
-
-
 
 
 \subsubsection{Listened Sockets}
 \label{sec:configlistened}
 
-Option \texttt{listen} defines list of listened sockets and what services
+Option \option{listen} defines list of listened sockets and what services
 runned on them.  Each element of list is a tuple with following elements:
 \begin{itemize}
 \item Port number;
@@ -414,105 +451,125 @@ runned on them.  Each element of list is a tuple with following elements:
 \item Options to this module.
 \end{itemize}
 
-Currently three modules are implemented:
+Currently these modules are implemented:
 \begin{description}
-\item[\verb|ejabberd_c2s|] This module serves C2S connections.
+  \titem{ejabberd\_c2s} This module serves C2S connections.
   
   The following options are defined:
   \begin{description}
-  \item[\verb|{access, <access rule>}|] This option defines access of users
-    to this C2S port.  Default value is ``\texttt{all}''.
-  \item[\verb|{shaper, <access rule>}|] This option is like previous, but
-    use shapers instead of ``\texttt{allow}'' and ``\texttt{deny}''.  Default
-    value is ``\texttt{none}''.
-  \item[\verb|{ip, IPAddress}|] This option specifies which network interface to
-    listen on.
-  \item[\verb|inet6|] Set up the socket for IPv6.
-  \item[\verb|ssl|] This option specifies that traffic on this port will be
+    \titem{\{access, <access rule>\}} This option defines access of users
+    to this C2S port.  Default value is ``\term{all}''.
+    \titem{\{shaper, <access rule>\}} This option is like previous, but
+    use shapers instead of ``\term{allow}'' and ``\term{deny}''.  Default
+    value is ``\term{none}''.
+    \titem{\{ip, IPAddress\}} This option specifies which network interface to
+    listen on. For example \verb|{ip, {192, 168, 1, 1}}|.
+    \titem{inet6} Set up the socket for IPv6.
+    \titem{ssl} This option specifies that traffic on this port will be
     encrypted using SSL.  You should also set ``\verb|certfile|'' option.
-  \item[\verb|{certfile, Path}|] Path to a file containing the SSL certificate.
+    \titem{\{certfile, Path\}} Path to a file containing the SSL certificate.
   \end{description}
-\item[\verb|ejabberd_s2s_in|] This module serves incoming S2S connections.
-\item[\verb|ejabberd_service|] This module serves connections from \Jabber{}
-  services (i.\,e.\ that use the \texttt{jabber:component:accept} namespace).
+  \titem{ejabberd\_s2s\_in} This module serves incoming S2S connections.
+  \titem{ejabberd\_service} This module serves connections from \Jabber{}
+  services (i.\,e.\ that use the \ns{jabber:component:accept} namespace).
+  
+  The following additional options are defined for \term{ejabberd\_service}
+  (options \option{access}, \option{shaper}, \option{ip}, \option{inet6} are
+  still valid):
+  \begin{description}
+    \titem{\{host, Hostname, [HostOptions]\}} This option defines hostname of connected
+    service and allows to specify additional options, e.\,g.\
+    \poption{\{password, Secret\}}.
+    \titem{\{hosts, [Hostnames], [HostOptions]\}} The same as above, but allows to
+    specify several hostnames.
+  \end{description}
+  \titem{ejabberd\_http} This module serves incoming HTTP connections.
+
+  The following options are defined:
+  \begin{description}
+    \titem{http\_poll} This option enables \tjepref{0025}{HTTP Polling} .
+    support.  It is available then at \verb|http://server:port/http-poll/|.
+    
+    \titem{web\_admin} This option enables web-based interface for \ejabberd{}
+    administration which is available at \verb|http://server:port/admin/|,
+    login and password should be equal to username and password of one of
+    registered users who have permission defined in ``configure'' access rule.
+  \end{description}
 \end{description}
 
 For example, the following configuration defines that:
 \begin{itemize}
 \item C2S connections are listened on port 5222 and 5223 (SSL) and denied for
-  user ``\texttt{bad}''
+  user ``\term{bad}''
 \item S2S connections are listened on port 5269
+\item HTTP connections are listened on port 5280 and administration interface
+  and HTTP Polling support are enabled
 \item All users except admins have traffic limit 1000\,B/s
-\item AIM service \texttt{aim.example.org} is connected to port 5233 with
-  password ``\texttt{aimsecret}''
-\item JIT services \texttt{icq.example.org} and \texttt{sms.example.org} are
-  connected to port 5234 with password ``\texttt{jitsecret}''
-\item MSN service \texttt{msn.example.org} is connected to port 5235 with
-  password ``\texttt{msnsecret}''
-\item YAHOO service \texttt{yahoo.example.org} is connected to port 5236 with
-  password ``\texttt{yahoosecret}''
-\item ILE service \texttt{ile.example.org} is connected to port 5237 with
-  password ``\texttt{ilesecret}''
+\item AIM service \jid{aim.example.org} is connected to port 5233 with
+  password ``\term{aimsecret}''
+\item JIT services \jid{icq.example.org} and \jid{sms.example.org} are
+  connected to port 5234 with password ``\term{jitsecret}''
+\item MSN service \jid{msn.example.org} is connected to port 5235 with
+  password ``\term{msnsecret}''
+\item Yahoo! service \jid{yahoo.example.org} is connected to port 5236 with
+  password ``\term{yahoosecret}''
+\item ILE service \jid{ile.example.org} is connected to port 5237 with
+  password ``\term{ilesecret}''
 \end{itemize}
-\begin{verbatim}
-{acl, blocked, {user, "bad"}}.
-{access, c2s, [{deny, blocked},
-               {allow, all}]}.
-{shaper, normal, {maxrate, 1000}}.
-{access, c2s_shaper, [{none, admin},
-                      {normal, all}]}.
-{listen,
- [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
-  {5223, ejabberd_c2s,     [{access, c2s},
-                            ssl, {certfile, "/path/to/ssl.pem"}]},
-  {5269, ejabberd_s2s_in,  []},
-  {5233, ejabberd_service, [{host, "aim.example.org",
-                             [{password, "aimsecret"}]}]},
-  {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
-                             [{password, "jitsecret"}]}]},
-  {5235, ejabberd_service, [{host, "msn.example.org",
-                             [{password, "msnsecret"}]}]},
-  {5236, ejabberd_service, [{host, "yahoo.example.org",
-                             [{password, "yahoosecret"}]}]},
-  {5237, ejabberd_service, [{host, "gg.example.org",
-                             [{password, "ggsecret"}]}]},
-  {5238, ejabberd_service, [{host, "ile.example.org",
-                             [{password, "ilesecret"}]}]}
- ]
-}.
+  \begin{verbatim}
+  {acl, blocked, {user, "bad"}}.
+  {access, c2s, [{deny, blocked},
+                 {allow, all}]}.
+  {shaper, normal, {maxrate, 1000}}.
+  {access, c2s_shaper, [{none, admin},
+                        {normal, all}]}.
+  {listen,
+   [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
+    {5223, ejabberd_c2s,     [{access, c2s},
+                              ssl, {certfile, "/path/to/ssl.pem"}]},
+    {5269, ejabberd_s2s_in,  []},
+    {5280, ejabberd_http,    [http_poll, web_admin]},
+    {5233, ejabberd_service, [{host, "aim.example.org",
+                               [{password, "aimsecret"}]}]},
+    {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
+                               [{password, "jitsecret"}]}]},
+    {5235, ejabberd_service, [{host, "msn.example.org",
+                               [{password, "msnsecret"}]}]},
+    {5236, ejabberd_service, [{host, "yahoo.example.org",
+                               [{password, "yahoosecret"}]}]},
+    {5237, ejabberd_service, [{host, "gg.example.org",
+                               [{password, "ggsecret"}]}]},
+    {5238, ejabberd_service, [{host, "ile.example.org",
+                               [{password, "ilesecret"}]}]}
+   ]
+  }.
 \end{verbatim}
-Note, that for jabberd14- or wpjabberd-based services you need to make the
-transports log and do xdb by themselves:
+Note, that for jabberd14- or wpjabberd-based services you have to make the
+transports log and do XDB by themselves:
 \begin{verbatim}
   <!--
-     You need to add elogger and rlogger entries here when using ejabberd.
+     You have to add elogger and rlogger entries here when using ejabberd.
      In this case the transport will do the logging.
   -->
 
-  <log id='elogger'>
+  <log id='logger'>
     <host/>
     <logtype/>
     <format>%d: [%t] (%h): %s</format>
-    <file>/var/log/jabber/error/aim-t.log</file>
-  </log>
-
-  <log id='rlogger'>
-    <host/>
-    <logtype>record</logtype>
-    <format>%d %h %s</format>
-    <file>/var/log/jabber/record/aim-t.log</file>
+    <file>/var/log/jabber/service.log</file>
   </log>
 
   <!--
      Some Jabber server implementations do not provide
      XDB services (for example jabberd 2.0 and ejabberd).
-     AIM-t is loaded into handle all XDB requests.
+     xdb_file_so is loaded in to handle all XDB requests.
   -->
 
   <xdb id="xdb">
     <host/>
     <load>
-      <xdb_file>/usr/lib/jabber/xdb_file.so</xdb_file> <!-- this is a lib of wpjabber or jabberd -->
+      <!-- this is a lib of wpjabber or jabberd -->
+      <xdb_file>/usr/lib/jabber/xdb_file.so</xdb_file>
       </load>
     <xdb_file xmlns="jabber:config:xdb_file">
       <spool><jabberd:cmdline flag='s'>/var/spool/jabber</jabberd:cmdline></spool>
@@ -524,26 +581,31 @@ transports log and do xdb by themselves:
 \subsubsection{Modules}
 \label{sec:configmodules}
 
-Option \texttt{modules} defines the list of modules that will be loaded after
+Option \term{modules} defines the list of modules that will be loaded after
 \ejabberd{} startup.  Each list element is a tuple where first element is a
 name of a module and second is list of options to this module.  See
 section~\ref{sec:modules} for detailed information on each module.
 
 Example:
 \begin{verbatim}
-{modules, [
-           {mod_register,  []},
-           {mod_roster,    []},
-           {mod_configure, []},
-           {mod_disco,     []},
-           {mod_stats,     []},
-           {mod_vcard,     []},
-           {mod_offline,   []},
-           {mod_echo,      [{host, "echo.localhost"}]},
-           {mod_private,   []},
-           {mod_time,      [{iqdisc, no_queue}]},
-           {mod_version,   []}
-          ]}.
+  {modules,
+   [{mod_register,  []},
+    {mod_roster,    []},
+    {mod_privacy,   []},
+    {mod_configure, []},
+    {mod_disco,     []},
+    {mod_stats,     []},
+    {mod_vcard,     []},
+    {mod_offline,   []},
+    {mod_echo,      [{host, "echo.localhost"}]},
+    {mod_private,   []},
+    {mod_irc,       []},
+    {mod_muc,       []},
+    {mod_pubsub,    []},
+    {mod_time,      [{iqdisc, no_queue}]},
+    {mod_last,      []},
+    {mod_version,   []}
+   ]}.
 \end{verbatim}
 
 
@@ -555,14 +617,12 @@ To perform online reconfiguration of \ejabberd{} you will need to have
 recommended to load \moddisco{} as well (see section~\ref{sec:moddisco}),
 because \modconfigure{} is highly integrated with it.  Additionally it is
 recommended to use a disco- and xdata-capable client such as
-\footahref{http://www.jabber.ru/projects/tkabber/index\_en.html}{Tkabber}
+\footahref{http://tkabber.jabber.ru/}{Tkabber}
 (which was developed synchronously with \ejabberd{}, its CVS version
 supports most of \ejabberd{} features).
 
 
-
-
-On disco query \ejabberd{} returns following items:
+On disco query \ejabberd{} returns following items (see figure~\ref{fig:disco}):
 \begin{itemize}
 \item Identity of server.
 \item List of features, including defined namespaces.
@@ -576,13 +636,13 @@ On disco query \ejabberd{} returns following items:
   \label{fig:disco}
 \end{figure}
 
-\subsubsection{Node \texttt{config}: Global Configuration}
+\subsubsection{Node \node{config}: Global Configuration}
 
-Under this node the following nodes exists:
+Under this node the following nodes exist:
 
-\paragraph{Node \texttt{config/hostname}}
+\paragraph{Node \node{config/hostname}}
 
-Via \ns{jabber:x:data} queries to this node possible to change host name of
+Via \ns{ejabberd:config} queries to this node possible to change host name of
 this \ejabberd{} server. (See figure~\ref{fig:hostname}) (Currently this works
 correctly only after a restart)
 \begin{figure}[htbp]
@@ -592,10 +652,9 @@ correctly only after a restart)
   \label{fig:hostname}
 \end{figure}
 
+\paragraph{Node \node{config/acls}}
 
-\paragraph{Node \texttt{config/acls}}
-
-Via \ns{jabber:x:data} queries to this node it is possible to edit ACLs list.
+Via \ns{ejabberd:config} queries to this node it is possible to edit ACLs list.
 (See figure~\ref{fig:acls})
 \begin{figure}[htbp]
   \centering
@@ -605,27 +664,21 @@ Via \ns{jabber:x:data} queries to this node it is possible to edit ACLs list.
 \end{figure}
 
 
-\paragraph{Node \texttt{config/access}}
+\paragraph{Node \node{config/access}}
 
-Via \ns{jabber:x:data} queries to this node it is possible to edit access
+Via \ns{ejabberd:config} queries to this node it is possible to edit access
 rules.
 
 
-\paragraph{Node \texttt{config/remusers}}
+\paragraph{Node \node{config/remusers}}
 
-Via \ns{jabber:x:data} queries to this node it is possible to remove users.  If
+Via \ns{ejabberd:config} queries to this node it is possible to remove users.  If
 removed user is online, then he will be disconnected.  Also user-related data
 (e.g. his roster) is removed (but appropriate module must be loaded).
 
+\subsubsection{Node \node{online users}: List of Online Users}
 
-
-
-\subsubsection{Node \texttt{online users}: List of Online Users}
-
-
-
-
-\subsubsection{Node \texttt{all users}: List of Registered Users}
+\subsubsection{Node \node{all users}: List of Registered Users}
 
 \begin{figure}[htbp]
   \centering
@@ -635,9 +688,9 @@ removed user is online, then he will be disconnected.  Also user-related data
 \end{figure}
 
 
-\subsubsection{Node \texttt{outgoing s2s}: List of Outgoing S2S connections}
+\subsubsection{Node \node{outgoing s2s}: List of Outgoing S2S connections}
 
-\subsubsection{Node \texttt{running nodes}: List of Running \ejabberd{} Nodes}
+\subsubsection{Node \node{running nodes}: List of Running \ejabberd{} Nodes}
 
 \begin{figure}[htbp]
   \centering
@@ -646,7 +699,7 @@ removed user is online, then he will be disconnected.  Also user-related data
   \label{fig:discorunnodes}
 \end{figure}
 
-\subsubsection{Node \texttt{stopped nodes}: List of Stopped Nodes}
+\subsubsection{Node \node{stopped nodes}: List of Stopped Nodes}
 
 
 
@@ -663,17 +716,13 @@ TBD
 \subsection{How it works}
 \label{sec:howitworks}
 
-
-
 A \Jabber{} domain is served by one or more \ejabberd{} nodes.  These nodes can
 be run on different machines that are connected via a network.  They all must
 have the ability to connect to port 4369 of all another nodes, and must have
 the same magic cookie (see Erlang/OTP documentation, in other words the file
-\texttt{\~{}ejabberd/.erlang.cookie} must be the same on all nodes). This is
+\term{\~{}ejabberd/.erlang.cookie} must be the same on all nodes). This is
 needed because all nodes exchange information about connected users, S2S
 connections, registered services, etc\ldots
-
-
 
 Each \ejabberd{} node have following modules:
 \begin{itemize}
@@ -720,7 +769,6 @@ it is routed to the process that serves this connection, and if a connection
 does not exist, then it is opened and registered.
 
 
-
 \appendix{}
 
 \section{Built-in Modules}
@@ -732,22 +780,23 @@ does not exist, then it is opened and registered.
 The following options are used by many modules, so they are described in
 separate section.
 
-\subsubsection{Option \texttt{iqdisc}}
+\subsubsection{Option \option{iqdisc}}
+\label{sec:modiqdiscoption}
 
 Many modules define handlers for processing IQ queries of different namespaces
-to this server or to user (e.\,g.\ to \texttt{example.org} or to
-\texttt{user@example.org}).  This option defines processing discipline of
+to this server or to user (e.\,g.\ to \jid{example.org} or to
+\jid{user@example.org}).  This option defines processing discipline of
 these queries.  Possible values are:
 \begin{description}
-\item[\texttt{no\_queue}] All queries of namespace with this processing
+\titem{no\_queue} All queries of namespace with this processing
   discipline processed immediately.  This also means that no other packets can
   be processed until finished this.  Hence this discipline is not recommended
-  if processing of query can take relative many time.
-\item[\texttt{one\_queue}] In this case created separate queue for processing
+  if processing of query can take relatively long time.
+\titem{one\_queue} In this case created separate queue for processing
   of IQ queries of namespace with this discipline, and processing of this queue
   is done in parallel with processing of other packets. This discipline is most
   recommended.
-\item[\texttt{parallel}] In this case for all packets with this discipline
+\titem{parallel} In this case for all packets with this discipline
   spawned separate Erlang process, so all these packets processed in parallel.
   Although spawning of Erlang process have relatively low cost, this can broke
   server normal work, because Erlang emulator have limit on number of processes
@@ -756,142 +805,240 @@ these queries.  Possible values are:
 
 Example:
 \begin{verbatim}
-{modules, [
-           ...
-           {mod_time,      [{iqdisc, no_queue}]},
-           ...
-          ]}.
+  {modules,
+   [
+    ...
+    {mod_time, [{iqdisc, no_queue}]},
+    ...
+   ]}.
 \end{verbatim}
 
+\subsubsection{Option \option{host}}
+\label{sec:modhostoption}
 
-\subsubsection{Option \texttt{host}}
-
-Some modules may act as services, and wants to have different domain name.
-This option explicitly defines this name.
+This option explicitly defines hostname for the module which acts as a service.
 
 Example:
 \begin{verbatim}
-{modules, [
-           ...
-           {mod_echo,      [{host, "echo.example.org"}]},
-           ...
-          ]}.
+  {modules,
+   [
+    ...
+    {mod_echo, [{host, "echo.example.org"}]},
+    ...
+   ]}.
 \end{verbatim}
-
-
-
-\subsection{\modregister{}}
-\label{sec:modregister}
-
-This module adds support for
-\footahref{http://www.jabber.org/jeps/jep-0077.html}{JEP-0077} (In-Band
-Registration).  There is possible to restrict registration via ``register''
-access rule.  If this rule returns ``deny'' on requested user name, then
-registration is not allowed for it.
-
-Options:
-\begin{description}
-\item[\texttt{iqdisc}] \ns{jabber:iq:register} IQ queries processing
-  discipline.
-\end{description}
-
-Example:
-\begin{verbatim}
-% Deny registration for users with too short name
-{acl, shortname, {user_glob, "?"}}.
-{acl, shortname, {user_glob, "??"}}.
-% Another variant: {acl, shortname, {user_regexp, "^..?$"}}.
-
-{access, register, [{deny, shortname},
-                    {allow, all}]}.
-
-{modules, [
-           ...
-           {mod_register, []},
-           ...
-          ]}.
-\end{verbatim}
-
-
-
-
-\subsection{\modroster{}}
-\label{sec:modroster}
-
 
 
 \subsection{\modconfigure{}}
 \label{sec:modconfigure}
 
+Options:
+\begin{description}
+\iqdiscitem{\ns{ejabberd:config}}
+\end{description}
 
 
 \subsection{\moddisco{}}
 \label{sec:moddisco}
 
-This module adds support for
-\footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030} (Service
-Discovery).
+This module adds support for \jepref{0030} (Service Discovery).
 
 Options:
 \begin{description}
-\item[\texttt{iqdisc}] \ns{http://jabber.org/protocol/disco#items} and
-  \ns{http://jabber.org/protocol/disco#info} IQ queries processing discipline.
-\item[\texttt{extra\_domains}] List of domains that will be added to server
+\iqdiscitem{\ns{http://jabber.org/protocol/disco\#items} and
+  \ns{http://jabber.org/protocol/disco\#info}}
+\titem{extra\_domains} List of domains that will be added to server
   items reply
 \end{description}
 
 Example:
 \begin{verbatim}
-{modules, [
-           ...
-           {mod_disco, [{extra_domains, ["jit.example.com",
-                                         "etc.example.com"]}]},
-           ...
-          ]}.
+  {modules,
+   [
+    ...
+    {mod_disco, [{extra_domains, ["jit.example.com",
+                                  "etc.example.com"]}]},
+    ...
+   ]}.
 \end{verbatim}
-
-
-\subsection{\modstats{}}
-\label{sec:modstats}
-
-This module adds support for
-\footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039} (Statistics
-Gathering).
-
-Options:
-\begin{description}
-\item[\texttt{iqdisc}] \ns{http://jabber.org/protocol/stats} IQ queries
-  processing discipline.
-\end{description}
-
-TBD about access.
-
-\subsection{\modvcard{}}
-\label{sec:modvcard}
-
-
-
-\subsection{\modoffline{}}
-\label{sec:modoffline}
-
 
 
 \subsection{\modecho{}}
 \label{sec:modecho}
 
+This module acts as a service and simply returns to sender any \Jabber{} packet. Module may be
+useful for debugging.
+
+Options:
+\begin{description}
+\hostitem{echo}
+\end{description}
+
+
+\subsection{\modirc{}}
+\label{sec:modirc}
+
+This module implements IRC transport.
+
+Options:
+\begin{description}
+\hostitem{irc}
+\end{description}
+
+
+\subsection{\modlast{}}
+\label{sec:modlast}
+
+This module adds support for \jepref{0012} (Last Activity)
+
+Options:
+\begin{description}
+\iqdiscitem{\ns{jabber:iq:last}}
+\end{description}
+
+
+\subsection{\modmuc{}}
+\label{sec:modmuc}
+
+This module implements \jepref{0045} (Multi-User Chat) service.
+
+Options:
+\begin{description}
+\hostitem{conference}
+\titem{access} Specifies who is allowed to use MUC service (default value is \term{all}).
+\titem{access\_create} Specifies who is allowed to create new rooms at
+  MUC service (default value is \term{all}).
+\titem{access\_admin} Specifies who is allowed to administrate MUC service
+(default value is \term{none}, which means that only creator may administer her room).
+\end{description}
+
+Example:
+\begin{verbatim}
+  % Define admin ACL
+  {acl, admin, {user, "admin"}}
+
+  % Define MUC admin access rule
+  {access, muc_admin, [{allow, admin}]}
+
+  {modules,
+   [
+    ...
+    {mod_muc, [{access, all},
+               {access_create, all},
+               {access_admin, muc_admin}]},
+    ...
+   ]}.
+\end{verbatim}
+
+
+\subsection{\modoffline{}}
+\label{sec:modoffline}
+
+This module implements offline message storage.
+
+
+\subsection{\modprivacy{}}
+\label{sec:modprivacy}
+
+This module implements Privacy Rules as defined in XMPP IM
+(see \ahrefurl{http://www.jabber.org/ietf/}).
+
+Options:
+\begin{description}
+\iqdiscitem{\ns{jabber:iq:privacy}}
+\end{description}
 
 
 \subsection{\modprivate{}}
 \label{sec:modprivate}
 
-This module adds support of
-\footahref{http://www.jabber.org/jeps/jep-0049.html}{JEP-0049} (Private XML
-Storage).
+This module adds support of \jepref{0049} (Private XML Storage).
 
 Options:
 \begin{description}
-\item[\texttt{iqdisc}] \ns{jabber:iq:private} IQ queries processing discipline.
+\iqdiscitem{\ns{jabber:iq:private}}
 \end{description}
+
+
+\subsection{\modpubsub{}}
+\label{sec:modpubsub}
+
+This module implements \jepref{0060} (Publish-Subscribe Service).
+
+Options:
+\begin{description}
+\hostitem{pubsub}
+\titem{served\_hosts} Specifies which hosts are served by the service.
+If absent then only main \ejabberd{} host is served.
+\end{description}
+
+Example:
+\begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_pubsub, [{served_hosts, ["example.com",
+                                  "example.org"]}]}
+    ...
+   ]}.
+\end{verbatim}
+
+
+\subsection{\modregister{}}
+\label{sec:modregister}
+
+This module adds support for \jepref{0077} (In-Band Registration).
+It is possible to restrict registration via ``register''
+access rule.  If this rule returns ``deny'' on requested user name, then
+registration is not allowed for it.
+
+Options:
+\begin{description}
+\iqdiscitem{\ns{jabber:iq:register}}
+\end{description}
+
+Example:
+\begin{verbatim}
+  % Deny registration for users with too short name
+  {acl, shortname, {user_glob, "?"}}.
+  {acl, shortname, {user_glob, "??"}}.
+  % Another variant: {acl, shortname, {user_regexp, "^..?$"}}.
+
+  {access, register, [{deny, shortname},
+                      {allow, all}]}.
+
+  {modules,
+   [
+    ...
+    {mod_register, []},
+    ...
+   ]}.
+\end{verbatim}
+
+
+\subsection{\modroster{}}
+\label{sec:modroster}
+
+This module implements roster management.
+
+Options:
+\begin{description}
+\iqdiscitem{\ns{jabber:iq:roster}}
+\end{description}
+
+
+\subsection{\modstats{}}
+\label{sec:modstats}
+
+This module adds support for \jepref{0039} (Statistics Gathering).
+
+Options:
+\begin{description}
+\iqdiscitem{\ns{http://jabber.org/protocol/stats}}
+\end{description}
+
+TBD about access.
+
 
 \subsection{\modtime{}}
 \label{sec:modtime}
@@ -900,7 +1047,20 @@ This module answers UTC time on \ns{jabber:iq:time} queries.
 
 Options:
 \begin{description}
-\item[\texttt{iqdisc}] \ns{jabber:iq:time} IQ queries processing discipline.
+\iqdiscitem{\ns{jabber:iq:time}}
+\end{description}
+
+
+\subsection{\modvcard{}}
+\label{sec:modvcard}
+
+This module implements simple Jabber User Directory (based on user vCards)
+and answers server vCard on \ns{vcard-temp} queries.
+
+Options:
+\begin{description}
+\hostitem{vjud}
+\iqdiscitem{\ns{vcard-temp}}
 \end{description}
 
 
@@ -911,25 +1071,23 @@ This module answers \ejabberd{} version on \ns{jabber:iq:version} queries.
 
 Options:
 \begin{description}
-\item[\texttt{iqdisc}] \ns{jabber:iq:version} IQ queries processing discipline.
+\iqdiscitem{\ns{jabber:iq:version}}
 \end{description}
-
-
 
 
 \section{I18n/L10n}
 \label{sec:i18nl10n}
 
-Many modules supports \texttt{xml:lang} attribute inside IQ queries.  E.\,g.\ 
-on figure~\ref{fig:discorus} (compare it with figure~\ref{fig:disco}) showed
-reply on following query:
+All built-in modules support \texttt{xml:lang} attribute inside IQ queries.
+E.\,g.\ on figure~\ref{fig:discorus} (compare it with figure~\ref{fig:disco})
+showed reply on following query:
 \begin{verbatim}
-<iq id='5'
-    to='e.localhost'
-    type='get'>
-  <query xmlns='http://jabber.org/protocol/disco#items'
-         xml:lang='ru'/>
-</iq>
+  <iq id='5'
+      to='e.localhost'
+      type='get'
+      xml:lang='ru'>
+    <query xmlns='http://jabber.org/protocol/disco#items'/>
+  </iq>
 \end{verbatim}
 
 \begin{figure}[htbp]
