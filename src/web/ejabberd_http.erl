@@ -216,8 +216,15 @@ recv_data(State, Len, Acc) ->
 
 make_xhtml_output(Status, Headers, XHTML) ->
     Data = list_to_binary([?XHTML_DOCTYPE, xml:element_to_string(XHTML)]),
-    Headers1 = [{"Content-Type", "text/html; charset=utf-8"},
-		{"Content-Length", integer_to_list(size(Data))} | Headers],
+    Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
+		   {value, _} ->
+		       [{"Content-Length", integer_to_list(size(Data))} |
+			Headers];
+		   _ ->
+		       [{"Content-Type", "text/html; charset=utf-8"},
+			{"Content-Length", integer_to_list(size(Data))} |
+			Headers]
+	       end,
     H = lists:map(fun({Attr, Val}) ->
 			  [Attr, ": ", Val, "\r\n"]
 		  end, Headers1),
@@ -227,8 +234,15 @@ make_xhtml_output(Status, Headers, XHTML) ->
 
 make_text_output(Status, Headers, Text) ->
     Data = list_to_binary(Text),
-    Headers1 = [{"Content-Type", "text/html; charset=utf-8"},
-		{"Content-Length", integer_to_list(size(Data))} | Headers],
+    Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
+		   {value, _} ->
+		       [{"Content-Length", integer_to_list(size(Data))} |
+			Headers];
+		   _ ->
+		       [{"Content-Type", "text/html; charset=utf-8"},
+			{"Content-Length", integer_to_list(size(Data))} |
+			Headers]
+	       end,
     H = lists:map(fun({Attr, Val}) ->
 			  [Attr, ": ", Val, "\r\n"]
 		  end, Headers1),

@@ -10,6 +10,8 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
+-behaviour(gen_fsm).
+
 %% External exports
 -export([start_link/2,
 	 init/1,
@@ -45,6 +47,9 @@
 -endif.
 
 -define(HTTP_POLL_TIMEOUT, 300000).
+-define(CT, {"Content-Type", "text/xml; charset=utf-8"}).
+-define(BAD_REQUEST, [?CT, {"Set-Cookie", "ID=-3:0; expires=-1"}]).
+
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -87,23 +92,29 @@ process_request(#request{path = [],
 		  end,
 	    case http_put(ID, Key, NewKey, Packet) of
 		{error, not_exists} ->
-		    {200, [{"Set-Cookie", "ID=-3:0; expires=-1"}], ""};
+		    {200, ?BAD_REQUEST, ""};
 		{error, bad_key} ->
-		    {200, [{"Set-Cookie", "ID=-3:0; expires=-1"}], ""};
+		    {200, ?BAD_REQUEST, ""};
 		ok ->
 		    receive
 		    after 100 -> ok
 		    end,
 		    case http_get(ID) of
 			{error, not_exists} ->
-			    {200, [{"Set-Cookie", "ID=-3:0; expires=-1"}], ""};
+			    {200, [?BAD_REQUEST], ""};
 			{ok, OutPacket} ->
-			    Cookie = "ID=" ++ ID ++ "; expires=-1",
-			    {200, [{"Set-Cookie", Cookie}], OutPacket}
+			    if
+				ID == ID1 ->
+				    {200, [?CT], OutPacket};
+				true ->
+				    Cookie = "ID=" ++ ID ++ "; expires=-1",
+				    {200, [?CT, {"Set-Cookie", Cookie}],
+				     OutPacket}
+			    end
 		    end
 	    end;
 	_ ->
-	    {200, [{"Set-Cookie", "ID=-2:0; expires=-1"}], ""}
+	    {200, [?CT, {"Set-Cookie", "ID=-2:0; expires=-1"}], ""}
     end.
 
 

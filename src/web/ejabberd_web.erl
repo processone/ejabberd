@@ -82,7 +82,8 @@ process_config(#request{user = User,
 			lang = Lang} = Request) ->
     make_xhtml([?XC("h1", "ejabberd configuration"),
 		?XE("ul",
-		    [?LI([?AC("acls/", "Access Control Lists")]),
+		    [?LI([?AC("acls/", "Access Control Lists"), ?C(" "),
+			  ?AC("acls-raw/", "(raw)")]),
 		     ?LI([?AC("access/", "Access Rules")]),
 		     ?LI([?AC("users/", "Users")]),
 		     ?LI([?AC("nodes/", "Nodes")])
@@ -90,7 +91,7 @@ process_config(#request{user = User,
 	       ]);
 
 process_config(#request{user = User,
-			path = ["acls"],
+			path = ["acls-raw"],
 			q = Query,
 			lang = Lang} = Request) ->
     Res = case lists:keysearch("acls", 1, Query) of
@@ -131,16 +132,47 @@ process_config(#request{user = User,
 		     ])
 	       ]);
 
-process_config(#request{user = User,
-			path = ["acls2"],
+process_config(#request{method = Method,
+			user = User,
+			path = ["acls"],
 			q = Query,
 			lang = Lang} = Request) ->
-    ACLs = ets:tab2list(acl),
+    ?INFO_MSG("query: ~p", [Query]),
+    Res = case Method of
+	      'POST' ->
+		  case catch acl_parse_query(Query) of
+		      {'EXIT', _} ->
+			  error;
+		      NewACLs ->
+			  ?INFO_MSG("NewACLs: ~p", [NewACLs]),
+			  case acl:add_list(NewACLs, true) of
+			      ok ->
+				  ?INFO_MSG("NewACLs: ok", []),
+				  ok;
+			      _ ->
+				  error
+			  end
+		  end;
+	      _ ->
+		  nothing
+	  end,
+    ACLs = lists:keysort(2, ets:tab2list(acl)),
     make_xhtml([?XC("h1", "ejabberd ACLs configuration")] ++
+	       case Res of
+		   ok -> [?C("submited"), ?P];
+		   error -> [?C("bad format"), ?P];
+		   nothing -> []
+	       end ++
 	       [?XAE("form", [{"method", "post"}],
 		     [acls_to_xhtml(ACLs),
 		      ?BR,
-		      ?XA("input", [{"type", "submit"}])
+		      ?XA("input", [{"type", "submit"},
+				    {"name", "delete"},
+				    {"value", "Delete Selected"}]),
+		      ?C(" "),
+		      ?XA("input", [{"type", "submit"},
+				    {"name", "submit"},
+				    {"value", "Submit"}])
 		     ])
 	       ]);
 
@@ -152,30 +184,53 @@ process_config(_Request) ->
 acls_to_xhtml(ACLs) ->
     ?XAE("table", [],
 	 [?XE("tbody",
-		lists:map(
-		  fun({acl, Name, Spec}) ->
-			  ?XE("tr",
-			      [?XC("td", atom_to_list(Name))] ++
-			      acl_spec_to_xhtml(Spec)
-			     )
-		  end, ACLs)
+	      lists:map(
+		fun({acl, Name, Spec} = ACL) ->
+			SName = atom_to_list(Name),
+			ID = acl_to_id(ACL),
+			?XE("tr",
+			    [?XE("td",
+				 [?XA("input", [{"type", "checkbox"},
+						{"name", "selected"},
+						{"value", ID}])]),
+			     ?XC("td", SName)] ++
+			    acl_spec_to_xhtml(ID, Spec)
+			   )
+		end, ACLs) ++
+	      [?XE("tr",
+		   [?X("td"),
+		    ?XE("td", 
+			[?XA("input", [{"type", "text"},
+				       {"name", "namenew"},
+				       {"value", ""}])]
+		       )] ++
+		   acl_spec_to_xhtml("new", {user, ""})
+		  )]
 	     )]).
 
 -define(ACLINPUT(Text), ?XE("td", [?XA("input", [{"type", "text"},
-						 {"name", ""},
+						 {"name", "value" ++ ID},
 						 {"value", Text}])])).
 
-acl_spec_to_xhtml({user, U}) ->
-    [acl_spec_select(user), ?ACLINPUT(U)];
+acl_spec_to_text({user, U}) ->
+    {user, U};
 
-acl_spec_to_xhtml(Spec) ->
-    [acl_spec_select(raw),
-     ?ACLINPUT(lists:flatten(io_lib:format("~p.", [Spec])))
-    ].
+acl_spec_to_text({server, S}) ->
+    {server, S};
 
-acl_spec_select(Opt) ->
+acl_spec_to_text({user, U, S}) ->
+    {user, U ++ "@" ++ S};
+
+acl_spec_to_text(Spec) ->
+    {raw, term_to_string(Spec)}.
+
+acl_spec_to_xhtml(ID, Spec) ->
+    {Type, Str} = acl_spec_to_text(Spec),
+    [acl_spec_select(ID, Type), ?ACLINPUT(Str)].
+
+acl_spec_select(ID, Opt) ->
     ?XE("td",
-	[?XAE("select", [{"name", ""}],
+	[?XAE("select", [{"name", "type" ++ ID}],
 	      lists:map(
 		fun(O) ->
 			Sel = if
@@ -185,4 +240,83 @@ acl_spec_select(Opt) ->
 			?XAC("option",
 			     Sel ++ [{"value", atom_to_list(O)}],
 			     atom_to_list(O))
-		end, [all, user, server, raw]))]).
+		end, [user, server, user_server, raw]))]).
+
+
+term_to_string(T) ->
+    lists:flatten(io_lib:format("~1000000p", [T])).
+
+acl_to_id(ACL) ->
+    jlib:encode_base64(binary_to_list(term_to_binary(ACL))).
+
+
+acl_parse_query(Query) ->
+    ACLs = ets:tab2list(acl),
+    case lists:keysearch("submit", 1, Query) of
+	{value, _} ->
+	    acl_parse_submit(ACLs, Query);
+	_ ->
+	    case lists:keysearch("delete", 1, Query) of
+		{value, _} ->
+		    acl_parse_delete(ACLs, Query)
+	    end
+    end.
+
+acl_parse_submit(ACLs, Query) ->
+    NewACLs =
+	lists:map(
+	  fun({acl, Name, Spec} = ACL) ->
+		  SName = atom_to_list(Name),
+		  ID = acl_to_id(ACL),
+		  case {lists:keysearch("type" ++ ID, 1, Query),
+			lists:keysearch("value" ++ ID, 1, Query)} of
+		      {{value, {_, T}}, {value, {_, V}}} ->
+			  {Type, Str} = acl_spec_to_text(Spec),
+			  case {atom_to_list(Type), Str} of
+			      {T, V} ->
+				  ACL;
+			      _ ->
+				  NewSpec = string_to_spec(T, V),
+				  {acl, Name, NewSpec}
+			  end;
+		      _ ->
+			  ACL
+		  end
+	  end, ACLs),
+    NewACL = case {lists:keysearch("namenew", 1, Query),
+		   lists:keysearch("typenew", 1, Query),
+		   lists:keysearch("valuenew", 1, Query)} of
+		 {{value, {_, ""}}, _, _} ->
+		     [];
+		 {{value, {_, N}}, {value, {_, T}}, {value, {_, V}}} ->
+		     NewName = list_to_atom(N),
+		     NewSpec = string_to_spec(T, V),
+		     [{acl, NewName, NewSpec}];
+		 _ ->
+		     []
+	     end,
+    NewACLs ++ NewACL.
+
+string_to_spec("user", Val) ->
+    {user, Val};
+string_to_spec("server", Val) ->
+    {server, Val};
+string_to_spec("user_server", Val) ->
+    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    {user_server, U, S};
+string_to_spec("raw", Val) ->
+    {ok, Tokens, _} = erl_scan:string(Val ++ "."),
+    {ok, NewSpec} = erl_parse:parse_term(Tokens),
+    NewSpec.
+
+
+acl_parse_delete(ACLs, Query) ->
+    NewACLs =
+	lists:filter(
+	  fun({acl, Name, Spec} = ACL) ->
+		  ID = acl_to_id(ACL),
+		  not lists:member({"selected", ID}, Query)
+	  end, ACLs),
+    NewACLs.
+
+
