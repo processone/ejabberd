@@ -150,9 +150,8 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    Server = StateData#state.server,
 	    New = case StateData#state.new of
 		      false ->
-			  case
-			      ejabberd_s2s:try_register(
-				{StateData#state.myname, Server}) of
+			  case ejabberd_s2s:try_register(
+				 {StateData#state.myname, Server}) of
 			      {key, Key} ->
 				  Key;
 			      false ->
@@ -234,7 +233,12 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 				    StateData#state.server,
 				    StateData#state.myname})
 		    end,
-		    {stop, normal, StateData}
+		    if
+			StateData#state.verify == false ->
+			    {stop, normal, StateData};
+			true ->
+			    {next_state, wait_for_validation, StateData}
+		    end
 	    end;
 	_ ->
 	    {next_state, wait_for_validation, StateData}
