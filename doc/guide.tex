@@ -30,7 +30,7 @@
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{January 26, 2003}
+\date{January 29, 2003}
 
 \begin{document}
 \begin{titlepage}
@@ -127,7 +127,10 @@ TBD
 Configuration file is loaded after first start of \ejabberd{}.  It consists of
 sequence of Erlang terms.  Parts of lines after \texttt{`\%'} sign are ignored.
 Each term is tuple, where first element is name of option, and other are option
-values.
+values.  Note, that after first start all values from this file stored in
+database, and in next time they will be APPENDED to existing values.  E.\,g.\
+if this file will not contain ``host'' definition, then old value will be
+used.
 
 
 \subsubsection{Host Name}
@@ -190,21 +193,64 @@ config file they looks like this:
 \begin{verbatim}
 {acl, all, all}.
 \end{verbatim}
+
 \item[\texttt{\{user, <username>\}}] Matches local user with name
   \texttt{<username>}.  Example:
 \begin{verbatim}
 {acl, admin, {user, "aleksey"}}.
 \end{verbatim}
+
 \item[\texttt{\{user, <username>, <server>\}}] Matches user with JID
-  \texttt{<username>@<server>}.  Example:
+  \texttt{<username>@<server>} and any resource.  Example:
 \begin{verbatim}
 {acl, admin, {user, "aleksey", "jabber.ru"}}.
 \end{verbatim}
+
 \item[\texttt{\{server, <server>\}}] Matches any JID from server
   \texttt{<server>}.  Example:
 \begin{verbatim}
 {acl, jabberorg, {server, "jabber.org"}}.
 \end{verbatim}
+
+\item[\texttt{\{user\_regexp, <regexp>\}}] Matches local user with name that
+  mathes \texttt{<regexp>}.  Example:
+\begin{verbatim}
+{acl, tests, {user, "test.*"}}.
+\end{verbatim}
+
+\item[\texttt{\{user\_regexp, <regexp>, <server>\}}] Matches user with name
+  that mathes \texttt{<regexp>} and from server \texttt{<server>}.  Example:
+\begin{verbatim}
+{acl, tests, {user, "test.*", "localhost"}}.
+\end{verbatim}
+
+\item[\texttt{\{server\_regexp, <regexp>\}}] Matches any JID from server that
+  matches \texttt{<regexp>}.  Example:
+\begin{verbatim}
+{acl, icq, {server, "icq.*"}}.
+\end{verbatim}
+
+\item[\texttt{\{node\_regexp, <user\_regexp>, <server\_regexp>\}}] Matches user
+  with name that mathes \texttt{<user\_regexp>} and from server that matches
+  \texttt{<server\_regexp>}.  Example:
+\begin{verbatim}
+{acl, aleksey, {node_regexp, "aleksey.*", "jabber.(ru|org)"}}.
+\end{verbatim}
+
+\item[\texttt{\{user\_glob, <glob>\}}]
+\item[\texttt{\{user\_glob, <glob>, <server>\}}]
+\item[\texttt{\{server\_glob, <glob>\}}]
+\item[\texttt{\{node\_glob, <user\_glob>, <server\_glob>\}}] This is same as
+  above, but use shell glob patterns instead of regexp.  This patterns can have
+  following special characters:
+  \begin{description}
+  \item[\texttt{*}] matches any string including the null string.
+  \item[\texttt{?}] matches any single character.
+  \item[\texttt{[\ldots{}]}] matches any of the enclosed characters.  Character
+    ranges are specified by a pair of characters separated by a \texttt{`-'}.
+    If the first character after \texttt{`['} is a \texttt{`!'}, then any
+    character not enclosed is matched.
+  \end{description}
 \end{description}
 
 Allowing or denying of different services is like this:
@@ -260,8 +306,11 @@ Example:
 To use facility of online reconfiguration of \ejabberd{} needed to have
 \modconfigure{} loaded (see section~\ref{sec:modconfigure}).  Also highly
 recommended to load \moddisco{} (see section~\ref{sec:moddisco}), because
-\modconfigure{} highly integrates with it.  Also recommended to use
-disco- and xdata-capable client.
+\modconfigure{} highly integrates with it.  Also recommended to use disco- and
+xdata-capable client
+(\footahref{http://www.jabber.ru/projects/tkabber/index\_en.html}{Tkabber}
+developed synchronously with \ejabberd{}, its CVS version use most of
+\ejabberd{} features).
 
 TBD
 
@@ -276,9 +325,9 @@ TBD
 runned on different machines that can be connected via network.  They all must
 have access to connect to port 4369 of all another nodes, and must have same
 magic cookie (see Erlang/OTP documentation, in short file
-\texttt{\~ejabberd/.erlang.cookie} must be the same on all nodes).  This is
+\texttt{\~{}ejabberd/.erlang.cookie} must be the same on all nodes).  This is
 needed because all nodes exchange information about connected users, S2S
-connection, registered services, etc\ldots
+connections, registered services, etc\ldots
 
 Each \ejabberd{} node run following modules:
 \begin{itemize}
@@ -317,8 +366,8 @@ sended to session manager on it.
 \subsubsection{S2S Manager}
 
 This module route packets to another \Jabber{} servers.  First, it check if
-to domain of packet destination from domain of source already opened S2S
-connection.  If it opened on another node, then it routed to S2S manager on
+already exists opened S2S connection from domain of packet source to domain of
+destination.  If it opened on another node, then it routed to S2S manager on
 that node, if it opened on this node, then it routed to process that serve this
 connection, and if this connection not exists, then it opened and registered.
 

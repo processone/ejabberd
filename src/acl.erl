@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : acl.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : ACL support
 %%% Created : 18 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -10,14 +10,17 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, add/2, match_rule/2, match_acl/2]).
+-export([start/0,
+	 add/2,
+	 match_rule/2,
+	 % for debugging only
+	 match_acl/2]).
 
 -include("ejabberd.hrl").
 
 -record(acl, {aclname, aclspec}).
 
 start() ->
-    %ets:new(acls, [bag, named_table, public]),
     mnesia:create_table(acl,
 			[{disc_copies, [node()]},
 			 {type, bag},
@@ -31,7 +34,6 @@ add(ACLName, ACLSpec) ->
 		mnesia:write(#acl{aclname = ACLName, aclspec = ACLSpec})
 	end,
     mnesia:transaction(F).
-    %ets:insert(acls, {ACLName, ACLData}).
 
 match_rule(Rule, JID) ->
     case ejabberd_config:get_global_option({access, Rule}) of
@@ -58,10 +60,50 @@ match_acl(ACL, JID) ->
 			  all ->
 			      true;
 			  {user, U} ->
-			      (U == User) and (?MYNAME == Server);
+			      (U == User) andalso (?MYNAME == Server);
 			  {user, U, S} ->
-			      (U == User) and (S == Server);
+			      (U == User) andalso (S == Server);
 			  {server, S} ->
-			      S == Server
+			      S == Server;
+			  {user_regexp, UR} ->
+			      (?MYNAME == Server) andalso
+				  is_regexp_match(User, UR);
+			  {user_regexp, UR, S} ->
+			      (S == Server) andalso
+				  is_regexp_match(User, UR);
+			  {server_regexp, SR} ->
+			      is_regexp_match(Server, SR);
+			  {node_regexp, UR, SR} ->
+			      is_regexp_match(Server, SR) andalso
+				  is_regexp_match(User, UR);
+			  {user_glob, UR} ->
+			      (?MYNAME == Server) andalso
+				  is_glob_match(User, UR);
+			  {user_glob, UR, S} ->
+			      (S == Server) andalso
+				  is_glob_match(User, UR);
+			  {server_glob, SR} ->
+			      is_glob_match(Server, SR);
+			  {node_glob, UR, SR} ->
+			      is_glob_match(Server, SR) andalso
+				  is_glob_match(User, UR)
 		      end
 	      end, ets:lookup(acl, ACL)).
+
+is_regexp_match(String, RegExp) ->
+    case regexp:first_match(String, RegExp) of
+	nomatch ->
+	    false;
+	{match, _, _} ->
+	    true;
+	{error, ErrDesc} ->
+	    ?ERROR_MSG(
+	       "Wrong regexp ~p in ACL: ~p",
+	       [RegExp, lists:flatten(regexp:format_error(ErrDesc))]),
+	    false
+    end.
+
+is_glob_match(String, Glob) ->
+    is_regexp_match(String, regexp:sh_to_awk(Glob)).
+
+

@@ -17,7 +17,7 @@
 
 <H3 ALIGN=center>Alexey Shchepin<BR><A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR><A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
-<H3 ALIGN=center>January 26, 2003</H3> <DIV ALIGN=center><IMG SRC="logo.png">
+<H3 ALIGN=center>January 29, 2003</H3> <DIV ALIGN=center><IMG SRC="logo.png">
  
  </DIV><BR>
 <BR>
@@ -96,7 +96,10 @@ erl -name ejabberd -s ejabberd
 <A NAME="sec:initconfig"></A>Configuration file is loaded after first start of <TT>ejabberd</TT>. It consists of
 sequence of Erlang terms. Parts of lines after <TT>`%'</TT> sign are ignored.
 Each term is tuple, where first element is name of option, and other are option
-values.<BR>
+values. Note, that after first start all values from this file stored in
+database, and in next time they will be APPENDED to existing values. E.&nbsp;g.
+if this file will not contain ``host'' definition, then old value will be
+used.<BR>
 <BR>
 <!--TOC subsubsection Host Name-->
 
@@ -160,7 +163,7 @@ config file they looks like this:
 {acl, admin, {user, "aleksey"}}.
 </PRE>
 <DT><TT>{user, &lt;username&gt;, &lt;server&gt;}</TT><DD> Matches user with JID
- <TT>&lt;username&gt;@&lt;server&gt;</TT>. Example:
+ <TT>&lt;username&gt;@&lt;server&gt;</TT> and any resource. Example:
 <PRE>
 {acl, admin, {user, "aleksey", "jabber.ru"}}.
 </PRE>
@@ -168,7 +171,49 @@ config file they looks like this:
  <TT>&lt;server&gt;</TT>. Example:
 <PRE>
 {acl, jabberorg, {server, "jabber.org"}}.
-</PRE></DL>Allowing or denying of different services is like this:
+</PRE>
+<DT><TT>{user_regexp, &lt;regexp&gt;}</TT><DD> Matches local user with name that
+ mathes <TT>&lt;regexp&gt;</TT>. Example:
+<PRE>
+{acl, tests, {user, "test.*"}}.
+</PRE>
+<DT><TT>{user_regexp, &lt;regexp&gt;, &lt;server&gt;}</TT><DD> Matches user with name
+ that mathes <TT>&lt;regexp&gt;</TT> and from server <TT>&lt;server&gt;</TT>. Example:
+<PRE>
+{acl, tests, {user, "test.*", "localhost"}}.
+</PRE>
+<DT><TT>{server_regexp, &lt;regexp&gt;}</TT><DD> Matches any JID from server that
+ matches <TT>&lt;regexp&gt;</TT>. Example:
+<PRE>
+{acl, icq, {server, "icq.*"}}.
+</PRE>
+<DT><TT>{node_regexp, &lt;user_regexp&gt;, &lt;server_regexp&gt;}</TT><DD> Matches user
+ with name that mathes <TT>&lt;user_regexp&gt;</TT> and from server that matches
+ <TT>&lt;server_regexp&gt;</TT>. Example:
+<PRE>
+{acl, aleksey, {node_regexp, "aleksey.*", "jabber.(ru|org)"}}.
+</PRE>
+<DT><TT>{user_glob, &lt;glob&gt;}</TT><DD>
+
+<DT><TT>{user_glob, &lt;glob&gt;, &lt;server&gt;}</TT><DD>
+
+<DT><TT>{server_glob, &lt;glob&gt;}</TT><DD>
+
+<DT><TT>{node_glob, &lt;user_glob&gt;, &lt;server_glob&gt;}</TT><DD> This is same as
+ above, but use shell glob patterns instead of regexp. This patterns can have
+ following special characters:
+ <DL COMPACT=compact>
+<DT>
+ <TT>*</TT><DD> matches any string including the null string.
+ 
+<DT><TT>?</TT><DD> matches any single character.
+ 
+<DT><TT>[...]</TT><DD> matches any of the enclosed characters. Character
+ ranges are specified by a pair of characters separated by a <TT>`-'</TT>.
+ If the first character after <TT>`['</TT> is a <TT>`!'</TT>, then any
+ character not enclosed is matched.
+ </DL>
+</DL>Allowing or denying of different services is like this:
 <PRE>
 {access, &lt;accessname&gt;, [{allow, &lt;aclname&gt;},
                         {deny, &lt;aclname&gt;},
@@ -215,8 +260,11 @@ Example:
 <A NAME="sec:onlineconfig"></A>To use facility of online reconfiguration of <TT>ejabberd</TT> needed to have
 <TT>mod_configure</TT> loaded (see section&nbsp;<A HREF="#sec:modconfigure">5.4</A>). Also highly
 recommended to load <TT>mod_disco</TT> (see section&nbsp;<A HREF="#sec:moddisco">5.5</A>), because
-<TT>mod_configure</TT> highly integrates with it. Also recommended to use
-disco- and xdata-capable client.<BR>
+<TT>mod_configure</TT> highly integrates with it. Also recommended to use disco- and
+xdata-capable client
+(<A HREF="http://www.jabber.ru/projects/tkabber/index_en.html">Tkabber</A>
+developed synchronously with <TT>ejabberd</TT>, its CVS version use most of
+<TT>ejabberd</TT> features).<BR>
 <BR>
 TBD<BR>
 <BR>
@@ -232,7 +280,7 @@ TBD<BR>
 runned on different machines that can be connected via network. They all must
 have access to connect to port 4369 of all another nodes, and must have same
 magic cookie (see Erlang/OTP documentation, in short file
-<TT>ejabberd/.erlang.cookie</TT> must be the same on all nodes). This is
+<TT>~ejabberd/.erlang.cookie</TT> must be the same on all nodes). This is
 needed because all nodes exchange information about connected users, S2S
 connection, registered services, etc...<BR>
 <BR>
@@ -275,8 +323,8 @@ sended to session manager on it.<BR>
 
 <H4>4.1.4&nbsp;&nbsp; S2S Manager</H4><!--SEC END -->
 This module route packets to another Jabber servers. First, it check if
-to domain of packet destination from domain of source already opened S2S
-connection. If it opened on another node, then it routed to S2S manager on
+already exists opened S2S connection from domain of packet source to domain of
+destination. If it opened on another node, then it routed to S2S manager on
 that node, if it opened on this node, then it routed to process that serve this
 connection, and if this connection not exists, then it opened and registered.<BR>
 <BR>
