@@ -465,7 +465,7 @@ except admins have traffic limit 1000&nbsp;b/s.
                                     {ssl, [{certfile, "/path/to/ssl.pem"}]}]},
           {5269, ejabberd_s2s_in,  []},
           {8888, ejabberd_service,
-           [{host, "conference.example.org", [{password, "secret"}]}]}
+           [{hosts, ["conference.example.org"], [{password, "secret"}]}]}
          ]}.
 </PRE>
 <!--TOC subsubsection Modules-->
@@ -807,8 +807,8 @@ Example:
 <PRE>
 {modules, [
            ...
-           {mod_disco, [[{extra_domains, ["jit.example.com",
-                                          "etc.example.com"]}]]},
+           {mod_disco, [{extra_domains, ["jit.example.com",
+                                         "etc.example.com"]}]},
            ...
           ]}.
 </PRE>

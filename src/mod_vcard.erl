@@ -84,7 +84,7 @@ loop() ->
     end.
 
 
-process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+process_local_iq(_From, _To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
 	set ->
 	    {iq, ID, error, XMLNS, [SubEl, ?ERR_NOT_ALLOWED]};
@@ -128,7 +128,7 @@ process_sm_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 			  lists:map(fun(R) ->
 					    R#vcard.vcard
 				    end, Rs);
-		      {aborted, Reason} ->
+		      {aborted, _Reason} ->
 			  []
 		  end,
 	    {iq, ID, result, XMLNS, Els}
@@ -160,7 +160,22 @@ set_vcard(User, VCARD) ->
     LOrgName  = stringprep:tolower(OrgName),
     LOrgUnit  = stringprep:tolower(OrgUnit),
 
-    F = fun() ->
+    if
+	(LUser     == error) or
+	(LFN       == error) or
+	(LFamily   == error) or
+	(LGiven    == error) or
+	(LMiddle   == error) or
+	(LNickname == error) or
+	(LBDay     == error) or
+	(LCTRY     == error) or
+	(LLocality == error) or
+	(LEMail    == error) or
+	(LOrgName  == error) or
+	(LOrgUnit  == error) ->
+	    {error, badarg};
+	true ->
+	    F = fun() ->
 		mnesia:write(#vcard{user = LUser, vcard = VCARD}),
 		mnesia:write(
 		  #vcard_search{user      = User,     luser      = LUser,     
@@ -176,8 +191,9 @@ set_vcard(User, VCARD) ->
 				orgname   = OrgName,  lorgname   = LOrgName,  
 				orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
 			       })
-	end,
-    mnesia:transaction(F).
+		end,
+		mnesia:transaction(F)
+    end.
 
 -define(TLFIELD(Type, Label, Var),
 	{xmlelement, "field", [{"type", Type},
@@ -310,7 +326,7 @@ do_route(From, To, Packet) ->
 	    end
     end.
 
-find_xdata_el({xmlelement, Name, Attrs, SubEls}) ->
+find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->
@@ -454,20 +470,36 @@ set_vcard_t(R, _) ->
     LOrgName  = stringprep:tolower(OrgName),
     LOrgUnit  = stringprep:tolower(OrgUnit),
 
-    mnesia:write(
-      #vcard_search{user      = User,     luser      = LUser,     
-		    fn        = FN,       lfn        = LFN,       
-		    family    = Family,   lfamily    = LFamily,   
-		    given     = Given,    lgiven     = LGiven,    
-		    middle    = Middle,   lmiddle    = LMiddle,   
-		    nickname  = Nickname, lnickname  = LNickname, 
-		    bday      = BDay,     lbday      = LBDay,     
-		    ctry      = CTRY,     lctry      = LCTRY,     
-		    locality  = Locality, llocality  = LLocality, 
-		    email     = EMail,    lemail     = LEMail,    
-		    orgname   = OrgName,  lorgname   = LOrgName,  
-		    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
-		   }).
+    if
+	(LUser     == error) or
+	(LFN       == error) or
+	(LFamily   == error) or
+	(LGiven    == error) or
+	(LMiddle   == error) or
+	(LNickname == error) or
+	(LBDay     == error) or
+	(LCTRY     == error) or
+	(LLocality == error) or
+	(LEMail    == error) or
+	(LOrgName  == error) or
+	(LOrgUnit  == error) ->
+	    {error, badarg};
+	true ->
+	    mnesia:write(
+	      #vcard_search{user      = User,     luser      = LUser,     
+			    fn        = FN,       lfn        = LFN,       
+			    family    = Family,   lfamily    = LFamily,   
+			    given     = Given,    lgiven     = LGiven,    
+			    middle    = Middle,   lmiddle    = LMiddle,   
+			    nickname  = Nickname, lnickname  = LNickname, 
+			    bday      = BDay,     lbday      = LBDay,     
+			    ctry      = CTRY,     lctry      = LCTRY,     
+			    locality  = Locality, llocality  = LLocality, 
+			    email     = EMail,    lemail     = LEMail,    
+			    orgname   = OrgName,  lorgname   = LOrgName,  
+			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
+			   })
+    end.
 
 
 reindex_vcards() ->

@@ -568,7 +568,8 @@ set_form(["running nodes", ENode, "import", "dir"], Lang, XData) ->
 		false ->
 		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
-		    rpc:call(Node, jd2ejd, import_dir, [String]);
+		    rpc:call(Node, jd2ejd, import_dir, [String]),
+		    {result, []};
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end

@@ -1,3 +1,14 @@
+2003-10-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard.erl: Added checks for stringprep results
+
+	* src/expat_erl.c: Workaround for EI encode_string bug
+
+	* src/xml_stream.erl: Slightly changed protocol to expat driver
+	* src/expat_erl.c: Likewise
+
+	* src/mod_configure.erl: Minor fix
+
 2003-10-19  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Fixed typo
