@@ -455,11 +455,23 @@ The following options are defined:
 <DT><CODE><B>ejabberd_service</B></CODE><DD> This module serves connections from Jabber
  services (i.&nbsp;e. that use the <TT>jabber:component:accept</TT> namespace).
 </DL>
-For example, the following configuration defines that C2S connections are
-listened on port 5222 and 5223 (SSL) and denied for user ``<TT>bad</TT>'', S2S
-on port 5269, and that service <TT>conference.example.org</TT> must be
-connected to port 8888 with a password ``<TT>secret</TT>''. Also all users
-except admins have traffic limit 1000&nbsp;b/s.
+For example, the following configuration defines that:
+<UL><LI>
+C2S connections are listened on port 5222 and 5223 (SSL) and denied for
+ user ``<TT>bad</TT>''
+<LI>S2S connections are listened on port 5269
+<LI>All users except admins have traffic limit 1000&nbsp;B/s
+<LI>AIM service <TT>aim.example.org</TT> is connected to port 5233 with
+ password ``<TT>aimsecret</TT>''
+<LI>JIT services <TT>icq.example.org</TT> and <TT>sms.example.org</TT> are
+ connected to port 5234 with password ``<TT>jitsecret</TT>''
+<LI>MSN service <TT>msn.example.org</TT> is connected to port 5235 with
+ password ``<TT>msnsecret</TT>''
+<LI>YAHOO service <TT>yahoo.example.org</TT> is connected to port 5236 with
+ password ``<TT>yahoosecret</TT>''
+<LI>ILE service <TT>ile.example.org</TT> is connected to port 5237 with
+ password ``<TT>ilesecret</TT>''
+</UL>
 <PRE>
 {acl, blocked, {user, "bad"}}.
 {access, c2s, [{deny, blocked},
@@ -467,14 +479,62 @@ except admins have traffic limit 1000&nbsp;b/s.
 {shaper, normal, {maxrate, 1000}}.
 {access, c2s_shaper, [{none, admin},
                       {normal, all}]}.
-{listen, [{5222, ejabberd_c2s,     [{access, c2s},
-                                    {shaper, c2s_shaper}]},
-          {5223, ejabberd_c2s,     [{access, c2s},
-                                    {ssl, [{certfile, "/path/to/ssl.pem"}]}]},
-          {5269, ejabberd_s2s_in,  []},
-          {8888, ejabberd_service,
-           [{hosts, ["conference.example.org"], [{password, "secret"}]}]}
-         ]}.
+{listen,
+ [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
+  {5223, ejabberd_c2s,     [{access, c2s},
+                            ssl, {certfile, "/path/to/ssl.pem"}]},
+  {5269, ejabberd_s2s_in,  []},
+  {5233, ejabberd_service, [{host, "aim.example.org",
+                             [{password, "aimsecret"}]}]},
+  {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
+                             [{password, "jitsecret"}]}]},
+  {5235, ejabberd_service, [{host, "msn.example.org",
+                             [{password, "msnsecret"}]}]},
+  {5236, ejabberd_service, [{host, "yahoo.example.org",
+                             [{password, "yahoosecret"}]}]},
+  {5237, ejabberd_service, [{host, "gg.example.org",
+                             [{password, "ggsecret"}]}]},
+  {5238, ejabberd_service, [{host, "ile.example.org",
+                             [{password, "ilesecret"}]}]}
+ ]
+}.
+</PRE>Note, that for jabberd14- or wpjabberd-based services you need to make the
+transports log and do xdb by themselves:
+<PRE>
+  &lt;!--
+     You need to add elogger and rlogger entries here when using ejabberd.
+     In this case the transport will do the logging.
+  --&gt;
+
+  &lt;log id='elogger'&gt;
+    &lt;host/&gt;
+    &lt;logtype/&gt;
+    &lt;format&gt;%d: [%t] (%h): %s&lt;/format&gt;
+    &lt;file&gt;/var/log/jabber/error/aim-t.log&lt;/file&gt;
+  &lt;/log&gt;
+
+  &lt;log id='rlogger'&gt;
+    &lt;host/&gt;
+    &lt;logtype&gt;record&lt;/logtype&gt;
+    &lt;format&gt;%d %h %s&lt;/format&gt;
+    &lt;file&gt;/var/log/jabber/record/aim-t.log&lt;/file&gt;
+  &lt;/log&gt;
+
+  &lt;!--
+     Some Jabber server implementations do not provide
+     XDB services (for example jabberd 2.0 and ejabberd).
+     AIM-t is loaded into handle all XDB requests.
+  --&gt;
+
+  &lt;xdb id="xdb"&gt;
+    &lt;host/&gt;
+    &lt;load&gt;
+      &lt;xdb_file&gt;/usr/lib/jabber/xdb_file.so&lt;/xdb_file&gt; &lt;!-- this is a lib of wpjabber or jabberd --&gt;
+      &lt;/load&gt;
+    &lt;xdb_file xmlns="jabber:config:xdb_file"&gt;
+      &lt;spool&gt;&lt;jabberd:cmdline flag='s'&gt;/var/spool/jabber&lt;/jabberd:cmdline&gt;&lt;/spool&gt;
+    &lt;/xdb_file&gt;
+  &lt;/xdb&gt;
 </PRE>
 <!--TOC subsubsection Modules-->
 

@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_web_admin.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Administration web interface
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -543,7 +543,7 @@ process_admin(#request{user = User,
     ACLs = lists:flatten(io_lib:format("~p.", [ets:tab2list(acl)])),
     make_xhtml([?XCT("h1", "ejabberd ACLs configuration")] ++
 	       case Res of
-		   ok -> [?CT("submited"), ?P];
+		   ok -> [?CT("submitted"), ?P];
 		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
@@ -584,7 +584,7 @@ process_admin(#request{method = Method,
     ACLs = lists:keysort(2, ets:tab2list(acl)),
     make_xhtml([?XCT("h1", "ejabberd ACLs configuration")] ++
 	       case Res of
-		   ok -> [?CT("submited"), ?P];
+		   ok -> [?CT("submitted"), ?P];
 		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
@@ -651,7 +651,7 @@ process_admin(#request{user = User,
 				 [{{access, '$1', '$2'}}]}])])),
     make_xhtml([?XC("h1", "ejabberd access rules configuration")] ++
 	       case Res of
-		   ok -> [?C("submited"), ?P];
+		   ok -> [?C("submitted"), ?P];
 		   error -> [?C("bad format"), ?P];
 		   nothing -> []
 	       end ++
@@ -689,7 +689,7 @@ process_admin(#request{method = Method,
 		     [{{access, '$1', '$2'}}]}]),
     make_xhtml([?XC("h1", "ejabberd access rules configuration")] ++
 	       case Res of
-		   ok -> [?C("submited"), ?P];
+		   ok -> [?C("submitted"), ?P];
 		   error -> [?C("bad format"), ?P];
 		   nothing -> []
 	       end ++
@@ -730,7 +730,7 @@ process_admin(#request{method = Method,
     make_xhtml([?XC("h1",
 		    "'" ++ SName ++ "' access rule configuration")] ++
 	       case Res of
-		   ok -> [?C("submited"), ?P];
+		   ok -> [?C("submitted"), ?P];
 		   error -> [?C("bad format"), ?P];
 		   nothing -> []
 	       end ++
@@ -1103,7 +1103,7 @@ user_info(User, Query, Lang) ->
 		 ?INPUTT("submit", "chpassword", "Change Password")],
     [?XC("h1", "User: " ++ User)] ++
 	case Res of
-	    ok -> [?C("submited"), ?P];
+	    ok -> [?C("submitted"), ?P];
 	    error -> [?C("bad format"), ?P];
 	    nothing -> []
 	end ++
@@ -1174,12 +1174,23 @@ search_running_node(SNode, [Node | Nodes]) ->
     end.
 
 get_node(Node, [], Query, Lang) ->
-    [?XC("h1", "Node: " ++ atom_to_list(Node)),
-     ?XE("ul",
-	 [?LI([?ACT("db/", "DB Management")]),
-	  ?LI([?ACT("backup/", "Backup Management")]),
-	  ?LI([?ACT("statistics/", "Statistics")])
-	 ])];
+    Res = node_parse_query(Node, Query),
+    [?XC("h1", "Node: " ++ atom_to_list(Node))] ++
+	case Res of
+	    ok -> [?C("submitted"), ?P];
+	    error -> [?C("bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XE("ul",
+	     [?LI([?ACT("db/", "DB Management")]),
+	      ?LI([?ACT("backup/", "Backup Management")]),
+	      ?LI([?ACT("stats/", "Statistics")])
+	     ]),
+	 ?XAE("form", [{"method", "post"}],
+	      [?INPUTT("submit", "restart", "Restart"),
+	       ?C(" "),
+	       ?INPUTT("submit", "stop", "Stop")])
+	];
 
 get_node(Node, ["db"], Query, Lang) ->
     case rpc:call(Node, mnesia, system_info, [tables]) of
@@ -1224,7 +1235,7 @@ get_node(Node, ["db"], Query, Lang) ->
 		     end, STables),
 	    [?XC("h1", "DB Tables at " ++ atom_to_list(Node))] ++
 		case Res of
-		    ok -> [?C("submited"), ?P];
+		    ok -> [?C("submitted"), ?P];
 		    error -> [?C("bad format"), ?P];
 		    nothing -> []
 		end ++
@@ -1249,6 +1260,7 @@ get_node(Node, ["db"], Query, Lang) ->
     end;
 
 get_node(Node, ["backup"], Query, Lang) ->
+    Res = node_backup_parse_query(Node, Query),
     [?XC("h1", "Backup Management at " ++ atom_to_list(Node)),
      ?XAE("form", [{"method", "post"}],
 	  [?XAE("table", [],
@@ -1292,8 +1304,75 @@ get_node(Node, ["backup"], Query, Lang) ->
 		     ])
 		])])];
 
+get_node(Node, ["stats"], Query, Lang) ->
+    UpTime = rpc:call(Node, erlang, statistics, [wall_clock]),
+    UpTimeS = io_lib:format("~.3f", [element(1, UpTime)/1000]),
+    CPUTime = rpc:call(Node, erlang, statistics, [runtime]),
+    CPUTimeS = io_lib:format("~.3f", [element(1, CPUTime)/1000]),
+    Users = length(
+	      rpc:call(Node, ejabberd_sm, dirty_get_my_sessions_list, [])),
+    TransactionsCommited =
+	rpc:call(Node, mnesia, system_info, [transaction_commits]),
+    TransactionsAborted =
+	rpc:call(Node, mnesia, system_info, [transaction_failures]),
+    TransactionsRestarted =
+	rpc:call(Node, mnesia, system_info, [transaction_restarts]),
+    TransactionsLogged =
+	rpc:call(Node, mnesia, system_info, [transaction_log_writes]),
+    
+    [?XC("h1", atom_to_list(Node) ++ " statistics"),
+     ?XAE("table", [],
+	  [?XE("tbody",
+	       [?XE("tr", [?XCT("td", "Uptime"),
+			   ?XAC("td", [{"class", "alignright"}],
+				UpTimeS)]),
+		?XE("tr", [?XCT("td", "CPU Time"),
+			   ?XAC("td", [{"class", "alignright"}],
+				CPUTimeS)]),
+		?XE("tr", [?XCT("td", "Authentificated users"),
+			   ?XAC("td", [{"class", "alignright"}],
+				integer_to_list(Users))]),
+		?XE("tr", [?XCT("td", "Transactions commited"),
+			   ?XAC("td", [{"class", "alignright"}],
+				integer_to_list(TransactionsCommited))]),
+		?XE("tr", [?XCT("td", "Transactions aborted"),
+			   ?XAC("td", [{"class", "alignright"}],
+				integer_to_list(TransactionsAborted))]),
+		?XE("tr", [?XCT("td", "Transactions restarted"),
+			   ?XAC("td", [{"class", "alignright"}],
+				integer_to_list(TransactionsRestarted))]),
+		?XE("tr", [?XCT("td", "Transactions logged"),
+			   ?XAC("td", [{"class", "alignright"}],
+				integer_to_list(TransactionsLogged))])
+	       ])
+	  ])];
+
 get_node(Node, NPath, Query, Lang) ->
     [?XC("h1", "Not found")].
+
+
+node_parse_query(Node, Query) ->
+    case lists:keysearch("restart", 1, Query) of
+	{value, _} ->
+	    case rpc:call(Node, init, restart, []) of
+		{badrpc, _Reason} ->
+		    error;
+		_ ->
+		    ok
+	    end;
+	_ ->
+	    case lists:keysearch("delete", 1, Query) of
+		{value, _} ->
+		    case rpc:call(Node, init, restart, []) of
+			{badrpc, _Reason} ->
+			    error;
+			_ ->
+			    ok
+		    end;
+		_ ->
+		    nothing
+	    end
+    end.
 
 
 db_storage_select(ID, Opt, Lang) ->
@@ -1344,4 +1423,50 @@ node_db_parse_query(Node, Tables, Query) ->
 	      end
       end, Tables),
     ok.
+
+node_backup_parse_query(Node, Query) ->
+    lists:foldl(
+      fun(Action, nothing) ->
+	      case lists:keysearch(Action, 1, Query) of
+		  {value, _} ->
+		      case lists:keysearch(Action ++ "path", 1, Query) of
+			  {value, {_, Path}} ->
+			      Res =
+				  case Action of
+				      "store" ->
+					  rpc:call(Node, mnesia,
+						   backup, [Path]);
+				      "restore" ->
+					  rpc:call(Node, mnesia,
+						   restore,
+						   [Path, [{default_op,
+							    keep_tables}]]);
+				      "fallback" ->
+					  rpc:call(Node, mnesia,
+						   install_fallback, [Path]);
+				      "dump" ->
+					  rpc:call(Node, mnesia,
+						   dump_to_textfile, [Path]);
+				      "load" ->
+					  rpc:call(Node, mnesia,
+						   load_textfile, [Path])
+				  end,
+			      case Res of
+				  {error, _Reason} ->
+				      error;
+				  {badrpc, _Reason} ->
+				      error;
+				  _ ->
+				      ok
+			      end;
+			  _ ->
+			      error
+		      end;
+		  _ ->
+		      nothing
+	      end;
+	 (_Action, Res) ->
+	      Res
+      end, nothing, ["store", "restore", "fallback", "dump", "load"]).
+
 

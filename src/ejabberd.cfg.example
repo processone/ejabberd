@@ -91,8 +91,9 @@
  [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
   {5223, ejabberd_c2s,     [{access, c2s}, ssl, {certfile, "./ssl.pem"}]},
   {5269, ejabberd_s2s_in,  [{shaper, s2s_shaper}]},
+  {5280, ejabberd_http,    [http_poll, web_admin]},
   {8888, ejabberd_service, [{access, all},
-			    {hosts, ["conference.e.localhost", "muc.e.localhost"],
+			    {hosts, ["icq.localhost", "sms.localhost"],
 			     [{password, "secret"}]}]}
  ]}.
 

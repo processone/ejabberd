@@ -12,7 +12,7 @@
 
 %% External exports
 -export([make_xhtml/1,
-	 process_get/1]).
+	 process_get/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -49,7 +49,8 @@ make_xhtml(Els) ->
 		      {"value", Value}])).
 
 
-process_get(#request{user = User,
+process_get({_, true},
+	    #request{user = User,
 		     path = ["admin" | RPath],
 		     q = Query,
 		     lang = Lang} = Request) ->
@@ -69,13 +70,14 @@ process_get(#request{user = User,
 				       [{xmlcdata, "401 Unauthorized"}]}])}
     end;
 
-process_get(#request{user = User,
+process_get({true, _},
+	    #request{user = User,
 		     path = ["http-poll" | RPath],
 		     q = Query,
 		     lang = Lang} = Request) ->
     ejabberd_http_poll:process_request(Request#request{path = RPath});
 
-process_get(_Request) ->
+process_get(_, _Request) ->
     {404, [], make_xhtml([?XC("h1", "Not found")])}.
 
 

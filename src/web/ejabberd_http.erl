@@ -25,7 +25,9 @@
 		request_path,
 		request_auth,
 		request_content_length,
-		request_lang = "en"
+		request_lang = "en",
+		use_http_poll = false,
+		use_web_admin = false
 	       }).
 
 
@@ -49,9 +51,15 @@ start_link({SockMod, Socket}, Opts) ->
 	ssl ->
 	    ssl:setopts(Socket, [{packet, http}, {recbuf, 8192}])
     end,
+    UseHTTPPoll = lists:member(http_poll, Opts),
+    UseWebAdmin = lists:member(web_admin, Opts),
+    io:format("S: ~p~n", [{UseHTTPPoll, UseWebAdmin}]),
     {ok, proc_lib:spawn_link(ejabberd_http,
 			     receive_headers,
-			     [#state{sockmod = SockMod, socket = Socket}])}.
+			     [#state{sockmod = SockMod,
+				     socket = Socket,
+				     use_http_poll = UseHTTPPoll,
+				     use_web_admin = UseWebAdmin}])}.
 
 
 send_text(State, Text) ->
@@ -93,7 +101,10 @@ receive_headers(State) ->
 		ssl ->
 		    ssl:setopts(Socket, [{packet, http}])
 	    end,
-	    receive_headers(#state{sockmod = SockMod, socket = Socket});
+	    receive_headers(#state{sockmod = SockMod,
+				   socket = Socket,
+				   use_http_poll = State#state.use_http_poll,
+				   use_web_admin = State#state.use_web_admin});
 	{error, _Reason} ->
 	    ok;
 	_ ->
@@ -105,7 +116,9 @@ receive_headers(State) ->
 process_request(#state{request_method = 'GET',
 		       request_path = {abs_path, Path},
 		       request_auth = Auth,
-		       request_lang = Lang}) ->
+		       request_lang = Lang,
+		       use_http_poll = UseHTTPPoll,
+		       use_web_admin = UseWebAdmin}) ->
     User = case Auth of
 	       {U, P} ->
 		   case ejabberd_auth:check_password(U, P) of
@@ -136,7 +149,10 @@ process_request(#state{request_method = 'GET',
 				       q = LQuery,
 				       user = User,
 				       lang = Lang},
-		    case ejabberd_web:process_get(Request) of
+		    io:format("~p~n", [{{UseHTTPPoll, UseWebAdmin},
+						  Request}]),
+		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
+						  Request) of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
 			{Status, Headers, El} when
@@ -157,7 +173,10 @@ process_request(#state{request_method = 'POST',
 		       request_content_length = Len,
 		       request_lang = Lang,
 		       sockmod = SockMod,
-		       socket = Socket} = State) when is_integer(Len) ->
+		       socket = Socket,
+		       use_http_poll = UseHTTPPoll,
+		       use_web_admin = UseWebAdmin} = State)
+  when is_integer(Len) ->
     User = case Auth of
 	       {U, P} ->
 		   case ejabberd_auth:check_password(U, P) of
@@ -197,7 +216,8 @@ process_request(#state{request_method = 'POST',
 				       user = User,
 				       data = Data,
 				       lang = Lang},
-		    case ejabberd_web:process_get(Request) of
+		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
+						  Request) of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
 			{Status, Headers, El} when
