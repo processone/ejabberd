@@ -53,7 +53,7 @@ init() ->
     %error_logger:logfile({open, ?LOG_PATH}),
     LogPath = case os:getenv("EJABBERD_LOG_PATH") of
 		  false ->
-		      ".";
+		      ?LOG_PATH;
 		  Path ->
 		      Path
 	      end,
