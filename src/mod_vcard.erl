@@ -103,7 +103,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 		 [{xmlcdata, "ejabberd"}]},
 		{xmlelement, "URL", [],
 		 [{xmlcdata,
-		   "http://www.jabber.ru/projects/ejabberd/"}]},
+		   "http://ejabberd.jabberstudio.org/"}]},
 		{xmlelement, "DESC", [],
 		 [{xmlcdata, "Erlang Jabber Server\n"
 		   "Copyright (c) 2002, 2003 Alexey Shchepin"}]},

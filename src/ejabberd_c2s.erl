@@ -47,7 +47,7 @@
 		pres_timestamp,
 		pres_invis = false}).
 
--define(DBGFSM, true).
+%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
