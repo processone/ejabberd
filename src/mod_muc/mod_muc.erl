@@ -180,7 +180,7 @@ do_route(Host, From, To, Packet) ->
 		    Type = xml:get_attr_s("type", Attrs),
 		    case {Name, Type} of
 			{"presence", ""} ->
-			    io:format("MUC: open new room '~s'~n", [Room]),
+			    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 			    {ok, Pid} = mod_muc_room:start(
 					  Host, Room, From, Nick),
 			    ets:insert(
@@ -195,7 +195,7 @@ do_route(Host, From, To, Packet) ->
 		    end;
 		[R] ->
 		    Pid = R#muc_online_room.pid,
-		    io:format("MUC: send to process ~p~n", [Pid]),
+		    ?DEBUG("MUC: send to process ~p~n", [Pid]),
 		    mod_muc_room:route(Pid, From, Nick, Packet),
 		    ok
 	    end

@@ -1,3 +1,11 @@
+2003-09-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/: Support for stringprep (not completed yet)
+
+2003-09-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Replaced io:format calls to ?DEBUG ones
+
 2003-09-19  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_muc/mod_muc_room.erl: Debug output switched off
