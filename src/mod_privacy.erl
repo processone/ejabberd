@@ -1,0 +1,672 @@
+%%%----------------------------------------------------------------------
+%%% File    : mod_privacy.erl
+%%% Author  : Alexey Shchepin <alexey@sevcom.net>
+%%% Purpose : jabber:iq:privacy support
+%%% Created : 21 Jul 2003 by Alexey Shchepin <alexey@sevcom.net>
+%%% Id      : $Id$
+%%%----------------------------------------------------------------------
+
+-module(mod_privacy).
+-author('alexey@sevcom.net').
+-vsn('$Revision$ ').
+
+-behaviour(gen_mod).
+
+-export([start/1,
+	 process_iq/3,
+	 process_iq_set/3,
+	 process_iq_get/4,
+	 get_user_list/1,
+	 check_packet/4,
+	 updated_list/2]).
+
+%-include_lib("mnemosyne/include/mnemosyne.hrl").
+-include("ejabberd.hrl").
+-include("jlib.hrl").
+
+-record(privacy, {user,
+		  default = none,
+		  lists = []}).
+
+-record(listitem, {type = none,
+		   value = none,
+		   action,
+		   order,
+		   match_all = false,
+		   match_iq = false,
+		   match_message = false,
+		   match_presence_in = false,
+		   match_presence_out = false
+		  }).
+
+-record(userlist, {name = none, list = []}).
+
+
+start(Opts) ->
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    mnesia:create_table(privacy, [{disc_copies, [node()]},
+				  {attributes, record_info(fields, privacy)}]),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVACY,
+				  ?MODULE, process_iq, IQDisc).
+
+%process_local_iq(From, To, {iq, _, Type, _, _} = IQ) ->
+%    case Type of
+%	set ->
+%	    process_iq_set(From, To, IQ);
+%	get ->
+%	    process_iq_get(From, To, IQ)
+%    end.
+%
+%
+%
+process_iq(From, To, IQ) ->
+    {iq, ID, Type, XMLNS, SubEl} = IQ,
+    {_, Server, _} = From,
+    Res =
+	case ?MYNAME of
+	    Server ->
+		case Type of
+		    set ->
+		        %process_iq_set(From, To, IQ);
+			{error, ?ERR_NOT_ALLOWED};
+		    get ->
+			{error, ?ERR_NOT_ALLOWED}
+		end;
+	    _ ->
+		{error, ?ERR_NOT_ALLOWED}
+	end,
+    case Res of
+	{result, IQRes} ->
+	    {iq, ID, result, XMLNS, IQRes};
+	{error, Error} ->
+	    {iq, ID, error, XMLNS, [SubEl, Error]}
+    end.
+
+
+process_iq_get(From, To, {iq, ID, Type, XMLNS, SubEl},
+	       #userlist{name = Active}) ->
+    {User, _, _} = From,
+    {xmlelement, _, _, Els} = SubEl,
+    case xml:remove_cdata(Els) of
+	[] ->
+	    process_lists_get(User, Active);
+	[{xmlelement, Name, Attrs, SubEls}] ->
+	    case Name of
+		"list" ->
+		    ListName = xml:get_attr("name", Attrs),
+		    process_list_get(User, ListName);
+		_ ->
+		    {error, ?ERR_BAD_REQUEST}
+	    end;
+	_ ->
+	    {error, ?ERR_BAD_REQUEST}
+    end.
+
+
+process_lists_get(User, Active) ->
+    LUser = jlib:tolower(User),
+    case catch mnesia:dirty_read(privacy, LUser) of
+	{'EXIT', Reason} ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	[] ->
+	    {result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+	[#privacy{default = Default, lists = Lists}] ->
+	    case Lists of
+		[] ->
+		    {result, [{xmlelement, "query",
+			       [{"xmlns", ?NS_PRIVACY}], []}]};
+		_ ->
+		    LItems = lists:map(
+			       fun({N, _}) ->
+				       {xmlelement, "list",
+					[{"name", N}], []}
+			       end, Lists),
+		    DItems =
+			case Default of
+			    none ->
+				LItems;
+			    _ ->
+				[{xmlelement, "default",
+				  [{"name", Default}], []} | LItems]
+			end,
+		    ADItems =
+			case Active of
+			    none ->
+				DItems;
+			    _ ->
+				[{xmlelement, "active",
+				  [{"name", Active}], []} | DItems]
+			end,
+		    {result,
+		     [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
+		       ADItems}]}
+	    end
+    end.
+
+process_list_get(User, {value, Name}) ->
+    LUser = jlib:tolower(User),
+    case catch mnesia:dirty_read(privacy, User) of
+	{'EXIT', Reason} ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	[] ->
+	    {result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+	[#privacy{lists = Lists}] ->
+	    case lists:keysearch(Name, 1, Lists) of
+		{value, {_, List}} ->
+		    LItems = lists:map(fun item_to_xml/1, List),
+		    {result,
+		     [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
+		       [{xmlelement, "list",
+			 [{"name", Name}], LItems}]}]};
+		_ ->
+		    {error, ?ERR_ITEM_NOT_FOUND}
+	    end
+    end;
+
+process_list_get(_User, false) ->
+    {error, ?ERR_BAD_REQUEST}.
+
+item_to_xml(Item) ->
+    Attrs1 = [{"action", action_to_list(Item#listitem.action)},
+	      {"order", order_to_list(Item#listitem.order)}],
+    Attrs2 = case Item#listitem.type of
+		 none ->
+		     Attrs1;
+		 Type ->
+		     [{"type", type_to_list(Item#listitem.type)},
+		      {"value", value_to_list(Type, Item#listitem.value)} |
+		      Attrs1]
+	     end,
+    SubEls = case Item#listitem.match_all of
+		 true ->
+		     [];
+		 false ->
+		     SE1 = case Item#listitem.match_iq of
+			       true ->
+				   [{xmlelement, "iq", [], []}];
+			       false ->
+				   []
+			   end,
+		     SE2 = case Item#listitem.match_message of
+			       true ->
+				   [{xmlelement, "message", [], []} | SE1];
+			       false ->
+				   SE1
+			   end,
+		     SE3 = case Item#listitem.match_presence_in of
+			       true ->
+				   [{xmlelement, "presence-in", [], []} | SE2];
+			       false ->
+				   SE2
+			   end,
+		     SE4 = case Item#listitem.match_presence_out of
+			       true ->
+				   [{xmlelement, "presence-out", [], []} | SE3];
+			       false ->
+				   SE3
+			   end,
+		     SE4
+	     end,
+    {xmlelement, "item", Attrs2, SubEls}.
+
+
+action_to_list(Action) ->
+    case Action of
+	allow -> "allow";
+	deny -> "deny"
+    end.
+
+order_to_list(Order) ->
+    integer_to_list(Order).
+
+type_to_list(Type) ->
+    case Type of
+	jid -> "jid";
+	group -> "group";
+	subscription -> "subscription"
+    end.
+
+value_to_list(Type, Val) ->
+    case Type of
+	jid -> jlib:jid_to_string(Val);
+	group -> Val;
+	subscription ->
+	    case Val of
+		both -> "both";
+		to -> "to";
+		from -> "from";
+		none -> "none"
+	    end
+    end.
+
+
+
+list_to_action(S) ->
+    case S of
+	"allow" -> allow;
+	"deny" -> deny
+    end.
+
+
+
+process_iq_set(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
+    {User, _, _} = From,
+    {xmlelement, _, _, Els} = SubEl,
+    case xml:remove_cdata(Els) of
+	[{xmlelement, Name, Attrs, SubEls}] ->
+	    ListName = xml:get_attr("name", Attrs),
+	    case Name of
+		"list" ->
+		    process_list_set(User, ListName, xml:remove_cdata(SubEls));
+		"active" ->
+		    process_active_set(User, ListName);
+		"default" ->
+		    process_default_set(User, ListName);
+		_ ->
+		    {error, ?ERR_BAD_REQUEST}
+	    end;
+	_ ->
+	    {error, ?ERR_BAD_REQUEST}
+    end.
+
+
+process_default_set(User, {value, Name}) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		case mnesia:read({privacy, LUser}) of
+		    [] ->
+			{error, ?ERR_ITEM_NOT_FOUND};
+		    [#privacy{lists = Lists} = P] ->
+			case lists:keymember(Name, 1, Lists) of
+			    true ->
+				mnesia:write(P#privacy{default = Name,
+						       lists = Lists}),
+				{result, []};
+			    false ->
+				{error, ?ERR_ITEM_NOT_FOUND}
+			end
+		end
+	end,
+    case mnesia:transaction(F) of
+	{atomic, {error, _} = Error} ->
+	    Error;
+	{atomic, {result, _} = Res} ->
+	    Res;
+	_ ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end;
+
+process_default_set(User, false) ->
+    LUser = jlib:tolower(User),
+    F = fun() ->
+		case mnesia:read({privacy, LUser}) of
+		    [] ->
+			{result, []};
+		    [R] ->
+			mnesia:write(R#privacy{default = none}),
+			{result, []}
+		end
+	end,
+    case mnesia:transaction(F) of
+	{atomic, {error, _} = Error} ->
+	    Error;
+	{atomic, {result, _} = Res} ->
+	    Res;
+	_ ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
+
+
+process_active_set(User, {value, Name}) ->
+    LUser = jlib:tolower(User),
+    case catch mnesia:dirty_read(privacy, LUser) of
+	[] ->
+	    {error, ?ERR_ITEM_NOT_FOUND};
+	[#privacy{lists = Lists} = P] ->
+	    case lists:keysearch(Name, 1, Lists) of
+		{value, {_, List}} ->
+		    {result, [], #userlist{name = Name, list = List}};
+		false ->
+		    {error, ?ERR_ITEM_NOT_FOUND}
+	    end
+    end;
+
+process_active_set(User, false) ->
+    {result, [], #userlist{}}.
+
+
+
+
+
+
+process_list_set(User, {value, Name}, Els) ->
+    LUser = jlib:tolower(User),
+    case parse_items(Els) of
+	false ->
+	    {error, ?ERR_BAD_REQUEST};
+	remove ->
+	    F =
+		fun() ->
+			case mnesia:read({privacy, LUser}) of
+			    [] ->
+				{result, []};
+			    [#privacy{default = Default, lists = Lists} = P] ->
+				% TODO: check active
+				if
+				    Name == Default ->
+					{error, ?ERR_CONFLICT};
+				    true ->
+					NewLists =
+					    lists:keydelete(Name, 1, Lists),
+					mnesia:write(
+					  P#privacy{lists = NewLists}),
+					{result, []}
+				end
+			end
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, {error, _} = Error} ->
+		    Error;
+		{atomic, {result, _} = Res} ->
+		    ejabberd_router:route(
+		      {User, ?MYNAME, ""},
+		      {User, ?MYNAME, ""},
+		      {xmlelement, "broadcast", [],
+		       [{privacy_list, #userlist{name = Name, list = []}}]}),
+		    Res;
+		_ ->
+		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    end;
+	List ->
+	    F =
+		fun() ->
+			case mnesia:wread({privacy, LUser}) of
+			    [] ->
+				NewLists = [{Name, List}],
+				mnesia:write(#privacy{user = LUser,
+						      lists = NewLists}),
+				{result, []};
+			    [#privacy{lists = Lists} = P] ->
+				NewLists1 = lists:keydelete(Name, 1, Lists),
+				NewLists = [{Name, List} | NewLists1],
+				mnesia:write(P#privacy{lists = NewLists}),
+				{result, []}
+			end
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, {error, _} = Error} ->
+		    Error;
+		{atomic, {result, _} = Res} ->
+		    ejabberd_router:route(
+		      {User, ?MYNAME, ""},
+		      {User, ?MYNAME, ""},
+		      {xmlelement, "broadcast", [],
+		       [{privacy_list, #userlist{name = Name, list = List}}]}),
+		    Res;
+		_ ->
+		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    end
+    end;
+
+process_list_set(_User, false, _Els) ->
+    {error, ?ERR_BAD_REQUEST}.
+
+
+parse_items([]) ->
+    remove;
+parse_items(Els) ->
+    parse_items(Els, []).
+
+parse_items([], Res) ->
+    lists:reverse(Res);
+parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
+    Type   = xml:get_attr("type",   Attrs),
+    Value  = xml:get_attr("value",  Attrs),
+    SAction = xml:get_attr("action", Attrs),
+    SOrder = xml:get_attr("order",  Attrs),
+    Action = case catch list_to_action(element(2, SAction)) of
+		 {'EXIT', _} -> false;
+		 Val -> Val
+	     end,
+    Order = case catch list_to_integer(element(2, SOrder)) of
+		{'EXIT', _} ->
+		    false;
+		IntVal ->
+		    if
+			IntVal >= 0 ->
+			    IntVal;
+			true ->
+			    false
+		    end
+	    end,
+    if
+	(Action /= false) and (Order /= false) ->
+	    I1 = #listitem{action = Action, order = Order},
+	    I2 = case {Type, Value} of
+		     {{value, T}, {value, V}} ->
+			 case T of
+			     "jid" ->
+				 case jlib:string_to_jid(V) of
+				     error ->
+					 false;
+				     JID ->
+					 I1#listitem{type = jid,
+						     value = JID}
+				 end;
+			     "group" ->
+				 I1#listitem{type = group,
+					     value = V};
+			     "subscription" ->
+				 case V of
+				     "none" ->
+					 I1#listitem{type = subscription,
+						     value = none};
+				     "both" ->
+					 I1#listitem{type = subscription,
+						     value = both};
+				     "from" ->
+					 I1#listitem{type = subscription,
+						     value = from};
+				     "to" ->
+					 I1#listitem{type = subscription,
+						     value = to};
+				     _ ->
+					 false
+				 end
+			 end;
+		     {{value, _}, false} ->
+			 false;
+		     _ ->
+			 I1
+		 end,
+	    case I2 of
+		false ->
+		    false;
+		_ ->
+		    case parse_matches(I2, xml:remove_cdata(SubEls)) of
+			false ->
+			    false;
+			I3 ->
+			    parse_items(Els, [I3 | Res])
+		    end
+	    end;
+	true ->
+	    false
+    end;
+
+parse_items(_, Res) ->
+    false.
+
+
+parse_matches(Item, []) ->
+    Item#listitem{match_all = true};
+parse_matches(Item, Els) ->
+    parse_matches1(Item, Els).
+
+parse_matches1(Item, []) ->
+    Item;
+parse_matches1(Item, [{xmlelement, "message", _, _} | Els]) ->
+    parse_matches1(Item#listitem{match_message = true}, Els);
+parse_matches1(Item, [{xmlelement, "iq", _, _} | Els]) ->
+    parse_matches1(Item#listitem{match_iq = true}, Els);
+parse_matches1(Item, [{xmlelement, "presence-in", _, _} | Els]) ->
+    parse_matches1(Item#listitem{match_presence_in = true}, Els);
+parse_matches1(Item, [{xmlelement, "presence-out", _, _} | Els]) ->
+    parse_matches1(Item#listitem{match_presence_out = true}, Els);
+parse_matches1(Item, [{xmlelement, _, _, _} | Els]) ->
+    false.
+
+
+
+
+
+
+
+get_user_list(User) ->
+    LUser = jlib:tolower(User),
+    case catch mnesia:dirty_read(privacy, LUser) of
+	[] ->
+	    #userlist{};
+	[#privacy{default = Default, lists = Lists}] ->
+	    case Default of
+		none ->
+		    #userlist{};
+		_ ->
+		    case lists:keysearch(Default, 1, Lists) of
+			{value, {_, List}} ->
+			    SortedList = lists:keysort(#listitem.order, List),
+			    #userlist{name = Default, list = SortedList};
+			_ ->
+			    #userlist{}
+		    end
+	    end;
+	_ ->
+	    #userlist{}
+    end.
+
+
+check_packet(User,
+	     #userlist{list = List},
+	     {From, To, {xmlelement, PName, _, _}},
+	     Dir) ->
+    case List of
+	[] ->
+	    allow;
+	_ ->
+	    PType = case PName of
+			"message" -> message;
+			"iq" -> iq;
+			"presence" -> presence
+		    end,
+	    case {PType, Dir} of
+		{message, in} ->
+		    LJID = jlib:jid_tolower(From),
+		    {Subscription, Groups} =
+			mod_roster:get_jid_info(User, LJID),
+		    check_packet_aux(List, message,
+				     LJID, Subscription, Groups);
+		{iq, in} ->
+		    LJID = jlib:jid_tolower(From),
+		    {Subscription, Groups} =
+			mod_roster:get_jid_info(User, LJID),
+		    check_packet_aux(List, iq,
+				     LJID, Subscription, Groups);
+		{presence, in} ->
+		    LJID = jlib:jid_tolower(From),
+		    {Subscription, Groups} =
+			mod_roster:get_jid_info(User, LJID),
+		    check_packet_aux(List, presence_in,
+				     LJID, Subscription, Groups);
+		{presence, out} ->
+		    LJID = jlib:jid_tolower(To),
+		    {Subscription, Groups} =
+			mod_roster:get_jid_info(User, LJID),
+		    check_packet_aux(List, presence_out,
+				     LJID, Subscription, Groups);
+		_ ->
+		    allow
+	    end
+    end.
+
+check_packet_aux([], PType, JID, Subscription, Groups) ->
+    allow;
+check_packet_aux([Item | List], PType, JID, Subscription, Groups) ->
+    #listitem{type = Type, value = Value, action = Action} = Item,
+    case Type of
+	none ->
+	    Action;
+	_ ->
+	    case is_ptype_match(Item, PType) of
+		true ->
+		    case is_type_match(Type, Value,
+				       JID, Subscription, Groups) of
+			true ->
+			    Action;
+			false ->
+			    check_packet_aux(List, PType,
+					     JID, Subscription, Groups)
+		    end;
+		false ->
+		    check_packet_aux(List, PType, JID, Subscription, Groups)
+	    end
+    end.
+
+
+is_ptype_match(Item, PType) ->
+    case Item#listitem.match_all of
+	true ->
+	    true;
+	false ->
+	    case PType of
+		message ->
+		    Item#listitem.match_message;
+		iq ->
+		    Item#listitem.match_iq;
+		presence_in ->
+		    Item#listitem.match_presence_in;
+		presence_out ->
+		    Item#listitem.match_presence_out
+	    end
+    end.
+
+
+is_type_match(Type, Value, JID, Subscription, Groups) ->
+    case Type of
+	jid ->
+	    case Value of
+		{"", Server, ""} ->
+		    case JID of
+			{_, Server, _} ->
+			    true;
+			_ ->
+			    false
+		    end;
+		{User, Server, ""} ->
+		    case JID of
+			{User, Server, _} ->
+			    true;
+			_ ->
+			    false
+		    end;
+		_ ->
+		    Value == JID
+	    end;
+	subscription ->
+	    Value == Subscription;
+	group ->
+	    lists:member(Value, Groups)
+    end.
+
+
+updated_list(#userlist{name = OldName} = Old,
+	     #userlist{name = NewName} = New) ->
+    if
+	OldName == NewName ->
+	    New;
+	true ->
+	    Old
+    end.
+
+
+
+
