@@ -1,3 +1,8 @@
+2003-10-31  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Updated to work more
+	correctly with latest jlib
+
 2003-10-30  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: More strong check for authentificated JID
