@@ -1695,21 +1695,12 @@ process_iq_disco_info(From, set, StateData) ->
     {error, ?ERR_NOT_ALLOWED};
 
 process_iq_disco_info(From, get, StateData) ->
-    FAffiliation = get_affiliation(From, StateData),
-    FRole = get_role(From, StateData),
-    case (FRole /= none) or
-	(FAffiliation == admin) or
-	(FAffiliation == owner) of
-	true ->
-	    {result, [{xmlelement, "identity",
-		       [{"category", "conference"},
-			{"type", "text"},
-			{"name", get_title(StateData)}], []},
-		      {xmlelement, "feature",
-		       [{"var", ?NS_MUC}], []}], StateData};
-	_ ->
-	    {error, ?ERR_NOT_ALLOWED}
-    end.
+    {result, [{xmlelement, "identity",
+	       [{"category", "conference"},
+		{"type", "text"},
+		{"name", get_title(StateData)}], []},
+	      {xmlelement, "feature",
+	       [{"var", ?NS_MUC}], []}], StateData}.
 
 
 process_iq_disco_items(From, set, StateData) ->
