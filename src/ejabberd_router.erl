@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_router.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Main router
 %%% Created : 27 Nov 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -12,9 +12,7 @@
 
 -export([route/3,
 	 register_route/1,
-	 register_local_route/1,
 	 unregister_route/1,
-	 unregister_local_route/1,
 	 dirty_get_all_routes/0,
 	 dirty_get_all_domains/0
 	]).
@@ -24,25 +22,22 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(route, {domain, node, pid}).
--record(local_route, {domain, pid}).
+-record(route, {domain, pid}).
 
 
 start_link() ->
-    {ok, proc_lib:spawn_link(ejabberd_router, init, [])}.
+    Pid = proc_lib:spawn_link(ejabberd_router, init, []),
+    register(ejabberd_router, Pid),
+    {ok, Pid}.
 
 init() ->
-    register(ejabberd_router, self()),
+    update_tables(),
     mnesia:create_table(route,
 			[{ram_copies, [node()]},
+			 {type, bag},
 			 {attributes,
 			  record_info(fields, route)}]),
-    mnesia:create_table(local_route,
-			[{ram_copies, [node()]},
-			 {local_content, true},
-			 {attributes,
-			  record_info(fields, local_route)}]),
-    mnesia:add_table_copy(local_route, node(), ram_copies),
+    mnesia:add_table_copy(route, node(), ram_copies),
     loop().
 
 loop() ->
@@ -56,44 +51,17 @@ loop() ->
 		    ok
 	    end,
 	    loop();
-	{register_route, Domain, Pid, Node} ->
+	{register_route, Domain, Pid} ->
 	    F = fun() ->
-			%case mnesia:wread({route, Domain}) of
-			%    [] ->
-			%	ok;
-			%    [Old] ->
-			%	% TODO: notify
-			%	ok
-			%end,
 			mnesia:write(#route{domain = Domain,
-					    node = Node,
 					    pid = Pid})
 		end,
 	    mnesia:transaction(F),
 	    loop();
-	{register_local_route, Domain, Pid} ->
+	{unregister_route, Domain, Pid} ->
 	    F = fun() ->
-			mnesia:write(#local_route{domain = Domain,
-						  pid = Pid})
-		end,
-	    mnesia:transaction(F),
-	    loop();
-	{unregister_route, Domain} ->
-	    F = fun() ->
-			%case mnesia:wread({route, Domain}) of
-			%    [] ->
-			%	ok;
-			%    [Old] ->
-			%	% TODO: notify
-			%	ok
-			%end,
-			mnesia:delete({route, Domain})
-		end,
-	    mnesia:transaction(F),
-	    loop();
-	{unregister_local_route, Domain} ->
-	    F = fun() ->
-			mnesia:delete({local_route, Domain})
+			mnesia:delete_object(#route{domain = Domain,
+						    pid = Pid})
 		end,
 	    mnesia:transaction(F),
 	    loop();
@@ -103,26 +71,17 @@ loop() ->
 
 do_route(From, To, Packet) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n", [From, To, Packet]),
-    #jid{lserver = LDstDomain} = To,
-    case mnesia:dirty_read({local_route, LDstDomain}) of
+    LDstDomain = To#jid.lserver,
+    case mnesia:dirty_read(route, LDstDomain) of
 	[] ->
-	    case mnesia:dirty_read({route, LDstDomain}) of
-		[] ->
-		    ejabberd_s2s ! {route, From, To, Packet};
-		[R] ->
-		    Node = R#route.node,
-		    case node() of
-			Node ->
-			    Pid = R#route.pid,
-			    ?DEBUG("routed to process ~p~n", [Pid]),
-			    Pid ! {route, From, To, Packet};
-			_ ->
-			    ?DEBUG("routed to node ~p~n", [Node]),
-			    {ejabberd_router, Node} ! {route, From, To, Packet}
-		    end
-	    end;
+	    ejabberd_s2s ! {route, From, To, Packet};
 	[R] ->
-	    Pid = R#local_route.pid,
+	    Pid = R#route.pid,
+	    ?DEBUG("routed to process ~p~n", [Pid]),
+	    Pid ! {route, From, To, Packet};
+	Rs ->
+	    R = lists:nth(erlang:phash(now(), length(Rs)), Rs),
+	    Pid = R#route.pid,
 	    ?DEBUG("routed to process ~p~n", [Pid]),
 	    Pid ! {route, From, To, Packet}
     end.
@@ -132,24 +91,33 @@ route(From, To, Packet) ->
     ejabberd_router ! {route, From, To, Packet}.
 
 register_route(Domain) ->
-    ejabberd_router ! {register_route, Domain, self(), node()}.
-
-register_local_route(Domain) ->
-    ejabberd_router ! {register_local_route, Domain, self()}.
+    ejabberd_router ! {register_route, Domain, self()}.
 
 unregister_route(Domain) ->
-    ejabberd_router ! {unregister_route, Domain}.
-
-unregister_local_route(Domain) ->
-    ejabberd_router ! {unregister_local_route, Domain}.
+    ejabberd_router ! {unregister_route, Domain, self()}.
 
 
 dirty_get_all_routes() ->
-    lists:delete(?MYNAME,
-		 lists:umerge(lists:sort(mnesia:dirty_all_keys(route)),
-			      lists:sort(mnesia:dirty_all_keys(local_route)))).
+    lists:delete(?MYNAME, lists:usort(mnesia:dirty_all_keys(route))).
 
 dirty_get_all_domains() ->
-    lists:umerge(lists:sort(mnesia:dirty_all_keys(route)),
-		 lists:sort(mnesia:dirty_all_keys(local_route))).
+    lists:usort(mnesia:dirty_all_keys(route)).
+
+
+
+update_tables() ->
+    case catch mnesia:table_info(route, attributes) of
+	[domain, node, pid] ->
+	    mnesia:delete_table(route);
+	[domain, pid] ->
+	    ok;
+	{'EXIT', _} ->
+	    ok
+    end,
+    case lists:member(local_route, mnesia:system_info(tables)) of
+	true ->
+	    mnesia:delete_table(local_route);
+	false ->
+	    ok
+    end.
 

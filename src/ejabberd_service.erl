@@ -164,7 +164,7 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 		    send_text(StateData, "<handshake/>"),
 		    lists:foreach(
 		      fun(H) ->
-			      ejabberd_router:register_local_route(H)
+			      ejabberd_router:register_route(H)
 		      end, StateData#state.hosts),
 		    {next_state, stream_established, StateData};
 		_ ->
@@ -299,7 +299,7 @@ terminate(_Reason, StateName, StateData) ->
 	stream_established ->
 	    lists:foreach(
 	      fun(H) ->
-		      ejabberd_router:unregister_local_route(H)
+		      ejabberd_router:unregister_route(H)
 	      end, StateData#state.hosts);
 	_ ->
 	    ok

@@ -68,7 +68,7 @@ start(Opts) ->
 
 
 init(Host) ->
-    ejabberd_router:register_local_route(Host),
+    ejabberd_router:register_route(Host),
     loop().
 
 loop() ->

@@ -25,7 +25,7 @@ start(Opts) ->
     register(ejabberd_mod_echo, spawn(?MODULE, init, [Host])).
 
 init(Host) ->
-    ejabberd_router:register_local_route(Host),
+    ejabberd_router:register_route(Host),
     loop(Host).
 
 loop(Host) ->
@@ -34,7 +34,7 @@ loop(Host) ->
 	    ejabberd_router:route(To, From, Packet),
 	    loop(Host);
 	stop ->
-	    ejabberd_router:unregister_local_route(Host),
+	    ejabberd_router:unregister_route(Host),
 	    ok;
 	_ ->
 	    loop(Host)

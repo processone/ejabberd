@@ -1,3 +1,14 @@
+2003-12-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_local.erl: Replaced register_local_route to
+	register_route
+	* src/ejabberd_service.erl: Likewise
+	* src/mod_echo.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+
+	* src/ejabberd_router.erl: Partially rewrited
+	* src/ejabberd_sm.erl: Likewise
+
 2003-12-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_s2s.erl: Partially rewrited

@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_sm.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Session manager
 %%% Created : 24 Nov 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -21,28 +21,23 @@
 	 unregister_iq_handler/1
 	]).
 
--include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(session, {ur, user, node}).
--record(local_session, {ur, pid}).
+-record(session, {ur, user, pid}).
 -record(presence, {ur, user, priority}).
 
 start_link() ->
-    {ok, proc_lib:spawn_link(ejabberd_sm, init, [])}.
+    Pid = proc_lib:spawn_link(ejabberd_sm, init, []),
+    register(ejabberd_sm, Pid),
+    {ok, Pid}.
 
 init() ->
-    register(ejabberd_sm, self()),
+    update_tables(),
     mnesia:create_table(session, [{ram_copies, [node()]},
 				  {attributes, record_info(fields, session)}]),
     mnesia:add_table_index(session, user),
-    mnesia:add_table_index(session, node),
-    mnesia:create_table(local_session,
-			[{ram_copies, [node()]},
-			 {local_content, true},
-			 {attributes, record_info(fields, local_session)}]),
-    mnesia:add_table_copy(local_session, node(), ram_copies),
+    mnesia:add_table_copy(session, node(), ram_copies),
     mnesia:create_table(presence,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, presence)}]),
@@ -67,9 +62,6 @@ loop() ->
 	    loop();
 	{close_session, User, Resource} ->
 	    remove_connection(User, Resource),
-	    loop();
-	{replace, User, Resource} ->
-	    replace_my_connection(User, Resource),
 	    loop();
 	{mnesia_system_event, {mnesia_down, Node}} ->
 	    clean_table_from_bad_node(Node),
@@ -108,46 +100,15 @@ register_connection(User, Resource, Pid) ->
     UR = {LUser, LResource},
     F = fun() ->
 		Ss = mnesia:wread({session, UR}),
-		Ls = mnesia:wread({local_session, UR}),
-		mnesia:write(#session{ur = UR, user = LUser, node = node()}),
-		mnesia:write(#local_session{ur = UR, pid = Pid}),
-		{Ss, Ls}
+		mnesia:write(#session{ur = UR, user = LUser, pid = Pid}),
+		Ss
         end,
     case mnesia:transaction(F) of
-	{atomic, {Ss, Ls}} ->
+	{atomic, Ss} ->
 	    lists:foreach(
 	      fun(R) ->
-		      if R#session.node /= node() ->
-			      {ejabberd_sm, R#session.node} !
-				  {replace, User, Resource};
-			 true ->
-			      ok
-		      end
-	      end, Ss),
-	    lists:foreach(
-	      fun(R) ->
-		      R#local_session.pid ! replaced
-	      end, Ls);
-	_ ->
-	    false
-    end.
-
-
-replace_my_connection(User, Resource) ->
-    LUser = jlib:nodeprep(User),
-    LResource = jlib:resourceprep(Resource),
-    UR = {LUser, LResource},
-    F = fun() ->
-		Es = mnesia:read({local_session, UR}),
-		mnesia:delete({local_session, UR}),
-		Es
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    lists:foreach(
-	      fun(R) ->
-		      R#local_session.pid ! replaced
-	      end, Rs);
+		      R#session.pid ! replaced
+	      end, Ss);
 	_ ->
 	    false
     end.
@@ -156,9 +117,8 @@ replace_my_connection(User, Resource) ->
 remove_connection(User, Resource) ->
     LUser = jlib:nodeprep(User),
     LResource = jlib:resourceprep(Resource),
+    UR = {LUser, LResource},
     F = fun() ->
-		UR = {LUser, LResource},
-		mnesia:delete({local_session, UR}),
 		mnesia:delete({session, UR})
         end,
     mnesia:transaction(F).
@@ -166,11 +126,13 @@ remove_connection(User, Resource) ->
 
 clean_table_from_bad_node(Node) ->
     F = fun() ->
-		Es = mnesia:index_read(session, Node, #session.node),
+		Es = mnesia:select(
+		       session,
+		       [{#session{pid = '$1', _ = '_'},
+			 [{'==', {node, '$1'}, Node}],
+			 ['$_']}]),
 		lists:foreach(fun(E) ->
-				      mnesia:delete_object(session, E, write),
-				      mnesia:delete(
-					{user_resource, E#session.ur})
+				      mnesia:delete_object(E)
 			      end, Es)
         end,
     mnesia:transaction(F).
@@ -261,8 +223,7 @@ do_route(From, To, Packet) ->
 	    end;
 	_ ->
 	    LUR = {LUser, LResource},
-	    Sess = mnesia:dirty_read({session, LUR}),
-	    case Sess of
+	    case mnesia:dirty_read({session, LUR}) of
 		[] ->
 		    case Name of
 			"message" ->
@@ -280,17 +241,10 @@ do_route(From, To, Packet) ->
 			_ ->
 			    ?DEBUG("packet droped~n", [])
 		    end;
-		[Ses] ->
-		    case mnesia:dirty_read({local_session, LUR}) of
-			[] ->
-			    Node = Ses#session.node,
-			    ?DEBUG("sending to node ~p~n", [Node]),
-			    {ejabberd_sm, Node} ! {route, From, To, Packet};
-			[El] ->
-			    Pid = El#local_session.pid,
-			    ?DEBUG("sending to process ~p~n", [Pid]),
-			    Pid ! {route, From, To, Packet}
-		    end
+		[Sess] ->
+		    Pid = Sess#session.pid,
+		    ?DEBUG("sending to process ~p~n", [Pid]),
+		    Pid ! {route, From, To, Packet}
 	    end
     end.
 
@@ -375,7 +329,11 @@ dirty_get_sessions_list() ->
     mnesia:dirty_all_keys(session).
 
 dirty_get_my_sessions_list() ->
-    mnesia:dirty_all_keys(local_session).
+    mnesia:dirty_select(
+      session,
+      [{#session{pid = '$1', _ = '_'},
+	[{'==', {node, '$1'}, node()}],
+	['$_']}]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -420,4 +378,22 @@ register_iq_handler(XMLNS, Module, Fun, Opts) ->
 
 unregister_iq_handler(XMLNS) ->
     ejabberd_sm ! {unregister_iq_handler, XMLNS}.
+
+
+
+update_tables() ->
+    case catch mnesia:table_info(session, attributes) of
+	[ur, user, node] ->
+	    mnesia:delete_table(session);
+	[ur, user, pid] ->
+	    ok;
+	{'EXIT', _} ->
+	    ok
+    end,
+    case lists:member(local_session, mnesia:system_info(tables)) of
+	true ->
+	    mnesia:delete_table(local_session);
+	false ->
+	    ok
+    end.
 
