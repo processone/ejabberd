@@ -104,7 +104,7 @@ close_session(User, Resource) ->
 
 register_connection(User, Resource, Pid) ->
     LUser = jlib:nodeprep(User),
-    LResource = jlib:nodeprep(Resource),
+    LResource = jlib:resourceprep(Resource),
     UR = {LUser, LResource},
     F = fun() ->
 		Ss = mnesia:wread({session, UR}),
@@ -135,7 +135,7 @@ register_connection(User, Resource, Pid) ->
 
 replace_my_connection(User, Resource) ->
     LUser = jlib:nodeprep(User),
-    LResource = jlib:nodeprep(Resource),
+    LResource = jlib:resourceprep(Resource),
     UR = {LUser, LResource},
     F = fun() ->
 		Es = mnesia:read({local_session, UR}),
@@ -155,7 +155,7 @@ replace_my_connection(User, Resource) ->
 
 remove_connection(User, Resource) ->
     LUser = jlib:nodeprep(User),
-    LResource = jlib:nodeprep(Resource),
+    LResource = jlib:resourceprep(Resource),
     F = fun() ->
 		UR = {LUser, LResource},
 		mnesia:delete({local_session, UR}),

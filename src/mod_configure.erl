@@ -793,7 +793,13 @@ get_sm_form(_, _, Lang) ->
 set_sm_form(User, [], Lang, XData) ->
     case lists:keysearch("action", 1, XData) of
 	{value, {_, ["edit"]}} ->
-	    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+	    case lists:keysearch("password", 1, XData) of
+		{value, {_, [Password]}} ->
+		    ejabberd_auth:set_password(User, Password),
+		    {result, []};
+		_ ->
+		    {error, ?ERR_BAD_REQUEST}
+	    end;
 	{value, {_, ["remove"]}} ->
 	    ejabberd_sm ! {route,
 			   jlib:make_jid("", "", ""),
