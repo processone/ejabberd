@@ -21,3 +21,4 @@ SNMP
 PubSub
 MUC: remove empty non-persistent conferences after timeout
 MUC: remove a lot of debugging output
+iq:last
