@@ -1,3 +1,11 @@
+2004-03-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+	* src/web/ejabberd_web.erl: Updated
+
+	* src/web/ejabberd_http.erl: Bugfix
+
 2004-03-16  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_roster.erl: Bugfix
@@ -139,7 +147,7 @@
 	* src/mod_irc/mod_irc.erl: Likewise
 
 	* src/mod_configure.erl: "jabber:iq:data" replaced with
-	"ejabber:config" namespace (thanks to Sergei Golovan)
+	"ejabberd:config" namespace (thanks to Sergei Golovan)
 	* src/mod_disco.erl: Likewise
 
 2004-02-12  Alexey Shchepin  <alexey@sevcom.net>
@@ -150,15 +158,15 @@
 
 	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
 
-	* src/mod_irc/mod_irc.erl: Now uses "ejabber:config" namespace
+	* src/mod_irc/mod_irc.erl: Now uses "ejabberd:config" namespace
 	(thanks to Sergei Golovan)
 
 	* src/mod_disco.erl: Fixed disco category and type (thanks to
 	Sergei Golovan)
 	* src/mod_pubsub/mod_pubsub.erl: Likewise
 
-	* src/jlib.hrl: Added "ejabber:config" namespace (thanks to Sergei
-	Golovan)
+	* src/jlib.hrl: Added "ejabberd:config" namespace (thanks to
+	Sergei Golovan)
 
 2004-01-27  Alexey Shchepin  <alexey@sevcom.net>
 

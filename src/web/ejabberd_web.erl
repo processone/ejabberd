@@ -84,7 +84,8 @@ process_admin(#request{user = User,
 		?XE("ul",
 		    [?LI([?AC("acls/", "Access Control Lists"), ?C(" "),
 			  ?AC("acls-raw/", "(raw)")]),
-		     ?LI([?AC("access/", "Access Rules")]),
+		     ?LI([?AC("access/", "Access Rules"), ?C(" "),
+			  ?AC("access-raw/", "(raw)")]),
 		     ?LI([?AC("users/", "Users")]),
 		     ?LI([?AC("nodes/", "Nodes")]),
 		     ?LI([?AC("stats/", "Statistics")])
@@ -178,6 +179,100 @@ process_admin(#request{method = Method,
 	       ]);
 
 process_admin(#request{user = User,
+			path = ["access-raw"],
+			q = Query,
+			lang = Lang} = Request) ->
+    SetAccess =
+	fun(Rs) ->
+		mnesia:transaction(
+		  fun() ->
+			  Os = mnesia:select(config,
+					     [{{config, {access, '$1'}, '$2'},
+					       [],
+					       ['$_']}]),
+			  lists:foreach(fun(O) ->
+						mnesia:delete_object(O)
+					end, Os),
+			  lists:foreach(
+			    fun({access, Name, Rules}) ->
+				    mnesia:write({config,
+						  {access, Name},
+						  Rules})
+			    end, Rs)
+		  end)
+	end,
+    Res = case lists:keysearch("access", 1, Query) of
+	      {value, {_, String}} ->
+		  case erl_scan:string(String) of
+		      {ok, Tokens, _} ->
+			  case erl_parse:parse_term(Tokens) of
+			      {ok, Rs} ->
+				  case SetAccess(Rs) of
+				      {atomic, _} ->
+					  ok;
+				      _ ->
+					  error
+				  end;
+			      _ ->
+				  error
+			  end;
+		      _ ->
+			  error
+		  end;
+	      _ ->
+		  nothing
+	  end,
+    Access =
+	lists:flatten(
+	  io_lib:format(
+	    "~p.", [ets:select(config,
+			       [{{config, {access, '$1'}, '$2'},
+				 [],
+				 [{{access, '$1', '$2'}}]}])])),
+    make_xhtml([?XC("h1", "ejabberd access rules configuration")] ++
+	       case Res of
+		   ok -> [?C("submited"), ?P];
+		   error -> [?C("bad format"), ?P];
+		   nothing -> []
+	       end ++
+	       [?XAE("form", [{"method", "post"}],
+		     [?XAC("textarea", [{"name", "access"},
+					{"rows", "16"},
+					{"cols", "80"}],
+			   Access),
+		      ?BR,
+		      ?XA("input", [{"type", "submit"}])
+		     ])
+	       ]);
+
+process_admin(#request{method = Method,
+			user = User,
+			path = ["access"],
+			q = Query,
+			lang = Lang} = Request) ->
+    ?INFO_MSG("query: ~p", [Query]),
+    Res = nothing,
+    AccessRules =
+	ets:select(config,
+		   [{{config, {access, '$1'}, '$2'},
+		     [],
+		     [{{access, '$1', '$2'}}]}]),
+    make_xhtml([?XC("h1", "ejabberd access rules configuration")] ++
+	       case Res of
+		   ok -> [?C("submited"), ?P];
+		   error -> [?C("bad format"), ?P];
+		   nothing -> []
+	       end ++
+	       [?XAE("form", [{"method", "post"}],
+		     [access_rules_to_xhtml(AccessRules),
+		      ?BR,
+		      ?XA("input", [{"type", "submit"},
+				    {"name", "delete"},
+				    {"value", "Delete Selected"}])
+		     ])
+	       ]);
+
+process_admin(#request{user = User,
 			path = ["users"],
 			q = Query,
 			lang = Lang} = Request) ->
@@ -209,7 +304,7 @@ acls_to_xhtml(ACLs) ->
 	      lists:map(
 		fun({acl, Name, Spec} = ACL) ->
 			SName = atom_to_list(Name),
-			ID = acl_to_id(ACL),
+			ID = term_to_id(ACL),
 			?XE("tr",
 			    [?XE("td",
 				 [?XA("input", [{"type", "checkbox"},
@@ -268,8 +363,8 @@ acl_spec_select(ID, Opt) ->
 term_to_string(T) ->
     lists:flatten(io_lib:format("~1000000p", [T])).
 
-acl_to_id(ACL) ->
-    jlib:encode_base64(binary_to_list(term_to_binary(ACL))).
+term_to_id(T) ->
+    jlib:encode_base64(binary_to_list(term_to_binary(T))).
 
 
 acl_parse_query(Query) ->
@@ -289,7 +384,7 @@ acl_parse_submit(ACLs, Query) ->
 	lists:map(
 	  fun({acl, Name, Spec} = ACL) ->
 		  SName = atom_to_list(Name),
-		  ID = acl_to_id(ACL),
+		  ID = term_to_id(ACL),
 		  case {lists:keysearch("type" ++ ID, 1, Query),
 			lists:keysearch("value" ++ ID, 1, Query)} of
 		      {{value, {_, T}}, {value, {_, V}}} ->
@@ -336,10 +431,44 @@ acl_parse_delete(ACLs, Query) ->
     NewACLs =
 	lists:filter(
 	  fun({acl, Name, Spec} = ACL) ->
-		  ID = acl_to_id(ACL),
+		  ID = term_to_id(ACL),
 		  not lists:member({"selected", ID}, Query)
 	  end, ACLs),
     NewACLs.
+
+
+access_rules_to_xhtml(AccessRules) ->
+    ?XAE("table", [],
+	 [?XE("tbody",
+	      lists:map(
+		fun({access, Name, Rules} = Access) ->
+			SName = atom_to_list(Name),
+			ID = term_to_id(Access),
+			?XE("tr",
+			    [?XE("td",
+				 [?XA("input", [{"type", "checkbox"},
+						{"name", "selected"},
+						{"value", ID}])]),
+			     ?XE("td", [?AC(SName ++ "/", SName)]),
+			     ?XC("td", term_to_string(Rules))
+			    ]
+			   )
+		end, AccessRules) ++
+	      [?XE("tr",
+		   [?X("td"),
+		    ?XE("td",
+			[?XA("input", [{"type", "text"},
+				       {"name", "namenew"},
+				       {"value", ""}])]
+		       ),
+		    ?XE("td",
+			[?XA("input", [{"type", "submit"},
+				       {"name", "addnew"},
+				       {"value", "Add New"}])])
+		   ]
+		  )]
+	     )]).
+
 
 
 

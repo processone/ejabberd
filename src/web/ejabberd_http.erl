@@ -122,7 +122,8 @@ process_request(#state{request_method = 'GET',
 		    case ejabberd_web:process_get(Request) of
 			El when element(1, El) == xmlelement ->
 			    make_xhtml_output(200, [], El);
-			{Status, Headers, El} ->
+			{Status, Headers, El} when
+			      element(1, El) == xmlelement ->
 			    make_xhtml_output(Status, Headers, El);
 			Text when is_list(Text) ->
 			    make_text_output(200, [], Text);
