@@ -415,7 +415,7 @@ in_subscription(User, From, Type) ->
 	{atomic, false} ->
 	    false;
 	{atomic, {update, Presence, Item}} ->
-	    ejabberd_router:route({User, ?MYNAME, ""},
+	    ejabberd_router:route(jlib:make_jid(User, ?MYNAME, ""),
 				  jlib:jid_replace_resource(From, ""),
 				  Presence),
 	    ejabberd_sm ! {route,

@@ -208,8 +208,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	{auth, ID, set, {U, P, D, R}} ->
 	    io:format("AUTH: ~p~n", [{U, P, D, R}]),
 	    JID = jlib:make_jid(U, StateData#state.server, R),
-	    case acl:match_rule(StateData#state.access, JID) of
-		allow ->
+	    case (JID /= error) andalso
+		(acl:match_rule(StateData#state.access, JID) == allow) of
+		true ->
 		    case ejabberd_auth:check_password(
 			   U, P, StateData#state.streamid, D) of
 			true ->
