@@ -57,7 +57,8 @@ make_xhtml(Els, Lang) ->
        ?XE("body",
 	   [?XAE("table",
 		 [{"id", "main"}],
-		 [?XAE("tr",
+		 [?XE("tbody",
+		      [?XAE("tr",
 			    [{"id", "top"}],
 			    [?XE("td",
 				 [?XE("table",
@@ -78,45 +79,37 @@ make_xhtml(Els, Lang) ->
 								   {"border", "0"}])]
 						     )])])
 				      ])])]),
-		  ?XAE("tr",
-		       [{"id", "middle"}],
-		      [?XE("td",
-			    [?XAE("table",
-				  [{"id", "middle-table"}],
-				 [?XE("tbody",
-				      [?XE("tr",
-					   [?XAE("td",
-						 [%{"height", "100%"},
-						%{"width", "100%"},
-						  {"id", "middle-td1"},
-						  {"bgcolor", "#ffffff"},
-						  {"valign", "top"}],
-						 [?XAE("ul",
-						       [{"id", "navlist"}],
-						       [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
-							?LI([?ACT("/admin/access/", "Access Rules")]),
-							?LI([?ACT("/admin/users/", "Users")]),
-							?LI([?ACT("/admin/nodes/", "Nodes")]),
-							?LI([?ACT("/admin/stats/", "Statistics")])
-						       ])]),
-					    ?XAE("td",
-						 [%{"height", "100%"},
-						  {"width", "100%"},
-						  {"id", "middle-td2"},
-						  {"bgcolor", "#ffffff"},
-						  {"valign", "top"}],
-						 [?XAE("div", [{"id", "content"}], Els)])])])
-				 ])])]),
-		  ?XAE("tr",
-		       [{"id", "bottom"}],
-		       [?XE("td",
-			    [?XE("table",
-				 [?XE("tbody",
-				      [?XE("tr",
-					   [?XCT("td",
-						 "ejabberd (c) 2002-2004 Alexey Shchepin")
-					   ])])
-				 ])])])])])
+		       ?XAE("tr",
+			    [{"id", "middle"}],
+			    [?XE("td",
+				 [?XAE("table",
+				       [{"id", "middle-table"}],
+				       [?XE("tbody",
+					    [?XE("tr",
+						 [?XAE("td",
+						       [{"id", "middle-td1"}],
+						       [?XAE("ul",
+							     [{"id", "navlist"}],
+							     [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
+							      ?LI([?ACT("/admin/access/", "Access Rules")]),
+							      ?LI([?ACT("/admin/users/", "Users")]),
+							      ?LI([?ACT("/admin/nodes/", "Nodes")]),
+							      ?LI([?ACT("/admin/stats/", "Statistics")])
+							     ])]),
+						  ?XAE("td",
+						       [{"id", "middle-td2"}],
+						       [?XAE("div", [{"id", "content"}], Els)])])])
+				       ])])]),
+		       ?XAE("tr",
+			    [{"id", "bottom"}],
+			    [?XE("td",
+				 [?XE("table",
+				      [?XE("tbody",
+					   [?XE("tr",
+						[?XCT("td",
+						      "ejabberd (c) 2002-2004 Alexey Shchepin")
+						])])
+				      ])])])])])])
       ]}}.
 
 css() -> "
@@ -159,21 +152,9 @@ body {
   padding-top: 2px;
 }
 
-/*
-#top > td > table > tbody > tr > td {
-  padding: 0;
-}
-*/
-
 #top td {
   padding: 0;
 }
-
-/*
-#top > td > table > tbody > tr > td > img {
-  margin-bottom: 0px;
-}
-*/
 
 #top img {
   margin-bottom: 0px;
@@ -192,8 +173,14 @@ body {
   empty-cells: show;
 }
 
-#middle-td1, #middle-td1 {
+#middle-td1, #middle-td2 {
   padding: 0;
+  background-color: #ffffff;
+  vertical-align: top;
+}
+
+#middle-td2 {
+  width: 100%;
 }
 
 #bottom table {
@@ -453,7 +440,8 @@ h3 {
 
 #content li {
   list-style-type: dot;
-  font-size: 7pt;
+  font-size: 10pt;
+  /*font-size: 7pt;*/
   padding-left: 10px;
 }
 
@@ -772,6 +760,13 @@ process_admin(#request{user = User,
 		       q = Query,
 		       lang = Lang} = Request) ->
     Res = user_info(U, Query, Lang),
+    make_xhtml(Res, Lang);
+
+process_admin(#request{user = User,
+		       path = ["nodes"],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    Res = get_nodes(Lang),
     make_xhtml(Res, Lang);
 
 process_admin(#request{lang = Lang}) ->
@@ -1111,4 +1106,28 @@ user_parse_query(User, Query) ->
 	_ ->
 	    nothing
     end.
+
+
+get_nodes(Lang) ->
+    RunningNodes = mnesia:system_info(running_db_nodes),
+    StoppedNodes = lists:usort(mnesia:system_info(db_nodes) ++
+			       mnesia:system_info(extra_db_nodes)) --
+	RunningNodes,
+    FRN = lists:map(
+	    fun(N) ->
+		    S = atom_to_list(N),
+		    ?LI([?AC("../node/" ++ S ++ "/", S)])
+	    end, lists:sort(RunningNodes)),
+    FSN = lists:map(
+	    fun(N) ->
+		    S = atom_to_list(N),
+		    ?LI([?C(S)])
+	    end, lists:sort(StoppedNodes)),
+    [?XC("h1", "Nodes"),
+     ?XC("h3", "Running Nodes"),
+     ?XE("ul", FRN),
+     ?XC("h3", "Stopped Nodes"),
+     ?XE("ul", FSN)].
+
+
 

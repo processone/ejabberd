@@ -12,7 +12,9 @@
 
 -export([start_link/0, init/1, start/3,
 	 init/3,
-	 init_ssl/4
+	 init_ssl/4,
+	 start_listener/3,
+	 stop_listener/1
 	]).
 
 -include("ejabberd.hrl").
@@ -130,4 +132,17 @@ accept_ssl(ListenSocket, Module, Opts) ->
 	    accept_ssl(ListenSocket, Module, Opts)
     end.
 
+
+start_listener(Port, Module, Opts) ->
+    ChildSpec = {Port,
+		 {?MODULE, start, [Port, Module, Opts]},
+		 permanent,
+		 brutal_kill,
+		 worker,
+		 [?MODULE]},
+    supervisor:start_child(ejabberd_listeners, ChildSpec).
+
+stop_listener(Port) ->
+    supervisor:terminate_child(ejabberd_listeners, Port),
+    supervisor:delete_child(ejabberd_listeners, Port).
 
