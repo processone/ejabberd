@@ -257,6 +257,26 @@ handle_info({route_chan, Channel, Resource,
 	end,
     {next_state, StateName, NewStateData};
 
+
+handle_info({route_chan, Channel, Resource,
+	     {xmlelement, "iq", Attrs, Els} = El},
+	    StateName, StateData) ->
+    From = StateData#state.user,
+    To = {lists:concat([Channel, "%", StateData#state.server]),
+	  StateData#state.myname, StateData#state.nick},
+    case jlib:iq_query_info(El) of
+	{iq, ID, Type, ?NS_MUC_ADMIN = XMLNS, SubEl} ->
+	    iq_admin(StateData, Channel,
+		     From,
+		     To,
+		     ID, XMLNS, Type, SubEl);
+	_ ->
+	    Err = jlib:make_error_reply(
+		    El, "503", "Service Unavailable"),
+	    ejabberd_router:route(To, From, Err)
+    end,
+    {next_state, StateName, StateData};
+
 handle_info({route_chan, Channel, Resource, Packet}, StateName, StateData) ->
     {next_state, StateName, StateData};
 
@@ -737,3 +757,77 @@ remove_element(E, Set) ->
 	_ ->
 	    Set
     end.
+
+
+
+iq_admin(StateData, Channel, From, To, ID, XMLNS, Type, SubEl) ->
+    case catch process_iq_admin(StateData, Channel, Type, SubEl) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p", [Reason]);
+	Res ->
+	    if
+		Res /= ignore ->
+		    ResIQ = case Res of
+				{result, ResEls} ->
+				    {iq, ID, result, XMLNS,
+				     [{xmlelement, "query",
+				       [{"xmlns", XMLNS}],
+				       ResEls
+				      }]};
+				{error, Code, Desc} ->
+				    {iq, ID, error, XMLNS,
+				     [SubEl, {xmlelement, "error",
+					      [{"code", Code}],
+					      [{xmlcdata, Desc}]}]}
+			    end,
+		    ejabberd_router:route(To, From,
+					  jlib:iq_to_xml(ResIQ));
+		true ->
+		    ok
+	    end
+    end.
+
+
+process_iq_admin(StateData, Channel, set, SubEl) ->
+    case xml:get_subtag(SubEl, "item") of
+	false ->
+	    {error, "400", "Bad Request"};
+	ItemEl ->
+	    Nick = xml:get_tag_attr_s("nick", ItemEl),
+	    Affiliation = xml:get_tag_attr_s("affiliation", ItemEl),
+	    Role = xml:get_tag_attr_s("role", ItemEl),
+	    Reason = xml:get_path_s(ItemEl, [{elem, "reason"}, cdata]),
+	    process_admin(StateData, Channel, Nick, Affiliation, Role, Reason)
+    end;
+process_iq_admin(StateData, Channel, get, SubEl) ->
+    {error, "501", "Not Implemented"}.
+
+
+
+process_admin(StateData, Channel, "", Affiliation, Role, Reason) ->
+    {error, "501", "Not Implemented"};
+
+process_admin(StateData, Channel, Nick, Affiliation, "none", Reason) ->
+    case Reason of
+	"" ->
+	    send_text(StateData,
+		      io_lib:format("KICK #~s ~s\r\n",
+				    [Channel, Nick]));
+	_ ->
+	    send_text(StateData,
+		      io_lib:format("KICK #~s ~s :~s\r\n",
+				    [Channel, Nick, Reason]))
+    end,
+    {result, []};
+
+
+
+process_admin(StateData, Channel, Nick, Affiliation, Role, Reason) ->
+    {error, "501", "Not Implemented"}.
+
+
+
+
+
+
+

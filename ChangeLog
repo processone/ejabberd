@@ -1,3 +1,7 @@
+2003-02-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: /kick support
+
 2003-02-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_irc/: Added configuration interface

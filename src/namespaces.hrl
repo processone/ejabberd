@@ -22,5 +22,7 @@
 -define(NS_STATS,       "http://jabber.org/protocol/stats").
 -define(NS_MUC,         "http://jabber.org/protocol/muc").
 -define(NS_MUC_USER,    "http://jabber.org/protocol/muc#user").
+-define(NS_MUC_ADMIN,   "http://jabber.org/protocol/muc#admin").
+-define(NS_MUC_OWNER,   "http://jabber.org/protocol/muc#owner").
 
 
