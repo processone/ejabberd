@@ -641,10 +641,16 @@ terminate(Reason, StateName, StateData) ->
 receiver(Socket, SockMod, Shaper, C2SPid) ->
     XMLStreamPid = xml_stream:start(C2SPid),
     ShaperState = shaper:new(Shaper),
-    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid).
+    Timeout = case SockMod of
+		  ssl ->
+		      20;
+		  _ ->
+		      infinity
+	      end,
+    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout).
 
-receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid) ->
-    case SockMod:recv(Socket, 0) of
+receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid, Timeout) ->
+    case SockMod:recv(Socket, 0, Timeout) of
         {ok, Text} ->
 	    ShaperSt1 = receive
 			    {change_shaper, Shaper} ->
@@ -654,7 +660,11 @@ receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid) ->
 			end,
 	    NewShaperState = shaper:update(ShaperSt1, size(Text)),
 	    xml_stream:send_text(XMLStreamPid, Text),
-	    receiver(Socket, SockMod, NewShaperState, C2SPid, XMLStreamPid);
+	    receiver(Socket, SockMod, NewShaperState, C2SPid, XMLStreamPid,
+		     Timeout);
+	{error, timeout} ->
+	    receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamPid,
+		     Timeout);
         {error, Reason} ->
 	    exit(XMLStreamPid, closed),
 	    gen_fsm:send_event(C2SPid, closed),

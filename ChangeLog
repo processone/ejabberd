@@ -1,6 +1,14 @@
+2003-04-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Workaround to make SSL work properly
+
 2003-04-28  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_irc/mod_irc_connection.erl: Fixed URL to ejabberd
+
+2003-04-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Support for nick registration
 
 2003-04-15  Alexey Shchepin  <alexey@sevcom.net>
 
