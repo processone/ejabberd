@@ -21,6 +21,7 @@
 start() ->
     register(ejabberd_local, spawn(ejabberd_local, init, [])),
     mod_register:start(),
+    mod_roster:start(),
     ok.
 
 init() ->

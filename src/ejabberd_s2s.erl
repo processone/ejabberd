@@ -10,9 +10,10 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0, init/0, open_session/2, close_session/2,
+-export([start/0, init/0,
 	 have_connection/1,
-	 get_key/1]).
+	 get_key/1,
+	 try_register/1]).
 
 -include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
@@ -59,58 +60,12 @@ loop() ->
     end.
 
 
-open_session(User, Resource) ->
-    ejabberd_s2s ! {open_session, User, Resource, self()}.
+%open_session(User, Resource) ->
+%    ejabberd_s2s ! {open_session, User, Resource, self()}.
+%
+%close_session(User, Resource) ->
+%    ejabberd_s2s ! {close_session, User, Resource}.
 
-close_session(User, Resource) ->
-    ejabberd_s2s ! {close_session, User, Resource}.
-
-%replace_alien_connection(User, Resource) ->
-%    F = fun() ->
-%		[ID] = mnemosyne:eval(query [X.id || X <- table(user_resource),
-%						     X.user = User,
-%						     X.resource = Resource]
-%				      end),
-%		Es = mnesia:read({session, ID}),
-%		mnesia:write(#session{id = ID, node = node()}),
-%		Es
-%        end,
-%    case mnesia:transaction(F) of
-%	{atomic, Rs} ->
-%	    lists:foreach(
-%	      fun(R) ->
-%		      if R#session.node /= node() ->
-%			      {ejabberd_s2s, R#session.node} !
-%				  {replace, User, Resource};
-%			 true ->
-%			      ok
-%		      end
-%	      end, Rs);
-%	_ ->
-%	    false
-%    end.
-%
-%
-%replace_my_connection(User, Resource) ->
-%    F = fun() ->
-%		[ID] = mnemosyne:eval(query [X.id || X <- table(user_resource),
-%						     X.user = User,
-%						     X.resource = Resource]
-%				      end),
-%
-%		Es = mnesia:read({mysession, ID}),
-%		mnesia:delete({mysession, ID}),
-%		Es
-%        end,
-%    case mnesia:transaction(F) of
-%	{atomic, Rs} ->
-%	    lists:foreach(
-%	      fun(R) ->
-%		      (R#mysession.info)#mysession_info.pid ! replaced
-%	      end, Rs);
-%	_ ->
-%	    false
-%    end.
 
 remove_connection(Server) ->
     F = fun() ->
@@ -119,43 +74,6 @@ remove_connection(Server) ->
 	end,
     mnesia:transaction(F).
 
-%replace_and_register_my_connection(User, Resource, Pid) ->
-%    F = fun() ->
-%		IDs = mnemosyne:eval(query [X.id || X <- table(user_resource),
-%						    X.user = User,
-%						    X.resource = Resource]
-%				     end),
-%
-%		ID = case IDs of
-%			 [Id] -> Id;
-%			 [] ->
-%			     [CurID] = 
-%				 mnemosyne:eval(
-%				   query [X.id ||
-%					     X <- table(user_resource_id_seq)]
-%				     end),
-%			     mnesia:write(
-%			       #user_resource_id_seq{id = CurID + 1}),
-%			     mnesia:write(
-%			       #user_resource{id = CurID,
-%					      user = User,
-%					      resource = Resource}),
-%			     CurID
-%		     end,
-%		Es = mnesia:read({mysession, ID}),
-%		mnesia:write(#mysession{id = ID,
-%					info = #mysession_info{pid = Pid}}),
-%		Es
-%        end,
-%    case mnesia:transaction(F) of
-%	{atomic, Rs} ->
-%	    lists:foreach(
-%	      fun(R) ->
-%		      (R#mysession.info)#mysession_info.pid ! replaced
-%	      end, Rs);
-%	_ ->
-%	    false
-%    end.
 
 
 clean_table_from_bad_node(Node) ->
@@ -190,6 +108,29 @@ get_key(Server) ->
 	    ""
     end.
 
+try_register(Server) ->
+    Key = randoms:get_string(),
+    F = fun() ->
+		case mnesia:read({s2s, Server}) of
+		    [] ->
+			mnesia:write(#s2s{server = Server,
+					  node = node(),
+					  key = Key}),
+			mnesia:write(#mys2s{server = Server,
+					    pid = self()}),
+			{key, Key};
+		    _ ->
+			false
+		end
+        end,
+    case mnesia:transaction(F) of
+	{atomic, Res} ->
+	    Res;
+	_ ->
+	    false
+    end.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -197,7 +138,7 @@ do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
     {User, Server, Resource} = To,
-    Key = lists:flatten(io_lib:format("~p", [random:uniform(65536*65536)])),
+    Key = randoms:get_string(),
     F = fun() ->
 		case mnesia:read({mys2s, Server}) of
 		    [] ->

@@ -20,7 +20,6 @@
 	 open_socket/2,
 	 wait_for_stream/2,
 	 wait_for_validation/2,
-	 wait_for_verification/2,
 	 stream_established/2,
 	 handle_info/3,
 	 terminate/3]).
@@ -28,7 +27,8 @@
 -include("ejabberd.hrl").
 
 -record(state, {socket, receiver, streamid,
-		myself = ?MYNAME, server, type, xmlpid, queue}).
+		myself = ?MYNAME, server, xmlpid, queue,
+		new = false, verify = false}).
 
 -define(DBGFSM, true).
 
@@ -74,9 +74,16 @@ start(Host, Type) ->
 %%----------------------------------------------------------------------
 init([Server, Type]) ->
     gen_fsm:send_event(self(), init),
+    {New, Verify} = case Type of
+			{new, Key} ->
+			    {Key, false};
+			{verify, Pid, Key} ->
+			    {false, {Pid, Key}}
+		    end,
     {ok, open_socket, #state{queue = queue:new(),
 			     server = Server,
-			     type = Type}}.
+			     new = New,
+			     verify = Verify}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -109,25 +116,41 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     % TODO
     case {xml:get_attr_s("xmlns", Attrs), xml:get_attr_s("xmlns:db", Attrs)} of
 	{"jabber:server", "jabber:server:dialback"} ->
-	    case StateData#state.type of
-		{new, Key} ->
+	    Server = StateData#state.server,
+	    New = case StateData#state.new of
+		      false ->
+			  case ejabberd_s2s:try_register(Server) of
+			      {key, Key} ->
+				  Key;
+			      false ->
+				  false
+			  end;
+		      Key ->
+			  Key
+		  end,
+	    case New of
+		false ->
+		    ok;
+		Key1 ->
 		    send_element(StateData#state.socket,
 				 {xmlelement,
 				  "db:result",
 				  [{"from", ?MYNAME},
-				   {"to", StateData#state.server}],
-				  [{xmlcdata, Key}]}),
-		    % TODO
-		    {next_state, wait_for_validation, StateData};
-		{verify, Pid, Key} ->
+				   {"to", Server}],
+				  [{xmlcdata, Key1}]})
+	    end,
+	    case StateData#state.verify of
+		false ->
+		    ok;
+		{Pid, Key2} ->
 		    send_element(StateData#state.socket,
 				 {xmlelement,
 				  "db:verify",
 				  [{"from", ?MYNAME},
 				   {"to", StateData#state.server}],
-				  [{xmlcdata, Key}]}),
-		    {next_state, wait_for_verification, StateData}
-		end;
+				  [{xmlcdata, Key2}]})
+	    end,
+	    {next_state, wait_for_validation, StateData#state{new = New}};
 	_ ->
 	    send_text(StateData#state.socket, ?INVALID_HEADER_ERR),
 	    {stop, normal, StateData}
@@ -143,12 +166,30 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 	{result, To, From, Id, Type} ->
 	    case Type of
 		"valid" ->
-		    % TODO
 		    send_queue(StateData#state.socket, StateData#state.queue),
 		    {next_state, stream_established, StateData};
 		_ ->
 		    % TODO: bounce packets
 		    {stop, normal, StateData}
+	    end;
+	{verify, To, From, Id, Type} ->
+	    case StateData#state.verify of
+		false ->
+		    {next_state, wait_for_validation, StateData};
+		{Pid, Key} ->
+		    case Type of
+			"valid" ->
+			    gen_fsm:send_event(Pid, valid);
+			_ ->
+			    gen_fsm:send_event(Pid, invalid)
+		    end,
+		    case StateData#state.verify of
+			false ->
+			    {stop, normal, StateData};
+			_ ->
+			    {next_state, wait_for_validation,
+			     StateData#state{verify = false}}
+		    end
 	    end;
 	_ ->
 	    {next_state, wait_for_validation, StateData}
@@ -162,33 +203,23 @@ wait_for_validation(closed, StateData) ->
     {stop, normal, StateData}.
 
 
-wait_for_verification({xmlstreamelement, El}, StateData) ->
-    case is_verify_res(El) of
-	{result, To, From, Id, Type} ->
-	    {verify, Pid, Key} = StateData#state.type,
-	    case Type of
-		"valid" ->
-		    io:format("VALID KEY~n", []),
-		    gen_fsm:send_event(Pid, valid);
-		    % TODO
-		_ ->
-		    % TODO
-		    gen_fsm:send_event(Pid, invalid)
-	    end,
-	    {stop, normal, StateData};
-	_ ->
-	    {next_state, wait_for_verification, StateData}
-    end;
-
-wait_for_verification({xmlstreamend, Name}, StateData) ->
-    % TODO
-    {stop, normal, StateData};
-
-wait_for_verification(closed, StateData) ->
-    {stop, normal, StateData}.
-
-
 stream_established({xmlstreamelement, El}, StateData) ->
+    case is_verify_res(El) of
+	{verify, VTo, VFrom, VId, VType} ->
+	    case StateData#state.verify of
+		{VPid, VKey} ->
+		    case VType of
+			"valid" ->
+			    gen_fsm:send_event(VPid, valid);
+			_ ->
+			    gen_fsm:send_event(VPid, invalid)
+		    end;
+		_ ->
+		    ok
+	    end;
+	_ ->
+	    ok
+    end,
     {xmlelement, Name, Attrs, Els} = El,
     % TODO
     From = xml:get_attr_s("from", Attrs),
@@ -293,11 +324,11 @@ handle_info({tcp_error, Socket, Reason}, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
     ?DEBUG("s2s_out: terminate ~p~n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!~n", [[Reason, StateName, StateData]]),
-    case StateData#state.type of
-	{new, Key} ->
-	    ejabberd_s2s ! {closed_conection, StateData#state.server};
-	_ ->
-	    ok
+    case StateData#state.new of
+	false ->
+	    ok;
+	Key ->
+	    ejabberd_s2s ! {closed_conection, StateData#state.server}
     end,
     case StateData#state.socket of
 	undefined ->
@@ -342,7 +373,7 @@ send_queue(Socket, Q) ->
     end.
 
 new_id() ->
-    lists:flatten(io_lib:format("~p", [random:uniform(65536*65536)])).
+    randoms:get_string().
 
 bounce_messages(Reason) ->
     receive
@@ -385,7 +416,7 @@ is_verify_res({xmlelement, Name, Attrs, Els}) when Name == "db:result" ->
      xml:get_attr_s("id", Attrs),
      xml:get_attr_s("type", Attrs)};
 is_verify_res({xmlelement, Name, Attrs, Els}) when Name == "db:verify" ->
-    {result,
+    {verify,
      xml:get_attr_s("to", Attrs),
      xml:get_attr_s("from", Attrs),
      xml:get_attr_s("id", Attrs),

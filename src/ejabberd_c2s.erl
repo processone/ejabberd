@@ -270,7 +270,7 @@ send_element(Pid, El) ->
     send_text(Pid, xml:element_to_string(El)).
 
 new_id() ->
-    lists:flatten(io_lib:format("~p", [random:uniform(65536*65536)])).
+    randoms:get_string().
 
 
 is_auth_packet({xmlelement, Name, Attrs, Els}) when Name == "iq" ->

@@ -12,6 +12,7 @@
 
 -export([make_result_iq_reply/1,
 	 make_error_reply/3,
+	 make_error_element/2,
 	 make_correct_from_to_attrs/3,
 	 replace_from_to_attrs/3,
 	 replace_from_to/3,
@@ -80,6 +81,11 @@ make_error_reply_attrs(Attrs) ->
     Attrs5 = lists:keydelete("type", 1, Attrs4),
     Attrs6 = [{"type", "error"} | Attrs5],
     Attrs6.
+
+make_error_element(Code, Desc) ->
+    {xmlelement, "error",
+     [{"code", Code}],
+     [{xmlcdata, Desc}]}.
 
 make_correct_from_to_attrs(From, To, Attrs) ->
     Attrs1 = lists:keydelete("from", 1, Attrs),

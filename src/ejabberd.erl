@@ -17,8 +17,7 @@ start() ->
 
 init() ->
     register(ejabberd, self()),
-    {A1, A2, A3} = now(),
-    random:seed(A1,A2,A3),
+    randoms:start(),
     ok = erl_ddll:load_driver(".", expat_erl),
     Port = open_port({spawn, expat_erl}, [binary]),
     db_init(),

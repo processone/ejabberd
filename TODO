@@ -1,8 +1,7 @@
 presence
 iq:register
-S2S
+S2S timeouts
 ...
-iq plugins
 iq:browse
 iq:disco
 ...

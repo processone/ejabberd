@@ -327,7 +327,7 @@ send_queue(Socket, Q) ->
 
 
 new_id() ->
-    lists:flatten(io_lib:format("~p", [random:uniform(65536*65536)])).
+    randoms:get_string().
 
 
 is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:result" ->
