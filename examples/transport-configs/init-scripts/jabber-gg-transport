@@ -33,8 +33,7 @@ case "$1" in
   stop)
 	echo "Stopping $NAME."
 	killall $NAME &
-# BUG REPORTEN hiervoor: bij afsluiten blijft telkens PID-bestand achter
-	rm $HOME/../../../var/run/jabber/jabber-gg-transport.pid
+	rm /var/run/jabber/jabber-gg-transport.pid
         ;;
 
   restart|reload)
