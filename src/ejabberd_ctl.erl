@@ -70,36 +70,36 @@ process(Node, ["reopen-log"]) ->
 	    ?STATUS_SUCCESS
     end;
 
-process(Node, ["register", User, Password]) ->
-    case rpc:call(Node, ejabberd_auth, try_register, [User, Password]) of
+process(Node, ["register", User, Server, Password]) ->
+    case rpc:call(Node, ejabberd_auth, try_register, [User, Server, Password]) of
 	{atomic, ok} ->
 	    ?STATUS_SUCCESS;
 	{atomic, exists} ->
 	    io:format("User ~p already registered on node ~p~n",
-		      [User, Node]),
+		      [User ++ "@" ++ Server, Node]),
 	    ?STATUS_ERROR;
 	{error, Reason} ->
 	    io:format("Can't register user ~p on node ~p: ~p~n",
-		      [User, Node, Reason]),
+		      [User ++ "@" ++ Server, Node, Reason]),
 	    ?STATUS_ERROR;
 	{badrpc, Reason} ->
 	    io:format("Can't register user ~p on node ~p: ~p~n",
-		      [User, Node, Reason]),
+		      [User ++ "@" ++ Server, Node, Reason]),
 	    ?STATUS_BADRPC
     end;
 
-process(Node, ["unregister", User]) ->
-    case rpc:call(Node, ejabberd_auth, remove_user, [User]) of
-	{atomic, ok} ->
-	    ?STATUS_SUCCESS;
+process(Node, ["unregister", User, Server]) ->
+    case rpc:call(Node, ejabberd_auth, remove_user, [User, Server]) of
 	{error, Reason} ->
 	    io:format("Can't unregister user ~p on node ~p: ~p~n",
-		      [User, Node, Reason]),
+		      [User ++ "@" ++ Server, Node, Reason]),
 	    ?STATUS_ERROR;
 	{badrpc, Reason} ->
 	    io:format("Can't unregister user ~p on node ~p: ~p~n",
-		      [User, Node, Reason]),
-	    ?STATUS_BADRPC
+		      [User ++ "@" ++ Server, Node, Reason]),
+	    ?STATUS_BADRPC;
+	_ ->
+	    ?STATUS_SUCCESS
     end;
 
 process(Node, ["backup", Path]) ->
@@ -178,7 +178,7 @@ process(Node, ["registered-users"]) ->
 	Users when is_list(Users) ->
 	    NewLine = io_lib:format("~n", []),
 	    SUsers = lists:sort(Users),
-	    FUsers = lists:map(fun(U) -> [U, NewLine] end, SUsers),
+	    FUsers = lists:map(fun({U, S}) -> [U, $@, S, NewLine] end, SUsers),
 	    io:format("~s", [FUsers]),
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
@@ -216,8 +216,8 @@ print_usage() ->
       "  stop\t\t\t\tstop ejabberd~n"
       "  restart\t\t\trestart ejabberd~n"
       "  reopen-log\t\t\treopen log file~n"
-      "  register user password\tregister a user~n"
-      "  unregister user\t\tunregister a user~n"
+      "  register user server password\tregister a user~n"
+      "  unregister user server\t\tunregister a user~n"
       "  backup file\t\t\tstore a database backup in file~n"
       "  restore file\t\t\trestore a database backup from file~n"
       "  install-fallback file\t\tinstall a database fallback from file~n"
