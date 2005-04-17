@@ -12,48 +12,51 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/2, stop/0, closed_conection/2,
-	 get_user_and_encoding/2]).
+-export([start/1, init/2, stop/0,
+	 closed_connection/3,
+	 get_user_and_encoding/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
 -define(DEFAULT_IRC_ENCODING, "koi8-r").
 
--record(irc_connection, {userserver, pid}).
--record(irc_custom, {userserver, data}).
+-record(irc_connection, {jid_server_host, pid}).
+-record(irc_custom, {us_host, data}).
 
 start(Opts) ->
     iconv:start(),
     mnesia:create_table(irc_custom,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, irc_custom)}]),
-    Host = gen_mod:get_opt(host, Opts, "irc." ++ ?MYNAME),
+    Hosts = gen_mod:get_hosts(Opts, "irc."),
+    Host = hd(Hosts),
+    update_table(Host),
     Access = gen_mod:get_opt(access, Opts, all),
-    register(ejabberd_mod_irc, spawn(?MODULE, init, [Host, Access])).
+    register(ejabberd_mod_irc, spawn(?MODULE, init, [Hosts, Access])).
 
-init(Host, Access) ->
+init(Hosts, Access) ->
     catch ets:new(irc_connection, [named_table,
 				   public,
-				   {keypos, #irc_connection.userserver}]),
-    ejabberd_router:register_route(Host),
-    loop(Host, Access).
+				   {keypos, #irc_connection.jid_server_host}]),
+    ejabberd_router:register_routes(Hosts),
+    loop(Hosts, Access).
 
-loop(Host, Access) ->
+loop(Hosts, Access) ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(Host, Access, From, To, Packet) of
+	    case catch do_route(To#jid.lserver, Access, From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop(Host, Access);
+	    loop(Hosts, Access);
 	stop ->
-	    ejabberd_router:unregister_global_route(Host),
+	    ejabberd_router:unregister_routes(Hosts),
 	    ok;
 	_ ->
-	    loop(Host, Access)
+	    loop(Hosts, Access)
     end.
 
 
@@ -96,7 +99,7 @@ do_route1(Host, From, To, Packet) ->
 						  From,
 						  jlib:iq_to_xml(Res));
 			#iq{xmlns = ?NS_REGISTER} = IQ ->
-			    process_register(From, To, IQ);
+			    process_register(Host, From, To, IQ);
 			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
 			    lang = Lang} = IQ ->
 			    Res = IQ#iq{type = result,
@@ -121,17 +124,17 @@ do_route1(Host, From, To, Packet) ->
 	_ ->
 	    case string:tokens(ChanServ, "%") of
 		[[_ | _] = Channel, [_ | _] = Server] ->
-		    case ets:lookup(irc_connection, {From, Server}) of
+		    case ets:lookup(irc_connection, {From, Server, Host}) of
 			[] ->
 			    io:format("open new connection~n"),
 			    {Username, Encoding} = get_user_and_encoding(
-						     From, Server),
+						     Host, From, Server),
 			    {ok, Pid} = mod_irc_connection:start(
 					  From, Host, Server,
 					  Username, Encoding),
 			    ets:insert(
 			      irc_connection,
-			      #irc_connection{userserver = {From, Server},
+			      #irc_connection{jid_server_host = {From, Server, Host},
 					      pid = Pid}),
 			    mod_irc_connection:route_chan(
 			      Pid, Channel, Resource, Packet),
@@ -147,7 +150,7 @@ do_route1(Host, From, To, Packet) ->
 		_ ->
 		    case string:tokens(ChanServ, "!") of
 			[[_ | _] = Nick, [_ | _] = Server] ->
-			    case ets:lookup(irc_connection, {From, Server}) of
+			    case ets:lookup(irc_connection, {From, Server, Host}) of
 				[] ->
 				    Err = jlib:make_error_reply(
 					    Packet, ?ERR_SERVICE_UNAVAILABLE),
@@ -175,8 +178,8 @@ stop() ->
     ejabberd_mod_irc ! stop,
     ok.
 
-closed_conection(From, Server) ->
-    ets:delete(irc_connection, {From, Server}).
+closed_connection(Host, From, Server) ->
+    ets:delete(irc_connection, {From, Server, Host}).
 
 
 iq_disco() ->
@@ -201,8 +204,8 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, translate:translate(Lang, "ejabberd IRC module\n"
         "Copyright (c) 2003-2005 Alexey Shchepin")}]}].
 
-process_register(From, To, #iq{} = IQ) ->
-    case catch process_irc_register(From, To, IQ) of
+process_register(Host, From, To, #iq{} = IQ) ->
+    case catch process_irc_register(Host, From, To, IQ) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	ResIQ ->
@@ -232,7 +235,7 @@ find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
-process_irc_register(From, To,
+process_irc_register(Host, From, To,
 		     #iq{type = Type, xmlns = XMLNS,
 			 lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -257,7 +260,8 @@ process_irc_register(From, To,
 				    Node = string:tokens(
 					     xml:get_tag_attr_s("node", SubEl),
 					     "/"),
-				    case set_form(From, Node, Lang, XData) of
+				    case set_form(
+					   Host, From, Node, Lang, XData) of
 					{result, Res} ->
 					    IQ#iq{type = result,
 						  sub_el = [{xmlelement, "query",
@@ -277,7 +281,7 @@ process_irc_register(From, To,
 	get ->
 	    Node =
 		string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-	    case get_form(From, Node, Lang) of
+	    case get_form(Host, From, Node, Lang) of
 		{result, Res} ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -292,11 +296,12 @@ process_irc_register(From, To,
 
 
 
-get_form(From, [], Lang) ->
+get_form(Host, From, [], Lang) ->
     #jid{user = User, server = Server,
 	 luser = LUser, lserver = LServer} = From,
+    US = {LUser, LServer},
     Customs =
-	case catch mnesia:dirty_read({irc_custom, {LUser, LServer}}) of
+	case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	    {'EXIT', Reason} ->
 		{error, ?ERR_INTERNAL_SERVER_ERROR};
 	    [] ->
@@ -306,7 +311,7 @@ get_form(From, [], Lang) ->
 		 xml:get_attr_s(encodings, Data)}
 	end,
     case Customs of
-	{error, _, _} ->
+	{error, _Error} ->
 	    Customs;
 	{Username, Encodings} ->
 	    {result,
@@ -370,15 +375,15 @@ get_form(From, [], Lang) ->
 	       ]}]}
     end;
 
-
-get_form(_, _, Lang) ->
+get_form(_Host, _, _, Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 
 
-set_form(From, [], Lang, XData) ->
+set_form(Host, From, [], Lang, XData) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
+    US = {LUser, LServer},
     case {lists:keysearch("username", 1, XData),
 	  lists:keysearch("encodings", 1, XData)} of
 	{{value, {_, [Username]}}, {value, {_, Strings}}} ->
@@ -392,8 +397,8 @@ set_form(From, [], Lang, XData) ->
 			    case mnesia:transaction(
 				   fun() ->
 					   mnesia:write(
-					     #irc_custom{userserver =
-							 {LUser, LServer},
+					     #irc_custom{us_host =
+							 {US, Host},
 							 data =
 							 [{username,
 							   Username},
@@ -416,14 +421,15 @@ set_form(From, [], Lang, XData) ->
     end;
 
 
-set_form(_, _, Lang, XData) ->
+set_form(_Host, _, _, Lang, XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
-get_user_and_encoding(From, IRCServer) ->
+get_user_and_encoding(Host, From, IRCServer) ->
     #jid{user = User, server = Server,
 	 luser = LUser, lserver = LServer} = From,
-    case catch mnesia:dirty_read({irc_custom, {LUser, LServer}}) of
+    US = {LUser, LServer},
+    case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	{'EXIT', Reason} ->
 	    {User, ?DEFAULT_IRC_ENCODING};
 	[] ->
@@ -436,3 +442,44 @@ get_user_and_encoding(From, IRCServer) ->
 	     end}
     end.
 
+
+update_table(Host) ->
+    Fields = record_info(fields, irc_custom),
+    case mnesia:table_info(irc_custom, attributes) of
+	Fields ->
+	    ok;
+	[userserver, data] ->
+	    ?INFO_MSG("Converting irc_custom table from "
+		      "{userserver, data} format", []),
+	    {atomic, ok} = mnesia:create_table(
+			     mod_irc_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, irc_custom},
+			      {attributes, record_info(fields, irc_custom)}]),
+	    mnesia:transform_table(irc_custom, ignore, Fields),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_irc_tmp_table),
+			 mnesia:foldl(
+			   fun(#irc_custom{us_host = US} = R, _) ->
+				   mnesia:dirty_write(
+				     mod_irc_tmp_table,
+				     R#irc_custom{us_host = {US, Host}})
+			   end, ok, irc_custom)
+		 end,
+	    mnesia:transaction(F1),
+	    mnesia:clear_table(irc_custom),
+	    F2 = fun() ->
+			 mnesia:write_lock_table(irc_custom),
+			 mnesia:foldl(
+			   fun(R, _) ->
+				   mnesia:dirty_write(R)
+			   end, ok, mod_irc_tmp_table)
+		 end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_irc_tmp_table);
+	_ ->
+	    ?INFO_MSG("Recreating irc_custom table", []),
+	    mnesia:transform_table(irc_custom, ignore, Fields)
+    end.

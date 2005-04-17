@@ -16,7 +16,8 @@
 	 get_opt/2,
 	 get_opt/3,
 	 get_module_opt/3,
-	 loaded_modules/0]).
+	 loaded_modules/0,
+	 get_hosts/2]).
 
 -export([behaviour_info/1]).
 
@@ -27,7 +28,7 @@
 behaviour_info(callbacks) ->
     [{start, 1},
      {stop, 0}];
-behaviour_info(Other) ->
+behaviour_info(_Other) ->
     undefined.
 
 start() ->
@@ -60,8 +61,8 @@ stop_module(Module) ->
 get_opt(Opt, Opts) ->
     case lists:keysearch(Opt, 1, Opts) of
 	false ->
-	    % TODO: replace with more appropriate function
-	    [] = {undefined_option, Opt};
+ 	    % TODO: replace with more appropriate function
+ 	    [] = {undefined_option, Opt};
 	{value, {_, Val}} ->
 	    Val
     end.
@@ -87,3 +88,15 @@ loaded_modules() ->
     ets:select(ejabberd_modules,
 	       [{#ejabberd_module{_ = '_', module = '$1'}, [],['$1']}]).
 
+get_hosts(Opts, Prefix) ->
+    case catch gen_mod:get_opt(hosts, Opts) of
+	{'EXIT', _Error1} ->
+	    case catch gen_mod:get_opt(host, Opts) of
+		{'EXIT', _Error2} ->
+		    [Prefix ++ Host || Host <- ?MYHOSTS];
+		Host ->
+		    [Host]
+	    end;
+	Hosts ->
+	    Hosts
+    end.

@@ -15,16 +15,16 @@
 	 init/0,
 	 stop/0,
 	 store_packet/3,
-	 resend_offline_messages/1,
-	 pop_offline_messages/2,
+	 resend_offline_messages/2,
+	 pop_offline_messages/3,
 	 remove_expired_messages/0,
 	 remove_old_messages/1,
-	 remove_user/1]).
+	 remove_user/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(offline_msg, {user, timestamp, expire, from, to, packet}).
+-record(offline_msg, {us, timestamp, expire, from, to, packet}).
 
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
@@ -97,11 +97,11 @@ store_packet(From, To, Packet) ->
 	(Type /= "error") and (Type /= "groupchat") ->
 	    case check_event(From, To, Packet) of
 		true ->
-		    #jid{luser = LUser} = To,
+		    #jid{luser = LUser, lserver = LServer} = To,
 		    TimeStamp = now(),
 		    {xmlelement, _Name, _Attrs, Els} = Packet,
 		    Expire = find_x_expire(TimeStamp, Els),
-		    ?PROCNAME ! #offline_msg{user = LUser,
+		    ?PROCNAME ! #offline_msg{us = {LUser, LServer},
 					     timestamp = TimeStamp,
 					     expire = Expire,
 					     from = From,
@@ -189,11 +189,13 @@ find_x_expire(TimeStamp, [El | Els]) ->
     end.
 
 
-resend_offline_messages(User) ->
+resend_offline_messages(User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
     F = fun() ->
-		Rs = mnesia:wread({offline_msg, LUser}),
-		mnesia:delete({offline_msg, LUser}),
+		Rs = mnesia:wread({offline_msg, US}),
+		mnesia:delete({offline_msg, US}),
 		Rs
 	end,
     case mnesia:transaction(F) of
@@ -216,11 +218,13 @@ resend_offline_messages(User) ->
 	    ok
     end.
 
-pop_offline_messages(Ls, User) ->
+pop_offline_messages(Ls, User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
     F = fun() ->
-		Rs = mnesia:wread({offline_msg, LUser}),
-		mnesia:delete({offline_msg, LUser}),
+		Rs = mnesia:wread({offline_msg, US}),
+		mnesia:delete({offline_msg, US}),
 		Rs
 	end,
     case mnesia:transaction(F) of
@@ -290,10 +294,12 @@ remove_old_messages(Days) ->
 	end,
     mnesia:transaction(F).
 
-remove_user(User) ->
+remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
     F = fun() ->
-		mnesia:delete({offline_msg, LUser})
+		mnesia:delete({offline_msg, US})
 	end,
     mnesia:transaction(F).
 
@@ -302,23 +308,83 @@ update_table() ->
     case mnesia:table_info(offline_msg, attributes) of
 	Fields ->
 	    ok;
+	[user, timestamp, expire, from, to, packet] ->
+	    ?INFO_MSG("Converting offline_msg table from "
+		      "{user, timestamp, expire, from, to, packet} format", []),
+	    Host = ?MYNAME,
+	    {atomic, ok} = mnesia:create_table(
+			     mod_offline_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, offline_msg},
+			      {attributes, record_info(fields, offline_msg)}]),
+	    mnesia:transform_table(offline_msg, ignore, Fields),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_offline_tmp_table),
+			 mnesia:foldl(
+			   fun(#offline_msg{us = U} = R, _) ->
+				   mnesia:dirty_write(
+				     mod_offline_tmp_table,
+				     R#offline_msg{us = {U, Host}})
+			   end, ok, offline_msg)
+		 end,
+	    mnesia:transaction(F1),
+	    mnesia:clear_table(offline_msg),
+	    F2 = fun() ->
+			 mnesia:write_lock_table(offline_msg),
+			 mnesia:foldl(
+			   fun(R, _) ->
+				   mnesia:dirty_write(R)
+			   end, ok, mod_offline_tmp_table)
+		 end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_offline_tmp_table);
 	[user, timestamp, from, to, packet] ->
 	    ?INFO_MSG("Converting offline_msg table from "
 		      "{user, timestamp, from, to, packet} format", []),
+	    Host = ?MYNAME,
+	    {atomic, ok} = mnesia:create_table(
+			     mod_offline_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, offline_msg},
+			      {attributes, record_info(fields, offline_msg)}]),
 	    mnesia:transform_table(
 	      offline_msg,
 	      fun({_, U, TS, F, T, P}) ->
 		      {xmlelement, _Name, _Attrs, Els} = P,
 		      Expire = find_x_expire(TS, Els),
-		      #offline_msg{user = U,
+		      #offline_msg{us = U,
 				   timestamp = TS,
 				   expire = Expire,
 				   from = F,
 				   to = T,
 				   packet = P}
-	      end, Fields);
+	      end, Fields),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_offline_tmp_table),
+			 mnesia:foldl(
+			   fun(#offline_msg{us = U} = R, _) ->
+				   mnesia:dirty_write(
+				     mod_offline_tmp_table,
+				     R#offline_msg{us = {U, Host}})
+			   end, ok, offline_msg)
+		 end,
+	    mnesia:transaction(F1),
+	    mnesia:clear_table(offline_msg),
+	    F2 = fun() ->
+			 mnesia:write_lock_table(offline_msg),
+			 mnesia:foldl(
+			   fun(R, _) ->
+				   mnesia:dirty_write(R)
+			   end, ok, mod_offline_tmp_table)
+		 end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_offline_tmp_table);
 	_ ->
 	    ?INFO_MSG("Recreating offline_msg table", []),
-	    mnesia:transform_table(last_activity, ignore, Fields)
+	    mnesia:transform_table(offline_msg, ignore, Fields)
     end.
 

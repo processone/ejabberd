@@ -26,7 +26,7 @@
 -define(DICT, dict).
 -define(MAXITEMS, 10).
 
--record(pubsub_node, {node, parent, info}).
+-record(pubsub_node, {host_node, host_parent, info}).
 -record(nodeinfo, {items = [],
 		   options = [],
 		   entities = ?DICT:new()
@@ -40,48 +40,54 @@ start(Opts) ->
     mnesia:create_table(pubsub_node,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, pubsub_node)}]),
-    mnesia:add_table_index(pubsub_node, parent),
-    Host = gen_mod:get_opt(host, Opts, "pubsub." ++ ?MYNAME),
-    ServedHosts = gen_mod:get_opt(served_hosts, Opts, [?MYNAME]),
+    Hosts = gen_mod:get_hosts(Opts, "pubsub."),
+    Host = hd(Hosts),
+    update_table(Host),
+    mnesia:add_table_index(pubsub_node, host_parent),
+    ServedHosts = gen_mod:get_opt(served_hosts, Opts, []),
     register(ejabberd_mod_pubsub,
-	     proc_lib:spawn_link(?MODULE, init, [Host, ServedHosts, self()])).
+	     proc_lib:spawn_link(?MODULE, init, [Hosts, ServedHosts, self()])).
 
 
 -define(MYJID, #jid{user = "", server = Host, resource = "",
 		    luser = "", lserver = Host, lresource = ""}).
 
-init(Host, ServedHosts, Parent) ->
-    ejabberd_router:register_route(Host),
-    create_new_node(Host, ["pubsub"], ?MYJID),
-    create_new_node(Host, ["pubsub", "nodes"], ?MYJID),
-    create_new_node(Host, ["home"], ?MYJID),
-    lists:foreach(fun(H) ->
-			  create_new_node(Host, ["home", H], ?MYJID)
-		  end, ServedHosts),
-    loop(Host, Parent).
+init(Hosts, ServedHosts, Parent) ->
+    ejabberd_router:register_routes(Hosts),
+    lists:foreach(
+      fun(Host) ->
+	      create_new_node(Host, ["pubsub"], ?MYJID),
+	      create_new_node(Host, ["pubsub", "nodes"], ?MYJID),
+	      create_new_node(Host, ["home"], ?MYJID),
+	      create_new_node(Host, ["home", find_my_host(Host)], ?MYJID),
+	      lists:foreach(fun(H) ->
+				    create_new_node(Host, ["home", H], ?MYJID)
+			    end, ServedHosts)
+      end, Hosts),
+    loop(Hosts, Parent).
 
-loop(Host, Parent) ->
+loop(Hosts, Parent) ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(Host, From, To, Packet) of
+	    case catch do_route(To#jid.lserver, From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop(Host, Parent);
+	    loop(Hosts, Parent);
 	{room_destroyed, Room} ->
 	    ets:delete(muc_online_room, Room),
-	    loop(Host, Parent);
+	    loop(Hosts, Parent);
 	stop ->
-	    ejabberd_router:unregister_global_route(Host),
+	    ejabberd_router:unregister_global_routes(Hosts),
 	    ok;
 	reload ->
-	    ?MODULE:loop(Host, Parent);
+	    ?MODULE:loop(Hosts, Parent);
         {system, From, Request} ->
-            sys:handle_system_msg(Request, From, Parent, ?MODULE, [], Host);
+            sys:handle_system_msg(Request, From, Parent, ?MODULE, [], Hosts);
 	_ ->
-	    loop(Host, Parent)
+	    loop(Hosts, Parent)
     end.
 
 
@@ -228,13 +234,13 @@ iq_disco_info(SNode) ->
 iq_disco_items(Host, From, SNode) ->
     Node = string:tokens(SNode, "/"),
     F = fun() ->
-		case mnesia:read({pubsub_node, Node}) of
+		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info}] ->
 			SubNodes = mnesia:index_read(pubsub_node,
-						     Node,
-						     #pubsub_node.parent),
+						     {Host, Node},
+						     #pubsub_node.host_parent),
 			SubItems =
-			    lists:map(fun(#pubsub_node{node = N}) ->
+			    lists:map(fun(#pubsub_node{host_node = {_, N}}) ->
 					      SN = node_to_string(N),
 					      {xmlelement, "item",
 					       [{"jid", Host},
@@ -255,10 +261,10 @@ iq_disco_items(Host, From, SNode) ->
 			    [] ->
 				SubNodes = mnesia:index_read(
 					     pubsub_node,
-					     Node,
-					     #pubsub_node.parent),
+					     {Host, Node},
+					     #pubsub_node.host_parent),
 				lists:map(
-				  fun(#pubsub_node{node = N}) ->
+				  fun(#pubsub_node{host_node = {_, N}}) ->
 					  SN = node_to_string(N),
 					  {xmlelement, "item",
 					   [{"jid", Host},
@@ -432,9 +438,9 @@ iq_pubsub(Host, From, Type, SubEl) ->
 		{set, "purge"} ->
 		    purge_node(Host, From, Node);
 		{get, "entities"} ->
-		    get_entities(From, Node);
+		    get_entities(Host, From, Node);
 		{set, "entities"} ->
-		    set_entities(From, Node, xml:remove_cdata(Els));
+		    set_entities(Host, From, Node, xml:remove_cdata(Els));
 		%{get, "configure"} ->
 		%    get_node_config(From, Node);
 		_ ->
@@ -467,7 +473,7 @@ create_new_node(Host, Node, Owner) ->
 	    Parent = lists:sublist(Node, length(Node) - 1),
 	    F = fun() ->
 			ParentExists = (Parent == []) orelse
-			    case mnesia:read({pubsub_node, Parent}) of
+			    case mnesia:read({pubsub_node, {Host, Parent}}) of
 				[_] ->
 				    true;
 				[] ->
@@ -477,7 +483,7 @@ create_new_node(Host, Node, Owner) ->
 			    false ->
 				{error, ?ERR_CONFLICT};
 			    _ ->
-				case mnesia:read({pubsub_node, Node}) of
+				case mnesia:read({pubsub_node, {Host, Node}}) of
 				    [_] ->
 					{error, ?ERR_CONFLICT};
 				    [] ->
@@ -488,8 +494,8 @@ create_new_node(Host, Node, Owner) ->
 						       subscription = none},
 					       ?DICT:new()),
 					mnesia:write(
-					  #pubsub_node{node = Node,
-						       parent = Parent,
+					  #pubsub_node{host_node = {Host, Node},
+						       host_parent = {Host, Parent},
 						       info = #nodeinfo{
 							 entities = Entities}}),
 					ok
@@ -530,7 +536,7 @@ create_new_node(Host, Node, Owner) ->
 publish_item(Host, JID, Node, ItemID, Payload) ->
     Publisher = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
     F = fun() ->
-		case mnesia:read({pubsub_node, Node}) of
+		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info} = N] ->
 			Affiliation = get_affiliation(Info, Publisher),
 			if
@@ -563,7 +569,7 @@ publish_item(Host, JID, Node, ItemID, Payload) ->
 delete_item(Host, JID, Node, ItemID) ->
     Publisher = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
     F = fun() ->
-		case mnesia:read({pubsub_node, Node}) of
+		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info} = N] ->
 			case check_item_publisher(Info, ItemID, Publisher)
 			    orelse
@@ -603,7 +609,7 @@ subscribe_node(Host, From, JID, Node) ->
 	end,
     Subscriber = jlib:jid_tolower(SubscriberJID),
     F = fun() ->
-		case mnesia:read({pubsub_node, Node}) of
+		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info} = N] ->
 			Affiliation = get_affiliation(Info, Subscriber),
 			if
@@ -646,7 +652,7 @@ unsubscribe_node(Host, From, JID, Node) ->
 	end,
     Subscriber = jlib:jid_tolower(SubscriberJID),
     F = fun() ->
-		case mnesia:read({pubsub_node, Node}) of
+		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info} = N] ->
 			Subscription = get_subscription(Info, Subscriber),
 			if
@@ -695,7 +701,7 @@ get_items(Host, JID, Node, SMaxItems) ->
 	{error, _} = Error ->
 	    Error;
 	_ ->
-	    case catch mnesia:dirty_read(pubsub_node, Node) of
+	    case catch mnesia:dirty_read(pubsub_node, {Host, Node}) of
 		[#pubsub_node{info = Info}] ->
 		    Items = lists:sublist(Info#nodeinfo.items, MaxItems),
 		    ItemsEls =
@@ -722,14 +728,14 @@ get_items(Host, JID, Node, SMaxItems) ->
 delete_node(Host, JID, Node) ->
     Owner = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
     F = fun() ->
-		case mnesia:read({pubsub_node, Node}) of
+		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info}] ->
 			case get_affiliation(Info, Owner) of
 			    owner ->
-				% TODO: don't iterate over all table
+				% TODO: don't iterate over entire table
 				Removed =
 				    mnesia:foldl(
-				      fun(#pubsub_node{node = N,
+				      fun(#pubsub_node{host_node = {_, N},
 						       info = #nodeinfo{
 							 entities = Entities
 							}}, Acc) ->
@@ -742,7 +748,7 @@ delete_node(Host, JID, Node) ->
 				      end, [], pubsub_node),
 				lists:foreach(
 				  fun({N, _}) ->
-					  mnesia:delete({pubsub_node, N})
+					  mnesia:delete({pubsub_node, {Host, N}})
 				  end, Removed),
 				{removed, Removed};
 			    _ ->
@@ -769,7 +775,7 @@ delete_node(Host, JID, Node) ->
 purge_node(Host, JID, Node) ->
     Owner = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
     F = fun() ->
-		case mnesia:read({pubsub_node, Node}) of
+		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info} = N] ->
 			case get_affiliation(Info, Owner) of
 			    owner ->
@@ -798,9 +804,9 @@ purge_node(Host, JID, Node) ->
     end.
 
 
-get_entities(OJID, Node) ->
+get_entities(Host, OJID, Node) ->
     Owner = jlib:jid_tolower(jlib:jid_remove_resource(OJID)),
-    case catch mnesia:dirty_read(pubsub_node, Node) of
+    case catch mnesia:dirty_read(pubsub_node, {Host, Node}) of
 	[#pubsub_node{info = Info}] ->
 	    case get_affiliation(Info, Owner) of
 		owner ->
@@ -832,7 +838,7 @@ get_entities(OJID, Node) ->
     end.
 
 
-set_entities(OJID, Node, EntitiesEls) ->
+set_entities(Host, OJID, Node, EntitiesEls) ->
     Owner = jlib:jid_tolower(jlib:jid_remove_resource(OJID)),
     Entities =
 	lists:foldl(
@@ -883,7 +889,7 @@ set_entities(OJID, Node, EntitiesEls) ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    F = fun() ->
-			case mnesia:read({pubsub_node, Node}) of
+			case mnesia:read({pubsub_node, {Host, Node}}) of
 			    [#pubsub_node{info = Info} = N] ->
 				case get_affiliation(Info, Owner) of
 				    owner ->
@@ -1071,7 +1077,7 @@ set_info_entities(Info, Entities) ->
 
 
 broadcast_publish_item(Host, Node, ItemID, Payload) ->
-    case catch mnesia:dirty_read(pubsub_node, Node) of
+    case catch mnesia:dirty_read(pubsub_node, {Host, Node}) of
 	[#pubsub_node{info = Info}] ->
 	    ?DICT:fold(
 	       fun(JID, #entity{subscription = Subscription}, _) ->
@@ -1103,7 +1109,7 @@ broadcast_publish_item(Host, Node, ItemID, Payload) ->
 
 
 broadcast_retract_item(Host, Node, ItemID) ->
-    case catch mnesia:dirty_read(pubsub_node, Node) of
+    case catch mnesia:dirty_read(pubsub_node, {Host, Node}) of
 	[#pubsub_node{info = Info}] ->
 	    ?DICT:fold(
 	       fun(JID, #entity{subscription = Subscription}, _) ->
@@ -1166,3 +1172,73 @@ system_terminate(Reason, Parent, _, State) ->
 
 system_code_change(State, _Mod, Ver, _Extra) ->
     {ok, State}.
+
+
+
+find_my_host(LServer) ->
+    Parts = string:tokens(LServer, "."),
+    find_my_host(Parts, ?MYHOSTS).
+
+find_my_host([], _Hosts) ->
+    ?MYNAME;
+find_my_host([_ | Tail] = Parts, Hosts) ->
+    Domain = parts_to_string(Parts),
+    case lists:member(Domain, Hosts) of
+	true ->
+	    Domain;
+	false ->
+	    find_my_host(Tail, Hosts)
+    end.
+
+parts_to_string(Parts) ->
+    string:strip(lists:flatten(lists:map(fun(S) -> [S, $.] end, Parts)),
+		 right, $.).
+
+
+
+update_table(Host) ->
+    Fields = record_info(fields, pubsub_node),
+    case mnesia:table_info(pubsub_node, attributes) of
+	Fields ->
+	    ok;
+	[node, parent, info] ->
+	    ?INFO_MSG("Converting pubsub_node table from "
+		      "{node, parent, info} format", []),
+	    {atomic, ok} = mnesia:create_table(
+			     mod_pubsub_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, pubsub_node},
+			      {attributes, record_info(fields, pubsub_node)}]),
+	    mnesia:del_table_index(pubsub_node, parent),
+	    mnesia:transform_table(pubsub_node, ignore, Fields),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_pubsub_tmp_table),
+			 mnesia:foldl(
+			   fun(#pubsub_node{host_node = N,
+					    host_parent = P} = R, _) ->
+				   mnesia:dirty_write(
+				     mod_pubsub_tmp_table,
+				     R#pubsub_node{host_node = {Host, N},
+						   host_parent = {Host, P}})
+			   end, ok, pubsub_node)
+		 end,
+	    mnesia:transaction(F1),
+	    mnesia:clear_table(pubsub_node),
+	    F2 = fun() ->
+			 mnesia:write_lock_table(pubsub_node),
+			 mnesia:foldl(
+			   fun(R, _) ->
+				   mnesia:dirty_write(R)
+			   end, ok, mod_pubsub_tmp_table)
+		 end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_pubsub_tmp_table);
+	_ ->
+	    ?INFO_MSG("Recreating pubsub_node table", []),
+	    mnesia:transform_table(pubsub_node, ignore, Fields)
+    end.
+
+
+

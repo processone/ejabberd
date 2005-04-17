@@ -16,16 +16,16 @@
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 reindex_vcards/0,
-	 remove_user/1]).
+	 remove_user/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
 
-%-define(JUD_ALLOW_RETURN_ALL, true).
 -define(JUD_MATCHES, 30).
 
--record(vcard_search, {user,     luser,
+-record(vcard_search, {us,
+		       user,     luser,
 		       fn,	 lfn,
 		       family,	 lfamily,
 		       given,	 lgiven,
@@ -38,7 +38,7 @@
 		       orgname,	 lorgname,
 		       orgunit,	 lorgunit
 		      }).
--record(vcard, {user, vcard}).
+-record(vcard, {us, vcard}).
 
 
 start(Opts) ->
@@ -47,6 +47,7 @@ start(Opts) ->
     mnesia:create_table(vcard_search,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, vcard_search)}]),
+    update_tables(),
     mnesia:add_table_index(vcard_search, luser),
     mnesia:add_table_index(vcard_search, lfn),
     mnesia:add_table_index(vcard_search, lfamily),
@@ -68,21 +69,21 @@ start(Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     catch mod_disco:register_sm_feature(?NS_VCARD),
-    Host = gen_mod:get_opt(host, Opts, "vjud." ++ ?MYNAME),
+    Hosts = gen_mod:get_hosts(Opts, "vjud."),
     Search = gen_mod:get_opt(search, Opts, true),
-    register(ejabberd_mod_vcard, spawn(?MODULE, init, [Host, Search])).
+    register(ejabberd_mod_vcard, spawn(?MODULE, init, [Hosts, Search])).
 
 
-init(Host, Search) ->
+init(Hosts, Search) ->
     case Search of
 	false ->
-	    loop(Host);
+	    loop(Hosts);
 	_ ->
-	    ejabberd_router:register_route(Host),
-	    loop(Host)
+	    ejabberd_router:register_routes(Hosts),
+	    loop(Hosts)
     end.
 
-loop(Host) ->
+loop(Hosts) ->
     receive
 	{route, From, To, Packet} ->
 	    case catch do_route(From, To, Packet) of
@@ -91,12 +92,12 @@ loop(Host) ->
 		_ ->
 		    ok
 	    end,
-	    loop(Host);
+	    loop(Hosts);
 	stop ->
-	    catch ejabberd_router:unregister_route(Host),
+	    catch ejabberd_router:unregister_routes(Hosts),
 	    ok;
 	_ ->
-	    loop(Host)
+	    loop(Hosts)
     end.
 
 stop() ->
@@ -137,17 +138,18 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    #jid{user = User, lserver = LServer, luser = LUser} = From,
-	    case ?MYNAME of
-		LServer ->
-		    set_vcard(User, SubEl),
+	    case lists:member(LServer, ?MYHOSTS) of
+		true ->
+		    set_vcard(User, LServer, SubEl),
 		    IQ#iq{type = result, sub_el = []};
-		_ ->
+		false ->
 		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 	    end;
 	get ->
-	    #jid{luser = LUser} = To,
+	    #jid{luser = LUser, lserver = LServer} = To,
+	    US = {LUser, LServer},
 	    F = fun() ->
-			mnesia:read({vcard, LUser})
+			mnesia:read({vcard, US})
 		end,
 	    Els = case mnesia:transaction(F) of
 		      {atomic, Rs} ->
@@ -160,7 +162,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    IQ#iq{type = result, sub_el = Els}
     end.
 
-set_vcard(User, VCARD) ->
+set_vcard(User, LServer, VCARD) ->
     FN       = xml:get_path_s(VCARD, [{elem, "FN"},                     cdata]),
     Family   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "FAMILY"},    cdata]),
     Given    = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "GIVEN"},     cdata]),
@@ -193,6 +195,8 @@ set_vcard(User, VCARD) ->
     LOrgName  = stringprep:tolower(OrgName),
     LOrgUnit  = stringprep:tolower(OrgUnit),
 
+    US = {LUser, LServer},
+
     if
 	(LUser     == error) or
 	(LFN       == error) or
@@ -209,9 +213,11 @@ set_vcard(User, VCARD) ->
 	    {error, badarg};
 	true ->
 	    F = fun() ->
-		mnesia:write(#vcard{user = LUser, vcard = VCARD}),
+		mnesia:write(#vcard{us = US, vcard = VCARD}),
 		mnesia:write(
-		  #vcard_search{user      = User,     luser      = LUser,     
+		  #vcard_search{us        = US,
+				user      = {User, LServer},
+				luser     = LUser,
 				fn        = FN,       lfn        = LFN,       
 				family    = Family,   lfamily    = LFamily,   
 				given     = Given,    lgiven     = LGiven,    
@@ -428,7 +434,7 @@ search_result(Lang, JID, Data) ->
        ?LFIELD("email", "email"),
        ?LFIELD("Organization Name", "orgname"),
        ?LFIELD("Organization Unit", "orgunit")
-      ]}] ++ lists:map(fun record_to_item/1, search(Data)).
+      ]}] ++ lists:map(fun record_to_item/1, search(JID#jid.lserver, Data)).
 
 -define(FIELD(Var, Val),
 	{xmlelement, "field", [{"var", Var}],
@@ -436,9 +442,10 @@ search_result(Lang, JID, Data) ->
 	   [{xmlcdata, Val}]}]}).
 
 record_to_item(R) ->
-     {xmlelement, "item", [],
-      [
-       ?FIELD("jid",      R#vcard_search.user ++ "@" ++ ?MYNAME),
+    {User, Server} = R#vcard_search.user,
+    {xmlelement, "item", [],
+     [
+       ?FIELD("jid",      User ++ "@" ++ Server),
        ?FIELD("fn",       R#vcard_search.fn),
        ?FIELD("family",   R#vcard_search.family),
        ?FIELD("given",    R#vcard_search.given),
@@ -453,34 +460,12 @@ record_to_item(R) ->
       ]
      }.
 
--ifdef(JUD_ALLOW_RETURN_ALL).
 
-search(Data) ->
-    MatchSpec = make_matchspec(Data),
-    case catch mnesia:dirty_select(vcard_search, [{MatchSpec, [], ['$_']}]) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p", [Reason]),
-	    [];
-	Rs ->
-	    case gen_mod:get_module_opt(?MODULE, matches, 30) of
-		infinity ->
-		    Rs;
-		Val when is_integer(Val) and Val > 0 ->
-		    lists:sublist(Rs, Val);
-		Val ->
-		    ?ERROR_MSG("Illegal option value ~p. "
-			       "Default value ~p substituted.",
-			       [{matches, Val}, ?JUD_MATCHES]),
-		    lists:sublist(Rs, ?JUD_MATCHES)
-	    end
-    end.
-
--else.
-
-search(Data) ->
-    MatchSpec = make_matchspec(Data),
+search(LServer, Data) ->
+    MatchSpec = make_matchspec(LServer, Data),
+    AllowReturnAll = gen_mod:get_module_opt(?MODULE, allow_return_all, false),
     if
-	MatchSpec == #vcard_search{_ = '_'} ->
+	(MatchSpec == #vcard_search{_ = '_'}) and (not AllowReturnAll) ->
 	    [];
 	true ->
 	    case catch mnesia:dirty_select(vcard_search,
@@ -503,33 +488,27 @@ search(Data) ->
 	    end
     end.
 
--endif.
 
-
-% TODO: remove
-%    F = fun() ->
-%		mnesia:select(vcard_search, [{MatchSpec, [], ['$_']}])
-%	end,
-%    case mnesia:transaction(F) of
-%	{atomic, Rs} ->
-%	    Rs;
-%	_ ->
-%	    []
-%    end.
-
-
-make_matchspec(Data) ->
+make_matchspec(LServer, Data) ->
     GlobMatch = #vcard_search{_ = '_'},
-    Match = filter_fields(Data, GlobMatch),
+    Match = filter_fields(Data, GlobMatch, LServer),
     Match.
 
-filter_fields([], Match) ->
+filter_fields([], Match, _LServer) ->
     Match;
-filter_fields([{SVar, [Val]} | Ds], Match)
+filter_fields([{SVar, [Val]} | Ds], Match, LServer)
   when is_list(Val) and (Val /= "") ->
     LVal = stringprep:tolower(Val),
     NewMatch = case SVar of
-                   "user"     -> Match#vcard_search{luser     = make_val(LVal)};
+                   "user" ->
+		       case gen_mod:get_module_opt(
+			      ?MODULE, search_all_hosts, true) of
+			   true ->
+			       Match#vcard_search{luser = make_val(LVal)};
+			   false ->
+			       Host = find_my_host(LServer),
+			       Match#vcard_search{us = {make_val(LVal), Host}}
+		       end;
                    "fn"       -> Match#vcard_search{lfn       = make_val(LVal)};
                    "family"   -> Match#vcard_search{lfamily   = make_val(LVal)};
                    "given"    -> Match#vcard_search{lgiven    = make_val(LVal)};
@@ -543,9 +522,9 @@ filter_fields([{SVar, [Val]} | Ds], Match)
                    "orgunit"  -> Match#vcard_search{lorgunit  = make_val(LVal)};
 		   _          -> Match
 	       end,
-    filter_fields(Ds, NewMatch);
-filter_fields([_ | Ds], Match) ->
-    filter_fields(Ds, Match).
+    filter_fields(Ds, NewMatch, LServer);
+filter_fields([_ | Ds], Match, LServer) ->
+    filter_fields(Ds, Match, LServer).
 
 make_val(Val) ->
     case lists:suffix("*", Val) of
@@ -555,10 +534,32 @@ make_val(Val) ->
 	    Val
     end.
 
+find_my_host(LServer) ->
+    Parts = string:tokens(LServer, "."),
+    find_my_host(Parts, ?MYHOSTS).
+
+find_my_host([], _Hosts) ->
+    ?MYNAME;
+find_my_host([_ | Tail] = Parts, Hosts) ->
+    Domain = parts_to_string(Parts),
+    case lists:member(Domain, Hosts) of
+	true ->
+	    Domain;
+	false ->
+	    find_my_host(Tail, Hosts)
+    end.
+
+parts_to_string(Parts) ->
+    string:strip(lists:flatten(lists:map(fun(S) -> [S, $.] end, Parts)),
+		 right, $.).
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 set_vcard_t(R, _) ->
-    User  = R#vcard.user,
+    US = R#vcard.us,
+    User  = US,
     VCARD = R#vcard.vcard,
 
     FN       = xml:get_path_s(VCARD, [{elem, "FN"},                     cdata]),
@@ -573,7 +574,7 @@ set_vcard_t(R, _) ->
     OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
     OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
 
-    LUser     = jlib:nodeprep(User),
+    {LUser, _LServer} = US,
     LFN       = stringprep:tolower(FN),
     LFamily   = stringprep:tolower(Family),
     LGiven    = stringprep:tolower(Given),
@@ -602,7 +603,8 @@ set_vcard_t(R, _) ->
 	    {error, badarg};
 	true ->
 	    mnesia:write(
-	      #vcard_search{user      = User,     luser      = LUser,     
+	      #vcard_search{us        = US,
+			    user      = User,     luser      = LUser,     
 			    fn        = FN,       lfn        = LFN,       
 			    family    = Family,   lfamily    = LFamily,   
 			    given     = Given,    lgiven     = LGiven,    
@@ -625,16 +627,159 @@ reindex_vcards() ->
     mnesia:transaction(F).
 
 
-remove_user(User) ->
+remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
     F = fun() ->
-		mnesia:delete({vcard, LUser}),
-		lists:foreach(fun(R) ->
-				      mnesia:delete_object(R)
-			      end,
-			      mnesia:index_read(vcard_search,
-						LUser,
-						#vcard_search.luser))
+		mnesia:delete({vcard, US}),
+		mnesia:delete({vcard_search, US})
 	end,
     mnesia:transaction(F).
+
+
+update_tables() ->
+    update_vcard_table(),
+    update_vcard_search_table().
+
+update_vcard_table() ->
+    Fields = record_info(fields, vcard),
+    case mnesia:table_info(vcard, attributes) of
+	Fields ->
+	    ok;
+	[user, vcard] ->
+	    ?INFO_MSG("Converting vcard table from "
+		      "{user, vcard} format", []),
+	    Host = ?MYNAME,
+	    {atomic, ok} = mnesia:create_table(
+			     mod_vcard_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, vcard},
+			      {attributes, record_info(fields, vcard)}]),
+	    mnesia:transform_table(vcard, ignore, Fields),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_vcard_tmp_table),
+			 mnesia:foldl(
+			   fun(#vcard{us = U} = R, _) ->
+				   mnesia:dirty_write(
+				     mod_vcard_tmp_table,
+				     R#vcard{us = {U, Host}})
+			   end, ok, vcard)
+		 end,
+	    mnesia:transaction(F1),
+	    mnesia:clear_table(vcard),
+	    F2 = fun() ->
+			 mnesia:write_lock_table(vcard),
+			 mnesia:foldl(
+			   fun(R, _) ->
+				   mnesia:dirty_write(R)
+			   end, ok, mod_vcard_tmp_table)
+		 end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_vcard_tmp_table);
+	_ ->
+	    ?INFO_MSG("Recreating vcard table", []),
+	    mnesia:transform_table(vcard, ignore, Fields)
+    end.
+
+
+update_vcard_search_table() ->
+    Fields = record_info(fields, vcard_search),
+    case mnesia:table_info(vcard_search, attributes) of
+	Fields ->
+	    ok;
+	[user,     luser,
+	 fn,       lfn,
+	 family,   lfamily,
+	 given,    lgiven,
+	 middle,   lmiddle,
+	 nickname, lnickname,
+	 bday,	   lbday,
+	 ctry,	   lctry,
+	 locality, llocality,
+	 email,	   lemail,
+	 orgname,  lorgname,
+	 orgunit,  lorgunit] ->
+	    ?INFO_MSG("Converting vcard_search table from "
+		      "{user, luser, fn, lfn, family, lfamily, given, lgiven, middle, lmiddle, nickname, lnickname, bday, lbday, ctry, lctry, locality, llocality, email, lemail, orgname, lorgname, orgunit, lorgunit} format", []),
+	    Host = ?MYNAME,
+	    {atomic, ok} = mnesia:create_table(
+			     mod_vcard_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, vcard_search},
+			      {attributes, record_info(fields, vcard_search)}]),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_vcard_tmp_table),
+			 mnesia:foldl(
+			   fun({vcard_search,
+				User,     LUser,     
+				FN,       LFN,       
+				Family,   LFamily,   
+				Given,    LGiven,    
+				Middle,   LMiddle,   
+				Nickname, LNickname, 
+				BDay,     LBDay,     
+				CTRY,     LCTRY,     
+				Locality, LLocality, 
+				EMail,    LEMail,    
+				OrgName,  LOrgName,  
+				OrgUnit,  LOrgUnit   
+			       }, _) ->
+				   mnesia:dirty_write(
+				     mod_vcard_tmp_table,
+				     #vcard_search{
+				       us        = {LUser, Host},
+				       user      = {User, Host},
+				       luser     = LUser,
+				       fn        = FN,       lfn        = LFN,
+				       family    = Family,   lfamily    = LFamily,
+				       given     = Given,    lgiven     = LGiven,
+				       middle    = Middle,   lmiddle    = LMiddle,
+				       nickname  = Nickname, lnickname  = LNickname,
+				       bday      = BDay,     lbday      = LBDay,
+				       ctry      = CTRY,     lctry      = LCTRY,
+				       locality  = Locality, llocality  = LLocality,
+				       email     = EMail,    lemail     = LEMail,
+				       orgname   = OrgName,  lorgname   = LOrgName,
+				       orgunit   = OrgUnit,  lorgunit   = LOrgUnit
+				      })
+			   end, ok, vcard_search)
+		 end,
+	    mnesia:transaction(F1),
+	    lists:foreach(fun(I) ->
+				  mnesia:del_table_index(
+				    vcard_search,
+				    element(I, {vcard_search,
+						user,     luser,
+						fn,       lfn,
+						family,   lfamily,
+						given,    lgiven,
+						middle,   lmiddle,
+						nickname, lnickname,
+						bday,	   lbday,
+						ctry,	   lctry,
+						locality, llocality,
+						email,	   lemail,
+						orgname,  lorgname,
+						orgunit,  lorgunit}))
+			  end, mnesia:table_info(vcard_search, index)),
+	    mnesia:clear_table(vcard_search),
+	    mnesia:transform_table(vcard_search, ignore, Fields),
+	    F2 = fun() ->
+	        	 mnesia:write_lock_table(vcard_search),
+	        	 mnesia:foldl(
+	        	   fun(R, _) ->
+	        		   mnesia:dirty_write(R)
+	        	   end, ok, mod_vcard_tmp_table)
+	         end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_vcard_tmp_table);
+	_ ->
+	    ?INFO_MSG("Recreating vcard_search table", []),
+	    mnesia:transform_table(vcard_search, ignore, Fields)
+    end.
 

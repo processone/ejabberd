@@ -12,15 +12,14 @@
 
 -export([start/1,
 	 stop/0,
-	 mech_new/0,
+	 mech_new/2,
 	 mech_step/2]).
 
 -behaviour(cyrsasl).
-%-behaviour(gen_mod).
 
--record(state, {step, nonce, username, authzid}).
+-record(state, {step, nonce, username, authzid, get_password}).
 
-start(Opts) ->
+start(_Opts) ->
     case ejabberd_auth:plain_password_required() of
 	true ->
 	    ok;
@@ -32,15 +31,15 @@ start(Opts) ->
 stop() ->
     ok.
 
-mech_new() ->
+mech_new(GetPassword, _CheckPassword) ->
     {ok, #state{step = 1,
-		nonce = randoms:get_string()}}.
+		nonce = randoms:get_string(),
+		get_password = GetPassword}}.
 
 mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
     {continue,
      "nonce=\"" ++ Nonce ++
      "\",qop=\"auth\",charset=utf-8,algorithm=md5-sess",
-     %"\",qop=\"auth,auth-int\",charset=utf-8,algorithm=md5-sess",
      State#state{step = 3}};
 mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
     case parse(ClientIn) of
@@ -49,7 +48,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	KeyVals ->
 	    UserName = xml:get_attr_s("username", KeyVals),
 	    AuthzId = xml:get_attr_s("authzid", KeyVals),
-	    case ejabberd_auth:get_password(UserName) of
+	    case (State#state.get_password)(UserName) of
 		false ->
 		    {error, "not-authorized"};
 		Passwd ->
@@ -72,7 +71,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
     end;
 mech_step(#state{step = 5,
 		 username = UserName,
-		 authzid = AuthzId} = State, "") ->
+		 authzid = AuthzId}, "") ->
     {ok, [{username, UserName}, {authzid, AuthzId}]};
 mech_step(A, B) ->
     io:format("SASL DIGEST: A ~p B ~p", [A,B]),
@@ -88,7 +87,7 @@ parse1([C | Cs], S, Ts) ->
     parse1(Cs, [C | S], Ts);
 parse1([], [], T) ->
     lists:reverse(T);
-parse1([], S, T) ->
+parse1([], _S, _T) ->
     bad.
 
 parse2([$" | Cs], Key, Val, Ts) ->
@@ -148,13 +147,13 @@ response(KeyVals, User, Passwd, Nonce, AuthzId, A2Prefix) ->
 		   crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
 		     ":" ++ Nonce ++ ":" ++ CNonce ++ ":" ++ AuthzId
 	 end,
-    case QOP of
-	"auth" ->
-	    A2 = A2Prefix ++ ":" ++ DigestURI;
-	_ ->
-	    A2 = A2Prefix ++ ":" ++ DigestURI ++
-		":00000000000000000000000000000000"
-    end,
+    A2 = case QOP of
+	     "auth" ->
+		 A2Prefix ++ ":" ++ DigestURI;
+	     _ ->
+		 A2Prefix ++ ":" ++ DigestURI ++
+		     ":00000000000000000000000000000000"
+	 end,
     T = hex(binary_to_list(crypto:md5(A1))) ++ ":" ++ Nonce ++ ":" ++
 	NC ++ ":" ++ CNonce ++ ":" ++ QOP ++ ":" ++
 	hex(binary_to_list(crypto:md5(A2))),

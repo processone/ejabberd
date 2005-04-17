@@ -195,18 +195,23 @@ process_request(#state{request_method = 'GET',
 		       request_lang = Lang,
 		       use_http_poll = UseHTTPPoll,
 		       use_web_admin = UseWebAdmin}) ->
-    User = case Auth of
-	       {U, P} ->
-		   case ejabberd_auth:check_password(U, P) of
-		       true ->
-			   U;
-		       false ->
-			   unauthorized
-		   end;
-	       _ ->
-		   undefined
-	   end,
-    case User of
+    US = case Auth of
+	     {SJID, P} ->
+		 case jlib:string_to_jid(SJID) of
+		     error ->
+			 unauthorized;
+		     #jid{user = U, server = S} ->
+			 case ejabberd_auth:check_password(U, S, P) of
+			     true ->
+				 {U, S};
+			     false ->
+				 unauthorized
+			 end
+		 end;
+	     _ ->
+		 undefined
+	 end,
+    case US of
 	unauthorized ->
 	    make_xhtml_output(
 	      401,
@@ -228,7 +233,7 @@ process_request(#state{request_method = 'GET',
 		    Request = #request{method = 'GET',
 				       path = LPath,
 				       q = LQuery,
-				       user = User,
+				       us = US,
 				       lang = Lang},
 		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
 						  Request) of
@@ -256,18 +261,23 @@ process_request(#state{request_method = 'POST',
 		       use_http_poll = UseHTTPPoll,
 		       use_web_admin = UseWebAdmin} = State)
   when is_integer(Len) ->
-    User = case Auth of
-	       {U, P} ->
-		   case ejabberd_auth:check_password(U, P) of
-		       true ->
-			   U;
-		       false ->
-			   unauthorized
-		   end;
-	       _ ->
-		   undefined
-	   end,
-    case User of
+    US = case Auth of
+	     {SJID, P} ->
+		 case jlib:string_to_jid(SJID) of
+		     error ->
+			 unauthorized;
+		     #jid{user = U, server = S} ->
+			 case ejabberd_auth:check_password(U, S, P) of
+			     true ->
+				 {U, S};
+			     false ->
+				 unauthorized
+			 end
+		 end;
+	     _ ->
+		 undefined
+	 end,
+    case US of
 	unauthorized ->
 	    make_xhtml_output(
 	      401,
@@ -297,7 +307,7 @@ process_request(#state{request_method = 'POST',
 		    Request = #request{method = 'POST',
 				       path = LPath,
 				       q = LQuery,
-				       user = User,
+				       us = US,
 				       data = Data,
 				       lang = Lang},
 		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},

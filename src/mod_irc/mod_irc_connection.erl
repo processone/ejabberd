@@ -32,7 +32,7 @@
 -define(SETS, gb_sets).
 
 -record(state, {socket, encoding, receiver, queue,
-		user, myname, server, nick,
+		user, host, server, nick,
 		channels = dict:new(),
 		inbuf = "", outbuf = ""}).
 
@@ -67,7 +67,7 @@ init([From, Host, Server, Username, Encoding]) ->
 			     encoding = Encoding,
 			     user = From,
 			     nick = Username,
-			     myname = Host,
+			     host = Host,
 			     server = Server}}.
 
 %%----------------------------------------------------------------------
@@ -90,7 +90,7 @@ open_socket(init, StateData) ->
 			"USER ~s ~s ~s :~s\r\n",
 			[StateData#state.nick,
 			 StateData#state.nick,
-			 StateData#state.myname,
+			 StateData#state.host,
 			 StateData#state.nick])),
 	    send_text(NewStateData,
 		      io_lib:format("CODEPAGE ~s\r\n", [StateData#state.encoding])),
@@ -231,7 +231,7 @@ handle_info({route_chan, Channel, Resource,
 			  jlib:make_jid(
 			    lists:concat(
 			      [Channel, "%", StateData#state.server]),
-			    StateData#state.myname, StateData#state.nick),
+			    StateData#state.host, StateData#state.nick),
 			  StateData#state.user, El),
 			Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
 			case Body of
@@ -304,7 +304,7 @@ handle_info({route_chan, Channel, Resource,
 	    StateName, StateData) ->
     From = StateData#state.user,
     To = jlib:make_jid(lists:concat([Channel, "%", StateData#state.server]),
-		       StateData#state.myname, StateData#state.nick),
+		       StateData#state.host, StateData#state.nick),
     case jlib:iq_query_info(El) of
 	#iq{xmlns = ?NS_MUC_ADMIN} = IQ ->
 	    iq_admin(StateData, Channel, From, To, IQ);
@@ -474,15 +474,16 @@ handle_info({tcp_error, Socket, Reason}, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
-    mod_irc:closed_conection(StateData#state.user,
-			     StateData#state.server),
+    mod_irc:closed_connection(StateData#state.host,
+			      StateData#state.user,
+			      StateData#state.server),
     bounce_messages("Server Connect Failed"),
     lists:foreach(
       fun(Chan) ->
 	      ejabberd_router:route(
 		jlib:make_jid(
 		  lists:concat([Chan, "%", StateData#state.server]),
-		  StateData#state.myname, StateData#state.nick),
+		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
 		{xmlelement, "presence", [{"type", "error"}],
 		 [{xmlelement, "error", [{"code", "502"}],
@@ -592,7 +593,7 @@ process_channel_list_user(StateData, Chan, User) ->
 	end,
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, User2),
+		    StateData#state.host, User2),
       StateData#state.user,
       {xmlelement, "presence", [],
        [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -618,7 +619,7 @@ process_channel_topic(StateData, Chan, String) ->
     ejabberd_router:route(
       jlib:make_jid(
 	lists:concat([Chan, "%", StateData#state.server]),
-	StateData#state.myname, FromUser),
+	StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "message", [{"type", "groupchat"}],
        [{xmlelement, "subject", [], [{xmlcdata, Msg1}]}]}).
@@ -636,7 +637,7 @@ process_chanprivmsg(StateData, Chan, From, String) ->
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, FromUser),
+		    StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "message", [{"type", "groupchat"}],
        [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
@@ -655,7 +656,7 @@ process_channotice(StateData, Chan, From, String) ->
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, FromUser),
+		    StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "message", [{"type", "groupchat"}],
        [{xmlelement, "body", [], [{xmlcdata, "NOTICE: " ++ Msg2}]}]}).
@@ -675,7 +676,7 @@ process_privmsg(StateData, Nick, From, String) ->
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
-		    StateData#state.myname, ""),
+		    StateData#state.host, ""),
       StateData#state.user,
       {xmlelement, "message", [{"type", "chat"}],
        [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
@@ -693,7 +694,7 @@ process_notice(StateData, Nick, From, String) ->
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
-		    StateData#state.myname, ""),
+		    StateData#state.host, ""),
       StateData#state.user,
       {xmlelement, "message", [{"type", "chat"}],
        [{xmlelement, "body", [], [{xmlcdata, "NOTICE: " ++ Msg2}]}]}).
@@ -719,7 +720,7 @@ process_topic(StateData, Chan, From, String) ->
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, FromUser),
+		    StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "message", [{"type", "groupchat"}],
        [{xmlelement, "subject", [], [{xmlcdata, Msg1}]},
@@ -733,7 +734,7 @@ process_part(StateData, Chan, From, String) ->
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, FromUser),
+		    StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "message", [{"type", "groupchat"}],
        [{xmlelement, "body", [],
@@ -742,7 +743,7 @@ process_part(StateData, Chan, From, String) ->
 
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, FromUser),
+		    StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "presence", [{"type", "unavailable"}],
        [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -777,7 +778,7 @@ process_quit(StateData, From, String) ->
 		          ejabberd_router:route(
 			    jlib:make_jid(
 			      lists:concat([Chan, "%", StateData#state.server]),
-			      StateData#state.myname, FromUser),
+			      StateData#state.host, FromUser),
 			    StateData#state.user,
 			    {xmlelement, "message", [{"type", "groupchat"}],
 			     [{xmlelement, "body", [],
@@ -787,7 +788,7 @@ process_quit(StateData, From, String) ->
 			  ejabberd_router:route(
 			    jlib:make_jid(
 			      lists:concat([Chan, "%", StateData#state.server]),
-			      StateData#state.myname, FromUser),
+			      StateData#state.host, FromUser),
 			    StateData#state.user,
 			    {xmlelement, "presence", [{"type", "unavailable"}],
 			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -811,7 +812,7 @@ process_join(StateData, Channel, From, String) ->
     Chan = lists:subtract(Channel, ":#"),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, FromUser),
+		    StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "presence", [],
        [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -825,7 +826,7 @@ process_join(StateData, Channel, From, String) ->
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, FromUser),
+		    StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "message", [{"type", "groupchat"}],
        [{xmlelement, "body", [],
@@ -848,7 +849,7 @@ process_mode_o(StateData, Chan, From, Nick, Affiliation, Role) ->
     %Msg = lists:last(string:tokens(String, ":")),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, Nick),
+		    StateData#state.host, Nick),
       StateData#state.user,
       {xmlelement, "presence", [],
        [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -861,7 +862,7 @@ process_kick(StateData, Chan, From, Nick) ->
     %Msg = lists:last(string:tokens(String, ":")),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.myname, Nick),
+		    StateData#state.host, Nick),
       StateData#state.user,
       {xmlelement, "presence", [{"type", "unavailable"}],
        [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -883,7 +884,7 @@ process_nick(StateData, From, NewNick) ->
 			  ejabberd_router:route(
 			    jlib:make_jid(
 			      lists:concat([Chan, "%", StateData#state.server]),
-			      StateData#state.myname, FromUser),
+			      StateData#state.host, FromUser),
 			    StateData#state.user,
 			    {xmlelement, "presence", [{"type", "unavailable"}],
 			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -897,7 +898,7 @@ process_nick(StateData, From, NewNick) ->
 			  ejabberd_router:route(
 			    jlib:make_jid(
 			      lists:concat([Chan, "%", StateData#state.server]),
-			      StateData#state.myname, Nick),
+			      StateData#state.host, Nick),
 			    StateData#state.user,
 			    {xmlelement, "presence", [],
 			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
@@ -921,7 +922,7 @@ process_error(StateData, String) ->
 	      ejabberd_router:route(
 		jlib:make_jid(
 		  lists:concat([Chan, "%", StateData#state.server]),
-		  StateData#state.myname, StateData#state.nick),
+		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
 		{xmlelement, "presence", [{"type", "error"}],
 		 [{xmlelement, "error", [{"code", "502"}],

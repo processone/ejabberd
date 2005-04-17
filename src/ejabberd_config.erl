@@ -78,13 +78,15 @@ process_term(Term, State) ->
 	    State#state{opts = [#config{key = {shaper, Name},
 					value = Data} |
 				State#state.opts]};
+	{host, Host} ->
+	    add_option(hosts, [Host], State);
 	{Opt, Val} ->
 	    add_option(Opt, Val, State)
     end.
 
 add_option(Opt, Val, State) ->
     Table = case Opt of
-		host ->
+		hosts ->
 		    config;
 		language ->
 		    config;

@@ -149,6 +149,7 @@ normal_state({route, From, "",
 						case (NSD#state.config)#config.persistent of
 						    true ->
 							mod_muc:store_room(
+							  NSD#state.host,
 							  NSD#state.room,
 							  make_opts(NSD));
 						    _ ->
@@ -364,7 +365,8 @@ normal_state({route, From, Nick,
 			case is_nick_change(From, Nick, StateData) of
 			    true ->
 				case {is_nick_exists(Nick, StateData),
-				      mod_muc:can_use_nick(From, Nick)} of
+				      mod_muc:can_use_nick(
+					StateData#state.host, From, Nick)} of
 				    {true, _} ->
 					Lang = xml:get_attr_s("xml:lang", Attrs),
 					ErrText = "Nickname is already in use by another occupant",
@@ -639,7 +641,7 @@ handle_info(_Info, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
-    mod_muc:room_destroyed(StateData#state.room),
+    mod_muc:room_destroyed(StateData#state.host, StateData#state.room),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -806,8 +808,8 @@ filter_presence({xmlelement, "presence", Attrs, Els}) ->
 		     case El of
 			 {xmlcdata, _} ->
 			     false;
-			 {xmlelement, Name1, Attrs1, _Els1} ->
-			     XMLNS = xml:get_attr_s("xmlns", Attrs1),
+			 {xmlelement, Name1, _Attrs1, _Els1} ->
+			     XMLNS = xml:get_attr_s("xmlns", Attrs),
 			     case {Name1, XMLNS} of
 				 {"show", ""} ->
 				     true;
@@ -872,7 +874,7 @@ is_nick_change(JID, Nick, StateData) ->
 add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     Lang = xml:get_attr_s("xml:lang", Attrs),
     case {is_nick_exists(Nick, StateData),
-	  mod_muc:can_use_nick(From, Nick)} of
+	  mod_muc:can_use_nick(StateData#state.host, From, Nick)} of
 	{true, _} ->
 	    ErrText = "Nickname is already in use by another occupant",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
@@ -1517,7 +1519,8 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	    io:format("MUC SET: ~p~n", [Res]),
 	    case (NSD#state.config)#config.persistent of
 		true ->
-		    mod_muc:store_room(NSD#state.room, make_opts(NSD));
+		    mod_muc:store_room(NSD#state.host, NSD#state.room,
+				       make_opts(NSD));
 		_ ->
 		    ok
 	    end,
@@ -2043,9 +2046,9 @@ change_config(Config, StateData) ->
     case {(StateData#state.config)#config.persistent,
 	  Config#config.persistent} of
 	{_, true} ->
-	    mod_muc:store_room(NSD#state.room, make_opts(NSD));
+	    mod_muc:store_room(NSD#state.host, NSD#state.room, make_opts(NSD));
 	{true, false} ->
-	    mod_muc:forget_room(NSD#state.room);
+	    mod_muc:forget_room(NSD#state.host, NSD#state.room);
 	{false, false} ->
 	    ok
 	end,
@@ -2130,7 +2133,7 @@ destroy_room(DEls, StateData) ->
       end, ?DICT:to_list(StateData#state.users)),
     case (StateData#state.config)#config.persistent of
 	true ->
-	    mod_muc:forget_room(StateData#state.room);
+	    mod_muc:forget_room(StateData#state.host, StateData#state.room);
 	false ->
 	    ok
 	end,

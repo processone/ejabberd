@@ -29,25 +29,26 @@ stop() ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_REGISTER),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_REGISTER).
 
-process_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
+process_iq(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    UTag = xml:get_subtag(SubEl, "username"),
 	    PTag = xml:get_subtag(SubEl, "password"),
 	    RTag = xml:get_subtag(SubEl, "remove"),
-	    Server = ?MYNAME,
+	    Server = To#jid.lserver,
 	    if
 		(UTag /= false) and (RTag /= false) ->
 		    User = xml:get_tag_cdata(UTag),
 		    case From of
 			#jid{user = User, lserver = Server} ->
-			    ejabberd_auth:remove_user(User),
+			    ejabberd_auth:remove_user(User, Server),
 			    IQ#iq{type = result, sub_el = [SubEl]};
 			_ ->
 			    if
 				PTag /= false ->
 				    Password = xml:get_tag_cdata(PTag),
 				    case ejabberd_auth:remove_user(User,
+								   Server,
 								   Password) of
 					ok ->
 					    IQ#iq{type = result,
@@ -74,7 +75,7 @@ process_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
 		(UTag == false) and (RTag /= false) ->
 		    case From of
 			#jid{user = User, lserver = Server} ->
-			    ejabberd_auth:remove_user(User),
+			    ejabberd_auth:remove_user(User, Server),
 			    IQ#iq{type = result, sub_el = [SubEl]};
 			_ ->
 			    IQ#iq{type = error,
@@ -85,10 +86,10 @@ process_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
 		    Password = xml:get_tag_cdata(PTag),
 		    case From of
 			#jid{user = User, lserver = Server} ->
-			    ejabberd_auth:set_password(User, Password),
+			    ejabberd_auth:set_password(User, Server, Password),
 			    IQ#iq{type = result, sub_el = [SubEl]};
 			_ ->
-			    case try_register(User, Password) of
+			    case try_register(User, Server, Password) of
 				ok ->
 				    IQ#iq{type = result, sub_el = [SubEl]};
 				{error, Error} ->
@@ -116,18 +117,18 @@ process_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     end.
 
 
-try_register(User, Password) ->
+try_register(User, Server, Password) ->
     case jlib:is_nodename(User) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
-	    JID = jlib:make_jid(User, ?MYNAME, ""),
+	    JID = jlib:make_jid(User, Server, ""),
 	    Access = gen_mod:get_module_opt(?MODULE, access, all),
 	    case acl:match_rule(Access, JID) of
 		deny ->
 		    {error, ?ERR_CONFLICT};
 		allow ->
-		    case ejabberd_auth:try_register(User, Password) of
+		    case ejabberd_auth:try_register(User, Server, Password) of
 			{atomic, ok} ->
 			    send_welcome_message(JID),
 			    send_registration_notifications(JID),

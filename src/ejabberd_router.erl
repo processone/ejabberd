@@ -13,7 +13,9 @@
 -export([route/3,
 	 register_route/1,
 	 register_route/2,
+	 register_routes/1,
 	 unregister_route/1,
+	 unregister_routes/1,
 	 dirty_get_all_routes/0,
 	 dirty_get_all_domains/0
 	]).
@@ -130,33 +132,58 @@ route(From, To, Packet) ->
     end.
 
 register_route(Domain) ->
-    Pid = self(),
-    F = fun() ->
-		mnesia:write(#route{domain = Domain,
-				    pid = Pid})
-	end,
-    mnesia:transaction(F).
+    case jlib:nameprep(Domain) of
+	error ->
+	    [] = {invalid_domain, Domain};
+	LDomain ->
+	    Pid = self(),
+	    F = fun() ->
+			mnesia:write(#route{domain = LDomain,
+					    pid = Pid})
+		end,
+	    mnesia:transaction(F)
+    end.
 
 register_route(Domain, LocalHint) ->
-    Pid = self(),
-    F = fun() ->
-		mnesia:write(#route{domain = Domain,
-				    pid = Pid,
-				    local_hint = LocalHint})
-	end,
-    mnesia:transaction(F).
+    case jlib:nameprep(Domain) of
+	error ->
+	    [] = {invalid_domain, Domain};
+	LDomain ->
+	    Pid = self(),
+	    F = fun() ->
+			mnesia:write(#route{domain = LDomain,
+					    pid = Pid,
+					    local_hint = LocalHint})
+		end,
+	    mnesia:transaction(F)
+    end.
+
+register_routes(Domains) ->
+    lists:foreach(fun(Domain) ->
+			  register_route(Domain)
+		  end, Domains).
 
 unregister_route(Domain) ->
-    Pid = self(),
-    F = fun() ->
-		mnesia:delete_object(#route{domain = Domain,
-					    pid = Pid})
-	end,
-    mnesia:transaction(F).
+    case jlib:nameprep(Domain) of
+	error ->
+	    [] = {invalid_domain, Domain};
+	LDomain ->
+	    Pid = self(),
+	    F = fun() ->
+			mnesia:delete_object(#route{domain = LDomain,
+						    pid = Pid})
+		end,
+	    mnesia:transaction(F)
+    end.
+
+unregister_routes(Domains) ->
+    lists:foreach(fun(Domain) ->
+			  unregister_route(Domain)
+		  end, Domains).
 
 
 dirty_get_all_routes() ->
-    lists:delete(?MYNAME, lists:usort(mnesia:dirty_all_keys(route))).
+    lists:usort(mnesia:dirty_all_keys(route)) -- ?MYHOSTS.
 
 dirty_get_all_domains() ->
     lists:usort(mnesia:dirty_all_keys(route)).

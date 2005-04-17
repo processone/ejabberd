@@ -9,7 +9,7 @@
 -record(request, {method,
 		  path,
 		  q = [],
-		  user,
+		  us,
 		  lang = "",
 		  data = ""
 		 }).

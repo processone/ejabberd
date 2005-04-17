@@ -72,7 +72,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			    get_last(IQ, SubEl, User);
 			List ->
 			    case catch mod_privacy:check_packet(
-					 User, List,
+					 User, ?MYNAME, List, % TODO
 					 {From, To,
 					  {xmlelement, "presence", [], []}},
 					 out) of

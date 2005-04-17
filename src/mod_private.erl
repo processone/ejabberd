@@ -15,18 +15,19 @@
 -export([start/1,
 	 stop/0,
 	 process_sm_iq/3,
-	 remove_user/1]).
+	 remove_user/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(private_storage, {userns, xml}).
+-record(private_storage, {usns, xml}).
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, private_storage)}]),
+    update_table(),
     ejabberd_hooks:add(remove_user,
 		       ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVATE,
@@ -40,22 +41,22 @@ stop() ->
 
 process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    case ?MYNAME of
-	LServer ->
+    case lists:member(LServer, ?MYHOSTS) of
+	true ->
 	    {xmlelement, Name, Attrs, Els} = SubEl,
 	    case Type of
 		set ->
 		    F = fun() ->
 				lists:foreach(
 				  fun(El) ->
-					  set_data(LUser, El)
+					  set_data(LUser, LServer, El)
 				  end, Els)
 			end,
 		    mnesia:transaction(F),
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, Name, Attrs, []}]};
 		get ->
-		    case catch get_data(LUser, Els) of
+		    case catch get_data(LUser, LServer, Els) of
 			{'EXIT', _Reason} ->
 			    IQ#iq{type = error,
 				  sub_el = [SubEl,
@@ -65,11 +66,11 @@ process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 				  sub_el = [{xmlelement, Name, Attrs, Res}]}
 		    end
 	    end;
-	_ ->
+	false ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
     end.
 
-set_data(LUser, El) ->
+set_data(LUser, LServer, El) ->
     case El of
 	{xmlelement, _Name, Attrs, _Els} ->
 	    XMLNS = xml:get_attr_s("xmlns", Attrs),
@@ -77,40 +78,45 @@ set_data(LUser, El) ->
 		"" ->
 		    ignore;
 		_ ->
-		    mnesia:write(#private_storage{userns = {LUser, XMLNS},
-						  xml = El})
+		    mnesia:write(
+		      #private_storage{usns = {LUser, LServer, XMLNS},
+				       xml = El})
 	    end;
 	_ ->
 	    ignore
     end.
 
-get_data(LUser, Els) ->
-    get_data(LUser, Els, []).
+get_data(LUser, LServer, Els) ->
+    get_data(LUser, LServer, Els, []).
 
-get_data(_LUser, [], Res) ->
+get_data(_LUser, _LServer, [], Res) ->
     lists:reverse(Res);
-get_data(LUser, [El | Els], Res) ->
+get_data(LUser, LServer, [El | Els], Res) ->
     case El of
 	{xmlelement, _Name, Attrs, _} ->
 	    XMLNS = xml:get_attr_s("xmlns", Attrs),
-	    case mnesia:dirty_read(private_storage, {LUser, XMLNS}) of
+	    case mnesia:dirty_read(private_storage, {LUser, LServer, XMLNS}) of
 		[R] ->
-		    get_data(LUser, Els, [R#private_storage.xml | Res]);
+		    get_data(LUser, LServer, Els,
+			     [R#private_storage.xml | Res]);
 		[] ->
-		    get_data(LUser, Els, [El | Res])
+		    get_data(LUser, LServer, Els,
+			     [El | Res])
 	    end;
 	_ ->
-	    get_data(LUser, Els, Res)
+	    get_data(LUser, LServer, Els, Res)
     end.
 
 
-remove_user(User) ->
+% TODO: use mnesia:select
+remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
     F = fun() ->
 		lists:foreach(
-		  fun({U, _} = Key) ->
+		  fun({U, S, _} = Key) ->
 			  if
-			      U == LUser ->
+			      (U == LUser) and (S == LServer) ->
 				  mnesia:delete({private_storage, Key});
 			      true ->
 				  ok
@@ -118,4 +124,48 @@ remove_user(User) ->
 		  end, mnesia:all_keys(private_storage))
         end,
     mnesia:transaction(F).
+
+
+update_table() ->
+    Fields = record_info(fields, private_storage),
+    case mnesia:table_info(private_storage, attributes) of
+	Fields ->
+	    ok;
+	[userns, xml] ->
+	    ?INFO_MSG("Converting private_storage table from "
+		      "{user, default, lists} format", []),
+	    Host = ?MYNAME,
+	    {atomic, ok} = mnesia:create_table(
+			     mod_private_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, private_storage},
+			      {attributes, record_info(fields, private_storage)}]),
+	    mnesia:transform_table(private_storage, ignore, Fields),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_private_tmp_table),
+			 mnesia:foldl(
+			   fun(#private_storage{usns = {U, NS}} = R, _) ->
+				   mnesia:dirty_write(
+				     mod_private_tmp_table,
+				     R#private_storage{usns = {U, Host, NS}})
+			   end, ok, private_storage)
+		 end,
+	    mnesia:transaction(F1),
+	    mnesia:clear_table(private_storage),
+	    F2 = fun() ->
+			 mnesia:write_lock_table(private_storage),
+			 mnesia:foldl(
+			   fun(R, _) ->
+				   mnesia:dirty_write(R)
+			   end, ok, mod_private_tmp_table)
+		 end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_private_tmp_table);
+	_ ->
+	    ?INFO_MSG("Recreating private_storage table", []),
+	    mnesia:transform_table(private_storage, ignore, Fields)
+    end.
+
 

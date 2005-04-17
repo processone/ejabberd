@@ -12,13 +12,15 @@
 
 -export([start_link/0, init/0,
 	 route/3,
-	 open_session/2, close_session/2,
+	 open_session/3, close_session/3,
 	 bounce_offline_message/3,
-	 get_user_resources/1,
-	 set_presence/3,
-	 unset_presence/3,
+	 disconnect_removed_user/2,
+	 get_user_resources/2,
+	 set_presence/4,
+	 unset_presence/4,
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
+	 get_vh_session_list/1,
 	 register_iq_handler/3,
 	 register_iq_handler/4,
 	 unregister_iq_handler/1
@@ -27,8 +29,8 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(session, {ur, user, pid}).
--record(presence, {ur, user, priority}).
+-record(session, {usr, us, pid}).
+-record(presence, {usr, us, priority}).
 
 start_link() ->
     Pid = proc_lib:spawn_link(ejabberd_sm, init, []),
@@ -39,16 +41,18 @@ init() ->
     update_tables(),
     mnesia:create_table(session, [{ram_copies, [node()]},
 				  {attributes, record_info(fields, session)}]),
-    mnesia:add_table_index(session, user),
+    mnesia:add_table_index(session, us),
     mnesia:add_table_copy(session, node(), ram_copies),
     mnesia:create_table(presence,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, presence)}]),
-    mnesia:add_table_index(presence, user),
+    mnesia:add_table_index(presence, us),
     mnesia:subscribe(system),
     ets:new(sm_iqtable, [named_table]),
     ejabberd_hooks:add(offline_message_hook,
 		       ejabberd_sm, bounce_offline_message, 100),
+    ejabberd_hooks:add(remove_user,
+		       ejabberd_sm, disconnect_removed_user, 100),
     loop().
 
 loop() ->
@@ -61,12 +65,6 @@ loop() ->
 		_ ->
 		    ok
 	    end,
-	    loop();
-	{open_session, User, Resource, From} ->
-	    register_connection(User, Resource, From),
-	    loop();
-	{close_session, User, Resource} ->
-	    remove_connection(User, Resource),
 	    loop();
 	{mnesia_system_event, {mnesia_down, Node}} ->
 	    clean_table_from_bad_node(Node),
@@ -100,20 +98,22 @@ route(From, To, Packet) ->
 	    ok
     end.
 
-open_session(User, Resource) ->
-    register_connection(User, Resource, self()).
+open_session(User, Server, Resource) ->
+    register_connection(User, Server, Resource, self()).
 
-close_session(User, Resource) ->
-    remove_connection(User, Resource).
+close_session(User, Server, Resource) ->
+    remove_connection(User, Server, Resource).
 
 
-register_connection(User, Resource, Pid) ->
+register_connection(User, Server, Resource, Pid) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
     LResource = jlib:resourceprep(Resource),
-    UR = {LUser, LResource},
+    US = {LUser, LServer},
+    USR = {LUser, LServer, LResource},
     F = fun() ->
-		Ss = mnesia:wread({session, UR}),
-		mnesia:write(#session{ur = UR, user = LUser, pid = Pid}),
+		Ss = mnesia:wread({session, USR}),
+		mnesia:write(#session{usr = USR, us = US, pid = Pid}),
 		Ss
         end,
     case mnesia:transaction(F) of
@@ -127,12 +127,13 @@ register_connection(User, Resource, Pid) ->
     end.
 
 
-remove_connection(User, Resource) ->
+remove_connection(User, Server, Resource) ->
     LUser = jlib:nodeprep(User),
     LResource = jlib:resourceprep(Resource),
-    UR = {LUser, LResource},
+    LServer = jlib:nameprep(Server),
+    USR = {LUser, LServer, LResource},
     F = fun() ->
-		mnesia:delete({session, UR})
+		mnesia:delete({session, USR})
         end,
     mnesia:transaction(F).
 
@@ -145,8 +146,7 @@ clean_table_from_bad_node(Node) ->
 			 [{'==', {node, '$1'}, Node}],
 			 ['$_']}]),
 		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E),
-				      mnesia:delete({presence, E#session.ur})
+				      mnesia:delete_object(E)
 			      end, Es)
         end,
     mnesia:transaction(F).
@@ -157,7 +157,7 @@ clean_table_from_bad_node(Node) ->
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    #jid{user = User,
+    #jid{user = User, server = Server,
 	 luser = LUser, lserver = LServer, lresource = LResource} = To,
     {xmlelement, Name, Attrs, _Els} = Packet,
     case LResource of
@@ -170,32 +170,33 @@ do_route(From, To, Packet) ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   false,
-				   [User, From, subscribe]),
+				   [User, Server, From, subscribe]),
 				 true};
 			    "subscribed" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   false,
-				   [User, From, subscribed]),
+				   [User, Server, From, subscribed]),
 				 true};
 			    "unsubscribe" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   false,
-				   [User, From, unsubscribe]),
+				   [User, Server, From, unsubscribe]),
 				 true};
 			    "unsubscribed" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   false,
-				   [User, From, unsubscribed]),
+				   [User, Server, From, unsubscribed]),
 				 true};
 			    _ ->
 				{true, false}
 			end,
 		    if Pass ->
 			    LFrom = jlib:jid_tolower(From),
-			    PResources = get_user_present_resources(User),
+			    PResources = get_user_present_resources(
+					   LUser, LServer),
 			    if
 				PResources /= [] ->
 				    lists:foreach(
@@ -213,7 +214,8 @@ do_route(From, To, Packet) ->
 				true ->
 				    if
 					Subsc ->
-					    case ejabberd_auth:is_user_exists(LUser) of
+					    case ejabberd_auth:is_user_exists(
+						   LUser, LServer) of
 						true ->
 						    ejabberd_hooks:run(
 						      offline_subscription_hook,
@@ -240,13 +242,13 @@ do_route(From, To, Packet) ->
 			      do_route(From,
 				       jlib:jid_replace_resource(To, R),
 				       Packet)
-		      end, get_user_resources(User));
+		      end, get_user_resources(User, Server));
 		_ ->
 		    ok
 	    end;
 	_ ->
-	    LUR = {LUser, LResource},
-	    case mnesia:dirty_read({session, LUR}) of
+	    USR = {LUser, LServer, LResource},
+	    case mnesia:dirty_read({session, USR}) of
 		[] ->
 		    case Name of
 			"message" ->
@@ -273,12 +275,13 @@ do_route(From, To, Packet) ->
 
 route_message(From, To, Packet) ->
     LUser = To#jid.luser,
-    case catch lists:max(get_user_present_resources(LUser)) of
+    LServer = To#jid.lserver,
+    case catch lists:max(get_user_present_resources(LUser, LServer)) of
 	{Priority, R} when is_integer(Priority),
 			   Priority >= 0 ->
 	    LResource = jlib:resourceprep(R),
-	    LUR = {LUser, LResource},
-	    case mnesia:dirty_read({session, LUR}) of
+	    USR = {LUser, LServer, LResource},
+	    case mnesia:dirty_read({session, USR}) of
 		[] ->
 		    ok;				% Race condition
 		[Sess] ->
@@ -291,7 +294,7 @@ route_message(From, To, Packet) ->
 		"error" ->
 		    ok;
 		_ ->
-		    case ejabberd_auth:is_user_exists(LUser) of
+		    case ejabberd_auth:is_user_exists(LUser, LServer) of
 			true ->
 			    ejabberd_hooks:run(offline_message_hook,
 					       [From, To, Packet]);
@@ -308,46 +311,58 @@ bounce_offline_message(From, To, Packet) ->
     ejabberd_router:route(To, From, Err),
     stop.
 
+disconnect_removed_user(User, Server) ->
+    ejabberd_sm:route(jlib:make_jid("", "", ""),
+		      jlib:make_jid(User, Server, ""),
+		      {xmlelement, "broadcast", [],
+		       [{exit, "User removed"}]}).
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_user_resources(User) ->
+get_user_resources(User, Server) ->
     LUser = jlib:nodeprep(User),
-    case catch mnesia:dirty_index_read(session, LUser, #session.user) of
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
+    case catch mnesia:dirty_index_read(session, US, #session.us) of
 	{'EXIT', _Reason} ->
 	    [];
 	Rs ->
 	    lists:map(fun(R) ->
-			      element(2, R#session.ur)
+			      element(3, R#session.usr)
 		      end, Rs)
     end.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-set_presence(User, Resource, Priority) ->
+set_presence(User, Server, Resource, Priority) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    USR = {User, Server, Resource},
+    US = {LUser, LServer},
     F = fun() ->
-		UR = {User, Resource},
-		mnesia:write(#presence{ur = UR, user = LUser,
+		mnesia:write(#presence{usr = USR, us = US,
 				       priority = Priority})
 	end,
     mnesia:transaction(F).
 
-unset_presence(User, Resource, Status) ->
+unset_presence(User, Server, Resource, Status) ->
+    USR = {User, Server, Resource},
     F = fun() ->
-		UR = {User, Resource},
-		mnesia:delete({presence, UR})
+		mnesia:delete({presence, USR})
 	end,
     mnesia:transaction(F),
-    ejabberd_hooks:run(unset_presence_hook, [User, Resource, Status]).
+    ejabberd_hooks:run(unset_presence_hook, [User, Server, Resource, Status]).
 
-get_user_present_resources(LUser) ->
-    case catch mnesia:dirty_index_read(presence, LUser, #presence.user) of
+get_user_present_resources(LUser, LServer) ->
+    US = {LUser, LServer},
+    case catch mnesia:dirty_index_read(presence, US, #presence.us) of
 	{'EXIT', _Reason} ->
 	    [];
 	Rs ->
 	    lists:map(fun(R) ->
-			      {R#presence.priority, element(2, R#presence.ur)}
+			      {R#presence.priority, element(3, R#presence.usr)}
 		      end, Rs)
     end.
 
@@ -360,6 +375,14 @@ dirty_get_my_sessions_list() ->
       [{#session{pid = '$1', _ = '_'},
 	[{'==', {node, '$1'}, node()}],
 	['$_']}]).
+
+get_vh_session_list(Server) ->
+    LServer = jlib:nameprep(Server),
+    mnesia:dirty_select(
+      session,
+      [{#session{usr = '$1', _ = '_'},
+	[{'==', {element, 2, '$1'}, LServer}],
+	['$1']}]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -410,6 +433,16 @@ update_tables() ->
 	[ur, user, node] ->
 	    mnesia:delete_table(session);
 	[ur, user, pid] ->
+	    mnesia:delete_table(session);
+	[usr, us, pid] ->
+	    ok;
+	{'EXIT', _} ->
+	    ok
+    end,
+    case catch mnesia:table_info(presence, attributes) of
+	[ur, user, priority] ->
+	    mnesia:delete_table(presence);
+	[usr, us, priority] ->
 	    ok;
 	{'EXIT', _} ->
 	    ok

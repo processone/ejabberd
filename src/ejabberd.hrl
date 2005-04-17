@@ -27,10 +27,9 @@
 			      [self(),?MODULE,?LINE]++Args)).
 
 
-%-define(MYNAME,"e.localhost").
--define(MYNAME, ejabberd_config:get_global_option(host)).
+-define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
+-define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).
 -define(S2STIMEOUT, 600000).
-%-define(S2STIMEOUT, 6000).
 -define(MYLANG, ejabberd_config:get_global_option(language)).
 
 -define(MSGS_DIR, "msgs").

@@ -333,7 +333,7 @@ push_item(User, From, Item) ->
 			 Item#roster.subscription}]}),
     lists:foreach(fun(Resource) ->
 			  push_item(User, Resource, From, Item)
-		  end, ejabberd_sm:get_user_resources(User)).
+		  end, ejabberd_sm:get_user_resources(User, 'TODO')).
 
 % TODO: don't push to those who not load roster
 -ifdef(PSI_ROSTER_WORKAROUND).

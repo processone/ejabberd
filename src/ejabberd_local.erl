@@ -31,7 +31,10 @@ start_link() ->
     {ok, Pid}.
 
 init() ->
-    ejabberd_router:register_route(?MYNAME, {apply, ?MODULE, route}),
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_router:register_route(Host, {apply, ?MODULE, route})
+      end, ?MYHOSTS),
     catch ets:new(?IQTABLE, [named_table, public]),
     ejabberd_hooks:add(local_send_to_resource_hook,
 		       ?MODULE, bounce_resource_packet, 100),

@@ -10,25 +10,26 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/1, stop/0, mech_new/0, mech_step/2, parse/1]).
+-export([start/1, stop/0, mech_new/2, mech_step/2, parse/1]).
 
 -behaviour(cyrsasl).
-%-behaviour(gen_mod).
 
-start(Opts) ->
+-record(state, {check_password}).
+
+start(_Opts) ->
     cyrsasl:register_mechanism("PLAIN", ?MODULE),
     ok.
 
 stop() ->
     ok.
 
-mech_new() ->
-    {ok, []}.
+mech_new(_GetPassword, CheckPassword) ->
+    {ok, #state{check_password = CheckPassword}}.
 
 mech_step(State, ClientIn) ->
     case parse(ClientIn) of
 	[AuthzId, User, Password] ->
-	    case ejabberd_auth:check_password(User, Password) of
+	    case (State#state.check_password)(User, Password) of
 		true ->
 		    {ok, [{username, User}, {authzid, AuthzId}]};
 		_ ->

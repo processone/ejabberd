@@ -16,15 +16,15 @@
 	 process_iq/3,
 	 process_iq_set/3,
 	 process_iq_get/4,
-	 get_user_list/1,
-	 check_packet/4,
+	 get_user_list/2,
+	 check_packet/5,
 	 updated_list/2]).
 
 %-include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(privacy, {user,
+-record(privacy, {us,
 		  default = none,
 		  lists = []}).
 
@@ -46,6 +46,7 @@ start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(privacy, [{disc_copies, [node()]},
 				  {attributes, record_info(fields, privacy)}]),
+    update_table(),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
@@ -78,16 +79,16 @@ process_iq(From, _To, IQ) ->
 
 process_iq_get(From, _To, #iq{sub_el = SubEl},
 	       #userlist{name = Active}) ->
-    #jid{luser = LUser} = From,
+    #jid{luser = LUser, lserver = LServer} = From,
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
 	[] ->
-	    process_lists_get(LUser, Active);
+	    process_lists_get(LUser, LServer, Active);
 	[{xmlelement, Name, Attrs, _SubEls}] ->
 	    case Name of
 		"list" ->
 		    ListName = xml:get_attr("name", Attrs),
-		    process_list_get(LUser, ListName);
+		    process_list_get(LUser, LServer, ListName);
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end;
@@ -96,8 +97,8 @@ process_iq_get(From, _To, #iq{sub_el = SubEl},
     end.
 
 
-process_lists_get(LUser, Active) ->
-    case catch mnesia:dirty_read(privacy, LUser) of
+process_lists_get(LUser, LServer, Active) ->
+    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
@@ -135,8 +136,8 @@ process_lists_get(LUser, Active) ->
 	    end
     end.
 
-process_list_get(LUser, {value, Name}) ->
-    case catch mnesia:dirty_read(privacy, LUser) of
+process_list_get(LUser, LServer, {value, Name}) ->
+    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
@@ -155,7 +156,7 @@ process_list_get(LUser, {value, Name}) ->
 	    end
     end;
 
-process_list_get(_LUser, false) ->
+process_list_get(_LUser, _LServer, false) ->
     {error, ?ERR_BAD_REQUEST}.
 
 item_to_xml(Item) ->
@@ -242,18 +243,19 @@ list_to_action(S) ->
 
 
 process_iq_set(From, _To, #iq{sub_el = SubEl}) ->
-    #jid{luser = LUser} = From,
+    #jid{luser = LUser, lserver = LServer} = From,
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
 	[{xmlelement, Name, Attrs, SubEls}] ->
 	    ListName = xml:get_attr("name", Attrs),
 	    case Name of
 		"list" ->
-		    process_list_set(LUser, ListName, xml:remove_cdata(SubEls));
+		    process_list_set(LUser, LServer, ListName,
+				     xml:remove_cdata(SubEls));
 		"active" ->
-		    process_active_set(LUser, ListName);
+		    process_active_set(LUser, LServer, ListName);
 		"default" ->
-		    process_default_set(LUser, ListName);
+		    process_default_set(LUser, LServer, ListName);
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end;
@@ -262,9 +264,9 @@ process_iq_set(From, _To, #iq{sub_el = SubEl}) ->
     end.
 
 
-process_default_set(LUser, {value, Name}) ->
+process_default_set(LUser, LServer, {value, Name}) ->
     F = fun() ->
-		case mnesia:read({privacy, LUser}) of
+		case mnesia:read({privacy, {LUser, LServer}}) of
 		    [] ->
 			{error, ?ERR_ITEM_NOT_FOUND};
 		    [#privacy{lists = Lists} = P] ->
@@ -287,9 +289,9 @@ process_default_set(LUser, {value, Name}) ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end;
 
-process_default_set(LUser, false) ->
+process_default_set(LUser, LServer, false) ->
     F = fun() ->
-		case mnesia:read({privacy, LUser}) of
+		case mnesia:read({privacy, {LUser, LServer}}) of
 		    [] ->
 			{result, []};
 		    [R] ->
@@ -307,8 +309,8 @@ process_default_set(LUser, false) ->
     end.
 
 
-process_active_set(LUser, {value, Name}) ->
-    case catch mnesia:dirty_read(privacy, LUser) of
+process_active_set(LUser, LServer, {value, Name}) ->
+    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	[] ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
 	[#privacy{lists = Lists}] ->
@@ -320,7 +322,7 @@ process_active_set(LUser, {value, Name}) ->
 	    end
     end;
 
-process_active_set(_LUser, false) ->
+process_active_set(_LUser, _LServer, false) ->
     {result, [], #userlist{}}.
 
 
@@ -328,14 +330,14 @@ process_active_set(_LUser, false) ->
 
 
 
-process_list_set(LUser, {value, Name}, Els) ->
+process_list_set(LUser, LServer, {value, Name}, Els) ->
     case parse_items(Els) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
 	remove ->
 	    F =
 		fun() ->
-			case mnesia:read({privacy, LUser}) of
+			case mnesia:read({privacy, {LUser, LServer}}) of
 			    [] ->
 				{result, []};
 			    [#privacy{default = Default, lists = Lists} = P] ->
@@ -368,10 +370,10 @@ process_list_set(LUser, {value, Name}, Els) ->
 	List ->
 	    F =
 		fun() ->
-			case mnesia:wread({privacy, LUser}) of
+			case mnesia:wread({privacy, {LUser, LServer}}) of
 			    [] ->
 				NewLists = [{Name, List}],
-				mnesia:write(#privacy{user = LUser,
+				mnesia:write(#privacy{us = {LUser, LServer},
 						      lists = NewLists}),
 				{result, []};
 			    [#privacy{lists = Lists} = P] ->
@@ -396,7 +398,7 @@ process_list_set(LUser, {value, Name}, Els) ->
 	    end
     end;
 
-process_list_set(_LUser, false, _Els) ->
+process_list_set(_LUser, _LServer, false, _Els) ->
     {error, ?ERR_BAD_REQUEST}.
 
 
@@ -511,9 +513,10 @@ parse_matches1(_Item, [{xmlelement, _, _, _} | _Els]) ->
 
 
 
-get_user_list(User) ->
+get_user_list(User, Server) ->
     LUser = jlib:nodeprep(User),
-    case catch mnesia:dirty_read(privacy, LUser) of
+    LServer = jlib:nameprep(Server),
+    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	[] ->
 	    #userlist{};
 	[#privacy{default = Default, lists = Lists}] ->
@@ -534,7 +537,7 @@ get_user_list(User) ->
     end.
 
 
-check_packet(User,
+check_packet(User, Server,
 	     #userlist{list = List},
 	     {From, To, {xmlelement, PName, _, _}},
 	     Dir) ->
@@ -552,28 +555,32 @@ check_packet(User,
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, {none, []}, [User, LJID]),
+			  roster_get_jid_info, {none, []},
+			  [User, Server, LJID]),
 		    check_packet_aux(List, message,
 				     LJID, Subscription, Groups);
 		{iq, in} ->
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, {none, []}, [User, LJID]),
+			  roster_get_jid_info, {none, []},
+			  [User, Server, LJID]),
 		    check_packet_aux(List, iq,
 				     LJID, Subscription, Groups);
 		{presence, in} ->
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, {none, []}, [User, LJID]),
+			  roster_get_jid_info, {none, []},
+			  [User, Server, LJID]),
 		    check_packet_aux(List, presence_in,
 				     LJID, Subscription, Groups);
 		{presence, out} ->
 		    LJID = jlib:jid_tolower(To),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, {none, []}, [User, LJID]),
+			  roster_get_jid_info, {none, []},
+			  [User, Server, LJID]),
 		    check_packet_aux(List, presence_out,
 				     LJID, Subscription, Groups);
 		_ ->
@@ -661,5 +668,47 @@ updated_list(#userlist{name = OldName} = Old,
     end.
 
 
+
+update_table() ->
+    Fields = record_info(fields, privacy),
+    case mnesia:table_info(privacy, attributes) of
+	Fields ->
+	    ok;
+	[user, default, lists] ->
+	    ?INFO_MSG("Converting privacy table from "
+		      "{user, default, lists} format", []),
+	    Host = ?MYNAME,
+	    {atomic, ok} = mnesia:create_table(
+			     mod_privacy_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, privacy},
+			      {attributes, record_info(fields, privacy)}]),
+	    mnesia:transform_table(privacy, ignore, Fields),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_privacy_tmp_table),
+			 mnesia:foldl(
+			   fun(#privacy{us = U} = R, _) ->
+				   mnesia:dirty_write(
+				     mod_privacy_tmp_table,
+				     R#privacy{us = {U, Host}})
+			   end, ok, privacy)
+		 end,
+	    mnesia:transaction(F1),
+	    mnesia:clear_table(privacy),
+	    F2 = fun() ->
+			 mnesia:write_lock_table(privacy),
+			 mnesia:foldl(
+			   fun(R, _) ->
+				   mnesia:dirty_write(R)
+			   end, ok, mod_privacy_tmp_table)
+		 end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_privacy_tmp_table);
+	_ ->
+	    ?INFO_MSG("Recreating privacy table", []),
+	    mnesia:transform_table(privacy, ignore, Fields)
+    end.
 
 

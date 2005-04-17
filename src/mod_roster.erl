@@ -15,31 +15,27 @@
 -export([start/1, stop/0,
 	 process_iq/3,
 	 process_local_iq/3,
-	 get_subscription_lists/2,
-	 in_subscription/4,
-	 out_subscription/3,
-	 set_items/2,
-	 remove_user/1,
-	 get_jid_info/3]).
+	 get_user_roster/2,
+	 get_subscription_lists/3,
+	 in_subscription/5,
+	 out_subscription/4,
+	 set_items/3,
+	 remove_user/2,
+	 get_jid_info/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("mod_roster.hrl").
 
--record(roster, {uj,
-		 user,
-		 jid,
-		 name = "",
-		 subscription = none,
-		 ask = none,
-		 groups = [],
-		 xattrs = [],
-		 xs = []}).
 
 start(Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
-    mnesia:add_table_index(roster, user),
+    update_table(),
+    mnesia:add_table_index(roster, us),
+    ejabberd_hooks:add(roster_get,
+		       ?MODULE, get_user_roster, 50),
     ejabberd_hooks:add(roster_in_subscription,
 		       ?MODULE, in_subscription, 50),
     ejabberd_hooks:add(roster_out_subscription,
@@ -54,6 +50,8 @@ start(Opts) ->
 				  ?MODULE, process_iq, IQDisc).
 
 stop() ->
+    ejabberd_hooks:delete(roster_get,
+			  ?MODULE, get_user_roster, 50),
     ejabberd_hooks:delete(roster_in_subscription,
 			  ?MODULE, in_subscription, 50),
     ejabberd_hooks:delete(roster_out_subscription,
@@ -74,8 +72,8 @@ stop() ->
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
-    case ?MYNAME of
-	LServer ->
+    case lists:member(LServer, ?MYHOSTS) of
+	true ->
 	    ResIQ = process_local_iq(From, To, IQ),
 	    ejabberd_router:route(From, From,
 				  jlib:iq_to_xml(ResIQ)),
@@ -89,8 +87,8 @@ process_iq(From, To, IQ) ->
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
-    case ?MYNAME of
-	LServer ->
+    case lists:member(LServer, ?MYHOSTS) of
+	true ->
 	    process_local_iq(From, To, IQ);
 	_ ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
@@ -109,8 +107,10 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
 
 
 process_iq_get(From, _To, #iq{sub_el = SubEl} = IQ) ->
-    #jid{luser = LUser} = From,
-    case catch mnesia:dirty_index_read(roster, LUser, #roster.user) of
+    LUser = From#jid.luser,
+    LServer = From#jid.lserver,
+    US = {LUser, LServer},
+    case catch ejabberd_hooks:run_fold(roster_get, [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
 	    IQ#iq{type = result,
@@ -120,6 +120,17 @@ process_iq_get(From, _To, #iq{sub_el = SubEl} = IQ) ->
 	_ ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
     end.
+
+get_user_roster(Acc, US) ->
+    case catch mnesia:dirty_index_read(roster, US, #roster.us) of
+	Items when is_list(Items) ->
+	    Items ++ Acc;
+	_ ->
+	    Acc
+    end.
+
+
+
 
 item_to_xml(Item) ->
     Attrs1 = [{"jid", jlib:jid_to_string(Item#roster.jid)}],
@@ -164,7 +175,7 @@ process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
 
 process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
-    #jid{user = User, luser = LUser} = From,
+    #jid{user = User, luser = LUser, lserver = LServer} = From,
     case JID1 of
 	error ->
 	    ok;
@@ -172,15 +183,14 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
 	    LJID = jlib:jid_tolower(JID1),
 	    F = fun() ->
-			Res = mnesia:read({roster, {LUser, LJID}}),
+			Res = mnesia:read({roster, {LUser, LServer, LJID}}),
 			Item = case Res of
 				   [] ->
-				       #roster{uj = {LUser, LJID},
-					       user = LUser,
+				       #roster{usj = {LUser, LServer, LJID},
+					       us = {LUser, LServer},
 					       jid = JID};
 				   [I] ->
-				       I#roster{user = LUser,
-						jid = JID,
+				       I#roster{jid = JID,
 						name = "",
 						groups = [],
 						xattrs = [],
@@ -190,7 +200,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			Item2 = process_item_els(Item1, Els),
 			case Item2#roster.subscription of
 			    remove ->
-				mnesia:delete({roster, {LUser, LJID}});
+				mnesia:delete({roster, {LUser, LServer, LJID}});
 			    _ ->
 				mnesia:write(Item2)
 			end,
@@ -198,7 +208,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 		end,
 	    case mnesia:transaction(F) of
 		{atomic, {OldItem, Item}} ->
-		    push_item(User, To, Item),
+		    push_item(User, LServer, To, Item),
 		    case Item#roster.subscription of
 			remove ->
 			    IsTo = case OldItem#roster.subscription of
@@ -292,47 +302,49 @@ process_item_els(Item, []) ->
     Item.
 
 
-push_item(User, From, Item) ->
+push_item(User, Server, From, Item) ->
     ejabberd_sm:route(jlib:make_jid("", "", ""),
-		      jlib:make_jid(User, "", ""),
+		      jlib:make_jid(User, Server, ""),
 		      {xmlelement, "broadcast", [],
 		       [{item,
 			 Item#roster.jid,
 			 Item#roster.subscription}]}),
     lists:foreach(fun(Resource) ->
-			  push_item(User, Resource, From, Item)
-		  end, ejabberd_sm:get_user_resources(User)).
+			  push_item(User, Server, Resource, From, Item)
+		  end, ejabberd_sm:get_user_resources(User, Server)).
 
 % TODO: don't push to those who not load roster
 -ifdef(PSI_ROSTER_WORKAROUND).
 
-push_item(User, Resource, _From, Item) ->
+push_item(User, Server, Resource, _From, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_ROSTER}],
 			   [item_to_xml(Item)]}]},
     ejabberd_router:route(
-      jlib:make_jid(User, ?MYNAME, Resource),
-      jlib:make_jid(User, ?MYNAME, Resource),
+      jlib:make_jid(User, Server, Resource),
+      jlib:make_jid(User, Server, Resource),
       jlib:iq_to_xml(ResIQ)).
 
 -else.
 
-push_item(User, Resource, From, Item) ->
+push_item(User, Server, Resource, From, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_ROSTER}],
 			   [item_to_xml(Item)]}]},
     ejabberd_router:route(
       From,
-      jlib:make_jid(User, ?MYNAME, Resource),
+      jlib:make_jid(User, Server, Resource),
       jlib:iq_to_xml(ResIQ)).
 
 -endif.
 
-get_subscription_lists(_, User) ->
+get_subscription_lists(_, User, Server) ->
     LUser = jlib:nodeprep(User),
-    case mnesia:dirty_index_read(roster, LUser, #roster.user) of
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
+    case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Items when is_list(Items) ->
 	    fill_subscription_lists(Items, [], []);
 	_ ->
@@ -340,7 +352,7 @@ get_subscription_lists(_, User) ->
     end.
 
 fill_subscription_lists([I | Is], F, T) ->
-    J = element(2, I#roster.uj),
+    J = element(3, I#roster.usj),
     case I#roster.subscription of
 	both ->
 	    fill_subscription_lists(Is, [J | F], [J | T]);
@@ -360,23 +372,25 @@ ask_to_pending(Ask) -> Ask.
 
 
 
-in_subscription(_, User, JID, Type) ->
-    process_subscription(in, User, JID, Type).
+in_subscription(_, User, Server, JID, Type) ->
+    process_subscription(in, User, Server, JID, Type).
 
-out_subscription(User, JID, Type) ->
-    process_subscription(out, User, JID, Type).
+out_subscription(User, Server, JID, Type) ->
+    process_subscription(out, User, Server, JID, Type).
 
-process_subscription(Direction, User, JID1, Type) ->
+process_subscription(Direction, User, Server, JID1, Type) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
     LJID = jlib:jid_tolower(JID1),
     F = fun() ->
-		Item = case mnesia:read({roster, {LUser, LJID}}) of
+		Item = case mnesia:read({roster, {LUser, LServer, LJID}}) of
 			   [] ->
 			       JID = {JID1#jid.user,
 				      JID1#jid.server,
 				      JID1#jid.resource},
-			       #roster{uj = {LUser, LJID},
-				       user = LUser,
+			       #roster{usj = {LUser, LServer, LJID},
+				       us = US,
 				       jid = JID};
 			   [I] ->
 			       I
@@ -420,12 +434,13 @@ process_subscription(Direction, User, JID1, Type) ->
 			    unsubscribed -> "unsubscribed"
 			end,
 		    ejabberd_router:route(
-		      jlib:make_jid(User, ?MYNAME, ""), JID1,
+		      jlib:make_jid(User, Server, ""), JID1,
 		      {xmlelement, "presence", [{"type", T}], []})
 	    end,
 	    case Push of
 		{push, Item} ->
-		    push_item(User, jlib:make_jid("", ?MYNAME, ""), Item),
+		    push_item(User, Server,
+			      jlib:make_jid("", Server, ""), Item),
 		    true;
 		none ->
 		    false
@@ -525,27 +540,32 @@ in_auto_reply(both, none, unsubscribe)  -> unsubscribed;
 in_auto_reply(_,    _,    _)  ->           none.
 
 
-remove_user(User) ->
+remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
     F = fun() ->
 		lists:foreach(fun(R) ->
 				      mnesia:delete_object(R)
 			      end,
-			      mnesia:index_read(roster, LUser, #roster.user))
+			      mnesia:index_read(roster, US, #roster.us))
         end,
     mnesia:transaction(F).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-set_items(User, SubEl) ->
+set_items(User, Server, SubEl) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
     F = fun() ->
-		lists:foreach(fun(El) -> process_item_set_t(LUser, El) end, Els)
+		lists:foreach(fun(El) ->
+				      process_item_set_t(LUser, LServer, El)
+			      end, Els)
 	end,
     mnesia:transaction(F).
 
-process_item_set_t(LUser, {xmlelement, _Name, Attrs, Els}) ->
+process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
     case JID1 of
 	error ->
@@ -553,19 +573,19 @@ process_item_set_t(LUser, {xmlelement, _Name, Attrs, Els}) ->
 	_ ->
 	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
 	    LJID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
-	    Item = #roster{uj = {LUser, LJID},
-			   user = LUser,
+	    Item = #roster{usj = {LUser, LServer, LJID},
+			   us = {LUser, LServer},
 			   jid = JID},
 	    Item1 = process_item_attrs_ws(Item, Attrs),
 	    Item2 = process_item_els(Item1, Els),
 	    case Item2#roster.subscription of
 		remove ->
-		    mnesia:delete({roster, {LUser, LJID}});
+		    mnesia:delete({roster, {LUser, LServer, LJID}});
 		_ ->
 		    mnesia:write(Item2)
 	    end
     end;
-process_item_set_t(_LUser, _) ->
+process_item_set_t(_LUser, _LServer, _) ->
     ok.
 
 process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
@@ -613,10 +633,11 @@ process_item_attrs_ws(Item, []) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_jid_info(_, User, JID) ->
+get_jid_info(_, User, Server, JID) ->
     LUser = jlib:nodeprep(User),
     LJID = jlib:jid_tolower(JID),
-    case catch mnesia:dirty_read(roster, {LUser, LJID}) of
+    LServer = jlib:nameprep(Server),
+    case catch mnesia:dirty_read(roster, {LUser, LServer, LJID}) of
 	[#roster{subscription = Subscription, groups = Groups}] ->
 	    {Subscription, Groups};
 	_ ->
@@ -625,7 +646,8 @@ get_jid_info(_, User, JID) ->
 		LRJID == LJID ->
 		    {none, []};
 		true ->
-		    case catch mnesia:dirty_read(roster, {LUser, LRJID}) of
+		    case catch mnesia:dirty_read(
+				 roster, {LUser, LServer, LRJID}) of
 			[#roster{subscription = Subscription,
 				 groups = Groups}] ->
 			    {Subscription, Groups};
@@ -633,6 +655,53 @@ get_jid_info(_, User, JID) ->
 			    {none, []}
 		    end
 	    end
+    end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+update_table() ->
+    Fields = record_info(fields, roster),
+    case mnesia:table_info(roster, attributes) of
+	Fields ->
+	    ok;
+	[uj, user, jid, name, subscription, ask, groups, xattrs, xs] ->
+	    ?INFO_MSG("Converting roster table from "
+		      "{uj, user, jid, name, subscription, ask, groups, xattrs, xs} format", []),
+	    Host = ?MYNAME,
+	    {atomic, ok} = mnesia:create_table(
+			     mod_roster_tmp_table,
+			     [{disc_only_copies, [node()]},
+			      {type, bag},
+			      {local_content, true},
+			      {record_name, roster},
+			      {attributes, record_info(fields, roster)}]),
+	    mnesia:del_table_index(roster, user),
+	    mnesia:transform_table(roster, ignore, Fields),
+	    F1 = fun() ->
+			 mnesia:write_lock_table(mod_roster_tmp_table),
+			 mnesia:foldl(
+			   fun(#roster{usj = {U, JID}, us = U} = R, _) ->
+				   mnesia:dirty_write(
+				     mod_roster_tmp_table,
+				     R#roster{usj = {U, Host, JID},
+					      us = {U, Host}})
+			   end, ok, roster)
+		 end,
+	    mnesia:transaction(F1),
+	    mnesia:clear_table(roster),
+	    F2 = fun() ->
+			 mnesia:write_lock_table(roster),
+			 mnesia:foldl(
+			   fun(R, _) ->
+				   mnesia:dirty_write(R)
+			   end, ok, mod_roster_tmp_table)
+		 end,
+	    mnesia:transaction(F2),
+	    mnesia:delete_table(mod_roster_tmp_table);
+	_ ->
+	    ?INFO_MSG("Recreating roster table", []),
+	    mnesia:transform_table(roster, ignore, Fields)
     end.
 
 

@@ -12,16 +12,16 @@
 
 %% External exports
 -export([start/0,
-	 set_password/2,
-	 check_password/2,
-	 check_password/4,
-	 try_register/2,
+	 set_password/3,
+	 check_password/3,
+	 check_password/5,
+	 try_register/3,
 	 dirty_get_registered_users/0,
-	 get_password/1,
-	 get_password_s/1,
-	 is_user_exists/1,
-	 remove_user/1,
+	 get_password/2,
+	 get_password_s/2,
+	 is_user_exists/2,
 	 remove_user/2,
+	 remove_user/3,
 	 plain_password_required/0
 	]).
 
@@ -36,7 +36,7 @@ start() ->
 plain_password_required() ->
     false.
 
-check_password(User, Password) ->
+check_password(User, _Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
 	    false;
@@ -52,7 +52,7 @@ check_password(User, Password) ->
 	    end
     end.
 
-check_password(User, Password, StreamID, Digest) ->
+check_password(User, _Server, Password, StreamID, Digest) ->
     case jlib:nodeprep(User) of
 	error ->
 	    false;
@@ -78,7 +78,7 @@ check_password(User, Password, StreamID, Digest) ->
 	    end
     end.
 
-set_password(User, Password) ->
+set_password(User, _Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
 	    {error, invalid_jid};
@@ -93,7 +93,7 @@ set_password(User, Password) ->
     end.
 
 
-try_register(User, Password) ->
+try_register(User, _Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
 	    {error, invalid_jid};
@@ -118,7 +118,10 @@ dirty_get_registered_users() ->
 	    []
     end.
 
-get_password(User) ->
+dirty_get_registered_users(Server) ->
+    dirty_get_registered_users().
+
+get_password(User, _Server) ->
     case jlib:nodeprep(User) of
 	error ->
 	    false;
@@ -134,7 +137,7 @@ get_password(User) ->
 	    end
     end.
 
-get_password_s(User) ->
+get_password_s(User, _Server) ->
     case jlib:nodeprep(User) of
 	error ->
 	    "";
@@ -150,7 +153,7 @@ get_password_s(User) ->
 	    end
     end.
 
-is_user_exists(User) ->
+is_user_exists(User, _Server) ->
     case jlib:nodeprep(User) of
 	error ->
 	    false;
@@ -166,7 +169,7 @@ is_user_exists(User) ->
 	    end
     end.
 
-remove_user(User) ->
+remove_user(User, _Server) ->
     case jlib:nodeprep(User) of
 	error ->
 	    error;
@@ -177,7 +180,7 @@ remove_user(User) ->
 	    ejabberd_hooks:run(remove_user, [User])
     end.
 
-remove_user(User, Password) ->
+remove_user(User, _Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
 	    error;

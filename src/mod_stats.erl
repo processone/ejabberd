@@ -38,7 +38,7 @@ process_local_iq(From, To, #iq{id = ID, type = Type,
 	    Node = string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
 	    Names = get_names(Els, []),
 	    
-	    case get_local_stats(Node, Names) of
+	    case get_local_stats(To#jid.server, Node, Names) of
 		{result, Res} ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -66,16 +66,20 @@ get_names([_ | Els], Res) ->
 
 -define(STAT(Name), {xmlelement, "stat", [{"name", Name}], []}).
 
-get_local_stats([], []) ->
+get_local_stats(_Server, [], []) ->
     {result,
      [?STAT("users/online"),
-      ?STAT("users/total")
+      ?STAT("users/total"),
+      ?STAT("users/all-hosts/online"),
+      ?STAT("users/all-hosts/total")
      ]};
 
-get_local_stats([], Names) ->
-    {result, lists:map(fun(Name) -> get_local_stat([], Name) end, Names)};
+get_local_stats(Server, [], Names) ->
+    {result, lists:map(fun(Name) ->
+			       get_local_stat(Server, [], Name)
+		       end, Names)};
 
-get_local_stats(["running nodes", _], []) ->
+get_local_stats(_Server, ["running nodes", _], []) ->
     {result,
      [?STAT("time/uptime"),
       ?STAT("time/cputime"),
@@ -86,7 +90,7 @@ get_local_stats(["running nodes", _], []) ->
       ?STAT("transactions/logged")
      ]};
 
-get_local_stats(["running nodes", ENode], Names) ->
+get_local_stats(_Server, ["running nodes", ENode], Names) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -95,7 +99,7 @@ get_local_stats(["running nodes", ENode], Names) ->
 	     lists:map(fun(Name) -> get_node_stat(Node, Name) end, Names)}
     end;
 
-get_local_stats(_, _) ->
+get_local_stats(_Server, _, _) ->
     {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
 
 
@@ -115,27 +119,40 @@ get_local_stats(_, _) ->
 	   [{xmlcdata, Desc}]}]}).
 
 
-%get_local_stat([], Name) when Name == "time/uptime" ->
-%    ?STATVAL(io_lib:format("~.3f", [element(1, statistics(wall_clock))/1000]),
-%	     "seconds");
-%get_local_stat([], Name) when Name == "time/cputime" ->
-%    ?STATVAL(io_lib:format("~.3f", [element(1, statistics(runtime))/1000]),
-%	     "seconds");
-get_local_stat([], Name) when Name == "users/online" ->
+get_local_stat(Server, [], Name) when Name == "users/online" ->
+    case catch ejabberd_sm:get_vh_session_list(Server) of
+	{'EXIT', Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	Users ->
+	    ?STATVAL(integer_to_list(length(Users)), "users")
+    end;
+
+get_local_stat(Server, [], Name) when Name == "users/total" ->
+    LServer = jlib:nameprep(Server),
+    case catch ejabberd_auth:get_vh_registered_users(Server) of
+	{'EXIT', Reason} ->
+	    ?STATERR("500", "Internal Server Error");
+	Users ->
+	    ?STATVAL(integer_to_list(length(Users)), "users")
+    end;
+
+get_local_stat(_Server, [], Name) when Name == "users/all-hosts/online" ->
     case catch mnesia:table_info(session, size) of
 	{'EXIT', Reason} ->
 	    ?STATERR("500", "Internal Server Error");
 	Users ->
 	    ?STATVAL(integer_to_list(Users), "users")
     end;
-get_local_stat([], Name) when Name == "users/total" ->
+
+get_local_stat(_Server, [], Name) when Name == "users/all-hosts/total" ->
     case catch mnesia:table_info(passwd, size) of
 	{'EXIT', Reason} ->
 	    ?STATERR("500", "Internal Server Error");
 	Users ->
 	    ?STATVAL(integer_to_list(Users), "users")
     end;
-get_local_stat(_, Name) ->
+
+get_local_stat(_Server, _, Name) ->
     ?STATERR("404", "Not Found").
 
 

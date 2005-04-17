@@ -13,17 +13,19 @@
 -export([start/0,
 	 register_mechanism/2,
 	 listmech/0,
-	 server_new/4,
+	 server_new/6,
 	 server_start/3,
 	 server_step/2]).
 
 -record(sasl_mechanism, {mechanism, module}).
--record(sasl_state, {service, myname, realm, mech_mod, mech_state}).
+-record(sasl_state, {service, myname, realm,
+		     get_password, check_password,
+		     mech_mod, mech_state}).
 
 -export([behaviour_info/1]).
 
 behaviour_info(callbacks) ->
-    [{mech_new, 0},
+    [{mech_new, 2},
      {mech_step, 2}];
 behaviour_info(Other) ->
     undefined.
@@ -80,15 +82,19 @@ listmech() ->
 	       [{#sasl_mechanism{mechanism = '$1', _ = '_'}, [], ['$1']}]).
 
 
-server_new(Service, ServerFQDN, UserRealm, SecFlags) ->
+server_new(Service, ServerFQDN, UserRealm, SecFlags,
+	   GetPassword, CheckPassword) ->
     #sasl_state{service = Service,
 		myname = ServerFQDN,
-		realm = UserRealm}.
+		realm = UserRealm,
+		get_password = GetPassword,
+		check_password = CheckPassword}.
 
 server_start(State, Mech, ClientIn) ->
     case ets:lookup(sasl_mechanism, Mech) of
 	[#sasl_mechanism{module = Module}] ->
-	    {ok, MechState} = Module:mech_new(),
+	    {ok, MechState} = Module:mech_new(State#sasl_state.get_password,
+					      State#sasl_state.check_password),
 	    server_step(State#sasl_state{mech_mod = Module,
 					 mech_state = MechState},
 			ClientIn);

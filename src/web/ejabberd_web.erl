@@ -50,20 +50,20 @@ make_xhtml(Els) ->
 
 
 process_get({_, true},
-	    #request{user = User,
+	    #request{us = US,
 		     path = ["admin" | RPath],
 		     q = Query,
 		     lang = Lang} = Request) ->
-    if
-	User /= undefined ->
-	    case acl:match_rule(configure, jlib:make_jid(User, ?MYNAME, "")) of
+    case US of
+	{User, Server} ->
+	    case acl:match_rule(configure, jlib:make_jid(User, Server, "")) of
 		deny ->
 		    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
 		allow ->
 		    ejabberd_web_admin:process_admin(
 		      Request#request{path = RPath})
 	    end;
-	true ->
+	undefined ->
 	    {401,
 	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 	     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
@@ -71,10 +71,10 @@ process_get({_, true},
     end;
 
 process_get({true, _},
-	    #request{user = User,
+	    #request{us = _US,
 		     path = ["http-poll" | RPath],
-		     q = Query,
-		     lang = Lang} = Request) ->
+		     q = _Query,
+		     lang = _Lang} = Request) ->
     ejabberd_http_poll:process_request(Request#request{path = RPath});
 
 process_get(_, _Request) ->

@@ -690,11 +690,6 @@ set_form(["config", "remusers"], Lang, XData) ->
       fun({Var, Vals}) ->
 	      case Vals of
 		  ["1"] ->
-		      ejabberd_sm ! {route,
-				     jlib:make_jid("", "", ""),
-				     jlib:make_jid(Var, "", ""),
-				     {xmlelement, "broadcast", [],
-				      [{exit, "User removed"}]}},
 		      catch ejabberd_auth:remove_user(Var);
 		  _ ->
 		      ok
@@ -728,7 +723,7 @@ process_sm_iq(From, To,
 	deny ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
-	    #jid{user = User} = To,
+	    #jid{user = User, server = Server} = To,
 	    case Type of
 		set ->
 		    XDataEl = find_xdata_el(SubEl),
@@ -753,10 +748,11 @@ process_sm_iq(From, To,
 						  xml:get_tag_attr_s("node", SubEl),
 						  "/"),
 					    case set_sm_form(
-						   User, Node, Lang, XData) of
+						   User, Server, Node,
+						   Lang, XData) of
 						{result, Res} ->
 						    IQ#iq{type = result,
-							sub_el =
+							  sub_el =
 							    [{xmlelement, "query",
 							      [{"xmlns", XMLNS}],
 							      Res
@@ -774,7 +770,7 @@ process_sm_iq(From, To,
 		get ->
 		    Node =
 			string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-		    case get_sm_form(User, Node, Lang) of
+		    case get_sm_form(User, Server, Node, Lang) of
 			{result, Res} ->
 			    IQ#iq{type = result,
 				  sub_el =
@@ -788,7 +784,7 @@ process_sm_iq(From, To,
     end.
 
 
-get_sm_form(User, [], Lang) ->
+get_sm_form(User, Server, [], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -811,7 +807,7 @@ get_sm_form(User, [], Lang) ->
 		   [{xmlelement, "value", [], [{xmlcdata, "remove"}]}]}
 	         ]},
 	        ?XFIELD("text-private", "Password", "password",
-		        ejabberd_auth:get_password_s(User))
+		        ejabberd_auth:get_password_s(User, Server))
 	        %{xmlelement, "field", [{"type", "text-single"},
 	        %  		     {"label",
 	        %  		      translate:translate(Lang, "Host name")},
@@ -819,32 +815,27 @@ get_sm_form(User, [], Lang) ->
 	        % [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
 	     ]}]};
 
-get_sm_form(_, _, Lang) ->
+get_sm_form(_User, _Server, _Node, Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
-set_sm_form(User, [], Lang, XData) ->
+set_sm_form(User, Server, [], Lang, XData) ->
     case lists:keysearch("action", 1, XData) of
 	{value, {_, ["edit"]}} ->
 	    case lists:keysearch("password", 1, XData) of
 		{value, {_, [Password]}} ->
-		    ejabberd_auth:set_password(User, Password),
+		    ejabberd_auth:set_password(User, Server, Password),
 		    {result, []};
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end;
 	{value, {_, ["remove"]}} ->
-	    ejabberd_sm ! {route,
-			   jlib:make_jid("", "", ""),
-			   jlib:make_jid(User, "", ""),
-			   {xmlelement, "broadcast", [],
-			    [{exit, "User removed"}]}},
-	    catch ejabberd_auth:remove_user(User),
+	    catch ejabberd_auth:remove_user(User, Server),
 	    {result, []};
 	_ ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
-set_sm_form(_, _, Lang, XData) ->
+set_sm_form(_User, _Server, _Node, Lang, XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
