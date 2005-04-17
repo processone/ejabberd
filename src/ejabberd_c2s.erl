@@ -445,7 +445,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		    ?INFO_MSG("(~w) Accepted authentication for ~s",
 			      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
-		     StateData#state{authentificated = true,
+		     StateData#state{streamid = new_id(),
+				     authentificated = true,
 				     user = U
 				    }};
 		{continue, ServerOut, NewSASLState} ->
@@ -475,6 +476,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    {next_state, wait_for_stream,
 	     StateData#state{sockmod = tls,
 			     socket = TLSSocket,
+			     streamid = new_id(),
 			     tls_enabled = true
 			    }};
 	_ ->
@@ -533,7 +535,8 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		    ?INFO_MSG("(~w) Accepted authentication for ~s",
 			      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
-		     StateData#state{authentificated = true,
+		     StateData#state{streamid = new_id(),
+				     authentificated = true,
 				     user = U
 				    }};
 		{continue, ServerOut, NewSASLState} ->

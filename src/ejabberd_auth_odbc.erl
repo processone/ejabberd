@@ -17,6 +17,7 @@
 	 check_password/5,
 	 try_register/3,
 	 dirty_get_registered_users/0,
+	 get_vh_registered_users/1,
 	 get_password/2,
 	 get_password_s/2,
 	 is_user_exists/2,
@@ -118,7 +119,7 @@ dirty_get_registered_users() ->
 	    []
     end.
 
-dirty_get_registered_users(Server) ->
+get_vh_registered_users(Server) ->
     dirty_get_registered_users().
 
 get_password(User, _Server) ->

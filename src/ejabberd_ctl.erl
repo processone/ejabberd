@@ -147,7 +147,7 @@ process(Node, ["load", Path]) ->
 process(Node, ["restore", Path]) ->
     case rpc:call(Node,
 		  mnesia, restore, [Path, [{default_op, keep_tables}]]) of
-	{atomic, ok} ->
+	{atomic, _} ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
 	    io:format("Can't restore backup from ~p on node ~p: ~p~n",
