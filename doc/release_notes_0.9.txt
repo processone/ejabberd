@@ -19,7 +19,7 @@ Virtual Hosting
 
     Note that you are now using a list of hosts. The main one should
     be the first listed. See migration section further in this release
-    notefor details.
+    note for details.
       
 
 Shared Roster
@@ -57,10 +57,13 @@ PostgreSQL (ODBC) support
     how to configure ejabberd with odbc support. You can get support
     on how to configure ejabberd with a relational database.
 
+
 Migration from ejabberd 0.7.5
 
     Migration is pretty straightforward as Mnesia database schema
-    converions is handled automatically.
+    conversions is handled automatically. Remember however that you
+    must backup your ejabberd database before migration.
+
     Here are the following steps to proceed:
 
     1. Stop your instance of ejabberd.
