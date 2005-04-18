@@ -107,7 +107,15 @@ make_xhtml(Els, Lang) ->
 							      ?LI([?ACT("/admin/online-users/", "Online Users")]),
 							      ?LI([?ACT("/admin/nodes/", "Nodes")]),
 							      ?LI([?ACT("/admin/stats/", "Statistics")])
-							     ])]),
+							     ] ++
+							     case lists:member(mod_shared_roster,
+									       gen_mod:loaded_modules()) of
+								 true ->
+								     [?LI([?ACT("/admin/shared-roster/", "Shared Roster")])];
+								 false ->
+								     []
+							     end
+							    )]),
 						  ?XAE("td",
 						       [{"id", "middle-td2"}],
 						       [?XAE("div", [{"id", "content"}], Els)])])])
@@ -508,7 +516,15 @@ process_admin(#request{us = US,
 		     ?LI([?ACT("online-users/", "Online Users")]),
 		     ?LI([?ACT("nodes/", "Nodes")]),
 		     ?LI([?ACT("stats/", "Statistics")])
-		    ])
+		    ] ++
+		    case lists:member(mod_shared_roster,
+				      gen_mod:loaded_modules()) of
+			true ->
+			    [?LI([?ACT("shared-roster/", "Shared Roster")])];
+			false ->
+			    []
+		    end
+		   )
 	       ], Lang);
 
 process_admin(#request{us = US,
