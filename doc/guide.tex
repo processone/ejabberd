@@ -69,9 +69,13 @@
 
 \newcommand{\iqdiscitem}[1]{\titem{iqdisc} #1 IQ queries processing
 discipline (see~\ref{sec:modiqdiscoption}).}
-\newcommand{\hostitem}[1]{\titem{host} Defines hostname of service
-(see~\ref{sec:modhostoption}). If not present
-then prefix \jid{#1.} is added to main \ejabberd{} hostname.}
+\newcommand{\hostitem}[1]{
+  \titem{host} Defines hostname of the service
+  (see~\ref{sec:modhostoption}).
+  \titem{hosts} Defines hostnames of the service
+  (see~\ref{sec:modhostsoption}).  If neither \texttt{host} nor \texttt{hosts}
+  are not present, then prefix \jid{#1.} is added to all \ejabberd{} hostnames.
+}
 
 \title{Ejabberd Installation and Operation Guide}
 \author{Alexey Shchepin \\
@@ -109,6 +113,7 @@ The main features of \ejabberd{} are:
   permanently on more than one node.  This means that if one of the nodes
   crashes, then the others will continue working without disruption.
   You can also add or replace nodes ``on the fly''.
+\item Support for virtual hosting
 \item Built-in \tjepref{0045}{Multi-User Chat} service
 \item Built-in IRC transport
 \item Built-in \tjepref{0060}{Publish-Subscribe} service
@@ -127,8 +132,9 @@ The main features of \ejabberd{} are:
 
 The misfeatures of \ejabberd{} are:
 \begin{itemize}
-\item No support for virtual domains
 \item No support for authentication and STARTTLS in S2S connections
+\item Access rules can be defined only for global conext, not for specific
+  virtual host
 \end{itemize}
 
 
@@ -309,13 +315,25 @@ With this lines old global or local options or ACLs will be removed before
 adding new ones.
 
 
-\subsubsection{Host Name}
+\subsubsection{Host Names}
 \label{sec:confighostname}
 
-Option \option{hostname} defines name of \Jabber{} domain that \ejabberd{}
-serves.  E.\,g.\ to use \jid{jabber.org} domain add the following line in the config:
+Option \option{hosts} defines a list of \Jabber{} domains that \ejabberd{}
+serves.  E.\,g.\ to serve \jid{example.org} and \jid{example.com} domains add
+the following line in the config:
 \begin{verbatim}
-  {host, "jabber.org"}.
+  {hosts, ["example.org", "example.com"]}.
+\end{verbatim}
+
+Option \option{host} defines one \Jabber{} domain that \ejabberd{} serves.
+E.\,g.\ to serve only \jid{example.org} domain add the following line in the
+config:
+\begin{verbatim}
+  {host, "example.org"}.
+\end{verbatim}
+It have the same effect as
+\begin{verbatim}
+  {hosts, ["example.org"]}.
 \end{verbatim}
 
 %This option is mandatory.
@@ -347,8 +365,8 @@ declarations of ACL in config file have following syntax:
 \begin{verbatim}
 {acl, all, all}.
 \end{verbatim}
-\titem{\{user, <username>\}} Matches local user with name
-  \term{<username>}.  Example:
+\titem{\{user, <username>\}} Matches user with name
+  \term{<username>} at the first virtual host.  Example:
 \begin{verbatim}
 {acl, admin, {user, "aleksey"}}.
 \end{verbatim}
@@ -363,7 +381,7 @@ declarations of ACL in config file have following syntax:
 {acl, jabberorg, {server, "jabber.org"}}.
 \end{verbatim}
 \titem{\{user\_regexp, <regexp>\}} Matches local user with name that
-  matches \term{<regexp>}.  Example:
+  matches \term{<regexp>} at the first virtual host.  Example:
 \begin{verbatim}
 {acl, tests, {user, "^test[0-9]*$"}}.
 \end{verbatim}
@@ -400,7 +418,7 @@ declarations of ACL in config file have following syntax:
   \end{description}
 \end{description}
 
-The following ACLs pre-defined:
+The following ACLs are pre-defined:
 \begin{description}
 \titem{all} Matches all JIDs.
 \titem{none} Matches none JIDs.
@@ -428,8 +446,8 @@ Example:
 
 Following access rules pre-defined:
 \begin{description}
-\titem{all} Always return ``\term{allow}''
-\titem{none} Always return ``\term{deny}''
+\titem{all} Always returns ``\term{allow}''
+\titem{none} Always returns ``\term{deny}''
 \end{description}
 
 
@@ -620,6 +638,7 @@ Example:
     {mod_stats,     []},
     {mod_vcard,     []},
     {mod_offline,   []},
+    {mod_announce,  [{access, announce}]},
     {mod_echo,      [{host, "echo.localhost"}]},
     {mod_private,   []},
     {mod_irc,       []},
@@ -895,6 +914,22 @@ Example:
    ]}.
 \end{verbatim}
 
+\subsubsection{\option{hosts}}
+\label{sec:modhostsoption}
+
+This option explicitly defines a list of hostnames for the module which acts as
+a service.
+
+Example:
+\begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_echo, [{hosts, ["echo.example.org", "echo.example.com"]}]},
+    ...
+   ]}.
+\end{verbatim}
+
 
 \subsection{\modannounce{}}
 \label{sec:modannounce}
@@ -903,20 +938,24 @@ This module adds support for broadcast announce messages and MOTD.
 When the module is loaded, it handles messages sent to the following JID's
 (suppose that main server has address \jid{example.org}):
 \begin{description}
-\titem{example.org/announce/all} Message is sent to all registered users.
-If the user is online and connected to several resources, only resource with
-the highest priority will receive the message. If the registered user is
-not connected, the message will be stored offline (if oflline storage is
-available).
-\titem{example.org/announce/online} Message is sent to all connected users.
-If the user is online and connected to several resources, all resources
-will receive the message.
+\titem{example.org/announce/all} Message is sent to all registered users at
+\jid{example.org}.  If the user is online and connected to several resources,
+only resource with the highest priority will receive the message.  If the
+registered user is not connected, the message will be stored offline (if
+oflline storage is available).
+\titem{example.org/announce/online} Message is sent to all connected users at
+\jid{example.org}.  If the user is online and connected to several resources,
+all resources will receive the message.
+\titem{example.org/announce/all-hosts/online} Message is sent to all connected
+users at every virtual host.  If the user is online and connected to several
+resources, all resources will receive the message.
 \titem{example.org/announce/motd} Message is set as MOTD (Message of the Day)
-and will be sent to users as they login. In addition the message is sent to
-all connected users (similar to \term{announce/online} resource).
-\titem{example.org/announce/motd/update} Message is set as MOTD (Message of the Day)
-and will be sent to users as they login. The message is \emph{not sent} to
-all connected users.
+and is sent to users at \jid{example.org} as they login.  In addition the
+message is sent to all connected users (similar to \term{announce/online}
+resource).
+\titem{example.org/announce/motd/update} Message is set as MOTD (Message of the
+Day) and is sent to users at \jid{example.org} as they login.  The message
+is \emph{not sent} to all connected users.
 \titem{example.org/announce/motd/delete} Any message sent to this JID
 removes existing MOTD.
 \end{description}
@@ -1207,11 +1246,16 @@ Options:
 \begin{description}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
-\titem{search} Specifies wheather search is enabled (value is \term{true}, default) or
+\titem{search} Specifies whether search is enabled (value is \term{true}, default) or
 disabled (value is \term{false}) by the service. If \term{search} is set to \term{false},
 option \term{host} is ignored and service does not appear in Jabber Discovery items.
 \titem{matches} Limits the number of reported search results. If value is set to
-\term{infinity} then all search results are reported. Default value is \term{30}.
+\term{infinity} then all search results are reported.  Default value is \term{30}.
+\titem{allow\_return\_all}  Specifies whether search with empty input fields can
+return all known users.  Default is \term{false}.
+\titem{search\_all\_hosts}  If set in \term{true} then search returns matched
+items at all virtual hosts.  Otherwise only current host items are returned.
+Default is \term{true}.
 \end{description}
 
 Example:
@@ -1219,7 +1263,10 @@ Example:
   {modules,
    [
     ...
-    {mod_vcard, [{search, false}, {matches, 20}]}
+    {mod_vcard, [{search, true},
+                 {matches, 20},
+                 {allow_return_all, true},
+                 {search_all_hosts, false}]}
     ...
    ]}.
 \end{verbatim}

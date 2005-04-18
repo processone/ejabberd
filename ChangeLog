@@ -1,5 +1,7 @@
 2005-04-18  Alexey Shchepin  <alexey@sevcom.net>
 
+	* doc/guide.tex: Updated
+
 	* src/msgs/pl.msg: New Polish translation (thanks to Andrew Smyk)
 
 2005-04-17  Alexey Shchepin  <alexey@sevcom.net>
