@@ -68,7 +68,7 @@ escape(S) ->
 %%          {stop, Reason}
 %%----------------------------------------------------------------------
 init([]) ->
-    {ok, Ref} = odbc:connect("DSN=ejabberd;UID=ejabberd;PWD=ejabberd",
+    {ok, Ref} = odbc:connect(ejabberd_config:get_local_option(odbc_server),
 			     [{scrollable_cursors, off}]),
     {ok, #state{odbc_ref = Ref}}.
 

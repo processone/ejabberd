@@ -1,5 +1,9 @@
 2005-04-18  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/odbc/ejabberd_odbc.erl: ODBC connection string can be
+	specified via odbc_server option now
+	* src/ejabberd.cfg.example: Added ODBC usage example
+
 	* doc/guide.tex: Updated
 
 	* src/msgs/pl.msg: New Polish translation (thanks to Andrew Smyk)

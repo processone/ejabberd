@@ -85,9 +85,13 @@
 %{auth_method, external}.
 %{extauth_program, "/path/to/authentification/script"}.
 
+% For authentification via ODBC use the following:
+%{auth_method, odbc}.
+%{odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}.
+
 
 % Host name:
-{host, "localhost"}.
+{hosts, ["localhost"]}.
 
 
 % Default language for server messages
