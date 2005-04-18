@@ -18,7 +18,8 @@ Virtual Hosting
     instead of the previous host directive.
 
     Note that you are now using a list of hosts. The main one should
-    be the first listed. See migration note further for details.
+    be the first listed. See migration section further in this release
+    notefor details.
       
 
 Shared Roster
@@ -35,6 +36,14 @@ Shared Roster
 
 PostgreSQL (ODBC) support
 
+    This feature is experimental and not yet properly documented. This
+    feature is released for testing purpose.
+
+    You need to have Erlang/OTP R10 to compile with ODBC on various
+    flavour of *nix. You should use Erlang/OTP R10B-4, as this task
+    has became easier with this release. It comes already build in
+    Erlang/OTP Microsoft Windows binary.
+
     PostgreSQL support is enabled by using the following module in
     ejabberd.cfg instead of their standard counterpart:
 
@@ -44,6 +53,9 @@ PostgreSQL (ODBC) support
 
     The database schema is located in the src/odbc/pq.sql file.
 
+    Look at the src/ejabberd.cfg.example file for more information on
+    how to configure ejabberd with odbc support. You can get support
+    on how to configure ejabberd with a relational database.
 
 Migration from ejabberd 0.7.5
 
