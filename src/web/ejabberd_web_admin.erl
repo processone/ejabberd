@@ -1151,8 +1151,12 @@ list_users_parse_query(Query) ->
 		error ->
 		    error;
 		#jid{user = User, server = Server} ->
-		    ejabberd_auth:try_register(User, Server, Password),
-		    ok
+		    case ejabberd_auth:try_register(User, Server, Password) of
+			{error, _Reason} ->
+			    error;
+			_ ->
+			    ok
+		    end
 	    end;
 	false ->
 	    nothing
@@ -1180,7 +1184,8 @@ list_given_users(Users, Prefix, Lang) ->
 	       fun(SU = {Server, User}) ->
 		       US = {User, Server},
 		       QueueLen = length(mnesia:dirty_read({offline_msg, US})),
-		       FQueueLen = [?AC(Prefix ++ "user/" ++ User ++ "@" ++ Server ++ "/queue/",
+		       FQueueLen = [?AC(Prefix ++ "user/" ++
+					User ++ "@" ++ Server ++ "/queue/",
 					integer_to_list(QueueLen))],
 		       FLast =
 			   case ejabberd_sm:get_user_resources(User, Server) of

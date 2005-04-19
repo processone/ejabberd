@@ -26,6 +26,8 @@
 	 plain_password_required/0
 	]).
 
+-include("ejabberd.hrl").
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -45,7 +47,12 @@ set_password(User, Server, Password) ->
     (auth_module()):set_password(User, Server, Password).
 
 try_register(User, Server, Password) ->
-    (auth_module()):try_register(User, Server, Password).
+    case lists:member(jlib:nameprep(Server), ?MYHOSTS) of
+	true ->
+	    (auth_module()):try_register(User, Server, Password);
+	false ->
+	    {error, not_allowed}
+    end.
 
 dirty_get_registered_users() ->
     (auth_module()):dirty_get_registered_users().

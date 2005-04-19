@@ -1,5 +1,11 @@
 2005-04-20  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_auth.erl: Added check for domain of registered user
+
+	* src/web/ejabberd_web_admin.erl: Fixed user registration via web
+	interface, fixed path to user's offline messages (thanks to
+	Mickael Remond)
+
 	* src/mod_disco.erl: Fixed domain listing when one virtual host is
 	a subdomain of another
 
