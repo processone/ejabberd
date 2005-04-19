@@ -344,9 +344,17 @@ get_local_items(_Host, _, _, _) ->
 
 
 get_vh_services(Host) ->
-    DotHost = "." ++ Host,
+    Hosts = lists:sort(fun(H1, H2) -> length(H1) >= length(H2) end, ?MYHOSTS),
     lists:filter(fun(H) ->
-			 lists:suffix(DotHost, H)
+			 case lists:dropwhile(
+				fun(VH) ->
+					not lists:suffix("." ++ VH, H)
+				end, Hosts) of
+			     [] ->
+				 false;
+			     [VH | _] ->
+				 VH == Host
+			 end
 		 end, ejabberd_router:dirty_get_all_routes()).
 
 get_online_vh_users(Host) ->
