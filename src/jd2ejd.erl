@@ -87,8 +87,9 @@ process_xdb(User, Server, {xmlelement, Name, _Attrs, Els}) ->
     end.
 
 
-xdb_data(User, Server, El) ->
-    {xmlelement, _Name, Attrs, _Els} = El,
+xdb_data(User, Server, {xmlcdata, _CData}) ->
+    ok;
+xdb_data(User, Server, {xmlelement, _Name, Attrs, _Els} = El) ->
     From = jlib:make_jid(User, Server, ""),
     case xml:get_attr_s("xmlns", Attrs) of
 	?NS_AUTH ->
