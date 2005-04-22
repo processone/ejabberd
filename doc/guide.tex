@@ -48,6 +48,7 @@
 \newcommand{\modregister}{\module{mod\_register}}
 \newcommand{\modroster}{\module{mod\_roster}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
+\newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
 \newcommand{\modstats}{\module{mod\_stats}}
 \newcommand{\modtime}{\module{mod\_time}}
 \newcommand{\modvcard}{\module{mod\_vcard}}
@@ -1014,8 +1015,8 @@ Example:
 \subsection{\modecho{}}
 \label{sec:modecho}
 
-This module acts as a service and simply returns to sender any \Jabber{} packet. Module may be
-useful for debugging.
+This module acts as a service and simply returns to sender any \Jabber{}
+packet.  Module may be useful for debugging.
 
 Options:
 \begin{description}
@@ -1210,6 +1211,95 @@ Example:
    ]}.
 \end{verbatim}
 
+
+\subsection{\modsharedroster{}}
+\label{sec:modsharedroster}
+
+This module implements shared roster groups support.
+
+You can edit shared roster groups via web-interface.  Each group has an unique
+ID and the following parameters:
+\begin{description}
+\item[Name] The name of the group, which will be displayed in roster.
+\item[Description] Textual description of this group, doesn't affect anything.
+\item[Members] List of full JIDs of group members, entered one per line in
+  web-interface.
+\item[Displayed groups] List of IDs of groups which will be in rosters of this
+  group members.
+\end{description}
+
+For example, to have a group of users which can see each other in roster,
+create a group like on table~\ref{tab:srge1}.
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{|l|l|}
+    & Group `\texttt{users}'\\
+    Name& Users\\
+    Members&
+    {\begin{tabular}{l}
+        \jid{user1@example.org}\\
+        \jid{user2@example.org}\\
+        \jid{user3@example.org}
+      \end{tabular}
+    }\\
+    Displayed groups& \texttt{users}
+  \end{tabular}
+  \caption{Shared group example N1}
+  \label{tab:srge1}
+\end{table}
+
+To have 3 groups `\texttt{managers}', `\texttt{workgroup1}', and
+`\texttt{workgroup2}', where group `\texttt{managers}' can see members of all
+groups, and other two groups can see `\texttt{managers}' group and themselves,
+create groups like on table~\ref{tab:srge2}.
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{|l|l|l|l|}
+    &
+    Group `\texttt{managers}'&
+    Group `\texttt{workgroup1}'&
+    Group `\texttt{workgroup2}'\\
+    Name& Managers& Workgroup1& Workgroup2\\
+    Members&
+    {\begin{tabular}{l}
+        \jid{manager1@example.org}\\
+        \jid{manager2@example.org}\\
+        \jid{manager3@example.org}
+      \end{tabular}
+    }&
+    {\begin{tabular}{l}
+        \jid{user1@example.org}\\
+        \jid{user2@example.org}\\
+        \jid{user3@example.org}
+      \end{tabular}
+    }&
+    {\begin{tabular}{l}
+        \jid{user4@example.org}\\
+        \jid{user5@example.org}\\
+        \jid{user6@example.org}
+      \end{tabular}
+    }\\
+    Displayed groups&
+    {\begin{tabular}{l}
+        \texttt{managers}\\
+        \texttt{workgroup1}\\
+        \texttt{workgroup2}
+      \end{tabular}
+    }&
+    {\begin{tabular}{l}
+        \texttt{managers}\\
+        \texttt{workgroup1}
+      \end{tabular}
+    }&
+    {\begin{tabular}{l}
+        \texttt{managers}\\
+        \texttt{workgroup2}
+      \end{tabular}
+    }
+  \end{tabular}
+  \caption{Shared group example N2}
+  \label{tab:srge2}
+\end{table}
 
 \subsection{\modstats{}}
 \label{sec:modstats}

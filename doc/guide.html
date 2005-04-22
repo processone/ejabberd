@@ -4,7 +4,7 @@
 <HEAD><TITLE>Ejabberd Installation and Operation Guide</TITLE>
 
 <META http-equiv="Content-Type" content="text/html; charset=ISO8859-1">
-<META name="GENERATOR" content="hevea 1.06">
+<META name="GENERATOR" content="hevea 1.07">
 </HEAD>
 <BODY >
 <!--HEVEA command line is: /usr/bin/hevea -charset ISO8859-1 guide.tex -->
@@ -101,12 +101,13 @@
 <LI><A HREF="#htoc45">A.13&nbsp;&nbsp;<TT>mod_register</TT></A>
 <LI><A HREF="#htoc46">A.14&nbsp;&nbsp;<TT>mod_roster</TT></A>
 <LI><A HREF="#htoc47">A.15&nbsp;&nbsp;<TT>mod_service_log</TT></A>
-<LI><A HREF="#htoc48">A.16&nbsp;&nbsp;<TT>mod_stats</TT></A>
-<LI><A HREF="#htoc49">A.17&nbsp;&nbsp;<TT>mod_time</TT></A>
-<LI><A HREF="#htoc50">A.18&nbsp;&nbsp;<TT>mod_vcard</TT></A>
-<LI><A HREF="#htoc51">A.19&nbsp;&nbsp;<TT>mod_version</TT></A>
+<LI><A HREF="#htoc48">A.16&nbsp;&nbsp;<TT>mod_shared_roster</TT></A>
+<LI><A HREF="#htoc49">A.17&nbsp;&nbsp;<TT>mod_stats</TT></A>
+<LI><A HREF="#htoc50">A.18&nbsp;&nbsp;<TT>mod_time</TT></A>
+<LI><A HREF="#htoc51">A.19&nbsp;&nbsp;<TT>mod_vcard</TT></A>
+<LI><A HREF="#htoc52">A.20&nbsp;&nbsp;<TT>mod_version</TT></A>
 </UL>
-<LI><A HREF="#htoc52">B&nbsp;&nbsp;I18n/L10n</A>
+<LI><A HREF="#htoc53">B&nbsp;&nbsp;I18n/L10n</A>
 </UL>
 
 <!--TOC section Introduction-->
@@ -1007,8 +1008,8 @@ Example:
 <H3><A NAME="htoc37">A.5</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
 
 <A NAME="sec:modecho"></A>
-This module acts as a service and simply returns to sender any Jabber packet. Module may be
-useful for debugging.<BR>
+This module acts as a service and simply returns to sender any Jabber
+packet. Module may be useful for debugging.<BR>
 <BR>
 Options:
 <DL COMPACT=compact><DT>
@@ -1227,9 +1228,120 @@ Example:
     ...
    ]}.
 </PRE>
+<!--TOC subsection <TT>mod_shared_roster</TT>-->
+
+<H3><A NAME="htoc48">A.16</A>&nbsp;&nbsp;<TT>mod_shared_roster</TT></H3><!--SEC END -->
+
+<A NAME="sec:modsharedroster"></A>
+This module implements shared roster groups support.<BR>
+<BR>
+You can edit shared roster groups via web-interface. Each group has an unique
+ID and the following parameters:
+<DL COMPACT=compact><DT>
+<B>Name</B><DD> The name of the group, which will be displayed in roster.
+<DT><B>Description</B><DD> Textual description of this group, doesn't affect anything.
+<DT><B>Members</B><DD> List of full JIDs of group members, entered one per line in
+ web-interface.
+<DT><B>Displayed groups</B><DD> List of IDs of groups which will be in rosters of this
+ group members.
+</DL>
+For example, to have a group of users which can see each other in roster,
+create a group like on table&nbsp;<A HREF="#tab:srge1">1</A>.
+<BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ <TABLE BORDER=1 CELLSPACING=0 CELLPADDING=1>
+<TR><TD ALIGN=left NOWRAP>&nbsp;</TD>
+<TD ALIGN=left NOWRAP>Group `<TT>users</TT>'</TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>Name</TD>
+<TD ALIGN=left NOWRAP>Users</TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>Members</TD>
+<TD ALIGN=left NOWRAP><TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP><TT>user1@example.org</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>user2@example.org</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>user3@example.org</TT></TD>
+</TR></TABLE></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>Displayed groups</TD>
+<TD ALIGN=left NOWRAP><TT>users</TT></TD>
+</TR></TABLE>
+ <BR>
+<DIV ALIGN=center>Table 1: Shared group example N1</DIV><BR>
+
+ <A NAME="tab:srge1"></A>
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
+To have 3 groups `<TT>managers</TT>', `<TT>workgroup1</TT>', and
+`<TT>workgroup2</TT>', where group `<TT>managers</TT>' can see members of all
+groups, and other two groups can see `<TT>managers</TT>' group and themselves,
+create groups like on table&nbsp;<A HREF="#tab:srge2">2</A>.
+<BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ <TABLE BORDER=1 CELLSPACING=0 CELLPADDING=1>
+<TR><TD ALIGN=left NOWRAP>&nbsp;</TD>
+<TD ALIGN=left NOWRAP>Group `<TT>managers</TT>'</TD>
+<TD ALIGN=left NOWRAP>Group `<TT>workgroup1</TT>'</TD>
+<TD ALIGN=left NOWRAP>Group `<TT>workgroup2</TT>'</TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>Name</TD>
+<TD ALIGN=left NOWRAP>Managers</TD>
+<TD ALIGN=left NOWRAP>Workgroup1</TD>
+<TD ALIGN=left NOWRAP>Workgroup2</TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>Members</TD>
+<TD ALIGN=left NOWRAP><TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP><TT>manager1@example.org</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>manager2@example.org</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>manager3@example.org</TT></TD>
+</TR></TABLE>
+ </TD>
+<TD ALIGN=left NOWRAP><TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP><TT>user1@example.org</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>user2@example.org</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>user3@example.org</TT></TD>
+</TR></TABLE>
+ </TD>
+<TD ALIGN=left NOWRAP><TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP><TT>user4@example.org</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>user5@example.org</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>user6@example.org</TT></TD>
+</TR></TABLE></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>Displayed groups</TD>
+<TD ALIGN=left NOWRAP><TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP><TT>managers</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>workgroup1</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>workgroup2</TT></TD>
+</TR></TABLE>
+ </TD>
+<TD ALIGN=left NOWRAP><TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP><TT>managers</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>workgroup1</TT></TD>
+</TR></TABLE>
+ </TD>
+<TD ALIGN=left NOWRAP><TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP><TT>managers</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP><TT>workgroup2</TT></TD>
+</TR></TABLE></TD>
+</TR></TABLE>
+ <BR>
+<DIV ALIGN=center>Table 2: Shared group example N2</DIV><BR>
+
+ <A NAME="tab:srge2"></A>
+<DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3><A NAME="htoc48">A.16</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
+<H3><A NAME="htoc49">A.17</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="sec:modstats"></A>
 This module adds support for <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).<BR>
@@ -1241,7 +1353,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_time</TT>-->
 
-<H3><A NAME="htoc49">A.17</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
+<H3><A NAME="htoc50">A.18</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="sec:modtime"></A>
 This module answers UTC time on <TT>jabber:iq:time</TT> queries.<BR>
@@ -1253,7 +1365,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3><A NAME="htoc50">A.18</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
+<H3><A NAME="htoc51">A.19</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="sec:modvcard"></A>
 This module implements simple Jabber User Directory (based on user vCards)
@@ -1295,7 +1407,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_version</TT>-->
 
-<H3><A NAME="htoc51">A.19</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
+<H3><A NAME="htoc52">A.20</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="sec:modversion"></A>
 This module answers <TT>ejabberd</TT> version on <TT>jabber:iq:version</TT> queries.<BR>
@@ -1307,7 +1419,7 @@ discipline (see&nbsp;<A HREF="#sec:modiqdiscoption">A.1.1</A>).
 </DL>
 <!--TOC section I18n/L10n-->
 
-<H2><A NAME="htoc52">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
+<H2><A NAME="htoc53">B</A>&nbsp;&nbsp;I18n/L10n</H2><!--SEC END -->
 
 <A NAME="sec:i18nl10n"></A>
 All built-in modules support <TT>xml:lang</TT> attribute inside IQ queries.
