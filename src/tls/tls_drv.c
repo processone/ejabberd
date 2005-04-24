@@ -80,8 +80,8 @@ static int tls_drv_control(ErlDrvData handle,
 	 d->ctx = SSL_CTX_new(SSLv23_server_method());
 	 die_unless(d->ctx, "SSL_CTX_new failed");
 
-	 res = SSL_CTX_use_certificate_chain_file(d->ctx, buf);
-	 die_unless(res > 0, "ssl_ctx_use_certificate_chain_file failed");
+	 res = SSL_CTX_use_certificate_file(d->ctx, buf, SSL_FILETYPE_PEM);
+	 die_unless(res > 0, "SSL_CTX_use_certificate_file failed");
 
 	 res = SSL_CTX_use_PrivateKey_file(d->ctx, buf, SSL_FILETYPE_PEM);
 	 die_unless(res > 0, "SSL_CTX_use_PrivateKey_file failed");

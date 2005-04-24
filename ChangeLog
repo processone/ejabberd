@@ -1,3 +1,7 @@
+2005-04-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls_drv.c: Reverted previous patch
+
 2005-04-22  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Added mod_shared_roster documentation
