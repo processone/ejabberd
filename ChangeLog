@@ -1,5 +1,15 @@
 2005-04-24  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/web/ejabberd_web_admin.erl: Added translation to submit
+	button and "shared roster groups" header (thanks to iceburn and
+	Sergei Golovan)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* src/mod_muc/mod_muc_room.erl: Minor update to simplify
+	translation (thanks to Sergei Golovan)
+
 	* src/tls/tls_drv.c: Reverted previous patch
 
 2005-04-22  Alexey Shchepin  <alexey@sevcom.net>

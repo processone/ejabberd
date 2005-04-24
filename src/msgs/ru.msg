@@ -1,5 +1,8 @@
 % $Id$
 
+% ejabberd_c2s.erl
+{"Use of STARTTLS required", "Вы обязаны использовать STARTTLS"}.
+
 % jlib.hrl
 {"No resource provided", "Не указан ресурс"}.
 {"Illegal resource format", "Неправильный формат ресурса"}.
@@ -72,17 +75,16 @@
  "Выберите имя пользователя и пароль для регистрации на этом сервере"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2004 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2004 Алексей Щепин"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd vCard модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin",
+ "Erlang Jabber Server\nCopyright (c) 2002-2005 Алексей Щепин"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin",
+ "ejabberd vCard модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
 {"You need an x:data capable client to search",
  "Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Search users in ", "Поиск пользователей в "}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)",
 "Заполните форму для поиска пользователя Jabber (Если добавить * в конец поля, то происходит поиск подстроки)"}.
 {"Results of search in ", "Результаты поиска в "}.
-
 {"User",              "Пользователь"}.
 {"Full Name", 	      "Полное имя"}.
 {"Name", 	      "Имя"}.
@@ -96,21 +98,26 @@
 {"Organization Name", "Название организации"}.
 {"Organization Unit", "Отдел организации"}.
 
+% mod_vcard_ldap.erl
+{"Fill in fields to search for any matching Jabber User", "Заполните форму для поиска пользователя Jabber"}.
+{"Given Name", "Имя"}.
+
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd pub/sub модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin",
+ "ejabberd pub/sub модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
+{"Node Creator", "Создатель узла"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname",
  "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"Nickname Registration at ", "Регистрация псевдонима на "}.
 {"Enter nickname you want to register", "Введите псевдоним, который Вы хотели бы зарегистрировать"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd MUC модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin",
+ "ejabberd MUC модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
 {"Only service administrators are allowed to send service messages",
  "Только администратор службы может посылать служебные сообщения"}.
-{"Room creation is not allowed by service policy",
- "Cоздавать конференцию не разрешено политикой службы"}.
+{"Room creation is denied by service policy",
+ "Cоздавать конференцию запрещено политикой службы"}.
 {"Conference room does not exist", "Конференция не существует"}.
 {"Access denied by service policy", "Доступ запрещён политикой службы"}.
 {"You must fill in field \"nick\" in the form",
@@ -178,8 +185,8 @@
 {"private, ", "приватная, "}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd IRC модуль\nCopyright (c) 2003-2004 Алексей Щепин"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin",
+ "ejabberd IRC модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
 {"You need an x:data capable client to configure mod_irc settings",
  "Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"Registration in mod_irc for ", "Регистрация в mod_irc для "}.
@@ -195,7 +202,6 @@
 {"Users", "Пользователи"}.
 {"Nodes", "Узлы"}.
 {"Statistics", "Статистика"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin", "ejabberd (c) 2002-2004 Алексей Щепин"}.
 {"(raw)", "(необработанный формат)"}.
 {"submitted", "отправлено"}.
 {"bad format", "неправильный формат"}.
@@ -249,7 +255,7 @@
 {"Update", "Обновить"}.
 {"Delete", "Удалить"}.
 {"Add User", "Добавить пользователя"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", "ejabberd (c) 2002-2004 Алексей Щепин, 2004 Process One"}.
+{"ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One", "ejabberd (c) 2002-2005 Алексей Щепин, 2004-2005 Process One"}.
 {"Offline messages", "Офлайновые сообщения"}.
 {"Last Activity", "Последнее подключение"}.
 {"Never", "Никогда"}.
@@ -268,6 +274,16 @@
 {"Add JID", "Добавить JID"}.
 {"User ", "Пользователь "}.
 {"Roster of ", "Ростер пользователя "}.
+{"Shared Roster", "Общие контакты"}.
+{"Online", "Подключён"}.
+{"Validate", "Утвердить"}.
+{"Not found", "Не найдено"}.
+{"Shared roster groups", "Группы общих контактов"}.
+{"Name:", "Название:"}.
+{"Description:", "Описание:"}.
+{"Members:", "Члены:"}.
+{"Displayed Groups:", "Видимые группы:"}.
+{"Group ", "Группа "}.
 
 % Local Variables:
 % mode: erlang

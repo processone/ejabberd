@@ -178,20 +178,23 @@ normal_state({route, From, "",
 							       NewStateData1),
 				    {next_state, normal_state, NewStateData2};
 				_ ->
-				    ErrText = 
+				    Err = 
 					case (StateData#state.config)#config.allow_change_subj of
 					    true ->
-						"Only moderators and participants "
-						"are allowed to change subject in this room";
+						?ERRT_FORBIDDEN(
+						  Lang,
+						  "Only moderators and participants "
+						  "are allowed to change subject in this room");
 					    _ ->
-						"Only moderators "
-						"are allowed to change subject in this room"
+						?ERRT_FORBIDDEN(
+						  Lang,
+						  "Only moderators "
+						  "are allowed to change subject in this room")
 					end,
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
 				    ejabberd_router:route(
 				      StateData#state.jid,
-				      From, Err),
+				      From,
+				      jlib:make_error_reply(Packet, Err)),
 			    {next_state, normal_state, StateData}
 			    end;
 			true ->

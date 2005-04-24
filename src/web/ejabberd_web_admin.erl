@@ -589,7 +589,7 @@ process_admin(#request{us = US,
 					{"cols", "80"}],
 			   ACLs),
 		      ?BR,
-		      ?INPUT("submit", "submit", "Submit")
+		      ?INPUTT("submit", "submit", "Submit")
 		     ])
 	       ], Lang);
 
@@ -697,7 +697,7 @@ process_admin(#request{us = US,
 					{"cols", "80"}],
 			   Access),
 		      ?BR,
-		      ?INPUT("submit", "submit", "Submit")
+		      ?INPUTT("submit", "submit", "Submit")
 		     ])
 	       ], Lang);
 
@@ -2164,7 +2164,8 @@ shared_roster_group(Group, Query, Lang) ->
 		       ]
 		      )]
 		 )]),
-    [?XC("h1", ?T("Shared roster group " ++ Group))] ++
+    [?XC("h1", ?T("Shared roster groups"))] ++
+    [?XC("h2", ?T("Group ") ++ Group)] ++
 	case Res of
 	    ok -> [?CT("submitted"), ?P];
 	    error -> [?CT("bad format"), ?P];
