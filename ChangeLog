@@ -1,3 +1,7 @@
+2005-04-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard_ldap.erl: Bugfix (thanks to Mickael Remond)
+
 2005-04-24  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_web_admin.erl: Added translation to submit

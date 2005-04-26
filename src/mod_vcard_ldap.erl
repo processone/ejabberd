@@ -401,7 +401,7 @@ search_result(Lang, JID, Data) ->
        ?LFIELD("Organization Unit", "orgunit")
       ]}] ++ lists:map(fun(E) -> 
 			       record_to_item(E#eldap_entry.attributes)
-		       end, search(Data)).
+		       end, search(JID#jid.lserver, Data)).
 
 -define(FIELD(Var, Val),
 	{xmlelement, "field", [{"var", Var}],
@@ -489,15 +489,17 @@ record_to_item(Attributes) ->
     FList = [X || X <- List, X /= none],
     {xmlelement, "item", [],FList}.
 
-search(Data) ->
+search(LServer, Data) ->
     Filter = make_filter(Data),
     Base = ejabberd_config:get_local_option(ldap_base),
     UIDAttr = ejabberd_config:get_local_option(ldap_uidattr),
-    case eldap:search("mod_vcard_ldap",[{base,Base},
+    case eldap:search("mod_vcard_ldap",[{base, Base},
 					{filter, Filter},
 					{attributes, []}]) of
 	#eldap_search_result{entries = E} ->
-	    [X || X <- E, ejabberd_auth:is_user_exists(ldap_get_value(X,UIDAttr)) ];
+	    [X || X <- E,
+		  ejabberd_auth:is_user_exists(
+		    ldap_get_value(X, UIDAttr), LServer)];
 	_ ->
 	    ?ERROR_MSG("~p", ["Bad search"])
     end.
