@@ -1,3 +1,8 @@
+2005-04-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* contrib/extract_translations/: A tool for extracting of
+	translation strings from ejabberd code (thanks to Sergei Golovan)
+
 2005-04-26  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_vcard_ldap.erl: Bugfix (thanks to Mickael Remond)
