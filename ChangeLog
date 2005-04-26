@@ -1,5 +1,9 @@
 2005-04-27  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_ctl.erl: Better spelling, now prints full file
+	paths, fixed checking of mnesia:install_fallback result, now
+	"dump" command dumps only persistent tables
+
 	* contrib/extract_translations/: A tool for extracting of
 	translation strings from ejabberd code (thanks to Sergei Golovan)
 
