@@ -79,7 +79,9 @@
 %{auth_method, ldap}.
 %{ldap_servers, ["localhost"]}.    % List of LDAP servers
 %{ldap_uidattr, "uid"}.            % LDAP attribute that holds user ID
-%{ldap_base, "dc=example,dc=com"}. % Base of LDAP directory
+%{ldap_base, "dc=example,dc=com"}. % Search base of LDAP directory
+%{ldap_rootdn, "dc=example,dc=com"}. % LDAP manager
+%{ldap_password, "******"}. % Password to LDAP manager
 
 % For authentification via external script use the following:
 %{auth_method, external}.

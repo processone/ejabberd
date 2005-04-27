@@ -26,6 +26,7 @@
 	 plain_password_required/0
 	]).
 
+-include("ejabberd.hrl").
 -include("eldap/eldap.hrl").
 
 %%%----------------------------------------------------------------------
@@ -65,10 +66,34 @@ try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
 
 dirty_get_registered_users() ->
-    [].
+    get_vh_registered_users(?MYNAME).
 
-get_vh_registered_users(_Server) ->
-    [].
+get_vh_registered_users(Server) ->
+    LServer = jlib:nameprep(Server),
+    Attr = ejabberd_config:get_local_option(ldap_uidattr),
+    Filter = eldap:present(Attr),
+    Base = ejabberd_config:get_local_option(ldap_base),
+    case eldap:search("ejabberd", [{base, Base},
+				   {filter, Filter},
+				   {attributes, [Attr]}]) of
+	#eldap_search_result{entries = Es} ->
+	    lists:flatmap(
+	      fun(E) ->
+		      case lists:keysearch(Attr, 1, E#eldap_entry.attributes) of
+			  {value, {_, [U]}} ->
+			      case jlib:nodeprep(U) of
+				  error ->
+				      [];
+				  LU ->
+				      [{LU, LServer}]
+			      end;
+			  _ ->
+			      []
+		      end
+	      end, Es);
+	_ ->
+	    []
+    end.
 
 get_password(_User, _Server) ->
     false.
