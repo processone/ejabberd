@@ -3,7 +3,7 @@
 %%% Author  : Sergei Golovan <sgolovan@nes.ru>
 %%% Purpose : Auxiliary tool for interface/messages translators
 %%% Created : 23 Apr 2005 by Sergei Golovan <sgolovan@nes.ru>
-%%% Id      : $Id: extract_translations.erl
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(extract_translations).
@@ -122,7 +122,8 @@ process_string(Dir, File, Str, Used) ->
 		    io:format("~n% ~s~n", [File]),
 		    ets:insert(files, {File})
 	    end,
-	    io:format("{~p, \"\"}.~n", [Str]);
+	    io:format("{~p, \"\"}.~n", [Str]),
+	    ets:insert(translations, {Str, ""});
 	_ ->
 	    ok
     end.

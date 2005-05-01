@@ -1,6 +1,13 @@
 2005-05-01  Alexey Shchepin  <alexey@sevcom.net>
 
-	* src/msgs/sw.msg: New Swedish translation (thanks to (Magnus Henoch)
+	* contrib/extract_translations/README: Better phrasing (thanks to
+	Sergei Golovan)
+
+	* contrib/extract_translations/extract_translations.erl: Fix to
+	avoid duplication of lines (thanks to Sergei Golovan)
+
+	* src/msgs/sw.msg: New Swedish translation (thanks to (Magnus
+	Henoch)
 
 	* src/msgs/pt.msg: New Portuguese translation (thanks to iceburn)
 
