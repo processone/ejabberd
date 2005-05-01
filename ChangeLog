@@ -1,8 +1,11 @@
-2005-05-01  Mickaël Rémond  <mremond@erlang-fr.org>
+2005-05-01  Mickael Remond  <mremond@erlang-fr.org>
 
 	* src/msgs/fr.msg: Updated
 
 2005-05-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/sw.msg: Renamed to sv.msg
+	* src/msgs/sv.msg: Likewise
 
 	* src/msgs/pl.msg: Updated (thanks to Andrew Smyk)
 
@@ -12,7 +15,7 @@
 	* contrib/extract_translations/extract_translations.erl: Fix to
 	avoid duplication of lines (thanks to Sergei Golovan)
 
-	* src/msgs/sw.msg: New Swedish translation (thanks to (Magnus
+	* src/msgs/sw.msg: New Swedish translation (thanks to Magnus
 	Henoch)
 
 	* src/msgs/pt.msg: New Portuguese translation (thanks to iceburn)
