@@ -2,8 +2,6 @@
 
 % jlib.hrl
 {"No resource provided", "Geen bron opgegeven"}.
-{"Illegal resource format", "Ongeldig bronformaat"}.
-{"Resource conflict", "Bronnenconflict"}.
 
 % mod_configure.erl
 {"DB Tables Configuration at ", "Databasetabellenconfiguratie op "}.
@@ -72,16 +70,15 @@
  "Kies een gebruikersnaam en een wachtwoord om u te registreren op deze server"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2004 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2004 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd vCard module\nCopyright (c) 2003-2004 Alexey Shchepin"}.
 {"You need an x:data capable client to search",
  "U hebt een x:data compatibele client nodig om te kunnen zoeken"}.
 {"Search users in ", "Gebruikers zoeken in "}.
 {"Fill in fields to search for any matching Jabber User",
- "Vul de velden in om te zoeken naar Jabbergebruikers op deze server"}.
+ "Vul de velden in om te zoeken naar Jabber-gebruikers op deze server"}.
 {"Results of search in ", "Zoekresultaten van "}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Vul het formulier in om elke overeenkomende Jabber-gebruiker te zoeken (Voeg achteraan het teken * toe om te zoeken naar alles wat met het eerste deel begint.)."}.
+{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 
 {"User",              "Gebruiker"}.
 {"Full Name", 	      "Volledige naam"}.
@@ -95,32 +92,30 @@
 {"email", 	      "E-mail"}.
 {"Organization Name", "Organisatie"}.
 {"Organization Unit", "Afdeling"}.
+{"JID",	              "JID"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd pub/sub module\nCopyright (c) 2003-2004 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{[], "[]"}.
+{"Node Creator", "Auteur van de node"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname",
  "U hebt een x:data compatibele client nodig om een bijnaam te kunnen registreren"}.
 {"Nickname Registration at ", "Registratie van bijnaam op "}.
 {"Enter nickname you want to register", "Voer de bijnaam in die u wilt registreren"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd MUC module\nCopyright (c) 2003-2004 Alexey Shchepin"}.
 {"Only service administrators are allowed to send service messages",
  "Alleen service-beheerders hebben de toelating om service-berichten te versturen"}.
-{"Room creation is not allowed by service policy",
- "Een kamer creëren is niet toegestaan door de service policy"}.
 {"Conference room does not exist", "Conferentiekamer bestaat niet"}.
 {"Access denied by service policy", "Toegang geweigerd door service policy"}.
 {"You must fill in field \"nick\" in the form",
  "U moet het veld \"nick\" invullen in het formulier"}.
 {"Specified nickname is already registered", "De gekozen bijnaam is al geregistreerd"}.
+{"Room creation is denied by service policy", "De aanmaak van een kamer is verhinderd door de instellingen van deze server"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " heeft het onderwerp ingesteld op: "}.
-{"You need an x:data-capable client to configure room",
- "U hebt een x:data compatibele client nodig om een kamer te kunnen configureren"}.
 {"Configuration for ", "Configuratie voor "}.
 {"Room title", "Kamernaam"}.
 {"Allow users to change subject?", "Gebruikers toestaan het onderwerp te wijzigen"}.
@@ -176,10 +171,9 @@
 {"Invalid role: ~s", "Ongeldige rol: ~s"}.
 {"Owner privileges required", "Eigenaarsprivileges zijn vereist"}.
 {"private, ", "privé, "}.
+{"You need an x:data capable client to configure room", "U hebt een x:data-compatibele client nodig om deze kamer te configureren"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin",
- "ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings",
  "U hebt een x:data-compatibele client nodig om de instellingen van mod_irc te configureren"}.
 {"Registration in mod_irc for ", "Registratie in mod_irc voor "}.
@@ -189,13 +183,13 @@
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Indien u verschillende coderingen wilt specificeren voor IRC servers, dan moet u in deze lijst waaren in het formaat: '{\"irc server\", \"codering\"}'. Standaard gebruikt deze service codering \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Voorbeeld: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Coderingen"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 
 % web/ejabberd_web_admin.erl
 {"ejabberd administration", "Beheer van ejabberd"}.
 {"Users", "Gebruikers"}.
 {"Nodes", "Nodes"}.
 {"Statistics", "Statistieken"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin", "ejabberd (c) 2002-2004 Alexey Shchepin"}.
 {"(raw)", "(ruw)"}.
 {"submitted", "verzonden"}.
 {"bad format", "slecht formaat"}.
@@ -249,7 +243,6 @@
 {"Update", "Bijwerken"}.
 {"Delete", "Verwijderen"}.
 {"Add User", "Gebruiker toevoegen"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", "ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One"}.
 {"Offline messages", "Offline berichten"}.
 {"Last Activity", "Laatste activiteit"}.
 {"Never", "Nooit"}.
@@ -268,6 +261,27 @@
 {"Add JID", "JID toevoegen"}.
 {"User ", "Gebruiker "}.
 {"Roster of ", "Roster van "}.
+{"Shared Roster", "Gedeeld roster"}.
+{"ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One", "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One"}.
+{"Online", "Online"}.
+{"JID", "JID"}.
+{"Validate", "Bevestigen"}.
+{"Not found", "Niet gevonden"}.
+{"Shared roster groups", "Gedeelde rostergroepen"}.
+{"Name:", "Naam:"}.
+{"Description:", "Beschrijving:"}.
+{"Members:", "Leden:"}.
+{"Displayed Groups:", "Weergegeven groepen:"}.
+{"Group ", "Groep"}.
+
+% mod_vcard_ldap.erl
+{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"JID", "JID"}.
+{"Given Name", "Opgegeven naam"}.
+
+% ejabberd_c2s.erl
+{"Use of STARTTLS required", "Gebruik van STARTTLS is vereist"}.
 
 % Local Variables:
 % mode: erlang

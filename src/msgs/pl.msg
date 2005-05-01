@@ -1,4 +1,4 @@
-% $Id: de.msg,v 1.1 2004/10/15 17:03:22 aleksey Exp $
+% $Id$
 
 % jlib.hrl
 {"No resource provided", "Brak dostarczonych zasobow"}.

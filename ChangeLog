@@ -1,3 +1,13 @@
+2005-05-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/sw.msg: New Swedish translation (thanks to (Magnus Henoch)
+
+	* src/msgs/pt.msg: New Portuguese translation (thanks to iceburn)
+
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
 2005-04-27  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_auth_ldap.erl: Added listing of users support
