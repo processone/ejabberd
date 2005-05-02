@@ -1677,6 +1677,19 @@ can_change_ra(FAffiliation, FRole,
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(FAffiliation, FRole,
+	      outcast, TRole,
+	      affiliation, member)
+  when (FAffiliation == owner) or (FAffiliation == admin) ->
+    true;
+can_change_ra(owner, FRole,
+	      outcast, TRole,
+	      affiliation, admin) ->
+    true;
+can_change_ra(owner, FRole,
+	      outcast, TRole,
+	      affiliation, owner) ->
+    true;
+can_change_ra(FAffiliation, FRole,
 	      none, TRole,
 	      affiliation, outcast)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
@@ -1714,15 +1727,11 @@ can_change_ra(owner, FRole,
     true;
 can_change_ra(owner, FRole,
 	      admin, TRole,
-	      affiliation, member) ->
-    true;
-can_change_ra(owner, FRole,
-	      admin, TRole,
-	      affiliation, owner) ->
+	      affiliation, _Affiliation) ->
     true;
 can_change_ra(owner, FRole,
 	      owner, TRole,
-	      affiliation, admin) ->
+	      affiliation, _Affiliation) ->
     true;
 can_change_ra(FAffiliation, FRole,
 	      TAffiliation, TRole,
@@ -1753,6 +1762,22 @@ can_change_ra(FAffiliation, FRole,
 	      TAffiliation, participant,
 	      role, moderator)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
+    true;
+can_change_ra(FAffiliation, FRole,
+	      owner, moderator,
+	      role, visitor) ->
+    false;
+can_change_ra(owner, FRole,
+	      TAffiliation, moderator,
+	      role, visitor) ->
+    true;
+can_change_ra(FAffiliation, FRole,
+	      admin, moderator,
+	      role, visitor) ->
+    false;
+can_change_ra(admin, FRole,
+	      TAffiliation, moderator,
+	      role, visitor) ->
     true;
 can_change_ra(FAffiliation, FRole,
 	      owner, moderator,
