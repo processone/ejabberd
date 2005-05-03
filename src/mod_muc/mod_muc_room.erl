@@ -547,7 +547,6 @@ normal_state({route, From, ToNick,
     {next_state, normal_state, StateData};
 
 normal_state(Event, StateData) ->
-    io:format("MUC: unknown event ~p~n", [Event]),
     {next_state, normal_state, StateData}.
 
 
@@ -708,19 +707,57 @@ set_affiliation(JID, Affiliation, StateData) ->
 		   end,
     StateData#state{affiliations = Affiliations}.
 
+set_affiliation_and_reason(JID, Affiliation, Reason, StateData) ->
+    LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
+    Affiliations = case Affiliation of
+		       none ->
+			   ?DICT:erase(LJID,
+				       StateData#state.affiliations);
+		       _ ->
+			   ?DICT:store(LJID,
+				       {Affiliation, Reason},
+				       StateData#state.affiliations)
+		   end,
+    StateData#state{affiliations = Affiliations}.
+
 get_affiliation(JID, StateData) ->
     {_AccessRoute, _AccessCreate, AccessAdmin} = StateData#state.access,
-    case acl:match_rule(AccessAdmin, JID) of
-	allow ->
-	    owner;
+    Res =
+	case acl:match_rule(AccessAdmin, JID) of
+	    allow ->
+		owner;
+	    _ ->
+		LJID = jlib:jid_tolower(JID),
+		case ?DICT:find(LJID, StateData#state.affiliations) of
+		    {ok, Affiliation} ->
+			Affiliation;
+		    _ ->
+			LJID1 = jlib:jid_remove_resource(LJID),
+			case ?DICT:find(LJID1, StateData#state.affiliations) of
+			    {ok, Affiliation} ->
+				Affiliation;
+			    _ ->
+				LJID2 = setelement(1, LJID, ""),
+				case ?DICT:find(LJID2, StateData#state.affiliations) of
+				    {ok, Affiliation} ->
+					Affiliation;
+				    _ ->
+					LJID3 = jlib:jid_remove_resource(LJID2),
+					case ?DICT:find(LJID3, StateData#state.affiliations) of
+					    {ok, Affiliation} ->
+						Affiliation;
+					    _ ->
+						none
+					end
+				end
+			end
+		end
+	end,
+    case Res of
+	{A, _Reason} ->
+	    A;
 	_ ->
-	    LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
-	    case ?DICT:find(LJID, StateData#state.affiliations) of
-		{ok, Affiliation} ->
-		    Affiliation;
-		_ ->
-		    none
-	    end
+	    Res
     end.
 
 set_role(JID, Role, StateData) ->
@@ -1437,7 +1474,12 @@ items_with_role(SRole, StateData) ->
 
 items_with_affiliation(SAffiliation, StateData) ->
     lists:map(
-      fun({JID, Affiliation}) ->
+      fun({JID, {Affiliation, Reason}}) ->
+	      {xmlelement, "item",
+	       [{"affiliation", affiliation_to_list(Affiliation)},
+		{"jid", jlib:jid_to_string(JID)}],
+	       [{xmlelement, "reason", [], [{xmlcdata, Reason}]}]};
+	 ({JID, Affiliation}) ->
 	      {xmlelement, "item",
 	       [{"affiliation", affiliation_to_list(Affiliation)},
 		{"jid", jlib:jid_to_string(JID)}],
@@ -1465,7 +1507,12 @@ search_role(Role, StateData) ->
 search_affiliation(Affiliation, StateData) ->
     lists:filter(
       fun({_, A}) ->
-	      Affiliation == A
+	      case A of
+		  {A1, _Reason} ->
+		      Affiliation == A1;
+		  _ ->
+		      Affiliation == A
+	      end
       end, ?DICT:to_list(StateData#state.affiliations)).
 
 
@@ -1486,8 +1533,8 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 				     {JID, affiliation, outcast, Reason} ->
 					 catch send_kickban_presence(
 						 JID, Reason, "301", SD),
-					 set_affiliation(
-					   JID, outcast,
+					 set_affiliation_and_reason(
+					   JID, outcast, Reason,
 					   set_role(JID, none, SD));
 				     {JID, affiliation, A, Reason} when
 					   (A == admin) or (A == owner) ->
@@ -1512,14 +1559,13 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 				       end
 				) of
 			      {'EXIT', ErrReason} ->
-				  io:format("MUC ITEMS SET ERR: ~p~n",
-					    [ErrReason]),
+				  ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n",
+					     [ErrReason]),
 				  SD;
 			      NSD ->
 				  NSD
 			  end
 		  end, StateData, Res),
-	    io:format("MUC SET: ~p~n", [Res]),
 	    case (NSD#state.config)#config.persistent of
 		true ->
 		    mod_muc:store_room(NSD#state.host, NSD#state.room,
