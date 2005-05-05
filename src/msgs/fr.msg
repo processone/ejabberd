@@ -2,11 +2,9 @@
 
 % jlib.hrl
 {"No resource provided", "Aucune ressource fournie"}.
-{"Illegal resource format", "Format de ressource non reconnu"}.
-{"Resource conflict", "Conflit de ressource"}.
 
 % mod_configure.erl
-{"DB Tables Configuration", "Configuration des tables de BdD"}.
+{"DB Tables Configuration at ", "Configuration des tables de BdD sur "}.
 {"Choose storage type of tables", "Choisissez un type de stockage pour les tables"}.
 {"RAM copy", "Copie en mémoire vive (RAM)"}.
 {"RAM and disc copy", "Copie en mémoire vive (RAM) et sur disque"}.
@@ -42,6 +40,9 @@
 {"Edit Properties", "Modifier les propriétés"}.
 {"Remove User", "Supprimer l'utilisateur"}.
 
+% src/ejabberd_c2s.erl
+{"Use of STARTTLS required", "L'utilisation de STARTTLS est impérative"}.
+
 % mod_disco.erl
 {"Configuration", "Configuration"}.
 {"Online Users", "Utilisateurs en ligne"}.
@@ -70,14 +71,20 @@
 % mod_register.erl
 {"Choose a username and password to register with this server", "Choisissez un nom d'utilisateur et un mot de passe pour s'enregistrer sur ce serveur"}.
 
+% src/mod_vcard_ldap.erl
+{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Serveur Jabber Erlang\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"Given Name", "Prénom"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "Module vCard ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"JID", "JID"}.
+
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2004 Alexey Shchepin", "Serveur Jabber Erlang\nCopyright (c) 2002-2004 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2004 Alexey Shchepin", "Module vCard ejabberd\nCopyright (c) 2003-2004 Alexey Shchepin"}.
 {"You need an x:data capable client to search",
  "Vous avez besoin d'un client supportant x:data pour faire une recherche"}.
 {"Search users in ", "Rechercher des utilisateurs "}.
+
 {"Fill in fields to search for any matching Jabber User",
  "Remplissez les champs pour rechercher un utilisateur Jabber"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Remplissez le formulaire pour recherche un utilisateur Jabber (Ajouter * à la fin du champ pour chercher n'importe quelle fin de chaîne"}.
 {"Results of search in ", "Résultat de la recherche des utilisateurs "}.
 
 {"User",              "Utilisateur"}.
@@ -94,15 +101,17 @@
 {"Organization Unit", "Unité de l'organisation"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2004 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright (c) 2003-2004 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{[], ""}.
+{"Node Creator", "Créateur du noeud"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Vous avez besoin d'un client supportant x:data pour enregistrer un pseudo"}.
 {"Nickname Registration at ", "Enregistrement d'un pseudo sur "}.
 {"Enter nickname you want to register", "Entrez le pseudo que vous souhaitez enregistrer"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2004 Alexey Shchepin", "Module MUC ejabberd\nCopyright (c) 2003-2004 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Module MUC ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {"Only service administrators are allowed to send service messages", "Seuls les administrateurs du service sont autoriser à envoyer des messages de service"}.
-{"Room creation is not allowed by service policy", "La création de salons a été restreinte pour ce service"}.
+{"Room creation is denied by service policy", "La création de salons est interdite par le service"}.
 {"Conference room does not exist", "La salle de conférence n'existe pas"}.
 {"Access denied by service policy", "L'accès au service est refusé"}.
 {"You must fill in field \"nick\" in the form", "Vous devez préciser le champ \"pseudo\" dans le formulaire"}.
@@ -159,7 +168,7 @@
 {"private, ", "privé"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin", "Module IRC ejabberd\nCopyright (c) 2003-2004 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Module IRC ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings", "Vous avez besoin d'un client supportant x:data pour configurer le module IRC"}.
 {"Registration in mod_irc for ", "Enregistrement du mod_irc pour "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Entrez le nom d'utilisateur et les encodages que vous souhaitez utiliser pour vous connecter aux serveurs IRC"}.
@@ -172,8 +181,9 @@
 {"ejabberd administration", "Administration d'ejabberd"}.
 {"Users", "Utilisateurs"}.
 {"Nodes", "Noeuds"}.
+{"Shared Roster", "Liste de contacts partagée"}.
 {"Statistics", "Statistiques"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin", "ejabberd (c) 2002-2004 Alexey Shchepin"}.
+{"ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One", "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One"}.
 {"(raw)", "(brut)"}.
 {"submitted", "Soumis"}.
 {"bad format", "Mauvais format"}.
@@ -227,7 +237,6 @@
 {"Update", "Mettre à jour"}.
 {"Delete", "Supprimer"}.
 {"Add User", "Ajouter un utilisateur"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", "ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One"}.
 {"Offline messages", "Messages en attente"}.
 {"Last Activity", "Dernière activité"}.
 {"Never", "Jamais"}.
@@ -246,6 +255,15 @@
 {"Add JID", "Ajouter un JID"}.
 {"User ", "Utilisateur"}.
 {"Roster of ", "Liste de contact de "}.
+{"Online", "En ligne"}.
+{"Validate", "Valider"}.
+{"Not found", "Non trouvé"}.
+{"Shared roster groups", "Groupes pour la liste de contacts partagée"}.
+{"Name:", "Nom:"}.
+{"Description:", "Description:"}.
+{"Members:", "Membres:"}.
+{"Displayed Groups:", "Groupes affichés:"}.
+{"Group ", "Groupe "}.
 
 % Local Variables:
 % mode: erlang
