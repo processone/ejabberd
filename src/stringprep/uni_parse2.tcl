@@ -235,13 +235,30 @@ proc uni::buildTables {} {
 
     foreach comp [array names comp_map] {
 	set ch1 [lindex $comp 0]
+	if {[info exists comp_first($ch1)] && $comp_first($ch1) > 0 && \
+		[info exists comp_second($ch1)] && $comp_second($ch1) > 0} {
+	    if {[lsearch -exact $comp_x_list $ch1] < 0} {
+		set i [llength $comp_x_list]
+		lappend comp_x_list $ch1
+		set comp_info_map($ch1) $i
+		lappend comp_y_list $ch1
+		set comp_info_map($ch1) $i
+		puts "There should be no symbols which appears on"
+		puts "both first and second place in composition"
+		exit
+	    }
+	}
+    }
+
+    foreach comp [array names comp_map] {
+	set ch1 [lindex $comp 0]
 	set ch2 [lindex $comp 1]
 
-	if {$comp_first($ch1) == 1} {
+	if {$comp_first($ch1) == 1 && ![info exists comp_second($ch1)]} {
 	    set i [llength $comp_first_list]
 	    lappend comp_first_list [list $ch2 $comp_map($comp)]
 	    set comp_info_map($ch1) [expr {$i | (1 << 16)}]
-	} elseif {$comp_second($ch2) == 1} {
+	} elseif {$comp_second($ch2) == 1 && ![info exists comp_first($ch2)]} {
 	    set i [llength $comp_second_list]
 	    lappend comp_second_list [list $ch1 $comp_map($comp)]
 	    set comp_info_map($ch2) [expr {$i | (1 << 16)}]
@@ -254,7 +271,7 @@ proc uni::buildTables {} {
 	    if {[lsearch -exact $comp_y_list $ch2] < 0} {
 		set i [llength $comp_y_list]
 		lappend comp_y_list $ch2
-		set comp_info_map($ch2) $i
+		set comp_info_map($ch2) [expr {$i | (1 << 17)}]
 	    }
 	}
     }
@@ -283,10 +300,19 @@ proc uni::buildTables {} {
 
 	if {[info exists decomp_map($i)]} {
 	    set decomp $decomp_map($i)
-	    #puts -$decomp
-	    while {[info exists decomp_map([set ch1 [lindex $decomp 0]])]} {
-		set decomp [concat $decomp_map($ch1) [lreplace $decomp 0 0]]
-		#puts +$decomp
+	    set b 1
+	    while {$b} {
+		set b 0
+		for {set j 0} {$j < [llength $decomp]} {incr j} {
+		    if {[info exists \
+			     decomp_map([set ch1 [lindex $decomp $j]])]} {
+			#puts -$decomp
+			set decomp [eval [list lreplace $decomp $j $j] \
+					$decomp_map($ch1)]
+			#puts +$decomp
+			set b 1
+		    }
+		}
 	    }
 
 	    if {[info exists decomp_used($decomp)]} {
@@ -665,6 +691,7 @@ static int compBothList\[[llength $comp_x_list]\]\[[llength $comp_y_list]\] = {"
 
 #define CompSingleMask (1 << 16)
 #define CompMask ((1 << 16) - 1)
+#define CompSecondMask (1 << 17)
 "
 
     close $f

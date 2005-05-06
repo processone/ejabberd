@@ -32,6 +32,18 @@ static void stringprep_erl_stop(ErlDrvData handle)
    driver_free((char*)handle);
 }
 
+
+/* Hangul constants */
+#define SBase 0xAC00
+#define LBase 0x1100
+#define VBase 0x1161
+#define TBase 0x11A7
+#define LCount 19
+#define VCount 21
+#define TCount 28
+#define NCount (VCount * TCount)
+#define SCount (LCount * NCount)
+
 /*
  * "canonical_ordering" and "compose" functions are based on nfkc.c from Gnome
  * library
@@ -48,7 +60,7 @@ static void canonical_ordering(int *str, int len)
       next = GetUniCharCClass(str[i + 1]);
       if (next != 0 && last > next)
       {
-	 for(j = i; j > 0; j--)
+	 for(j = i; j >= 0; j--)
 	 {
 	    if (GetUniCharCClass(str[j]) <= next)
 	       break;
@@ -67,29 +79,41 @@ static int compose(int ch1, int ch2)
 {
    int info1, info2;
 
+   if (LBase <= ch1 && ch1 < LBase + LCount &&
+       VBase <= ch2 && ch2 < VBase + VCount) {
+      return SBase + ((ch1 - LBase) * VCount + (ch2 - VBase)) * TCount;
+   }
+
+   if (SBase <= ch1 && ch1 < SBase + SCount && ((ch1 - SBase) % TCount) == 0 &&
+       TBase <= ch2 && ch2 < TBase + TCount) {
+      return ch1 + ch2 - TBase;
+   }
+
    info1 = GetUniCharCompInfo(ch1);
-   if(info1 != -1) {
-      if(info1 & CompSingleMask) {
+   if (info1 != -1) {
+      if (info1 & CompSingleMask) {
 	 if (ch2 == compFirstList[info1 & CompMask][0]) {
 	    return compFirstList[info1 & CompMask][1];
 	 } else
 	    return 0;
       }
-   } else
-      return 0;
-   
+   }
+
    info2 = GetUniCharCompInfo(ch2);
-   if(info2 != -1) {
+   if (info2 != -1) {
       if (info2 & CompSingleMask) {
 	 if (ch1 == compSecondList[info2 & CompMask][0]) {
 	    return compSecondList[info2 & CompMask][1];
 	 } else
 	    return 0;
       }
-   } else
-      return 0;
+   }
 
-   return compBothList[info1][info2];
+   if (info1 != -1 && info2 != -1 &&
+       !(info1 & CompSecondMask) && (info2 & CompSecondMask))
+      return compBothList[info1][info2 & CompMask];
+   else
+      return 0;
 }
 
 
@@ -162,7 +186,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    int str32len, str32pos = 0;
    int decomp_len, decomp_shift;
    int comp_pos, comp_starter_pos;
-   int cclass1, cclass2, cclass_prev;
+   int cclass_prev, cclass2;
    int ch1, ch2;
 
    size = len + 1;
@@ -266,20 +290,20 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    comp_pos = 1;
    comp_starter_pos = 0;
    ch1 = str32[0];
-   cclass1 = GetUniCharCClass(ch1);
-   cclass_prev = cclass1;
-   for(i = 1; i < str32pos; i++)
+   cclass_prev = GetUniCharCClass(ch1);
+   for (i = 1; i < str32pos; i++)
    {
       ch2 = str32[i];
       cclass2 = GetUniCharCClass(ch2);
-      if(cclass1 == 0 && cclass2 > cclass_prev && (ruc = compose(ch1, ch2))) {
+      if ((cclass_prev == 0 || cclass2 > cclass_prev) &&
+	  (ruc = compose(ch1, ch2))) {
 	 ch1 = ruc;
       } else {
-	 if(cclass2 == 0) {
+	 if (cclass2 == 0) {
 	    str32[comp_starter_pos] = ch1;
 	    comp_starter_pos = comp_pos++;
 	    ch1 = ch2;
-	    cclass1 = cclass_prev = 0;
+	    cclass_prev = 0;
 	 } else {
 	    str32[comp_pos++] = ch2;
 	    cclass_prev = cclass2;
