@@ -1,3 +1,13 @@
+2005-05-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/stringprep_drv.c: Added check for bidi
+
+	* src/stringprep/uni_parse.tcl: Now handle all Unicode code points
+	up to U+10FFFF
+	* src/stringprep/uni_parse2.tcl: Likewise
+	* src/stringprep/uni_data.c: Regenerated
+	* src/stringprep/uni_norm.c: Likewise
+
 2005-05-06  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/stringprep/uni_norm.c: Regenerated with Unicode 3.2 tables

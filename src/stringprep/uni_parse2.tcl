@@ -2,8 +2,8 @@
 #
 #	This program parses the UnicodeData file and generates the
 #	corresponding uni_norm.c file with compressed character
-#	data tables.  The input to this program should be the latest
-#	UnicodeData.txt and CompositionExclusions.txt files from:
+#	data tables.  The input to this program should be
+#	UnicodeData-3.2.0.txt and CompositionExclusions-3.2.0.txt files from:
 #	    ftp://ftp.unicode.org/Public/UNIDATA/
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
@@ -15,9 +15,9 @@
 
 
 namespace eval uni {
-    set cclass_shift 6
-    set decomp_shift 5
-    set comp_shift 5
+    set cclass_shift 8
+    set decomp_shift 8
+    set comp_shift 8
     set shift 5;		# number of bits of data within a page
 				# This value can be adjusted to find the
 				# best split to minimize table size
@@ -278,7 +278,7 @@ proc uni::buildTables {} {
 
     set next 0
 
-    for {set i 0} {$i <= 0xffff} {incr i} {
+    for {set i 0} {$i <= 0x10ffff} {incr i} {
 	#set gIndex [getGroup [getValue $i]]
 
 	set cclass_offset [expr {$i & $cclass_mask}]
@@ -473,7 +473,7 @@ static unsigned char cclassGroupMap\[\] = {"
     puts $f $line
     puts $f "};
 
-#define GetUniCharCClass(ch) (cclassGroupMap\[(cclassPageMap\[(((int)(ch)) & 0xffff) >> CCLASS_OFFSET_BITS\] << CCLASS_OFFSET_BITS) | ((ch) & ((1 << CCLASS_OFFSET_BITS)-1))\])
+#define GetUniCharCClass(ch) (cclassGroupMap\[(cclassPageMap\[(((int)(ch)) & 0x1fffff) >> CCLASS_OFFSET_BITS\] << CCLASS_OFFSET_BITS) | ((ch) & ((1 << CCLASS_OFFSET_BITS)-1))\])
 
 
 #define DECOMP_OFFSET_BITS $decomp_shift
@@ -554,7 +554,7 @@ static int decompList\[\] = {"
  * Unicode character tables.
  */
 
-#define GetUniCharDecompInfo(ch) (decompGroupMap\[(decompPageMap\[(((int)(ch)) & 0xffff) >> DECOMP_OFFSET_BITS\] << DECOMP_OFFSET_BITS) | ((ch) & ((1 << DECOMP_OFFSET_BITS)-1))\])
+#define GetUniCharDecompInfo(ch) (decompGroupMap\[(decompPageMap\[(((int)(ch)) & 0x1fffff) >> DECOMP_OFFSET_BITS\] << DECOMP_OFFSET_BITS) | ((ch) & ((1 << DECOMP_OFFSET_BITS)-1))\])
 
 #define GetDecompShift(info) ((info) & 0xffff)
 #define GetDecompLen(info) ((info) >> 16)
@@ -687,7 +687,7 @@ static int compBothList\[[llength $comp_x_list]\]\[[llength $comp_y_list]\] = {"
     puts $f "};
 
 
-#define GetUniCharCompInfo(ch) (compGroupMap\[(compPageMap\[(((int)(ch)) & 0xffff) >> COMP_OFFSET_BITS\] << COMP_OFFSET_BITS) | ((ch) & ((1 << COMP_OFFSET_BITS)-1))\])
+#define GetUniCharCompInfo(ch) (compGroupMap\[(compPageMap\[(((int)(ch)) & 0x1fffff) >> COMP_OFFSET_BITS\] << COMP_OFFSET_BITS) | ((ch) & ((1 << COMP_OFFSET_BITS)-1))\])
 
 #define CompSingleMask (1 << 16)
 #define CompMask ((1 << 16) - 1)

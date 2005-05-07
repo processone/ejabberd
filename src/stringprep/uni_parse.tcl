@@ -13,7 +13,7 @@
 
 
 namespace eval uni {
-    set shift 5;		# number of bits of data within a page
+    set shift 8;		# number of bits of data within a page
 				# This value can be adjusted to find the
 				# best split to minimize table size
 
@@ -33,13 +33,27 @@ proc uni::getValue {i} {
     variable casemap2
     variable tablemap
 
-    set tables $tablemap($i)
+    if {[info exists tablemap($i)]} {
+	set tables $tablemap($i)
+    } else {
+	set tables {}
+    }
+
     if {[info exists casemap2($i)]} {
 	set multicase 1
 	set delta $casemap2($i)
     } else {
 	set multicase 0
-	set delta $casemap($i)
+	if {[info exists casemap($i)]} {
+	    set delta $casemap($i)
+	} else {
+	    set delta 0
+	}
+    }
+
+    if {abs($delta) > 0xFFFFF} {
+	puts "delta must be less than 22 bits wide"
+	exit
     }
 
     set ac 0
@@ -71,7 +85,7 @@ proc uni::getValue {i} {
 		   ($d2  << 5) |
 		   ($xnp << 6) |
 		   ($multicase << 7) |
-		   ($delta << 16)}]
+		   ($delta << 11)}]
 
     return $val
 }
@@ -90,26 +104,25 @@ proc uni::getGroup {value} {
 proc uni::addPage {info} {
     variable pMap
     variable pages
+    variable pages_map
     
-    set pIndex [lsearch -exact $pages $info]
-    if {$pIndex == -1} {
+    if {[info exists pages_map($info)]} {
+	lappend pMap $pages_map($info)
+    } else {
 	set pIndex [llength $pages]
 	lappend pages $info
+	set pages_map($info) $pIndex
+	lappend pMap $pIndex
     }
-    lappend pMap $pIndex
     return
 }
+
 
 proc uni::load_tables {data} {
     variable casemap
     variable casemap2
     variable multicasemap
     variable tablemap
-
-    for {set i 0} {$i <= 0xffff} {incr i} {
-	set casemap($i) 0
-	set tablemap($i) {}
-    }
 
     set multicasemap {}
     set table ""
@@ -127,7 +140,7 @@ proc uni::load_tables {data} {
 		    if {[regexp {^   ([[:xdigit:]]+); ;} $line \
 			     temp val]} {
 			scan $val %x val
-			if {$val <= 0xffff} {
+			if {$val <= 0x10ffff} {
 			    lappend tablemap($val) $table
 			}
 		    }
@@ -136,7 +149,7 @@ proc uni::load_tables {data} {
 			     temp from to]} {
 			scan $from %x from
 			scan $to %x to
-			if {$from <= 0xffff && $to <= 0xffff} {
+			if {$from <= 0x10ffff && $to <= 0x10ffff} {
 			    set casemap($from) [expr {$to - $from}]
 			}
 		    } elseif {[regexp {^   ([[:xdigit:]]+); ([[:xdigit:]]+) ([[:xdigit:]]+);} $line \
@@ -144,8 +157,8 @@ proc uni::load_tables {data} {
 			scan $from %x from
 			scan $to1 %x to1
 			scan $to2 %x to2
-			if {$from <= 0xffff && \
-				$to1 <= 0xffff && $to2 <= 0xffff} {
+			if {$from <= 0x10ffff && \
+				$to1 <= 0x10ffff && $to2 <= 0x10ffff} {
 			    set casemap2($from) [llength $multicasemap]
 			    lappend multicasemap [list $to1 $to2]
 			}
@@ -155,9 +168,9 @@ proc uni::load_tables {data} {
 			scan $to1 %x to1
 			scan $to2 %x to2
 			scan $to3 %x to3
-			if {$from <= 0xffff && \
-				$to1 <= 0xffff && $to2 <= 0xffff && \
-				$to3 <= 0xffff} {
+			if {$from <= 0x10ffff && \
+				$to1 <= 0x10ffff && $to2 <= 0x10ffff && \
+				$to3 <= 0x10ffff} {
 			    set casemap2($from) [llength $multicasemap]
 			    lappend multicasemap [list $to1 $to2 $to3]
 			}
@@ -170,13 +183,13 @@ proc uni::load_tables {data} {
 			     temp from to]} {
 			scan $from %x from
 			scan $to %x to
-			for {set i $from} {$i <= $to && $i <= 0xffff} {incr i} {
+			for {set i $from} {$i <= $to && $i <= 0x10ffff} {incr i} {
 			    lappend tablemap($i) $table
 			}
 		    } elseif {[regexp {^   ([[:xdigit:]]+)} $line \
 			     temp val]} {
 			scan $val %x val
-			if {$val <= 0xffff} {
+			if {$val <= 0x10ffff} {
 			    lappend tablemap($val) $table
 			}
 		    }
@@ -207,7 +220,7 @@ proc uni::buildTables {} {
 
     set next 0
 
-    for {set i 0} {$i <= 0xffff} {incr i} {
+    for {set i 0} {$i <= 0x10ffff} {incr i} {
 	set gIndex [getGroup [getValue $i]]
 
 	# Split character index into offset and page number
@@ -246,7 +259,7 @@ proc uni::main {} {
     buildTables
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
     set size [expr {[llength $pMap] + [llength $pages]*(1<<$shift)}]
-    puts "shift = 6, space = $size"
+    puts "shift = $shift, space = $size"
 
     set f [open [file join [lindex $argv 1] uni_data.c] w]
     fconfigure $f -translation lf
@@ -301,7 +314,7 @@ static unsigned char pageMap\[\] = {"
  * set of character attributes.
  */
 
-static unsigned char groupMap\[\] = {"
+static unsigned short int groupMap\[\] = {"
     set line "    "
     set lasti [expr {[llength $pages] - 1}]
     for {set i 0} {$i <= $lasti} {incr i} {
@@ -333,17 +346,17 @@ static unsigned char groupMap\[\] = {"
  *
  * Bit  3	B.1
  *
- * Bit  4	B.1
+ * Bit  4	D.1
  *
- * Bit  5	D.1
+ * Bit  5	D.2
  *
- * Bit  6	D.2
+ * Bit  6	XNP
  *
  * Bit  7	Case maps to several characters
  *
- * Bits 8-15	Reserved for future use.
+ * Bits 8-10	Reserved for future use.
  *
- * Bits 16-31	Case delta: delta for case conversions.  This should be the
+ * Bits 11-31	Case delta: delta for case conversions.  This should be the
  *			    highest field so we can easily sign extend.
  */
 
@@ -405,7 +418,7 @@ static int multiCaseTable\[\]\[4\] = {"
 
 #define GetCaseType(info) (((info) & 0xE0) >> 5)
 #define GetCategory(info) ((info) & 0x1F)
-#define GetDelta(info) (((info) > 0) ? ((info) >> 16) : (~(~((info)) >> 16)))
+#define GetDelta(info) (((info) > 0) ? ((info) >> 11) : (~(~((info)) >> 11)))
 #define GetMC(info) (multiCaseTable\[GetDelta(info)\])
 
 /*
@@ -413,7 +426,7 @@ static int multiCaseTable\[\]\[4\] = {"
  * Unicode character tables.
  */
 
-#define GetUniCharInfo(ch) (groups\[groupMap\[(pageMap\[(((int)(ch)) & 0xffff) >> OFFSET_BITS\] << OFFSET_BITS) | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
+#define GetUniCharInfo(ch) (groups\[groupMap\[(pageMap\[(((int)(ch)) & 0x1fffff) >> OFFSET_BITS\] << OFFSET_BITS) | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
 "
 
     close $f

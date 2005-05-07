@@ -60,7 +60,7 @@ static void canonical_ordering(int *str, int len)
       next = GetUniCharCClass(str[i + 1]);
       if (next != 0 && last > next)
       {
-	 for(j = i; j >= 0; j--)
+	 for (j = i; j >= 0; j--)
 	 {
 	    if (GetUniCharCClass(str[j]) <= next)
 	       break;
@@ -118,23 +118,23 @@ static int compose(int ch1, int ch2)
 
 
 #define ADD_UCHAR(ruc)							\
-	 if(ruc < 0x80) {						\
-	    if(pos >= size) {						\
+	 if (ruc <= 0x7F) {						\
+	    if (pos >= size) {						\
 	       size = 2*size + 1;					\
 	       rstring = driver_realloc(rstring, size);			\
 	    }								\
 	    rstring[pos] = (char) ruc;					\
 	    pos++;							\
-	 } else if(ruc < 0x7FF) {					\
-	    if(pos + 1 >= size) {					\
+	 } else if (ruc <= 0x7FF) {					\
+	    if (pos + 1 >= size) {					\
 	       size = 2*size + 2;					\
 	       rstring = driver_realloc(rstring, size);			\
 	    }								\
 	    rstring[pos] = (char) ((ruc >> 6) | 0xC0);			\
 	    rstring[pos+1] = (char) ((ruc | 0x80) & 0xBF);		\
 	    pos += 2;							\
-	 } else if(ruc < 0xFFFF) {					\
-	    if(pos + 2 >= size) {					\
+	 } else if (ruc <= 0xFFFF) {					\
+	    if (pos + 2 >= size) {					\
 	       size = 2*size + 3;					\
 	       rstring = driver_realloc(rstring, size);			\
 	    }								\
@@ -142,10 +142,20 @@ static int compose(int ch1, int ch2)
 	    rstring[pos+1] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
 	    rstring[pos+2] = (char) ((ruc | 0x80) & 0xBF);		\
 	    pos += 3;							\
+	 } else if (ruc <= 0x1FFFFF) {					\
+	    if (pos + 2 >= size) {					\
+	       size = 2*size + 4;					\
+	       rstring = driver_realloc(rstring, size);			\
+	    }								\
+	    rstring[pos] = (char) ((ruc >> 18) | 0xF0);			\
+	    rstring[pos+1] = (char) (((ruc >> 12) | 0x80) & 0xBF);	\
+	    rstring[pos+2] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
+	    rstring[pos+3] = (char) ((ruc | 0x80) & 0xBF);		\
+	    pos += 4;							\
 	 }
 
 #define ADD_UCHAR32(str, pos, len, ch)				\
-	    if(pos >= len) {					\
+	    if (pos >= len) {					\
 	       len = 2*len + 1;					\
 	       str = driver_realloc(str, len * sizeof(int));	\
 	    }							\
@@ -155,10 +165,10 @@ static int compose(int ch1, int ch2)
 
 #define ADD_DECOMP(ruc)						\
 	       info = GetUniCharDecompInfo(ruc);		\
-	       if(info >= 0) {					\
+	       if (info >= 0) {					\
 		  decomp_len = GetDecompLen(info);		\
 		  decomp_shift = GetDecompShift(info);		\
-		  for(j = 0; j < decomp_len; j++) {		\
+		  for (j = 0; j < decomp_len; j++) {		\
 	             ADD_UCHAR32(str32, str32pos, str32len,	\
 				 decompList[decomp_shift + j]);	\
 		  }						\
@@ -188,6 +198,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    int comp_pos, comp_starter_pos;
    int cclass_prev, cclass2;
    int ch1, ch2;
+   int first_ral, last_ral, have_ral, have_l;
 
    size = len + 1;
 
@@ -221,35 +232,50 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 	 break;
    }
 
-   for(i = 0; i < len; i++)
+   for (i = 0; i < len; i++)
    {
       c = buf[i];
-      if(c < 0x80) {
+      if (c < 0x80) {
 	 uc = c;
-      } else if(c < 0xC0) {
+      } else if (c < 0xC0) {
 	 bad = 1;
-      } else if(c < 0xE0) {
-	 if(i+1 < len && (buf[i+1] & 0xC0) == 0x80) {
+      } else if (c < 0xE0) {
+	 if (i+1 < len && (buf[i+1] & 0xC0) == 0x80) {
 	    uc = ((c & 0x1F) << 6) | (buf[i+1] & 0x3F);
 	    i++;
 	 } else {
 	    bad = 1;
 	 }
-      } else if(c < 0xF0) {
-	 if(i+2 < len && (buf[i+1] & 0xC0) == 0x80 &&
-	    (buf[i+2] & 0xC0) == 0x80) {
-	    uc = ((c & 0x0F) << 12) | ((buf[i+1] & 0x3F) << 6)
+      } else if (c < 0xF0) {
+	 if (i+2 < len && (buf[i+1] & 0xC0) == 0x80 &&
+	     (buf[i+2] & 0xC0) == 0x80) {
+	    uc = ((c & 0x0F) << 12)
+	       | ((buf[i+1] & 0x3F) << 6)
 	       | (buf[i+2] & 0x3F);
 	    i += 2;
 	 } else {
 	    bad = 1;
 	 }
+      } else if (c < 0xF8) {
+	 if (i+3 < len &&
+	     (buf[i+1] & 0xC0) == 0x80 &&
+	     (buf[i+2] & 0xC0) == 0x80 &&
+	     (buf[i+3] & 0xC0) == 0x80) {
+	    uc = ((c & 0x07) << 18)
+	       | ((buf[i+1] & 0x3F) << 12)
+	       | ((buf[i+2] & 0x3F) << 6)
+	       | (buf[i+3] & 0x3F);
+	    i += 3;
+	    if (uc > 0x10FFFF)
+	       bad = 1;
+	 } else {
+	    bad = 1;
+	 }
       } else {
-	 // TODO
 	 bad = 1;
       }
 
-      if(bad) {
+      if (bad) {
 	 *rbuf = rstring;
 	 driver_free(str32);
 	 return 1;
@@ -257,16 +283,16 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       
       info = GetUniCharInfo(uc);
 
-      if(!(info & B1Mask)) 
+      if (!(info & B1Mask)) 
       {
-	 if(tolower) {
-	    if(!(info & MCMask)) 
+	 if (tolower) {
+	    if (!(info & MCMask)) 
 	    {
 	       ruc = uc + GetDelta(info);
 	       ADD_DECOMP(ruc);
 	    } else {
 	       mc = GetMC(info);
-	       for(j = 1; j <= mc[0]; j++) {
+	       for (j = 1; j <= mc[0]; j++) {
 		  ruc = mc[j];
 		  ADD_DECOMP(ruc);
 	       }
@@ -313,18 +339,30 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    str32[comp_starter_pos] = ch1;
    str32pos = comp_pos;
    
-   for(i = 0; i < str32pos; i++)
+   last_ral = have_ral = have_l = 0;
+   info = GetUniCharInfo(str32[0]);
+   first_ral = info & D1Mask;
+   for (i = 0; i < str32pos; i++)
    {
       ruc = str32[i];
       info = GetUniCharInfo(ruc);
-      if(info & prohibit) {
+      if (info & prohibit) {
 	 *rbuf = rstring;
 	 driver_free(str32);
 	 return 1;
       }
+      last_ral = info & D1Mask;
+      have_ral = have_ral || last_ral;
+      have_l = info & D2Mask;
       ADD_UCHAR(ruc);
    }
-   
+
+   if (have_ral && (!first_ral || !last_ral || have_l)) {
+      *rbuf = rstring;
+      driver_free(str32);
+      return 1;
+   }
+
    rstring[0] = 1;
    *rbuf = rstring;
    driver_free(str32);
