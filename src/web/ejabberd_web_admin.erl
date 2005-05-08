@@ -64,154 +64,117 @@ make_xhtml(Els, Lang) ->
 			       {"type", "text/css"},
 			       {"rel", "stylesheet"}], []}]},
        ?XE("body",
-	   [?XAE("table",
-		 [{"id", "main"}],
-		 [?XE("tbody",
-		      [?XAE("tr",
-			    [{"id", "top"}],
-			    [?XE("td",
-				 [?XE("table",
-				      [?XE("tbody",
-					   [?XE("tr",
-						[?XE("td",
-						     [?XAE("a", [{"href", "/admin/"}],
-							   [?XA("img", [{"src", "/admin/logo.png"},
-									{"width", "343"},
-									{"height", "55"},
-									{"alt", "ejabberd"},
-									{"border", "0"}])])]),
-						 ?XAE("td", [{"width", "100%"},
-							     {"background", "/admin/logo-fill.png"}],
-						     [?XAE("a", [{"href", "/admin/"}],
-							   [?XA("img", [{"src", "/admin/1x1tr.gif"},
-									{"width", "100%"},
-									{"height", "55"},
-									{"alt", ""},
-									{"border", "0"}])])]
-						     )])])
-				      ])])]),
-		       ?XAE("tr",
-			    [{"id", "middle"}],
-			    [?XE("td",
-				 [?XAE("table",
-				       [{"id", "middle-table"}],
-				       [?XE("tbody",
-					    [?XE("tr",
-						 [?XAE("td",
-						       [{"id", "middle-td1"}],
-						       [?XAE("ul",
-							     [{"id", "navlist"}],
-							     [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
-							      ?LI([?ACT("/admin/access/", "Access Rules")]),
-							      ?LI([?ACT("/admin/users/", "Users")]),
-							      ?LI([?ACT("/admin/online-users/", "Online Users")]),
-							      ?LI([?ACT("/admin/nodes/", "Nodes")]),
-							      ?LI([?ACT("/admin/stats/", "Statistics")])
-							     ] ++
-							     case lists:member(mod_shared_roster,
-									       gen_mod:loaded_modules()) of
-								 true ->
-								     [?LI([?ACT("/admin/shared-roster/", "Shared Roster")])];
-								 false ->
-								     []
-							     end
-							    )]),
-						  ?XAE("td",
-						       [{"id", "middle-td2"}],
-						       [?XAE("div", [{"id", "content"}], Els)])])])
-				       ])])]),
-		       ?XAE("tr",
-			    [{"id", "bottom"}],
-			    [?XE("td",
-				 [?XE("table",
-				      [?XE("tbody",
-					   [?XE("tr",
-						[?XCT("td",
-						      "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One")
-						])])
-				      ])])])])])])
+           [?XAE("div",
+		 [{"id", "container"}],
+		 [?XAE("div",
+		       [{"id", "header"}],
+		       [?XE("h1",
+			    [?ACT("/admin/", "ejabberd administration")]
+			   )]),
+		  ?XAE("div",
+		       [{"id", "navigation"}],
+		       [?XE("ul",
+			    [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
+			     ?LI([?ACT("/admin/access/", "Access Rules")]),
+			     ?LI([?ACT("/admin/users/", "Users")]),
+			     ?LI([?ACT("/admin/online-users/", "Online Users")]),
+			     ?LI([?ACT("/admin/last-activity/", "Last Activity")]),
+			     ?LI([?ACT("/admin/nodes/", "Nodes")]),
+			     ?LI([?ACT("/admin/stats/", "Statistics")])
+			    ] ++
+			    case lists:member(mod_shared_roster,
+					      gen_mod:loaded_modules()) of
+				true ->
+				    [?LI([?ACT("/admin/shared-roster/", "Shared Roster")])];
+				false ->
+				    []
+			    end
+			   )]),
+		  ?XAE("div",
+		       [{"id", "content"}],
+		       Els),
+		  ?XAE("div",
+		       [{"id", "clearcopyright"}],
+		       [{xmlcdata, ""}])]),
+	    ?XAE("div",
+		 [{"id", "copyrightouter"}],
+		 [?XAE("div",
+		       [{"id", "copyright"}],
+		       [?XCT("p",
+			     "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One")
+		       ])])])
       ]}}.
 
 css() -> "
-body {
+html,body {
+  background: white;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+#container {
+  padding: 0;
+  margin: 0;
+  min-height: 100%;
+  height: 100%;
+  margin-bottom: -30px;
+}
+
+html>body #container {
+  height: auto;
+}
+
+#header h1 {
+  width: 100%;
+  height: 55px;
+  padding: 0;
+  margin: 0;
+  background: transparent url(\"/admin/logo-fill.png\");
+}
+
+#header h1 a {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 55px;
+  padding: 0;
+  margin: 0;
+  background: transparent url(\"/admin/logo.png\") no-repeat;
+  display: block;
+  text-indent: -700em;
+}
+
+#clearcopyright {
+  display: block;
+  width: 100%;
+  height: 30px;
+}
+
+#copyrightouter {
+  display: table;
+  width: 100%;
+  height: 30px;
+}
+
+#copyright {
+  display: table-cell;
+  vertical-align: bottom;
+  width: 100%;
+  height: 30px;
+}
+
+#copyright p {
   margin-left: 0;
   margin-right: 0;
-  margin-top: 0;
+  margin-top: 5px;
   margin-bottom: 0;
-}
-
-#main {
-  border: none;
-  border-spacing: 0;
-  border-collapse: collapse;
-  background-color: #fe8a00;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 1px;
+  padding-bottom: 1px;
   width: 100%;
-  height: 100%;
-  padding: 0;
-}
-
-#main > tbody > tr > td {
-  padding: 0;
-}
-
-#top > td > table {
-  border: none;
-  border-spacing: 0;
-  border-collapse: collapse;
-  background-color: #fe8a00;
-  width: 100%;
-  padding-top: 2px;
-}
-
-#top table {
-  border: none;
-  border-spacing: 0;
-  border-collapse: collapse;
-  background-color: #fe8a00;
-  width: 100%;
-  padding-top: 2px;
-}
-
-#top td {
-  padding: 0;
-}
-
-#top img {
-  margin-bottom: 0px;
-}
-
-#middle {
-  height: 100%;
-}
-
-#middle-table {
-  border: none;
-  border-spacing: 0;
-  border-collapse: collapse;
-  width: 100%;
-  height: 100%;
-  empty-cells: show;
-}
-
-#middle-td1, #middle-td2 {
-  padding: 0;
-  background-color: #ffffff;
-  vertical-align: top;
-}
-
-#middle-td2 {
-  width: 100%;
-}
-
-#bottom table {
-  border: none;
-  border-spacing: 0;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-#bottom table td {
-  padding: 0;
   color: #ffffff;
   background-color: #fe8a00;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
@@ -220,86 +183,76 @@ body {
   text-align: center;
 }
 
-    /*td{
-      font-size: 3pt;
-    }
-    td.a{
-      color: #fc8800;
-      background-color: #fe8a00;
-    }
-    td.b{
-      color: #333333;
-      background-color: #000000;
-    }
-    td.c{
-      color: #743300;
-      background-color: #723100;
-    }
-    td.d{
-      color: #fdc58a;
-      background-color: #ffc78c;
-    }
-    td.e{
-      color: #fde1c7;
-      background-color: #ffe3c9;
-    }
-    td.f{
-      color: #fdfdfd;
-      background-color: #ffffff;
-    }*/
-    td.copy{
-      color: #ffffff;
-      background-color: #fe8a00;
-      font-family: Verdana, Arial, Helvetica, sans-serif; 
-      font-size: 7pt;
-      font-weight: bold;
-      text-align: center;
-    }
+#navigation ul {
+  position: absolute;
+  top: 55px;
+  left: 0;
+  padding: 0 1px 1px;
+  margin: 0;
+  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-size: 7.5pt;
+  font-weight: bold;
+  background: #d47911;
+  width: 13em;
+}
 
-    #navlist
-    {
-    padding: 0 1px 1px;
-    margin-left: 0;
-    font: bold 10px Verdana, sans-serif;
-    background: #d47911;
-    width: 13em;
-    }
+#navigation ul li {
+  list-style: none;
+  margin: 0;
+  text-align: left;
+  display: inline;
+}
 
-    #navlist li
-    {
-    list-style: none;
-    margin: 0;
-    text-align: left;
-    display: inline;
-    }
+#navigation ul li a {
+  margin: 0;
+  display: block;
+  padding: 0.25em 0.5em 0.25em 0.75em;
+  border-left: 1em solid #ffc78c;
+  border-top: 1px solid gray;
+  background: #ffe3c9;
+  text-decoration: none;
+}
 
-    #navlist li a
-    {
-    display: block;
-    padding: 0.25em 0.5em 0.25em 0.75em;
-    border-left: 1em solid #ffc78c;
-    border-top: 1px solid gray;
-    background: #ffe3c9;
-    text-decoration: none;
-    }
+#navigation ul li a:link {
+  color: #844;
+}
 
-    #navlist li a:link { color: #844; }
-    #navlist li a:visited { color: #766; }
+#navigation ul li a:visited {
+ color: #766;
+}
 
-    #navlist li a:hover
-    {
-    border-color: #fc8800;
-    color: #FFF;
-    background: #332;
-    }
+#navigation ul li a:hover {
+  border-color: #fc8800;
+  color: #FFF;
+  background: #332;
+}
+
+#lastactivity li {
+  font-weight: bold;
+  border: 1px solid #d6760e;
+  background-color: #fff2e8;
+  padding: 2px;
+  margin-bottom: -1px;
+}
+
+td.copy {
+  color: #ffffff;
+  background-color: #fe8a00;
+  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-size: 7pt;
+  font-weight: bold;
+  text-align: center;
+}
 
 input {
-    border: 1px solid #d6760e;
-    color: #723202;
-    background-color: #fff2e8;
-    vertical-align: middle;
-    margin-bottom: 0px;
-    padding: 0.1em;
+  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-size: 10pt;
+  border: 1px solid #d6760e;
+  color: #723202;
+  background-color: #fff2e8;
+  vertical-align: middle;
+  margin-bottom: 0px;
+  padding: 0.1em;
 }
 
 input[type=submit] {
@@ -312,24 +265,24 @@ input[type=submit] {
 }
 
 textarea {
-    border: 1px solid #d6760e;
-    color: #723202;
-    background-color: #fff2e8;
-    vertical-align: middle;
-    margin-top: 7px;
-    /*margin-left: 7px;
-    margin-right: 7px;*/
-    margin-bottom: 5px;
-    padding: 0.1em;
+  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-size: 10pt;
+  border: 1px solid #d6760e;
+  color: #723202;
+  background-color: #fff2e8;
+  vertical-align: middle;
+  margin-top: 7px;
+  margin-bottom: 5px;
+  padding: 0.1em;
 }
 
 select {
-    border: 1px solid #d6760e;
-    color: #723202;
-    background-color: #fff2e8;
-    vertical-align: middle;
-    margin-bottom: 0px; 
-    padding: 0.1em;
+  border: 1px solid #d6760e;
+  color: #723202;
+  background-color: #fff2e8;
+  vertical-align: middle;
+  margin-bottom: 0px; 
+  padding: 0.1em;
 }
 
 thead {
@@ -412,7 +365,6 @@ h1 {
   font-size: 14pt;
   font-weight: bold;
   text-align: center;
-  padding-left: 5px;
   padding-top: 2px;
   padding-bottom: 2px;
   margin-top: 0px;
@@ -425,7 +377,6 @@ h2 {
   font-size: 12pt;
   font-weight: bold;
   text-align: center;
-  padding-left: 5px;
   padding-top: 2px;
   padding-bottom: 2px;
   margin-top: 0px;
@@ -438,7 +389,6 @@ h3 {
   font-size: 10pt;
   font-weight: bold;
   text-align: left;
-  padding-left: 5px;
   padding-top: 20px;
   padding-bottom: 2px;
   margin-top: 0px;
@@ -446,21 +396,21 @@ h3 {
 }
 
 #content a:link {
-  color: #444466; 
+  color: #990000; 
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
   font-weight: bold;
   text-decoration: underlined;
 }
 #content a:visited {
-  color: #444466;  
+  color: #990000;  
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
   font-weight: bold;
   text-decoration: underlined;
 }
 #content a:hover {
-  color: #222266;  
+  color: #cc6600;  
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
   font-weight: bold;
@@ -468,7 +418,7 @@ h3 {
 }
 
 
-#content li {
+#content ul li {
   list-style-type: dot;
   font-size: 10pt;
   /*font-size: 7pt;*/
@@ -479,9 +429,11 @@ h3 {
   font-size: 10pt;
 }
 
-div#content {
-  margin-left: 10px;
-  margin-top: 5px;
+#content {
+  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-size: 10pt;
+  padding-left: 13em;
+  padding-top: 5px;
 }
 
 *.alignright {
@@ -492,15 +444,27 @@ div#content {
 
 logo() ->
     jlib:decode_base64(
-      "iVBORw0KGgoAAAANSUhEUgAAAVcAAAA3CAMAAACPbPnEAAAAYFBMVEX///8CAgJyMgL+vm7Wdg7+igL+/v7+slb+qkb+4sr+ojP+nir+lhr+1qb+khL+wnb+wn7+zpb+jgb+yoz+xo7+tmL+pj7+mib+jg7+5sb+rlL+rkr+mh7+tl7+2q7+umpJ0uikAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAAHdElNRQfUBAUJBhWzc9qJAAABQ0lEQVR42u2bXU/CQBBFUUZFURAU5Ev4//+S3Ow+tFl3s6adtE3Oebghzc4DJ/Nw04WZgQczexJkz4lXvOKVxKuXV6APTCFXAq94xSte8ermFYbrA6+ilemZRxGz+fxBxMydL0/Vz5anvkUrPfb1IPCKV7ziFa9uXsG/DzyLPz7ndjS3tc3tSbcwPdl9tmYq3dHmk9x3r8mtiM11KfCKV7ziFa9uXmEc7wf+u6+5TtlXf62fKu9rl3wX9ibsLPCKV7ziFa9uXmF87wf67aBT6a+hp4bOehFxU0/CbgKveMUrXvHq5hXG+vuBcpss75zH/VZ5X7vcb4W7q5A/wvbCXoTNhX0JvOIVr3jFq5tX4P8Fw2V6g7UQ9itsLeKmfgi84hWveMWrm1egDwyX6Q3WTtinsI2wq7CjwCte8YpXvLp5BQ/utIiGbwh9RAEAAAAASUVORK5CYII=").
+      "iVBORw0KGgoAAAANSUhEUgAAAVcAAAA3CAMAAACPbPnEAAAAYFBMVEX///8C"
+      "AgJyMgL+vm7Wdg7+igL+/v7+slb+qkb+4sr+ojP+nir+lhr+1qb+khL+wnb+"
+      "wn7+zpb+jgb+yoz+xo7+tmL+pj7+mib+jg7+5sb+rlL+rkr+mh7+tl7+2q7+"
+      "umpJ0uikAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxIA"
+      "AAsSAdLdfvwAAAAHdElNRQfUBAUJBhWzc9qJAAABQ0lEQVR42u2bXU/CQBBF"
+      "UUZFURAU5Ev4//+S3Ow+tFl3s6adtE3Oebghzc4DJ/Nw04WZgQczexJkz4lX"
+      "vOKVxKuXV6APTCFXAq94xSte8ermFYbrA6+ilemZRxGz+fxBxMydL0/Vz5an"
+      "vkUrPfb1IPCKV7ziFa9uXsG/DzyLPz7ndjS3tc3tSbcwPdl9tmYq3dHmk9x3"
+      "r8mtiM11KfCKV7ziFa9uXmEc7wf+u6+5TtlXf62fKu9rl3wX9ibsLPCKV7zi"
+      "Fa9uXmF87wf67aBT6a+hp4bOehFxU0/CbgKveMUrXvHq5hXG+vuBcpss75zH"
+      "/VZ5X7vcb4W7q5A/wvbCXoTNhX0JvOIVr3jFq5tX4P8Fw2V6g7UQ9itsLeKm"
+      "fgi84hWveMWrm1egDwyX6Q3WTtinsI2wq7CjwCte8YpXvLp5BQ/utIiGbwh9"
+      "RAEAAAAASUVORK5CYII=").
 
 logo_fill() ->
     jlib:decode_base64(
-      "iVBORw0KGgoAAAANSUhEUgAAAAYAAAA3BAMAAADdxCZzAAAAIVBMVEX////Wdg7+igL+khL+jg7+nir+rkr+umr+yoz+1qb+5sYp3v/aAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxEAAAsRAX9kX5EAAAAHdElNRQfUBAYHDzOol2bZAAAASElEQVR42mMQFBRkUFJSxMAgcWNjQwwMEndxccTAIPHQ0EAMDBJPS0vEwCDx8vJCDAwS7+hoxMAg8ZkzJ2JgkPiqVQsxMFAcABvNNugXg2QkAAAAAElFTkSuQmCC").
-
-empty() ->
-    jlib:decode_base64(
-      "R0lGODlhAQABAIAAAP///////yH+FUNyZWF0ZWQgd2l0aCBUaGUgR0lNUAAh+QQBCgABACwAAAAAAQABAAACAkwBADs=").
+      "iVBORw0KGgoAAAANSUhEUgAAAAYAAAA3BAMAAADdxCZzAAAAHlBMVEXWdg7+"
+      "igL+jg7+khL+nir+rkr+umr+yoz+1qb+5sbOf9L8AAAACXBIWXMAAA9hAAAP"
+      "YQGoP6dpAAAAQUlEQVQI12XDSxHAIBAFQT6BJEcsYAELWMACFtYCFnAL7zxd"
+      "1c5dvhSU2BpKqBXl6R0ljYGS50R5zVC+tVD+vfE6YyUexE9x7g4AAAAASUVO"
+      "RK5CYII=").
 
 process_admin(#request{us = US,
 		       path = [],
@@ -508,19 +472,20 @@ process_admin(#request{us = US,
 		       lang = Lang} = Request) ->
     make_xhtml([?XCT("h1", "ejabberd administration"),
 		?XE("ul",
-		    [?LI([?ACT("acls/", "Access Control Lists"), ?C(" "),
-			  ?ACT("acls-raw/", "(raw)")]),
-		     ?LI([?ACT("access/", "Access Rules"), ?C(" "),
-			  ?ACT("access-raw/", "(raw)")]),
-		     ?LI([?ACT("users/", "Users")]),
-		     ?LI([?ACT("online-users/", "Online Users")]),
-		     ?LI([?ACT("nodes/", "Nodes")]),
-		     ?LI([?ACT("stats/", "Statistics")])
+		    [?LI([?ACT("/admin/acls/", "Access Control Lists"), ?C(" "),
+			  ?ACT("/admin/acls-raw/", "(raw)")]),
+		     ?LI([?ACT("/admin/access/", "Access Rules"), ?C(" "),
+			  ?ACT("/admin/access-raw/", "(raw)")]),
+		     ?LI([?ACT("/admin/users/", "Users")]),
+		     ?LI([?ACT("/admin/online-users/", "Online Users")]),
+		     ?LI([?ACT("/admin/last-activity/", "Last Activity")]),
+		     ?LI([?ACT("/admin/nodes/", "Nodes")]),
+		     ?LI([?ACT("/admin/stats/", "Statistics")])
 		    ] ++
 		    case lists:member(mod_shared_roster,
 				      gen_mod:loaded_modules()) of
 			true ->
-			    [?LI([?ACT("shared-roster/", "Shared Roster")])];
+			    [?LI([?ACT("/admin/shared-roster/", "Shared Roster")])];
 			false ->
 			    []
 		    end
@@ -544,12 +509,6 @@ process_admin(#request{us = US,
 		       q = Query,
 		       lang = Lang} = Request) ->
     {200, [{"Content-Type", "image/png"}], logo_fill()};
-
-process_admin(#request{us = US,
-		       path = ["1x1tr.gif"],
-		       q = Query,
-		       lang = Lang} = Request) ->
-    {200, [{"Content-Type", "image/gif"}], empty()};
 
 process_admin(#request{us = US,
 		       path = ["acls-raw"],
@@ -797,6 +756,46 @@ process_admin(#request{us = US,
 			lang = Lang} = Request) ->
     Res = list_online_users(Lang),
     make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
+
+process_admin(#request{method = Method,
+		       us = US,
+		       path = ["last-activity"],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    ?INFO_MSG("query: ~p", [Query]),
+    Month = case lists:keysearch("period", 1, Query) of
+		{value, {_, Val}} ->
+		    Val;
+		_ ->
+		    "month"
+	    end,
+    Res = case lists:keysearch("ordinary", 1, Query) of
+	      {value, {_, _}} ->
+		  list_last_activity(Lang, false, Month);
+	      _ ->
+		  list_last_activity(Lang, true, Month)
+	  end,
+    make_xhtml([?XCT("h1", "Users last activity")] ++
+	       [?XAE("form", [{"method", "post"}],
+		     [?CT("Period: "),
+		      ?XAE("select", [{"name", "period"}],
+			   lists:map(
+			     fun({O, V}) ->
+				    Sel = if
+					      O == Month -> [{"selected", "selected"}];
+					      true -> []
+					  end,
+				    ?XAC("option",
+					 Sel ++ [{"value", O}], V)
+			     end, [{"month", ?T("Last month")},
+				   {"year", ?T("Last year")},
+				   {"all", ?T("All activity")}])),
+		      ?C(" "),
+		      ?INPUTT("submit", "ordinary", "Show Ordinary Table"),
+		      ?C(" "),
+		      ?INPUTT("submit", "integral", "Show Integral Table")
+		     ])] ++
+	       Res, Lang);
 
 process_admin(#request{us = US,
 		       path = ["stats"],
@@ -1556,6 +1555,74 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
       end, Items),
     nothing.
 
+
+list_last_activity(_Lang, Integral, Period) ->
+    {MegaSecs, Secs, _MicroSecs} = now(),
+    TimeStamp = MegaSecs * 1000000 + Secs,
+    case Period of
+	"all" ->
+	    TS = 0,
+	    Days = infinity;
+	"year" ->
+	    TS = TimeStamp - 366 * 86400,
+	    Days = 366;
+	_ ->
+	    TS = TimeStamp - 31 * 86400,
+	    Days = 31
+    end,
+    case catch mnesia:dirty_select(
+		 last_activity, [{{last_activity, '_', '$1', '_'},
+				  [{'>', '$1', TS}],
+				  [{'trunc', {'/',
+					      {'-', TimeStamp, '$1'},
+					      86400}}]}]) of
+	{'EXIT', _Reason} ->
+	    [];
+	Vals ->
+	    Hist = histogram(Vals, Integral),
+	    Left = case Days of
+		       infinity ->
+			   0;
+		       _ ->
+			   Days - length(Hist)
+		   end,
+	    Tail = case Integral andalso Hist /= [] of
+		       true ->
+			   lists:duplicate(Left, lists:last(Hist));
+		       _ ->
+			   lists:duplicate(Left, 0)
+		   end,
+	    Max = lists:max(Hist),
+	    [?XAE("ol",
+		  [{"id", "lastactivity"}, {"start", "0"}],
+		  [?XAE("li",
+			[{"style", "width:" ++ integer_to_list(
+						 trunc(90 * V / Max)) ++ "%;"}],
+			[{xmlcdata, integer_to_list(V)}])
+		   || V <- Hist ++ Tail])]
+    end.
+
+histogram(Values, Integral) ->
+    histogram(lists:sort(Values), Integral, 0, 0, []).
+
+histogram([H | T], Integral, Current, Count, Hist) when Current == H ->
+    histogram(T, Integral, Current, Count + 1, Hist);
+	    
+histogram([H | _] = Values, Integral, Current, Count, Hist) when Current < H ->
+    if
+	Integral ->
+	    histogram(Values, Integral, Current + 1, Count, [Count | Hist]);
+	true ->
+	    histogram(Values, Integral, Current + 1, 0, [Count | Hist])
+    end;
+
+histogram([], _Integral, _Current, Count, Hist) ->
+    if
+	Count > 0 ->
+	    lists:reverse([Count | Hist]);
+	true ->
+	    lists:reverse(Hist)
+    end.
 
 
 get_nodes(Lang) ->

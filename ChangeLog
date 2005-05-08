@@ -1,3 +1,9 @@
+2005-05-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Images now specified via CSS,
+	design slightly updated, added last activity statistics (thanks to
+	Sergei Golovan)
+
 2005-05-07  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/stringprep/stringprep_drv.c: Added check for bidi
