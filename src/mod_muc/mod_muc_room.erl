@@ -249,6 +249,15 @@ normal_state({route, From, "",
 						    IJID,
 						    member,
 						    StateData),
+					    case (NSD#state.config)#config.persistent of
+						true ->
+						    mod_muc:store_room(
+						      NSD#state.host,
+						      NSD#state.room,
+						      make_opts(NSD));
+						_ ->
+						    ok
+					    end,
 					    {next_state, normal_state, NSD};
 					_ ->
 					    {next_state, normal_state,

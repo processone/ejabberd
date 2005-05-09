@@ -1,5 +1,9 @@
 2005-05-09  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_muc/mod_muc_room.erl: Fixed bug with storing
+	affiliations of invited users in members-only room (thanks to
+	Sergei Golovan)
+
 	* src/ejabberd_c2s.erl: Fixed starttls_required behaviour for
 	legacy connections (thanks to Brian Campbell)
 
