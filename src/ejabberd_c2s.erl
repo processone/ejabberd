@@ -256,16 +256,30 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			_ ->
 			    Header = io_lib:format(
 				       ?STREAM_HEADER,
-				       [StateData#state.streamid, Server, "", DefaultLang]),
-			    send_text(StateData, Header),
-			    {next_state, wait_for_auth,
-			     StateData#state{server = Server,
-					     lang = Lang}}
+				       [StateData#state.streamid, Server, "",
+					DefaultLang]),
+			    if
+				(not StateData#state.tls_enabled) and
+				StateData#state.tls_required ->
+				    send_text(StateData,
+					      Header ++
+					      ?POLICY_VIOLATION_ERR(
+						 Lang,
+						 "Use of STARTTLS required") ++
+					      ?STREAM_TRAILER),
+				    {stop, normal, StateData};
+				true ->
+				    send_text(StateData, Header),
+				    {next_state, wait_for_auth, 
+				     StateData#state{server = Server,
+						     lang = Lang}}
+			    end
 		    end;
 		_ ->
 		    Header = io_lib:format(
 			       ?STREAM_HEADER,
-			       [StateData#state.streamid, ?MYNAME, "", DefaultLang]),
+			       [StateData#state.streamid, ?MYNAME, "",
+				DefaultLang]),
 		    send_text(StateData,
 			      Header ++ ?HOST_UNKNOWN_ERR ++ ?STREAM_TRAILER),
 		    {stop, normal, StateData}
