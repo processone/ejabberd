@@ -111,7 +111,7 @@ xdb_data(User, Server, {xmlelement, _Name, Attrs, _Els} = El) ->
 	XMLNS ->
 	    case xml:get_attr_s("j_private_flag", Attrs) of
 		"1" ->
-		    catch mod_private:process_local_iq(
+		    catch mod_private:process_sm_iq(
 			    From,
 			    jlib:make_jid("", ?MYNAME, ""),
 			    #iq{type = set, xmlns = ?NS_PRIVATE,

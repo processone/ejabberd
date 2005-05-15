@@ -80,7 +80,7 @@ loop(Hosts, Parent) ->
 	    ets:delete(muc_online_room, Room),
 	    loop(Hosts, Parent);
 	stop ->
-	    ejabberd_router:unregister_global_routes(Hosts),
+	    ejabberd_router:unregister_routes(Hosts),
 	    ok;
 	reload ->
 	    ?MODULE:loop(Hosts, Parent);

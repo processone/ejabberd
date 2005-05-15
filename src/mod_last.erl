@@ -74,7 +74,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 		  roster_get_jid_info, {none, []}, [User, Server, From]),
 	    if
 		(Subscription == both) or (Subscription == from) ->
-		    case catch mod_privacy:get_user_list(User) of
+		    case catch mod_privacy:get_user_list(User, Server) of
 			{'EXIT', _Reason} ->
 			    get_last(IQ, SubEl, User, Server);
 			List ->

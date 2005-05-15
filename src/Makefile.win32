@@ -68,6 +68,8 @@ release : build release_clean
 	copy tls\*.erl $(SRC_DIR)\tls
 	mkdir $(SRC_DIR)\web
 	copy web\*.erl $(SRC_DIR)\web
+	mkdir $(SRC_DIR)\odbc
+	copy odbc\*.erl $(SRC_DIR)\odbc
 	mkdir $(DOC_DIR)
 	copy ..\doc\*.html $(DOC_DIR)
 	copy ..\doc\*.png $(DOC_DIR)
@@ -92,6 +94,8 @@ all-recursive :
 	cd ..\tls
 	nmake -nologo -f Makefile.win32
 	cd ..\web
+	nmake -nologo -f Makefile.win32
+	cd ..\odbc
 	nmake -nologo -f Makefile.win32
 	cd ..
 
@@ -121,6 +125,8 @@ clean-recursive :
 	cd ..\tls
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\web
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\odbc
 	nmake -nologo -f Makefile.win32 clean
 	cd ..
 

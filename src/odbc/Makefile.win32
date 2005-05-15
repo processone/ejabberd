@@ -1,0 +1,20 @@
+
+include ..\Makefile.inc
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+OBJS = \
+	$(OUTDIR)\ejabberd_odbc.beam \
+	$(OUTDIR)\ejabberd_odbc_sup.beam
+
+ALL : $(OBJS)
+
+CLEAN :
+	-@erase $(OBJS)
+
+$(OUTDIR)\ejabberd_odbc.beam : ejabberd_odbc.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_odbc.erl
+
+$(OUTDIR)\ejabberd_odbc_sup.beam : ejabberd_odbc_sup.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_odbc_sup.erl

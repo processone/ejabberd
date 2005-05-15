@@ -62,12 +62,13 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    User = To#jid.luser,
+	    Server = To#jid.lserver,
 	    {Subscription, _Groups} =
 		ejabberd_hooks:run_fold(
 		  roster_get_jid_info, {none, []}, [User, From]),
 	    if
 		(Subscription == both) or (Subscription == from) ->
-		    case catch mod_privacy:get_user_list(User) of
+		    case catch mod_privacy:get_user_list(User, Server) of
 			{'EXIT', _Reason} ->
 			    get_last(IQ, SubEl, User);
 			List ->
