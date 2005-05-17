@@ -322,6 +322,13 @@ handle_info({route_chan, Channel, Resource,
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
+	#iq{xmlns = ?NS_VCARD} ->
+	    Res = io_lib:format("WHOIS ~s \r\n",
+				[Resource]),
+	    ?SEND(Res),
+	    Err = jlib:make_error_reply(
+		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    ejabberd_router:route(To, From, Err);
 	#iq{} ->
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
@@ -390,6 +397,18 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 	    [_, "332", Nick, [$# | Chan] | _] ->
 		process_channel_topic(StateData, Chan, String),
 		StateData;
+	    [_, "318", _, Nick | _] ->
+		process_endofwhois(StateData, String, Nick),
+		StateData;
+	    [_, "311", _, Nick, Ident, Irchost | _ ] ->
+		process_whois311(StateData, String, Nick, Ident, Irchost),
+		StateData;
+	    [_, "312", _, Nick, Ircserver  | _ ] ->
+		process_whois312(StateData, String, Nick, Ircserver),
+		StateData;
+	    [_, "319", _, Nick | _ ] ->
+		process_whois319(StateData, String, Nick),
+		StateData;
 	    [From, "PRIVMSG", [$# | Chan] | _] ->
 		process_chanprivmsg(StateData, Chan, From, String),
 		StateData;
@@ -398,6 +417,9 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 		StateData;
 	    [From, "PRIVMSG", Nick, ":\001VERSION\001" | _] ->
 		process_version(StateData, Nick, From),
+		StateData;
+	    [From, "PRIVMSG", Nick, ":\001USERINFO\001" | _] ->
+		process_userinfo(StateData, Nick, From),
 		StateData;
 	    [From, "PRIVMSG", Nick | _] ->
 		process_privmsg(StateData, Nick, From, String),
@@ -625,6 +647,50 @@ process_channel_topic(StateData, Chan, String) ->
        [{xmlelement, "subject", [], [{xmlcdata, Msg1}]}]}).
 
 
+process_endofwhois(StateData, String, Nick) ->
+    ejabberd_router:route(
+      jlib:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+		    StateData#state.host, ""),
+      StateData#state.user,
+      {xmlelement, "message", [{"type", "chat"}],
+       [{xmlelement, "body", [], [{xmlcdata, "End of WHOIS"}]}]}).
+
+process_whois311(StateData, String, Nick, Ident, Irchost) ->
+    {ok, Fullname, _} = regexp:sub(String, ".*311[^:]*:", ""),
+    ejabberd_router:route(
+      jlib:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+		    StateData#state.host, ""),
+      StateData#state.user,
+      {xmlelement, "message", [{"type", "chat"}],
+       [{xmlelement, "body", [],
+	 [{xmlcdata, lists:concat(
+		       ["WHOIS: ", Nick, " is ",
+			Ident, "@" , Irchost, " : " , Fullname])}]}]}).
+
+process_whois312(StateData, String, Nick, Ircserver) ->
+    {ok, Ircserverdesc, _} = regexp:sub(String, ".*312[^:]*:", ""),
+    ejabberd_router:route(
+      jlib:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+		    StateData#state.host, ""),
+      StateData#state.user,
+      {xmlelement, "message", [{"type", "chat"}],
+       [{xmlelement, "body", [],
+	 [{xmlcdata, lists:concat(["WHOIS: ", Nick, " use ",
+				   Ircserver, " : ", Ircserverdesc])}]}]}).
+
+process_whois319(StateData, String, Nick) ->
+    {ok, Chanlist, _} = regexp:sub(String, ".*319[^:]*:", ""),
+    ejabberd_router:route(
+      jlib:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+		    StateData#state.host, ""),
+      StateData#state.user,
+      {xmlelement, "message", [{"type", "chat"}],
+       [{xmlelement, "body", [],
+	 [{xmlcdata, lists:concat(["WHOIS: ", Nick, " is on ",
+				   Chanlist])}]}]}).
+
+
+
 process_chanprivmsg(StateData, Chan, From, String) ->
     [FromUser | _] = string:tokens(From, "!"),
     {ok, Msg, _} = regexp:sub(String, ".*PRIVMSG[^:]*:", ""),
@@ -712,6 +778,17 @@ process_version(StateData, Nick, From) ->
 		    "http://ejabberd.jabberstudio.org/"
 		    "\001\r\n",
 		    [FromUser])).
+
+
+process_userinfo(StateData, Nick, From) ->
+    [FromUser | _] = string:tokens(From, "!"),
+    send_text(
+      StateData,
+      io_lib:format("NOTICE ~s :\001USERINFO "
+		    "This user uses xmpp:~s"
+		    "\001\r\n",
+		    [FromUser,
+		     jlib:jid_to_string(StateData#state.user)])).
 
 
 process_topic(StateData, Chan, From, String) ->
