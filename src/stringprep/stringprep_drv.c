@@ -143,7 +143,7 @@ static int compose(int ch1, int ch2)
 	    rstring[pos+2] = (char) ((ruc | 0x80) & 0xBF);		\
 	    pos += 3;							\
 	 } else if (ruc <= 0x1FFFFF) {					\
-	    if (pos + 2 >= size) {					\
+	    if (pos + 3 >= size) {					\
 	       size = 2*size + 4;					\
 	       rstring = driver_realloc(rstring, size);			\
 	    }								\
