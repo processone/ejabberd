@@ -90,23 +90,21 @@ static int compose(int ch1, int ch2)
    }
 
    info1 = GetUniCharCompInfo(ch1);
-   if (info1 != -1) {
-      if (info1 & CompSingleMask) {
-	 if (ch2 == compFirstList[info1 & CompMask][0]) {
-	    return compFirstList[info1 & CompMask][1];
-	 } else
-	    return 0;
-      }
+   if (info1 != -1 && info1 & CompSingleMask) {
+      if (!(info1 & CompSecondMask) &&
+	  ch2 == compFirstList[info1 & CompMask][0]) {
+	 return compFirstList[info1 & CompMask][1];
+      } else
+	 return 0;
    }
 
    info2 = GetUniCharCompInfo(ch2);
-   if (info2 != -1) {
-      if (info2 & CompSingleMask) {
-	 if (ch1 == compSecondList[info2 & CompMask][0]) {
-	    return compSecondList[info2 & CompMask][1];
-	 } else
-	    return 0;
-      }
+   if (info2 != -1 && info2 & CompSingleMask) {
+      if ((info2 & CompSecondMask) &&
+	  ch1 == compSecondList[info2 & CompMask][0]) {
+	 return compSecondList[info2 & CompMask][1];
+      } else
+	 return 0;
    }
 
    if (info1 != -1 && info2 != -1 &&

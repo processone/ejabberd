@@ -261,7 +261,7 @@ proc uni::buildTables {} {
 	} elseif {$comp_second($ch2) == 1 && ![info exists comp_first($ch2)]} {
 	    set i [llength $comp_second_list]
 	    lappend comp_second_list [list $ch1 $comp_map($comp)]
-	    set comp_info_map($ch2) [expr {$i | (1 << 16)}]
+	    set comp_info_map($ch2) [expr {$i | (1 << 16) | (1 << 17)}]
 	} else {
 	    if {[lsearch -exact $comp_x_list $ch1] < 0} {
 		set i [llength $comp_x_list]

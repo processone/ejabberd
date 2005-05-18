@@ -1,3 +1,13 @@
+2005-05-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Now possible to subscribe to a
+	pubsub node with a JID that includes a resource (thanks to Martijn
+	van Beers)
+
+	* src/stringprep/uni_parse2.tcl: Bugfix
+	* src/stringprep/stringprep_drv.c: Likewise
+	* src/stringprep/uni_norm.c: Regenerated
+
 2005-05-18  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_irc/mod_irc_connection.erl: Added support for WHOIS

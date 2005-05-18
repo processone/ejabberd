@@ -608,6 +608,7 @@ subscribe_node(Host, From, JID, Node) ->
 		J
 	end,
     Subscriber = jlib:jid_tolower(SubscriberJID),
+    SubscriberWithoutResource = jlib:jid_remove_resource(Subscriber),
     F = fun() ->
 		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info} = N] ->
@@ -627,7 +628,7 @@ subscribe_node(Host, From, JID, Node) ->
 		end
 	end,
     if
-	Sender == Subscriber ->
+	Sender == SubscriberWithoutResource ->
 	    case mnesia:transaction(F) of
 		{atomic, {error, _} = Error} ->
 		    Error;
