@@ -286,6 +286,13 @@
 {"Members:", "Члени:"}.
 {"Displayed Groups:", "Видимі групи:"}.
 {"Group ", "Група "}.
+{"Users last activity", "Статистика останнього підключення користувачів"}.
+{"Period: ", "Період"}.
+{"Last month", "За останній місяць"}.
+{"Last year", "За останній рік"}.
+{"All activity", "Вся статистика"}.
+{"Show Ordinary Table", "Показати звичайну таблицю"}.
+{"Show Integral Table", "Показати інтегральну таблицю"}.
 
 % Local Variables:
 % mode: erlang

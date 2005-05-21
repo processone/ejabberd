@@ -251,6 +251,13 @@
 {"Members:", "Miembros:"}.
 {"Displayed Groups:", "Mostrar grupos:"}.
 {"Group ", "Grupo "}.
+{"Users last activity", "Última actividad de los usuarios"}.
+{"Period: ", "Periodo: "}.
+{"Last month", "Último mes"}.
+{"Last year", "Último año"}.
+{"All activity", "Toda la actividad"}.
+{"Show Ordinary Table", "Mostrar Tabla Ordinaria"}.
+{"Show Integral Table", "Mostrar Tabla Integral"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Es obligatorio usar STARTTLS"}.
@@ -258,10 +265,8 @@
 % mod_vcard_ldap.erl
 {"Given Name", "Nombre dado"}.
 {"JID", "JID"}.
+{"Fill in fields to search for any matching Jabber User", "Rellena campos para buscar usuarios Jabber que concuerden"}.
 
 % Local Variables:
 % mode: erlang
 % End:
-
-
-
