@@ -716,7 +716,7 @@ get_items(Host, JID, Node, SMaxItems) ->
 				  {xmlelement, "item", ItemAttrs, Payload}
 			  end, Items),
 		    {result, [{xmlelement, "pubsub",
-			       [{"xmlns", ?NS_PUBSUB_EVENT}],
+			       [{"xmlns", ?NS_PUBSUB}],
 			       [{xmlelement, "items",
 				 [{"node", node_to_string(Node)}],
 				 ItemsEls}]}]};
@@ -827,7 +827,7 @@ get_entities(Host, OJID, Node) ->
 				    []} | Acc]
 			  end, [], Entities),
 		    {result, [{xmlelement, "pubsub",
-			       [{"xmlns", ?NS_PUBSUB_EVENT}],
+			       [{"xmlns", ?NS_PUBSUB}],
 			       [{xmlelement, "entities",
 				 [{"node", node_to_string(Node)}],
 				 EntitiesEls}]}]};
@@ -1091,7 +1091,7 @@ broadcast_publish_item(Host, Node, ItemID, Payload) ->
 					   end,
 			       Stanza =
 				   {xmlelement, "message", [],
-				    [{xmlelement, "x",
+				    [{xmlelement, "event",
 				      [{"xmlns", ?NS_PUBSUB_EVENT}],
 				      [{xmlelement, "items",
 					[{"node", node_to_string(Node)}],
@@ -1123,7 +1123,7 @@ broadcast_retract_item(Host, Node, ItemID) ->
 					   end,
 			       Stanza =
 				   {xmlelement, "message", [],
-				    [{xmlelement, "x",
+				    [{xmlelement, "event",
 				      [{"xmlns", ?NS_PUBSUB_EVENT}],
 				      [{xmlelement, "items",
 					[{"node", node_to_string(Node)}],
@@ -1150,7 +1150,7 @@ broadcast_removed_node(Host, Removed) ->
 			     (Subscription /= pending) ->
 				 Stanza =
 				     {xmlelement, "message", [],
-				      [{xmlelement, "x",
+				      [{xmlelement, "event",
 					[{"xmlns", ?NS_PUBSUB_EVENT}],
 					[{xmlelement, "delete",
 					  [{"node", node_to_string(Node)}],

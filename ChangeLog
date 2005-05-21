@@ -1,5 +1,8 @@
 2005-05-21  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_pubsub/mod_pubsub.erl: Fixed XML element name for
+	pubsub#event namespace (thanks to Magnus Henoch)
+
 	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
 	* src/msgs/uk.msg: Likewise
 
