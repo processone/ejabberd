@@ -1,3 +1,10 @@
+2005-05-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: "Connection:" header value now
+	matched case-insensitive, and returned to client, replaced
+	duplicate is_space($\r) with is_space($\t) (thanks to Maxim
+	Ryazanov)
+
 2005-05-21  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fixed XML element name for

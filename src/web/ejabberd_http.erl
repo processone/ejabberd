@@ -139,14 +139,14 @@ process_header(State, Data) ->
 			request_path = Path,
 			request_keepalive = KeepAlive};
 	{ok, {http_header, _, 'Connection', _, Conn}} ->
-	    KeepAlive1 = case Conn of
-		"keep-alive" ->
-		    true;
-		"close" ->
-		    false;
-		_ ->
-		    State#state.request_keepalive
-	    end,
+	    KeepAlive1 = case jlib:tolower(Conn) of
+			     "keep-alive" ->
+				 true;
+			     "close" ->
+				 false;
+			     _ ->
+				 State#state.request_keepalive
+			 end,
 	    State#state{request_keepalive = KeepAlive1};
 	{ok, {http_header, _, 'Authorization', _, Auth}} ->
 	    State#state{request_auth = parse_auth(Auth)};
@@ -194,7 +194,7 @@ process_request(#state{request_method = 'GET',
 		       request_auth = Auth,
 		       request_lang = Lang,
 		       use_http_poll = UseHTTPPoll,
-		       use_web_admin = UseWebAdmin}) ->
+		       use_web_admin = UseWebAdmin} = State) ->
     US = case Auth of
 	     {SJID, P} ->
 		 case jlib:string_to_jid(SJID) of
@@ -214,6 +214,7 @@ process_request(#state{request_method = 'GET',
     case US of
 	unauthorized ->
 	    make_xhtml_output(
+	      State, 
 	      401,
 	      [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 	      ejabberd_web:make_xhtml([{xmlelement, "h1", [],
@@ -238,15 +239,15 @@ process_request(#state{request_method = 'GET',
 		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
 						  Request) of
 			El when element(1, El) == xmlelement ->
-			    make_xhtml_output(200, [], El);
+			    make_xhtml_output(State, 200, [], El);
 			{Status, Headers, El} when
 			      element(1, El) == xmlelement ->
-			    make_xhtml_output(Status, Headers, El);
+			    make_xhtml_output(State, Status, Headers, El);
 			Text when is_list(Text) ->
-			    make_text_output(200, [], Text);
+			    make_text_output(State, 200, [], Text);
 			{Status, Headers, Text} when
 			      is_list(Text) ->
-			    make_text_output(Status, Headers, Text)
+			    make_text_output(State, Status, Headers, Text)
 		    end
 	    end
     end;
@@ -280,6 +281,7 @@ process_request(#state{request_method = 'POST',
     case US of
 	unauthorized ->
 	    make_xhtml_output(
+	      State, 
 	      401,
 	      [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 	      ejabberd_web:make_xhtml([{xmlelement, "h1", [],
@@ -313,20 +315,20 @@ process_request(#state{request_method = 'POST',
 		    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
 						  Request) of
 			El when element(1, El) == xmlelement ->
-			    make_xhtml_output(200, [], El);
+			    make_xhtml_output(State, 200, [], El);
 			{Status, Headers, El} when
 			      element(1, El) == xmlelement ->
-			    make_xhtml_output(Status, Headers, El);
+			    make_xhtml_output(State, Status, Headers, El);
 			Text when is_list(Text) ->
-			    make_text_output(200, [], Text);
+			    make_text_output(State, 200, [], Text);
 			{Status, Headers, Text} when is_list(Text) ->
-			    make_text_output(Status, Headers, Text)
+			    make_text_output(State, Status, Headers, Text)
 		    end
 	    end
     end;
 
-process_request(_) ->
-    make_xhtml_output(
+process_request(State) ->
+    make_xhtml_output(State, 
       400,
       [],
       ejabberd_web:make_xhtml([{xmlelement, "h1", [],
@@ -353,7 +355,7 @@ recv_data(State, Len, Acc) ->
     end.
 
 
-make_xhtml_output(Status, Headers, XHTML) ->
+make_xhtml_output(State, Status, Headers, XHTML) ->
     Data = case lists:member(html, Headers) of
 	       true ->
 		   list_to_binary([?HTML_DOCTYPE,
@@ -371,16 +373,32 @@ make_xhtml_output(Status, Headers, XHTML) ->
 			{"Content-Length", integer_to_list(size(Data))} |
 			Headers]
 	       end,
+    HeadersOut = case {State#state.request_version,
+		       State#state.request_keepalive} of
+		     {{1, 1}, true} -> Headers1;
+		     {_, true} -> 
+			 [{"Connection", "keep-alive"} | Headers1];
+		     {_, false} -> 
+			 % not required for http versions < 1.1
+			 % but would make no harm
+			 [{"Connection", "close"} | Headers1]
+		 end,
+
+    Version = case State#state.request_version of
+		  {1, 1} -> "HTTP/1.1 ";
+		  _ -> "HTTP/1.0 "
+	      end,
+	       
     H = lists:map(fun({Attr, Val}) ->
 			  [Attr, ": ", Val, "\r\n"];
 		     (_) ->
 			  []
-		  end, Headers1),
-    SL = ["HTTP/1.1 ", integer_to_list(Status), " ",
+		  end, HeadersOut),
+    SL = [Version, integer_to_list(Status), " ",
 	  code_to_phrase(Status), "\r\n"],
     [SL, H, "\r\n", Data].
 
-make_text_output(Status, Headers, Text) ->
+make_text_output(State, Status, Headers, Text) ->
     Data = list_to_binary(Text),
     Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
 		   {value, _} ->
@@ -391,13 +409,30 @@ make_text_output(Status, Headers, Text) ->
 			{"Content-Length", integer_to_list(size(Data))} |
 			Headers]
 	       end,
+
+    HeadersOut = case {State#state.request_version,
+		       State#state.request_keepalive} of
+		     {{1, 1}, true} -> Headers1;
+		     {_, true} -> 
+			 [{"Connection", "keep-alive"} | Headers1];
+		     {_, false} -> 
+			 % not required for http versions < 1.1
+			 % but would make no harm
+			 [{"Connection", "close"} | Headers1]
+		 end,
+
+    Version = case State#state.request_version of
+		  {1, 1} -> "HTTP/1.1 ";
+		  _ -> "HTTP/1.0 "
+	      end,
+
     H = lists:map(fun({Attr, Val}) ->
 			  [Attr, ": ", Val, "\r\n"]
-		  end, Headers1),
-    SL = ["HTTP/1.1 ", integer_to_list(Status), " ",
+		  end, HeadersOut),
+    SL = [Version, integer_to_list(Status), " ",
 	  code_to_phrase(Status), "\r\n"],
     [SL, H, "\r\n", Data].
-    
+
 
 parse_lang(Langs) ->
     case string:tokens(Langs, ",; ") of
@@ -779,7 +814,7 @@ is_space($\r) ->
     true;
 is_space($\n) ->
     true;
-is_space($\r) ->
+is_space($\t) ->
     true;
 is_space(_) ->
     false.
