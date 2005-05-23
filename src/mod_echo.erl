@@ -17,12 +17,12 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
-
+-define(PROCNAME, ejabberd_mod_echo).
 
 start(Opts) ->
     %Host = gen_mod:get_opt(host, Opts),
     Host = gen_mod:get_opt(host, Opts, "echo." ++ ?MYNAME),
-    register(ejabberd_mod_echo, spawn(?MODULE, init, [Host])).
+    register(?PROCNAME, spawn(?MODULE, init, [Host])).
 
 init(Host) ->
     ejabberd_router:register_route(Host),
@@ -41,5 +41,6 @@ loop(Host) ->
     end.
 
 stop() ->
-    ejabberd_mod_echo ! stop,
-    ok.
+    ?PROCNAME ! stop,
+    {wait, ?PROCNAME}.
+

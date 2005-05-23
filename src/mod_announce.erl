@@ -70,7 +70,7 @@ stop() ->
     ejabberd_hooks:delete(sm_register_connection_hook,
 			  ?MODULE, send_motd, 50),
     exit(whereis(?PROCNAME), stop),
-    ok.
+    {wait, ?PROCNAME}.
 
 announce(From, To, Packet) ->
     case To of

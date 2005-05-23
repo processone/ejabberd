@@ -89,7 +89,7 @@ stop() ->
     ejabberd_hooks:delete(remove_user,
 			  ?MODULE, remove_user, 50),
     exit(whereis(?PROCNAME), stop),
-    ok.
+    {wait, ?PROCNAME}.
 
 store_packet(From, To, Packet) ->
     Type = xml:get_tag_attr_s("type", Packet),

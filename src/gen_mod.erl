@@ -17,6 +17,7 @@
 	 get_opt/3,
 	 get_module_opt/3,
 	 loaded_modules/0,
+	 loaded_modules_with_opts/0,
 	 get_hosts/2]).
 
 -export([behaviour_info/1]).
@@ -52,11 +53,39 @@ stop_module(Module) ->
     case catch Module:stop() of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
+	{wait, ProcList} when is_list(ProcList) ->
+	    lists:foreach(fun wait_for_process/1, ProcList),
+	    ets:delete(ejabberd_modules, Module),
+	    ok;
+	{wait, Process} ->
+	    wait_for_process(Process),
+	    ets:delete(ejabberd_modules, Module),
+	    ok;
 	_ ->
 	    ets:delete(ejabberd_modules, Module),
 	    ok
     end.
 
+wait_for_process(Process) ->
+    MonitorReference = erlang:monitor(process, Process),
+    wait_for_stop(Process, MonitorReference).
+
+wait_for_stop(Process, MonitorReference) ->
+    receive
+	{'DOWN', MonitorReference, _Type, _Object, _Info} ->
+	    ok
+    after 5000 ->
+	    catch exit(whereis(Process), kill),
+	    wait_for_stop1(MonitorReference)
+    end.
+
+wait_for_stop1(MonitorReference) ->
+    receive
+	{'DOWN', MonitorReference, _Type, _Object, _Info} ->
+	    ok
+    after 5000 ->
+	    ok
+    end.
 
 get_opt(Opt, Opts) ->
     case lists:keysearch(Opt, 1, Opts) of
@@ -86,7 +115,15 @@ get_module_opt(Module, Opt, Default) ->
 
 loaded_modules() ->
     ets:select(ejabberd_modules,
-	       [{#ejabberd_module{_ = '_', module = '$1'}, [],['$1']}]).
+	       [{#ejabberd_module{_ = '_', module = '$1'},
+		 [],
+		 ['$1']}]).
+
+loaded_modules_with_opts() ->
+    ets:select(ejabberd_modules,
+	       [{#ejabberd_module{_ = '_', module = '$1', opts = '$2'},
+		 [],
+		 [{{'$1', '$2'}}]}]).
 
 get_hosts(Opts, Prefix) ->
     case catch gen_mod:get_opt(hosts, Opts) of

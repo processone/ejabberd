@@ -35,6 +35,7 @@
 		 subscription = none}).
 -record(item, {id, publisher, payload}).
 
+-define(PROCNAME, ejabberd_mod_pubsub).
 
 start(Opts) ->
     mnesia:create_table(pubsub_node,
@@ -45,7 +46,7 @@ start(Opts) ->
     update_table(Host),
     mnesia:add_table_index(pubsub_node, host_parent),
     ServedHosts = gen_mod:get_opt(served_hosts, Opts, []),
-    register(ejabberd_mod_pubsub,
+    register(?PROCNAME,
 	     proc_lib:spawn_link(?MODULE, init, [Hosts, ServedHosts, self()])).
 
 
@@ -202,8 +203,8 @@ do_route(Host, From, To, Packet) ->
 
 
 stop() ->
-    ejabberd_mod_pubsub ! stop,
-    ok.
+    ?PROCNAME ! stop,
+    {wait, ?PROCNAME}.
 
 
 

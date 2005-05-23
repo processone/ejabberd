@@ -24,6 +24,8 @@
 -record(irc_connection, {jid_server_host, pid}).
 -record(irc_custom, {us_host, data}).
 
+-define(PROCNAME, ejabberd_mod_irc).
+
 start(Opts) ->
     iconv:start(),
     mnesia:create_table(irc_custom,
@@ -33,7 +35,7 @@ start(Opts) ->
     Host = hd(Hosts),
     update_table(Host),
     Access = gen_mod:get_opt(access, Opts, all),
-    register(ejabberd_mod_irc, spawn(?MODULE, init, [Hosts, Access])).
+    register(?PROCNAME, spawn(?MODULE, init, [Hosts, Access])).
 
 init(Hosts, Access) ->
     catch ets:new(irc_connection, [named_table,
@@ -172,11 +174,10 @@ do_route1(Host, From, To, Packet) ->
     end.
 
 
-
-
 stop() ->
-    ejabberd_mod_irc ! stop,
-    ok.
+    ?PROCNAME ! stop,
+    {wait, ?PROCNAME}.
+
 
 closed_connection(Host, From, Server) ->
     ets:delete(irc_connection, {From, Server, Host}).

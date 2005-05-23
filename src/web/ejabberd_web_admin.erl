@@ -185,12 +185,12 @@ html>body #container {
 
 #navigation ul {
   position: absolute;
-  top: 55px;
+  top: 54px;
   left: 0;
-  padding: 0 1px 1px;
+  padding: 0 1px 1px 1px;
   margin: 0;
   font-family: Verdana, Arial, Helvetica, sans-serif; 
-  font-size: 7.5pt;
+  font-size: 8pt;
   font-weight: bold;
   background: #d47911;
   width: 13em;
@@ -206,9 +206,9 @@ html>body #container {
 #navigation ul li a {
   margin: 0;
   display: block;
-  padding: 0.25em 0.5em 0.25em 0.75em;
+  padding: 3px 6px 3px 9px;
   border-left: 1em solid #ffc78c;
-  border-top: 1px solid gray;
+  border-top: 1px solid #d47911;
   background: #ffe3c9;
   text-decoration: none;
 }
@@ -257,7 +257,7 @@ input {
 
 input[type=submit] {
   font-family: Verdana, Arial, Helvetica, sans-serif; 
-  font-size: 7pt;
+  font-size: 8pt;
   font-weight: bold;
   color: #ffffff;
   background-color: #fe8a00;
@@ -1683,6 +1683,7 @@ get_node(Node, [], Query, Lang) ->
 	     [?LI([?ACT("db/", "DB Management")]),
 	      ?LI([?ACT("backup/", "Backup Management")]),
 	      ?LI([?ACT("ports/", "Listened Ports Management")]),
+	      ?LI([?ACT("modules/", "Modules Management")]),
 	      ?LI([?ACT("stats/", "Statistics")])
 	     ]),
 	 ?XAE("form", [{"method", "post"}],
@@ -1823,6 +1824,28 @@ get_node(Node, ["ports"], Query, Lang) ->
 	end ++
 	[?XAE("form", [{"method", "post"}],
 	      [node_ports_to_xhtml(NewPorts, Lang)])
+	];
+
+get_node(Node, ["modules"], Query, Lang) ->
+    Modules = rpc:call(Node, gen_mod, loaded_modules_with_opts, []),
+    Res = case catch node_modules_parse_query(Node, Modules, Query) of
+	      submitted ->
+		  ok;
+	      {'EXIT', Reason} ->
+		  ?INFO_MSG("~p~n", [Reason]),
+		  error;
+	      _ ->
+		  nothing
+	  end,
+    NewModules = lists:sort(rpc:call(Node, gen_mod, loaded_modules_with_opts, [])),
+    [?XC("h1", ?T("Modules at ") ++ atom_to_list(Node))] ++
+	case Res of
+	    ok -> [?CT("submitted"), ?P];
+	    error -> [?CT("bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"method", "post"}],
+	      [node_modules_to_xhtml(NewModules, Lang)])
 	];
 
 get_node(Node, ["stats"], Query, Lang) ->
@@ -2041,13 +2064,13 @@ node_ports_parse_query(Node, Ports, Query) ->
 		      Module = list_to_atom(SModule),
 		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 		      {ok, Opts} = erl_parse:parse_term(Tokens),
-		      ejabberd_listener:delete_listener(Port),
-		      ejabberd_listener:add_listener(Port, Module, Opts),
+		      rpc:call(Node, ejabberd_listener, delete_listener, [Port]),
+		      rpc:call(Node, ejabberd_listener, add_listener, [Port, Module, Opts]),
 		      throw(submitted);
 		  _ ->
 		      case lists:keysearch("delete" ++ SPort, 1, Query) of
 			  {value, _} ->
-			      ejabberd_listener:delete_listener(Port),
+			      rpc:call(Node, ejabberd_listener, delete_listener, [Port]),
 			      throw(submitted);
 			  _ ->
 			      ok
@@ -2066,12 +2089,81 @@ node_ports_parse_query(Node, Ports, Query) ->
 	    Module = list_to_atom(SModule),
 	    {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 	    {ok, Opts} = erl_parse:parse_term(Tokens),
-	    ejabberd_listener:add_listener(Port, Module, Opts),
+	    rpc:call(Node, ejabberd_listener, add_listener, [Port, Module, Opts]),
 	    throw(submitted);
 	_ ->
 	    ok
     end.
 
+node_modules_to_xhtml(Modules, Lang) ->
+    ?XAE("table", [],
+	 [?XE("thead",
+	      [?XE("tr",
+		   [?XCT("td", "Module"),
+		    ?XCT("td", "Options")
+		   ])]),
+	  ?XE("tbody",
+	      lists:map(
+		fun({Module, Opts} = E) ->
+			SModule = atom_to_list(Module),
+			ID = term_to_id(E),
+			?XE("tr",
+			    [?XC("td", SModule),
+			     ?XE("td", [?INPUTS("text", "opts" ++ SModule,
+						term_to_string(Opts), "40")]),
+			     ?XE("td", [?INPUTT("submit", "restart" ++ SModule,
+						"Restart")]),
+			     ?XE("td", [?INPUTT("submit", "stop" ++ SModule,
+						"Stop")])
+			    ]
+			   )
+		end, Modules) ++
+	      [?XE("tr",
+		   [?XE("td", [?INPUT("text", "modulenew", "")]),
+		    ?XE("td", [?INPUTS("text", "optsnew", "", "40")]),
+		    ?XAE("td", [{"colspan", "2"}],
+			 [?INPUTT("submit", "start", "Start")])
+		   ]
+		  )]
+	     )]).
+
+node_modules_parse_query(Node, Modules, Query) ->
+    lists:foreach(
+      fun({Module, _Opts1}) ->
+	      SModule = atom_to_list(Module),
+	      case lists:keysearch("restart" ++ SModule, 1, Query) of
+		  {value, _} ->
+		      {value, {_, SOpts}} =
+			   lists:keysearch("opts" ++ SModule, 1, Query),
+		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
+		      {ok, Opts} = erl_parse:parse_term(Tokens),
+		      rpc:call(Node, gen_mod, stop_module, [Module]),
+		      rpc:call(Node, gen_mod, start_module, [Module, Opts]),
+		      throw(submitted);
+		  _ ->
+		      case lists:keysearch("stop" ++ SModule, 1, Query) of
+			  {value, _} ->
+			      rpc:call(Node, gen_mod, stop_module, [Module]),
+			      throw(submitted);
+			  _ ->
+			      ok
+		      end
+	      end
+      end, Modules),
+    case lists:keysearch("start", 1, Query) of
+	{value, _} ->
+	    {{value, {_, SModule}},
+	     {value, {_, SOpts}}} =
+		{lists:keysearch("modulenew", 1, Query),
+		 lists:keysearch("optsnew", 1, Query)},
+	    Module = list_to_atom(SModule),
+	    {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
+	    {ok, Opts} = erl_parse:parse_term(Tokens),
+	    rpc:call(Node, gen_mod, start_module, [Module, Opts]),
+	    throw(submitted);
+	_ ->
+	    ok
+    end.
 
 
 pretty_print(El) ->

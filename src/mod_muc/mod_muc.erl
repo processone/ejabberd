@@ -30,6 +30,7 @@
 -record(muc_online_room, {name_host, pid}).
 -record(muc_registered, {us_host, nick}).
 
+-define(PROCNAME, ejabberd_mod_muc).
 
 start(Opts) ->
     mnesia:create_table(muc_room,
@@ -45,7 +46,7 @@ start(Opts) ->
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
-    register(ejabberd_mod_muc,
+    register(?PROCNAME,
 	     spawn(?MODULE, init,
 		   [Hosts, {Access, AccessCreate, AccessAdmin}])).
 
@@ -252,12 +253,12 @@ do_route1(Host, Access, From, To, Packet) ->
 
 
 room_destroyed(Host, Room) ->
-    ejabberd_mod_muc ! {room_destroyed, {Room, Host}},
+    ?PROCNAME ! {room_destroyed, {Room, Host}},
     ok.
 
 stop() ->
-    ejabberd_mod_muc ! stop,
-    ok.
+    ?PROCNAME ! stop,
+    {wait, ?PROCNAME}.
 
 
 store_room(Host, Name, Opts) ->
