@@ -1,5 +1,15 @@
 2005-05-23  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_last_odbc.erl: Added store_last_info/4 function (thanks
+	to Sergei Golovan)
+	* src/mod_last.erl: Likewise
+
+	* src/jd2ejd.erl: Support for exporting iq:last information,
+	better error handling (thanks to Sergei Golovan)
+
+	* src/ejabberd_ctl.erl: Added "import-file" and "import-dir"
+	commands (thanks to Sergei Golovan)
+
 	* doc/guide.tex: Updated (thanks to Sergei Golovan)
 	* doc/dev.tex: Likewise
 	* doc/disco.png: Likewise

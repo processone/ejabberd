@@ -37,19 +37,23 @@ import_file(File) ->
 				{'EXIT', Reason} ->
 				    ?ERROR_MSG(
 				       "Error while processing file \"~s\": ~p~n",
-				       [File, Reason]);
+				       [File, Reason]),
+				       {error, Reason};
 				_ ->
 				    ok
 			    end;
 			{error, Reason} ->
 			    ?ERROR_MSG("Can't parse file \"~s\": ~p~n",
-				       [File, Reason])
+				       [File, Reason]),
+			    {error, Reason}
 		    end;
 		{error, Reason} ->
-		    ?ERROR_MSG("Can't read file \"~s\": ~p~n", [File, Reason])
+		    ?ERROR_MSG("Can't read file \"~s\": ~p~n", [File, Reason]),
+		    {error, Reason}
 	    end;
 	false ->
-	    ?ERROR_MSG("Incorrect user/server name in file \"~s\"~n", [File])
+	    ?ERROR_MSG("Illegal user/server name in file \"~s\"~n", [File]),
+	    {error, "illegal user/server"}
     end.
 
 
@@ -65,11 +69,15 @@ import_dir(Dir) ->
 				 false
 			 end
 		 end, Files),
-    lists:foreach(
-      fun(FN) ->
-	      import_file(filename:join([Dir, FN]))
-      end, MsgFiles),
-    ok.
+    lists:foldl(
+      fun(FN, A) ->
+	      Res = import_file(filename:join([Dir, FN])),
+	      case {A, Res} of
+		  {ok, ok} -> ok;
+		  {ok, _} -> {error, "see ejabberd log for details"};
+		  _ -> A
+	      end
+      end, ok, MsgFiles).
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
@@ -98,6 +106,14 @@ xdb_data(User, Server, {xmlelement, _Name, Attrs, _Els} = El) ->
 	    ok;
 	?NS_ROSTER ->
 	    catch mod_roster:set_items(User, Server, El),
+	    ok;
+	?NS_LAST ->
+	    TimeStamp = xml:get_attr_s("last", Attrs),
+	    Status = xml:get_tag_cdata(El),
+	    catch mod_last:store_last_info(User,
+					   Server,
+					   list_to_integer(TimeStamp),
+					   Status),
 	    ok;
 	?NS_VCARD ->
 	    catch mod_vcard:process_sm_iq(

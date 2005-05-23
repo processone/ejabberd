@@ -61,34 +61,38 @@
 
 <A NAME="sec:intro"></A>
 <TT>ejabberd</TT> is a Free and Open Source fault-tolerant distributed Jabber
-server. It is writen mostly in Erlang.<BR>
+server. It is written mostly in Erlang.<BR>
 <BR>
-The main features of <TT>ejabberd</TT> is:
+The main features of <TT>ejabberd</TT> are:
 <UL><LI>
-Works on most of popular platforms: *nix (tested on Linux and FreeBSD)
- and Win32
-<LI>Distributed: You can run <TT>ejabberd</TT> on a cluster of machines and all of
- them will serve one Jabber domain.
+Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
+ NetBSD) and Win32
+<LI>Distributed: You can run <TT>ejabberd</TT> on a cluster of machines to let all of
+ them serve one Jabber domain.
 <LI>Fault-tolerance: You can setup an <TT>ejabberd</TT> cluster so that all the
  information required for a properly working service will be stored
  permanently on more than one node. This means that if one of the nodes
  crashes, then the others will continue working without disruption.
- You can also add or replace more nodes ``on the fly''.
-<LI>Built-in <A HREF="http://www.jabber.org/jeps/jep-0045.html">Multi-User
- Chat</A> service
+ You can also add or replace nodes ``on the fly''.
+<LI>Support for virtual hosting
+<LI>Built-in <A HREF="http://www.jabber.org/jeps/jep-0045.html">Multi-User Chat</A> service
 <LI>Built-in IRC transport
-<LI>Built-in
- <A HREF="http://www.jabber.org/jeps/jep-0060.html">Publish-Subscribe</A>
- service
+<LI>Built-in <A HREF="http://www.jabber.org/jeps/jep-0060.html">Publish-Subscribe</A> service
 <LI>Built-in Jabber Users Directory service based on users vCards
-<LI>Support for
- <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A>
- (Service Discovery).
-<LI>Support for
- <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>
- (Statistics Gathering).
-<LI>Support for <TT>xml:lang</TT> attribute in many XML elements
+<LI>Built-in web-based administration interface
+<LI>Built-in <A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A> service
+<LI>SSL support
+<LI>Support for LDAP authentication
+<LI>Ability to interface with external components (JIT, MSN-t, Yahoo-t, etc.)
+<LI>Migration from jabberd14 is possible
+<LI>Mostly XMPP-compliant
+<LI>Support for <A HREF="http://www.jabber.org/jeps/jep-0030.html">Service Discovery</A>.
+<LI>Support for <A HREF="http://www.jabber.org/jeps/jep-0039.html">Statistics Gathering</A>.
+<LI>Support for <TT>xml:lang</TT>
 </UL>
+<TT>ejabberd</TT> is a Free and Open Source fault-tolerant distributed Jabber
+server. It is written mostly in Erlang.<BR>
+<BR>
 <!--TOC subsection How it works-->
 
 <H3><A NAME="htoc2">1.1</A>&nbsp;&nbsp;How it works</H3><!--SEC END -->
@@ -166,13 +170,13 @@ XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
         CDATA = {xmlcdata, string()}
 </PRE>E.&nbsp;g. this stanza:
 <PRE>
-&lt;message to='test@conference.e.localhost' type='groupchat'&gt;
+&lt;message to='test@conference.example.org' type='groupchat'&gt;
   &lt;body&gt;test&lt;/body&gt;
 &lt;/message&gt;
 </PRE>represented as following structure:
 <PRE>
 {xmlelement, "message",
-    [{"to", "test@conference.e.localhost"},
+    [{"to", "test@conference.example.org"},
      {"type", "groupchat"}],
     [{xmlelement, "body",
          [],

@@ -4,7 +4,7 @@
 <HEAD><TITLE>Ejabberd Installation and Operation Guide</TITLE>
 
 <META http-equiv="Content-Type" content="text/html; charset=ISO8859-1">
-<META name="GENERATOR" content="hevea 1.07">
+<META name="GENERATOR" content="hevea 1.06">
 </HEAD>
 <BODY >
 <!--HEVEA command line is: /usr/bin/hevea -charset ISO8859-1 guide.tex -->
@@ -21,7 +21,7 @@
 <A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
 <A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3>
 
-<H3 ALIGN=center>April 18, 2005</H3><DIV ALIGN=center>
+<H3 ALIGN=center>May 23, 2005</H3><DIV ALIGN=center>
 
  <IMG SRC="logo.png">
  
@@ -141,8 +141,8 @@ Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
 <LI>Ability to interface with external components (JIT, MSN-t, Yahoo-t, etc.)
 <LI>Migration from jabberd14 is possible
 <LI>Mostly XMPP-compliant
-<LI>Support for <A HREF="http://www.jabber.org/jeps/jep-0030.html">JEP-0030</A> (Service Discovery).
-<LI>Support for <A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A> (Statistics Gathering).
+<LI>Support for <A HREF="http://www.jabber.org/jeps/jep-0030.html">Service Discovery</A>.
+<LI>Support for <A HREF="http://www.jabber.org/jeps/jep-0039.html">Statistics Gathering</A>.
 <LI>Support for <TT>xml:lang</TT>
 </UL>
 The misfeatures of <TT>ejabberd</TT> are:
@@ -391,7 +391,7 @@ declarations of ACL in config file have following syntax:
 </PRE><DT><B><TT>{user_regexp, &lt;regexp&gt;, &lt;server&gt;}</TT></B><DD> Matches user with name
  that matches <TT>&lt;regexp&gt;</TT> and from server <TT>&lt;server&gt;</TT>. Example:
 <PRE>
-{acl, tests, {user, "^test", "localhost"}}.
+{acl, tests, {user, "^test", "example.org"}}.
 </PRE><DT><B><TT>{server_regexp, &lt;regexp&gt;}</TT></B><DD> Matches any JID from server that
  matches <TT>&lt;regexp&gt;</TT>. Example:
 <PRE>
@@ -518,7 +518,7 @@ The following additional options are defined for <TT>ejabberd_service</TT>
 <BR>
 The following options are defined:
  <DL COMPACT=compact><DT>
- <B><TT>http_poll</TT></B><DD> This option enables <A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A>
+ <B><TT>http_poll</TT></B><DD> This option enables <A HREF="http://www.jabber.org/jeps/jep-0025.html">JEP-0025</A> (HTTP Polling)
  support. It is available then at <CODE>http://server:port/http-poll/</CODE>.<BR>
 <BR>
 <DT><B><TT>web_admin</TT></B><DD> This option enables web-based interface for <TT>ejabberd</TT>
@@ -629,7 +629,7 @@ Example:
     {mod_vcard,     []},
     {mod_offline,   []},
     {mod_announce,  [{access, announce}]},
-    {mod_echo,      [{host, "echo.localhost"}]},
+    {mod_echo,      [{host, "echo.example.org"}]},
     {mod_private,   []},
     {mod_irc,       []},
     {mod_muc,       []},
@@ -823,9 +823,8 @@ Replicating of table makes lookup in this table faster on this node,
  but writing will be slower. And of course if machine with one of
  replicas is down, other replicas will be used.<BR>
 <BR>
-Also section ``5.3 Table Fragmentation''
- <A HREF="http://www.erlang.se/doc/doc-5.4/lib/mnesia-4.2/doc/html/index.html">here</A>
- can be useful.<BR>
+Also section 5.3 (Table Fragmentation) of
+ <A HREF="http://www.erlang.se/doc/doc-5.4/lib/mnesia-4.2/doc/html/index.html">Mnesia Reference Manual</A> can be useful.<BR>
 <BR>
 (alt) Same as in previous item, but for other tables.<BR>
 <BR>
@@ -1426,7 +1425,7 @@ All built-in modules support <TT>xml:lang</TT> attribute inside IQ queries.
 E.&nbsp;g. on figure&nbsp;<A HREF="#fig:discorus">2</A> showed the reply on the following query:
 <PRE>
   &lt;iq id='5'
-      to='e.localhost'
+      to='example.org'
       type='get'
       xml:lang='ru'&gt;
     &lt;query xmlns='http://jabber.org/protocol/disco#items'/&gt;

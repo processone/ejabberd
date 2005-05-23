@@ -17,6 +17,7 @@
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 on_presence_update/4,
+	 store_last_info/4,
 	 remove_user/2]).
 
 -include("ejabberd.hrl").
@@ -118,18 +119,21 @@ get_last(IQ, SubEl, LUser, LServer) ->
 
 
 on_presence_update(User, Server, _Resource, Status) ->
+    {MegaSecs, Secs, _MicroSecs} = now(),
+    TimeStamp = MegaSecs * 1000000 + Secs,
+    store_last_info(User, Server, TimeStamp, Status).
+
+store_last_info(User, Server, TimeStamp, Status) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp = MegaSecs * 1000000 + Secs,
     F = fun() ->
 		mnesia:write(#last_activity{us = US,
 					    timestamp = TimeStamp,
 					    status = Status})
 	end,
     mnesia:transaction(F).
-
+    
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),

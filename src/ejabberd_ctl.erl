@@ -173,6 +173,34 @@ process(Node, ["install-fallback", Path]) ->
 	    ?STATUS_BADRPC
     end;
 
+process(Node, ["import-file", Path]) ->
+    case rpc:call(Node, jd2ejd, import_file, [Path]) of
+        ok ->
+            ?STATUS_SUCCESS;
+        {error, Reason} ->
+            io:format("Can't import jabberd 1.4 spool file ~p at node ~p: ~p~n",
+                      [filename:absname(Path), Node, Reason]),
+	    ?STATUS_ERROR;
+        {badrpc, Reason} ->
+            io:format("Can't import jabberd 1.4 spool file ~p at node ~p: ~p~n",
+                      [filename:absname(Path), Node, Reason]),
+	    ?STATUS_BADRPC
+    end;
+
+process(Node, ["import-dir", Path]) ->
+    case rpc:call(Node, jd2ejd, import_dir, [Path]) of
+        ok ->
+            ?STATUS_SUCCESS;
+        {error, Reason} ->
+            io:format("Can't import jabberd 1.4 spool dir ~p at node ~p: ~p~n",
+                      [filename:absname(Path), Node, Reason]),
+	    ?STATUS_ERROR;
+        {badrpc, Reason} ->
+            io:format("Can't import jabberd 1.4 spool dir ~p at node ~p: ~p~n",
+                      [filename:absname(Path), Node, Reason]),
+	    ?STATUS_BADRPC
+    end;
+
 process(Node, ["registered-users"]) ->
     case rpc:call(Node, ejabberd_auth, dirty_get_registered_users, []) of
 	Users when is_list(Users) ->
@@ -217,12 +245,14 @@ print_usage() ->
       "  restart\t\t\trestart ejabberd~n"
       "  reopen-log\t\t\treopen log file~n"
       "  register user server password\tregister a user~n"
-      "  unregister user server\t\tunregister a user~n"
-      "  backup file\t\t\tstore a database backup in file~n"
+      "  unregister user server\tunregister a user~n"
+      "  backup file\t\t\tstore a database backup to file~n"
       "  restore file\t\t\trestore a database backup from file~n"
       "  install-fallback file\t\tinstall a database fallback from file~n"
-      "  dump file\t\t\tdump a database in a text file~n"
+      "  dump file\t\t\tdump a database to a text file~n"
       "  load file\t\t\trestore a database from a text file~n"
+      "  import-file file\t\timport user data from jabberd 1.4 spool file~n"
+      "  import-dir dir\t\timport user data from jabberd 1.4 spool directory~n"
       "  registered-users\t\tlist all registered users~n"
       "  delete-expired-messages\tdelete expired offline messages from database~n"
       "~n"
