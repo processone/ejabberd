@@ -31,7 +31,9 @@
 \newcommand{\modprivate}{\texttt{mod\_private}}
 \newcommand{\modtime}{\texttt{mod\_time}}
 \newcommand{\modversion}{\texttt{mod\_version}}
-c
+
+\newcommand{\tjepref}[2]{\footahref{http://www.jabber.org/jeps/jep-#1.html}{#2}}
+\newcommand{\jepref}[1]{\tjepref{#1}{JEP-#1}}
 %\setcounter{tocdepth}{3}
 
 
@@ -58,42 +60,42 @@ c
 \label{sec:intro}
 
 \ejabberd{} is a Free and Open Source fault-tolerant distributed \Jabber{}
-server.  It is writen mostly in Erlang.
+server.  It is written mostly in Erlang.
 
-The main features of \ejabberd{} is:
+The main features of \ejabberd{} are:
 \begin{itemize}
-\item Works on most of popular platforms: *nix (tested on Linux and FreeBSD)
-  and Win32
-\item Distributed: You can run \ejabberd{} on a cluster of machines and all of
-  them will serve one Jabber domain.
+\item Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
+  NetBSD) and Win32
+\item Distributed: You can run \ejabberd{} on a cluster of machines to let all of
+  them serve one Jabber domain.
 \item Fault-tolerance: You can setup an \ejabberd{} cluster so that all the
   information required for a properly working service will be stored
   permanently on more than one node.  This means that if one of the nodes
   crashes, then the others will continue working without disruption.
-  You can also add or replace more nodes ``on the fly''.
-\item Built-in \footahref{http://www.jabber.org/jeps/jep-0045.html}{Multi-User
-    Chat} service
+  You can also add or replace nodes ``on the fly''.
+\item Support for virtual hosting
+\item Built-in \tjepref{0045}{Multi-User Chat} service
 \item Built-in IRC transport
-\item Built-in
-  \footahref{http://www.jabber.org/jeps/jep-0060.html}{Publish-Subscribe}
-  service
+\item Built-in \tjepref{0060}{Publish-Subscribe} service
 \item Built-in Jabber Users Directory service based on users vCards
-\item Support for
-  \footahref{http://www.jabber.org/jeps/jep-0030.html}{JEP-0030}
-  (Service Discovery).
-\item Support for
-  \footahref{http://www.jabber.org/jeps/jep-0039.html}{JEP-0039}
-  (Statistics Gathering).
-\item Support for \ns{xml:lang} attribute in many XML elements
+\item Built-in web-based administration interface
+\item Built-in \tjepref{0025}{HTTP Polling} service
+\item SSL support
+\item Support for LDAP authentication
+\item Ability to interface with external components (JIT, MSN-t, Yahoo-t, etc.)
+\item Migration from jabberd14 is possible
+\item Mostly XMPP-compliant
+\item Support for \tjepref{0030}{Service Discovery}.
+\item Support for \tjepref{0039}{Statistics Gathering}.
+\item Support for \ns{xml:lang}
 \end{itemize}
-
-
+\ejabberd{} is a Free and Open Source fault-tolerant distributed \Jabber{}
+server.  It is written mostly in Erlang.
 
 
 
 \subsection{How it works}
 \label{sec:howitworks}
-
 
 
 A \Jabber{} domain is served by one or more \ejabberd{} nodes.  These nodes can
@@ -169,14 +171,14 @@ XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
 \end{verbatim}
 E.\,g. this stanza:
 \begin{verbatim}
-<message to='test@conference.e.localhost' type='groupchat'>
+<message to='test@conference.example.org' type='groupchat'>
   <body>test</body>
 </message>
 \end{verbatim}
 represented as following structure:
 \begin{verbatim}
 {xmlelement, "message",
-    [{"to", "test@conference.e.localhost"},
+    [{"to", "test@conference.example.org"},
      {"type", "groupchat"}],
     [{xmlelement, "body",
          [],

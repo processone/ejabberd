@@ -126,8 +126,8 @@ The main features of \ejabberd{} are:
 \item Ability to interface with external components (JIT, MSN-t, Yahoo-t, etc.)
 \item Migration from jabberd14 is possible
 \item Mostly XMPP-compliant
-\item Support for \jepref{0030} (Service Discovery).
-\item Support for \jepref{0039} (Statistics Gathering).
+\item Support for \tjepref{0030}{Service Discovery}.
+\item Support for \tjepref{0039}{Statistics Gathering}.
 \item Support for \ns{xml:lang}
 \end{itemize}
 
@@ -164,7 +164,7 @@ To compile \ejabberd{} in MS Windows environment, you will need the following
 packages:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
-\item \footahref{http://erlang.org/download/otp_win32_R10B-1a.exe}{Erlang/OTP R10B-1a}
+\item \footahref{http://erlang.org/download/otp\_win32\_R10B-1a.exe}{Erlang/OTP R10B-1a}
 \item \footahref{http://prdownloads.sourceforge.net/expat/expat\_win32bin\_1\_95\_7.exe?download}{Expat 1.95.7}
 \item
 \footahref{http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.9.1.tar.gz}{Iconv 1.9.1}
@@ -387,7 +387,7 @@ declarations of ACL in config file have following syntax:
 \titem{\{user\_regexp, <regexp>, <server>\}} Matches user with name
   that matches \term{<regexp>} and from server \term{<server>}.  Example:
 \begin{verbatim}
-{acl, tests, {user, "^test", "localhost"}}.
+{acl, tests, {user, "^test", "example.org"}}.
 \end{verbatim}
 \titem{\{server\_regexp, <regexp>\}} Matches any JID from server that
   matches \term{<regexp>}.  Example:
@@ -524,7 +524,7 @@ Currently these modules are implemented:
 
   The following options are defined:
   \begin{description}
-    \titem{http\_poll} This option enables \tjepref{0025}{HTTP Polling}
+    \titem{http\_poll} This option enables \jepref{0025} (HTTP Polling)
     support.  It is available then at \verb|http://server:port/http-poll/|.
     
     \titem{web\_admin} This option enables web-based interface for \ejabberd{}
@@ -637,7 +637,7 @@ Example:
     {mod_vcard,     []},
     {mod_offline,   []},
     {mod_announce,  [{access, announce}]},
-    {mod_echo,      [{host, "echo.localhost"}]},
+    {mod_echo,      [{host, "echo.example.org"}]},
     {mod_private,   []},
     {mod_irc,       []},
     {mod_muc,       []},
@@ -830,9 +830,9 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
   but writing will be slower.  And of course if machine with one of
   replicas is down, other replicas will be used.
   
-  Also section ``5.3 Table Fragmentation''
-  \footahref{http://www.erlang.se/doc/doc-5.4/lib/mnesia-4.2/doc/html/index.html}{here}
-  can be useful.
+  Also section 5.3 (Table Fragmentation) of
+  \footahref{http://www.erlang.se/doc/doc-5.4/lib/mnesia-4.2/doc/html/index.html}
+  {Mnesia Reference Manual} can be useful.
   
   (alt) Same as in previous item, but for other tables.
 
@@ -1377,7 +1377,7 @@ All built-in modules support \texttt{xml:lang} attribute inside IQ queries.
 E.\,g.\ on figure~\ref{fig:discorus} showed the reply on the following query:
 \begin{verbatim}
   <iq id='5'
-      to='e.localhost'
+      to='example.org'
       type='get'
       xml:lang='ru'>
     <query xmlns='http://jabber.org/protocol/disco#items'/>

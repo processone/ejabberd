@@ -1,5 +1,12 @@
 2005-05-23  Alexey Shchepin  <alexey@sevcom.net>
 
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+	* doc/dev.tex: Likewise
+	* doc/disco.png: Likewise
+	* doc/discorus.png: Likewise
+	* doc/webadmin.png: Likewise
+	* doc/webadminru.png: Likewise
+
 	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
 	* src/msgs/uk.msg: Likewise
 
