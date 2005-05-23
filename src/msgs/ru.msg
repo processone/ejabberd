@@ -291,6 +291,9 @@
 {"All activity", "Вся статистика"}.
 {"Show Ordinary Table", "Показать обычную таблицу"}.
 {"Show Integral Table", "Показать интегральную таблицу"}.
+{"Start", "Запустить"}.
+{"Modules Management", "Управление модулями"}.
+{"Modules at ", "Модули на "}.
 
 % Local Variables:
 % mode: erlang

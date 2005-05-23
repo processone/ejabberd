@@ -1,7 +1,11 @@
 2005-05-23  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
 	* src/web/ejabberd_web_admin.erl: Updated CSS, added modules
-	management (thanks to Sergei Golovan)
+	management, fixed bug with configuring of listened ports on
+	different nodes (thanks to Sergei Golovan)
 
 	* src/gen_mod.erl: Added function loaded_modules_with_opts/0, new
 	API for module stopping (thanks to Sergei Golovan)
