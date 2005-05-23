@@ -14,7 +14,7 @@ ERLANG_LIBS = @ERLANG_LIBS@
 
 prefix = @prefix@
 
-SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ @web@ stringprep @tls@
+SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ @web@ stringprep @tls@ @odbc@
 ERLSHLIBS = expat_erl.so
 
 DESTDIR =

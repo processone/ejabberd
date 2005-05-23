@@ -91,7 +91,7 @@ AC_ARG_ENABLE($1,
   [  --enable-$1        enable $1 (default: $2)],
     [mr_enable_$1="$enableval"],
      [mr_enable_$1=$2])
-if test "$mr_enable_$1" = $2; then
+if test "$mr_enable_$1" = "yes"; then
 $1=$1
 make_$1=$1/Makefile
 fi

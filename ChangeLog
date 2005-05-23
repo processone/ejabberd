@@ -1,5 +1,12 @@
 2005-05-23  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/odbc/Makefile.in: Added
+
+	* src/configure.ac: Updated for odbc support
+	* src/Makefile.in: Likewise
+
+	* src/aclocal.m4: Bugfix
+
 	* src/mod_last_odbc.erl: Added store_last_info/4 function (thanks
 	to Sergei Golovan)
 	* src/mod_last.erl: Likewise

@@ -831,6 +831,7 @@ Optional Features:
   --enable-eldap        enable eldap (default: yes)
   --enable-web        enable web (default: yes)
   --enable-tls        enable tls (default: yes)
+  --enable-odbc        enable odbc (default: no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3616,7 +3617,7 @@ if test "${enable_mod_pubsub+set}" = set; then
 else
   mr_enable_mod_pubsub=yes
 fi;
-if test "$mr_enable_mod_pubsub" = yes; then
+if test "$mr_enable_mod_pubsub" = "yes"; then
 mod_pubsub=mod_pubsub
 make_mod_pubsub=mod_pubsub/Makefile
 fi
@@ -3638,7 +3639,7 @@ if test "${enable_mod_irc+set}" = set; then
 else
   mr_enable_mod_irc=yes
 fi;
-if test "$mr_enable_mod_irc" = yes; then
+if test "$mr_enable_mod_irc" = "yes"; then
 mod_irc=mod_irc
 make_mod_irc=mod_irc/Makefile
 fi
@@ -3660,7 +3661,7 @@ if test "${enable_mod_muc+set}" = set; then
 else
   mr_enable_mod_muc=yes
 fi;
-if test "$mr_enable_mod_muc" = yes; then
+if test "$mr_enable_mod_muc" = "yes"; then
 mod_muc=mod_muc
 make_mod_muc=mod_muc/Makefile
 fi
@@ -3682,7 +3683,7 @@ if test "${enable_eldap+set}" = set; then
 else
   mr_enable_eldap=yes
 fi;
-if test "$mr_enable_eldap" = yes; then
+if test "$mr_enable_eldap" = "yes"; then
 eldap=eldap
 make_eldap=eldap/Makefile
 fi
@@ -3704,7 +3705,7 @@ if test "${enable_web+set}" = set; then
 else
   mr_enable_web=yes
 fi;
-if test "$mr_enable_web" = yes; then
+if test "$mr_enable_web" = "yes"; then
 web=web
 make_web=web/Makefile
 fi
@@ -3726,7 +3727,7 @@ if test "${enable_tls+set}" = set; then
 else
   mr_enable_tls=yes
 fi;
-if test "$mr_enable_tls" = yes; then
+if test "$mr_enable_tls" = "yes"; then
 tls=tls
 make_tls=tls/Makefile
 fi
@@ -3737,7 +3738,29 @@ echo "${ECHO_T}$mr_enable_tls" >&6
 
 
 
-ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_eldap $make_web stringprep/Makefile $make_tls"
+odbc=
+make_odbc=
+echo "$as_me:$LINENO: checking whether build odbc" >&5
+echo $ECHO_N "checking whether build odbc... $ECHO_C" >&6
+# Check whether --enable-odbc or --disable-odbc was given.
+if test "${enable_odbc+set}" = set; then
+  enableval="$enable_odbc"
+  mr_enable_odbc="$enableval"
+else
+  mr_enable_odbc=no
+fi;
+if test "$mr_enable_odbc" = "yes"; then
+odbc=odbc
+make_odbc=odbc/Makefile
+fi
+echo "$as_me:$LINENO: result: $mr_enable_odbc" >&5
+echo "${ECHO_T}$mr_enable_odbc" >&6
+
+
+
+
+
+ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_eldap $make_web stringprep/Makefile $make_tls $make_odbc"
 
 #openssl
 
@@ -3816,8 +3839,10 @@ else
 fi
 
         if test x"$have_openssl" = xyes; then
+            save_CPPFLAGS=$CPPFLAGS
+            CPPFLAGS="-I$ssl_prefix/lib $CPPFLAGS"
 
-for ac_header in $ssl_prefix/include/openssl/ssl.h
+for ac_header in openssl/ssl.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -3930,11 +3955,13 @@ fi
 
 done
 
+            CPPFLAGS=$save_CPPFLAGS
             if test x"$have_openssl_h" = xyes; then
                 have_openssl=yes
                 printf "openssl found in $ssl_prefix\n";
                 SSL_LIBS="-L$ssl_prefix/lib -lssl -lcrypto"
-                SSL_CFLAGS="-I$ssl_prefix/include/openssl -DHAVE_SSL"
+                CPPFLAGS="-I$ssl_prefix/lib $CPPFLAGS"
+                SSL_CFLAGS="-DHAVE_SSL"
                 break
             fi
         fi
@@ -4452,6 +4479,7 @@ do
   "$make_web" ) CONFIG_FILES="$CONFIG_FILES $make_web" ;;
   "stringprep/Makefile" ) CONFIG_FILES="$CONFIG_FILES stringprep/Makefile" ;;
   "$make_tls" ) CONFIG_FILES="$CONFIG_FILES $make_tls" ;;
+  "$make_odbc" ) CONFIG_FILES="$CONFIG_FILES $make_odbc" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
@@ -4562,6 +4590,8 @@ s,@web@,$web,;t t
 s,@make_web@,$make_web,;t t
 s,@tls@,$tls,;t t
 s,@make_tls@,$make_tls,;t t
+s,@odbc@,$odbc,;t t
+s,@make_odbc@,$make_odbc,;t t
 s,@SSL_LIBS@,$SSL_LIBS,;t t
 s,@SSL_CFLAGS@,$SSL_CFLAGS,;t t
 CEOF

@@ -28,6 +28,7 @@ AC_MOD_ENABLE(mod_muc, yes)
 AC_MOD_ENABLE(eldap, yes)
 AC_MOD_ENABLE(web, yes)
 AC_MOD_ENABLE(tls, yes)
+AC_MOD_ENABLE(odbc, no)
 
 AC_CONFIG_FILES([Makefile
                  $make_mod_irc
@@ -36,7 +37,8 @@ AC_CONFIG_FILES([Makefile
                  $make_eldap
                  $make_web
                  stringprep/Makefile
-                 $make_tls])
+                 $make_tls
+                 $make_odbc])
 #openssl
 AM_WITH_OPENSSL
 AC_OUTPUT
