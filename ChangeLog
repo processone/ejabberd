@@ -1,5 +1,7 @@
 2005-05-23  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/fr.msg: Updated (thanks to Mickael Remond)
+
 	* src/odbc/Makefile.in: Added
 
 	* src/configure.ac: Updated for odbc support
