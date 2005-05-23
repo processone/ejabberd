@@ -19,5 +19,3 @@ make roster set to work in one transaction
 add traffic shapers to c2s connection before authentification
 more traffic shapers
 SNMP
-
-(test svn/dav)
