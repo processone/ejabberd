@@ -264,6 +264,16 @@
 {"Members:", "Membres:"}.
 {"Displayed Groups:", "Groupes affichés:"}.
 {"Group ", "Groupe "}.
+{"Users last activity", "Dernière activité des utilisateurs"}.
+{"Period: ", "Période:"}.
+{"Last month", "Dernier mois"}.
+{"Last year", "Dernière année"}.
+{"All activity", "Toute activité"}.
+{"Show Ordinary Table", "Montrer la table ordinaire"}.
+{"Show Integral Table", "Montrer la table intégralement"}.
+{"Modules Management", "Gestion des modules"}.
+{"Modules at ", "Modules sur "}.
+{"Start", "Démarrer"}.
 
 % Local Variables:
 % mode: erlang
