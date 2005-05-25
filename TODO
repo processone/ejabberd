@@ -1,20 +1,14 @@
-admin tool
 mod_muc logging
 
 admin interface
 	users management
 		statistics about each user
 		statistics about each connection
-	node management
-		node restart/shutdown
-		statistics about memory usage
 
 S2S:
-	rewrite S2S key validation
 	check "id" attributes in db:verify packets
 
 more correctly work with SRV DNS records (priority, weight, etc...)
-TLS
 make roster set to work in one transaction
 add traffic shapers to c2s connection before authentification
 more traffic shapers

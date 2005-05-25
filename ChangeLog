@@ -1,4 +1,11 @@
+2005-05-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/pt-br.msg: New Brazilian Portuguese translation (thanks
+	to Felipe Brito Vasconcellos)
+
 2005-05-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): ejabberd-0.9.1 released
 
 	* src/msgs/fr.msg: Updated (thanks to Mickael Remond)
 
