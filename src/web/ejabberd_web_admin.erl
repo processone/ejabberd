@@ -1556,7 +1556,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
     nothing.
 
 
-list_last_activity(_Lang, Integral, Period) ->
+list_last_activity(Lang, Integral, Period) ->
     {MegaSecs, Secs, _MicroSecs} = now(),
     TimeStamp = MegaSecs * 1000000 + Secs,
     case Period of
@@ -1580,26 +1580,32 @@ list_last_activity(_Lang, Integral, Period) ->
 	    [];
 	Vals ->
 	    Hist = histogram(Vals, Integral),
-	    Left = case Days of
-		       infinity ->
-			   0;
-		       _ ->
-			   Days - length(Hist)
-		   end,
-	    Tail = case Integral andalso Hist /= [] of
-		       true ->
-			   lists:duplicate(Left, lists:last(Hist));
-		       _ ->
-			   lists:duplicate(Left, 0)
-		   end,
-	    Max = lists:max(Hist),
-	    [?XAE("ol",
-		  [{"id", "lastactivity"}, {"start", "0"}],
-		  [?XAE("li",
-			[{"style", "width:" ++ integer_to_list(
-						 trunc(90 * V / Max)) ++ "%;"}],
-			[{xmlcdata, integer_to_list(V)}])
-		   || V <- Hist ++ Tail])]
+	    if
+		Hist == [] ->
+		    [?CT("No data")];
+		true ->
+		    Left = if
+			       Days == infinity ->
+				   0;
+			       true ->
+				   Days - length(Hist)
+			   end,
+		    Tail = if
+			       Integral ->
+				   lists:duplicate(Left, lists:last(Hist));
+			       true ->
+				   lists:duplicate(Left, 0)
+			   end,
+		    Max = lists:max(Hist),
+		    [?XAE("ol",
+			  [{"id", "lastactivity"}, {"start", "0"}],
+			  [?XAE("li",
+				[{"style",
+				  "width:" ++ integer_to_list(
+						trunc(90 * V / Max)) ++ "%;"}],
+				[{xmlcdata, integer_to_list(V)}])
+			   || V <- Hist ++ Tail])]
+	    end
     end.
 
 histogram(Values, Integral) ->
