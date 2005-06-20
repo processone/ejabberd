@@ -12,8 +12,8 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 stop/0,
+-export([start/2,
+	 stop/1,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 on_presence_update/4,
@@ -26,28 +26,28 @@
 -record(last_activity, {us, timestamp, status}).
 
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(last_activity,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, last_activity)}]),
     update_table(),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_LAST,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_LAST,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST,
 				  ?MODULE, process_sm_iq, IQDisc),
-    ejabberd_hooks:add(remove_user,
+    ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(unset_presence_hook,
+    ejabberd_hooks:add(unset_presence_hook, Host,
 		       ?MODULE, on_presence_update, 50).
 
-stop() ->
-    ejabberd_hooks:delete(remove_user,
+stop(Host) ->
+    ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(unset_presence_hook,
+    ejabberd_hooks:delete(unset_presence_hook, Host,
 			  ?MODULE, on_presence_update, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_LAST),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_LAST).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_LAST),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_LAST).
 
 process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
@@ -72,7 +72,8 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    Server = To#jid.lserver,
 	    {Subscription, _Groups} =
 		ejabberd_hooks:run_fold(
-		  roster_get_jid_info, {none, []}, [User, Server, From]),
+		  roster_get_jid_info, Server,
+		  {none, []}, [User, Server, From]),
 	    if
 		(Subscription == both) or (Subscription == from) ->
 		    case catch mod_privacy:get_user_list(User, Server) of

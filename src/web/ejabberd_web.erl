@@ -51,17 +51,46 @@ make_xhtml(Els) ->
 
 process_get({_, true},
 	    #request{us = US,
+		     path = ["admin", "server", SHost | RPath],
+		     q = Query,
+		     lang = Lang} = Request) ->
+    Host = jlib:nameprep(SHost),
+    case lists:member(Host, ?MYHOSTS) of
+	true ->
+	    case US of
+		{User, Server} ->
+		    case acl:match_rule(
+			   Host, configure, jlib:make_jid(User, Server, "")) of
+			deny ->
+			    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
+			allow ->
+			    ejabberd_web_admin:process_admin(
+			      Host, Request#request{path = RPath})
+		    end;
+		undefined ->
+		    {401,
+		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
+		     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
+					       [{xmlcdata, "401 Unauthorized"}]}])}
+	    end;
+	false ->
+	    {404, [], make_xhtml([?XC("h1", "Not found")])}
+    end;
+
+process_get({_, true},
+	    #request{us = US,
 		     path = ["admin" | RPath],
 		     q = Query,
 		     lang = Lang} = Request) ->
     case US of
 	{User, Server} ->
-	    case acl:match_rule(configure, jlib:make_jid(User, Server, "")) of
+	    case acl:match_rule(
+		   global, configure, jlib:make_jid(User, Server, "")) of
 		deny ->
 		    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
 		allow ->
 		    ejabberd_web_admin:process_admin(
-		      Request#request{path = RPath})
+		      global, Request#request{path = RPath})
 	    end;
 	undefined ->
 	    {401,

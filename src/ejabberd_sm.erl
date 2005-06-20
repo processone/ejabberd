@@ -21,9 +21,9 @@
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
 	 get_vh_session_list/1,
-	 register_iq_handler/3,
 	 register_iq_handler/4,
-	 unregister_iq_handler/1
+	 register_iq_handler/5,
+	 unregister_iq_handler/2
 	]).
 
 -include("ejabberd.hrl").
@@ -49,10 +49,13 @@ init() ->
     mnesia:add_table_index(presence, us),
     mnesia:subscribe(system),
     ets:new(sm_iqtable, [named_table]),
-    ejabberd_hooks:add(offline_message_hook,
-		       ejabberd_sm, bounce_offline_message, 100),
-    ejabberd_hooks:add(remove_user,
-		       ejabberd_sm, disconnect_removed_user, 100),
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_hooks:add(offline_message_hook, Host,
+				 ejabberd_sm, bounce_offline_message, 100),
+	      ejabberd_hooks:add(remove_user, Host,
+				 ejabberd_sm, disconnect_removed_user, 100)
+      end, ?MYHOSTS),
     loop().
 
 loop() ->
@@ -69,20 +72,20 @@ loop() ->
 	{mnesia_system_event, {mnesia_down, Node}} ->
 	    clean_table_from_bad_node(Node),
 	    loop();
-	{register_iq_handler, XMLNS, Module, Function} ->
-	    ets:insert(sm_iqtable, {XMLNS, Module, Function}),
+	{register_iq_handler, Host, XMLNS, Module, Function} ->
+	    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function}),
 	    loop();
-	{register_iq_handler, XMLNS, Module, Function, Opts} ->
-	    ets:insert(sm_iqtable, {XMLNS, Module, Function, Opts}),
+	{register_iq_handler, Host, XMLNS, Module, Function, Opts} ->
+	    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function, Opts}),
 	    loop();
-	{unregister_iq_handler, XMLNS} ->
-	    case ets:lookup(sm_iqtable, XMLNS) of
+	{unregister_iq_handler, Host, XMLNS} ->
+	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
 		[{_, Module, Function, Opts}] ->
 		    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
 		_ ->
 		    ok
 	    end,
-	    ets:delete(sm_iqtable, XMLNS),
+	    ets:delete(sm_iqtable, {XMLNS, Host}),
 	    loop();
 	_ ->
 	    loop()
@@ -170,24 +173,28 @@ do_route(From, To, Packet) ->
 			    "subscribe" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
+				   LServer,
 				   false,
 				   [User, Server, From, subscribe]),
 				 true};
 			    "subscribed" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
+				   LServer,
 				   false,
 				   [User, Server, From, subscribed]),
 				 true};
 			    "unsubscribe" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
+				   LServer,
 				   false,
 				   [User, Server, From, unsubscribe]),
 				 true};
 			    "unsubscribed" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
+				   LServer,
 				   false,
 				   [User, Server, From, unsubscribed]),
 				 true};
@@ -220,6 +227,7 @@ do_route(From, To, Packet) ->
 						true ->
 						    ejabberd_hooks:run(
 						      offline_subscription_hook,
+						      LServer,
 						      [From, To, Packet]);
 						_ ->
 						    Err = jlib:make_error_reply(
@@ -298,6 +306,7 @@ route_message(From, To, Packet) ->
 		    case ejabberd_auth:is_user_exists(LUser, LServer) of
 			true ->
 			    ejabberd_hooks:run(offline_message_hook,
+					       LServer,
 					       [From, To, Packet]);
 			_ ->
 			    Err = jlib:make_error_reply(
@@ -354,7 +363,8 @@ unset_presence(User, Server, Resource, Status) ->
 		mnesia:delete({presence, USR})
 	end,
     mnesia:transaction(F),
-    ejabberd_hooks:run(unset_presence_hook, [User, Server, Resource, Status]).
+    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
+		       [User, Server, Resource, Status]).
 
 get_user_present_resources(LUser, LServer) ->
     US = {LUser, LServer},
@@ -392,7 +402,8 @@ process_iq(From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
 	#iq{xmlns = XMLNS} ->
-	    case ets:lookup(sm_iqtable, XMLNS) of
+	    Host = To#jid.lserver,
+	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ),
 		    if
@@ -403,7 +414,7 @@ process_iq(From, To, Packet) ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
-		    gen_iq_handler:handle(Module, Function, Opts,
+		    gen_iq_handler:handle(Host, Module, Function, Opts,
 					  From, To, IQ);
 		[] ->
 		    Err = jlib:make_error_reply(
@@ -418,14 +429,14 @@ process_iq(From, To, Packet) ->
 	    ok
     end.
 
-register_iq_handler(XMLNS, Module, Fun) ->
-    ejabberd_sm ! {register_iq_handler, XMLNS, Module, Fun}.
+register_iq_handler(Host, XMLNS, Module, Fun) ->
+    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.
 
-register_iq_handler(XMLNS, Module, Fun, Opts) ->
-    ejabberd_sm ! {register_iq_handler, XMLNS, Module, Fun, Opts}.
+register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
+    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
 
-unregister_iq_handler(XMLNS) ->
-    ejabberd_sm ! {unregister_iq_handler, XMLNS}.
+unregister_iq_handler(Host, XMLNS) ->
+    ejabberd_sm ! {unregister_iq_handler, Host, XMLNS}.
 
 
 

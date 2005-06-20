@@ -12,8 +12,8 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 stop/0,
+-export([start/2,
+	 stop/1,
 	 process_sm_iq/3,
 	 remove_user/2]).
 
@@ -22,21 +22,21 @@
 
 -record(private_storage, {usns, xml}).
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, private_storage)}]),
     update_table(),
-    ejabberd_hooks:add(remove_user,
+    ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVATE,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE,
 				  ?MODULE, process_sm_iq, IQDisc).
 
-stop() ->
-    ejabberd_hooks:delete(remove_user,
+stop(Host) ->
+    ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_PRIVATE).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE).
 
 
 process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->

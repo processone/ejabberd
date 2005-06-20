@@ -14,7 +14,7 @@
 -vsn('$Revision$ ').
 
 %% External exports
--export([process_admin/1]).
+-export([process_admin/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -52,7 +52,7 @@
 		      {"size", Size}])).
 -define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
 
-make_xhtml(Els, Lang) ->
+make_xhtml(Els, global, Lang) ->
     {200, [html],
      {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
 			   {"xml:lang", Lang},
@@ -76,16 +76,60 @@ make_xhtml(Els, Lang) ->
 		       [?XE("ul",
 			    [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
 			     ?LI([?ACT("/admin/access/", "Access Rules")]),
-			     ?LI([?ACT("/admin/users/", "Users")]),
-			     ?LI([?ACT("/admin/online-users/", "Online Users")]),
-			     ?LI([?ACT("/admin/last-activity/", "Last Activity")]),
 			     ?LI([?ACT("/admin/nodes/", "Nodes")]),
 			     ?LI([?ACT("/admin/stats/", "Statistics")])
+			    ]
+			   )]),
+		  ?XAE("div",
+		       [{"id", "content"}],
+		       Els),
+		  ?XAE("div",
+		       [{"id", "clearcopyright"}],
+		       [{xmlcdata, ""}])]),
+	    ?XAE("div",
+		 [{"id", "copyrightouter"}],
+		 [?XAE("div",
+		       [{"id", "copyright"}],
+		       [?XCT("p",
+			     "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One")
+		       ])])])
+      ]}};
+
+make_xhtml(Els, Host, Lang) ->
+    Base = "/admin/server/" ++ Host ++ "/",
+    {200, [html],
+     {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
+			   {"xml:lang", Lang},
+			   {"lang", Lang}],
+      [{xmlelement, "head", [],
+	[{xmlelement, "meta", [{"http-equiv", "Content-Type"},
+			       {"content", "text/html; charset=utf-8"}], []},
+	 {xmlelement, "link", [{"href", Base ++ "style.css"},
+			       {"type", "text/css"},
+			       {"rel", "stylesheet"}], []}]},
+       ?XE("body",
+           [?XAE("div",
+		 [{"id", "container"}],
+		 [?XAE("div",
+		       [{"id", "header"}],
+		       [?XE("h1",
+			    [?ACT(Base, "ejabberd administration")]
+			   )]),
+		  ?XAE("div",
+		       [{"id", "navigation"}],
+		       [?XE("ul",
+			    [?LI([?ACT(Base ++ "acls/", "Access Control Lists")]),
+			     ?LI([?ACT(Base ++ "access/", "Access Rules")]),
+			     ?LI([?ACT(Base ++ "users/", "Users")]),
+			     ?LI([?ACT(Base ++ "online-users/", "Online Users")]),
+			     ?LI([?ACT(Base ++ "last-activity/", "Last Activity")]),
+			     ?LI([?ACT(Base ++ "nodes/", "Nodes")]),
+			     ?LI([?ACT(Base ++ "stats/", "Statistics")])
 			    ] ++
 			    case lists:member(mod_shared_roster,
-					      gen_mod:loaded_modules()) of
+					      gen_mod:loaded_modules(Host)) of
 				true ->
-				    [?LI([?ACT("/admin/shared-roster/", "Shared Roster")])];
+				    [?LI([?ACT(Base ++ "shared-roster/", "Shared Roster")])];
 				false ->
 				    []
 			    end
@@ -105,7 +149,14 @@ make_xhtml(Els, Lang) ->
 		       ])])])
       ]}}.
 
-css() -> "
+css(Host) ->
+    Base = case Host of
+	       global ->
+		   "/admin/";
+	       _ ->
+		   "/admin/server/" ++ Host ++ "/"
+	   end,
+    "
 html,body {
   background: white;
   margin: 0;
@@ -130,7 +181,7 @@ html>body #container {
   height: 55px;
   padding: 0;
   margin: 0;
-  background: transparent url(\"/admin/logo-fill.png\");
+  background: transparent url(\"" ++ Base ++ "logo-fill.png\");
 }
 
 #header h1 a {
@@ -141,7 +192,7 @@ html>body #container {
   height: 55px;
   padding: 0;
   margin: 0;
-  background: transparent url(\"/admin/logo.png\") no-repeat;
+  background: transparent url(\"" ++ Base ++ "logo.png\") no-repeat;
   display: block;
   text-indent: -700em;
 }
@@ -466,7 +517,8 @@ logo_fill() ->
       "1c5dvhSU2BpKqBXl6R0ljYGS50R5zVC+tVD+vfE6YyUexE9x7g4AAAAASUVO"
       "RK5CYII=").
 
-process_admin(#request{us = US,
+process_admin(global,
+	      #request{us = US,
 		       path = [],
 		       q = Query,
 		       lang = Lang} = Request) ->
@@ -476,41 +528,63 @@ process_admin(#request{us = US,
 			  ?ACT("/admin/acls-raw/", "(raw)")]),
 		     ?LI([?ACT("/admin/access/", "Access Rules"), ?C(" "),
 			  ?ACT("/admin/access-raw/", "(raw)")]),
-		     ?LI([?ACT("/admin/users/", "Users")]),
-		     ?LI([?ACT("/admin/online-users/", "Online Users")]),
-		     ?LI([?ACT("/admin/last-activity/", "Last Activity")]),
 		     ?LI([?ACT("/admin/nodes/", "Nodes")]),
 		     ?LI([?ACT("/admin/stats/", "Statistics")])
+		    ]
+		   )
+	       ], global, Lang);
+
+process_admin(Host,
+	      #request{us = US,
+		       path = [],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    Base = "/admin/server/" ++ Host ++ "/",
+    make_xhtml([?XCT("h1", "ejabberd administration"),
+		?XE("ul",
+		    [?LI([?ACT(Base ++ "acls/", "Access Control Lists"), ?C(" "),
+			  ?ACT(Base ++ "acls-raw/", "(raw)")]),
+		     ?LI([?ACT(Base ++ "access/", "Access Rules"), ?C(" "),
+			  ?ACT(Base ++ "access-raw/", "(raw)")]),
+		     ?LI([?ACT(Base ++ "users/", "Users")]),
+		     ?LI([?ACT(Base ++ "online-users/", "Online Users")]),
+		     ?LI([?ACT(Base ++ "last-activity/", "Last Activity")]),
+		     ?LI([?ACT(Base ++ "nodes/", "Nodes")]),
+		     ?LI([?ACT(Base ++ "stats/", "Statistics")])
 		    ] ++
 		    case lists:member(mod_shared_roster,
-				      gen_mod:loaded_modules()) of
+				      gen_mod:loaded_modules(Host)) of
 			true ->
-			    [?LI([?ACT("/admin/shared-roster/", "Shared Roster")])];
+			    [?LI([?ACT(Base ++ "shared-roster/", "Shared Roster")])];
 			false ->
 			    []
 		    end
 		   )
-	       ], Lang);
+	       ], Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["style.css"],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    {200, [{"Content-Type", "text/css"}], css()};
+    {200, [{"Content-Type", "text/css"}], css(Host)};
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["logo.png"],
 		       q = Query,
 		       lang = Lang} = Request) ->
     {200, [{"Content-Type", "image/png"}], logo()};
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["logo-fill.png"],
 		       q = Query,
 		       lang = Lang} = Request) ->
     {200, [{"Content-Type", "image/png"}], logo_fill()};
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["acls-raw"],
 		       q = Query,
 		       lang = Lang} = Request) ->
@@ -520,7 +594,7 @@ process_admin(#request{us = US,
 		      {ok, Tokens, _} ->
 			  case erl_parse:parse_term(Tokens) of
 			      {ok, NewACLs} ->
-				  case acl:add_list(NewACLs, true) of
+				  case acl:add_list(Host, NewACLs, true) of
 				      ok ->
 					  ok;
 				      _ ->
@@ -535,7 +609,11 @@ process_admin(#request{us = US,
 	      _ ->
 		  nothing
 	  end,
-    ACLs = lists:flatten(io_lib:format("~p.", [ets:tab2list(acl)])),
+    ACLs = lists:flatten(
+	     io_lib:format(
+	       "~p.", [lists:keysort(
+			 2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
+					      [], [{{acl, '$1', '$2'}}]}]))])),
     make_xhtml([?XCT("h1", "ejabberd access control lists configuration")] ++
 	       case Res of
 		   ok -> [?CT("submitted"), ?P];
@@ -550,9 +628,10 @@ process_admin(#request{us = US,
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ], Lang);
+	       ], Host, Lang);
 
-process_admin(#request{method = Method,
+process_admin(Host,
+	      #request{method = Method,
 			us = US,
 			path = ["acls"],
 			q = Query,
@@ -560,12 +639,12 @@ process_admin(#request{method = Method,
     ?INFO_MSG("query: ~p", [Query]),
     Res = case Method of
 	      'POST' ->
-		  case catch acl_parse_query(Query) of
+		  case catch acl_parse_query(Host, Query) of
 		      {'EXIT', _} ->
 			  error;
 		      NewACLs ->
-			  ?INFO_MSG("NewACLs: ~p", [NewACLs]),
-			  case acl:add_list(NewACLs, true) of
+			  ?INFO_MSG("NewACLs at ~s: ~p", [Host, NewACLs]),
+			  case acl:add_list(Host, NewACLs, true) of
 			      ok ->
 				  ?INFO_MSG("NewACLs: ok", []),
 				  ok;
@@ -576,7 +655,9 @@ process_admin(#request{method = Method,
 	      _ ->
 		  nothing
 	  end,
-    ACLs = lists:keysort(2, ets:tab2list(acl)),
+    ACLs = lists:keysort(
+	     2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
+				  [], [{{acl, '$1', '$2'}}]}])),
     make_xhtml([?XCT("h1", "ejabberd access control lists configuration")] ++
 	       case Res of
 		   ok -> [?CT("submitted"), ?P];
@@ -591,9 +672,10 @@ process_admin(#request{method = Method,
 		      ?C(" "),
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ], Lang);
+	       ], Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 			path = ["access-raw"],
 			q = Query,
 			lang = Lang} = Request) ->
@@ -601,17 +683,18 @@ process_admin(#request{us = US,
 	fun(Rs) ->
 		mnesia:transaction(
 		  fun() ->
-			  Os = mnesia:select(config,
-					     [{{config, {access, '$1'}, '$2'},
-					       [],
-					       ['$_']}]),
+			  Os = mnesia:select(
+				 config,
+				 [{{config, {access, '$1', Host}, '$2'},
+				   [],
+				   ['$_']}]),
 			  lists:foreach(fun(O) ->
 						mnesia:delete_object(O)
 					end, Os),
 			  lists:foreach(
 			    fun({access, Name, Rules}) ->
 				    mnesia:write({config,
-						  {access, Name},
+						  {access, Name, Host},
 						  Rules})
 			    end, Rs)
 		  end)
@@ -641,7 +724,7 @@ process_admin(#request{us = US,
 	lists:flatten(
 	  io_lib:format(
 	    "~p.", [ets:select(config,
-			       [{{config, {access, '$1'}, '$2'},
+			       [{{config, {access, '$1', Host}, '$2'},
 				 [],
 				 [{{access, '$1', '$2'}}]}])])),
     make_xhtml([?XCT("h1", "ejabberd access rules configuration")] ++
@@ -658,9 +741,10 @@ process_admin(#request{us = US,
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ], Lang);
+	       ], Host, Lang);
 
-process_admin(#request{method = Method,
+process_admin(Host,
+	      #request{method = Method,
 		       us = US,
 		       path = ["access"],
 		       q = Query,
@@ -668,7 +752,7 @@ process_admin(#request{method = Method,
     ?INFO_MSG("query: ~p", [Query]),
     Res = case Method of
 	      'POST' ->
-		  case catch access_parse_query(Query) of
+		  case catch access_parse_query(Host, Query) of
 		      {'EXIT', _} ->
 			  error;
 		      ok ->
@@ -679,7 +763,7 @@ process_admin(#request{method = Method,
 	  end,
     AccessRules =
 	ets:select(config,
-		   [{{config, {access, '$1'}, '$2'},
+		   [{{config, {access, '$1', Host}, '$2'},
 		     [],
 		     [{{access, '$1', '$2'}}]}]),
     make_xhtml([?XCT("h1", "ejabberd access rules configuration")] ++
@@ -694,9 +778,10 @@ process_admin(#request{method = Method,
 		      ?BR,
 		      ?INPUTT("submit", "delete", "Delete Selected")
 		     ])
-	       ], Lang);
+	       ], Host, Lang);
 
-process_admin(#request{method = Method,
+process_admin(Host,
+	      #request{method = Method,
 		       us = US,
 		       path = ["access", SName],
 		       q = Query,
@@ -708,7 +793,7 @@ process_admin(#request{method = Method,
 		  case parse_access_rule(String) of
 		      {ok, Rs} ->
 			  ejabberd_config:add_global_option(
-			    {access, Name}, Rs),
+			    {access, Name, Host}, Rs),
 			  ok;
 		      _ ->
 			  error
@@ -716,7 +801,7 @@ process_admin(#request{method = Method,
 	      _ ->
 		  nothing
 	  end,
-    Rules = case ejabberd_config:get_global_option({access, Name}) of
+    Rules = case ejabberd_config:get_global_option({access, Name, Host}) of
 		undefined ->
 		    [];
 		Rs1 ->
@@ -734,34 +819,38 @@ process_admin(#request{method = Method,
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ], Lang);
+	       ], Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 			path = ["users"],
 			q = Query,
-			lang = Lang} = Request) ->
-    Res = list_users(Query, Lang),
-    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
+			lang = Lang} = Request) when is_list(Host) ->
+    Res = list_users(Host, Query, Lang),
+    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["users", Diap],
 		       q = Query,
-		       lang = Lang} = Request) ->
-    Res = list_users_in_diapason(Diap, Lang),
-    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
+		       lang = Lang} = Request) when is_list(Host) ->
+    Res = list_users_in_diapason(Host, Diap, Lang),
+    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 			path = ["online-users"],
 			q = Query,
-			lang = Lang} = Request) ->
-    Res = list_online_users(Lang),
-    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Lang);
+			lang = Lang} = Request) when is_list(Host) ->
+    Res = list_online_users(Host, Lang),
+    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
 
-process_admin(#request{method = Method,
+process_admin(Host,
+	      #request{method = Method,
 		       us = US,
 		       path = ["last-activity"],
 		       q = Query,
-		       lang = Lang} = Request) ->
+		       lang = Lang} = Request) when is_list(Host) ->
     ?INFO_MSG("query: ~p", [Query]),
     Month = case lists:keysearch("period", 1, Query) of
 		{value, {_, Val}} ->
@@ -771,9 +860,9 @@ process_admin(#request{method = Method,
 	    end,
     Res = case lists:keysearch("ordinary", 1, Query) of
 	      {value, {_, _}} ->
-		  list_last_activity(Lang, false, Month);
+		  list_last_activity(Host, Lang, false, Month);
 	      _ ->
-		  list_last_activity(Lang, true, Month)
+		  list_last_activity(Host, Lang, true, Month)
 	  end,
     make_xhtml([?XCT("h1", "Users last activity")] ++
 	       [?XAE("form", [{"method", "post"}],
@@ -795,71 +884,80 @@ process_admin(#request{method = Method,
 		      ?C(" "),
 		      ?INPUTT("submit", "integral", "Show Integral Table")
 		     ])] ++
-	       Res, Lang);
+	       Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["stats"],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    Res = get_stats(Lang),
-    make_xhtml([?XCT("h1", "ejabberd stats")] ++ Res, Lang);
+    Res = get_stats(Host, Lang),
+    make_xhtml([?XCT("h1", "ejabberd stats")] ++ Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["user", U],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    Res = user_info(U, Query, Lang),
-    make_xhtml(Res, Lang);
+    Res = user_info(U, Host, Query, Lang),
+    make_xhtml(Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["user", U, "queue"],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    Res = user_queue(U, Query, Lang),
-    make_xhtml(Res, Lang);
+    Res = user_queue(U, Host, Query, Lang),
+    make_xhtml(Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["user", U, "roster"],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    Res = user_roster(U, Query, Lang, true),
-    make_xhtml(Res, Lang);
+    Res = user_roster(U, Host, Query, Lang, true),
+    make_xhtml(Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["nodes"],
 		       q = Query,
 		       lang = Lang} = Request) ->
     Res = get_nodes(Lang),
-    make_xhtml(Res, Lang);
+    make_xhtml(Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 		       path = ["node", SNode | NPath],
 		       q = Query,
 		       lang = Lang} = Request) ->
     case search_running_node(SNode) of
 	false ->
-	    make_xhtml([?XCT("h1", "Node not found")], Lang);
+	    make_xhtml([?XCT("h1", "Node not found")], Host, Lang);
 	Node ->
-	    Res = get_node(Node, NPath, Query, Lang),
-	    make_xhtml(Res, Lang)
+	    Res = get_node(Host, Node, NPath, Query, Lang),
+	    make_xhtml(Res, Host, Lang)
     end;
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 			path = ["shared-roster"],
 			q = Query,
 			lang = Lang} = Request) ->
     Res = list_shared_roster_groups(Query, Lang),
-    make_xhtml(Res, Lang);
+    make_xhtml(Res, Host, Lang);
 
-process_admin(#request{us = US,
+process_admin(Host,
+	      #request{us = US,
 			path = ["shared-roster", Group],
 			q = Query,
 			lang = Lang} = Request) ->
     Res = shared_roster_group(Group, Query, Lang),
-    make_xhtml(Res, Lang);
+    make_xhtml(Res, Host, Lang);
 
-process_admin(#request{lang = Lang}) ->
-    setelement(1, make_xhtml([?XC("h1", "Not found")], Lang), 404).
+process_admin(Host,
+	      #request{lang = Lang}) ->
+    setelement(1, make_xhtml([?XC("h1", "Not found")], Host, Lang), 404).
 
 
 
@@ -924,8 +1022,9 @@ term_to_id(T) ->
     jlib:encode_base64(binary_to_list(term_to_binary(T))).
 
 
-acl_parse_query(Query) ->
-    ACLs = ets:tab2list(acl),
+acl_parse_query(Host, Query) ->
+    ACLs = ets:select(acl, [{{acl, {'$1', Host}, '$2'},
+			     [], [{{acl, '$1', '$2'}}]}]),
     case lists:keysearch("submit", 1, Query) of
 	{value, _} ->
 	    acl_parse_submit(ACLs, Query);
@@ -977,7 +1076,7 @@ string_to_spec("server", Val) ->
     {server, Val};
 string_to_spec("user_server", Val) ->
     #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
-    {user_server, U, S};
+    {user, U, S};
 string_to_spec("raw", Val) ->
     {ok, Tokens, _} = erl_scan:string(Val ++ "."),
     {ok, NewSpec} = erl_parse:parse_term(Tokens),
@@ -1016,31 +1115,31 @@ access_rules_to_xhtml(AccessRules, Lang) ->
 		  )]
 	     )]).
 
-access_parse_query(Query) ->
+access_parse_query(Host, Query) ->
     AccessRules =
 	ets:select(config,
-		   [{{config, {access, '$1'}, '$2'},
+		   [{{config, {access, '$1', Host}, '$2'},
 		     [],
 		     [{{access, '$1', '$2'}}]}]),
     case lists:keysearch("addnew", 1, Query) of
 	{value, _} ->
-	    access_parse_addnew(AccessRules, Query);
+	    access_parse_addnew(AccessRules, Host, Query);
 	_ ->
 	    case lists:keysearch("delete", 1, Query) of
 		{value, _} ->
-		    access_parse_delete(AccessRules, Query)
+		    access_parse_delete(AccessRules, Host, Query)
 	    end
     end.
 
-access_parse_addnew(AccessRules, Query) ->
+access_parse_addnew(AccessRules, Host, Query) ->
     case lists:keysearch("namenew", 1, Query) of
 	{value, {_, String}} when String /= "" ->
 	    Name = list_to_atom(String),
-	    ejabberd_config:add_global_option({access, Name}, []),
+	    ejabberd_config:add_global_option({access, Name, Host}, []),
 	    ok
     end.
 
-access_parse_delete(AccessRules, Query) ->
+access_parse_delete(AccessRules, Host, Query) ->
     lists:foreach(
       fun({access, Name, _Rules} = AccessRule) ->
 	      ID = term_to_id(AccessRule),
@@ -1048,7 +1147,7 @@ access_parse_delete(AccessRules, Query) ->
 		  true ->
 		      mnesia:transaction(
 			fun() ->
-				mnesia:delete({config, {access, Name}})
+				mnesia:delete({config, {access, Name, Host}})
 			end);
 		  _ ->
 		      ok
@@ -1091,9 +1190,9 @@ parse_access_rule(Text) ->
 
 
 
-list_users(Query, Lang) ->
+list_users(Host, Query, Lang) ->
     Res = list_users_parse_query(Query),
-    Users = ejabberd_auth:dirty_get_registered_users(),
+    Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     FUsers =
 	case length(SUsers) of
@@ -1162,8 +1261,8 @@ list_users_parse_query(Query) ->
     end.
 
 
-list_users_in_diapason(Diap, Lang) ->
-    Users = ejabberd_auth:dirty_get_registered_users(),
+list_users_in_diapason(Host, Diap, Lang) ->
+    Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     {ok, [S1, S2]} = regexp:split(Diap, "-"),
     N1 = list_to_integer(S1),
@@ -1184,7 +1283,7 @@ list_given_users(Users, Prefix, Lang) ->
 		       US = {User, Server},
 		       QueueLen = length(mnesia:dirty_read({offline_msg, US})),
 		       FQueueLen = [?AC(Prefix ++ "user/" ++
-					User ++ "@" ++ Server ++ "/queue/",
+					User ++ "/queue/",
 					integer_to_list(QueueLen))],
 		       FLast =
 			   case ejabberd_sm:get_user_resources(User, Server) of
@@ -1208,8 +1307,7 @@ list_given_users(Users, Prefix, Lang) ->
 				   ?T("Online")
 			   end,
 		       ?XE("tr",
-			   [?XE("td", [?AC(Prefix ++ "user/" ++
-					   us_to_list(US) ++ "/",
+			   [?XE("td", [?AC(Prefix ++ "user/" ++ User ++ "/",
 					   us_to_list(US))]),
 			    ?XE("td", FQueueLen),
 			    ?XC("td", FLast)])
@@ -1223,14 +1321,13 @@ su_to_list({Server, User}) ->
     jlib:jid_to_string({User, Server, ""}).
 
 
-get_stats(Lang) ->
+get_stats(global, Lang) ->
     OnlineUsers = mnesia:table_info(presence, size),
     AuthUsers = mnesia:table_info(session, size),
     RegisteredUsers = mnesia:table_info(passwd, size),
     S2SConns = ejabberd_s2s:dirty_get_connections(),
     S2SConnections = length(S2SConns),
     S2SServers = length(lists:usort([element(2, C) || C <- S2SConns])),
-    
     [?XAE("table", [],
 	  [?XE("tbody",
 	       [?XE("tr", [?XCT("td", "Registered users"),
@@ -1244,22 +1341,31 @@ get_stats(Lang) ->
 		?XE("tr", [?XCT("td", "Outgoing S2S servers"),
 			   ?XC("td", integer_to_list(S2SServers))])
 	       ])
+	  ])];
+
+get_stats(Host, Lang) ->
+    OnlineUsers = length(ejabberd_sm:get_vh_session_list(Host)),
+    RegisteredUsers = length(ejabberd_auth:get_vh_registered_users(Host)),
+    [?XAE("table", [],
+	  [?XE("tbody",
+	       [?XE("tr", [?XCT("td", "Registered users"),
+			   ?XC("td", integer_to_list(RegisteredUsers))]),
+		?XE("tr", [?XCT("td", "Online users"),
+			   ?XC("td", integer_to_list(OnlineUsers))])
+	       ])
 	  ])].
 
 
-list_online_users(_Lang) ->
-    Users = [{S, U} || {U, S, R} <- ejabberd_sm:dirty_get_sessions_list()],
+list_online_users(Host, _Lang) ->
+    Users = [{S, U} || {U, S, R} <- ejabberd_sm:get_vh_session_list(Host)],
     SUsers = lists:usort(Users),
     lists:flatmap(
-      fun(SU) ->
-	      [?AC("../user/" ++ su_to_list(SU) ++ "/", su_to_list(SU)), ?BR]
+      fun({S, U} = SU) ->
+	      [?AC("../user/" ++ U ++ "/", su_to_list(SU)), ?BR]
       end, SUsers).
 
-user_info(SUser, Query, Lang) ->
-    UJID = jlib:string_to_jid(SUser),
-    User = UJID#jid.user,
-    Server = UJID#jid.server,
-    US = {UJID#jid.luser, UJID#jid.lserver},
+user_info(User, Server, Query, Lang) ->
+    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
     Res = user_parse_query(User, Server, Query),
     Resources = ejabberd_sm:get_user_resources(User, Server),
     FResources =
@@ -1315,11 +1421,8 @@ user_parse_query(User, Server, Query) ->
     end.
 
 
-user_queue(SUser, Query, Lang) ->
-    UJID = jlib:string_to_jid(SUser),
-    User = UJID#jid.user,
-    Server = UJID#jid.server,
-    US = {UJID#jid.luser, UJID#jid.lserver},
+user_queue(User, Server, Query, Lang) ->
+    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
     Res = user_queue_parse_query(US, Query),
     Msgs = lists:keysort(3, mnesia:dirty_read({offline_msg, US})),
     FMsgs =
@@ -1409,11 +1512,8 @@ ask_to_pending(unsubscribe) -> none;
 ask_to_pending(Ask) -> Ask.
 
 
-user_roster(SUser, Query, Lang, Admin) ->
-    UJID = jlib:string_to_jid(SUser),
-    User = UJID#jid.user,
-    Server = UJID#jid.server,
-    US = {UJID#jid.luser, UJID#jid.lserver},
+user_roster(User, Server, Query, Lang, Admin) ->
+    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
     Items1 = mnesia:dirty_index_read(roster, US, #roster.us),
     Res = user_roster_parse_query(User, Server, Items1, Query, Admin),
     Items = mnesia:dirty_index_read(roster, US, #roster.us),
@@ -1556,7 +1656,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
     nothing.
 
 
-list_last_activity(Lang, Integral, Period) ->
+list_last_activity(Host, Lang, Integral, Period) ->
     {MegaSecs, Secs, _MicroSecs} = now(),
     TimeStamp = MegaSecs * 1000000 + Secs,
     case Period of
@@ -1571,7 +1671,7 @@ list_last_activity(Lang, Integral, Period) ->
 	    Days = 31
     end,
     case catch mnesia:dirty_select(
-		 last_activity, [{{last_activity, '_', '$1', '_'},
+		 last_activity, [{{last_activity, {'_', Host}, '$1', '_'},
 				  [{'>', '$1', TS}],
 				  [{'trunc', {'/',
 					      {'-', TimeStamp, '$1'},
@@ -1677,7 +1777,7 @@ search_running_node(SNode, [Node | Nodes]) ->
 	    search_running_node(SNode, Nodes)
     end.
 
-get_node(Node, [], Query, Lang) ->
+get_node(global, Node, [], Query, Lang) ->
     Res = node_parse_query(Node, Query),
     [?XC("h1", ?T("Node ") ++ atom_to_list(Node))] ++
 	case Res of
@@ -1689,7 +1789,6 @@ get_node(Node, [], Query, Lang) ->
 	     [?LI([?ACT("db/", "DB Management")]),
 	      ?LI([?ACT("backup/", "Backup Management")]),
 	      ?LI([?ACT("ports/", "Listened Ports Management")]),
-	      ?LI([?ACT("modules/", "Modules Management")]),
 	      ?LI([?ACT("stats/", "Statistics")])
 	     ]),
 	 ?XAE("form", [{"method", "post"}],
@@ -1698,7 +1797,13 @@ get_node(Node, [], Query, Lang) ->
 	       ?INPUTT("submit", "stop", "Stop")])
 	];
 
-get_node(Node, ["db"], Query, Lang) ->
+get_node(Host, Node, [], Query, Lang) ->
+    [?XC("h1", ?T("Node ") ++ atom_to_list(Node)),
+     ?XE("ul",
+	 [?LI([?ACT("modules/", "Modules Management")])])
+    ];
+
+get_node(global, Node, ["db"], Query, Lang) ->
     case rpc:call(Node, mnesia, system_info, [tables]) of
 	{badrpc, _Reason} ->
 	    [?XCT("h1", "RPC call error")];
@@ -1765,7 +1870,7 @@ get_node(Node, ["db"], Query, Lang) ->
 				)])])]
     end;
 
-get_node(Node, ["backup"], Query, Lang) ->
+get_node(global, Node, ["backup"], Query, Lang) ->
     Res = node_backup_parse_query(Node, Query),
     [?XC("h1", ?T("Backup Management at ") ++ atom_to_list(Node)),
      ?XAE("form", [{"method", "post"}],
@@ -1810,7 +1915,7 @@ get_node(Node, ["backup"], Query, Lang) ->
 		     ])
 		])])];
 
-get_node(Node, ["ports"], Query, Lang) ->
+get_node(global, Node, ["ports"], Query, Lang) ->
     Ports = rpc:call(Node, ejabberd_config, get_local_option, [listen]),
     Res = case catch node_ports_parse_query(Node, Ports, Query) of
 	      submitted ->
@@ -1832,9 +1937,9 @@ get_node(Node, ["ports"], Query, Lang) ->
 	      [node_ports_to_xhtml(NewPorts, Lang)])
 	];
 
-get_node(Node, ["modules"], Query, Lang) ->
+get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
     Modules = rpc:call(Node, gen_mod, loaded_modules_with_opts, []),
-    Res = case catch node_modules_parse_query(Node, Modules, Query) of
+    Res = case catch node_modules_parse_query(Host, Node, Modules, Query) of
 	      submitted ->
 		  ok;
 	      {'EXIT', Reason} ->
@@ -1843,7 +1948,8 @@ get_node(Node, ["modules"], Query, Lang) ->
 	      _ ->
 		  nothing
 	  end,
-    NewModules = lists:sort(rpc:call(Node, gen_mod, loaded_modules_with_opts, [])),
+    NewModules = lists:sort(
+		   rpc:call(Node, gen_mod, loaded_modules_with_opts, [Host])),
     [?XC("h1", ?T("Modules at ") ++ atom_to_list(Node))] ++
 	case Res of
 	    ok -> [?CT("submitted"), ?P];
@@ -1854,7 +1960,7 @@ get_node(Node, ["modules"], Query, Lang) ->
 	      [node_modules_to_xhtml(NewModules, Lang)])
 	];
 
-get_node(Node, ["stats"], Query, Lang) ->
+get_node(global, Node, ["stats"], Query, Lang) ->
     UpTime = rpc:call(Node, erlang, statistics, [wall_clock]),
     UpTimeS = io_lib:format("~.3f", [element(1, UpTime)/1000]),
     CPUTime = rpc:call(Node, erlang, statistics, [runtime]),
@@ -1897,7 +2003,7 @@ get_node(Node, ["stats"], Query, Lang) ->
 	       ])
 	  ])];
 
-get_node(Node, NPath, Query, Lang) ->
+get_node(Host, Node, NPath, Query, Lang) ->
     [?XCT("h1", "Not found")].
 
 
@@ -2133,7 +2239,7 @@ node_modules_to_xhtml(Modules, Lang) ->
 		  )]
 	     )]).
 
-node_modules_parse_query(Node, Modules, Query) ->
+node_modules_parse_query(Host, Node, Modules, Query) ->
     lists:foreach(
       fun({Module, _Opts1}) ->
 	      SModule = atom_to_list(Module),
@@ -2143,13 +2249,13 @@ node_modules_parse_query(Node, Modules, Query) ->
 			   lists:keysearch("opts" ++ SModule, 1, Query),
 		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 		      {ok, Opts} = erl_parse:parse_term(Tokens),
-		      rpc:call(Node, gen_mod, stop_module, [Module]),
-		      rpc:call(Node, gen_mod, start_module, [Module, Opts]),
+		      rpc:call(Node, gen_mod, stop_module, [Host, Module]),
+		      rpc:call(Node, gen_mod, start_module, [Host, Module, Opts]),
 		      throw(submitted);
 		  _ ->
 		      case lists:keysearch("stop" ++ SModule, 1, Query) of
 			  {value, _} ->
-			      rpc:call(Node, gen_mod, stop_module, [Module]),
+			      rpc:call(Node, gen_mod, stop_module, [Host, Module]),
 			      throw(submitted);
 			  _ ->
 			      ok
@@ -2165,7 +2271,7 @@ node_modules_parse_query(Node, Modules, Query) ->
 	    Module = list_to_atom(SModule),
 	    {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 	    {ok, Opts} = erl_parse:parse_term(Tokens),
-	    rpc:call(Node, gen_mod, start_module, [Module, Opts]),
+	    rpc:call(Node, gen_mod, start_module, [Host, Module, Opts]),
 	    throw(submitted);
 	_ ->
 	    ok

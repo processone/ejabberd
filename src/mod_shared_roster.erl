@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, stop/0,
+-export([start/2, stop/1,
 	 get_user_roster/2,
 	 get_subscription_lists/3,
 	 get_jid_info/4,
@@ -35,7 +35,7 @@
 -record(sr_group, {group_host, opts}).
 -record(sr_user, {us, group_host}).
 
-start(_Opts) ->
+start(Host, _Opts) ->
     mnesia:create_table(sr_group,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, sr_group)}]),
@@ -44,31 +44,31 @@ start(_Opts) ->
 			 {type, bag},
 			 {attributes, record_info(fields, sr_user)}]),
     mnesia:add_table_index(sr_user, group_host),
-    ejabberd_hooks:add(roster_get,
+    ejabberd_hooks:add(roster_get, Host,
 		       ?MODULE, get_user_roster, 70),
-    ejabberd_hooks:add(roster_in_subscription,
+    ejabberd_hooks:add(roster_in_subscription, Host,
         	       ?MODULE, in_subscription, 30),
-    ejabberd_hooks:add(roster_out_subscription,
+    ejabberd_hooks:add(roster_out_subscription, Host,
         	       ?MODULE, out_subscription, 30),
-    ejabberd_hooks:add(roster_get_subscription_lists,
+    ejabberd_hooks:add(roster_get_subscription_lists, Host,
 		       ?MODULE, get_subscription_lists, 70),
-    ejabberd_hooks:add(roster_get_jid_info,
+    ejabberd_hooks:add(roster_get_jid_info, Host,
         	       ?MODULE, get_jid_info, 70).
-    %ejabberd_hooks:add(remove_user,
+    %ejabberd_hooks:add(remove_user, Host,
     %    	       ?MODULE, remove_user, 50),
 
-stop() ->
-    ejabberd_hooks:delete(roster_get,
+stop(Host) ->
+    ejabberd_hooks:delete(roster_get, Host,
 			  ?MODULE, get_user_roster, 70),
-    ejabberd_hooks:delete(roster_in_subscription,
+    ejabberd_hooks:delete(roster_in_subscription, Host,
         		  ?MODULE, in_subscription, 30),
-    ejabberd_hooks:delete(roster_out_subscription,
+    ejabberd_hooks:delete(roster_out_subscription, Host,
         		  ?MODULE, out_subscription, 30),
-    ejabberd_hooks:delete(roster_get_subscription_lists,
+    ejabberd_hooks:delete(roster_get_subscription_lists, Host,
         		  ?MODULE, get_subscription_lists, 70),
-    ejabberd_hooks:delete(roster_get_jid_info,
+    ejabberd_hooks:delete(roster_get_jid_info, Host,
         		  ?MODULE, get_jid_info, 70).
-    %ejabberd_hooks:delete(remove_user,
+    %ejabberd_hooks:delete(remove_user, Host,
     %    		  ?MODULE, remove_user, 50),
 
 

@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/2, stop/0,
+-export([start/2, init/2, stop/1,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 reindex_vcards/0,
@@ -40,8 +40,9 @@
 		      }).
 -record(vcard, {us, vcard}).
 
+-define(PROCNAME, ejabberd_mod_vcard).
 
-start(Opts) ->
+start(Host, Opts) ->
     mnesia:create_table(vcard, [{disc_only_copies, [node()]},
 				{attributes, record_info(fields, vcard)}]),
     mnesia:create_table(vcard_search,
@@ -61,17 +62,18 @@ start(Opts) ->
     mnesia:add_table_index(vcard_search, lorgname),
     mnesia:add_table_index(vcard_search, lorgunit),
 
-    ejabberd_hooks:add(remove_user,
+    ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     catch mod_disco:register_sm_feature(?NS_VCARD),
     Hosts = gen_mod:get_hosts(Opts, "vjud."),
     Search = gen_mod:get_opt(search, Opts, true),
-    register(ejabberd_mod_vcard, spawn(?MODULE, init, [Hosts, Search])).
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+	     spawn(?MODULE, init, [Hosts, Search])).
 
 
 init(Hosts, Search) ->
@@ -100,14 +102,15 @@ loop(Hosts) ->
 	    loop(Hosts)
     end.
 
-stop() ->
-    ejabberd_hooks:delete(remove_user,
+stop(Host) ->
+    ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_VCARD),
-    catch mod_disco:unregister_sm_feature(?NS_VCARD),
-    ejabberd_mod_vcard ! stop,
-    ok.
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
+    catch mod_disco:unregister_sm_feature(Host, ?NS_VCARD),
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc ! stop,
+    {wait, Proc}.
 
 process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -463,7 +466,8 @@ record_to_item(R) ->
 
 search(LServer, Data) ->
     MatchSpec = make_matchspec(LServer, Data),
-    AllowReturnAll = gen_mod:get_module_opt(?MODULE, allow_return_all, false),
+    AllowReturnAll = gen_mod:get_module_opt(LServer, ?MODULE,
+					    allow_return_all, false),
     if
 	(MatchSpec == #vcard_search{_ = '_'}) and (not AllowReturnAll) ->
 	    [];
@@ -474,7 +478,8 @@ search(LServer, Data) ->
 		    ?ERROR_MSG("~p", [Reason]),
 		    [];
 		Rs ->
-		    case gen_mod:get_module_opt(?MODULE, matches, ?JUD_MATCHES) of
+		    case gen_mod:get_module_opt(LServer, ?MODULE,
+						matches, ?JUD_MATCHES) of
 			infinity ->
 			    Rs;
 			Val when is_integer(Val) and (Val > 0) ->
@@ -501,8 +506,8 @@ filter_fields([{SVar, [Val]} | Ds], Match, LServer)
     LVal = stringprep:tolower(Val),
     NewMatch = case SVar of
                    "user" ->
-		       case gen_mod:get_module_opt(
-			      ?MODULE, search_all_hosts, true) of
+		       case gen_mod:get_module_opt(LServer, ?MODULE,
+						   search_all_hosts, true) of
 			   true ->
 			       Match#vcard_search{luser = make_val(LVal)};
 			   false ->

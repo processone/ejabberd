@@ -11,58 +11,60 @@
 -vsn('$Revision$ ').
 
 -export([start/0,
-	 start_module/2,
-	 stop_module/1,
+	 start_module/3,
+	 stop_module/2,
 	 get_opt/2,
 	 get_opt/3,
-	 get_module_opt/3,
-	 loaded_modules/0,
-	 loaded_modules_with_opts/0,
-	 get_hosts/2]).
+	 get_module_opt/4,
+	 loaded_modules/1,
+	 loaded_modules_with_opts/1,
+	 get_hosts/2,
+	 get_module_proc/2]).
 
 -export([behaviour_info/1]).
 
 -include("ejabberd.hrl").
 
--record(ejabberd_module, {module, opts}).
+-record(ejabberd_module, {module_host, opts}).
 
 behaviour_info(callbacks) ->
-    [{start, 1},
-     {stop, 0}];
+    [{start, 2},
+     {stop, 1}];
 behaviour_info(_Other) ->
     undefined.
 
 start() ->
     ets:new(ejabberd_modules, [named_table,
 			       public,
-			       {keypos, #ejabberd_module.module}]),
+			       {keypos, #ejabberd_module.module_host}]),
     ok.
 
 
-start_module(Module, Opts) ->
-    case catch Module:start(Opts) of
+start_module(Host, Module, Opts) ->
+    case catch Module:start(Host, Opts) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
-	    ets:insert(ejabberd_modules, #ejabberd_module{module = Module,
-							  opts = Opts}),
+	    ets:insert(ejabberd_modules,
+		       #ejabberd_module{module_host = {Module, Host},
+					opts = Opts}),
 	    ok
     end.
 
-stop_module(Module) ->
-    case catch Module:stop() of
+stop_module(Host, Module) ->
+    case catch Module:stop(Host) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	{wait, ProcList} when is_list(ProcList) ->
 	    lists:foreach(fun wait_for_process/1, ProcList),
-	    ets:delete(ejabberd_modules, Module),
+	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok;
 	{wait, Process} ->
 	    wait_for_process(Process),
-	    ets:delete(ejabberd_modules, Module),
+	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok;
 	_ ->
-	    ets:delete(ejabberd_modules, Module),
+	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok
     end.
 
@@ -104,8 +106,8 @@ get_opt(Opt, Opts, Default) ->
 	    Val
     end.
 
-get_module_opt(Module, Opt, Default) ->
-    OptsList = ets:lookup(ejabberd_modules, Module),
+get_module_opt(Host, Module, Opt, Default) ->
+    OptsList = ets:lookup(ejabberd_modules, {Module, Host}),
     case OptsList of
 	[] ->
 	    Default;
@@ -113,15 +115,16 @@ get_module_opt(Module, Opt, Default) ->
 	    get_opt(Opt, Opts, Default)
     end.
 
-loaded_modules() ->
+loaded_modules(Host) ->
     ets:select(ejabberd_modules,
-	       [{#ejabberd_module{_ = '_', module = '$1'},
+	       [{#ejabberd_module{_ = '_', module_host = {'$1', Host}},
 		 [],
 		 ['$1']}]).
 
-loaded_modules_with_opts() ->
+loaded_modules_with_opts(Host) ->
     ets:select(ejabberd_modules,
-	       [{#ejabberd_module{_ = '_', module = '$1', opts = '$2'},
+	       [{#ejabberd_module{_ = '_', module_host = {'$1', Host},
+				  opts = '$2'},
 		 [],
 		 [{{'$1', '$2'}}]}]).
 
@@ -137,3 +140,7 @@ get_hosts(Opts, Prefix) ->
 	Hosts ->
 	    Hosts
     end.
+
+get_module_proc(Host, Base) ->
+    list_to_atom(atom_to_list(Base) ++ "_" ++ Host).
+

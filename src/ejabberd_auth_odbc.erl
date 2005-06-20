@@ -170,7 +170,7 @@ is_user_exists(User, _Server) ->
 	    end
     end.
 
-remove_user(User, _Server) ->
+remove_user(User, Server) ->
     case jlib:nodeprep(User) of
 	error ->
 	    error;
@@ -178,10 +178,10 @@ remove_user(User, _Server) ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    catch ejabberd_odbc:sql_query(
 		    ["delete from users where username='", Username ,"'"]),
-	    ejabberd_hooks:run(remove_user, [User])
+	    ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User])
     end.
 
-remove_user(User, _Server, Password) ->
+remove_user(User, Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
 	    error;
@@ -196,7 +196,8 @@ remove_user(User, _Server, Password) ->
 		   "where username='", Username, "' and password='", Pass, "';"
 		   "commit"]) of
 		{selected, ["password"], [{Password}]} ->
-		    ejabberd_hooks:run(remove_user, [User]),
+		    ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
+				       [User]),
 		    ok;
 		{selected, ["password"], []} ->
 		    not_exists;

@@ -16,7 +16,11 @@
 	 add/4,
 	 delete/4,
 	 run/2,
-	 run_fold/3]).
+	 run_fold/3,
+	 add/5,
+	 delete/5,
+	 run/3,
+	 run_fold/4]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -37,13 +41,22 @@ start_link() ->
     gen_server:start_link({local, ejabberd_hooks}, ejabberd_hooks, [], []).
 
 add(Hook, Module, Function, Seq) ->
-    gen_server:call(ejabberd_hooks, {add, Hook, Module, Function, Seq}).
+    add(Hook, global, Module, Function, Seq).
+
+add(Hook, Host, Module, Function, Seq) ->
+    gen_server:call(ejabberd_hooks, {add, Hook, Host, Module, Function, Seq}).
 
 delete(Hook, Module, Function, Seq) ->
-    gen_server:call(ejabberd_hooks, {delete, Hook, Module, Function, Seq}).
+    delete(Hook, global, Module, Function, Seq).
+
+delete(Hook, Host, Module, Function, Seq) ->
+    gen_server:call(ejabberd_hooks, {delete, Hook, Host, Module, Function, Seq}).
 
 run(Hook, Args) ->
-    case ets:lookup(hooks, Hook) of
+    run(Hook, global, Args).
+
+run(Hook, Host, Args) ->
+    case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
 	    run1(Ls, Hook, Args);
 	[] ->
@@ -51,7 +64,10 @@ run(Hook, Args) ->
     end.
 
 run_fold(Hook, Val, Args) ->
-    case ets:lookup(hooks, Hook) of
+    run_fold(Hook, global, Val, Args).
+
+run_fold(Hook, Host, Val, Args) ->
+    case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
 	    run_fold1(Ls, Hook, Val, Args);
 	[] ->
@@ -82,8 +98,8 @@ init([]) ->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
-handle_call({add, Hook, Module, Function, Seq}, From, State) ->
-    Reply = case ets:lookup(hooks, Hook) of
+handle_call({add, Hook, Host, Module, Function, Seq}, From, State) ->
+    Reply = case ets:lookup(hooks, {Hook, Host}) of
 		[{_, Ls}] ->
 		    El = {Seq, Module, Function},
 		    case lists:member(El, Ls) of
@@ -91,20 +107,20 @@ handle_call({add, Hook, Module, Function, Seq}, From, State) ->
 			    ok;
 			false ->
 			    NewLs = lists:merge(Ls, [El]),
-			    ets:insert(hooks, {Hook, NewLs}),
+			    ets:insert(hooks, {{Hook, Host}, NewLs}),
 			    ok
 		    end;
 		[] ->
 		    NewLs = [{Seq, Module, Function}],
-		    ets:insert(hooks, {Hook, NewLs}),
+		    ets:insert(hooks, {{Hook, Host}, NewLs}),
 		    ok
 	    end,
     {reply, Reply, State};
-handle_call({delete, Hook, Module, Function, Seq}, From, State) ->
-    Reply = case ets:lookup(hooks, Hook) of
+handle_call({delete, Hook, Host, Module, Function, Seq}, From, State) ->
+    Reply = case ets:lookup(hooks, {Hook, Host}) of
 		[{_, Ls}] ->
 		    NewLs = lists:delete({Seq, Module, Function}, Ls),
-		    ets:insert(hooks, {Hook, NewLs}),
+		    ets:insert(hooks, {{Hook, Host}, NewLs}),
 		    ok;
 		[] ->
 		    ok

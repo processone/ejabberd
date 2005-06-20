@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, stop/0,
+-export([start/2, stop/1,
 	 process_iq/3,
 	 process_local_iq/3,
 	 get_subscription_lists/2,
@@ -31,35 +31,35 @@
 		 subscription = none,
 		 ask = none}).
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    ejabberd_hooks:add(roster_out_subscription,
+    ejabberd_hooks:add(roster_out_subscription, Host,
 		       ?MODULE, out_subscription, 50),
-    ejabberd_hooks:add(roster_in_subscription,
+    ejabberd_hooks:add(roster_in_subscription, Host,
 		       ?MODULE, in_subscription, 50),
-    ejabberd_hooks:add(roster_out_subscription,
+    ejabberd_hooks:add(roster_out_subscription, Host,
 		       ?MODULE, out_subscription, 50),
-    ejabberd_hooks:add(roster_get_subscription_lists,
+    ejabberd_hooks:add(roster_get_subscription_lists, Host,
 		       ?MODULE, get_subscription_lists, 50),
-    ejabberd_hooks:add(roster_get_jid_info,
+    ejabberd_hooks:add(roster_get_jid_info, Host,
 		       ?MODULE, get_jid_info, 50),
-    ejabberd_hooks:add(remove_user,
+    ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_ROSTER,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
-stop() ->
-    ejabberd_hooks:delete(roster_in_subscription,
+stop(Host) ->
+    ejabberd_hooks:delete(roster_in_subscription, Host,
 			  ?MODULE, in_subscription, 50),
-    ejabberd_hooks:delete(roster_out_subscription,
+    ejabberd_hooks:delete(roster_out_subscription, Host,
 			  ?MODULE, out_subscription, 50),
-    ejabberd_hooks:delete(roster_get_subscription_lists,
+    ejabberd_hooks:delete(roster_get_subscription_lists, Host,
 			  ?MODULE, get_subscription_lists, 50),
-    ejabberd_hooks:delete(roster_get_jid_info,
+    ejabberd_hooks:delete(roster_get_jid_info, Host,
 			  ?MODULE, get_jid_info, 50),
-    ejabberd_hooks:delete(remove_user,
+    ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_ROSTER).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 
 -define(PSI_ROSTER_WORKAROUND, true).

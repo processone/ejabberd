@@ -11,9 +11,9 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
+-export([start/2,
 	 init/0,
-	 stop/0,
+	 stop/1,
 	 store_packet/3,
 	 resend_offline_messages/2,
 	 pop_offline_messages/3,
@@ -29,21 +29,22 @@
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
-start(_) ->
+start(Host, _Opts) ->
     mnesia:create_table(offline_msg,
 			[{disc_only_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, offline_msg)}]),
     update_table(),
-    ejabberd_hooks:add(offline_message_hook,
+    ejabberd_hooks:add(offline_message_hook, Host,
 		       ?MODULE, store_packet, 50),
-    ejabberd_hooks:add(offline_subscription_hook,
+    ejabberd_hooks:add(offline_subscription_hook, Host,
 		       ?MODULE, store_packet, 50),
-    ejabberd_hooks:add(resend_offline_messages_hook,
+    ejabberd_hooks:add(resend_offline_messages_hook, Host,
 		       ?MODULE, pop_offline_messages, 50),
-    ejabberd_hooks:add(remove_user,
+    ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
-    register(?PROCNAME, spawn(?MODULE, init, [])).
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+	     spawn(?MODULE, init, [])).
 
 init() ->
     loop().
@@ -79,17 +80,18 @@ receive_all(Msgs) ->
     end.
 
 
-stop() ->
-    ejabberd_hooks:delete(offline_message_hook,
+stop(Host) ->
+    ejabberd_hooks:delete(offline_message_hook, Host,
 			  ?MODULE, store_packet, 50),
-    ejabberd_hooks:delete(offline_subscription_hook,
+    ejabberd_hooks:delete(offline_subscription_hook, Host,
 			  ?MODULE, store_packet, 50),
-    ejabberd_hooks:delete(resend_offline_messages_hook,
+    ejabberd_hooks:delete(resend_offline_messages_hook, Host,
 			  ?MODULE, pop_offline_messages, 50),
-    ejabberd_hooks:delete(remove_user,
+    ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
-    exit(whereis(?PROCNAME), stop),
-    {wait, ?PROCNAME}.
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    exit(whereis(Proc), stop),
+    {wait, Proc}.
 
 store_packet(From, To, Packet) ->
     Type = xml:get_tag_attr_s("type", Packet),

@@ -12,8 +12,8 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 stop/0,
+-export([start/2,
+	 stop/1,
 	 process_local_iq/3,
 	 process_sm_iq/3]).
 
@@ -21,22 +21,22 @@
 -include("jlib.hrl").
 
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_EJABBERD_CONFIG,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_EJABBERD_CONFIG,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_EJABBERD_CONFIG,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_EJABBERD_CONFIG,
 				  ?MODULE, process_sm_iq, IQDisc),
     ok.
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_EJABBERD_CONFIG),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_EJABBERD_CONFIG).
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_EJABBERD_CONFIG),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_EJABBERD_CONFIG).
 
 
-process_local_iq(From, _To, #iq{id = ID, type = Type, xmlns = XMLNS,
+process_local_iq(From, To, #iq{id = ID, type = Type, xmlns = XMLNS,
 				lang = Lang, sub_el = SubEl} = IQ) ->
-    case acl:match_rule(configure, From) of
+    case acl:match_rule(To#jid.lserver, configure, From) of
 	deny ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->
@@ -719,7 +719,7 @@ search_running_node(SNode, [Node | Nodes]) ->
 
 process_sm_iq(From, To,
 	      #iq{type = Type, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ) ->
-    case acl:match_rule(configure, From) of
+    case acl:match_rule(To#jid.lserver, configure, From) of
 	deny ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->

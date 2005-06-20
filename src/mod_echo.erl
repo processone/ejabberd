@@ -12,17 +12,17 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/1, stop/0]).
+-export([start/2, init/1, stop/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
 -define(PROCNAME, ejabberd_mod_echo).
 
-start(Opts) ->
-    %Host = gen_mod:get_opt(host, Opts),
-    Host = gen_mod:get_opt(host, Opts, "echo." ++ ?MYNAME),
-    register(?PROCNAME, spawn(?MODULE, init, [Host])).
+start(Host, Opts) ->
+    MyHost = gen_mod:get_opt(host, Opts, "echo." ++ Host),
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+	     spawn(?MODULE, init, [MyHost])).
 
 init(Host) ->
     ejabberd_router:register_route(Host),
@@ -40,7 +40,8 @@ loop(Host) ->
 	    loop(Host)
     end.
 
-stop() ->
-    ?PROCNAME ! stop,
-    {wait, ?PROCNAME}.
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc ! stop,
+    {wait, Proc}.
 

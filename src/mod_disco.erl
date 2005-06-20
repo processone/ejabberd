@@ -12,18 +12,18 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 stop/0,
+-export([start/2,
+	 stop/1,
 	 process_local_iq_items/3,
 	 process_local_iq_info/3,
 	 process_sm_iq_items/3,
 	 process_sm_iq_info/3,
-	 register_feature/1,
-	 unregister_feature/1,
+	 register_feature/2,
+	 unregister_feature/2,
 	 register_extra_domain/1,
 	 unregister_extra_domain/1,
-	 register_sm_feature/1,
-	 unregister_sm_feature/1,
+	 register_sm_feature/2,
+	 unregister_sm_feature/2,
 	 register_sm_node/4,
 	 unregister_sm_node/1]).
 
@@ -36,23 +36,23 @@
 			 [{"xmlns", ?NS_DISCO_INFO},
 			  {"node", SNode}], []}]}).
 
-start(Opts) ->
+start(Host, Opts) ->
     ejabberd_local:refresh_iq_handlers(),
 
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_DISCO_ITEMS,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
 				  ?MODULE, process_local_iq_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_DISCO_INFO,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_local_iq_info, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_DISCO_ITEMS,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS,
 				  ?MODULE, process_sm_iq_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_DISCO_INFO,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_sm_iq_info, IQDisc),
 
     catch ets:new(disco_features, [named_table, ordered_set, public]),
-    register_feature("iq"),
-    register_feature("presence"),
-    register_feature("presence-invisible"),
+    register_feature(Host, "iq"),
+    register_feature(Host, "presence"),
+    register_feature(Host, "presence-invisible"),
 
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
@@ -61,23 +61,23 @@ start(Opts) ->
     catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
     ok.
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_DISCO_INFO),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_DISCO_INFO),
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
     catch ets:delete(disco_features),
     catch ets:delete(disco_extra_domains),
     ok.
 
 
-register_feature(Feature) ->
+register_feature(Host, Feature) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
-    ets:insert(disco_features, {Feature}).
+    ets:insert(disco_features, {{Feature, Host}}).
 
-unregister_feature(Feature) ->
+unregister_feature(Host, Feature) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
-    ets:delete(disco_features, Feature).
+    ets:delete(disco_features, {Feature, Host}).
 
 register_extra_domain(Domain) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
@@ -94,18 +94,19 @@ process_local_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} =
 	get ->
 	    SNode = xml:get_tag_attr_s("node", SubEl),
 	    Node = string:tokens(SNode, "/"),
+	    Host = To#jid.lserver,
 
-	    case acl:match_rule(configure, From) of
+	    case acl:match_rule(Host, configure, From) of
 		deny when Node /= [] ->
 		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 		deny ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", ?NS_DISCO_ITEMS}],
-				     get_services_only(To#jid.lserver)
+				     get_services_only(Host)
 				    }]};
 		_ ->
-		    case get_local_items(To#jid.lserver, Node,
+		    case get_local_items(Host, Node,
 					 jlib:jid_to_string(To), Lang) of
 			{result, Res} ->
 			    IQ#iq{type = result,
@@ -121,7 +122,7 @@ process_local_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} =
     end.
 
 
-process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
+process_local_iq_info(From, To, #iq{type = Type, xmlns = XMLNS,
 				     sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
@@ -129,7 +130,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 	get ->
 	    SNode = xml:get_tag_attr_s("node", SubEl),
 	    Node = string:tokens(SNode, "/"),
-	    case {acl:match_rule(configure, From), Node} of
+	    case {acl:match_rule(To#jid.lserver, configure, From), Node} of
 		{_, []} ->
 		    Features = lists:map(fun feature_to_xml/1,
 					 ets:tab2list(disco_features)),
@@ -162,7 +163,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 				       [{"category", "ejabberd"},
 					{"type", "node"},
 					{"name", ENode}], []},
-				      feature_to_xml({?NS_STATS})
+				      feature_to_xml(?NS_STATS)
 				     ]
 				    }]};
 		{allow, ["running nodes", ENode, "DB"]} ->
@@ -171,7 +172,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 				     "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
+				     [feature_to_xml(?NS_EJABBERD_CONFIG)]}]};
 		{allow, ["running nodes", ENode, "modules"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "modules", _]} ->
@@ -179,7 +180,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
+				     [feature_to_xml(?NS_EJABBERD_CONFIG)]}]};
 		{allow, ["running nodes", ENode, "backup"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "backup", _]} ->
@@ -187,7 +188,7 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
+				     [feature_to_xml(?NS_EJABBERD_CONFIG)]}]};
 		{allow, ["running nodes", ENode, "import"]} ->
 		    ?EMPTY_INFO_RESULT;
 		{allow, ["running nodes", ENode, "import", _]} ->
@@ -195,20 +196,22 @@ process_local_iq_info(From, _To, #iq{type = Type, xmlns = XMLNS,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
+				     [feature_to_xml(?NS_EJABBERD_CONFIG)]}]};
 		{allow, ["config", _]} ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", XMLNS},
 				      {"node", SNode}],
-				     [feature_to_xml({?NS_EJABBERD_CONFIG})]}]};
+				     [feature_to_xml(?NS_EJABBERD_CONFIG)]}]};
 		_ ->
 		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
 	    end
     end.
 
 
-feature_to_xml({Feature}) ->
+feature_to_xml({{Feature, _Host}}) ->
+    feature_to_xml(Feature);
+feature_to_xml(Feature) when is_list(Feature) ->
     {xmlelement, "feature", [{"var", Feature}], []}.
 
 domain_to_xml({Domain}) ->
@@ -488,13 +491,13 @@ get_stopped_nodes(Lang) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-register_sm_feature(Feature) ->
+register_sm_feature(Host, Feature) ->
     catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
-    ets:insert(disco_sm_features, {Feature}).
+    ets:insert(disco_sm_features, {{Feature, Host}}).
 
-unregister_sm_feature(Feature) ->
+unregister_sm_feature(Host, Feature) ->
     catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
-    ets:delete(disco_sm_features, Feature).
+    ets:delete(disco_sm_features, {Feature, Host}).
 
 register_sm_node(Node, Name, Module, Function) ->
     catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
@@ -509,7 +512,7 @@ process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ
     #jid{luser = LFrom, lserver = LServer} = From,
     Self = (LTo == LFrom) andalso (LServer == ?MYNAME),
     Node = xml:get_tag_attr_s("node", SubEl),
-    case {acl:match_rule(configure, From), Type, Self, Node} of
+    case {acl:match_rule(To#jid.lserver, configure, From), Type, Self, Node} of
 	{_, set, _, _} ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	{_, get, true, []}  ->
@@ -561,7 +564,7 @@ process_sm_iq_info(From, To, #iq{type = Type, xmlns = XMLNS,
     #jid{luser = LFrom, lserver = LServer} = From,
     Self = (LTo == LFrom) andalso (LServer == ?MYNAME),
     Node = xml:get_tag_attr_s("node", SubEl),
-    case {acl:match_rule(configure, From), Type, Self, Node} of
+    case {acl:match_rule(To#jid.lserver, configure, From), Type, Self, Node} of
 	{_, set, _, _} ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	{allow, get, _, []} ->
@@ -569,7 +572,7 @@ process_sm_iq_info(From, To, #iq{type = Type, xmlns = XMLNS,
 				 ets:tab2list(disco_sm_features)),
 	    IQ#iq{type = result,
 		  sub_el = [{xmlelement, "query", [{"xmlns", XMLNS}],
-			     [feature_to_xml({?NS_EJABBERD_CONFIG})] ++
+			     [feature_to_xml(?NS_EJABBERD_CONFIG)] ++
 			     Features}]};
 	{_, get, _, []} ->
 	    Features = lists:map(fun feature_to_xml/1,

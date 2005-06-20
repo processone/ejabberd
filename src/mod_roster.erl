@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, stop/0,
+-export([start/2, stop/1,
 	 process_iq/3,
 	 process_local_iq/3,
 	 get_user_roster/2,
@@ -28,41 +28,41 @@
 -include("mod_roster.hrl").
 
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
     update_table(),
     mnesia:add_table_index(roster, us),
-    ejabberd_hooks:add(roster_get,
+    ejabberd_hooks:add(roster_get, Host,
 		       ?MODULE, get_user_roster, 50),
-    ejabberd_hooks:add(roster_in_subscription,
+    ejabberd_hooks:add(roster_in_subscription, Host,
 		       ?MODULE, in_subscription, 50),
-    ejabberd_hooks:add(roster_out_subscription,
+    ejabberd_hooks:add(roster_out_subscription, Host,
 		       ?MODULE, out_subscription, 50),
-    ejabberd_hooks:add(roster_get_subscription_lists,
+    ejabberd_hooks:add(roster_get_subscription_lists, Host,
 		       ?MODULE, get_subscription_lists, 50),
-    ejabberd_hooks:add(roster_get_jid_info,
+    ejabberd_hooks:add(roster_get_jid_info, Host,
 		       ?MODULE, get_jid_info, 50),
-    ejabberd_hooks:add(remove_user,
+    ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_ROSTER,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
-stop() ->
-    ejabberd_hooks:delete(roster_get,
+stop(Host) ->
+    ejabberd_hooks:delete(roster_get, Host,
 			  ?MODULE, get_user_roster, 50),
-    ejabberd_hooks:delete(roster_in_subscription,
+    ejabberd_hooks:delete(roster_in_subscription, Host,
 			  ?MODULE, in_subscription, 50),
-    ejabberd_hooks:delete(roster_out_subscription,
+    ejabberd_hooks:delete(roster_out_subscription, Host,
 			  ?MODULE, out_subscription, 50),
-    ejabberd_hooks:delete(roster_get_subscription_lists,
+    ejabberd_hooks:delete(roster_get_subscription_lists, Host,
 			  ?MODULE, get_subscription_lists, 50),
-    ejabberd_hooks:delete(roster_get_jid_info,
+    ejabberd_hooks:delete(roster_get_jid_info, Host,
 			  ?MODULE, get_jid_info, 50),
-    ejabberd_hooks:delete(remove_user,
+    ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_ROSTER).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 
 -define(PSI_ROSTER_WORKAROUND, true).
@@ -106,11 +106,11 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
 
 
 
-process_iq_get(From, _To, #iq{sub_el = SubEl} = IQ) ->
+process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
     LUser = From#jid.luser,
     LServer = From#jid.lserver,
     US = {LUser, LServer},
-    case catch ejabberd_hooks:run_fold(roster_get, [], [US]) of
+    case catch ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
 	    IQ#iq{type = result,

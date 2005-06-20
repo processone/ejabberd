@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_config.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Load config file
 %%% Created : 14 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -19,12 +19,12 @@
 -record(config, {key, value}).
 -record(local_config, {key, value}).
 -record(state, {opts = [],
+		hosts = [],
 		override_local = false,
 		override_global = false,
 		override_acls = false}).
 
 start() ->
-    %ets:new(ejabberd_config, [named_table, public]),
     mnesia:create_table(config,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, config)}]),
@@ -34,8 +34,6 @@ start() ->
 			 {local_content, true},
 			 {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
-
-    %% mremond: Config file can be configured from the command line
     Config = case application:get_env(config) of
 		 {ok, Path} -> Path;
 		 undefined -> 
@@ -52,11 +50,36 @@ start() ->
 load_file(File) ->
     case file:consult(File) of
 	{ok, Terms} ->
-	    Res = lists:foldl(fun process_term/2, #state{}, Terms),
+	    State = lists:foldl(fun search_hosts/2, #state{}, Terms),
+	    Res = lists:foldl(fun process_term/2, State, Terms),
 	    set_opts(Res);
 	{error, Reason} ->
 	    ?ERROR_MSG("Can't load config file ~p: ~p", [File, Reason]),
 	    exit(file:format_error(Reason))
+    end.
+
+search_hosts(Term, State) ->
+    case Term of
+	{host, Host} ->
+	    if
+		State#state.hosts == [] ->
+		    add_option(hosts, [Host], State#state{hosts = [Host]});
+		true ->
+		    ?ERROR_MSG("Can't load config file: "
+			       "too many hosts definitions", []),
+		    exit("too many hosts definitions")
+	    end;
+	{hosts, Hosts} ->
+	    if
+		State#state.hosts == [] ->
+		    add_option(hosts, Hosts, State#state{hosts = Hosts});
+		true ->
+		    ?ERROR_MSG("Can't load config file: "
+			       "too many hosts definitions", []),
+		    exit("too many hosts definitions")
+	    end;
+	_ ->
+	    State
     end.
 
 process_term(Term, State) ->
@@ -68,20 +91,40 @@ process_term(Term, State) ->
 	override_acls ->
 	    State#state{override_acls = true};
 	{acl, ACLName, ACLData} ->
-	    State#state{opts =
-		   [acl:to_record(ACLName, ACLData) | State#state.opts]};
+	    process_host_term(Term, global, State);
 	{access, RuleName, Rules} ->
-	    State#state{opts = [#config{key = {access, RuleName},
+	    process_host_term(Term, global, State);
+	{shaper, Name, Data} ->
+	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
+			State, State#state.hosts);
+	{host, Host} ->
+	    State;
+	{hosts, Hosts} ->
+	    State;
+	{Opt, Val} ->
+	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
+			State, State#state.hosts)
+    end.
+
+process_host_term(Term, Host, State) ->
+    case Term of
+	{acl, ACLName, ACLData} ->
+	    State#state{opts =
+		   [acl:to_record(Host, ACLName, ACLData) | State#state.opts]};
+	{access, RuleName, Rules} ->
+	    State#state{opts = [#config{key = {access, RuleName, Host},
 					value = Rules} |
 				State#state.opts]};
 	{shaper, Name, Data} ->
-	    State#state{opts = [#config{key = {shaper, Name},
+	    State#state{opts = [#config{key = {shaper, Name, Host},
 					value = Data} |
 				State#state.opts]};
 	{host, Host} ->
-	    add_option(hosts, [Host], State);
+	    State;
+	{hosts, Hosts} ->
+	    State;
 	{Opt, Val} ->
-	    add_option(Opt, Val, State)
+	    add_option({Opt, Host}, Val, State)
     end.
 
 add_option(Opt, Val, State) ->

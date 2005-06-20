@@ -11,9 +11,9 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
+-export([start/2,
 	 init/0,
-	 stop/0,
+	 stop/1,
 	 announce/3,
 	 send_motd/1]).
 
@@ -25,17 +25,18 @@
 
 -define(PROCNAME, ejabberd_announce).
 
-start(_) ->
+start(Host, _Opts) ->
     mnesia:create_table(motd, [{disc_copies, [node()]},
 			       {attributes, record_info(fields, motd)}]),
     mnesia:create_table(motd_users, [{disc_copies, [node()]},
 				     {attributes, record_info(fields, motd_users)}]),
     update_tables(),
-    ejabberd_hooks:add(local_send_to_resource_hook,
+    ejabberd_hooks:add(local_send_to_resource_hook, Host,
 		       ?MODULE, announce, 50),
-    ejabberd_hooks:add(user_available_hook,
+    ejabberd_hooks:add(user_available_hook, Host,
 		       ?MODULE, send_motd, 50),
-    register(?PROCNAME, proc_lib:spawn(?MODULE, init, [])).
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+	     proc_lib:spawn(?MODULE, init, [])).
 
 init() ->
     loop().
@@ -64,47 +65,50 @@ loop() ->
 	    loop()
     end.
 
-stop() ->
-    ejabberd_hooks:delete(local_send_to_resource_hook,
+stop(Host) ->
+    ejabberd_hooks:delete(local_send_to_resource_hook, Host,
 			  ?MODULE, announce, 50),
-    ejabberd_hooks:delete(sm_register_connection_hook,
+    ejabberd_hooks:delete(sm_register_connection_hook, Host,
 			  ?MODULE, send_motd, 50),
-    exit(whereis(?PROCNAME), stop),
-    {wait, ?PROCNAME}.
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    exit(whereis(Proc), stop),
+    {wait, Proc}.
 
 announce(From, To, Packet) ->
     case To of
 	#jid{luser = "", lresource = Res} ->
 	    {xmlelement, Name, _Attrs, _Els} = Packet,
-		case {Res, Name} of
-		    {"announce/all", "message"} ->
-			?PROCNAME ! {announce_all, From, To, Packet},
-			stop;
-		    {"announce/online", "message"} ->
-			?PROCNAME ! {announce_online, From, To, Packet},
-			stop;
-		    {"announce/all-hosts/online", "message"} ->
-			?PROCNAME ! {announce_all_hosts_online, From, To, Packet},
-			stop;
-		    {"announce/motd", "message"} ->
-			?PROCNAME ! {announce_motd, From, To, Packet},
-			stop;
-		    {"announce/motd/update", "message"} ->
-			?PROCNAME ! {announce_motd_update, From, To, Packet},
-			stop;
-		    {"announce/motd/delete", "message"} ->
-			?PROCNAME ! {announce_motd_delete, From, To, Packet},
-			stop;
-		    _ ->
-			ok
+	    Proc = gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME),
+	    case {Res, Name} of
+		{"announce/all", "message"} ->
+		    Proc ! {announce_all, From, To, Packet},
+		    stop;
+		{"announce/online", "message"} ->
+		    Proc ! {announce_online, From, To, Packet},
+		    stop;
+		{"announce/all-hosts/online", "message"} ->
+		    Proc ! {announce_all_hosts_online, From, To, Packet},
+		    stop;
+		{"announce/motd", "message"} ->
+		    Proc ! {announce_motd, From, To, Packet},
+		    stop;
+		{"announce/motd/update", "message"} ->
+		    Proc ! {announce_motd_update, From, To, Packet},
+		    stop;
+		{"announce/motd/delete", "message"} ->
+		    Proc ! {announce_motd_delete, From, To, Packet},
+		    stop;
+		_ ->
+		    ok
 	    end;
 	_ ->
 	    ok
     end.
 
 announce_all(From, To, Packet) ->
-    Access = gen_mod:get_module_opt(?MODULE, access, none),
-    case acl:match_rule(Access, From) of
+    Host = To#jid.lserver,
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
+    case acl:match_rule(Host, Access, From) of
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
 	    ejabberd_router:route(To, From, Err);
@@ -114,24 +118,25 @@ announce_all(From, To, Packet) ->
 		fun({User, Server}) ->
 			Dest = jlib:make_jid(User, Server, ""),
 			ejabberd_router:route(Local, Dest, Packet)
-		end, ejabberd_auth:get_vh_registered_users(To#jid.lserver))
+		end, ejabberd_auth:get_vh_registered_users(Host))
     end.
 
 announce_online(From, To, Packet) ->
-    Access = gen_mod:get_module_opt(?MODULE, access, none),
-    case acl:match_rule(Access, From) of
+    Host = To#jid.lserver,
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
+    case acl:match_rule(Host, Access, From) of
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    announce_online1(ejabberd_sm:get_vh_session_list(To#jid.lserver),
+	    announce_online1(ejabberd_sm:get_vh_session_list(Host),
 			     To#jid.server,
 			     Packet)
     end.
 
 announce_all_hosts_online(From, To, Packet) ->
-    Access = gen_mod:get_module_opt(?MODULE, access, none),
-    case acl:match_rule(Access, From) of
+    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
+    case acl:match_rule(global, Access, From) of
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
 	    ejabberd_router:route(To, From, Err);
@@ -150,14 +155,15 @@ announce_online1(Sessions, Server, Packet) ->
       end, Sessions).
 
 announce_motd(From, To, Packet) ->
-    Access = gen_mod:get_module_opt(?MODULE, access, none),
-    case acl:match_rule(Access, From) of
+    Host = To#jid.lserver,
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
+    case acl:match_rule(Host, Access, From) of
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd_update(To#jid.lserver, Packet),
-	    Sessions = ejabberd_sm:get_vh_session_list(To#jid.lserver),
+	    Sessions = ejabberd_sm:get_vh_session_list(Host),
 	    announce_online1(Sessions, To#jid.server, Packet),
 	    F = fun() ->
 			lists:foreach(
@@ -169,13 +175,14 @@ announce_motd(From, To, Packet) ->
     end.
 
 announce_motd_update(From, To, Packet) ->
-    Access = gen_mod:get_module_opt(?MODULE, access, none),
-    case acl:match_rule(Access, From) of
+    Host = To#jid.lserver,
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
+    case acl:match_rule(Host, Access, From) of
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    announce_motd_update(To#jid.lserver, Packet)
+	    announce_motd_update(Host, Packet)
     end.
 
 announce_motd_update(LServer, Packet) ->
@@ -186,13 +193,14 @@ announce_motd_update(LServer, Packet) ->
     mnesia:transaction(F).
 
 announce_motd_delete(From, To, Packet) ->
-    Access = gen_mod:get_module_opt(?MODULE, access, none),
-    case acl:match_rule(Access, From) of
+    Host = To#jid.lserver,
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
+    case acl:match_rule(Host, Access, From) of
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    announce_motd_delete(To#jid.lserver)
+	    announce_motd_delete(Host)
     end.
 
 announce_motd_delete(LServer) ->

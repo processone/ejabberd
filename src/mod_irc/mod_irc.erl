@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/2, stop/0,
+-export([start/2, init/2, stop/1,
 	 closed_connection/3,
 	 get_user_and_encoding/3]).
 
@@ -26,44 +26,44 @@
 
 -define(PROCNAME, ejabberd_mod_irc).
 
-start(Opts) ->
+start(Host, Opts) ->
     iconv:start(),
     mnesia:create_table(irc_custom,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, irc_custom)}]),
-    Hosts = gen_mod:get_hosts(Opts, "irc."),
-    Host = hd(Hosts),
-    update_table(Host),
+    MyHost = gen_mod:get_opt(host, Opts, "irc." ++ Host),
+    update_table(MyHost),
     Access = gen_mod:get_opt(access, Opts, all),
-    register(?PROCNAME, spawn(?MODULE, init, [Hosts, Access])).
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+	     spawn(?MODULE, init, [MyHost, Access])).
 
-init(Hosts, Access) ->
+init(Host, Access) ->
     catch ets:new(irc_connection, [named_table,
 				   public,
 				   {keypos, #irc_connection.jid_server_host}]),
-    ejabberd_router:register_routes(Hosts),
-    loop(Hosts, Access).
+    ejabberd_router:register_route(Host),
+    loop(Host, Access).
 
-loop(Hosts, Access) ->
+loop(Host, Access) ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(To#jid.lserver, Access, From, To, Packet) of
+	    case catch do_route(Host, Access, From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop(Hosts, Access);
+	    loop(Host, Access);
 	stop ->
-	    ejabberd_router:unregister_routes(Hosts),
+	    ejabberd_router:unregister_route(Host),
 	    ok;
 	_ ->
-	    loop(Hosts, Access)
+	    loop(Host, Access)
     end.
 
 
 do_route(Host, Access, From, To, Packet) ->
-    case acl:match_rule(Access, From) of
+    case acl:match_rule(Host, Access, From) of
 	allow ->
 	    do_route1(Host, From, To, Packet);
 	_ ->
@@ -174,9 +174,10 @@ do_route1(Host, From, To, Packet) ->
     end.
 
 
-stop() ->
-    ?PROCNAME ! stop,
-    {wait, ?PROCNAME}.
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc ! stop,
+    {wait, Proc}.
 
 
 closed_connection(Host, From, Server) ->

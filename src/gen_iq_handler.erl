@@ -11,33 +11,33 @@
 -vsn('$Revision$ ').
 
 -export([start/0,
-	 start_link/2,
-	 add_iq_handler/5,
-	 remove_iq_handler/2,
+	 start_link/3,
+	 add_iq_handler/6,
+	 remove_iq_handler/3,
 	 stop_iq_handler/3,
-	 handle/6,
-	 process_iq/5,
-	 queue_init/2]).
+	 handle/7,
+	 process_iq/6,
+	 queue_init/3]).
 
 -include("ejabberd.hrl").
 
 start() ->
     ok.
 
-add_iq_handler(Component, NS, Module, Function, Type) ->
+add_iq_handler(Component, Host, NS, Module, Function, Type) ->
     case Type of
 	no_queue ->
-	    Component:register_iq_handler(NS, Module, Function, no_queue);
+	    Component:register_iq_handler(Host, NS, Module, Function, no_queue);
 	one_queue ->
 	    {ok, Pid} = supervisor:start_child(ejabberd_iq_sup,
-					       [Module, Function]),
-	    Component:register_iq_handler(NS, Module, Function,
+					       [Host, Module, Function]),
+	    Component:register_iq_handler(Host, NS, Module, Function,
 					  {one_queue, Pid});
 	parallel ->
-	    Component:register_iq_handler(NS, Module, Function, parallel)
+	    Component:register_iq_handler(Host, NS, Module, Function, parallel)
     end.
 
-remove_iq_handler(Component, NS) ->
+remove_iq_handler(Component, Host, NS) ->
     Component:unregister_iq_handler(NS).
 
 stop_iq_handler(Module, Function, Opts) ->
@@ -48,20 +48,20 @@ stop_iq_handler(Module, Function, Opts) ->
 	    ok
     end.
 
-handle(Module, Function, Opts, From, To, IQ) ->
+handle(Host, Module, Function, Opts, From, To, IQ) ->
     case Opts of
 	no_queue ->
-	    process_iq(Module, Function, From, To, IQ);
+	    process_iq(Host, Module, Function, From, To, IQ);
 	{one_queue, Pid} ->
 	    Pid ! {process_iq, From, To, IQ};
 	parallel ->
-	    spawn(?MODULE, process_iq, [Module, Function, From, To, IQ]);
+	    spawn(?MODULE, process_iq, [Host, Module, Function, From, To, IQ]);
 	_ ->
 	    todo
     end.
 
 
-process_iq(Module, Function, From, To, IQ) ->
+process_iq(_Host, Module, Function, From, To, IQ) ->
     case catch Module:Function(From, To, IQ) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
@@ -75,18 +75,18 @@ process_iq(Module, Function, From, To, IQ) ->
 	    end
     end.
 
-start_link(Module, Function) ->
-  {ok, proc_lib:spawn_link(?MODULE, queue_init, [Module, Function])}.
+start_link(Host, Module, Function) ->
+  {ok, proc_lib:spawn_link(?MODULE, queue_init, [Host, Module, Function])}.
 
-queue_init(Module, Function) ->
-    queue_loop(Module, Function).
+queue_init(Host, Module, Function) ->
+    queue_loop(Host, Module, Function).
 
 % TODO: use gen_event
-queue_loop(Module, Function) ->
+queue_loop(Host, Module, Function) ->
     receive
 	{process_iq, From, To, IQ} ->
-	    process_iq(Module, Function, From, To, IQ),
-	    queue_loop(Module, Function);
+	    process_iq(Host, Module, Function, From, To, IQ),
+	    queue_loop(Host, Module, Function);
 	_ ->
-	    queue_loop(Module, Function)
+	    queue_loop(Host, Module, Function)
     end.

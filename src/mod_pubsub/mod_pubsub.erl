@@ -12,10 +12,10 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 init/3,
+-export([start/2,
+	 init/4,
 	 loop/2,
-	 stop/0,
+	 stop/1,
 	 system_continue/3,
 	 system_terminate/4,
 	 system_code_change/4]).
@@ -37,37 +37,34 @@
 
 -define(PROCNAME, ejabberd_mod_pubsub).
 
-start(Opts) ->
+start(Host, Opts) ->
     mnesia:create_table(pubsub_node,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, pubsub_node)}]),
-    Hosts = gen_mod:get_hosts(Opts, "pubsub."),
-    Host = hd(Hosts),
-    update_table(Host),
+    MyHost = gen_mod:get_opt(host, Opts, "pubsub." ++ Host),
+    update_table(MyHost),
     mnesia:add_table_index(pubsub_node, host_parent),
     ServedHosts = gen_mod:get_opt(served_hosts, Opts, []),
-    register(?PROCNAME,
-	     proc_lib:spawn_link(?MODULE, init, [Hosts, ServedHosts, self()])).
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+	     proc_lib:spawn_link(?MODULE, init,
+				 [MyHost, Host, ServedHosts, self()])).
 
 
 -define(MYJID, #jid{user = "", server = Host, resource = "",
 		    luser = "", lserver = Host, lresource = ""}).
 
-init(Hosts, ServedHosts, Parent) ->
-    ejabberd_router:register_routes(Hosts),
-    lists:foreach(
-      fun(Host) ->
-	      create_new_node(Host, ["pubsub"], ?MYJID),
-	      create_new_node(Host, ["pubsub", "nodes"], ?MYJID),
-	      create_new_node(Host, ["home"], ?MYJID),
-	      create_new_node(Host, ["home", find_my_host(Host)], ?MYJID),
-	      lists:foreach(fun(H) ->
-				    create_new_node(Host, ["home", H], ?MYJID)
-			    end, ServedHosts)
-      end, Hosts),
-    loop(Hosts, Parent).
+init(Host, ServerHost, ServedHosts, Parent) ->
+    ejabberd_router:register_route(Host),
+    create_new_node(Host, ["pubsub"], ?MYJID),
+    create_new_node(Host, ["pubsub", "nodes"], ?MYJID),
+    create_new_node(Host, ["home"], ?MYJID),
+    create_new_node(Host, ["home", ServerHost], ?MYJID),
+    lists:foreach(fun(H) ->
+			  create_new_node(Host, ["home", H], ?MYJID)
+		  end, ServedHosts),
+    loop(Host, Parent).
 
-loop(Hosts, Parent) ->
+loop(Host, Parent) ->
     receive
 	{route, From, To, Packet} ->
 	    case catch do_route(To#jid.lserver, From, To, Packet) of
@@ -76,19 +73,19 @@ loop(Hosts, Parent) ->
 		_ ->
 		    ok
 	    end,
-	    loop(Hosts, Parent);
+	    loop(Host, Parent);
 	{room_destroyed, Room} ->
 	    ets:delete(muc_online_room, Room),
-	    loop(Hosts, Parent);
+	    loop(Host, Parent);
 	stop ->
-	    ejabberd_router:unregister_routes(Hosts),
+	    ejabberd_router:unregister_route(Host),
 	    ok;
 	reload ->
-	    ?MODULE:loop(Hosts, Parent);
+	    ?MODULE:loop(Host, Parent);
         {system, From, Request} ->
-            sys:handle_system_msg(Request, From, Parent, ?MODULE, [], Hosts);
+            sys:handle_system_msg(Request, From, Parent, ?MODULE, [], Host);
 	_ ->
-	    loop(Hosts, Parent)
+	    loop(Host, Parent)
     end.
 
 
@@ -202,9 +199,10 @@ do_route(Host, From, To, Packet) ->
 
 
 
-stop() ->
-    ?PROCNAME ! stop,
-    {wait, ?PROCNAME}.
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc ! stop,
+    {wait, Proc}.
 
 
 
@@ -1175,26 +1173,6 @@ system_terminate(Reason, Parent, _, State) ->
 system_code_change(State, _Mod, Ver, _Extra) ->
     {ok, State}.
 
-
-
-find_my_host(LServer) ->
-    Parts = string:tokens(LServer, "."),
-    find_my_host(Parts, ?MYHOSTS).
-
-find_my_host([], _Hosts) ->
-    ?MYNAME;
-find_my_host([_ | Tail] = Parts, Hosts) ->
-    Domain = parts_to_string(Parts),
-    case lists:member(Domain, Hosts) of
-	true ->
-	    Domain;
-	false ->
-	    find_my_host(Tail, Hosts)
-    end.
-
-parts_to_string(Parts) ->
-    string:strip(lists:flatten(lists:map(fun(S) -> [S, $.] end, Parts)),
-		 right, $.).
 
 
 

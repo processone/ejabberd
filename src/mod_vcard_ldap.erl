@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, init/2, stop/0,
+-export([start/2, init/2, stop/1,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 remove_user/1]).
@@ -22,11 +22,11 @@
 -include("jlib.hrl").
 
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     LDAPServers = ejabberd_config:get_local_option(ldap_servers),
     RootDN = ejabberd_config:get_local_option(ldap_rootdn),
@@ -62,9 +62,9 @@ loop(Host) ->
 	    loop(Host)
     end.
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_VCARD),
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
     ejabberd_mod_vcard_ldap ! stop,
     ok.
 

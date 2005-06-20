@@ -11,25 +11,25 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 stop/0,
+-export([start/2,
+	 stop/1,
 	 log_user_send/3,
 	 log_user_receive/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
-start(_) ->
-    ejabberd_hooks:add(user_send_packet,
+start(Host, _Opts) ->
+    ejabberd_hooks:add(user_send_packet, Host,
 		       ?MODULE, log_user_send, 50),
-    ejabberd_hooks:add(user_receive_packet,
+    ejabberd_hooks:add(user_receive_packet, Host,
 		       ?MODULE, log_user_receive, 50),
     ok.
 
-stop() ->
-    ejabberd_hooks:delete(user_send_packet,
+stop(Host) ->
+    ejabberd_hooks:delete(user_send_packet, Host,
 			  ?MODULE, log_user_send, 50),
-    ejabberd_hooks:delete(user_receive_packet,
+    ejabberd_hooks:delete(user_receive_packet, Host,
 			  ?MODULE, log_user_receive, 50),
     ok.
 
@@ -41,9 +41,10 @@ log_user_receive(_JID, From, To, Packet) ->
 
 
 log_packet(From, To, {xmlelement, Name, Attrs, Els}) ->
-    Loggers = gen_mod:get_module_opt(?MODULE, loggers, []),
-    ServerJID = #jid{user = "", server = ?MYNAME, resource = "",
-		     luser = "", lserver = ?MYNAME, lresource = ""},
+    Host = From#jid.lserver,
+    Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
+    ServerJID = #jid{user = "", server = Host, resource = "",
+		     luser = "", lserver = Host, lresource = ""},
     NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 					  jlib:jid_to_string(To),
 					  Attrs),

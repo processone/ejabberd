@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_register.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Inband registration support
 %%% Created :  8 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -12,24 +12,27 @@
 
 -behaviour(gen_mod).
 
--export([start/1, stop/0, process_iq/3]).
+-export([start/2,
+	 stop/1,
+	 process_iq/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_REGISTER,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
 				  ?MODULE, process_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_REGISTER,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_REGISTER,
 				  ?MODULE, process_iq, IQDisc),
     ok.
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_REGISTER),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_REGISTER).
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_REGISTER).
 
-process_iq(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
+process_iq(From, To,
+	   #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    UTag = xml:get_subtag(SubEl, "username"),
@@ -123,8 +126,8 @@ try_register(User, Server, Password) ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    JID = jlib:make_jid(User, Server, ""),
-	    Access = gen_mod:get_module_opt(?MODULE, access, all),
-	    case acl:match_rule(Access, JID) of
+	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+	    case acl:match_rule(Server, Access, JID) of
 		deny ->
 		    {error, ?ERR_CONFLICT};
 		allow ->

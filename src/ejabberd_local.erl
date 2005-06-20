@@ -13,9 +13,9 @@
 -export([start_link/0, init/0]).
 
 -export([route/3,
-	 register_iq_handler/3,
 	 register_iq_handler/4,
-	 unregister_iq_handler/1,
+	 register_iq_handler/5,
+	 unregister_iq_handler/2,
 	 refresh_iq_handlers/0,
 	 bounce_resource_packet/3
 	]).
@@ -33,11 +33,11 @@ start_link() ->
 init() ->
     lists:foreach(
       fun(Host) ->
-	      ejabberd_router:register_route(Host, {apply, ?MODULE, route})
+	      ejabberd_router:register_route(Host, {apply, ?MODULE, route}),
+	      ejabberd_hooks:add(local_send_to_resource_hook, Host,
+				 ?MODULE, bounce_resource_packet, 100)
       end, ?MYHOSTS),
     catch ets:new(?IQTABLE, [named_table, public]),
-    ejabberd_hooks:add(local_send_to_resource_hook,
-		       ?MODULE, bounce_resource_packet, 100),
     loop().
 
 loop() ->
@@ -51,32 +51,32 @@ loop() ->
 		    ok
 	    end,
 	    loop();
-	{register_iq_handler, XMLNS, Module, Function} ->
-	    ets:insert(?IQTABLE, {XMLNS, Module, Function}),
-	    catch mod_disco:register_feature(XMLNS),
+	{register_iq_handler, Host, XMLNS, Module, Function} ->
+	    ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),
+	    catch mod_disco:register_feature(Host, XMLNS),
 	    loop();
-	{register_iq_handler, XMLNS, Module, Function, Opts} ->
-	    ets:insert(?IQTABLE, {XMLNS, Module, Function, Opts}),
-	    catch mod_disco:register_feature(XMLNS),
+	{register_iq_handler, Host, XMLNS, Module, Function, Opts} ->
+	    ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function, Opts}),
+	    catch mod_disco:register_feature(Host, XMLNS),
 	    loop();
-	{unregister_iq_handler, XMLNS} ->
-	    case ets:lookup(?IQTABLE, XMLNS) of
+	{unregister_iq_handler, Host, XMLNS} ->
+	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function, Opts}] ->
 		    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
 		_ ->
 		    ok
 	    end,
-	    ets:delete(?IQTABLE, XMLNS),
-	    catch mod_disco:unregister_feature(XMLNS),
+	    ets:delete(?IQTABLE, {XMLNS, Host}),
+	    catch mod_disco:unregister_feature(Host, XMLNS),
 	    loop();
 	refresh_iq_handlers ->
 	    lists:foreach(
 	      fun(T) ->
 		      case T of
-			  {XMLNS, _Module, _Function, _Opts} ->
-			      catch mod_disco:register_feature(XMLNS);
-			  {XMLNS, _Module, _Function} ->
-			      catch mod_disco:register_feature(XMLNS);
+			  {{XMLNS, Host}, _Module, _Function, _Opts} ->
+			      catch mod_disco:register_feature(Host, XMLNS);
+			  {{XMLNS, Host}, _Module, _Function} ->
+			      catch mod_disco:register_feature(Host, XMLNS);
 			  _ ->
 			      ok
 		      end
@@ -112,6 +112,7 @@ do_route(From, To, Packet) ->
 		"result" -> ok;
 		_ ->
 		    ejabberd_hooks:run(local_send_to_resource_hook,
+				       To#jid.lserver,
 				       [From, To, Packet])
 	    end
 	end.
@@ -120,7 +121,8 @@ process_iq(From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
 	#iq{xmlns = XMLNS} ->
-	    case ets:lookup(?IQTABLE, XMLNS) of
+	    Host = To#jid.lserver,
+	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ),
 		    if
@@ -131,7 +133,7 @@ process_iq(From, To, Packet) ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
-		    gen_iq_handler:handle(Module, Function, Opts,
+		    gen_iq_handler:handle(Host, Module, Function, Opts,
 					  From, To, IQ);
 		[] ->
 		    Err = jlib:make_error_reply(
@@ -155,14 +157,14 @@ route(From, To, Packet) ->
 	    ok
     end.
 
-register_iq_handler(XMLNS, Module, Fun) ->
-    ejabberd_local ! {register_iq_handler, XMLNS, Module, Fun}.
+register_iq_handler(Host, XMLNS, Module, Fun) ->
+    ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun}.
 
-register_iq_handler(XMLNS, Module, Fun, Opts) ->
-    ejabberd_local ! {register_iq_handler, XMLNS, Module, Fun, Opts}.
+register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
+    ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
 
-unregister_iq_handler(XMLNS) ->
-    ejabberd_local ! {unregister_iq_handler, XMLNS}.
+unregister_iq_handler(Host, XMLNS) ->
+    ejabberd_local ! {unregister_iq_handler, Host, XMLNS}.
 
 refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.

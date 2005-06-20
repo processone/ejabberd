@@ -12,10 +12,10 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 init/2,
-	 stop/0,
-	 room_destroyed/2,
+-export([start/2,
+	 init/3,
+	 stop/1,
+	 room_destroyed/3,
 	 store_room/3,
 	 restore_room/2,
 	 forget_room/2,
@@ -32,60 +32,59 @@
 
 -define(PROCNAME, ejabberd_mod_muc).
 
-start(Opts) ->
+start(Host, Opts) ->
     mnesia:create_table(muc_room,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, muc_room)}]),
     mnesia:create_table(muc_registered,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, muc_registered)}]),
-    Hosts = gen_mod:get_hosts(Opts, "conference."),
-    Host = hd(Hosts),
-    update_tables(Host),
+    MyHost = gen_mod:get_opt(host, Opts, "conference." ++ Host),
+    update_tables(MyHost),
     mnesia:add_table_index(muc_registered, nick),
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
-    register(?PROCNAME,
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, init,
-		   [Hosts, {Access, AccessCreate, AccessAdmin}])).
+		   [MyHost, Host, {Access, AccessCreate, AccessAdmin}])).
 
 
 
-init(Hosts, Access) ->
+init(Host, ServerHost, Access) ->
     catch ets:new(muc_online_room, [named_table,
 				    public,
 				    {keypos, #muc_online_room.name_host}]),
-    ejabberd_router:register_routes(Hosts),
-    load_permanent_rooms(Access),
-    loop(Hosts, Access).
+    ejabberd_router:register_route(Host),
+    load_permanent_rooms(Host, ServerHost, Access),
+    loop(Host, ServerHost, Access).
 
-loop(Hosts, Access) ->
+loop(Host, ServerHost, Access) ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(To#jid.lserver, Access, From, To, Packet) of
+	    case catch do_route(Host, ServerHost, Access, From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop(Hosts, Access);
+	    loop(Host, ServerHost, Access);
 	{room_destroyed, RoomHost} ->
 	    ets:delete(muc_online_room, RoomHost),
-	    loop(Hosts, Access);
+	    loop(Host, ServerHost, Access);
 	stop ->
-	    ejabberd_router:unregister_routes(Hosts),
+	    ejabberd_router:unregister_route(Host),
 	    ok;
 	_ ->
-	    loop(Hosts, Access)
+	    loop(Host, ServerHost, Access)
     end.
 
 
-do_route(Host, Access, From, To, Packet) ->
+do_route(Host, ServerHost, Access, From, To, Packet) ->
     {AccessRoute, _AccessCreate, _AccessAdmin} = Access,
-    case acl:match_rule(AccessRoute, From) of
+    case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
-	    do_route1(Host, Access, From, To, Packet);
+	    do_route1(Host, ServerHost, Access, From, To, Packet);
 	_ ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
 	    Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -96,7 +95,7 @@ do_route(Host, Access, From, To, Packet) ->
     end.
 
 
-do_route1(Host, Access, From, To, Packet) ->
+do_route1(Host, ServerHost, Access, From, To, Packet) ->
     {_AccessRoute, AccessCreate, AccessAdmin} = Access,
     {Room, _, Nick} = jlib:jid_tolower(To),
     {xmlelement, Name, Attrs, _Els} = Packet,
@@ -178,7 +177,7 @@ do_route1(Host, Access, From, To, Packet) ->
 				"error" ->
 				    ok;
 				_ ->
-				    case acl:match_rule(AccessAdmin, From) of
+				    case acl:match_rule(ServerHost, AccessAdmin, From) of
 					allow ->
 					    Msg = xml:get_path_s(
 						    Packet,
@@ -216,11 +215,12 @@ do_route1(Host, Access, From, To, Packet) ->
 		    Type = xml:get_attr_s("type", Attrs),
 		    case {Name, Type} of
 			{"presence", ""} ->
-			    case acl:match_rule(AccessCreate, From) of
+			    case acl:match_rule(ServerHost, AccessCreate, From) of
 				allow ->
 				    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 				    {ok, Pid} = mod_muc_room:start(
-						  Host, Access, Room, From, Nick),
+						  Host, ServerHost, Access,
+						  Room, From, Nick),
 				    ets:insert(
 				      muc_online_room,
 				      #muc_online_room{name_host = {Room, Host},
@@ -252,13 +252,15 @@ do_route1(Host, Access, From, To, Packet) ->
 
 
 
-room_destroyed(Host, Room) ->
-    ?PROCNAME ! {room_destroyed, {Room, Host}},
+room_destroyed(Host, Room, ServerHost) ->
+    gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
+	{room_destroyed, {Room, Host}},
     ok.
 
-stop() ->
-    ?PROCNAME ! stop,
-    {wait, ?PROCNAME}.
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc ! stop,
+    {wait, Proc}.
 
 
 store_room(Host, Name, Opts) ->
@@ -284,8 +286,11 @@ forget_room(Host, Name) ->
     mnesia:transaction(F).
 
 
-load_permanent_rooms(Access) ->
-    case catch mnesia:dirty_select(muc_room, [{'_', [], ['$_']}]) of
+load_permanent_rooms(Host, ServerHost, Access) ->
+    case catch mnesia:dirty_select(
+		 muc_room, [{#muc_room{name_host = {'_', Host}, _ = '_'},
+			     [],
+			     ['$_']}]) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]),
 	    ok;
@@ -294,6 +299,7 @@ load_permanent_rooms(Access) ->
 				  {Room, Host} = R#muc_room.name_host,
 				  {ok, Pid} = mod_muc_room:start(
 						Host,
+						ServerHost,
 						Access,
 						Room,
 						R#muc_room.opts),

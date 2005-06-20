@@ -340,7 +340,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	{auth, _ID, set, {U, P, D, R}} ->
 	    JID = jlib:make_jid(U, StateData#state.server, R),
 	    case (JID /= error) andalso
-		(acl:match_rule(StateData#state.access, JID) == allow) of
+		(acl:match_rule(StateData#state.server,
+				StateData#state.access, JID) == allow) of
 		true ->
 		    case ejabberd_auth:check_password(
 			   U, StateData#state.server, P,
@@ -358,6 +359,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    change_shaper(StateData, JID),
 			    {Fs, Ts} = ejabberd_hooks:run_fold(
 					 roster_get_subscription_lists,
+					 StateData#state.server,
 					 {[], []},
 					 [U, StateData#state.server]),
 			    LJID = jlib:jid_tolower(
@@ -651,7 +653,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 	    U = StateData#state.user,
 	    R = StateData#state.resource,
 	    JID = StateData#state.jid,
-	    case acl:match_rule(StateData#state.access, JID) of
+	    case acl:match_rule(StateData#state.server,
+				StateData#state.access, JID) of
 		allow ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
 			      [StateData#state.socket,
@@ -663,6 +666,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    change_shaper(StateData, JID),
 		    {Fs, Ts} = ejabberd_hooks:run_fold(
 				 roster_get_subscription_lists,
+				 StateData#state.server,
 				 {[], []},
 				 [U, StateData#state.server]),
 		    LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
@@ -764,6 +768,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 				    _ ->
 					ejabberd_hooks:run(
 					  user_send_packet,
+					  Server,
 					  [FromJID, ToJID, NewEl]),
 					ejabberd_router:route(
 					  FromJID, ToJID, NewEl),
@@ -772,6 +777,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 			end;
 		    "message" ->
 			ejabberd_hooks:run(user_send_packet,
+					   Server,
 					   [FromJID, ToJID, NewEl]),
 			ejabberd_router:route(FromJID, ToJID, NewEl),
 			StateData;
@@ -983,6 +989,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    Text = xml:element_to_string(FixedPacket),
 	    send_text(StateData, Text),
 	    ejabberd_hooks:run(user_receive_packet,
+			       StateData#state.server,
 			       [StateData#state.jid, From, To, FixedPacket]),
 	    {next_state, StateName, NewState};
 	true ->
@@ -1055,7 +1062,8 @@ terminate(_Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 change_shaper(StateData, JID) ->
-    Shaper = acl:match_rule(StateData#state.shaper, JID),
+    Shaper = acl:match_rule(StateData#state.server,
+			    StateData#state.shaper, JID),
     ejabberd_receiver:change_shaper(StateData#state.receiver, Shaper).
 
 send_text(StateData, Text) ->
@@ -1208,6 +1216,7 @@ presence_update(From, Packet, StateData) ->
 		if
 		    FromUnavail ->
 			ejabberd_hooks:run(user_available_hook,
+					   StateData#state.server,
 					   [StateData#state.jid]),
 			resend_offline_messages(StateData),
 			presence_broadcast_first(
@@ -1248,21 +1257,25 @@ presence_track(From, To, Packet, StateData) ->
 	"subscribe" ->
 	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    ejabberd_hooks:run(roster_out_subscription,
+			       Server,
 			       [User, Server, To, subscribe]),
 	    StateData;
 	"subscribed" ->
 	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    ejabberd_hooks:run(roster_out_subscription,
+			       Server,
 			       [User, Server, To, subscribed]),
 	    StateData;
 	"unsubscribe" ->
 	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    ejabberd_hooks:run(roster_out_subscription,
+			       Server,
 			       [User, Server, To, unsubscribe]),
 	    StateData;
 	"unsubscribed" ->
 	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    ejabberd_hooks:run(roster_out_subscription,
+			       Server,
 			       [User, Server, To, unsubscribed]),
 	    StateData;
 	"error" ->
@@ -1505,7 +1518,9 @@ process_privacy_iq(From, To,
 resend_offline_messages(#state{user = User,
 			       server = Server,
 			       privacy_list = PrivList} = StateData) ->
-    case ejabberd_hooks:run_fold(resend_offline_messages_hook, [],
+    case ejabberd_hooks:run_fold(resend_offline_messages_hook,
+				 Server,
+				 [],
 				 [User, Server]) of
 	Rs when list(Rs) ->
 	    lists:foreach(

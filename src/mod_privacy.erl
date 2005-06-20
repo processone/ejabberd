@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/1, stop/0,
+-export([start/2, stop/1,
 	 process_iq/3,
 	 process_iq_set/3,
 	 process_iq_get/4,
@@ -42,16 +42,16 @@
 -record(userlist, {name = none, list = []}).
 
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(privacy, [{disc_copies, [node()]},
 				  {attributes, record_info(fields, privacy)}]),
     update_table(),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ?NS_PRIVACY,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ?NS_PRIVACY).
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY).
 
 process_iq(From, _To, IQ) ->
     #iq{type = Type, sub_el = SubEl} = IQ,
@@ -555,32 +555,32 @@ check_packet(User, Server,
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, {none, []},
-			  [User, Server, LJID]),
+			  roster_get_jid_info, jlib:nameprep(Server),
+			  {none, []}, [User, Server, LJID]),
 		    check_packet_aux(List, message,
 				     LJID, Subscription, Groups);
 		{iq, in} ->
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, {none, []},
-			  [User, Server, LJID]),
+			  roster_get_jid_info, jlib:nameprep(Server),
+			  {none, []}, [User, Server, LJID]),
 		    check_packet_aux(List, iq,
 				     LJID, Subscription, Groups);
 		{presence, in} ->
 		    LJID = jlib:jid_tolower(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, {none, []},
-			  [User, Server, LJID]),
+			  roster_get_jid_info, jlib:nameprep(Server),
+			  {none, []}, [User, Server, LJID]),
 		    check_packet_aux(List, presence_in,
 				     LJID, Subscription, Groups);
 		{presence, out} ->
 		    LJID = jlib:jid_tolower(To),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, {none, []},
-			  [User, Server, LJID]),
+			  roster_get_jid_info, jlib:nameprep(Server),
+			  {none, []}, [User, Server, LJID]),
 		    check_packet_aux(List, presence_out,
 				     LJID, Subscription, Groups);
 		_ ->
@@ -592,12 +592,12 @@ check_packet_aux([], _PType, _JID, _Subscription, _Groups) ->
     allow;
 check_packet_aux([Item | List], PType, JID, Subscription, Groups) ->
     #listitem{type = Type, value = Value, action = Action} = Item,
-    case Type of
-	none ->
-	    Action;
-	_ ->
-	    case is_ptype_match(Item, PType) of
-		true ->
+    case is_ptype_match(Item, PType) of
+	true ->
+	    case Type of
+		none ->
+		    Action;
+		_ ->
 		    case is_type_match(Type, Value,
 				       JID, Subscription, Groups) of
 			true ->
@@ -605,10 +605,10 @@ check_packet_aux([Item | List], PType, JID, Subscription, Groups) ->
 			false ->
 			    check_packet_aux(List, PType,
 					     JID, Subscription, Groups)
-		    end;
-		false ->
-		    check_packet_aux(List, PType, JID, Subscription, Groups)
-	    end
+		    end
+	    end;
+	false ->
+	    check_packet_aux(List, PType, JID, Subscription, Groups)
     end.
 
 

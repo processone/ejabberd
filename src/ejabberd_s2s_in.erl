@@ -148,7 +148,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					    Key, StateData#state.streamid}),
 		    Conns = ?DICT:store({LFrom, LTo}, wait_for_verification,
 					StateData#state.connections),
-		    change_shaper(StateData, jlib:make_jid("", LFrom, "")),
+		    change_shaper(StateData, LTo, jlib:make_jid("", LFrom, "")),
 		    {next_state,
 		     stream_established,
 		     StateData#state{connections = Conns,
@@ -326,8 +326,8 @@ send_element(Socket, El) ->
     send_text(Socket, xml:element_to_string(El)).
 
 
-change_shaper(StateData, JID) ->
-    Shaper = acl:match_rule(StateData#state.shaper, JID),
+change_shaper(StateData, Host, JID) ->
+    Shaper = acl:match_rule(Host, StateData#state.shaper, JID),
     ejabberd_receiver:change_shaper(StateData#state.receiver, Shaper).
 
 

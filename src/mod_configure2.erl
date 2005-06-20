@@ -12,8 +12,8 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 stop/0,
+-export([start/2,
+	 stop/1,
 	 process_local_iq/3]).
 
 -include("ejabberd.hrl").
@@ -21,18 +21,18 @@
 
 -define(NS_ECONFIGURE, "http://ejabberd.jabberstudio.org/protocol/configure").
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_ECONFIGURE,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE,
 				  ?MODULE, process_local_iq, IQDisc),
     ok.
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_ECONFIGURE).
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE).
 
 
-process_local_iq(From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
-    case acl:match_rule(configure, From) of
+process_local_iq(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
+    case acl:match_rule(To#jid.lserver, configure, From) of
 	deny ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	allow ->

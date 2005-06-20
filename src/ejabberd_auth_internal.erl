@@ -165,7 +165,7 @@ remove_user(User, Server) ->
 		mnesia:delete({passwd, US})
         end,
     mnesia:transaction(F),
-    ejabberd_hooks:run(remove_user, [User, Server]).
+    ejabberd_hooks:run(remove_user, LServer, [User, Server]).
 
 remove_user(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
@@ -184,7 +184,7 @@ remove_user(User, Server, Password) ->
         end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    ejabberd_hooks:run(remove_user, [User, Server]),
+	    ejabberd_hooks:run(remove_user, LServer, [User, Server]),
 	    ok;
 	{atomic, Res} ->
 	    Res;

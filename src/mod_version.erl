@@ -12,8 +12,8 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 stop/0,
+-export([start/2,
+	 stop/1,
 	 process_local_iq/3]).
 
 -include("ejabberd.hrl").
@@ -21,13 +21,13 @@
 
 
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_VERSION,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VERSION,
 				  ?MODULE, process_local_iq, IQDisc).
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_VERSION).
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VERSION).
 
 
 process_local_iq(From, To, #iq{id = ID, type = Type,

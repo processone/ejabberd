@@ -11,12 +11,12 @@
 -vsn('$Revision$ ').
 
 -export([start/0,
-	 to_record/2,
-	 add/2,
-	 add_list/2,
-	 match_rule/2,
+	 to_record/3,
+	 add/3,
+	 add_list/3,
+	 match_rule/3,
 	 % for debugging only
-	 match_acl/2]).
+	 match_acl/3]).
 
 -include("ejabberd.hrl").
 
@@ -30,30 +30,35 @@ start() ->
     mnesia:add_table_copy(acl, node(), ram_copies),
     ok.
 
-to_record(ACLName, ACLSpec) ->
-    #acl{aclname = ACLName, aclspec = ACLSpec}.
+to_record(Host, ACLName, ACLSpec) ->
+    #acl{aclname = {ACLName, Host}, aclspec = ACLSpec}.
 
-add(ACLName, ACLSpec) ->
+add(Host, ACLName, ACLSpec) ->
     F = fun() ->
-		mnesia:write(#acl{aclname = ACLName, aclspec = ACLSpec})
+		mnesia:write(#acl{aclname = {ACLName, Host},
+				  aclspec = ACLSpec})
 	end,
     mnesia:transaction(F).
 
-add_list(ACLs, Clear) ->
+add_list(Host, ACLs, Clear) ->
     F = fun() ->
 		if
 		    Clear ->
-			Ks = mnesia:all_keys(acl),
+			Ks = mnesia:select(
+			       acl, [{{acl, {'$1', Host}, '$2'}, [], ['$1']}]),
 			lists:foreach(fun(K) ->
-					      mnesia:delete({acl, K})
+					      mnesia:delete({acl, {K, Host}})
 				      end, Ks);
 		    true ->
 			ok
 		end,
 		lists:foreach(fun(ACL) ->
 				      case ACL of
-					  #acl{} ->
-					      mnesia:write(ACL)
+					  #acl{aclname = ACLName,
+					       aclspec = ACLSpec} ->
+					      mnesia:write(
+						#acl{aclname = {ACLName, Host},
+						     aclspec = ACLSpec})
 				      end
 			      end, ACLs)
 	end,
@@ -66,30 +71,53 @@ add_list(ACLs, Clear) ->
 
 
 
-match_rule(Rule, JID) ->
+match_rule(global, Rule, JID) ->
     case Rule of
 	all -> allow;
 	none -> deny;
 	_ ->
-	    case ejabberd_config:get_global_option({access, Rule}) of
+	    case ejabberd_config:get_global_option({access, Rule, global}) of
 		undefined ->
 		    deny;
-		ACLs ->
-		    match_acls(ACLs, JID)
+		GACLs ->
+		    match_acls(GACLs, JID, global)
+	    end
+    end;
+
+match_rule(Host, Rule, JID) ->
+    case Rule of
+	all -> allow;
+	none -> deny;
+	_ ->
+	    case ejabberd_config:get_global_option({access, Rule, global}) of
+		undefined ->
+		    case ejabberd_config:get_global_option({access, Rule, Host}) of
+			undefined ->
+			    deny;
+			ACLs ->
+			    match_acls(ACLs, JID, Host)
+		    end;
+		GACLs ->
+		    case ejabberd_config:get_global_option({access, Rule, Host}) of
+			undefined ->
+			    match_acls(GACLs, JID, Host);
+			ACLs ->
+			    match_acls(GACLs ++ ACLs, JID, Host)
+		    end
 	    end
     end.
 
-match_acls([], _) ->
+match_acls([], _, Host) ->
     deny;
-match_acls([{Access, ACL} | ACLs], JID) ->
-    case match_acl(ACL, JID) of
+match_acls([{Access, ACL} | ACLs], JID, Host) ->
+    case match_acl(ACL, JID, Host) of
 	true ->
 	    Access;
 	_ ->
-	    match_acls(ACLs, JID)
+	    match_acls(ACLs, JID, Host)
     end.
 
-match_acl(ACL, JID) ->
+match_acl(ACL, JID, Host) ->
     case ACL of
 	all -> true;
 	none -> false;
@@ -100,14 +128,20 @@ match_acl(ACL, JID) ->
 				  all ->
 				      true;
 				  {user, U} ->
-				      (U == User) andalso (?MYNAME == Server);
+				      (U == User)
+					  andalso
+					    ((Host == Server) orelse
+					     ((Host == global) andalso
+					      lists:member(Server, ?MYHOSTS)));
 				  {user, U, S} ->
 				      (U == User) andalso (S == Server);
 				  {server, S} ->
 				      S == Server;
 				  {user_regexp, UR} ->
-				      (?MYNAME == Server) andalso
-					  is_regexp_match(User, UR);
+				      ((Host == Server) orelse
+				       ((Host == global) andalso
+					lists:member(Server, ?MYHOSTS)))
+					  andalso is_regexp_match(User, UR);
 				  {user_regexp, UR, S} ->
 				      (S == Server) andalso
 					  is_regexp_match(User, UR);
@@ -117,7 +151,10 @@ match_acl(ACL, JID) ->
 				      is_regexp_match(Server, SR) andalso
 					  is_regexp_match(User, UR);
 				  {user_glob, UR} ->
-				      (?MYNAME == Server) andalso
+				      ((Host == Server) orelse
+				       ((Host == global) andalso
+					lists:member(Server, ?MYHOSTS)))
+					  andalso
 					  is_glob_match(User, UR);
 				  {user_glob, UR, S} ->
 				      (S == Server) andalso
@@ -128,7 +165,9 @@ match_acl(ACL, JID) ->
 				      is_glob_match(Server, SR) andalso
 					  is_glob_match(User, UR)
 			      end
-		      end, ets:lookup(acl, ACL))
+		      end,
+		      ets:lookup(acl, {ACL, global}) ++
+		      ets:lookup(acl, {ACL, Host}))
     end.
 
 is_regexp_match(String, RegExp) ->

@@ -12,21 +12,21 @@
 
 -behaviour(gen_mod).
 
--export([start/1,
-	 stop/0,
+-export([start/2,
+	 stop/1,
 	 process_local_iq/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_TIME,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_TIME,
 				  ?MODULE, process_local_iq, IQDisc).
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_TIME).
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_TIME).
 
 process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of

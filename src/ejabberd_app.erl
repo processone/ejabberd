@@ -87,14 +87,18 @@ db_init() ->
     mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
 
 load_modules() ->
-    case ejabberd_config:get_local_option(modules) of
-	undefined ->
-	    ok;
-	Modules ->
-	    lists:foreach(fun({Module, Args}) ->
-				  gen_mod:start_module(Module, Args)
-			  end, Modules)
-    end.
+    lists:foreach(
+      fun(Host) ->
+	      case ejabberd_config:get_local_option(modules) of
+		  undefined ->
+		      ok;
+		  Modules ->
+		      lists:foreach(
+			fun({Module, Args}) ->
+				gen_mod:start_module(Host, Module, Args)
+			end, Modules)
+	      end
+      end, ?MYHOSTS).
 
 
 dump_ports() ->

@@ -283,7 +283,7 @@ handle_info({send_element, El}, StateName, StateData) ->
     send_element(StateData, El),
     {next_state, StateName, StateData};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
-    case acl:match_rule(StateData#state.access, From) of
+    case acl:match_rule(global, StateData#state.access, From) of
 	allow ->
 	    {xmlelement, Name, Attrs, Els} = Packet,
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),

@@ -14,8 +14,8 @@
 
 
 %% External exports
--export([start/5,
-	 start/4,
+-export([start/6,
+	 start/5,
 	 route/4]).
 
 %% gen_fsm callbacks
@@ -59,6 +59,7 @@
 
 -record(state, {room,
 		host,
+		server_host,
 		access,
 		jid,
 		config = #config{},
@@ -82,11 +83,12 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Host, Access, Room, Creator, Nick) ->
-    gen_fsm:start(?MODULE, [Host, Access, Room, Creator, Nick], ?FSMOPTS).
+start(Host, ServerHost, Access, Room, Creator, Nick) ->
+    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, Creator, Nick],
+		  ?FSMOPTS).
 
-start(Host, Access, Room, Opts) ->
-    gen_fsm:start(?MODULE, [Host, Access, Room, Opts], ?FSMOPTS).
+start(Host, ServerHost, Access, Room, Opts) ->
+    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -99,16 +101,18 @@ start(Host, Access, Room, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Host, Access, Room, Creator, Nick]) ->
+init([Host, ServerHost, Access, Room, Creator, Nick]) ->
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
+				   server_host = ServerHost,
 				   access = Access,
 				   room = Room,
 				   jid = jlib:make_jid(Room, Host, ""),
 				   just_created = true}),
     {ok, normal_state, State};
-init([Host, Access, Room, Opts]) ->
+init([Host, ServerHost, Access, Room, Opts]) ->
     State = set_opts(Opts, #state{host = Host,
+				  server_host = ServerHost,
 				  access = Access,
 				  room = Room,
 				  jid = jlib:make_jid(Room, Host, "")}),
@@ -652,7 +656,8 @@ handle_info(_Info, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
-    mod_muc:room_destroyed(StateData#state.host, StateData#state.room),
+    mod_muc:room_destroyed(StateData#state.host, StateData#state.room,
+			   StateData#state.server_host),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -732,7 +737,7 @@ set_affiliation_and_reason(JID, Affiliation, Reason, StateData) ->
 get_affiliation(JID, StateData) ->
     {_AccessRoute, _AccessCreate, AccessAdmin} = StateData#state.access,
     Res =
-	case acl:match_rule(AccessAdmin, JID) of
+	case acl:match_rule(StateData#state.server_host, AccessAdmin, JID) of
 	    allow ->
 		owner;
 	    _ ->
