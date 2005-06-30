@@ -103,12 +103,13 @@ store_packet(From, To, Packet) ->
 		    TimeStamp = now(),
 		    {xmlelement, _Name, _Attrs, Els} = Packet,
 		    Expire = find_x_expire(TimeStamp, Els),
-		    ?PROCNAME ! #offline_msg{us = {LUser, LServer},
-					     timestamp = TimeStamp,
-					     expire = Expire,
-					     from = From,
-					     to = To,
-					     packet = Packet},
+		    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+			#offline_msg{us = {LUser, LServer},
+				     timestamp = TimeStamp,
+				     expire = Expire,
+				     from = From,
+				     to = To,
+				     packet = Packet},
 		    stop;
 		_ ->
 		    ok
