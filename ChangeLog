@@ -1,5 +1,7 @@
 2005-07-03  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_app.erl: Bugfix
+
 	* src/ejabberd_config.erl: Bugfix
 
 2005-06-30  Alexey Shchepin  <alexey@sevcom.net>

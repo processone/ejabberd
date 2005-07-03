@@ -89,7 +89,7 @@ db_init() ->
 load_modules() ->
     lists:foreach(
       fun(Host) ->
-	      case ejabberd_config:get_local_option(modules) of
+	      case ejabberd_config:get_local_option({modules, Host}) of
 		  undefined ->
 		      ok;
 		  Modules ->
