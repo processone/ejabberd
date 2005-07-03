@@ -101,6 +101,8 @@ process_term(Term, State) ->
 	    State;
 	{hosts, Hosts} ->
 	    State;
+	{listen, Val} ->
+	    add_option(listen, Val, State);
 	{Opt, Val} ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
 			State, State#state.hosts)
