@@ -12,11 +12,11 @@
 -behaviour(gen_mod).
 
 -export([start/2,
-	 init/0,
+	 init/1,
 	 stop/1,
 	 store_packet/3,
-	 pop_offline_messages/2,
-	 remove_user/1]).
+	 pop_offline_messages/3,
+	 remove_user/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -27,8 +27,6 @@
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
 start(Host, _Opts) ->
-    % TODO: remove
-    ejabberd_odbc:start(),
     ejabberd_hooks:add(offline_message_hook, Host,
 		       ?MODULE, store_packet, 50),
     ejabberd_hooks:add(offline_subscription_hook, Host,
@@ -37,12 +35,13 @@ start(Host, _Opts) ->
 		       ?MODULE, pop_offline_messages, 50),
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
-    register(?PROCNAME, spawn(?MODULE, init, [])).
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+	     spawn(?MODULE, init, [Host])).
 
-init() ->
-    loop().
+init(Host) ->
+    loop(Host).
 
-loop() ->
+loop(Host) ->
     receive
 	#offline_msg{} = Msg ->
 	    Msgs = receive_all([Msg]),
@@ -75,15 +74,16 @@ loop() ->
 			       "');"]
 		      end, Msgs),
 	    case catch ejabberd_odbc:sql_query(
+			 Host,
 			 ["begin; ", Query, " commit"]) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p~n", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop();
+	    loop(Host);
 	_ ->
-	    loop()
+	    loop(Host)
     end.
 
 receive_all(Msgs) ->
@@ -104,7 +104,8 @@ stop(Host) ->
 			  ?MODULE, pop_offline_messages, 50),
     ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
-    exit(whereis(?PROCNAME), stop),
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    exit(whereis(Proc), stop),
     ok.
 
 store_packet(From, To, Packet) ->
@@ -117,12 +118,13 @@ store_packet(From, To, Packet) ->
 		    TimeStamp = now(),
 		    {xmlelement, _Name, _Attrs, Els} = Packet,
 		    Expire = find_x_expire(TimeStamp, Els),
-		    ?PROCNAME ! #offline_msg{user = LUser,
-					     timestamp = TimeStamp,
-					     expire = Expire,
-					     from = From,
-					     to = To,
-					     packet = Packet},
+		    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+			#offline_msg{user = LUser,
+				     timestamp = TimeStamp,
+				     expire = Expire,
+				     from = From,
+				     to = To,
+				     packet = Packet},
 		    stop;
 		_ ->
 		    ok
@@ -205,10 +207,12 @@ find_x_expire(TimeStamp, [El | Els]) ->
     end.
 
 
-pop_offline_messages(Ls, User) ->
+pop_offline_messages(Ls, User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
     EUser = ejabberd_odbc:escape(LUser),
     case ejabberd_odbc:sql_query(
+	   LServer,
 	   ["begin;"
 	    "select * from spool where username='", EUser, "';"
 	    "delete from spool where username='", EUser, "';"
@@ -238,9 +242,11 @@ pop_offline_messages(Ls, User) ->
     end.
 
 
-remove_user(User) ->
+remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
     ejabberd_odbc:sql_query(
+      LServer,
       ["delete from spool where username='", Username, "'"]).
 

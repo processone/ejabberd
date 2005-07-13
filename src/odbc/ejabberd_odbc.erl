@@ -13,8 +13,8 @@
 -behaviour(gen_server).
 
 %% External exports
--export([start/0, start_link/0,
-	 sql_query/1,
+-export([start/1, start_link/1,
+	 sql_query/2,
 	 escape/1]).
 
 %% gen_server callbacks
@@ -30,14 +30,14 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start() ->
-    gen_server:start(ejabberd_odbc, [], []).
+start(Host) ->
+    gen_server:start(ejabberd_odbc, [Host], []).
 
-start_link() ->
-    gen_server:start_link(ejabberd_odbc, [], []).
+start_link(Host) ->
+    gen_server:start_link(ejabberd_odbc, [Host], []).
 
-sql_query(Query) ->
-    gen_server:call(ejabberd_odbc_sup:get_random_pid(),
+sql_query(Host, Query) ->
+    gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
 		    {sql_query, Query}, 60000).
 
 escape(S) ->
@@ -67,8 +67,9 @@ escape(S) ->
 %%          ignore               |
 %%          {stop, Reason}
 %%----------------------------------------------------------------------
-init([]) ->
-    {ok, Ref} = odbc:connect(ejabberd_config:get_local_option(odbc_server),
+init([Host]) ->
+    {ok, Ref} = odbc:connect(ejabberd_config:get_local_option(
+			       {odbc_server, Host}),
 			     [{scrollable_cursors, off}]),
     {ok, #state{odbc_ref = Ref}}.
 

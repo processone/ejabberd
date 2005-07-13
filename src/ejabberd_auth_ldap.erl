@@ -11,7 +11,7 @@
 -vsn('$Revision$ ').
 
 %% External exports
--export([start/0,
+-export([start/1,
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
@@ -32,23 +32,27 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start() ->
-    LDAPServers = ejabberd_config:get_local_option(ldap_servers),
-    RootDN = ejabberd_config:get_local_option(ldap_rootdn),
-    Password = ejabberd_config:get_local_option(ldap_password),
-    eldap:start_link("ejabberd", LDAPServers, 389, RootDN, Password),
-    eldap:start_link("ejabberd_bind", LDAPServers, 389, RootDN, Password),
+start(Host) ->
+    LDAPServers = ejabberd_config:get_local_option({ldap_servers, Host}),
+    RootDN = ejabberd_config:get_local_option({ldap_rootdn, Host}),
+    Password = ejabberd_config:get_local_option({ldap_password, Host}),
+    eldap:start_link(gen_mod:get_module_proc(Host, ejabberd),
+		     LDAPServers, 389, RootDN, Password),
+    eldap:start_link(gen_mod:get_module_proc(Host, ejabberd_bind),
+		     LDAPServers, 389, RootDN, Password),
     ok.
 
 plain_password_required() ->
     true.
 
-check_password(User, _Server, Password) ->
-    case find_user_dn(User) of
+check_password(User, Server, Password) ->
+    case find_user_dn(User, Server) of
 	false ->
 	    false;
 	DN ->
-	    case eldap:bind("ejabberd_bind", DN, Password) of
+	    LServer = jlib:nameprep(Server),
+	    case eldap:bind(gen_mod:get_module_proc(LServer, ejabberd_bind),
+			    DN, Password) of
 		ok ->
 		    true;
 		_ ->
@@ -70,12 +74,13 @@ dirty_get_registered_users() ->
 
 get_vh_registered_users(Server) ->
     LServer = jlib:nameprep(Server),
-    Attr = ejabberd_config:get_local_option(ldap_uidattr),
+    Attr = ejabberd_config:get_local_option({ldap_uidattr, LServer}),
     Filter = eldap:present(Attr),
-    Base = ejabberd_config:get_local_option(ldap_base),
-    case eldap:search("ejabberd", [{base, Base},
-				   {filter, Filter},
-				   {attributes, [Attr]}]) of
+    Base = ejabberd_config:get_local_option({ldap_base, LServer}),
+    case eldap:search(gen_mod:get_module_proc(LServer, ejabberd),
+		      [{base, Base},
+		       {filter, Filter},
+		       {attributes, [Attr]}]) of
 	#eldap_search_result{entries = Es} ->
 	    lists:flatmap(
 	      fun(E) ->
@@ -101,8 +106,8 @@ get_password(_User, _Server) ->
 get_password_s(_User, _Server) ->
     "".
 
-is_user_exists(User, _Server) ->
-    case find_user_dn(User) of
+is_user_exists(User, Server) ->
+    case find_user_dn(User, Server) of
 	false ->
 	    false;
 	_DN ->
@@ -120,13 +125,15 @@ remove_user(_User, _Server, _Password) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-find_user_dn(User) ->
-    Attr = ejabberd_config:get_local_option(ldap_uidattr),
+find_user_dn(User, Server) ->
+    LServer = jlib:nameprep(Server),
+    Attr = ejabberd_config:get_local_option({ldap_uidattr, LServer}),
     Filter = eldap:equalityMatch(Attr, User),
-    Base = ejabberd_config:get_local_option(ldap_base),
-    case eldap:search("ejabberd", [{base, Base},
-				   {filter, Filter},
-				   {attributes, []}]) of
+    Base = ejabberd_config:get_local_option({ldap_base, LServer}),
+    case eldap:search(gen_mod:get_module_proc(LServer, ejabberd),
+		      [{base, Base},
+		       {filter, Filter},
+		       {attributes, []}]) of
 	#eldap_search_result{entries = [E | _]} ->
 	    E#eldap_entry.object_name;
 	_ ->

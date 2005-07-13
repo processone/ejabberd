@@ -11,7 +11,7 @@
 -vsn('$Revision$ ').
 
 %% External exports
--export([start/0,
+-export([start/1,
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
@@ -29,21 +29,22 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start() ->
-    extauth:start(ejabberd_config:get_local_option(extauth_program)),
+start(Host) ->
+    extauth:start(
+      Host, ejabberd_config:get_local_option({extauth_program, Host})),
     ok.
 
 plain_password_required() ->
     true.
 
-check_password(User, _Server, Password) ->
-    extauth:check_password(User, Password).
+check_password(User, Server, Password) ->
+    extauth:check_password(User, Server, Password).
 
 check_password(User, Server, Password, _StreamID, _Digest) ->
     check_password(User, Server, Password).
 
-set_password(User, _Server, Password) ->
-    extauth:set_password(User, Password).
+set_password(User, Server, Password) ->
+    extauth:set_password(User, Server, Password).
 
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
@@ -60,8 +61,8 @@ get_password(_User, _Server) ->
 get_password_s(_User, _Server) ->
     "".
 
-is_user_exists(User, _Server) ->
-    extauth:is_user_exists(User).
+is_user_exists(User, Server) ->
+    extauth:is_user_exists(User, Server).
 
 remove_user(_User, _Server) ->
     {error, not_allowed}.

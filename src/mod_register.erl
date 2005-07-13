@@ -150,12 +150,13 @@ try_register(User, Server, Password) ->
 
 
 send_welcome_message(JID) ->
-    case ejabberd_config:get_local_option(welcome_message) of
+    Host = JID#jid.lserver,
+    case ejabberd_config:get_local_option({welcome_message, Host}) of
 	{"", ""} ->
 	    ok;
 	{Subj, Body} ->
 	    ejabberd_router:route(
-	      jlib:make_jid("", ?MYNAME, ""),
+	      jlib:make_jid("", Host, ""),
 	      JID,
 	      {xmlelement, "message", [{"type", "normal"}],
 	       [{xmlelement, "subject", [], [{xmlcdata, Subj}]},
@@ -165,7 +166,8 @@ send_welcome_message(JID) ->
     end.
 
 send_registration_notifications(UJID) ->
-    case ejabberd_config:get_local_option(registration_watchers) of
+    Host = UJID#jid.lserver,
+    case ejabberd_config:get_local_option({registration_watchers, Host}) of
 	[] -> ok;
 	JIDs when is_list(JIDs) ->
 	    Body = lists:flatten(
@@ -178,7 +180,7 @@ send_registration_notifications(UJID) ->
 			  error -> ok;
 			  JID ->
 			      ejabberd_router:route(
-				jlib:make_jid("", ?MYNAME, ""),
+				jlib:make_jid("", Host, ""),
 				JID,
 				{xmlelement, "message", [{"type", "chat"}],
 				 [{xmlelement, "body", [],

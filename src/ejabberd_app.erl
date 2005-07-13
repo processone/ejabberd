@@ -28,13 +28,13 @@ start(normal, _Args) ->
     acl:start(),
     gen_mod:start(),
     ejabberd_config:start(),
+    Sup = ejabberd_sup:start_link(),
     ejabberd_auth:start(),
     cyrsasl:start(),
     % Profiling
     %eprof:start(),
     %eprof:profile([self()]),
     %fprof:trace(start, "/tmp/fprof"),
-    Sup = ejabberd_sup:start_link(),
     start(),
     load_modules(),
     Sup;

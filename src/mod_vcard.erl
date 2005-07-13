@@ -69,7 +69,7 @@ start(Host, Opts) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
-    catch mod_disco:register_sm_feature(?NS_VCARD),
+    catch mod_disco:register_sm_feature(Host, ?NS_VCARD),
     Hosts = gen_mod:get_hosts(Opts, "vjud."),
     Search = gen_mod:get_opt(search, Opts, true),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),

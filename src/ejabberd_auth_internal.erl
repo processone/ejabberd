@@ -11,7 +11,7 @@
 -vsn('$Revision$ ').
 
 %% External exports
--export([start/0,
+-export([start/1,
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
@@ -33,7 +33,7 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start() ->
+start(_Host) ->
     mnesia:create_table(passwd, [{disc_copies, [node()]},
 				 {attributes, record_info(fields, passwd)}]),
     update_table(),

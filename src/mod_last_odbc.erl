@@ -18,7 +18,7 @@
 	 process_sm_iq/3,
 	 on_presence_update/4,
 	 store_last_info/4,
-	 remove_user/1]).
+	 remove_user/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -72,17 +72,17 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 		(Subscription == both) or (Subscription == from) ->
 		    case catch mod_privacy:get_user_list(User, Server) of
 			{'EXIT', _Reason} ->
-			    get_last(IQ, SubEl, User);
+			    get_last(IQ, SubEl, User, Server);
 			List ->
 			    case catch mod_privacy:check_packet(
-					 User, ?MYNAME, List, % TODO
+					 User, Server, List,
 					 {From, To,
 					  {xmlelement, "presence", [], []}},
 					 out) of
 				{'EXIT', _Reason} ->
-				    get_last(IQ, SubEl, User);
+				    get_last(IQ, SubEl, User, Server);
 				allow ->
-				    get_last(IQ, SubEl, User);
+				    get_last(IQ, SubEl, User, Server);
 				deny ->
 				    IQ#iq{type = error,
 					  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
@@ -94,9 +94,10 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    end
     end.
 
-get_last(IQ, SubEl, LUser) ->
+get_last(IQ, SubEl, LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(
+		 LServer,
 		 ["select seconds, state from last "
 		  "where username='", Username, "'"]) of
 	{'EXIT', _Reason} ->
@@ -129,10 +130,12 @@ on_presence_update(User, Server, _Resource, Status) ->
 
 store_last_info(User, Server, TimeStamp, Status) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(User),
     Username = ejabberd_odbc:escape(LUser),
     Seconds = ejabberd_odbc:escape(integer_to_list(TimeStamp)),
     State = ejabberd_odbc:escape(Status),
     ejabberd_odbc:sql_query(
+      LServer,
       ["begin;"
        "delete from last where username='", Username, "';"
        "insert into last(username, seconds, state) "
@@ -140,9 +143,11 @@ store_last_info(User, Server, TimeStamp, Status) ->
        "commit"]).
 
 
-remove_user(User) ->
+remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
     ejabberd_odbc:sql_query(
+      LServer,
       ["delete from last where username='", Username, "'"]).
 

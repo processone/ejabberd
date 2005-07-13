@@ -20,13 +20,7 @@
 -record(state, {step, nonce, username, authzid, get_password}).
 
 start(_Opts) ->
-    case ejabberd_auth:plain_password_required() of
-	true ->
-	    ok;
-	false ->
-	    cyrsasl:register_mechanism("DIGEST-MD5", ?MODULE),
-	    ok
-    end.
+    cyrsasl:register_mechanism("DIGEST-MD5", ?MODULE, true).
 
 stop() ->
     ok.

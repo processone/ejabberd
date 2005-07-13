@@ -195,7 +195,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					      fun(S) ->
 						      {xmlelement, "mechanism", [],
 						       [{xmlcdata, S}]}
-					      end, cyrsasl:listmech()),
+					      end, cyrsasl:listmech(Server)),
 				    TLS = StateData#state.tls,
 				    TLSEnabled = StateData#state.tls_enabled,
 				    TLSRequired = StateData#state.tls_required,
@@ -312,7 +312,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    {next_state, wait_for_auth, StateData};
 	{auth, _ID, get, {U, _, _, _}} ->
 	    {xmlelement, Name, Attrs, _Els} = jlib:make_result_iq_reply(El),
-	    Res = case ejabberd_auth:plain_password_required() of
+	    Res = case ejabberd_auth:plain_password_required(
+			 StateData#state.server) of
 		      false ->
 			  {xmlelement, Name, Attrs,
 			   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],

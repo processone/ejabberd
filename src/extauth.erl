@@ -9,35 +9,36 @@
 -module(extauth).
 -author('leifj@it.su.se').
 
--export([start/1, stop/0, init/1,
-	 check_password/2, set_password/2, is_user_exists/1 ]).
+-export([start/2, stop/1, init/2,
+	 check_password/3, set_password/3, is_user_exists/2]).
 
 
-start(ExtPrg) ->
-    spawn(?MODULE, init, [ExtPrg]).
+start(Host, ExtPrg) ->
+    spawn(?MODULE, init, [Host, ExtPrg]).
 
-init(ExtPrg) ->
-    register(eauth,self()),
+init(Host, ExtPrg) ->
+    register(gen_mod:get_module_proc(Host, eauth), self()),
     process_flag(trap_exit,true),
     Port = open_port({spawn, ExtPrg}, [{packet,2}]),
     loop(Port).
 
-stop() ->
-    eauth ! stop.
+stop(Host) ->
+    gen_mod:get_module_proc(Host, eauth) ! stop.
 
-check_password(User,Password) ->
-    call_port(["auth",User,Password]).
+check_password(User, Server, Password) ->
+    call_port(Server, ["auth", User, Server, Password]).
 
-is_user_exists(User) ->
-    call_port(["isuser",User]).
+is_user_exists(User, Server) ->
+    call_port(Server, ["isuser", User, Server]).
 
-set_password(User,Password) ->
-    call_port(["setpass",User,Password]).
+set_password(User, Server, Password) ->
+    call_port(Server, ["setpass", User, Server, Password]).
 
-call_port(Msg) ->
-    eauth ! {call, self(), Msg},
+call_port(Server, Msg) ->
+    LServer = jlib:nameprep(Server),
+    gen_mod:get_module_proc(LServer, eauth) ! {call, self(), Msg},
     receive
-	{eauth,Result}->
+	{eauth,Result} ->
 	    Result
     end.
 
