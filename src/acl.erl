@@ -102,7 +102,15 @@ match_rule(Host, Rule, JID) ->
 			undefined ->
 			    match_acls(GACLs, JID, Host);
 			ACLs ->
-			    match_acls(GACLs ++ ACLs, JID, Host)
+			    case lists:reverse(GACLs) of
+				[{allow, all} | Rest] ->
+				    match_acls(
+				      lists:reverse(Rest) ++ ACLs ++
+				      [{allow, all}],
+				      JID, Host);
+				_ ->
+				    match_acls(GACLs ++ ACLs, JID, Host)
+			    end
 		    end
 	    end
     end.
