@@ -20,8 +20,8 @@
 	 process_sm_iq_info/3,
 	 register_feature/2,
 	 unregister_feature/2,
-	 register_extra_domain/1,
-	 unregister_extra_domain/1,
+	 register_extra_domain/2,
+	 unregister_extra_domain/2,
 	 register_sm_feature/2,
 	 unregister_sm_feature/2,
 	 register_sm_node/4,
@@ -56,7 +56,8 @@ start(Host, Opts) ->
 
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
-    lists:foreach(fun register_extra_domain/1, ExtraDomains),
+    lists:foreach(fun(Domain) -> register_extra_domain(Host, Domain) end,
+		  ExtraDomains),
     catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
     catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
     ok.
@@ -66,8 +67,8 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
-    catch ets:delete(disco_features),
-    catch ets:delete(disco_extra_domains),
+    catch ets:match_delete(disco_features, {{'_', Host}}),
+    catch ets:match_delete(disco_extra_domains, {{'_', Host}}),
     ok.
 
 
@@ -79,13 +80,13 @@ unregister_feature(Host, Feature) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
     ets:delete(disco_features, {Feature, Host}).
 
-register_extra_domain(Domain) ->
+register_extra_domain(Host, Domain) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
-    ets:insert(disco_extra_domains, {Domain}).
+    ets:insert(disco_extra_domains, {{Domain, Host}}).
 
-unregister_extra_domain(Domain) ->
+unregister_extra_domain(Host, Domain) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
-    ets:delete(disco_extra_domains, Domain).
+    ets:delete(disco_extra_domains, {Domain, Host}).
 
 process_local_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -128,12 +129,17 @@ process_local_iq_info(From, To, #iq{type = Type, xmlns = XMLNS,
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
+	    LServer = To#jid.lserver,
 	    SNode = xml:get_tag_attr_s("node", SubEl),
 	    Node = string:tokens(SNode, "/"),
-	    case {acl:match_rule(To#jid.lserver, configure, From), Node} of
+	    case {acl:match_rule(LServer, configure, From), Node} of
 		{_, []} ->
-		    Features = lists:map(fun feature_to_xml/1,
-					 ets:tab2list(disco_features)),
+		    Features = lists:map(
+				 fun feature_to_xml/1,
+				 ets:select(disco_features,
+					    [{{{'$1', LServer}},
+					      [],
+					      ['$1']}])),
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement,
 				     "query",
@@ -229,13 +235,21 @@ domain_to_xml(Domain) ->
 get_services_only(Host) ->
     lists:map(fun domain_to_xml/1,
 	      get_vh_services(Host)) ++
-	lists:map(fun domain_to_xml/1, ets:tab2list(disco_extra_domains)).
+	lists:map(fun domain_to_xml/1,
+		  ets:select(disco_extra_domains,
+			     [{{{'$1', Host}},
+			       [],
+			       ['$1']}])).
 
 get_local_items(Host, [], Server, Lang) ->
     Domains =
 	lists:map(fun domain_to_xml/1,
 		  get_vh_services(Host)) ++
-	lists:map(fun domain_to_xml/1, ets:tab2list(disco_extra_domains)),
+	lists:map(fun domain_to_xml/1,
+		  ets:select(disco_extra_domains,
+			     [{{{'$1', Host}},
+			       [],
+			       ['$1']}])),
     {result,
      Domains ++
      [?NODE("Configuration",            "config"),

@@ -1,5 +1,8 @@
 2005-07-15  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_disco.erl: Fixed processing of host features and
+	extra_domains option
+
 	* src/ejabberd_c2s.erl: Processing of jabber:iq:register totally
 	moved to mod_register.erl (thanks to Sergei Golovan)
 	* src/mod_register.erl: Likewise
