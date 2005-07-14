@@ -1,3 +1,18 @@
+2005-07-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Processing of jabber:iq:register totally
+	moved to mod_register.erl (thanks to Sergei Golovan)
+	* src/mod_register.erl: Likewise
+
+	* src/win32/ejabberd.nsi: Added two pictures in installer (thanks
+	to Maxim Ryazanov)
+	* src/win32/ejabberd_header.bmp: Likewise
+	* src/win32/ejabberd_intro.bmp: Likewise
+
+	* src/web/ejabberd_web_admin.erl: Fixed spelling of word
+	"authentication"
+	* src/ejabberd_c2s.erl: Likewise
+
 2005-07-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_register.erl: Bugfix
@@ -745,10 +760,10 @@
 2004-07-30  Alexey Shchepin  <alexey@sevcom.net>
 
 	* examples/extauth/check_pass_null.pl: A reference "null"
-	implementation of external authentification script (thanks to Leif
+	implementation of external authentication script (thanks to Leif
 	Johansson)
 
-	* src/extauth.erl: Support for external authentification
+	* src/extauth.erl: Support for external authentication
 	(thanks to Leif Johansson)
 	* src/ejabberd_auth.erl: Likewise
 
@@ -1382,7 +1397,7 @@
 
 	* src/ejabberd.cfg.example: Updated
 
-	* src/ejabberd_auth.erl: Support for LDAP authentification
+	* src/ejabberd_auth.erl: Support for LDAP authentication
 	* src/cyrsasl_digest.erl: Likewise
 	* src/mod_register.erl: Likewise
 	* src/ejabberd_c2s.erl: Likewise
@@ -1436,7 +1451,7 @@
 
 2003-11-07  Alexey Shchepin  <alexey@sevcom.net>
 
-	* src/cyrsasl.erl: Updated SASL authentification
+	* src/cyrsasl.erl: Updated SASL authentication
 	* src/ejabberd_c2s.erl: Likewise
 
 	* src/ejabberd_sm.erl: Better resource handling
@@ -1470,7 +1485,7 @@
 
 2003-10-30  Alexey Shchepin  <alexey@sevcom.net>
 
-	* src/ejabberd_c2s.erl: More strong check for authentificated JID
+	* src/ejabberd_c2s.erl: More strong check for authenticated JID
 
 	* src/mod_roster.erl: Bugfix
 
@@ -1628,7 +1643,7 @@
 
 2003-10-09  Alexey Shchepin  <alexey@sevcom.net>
 
-	* src/ejabberd_c2s.erl: Added authentification logging
+	* src/ejabberd_c2s.erl: Added authentication logging
 
 	* src/ejabberd_listener.erl: Added logging of accepted connections
 
@@ -1715,7 +1730,7 @@
 	* src/ejabberd_s2s_out.erl: Likewise
 
 	* src/ejabberd_c2s.erl: Added sending of empty <stream:features/>
-	element after opening of authentificated stream
+	element after opening of authenticated stream
 
 2003-09-02  Alexey Shchepin  <alexey@sevcom.net>
 

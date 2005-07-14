@@ -19,6 +19,10 @@
 
     !define MUI_ICON "ejabberd.ico"
     !define MUI_UNICON "ejabberd.ico"
+    !define MUI_HEADERIMAGE                                  
+    !define MUI_HEADERIMAGE_BITMAP "ejabberd_header.bmp"     
+    !define MUI_WELCOMEFINISHPAGE_BITMAP "ejabberd_intro.bmp"
+
 
 ;--------------------------------
 ;Configuration
@@ -28,6 +32,10 @@
 ;--------------------------------
 ;Reserve Files
   
+    ReserveFile "ejabberd.ico"
+    ReserveFile "ejabberd.ico"
+    ReserveFile "ejabberd_header.bmp"     
+    ReserveFile "ejabberd_intro.bmp"
     !ifdef HACKED_INSTALLOPTIONS
 	ReserveFile "CheckUserH.ini"
 	ReserveFile "CheckReqs1H.ini"
@@ -111,12 +119,12 @@ FunctionEnd
     !define MUI_ABORTWARNING
 
 ;--------------------------------
-;Pages
+;Installer/Uninstaller pages
 
     !insertmacro MUI_PAGE_WELCOME
+    !insertmacro MUI_PAGE_LICENSE "..\..\COPYING"
     Page custom CheckUser LeaveCheckUser
     Page custom CheckService LeaveCheckService
-    !insertmacro MUI_PAGE_LICENSE "..\..\COPYING"
     Page custom CheckReqs LeaveCheckReqs
     Page custom CheckReqs1 LeaveCheckReqs1
     ;!insertmacro MUI_PAGE_COMPONENTS

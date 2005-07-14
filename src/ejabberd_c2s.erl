@@ -49,7 +49,7 @@
 		tls_required = false,
 		tls_enabled = false,
 		tls_options = [],
-		authentificated = false,
+		authenticated = false,
 		jid,
 		user = "", server = ?MYNAME, resource = "",
 		pres_t = ?SETS:new(),
@@ -178,7 +178,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						    " version='1.0'",
 						    DefaultLang]),
 			    send_text(StateData, Header),
-			    case StateData#state.authentificated of
+			    case StateData#state.authenticated of
 				false ->
 				    SASLState =
 					cyrsasl:server_new(
@@ -223,10 +223,11 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						  TLSFeature ++
 						  [{xmlelement, "mechanisms",
 						    [{"xmlns", ?NS_SASL}],
-						    Mechs},
-						   {xmlelement, "register",
-						    [{"xmlns", ?NS_FEATURE_IQREGISTER}],
-						    []}]}),
+						    Mechs}] ++
+						   ejabberd_hooks:run_fold(
+						     c2s_stream_features,
+						     Server,
+						     [], [])}),
 				    {next_state, wait_for_feature_request,
 				     StateData#state{server = Server,
 						     sasl_state = SASLState,
@@ -411,21 +412,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		    end
 	    end;
 	_ ->
-	    case jlib:iq_query_info(El) of
-		#iq{xmlns = ?NS_REGISTER} = IQ ->
-		    ResIQ = mod_register:process_iq(
-			      {"", "", ""},
-			      jlib:make_jid("", StateData#state.server, ""),
-			      IQ),
-		    Res1 = jlib:replace_from_to({"", StateData#state.server, ""},
-						{"", "", ""},
-						jlib:iq_to_xml(ResIQ)),
-		    Res = jlib:remove_attr("to", Res1),
-		    send_element(StateData, Res),
-		    {next_state, wait_for_auth, StateData};
-		_ ->
-		    {next_state, wait_for_auth, StateData}
-	    end
+	    process_unauthenticated_stanza(StateData, El),
+	    {next_state, wait_for_auth, StateData}
     end;
 
 wait_for_auth({xmlstreamend, _Name}, StateData) ->
@@ -463,7 +451,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
 		     StateData#state{streamid = new_id(),
-				     authentificated = true,
+				     authenticated = true,
 				     user = U
 				    }};
 		{continue, ServerOut, NewSASLState} ->
@@ -506,21 +494,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 					 ?STREAM_TRAILER),
 		    {stop, normal, StateData};
 		true ->
-		    case jlib:iq_query_info(El) of
-			#iq{xmlns = ?NS_REGISTER} = IQ ->
-			    ResIQ = mod_register:process_iq(
-				      {"", "", ""},
-				      jlib:make_jid("", StateData#state.server, ""),
-				      IQ),
-			    Res1 = jlib:replace_from_to({"", StateData#state.server, ""},
-							{"", "", ""},
-							jlib:iq_to_xml(ResIQ)),
-			    Res = jlib:remove_attr("to", Res1),
-			    send_element(StateData, Res),
-			    {next_state, wait_for_feature_request, StateData};
-			_ ->
-			    {next_state, wait_for_feature_request, StateData}
-		    end
+		    process_unauthenticated_stanza(StateData, El),
+		    {next_state, wait_for_feature_request, StateData}
 	    end
     end;
 
@@ -553,7 +528,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 			      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
 		     StateData#state{streamid = new_id(),
-				     authentificated = true,
+				     authenticated = true,
 				     user = U
 				    }};
 		{continue, ServerOut, NewSASLState} ->
@@ -572,21 +547,8 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		    {next_state, wait_for_feature_request, StateData}
 	    end;
 	_ ->
-	    case jlib:iq_query_info(El) of
-		#iq{xmlns = ?NS_REGISTER} = IQ ->
-		    ResIQ = mod_register:process_iq(
-			      {"", "", ""},
-			      jlib:make_jid("", StateData#state.server, ""),
-			      IQ),
-		    Res1 = jlib:replace_from_to({"", StateData#state.server, ""},
-						{"", "", ""},
-						jlib:iq_to_xml(ResIQ)),
-		    Res = jlib:remove_attr("to", Res1),
-		    send_element(StateData, Res),
-		    {next_state, wait_for_feature_request, StateData};
-		_ ->
-		    {next_state, wait_for_feature_request, StateData}
-	    end
+	    process_unauthenticated_stanza(StateData, El),
+	    {next_state, wait_for_feature_request, StateData}
     end;
 
 wait_for_sasl_response({xmlstreamend, _Name}, StateData) ->
@@ -863,7 +825,7 @@ handle_info({send_text, Text}, StateName, StateData) ->
 handle_info(replaced, _StateName, StateData) ->
     % TODO
     %send_text(StateData#state.sender, Text),
-    {stop, normal, StateData#state{authentificated = replaced}};
+    {stop, normal, StateData#state{authenticated = replaced}};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
     {Pass, NewAttrs, NewState} =
@@ -1005,7 +967,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 terminate(_Reason, StateName, StateData) ->
     case StateName of
 	session_established ->
-	    case StateData#state.authentificated of
+	    case StateData#state.authenticated of
 		replaced ->
 		    ?INFO_MSG("(~w) Replaced session for ~s",
 			      [StateData#state.socket,
@@ -1568,3 +1530,30 @@ get_statustag(Presence) ->
     case xml:get_path_s(Presence, [{elem, "status"}, cdata]) of
 	ShowTag -> ShowTag
     end.
+
+process_unauthenticated_stanza(StateData, El) ->
+    case jlib:iq_query_info(El) of
+	#iq{} = IQ ->
+	    Res = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
+					  StateData#state.server,
+					  empty,
+					  [StateData#state.server, IQ]),
+	    case Res of
+		empty ->
+		    % The only reasonable IQ's here are auth and register IQ's
+		    % They contain secrets, so don't include subelements to response
+		    ResIQ = IQ#iq{type = error,
+				  sub_el = [?ERR_FEATURE_NOT_IMPLEMENTED]},
+		    Res1 = jlib:replace_from_to(
+			     jlib:make_jid("", StateData#state.server, ""),
+			     jlib:make_jid("", "", ""),
+			     jlib:iq_to_xml(ResIQ)),
+		    send_element(StateData, jlib:remove_attr("to", Res1));
+		_ ->                    
+		    send_element(StateData, Res)
+	    end;
+	_ ->
+	    % Drop any stanza, which isn't IQ stanza
+	    ok
+    end.
+

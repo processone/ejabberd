@@ -14,6 +14,8 @@
 
 -export([start/2,
 	 stop/1,
+	 stream_feature_register/1,
+	 unauthenticated_iq_register/3,
 	 process_iq/3]).
 
 -include("ejabberd.hrl").
@@ -25,11 +27,36 @@ start(Host, Opts) ->
 				  ?MODULE, process_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_REGISTER,
 				  ?MODULE, process_iq, IQDisc),
+    ejabberd_hooks:add(c2s_stream_features, Host,
+ 		       ?MODULE, stream_feature_register, 50),
+    ejabberd_hooks:add(c2s_unauthenticated_iq, Host,
+ 		       ?MODULE, unauthenticated_iq_register, 50),
     ok.
 
 stop(Host) ->
+    ejabberd_hooks:delete(c2s_stream_features, Host,
+ 			  ?MODULE, stream_feature_register, 50),
+    ejabberd_hooks:delete(c2s_unauthenticated_iq, Host,
+			  ?MODULE, unauthenticated_iq_register, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_REGISTER),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_REGISTER).
+
+
+stream_feature_register(Acc) ->
+    [{xmlelement, "register",
+      [{"xmlns", ?NS_FEATURE_IQREGISTER}], []} | Acc].
+
+unauthenticated_iq_register(_Acc, Server, #iq{xmlns = ?NS_REGISTER} = IQ) ->
+    ResIQ = process_iq(jlib:make_jid("", "", ""),
+ 		       jlib:make_jid("", Server, ""),
+ 		       IQ),
+    Res1 = jlib:replace_from_to(jlib:make_jid("", Server, ""),
+ 				jlib:make_jid("", "", ""),
+ 				jlib:iq_to_xml(ResIQ)),
+    jlib:remove_attr("to", Res1);
+
+unauthenticated_iq_register(Acc, _Server, _IQ) ->
+    Acc.
 
 process_iq(From, To,
 	   #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
