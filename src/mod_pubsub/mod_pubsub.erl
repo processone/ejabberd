@@ -20,11 +20,20 @@
 	 system_terminate/4,
 	 system_code_change/4]).
 
+-export([delete_item/3,
+	 set_entities/4,
+	 delete_node/2,
+	 create_new_node/2,
+	 subscribe_node/3,
+	 get_node_config/4,
+	 set_node_config/4]).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
 -define(DICT, dict).
--define(MAXITEMS, 10).
+-define(MAXITEMS, 20).
+-define(MAX_PAYLOAD_SIZE, 100000).
 
 -record(pubsub_node, {host_node, host_parent, info}).
 -record(nodeinfo, {items = [],
@@ -62,6 +71,7 @@ init(Host, ServerHost, ServedHosts, Parent) ->
     lists:foreach(fun(H) ->
 			  create_new_node(Host, ["home", H], ?MYJID)
 		  end, ServedHosts),
+    ets:new(gen_mod:get_module_proc(Host, pubsub_presence), [set, named_table]),
     loop(Host, Parent).
 
 loop(Host, Parent) ->
@@ -88,6 +98,33 @@ loop(Host, Parent) ->
 	    loop(Host, Parent)
     end.
 
+%%% API functions
+
+delete_item(From, Node, ItemID) ->
+    delete_item(get_host(), From, Node, ItemID).
+
+delete_node(From, Node) ->
+    delete_node(get_host(), From, Node).
+
+create_new_node(Node, From) ->
+    create_new_node(get_host(), Node, From).
+
+subscribe_node(From, JID, Node) ->
+    subscribe_node(get_host(), From, JID, Node).
+
+set_node_config(From, Node, Els, Lang) ->
+    set_node_config(get_host(), From, Node, Els, Lang).
+
+get_host() ->
+    ejabberd_mod_pubsub ! {get_host, self()},
+    receive
+	{pubsub_host, Host} ->
+	    Host
+    after 5000 ->
+	    timeout
+    end.
+
+%%% Internal functions
 
 do_route(Host, From, To, Packet) ->
     {xmlelement, Name, Attrs, Els} = Packet,
@@ -124,36 +161,24 @@ do_route(Host, From, To, Packet) ->
 					  Packet, Error)
 				end,
 			    ejabberd_router:route(To, From, Res);
-			%#iq{type = get, xmlns = ?NS_REGISTER = XMLNS,
-			%    lang = Lang, sub_el = SubEl} = IQ ->
-			%    Res = IQ#iq{type = result,
-			%		 sub_el = [{xmlelement, "query",
-			%			    [{"xmlns", XMLNS}],
-			%			    iq_get_register_info(
-			%			      From, Lang)}]},
-			%    ejabberd_router:route(To,
-			%			  From,
-			%			  jlib:iq_to_xml(Res));
-			%#iq{type = set, xmlns = ?NS_REGISTER = XMLNS,
-			%    sub_el = SubEl} = IQ ->
-			%    case process_iq_register_set(From, SubEl) of
-			%	{result, IQRes} ->
-			%	    Res = IQ#iq{type = result,
-			%			sub_el = [{xmlelement, "query",
-			%				   [{"xmlns", XMLNS}],
-			%				   IQRes}]},
-			%	    ejabberd_router:route(
-			%	      To, From, jlib:iq_to_xml(Res));
-			%	{error, Error} ->
-			%	    Err = jlib:make_error_reply(
-			%		    Packet, Error),
-			%	    ejabberd_router:route(
-			%	      To, From, Err)
-			%    end;
 			#iq{type = Type, xmlns = ?NS_PUBSUB = XMLNS,
 			    sub_el = SubEl} = IQ ->
 			    Res =
 				case iq_pubsub(Host, From, Type, SubEl) of
+				    {result, IQRes} ->
+					jlib:iq_to_xml(
+					  IQ#iq{type = result,
+						sub_el = IQRes});
+				    {error, Error} ->
+					jlib:make_error_reply(
+					  Packet, Error)
+				end,
+			    ejabberd_router:route(To, From, Res);
+			#iq{type = Type, xmlns = ?NS_PUBSUB_OWNER = XMLNS,
+			    lang = Lang, sub_el = SubEl} = IQ ->
+			    Res =
+				case iq_pubsub_owner(
+				       Host, From, Type, Lang, SubEl) of
 				    {result, IQRes} ->
 					jlib:iq_to_xml(
 					  IQ#iq{type = result,
@@ -180,6 +205,19 @@ do_route(Host, From, To, Packet) ->
 			_ ->
 			    ok
 		    end;
+		"presence" ->
+		    Type = xml:get_attr_s("type", Attrs),
+		    if
+			(Type == "unavailable") or (Type == "error") ->
+			    ets:delete(
+			      gen_mod:get_module_proc(Host, pubsub_presence),
+			      {From#jid.luser, From#jid.lserver});
+			true ->
+			    ets:insert(
+			      gen_mod:get_module_proc(Host, pubsub_presence),
+			      {{From#jid.luser, From#jid.lserver}, []})
+		    end,
+		    ok;
 		_ ->
 		    ok
 	    end;
@@ -219,7 +257,6 @@ iq_disco_info(SNode) ->
 	      [{"category", "pubsub"},
 	       {"type", "generic"},
 	       {"name", "ejabberd/mod_pubsub"}], []},
-	     %{xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB_EVENT}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB_OWNER}], []},
@@ -286,104 +323,6 @@ iq_disco_items(Host, From, SNode) ->
     end.
 
 
-% TODO
-%-define(XFIELD(Type, Label, Var, Val),
-%	{xmlelement, "field", [{"type", Type},
-%			       {"label", translate:translate(Lang, Label)},
-%			       {"var", Var}],
-%	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
-%
-%iq_get_register_info(From, Lang) ->
-%    {LUser, LServer, _} = jlib:jid_tolower(From),
-%    LUS = {LUser, LServer},
-%    Nick = case catch mnesia:dirty_read(muc_registered, LUS) of
-%	       {'EXIT', Reason} ->
-%		   "";
-%	       [] ->
-%		   "";
-%	       [#muc_registered{nick = N}] ->
-%		   N
-%	   end,
-%    [{xmlelement, "instructions", [],
-%      [{xmlcdata, translate:translate(
-%		    Lang, "You need a x:data capable client to register.")}]},
-%     {xmlelement, "x",
-%      [{"xmlns", ?NS_XDATA}],
-%      [{xmlelement, "title", [],
-%	[{xmlcdata,
-%	  translate:translate(
-%	    Lang, "Nick Registration")}]},
-%       {xmlelement, "instructions", [],
-%	[{xmlcdata,
-%	  translate:translate(
-%	    Lang, "Enter nick you want to register.")}]},
-%       ?XFIELD("text-single", "Nick", "nick", Nick)]}].
-%
-%iq_set_register_info(From, XData) ->
-%    {LUser, LServer, _} = jlib:jid_tolower(From),
-%    LUS = {LUser, LServer},
-%    case lists:keysearch("nick", 1, XData) of
-%	false ->
-%	    {error, ?ERR_BAD_REQUEST};
-%	{value, {_, [Nick]}} ->
-%	    F = fun() ->
-%			case Nick of
-%			    "" ->
-%				mnesia:delete({muc_registered, LUS}),
-%				ok;
-%			    _ ->
-%				Allow = case mnesia:index_read(
-%					       muc_registered,
-%					       Nick,
-%					       #muc_registered.nick) of
-%					    [] ->
-%						true;
-%					    [#muc_registered{user = U}] ->
-%						U == LUS
-%					end,
-%				if
-%				    Allow ->
-%					mnesia:write(
-%					  #muc_registered{user = LUS,
-%							  nick = Nick}),
-%					ok;
-%				    true ->
-%					false
-%				end
-%			end
-%		end,
-%	    case mnesia:transaction(F) of
-%		{atomic, ok} ->
-%		    {result, []};
-%		{atomic, false} ->
-%		    {error, ?ERR_NOT_ALLOWED};
-%		_ ->
-%		    {error, ?ERR_INTERNAL_SERVER_ERROR}
-%	    end
-%    end.
-%
-%process_iq_register_set(From, SubEl) ->
-%    {xmlelement, Name, Attrs, Els} = SubEl,
-%    case xml:remove_cdata(Els) of
-%	[{xmlelement, "x", Attrs1, Els1} = XEl] ->
-%	    case {xml:get_tag_attr_s("xmlns", XEl),
-%		  xml:get_tag_attr_s("type", XEl)} of
-%		{?NS_XDATA, "cancel"} ->
-%		    {result, []};
-%		{?NS_XDATA, "submit"} ->
-%		    XData = jlib:parse_xdata_submit(XEl),
-%		    case XData of
-%			invalid ->
-%			    {error, ?ERR_BAD_REQUEST};
-%			_ ->
-%			    iq_set_register_info(From, XData)
-%		    end;
-%		_ ->
-%		    {error, ?ERR_BAD_REQUEST}
-%	    end;
-%	_ ->
-%	    {error, ?ERR_BAD_REQUEST}
-%    end.
 
 iq_get_vcard(Lang) ->
     [{xmlelement, "FN", [],
@@ -440,8 +379,8 @@ iq_pubsub(Host, From, Type, SubEl) ->
 		    get_entities(Host, From, Node);
 		{set, "entities"} ->
 		    set_entities(Host, From, Node, xml:remove_cdata(Els));
-		%{get, "configure"} ->
-		%    get_node_config(From, Node);
+		{get, "affiliations"} ->
+		    get_affiliations(Host, From);
 		_ ->
 		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
 	    end;
@@ -455,6 +394,31 @@ iq_pubsub(Host, From, Type, SubEl) ->
 			       {"label", translate:translate(Lang, Label)},
 			       {"var", Var}],
 	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+
+-define(BOOLXFIELD(Label, Var, Val),
+	?XFIELD("boolean", Label, Var,
+		case Val of
+		    true -> "1";
+		    _ -> "0"
+		end)).
+
+-define(STRINGXFIELD(Label, Var, Val),
+	?XFIELD("text-single", Label, Var, Val)).
+
+-define(XFIELDOPT(Type, Label, Var, Val, Opts),
+	{xmlelement, "field", [{"type", Type},
+			       {"label", translate:translate(Lang, Label)},
+			       {"var", Var}],
+	 lists:map(fun(Opt) ->
+			   {xmlelement, "option", [],
+			    [{xmlelement, "value", [],
+			      [{xmlcdata, Opt}]}]}
+		   end, Opts) ++
+	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+
+-define(LISTXFIELD(Label, Var, Val, Opts),
+	?XFIELDOPT("list-single", Label, Var, Val, Opts)).
+
 
 
 %% Create new pubsub nodes
@@ -533,14 +497,25 @@ create_new_node(Host, Node, Owner) ->
 
 
 publish_item(Host, JID, Node, ItemID, Payload) ->
+    ejabberd_hooks:run(pubsub_publish_item, Host,
+		       [JID, ?MYJID, Node, ItemID, Payload]),
     Publisher = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
     F = fun() ->
 		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info} = N] ->
 			Affiliation = get_affiliation(Info, Publisher),
+			Subscription = get_subscription(Info, Publisher),
+			MaxSize = get_node_option(Info, max_payload_size),
+			Model = get_node_option(Info, publish_model),
+			Size = size(term_to_binary(Payload)),
 			if
-			    (Affiliation == owner) or
-			    (Affiliation == publisher) ->
+			    ((Model == open) or
+			    ((Model == publishers) and
+			     ((Affiliation == owner) or
+			      (Affiliation == publisher))) or
+			    ((Model == subscribers) and
+			     (Subscription == subscribed))) and
+			    (Size =< MaxSize) ->
 				NewInfo =
 				    insert_item(Info, ItemID,
 						Publisher, Payload),
@@ -609,19 +584,19 @@ subscribe_node(Host, From, JID, Node) ->
     Subscriber = jlib:jid_tolower(SubscriberJID),
     SubscriberWithoutResource = jlib:jid_remove_resource(Subscriber),
     F = fun() ->
-		case mnesia:read({pubsub_node, {Host, Node}}) of
-		    [#pubsub_node{info = Info} = N] ->
-			Affiliation = get_affiliation(Info, Subscriber),
-			if
-			    Affiliation /= outcast ->
-				NewInfo =
-				    add_subscriber(Info, Subscriber),
-				mnesia:write(
-				  N#pubsub_node{info = NewInfo}),
-				{result, []};
-			    true ->
-				{error, ?ERR_NOT_ALLOWED}
-			end;
+  		case mnesia:read({pubsub_node, {Host, Node}}) of
+  		    [#pubsub_node{info = Info} = N] ->
+  			Affiliation = get_affiliation(Info, Subscriber),
+ 			AllowSubscriptions = get_node_option(Info, subscribe),
+ 			if
+ 			    AllowSubscriptions and
+ 			    (Affiliation /= outcast) ->
+ 				NewInfo = add_subscriber(Info, Subscriber),
+ 				mnesia:write(N#pubsub_node{info = NewInfo}),
+ 				{result, [], Info};
+  			    true ->
+  				{error, ?ERR_NOT_ALLOWED}
+  			end;
 		    [] ->
 			{error, ?ERR_ITEM_NOT_FOUND}
 		end
@@ -631,7 +606,33 @@ subscribe_node(Host, From, JID, Node) ->
 	    case mnesia:transaction(F) of
 		{atomic, {error, _} = Error} ->
 		    Error;
-		{atomic, {result, Res}} ->
+ 		{atomic, {result, Res, Info}} ->
+ 		    case get_node_option(Info, send_item_subscribe) of
+ 			true ->
+ 			    ItemsEls =
+ 				lists:map(
+ 				  fun(#item{id = ItemID,
+					    payload = Payload}) ->
+					  ItemAttrs = case ItemID of
+							  "" -> [];
+							  _ -> [{"id", ItemID}]
+						      end,
+ 					  {xmlelement, "item",
+ 					   ItemAttrs, Payload}
+				  end, Info#nodeinfo.items),
+ 			    Stanza =
+ 				{xmlelement, "message",
+ 				 [],
+ 				 [{xmlelement, "x",
+ 				   [{"xmlns", ?NS_PUBSUB_EVENT}],
+ 				   [{xmlelement, "items",
+ 				     [{"node", node_to_string(Node)}],
+ 				     ItemsEls}]}]},
+ 			    ejabberd_router:route(
+ 			      ?MYJID, jlib:make_jid(Subscriber), Stanza);
+ 			false ->
+ 			    ok
+ 		    end,
 		    {result, Res};
 		_ ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
@@ -715,7 +716,7 @@ get_items(Host, JID, Node, SMaxItems) ->
 				  {xmlelement, "item", ItemAttrs, Payload}
 			  end, Items),
 		    {result, [{xmlelement, "pubsub",
-			       [{"xmlns", ?NS_PUBSUB}],
+			       [{"xmlns", ?NS_PUBSUB_EVENT}],
 			       [{xmlelement, "items",
 				 [{"node", node_to_string(Node)}],
 				 ItemsEls}]}]};
@@ -736,12 +737,10 @@ delete_node(Host, JID, Node) ->
 				Removed =
 				    mnesia:foldl(
 				      fun(#pubsub_node{host_node = {_, N},
-						       info = #nodeinfo{
-							 entities = Entities
-							}}, Acc) ->
+						       info = NInfo}, Acc) ->
 					      case lists:prefix(Node, N) of
 						  true ->
-						      [{N, Entities} | Acc];
+						      [{N, NInfo} | Acc];
 						  _ ->
 						      Acc
 					      end
@@ -826,7 +825,7 @@ get_entities(Host, OJID, Node) ->
 				    []} | Acc]
 			  end, [], Entities),
 		    {result, [{xmlelement, "pubsub",
-			       [{"xmlns", ?NS_PUBSUB}],
+			       [{"xmlns", ?NS_PUBSUB_EVENT}],
 			       [{xmlelement, "entities",
 				 [{"node", node_to_string(Node)}],
 				 EntitiesEls}]}]};
@@ -916,41 +915,44 @@ set_entities(Host, OJID, Node, EntitiesEls) ->
     end.
 
 
-%get_node_config(OJID, Node) ->
-%    Owner = jlib:jid_tolower(jlib:jid_remove_resource(OJID)),
-%    case catch mnesia:dirty_read(pubsub_node, Node) of
-%	[#pubsub_node{info = Info}] ->
-%	    case get_affiliation(Info, Owner) of
-%		owner ->
-%		    Entities = Info#nodeinfo.entities,
-%		    EntitiesEls =
-%			?DICT:fold(
-%			  fun(JID,
-%			      #entity{affiliation = Affiliation,
-%				      subscription = Subscription},
-%			      Acc) ->
-%				  [{xmlelement, "entity",
-%				    [{"jid", jlib:jid_to_string(JID)},
-%				     {"affiliation",
-%				      affiliation_to_string(Affiliation)},
-%				     {"subscription",
-%				      subscription_to_string(Subscription)}],
-%				    []} | Acc]
-%			  end, [], Entities),
-%		    {result, [{xmlelement, "pubsub",
-%			       [{"xmlns", ?NS_PUBSUB_EVENT}],
-%			       [{xmlelement, "entities",
-%				 [{"node", node_to_string(Node)}],
-%				 EntitiesEls}]}]};
-%		_ ->
-%		    {error, ?ERR_NOT_ALLOWED}
-%	    end;
-%	_ ->
-%	    {error, ?ERR_ITEM_NOT_FOUND}
-%    end.
-
-
-
+get_affiliations(Host, JID) ->
+    LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+    case catch mnesia:dirty_select(
+		 pubsub_node,
+		 [{#pubsub_node{_ = '_'},
+		   [],
+		   ['$_']}]) of
+	{'EXIT', _} ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	Nodes ->
+	    Entities =
+		lists:flatmap(
+		  fun(#pubsub_node{host_node = {H, Node}, info = Info})
+		     when H == Host ->
+			  Affiliation = get_affiliation(Info, LJID),
+			  Subscription = get_subscription(Info, LJID),
+			  if
+			      (Affiliation /= none) or
+			      (Subscription /= none) ->
+				  [{xmlelement, "entity",
+				    [{"node", node_to_string(Node)},
+				     {"jid", jlib:jid_to_string(JID)},
+				     {"affiliation",
+				      affiliation_to_string(Affiliation)},
+				     {"subscription",
+				      subscription_to_string(Subscription)}],
+				    []}];
+			      true ->
+				  []
+			  end;
+		     (_) ->
+			  []
+		  end, Nodes),
+	    {result, [{xmlelement, "pubsub",
+		       [{"xmlns", ?NS_PUBSUB_EVENT}],
+		       [{xmlelement, "affiliations", [],
+			 Entities}]}]}
+    end.
 
 
 
@@ -1011,7 +1013,7 @@ insert_item(Info, ItemID, Publisher, Payload) ->
 			  end, Items),
     Items2 = [#item{id = ItemID, publisher = Publisher, payload = Payload} |
 	      Items1],
-    Items3 = lists:sublist(Items2, ?MAXITEMS),
+    Items3 = lists:sublist(Items2, get_max_items(Info)),
     Info#nodeinfo{items = Items3}.
 
 remove_item(Info, ItemID) ->
@@ -1073,7 +1075,7 @@ set_info_entities(Info, Entities) ->
 		  end
 	  end, Info#nodeinfo.entities, Entities),
     Info#nodeinfo{entities = NewEntities}.
-				
+
 
 
 broadcast_publish_item(Host, Node, ItemID, Payload) ->
@@ -1081,13 +1083,36 @@ broadcast_publish_item(Host, Node, ItemID, Payload) ->
 	[#pubsub_node{info = Info}] ->
 	    ?DICT:fold(
 	       fun(JID, #entity{subscription = Subscription}, _) ->
-		       if 
+		       Present = case get_node_option(
+					Info, presence_based_delivery) of
+				     true ->
+					 case ets:lookup(
+						gen_mod:get_module_proc(Host, pubsub_presence),
+						{element(1, JID),
+						 element(2, JID)}) of
+					     [_] ->
+						 true;
+					     [] ->
+						 false
+					 end;
+				     false ->
+					 true
+				 end,
+		       if
 			   (Subscription /= none) and
-			   (Subscription /= pending) ->
+			   (Subscription /= pending) and
+			   Present ->
 			       ItemAttrs = case ItemID of
 					       "" -> [];
 					       _ -> [{"id", ItemID}]
 					   end,
+			       Content = case get_node_option(
+						Info, deliver_payloads) of
+					     true ->
+						 Payload;
+					     false ->
+						 []
+					 end,
 			       Stanza =
 				   {xmlelement, "message", [],
 				    [{xmlelement, "event",
@@ -1096,7 +1121,7 @@ broadcast_publish_item(Host, Node, ItemID, Payload) ->
 					[{"node", node_to_string(Node)}],
 					[{xmlelement, "item",
 					  ItemAttrs,
-					  Payload}]}]}]},
+					  Content}]}]}]},
 			       ejabberd_router:route(
 				 ?MYJID, jlib:make_jid(JID), Stanza);
 			   true ->
@@ -1111,29 +1136,34 @@ broadcast_publish_item(Host, Node, ItemID, Payload) ->
 broadcast_retract_item(Host, Node, ItemID) ->
     case catch mnesia:dirty_read(pubsub_node, {Host, Node}) of
 	[#pubsub_node{info = Info}] ->
-	    ?DICT:fold(
-	       fun(JID, #entity{subscription = Subscription}, _) ->
-		       if 
-			   (Subscription /= none) and
-			   (Subscription /= pending) ->
-			       ItemAttrs = case ItemID of
-					       "" -> [];
-					       _ -> [{"id", ItemID}]
-					   end,
-			       Stanza =
-				   {xmlelement, "message", [],
-				    [{xmlelement, "event",
-				      [{"xmlns", ?NS_PUBSUB_EVENT}],
-				      [{xmlelement, "items",
-					[{"node", node_to_string(Node)}],
-					[{xmlelement, "retract",
-					 ItemAttrs, []}]}]}]},
-			       ejabberd_router:route(
-				 ?MYJID, jlib:make_jid(JID), Stanza);
-			   true ->
-			       ok
-		       end
-	       end, ok, Info#nodeinfo.entities);
+	    case get_node_option(Info, notify_retract) of
+		true ->
+		    ?DICT:fold(
+		       fun(JID, #entity{subscription = Subscription}, _) ->
+			       if 
+				   (Subscription /= none) and
+				   (Subscription /= pending) ->
+				       ItemAttrs = case ItemID of
+						       "" -> [];
+						       _ -> [{"id", ItemID}]
+						   end,
+				       Stanza =
+					   {xmlelement, "message", [],
+					    [{xmlelement, "x",
+					      [{"xmlns", ?NS_PUBSUB_EVENT}],
+					      [{xmlelement, "items",
+						[{"node", node_to_string(Node)}],
+						[{xmlelement, "retract",
+						  ItemAttrs, []}]}]}]},
+				       ejabberd_router:route(
+					 ?MYJID, jlib:make_jid(JID), Stanza);
+				   true ->
+				       ok
+			       end
+		       end, ok, Info#nodeinfo.entities);
+		false ->
+		    ok
+	    end;
 	_ ->
 	    false
     end.
@@ -1141,26 +1171,93 @@ broadcast_retract_item(Host, Node, ItemID) ->
 
 broadcast_removed_node(Host, Removed) ->
     lists:foreach(
-      fun({Node, Entities}) ->
-	      ?DICT:fold(
-		 fun(JID, #entity{subscription = Subscription}, _) ->
-			 if 
-			     (Subscription /= none) and
-			     (Subscription /= pending) ->
-				 Stanza =
-				     {xmlelement, "message", [],
-				      [{xmlelement, "event",
-					[{"xmlns", ?NS_PUBSUB_EVENT}],
-					[{xmlelement, "delete",
-					  [{"node", node_to_string(Node)}],
-					    []}]}]},
-				 ejabberd_router:route(
-				   ?MYJID, jlib:make_jid(JID), Stanza);
-			     true ->
-				 ok
-			 end
-		 end, ok, Entities)
+      fun({Node, Info}) ->
+	      case get_node_option(Info, notify_delete) of
+		  true ->
+		      Entities = Info#nodeinfo.entities,
+		      ?DICT:fold(
+			 fun(JID, #entity{subscription = Subscription}, _) ->
+				 if 
+				     (Subscription /= none) and
+				     (Subscription /= pending) ->
+					 Stanza =
+					     {xmlelement, "message", [],
+					      [{xmlelement, "x",
+						[{"xmlns", ?NS_PUBSUB_EVENT}],
+						[{xmlelement, "delete",
+						  [{"node", node_to_string(Node)}],
+						  []}]}]},
+					 ejabberd_router:route(
+					   ?MYJID, jlib:make_jid(JID), Stanza);
+				     true ->
+					 ok
+				 end
+			 end, ok, Entities);
+		  false ->
+		      ok
+	      end
       end, Removed).
+
+
+broadcast_config_notification(Host, Node, Lang) ->
+    case catch mnesia:dirty_read(pubsub_node, {Host, Node}) of
+	[#pubsub_node{info = Info}] ->
+	    case get_node_option(Info, notify_config) of
+		true ->
+		    ?DICT:fold(
+		       fun(JID, #entity{subscription = Subscription}, _) ->
+			       Present = case get_node_option(
+						Info, presence_based_delivery) of
+					     true ->
+						 case ets:lookup(
+							gen_mod:get_module_proc(Host, pubsub_presence),
+							{element(1, JID),
+							 element(2, JID)}) of
+						     [_] ->
+							 true;
+						     [] ->
+							 false
+						 end;
+					     false ->
+						 true
+					 end,
+			       if
+				   (Subscription /= none) and
+				   (Subscription /= pending) and
+				   Present ->
+				       Fields = get_node_config_xfields(
+						  Node, Info, Lang),
+				       Content = case get_node_option(
+							Info, deliver_payloads) of
+						     true ->
+							 [{xmlelement, "x",
+							   [{"xmlns", ?NS_XDATA},
+							    {"type", "form"}],
+							   Fields}];
+						     false ->
+							 []
+						 end,
+				       Stanza =
+					   {xmlelement, "message", [],
+					    [{xmlelement, "x",
+					      [{"xmlns", ?NS_PUBSUB_EVENT}],
+					      [{xmlelement, "items",
+						[{"node", node_to_string(Node)}],
+						[{xmlelement, "item",
+						  [{"id", "configuration"}],
+						  Content}]}]}]},
+				       ejabberd_router:route(
+					 ?MYJID, jlib:make_jid(JID), Stanza);
+				   true ->
+				       ok
+			       end
+		       end, ok, Info#nodeinfo.entities);
+		false ->
+		    ok
+	    end;
+	_ ->
+	    false
+    end.
 
 
 
@@ -1173,6 +1270,303 @@ system_terminate(Reason, Parent, _, State) ->
 system_code_change(State, _Mod, Ver, _Extra) ->
     {ok, State}.
 
+
+
+
+iq_pubsub_owner(Host, From, Type, Lang, SubEl) ->
+    {xmlelement, _, _, SubEls} = SubEl,
+    case xml:remove_cdata(SubEls) of
+	[{xmlelement, Name, Attrs, Els}] ->
+	    SNode = xml:get_attr_s("node", Attrs),
+	    Node = string:tokens(SNode, "/"),
+	    case {Type, Name} of
+		{get, "configure"} ->
+		    get_node_config(Host, From, Node, Lang);
+		{set, "configure"} ->
+		    set_node_config(Host, From, Node, Els, Lang);
+		_ ->
+		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
+	    end;
+	_ ->
+	    {error, ?ERR_BAD_REQUEST}
+    end.
+
+get_node_config(Host, From, Node, Lang) ->
+    case catch mnesia:dirty_read(pubsub_node, {Host, Node}) of
+	[#pubsub_node{info = Info}] ->
+	    case get_affiliation(Info, From) of
+		owner ->
+		    Fields = get_node_config_xfields(Node, Info, Lang),
+		    {result, [{xmlelement, "pubsub",
+			       [{"xmlns", ?NS_PUBSUB_OWNER}],
+			       [{xmlelement, "configure",
+				 [{"node", node_to_string(Node)}],
+				 [{xmlelement, "x", [{"xmlns", ?NS_XDATA},
+						     {"type", "form"}],
+				   Fields}]}]}]};
+		_ ->
+		    {error, ?ERR_NOT_AUTHORIZED}
+	    end;
+	_ ->
+	    {error, ?ERR_ITEM_NOT_FOUND}
+    end.
+
+% TODO: move to jlib.hrl
+-define(NS_PUBSUB_NODE_CONFIG, "http://jabber.org/protocol/pubsub#node_config").
+
+-define(BOOL_CONFIG_FIELD(Label, Var),
+	?BOOLXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
+		    get_node_option(Info, Var))).
+
+-define(STRING_CONFIG_FIELD(Label, Var),
+	?STRINGXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
+		      get_node_option(Info, Var))).
+
+-define(INTEGER_CONFIG_FIELD(Label, Var),
+	?STRINGXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
+		      integer_to_list(get_node_option(Info, Var)))).
+
+-define(JLIST_CONFIG_FIELD(Label, Var, Opts),
+	?LISTXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
+		    jlib:jid_to_string(get_node_option(Info, Var)),
+		    [jlib:jid_to_string(O) || O <- Opts])).
+
+-define(ALIST_CONFIG_FIELD(Label, Var, Opts),
+	?LISTXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
+		    atom_to_list(get_node_option(Info, Var)),
+		    [atom_to_list(O) || O <- Opts])).
+
+
+-define(DEFAULT_OPTIONS,
+	[{deliver_payloads, true},
+	 {notify_config, false},
+	 {notify_delete, false},
+	 {notify_retract, true},
+	 {persist_items, true},
+	 {max_items, ?MAXITEMS div 2},
+	 {subscribe, true},
+	 {subscription_model, open},
+	 {publish_model, publishers},
+	 {max_payload_size, ?MAX_PAYLOAD_SIZE},
+	 {send_item_subscribe, false},
+	 {presence_based_delivery, false}]).
+
+get_node_option(Info, current_approver) ->
+    Default = hd(get_owners_jids(Info)),
+    Options = Info#nodeinfo.options,
+    element(
+      2, element(2, lists:keysearch(
+		      current_approver, 1,
+		      Options ++ [{current_approver, Default}])));
+get_node_option(#nodeinfo{options = Options}, Var) ->
+    element(
+      2, element(2, lists:keysearch(Var, 1, Options ++ ?DEFAULT_OPTIONS))).
+
+get_max_items(Info) ->
+    case get_node_option(Info, persist_items) of
+	true ->
+	    get_node_option(Info, max_items);
+	false ->
+	    0
+    end.
+
+get_owners_jids(Info) ->
+    Entities = Info#nodeinfo.entities,
+    Owners =
+	?DICT:fold(
+	   fun(JID,
+	       #entity{affiliation = Affiliation,
+		       subscription = Subscription},
+	       Acc) ->
+		   case Affiliation of
+		       owner ->
+			   [JID | Acc];
+		       _ ->
+			   Acc
+		   end
+	   end, [], Entities),
+    lists:sort(Owners).
+
+
+get_node_config_xfields(Node, Info, Lang) ->
+    [?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NODE_CONFIG),
+     ?BOOL_CONFIG_FIELD("Deliver payloads with event notifications", deliver_payloads),
+     ?BOOL_CONFIG_FIELD("Notify subscribers when the node configuration changes", notify_config),
+     ?BOOL_CONFIG_FIELD("Notify subscribers when the node is deleted", notify_delete),
+     ?BOOL_CONFIG_FIELD("Notify subscribers when items are removed from the node", notify_retract),
+     ?BOOL_CONFIG_FIELD("Persist items to storage", persist_items),
+     ?INTEGER_CONFIG_FIELD("Max # of items to persist", max_items),
+     ?BOOL_CONFIG_FIELD("Whether to allow subscriptions", subscribe),
+     ?ALIST_CONFIG_FIELD("Specify the subscriber model", subscription_model,
+			 [open]),
+     ?ALIST_CONFIG_FIELD("Specify the publisher model", publish_model,
+			 [publishers, subscribers, open]),
+     ?INTEGER_CONFIG_FIELD("Max payload size in bytes", max_payload_size),
+     ?BOOL_CONFIG_FIELD("Send items to new subscribers", send_item_subscribe),
+     ?BOOL_CONFIG_FIELD("Only deliver notifications to available users", presence_based_delivery),
+     ?JLIST_CONFIG_FIELD("Specify the current subscription approver", current_approver,
+			 get_owners_jids(Info))
+    ].
+
+
+set_node_config(Host, From, Node, Els, Lang) ->
+    case catch mnesia:dirty_read(pubsub_node, {Host, Node}) of
+	[#pubsub_node{info = Info} = N] ->
+	    case get_affiliation(Info, From) of
+		owner ->
+		    case xml:remove_cdata(Els) of
+			[{xmlelement, "x", _Attrs1, _Els1} = XEl] ->
+			    case {xml:get_tag_attr_s("xmlns", XEl),
+				  xml:get_tag_attr_s("type", XEl)} of
+				{?NS_XDATA, "cancel"} ->
+				    {result, []};
+				{?NS_XDATA, "submit"} ->
+				    CurOpts = Info#nodeinfo.options,
+				    set_node_config1(
+				      Host, From, Node, XEl, CurOpts, Lang);
+				_ ->
+				    {error, ?ERR_BAD_REQUEST}
+			    end;
+			_ ->
+			    {error, ?ERR_BAD_REQUEST}
+		    end;
+		_ ->
+		    {error, ?ERR_NOT_AUTHORIZED}
+	    end;
+	_ ->
+	    {error, ?ERR_ITEM_NOT_FOUND}
+    end.
+
+
+set_node_config1(Host, From, Node, XEl, CurOpts, Lang) ->
+    XData = jlib:parse_xdata_submit(XEl),
+    case XData of
+	invalid ->
+	    {error, ?ERR_BAD_REQUEST};
+	_ ->
+	    case set_xoption(XData, CurOpts) of
+		NewOpts when is_list(NewOpts) ->
+		    change_node_opts(Host, NewOpts, Node, Lang);
+		Err ->
+		    Err
+	    end
+    end.
+
+add_opt(Key, Value, Opts) ->
+    Opts1 = lists:keydelete(Key, 1, Opts),
+    [{Key, Value} | Opts1].
+
+
+-define(SET_BOOL_XOPT(Opt, Val),
+	case Val of
+	    "0" -> set_xoption(Opts, add_opt(Opt, false, NewOpts));
+	    "1" -> set_xoption(Opts, add_opt(Opt, true, NewOpts));
+	    _ -> {error, ?ERR_BAD_REQUEST}
+	end).
+
+-define(SET_STRING_XOPT(Opt, Val),
+	set_xoption(Opts, add_opt(Opt, Val, NewOpts))).
+
+-define(SET_INTEGER_XOPT(Opt, Val, Min, Max),
+	case catch list_to_integer(Val) of
+	    IVal when is_integer(IVal),
+		      IVal >= Min,
+		      IVal =< Max ->
+		set_xoption(Opts, add_opt(Opt, IVal, NewOpts));
+	    _ ->
+		{error, ?ERR_BAD_REQUEST}
+	end).
+
+-define(SET_ALIST_XOPT(Opt, Val, Vals),
+	case lists:member(Val, [atom_to_list(V) || V <- Vals]) of
+	    true ->
+		set_xoption(Opts, add_opt(Opt, list_to_atom(Val), NewOpts));
+	    false ->
+		{error, ?ERR_BAD_REQUEST}
+	end).
+
+
+set_xoption([], NewOpts) ->
+    NewOpts;
+set_xoption([{"FORM_TYPE", _} | Opts], NewOpts) ->
+    set_xoption(Opts, NewOpts);
+set_xoption([{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(deliver_payloads, Val);
+set_xoption([{"pubsub#notify_config", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(notify_config, Val);
+set_xoption([{"pubsub#notify_delete", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(notify_delete, Val);
+set_xoption([{"pubsub#notify_retract", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(notify_retract, Val);
+set_xoption([{"pubsub#persist_items", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(persist_items, Val);
+set_xoption([{"pubsub#max_items", [Val]} | Opts], NewOpts) ->
+    ?SET_INTEGER_XOPT(max_items, Val, 0, ?MAXITEMS);
+set_xoption([{"pubsub#subscribe", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(subscribe, Val);
+set_xoption([{"pubsub#subscription_model", [Val]} | Opts], NewOpts) ->
+    ?SET_ALIST_XOPT(subscription_model, Val, [open]);
+set_xoption([{"pubsub#publish_model", [Val]} | Opts], NewOpts) ->
+    ?SET_ALIST_XOPT(publish_model, Val, [publishers, subscribers, open]);
+set_xoption([{"pubsub#max_payload_size", [Val]} | Opts], NewOpts) ->
+    ?SET_INTEGER_XOPT(max_payload_size, Val, 0, ?MAX_PAYLOAD_SIZE);
+set_xoption([{"pubsub#send_item_subscribe", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(send_item_subscribe, Val);
+set_xoption([{"pubsub#presence_based_delivery", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(presence_based_delivery, Val);
+set_xoption([{"pubsub#current_approver", _} | Opts], NewOpts) ->
+    % TODO
+    set_xoption(Opts, NewOpts);
+%set_xoption([{"title", [Val]} | Opts], NewOpts) ->
+%    ?SET_STRING_XOPT(title, Val);
+set_xoption([_ | _Opts], _NewOpts) ->
+    {error, ?ERR_BAD_REQUEST}.
+
+
+change_node_opts(Host, NewOpts, Node, Lang) ->
+    F = fun() ->
+		case mnesia:read({pubsub_node, {Host, Node}}) of
+		    [#pubsub_node{info = Info} = N] ->
+			NewInfo = Info#nodeinfo{options = NewOpts},
+			mnesia:write(
+			  N#pubsub_node{info = NewInfo}),
+			{result, []};
+		    [] ->
+			{error, ?ERR_ITEM_NOT_FOUND}
+		end
+	end,
+    case mnesia:transaction(F) of
+	{atomic, {error, _} = Error} ->
+	    Error;
+	{atomic, {result, Res}} ->
+	    broadcast_config_notification(Host, Node, Lang),
+	    {result, Res};
+	_ ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
+
+
+
+
+
+find_my_host(LServer) ->
+    Parts = string:tokens(LServer, "."),
+    find_my_host(Parts, ?MYHOSTS).
+
+find_my_host([], _Hosts) ->
+    ?MYNAME;
+find_my_host([_ | Tail] = Parts, Hosts) ->
+    Domain = parts_to_string(Parts),
+    case lists:member(Domain, Hosts) of
+	true ->
+	    Domain;
+	false ->
+	    find_my_host(Tail, Hosts)
+    end.
+
+parts_to_string(Parts) ->
+    string:strip(lists:flatten(lists:map(fun(S) -> [S, $.] end, Parts)),
+		 right, $.).
 
 
 
@@ -1219,6 +1613,7 @@ update_table(Host) ->
 	    ?INFO_MSG("Recreating pubsub_node table", []),
 	    mnesia:transform_table(pubsub_node, ignore, Fields)
     end.
+
 
 
 
