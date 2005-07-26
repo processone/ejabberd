@@ -67,7 +67,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    {Subscription, _Groups} =
 		ejabberd_hooks:run_fold(
 		  roster_get_jid_info, Server,
-		  {none, []}, [User, From]),
+		  {none, []}, [User, Server, From]),
 	    if
 		(Subscription == both) or (Subscription == from) ->
 		    case catch mod_privacy:get_user_list(User, Server) of
@@ -130,7 +130,7 @@ on_presence_update(User, Server, _Resource, Status) ->
 
 store_last_info(User, Server, TimeStamp, Status) ->
     LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(User),
+    LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
     Seconds = ejabberd_odbc:escape(integer_to_list(TimeStamp)),
     State = ejabberd_odbc:escape(Status),

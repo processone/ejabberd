@@ -99,37 +99,55 @@ xdb_data(User, Server, {xmlcdata, _CData}) ->
     ok;
 xdb_data(User, Server, {xmlelement, _Name, Attrs, _Els} = El) ->
     From = jlib:make_jid(User, Server, ""),
+    LServer = jlib:nameprep(Server),
     case xml:get_attr_s("xmlns", Attrs) of
 	?NS_AUTH ->
 	    Password = xml:get_tag_cdata(El),
 	    ejabberd_auth:set_password(User, Server, Password),
 	    ok;
 	?NS_ROSTER ->
-	    catch mod_roster:set_items(User, Server, El),
+	    case lists:member(mod_roster_odbc,
+			      gen_mod:loaded_modules(LServer)) of
+		true ->
+		    catch mod_roster_odbc:set_items(User, Server, El);
+		false ->
+		    catch mod_roster:set_items(User, Server, El)
+	    end,
 	    ok;
 	?NS_LAST ->
 	    TimeStamp = xml:get_attr_s("last", Attrs),
 	    Status = xml:get_tag_cdata(El),
-	    catch mod_last:store_last_info(User,
-					   Server,
-					   list_to_integer(TimeStamp),
-					   Status),
+	    case lists:member(mod_last_odbc,
+			      gen_mod:loaded_modules(LServer)) of
+		true ->
+		    catch mod_last_odbc:store_last_info(
+			    User,
+			    Server,
+			    list_to_integer(TimeStamp),
+			    Status);
+		false ->
+		    catch mod_last:store_last_info(
+			    User,
+			    Server,
+			    list_to_integer(TimeStamp),
+			    Status)
+	    end,
 	    ok;
 	?NS_VCARD ->
 	    catch mod_vcard:process_sm_iq(
 		    From,
-		    jlib:make_jid("", ?MYNAME, ""),
+		    jlib:make_jid("", Server, ""),
 		    #iq{type = set, xmlns = ?NS_VCARD, sub_el = El}),
 	    ok;
 	"jabber:x:offline" ->
-	    process_offline(From, El),
+	    process_offline(Server, From, El),
 	    ok;
 	XMLNS ->
 	    case xml:get_attr_s("j_private_flag", Attrs) of
 		"1" ->
 		    catch mod_private:process_sm_iq(
 			    From,
-			    jlib:make_jid("", ?MYNAME, ""),
+			    jlib:make_jid("", Server, ""),
 			    #iq{type = set, xmlns = ?NS_PRIVATE,
 				sub_el = {xmlelement, "query", [],
 					  [jlib:remove_attr(
@@ -142,12 +160,13 @@ xdb_data(User, Server, {xmlelement, _Name, Attrs, _Els} = El) ->
     end.
 
 
-process_offline(To, {xmlelement, _, _, Els}) ->
+process_offline(Server, To, {xmlelement, _, _, Els}) ->
+    LServer = jlib:nameprep(Server),
     lists:foreach(fun({xmlelement, _, Attrs, _} = El) ->
 			  FromS = xml:get_attr_s("from", Attrs),
 			  From = case FromS of
 				     "" ->
-					 jlib:make_jid("", ?MYNAME, "");
+					 jlib:make_jid("", Server, "");
 				     _ ->
 					 jlib:string_to_jid(FromS)
 				 end,
@@ -155,7 +174,9 @@ process_offline(To, {xmlelement, _, _, Els}) ->
 			      error ->
 				  ok;
 			      _ ->
-				  catch mod_offline:store_packet(From, To, El)
+				  ejabberd_hooks:run(offline_message_hook,
+						     LServer,
+						     [From, To, El])
 			  end
 		  end, Els).
 

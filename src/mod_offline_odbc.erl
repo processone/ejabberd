@@ -217,7 +217,10 @@ pop_offline_messages(Ls, User, Server) ->
 	    "select * from spool where username='", EUser, "';"
 	    "delete from spool where username='", EUser, "';"
 	    "commit"]) of
-	{selected, ["username","xml"], Rs} ->
+	[{updated, undefined},
+	 {selected, ["username","xml"], Rs},
+	 {updated, _},
+	 {updated, undefined}] ->
 	    Ls ++ lists:flatmap(
 		    fun({_, XML}) ->
 			    case xml_stream:parse_element(XML) of

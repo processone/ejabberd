@@ -1,3 +1,15 @@
+2005-07-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jd2ejd.erl: Updated to work with ODBC
+
+	* src/mod_roster_odbc.erl: Updated
+
+2005-07-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline_odbc.erl: Bugfix
+
+	* src/mod_last_odbc.erl: Bugfix
+
 2005-07-20  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Updated to J-EAI version
