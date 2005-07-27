@@ -1,6 +1,6 @@
 2005-07-27  Alexey Shchepin  <alexey@sevcom.net>
 
-	* src/ejabberd_router.erl: Added route_packet hook
+	* src/ejabberd_router.erl: Added filter_packet hook
 
 2005-07-26  Alexey Shchepin  <alexey@sevcom.net>
 

@@ -84,8 +84,8 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n",
 	   [OrigFrom, OrigTo, OrigPacket]),
     LOrigDstDomain = OrigTo#jid.lserver,
-    case ejabberd_hooks:run_fold(
-	   route_packet, LOrigDstDomain, {OrigFrom, OrigTo, OrigPacket}, []) of
+    case ejabberd_hooks:run_fold(filter_packet, LOrigDstDomain,
+				 {OrigFrom, OrigTo, OrigPacket}, []) of
 	{From, To, Packet} ->
 	    LDstDomain = To#jid.lserver,
 	    case mnesia:dirty_read(route, LDstDomain) of
