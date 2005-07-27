@@ -80,44 +80,51 @@ loop() ->
 	    loop()
     end.
 
-do_route(From, To, Packet) ->
-    ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n", [From, To, Packet]),
-    LDstDomain = To#jid.lserver,
-    case mnesia:dirty_read(route, LDstDomain) of
-	[] ->
-	    ejabberd_s2s:route(From, To, Packet);
-	[R] ->
-	    Pid = R#route.pid,
-	    if
-		node(Pid) == node() ->
-		    case R#route.local_hint of
-			{apply, Module, Function} ->
-			    Module:Function(From, To, Packet);
-			_ ->
+do_route(OrigFrom, OrigTo, OrigPacket) ->
+    ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n",
+	   [OrigFrom, OrigTo, OrigPacket]),
+    LOrigDstDomain = OrigTo#jid.lserver,
+    case ejabberd_hooks:run_fold(
+	   route_packet, LOrigDstDomain, {OrigFrom, OrigTo, OrigPacket}, []) of
+	{From, To, Packet} ->
+	    LDstDomain = To#jid.lserver,
+	    case mnesia:dirty_read(route, LDstDomain) of
+		[] ->
+		    ejabberd_s2s:route(From, To, Packet);
+		[R] ->
+		    Pid = R#route.pid,
+		    if
+			node(Pid) == node() ->
+			    case R#route.local_hint of
+				{apply, Module, Function} ->
+				    Module:Function(From, To, Packet);
+				_ ->
+				    Pid ! {route, From, To, Packet}
+			    end;
+			true ->
 			    Pid ! {route, From, To, Packet}
 		    end;
-		true ->
-		    Pid ! {route, From, To, Packet}
-	    end;
-	Rs ->
-	    case [R || R <- Rs, node(R#route.pid) == node()] of
-		[] ->
-		    R = lists:nth(erlang:phash(now(), length(Rs)), Rs),
-		    Pid = R#route.pid,
-		    Pid ! {route, From, To, Packet};
-		LRs ->
-		    LRs,
-		    R = lists:nth(erlang:phash(now(), length(LRs)), LRs),
-		    Pid = R#route.pid,
-		    case R#route.local_hint of
-			{apply, Module, Function} ->
-			    Module:Function(From, To, Packet);
-			_ ->
-			    Pid ! {route, From, To, Packet}
+		Rs ->
+		    case [R || R <- Rs, node(R#route.pid) == node()] of
+			[] ->
+			    R = lists:nth(erlang:phash(now(), length(Rs)), Rs),
+			    Pid = R#route.pid,
+			    Pid ! {route, From, To, Packet};
+			LRs ->
+			    LRs,
+			    R = lists:nth(erlang:phash(now(), length(LRs)), LRs),
+			    Pid = R#route.pid,
+			    case R#route.local_hint of
+				{apply, Module, Function} ->
+				    Module:Function(From, To, Packet);
+				_ ->
+				    Pid ! {route, From, To, Packet}
+			    end
 		    end
-	    end
+	    end;
+	drop ->
+	    ok
     end.
-
 
 %route(From, To, Packet) ->
 %    ejabberd_router ! {route, From, To, Packet}.
