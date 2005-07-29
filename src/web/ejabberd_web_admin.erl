@@ -76,6 +76,7 @@ make_xhtml(Els, global, Lang) ->
 		       [?XE("ul",
 			    [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
 			     ?LI([?ACT("/admin/access/", "Access Rules")]),
+			     ?LI([?ACT("/admin/vhosts/", "Virtual Hosts")]),
 			     ?LI([?ACT("/admin/nodes/", "Nodes")]),
 			     ?LI([?ACT("/admin/stats/", "Statistics")])
 			    ]
@@ -528,6 +529,7 @@ process_admin(global,
 			  ?ACT("/admin/acls-raw/", "(raw)")]),
 		     ?LI([?ACT("/admin/access/", "Access Rules"), ?C(" "),
 			  ?ACT("/admin/access-raw/", "(raw)")]),
+		     ?LI([?ACT("/admin/vhosts/", "Virtual Hosts")]),
 		     ?LI([?ACT("/admin/nodes/", "Nodes")]),
 		     ?LI([?ACT("/admin/stats/", "Statistics")])
 		    ]
@@ -821,11 +823,19 @@ process_admin(Host,
 		     ])
 	       ], Host, Lang);
 
+process_admin(global,
+	      #request{us = US,
+		       path = ["vhosts"],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    Res = list_vhosts(Lang),
+    make_xhtml([?XCT("h1", "ejabberd virtual hosts")] ++ Res, global, Lang);
+
 process_admin(Host,
 	      #request{us = US,
-			path = ["users"],
-			q = Query,
-			lang = Lang} = Request) when is_list(Host) ->
+		       path = ["users"],
+		       q = Query,
+		       lang = Lang} = Request) when is_list(Host) ->
     Res = list_users(Host, Query, Lang),
     make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
 
@@ -839,9 +849,9 @@ process_admin(Host,
 
 process_admin(Host,
 	      #request{us = US,
-			path = ["online-users"],
-			q = Query,
-			lang = Lang} = Request) when is_list(Host) ->
+		       path = ["online-users"],
+		       q = Query,
+		       lang = Lang} = Request) when is_list(Host) ->
     Res = list_online_users(Host, Lang),
     make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
 
@@ -941,17 +951,17 @@ process_admin(Host,
 
 process_admin(Host,
 	      #request{us = US,
-			path = ["shared-roster"],
-			q = Query,
-			lang = Lang} = Request) ->
+		       path = ["shared-roster"],
+		       q = Query,
+		       lang = Lang} = Request) ->
     Res = list_shared_roster_groups(Query, Lang),
     make_xhtml(Res, Host, Lang);
 
 process_admin(Host,
 	      #request{us = US,
-			path = ["shared-roster", Group],
-			q = Query,
-			lang = Lang} = Request) ->
+		       path = ["shared-roster", Group],
+		       q = Query,
+		       lang = Lang} = Request) ->
     Res = shared_roster_group(Group, Query, Lang),
     make_xhtml(Res, Host, Lang);
 
@@ -1188,6 +1198,30 @@ parse_access_rule(Text) ->
     end.
 
 
+list_vhosts(Lang) ->
+    Hosts = ?MYHOSTS,
+    SHosts = lists:sort(Hosts),
+    [?XE("table",
+	 [?XE("thead",
+	      [?XE("tr",
+		   [?XCT("td", "Host"),
+		    ?XCT("td", "Registered users"),
+		    ?XCT("td", "Online users")
+		   ])]),
+	  ?XE("tbody",
+	      lists:map(
+		fun(Host) ->
+			OnlineUsers =
+			    length(ejabberd_sm:get_vh_session_list(Host)),
+			RegisteredUsers =
+			    length(ejabberd_auth:get_vh_registered_users(Host)),
+			?XE("tr",
+			    [?XE("td", [?AC("../server/" ++ Host ++ "/", Host)]),
+			     ?XC("td", integer_to_list(RegisteredUsers)),
+			     ?XC("td", integer_to_list(OnlineUsers))
+			    ])
+		end, SHosts)
+	     )])].
 
 
 list_users(Host, Query, Lang) ->
