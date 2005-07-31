@@ -1,5 +1,8 @@
 2005-07-31  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
 	* src/msgs/de.msg: Updated (thanks to Torsten Werner)
 
 	* src/web/ejabberd_web_admin.erl: Fixed CSS style sheet to be

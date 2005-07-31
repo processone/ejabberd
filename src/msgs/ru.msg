@@ -105,7 +105,20 @@
 % mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin",
  "ejabberd pub/sub модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
-{"Node Creator", "Создатель узла"}.
+{"Node Creator", "Создатель сборника"}.
+{"Deliver payloads with event notifications", "Доставлять вместе с уведомлениями o публикациях сами публикации"}.
+{"Notify subscribers when the node configuration changes", "Уведомлять подписчиков об изменении конфигурации сборника"}.
+{"Notify subscribers when the node is deleted", "Уведомлять подписчиков об удалении сборника"}.
+{"Notify subscribers when items are removed from the node", "Уведомлять подписчиков об удалении публикаций из сборника"}.
+{"Persist items to storage", "Сохранять публикации в хранилище"}.
+{"Max # of items to persist", "Максимальное число сохраняемых публикаций"}.
+{"Whether to allow subscriptions", "Разрешить подписку"}.
+{"Specify the subscriber model", "Условия подписки"}.
+{"Specify the publisher model", "Условия публикации"}.
+{"Max payload size in bytes", "Максимальный размер полезной нагрузки в байтах"}.
+{"Send items to new subscribers", "Отправлять публикации новым подписчикам"}.
+{"Only deliver notifications to available users", "Доставлять уведомления только доступным пользователям"}.
+{"Specify the current subscription approver", "JID пользователя, утверждающего подписку"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname",
@@ -216,7 +229,7 @@
 {"Node not found", "Узел не найден"}.
 {"Add New", "Добавить"}.
 {"Registered users", "Зарегистрированные пользователи"}.
-{"Authentificated users", "Аутентифицированные пользователи"}.
+{"Authenticated users", "Аутентифицированные пользователи"}.
 {"Online users", "Подключённые пользователи"}.
 {"Outgoing S2S servers", "Исходящие S2S-серверы"}.
 {"Change Password", "Сменить пароль"}.
@@ -294,6 +307,7 @@
 {"Start", "Запустить"}.
 {"Modules Management", "Управление модулями"}.
 {"Modules at ", "Модули на "}.
+{"No data", "Нет данных"}.
 
 % Local Variables:
 % mode: erlang
