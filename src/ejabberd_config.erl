@@ -101,6 +101,9 @@ process_term(Term, State) ->
 	    State;
 	{hosts, Hosts} ->
 	    State;
+	{host_config, Host, Terms} ->
+	    lists:foldl(fun(T, S) -> process_host_term(T, Host, S) end,
+			State, Terms);
 	{listen, Val} ->
 	    add_option(listen, Val, State);
 	{outgoing_s2s_port, Port} ->

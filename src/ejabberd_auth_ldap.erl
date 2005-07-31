@@ -36,9 +36,9 @@ start(Host) ->
     LDAPServers = ejabberd_config:get_local_option({ldap_servers, Host}),
     RootDN = ejabberd_config:get_local_option({ldap_rootdn, Host}),
     Password = ejabberd_config:get_local_option({ldap_password, Host}),
-    eldap:start_link(gen_mod:get_module_proc(Host, ejabberd),
+    eldap:start_link(get_eldap_id(Host, ejabberd),
 		     LDAPServers, 389, RootDN, Password),
-    eldap:start_link(gen_mod:get_module_proc(Host, ejabberd_bind),
+    eldap:start_link(get_eldap_id(Host, ejabberd_bind),
 		     LDAPServers, 389, RootDN, Password),
     ok.
 
@@ -51,7 +51,7 @@ check_password(User, Server, Password) ->
 	    false;
 	DN ->
 	    LServer = jlib:nameprep(Server),
-	    case eldap:bind(gen_mod:get_module_proc(LServer, ejabberd_bind),
+	    case eldap:bind(get_eldap_id(LServer, ejabberd_bind),
 			    DN, Password) of
 		ok ->
 		    true;
@@ -77,7 +77,7 @@ get_vh_registered_users(Server) ->
     Attr = ejabberd_config:get_local_option({ldap_uidattr, LServer}),
     Filter = eldap:present(Attr),
     Base = ejabberd_config:get_local_option({ldap_base, LServer}),
-    case eldap:search(gen_mod:get_module_proc(LServer, ejabberd),
+    case eldap:search(get_eldap_id(LServer, ejabberd),
 		      [{base, Base},
 		       {filter, Filter},
 		       {attributes, [Attr]}]) of
@@ -130,7 +130,7 @@ find_user_dn(User, Server) ->
     Attr = ejabberd_config:get_local_option({ldap_uidattr, LServer}),
     Filter = eldap:equalityMatch(Attr, User),
     Base = ejabberd_config:get_local_option({ldap_base, LServer}),
-    case eldap:search(gen_mod:get_module_proc(LServer, ejabberd),
+    case eldap:search(get_eldap_id(LServer, ejabberd),
 		      [{base, Base},
 		       {filter, Filter},
 		       {attributes, []}]) of
@@ -140,3 +140,5 @@ find_user_dn(User, Server) ->
 	    false
     end.
 
+get_eldap_id(Host, Name) ->
+    atom_to_list(gen_mod:get_module_proc(Host, Name)).

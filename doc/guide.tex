@@ -82,7 +82,7 @@ discipline (see~\ref{sec:modiqdiscoption}).}
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{May 23, 2005}
+\date{July 31, 2005}
 
 \begin{document}
 \begin{titlepage}
@@ -647,6 +647,29 @@ Example:
     {mod_version,   []}
    ]}.
 \end{verbatim}
+
+
+\subsubsection{Virtual Host Configuration}
+\label{sec:configvirtualhost}
+
+Options can be defined separately for different virtual hosts using
+\term{host\_config} option.  It have the have following syntax:
+\begin{verbatim}
+  {host_config, <hostname>, [<option>, <option>, ...]}.
+\end{verbatim}
+
+Example:
+\begin{verbatim}
+{host_config, "example.org", [{auth_method, internal}]}.
+
+{host_config, "example.com", [{auth_method, ldap},
+                              {ldap_servers, ["localhost"]},
+                              {ldap_uidattr, "uid"},
+                              {ldap_rootdn, "dc=localdomain"},
+                              {ldap_rootdn, "dc=example,dc=com"},
+                              {ldap_password, ""}]}.
+\end{verbatim}
+
 
 
 \subsection{Online Configuration and Monitoring}
