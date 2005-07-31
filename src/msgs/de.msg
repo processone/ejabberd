@@ -12,9 +12,9 @@
 {"RAM and disc copy", "Kopie im RAM und auf der Festplatte"}.
 {"Disc only copy", "Kopie nur auf Festplatte"}.
 {"Remote copy", "Fernkopie"}.
-{"Stop Modules at ", "Stop Module bei"}.
+{"Stop Modules at ", "Stop Module bei "}.
 {"Choose modules to stop", "Wähle zu stoppende Module"}.
-{"Start Modules at ", "Start Module bei"}.
+{"Start Modules at ", "Start Module bei "}.
 {"Enter list of {Module, [Options]}", "Geben Sie die Liste der Module ein {Module, [Optionen]}"}.
 {"List of modules to start", "Liste der zu startenden Module"}.
 {"Backup to File at ", "Datensicherung bei "}.
@@ -37,7 +37,7 @@
 {"Access rules", "Zugangsregeln"}.
 {"Remove Users", "Benutzer löschen"}.
 {"Choose users to remove", "Wählen Sie die zu löschenden Benutzer"}.
-{"Administration of ", "Administration der"}.
+{"Administration of ", "Administration der "}.
 {"Action on user", "Aktion auf Benutzer"}.
 {"Edit Properties", "Einstellungen ändern"}.
 {"Remove User", "Benutzer löschen"}.
@@ -112,10 +112,10 @@
 {"Specified nickname is already registered", "Der angegebene Name ist bereits vergeben"}.
 
 % mod_muc/mod_muc_room.erl
-{" has set the subject to: ", "hat das Thema geändert zu"}.
+{" has set the subject to: ", " hat das Thema geändert zu "}.
 {"You need an x:data capable client to configure room",
  "Sie brauchen einen für x:data geeigneten Client um den Raum zu konfigurieren"}.
-{"Configuration for ", "Konfiguration für"}.
+{"Configuration for ", "Konfiguration für "}.
 {"Room title", "Raumname"}.
 {"Allow users to change subject?", "Benutzer dürfen das Thema ändern?"}.
 {"Allow users to query other users?",
@@ -175,7 +175,7 @@
 {"ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin", ""}.
 {"You need an x:data capable client to configure mod_irc settings",
  "Sie brauchen einen x:data kompatiblen Client um die mod_irc Einstellungen zu konfigurieren"}.
-{"Registration in mod_irc for ", "Registrierung in mod_irc für"}.
+{"Registration in mod_irc for ", "Registrierung in mod_irc für "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers",
  "Geben Sie Benutzernamen und Verschlüsselung für die Verbindung zum IRC Server an"}.
 {"IRC Username", "IRC Benutzername"}.
@@ -214,25 +214,25 @@
 {"Connected Resources:", "Verbundene Resourcen"}.
 {"Password:", "Passwort:"}.
 {"None", "Keine"}.
-{"Node ", "Knoten"}.
+{"Node ", "Knoten "}.
 {"DB Management", "DB Management"}.
 {"Listened Ports Management", "Ports Management"}.
 {"Restart", "Neustart"}.
 {"Stop", "Stop"}.
 {"RPC call error", "RPC-Aufruf Fehler"}.
-{"DB Tables at ", "DB Tabellen"}.
+{"DB Tables at ", "DB Tabellen bei "}.
 {"Name", "Name"}.
 {"Storage Type", "Speichertyp"}.
 {"Size", "Größe"}.
 {"Memory", "Speicher"}.
-{"Backup Management at ", "Backup Management"}.
+{"Backup Management at ", "Backup Management bei "}.
 {"Store a backup in a file", "Die Sicherung in eine Datei legen "}.
 {"OK", "OK"}.
 {"Restore a backup from a file", "Die Sicherung aus einer Datei wiederherstellen"}.
 {"Install a database fallback from a file", "Eine Sicherungsdatenbank aus einer Datei installieren"}.
 {"Dump a database in a text file", "Ausgabe der Datenbank in eine Textdatei"}.
 {"Restore a database from a text file", "Datenbank aus einer Textdatei wiederherstellen"}.
-{"Listened Ports at ", "Listened Ports at"}.
+{"Listened Ports at ", "Listened Ports at "}.
 {"~p statistics", "~p Statistiken"}.
 {"Uptime", "Betriebszeit"}.
 {"CPU Time", "CPU Zeit"}.
@@ -263,7 +263,7 @@
 {"Groups", "Gruppe"}.
 {"Remove", "Entfernen"}.
 {"Add JID", "JID hinzufügen"}.
-{"User ", "Benutzer"}.
+{"User ", "Benutzer "}.
 {"Roster of ", "Liste von "}.
 
 % Local Variables:
