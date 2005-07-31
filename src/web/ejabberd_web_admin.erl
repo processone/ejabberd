@@ -452,26 +452,26 @@ h3 {
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
   font-weight: bold;
-  text-decoration: underlined;
+  text-decoration: underline;
 }
 #content a:visited {
   color: #990000;  
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
   font-weight: bold;
-  text-decoration: underlined;
+  text-decoration: underline;
 }
 #content a:hover {
   color: #cc6600;  
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
   font-weight: bold;
-  text-decoration: underlined;
+  text-decoration: underline;
 }
 
 
 #content ul li {
-  list-style-type: dot;
+  list-style-type: disc;
   font-size: 10pt;
   /*font-size: 7pt;*/
   padding-left: 10px;
