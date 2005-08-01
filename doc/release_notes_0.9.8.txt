@@ -2,11 +2,11 @@
 			    ejabberd 0.9.8
 			      2005-08-01
 
-   This document describes the main changes for ejabberd 0.9.8
-   release. This release prepares the release of ejabberd 1.0, which
-   is due later this year.
+   This document describes the main changes in ejabberd 0.9.8. This
+   version prepares the release of ejabberd 1.0, which is due later
+   this year.
 
-   The code can be downloaded from the download page
+   The code can be downloaded from the Process-one website
    (http://www.process-one.net/en/projects/ejabberd/)
 
    For more detailed informations, please refer to ejabberd User Guide
@@ -15,44 +15,44 @@
 
 Enhanced virtual hosting
 
-   Virtual hosting now applies to much more settings and features and
-   is now transparent. Virtual hosting now accept different parameters
-   for different virtual host regarding: Authentication method, Access
-   Control List and acces rules, users management, statistics and
-   shared roster. The web interface now gives access to each virtual
-   hosts parameters.
+   Virtual hosting now applies to much more setting options and
+   features and is now transparent. Virtual hosting accepts different
+   parameters for different virtual hosts regarding the following
+   features: Authentication method, Access Control List and access
+   rules, users management, statistics and shared roster. The web
+   interface now gives access to each virtual host's parameters.
 
 
 Enhanced publish and subscribe module
 
-   ejabberd pubsub module now integrates enhancement coming from
+   ejabberd pubsub module now integrates enhancements coming from
    J-EAI, an XMPP-based integration server built on ejabberd. ejabberd
-   now supports publish and subscribe node configuration. It is
-   possible to define node that should be persistant, and the number
+   thus supports publish and subscribe node configuration. It is
+   possible to define nodes that should be persistant, and the number
    of items to persist. It is also possible to define various
    notification parameters, such as the delivery of the payload with
    the notifications, the notification of subscribers when some
-   changes occurs on items, the items the maximum size of the payload,
-   the subscription approvers, the notification of online users only,
-   etc.
+   changes occurs on items, the maximum size of the items payload, the
+   subscription approvers, the limitation of the notification to
+   online users only, etc.
 
 
 Code reorganisation and update
 
-   - The mod_register have been cleaned-up.
-   - ODBC supports have been updated and several bugs have been fixed.
+   - The mod_register have been cleaned up.
+   - ODBC support have been updated and several bugs have been fixed.
 
 
 Development API
 
-   To ease the work of ejabberd developer, a filter_packet hook has
-   been added. It is this possible to develop specific plugin to
+   To ease the work of Jabber/XMPP developers, a filter_packet hook
+   has been added. It is thus possible to develop specific plugin to
    filter or modify packets flowing through ejabberd.
 
 
 Translations
 
-   Translations have been updated to add support the new pubsub features.
+   Translations have been updated to support the new pubsub features.
    A new Brazilian Portuguese translation has been added.
 
 
@@ -64,22 +64,22 @@ Web interface
 Installers
 
    Installers are now provided for Microsoft Windows and Linux. The
-   Linux installer now includes Erlang ASN1 modules for LDAP
+   Linux installer now includes Erlang ASN.1 modules for LDAP
    authentication support.
 
 
 Bugfixes
 
    This release contains several bugfixes and architectural
-   changes. Bugfixes include improvement on LDAP authentication.
-   Please refer to the Changelog file supplied with this
-   release for details of all improvements in the ejabberd code.
+   changes. Among other things Bugfixes include improvements on LDAP
+   authentication.  Please refer to the ChangeLog file supplied with
+   this release for details of all improvements in the ejabberd code.
 
 
 References
 
-   The ejabbed feature sheet helps make comparison with other
-   Jabber/XMPP server:
+   The ejabbed feature sheet helps to make comparison with other
+   Jabber/XMPP servers:
    http://www.process-one.net/en/projects/ejabberd/docs/features.pdf
 
    Contributed tutorials are available:
@@ -89,5 +89,3 @@ References
      http://ejabberd.jabber.ru/jabberd2-to-ejabberd
    - Transport configuration for connecting to other networks:
      http://ejabberd.jabber.ru/tutorials-transports
-
-
