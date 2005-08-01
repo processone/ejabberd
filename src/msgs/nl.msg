@@ -58,7 +58,7 @@
 {"Start Modules", "Modules starten"}.
 {"Stop Modules", "Modules stoppen"}.
 {"Backup Management", "Backupbeheer"}.
-{"Import users from jabberd1.4 spool files", "Importeer jabberd1.4 gebruikers via spool-bestanden"}.
+{"Import users from jabberd1.4 spool files", "Importeer jabberd 1.4 gebruikers via spool-bestanden"}.
 {"Backup", "Backup"}.
 {"Restore", "Backup herstellen"}.
 {"Dump to Text File", "Naar tekstbestand dumpen"}.
@@ -78,7 +78,7 @@
 {"Results of search in ", "Zoekresultaten van "}.
 {"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Vul het formulier in om elke overeenkomende Jabber-gebruiker te zoeken (Voeg achteraan het teken * toe om te zoeken naar alles wat met het eerste deel begint.)."}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd's vCard module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 
 {"User",              "Gebruiker"}.
 {"Full Name", 	      "Volledige naam"}.
@@ -95,9 +95,22 @@
 {"JID",	              "JID"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd's pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {[], "[]"}.
 {"Node Creator", "Auteur van de node"}.
+{"Deliver payloads with event notifications", "Berichten bezorgen samen met gebeurtenisnotificaties"}.
+{"Notify subscribers when the node configuration changes", "Abonnees informeren wanneer de instellingen van de node gewijzigd worden"}.
+{"Notify subscribers when the node is deleted", "Abonnees informeren wanneer de node verwijderd word"}.
+{"Notify subscribers when items are removed from the node", "Abonnees informeren wanneer items verwijderd worden uit de node"}.
+{"Persist items to storage", "Items in geheugen bewaren"}.
+{"Max # of items to persist", "Maximum aantal in het geheugen te bewaren items"}.
+{"Whether to allow subscriptions", "Abonnementsaanraag toestaan"}.
+{"Specify the subscriber model", "Abonnementstype specificeren"}.
+{"Specify the publisher model", "Publicatietype specificeren"}.
+{"Max payload size in bytes", "Maximumgrootte van bericht in bytes"}.
+{"Send items to new subscribers", "Items naar nieuwe abonnees verzenden"}.
+{"Only deliver notifications to available users", "Notificaties alleen bezorgen aan beschikbare gebruikers"}.
+{"Specify the current subscription approver", "Huidige verlener van abonnementen specificeren"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname",
@@ -105,17 +118,17 @@
 {"Nickname Registration at ", "Registratie van bijnaam op "}.
 {"Enter nickname you want to register", "Voer de bijnaam in die u wilt registreren"}.
 {"Only service administrators are allowed to send service messages",
- "Alleen service-beheerders hebben de toelating om service-berichten te versturen"}.
+ "Alleen service-beheerders kunnen service-berichten versturen"}.
 {"Conference room does not exist", "Conferentiekamer bestaat niet"}.
 {"Access denied by service policy", "Toegang geweigerd door service policy"}.
 {"You must fill in field \"nick\" in the form",
  "U moet het veld \"nick\" invullen in het formulier"}.
 {"Specified nickname is already registered", "De gekozen bijnaam is al geregistreerd"}.
 {"Room creation is denied by service policy", "De aanmaak van een kamer is verhinderd door de instellingen van deze server"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd's MUC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 
 % mod_muc/mod_muc_room.erl
-{" has set the subject to: ", " heeft het onderwerp ingesteld op: "}.
+{" has set the subject to: ", " veranderde het onderwerp in: "}.
 {"Configuration for ", "Configuratie voor "}.
 {"Room title", "Kamernaam"}.
 {"Allow users to change subject?", "Gebruikers toestaan het onderwerp te wijzigen"}.
@@ -180,13 +193,13 @@
 {"Enter username and encodings you wish to use for connecting to IRC servers",
  "Voer de gebruikersnaam en coderingen in die u wilt gebruiken voor de verbindingen met IRC servers"}.
 {"IRC Username", "IRC gebruikersnaam"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Indien u verschillende coderingen wilt specificeren voor IRC servers, dan moet u in deze lijst waaren in het formaat: '{\"irc server\", \"codering\"}'. Standaard gebruikt deze service codering \"~s\"."}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Als u verschillende coderingen wilt opgeven voor IRC-servers, geef dan in deze lijst waarden op in het formaat: '{\"irc server\", \"codering\"}'. Standaard gebruikt deze service codering \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Voorbeeld: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Coderingen"}.
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd's IRC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd administration", "Beheer van ejabberd"}.
+{"ejabberd administration", "Beheer"}.
 {"Users", "Gebruikers"}.
 {"Nodes", "Nodes"}.
 {"Statistics", "Statistieken"}.
@@ -194,24 +207,24 @@
 {"submitted", "verzonden"}.
 {"bad format", "slecht formaat"}.
 {"raw", "ruw"}.
-{"ejabberd access control lists configuration", "ejabberd access control lists configuratie"}.
+{"ejabberd access control lists configuration", "Access control lists"}.
 {"Delete Selected", "Geselecteerde verwijderen"}.
 {"Submit", "Verzenden"}.
-{"ejabberd access rules configuration", "ejabberd access rules configuratie"}.
-{"~s access rule configuration", "~s access rule configuratie"}.
-{"ejabberd users", "ejabberd-gebruikers"}.
-{"ejabberd stats", "Statistieken van ejabberd"}.
+{"ejabberd access rules configuration", "Access rules"}.
+{"~s access rule configuration", "Access rules op ~s"}.
+{"ejabberd users", "Gebruikers"}.
+{"ejabberd stats", "Statistieken"}.
 {"Node not found", "Node niet gevonden"}.
 {"Add New", "Nieuw toevoegen"}.
 {"Registered users", "Geregistreerde gebruikers"}.
-{"Authentificated users", "Aangemelde gebruikers"}.
+{"Authenticated users", "Aangemelde gebruikers"}.
 {"Online users", "Online gebruikers"}.
 {"Outgoing S2S servers", "Uitgaande S2S verbindingen"}.
 {"Change Password", "Wachtwoord wijzigen"}.
 {"Connected Resources:", "Verbonden bronnen:"}.
 {"Password:", "Wachtwoord:"}.
 {"None", "Geen"}.
-{"Node ", "Node"}.
+{"Node ", "Node "}.
 {"DB Management", "Databasebeheer"}.
 {"Listened Ports Management", "Beheer van openstaande poorten"}.
 {"Restart", "Herstarten"}.
@@ -229,14 +242,14 @@
 {"Install a database fallback from a file", "Reservedatabase installeren vanaf een bestand"}.
 {"Dump a database in a text file", "Database dumpen in een tekstbestand"}.
 {"Restore a database from a text file", "Database herstellen vanaf een tekstbestand"}.
-{"Listened Ports at ", "Geopende poorten op "}.
-{"~p statistics", "~p statistieken"}.
+{"Listened Ports at ", "Openstaande poorten op "}.
+{"~p statistics", "Statistieken van ~p"}.
 {"Uptime", "Uptime"}.
 {"CPU Time", "Processortijd"}.
-{"Transactions commited", "Transacties bevestigd"}.
-{"Transactions aborted", "Transacties afgebroken"}.
-{"Transactions restarted", "Transacties herstart"}.
-{"Transactions logged", "Transacties gelogd"}.
+{"Transactions commited", "Bevestigde transacties"}.
+{"Transactions aborted", "Afgebroken transacties"}.
+{"Transactions restarted", "Herstarte transacties"}.
+{"Transactions logged", "Gelogde transacties"}.
 {"Port", "Poort"}.
 {"Module", "Module"}.
 {"Options", "Opties"}.
@@ -246,7 +259,7 @@
 {"Offline messages", "Offline berichten"}.
 {"Last Activity", "Laatste activiteit"}.
 {"Never", "Nooit"}.
-{"~s offline messages queue", "~s offline berichten in de wachtrij"}.
+{"~s offline messages queue", "offline berichten in de wachtrij op ~s"}.
 {"Time", "Tijd"}.
 {"From", "Van"}.
 {"To", "Aan"}.
@@ -272,11 +285,25 @@
 {"Description:", "Beschrijving:"}.
 {"Members:", "Leden:"}.
 {"Displayed Groups:", "Weergegeven groepen:"}.
-{"Group ", "Groep"}.
+{"Group ", "Groep "}.
+{"Users last activity", "Laatste activiteit van gebruikers"}.
+{"Period: ", "Periode: "}.
+{"Last month", "Afgelopen maand"}.
+{"Last year", "Afgelopen jaar"}.
+{"All activity", "Alle activiteit"}.
+{"Show Ordinary Table", "Deel van tabel laten zien"}.
+{"Show Integral Table", "Volledige tabel laten zien"}.
+{"No data", "Geen gegevens"}.
+{"Modules Management", "Modulebeheer"}.
+{"Modules at ", "Modules op "}.
+{"Start", "Starten"}.
+{"Virtual Hosts", "Virtuele hosts"}.
+{"ejabberd virtual hosts", "Virtuele hosts"}.
+{"Host", "Host"}.
 
 % mod_vcard_ldap.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd's vCard module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {"JID", "JID"}.
 {"Given Name", "Opgegeven naam"}.
 
