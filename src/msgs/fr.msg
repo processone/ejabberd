@@ -104,6 +104,20 @@
 {"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {[], ""}.
 {"Node Creator", "Créateur du noeud"}.
+{"Deliver payloads with event notifications", "Inclure le contenu du message avec la notification"}.
+{"Notify subscribers when the node configuration changes", "Avertir les abonnés lorsque la configuration du noeud change"}.
+{"Notify subscribers when the node is deleted", "Avertir les abonnés lorsque le noeud est supprimé"}.
+{"Notify subscribers when items are removed from the node", "Avertir les abonnés lorsque des éléments sont supprimés sur le noeud"}.
+{"Persist items to storage", "Stockage persistant des éléments"}.
+{"Max # of items to persist", "Nombre maximum d'éléments à stocker"}.
+{"Whether to allow subscriptions", "Autoriser l'abonnement ?"}.
+{"Specify the subscriber model", "Définir le modèle d'abonnement"}.
+{"Specify the publisher model", "Définir le modèle de publication"}.
+{"Max payload size in bytes", "Taille maximum pour le contenu du message en octet"}.
+{"Send items to new subscribers", "Envoyer les anciens éléments aux nouveaux abonnés"}.
+{"Only deliver notifications to available users", "Envoyer les notifications uniquement aux utilisateurs disponibles"}.
+{"Specify the current subscription approver", "Définir l'utilisateur qui valide les abonnements"}.
+
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Vous avez besoin d'un client supportant x:data pour enregistrer un pseudo"}.
@@ -198,14 +212,13 @@
 {"Node not found", "Noeud non trouvé"}.
 {"Add New", "Ajouter"}.
 {"Registered users", "Utilisateurs enregistrés"}.
-{"Authentificated users", "Utilisateurs authentifiés"}.
 {"Online users", "Utilisateurs connectés"}.
 {"Outgoing S2S servers", "Connexions S2S sortantes"}.
 {"Change Password", "Modifier le mot de passe"}.
 {"Connected Resources:", "Ressources connectées:"}.
 {"Password:", "Mot de passe:"}.
 {"None", "Aucun"}.
-{"Node ", "Noeud"}.
+{"Node ", "Noeud "}.
 {"DB Management", "Gestion BdD"}.
 {"Listened Ports Management", "Gestion des ports ouverts"}.
 {"Restart", "Redémarrer"}.
@@ -258,7 +271,7 @@
 {"Online", "En ligne"}.
 {"Validate", "Valider"}.
 {"Not found", "Non trouvé"}.
-{"Shared roster groups", "Groupes pour la liste de contacts partagée"}.
+{"Shared roster groups", "Groupes de la liste de contacts partagée"}.
 {"Name:", "Nom:"}.
 {"Description:", "Description:"}.
 {"Members:", "Membres:"}.
@@ -274,6 +287,12 @@
 {"Modules Management", "Gestion des modules"}.
 {"Modules at ", "Modules sur "}.
 {"Start", "Démarrer"}.
+{"Virtual Hosts", "Serveurs virtuels"}.
+{"ejabberd virtual hosts", "Serveurs virtuels d'ejabberd"}.
+{"Host", "Serveur"}.
+{"Authenticated users", "Utilisateurs authentifiés"}.
+{"No data", "Aucune information disponible"}.
+
 
 % Local Variables:
 % mode: erlang
