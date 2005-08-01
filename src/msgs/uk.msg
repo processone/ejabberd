@@ -197,6 +197,9 @@
 {"Invalid role: ~s", "Недопустима роль: ~s"}.
 {"Owner privileges required", "Необхідні права власника"}.
 {"private, ", "приватна, "}.
+{"Description", "Опис"}.
+{"Number of occupants", "Число учасників"}.
+{"Subject", "Тема"}.
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin",
@@ -310,6 +313,9 @@
 {"Modules Management", "Керування модулями"}.
 {"Modules at ", "Модулі на "}.
 {"No data", "Немає даних"}.
+{"Virtual Hosts", "Віртуальні хости"}.
+{"ejabberd virtual hosts", "віртуальні хости ejabberd"}.
+{"Host", "Хост"}.
 
 % Local Variables:
 % mode: erlang

@@ -1,5 +1,8 @@
 2005-08-01  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
 	* src/msgs/es.msg: Updated (thanks to Badlop)
 
 	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
