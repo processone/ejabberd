@@ -95,6 +95,19 @@
 {"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2005 Alexey Shchepin"}.
 {"Node Creator", "Creador del nodo"}.
 {[], " "}.
+{"Deliver payloads with event notifications", "Enviar payloads junto con las notificaciones de eventos"}.
+{"Notify subscribers when the node configuration changes", "Notificar subscriptores cuando cambia la configuración del nodo"}.
+{"Notify subscribers when the node is deleted", "Notificar subscriptores cuando el nodo se borra"}.
+{"Notify subscribers when items are removed from the node", "Notificar subscriptores cuando los elementos se borran del nodo"}.
+{"Persist items to storage", "Persistir elementos al almacenar"}.
+{"Max # of items to persist", "Máximo # de elementos que persisten"}.
+{"Whether to allow subscriptions", "Permitir subscripciones"}.
+{"Specify the subscriber model", "Especificar el modelo del subscriptor"}.
+{"Specify the publisher model", "Especificar el modelo del publicante"}.
+{"Max payload size in bytes", "Máximo tamaño del payload en bytes"}.
+{"Send items to new subscribers", "Enviar elementos a los nuevos subscriptores"}.
+{"Only deliver notifications to available users", "Solo enviar notificaciones a los usuarios disponibles"}.
+{"Specify the current subscription approver", "Especificar el aprobador de subscripción actual"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Necesitas un cliente con soporte de x:data para poder registrar el apodo"}.
@@ -182,7 +195,6 @@
 {"Node not found", "Nodo no encontrado"}.
 {"Add New", "Añadir nuevo"}.
 {"Registered users", "Usuarios registrados"}.
-{"Authentificated users", "Usuarios autentificados"}.
 {"Online users", "Usuarios conectados"}.
 {"Outgoing S2S servers", "Servidores conectados"}.
 {"Change Password", "Cambiar contraseña"}.
@@ -258,6 +270,14 @@
 {"All activity", "Toda la actividad"}.
 {"Show Ordinary Table", "Mostrar Tabla Ordinaria"}.
 {"Show Integral Table", "Mostrar Tabla Integral"}.
+{"Authenticated users", "Usuarios autenticados"}.
+{"No data", "No hay datos"}.
+{"Modules Management", "Gestión de módulos"}.
+{"Modules at ", "Módulos en "}.
+{"Start", "Iniciar"}.
+{"Virtual Hosts", "Hosts Virtuales"}.
+{"ejabberd virtual hosts", "Hosts virtuales de ejabberd"}.
+{"Host", "Host"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Es obligatorio usar STARTTLS"}.
