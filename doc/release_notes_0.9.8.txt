@@ -32,7 +32,7 @@ Enhanced publish and subscribe module
    of items to persist. It is also possible to define various
    notification parameters, such as the delivery of the payload with
    the notifications, the notification of subscribers when some
-   changes occurs on items, the maximum size of the items payload, the
+   changes occur on items, the maximum size of the items payload, the
    subscription approvers, the limitation of the notification to
    online users only, etc.
 
@@ -63,7 +63,7 @@ Web interface
 
 Installers
 
-   Installers are now provided for Microsoft Windows and Linux. The
+   Installers are now provided for Microsoft Windows and Linux/x86. The
    Linux installer now includes Erlang ASN.1 modules for LDAP
    authentication support.
 
@@ -78,7 +78,7 @@ Bugfixes
 
 References
 
-   The ejabbed feature sheet helps to make comparison with other
+   The ejabberd feature sheet helps to make comparison with other
    Jabber/XMPP servers:
    http://www.process-one.net/en/projects/ejabberd/docs/features.pdf
 
