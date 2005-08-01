@@ -74,3 +74,20 @@ Bugfixes
    changes. Bugfixes include improvement on LDAP authentication.
    Please refer to the Changelog file supplied with this
    release for details of all improvements in the ejabberd code.
+
+
+References
+
+   The ejabbed feature sheet helps make comparison with other
+   Jabber/XMPP server:
+   http://www.process-one.net/en/projects/ejabberd/docs/features.pdf
+
+   Contributed tutorials are available:
+   - Migration from Jabberd1.4 to ejabberd:
+     http://ejabberd.jabber.ru/jabberd1-to-ejabberd
+   - Migration from Jabberd2 to ejabberd:
+     http://ejabberd.jabber.ru/jabberd2-to-ejabberd
+   - Transport configuration for connecting to other networks:
+     http://ejabberd.jabber.ru/tutorials-transports
+
+
