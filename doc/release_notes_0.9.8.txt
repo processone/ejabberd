@@ -10,7 +10,7 @@
    (http://www.process-one.net/en/projects/ejabberd/)
 
    For more detailed informations, please refer to ejabberd User Guide
-   on Process-one website (http://www.process-one.net/projects/ejabberd/).
+   on Process-one website (http://www.process-one.net/en/projects/ejabberd/).
 
 
 Enhanced virtual hosting
