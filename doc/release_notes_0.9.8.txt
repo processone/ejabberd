@@ -1,0 +1,72 @@
+			    Release notes
+			    ejabberd 0.9.8
+
+   This document describes the main changes for ejabberd 0.9.8
+   release.
+
+   The code can be downloaded from the download page
+   (http://www.process-one.net/en/projects/ejabberd/)
+
+   For more detailed informations, please refer to ejabberd User Guide
+   on Process-one website (http://www.process-one.net/projects/ejabberd/).
+
+
+Enhanced virtual hosting
+
+   Virtual hosting now applies to much more settings and features and
+   is now transparent. Virtual hosting now accept different parameters
+   for different virtual host regarding: Authentication method, Access
+   Control List and acces rules, users management, statistics and
+   shared roster. The web interface now gives access to each virtual
+   hosts parameters.
+
+
+Enhanced publish and subscribe module
+
+   ejabberd pubsub module now integrates enhancement coming from
+   J-EAI, an XMPP-based integration server built on ejabberd. ejabberd
+   now supports publish and subscribe node configuration. It is
+   possible to define node that should be persistant, and the number
+   of items to persist. It is also possible to define various
+   notification parameters, such as the delivery of the payload with
+   the notifications, the notification of subscribers when some
+   changes occurs on items, the items the maximum size of the payload,
+   the subscription approvers, the notification of online users only,
+   etc.
+
+
+Code reorganisation and update
+
+   - The mod_register have been cleaned-up.
+   - ODBC supports have been updated and several bugs have been fixed.
+
+
+Development API
+
+   To ease the work of ejabberd developer, a filter_packet hook has
+   been added. It is this possible to develop specific plugin to
+   filter or modify packets flowing through ejabberd.
+
+
+Translations
+
+   Translations have been updated to add support the new pubsub features.
+   A new Brazilian Portuguese translation has been added.
+
+
+Web interface
+
+   CSS stylesheets are now W3C compliant.
+
+
+Installers
+
+   Installers are now provided for Microsoft Windows and Linux.
+
+
+Bugfixes
+
+   This release contains several bugfixes and architectural
+   changes. Bugfixes include improvement on LDAP authentication.
+   Please refer to the Changelog file supplied with this
+   release for details of all improvements in the ejabberd code.
