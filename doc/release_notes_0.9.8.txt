@@ -1,8 +1,10 @@
 			    Release notes
 			    ejabberd 0.9.8
+			      2005-08-01
 
    This document describes the main changes for ejabberd 0.9.8
-   release.
+   release. This release prepares the release of ejabberd 1.0, which
+   is due later this year.
 
    The code can be downloaded from the download page
    (http://www.process-one.net/en/projects/ejabberd/)
@@ -61,7 +63,9 @@ Web interface
 
 Installers
 
-   Installers are now provided for Microsoft Windows and Linux.
+   Installers are now provided for Microsoft Windows and Linux. The
+   Linux installer now includes Erlang ASN1 modules for LDAP
+   authentication support.
 
 
 Bugfixes
