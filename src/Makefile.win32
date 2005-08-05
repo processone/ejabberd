@@ -8,8 +8,8 @@ EREL=$(REL)\ejabberd-$(EJABBERD_VERSION)
 EBIN_DIR=$(EREL)\ebin
 SRC_DIR=$(EREL)\src
 PRIV_DIR=$(EREL)\priv
-SO_DIR=$(PRIV_DIR)\lib
-MSGS_DIR=$(PRIV_DIR)\msgs
+SO_DIR=$(EREL)
+MSGS_DIR=$(EREL)\msgs
 WIN32_DIR=$(EREL)\win32
 DOC_DIR=$(EREL)\doc
 
@@ -35,13 +35,12 @@ release : build release_clean
 	copy *.beam $(EBIN_DIR)
 	@erase $(EBIN_DIR)\configure.beam
 	copy *.app $(EBIN_DIR)
-	mkdir $(PRIV_DIR)
-	mkdir $(SO_DIR)
 	copy *.dll $(SO_DIR)
 	mkdir $(MSGS_DIR)
 	copy msgs\*.msg $(MSGS_DIR)
 	mkdir $(WIN32_DIR)
 	copy win32\ejabberd.cfg $(EREL)
+	copy win32\inetrc $(EREL)
 	copy $(SYSTEMROOT)\system32\libeay32.dll $(EREL)
 	copy $(SYSTEMROOT)\system32\ssleay32.dll $(EREL)
 	copy win32\ejabberd.ico $(WIN32_DIR)
@@ -71,6 +70,7 @@ release : build release_clean
 	mkdir $(SRC_DIR)\odbc
 	copy odbc\*.erl $(SRC_DIR)\odbc
 	mkdir $(DOC_DIR)
+	copy ..\doc\*.txt $(DOC_DIR)
 	copy ..\doc\*.html $(DOC_DIR)
 	copy ..\doc\*.png $(DOC_DIR)
 

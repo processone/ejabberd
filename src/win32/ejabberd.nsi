@@ -159,10 +159,10 @@ SectionIn 1 RO
     SetOutPath "$INSTDIR"
     File /r "${TESTDIR}\doc"
     File /r "${TESTDIR}\ebin"
-    File /r "${TESTDIR}\priv"
+    File /r "${TESTDIR}\msgs"
     File /r "${TESTDIR}\win32"
-    File "${TESTDIR}\libeay32.dll"
-    File "${TESTDIR}\ssleay32.dll"
+    File "${TESTDIR}\*.dll"
+    File "${TESTDIR}\inetrc"
     File /oname=ejabberd.cfg.example "${TESTDIR}\ejabberd.cfg"
     SetOverwrite off
     File "${TESTDIR}\ejabberd.cfg"
@@ -178,9 +178,8 @@ SectionIn 1 RO
     CreateDirectory "$0"
     CreateShortCut "$0\Start Ejabberd.lnk" "$ERLANG_PATH\bin\werl.exe" \
 	'-sname ejabberd -pa ebin \
-	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH priv/msgs \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
-	-s ejabberd -ejabberd config \"ejabberd.cfg\" -mnesia dir \"spool\" \
+	-s ejabberd -kernel inetrc \"inetrc\" -mnesia dir \"spool\" \
 	-sasl sasl_error_logger {file,\"log/sasl.log\"}' \
 	$INSTDIR\win32\ejabberd.ico
     CreateShortCut "$0\Edit Config.lnk" "%SystemRoot%\system32\notepad.exe" \
@@ -214,8 +213,7 @@ SectionIn 1 RO
     nsExec::ExecToLog '"$ERLSRV" add ejabberd -stopaction "init:stop()." \
 	-onfail restart -workdir "$INSTDIR" \
 	-args "-s ejabberd -pa ebin \
-	-ejabberd config \\\"ejabberd.cfg\\\" \
-	-env EJABBERD_SO_PATH priv/lib -env EJABBERD_MSGS_PATH priv/msgs \
+	-kernel inetrc \\\"inetrc\\\" \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
 	-sasl sasl_error_logger {file,\\\"log/sasl.log\\\"} \
 	-mnesia dir \\\"spool\\\"" -d'
@@ -299,12 +297,13 @@ Section "Uninstall"
     skipservice:
     RMDir /r "$INSTDIR\doc"
     RMDir /r "$INSTDIR\ebin"
-    RMDir /r "$INSTDIR\priv"
+    RMDir /r "$INSTDIR\msgs"
     RMDir /r "$INSTDIR\win32"
     ;RMDir /r "$INSTDIR\src"
     RMDir /r "$INSTDIR\log"
-    Delete "$INSTDIR\libeay32.dll"
-    Delete "$INSTDIR\ssleay32.dll"
+    Delete "$INSTDIR\*.dll"
+    Delete "$INSTDIR\inetrc"
+    Delete "$INSTDIR\ejabberd.cfg.example"
     Delete "$INSTDIR\Uninstall.exe"
     RMDir "$INSTDIR"  
 
