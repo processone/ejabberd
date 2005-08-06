@@ -1,5 +1,7 @@
 2005-08-07  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/pl.msg: Updated (thanks to Andrew Smyk)
+
 	* src/web/ejabberd_web_admin.erl: Bugfix (thanks to Badlop)
 
 2005-08-05  Alexey Shchepin  <alexey@sevcom.net>

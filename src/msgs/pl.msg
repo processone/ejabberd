@@ -177,7 +177,7 @@
  "Potrzebujesz klienta kompatybilnego z x:data aby skonfigurować mod_irc"}.
 {"Registration in mod_irc for ", "Rejestracja w mod_irc dla "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers",
- "Wprowadź nazwę użytkownika i kodowanie ktore chcesz używać do lączenia z serwerami IRC"}.
+ "Wprowadź nazwę użytkownika i kodowanie których chcesz używać do łączenia z serwerami IRC"}.
 {"IRC Username", "Nazwa użytkownika"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format
  '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.",
@@ -241,7 +241,7 @@
 {"Transactions restarted", "Transakcje zrestartowane"}.
 {"Transactions logged", "Transakcje logowane"}.
 {"Port", "Port"}.
-{"Module", "Modul"}.
+{"Module", "Moduł"}.
 {"Options", "Opcje"}.
 {"Update", "Aktualizacja"}.
 {"Delete", "Usuń"}.
@@ -265,6 +265,30 @@
 {"Add JID", "Dodaj JID "}.
 {"User ", "Użytkownik "}.
 {"Roster of ", "Roster "}.
+{"Shared Roster", "Roster współdzielony"}.
+{"Online", "Dostępny"}.
+{"Validate", "Zatwierdź"}.
+{"Not found", "Nie znaleziony"}.
+{"Shared roster groups", "Grupy rosterów współdzielonych"}.
+{"Name:", "Nazwa:"}.
+{"Description:", "Opis:"}.
+{"Members:", "Członkowie:"}.
+{"Displayed Groups:", "Wyświetlane grupy:"}.
+{"Group ", "Grupa "}.
+{"Users last activity", "Ostatnia aktywność użytkowników"}.
+{"Period: ", "Przedział czasu "}.
+{"Last month", "Ostatni miesiąc"}.
+{"Last year", "Ostatni rok"}.
+{"All activity", "Cała aktywność"}.
+{"Show Ordinary Table", "Pokaż zwykłą tabelę"}.
+{"Show Integral Table", "Pokaż tabelę całkowitą"}.
+{"Start", "Start"}.
+{"Modules Management", "Zarządzanie modułami"}.
+{"Modules at ", "Moduły na "}.
+{"No data", "Brak danych"}.
+{"Virtual Hosts", "Wirtualne hosty"}.
+{"ejabberd virtual hosts", "wirtualne hosty ejabberda"}.
+{"Host", "Host"}.
 
 % Local Variables:
 % mode: erlang
