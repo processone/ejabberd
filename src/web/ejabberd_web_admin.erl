@@ -1972,7 +1972,7 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 	];
 
 get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
-    Modules = rpc:call(Node, gen_mod, loaded_modules_with_opts, []),
+    Modules = rpc:call(Node, gen_mod, loaded_modules_with_opts, [Host]),
     Res = case catch node_modules_parse_query(Host, Node, Modules, Query) of
 	      submitted ->
 		  ok;
