@@ -77,6 +77,10 @@ parse(S) ->
 
 parse1([$= | Cs], S, Ts) ->
     parse2(Cs, lists:reverse(S), "", Ts);
+parse1([$, | Cs], [], Ts) ->
+    parse1(Cs, [], Ts);
+parse1([$\s | Cs], [], Ts) ->
+    parse1(Cs, [], Ts);
 parse1([C | Cs], S, Ts) ->
     parse1(Cs, [C | S], Ts);
 parse1([], [], T) ->
@@ -100,6 +104,8 @@ parse3([], _, _, _) ->
 
 parse4([$, | Cs], Key, Val, Ts) ->
     parse1(Cs, "", [{Key, lists:reverse(Val)} | Ts]);
+parse4([$\s | Cs], Key, Val, Ts) ->
+    parse4(Cs, Key, Val, Ts);
 parse4([C | Cs], Key, Val, Ts) ->
     parse4(Cs, Key, [C | Val], Ts);
 parse4([], Key, Val, Ts) ->
