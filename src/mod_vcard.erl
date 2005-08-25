@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, init/2, stop/1,
+-export([start/2, init/3, stop/1,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 reindex_vcards/0,
@@ -70,36 +70,36 @@ start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     catch mod_disco:register_sm_feature(Host, ?NS_VCARD),
-    Hosts = gen_mod:get_hosts(Opts, "vjud."),
+    MyHost = gen_mod:get_opt(host, Opts, "vjud." ++ Host),
     Search = gen_mod:get_opt(search, Opts, true),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [Hosts, Search])).
+	     spawn(?MODULE, init, [MyHost, Host, Search])).
 
 
-init(Hosts, Search) ->
+init(Host, ServerHost, Search) ->
     case Search of
 	false ->
-	    loop(Hosts);
+	    loop(Host, ServerHost);
 	_ ->
-	    ejabberd_router:register_routes(Hosts),
-	    loop(Hosts)
+	    ejabberd_router:register_route(Host),
+	    loop(Host, ServerHost)
     end.
 
-loop(Hosts) ->
+loop(Host, ServerHost) ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(From, To, Packet) of
+	    case catch do_route(ServerHost, From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop(Hosts);
+	    loop(Host, ServerHost);
 	stop ->
-	    catch ejabberd_router:unregister_routes(Hosts),
+	    ejabberd_router:unregister_route(Host),
 	    ok;
 	_ ->
-	    loop(Hosts)
+	    loop(Host, ServerHost)
     end.
 
 stop(Host) ->
@@ -272,7 +272,7 @@ set_vcard(User, LServer, VCARD) ->
 
 
 
-do_route(From, To, Packet) ->
+do_route(ServerHost, From, To, Packet) ->
     #jid{user = User, resource = Resource} = To,
     if
 	(User /= "") or (Resource /= "") ->
@@ -310,7 +310,7 @@ do_route(From, To, Packet) ->
 						    [{xmlelement, "x",
 						      [{"xmlns", ?NS_XDATA},
 						       {"type", "result"}],
-						      search_result(Lang, To, XData)
+						      search_result(Lang, To, ServerHost, XData)
 						     }]}]},
 					    ejabberd_router:route(
 					      To, From, jlib:iq_to_xml(ResIQ))
@@ -420,7 +420,7 @@ find_xdata_el1([_ | Els]) ->
 	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},
 			       {"var", Var}], []}).
 
-search_result(Lang, JID, Data) ->
+search_result(Lang, JID, ServerHost, Data) ->
     [{xmlelement, "title", [],
       [{xmlcdata, translate:translate(Lang, "Results of search in ") ++
 	jlib:jid_to_string(JID)}]},
@@ -437,7 +437,7 @@ search_result(Lang, JID, Data) ->
        ?LFIELD("email", "email"),
        ?LFIELD("Organization Name", "orgname"),
        ?LFIELD("Organization Unit", "orgunit")
-      ]}] ++ lists:map(fun record_to_item/1, search(JID#jid.lserver, Data)).
+      ]}] ++ lists:map(fun record_to_item/1, search(ServerHost, Data)).
 
 -define(FIELD(Var, Val),
 	{xmlelement, "field", [{"var", Var}],

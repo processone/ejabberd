@@ -41,7 +41,7 @@
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{September 10, 2003}
+\date{August 21, 2005}
 
 \begin{document}
 \begin{titlepage}
@@ -89,8 +89,6 @@ The main features of \ejabberd{} are:
 \item Support for \tjepref{0039}{Statistics Gathering}.
 \item Support for \ns{xml:lang}
 \end{itemize}
-\ejabberd{} is a Free and Open Source fault-tolerant distributed \Jabber{}
-server.  It is written mostly in Erlang.
 
 
 
@@ -158,7 +156,7 @@ does not exist, then it is opened and registered.
 \section{XML representation}
 \label{sec:xmlrepr}
 
-Each XML stanza represented as following tuple:
+Each XML stanza is represented as the following tuple:
 \begin{verbatim}
 XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
         Name = string()
@@ -175,7 +173,7 @@ E.\,g. this stanza:
   <body>test</body>
 </message>
 \end{verbatim}
-represented as following structure:
+is represented as the following structure:
 \begin{verbatim}
 {xmlelement, "message",
     [{"to", "test@conference.example.org"},
@@ -245,6 +243,18 @@ Res = string() | XMLElement
 \end{description}
 
 
+\section{Module \texttt{xml\_stream}}
+\label{sec:xmlstreammod}
+
+\begin{description}
+\item[\verb!parse_element(Str) -> XMLElement | {error, Err}!]
+\begin{verbatim}
+Str = string()
+Err = term()
+\end{verbatim}
+  Parses \texttt{Str} using XML parser, returns either parsed element or error
+  tuple.
+\end{description}
 
 
 \section{\ejabberd{} modules}
@@ -264,25 +274,27 @@ of particular XML namespaces that addressed to server or to users bare JIDs.
 
 In this module the following functions are defined:
 \begin{description}
-\item[\verb|add_iq_handler(Component, NS, Module, Function, Type)|]
+\item[\verb|add_iq_handler(Component, Host, NS, Module, Function, Type)|]
 \begin{verbatim}
 Component = Module = Function = atom()
-NS = string()
+Host = NS = string()
 Type = no_queue | one_queue | parallel
 \end{verbatim}
-  Registers function \verb|Module:Function| as handler for IQ packets that
-  contain child of namespace \verb|NS| in \verb|Component|.  Queueing
-  discipline is \verb|Type|.  There are at least two components defined:
+  Registers function \verb|Module:Function| as handler for IQ packets on
+  virtual host \verb|Host| that contain child of namespace \verb|NS| in
+  \verb|Component|.  Queueing discipline is \verb|Type|.  There are at least
+  two components defined:
   \begin{description}
   \item[\verb|ejabberd_local|] Handles packets that addressed to server JID;
   \item[\verb|ejabberd_sm|] Handles packets that addressed to users bare JIDs.
   \end{description}
-\item[\verb|remove_iq_handler(Component, NS)|]
+\item[\verb|remove_iq_handler(Component, Host, NS)|]
 \begin{verbatim}
 Component = atom()
-NS = string()
+Host = NS = string()
 \end{verbatim}
-  Removes IQ handler for namespace \verb|NS| from \verb|Component|.
+  Removes IQ handler on virtual host \verb|Host| for namespace \verb|NS| from
+  \verb|Component|.
 \end{description}
 
 Handler function must have the following type:
@@ -300,8 +312,8 @@ From = To = jid()
 
 -behaviour(gen_mod).
 
--export([start/1,
-         stop/0,
+-export([start/2,
+         stop/1,
          process_local_iq/3]).
 
 -include("ejabberd.hrl").
@@ -309,13 +321,13 @@ From = To = jid()
 
 -define(NS_CPUTIME, "ejabberd:cputime").
 
-start(Opts) ->
+start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, ?NS_CPUTIME,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_CPUTIME,
                                   ?MODULE, process_local_iq, IQDisc).
 
-stop() ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, ?NS_CPUTIME).
+stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_CPUTIME).
 
 process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
     case Type of
@@ -345,14 +357,15 @@ TODO: use \verb|proc_lib|
 
 -behaviour(gen_mod).
 
--export([start/1, init/1, stop/0]).
+-export([start/2, init/1, stop/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
-start(Opts) ->
-    Host = gen_mod:get_opt(host, Opts, "echo." ++ ?MYNAME),
-    register(ejabberd_mod_echo, spawn(?MODULE, init, [Host])).
+start(Host, Opts) ->
+    MyHost = gen_mod:get_opt(host, Opts, "echo." ++ Host),
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+             spawn(?MODULE, init, [MyHost])).
 
 init(Host) ->
     ejabberd_router:register_local_route(Host),
@@ -364,15 +377,16 @@ loop(Host) ->
             ejabberd_router:route(To, From, Packet),
             loop(Host);
         stop ->
-            ejabberd_router:unregister_local_route(Host),
+            ejabberd_router:unregister_route(Host),
             ok;
         _ ->
             loop(Host)
     end.
 
-stop() ->
-    ejabberd_mod_echo ! stop,
-    ok.
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc ! stop,
+    {wait, Proc}.
 \end{verbatim}
 
 

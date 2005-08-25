@@ -122,11 +122,12 @@ dirty_get_registered_users() ->
     get_vh_registered_users(?MYNAME).
 
 get_vh_registered_users(Server) ->
+    LServer = jlib:nameprep(Server),
     case catch ejabberd_odbc:sql_query(
-		 jlib:nameprep(Server),
+		 LServer,
 		 "select username from users") of
 	{selected, ["username"], Res} ->
-	    [U || {U} <- Res];
+	    [{U, LServer} || {U} <- Res];
 	_ ->
 	    []
     end.

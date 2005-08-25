@@ -12,7 +12,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, init/2, stop/1,
+-export([start/2, init/3, stop/1,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 remove_user/1]).
@@ -21,6 +21,7 @@
 -include("eldap/eldap.hrl").
 -include("jlib.hrl").
 
+-define(PROCNAME, ejabberd_mod_vcard_ldap).
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -28,45 +29,47 @@ start(Host, Opts) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
-    LDAPServers = ejabberd_config:get_local_option(ldap_servers),
-    RootDN = ejabberd_config:get_local_option(ldap_rootdn),
-    Password = ejabberd_config:get_local_option(ldap_password),			
+    LDAPServers = ejabberd_config:get_local_option({ldap_servers, Host}),
+    RootDN = ejabberd_config:get_local_option({ldap_rootdn, Host}),
+    Password = ejabberd_config:get_local_option({ldap_password, Host}),
     eldap:start_link("mod_vcard_ldap", LDAPServers, 389, RootDN, Password),
-    Host = gen_mod:get_opt(host, Opts, "vjud." ++ ?MYNAME),
+    MyHost = gen_mod:get_opt(host, Opts, "vjud." ++ Host),
     Search = gen_mod:get_opt(search, Opts, true),
-    register(ejabberd_mod_vcard_ldap, spawn(?MODULE, init, [Host, Search])).
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+	     spawn(?MODULE, init, [MyHost, Host, Search])).
 
-init(Host, Search) ->
+init(Host, ServerHost, Search) ->
     case Search of
 	false ->
-	    loop(Host);
+	    loop(Host, ServerHost);
 	_ ->
 	    ejabberd_router:register_route(Host),
-	    loop(Host)
+	    loop(Host, ServerHost)
     end.
 
-loop(Host) ->
+loop(Host, ServerHost) ->
     receive
 	{route, From, To, Packet} ->
-	    case catch do_route(From, To, Packet) of
+	    case catch do_route(ServerHost, From, To, Packet) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
 		_ ->
 		    ok
 	    end,
-	    loop(Host);
+	    loop(Host, ServerHost);
 	stop ->
-	    catch ejabberd_router:unregister_route(Host),
+	    ejabberd_router:unregister_route(Host),
 	    ok;
 	_ ->
-	    loop(Host)
+	    loop(Host, ServerHost)
     end.
 
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
-    ejabberd_mod_vcard_ldap ! stop,
-    ok.
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc ! stop,
+    {wait, Proc}.
 
 process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -92,10 +95,10 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 			     ]}]}
     end.
 
-find_ldap_user(User) ->
-    Attr = ejabberd_config:get_local_option(ldap_uidattr),
+find_ldap_user(Host, User) ->
+    Attr = ejabberd_config:get_local_option({ldap_uidattr, Host}),
     Filter = eldap:equalityMatch(Attr, User),
-    Base = ejabberd_config:get_local_option(ldap_base),
+    Base = ejabberd_config:get_local_option({ldap_base, Host}),
     case eldap:search("mod_vcard_ldap", [{base, Base},
 					 {filter, Filter},
 					 {attributes, []}]) of
@@ -192,12 +195,13 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    #jid{luser = LUser} = To,
-	    case find_ldap_user(LUser) of
+	    #jid{luser = LUser, lserver = LServer} = To,
+	    case find_ldap_user(LServer, LUser) of
 		#eldap_entry{attributes = Attributes} ->
 		    Vcard = ldap_attributes_to_vcard(Attributes,From,To),
 		    IQ#iq{type = result, sub_el = Vcard};
-		_ -> IQ#iq{type = result, sub_el = []}
+		_ ->
+		    IQ#iq{type = result, sub_el = []}
 	    end
 	end.
 
@@ -234,7 +238,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 
 
 
-do_route(From, To, Packet) ->
+do_route(ServerHost, From, To, Packet) ->
     #jid{user = User, resource = Resource} = To,
     if
 	(User /= "") or (Resource /= "") ->
@@ -272,7 +276,7 @@ do_route(From, To, Packet) ->
 						    [{xmlelement, "x",
 						      [{"xmlns", ?NS_XDATA},
 						       {"type", "result"}],
-						      search_result(Lang, To, XData)
+						      search_result(Lang, To, ServerHost, XData)
 						     }]}]},
 					    ejabberd_router:route(
 					      To, From, jlib:iq_to_xml(ResIQ))
@@ -382,7 +386,7 @@ find_xdata_el1([_ | Els]) ->
 	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},
 			       {"var", Var}], []}).
 
-search_result(Lang, JID, Data) ->
+search_result(Lang, JID, ServerHost, Data) ->
     [{xmlelement, "title", [],
       [{xmlcdata, translate:translate(Lang, "Results of search in ") ++
 	jlib:jid_to_string(JID)}]},
@@ -401,7 +405,7 @@ search_result(Lang, JID, Data) ->
        ?LFIELD("Organization Unit", "orgunit")
       ]}] ++ lists:map(fun(E) -> 
 			       record_to_item(E#eldap_entry.attributes)
-		       end, search(JID#jid.lserver, Data)).
+		       end, search(ServerHost, Data)).
 
 -define(FIELD(Var, Val),
 	{xmlelement, "field", [{"var", Var}],
@@ -491,8 +495,8 @@ record_to_item(Attributes) ->
 
 search(LServer, Data) ->
     Filter = make_filter(Data),
-    Base = ejabberd_config:get_local_option(ldap_base),
-    UIDAttr = ejabberd_config:get_local_option(ldap_uidattr),
+    Base = ejabberd_config:get_local_option({ldap_base, LServer}),
+    UIDAttr = ejabberd_config:get_local_option({ldap_uidattr, LServer}),
     case eldap:search("mod_vcard_ldap",[{base, Base},
 					{filter, Filter},
 					{attributes, []}]) of
@@ -500,15 +504,17 @@ search(LServer, Data) ->
 	    [X || X <- E,
 		  ejabberd_auth:is_user_exists(
 		    ldap_get_value(X, UIDAttr), LServer)];
-	_ ->
-	    ?ERROR_MSG("~p", ["Bad search"])
+	Err ->
+	    ?ERROR_MSG("Bad search: ~p", [[LServer, {base, Base},
+					{filter, Filter},
+					{attributes, []}]])
     end.
 
 
 make_filter(Data) ->
     Filter = [X || X <- lists:map(fun(R) -> 
 					  make_assertion(R)
-				  end,Data),
+				  end, Data),
 		   X /= none ],
     case Filter of
 	[F] -> 
