@@ -91,7 +91,7 @@ receive_all(Msgs) ->
 	#offline_msg{} = Msg ->
 	    receive_all([Msg | Msgs])
     after 0 ->
-	    Msgs
+	    lists:reverse(Msgs)
     end.
 
 

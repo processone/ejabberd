@@ -1,3 +1,9 @@
+2005-08-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejd2odbc.erl: Converter from mnesia to ODBC
+
+	* src/mod_offline_odbc.erl: Minor fix
+
 2005-08-25  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_vcard_ldap.erl: Bugfix
@@ -45,6 +51,8 @@
 	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
 
 2005-08-01  Mickael Remond  <mremond@erlang-fr.org>
+
+	* (all): ejabberd-0.9.8 released
 
 	* src/msgs/fr.msg: Updated
 
