@@ -1,9 +1,12 @@
 2005-09-04  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_disco.erl: Disco publishing support (thanks to Magnus
+	Henoch)
+
 	* src/mod_disco.erl: Functions register_sm_feature and
 	register_sm_node replaced with hooks (thanks to Sergei Golovan)
-	* src/mod_vcard.erl: 
-	* src/mod_vcard_ldap.erl: 
+	* src/mod_vcard.erl: Updated
+	* src/mod_vcard_ldap.erl: Likewise
 
 	* src/mod_disco.erl: Now mod_disco doesn't depend on mod_configure
 	(thanks to Sergei Golovan)
