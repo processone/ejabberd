@@ -13,6 +13,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, init/3, stop/1,
+	 get_sm_features/5,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 reindex_vcards/0,
@@ -69,7 +70,7 @@ start(Host, Opts) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
-    catch mod_disco:register_sm_feature(Host, ?NS_VCARD),
+    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     MyHost = gen_mod:get_opt(host, Opts, "vjud." ++ Host),
     Search = gen_mod:get_opt(search, Opts, true),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -107,10 +108,26 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
-    catch mod_disco:unregister_sm_feature(Host, ?NS_VCARD),
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,
     {wait, Proc}.
+
+get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+ 
+get_sm_features(Acc, _From, _To, Node, _Lang) ->
+    case Node of
+	[] ->
+	    case Acc of
+		{result, Features} ->
+		    {result, [?NS_VCARD | Features]};
+		empty ->
+		    {result, [?NS_VCARD]}
+	    end;
+ 	_ ->
+	    Acc
+     end.
 
 process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -140,7 +157,7 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    #jid{user = User, lserver = LServer, luser = LUser} = From,
+	    #jid{user = User, lserver = LServer} = From,
 	    case lists:member(LServer, ?MYHOSTS) of
 		true ->
 		    set_vcard(User, LServer, SubEl),
@@ -327,7 +344,7 @@ do_route(ServerHost, From, To, Packet) ->
 						  From,
 						  jlib:iq_to_xml(ResIQ))
 		    end;
-		#iq{type = Type, xmlns = ?NS_DISCO_INFO, sub_el = SubEl} ->
+		#iq{type = Type, xmlns = ?NS_DISCO_INFO} ->
 		    case Type of
 			set ->
 			    Err = jlib:make_error_reply(
@@ -355,7 +372,7 @@ do_route(ServerHost, From, To, Packet) ->
 						  From,
 						  jlib:iq_to_xml(ResIQ))
 		    end;
-		#iq{type = Type, xmlns = ?NS_DISCO_ITEMS, sub_el = SubEl} ->
+		#iq{type = Type, xmlns = ?NS_DISCO_ITEMS} ->
 		    case Type of
 			set ->
 			    Err = jlib:make_error_reply(

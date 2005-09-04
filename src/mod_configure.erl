@@ -14,6 +14,11 @@
 
 -export([start/2,
 	 stop/1,
+	 get_local_identity/5,
+	 get_local_features/5,
+	 get_local_items/5,
+	 get_sm_features/5,
+	 get_sm_items/5,
 	 process_local_iq/3,
 	 process_sm_iq/3]).
 
@@ -27,14 +32,399 @@ start(Host, Opts) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_EJABBERD_CONFIG,
 				  ?MODULE, process_sm_iq, IQDisc),
+    ejabberd_hooks:add(disco_local_items, Host, ?MODULE, get_local_items, 50),
+    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
+    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, get_local_identity, 50),
+    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_sm_items, 50),
+    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     ok.
 
 stop(Host) ->
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_sm_items, 50),
+    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 50),
+    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 50),
+    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, get_local_items, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_EJABBERD_CONFIG),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_EJABBERD_CONFIG).
 
 
-process_local_iq(From, To, #iq{id = ID, type = Type, xmlns = XMLNS,
+-define(EMPTY_INFO_RESULT, {result, Feats}).
+
+get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+
+get_sm_features(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
+    case {acl:match_rule(LServer, configure, From), Node} of
+	{allow, []} ->
+	    case Acc of
+		{result, Features} ->
+		    {result, [?NS_EJABBERD_CONFIG | Features]};
+		empty ->
+		    {result, [?NS_EJABBERD_CONFIG]}
+	    end;
+	_ ->
+	    Acc
+    end.
+
+get_local_identity(Acc, _From, _To, Node, _Lang) ->
+    case Node of
+	["running nodes", ENode] ->
+	     [{xmlelement, "identity",
+	       [{"category", "ejabberd"},
+		{"type", "node"},
+		{"name", ENode}], []}];
+	_ ->
+	    Acc
+    end.
+
+get_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+
+get_local_features(Acc, _From, _To, [], _Lang) ->
+    Acc;
+
+get_local_features(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
+    Feats = case Acc of
+		{result, Features} -> Features;
+		empty -> []
+	    end,
+    case {acl:match_rule(LServer, configure, From), Node} of
+	{deny, _} ->
+	    {error, ?ERR_NOT_ALLOWED};
+	{allow, ["config"]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["online users"]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["all users"]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["all users", [$@ | _]]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["outgoing s2s" | _]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["running nodes"]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["stopped nodes"]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["running nodes", _ENode]} ->
+	    {result, [?NS_STATS | Feats]};
+	{allow, ["running nodes", _ENode, "DB"]} ->
+	    {result, [?NS_EJABBERD_CONFIG | Feats]};
+	{allow, ["running nodes", _ENode, "modules"]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["running nodes", _ENode, "modules", _]} ->
+	    {result, [?NS_EJABBERD_CONFIG | Feats]};
+	{allow, ["running nodes", _ENode, "backup"]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["running nodes", _ENode, "backup", _]} ->
+	    {result, [?NS_EJABBERD_CONFIG | Feats]};
+	{allow, ["running nodes", _ENode, "import"]} ->
+	    ?EMPTY_INFO_RESULT;
+	{allow, ["running nodes", _ENode, "import", _]} ->
+	    {result, [?NS_EJABBERD_CONFIG | Feats]};
+	{allow, ["config", _]} ->
+	    {result, [?NS_EJABBERD_CONFIG | Feats]};
+	_ ->
+	    Acc
+    end.
+
+get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+
+get_sm_items(Acc, From,
+	     #jid{user = User, server = Server, lserver = LServer} = _To,
+	     Node, _Lang) ->
+    case {acl:match_rule(LServer, configure, From), Node} of
+	{allow, []} ->
+	    Items = case Acc of
+			{result, Its} ->
+			    Its;
+			empty ->
+			    []
+		    end,
+	    {result, Items ++ get_user_resources(User, Server)};
+	_ ->
+	    Acc
+    end.
+
+get_user_resources(User, Server) ->
+    Rs = ejabberd_sm:get_user_resources(User, Server),
+    lists:map(fun(R) ->
+		      {xmlelement, "item",
+		       [{"jid", User ++ "@" ++ Server ++ "/" ++ R},
+			{"name", User}], []}
+	      end, lists:sort(Rs)).
+
+get_local_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+
+get_local_items(Acc, From, #jid{lserver = LServer} = To, Node, Lang) ->
+    Items = case Acc of
+		{result, Its} ->
+		    Its;
+		empty ->
+		    []
+	    end,
+    case acl:match_rule(LServer, configure, From) of
+	deny when Node /= [] ->
+	    {error, ?ERR_NOT_ALLOWED};
+	deny ->
+	    {result, Items};
+	_ ->
+	    case get_local_items(To#jid.lserver, Node,
+				 jlib:jid_to_string(To), Lang) of
+		{result, Res} ->
+		    {result, Items ++ Res};
+		{error, Error} ->
+			{error, Error}
+	    end
+    end.
+
+-define(NODE(Name, Node),
+	{xmlelement, "item",
+	 [{"jid", Server},
+	  {"name", translate:translate(Lang, Name)},
+	  {"node", Node}], []}).
+
+get_local_items(_Host, [], Server, Lang) ->
+    {result,
+     [?NODE("Configuration",            "config"),
+      ?NODE("Online Users",             "online users"),
+      ?NODE("All Users",                "all users"),
+      ?NODE("Outgoing S2S connections", "outgoing s2s"),
+      ?NODE("Running Nodes",            "running nodes"),
+      ?NODE("Stopped Nodes",            "stopped nodes")
+     ]};
+
+get_local_items(_Host, ["config"], Server, Lang) ->
+    {result,
+     [?NODE("Host Name",            "config/hostname"),
+      ?NODE("Access Control Lists", "config/acls"),
+      ?NODE("Access Rules",         "config/access")
+      % Too expensive on big hosts
+      %?NODE("Remove Users",         "config/remusers")
+     ]};
+
+get_local_items(_Host, ["config", _], _Server, _Lang) ->
+    {result, []};
+
+get_local_items(Host, ["online users"], _Server, _Lang) ->
+    {result, get_online_vh_users(Host)};
+
+get_local_items(Host, ["all users"], _Server, _Lang) ->
+    {result, get_all_vh_users(Host)};
+
+get_local_items(_Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
+    case catch ejabberd_auth:dirty_get_registered_users() of
+	{'EXIT', _Reason} ->
+	    ?ERR_INTERNAL_SERVER_ERROR;
+	Users ->
+	    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
+	    case catch begin
+			   {ok, [S1, S2]} = regexp:split(Diap, "-"),
+			   N1 = list_to_integer(S1),
+			   N2 = list_to_integer(S2),
+			   Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
+			   lists:map(fun({S, U}) ->
+					     {xmlelement, "item",
+					      [{"jid", U ++ "@" ++ S},
+					       {"name", U ++ "@" ++ S}], []}
+				     end, Sub)
+		       end of
+		{'EXIT', _Reason} ->
+		    ?ERR_NOT_ACCEPTABLE;
+		Res ->
+		    {result, Res}
+	    end
+    end;
+
+get_local_items(Host, ["outgoing s2s"], _Server, Lang) ->
+    {result, get_outgoing_s2s(Host, Lang)};
+
+get_local_items(Host, ["outgoing s2s", To], _Server, Lang) ->
+    {result, get_outgoing_s2s(Host, Lang, To)};
+
+get_local_items(_Host, ["running nodes"], _Server, Lang) ->
+    {result, get_running_nodes(Lang)};
+
+get_local_items(_Host, ["stopped nodes"], _Server, Lang) ->
+    {result, get_stopped_nodes(Lang)};
+
+get_local_items(_Host, ["running nodes", ENode], Server, Lang) ->
+    {result,
+     [?NODE("DB", "running nodes/" ++ ENode ++ "/DB"),
+      ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules"),
+      ?NODE("Backup Management", "running nodes/" ++ ENode ++ "/backup"),
+      ?NODE("Import users from jabberd1.4 spool files",
+	    "running nodes/" ++ ENode ++ "/import")
+     ]};
+
+get_local_items(_Host, ["running nodes", _ENode, "DB"], _Server, _Lang) ->
+    {result, []};
+
+get_local_items(_Host, ["running nodes", ENode, "modules"], Server, Lang) ->
+    {result,
+     [?NODE("Start Modules", "running nodes/" ++ ENode ++ "/modules/start"),
+      ?NODE("Stop Modules",  "running nodes/" ++ ENode ++ "/modules/stop")
+     ]};
+
+get_local_items(_Host, ["running nodes", _ENode, "modules", _], _Server, _Lang) ->
+    {result, []};
+
+get_local_items(_Host, ["running nodes", ENode, "backup"], Server, Lang) ->
+    {result,
+     [?NODE("Backup", "running nodes/" ++ ENode ++ "/backup/backup"),
+      ?NODE("Restore", "running nodes/" ++ ENode ++ "/backup/restore"),
+      ?NODE("Dump to Text File",
+	    "running nodes/" ++ ENode ++ "/backup/textfile")
+     ]};
+
+get_local_items(_Host, ["running nodes", _ENode, "backup", _], _Server, _Lang) ->
+    {result, []};
+
+get_local_items(_Host, ["running nodes", ENode, "import"], Server, Lang) ->
+    {result,
+     [?NODE("Import File", "running nodes/" ++ ENode ++ "/import/file"),
+      ?NODE("Import Directory",  "running nodes/" ++ ENode ++ "/import/dir")
+     ]};
+
+get_local_items(_Host, ["running nodes", _ENode, "import", _], _Server, _Lang) ->
+    {result, []};
+
+get_local_items(_Host, _, _Server, _Lang) ->
+    {error, ?ERR_ITEM_NOT_FOUND}.
+
+
+get_online_vh_users(Host) ->
+    case catch ejabberd_sm:get_vh_session_list(Host) of
+	{'EXIT', _Reason} ->
+	    [];
+	USRs ->
+	    SURs = lists:sort([{S, U, R} || {U, S, R} <- USRs]),
+	    lists:map(fun({S, U, R}) ->
+			      {xmlelement, "item",
+			       [{"jid", U ++ "@" ++ S ++ "/" ++ R},
+				{"name", U ++ "@" ++ S}], []}
+		      end, SURs)
+    end.
+
+get_all_vh_users(Host) ->
+    case catch ejabberd_auth:get_vh_registered_users(Host) of
+	{'EXIT', _Reason} ->
+	    [];
+	Users ->
+	    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
+	    case length(SUsers) of
+		N when N =< 100 ->
+		    lists:map(fun({S, U}) ->
+				      {xmlelement, "item",
+				       [{"jid", U ++ "@" ++ S},
+					{"name", U ++ "@" ++ S}], []}
+			      end, SUsers);
+		N ->
+		    NParts = trunc(math:sqrt(N * 0.618)) + 1,
+		    M = trunc(N / NParts) + 1,
+		    lists:map(fun(K) ->
+				      L = K + M - 1,
+				      Node =
+					  "@" ++ integer_to_list(K) ++
+					  "-" ++ integer_to_list(L),
+				      {FS, FU} = lists:nth(K, SUsers),
+				      {LS, LU} =
+					  if L < N -> lists:nth(L, SUsers);
+					     true -> lists:last(SUsers)
+					  end,
+				      Name = 
+					  FU ++ "@" ++ FS ++
+					  " -- " ++
+					  LU ++ "@" ++ LS,
+				      {xmlelement, "item",
+				       [{"jid", Host},
+					{"node", "all users/" ++ Node},
+					{"name", Name}], []}
+			      end, lists:seq(1, N, M))
+	    end
+    end.
+
+get_outgoing_s2s(Host, Lang) ->
+    case catch ejabberd_s2s:dirty_get_connections() of
+	{'EXIT', _Reason} ->
+	    [];
+	Connections ->
+	    DotHost = "." ++ Host,
+	    TConns = [TH || {FH, TH} <- Connections,
+			    Host == FH orelse lists:suffix(DotHost, FH)],
+	    lists:map(
+	      fun(T) ->
+		      {xmlelement, "item",
+		       [{"jid", Host},
+			{"node", "outgoing s2s/" ++ T},
+			{"name",
+			 lists:flatten(
+			   io_lib:format(
+			     translate:translate(Lang, "To ~s"), [T]))}],
+		       []}
+	      end, lists:usort(TConns))
+    end.
+
+get_outgoing_s2s(Host, Lang, To) ->
+    case catch ejabberd_s2s:dirty_get_connections() of
+	{'EXIT', _Reason} ->
+	    [];
+	Connections ->
+	    lists:map(
+	      fun({F, _T}) ->
+		      {xmlelement, "item",
+		       [{"jid", Host},
+			{"node", "outgoing s2s/" ++ To ++ "/" ++ F},
+			{"name",
+			 lists:flatten(
+			   io_lib:format(
+			     translate:translate(Lang, "From ~s"), [F]))}],
+		       []}
+	      end, lists:keysort(1, lists:filter(fun(E) ->
+							 element(2, E) == To
+						 end, Connections)))
+    end.
+
+
+get_running_nodes(_Lang) ->
+    case catch mnesia:system_info(running_db_nodes) of
+	{'EXIT', _Reason} ->
+	    [];
+	DBNodes ->
+	    lists:map(
+	      fun(N) ->
+		      S = atom_to_list(N),
+		      {xmlelement, "item",
+		       [{"jid", ?MYNAME},
+			{"node", "running nodes/" ++ S},
+			{"name", S}],
+		       []}
+	      end, lists:sort(DBNodes))
+    end.
+
+get_stopped_nodes(_Lang) ->
+    case catch (lists:usort(mnesia:system_info(db_nodes) ++
+			    mnesia:system_info(extra_db_nodes)) --
+		mnesia:system_info(running_db_nodes)) of
+	{'EXIT', _Reason} ->
+	    [];
+	DBNodes ->
+	    lists:map(
+	      fun(N) ->
+		      S = atom_to_list(N),
+		      {xmlelement, "item",
+		       [{"jid", ?MYNAME},
+			{"node", "stopped nodes/" ++ S},
+			{"name", S}],
+		       []}
+	      end, lists:sort(DBNodes))
+    end.
+
+
+
+process_local_iq(From, To, #iq{type = Type, xmlns = XMLNS,
 				lang = Lang, sub_el = SubEl} = IQ) ->
     case acl:match_rule(To#jid.lserver, configure, From) of
 	deny ->
@@ -46,7 +436,7 @@ process_local_iq(From, To, #iq{id = ID, type = Type, xmlns = XMLNS,
 		    case XDataEl of
 			false ->
 			    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
-			{xmlelement, _Name, Attrs, SubEls} ->
+			{xmlelement, _Name, Attrs, _SubEls} ->
 			    case xml:get_attr_s("type", Attrs) of
 				"cancel" ->
 				    IQ#iq{type = result,
@@ -394,7 +784,7 @@ get_form(["config", "remusers"], Lang) ->
 		   translate:translate(
 		     Lang, "Choose users to remove")}]}] ++
       case catch ejabberd_auth:dirty_get_registered_users() of
-	  {'EXIT', Reason} ->
+	  {'EXIT', _Reason} ->
 	      [];
 	  Users ->
 	      lists:map(fun(U) ->
@@ -403,12 +793,12 @@ get_form(["config", "remusers"], Lang) ->
       end
     }]};
 
-get_form(_, Lang) ->
+get_form(_, _Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 
-set_form(["running nodes", ENode, "DB"], Lang, XData) ->
+set_form(["running nodes", ENode, "DB"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -442,7 +832,7 @@ set_form(["running nodes", ENode, "DB"], Lang, XData) ->
 	    {result, []}
     end;
 
-set_form(["running nodes", ENode, "modules", "stop"], Lang, XData) ->
+set_form(["running nodes", ENode, "modules", "stop"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -460,7 +850,7 @@ set_form(["running nodes", ENode, "modules", "stop"], Lang, XData) ->
 	    {result, []}
     end;
 
-set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
+set_form(["running nodes", ENode, "modules", "start"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -496,7 +886,7 @@ set_form(["running nodes", ENode, "modules", "start"], Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
+set_form(["running nodes", ENode, "backup", "backup"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -506,9 +896,9 @@ set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
 		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
 		    case rpc:call(Node, mnesia, backup, [String]) of
-			{badrpc, Reason} ->
+			{badrpc, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR};
-			{error, Reason} ->
+			{error, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			_ ->
 			    {result, []}
@@ -519,7 +909,7 @@ set_form(["running nodes", ENode, "backup", "backup"], Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
+set_form(["running nodes", ENode, "backup", "restore"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -530,9 +920,9 @@ set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
 		{value, {_, [String]}} ->
 		    case rpc:call(Node, mnesia, restore,
 				  [String, [{default_op, keep_tables}]]) of
-			{badrpc, Reason} ->
+			{badrpc, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR};
-			{error, Reason} ->
+			{error, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			_ ->
 			    {result, []}
@@ -543,7 +933,7 @@ set_form(["running nodes", ENode, "backup", "restore"], Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
+set_form(["running nodes", ENode, "backup", "textfile"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -553,9 +943,9 @@ set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
 		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
 		    case rpc:call(Node, mnesia, dump_to_textfile, [String]) of
-			{badrpc, Reason} ->
+			{badrpc, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR};
-			{error, Reason} ->
+			{error, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			_ ->
 			    {result, []}
@@ -566,7 +956,7 @@ set_form(["running nodes", ENode, "backup", "textfile"], Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "import", "file"], Lang, XData) ->
+set_form(["running nodes", ENode, "import", "file"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -583,7 +973,7 @@ set_form(["running nodes", ENode, "import", "file"], Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "import", "dir"], Lang, XData) ->
+set_form(["running nodes", ENode, "import", "dir"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -600,7 +990,7 @@ set_form(["running nodes", ENode, "import", "dir"], Lang, XData) ->
     end;
 
 
-set_form(["config", "hostname"], Lang, XData) ->
+set_form(["config", "hostname"], _Lang, XData) ->
     case lists:keysearch("hostname", 1, XData) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
@@ -613,7 +1003,7 @@ set_form(["config", "hostname"], Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(["config", "acls"], Lang, XData) ->
+set_form(["config", "acls"], _Lang, XData) ->
     case lists:keysearch("acls", 1, XData) of
 	{value, {_, Strings}} ->
 	    String = lists:foldl(fun(S, Res) ->
@@ -639,7 +1029,7 @@ set_form(["config", "acls"], Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(["config", "access"], Lang, XData) ->
+set_form(["config", "access"], _Lang, XData) ->
     SetAccess =
 	fun(Rs) ->
 		mnesia:transaction(
@@ -685,7 +1075,7 @@ set_form(["config", "access"], Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(["config", "remusers"], Lang, XData) ->
+set_form(["config", "remusers"], _Lang, XData) ->
     lists:foreach(
       fun({Var, Vals}) ->
 	      case Vals of
@@ -697,7 +1087,7 @@ set_form(["config", "remusers"], Lang, XData) ->
       end, XData),
     {result, []};
 
-set_form(_, Lang, XData) ->
+set_form(_, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
@@ -730,7 +1120,7 @@ process_sm_iq(From, To,
 		    case XDataEl of
 		        false ->
 			    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
-			{xmlelement, _Name, Attrs, SubEls} ->
+			{xmlelement, _Name, Attrs, _SubEls} ->
 			    case xml:get_attr_s("type", Attrs) of
 				"cancel" ->
 				    IQ#iq{type = result,
@@ -815,11 +1205,11 @@ get_sm_form(User, Server, [], Lang) ->
 	        % [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
 	     ]}]};
 
-get_sm_form(_User, _Server, _Node, Lang) ->
+get_sm_form(_User, _Server, _Node, _Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
-set_sm_form(User, Server, [], Lang, XData) ->
+set_sm_form(User, Server, [], _Lang, XData) ->
     case lists:keysearch("action", 1, XData) of
 	{value, {_, ["edit"]}} ->
 	    case lists:keysearch("password", 1, XData) of
@@ -835,7 +1225,7 @@ set_sm_form(User, Server, [], Lang, XData) ->
 	_ ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
-set_sm_form(_User, _Server, _Node, Lang, XData) ->
+set_sm_form(_User, _Server, _Node, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->

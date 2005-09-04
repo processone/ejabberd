@@ -13,6 +13,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, init/3, stop/1,
+ 	 get_sm_features/5,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 remove_user/1]).
@@ -29,6 +30,7 @@ start(Host, Opts) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
+    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     LDAPServers = ejabberd_config:get_local_option({ldap_servers, Host}),
     RootDN = ejabberd_config:get_local_option({ldap_rootdn, Host}),
     Password = ejabberd_config:get_local_option({ldap_password, Host}),
@@ -67,9 +69,25 @@ loop(Host, ServerHost) ->
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,
     {wait, Proc}.
+
+get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+get_sm_features(Acc, _From, _To, Node, _Lang) ->
+    case Node of
+ 	[] ->
+ 	    case Acc of
+ 		{result, Features} ->
+ 		    {result, [?NS_VCARD | Features]};
+ 		empty ->
+ 		    {result, [?NS_VCARD]}
+ 	    end;
+  	_ ->
+ 	    Acc
+    end.
 
 process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -179,16 +197,6 @@ ldap_attributes_to_vcard(Attributes,From,To) ->
 		   [{xmlelement,"N",[],FNElts},
 		    {xmlelement,"ORG",[],FOElts}])
      }].
-
-is_self_request(From,To) ->
-    #jid{luser = RUser, lserver = RServer } = From,
-    #jid{luser = LUser} = To,
-    case RServer == ?MYNAME of
-	true ->
-	    LUser == RUser;
-	_ ->
-	    false
-    end.
 
 process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
