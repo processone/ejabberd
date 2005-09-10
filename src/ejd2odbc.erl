@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejd2odbc.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : Import of jabberd1.4 user spool file
+%%% Purpose : Export some mnesia tables to SQL DB
 %%% Created : 22 Aug 2005 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -165,7 +165,7 @@ output(LServer, IO, SQL) ->
 	odbc ->
 	    catch ejabberd_odbc:sql_query(LServer, SQL);
 	_ ->
-	    file:write(IO, [SQL, $\n])
+	    file:write(IO, [SQL, $;, $\n])
     end.
 
 record_to_string(#roster{usj = {User, Server, JID},
