@@ -11,10 +11,10 @@
 -vsn('$Revision$ ').
 
 %% External exports
--export([export_passwd/1,
-	 export_roster/1,
-	 export_offline/1,
-	 export_last/1]).
+-export([export_passwd/2,
+	 export_roster/2,
+	 export_offline/2,
+	 export_last/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -29,9 +29,9 @@
 %%% API
 %%%----------------------------------------------------------------------
 
-export_passwd(Server) ->
+export_passwd(Server, Output) ->
     export_common(
-      Server, passwd,
+      Server, passwd, Output,
       fun(Host, {passwd, {LUser, LServer}, Password} = R)
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
@@ -43,9 +43,9 @@ export_passwd(Server) ->
 	      []
       end).
 
-export_roster(Server) ->
+export_roster(Server, Output) ->
     export_common(
-      Server, roster,
+      Server, roster, Output,
       fun(Host, #roster{usj = {LUser, LServer, LJID}} = R)
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
@@ -71,9 +71,9 @@ export_roster(Server) ->
 	      []
       end).
 
-export_offline(Server) ->
+export_offline(Server, Output) ->
     export_common(
-      Server, offline_msg,
+      Server, offline_msg, Output,
       fun(Host, #offline_msg{us = {LUser, LServer},
 			     timestamp = TimeStamp,
 			     from = From,
@@ -102,9 +102,9 @@ export_offline(Server) ->
 	      []
       end).
 
-export_last(Server) ->
+export_last(Server, Output) ->
     export_common(
-      Server, last_activity,
+      Server, last_activity, Output,
       fun(Host, #last_activity{us = {LUser, LServer},
 			       timestamp = TimeStamp,
 			       status = Status})
@@ -123,10 +123,17 @@ export_last(Server) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-export_common(Server, Table, ConvertFun) ->
+export_common(Server, Table, Output, ConvertFun) ->
+    IO = case Output of
+	     odbc ->
+		 odbc;
+	     _ ->
+		 {ok, IODevice} = file:open(Output, [write, raw]),
+		 IODevice
+	 end,
     mnesia:transaction(
       fun() ->
-	      mnesia:read_lock_table(passwd),
+	      mnesia:read_lock_table(Table),
 	      LServer = jlib:nameprep(Server),
 	      {_N, SQLs} =
 		  mnesia:foldl(
@@ -139,21 +146,27 @@ export_common(Server, Table, ConvertFun) ->
 					N < ?MAX_RECORDS_PER_TRANSACTION - 1 ->
 					    {N + 1, [SQL | SQLs]};
 					true ->
-					    catch ejabberd_odbc:sql_query(
-						    LServer,
-						    ["begin;",
-						     lists:reverse([SQL | SQLs]),
-						     "commit"]),
+					    output(LServer, IO,
+						   ["begin;",
+						    lists:reverse([SQL | SQLs]),
+						    "commit"]),
 					    {0, []}
 				    end
 			    end
 		    end, {0, []}, Table),
-	      catch ejabberd_odbc:sql_query(
-		      LServer,
-		      ["begin;",
-		       lists:reverse(SQLs),
-		       "commit"])
+	      output(LServer, IO,
+		     ["begin;",
+		      lists:reverse(SQLs),
+		      "commit"])
       end).
+
+output(LServer, IO, SQL) ->
+    case IO of
+	odbc ->
+	    catch ejabberd_odbc:sql_query(LServer, SQL);
+	_ ->
+	    file:write(IO, [SQL, $\n])
+    end.
 
 record_to_string(#roster{usj = {User, Server, JID},
 			 name = Name,

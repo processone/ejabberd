@@ -1,3 +1,7 @@
+2005-09-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejd2odbc.erl: Updated
+
 2005-09-04  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_disco.erl: Disco publishing support (thanks to Magnus
