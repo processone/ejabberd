@@ -219,8 +219,7 @@ jid_to_string({Node, Server, Resource}) ->
 is_nodename([]) ->
     false;
 is_nodename(J) ->
-    nodeprep(J).
-
+    nodeprep(J) /= error.
 
 
 %tolower_c(C) when C >= $A, C =< $Z ->
