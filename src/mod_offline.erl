@@ -145,7 +145,7 @@ check_event(From, To, Packet) ->
 					    {xmlelement, "offline", [], []}]}]
 					}),
 			    true
-			end;
+		    end;
 		_ ->
 		    false
 	    end

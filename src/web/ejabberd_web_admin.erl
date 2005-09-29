@@ -14,7 +14,9 @@
 -vsn('$Revision$ ').
 
 %% External exports
--export([process_admin/2]).
+-export([process_admin/2,
+	 list_users/4,
+	 list_users_in_diapason/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -836,7 +838,7 @@ process_admin(Host,
 		       path = ["users"],
 		       q = Query,
 		       lang = Lang} = Request) when is_list(Host) ->
-    Res = list_users(Host, Query, Lang),
+    Res = list_users(Host, Query, Lang, fun url_func/1),
     make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
 
 process_admin(Host,
@@ -844,7 +846,7 @@ process_admin(Host,
 		       path = ["users", Diap],
 		       q = Query,
 		       lang = Lang} = Request) when is_list(Host) ->
-    Res = list_users_in_diapason(Host, Diap, Lang),
+    Res = list_users_in_diapason(Host, Diap, Lang, fun url_func/1),
     make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
 
 process_admin(Host,
@@ -954,7 +956,7 @@ process_admin(Host,
 		       path = ["shared-roster"],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    Res = list_shared_roster_groups(Query, Lang),
+    Res = list_shared_roster_groups(Host, Query, Lang),
     make_xhtml(Res, Host, Lang);
 
 process_admin(Host,
@@ -962,7 +964,7 @@ process_admin(Host,
 		       path = ["shared-roster", Group],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    Res = shared_roster_group(Group, Query, Lang),
+    Res = shared_roster_group(Host, Group, Query, Lang),
     make_xhtml(Res, Host, Lang);
 
 process_admin(Host,
@@ -1224,14 +1226,14 @@ list_vhosts(Lang) ->
 	     )])].
 
 
-list_users(Host, Query, Lang) ->
+list_users(Host, Query, Lang, URLFunc) ->
     Res = list_users_parse_query(Query),
     Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     FUsers =
 	case length(SUsers) of
 	    N when N =< 100 ->
-		[list_given_users(SUsers, "../", Lang)];
+		[list_given_users(SUsers, "../", Lang, URLFunc)];
 	    N ->
 		NParts = trunc(math:sqrt(N * 0.618)) + 1,
 		M = trunc(N / NParts) + 1,
@@ -1246,7 +1248,7 @@ list_users(Host, Query, Lang) ->
 			      su_to_list(lists:nth(K, SUsers)) ++
 			      [$\s, 226, 128, 148, $\s] ++
 			      Last,
-			  [?AC(Node ++ "/", Name), ?BR]
+			  [?AC(URLFunc({user_diapason, K, L}), Name), ?BR]
 		  end, lists:seq(1, N, M))
 	end,
     case Res of
@@ -1295,16 +1297,16 @@ list_users_parse_query(Query) ->
     end.
 
 
-list_users_in_diapason(Host, Diap, Lang) ->
+list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     {ok, [S1, S2]} = regexp:split(Diap, "-"),
     N1 = list_to_integer(S1),
     N2 = list_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
-    [list_given_users(Sub, "../../", Lang)].
+    [list_given_users(Sub, "../../", Lang, URLFunc)].
 
-list_given_users(Users, Prefix, Lang) ->
+list_given_users(Users, Prefix, Lang, URLFunc) ->
     ?XE("table",
 	[?XE("thead",
 	     [?XE("tr",
@@ -1316,8 +1318,8 @@ list_given_users(Users, Prefix, Lang) ->
 	       fun(SU = {Server, User}) ->
 		       US = {User, Server},
 		       QueueLen = length(mnesia:dirty_read({offline_msg, US})),
-		       FQueueLen = [?AC(Prefix ++ "user/" ++
-					User ++ "/queue/",
+		       FQueueLen = [?AC(URLFunc({users_queue, Prefix,
+						 User, Server}),
 					integer_to_list(QueueLen))],
 		       FLast =
 			   case ejabberd_sm:get_user_resources(User, Server) of
@@ -1341,7 +1343,7 @@ list_given_users(Users, Prefix, Lang) ->
 				   ?T("Online")
 			   end,
 		       ?XE("tr",
-			   [?XE("td", [?AC(Prefix ++ "user/" ++ User ++ "/",
+			   [?XE("td", [?AC(URLFunc({user, Prefix, User, Server}),
 					   us_to_list(US))]),
 			    ?XE("td", FQueueLen),
 			    ?XC("td", FLast)])
@@ -2355,9 +2357,9 @@ pretty_print({xmlelement, Name, Attrs, Els}, Prefix) ->
      end].
 
 
-list_shared_roster_groups(Query, Lang) ->
-    Res = list_sr_groups_parse_query(Query),
-    SRGroups = mod_shared_roster:list_groups(?MYNAME),
+list_shared_roster_groups(Host, Query, Lang) ->
+    Res = list_sr_groups_parse_query(Host, Query),
+    SRGroups = mod_shared_roster:list_groups(Host),
     FGroups =
 	?XAE("table", [],
 	     [?XE("tbody",
@@ -2390,35 +2392,35 @@ list_shared_roster_groups(Query, Lang) ->
 	      ])
 	].
 
-list_sr_groups_parse_query(Query) ->
+list_sr_groups_parse_query(Host, Query) ->
     case lists:keysearch("addnew", 1, Query) of
 	{value, _} ->
-	    list_sr_groups_parse_addnew(Query);
+	    list_sr_groups_parse_addnew(Host, Query);
 	_ ->
 	    case lists:keysearch("delete", 1, Query) of
 		{value, _} ->
-		    list_sr_groups_parse_delete(Query);
+		    list_sr_groups_parse_delete(Host, Query);
 		_ ->
 		    nothing
 	    end
     end.
 
-list_sr_groups_parse_addnew(Query) ->
+list_sr_groups_parse_addnew(Host, Query) ->
     case lists:keysearch("namenew", 1, Query) of
 	{value, {_, Group}} when Group /= "" ->
-	    mod_shared_roster:create_group(?MYNAME, Group),
+	    mod_shared_roster:create_group(Host, Group),
 	    ok;
 	_ ->
 	    error
     end.
 
-list_sr_groups_parse_delete(Query) ->
-    SRGroups = mod_shared_roster:list_groups(?MYNAME),
+list_sr_groups_parse_delete(Host, Query) ->
+    SRGroups = mod_shared_roster:list_groups(Host),
     lists:foreach(
       fun(Group) ->
 	      case lists:member({"selected", Group}, Query) of
 		  true ->
-		      mod_shared_roster:delete_group(?MYNAME, Group);
+		      mod_shared_roster:delete_group(Host, Group);
 		  _ ->
 		      ok
 	      end
@@ -2426,15 +2428,22 @@ list_sr_groups_parse_delete(Query) ->
     ok.
 
 
-shared_roster_group(Group, Query, Lang) ->
-    Res = shared_roster_group_parse_query(?MYNAME, Group, Query),
-    GroupOpts = mod_shared_roster:get_group_opts(?MYNAME, Group),
+shared_roster_group(Host, Group, Query, Lang) ->
+    Res = shared_roster_group_parse_query(Host, Group, Query),
+    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
     Name = get_opt(GroupOpts, name, ""),
     Description = get_opt(GroupOpts, description, ""),
-    Members = mod_shared_roster:get_group_users(?MYNAME, Group),
+    AllUsers = get_opt(GroupOpts, all_users, false),
     Disabled = false,
     DisplayedGroups = get_opt(GroupOpts, displayed_groups, []),
-    FMembers = [[us_to_list(Member), $\n] || Member <- Members],
+    Members = mod_shared_roster:get_group_explicit_users(Host, Group),
+    FMembers =
+	if
+	    AllUsers ->
+		"@all@\n";
+	    true ->
+		[]
+	end ++ [[us_to_list(Member), $\n] || Member <- Members],
     FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
     FGroup =
 	?XAE("table", [],
@@ -2506,21 +2515,36 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 		    DispGroups == [] -> [];
 		    true -> [{displayed_groups, DispGroups}]
 		end,
-	    mod_shared_roster:set_group_opts(
-	      ?MYNAME, Group, NameOpt ++ DispGroupsOpt ++ DescriptionOpt),
 
-	    OldMembers = mod_shared_roster:get_group_users(?MYNAME, Group),
+	    OldMembers = mod_shared_roster:get_group_explicit_users(
+			   Host, Group),
+	    SJIDs = string:tokens(SMembers, "\r\n"),
 	    NewMembers =
 		lists:foldl(
 		  fun(_SJID, error) -> error;
 		     (SJID, USs) ->
-			  case jlib:string_to_jid(SJID) of
-			      JID when is_record(JID, jid) ->
-				  [{JID#jid.luser, JID#jid.lserver} | USs];
-			      error ->
-				  error
+			  case SJID of
+			      "@all@" ->
+				  USs;
+			      _ ->
+				  case jlib:string_to_jid(SJID) of
+				      JID when is_record(JID, jid) ->
+					  [{JID#jid.luser, JID#jid.lserver} | USs];
+				      error ->
+					  error
+				  end
 			  end
-		  end, [], string:tokens(SMembers, "\r\n")),
+		  end, [], SJIDs),
+	    AllUsersOpt =
+		case lists:member("@all@", SJIDs) of
+		    true -> [{all_users, true}];
+		    false -> []
+		end,
+
+	    mod_shared_roster:set_group_opts(
+	      Host, Group,
+	      NameOpt ++ DispGroupsOpt ++ DescriptionOpt ++ AllUsersOpt),
+
 	    if
 		NewMembers == error -> error;
 		true ->
@@ -2543,7 +2567,6 @@ shared_roster_group_parse_query(Host, Group, Query) ->
     end.
 
 
-
 get_opt(Opts, Opt, Default) ->
     case lists:keysearch(Opt, 1, Opts) of
 	{value, {_, Val}} ->
@@ -2551,4 +2574,12 @@ get_opt(Opts, Opt, Default) ->
 	false ->
 	    Default
     end.
+
+
+url_func({user_diapason, From, To}) ->
+    integer_to_list(From) ++ "-" ++ integer_to_list(To) ++ "/";
+url_func({users_queue, Prefix, User, Server}) ->
+    Prefix ++ "user/" ++ User ++ "/queue/";
+url_func({user, Prefix, User, Server}) ->
+    Prefix ++ "user/" ++ User ++ "/".
 

@@ -25,6 +25,7 @@
 	 get_group_opts/2,
 	 set_group_opts/3,
 	 get_group_users/2,
+	 get_group_explicit_users/2,
 	 add_user_to_group/3,
 	 remove_user_from_group/3]).
 
@@ -226,7 +227,7 @@ get_user_groups(US) ->
 	    [Group || #sr_user{group_host = {Group, H}} <- Rs, H == Host];
 	_ ->
 	    []
-    end.
+    end ++ get_all_users_groups(Host).
 
 is_group_enabled(Host, Group) ->
     case catch mnesia:dirty_read(sr_group, {Group, Host}) of
@@ -250,6 +251,14 @@ get_group_opt(Host, Group, Opt, Default) ->
     end.
 
 get_group_users(Host, Group) ->
+    case get_group_opt(Host, Group, all_users, false) of
+	true ->
+	    ejabberd_auth:get_vh_registered_users(Host);
+	false ->
+	    []
+    end ++ get_group_explicit_users(Host, Group).
+
+get_group_explicit_users(Host, Group) ->
     case catch mnesia:dirty_index_read(
 		 sr_user, {Group, Host}, #sr_user.group_host) of
 	Rs when is_list(Rs) ->
@@ -260,6 +269,11 @@ get_group_users(Host, Group) ->
 
 get_group_name(Host, Group) ->
     get_group_opt(Host, Group, name, Group).
+
+get_all_users_groups(Host) ->
+    lists:filter(
+      fun(Group) -> get_group_opt(Host, Group, all_users, false) end,
+      list_groups(Host)).
 
 get_user_displayed_groups(US) ->
     Host = element(2, US),
