@@ -14,7 +14,9 @@
 -export([export_passwd/2,
 	 export_roster/2,
 	 export_offline/2,
-	 export_last/2]).
+	 export_last/2,
+	 export_vcard/2,
+	 export_vcard_search/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -22,6 +24,21 @@
 
 -record(offline_msg, {us, timestamp, expire, from, to, packet}).
 -record(last_activity, {us, timestamp, status}).
+-record(vcard, {us, vcard}).
+-record(vcard_search, {us,
+		       user,     luser,
+		       fn,	 lfn,
+		       family,	 lfamily,
+		       given,	 lgiven,
+		       middle,	 lmiddle,
+		       nickname, lnickname,
+		       bday,	 lbday,
+		       ctry,	 lctry,
+		       locality, llocality,
+		       email,	 lemail,
+		       orgname,	 lorgname,
+		       orgunit,	 lorgunit
+		      }).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 1000).
 
@@ -115,6 +132,89 @@ export_last(Server, Output) ->
 	      ["delete from last where username='", Username, "';"
 	       "insert into last(username, seconds, state) "
 	       "values ('", Username, "', '", Seconds, "', '", State, "');"];
+	 (_Host, _R) ->
+	      []
+      end).
+
+export_vcard(Server, Output) ->
+    export_common(
+      Server, vcard, Output,
+      fun(Host, #vcard{us = {LUser, LServer},
+		       vcard = VCARD})
+	 when LServer == Host ->
+	      Username = ejabberd_odbc:escape(LUser),
+	      SVCARD = ejabberd_odbc:escape(
+			 lists:flatten(xml:element_to_string(VCARD))),
+	      ["delete from vcard where username='", Username, "';"
+	       "insert into vcard(username, vcard) "
+	       "values ('", Username, "', '", SVCARD, "');"];
+	 (_Host, _R) ->
+	      []
+      end).
+
+export_vcard_search(Server, Output) ->
+    export_common(
+      Server, vcard_search, Output,
+      fun(Host, #vcard_search{user      = {User, LServer},
+			      luser     = LUser,
+			      fn        = FN,       lfn        = LFN,       
+			      family    = Family,   lfamily    = LFamily,   
+			      given     = Given,    lgiven     = LGiven,    
+			      middle    = Middle,   lmiddle    = LMiddle,   
+			      nickname  = Nickname, lnickname  = LNickname, 
+			      bday      = BDay,     lbday      = LBDay,     
+			      ctry      = CTRY,     lctry      = LCTRY,     
+			      locality  = Locality, llocality  = LLocality, 
+			      email     = EMail,    lemail     = LEMail,    
+			      orgname   = OrgName,  lorgname   = LOrgName,  
+			      orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
+			     })
+	 when LServer == Host ->
+	      Username = ejabberd_odbc:escape(User),
+	      LUsername = ejabberd_odbc:escape(LUser),
+
+	      SFN = ejabberd_odbc:escape(FN),
+	      SLFN = ejabberd_odbc:escape(LFN),
+	      SFamily = ejabberd_odbc:escape(Family),
+	      SLFamily = ejabberd_odbc:escape(LFamily),
+	      SGiven = ejabberd_odbc:escape(Given),
+	      SLGiven = ejabberd_odbc:escape(LGiven),
+	      SMiddle = ejabberd_odbc:escape(Middle),
+	      SLMiddle = ejabberd_odbc:escape(LMiddle),
+	      SNickname = ejabberd_odbc:escape(Nickname),
+	      SLNickname = ejabberd_odbc:escape(LNickname),
+	      SBDay = ejabberd_odbc:escape(BDay),
+	      SLBDay = ejabberd_odbc:escape(LBDay),
+	      SCTRY = ejabberd_odbc:escape(CTRY),
+	      SLCTRY = ejabberd_odbc:escape(LCTRY),
+	      SLocality = ejabberd_odbc:escape(Locality),
+	      SLLocality = ejabberd_odbc:escape(LLocality),
+	      SEMail = ejabberd_odbc:escape(EMail),
+	      SLEMail = ejabberd_odbc:escape(LEMail),
+	      SOrgName = ejabberd_odbc:escape(OrgName),
+	      SLOrgName = ejabberd_odbc:escape(LOrgName),
+	      SOrgUnit = ejabberd_odbc:escape(OrgUnit),
+	      SLOrgUnit = ejabberd_odbc:escape(LOrgUnit),
+
+	      ["delete from vcard_search where lusername='", LUsername, "';"
+	       "insert into vcard_search("
+	       "        username, lusername, fn, lfn, family, lfamily,"
+	       "        given, lgiven, middle, lmiddle, nickname, lnickname,"
+	       "        bday, lbday, ctry, lctry, locality, llocality,"
+	       "        email, lemail, orgname, lorgname, orgunit, lorgunit)"
+	       "values (",
+	       "        '", Username, "', '",  LUsername, "'," 
+	       "        '", SFN,       "', '", SLFN,       "'," 
+	       "        '", SFamily,   "', '", SLFamily,   "',"
+	       "        '", SGiven,    "', '", SLGiven,	 "',"
+	       "        '", SMiddle,   "', '", SLMiddle,   "',"
+	       "        '", SNickname, "', '", SLNickname, "',"
+	       "        '", SBDay,     "', '", SLBDay,	 "',"
+	       "        '", SCTRY,     "', '", SLCTRY,	 "',"
+	       "        '", SLocality, "', '", SLLocality, "',"
+	       "        '", SEMail,    "', '", SLEMail,	 "',"
+	       "        '", SOrgName,  "', '", SLOrgName,  "',"
+	       "        '", SOrgUnit,  "', '", SLOrgUnit,  "');"];
 	 (_Host, _R) ->
 	      []
       end).

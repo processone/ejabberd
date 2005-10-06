@@ -1,13 +1,12 @@
 
-
 CREATE TABLE users (
-    username text NOT NULL,
+    username text PRIMARY KEY,
     "password" text NOT NULL
 );
 
 
 CREATE TABLE last (
-    username text NOT NULL,
+    username text PRIMARY KEY,
     seconds text NOT NULL,
     state text
 );
@@ -24,6 +23,9 @@ CREATE TABLE rosterusers (
     "type" text
 );
 
+CREATE UNIQUE INDEX i_rosteru_user_jid ON rosterusers USING btree (username, jid);
+CREATE INDEX i_rosteru_username ON rosterusers USING btree (username);
+CREATE INDEX i_rosteru_jid ON rosterusers USING btree (jid);
 
 
 CREATE TABLE rostergroups (
@@ -32,58 +34,57 @@ CREATE TABLE rostergroups (
     grp text NOT NULL
 );
 
+CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
+
 
 CREATE TABLE spool (
     username text NOT NULL,
     xml text
 );
 
+CREATE INDEX i_despool ON spool USING btree (username);
 
 
 CREATE TABLE vcard (
-    username text NOT NULL,
-    full_name text,
-    first_name text,
-    last_name text,
-    nick_name text,
-    url text,
-    address1 text,
-    address2 text,
-    locality text,
-    region text,
-    pcode text,
-    country text,
-    telephone text,
-    email text,
-    orgname text,
-    orgunit text,
-    title text,
-    role text,
-    b_day date,
-    descr text
+    username text PRIMARY KEY,
+    vcard text NOT NULL
 );
 
+CREATE TABLE vcard_search (
+    username text NOT NULL,
+    lusername text PRIMARY KEY,
+    fn text NOT NULL,
+    lfn text NOT NULL,
+    family text NOT NULL,
+    lfamily text NOT NULL,
+    given text NOT NULL,
+    lgiven text NOT NULL,
+    middle text NOT NULL,
+    lmiddle text NOT NULL,
+    nickname text NOT NULL,
+    lnickname text NOT NULL,
+    bday text NOT NULL,
+    lbday text NOT NULL,
+    ctry text NOT NULL,
+    lctry text NOT NULL,
+    locality text NOT NULL,
+    llocality text NOT NULL,
+    email text NOT NULL,
+    lemail text NOT NULL,
+    orgname text NOT NULL,
+    lorgname text NOT NULL,
+    orgunit text NOT NULL,
+    lorgunit text NOT NULL
+);
 
-
-
-CREATE INDEX i_users_login ON users USING btree (username, "password");
-
-CREATE INDEX i_rosteru_user_jid ON rosterusers USING btree (username, jid);
-
-CREATE INDEX i_rosteru_username ON rosterusers USING btree (username);
-
-CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
-
-CREATE INDEX i_despool ON spool USING btree (username);
-
-CREATE INDEX i_rosteru_jid ON rosterusers USING btree (jid);
-
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (username);
-
-ALTER TABLE ONLY last
-    ADD CONSTRAINT last_pkey PRIMARY KEY (username);
-
-ALTER TABLE ONLY vcard
-    ADD CONSTRAINT vcard_pkey PRIMARY KEY (username);
-
+CREATE INDEX i_vcard_search_lfn       ON vcard_search(lfn);
+CREATE INDEX i_vcard_search_lfamily   ON vcard_search(lfamily);
+CREATE INDEX i_vcard_search_lgiven    ON vcard_search(lgiven);
+CREATE INDEX i_vcard_search_lmiddle   ON vcard_search(lmiddle);
+CREATE INDEX i_vcard_search_lnickname ON vcard_search(lnickname);
+CREATE INDEX i_vcard_search_lbday     ON vcard_search(lbday);
+CREATE INDEX i_vcard_search_lctry     ON vcard_search(lctry);
+CREATE INDEX i_vcard_search_llocality ON vcard_search(llocality);
+CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
+CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
+CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
