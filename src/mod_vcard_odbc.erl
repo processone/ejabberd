@@ -3,12 +3,12 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : vCard support via ODBC
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id: mod_vcard.erl 374 2005-07-13 03:24:13Z alexey $
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_vcard_odbc).
 -author('alexey@sevcom.net').
--vsn('$Revision: 374 $ ').
+-vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 
