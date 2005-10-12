@@ -425,7 +425,8 @@ get_subscription_lists(_, User, Server) ->
 	    {[], []}
     end.
 
-fill_subscription_lists([I | Is], F, T) ->
+fill_subscription_lists([RawI | Is], F, T) ->
+    I = raw_to_record(RawI),
     J = I#roster.jid,
     case I#roster.subscription of
 	both ->
