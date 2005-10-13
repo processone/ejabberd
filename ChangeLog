@@ -1,5 +1,8 @@
 2005-10-13  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/odbc/ejabberd_odbc.erl: Experimental support for pgsql
+	library
+
 	* src/ejabberd_auth_odbc.erl: Bugfix
 
 	* src/mod_roster_odbc.erl: Bugfix
