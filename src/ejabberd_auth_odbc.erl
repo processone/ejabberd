@@ -192,7 +192,8 @@ remove_user(User, Server) ->
 	    catch ejabberd_odbc:sql_query(
 		    jlib:nameprep(Server),
 		    ["delete from users where username='", Username ,"'"]),
-	    ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User])
+	    ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
+			       [User, Server])
     end.
 
 remove_user(User, Server, Password) ->
@@ -212,7 +213,7 @@ remove_user(User, Server, Password) ->
 		   "commit"]) of
 		{selected, ["password"], [{Password}]} ->
 		    ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
-				       [User]),
+				       [User, Server]),
 		    ok;
 		{selected, ["password"], []} ->
 		    not_exists;

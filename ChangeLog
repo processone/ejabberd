@@ -1,5 +1,7 @@
 2005-10-13  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_auth_odbc.erl: Bugfix
+
 	* src/mod_roster_odbc.erl: Bugfix
 
 2005-10-07  Alexey Shchepin  <alexey@sevcom.net>
