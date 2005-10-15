@@ -1,3 +1,8 @@
+2005-10-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Updated to work correctly with
+	mod_vcard_odbc
+
 2005-10-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/odbc/ejabberd_odbc.erl: Experimental support for pgsql
