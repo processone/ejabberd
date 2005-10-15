@@ -1,5 +1,7 @@
 2005-10-15  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_roster_odbc.erl: Bugfix
+
 	* src/ejabberd_c2s.erl: Updated to work correctly with
 	mod_vcard_odbc
 

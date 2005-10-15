@@ -841,7 +841,7 @@ record_to_string(#roster{user = User,
 			 subscription = Subscription,
 			 ask = Ask}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(JID)),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(JID))),
     Nick = ejabberd_odbc:escape(Name),
     SSubscription = case Subscription of
 			both -> "B";
@@ -869,7 +869,7 @@ groups_to_string(#roster{user = User,
 			 jid = JID,
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(JID)),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(JID))),
     [["("
       "'", Username, "',"
       "'", SJID, "',"
