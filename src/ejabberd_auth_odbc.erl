@@ -111,7 +111,7 @@ try_register(User, Server, Password) ->
 			 jlib:nameprep(Server),
 			 ["insert into users(username, password) "
 			  "values ('", Username, "', '", Pass, "')"]) of
-		{updated, _} ->
+		{updated, 1} ->
 		    {atomic, ok};
 		_ ->
 		    {atomic, exists}

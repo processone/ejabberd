@@ -153,6 +153,8 @@ pgsql_item_to_odbc("INSERT " ++ OIDN) ->
     {updated, list_to_integer(N)};
 pgsql_item_to_odbc("DELETE " ++ N) ->
     {updated, list_to_integer(N)};
+pgsql_item_to_odbc({error, Error}) ->
+    {error, Error};
 pgsql_item_to_odbc(_) ->
     {updated,undefined}.
 
