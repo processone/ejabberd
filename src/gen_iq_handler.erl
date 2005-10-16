@@ -38,7 +38,7 @@ add_iq_handler(Component, Host, NS, Module, Function, Type) ->
     end.
 
 remove_iq_handler(Component, Host, NS) ->
-    Component:unregister_iq_handler(NS).
+    Component:unregister_iq_handler(Host, NS).
 
 stop_iq_handler(Module, Function, Opts) ->
     case Opts of
