@@ -764,7 +764,7 @@ get_jid_info(_, User, Server, JID) ->
 				   "where username='", Username, "' "
 				   "and jid='", SJID, "'"]) of
 			 {selected, ["grp"], JGrps} when is_list(JGrps) ->
-			     JGrps;
+			     [JGrp || {JGrp} <- JGrps];
 			 _ ->
 			     []
 		     end,
@@ -794,7 +794,7 @@ get_jid_info(_, User, Server, JID) ->
 						   "where username='", Username, "' "
 						   "and jid='", SRJID, "'"]) of
 					 {selected, ["grp"], JGrps} when is_list(JGrps) ->
-					     JGrps;
+					     [JGrp || {JGrp} <- JGrps];
 					 _ ->
 					     []
 				     end,
