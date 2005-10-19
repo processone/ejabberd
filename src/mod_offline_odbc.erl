@@ -214,7 +214,8 @@ pop_offline_messages(Ls, User, Server) ->
     case ejabberd_odbc:sql_query(
 	   LServer,
 	   ["begin;"
-	    "select * from spool where username='", EUser, "';"
+	    "select username, xml from spool where username='", EUser, "'"
+	    "  order by seq;"
 	    "delete from spool where username='", EUser, "';"
 	    "commit"]) of
 	[{updated, undefined},
