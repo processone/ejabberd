@@ -4,6 +4,7 @@
 #include <string.h>
 #include <erl_driver.h>
 #include <openssl/ssl.h>
+#include <openssl/err.h>
 
 
 #define BUF_SIZE 1024
@@ -45,11 +46,12 @@ static void tls_drv_stop(ErlDrvData handle)
 }
 
 
-#define SET_CERTIFICATE_FILE 1
-#define SET_ENCRYPTED_INPUT  2
-#define SET_DECRYPTED_OUTPUT 3
-#define GET_ENCRYPTED_OUTPUT 4
-#define GET_DECRYPTED_INPUT  5
+#define SET_CERTIFICATE_FILE_ACCEPT 1
+#define SET_CERTIFICATE_FILE_CONNECT 2
+#define SET_ENCRYPTED_INPUT  3
+#define SET_DECRYPTED_OUTPUT 4
+#define GET_ENCRYPTED_OUTPUT 5
+#define GET_DECRYPTED_INPUT  6
 
 
 #define die_unless(cond, errstr)				\
@@ -76,8 +78,9 @@ static int tls_drv_control(ErlDrvData handle,
 
    switch (command)
    {
-      case SET_CERTIFICATE_FILE:
-	 d->ctx = SSL_CTX_new(SSLv23_server_method());
+      case SET_CERTIFICATE_FILE_ACCEPT:
+      case SET_CERTIFICATE_FILE_CONNECT:
+	 d->ctx = SSL_CTX_new(SSLv23_method());
 	 die_unless(d->ctx, "SSL_CTX_new failed");
 
 	 res = SSL_CTX_use_certificate_file(d->ctx, buf, SSL_FILETYPE_PEM);
@@ -97,7 +100,10 @@ static int tls_drv_control(ErlDrvData handle,
 
 	 SSL_set_bio(d->ssl, d->bio_read, d->bio_write);
 
-	 SSL_set_accept_state(d->ssl);
+	 if (command == SET_CERTIFICATE_FILE_ACCEPT)
+	    SSL_set_accept_state(d->ssl);
+	 else
+	    SSL_set_connect_state(d->ssl);
 	 break;
       case SET_ENCRYPTED_INPUT:
 	 die_unless(d->ssl, "SSL not initialized");
@@ -106,6 +112,19 @@ static int tls_drv_control(ErlDrvData handle,
       case SET_DECRYPTED_OUTPUT:
 	 die_unless(d->ssl, "SSL not initialized");
 	 res = SSL_write(d->ssl, buf, len);
+	 if (res <= 0) 
+	 {
+	    res = SSL_get_error(d->ssl, res);
+	    if (res == SSL_ERROR_WANT_READ || res == SSL_ERROR_WANT_WRITE) 
+	    {
+	       b = driver_alloc_binary(1);
+	       b->orig_bytes[0] = 2;
+	       *rbuf = (char *)b;
+	       return 1;
+	    } else {
+	       die_unless(0, "SSL_write failed");
+	    }
+	 }
 	 break;
       case GET_ENCRYPTED_OUTPUT:
 	 die_unless(d->ssl, "SSL not initialized");
@@ -128,13 +147,10 @@ static int tls_drv_control(ErlDrvData handle,
       case GET_DECRYPTED_INPUT:
 	 if (!SSL_is_init_finished(d->ssl))
 	 {
-	    //printf("Doing SSL_accept\r\n");
-	    res = SSL_accept(d->ssl);
-	    //if (res == 0)
-	    //   printf("SSL_accept returned zero\r\n");
-	    if (res < 0)
+	    res = SSL_do_handshake(d->ssl);
+	    if (res <= 0)
 	       die_unless(SSL_get_error(d->ssl, res) == SSL_ERROR_WANT_READ,
-			  "SSL_accept failed");
+			  "SSL_do_handshake failed");
 	 } else {
 	    size = BUF_SIZE + 1;
 	    rlen = 1;

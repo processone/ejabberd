@@ -36,24 +36,27 @@ receiver(Socket, SockMod, Shaper, C2SPid) ->
 
 receiver(Socket, SockMod, ShaperState, C2SPid, XMLStreamState, Timeout) ->
     Res = (catch SockMod:recv(Socket, 0, Timeout)),
-    case Res of
-        {ok, Data} ->
-	    receive
-		{starttls, TLSSocket} ->
-		    xml_stream:close(XMLStreamState),
-		    XMLStreamState1 = xml_stream:new(C2SPid),
-		    TLSRes = tls:recv_data(TLSSocket, Data),
-		    receiver1(TLSSocket, tls,
-			      ShaperState, C2SPid, XMLStreamState1, Timeout,
-			      TLSRes)
-	    after 0 ->
-		    receiver1(Socket, SockMod,
-			      ShaperState, C2SPid, XMLStreamState, Timeout,
-			      Res)
-	    end;
-	_ ->
+    receive
+	{starttls, TLSSocket} ->
+	    xml_stream:close(XMLStreamState),
+	    XMLStreamState1 = xml_stream:new(C2SPid),
+	    TLSRes = case Res of
+			 {ok, Data} ->
+			     tls:recv_data(TLSSocket, Data);
+			 _ ->
+			     tls:recv_data(TLSSocket, "")
+		     end,
+	    receiver1(TLSSocket, tls,
+		      ShaperState, C2SPid, XMLStreamState1, Timeout,
+		      TLSRes);
+	{change_timeout, NewTimeout} -> % Dirty hack
 	    receiver1(Socket, SockMod,
-		      ShaperState, C2SPid, XMLStreamState, Timeout, Res)
+		      ShaperState, C2SPid, XMLStreamState, NewTimeout,
+		      Res)
+    after 0 ->
+	    receiver1(Socket, SockMod,
+		      ShaperState, C2SPid, XMLStreamState, Timeout,
+		      Res)
     end.
 
 

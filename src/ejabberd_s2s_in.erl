@@ -14,13 +14,12 @@
 
 %% External exports
 -export([start/2,
-	 start_link/2,
-	 send_text/2,
-	 send_element/2]).
+	 start_link/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
 	 wait_for_stream/2,
+	 wait_for_feature_request/2,
 	 stream_established/2,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -34,9 +33,13 @@
 -define(DICT, dict).
 
 -record(state, {socket,
+		sockmod,
 		receiver,
 		streamid,
 		shaper,
+		tls = false,
+		tls_enabled = false,
+		tls_options = [],
 	        connections = ?DICT:new(),
 		timer}).
 
@@ -49,13 +52,13 @@
 -define(FSMOPTS, []).
 -endif.
 
--define(STREAM_HEADER,
+-define(STREAM_HEADER(Version),
 	("<?xml version='1.0'?>"
 	 "<stream:stream "
 	 "xmlns:stream='http://etherx.jabber.org/streams' "
 	 "xmlns='jabber:server' "
 	 "xmlns:db='jabber:server:dialback' "
-	 "id='" ++ StateData#state.streamid ++ "'>")
+	 "id='" ++ StateData#state.streamid ++ "'" ++ Version ++ ">")
        ).
 
 -define(STREAM_TRAILER, "</stream:stream>").
@@ -96,12 +99,28 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
+    StartTLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
+		   undefined ->
+		       false;
+		   UseStartTLS ->
+		       UseStartTLS
+	       end,
+    TLSOpts = case ejabberd_config:get_local_option(s2s_certfile) of
+		  undefined ->
+		      [];
+		  CertFile ->
+		      [{certfile, CertFile}]
+	      end,
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, wait_for_stream,
      #state{socket = Socket,
+	    sockmod = SockMod,
 	    receiver = ReceiverPid,
 	    streamid = new_id(),
 	    shaper = Shaper,
+	    tls = StartTLS,
+	    tls_enabled = false,
+	    tls_options = TLSOpts,
 	    timer = Timer}}.
 
 %%----------------------------------------------------------------------
@@ -113,18 +132,28 @@ init([{SockMod, Socket}, Opts]) ->
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     % TODO
-    case {xml:get_attr_s("xmlns", Attrs), xml:get_attr_s("xmlns:db", Attrs)} of
-	{"jabber:server", "jabber:server:dialback"} ->
-	    send_text(StateData#state.socket, ?STREAM_HEADER),
-	    {next_state, stream_established, StateData#state{}};
+    case {xml:get_attr_s("xmlns", Attrs),
+	  xml:get_attr_s("xmlns:db", Attrs),
+	  xml:get_attr_s("version", Attrs) == "1.0"} of
+	{"jabber:server", "jabber:server:dialback", true} when
+	     StateData#state.tls ->
+	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
+	    send_element(StateData,
+			 {xmlelement, "stream:features", [],
+			  [{xmlelement, "starttls",
+			    [{"xmlns", ?NS_TLS}], []}]}),
+	    {next_state, wait_for_feature_request, StateData};
+	{"jabber:server", "jabber:server:dialback", _} ->
+	    send_text(StateData, ?STREAM_HEADER("")),
+	    {next_state, stream_established, StateData};
 	_ ->
-	    send_text(StateData#state.socket, ?INVALID_NAMESPACE_ERR),
+	    send_text(StateData, ?INVALID_NAMESPACE_ERR),
 	    {stop, normal, StateData}
     end;
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket,
-	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_text(StateData,
+	      ?STREAM_HEADER("") ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 wait_for_stream(timeout, StateData) ->
@@ -132,6 +161,45 @@ wait_for_stream(timeout, StateData) ->
 
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
+
+
+wait_for_feature_request({xmlstreamelement, El}, StateData) ->
+    {xmlelement, Name, Attrs, Els} = El,
+    TLS = StateData#state.tls,
+    TLSEnabled = StateData#state.tls_enabled,
+    SockMod = StateData#state.sockmod,
+    case {xml:get_attr_s("xmlns", Attrs), Name} of
+	{?NS_TLS, "starttls"} when TLS == true,
+				   TLSEnabled == false,
+				   SockMod == gen_tcp ->
+	    ?INFO_MSG("starttls", []),
+	    Socket = StateData#state.socket,
+	    TLSOpts = StateData#state.tls_options,
+	    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
+	    ejabberd_receiver:starttls(StateData#state.receiver, TLSSocket),
+	    send_element(StateData,
+			 {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []}),
+	    {next_state, wait_for_stream,
+	     StateData#state{sockmod = tls,
+			     socket = TLSSocket,
+			     streamid = new_id(),
+			     tls_enabled = true
+			    }};
+	_ ->
+	    stream_established({xmlstreamelement, El}, StateData)
+    end;
+
+wait_for_feature_request({xmlstreamend, _Name}, StateData) ->
+    send_text(StateData, ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_feature_request({xmlstreamerror, _}, StateData) ->
+    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_feature_request(closed, StateData) ->
+    {stop, normal, StateData}.
+
 
 stream_established({xmlstreamelement, El}, StateData) ->
     cancel_timer(StateData#state.timer),
@@ -154,7 +222,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		     StateData#state{connections = Conns,
 				     timer = Timer}};
 		_ ->
-		    send_text(StateData#state.socket, ?HOST_UNKNOWN_ERR),
+		    send_text(StateData, ?HOST_UNKNOWN_ERR),
 		    {stop, normal, StateData}
 	    end;
 	{verify, To, From, Id, Key} ->
@@ -165,7 +233,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    Type = if Key == Key1 -> "valid";
 		      true -> "invalid"
 		   end,
-	    send_element(StateData#state.socket,
+	    send_element(StateData,
 			 {xmlelement,
 			  "db:verify",
 			  [{"from", To},
@@ -204,7 +272,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
     end;
 
 stream_established({valid, From, To}, StateData) ->
-    send_element(StateData#state.socket,
+    send_element(StateData,
 		 {xmlelement,
 		  "db:result",
 		  [{"from", To},
@@ -219,7 +287,7 @@ stream_established({valid, From, To}, StateData) ->
     {next_state, stream_established, NSD};
 
 stream_established({invalid, From, To}, StateData) ->
-    send_element(StateData#state.socket,
+    send_element(StateData,
 		 {xmlelement,
 		  "db:result",
 		  [{"from", To},
@@ -237,8 +305,8 @@ stream_established({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 stream_established({xmlstreamerror, _}, StateData) ->
-    send_text(StateData#state.socket,
-	      ?STREAM_HEADER ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_text(StateData,
+	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
 stream_established(timeout, StateData) ->
@@ -294,7 +362,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
-    send_text(StateData#state.socket, Text),
+    send_text(StateData, Text),
     {next_state, StateName, StateData};
 
 handle_info({timeout, Timer, _}, StateName,
@@ -312,18 +380,18 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
-    gen_tcp:close(StateData#state.socket),
+    (StateData#state.sockmod):close(StateData#state.socket),
     ok.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-send_text(Socket, Text) ->
-    gen_tcp:send(Socket,Text).
+send_text(StateData, Text) ->
+    (StateData#state.sockmod):send(StateData#state.socket, Text).
 
-send_element(Socket, El) ->
-    send_text(Socket, xml:element_to_string(El)).
+send_element(StateData, El) ->
+    send_text(StateData, xml:element_to_string(El)).
 
 
 change_shaper(StateData, Host, JID) ->

@@ -27,11 +27,12 @@
 	 code_change/3,
 	 terminate/2]).
 
--define(SET_CERTIFICATE_FILE, 1).
--define(SET_ENCRYPTED_INPUT,  2).
--define(SET_DECRYPTED_OUTPUT, 3).
--define(GET_ENCRYPTED_OUTPUT, 4).
--define(GET_DECRYPTED_INPUT,  5).
+-define(SET_CERTIFICATE_FILE_ACCEPT, 1).
+-define(SET_CERTIFICATE_FILE_CONNECT, 2).
+-define(SET_ENCRYPTED_INPUT,  3).
+-define(SET_DECRYPTED_OUTPUT, 4).
+-define(GET_ENCRYPTED_OUTPUT, 5).
+-define(GET_DECRYPTED_INPUT,  6).
 
 -record(tlssock, {tcpsock, tlsport}).
 
@@ -44,7 +45,7 @@ start_link() ->
 init([]) ->
     ok = erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
     Port = open_port({spawn, tls_drv}, [binary]),
-    Res = port_control(Port, ?SET_CERTIFICATE_FILE, "./ssl.pem" ++ [0]),
+    Res = port_control(Port, ?SET_CERTIFICATE_FILE_ACCEPT, "./ssl.pem" ++ [0]),
     case Res of
 	<<0>> ->
 	    %ets:new(iconv_table, [set, public, named_table]),
@@ -86,8 +87,13 @@ tcp_to_tls(TCPSocket, Options) ->
 	{value, {certfile, CertFile}} ->
 	    ok = erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
 	    Port = open_port({spawn, tls_drv}, [binary]),
-	    case port_control(Port, ?SET_CERTIFICATE_FILE,
-			      CertFile ++ [0]) of
+	    Command = case lists:member(connect, Options) of
+			  true ->
+			      ?SET_CERTIFICATE_FILE_CONNECT;
+			  false ->
+			      ?SET_CERTIFICATE_FILE_ACCEPT
+		      end,
+	    case port_control(Port, Command, CertFile ++ [0]) of
 		<<0>> ->
 		    {ok, #tlssock{tcpsock = TCPSocket, tlsport = Port}};
 		<<1, Error/binary>> ->
@@ -145,7 +151,10 @@ send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 		    {error, binary_to_list(Error)}
 	    end;
 	<<1, Error/binary>> ->
-	    {error, binary_to_list(Error)}
+	    {error, binary_to_list(Error)};
+	<<2>> -> % Dirty hack
+	    receive after 100 -> ok end,
+	    send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet)
     end.
 
 
@@ -158,7 +167,8 @@ test() ->
     ok = erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
     Port = open_port({spawn, tls_drv}, [binary]),
     io:format("open_port: ~p~n", [Port]),
-    PCRes = port_control(Port, ?SET_CERTIFICATE_FILE, "./ssl.pem" ++ [0]),
+    PCRes = port_control(Port, ?SET_CERTIFICATE_FILE_ACCEPT,
+			 "./ssl.pem" ++ [0]),
     io:format("port_control: ~p~n", [PCRes]),
     {ok, ListenSocket} = gen_tcp:listen(1234, [binary,
 					       {packet, 0}, 

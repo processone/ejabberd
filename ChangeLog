@@ -1,3 +1,16 @@
+2005-10-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls_drv.c: Support for "connect" method
+	* src/tls/tls.erl: Likewise
+
+	* src/ejabberd_s2s_in.erl: Support for STARTTLS+Dialback
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd_receiver.erl: Added a few hacks ({active,once} mode
+	should be used instead of recv/3 call to avoid them)
+	* src/ejabberd_config.erl: Added s2s_use_starttls and s2s_certfile
+	options
+	* src/ejabberd.cfg.example: Likewise
+
 2005-10-22  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_app.erl: Try to load tls_drv at startup to avoid

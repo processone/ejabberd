@@ -115,6 +115,11 @@
 			     [{password, "secret"}]}]}
  ]}.
 
+
+% Use STARTTLS+Dialback for S2S connections
+{s2s_use_starttls, true}.
+{s2s_certfile, "./ssl.pem"}.
+
 % If SRV lookup fails, then port 5269 is used to communicate with remote server
 {outgoing_s2s_port, 5269}.
 
