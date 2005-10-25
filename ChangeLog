@@ -1,5 +1,11 @@
 2005-10-25  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/tls/tls.erl: Accept {error,already_loaded} from
+	erl_ddll:load_driver/2
+	* src/stringprep/stringprep.erl: Likewise
+	* src/mod_irc/iconv.erl: Likewise
+	* src/ejabberd_app.erl: Likewise
+
 	* src/tls/tls_drv.c: Support for "connect" method
 	* src/tls/tls.erl: Likewise
 

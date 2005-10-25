@@ -43,7 +43,10 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    ok = erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
+    case erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv) of
+	ok -> ok;
+	{error, already_loaded} -> ok
+    end,
     Port = open_port({spawn, tls_drv}, [binary]),
     Res = port_control(Port, ?SET_CERTIFICATE_FILE_ACCEPT, "./ssl.pem" ++ [0]),
     case Res of
@@ -85,7 +88,10 @@ terminate(_Reason, Port) ->
 tcp_to_tls(TCPSocket, Options) ->
     case lists:keysearch(certfile, 1, Options) of
 	{value, {certfile, CertFile}} ->
-	    ok = erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
+	    case erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv) of
+		ok -> ok;
+		{error, already_loaded} -> ok
+	    end,
 	    Port = open_port({spawn, tls_drv}, [binary]),
 	    Command = case lists:member(connect, Options) of
 			  true ->
@@ -164,7 +170,10 @@ close(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
 
 
 test() ->
-    ok = erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
+    case erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv) of
+	ok -> ok;
+	{error, already_loaded} -> ok
+    end,
     Port = open_port({spawn, tls_drv}, [binary]),
     io:format("open_port: ~p~n", [Port]),
     PCRes = port_control(Port, ?SET_CERTIFICATE_FILE_ACCEPT,

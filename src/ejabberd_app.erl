@@ -63,7 +63,10 @@ init() ->
 	end,
     error_logger:add_report_handler(ejabberd_logger_h, LogPath),
     erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
-    ok = erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl),
+    case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
+	ok -> ok;
+	{error, already_loaded} -> ok
+    end,
     Port = open_port({spawn, expat_erl}, [binary]),
     loop(Port).
 

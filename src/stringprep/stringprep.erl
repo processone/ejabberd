@@ -39,7 +39,10 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    ok = erl_ddll:load_driver(ejabberd:get_so_path(), stringprep_drv),
+    case erl_ddll:load_driver(ejabberd:get_so_path(), stringprep_drv) of
+	ok -> ok;
+	{error, already_loaded} -> ok
+    end,
     Port = open_port({spawn, stringprep_drv}, []),
     register(?STRINGPREP_PORT, Port),
     {ok, Port}.

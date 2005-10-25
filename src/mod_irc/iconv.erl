@@ -31,7 +31,10 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    ok = erl_ddll:load_driver(ejabberd:get_so_path(), iconv_erl),
+    case erl_ddll:load_driver(ejabberd:get_so_path(), iconv_erl) of
+	ok -> ok;
+	{error, already_loaded} -> ok
+    end,
     Port = open_port({spawn, iconv_erl}, []),
     ets:new(iconv_table, [set, public, named_table]),
     ets:insert(iconv_table, {port, Port}),
