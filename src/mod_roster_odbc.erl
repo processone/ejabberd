@@ -468,7 +468,18 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 	       {selected, ["username", "jid", "nick", "subscription", "ask",
 			   "server", "subscribe", "type"],
 		[I]} ->
-		   raw_to_record(I);
+		   R = raw_to_record(I),
+		   Groups = case catch ejabberd_odbc:sql_query(
+					 LServer,
+					 ["select grp from rostergroups "
+					  "where username='", Username, "' "
+					  "and jid='", SJID, "'"]) of
+				{selected, ["grp"], JGrps} when is_list(JGrps) ->
+				    [JGrp || {JGrp} <- JGrps];
+				_ ->
+				    []
+			    end,
+		   R#roster{groups = Groups};
 	       _ ->
 		   #roster{user = LUser,
 			   jid = LJID}

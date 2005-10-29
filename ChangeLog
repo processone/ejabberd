@@ -1,3 +1,7 @@
+2005-10-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix
+
 2005-10-25  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/tls/tls.erl: Accept {error,already_loaded} from
