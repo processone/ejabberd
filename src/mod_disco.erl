@@ -182,12 +182,14 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 get_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_local_features(Acc, _From, _To, [], _Lang) ->
+get_local_features(Acc, _From, To, [], _Lang) ->
     Feats = case Acc of
 		{result, Features} -> Features;
 		empty -> []
 	    end,
-    {result, ets:tab2list(disco_features) ++ Feats};
+    Host = To#jid.lserver,
+    {result,
+     ets:select(disco_features, [{{{'_', Host}}, [], ['$_']}]) ++ Feats};
 
 get_local_features(Acc, _From, _To, _Node, _Lang) ->
     case Acc of
