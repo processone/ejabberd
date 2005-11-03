@@ -1,5 +1,7 @@
 2005-11-03  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_disco.erl: Fixed extra_domains option processing
+
 	* src/ejabberd_s2s_out.erl: Support for STARTTLS+SASL EXTERNAL
 	(not well-tested yet)
 	* src/ejabberd_s2s_in.erl: Likewise

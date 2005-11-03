@@ -223,7 +223,8 @@ get_local_services(Acc, _From, To, [], _Lang) ->
      lists:usort(
        lists:map(fun domain_to_xml/1,
 		 get_vh_services(Host) ++
-		 ets:tab2list(disco_extra_domains))
+		 ets:select(disco_extra_domains,
+			    [{{{'$1', Host}}, [], ['$1']}]))
        ) ++ Items};
 
 get_local_services({result, _} = Acc, _From, _To, _Node, _Lang) ->
