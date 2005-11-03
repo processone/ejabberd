@@ -46,12 +46,19 @@ static void tls_drv_stop(ErlDrvData handle)
 }
 
 
+static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+   return 1;
+}
+
 #define SET_CERTIFICATE_FILE_ACCEPT 1
 #define SET_CERTIFICATE_FILE_CONNECT 2
 #define SET_ENCRYPTED_INPUT  3
 #define SET_DECRYPTED_OUTPUT 4
 #define GET_ENCRYPTED_OUTPUT 5
 #define GET_DECRYPTED_INPUT  6
+#define GET_PEER_CERTIFICATE 7
+#define GET_VERIFY_RESULT    8
 
 
 #define die_unless(cond, errstr)				\
@@ -75,6 +82,7 @@ static int tls_drv_control(ErlDrvData handle,
    int res;
    int size;
    ErlDrvBinary *b;
+   X509 *cert;
 
    switch (command)
    {
@@ -92,6 +100,15 @@ static int tls_drv_control(ErlDrvData handle,
 	 res = SSL_CTX_check_private_key(d->ctx);
 	 die_unless(res > 0, "SSL_CTX_check_private_key failed");
 
+	 SSL_CTX_set_default_verify_paths(d->ctx);
+
+	 if (command == SET_CERTIFICATE_FILE_ACCEPT)
+	 {
+	    SSL_CTX_set_verify(d->ctx,
+			       SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
+			       verify_callback);
+	 }
+	 
 	 d->ssl = SSL_new(d->ctx);
 	 die_unless(d->ssl, "SSL_new failed");
 
@@ -181,6 +198,37 @@ static int tls_drv_control(ErlDrvData handle,
 	    *rbuf = (char *)b;
 	    return rlen;
 	 }
+	 break;
+      case GET_PEER_CERTIFICATE:
+	 cert = SSL_get_peer_certificate(d->ssl);
+	 if (cert == NULL)
+	 {
+	    b = driver_alloc_binary(1);
+	    b->orig_bytes[0] = 1;
+	    *rbuf = (char *)b;
+	    return 1;
+	 } else {
+	    unsigned char *tmp_buf;
+	    rlen = i2d_X509(cert, NULL);
+	    if (rlen >= 0)
+	    {
+	       rlen++;
+	       b = driver_alloc_binary(rlen);
+	       b->orig_bytes[0] = 0;
+	       tmp_buf = &b->orig_bytes[1];
+	       i2d_X509(cert, &tmp_buf);
+	       X509_free(cert);
+	       *rbuf = (char *)b;
+	       return rlen;
+	    } else
+	       X509_free(cert);
+	 }
+	 break;
+      case GET_VERIFY_RESULT:
+	 b = driver_alloc_binary(1);
+	 b->orig_bytes[0] = SSL_get_verify_result(d->ssl);
+	 *rbuf = (char *)b;
+	 return 1;
 	 break;
    }
 

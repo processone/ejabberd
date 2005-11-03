@@ -29,6 +29,9 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+%-include_lib("ssl/pkix/SSL-PKIX.hrl").
+-include_lib("ssl/pkix/PKIX1Explicit88.hrl").
+-include("tls/XmppAddr.hrl").
 
 -define(DICT, dict).
 
@@ -40,6 +43,8 @@
 		tls = false,
 		tls_enabled = false,
 		tls_options = [],
+		authenticated = false,
+		auth_domain,
 	        connections = ?DICT:new(),
 		timer}).
 
@@ -131,18 +136,50 @@ init([{SockMod, Socket}, Opts]) ->
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
-    % TODO
     case {xml:get_attr_s("xmlns", Attrs),
 	  xml:get_attr_s("xmlns:db", Attrs),
 	  xml:get_attr_s("version", Attrs) == "1.0"} of
 	{"jabber:server", "jabber:server:dialback", true} when
-	     StateData#state.tls ->
+	      StateData#state.tls and (not StateData#state.authenticated) ->
 	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
+	    SASL =
+		if
+		    StateData#state.tls_enabled ->
+			case tls:get_peer_certificate(StateData#state.socket) of
+			    {ok, _Cert} ->
+				case tls:get_verify_result(
+				       StateData#state.socket) of
+				    0 ->
+					[{xmlelement, "mechanisms",
+					  [{"xmlns", ?NS_SASL}],
+					  [{xmlelement, "mechanism", [],
+					    [{xmlcdata, "EXTERNAL"}]}]}];
+				    _ ->
+					[]
+				end;
+			    error ->
+				[]
+			end;
+		    true ->
+			[]
+		end,
+	    StartTLS = if
+			   StateData#state.tls_enabled ->
+			       [];
+			   true ->
+			       [{xmlelement, "starttls",
+				 [{"xmlns", ?NS_TLS}], []}]
+		       end,
 	    send_element(StateData,
 			 {xmlelement, "stream:features", [],
-			  [{xmlelement, "starttls",
-			    [{"xmlns", ?NS_TLS}], []}]}),
+			  SASL ++ StartTLS}),
 	    {next_state, wait_for_feature_request, StateData};
+	{"jabber:server", _, true} when
+	      StateData#state.authenticated ->
+	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
+	    send_element(StateData,
+			 {xmlelement, "stream:features", [], []}),
+	    {next_state, stream_established, StateData};
 	{"jabber:server", "jabber:server:dialback", _} ->
 	    send_text(StateData, ?STREAM_HEADER("")),
 	    {next_state, stream_established, StateData};
@@ -185,6 +222,60 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			     streamid = new_id(),
 			     tls_enabled = true
 			    }};
+	{?NS_SASL, "auth"} when TLSEnabled ->
+	    Mech = xml:get_attr_s("mechanism", Attrs),
+	    case Mech of
+		"EXTERNAL" ->
+		    Auth = jlib:decode_base64(xml:get_cdata(Els)),
+		    AuthDomain = jlib:nameprep(Auth),
+		    AuthRes =
+			case tls:get_peer_certificate(StateData#state.socket) of
+			    {ok, Cert} ->
+				case tls:get_verify_result(
+				       StateData#state.socket) of
+				    0 ->
+					case AuthDomain of
+					    error ->
+						false;
+					    _ ->
+						lists:member(
+						  AuthDomain,
+						  get_cert_domains(Cert))
+					end;
+				    _ ->
+					false
+				end;
+			    error ->
+				false
+			end,
+		    if
+			AuthRes ->
+			    ejabberd_receiver:reset_stream(
+			      StateData#state.receiver),
+			    send_element(StateData,
+					 {xmlelement, "success",
+					  [{"xmlns", ?NS_SASL}], []}),
+			    ?INFO_MSG("(~w) Accepted s2s authentication for ~s",
+				      [StateData#state.socket, AuthDomain]),
+			    {next_state, wait_for_stream,
+			     StateData#state{streamid = new_id(),
+					     authenticated = true,
+					     auth_domain = AuthDomain
+					    }};
+			true ->
+			    send_element(StateData,
+					 {xmlelement, "failure",
+					  [{"xmlns", ?NS_SASL}], []}),
+			    send_text(StateData, ?STREAM_TRAILER),
+			    {stop, normal, StateData}
+		    end;
+		_ ->
+		    send_element(StateData,
+				 {xmlelement, "failure",
+				  [{"xmlns", ?NS_SASL}],
+				  [{xmlelement, "invalid-mechanism", [], []}]}),
+		    {stop, normal, StateData}
+	    end;
 	_ ->
 	    stream_established({xmlstreamelement, El}, StateData)
     end;
@@ -252,18 +343,38 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		(To /= error) and (From /= error) ->
 		    LFrom = From#jid.lserver,
 		    LTo = To#jid.lserver,
-		    case ?DICT:find({LFrom, LTo},
-				    StateData#state.connections) of
-			{ok, established} ->
-			    if ((Name == "iq") or
-				(Name == "message") or
-				(Name == "presence")) ->
-				    ejabberd_router:route(From, To, El);
-			       true ->
+		    if
+			StateData#state.authenticated ->
+			    case (LFrom == StateData#state.auth_domain)
+				andalso
+				lists:member(
+				  LTo,
+				  ejabberd_router:dirty_get_all_domains()) of
+				true ->
+				    if ((Name == "iq") or
+					(Name == "message") or
+					(Name == "presence")) ->
+					    ejabberd_router:route(From, To, El);
+				       true ->
+					    error
+				    end;
+				false ->
 				    error
 			    end;
-			_ ->
-			    error
+			true ->
+			    case ?DICT:find({LFrom, LTo},
+					    StateData#state.connections) of
+				{ok, established} ->
+				    if ((Name == "iq") or
+					(Name == "message") or
+					(Name == "presence")) ->
+					    ejabberd_router:route(From, To, El);
+				       true ->
+					    error
+				    end;
+				_ ->
+				    error
+			    end
 		    end;
 		true ->
 		    error
@@ -365,7 +476,7 @@ handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     {next_state, StateName, StateData};
 
-handle_info({timeout, Timer, _}, StateName,
+handle_info({timeout, Timer, _}, _StateName,
 	    #state{timer = Timer} = StateData) ->
     {stop, normal, StateData};
 
@@ -426,6 +537,53 @@ is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:verify" ->
      xml:get_cdata(Els)};
 is_key_packet(_) ->
     false.
+
+
+get_cert_domains(Cert) ->
+    {rdnSequence, Subject} =
+	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.subject,
+    lists:flatmap(
+      fun(#'AttributeTypeAndValue'{type = ?'id-at-commonName',
+				   value = Val}) ->
+	      case 'PKIX1Explicit88':decode(
+				      'X520CommonName', Val) of
+		  {ok, {_, D1}} ->
+		      D = if
+			      is_list(D1) -> D1;
+			      is_binary(D1) -> binary_to_list(D1);
+			      true -> error
+			  end,
+		      if
+			  D /= error ->
+			      case jlib:nameprep(D) of
+				  error ->
+				      [];
+				  LD ->
+				      [LD]
+			      end;
+			  true ->
+			      []
+		      end;
+		  _ ->
+		      []
+	      end;
+	 (#'AttributeTypeAndValue'{type = ?'id-on-xmppAddr',
+				   value = Val}) ->
+	      case 'XmppAddr':decode(
+			       'XmppAddr', Val) of
+		  {ok, D} when is_binary(D) ->
+		      case jlib:nameprep(binary_to_list(D)) of
+			  error ->
+			      [];
+			  LD ->
+			      [LD]
+		      end;
+		  _ ->
+		      []
+	      end;
+	 (_) ->
+	      []
+      end, lists:flatten(Subject)).
 
 
 

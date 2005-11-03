@@ -17,6 +17,8 @@
 	 send/2,
 	 recv/2, recv/3, recv_data/2,
 	 close/1,
+	 get_peer_certificate/1,
+	 get_verify_result/1,
 	 test/0]).
 
 %% Internal exports, call-back functions.
@@ -33,6 +35,8 @@
 -define(SET_DECRYPTED_OUTPUT, 4).
 -define(GET_ENCRYPTED_OUTPUT, 5).
 -define(GET_DECRYPTED_INPUT,  6).
+-define(GET_PEER_CERTIFICATE, 7).
+-define(GET_VERIFY_RESULT,    8).
 
 -record(tlssock, {tcpsock, tlsport}).
 
@@ -69,15 +73,16 @@ handle_call(_, _, State) ->
 handle_cast(_, State) ->
     {noreply, State}.
 
-handle_info({'EXIT', Pid, Reason}, Port) ->
-    {noreply, Port};
-
 handle_info({'EXIT', Port, Reason}, Port) ->
     {stop, {port_died, Reason}, Port};
+
+handle_info({'EXIT', _Pid, _Reason}, Port) ->
+    {noreply, Port};
+
 handle_info(_, State) ->
     {noreply, State}.
 
-code_change(OldVsn, State, Extra) ->
+code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 terminate(_Reason, Port) ->
@@ -115,7 +120,7 @@ tls_to_tcp(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
 
 recv(Socket, Length) ->
     recv(Socket, Length, infinity).
-recv(#tlssock{tcpsock = TCPSocket, tlsport = Port} = TLSSock,
+recv(#tlssock{tcpsock = TCPSocket} = TLSSock,
      Length, Timeout) ->
     case gen_tcp:recv(TCPSocket, Length, Timeout) of
 	{ok, Packet} ->
@@ -133,6 +138,7 @@ recv_data(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 			<<0, Out/binary>> ->
 			    case gen_tcp:send(TCPSocket, Out) of
 				ok ->
+				    %io:format("IN: ~p~n", [{TCPSocket, binary_to_list(In)}]),
 				    {ok, In};
 				Error ->
 				    Error
@@ -150,6 +156,7 @@ recv_data(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
     case port_control(Port, ?SET_DECRYPTED_OUTPUT, Packet) of
 	<<0>> ->
+	    %io:format("OUT: ~p~n", [{TCPSocket, lists:flatten(Packet)}]),
 	    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
 		<<0, Out/binary>> ->
 		    gen_tcp:send(TCPSocket, Out);
@@ -159,14 +166,35 @@ send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 	<<1, Error/binary>> ->
 	    {error, binary_to_list(Error)};
 	<<2>> -> % Dirty hack
-	    receive after 100 -> ok end,
-	    send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet)
+	    receive
+		{timeout, _Timer, _} ->
+		    {error, timeout}
+	    after 100 ->
+		    send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet)
+	    end
     end.
 
 
 close(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
     gen_tcp:close(TCPSocket),
     port_close(Port).
+
+get_peer_certificate(#tlssock{tlsport = Port}) ->
+    case port_control(Port, ?GET_PEER_CERTIFICATE, []) of
+	<<0, BCert/binary>> ->
+	    case catch ssl_pkix:decode_cert(BCert, [pkix]) of
+		{ok, Cert} ->
+		    {ok, Cert};
+		_ ->
+		    error
+	    end;
+	<<1>> ->
+	    error
+    end.
+
+get_verify_result(#tlssock{tlsport = Port}) ->
+    <<Res>> = port_control(Port, ?GET_VERIFY_RESULT, []),
+    Res.
 
 
 test() ->

@@ -12,13 +12,17 @@ ERLSHLIBS = ../tls_drv.so
 
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
+ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 OBJS   = \
-	$(OUTDIR)/tls.beam
+	$(OUTDIR)/tls.beam $(OUTDIR)/XmppAddr.beam
 
 all:    $(OBJS) $(ERLSHLIBS)
 
 $(OUTDIR)/%.beam:       %.erl
 	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
+
+%.erl: %.asn1
+	erlc $(ASN_FLAGS) $<
 
 #all:	$(ERLSHLIBS)
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt

@@ -21,6 +21,7 @@
 	 wait_for_stream/2,
 	 wait_for_validation/2,
 	 wait_for_features/2,
+	 wait_for_auth_result/2,
 	 wait_for_starttls_proceed/2,
 	 stream_established/2,
 	 handle_event/3,
@@ -40,6 +41,8 @@
 		tls_required = false,
 		tls_enabled = false,
 		tls_options = [],
+		authenticated = false,
+		try_auth = true,
 		myname, server, queue,
 		new = false, verify = false,
 		timer}).
@@ -276,23 +279,57 @@ wait_for_validation(closed, StateData) ->
 wait_for_features({xmlstreamelement, El}, StateData) ->
     case El of
 	{xmlelement, "stream:features", _Attrs, Els} ->
-	    {StartTLS, StartTLSRequired} =
+	    {SASLEXT, StartTLS, StartTLSRequired} =
 		lists:foldl(
-		  fun({xmlelement, "starttls", Attrs1, Els1} = El1, Acc) ->
+		  fun({xmlelement, "mechanisms", Attrs1, Els1} = El1,
+		      {SEXT, STLS, STLSReq} = Acc) ->
+			  case xml:get_attr_s("xmlns", Attrs1) of
+			      ?NS_SASL ->
+				  NewSEXT =
+				      lists:any(
+					fun({xmlelement, "mechanism", _, Els2}) ->
+						case xml:get_cdata(Els2) of
+						    "EXTERNAL" -> true;
+						    _ -> false
+						end;
+					   (_) -> false
+					end, Els1),
+				  {NewSEXT, STLS, STLSReq};
+			      _ ->
+				  Acc
+			  end;
+		     ({xmlelement, "starttls", Attrs1, Els1} = El1,
+		      {SEXT, STLS, STLSReq} = Acc) ->
 			  case xml:get_attr_s("xmlns", Attrs1) of
 			      ?NS_TLS ->
 				  Req = case xml:get_subtag(El1, "required") of
 					    {xmlelement, _, _, _} -> true;
 					    false -> false
 					end,
-				  {true, Req};
+				  {SEXT, true, Req};
 			      _ ->
 				  Acc
 			  end;
 		     (_, Acc) ->
 			  Acc
-		  end, {false, false}, Els),
+		  end, {false, false, false}, Els),
 	    if
+		(not SASLEXT) and (not StartTLS) and
+		StateData#state.authenticated ->
+		    send_queue(StateData, StateData#state.queue),
+		    {next_state, stream_established,
+		     StateData#state{queue = queue:new()}};
+		SASLEXT and StateData#state.try_auth and
+		(StateData#state.new /= false) ->
+		    send_element(StateData,
+				 {xmlelement, "auth",
+				  [{"xmlns", ?NS_SASL},
+				   {"mechanism", "EXTERNAL"}],
+				  [{xmlcdata,
+				    jlib:encode_base64(
+				      StateData#state.myname)}]}),
+		    {next_state, wait_for_auth_result,
+		     StateData#state{try_auth = false}};
 		StartTLS and StateData#state.tls and
 		(not StateData#state.tls_enabled) ->
 		    StateData#state.receiver ! {change_timeout, 100},
@@ -333,6 +370,66 @@ wait_for_features(closed, StateData) ->
     {stop, normal, StateData}.
 
 
+wait_for_auth_result({xmlstreamelement, El}, StateData) ->
+    case El of
+	{xmlelement, "success", Attrs, _Els} ->
+	    case xml:get_attr_s("xmlns", Attrs) of
+		?NS_SASL ->
+		    ?INFO_MSG("auth: ~p", [{StateData#state.myname,
+					    StateData#state.server}]),
+		    ejabberd_receiver:reset_stream(
+		      StateData#state.receiver),
+		    send_text(StateData,
+			      io_lib:format(?STREAM_HEADER,
+					    [StateData#state.server,
+					     " version='1.0'"])),
+		    {next_state, wait_for_stream,
+		     StateData#state{streamid = new_id(),
+				     authenticated = true
+				    }};
+		_ ->
+		    send_text(StateData,
+			      xml:element_to_string(?SERR_BAD_FORMAT) ++
+			      ?STREAM_TRAILER),
+		    {stop, normal, StateData}
+	    end;
+	{xmlelement, "failure", Attrs, _Els} ->
+	    case xml:get_attr_s("xmlns", Attrs) of
+		?NS_SASL ->
+		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
+						 StateData#state.server}]),
+		    (StateData#state.sockmod):close(StateData#state.socket),
+		    gen_fsm:send_event(self(), init),
+		    {next_state, open_socket,
+		     StateData#state{socket = undefined}};
+		_ ->
+		    send_text(StateData,
+			      xml:element_to_string(?SERR_BAD_FORMAT) ++
+			      ?STREAM_TRAILER),
+		    {stop, normal, StateData}
+	    end;
+	_ ->
+	    send_text(StateData,
+		      xml:element_to_string(?SERR_BAD_FORMAT) ++
+		      ?STREAM_TRAILER),
+	    {stop, normal, StateData}
+    end;
+
+wait_for_auth_result({xmlstreamend, Name}, StateData) ->
+    {stop, normal, StateData};
+
+wait_for_auth_result({xmlstreamerror, _}, StateData) ->
+    send_text(StateData,
+	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_auth_result(timeout, StateData) ->
+    {stop, normal, StateData};
+
+wait_for_auth_result(closed, StateData) ->
+    {stop, normal, StateData}.
+
+
 wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
     case El of
 	{xmlelement, "proceed", Attrs, _Els} ->
@@ -351,12 +448,15 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 						   streamid = new_id(),
 						   tls_enabled = true
 						  },
-		    R = send_text(NewStateData,
-				  io_lib:format(?STREAM_HEADER,
-						[StateData#state.server,
-						 " version='1.0'"])),
+		    send_text(NewStateData,
+			      io_lib:format(?STREAM_HEADER,
+					    [StateData#state.server,
+					     " version='1.0'"])),
 		    {next_state, wait_for_stream, NewStateData};
 		_ ->
+		    send_text(StateData,
+			      xml:element_to_string(?SERR_BAD_FORMAT) ++
+			      ?STREAM_TRAILER),
 		    {stop, normal, StateData}
 	    end;
 	_ ->

@@ -1,3 +1,13 @@
+2005-11-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Support for STARTTLS+SASL EXTERNAL
+	(not well-tested yet)
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/tls/tls.erl: Likewise
+	* src/tls/tls_drv.c: Likewise
+	* src/tls/XmppAddr.asn1: Likewise
+	* src/tls/Makefile.in: Likewise
+
 2005-10-30  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_disco.erl: Minor fix
