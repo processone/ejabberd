@@ -31,6 +31,7 @@
 -include("jlib.hrl").
 %-include_lib("ssl/pkix/SSL-PKIX.hrl").
 -include_lib("ssl/pkix/PKIX1Explicit88.hrl").
+-include_lib("ssl/pkix/PKIX1Implicit88.hrl").
 -include("tls/XmppAddr.hrl").
 
 -define(DICT, dict).
@@ -542,6 +543,8 @@ is_key_packet(_) ->
 get_cert_domains(Cert) ->
     {rdnSequence, Subject} =
 	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.subject,
+    Extensions =
+	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.extensions,
     lists:flatmap(
       fun(#'AttributeTypeAndValue'{type = ?'id-at-commonName',
 				   value = Val}) ->
@@ -555,11 +558,13 @@ get_cert_domains(Cert) ->
 			  end,
 		      if
 			  D /= error ->
-			      case jlib:nameprep(D) of
-				  error ->
-				      [];
-				  LD ->
-				      [LD]
+			      case jlib:string_to_jid(D) of
+				  #jid{luser = "",
+				       lserver = LD,
+				       lresource = ""} ->
+				      [LD];
+				  _ ->
+				      []
 			      end;
 			  true ->
 			      []
@@ -567,23 +572,48 @@ get_cert_domains(Cert) ->
 		  _ ->
 		      []
 	      end;
-	 (#'AttributeTypeAndValue'{type = ?'id-on-xmppAddr',
-				   value = Val}) ->
-	      case 'XmppAddr':decode(
-			       'XmppAddr', Val) of
-		  {ok, D} when is_binary(D) ->
-		      case jlib:nameprep(binary_to_list(D)) of
-			  error ->
-			      [];
-			  LD ->
-			      [LD]
-		      end;
-		  _ ->
-		      []
-	      end;
 	 (_) ->
 	      []
-      end, lists:flatten(Subject)).
+      end, lists:flatten(Subject)) ++
+	lists:flatmap(
+	  fun(#'Extension'{extnID = ?'id-ce-subjectAltName',
+			   extnValue = Val}) ->
+		  BVal = if
+			     is_list(Val) -> list_to_binary(Val);
+			     is_binary(Val) -> Val;
+			     true -> Val
+			 end,
+		  case 'PKIX1Implicit88':decode('SubjectAltName', BVal) of
+		      {ok, SANs} ->
+			  lists:flatmap(
+			    fun({otherName,
+				 #'AnotherName'{'type-id' = ?'id-on-xmppAddr',
+						value = XmppAddr
+					       }}) ->
+				    case 'XmppAddr':decode(
+					   'XmppAddr', XmppAddr) of
+					{ok, D} when is_binary(D) ->
+					    case jlib:string_to_jid(
+						   binary_to_list(D)) of
+						#jid{luser = "",
+						     lserver = LD,
+						     lresource = ""} ->
+						    [LD];
+						_ ->
+						    []
+					    end;
+					_ ->
+					    []
+				    end;
+			       (_) ->
+				    []
+			    end, SANs);
+		      _ ->
+			  []
+		  end;
+	     (_) ->
+		  []
+	  end, Extensions).
 
 
 

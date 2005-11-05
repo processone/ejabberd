@@ -473,7 +473,16 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				   TLSEnabled == false,
 				   SockMod == gen_tcp ->
 	    Socket = StateData#state.socket,
-	    TLSOpts = StateData#state.tls_options,
+	    TLSOpts = case ejabberd_config:get_local_option(
+			     {domain_certfile, StateData#state.server}) of
+			  undefined ->
+			      StateData#state.tls_options;
+			  CertFile ->
+			      [{certfile, CertFile} |
+			       lists:keydelete(
+				 certfile, 1, StateData#state.tls_options)]
+		      end,
+	    io:format("O: ~p~n", [TLSOpts]),
 	    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
 	    ejabberd_receiver:starttls(StateData#state.receiver, TLSSocket),
 	    send_element(StateData,

@@ -1,3 +1,12 @@
+2005-11-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_config.erl: Support for per host certificates
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_s2s_in.erl: Fixed id-on-xmppAddr processing
+
 2005-11-03  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_disco.erl: Fixed extra_domains option processing
