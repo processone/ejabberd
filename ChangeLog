@@ -1,3 +1,9 @@
+2005-11-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Fixed invalid behaviour upon
+	connecting to host with invalid domain
+	* src/ejabberd_s2s.erl: Likewise
+
 2005-11-05  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_config.erl: Support for per host certificates

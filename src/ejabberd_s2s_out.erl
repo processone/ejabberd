@@ -13,7 +13,9 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/3, start_link/3]).
+-export([start/3,
+	 start_link/3,
+	 start_connection/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -84,6 +86,9 @@ start(From, Host, Type) ->
 start_link(From, Host, Type) ->
     gen_fsm:start_link(ejabberd_s2s_out, [From, Host, Type], ?FSMOPTS).
 
+start_connection(Pid) ->
+    gen_fsm:send_event(Pid, init).
+
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
@@ -97,7 +102,6 @@ start_link(From, Host, Type) ->
 %%----------------------------------------------------------------------
 init([From, Server, Type]) ->
     ?INFO_MSG("started: ~p", [{From, Server, Type}]),
-    gen_fsm:send_event(self(), init),
     TLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
 	      undefined ->
 		  false;
@@ -115,6 +119,7 @@ init([From, Server, Type]) ->
 			{new, Key} ->
 			    {Key, false};
 			{verify, Pid, Key, SID} ->
+			    start_connection(self()),
 			    {false, {Pid, Key, SID}}
 		    end,
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
@@ -140,12 +145,17 @@ open_socket(init, StateData) ->
 	      false -> {error, badarg};
 	      ASCIIAddr ->
 		  ?DEBUG("s2s_out: connecting to ~s:~p~n", [ASCIIAddr, Port]),
-		  case gen_tcp:connect(ASCIIAddr, Port,
-				       [binary, {packet, 0},
-					{active, false}]) of
+		  case catch gen_tcp:connect(ASCIIAddr, Port,
+					     [binary, {packet, 0},
+					      {active, false}]) of
 		      {ok, _Socket} = R -> R;
 		      {error, Reason1} ->
 			  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
+			  catch gen_tcp:connect(Addr, Port,
+						[binary, {packet, 0},
+						 {active, false}, inet6]);
+		      {'EXIT', Reason1} ->
+			  ?DEBUG("s2s_out: connect crashed ~p~n", [Reason1]),
 			  catch gen_tcp:connect(Addr, Port,
 						[binary, {packet, 0},
 						 {active, false}, inet6])

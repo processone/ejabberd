@@ -167,7 +167,9 @@ find_connection(From, To) ->
 				Pid
 			end
 		end,
-	    mnesia:transaction(F);
+	    TRes = mnesia:transaction(F),
+	    ejabberd_s2s_out:start_connection(Pid),
+	    TRes;
 	[El] ->
 	    {atomic, El#s2s.pid}
     end.
