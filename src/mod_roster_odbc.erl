@@ -229,70 +229,69 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 	    LJID = jlib:jid_tolower(JID1),
 	    Username = ejabberd_odbc:escape(LUser),
 	    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
-	    case catch ejabberd_odbc:sql_query(
-			 LServer,
-			 ["select username, jid, nick, subscription, ask, "
-			  "server, subscribe, type from rosterusers "
-			  "where username='", Username, "' "
-			  "and jid='", SJID, "'"]) of
-		{selected, ["username", "jid", "nick", "subscription", "ask",
-			    "server", "subscribe", "type"],
-		 Res} ->
-		    Item = case Res of
-			       [] ->
-				   #roster{user = LUser,
-					   jid = LJID};
-			       [I] ->
-				   (raw_to_record(I))#roster{user = LUser,
-							     jid = JID,
-							     name = ""}
-			   end,
-		    Item1 = process_item_attrs(Item, Attrs),
-		    Item2 = process_item_els(Item1, Els),
-		    case Item2#roster.subscription of
+	    F = fun() ->
+			{selected,
+			 ["username", "jid", "nick", "subscription",
+			  "ask", "server", "subscribe", "type"],
+			 Res} =
+			    ejabberd_odbc:sql_query_t(
+			      ["select username, jid, nick, subscription, "
+			       "ask, server, subscribe, type from rosterusers "
+			       "where username='", Username, "' "
+			       "and jid='", SJID, "'"]),
+			Item = case Res of
+				   [] ->
+				       #roster{user = LUser,
+					       jid = LJID};
+				   [I] ->
+				       (raw_to_record(I))#roster{user = LUser,
+								 jid = JID,
+								 name = ""}
+			       end,
+			Item1 = process_item_attrs(Item, Attrs),
+			Item2 = process_item_els(Item1, Els),
+			case Item2#roster.subscription of
+			    remove ->
+				ejabberd_odbc:sql_query_t(
+				  ["delete from rosterusers "
+				   "      where username='", Username, "' "
+				   "        and jid='", SJID, "';"
+				   "delete from rostergroups "
+				   "      where username='", Username, "' "
+				   "        and jid='", SJID, "'"]);
+			    _ ->
+				ItemVals = record_to_string(Item2),
+				ItemGroups = groups_to_string(Item2),
+				ejabberd_odbc:sql_query_t(
+				  ["delete from rosterusers "
+				   "      where username='", Username, "' "
+				   "        and jid='", SJID, "';"
+				   "insert into rosterusers("
+				   "              username, jid, nick, "
+				   "              subscription, ask, "
+				   "              server, subscribe, type) "
+				   " values ", ItemVals, ";"
+				   "delete from rostergroups "
+				   "      where username='", Username, "' "
+				   "        and jid='", SJID, "';",
+				   [["insert into rostergroups("
+				     "              username, jid, grp) "
+				     " values ", ItemGroup, ";"] ||
+				       ItemGroup <- ItemGroups]])
+			end,
+			{Item, Item2}
+		end,
+	    case ejabberd_odbc:sql_transaction(LServer, F) of
+		{atomic, {OldItem, Item}} ->
+		    push_item(User, LServer, To, Item),
+		    case Item#roster.subscription of
 			remove ->
-			    catch ejabberd_odbc:sql_query(
-				    LServer,
-				    ["begin;"
-				     "delete from rosterusers "
-				     "      where username='", Username, "' "
-				     "        and jid='", SJID, "';"
-				     "delete from rostergroups "
-				     "      where username='", Username, "' "
-				     "        and jid='", SJID, "';"
-				     "commit"]);
-			_ ->
-			    ItemVals = record_to_string(Item2),
-			    ItemGroups = groups_to_string(Item2),
-			    catch ejabberd_odbc:sql_query(
-				    LServer,
-				    ["begin;"
-				     "delete from rosterusers "
-				     "      where username='", Username, "' "
-				     "        and jid='", SJID, "';"
-				     "insert into rosterusers("
-				     "              username, jid, nick, "
-				     "              subscription, ask, "
-				     "              server, subscribe, type) "
-				     " values ", ItemVals, ";"
-				     "delete from rostergroups "
-				     "      where username='", Username, "' "
-				     "        and jid='", SJID, "';",
-				     [["insert into rostergroups("
-				       "              username, jid, grp) "
-				       " values ", ItemGroup, ";"] ||
-					 ItemGroup <- ItemGroups],
-				     "commit"])
-		    end,
-		    push_item(User, LServer, To, Item2),
-		    case Item2#roster.subscription of
-			remove ->
-			    IsTo = case Item#roster.subscription of
+			    IsTo = case OldItem#roster.subscription of
 				       both -> true;
 				       to -> true;
 				       _ -> false
 				   end,
-			    IsFrom = case Item#roster.subscription of
+			    IsFrom = case OldItem#roster.subscription of
 					 both -> true;
 					 from -> true;
 					 _ -> false
@@ -300,7 +299,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			    if IsTo ->
 				    ejabberd_router:route(
 				      jlib:jid_remove_resource(From),
-				      jlib:make_jid(Item#roster.jid),
+				      jlib:make_jid(OldItem#roster.jid),
 				      {xmlelement, "presence",
 				       [{"type", "unsubscribe"}],
 				       []});
@@ -309,7 +308,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			    if IsFrom ->
 				    ejabberd_router:route(
 				      jlib:jid_remove_resource(From),
-				      jlib:make_jid(Item#roster.jid),
+				      jlib:make_jid(OldItem#roster.jid),
 				      {xmlelement, "presence",
 				       [{"type", "unsubscribed"}],
 				       []});
@@ -459,87 +458,96 @@ process_subscription(Direction, User, Server, JID1, Type) ->
     LJID = jlib:jid_tolower(JID1),
     Username = ejabberd_odbc:escape(LUser),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
-    Item = case catch ejabberd_odbc:sql_query(
-			LServer,
-			["select username, jid, nick, subscription, ask, "
-			 "server, subscribe, type from rosterusers "
-			 "where username='", Username, "' "
-			 "and jid='", SJID, "'"]) of
-	       {selected, ["username", "jid", "nick", "subscription", "ask",
-			   "server", "subscribe", "type"],
-		[I]} ->
-		   R = raw_to_record(I),
-		   Groups = case catch ejabberd_odbc:sql_query(
-					 LServer,
-					 ["select grp from rostergroups "
-					  "where username='", Username, "' "
-					  "and jid='", SJID, "'"]) of
-				{selected, ["grp"], JGrps} when is_list(JGrps) ->
-				    [JGrp || {JGrp} <- JGrps];
-				_ ->
-				    []
+    F = fun() ->
+		Item =
+		    case ejabberd_odbc:sql_query_t(
+			   ["select username, jid, nick, subscription, ask, "
+			    "server, subscribe, type from rosterusers "
+			    "where username='", Username, "' "
+			    "and jid='", SJID, "'"]) of
+			{selected,
+			 ["username", "jid", "nick", "subscription", "ask",
+			  "server", "subscribe", "type"],
+			 [I]} ->
+			    R = raw_to_record(I),
+			    Groups =
+				case ejabberd_odbc:sql_query_t(
+				       ["select grp from rostergroups "
+					"where username='", Username, "' "
+					"and jid='", SJID, "'"]) of
+				    {selected, ["grp"], JGrps} when is_list(JGrps) ->
+					[JGrp || {JGrp} <- JGrps];
+				    _ ->
+					[]
+				end,
+			    R#roster{groups = Groups};
+			{selected,
+			 ["username", "jid", "nick", "subscription", "ask",
+			  "server", "subscribe", "type"],
+			 []} ->
+			    #roster{user = LUser,
+				    jid = LJID}
+		    end,
+		NewState = case Direction of
+			       out ->
+				   out_state_change(Item#roster.subscription,
+						    Item#roster.ask,
+						    Type);
+			       in ->
+				   in_state_change(Item#roster.subscription,
+						   Item#roster.ask,
+						   Type)
+			   end,
+		AutoReply = case Direction of
+				out ->
+				    none;
+				in ->
+				    in_auto_reply(Item#roster.subscription,
+						  Item#roster.ask,
+						  Type)
 			    end,
-		   R#roster{groups = Groups};
-	       _ ->
-		   #roster{user = LUser,
-			   jid = LJID}
-	   end,
-    NewState = case Direction of
-		   out ->
-		       out_state_change(Item#roster.subscription,
-					Item#roster.ask,
-					Type);
-		   in ->
-		       in_state_change(Item#roster.subscription,
-				       Item#roster.ask,
-				       Type)
-	       end,
-    AutoReply = case Direction of
-		    out ->
-			none;
-		    in ->
-			in_auto_reply(Item#roster.subscription,
-				      Item#roster.ask,
-				      Type)
-		end,
-    Push = case NewState of
-	       none ->
-		   none;
-	       {Subscription, Pending} ->
-		   NewItem = Item#roster{subscription = Subscription,
-					 ask = Pending},
-		   ItemVals = record_to_string(NewItem),
-		   catch ejabberd_odbc:sql_query(
-			   LServer,
-			   ["begin;"
-			    "delete from rosterusers "
-			    "      where username='", Username, "' "
-			    "        and jid='", SJID, "';"
-			    "insert into rosterusers("
-			    "              username, jid, nick, "
-			    "              subscription, ask, "
-			    "              server, subscribe, type) "
-			    " values ", ItemVals, ";"
-			    "commit"]),
-		   {push, NewItem}
-	   end,
-    case AutoReply of
-	none ->
-	    ok;
+		case NewState of
+		    none ->
+			{none, AutoReply};
+		    {Subscription, Pending} ->
+			NewItem = Item#roster{subscription = Subscription,
+					      ask = Pending},
+			ItemVals = record_to_string(NewItem),
+			ejabberd_odbc:sql_query_t(
+			  ["delete from rosterusers "
+			   "      where username='", Username, "' "
+			   "        and jid='", SJID, "';"
+			   "insert into rosterusers("
+			   "              username, jid, nick, "
+			   "              subscription, ask, "
+			   "              server, subscribe, type) "
+			   " values ", ItemVals]),
+			{{push, NewItem}, AutoReply}
+		end
+	end,
+    case ejabberd_odbc:sql_transaction(LServer, F) of
+	{atomic, {Push, AutoReply}} ->
+	    case AutoReply of
+		none ->
+		    ok;
+		_ ->
+		    T = case AutoReply of
+			    subscribed -> "subscribed";
+			    unsubscribed -> "unsubscribed"
+			end,
+		    ejabberd_router:route(
+		      jlib:make_jid(User, Server, ""), JID1,
+		      {xmlelement, "presence", [{"type", T}], []})
+	    end,
+	    case Push of
+		{push, Item} ->
+		    push_item(User, Server,
+			      jlib:make_jid("", Server, ""), Item),
+		    true;
+		none ->
+		    false
+	    end;
 	_ ->
-	    T = case AutoReply of
-		    subscribed -> "subscribed";
-		    unsubscribed -> "unsubscribed"
-		end,
-	    ejabberd_router:route(
-	      jlib:make_jid(User, Server, ""), JID1,
-	      {xmlelement, "presence", [{"type", T}], []})
-    end,
-    case Push of
-	{push, PushItem} ->
-	    push_item(User, Server, jlib:make_jid("", Server, ""), PushItem),
-	    true;
-	none ->
 	    false
     end.
 
@@ -639,14 +647,15 @@ remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
-    catch ejabberd_odbc:sql_query(
-	    LServer,
-	    ["begin;"
-	     "delete from rosterusers "
-	     "      where username='", Username, "';"
-	     "delete from rostergroups "
-	     "      where username='", Username, "';"
-	     "commit"]),
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      fun() ->
+	      ejabberd_odbc:sql_query_t(
+		["delete from rosterusers "
+		 "      where username='", Username, "';"
+		 "delete from rostergroups "
+		 "      where username='", Username, "'"])
+      end),
     ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

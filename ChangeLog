@@ -1,3 +1,10 @@
+2005-11-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/ejabberd_odbc.erl: Support for mnesia-like transaction
+	interface
+	* src/mod_roster_odbc.erl: Updated to use
+	ejabberd_odbc:sql_transaction/2
+
 2005-11-12  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_s2s_out.erl: Fixed invalid behaviour upon

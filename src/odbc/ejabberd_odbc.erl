@@ -15,6 +15,8 @@
 %% External exports
 -export([start/1, start_link/1,
 	 sql_query/2,
+	 sql_query_t/1,
+	 sql_transaction/2,
 	 escape/1]).
 
 %% gen_server callbacks
@@ -26,6 +28,9 @@
 	 terminate/2]).
 
 -record(state, {db_ref, db_type}).
+
+-define(STATE_KEY, ejabberd_odbc_state).
+-define(MAX_TRANSACTION_RESTARTS, 10).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -39,6 +44,30 @@ start_link(Host) ->
 sql_query(Host, Query) ->
     gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
 		    {sql_query, Query}, 60000).
+
+sql_transaction(Host, F) ->
+    gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
+		    {sql_transaction, F}, 60000).
+
+sql_query_t(Query) ->
+    State = get(?STATE_KEY),
+    QRes = sql_query_internal(State, Query),
+    case QRes of
+	{error, "No SQL-driver information available."} ->
+	    % workaround for odbc bug
+	    {updated, 0};
+	{error, _} ->
+	    throw(aborted);
+	Rs when is_list(Rs) ->
+	    case lists:keymember(error, 1, Rs) of
+		true ->
+		    throw(aborted);
+		_ ->
+		    QRes
+	    end;
+	_ ->
+	    QRes
+    end.
 
 escape(S) ->
     [case C of
@@ -91,13 +120,13 @@ init([Host]) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
 handle_call({sql_query, Query}, _From, State) ->
-    Reply = case State#state.db_type of
-		odbc ->
-		    odbc:sql_query(State#state.db_ref, Query);
-		pgsql ->
-		    pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query))
-	    end,
+    Reply = sql_query_internal(State, Query),
     {reply, Reply, State};
+
+handle_call({sql_transaction, F}, _From, State) ->
+    Reply = execute_transaction(State, F, ?MAX_TRANSACTION_RESTARTS),
+    {reply, Reply, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -136,6 +165,30 @@ terminate(_Reason, _State) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
+sql_query_internal(State, Query) ->
+    case State#state.db_type of
+	odbc ->
+	    odbc:sql_query(State#state.db_ref, Query);
+	pgsql ->
+	    pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query))
+    end.
+
+execute_transaction(_State, _F, 0) ->
+    {aborted, restarts_exceeded};
+execute_transaction(State, F, NRestarts) ->
+    put(?STATE_KEY, State),
+    sql_query_internal(State, "begin"),
+    case catch F() of
+	aborted ->
+	    execute_transaction(State, F, NRestarts - 1);
+	{'EXIT', Reason} ->
+	    sql_query_internal(State, "rollback"),
+	    {aborted, Reason};
+	Res ->
+	    sql_query_internal(State, "commit"),
+	    {atomic, Res}
+    end.
+
 pgsql_to_odbc({ok, PGSQLResult}) ->
     case PGSQLResult of
 	[Item] ->
@@ -149,7 +202,7 @@ pgsql_item_to_odbc({"SELECT", Rows, Recs}) ->
      [element(1, Row) || Row <- Rows],
      [list_to_tuple(Rec) || Rec <- Recs]};
 pgsql_item_to_odbc("INSERT " ++ OIDN) ->
-    [OID, N] = string:tokens(OIDN, " "),
+    [_OID, N] = string:tokens(OIDN, " "),
     {updated, list_to_integer(N)};
 pgsql_item_to_odbc("DELETE " ++ N) ->
     {updated, list_to_integer(N)};
