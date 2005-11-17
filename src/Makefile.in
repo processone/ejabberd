@@ -27,9 +27,11 @@ MSGSDIR = $(PRIVDIR)/msgs
 LOGDIR = $(DESTDIR)/var/log/ejabberd
 ETCDIR = $(DESTDIR)/etc/ejabberd
 
+ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
+
 all: $(ERLSHLIBS) compile-beam all-recursive
 
-compile-beam:
+compile-beam: XmppAddr.hrl
 	@ERL@ -s make all report -noinput -s erlang halt
 
 
@@ -42,6 +44,9 @@ mostlyclean-recursive maintainer-clean-recursive:
 	(cd $$subdir && $(MAKE) $$target) || exit 1; \
 	done
 
+
+%.hrl: %.asn1
+	erlc $(ASN_FLAGS) $<
 
 $(ERLSHLIBS):	%.so:	%.c
 			gcc -Wall $(CFLAGS) $(LDFLAGS) $(LIBS) \

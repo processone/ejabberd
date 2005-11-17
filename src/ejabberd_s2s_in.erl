@@ -14,7 +14,7 @@
 
 %% External exports
 -export([start/2,
-	 start_link/2]).
+	 start_link/2,match_domain/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -32,7 +32,7 @@
 %-include_lib("ssl/pkix/SSL-PKIX.hrl").
 -include_lib("ssl/pkix/PKIX1Explicit88.hrl").
 -include_lib("ssl/pkix/PKIX1Implicit88.hrl").
--include("tls/XmppAddr.hrl").
+-include("XmppAddr.hrl").
 
 -define(DICT, dict).
 
@@ -239,9 +239,16 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 					    error ->
 						false;
 					    _ ->
-						lists:member(
-						  AuthDomain,
-						  get_cert_domains(Cert))
+						case idna:domain_utf8_to_ascii(AuthDomain) of
+						    false ->
+							false;
+						    PCAuthDomain ->
+							lists:any(
+							  fun(D) ->
+								  match_domain(
+								    PCAuthDomain, D)
+							  end, get_cert_domains(Cert))
+						end
 					end;
 				    _ ->
 					false
@@ -548,8 +555,7 @@ get_cert_domains(Cert) ->
     lists:flatmap(
       fun(#'AttributeTypeAndValue'{type = ?'id-at-commonName',
 				   value = Val}) ->
-	      case 'PKIX1Explicit88':decode(
-				      'X520CommonName', Val) of
+	      case 'PKIX1Explicit88':decode('X520CommonName', Val) of
 		  {ok, {_, D1}} ->
 		      D = if
 			      is_list(D1) -> D1;
@@ -598,10 +604,24 @@ get_cert_domains(Cert) ->
 						#jid{luser = "",
 						     lserver = LD,
 						     lresource = ""} ->
-						    [LD];
+						    case idna:domain_utf8_to_ascii(LD) of
+							false ->
+							    [];
+							PCLD ->
+							    [PCLD]
+						    end;
 						_ ->
 						    []
 					    end;
+					_ ->
+					    []
+				    end;
+			       ({dNSName, D}) when is_list(D) ->
+				    case jlib:string_to_jid(D) of
+					#jid{luser = "",
+					     lserver = LD,
+					     lresource = ""} ->
+					    [LD];
 					_ ->
 					    []
 				    end;
@@ -615,5 +635,34 @@ get_cert_domains(Cert) ->
 		  []
 	  end, Extensions).
 
+match_domain(Domain, Domain) ->
+    true;
+match_domain(Domain, Pattern) ->
+    DLabels = string:tokens(Domain, "."),
+    PLabels = string:tokens(Pattern, "."),
+    match_labels(DLabels, PLabels).
+
+match_labels([], []) ->
+    true;
+match_labels([], [_ | _]) ->
+    false;
+match_labels([_ | _], []) ->
+    false;
+match_labels([DL | DLabels], [PL | PLabels]) ->
+    case lists:all(fun(C) -> (($a =< C) andalso (C =< $z))
+				 orelse (($0 =< C) andalso (C =< $9))
+				 orelse (C == $-) orelse (C == $*)
+		   end, PL) of
+	true ->
+	    Regexp = regexp:sh_to_awk(PL),
+	    case regexp:match(DL, Regexp) of
+		{match, _, _} ->
+		    match_labels(DLabels, PLabels);
+		_ ->
+		    false
+	    end;
+	false ->
+	    false
+    end.
 
 
