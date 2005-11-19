@@ -24,7 +24,7 @@ $(OUTDIR)/%.beam:       %.erl
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
 $(ERLSHLIBS):	../%.so:	%.c
-			$(CC) -Wall $(CFLAGS) $(LDFLAGS) \
+			$(CC) -Wall $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) \
 			$(subst ../,,$(subst .so,.c,$@)) $(LIBS) \
 			-o $@ -fpic -shared
 
