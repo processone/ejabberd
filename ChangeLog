@@ -1,3 +1,8 @@
+2005-11-19  Mickael Remond  <mickael.remond@process-one.net>
+
+	* contrib/extract_translations/prepare-translation.sh: Added wrapper to
+	extract_translation.erl (thanks to Badlod).
+
 2005-11-19  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_vcard.erl: Fixed xmlns in disco items replies (thanks to
