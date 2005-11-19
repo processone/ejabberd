@@ -388,7 +388,7 @@ do_route(ServerHost, From, To, Packet) ->
 				IQ#iq{type = result,
 				      sub_el = [{xmlelement,
 						 "query",
-						 [{"xmlns", ?NS_DISCO_INFO}],
+						 [{"xmlns", ?NS_DISCO_ITEMS}],
 						 []}]},
 			    ejabberd_router:route(To,
 						  From,
