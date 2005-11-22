@@ -313,11 +313,12 @@ push_item(User, Server, From, Item) ->
 			  push_item(User, Server, Resource, From, Item)
 		  end, ejabberd_sm:get_user_resources(User, Server)).
 
-% TODO: don't push to those who not load roster
+% TODO: don't push to those who didn't load roster
 -ifdef(PSI_ROSTER_WORKAROUND).
 
 push_item(User, Server, Resource, _From, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
+		id = "push",
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_ROSTER}],
 			   [item_to_xml(Item)]}]},
@@ -330,6 +331,7 @@ push_item(User, Server, Resource, _From, Item) ->
 
 push_item(User, Server, Resource, From, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
+		id = "push",
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_ROSTER}],
 			   [item_to_xml(Item)]}]},

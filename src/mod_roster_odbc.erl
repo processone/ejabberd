@@ -385,6 +385,7 @@ push_item(User, Server, From, Item) ->
 
 push_item(User, Server, Resource, _From, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
+		id = "push",
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_ROSTER}],
 			   [item_to_xml(Item)]}]},
@@ -397,6 +398,7 @@ push_item(User, Server, Resource, _From, Item) ->
 
 push_item(User, Resource, From, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
+		id = "push",
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_ROSTER}],
 			   [item_to_xml(Item)]}]},
