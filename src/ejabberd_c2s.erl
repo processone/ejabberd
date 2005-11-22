@@ -832,8 +832,11 @@ handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     {next_state, StateName, StateData};
 handle_info(replaced, _StateName, StateData) ->
-    % TODO
-    %send_text(StateData#state.sender, Text),
+    Lang = StateData#state.lang,
+    send_text(StateData,
+	      xml:element_to_string(
+		?SERRT_CONFLICT(Lang, "Replaced by new connection"))
+	      ++ ?STREAM_TRAILER),
     {stop, normal, StateData#state{authenticated = replaced}};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
