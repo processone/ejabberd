@@ -1343,8 +1343,11 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 				   ?T("Online")
 			   end,
 		       ?XE("tr",
-			   [?XE("td", [?AC(URLFunc({user, Prefix, User, Server}),
-					   us_to_list(US))]),
+			   [?XE("td",
+				[?AC(URLFunc({user, Prefix,
+					      ejabberd_http:url_encode(User),
+					      Server}),
+				     us_to_list(US))]),
 			    ?XE("td", FQueueLen),
 			    ?XC("td", FLast)])
 	       end, Users)
@@ -1397,7 +1400,9 @@ list_online_users(Host, _Lang) ->
     SUsers = lists:usort(Users),
     lists:flatmap(
       fun({S, U} = SU) ->
-	      [?AC("../user/" ++ U ++ "/", su_to_list(SU)), ?BR]
+	      [?AC("../user/" ++ ejabberd_http:url_encode(U) ++ "/",
+		   su_to_list(SU)),
+	       ?BR]
       end, SUsers).
 
 user_info(User, Server, Query, Lang) ->

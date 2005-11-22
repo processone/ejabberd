@@ -1,5 +1,10 @@
 2005-11-22  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/web/ejabberd_web_admin.erl: Fixed encoding of user names in
+	URLs
+
+	* src/web/ejabberd_http.erl: Added url_encode function from yaws
+
 	* src/ejabberd_c2s.erl: Send stream error when connection is
 	replaced (thanks to Maxim Ryazanov)
 
