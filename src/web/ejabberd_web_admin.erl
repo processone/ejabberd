@@ -60,7 +60,8 @@ make_xhtml(Els, global, Lang) ->
 			   {"xml:lang", Lang},
 			   {"lang", Lang}],
       [{xmlelement, "head", [],
-	[{xmlelement, "meta", [{"http-equiv", "Content-Type"},
+	[?XCT("title", "ejabberd Web Interface"),
+	 {xmlelement, "meta", [{"http-equiv", "Content-Type"},
 			       {"content", "text/html; charset=utf-8"}], []},
 	 {xmlelement, "link", [{"href", "/admin/style.css"},
 			       {"type", "text/css"},
@@ -105,7 +106,8 @@ make_xhtml(Els, Host, Lang) ->
 			   {"xml:lang", Lang},
 			   {"lang", Lang}],
       [{xmlelement, "head", [],
-	[{xmlelement, "meta", [{"http-equiv", "Content-Type"},
+	[?XCT("title", "ejabberd Web Interface"),
+	 {xmlelement, "meta", [{"http-equiv", "Content-Type"},
 			       {"content", "text/html; charset=utf-8"}], []},
 	 {xmlelement, "link", [{"href", Base ++ "style.css"},
 			       {"type", "text/css"},
@@ -624,7 +626,7 @@ process_admin(Host,
 		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XAE("form", [{"method", "post"}],
+	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [?XAC("textarea", [{"name", "acls"},
 					{"rows", "16"},
 					{"cols", "80"}],
@@ -669,7 +671,7 @@ process_admin(Host,
 		   nothing -> []
 	       end ++
 	       [?XE("p", [?ACT("../acls-raw/", "raw")])] ++
-	       [?XAE("form", [{"method", "post"}],
+	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [acls_to_xhtml(ACLs),
 		      ?BR,
 		      ?INPUTT("submit", "delete", "Delete Selected"),
@@ -737,7 +739,7 @@ process_admin(Host,
 		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XAE("form", [{"method", "post"}],
+	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [?XAC("textarea", [{"name", "access"},
 					{"rows", "16"},
 					{"cols", "80"}],
@@ -777,7 +779,7 @@ process_admin(Host,
 		   nothing -> []
 	       end ++
 	       [?XE("p", [?ACT("../access-raw/", "raw")])] ++
-	       [?XAE("form", [{"method", "post"}],
+	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [access_rules_to_xhtml(AccessRules, Lang),
 		      ?BR,
 		      ?INPUTT("submit", "delete", "Delete Selected")
@@ -818,7 +820,7 @@ process_admin(Host,
 		   error -> [?CT("bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XAE("form", [{"method", "post"}],
+	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [access_rule_to_xhtml(Rules),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
@@ -877,7 +879,7 @@ process_admin(Host,
 		  list_last_activity(Host, Lang, true, Month)
 	  end,
     make_xhtml([?XCT("h1", "Users last activity")] ++
-	       [?XAE("form", [{"method", "post"}],
+	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [?CT("Period: "),
 		      ?XAE("select", [{"name", "period"}],
 			   lists:map(
@@ -1256,7 +1258,7 @@ list_users(Host, Query, Lang, URLFunc) ->
 	error -> [?CT("bad format"), ?P];
 	nothing -> []
     end ++
-	[?XAE("form", [{"method", "post"}],
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?XE("table",
 		   [?XE("tr",
 			[?XC("td", ?T("User") ++ ":"),
@@ -1431,7 +1433,7 @@ user_info(User, Server, Query, Lang) ->
 	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"method", "post"}],
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?XCT("h3", "Connected Resources:")] ++ FResources ++
 	      [?XCT("h3", "Password:")] ++ FPassword ++
 	      [?XCT("h3", "Offline messages:")] ++ FQueueLen ++
@@ -1498,7 +1500,7 @@ user_queue(User, Server, Query, Lang) ->
 	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"method", "post"}],
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?XE("table",
 		   [?XE("thead",
 			[?XE("tr",
@@ -1508,7 +1510,16 @@ user_queue(User, Server, Query, Lang) ->
 			      ?XCT("td", "To"),
 			      ?XCT("td", "Packet")
 			     ])]),
-		    ?XE("tbody", FMsgs)]),
+		    ?XE("tbody",
+			if
+			    FMsgs == [] ->
+				[?XE("tr",
+				     [?XAC("td", [{"colspan", "4"}], " ")]
+				    )];
+			    true ->
+				FMsgs
+			end
+		       )]),
 	       ?BR,
 	       ?INPUTT("submit", "delete", "Delete Selected")
 	      ])].
@@ -1615,7 +1626,7 @@ user_roster(User, Server, Query, Lang, Admin) ->
 	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"method", "post"}],
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      FItems ++
 	      [?P,
 	       ?INPUT("text", "newjid", ""), ?C(" "),
@@ -1832,7 +1843,7 @@ get_node(global, Node, [], Query, Lang) ->
 	      ?LI([?ACT("ports/", "Listened Ports Management")]),
 	      ?LI([?ACT("stats/", "Statistics")])
 	     ]),
-	 ?XAE("form", [{"method", "post"}],
+	 ?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?INPUTT("submit", "restart", "Restart"),
 	       ?C(" "),
 	       ?INPUTT("submit", "stop", "Stop")])
@@ -1891,7 +1902,7 @@ get_node(global, Node, ["db"], Query, Lang) ->
 		    error -> [?CT("bad format"), ?P];
 		    nothing -> []
 		end ++
-		[?XAE("form", [{"method", "post"}],
+		[?XAE("form", [{"action", ""}, {"method", "post"}],
 		      [?XAE("table", [],
 			    [?XE("thead",
 				 [?XE("tr",
@@ -1914,7 +1925,7 @@ get_node(global, Node, ["db"], Query, Lang) ->
 get_node(global, Node, ["backup"], Query, Lang) ->
     Res = node_backup_parse_query(Node, Query),
     [?XC("h1", ?T("Backup Management at ") ++ atom_to_list(Node)),
-     ?XAE("form", [{"method", "post"}],
+     ?XAE("form", [{"action", ""}, {"method", "post"}],
 	  [?XAE("table", [],
 		[?XE("tbody",
 		     [?XE("tr",
@@ -1974,7 +1985,7 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"method", "post"}],
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [node_ports_to_xhtml(NewPorts, Lang)])
 	];
 
@@ -1997,7 +2008,7 @@ get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
 	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"method", "post"}],
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [node_modules_to_xhtml(NewModules, Lang)])
 	];
 
@@ -2390,7 +2401,7 @@ list_shared_roster_groups(Host, Query, Lang) ->
 	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"method", "post"}],
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [FGroups,
 	       ?BR,
 	       ?INPUTT("submit", "delete", "Delete Selected")
@@ -2490,7 +2501,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 	    error -> [?CT("bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"method", "post"}],
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [FGroup,
 	       ?BR,
 	       ?INPUTT("submit", "submit", "Submit")

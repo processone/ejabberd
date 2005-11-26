@@ -42,7 +42,8 @@
 	"\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n").
 
 -define(HTML_DOCTYPE,
-	"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n").
+	"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" "
+	"\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n").
 
 
 start(SockData, Opts) ->
