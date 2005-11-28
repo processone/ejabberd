@@ -1,3 +1,13 @@
+2005-11-28  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Improved and updated documentation (Thanks to Sander
+        Devrieze)
+	* doc/guide.html: Likewise
+	* doc/features.tex: Likewise
+	* doc/introduction.tex: Likewise
+	* doc/version.tex: Likewise
+	* doc/logo.png: New logo for ejabberd doc (Thanks to Sander Devrieze)
+
 2005-11-26  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_http.erl: Now web interface is compliant to
