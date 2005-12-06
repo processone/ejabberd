@@ -100,7 +100,7 @@ all-recursive :
 	cd ..
 
 compile-beam : 
-	erl -s make all report -noinput -s erlang halt
+	erlc *.erl
 
 CLEAN : clean-recursive clean-local
 

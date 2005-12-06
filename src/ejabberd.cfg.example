@@ -25,6 +25,8 @@
 {access, configure, [{allow, admin}]}.
 
 % Every username can be registered via in-band registration:
+% You could replace {allow, all} with {deny, all} to prevent user from using
+% in-band registration
 {access, register, [{allow, all}]}.
 
 % After successful registration user will get message with following subject

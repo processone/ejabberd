@@ -1,3 +1,14 @@
+2005-12-06  Mickael Remond  <mickael.remond@erlang-fr.org>
+        
+	* src/ejabberd.cfg.example: Updated
+
+	* src/Makefile.*: Can now be build when the Erlang environment is
+	not Erlang/OTP but the Erlang REPOS CDROM.  Still compatible with
+	standard Erlang/OTP install
+	* aclocal.m4: Likewise
+	* src/Makefile.*: Can now be build with Erlang debug_info with
+	'make debug=true'
+
 2005-12-06  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/pt-br.msg: Updated (thanks to Victor Hugo dos Santos)

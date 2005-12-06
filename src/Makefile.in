@@ -12,6 +12,11 @@ ERLANG_CFLAGS= @ERLANG_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
+# make debug=true to compile Erlang module with debug informations.
+ifdef debug
+  ERLC_FLAGS+=+debug_info
+endif
+
 prefix = @prefix@
 
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ @web@ stringprep @tls@ @odbc@
@@ -32,7 +37,7 @@ ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 all: $(ERLSHLIBS) compile-beam all-recursive
 
 compile-beam: XmppAddr.hrl
-	@ERL@ -s make all report -noinput -s erlang halt
+	@ERLC@ $(ERLC_FLAGS) *.erl
 
 
 all-recursive install-recursive uninstall-recursive \

@@ -1,3 +1,5 @@
+Win32 build: Make it possible to compile with +debug_info flag.
+
 mod_muc logging
 
 admin interface
