@@ -582,11 +582,22 @@ The following options are available:
     ``configure'' access rule.
 \end{description}
 
+Also the following global options are available for s2s connections:
+\begin{description}
+  \titem{\{s2s\_use\_starttls, true|false\}}
+  \ind{options!s2s\_use\_starttls}This option defines whether use or not
+  STARTTLS for s2s connections.
+  \titem{\{s2s\_certfile, Path\}} \ind{options!s2s\_certificate}Path to a file
+  containing the SSL certificate.
+  \titem{\{domain\_certfile, Domain, Path\}} \ind{options!domain\_certfile}Path
+  to a file containing the SSL certificate for specified domain.
+\end{description}
+
 For instance, the following configuration defines that:
 \begin{itemize}
 \item c2s connections are listened for on port 5222 and 5223 (SSL) and denied
   for the user ``\term{bad}''
-\item s2s connections are listened for on port 5269
+\item s2s connections are listened for on port 5269 with STARTTLS enabled
 \item Port 5280 is serving the web interface and the HTTP Polling service. Note
   that it is also possible to serve them on different ports. The second
   example in section~\ref{sec:webadm} shows how exactly this can be done.
@@ -641,6 +652,8 @@ For instance, the following configuration defines that:
                                [{password, "jmcsecret"}]}]}
    ]
   }.
+  {s2s_use_starttls, true}.
+  {s2s_certfile, "/path/to/ssl.pem"}.
 \end{verbatim}
 Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based
 services you have to make the transports log and do \ind{XDB}XDB by themselves:

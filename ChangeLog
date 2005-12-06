@@ -1,3 +1,7 @@
+2005-12-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
 2005-12-06  Mickael Remond  <mickael.remond@erlang-fr.org>
         
 	* src/ejabberd.cfg.example: Updated
