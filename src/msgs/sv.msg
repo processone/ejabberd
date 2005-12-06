@@ -5,8 +5,6 @@
 
 % jlib.hrl
 {"No resource provided", "Ingen resurs angiven"}.
-{"Illegal resource format", "Otillåtet resursformat"}.
-{"Resource conflict", "Resurskonflikt"}.
 
 % mod_configure.erl
 {"DB Tables Configuration at ", "Konfigurera DB-tabeller på "}.
@@ -102,10 +100,27 @@
 {"Fill in fields to search for any matching Jabber User", "Fyll i fält för att söka efter jabberanvändare"}.
 {"Given Name", "Förnamn"}.
 
+% mod_vcard_odbc.erl
+{"JID", "JID"}.
+
 % mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin",
  "ejabberd pub/sub-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
 {"Node Creator", "Nodskapare"}.
+{[], ""}.
+{"Deliver payloads with event notifications", "Skicka innehåll tillsammans med notifikationer"}.
+{"Notify subscribers when the node configuration changes", "Meddela prenumeranter när nodens konfiguration ändras"}.
+{"Notify subscribers when the node is deleted", "Meddela prenumeranter när noden tas bort"}.
+{"Notify subscribers when items are removed from the node", "Meddela prenumeranter när dataposter tas bort från noden"}.
+{"Persist items to storage", "Spara dataposter permanent"}.
+{"Max # of items to persist", "Högsta antal dataposter som sparas"}.
+{"Whether to allow subscriptions", "Tillåta prenumerationer?"}.
+{"Specify the subscriber model", "Ange prenumerationsmodell"}.
+{"Specify the publisher model", "Ange publiceringsmodell"}.
+{"Max payload size in bytes", "Högsta innehållsstorlek i bytes"}.
+{"Send items to new subscribers", "Skicka dataposter till nya prenumeranter"}.
+{"Only deliver notifications to available users", "Skicka notifikationer bara till uppkopplade användare"}.
+{"Specify the current subscription approver", "Ange prenumerationsgodkännare"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname",
@@ -216,7 +231,7 @@
 {"Node not found", "Noden finns inte"}.
 {"Add New", "Lägg till ny"}.
 {"Registered users", "Registrerade användare"}.
-{"Authentificated users", "Inloggade användare"}.
+{"Authenticated users", "Inloggade användare"}.
 {"Online users", "Anslutna användare"}.
 {"Outgoing S2S servers", "Utgående S2S-servrar"}.
 {"Change Password", "Ändra lösenord"}.
@@ -284,6 +299,20 @@
 {"Members:", "Medlemmar:"}.
 {"Displayed Groups:", "Visade grupper:"}.
 {"Group ", "Grupp "}.
+{"Virtual Hosts", "Virtuella servrar"}.
+{"ejabberd virtual hosts", "Virtuella ejabberd-servrar"}.
+{"Users last activity", "Senaste aktivitet från användare"}.
+{"Period: ", "Period: "}.
+{"Last month", "Senaste månaden"}.
+{"Last year", "Senaste året"}.
+{"All activity", "All aktivitet"}.
+{"Show Ordinary Table", "Visa normal tabell"}.
+{"Show Integral Table", "Visa kumulativ tabell"}.
+{"Host", "Server"}.
+{"No data", "Inga data"}.
+{"Modules Management", "Modulhantering"}.
+{"Modules at ", "Moduler på"}.
+{"Start", "Starta"}.
 
 % Local Variables:
 % mode: erlang
