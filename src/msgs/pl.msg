@@ -314,16 +314,16 @@
 {"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", ""}.
 {[], ""}.
 {"Node Creator", "Tworzenie ga艂臋zi"}.
-{"Deliver payloads with event notifications", "Do潮cz zawarto舵 publikowanego przedmiotu podczas wysy砤nia powiadomienia o publikacji"}.
+{"Deliver payloads with event notifications", "Do?cz zawarto? publikowanego przedmiotu podczas wysy?nia powiadomienia o publikacji"}.
 {"Notify subscribers when the node configuration changes", "Informuj subskrybent贸w gdy konfiguracja ga艂臋zi si臋 zmieni"}.
 {"Notify subscribers when the node is deleted", "Informuj subskrybent贸w gdy ga艂膮偶 zostanie wykasowana"}.
 {"Notify subscribers when items are removed from the node", "Informuj subskrybent贸w kiedy zostan膮 z ga艂臋zi usuni臋te jakie艣 elementy"}.
-{"Persist items to storage", "Przechowuj przedmioty pub/sub w pami阠i"}.
-{"Max # of items to persist", "Maksymalna ilo艣膰 przechowywanych przedmiot體"}.
+{"Persist items to storage", "Przechowuj przedmioty pub/sub w pami?"}.
+{"Max # of items to persist", "Maksymalna ilo艣膰 przechowywanych przedmiot?"}.
 {"Whether to allow subscriptions", "Czy pozwoli膰 na subskrypcje"}.
 {"Specify the subscriber model", "Oznacz model subskrybenta"}.
 {"Specify the publisher model", "Oznacz model publikuj膮cego"}.
-{"Max payload size in bytes", "Maksymalna wielko舵 powiadomienia w bajtach"}.
+{"Max payload size in bytes", "Maksymalna wielko? powiadomienia w bajtach"}.
 {"Send items to new subscribers", "Wysy艂aj rzeczy do nowych subskrybent贸w"}.
 {"Only deliver notifications to available users", "Dostarczaj notyfikacje tylko do osi膮galnych u偶ytkownik贸w"}.
 {"Specify the current subscription approver", "Wyznacz aprobuj膮cego obecne subskrypcje "}.
@@ -342,9 +342,9 @@
 {"Room creation is denied by service policy", "Tworzenie pokoju jest zabronione przez polis臋"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", ""}.
 
-"Illegal resource format"
-"Room creation is not allowed by service policy"
-"DB Tables Configuration"
-"Authentificated users"
-"Resource conflict"
-"If you want to specify different encodings for IRC servers, fill this list with values in format\n '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding."
+%"Illegal resource format"
+%"Room creation is not allowed by service policy"
+%"DB Tables Configuration"
+%"Authentificated users"
+%"Resource conflict"
+%"If you want to specify different encodings for IRC servers, fill this list with values in format\n '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding."
