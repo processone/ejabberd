@@ -96,7 +96,8 @@ stop(Host) ->
 store_packet(From, To, Packet) ->
     Type = xml:get_tag_attr_s("type", Packet),
     if
-	(Type /= "error") and (Type /= "groupchat") ->
+	(Type /= "error") and (Type /= "groupchat") and
+	(Type /= "headline") ->
 	    case check_event(From, To, Packet) of
 		true ->
 		    #jid{luser = LUser, lserver = LServer} = To,

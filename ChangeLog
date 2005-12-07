@@ -1,3 +1,8 @@
+2005-12-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline.erl: Don't store headline messages
+	* src/mod_offline_odbc.erl: Likewise
+
 2005-12-06  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Updated
