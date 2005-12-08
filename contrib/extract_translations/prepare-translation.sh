@@ -2,7 +2,7 @@
 
 # Frontend for ejabberd's extract_translations.erl
 # by Badlop
-# last updated: 18 November 2005
+# last updated: 8 December 2005
 
 while [ "$1" != "" ] 
 do
@@ -17,7 +17,7 @@ do
             exit 0
             ;;
         -lang)
-            # This is the languaje to be extracted
+            # This is the language to be extracted
             LANGU=$2
             shift
             shift
@@ -64,18 +64,10 @@ echo ""
 echo -n "Extracting language strings for '$LANGU':"
 
 echo -n " new..."
-sh -c "cd $SRC_DIR; $ERL 
--pa $EXTRACT_DIR 
--noinput 
--s extract_translations 
--extra . $MSGS_PATH >$MSGS_PATH.new"
+$ERL -pa $EXTRACT_DIR -noinput -noshell -s extract_translations -s init stop -extra $SRC_DIR $MSGS_PATH >$MSGS_PATH.new
 
 echo -n " old..."
-sh -c "cd $SRC_DIR; $ERL 
--pa $EXTRACT_DIR 
--noinput 
--s extract_translations 
--extra -unused . $MSGS_PATH >$MSGS_PATH.unused"
+$ERL -pa $EXTRACT_DIR -noinput -noshell -s extract_translations -s init stop -extra -unused $SRC_DIR $MSGS_PATH >$MSGS_PATH.unused
 
 cat $MSGS_PATH >$MSGS_PATH2
 

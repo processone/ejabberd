@@ -42,6 +42,7 @@
 
 % src/ejabberd_c2s.erl
 {"Use of STARTTLS required", "L'utilisation de STARTTLS est impérative"}.
+{"Replaced by new connection", "Remplacé par une nouvelle connexion"}.
 
 % mod_disco.erl
 {"Configuration", "Configuration"}.
@@ -292,6 +293,7 @@
 {"Host", "Serveur"}.
 {"Authenticated users", "Utilisateurs authentifiés"}.
 {"No data", "Aucune information disponible"}.
+{"ejabberd Web Interface", "Ejabberd - Interface Web"}.
 
 
 % Local Variables:
