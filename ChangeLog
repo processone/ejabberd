@@ -1,5 +1,7 @@
 2005-12-10  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_service.erl: Added logging of termination
+
 	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
 	* src/msgs/uk.msg: Likewise
 

@@ -303,7 +303,8 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(_Reason, StateName, StateData) ->
+terminate(Reason, StateName, StateData) ->
+    ?INFO_MSG("terminated: ~p", [Reason]),
     case StateName of
 	stream_established ->
 	    lists:foreach(
