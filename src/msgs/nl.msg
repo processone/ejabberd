@@ -300,6 +300,7 @@
 {"Virtual Hosts", "Virtuele hosts"}.
 {"ejabberd virtual hosts", "Virtuele hosts"}.
 {"Host", "Host"}.
+{"ejabberd Web Interface", "ejabberd's webinterface"}.
 
 % mod_vcard_ldap.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin"}.
@@ -309,6 +310,7 @@
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Gebruik van STARTTLS is vereist"}.
+{"Replaced by new connection", "Vervangen door een nieuwe verbinding"}.
 
 % Local Variables:
 % mode: erlang

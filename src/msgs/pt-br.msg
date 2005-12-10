@@ -38,7 +38,6 @@
 {"Remove Users", "Remover usuários"}.
 {"Restore Backup from File at ", "Restaura cópia de segurança a partir do arquivo em "}.
 {"Start Modules at ", "Iniciar módulos em "}.
-{"Nome Modules at ", "Parar módulos em "}.
 
 
 % mod_disco.erl
@@ -51,7 +50,6 @@
 {"DB", "BD"}.
 {"Dump to Text File", "Exportar para arquivo de texto"}.
 {"From ~s", "De ~s"}.
-{"Máquina Name", "Nome da máquina"}.
 {"Import Directory", "Importar diretório"}.
 {"Import File", "Importar arquivo"}.
 {"Import users from jabberd1.4 spool files", "Importar usuários a partir de arquivos da spool do jabberd1.4"}.
@@ -198,7 +196,6 @@
 {"Add New", "Adicionar novo"}.
 {"Add User", "Adicionar usuário"}.
 {"All activity", "Toda la atividade"}.
-{"Authentificated users", "Usuários autenticados"}.
 {"Backup Management at ", "Gestão de copia de segurança em "}.
 {"bad format", "mal formato"}.
 {"Change Password", "Mudar senha"}.

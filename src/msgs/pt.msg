@@ -4,8 +4,6 @@
 
 % jlib.hrl
 {"No resource provided", "Não foi passado nenhum recurso"}.
-{"Illegal resource format", "Formato de recurso ilegal"}.
-{"Resource conflict", "Conflito de recursos"}.
 
 % mod_configure.erl
 {"DB Tables Configuration at ", "Configuração de tabelas da BD em "}.
@@ -73,8 +71,8 @@
 {"Choose a username and password to register with this server", "Escolha um nome de utilizador e palavra-chave para se registar neste servidor"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2004 Alexey Shchepin", "Servidor Jabber em Erlang\nCopyright (c) 2002-2004 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2004 Alexey Shchepin", "Módulo vCard de ejabberd\nCopyright (c) 2003-2004 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Servidor Jabber em Erlang\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo vCard de ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {"You need an x:data capable client to search", "É necessário um cliente com suporte de x:data para poder procurar"}.
 {"Search users in ", "Procurar utilizadores em "}.
 {"Fill in fields to search for any matching Jabber User", "Preencha os campos para procurar utilizadores Jabber coincidentes"}.
@@ -94,15 +92,14 @@
 {"Organization Unit", "Unidade da organização"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2004 Alexey Shchepin", "Módulo pub/sub de ejabberd\nCopyright (c) 2003-2004 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo pub/sub de ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "É necessário um cliente com suporte de x:data para poder registar a alcunha"}.
 {"Nickname Registration at ", "Registo da alcunha em "}.
 {"Enter nickname you want to register", "Introduza a alcunha que quer registar"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2004 Alexey Shchepin", "Módulo MUC de ejabberd\nCopyright (c) 2003-2004 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo MUC de ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {"Only service administrators are allowed to send service messages", "Só os administradores do serviço têm permissão para enviar mensagens de serviço"}.
-{"Room creation is not allowed by service policy", "A política de serviço proíbe-o de criar salas"}.
 {"Conference room does not exist", "A sala não existe"}.
 {"Access denied by service policy", "Acesso negado pela política de serviço"}.
 {"You must fill in field \"nick\" in the form", "Deve preencher o campo \"alcunha\" no formulário"}.
@@ -154,7 +151,7 @@
 {"private, ", "privado"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2004 Alexey Shchepin", "Módulo de IRC ejabberd\nCopyright (c) 2003-2004 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo de IRC ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings", "É necessário um cliente com suporte de x:data para configurar as opções do mod_irc"}.
 {"Registration in mod_irc for ", "Registo no mod_irc para"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Introduza o nome de utilizador e codificações de caracteres que quer usar ao conectar-se aos servidores de IRC"}.
@@ -167,7 +164,6 @@
 {"Users", "Utilizadores"}.
 {"Nodes", "Nodos"}.
 {"Statistics", "Estatísticas"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin", "ejabberd (c) 2002-2004 Alexey Shchepin"}.
 {"(raw)", "(modo texto)"}.
 {"submitted", "enviado"}.
 {"bad format", "formato inválido"}.
@@ -182,7 +178,6 @@
 {"Node not found", "Nodo não encontrado"}.
 {"Add New", "Adicionar novo"}.
 {"Registered users", "Utilizadores registados"}.
-{"Authentificated users", "Utilizadores autentificados"}.
 {"Online users", "Utilizadores ligados"}.
 {"Outgoing S2S servers", "Servidores S2S de saída"}.
 {"Change Password", "Mudar palavra-chave"}.
@@ -221,7 +216,7 @@
 {"Update", "Actualizar"}.
 {"Delete", "Eliminar"}.
 {"Add User", "Adicionar utilizador"}.
-{"ejabberd (c) 2002-2004 Alexey Shchepin, 2004 Process One", ""}.
+{"ejabberd (c) 2002-2005 Alexey Shchepin, 2005 Process One", "ejabberd (c) 2002-2005 Alexey Shchepin, 2005 Process One"}.
 {"Offline messages", "Mensagens diferidas"}.
 {"Last Activity", "Última actividade"}.
 {"Online", "Ligado"}.

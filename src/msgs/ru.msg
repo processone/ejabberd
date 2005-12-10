@@ -2,6 +2,7 @@
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Вы обязаны использовать STARTTLS"}.
+{"Replaced by new connection", "Заменено новым соединением"}.
 
 % jlib.hrl
 {"No resource provided", "Не указан ресурс"}.
@@ -196,9 +197,6 @@
 {"Invalid role: ~s", "Недопустимая роль: ~s"}.
 {"Owner privileges required", "Требуются права владельца"}.
 {"private, ", "приватная, "}.
-{"Description", "Описание"}.
-{"Number of occupants", "Число участников"}.
-{"Subject", "Тема"}.
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin",
@@ -214,6 +212,7 @@
 {"Encodings", "Кодировки"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Interface", "Web-интерфейс ejabberd"}.
 {"ejabberd administration", "Администрирование ejabberd"}.
 {"Users", "Пользователи"}.
 {"Nodes", "Узлы"}.

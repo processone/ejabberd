@@ -297,12 +297,14 @@
 {"Members:", "Mitglieder:"}.
 {"Displayed Groups:", "Angezeigte Gruppen:"}.
 {"Group ", "Gruppe "}.
+{"ejabberd Web Interface", "ejabberd Web Interface"}.
 
 % mod_vcard_ldap.erl
 {"Given Name", "Vorname"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Verwendung von STARTTLS erforderlich"}.
+{"Replaced by new connection", "Durch neue Verbindung ersetzt"}.
 
 % mod_vcard_odbc.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin"}.

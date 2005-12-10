@@ -278,9 +278,11 @@
 {"Virtual Hosts", "Hosts Virtuales"}.
 {"ejabberd virtual hosts", "Hosts virtuales de ejabberd"}.
 {"Host", "Host"}.
+{"ejabberd Web Interface", "Interfaz Web de ejabberd"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Es obligatorio usar STARTTLS"}.
+{"Replaced by new connection", "Reemplazado por una nueva conexión"}.
 
 % mod_vcard_ldap.erl
 {"Given Name", "Nombre dado"}.

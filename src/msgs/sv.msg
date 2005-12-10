@@ -2,6 +2,7 @@
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Du måste använda STARTTLS"}.
+{"Replaced by new connection", "Ersatt av ny anslutning"}.
 
 % jlib.hrl
 {"No resource provided", "Ingen resurs angiven"}.
@@ -107,7 +108,7 @@
 {"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin",
  "ejabberd pub/sub-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
 {"Node Creator", "Nodskapare"}.
-{[], ""}.
+{[], " "}.
 {"Deliver payloads with event notifications", "Skicka innehåll tillsammans med notifikationer"}.
 {"Notify subscribers when the node configuration changes", "Meddela prenumeranter när nodens konfiguration ändras"}.
 {"Notify subscribers when the node is deleted", "Meddela prenumeranter när noden tas bort"}.
@@ -313,6 +314,7 @@
 {"Modules Management", "Modulhantering"}.
 {"Modules at ", "Moduler på"}.
 {"Start", "Starta"}.
+{"ejabberd Web Interface", "Webbgränssnitt till ejabberd"}.
 
 % Local Variables:
 % mode: erlang
