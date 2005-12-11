@@ -453,10 +453,16 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 
 %% in_state_change(Subscription, Pending, Type) -> NewState
 %% NewState = none | {NewSubscription, NewPending}
+-ifdef(ROSTER_GATEWAY_WORKAROUND).
+-define(NNSD, {to, none}).
+-define(NISD, {to, in}).
+-else.
+-define(NNSD, none).
+-define(NISD, none).
+-endif.
 
 in_state_change(none, none, subscribe)    -> {none, in};
-in_state_change(none, none, subscribed)   -> {to, none}; % Workaround for gateways
-%in_state_change(none, none, subscribed)   -> none;
+in_state_change(none, none, subscribed)   -> ?NNSD;
 in_state_change(none, none, unsubscribe)  -> none;
 in_state_change(none, none, unsubscribed) -> none;
 in_state_change(none, out,  subscribe)    -> {none, both};
@@ -464,8 +470,7 @@ in_state_change(none, out,  subscribed)   -> {to, none};
 in_state_change(none, out,  unsubscribe)  -> none;
 in_state_change(none, out,  unsubscribed) -> {none, none};
 in_state_change(none, in,   subscribe)    -> none;
-in_state_change(none, in,   subscribed)   -> {to, in}; % Workaround for gateways
-%in_state_change(none, in,   subscribed)   -> none;
+in_state_change(none, in,   subscribed)   -> ?NISD;
 in_state_change(none, in,   unsubscribe)  -> {none, none};
 in_state_change(none, in,   unsubscribed) -> none;
 in_state_change(none, both, subscribe)    -> none;

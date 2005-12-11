@@ -1,3 +1,11 @@
+2005-12-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Workaround for gateway subscriptions now
+	should be enabled with --enable-roster-gateway-workaround
+	* src/mod_roster_odbc.erl: Likewise
+	* src/configure.ac: Likewise
+	* src/Makefile.in: Likewise
+
 2005-12-10  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_service.erl: Added logging of termination

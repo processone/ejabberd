@@ -30,6 +30,15 @@ AC_MOD_ENABLE(web, yes)
 AC_MOD_ENABLE(tls, yes)
 AC_MOD_ENABLE(odbc, no)
 
+AC_ARG_ENABLE(roster_gateway_workaround,
+[  --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions],
+[case "${enableval}" in
+  yes) roster_gateway_workaround=true ;;
+  no)  roster_gateway_workaround=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-roster-gateway-workaround) ;;
+esac],[roster_gateway_workaround=false])
+AC_SUBST(roster_gateway_workaround)
+
 AC_CONFIG_FILES([Makefile
                  $make_mod_irc
                  $make_mod_muc

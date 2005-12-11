@@ -17,10 +17,16 @@ ifdef debug
   ERLC_FLAGS+=+debug_info
 endif
 
+ifeq (@roster_gateway_workaround@, true)
+  ERLC_FLAGS+=-DROSTER_GATEWAY_WORKAROUND
+endif
+
 prefix = @prefix@
 
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ @web@ stringprep @tls@ @odbc@
 ERLSHLIBS = expat_erl.so
+SOURCES = $(wildcard *.erl)
+BEAMS = $(SOURCES:.erl=.beam)
 
 DESTDIR =
 
@@ -36,8 +42,10 @@ ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 
 all: $(ERLSHLIBS) compile-beam all-recursive
 
-compile-beam: XmppAddr.hrl
-	@ERLC@ $(ERLC_FLAGS) *.erl
+compile-beam: XmppAddr.hrl $(BEAMS)
+
+%.beam:       %.erl
+	@ERLC@ -W $(ERLC_FLAGS) $<
 
 
 all-recursive install-recursive uninstall-recursive \
@@ -51,7 +59,7 @@ mostlyclean-recursive maintainer-clean-recursive:
 
 
 %.hrl: %.asn1
-	erlc $(ASN_FLAGS) $<
+	@ERLC@ $(ASN_FLAGS) $<
 
 $(ERLSHLIBS):	%.so:	%.c
 			gcc -Wall $(CFLAGS) $(LDFLAGS) $(LIBS) \
