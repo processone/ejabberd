@@ -2,7 +2,7 @@
 
 {application, ejabberd,
  [{description, "ejabberd"},
-  {vsn, "0.1-alpha"},
+  {vsn, "0.9.9-alpha"},
   {modules, [acl,
 	     configure,
 	     cyrsasl,
