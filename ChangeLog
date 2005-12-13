@@ -1,5 +1,7 @@
 2005-12-13  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/win32/ejabberd.nsi: Updated (thanks to Sergei Golovan)
+
 	* src/ejabberd.hrl: Updated version
 	* src/ejabberd.app: Likewise
 	* doc/version.tex: Likewise

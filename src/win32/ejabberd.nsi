@@ -179,7 +179,7 @@ SectionIn 1 RO
     CreateShortCut "$0\Start Ejabberd.lnk" "$ERLANG_PATH\bin\werl.exe" \
 	'-sname ejabberd -pa ebin \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
-	-s ejabberd -kernel inetrc \"inetrc\" -mnesia dir \"spool\" \
+	-s ejabberd -kernel inetrc \"./inetrc\" -mnesia dir \"spool\" \
 	-sasl sasl_error_logger {file,\"log/sasl.log\"}' \
 	$INSTDIR\win32\ejabberd.ico
     CreateShortCut "$0\Edit Config.lnk" "%SystemRoot%\system32\notepad.exe" \
@@ -213,7 +213,7 @@ SectionIn 1 RO
     nsExec::ExecToLog '"$ERLSRV" add ejabberd -stopaction "init:stop()." \
 	-onfail restart -workdir "$INSTDIR" \
 	-args "-s ejabberd -pa ebin \
-	-kernel inetrc \\\"inetrc\\\" \
+	-kernel inetrc \\\"./inetrc\\\" \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
 	-sasl sasl_error_logger {file,\\\"log/sasl.log\\\"} \
 	-mnesia dir \\\"spool\\\"" -d'
