@@ -1,0 +1,117 @@
+			    Release notes
+			    ejabberd 1.0.0
+			      2005-12-13
+
+   This document describes the main changes in ejabberd 1.0.0. This version is
+   compliant with the XMPP (eXtensible Messaging and Presence Protocol)
+   standard. ejabberd is the first Open Source server to fully comply to the
+   XMPP standard.
+
+   The code can be downloaded from the Process-one website:
+   http://www.process-one.net/en/projects/ejabberd/
+
+   For more detailed information, please refer to ejabberd User Guide
+   on the Process-one website:
+   http://www.process-one.net/en/projects/ejabberd/docs.html
+
+
+   Recent changes include....
+
+
+Encrypted server-to-server connections
+
+  - Support for STARTTLS+SASL EXTERNAL for Server-to-Server connections.
+  - STARTTLS+Dialback has been implemented for Server-to-Server (s2s)
+    connections. Those options are handled with two new config file options
+    (s2s_use_starttls and s2s_certfile). See ejabberd.cfg.example for usage
+    examples.
+  - DNSName certificate field and DNS name matching are supported.
+  - Per virtual host certificate can be defined.
+
+ODBC Support
+
+  - ODBC support has been improved to allow production use of ejabberd with
+    relational databases.
+  - Support for VCard storage in ODBC has been added.
+  - ejd2odbc.erl: is a program that convert an installation from Erlang Mnesia
+    database to an ODBC relational database.
+
+Native PostgreSQL support
+
+  - Native postgreSQL support has been added: You can now use a PostgreSQL
+    database without the need to go through the ODBC driver.
+
+Shared roster
+
+  - Shared roster support have been improved: You can specify all users in a
+    virtual host for addition in a group.
+
+Web interface
+
+   - The Web interface internal code has been modified for better integration
+     and compliance with J-EAI.
+   - The Web interface is now compliant to XHTML 1.0 Transitional.
+   - Several bugs have been fixed.
+
+Transports
+
+   - A transport workaround can be enabled with the compile time option:
+     --enable-roster-gateway-workaround
+     This option allows to add items with subscription "to" in roster by
+     sending <presence type='subscribed'/> stanza to user. This option is
+     needed for JIT ICQ transport.
+     Warning: By using this option, ejabberd is not fully XMPP compliant.
+
+Documentation and translations
+
+   - Documentation has been improved to cover more topics.
+   - Translations have been updated to support the new features.
+
+Bugfixes
+
+   - This release contains several bugfixes.
+     Among other bugfixes include improvements Client-to-Server connection
+     management module. Please refer to the ChangeLog file supplied with this
+     release regarding all improvements in ejabberd.
+
+Erlang version supported
+
+   - You now needs at least Erlang/OTP R9C to be able to run ejabberd 1.0.0.
+
+Installers
+
+   Installers are provided for Microsoft Windows and Linux/x86. The Linux
+   installer includes Erlang ASN.1 modules for LDAP authentication support.
+   Installers are available from:
+   http://www.process-one.net/en/projects/ejabberd/download.html
+
+Migration
+
+   - Before any migration, ejabberd system and database must be properly
+     backed-up.
+   - System migrating from a previous ODBC based install will need to change
+     their relational database schema. The following SQL commands must be run
+     on the database:
+    ;; To update from previous table definition:
+    CREATE SEQUENCE spool_seq_seq;
+    ALTER TABLE spool ADD COLUMN seq integer;
+    ALTER TABLE spool ALTER COLUMN seq SET DEFAULT nextval('spool_seq_seq');
+    UPDATE spool SET seq = DEFAULT;
+    ALTER TABLE spool ALTER COLUMN seq SET NOT NULL;
+
+References
+
+   The ejabberd feature sheet helps comparing with other Jabber/XMPP 
+   servers:
+   http://www.process-one.net/en/projects/ejabberd/docs/features.pdf
+
+   Contributed tutorials of interest are:
+   - Migration from Jabberd1.4 to ejabberd:
+     http://ejabberd.jabber.ru/jabberd1-to-ejabberd
+   - Migration from Jabberd2 to ejabberd:
+     http://ejabberd.jabber.ru/jabberd2-to-ejabberd
+   - Transport configuration for connecting to other networks:
+     http://ejabberd.jabber.ru/tutorials-transports
+
+END
+

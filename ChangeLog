@@ -1,3 +1,9 @@
+2005-12-13  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/release_notes_1.0.0.txt: Added preliminary version of ejabberd
+	1.0.0 release notes.
+	* doc/guide.html: Generated the updated HTML version of the documentation.
+
 2005-12-11  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_roster.erl: Workaround for gateway subscriptions now
