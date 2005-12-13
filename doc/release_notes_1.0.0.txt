@@ -72,13 +72,14 @@ Documentation and translations
 Bugfixes
 
    - This release contains several bugfixes.
-     Among other bugfixes include improvements Client-to-Server connection
-     management module. Please refer to the ChangeLog file supplied with this
-     release regarding all improvements in ejabberd.
+
+     Among other bugfixes include improvements to the Client-to-Server
+     connection management module. Please refer to the ChangeLog file supplied
+     with this release regarding all improvements in ejabberd.
 
 Erlang version supported
 
-   - You now needs at least Erlang/OTP R9C to be able to run ejabberd 1.0.0.
+   - You now need at least Erlang/OTP R9C to be able to run ejabberd 1.0.0.
 
 Installers
 
