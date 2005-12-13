@@ -4,8 +4,8 @@
 
    This document describes the main changes in ejabberd 1.0.0. This version is
    compliant with the XMPP (eXtensible Messaging and Presence Protocol)
-   standard. ejabberd is the first Open Source server to fully comply to the
-   XMPP standard.
+   standard. ejabberd is the first Open Source server claiming to fully
+   comply to the XMPP standard.
 
    The code can be downloaded from the Process-one website:
    http://www.process-one.net/en/projects/ejabberd/
@@ -55,8 +55,10 @@ Web interface
 
 Transports
 
-   - A transport workaround can be enabled with the compile time option:
-     --enable-roster-gateway-workaround
+   - A transport workaround can be enabled with the compile time option. You
+     can pass the "--enable-roster-gateway-workaround" option to the configure
+     script. For example:
+     ./configure --enable-roster-gateway-workaround
      This option allows to add items with subscription "to" in roster by
      sending <presence type='subscribed'/> stanza to user. This option is
      needed for JIT ICQ transport.
@@ -92,7 +94,6 @@ Migration
    - System migrating from a previous ODBC based install will need to change
      their relational database schema. The following SQL commands must be run
      on the database:
-    ;; To update from previous table definition:
     CREATE SEQUENCE spool_seq_seq;
     ALTER TABLE spool ADD COLUMN seq integer;
     ALTER TABLE spool ALTER COLUMN seq SET DEFAULT nextval('spool_seq_seq');
