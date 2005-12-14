@@ -55,27 +55,35 @@ static int iconv_erl_control(ErlDrvData drv_data,
    ei_get_type(buf, &index, &i, &size);
    stmp = string = malloc(size + 1); 
    ei_decode_string(buf, &index, string);
-  
+
    cd = iconv_open(to, from);
 
-   if(cd == (iconv_t) -1)
-   {
+   if (cd == (iconv_t) -1) {
       cd = iconv_open("ascii", "ascii");
-      if(cd == (iconv_t) -1)
-	{
-	  cd = iconv_open("ascii", "ascii");
-	}
+      if (cd == (iconv_t) -1) {
+	 *rbuf = (char*)(b = driver_alloc_binary(size));
+	 memcpy(b->orig_bytes, string, size);
+
+	 free(from);
+	 free(to);
+	 free(string);
+
+	 return size;
+      }
    }
    
    outleft = avail = 4*size;
    inleft = size;
    rtmp = rstring = malloc(avail);
-   iconv(cd, &stmp, &inleft, &rtmp, &outleft);
+   while (inleft > 0) {
+      if (iconv(cd, &stmp, &inleft, &rtmp, &outleft) == (size_t) -1) {
+	 stmp++;
+	 inleft--;
+      }
+   }
    
    size = rtmp - rstring;
 
-   //printf("size=%d, res=%s\r\n", size, rstring);
-   
    *rbuf = (char*)(b = driver_alloc_binary(size));
    memcpy(b->orig_bytes, rstring, size);
 
