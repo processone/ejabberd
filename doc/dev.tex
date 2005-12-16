@@ -1,14 +1,20 @@
-\documentclass[10pt]{article}
+\documentclass[a4paper,10pt]{article}
 
+%% Packages
 \usepackage{graphics}
 \usepackage{hevea}
+\usepackage{makeidx}
 \usepackage{verbatim}
 
+%% Index
+\makeindex
+% Remove the index anchors from the HTML version to save size and bandwith.
+\newcommand{\ind}[1]{\begin{latexonly}\index{#1}\end{latexonly}}
 
+%% Images
 \newcommand{\logoscale}{0.7}
 \newcommand{\imgscale}{0.58}
 \newcommand{\insimg}[1]{\insscaleimg{\imgscale}{#1}}
-
 \newcommand{\insscaleimg}[2]{
   \imgsrc{#2}{}
   \begin{latexonly}
@@ -16,83 +22,74 @@
   \end{latexonly}
 }
 
+%% Various
 \newcommand{\ns}[1]{\texttt{#1}}
 \newcommand{\ejabberd}{\texttt{ejabberd}}
 \newcommand{\Jabber}{Jabber}
 
-\newcommand{\modregister}{\texttt{mod\_register}}
-\newcommand{\modroster}{\texttt{mod\_roster}}
-\newcommand{\modconfigure}{\texttt{mod\_configure}}
-\newcommand{\moddisco}{\texttt{mod\_disco}}
-\newcommand{\modstats}{\texttt{mod\_stats}}
-\newcommand{\modvcard}{\texttt{mod\_vcard}}
-\newcommand{\modoffline}{\texttt{mod\_offline}}
-\newcommand{\modecho}{\texttt{mod\_echo}}
-\newcommand{\modprivate}{\texttt{mod\_private}}
-\newcommand{\modtime}{\texttt{mod\_time}}
-\newcommand{\modversion}{\texttt{mod\_version}}
+%% Modules
+\newcommand{\module}[1]{\texttt{#1}}
+\newcommand{\modannounce}{\module{mod\_announce}}
+\newcommand{\modconfigure}{\module{mod\_configure}}
+\newcommand{\moddisco}{\module{mod\_disco}}
+\newcommand{\modirc}{\module{mod\_irc}}
+\newcommand{\modlast}{\module{mod\_last}}
+\newcommand{\modmuc}{\module{mod\_muc}}
+\newcommand{\modecho}{\module{mod\_echo}}
+\newcommand{\modoffline}{\module{mod\_offline}}
+\newcommand{\modprivacy}{\module{mod\_privacy}}
+\newcommand{\modprivate}{\module{mod\_private}}
+\newcommand{\modpubsub}{\module{mod\_pubsub}}
+\newcommand{\modregister}{\module{mod\_register}}
+\newcommand{\modroster}{\module{mod\_roster}}
+\newcommand{\modservicelog}{\module{mod\_service\_log}}
+\newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
+\newcommand{\modstats}{\module{mod\_stats}}
+\newcommand{\modtime}{\module{mod\_time}}
+\newcommand{\modvcard}{\module{mod\_vcard}}
+\newcommand{\modversion}{\module{mod\_version}}
 
-\newcommand{\tjepref}[2]{\footahref{http://www.jabber.org/jeps/jep-#1.html}{#2}}
-\newcommand{\jepref}[1]{\tjepref{#1}{JEP-#1}}
-%\setcounter{tocdepth}{3}
-
-
-\title{Ejabberd Developers Guide}
+%% Title page
+\include{version}
+\title{Ejabberd \version\ Developers Guide}
 \author{Alexey Shchepin \\
   \ahrefurl{mailto:alexey@sevcom.net} \\
   \ahrefurl{xmpp:aleksey@jabber.ru}}
-\date{August 21, 2005}
+
+%% Options
+\newcommand{\marking}[1]{#1} % Marking disabled
+\newcommand{\quoting}[2][yozhik]{} % Quotes disabled
+\newcommand{\new}{\begin{latexonly}\marginpar{\textsc{new}}\end{latexonly}} % Highlight new features
+\newcommand{\improved}{\begin{latexonly}\marginpar{\textsc{improved}}\end{latexonly}} % Highlight improved features
+\newcommand{\moreinfo}[1]{} % Hide details
+
+%% Footnotes
+\newcommand{\tjepref}[2]{\footahref{http://www.jabber.org/jeps/jep-#1.html}{#2}}
+\newcommand{\jepref}[1]{\tjepref{#1}{JEP-#1}}
 
 \begin{document}
+
+\label{sec:titlepage}
 \begin{titlepage}
   \maketitle{}
-  
-  {\centering
-    \insscaleimg{\logoscale}{logo.png}
+
+  \begin{center}
+  {\insscaleimg{\logoscale}{logo.png}
     \par
   }
+  \end{center}
+
+  \begin{quotation}\textit{I can thoroughly recommend ejabberd for ease of setup --
+  Kevin Smith, Current maintainer of the Psi project}\end{quotation}
+
 \end{titlepage}
-%\newpage
+
 \tableofcontents{}
 
-\newpage
-\section{Introduction}
-\label{sec:intro}
+% Input introduction.tex
+\input{introduction}
 
-\ejabberd{} is a Free and Open Source fault-tolerant distributed \Jabber{}
-server.  It is written mostly in Erlang.
-
-The main features of \ejabberd{} are:
-\begin{itemize}
-\item Works on most of popular platforms: *nix (tested on Linux, FreeBSD and
-  NetBSD) and Win32
-\item Distributed: You can run \ejabberd{} on a cluster of machines to let all of
-  them serve one Jabber domain.
-\item Fault-tolerance: You can setup an \ejabberd{} cluster so that all the
-  information required for a properly working service will be stored
-  permanently on more than one node.  This means that if one of the nodes
-  crashes, then the others will continue working without disruption.
-  You can also add or replace nodes ``on the fly''.
-\item Support for virtual hosting
-\item Built-in \tjepref{0045}{Multi-User Chat} service
-\item Built-in IRC transport
-\item Built-in \tjepref{0060}{Publish-Subscribe} service
-\item Built-in Jabber Users Directory service based on users vCards
-\item Built-in web-based administration interface
-\item Built-in \tjepref{0025}{HTTP Polling} service
-\item SSL support
-\item Support for LDAP authentication
-\item Ability to interface with external components (JIT, MSN-t, Yahoo-t, etc.)
-\item Migration from jabberd14 is possible
-\item Mostly XMPP-compliant
-\item Support for \tjepref{0030}{Service Discovery}.
-\item Support for \tjepref{0039}{Statistics Gathering}.
-\item Support for \ns{xml:lang}
-\end{itemize}
-
-
-
-\subsection{How it works}
+\section{How it works}
 \label{sec:howitworks}
 
 
@@ -115,7 +112,7 @@ Each \ejabberd{} node have following modules:
 \end{itemize}
 
 
-\subsubsection{Router}
+\subsection{Router}
 
 This module is the main router of \Jabber{} packets on each node.  It routes
 them based on their destinations domains.  It has two tables: local and global
@@ -126,14 +123,14 @@ process.  If it does not exists in either tables, then it sent to the S2S
 manager.
 
 
-\subsubsection{Local Router}
+\subsection{Local Router}
 
 This module routes packets which have a destination domain equal to this server
 name.  If destination JID has a non-empty user part, then it routed to the
 session manager, else it is processed depending on it's content.
 
 
-\subsubsection{Session Manager}
+\subsection{Session Manager}
 
 This module routes packets to local users.  It searches for what user resource
 packet must be sended via presence table.  If this resource is connected to
@@ -141,7 +138,7 @@ this node, it is routed to C2S process, if it connected via another node, then
 the packet is sent to session manager on that node.
 
 
-\subsubsection{S2S Manager}
+\subsection{S2S Manager}
 
 This module routes packets to other \Jabber{} servers.  First, it checks if an
 open S2S connection from the domain of the packet source to the domain of
@@ -189,20 +186,20 @@ is represented as the following structure:
 \label{sec:xmlmod}
 
 \begin{description}
-\item[\verb|element_to_string(El) -> string()|]
+\item{\verb|element_to_string(El) -> string()|}
 \begin{verbatim}
 El = XMLElement
 \end{verbatim}
   Returns string representation of XML stanza \texttt{El}.
 
-\item[\verb|crypt(S) -> string()|]
+\item{\verb|crypt(S) -> string()|}
 \begin{verbatim}
 S = string()
 \end{verbatim}
   Returns string which correspond to \texttt{S} with encoded XML special
   characters.
 
-\item[\verb|remove_cdata(ECList) -> EList|]
+\item{\verb|remove_cdata(ECList) -> EList|}
 \begin{verbatim}
 ECList = [ElementOrCDATA]
 EList = [XMLElement]
@@ -211,7 +208,7 @@ EList = [XMLElement]
 
 
 
-\item[\verb|get_path_s(El, Path) -> Res|]
+\item{\verb|get_path_s(El, Path) -> Res|}
 \begin{verbatim}
 El = XMLElement
 Path = [PathItem]
@@ -225,15 +222,15 @@ Res = string() | XMLElement
   If \texttt{Path} is empty, then returns \texttt{El}.  Else sequentially
   consider elements of \texttt{Path}.  Each element is one of:
   \begin{description}
-  \item[\verb|{elem, Name}|] \texttt{Name} is name of subelement of
+  \item{\verb|{elem, Name}|} \texttt{Name} is name of subelement of
     \texttt{El}, if such element exists, then this element considered in
     following steps, else returns empty string.
-  \item[\verb|{attr, Name}|] If \texttt{El} have attribute \texttt{Name}, then
+  \item{\verb|{attr, Name}|} If \texttt{El} have attribute \texttt{Name}, then
     returns value of this attribute, else returns empty string.
-  \item[\verb|cdata|] Returns CDATA of \texttt{El}.
+  \item{\verb|cdata|} Returns CDATA of \texttt{El}.
   \end{description}
 
-\item[TODO:]
+\item{TODO:}
 \begin{verbatim}
          get_cdata/1, get_tag_cdata/1
          get_attr/2, get_attr_s/2
@@ -247,7 +244,7 @@ Res = string() | XMLElement
 \label{sec:xmlstreammod}
 
 \begin{description}
-\item[\verb!parse_element(Str) -> XMLElement | {error, Err}!]
+\item{\verb!parse_element(Str) -> XMLElement | {error, Err}!}
 \begin{verbatim}
 Str = string()
 Err = term()
@@ -261,12 +258,12 @@ Err = term()
 \label{sec:emods}
 
 
-\subsection{\verb|gen_mod| behaviour}
+\subsection{gen\_mod behaviour}
 \label{sec:genmod}
 
 TBD
 
-\subsection{Module \verb|gen_iq_handler|}
+\subsection{Module gen\_iq\_handler}
 \label{sec:geniqhandl}
 
 The module \verb|gen_iq_handler| allows to easily write handlers for IQ packets
@@ -274,7 +271,7 @@ of particular XML namespaces that addressed to server or to users bare JIDs.
 
 In this module the following functions are defined:
 \begin{description}
-\item[\verb|add_iq_handler(Component, Host, NS, Module, Function, Type)|]
+\item{\verb|add_iq_handler(Component, Host, NS, Module, Function, Type)|}
 \begin{verbatim}
 Component = Module = Function = atom()
 Host = NS = string()
@@ -285,10 +282,10 @@ Type = no_queue | one_queue | parallel
   \verb|Component|.  Queueing discipline is \verb|Type|.  There are at least
   two components defined:
   \begin{description}
-  \item[\verb|ejabberd_local|] Handles packets that addressed to server JID;
-  \item[\verb|ejabberd_sm|] Handles packets that addressed to users bare JIDs.
+  \item{\verb|ejabberd_local|} Handles packets that addressed to server JID;
+  \item{\verb|ejabberd_sm|} Handles packets that addressed to users bare JIDs.
   \end{description}
-\item[\verb|remove_iq_handler(Component, Host, NS)|]
+\item{\verb|remove_iq_handler(Component, Host, NS)|}
 \begin{verbatim}
 Component = atom()
 Host = NS = string()
@@ -299,7 +296,7 @@ Host = NS = string()
 
 Handler function must have the following type:
 \begin{description}
-\item[\verb|Module:Function(From, To, IQ)|]
+\item{\verb|Module:Function(From, To, IQ)|}
 \begin{verbatim}
 From = To = jid()
 \end{verbatim}

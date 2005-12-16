@@ -1,3 +1,10 @@
+2005-12-16  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/Makefile: Added helper to generate the docs (Thanks to Sander
+	Devrieze)
+	* doc/guide.tex: Added ejabberd 1.0.0 release notes.
+	* doc/dev.tex: Code clean-up (Thanks to Sander Devrieze) 
+
 2005-12-16  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/features.tex: Added feature sheet (Thanks to Sander
