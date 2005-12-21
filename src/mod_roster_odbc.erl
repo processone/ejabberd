@@ -255,29 +255,35 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 				ejabberd_odbc:sql_query_t(
 				  ["delete from rosterusers "
 				   "      where username='", Username, "' "
-				   "        and jid='", SJID, "';"
-				   "delete from rostergroups "
+				   "        and jid='", SJID, "';"]),
+				ejabberd_odbc:sql_query_t(
+				  ["delete from rostergroups "
 				   "      where username='", Username, "' "
-				   "        and jid='", SJID, "'"]);
+				   "        and jid='", SJID, "';"]);
 			    _ ->
 				ItemVals = record_to_string(Item2),
 				ItemGroups = groups_to_string(Item2),
 				ejabberd_odbc:sql_query_t(
 				  ["delete from rosterusers "
 				   "      where username='", Username, "' "
-				   "        and jid='", SJID, "';"
-				   "insert into rosterusers("
+				   "        and jid='", SJID, "';"]),
+				ejabberd_odbc:sql_query_t(
+				  ["insert into rosterusers("
 				   "              username, jid, nick, "
 				   "              subscription, ask, "
 				   "              server, subscribe, type) "
-				   " values ", ItemVals, ";"
-				   "delete from rostergroups "
+				   " values ", ItemVals, ";"]),
+				ejabberd_odbc:sql_query_t(
+				  ["delete from rostergroups "
 				   "      where username='", Username, "' "
-				   "        and jid='", SJID, "';",
-				   [["insert into rostergroups("
-				     "              username, jid, grp) "
-				     " values ", ItemGroup, ";"] ||
-				       ItemGroup <- ItemGroups]])
+				   "        and jid='", SJID, "';"]),
+				lists:foreach(fun(ItemGroup) ->
+					    ejabberd_odbc:sql_query_t(
+					       ["insert into rostergroups("
+						"              username, jid, grp) "
+						" values ", ItemGroup, ";"])
+					      end,
+					      ItemGroups)
 			end,
 			{Item, Item2}
 		end,
@@ -466,7 +472,7 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 			   ["select username, jid, nick, subscription, ask, "
 			    "server, subscribe, type from rosterusers "
 			    "where username='", Username, "' "
-			    "and jid='", SJID, "'"]) of
+			    "and jid='", SJID, "';"]) of
 			{selected,
 			 ["username", "jid", "nick", "subscription", "ask",
 			  "server", "subscribe", "type"],
@@ -476,7 +482,7 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 				case ejabberd_odbc:sql_query_t(
 				       ["select grp from rostergroups "
 					"where username='", Username, "' "
-					"and jid='", SJID, "'"]) of
+					"and jid='", SJID, "';"]) of
 				    {selected, ["grp"], JGrps} when is_list(JGrps) ->
 					[JGrp || {JGrp} <- JGrps];
 				    _ ->
@@ -518,12 +524,13 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 			ejabberd_odbc:sql_query_t(
 			  ["delete from rosterusers "
 			   "      where username='", Username, "' "
-			   "        and jid='", SJID, "';"
-			   "insert into rosterusers("
+			   "        and jid='", SJID, "';"]),
+			ejabberd_odbc:sql_query_t(
+			  ["insert into rosterusers("
 			   "              username, jid, nick, "
 			   "              subscription, ask, "
 			   "              server, subscribe, type) "
-			   " values ", ItemVals]),
+			   " values ", ItemVals, ";"]),
 			{{push, NewItem}, AutoReply}
 		end
 	end,
@@ -659,9 +666,10 @@ remove_user(User, Server) ->
       fun() ->
 	      ejabberd_odbc:sql_query_t(
 		["delete from rosterusers "
-		 "      where username='", Username, "';"
-		 "delete from rostergroups "
-		 "      where username='", Username, "'"])
+		 "      where username='", Username, "';"]),
+	      ejabberd_odbc:sql_query_t(
+		["delete from rostergroups "
+		 "      where username='", Username, "';"])
       end),
     ok.
 
@@ -671,13 +679,11 @@ set_items(User, Server, SubEl) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    catch ejabberd_odbc:sql_query(
+    catch ejabberd_odbc:transaction(
 	    LServer,
-	    ["begin;",
 	     lists:map(fun(El) ->
 			       process_item_set_t(LUser, LServer, El)
-		       end, Els),
-	     "commit"]).
+		       end, Els)).
 
 process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
@@ -695,26 +701,26 @@ process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
 	    Item2 = process_item_els(Item1, Els),
 	    case Item2#roster.subscription of
 	        remove ->
-		    ["delete from rosterusers "
+		    [["delete from rosterusers "
 		     "      where username='", Username, "' "
-		     "        and jid='", SJID, "';"
-		     "delete from rostergroups "
+		     "        and jid='", SJID, "';"],
+		     ["delete from rostergroups "
 		     "      where username='", Username, "' "
-		     "        and jid='", SJID, "';"];
+		     "        and jid='", SJID, "';"]];
 	        _ ->
 	            ItemVals = record_to_string(Item1),
 		    ItemGroups = groups_to_string(Item2),
-		    ["delete from rosterusers "
+		    [["delete from rosterusers "
 		     "      where username='", Username, "' "
-		     "        and jid='", SJID, "';"
-		     "insert into rosterusers("
-		     "              username, jid, nick, "
-		     "              subscription, ask, "
-		     "              server, subscribe, type) "
-		     " values ", ItemVals, ";"
-		     "delete from rostergroups "
-		     "      where username='", Username, "' "
-		     "        and jid='", SJID, "';",
+		     "        and jid='", SJID, "';"],
+		     ["insert into rosterusers("
+		      "              username, jid, nick, "
+		      "              subscription, ask, "
+		      "              server, subscribe, type) "
+		      " values ", ItemVals, ";"],
+		     ["delete from rostergroups "
+		      "      where username='", Username, "' "
+		      "        and jid='", SJID, "';"],
 		     [["insert into rostergroups("
 		       "              username, jid, grp) "
 		       " values ", ItemGroup, ";"] ||

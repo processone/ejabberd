@@ -56,7 +56,6 @@ process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			      []}]}
     end.
 
-
 process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
@@ -99,7 +98,7 @@ get_last(IQ, SubEl, LUser, LServer) ->
     case catch ejabberd_odbc:sql_query(
 		 LServer,
 		 ["select seconds, state from last "
-		  "where username='", Username, "'"]) of
+		  "where username='", Username, "';"]) of
 	{'EXIT', _Reason} ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
 	{selected, ["seconds","state"], []} ->
@@ -121,8 +120,6 @@ get_last(IQ, SubEl, LUser, LServer) ->
 	    end
     end.
 
-
-
 on_presence_update(User, Server, _Resource, Status) ->
     {MegaSecs, Secs, _MicroSecs} = now(),
     TimeStamp = MegaSecs * 1000000 + Secs,
@@ -134,20 +131,16 @@ store_last_info(User, Server, TimeStamp, Status) ->
     Username = ejabberd_odbc:escape(LUser),
     Seconds = ejabberd_odbc:escape(integer_to_list(TimeStamp)),
     State = ejabberd_odbc:escape(Status),
-    ejabberd_odbc:sql_query(
+    %% MREMOND: I think this should be turn into a non transactional behaviour
+    ejabberd_odbc:sql_transaction(
       LServer,
-      ["begin;"
-       "delete from last where username='", Username, "';"
-       "insert into last(username, seconds, state) "
-       "values ('", Username, "', '", Seconds, "', '", State, "');",
-       "commit"]).
-
+      [["delete from last where username='", Username, "';"],
+       ["insert into last(username, seconds, state) "
+	"values ('", Username, "', '", Seconds, "', '", State, "');"]]).
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["delete from last where username='", Username, "'"]).
-
+    ejabberd_odbc:sql_query(LServer,
+      ["delete from last where username='", Username, "';"]).

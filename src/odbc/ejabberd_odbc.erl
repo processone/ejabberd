@@ -45,10 +45,22 @@ sql_query(Host, Query) ->
     gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
 		    {sql_query, Query}, 60000).
 
+%% SQL transaction based on a list of queries
+%% This function automatically 
+sql_transaction(Host, Queries) when is_list(Queries) ->
+    F = fun() ->
+		lists:foreach(fun(Query) ->
+				      R = sql_query(Host, Query)
+			      end,
+			      Queries)
+	end,
+    sql_transaction(Host, F);
+%% SQL transaction, based on a erlang anonymous function (F = fun)
 sql_transaction(Host, F) ->
     gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
 		    {sql_transaction, F}, 60000).
 
+%% This function is intended to be used from inside an sql_transaction:
 sql_query_t(Query) ->
     State = get(?STATE_KEY),
     QRes = sql_query_internal(State, Query),
@@ -106,7 +118,7 @@ init([Host]) ->
 	_ when is_list(SQLServer) ->
 	    {ok, Ref} = odbc:connect(SQLServer,
 				     [{scrollable_cursors, off}]),
-	    {ok, #state{db_ref = Ref,
+	    {ok, #state{db_ref = Ref, 
 			db_type = odbc}}
     end.
 
@@ -177,15 +189,15 @@ execute_transaction(_State, _F, 0) ->
     {aborted, restarts_exceeded};
 execute_transaction(State, F, NRestarts) ->
     put(?STATE_KEY, State),
-    sql_query_internal(State, "begin"),
+    sql_query_internal(State, "begin;"),
     case catch F() of
 	aborted ->
 	    execute_transaction(State, F, NRestarts - 1);
 	{'EXIT', Reason} ->
-	    sql_query_internal(State, "rollback"),
+	    sql_query_internal(State, "rollback;"),
 	    {aborted, Reason};
 	Res ->
-	    sql_query_internal(State, "commit"),
+	    sql_query_internal(State, "commit;"),
 	    {atomic, Res}
     end.
 

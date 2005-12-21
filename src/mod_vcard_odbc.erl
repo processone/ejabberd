@@ -136,7 +136,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    case catch ejabberd_odbc:sql_query(
 			 LServer,
 			 ["select vcard from vcard "
-			  "where username='", Username, "'"]) of
+			  "where username='", Username, "';"]) of
 		{selected, ["vcard"], [{SVCARD}]} ->
 		    case xml_stream:parse_element(SVCARD) of
 			{error, _Reason} ->
@@ -231,32 +231,30 @@ set_vcard(User, LServer, VCARD) ->
 	    SOrgUnit = ejabberd_odbc:escape(OrgUnit),
 	    SLOrgUnit = ejabberd_odbc:escape(LOrgUnit),
 
-	    ejabberd_odbc:sql_query(
+	    ejabberd_odbc:sql_transaction(
 	      LServer,
-	      ["begin;"
-	       "delete from vcard where username='", LUsername, "';"
-	       "insert into vcard(username, vcard) "
-	       "values ('", LUsername, "', '", SVCARD, "');"
-	       "delete from vcard_search where lusername='", LUsername, "';"
-	       "insert into vcard_search("
-	       "        username, lusername, fn, lfn, family, lfamily,"
-	       "        given, lgiven, middle, lmiddle, nickname, lnickname,"
-	       "        bday, lbday, ctry, lctry, locality, llocality,"
-	       "        email, lemail, orgname, lorgname, orgunit, lorgunit)"
-	       "values (",
-	       "        '", Username,  "', '", LUsername,  "'," 
-	       "        '", SFN,       "', '", SLFN,       "'," 
-	       "        '", SFamily,   "', '", SLFamily,   "',"
-	       "        '", SGiven,    "', '", SLGiven,	   "',"
-	       "        '", SMiddle,   "', '", SLMiddle,   "',"
-	       "        '", SNickname, "', '", SLNickname, "',"
-	       "        '", SBDay,     "', '", SLBDay,	   "',"
-	       "        '", SCTRY,     "', '", SLCTRY,	   "',"
-	       "        '", SLocality, "', '", SLLocality, "',"
-	       "        '", SEMail,    "', '", SLEMail,	   "',"
-	       "        '", SOrgName,  "', '", SLOrgName,  "',"
-	       "        '", SOrgUnit,  "', '", SLOrgUnit,  "');"
-	       "commit"])
+	      [["delete from vcard where username='", LUsername, "';"],
+	       ["insert into vcard(username, vcard) "
+	       "values ('", LUsername, "', '", SVCARD, "');"],
+	       ["delete from vcard_search where lusername='", LUsername, "';"],
+	       ["insert into vcard_search("
+		"        username, lusername, fn, lfn, family, lfamily,"
+		"        given, lgiven, middle, lmiddle, nickname, lnickname,"
+		"        bday, lbday, ctry, lctry, locality, llocality,"
+		"        email, lemail, orgname, lorgname, orgunit, lorgunit)"
+		"values (",
+		"        '", Username,  "', '", LUsername,  "'," 
+		"        '", SFN,       "', '", SLFN,       "'," 
+		"        '", SFamily,   "', '", SLFamily,   "',"
+		"        '", SGiven,    "', '", SLGiven,    "',"
+		"        '", SMiddle,   "', '", SLMiddle,   "',"
+		"        '", SNickname, "', '", SLNickname, "',"
+		"        '", SBDay,     "', '", SLBDay,	   "',"
+		"        '", SCTRY,     "', '", SLCTRY,	   "',"
+		"        '", SLocality, "', '", SLLocality, "',"
+		"        '", SEMail,    "', '", SLEMail,	   "',"
+		"        '", SOrgName,  "', '", SLOrgName,  "',"
+		"        '", SOrgUnit,  "', '", SLOrgUnit,  "');"]])
     end.
 
 -define(TLFIELD(Type, Label, Var),
@@ -290,9 +288,6 @@ set_vcard(User, LServer, VCARD) ->
 	   ?TLFIELD("text-single", "Organization Name", "orgname"),
 	   ?TLFIELD("text-single", "Organization Unit", "orgunit")
 	  ]}]).
-
-
-
 
 do_route(ServerHost, From, To, Packet) ->
     #jid{user = User, resource = Resource} = To,
@@ -514,7 +509,7 @@ search(LServer, Data) ->
 			 ["select username, fn, family, given, middle, "
 			  "       nickname, bday, ctry, locality, "
 			  "       email, orgname, orgunit from vcard_search ",
-			  MatchSpec, Limit]) of
+			  MatchSpec, Limit, ";"]) of
 		{selected, ["username", "fn", "family", "given", "middle",
 			    "nickname", "bday", "ctry", "locality",
 			    "email", "orgname", "orgunit"],
@@ -660,11 +655,9 @@ remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query(
+    ejabberd_odbc:sql_transaction(
       LServer,
-      ["begin;"
-       "delete from vcard where username='", Username, "';"
-       "delete from vcard_search where lusername='", Username, "';"
-       "commit"]).
+      [["delete from vcard where username='", Username, "';"],
+       ["delete from vcard_search where lusername='", Username, "';"]]).
 
 

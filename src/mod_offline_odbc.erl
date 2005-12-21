@@ -5,7 +5,6 @@
 %%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
-
 -module(mod_offline_odbc).
 -author('alexey@sevcom.net').
 
@@ -73,9 +72,9 @@ loop(Host) ->
 			       XML,
 			       "');"]
 		      end, Msgs),
-	    case catch ejabberd_odbc:sql_query(
+	    case catch ejabberd_odbc:sql_transaction(
 			 Host,
-			 ["begin; ", Query, " commit"]) of
+			 Query) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p~n", [Reason]);
 		_ ->
@@ -212,17 +211,16 @@ pop_offline_messages(Ls, User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     EUser = ejabberd_odbc:escape(LUser),
-    case ejabberd_odbc:sql_query(
-	   LServer,
-	   ["begin;"
-	    "select username, xml from spool where username='", EUser, "'"
-	    "  order by seq;"
-	    "delete from spool where username='", EUser, "';"
-	    "commit"]) of
-	[{updated, undefined},
-	 {selected, ["username","xml"], Rs},
-	 {updated, _},
-	 {updated, undefined}] ->
+    F = fun() ->
+		Result = ejabberd_odbc:sql_query_t(
+			   ["select username, xml from spool where username='", EUser, "'"
+			    "  order by seq;"]),
+		ejabberd_odbc:sql_query_t(
+		  ["delete from spool where username='", EUser, "';"]),
+		Result
+	end,
+    case ejabberd_odbc:sql_transaction(LServer,F) of
+	{atomic, {selected, ["username","xml"], Rs}} ->
 	    Ls ++ lists:flatmap(
 		    fun({_, XML}) ->
 			    case xml_stream:parse_element(XML) of
@@ -253,5 +251,5 @@ remove_user(User, Server) ->
     Username = ejabberd_odbc:escape(LUser),
     ejabberd_odbc:sql_query(
       LServer,
-      ["delete from spool where username='", Username, "'"]).
+      ["delete from spool where username='", Username, "';"]).
 

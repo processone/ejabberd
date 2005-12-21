@@ -1,3 +1,14 @@
+2005-12-21  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/mysql.sql: Database description for MySQL Database 4.1 (Max
+	version, with Innodb)
+	* src/ejabberd_auth_odbc.erl: MySQL ODBC support.
+	* src/mod_offline_odbc.erl: likewise
+	* src/mod_vcard_odbc.erl: likewsie
+	* src/mod_roster_odbc.erl: likewise
+	* src/odbc/ejabberd_odbc.erl: likewise
+	* src/mod_last_odbc.erl: likewise
+
 2005-12-16  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/Makefile: Added helper to generate the docs (Thanks to Sander
