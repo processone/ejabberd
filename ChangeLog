@@ -5,18 +5,26 @@
 
 2005-12-22  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/Makefile.win32: Updated (thanks to Sergei Golovan)
+	* src/configure.erl: Likewise
+	* src/win32/CheckReqs.ini: Likewise
+	* src/win32/CheckReqs1.ini: Likewise
+	* src/win32/CheckReqs1H.ini: Likewise
+	* src/win32/ejabberd.nsh: Likewise
+	* src/win32/ejabberd.nsi: Likewise
+
 	* src/odbc/ejabberd_odbc.erl: Bugfix
 
 2005-12-21  Mickael Remond  <mickael.remond@process-one.net>
 
-	* src/odbc/mysql.sql: Database description for MySQL Database 4.1 (Max
-	version, with Innodb)
-	* src/ejabberd_auth_odbc.erl: MySQL ODBC support.
-	* src/mod_offline_odbc.erl: likewise
-	* src/mod_vcard_odbc.erl: likewsie
-	* src/mod_roster_odbc.erl: likewise
-	* src/odbc/ejabberd_odbc.erl: likewise
-	* src/mod_last_odbc.erl: likewise
+	* src/odbc/mysql.sql: Database description for MySQL Database 4.1
+	(Max version, with Innodb)
+	* src/ejabberd_auth_odbc.erl: MySQL ODBC support
+	* src/mod_offline_odbc.erl: Likewise
+	* src/mod_vcard_odbc.erl: Likewsie
+	* src/mod_roster_odbc.erl: Likewise
+	* src/odbc/ejabberd_odbc.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
 
 2005-12-16  Mickael Remond  <mickael.remond@process-one.net>
 

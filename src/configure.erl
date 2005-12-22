@@ -36,6 +36,7 @@ start() ->
 	    IconvLib  = "ICONV_LIB = $(ICONV_DIR)\\lib\\iconv.lib\n"
     end,
 
+    EVersion = "ERLANG_VERSION = " ++ erlang:system_info(version) ++ "\n",
     EIDirS   = "EI_DIR = " ++ code:lib_dir("erl_interface") ++ "\n",
     RootDirS = "ERLANG_DIR = " ++ code:root_dir() ++ "\n",
     Version  = "EJABBERD_VERSION = " ++ ?VERSION ++ "\n",

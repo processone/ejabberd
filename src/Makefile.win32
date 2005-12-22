@@ -69,6 +69,7 @@ release : build release_clean
 	copy web\*.erl $(SRC_DIR)\web
 	mkdir $(SRC_DIR)\odbc
 	copy odbc\*.erl $(SRC_DIR)\odbc
+	copy odbc\*.sql $(EREL)
 	mkdir $(DOC_DIR)
 	copy ..\doc\*.txt $(DOC_DIR)
 	copy ..\doc\*.html $(DOC_DIR)
@@ -99,8 +100,11 @@ all-recursive :
 	nmake -nologo -f Makefile.win32
 	cd ..
 
-compile-beam : 
-	erlc *.erl
+compile-beam : XmppAddr.hrl
+	erl -s make all report -noinput -s erlang halt
+
+XmppAddr.hrl : XmppAddr.asn1
+	erlc -bber_bin +der +compact_bit_string +optimize +noobj XmppAddr.asn1
 
 CLEAN : clean-recursive clean-local
 
@@ -110,6 +114,9 @@ clean-local :
 	-@erase expat_erl.exp
 	-@erase expat_erl.lib
 	-@erase *.beam
+	-@erase XmppAddr.asn1db
+	-@erase XmppAddr.erl
+	-@erase XmppAddr.hrl
 
 clean-recursive :
 	cd eldap

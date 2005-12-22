@@ -67,7 +67,7 @@
 
 Function .onInit
 
-    StrCpy $REQUIRED_ERLANG_VERSION "5.3.6.2"
+    StrCpy $REQUIRED_ERLANG_VERSION "5.4.9"
     StrCpy $REQUIRED_OPENSSL_VERSION "0.9.7c"
 
     ;Default installation folder
@@ -123,10 +123,10 @@ FunctionEnd
 
     !insertmacro MUI_PAGE_WELCOME
     !insertmacro MUI_PAGE_LICENSE "..\..\COPYING"
-    Page custom CheckUser LeaveCheckUser
-    Page custom CheckService LeaveCheckService
     Page custom CheckReqs LeaveCheckReqs
     Page custom CheckReqs1 LeaveCheckReqs1
+    Page custom CheckUser LeaveCheckUser
+    Page custom CheckService LeaveCheckService
     ;!insertmacro MUI_PAGE_COMPONENTS
     !insertmacro MUI_PAGE_DIRECTORY
 
