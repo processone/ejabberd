@@ -27,6 +27,8 @@
 	 handle_info/2,
 	 terminate/2]).
 
+-include("ejabberd.hrl").
+
 -record(state, {db_ref, db_type}).
 
 -define(STATE_KEY, ejabberd_odbc_state).
@@ -112,14 +114,22 @@ init([Host]) ->
     SQLServer = ejabberd_config:get_local_option({odbc_server, Host}),
     case SQLServer of
 	{pgsql, Server, DB, Username, Password} ->
-	    {ok, Ref} = pgsql:connect(Server, DB, Username, Password),
-	    {ok, #state{db_ref = Ref,
-			db_type = pgsql}};
+	    case pgsql:connect(Server, DB, Username, Password) of
+		{ok, Ref} -> 
+		    {ok, #state{db_ref = Ref, db_type = pgsql}};
+		{error, Reason} ->
+		    ?ERROR_MSG("PostgreSQL connection failed: ~p~n", [Reason]),
+		    {stop, pgsql_connection_failed}
+	    end;
 	_ when is_list(SQLServer) ->
-	    {ok, Ref} = odbc:connect(SQLServer,
-				     [{scrollable_cursors, off}]),
-	    {ok, #state{db_ref = Ref, 
-			db_type = odbc}}
+	    case odbc:connect(SQLServer,[{scrollable_cursors, off}]) of
+		{ok, Ref} -> 
+		    {ok, #state{db_ref = Ref, db_type = odbc}};
+		{error, Reason} ->
+		    ?ERROR_MSG("ODBC connection (~s) failed: ~p~n",
+			       [SQLServer, Reason]),
+		    {stop, odbc_connection_failed}
+	    end
     end.
 
 %%----------------------------------------------------------------------

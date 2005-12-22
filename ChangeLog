@@ -1,3 +1,8 @@
+2005-12-22  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: Added error message on ODBC
+	connection to help ODBC configuration troubleshooting.
+
 2005-12-22  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/odbc/ejabberd_odbc.erl: Bugfix
