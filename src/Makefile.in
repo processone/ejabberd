@@ -85,6 +85,7 @@ clean: clean-recursive clean-local
 
 clean-local:
 	rm -f *.beam $(ERLSHLIBS)
+	rm -f XmppAddr.asn1db XmppAddr.erl XmppAddr.hrl
 
 distclean: distclean-recursive clean-local
 	rm -f config.status

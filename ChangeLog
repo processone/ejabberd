@@ -1,5 +1,8 @@
 2005-12-22  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/Makefile.in: Clean results of ASN.1 compiler (thanks to
+	Sergei Golovan)
+
 	* src/win32/ejabberd.nsh: Removed (thanks to Sergei Golovan)
 
 2005-12-22  Mickael Remond  <mickael.remond@process-one.net>
