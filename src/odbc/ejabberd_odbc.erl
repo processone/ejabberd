@@ -50,7 +50,7 @@ sql_query(Host, Query) ->
 sql_transaction(Host, Queries) when is_list(Queries) ->
     F = fun() ->
 		lists:foreach(fun(Query) ->
-				      R = sql_query(Host, Query)
+				      sql_query_t(Query)
 			      end,
 			      Queries)
 	end,
