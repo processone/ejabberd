@@ -29,7 +29,7 @@
 %%          Other
 %%----------------------------------------------------------------------
 init(File) ->
-    case file:open(File, [append]) of
+    case file:open(File, [append, raw]) of
 	{ok, Fd} ->
 	    {ok, #state{fd = Fd, file = File}};
 	Error ->
@@ -66,7 +66,7 @@ handle_info({'EXIT', _Fd, _Reason}, _State) ->
     remove_handler;
 handle_info({emulator, _GL, reopen}, State) ->
     file:close(State#state.fd),
-    case file:open(State#state.file, [append]) of
+    case file:open(State#state.file, [append, raw]) of
 	{ok, Fd} ->
 	    {ok, State#state{fd = Fd}};
 	Error ->
@@ -101,38 +101,38 @@ write_event(Fd, {Time, {error, _GL, {Pid, Format, Args}}}) ->
     T = write_time(Time),
     case catch io_lib:format(add_node(Format,Pid), Args) of
 	S when list(S) ->
-	    io:format(Fd, T ++ S, []);
+	    file:write(Fd, io_lib:format(T ++ S, []));
 	_ ->
 	    F = add_node("ERROR: ~p - ~p~n", Pid),
-	    io:format(Fd, T ++ F, [Format,Args])
+	    file:write(Fd, io_lib:format(T ++ F, [Format,Args]))
     end;
 write_event(Fd, {Time, {emulator, _GL, Chars}}) ->
     T = write_time(Time),
     case catch io_lib:format(Chars, []) of
 	S when list(S) ->
-	    io:format(Fd, T ++ S, []);
+	    file:write(Fd, io_lib:format(T ++ S, []));
 	_ ->
-	    io:format(Fd, T ++ "ERROR: ~p ~n", [Chars])
+	    file:write(Fd, io_lib:format(T ++ "ERROR: ~p ~n", [Chars]))
     end;
 write_event(Fd, {Time, {info, _GL, {Pid, Info, _}}}) ->
     T = write_time(Time),
-    io:format(Fd, T ++ add_node("~p~n",Pid),[Info]);
+    file:write(Fd, io_lib:format(T ++ add_node("~p~n",Pid), [Info]));
 write_event(Fd, {Time, {error_report, _GL, {Pid, std_error, Rep}}}) ->
     T = write_time(Time),
     S = format_report(Rep),
-    io:format(Fd, T ++ S ++ add_node("", Pid), []);
+    file:write(Fd, io_lib:format(T ++ S ++ add_node("", Pid), []));
 write_event(Fd, {Time, {info_report, _GL, {Pid, std_info, Rep}}}) ->
     T = write_time(Time, "INFO REPORT"),
     S = format_report(Rep),
-    io:format(Fd, T ++ S ++ add_node("", Pid), []);
+    file:write(Fd, io_lib:format(T ++ S ++ add_node("", Pid), []));
 write_event(Fd, {Time, {info_msg, _GL, {Pid, Format, Args}}}) ->
     T = write_time(Time, "INFO REPORT"),
     case catch io_lib:format(add_node(Format,Pid), Args) of
 	S when list(S) ->
-	    io:format(Fd, T ++ S, []);
+	    file:write(Fd, io_lib:format(T ++ S, []));
 	_ ->
 	    F = add_node("ERROR: ~p - ~p~n", Pid),
-	    io:format(Fd, T ++ F, [Format,Args])
+	    file:write(Fd, io_lib:format(T ++ F, [Format,Args]))
     end;
 write_event(_, _) ->
     ok.

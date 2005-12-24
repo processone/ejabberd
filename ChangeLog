@@ -1,3 +1,7 @@
+2005-12-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_logger_h.erl: Speed optimizations
+
 2005-12-22  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/Makefile.in: Clean results of ASN.1 compiler (thanks to
