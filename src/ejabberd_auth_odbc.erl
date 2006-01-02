@@ -49,7 +49,7 @@ check_password(User, Server, Password) ->
 	    case catch ejabberd_odbc:sql_query(
 			 jlib:nameprep(Server),
 			 ["select password from users "
-			  "where username='", Username, "'"]) of
+			  "where username='", Username, "';"]) of
 		{selected, ["password"], [{Password}]} ->
 		    true;
 		_ ->
@@ -66,7 +66,7 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	    case catch ejabberd_odbc:sql_query(
 			 jlib:nameprep(Server),
 			 ["select password from users "
-			  "where username='", Username, "'"]) of
+			  "where username='", Username, "';"]) of
 		{selected, ["password"], [{Passwd}]} ->
 		    DigRes = if
 				 Digest /= "" ->
@@ -110,7 +110,7 @@ try_register(User, Server, Password) ->
 	    case catch ejabberd_odbc:sql_query(
 			 jlib:nameprep(Server),
 			 ["insert into users(username, password) "
-			  "values ('", Username, "', '", Pass, "')"]) of
+			  "values ('", Username, "', '", Pass, "');"]) of
 		{updated, 1} ->
 		    {atomic, ok};
 		_ ->
@@ -141,7 +141,7 @@ get_password(User, Server) ->
 	    case catch ejabberd_odbc:sql_query(
 			 jlib:nameprep(Server),
 			 ["select password from users "
-			  "where username='", Username, "'"]) of
+			  "where username='", Username, "';"]) of
 		{selected, ["password"], [{Password}]} ->
 		    Password;
 		_ ->
@@ -158,7 +158,7 @@ get_password_s(User, Server) ->
 	    case catch ejabberd_odbc:sql_query(
 			 jlib:nameprep(Server),
 			 ["select password from users "
-			  "where username='", Username, "'"]) of
+			  "where username='", Username, "';"]) of
 		{selected, ["password"], [{Password}]} ->
 		    Password;
 		_ ->
@@ -175,7 +175,7 @@ is_user_exists(User, Server) ->
 	    case catch ejabberd_odbc:sql_query(
 			 jlib:nameprep(Server),
 			 ["select password from users "
-			  "where username='", Username, "'"]) of
+			  "where username='", Username, "';"]) of
 		{selected, ["password"], [{_Password}]} ->
 		    true;
 		_ ->
@@ -191,7 +191,7 @@ remove_user(User, Server) ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    catch ejabberd_odbc:sql_query(
 		    jlib:nameprep(Server),
-		    ["delete from users where username='", Username ,"'"]),
+		    ["delete from users where username='", Username ,"';"]),
 	    ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
 			       [User, Server])
     end.

@@ -33,6 +33,7 @@
 
 -define(STATE_KEY, ejabberd_odbc_state).
 -define(MAX_TRANSACTION_RESTARTS, 10).
+-define(MYSQL_PORT, 3306).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -114,23 +115,13 @@ init([Host]) ->
     SQLServer = ejabberd_config:get_local_option({odbc_server, Host}),
     case SQLServer of
 	{pgsql, Server, DB, Username, Password} ->
-	    case pgsql:connect(Server, DB, Username, Password) of
-		{ok, Ref} -> 
-		    {ok, #state{db_ref = Ref, db_type = pgsql}};
-		{error, Reason} ->
-		    ?ERROR_MSG("PostgreSQL connection failed: ~p~n", [Reason]),
-		    {stop, pgsql_connection_failed}
-	    end;
+	    pgsql_connect(Server, DB, Username, Password);
+	{mysql, Server, DB, Username, Password} ->
+	    mysql_connect(Server, DB, Username, Password);
 	_ when is_list(SQLServer) ->
-	    case odbc:connect(SQLServer,[{scrollable_cursors, off}]) of
-		{ok, Ref} -> 
-		    {ok, #state{db_ref = Ref, db_type = odbc}};
-		{error, Reason} ->
-		    ?ERROR_MSG("ODBC connection (~s) failed: ~p~n",
-			       [SQLServer, Reason]),
-		    {stop, odbc_connection_failed}
-	    end
+	    odbc_connect(SQLServer)
     end.
+
 
 %%----------------------------------------------------------------------
 %% Func: handle_call/3
@@ -192,7 +183,9 @@ sql_query_internal(State, Query) ->
 	odbc ->
 	    odbc:sql_query(State#state.db_ref, Query);
 	pgsql ->
-	    pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query))
+	    pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
+	mysql ->
+	    mysql_to_odbc(mysql_conn:fetch(State#state.db_ref, Query, self()))
     end.
 
 execute_transaction(_State, _F, 0) ->
@@ -211,6 +204,35 @@ execute_transaction(State, F, NRestarts) ->
 	    {atomic, Res}
     end.
 
+%% == pure ODBC code
+
+%% part of init/1
+%% Open an ODBC database connection
+odbc_connect(SQLServer) ->
+    case odbc:connect(SQLServer,[{scrollable_cursors, off}]) of
+	{ok, Ref} -> 
+	    {ok, #state{db_ref = Ref, db_type = odbc}};
+	{error, Reason} ->
+	    ?ERROR_MSG("ODBC connection (~s) failed: ~p~n",
+		       [SQLServer, Reason]),
+	    {stop, odbc_connection_failed}
+    end.
+
+
+%% == Native PostgreSQL code
+
+%% part of init/1
+%% Open a database connection to PostgreSQL
+pgsql_connect(Server, DB, Username, Password) ->
+    case pgsql:connect(Server, DB, Username, Password) of
+	{ok, Ref} -> 
+	    {ok, #state{db_ref = Ref, db_type = pgsql}};
+	{error, Reason} ->
+	    ?ERROR_MSG("PostgreSQL connection failed: ~p~n", [Reason]),
+	    {stop, pgsql_connection_failed}
+    end.
+
+%% Convert PostgreSQL query result to Erlang ODBC result formalism
 pgsql_to_odbc({ok, PGSQLResult}) ->
     case PGSQLResult of
 	[Item] ->
@@ -233,3 +255,33 @@ pgsql_item_to_odbc({error, Error}) ->
 pgsql_item_to_odbc(_) ->
     {updated,undefined}.
 
+%% == Native MySQL code
+
+%% part of init/1
+%% Open a database connection to MySQL
+mysql_connect(Server, DB, Username, Password) ->
+    NoLogFun = fun(_Level,_Format,_Argument) -> ok end,
+    case mysql_conn:start(Server, ?MYSQL_PORT, Username, Password, DB, NoLogFun) of
+	{ok, Ref} ->
+	    {ok, #state{db_ref = Ref, db_type = mysql}};
+	{error, Reason} ->
+	    ?ERROR_MSG("MySQL connection failed: ~p~n", [Reason]),
+	    {stop, mysql_connection_failed}
+    end.
+
+%% Convert MySQL query result to Erlang ODBC result formalism
+mysql_to_odbc({updated, MySQLRes}) ->
+    {updated, mysql:get_result_affected_rows(MySQLRes)};
+mysql_to_odbc({data, MySQLRes}) ->
+    mysql_item_to_odbc(mysql:get_result_field_info(MySQLRes),
+		       mysql:get_result_rows(MySQLRes));
+mysql_to_odbc({error, MySQLRes}) ->
+    {error, mysql:get_result_reason(MySQLRes)}.
+
+%% When tabular data is returned, convert it to the ODBC formalism
+mysql_item_to_odbc(Columns, Recs) ->
+    %% For now, there is a bug and we do not get the correct value from MySQL
+    %% module:
+    {selected,
+     [element(2, Column) || Column <- Columns],
+     [list_to_tuple(Rec) || Rec <- Recs]}.
