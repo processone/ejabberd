@@ -171,6 +171,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
+%% We receive the down signal when we loose the MySQL connection (we are
+%% monitoring the connection)
+%% => We exit and let the supervisor restart the connection.
+handle_info({'DOWN', _MonitorRef, process, _Pid, _Info}, State) ->
+    {stop, connection_dropped, State};
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -185,7 +190,6 @@ terminate(_Reason, _State) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-
 sql_query_internal(State, Query) ->
     case State#state.db_type of
 	odbc ->
@@ -223,6 +227,8 @@ odbc_connect(SQLServer) ->
 	{error, Reason} ->
 	    ?ERROR_MSG("ODBC connection (~s) failed: ~p~n",
 		       [SQLServer, Reason]),
+	    %% If we can't connect we wait for 30 seconds before retrying
+	    timer:sleep(30000),
 	    {stop, odbc_connection_failed}
     end.
 
@@ -237,6 +243,8 @@ pgsql_connect(Server, DB, Username, Password) ->
 	    {ok, #state{db_ref = Ref, db_type = pgsql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("PostgreSQL connection failed: ~p~n", [Reason]),
+	    %% If we can't connect we wait for 30 seconds before retrying
+	    timer:sleep(30000),
 	    {stop, pgsql_connection_failed}
     end.
 
@@ -271,9 +279,12 @@ mysql_connect(Server, DB, Username, Password) ->
     NoLogFun = fun(_Level,_Format,_Argument) -> ok end,
     case mysql_conn:start(Server, ?MYSQL_PORT, Username, Password, DB, NoLogFun) of
 	{ok, Ref} ->
+	    erlang:monitor(process, Ref),
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("MySQL connection failed: ~p~n", [Reason]),
+	    %% If we can't connect we wait for 30 seconds before retrying
+	    timer:sleep(30000),
 	    {stop, mysql_connection_failed}
     end.
 

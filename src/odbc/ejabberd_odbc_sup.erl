@@ -25,7 +25,7 @@ start_link(Host) ->
 init([Host]) ->
     % TODO
     N = 10,
-    {ok, {{one_for_one, 10, 1},
+    {ok, {{one_for_one, 10, 6},
 	  lists:map(
 	    fun(I) ->
 		    {I,

@@ -6,6 +6,10 @@
 	* src/mod_vcard_odbc.erl: likewise.
 	* src/odbc/mysql.sql: Fixed MySQL database creation script: Was
 	not properly working with all MySQL version.
+	* src/odbc/ejabberd_odbc.erl: Added a way to retry database
+	connection connect for 5 minutes when the connection is lost. No
+	further connection is retry after. 
+	* src/odbc/ejabberd_odbc_sup.erl: likewise.
 	
 2006-01-13  Alexey Shchepin  <alexey@sevcom.net>
 
