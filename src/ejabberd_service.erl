@@ -13,7 +13,12 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/2, start_link/2, receiver/3, send_text/2, send_element/2]).
+-export([start/2,
+	 start_link/2,
+	 receiver/3,
+	 send_text/2,
+	 send_element/2,
+	 become_controller/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -74,6 +79,9 @@ start(SockData, Opts) ->
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_service, [SockData, Opts], ?FSMOPTS).
+
+become_controller(_Pid) ->
+    ok.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -175,7 +183,7 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 		    {stop, normal, StateData}
 	    end;
 	_ ->
-	    {next_state, wait_for_key, StateData}
+	    {next_state, wait_for_handshake, StateData}
     end;
 
 wait_for_handshake({xmlstreamend, _Name}, StateData) ->

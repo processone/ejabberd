@@ -17,6 +17,7 @@
 	 start_link/2,
 	 send_text/2,
 	 send_element/2,
+	 become_controller/1,
 	 get_presence/1]).
 
 %% gen_fsm callbacks
@@ -96,6 +97,9 @@ start(SockData, Opts) ->
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_c2s, [SockData, Opts], ?FSMOPTS).
+
+become_controller(Pid) ->
+    gen_fsm:send_all_state_event(Pid, become_controller).
 
 %% Return Username, Resource and presence information
 get_presence(FsmRef) ->
@@ -791,6 +795,12 @@ session_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_event(become_controller, StateName, StateData) ->
+    ok = (StateData#state.sockmod):controlling_process(
+	   StateData#state.socket,
+	   StateData#state.receiver),
+    ejabberd_receiver:become_controller(StateData#state.receiver),
+    {next_state, StateName, StateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -975,7 +985,10 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    {next_state, StateName, NewState};
 	true ->
 	    {next_state, StateName, NewState}
-    end.
+    end;
+handle_info(Info, StateName, StateData) ->
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
+    {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
 %% Func: terminate/3
@@ -1035,7 +1048,7 @@ terminate(_Reason, StateName, StateData) ->
 	_ ->
 	    ok
     end,
-    (StateData#state.sockmod):close(StateData#state.socket),
+    ejabberd_receiver:close(StateData#state.receiver),
     ok.
 
 %%%----------------------------------------------------------------------

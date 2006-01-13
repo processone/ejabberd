@@ -1,3 +1,18 @@
+2006-01-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_service.erl: Bugfix
+
+	* src/ejabberd_receiver.erl: Rewritten to use {active, once} mode
+	for socket
+	* src/ejabberd_c2s.erl: Update
+	* src/ejabberd_listener.erl: Likewise
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd_service.erl: Likewise
+	* src/shaper.erl: Likewise
+	* src/tls/tls.erl: Likewise
+	* src/web/ejabberd_http.erl: Likewise
+
 2006-01-02  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: Native MySQL support

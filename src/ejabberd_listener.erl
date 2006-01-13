@@ -99,6 +99,7 @@ accept(ListenSocket, Module, Opts) ->
 		{error, _Reason} ->
 		    gen_tcp:close(Socket)
 	    end,
+	    Module:become_controller(Pid),
 	    accept(ListenSocket, Module, Opts);
 	{error, Reason} ->
 	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
@@ -146,6 +147,7 @@ accept_ssl(ListenSocket, Module, Opts) ->
 	    end,
 	    {ok, Pid} = Module:start({ssl, Socket}, Opts),
 	    catch ssl:controlling_process(Socket, Pid),
+	    Module:become_controller(Pid),
 	    accept_ssl(ListenSocket, Module, Opts);
 	{error, timeout} ->
 	    accept_ssl(ListenSocket, Module, Opts);

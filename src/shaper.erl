@@ -33,25 +33,26 @@ new1({maxrate, MaxRate}) ->
 	     lasttime = now_to_usec(now())}.
 
 
-update(none, Size) ->
-    none;
+update(none, _Size) ->
+    {none, 0};
 update(#maxrate{} = State, Size) ->
     MinInterv = 1000 * Size /
 	(2 * State#maxrate.maxrate - State#maxrate.lastrate),
     Interv = (now_to_usec(now()) - State#maxrate.lasttime) / 1000,
     %io:format("State: ~p, Size=~p~nM=~p, I=~p~n",
     %          [State, Size, MinInterv, Interv]),
-    if
-	MinInterv > Interv ->
-	    timer:sleep(1 + trunc(MinInterv - Interv));
-	true ->
-	    ok
-    end,
-    Now = now_to_usec(now()),
-    State#maxrate{
-      lastrate = (State#maxrate.lastrate +
-		  1000000 * Size / (Now - State#maxrate.lasttime))/2,
-      lasttime = Now}.
+    Pause = if
+		MinInterv > Interv ->
+		    1 + trunc(MinInterv - Interv);
+		true ->
+		    0
+	    end,
+    NextNow = now_to_usec(now()) + Pause * 1000,
+    {State#maxrate{
+       lastrate = (State#maxrate.lastrate +
+		   1000000 * Size / (NextNow - State#maxrate.lasttime))/2,
+       lasttime = NextNow},
+     Pause}.
 
 
 now_to_usec({MSec, Sec, USec}) ->

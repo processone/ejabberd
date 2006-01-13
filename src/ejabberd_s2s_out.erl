@@ -164,6 +164,8 @@ open_socket(init, StateData) ->
     case Res of
 	{ok, Socket} ->
 	    ReceiverPid = ejabberd_receiver:start(Socket, gen_tcp, none),
+	    ok = gen_tcp:controlling_process(Socket, ReceiverPid),
+	    ejabberd_receiver:become_controller(ReceiverPid),
 	    Version = if
 			  StateData#state.use_v10 ->
 			      " version='1.0'";
@@ -342,7 +344,6 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		     StateData#state{try_auth = false}};
 		StartTLS and StateData#state.tls and
 		(not StateData#state.tls_enabled) ->
-		    StateData#state.receiver ! {change_timeout, 100},
 		    send_element(StateData,
 				 {xmlelement, "starttls",
 				  [{"xmlns", ?NS_TLS}], []}),
@@ -462,7 +463,6 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 		    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
 		    ejabberd_receiver:starttls(
 		      StateData#state.receiver, TLSSocket),
-		    StateData#state.receiver ! {change_timeout, infinity},
 		    NewStateData = StateData#state{sockmod = tls,
 						   socket = TLSSocket,
 						   streamid = new_id(),
@@ -630,8 +630,7 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
-    Error = ?ERR_REMOTE_SERVER_NOT_FOUND,
-    bounce_queue(StateData#state.queue, Error),
+    bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
     case StateData#state.new of
 	false ->
 	    ok;
@@ -642,8 +641,8 @@ terminate(Reason, StateName, StateData) ->
     case StateData#state.socket of
 	undefined ->
 	    ok;
-	Socket ->
-	    (StateData#state.sockmod):close(Socket)
+	_Socket ->
+	    ejabberd_receiver:close(StateData#state.receiver)
     end,
     ok.
 

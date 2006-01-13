@@ -13,6 +13,7 @@
 %% External exports
 -export([start/2,
 	 start_link/2,
+	 become_controller/1,
 	 receive_headers/1,
 	 url_encode/1]).
 
@@ -80,6 +81,9 @@ start_link({SockMod, Socket}, Opts) ->
 				     use_http_poll = UseHTTPPoll,
 				     use_web_admin = UseWebAdmin}])}.
 
+
+become_controller(_Pid) ->
+    ok.
 
 send_text(State, Text) ->
     (State#state.sockmod):send(State#state.socket, Text).

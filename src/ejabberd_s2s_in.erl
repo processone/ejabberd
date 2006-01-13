@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_s2s_in.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : Serve incoming s2s connection
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -14,7 +14,9 @@
 
 %% External exports
 -export([start/2,
-	 start_link/2,match_domain/2]).
+	 start_link/2,
+	 become_controller/1,
+	 match_domain/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -29,7 +31,6 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
-%-include_lib("ssl/pkix/SSL-PKIX.hrl").
 -include_lib("ssl/pkix/PKIX1Explicit88.hrl").
 -include_lib("ssl/pkix/PKIX1Implicit88.hrl").
 -include("XmppAddr.hrl").
@@ -86,6 +87,9 @@ start(SockData, Opts) ->
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_s2s_in, [SockData, Opts], ?FSMOPTS).
+
+become_controller(Pid) ->
+    gen_fsm:send_all_state_event(Pid, become_controller).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -455,6 +459,12 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_event(become_controller, StateName, StateData) ->
+    ok = (StateData#state.sockmod):controlling_process(
+	   StateData#state.socket,
+	   StateData#state.receiver),
+    ejabberd_receiver:become_controller(StateData#state.receiver),
+    {next_state, StateName, StateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -499,7 +509,7 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
-    (StateData#state.sockmod):close(StateData#state.socket),
+    ejabberd_receiver:close(StateData#state.receiver),
     ok.
 
 %%%----------------------------------------------------------------------

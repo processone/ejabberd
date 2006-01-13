@@ -16,6 +16,8 @@
 	 tcp_to_tls/2, tls_to_tcp/1,
 	 send/2,
 	 recv/2, recv/3, recv_data/2,
+	 setopts/2,
+	 controlling_process/2,
 	 close/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
@@ -174,6 +176,12 @@ send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 	    end
     end.
 
+
+setopts(#tlssock{tcpsock = TCPSocket}, Opts) ->
+    inet:setopts(TCPSocket, Opts).
+
+controlling_process(#tlssock{tcpsock = TCPSocket}, Pid) ->
+    gen_tcp:controlling_process(TCPSocket, Pid).
 
 close(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
     gen_tcp:close(TCPSocket),
