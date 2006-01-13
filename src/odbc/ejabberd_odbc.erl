@@ -17,7 +17,8 @@
 	 sql_query/2,
 	 sql_query_t/1,
 	 sql_transaction/2,
-	 escape/1]).
+	 escape/1,
+	 escape_like/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -84,20 +85,27 @@ sql_query_t(Query) ->
 	    QRes
     end.
 
-escape(S) ->
-    [case C of
-	 $\0 -> "\\0";
-	 $\n -> "\\n";
-	 $\t -> "\\t";
-	 $\b -> "\\b";
-	 $\r -> "\\r";
-	 $'  -> "\\'";
-	 $"  -> "\\\"";
-	 $%  -> "\\%";
-	 $_  -> "\\_";
-	 $\\ -> "\\\\";
-	 _ -> C
-     end || C <- S].
+%% Escape character that will confuse an SQL engine
+escape(S) when is_list(S) ->
+    [escape(C) || C <- S];
+escape($\0) -> "\\0";
+escape($\n) -> "\\n";
+escape($\t) -> "\\t";
+escape($\b) -> "\\b";
+escape($\r) -> "\\r";
+escape($')  -> "\\'";
+escape($")  -> "\\\"";
+escape($\\) -> "\\\\";
+escape(C)   -> C.
+
+%% Escape character that will confuse an SQL engine
+%% Percent and underscore only need to be escaped for pattern matching like
+%% statement
+escape_like(S) when is_list(S) ->
+    [escape_like(C) || C <- S];
+escape_like($%) -> "\\%";
+escape_like($_) -> "\\_";
+escape_like(C)  -> escape(C).
 
 
 %%%----------------------------------------------------------------------

@@ -1,14 +1,16 @@
+-- Needs MySQL max with innodb back-end
+
 CREATE TABLE users (
     username varchar(250) PRIMARY KEY,
     password text NOT NULL
-);
+) TYPE=InnoDB CHARACTER SET utf8;
 
 
 CREATE TABLE last (
     username varchar(250) PRIMARY KEY,
     seconds text NOT NULL,
     state text
-);
+) TYPE=InnoDB CHARACTER SET utf8;
 
 
 CREATE TABLE rosterusers (
@@ -20,32 +22,35 @@ CREATE TABLE rosterusers (
     server character(1) NOT NULL,
     subscribe text,
     type text
-);
+) TYPE=InnoDB CHARACTER SET utf8;
 
-CREATE UNIQUE INDEX i_rosteru_user_jid USING BTREE ON rosterusers(username, jid);
-CREATE INDEX i_rosteru_username USING BTREE ON rosterusers(username);
-CREATE INDEX i_rosteru_jid USING BTREE ON rosterusers(jid);
+CREATE UNIQUE INDEX i_rosteru_user_jid USING HASH ON rosterusers(username(75), jid(75));
+CREATE INDEX i_rosteru_username USING HASH ON rosterusers(username);
+CREATE INDEX i_rosteru_jid USING HASH ON rosterusers(jid);
 
 CREATE TABLE rostergroups (
     username varchar(250) NOT NULL,
     jid varchar(250) NOT NULL,
     grp text NOT NULL
-);
+) TYPE=InnoDB CHARACTER SET utf8;
 
-CREATE INDEX pk_rosterg_user_jid USING BTREE ON rostergroups(username, jid);
+CREATE INDEX pk_rosterg_user_jid USING HASH ON rostergroups(username(75), jid(75));
+
 
 CREATE TABLE spool (
     username varchar(250) NOT NULL,
     xml text,
     seq SERIAL
-);
+) TYPE=InnoDB CHARACTER SET utf8;
 
 CREATE INDEX i_despool USING BTREE ON spool(username);
+
 
 CREATE TABLE vcard (
     username varchar(250) PRIMARY KEY,
     vcard text NOT NULL
-);
+) TYPE=InnoDB CHARACTER SET utf8;
+
 
 CREATE TABLE vcard_search (
     username varchar(250) NOT NULL,
@@ -72,7 +77,7 @@ CREATE TABLE vcard_search (
     lorgname varchar(250) NOT NULL,
     orgunit text NOT NULL,
     lorgunit varchar(250) NOT NULL
-);
+) TYPE=InnoDB CHARACTER SET utf8;
 
 CREATE INDEX i_vcard_search_lfn       ON vcard_search(lfn);
 CREATE INDEX i_vcard_search_lfamily   ON vcard_search(lfamily);
@@ -86,11 +91,3 @@ CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
 CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
 CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
 
--- Needs MySQL max with innodb back-end
-ALTER TABLE users ENGINE = InnoDB;
-ALTER TABLE rosterusers ENGINE = InnoDB;
-ALTER TABLE rostergroups ENGINE = InnoDB;
-ALTER TABLE last ENGINE = InnoDB; 
-ALTER TABLE vcard ENGINE = InnoDB; 
-ALTER TABLE vcard_search ENGINE = InnoDB; 
-ALTER TABLE spool ENGINE = InnoDB;

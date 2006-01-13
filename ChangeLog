@@ -1,3 +1,12 @@
+2006-01-13  Mickaël Rémond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: underscore and percent are now only
+	escaped in like queries. MySQL where not escaping those escaped
+	characters in other context.
+	* src/mod_vcard_odbc.erl: likewise.
+	* src/odbc/mysql.sql: Fixed MySQL database creation script: Was
+	not properly working with all MySQL version.
+	
 2006-01-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_service.erl: Bugfix

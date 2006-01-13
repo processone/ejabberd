@@ -131,7 +131,6 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    end;
 	get ->
 	    #jid{luser = LUser, lserver = LServer} = To,
-	    US = {LUser, LServer},
 	    Username = ejabberd_odbc:escape(LUser),
 	    case catch ejabberd_odbc:sql_query(
 			 LServer,
@@ -185,8 +184,6 @@ set_vcard(User, LServer, VCARD) ->
     LEMail    = stringprep:tolower(EMail),
     LOrgName  = stringprep:tolower(OrgName),
     LOrgUnit  = stringprep:tolower(OrgUnit),
-
-    US = {LUser, LServer},
 
     if
 	(LUser     == error) or
@@ -559,12 +556,7 @@ make_val(Match, Field, Val) ->
 	case lists:suffix("*", Val) of
 	    true ->
 		Val1 = lists:sublist(Val, length(Val) - 1),
-		Val2 = lists:flatten([case C of
-					  $_ -> "\\_";
-					  $% -> "\\%";
-					  _ -> C
-				      end || C <- Val1]),
-		SVal = ejabberd_odbc:escape(Val2 ++ "%"),
+		SVal = ejabberd_odbc:escape_like(Val1) ++ "%",
 		[Field, " LIKE '", SVal, "'"];
 	    _ ->
 		SVal = ejabberd_odbc:escape(Val),
