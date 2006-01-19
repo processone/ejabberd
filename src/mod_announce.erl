@@ -15,10 +15,16 @@
 	 init/0,
 	 stop/1,
 	 announce/3,
-	 send_motd/1]).
+	 send_motd/1,
+	 disco_identity/5,
+	 disco_features/5,
+	 disco_items/5,
+	 announce_commands/4,
+	 announce_items/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("adhoc.hrl").
 
 -record(motd, {server, packet}).
 -record(motd_users, {us, dummy = []}).
@@ -33,6 +39,11 @@ start(Host, _Opts) ->
     update_tables(),
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
 		       ?MODULE, announce, 50),
+    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, disco_identity, 50),
+    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
+    ejabberd_hooks:add(disco_local_items, Host, ?MODULE, disco_items, 50),
+    ejabberd_hooks:add(adhoc_local_items, Host, ?MODULE, announce_items, 50),
+    ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE, announce_commands, 50),
     ejabberd_hooks:add(user_available_hook, Host,
 		       ?MODULE, send_motd, 50),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -66,6 +77,11 @@ loop() ->
     end.
 
 stop(Host) ->
+    ejabberd_hooks:delete(adhoc_local_commands, Host, ?MODULE, announce_commands, 50),
+    ejabberd_hooks:delete(adhoc_local_items, Host, ?MODULE, announce_items, 50),
+    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 50),
+    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
+    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 50),
     ejabberd_hooks:delete(local_send_to_resource_hook, Host,
 			  ?MODULE, announce, 50),
     ejabberd_hooks:delete(sm_register_connection_hook, Host,
@@ -74,6 +90,7 @@ stop(Host) ->
     exit(whereis(Proc), stop),
     {wait, Proc}.
 
+% Announcing via messages to a custom resource
 announce(From, To, Packet) ->
     case To of
 	#jid{luser = "", lresource = Res} ->
@@ -105,12 +122,422 @@ announce(From, To, Packet) ->
 	    ok
     end.
 
+%-------------------------------------------------------------------------
+% Announcing via ad-hoc commands
+-define(INFO_COMMAND(Lang, Node),
+        [{xmlelement, "identity",
+	  [{"category", "automation"},
+	   {"type", "command-node"},
+	   {"name", get_title(Lang, Node)}], []}]).
+
+disco_identity(Acc, _From, _To, Node, Lang) ->
+    case Node of
+	"announce/all" ->
+	    ?INFO_COMMAND(Lang, Node);
+	"announce/all-hosts/online" ->
+	    ?INFO_COMMAND(Lang, Node);
+	"announce/online" ->
+	    ?INFO_COMMAND(Lang, Node);
+	"announce/motd" ->
+	    ?INFO_COMMAND(Lang, Node);
+	"announce/motd/delete" ->
+	    ?INFO_COMMAND(Lang, Node);
+	"announce/motd/update" ->
+	    ?INFO_COMMAND(Lang, Node);
+	_ ->
+	    Acc
+    end.
+
+%-------------------------------------------------------------------------
+
+-define(INFO_RESULT(Allow, Feats),
+    case Allow of
+	deny ->
+	    {error, ?ERR_FORBIDDEN};
+	allow ->
+	    {result, Feats}
+    end).
+
+disco_features(Acc, From, #jid{lserver = LServer} = _To,
+	       "announce", _Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    Access1 = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
+	    Access2 = gen_mod:get_module_opt(global, ?MODULE, access, none),
+	    case {acl:match_rule(LServer, Access1, From),
+		  acl:match_rule(global, Access2, From)} of
+		{deny, deny} ->
+		    {error, ?ERR_FORBIDDEN};
+		_ ->
+		    {result, []}
+	    end
+    end;
+
+disco_features(Acc, From, #jid{lserver = LServer} = _To,
+	       "announce/all-hosts/online", _Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
+	    Allow = acl:match_rule(global, Access, From),
+	    ?INFO_RESULT(Allow, [?NS_COMMANDS])
+    end;
+
+disco_features(Acc, From, #jid{lserver = LServer} = _To,
+	       Node, _Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    Access = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
+	    Allow = acl:match_rule(LServer, Access, From),
+	    case Node of
+		"announce/all" ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		"announce/online" ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		"announce/motd" ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		"announce/motd/delete" ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		"announce/motd/update" ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		_ ->
+		    Acc
+	    end
+    end.
+
+%-------------------------------------------------------------------------
+
+-define(NODE_TO_ITEM(Lang, Server, Node),
+	{xmlelement, "item",
+	 [{"jid", Server},
+	  {"node", Node},
+	  {"name", get_title(Lang, Node)}],
+	 []}).
+
+-define(ITEMS_RESULT(Allow, Items),
+    case Allow of
+	deny ->
+	    {error, ?ERR_FORBIDDEN};
+	allow ->
+	    {result, Items}
+    end).
+
+disco_items(Acc, From, #jid{lserver = LServer, server = Server} = _To,
+	    "", Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    Access1 = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
+	    Access2 = gen_mod:get_module_opt(global, ?MODULE, access, none),
+	    case {acl:match_rule(LServer, Access1, From),
+		  acl:match_rule(global, Access2, From)} of
+		{deny, deny} ->
+		    Acc;
+		_ ->
+		    Items = case Acc of
+				{result, I} -> I;
+				_ -> []
+			    end,
+		    Nodes = [?NODE_TO_ITEM(Lang, Server, "announce")],
+		    {result, Items ++ Nodes}
+	    end
+    end;
+
+disco_items(Acc, From, #jid{lserver = LServer} = To, "announce", Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    announce_items(Acc, From, To, Lang)
+    end;
+
+disco_items(Acc, From, #jid{lserver = LServer} = _To,
+	    "announce/all-hosts/online", _Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
+	    Allow = acl:match_rule(global, Access, From),
+	    ?ITEMS_RESULT(Allow, [])
+    end;
+
+disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    Access = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
+	    Allow = acl:match_rule(LServer, Access, From),
+	    case Node of
+		"announce/all" ->
+		    ?ITEMS_RESULT(Allow, []);
+		"announce/online" ->
+		    ?ITEMS_RESULT(Allow, []);
+		"announce/motd" ->
+		    ?ITEMS_RESULT(Allow, []);
+		"announce/motd/delete" ->
+		    ?ITEMS_RESULT(Allow, []);
+		"announce/motd/update" ->
+		    ?ITEMS_RESULT(Allow, []);
+		_ ->
+		    Acc
+	    end
+    end.
+
+%-------------------------------------------------------------------------
+
+announce_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, Lang) ->
+    Access1 = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
+    Nodes1 = case acl:match_rule(LServer, Access1, From) of
+		 allow ->
+		     [?NODE_TO_ITEM(Lang, Server, "announce/all"),
+		      ?NODE_TO_ITEM(Lang, Server, "announce/online"),
+		      ?NODE_TO_ITEM(Lang, Server, "announce/motd"),
+		      ?NODE_TO_ITEM(Lang, Server, "announce/motd/delete"),
+		      ?NODE_TO_ITEM(Lang, Server, "announce/motd/update")];
+		 deny ->
+		     []
+	     end,
+    Access2 = gen_mod:get_module_opt(global, ?MODULE, access, none),
+    Nodes2 = case acl:match_rule(global, Access2, From) of
+		 allow ->
+		     [?NODE_TO_ITEM(Lang, Server, "announce/all-hosts/online")];
+		 deny ->
+		     []
+	     end,
+    case {Nodes1, Nodes2} of
+	{[], []} ->
+	    Acc;
+	_ ->
+	    Items = case Acc of
+			{result, I} -> I;
+			_ -> []
+		    end,
+	    {result, Items ++ Nodes1 ++ Nodes2}
+    end.
+
+%-------------------------------------------------------------------------
+
+-define(COMMANDS_RESULT(Allow, From, To, Request),
+    case Allow of
+	deny ->
+	    {error, ?ERR_FORBIDDEN};
+	allow ->
+	    announce_commands(From, To, Request)
+    end).
+
+announce_commands(_Acc, From, To,
+		  #adhoc_request{
+		     node = "announce/all-hosts/online"} = Request) ->
+    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
+    Allow = acl:match_rule(global, Access, From),
+    ?COMMANDS_RESULT(Allow, From, To, Request);
+
+announce_commands(Acc, From, #jid{lserver = LServer} = To,
+		  #adhoc_request{node = Node} = Request) ->
+    Access = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
+    Allow = acl:match_rule(LServer, Access, From),
+    case Node of
+	"announce/all" ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	"announce/online" ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	"announce/motd" ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	"announce/motd/delete" ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	"announce/motd/update" ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	_ ->
+	    Acc
+    end.
+
+%-------------------------------------------------------------------------
+
+announce_commands(From, To,
+		  #adhoc_request{lang = Lang,
+				 node = Node,
+				 action = Action,
+				 xdata = XData} = Request) ->
+    %% If the "action" attribute is not present, it is
+    %% understood as "execute".  If there was no <actions/>
+    %% element in the first response (which there isn't in our
+    %% case), "execute" and "complete" are equivalent.
+    ActionIsExecute = lists:member(Action,
+				   ["", "execute", "complete"]),
+    if Action == "cancel" ->
+	    %% User cancels request
+	    adhoc:produce_response(Request, 
+				   #adhoc_response{status = canceled});
+       XData == false, ActionIsExecute ->
+	    %% User requests form
+	    adhoc:produce_response(
+	      Request,
+	      #adhoc_response{status = executing,
+			      elements = [generate_adhoc_form(Lang, Node)]});
+       XData /= false, ActionIsExecute ->
+	    %% User returns form.
+	    case jlib:parse_xdata_submit(XData) of
+		invalid ->
+		    {error, ?ERR_BAD_REQUEST};
+		Fields ->
+		    handle_adhoc_form(From, To, Request, Fields)
+	    end;
+       true ->
+	    {error, ?ERR_BAD_REQUEST}
+    end.
+
+generate_adhoc_form(Lang, Node) ->
+    {xmlelement, "x",
+     [{"xmlns", ?NS_XDATA},
+      {"type", "form"}],
+     [{xmlelement, "title", [], [{xmlcdata, get_title(Lang, Node)}]}]
+     ++
+      if Node == "announce/motd/delete" ->
+	      [{xmlelement, "field",
+	       [{"var", "confirm"},
+		{"type", "boolean"},
+		{"label", translate:translate(Lang, "Really delete message of the day?")}],
+	       [{xmlelement, "value",
+		[],
+		[{xmlcdata, "true"}]}]}];
+	 true ->
+	      [{xmlelement, "field", 
+		[{"var", "subject"},
+		 {"type", "text-single"},
+		 {"label", translate:translate(Lang, "Subject")}],
+		[]},
+	       {xmlelement, "field",
+		[{"var", "body"},
+		 {"type", "text-multi"},
+		 {"label", translate:translate(Lang, "Message body")}],
+		[]}]
+      end}.
+
+join_lines([]) ->
+    [];
+join_lines(Lines) ->
+    join_lines(Lines, []).
+join_lines([Line|Lines], Acc) ->
+    join_lines(Lines, ["\n",Line|Acc]);
+join_lines([], Acc) ->
+    %% Remove last newline
+    lists:flatten(lists:reverse(tl(Acc))).
+
+handle_adhoc_form(From, #jid{lserver = LServer} = To,
+		  #adhoc_request{lang = Lang,
+				 node = Node,
+				 sessionid = SessionID},
+		  Fields) ->
+    Confirm = case lists:keysearch("confirm", 1, Fields) of
+		  {value, {"confirm", ["true"]}} ->
+		      true;
+		  {value, {"confirm", ["1"]}} ->
+		      true;
+		  _ ->
+		      false
+	      end,
+    Subject = case lists:keysearch("subject", 1, Fields) of
+		  {value, {"subject", SubjectLines}} ->
+		      %% There really shouldn't be more than one
+		      %% subject line, but can we stop them?
+		      join_lines(SubjectLines);
+		  _ ->
+		      []
+	      end,
+    Body = case lists:keysearch("body", 1, Fields) of
+	       {value, {"body", BodyLines}} ->
+		   join_lines(BodyLines);
+	       _ ->
+		   []
+	   end,
+    Response = #adhoc_response{lang = Lang,
+			       node = Node,
+			       sessionid = SessionID,
+			       status = completed},
+    Packet = {xmlelement, "message", [{"type", "normal"}], 
+	      if Subject /= [] ->
+		      [{xmlelement, "subject", [], 
+			[{xmlcdata, Subject}]}];
+		 true ->
+		      []
+	      end ++
+	      if Body /= [] ->
+		      [{xmlelement, "body", [],
+			[{xmlcdata, Body}]}];
+		 true ->
+		      []
+	      end},
+
+    Proc = gen_mod:get_module_proc(LServer, ?PROCNAME),
+    case {Node, Body} of
+	{"announce/motd/delete", _} ->
+	    if	Confirm ->
+		    Proc ! {announce_motd_delete, From, To, Packet},
+		    adhoc:produce_response(Response);
+	       true ->
+		    adhoc:produce_response(Response)
+	    end;
+	{_, []} ->
+	    %% An announce message with no body is definitely an operator error.
+	    %% Throw an error and give him/her a chance to send message again.
+	    {error, ?ERRT_NOT_ACCEPTABLE(
+		      Lang,
+		      "No body provided for announce message")};
+	%% Now send the packet to ?PROCNAME.
+	%% We don't use direct announce_* functions because it
+	%% leads to large delay in response and <iq/> queries processing
+	{"announce/all", _} ->
+	    Proc ! {announce_all, From, To, Packet},
+	    adhoc:produce_response(Response);
+	{"announce/online", _} ->
+	    Proc ! {announce_online, From, To, Packet},
+	    adhoc:produce_response(Response);
+	{"announce/all-hosts/online", _} ->	    
+	    Proc ! {announce_all_hosts_online, From, To, Packet},
+	    adhoc:produce_response(Response);
+	{"announce/motd", _} ->
+	    Proc ! {announce_motd, From, To, Packet},
+	    adhoc:produce_response(Response);
+	{"announce/motd/update", _} ->
+	    Proc ! {announce_motd_update, From, To, Packet},
+	    adhoc:produce_response(Response);
+	_ ->
+	    %% This can't happen, as we haven't registered any other
+	    %% command nodes.
+	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
+
+get_title(Lang, "announce") ->
+    translate:translate(Lang, "Announcements");
+get_title(Lang, "announce/all") ->
+    translate:translate(Lang, "Send announcement to all users");
+get_title(Lang, "announce/online") ->
+    translate:translate(Lang, "Send announcement to all online users");
+get_title(Lang, "announce/all-hosts/online") ->
+    translate:translate(Lang, "Send announcement to all online users on all hosts");
+get_title(Lang, "announce/motd") ->
+    translate:translate(Lang, "Set message of the day and send to online users");
+get_title(Lang, "announce/motd/update") ->
+    translate:translate(Lang, "Update message of the day (don't send)");
+get_title(Lang, "announce/motd/delete") ->
+    translate:translate(Lang, "Delete message of the day").
+
+%-------------------------------------------------------------------------
+
 announce_all(From, To, Packet) ->
     Host = To#jid.lserver,
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    Local = jlib:make_jid("", To#jid.server, ""),
@@ -126,7 +553,7 @@ announce_online(From, To, Packet) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_online1(ejabberd_sm:get_vh_session_list(Host),
@@ -138,7 +565,7 @@ announce_all_hosts_online(From, To, Packet) ->
     Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_online1(ejabberd_sm:dirty_get_sessions_list(),
@@ -159,7 +586,7 @@ announce_motd(From, To, Packet) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd_update(To#jid.lserver, Packet),
@@ -179,7 +606,7 @@ announce_motd_update(From, To, Packet) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd_update(Host, Packet)
@@ -197,7 +624,7 @@ announce_motd_delete(From, To, Packet) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd_delete(Host)
@@ -237,6 +664,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID) ->
 	    ok
     end.
 
+%-------------------------------------------------------------------------
 
 update_tables() ->
     update_motd_table(),
@@ -326,3 +754,4 @@ update_motd_users_table() ->
 	    ?INFO_MSG("Recreating motd_users table", []),
 	    mnesia:transform_table(motd_users, ignore, Fields)
     end.
+

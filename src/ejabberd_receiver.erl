@@ -17,6 +17,7 @@
 	 change_shaper/2,
 	 reset_stream/1,
 	 starttls/2,
+	 compress/2,
 	 become_controller/1,
 	 close/1]).
 
@@ -53,6 +54,9 @@ reset_stream(Pid) ->
 
 starttls(Pid, TLSSocket) ->
     gen_server:call(Pid, {starttls, TLSSocket}).
+
+compress(Pid, ZlibSocket) ->
+    gen_server:call(Pid, {compress, ZlibSocket}).
 
 become_controller(Pid) ->
     gen_server:call(Pid, become_controller).
@@ -110,6 +114,20 @@ handle_call({starttls, TLSSocket}, _From,
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
+handle_call({compress, ZlibSocket}, _From,
+	    #state{xml_stream_state = XMLStreamState,
+		   c2s_pid = C2SPid} = State) ->
+    xml_stream:close(XMLStreamState),
+    NewXMLStreamState = xml_stream:new(C2SPid),
+    NewState = State#state{socket = ZlibSocket,
+			   sock_mod = ejabberd_zlib,
+			   xml_stream_state = NewXMLStreamState},
+    case ejabberd_zlib:recv_data(ZlibSocket, "") of
+	{ok, ZlibData} ->
+	    {reply, ok, process_data(ZlibData, NewState)};
+	{error, _Reason} ->
+	    {stop, normal, ok, NewState}
+    end;
 handle_call(reset_stream, _From,
 	    #state{xml_stream_state = XMLStreamState,
 		   c2s_pid = C2SPid} = State) ->
@@ -154,6 +172,13 @@ handle_info({Tag, _TCPSocket, Data},
 	    case tls:recv_data(Socket, Data) of
 		{ok, TLSData} ->
 		    {noreply, process_data(TLSData, State)};
+		{error, _Reason} ->
+		    {stop, normal, State}
+	    end;
+	ejabberd_zlib ->
+	    case ejabberd_zlib:recv_data(Socket, Data) of
+		{ok, ZlibData} ->
+		    {noreply, process_data(ZlibData, State)};
 		{error, _Reason} ->
 		    {stop, normal, State}
 	    end;
@@ -210,7 +235,6 @@ activate_socket(#state{socket = Socket,
 	_ ->
 	    SockMod:setopts(Socket, [{active, once}])
     end.
-
 
 process_data(Data,
 	     #state{xml_stream_state = XMLStreamState,

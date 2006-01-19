@@ -134,13 +134,14 @@
   {mod_register,   [{access, register}]},
   {mod_roster,     []},
   {mod_privacy,    []},
-  {mod_configure,  []},
+  {mod_adhoc,      []},
+  {mod_configure,  []}, % Depends on mod_adhoc
   {mod_configure2, []},
   {mod_disco,      []},
   {mod_stats,      []},
   {mod_vcard,      []},
   {mod_offline,    []},
-  {mod_announce,   [{access, announce}]},
+  {mod_announce,   [{access, announce}]}, % Depends on mod_adhoc
   {mod_echo,       [{host, "echo.localhost"}]},
   {mod_private,    []},
   {mod_irc,        []},

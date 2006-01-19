@@ -19,7 +19,8 @@
 	 loaded_modules/1,
 	 loaded_modules_with_opts/1,
 	 get_hosts/2,
-	 get_module_proc/2]).
+	 get_module_proc/2,
+	 is_loaded/2]).
 
 -export([behaviour_info/1]).
 
@@ -143,4 +144,7 @@ get_hosts(Opts, Prefix) ->
 
 get_module_proc(Host, Base) ->
     list_to_atom(atom_to_list(Base) ++ "_" ++ Host).
+
+is_loaded(Host, Module) ->
+    ets:member(ejabberd_modules, {Module, Host}).
 

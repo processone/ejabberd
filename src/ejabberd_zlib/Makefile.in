@@ -1,0 +1,38 @@
+# $Id$
+
+CC = @CC@
+CFLAGS = @CFLAGS@ @ZLIB_CFLAGS@ @ERLANG_CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@ @ZLIB_LIBS@ @ERLANG_LIBS@
+
+SUBDIRS = 
+
+ERLSHLIBS = ../ejabberd_zlib_drv.so
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+OBJS   = \
+	$(OUTDIR)/ejabberd_zlib.beam
+
+all:    $(OBJS) $(ERLSHLIBS)
+
+$(OUTDIR)/%.beam:       %.erl
+	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
+
+#all:	$(ERLSHLIBS)
+#	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
+
+$(ERLSHLIBS):	../%.so:	%.c
+			$(CC) -Wall $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) \
+			$(subst ../,,$(subst .so,.c,$@)) $(LIBS) \
+			-o $@ -fpic -shared
+
+clean:
+	rm -f $(OBJS) $(ERLSHLIBS)
+
+distclean: clean
+	rm -f Makefile
+
+TAGS:
+	etags *.erl

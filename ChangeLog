@@ -1,4 +1,49 @@
-2006-01-13  Mickaël Rémond  <mickael.remond@process-one.net>
+2006-01-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/aclocal.m4: Updated for zlib support
+	* src/configure.ac: Likewise
+
+	* src/mod_muc/mod_muc_room.erl: Weakened presence filtering, added
+	warning in non-anonymous rooms, room destroying updated to latest
+	JEP-0045, added a number of occupants and room name in room's
+	disco#info reply, miscellaneous internal changes (thanks to Sergei
+	Golovan)
+
+	* src/mod_muc/mod_muc.erl: Better support for nick unregistration
+	(thanks to Sergei Golovan)
+
+	* src/ejabberd_zlib/ejabberd_zlib.erl: Zlib support (thanks to
+	Sergei Golovan)
+	* src/ejabberd_zlib/ejabberd_zlib_drv.c: Likewise
+	* src/ejabberd_zlib/Makefile.in: Likewise
+	* src/ejabberd_c2s.erl: Stream compression support (JEP-0138)
+	* src/ejabberd_receiver.erl: Likewise
+
+	* src/mod_disco.erl: Don't split node name before calling hooks
+	(thanks to Sergei Golovan)
+
+	* src/mod_configure.erl: Support for configuration using ad-hoc
+	commands (thanks to Sergei Golovan)
+
+	* src/mod_announce.erl: Support for sending announce messages
+	using ad-hoc commands (thanks to Sergei Golovan)
+
+	* src/mod_adhoc.erl: Ad-hoc support (JEP-0050) (thanks to Magnus
+	Henoch)
+	* src/adhoc.erl: Likewise
+	* src/adhoc.hrl: Likewise
+
+	* src/jlib.hrl: Updated (thanks to Sergei Golovan)
+
+	* src/gen_mod.erl: Added function is_loaded/2 (thanks to Sergei
+	Golovan)
+
+	* src/ejabberd_service.erl: Changed error message on handshake
+	error (thanks to Sergei Golovan)
+
+	* src/ejabberd.cfg.example: Updated (thanks to Sergei Golovan)
+
+2006-01-13  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: underscore and percent are now only
 	escaped in like queries. MySQL where not escaping those escaped

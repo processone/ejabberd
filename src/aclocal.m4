@@ -29,6 +29,37 @@ AC_DEFUN(AM_WITH_EXPAT,
   AC_SUBST(EXPAT_LIBS)
 ])
 
+AC_DEFUN(AM_WITH_ZLIB,
+[ AC_ARG_WITH(zlib,
+	      [  --with-zlib=PREFIX	prefix where zlib is installed])
+
+  ZLIB_CFLAGS=
+  ZLIB_LIBS=
+	if test x"$with_zlib" != x; then
+		ZLIB_CFLAGS="-I$with_zlib/include"
+		ZLIB_LIBS="-L$with_zlib/lib"
+	fi
+	
+	AC_CHECK_LIB(z, gzgets,
+		     [ ZLIB_LIBS="$ZLIB_LIBS -lz"
+		       zlib_found=yes ],
+		     [ zlib_found=no ],
+		     "$ZLIB_LIBS")
+	if test $zlib_found = no; then
+		AC_MSG_ERROR([Could not find the zlib library])
+	fi
+	zlib_save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $ZLIB_CFLAGS"
+	AC_CHECK_HEADERS(zlib.h, , zlib_found=no)
+	if test $zlib_found = no; then
+		AC_MSG_ERROR([Could not find zlib.h])
+	fi
+	CFLAGS="$zlib_save_CFLAGS"
+
+  AC_SUBST(ZLIB_CFLAGS)
+  AC_SUBST(ZLIB_LIBS)
+])
+
 AC_DEFUN(AM_WITH_ERLANG,
 [ AC_ARG_WITH(erlang,
 	      [  --with-erlang=PREFIX    path to erlc and erl ])

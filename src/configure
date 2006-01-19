@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SET_MAKE ERLC ac_pt_ERLC ERL ac_pt_ERL ERLANG_CFLAGS ERLANG_LIBS LIBICONV CPP EGREP EXPAT_CFLAGS EXPAT_LIBS LIBOBJS mod_pubsub make_mod_pubsub mod_irc make_mod_irc mod_muc make_mod_muc eldap make_eldap web make_web tls make_tls odbc make_odbc roster_gateway_workaround SSL_LIBS SSL_CFLAGS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SET_MAKE ERLC ac_pt_ERLC ERL ac_pt_ERL ERLANG_CFLAGS ERLANG_LIBS LIBICONV CPP EGREP EXPAT_CFLAGS EXPAT_LIBS ZLIB_CFLAGS ZLIB_LIBS LIBOBJS mod_pubsub make_mod_pubsub mod_irc make_mod_irc mod_muc make_mod_muc eldap make_eldap web make_web tls make_tls odbc make_odbc ejabberd_zlib make_ejabberd_zlib roster_gateway_workaround SSL_LIBS SSL_CFLAGS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -850,6 +850,7 @@ Optional Features:
   --enable-web        enable web (default: yes)
   --enable-tls        enable tls (default: yes)
   --enable-odbc        enable odbc (default: no)
+  --enable-ejabberd_zlib        enable ejabberd_zlib (default: yes)
   --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions
 
 Optional Packages:
@@ -858,6 +859,7 @@ Optional Packages:
   --with-erlang=PREFIX    path to erlc and erl
   --with-libiconv-prefix=PREFIX	prefix where libiconv is installed
   --with-expat=PREFIX	prefix where EXPAT is installed
+  --with-zlib=PREFIX	prefix where zlib is installed
   --with-openssl=PREFIX    prefix where OPENSSL is installed
 
 Some influential environment variables:
@@ -3563,6 +3565,259 @@ echo "$as_me: error: Could not find expat.h" >&2;}
 
 
 
+#locating zlib
+
+# Check whether --with-zlib or --without-zlib was given.
+if test "${with_zlib+set}" = set; then
+  withval="$with_zlib"
+
+fi;
+
+  ZLIB_CFLAGS=
+  ZLIB_LIBS=
+	if test x"$with_zlib" != x; then
+		ZLIB_CFLAGS="-I$with_zlib/include"
+		ZLIB_LIBS="-L$with_zlib/lib"
+	fi
+
+	echo "$as_me:$LINENO: checking for gzgets in -lz" >&5
+echo $ECHO_N "checking for gzgets in -lz... $ECHO_C" >&6
+if test "${ac_cv_lib_z_gzgets+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz "$ZLIB_LIBS" $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char gzgets ();
+int
+main ()
+{
+gzgets ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_z_gzgets=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_z_gzgets=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_z_gzgets" >&5
+echo "${ECHO_T}$ac_cv_lib_z_gzgets" >&6
+if test $ac_cv_lib_z_gzgets = yes; then
+   ZLIB_LIBS="$ZLIB_LIBS -lz"
+		       zlib_found=yes
+else
+   zlib_found=no
+fi
+
+	if test $zlib_found = no; then
+		{ { echo "$as_me:$LINENO: error: Could not find the zlib library" >&5
+echo "$as_me: error: Could not find the zlib library" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	zlib_save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $ZLIB_CFLAGS"
+
+for ac_header in zlib.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## --------------------------------- ##
+## Report this to BUG-REPORT-ADDRESS ##
+## --------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  zlib_found=no
+fi
+
+done
+
+	if test $zlib_found = no; then
+		{ { echo "$as_me:$LINENO: error: Could not find zlib.h" >&5
+echo "$as_me: error: Could not find zlib.h" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	CFLAGS="$zlib_save_CFLAGS"
+
+
+
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 echo "$as_me:$LINENO: checking for an ANSI C-conforming const" >&5
@@ -4224,6 +4479,28 @@ echo "${ECHO_T}$mr_enable_odbc" >&6
 
 
 
+ejabberd_zlib=
+make_ejabberd_zlib=
+echo "$as_me:$LINENO: checking whether build ejabberd_zlib" >&5
+echo $ECHO_N "checking whether build ejabberd_zlib... $ECHO_C" >&6
+# Check whether --enable-ejabberd_zlib or --disable-ejabberd_zlib was given.
+if test "${enable_ejabberd_zlib+set}" = set; then
+  enableval="$enable_ejabberd_zlib"
+  mr_enable_ejabberd_zlib="$enableval"
+else
+  mr_enable_ejabberd_zlib=yes
+fi;
+if test "$mr_enable_ejabberd_zlib" = "yes"; then
+ejabberd_zlib=ejabberd_zlib
+make_ejabberd_zlib=ejabberd_zlib/Makefile
+fi
+echo "$as_me:$LINENO: result: $mr_enable_ejabberd_zlib" >&5
+echo "${ECHO_T}$mr_enable_ejabberd_zlib" >&6
+
+
+
+
+
 # Check whether --enable-roster_gateway_workaround or --disable-roster_gateway_workaround was given.
 if test "${enable_roster_gateway_workaround+set}" = set; then
   enableval="$enable_roster_gateway_workaround"
@@ -4239,7 +4516,7 @@ else
 fi;
 
 
-                                                                                          ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_eldap $make_web stringprep/Makefile $make_tls $make_odbc"
+                                                                                                    ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_eldap $make_web stringprep/Makefile $make_tls $make_odbc $make_ejabberd_zlib"
 
 #openssl
 
@@ -5056,6 +5333,7 @@ do
   "stringprep/Makefile" ) CONFIG_FILES="$CONFIG_FILES stringprep/Makefile" ;;
   "$make_tls" ) CONFIG_FILES="$CONFIG_FILES $make_tls" ;;
   "$make_odbc" ) CONFIG_FILES="$CONFIG_FILES $make_odbc" ;;
+  "$make_ejabberd_zlib" ) CONFIG_FILES="$CONFIG_FILES $make_ejabberd_zlib" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
@@ -5158,6 +5436,8 @@ s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@EXPAT_CFLAGS@,$EXPAT_CFLAGS,;t t
 s,@EXPAT_LIBS@,$EXPAT_LIBS,;t t
+s,@ZLIB_CFLAGS@,$ZLIB_CFLAGS,;t t
+s,@ZLIB_LIBS@,$ZLIB_LIBS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@mod_pubsub@,$mod_pubsub,;t t
 s,@make_mod_pubsub@,$make_mod_pubsub,;t t
@@ -5173,6 +5453,8 @@ s,@tls@,$tls,;t t
 s,@make_tls@,$make_tls,;t t
 s,@odbc@,$odbc,;t t
 s,@make_odbc@,$make_odbc,;t t
+s,@ejabberd_zlib@,$ejabberd_zlib,;t t
+s,@make_ejabberd_zlib@,$make_ejabberd_zlib,;t t
 s,@roster_gateway_workaround@,$roster_gateway_workaround,;t t
 s,@SSL_LIBS@,$SSL_LIBS,;t t
 s,@SSL_CFLAGS@,$SSL_CFLAGS,;t t

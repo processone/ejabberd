@@ -107,7 +107,7 @@ do_route1(Host, ServerHost, Access, From, To, Packet) ->
 			"iq" ->
 			    case jlib:iq_query_info(Packet) of
 				#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
-				    sub_el = SubEl} = IQ ->
+				    sub_el = _SubEl} = IQ ->
 				    Res = IQ#iq{type = result,
 						sub_el = [{xmlelement, "query",
 							   [{"xmlns", XMLNS}],
@@ -123,7 +123,7 @@ do_route1(Host, ServerHost, Access, From, To, Packet) ->
 				#iq{type = get,
 				    xmlns = ?NS_REGISTER = XMLNS,
 				    lang = Lang,
-				    sub_el = SubEl} = IQ ->
+				    sub_el = _SubEl} = IQ ->
 				    Res = IQ#iq{type = result,
 						sub_el =
 						[{xmlelement, "query",
@@ -155,7 +155,7 @@ do_route1(Host, ServerHost, Access, From, To, Packet) ->
 				#iq{type = get,
 				    xmlns = ?NS_VCARD = XMLNS,
 				    lang = Lang,
-				    sub_el = SubEl} = IQ ->
+				    sub_el = _SubEl} = IQ ->
 				    Res = IQ#iq{type = result,
 						sub_el =
 						[{xmlelement, "vCard",
@@ -380,76 +380,81 @@ iq_get_register_info(Host, From, Lang) ->
 		Lang, "Enter nickname you want to register")}]},
 	   ?XFIELD("text-single", "Nickname", "nick", Nick)]}].
 
-iq_set_register_info(Host, From, XData, Lang) ->
+iq_set_register_info(Host, From, Nick, Lang) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     LUS = {LUser, LServer},
-    case lists:keysearch("nick", 1, XData) of
-	false ->
-	    ErrText = "You must fill in field \"nick\" in the form",
-	    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
-	{value, {_, [Nick]}} ->
-	    F = fun() ->
-			case Nick of
-			    "" ->
-				mnesia:delete({muc_registered, {LUS, Host}}),
+    F = fun() ->
+		case Nick of
+		    "" ->
+			mnesia:delete({muc_registered, {LUS, Host}}),
+			ok;
+		    _ ->
+			Allow =
+			    case mnesia:select(
+				   muc_registered,
+				   [{#muc_registered{us_host = '$1',
+						     nick = Nick,
+						     _ = '_'},
+				     [{'==', {element, 2, '$1'}, Host}],
+				     ['$_']}]) of
+				[] ->
+				    true;
+				[#muc_registered{us_host = {U, _Host}}] ->
+				    U == LUS
+			    end,
+			if
+			    Allow ->
+				mnesia:write(
+				  #muc_registered{us_host = {LUS, Host},
+						  nick = Nick}),
 				ok;
-			    _ ->
-				Allow =
-				    case mnesia:select(
-					   muc_registered,
-					   [{#muc_registered{us_host = '$1',
-							     nick = Nick,
-							     _ = '_'},
-					     [{'==', {element, 2, '$1'}, Host}],
-					     ['$_']}]) of
-					[] ->
-					    true;
-					[#muc_registered{us_host = {U, _Host}}] ->
-					    U == LUS
-				    end,
-				if
-				    Allow ->
-					mnesia:write(
-					  #muc_registered{us_host = {LUS, Host},
-							  nick = Nick}),
-					ok;
-				    true ->
-					false
-				end
+			    true ->
+				false
 			end
-		end,
-	    case mnesia:transaction(F) of
-		{atomic, ok} ->
-		    {result, []};
-		{atomic, false} ->
-		    ErrText = "Specified nickname is already registered",
-		    {error, ?ERRT_CONFLICT(Lang, ErrText)};
-		_ ->
-		    {error, ?ERR_INTERNAL_SERVER_ERROR}
-	    end
+		end
+	end,
+    case mnesia:transaction(F) of
+	{atomic, ok} ->
+	    {result, []};
+	{atomic, false} ->
+	    ErrText = "Specified nickname is already registered",
+	    {error, ?ERRT_CONFLICT(Lang, ErrText)};
+	_ ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
 process_iq_register_set(Host, From, SubEl, Lang) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
-    case xml:remove_cdata(Els) of
-	[{xmlelement, "x", _Attrs1, _Els1} = XEl] ->
-	    case {xml:get_tag_attr_s("xmlns", XEl),
-		  xml:get_tag_attr_s("type", XEl)} of
-		{?NS_XDATA, "cancel"} ->
-		    {result, []};
-		{?NS_XDATA, "submit"} ->
-		    XData = jlib:parse_xdata_submit(XEl),
-		    case XData of
-			invalid ->
-			    {error, ?ERR_BAD_REQUEST};
+    case xml:get_subtag(SubEl, "remove") of
+	false ->
+	    case xml:remove_cdata(Els) of
+		[{xmlelement, "x", _Attrs1, _Els1} = XEl] ->
+		    case {xml:get_tag_attr_s("xmlns", XEl),
+			  xml:get_tag_attr_s("type", XEl)} of
+			{?NS_XDATA, "cancel"} ->
+			    {result, []};
+			{?NS_XDATA, "submit"} ->
+			    XData = jlib:parse_xdata_submit(XEl),
+			    case XData of
+				invalid ->
+				    {error, ?ERR_BAD_REQUEST};
+				_ ->
+				    case lists:keysearch("nick", 1, XData) of
+					false ->
+					    ErrText = "You must fill in field \"Nickname\" in the form",
+					    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
+					{value, {_, [Nick]}} ->
+					    iq_set_register_info(Host, From, Nick, Lang)
+				    end
+			    end;
 			_ ->
-			    iq_set_register_info(Host, From, XData, Lang)
+			    {error, ?ERR_BAD_REQUEST}
 		    end;
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end;
 	_ ->
-	    {error, ?ERR_BAD_REQUEST}
+	    iq_set_register_info(Host, From, "", Lang)
     end.
 
 iq_get_vcard(Lang) ->

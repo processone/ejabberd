@@ -17,134 +17,210 @@
 	 get_local_identity/5,
 	 get_local_features/5,
 	 get_local_items/5,
+	 adhoc_local_items/4,
+	 adhoc_local_commands/4,
+	 get_sm_identity/5,
 	 get_sm_features/5,
 	 get_sm_items/5,
-	 process_local_iq/3,
-	 process_sm_iq/3]).
+	 adhoc_sm_items/4,
+	 adhoc_sm_commands/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("adhoc.hrl").
 
 
-start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_EJABBERD_CONFIG,
-				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_EJABBERD_CONFIG,
-				  ?MODULE, process_sm_iq, IQDisc),
+start(Host, _Opts) ->
     ejabberd_hooks:add(disco_local_items, Host, ?MODULE, get_local_items, 50),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, get_local_identity, 50),
     ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_sm_items, 50),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, get_sm_identity, 50),
+    ejabberd_hooks:add(adhoc_local_items, Host, ?MODULE, adhoc_local_items, 50),
+    ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE, adhoc_local_commands, 50),
+    ejabberd_hooks:add(adhoc_sm_items, Host, ?MODULE, adhoc_sm_items, 50),
+    ejabberd_hooks:add(adhoc_sm_commands, Host, ?MODULE, adhoc_sm_commands, 50),
     ok.
 
 stop(Host) ->
+    ejabberd_hooks:delete(adhoc_sm_commands, Host, ?MODULE, adhoc_sm_commands, 50),
+    ejabberd_hooks:delete(adhoc_sm_items, Host, ?MODULE, adhoc_sm_items, 50),
+    ejabberd_hooks:delete(adhoc_local_commands, Host, ?MODULE, adhoc_local_commands, 50),
+    ejabberd_hooks:delete(adhoc_local_items, Host, ?MODULE, adhoc_local_items, 50),
+    ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, get_sm_identity, 50),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_sm_items, 50),
     ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 50),
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 50),
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, get_local_items, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_EJABBERD_CONFIG),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_EJABBERD_CONFIG).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_COMMANDS).
 
+%%%-----------------------------------------------------------------------
 
--define(EMPTY_INFO_RESULT, {result, Feats}).
+-define(INFO_IDENTITY(Category, Type, Name, Lang),
+	[{xmlelement, "identity",
+	  [{"category", Category},
+	   {"type", Type},
+	   {"name", translate:translate(Lang, Name)}], []}]).
 
-get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
-    Acc;
+-define(INFO_COMMAND(Name, Lang),
+	?INFO_IDENTITY("automation", "command-node", Name, Lang)).
+
+get_sm_identity(Acc, _From, _To, Node, Lang) ->
+    case Node of
+	"config" ->
+	    ?INFO_COMMAND("Configuration", Lang);
+	_ ->
+	    Acc
+    end.
+
+get_local_identity(Acc, _From, _To, Node, Lang) ->
+    LNode = string:tokens(Node, "/"),
+    case LNode of
+	["running nodes", ENode] ->
+	    ?INFO_IDENTITY("ejabberd", "node", ENode, Lang);
+	["running nodes", _ENode, "DB"] ->
+	    ?INFO_COMMAND("DB", Lang);
+	["running nodes", _ENode, "modules", "start"] ->
+	    ?INFO_COMMAND("Start Modules", Lang);
+	["running nodes", _ENode, "modules", "stop"] ->
+	    ?INFO_COMMAND("Stop Modules", Lang);
+	["running nodes", _ENode, "backup", "backup"] ->
+	    ?INFO_COMMAND("Backup", Lang);
+	["running nodes", _ENode, "backup", "restore"] ->
+	    ?INFO_COMMAND("Restore", Lang);
+	["running nodes", _ENode, "backup", "textfile"] ->
+	    ?INFO_COMMAND("Dump to Text File", Lang);
+	["running nodes", _ENode, "import", "file"] ->
+	    ?INFO_COMMAND("Import File", Lang);
+	["running nodes", _ENode, "import", "dir"] ->
+	    ?INFO_COMMAND("Import Directory", Lang);
+	["config", "hostname"] ->
+	    ?INFO_COMMAND("Host Name", Lang);
+	["config", "acls"] ->
+	    ?INFO_COMMAND("Access Control Lists", Lang);
+	["config", "access"] ->
+	    ?INFO_COMMAND("Access Rules", Lang);
+	_ ->
+	    Acc
+    end.
+
+%%%-----------------------------------------------------------------------
+
+-define(INFO_RESULT(Allow, Feats),
+    case Allow of
+	deny ->
+	    {error, ?ERR_FORBIDDEN};
+	allow ->
+	    {result, Feats}
+    end).
 
 get_sm_features(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
-    case {acl:match_rule(LServer, configure, From), Node} of
-	{allow, []} ->
-	    case Acc of
-		{result, Features} ->
-		    {result, [?NS_EJABBERD_CONFIG | Features]};
-		empty ->
-		    {result, [?NS_EJABBERD_CONFIG]}
-	    end;
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
 	_ ->
-	    Acc
+	    Allow = acl:match_rule(LServer, configure, From),
+	    case Node of
+		"config" ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		_ ->
+		    Acc
+	    end
     end.
-
-get_local_identity(Acc, _From, _To, Node, _Lang) ->
-    case Node of
-	["running nodes", ENode] ->
-	     [{xmlelement, "identity",
-	       [{"category", "ejabberd"},
-		{"type", "node"},
-		{"name", ENode}], []}];
-	_ ->
-	    Acc
-    end.
-
-get_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
-    Acc;
-
-get_local_features(Acc, _From, _To, [], _Lang) ->
-    Acc;
 
 get_local_features(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
-    Feats = case Acc of
-		{result, Features} -> Features;
-		empty -> []
-	    end,
-    case {acl:match_rule(LServer, configure, From), Node} of
-	{deny, _} ->
-	    {error, ?ERR_NOT_ALLOWED};
-	{allow, ["config"]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["online users"]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["all users"]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["all users", [$@ | _]]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["outgoing s2s" | _]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["running nodes"]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["stopped nodes"]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["running nodes", _ENode]} ->
-	    {result, [?NS_STATS | Feats]};
-	{allow, ["running nodes", _ENode, "DB"]} ->
-	    {result, [?NS_EJABBERD_CONFIG | Feats]};
-	{allow, ["running nodes", _ENode, "modules"]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["running nodes", _ENode, "modules", _]} ->
-	    {result, [?NS_EJABBERD_CONFIG | Feats]};
-	{allow, ["running nodes", _ENode, "backup"]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["running nodes", _ENode, "backup", _]} ->
-	    {result, [?NS_EJABBERD_CONFIG | Feats]};
-	{allow, ["running nodes", _ENode, "import"]} ->
-	    ?EMPTY_INFO_RESULT;
-	{allow, ["running nodes", _ENode, "import", _]} ->
-	    {result, [?NS_EJABBERD_CONFIG | Feats]};
-	{allow, ["config", _]} ->
-	    {result, [?NS_EJABBERD_CONFIG | Feats]};
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    LNode = string:tokens(Node, "/"),
+	    Allow = acl:match_rule(LServer, configure, From),
+	    case LNode of
+		["config"] ->
+		    ?INFO_RESULT(Allow, []);
+		["online users"] ->
+		    ?INFO_RESULT(Allow, []);
+		["all users"] ->
+		    ?INFO_RESULT(Allow, []);
+		["all users", [$@ | _]] ->
+		    ?INFO_RESULT(Allow, []);
+		["outgoing s2s" | _] ->
+		    ?INFO_RESULT(Allow, []);
+		["running nodes"] ->
+		    ?INFO_RESULT(Allow, []);
+		["stopped nodes"] ->
+		    ?INFO_RESULT(Allow, []);
+		["running nodes", _ENode] ->
+		    ?INFO_RESULT(Allow, [?NS_STATS]);
+		["running nodes", _ENode, "DB"] ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		["running nodes", _ENode, "modules"] ->
+		    ?INFO_RESULT(Allow, []);
+		["running nodes", _ENode, "modules", _] ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		["running nodes", _ENode, "backup"] ->
+		    ?INFO_RESULT(Allow, []);
+		["running nodes", _ENode, "backup", _] ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		["running nodes", _ENode, "import"] ->
+		    ?INFO_RESULT(Allow, []);
+		["running nodes", _ENode, "import", _] ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		["config", _] ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		_ ->
+		    Acc
+	    end
+    end.
+
+%%%-----------------------------------------------------------------------
+
+adhoc_sm_items(Acc, From, #jid{lserver = LServer} = To, Lang) ->
+    case acl:match_rule(LServer, configure, From) of
+	allow ->
+	    Items = case Acc of
+			{result, Its} -> Its;
+			empty -> []
+		    end,
+	    Nodes = [{xmlelement, "item",
+		      [{"jid", jlib:jid_to_string(To)},
+		       {"name", translate:translate(Lang, "Configuration")},
+		       {"node", "config"}], []}],
+	    {result, Items ++ Nodes};
 	_ ->
 	    Acc
     end.
 
-get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
-    Acc;
+%%%-----------------------------------------------------------------------
 
 get_sm_items(Acc, From,
-	     #jid{user = User, server = Server, lserver = LServer} = _To,
-	     Node, _Lang) ->
-    case {acl:match_rule(LServer, configure, From), Node} of
-	{allow, []} ->
-	    Items = case Acc of
-			{result, Its} ->
-			    Its;
-			empty ->
-			    []
-		    end,
-	    {result, Items ++ get_user_resources(User, Server)};
+	     #jid{user = User, server = Server, lserver = LServer} = To,
+	     Node, Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
 	_ ->
-	    Acc
+	    Items = case Acc of
+			{result, Its} -> Its;
+			empty -> []
+		    end,
+	    case {acl:match_rule(LServer, configure, From), Node} of
+		{allow, ""} ->
+		    Nodes = [{xmlelement, "item",
+			      [{"jid", jlib:jid_to_string(To)},
+			       {"name", translate:translate(Lang, "Configuration")},
+			       {"node", "config"}], []}],
+		    {result, Items ++ Nodes ++ get_user_resources(User, Server)};
+		{allow, "config"} ->
+		    {result, []};
+		{_, "config"} ->
+		    {error, ?ERR_FORBIDDEN};
+		_ ->
+		    Acc
+	    end
     end.
 
 get_user_resources(User, Server) ->
@@ -155,30 +231,148 @@ get_user_resources(User, Server) ->
 			{"name", User}], []}
 	      end, lists:sort(Rs)).
 
-get_local_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
-    Acc;
+%%%-----------------------------------------------------------------------
 
-get_local_items(Acc, From, #jid{lserver = LServer} = To, Node, Lang) ->
-    Items = case Acc of
-		{result, Its} ->
-		    Its;
-		empty ->
+adhoc_local_items(Acc, From, #jid{lserver = LServer, server = Server} = To,
+		  Lang) ->
+    case acl:match_rule(LServer, configure, From) of
+	allow ->
+	    Items = case Acc of
+			{result, Its} -> Its;
+			empty -> []
+		    end,
+	    %% Recursively get all configure commands
+	    Nodes = recursively_get_local_items(LServer, "", Server, Lang),
+	    Nodes1 = lists:filter(
+		       fun(N) ->
+				Nd = xml:get_tag_attr_s("node", N),
+				F = get_local_features([], From, To, Nd, Lang),
+				case F of
+				    {result, [?NS_COMMANDS]} ->
+					true;
+				    _ ->
+					false
+				end
+		       end, Nodes),
+	    {result, Items ++ Nodes1};
+	_ ->
+	    Acc
+    end.
+
+recursively_get_local_items(_LServer, "online users", _Server, _Lang) ->
+    [];
+
+recursively_get_local_items(_LServer, "all users", _Server, _Lang) ->
+    [];
+
+recursively_get_local_items(LServer, Node, Server, Lang) ->
+    LNode = string:tokens(Node, "/"),
+    Items = case get_local_items(LServer, LNode, Server, Lang) of
+		{result, Res} ->
+		    Res;
+		{error, _Error} ->
 		    []
 	    end,
-    case acl:match_rule(LServer, configure, From) of
-	deny when Node /= [] ->
-	    {error, ?ERR_NOT_ALLOWED};
+    Nodes = lists:flatten(
+      lists:map(
+	fun(N) ->
+		S = xml:get_tag_attr_s("jid", N),
+		Nd = xml:get_tag_attr_s("node", N),
+		if (S /= Server) or (Nd == "") ->
+		    [];
+		true ->
+		    [N, recursively_get_local_items(
+			  LServer, Nd, Server, Lang)]
+		end
+	end, Items)),
+    Nodes.
+
+%%%-----------------------------------------------------------------------
+
+-define(ITEMS_RESULT(Allow, LNode, Fallback),
+    case Allow of
 	deny ->
-	    {result, Items};
-	_ ->
-	    case get_local_items(To#jid.lserver, Node,
+	    Fallback;
+	allow ->
+	    case get_local_items(LServer, LNode,
 				 jlib:jid_to_string(To), Lang) of
 		{result, Res} ->
-		    {result, Items ++ Res};
+		    {result, Res};
 		{error, Error} ->
-			{error, Error}
+		    {error, Error}
+	    end
+    end).
+
+get_local_items(Acc, From, #jid{lserver = LServer} = To, "", Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    Items = case Acc of
+			{result, Its} -> Its;
+			empty -> []
+		    end,
+	    Allow = acl:match_rule(LServer, configure, From),
+	    case Allow of
+		deny ->
+		    {result, Items};
+		allow ->
+		    case get_local_items(LServer, [],
+					 jlib:jid_to_string(To), Lang) of
+			{result, Res} ->
+			    {result, Items ++ Res};
+			{error, _Error} ->
+			    {result, Items}
+		    end
+	    end
+    end;
+
+get_local_items(Acc, From, #jid{lserver = LServer} = To, Node, Lang) ->
+    case gen_mod:is_loaded(LServer, mod_adhoc) of
+	false ->
+	    Acc;
+	_ ->
+	    LNode = string:tokens(Node, "/"),
+	    Allow = acl:match_rule(LServer, configure, From),
+	    case LNode of
+		["config"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["online users"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["all users"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["all users", [$@ | _]] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["outgoing s2s" | _] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["stopped nodes"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes", _ENode] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes", _ENode, "DB"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes", _ENode, "modules"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes", _ENode, "modules", _] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes", _ENode, "backup"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes", _ENode, "backup", _] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes", _ENode, "import"] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["running nodes", _ENode, "import", _] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		["config", _] ->
+		    ?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		_ ->
+		    Acc
 	    end
     end.
+
+%%%-----------------------------------------------------------------------
 
 -define(NODE(Name, Node),
 	{xmlelement, "item",
@@ -422,71 +616,85 @@ get_stopped_nodes(_Lang) ->
 	      end, lists:sort(DBNodes))
     end.
 
+%-------------------------------------------------------------------------
 
-
-process_local_iq(From, To, #iq{type = Type, xmlns = XMLNS,
-				lang = Lang, sub_el = SubEl} = IQ) ->
-    case acl:match_rule(To#jid.lserver, configure, From) of
+-define(COMMANDS_RESULT(Allow, From, To, Request),
+    case Allow of
 	deny ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	    {error, ?ERR_FORBIDDEN};
 	allow ->
-	    case Type of
-		set ->
-		    XDataEl = find_xdata_el(SubEl),
-		    case XDataEl of
-			false ->
-			    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
-			{xmlelement, _Name, Attrs, _SubEls} ->
-			    case xml:get_attr_s("type", Attrs) of
-				"cancel" ->
-				    IQ#iq{type = result,
-					  sub_el = [{xmlelement, "query",
-						     [{"xmlns", XMLNS}], []}]};
-				"submit" ->
-				    XData = jlib:parse_xdata_submit(XDataEl),
-				    case XData of
-					invalid ->
-					    IQ#iq{type = error,
-						  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-					_ ->
-					    Node =
-						string:tokens(
-						  xml:get_tag_attr_s("node", SubEl),
-						  "/"),
-					    case set_form(Node, Lang, XData) of
-						{result, Res} ->
-						    IQ#iq{type = result,
-							  sub_el =
-							  [{xmlelement, "query",
-							    [{"xmlns", XMLNS}],
-							    Res
-							   }]};
-						{error, Error} ->
-						    IQ#iq{type = error,
-							  sub_el = [SubEl, Error]}
-					    end
-				    end;
-				_ ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
-			    end
-		    end;
-		get ->
-		    Node =
-			string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-		    case get_form(Node, Lang) of
-			{result, Res} ->
-			    IQ#iq{type = result,
-				  sub_el =
-				  [{xmlelement, "query", [{"xmlns", XMLNS}],
-				    Res
-				   }]};
-			{error, Error} ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, Error]}
-		    end
-	    end
+	    adhoc_local_commands(From, To, Request)
+    end).
+
+adhoc_local_commands(Acc, From, #jid{lserver = LServer} = To,
+		     #adhoc_request{node = Node} = Request) ->
+    LNode = string:tokens(Node, "/"),
+    Allow = acl:match_rule(LServer, configure, From),
+    case LNode of
+	["running nodes", _ENode, "DB"] ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	["running nodes", _ENode, "modules", _] ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	["running nodes", _ENode, "backup", _] ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	["running nodes", _ENode, "import", _] ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	["config", _] ->
+	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	_ ->
+	    Acc
     end.
+
+adhoc_local_commands(_From, _To,
+		     #adhoc_request{lang = Lang,
+				    node = Node,
+				    sessionid = SessionID,
+				    action = Action,
+				    xdata = XData} = Request) ->
+    LNode = string:tokens(Node, "/"),
+    %% If the "action" attribute is not present, it is
+    %% understood as "execute".  If there was no <actions/>
+    %% element in the first response (which there isn't in our
+    %% case), "execute" and "complete" are equivalent.
+    ActionIsExecute = lists:member(Action,
+				   ["", "execute", "complete"]),
+    if	Action == "cancel" ->
+	    %% User cancels request
+	    adhoc:produce_response(
+	      Request, 
+	      #adhoc_response{status = canceled});
+	XData == false, ActionIsExecute ->
+	    %% User requests form
+	    case get_form(LNode, Lang) of
+		{result, Form} ->
+		    adhoc:produce_response(
+		      Request,
+		      #adhoc_response{status = executing,
+				      elements = Form});
+		{error, Error} ->
+		    {error, Error}
+	    end;
+	XData /= false, ActionIsExecute ->
+	    %% User returns form.
+	    case jlib:parse_xdata_submit(XData) of
+		invalid ->
+		    {error, ?ERR_BAD_REQUEST};
+		Fields ->
+		    case set_form(LNode, Lang, Fields) of
+			{result, _Res} ->
+			    adhoc:produce_response(
+			      #adhoc_response{lang = Lang,
+			                      node = Node,
+					      sessionid = SessionID,
+					      status = completed});
+			{error, Error} ->
+			    {error, Error}
+		    end
+	    end;
+	true ->
+	    {error, ?ERR_BAD_REQUEST}
+    end.
+
 
 -define(TLFIELD(Type, Label, Var),
 	{xmlelement, "field", [{"type", Type},
@@ -1107,83 +1315,60 @@ search_running_node(SNode, [Node | Nodes]) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_sm_iq(From, To,
-	      #iq{type = Type, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ) ->
-    case acl:match_rule(To#jid.lserver, configure, From) of
+adhoc_sm_commands(_Acc, From,
+		  #jid{user = User, server = Server, lserver = LServer} = _To,
+		  #adhoc_request{lang = Lang,
+				 node = "config",
+				 action = Action,
+				 xdata = XData} = Request) ->
+    case acl:match_rule(LServer, configure, From) of
 	deny ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	    {error, ?ERR_FORBIDDEN};
 	allow ->
-	    #jid{user = User, server = Server} = To,
-	    case Type of
-		set ->
-		    XDataEl = find_xdata_el(SubEl),
-		    case XDataEl of
-		        false ->
-			    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
-			{xmlelement, _Name, Attrs, _SubEls} ->
-			    case xml:get_attr_s("type", Attrs) of
-				"cancel" ->
-				    IQ#iq{type = result,
-					sub_el = [{xmlelement, "query",
-						   [{"xmlns", XMLNS}], []}]};
-				"submit" ->
-				    XData = jlib:parse_xdata_submit(XDataEl),
-				    case XData of
-					invalid ->
-					    IQ#iq{type = error,
-						  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-					_ ->
-					    Node =
-						string:tokens(
-						  xml:get_tag_attr_s("node", SubEl),
-						  "/"),
-					    case set_sm_form(
-						   User, Server, Node,
-						   Lang, XData) of
-						{result, Res} ->
-						    IQ#iq{type = result,
-							  sub_el =
-							    [{xmlelement, "query",
-							      [{"xmlns", XMLNS}],
-							      Res
-							     }]};
-						{error, Error} ->
-						    IQ#iq{type = error,
-							  sub_el = [SubEl, Error]}
-					    end
-				    end;
-				_ ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
-			    end
-		    end;
-		get ->
-		    Node =
-			string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-		    case get_sm_form(User, Server, Node, Lang) of
-			{result, Res} ->
-			    IQ#iq{type = result,
-				  sub_el =
-				  [{xmlelement, "query", [{"xmlns", XMLNS}],
-				    Res
-				   }]};
+	    %% If the "action" attribute is not present, it is
+	    %% understood as "execute".  If there was no <actions/>
+	    %% element in the first response (which there isn't in our
+	    %% case), "execute" and "complete" are equivalent.
+	    ActionIsExecute = lists:member(Action,
+					   ["", "execute", "complete"]),
+	    if	Action == "cancel" ->
+		    %% User cancels request
+		    adhoc:produce_response(
+		      Request, 
+		      #adhoc_response{status = canceled});
+		XData == false, ActionIsExecute ->
+		    %% User requests form
+		    case get_sm_form(User, Server, "config", Lang) of
+			{result, Form} ->
+			    adhoc:produce_response(
+			      Request,
+			      #adhoc_response{status = executing,
+					      elements = Form});
 			{error, Error} ->
-			    IQ#iq{type = error, sub_el = [SubEl, Error]}
-		    end
+			    {error, Error}
+		    end;
+		XData /= false, ActionIsExecute ->
+		    %% User returns form.
+		    case jlib:parse_xdata_submit(XData) of
+			invalid ->
+			    {error, ?ERR_BAD_REQUEST};
+			Fields ->
+			    set_sm_form(User, Server, "config", Request, Fields)
+		    end;
+		true ->
+		    {error, ?ERR_BAD_REQUEST}
 	    end
-    end.
+    end;
 
+adhoc_sm_commands(Acc, _From, _To, _Request) ->
+    Acc.
 
-get_sm_form(User, Server, [], Lang) ->
+get_sm_form(User, Server, "config", Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
 		   translate:translate(
 		     Lang, "Administration of ") ++ User}]},
-	        %{xmlelement, "instructions", [],
-	        % [{xmlcdata,
-	        %   translate:translate(
-	        %     Lang, "Choose host name")}]},
 	        {xmlelement, "field",
 	         [{"type", "list-single"},
 		  {"label", translate:translate(Lang, "Action on user")},
@@ -1198,49 +1383,36 @@ get_sm_form(User, Server, [], Lang) ->
 	         ]},
 	        ?XFIELD("text-private", "Password", "password",
 		        ejabberd_auth:get_password_s(User, Server))
-	        %{xmlelement, "field", [{"type", "text-single"},
-	        %  		     {"label",
-	        %  		      translate:translate(Lang, "Host name")},
-	        %  		     {"var", "hostname"}],
-	        % [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
 	     ]}]};
 
 get_sm_form(_User, _Server, _Node, _Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
-set_sm_form(User, Server, [], _Lang, XData) ->
+set_sm_form(User, Server, "config",
+	    #adhoc_request{lang = Lang,
+	                   node = Node,
+			   sessionid = SessionID}, XData) ->
+    Response = #adhoc_response{lang = Lang,
+                               node = Node,
+			       sessionid = SessionID,
+			       status = completed},
     case lists:keysearch("action", 1, XData) of
 	{value, {_, ["edit"]}} ->
 	    case lists:keysearch("password", 1, XData) of
 		{value, {_, [Password]}} ->
 		    ejabberd_auth:set_password(User, Server, Password),
-		    {result, []};
+		    adhoc:produce_response(Response);
 		_ ->
-		    {error, ?ERR_BAD_REQUEST}
+		    {error, ?ERR_NOT_ACCEPTABLE}
 	    end;
 	{value, {_, ["remove"]}} ->
 	    catch ejabberd_auth:remove_user(User, Server),
-	    {result, []};
+	    adhoc:produce_response(Response);
 	_ ->
-	    {error, ?ERR_BAD_REQUEST}
+	    {error, ?ERR_NOT_ACCEPTABLE}
     end;
-set_sm_form(_User, _Server, _Node, _Lang, _XData) ->
+
+set_sm_form(_User, _Server, _Node, _Request, _Fields) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
-find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
-    find_xdata_el1(SubEls).
-
-find_xdata_el1([]) ->
-    false;
-
-find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
-    case xml:get_attr_s("xmlns", Attrs) of
-	?NS_XDATA ->
-	    {xmlelement, Name, Attrs, SubEls};
-	_ ->
-	    find_xdata_el1(Els)
-    end;
-
-find_xdata_el1([_ | Els]) ->
-    find_xdata_el1(Els).

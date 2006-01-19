@@ -179,7 +179,7 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 		      end, StateData#state.hosts),
 		    {next_state, stream_established, StateData};
 		_ ->
-		    send_text(StateData, ?INVALID_HEADER_ERR),
+		    send_text(StateData, ?INVALID_HANDSHAKE_ERR),
 		    {stop, normal, StateData}
 	    end;
 	_ ->

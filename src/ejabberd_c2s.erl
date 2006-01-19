@@ -46,6 +46,7 @@
 		sasl_state,
 		access,
 		shaper,
+		zlib = false,
 		tls = false,
 		tls_required = false,
 		tls_enabled = false,
@@ -125,6 +126,7 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
+    Zlib = lists:member(zlib, Opts),
     StartTLS = lists:member(starttls, Opts),
     StartTLSRequired = lists:member(starttls_required, Opts),
     TLSEnabled = lists:member(tls, Opts),
@@ -145,6 +147,7 @@ init([{SockMod, Socket}, Opts]) ->
     {ok, wait_for_stream, #state{socket       = Socket1,
 				 sockmod      = SockMod1,
 				 receiver     = ReceiverPid,
+				 zlib         = Zlib,
 				 tls          = TLS,
 				 tls_required = StartTLSRequired,
 				 tls_enabled  = TLSEnabled,
@@ -200,10 +203,22 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						      {xmlelement, "mechanism", [],
 						       [{xmlcdata, S}]}
 					      end, cyrsasl:listmech(Server)),
+				    SockMod = StateData#state.sockmod,
+				    Zlib = StateData#state.zlib,
+				    CompressFeature =
+					case Zlib andalso
+					    (SockMod /= ejabberd_zlib) of
+					    true ->
+						[{xmlelement, "compression",
+						  [{"xmlns", ?NS_FEATURE_COMPRESS}],
+						  [{xmlelement, "method",
+						    [], [{xmlcdata, "zlib"}]}]}];
+					    _ ->
+						[]
+					end,
 				    TLS = StateData#state.tls,
 				    TLSEnabled = StateData#state.tls_enabled,
 				    TLSRequired = StateData#state.tls_required,
-				    SockMod = StateData#state.sockmod,
 				    TLSFeature =
 					case (TLS == true) andalso
 					    (TLSEnabled == false) andalso
@@ -224,7 +239,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					end,
 				    send_element(StateData,
 						 {xmlelement, "stream:features", [],
-						  TLSFeature ++
+						  TLSFeature ++ CompressFeature ++
 						  [{xmlelement, "mechanisms",
 						    [{"xmlns", ?NS_SASL}],
 						    Mechs}] ++
@@ -337,7 +352,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		  end,
 	    send_element(StateData, Res),
 	    {next_state, wait_for_auth, StateData};
-	{auth, _ID, set, {U, P, D, ""}} ->
+	{auth, _ID, set, {_U, _P, _D, ""}} ->
 	    Err = jlib:make_error_reply(
 		    El,
 		    ?ERR_AUTH_NO_RESOURCE_PROVIDED(StateData#state.lang)),
@@ -434,6 +449,7 @@ wait_for_auth(closed, StateData) ->
 
 wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
+    Zlib = StateData#state.zlib,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
     TLSRequired = StateData#state.tls_required,
@@ -496,6 +512,19 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			     socket = TLSSocket,
 			     streamid = new_id(),
 			     tls_enabled = true
+			    }};
+	{?NS_COMPRESS, "compress"} when Zlib == true,
+					SockMod /= ejabberd_zlib ->
+	    Socket = StateData#state.socket,
+	    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(SockMod, Socket),
+	    ejabberd_receiver:compress(StateData#state.receiver, ZlibSocket),
+	    send_element(StateData,
+			 {xmlelement, "compressed",
+			  [{"xmlns", ?NS_COMPRESS}], []}),
+	    {next_state, wait_for_stream,
+	     StateData#state{sockmod = ejabberd_zlib,
+			     socket = ZlibSocket,
+			     streamid = new_id()
 			    }};
 	_ ->
 	    if

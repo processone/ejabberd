@@ -23,7 +23,7 @@ endif
 
 prefix = @prefix@
 
-SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ @web@ stringprep @tls@ @odbc@
+SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @eldap@ @web@ stringprep @tls@ @odbc@ @ejabberd_zlib@
 ERLSHLIBS = expat_erl.so
 SOURCES = $(wildcard *.erl)
 BEAMS = $(SOURCES:.erl=.beam)

@@ -33,6 +33,7 @@
 -define(NS_PUBSUB_EVENT, "http://jabber.org/protocol/pubsub#event").
 -define(NS_PUBSUB_OWNER, "http://jabber.org/protocol/pubsub#owner").
 -define(NS_PUBSUB_NMI,   "http://jabber.org/protocol/pubsub#node-meta-info").
+-define(NS_COMMANDS,     "http://jabber.org/protocol/commands").
 
 -define(NS_EJABBERD_CONFIG, "ejabberd:config").
 
@@ -48,6 +49,9 @@
 
 -define(NS_FEATURE_IQAUTH, "http://jabber.org/features/iq-auth").
 -define(NS_FEATURE_IQREGISTER, "http://jabber.org/features/iq-register").
+-define(NS_FEATURE_COMPRESS, "http://jabber.org/features/compress").
+
+-define(NS_COMPRESS,     "http://jabber.org/protocol/compress").
 
 % TODO: remove "code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),

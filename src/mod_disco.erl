@@ -113,8 +113,7 @@ process_local_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} =
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    SNode = xml:get_tag_attr_s("node", SubEl),
-	    Node = string:tokens(SNode, "/"),
+	    Node = xml:get_tag_attr_s("node", SubEl),
 	    Host = To#jid.lserver,
 
 	    case ejabberd_hooks:run_fold(disco_local_items,
@@ -123,8 +122,8 @@ process_local_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} =
 					 [From, To, Node, Lang]) of
 		{result, Items} ->
 		    ANode = case Node of
-				[] -> [];
-				_ -> [{"node", SNode}]
+				"" -> [];
+				_ -> [{"node", Node}]
 		    end,
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -144,8 +143,7 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    Host = To#jid.lserver,
-	    SNode = xml:get_tag_attr_s("node", SubEl),
-	    Node = string:tokens(SNode, "/"),
+	    Node = xml:get_tag_attr_s("node", SubEl),
 	    Identity = ejabberd_hooks:run_fold(disco_local_identity,
 					       Host,
 					       [],
@@ -156,8 +154,8 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 					 [From, To, Node, Lang]) of
 		{result, Features} ->
 		    ANode = case Node of
-				[] -> [];
-				_ -> [{"node", SNode}]
+				"" -> [];
+				_ -> [{"node", Node}]
 			    end,
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -252,7 +250,7 @@ get_vh_services(Host) ->
 process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    #jid{user = User, luser = LTo, lserver = ToServer} = To,
+	    #jid{luser = LTo, lserver = ToServer} = To,
 	    #jid{luser = LFrom, lserver = LServer} = From,
 	    Self = (LTo == LFrom) andalso (ToServer == LServer),
 	    Node = xml:get_tag_attr_s("node", SubEl),
@@ -272,16 +270,15 @@ process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ
 	    end;
 	get ->
 	    Host = To#jid.lserver,
-	    SNode = xml:get_tag_attr_s("node", SubEl),
-	    Node = string:tokens(SNode, "/"),
+	    Node = xml:get_tag_attr_s("node", SubEl),
 	    case ejabberd_hooks:run_fold(disco_sm_items,
 					 Host,
 					 empty,
 					 [From, To, Node, Lang]) of
 		{result, Items} ->
 		    ANode = case Node of
-				[] -> [];
-				_ -> [{"node", SNode}]
+				"" -> [];
+				_ -> [{"node", Node}]
 			    end,
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -329,8 +326,7 @@ process_sm_iq_info(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    Host = To#jid.lserver,
-	    SNode = xml:get_tag_attr_s("node", SubEl),
-	    Node = string:tokens(SNode, "/"),
+	    Node = xml:get_tag_attr_s("node", SubEl),
 	    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
 					       Host,
 					       [],
@@ -341,8 +337,8 @@ process_sm_iq_info(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 					 [From, To, Node, Lang]) of
 		{result, Features} ->
 		    ANode = case Node of
-				[] -> [];
-				_ -> [{"node", SNode}]
+				"" -> [];
+				_ -> [{"node", Node}]
 			    end,
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -384,23 +380,16 @@ get_user_resources(User, Server) ->
 
 get_publish_items(empty,
 		  #jid{luser = LFrom, lserver = LSFrom},
-		  #jid{user = User, server = Server, luser = LTo, lserver = LSTo} = _To,
+		  #jid{luser = LTo, lserver = LSTo} = _To,
 		  Node, _Lang) ->
     if
 	(LFrom == LTo) and (LSFrom == LSTo) ->
-	    % Hack
-	    SNode = join(Node, "/"),
-	    retrieve_disco_publish({LTo, LSTo}, SNode);
+	    retrieve_disco_publish({LTo, LSTo}, Node);
 	true ->
 	    empty
     end;
 get_publish_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
-
-join(List, Sep) ->
-    lists:foldl(fun(A, "") -> A;
-		   (A, Acc) -> Acc ++ Sep ++ A
-		end, "", List).
 
 process_disco_publish(User, Node, Items) ->
     F = fun() ->
