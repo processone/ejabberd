@@ -239,6 +239,7 @@ activate_socket(#state{socket = Socket,
 process_data(Data,
 	     #state{xml_stream_state = XMLStreamState,
 		    shaper_state = ShaperState} = State) ->
+    ?DEBUG("Received XML on stream = ~p", [binary_to_list(Data)]),
     XMLStreamState1 = xml_stream:parse(XMLStreamState, Data),
     {NewShaperState, Pause} = shaper:update(ShaperState, size(Data)),
     if
