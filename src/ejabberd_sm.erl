@@ -12,12 +12,13 @@
 
 -export([start_link/0, init/0,
 	 route/3,
-	 open_session/3, close_session/3,
+	 open_session/4, close_session/1,
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
-	 set_presence/4,
-	 unset_presence/4,
+	 set_presence/5,
+	 unset_presence/5,
+	 close_session_unset_presence/5,
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
 	 get_vh_session_list/1,
@@ -29,8 +30,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(session, {usr, us, pid}).
--record(presence, {usr, us, priority}).
+-record(session, {sid, usr, us, priority}).
 
 start_link() ->
     Pid = proc_lib:spawn_link(ejabberd_sm, init, []),
@@ -39,14 +39,12 @@ start_link() ->
 
 init() ->
     update_tables(),
-    mnesia:create_table(session, [{ram_copies, [node()]},
-				  {attributes, record_info(fields, session)}]),
+    mnesia:create_table(session,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, session)}]),
+    mnesia:add_table_index(session, usr),
     mnesia:add_table_index(session, us),
     mnesia:add_table_copy(session, node(), ram_copies),
-    mnesia:create_table(presence,
-			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, presence)}]),
-    mnesia:add_table_index(presence, us),
     mnesia:subscribe(system),
     ets:new(sm_iqtable, [named_table]),
     lists:foreach(
@@ -101,59 +99,57 @@ route(From, To, Packet) ->
 	    ok
     end.
 
-open_session(User, Server, Resource) ->
-    register_connection(User, Server, Resource, self()).
+open_session(SID, User, Server, Resource) ->
+    set_session(SID, User, Server, Resource, undefined).
 
-close_session(User, Server, Resource) ->
-    remove_connection(User, Server, Resource).
-
-
-register_connection(User, Server, Resource, Pid) ->
+set_session(SID, User, Server, Resource, Priority) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LResource = jlib:resourceprep(Resource),
     US = {LUser, LServer},
     USR = {LUser, LServer, LResource},
     F = fun() ->
-		Ss = mnesia:wread({session, USR}),
-		mnesia:write(#session{usr = USR, us = US, pid = Pid}),
-		Ss
-        end,
-    case mnesia:transaction(F) of
-	{atomic, Ss} ->
+		mnesia:write(#session{sid = SID,
+				      usr = USR,
+				      us = US,
+				      priority = Priority})
+	end,
+    mnesia:sync_dirty(F),
+    SIDs = mnesia:dirty_select(
+	     session,
+	     [{#session{sid = '$1', usr = USR, _ = '_'}, [], ['$1']}]),
+    if
+	SIDs == [] ->
+	    ok;
+	true ->
+	    MaxSID = lists:max(SIDs),
 	    lists:foreach(
-	      fun(R) ->
-		      R#session.pid ! replaced
-	      end, Ss);
-	_ ->
-	    false
+	      fun({_, Pid} = S) when S /= MaxSID ->
+		      Pid ! replaced;
+		 (_) ->
+		      ok
+	      end, SIDs)
     end.
 
-
-remove_connection(User, Server, Resource) ->
-    LUser = jlib:nodeprep(User),
-    LResource = jlib:resourceprep(Resource),
-    LServer = jlib:nameprep(Server),
-    USR = {LUser, LServer, LResource},
+close_session(SID) ->
     F = fun() ->
-		mnesia:delete({session, USR})
+		mnesia:delete({session, SID})
         end,
-    mnesia:transaction(F).
+    mnesia:sync_dirty(F).
 
 
 clean_table_from_bad_node(Node) ->
     F = fun() ->
 		Es = mnesia:select(
 		       session,
-		       [{#session{pid = '$1', _ = '_'},
+		       [{#session{sid = {'_', '$1'}, _ = '_'},
 			 [{'==', {node, '$1'}, Node}],
 			 ['$_']}]),
 		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E),
-				      mnesia:delete({presence, E#session.usr})
+				      mnesia:delete_object(E)
 			      end, Es)
         end,
-    mnesia:transaction(F).
+    mnesia:sync_dirty(F).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -257,7 +253,7 @@ do_route(From, To, Packet) ->
 	    end;
 	_ ->
 	    USR = {LUser, LServer, LResource},
-	    case mnesia:dirty_read({session, USR}) of
+	    case mnesia:dirty_index_read(session, USR, #session.usr) of
 		[] ->
 		    case Name of
 			"message" ->
@@ -275,8 +271,9 @@ do_route(From, To, Packet) ->
 			_ ->
 			    ?DEBUG("packet droped~n", [])
 		    end;
-		[Sess] ->
-		    Pid = Sess#session.pid,
+		Ss ->
+		    Session = lists:max(Ss),
+		    Pid = element(2, Session#session.sid),
 		    ?DEBUG("sending to process ~p~n", [Pid]),
 		    Pid ! {route, From, To, Packet}
 	    end
@@ -290,11 +287,12 @@ route_message(From, To, Packet) ->
 			   Priority >= 0 ->
 	    LResource = jlib:resourceprep(R),
 	    USR = {LUser, LServer, LResource},
-	    case mnesia:dirty_read({session, USR}) of
+	    case mnesia:dirty_index_read(session, USR, #session.usr) of
 		[] ->
 		    ok;				% Race condition
-		[Sess] ->
-		    Pid = Sess#session.pid,
+		Ss ->
+		    Session = lists:max(Ss),
+		    Pid = element(2, Session#session.sid),
 		    ?DEBUG("sending to process ~p~n", [Pid]),
 		    Pid ! {route, From, To, Packet}
 	    end;
@@ -337,53 +335,67 @@ get_user_resources(User, Server) ->
     case catch mnesia:dirty_index_read(session, US, #session.us) of
 	{'EXIT', _Reason} ->
 	    [];
-	Rs ->
-	    lists:map(fun(R) ->
-			      element(3, R#session.usr)
-		      end, Rs)
+	Ss ->
+	    [element(3, S#session.usr) || S <- clean_session_list(Ss)]
+    end.
+
+clean_session_list(Ss) ->
+    clean_session_list(lists:keysort(#session.usr, Ss), []).
+
+clean_session_list([], Res) ->
+    Res;
+clean_session_list([S], Res) ->
+    [S | Res];
+clean_session_list([S1, S2 | Rest], Res) ->
+    if
+	S1#session.usr == S2#session.usr ->
+	    if
+		S1#session.sid > S2#session.sid ->
+		    clean_session_list([S1 | Rest], Res);
+		true ->
+		    clean_session_list([S2 | Rest], Res)
+	    end;
+	true ->
+	    clean_session_list([S2 | Rest], [S1 | Res])
     end.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-set_presence(User, Server, Resource, Priority) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    USR = {User, Server, Resource},
-    US = {LUser, LServer},
-    F = fun() ->
-		mnesia:write(#presence{usr = USR, us = US,
-				       priority = Priority})
-	end,
-    mnesia:transaction(F).
+set_presence(SID, User, Server, Resource, Priority) ->
+    set_session(SID, User, Server, Resource, Priority).
 
-unset_presence(User, Server, Resource, Status) ->
-    USR = {User, Server, Resource},
-    F = fun() ->
-		mnesia:delete({presence, USR})
-	end,
-    mnesia:transaction(F),
+unset_presence(SID, User, Server, Resource, Status) ->
+    set_session(SID, User, Server, Resource, undefined),
+    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
+		       [User, Server, Resource, Status]).
+
+close_session_unset_presence(SID, User, Server, Resource, Status) ->
+    close_session(SID),
     ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
 		       [User, Server, Resource, Status]).
 
 get_user_present_resources(LUser, LServer) ->
     US = {LUser, LServer},
-    case catch mnesia:dirty_index_read(presence, US, #presence.us) of
+    case catch mnesia:dirty_index_read(session, US, #session.us) of
 	{'EXIT', _Reason} ->
 	    [];
-	Rs ->
-	    lists:map(fun(R) ->
-			      {R#presence.priority, element(3, R#presence.usr)}
-		      end, Rs)
+	Ss ->
+	    [{S#session.priority, element(3, S#session.usr)} ||
+		S <- clean_session_list(Ss), is_integer(S#session.priority)]
     end.
 
 dirty_get_sessions_list() ->
-    mnesia:dirty_all_keys(session).
+    mnesia:dirty_select(
+      session,
+      [{#session{usr = '$1', _ = '_'},
+	[],
+	['$1']}]).
 
 dirty_get_my_sessions_list() ->
     mnesia:dirty_select(
       session,
-      [{#session{pid = '$1', _ = '_'},
+      [{#session{sid = {'_', '$1'}, _ = '_'},
 	[{'==', {node, '$1'}, node()}],
 	['$_']}]).
 
@@ -447,16 +459,16 @@ update_tables() ->
 	[ur, user, pid] ->
 	    mnesia:delete_table(session);
 	[usr, us, pid] ->
+	    mnesia:delete_table(session);
+	[sid, usr, us, priority] ->
 	    ok;
 	{'EXIT', _} ->
 	    ok
     end,
-    case catch mnesia:table_info(presence, attributes) of
-	[ur, user, priority] ->
+    case lists:member(presence, mnesia:system_info(tables)) of
+	true ->
 	    mnesia:delete_table(presence);
-	[usr, us, priority] ->
-	    ok;
-	{'EXIT', _} ->
+	false ->
 	    ok
     end,
     case lists:member(local_session, mnesia:system_info(tables)) of

@@ -54,6 +54,7 @@
 		authenticated = false,
 		jid,
 		user = "", server = ?MYNAME, resource = "",
+		sid,
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
 		pres_a = ?SETS:new(),
@@ -372,8 +373,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			       "(~w) Accepted legacy authentication for ~s",
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
+			    SID = {now(), self()},
 			    ejabberd_sm:open_session(
-			      U, StateData#state.server, R),
+			      SID, U, StateData#state.server, R),
 			    Res1 = jlib:make_result_iq_reply(El),
 			    Res = setelement(4, Res1, []),
 			    send_element(StateData, Res),
@@ -397,6 +399,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			     StateData#state{user = U,
 					     resource = R,
 					     jid = JID,
+					     sid = SID,
 					     pres_f = ?SETS:from_list(Fs1),
 					     pres_t = ?SETS:from_list(Ts1),
 					     privacy_list = PrivList}};
@@ -664,8 +667,9 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
 			      [StateData#state.socket,
 			       jlib:jid_to_string(JID)]),
+		    SID = {now(), self()},
 		    ejabberd_sm:open_session(
-		      U, StateData#state.server, R),
+		      SID, U, StateData#state.server, R),
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
@@ -684,7 +688,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			    PL -> PL
 			end,
 		    {next_state, session_established,
-		     StateData#state{pres_f = ?SETS:from_list(Fs1),
+		     StateData#state{sid = SID,
+				     pres_f = ?SETS:from_list(Fs1),
 				     pres_t = ?SETS:from_list(Ts1),
 				     privacy_list = PrivList}};
 		_ ->
@@ -1037,10 +1042,12 @@ terminate(_Reason, StateName, StateData) ->
 			      [{"type", "unavailable"}],
 			      [{xmlelement, "status", [],
 				[{xmlcdata, "Replaced by new connection"}]}]},
-		    ejabberd_sm:unset_presence(StateData#state.user,
-					       StateData#state.server,
-					       StateData#state.resource,
-					       "Replaced by new connection"),
+		    ejabberd_sm:close_session_unset_presence(
+		      StateData#state.sid,
+		      StateData#state.user,
+		      StateData#state.server,
+		      StateData#state.resource,
+		      "Replaced by new connection"),
 		    presence_broadcast(
 		      StateData, From, StateData#state.pres_a, Packet),
 		    presence_broadcast(
@@ -1049,25 +1056,24 @@ terminate(_Reason, StateName, StateData) ->
 		    ?INFO_MSG("(~w) Close session for ~s",
 			      [StateData#state.socket,
 			       jlib:jid_to_string(StateData#state.jid)]),
-		    ejabberd_sm:close_session(StateData#state.user,
-					      StateData#state.server,
-					      StateData#state.resource),
 
-		    Tmp = ?SETS:new(),
+		    EmptySet = ?SETS:new(),
 		    case StateData of
 			#state{pres_last = undefined,
-			       pres_a = Tmp,
-			       pres_i = Tmp,
+			       pres_a = EmptySet,
+			       pres_i = EmptySet,
 			       pres_invis = false} ->
-			    ok;
+			    ejabberd_sm:close_session(StateData#state.sid);
 			_ ->
 			    From = StateData#state.jid,
 			    Packet = {xmlelement, "presence",
 				      [{"type", "unavailable"}], []},
-			    ejabberd_sm:unset_presence(StateData#state.user,
-						       StateData#state.server,
-						       StateData#state.resource,
-						       ""),
+			    ejabberd_sm:close_session_unset_presence(
+			      StateData#state.sid,
+			      StateData#state.user,
+			      StateData#state.server,
+			      StateData#state.resource,
+			      ""),
 			    presence_broadcast(
 			      StateData, From, StateData#state.pres_a, Packet),
 			    presence_broadcast(
@@ -1189,7 +1195,8 @@ presence_update(From, Packet, StateData) ->
 			 StatusTag ->
 			    xml:get_tag_cdata(StatusTag)
 		     end,
-	    ejabberd_sm:unset_presence(StateData#state.user,
+	    ejabberd_sm:unset_presence(StateData#state.sid,
+				       StateData#state.user,
 				       StateData#state.server,
 				       StateData#state.resource,
 				       Status),
@@ -1493,7 +1500,8 @@ update_priority(El, StateData) ->
 			  0
 		  end
 	  end,
-    ejabberd_sm:set_presence(StateData#state.user,
+    ejabberd_sm:set_presence(StateData#state.sid,
+			     StateData#state.user,
 			     StateData#state.server,
 			     StateData#state.resource,
 			     Pri).

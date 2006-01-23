@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/5, receiver/2, route_chan/4, route_nick/3]).
+-export([start/5, route_chan/4, route_nick/3]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -31,7 +31,7 @@
 
 -define(SETS, gb_sets).
 
--record(state, {socket, encoding, receiver, queue,
+-record(state, {socket, encoding, queue,
 		user, host, server, nick,
 		channels = dict:new(),
 		inbuf = "", outbuf = ""}).
@@ -522,21 +522,6 @@ terminate(Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-
-receiver(Socket, C2SPid) ->
-    XMLStreamPid = xml_stream:start(C2SPid),
-    receiver(Socket, C2SPid, XMLStreamPid).
-
-receiver(Socket, C2SPid, XMLStreamPid) ->
-    case gen_tcp:recv(Socket, 0) of
-        {ok, Text} ->
-	    xml_stream:send_text(XMLStreamPid, Text),
-	    receiver(Socket, C2SPid, XMLStreamPid);
-        {error, Reason} ->
-	    exit(XMLStreamPid, closed),
-	    gen_fsm:send_event(C2SPid, closed),
-	    ok
-    end.
 
 send_text(#state{socket = Socket, encoding = Encoding}, Text) ->
     CText = iconv:convert("utf-8", Encoding, lists:flatten(Text)),
