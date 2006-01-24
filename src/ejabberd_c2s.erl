@@ -505,7 +505,6 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			       lists:keydelete(
 				 certfile, 1, StateData#state.tls_options)]
 		      end,
-	    io:format("O: ~p~n", [TLSOpts]),
 	    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
 	    ejabberd_receiver:starttls(StateData#state.receiver, TLSSocket),
 	    send_element(StateData,
@@ -518,17 +517,38 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    }};
 	{?NS_COMPRESS, "compress"} when Zlib == true,
 					SockMod /= ejabberd_zlib ->
-	    Socket = StateData#state.socket,
-	    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(SockMod, Socket),
-	    ejabberd_receiver:compress(StateData#state.receiver, ZlibSocket),
-	    send_element(StateData,
-			 {xmlelement, "compressed",
-			  [{"xmlns", ?NS_COMPRESS}], []}),
-	    {next_state, wait_for_stream,
-	     StateData#state{sockmod = ejabberd_zlib,
-			     socket = ZlibSocket,
-			     streamid = new_id()
-			    }};
+	    case xml:get_subtag(El, "method") of
+		false ->
+		    send_element(StateData,
+		                 {xmlelement, "failure",
+				  [{"xmlns", ?NS_COMPRESS}],
+				  [{xmlelement, "setup-failed", [], []}]}),
+		    {next_state, wait_for_feature_request, StateData};
+		Method ->
+		    case xml:get_tag_cdata(Method) of
+			"zlib" ->
+			    Socket = StateData#state.socket,
+			    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(SockMod,
+								 Socket),
+			    ejabberd_receiver:compress(StateData#state.receiver,
+						       ZlibSocket),
+			    send_element(StateData,
+					 {xmlelement, "compressed",
+					  [{"xmlns", ?NS_COMPRESS}], []}),
+			    {next_state, wait_for_stream,
+			     StateData#state{sockmod = ejabberd_zlib,
+					     socket = ZlibSocket,
+					     streamid = new_id()
+					    }};
+			_ ->
+			    send_element(StateData,
+					 {xmlelement, "failure",
+					  [{"xmlns", ?NS_COMPRESS}],
+					  [{xmlelement, "unsupported-method",
+					    [], []}]}),
+			    {next_state, wait_for_feature_request, StateData}
+		    end
+	    end;
 	_ ->
 	    if
 		(SockMod == gen_tcp) and TLSRequired ->

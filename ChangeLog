@@ -1,3 +1,8 @@
+2006-01-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Better error handling for stream
+	compression support (thanks to Sergei Golovan)
+
 2006-01-24  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_roster_odbc.erl: Bugfix
