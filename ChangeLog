@@ -1,4 +1,3 @@
-<<<<<<< .mine
 2006-01-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_sm.erl: Partially rewritten to work more
@@ -9,14 +8,12 @@
 
 	* src/mod_irc/mod_irc_connection.erl: Cleanup
 
-=======
 2006-01-20  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_receiver.erl: Added new debugging trace: It is now
 	possible to dump the XML stream received from a client (usefull for
         client debugging).
 
->>>>>>> .r487
 2006-01-19  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/aclocal.m4: Updated for zlib support
