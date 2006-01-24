@@ -108,9 +108,22 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
 
 
 
-process_iq_get(From, _To, #iq{sub_el = SubEl} = IQ) ->
+process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
     LUser = From#jid.luser,
     LServer = From#jid.lserver,
+    US = {LUser, LServer},
+    case catch ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US]) of
+	Items when is_list(Items) ->
+	    XItems = lists:map(fun item_to_xml/1, Items),
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "query",
+			     [{"xmlns", ?NS_ROSTER}],
+			     XItems}]};
+	_ ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+    end.
+
+get_user_roster(Acc, {LUser, LServer}) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(
 		 LServer,
@@ -130,7 +143,7 @@ process_iq_get(From, _To, #iq{sub_el = SubEl} = IQ) ->
 			    _ ->
 				[]
 			end,
-	    XItems = lists:flatmap(
+	    RItems = lists:flatmap(
 		       fun(I) ->
 			       case raw_to_record(I) of
 				   error ->
@@ -144,33 +157,6 @@ process_iq_get(From, _To, #iq{sub_el = SubEl} = IQ) ->
 							  []
 						  end, JIDGroups),
 				       [item_to_xml(R#roster{groups = Groups})]
-			       end
-		       end, Items),
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement, "query",
-			     [{"xmlns", ?NS_ROSTER}],
-			     XItems}]};
-	_ ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
-    end.
-
-get_user_roster(Acc, {LUser, LServer}) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch ejabberd_odbc:sql_query(
-		 LServer,
-		 ["select username, jid, nick, subscription, ask, "
-		  "server, subscribe, type from rosterusers "
-		  "where username='", Username, "'"]) of
-	{selected, ["username", "jid", "nick", "subscription", "ask",
-		    "server", "subscribe", "type"],
-	 Items} when is_list(Items) ->
-	    RItems = lists:flatmap(
-		       fun(I) ->
-			       case raw_to_record(I) of
-				   error ->
-				       [];
-				   R ->
-				       [R]
 			       end
 		       end, Items),
 	    RItems ++ Acc;

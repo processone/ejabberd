@@ -1,3 +1,7 @@
+2006-01-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix
+
 2006-01-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_sm.erl: Partially rewritten to work more
