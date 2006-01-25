@@ -1,5 +1,10 @@
 2006-01-25  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_c2s.erl: Remove top-level xmlns from incoming
+	stanzas
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_service.erl: Likewise
+
 	* src/ejabberd_c2s.erl: Better error handling for stream
 	compression support (thanks to Sergei Golovan)
 

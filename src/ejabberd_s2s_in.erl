@@ -346,7 +346,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 			  []}),
 	    {next_state, stream_established, StateData#state{timer = Timer}};
 	_ ->
-	    {xmlelement, Name, Attrs, _Els} = El,
+	    NewEl = jlib:remove_attr("xmlns", El),
+	    {xmlelement, Name, Attrs, _Els} = NewEl,
 	    From_s = xml:get_attr_s("from", Attrs),
 	    From = jlib:string_to_jid(From_s),
 	    To_s = xml:get_attr_s("to", Attrs),
@@ -366,7 +367,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				    if ((Name == "iq") or
 					(Name == "message") or
 					(Name == "presence")) ->
-					    ejabberd_router:route(From, To, El);
+					    ejabberd_router:route(
+					      From, To, NewEl);
 				       true ->
 					    error
 				    end;
@@ -380,7 +382,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				    if ((Name == "iq") or
 					(Name == "message") or
 					(Name == "presence")) ->
-					    ejabberd_router:route(From, To, El);
+					    ejabberd_router:route(
+					      From, To, NewEl);
 				       true ->
 					    error
 				    end;

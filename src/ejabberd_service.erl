@@ -198,7 +198,8 @@ wait_for_handshake(closed, StateData) ->
 
 
 stream_established({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, _Els} = El,
+    NewEl = jlib:remove_attr("xmlns", El),
+    {xmlelement, Name, Attrs, _Els} = NewEl,
     From = xml:get_attr_s("from", Attrs),
     FromJID1 = jlib:string_to_jid(From),
     FromJID = case FromJID1 of
@@ -218,9 +219,9 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	(Name == "message") or
 	(Name == "presence")) and
        (ToJID /= error) and (FromJID /= error) ->
-	    ejabberd_router:route(FromJID, ToJID, El);
+	    ejabberd_router:route(FromJID, ToJID, NewEl);
        true ->
-	    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
+	    Err = jlib:make_error_reply(NewEl, ?ERR_BAD_REQUEST),
 	    send_element(StateData, Err),
 	    error
     end,

@@ -751,15 +751,16 @@ session_established({xmlstreamelement, El}, StateData) ->
 		_ ->
 		    jlib:string_to_jid(To)
 	    end,
+    NewEl1 = jlib:remove_attr("xmlns", El),
     NewEl = case xml:get_attr_s("xml:lang", Attrs) of
 		"" ->
 		    case StateData#state.lang of
-			"" -> El;
+			"" -> NewEl1;
 			Lang ->
-			    xml:replace_tag_attr("xml:lang", Lang, El)
+			    xml:replace_tag_attr("xml:lang", Lang, NewEl1)
 		    end;
 		_ ->
-		    El
+		    NewEl1
 	    end,
     NewState =
 	case ToJID of
