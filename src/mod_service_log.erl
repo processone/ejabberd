@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_service_log.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : Manage announce messages
+%%% Purpose : Copy user messages to logger service
 %%% Created : 24 Aug 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------

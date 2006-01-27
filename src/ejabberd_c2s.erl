@@ -8,7 +8,7 @@
 
 -module(ejabberd_c2s).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
+-update_info({update, 0}).
 
 -behaviour(gen_fsm).
 

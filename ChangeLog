@@ -1,3 +1,10 @@
+2006-01-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_update.erl: Support for run-time ejabberd updating
+	(not completed)
+	* src/ejabberd_c2s.erl: Added 'update_info' module attribute for
+	testing ejabberd_update
+
 2006-01-25  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: Remove top-level xmlns from incoming
@@ -1914,7 +1921,7 @@
 
 2003-11-27  Alexey Shchepin  <alexey@sevcom.net>
 
-	* examples/mtr/ejabberd.cfg: Updatted (thanks to Marshall T. Rose)
+	* examples/mtr/ejabberd.cfg: Updated (thanks to Marshall T. Rose)
 
 	* src/ejabberd_auth.erl: LDAP attribute that holds user ID now
 	configurable
