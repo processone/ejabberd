@@ -68,6 +68,14 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_listener]},
+    ReceiverSupervisor =
+	{ejabberd_receiver_sup,
+	 {ejabberd_tmp_sup, start_link,
+	  [ejabberd_receiver_sup, ejabberd_receiver]},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [ejabberd_tmp_sup]},
     C2SSupervisor =
 	{ejabberd_c2s_sup,
 	 {ejabberd_tmp_sup, start_link, [ejabberd_c2s_sup, ejabberd_c2s]},
@@ -130,6 +138,7 @@ init([]) ->
 	   SM,
 	   S2S,
 	   Local,
+	   ReceiverSupervisor,
 	   C2SSupervisor,
 	   S2SInSupervisor,
 	   S2SOutSupervisor,

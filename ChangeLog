@@ -1,3 +1,17 @@
+2006-01-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/pg.sql: Fixed syntax error
+
+2006-01-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_router.erl: Updated to use gen_server behaviour
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_s2s.erl: Likewise
+	* src/gen_iq_handler.erl: Likewise
+
+	* src/ejabberd_sup.erl: Added supervisor for ejabberd_receiver
+	* src/ejabberd_receiver.erl: Updating
+
 2006-01-27  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_update.erl: Support for run-time ejabberd updating

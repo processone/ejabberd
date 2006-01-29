@@ -10,7 +10,10 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start_link/0, init/0,
+-behaviour(gen_server).
+
+%% API
+-export([start_link/0,
 	 route/3,
 	 have_connection/1,
 	 get_key/1,
@@ -18,43 +21,25 @@
 	 remove_connection/1,
 	 dirty_get_connections/0]).
 
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
 -record(s2s, {fromto, pid, key}).
+-record(state, {}).
 
-
+%%====================================================================
+%% API
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
+%% Description: Starts the server
+%%--------------------------------------------------------------------
 start_link() ->
-    Pid = proc_lib:spawn_link(ejabberd_s2s, init, []),
-    register(ejabberd_s2s, Pid),
-    {ok, Pid}.
-
-init() ->
-    update_tables(),
-    mnesia:create_table(s2s, [{ram_copies, [node()]},
-			      {attributes, record_info(fields, s2s)}]),
-    mnesia:add_table_copy(s2s, node(), ram_copies),
-    mnesia:subscribe(system),
-    loop().
-
-loop() ->
-    receive
-	{mnesia_system_event, {mnesia_down, Node}} ->
-	    clean_table_from_bad_node(Node),
-	    loop();
-	{route, From, To, Packet} ->
-	    case catch do_route(From, To, Packet) of
-		{'EXIT', Reason} ->
-		    ?ERROR_MSG("~p~nwhen processing: ~p",
-			       [Reason, {From, To, Packet}]);
-		_ ->
-		    ok
-	    end,
-	    loop();
-	_ ->
-	    loop()
-    end.
-
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
@@ -65,26 +50,10 @@ route(From, To, Packet) ->
 	    ok
     end.
 
-
 remove_connection(FromTo) ->
     F = fun() ->
 		mnesia:delete({s2s, FromTo})
 	end,
-    mnesia:transaction(F).
-
-
-
-clean_table_from_bad_node(Node) ->
-    F = fun() ->
-		Es = mnesia:select(
-		       s2s,
-		       [{#s2s{pid = '$1', _ = '_'},
-			 [{'==', {node, '$1'}, Node}],
-			 ['$_']}]),
-		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E)
-			      end, Es)
-        end,
     mnesia:transaction(F).
 
 have_connection(FromTo) ->
@@ -123,9 +92,103 @@ try_register(FromTo) ->
 	    false
     end.
 
+dirty_get_connections() ->
+    mnesia:dirty_all_keys(s2s).
 
+%%====================================================================
+%% gen_server callbacks
+%%====================================================================
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%--------------------------------------------------------------------
+%% Function: init(Args) -> {ok, State} |
+%%                         {ok, State, Timeout} |
+%%                         ignore               |
+%%                         {stop, Reason}
+%% Description: Initiates the server
+%%--------------------------------------------------------------------
+init([]) ->
+    update_tables(),
+    mnesia:create_table(s2s, [{ram_copies, [node()]},
+			      {attributes, record_info(fields, s2s)}]),
+    mnesia:add_table_copy(s2s, node(), ram_copies),
+    mnesia:subscribe(system),
+    {ok, #state{}}.
+
+%%--------------------------------------------------------------------
+%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
+%%                                      {reply, Reply, State, Timeout} |
+%%                                      {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, Reply, State} |
+%%                                      {stop, Reason, State}
+%% Description: Handling call messages
+%%--------------------------------------------------------------------
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_cast(Msg, State) -> {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, State}
+%% Description: Handling cast messages
+%%--------------------------------------------------------------------
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_info(Info, State) -> {noreply, State} |
+%%                                       {noreply, State, Timeout} |
+%%                                       {stop, Reason, State}
+%% Description: Handling all non call/cast messages
+%%--------------------------------------------------------------------
+handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
+    clean_table_from_bad_node(Node),
+    {noreply, State};
+handle_info({route, From, To, Packet}, State) ->
+    case catch do_route(From, To, Packet) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p~nwhen processing: ~p",
+		       [Reason, {From, To, Packet}]);
+	_ ->
+	    ok
+    end,
+    {noreply, State};
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: terminate(Reason, State) -> void()
+%% Description: This function is called by a gen_server when it is about to
+%% terminate. It should be the opposite of Module:init/1 and do any necessary
+%% cleaning up. When it returns, the gen_server terminates with Reason.
+%% The return value is ignored.
+%%--------------------------------------------------------------------
+terminate(_Reason, _State) ->
+    ok.
+
+%%--------------------------------------------------------------------
+%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
+%% Description: Convert process state when code is changed
+%%--------------------------------------------------------------------
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
+clean_table_from_bad_node(Node) ->
+    F = fun() ->
+		Es = mnesia:select(
+		       s2s,
+		       [{#s2s{pid = '$1', _ = '_'},
+			 [{'==', {node, '$1'}, Node}],
+			 ['$_']}]),
+		lists:foreach(fun(E) ->
+				      mnesia:delete_object(E)
+			      end, Es)
+        end,
+    mnesia:transaction(F).
 
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
@@ -174,14 +237,8 @@ find_connection(From, To) ->
 	    {atomic, El#s2s.pid}
     end.
 
-
 send_element(Pid, El) ->
     Pid ! {send_element, El}.
-
-
-dirty_get_connections() ->
-    mnesia:dirty_all_keys(s2s).
-
 
 update_tables() ->
     case catch mnesia:table_info(s2s, attributes) of

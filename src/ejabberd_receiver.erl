@@ -13,7 +13,8 @@
 -behaviour(gen_server).
 
 %% API
--export([start/3,
+-export([start_link/4,
+	 start/3,
 	 change_shaper/2,
 	 reset_stream/1,
 	 starttls/2,
@@ -38,12 +39,19 @@
 %% API
 %%====================================================================
 %%--------------------------------------------------------------------
+%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
+%% Description: Starts the server
+%%--------------------------------------------------------------------
+start_link(Socket, SockMod, Shaper, C2SPid) ->
+    gen_server:start_link(?MODULE, [Socket, SockMod, Shaper, C2SPid], []).
+
+%%--------------------------------------------------------------------
 %% Function: start() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start(Socket, SockMod, Shaper) ->
-    {ok, Pid} = gen_server:start(
-		  ?MODULE, [Socket, SockMod, Shaper, self()], []),
+    {ok, Pid} = supervisor:start_child(ejabberd_receiver_sup,
+				       [Socket, SockMod, Shaper, self()]),
     Pid.
 
 change_shaper(Pid, Shaper) ->

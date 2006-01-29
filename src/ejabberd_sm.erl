@@ -10,7 +10,10 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start_link/0, init/0,
+-behaviour(gen_server).
+
+%% API
+-export([start_link/0,
 	 route/3,
 	 open_session/4, close_session/1,
 	 bounce_offline_message/3,
@@ -27,17 +30,124 @@
 	 unregister_iq_handler/2
 	]).
 
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
 -record(session, {sid, usr, us, priority}).
+-record(state, {}).
 
+%%====================================================================
+%% API
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
+%% Description: Starts the server
+%%--------------------------------------------------------------------
 start_link() ->
-    Pid = proc_lib:spawn_link(ejabberd_sm, init, []),
-    register(ejabberd_sm, Pid),
-    {ok, Pid}.
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-init() ->
+route(From, To, Packet) ->
+    case catch do_route(From, To, Packet) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p~nwhen processing: ~p",
+		       [Reason, {From, To, Packet}]);
+	_ ->
+	    ok
+    end.
+
+open_session(SID, User, Server, Resource) ->
+    set_session(SID, User, Server, Resource, undefined).
+
+close_session(SID) ->
+    F = fun() ->
+		mnesia:delete({session, SID})
+        end,
+    mnesia:sync_dirty(F).
+
+bounce_offline_message(From, To, Packet) ->
+    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
+    ejabberd_router:route(To, From, Err),
+    stop.
+
+disconnect_removed_user(User, Server) ->
+    ejabberd_sm:route(jlib:make_jid("", "", ""),
+		      jlib:make_jid(User, Server, ""),
+		      {xmlelement, "broadcast", [],
+		       [{exit, "User removed"}]}).
+
+get_user_resources(User, Server) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
+    case catch mnesia:dirty_index_read(session, US, #session.us) of
+	{'EXIT', _Reason} ->
+	    [];
+	Ss ->
+	    [element(3, S#session.usr) || S <- clean_session_list(Ss)]
+    end.
+
+set_presence(SID, User, Server, Resource, Priority) ->
+    set_session(SID, User, Server, Resource, Priority).
+
+unset_presence(SID, User, Server, Resource, Status) ->
+    set_session(SID, User, Server, Resource, undefined),
+    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
+		       [User, Server, Resource, Status]).
+
+close_session_unset_presence(SID, User, Server, Resource, Status) ->
+    close_session(SID),
+    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
+		       [User, Server, Resource, Status]).
+
+
+dirty_get_sessions_list() ->
+    mnesia:dirty_select(
+      session,
+      [{#session{usr = '$1', _ = '_'},
+	[],
+	['$1']}]).
+
+dirty_get_my_sessions_list() ->
+    mnesia:dirty_select(
+      session,
+      [{#session{sid = {'_', '$1'}, _ = '_'},
+	[{'==', {node, '$1'}, node()}],
+	['$_']}]).
+
+get_vh_session_list(Server) ->
+    LServer = jlib:nameprep(Server),
+    mnesia:dirty_select(
+      session,
+      [{#session{usr = '$1', _ = '_'},
+	[{'==', {element, 2, '$1'}, LServer}],
+	['$1']}]).
+
+register_iq_handler(Host, XMLNS, Module, Fun) ->
+    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.
+
+register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
+    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
+
+unregister_iq_handler(Host, XMLNS) ->
+    ejabberd_sm ! {unregister_iq_handler, Host, XMLNS}.
+
+
+%%====================================================================
+%% gen_server callbacks
+%%====================================================================
+
+%%--------------------------------------------------------------------
+%% Function: init(Args) -> {ok, State} |
+%%                         {ok, State, Timeout} |
+%%                         ignore               |
+%%                         {stop, Reason}
+%% Description: Initiates the server
+%%--------------------------------------------------------------------
+init([]) ->
     update_tables(),
     mnesia:create_table(session,
 			[{ram_copies, [node()]},
@@ -54,53 +164,86 @@ init() ->
 	      ejabberd_hooks:add(remove_user, Host,
 				 ejabberd_sm, disconnect_removed_user, 100)
       end, ?MYHOSTS),
-    loop().
+    {ok, #state{}}.
 
-loop() ->
-    receive
-	{route, From, To, Packet} ->
-	    case catch do_route(From, To, Packet) of
-		{'EXIT', Reason} ->
-		    ?ERROR_MSG("~p~nwhen processing: ~p",
-			       [Reason, {From, To, Packet}]);
-		_ ->
-		    ok
-	    end,
-	    loop();
-	{mnesia_system_event, {mnesia_down, Node}} ->
-	    clean_table_from_bad_node(Node),
-	    loop();
-	{register_iq_handler, Host, XMLNS, Module, Function} ->
-	    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function}),
-	    loop();
-	{register_iq_handler, Host, XMLNS, Module, Function, Opts} ->
-	    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function, Opts}),
-	    loop();
-	{unregister_iq_handler, Host, XMLNS} ->
-	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
-		[{_, Module, Function, Opts}] ->
-		    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
-		_ ->
-		    ok
-	    end,
-	    ets:delete(sm_iqtable, {XMLNS, Host}),
-	    loop();
-	_ ->
-	    loop()
-    end.
+%%--------------------------------------------------------------------
+%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
+%%                                      {reply, Reply, State, Timeout} |
+%%                                      {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, Reply, State} |
+%%                                      {stop, Reason, State}
+%% Description: Handling call messages
+%%--------------------------------------------------------------------
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
 
+%%--------------------------------------------------------------------
+%% Function: handle_cast(Msg, State) -> {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, State}
+%% Description: Handling cast messages
+%%--------------------------------------------------------------------
+handle_cast(_Msg, State) ->
+    {noreply, State}.
 
-route(From, To, Packet) ->
+%%--------------------------------------------------------------------
+%% Function: handle_info(Info, State) -> {noreply, State} |
+%%                                       {noreply, State, Timeout} |
+%%                                       {stop, Reason, State}
+%% Description: Handling all non call/cast messages
+%%--------------------------------------------------------------------
+handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
 	_ ->
 	    ok
-    end.
+    end,
+    {noreply, State};
+handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
+    clean_table_from_bad_node(Node),
+    {noreply, State};
+handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
+    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function}),
+    {noreply, State};
+handle_info({register_iq_handler, Host, XMLNS, Module, Function, Opts}, State) ->
+    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function, Opts}),
+    {noreply, State};
+handle_info({unregister_iq_handler, Host, XMLNS}, State) ->
+    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
+	[{_, Module, Function, Opts}] ->
+	    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
+	_ ->
+	    ok
+    end,
+    ets:delete(sm_iqtable, {XMLNS, Host}),
+    {noreply, State};
+handle_info(_Info, State) ->
+    {noreply, State}.
 
-open_session(SID, User, Server, Resource) ->
-    set_session(SID, User, Server, Resource, undefined).
+%%--------------------------------------------------------------------
+%% Function: terminate(Reason, State) -> void()
+%% Description: This function is called by a gen_server when it is about to
+%% terminate. It should be the opposite of Module:init/1 and do any necessary
+%% cleaning up. When it returns, the gen_server terminates with Reason.
+%% The return value is ignored.
+%%--------------------------------------------------------------------
+terminate(_Reason, _State) ->
+    ok.
+
+%%--------------------------------------------------------------------
+%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
+%% Description: Convert process state when code is changed
+%%--------------------------------------------------------------------
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
 
 set_session(SID, User, Server, Resource, Priority) ->
     LUser = jlib:nodeprep(User),
@@ -130,12 +273,6 @@ set_session(SID, User, Server, Resource, Priority) ->
 		      ok
 	      end, SIDs)
     end.
-
-close_session(SID) ->
-    F = fun() ->
-		mnesia:delete({session, SID})
-        end,
-    mnesia:sync_dirty(F).
 
 
 clean_table_from_bad_node(Node) ->
@@ -314,30 +451,8 @@ route_message(From, To, Packet) ->
 	    end
     end.
 
-bounce_offline_message(From, To, Packet) ->
-    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
-    ejabberd_router:route(To, From, Err),
-    stop.
-
-disconnect_removed_user(User, Server) ->
-    ejabberd_sm:route(jlib:make_jid("", "", ""),
-		      jlib:make_jid(User, Server, ""),
-		      {xmlelement, "broadcast", [],
-		       [{exit, "User removed"}]}).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-get_user_resources(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_index_read(session, US, #session.us) of
-	{'EXIT', _Reason} ->
-	    [];
-	Ss ->
-	    [element(3, S#session.usr) || S <- clean_session_list(Ss)]
-    end.
 
 clean_session_list(Ss) ->
     clean_session_list(lists:keysort(#session.usr, Ss), []).
@@ -362,19 +477,6 @@ clean_session_list([S1, S2 | Rest], Res) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-set_presence(SID, User, Server, Resource, Priority) ->
-    set_session(SID, User, Server, Resource, Priority).
-
-unset_presence(SID, User, Server, Resource, Status) ->
-    set_session(SID, User, Server, Resource, undefined),
-    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
-		       [User, Server, Resource, Status]).
-
-close_session_unset_presence(SID, User, Server, Resource, Status) ->
-    close_session(SID),
-    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
-		       [User, Server, Resource, Status]).
-
 get_user_present_resources(LUser, LServer) ->
     US = {LUser, LServer},
     case catch mnesia:dirty_index_read(session, US, #session.us) of
@@ -384,28 +486,6 @@ get_user_present_resources(LUser, LServer) ->
 	    [{S#session.priority, element(3, S#session.usr)} ||
 		S <- clean_session_list(Ss), is_integer(S#session.priority)]
     end.
-
-dirty_get_sessions_list() ->
-    mnesia:dirty_select(
-      session,
-      [{#session{usr = '$1', _ = '_'},
-	[],
-	['$1']}]).
-
-dirty_get_my_sessions_list() ->
-    mnesia:dirty_select(
-      session,
-      [{#session{sid = {'_', '$1'}, _ = '_'},
-	[{'==', {node, '$1'}, node()}],
-	['$_']}]).
-
-get_vh_session_list(Server) ->
-    LServer = jlib:nameprep(Server),
-    mnesia:dirty_select(
-      session,
-      [{#session{usr = '$1', _ = '_'},
-	[{'==', {element, 2, '$1'}, LServer}],
-	['$1']}]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -440,15 +520,6 @@ process_iq(From, To, Packet) ->
 	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
-
-register_iq_handler(Host, XMLNS, Module, Fun) ->
-    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.
-
-register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
-    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
-
-unregister_iq_handler(Host, XMLNS) ->
-    ejabberd_sm ! {unregister_iq_handler, Host, XMLNS}.
 
 
 

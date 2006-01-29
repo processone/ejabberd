@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : gen_iq_handler.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose : IQ handler support
 %%% Created : 22 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -10,19 +10,35 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/0,
-	 start_link/3,
+-behaviour(gen_server).
+
+%% API
+-export([start_link/3,
 	 add_iq_handler/6,
 	 remove_iq_handler/3,
 	 stop_iq_handler/3,
 	 handle/7,
-	 process_iq/6,
-	 queue_init/3]).
+	 process_iq/6]).
+
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 
-start() ->
-    ok.
+-record(state, {host,
+		module,
+		function}).
+
+%%====================================================================
+%% API
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
+%% Description: Starts the server
+%%--------------------------------------------------------------------
+start_link(Host, Module, Function) ->
+    gen_server:start_link(?MODULE, [Host, Module, Function], []).
 
 add_iq_handler(Component, Host, NS, Module, Function, Type) ->
     case Type of
@@ -40,10 +56,10 @@ add_iq_handler(Component, Host, NS, Module, Function, Type) ->
 remove_iq_handler(Component, Host, NS) ->
     Component:unregister_iq_handler(Host, NS).
 
-stop_iq_handler(Module, Function, Opts) ->
+stop_iq_handler(_Module, _Function, Opts) ->
     case Opts of
 	{one_queue, Pid} ->
-	    exit(Pid, kill);
+	    gen_server:call(Pid, stop);
 	_ ->
 	    ok
     end.
@@ -75,18 +91,76 @@ process_iq(_Host, Module, Function, From, To, IQ) ->
 	    end
     end.
 
-start_link(Host, Module, Function) ->
-  {ok, proc_lib:spawn_link(?MODULE, queue_init, [Host, Module, Function])}.
+%%====================================================================
+%% gen_server callbacks
+%%====================================================================
 
-queue_init(Host, Module, Function) ->
-    queue_loop(Host, Module, Function).
+%%--------------------------------------------------------------------
+%% Function: init(Args) -> {ok, State} |
+%%                         {ok, State, Timeout} |
+%%                         ignore               |
+%%                         {stop, Reason}
+%% Description: Initiates the server
+%%--------------------------------------------------------------------
+init([Host, Module, Function]) ->
+    {ok, #state{host = Host,
+		module = Module,
+		function = Function}}.
 
-% TODO: use gen_event
-queue_loop(Host, Module, Function) ->
-    receive
-	{process_iq, From, To, IQ} ->
-	    process_iq(Host, Module, Function, From, To, IQ),
-	    queue_loop(Host, Module, Function);
-	_ ->
-	    queue_loop(Host, Module, Function)
-    end.
+%%--------------------------------------------------------------------
+%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
+%%                                      {reply, Reply, State, Timeout} |
+%%                                      {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, Reply, State} |
+%%                                      {stop, Reason, State}
+%% Description: Handling call messages
+%%--------------------------------------------------------------------
+handle_call(stop, _From, State) ->
+    Reply = ok,
+    {stop, normal, Reply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_cast(Msg, State) -> {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, State}
+%% Description: Handling cast messages
+%%--------------------------------------------------------------------
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_info(Info, State) -> {noreply, State} |
+%%                                       {noreply, State, Timeout} |
+%%                                       {stop, Reason, State}
+%% Description: Handling all non call/cast messages
+%%--------------------------------------------------------------------
+handle_info({process_iq, From, To, IQ},
+	    #state{host = Host,
+		   module = Module,
+		   function = Function} = State) ->
+    process_iq(Host, Module, Function, From, To, IQ),
+    {noreply, State};
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: terminate(Reason, State) -> void()
+%% Description: This function is called by a gen_server when it is about to
+%% terminate. It should be the opposite of Module:init/1 and do any necessary
+%% cleaning up. When it returns, the gen_server terminates with Reason.
+%% The return value is ignored.
+%%--------------------------------------------------------------------
+terminate(_Reason, _State) ->
+    ok.
+
+%%--------------------------------------------------------------------
+%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
+%% Description: Convert process state when code is changed
+%%--------------------------------------------------------------------
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------

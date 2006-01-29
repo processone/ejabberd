@@ -95,11 +95,17 @@ update() ->
 make_script(UpdatedBeams) ->
     lists:map(
       fun(Module) ->
-	      {ok, {Module, [{attributes, Attrs}]}} =
+	      {ok, {Module, [{attributes, NewAttrs}]}} =
 		  beam_lib:chunks(code:which(Module), [attributes]),
-	      case lists:keysearch(update_info, 1, Attrs) of
-		  {value, {_, [{update, Extra}]}} ->
-		      {update, Module, {advanced, Extra}};
+	      CurAttrs = Module:module_info(attributes),
+	      case lists:keysearch(update_info, 1, NewAttrs) of
+		  {value, {_, [{update, _}]}} ->
+		      case lists:keysearch(update_info, 1, CurAttrs) of
+			  {value, {_, [{update, Extra}]}} ->
+			      {update, Module, {advanced, Extra}};
+			  false ->
+			      {update, Module, {advanced, 0}}
+		      end;
 		  false ->
 		      {load_module, Module}
 	      end
