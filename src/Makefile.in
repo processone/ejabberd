@@ -28,15 +28,15 @@ ERLSHLIBS = expat_erl.so
 SOURCES = $(wildcard *.erl)
 BEAMS = $(SOURCES:.erl=.beam)
 
-DESTDIR =
+DESTDIR = 
 
-EJABBERDDIR = $(DESTDIR)/var/lib/ejabberd
+EJABBERDDIR = $(DESTDIR)@prefix@/var/lib/ejabberd
 BEAMDIR = $(EJABBERDDIR)/ebin
 PRIVDIR = $(EJABBERDDIR)/priv
 SODIR = $(PRIVDIR)/lib
 MSGSDIR = $(PRIVDIR)/msgs
-LOGDIR = $(DESTDIR)/var/log/ejabberd
-ETCDIR = $(DESTDIR)/etc/ejabberd
+LOGDIR = $(DESTDIR)@prefix@/var/log/ejabberd
+ETCDIR = $(DESTDIR)@prefix@/etc/ejabberd
 
 ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 

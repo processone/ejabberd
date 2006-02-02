@@ -20,6 +20,9 @@ AM_WITH_ZLIB
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 
+# Change default prefix
+AC_PREFIX_DEFAULT /
+
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_HEADER_STDC
