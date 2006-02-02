@@ -14,7 +14,9 @@
 
 
 %% External exports
--export([start/6,
+-export([start_link/6,
+	 start_link/5,
+	 start/6,
 	 start/5,
 	 route/4]).
 
@@ -84,11 +86,21 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host, ServerHost, Access, Room, Creator, Nick) ->
-    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, Creator, Nick],
-		  ?FSMOPTS).
+    Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
+    supervisor:start_child(
+      Supervisor, [Host, ServerHost, Access, Room, Creator, Nick]).
 
 start(Host, ServerHost, Access, Room, Opts) ->
-    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, Opts], ?FSMOPTS).
+    Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
+    supervisor:start_child(
+      Supervisor, [Host, ServerHost, Access, Room, Opts]).
+
+start_link(Host, ServerHost, Access, Room, Creator, Nick) ->
+    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, Creator, Nick],
+		  ?FSMOPTS).
+
+start_link(Host, ServerHost, Access, Room, Opts) ->
+    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, Opts], ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
