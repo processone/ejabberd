@@ -8,7 +8,7 @@
 
 -module(ejabberd_web).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
+-vsn('$Revision$  ').
 
 %% External exports
 -export([make_xhtml/1,
@@ -50,13 +50,29 @@ make_xhtml(Els) ->
 
 
 process_get({_, true},
-	    #request{us = US,
+	    #request{auth = Auth,
 		     path = ["admin", "server", SHost | RPath],
 		     q = Query,
 		     lang = Lang} = Request) ->
     Host = jlib:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
 	true ->
+	    US = case Auth of
+		     {SJID, P} ->
+			 case jlib:string_to_jid(SJID) of
+			     error ->
+				 unauthorized;
+			     #jid{user = U, server = S} ->
+				 case ejabberd_auth:check_password(U, S, P) of
+				     true ->
+					 {U, S};
+				     false ->
+					 unauthorized
+				 end
+			 end;
+		     _ ->
+			 unauthorized
+		 end,
 	    case US of
 		{User, Server} ->
 		    case acl:match_rule(
@@ -65,7 +81,8 @@ process_get({_, true},
 			    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
 			allow ->
 			    ejabberd_web_admin:process_admin(
-			      Host, Request#request{path = RPath})
+			      Host, Request#request{path = RPath,
+						    us = US})
 		    end;
 		undefined ->
 		    {401,
@@ -78,10 +95,26 @@ process_get({_, true},
     end;
 
 process_get({_, true},
-	    #request{us = US,
+	    #request{auth = Auth,
 		     path = ["admin" | RPath],
 		     q = Query,
 		     lang = Lang} = Request) ->
+    US = case Auth of
+	     {SJID, P} ->
+		 case jlib:string_to_jid(SJID) of
+		     error ->
+			 unauthorized;
+		     #jid{user = U, server = S} ->
+			 case ejabberd_auth:check_password(U, S, P) of
+			     true ->
+				 {U, S};
+			     false ->
+				 unauthorized
+			 end
+		 end;
+	     _ ->
+		 undefined
+	 end,
     case US of
 	{User, Server} ->
 	    case acl:match_rule(
@@ -90,7 +123,8 @@ process_get({_, true},
 		    {401, [], make_xhtml([?XC("h1", "Not Allowed")])};
 		allow ->
 		    ejabberd_web_admin:process_admin(
-		      global, Request#request{path = RPath})
+		      global, Request#request{path = RPath,
+					      us = US})
 	    end;
 	undefined ->
 	    {401,
@@ -100,8 +134,7 @@ process_get({_, true},
     end;
 
 process_get({true, _},
-	    #request{us = _US,
-		     path = ["http-poll" | RPath],
+	    #request{path = ["http-poll" | RPath],
 		     q = _Query,
 		     lang = _Lang} = Request) ->
     ejabberd_http_poll:process_request(Request#request{path = RPath});

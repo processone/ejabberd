@@ -97,10 +97,11 @@ start(Host, ServerHost, Access, Room, Opts) ->
 
 start_link(Host, ServerHost, Access, Room, Creator, Nick) ->
     gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, Creator, Nick],
-		  ?FSMOPTS).
+		       ?FSMOPTS).
 
 start_link(Host, ServerHost, Access, Room, Opts) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, Opts], ?FSMOPTS).
+    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, Opts],
+		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm

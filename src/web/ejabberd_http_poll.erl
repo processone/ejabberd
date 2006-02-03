@@ -21,7 +21,8 @@
 	 handle_info/3,
 	 terminate/3,
 	 send/2,
-	 recv/3,
+	 setopts/2,
+	 controlling_process/2,
 	 close/1,
 	 process_request/1]).
 
@@ -66,8 +67,16 @@ start_link(ID, Key) ->
 send({http_poll, FsmRef}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
 
-recv({http_poll, FsmRef}, _Length, Timeout) ->
-    gen_fsm:sync_send_all_state_event(FsmRef, recv, Timeout).
+setopts({http_poll, FsmRef}, Opts) ->
+    case lists:member({active, once}, Opts) of
+	true ->
+	    gen_fsm:sync_send_all_state_event(FsmRef, activate);
+	_ ->
+	    ok
+    end.
+
+controlling_process(_Socket, _Pid) ->
+    ok.
 
 close({http_poll, FsmRef}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
@@ -138,7 +147,8 @@ process_request(_Request) ->
 init([ID, Key]) ->
     ?INFO_MSG("started: ~p", [{ID, Key}]),
     Opts = [], % TODO
-    ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
+    {ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
+    ejabberd_c2s:become_controller(C2SPid),
     Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
     {ok, loop, #state{id = ID,
 		      key = Key,
@@ -188,14 +198,14 @@ handle_sync_event({send, Packet}, From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData#state{output = Output}};
 
-handle_sync_event(recv, From, StateName, StateData) ->
+handle_sync_event(activate, From, StateName, StateData) ->
     case StateData#state.input of
 	"" ->
-	    {next_state, StateName, StateData#state{waiting_input = From}};
+	    {reply, ok, StateName, StateData#state{waiting_input = From}};
 	Input ->
-	    Reply = {ok, list_to_binary(Input)},
-	    {reply, Reply, StateName, StateData#state{input = "",
-						      waiting_input = false}}
+	    From ! {tcp, {http_poll, self()}, list_to_binary(Input)},
+	    {reply, ok, StateName, StateData#state{input = "",
+						   waiting_input = false}}
     end;
 
 handle_sync_event(stop, From, StateName, StateData) ->
@@ -225,8 +235,9 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 		    Reply = ok,
 		    {reply, Reply, StateName, StateData#state{input = Input,
 							      key = NewKey}};
-		Receiver ->
-		    gen_fsm:reply(Receiver, {ok, list_to_binary(Packet)}),
+		{Receiver, _Tag} ->
+		    Receiver ! {tcp, {http_poll, self()},
+				list_to_binary(Packet)},
 		    cancel_timer(StateData#state.timer),
 		    Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
 		    Reply = ok,

@@ -1,3 +1,18 @@
+2006-02-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Authentication check moved to
+	ejabberd_web.erl
+	* src/web/ejabberd_web.erl: Likewise
+
+	* src/web/Makefile.in: Added ejabberd_http.hrl dependency
+
+	* src/web/ejabberd_http_poll.erl: Updated to use {active, once}
+	socket mode
+
+	* src/mod_irc/mod_irc.erl: Updated to use gen_server behaviour and
+	ejabberd supervision tree
+	* src/mod_irc/mod_irc_connection.erl: Likewise
+
 2006-02-02  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/configure.ac: --prefix option can now override the default
@@ -9,6 +24,7 @@
 
 	* src/mod_pubsub/mod_pubsub.erl: Updated to use gen_server
 	behaviour and ejabberd supervision tree
+	* src/mod_echo.erl: Likewise
 
 2006-02-01  Alexey Shchepin  <alexey@sevcom.net>
 

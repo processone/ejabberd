@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start/5, route_chan/4, route_nick/3]).
+-export([start_link/5, start/6, route_chan/4, route_nick/3]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -47,8 +47,14 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(From, Host, Server, Username, Encoding) ->
-    gen_fsm:start(?MODULE, [From, Host, Server, Username, Encoding], ?FSMOPTS).
+start(From, Host, ServerHost, Server, Username, Encoding) ->
+    Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_irc_sup),
+    supervisor:start_child(
+      Supervisor, [From, Host, Server, Username, Encoding]).
+
+start_link(From, Host, Server, Username, Encoding) ->
+    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding],
+		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm

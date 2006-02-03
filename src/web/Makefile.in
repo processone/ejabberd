@@ -19,7 +19,7 @@ OBJS   = \
 
 all:    $(OBJS)
 
-$(OUTDIR)/%.beam:       %.erl
+$(OUTDIR)/%.beam:	%.erl ejabberd_http.hrl
 	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
 
 

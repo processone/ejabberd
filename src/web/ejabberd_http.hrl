@@ -10,6 +10,7 @@
 		  path,
 		  q = [],
 		  us,
+		  auth,
 		  lang = "",
 		  data = ""
 		 }).
