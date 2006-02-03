@@ -1,5 +1,8 @@
 2006-02-03  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_auth_odbc.erl: Added ejabberd_odbc_sup to ejabberd
+	supervision tree
+
 	* src/web/ejabberd_http.erl: Authentication check moved to
 	ejabberd_web.erl
 	* src/web/ejabberd_web.erl: Likewise

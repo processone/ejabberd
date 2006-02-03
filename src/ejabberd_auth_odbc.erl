@@ -34,7 +34,14 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
-    ejabberd_odbc_sup:start_link(Host),
+    ChildSpec =
+	{ejabberd_odbc_sup,
+	 {ejabberd_odbc_sup, start_link, [Host]},
+	 temporary,
+	 infinity,
+	 supervisor,
+	 [ejabberd_odbc_sup]},
+    supervisor:start_child(ejabberd_sup, ChildSpec),
     ok.
 
 plain_password_required() ->
