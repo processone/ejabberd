@@ -395,7 +395,7 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, translate:translate(
 		    Lang,
 		    "ejabberd pub/sub module\n"
-		    "Copyright (c) 2003-2005 Alexey Shchepin")}]}].
+		    "Copyright (c) 2003-2006 Alexey Shchepin")}]}].
 
 
 iq_pubsub(Host, From, Type, SubEl) ->

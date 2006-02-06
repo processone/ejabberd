@@ -25,6 +25,7 @@
 	 wait_for_features/2,
 	 wait_for_auth_result/2,
 	 wait_for_starttls_proceed/2,
+	 reopen_socket/2,
 	 stream_established/2,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -209,10 +210,9 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
 					 StateData#state.server}]),
 	    % TODO: clear message queue
-	    (StateData#state.sockmod):close(StateData#state.socket),
-	    gen_fsm:send_event(self(), init),
-	    {next_state, open_socket, StateData#state{socket = undefined,
-						      use_v10 = false}};
+	    ejabberd_receiver:close(StateData#state.receiver),
+	    {next_state, reopen_socket, StateData#state{socket = undefined,
+							use_v10 = false}};
 	_ ->
 	    send_text(StateData, ?INVALID_NAMESPACE_ERR),
 	    {stop, normal, StateData}
@@ -351,9 +351,8 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		StartTLSRequired and (not StateData#state.tls) ->
 		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
 						 StateData#state.server}]),
-		    (StateData#state.sockmod):close(StateData#state.socket),
-		    gen_fsm:send_event(self(), init),
-		    {next_state, open_socket,
+		    ejabberd_receiver:close(StateData#state.receiver),
+		    {next_state, reopen_socket,
 		     StateData#state{socket = undefined,
 				     use_v10 = false}};
 		true ->
@@ -409,9 +408,8 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 		?NS_SASL ->
 		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
 						 StateData#state.server}]),
-		    (StateData#state.sockmod):close(StateData#state.socket),
-		    gen_fsm:send_event(self(), init),
-		    {next_state, open_socket,
+		    ejabberd_receiver:close(StateData#state.receiver),
+		    {next_state, reopen_socket,
 		     StateData#state{socket = undefined}};
 		_ ->
 		    send_text(StateData,
@@ -496,6 +494,19 @@ wait_for_starttls_proceed(timeout, StateData) ->
 
 wait_for_starttls_proceed(closed, StateData) ->
     {stop, normal, StateData}.
+
+
+reopen_socket({xmlstreamelement, El}, StateData) ->
+    {next_state, reopen_socket, StateData};
+reopen_socket({xmlstreamend, Name}, StateData) ->
+    {next_state, reopen_socket, StateData};
+reopen_socket({xmlstreamerror, _}, StateData) ->
+    {next_state, reopen_socket, StateData};
+reopen_socket(timeout, StateData) ->
+    {stop, normal, StateData};
+reopen_socket(closed, StateData) ->
+    gen_fsm:send_event(self(), init),
+    {next_state, open_socket, StateData}.
 
 
 stream_established({xmlstreamelement, El}, StateData) ->

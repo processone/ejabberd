@@ -95,7 +95,7 @@ make_xhtml(Els, global, Lang) ->
 		 [?XAE("div",
 		       [{"id", "copyright"}],
 		       [?XCT("p",
-			     "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One")
+			     "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One")
 		       ])])])
       ]}};
 
@@ -150,7 +150,7 @@ make_xhtml(Els, Host, Lang) ->
 		 [?XAE("div",
 		       [{"id", "copyright"}],
 		       [?XCT("p",
-			     "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One")
+			     "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One")
 		       ])])])
       ]}}.
 

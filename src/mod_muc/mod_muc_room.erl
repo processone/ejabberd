@@ -1564,6 +1564,18 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 					 catch send_kickban_presence(
 						 JID, Reason, "307", SD),
 					 set_role(JID, none, SD);
+				     {JID, affiliation, none, Reason} ->
+					 case (SD#state.config)#config.members_only of
+					     true ->
+						 catch send_kickban_presence(
+							 JID, Reason, "321", SD),
+						 SD1 = set_affiliation(JID, none, SD),
+						 set_role(JID, none, SD1);
+					     _ ->
+						 SD1 = set_affiliation(JID, none, SD),
+						 send_update_presence(JID, SD1),
+						 SD1
+					 end;
 				     {JID, affiliation, outcast, Reason} ->
 					 catch send_kickban_presence(
 						 JID, Reason, "301", SD),
@@ -2105,7 +2117,9 @@ set_config(XEl, StateData) ->
 -define(SET_BOOL_XOPT(Opt, Val),
 	case Val of
 	    "0" -> set_xoption(Opts, Config#config{Opt = false});
+	    "false" -> set_xoption(Opts, Config#config{Opt = false});
 	    "1" -> set_xoption(Opts, Config#config{Opt = true});
+	    "true" -> set_xoption(Opts, Config#config{Opt = true});
 	    _ -> {error, ?ERR_BAD_REQUEST}
 	end).
 
@@ -2159,8 +2173,29 @@ change_config(Config, StateData) ->
 	    mod_muc:forget_room(NSD#state.host, NSD#state.room);
 	{false, false} ->
 	    ok
-	end,
-    {result, [], NSD}.
+    end,
+    case {(StateData#state.config)#config.members_only,
+          Config#config.members_only} of
+	{false, true} ->
+	    NSD1 = remove_nonmembers(NSD),
+	    {result, [], NSD1};
+	_ ->
+	    {result, [], NSD}
+    end.
+
+remove_nonmembers(StateData) ->
+    lists:foldl(
+      fun({_LJID, #user{jid = JID}}, SD) ->
+	    Affiliation = get_affiliation(JID, SD),
+	    case Affiliation of
+		none ->
+		    catch send_kickban_presence(
+			    JID, "", "322", SD),
+		    set_role(JID, none, SD);
+		_ ->
+		    SD
+	    end
+      end, StateData, ?DICT:to_list(StateData#state.users)).
 
 
 -define(CASE_CONFIG_OPT(Opt),

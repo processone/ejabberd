@@ -645,7 +645,7 @@ adhoc_local_commands(Acc, From, #jid{lserver = LServer} = To,
 	    Acc
     end.
 
-adhoc_local_commands(_From, _To,
+adhoc_local_commands(_From, #jid{lserver = LServer} = _To,
 		     #adhoc_request{lang = Lang,
 				    node = Node,
 				    sessionid = SessionID,
@@ -665,7 +665,7 @@ adhoc_local_commands(_From, _To,
 	      #adhoc_response{status = canceled});
 	XData == false, ActionIsExecute ->
 	    %% User requests form
-	    case get_form(LNode, Lang) of
+	    case get_form(LServer, LNode, Lang) of
 		{result, Form} ->
 		    adhoc:produce_response(
 		      Request,
@@ -680,7 +680,7 @@ adhoc_local_commands(_From, _To,
 		invalid ->
 		    {error, ?ERR_BAD_REQUEST};
 		Fields ->
-		    case set_form(LNode, Lang, Fields) of
+		    case set_form(LServer, LNode, Lang, Fields) of
 			{result, _Res} ->
 			    adhoc:produce_response(
 			      #adhoc_response{lang = Lang,
@@ -730,7 +730,7 @@ adhoc_local_commands(_From, _To,
 
 
 
-get_form(["running nodes", ENode, "DB"], Lang) ->
+get_form(_Host, ["running nodes", ENode, "DB"], Lang) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -766,12 +766,12 @@ get_form(["running nodes", ENode, "DB"], Lang) ->
 	    end
     end;
 
-get_form(["running nodes", ENode, "modules", "stop"], Lang) ->
+get_form(Host, ["running nodes", ENode, "modules", "stop"], Lang) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
 	Node ->
-	    case rpc:call(Node, gen_mod, loaded_modules, []) of
+	    case rpc:call(Node, gen_mod, loaded_modules, [Host]) of
 		{badrpc, _Reason} ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR};
 		Modules ->
@@ -793,7 +793,7 @@ get_form(["running nodes", ENode, "modules", "stop"], Lang) ->
 	    end
     end;
 
-get_form(["running nodes", ENode, "modules", "start"], Lang) ->
+get_form(_Host, ["running nodes", ENode, "modules", "start"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -812,7 +812,7 @@ get_form(["running nodes", ENode, "modules", "start"], Lang) ->
 	        }
 	     ]}]};
 
-get_form(["running nodes", ENode, "backup", "backup"], Lang) ->
+get_form(_Host, ["running nodes", ENode, "backup", "backup"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -831,7 +831,7 @@ get_form(["running nodes", ENode, "backup", "backup"], Lang) ->
 	        }
 	     ]}]};
 
-get_form(["running nodes", ENode, "backup", "restore"], Lang) ->
+get_form(_Host, ["running nodes", ENode, "backup", "restore"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -850,7 +850,7 @@ get_form(["running nodes", ENode, "backup", "restore"], Lang) ->
 	        }
 	     ]}]};
 
-get_form(["running nodes", ENode, "backup", "textfile"], Lang) ->
+get_form(_Host, ["running nodes", ENode, "backup", "textfile"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -869,7 +869,7 @@ get_form(["running nodes", ENode, "backup", "textfile"], Lang) ->
 	        }
 	     ]}]};
 
-get_form(["running nodes", ENode, "import", "file"], Lang) ->
+get_form(_Host, ["running nodes", ENode, "import", "file"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -888,7 +888,7 @@ get_form(["running nodes", ENode, "import", "file"], Lang) ->
 	        }
 	     ]}]};
 
-get_form(["running nodes", ENode, "import", "dir"], Lang) ->
+get_form(_Host, ["running nodes", ENode, "import", "dir"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -907,7 +907,7 @@ get_form(["running nodes", ENode, "import", "dir"], Lang) ->
 	        }
 	     ]}]};
 
-get_form(["config", "hostname"], Lang) ->
+get_form(_Host, ["config", "hostname"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 		 [{xmlcdata,
@@ -925,7 +925,7 @@ get_form(["config", "hostname"], Lang) ->
 	         [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
 	     ]}]};
 
-get_form(["config", "acls"], Lang) ->
+get_form(_Host, ["config", "acls"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -950,7 +950,7 @@ get_form(["config", "acls"], Lang) ->
 	        }
 	     ]}]};
 
-get_form(["config", "access"], Lang) ->
+get_form(_Host, ["config", "access"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -981,7 +981,7 @@ get_form(["config", "access"], Lang) ->
 	        }
 	     ]}]};
 
-get_form(["config", "remusers"], Lang) ->
+get_form(Host, ["config", "remusers"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [{xmlelement, "title", [],
 	         [{xmlcdata,
@@ -991,7 +991,7 @@ get_form(["config", "remusers"], Lang) ->
 	         [{xmlcdata,
 		   translate:translate(
 		     Lang, "Choose users to remove")}]}] ++
-      case catch ejabberd_auth:dirty_get_registered_users() of
+      case catch ejabberd_auth:get_vh_registered_users(Host) of
 	  {'EXIT', _Reason} ->
 	      [];
 	  Users ->
@@ -1001,12 +1001,12 @@ get_form(["config", "remusers"], Lang) ->
       end
     }]};
 
-get_form(_, _Lang) ->
+get_form(_Host, _, _Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 
-set_form(["running nodes", ENode, "DB"], _Lang, XData) ->
+set_form(_Host, ["running nodes", ENode, "DB"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -1040,7 +1040,7 @@ set_form(["running nodes", ENode, "DB"], _Lang, XData) ->
 	    {result, []}
     end;
 
-set_form(["running nodes", ENode, "modules", "stop"], _Lang, XData) ->
+set_form(Host, ["running nodes", ENode, "modules", "stop"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -1050,7 +1050,7 @@ set_form(["running nodes", ENode, "modules", "stop"], _Lang, XData) ->
 		      case Vals of
 			  ["1"] ->
 			      Module = list_to_atom(Var),
-			      rpc:call(Node, gen_mod, stop_module, [Module]);
+			      rpc:call(Node, gen_mod, stop_module, [Host, Module]);
 			  _ ->
 			      ok
 		      end
@@ -1058,7 +1058,7 @@ set_form(["running nodes", ENode, "modules", "stop"], _Lang, XData) ->
 	    {result, []}
     end;
 
-set_form(["running nodes", ENode, "modules", "start"], _Lang, XData) ->
+set_form(Host, ["running nodes", ENode, "modules", "start"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -1079,7 +1079,7 @@ set_form(["running nodes", ENode, "modules", "start"], _Lang, XData) ->
 					      rpc:call(Node,
 						       gen_mod,
 						       start_module,
-						       [Module, Args])
+						       [Host, Module, Args])
 				      end, Modules),
 				    {result, []};
 				_ ->
@@ -1094,7 +1094,7 @@ set_form(["running nodes", ENode, "modules", "start"], _Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "backup", "backup"], _Lang, XData) ->
+set_form(_Host, ["running nodes", ENode, "backup", "backup"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -1117,7 +1117,7 @@ set_form(["running nodes", ENode, "backup", "backup"], _Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "backup", "restore"], _Lang, XData) ->
+set_form(_Host, ["running nodes", ENode, "backup", "restore"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -1141,7 +1141,7 @@ set_form(["running nodes", ENode, "backup", "restore"], _Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "backup", "textfile"], _Lang, XData) ->
+set_form(_Host, ["running nodes", ENode, "backup", "textfile"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -1164,7 +1164,7 @@ set_form(["running nodes", ENode, "backup", "textfile"], _Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "import", "file"], _Lang, XData) ->
+set_form(_Host, ["running nodes", ENode, "import", "file"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -1181,7 +1181,7 @@ set_form(["running nodes", ENode, "import", "file"], _Lang, XData) ->
     end;
 
 
-set_form(["running nodes", ENode, "import", "dir"], _Lang, XData) ->
+set_form(_Host, ["running nodes", ENode, "import", "dir"], _Lang, XData) ->
     case search_running_node(ENode) of
 	false ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
@@ -1198,7 +1198,7 @@ set_form(["running nodes", ENode, "import", "dir"], _Lang, XData) ->
     end;
 
 
-set_form(["config", "hostname"], _Lang, XData) ->
+set_form(_Host, ["config", "hostname"], _Lang, XData) ->
     case lists:keysearch("hostname", 1, XData) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
@@ -1211,7 +1211,7 @@ set_form(["config", "hostname"], _Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(["config", "acls"], _Lang, XData) ->
+set_form(_Host, ["config", "acls"], _Lang, XData) ->
     case lists:keysearch("acls", 1, XData) of
 	{value, {_, Strings}} ->
 	    String = lists:foldl(fun(S, Res) ->
@@ -1237,7 +1237,7 @@ set_form(["config", "acls"], _Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(["config", "access"], _Lang, XData) ->
+set_form(_Host, ["config", "access"], _Lang, XData) ->
     SetAccess =
 	fun(Rs) ->
 		mnesia:transaction(
@@ -1283,19 +1283,19 @@ set_form(["config", "access"], _Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(["config", "remusers"], _Lang, XData) ->
+set_form(Host, ["config", "remusers"], _Lang, XData) ->
     lists:foreach(
       fun({Var, Vals}) ->
 	      case Vals of
 		  ["1"] ->
-		      catch ejabberd_auth:remove_user(Var);
+		      catch ejabberd_auth:remove_user(Var, Host);
 		  _ ->
 		      ok
 	      end
       end, XData),
     {result, []};
 
-set_form(_, _Lang, _XData) ->
+set_form(_Host, _, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 

@@ -581,7 +581,7 @@ iq_get_vcard(Lang) ->
 	"http://ejabberd.jabberstudio.org/"}]},
      {xmlelement, "DESC", [],
       [{xmlcdata, translate:translate(Lang, "ejabberd MUC module\n"
-	"Copyright (c) 2003-2005 Alexey Shchepin")}]}].
+	"Copyright (c) 2003-2006 Alexey Shchepin")}]}].
 
 
 broadcast_service_message(Host, Msg) ->

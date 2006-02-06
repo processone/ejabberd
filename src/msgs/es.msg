@@ -116,7 +116,7 @@
 {"Only service administrators are allowed to send service messages", "Solo los administradores del servicio tienen permiso para enviar mensajes de servicio"}.
 {"Conference room does not exist", "La sala de conferencias no existe"}.
 {"Access denied by service policy", "Acceso denegado por la política del servicio"}.
-{"You must fill in field \"nick\" in the form", "Debes rellenar el campo \"apodo\" en el formulario"}.
+{"You must fill in field \"Nickname\" in the form", "Debes rellenar el campo \"Apodo\" en el formulario"}.
 {"Specified nickname is already registered", "El apodo especificado ya está registrado, tendrás que buscar otro"}.
 {"Room creation is denied by service policy", "Se te ha denegado crear la sala por política del servicio"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2005 Alexey Shchepin"}.
@@ -126,20 +126,20 @@
 {"You need an x:data capable client to configure room", "Necesitas un cliente con soporte de x:data para configurar la sala"}.
 {"Configuration for ", "Configuración para "}.
 {"Room title", "Título de la sala"}.
-{"Allow users to change subject?", "Permitir a los usuarios cambiar el asunto"}.
-{"Allow users to query other users?", "Permitir a los usuarios consultar a otros usuarios"}.
-{"Allow users to send private messages?", "Permitir a los usuarios enviar mensajes privados"}.
-{"Make room public searchable?", "Hacer la sala públicamente visible"}.
-{"Make participants list public?", "Hacer pública la lista de participantes"}.
-{"Make room persistent?", "Hacer la sala permanente"}.
-{"Make room moderated?", "Hacer la sala moderada"}.
-{"Default users as members?", "Los usuarios son miembros por defecto"}.
-{"Make room members only?", "Hacer la sala sólo para miembros"}.
-{"Allow users to send invites?", "Permitir a los usuarios enviar invitaciones"}.
-{"Make room password protected?", "Proteger la sala con contraseña"}.
+{"Allow users to change subject", "Permitir a los usuarios cambiar el asunto"}.
+{"Allow users to query other users", "Permitir a los usuarios consultar a otros usuarios"}.
+{"Allow users to send private messages", "Permitir a los usuarios enviar mensajes privados"}.
+{"Make room public searchable", "Sala públicamente visible"}.
+{"Make participants list public", "La lista de participantes es pública"}.
+{"Make room persistent", "Sala permanente"}.
+{"Make room moderated", "Sala moderada"}.
+{"Default users as participants", "Los usuarios on participantes por defecto"}.
+{"Make room members-only", "Sala sólo para miembros"}.
+{"Allow users to send invites", "Permitir a los usuarios enviar invitaciones"}.
+{"Make room password protected", "Proteger la sala con contraseña"}.
 {"Password", "Contraseña"}.
-{"Make room anonymous?", "Hacer anónima la sala"}.
-{"Enable logging?", "Guardar históricos"}.
+{"This room is not anonymous", "Sala no anónima"}.
+{"Enable logging", "Guardar históricos"}.
 {"Only moderators and participants are allowed to change subject in this room", "Solo los moderadores y participantes pueden cambiar el asunto de esta sala"}.
 {"Only moderators are allowed to change subject in this room", "Solo los moderadores pueden cambiar el asunto de esta sala"}.
 {"Visitors are not allowed to send messages to all occupants", "Los visitantes no pueden enviar mensajes a todos los ocupantes"}.
@@ -165,6 +165,9 @@
 {"Invalid role: ~s", "Rol no válido: ~s"}.
 {"Owner privileges required", "Se requieren privilegios de propietario de la sala"}.
 {"private, ", "privado"}.
+{"Make room semianonymous", "Hacer la sala semianónima"}.
+{"Description", "Descripción"}.
+{"Number of occupants", "Número de ocupantes"}.
 
 % mod_irc/mod_irc.erl
 {"You need an x:data capable client to configure mod_irc settings", "Necesitas un cliente con soporte de x:data para configurar las opciones de mod_irc"}.
@@ -289,6 +292,25 @@
 {"JID", "JID"}.
 {"Fill in fields to search for any matching Jabber User", "Rellena campos para buscar usuarios Jabber que concuerden"}.
 
+% mod_adhoc.erl
+{"Commands", "Comandos"}.
+{"Ping", "Ping"}.
+{"Pong", "Pong"}.
+
+% mod_announce.erl
+{"Really delete message of the day?", "¿Está seguro de quere borrar el mensaje del dia?"}.
+{"Subject", "Asunto"}.
+{"Message body", "Cuerpo del mensaje"}.
+{"No body provided for announce message", "No se ha proporcionado cuerpo de mensaje para el anuncio"}.
+{"Announcements", "Anuncios"}.
+{"Send announcement to all users", "Enviar anuncio a todos los usuarios"}.
+{"Send announcement to all online users", "Enviar anuncio a todos los usuarios conectados"}.
+{"Send announcement to all online users on all hosts", "Enviar anuncio a todos los usuarios conectados en todos los dominios"}.
+{"Set message of the day and send to online users", "Poner mensaje del dia y enviar a todos los usuarios conectados"}.
+{"Update message of the day (don't send)", "Actualizar mensaje del dia, pero no enviarlo"}.
+{"Delete message of the day", "Borrar mensaje del dia"}.
+
 % Local Variables:
 % mode: erlang
 % End:
+

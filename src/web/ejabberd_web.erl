@@ -84,7 +84,7 @@ process_get({_, true},
 			      Host, Request#request{path = RPath,
 						    us = US})
 		    end;
-		undefined ->
+		unauthorized ->
 		    {401,
 		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 		     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
@@ -113,7 +113,7 @@ process_get({_, true},
 			 end
 		 end;
 	     _ ->
-		 undefined
+		 unauthorized
 	 end,
     case US of
 	{User, Server} ->
@@ -126,7 +126,7 @@ process_get({_, true},
 		      global, Request#request{path = RPath,
 					      us = US})
 	    end;
-	undefined ->
+	unauthorized ->
 	    {401,
 	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 	     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
