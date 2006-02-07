@@ -83,14 +83,6 @@ remove_user(User, Server, Password) ->
 
 auth_module(Server) ->
     LServer = jlib:nameprep(Server),
-    case ejabberd_config:get_local_option({auth_method, LServer}) of
-	external ->
-	    ejabberd_auth_external;
-	ldap ->
-	    ejabberd_auth_ldap;
-	odbc ->
-	    ejabberd_auth_odbc;
-	_ ->
-	    ejabberd_auth_internal
-    end.
+    Method = ejabberd_config:get_local_option({auth_method, LServer}),
+    list_to_atom("ejabberd_auth_" ++ atom_to_list(Method)).
 
