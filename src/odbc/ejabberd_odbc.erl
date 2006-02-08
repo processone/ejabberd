@@ -223,6 +223,7 @@ execute_transaction(State, F, NRestarts) ->
 odbc_connect(SQLServer) ->
     case odbc:connect(SQLServer,[{scrollable_cursors, off}]) of
 	{ok, Ref} -> 
+	    erlang:monitor(process, Ref),
 	    {ok, #state{db_ref = Ref, db_type = odbc}};
 	{error, Reason} ->
 	    ?ERROR_MSG("ODBC connection (~s) failed: ~p~n",
