@@ -156,7 +156,7 @@ get_user_roster(Acc, {LUser, LServer}) ->
 						     (_) ->
 							  []
 						  end, JIDGroups),
-				       [item_to_xml(R#roster{groups = Groups})]
+				       [R#roster{groups = Groups}]
 			       end
 		       end, Items),
 	    RItems ++ Acc;
