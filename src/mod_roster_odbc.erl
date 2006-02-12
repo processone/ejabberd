@@ -25,14 +25,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
-
--record(roster, {user,
-		 jid,
-		 name = "",
-		 subscription = none,
-		 ask = none,
-		 groups = []
-		}).
+-include("mod_roster.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -74,8 +67,8 @@ stop(Host) ->
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
-    case ?MYNAME of
-	LServer ->
+    case lists:member(LServer, ?MYHOSTS) of
+	true ->
 	    ResIQ = process_local_iq(From, To, IQ),
 	    ejabberd_router:route(From, From,
 				  jlib:iq_to_xml(ResIQ)),
@@ -89,8 +82,8 @@ process_iq(From, To, IQ) ->
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
-    case ?MYNAME of
-	LServer ->
+    case lists:member(LServer, ?MYHOSTS) of
+	true ->
 	    process_local_iq(From, To, IQ);
 	_ ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
@@ -145,7 +138,7 @@ get_user_roster(Acc, {LUser, LServer}) ->
 			end,
 	    RItems = lists:flatmap(
 		       fun(I) ->
-			       case raw_to_record(I) of
+			       case raw_to_record(LServer, I) of
 				   error ->
 				       [];
 				   R ->
@@ -227,12 +220,15 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			       "and jid='", SJID, "'"]),
 			Item = case Res of
 				   [] ->
-				       #roster{user = LUser,
+				       #roster{usj = {LUser, LServer, LJID},
+					       us = {LUser, LServer},
 					       jid = LJID};
 				   [I] ->
-				       (raw_to_record(I))#roster{user = LUser,
-								 jid = JID,
-								 name = ""}
+				       (raw_to_record(LServer, I))#roster{
+					 usj = {LUser, LServer, LJID},
+					 us = {LUser, LServer},
+					 jid = LJID,
+					 name = ""}
 			       end,
 			Item1 = process_item_attrs(Item, Attrs),
 			Item2 = process_item_els(Item1, Els),
@@ -325,7 +321,7 @@ process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
 		error ->
 		    process_item_attrs(Item, Attrs);
 		JID1 ->
-		    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
+		    JID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
 		    process_item_attrs(Item#roster{jid = JID}, Attrs)
 	    end;
 	"name" ->
@@ -413,25 +409,25 @@ get_subscription_lists(_, User, Server) ->
 	{selected, ["username", "jid", "nick", "subscription", "ask",
 		    "server", "subscribe", "type"],
 	 Items} when is_list(Items) ->
-	    fill_subscription_lists(Items, [], []);
+	    fill_subscription_lists(LServer, Items, [], []);
 	_ ->
 	    {[], []}
     end.
 
-fill_subscription_lists([RawI | Is], F, T) ->
-    I = raw_to_record(RawI),
+fill_subscription_lists(LServer, [RawI | Is], F, T) ->
+    I = raw_to_record(LServer, RawI),
     J = I#roster.jid,
     case I#roster.subscription of
 	both ->
-	    fill_subscription_lists(Is, [J | F], [J | T]);
+	    fill_subscription_lists(LServer, Is, [J | F], [J | T]);
 	from ->
-	    fill_subscription_lists(Is, [J | F], T);
+	    fill_subscription_lists(LServer, Is, [J | F], T);
 	to ->
-	    fill_subscription_lists(Is, F, [J | T]);
+	    fill_subscription_lists(LServer, Is, F, [J | T]);
 	_ ->
-	    fill_subscription_lists(Is, F, T)
+	    fill_subscription_lists(LServer, Is, F, T)
     end;
-fill_subscription_lists([], F, T) ->
+fill_subscription_lists(_LServer, [], F, T) ->
     {F, T}.
 
 ask_to_pending(subscribe) -> out;
@@ -463,7 +459,7 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 			 ["username", "jid", "nick", "subscription", "ask",
 			  "server", "subscribe", "type"],
 			 [I]} ->
-			    R = raw_to_record(I),
+			    R = raw_to_record(LServer, I),
 			    Groups =
 				case ejabberd_odbc:sql_query_t(
 				       ["select grp from rostergroups "
@@ -479,7 +475,8 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 			 ["username", "jid", "nick", "subscription", "ask",
 			  "server", "subscribe", "type"],
 			 []} ->
-			    #roster{user = LUser,
+			    #roster{usj = {LUser, LServer, LJID},
+				    us = {LUser, LServer},
 				    jid = LJID}
 		    end,
 		NewState = case Direction of
@@ -681,7 +678,8 @@ process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
 	    LJID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
 	    Username = ejabberd_odbc:escape(LUser),
 	    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
-	    Item = #roster{user = LUser,
+	    Item = #roster{usj = {LUser, LServer, LJID},
+			   us = {LUser, LServer},
 			   jid = LJID},
 	    Item1 = process_item_attrs_ws(Item, Attrs),
 	    Item2 = process_item_els(Item1, Els),
@@ -723,7 +721,7 @@ process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
 		error ->
 		    process_item_attrs_ws(Item, Attrs);
 		JID1 ->
-		    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
+		    JID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
 		    process_item_attrs_ws(Item#roster{jid = JID}, Attrs)
 	    end;
 	"name" ->
@@ -826,8 +824,8 @@ get_jid_info(_, User, Server, JID) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-raw_to_record({User, SJID, Nick, SSubscription, SAsk,
-	       _SServer, _SSubscribe, _SType}) ->
+raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk,
+			_SServer, _SSubscribe, _SType}) ->
     case jlib:string_to_jid(SJID) of
 	error ->
 	    error;
@@ -847,14 +845,15 @@ raw_to_record({User, SJID, Nick, SSubscription, SAsk,
 		      "I" -> in;
 		      _ -> none
 		  end,
-	    #roster{user = User,
+	    #roster{usj = {User, LServer, LJID},
+		    us = {User, LServer},
 		    jid = LJID,
 		    name = Nick,
 		    subscription = Subscription,
 		    ask = Ask}
     end.
 
-record_to_string(#roster{user = User,
+record_to_string(#roster{us = {User, _Server},
 			 jid = JID,
 			 name = Name,
 			 subscription = Subscription,
@@ -884,7 +883,7 @@ record_to_string(#roster{user = User,
      "'", SAsk, "',"
      "'N', '', 'item')"].
 
-groups_to_string(#roster{user = User,
+groups_to_string(#roster{us = {User, _Server},
 			 jid = JID,
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
