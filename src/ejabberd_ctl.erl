@@ -9,18 +9,23 @@
 -module(ejabberd_ctl).
 -author('alexey@sevcom.net').
 
--export([start/0, dump_to_textfile/1]).
+-export([start/0,
+	 process/1]).
 
--define(STATUS_SUCCESS, 0).
--define(STATUS_ERROR,   1).
--define(STATUS_USAGE,   2).
--define(STATUS_BADRPC,  3).
+-include("ejabberd_ctl.hrl").
 
 start() ->
     case init:get_plain_arguments() of
 	[SNode | Args] ->
 	    Node = list_to_atom(SNode),
-	    Status = process(Node, Args),
+	    Status = case rpc:call(Node, ?MODULE, process, [Args]) of
+			 {badrpc, Reason} ->
+			     io:format("RPC call failed on the node ~p: ~p~n",
+				       [Node, Reason]),
+			     ?STATUS_BADRPC;
+			 S ->
+			     S
+		     end,
 	    halt(Status);
 	_ ->
 	    print_usage(),
@@ -28,181 +33,120 @@ start() ->
     end.
 
 
-process(Node, ["status"]) ->
-    case rpc:call(Node, init, get_status, []) of
-	{badrpc, Reason} ->
-	    io:format("Can't get node ~p status: ~p~n",
-		      [Node, Reason]),
-	    ?STATUS_BADRPC;
-	{InternalStatus, ProvidedStatus} ->
-	    io:format("Node ~p is ~p. Status: ~p~n",
-		      [Node, InternalStatus, ProvidedStatus]),
-	    ?STATUS_SUCCESS
-    end;
+process(["status"]) ->
+    {InternalStatus, ProvidedStatus} = init:get_status(),
+    io:format("Node ~p is ~p. Status: ~p~n",
+	      [node(), InternalStatus, ProvidedStatus]),
+    ?STATUS_SUCCESS;
 
-process(Node, ["stop"]) ->
-    case rpc:call(Node, init, stop, []) of
-	{badrpc, Reason} ->
-	    io:format("Can't stop node ~p: ~p~n",
-		      [Node, Reason]),
-	    ?STATUS_BADRPC;
-	_ ->
-	    ?STATUS_SUCCESS
-    end;
+process(["stop"]) ->
+    init:stop(),
+    ?STATUS_SUCCESS;
 
-process(Node, ["restart"]) ->
-    case rpc:call(Node, init, restart, []) of
-	{badrpc, Reason} ->
-	    io:format("Can't restart node ~p: ~p~n",
-		      [Node, Reason]),
-	    ?STATUS_BADRPC;
-	_ ->
-	    ?STATUS_SUCCESS
-    end;
+process(["restart"]) ->
+    init:restart(),
+    ?STATUS_SUCCESS;
 
-process(Node, ["reopen-log"]) ->
-    case rpc:call(Node, ejabberd_logger_h, reopen_log, []) of
-	{badrpc, Reason} ->
-	    io:format("Can't reopen node ~p log: ~p~n",
-		      [Node, Reason]),
-	    ?STATUS_BADRPC;
-	_ ->
-	    ?STATUS_SUCCESS
-    end;
+process(["reopen-log"]) ->
+    ejabberd_logger_h:reopen_log(),
+    ?STATUS_SUCCESS;
 
-process(Node, ["register", User, Server, Password]) ->
-    case rpc:call(Node, ejabberd_auth, try_register, [User, Server, Password]) of
+process(["register", User, Server, Password]) ->
+    case ejabberd_auth:try_register(User, Server, Password) of
 	{atomic, ok} ->
 	    ?STATUS_SUCCESS;
 	{atomic, exists} ->
 	    io:format("User ~p already registered at node ~p~n",
-		      [User ++ "@" ++ Server, Node]),
+		      [User ++ "@" ++ Server, node()]),
 	    ?STATUS_ERROR;
 	{error, Reason} ->
 	    io:format("Can't register user ~p at node ~p: ~p~n",
-		      [User ++ "@" ++ Server, Node, Reason]),
-	    ?STATUS_ERROR;
-	{badrpc, Reason} ->
-	    io:format("Can't register user ~p at node ~p: ~p~n",
-		      [User ++ "@" ++ Server, Node, Reason]),
-	    ?STATUS_BADRPC
+		      [User ++ "@" ++ Server, node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["unregister", User, Server]) ->
-    case rpc:call(Node, ejabberd_auth, remove_user, [User, Server]) of
+process(["unregister", User, Server]) ->
+    case ejabberd_auth:remove_user(User, Server) of
 	{error, Reason} ->
 	    io:format("Can't unregister user ~p at node ~p: ~p~n",
-		      [User ++ "@" ++ Server, Node, Reason]),
+		      [User ++ "@" ++ Server, node(), Reason]),
 	    ?STATUS_ERROR;
-	{badrpc, Reason} ->
-	    io:format("Can't unregister user ~p at node ~p: ~p~n",
-		      [User ++ "@" ++ Server, Node, Reason]),
-	    ?STATUS_BADRPC;
 	_ ->
 	    ?STATUS_SUCCESS
     end;
 
-process(Node, ["backup", Path]) ->
-    case rpc:call(Node, mnesia, backup, [Path]) of
+process(["backup", Path]) ->
+    case mnesia:backup(Path) of
         ok ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
 	    io:format("Can't store backup in ~p at node ~p: ~p~n",
-		      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_ERROR;
-	{badrpc, Reason} ->
-	    io:format("Can't store backup in ~p at node ~p: ~p~n",
-		      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_BADRPC
+		      [filename:absname(Path), node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["dump", Path]) ->
-    case rpc:call(Node, ejabberd_ctl, dump_to_textfile, [Path]) of
+process(["dump", Path]) ->
+    case dump_to_textfile(Path) of
 	ok ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
             io:format("Can't store dump in ~p at node ~p: ~p~n",
-                      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_ERROR;
-        {badrpc, Reason} ->
-            io:format("Can't store dump in ~p at node ~p: ~p~n",
-                      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_BADRPC
+                      [filename:absname(Path), node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["load", Path]) ->
-    case rpc:call(Node, mnesia, load_textfile, [Path]) of
+process(["load", Path]) ->
+    case mnesia:load_textfile(Path) of
         {atomic, ok} ->
             ?STATUS_SUCCESS;
         {error, Reason} ->
             io:format("Can't load dump in ~p at node ~p: ~p~n",
-                      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_ERROR;
-        {badrpc, Reason} ->
-            io:format("Can't load dump in ~p at node ~p: ~p~n",
-                      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_BADRPC
+                      [filename:absname(Path), node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["restore", Path]) ->
-    case rpc:call(Node,
-		  mnesia, restore, [Path, [{default_op, keep_tables}]]) of
+process(["restore", Path]) ->
+    case mnesia:restore(Path, [{default_op, keep_tables}]) of
 	{atomic, _} ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
 	    io:format("Can't restore backup from ~p at node ~p: ~p~n",
-		      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_ERROR;
-	{badrpc, Reason} ->
-	    io:format("Can't restore backup from ~p at node ~p: ~p~n",
-		      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_BADRPC
+		      [filename:absname(Path), node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["install-fallback", Path]) ->
-    case rpc:call(Node, mnesia, install_fallback, [Path]) of
+process(["install-fallback", Path]) ->
+    case mnesia:install_fallback(Path) of
 	ok ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
 	    io:format("Can't install fallback from ~p at node ~p: ~p~n",
-		      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_ERROR;
-	{badrpc, Reason} ->
-	    io:format("Can't install fallback from ~p at node ~p: ~p~n",
-		      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_BADRPC
+		      [filename:absname(Path), node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["import-file", Path]) ->
-    case rpc:call(Node, jd2ejd, import_file, [Path]) of
+process(["import-file", Path]) ->
+    case jd2ejd:import_file(Path) of
         ok ->
             ?STATUS_SUCCESS;
         {error, Reason} ->
             io:format("Can't import jabberd 1.4 spool file ~p at node ~p: ~p~n",
-                      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_ERROR;
-        {badrpc, Reason} ->
-            io:format("Can't import jabberd 1.4 spool file ~p at node ~p: ~p~n",
-                      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_BADRPC
+                      [filename:absname(Path), node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["import-dir", Path]) ->
-    case rpc:call(Node, jd2ejd, import_dir, [Path]) of
+process(["import-dir", Path]) ->
+    case jd2ejd:import_dir(Path) of
         ok ->
             ?STATUS_SUCCESS;
         {error, Reason} ->
             io:format("Can't import jabberd 1.4 spool dir ~p at node ~p: ~p~n",
-                      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_ERROR;
-        {badrpc, Reason} ->
-            io:format("Can't import jabberd 1.4 spool dir ~p at node ~p: ~p~n",
-                      [filename:absname(Path), Node, Reason]),
-	    ?STATUS_BADRPC
+                      [filename:absname(Path), node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["registered-users"]) ->
-    case rpc:call(Node, ejabberd_auth, dirty_get_registered_users, []) of
+process(["registered-users"]) ->
+    case ejabberd_auth:dirty_get_registered_users() of
 	Users when is_list(Users) ->
 	    NewLine = io_lib:format("~n", []),
 	    SUsers = lists:sort(Users),
@@ -211,25 +155,15 @@ process(Node, ["registered-users"]) ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
 	    io:format("Can't get list of registered users at node ~p: ~p~n",
-		      [Node, Reason]),
-	    ?STATUS_ERROR;
-	{badrpc, Reason} ->
-	    io:format("Can't get list of registered users at node ~p: ~p~n",
-		      [Node, Reason]),
-	    ?STATUS_BADRPC
+		      [node(), Reason]),
+	    ?STATUS_ERROR
     end;
 
-process(Node, ["delete-expired-messages"]) ->
-    case rpc:call(Node, mod_offline, remove_expired_messages, []) of
-	{badrpc, Reason} ->
-	    io:format("Can't delete expired messages at node ~p: ~p~n",
-		      [Node, Reason]),
-	    ?STATUS_BADRPC;
-	_ ->
-	    ?STATUS_SUCCESS
-    end;
+process(["delete-expired-messages"]) ->
+    mod_offline:remove_expired_messages(),
+    ?STATUS_SUCCESS;
 
-process(_Node, _Args) ->
+process(_Args) ->
     print_usage(),
     ?STATUS_USAGE.
 
@@ -286,7 +220,7 @@ dump_to_textfile(_, {ok, F}) ->
 dump_to_textfile(_, {error, Reason}) ->
     {error, Reason}.
 
-    
+
 dump_tab(F, T) ->
     W = mnesia:table_info(T, wild_pattern),
     {atomic,All} = mnesia:transaction(
