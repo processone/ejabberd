@@ -1,6 +1,8 @@
 2006-02-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_ctl.erl: Partially rewritten
+	* src/ejabberd_ctl.hrl: Definitions of exit status codes moved
+	here
 
 2006-02-12  Alexey Shchepin  <alexey@sevcom.net>
 
