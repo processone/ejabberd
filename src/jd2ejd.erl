@@ -134,10 +134,19 @@ xdb_data(User, Server, {xmlelement, _Name, Attrs, _Els} = El) ->
 	    end,
 	    ok;
 	?NS_VCARD ->
-	    catch mod_vcard:process_sm_iq(
-		    From,
-		    jlib:make_jid("", Server, ""),
-		    #iq{type = set, xmlns = ?NS_VCARD, sub_el = El}),
+	    case lists:member(mod_vcard_odbc,
+			      gen_mod:loaded_modules(LServer)) of
+		true ->
+		    catch mod_vcard_odbc:process_sm_iq(
+			    From,
+			    jlib:make_jid("", Server, ""),
+			    #iq{type = set, xmlns = ?NS_VCARD, sub_el = El});
+		false ->
+		    catch mod_vcard:process_sm_iq(
+			    From,
+			    jlib:make_jid("", Server, ""),
+			    #iq{type = set, xmlns = ?NS_VCARD, sub_el = El})
+	    end,
 	    ok;
 	"jabber:x:offline" ->
 	    process_offline(Server, From, El),

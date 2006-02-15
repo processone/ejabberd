@@ -27,7 +27,8 @@
 	 get_vh_session_list/1,
 	 register_iq_handler/4,
 	 register_iq_handler/5,
-	 unregister_iq_handler/2
+	 unregister_iq_handler/2,
+	 ctl_process/2
 	]).
 
 %% gen_server callbacks
@@ -36,6 +37,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("ejabberd_ctl.hrl").
 
 -record(session, {sid, usr, us, priority}).
 -record(state, {}).
@@ -164,6 +166,11 @@ init([]) ->
 	      ejabberd_hooks:add(remove_user, Host,
 				 ejabberd_sm, disconnect_removed_user, 100)
       end, ?MYHOSTS),
+    ejabberd_ctl:register_commands(
+      [{"connected-users", "list all established sessions"},
+       {"connected-users-number", "print a number of established sessions"},
+       {"user-resources user server", "print user's connected resources"}],
+      ?MODULE, ctl_process),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -521,6 +528,27 @@ process_iq(From, To, Packet) ->
 	    ok
     end.
 
+
+ctl_process(_Val, ["connected-users"]) ->
+    USRs = dirty_get_sessions_list(),
+    NewLine = io_lib:format("~n", []),
+    SUSRs = lists:sort(USRs),
+    FUSRs = lists:map(fun({U, S, R}) -> [U, $@, S, $/, R, NewLine] end, SUSRs),
+    io:format("~s", [FUSRs]),
+    ?STATUS_SUCCESS;
+ctl_process(_Val, ["connected-users-number"]) ->
+    N = length(dirty_get_sessions_list()),
+    io:format("~p~n", [N]),
+    ?STATUS_SUCCESS;
+ctl_process(_Val, ["user-resources", User, Server]) ->
+    Resources =  get_user_resources(User, Server),
+    NewLine = io_lib:format("~n", []),
+    SResources = lists:sort(Resources),
+    FResources = lists:map(fun(R) -> [R, NewLine] end, SResources),
+    io:format("~s", [FResources]),
+    ?STATUS_SUCCESS;
+ctl_process(Val, _Args) ->
+    Val.
 
 
 update_tables() ->

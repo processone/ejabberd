@@ -34,14 +34,13 @@ stop(Host) ->
     ok.
 
 log_user_send(From, To, Packet) ->
-    log_packet(From, To, Packet).
+    log_packet(From, To, Packet, From#jid.lserver).
 
 log_user_receive(_JID, From, To, Packet) ->
-    log_packet(From, To, Packet).
+    log_packet(From, To, Packet, To#jid.lserver).
 
 
-log_packet(From, To, {xmlelement, Name, Attrs, Els}) ->
-    Host = From#jid.lserver,
+log_packet(From, To, {xmlelement, Name, Attrs, Els}, Host) ->
     Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
     ServerJID = #jid{user = "", server = Host, resource = "",
 		     luser = "", lserver = Host, lresource = ""},

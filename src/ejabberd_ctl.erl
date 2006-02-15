@@ -10,7 +10,9 @@
 -author('alexey@sevcom.net').
 
 -export([start/0,
-	 process/1]).
+	 process/1,
+	 register_commands/3,
+	 unregister_commands/3]).
 
 -include("ejabberd_ctl.hrl").
 
@@ -20,7 +22,7 @@ start() ->
 	    Node = list_to_atom(SNode),
 	    Status = case rpc:call(Node, ?MODULE, process, [Args]) of
 			 {badrpc, Reason} ->
-			     io:format("RPC call failed on the node ~p: ~p~n",
+			     io:format("RPC failed on the node ~p: ~p~n",
 				       [Node, Reason]),
 			     ?STATUS_BADRPC;
 			 S ->
@@ -163,36 +165,75 @@ process(["delete-expired-messages"]) ->
     mod_offline:remove_expired_messages(),
     ?STATUS_SUCCESS;
 
-process(_Args) ->
-    print_usage(),
-    ?STATUS_USAGE.
-
+process(Args) ->
+    case ejabberd_hooks:run_fold(
+	   ejabberd_ctl_process,
+	   false,
+	   [Args]) of
+	false ->
+	    print_usage(),
+	    ?STATUS_USAGE;
+	Status ->
+	    Status
+    end.
 
 
 print_usage() ->
+    catch ets:new(ejabberd_ctl_cmds, [named_table, ordered_set, public]),
+    CmdDescs =
+	[{"status", "get ejabberd status"},
+	 {"stop", "stop ejabberd"},
+	 {"restart", "restart ejabberd"},
+	 {"reopen-log", "reopen log file"},
+	 {"register user server password", "register a user"},
+	 {"unregister user server", "unregister a user"},
+	 {"backup file", "store a database backup to file"},
+	 {"restore file", "restore a database backup from file"},
+	 {"install-fallback file", "install a database fallback from file"},
+	 {"dump file", "dump a database to a text file"},
+	 {"load file", "restore a database from a text file"},
+	 {"import-file file", "import user data from jabberd 1.4 spool file"},
+	 {"import-dir dir", "import user data from jabberd 1.4 spool directory"},
+	 {"registered-users", "list all registered users"},
+	 {"delete-expired-messages", "delete expired offline messages from database"}] ++
+	ets:tab2list(ejabberd_ctl_cmds),
+    MaxCmdLen =
+	lists:max(lists:map(
+		    fun({Cmd, _Desc}) ->
+			    length(Cmd)
+		    end, CmdDescs)),
+    NewLine = io_lib:format("~n", []),
+    FmtCmdDescs =
+	lists:map(
+	  fun({Cmd, Desc}) ->
+		  ["  ", Cmd, string:chars($\s, MaxCmdLen - length(Cmd) + 1),
+		   Desc, NewLine]
+	  end, CmdDescs),
     io:format(
       "Usage: ejabberdctl node command~n"
       "~n"
       "Available commands:~n"
-      "  status\t\t\tget ejabberd status~n"
-      "  stop\t\t\t\tstop ejabberd~n"
-      "  restart\t\t\trestart ejabberd~n"
-      "  reopen-log\t\t\treopen log file~n"
-      "  register user server password\tregister a user~n"
-      "  unregister user server\tunregister a user~n"
-      "  backup file\t\t\tstore a database backup to file~n"
-      "  restore file\t\t\trestore a database backup from file~n"
-      "  install-fallback file\t\tinstall a database fallback from file~n"
-      "  dump file\t\t\tdump a database to a text file~n"
-      "  load file\t\t\trestore a database from a text file~n"
-      "  import-file file\t\timport user data from jabberd 1.4 spool file~n"
-      "  import-dir dir\t\timport user data from jabberd 1.4 spool directory~n"
-      "  registered-users\t\tlist all registered users~n"
-      "  delete-expired-messages\tdelete expired offline messages from database~n"
+      ++ FmtCmdDescs ++
       "~n"
       "Example:~n"
       "  ejabberdctl ejabberd@host restart~n"
      ).
+
+register_commands(CmdDescs, Module, Function) ->
+    catch ets:new(ejabberd_ctl_cmds, [named_table, ordered_set, public]),
+    ets:insert(ejabberd_ctl_cmds, CmdDescs),
+    ejabberd_hooks:add(ejabberd_ctl_process,
+		       Module, Function, 50),
+    ok.
+
+unregister_commands(CmdDescs, Module, Function) ->
+    catch ets:new(ejabberd_ctl_cmds, [named_table, ordered_set, public]),
+    lists:foreach(fun(CmdDesc) ->
+			  ets:delete_object(ejabberd_ctl_cmds, CmdDesc)
+		  end, CmdDescs),
+    ejabberd_hooks:delete(ejabberd_ctl_process,
+			  Module, Function, 50),
+    ok.
 
 dump_to_textfile(File) ->
     dump_to_textfile(mnesia:system_info(is_running), file:open(File, write)).

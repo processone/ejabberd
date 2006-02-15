@@ -1,3 +1,16 @@
+2006-02-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_service_log.erl: Bugfix (thanks to Badlop)
+
+	* src/jd2ejd.erl: Use mod_vcard_odbc if it is loaded (thanks to
+	Tomasz Sterna)
+
+2006-02-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Added a few ejabberdctl commands
+
+	* src/ejabberd_ctl.erl: New interface for command registration
+
 2006-02-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_ctl.erl: Partially rewritten
