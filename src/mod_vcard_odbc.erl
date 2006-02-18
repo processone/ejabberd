@@ -281,7 +281,7 @@ set_vcard(User, LServer, VCARD) ->
 	   ?TLFIELD("text-single", "Birthday", "bday"),
 	   ?TLFIELD("text-single", "Country", "ctry"),
 	   ?TLFIELD("text-single", "City", "locality"),
-	   ?TLFIELD("text-single", "email", "email"),
+	   ?TLFIELD("text-single", "Email", "email"),
 	   ?TLFIELD("text-single", "Organization Name", "orgname"),
 	   ?TLFIELD("text-single", "Organization Unit", "orgunit")
 	  ]}]).
@@ -436,10 +436,10 @@ find_xdata_el1([_ | Els]) ->
 
 search_result(Lang, JID, ServerHost, Data) ->
     [{xmlelement, "title", [],
-      [{xmlcdata, translate:translate(Lang, "Results of search in ") ++
+      [{xmlcdata, translate:translate(Lang, "Search Results for ") ++
 	jlib:jid_to_string(JID)}]},
      {xmlelement, "reported", [],
-      [?LFIELD("JID", "jid"),
+      [?LFIELD("Jabber ID", "jid"),
        ?LFIELD("Full Name", "fn"),
        ?LFIELD("Name", "given"),
        ?LFIELD("Middle Name", "middle"),
@@ -448,7 +448,7 @@ search_result(Lang, JID, ServerHost, Data) ->
        ?LFIELD("Birthday", "bday"),
        ?LFIELD("Country", "ctry"),
        ?LFIELD("City", "locality"),
-       ?LFIELD("email", "email"),
+       ?LFIELD("Email", "email"),
        ?LFIELD("Organization Name", "orgname"),
        ?LFIELD("Organization Unit", "orgunit")
       ]}] ++ lists:map(fun(R) -> record_to_item(ServerHost, R) end,

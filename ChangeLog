@@ -1,3 +1,17 @@
+2006-02-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Added /msg and /ctcp
+	commands, improved handling of channel topic and kick, mirc colors
+	now filtered, other minor improvements (thanks to Oleg
+	V. Motienko)
+
+	* src/mod_configure.erl: Improved strings (thanks to Sander
+	Devrieze)
+	* src/mod_vcard.erl: Likewise
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/mod_vcard_odbc.erl: Likewise
+	* src/web/ejabberd_web_admin.erl: Likewise
+
 2006-02-15  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_service_log.erl: Bugfix (thanks to Badlop)

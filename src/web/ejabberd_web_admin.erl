@@ -72,7 +72,7 @@ make_xhtml(Els, global, Lang) ->
 		 [?XAE("div",
 		       [{"id", "header"}],
 		       [?XE("h1",
-			    [?ACT("/admin/", "ejabberd administration")]
+			    [?ACT("/admin/", "Administration")]
 			   )]),
 		  ?XAE("div",
 		       [{"id", "navigation"}],
@@ -118,7 +118,7 @@ make_xhtml(Els, Host, Lang) ->
 		 [?XAE("div",
 		       [{"id", "header"}],
 		       [?XE("h1",
-			    [?ACT(Base, "ejabberd administration")]
+			    [?ACT(Base, "Administration")]
 			   )]),
 		  ?XAE("div",
 		       [{"id", "navigation"}],
@@ -527,12 +527,12 @@ process_admin(global,
 		       path = [],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    make_xhtml([?XCT("h1", "ejabberd administration"),
+    make_xhtml([?XCT("h1", "Administration"),
 		?XE("ul",
 		    [?LI([?ACT("/admin/acls/", "Access Control Lists"), ?C(" "),
-			  ?ACT("/admin/acls-raw/", "(raw)")]),
+			  ?ACT("/admin/acls-raw/", "(Raw)")]),
 		     ?LI([?ACT("/admin/access/", "Access Rules"), ?C(" "),
-			  ?ACT("/admin/access-raw/", "(raw)")]),
+			  ?ACT("/admin/access-raw/", "(Raw)")]),
 		     ?LI([?ACT("/admin/vhosts/", "Virtual Hosts")]),
 		     ?LI([?ACT("/admin/nodes/", "Nodes")]),
 		     ?LI([?ACT("/admin/stats/", "Statistics")])
@@ -546,12 +546,12 @@ process_admin(Host,
 		       q = Query,
 		       lang = Lang} = Request) ->
     Base = "/admin/server/" ++ Host ++ "/",
-    make_xhtml([?XCT("h1", "ejabberd administration"),
+    make_xhtml([?XCT("h1", "Administration"),
 		?XE("ul",
 		    [?LI([?ACT(Base ++ "acls/", "Access Control Lists"), ?C(" "),
-			  ?ACT(Base ++ "acls-raw/", "(raw)")]),
+			  ?ACT(Base ++ "acls-raw/", "(Raw)")]),
 		     ?LI([?ACT(Base ++ "access/", "Access Rules"), ?C(" "),
-			  ?ACT(Base ++ "access-raw/", "(raw)")]),
+			  ?ACT(Base ++ "access-raw/", "(Raw)")]),
 		     ?LI([?ACT(Base ++ "users/", "Users")]),
 		     ?LI([?ACT(Base ++ "online-users/", "Online Users")]),
 		     ?LI([?ACT(Base ++ "last-activity/", "Last Activity")]),
@@ -620,10 +620,10 @@ process_admin(Host,
 	       "~p.", [lists:keysort(
 			 2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
 					      [], [{{acl, '$1', '$2'}}]}]))])),
-    make_xhtml([?XCT("h1", "ejabberd access control lists configuration")] ++
+    make_xhtml([?XCT("h1", "Access Control Lists")] ++
 	       case Res of
-		   ok -> [?CT("submitted"), ?P];
-		   error -> [?CT("bad format"), ?P];
+		   ok -> [?CT("Submitted"), ?P];
+		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -664,13 +664,13 @@ process_admin(Host,
     ACLs = lists:keysort(
 	     2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
 				  [], [{{acl, '$1', '$2'}}]}])),
-    make_xhtml([?XCT("h1", "ejabberd access control lists configuration")] ++
+    make_xhtml([?XCT("h1", "Access Control Lists")] ++
 	       case Res of
-		   ok -> [?CT("submitted"), ?P];
-		   error -> [?CT("bad format"), ?P];
+		   ok -> [?CT("Submitted"), ?P];
+		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XE("p", [?ACT("../acls-raw/", "raw")])] ++
+	       [?XE("p", [?ACT("../acls-raw/", "Raw")])] ++
 	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [acls_to_xhtml(ACLs),
 		      ?BR,
@@ -733,10 +733,10 @@ process_admin(Host,
 			       [{{config, {access, '$1', Host}, '$2'},
 				 [],
 				 [{{access, '$1', '$2'}}]}])])),
-    make_xhtml([?XCT("h1", "ejabberd access rules configuration")] ++
+    make_xhtml([?XCT("h1", "Access Rules")] ++
 	       case Res of
-		   ok -> [?CT("submitted"), ?P];
-		   error -> [?CT("bad format"), ?P];
+		   ok -> [?CT("Submitted"), ?P];
+		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -772,10 +772,10 @@ process_admin(Host,
 		   [{{config, {access, '$1', Host}, '$2'},
 		     [],
 		     [{{access, '$1', '$2'}}]}]),
-    make_xhtml([?XCT("h1", "ejabberd access rules configuration")] ++
+    make_xhtml([?XCT("h1", "Access Rules")] ++
 	       case Res of
-		   ok -> [?CT("submitted"), ?P];
-		   error -> [?CT("bad format"), ?P];
+		   ok -> [?CT("Submitted"), ?P];
+		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XE("p", [?ACT("../access-raw/", "raw")])] ++
@@ -816,8 +816,8 @@ process_admin(Host,
     make_xhtml([?XC("h1",
 		    io_lib:format(?T("~s access rule configuration"), [SName]))] ++
 	       case Res of
-		   ok -> [?CT("submitted"), ?P];
-		   error -> [?CT("bad format"), ?P];
+		   ok -> [?CT("Submitted"), ?P];
+		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
 	       [?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -841,7 +841,7 @@ process_admin(Host,
 		       q = Query,
 		       lang = Lang} = Request) when is_list(Host) ->
     Res = list_users(Host, Query, Lang, fun url_func/1),
-    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
 	      #request{us = US,
@@ -849,7 +849,7 @@ process_admin(Host,
 		       q = Query,
 		       lang = Lang} = Request) when is_list(Host) ->
     Res = list_users_in_diapason(Host, Diap, Lang, fun url_func/1),
-    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
 	      #request{us = US,
@@ -857,7 +857,7 @@ process_admin(Host,
 		       q = Query,
 		       lang = Lang} = Request) when is_list(Host) ->
     Res = list_online_users(Host, Lang),
-    make_xhtml([?XCT("h1", "ejabberd users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT("h1", "Online Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
 	      #request{method = Method,
@@ -878,7 +878,7 @@ process_admin(Host,
 	      _ ->
 		  list_last_activity(Host, Lang, true, Month)
 	  end,
-    make_xhtml([?XCT("h1", "Users last activity")] ++
+    make_xhtml([?XCT("h1", "Users Last Activity")] ++
 	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [?CT("Period: "),
 		      ?XAE("select", [{"name", "period"}],
@@ -906,7 +906,7 @@ process_admin(Host,
 		       q = Query,
 		       lang = Lang} = Request) ->
     Res = get_stats(Host, Lang),
-    make_xhtml([?XCT("h1", "ejabberd stats")] ++ Res, Host, Lang);
+    make_xhtml([?XCT("h1", "Statistics")] ++ Res, Host, Lang);
 
 process_admin(Host,
 	      #request{us = US,
@@ -971,7 +971,7 @@ process_admin(Host,
 
 process_admin(Host,
 	      #request{lang = Lang}) ->
-    setelement(1, make_xhtml([?XC("h1", "Not found")], Host, Lang), 404).
+    setelement(1, make_xhtml([?XC("h1", "Not Found")], Host, Lang), 404).
 
 
 
@@ -1209,8 +1209,8 @@ list_vhosts(Lang) ->
 	 [?XE("thead",
 	      [?XE("tr",
 		   [?XCT("td", "Host"),
-		    ?XCT("td", "Registered users"),
-		    ?XCT("td", "Online users")
+		    ?XCT("td", "Registered Users"),
+		    ?XCT("td", "Online Users")
 		   ])]),
 	  ?XE("tbody",
 	      lists:map(
@@ -1254,8 +1254,8 @@ list_users(Host, Query, Lang, URLFunc) ->
 		  end, lists:seq(1, N, M))
 	end,
     case Res of
-	ok -> [?CT("submitted"), ?P];
-	error -> [?CT("bad format"), ?P];
+	ok -> [?CT("Submitted"), ?P];
+	error -> [?CT("Bad format"), ?P];
 	nothing -> []
     end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -1313,7 +1313,7 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 	[?XE("thead",
 	     [?XE("tr",
 		  [?XCT("td", "User"),
-		   ?XCT("td", "Offline messages"),
+		   ?XCT("td", "Offline Messages"),
 		   ?XCT("td", "Last Activity")])]),
 	 ?XE("tbody",
 	     lists:map(
@@ -1371,15 +1371,15 @@ get_stats(global, Lang) ->
     S2SServers = length(lists:usort([element(2, C) || C <- S2SConns])),
     [?XAE("table", [],
 	  [?XE("tbody",
-	       [?XE("tr", [?XCT("td", "Registered users"),
+	       [?XE("tr", [?XCT("td", "Registered Users:"),
 			   ?XC("td", integer_to_list(RegisteredUsers))]),
-		?XE("tr", [?XCT("td", "Authenticated users"),
+		?XE("tr", [?XCT("td", "Authenticated Users:"),
 			   ?XC("td", integer_to_list(AuthUsers))]),
-		?XE("tr", [?XCT("td", "Online users"),
+		?XE("tr", [?XCT("td", "Online Users:"),
 			   ?XC("td", integer_to_list(OnlineUsers))]),
-		?XE("tr", [?XCT("td", "Outgoing S2S connections"),
+		?XE("tr", [?XCT("td", "Outgoing s2s Connections:"),
 			   ?XC("td", integer_to_list(S2SConnections))]),
-		?XE("tr", [?XCT("td", "Outgoing S2S servers"),
+		?XE("tr", [?XCT("td", "Outgoing s2s Servers:"),
 			   ?XC("td", integer_to_list(S2SServers))])
 	       ])
 	  ])];
@@ -1389,9 +1389,9 @@ get_stats(Host, Lang) ->
     RegisteredUsers = length(ejabberd_auth:get_vh_registered_users(Host)),
     [?XAE("table", [],
 	  [?XE("tbody",
-	       [?XE("tr", [?XCT("td", "Registered users"),
+	       [?XE("tr", [?XCT("td", "Registered Users:"),
 			   ?XC("td", integer_to_list(RegisteredUsers))]),
-		?XE("tr", [?XCT("td", "Online users"),
+		?XE("tr", [?XCT("td", "Online Users:"),
 			   ?XC("td", integer_to_list(OnlineUsers))])
 	       ])
 	  ])].
@@ -1429,14 +1429,14 @@ user_info(User, Server, Query, Lang) ->
 		     integer_to_list(QueueLen))],
     [?XC("h1", ?T("User ") ++ us_to_list(US))] ++
 	case Res of
-	    ok -> [?CT("submitted"), ?P];
-	    error -> [?CT("bad format"), ?P];
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?XCT("h3", "Connected Resources:")] ++ FResources ++
 	      [?XCT("h3", "Password:")] ++ FPassword ++
-	      [?XCT("h3", "Offline messages:")] ++ FQueueLen ++
+	      [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++
 	      [?XE("h3", [?ACT("roster/", "Roster")])] ++
 	      [?BR, ?INPUTT("submit", "removeuser", "Remove User")])].
 
@@ -1493,11 +1493,11 @@ user_queue(User, Server, Query, Lang) ->
 		       ?XAE("td", [{"class", "valign"}], [?XC("pre", FPacket)])]
 		     )
 	  end, Msgs),
-    [?XC("h1", io_lib:format(?T("~s offline messages queue"),
+    [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
 			     [us_to_list(US)]))] ++
 	case Res of
-	    ok -> [?CT("submitted"), ?P];
-	    error -> [?CT("bad format"), ?P];
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -1578,7 +1578,7 @@ user_roster(User, Server, Query, Lang, Admin) ->
 		[?XE("table",
 		     [?XE("thead",
 			  [?XE("tr",
-			       [?XCT("td", "JID"),
+			       [?XCT("td", "Jabber ID"),
 				?XCT("td", "Nickname"),
 				?XCT("td", "Subscription"),
 				?XCT("td", "Pending"),
@@ -1622,15 +1622,15 @@ user_roster(User, Server, Query, Lang, Admin) ->
 	end,
     [?XC("h1", ?T("Roster of ") ++ us_to_list(US))] ++
 	case Res of
-	    ok -> [?CT("submitted"), ?P];
-	    error -> [?CT("bad format"), ?P];
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      FItems ++
 	      [?P,
 	       ?INPUT("text", "newjid", ""), ?C(" "),
-	       ?INPUTT("submit", "addjid", "Add JID")
+	       ?INPUTT("submit", "addjid", "Add Jabber ID")
 	      ])].
 
 user_roster_parse_query(User, Server, Items, Query, Admin) ->
@@ -1734,7 +1734,7 @@ list_last_activity(Host, Lang, Integral, Period) ->
 	    Hist = histogram(Vals, Integral),
 	    if
 		Hist == [] ->
-		    [?CT("No data")];
+		    [?CT("No Data")];
 		true ->
 		    Left = if
 			       Days == infinity ->
@@ -1833,14 +1833,14 @@ get_node(global, Node, [], Query, Lang) ->
     Res = node_parse_query(Node, Query),
     [?XC("h1", ?T("Node ") ++ atom_to_list(Node))] ++
 	case Res of
-	    ok -> [?CT("submitted"), ?P];
-	    error -> [?CT("bad format"), ?P];
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XE("ul",
-	     [?LI([?ACT("db/", "DB Management")]),
-	      ?LI([?ACT("backup/", "Backup Management")]),
-	      ?LI([?ACT("ports/", "Listened Ports Management")]),
+	     [?LI([?ACT("db/", "Database")]),
+	      ?LI([?ACT("backup/", "Backup")]),
+	      ?LI([?ACT("ports/", "Listened Ports")]),
 	      ?LI([?ACT("stats/", "Statistics")])
 	     ]),
 	 ?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -1852,13 +1852,13 @@ get_node(global, Node, [], Query, Lang) ->
 get_node(Host, Node, [], Query, Lang) ->
     [?XC("h1", ?T("Node ") ++ atom_to_list(Node)),
      ?XE("ul",
-	 [?LI([?ACT("modules/", "Modules Management")])])
+	 [?LI([?ACT("modules/", "Modules")])])
     ];
 
 get_node(global, Node, ["db"], Query, Lang) ->
     case rpc:call(Node, mnesia, system_info, [tables]) of
 	{badrpc, _Reason} ->
-	    [?XCT("h1", "RPC call error")];
+	    [?XCT("h1", "RPC Call Error")];
 	Tables ->
 	    Res = node_db_parse_query(Node, Tables, Query),
 	    STables = lists:sort(Tables),
@@ -1896,10 +1896,10 @@ get_node(global, Node, ["db"], Query, Lang) ->
 				       integer_to_list(Memory))
 				 ])
 		     end, STables),
-	    [?XC("h1", ?T("DB Tables at ") ++ atom_to_list(Node))] ++
+	    [?XC("h1", ?T("Database Tables at ") ++ atom_to_list(Node))] ++
 		case Res of
-		    ok -> [?CT("submitted"), ?P];
-		    error -> [?CT("bad format"), ?P];
+		    ok -> [?CT("Submitted"), ?P];
+		    error -> [?CT("Bad format"), ?P];
 		    nothing -> []
 		end ++
 		[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -1924,19 +1924,20 @@ get_node(global, Node, ["db"], Query, Lang) ->
 
 get_node(global, Node, ["backup"], Query, Lang) ->
     Res = node_backup_parse_query(Node, Query),
-    [?XC("h1", ?T("Backup Management at ") ++ atom_to_list(Node)),
+    [?XC("h1", ?T("Backup of ") ++ atom_to_list(Node)),
+     ?XCT("p", "Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
      ?XAE("form", [{"action", ""}, {"method", "post"}],
 	  [?XAE("table", [],
 		[?XE("tbody",
 		     [?XE("tr",
-			  [?XCT("td", "Store a backup in a file"),
+ 			  [?XCT("td", "Store binary backup:"),
 			   ?XE("td", [?INPUT("text", "storepath",
 					     "ejabberd.backup")]),
 			   ?XE("td", [?INPUTT("submit", "store",
 					      "OK")])
 			  ]),
 		      ?XE("tr",
-			  [?XCT("td", "Restore a backup from a file"),
+ 			  [?XCT("td", "Restore binary backup immediately:"),
 			   ?XE("td", [?INPUT("text", "restorepath",
 					     "ejabberd.backup")]),
 			   ?XE("td", [?INPUTT("submit", "restore",
@@ -1944,21 +1945,21 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 			  ]),
 		      ?XE("tr",
 			  [?XCT("td",
-				"Install a database fallback from a file"),
+				"Restore binary backup after next ejabberd restart (requires less memory):"),
 			   ?XE("td", [?INPUT("text", "fallbackpath",
 					     "ejabberd.backup")]),
 			   ?XE("td", [?INPUTT("submit", "fallback",
 					      "OK")])
 			  ]),
 		      ?XE("tr",
-			  [?XCT("td", "Dump a database in a text file"),
+			  [?XCT("td", "Store plain text backup:"),
 			   ?XE("td", [?INPUT("text", "dumppath",
 					     "ejabberd.dump")]),
 			   ?XE("td", [?INPUTT("submit", "dump",
 					      "OK")])
 			  ]),
 		      ?XE("tr",
-			  [?XCT("td", "Restore a database from a text file"),
+			  [?XCT("td", "Restore plain text backup immediately:"),
 			   ?XE("td", [?INPUT("text", "loadpath",
 					     "ejabberd.dump")]),
 			   ?XE("td", [?INPUTT("submit", "load",
@@ -1981,8 +1982,8 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 		 rpc:call(Node, ejabberd_config, get_local_option, [listen])),
     [?XC("h1", ?T("Listened Ports at ") ++ atom_to_list(Node))] ++
 	case Res of
-	    ok -> [?CT("submitted"), ?P];
-	    error -> [?CT("bad format"), ?P];
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -2004,8 +2005,8 @@ get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
 		   rpc:call(Node, gen_mod, loaded_modules_with_opts, [Host])),
     [?XC("h1", ?T("Modules at ") ++ atom_to_list(Node))] ++
 	case Res of
-	    ok -> [?CT("submitted"), ?P];
-	    error -> [?CT("bad format"), ?P];
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -2028,35 +2029,35 @@ get_node(global, Node, ["stats"], Query, Lang) ->
     TransactionsLogged =
 	rpc:call(Node, mnesia, system_info, [transaction_log_writes]),
     
-    [?XC("h1", io_lib:format(?T("~p statistics"), [Node])),
+    [?XC("h1", io_lib:format(?T("Statistics of ~p"), [Node])),
      ?XAE("table", [],
 	  [?XE("tbody",
-	       [?XE("tr", [?XCT("td", "Uptime"),
+	       [?XE("tr", [?XCT("td", "Uptime:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				UpTimeS)]),
-		?XE("tr", [?XCT("td", "CPU Time"),
+		?XE("tr", [?XCT("td", "CPU Time:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				CPUTimeS)]),
-		?XE("tr", [?XCT("td", "Authenticated users"),
+		?XE("tr", [?XCT("td", "Authenticated Users:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				integer_to_list(Users))]),
-		?XE("tr", [?XCT("td", "Transactions commited"),
+		?XE("tr", [?XCT("td", "Transactions Commited:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				integer_to_list(TransactionsCommited))]),
-		?XE("tr", [?XCT("td", "Transactions aborted"),
+		?XE("tr", [?XCT("td", "Transactions Aborted:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				integer_to_list(TransactionsAborted))]),
-		?XE("tr", [?XCT("td", "Transactions restarted"),
+		?XE("tr", [?XCT("td", "Transactions Restarted:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				integer_to_list(TransactionsRestarted))]),
-		?XE("tr", [?XCT("td", "Transactions logged"),
+		?XE("tr", [?XCT("td", "Transactions Logged:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				integer_to_list(TransactionsLogged))])
 	       ])
 	  ])];
 
 get_node(Host, Node, NPath, Query, Lang) ->
-    [?XCT("h1", "Not found")].
+    [?XCT("h1", "Not Found")].
 
 
 node_parse_query(Node, Query) ->
@@ -2395,10 +2396,10 @@ list_shared_roster_groups(Host, Query, Lang) ->
 		       ]
 		      )]
 		 )]),
-    [?XC("h1", ?T("Shared roster groups"))] ++
+    [?XC("h1", ?T("Shared Roster Groups"))] ++
 	case Res of
-	    ok -> [?CT("submitted"), ?P];
-	    error -> [?CT("bad format"), ?P];
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -2494,11 +2495,11 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		       ]
 		      )]
 		 )]),
-    [?XC("h1", ?T("Shared roster groups"))] ++
+    [?XC("h1", ?T("Shared Roster Groups"))] ++
     [?XC("h2", ?T("Group ") ++ Group)] ++
 	case Res of
-	    ok -> [?CT("submitted"), ?P];
-	    error -> [?CT("bad format"), ?P];
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],

@@ -115,7 +115,7 @@ open_socket(init, StateData) ->
 wait_for_registration(closed, StateData) ->
     {stop, normal, StateData}.
 
-stream_established({xmlstreamend, Name}, StateData) ->
+stream_established({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 stream_established(timeout, StateData) ->
@@ -145,7 +145,7 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_event(Event, StateName, StateData) ->
+handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -157,11 +157,11 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event(Event, From, StateName, StateData) ->
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
 
-code_change(OldVsn, StateName, StateData, Extra) ->
+code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
 -define(SEND(S),
@@ -243,15 +243,36 @@ handle_info({route_chan, Channel, Resource,
 			case Body of
 			    "/quote " ++ Rest ->
 				?SEND(Rest ++ "\r\n");
+			    "/msg " ++ Rest ->
+				?SEND("PRIVMSG " ++ Rest ++ "\r\n");
+			    "/me " ++ Rest ->
+				Strings = string:tokens(Rest, "\n"),
+				Res = lists:concat(
+					lists:map(
+					  fun(S) ->
+						  io_lib:format(
+						    "PRIVMSG #~s :\001ACTION ~s\001\r\n",
+						    [Channel, S])
+					  end, Strings)),
+				?SEND(Res);
+			    "/ctcp " ++ Rest ->
+				Words = string:tokens(Rest, " "),
+				case Words of
+				    [CtcpDest | _] ->
+					CtcpCmd =
+					    toupper(
+					      string:substr(
+						Rest,
+						string:str(Rest, " ") + 1)),
+					Res = io_lib:format(
+						"PRIVMSG ~s :\001~s\001\r\n",
+						[CtcpDest, CtcpCmd]),
+					?SEND(Res);
+				    _ ->
+					ok
+				end;
 			    _ ->
-				Body1 =
-				    case Body of
-					[$/, $m, $e, $  | Rest] ->
-					    "\001ACTION " ++ Rest ++ "\001";
-					_ ->
-					    Body
-				    end,
-				Strings = string:tokens(Body1, "\n"),
+				Strings = string:tokens(Body, "\n"),
 				Res = lists:concat(
 					lists:map(
 					  fun(S) ->
@@ -271,19 +292,40 @@ handle_info({route_chan, Channel, Resource,
 				  end, Strings)),
 			?SEND(Res)
 		end;
-	    "chat" ->
+	    Type when Type == "chat"; Type == ""; Type == "normal" ->
 		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
 		case Body of
 		    "/quote " ++ Rest ->
 			?SEND(Rest ++ "\r\n");
+		    "/msg " ++ Rest ->
+			?SEND("PRIVMSG " ++ Rest ++ "\r\n");
+		    "/me " ++ Rest ->
+			Strings = string:tokens(Rest, "\n"),
+			Res = lists:concat(
+				lists:map(
+				  fun(S) ->
+					  io_lib:format(
+					    "PRIVMSG ~s :\001ACTION ~s\001\r\n",
+					    [Resource, S])
+				  end, Strings)),
+			?SEND(Res);
+		    "/ctcp " ++ Rest ->
+		    	Words = string:tokens(Rest, " "),
+			case Words of
+			    [CtcpDest | _ ] ->
+				CtcpCmd =
+				    toupper(
+				      string:substr(
+					Rest, string:str(Rest, " ") + 1)),
+				Res = io_lib:format(
+					"PRIVMSG ~s :~s\r\n",
+					[CtcpDest, "\001" ++ CtcpCmd ++ "\001"]),
+				?SEND(Res);
+			    _ ->
+			        ok
+			end;
 		    _ ->
-			Body1 = case Body of
-				    [$/, $m, $e, $  | Rest] ->
-					"\001ACTION " ++ Rest ++ "\001";
-				    _ ->
-					Body
-				end,
-			Strings = string:tokens(Body1, "\n"),
+			Strings = string:tokens(Body, "\n"),
 			Res = lists:concat(
 				lists:map(
 				  fun(S) ->
@@ -358,14 +400,32 @@ handle_info({route_nick, Nick,
 		case Body of
 		    "/quote " ++ Rest ->
 			?SEND(Rest ++ "\r\n");
+		    "/msg " ++ Rest ->
+			?SEND("PRIVMSG " ++ Rest ++ "\r\n");
+		    "/me " ++ Rest ->
+			Strings = string:tokens(Rest, "\n"),
+			Res = lists:concat(
+				lists:map(
+				  fun(S) ->
+					  io_lib:format(
+					    "PRIVMSG ~s :\001ACTION ~s\001\r\n",
+					    [Nick, S])
+				  end, Strings)),
+			?SEND(Res);
+		    "/ctcp " ++ Rest ->
+		    	Words = string:tokens(Rest, " "),
+			case Words of
+			    [CtcpDest | _ ] ->
+				CtcpCmd = toupper(string:substr(Rest, string:str(Rest, " ")+1 )),
+				Res = io_lib:format(
+				    "PRIVMSG ~s :~s\r\n",
+				    [CtcpDest, "\001" ++ CtcpCmd ++ "\001"]),
+				?SEND(Res);
+			     _ ->
+			        ok
+			end;
 		    _ ->
-			Body1 = case Body of
-				    [$/, $m, $e, $  | Rest] ->
-					"\001ACTION " ++ Rest ++ "\001";
-				    _ ->
-					Body
-				end,
-			Strings = string:tokens(Body1, "\n"),
+			Strings = string:tokens(Body, "\n"),
 			Res = lists:concat(
 				lists:map(
 				  fun(S) ->
@@ -402,6 +462,9 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 		process_channel_list(StateData, Items);
 	    [_, "332", Nick, [$# | Chan] | _] ->
 		process_channel_topic(StateData, Chan, String),
+		StateData;
+	    [_, "333", Nick, [$# | Chan] | _] ->
+		process_channel_topic_who(StateData, Chan, String),
 		StateData;
 	    [_, "318", _, Nick | _] ->
 		process_endofwhois(StateData, String, Nick),
@@ -451,7 +514,7 @@ handle_info({ircstring, [$: | String]}, StateName, StateData) ->
 			       "member", "participant"),
 		StateData;
 	    [From, "KICK", [$# | Chan], Nick | _] ->
-		process_kick(StateData, Chan, From, Nick),
+		process_kick(StateData, Chan, From, Nick, String),
 		StateData;
 	    [From, "NICK", Nick | _] ->
 		process_nick(StateData, From, Nick);
@@ -626,16 +689,43 @@ process_channel_list_user(StateData, Chan, User) ->
 
 
 process_channel_topic(StateData, Chan, String) ->
-    FromUser = "someone",
     {ok, Msg, _} = regexp:sub(String, ".*332[^:]*:", ""),
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(
 	lists:concat([Chan, "%", StateData#state.server]),
-	StateData#state.host, FromUser),
+	StateData#state.host, ""),
       StateData#state.user,
       {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "subject", [], [{xmlcdata, Msg1}]}]}).
+       [{xmlelement, "subject", [], [{xmlcdata, Msg1}]},
+	{xmlelement, "body", [], [{xmlcdata, "Topic for #" ++ Chan ++ ": " ++ Msg1}]}
+       ]}).
+
+process_channel_topic_who(StateData, Chan, String) ->
+    Words = string:tokens(String, " "),
+    Msg1 = case Words of
+	       [_, "333", _, _Chan, Whoset , Timeset] ->
+		   case string:to_integer(Timeset) of
+		       {Unixtimeset, Rest} -> 
+			   "Topic for #" ++ Chan ++ " set by " ++ Whoset ++
+			       " at " ++ unixtime2string(Unixtimeset);
+		       _->
+			   "Topic for #" ++ Chan ++ " set by " ++ Whoset
+		   end;
+	       [_, "333", _, _Chan, Whoset | _] ->
+                   "Topic for #" ++ Chan ++ " set by " ++ Whoset;
+	       _ ->
+		   String
+	   end,
+    Msg2 = filter_message(Msg1),
+
+    ejabberd_router:route(
+      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+		    StateData#state.host, ""),
+      StateData#state.user,
+      {xmlelement, "message", [{"type", "groupchat"}],
+       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+
 
 
 process_endofwhois(StateData, String, Nick) ->
@@ -708,7 +798,7 @@ process_channotice(StateData, Chan, From, String) ->
 	       [1, $A, $C, $T, $I, $O, $N, $  | Rest] ->
 		   "/me " ++ Rest;
 	       _ ->
-		   Msg
+		   "/me NOTICE: " ++ Msg
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
@@ -716,7 +806,7 @@ process_channotice(StateData, Chan, From, String) ->
 		    StateData#state.host, FromUser),
       StateData#state.user,
       {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "body", [], [{xmlcdata, "NOTICE: " ++ Msg2}]}]}).
+       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
 
 
 
@@ -746,7 +836,7 @@ process_notice(StateData, Nick, From, String) ->
 	       [1, $A, $C, $T, $I, $O, $N, $  | Rest] ->
 		   "/me " ++ Rest;
 	       _ ->
-		   Msg
+		   "/me NOTICE: " ++ Msg
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
@@ -754,7 +844,7 @@ process_notice(StateData, Nick, From, String) ->
 		    StateData#state.host, ""),
       StateData#state.user,
       {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [], [{xmlcdata, "NOTICE: " ++ Msg2}]}]}).
+       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
 
 
 process_version(StateData, Nick, From) ->
@@ -776,7 +866,7 @@ process_userinfo(StateData, Nick, From) ->
     send_text(
       StateData,
       io_lib:format("NOTICE ~s :\001USERINFO "
-		    "This user uses xmpp:~s"
+		    "xmpp:~s"
 		    "\001\r\n",
 		    [FromUser,
 		     jlib:jid_to_string(StateData#state.user)])).
@@ -798,17 +888,8 @@ process_topic(StateData, Chan, From, String) ->
 
 process_part(StateData, Chan, From, String) ->
     [FromUser | FromIdent] = string:tokens(From, "!"),
-    {ok, Msg, _} = regexp:sub(String, ".*PART[^:]*", ""),    
+    {ok, Msg, _} = regexp:sub(String, ".*PART[^:]*:", ""),    
     Msg1 = filter_message(Msg),
-    ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.host, FromUser),
-      StateData#state.user,
-      {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "body", [],
-	 [{xmlcdata, "/me has part: " ++
-	   Msg1 ++ "("  ++ FromIdent ++ ")" }]}]}),
-
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
@@ -820,7 +901,7 @@ process_part(StateData, Chan, From, String) ->
 	    {"role", "none"}],
 	   []}]},
 	{xmlelement, "status", [],
-	 [{xmlcdata, Msg1 ++ "("  ++ FromIdent ++ ")"}]}]
+	 [{xmlcdata, Msg1 ++ " ("  ++ FromIdent ++ ")"}]}]
       }),
     case catch dict:update(Chan,
 			   fun(Ps) ->
@@ -843,16 +924,6 @@ process_quit(StateData, From, String) ->
 	  fun(Chan, Ps) ->
 		  case ?SETS:is_member(FromUser, Ps) of
 		      true ->
-		          ejabberd_router:route(
-			    jlib:make_jid(
-			      lists:concat([Chan, "%", StateData#state.server]),
-			      StateData#state.host, FromUser),
-			    StateData#state.user,
-			    {xmlelement, "message", [{"type", "groupchat"}],
-			     [{xmlelement, "body", [],
-			       [{xmlcdata, "/me has quit: " ++
-				 Msg1 ++ "("  ++ FromIdent ++ ")" }]}]}),
-
 			  ejabberd_router:route(
 			    jlib:make_jid(
 			      lists:concat([Chan, "%", StateData#state.server]),
@@ -865,7 +936,7 @@ process_quit(StateData, From, String) ->
 				  {"role", "none"}],
 				 []}]},
 			      {xmlelement, "status", [],
-			       [{xmlcdata, Msg1 ++ "("  ++ FromIdent ++ ")"}]}
+			       [{xmlcdata, Msg1 ++ " ("  ++ FromIdent ++ ")"}]}
 			     ]}),
 			  remove_element(FromUser, Ps);
 		      _ ->
@@ -890,16 +961,6 @@ process_join(StateData, Channel, From, String) ->
 	   []}]},
 	{xmlelement, "status", [],
 	 [{xmlcdata, FromIdent}]}]}),
-    {ok, Msg, _} = regexp:sub(String, ".*JOIN[^:]*:", ""),    
-    Msg1 = filter_message(Msg),
-    ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.host, FromUser),
-      StateData#state.user,
-      {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "body", [],
-	 [{xmlcdata, "/me has joined " ++
-	   Msg1 ++ "("  ++ FromIdent ++ ")" }]}]}),
 
     case catch dict:update(Chan,
 			   fun(Ps) ->
@@ -926,8 +987,15 @@ process_mode_o(StateData, Chan, From, Nick, Affiliation, Role) ->
 	    {"role", Role}],
 	   []}]}]}).
 
-process_kick(StateData, Chan, From, Nick) ->
-    %Msg = lists:last(string:tokens(String, ":")),
+process_kick(StateData, Chan, From, Nick, String) ->
+    Msg = lists:last(string:tokens(String, ":")),
+    Msg2 = Nick ++ " kicked by " ++ From ++ " (" ++ filter_message(Msg) ++ ")",
+    ejabberd_router:route(
+      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+		    StateData#state.host, ""),
+      StateData#state.user,
+      {xmlelement, "message", [{"type", "groupchat"}],
+       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, Nick),
@@ -1086,4 +1154,36 @@ filter_message(Msg) ->
 		      false;
 		 true -> true
 	      end
-      end, Msg).
+      end, filter_mirc_colors(Msg)).
+
+filter_mirc_colors(Msg) ->
+    case regexp:gsub(Msg, "(\\003[0-9]+)(,[0-9]+)?", "") of
+	{ok, Msg2, _} ->
+	    Msg2;
+	_ ->
+	    Msg
+    end.
+
+unixtime2string(Unixtime) ->
+    Secs = Unixtime + calendar:datetime_to_gregorian_seconds(
+			{{1970, 1, 1}, {0,0,0}}),
+    case calendar:universal_time_to_local_time(
+	   calendar:gregorian_seconds_to_datetime(Secs)) of 
+	{{Year, Month, Day}, {Hour, Minute, Second}} ->
+	    lists:flatten(
+	      io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",
+			    [Year, Month, Day, Hour, Minute, Second]));
+	_->
+	    "0000-00-00 00:00:00"
+    end.
+
+toupper([C | Cs]) ->
+    if
+	C >= $a, C =< $z ->
+	    [C - 32 | toupper(Cs)];
+	true ->
+	    [C | toupper(Cs)]
+    end;
+toupper([]) ->
+    [].
+

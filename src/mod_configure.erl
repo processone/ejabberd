@@ -385,7 +385,7 @@ get_local_items(_Host, [], Server, Lang) ->
      [?NODE("Configuration",            "config"),
       ?NODE("Online Users",             "online users"),
       ?NODE("All Users",                "all users"),
-      ?NODE("Outgoing S2S connections", "outgoing s2s"),
+      ?NODE("Outgoing s2s Connections", "outgoing s2s"),
       ?NODE("Running Nodes",            "running nodes"),
       ?NODE("Stopped Nodes",            "stopped nodes")
      ]};
@@ -446,10 +446,10 @@ get_local_items(_Host, ["stopped nodes"], _Server, Lang) ->
 
 get_local_items(_Host, ["running nodes", ENode], Server, Lang) ->
     {result,
-     [?NODE("DB", "running nodes/" ++ ENode ++ "/DB"),
+     [?NODE("Database", "running nodes/" ++ ENode ++ "/DB"),
       ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules"),
       ?NODE("Backup Management", "running nodes/" ++ ENode ++ "/backup"),
-      ?NODE("Import users from jabberd1.4 spool files",
+      ?NODE("Import Users From jabberd 1.4 Spool Files",
 	    "running nodes/" ++ ENode ++ "/import")
      ]};
 
@@ -744,7 +744,7 @@ get_form(_Host, ["running nodes", ENode, "DB"], Lang) ->
 			       [{xmlelement, "title", [],
 			         [{xmlcdata,
 				   translate:translate(
-				     Lang, "DB Tables Configuration at ") ++
+				     Lang, "Database Tables Configuration at ") ++
 				     ENode}]},
 			        {xmlelement, "instructions", [],
 			         [{xmlcdata,
