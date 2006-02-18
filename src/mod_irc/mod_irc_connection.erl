@@ -665,6 +665,9 @@ process_channel_list_user(StateData, Chan, User) ->
 	case User1 of
 	    [$@ | U2] -> {U2, "admin", "moderator"};
 	    [$+ | U2] -> {U2, "member", "participant"};
+	    [$\% | U2] -> {U2, "admin", "moderator"};
+	    [$& | U2] -> {U2, "admin", "moderator"};
+	    [$~ | U2] -> {U2, "admin", "moderator"};
 	    _ -> {User1, "member", "participant"}
 	end,
     ejabberd_router:route(

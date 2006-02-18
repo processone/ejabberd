@@ -1,9 +1,12 @@
 2006-02-18  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_irc/mod_irc_connection.erl: Added handling for "%", "&"
+	and "~" prefixes in IRC nicknames (thanks to Vladimir Kulev)
+
 	* src/mod_irc/mod_irc_connection.erl: Added /msg and /ctcp
 	commands, improved handling of channel topic and kick, mirc colors
-	now filtered, other minor improvements (thanks to Oleg
-	V. Motienko)
+	now filtered, other minor improvements (thanks to Oleg V. Motienko
+	and Magnus Henoch)
 
 	* src/mod_configure.erl: Improved strings (thanks to Sander
 	Devrieze)
