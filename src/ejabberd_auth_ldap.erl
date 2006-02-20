@@ -40,6 +40,10 @@ start(Host) ->
 		     LDAPServers, 389, RootDN, Password),
     eldap:start_link(get_eldap_id(Host, ejabberd_bind),
 		     LDAPServers, 389, RootDN, Password),
+    ejabberd_ctl:register_commands(
+      Host,
+      [{"registered-users", "list all registered users"}],
+      ejabberd_auth, ctl_process_get_registered),
     ok.
 
 plain_password_required() ->

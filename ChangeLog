@@ -1,3 +1,15 @@
+2006-02-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_ctl.erl: Added API for virtual host specific
+	commands, removed registered-users command
+	* src/ejabberd_auth.erl: Added processing of registered-users
+	command
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_app.erl: Added inititalization of ejabberd_ctl
+	* src/ejabberd_sm.erl: Minor update
+
 2006-02-18  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_irc/mod_irc_connection.erl: Added handling for "%", "&"

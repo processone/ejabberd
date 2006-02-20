@@ -23,10 +23,12 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
-	 plain_password_required/1
+	 plain_password_required/1,
+	 ctl_process_get_registered/3
 	]).
 
 -include("ejabberd.hrl").
+-include("ejabberd_ctl.hrl").
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -76,6 +78,17 @@ remove_user(User, Server) ->
 
 remove_user(User, Server, Password) ->
     (auth_module(Server)):remove_user(User, Server, Password).
+
+
+ctl_process_get_registered(_Val, Host, ["registered-users"]) ->
+    Users = ejabberd_auth:get_vh_registered_users(Host),
+    NewLine = io_lib:format("~n", []),
+    SUsers = lists:sort(Users),
+    FUsers = lists:map(fun({U, _S}) -> [U, NewLine] end, SUsers),
+    io:format("~s", [FUsers]),
+    {stop, ?STATUS_SUCCESS};
+ctl_process_get_registered(Val, _Host, _Args) ->
+    Val.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions

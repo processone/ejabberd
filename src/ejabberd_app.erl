@@ -24,6 +24,7 @@ start(normal, _Args) ->
     catch ssl:start(),
     translate:start(),
     acl:start(),
+    ejabberd_ctl:init(),
     gen_mod:start(),
     ejabberd_config:start(),
     Sup = ejabberd_sup:start_link(),

@@ -42,6 +42,10 @@ start(Host) ->
 	 supervisor,
 	 [ejabberd_odbc_sup]},
     supervisor:start_child(ejabberd_sup, ChildSpec),
+    ejabberd_ctl:register_commands(
+      Host,
+      [{"registered-users", "list all registered users"}],
+      ejabberd_auth, ctl_process_get_registered),
     ok.
 
 plain_password_required() ->

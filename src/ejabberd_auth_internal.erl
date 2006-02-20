@@ -33,10 +33,14 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(_Host) ->
+start(Host) ->
     mnesia:create_table(passwd, [{disc_copies, [node()]},
 				 {attributes, record_info(fields, passwd)}]),
     update_table(),
+    ejabberd_ctl:register_commands(
+      Host,
+      [{"registered-users", "list all registered users"}],
+      ejabberd_auth, ctl_process_get_registered),
     ok.
 
 plain_password_required() ->

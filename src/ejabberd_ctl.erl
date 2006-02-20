@@ -10,9 +10,12 @@
 -author('alexey@sevcom.net').
 
 -export([start/0,
+	 init/0,
 	 process/1,
 	 register_commands/3,
-	 unregister_commands/3]).
+	 register_commands/4,
+	 unregister_commands/3,
+	 unregister_commands/4]).
 
 -include("ejabberd_ctl.hrl").
 
@@ -33,6 +36,10 @@ start() ->
 	    print_usage(),
 	    halt(?STATUS_USAGE)
     end.
+
+init() ->
+    ets:new(ejabberd_ctl_cmds, [named_table, set, public]),
+    ets:new(ejabberd_ctl_host_cmds, [named_table, set, public]).
 
 
 process(["status"]) ->
@@ -147,29 +154,28 @@ process(["import-dir", Path]) ->
 	    ?STATUS_ERROR
     end;
 
-process(["registered-users"]) ->
-    case ejabberd_auth:dirty_get_registered_users() of
-	Users when is_list(Users) ->
-	    NewLine = io_lib:format("~n", []),
-	    SUsers = lists:sort(Users),
-	    FUsers = lists:map(fun({U, S}) -> [U, $@, S, NewLine] end, SUsers),
-	    io:format("~s", [FUsers]),
-	    ?STATUS_SUCCESS;
-	{error, Reason} ->
-	    io:format("Can't get list of registered users at node ~p: ~p~n",
-		      [node(), Reason]),
-	    ?STATUS_ERROR
-    end;
-
 process(["delete-expired-messages"]) ->
     mod_offline:remove_expired_messages(),
     ?STATUS_SUCCESS;
 
+process(["vhost", H | Args]) ->
+    case jlib:nameprep(H) of
+	false ->
+	    io:format("Bad hostname: ~p~n", [H]),
+	    ?STATUS_ERROR;
+	Host ->
+	    case ejabberd_hooks:run_fold(
+		   ejabberd_ctl_process, Host, false, [Host, Args]) of
+		false ->
+		    print_vhost_usage(Host),
+		    ?STATUS_USAGE;
+		Status ->
+		    Status
+	    end
+    end;
+
 process(Args) ->
-    case ejabberd_hooks:run_fold(
-	   ejabberd_ctl_process,
-	   false,
-	   [Args]) of
+    case ejabberd_hooks:run_fold(ejabberd_ctl_process, false, [Args]) of
 	false ->
 	    print_usage(),
 	    ?STATUS_USAGE;
@@ -179,7 +185,6 @@ process(Args) ->
 
 
 print_usage() ->
-    catch ets:new(ejabberd_ctl_cmds, [named_table, ordered_set, public]),
     CmdDescs =
 	[{"status", "get ejabberd status"},
 	 {"stop", "stop ejabberd"},
@@ -194,8 +199,8 @@ print_usage() ->
 	 {"load file", "restore a database from a text file"},
 	 {"import-file file", "import user data from jabberd 1.4 spool file"},
 	 {"import-dir dir", "import user data from jabberd 1.4 spool directory"},
-	 {"registered-users", "list all registered users"},
-	 {"delete-expired-messages", "delete expired offline messages from database"}] ++
+	 {"delete-expired-messages", "delete expired offline messages from database"},
+	 {"vhost host ...", "execute host-specific commands"}] ++
 	ets:tab2list(ejabberd_ctl_cmds),
     MaxCmdLen =
 	lists:max(lists:map(
@@ -206,7 +211,7 @@ print_usage() ->
     FmtCmdDescs =
 	lists:map(
 	  fun({Cmd, Desc}) ->
-		  ["  ", Cmd, string:chars($\s, MaxCmdLen - length(Cmd) + 1),
+		  ["  ", Cmd, string:chars($\s, MaxCmdLen - length(Cmd) + 2),
 		   Desc, NewLine]
 	  end, CmdDescs),
     io:format(
@@ -219,17 +224,60 @@ print_usage() ->
       "  ejabberdctl ejabberd@host restart~n"
      ).
 
+print_vhost_usage(Host) ->
+    CmdDescs =
+	ets:select(ejabberd_ctl_host_cmds,
+		   [{{Host, '$1', '$2'}, [], [{{'$1', '$2'}}]}]),
+    MaxCmdLen =
+	if
+	    CmdDescs == [] ->
+		0;
+	    true ->
+		lists:max(lists:map(
+			    fun({Cmd, _Desc}) ->
+				    length(Cmd)
+			    end, CmdDescs))
+	end,
+    NewLine = io_lib:format("~n", []),
+    FmtCmdDescs =
+	lists:map(
+	  fun({Cmd, Desc}) ->
+		  ["  ", Cmd, string:chars($\s, MaxCmdLen - length(Cmd) + 2),
+		   Desc, NewLine]
+	  end, CmdDescs),
+    io:format(
+      "Usage: ejabberdctl node vhost host command~n"
+      "~n"
+      "Available commands:~n"
+      ++ FmtCmdDescs ++
+      "~n"
+     ).
+
 register_commands(CmdDescs, Module, Function) ->
-    catch ets:new(ejabberd_ctl_cmds, [named_table, ordered_set, public]),
     ets:insert(ejabberd_ctl_cmds, CmdDescs),
     ejabberd_hooks:add(ejabberd_ctl_process,
 		       Module, Function, 50),
     ok.
 
+register_commands(Host, CmdDescs, Module, Function) ->
+    ets:insert(ejabberd_ctl_host_cmds,
+	       [{Host, Cmd, Desc} || {Cmd, Desc} <- CmdDescs]),
+    ejabberd_hooks:add(ejabberd_ctl_process, Host,
+		       Module, Function, 50),
+    ok.
+
 unregister_commands(CmdDescs, Module, Function) ->
-    catch ets:new(ejabberd_ctl_cmds, [named_table, ordered_set, public]),
     lists:foreach(fun(CmdDesc) ->
 			  ets:delete_object(ejabberd_ctl_cmds, CmdDesc)
+		  end, CmdDescs),
+    ejabberd_hooks:delete(ejabberd_ctl_process,
+			  Module, Function, 50),
+    ok.
+
+unregister_commands(Host, CmdDescs, Module, Function) ->
+    lists:foreach(fun({Cmd, Desc}) ->
+			  ets:delete_object(ejabberd_ctl_host_cmds,
+					    {Host, Cmd, Desc})
 		  end, CmdDescs),
     ejabberd_hooks:delete(ejabberd_ctl_process,
 			  Module, Function, 50),
