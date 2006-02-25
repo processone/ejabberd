@@ -108,7 +108,7 @@ parse_form(Dir, File, Form, Used) ->
 	    ok
     end.
 	    
-process_string(Dir, File, Str, Used) ->
+process_string(_Dir, File, Str, Used) ->
     case {ets:lookup(translations, Str), Used} of
 	{[{_Key, _Trans}], unused} ->
 	    ets:delete(translations, Str);

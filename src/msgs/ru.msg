@@ -9,6 +9,26 @@
 {"Illegal resource format", "Неправильный формат ресурса"}.
 {"Resource conflict", "Конфликт ресурсов"}.
 
+% mod_adhoc.erl
+{"Commands", "Команды"}.
+{"Ping", "Пинг"}.
+{"Pong", "Понг"}.
+
+% mod_announce.erl
+{"Really delete message of the day?", "Действительно удалить сообщение дня?"}.
+{"Subject", "Тема"}.
+{"Message body", "Тело сообщения"}.
+{"No body provided for announce message", "Тело объявления не должно быть пустым"}.
+{"Announcements", "Объявления"}.
+{"Send announcement to all users", "Разослать объявление всем пользователям"}.
+{"Send announcement to all online users", "Разослать объявление всем подключённым пользователям"}.
+{"Send announcement to all online users on all hosts",
+ "Разослать объявление всем подключённым пользователям на всех виртуальных серверах"}.
+{"Set message of the day and send to online users",
+ "Установить сообщение дня и разослать его подключённым пользователям"}.
+{"Update message of the day (don't send)", "Обновить сообщение дня (не рассылать)"}.
+{"Delete message of the day", "Удалить сообщение дня"}.
+
 % mod_configure.erl
 {"DB Tables Configuration at ", "Конфигурация таблиц БД на "}.
 {"Choose storage type of tables", "Выберите тип хранения таблиц"}.
@@ -76,10 +96,10 @@
  "Выберите имя пользователя и пароль для регистрации на этом сервере"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2005 Алексей Щепин"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin",
- "ejabberd vCard модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin",
+ "Erlang Jabber Server\nCopyright (c) 2002-2006 Алексей Щепин"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin",
+ "ejabberd vCard модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
 {"You need an x:data capable client to search",
  "Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Search users in ", "Поиск пользователей в "}.
@@ -104,8 +124,8 @@
 {"Given Name", "Имя"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin",
- "ejabberd pub/sub модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin",
+ "ejabberd pub/sub модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
 {"Node Creator", "Создатель сборника"}.
 {"Deliver payloads with event notifications", "Доставлять вместе с уведомлениями o публикациях сами публикации"}.
 {"Notify subscribers when the node configuration changes", "Уведомлять подписчиков об изменении конфигурации сборника"}.
@@ -126,43 +146,44 @@
  "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"Nickname Registration at ", "Регистрация псевдонима на "}.
 {"Enter nickname you want to register", "Введите псевдоним, который Вы хотели бы зарегистрировать"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin",
- "ejabberd MUC модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin",
+ "ejabberd MUC модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
 {"Only service administrators are allowed to send service messages",
  "Только администратор службы может посылать служебные сообщения"}.
 {"Room creation is denied by service policy",
  "Cоздавать конференцию запрещено политикой службы"}.
 {"Conference room does not exist", "Конференция не существует"}.
 {"Access denied by service policy", "Доступ запрещён политикой службы"}.
-{"You must fill in field \"nick\" in the form",
- "Вы должны заполнить поле \"nick\" в форме"}.
+{"You must fill in field \"Nickname\" in the form",
+ "Вы должны заполнить поле \"Псевдоним\" в форме"}.
 {"Specified nickname is already registered", "Указанный псевдоним уже зарегистрирован"}.
 
 % mod_muc/mod_muc_room.erl
+{"This room is not anonymous", "Эта комната не анонимная"}.
 {" has set the subject to: ", " установил(а) тему: "}.
 {"You need an x:data capable client to configure room",
  "Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"}.
 {"Configuration for ", "Конфигурация "}.
 {"Room title", "Название комнаты"}.
-{"Allow users to change subject?", "Разрешить пользователям изменять тему?"}.
-{"Allow users to query other users?",
- "Разрешить iq-запросы к пользователям?"}.
-{"Allow users to send private messages?",
- "Разрешить приватные сообщения?"}.
-{"Make room public searchable?", "Сделать комнату видимой всем?"}.
-{"Make participants list public?", "Сделать список участников видимым всем?"}.
-{"Make room persistent?", "Сделать комнату постоянной?"}.
-{"Make room moderated?", "Сделать комнату модерируемой?"}.
-{"Default users as members?",
- "Сделать пользователей участниками по умолчанию?"}.
-{"Make room members only?",
- "Комната только для зарегистрированных участников?"}.
-{"Allow users to send invites?",
- "Разрешить пользователям посылать приглашения?"}.
-{"Make room password protected?", "Сделать комнату защищённой паролем?"}.
+{"Allow users to change subject", "Разрешить пользователям изменять тему"}.
+{"Allow users to query other users",
+ "Разрешить iq-запросы к пользователям"}.
+{"Allow users to send private messages",
+ "Разрешить приватные сообщения"}.
+{"Make room public searchable", "Сделать комнату видимой всем"}.
+{"Make participants list public", "Сделать список участников видимым всем"}.
+{"Make room persistent", "Сделать комнату постоянной"}.
+{"Make room moderated", "Сделать комнату модерируемой"}.
+{"Default users as participants",
+ "Сделать пользователей участниками по умолчанию"}.
+{"Make room members-only",
+ "Комната только для зарегистрированных участников"}.
+{"Allow users to send invites",
+ "Разрешить пользователям посылать приглашения"}.
+{"Make room password protected", "Сделать комнату защищённой паролем"}.
 {"Password", "Пароль"}.
-{"Make room anonymous?", "Сделать комнату анонимной?"}.
-{"Enable logging?", "Включить журналирование?"}.
+{"Make room semianonymous", "Сделать комнату полуанонимной"}.
+{"Enable logging", "Включить журналирование"}.
 {"Only moderators and participants are allowed to change subject in this room",
  "Только модераторы и участники могут изменять тему в этой комнате"}.
 {"Only moderators are allowed to change subject in this room",
@@ -197,10 +218,12 @@
 {"Invalid role: ~s", "Недопустимая роль: ~s"}.
 {"Owner privileges required", "Требуются права владельца"}.
 {"private, ", "приватная, "}.
+{"Description", "Описание"}.
+{"Number of occupants", "Число присутствующих"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin",
- "ejabberd IRC модуль\nCopyright (c) 2003-2005 Алексей Щепин"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin",
+ "ejabberd IRC модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
 {"You need an x:data capable client to configure mod_irc settings",
  "Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"Registration in mod_irc for ", "Регистрация в mod_irc для "}.
@@ -270,7 +293,7 @@
 {"Update", "Обновить"}.
 {"Delete", "Удалить"}.
 {"Add User", "Добавить пользователя"}.
-{"ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One", "ejabberd (c) 2002-2005 Алексей Щепин, 2004-2005 Process One"}.
+{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Алексей Щепин, 2004-2006 Process One"}.
 {"Offline messages", "Офлайновые сообщения"}.
 {"Last Activity", "Последнее подключение"}.
 {"Never", "Никогда"}.

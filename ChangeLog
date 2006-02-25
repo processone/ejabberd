@@ -1,3 +1,16 @@
+2006-02-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* contrib/extract_translations/extract_translations.erl: Minor
+	update (thanks to Sergei Golovan)
+
+	* src/ejabberd_zlib/Makefile.win32: Zlib support for Windows build
+	(thanks to Sergei Golovan)
+	* src/Makefile.win32: Likewise
+	* src/configure.erl: Likewise
+
 2006-02-20  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_ctl.erl: Added API for virtual host specific

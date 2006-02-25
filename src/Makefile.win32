@@ -65,6 +65,10 @@ release : build release_clean
 	copy stringprep\*.tcl $(SRC_DIR)\stringprep
 	mkdir $(SRC_DIR)\tls
 	copy tls\*.erl $(SRC_DIR)\tls
+	copy tls\*.c $(SRC_DIR)\tls
+	mkdir $(SRC_DIR)\ejabberd_zlib
+	copy ejabberd_zlib\*.erl $(SRC_DIR)\ejabberd_zlib
+	copy ejabberd_zlib\*.c $(SRC_DIR)\ejabberd_zlib
 	mkdir $(SRC_DIR)\web
 	copy web\*.erl $(SRC_DIR)\web
 	mkdir $(SRC_DIR)\odbc
@@ -93,6 +97,8 @@ all-recursive :
 	cd ..\stringprep
 	nmake -nologo -f Makefile.win32
 	cd ..\tls
+	nmake -nologo -f Makefile.win32
+	cd ..\ejabberd_zlib
 	nmake -nologo -f Makefile.win32
 	cd ..\web
 	nmake -nologo -f Makefile.win32
@@ -130,6 +136,8 @@ clean-recursive :
 	cd ..\stringprep
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\tls
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\ejabberd_zlib
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\web
 	nmake -nologo -f Makefile.win32 clean
