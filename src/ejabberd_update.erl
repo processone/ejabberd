@@ -17,7 +17,7 @@
 %%====================================================================
 update() ->
     case update_info() of
-	{ok, Dir, _UpdatedBeams, _Script, _LowLevelScript, Check} ->
+	{ok, Dir, _UpdatedBeams, _Script, LowLevelScript, _Check} ->
 	    Eval =
 		release_handler_1:eval_script(
 		  LowLevelScript, [],
