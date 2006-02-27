@@ -1841,7 +1841,8 @@ get_node(global, Node, [], Query, Lang) ->
 	     [?LI([?ACT("db/", "Database")]),
 	      ?LI([?ACT("backup/", "Backup")]),
 	      ?LI([?ACT("ports/", "Listened Ports")]),
-	      ?LI([?ACT("stats/", "Statistics")])
+	      ?LI([?ACT("stats/", "Statistics")]),
+	      ?LI([?ACT("update/", "Update")])
 	     ]),
 	 ?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?INPUTT("submit", "restart", "Restart"),
@@ -2055,6 +2056,38 @@ get_node(global, Node, ["stats"], Query, Lang) ->
 				integer_to_list(TransactionsLogged))])
 	       ])
 	  ])];
+
+get_node(global, Node, ["update"], Query, Lang) ->
+    rpc:call(Node, code, purge, [ejabberd_update]),
+    Res = node_update_parse_query(Node, Query),
+    rpc:call(Node, code, load_file, [ejabberd_update]),
+    {ok, Dir, UpdatedBeams, Script, LowLevelScript, Check} =
+	rpc:call(Node, ejabberd_update, update_info, []),
+    Mods =
+	case UpdatedBeams of
+	    [] ->
+		?CT("None");
+	    _ ->
+		?XE("ul",
+		    [?LI([?C(atom_to_list(Beam))]) ||
+			Beam <- UpdatedBeams])
+	end,
+    FmtScript = ?XC("pre", io_lib:format("~p", [Script])),
+    FmtLowLevelScript = ?XC("pre", io_lib:format("~p", [LowLevelScript])),
+    [?XC("h1", ?T("Update ") ++ atom_to_list(Node))] ++
+	case Res of
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	      [?INPUTT("submit", "update", "Update"),
+	       ?XCT("h2", "Update plan"),
+	       ?XCT("h3", "Updated modules"), Mods,
+	       ?XCT("h3", "Update script"), FmtScript,
+	       ?XCT("h3", "Low level update script"), FmtLowLevelScript,
+	       ?XCT("h3", "Script check"), ?C(atom_to_list(Check))])
+	];
 
 get_node(Host, Node, NPath, Query, Lang) ->
     [?XCT("h1", "Not Found")].
@@ -2328,6 +2361,22 @@ node_modules_parse_query(Host, Node, Modules, Query) ->
 	    throw(submitted);
 	_ ->
 	    ok
+    end.
+
+
+node_update_parse_query(Node, Query) ->
+    case lists:keysearch("update", 1, Query) of
+	{value, _} ->
+	    case rpc:call(Node, ejabberd_update, update, []) of
+		{ok, _} ->
+		    ok;
+		{error, Error} ->
+		    ?ERROR_MSG("~p~n", [Error]);
+		{badrpc, Error} ->
+		    ?ERROR_MSG("~p~n", [Error])
+	    end;
+	_ ->
+	    nothing
     end.
 
 

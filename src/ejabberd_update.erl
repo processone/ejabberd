@@ -10,12 +10,25 @@
 -author('alexey@sevcom.net').
 
 %% API
--export([update/0]).
+-export([update/0, update_info/0]).
 
 %%====================================================================
 %% API
 %%====================================================================
 update() ->
+    case update_info() of
+	{ok, Dir, _UpdatedBeams, _Script, _LowLevelScript, Check} ->
+	    Eval =
+		release_handler_1:eval_script(
+		  LowLevelScript, [],
+		  [{ejabberd, "", filename:join(Dir, "..")}]),
+	    io:format("eval: ~p~n", [Eval]),
+	    Eval;
+	{error, Reason} ->
+	    {error, Reason}
+    end.
+
+update_info() ->
     Dir = filename:dirname(code:which(ejabberd)),
     case file:list_dir(Dir) of
 	{ok, Files} ->
@@ -46,11 +59,7 @@ update() ->
 		  LowLevelScript,
 		  [{ejabberd, "", filename:join(Dir, "..")}]),
 	    io:format("check: ~p~n", [Check]),
-	    Eval =
-		release_handler_1:eval_script(
-		  LowLevelScript, [],
-		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    io:format("eval: ~p~n", [Eval]);
+	    {ok, Dir, UpdatedBeams, Script, LowLevelScript, Check};
 	{error, Reason} ->
 	    {error, Reason}
     end.
