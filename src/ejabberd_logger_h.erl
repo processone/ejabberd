@@ -66,6 +66,7 @@ handle_info({'EXIT', _Fd, _Reason}, _State) ->
     remove_handler;
 handle_info({emulator, _GL, reopen}, State) ->
     file:close(State#state.fd),
+    rotate_log(State#state.file),
     case file:open(State#state.file, [append, raw]) of
 	{ok, Fd} ->
 	    {ok, State#state{fd = Fd}};
@@ -189,3 +190,17 @@ write_time({{Y,Mo,D},{H,Mi,S}}, Type) ->
     io_lib:format("~n=~s==== ~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w ===~n",
 		  [Type, Y, Mo, D, H, Mi, S]).
 
+%% Rename the log file if it the filename exists
+%% This is needed in systems when the file must be closed before rotation (Windows).
+%% On most Unix-like system, the file can be renamed from the command line and
+%%the log can directly be reopened.
+rotate_log(Filename) ->
+    case file:read_file_info(Filename) of
+	{ok, _FileInfo} ->
+	    RotationName = filename:rootname(Filename),
+	    file:rename(Filename, [RotationName, "-old.log"]),
+	    ok;
+	{error, _Reason} ->
+	    ok
+    end.
+	    
