@@ -1306,28 +1306,28 @@ presence_track(From, To, Packet, StateData) ->
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	"subscribe" ->
-	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, subscribe]),
+	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    StateData;
 	"subscribed" ->
-	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, subscribed]),
+	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    StateData;
 	"unsubscribe" ->
-	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, unsubscribe]),
+	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    StateData;
 	"unsubscribed" ->
-	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, unsubscribed]),
+	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
 	    StateData;
 	"error" ->
 	    ejabberd_router:route(From, To, Packet),

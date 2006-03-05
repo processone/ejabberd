@@ -35,7 +35,7 @@
 %%%----------------------------------------------------------------------
 start(Host) ->
     ChildSpec =
-	{ejabberd_odbc_sup,
+	{gen_mod:get_module_proc(Host, ejabberd_odbc_sup),
 	 {ejabberd_odbc_sup, start_link, [Host]},
 	 temporary,
 	 infinity,
