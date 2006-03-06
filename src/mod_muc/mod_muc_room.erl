@@ -1684,10 +1684,28 @@ find_changed_items(UJID, UAffiliation, URole,
 					    [StrAffiliation]),
 				    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText1)};
 				SAffiliation ->
-				    case can_change_ra(
-					   UAffiliation, URole,
-					   TAffiliation, TRole,
-					   affiliation, SAffiliation) of
+				    CanChangeRA =
+					case can_change_ra(
+					       UAffiliation, URole,
+					       TAffiliation, TRole,
+					       affiliation, SAffiliation) of
+					    nothing ->
+						nothing;
+					    true ->
+						true;
+					    check_owner ->
+						case search_affiliation(
+						       owner, StateData) of
+						    [{OJID, _}] ->
+							jlib:jid_remove_resource(OJID) /=
+							    jlib:jid_tolower(jlib:jid_remove_resource(UJID));
+						    _ ->
+							true
+						end;
+					    _ ->
+						false
+					end,
+				    case CanChangeRA of
 					nothing ->
 					    find_changed_items(
 					      UJID,
@@ -1705,7 +1723,7 @@ find_changed_items(UJID, UAffiliation, URole,
 						xml:get_path_s(
 						  Item, [{elem, "reason"},
 							 cdata])} | Res]);
-					_ ->
+					false ->
 					    {error, ?ERR_NOT_ALLOWED}
 				    end
 			    end
@@ -1721,10 +1739,28 @@ find_changed_items(UJID, UAffiliation, URole,
 				  [StrRole]),
 			    {error, ?ERRT_BAD_REQUEST(Lang, ErrText1)};
 			SRole ->
-			    case can_change_ra(
-				   UAffiliation, URole,
-				   TAffiliation, TRole,
-				   role, SRole) of
+			    CanChangeRA =
+				case can_change_ra(
+				       UAffiliation, URole,
+				       TAffiliation, TRole,
+				       role, SRole) of
+				    nothing ->
+					nothing;
+				    true ->
+					true;
+				    check_owner ->
+					case search_affiliation(
+					       owner, StateData) of
+					    [{OJID, _}] ->
+						jlib:jid_remove_resource(OJID) /=
+						    jlib:jid_tolower(jlib:jid_remove_resource(UJID));
+					    _ ->
+						true
+					end;
+				    _ ->
+					false
+			    end,
+			    case CanChangeRA of
 				nothing ->
 				    find_changed_items(
 				      UJID,
@@ -1824,7 +1860,7 @@ can_change_ra(owner, _FRole,
 can_change_ra(owner, _FRole,
 	      owner, _TRole,
 	      affiliation, _Affiliation) ->
-    true;
+    check_owner;
 can_change_ra(_FAffiliation, _FRole,
 	      _TAffiliation, _TRole,
 	      affiliation, _Value) ->
