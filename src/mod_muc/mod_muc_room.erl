@@ -51,7 +51,7 @@
 		 password_protected = false,
 		 password = "",
 		 anonymous = true,
-		 logging = false % TODO
+		 logging = false
 		}).
 
 -record(user, {jid,
@@ -370,7 +370,11 @@ normal_state({route, From, Nick,
 			NewState =
 			    add_user_presence_un(From, Packet, StateData),
 			send_new_presence(From, NewState),
-			remove_online_user(From, NewState);
+			Reason = case xml:get_subtag(Packet, "status") of
+				false -> "";
+				Status_el -> xml:get_tag_cdata(Status_el)
+			end,
+			remove_online_user(From, NewState, Reason);
 		    _ ->
 			StateData
 		end;
@@ -856,10 +860,17 @@ add_online_user(JID, Nick, Role, StateData) ->
 			      nick = Nick,
 			      role = Role},
 			StateData#state.users),
+    add_to_log(join, Nick, StateData),
     StateData#state{users = Users}.
 
 remove_online_user(JID, StateData) ->
+	remove_online_user(JID, StateData, "").
+
+remove_online_user(JID, StateData, Reason) ->
     LJID = jlib:jid_tolower(JID),
+    {ok, #user{nick = Nick}} =
+    	?DICT:find(LJID, StateData#state.users),
+    add_to_log(leave, {Nick, Reason}, StateData),
     Users = ?DICT:erase(LJID, StateData#state.users),
     StateData#state{users = Users}.
 
@@ -1298,6 +1309,7 @@ change_nick(JID, Nick, StateData) ->
 	   end, StateData#state.users),
     NewStateData = StateData#state{users = Users},
     send_nick_changing(JID, OldNick, NewStateData),
+    add_to_log(nickchange, {OldNick, Nick}, StateData),
     NewStateData.
 
 send_nick_changing(JID, OldNick, StateData) ->
@@ -1397,6 +1409,7 @@ add_message_to_history(FromNick, Packet, StateData) ->
     Size = lists:flatlength(xml:element_to_string(SPacket)),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
 		   StateData#state.history),
+    add_to_log(text, {FromNick, Packet}, StateData),
     StateData#state{history = Q1}.
 
 send_history(JID, Shift, StateData) ->
@@ -1951,6 +1964,9 @@ send_kickban_presence(JID, Reason, Code, StateData) ->
 		    end
 	    end,
     lists:foreach(fun(J) ->
+			  {ok, #user{nick = Nick}} =
+			      ?DICT:find(J, StateData#state.users),
+			  add_to_log(kickban, {Nick, Reason, Code}, StateData),
 			  send_kickban_presence1(J, Reason, Code, StateData)
 		  end, LJIDs).
 
@@ -1998,7 +2014,10 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 			{?NS_XDATA, "cancel"} ->
 			    {result, [], StateData};
 			{?NS_XDATA, "submit"} ->
-			    set_config(XEl, StateData);
+			    case check_allowed_log_change(XEl, StateData, From) of
+					allow -> set_config(XEl, StateData);
+					deny -> {error, ?ERR_BAD_REQUEST}
+				end;
 			_ ->
 			    {error, ?ERR_BAD_REQUEST}
 		    end;
@@ -2019,7 +2038,7 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 	    {xmlelement, _Name, _Attrs, Els} = SubEl,
 	    case xml:remove_cdata(Els) of
 		[] ->
-		    get_config(Lang, StateData);
+		    get_config(Lang, StateData, From);
 		[Item] ->
 		    case xml:get_tag_attr("affiliation", Item) of
 			false ->
@@ -2048,6 +2067,14 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 	    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
     end.
 
+check_allowed_log_change(XEl, StateData, From) ->
+    case lists:keymember("logging", 1, jlib:parse_xdata_submit(XEl)) of
+	false ->
+	    allow;
+	true ->
+	    mod_muc_log:check_access_log(
+	      StateData#state.server_host, From)
+    end.
 
 
 -define(XFIELD(Type, Label, Var, Val),
@@ -2070,7 +2097,7 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 	?XFIELD("text-private", Label, Var, Val)).
 
 
-get_config(Lang, StateData) ->
+get_config(Lang, StateData, From) ->
     Config = StateData#state.config,
     Res =
 	[{xmlelement, "title", [],
@@ -2120,11 +2147,17 @@ get_config(Lang, StateData) ->
 		     Config#config.allow_query_users),
 	 ?BOOLXFIELD("Allow users to send invites",
 		     "allow_user_invites",
-		     Config#config.allow_user_invites),
-	 ?BOOLXFIELD("Enable logging",
-		     "logging",
-		     Config#config.logging)
-	],
+		     Config#config.allow_user_invites)
+	] ++
+	case mod_muc_log:check_access_log(
+	       StateData#state.server_host, From) of
+	    allow ->
+		[?BOOLXFIELD(
+		    "Enable logging",
+		    "logging",
+		    Config#config.logging)];
+	    _ -> []
+	end,
     {result, [{xmlelement, "instructions", [],
 	       [{xmlcdata,
 		 translate:translate(
@@ -2144,7 +2177,10 @@ set_config(XEl, StateData) ->
 	_ ->
 	    case set_xoption(XData, StateData#state.config) of
 		#config{} = Config ->
-		    change_config(Config, StateData);
+		    Res = change_config(Config, StateData),
+		    {result, _, NSD} = Res,
+		    add_to_log(roomconfig_change, [], NSD),
+		    Res;
 		Err ->
 		    Err
 	    end
@@ -2487,3 +2523,16 @@ check_invitation(From, Els, StateData) ->
 	    error
     end.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Logging
+
+add_to_log(Type, Data, StateData) ->
+    case (StateData#state.config)#config.logging of
+	true ->
+	    mod_muc_log:add_to_log(
+	      StateData#state.server_host, Type, Data,
+	      StateData#state.jid, make_opts(StateData));
+	false ->
+	    ok
+    end.

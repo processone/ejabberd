@@ -12,6 +12,7 @@ OUTDIR = ..
 EFLAGS = -I .. -pz ..
 OBJS   = \
 	$(OUTDIR)/mod_muc.beam \
+	$(OUTDIR)/mod_muc_log.beam \
 	$(OUTDIR)/mod_muc_room.beam
 
 all:    $(OBJS)

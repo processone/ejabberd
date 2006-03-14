@@ -64,8 +64,8 @@ process_data(CallbackPid, Stack, Data) ->
 	{?XML_START, {Name, Attrs}} ->
 	    if
 		Stack == [] ->
-		    gen_fsm:send_event(CallbackPid,
-				       {xmlstreamstart, Name, Attrs});
+		    catch gen_fsm:send_event(CallbackPid,
+					     {xmlstreamstart, Name, Attrs});
 		true ->
 		    ok
 	    end,
@@ -76,12 +76,12 @@ process_data(CallbackPid, Stack, Data) ->
 		    NewEl = {xmlelement, Name, Attrs, lists:reverse(Els)},
 		    case Tail of
 			[] ->
-			    gen_fsm:send_event(CallbackPid,
-					       {xmlstreamend, EndName}),
+			    catch gen_fsm:send_event(CallbackPid,
+						     {xmlstreamend, EndName}),
 			    Tail;
 			[_] ->
-			    gen_fsm:send_event(CallbackPid,
-					       {xmlstreamelement, NewEl}),
+			    catch gen_fsm:send_event(CallbackPid,
+						     {xmlstreamelement, NewEl}),
 			    Tail;
 			[{xmlelement, Name1, Attrs1, Els1} | Tail1] ->
 			    [{xmlelement, Name1, Attrs1, [NewEl | Els1]} |
@@ -98,7 +98,7 @@ process_data(CallbackPid, Stack, Data) ->
 		[] -> []
 	    end;
 	{?XML_ERROR, Err} ->
-	    gen_fsm:send_event(CallbackPid, {xmlstreamerror, Err})
+	    catch gen_fsm:send_event(CallbackPid, {xmlstreamerror, Err})
     end.
 
 

@@ -49,6 +49,17 @@ add_iq_handler(Component, Host, NS, Module, Function, Type) ->
 					       [Host, Module, Function]),
 	    Component:register_iq_handler(Host, NS, Module, Function,
 					  {one_queue, Pid});
+	{queues, N} ->
+	    Pids =
+		lists:map(
+		  fun(_) ->
+			  {ok, Pid} = supervisor:start_child(
+					ejabberd_iq_sup,
+					[Host, Module, Function]),
+			  Pid
+		  end, lists:seq(1, N)),
+	    Component:register_iq_handler(Host, NS, Module, Function,
+					  {queues, Pids});
 	parallel ->
 	    Component:register_iq_handler(Host, NS, Module, Function, parallel)
     end.
@@ -60,6 +71,10 @@ stop_iq_handler(_Module, _Function, Opts) ->
     case Opts of
 	{one_queue, Pid} ->
 	    gen_server:call(Pid, stop);
+	{queues, Pids} ->
+	    lists:foreach(fun(Pid) ->
+				  catch gen_server:call(Pid, stop)
+			  end, Pids);
 	_ ->
 	    ok
     end.
@@ -69,6 +84,9 @@ handle(Host, Module, Function, Opts, From, To, IQ) ->
 	no_queue ->
 	    process_iq(Host, Module, Function, From, To, IQ);
 	{one_queue, Pid} ->
+	    Pid ! {process_iq, From, To, IQ};
+	{queues, Pids} ->
+	    Pid = lists:nth(erlang:phash(now(), length(Pids)), Pids),
 	    Pid ! {process_iq, From, To, IQ};
 	parallel ->
 	    spawn(?MODULE, process_iq, [Host, Module, Function, From, To, IQ]);

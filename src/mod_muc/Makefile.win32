@@ -6,6 +6,7 @@ EFLAGS = -I .. -pz ..
 
 OBJS = \
 	$(OUTDIR)\mod_muc.beam \
+	$(OUTDIR)\mod_muc_log.beam \
 	$(OUTDIR)\mod_muc_room.beam
 
 ALL : $(OBJS)
@@ -15,6 +16,9 @@ CLEAN :
 
 $(OUTDIR)\mod_muc.beam : mod_muc.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) mod_muc.erl
+
+$(OUTDIR)\mod_muc_log.beam : mod_muc_log.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_muc_log.erl
 
 $(OUTDIR)\mod_muc_room.beam : mod_muc_room.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) mod_muc_room.erl
