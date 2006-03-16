@@ -910,8 +910,38 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    "presence" ->
 		case xml:get_attr_s("type", Attrs) of
 		    "probe" ->
-			process_presence_probe(From, To, StateData),
-			{false, Attrs, StateData};
+			LFrom = jlib:jid_tolower(From),
+			LBFrom = jlib:jid_remove_resource(LFrom),
+			NewStateData =
+			    case ?SETS:is_element(
+				    LFrom, StateData#state.pres_a) orelse
+				?SETS:is_element(
+				   LBFrom, StateData#state.pres_a) of
+				true ->
+				    StateData;
+				false ->
+				    case ?SETS:is_element(
+					    LFrom, StateData#state.pres_f) of
+					true ->
+					    A = ?SETS:add_element(
+						   LFrom,
+						   StateData#state.pres_a),
+					    StateData#state{pres_a = A};
+					false ->
+					    case ?SETS:is_element(
+						    LBFrom, StateData#state.pres_f) of
+						true ->
+						    A = ?SETS:add_element(
+							   LBFrom,
+							   StateData#state.pres_a),
+						    StateData#state{pres_a = A};
+						false ->
+						    StateData
+					    end
+				    end
+			    end,
+			process_presence_probe(From, To, NewStateData),
+			{false, Attrs, NewStateData};
 		    "error" ->
 			NewA = remove_element(jlib:jid_tolower(From),
 					      StateData#state.pres_a),
@@ -938,7 +968,37 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			    {'EXIT', _Reason} ->
 				{true, Attrs, StateData};
 			    allow ->
-				{true, Attrs, StateData};
+				LFrom = jlib:jid_tolower(From),
+				LBFrom = jlib:jid_remove_resource(LFrom),
+				case ?SETS:is_element(
+					LFrom, StateData#state.pres_a) orelse
+				    ?SETS:is_element(
+				       LBFrom, StateData#state.pres_a) of
+				    true ->
+					{true, Attrs, StateData};
+				    false ->
+					case ?SETS:is_element(
+						LFrom, StateData#state.pres_f) of
+					    true ->
+						A = ?SETS:add_element(
+						       LFrom,
+						       StateData#state.pres_a),
+						{true, Attrs,
+						 StateData#state{pres_a = A}};
+					    false ->
+						case ?SETS:is_element(
+							LBFrom, StateData#state.pres_f) of
+						    true ->
+							A = ?SETS:add_element(
+							       LBFrom,
+							       StateData#state.pres_a),
+							{true, Attrs,
+							 StateData#state{pres_a = A}};
+						    false ->
+							{true, Attrs, StateData}
+						end
+					end
+				end;
 			    deny ->
 				{false, Attrs, StateData}
 			end

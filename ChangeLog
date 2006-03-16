@@ -1,3 +1,7 @@
+2006-03-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix
+
 2006-03-14  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/xml_stream.erl: Added catching of gen_fsm:send_event errors
