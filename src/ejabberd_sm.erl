@@ -290,7 +290,7 @@ clean_table_from_bad_node(Node) ->
 			 [{'==', {node, '$1'}, Node}],
 			 ['$_']}]),
 		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E)
+				      mnesia:delete({session, E#session.sid})
 			      end, Es)
         end,
     mnesia:sync_dirty(F).
