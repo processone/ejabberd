@@ -1015,7 +1015,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				       StateData)};
 		    [{exit, Reason}] ->
 			{exit, Attrs, Reason};
-		    [{privacy_list, PrivList}] ->
+		    [{privacy_list, PrivList, PrivListName}] ->
 			{false, Attrs,
 			 case catch mod_privacy:updated_list(
 				      StateData#state.privacy_list,
@@ -1023,6 +1023,21 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			     {'EXIT', _} ->
 				 {false, Attrs, StateData};
 			     NewPL ->
+				 PrivPushIQ =
+				     #iq{type = set, xmlns = ?NS_PRIVACY,
+					 id = "push",
+					 sub_el = [{xmlelement, "query",
+						    [{"xmlns", ?NS_PRIVACY}],
+						    [{xmlelement, "list",
+						      [{"name", PrivListName}],
+						      []}]}]},
+				 PrivPushEl =
+				     jlib:replace_from_to(
+				       jlib:jid_remove_resource(
+					 StateData#state.jid),
+				       StateData#state.jid,
+				       jlib:iq_to_xml(PrivPushIQ)),
+				 send_element(StateData, PrivPushEl),
 				 StateData#state{privacy_list = NewPL}
 			 end};
 		    _ ->

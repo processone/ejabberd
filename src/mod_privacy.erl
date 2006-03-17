@@ -362,7 +362,9 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		      jlib:make_jid(LUser, ?MYNAME, ""),
 		      jlib:make_jid(LUser, ?MYNAME, ""),
 		      {xmlelement, "broadcast", [],
-		       [{privacy_list, #userlist{name = Name, list = []}}]}),
+		       [{privacy_list,
+			 #userlist{name = Name, list = []},
+			 Name}]}),
 		    Res;
 		_ ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
@@ -391,7 +393,9 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		      jlib:make_jid(LUser, ?MYNAME, ""),
 		      jlib:make_jid(LUser, ?MYNAME, ""),
 		      {xmlelement, "broadcast", [],
-		       [{privacy_list, #userlist{name = Name, list = List}}]}),
+		       [{privacy_list,
+			 #userlist{name = Name, list = List},
+			 Name}]}),
 		    Res;
 		_ ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
