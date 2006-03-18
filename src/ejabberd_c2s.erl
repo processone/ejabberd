@@ -1016,7 +1016,6 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    [{exit, Reason}] ->
 			{exit, Attrs, Reason};
 		    [{privacy_list, PrivList, PrivListName}] ->
-			{false, Attrs,
 			 case catch mod_privacy:updated_list(
 				      StateData#state.privacy_list,
 				      PrivList) of
@@ -1038,8 +1037,8 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				       StateData#state.jid,
 				       jlib:iq_to_xml(PrivPushIQ)),
 				 send_element(StateData, PrivPushEl),
-				 StateData#state{privacy_list = NewPL}
-			 end};
+				 {false, Attrs, StateData#state{privacy_list = NewPL}}
+			end;
 		    _ ->
 			{false, Attrs, StateData}
 		end;
