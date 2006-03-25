@@ -208,7 +208,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				    Zlib = StateData#state.zlib,
 				    CompressFeature =
 					case Zlib andalso
-					    (SockMod /= ejabberd_zlib) of
+					    (SockMod == gen_tcp) of
 					    true ->
 						[{xmlelement, "compression",
 						  [{"xmlns", ?NS_FEATURE_COMPRESS}],
@@ -516,7 +516,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			     tls_enabled = true
 			    }};
 	{?NS_COMPRESS, "compress"} when Zlib == true,
-					SockMod /= ejabberd_zlib ->
+					SockMod == gen_tcp ->
 	    case xml:get_subtag(El, "method") of
 		false ->
 		    send_element(StateData,
