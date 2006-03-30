@@ -1533,6 +1533,7 @@ roster_change(IJID, ISubscription, StateData) ->
     LIJID = jlib:jid_tolower(IJID),
     IsFrom = (ISubscription == both) or (ISubscription == from),
     IsTo   = (ISubscription == both) or (ISubscription == to),
+    OldIsFrom = ?SETS:is_element(LIJID, StateData#state.pres_f),
     FSet = if
 	       IsFrom ->
 		   ?SETS:add_element(LIJID, StateData#state.pres_f);
@@ -1551,14 +1552,26 @@ roster_change(IJID, ISubscription, StateData) ->
 	P ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
 	    From = StateData#state.jid,
-	    Cond1 = (not StateData#state.pres_invis) and IsFrom,
-	    Cond2 = (not IsFrom)
+	    To = jlib:make_jid(IJID),
+	    Cond1 = (not StateData#state.pres_invis) and IsFrom
+		and (not OldIsFrom),
+	    Cond2 = (not IsFrom) and OldIsFrom
 		and (?SETS:is_element(LIJID, StateData#state.pres_a) or
 		     ?SETS:is_element(LIJID, StateData#state.pres_i)),
 	    if
 		Cond1 ->
 		    ?DEBUG("C1: ~p~n", [LIJID]),
-		    ejabberd_router:route(From, jlib:make_jid(IJID), P),
+		    case catch mod_privacy:check_packet(
+				 StateData#state.user,
+				 StateData#state.server,
+				 StateData#state.privacy_list,
+				 {From, To, P},
+				 out) of
+			deny ->
+			    ok;
+			_ ->
+			    ejabberd_router:route(From, To, P)
+		    end,
 		    A = ?SETS:add_element(LIJID,
 					  StateData#state.pres_a),
 		    StateData#state{pres_a = A,
@@ -1566,9 +1579,19 @@ roster_change(IJID, ISubscription, StateData) ->
 				    pres_t = TSet};
 		Cond2 ->
 		    ?DEBUG("C2: ~p~n", [LIJID]),
-		    ejabberd_router:route(From, jlib:make_jid(IJID),
-					  {xmlelement, "presence",
-					   [{"type", "unavailable"}], []}),
+		    PU = {xmlelement, "presence",
+			  [{"type", "unavailable"}], []},
+		    case catch mod_privacy:check_packet(
+				 StateData#state.user,
+				 StateData#state.server,
+				 StateData#state.privacy_list,
+				 {From, To, PU},
+				 out) of
+			deny ->
+			    ok;
+			_ ->
+			    ejabberd_router:route(From, To, PU)
+		    end,
 		    I = remove_element(LIJID,
 				       StateData#state.pres_i),
 		    A = remove_element(LIJID,
