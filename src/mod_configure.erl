@@ -82,7 +82,7 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 	["running nodes", ENode] ->
 	    ?INFO_IDENTITY("ejabberd", "node", ENode, Lang);
 	["running nodes", _ENode, "DB"] ->
-	    ?INFO_COMMAND("DB", Lang);
+	    ?INFO_COMMAND("Database", Lang);
 	["running nodes", _ENode, "modules", "start"] ->
 	    ?INFO_COMMAND("Start Modules", Lang);
 	["running nodes", _ENode, "modules", "stop"] ->

@@ -28,7 +28,7 @@
 {"Delete message of the day", "Видалити повідомлення дня"}.
 
 % mod_configure.erl
-{"DB Tables Configuration at ", "Конфігурація таблиць БД на "}.
+{"Database Tables Configuration at ", "Конфігурація таблиць бази даних на "}.
 {"Choose storage type of tables", "Оберіть тип збереження таблиць"}.
 {"RAM copy", "ОЗП"}.
 {"RAM and disc copy", "ОЗП та диск"}.
@@ -68,7 +68,7 @@
 {"Configuration", "Конфігурація"}.
 {"Online Users", "Підключені користувачі"}.
 {"All Users", "Всі користувачі"}.
-{"Outgoing S2S connections", "Вихідні S2S-з'єднання"}.
+{"Outgoing s2s Connections", "Вихідні s2s-з'єднання"}.
 {"To ~s", "До ~s"}.
 {"From ~s", "Від ~s"}.
 {"Running Nodes", "Працюючі вузли"}.
@@ -77,12 +77,12 @@
 {"Access Control Lists", "Списки керування доступом"}.
 {"Access Rules", "Правила доступу"}.
 {"Remove Users", "Видалення користувачів"}.
-{"DB", "БД"}.
+{"Database", "База даних"}.
 {"Modules", "Модулі"}.
 {"Start Modules", "Запуск модулів"}.
 {"Stop Modules", "Зупинка модулів"}.
 {"Backup Management", "Керування резервним копіюванням"}.
-{"Import users from jabberd1.4 spool files", "Імпорт користувачів зі спулу jabberd1.4"}.
+{"Import Users From jabberd 1.4 Spool Files", "Імпорт користувачів зі спулу jabberd 1.4"}.
 {"Backup", "Резервне копіювання"}.
 {"Restore", "Відновлення з резервної копії"}.
 {"Dump to Text File", "Копіювання в текстовий файл"}.
@@ -103,7 +103,8 @@
 {"Search users in ", "Пошук користувачів в "}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)",
  "Заповніть поля для пошуку користувача Jabber (Додайте * в кінець поля для пошуку підрядка)"}.
-{"Results of search in ", "Результати пошуку в "}.
+{"Search Results for ", "Результати пошуку в "}.
+{"Jabber ID",         "Jabber ID"}.
 {"User",              "Користувач"}.
 {"Full Name", 	      "Повне ім'я"}.
 {"Name", 	      "Ім'я"}.
@@ -113,7 +114,7 @@
 {"Birthday", 	      "День народження"}.
 {"Country", 	      "Країна"}.
 {"City", 	      "Місто"}.
-{"email", 	      "email"}.
+{"Email", 	      "Електронна пошта"}.
 {"Organization Name", "Назва організації"}.
 {"Organization Unit", "Відділ організації"}.
 
@@ -156,6 +157,34 @@
 {"You must fill in field \"Nickname\" in the form",
  "Вам необхідно заповнити поле \"Псевдонім\" у формі"}.
 {"Specified nickname is already registered", "Вказаний псевдонім вже зареєстрований"}.
+
+% /home/sergei/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
+{"Chatroom configuration modified", "Конфігурація кімнати змінилась"}.
+{"joins the room", "увійшов(ла) в кімнату"}.
+{"leaves the room", "вийшов(ла) з кімнати"}.
+{"has been kicked", "вигнали з кімнати"}.
+{"has been banned", "заборонили вхід в кімнату"}.
+{"is now known as", "змінив(ла) им'я на"}.
+{"Monday", "Понеділок"}.
+{"Tuesday", "Вівторок"}.
+{"Wednesday", "Середа"}.
+{"Thursday", "Четвер"}.
+{"Friday", "П'ятниця"}.
+{"Saturday", "Субота"}.
+{"Sunday", "Неділя"}.
+{"January", "січня"}.
+{"February", "лютого"}.
+{"March", "березня"}.
+{"April", "квітня"}.
+{"May", "травня"}.
+{"June", "червня"}.
+{"July", "липня"}.
+{"August", "серпня"}.
+{"September", "вересня"}.
+{"October", "грудня"}.
+{"November", "листопада"}.
+{"December", "грудня"}.
+{"Room Configuration", "Конфігурація кімнати"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " встановив(ла) тему: "}.
@@ -235,57 +264,62 @@
 
 % web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Web-інтерфейс ejabberd"}.
-{"ejabberd administration", "Адміністрування ejabberd"}.
+{"Administration", "Адміністрування"}.
 {"Users", "Користувачі"}.
 {"Nodes", "Вузли"}.
 {"Statistics", "Статистика"}.
-{"(raw)", "(необроблений формат)"}.
-{"submitted", "відправлено"}.
-{"bad format", "неправильний формат"}.
-{"raw", "необроблений формат"}.
-{"ejabberd access control lists configuration", "Конфігурація списків керування доступом ejabberd"}.
+{"(Raw)", "(Необроблений формат)"}.
+{"Submitted", "Відправлено"}.
+{"Bad format", "Неправильний формат"}.
+{"Raw", "необроблений формат"}.
 {"Delete Selected", "Видалити виділені"}.
 {"Submit", "Відправити"}.
-{"ejabberd access rules configuration", "Конфігурація правил доступу ejabberd"}.
 {"~s access rule configuration", "Конфігурація правила доступу ~s"}.
-{"ejabberd users", "Користувачі ejabberd"}.
-{"ejabberd stats", "Статистика ejabberd"}.
 {"Node not found", "Вузол не знайдено"}.
 {"Add New", "Додати"}.
-{"Registered users", "Зареєстровані користувачі"}.
-{"Authenticated users", "Аутентифіковані користувачі"}.
-{"Online users", "Підключені користувачі"}.
-{"Outgoing S2S servers", "Вихідні S2S-сервери"}.
+{"Registered Users", "Зареєстровані користувачі"}.
+{"Registered Users:", "Зареєстровані користувачі:"}.
+{"Authenticated Users:", "Аутентифіковані користувачі:"}.
+{"Online Users", "Підключені користувачі"}.
+{"Online Users:", "Підключені користувачі:"}.
+{"Outgoing s2s Connections:", "Вихідні s2s-з'єднання:"}.
+{"Outgoing s2s Servers:", "Вихідні s2s-сервери:"}.
 {"Change Password", "Змінити пароль"}.
 {"Connected Resources:", "Підключені ресурси:"}.
 {"Password:", "Пароль:"}.
 {"None", "Немає"}.
 {"Node ", "Вузол "}.
-{"DB Management", "Управління БД"}.
-{"Listened Ports Management", "Управління відкритими портами"}.
+{"Listened Ports", "Відкриті порти"}.
 {"Restart", "Перезапустити"}.
 {"Stop", "Зупинити"}.
-{"RPC call error", "Помилка виклику RPC"}.
-{"DB Tables at ", "Таблиці БД на "}.
+{"RPC Call Error", "Помилка виклику RPC"}.
+{"Database Tables at ", "Таблиці бази даних на "}.
 {"Name", "Назва"}.
 {"Storage Type", "Тип таблиці"}.
 {"Size", "Розмір"}.
 {"Memory", "Пам'ять"}.
-{"Backup Management at ", "Управління резервним копіюванням на "}.
-{"Store a backup in a file", "Зберегти резервну копію в файл"}.
+{"Backup of ", "Резервне копіювання "}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "Зауважте, що тут відбувається резервне копіювання тільки вбудованної бази даних Mnesia. Якщо Ви також використовуєте інше сховище для даних (наприклад за допомогою модуля ODBC), то його резервне копіювання потрібно робити окремо."}.
+{"Store binary backup:", "Зберегти бінарну резервну копію:"}.
 {"OK", "Продовжити"}.
-{"Restore a backup from a file", "Відновити резервну копію з файла"}.
-{"Install a database fallback from a file", "Встановити базу даних для відновлення при слідуючому запуску"}.
-{"Dump a database in a text file", "Копіювати базу даних в текстовий файл"}.
-{"Restore a database from a text file", "Відновити базу даних з текстового файла"}.
+{"Restore binary backup immediately:", "Відновити з бінарної резервної копії негайно:"}.
+{"Restore binary backup after next ejabberd restart (requires less memory):", "Відновити з бінарної резервної копії при наступному запуску (потребує менше пам'яті):"}.
+{"Store plain text backup:", "Зберегти текстову резервну копію:"}.
+{"Restore plain text backup immediately:", "Відновити з текстової резервної копії негайно:"}.
 {"Listened Ports at ", "Відкриті порти на "}.
-{"~p statistics", "статистика вузла ~p"}.
-{"Uptime", "Час роботи сервера"}.
-{"CPU Time", "Процесорний час"}.
-{"Transactions commited", "Транзакції завершені"}.
-{"Transactions aborted", "Транзакції відмінені"}.
-{"Transactions restarted", "Транзакції перезапущені"}.
-{"Transactions logged", "Транзакції запротокольовані"}.
+{"Statistics of ~p", "статистика вузла ~p"}.
+{"Uptime:", "Час роботи:"}.
+{"CPU Time:", "Процесорний час:"}.
+{"Transactions Commited:", "Транзакції завершені:"}.
+{"Transactions Aborted:", "Транзакції відмінені:"}.
+{"Transactions Restarted:", "Транзакції перезапущені:"}.
+{"Transactions Logged:", "Транзакції запротокольовані:"}.
+{"Update ", "Поновлення "}.
+{"Update plan", "План поновлення"}.
+{"Updated modules", "Поновлені модулі"}.
+{"Update script", "Сценарій поновлення"}.
+{"Low level update script", "Низькорівневий сценарій поновлення"}.
+{"Script check", "Перевірка сценарію"}.
 {"Port", "Порт"}.
 {"Module", "Модуль"}.
 {"Options", "Параметри"}.
@@ -294,35 +328,35 @@
 {"Add User", "Додати користувача"}.
 {"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One",
  "ejabberd (c) 2002-2006 Олексій Щепін, 2004-2006 Process One"}.
-{"Offline messages", "Офлайнові повідомлення"}.
+{"Offline Messages", "Офлайнові повідомлення"}.
+{"Offline Messages:", "Офлайнові повідомлення:"}.
 {"Last Activity", "Останнє підключення"}.
 {"Never", "Ніколи"}.
-{"~s offline messages queue", "Черга офлайнових повідомлень ~s"}.
+{"~s's Offline Messages Queue", "Черга офлайнових повідомлень ~s"}.
 {"Time", "Час"}.
 {"From", "Від кого"}.
 {"To", "Кому"}.
 {"Packet", "Пакет"}.
-{"Offline messages:", "Офлайнові повідомлення:"}.
 {"Roster", "Ростер"}.
 {"Nickname", "Псевдонім"}.
 {"Subscription", "Підписка"}.
 {"Pending", "Очікування"}.
 {"Groups", "Групи"}.
 {"Remove", "Видалити"}.
-{"Add JID", "Додати JID"}.
+{"Add Jabber ID", "Додати Jabber ID"}.
 {"User ", "Користувач "}.
 {"Roster of ", "Ростер користувача "}.
 {"Shared Roster", "Спільні контакти"}.
 {"Online", "Підключений"}.
 {"Validate", "Затвердити"}.
-{"Not found", "Не знайдено"}.
-{"Shared roster groups", "Спільні групи контактів"}.
+{"Not Found", "Не знайдено"}.
+{"Shared Roster Groups", "Спільні групи контактів"}.
 {"Name:", "Назва:"}.
 {"Description:", "Опис:"}.
 {"Members:", "Члени:"}.
 {"Displayed Groups:", "Видимі групи:"}.
 {"Group ", "Група "}.
-{"Users last activity", "Статистика останнього підключення користувачів"}.
+{"Users Last Activity", "Статистика останнього підключення користувачів"}.
 {"Period: ", "Період"}.
 {"Last month", "За останній місяць"}.
 {"Last year", "За останній рік"}.
@@ -330,9 +364,8 @@
 {"Show Ordinary Table", "Показати звичайну таблицю"}.
 {"Show Integral Table", "Показати інтегральну таблицю"}.
 {"Start", "Запустити"}.
-{"Modules Management", "Керування модулями"}.
 {"Modules at ", "Модулі на "}.
-{"No data", "Немає даних"}.
+{"No Data", "Немає даних"}.
 {"Virtual Hosts", "Віртуальні хости"}.
 {"ejabberd virtual hosts", "віртуальні хости ejabberd"}.
 {"Host", "Хост"}.

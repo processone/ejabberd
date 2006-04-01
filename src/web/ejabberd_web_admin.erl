@@ -778,7 +778,7 @@ process_admin(Host,
 		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XE("p", [?ACT("../access-raw/", "raw")])] ++
+	       [?XE("p", [?ACT("../access-raw/", "Raw")])] ++
 	       [?XAE("form", [{"action", ""}, {"method", "post"}],
 		     [access_rules_to_xhtml(AccessRules, Lang),
 		      ?BR,

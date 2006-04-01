@@ -31,8 +31,8 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include_lib("ssl/pkix/PKIX1Explicit88.hrl").
--include_lib("ssl/pkix/PKIX1Implicit88.hrl").
+-include_lib("ssl/include/PKIX1Explicit88.hrl").
+-include_lib("ssl/include/PKIX1Implicit88.hrl").
 -include("XmppAddr.hrl").
 
 -define(DICT, dict).
