@@ -1191,6 +1191,7 @@ change_shaper(StateData, JID) ->
     ejabberd_receiver:change_shaper(StateData#state.receiver, Shaper).
 
 send_text(StateData, Text) ->
+    ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->

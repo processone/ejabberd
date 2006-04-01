@@ -1,3 +1,10 @@
+2006-04-01  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/Makefile.in: Added an option to compile ejabberd with debug
+	print-out (make ejabberd_debug=true).
+	* src/ejabberd_c2s.erl: Added a new debug printout: We can now print
+	the XML packets send by the server.
+
 2006-03-31  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: Bugfix
