@@ -164,7 +164,7 @@ void *erlXML_CharacterDataHandler(expat_data *d,
    ei_x_encode_list_header(&event_buf, 1);
    ei_x_encode_tuple_header(&event_buf, 2);
    ei_x_encode_long(&event_buf, XML_CDATA);
-   ei_x_encode_string_len_fixed(&event_buf, s, len);
+   ei_x_encode_binary(&event_buf, s, len);
    return NULL;
 }
 

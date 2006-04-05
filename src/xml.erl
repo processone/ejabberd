@@ -105,7 +105,7 @@ attr_to_list({Name, Value}) ->
 %crypt([], R) ->
 %    R.
 
-crypt(S) ->
+crypt(S) when is_list(S) ->
     [case C of
 	 $& -> "&amp;";
 	 $< -> "&lt;";
@@ -113,7 +113,9 @@ crypt(S) ->
 	 $" -> "&quot;";
 	 $' -> "&apos;";
 	 _ -> C
-     end || C <- S].
+     end || C <- S];
+crypt(S) when is_binary(S) ->
+    crypt(binary_to_list(S)).
 
 %crypt1(S) ->
 %    lists:flatten([case C of
@@ -159,10 +161,10 @@ remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
 %    R.
 
 get_cdata(L) ->
-    get_cdata(L, "").
+    binary_to_list(list_to_binary(get_cdata(L, ""))).
 
 get_cdata([{xmlcdata, CData} | L], S) ->
-    get_cdata(L, S ++ CData);
+    get_cdata(L, [S, CData]);
 get_cdata([_ | L], S) ->
     get_cdata(L, S);
 get_cdata([], S) ->

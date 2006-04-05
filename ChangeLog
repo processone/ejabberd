@@ -1,3 +1,8 @@
+2006-04-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/expat_erl.c: Use binaries for CDATA
+	* src/xml.erl: Likewise
+
 2006-04-02  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
