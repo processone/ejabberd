@@ -25,8 +25,7 @@
 -export([behaviour_info/1]).
 
 behaviour_info(callbacks) ->
-    [{mech_new, 2},
-     {mech_step, 2}];
+    [{mech_new, 3}, {mech_step, 2}];
 behaviour_info(Other) ->
     undefined.
 
@@ -36,6 +35,7 @@ start() ->
 			     {keypos, #sasl_mechanism.mechanism}]),
     cyrsasl_plain:start([]),
     cyrsasl_digest:start([]),
+    cyrsasl_anonymous:start([]),
     ok.
 
 register_mechanism(Mechanism, Module, RequirePlainPassword) ->
@@ -81,18 +81,19 @@ check_credentials(State, Props) ->
 
 listmech(Host) ->
     RequirePlainPassword = ejabberd_auth:plain_password_required(Host),
-    ets:select(sasl_mechanism,
-	       [{#sasl_mechanism{mechanism = '$1',
-				 require_plain_password = '$2',
-				 _ = '_'},
-		 if
-		     RequirePlainPassword ->
-			 [{'==', '$2', false}];
-		     true ->
-			 []
-		 end,
-		 ['$1']}]).
-
+    
+    Mechs = ets:select(sasl_mechanism,
+		       [{#sasl_mechanism{mechanism = '$1',
+					 require_plain_password = '$2',
+					 _ = '_'},
+			 if
+			     RequirePlainPassword ->
+				 [{'==', '$2', false}];
+			     true ->
+				 []
+			 end,
+			 ['$1']}]),
+    filter_anonymous(Host, Mechs).
 
 server_new(Service, ServerFQDN, UserRealm, SecFlags,
 	   GetPassword, CheckPassword) ->
@@ -105,8 +106,10 @@ server_new(Service, ServerFQDN, UserRealm, SecFlags,
 server_start(State, Mech, ClientIn) ->
     case ets:lookup(sasl_mechanism, Mech) of
 	[#sasl_mechanism{module = Module}] ->
-	    {ok, MechState} = Module:mech_new(State#sasl_state.get_password,
-					      State#sasl_state.check_password),
+	    {ok, MechState} = Module:mech_new(
+				State#sasl_state.myname,
+				State#sasl_state.get_password,
+				State#sasl_state.check_password),
 	    server_step(State#sasl_state{mech_mod = Module,
 					 mech_state = MechState},
 			ClientIn);
@@ -132,3 +135,10 @@ server_step(State, ClientIn) ->
 	    {error, Error}
     end.
 
+%% Remove the anonymous mechanism from the list if not enabled for the given
+%% host
+filter_anonymous(Host, Mechs) ->
+    case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(Host) of
+	true  -> Mechs;
+	false -> Mechs -- "ANONYMOUS"
+    end.

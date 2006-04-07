@@ -12,7 +12,7 @@
 
 -export([start/1,
 	 stop/0,
-	 mech_new/2,
+	 mech_new/3,
 	 mech_step/2]).
 
 -behaviour(cyrsasl).
@@ -25,7 +25,7 @@ start(_Opts) ->
 stop() ->
     ok.
 
-mech_new(GetPassword, _CheckPassword) ->
+mech_new(_Host, GetPassword, _CheckPassword) ->
     {ok, #state{step = 1,
 		nonce = randoms:get_string(),
 		get_password = GetPassword}}.

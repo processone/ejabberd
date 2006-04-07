@@ -1158,7 +1158,10 @@ terminate(_Reason, StateName, StateData) ->
 			       pres_a = EmptySet,
 			       pres_i = EmptySet,
 			       pres_invis = false} ->
-			    ejabberd_sm:close_session(StateData#state.sid);
+			    ejabberd_sm:close_session(StateData#state.sid,
+						      StateData#state.user,
+						      StateData#state.server,
+						      StateData#state.resource);
 			_ ->
 			    From = StateData#state.jid,
 			    Packet = {xmlelement, "presence",

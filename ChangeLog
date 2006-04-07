@@ -1,3 +1,14 @@
+2006-04-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: SASL Anonymous + Anonymous login support
+	(thanks to Mickael Remond and Magnus Henoch)
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_auth.erl: Likewise
+	* src/ejabberd_auth_anonymous.erl: Likewise
+	* src/cyrsasl.erl: Likewise
+	* src/cyrsasl_anonymous.erl: Likewise
+	* src/ejabberd.cfg.example: Likewise
+
 2006-04-06  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/expat_erl.c: Use binaries for CDATA

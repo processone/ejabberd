@@ -73,11 +73,11 @@
 {access, local, [{allow, local}]}.
 
 
-% Authentification method.  If you want to use internal user base, then use
+% Authentication method.  If you want to use internal user base, then use
 % this line:
 {auth_method, internal}.
 
-% For LDAP authentification use these lines instead of above one:
+% For LDAP authentication use these lines instead of above one:
 %{auth_method, ldap}.
 %{ldap_servers, ["localhost"]}.    % List of LDAP servers
 %{ldap_uidattr, "uid"}.            % LDAP attribute that holds user ID
@@ -85,11 +85,11 @@
 %{ldap_rootdn, "dc=example,dc=com"}. % LDAP manager
 %{ldap_password, "******"}. % Password to LDAP manager
 
-% For authentification via external script use the following:
+% For authentication via external script use the following:
 %{auth_method, external}.
-%{extauth_program, "/path/to/authentification/script"}.
+%{extauth_program, "/path/to/authentication/script"}.
 
-% For authentification via ODBC use the following:
+% For authentication via ODBC use the following:
 %{auth_method, odbc}.
 %{odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}.
 
@@ -97,6 +97,18 @@
 % Host name:
 {hosts, ["localhost"]}.
 
+
+%% Anonymous login support:
+%% anonymous_protocol: sasl_anon|login_anon|both
+%% allow_multiple_connections: true|false
+%% anon_digest_password: "anonymous" (this is the default password that should
+%%                                    be use for digest login).
+%%{host_config, "public.example.org", [{auth_method, anonymous},
+%%			               {allow_multiple_connections, false},
+%%			               {anonymous_protocol, sasl_anon},
+%%			               {anon_digest_password, "anonymous"}]}.
+%% To use both anonymous and internal authentication:
+%%{host_config, "public.example.org", [{auth_method, [anonymous, internal]}]}.
 
 % Default language for server messages
 {language, "en"}.

@@ -15,7 +15,7 @@
 %% API
 -export([start_link/0,
 	 route/3,
-	 open_session/4, close_session/1,
+	 open_session/4, close_session/4,
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
@@ -62,13 +62,19 @@ route(From, To, Packet) ->
     end.
 
 open_session(SID, User, Server, Resource) ->
-    set_session(SID, User, Server, Resource, undefined).
+    set_session(SID, User, Server, Resource, undefined),
+    JID = jlib:make_jid(User, Server, Resource),
+    ejabberd_hooks:run(sm_register_connection_hook, JID#jid.lserver,
+		       [SID, JID]).
 
-close_session(SID) ->
+close_session(SID, User, Server, Resource) ->
     F = fun() ->
 		mnesia:delete({session, SID})
         end,
-    mnesia:sync_dirty(F).
+    mnesia:sync_dirty(F),
+    JID = jlib:make_jid(User, Server, Resource),
+    ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
+		       [SID, JID]).
 
 bounce_offline_message(From, To, Packet) ->
     Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
@@ -101,7 +107,7 @@ unset_presence(SID, User, Server, Resource, Status) ->
 		       [User, Server, Resource, Status]).
 
 close_session_unset_presence(SID, User, Server, Resource, Status) ->
-    close_session(SID),
+    close_session(SID, User, Server, Resource),
     ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
 		       [User, Server, Resource, Status]).
 

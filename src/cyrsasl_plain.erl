@@ -10,7 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
--export([start/1, stop/0, mech_new/2, mech_step/2, parse/1]).
+-export([start/1, stop/0, mech_new/3, mech_step/2, parse/1]).
 
 -behaviour(cyrsasl).
 
@@ -23,7 +23,7 @@ start(_Opts) ->
 stop() ->
     ok.
 
-mech_new(_GetPassword, CheckPassword) ->
+mech_new(_Host, _GetPassword, CheckPassword) ->
     {ok, #state{check_password = CheckPassword}}.
 
 mech_step(State, ClientIn) ->

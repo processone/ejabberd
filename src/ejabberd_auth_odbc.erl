@@ -217,8 +217,8 @@ remove_user(User, Server, Password) ->
 	    LServer = jlib:nameprep(Server),
 	    F = fun() ->
 			Result = ejabberd_odbc:sql_query_t(
-			       ["select password from users where username='",
-				Username, "';"]),
+				   ["select password from users where username='",
+				    Username, "';"]),
 			ejabberd_odbc:sql_query_t(["delete from users "
 						   "where username='", Username,
 						   "' and password='", Pass, "';"]),
