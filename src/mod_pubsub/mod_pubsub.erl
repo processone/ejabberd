@@ -114,27 +114,26 @@ get_host() ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Host, Opts]) ->
+init([ServerHost, Opts]) ->
     mnesia:create_table(pubsub_node,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, pubsub_node)}]),
-    MyHost = gen_mod:get_opt(host, Opts, "pubsub." ++ Host),
-    update_table(MyHost),
+    Host = gen_mod:get_opt(host, Opts, "pubsub." ++ ServerHost),
+    update_table(Host),
     mnesia:add_table_index(pubsub_node, host_parent),
     ServedHosts = gen_mod:get_opt(served_hosts, Opts, []),
 
-
-    ejabberd_router:register_route(MyHost),
-    create_new_node(MyHost, ["pubsub"], ?MYJID),
-    create_new_node(MyHost, ["pubsub", "nodes"], ?MYJID),
-    create_new_node(MyHost, ["home"], ?MYJID),
-    create_new_node(MyHost, ["home", Host], ?MYJID),
+    ejabberd_router:register_route(Host),
+    create_new_node(Host, ["pubsub"], ?MYJID),
+    create_new_node(Host, ["pubsub", "nodes"], ?MYJID),
+    create_new_node(Host, ["home"], ?MYJID),
+    create_new_node(Host, ["home", ServerHost], ?MYJID),
     lists:foreach(fun(H) ->
-			  create_new_node(MyHost, ["home", H], ?MYJID)
+			  create_new_node(Host, ["home", H], ?MYJID)
 		  end, ServedHosts),
-    ets:new(gen_mod:get_module_proc(MyHost, pubsub_presence),
+    ets:new(gen_mod:get_module_proc(Host, pubsub_presence),
 	    [set, named_table]),
-    {ok, #state{host = MyHost}}.
+    {ok, #state{host = Host}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
