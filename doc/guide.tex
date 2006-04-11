@@ -50,6 +50,7 @@
 \newcommand{\modirc}{\module{mod\_irc}}
 \newcommand{\modlast}{\module{mod\_last}}
 \newcommand{\modmuc}{\module{mod\_muc}}
+\newcommand{\modmuclog}{\module{mod\_muc\_log}}
 \newcommand{\modecho}{\module{mod\_echo}}
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
@@ -1497,6 +1498,79 @@ Examples:
    ]}.
 \end{verbatim}
 \end{itemize}
+
+\subsection{\modmuclog{}}
+\label{sec:modmuclog}
+\ind{modules!\modmuclog{}}
+
+This module enables optional logging of Multi-User Chat conversations to HTML.
+Once you enable this module, join a chatroom with enought privileges using a MUC capable Jabber client,
+request the configuration form and there you will have an option to enable chatroom logging.
+
+Some of the features of generated logs:
+\begin{itemize}
+\item A lot of information about chatroom is added on top of the page: Room title, JID, subject author, subject and configuration.
+\item Room title and JID are links to join the chatroom (using XMPP-IRI).
+\item Subject and chatroom configuration changes are tracked and displayed.
+\item Joins, leaves, nick changes, kicks, bans and /me are tracked and displayed, including the reason when available.
+\item Generated HTML files are XHTML 1.0 Transitional and CSS compliant.
+\item Timestamps are self-referencing links.
+\item Links on top for quicker navigation: Previous day, Next day, Up.
+\item CSS is used for style definition, and a custom CSS file can be used.
+\item URLs on messages and subjects are converted to hyperlinks.
+\item Timezone used on timestamps is shown on the log files.
+\item A custom link can be added on top of page.
+\end{itemize}
+
+Options:
+\begin{description}
+\titem{access\_log}\ind{options!access\_log}
+    Restricts which users are allowed to enable or disable chatroom logging using ACL and ACCESS.
+    Default: \term{muc\_admin}.
+    If you want to allow any chatroom owner put: \term{muc}.
+\titem{cssfile}\ind{options!cssfile}
+    If HTMLs will use a custom CSS file or the embedded one.
+    Allowed values:
+        \term{false}: HTMLs will include the standard CSS code;
+        \term{"CSS-URL"}: the URL of the CSS file (for example: "http://example.com/my.css").
+    Default: \term{false}.
+\titem{dirtype}\ind{options!dirtype}
+    Type of directory that will be created.
+	Allowed values: 
+		\term{subdirs}: creates subdirectories for year and month; 
+        \term{plain}: the filename contains the full date, no subdirs.
+    Default: \term{subdirs}.
+\titem{outdir}\ind{options!outdir}
+    Full path to the directory where html will be generated.
+    Make sure the system user has write access on that directory. 
+    Default: \term{"www/muc"}.
+\titem{timezone}\ind{options!timezone}
+    What timezone should be used.
+    Allowed values:
+		\term{local}: use local time, as reported to Erlang by the operating system;
+        \term{universal}: use GMT/UTC time.
+    Default: \term{local}.
+\titem{top\_link}\ind{options!top\_link}
+    Customizable link on top right corner. Syntax of this option: \term{\{"URL", "Text"\}}.
+    Default: \term{\{"/", "Home"\}}.
+\end{description}
+
+Example configuration:
+\begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_muc_log, [
+               {access_log, muc},
+               {cssfile, "http://example.com/my.css"},
+               {dirtype, plain},
+               {outdir, "/var/www/muclogs"},
+               {timezone, universal},
+               {top_link, {"http://www.jabber.ru", "Jabber.ru"}}
+    ]},
+    ...
+   ]}.
+\end{verbatim}
 
 \subsection{\modoffline{}}
 \label{sec:modoffline}

@@ -6,7 +6,6 @@
 {"No resource provided", "No se ha proporcionado recurso"}.
 
 % mod_configure.erl
-{"DB Tables Configuration at ", "Configuración de tablas de la BD en "}.
 {"Choose storage type of tables", "Selecciona tipo de almacenamiento de las tablas"}.
 {"RAM copy", "Copia en RAM"}.
 {"RAM and disc copy", "Copia en RAM y disco"}.
@@ -41,12 +40,15 @@
 {"Action on user", "Acción en el usuario"}.
 {"Edit Properties", "Editar propiedades"}.
 {"Remove User", "Eliminar usuario"}.
+{"Database", "Base de datos"}.
+{"Outgoing s2s Connections", "Conexiones S2S salientes"}.
+{"Import Users From jabberd 1.4 Spool Files", "Importar usuarios de ficheros spool de jabberd-1.4"}.
+{"Database Tables Configuration at ", "Configuración de tablas de la base de datos en "}.
 
 % mod_disco.erl
 {"Configuration", "Configuración"}.
 {"Online Users", "Usuarios conectados"}.
 {"All Users", "Todos los usuarios"}.
-{"Outgoing S2S connections", "Conexiones S2S de salida"}.
 {"To ~s", "A ~s"}.
 {"From ~s", "De ~s"}.
 {"Running Nodes", "Nodos funcionando"}.
@@ -55,12 +57,9 @@
 {"Access Control Lists", "Listas de Control de Acceso"}.
 {"Access Rules", "Reglas de Acceso"}.
 {"Remove Users", "Eliminar usuarios"}.
-{"DB", "BD"}.
 {"Modules", "Módulos"}.
 {"Start Modules", "Iniciar módulos"}.
 {"Stop Modules", "Detener módulos"}.
-{"Backup Management", "Gestión de copia de seguridad"}.
-{"Import users from jabberd1.4 spool files", "Importar usuarios desde ficheros jabberd1.4 spool"}.
 {"Backup", "Guardar copia de seguridad"}.
 {"Restore", "Restaurar"}.
 {"Dump to Text File", "Exportar a fichero de texto"}.
@@ -71,12 +70,16 @@
 {"Choose a username and password to register with this server", "Escoge un nombre de usuario y contraseña para registrarte en este servidor"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Servidor Jabber en Erlang\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Servidor Jabber en Erlang\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Rellena el formulario para buscar usuarios Jabber. Añade * al final de un campo para buscar subcadenas."}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo vCard para ejabberd\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo vCard para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"You need an x:data capable client to search", "Necesitas un cliente con soporte de x:data para poder buscar"}.
 {"Search users in ", "Buscar usuarios en "}.
-{"Results of search in ", "Resultados de la búsqueda en "}.
+
+% mod_vcard_odbc.erl
+{"Email", "correo"}.
+{"Search Results for ", "Buscar resultados por "}.
+{"Jabber ID", "Jabber ID"}.
 
 {"User",              "Usuario"}.
 {"Full Name", 	      "Nombre completo"}.
@@ -87,12 +90,11 @@
 {"Birthday", 	      "Cumpleaños"}.
 {"Country", 	      "País"}.
 {"City", 	      "Ciudad"}.
-{"email", 	      "correo-e"}.
 {"Organization Name", "Nombre de la organización"}.
 {"Organization Unit", "Unidad de la organización"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Node Creator", "Creador del nodo"}.
 {[], " "}.
 {"Deliver payloads with event notifications", "Enviar payloads junto con las notificaciones de eventos"}.
@@ -119,7 +121,7 @@
 {"You must fill in field \"Nickname\" in the form", "Debes rellenar el campo \"Apodo\" en el formulario"}.
 {"Specified nickname is already registered", "El apodo especificado ya está registrado, tendrás que buscar otro"}.
 {"Room creation is denied by service policy", "Se te ha denegado crear la sala por política del servicio"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " ha puesto el asunto: "}.
@@ -169,6 +171,33 @@
 {"Description", "Descripción"}.
 {"Number of occupants", "Número de ocupantes"}.
 
+% mod_muc/mod_muc_log.erl
+{"Chatroom configuration modified", "Configuración de la sala modificada"}.
+{"joins the room", "entra en la sala"}.
+{"leaves the room", "sale de la sala"}.
+{"has been kicked", "ha sido expulsado"}.
+{"has been banned", "ha sido bloqueado"}.
+{"is now known as", "se cambia el nombre a"}.
+{"Monday", "lunes"}.
+{"Tuesday", "martes"}.
+{"Wednesday", "miércoles"}.
+{"Thursday", "jueves"}.
+{"Friday", "viernes"}.
+{"Saturday", "sábado"}.
+{"Sunday", "domingo"}.
+{"January", "enero"}.
+{"February", "febrero"}.
+{"March", "marzo"}.
+{"April", "abril"}.
+{"May", "mayo"}.
+{"June", "junio"}.
+{"July", "julio"}.
+{"August", "agosto"}.
+{"September", "septiembre"}.
+{"October", "octubre"}.
+{"November", "noviembre"}.
+{"December", "diciembre"}.
+{"Room Configuration", "Configuración de la sala"}.
 % mod_irc/mod_irc.erl
 {"You need an x:data capable client to configure mod_irc settings", "Necesitas un cliente con soporte de x:data para configurar las opciones de mod_irc"}.
 {"Registration in mod_irc for ", "Registro en mod_irc para"}.
@@ -176,112 +205,115 @@
 {"IRC Username", "Nombre de usuario en IRC"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Si quieres especificar codificaciones de carácteres distintos para cada servidor IRC rellena esta lista con valores en el formato '{\"servidor irc\", \"codificación\"}'.  Este servicio usa por defecto la codificación \"~s\"."}.
 {"Encodings", "Codificaciones"}.
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Ejemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd administration", "Administración de ejabberd"}.
 {"Users", "Usuarios"}.
 {"Nodes", "Nodos"}.
 {"Statistics", "Estadísticas"}.
-{"(raw)", "(crudo)"}.
-{"submitted", "enviado"}.
-{"bad format", "mal formato"}.
-{"raw", "crudo"}.
-{"ejabberd access control lists configuration", "Configuración de las Listas de Control de Acceso de ejabberd"}.
 {"Delete Selected", "Eliminar los seleccionados"}.
 {"Submit", "Enviar"}.
-{"ejabberd access rules configuration", "Configuración de las Reglas de Acceso de ejabberd"}.
 {"~s access rule configuration", "Configuración de las Regla de Acceso ~s"}.
-{"ejabberd users", "Usuarios de ejabberd"}.
-{"ejabberd stats", "Estadísticas de ejabberd"}.
 {"Node not found", "Nodo no encontrado"}.
 {"Add New", "Añadir nuevo"}.
-{"Registered users", "Usuarios registrados"}.
-{"Online users", "Usuarios conectados"}.
-{"Outgoing S2S servers", "Servidores conectados"}.
 {"Change Password", "Cambiar contraseña"}.
 {"Connected Resources:", "Recursos conectados:"}.
 {"Password:", "Contraseña:"}.
 {"None", "Ninguno"}.
 {"Node ", "Nodo "}.
-{"DB Management", "Gestión de la BD"}.
-{"Listened Ports Management", "Gestión de los puertos de escucha"}.
 {"Restart", "Reiniciar"}.
 {"Stop", "Detener"}.
-{"RPC call error", "Error en la llamada RPC"}.
-{"DB Tables at ", "Tablas de la BD en "}.
 {"Name", "Nombre"}.
 {"Storage Type", "Tipo de almacenamiento"}.
 {"Size", "Tamaño"}.
 {"Memory", "Memoria"}.
-{"Backup Management at ", "Gestión de copia de seguridad en "}.
-{"Store a backup in a file", "Almacenar una copia de seguridad en fichero"}.
+{"Backup Management", "Gestión de copia de seguridad"}.
 {"OK", "Aceptar"}.
-{"Restore a backup from a file", "Recuperar una copia de seguridad de un fichero"}.
-{"Install a database fallback from a file", "Instalar una recuperación de BD desde un fichero"}.
-{"Dump a database in a text file", "Exportar una Base de Datos a un fichero de texto"}.
-{"Restore a database from a text file", "Restaurar una Base de Datos desde un fichero de texto"}.
 {"Listened Ports at ", "Puertos de escucha en "}.
-{"~p statistics", "Estadísticas de ~p"}.
-{"Uptime", "Tiempo de funcionamiento"}.
-{"CPU Time", "Tiempo de procesador consumido"}.
-{"Transactions commited", "Transacciones realizadas"}.
-{"Transactions aborted", "Transacciones abortadas"}.
-{"Transactions restarted", "Transacciones reiniciadas"}.
-{"Transactions logged", "Transacciones almacenadas"}.
 {"Port", "Puerto"}.
 {"Module", "Módulo"}.
 {"Options", "Opciones"}.
 {"Update", "Actualizar"}.
 {"Delete", "Eliminar"}.
 {"Add User", "Añadir usuario"}.
-{"Offline messages", "Mensajes diferidos"}.
 {"Last Activity", "Última actividad"}.
 {"Never", "Nunca"}.
-{"~s offline messages queue", "~s cola de mensajes diferidos"}.
 {"Time", "Fecha"}.
 {"From", "De"}.
 {"To", "Para"}.
 {"Packet", "Paquete"}.
-{"Offline messages:", "Mensajes diferidos:"}.
 {"Roster", "Lista de contactos"}.
 {"Nickname", "Apodo"}.
 {"Subscription", "Subscripción"}.
 {"Pending", "Pendiente"}.
 {"Groups", "Grupos"}.
 {"Remove", "Borrar"}.
-{"Add JID", "Añadir JID"}.
 {"User ", "Usuario "}.
 {"Roster of ", "Lista de contactos de "}.
-{"ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One", "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One"}.
+{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
 {"Shared Roster", "Grupos Compartidos"}.
 {"Online", "Conectado"}.
-{"JID", "JID"}.
 {"Validate", "Validar"}.
-{"Not found", "No encontrado"}.
-{"Shared roster groups", "Grupos Compartidos"}.
 {"Name:", "Nombre:"}.
 {"Description:", "Descripción:"}.
 {"Members:", "Miembros:"}.
 {"Displayed Groups:", "Mostrar grupos:"}.
 {"Group ", "Grupo "}.
-{"Users last activity", "Última actividad de los usuarios"}.
 {"Period: ", "Periodo: "}.
 {"Last month", "Último mes"}.
 {"Last year", "Último año"}.
 {"All activity", "Toda la actividad"}.
 {"Show Ordinary Table", "Mostrar Tabla Ordinaria"}.
 {"Show Integral Table", "Mostrar Tabla Integral"}.
-{"Authenticated users", "Usuarios autenticados"}.
-{"No data", "No hay datos"}.
-{"Modules Management", "Gestión de módulos"}.
 {"Modules at ", "Módulos en "}.
 {"Start", "Iniciar"}.
 {"Virtual Hosts", "Hosts Virtuales"}.
 {"ejabberd virtual hosts", "Hosts virtuales de ejabberd"}.
 {"Host", "Host"}.
 {"ejabberd Web Interface", "Interfaz Web de ejabberd"}.
+{"Restore plain text backup immediately:", "Restaurar copias de seguridad de texto plano inmediatamente:"}.
+{"Statistics of ~p", "Estadísticas de ~p"}.
+{"Uptime:", "Tiempo desde el inicio:"}.
+{"CPU Time:", "Tiempo consumido de CPU:"}.
+{"Transactions Commited:", "Transacciones finalizadas:"}.
+{"Transactions Aborted:", "Transacciones abortadas:"}.
+{"Transactions Restarted:", "Transacciones reiniciadas:"}.
+{"Transactions Logged:", "Transacciones registradas:"}.
+{"Update ", "Actualizar"}.
+{"Update plan", "Plan de actualización"}.
+{"Updated modules", "Módulos actualizados"}.
+{"Update script", "Script de actualización"}.
+{"Low level update script", "Script de actualización a bajo nivel"}.
+{"Script check", "Comprobación de script"}.
+{"Not Found", "No encontrado"}.
+{"Shared Roster Groups", "Grupos Compartidos"}.
+{"Administration", "Administración"}.
+{"(Raw)", "(Crudo)"}.
+{"Submitted", "Enviado"}.
+{"Bad format", "Mal formato"}.
+{"Raw", "Crudo"}.
+{"Users Last Activity", "Última actividad de los usuarios"}.
+{"Registered Users", "Usuarios registrados"}.
+{"Offline Messages", "Mensajes diferidos"}.
+{"Registered Users:", "Usuarios registrados:"}.
+{"Authenticated Users:", "Usuarios autenticados:"}.
+{"Online Users:", "Usuarios conectados:"}.
+{"Outgoing s2s Connections:", "Conexiones S2S salientes:"}.
+{"Outgoing s2s Servers:", "Servidores S2S salientes:"}.
+{"Offline Messages:", "Mensajes diferidos:"}.
+{"~s's Offline Messages Queue", "Cola de mensajes diferidos de ~s"}.
+{"Add Jabber ID", "Añadir Jabber ID"}.
+{"No Data", "Sin datos"}.
+{"Listened Ports", "Puertos de escucha"}.
+{"RPC Call Error", "Error en la llamada RPC"}.
+{"Database Tables at ", "Tablas de la base de datos en "}.
+{"Backup of ", "Copia de seguridad de "}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "Ten en cuenta que estas opciones solo harán copia de seguridad de la base de datos Mnesia embebida. Si estás usando ODBC tendrás que hacer también copia de seguridad de tu base de datos SQL."}.
+{"Store binary backup:", "Guardar copia de seguridad binaria:"}.
+{"Restore binary backup immediately:", "Restaurar inmediatamente copia de seguridad binaria:"}.
+{"Restore binary backup after next ejabberd restart (requires less memory):", "Restaurar copia de seguridad binaria en el siguiente reinicio de ejabberd (requiere menos memoria que si instantánea):"}.
+{"Store plain text backup:", "Guardar copia de seguridad en texto plano:"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Es obligatorio usar STARTTLS"}.
@@ -289,7 +321,6 @@
 
 % mod_vcard_ldap.erl
 {"Given Name", "Nombre dado"}.
-{"JID", "JID"}.
 {"Fill in fields to search for any matching Jabber User", "Rellena campos para buscar usuarios Jabber que concuerden"}.
 
 % mod_adhoc.erl
@@ -313,4 +344,3 @@
 % Local Variables:
 % mode: erlang
 % End:
-

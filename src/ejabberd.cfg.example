@@ -165,6 +165,8 @@
   {mod_muc,        [{access, muc},
 		    {access_create, muc},
 		    {access_admin, muc_admin}]},
+%  {mod_muc_log,    []},
+%  {mod_shared_roster, []},
   {mod_pubsub,     []},
   {mod_time,       []},
   {mod_last,       []},
