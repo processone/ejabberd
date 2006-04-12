@@ -1,3 +1,13 @@
+2006-04-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Minor fix
+
+	* src/ejabberd_c2s.erl: Bugfix (thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
 2006-04-11  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/es.msg: Updated (thanks to Badlop)

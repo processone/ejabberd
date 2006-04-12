@@ -327,18 +327,20 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
-	{auth, _ID, get, {"", _, _, _}} ->
-	    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
-	    send_element(StateData, Err),
-	    {next_state, wait_for_auth, StateData};
 	{auth, _ID, get, {U, _, _, _}} ->
 	    {xmlelement, Name, Attrs, _Els} = jlib:make_result_iq_reply(El),
+	    case U of
+		"" ->
+		    UCdata = [];
+		_ ->
+		    UCdata = [{xmlcdata, U}]
+	    end,
 	    Res = case ejabberd_auth:plain_password_required(
 			 StateData#state.server) of
 		      false ->
 			  {xmlelement, Name, Attrs,
 			   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
-			     [{xmlelement, "username", [], [{xmlcdata, U}]},
+			     [{xmlelement, "username", [], UCdata},
 			      {xmlelement, "password", [], []},
 			      {xmlelement, "digest", [], []},
 			      {xmlelement, "resource", [], []}
@@ -346,7 +348,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		      true ->
 			  {xmlelement, Name, Attrs,
 			   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
-			     [{xmlelement, "username", [], [{xmlcdata, U}]},
+			     [{xmlelement, "username", [], UCdata},
 			      {xmlelement, "password", [], []},
 			      {xmlelement, "resource", [], []}
 			     ]}]}
@@ -1195,7 +1197,7 @@ change_shaper(StateData, JID) ->
 
 send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
-    (StateData#state.sockmod):send(StateData#state.socket, Text).
+    catch (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_string(El)).

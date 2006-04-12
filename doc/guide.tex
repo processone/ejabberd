@@ -145,8 +145,10 @@ To compile \ejabberd{} on a ``Unix-like'' operating system, you need:
 \item GNU Make;
 \item GCC;
 \item libexpat 1.95 or higher;
-\item Erlang/OTP R8B or higher;
+\item Erlang/OTP R9C-2 or higher;
 \item OpenSSL 0.9.6 or higher (optional).
+\item Zlib 1.2.3 or higher (optional).
+\item GNU Iconv 1.8 or higher (optional, not needed at all on systems with GNU libc).
 \end{itemize}
 
 \subsubsection{Windows}
@@ -156,13 +158,14 @@ To compile \ejabberd{} on a ``Unix-like'' operating system, you need:
 To compile \ejabberd{} on a Windows flavour, you need:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
-\item \footahref{http://erlang.org/download.html}{Erlang/OTP R8B or higher}
+\item \footahref{http://erlang.org/download.html}{Erlang/OTP R9C-2 or higher}
 \item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 1.95.7 or higher}
 \item
-\footahref{http://www.gnu.org/software/libiconv/}{Iconv 1.9.1}
+\footahref{http://www.gnu.org/software/libiconv/}{GNU Iconv 1.9.1}
 (optional)
 \item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL}
 (to enable SSL connections)
+\item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
 \end{itemize}
 
 \subsection{Obtaining \ejabberd{}}
@@ -513,12 +516,12 @@ tuple with the following elements:
 Currently next modules are implemented:
 \begin{table}[H]
   \centering
-  \begin{tabular}{|l|l|l|l|l|}
+  \def\arraystretch{1.4}
+  \begin{tabular}{|l|l|p{87mm}|}
   \hline \texttt{ejabberd\_c2s}& Description& Handles c2s connections.\\
     \cline{2-3} & Options& \texttt{access}, \texttt{certfile}, \texttt{inet6},
     \texttt{ip}, \texttt{shaper}, \texttt{ssl}, \texttt{tls},
-    \texttt{starttls},\\
-    & &\texttt{starttls\_required}\\
+    \texttt{starttls}, \texttt{starttls\_required}, \texttt{zlib}\\
   \hline \texttt{ejabberd\_s2s\_in}& Description& Handles incoming s2s
   connections.\\
     \cline{2-3} & Options& \texttt{inet6}, \texttt{ip}\\
@@ -576,6 +579,11 @@ The following options are available:
   \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
     the port will be encrypted using SSL immediately after connecting. You
     should also set the \option{certfile} option.
+  \titem{zlib} \ind{options!zlib}\ind{protocols!JEP-0138: Stream Compression}\ind{Zlib}This
+    option specifies that Zlib stream compression (as defined in \jepref{0138})
+    is available on connections to the port. Client cannot use stream compression and
+    stream encryption simultaneously, so if you specify both \option{tls} (or \option{ssl})
+    and \option{zlib} the latter option will not affect connection at all.
   \titem{web\_admin} \ind{options!web\_admin}\ind{web interface}This option
     enables the web interface for \ejabberd{} administration which is available
     at \verb|http://server:port/admin/|. Login and password are the username and

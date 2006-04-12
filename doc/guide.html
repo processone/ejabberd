@@ -250,8 +250,10 @@ To compile <TT>ejabberd</TT> on a ``Unix-like'' operating system, you need:
 GNU Make;
 <LI>GCC;
 <LI>libexpat 1.95 or higher;
-<LI>Erlang/OTP R8B or higher;
+<LI>Erlang/OTP R9C-2 or higher;
 <LI>OpenSSL 0.9.6 or higher (optional).
+<LI>Zlib 1.2.3 or higher (optional).
+<LI>GNU Iconv 1.8 or higher (optional, not needed at all on systems with GNU libc).
 </UL>
 <!--TOC subsubsection Windows-->
 
@@ -262,12 +264,13 @@ GNU Make;
 To compile <TT>ejabberd</TT> on a Windows flavour, you need:
 <UL><LI>
 MS Visual C++ 6.0 Compiler
-<LI><A HREF="http://erlang.org/download.html">Erlang/OTP R8B or higher</A>
+<LI><A HREF="http://erlang.org/download.html">Erlang/OTP R9C-2 or higher</A>
 <LI><A HREF="http://sourceforge.net/project/showfiles.php?group_id=10127&package_id=11277">Expat 1.95.7 or higher</A>
-<LI><A HREF="http://www.gnu.org/software/libiconv/">Iconv 1.9.1</A>
+<LI><A HREF="http://www.gnu.org/software/libiconv/">GNU Iconv 1.9.1</A>
 (optional)
 <LI><A HREF="http://www.slproweb.com/products/Win32OpenSSL.html">Shining Light OpenSSL</A>
 (to enable SSL connections)
+<LI><A HREF="http://www.zlib.net/">Zlib 1.2.3 or higher</A>
 </UL>
 <!--TOC subsection Obtaining <TT>ejabberd</TT>-->
 
@@ -597,48 +600,45 @@ Port number.
 
 Currently next modules are implemented:
 <BLOCKQUOTE><DIV ALIGN=center><DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV>
+ 
  <TABLE BORDER=1 CELLSPACING=0 CELLPADDING=1>
-<TR><TD ALIGN=left NOWRAP><TT>ejabberd_c2s</TT></TD>
-<TD ALIGN=left NOWRAP>Description</TD>
-<TD ALIGN=left NOWRAP>Handles c2s connections.</TD>
+<TR><TD VALIGN=top ALIGN=left NOWRAP><TT>ejabberd_c2s</TT></TD>
+<TD VALIGN=top ALIGN=left NOWRAP>Description</TD>
+<TD VALIGN=top ALIGN=left>Handles c2s connections.</TD>
 </TR>
-<TR><TD ALIGN=left NOWRAP>&nbsp;</TD>
-<TD ALIGN=left NOWRAP>Options</TD>
-<TD ALIGN=left NOWRAP><TT>access</TT>, <TT>certfile</TT>, <TT>inet6</TT>,
+<TR><TD VALIGN=top ALIGN=left NOWRAP>&nbsp;</TD>
+<TD VALIGN=top ALIGN=left NOWRAP>Options</TD>
+<TD VALIGN=top ALIGN=left><TT>access</TT>, <TT>certfile</TT>, <TT>inet6</TT>,
  <TT>ip</TT>, <TT>shaper</TT>, <TT>ssl</TT>, <TT>tls</TT>,
- <TT>starttls</TT>,</TD>
+ <TT>starttls</TT>, <TT>starttls_required</TT>, <TT>zlib</TT></TD>
 </TR>
-<TR><TD ALIGN=left NOWRAP>&nbsp;</TD>
-<TD ALIGN=left NOWRAP>&nbsp;</TD>
-<TD ALIGN=left NOWRAP><TT>starttls_required</TT></TD>
-</TR>
-<TR><TD ALIGN=left NOWRAP><TT>ejabberd_s2s_in</TT></TD>
-<TD ALIGN=left NOWRAP>Description</TD>
-<TD ALIGN=left NOWRAP>Handles incoming s2s
+<TR><TD VALIGN=top ALIGN=left NOWRAP><TT>ejabberd_s2s_in</TT></TD>
+<TD VALIGN=top ALIGN=left NOWRAP>Description</TD>
+<TD VALIGN=top ALIGN=left>Handles incoming s2s
  connections.</TD>
 </TR>
-<TR><TD ALIGN=left NOWRAP>&nbsp;</TD>
-<TD ALIGN=left NOWRAP>Options</TD>
-<TD ALIGN=left NOWRAP><TT>inet6</TT>, <TT>ip</TT></TD>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>&nbsp;</TD>
+<TD VALIGN=top ALIGN=left NOWRAP>Options</TD>
+<TD VALIGN=top ALIGN=left><TT>inet6</TT>, <TT>ip</TT></TD>
 </TR>
-<TR><TD ALIGN=left NOWRAP><TT>ejabberd_service</TT></TD>
-<TD ALIGN=left NOWRAP>Description</TD>
-<TD ALIGN=left NOWRAP>Interacts with external
+<TR><TD VALIGN=top ALIGN=left NOWRAP><TT>ejabberd_service</TT></TD>
+<TD VALIGN=top ALIGN=left NOWRAP>Description</TD>
+<TD VALIGN=top ALIGN=left>Interacts with external
  components (*).</TD>
 </TR>
-<TR><TD ALIGN=left NOWRAP>&nbsp;</TD>
-<TD ALIGN=left NOWRAP>Options</TD>
-<TD ALIGN=left NOWRAP><TT>access</TT>, <TT>hosts</TT>, <TT>inet6</TT>,
+<TR><TD VALIGN=top ALIGN=left NOWRAP>&nbsp;</TD>
+<TD VALIGN=top ALIGN=left NOWRAP>Options</TD>
+<TD VALIGN=top ALIGN=left><TT>access</TT>, <TT>hosts</TT>, <TT>inet6</TT>,
  <TT>ip</TT>, <TT>shaper</TT></TD>
 </TR>
-<TR><TD ALIGN=left NOWRAP><TT>ejabberd_http</TT></TD>
-<TD ALIGN=left NOWRAP>Description</TD>
-<TD ALIGN=left NOWRAP>Handles incoming HTTP
+<TR><TD VALIGN=top ALIGN=left NOWRAP><TT>ejabberd_http</TT></TD>
+<TD VALIGN=top ALIGN=left NOWRAP>Description</TD>
+<TD VALIGN=top ALIGN=left>Handles incoming HTTP
  connections.</TD>
 </TR>
-<TR><TD ALIGN=left NOWRAP>&nbsp;</TD>
-<TD ALIGN=left NOWRAP>Options</TD>
-<TD ALIGN=left NOWRAP><TT>certfile</TT>, <TT>http_poll</TT>,
+<TR><TD VALIGN=top ALIGN=left NOWRAP>&nbsp;</TD>
+<TD VALIGN=top ALIGN=left NOWRAP>Options</TD>
+<TD VALIGN=top ALIGN=left><TT>certfile</TT>, <TT>http_poll</TT>,
  <TT>inet6</TT>, <TT>ip</TT>, <TT>tls</TT>, <TT>web_admin</TT></TD>
 </TR></TABLE>
 <DIV ALIGN=center><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
@@ -684,6 +684,11 @@ If HTTP Polling is enabled, it will be available at
  <DT><B><TT>tls</TT></B><DD> This option specifies that traffic on
  the port will be encrypted using SSL immediately after connecting. You
  should also set the <TT>certfile</TT> option.
+ <DT><B><TT>zlib</TT></B><DD> This
+ option specifies that Zlib stream compression (as defined in <A HREF="http://www.jabber.org/jeps/jep-0138.html">JEP-0138</A>)
+ is available on connections to the port. Client cannot use stream compression and
+ stream encryption simultaneously, so if you specify both <TT>tls</TT> (or <TT>ssl</TT>)
+ and <TT>zlib</TT> the latter option will not affect connection at all.
  <DT><B><TT>web_admin</TT></B><DD> This option
  enables the web interface for <TT>ejabberd</TT> administration which is available
  at <CODE>http://server:port/admin/</CODE>. Login and password are the username and
