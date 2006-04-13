@@ -15,7 +15,6 @@
 %% External exports
 -export([start/2,
 	 start_link/2,
-	 receiver/3,
 	 send_text/2,
 	 send_element/2,
 	 become_controller/1]).
@@ -80,8 +79,8 @@ start(SockData, Opts) ->
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_service, [SockData, Opts], ?FSMOPTS).
 
-become_controller(_Pid) ->
-    ok.
+become_controller(Pid) ->
+    gen_fsm:send_all_state_event(Pid, become_controller).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -124,7 +123,7 @@ init([{SockMod, Socket}, Opts]) ->
 			false
 		end
 	end,
-    ReceiverPid = spawn(?MODULE, receiver, [Socket, SockMod, self()]),
+    ReceiverPid = ejabberd_receiver:start(Socket, SockMod, none),
     {ok, wait_for_stream, #state{socket = Socket,
 				 receiver = ReceiverPid,
 				 streamid = new_id(),
@@ -260,6 +259,12 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_event(become_controller, StateName, StateData) ->
+    ok = (StateData#state.sockmod):controlling_process(
+	   StateData#state.socket,
+	   StateData#state.receiver),
+    ejabberd_receiver:become_controller(StateData#state.receiver),
+    {next_state, StateName, StateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -323,27 +328,12 @@ terminate(Reason, StateName, StateData) ->
 	_ ->
 	    ok
     end,
-    (StateData#state.sockmod):close(StateData#state.socket),
+    ejabberd_receiver:close(StateData#state.receiver),
     ok.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-
-receiver(Socket, SockMod, C2SPid) ->
-    XMLStreamPid = xml_stream:start(C2SPid),
-    receiver(Socket, SockMod, C2SPid, XMLStreamPid).
-
-receiver(Socket, SockMod, C2SPid, XMLStreamPid) ->
-    case SockMod:recv(Socket, 0) of
-        {ok, Text} ->
-	    xml_stream:send_text(XMLStreamPid, Text),
-	    receiver(Socket, SockMod, C2SPid, XMLStreamPid);
-        {error, _Reason} ->
-	    exit(XMLStreamPid, closed),
-	    gen_fsm:send_event(C2SPid, closed),
-	    ok
-    end.
 
 send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket,Text).
