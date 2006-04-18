@@ -297,8 +297,8 @@
 {"Notify subscribers when the node configuration changes", "Informuj subskrybentów gdy konfiguracja gałęzi się zmieni"}.
 {"Notify subscribers when the node is deleted", "Informuj subskrybentów gdy gałąż zostanie wykasowana"}.
 {"Notify subscribers when items are removed from the node", "Informuj subskrybentów kiedy zostaną z gałęzi usunięte jakieś elementy"}.
-{"Persist items to storage", "Przechowuj przedmioty pub/sub w pami?"}.
-{"Max # of items to persist", "Maksymalna ilość przechowywanych przedmiot?"}.
+{"Persist items to storage", "Przechowuj przedmioty pub/sub w pamięci"}.
+{"Max # of items to persist", "Maksymalna ilość przechowywanych przedmiotów"}.
 {"Whether to allow subscriptions", "Czy pozwolić na subskrypcje"}.
 {"Specify the subscriber model", "Oznacz model subskrybenta"}.
 {"Specify the publisher model", "Oznacz model publikującego"}.
@@ -324,3 +324,140 @@
 % Local Variables:
 % mode: erlang
 % End:
+
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_vcard_odbc.erl
+{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", ""}.
+{"Email", ""}.
+{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"Search Results for ", "Wyniki wyszukiwania dla "}.
+{"Jabber ID", ""}.
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_adhoc.erl
+{"Commands", "Polecenia"}.
+{"Ping", "Ping"}.
+{"Pong", "Pong"}.
+
+% /usr/home/src/ejabberd/ejabberd/src/ejabberd_c2s.erl
+{"Replaced by new connection", "Podmienione przez nowe połączenie"}.
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_announce.erl
+{"Really delete message of the day?", "Na pewno usunąć wiadomość dnia?"}.
+{"Subject", "Temat"}.
+{"Message body", "Treść wiadomości"}.
+{"No body provided for announce message", "Nikt nie jest uprawniony do rozsyłania oznajmień"}.
+{"Announcements", "Oznajmienia"}.
+{"Send announcement to all users", "Wyślij oznajmienie do wszystkich użytkowników"}.
+{"Send announcement to all online users", "Wyślij oznajmienie do wszystkich użytkowników online"}.
+{"Send announcement to all online users on all hosts", "Wyślij oznajmienie do wszystkich użytkowników online na wszystkich hostach"}.
+{"Set message of the day and send to online users", "Wyślij wiadomość dnia do wszystkich użytkowników online"}.
+{"Update message of the day (don't send)", "Zmień wiadomość dnia (nie wysyłaj)"}.
+{"Delete message of the day", "Usuń wiadomość dnia"}.
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_configure.erl
+{"Database", "Baza"}.
+{"Outgoing s2s Connections", "Wychodzące połączenia s2s"}.
+{"Import Users From jabberd 1.4 Spool Files", "Importuj użytkowników z plików spool serwera jabber 1.4"}.
+{"Database Tables Configuration at ", "Konfiguracja tabel bazy na "}.
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_pubsub/mod_pubsub.erl
+{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+
+% /usr/home/src/ejabberd/ejabberd/src/web/ejabberd_web_admin.erl
+{"ejabberd Web Interface", "Interfejs WWW serwera ejabberd"}.
+{"Administration", "Administracja"}.
+{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", ""}.
+{"(Raw)", ""}.
+{"Submitted", "Wprowadzone"}.
+{"Bad format", "Zły format"}.
+{"Raw", ""}.
+{"Users Last Activity", "Ostatnia aktywność użytkowników"}.
+{"Registered Users", "Użytkownicy zarejestrowani"}.
+{"Offline Messages", "Wiadomości offline"}.
+{"Registered Users:", "Użytkownicy zarejestrowani:"}.
+{"Authenticated Users:", "Użytkownicy autoryzowani:"}.
+{"Online Users:", "Użytkownicy online:"}.
+{"Outgoing s2s Connections:", "Wychodzące połączenia s2s:"}.
+{"Outgoing s2s Servers:", "Serwery zewnętrzne s2s:"}.
+{"Offline Messages:", "Wiadomości offline"}.
+{"~s's Offline Messages Queue", "~s skolejkowanych wiadomości offline"}.
+{"Add Jabber ID", "Dodaj JID"}.
+{"No Data", "Brak danych"}.
+{"Listened Ports", "Porty nasłuchujące"}.
+{"RPC Call Error", "Błąd odwołania RPC"}.
+{"Database Tables at ", "Tabele bazy na "}.
+{"Backup of ", "Kopia zapasowa "}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "Te opcje backupują jedynie bazę Mnesia. Jeśli używasz modułu ODBC - musisz wykonać kopię SQL oddzielnie"}.
+{"Store binary backup:", "Zachowaj kopię binarną:"}.
+{"Restore binary backup immediately:", "Natychmiast odtwórz kopię binarną:"}.
+{"Restore binary backup after next ejabberd restart (requires less memory):", "Odtwórz kopię binarną podczas następnego restaru ejabberd-a (wymaga mniej pamięci)"}.
+{"Store plain text backup:", "Zachowaj kopię w czystym tekście"}.
+{"Restore plain text backup immediately:", "Odtwórz kopię z czystego tekstu"}.
+{"Statistics of ~p", "Statystyki ~p"}.
+{"Uptime:", "Uptime"}.
+{"CPU Time:", "Czas CPU"}.
+{"Transactions Commited:", "Transakcje zakończone"}.
+{"Transactions Aborted:", "Transakcje anulowane"}.
+{"Transactions Restarted:", "Transakcje uruchomione ponownie"}.
+{"Transactions Logged:", "Transakcje logowane"}.
+{"Update ", "Uaktualnij"}.
+{"Update plan", "Uaktualnij plan"}.
+{"Updated modules", "Uaktualnione moduły"}.
+{"Update script", "Uaktualnij skrypt"}.
+{"Low level update script", ""}.
+{"Script check", "Sprawdź skrypt"}.
+{"Not Found", "Nie znaleziono"}.
+{"Shared Roster Groups", "Grupy współdzielone"}.
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_irc/mod_irc.erl
+{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
+{"Chatroom configuration modified", "Konfiguracja pokoju zmodyfikowana"}.
+{"joins the room", "dołączył(a) się do pokoju"}.
+{"leaves the room", "opóścił(a) pokój"}.
+{"has been kicked", "został(a) kopnięty(a)"}.
+{"has been banned", "został(a) zabanowany(a)"}.
+{"is now known as", "jest teraz znany(a) jako"}.
+{"Monday", "Poniedziałek"}.
+{"Tuesday", "Wtorek"}.
+{"Wednesday", "Środa"}.
+{"Thursday", "Czwartek"}.
+{"Friday", "Piątek"}.
+{"Saturday", "Sobota"}.
+{"Sunday", "Niedziela"}.
+{"January", "Styczeń"}.
+{"February", "Luty"}.
+{"March", "Marzec"}.
+{"April", "Kwiecień"}.
+{"May", "Maj"}.
+{"June", "Czerwiec"}.
+{"July", "Lipiec"}.
+{"August", "Sierpień"}.
+{"September", "Wrzesień"}.
+{"October", "Październik"}.
+{"November", "Listopad"}.
+{"December", "Grudzień"}.
+{"Room Configuration", "Konfiguracja pokoju"}.
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc.erl
+{"You must fill in field \"Nickname\" in the form", "Musisz wypełnić pole NICKNAME w formularzu"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+
+% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_room.erl
+{"This room is not anonymous", "Pokój nie jest nieznany"}.
+{"Make room persistent", "Utwórz pokój na stałe"}.
+{"Make room public searchable", "Pozwól wyszukiwać pokój"}.
+{"Make participants list public", "Upublicznij listę uczestników"}.
+{"Make room password protected", "Zabezpiecz pokój hasłem"}.
+{"Make room semianonymous", "Utwórz pokój pół-nieznanym"}.
+{"Make room members-only", "Utwórz pokój tylko dla członków"}.
+{"Make room moderated", "Moderuj pokój"}.
+{"Default users as participants", "Domyślni użytkownicy jako uczestnicy"}.
+{"Allow users to change subject", "Pozwól użytkownikom zmienić tytuł pokoju"}.
+{"Allow users to send private messages", "Pozwól użytkownikom wysyłać prywatne wiadomości"}.
+{"Allow users to query other users", "Pozwól użytkownikom pobierać informacje o innych użytkownikach"}.
+{"Allow users to send invites", "Pozwól użytkownikom wysyłać zaproszenia"}.
+{"Enable logging", "Włącz logowanie"}.
+{"Description", "Opis"}.
+{"Number of occupants", "Liczba uczestników"}.

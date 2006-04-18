@@ -1,3 +1,7 @@
+2006-04-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk)
+
 2006-04-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/xml_stream.erl: Cleanup
