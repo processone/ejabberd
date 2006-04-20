@@ -75,7 +75,8 @@ set_password(User, Server, Password) ->
       end, {error, not_allowed}, auth_modules(Server)).
 
 try_register(User, Server, Password) ->
-    case lists:member(jlib:nameprep(Server), ?MYHOSTS) of
+    case lists:member(jlib:nameprep(Server), ?MYHOSTS) and 
+	not is_user_exists(User,Server) of
 	true ->
 	    lists:foldl(
 	      fun(_M, {atomic, ok} = Res) ->
