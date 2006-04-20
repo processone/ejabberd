@@ -1,3 +1,10 @@
+2006-04-20  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd.cfg.example: Update of the example for anonymous.
+	Removed unnecessary parameter.
+	* src/ejabberd_auth_anonymous.erl: Removed unnecessary parameter /
+	bugfix.
+
 2006-04-19  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk)

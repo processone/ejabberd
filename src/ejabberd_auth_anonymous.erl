@@ -60,7 +60,7 @@ start(Host) ->
 
 %% Return true if anonymous is allowed for host or false otherwise
 allow_anonymous(Host) ->
-    lists:member(anonymous, ejabberd_auth:auth_modules(Host)).
+    lists:member(?MODULE, ejabberd_auth:auth_modules(Host)).
 
 %% Return true if anonymous mode is enabled and if anonymous protocol is SASL
 %% anonymous protocol can be: sasl_anon|login_anon|both
@@ -192,8 +192,7 @@ get_vh_registered_users(_Server) ->
 
 %% Return password of permanent user or false for anonymous users
 get_password(User, Server) ->
-    DefaultPassword = get_default_password(Server),
-    get_password(User, Server, DefaultPassword).
+    get_password(User, Server, "").
 
 get_password(User, Server, DefaultValue) ->
     case anonymous_user_exist(User, Server) of
@@ -203,13 +202,6 @@ get_password(User, Server, DefaultValue) ->
 	%% We return the permanent user password otherwise
 	false ->
 	    false
-    end.
-
-%% Return the default digest password from the config file
-get_default_password(Host) ->
-    case ejabberd_config:get_local_option({anon_digest_password, Host}) of
-           undefined -> "";
-           Pass -> Pass
     end.
 
 %% Returns true if the user exists in the DB or if an anonymous user is logged

@@ -97,16 +97,13 @@
 % Host name:
 {hosts, ["localhost"]}.
 
-
 %% Anonymous login support:
-%% anonymous_protocol: sasl_anon|login_anon|both
-%% allow_multiple_connections: true|false
-%% anon_digest_password: "anonymous" (this is the default password that should
-%%                                    be use for digest login).
+%%  auth_method: anonymous
+%%  anonymous_protocol: sasl_anon|login_anon|both
+%%  allow_multiple_connections: true|false
 %%{host_config, "public.example.org", [{auth_method, anonymous},
-%%			               {allow_multiple_connections, false},
-%%			               {anonymous_protocol, sasl_anon},
-%%			               {anon_digest_password, "anonymous"}]}.
+%%                                     {allow_multiple_connections, false},
+%%                                     {anonymous_protocol, sasl_anon}]}.
 %% To use both anonymous and internal authentication:
 %%{host_config, "public.example.org", [{auth_method, [anonymous, internal]}]}.
 
