@@ -7,6 +7,7 @@
 	* src/ejabberd_auth.erl: Bugfix: We now are forced to check is an
 	anonymous user is log under a given user name before trying to register
         it.
+	* doc/guide.tex: Updated (SASL anonymous and anonymous login).
 
 2006-04-19  Alexey Shchepin  <alexey@sevcom.net>
 

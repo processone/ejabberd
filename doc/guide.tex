@@ -773,6 +773,67 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+\subsubsection{SASL anonymous and anonymous login}
+\label{sec:configsaslanonymous}
+\ind{sasl anonymous}\ind{anonymous login}
+
+The configuration of the anonymous mode can be done with three host_config
+parameters:
+
+\begin{itemize} 
+\item \term{auth\_method}: This value is used for defining the authentication method:
+internal, odbc, ldap, external). You now have a special extra option to enable
+anonymous mode: anonymous.
+
+\item \term{allow\_multiple\_connections}: This option can be either true or false and
+is only used when the anonymous mode is enabled. Setting it to true means that
+the same username will be able to be taken several time in anonymous login
+mode if different resource are used to connect. This option is only useful in
+very special cases. It defaults to false.
+
+\item \term{anonymous\_protocol}: This option can take three values: sasl_anon,
+login_anon or both. sasl_anon means that SASL anonymous mode is
+enabled. login_anon means that anonymous login mode is enabled. both means
+that SASL anonymous and login anonymous are enabled.
+\end{itemize}
+
+Those options are defined for each virtual host with the \term{host\_config}
+parameter (see section~\ref{sec:configvirtualhost}).
+
+Examples:
+\begin{itemize}
+\item To enable anonymous login on a virtual host:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, anonymous},
+                                     {anonymous_protocol, login_anon}]}.
+\end{verbatim}
+\item To enable anonymous login and internal authentication on a virtual host:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
+                                     {anonymous_protocol, login_anon}]}.
+\end{verbatim}
+\item To enable SASL anonymous on a virtual host:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous]},
+                                     {anonymous_protocol, sasl_anon}]}.
+\end{verbatim}
+\item To enable SASL anonymous and anonymous login on a virtual host:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous]},
+                                     {anonymous_protocol, both}]}.
+\end{verbatim}
+\item To enable SASL anonymous, anonymous login and internal authentication on
+a virtual host:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
+                                     {anonymous_protocol, both}]}.
+\end{verbatim}
+\end{itemize}
+
+A detailled tutorial on SASL anonymous and anonymous login support is
+available from:
+\ahrefurl{http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support}
+
 \subsection{Creating an Initial Administrator}
 \label{sec:initialadmin}
 
