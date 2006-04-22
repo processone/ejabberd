@@ -127,6 +127,11 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
+    MaxStanzaSize =
+	case lists:keysearch(max_stanza_size, 1, Opts) of
+	    {value, {_, Size}} -> Size;
+	    _ -> infinity
+	end,
     Zlib = lists:member(zlib, Opts),
     StartTLS = lists:member(starttls, Opts),
     StartTLSRequired = lists:member(starttls_required, Opts),
@@ -139,10 +144,12 @@ init([{SockMod, Socket}, Opts]) ->
 	if
 	    TLSEnabled ->
 		{ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
-		RecPid = ejabberd_receiver:start(TLSSocket, tls, none),
+		RecPid = ejabberd_receiver:start(
+			   TLSSocket, tls, none, MaxStanzaSize),
 		{tls, TLSSocket, RecPid};
 	    true ->
-		RecPid = ejabberd_receiver:start(Socket, SockMod, none),
+		RecPid = ejabberd_receiver:start(
+			   Socket, SockMod, none, MaxStanzaSize),
 		{SockMod, Socket, RecPid}
 	end,
     {ok, wait_for_stream, #state{socket       = Socket1,

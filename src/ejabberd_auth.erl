@@ -75,17 +75,21 @@ set_password(User, Server, Password) ->
       end, {error, not_allowed}, auth_modules(Server)).
 
 try_register(User, Server, Password) ->
-    case lists:member(jlib:nameprep(Server), ?MYHOSTS) and 
-	not is_user_exists(User,Server) of
+    case is_user_exists(User,Server) of
 	true ->
-	    lists:foldl(
-	      fun(_M, {atomic, ok} = Res) ->
-		      Res;
-		 (M, _) ->
-		      M:try_register(User, Server, Password)
-	      end, {error, not_allowed}, auth_modules(Server));
+	    {atomic, exists};
 	false ->
-	    {error, not_allowed}
+	    case lists:member(jlib:nameprep(Server), ?MYHOSTS) of
+		true ->
+		    lists:foldl(
+		      fun(_M, {atomic, ok} = Res) ->
+			      Res;
+			 (M, _) ->
+			      M:try_register(User, Server, Password)
+		      end, {error, not_allowed}, auth_modules(Server));
+		false ->
+		    {error, not_allowed}
+	    end
     end.
 
 %% Registered users list do not include anonymous users logged

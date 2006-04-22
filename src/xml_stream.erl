@@ -11,6 +11,7 @@
 -vsn('$Revision$ ').
 
 -export([new/1,
+	 new/2,
 	 parse/2,
 	 close/1,
 	 parse_element/1]).
@@ -23,7 +24,7 @@
 -define(PARSE_COMMAND, 0).
 -define(PARSE_FINAL_COMMAND, 1).
 
--record(xml_stream_state, {callback_pid, port, stack}).
+-record(xml_stream_state, {callback_pid, port, stack, size, maxsize}).
 
 process_data(CallbackPid, Stack, Data) ->
     case Data of
@@ -68,23 +69,45 @@ process_data(CallbackPid, Stack, Data) ->
     end.
 
 
-
 new(CallbackPid) ->
+    new(CallbackPid, infinity).
+
+new(CallbackPid, MaxSize) ->
     Port = open_port({spawn, expat_erl}, [binary]),
     #xml_stream_state{callback_pid = CallbackPid,
 		      port = Port,
-		      stack = []}.
+		      stack = [],
+		      size = 0,
+		      maxsize = MaxSize}.
 
 
 parse(#xml_stream_state{callback_pid = CallbackPid,
 			port = Port,
-			stack = Stack} = State, Str) ->
+			stack = Stack,
+			size = Size,
+			maxsize = MaxSize} = State, Str) ->
+    StrSize = if
+		  is_list(Str) -> length(Str);
+		  is_binary(Str) -> size(Str)
+	      end,
     Res = port_control(Port, ?PARSE_COMMAND, Str),
-    NewStack = lists:foldl(
-		 fun(Data, St) ->
-			 process_data(CallbackPid, St, Data)
-		 end, Stack, binary_to_term(Res)),
-    State#xml_stream_state{stack = NewStack}.
+    {NewStack, NewSize} =
+	lists:foldl(
+	  fun(Data, {St, Sz}) ->
+		  NewSt = process_data(CallbackPid, St, Data),
+		  case NewSt of
+		      [_] -> {NewSt, 0};
+		      _ -> {NewSt, Sz}
+		  end
+	  end, {Stack, Size + StrSize}, binary_to_term(Res)),
+    if
+	NewSize > MaxSize ->
+	    catch gen_fsm:send_event(CallbackPid,
+				     {xmlstreamerror, "XML stanza is too big"});
+	true ->
+	    ok
+    end,
+    State#xml_stream_state{stack = NewStack, size = NewSize}.
 
 close(#xml_stream_state{port = Port}) ->
     port_close(Port).

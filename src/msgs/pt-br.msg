@@ -1,6 +1,6 @@
 % $Id$
 % Brazilian Portuguese translation
-% Author: Victor Hugo dos Santos
+% Authors: Victor Hugo dos Santos, Lucius Curado
 
 
 
@@ -73,9 +73,9 @@
 {"Birthday","Aniversário"}.
 {"City", "Cidade"}.
 {"Country","País"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo vCard para ejabberd\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo vCard para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"email", "e-mail"}.
-{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Servidor Jabber em Erlang\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Servidor Jabber em Erlang\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Family Name", "Nome de família"}.
 {"Fill in fields to search for any matching Jabber User", "Preencha os campos para procurar usuários Jabber coincidentes"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Preencha o formulário para buscar usuários Jabber. Agrega * ao final de um campo para buscar sub-palavras."}.
@@ -94,7 +94,7 @@
 
 {[], " "}.
 {"Deliver payloads with event notifications", "Enviar payloads junto com as notificações de eventos"}.
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Max # of items to persist", "Máximo # de elementos que persistem"}.
 {"Max payload size in bytes", "Máximo tamanho do payload em bytes"}.
 {"Node Creator", "Criador do nodo"}.
@@ -118,7 +118,7 @@
 {"Enable logging?", "Salvar históricos?"}.
 {"Access denied by service policy", "Aceso denegado por la política do serviço"}.
 {"Conference room does not exist", "La sala de conferencias não existe"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Enter nickname you want to register", "Introduza o apelido que quer registrar"}.
 {"Incorrect password", "Senha incorreta"}.
 {"Make room anonymous?", "Tornar a sala anônima?"}.
@@ -181,7 +181,7 @@
 
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2005 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Encodings", "Codificação"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Introduza o nome de usuário e codificações de caracteres que quer usar ao conectar-se aos servidores de IRC"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Exemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
@@ -209,7 +209,7 @@
 {"ejabberd access control lists configuration", "Configuração das Listas de Controle de Acesso do ejabberd"}.
 {"ejabberd access rules configuration", "Configuração de las Regras de Aceso de ejabberd"}.
 {"ejabberd administration", "Administração de ejabberd"}.
-{"ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One", "ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One"}.
+{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
 {"ejabberd stats", "Estatísticas de ejabberd"}.
 {"ejabberd users", "Usuários do ejabberd"}.
 {"ejabberd virtual hosts", "Maquinas virtuais de ejabberd"}.
@@ -291,6 +291,150 @@
 {"Given Name", "Nome dado"}.
 {"JID", "JID"}.
 
+
+% mod_adhoc.erl
+{"Commands", "Comandos"}.
+{"Ping", "Ping"}.
+{"Pong", "Pong"}.
+
+% mod_vcard_odbc.erl
+{"Email", "e-mail"}.
+{"Search Results for ", "Resultados de pesquisa para"}.
+{"Jabber ID", "ID Jabber"}.
+
+% ejabberd_c2s.erl
+{"Replaced by new connection", "Substituído por nova conexão"}.
+
+% mod_announce.erl
+{"Really delete message of the day?", "Deletar realmente a mensagem do dia?"}.
+{"Subject", "Assunto"}.
+{"Message body", "Corpo da mensagem"}.
+{"No body provided for announce message", "Nenhum corpo de texto fornecido para anunciar mensagem"}.
+{"Announcements", "Anúncios"}.
+{"Send announcement to all users", "Enviar anúncio a todos os usuários"}.
+{"Send announcement to all online users", "Enviar anúncio a todos os usuárions online"}.
+{"Send announcement to all online users on all hosts", "Enviar anúncio a todos usuários online em todas as máquinas"}.
+{"Set message of the day and send to online users", "Definir mensagem do dia e enviar a todos usuários online"}.
+{"Update message of the day (don't send)", "Atualizar mensagem do dia (não enviar)"}.
+{"Delete message of the day", "Apagar mensagem do dia"}.
+
+% mod_configure.erl
+{"Database", "Base de dados"}.
+{"Host Name", "Nome da máquina"}.
+{"Outgoing s2s Connections", "Conexões que partam de s2s"}.
+{"Import Users From jabberd 1.4 Spool Files", "Importar usuários de arquivos jabberd 1.4"}.
+{"Database Tables Configuration at ", "Configuração de Tabelas de Base de dados em "}.
+{"Stop Modules at ", "Parar módulos em "}.
+{"List of modules to start", "Listas de módulos para inicializar"}.
+{"Hostname Configuration", "Configuração do Hostname"}.
+{"Choose host name", "Definir nome da máquina"}.
+{"Host name", "Nome da máquina"}.
+
+% mod_pubsub/mod_pubsub.erl
+
+% web/ejabberd_web_admin.erl
+{"ejabberd Web Interface", "Interface Web do ejabberd"}.
+{"Administration", "Administração"}.
+{"Nodes", "Nós"}.
+{"(Raw)", "(Intocado)"}.
+{"Submitted", "Submetido"}.
+{"Bad format", "Formato incorreto"}.
+{"Raw", "Intocado"}.
+{"Users Last Activity", "Ultimas atividades dos usuários"}.
+{"Node not found", "Nó não encontrado"}.
+{"Registered Users", "Usuários Registrados"}.
+{"Offline Messages", "Mensagens offline"}.
+{"Registered Users:", "Usuários registrados"}.
+{"Authenticated Users:", "Usuários Autenticados"}.
+{"Online Users:", "Usuários online"}.
+{"Outgoing s2s Connections:", "Conexões que partem de s2s"}.
+{"Outgoing s2s Servers:", "Servidores que partem de s2s"}.
+{"None", "Nenhum"}.
+{"Offline Messages:", "Mensagens offline"}.
+{"~s's Offline Messages Queue", "~s's Fila de Mensagens Offline"}.
+{"Add Jabber ID", "Adicionar ID jabber"}.
+{"No Data", "Nenhum dado"}.
+{"Node ", "Nó"}.
+{"Listened Ports", "Portas escutadas"}.
+{"RPC Call Error", "Erro de chamada RPC"}.
+{"Database Tables at ", "Tabelas de base de dados em"}.
+{"Backup of ", "Backup de"}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "Observe que tais opções farão backup apenas da base de dados Mnesia. Caso você esteja utilizando o modulo ODBC, você precisará fazer backup de sua base de dados SQL separadamente."}.
+{"Store binary backup:", "Armazenar backup binário:"}.
+{"OK", "OK"}.
+{"Restore binary backup immediately:", "Restaurar backup binário imediatamente"}.
+{"Restore binary backup after next ejabberd restart (requires less memory):", "Restaurar backup binário após próximo reinicialização do ejabberd (requer menos memória):"}.
+{"Store plain text backup:", "Armazenar backup plain text"}.
+{"Restore plain text backup immediately:", "Restaurar backup plain text imediatamente:"}.
+{"Statistics of ~p", "Estatísticas de ~p"}.
+{"Uptime:", "Uptime:"}.
+{"CPU Time:", "Tempo de CPU"}.
+{"Transactions Commited:", "Transações:"}.
+{"Transactions Aborted:", "Transações abortadas:"}.
+{"Transactions Restarted:", "Transações restauradas:"}.
+{"Transactions Logged:", "Transações de log:"}.
+{"Update ", "Atualizar"}.
+{"Update plan", "Plano de Atualização"}.
+{"Updated modules", "Módulos atualizados"}.
+{"Update script", "Script de atualização"}.
+{"Low level update script", "Script de atualização low level"}.
+{"Script check", "Verificação de Script"}.
+{"Not Found", "Não encontrado"}.
+{"Shared Roster Groups", "Grupos Shared Roster"}.
+{"Description:", "Descrição:"}.
+{"Displayed Groups:", "Grupos Indicados"}.
+
+% mod_irc/mod_irc.erl
+
+% mod_muc/mod_muc_log.erl
+{"Chatroom configuration modified", "Configuração da sala de bate-papo modificada"}.
+{"joins the room", "Entrar na sala"}.
+{"leaves the room", "Sair da sala"}.
+{"has been kicked", "foi removido"}.
+{"has been banned", "foi banido"}.
+{"is now known as", ""}.
+{"Monday", "Segunda"}.
+{"Tuesday", "Terça"}.
+{"Wednesday", "Quarta"}.
+{"Thursday", "Quinta"}.
+{"Friday", "Sexta"}.
+{"Saturday", "Sábado"}.
+{"Sunday", "Domingo"}.
+{"January", "Janeiro"}.
+{"February", "Fevereiro"}.
+{"March", "Março"}.
+{"April", "Abril"}.
+{"May", "Maio"}.
+{"June", "Junho"}.
+{"July", "Julho"}.
+{"August", "Agosto"}.
+{"September", "Setembro"}.
+{"October", "Outubro"}.
+{"November", "Novembro"}.
+{"December", "Dezembro"}.
+{"Room Configuration", "Configuração de salas"}.
+
+% mod_muc/mod_muc.erl
+{"Only service administrators are allowed to send service messages", "Apenas administradores possuem permissão para enviar mensagens de serviço"}.
+{"You must fill in field \"Nickname\" in the form", "Você deve completar o campo \"Apelido\" no formulário"}.
+
+% mod_muc/mod_muc_room.erl
+{"This room is not anonymous", "Essa sala não é anônima"}.
+{"Make room persistent", "Tornar sala persistente"}.
+{"Make room public searchable", "Tornar sala pública possível de ser encontrada"}.
+{"Make participants list public", "Tornar pública a lista de participantes"}.
+{"Make room password protected", "Tornar protegida a senha da sala"}.
+{"Make room semianonymous", "Tornar sala semi-anônima"}.
+{"Make room members-only", "Tornar sala apenas para membros"}.
+{"Make room moderated", "Tornar a sala moderada"}.
+{"Default users as participants", "Usuários padrões como participantes"}.
+{"Allow users to change subject", "Permitir a usuários modificar o assunto"}.
+{"Allow users to send private messages", "Permitir a usuários enviarem mensagens privadas"}.
+{"Allow users to query other users", "Permitir a usuários pesquisar informações sobre os demais"}.
+{"Allow users to send invites", "Permitir a usuários envio de convites"}.
+{"Enable logging", "Permitir criação de logs"}.
+{"Description", "Descrição"}.
+{"Number of occupants", "Número de participantes"}.
 
 % Local Variables:
 % mode: erlang

@@ -104,11 +104,17 @@ become_controller(Pid) ->
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
     ?INFO_MSG("started: ~p", [{SockMod, Socket}]),
-    ReceiverPid = ejabberd_receiver:start(Socket, SockMod, none),
     Shaper = case lists:keysearch(shaper, 1, Opts) of
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
+    MaxStanzaSize =
+	case lists:keysearch(max_stanza_size, 1, Opts) of
+	    {value, {_, Size}} -> Size;
+	    _ -> infinity
+	end,
+    ReceiverPid = ejabberd_receiver:start(
+		    Socket, SockMod, none, MaxStanzaSize),
     StartTLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
 		   undefined ->
 		       false;

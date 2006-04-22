@@ -13,8 +13,9 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/4,
+-export([start_link/5,
 	 start/3,
+	 start/4,
 	 change_shaper/2,
 	 reset_stream/1,
 	 starttls/2,
@@ -32,6 +33,7 @@
 		sock_mod,
 		shaper_state,
 		c2s_pid,
+		max_stanza_size,
 		xml_stream_state,
 		timeout}).
 
@@ -42,16 +44,21 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Socket, SockMod, Shaper, C2SPid) ->
-    gen_server:start_link(?MODULE, [Socket, SockMod, Shaper, C2SPid], []).
+start_link(Socket, SockMod, Shaper, MaxStanzaSize, C2SPid) ->
+    gen_server:start_link(
+      ?MODULE, [Socket, SockMod, Shaper, MaxStanzaSize, C2SPid], []).
 
 %%--------------------------------------------------------------------
 %% Function: start() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start(Socket, SockMod, Shaper) ->
-    {ok, Pid} = supervisor:start_child(ejabberd_receiver_sup,
-				       [Socket, SockMod, Shaper, self()]),
+    start(Socket, SockMod, Shaper, infinity).
+
+start(Socket, SockMod, Shaper, MaxStanzaSize) ->
+    {ok, Pid} = supervisor:start_child(
+		  ejabberd_receiver_sup,
+		  [Socket, SockMod, Shaper, MaxStanzaSize, self()]),
     Pid.
 
 change_shaper(Pid, Shaper) ->
@@ -83,8 +90,8 @@ close(Pid) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Socket, SockMod, Shaper, C2SPid]) ->
-    XMLStreamState = xml_stream:new(C2SPid),
+init([Socket, SockMod, Shaper, MaxStanzaSize, C2SPid]) ->
+    XMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     ShaperState = shaper:new(Shaper),
     Timeout = case SockMod of
 		  ssl ->
@@ -96,6 +103,7 @@ init([Socket, SockMod, Shaper, C2SPid]) ->
 		sock_mod = SockMod,
 		shaper_state = ShaperState,
 		c2s_pid = C2SPid,
+		max_stanza_size = MaxStanzaSize,
 		xml_stream_state = XMLStreamState,
 		timeout = Timeout}}.
 
@@ -110,9 +118,10 @@ init([Socket, SockMod, Shaper, C2SPid]) ->
 %%--------------------------------------------------------------------
 handle_call({starttls, TLSSocket}, _From,
 	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid} = State) ->
+		   c2s_pid = C2SPid,
+		   max_stanza_size = MaxStanzaSize} = State) ->
     xml_stream:close(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid),
+    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     NewState = State#state{socket = TLSSocket,
 			   sock_mod = tls,
 			   xml_stream_state = NewXMLStreamState},
@@ -124,9 +133,10 @@ handle_call({starttls, TLSSocket}, _From,
     end;
 handle_call({compress, ZlibSocket}, _From,
 	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid} = State) ->
+		   c2s_pid = C2SPid,
+		   max_stanza_size = MaxStanzaSize} = State) ->
     xml_stream:close(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid),
+    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     NewState = State#state{socket = ZlibSocket,
 			   sock_mod = ejabberd_zlib,
 			   xml_stream_state = NewXMLStreamState},
@@ -138,9 +148,10 @@ handle_call({compress, ZlibSocket}, _From,
     end;
 handle_call(reset_stream, _From,
 	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid} = State) ->
+		   c2s_pid = C2SPid,
+		   max_stanza_size = MaxStanzaSize} = State) ->
     xml_stream:close(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid),
+    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     Reply = ok,
     {reply, Reply, State#state{xml_stream_state = NewXMLStreamState}};
 handle_call(become_controller, _From, State) ->
