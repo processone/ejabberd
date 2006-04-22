@@ -113,13 +113,17 @@
 % Listened ports:
 {listen,
  [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper},
+			    {max_stanza_size, 65536},
 			    starttls, {certfile, "./ssl.pem"}]},
   {5223, ejabberd_c2s,     [{access, c2s},
+			    {max_stanza_size, 65536},
 			    tls, {certfile, "./ssl.pem"}]},
   % Use these two lines instead if TLS support is not compiled
   %{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
   %{5223, ejabberd_c2s,     [{access, c2s}, ssl, {certfile, "./ssl.pem"}]},
-  {5269, ejabberd_s2s_in,  [{shaper, s2s_shaper}]},
+  {5269, ejabberd_s2s_in,  [{shaper, s2s_shaper},
+			    {max_stanza_size, 131072}
+			   ]},
   {5280, ejabberd_http,    [http_poll, web_admin]},
   {8888, ejabberd_service, [{access, all},
 			    {hosts, ["icq.localhost", "sms.localhost"],
