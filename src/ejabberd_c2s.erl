@@ -1346,7 +1346,14 @@ presence_update(From, Packet, StateData) ->
 	"unsubscribed" ->
 	    StateData;
 	_ ->
-	    update_priority(xml:get_subtag(Packet, "priority"), StateData),
+	    OldPriority = case StateData#state.pres_last of
+			      undefined ->
+				  0;
+			      OldPresence ->
+				  get_priority_from_presence(OldPresence)
+			  end,
+	    NewPriority = get_priority_from_presence(Packet),
+	    update_priority(NewPriority, StateData),
 	    FromUnavail = (StateData#state.pres_last == undefined) or
 		StateData#state.pres_invis,
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
@@ -1367,6 +1374,11 @@ presence_update(From, Packet, StateData) ->
 						      StateData#state.pres_f,
 						      StateData#state.pres_a,
 						      Packet),
+			if OldPriority < 0, NewPriority >= 0 ->
+				resend_offline_messages(StateData);
+			   true ->
+				ok
+			end,
 			StateData#state{pres_last = Packet,
 					pres_invis = false
 				       }
@@ -1619,25 +1631,25 @@ roster_change(IJID, ISubscription, StateData) ->
     end.
 
 
-update_priority(El, StateData) ->
-    Pri = case El of
-	      false ->
-		  0;
-	      _ ->
-		  case catch list_to_integer(xml:get_tag_cdata(El)) of
-		      P when is_integer(P) ->
-			  P;
-		      _ ->
-			  0
-		  end
-	  end,
+update_priority(Pri, StateData) ->
     ejabberd_sm:set_presence(StateData#state.sid,
 			     StateData#state.user,
 			     StateData#state.server,
 			     StateData#state.resource,
 			     Pri).
 
-
+get_priority_from_presence(PresencePacket) ->
+    case xml:get_subtag(PresencePacket, "priority") of
+	false ->
+	    0;
+	SubEl ->
+	    case catch list_to_integer(xml:get_tag_cdata(SubEl)) of
+		P when is_integer(P) ->
+		    P;
+		_ ->
+		    0
+	    end
+    end.
 
 process_privacy_iq(From, To,
 		   #iq{type = Type, sub_el = SubEl} = IQ,
