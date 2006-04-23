@@ -1,5 +1,8 @@
 2006-04-23  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/configure: Removed '==' bashism (thanks to Magnus Henoch)
+	* src/aclocal.m4: Likewise
+
 	* src/ejabberd_c2s.erl: Resend messages when leaving negative
 	presence state (thanks to Magnus Henoch)
 

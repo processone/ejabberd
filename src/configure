@@ -2471,7 +2471,7 @@ else
 fi
 
 
-   if test "z$ERLC" == "z" || test "z$ERL" == "z"; then
+   if test "z$ERLC" = "z" || test "z$ERL" = "z"; then
    		{ { echo "$as_me:$LINENO: error: erlang not found" >&5
 echo "$as_me: error: erlang not found" >&2;}
    { (exit 1); exit 1; }; }
