@@ -92,13 +92,13 @@ Migration Notes
 
    - Before any migration, ejabberd system and database must be properly
      backed up.
-   - The database schema has not been changed and as such does not require any
-     migration.
+   - The database schema has not been changed and consequently it does not
+     require any migration.
 
 
 References
 
-   Contributed tutorials of interest are:
+   Contributed tutorials and documents of interest are:
    - Migration from Jabberd1.4, Jabberd2 and WPJabber to ejabberd:
      http://ejabberd.jabber.ru/migrate-to-ejabberd     
    - Transport configuration for connecting to other networks:
@@ -107,5 +107,7 @@ References
      http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver
    - Anonymous User Support:
      http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support
+   - Frequently Asked Questions:
+     http://ejabberd.jabber.ru/faq
 
 END
