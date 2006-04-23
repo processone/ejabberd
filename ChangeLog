@@ -1,6 +1,7 @@
 2006-04-23  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/msgs/fr.msg: Updated
+	* src/msgs/de.msg: Updated (thanks to Nikolaus Polak)
 
 2006-04-22  Alexey Shchepin  <alexey@sevcom.net>
 
