@@ -99,11 +99,13 @@ Migration Notes
 References
 
    Contributed tutorials of interest are:
-   - Migration from Jabberd1.4 to ejabberd:
-     http://ejabberd.jabber.ru/jabberd1-to-ejabberd
-   - Migration from Jabberd2 to ejabberd:
-     http://ejabberd.jabber.ru/jabberd2-to-ejabberd
+   - Migration from Jabberd1.4, Jabberd2 and WPJabber to ejabberd:
+     http://ejabberd.jabber.ru/migrate-to-ejabberd     
    - Transport configuration for connecting to other networks:
      http://ejabberd.jabber.ru/tutorials-transports
+   - Using ejabberd with MySQL native driver:
+     http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver
+   - Anonymous User Support:
+     http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support
 
 END
