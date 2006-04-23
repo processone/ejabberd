@@ -838,6 +838,85 @@ A detailled tutorial on SASL anonymous and anonymous login support is
 available from:
 \ahrefurl{http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support}
 
+\subsection{Relational Database Support}
+\label{sec:relationaldatabase}
+
+\subsubsection{Authentication against a relational database}
+\label{sec:relationaldatabaseauth}
+
+ejabberd use its internal Mnesia database as a default. It is however possible
+to use relational database to store persistant, long-living data. When
+switching the \term{auth\_method} from internal to \term{odbc}, you are
+telling ejabberd to use a relational database for authentication. Different
+\term{auth\_method} values can be used for different virtual hosts in the
+system.
+
+The option value name be misleading, as the method name is use both for access
+to relational database through ODBC or through the native interface. In any
+case, the first step is to define the odbc \term{auth\_method}. For example:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [odbc]}]}.
+\end{verbatim}
+
+The actual database access is defined in the option \term{odbc\_server}. Its
+value is use to defined if we want to use ODBC, or one of the two native
+interface available, PostgreSQL or MySQL.
+
+To use a relational database through ODBC, you can pass the ODBC connection
+string as \term{odbc\_server} parameter. For example:
+\begin{verbatim}
+{odbc_server, "DSN=database;UID=ejabberd;PWD=password"}.
+\end{verbatim}
+
+To use the native PostgreSQL interface, you can pass a tuple of the following form as
+parameter:
+\begin{verbatim}
+{pgsql, "Server", "Database", "Username", "Password"}
+\end{verbatim}
+
+\term{pgsql} is a keyword that should be kept as is. For example:
+\begin{verbatim}
+{odbc_server, {pgsql, "localhost", "database", "ejabberd", "password"}}.
+\end{verbatim}
+
+Note that you need to install the Erlang PgSQL library first. This library is
+available from Sourceforge: \ahrefurl{http://cvs.sourceforge.net/viewcvs.py/jungerl/jungerl/lib/pgsql/}
+
+To use the native MySQL interface, the same tuple should be passed, except
+that you now have to use the \term{mysql} keyword instead of the \term{pgsql}
+keyword:
+\begin{verbatim}
+{mysql, "Server", "Database", "Username", "Password"}
+\end{verbatim}
+
+\term{mysql} is a keyword that should be kept as is. For example:
+\begin{verbatim}
+{odbc_server, {mysql, "localhost", "test", "root", "password"}}.
+\end{verbatim}
+
+Note that you need to install the Erlang MySQL library first. This library is
+directly available from Process-one website: \ahrefurl{http://support.process-one.net/doc/display/CONTRIBS/Yxa}
+
+A detailled tutorial to set-up \ejabberd{} using the native MySQL interface is
+available from: \ahrefurl{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}
+
+\subsubsection{Relational database for other modules}
+\label{sec:relationaldatabaseextra}
+
+It is possible to use a relational database to store pieces of
+information. You can do this by changing the module name to a name with an
+\term{\_odbc} suffix in \ejabberd{} config file. You can use a relational
+database for the following data:
+
+\begin{itemize}
+\item Last connection date and time: Use \term{mod\_last\_odbc} instead of
+  \term{mod\_last}.
+\item Offline messages: Use \term{mod\_offline\_odbc} instead of
+  \term{mod\_offline}.
+\item Rosters: Use \term{mod\_roster\_odbc} instead of \term{mod\_roster}.
+\item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
+\end{itemize}
+
 \subsection{Creating an Initial Administrator}
 \label{sec:initialadmin}
 
@@ -2231,7 +2310,7 @@ Thanks to all people who contributed to this guide:
 \item Alexey Shchepin (\ahrefurl{xmpp:aleksey@jabber.ru})
 \item Florian Zumbiehl (\ahrefurl{xmpp:florz@florz.de})
 \item Michael Grigutsch (\ahrefurl{xmpp:migri@jabber.i-pobox.net})
-\item Micka\"el R\'emond (\ahrefurl{xmpp:mremond@erlang-projects.org})
+\item Mickael Remond (\ahrefurl{xmpp:mremond@erlang-projects.org})
 \item Sander Devrieze (\ahrefurl{xmpp:sander@devrieze.dyndns.org})
 \item Sergei Golovan (\ahrefurl{xmpp:sgolovan@nes.ru})
 \item Vsevolod Pelipas (\ahrefurl{xmpp:vsevoload@jabber.ru})

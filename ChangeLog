@@ -13,6 +13,8 @@
 	* src/ejabberd_sm.erl: Now delivering messages to all resources with
 	max equal priority when this priority is non-negative.
 
+	* src/guide.tex: Added documentation for native database configuration.
+
 2006-04-22  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/msgs/pt-br.msg: Updated (thanks to Lucius Curado)
