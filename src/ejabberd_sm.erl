@@ -432,20 +432,29 @@ do_route(From, To, Packet) ->
 route_message(From, To, Packet) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
-    case catch lists:max(get_user_present_resources(LUser, LServer)) of
-	{Priority, R} when is_integer(Priority),
-			   Priority >= 0 ->
-	    LResource = jlib:resourceprep(R),
-	    USR = {LUser, LServer, LResource},
-	    case mnesia:dirty_index_read(session, USR, #session.usr) of
-		[] ->
-		    ok;				% Race condition
-		Ss ->
-		    Session = lists:max(Ss),
-		    Pid = element(2, Session#session.sid),
-		    ?DEBUG("sending to process ~p~n", [Pid]),
-		    Pid ! {route, From, To, Packet}
-	    end;
+    PrioRes = get_user_present_resources(LUser, LServer),
+    case catch lists:max(PrioRes) of
+	{Priority, _R} when is_integer(Priority), Priority >= 0 ->
+	    lists:foreach(
+	      %% Route messages to all priority that equals the max, if
+	      %% positive
+	      fun({P, R}) when P == Priority ->
+		      LResource = jlib:resourceprep(R),
+		      USR = {LUser, LServer, LResource},
+		      case mnesia:dirty_index_read(session, USR, #session.usr) of
+			  [] ->
+			      ok;				% Race condition
+			  Ss ->
+			      Session = lists:max(Ss),
+			      Pid = element(2, Session#session.sid),
+			      ?DEBUG("sending to process ~p~n", [Pid]),
+			      Pid ! {route, From, To, Packet}
+		      end;
+		 %% Ignore other priority:
+		 ({_Prio, _Res}) ->
+		      ok
+	      end,
+	      PrioRes);
 	_ ->
 	    case xml:get_tag_attr_s("type", Packet) of
 		"error" ->

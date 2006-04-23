@@ -2,6 +2,8 @@
 
 	* src/msgs/fr.msg: Updated
 	* src/msgs/de.msg: Updated (thanks to Nikolaus Polak)
+	* src/ejabberd_sm.erl: Now delivering messages to all resources with
+	max equal priority when this priority is non-negative.
 
 2006-04-22  Alexey Shchepin  <alexey@sevcom.net>
 
