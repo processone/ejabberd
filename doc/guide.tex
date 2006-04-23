@@ -44,25 +44,31 @@
 
 %% Modules
 \newcommand{\module}[1]{\texttt{#1}}
+\newcommand{\modadhoc}{\module{mod\_adhoc}}
 \newcommand{\modannounce}{\module{mod\_announce}}
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
+\newcommand{\modecho}{\module{mod\_echo}}
 \newcommand{\modirc}{\module{mod\_irc}}
 \newcommand{\modlast}{\module{mod\_last}}
+\newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
 \newcommand{\modmuclog}{\module{mod\_muc\_log}}
-\newcommand{\modecho}{\module{mod\_echo}}
 \newcommand{\modoffline}{\module{mod\_offline}}
+\newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
 \newcommand{\modprivate}{\module{mod\_private}}
 \newcommand{\modpubsub}{\module{mod\_pubsub}}
 \newcommand{\modregister}{\module{mod\_register}}
 \newcommand{\modroster}{\module{mod\_roster}}
+\newcommand{\modrosterodbc}{\module{mod\_roster\_odbc}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
 \newcommand{\modstats}{\module{mod\_stats}}
 \newcommand{\modtime}{\module{mod\_time}}
 \newcommand{\modvcard}{\module{mod\_vcard}}
+\newcommand{\modvcardldap}{\module{mod\_vcard\_ldap}}
+\newcommand{\modvcardodbc}{\module{mod\_vcard\_odbc}}
 \newcommand{\modversion}{\module{mod\_version}}
 
 %% Common options
@@ -341,7 +347,7 @@ Examples:
 \end{itemize}
 \item Serving two domains:
 \begin{verbatim}
-  {hosts, ["one.org", "two.org"]}.
+  {hosts, ["example.net", "example.com"]}.
 \end{verbatim}
 \end{itemize}
 
@@ -703,33 +709,30 @@ services you have to make the transports log and do \ind{XDB}XDB by themselves:
 \ind{modules}
 
 The option \term{modules} defines the list of modules that will be loaded after
-\ejabberd{} startup. Each entry in the list is a tuple in which the first
+\ejabberd{}'s startup. Each entry in the list is a tuple in which the first
 element is the name of a module and the second is a list of options for that
-module. Read section~\ref{sec:modules} for detailed information about each
-module.
+module. Read section~\ref{sec:modules} for detailed information about modules.
 
-Example:\ind{modules!overview}
-\begin{verbatim}
+Examples:
+\begin{itemize}
+\item In this simple example, only the module \modecho{} is loaded and no
+  options are specified between square brackets:
+  \begin{verbatim}
   {modules,
-   [{mod_register,  []},
-    {mod_roster,    []},
-    {mod_privacy,   []},
-    {mod_configure, []},
-    {mod_disco,     []},
-    {mod_stats,     []},
-    {mod_vcard,     []},
-    {mod_offline,   []},
-    {mod_announce,  [{access, announce}]},
-    {mod_echo,      [{hosts, ["echo.example.org"]}]},
-    {mod_private,   []},
-    {mod_irc,       []},
-    {mod_muc,       []},
-    {mod_pubsub,    []},
-    {mod_time,      [{iqdisc, no_queue}]},
-    {mod_last,      []},
+   [{mod_echo,      []}
+   ]}.
+\end{verbatim}
+\item The second example is also simple: the modules \modecho{}, \modtime{}, and
+  \modversion{} are loaded without options. Remark that, besides the last entry,
+  all entries end with a comma:
+  \begin{verbatim}
+  {modules,
+   [{mod_echo,      []},
+    {mod_time,      []},
     {mod_version,   []}
    ]}.
 \end{verbatim}
+\end{itemize}
 
 \subsubsection{Virtual Hosting}
 \label{sec:configvirtualhost}
@@ -744,27 +747,27 @@ syntax:
 
 Examples:
 \begin{itemize}
-\item Domain \jid{one.org} is using the internal authentication method while
-  domain \jid{two.org} is using the \ind{LDAP}LDAP server running on the domain
+\item Domain \jid{example.net} is using the internal authentication method while
+  domain \jid{example.com} is using the \ind{LDAP}LDAP server running on the domain
   \jid{localhost} to perform authentication:
 \begin{verbatim}
-{host_config, "one.org", [{auth_method, internal}]}.
+{host_config, "example.net", [{auth_method, internal}]}.
 
-{host_config, "two.org", [{auth_method, ldap},
+{host_config, "example.com", [{auth_method, ldap},
                               {ldap_servers, ["localhost"]},
                               {ldap_uidattr, "uid"},
                               {ldap_rootdn, "dc=localdomain"},
                               {ldap_rootdn, "dc=example,dc=com"},
                               {ldap_password, ""}]}.
 \end{verbatim}
-\item Domain \jid{one.org} is using \ind{ODBC}ODBC to perform authentication
-  while domain \jid{two.org} is using the LDAP servers running on the domains
+\item Domain \jid{example.net} is using \ind{ODBC}ODBC to perform authentication
+  while domain \jid{example.com} is using the LDAP servers running on the domains
   \jid{localhost} and \jid{otherhost}:
 \begin{verbatim}
-{host_config, "one.org", [{auth_method, odbc},
+{host_config, "example.net", [{auth_method, odbc},
                               {odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}]}.
 
-{host_config, "two.org", [{auth_method, ldap},
+{host_config, "example.com", [{auth_method, ldap},
                               {ldap_servers, ["localhost", "otherhost"]},
                               {ldap_uidattr, "uid"},
                               {ldap_rootdn, "dc=localdomain"},
@@ -777,8 +780,8 @@ Examples:
 \label{sec:configsaslanonymous}
 \ind{sasl anonymous}\ind{anonymous login}
 
-The configuration of the anonymous mode can be done with three host_config
-parameters:
+The configuration of the anonymous mode can be done with three
+\term{host\_config} parameters:
 
 \begin{itemize} 
 \item \term{auth\_method}: This value is used for defining the authentication method:
@@ -791,10 +794,11 @@ the same username will be able to be taken several time in anonymous login
 mode if different resource are used to connect. This option is only useful in
 very special cases. It defaults to false.
 
-\item \term{anonymous\_protocol}: This option can take three values: sasl_anon,
-login_anon or both. sasl_anon means that SASL anonymous mode is
-enabled. login_anon means that anonymous login mode is enabled. both means
-that SASL anonymous and login anonymous are enabled.
+\item \term{anonymous\_protocol}: This option can take three values:
+  \term{sasl\_anon}, \term{login\_anon} or both.  \term{sasl\_anon} means that
+  SASL anonymous mode is enabled.  \term{login\_anon} means that anonymous
+  login mode is enabled. both means that SASL anonymous and login anonymous are
+  enabled.
 \end{itemize}
 
 Those options are defined for each virtual host with the \term{host\_config}
@@ -898,18 +902,18 @@ Examples:
   \ind{protocols!JEP-0025: HTTP Polling}HTTP Polling interface. In this example
   you should point your web browser to \verb|http://example.org:5280/admin/| to
   administer all virtual hosts or to
-  \verb|http://example.org:5280/admin/server/two.org/| to administer only the
-  virtual host \jid{two.org}. Before you get access to the web interface you
-  need to enter as username, the JID and password from a registered user that is
-  allowed to configure \ejabberd{}. In this example you can enter as username
- ``\jid{admin@one.org}'' to administer all virtual hosts (first URL). If you
-  log in with ``\jid{admin@two.org}'' on \\
-  \verb|http://example.org:5280/admin/server/two.org/| you can only administer
-  the virtual host \jid{two.org}.
+  \verb|http://example.org:5280/admin/server/example.com/| to administer only
+  the virtual host \jid{example.com}. Before you get access to the web interface
+  you need to enter as username, the JID and password from a registered user
+  that is allowed to configure \ejabberd{}. In this example you can enter as
+  username ``\jid{admin@example.net}'' to administer all virtual hosts (first
+  URL). If you log in with ``\jid{admin@example.com}'' on \\
+  \verb|http://example.org:5280/admin/server/example.com/| you can only
+  administer the virtual host \jid{example.com}.
   \begin{verbatim}
   ...
-  {acl, admins, {user, "admin", "one.org"}}.
-  {host_config, "two.org", [{acl, admins, {user, "admin", "two.org"}}]}.
+  {acl, admins, {user, "admin", "example.net"}}.
+  {host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
   {access, configure, [{allow, admins}]}.
   ...
   {hosts, ["example.org"]}.
@@ -993,7 +997,7 @@ Additional information:
 \label{sec:firewall}
 \ind{firewall}\ind{ports}\ind{SASL}\ind{TLS}\ind{clustering!ports}
 
-You need to take the following ports in mind when configuring your firewall:
+You need to take the following TCP ports in mind when configuring your firewall:
 \begin{table}[H]
   \centering
   \begin{tabular}{|l|l|}
@@ -1168,10 +1172,76 @@ domain.
 %\ind{backup}
 
 \appendix{}
-
 \section{Built-in Modules}
 \label{sec:modules}
 \ind{modules}
+
+\subsection{Overview}
+\label{sec:modoverview}
+\ind{modules!overview}\ind{XMPP compliancy}
+
+The following table lists all modules available in the official \ejabberd{}
+distribution. You can find more
+\footahref{http://ejabberd.jabber.ru/contributions}{contributed modules} on the
+ejabberd website. Please remember that these contributions might not work or
+that they can contain severe bugs and security leaks. Therefore, use them at
+your own risk!
+
+You can see which database backend each module needs by looking at the suffix:
+\begin{itemize}
+\item ``\_ldap'', this means that the module needs an LDAP server as backend.
+\item ``\_odbc'', this means that the module needs an ODBC compatible database,
+  a MySQL database, or a PostgreSQL database as backend.
+\item Nothing, this means that the modules uses Erlang's built-in database
+  Mnesia as backend.
+\end{itemize}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|l|l|l|l|}
+    \hline Module & Feature & Dependencies & Needed for XMPP? \\ 
+    \hline \hline \modadhoc{} & Ad-Hoc Commands (\jepref{0050}) &  & No \\ 
+    \hline \modannounce{} & Manage announcements & \modadhoc{} & No \\ 
+    \hline \modconfigure{} & Support for online & \modadhoc{} & No \\ 
+    & configuration of ejabberd & & \\ 
+    \hline \moddisco{} & Service Discovery (\jepref{0030}) &  & No \\ 
+    \hline \modecho{} & Echoes Jabber packets &  & No \\ 
+    \hline \modirc{} & IRC transport &  & No \\ 
+    \hline \modlast{} & Last Activity (\jepref{0012}) &  & No \\ 
+    \hline \modlastodbc{} & Last Activity (\jepref{0012}) & ODBC compatible & No \\ 
+    & & database, MySQL & \\
+    & & or PostgreSQL & \\
+    \hline \modmuc{} & Multi-User Chat (\jepref{0045}) &  & No \\ 
+    \hline \modmuclog{} & Multi-User Chat room logging & \modmuc{} & No \\ 
+    \hline \modoffline{} & Offline message storage &  & No \\ 
+    \hline \modofflineodbc{} & Offline message storage & ODBC compatible & No \\ 
+    & & database, MySQL & \\
+    & & or PostgreSQL & \\
+    \hline \modprivacy{} & Blocking Communication &  & Yes \\ 
+    \hline \modprivate{} & Private XML Storage (\jepref{0049}) &  & No \\ 
+    \hline \modpubsub{} & Publish-Subscribe (\jepref{0060}) &  & No \\ 
+    \hline \modregister{} & In-Band Registration (\jepref{0077}) &  & No \\ 
+    \hline \modroster{} & Roster management &  & Yes (*) \\ 
+    \hline \modrosterodbc{} & Roster management & ODBC compatible & Yes (*) \\ 
+    & & database, MySQL & \\
+    & & or PostgreSQL & \\
+    \hline \modservicelog{} & Copy user messages to logger service &  & No \\ 
+    \hline \modsharedroster{} & Shared roster management & \modroster{} or & No \\ 
+    & & \modrosterodbc{} & \\ 
+    \hline \modstats{} & Statistics Gathering (\jepref{0039}) &  & No \\ 
+    \hline \modtime{} & Entity Time (\jepref{0090}) &  & No \\ 
+    \hline \modvcard{} & vcard-temp (\jepref{0054}) &  & No \\ 
+    \hline \modvcardldap{} & vcard-temp (\jepref{0054}) & LDAP server & No \\ 
+    \hline \modvcardodbc{} & vcard-temp (\jepref{0054}) & ODBC compatible & No \\ 
+    & & database, MySQL & \\
+    & & or PostgreSQL & \\
+    \hline \modversion{} & Software Version (\jepref{0092}) &  & No\\
+    \hline
+  \end{tabular}
+\end{table}
+
+(*) This module or a similar one with another database backend is needed for
+XMPP compliancy.
 
 \subsection{Common Options}
 \label{sec:modcommonopts}
@@ -1244,12 +1314,12 @@ Examples:
    ]}.
 \end{verbatim}
   \end{itemize}
-  \item Serving the echo module on tho domains:
+  \item Serving the echo module on two domains:
     \begin{verbatim}
   {modules,
    [
     ...
-    {mod_echo, [{hosts, ["echo.one.org", "echo.two.org"]}]},
+    {mod_echo, [{hosts, ["echo.example.net", "echo.example.com"]}]},
     ...
    ]}.
 \end{verbatim}
@@ -1453,13 +1523,14 @@ Examples:
     ...
    ]}.
 \end{verbatim}
-% bug in current svn!!: irc-transport.two.org will *not* show up in the service discovery items; instead you will see irc.two.org!!!!
-\item In next example the IRC transport is available on two virtual hosts
-  with different prefixes on each host. Moreover, the transport is only
-  accessible by paying customers registered on our domains and on other servers.
+% bug in current svn!!: irc-transport.example.com will *not* show up in the service discovery items; instead you will see irc.example.com!!!!
+\item In next example the IRC transport is available on the two virtual hosts
+  \jid{example.net} and \jid{example.com} with different prefixes on each host.
+  Moreover, the transport is only accessible by paying customers registered on
+  our domains and on other servers.
   \begin{verbatim}
-  {acl, paying_customers, {user, "customer1", "one.org"}}.
-  {acl, paying_customers, {user, "customer2", "two.org"}}.
+  {acl, paying_customers, {user, "customer1", "example.net"}}.
+  {acl, paying_customers, {user, "customer2", "example.com"}}.
   {acl, paying_customers, {user, "customer3", "example.org"}}.
   ...
   {access, paying_customers, [{allow, paying_customers},
@@ -1469,7 +1540,7 @@ Examples:
    [
     ...
     {mod_irc, [{access, paying_customers},
-               {hosts, ["irc.one.org", "irc-transport.two.org"]}]},
+               {hosts, ["irc.example.net", "irc-transport.example.com"]}]},
     ...
    ]}.
 \end{verbatim}
@@ -1518,7 +1589,9 @@ Options:
 \titem{access\_admin} \ind{options!access\_admin}This option specifies
   who is allowed to administrate the Multi-User Chat service (the default
   value is \term{none}, which means that only the room creator can
-  administer his room).
+  administer his room). By sending a message to the service JID,
+  administrators can send service messages that will be displayed in every
+  active room.
 \end{description}
 
 Examples:
@@ -1526,7 +1599,11 @@ Examples:
 \item In the first example everyone is allowed to use the Multi-User Chat
   service. Everyone will also be able to create new rooms but only the user
   \jid{admin@example.org} is allowed to administrate any room. In this
-  example he is also a global administrator.
+  example he is also a global administrator. When \jid{admin@example.org}
+  sends a message such as ``Tomorrow, the \Jabber{} server will be moved
+  to new hardware. This will involve service breakdowns around 23:00 UMT.
+  We apologise for this inconvenience.'' to \jid{conference.example.org},
+  it will be displayed in all active rooms.
   \begin{verbatim}
   {acl, admins, {user, "admin", "example.org"}}.
   ...
@@ -1544,10 +1621,14 @@ Examples:
 \item In the second example the Multi-User Chat service is only accessible by
   paying customers registered on our domains and on other servers. Of course
   the administrator is also allowed to access rooms. In addition, he is the
-  only authority able to create and administer rooms.
+  only authority able to create and administer rooms. When
+  \jid{admin@example.org} sends a message such as ``Tomorrow, the \Jabber{}
+  server will be moved to new hardware. This will involve service breakdowns
+  around 23:00 UMT. We apologise for this inconvenience.'' to
+  \jid{conference.example.org}, it will be displayed in all active rooms.
   \begin{verbatim}
-  {acl, paying_customers, {user, "customer1", "one.org"}}.
-  {acl, paying_customers, {user, "customer2", "two.org"}}.
+  {acl, paying_customers, {user, "customer1", "example.net"}}.
+  {acl, paying_customers, {user, "customer2", "example.com"}}.
   {acl, paying_customers, {user, "customer3", "example.org"}}.
   {acl, admins, {user, "admin", "example.org"}}.
   ...

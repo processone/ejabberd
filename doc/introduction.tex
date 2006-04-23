@@ -43,19 +43,19 @@ Peter Saint-Andr\'e, Executive Director of the Jabber Software Foundation}
 \begin{itemize}
 \item \marking{Multiplatform:} \ejabberd{} runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.
 
-\item \marking{Distributed:} You can run \ejabberd{} on a cluster of machines and all of them will serve one \Jabber{} domain. When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.
+\item \marking{Distributed:} You can run \ejabberd{} on a cluster of machines and all of them will serve the same \Jabber{} domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.
 
 \item \marking{Fault-tolerant:} You can deploy an \ejabberd{} cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced ``on the fly''.
 
-\item \marking{Administrator Friendly:} \ejabberd{} is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other  administrator benefits include:
+\item \marking{Administrator Friendly:} \ejabberd{} is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
 \begin{itemize}
-\item Comprehensive documentation.\improved{}\moreinfo{ --- You can start in the \footahref{http://ejabberd.jabber.ru/book}{ejabberd Book}.}
-\item Straightforward installers for Windows and Linux.\moreinfo{ --- (\footahref{http://ejabberd.jabber.ru/screenshots-linux-installer}{Screenshots}).}
-\item Web interface for administration tasks.\improved{}\moreinfo{ --- With HTTPS secure access. \footahref{http://ejabberd.jabber.ru/online-demo-webadmin}{Demo}.}
-\item Shared Roster groups.\improved{}\moreinfo{ --- The administrator can setup a common list of \Jabber{} users for all users on the server. Those users are virtually added to all rosters. They cannot be removed, but can be renamed or moved into different roster groups. Does not require client implementation. Not related to \jepref{0144} (Roster Item Exchange).\footahref{http://ejabberd.jabber.ru/screenshots-shared-roster-groups}{Screenshots})}
-\item Command line administration tool.\moreinfo{ --- Some basic administration tasks can be acomplished using the command line: register/remove users, backup/restore database, amongst others (\footahref{http://ejabberd.jabber.ru/screenshots-administration#ejabberdctl}{Screenshots}).}
+\item Comprehensive documentation.\moreinfo{ --- You can start in the \footahref{http://ejabberd.jabber.ru/book}{ejabberd Book}.}
+\item Straightforward installers for Linux, Mac OS X, and Windows.\improved{}\moreinfo{ --- (\footahref{http://ejabberd.jabber.ru/screenshots-linux-installer}{Screenshots}).}
+\item Web interface for administration tasks.\moreinfo{ --- With HTTPS secure access. \footahref{http://ejabberd.jabber.ru/online-demo-webadmin}{Demo}.}
+\item Shared Roster Groups.\moreinfo{ --- The administrator can setup a common list of \Jabber{} users for all users on the server. Those users are virtually added to all rosters. They cannot be removed, but can be renamed or moved into different roster groups. Does not require client implementation. Not related to \jepref{0144} (Roster Item Exchange).\footahref{http://ejabberd.jabber.ru/screenshots-shared-roster-groups}{Screenshots})}
+\item Command line administration tool.\improved{}\moreinfo{ --- Some basic administration tasks can be acomplished using the command line: register/remove users, backup/restore database, amongst others (\footahref{http://ejabberd.jabber.ru/screenshots-administration#ejabberdctl}{Screenshots}).}
 \item Can integrate with existing authentication mechanisms.
-\item Capability to send announce messages.
+\item Capability to send announce messages.\improved{}
 \end{itemize}
 
 \item \marking{Internationalized:} \ejabberd{} leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
@@ -66,7 +66,7 @@ Peter Saint-Andr\'e, Executive Director of the Jabber Software Foundation}
 
 \item \marking{Open Standards:} \ejabberd{} is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
 \begin{itemize}
-\item Fully XMPP compliant \moreinfo{ --- ejabberd is fully compliant with XMPP Core 1.0 and XMPP IM 1.0. Check the \footahref{http://ejabberd.jabber.ru/protocols}{supported protocols}.} \new{}
+\item Fully XMPP compliant \moreinfo{ --- ejabberd is fully compliant with XMPP Core 1.0 and XMPP IM 1.0. Check the \footahref{http://ejabberd.jabber.ru/protocols}{supported protocols}.}
 \item XML-based protocol
 \item \footahref{http://ejabberd.jabber.ru/protocols}{Many JEPs supported}.
 \end{itemize}
@@ -84,7 +84,7 @@ Justin Karneges, Founder of the Psi and the Delta projects}
 
 Besides common \Jabber{} server features, \ejabberd{} comes with a wide range of other features:
 \begin{itemize}
-\item Modular: \ejabberd{}'s modular architecture allows easy customization:
+\item Modular
 \begin{itemize}
 \item Load only the modules you want.
 \item Extend \ejabberd{} with your own custom modules.\moreinfo{ --- A list of contributed modules and patches is available on the \footahref{http://ejabberd.jabber.ru/contributions}{contributions page}.}
@@ -92,37 +92,33 @@ Besides common \Jabber{} server features, \ejabberd{} comes with a wide range of
 \item Security
 \begin{itemize}
 \item SASL and STARTTLS for c2s and s2s connections.\improved{}
-\item STARTTLS and Dialback s2s connections.\new{}
-\item Obsolete SSL for c2s connections also supported.
+\item STARTTLS and Dialback s2s connections.
 \item Web interface accessible via HTTPS secure access.
 \end{itemize}
 \item Databases
 \begin{itemize}
-\item Native PostgreSQL support. \new{}
+\item Native MySQL support.\new{}
+\item Native PostgreSQL support.
 \item Mnesia.
-\item ODBC data storage support. \improved{}\moreinfo{ --- ODBC requests can be load balanced between several connections.}
+\item ODBC data storage support. \moreinfo{ --- ODBC requests can be load balanced between several connections.}
 \end{itemize}
 \item Authentication
 \begin{itemize}
-\item LDAP. \moreinfo{ --- Accounts can authenticate in a LDAP server.}
+\item LDAP and ODBC. \moreinfo{ --- Accounts can authenticate in a LDAP server.}
 \item External Authentication script.
 \item Internal Authentication.
 \end{itemize}
-\item The ability to interface via external components with networks such as:
-\begin{itemize}
-\item AIM
-\item ICQ
-\item MSN
-\end{itemize}
 \item Others
 \begin{itemize}
-\item IPv6 support both for c2s and s2s connections. 
-\item Support for virtual hosting. \improved{}\moreinfo{ --- Several \Jabber{} hosts can be hosted on the same \ejabberd{} instance. As simple as adding a new domain name to the list of hosts in the configuration file.}
-\item \tjepref{0025}{HTTP Polling} service
-\item \tjepref{0045}{Multi-User Chat} module.
-\item IRC transport.
-\item \tjepref{0060}{Publish-Subscribe} component.
-\item Users Directory based on users vCards.
+\item Compressing XML streams with Stream Compression (\jepref{0138}).\new{}
+\item Interface with networks such as AIM, ICQ and MSN.
 \item Statistics via Statistics Gathering (\jepref{0039}).
+\item IPv6 support both for c2s and s2s connections.
+\item \tjepref{0045}{Multi-User Chat} module with logging.\improved{}
+\item Users Directory based on users vCards.
+\item \tjepref{0060}{Publish-Subscribe} component.
+\item Support for virtual hosting. \moreinfo{ --- Several \Jabber{} hosts can be hosted on the same \ejabberd{} instance. As simple as adding a new domain name to the list of hosts in the configuration file.}
+\item \tjepref{0025}{HTTP Polling} service.
+\item IRC transport.\improved{}
 \end{itemize}
 \end{itemize}
