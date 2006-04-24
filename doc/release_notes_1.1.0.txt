@@ -3,8 +3,9 @@
 				24 April 2006
 
    This document describes the main changes in ejabberd 1.1.0. This version
-   introduce new features, new JEPs (Jabber Enhancement Proposal) support, and
-   many performance improvements for large scale deployments.
+   introduce new features including support for new Jabber Enhancement
+   Proposals and several performance improvements enabling deployments on an
+   even larger scale than already possible.
 
    ejabberd can be downloaded from the Process-one website:
    http://www.process-one.net/en/projects/ejabberd/
@@ -22,22 +23,20 @@
 
 New Jabber Enhancement Proposal support:
 
-  - JEP-0050: adhoc commands support.
-  - JEP-0138: Stream compression support.
+  - JEP-0050: Ad-Hoc Commands.
+  - JEP-0138: Stream Compression.
   - JEP-0175: SASL anonymous.
 
 Anonymous login
 
-  - SASL anonymous is fully supported.
-  - Login anonymous is supported for client that do not yet support SASL
-    anonymous.
+  - SASL anonymous.
+  - Anonymous login for clients that do not yet support SASL Anonymous.
   
 Relational database Support
 
-  - MySQL is now fully supported through ODBC or in native mode.
-  - Various improvements to the native database features.
-  - The Jabber migration tool can now use relational databases and not only
-    the internal Mnesia database.
+  - MySQL is now fully supported through ODBC and in native mode.
+  - Various improvements to the native database interfaces.
+  - The migration tool can use relational databases.
 
 Multi-User Chat improvements
 
@@ -54,33 +53,36 @@ Performance scalability improvements for large clusters
   - Speed improvement on logger.
   - TCP/IP packet reception change for better network throttling and
     regulation.
-  As a result, load on large installation should be reduced.
+  As a result, these improvements will reduce load on large scale deployments.
 
 XMPP Protocol related improvements
 
-  - The size of the XML stanza is now limited.
-  - Messages are now send to all resources that have a priority equal to the
-    highest priority currently used by the user.
+  - XML stanza size can be limited.
+  - Messages are send to all resources with the same highest priority.
 
 Documentation and Internationalization
 
-   - Documentation has been extended to cover more topics and updated.
+   - Documentation has been extended to cover more topics.
    - Translations have been updated.
+
+Web interface
+
+   - XHTML 1.0 compliance.
 
 Bugfixes
 
-   - This release contains many bugfixes on various other areas: pubsub, build
-     chain, installers, IRC gateway, ejabberdctl, ...
+   - This release contains many bugfixes on various areas such as Publish-Subscribe, build
+     chain, installers, IRC gateway, ejabberdctl, amongst others.
    - Please refer to the ChangeLog file supplied with this release regarding
      all improvements in ejabberd.
 
 
-   Installation Notes
 
+   Installation Notes
 
 Supported Erlang Version
 
-   - You need at least Erlang/OTP R9C to run ejabberd 1.1.0.
+   - You need at least Erlang/OTP R9C-2 to run ejabberd 1.1.0.
 
 Installation
 
@@ -92,8 +94,8 @@ Migration Notes
 
    - Before any migration, ejabberd system and database must be properly
      backed up.
-   - The database schema has not been changed and consequently it does not
-     require any migration.
+   - The database schema has not been changed comparing to version 1.0.0 and
+     consequently it does not require any migration.
 
 
 References
