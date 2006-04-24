@@ -1,3 +1,7 @@
+2006-04-24  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd.hrl: Updated for version 1.1.0.
+
 2006-04-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/configure: Removed '==' bashism (thanks to Magnus Henoch)
