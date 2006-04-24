@@ -1,3 +1,7 @@
+2006-04-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Added a documentation for max_stanza_size option
+
 2006-04-24  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd.hrl: Updated for version 1.1.0.

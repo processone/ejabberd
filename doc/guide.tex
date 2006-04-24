@@ -526,11 +526,13 @@ Currently next modules are implemented:
   \begin{tabular}{|l|l|p{87mm}|}
   \hline \texttt{ejabberd\_c2s}& Description& Handles c2s connections.\\
     \cline{2-3} & Options& \texttt{access}, \texttt{certfile}, \texttt{inet6},
-    \texttt{ip}, \texttt{shaper}, \texttt{ssl}, \texttt{tls},
-    \texttt{starttls}, \texttt{starttls\_required}, \texttt{zlib}\\
+    \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper}, \texttt{ssl},
+    \texttt{tls}, \texttt{starttls}, \texttt{starttls\_required},
+    \texttt{zlib}\\
   \hline \texttt{ejabberd\_s2s\_in}& Description& Handles incoming s2s
   connections.\\
-    \cline{2-3} & Options& \texttt{inet6}, \texttt{ip}\\
+    \cline{2-3} & Options& \texttt{inet6}, \texttt{ip},
+    \texttt{max\_stanza\_size}\\
   \hline \texttt{ejabberd\_service}& Description& Interacts with external
   components (*).\\
     \cline{2-3} & Options& \texttt{access}, \texttt{hosts}, \texttt{inet6},
@@ -568,6 +570,10 @@ The following options are available:
   \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6.
   \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
     interface to listen for. For example \verb|{ip, {192, 168, 1, 1}}|.
+  \titem{\{max\_stanza\_size, Size\}} \ind{options!max\_stanza\_size}This
+    option specifies an approximate maximal size in bytes of XML stanzas.
+    For example \verb|{max\_stanza\_size, 65536}|.  The default value
+    is ``\term{infinity}''.
   \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{sec:configshaper}). The default value
     is ``\term{none}''.
