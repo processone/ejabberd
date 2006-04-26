@@ -45,8 +45,15 @@ init() ->
 process(["status"]) ->
     {InternalStatus, ProvidedStatus} = init:get_status(),
     io:format("Node ~p is ~p. Status: ~p~n",
-	      [node(), InternalStatus, ProvidedStatus]),
-    ?STATUS_SUCCESS;
+              [node(), InternalStatus, ProvidedStatus]),
+    case lists:keysearch(ejabberd, 1, application:which_applications()) of
+        false ->
+            io:format("ejabberd is not running~n", []),
+            ?STATUS_ERROR;
+        {value,_Version} ->
+            io:format("ejabberd is running~n", []),
+            ?STATUS_SUCCESS
+    end;
 
 process(["stop"]) ->
     init:stop(),

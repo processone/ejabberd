@@ -1,3 +1,8 @@
+2006-04-27  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_ctl.erl: The status now only returns "started" if
+	ejabberd is started and ready to accept requests.
+
 2006-04-24  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Added a documentation for max_stanza_size option
