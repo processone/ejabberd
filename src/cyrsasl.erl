@@ -104,16 +104,21 @@ server_new(Service, ServerFQDN, UserRealm, SecFlags,
 		check_password = CheckPassword}.
 
 server_start(State, Mech, ClientIn) ->
-    case ets:lookup(sasl_mechanism, Mech) of
-	[#sasl_mechanism{module = Module}] ->
-	    {ok, MechState} = Module:mech_new(
-				State#sasl_state.myname,
-				State#sasl_state.get_password,
-				State#sasl_state.check_password),
-	    server_step(State#sasl_state{mech_mod = Module,
-					 mech_state = MechState},
-			ClientIn);
-	_ ->
+    case lists:member(Mech, listmech(State#sasl_state.myname)) of
+	true ->
+	    case ets:lookup(sasl_mechanism, Mech) of
+		[#sasl_mechanism{module = Module}] ->
+		    {ok, MechState} = Module:mech_new(
+					State#sasl_state.myname,
+					State#sasl_state.get_password,
+					State#sasl_state.check_password),
+		    server_step(State#sasl_state{mech_mod = Module,
+						 mech_state = MechState},
+				ClientIn);
+		_ ->
+		    {error, "no-mechanism"}
+	    end;
+	false ->
 	    {error, "no-mechanism"}
     end.
 
@@ -140,5 +145,5 @@ server_step(State, ClientIn) ->
 filter_anonymous(Host, Mechs) ->
     case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(Host) of
 	true  -> Mechs;
-	false -> Mechs -- "ANONYMOUS"
+	false -> Mechs -- ["ANONYMOUS"]
     end.
