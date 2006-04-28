@@ -9,7 +9,7 @@
 
    This release fix a security issue introduced in ejabberd 1.1.0. In SASL
    mode, anonymous login was enabled as a default. Upgrading ejabberd 1.1.0 to
-   ejabberd 1.1.1 is highly recommanded.
+   ejabberd 1.1.1 is highly recommended.
 
    ejabberd can be downloaded from the Process-one website:
    http://www.process-one.net/en/projects/ejabberd/
