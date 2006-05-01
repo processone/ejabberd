@@ -18,6 +18,7 @@
 	 unregister_commands/4]).
 
 -include("ejabberd_ctl.hrl").
+-include("ejabberd.hrl").
 
 start() ->
     case init:get_plain_arguments() of
@@ -122,13 +123,17 @@ process(["load", Path]) ->
     end;
 
 process(["restore", Path]) ->
-    case mnesia:restore(Path, [{default_op, keep_tables}]) of
+    case mnesia:restore(Path, [{keep_tables,keep_tables()},
+			       {default_op, skip_tables}]) of
 	{atomic, _} ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
 	    io:format("Can't restore backup from ~p at node ~p: ~p~n",
 		      [filename:absname(Path), node(), Reason]),
-	    ?STATUS_ERROR
+	    ?STATUS_ERROR;
+	{aborted,{no_exists,Table}} ->
+	    io:format("Can't restore backup from ~p at node ~p: Table ~p does not exist.~n",
+		      [filename:absname(Path), node(), Table])
     end;
 
 process(["install-fallback", Path]) ->
@@ -324,3 +329,34 @@ dump_tab(F, T) ->
     lists:foreach(
       fun(Term) -> io:format(F,"~p.~n", [setelement(1, Term, T)]) end, All).
 
+%% This function return a list of tables that should be kept from a previous
+%% version backup.
+%% Obsolete tables or tables created by module who are no longer used are not
+%% restored and are ignored.
+keep_tables() ->
+    lists:flatten([acl, passwd, config, local_config, disco_publish,
+		   keep_modules_tables()]).
+
+%% Return the list of modules tables in use, according to the list of actually
+%% loaded modules
+keep_modules_tables() ->		      
+    lists:map(fun(Module) ->
+		      module_tables(Module)
+	      end,
+	      gen_mod:loaded_modules(?MYNAME)).
+
+%% TODO: This mapping should probably be moved to a callback function in each
+%% module.
+%% Mapping between modules and their tables
+module_tables(mod_announce) -> [motd, motd_users];
+module_tables(mod_irc) -> [irc_custom];
+module_tables(mod_last) -> [last_activity];
+module_tables(mod_muc) -> [muc_room, muc_registered];
+module_tables(mod_offline) -> [offline_msg];
+module_tables(mod_privacy) -> [privacy];
+module_tables(mod_private) -> [private_storage];
+module_tables(mod_pubsub) -> [pubsub_node];
+module_tables(mod_roster) -> [roster];
+module_tables(mod_shared_roster) -> [sr_group, sr_user];
+module_tables(mod_vcard) -> [vcard, vcard_search];
+module_tables(_Other) -> [].

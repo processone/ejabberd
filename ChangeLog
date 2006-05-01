@@ -1,3 +1,9 @@
+2006-05-01  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_ctl.erl: Unknown tables or tables from now unused
+	modules are ignored during restore. The restore can now be performed in
+        such case.
+
 2006-04-28  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd.hrl: release 1.1.1
