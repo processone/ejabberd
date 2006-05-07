@@ -9,6 +9,11 @@
 
 	* src/ejabberd_ctl.erl: Now prints a user-friendly when trying to
 	restore a backup from a non-existent file.
+
+	* src/ejabberd_ctl.erl: Added a way to delete the older message
+	from the offline message table. This function is only available if
+	offline message queue is stored in Mnesia internal database. The
+	function delete_old_messages is not available in mod_offline_odbc.
 	
 2006-05-01  Mickael Remond  <mickael.remond@process-one.net>
 

@@ -175,6 +175,21 @@ process(["delete-expired-messages"]) ->
     mod_offline:remove_expired_messages(),
     ?STATUS_SUCCESS;
 
+process(["delete-old-messages", Days]) ->
+    case catch list_to_integer(Days) of
+	{'EXIT',{Reason, _Stack}} ->
+            io:format("Can't delete old messages (~p). Please pass an integer as parameter.~n",
+                      [Reason]),
+	    ?STATUS_ERROR;
+	Integer when Integer >= 0 ->
+	    {atomic, _} = mod_offline:remove_old_messages(Integer),
+	    io:format("Removed messages older than ~s days~n", [Days]),
+	    ?STATUS_SUCCESS;
+	Integer ->
+	    io:format("Can't delete old messages. Please pass a positive integer as parameter.~n", []),
+	    ?STATUS_ERROR
+    end;
+
 process(["vhost", H | Args]) ->
     case jlib:nameprep(H) of
 	false ->
@@ -217,6 +232,7 @@ print_usage() ->
 	 {"import-file file", "import user data from jabberd 1.4 spool file"},
 	 {"import-dir dir", "import user data from jabberd 1.4 spool directory"},
 	 {"delete-expired-messages", "delete expired offline messages from database"},
+	 {"delete-old-messages n", "delete offline messages older than n days from database"},
 	 {"vhost host ...", "execute host-specific commands"}] ++
 	ets:tab2list(ejabberd_ctl_cmds),
     MaxCmdLen =
