@@ -5,8 +5,8 @@
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
-%%% Copyright (c) 2004-2005 Alexey Shchepin
-%%% Copyright (c) 2004-2005 Process One
+%%% Copyright (c) 2004-2006 Alexey Shchepin
+%%% Copyright (c) 2004-2006 Process One
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_web_admin).
@@ -2179,10 +2179,8 @@ node_backup_parse_query(Node, Query) ->
 					  rpc:call(Node, mnesia,
 						   backup, [Path]);
 				      "restore" ->
-					  rpc:call(Node, mnesia,
-						   restore,
-						   [Path, [{default_op,
-							    keep_tables}]]);
+					  rpc:call(Node, ejabberd_admin,
+						   restore, [Path]);
 				      "fallback" ->
 					  rpc:call(Node, mnesia,
 						   install_fallback, [Path]);

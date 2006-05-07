@@ -1,3 +1,12 @@
+2006-05-07  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_configure.erl: Unknown tables or tables from now unused
+	modules are ignored during restore. The restore can now be performed in
+        such case.
+	* src/web/ejabberd_web_admin.er: Likewise.
+	* src/ejabberd_admin.erl: Code refactoring. Common Mnesia database
+	restore function.
+
 2006-05-01  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_ctl.erl: Unknown tables or tables from now unused

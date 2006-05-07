@@ -1126,8 +1126,7 @@ set_form(_Host, ["running nodes", ENode, "backup", "restore"], _Lang, XData) ->
 		false ->
 		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
-		    case rpc:call(Node, mnesia, restore,
-				  [String, [{default_op, keep_tables}]]) of
+                    case rpc:call(Node, ejabberd_admin, restore, [String]) of
 			{badrpc, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			{error, _Reason} ->
