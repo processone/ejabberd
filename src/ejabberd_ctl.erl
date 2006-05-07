@@ -133,7 +133,12 @@ process(["restore", Path]) ->
 	    ?STATUS_ERROR;
 	{aborted,{no_exists,Table}} ->
 	    io:format("Can't restore backup from ~p at node ~p: Table ~p does not exist.~n",
-		      [filename:absname(Path), node(), Table])
+		      [filename:absname(Path), node(), Table]),
+	    ?STATUS_ERROR;
+	{aborted,enoent} ->
+	    io:format("Can't restore backup from ~p at node ~p: File not found.~n",
+		      [filename:absname(Path), node()]),
+	    ?STATUS_ERROR
     end;
 
 process(["install-fallback", Path]) ->

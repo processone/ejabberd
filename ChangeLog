@@ -7,6 +7,9 @@
 	* src/ejabberd_admin.erl: Code refactoring. Common Mnesia database
 	restore function.
 
+	* src/ejabberd_ctl.erl: Now prints a user-friendly when trying to
+	restore a backup from a non-existent file.
+	
 2006-05-01  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_ctl.erl: Unknown tables or tables from now unused
