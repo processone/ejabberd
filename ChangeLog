@@ -3,7 +3,7 @@
 	* src/mod_configure.erl: Unknown tables or tables from now unused
 	modules are ignored during restore. The restore can now be performed in
         such case.
-	* src/web/ejabberd_web_admin.er: Likewise.
+	* src/web/ejabberd_web_admin.erl: Likewise.
 	* src/ejabberd_admin.erl: Code refactoring. Common Mnesia database
 	restore function.
 
