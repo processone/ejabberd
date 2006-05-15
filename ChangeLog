@@ -1,3 +1,8 @@
+2006-05-15  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Timeout disconnection were not
+	properly handled after "active once" migration. This is now fixed.
+	
 2006-05-07  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_configure.erl: Unknown tables or tables from now unused
@@ -14,7 +19,7 @@
 	from the offline message table. This function is only available if
 	offline message queue is stored in Mnesia internal database. The
 	function delete_old_messages is not available in mod_offline_odbc.
-	
+
 2006-05-01  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_ctl.erl: Unknown tables or tables from now unused

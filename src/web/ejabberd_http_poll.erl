@@ -37,6 +37,7 @@
 		output = "",
 		input = "",
 		waiting_input = false,
+		last_receiver,
 		timer}).
 
 %-define(DBGFSM, true).
@@ -205,7 +206,9 @@ handle_sync_event(activate, From, StateName, StateData) ->
 	Input ->
 	    From ! {tcp, {http_poll, self()}, list_to_binary(Input)},
 	    {reply, ok, StateName, StateData#state{input = "",
-						   waiting_input = false}}
+						   waiting_input = false,
+						   last_receiver = From
+						  }}
     end;
 
 handle_sync_event(stop, From, StateName, StateData) ->
@@ -243,6 +246,7 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 		    Reply = ok,
 		    {reply, Reply, StateName,
 		     StateData#state{waiting_input = false,
+				     last_receiver = Receiver,
 				     key = NewKey,
 				     timer = Timer}}
 	    end;
@@ -287,9 +291,12 @@ terminate(Reason, StateName, StateData) ->
       end),
     case StateData#state.waiting_input of
 	false ->
-	    ok;
-	Receiver ->
-	    gen_fsm:reply(Receiver, {error, closed})
+	    case StateData#state.last_receiver of
+		undefined -> ok;
+		Receiver  -> Receiver ! {tcp_closed, {http_poll, self()}}
+	    end;
+	{Receiver, _Tag} ->
+	    Receiver ! {tcp_closed, {http_poll, self()}}
     end,
     ok.
 
