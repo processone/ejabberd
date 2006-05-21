@@ -526,9 +526,9 @@ Currently next modules are implemented:
   \begin{tabular}{|l|l|p{87mm}|}
   \hline \texttt{ejabberd\_c2s}& Description& Handles c2s connections.\\
     \cline{2-3} & Options& \texttt{access}, \texttt{certfile}, \texttt{inet6},
-    \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper}, \texttt{ssl},
-    \texttt{tls}, \texttt{starttls}, \texttt{starttls\_required},
-    \texttt{zlib}\\
+    \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{max\_user\_sessions}, 
+    \texttt{shaper}, \texttt{ssl}, \texttt{tls}, \texttt{starttls},
+    \texttt{starttls\_required}, \texttt{zlib}\\
   \hline \texttt{ejabberd\_s2s\_in}& Description& Handles incoming s2s
   connections.\\
     \cline{2-3} & Options& \texttt{inet6}, \texttt{ip},
@@ -574,6 +574,16 @@ The following options are available:
     option specifies an approximate maximal size in bytes of XML stanzas.
     For example \verb|{max\_stanza\_size, 65536}|.  The default value
     is ``\term{infinity}''.
+
+  \titem{\{max\_user\_sessions, Max\}} \ind{options!max\_user\_sessions}This
+    option specifies the maximum number of sessions (authenticated
+    connections) per user. If a user tries to open more than the maximum
+    number of allowed sessions, with different resources, the first opened
+    session will be disconnected. The error ``\term{session replaced}'' is
+    send to the disconnected session. This value is either a number or
+    \term{infinity}.  For example \verb|{max\_user\_sessions, 10}|.  The
+    default value is \term{10}.
+
   \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{sec:configshaper}). The default value
     is ``\term{none}''.

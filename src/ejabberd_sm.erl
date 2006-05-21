@@ -42,6 +42,9 @@
 -record(session, {sid, usr, us, priority}).
 -record(state, {}).
 
+%% default value for the maximum number of user connections
+-define(MAX_USER_SESSIONS, 10).
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -63,6 +66,7 @@ route(From, To, Packet) ->
 
 open_session(SID, User, Server, Resource) ->
     set_session(SID, User, Server, Resource, undefined),
+    check_for_sessions_to_replace(User, Server, Resource),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_register_connection_hook, JID#jid.lserver,
 		       [SID, JID]).
@@ -177,6 +181,7 @@ init([]) ->
        {"connected-users-number", "print a number of established sessions"},
        {"user-resources user server", "print user's connected resources"}],
       ?MODULE, ctl_process),
+
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -270,23 +275,7 @@ set_session(SID, User, Server, Resource, Priority) ->
 				      us = US,
 				      priority = Priority})
 	end,
-    mnesia:sync_dirty(F),
-    SIDs = mnesia:dirty_select(
-	     session,
-	     [{#session{sid = '$1', usr = USR, _ = '_'}, [], ['$1']}]),
-    if
-	SIDs == [] ->
-	    ok;
-	true ->
-	    MaxSID = lists:max(SIDs),
-	    lists:foreach(
-	      fun({_, Pid} = S) when S /= MaxSID ->
-		      Pid ! replaced;
-		 (_) ->
-		      ok
-	      end, SIDs)
-    end.
-
+    mnesia:sync_dirty(F).
 
 clean_table_from_bad_node(Node) ->
     F = fun() ->
@@ -507,6 +496,69 @@ get_user_present_resources(LUser, LServer) ->
 	Ss ->
 	    [{S#session.priority, element(3, S#session.usr)} ||
 		S <- clean_session_list(Ss), is_integer(S#session.priority)]
+    end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% On new session, check if some existing connections need to be replace
+check_for_sessions_to_replace(User, Server, Resource) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    LResource = jlib:resourceprep(Resource),
+
+    %% TODO: Depending on how this is executed, there could be an unneeded
+    %% replacement for max_sessions. We need to check this at some point.
+    check_existing_resources(LUser, LServer, LResource),
+    check_max_sessions(LUser, LServer).
+
+check_existing_resources(LUser, LServer, LResource) ->
+    USR = {LUser, LServer, LResource},
+    %% A connection exist with the same resource. We replace it:
+    SIDs = mnesia:dirty_select(
+	     session,
+	     [{#session{sid = '$1', usr = USR, _ = '_'}, [], ['$1']}]),
+    if
+	SIDs == [] -> ok;
+	true ->
+	    MaxSID = lists:max(SIDs),
+	    lists:foreach(
+	      fun({_, Pid} = S) when S /= MaxSID ->
+		      Pid ! replaced;
+		 (_) -> ok
+	      end, SIDs)
+    end.
+
+check_max_sessions(LUser, LServer) ->
+    %% If the max number of sessions for a given is reached, we replace the
+    %% first one
+    SIDs =  mnesia:dirty_select(
+             session,
+             [{#session{sid = '$1', usr = {LUser, LServer, '_'}, _ = '_'}, [], ['$1']}]),
+    MaxSessions = get_max_user_sessions(),
+    if length(SIDs) =< MaxSessions -> ok;
+       true -> {_, Pid} = lists:min(SIDs),
+               Pid ! replaced
+    end.
+
+
+%% Get the user_max_session setting
+%% This option defines the max number of time a given users are allowed to
+%% log in
+%% This option is only used on c2s connections
+%% Defaults to 10
+%% Can be set to infinity
+get_max_user_sessions() ->
+    case ejabberd_config:get_local_option(listen) of 
+	undefined -> ?MAX_USER_SESSIONS;
+	Listeners -> 
+	    case lists:keysearch(ejabberd_c2s, 2, Listeners) of
+		{value, {_Port, _Method, Opts}} -> 
+		    case lists:keysearch(max_user_sessions, 1, Opts) of
+			{value, {_, Max}} -> Max;
+			_ -> ?MAX_USER_SESSIONS
+		    end;
+		_ -> ?MAX_USER_SESSIONS
+	    end
     end.
 
 

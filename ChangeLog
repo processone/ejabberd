@@ -1,3 +1,12 @@
+2006-05-21  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_sm.erl: An option to limit the number of opened sessions
+	for a given user have been added. As a default, a given user can only
+	log in 10 times with different resources. After that, new connections
+        replace the older ones.
+	* src/ejabberd.cfg.example: Likewise.
+	* doc/guide.tex: Likewise.
+
 2006-05-15  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: Timeout disconnection were not
