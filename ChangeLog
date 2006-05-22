@@ -1,3 +1,10 @@
+2006-05-22  Mickael Remond  <mickael.remond@process-one.net>
+	
+	* src/ejabberd_sm.erl: The max_user_sessions has been moved to
+	host configuration.
+	* src/ejabberd.cfg.example: Likewise.
+	* doc/guide.tex: Likewise.
+
 2006-05-21  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_sm.erl: An option to limit the number of opened sessions

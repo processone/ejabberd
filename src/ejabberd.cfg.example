@@ -97,6 +97,9 @@
 % Host name:
 {hosts, ["localhost"]}.
 
+%% Define the maximum number of time a single user is allowed to connect:
+{max_user_sessions, 10}.
+
 %% Anonymous login support:
 %%  auth_method: anonymous
 %%  anonymous_protocol: sasl_anon|login_anon|both
@@ -114,7 +117,6 @@
 {listen,
  [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper},
 			    {max_stanza_size, 65536},
-			    {max_user_sessions, 10},
 			    starttls, {certfile, "./ssl.pem"}]},
   {5223, ejabberd_c2s,     [{access, c2s},
 			    {max_stanza_size, 65536},

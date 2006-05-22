@@ -43,7 +43,7 @@
 -record(state, {}).
 
 %% default value for the maximum number of user connections
--define(MAX_USER_SESSIONS, 10).
+-define(MAX_USER_SESSIONS, infinity).
 
 %%====================================================================
 %% API
@@ -534,7 +534,7 @@ check_max_sessions(LUser, LServer) ->
     SIDs =  mnesia:dirty_select(
              session,
              [{#session{sid = '$1', usr = {LUser, LServer, '_'}, _ = '_'}, [], ['$1']}]),
-    MaxSessions = get_max_user_sessions(),
+    MaxSessions = get_max_user_sessions(LServer),
     if length(SIDs) =< MaxSessions -> ok;
        true -> {_, Pid} = lists:min(SIDs),
                Pid ! replaced
@@ -544,21 +544,11 @@ check_max_sessions(LUser, LServer) ->
 %% Get the user_max_session setting
 %% This option defines the max number of time a given users are allowed to
 %% log in
-%% This option is only used on c2s connections
-%% Defaults to 10
-%% Can be set to infinity
-get_max_user_sessions() ->
-    case ejabberd_config:get_local_option(listen) of 
+%% Defaults to infinity
+get_max_user_sessions(Host) ->
+    case ejabberd_config:get_local_option({max_user_sessions, Host}) of 
 	undefined -> ?MAX_USER_SESSIONS;
-	Listeners -> 
-	    case lists:keysearch(ejabberd_c2s, 2, Listeners) of
-		{value, {_Port, _Method, Opts}} -> 
-		    case lists:keysearch(max_user_sessions, 1, Opts) of
-			{value, {_, Max}} -> Max;
-			_ -> ?MAX_USER_SESSIONS
-		    end;
-		_ -> ?MAX_USER_SESSIONS
-	    end
+	Max -> Max
     end.
 
 
