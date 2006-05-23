@@ -13,6 +13,6 @@
 		 subscription = none,
 		 ask = none,
 		 groups = [],
-		 xattrs = [],
+		 askmessage = [],
 		 xs = []}).
 

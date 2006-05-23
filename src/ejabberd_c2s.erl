@@ -1364,6 +1364,7 @@ presence_update(From, Packet, StateData) ->
 					   StateData#state.server,
 					   [StateData#state.jid]),
 			resend_offline_messages(StateData),
+			resend_subscription_requests(StateData),
 			presence_broadcast_first(
 			  From, StateData#state{pres_last = Packet,
 						pres_invis = false
@@ -1726,6 +1727,19 @@ resend_offline_messages(#state{user = User,
 		      end
 	      end, Rs)
     end.
+
+resend_subscription_requests(#state{user = User,
+				    server = Server} = StateData) ->
+    PendingSubscriptions = ejabberd_hooks:run_fold(
+			     resend_subscription_requests_hook,
+			     Server,
+			     [],
+			     [User, Server]),
+    lists:foreach(fun(XMLPacket) ->
+			  send_element(StateData,
+				       XMLPacket)
+		  end,
+		  PendingSubscriptions).
 
 get_showtag(undefined) ->
     "unavailable";

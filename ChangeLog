@@ -1,3 +1,18 @@
+2006-05-23  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_roster.erl: The subscribe request are now resend at login as
+	long as they have not been answered. mod_roster do no more depends on
+        mod_offline.
+	* src/ejabberd_sm.erl: Likewise.
+	* src/ejabberd_c2s.erl: Likewise.
+	* src/mod_roster_odbc.erl: Likewise (The ODBC/relational support has
+	not yet been tested).
+	* src/mod_roster.hrl: Likewise.
+	* src/mod_offline.erl: Likewise.
+	* src/mod_offline_odbc.erl: Likewise.
+	* odbc/pg.sql: Likewise.
+	* odbc/mysql.sql: Likewise.
+
 2006-05-22  Mickael Remond  <mickael.remond@process-one.net>
 	
 	* src/ejabberd_sm.erl: The max_user_sessions has been moved to

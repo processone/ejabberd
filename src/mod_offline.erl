@@ -37,8 +37,6 @@ start(Host, _Opts) ->
     update_table(),
     ejabberd_hooks:add(offline_message_hook, Host,
 		       ?MODULE, store_packet, 50),
-    ejabberd_hooks:add(offline_subscription_hook, Host,
-		       ?MODULE, store_packet, 50),
     ejabberd_hooks:add(resend_offline_messages_hook, Host,
 		       ?MODULE, pop_offline_messages, 50),
     ejabberd_hooks:add(remove_user, Host,
@@ -82,8 +80,6 @@ receive_all(Msgs) ->
 
 stop(Host) ->
     ejabberd_hooks:delete(offline_message_hook, Host,
-			  ?MODULE, store_packet, 50),
-    ejabberd_hooks:delete(offline_subscription_hook, Host,
 			  ?MODULE, store_packet, 50),
     ejabberd_hooks:delete(resend_offline_messages_hook, Host,
 			  ?MODULE, pop_offline_messages, 50),

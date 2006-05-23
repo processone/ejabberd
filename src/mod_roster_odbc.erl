@@ -17,7 +17,8 @@
 	 process_local_iq/3,
 	 get_user_roster/2,
 	 get_subscription_lists/3,
-	 in_subscription/5,
+	 get_in_pending_subscriptions/3,
+	 in_subscription/6,
 	 out_subscription/4,
 	 set_items/3,
 	 remove_user/2,
@@ -41,6 +42,8 @@ start(Host, Opts) ->
 		       ?MODULE, get_jid_info, 50),
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
+    ejabberd_hooks:add(resend_subscription_requests_hook, Host,
+		       ?MODULE, get_in_pending_subscriptions, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
@@ -57,6 +60,8 @@ stop(Host) ->
 			  ?MODULE, get_jid_info, 50),
     ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(resend_subscription_requests_hook, Host,
+		       ?MODULE, get_in_pending_subscriptions, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 
@@ -253,7 +258,8 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 				  ["insert into rosterusers("
 				   "              username, jid, nick, "
 				   "              subscription, ask, "
-				   "              server, subscribe, type) "
+				   "              askmessage, server, "
+				   "              subscribe, type) "
 				   " values ", ItemVals, ";"]),
 				ejabberd_odbc:sql_query_t(
 				  ["delete from rostergroups "
@@ -436,13 +442,13 @@ ask_to_pending(Ask) -> Ask.
 
 
 
-in_subscription(_, User, Server, JID, Type) ->
-    process_subscription(in, User, Server, JID, Type).
+in_subscription(_, User, Server, JID, Type, Reason) ->
+    process_subscription(in, User, Server, JID, Type, Reason).
 
 out_subscription(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type).
+    process_subscription(out, User, Server, JID, Type, []).
 
-process_subscription(Direction, User, Server, JID1, Type) ->
+process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LJID = jlib:jid_tolower(JID1),
@@ -497,12 +503,18 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 						  Item#roster.ask,
 						  Type)
 			    end,
+		AskMessage = case NewState of
+				 {_, both} -> Reason;
+				 {_, in}   -> Reason;
+				 {_, _}    -> []
+			     end,
 		case NewState of
 		    none ->
 			{none, AutoReply};
 		    {Subscription, Pending} ->
 			NewItem = Item#roster{subscription = Subscription,
-					      ask = Pending},
+					      ask = Pending,
+					      askmessage = AskMessage},
 			ItemVals = record_to_string(NewItem),
 			ejabberd_odbc:sql_query_t(
 			  ["delete from rosterusers "
@@ -512,7 +524,8 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 			  ["insert into rosterusers("
 			   "              username, jid, nick, "
 			   "              subscription, ask, "
-			   "              server, subscribe, type) "
+			   "              askmessage, server, subscribe, "
+			   "              type) "
 			   " values ", ItemVals, ";"]),
 			{{push, NewItem}, AutoReply}
 		end
@@ -700,7 +713,8 @@ process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
 		     ["insert into rosterusers("
 		      "              username, jid, nick, "
 		      "              subscription, ask, "
-		      "              server, subscribe, type) "
+		      "              askmessage, server, subscribe, "
+		      "              type) "
 		      " values ", ItemVals, ";"],
 		     ["delete from rostergroups "
 		      "      where username='", Username, "' "
@@ -754,6 +768,37 @@ process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
 process_item_attrs_ws(Item, []) ->
     Item.
 
+
+get_in_pending_subscriptions(Ls, User, Server) ->
+    JID =  jlib:make_jid(User, Server,""),
+    case mnesia:dirty_index_read(roster, {User,Server}, #roster.us) of
+	Result when list(Result) ->
+    	    Ls ++ lists:map(
+		   fun(R) ->
+			   Message = R#roster.askmessage,
+			   Status  = if is_binary(Message) ->
+					     binary_to_list(Message);
+					true ->
+					     []
+				     end,
+			   {xmlelement, "presence", [{"from", jlib:jid_to_string(R#roster.jid)},
+						     {"to", jlib:jid_to_string(JID)},
+						     {"type", "subscribe"}],
+			    [{xmlelement, "status", [],
+			      [{xmlcdata, Status}]}]}
+		   end,
+		   lists:filter(
+		     fun(R) ->
+			     case R#roster.ask of
+				 in   -> true;
+				 both -> true;
+				 _ -> false
+			     end
+		     end,
+		     Result));
+	_ -> []
+    end.
+		     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -857,7 +902,8 @@ record_to_string(#roster{us = {User, _Server},
 			 jid = JID,
 			 name = Name,
 			 subscription = Subscription,
-			 ask = Ask}) ->
+			 ask = Ask,
+			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(JID))),
     Nick = ejabberd_odbc:escape(Name),
@@ -881,6 +927,7 @@ record_to_string(#roster{us = {User, _Server},
      "'", Nick, "',"
      "'", SSubscription, "',"
      "'", SAsk, "',"
+     "'", AskMessage, "',"
      "'N', '', 'item')"].
 
 groups_to_string(#roster{us = {User, _Server},

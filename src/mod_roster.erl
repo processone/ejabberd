@@ -17,7 +17,8 @@
 	 process_local_iq/3,
 	 get_user_roster/2,
 	 get_subscription_lists/3,
-	 in_subscription/5,
+	 get_in_pending_subscriptions/3,
+	 in_subscription/6,
 	 out_subscription/4,
 	 set_items/3,
 	 remove_user/2,
@@ -46,6 +47,8 @@ start(Host, Opts) ->
 		       ?MODULE, get_jid_info, 50),
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
+    ejabberd_hooks:add(resend_subscription_requests_hook, Host,
+		       ?MODULE, get_in_pending_subscriptions, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
@@ -62,6 +65,8 @@ stop(Host) ->
 			  ?MODULE, get_jid_info, 50),
     ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(resend_subscription_requests_hook, Host,
+		       ?MODULE, get_in_pending_subscriptions, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 
@@ -130,8 +135,6 @@ get_user_roster(Acc, US) ->
     end.
 
 
-
-
 item_to_xml(Item) ->
     Attrs1 = [{"jid", jlib:jid_to_string(Item#roster.jid)}],
     Attrs2 = case Item#roster.name of
@@ -160,12 +163,11 @@ item_to_xml(Item) ->
 		 _ ->
 		     Attrs3
 	     end,
-    Attrs = Attrs4 ++ Item#roster.xattrs,
     SubEls1 = lists:map(fun(G) ->
 				{xmlelement, "group", [], [{xmlcdata, G}]}
 			end, Item#roster.groups),
     SubEls = SubEls1 ++ Item#roster.xs,
-    {xmlelement, "item", Attrs, SubEls}.
+    {xmlelement, "item", Attrs4, SubEls}.
 
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
@@ -193,7 +195,6 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 				       I#roster{jid = JID,
 						name = "",
 						groups = [],
-						xattrs = [],
 						xs = []}
 			       end,
 			Item1 = process_item_attrs(Item, Attrs),
@@ -274,9 +275,7 @@ process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
 	"ask" ->
 	    process_item_attrs(Item, Attrs);
 	_ ->
-	    XAttrs = Item#roster.xattrs,
-	    process_item_attrs(Item#roster{xattrs = [{Attr, Val} | XAttrs]},
-			       Attrs)
+	    process_item_attrs(Item, Attrs)
     end;
 process_item_attrs(Item, []) ->
     Item.
@@ -374,13 +373,13 @@ ask_to_pending(Ask) -> Ask.
 
 
 
-in_subscription(_, User, Server, JID, Type) ->
-    process_subscription(in, User, Server, JID, Type).
+in_subscription(_, User, Server, JID, Type, Reason) ->
+    process_subscription(in, User, Server, JID, Type, Reason).
 
 out_subscription(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type).
+    process_subscription(out, User, Server, JID, Type, []).
 
-process_subscription(Direction, User, Server, JID1, Type) ->
+process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
@@ -415,12 +414,18 @@ process_subscription(Direction, User, Server, JID1, Type) ->
 						  Item#roster.ask,
 						  Type)
 			    end,
+		AskMessage = case NewState of
+				 {_, both} -> Reason;
+				 {_, in}   -> Reason;
+				 {_, _}    -> []
+			     end,
 		case NewState of
 		    none ->
 			{none, AutoReply};
 		    {Subscription, Pending} ->
 			NewItem = Item#roster{subscription = Subscription,
-					      ask = Pending},
+					      ask = Pending,
+					      askmessage = list_to_binary(AskMessage)},
 			mnesia:write(NewItem),
 			{{push, NewItem}, AutoReply}
 		end
@@ -630,12 +635,41 @@ process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
 	"ask" ->
 	    process_item_attrs_ws(Item, Attrs);
 	_ ->
-	    XAttrs = Item#roster.xattrs,
-	    process_item_attrs_ws(Item#roster{xattrs = [{Attr, Val} | XAttrs]},
-				  Attrs)
+	    process_item_attrs_ws(Item, Attrs)
     end;
 process_item_attrs_ws(Item, []) ->
     Item.
+
+get_in_pending_subscriptions(Ls, User, Server) ->
+    JID =  jlib:make_jid(User, Server,""),
+    case mnesia:dirty_index_read(roster, {User,Server}, #roster.us) of
+	Result when list(Result) ->
+    	    Ls ++ lists:map(
+		   fun(R) ->
+			   Message = R#roster.askmessage,
+			   Status  = if is_binary(Message) ->
+					     binary_to_list(Message);
+					true ->
+					     []
+				     end,
+			   {xmlelement, "presence", [{"from", jlib:jid_to_string(R#roster.jid)},
+						     {"to", jlib:jid_to_string(JID)},
+						     {"type", "subscribe"}],
+			    [{xmlelement, "status", [],
+			      [{xmlcdata, Status}]}]}
+		   end,
+		   lists:filter(
+		     fun(R) ->
+			     case R#roster.ask of
+				 in   -> true;
+				 both -> true;
+				 _ -> false
+			     end
+		     end,
+		     Result));
+	_ -> []
+    end.
+		     
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -673,42 +707,54 @@ update_table() ->
 	Fields ->
 	    ok;
 	[uj, user, jid, name, subscription, ask, groups, xattrs, xs] ->
-	    ?INFO_MSG("Converting roster table from "
-		      "{uj, user, jid, name, subscription, ask, groups, xattrs, xs} format", []),
-	    Host = ?MYNAME,
-	    {atomic, ok} = mnesia:create_table(
-			     mod_roster_tmp_table,
-			     [{disc_only_copies, [node()]},
-			      {type, bag},
-			      {local_content, true},
-			      {record_name, roster},
-			      {attributes, record_info(fields, roster)}]),
-	    mnesia:del_table_index(roster, user),
-	    mnesia:transform_table(roster, ignore, Fields),
-	    F1 = fun() ->
-			 mnesia:write_lock_table(mod_roster_tmp_table),
-			 mnesia:foldl(
-			   fun(#roster{usj = {U, JID}, us = U} = R, _) ->
-				   mnesia:dirty_write(
-				     mod_roster_tmp_table,
-				     R#roster{usj = {U, Host, JID},
-					      us = {U, Host}})
-			   end, ok, roster)
-		 end,
-	    mnesia:transaction(F1),
-	    mnesia:clear_table(roster),
-	    F2 = fun() ->
-			 mnesia:write_lock_table(roster),
-			 mnesia:foldl(
-			   fun(R, _) ->
-				   mnesia:dirty_write(R)
-			   end, ok, mod_roster_tmp_table)
-		 end,
-	    mnesia:transaction(F2),
-	    mnesia:delete_table(mod_roster_tmp_table);
+	    convert_table1(Fields);
+	[usj, us, jid, name, subscription, ask, groups, xattrs, xs] ->
+	    convert_table2(Fields);
 	_ ->
 	    ?INFO_MSG("Recreating roster table", []),
 	    mnesia:transform_table(roster, ignore, Fields)
     end.
 
 
+%% Convert roster table to support virtual host
+convert_table1(Fields) ->
+    ?INFO_MSG("Virtual host support: converting roster table from "
+	      "{uj, user, jid, name, subscription, ask, groups, xattrs, xs} format", []),
+    Host = ?MYNAME,
+    {atomic, ok} = mnesia:create_table(
+		     mod_roster_tmp_table,
+		     [{disc_only_copies, [node()]},
+		      {type, bag},
+		      {local_content, true},
+		      {record_name, roster},
+		      {attributes, record_info(fields, roster)}]),
+    mnesia:del_table_index(roster, user),
+    mnesia:transform_table(roster, ignore, Fields),
+    F1 = fun() ->
+		 mnesia:write_lock_table(mod_roster_tmp_table),
+		 mnesia:foldl(
+		   fun(#roster{usj = {U, JID}, us = U} = R, _) ->
+			   mnesia:dirty_write(
+			     mod_roster_tmp_table,
+			     R#roster{usj = {U, Host, JID},
+				      us = {U, Host}})
+		   end, ok, roster)
+	 end,
+    mnesia:transaction(F1),
+    mnesia:clear_table(roster),
+    F2 = fun() ->
+		 mnesia:write_lock_table(roster),
+		 mnesia:foldl(
+		   fun(R, _) ->
+			   mnesia:dirty_write(R)
+		   end, ok, mod_roster_tmp_table)
+	 end,
+    mnesia:transaction(F2),
+    mnesia:delete_table(mod_roster_tmp_table).
+
+
+%% Convert roster table: xattrs fields become 
+convert_table2(Fields) ->
+    ?INFO_MSG("Converting roster table from "
+	      "{usj, us, jid, name, subscription, ask, groups, xattrs, xs} format", []),
+    mnesia:transform_table(roster, ignore, Fields).

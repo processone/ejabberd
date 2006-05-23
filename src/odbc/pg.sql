@@ -18,6 +18,7 @@ CREATE TABLE rosterusers (
     nick text,
     subscription character(1) NOT NULL,
     ask character(1) NOT NULL,
+    askmessage text,
     server character(1) NOT NULL,
     subscribe text,
     "type" text
@@ -36,12 +37,6 @@ CREATE TABLE rostergroups (
 
 CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
 
---- To update from previous table definition:
--- CREATE SEQUENCE spool_seq_seq;
--- ALTER TABLE spool ADD COLUMN seq integer;
--- ALTER TABLE spool ALTER COLUMN seq SET DEFAULT nextval('spool_seq_seq');
--- UPDATE spool SET seq = DEFAULT;
--- ALTER TABLE spool ALTER COLUMN seq SET NOT NULL;
 
 CREATE TABLE spool (
     username text NOT NULL,
@@ -95,3 +90,13 @@ CREATE INDEX i_vcard_search_llocality ON vcard_search(llocality);
 CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
 CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
 CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
+
+--- To update from 0.9.8:
+-- CREATE SEQUENCE spool_seq_seq;
+-- ALTER TABLE spool ADD COLUMN seq integer;
+-- ALTER TABLE spool ALTER COLUMN seq SET DEFAULT nextval('spool_seq_seq');
+-- UPDATE spool SET seq = DEFAULT;
+-- ALTER TABLE spool ALTER COLUMN seq SET NOT NULL;
+
+--- To update from 1.x:
+-- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;

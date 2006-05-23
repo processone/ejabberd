@@ -19,6 +19,7 @@ CREATE TABLE rosterusers (
     nick text,
     subscription character(1) NOT NULL,
     ask character(1) NOT NULL,
+    askmessage text,
     server character(1) NOT NULL,
     subscribe text,
     type text
@@ -91,3 +92,5 @@ CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
 CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
 CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
 
+--- To update from 1.x:
+-- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;

@@ -306,32 +306,34 @@ do_route(From, To, Packet) ->
 		    {Pass, Subsc} =
 			case xml:get_attr_s("type", Attrs) of
 			    "subscribe" ->
+				Reason = xml:get_tag_cdata(
+					   xml:get_subtag(Packet, "status")),
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, subscribe]),
+				   [User, Server, From, subscribe, Reason]),
 				 true};
 			    "subscribed" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, subscribed]),
+				   [User, Server, From, subscribed, ""]),
 				 true};
 			    "unsubscribe" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, unsubscribe]),
+				   [User, Server, From, unsubscribe, ""]),
 				 true};
 			    "unsubscribed" ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, unsubscribed]),
+				   [User, Server, From, unsubscribed, ""]),
 				 true};
 			    _ ->
 				{true, false}
@@ -340,39 +342,18 @@ do_route(From, To, Packet) ->
 			    LFrom = jlib:jid_tolower(From),
 			    PResources = get_user_present_resources(
 					   LUser, LServer),
-			    if
-				PResources /= [] ->
-				    lists:foreach(
-				      fun({_, R}) ->
-					      if LFrom /=
-						 {LUser, LServer, R} ->
-						      do_route(
-							From,
-							jlib:jid_replace_resource(To, R),
-							Packet);
-						 true ->
-						      ok
-					      end
-				      end, PResources);
-				true ->
-				    if
-					Subsc ->
-					    case ejabberd_auth:is_user_exists(
-						   LUser, LServer) of
-						true ->
-						    ejabberd_hooks:run(
-						      offline_subscription_hook,
-						      LServer,
-						      [From, To, Packet]);
-						_ ->
-						    Err = jlib:make_error_reply(
-							    Packet, ?ERR_SERVICE_UNAVAILABLE),
-						    ejabberd_router:route(To, From, Err)
-					    end;
-					true ->
-					    ok
-				    end
-			    end;
+			    lists:foreach(
+			      fun({_, R}) ->
+				      if LFrom /=
+					 {LUser, LServer, R} ->
+					      do_route(
+						From,
+						jlib:jid_replace_resource(To, R),
+						Packet);
+					 true ->
+					      ok
+				      end
+			      end, PResources);
 		       true ->
 			    ok
 		    end;
