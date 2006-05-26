@@ -417,7 +417,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 		AskMessage = case NewState of
 				 {_, both} -> Reason;
 				 {_, in}   -> Reason;
-				 {_, _}    -> []
+				 _         -> ""
 			     end,
 		case NewState of
 		    none ->
@@ -641,35 +641,37 @@ process_item_attrs_ws(Item, []) ->
     Item.
 
 get_in_pending_subscriptions(Ls, User, Server) ->
-    JID =  jlib:make_jid(User, Server,""),
-    case mnesia:dirty_index_read(roster, {User,Server}, #roster.us) of
+    JID = jlib:make_jid(User, Server, ""),
+    US = {JID#jid.luser, JID#jid.lserver},
+    case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Result when list(Result) ->
     	    Ls ++ lists:map(
-		   fun(R) ->
-			   Message = R#roster.askmessage,
-			   Status  = if is_binary(Message) ->
-					     binary_to_list(Message);
-					true ->
-					     []
-				     end,
-			   {xmlelement, "presence", [{"from", jlib:jid_to_string(R#roster.jid)},
-						     {"to", jlib:jid_to_string(JID)},
-						     {"type", "subscribe"}],
-			    [{xmlelement, "status", [],
-			      [{xmlcdata, Status}]}]}
-		   end,
-		   lists:filter(
-		     fun(R) ->
-			     case R#roster.ask of
-				 in   -> true;
-				 both -> true;
-				 _ -> false
-			     end
-		     end,
-		     Result));
-	_ -> []
+		    fun(R) ->
+			    Message = R#roster.askmessage,
+			    Status  = if is_binary(Message) ->
+					      binary_to_list(Message);
+					 true ->
+					      ""
+				      end,
+			    {xmlelement, "presence",
+			     [{"from", jlib:jid_to_string(R#roster.jid)},
+			      {"to", jlib:jid_to_string(JID)},
+			      {"type", "subscribe"}],
+			     [{xmlelement, "status", [],
+			       [{xmlcdata, Status}]}]}
+		    end,
+		    lists:filter(
+		      fun(R) ->
+			      case R#roster.ask of
+				  in   -> true;
+				  both -> true;
+				  _ -> false
+			      end
+		      end,
+		      Result));
+	_ ->
+	    Ls
     end.
-		     
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

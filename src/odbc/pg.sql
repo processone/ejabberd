@@ -18,7 +18,7 @@ CREATE TABLE rosterusers (
     nick text,
     subscription character(1) NOT NULL,
     ask character(1) NOT NULL,
-    askmessage text,
+    askmessage text NOT NULL,
     server character(1) NOT NULL,
     subscribe text,
     "type" text
@@ -99,4 +99,6 @@ CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
 -- ALTER TABLE spool ALTER COLUMN seq SET NOT NULL;
 
 --- To update from 1.x:
--- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;
+-- ALTER TABLE rosterusers ADD COLUMN askmessage text;
+-- UPDATE rosterusers SET askmessage = '';
+-- ALTER TABLE rosterusers ALTER COLUMN askmessage SET NOT NULL;

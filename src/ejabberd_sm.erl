@@ -8,7 +8,6 @@
 
 -module(ejabberd_sm).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 
@@ -306,8 +305,9 @@ do_route(From, To, Packet) ->
 		    {Pass, Subsc} =
 			case xml:get_attr_s("type", Attrs) of
 			    "subscribe" ->
-				Reason = xml:get_tag_cdata(
-					   xml:get_subtag(Packet, "status")),
+				Reason = xml:get_path_s(
+					   Packet,
+					   [{elem, "status"}, cdata]),
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,

@@ -1,3 +1,14 @@
+2006-05-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/pg.sql: Updated
+
+	* src/mod_shared_roster.erl: Updated
+
+	* src/ejabberd_sm.erl: Bugfix
+
+	* src/mod_roster.erl: Bugfix
+	* src/mod_roster_odbc.erl: Likewise
+
 2006-05-23  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_roster.erl: The subscribe request are now resend at login as

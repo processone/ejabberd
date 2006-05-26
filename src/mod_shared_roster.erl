@@ -8,7 +8,6 @@
 
 -module(mod_shared_roster).
 -author('alexey@sevcom.net').
--vsn('$Revision: 24 $ ').
 
 -behaviour(gen_mod).
 
@@ -16,7 +15,7 @@
 	 get_user_roster/2,
 	 get_subscription_lists/3,
 	 get_jid_info/4,
-	 in_subscription/5,
+	 in_subscription/6,
 	 out_subscription/4,
 	 list_groups/1,
 	 create_group/2,
@@ -148,7 +147,7 @@ get_jid_info({Subscription, Groups}, User, Server, JID) ->
 	    {Subscription, Groups}
     end.
 
-in_subscription(Acc, User, Server, JID, Type) ->
+in_subscription(Acc, User, Server, JID, Type, _Reason) ->
     process_subscription(in, User, Server, JID, Type, Acc).
 
 out_subscription(User, Server, JID, Type) ->

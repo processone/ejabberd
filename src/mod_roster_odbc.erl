@@ -8,7 +8,6 @@
 
 -module(mod_roster_odbc).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 
@@ -126,10 +125,10 @@ get_user_roster(Acc, {LUser, LServer}) ->
     case catch ejabberd_odbc:sql_query(
 		 LServer,
 		 ["select username, jid, nick, subscription, ask, "
-		  "server, subscribe, type from rosterusers "
+		  "askmessage, server, subscribe, type from rosterusers "
 		  "where username='", Username, "'"]) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",
-		    "server", "subscribe", "type"],
+		    "askmessage", "server", "subscribe", "type"],
 	 Items} when is_list(Items) ->
 	    JIDGroups = case catch ejabberd_odbc:sql_query(
 				     LServer,
@@ -216,11 +215,12 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 	    F = fun() ->
 			{selected,
 			 ["username", "jid", "nick", "subscription",
-			  "ask", "server", "subscribe", "type"],
+			  "ask", "askmessage", "server", "subscribe", "type"],
 			 Res} =
 			    ejabberd_odbc:sql_query_t(
 			      ["select username, jid, nick, subscription, "
-			       "ask, server, subscribe, type from rosterusers "
+			       "ask, askmessage, server, subscribe, type "
+			       "from rosterusers "
 			       "where username='", Username, "' "
 			       "and jid='", SJID, "'"]),
 			Item = case Res of
@@ -410,10 +410,10 @@ get_subscription_lists(_, User, Server) ->
     case catch ejabberd_odbc:sql_query(
 		 LServer,
 		 ["select username, jid, nick, subscription, ask, "
-		  "server, subscribe, type from rosterusers "
+		  "askmessage, server, subscribe, type from rosterusers "
 		  "where username='", Username, "'"]) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",
-		    "server", "subscribe", "type"],
+		    "askmessage", "server", "subscribe", "type"],
 	 Items} when is_list(Items) ->
 	    fill_subscription_lists(LServer, Items, [], []);
 	_ ->
@@ -458,12 +458,13 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 		Item =
 		    case ejabberd_odbc:sql_query_t(
 			   ["select username, jid, nick, subscription, ask, "
-			    "server, subscribe, type from rosterusers "
+			    "askmessage, server, subscribe, type "
+			    "from rosterusers "
 			    "where username='", Username, "' "
 			    "and jid='", SJID, "';"]) of
 			{selected,
 			 ["username", "jid", "nick", "subscription", "ask",
-			  "server", "subscribe", "type"],
+			  "askmessage", "server", "subscribe", "type"],
 			 [I]} ->
 			    R = raw_to_record(LServer, I),
 			    Groups =
@@ -506,7 +507,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 		AskMessage = case NewState of
 				 {_, both} -> Reason;
 				 {_, in}   -> Reason;
-				 {_, _}    -> []
+				 _         -> ""
 			     end,
 		case NewState of
 		    none ->
@@ -770,35 +771,47 @@ process_item_attrs_ws(Item, []) ->
 
 
 get_in_pending_subscriptions(Ls, User, Server) ->
-    JID =  jlib:make_jid(User, Server,""),
-    case mnesia:dirty_index_read(roster, {User,Server}, #roster.us) of
-	Result when list(Result) ->
+    JID = jlib:make_jid(User, Server, ""),
+    LUser = JID#jid.luser,
+    LServer = JID#jid.lserver,
+    Username = ejabberd_odbc:escape(LUser),
+    case catch ejabberd_odbc:sql_query(
+		 LServer,
+		 ["select username, jid, nick, subscription, ask, "
+		  "askmessage, server, subscribe, type from rosterusers "
+		  "where username='", Username, "'"]) of
+	{selected, ["username", "jid", "nick", "subscription", "ask",
+		    "askmessage", "server", "subscribe", "type"],
+	 Items} when is_list(Items) ->
     	    Ls ++ lists:map(
-		   fun(R) ->
-			   Message = R#roster.askmessage,
-			   Status  = if is_binary(Message) ->
-					     binary_to_list(Message);
-					true ->
-					     []
-				     end,
-			   {xmlelement, "presence", [{"from", jlib:jid_to_string(R#roster.jid)},
-						     {"to", jlib:jid_to_string(JID)},
-						     {"type", "subscribe"}],
-			    [{xmlelement, "status", [],
-			      [{xmlcdata, Status}]}]}
-		   end,
-		   lists:filter(
-		     fun(R) ->
-			     case R#roster.ask of
-				 in   -> true;
-				 both -> true;
-				 _ -> false
-			     end
-		     end,
-		     Result));
-	_ -> []
+		    fun(R) ->
+			    Message = R#roster.askmessage,
+			    Status  = if is_binary(Message) ->
+					      binary_to_list(Message);
+					 true ->
+					      ""
+				      end,
+			    {xmlelement, "presence",
+			     [{"from", jlib:jid_to_string(R#roster.jid)},
+			      {"to", jlib:jid_to_string(JID)},
+			      {"type", "subscribe"}],
+			     [{xmlelement, "status", [],
+			       [{xmlcdata, Status}]}]}
+		    end,
+		    lists:flatmap(
+		      fun(I) ->
+			      R = raw_to_record(LServer, I),
+			      case R#roster.ask of
+				  in   -> [R];
+				  both -> [R];
+				  _ -> []
+			      end
+		      end,
+		      Items));
+	_ ->
+	    Ls
     end.
-		     
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -869,7 +882,7 @@ get_jid_info(_, User, Server, JID) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk,
+raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 			_SServer, _SSubscribe, _SType}) ->
     case jlib:string_to_jid(SJID) of
 	error ->
@@ -895,7 +908,8 @@ raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk,
 		    jid = LJID,
 		    name = Nick,
 		    subscription = Subscription,
-		    ask = Ask}
+		    ask = Ask,
+		    askmessage = SAskMessage}
     end.
 
 record_to_string(#roster{us = {User, _Server},
