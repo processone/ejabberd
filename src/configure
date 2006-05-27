@@ -4800,6 +4800,7 @@ fi
 fi
 
 # If ssl is kerberized it need krb5.h
+# On RedHat and OpenBSD, krb5.h is in an unsual place:
 KRB5_INCLUDE="`krb5-config --cflags 2>/dev/null`"
 if test -n "$KRB5_INCLUDE" ; then
         CPPFLAGS="$CPPFLAGS $KRB5_INCLUDE"
@@ -4812,7 +4813,6 @@ else
                 fi
         done
 fi
-echo MREMOND: $CPPFLAGS
 if test "${ac_cv_header_krb5_h+set}" = set; then
   echo "$as_me:$LINENO: checking for krb5.h" >&5
 echo $ECHO_N "checking for krb5.h... $ECHO_C" >&6
