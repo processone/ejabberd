@@ -57,4 +57,20 @@ AC_CONFIG_FILES([Makefile
                  $make_ejabberd_zlib])
 #openssl
 AM_WITH_OPENSSL
+# If ssl is kerberized it need krb5.h
+# On RedHat and OpenBSD, krb5.h is in an unsual place:
+KRB5_INCLUDE="`krb5-config --cflags 2>/dev/null`"
+if test -n "$KRB5_INCLUDE" ; then
+        CPPFLAGS="$CPPFLAGS $KRB5_INCLUDE"
+else
+        #         For RedHat                                  For BSD
+        for D in /usr/kerberos/include /usr/include/kerberos /usr/include/kerberosV
+        do
+                if test -d $D ; then
+                        CPPFLAGS="$CPPFLAGS -I$D"
+                fi
+        done
+fi
+AC_CHECK_HEADER(krb5.h,,)
+
 AC_OUTPUT
