@@ -609,7 +609,7 @@ out_state_change(none, none, subscribe)    -> {none, out};
 out_state_change(none, none, subscribed)   -> none;
 out_state_change(none, none, unsubscribe)  -> none;
 out_state_change(none, none, unsubscribed) -> none;
-out_state_change(none, out,  subscribe)    -> none;
+out_state_change(none, out,  subscribe)    -> {none, out}; %% We need to resend query (RFC3921, section 9.2)
 out_state_change(none, out,  subscribed)   -> none;
 out_state_change(none, out,  unsubscribe)  -> {none, none};
 out_state_change(none, out,  unsubscribed) -> none;

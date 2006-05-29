@@ -1,3 +1,11 @@
+2006-05-29  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_roster.erl: According to RFC3921 section 9.2, outbound
+	subscribe presence packets must be sent, even if the user has already
+	asked for subcription previously (subscription: none and pending: out).
+	The mod_roster now conforms to this behaviour. 
+	* src/mod_roster_odbc.erl: Likewise.
+
 2006-05-27  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/configure.ac: Added an optional check for krb5.h in
