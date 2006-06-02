@@ -1,3 +1,9 @@
+2006-06-31  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Messages polled between the
+	the last client request and the polling timeout were lost. Those
+	messages are now resent using ejabberd routing mechanisms.
+
 2006-05-29  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_roster.erl: According to RFC3921 section 9.2, outbound

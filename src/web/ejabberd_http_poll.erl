@@ -36,7 +36,7 @@
 		key,
 		output = "",
 		input = "",
-		waiting_input = false,
+		waiting_input = false, %% {ReceiverPid, Tag}
 		last_receiver,
 		timer}).
 
@@ -195,7 +195,7 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
 handle_sync_event({send, Packet}, From, StateName, StateData) ->
-    Output = [StateData#state.output | Packet],
+    Output = StateData#state.output ++ [lists:flatten(Packet)],
     Reply = ok,
     {reply, Reply, StateName, StateData#state{output = Output}};
 
@@ -234,7 +234,7 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 	Allow ->
 	    case StateData#state.waiting_input of
 		false ->
-		    Input = [StateData#state.input | Packet],
+		    Input = [StateData#state.input|Packet],
 		    Reply = ok,
 		    {reply, Reply, StateName, StateData#state{input = Input,
 							      key = NewKey}};
@@ -291,13 +291,18 @@ terminate(Reason, StateName, StateData) ->
       end),
     case StateData#state.waiting_input of
 	false ->
+	    %% We are testing this case due to "socket activation": If we pass
+	    %% here and the "socket" is not ready to receive, the tcp_closed
+	    %% will be lost.
 	    case StateData#state.last_receiver of
 		undefined -> ok;
-		Receiver  -> Receiver ! {tcp_closed, {http_poll, self()}}
+		Receiver  ->
+		    Receiver ! {tcp_closed, {http_poll, self()}}
 	    end;
 	{Receiver, _Tag} ->
 	    Receiver ! {tcp_closed, {http_poll, self()}}
     end,
+    resend_messages(StateData#state.output),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -348,3 +353,27 @@ cancel_timer(Timer) ->
 	    ok
     end.
 
+%% Resend the polled messages
+resend_messages(Messages) ->
+    lists:foreach(fun(Packet) ->
+			  resend_message(Packet)
+		  end, Messages).
+    
+%% This function is used to resend messages that have been polled but not
+%% delivered.
+resend_message(Packet) ->
+    ParsedPacket = xml_stream:parse_element(Packet),
+    From = get_jid("from", ParsedPacket),
+    To = get_jid("to", ParsedPacket),
+    io:format("MREMOND: Resend ~p ~p ~p~n",[From,To, ParsedPacket]),
+    ejabberd_router:route(From, To, ParsedPacket).
+
+%% Type can be "from" or "to"
+%% Parsed packet is a parsed Jabber packet.
+get_jid(Type, ParsedPacket) ->
+    case xml:get_tag_attr(Type, ParsedPacket) of
+	{value, StringJid} ->
+	    jlib:string_to_jid(StringJid);
+	false ->
+	    jlib:make_jid("","","")
+    end.
