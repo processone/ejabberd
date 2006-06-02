@@ -133,12 +133,16 @@ process_header(State, Data) ->
     SockMod = State#state.sockmod,
     Socket = State#state.socket,
     case Data of
-	{ok, {http_request, Method, Path, Version}} ->
+	{ok, {http_request, Method, Uri, Version}} ->
 	    KeepAlive = case Version of
 		{1, 1} ->
 		    true;
 		_ ->
 		    false
+	    end,
+	    Path = case Uri of
+	        {absoluteURI, _Scheme, _Host, _Port, P} -> {abs_path, P};
+	        _ -> Uri
 	    end,
 	    State#state{request_method = Method,
 			request_version = Version,
@@ -716,10 +720,27 @@ parse_req(Line) ->
 			       "*" ->
 			       % Is this correct?
 				   "*";
-			       P ->
-			       % FIXME: Handle
-			       % absolute URIs
-				   {abs_path, P}
+			       _ ->
+				   case string:str(URI, "://") of
+				       0 ->
+				           % Relative URI
+				           % ex: /index.html
+				           {abs_path, URI};
+				       N ->
+				           % Absolute URI
+				           % ex: http://localhost/index.html
+
+				           % Remove scheme
+				           % ex: URI2 = localhost/index.html
+				           URI2 = string:substr(URI, N + 3),
+				           % Look for the start of the path
+				           % (or the lack of a path thereof)
+				           case string:chr(URI2, $/) of
+				               0 -> {abs_path, "/"};
+				               M -> {abs_path,
+				                   string:substr(URI2, M + 1)}
+				           end
+				   end
 			   end,
 		    case VersionStr of
 			[] ->
