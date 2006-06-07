@@ -1913,6 +1913,9 @@ Options:
 \titem{served\_hosts} \ind{options!served\_hosts}To specify which hosts needs to
   be served, you can use this option. If absent, only the main \ejabberd{}
   host is served. % Not a straigtforward description! This needs to be improved!
+\titem{access\_createnode} \ind{options!access\_createnode}
+    Restricts which users are allowed to create pubsub nodes using ACL and ACCESS.
+    Default: \term{pubsub\_createnode}.
 \end{description}
 
 Example:
@@ -1921,7 +1924,8 @@ Example:
    [
     ...
     {mod_pubsub, [{served_hosts, ["example.com",
-                                  "example.org"]}]}
+                                  "example.org"]},
+                  {access_createnode, pubsub_createnode}]}
     ...
    ]}.
 \end{verbatim}

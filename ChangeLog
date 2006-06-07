@@ -1,3 +1,11 @@
+2006-06-07  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Support for pubsub node creation ACL.
+	It is now possible to limit the node creation rights using an ACL from
+	ejabberd config file (Thanks to Christophe Romain). 
+	* doc/guide.tex: Likewise.
+	* src/ejabberd.cfg.example.
+
 2006-06-02  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: Messages polled between the

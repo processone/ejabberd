@@ -4,7 +4,7 @@
 
 <HEAD>
 
-<TITLE>Ejabberd 1.0.0 Developers Guide</TITLE>
+<TITLE>Ejabberd 1.1.1 Developers Guide</TITLE>
 
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <META name="GENERATOR" content="hevea 1.08">
@@ -34,7 +34,7 @@ BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
 
  <TABLE CLASS="title">
 <TR><TD>
-<H1 CLASS="titlemain">Ejabberd 1.0.0 Developers Guide</H1>
+<H1 CLASS="titlemain">Ejabberd 1.1.1 Developers Guide</H1>
 <H3 CLASS="titlerest">Alexey Shchepin<BR>
 <A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
 <A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3></TD>
@@ -101,16 +101,16 @@ BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Multiplatform: <TT>ejabberd</TT> runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.<BR>
 <BR>
-<LI CLASS="li-itemize">Distributed: You can run <TT>ejabberd</TT> on a cluster of machines and all of them will serve one Jabber domain. When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.<BR>
+<LI CLASS="li-itemize">Distributed: You can run <TT>ejabberd</TT> on a cluster of machines and all of them will serve the same Jabber domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.<BR>
 <BR>
 <LI CLASS="li-itemize">Fault-tolerant: You can deploy an <TT>ejabberd</TT> cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced &#8220;on the fly&#8221;.<BR>
 <BR>
 <LI CLASS="li-itemize">Administrator Friendly: <TT>ejabberd</TT> is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Comprehensive documentation.
-<LI CLASS="li-itemize">Straightforward installers for Windows and Linux.
+<LI CLASS="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows.
 <LI CLASS="li-itemize">Web interface for administration tasks.
-<LI CLASS="li-itemize">Shared Roster groups.
+<LI CLASS="li-itemize">Shared Roster Groups.
 <LI CLASS="li-itemize">Command line administration tool.
 <LI CLASS="li-itemize">Can integrate with existing authentication mechanisms.
 <LI CLASS="li-itemize">Capability to send announce messages.
@@ -124,7 +124,7 @@ Translated in 11 languages.
 <BR>
 <LI CLASS="li-itemize">Open Standards: <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Fully XMPP compliant  
+Fully XMPP compliant 
 <LI CLASS="li-itemize">XML-based protocol
 <LI CLASS="li-itemize"><A HREF="http://ejabberd.jabber.ru/protocols">Many JEPs supported</A>.
 </UL></UL>
@@ -136,7 +136,7 @@ Fully XMPP compliant
 
 Besides common Jabber server features, <TT>ejabberd</TT> comes with a wide range of other features:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Modular: <TT>ejabberd</TT>'s modular architecture allows easy customization:
+Modular
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Load only the modules you want.
 <LI CLASS="li-itemize">Extend <TT>ejabberd</TT> with your own custom modules.
@@ -145,37 +145,33 @@ Load only the modules you want.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 SASL and STARTTLS for c2s and s2s connections.
 <LI CLASS="li-itemize">STARTTLS and Dialback s2s connections.
-<LI CLASS="li-itemize">Obsolete SSL for c2s connections also supported.
 <LI CLASS="li-itemize">Web interface accessible via HTTPS secure access.
 </UL>
 <LI CLASS="li-itemize">Databases
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Native PostgreSQL support. 
+Native MySQL support.
+<LI CLASS="li-itemize">Native PostgreSQL support.
 <LI CLASS="li-itemize">Mnesia.
 <LI CLASS="li-itemize">ODBC data storage support. 
 </UL>
 <LI CLASS="li-itemize">Authentication
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-LDAP. 
+LDAP and ODBC. 
 <LI CLASS="li-itemize">External Authentication script.
 <LI CLASS="li-itemize">Internal Authentication.
 </UL>
-<LI CLASS="li-itemize">The ability to interface via external components with networks such as:
-<UL CLASS="itemize"><LI CLASS="li-itemize">
-AIM
-<LI CLASS="li-itemize">ICQ
-<LI CLASS="li-itemize">MSN
-</UL>
 <LI CLASS="li-itemize">Others
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-IPv6 support both for c2s and s2s connections. 
-<LI CLASS="li-itemize">Support for virtual hosting. 
-<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A> service
-<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0045.html">Multi-User Chat</A> module.
-<LI CLASS="li-itemize">IRC transport.
-<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0060.html">Publish-Subscribe</A> component.
-<LI CLASS="li-itemize">Users Directory based on users vCards.
+Compressing XML streams with Stream Compression (<A HREF="http://www.jabber.org/jeps/jep-0138.html">JEP-0138</A>).
+<LI CLASS="li-itemize">Interface with networks such as AIM, ICQ and MSN.
 <LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>).
+<LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0045.html">Multi-User Chat</A> module with logging.
+<LI CLASS="li-itemize">Users Directory based on users vCards.
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0060.html">Publish-Subscribe</A> component.
+<LI CLASS="li-itemize">Support for virtual hosting. 
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A> service.
+<LI CLASS="li-itemize">IRC transport.
 </UL>
 </UL>
 <!--TOC section How it works-->

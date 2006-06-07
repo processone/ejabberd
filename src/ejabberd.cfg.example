@@ -20,6 +20,8 @@
 %{acl, test, {user_regexp, "^test"}}.
 %{acl, test, {user_glob, "test*"}}.
 
+% Everybody can create pubsub nodes
+{access, pubsub_createnode, [{allow, all}]}.
 
 % Only admins can use configuration interface:
 {access, configure, [{allow, admin}]}.
@@ -171,7 +173,7 @@
 		    {access_admin, muc_admin}]},
 %  {mod_muc_log,    []},
 %  {mod_shared_roster, []},
-  {mod_pubsub,     []},
+  {mod_pubsub,     [{access_createnode, pubsub_createnode}]},
   {mod_time,       []},
   {mod_last,       []},
   {mod_version,    []}

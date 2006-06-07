@@ -2188,14 +2188,18 @@ Options:
 
 <DT CLASS="dt-description"><B><TT>served_hosts</TT></B><DD CLASS="dd-description"> To specify which hosts needs to
  be served, you can use this option. If absent, only the main <TT>ejabberd</TT>
- host is served. </DL>
+ host is served. <DT CLASS="dt-description"><B><TT>access_createnode</TT></B><DD CLASS="dd-description"> 
+ Restricts which users are allowed to create pubsub nodes using ACL and ACCESS.
+ Default: <TT>pubsub_createnode</TT>.
+</DL>
 Example:
 <PRE CLASS="verbatim">
   {modules,
    [
     ...
     {mod_pubsub, [{served_hosts, ["example.com",
-                                  "example.org"]}]}
+                                  "example.org"]},
+                  {access_createnode, pubsub_createnode}]}
     ...
    ]}.
 </PRE>
