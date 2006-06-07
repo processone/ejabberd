@@ -328,32 +328,50 @@ iq_disco_info(SNode) ->
 	    []
     end.
 
-
 iq_disco_items(Host, From, SNode) ->
-    Node = string:tokens(SNode, "/"),
+	{Node,ItemID} = case SNode of
+	[] ->
+		{[],none};
+	_ ->
+		Tokens = string:tokens(SNode, "!"),
+		NodeList = string:tokens(lists:nth(1, Tokens), "/"),
+		ItemName = case length(Tokens) of
+		2 -> lists:nth(2, Tokens);
+		_ -> none
+		end,
+		{NodeList, ItemName}
+	end,
+	NodeFull = string:tokens(SNode,"/"),
     F = fun() ->
 		case mnesia:read({pubsub_node, {Host, Node}}) of
 		    [#pubsub_node{info = Info}] ->
-			SubNodes = mnesia:index_read(pubsub_node,
+			case ItemID of
+			none ->
+				SubNodes = mnesia:index_read(pubsub_node,
 						     {Host, Node},
 						     #pubsub_node.host_parent),
-			SubItems =
-			    lists:map(fun(#pubsub_node{host_node = {_, N}}) ->
+				SubItems = lists:map(fun(#pubsub_node{host_node = {_, N}}) ->
 					      SN = node_to_string(N),
 					      {xmlelement, "item",
 					       [{"jid", Host},
 						{"node", SN},
 						{"name", lists:last(N)}], []}
 				      end, SubNodes),
-			SN = node_to_string(Node),
-			Items =
-			    lists:map(fun(#item{id = Name}) ->
+				SN = node_to_string(Node),
+				Items = lists:map(fun(#item{id = Name}) ->
+						RealName = case Name of
+						[] -> "item";
+						_ -> Name
+						end,
 					      {xmlelement, "item",
 					       [{"jid", Host},
 						{"node", SN ++ "!" ++ Name},
-						{"name", Name}], []}
+						{"name", RealName}], []}
 				      end, Info#nodeinfo.items),
-			SubItems ++ Items;
+				SubItems ++ Items;
+			_ ->
+				[]
+			end;
 		    [] ->
 			case Node of
 			    [] ->
@@ -383,8 +401,6 @@ iq_disco_items(Host, From, SNode) ->
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
-
-
 
 iq_get_vcard(Lang) ->
     [{xmlelement, "FN", [],
