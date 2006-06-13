@@ -149,7 +149,8 @@ check_password(User, Server, Password) ->
 check_password(User, Server, _Password, _StreamID, _Digest) ->
     %% We refuse login for registered accounts (They cannot logged but
     %% they however are "reserved")
-    case ejabberd_auth:is_user_exists(User, Server) of
+    case ejabberd_auth:is_user_exists_in_other_modules(?MODULE, 
+						       User, Server) of
 	true  -> false;
 	false -> login(User, Server)
     end.

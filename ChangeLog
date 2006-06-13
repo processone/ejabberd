@@ -1,3 +1,9 @@
+2006-06-13  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_auth.erl: Fixed broken multiple connection with
+	anonymous login problem.
+	* src/ejabberd_auth_anonymous.erl: Likewise.
+
 2006-06-07  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Support for pubsub node creation

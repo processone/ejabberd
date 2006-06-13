@@ -25,6 +25,7 @@
 	 get_password/2,
 	 get_password_s/2,
 	 is_user_exists/2,
+         is_user_exists_in_other_modules/3,
 	 remove_user/2,
 	 remove_user/3,
 	 plain_password_required/1,
@@ -129,6 +130,14 @@ is_user_exists(User, Server) ->
       fun(M) ->
 	      M:is_user_exists(User, Server)
       end, auth_modules(Server)).
+
+%% Check if the user exists in all authentications module except the module
+%% passed as parameter
+is_user_exists_in_other_modules(Module, User, Server) ->
+    lists:any(
+      fun(M) ->
+	      M:is_user_exists(User, Server)
+      end, auth_modules(Server)--[Module]).
 
 remove_user(User, Server) ->
     lists:foreach(
