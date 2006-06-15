@@ -1,3 +1,8 @@
+2006-06-15  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Bugfix: using tuple instead of a Pid
+	to send Erlang messages in a rarely used case.
+
 2006-06-13  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_auth.erl: Fixed broken multiple connection with

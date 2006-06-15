@@ -204,7 +204,8 @@ handle_sync_event(activate, From, StateName, StateData) ->
 	"" ->
 	    {reply, ok, StateName, StateData#state{waiting_input = From}};
 	Input ->
-	    From ! {tcp, {http_poll, self()}, list_to_binary(Input)},
+            {Receiver, _Tag} = From,
+	    Receiver ! {tcp, {http_poll, self()}, list_to_binary(Input)},
 	    {reply, ok, StateName, StateData#state{input = "",
 						   waiting_input = false,
 						   last_receiver = From
