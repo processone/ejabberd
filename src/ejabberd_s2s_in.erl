@@ -8,7 +8,6 @@
 
 -module(ejabberd_s2s_in).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_fsm).
 
@@ -150,7 +149,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case {xml:get_attr_s("xmlns", Attrs),
 	  xml:get_attr_s("xmlns:db", Attrs),
 	  xml:get_attr_s("version", Attrs) == "1.0"} of
-	{"jabber:server", "jabber:server:dialback", true} when
+	{"jabber:server", _, true} when
 	      StateData#state.tls and (not StateData#state.authenticated) ->
 	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
 	    SASL =

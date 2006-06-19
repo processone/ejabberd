@@ -1,3 +1,8 @@
+2006-06-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_in.erl: Removed needless check for xmlns:db
+	when starttls is enabled
+
 2006-06-15  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: Bugfix: using tuple instead of a Pid
