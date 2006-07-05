@@ -2582,7 +2582,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 
 	    OldMembers = mod_shared_roster:get_group_explicit_users(
 			   Host, Group),
-	    SJIDs = string:tokens(SMembers, "\r\n"),
+	    SJIDs = string:tokens(SMembers, ", \r\n"),
 	    NewMembers =
 		lists:foldl(
 		  fun(_SJID, error) -> error;

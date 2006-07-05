@@ -1,3 +1,8 @@
+2006-07-05  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: More flexible parsing the shared
+	roster members list from the configuration form.
+
 2006-06-19  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_s2s_in.erl: Removed needless check for xmlns:db
