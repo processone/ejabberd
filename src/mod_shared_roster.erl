@@ -75,14 +75,22 @@ stop(Host) ->
 get_user_roster(Items, US) ->
     {U, S} = US,
     DisplayedGroups = get_user_displayed_groups(US),
+    %% Get shared roster users in all groups and remove self: 
     SRUsers = 
 	lists:foldl(
 	  fun(Group, Acc1) ->
 		  lists:foldl(
 		    fun(User, Acc2) ->
-			    dict:append(User, get_group_name(S, Group), Acc2)
+			    if User == US -> Acc2;
+			       true -> dict:append(User, 
+						   get_group_name(S, Group),
+						   Acc2)
+			    end
 		    end, Acc1, get_group_users(S, Group))
 	  end, dict:new(), DisplayedGroups),
+
+    %% If partially subscribed users are also in shared roster, show them as
+    %% totally subscribed:
     {NewItems1, SRUsersRest} =
 	lists:mapfoldl(
 	  fun(Item, SRUsers1) ->
@@ -96,6 +104,8 @@ get_user_roster(Items, US) ->
 			  {Item, SRUsers1}
 		  end
 	  end, SRUsers, Items),
+    
+    %% Export items in roster format:
     SRItems = [#roster{usj = {U, S, {U1, S1, ""}},
 		       us = US,
 		       jid = {U1, S1, ""},

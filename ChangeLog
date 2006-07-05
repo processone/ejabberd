@@ -2,8 +2,11 @@
 
 	* src/web/ejabberd_web_admin.erl: More flexible parsing the shared
 	roster members list from the configuration form.
-	* src/mod_shared_roster.erl: Delete the shared roster group now
-	correctly delete its user entries.
+	* src/mod_shared_roster.erl: Deletng a shared roster group now
+	correctly deletes its user entries.
+
+	* src/mod_shared_roster.erl: The logged user (self) is now removed from
+	the shared roster list.
 
 2006-06-19  Alexey Shchepin  <alexey@sevcom.net>
 
