@@ -197,8 +197,15 @@ create_group(Host, Group, Opts) ->
     mnesia:transaction(F).
 
 delete_group(Host, Group) ->
+    GroupHost = {Group, Host},
     F = fun() ->
-		mnesia:delete({sr_group, {Group, Host}})
+		%% Delete the group ...
+		mnesia:delete({sr_group, GroupHost}),
+		%% ... and its users
+		Users = mnesia:index_read(sr_user, GroupHost, #sr_user.group_host),
+		lists:foreach(fun(UserEntry) ->
+				      mnesia:delete_object(UserEntry)
+			      end, Users)
 	end,
     mnesia:transaction(F).
 
@@ -297,7 +304,8 @@ add_user_to_group(Host, US, Group) ->
     mnesia:transaction(F).
 
 remove_user_from_group(Host, US, Group) ->
-    R = #sr_user{us = US, group_host = {Group, Host}},
+    GroupHost = {Group, Host},
+    R = #sr_user{us = US, group_host = GroupHost},
     F = fun() ->
 		mnesia:delete_object(R)
 	end,
