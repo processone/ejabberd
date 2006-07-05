@@ -169,6 +169,7 @@ auth_modules(Server) ->
     LServer = jlib:nameprep(Server),
     Method = ejabberd_config:get_local_option({auth_method, LServer}),
     Methods = if
+		  Method == undefined -> [];
 		  is_list(Method) -> Method;
 		  is_atom(Method) -> [Method]
 	      end,

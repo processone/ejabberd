@@ -7,6 +7,8 @@
 
 	* src/mod_shared_roster.erl: The logged user (self) is now removed from
 	the shared roster list.
+	* src/ejabberd_auth.erl: Better handling of errors when the server for
+	authentication is unknown.
 
 2006-06-19  Alexey Shchepin  <alexey@sevcom.net>
 
