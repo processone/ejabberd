@@ -1002,8 +1002,8 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 				true ->
 				    ok
 			    end,
-			    send_new_presence(From, NewState),
 			    send_existing_presences(From, NewState),
+			    send_new_presence(From, NewState),
 			    Shift = count_stanza_shift(Nick, Els, NewState),
 			    case send_history(From, Shift, NewState) of
 				true ->

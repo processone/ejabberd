@@ -5,6 +5,10 @@
 	* src/mod_roster.erl: Likewise.
 	* src/mod_roster_odbc.erl: Likewise.
 
+	* src/mod_muc/mod_muc_room.erl: Fixed the order in which room presence
+	packets are sent (First existing presence to new occupant, then new
+	occupant presence to existing users.
+
 2006-07-05  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: More flexible parsing the shared
