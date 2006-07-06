@@ -273,7 +273,11 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 					      end,
 					      ItemGroups)
 			end,
-			{Item, Item2}
+			%% If the item exist in shared roster, take the
+			%% subscription information from there:
+			Item3 = ejabberd_hooks:run_fold(roster_process_item,
+							LServer, Item2, [LServer]),
+			{Item, Item3}
 		end,
 	    case ejabberd_odbc:sql_transaction(LServer, F) of
 		{atomic, {OldItem, Item}} ->

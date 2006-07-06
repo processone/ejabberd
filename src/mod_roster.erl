@@ -205,7 +205,11 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			    _ ->
 				mnesia:write(Item2)
 			end,
-			{Item, Item2}
+			%% If the item exist in shared roster, take the
+			%% subscription information from there:
+			Item3 = ejabberd_hooks:run_fold(roster_process_item,
+							LServer, Item2, [LServer]),
+			{Item, Item3}
 		end,
 	    case mnesia:transaction(F) of
 		{atomic, {OldItem, Item}} ->

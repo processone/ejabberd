@@ -15,6 +15,7 @@
 	 get_user_roster/2,
 	 get_subscription_lists/3,
 	 get_jid_info/4,
+	 process_item/2,
 	 in_subscription/6,
 	 out_subscription/4,
 	 list_groups/1,
@@ -53,7 +54,9 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(roster_get_subscription_lists, Host,
 		       ?MODULE, get_subscription_lists, 70),
     ejabberd_hooks:add(roster_get_jid_info, Host,
-        	       ?MODULE, get_jid_info, 70).
+        	       ?MODULE, get_jid_info, 70),
+    ejabberd_hooks:add(roster_process_item, Host,
+        	       ?MODULE, process_item, 50).
     %ejabberd_hooks:add(remove_user, Host,
     %    	       ?MODULE, remove_user, 50),
 
@@ -67,7 +70,9 @@ stop(Host) ->
     ejabberd_hooks:delete(roster_get_subscription_lists, Host,
         		  ?MODULE, get_subscription_lists, 70),
     ejabberd_hooks:delete(roster_get_jid_info, Host,
-        		  ?MODULE, get_jid_info, 70).
+        		  ?MODULE, get_jid_info, 70),
+    ejabberd_hooks:delete(roster_process_item, Host,
+			  ?MODULE, process_item, 50).
     %ejabberd_hooks:delete(remove_user, Host,
     %    		  ?MODULE, remove_user, 50),
 
@@ -115,6 +120,28 @@ get_user_roster(Items, US) ->
 		       groups = GroupNames} ||
 		  {{U1, S1}, GroupNames} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
+
+%% This function in use to rewrite the roster entries when moving or renaming
+%% them in the user contact list.
+process_item(RosterItem, Host) ->
+    USFrom = RosterItem#roster.us,
+    {User,Server,_Resource} = RosterItem#roster.jid,
+    USTo = {User,Server},
+    DisplayedGroups = get_user_displayed_groups(USFrom),
+    CommonGroups = lists:filter(fun(Group) ->
+					is_user_in_group(USTo, Group, Host)
+				end, DisplayedGroups),
+    case CommonGroups of
+	[] -> RosterItem;
+	%% Roster item cannot be removed: We simply reset the original groups:
+	_ when RosterItem#roster.subscription == remove ->
+	    GroupNames = lists:map(fun(Group) ->
+					   get_group_name(Host, Group)
+				   end, CommonGroups),
+	    RosterItem#roster{subscription = both, ask = none,
+			      groups=[GroupNames]};
+	_ -> RosterItem#roster{subscription = both, ask = none}
+    end.
 
 get_subscription_lists({F, T}, User, Server) ->
     LUser = jlib:nodeprep(User),
@@ -234,8 +261,6 @@ set_group_opts(Host, Group, Opts) ->
 	end,
     mnesia:transaction(F).
 
-
-
 get_user_groups(US) ->
     Host = element(2, US),
     case catch mnesia:dirty_read(sr_user, US) of
@@ -305,6 +330,12 @@ get_user_displayed_groups(US) ->
 		    end
 	    end, get_user_groups(US))),
     [Group || Group <- DisplayedGroups1, is_group_enabled(Host, Group)].
+
+is_user_in_group(US, Group, Host) ->
+    case mnesia:match_object(#sr_user{us=US, group_host={Group, Host}}) of
+	[] -> false;
+	_  -> true
+    end.
 
 add_user_to_group(Host, US, Group) ->
     R = #sr_user{us = US, group_host = {Group, Host}},

@@ -1,3 +1,10 @@
+2006-07-06  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_shared_roster.erl: Shared roster entries can now be moved or
+	rename from a client without breaking current presence status.
+	* src/mod_roster.erl: Likewise.
+	* src/mod_roster_odbc.erl: Likewise.
+
 2006-07-05  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: More flexible parsing the shared
