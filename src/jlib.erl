@@ -181,6 +181,9 @@ string_to_jid1([], "") ->
 string_to_jid1([], N) ->
     make_jid("", lists:reverse(N), "").
 
+%% Only one "@" is admitted per JID
+string_to_jid2([$@ | _J], _N, _S) ->
+    error;
 string_to_jid2([$/ | _J], _N, "") ->
     error;
 string_to_jid2([$/ | J], N, S) ->

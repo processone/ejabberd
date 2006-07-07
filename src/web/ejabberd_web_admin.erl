@@ -1229,7 +1229,7 @@ list_vhosts(Lang) ->
 
 
 list_users(Host, Query, Lang, URLFunc) ->
-    Res = list_users_parse_query(Query),
+    Res = list_users_parse_query(Query, Host),
     Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     FUsers =
@@ -1262,28 +1262,32 @@ list_users(Host, Query, Lang, URLFunc) ->
 	      [?XE("table",
 		   [?XE("tr",
 			[?XC("td", ?T("User") ++ ":"),
-			 ?XE("td", [?INPUT("text", "newusername", "")])
+			 ?XE("td", [?INPUT("text", "newusername", "")]),
+			 ?XE("td", [?C([" @ ", Host])])
 			]),
 		    ?XE("tr",
 			[?XC("td", ?T("Password") ++ ":"),
-			 ?XE("td", [?INPUT("password", "newuserpassword", "")])
+			 ?XE("td", [?INPUT("password", "newuserpassword", "")]),
+			 ?X("td")
 			]),
 		    ?XE("tr",
 			[?X("td"),
 			 ?XAE("td", [{"class", "alignright"}],
-			      [?INPUTT("submit", "addnewuser", "Add User")])
+			      [?INPUTT("submit", "addnewuser", "Add User")]),
+			 ?X("td")
 			])]),
 	       ?P] ++
 	      FUsers)].
 
-list_users_parse_query(Query) ->
+%% Parse user creation query and try register:
+list_users_parse_query(Query, Host) ->
     case lists:keysearch("addnewuser", 1, Query) of
 	{value, _} ->
-	    {value, {_, JIDString}} =
+	    {value, {_, Username}} =
 		lists:keysearch("newusername", 1, Query),
 	    {value, {_, Password}} =
 		lists:keysearch("newuserpassword", 1, Query),
-	    case jlib:string_to_jid(JIDString) of
+	    case jlib:string_to_jid(Username++"@"++Host) of
 		error ->
 		    error;
 		#jid{user = User, server = Server} ->
