@@ -1,3 +1,8 @@
+2006-07-16  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/acl.erl: The server does not crash anymore on wrong acl rule. Add
+	rule error message in log file.
+
 2006-07-07  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: User creation form now creates the

@@ -171,7 +171,13 @@ match_acl(ACL, JID, Host) ->
 				      is_glob_match(Server, SR);
 				  {node_glob, UR, SR} ->
 				      is_glob_match(Server, SR) andalso
-					  is_glob_match(User, UR)
+					  is_glob_match(User, UR);
+				  WrongSpec ->
+				      ?ERROR_MSG(
+					 "Wrong ACL expression: ~p~n"
+					 "Check your config file and reload it with the override_acls option enabled",
+					 [WrongSpec]),
+				      false
 			      end
 		      end,
 		      ets:lookup(acl, {ACL, global}) ++
