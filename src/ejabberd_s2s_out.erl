@@ -8,7 +8,6 @@
 
 -module(ejabberd_s2s_out).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_fsm).
 
@@ -46,6 +45,7 @@
 		tls_enabled = false,
 		tls_options = [],
 		authenticated = false,
+		db_enabled = true,
 		try_auth = true,
 		myname, server, queue,
 		new = false, verify = false,
@@ -224,12 +224,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	      StateData#state.use_v10 ->
 	    {next_state, wait_for_features, StateData};
 	{"jabber:server", "", true} when StateData#state.use_v10 ->
-	    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
-					 StateData#state.server}]),
-	    % TODO: clear message queue
-	    ejabberd_receiver:close(StateData#state.receiver),
-	    {next_state, reopen_socket, StateData#state{socket = undefined,
-							use_v10 = false}};
+	    {next_state, wait_for_features, StateData#state{db_enabled = false}};
 	_ ->
 	    send_text(StateData, ?INVALID_NAMESPACE_ERR),
 	    {stop, normal, StateData}
@@ -372,8 +367,15 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		    {next_state, reopen_socket,
 		     StateData#state{socket = undefined,
 				     use_v10 = false}};
+		StateData#state.db_enabled ->
+		    send_db_request(StateData);
 		true ->
-		    send_db_request(StateData)
+		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
+						 StateData#state.server}]),
+		    % TODO: clear message queue
+		    ejabberd_receiver:close(StateData#state.receiver),
+		    {next_state, reopen_socket, StateData#state{socket = undefined,
+								use_v10 = false}}
 	    end;
 	_ ->
 	    send_text(StateData,

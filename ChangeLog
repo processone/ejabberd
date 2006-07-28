@@ -1,3 +1,13 @@
+2006-07-28  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bugfix: added a missing catch and fixed the
+	error code used on unknown namespace.
+	* src/ejabberd_s2s_out.erl: Improved s2s connection negociation
+	(dialback namespace usage) when using tls.
+	* src/ejabberd_sm.erl: Fixed the error code used on unknown namespace.
+	* src/mod_register.erl: ejabberd now sends iq result and stream end on
+	user remove.
+
 2006-07-16  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/acl.erl: The server does not crash anymore on wrong acl rule. Add

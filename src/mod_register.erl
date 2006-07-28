@@ -8,7 +8,6 @@
 
 -module(mod_register).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 
@@ -59,7 +58,7 @@ unauthenticated_iq_register(Acc, _Server, _IQ) ->
     Acc.
 
 process_iq(From, To,
-	   #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
+	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} = IQ) ->
     case Type of
 	set ->
 	    UTag = xml:get_subtag(SubEl, "username"),
@@ -104,9 +103,18 @@ process_iq(From, To,
 		    end;
 		(UTag == false) and (RTag /= false) ->
 		    case From of
-			#jid{user = User, lserver = Server} ->
+			#jid{user = User,
+			     lserver = Server,
+			     resource = Resource} ->
+			    ResIQ = #iq{type = result, xmlns = ?NS_REGISTER,
+					id = ID,
+					sub_el = [SubEl]},
+			    ejabberd_router:route(
+			      jlib:make_jid(User, Server, Resource),
+			      jlib:make_jid(User, Server, Resource),
+			      jlib:iq_to_xml(ResIQ)),
 			    ejabberd_auth:remove_user(User, Server),
-			    IQ#iq{type = result, sub_el = [SubEl]};
+			    ignore;
 			_ ->
 			    IQ#iq{type = error,
 				  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}

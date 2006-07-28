@@ -1109,6 +1109,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	end,
     if
 	Pass == exit ->
+	    catch send_text(StateData, ?STREAM_TRAILER),
 	    {stop, normal, StateData};
 	Pass ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
@@ -1768,7 +1769,7 @@ process_unauthenticated_stanza(StateData, El) ->
 		    % The only reasonable IQ's here are auth and register IQ's
 		    % They contain secrets, so don't include subelements to response
 		    ResIQ = IQ#iq{type = error,
-				  sub_el = [?ERR_FEATURE_NOT_IMPLEMENTED]},
+				  sub_el = [?ERR_SERVICE_UNAVAILABLE]},
 		    Res1 = jlib:replace_from_to(
 			     jlib:make_jid("", StateData#state.server, ""),
 			     jlib:make_jid("", "", ""),

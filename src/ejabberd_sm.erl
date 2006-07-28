@@ -555,7 +555,7 @@ process_iq(From, To, Packet) ->
 					  From, To, IQ);
 		[] ->
 		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+			    Packet, ?ERR_SERVICE_UNAVAILABLE),
 		    ejabberd_router:route(To, From, Err)
 	    end;
 	reply ->
