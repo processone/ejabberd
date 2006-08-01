@@ -484,7 +484,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			    R#roster{groups = Groups};
 			{selected,
 			 ["username", "jid", "nick", "subscription", "ask",
-			  "server", "subscribe", "type"],
+			  "askmessage", "server", "subscribe", "type"],
 			 []} ->
 			    #roster{usj = {LUser, LServer, LJID},
 				    us = {LUser, LServer},

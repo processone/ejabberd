@@ -1,3 +1,7 @@
+2006-08-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix
+
 2006-07-28  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_c2s.erl: Bugfix: added a missing catch and fixed the
