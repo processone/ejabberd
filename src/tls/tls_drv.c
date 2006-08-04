@@ -64,10 +64,26 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 #define die_unless(cond, errstr)				\
 	 if (!(cond))						\
 	 {							\
-	    rlen = strlen(errstr) + 1;				\
+	    int errstrlen = strlen(errstr);			\
+	    unsigned long error_code = ERR_get_error();		\
+	    char *error_string = error_code ?			\
+	       ERR_error_string(error_code, NULL) :		\
+	       NULL;						\
+	    int error_string_length = error_string ?		\
+	       strlen(error_string) : 0;			\
+	    if (error_code)					\
+	       rlen = errstrlen + error_string_length + 3;	\
+	    else						\
+	       rlen = errstrlen + 1;				\
 	    b = driver_alloc_binary(rlen);			\
 	    b->orig_bytes[0] = 1;				\
-	    strncpy(b->orig_bytes + 1, errstr, rlen - 1);	\
+	    strncpy(b->orig_bytes + 1, errstr, errstrlen);	\
+	    if (error_code) {					\
+	       strncpy(b->orig_bytes + 1 + errstrlen,		\
+		       ": ", 2);				\
+	       strncpy(b->orig_bytes + 3 + errstrlen,		\
+		       error_string, error_string_length);	\
+	    }							\
 	    *rbuf = (char *)b;					\
 	    return rlen;					\
 	 }
@@ -84,6 +100,7 @@ static int tls_drv_control(ErlDrvData handle,
    ErlDrvBinary *b;
    X509 *cert;
 
+   ERR_clear_error();
    switch (command)
    {
       case SET_CERTIFICATE_FILE_ACCEPT:
