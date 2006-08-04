@@ -2103,41 +2103,56 @@ get_config(Lang, StateData, From) ->
 	[{xmlelement, "title", [],
 	  [{xmlcdata, translate:translate(Lang, "Configuration for ") ++
 	    jlib:jid_to_string(StateData#state.jid)}]},
+	 {xmlelement, "field", [{"type", "hidden"},
+				{"var", "FORM_TYPE"}],
+	  [{xmlelement, "value", [],
+	    [{xmlcdata, "http://jabber.org/protocol/muc#roomconfig"}]}]},
 	 ?STRINGXFIELD("Room title",
-		       "title",
+		       "muc#roomconfig_roomname",
 		       Config#config.title),
 	 ?BOOLXFIELD("Make room persistent",
-		     "persistent",
+		     "muc#roomconfig_persistentroom",
 		     Config#config.persistent),
 	 ?BOOLXFIELD("Make room public searchable",
-		     "public",
+		     "muc#roomconfig_publicroom",
 		     Config#config.public),
 	 ?BOOLXFIELD("Make participants list public",
 		     "public_list",
 		     Config#config.public_list),
 	 ?BOOLXFIELD("Make room password protected",
-		     "password_protected",
+		     "muc#roomconfig_passwordprotectedroom",
 		     Config#config.password_protected),
 	 ?PRIVATEXFIELD("Password",
-			"password",
+			"muc#roomconfig_roomsecret",
 			case Config#config.password_protected of
 			    true -> Config#config.password;
 			    false -> ""
 			end),
-	 ?BOOLXFIELD("Make room semianonymous",
-		     "anonymous",
-		     Config#config.anonymous),
+	 {xmlelement, "field",
+	  [{"type", "list-single"},
+	   {"label", translate:translate(Lang, "Who may discover real JIDs?")},
+	   {"var", "muc#roomconfig_whois"}],
+	  [{xmlelement, "value", [], [{xmlcdata,
+				       if Config#config.anonymous ->
+					       "moderators";
+					  true ->
+					       "anyone"
+				       end}]},
+	   {xmlelement, "option", [{"label", "Moderators only"}],
+	    [{xmlelement, "value", [], [{xmlcdata, "moderators"}]}]},
+	   {xmlelement, "option", [{"label", "Anyone"}],
+	    [{xmlelement, "value", [], [{xmlcdata, "anyone"}]}]}]},
 	 ?BOOLXFIELD("Make room members-only",
-		     "members_only",
+		     "muc#roomconfig_membersonly",
 		     Config#config.members_only),
 	 ?BOOLXFIELD("Make room moderated",
-		     "moderated",
+		     "muc#roomconfig_moderatedroom",
 		     Config#config.moderated),
 	 ?BOOLXFIELD("Default users as participants",
 		     "members_by_default",
 		     Config#config.members_by_default),
 	 ?BOOLXFIELD("Allow users to change subject",
-		     "allow_change_subj",
+		     "muc#roomconfig_changesubject",
 		     Config#config.allow_change_subj),
 	 ?BOOLXFIELD("Allow users to send private messages",
 		     "allow_private_messages",
@@ -2146,7 +2161,7 @@ get_config(Lang, StateData, From) ->
 		     "allow_query_users",
 		     Config#config.allow_query_users),
 	 ?BOOLXFIELD("Allow users to send invites",
-		     "allow_user_invites",
+		     "muc#roomconfig_allowinvites",
 		     Config#config.allow_user_invites)
 	] ++
 	case mod_muc_log:check_access_log(
@@ -2154,7 +2169,7 @@ get_config(Lang, StateData, From) ->
 	    allow ->
 		[?BOOLXFIELD(
 		    "Enable logging",
-		    "logging",
+		    "muc#roomconfig_enablelogging",
 		    Config#config.logging)];
 	    _ -> []
 	end,
@@ -2201,36 +2216,48 @@ set_config(XEl, StateData) ->
 
 set_xoption([], Config) ->
     Config;
-set_xoption([{"title", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_roomname", [Val]} | Opts], Config) ->
     ?SET_STRING_XOPT(title, Val);
-set_xoption([{"allow_change_subj", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_changesubject", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_change_subj, Val);
 set_xoption([{"allow_query_users", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_query_users, Val);
 set_xoption([{"allow_private_messages", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_private_messages, Val);
-set_xoption([{"public", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_publicroom", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(public, Val);
 set_xoption([{"public_list", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(public_list, Val);
-set_xoption([{"persistent", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_persistentroom", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(persistent, Val);
-set_xoption([{"moderated", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_moderatedroom", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(moderated, Val);
 set_xoption([{"members_by_default", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(members_by_default, Val);
-set_xoption([{"members_only", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_membersonly", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(members_only, Val);
-set_xoption([{"allow_user_invites", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_allowinvites", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_user_invites, Val);
-set_xoption([{"password_protected", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_passwordprotectedroom", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(password_protected, Val);
-set_xoption([{"password", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_roomsecret", [Val]} | Opts], Config) ->
     ?SET_STRING_XOPT(password, Val);
 set_xoption([{"anonymous", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(anonymous, Val);
-set_xoption([{"logging", [Val]} | Opts], Config) ->
+set_xoption([{"muc#roomconfig_whois", [Val]} | Opts], Config) ->
+    case Val of
+	"moderators" ->
+	    ?SET_BOOL_XOPT(anonymous, "1");
+	"anyone" ->
+	    ?SET_BOOL_XOPT(anonymous, "0");
+	_ ->
+	    {error, ?ERR_BAD_REQUEST}
+    end;
+set_xoption([{"muc#roomconfig_enablelogging", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(logging, Val);
+set_xoption([{"FORM_TYPE", _} | Opts], Config) ->
+    %% Ignore our FORM_TYPE
+    set_xoption(Opts, Config);
 set_xoption([_ | _Opts], _Config) ->
     {error, ?ERR_BAD_REQUEST}.
 
