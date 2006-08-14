@@ -1,3 +1,8 @@
+2006-08-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_router.erl: Now filter_packet hook works in
+	'global' context
+
 2006-08-04  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/tls/tls_drv.c: Report OpenSSL error messages (thanks to

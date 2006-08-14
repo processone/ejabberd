@@ -221,7 +221,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n",
 	   [OrigFrom, OrigTo, OrigPacket]),
     LOrigDstDomain = OrigTo#jid.lserver,
-    case ejabberd_hooks:run_fold(filter_packet, LOrigDstDomain,
+    case ejabberd_hooks:run_fold(filter_packet,
 				 {OrigFrom, OrigTo, OrigPacket}, []) of
 	{From, To, Packet} ->
 	    LDstDomain = To#jid.lserver,
