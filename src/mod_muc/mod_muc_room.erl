@@ -2068,7 +2068,8 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
     end.
 
 check_allowed_log_change(XEl, StateData, From) ->
-    case lists:keymember("logging", 1, jlib:parse_xdata_submit(XEl)) of
+    case lists:keymember("muc#roomconfig_enablelogging", 1,
+			 jlib:parse_xdata_submit(XEl)) of
 	false ->
 	    allow;
 	true ->
