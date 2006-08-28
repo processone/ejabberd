@@ -44,6 +44,13 @@ ETCDIR = $(DESTDIR)@prefix@/etc/ejabberd
 
 ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 
+ifeq ($(shell uname),Darwin)
+DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
+else
+# Assume Linux-style dynamic library flags
+DYNAMIC_LIB_CFLAGS = -fpic -shared
+endif
+
 all: $(ERLSHLIBS) compile-beam all-recursive
 
 compile-beam: XmppAddr.hrl $(BEAMS)
@@ -70,7 +77,7 @@ $(ERLSHLIBS):	%.so:	%.c
 			$(subst ../,,$(subst .so,.c,$@)) \
 			$(EXPAT_LIBS) $(EXPAT_CFLAGS) \
 			$(ERLANG_LIBS) $(ERLANG_CFLAGS) \
-			-o $@ -fpic -shared
+			-o $@ $(DYNAMIC_LIB_CFLAGS)
 
 install: all
 	install -d $(BEAMDIR)

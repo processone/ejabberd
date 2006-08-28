@@ -6,6 +6,13 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ @SSL_LIBS@ @ERLANG_LIBS@
 
+ifeq ($(shell uname),Darwin)
+DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
+else
+# Assume Linux-style dynamic library flags
+DYNAMIC_LIB_CFLAGS = -fpic -shared
+endif
+
 SUBDIRS = 
 
 ERLSHLIBS = ../tls_drv.so
@@ -26,7 +33,7 @@ $(OUTDIR)/%.beam:       %.erl
 $(ERLSHLIBS):	../%.so:	%.c
 			$(CC) -Wall $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) \
 			$(subst ../,,$(subst .so,.c,$@)) $(LIBS) \
-			-o $@ -fpic -shared
+			-o $@ -fpic $(DYNAMIC_LIB_CFLAGS)
 
 clean:
 	rm -f $(OBJS) $(ERLSHLIBS)
