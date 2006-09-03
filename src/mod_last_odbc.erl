@@ -95,10 +95,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 
 get_last(IQ, SubEl, LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
-    case catch ejabberd_odbc:sql_query(
-		 LServer,
-		 ["select seconds, state from last "
-		  "where username='", Username, "';"]) of
+    case catch odbc_queries:get_last(LServer, Username) of
 	{'EXIT', _Reason} ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
 	{selected, ["seconds","state"], []} ->
@@ -131,16 +128,11 @@ store_last_info(User, Server, TimeStamp, Status) ->
     Username = ejabberd_odbc:escape(LUser),
     Seconds = ejabberd_odbc:escape(integer_to_list(TimeStamp)),
     State = ejabberd_odbc:escape(Status),
-    %% MREMOND: I think this should be turn into a non transactional behaviour
-    ejabberd_odbc:sql_transaction(
-      LServer,
-      [["delete from last where username='", Username, "';"],
-       ["insert into last(username, seconds, state) "
-	"values ('", Username, "', '", Seconds, "', '", State, "');"]]).
+    odbc_queries:set_last_t(LServer, Username, Seconds, State).
+
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query(LServer,
-      ["delete from last where username='", Username, "';"]).
+    odbc_queries:del_last(LServer, Username).

@@ -1,3 +1,19 @@
+2006-09-03  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/odbc_queries.erl: Support for Microsoft SQL Server as a
+	database backend (via ODBC).
+	* src/odbc/ejabberd_odbc.erl: Likewise.
+	* src/odbc/mssql.sql: Likewise.
+	* src/odbc/Makefile.in: Likewise.
+	* src/ejabberd_auth_odbc.erl: Likewise.
+	* src/mod_offline_odbc.erl: Likewise.
+	* src/mod_roster_odbc.erl: Likewise.
+	* src/mod_last_odbc.erl: Likewise.
+	* src/configure.ac: Likewise
+	* doc/guide.tex: Likewise.
+	* doc/introduction.tex: Likewise.
+	* src/odbc/pg.sql: Minor fix. 
+
 2006-08-28  Mickael Remond  <mickael.remond@process-one.net>
 
 	* Makefile.in: Fix for MacOSX compilation.

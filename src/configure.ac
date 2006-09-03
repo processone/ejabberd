@@ -37,13 +37,22 @@ AC_MOD_ENABLE(odbc, no)
 AC_MOD_ENABLE(ejabberd_zlib, yes)
 
 AC_ARG_ENABLE(roster_gateway_workaround,
-[  --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions],
+[  --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions (default: no)],
 [case "${enableval}" in
   yes) roster_gateway_workaround=true ;;
   no)  roster_gateway_workaround=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-roster-gateway-workaround) ;;
 esac],[roster_gateway_workaround=false])
 AC_SUBST(roster_gateway_workaround)
+
+AC_ARG_ENABLE(mssql,
+[  --enable-mssql    Use Microsoft SQL Server database (default: no, requires --enable-odbc)],
+[case "${enableval}" in
+  yes) db_type=mssql ;;
+  no)  db_type=generic ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
+esac],[db_type=generic])
+AC_SUBST(db_type)
 
 AC_CONFIG_FILES([Makefile
                  $make_mod_irc

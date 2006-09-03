@@ -860,6 +860,26 @@ available from:
 \subsection{Relational Database Support}
 \label{sec:relationaldatabase}
 
+\subsubsection{Preliminary steps}
+\label{sec:relationaldatabasecompilation}
+
+If you have installed ejabberd using a binary version, the compilation steps
+are not needed as they have already been done correctly.
+
+Otherwise, to be able to use ejabberd with a relational database you need to
+enable ODBC modules during compilation, even if you want to use ejabberd with
+MySQL or PostgreSQL in native mode. The following \term{configure} command can
+be used to enable the relational modules:
+\begin{verbatim}
+./configure --enable-odbc
+\end{verbatim}
+
+If you are planning to use Microsoft SQL Server with ODBC, you need to specify
+it from the \term{configure} command before compilation:
+\begin{verbatim}
+./configure --enable-odbc --enable-mssql
+\end{verbatim}
+
 \subsubsection{Authentication against a relational database}
 \label{sec:relationaldatabaseauth}
 

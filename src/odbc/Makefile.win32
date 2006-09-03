@@ -6,7 +6,8 @@ EFLAGS = -I .. -pz ..
 
 OBJS = \
 	$(OUTDIR)\ejabberd_odbc.beam \
-	$(OUTDIR)\ejabberd_odbc_sup.beam
+	$(OUTDIR)\ejabberd_odbc_sup.beam \
+	$(OUTDIR)\odbc_queries.beam
 
 ALL : $(OBJS)
 
@@ -18,3 +19,7 @@ $(OUTDIR)\ejabberd_odbc.beam : ejabberd_odbc.erl
 
 $(OUTDIR)\ejabberd_odbc_sup.beam : ejabberd_odbc_sup.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_odbc_sup.erl
+
+$(OUTDIR)\odbc_queries.beam : odbc_queries.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) -D$(DBTYPE) odbc_queries.erl
+

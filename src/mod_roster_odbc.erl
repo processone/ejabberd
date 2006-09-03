@@ -122,20 +122,13 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
 
 get_user_roster(Acc, {LUser, LServer}) ->
     Username = ejabberd_odbc:escape(LUser),
-    case catch ejabberd_odbc:sql_query(
-		 LServer,
-		 ["select username, jid, nick, subscription, ask, "
-		  "askmessage, server, subscribe, type from rosterusers "
-		  "where username='", Username, "'"]) of
+    case catch odbc_queries:get_roster(LServer, Username) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",
 		    "askmessage", "server", "subscribe", "type"],
 	 Items} when is_list(Items) ->
-	    JIDGroups = case catch ejabberd_odbc:sql_query(
-				     LServer,
-				     ["select jid, grp from rostergroups "
-				      "where username='", Username, "'"]) of
-			    {selected, ["jid","grp"],
-			     JGrps} when is_list(JGrps) ->
+	    JIDGroups = case catch odbc_queries:get_roster_jid_groups(LServer, Username) of
+			    {selected, ["jid","grp"], JGrps}
+			    when is_list(JGrps) ->
 				JGrps;
 			    _ ->
 				[]
@@ -148,10 +141,11 @@ get_user_roster(Acc, {LUser, LServer}) ->
 				   R ->
 				       SJID = jlib:jid_to_string(R#roster.jid),
 				       Groups = lists:flatmap(
-						  fun({S, G}) when S == SJID ->
-							  [G];
-						     (_) ->
-							  []
+						  fun({S, G}) ->
+							  case jlib:jid_tolower(S) of
+							      SJID -> [G];
+							      _ -> []
+							  end
 						  end, JIDGroups),
 				       [R#roster{groups = Groups}]
 			       end
@@ -216,13 +210,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			{selected,
 			 ["username", "jid", "nick", "subscription",
 			  "ask", "askmessage", "server", "subscribe", "type"],
-			 Res} =
-			    ejabberd_odbc:sql_query_t(
-			      ["select username, jid, nick, subscription, "
-			       "ask, askmessage, server, subscribe, type "
-			       "from rosterusers "
-			       "where username='", Username, "' "
-			       "and jid='", SJID, "'"]),
+			 Res} = odbc_queries:get_roster_by_jid(LServer, Username, SJID),
 			Item = case Res of
 				   [] ->
 				       #roster{usj = {LUser, LServer, LJID},
@@ -239,39 +227,11 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			Item2 = process_item_els(Item1, Els),
 			case Item2#roster.subscription of
 			    remove ->
-				ejabberd_odbc:sql_query_t(
-				  ["delete from rosterusers "
-				   "      where username='", Username, "' "
-				   "        and jid='", SJID, "';"]),
-				ejabberd_odbc:sql_query_t(
-				  ["delete from rostergroups "
-				   "      where username='", Username, "' "
-				   "        and jid='", SJID, "';"]);
+                                odbc_queries:del_roster(LServer, Username, SJID);
 			    _ ->
 				ItemVals = record_to_string(Item2),
 				ItemGroups = groups_to_string(Item2),
-				ejabberd_odbc:sql_query_t(
-				  ["delete from rosterusers "
-				   "      where username='", Username, "' "
-				   "        and jid='", SJID, "';"]),
-				ejabberd_odbc:sql_query_t(
-				  ["insert into rosterusers("
-				   "              username, jid, nick, "
-				   "              subscription, ask, "
-				   "              askmessage, server, "
-				   "              subscribe, type) "
-				   " values ", ItemVals, ";"]),
-				ejabberd_odbc:sql_query_t(
-				  ["delete from rostergroups "
-				   "      where username='", Username, "' "
-				   "        and jid='", SJID, "';"]),
-				lists:foreach(fun(ItemGroup) ->
-					    ejabberd_odbc:sql_query_t(
-					       ["insert into rostergroups("
-						"              username, jid, grp) "
-						" values ", ItemGroup, ";"])
-					      end,
-					      ItemGroups)
+				odbc_queries:update_roster(LServer, Username, SJID, ItemVals, ItemGroups)
 			end,
 			%% If the item exist in shared roster, take the
 			%% subscription information from there:
@@ -279,7 +239,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 							LServer, Item2, [LServer]),
 			{Item, Item3}
 		end,
-	    case ejabberd_odbc:sql_transaction(LServer, F) of
+	    case odbc_queries:sql_transaction(LServer, F) of
 		{atomic, {OldItem, Item}} ->
 		    push_item(User, LServer, To, Item),
 		    case Item#roster.subscription of
@@ -411,11 +371,7 @@ get_subscription_lists(_, User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
-    case catch ejabberd_odbc:sql_query(
-		 LServer,
-		 ["select username, jid, nick, subscription, ask, "
-		  "askmessage, server, subscribe, type from rosterusers "
-		  "where username='", Username, "'"]) of
+    case catch odbc_queries:get_roster(LServer, Username) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",
 		    "askmessage", "server", "subscribe", "type"],
 	 Items} when is_list(Items) ->
@@ -460,22 +416,14 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     F = fun() ->
 		Item =
-		    case ejabberd_odbc:sql_query_t(
-			   ["select username, jid, nick, subscription, ask, "
-			    "askmessage, server, subscribe, type "
-			    "from rosterusers "
-			    "where username='", Username, "' "
-			    "and jid='", SJID, "';"]) of
+		    case odbc_queries:get_roster_by_jid(LServer, Username, SJID) of
 			{selected,
 			 ["username", "jid", "nick", "subscription", "ask",
 			  "askmessage", "server", "subscribe", "type"],
 			 [I]} ->
 			    R = raw_to_record(LServer, I),
 			    Groups =
-				case ejabberd_odbc:sql_query_t(
-				       ["select grp from rostergroups "
-					"where username='", Username, "' "
-					"and jid='", SJID, "';"]) of
+				case odbc_queries:get_roster_groups(LServer, Username, SJID) of
 				    {selected, ["grp"], JGrps} when is_list(JGrps) ->
 					[JGrp || {JGrp} <- JGrps];
 				    _ ->
@@ -521,21 +469,11 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 					      ask = Pending,
 					      askmessage = AskMessage},
 			ItemVals = record_to_string(NewItem),
-			ejabberd_odbc:sql_query_t(
-			  ["delete from rosterusers "
-			   "      where username='", Username, "' "
-			   "        and jid='", SJID, "';"]),
-			ejabberd_odbc:sql_query_t(
-			  ["insert into rosterusers("
-			   "              username, jid, nick, "
-			   "              subscription, ask, "
-			   "              askmessage, server, subscribe, "
-			   "              type) "
-			   " values ", ItemVals, ";"]),
+			odbc_queries:roster_subscribe(LServer, Username, SJID, ItemVals),
 			{{push, NewItem}, AutoReply}
 		end
 	end,
-    case ejabberd_odbc:sql_transaction(LServer, F) of
+    case odbc_queries:sql_transaction(LServer, F) of
 	{atomic, {Push, AutoReply}} ->
 	    case AutoReply of
 		none ->
@@ -662,16 +600,7 @@ remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_transaction(
-      LServer,
-      fun() ->
-	      ejabberd_odbc:sql_query_t(
-		["delete from rosterusers "
-		 "      where username='", Username, "';"]),
-	      ejabberd_odbc:sql_query_t(
-		["delete from rostergroups "
-		 "      where username='", Username, "';"])
-      end),
+    odbc_queries:del_user_roster_t(LServer, Username),
     ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -680,7 +609,7 @@ set_items(User, Server, SubEl) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    catch ejabberd_odbc:transaction(
+    catch odbc_queries:transaction(
 	    LServer,
 	     lists:map(fun(El) ->
 			       process_item_set_t(LUser, LServer, El)
@@ -703,31 +632,11 @@ process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
 	    Item2 = process_item_els(Item1, Els),
 	    case Item2#roster.subscription of
 	        remove ->
-		    [["delete from rosterusers "
-		     "      where username='", Username, "' "
-		     "        and jid='", SJID, "';"],
-		     ["delete from rostergroups "
-		     "      where username='", Username, "' "
-		     "        and jid='", SJID, "';"]];
+		    odbc_queries:del_roster_sql(Username, SJID);
 	        _ ->
 	            ItemVals = record_to_string(Item1),
 		    ItemGroups = groups_to_string(Item2),
-		    [["delete from rosterusers "
-		     "      where username='", Username, "' "
-		     "        and jid='", SJID, "';"],
-		     ["insert into rosterusers("
-		      "              username, jid, nick, "
-		      "              subscription, ask, "
-		      "              askmessage, server, subscribe, "
-		      "              type) "
-		      " values ", ItemVals, ";"],
-		     ["delete from rostergroups "
-		      "      where username='", Username, "' "
-		      "        and jid='", SJID, "';"],
-		     [["insert into rostergroups("
-		       "              username, jid, grp) "
-		       " values ", ItemGroup, ";"] ||
-			 ItemGroup <- ItemGroups]]
+		    odbc_queries:update_roster_sql(Username, SJID, ItemVals, ItemGroups)
 	    end
     end;
 process_item_set_t(_LUser, _LServer, _) ->
@@ -773,34 +682,24 @@ process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
 process_item_attrs_ws(Item, []) ->
     Item.
 
-
 get_in_pending_subscriptions(Ls, User, Server) ->
     JID = jlib:make_jid(User, Server, ""),
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
     Username = ejabberd_odbc:escape(LUser),
-    case catch ejabberd_odbc:sql_query(
-		 LServer,
-		 ["select username, jid, nick, subscription, ask, "
-		  "askmessage, server, subscribe, type from rosterusers "
-		  "where username='", Username, "'"]) of
+    case catch odbc_queries:get_roster(LServer, Username) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",
 		    "askmessage", "server", "subscribe", "type"],
 	 Items} when is_list(Items) ->
     	    Ls ++ lists:map(
 		    fun(R) ->
 			    Message = R#roster.askmessage,
-			    Status  = if is_binary(Message) ->
-					      binary_to_list(Message);
-					 true ->
-					      ""
-				      end,
 			    {xmlelement, "presence",
 			     [{"from", jlib:jid_to_string(R#roster.jid)},
 			      {"to", jlib:jid_to_string(JID)},
 			      {"type", "subscribe"}],
 			     [{xmlelement, "status", [],
-			       [{xmlcdata, Status}]}]}
+			       [{xmlcdata, Message}]}]}
 		    end,
 		    lists:flatmap(
 		      fun(I) ->
@@ -825,11 +724,7 @@ get_jid_info(_, User, Server, JID) ->
     LJID = jlib:jid_tolower(JID),
     Username = ejabberd_odbc:escape(LUser),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
-    case catch ejabberd_odbc:sql_query(
-		 LServer,
-		 ["select subscription from rosterusers "
-		  "where username='", Username, "' "
-		  "and jid='", SJID, "'"]) of
+    case catch odbc_queries:get_subscription(LServer, Username, SJID) of
 	{selected, ["subscription"], [{SSubscription}]} ->
 	    Subscription = case SSubscription of
 			       "B" -> both;
@@ -837,11 +732,7 @@ get_jid_info(_, User, Server, JID) ->
 			       "F" -> from;
 			       _ -> none
 			   end,
-	    Groups = case catch ejabberd_odbc:sql_query(
-				  LServer,
-				  ["select grp from rostergroups "
-				   "where username='", Username, "' "
-				   "and jid='", SJID, "'"]) of
+	    Groups = case catch odbc_queries:get_roster_group_by_jid(LServer, Username, SJID) of
 			 {selected, ["grp"], JGrps} when is_list(JGrps) ->
 			     [JGrp || {JGrp} <- JGrps];
 			 _ ->
@@ -855,11 +746,7 @@ get_jid_info(_, User, Server, JID) ->
 		    {none, []};
 		true ->
 		    SRJID = ejabberd_odbc:escape(jlib:jid_to_string(LRJID)),
-		    case catch ejabberd_odbc:sql_query(
-				 LServer,
-				 ["select subscription from rosterusers "
-				  "where username='", Username, "' "
-				  "and jid='", SRJID, "'"]) of
+		    case catch odbc_queries:get_subscription(LServer, Username, SRJID) of
 			{selected, ["subscription"], [{SSubscription}]} ->
 			    Subscription = case SSubscription of
 					       "B" -> both;
@@ -867,11 +754,7 @@ get_jid_info(_, User, Server, JID) ->
 					       "F" -> from;
 					       _ -> none
 					   end,
-			    Groups = case catch ejabberd_odbc:sql_query(
-						  LServer,
-						  ["select grp from rostergroups "
-						   "where username='", Username, "' "
-						   "and jid='", SRJID, "'"]) of
+			    Groups = case catch odbc_queries:get_rostergroup_by_jid(LServer, Username, SRJID) of
 					 {selected, ["grp"], JGrps} when is_list(JGrps) ->
 					     [JGrp || {JGrp} <- JGrps];
 					 _ ->
@@ -939,22 +822,26 @@ record_to_string(#roster{us = {User, _Server},
 	       in	   -> "I";
 	       none	   -> "N"
 	   end,
-    ["("
-     "'", Username, "',"
+    ["'", Username, "',"
      "'", SJID, "',"
      "'", Nick, "',"
      "'", SSubscription, "',"
      "'", SAsk, "',"
      "'", AskMessage, "',"
-     "'N', '', 'item')"].
+     "'N', '', 'item'"].
 
 groups_to_string(#roster{us = {User, _Server},
 			 jid = JID,
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(JID))),
-    [["("
-      "'", Username, "',"
-      "'", SJID, "',"
-      "'", ejabberd_odbc:escape(Group), "')"] || Group <- Groups].
+
+    %% Empty groups do not need to be converted to string to be inserted in
+    %% the database
+    lists:foldl(fun([], Acc) -> Acc;
+		   (Group, Acc) -> 
+			String = ["'", Username, "',"
+				  "'", SJID, "',"
+				  "'", ejabberd_odbc:escape(Group), "'"],
+			[String|Acc] end, [], Groups).
 

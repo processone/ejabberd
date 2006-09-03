@@ -13,12 +13,13 @@ OUTDIR = ..
 EFLAGS = -I .. -pz ..
 OBJS   = \
 	$(OUTDIR)/ejabberd_odbc.beam \
-	$(OUTDIR)/ejabberd_odbc_sup.beam
+	$(OUTDIR)/ejabberd_odbc_sup.beam \
+	$(OUTDIR)/odbc_queries.beam
 
 all:    $(OBJS)
 
 $(OUTDIR)/%.beam:       %.erl
-	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
+	@ERLC@ -W $(EFLAGS) -D@db_type@ -o $(OUTDIR) $<
 
 
 clean:

@@ -87,16 +87,7 @@ sql_query_t(Query) ->
 
 %% Escape character that will confuse an SQL engine
 escape(S) when is_list(S) ->
-    [escape(C) || C <- S];
-escape($\0) -> "\\0";
-escape($\n) -> "\\n";
-escape($\t) -> "\\t";
-escape($\b) -> "\\b";
-escape($\r) -> "\\r";
-escape($')  -> "\\'";
-escape($")  -> "\\\"";
-escape($\\) -> "\\\\";
-escape(C)   -> C.
+    [odbc_queries:escape(C) || C <- S].
 
 %% Escape character that will confuse an SQL engine
 %% Percent and underscore only need to be escaped for pattern matching like
@@ -105,7 +96,7 @@ escape_like(S) when is_list(S) ->
     [escape_like(C) || C <- S];
 escape_like($%) -> "\\%";
 escape_like($_) -> "\\_";
-escape_like(C)  -> escape(C).
+escape_like(C)  -> odbc_queries:escape(C).
 
 
 %%%----------------------------------------------------------------------

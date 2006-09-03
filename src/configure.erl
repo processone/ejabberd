@@ -46,6 +46,7 @@ start() ->
     Version  = "EJABBERD_VERSION = " ++ ?VERSION ++ "\n",
     ExpatDir = "EXPAT_DIR = c:\\progra~1\\expat-1.95.7\n",
     OpenSSLDir = "OPENSSL_DIR = c:\\progra~1\\OpenSSL\n",
+    DBType = "DBTYPE = generic\n",    %% 'generic' or 'mssql'
 
     SSLDir    = "SSLDIR = " ++ code:lib_dir("ssl") ++ "\n",
     StdLibDir = "STDLIBDIR = " ++ code:lib_dir("stdlib") ++ "\n",
@@ -58,6 +59,7 @@ start() ->
 				   SSLDir ++
 				   StdLibDir ++
 				   OpenSSLDir ++
+				   DBType ++
 				   ExpatDir ++
 				   ExpatLib ++
 				   ExpatFlag ++
