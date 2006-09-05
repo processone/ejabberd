@@ -18,6 +18,8 @@
 	 send/2,
 	 change_shaper/2,
 	 get_sockmod/1,
+	 get_peer_certificate/1,
+	 get_verify_result/1,
 	 close/1]).
 
 -record(socket_state, {sockmod, socket, receiver}).
@@ -92,6 +94,12 @@ change_shaper(SocketData, Shaper) ->
 
 get_sockmod(SocketData) ->
     SocketData#socket_state.sockmod.
+
+get_peer_certificate(SocketData) ->
+    tls:get_peer_certificate(SocketData#socket_state.socket).
+
+get_verify_result(SocketData) ->
+    tls:get_verify_result(SocketData#socket_state.socket).
 
 close(SocketData) ->
     ejabberd_receiver:close(SocketData#socket_state.receiver).

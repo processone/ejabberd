@@ -140,9 +140,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    SASL =
 		if
 		    StateData#state.tls_enabled ->
-			case tls:get_peer_certificate(StateData#state.socket) of
+			case ejabberd_socket:get_peer_certificate(
+			       StateData#state.socket) of
 			    {ok, _Cert} ->
-				case tls:get_verify_result(
+				case ejabberd_socket:get_verify_result(
 				       StateData#state.socket) of
 				    0 ->
 					[{xmlelement, "mechanisms",
@@ -222,9 +223,10 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		    Auth = jlib:decode_base64(xml:get_cdata(Els)),
 		    AuthDomain = jlib:nameprep(Auth),
 		    AuthRes =
-			case tls:get_peer_certificate(StateData#state.socket) of
+			case ejabberd_socket:get_peer_certificate(
+			       StateData#state.socket) of
 			    {ok, Cert} ->
-				case tls:get_verify_result(
+				case ejabberd_socket:get_verify_result(
 				       StateData#state.socket) of
 				    0 ->
 					case AuthDomain of
