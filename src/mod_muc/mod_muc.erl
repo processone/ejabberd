@@ -36,7 +36,7 @@
 -record(muc_online_room, {name_host, pid}).
 -record(muc_registered, {us_host, nick}).
 
--record(state, {host, server_host, access}).
+-record(state, {host, server_host, access, history_size}).
 
 -define(PROCNAME, ejabberd_mod_muc).
 
@@ -148,14 +148,17 @@ init([Host, Opts]) ->
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
+    HistorySize = gen_mod:get_opt(history_size, Opts, 20),
     catch ets:new(muc_online_room, [named_table,
 				    public,
 				    {keypos, #muc_online_room.name_host}]),
     ejabberd_router:register_route(MyHost),
-    load_permanent_rooms(MyHost, Host, {Access, AccessCreate, AccessAdmin}),
+    load_permanent_rooms(MyHost, Host, {Access, AccessCreate, AccessAdmin},
+			 HistorySize),
     {ok, #state{host = MyHost,
 		server_host = Host,
-		access = {Access, AccessCreate, AccessAdmin}}}.
+		access = {Access, AccessCreate, AccessAdmin},
+		history_size = HistorySize}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -187,8 +190,9 @@ handle_cast(_Msg, State) ->
 handle_info({route, From, To, Packet},
 	    #state{host = Host,
 		   server_host = ServerHost,
-		   access = Access} = State) ->
-    case catch do_route(Host, ServerHost, Access, From, To, Packet) of
+		   access = Access,
+		   history_size = HistorySize} = State) ->
+    case catch do_route(Host, ServerHost, Access, HistorySize, From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -239,11 +243,11 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, From, To, Packet) ->
+do_route(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
     {AccessRoute, _AccessCreate, _AccessAdmin} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
-	    do_route1(Host, ServerHost, Access, From, To, Packet);
+	    do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet);
 	_ ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
 	    Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -254,7 +258,7 @@ do_route(Host, ServerHost, Access, From, To, Packet) ->
     end.
 
 
-do_route1(Host, ServerHost, Access, From, To, Packet) ->
+do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
     {_AccessRoute, AccessCreate, AccessAdmin} = Access,
     {Room, _, Nick} = jlib:jid_tolower(To),
     {xmlelement, Name, Attrs, _Els} = Packet,
@@ -379,7 +383,8 @@ do_route1(Host, ServerHost, Access, From, To, Packet) ->
 				    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 				    {ok, Pid} = mod_muc_room:start(
 						  Host, ServerHost, Access,
-						  Room, From, Nick),
+						  Room, HistorySize, From,
+						  Nick),
 				    ets:insert(
 				      muc_online_room,
 				      #muc_online_room{name_host = {Room, Host},
@@ -411,7 +416,7 @@ do_route1(Host, ServerHost, Access, From, To, Packet) ->
 
 
 
-load_permanent_rooms(Host, ServerHost, Access) ->
+load_permanent_rooms(Host, ServerHost, Access, HistorySize) ->
     case catch mnesia:dirty_select(
 		 muc_room, [{#muc_room{name_host = {'_', Host}, _ = '_'},
 			     [],
@@ -427,6 +432,7 @@ load_permanent_rooms(Host, ServerHost, Access) ->
 						ServerHost,
 						Access,
 						Room,
+						HistorySize,
 						R#muc_room.opts),
 				  ets:insert(
 				    muc_online_room,

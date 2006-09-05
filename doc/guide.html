@@ -1980,7 +1980,14 @@ Options:
  value is <TT>none</TT>, which means that only the room creator can
  administer his room). By sending a message to the service JID,
  administrators can send service messages that will be displayed in every
- active room.
+ active room.<BR>
+<BR>
+<DT CLASS="dt-description"><B><TT>history_size</TT></B><DD CLASS="dd-description"> a small history of the
+ current discussion is send to users when they enter the room. This option make
+ it possible to define the number of history messages to keep and send to the
+ user joining the room. The value is a integer. Setting the value to <TT>0</TT>
+ disable the history feature and nothing is kept in memory. The default value
+ is <TT>20</TT>. This value is global and affects all MUC rooms on the server.
 </DL>
 Examples:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -1991,7 +1998,8 @@ In the first example everyone is allowed to use the Multi-User Chat
  sends a message such as &#8220;Tomorrow, the Jabber server will be moved
  to new hardware. This will involve service breakdowns around 23:00 UMT.
  We apologise for this inconvenience.&#8221; to <TT>conference.example.org</TT>,
- it will be displayed in all active rooms.
+ it will be displayed in all active rooms. In this example the history
+ feature is disabled.
  <PRE CLASS="verbatim">
   {acl, admins, {user, "admin", "example.org"}}.
   ...
@@ -2002,7 +2010,8 @@ In the first example everyone is allowed to use the Multi-User Chat
     ...
     {mod_muc, [{access, all},
                {access_create, all},
-               {access_admin, muc_admins}]},
+               {access_admin, muc_admins},
+               {history_size, 0}]},
     ...
    ]}.
 </PRE><LI CLASS="li-itemize">In the second example the Multi-User Chat service is only accessible by
@@ -2012,7 +2021,9 @@ In the first example everyone is allowed to use the Multi-User Chat
  <TT>admin@example.org</TT> sends a message such as &#8220;Tomorrow, the Jabber
  server will be moved to new hardware. This will involve service breakdowns
  around 23:00 UMT. We apologise for this inconvenience.&#8221; to
- <TT>conference.example.org</TT>, it will be displayed in all active rooms.
+ <TT>conference.example.org</TT>, it will be displayed in all active rooms. No
+ <TT>history_size</TT> option is used, this means that the feature is enabled
+ and the default value of 20 history messages will be send to the users.
  <PRE CLASS="verbatim">
   {acl, paying_customers, {user, "customer1", "example.net"}}.
   {acl, paying_customers, {user, "customer2", "example.com"}}.
