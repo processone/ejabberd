@@ -14,7 +14,6 @@
 %% External exports
 -export([start/2,
 	 start_link/2,
-	 become_controller/1,
 	 match_domain/2]).
 
 %% gen_fsm callbacks
@@ -37,8 +36,6 @@
 -define(DICT, dict).
 
 -record(state, {socket,
-		sockmod,
-		receiver,
 		streamid,
 		shaper,
 		tls = false,
@@ -87,9 +84,6 @@ start(SockData, Opts) ->
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_s2s_in, [SockData, Opts], ?FSMOPTS).
 
-become_controller(Pid) ->
-    gen_fsm:send_all_state_event(Pid, become_controller).
-
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
@@ -101,19 +95,12 @@ become_controller(Pid) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([{SockMod, Socket}, Opts]) ->
-    ?INFO_MSG("started: ~p", [{SockMod, Socket}]),
+init([Socket, Opts]) ->
+    ?INFO_MSG("started: ~p", [Socket]),
     Shaper = case lists:keysearch(shaper, 1, Opts) of
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
-    MaxStanzaSize =
-	case lists:keysearch(max_stanza_size, 1, Opts) of
-	    {value, {_, Size}} -> Size;
-	    _ -> infinity
-	end,
-    ReceiverPid = ejabberd_receiver:start(
-		    Socket, SockMod, none, MaxStanzaSize),
     StartTLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
 		   undefined ->
 		       false;
@@ -129,8 +116,6 @@ init([{SockMod, Socket}, Opts]) ->
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, wait_for_stream,
      #state{socket = Socket,
-	    sockmod = SockMod,
-	    receiver = ReceiverPid,
 	    streamid = new_id(),
 	    shaper = Shaper,
 	    tls = StartTLS,
@@ -214,7 +199,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
-    SockMod = StateData#state.sockmod,
+    SockMod = ejabberd_socket:get_sockmod(StateData#state.socket),
     case {xml:get_attr_s("xmlns", Attrs), Name} of
 	{?NS_TLS, "starttls"} when TLS == true,
 				   TLSEnabled == false,
@@ -222,13 +207,11 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    ?INFO_MSG("starttls", []),
 	    Socket = StateData#state.socket,
 	    TLSOpts = StateData#state.tls_options,
-	    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
-	    ejabberd_receiver:starttls(StateData#state.receiver, TLSSocket),
+	    TLSSocket = ejabberd_socket:starttls(Socket, TLSOpts),
 	    send_element(StateData,
 			 {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []}),
 	    {next_state, wait_for_stream,
-	     StateData#state{sockmod = tls,
-			     socket = TLSSocket,
+	     StateData#state{socket = TLSSocket,
 			     streamid = new_id(),
 			     tls_enabled = true
 			    }};
@@ -267,8 +250,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			end,
 		    if
 			AuthRes ->
-			    ejabberd_receiver:reset_stream(
-			      StateData#state.receiver),
+			    ejabberd_socket:reset_stream(
+			      StateData#state.socket),
 			    send_element(StateData,
 					 {xmlelement, "success",
 					  [{"xmlns", ?NS_SASL}], []}),
@@ -467,12 +450,6 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_event(become_controller, StateName, StateData) ->
-    ok = (StateData#state.sockmod):controlling_process(
-	   StateData#state.socket,
-	   StateData#state.receiver),
-    ejabberd_receiver:become_controller(StateData#state.receiver),
-    {next_state, StateName, StateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -517,7 +494,7 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
-    ejabberd_receiver:close(StateData#state.receiver),
+    ejabberd_socket:close(StateData#state.socket),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -525,7 +502,7 @@ terminate(Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 send_text(StateData, Text) ->
-    (StateData#state.sockmod):send(StateData#state.socket, Text).
+    ejabberd_socket:send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_string(El)).
@@ -533,7 +510,7 @@ send_element(StateData, El) ->
 
 change_shaper(StateData, Host, JID) ->
     Shaper = acl:match_rule(Host, StateData#state.shaper, JID),
-    ejabberd_receiver:change_shaper(StateData#state.receiver, Shaper).
+    ejabberd_socket:change_shaper(StateData#state.socket, Shaper).
 
 
 new_id() ->

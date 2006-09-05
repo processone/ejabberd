@@ -13,14 +13,14 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/5,
+-export([start_link/4,
 	 start/3,
 	 start/4,
 	 change_shaper/2,
 	 reset_stream/1,
 	 starttls/2,
 	 compress/2,
-	 become_controller/1,
+	 become_controller/2,
 	 close/1]).
 
 %% gen_server callbacks
@@ -44,9 +44,9 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Socket, SockMod, Shaper, MaxStanzaSize, C2SPid) ->
+start_link(Socket, SockMod, Shaper, MaxStanzaSize) ->
     gen_server:start_link(
-      ?MODULE, [Socket, SockMod, Shaper, MaxStanzaSize, C2SPid], []).
+      ?MODULE, [Socket, SockMod, Shaper, MaxStanzaSize], []).
 
 %%--------------------------------------------------------------------
 %% Function: start() -> {ok,Pid} | ignore | {error,Error}
@@ -58,7 +58,7 @@ start(Socket, SockMod, Shaper) ->
 start(Socket, SockMod, Shaper, MaxStanzaSize) ->
     {ok, Pid} = supervisor:start_child(
 		  ejabberd_receiver_sup,
-		  [Socket, SockMod, Shaper, MaxStanzaSize, self()]),
+		  [Socket, SockMod, Shaper, MaxStanzaSize]),
     Pid.
 
 change_shaper(Pid, Shaper) ->
@@ -73,8 +73,8 @@ starttls(Pid, TLSSocket) ->
 compress(Pid, ZlibSocket) ->
     gen_server:call(Pid, {compress, ZlibSocket}).
 
-become_controller(Pid) ->
-    gen_server:call(Pid, become_controller).
+become_controller(Pid, C2SPid) ->
+    gen_server:call(Pid, {become_controller, C2SPid}).
 
 close(Pid) ->
     gen_server:cast(Pid, close).
@@ -90,8 +90,7 @@ close(Pid) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Socket, SockMod, Shaper, MaxStanzaSize, C2SPid]) ->
-    XMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
+init([Socket, SockMod, Shaper, MaxStanzaSize]) ->
     ShaperState = shaper:new(Shaper),
     Timeout = case SockMod of
 		  ssl ->
@@ -102,9 +101,7 @@ init([Socket, SockMod, Shaper, MaxStanzaSize, C2SPid]) ->
     {ok, #state{socket = Socket,
 		sock_mod = SockMod,
 		shaper_state = ShaperState,
-		c2s_pid = C2SPid,
 		max_stanza_size = MaxStanzaSize,
-		xml_stream_state = XMLStreamState,
 		timeout = Timeout}}.
 
 %%--------------------------------------------------------------------
@@ -154,10 +151,13 @@ handle_call(reset_stream, _From,
     NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     Reply = ok,
     {reply, Reply, State#state{xml_stream_state = NewXMLStreamState}};
-handle_call(become_controller, _From, State) ->
-    activate_socket(State),
+handle_call({become_controller, C2SPid}, _From, State) ->
+    XMLStreamState = xml_stream:new(C2SPid, State#state.max_stanza_size),
+    NewState = State#state{c2s_pid = C2SPid,
+			   xml_stream_state = XMLStreamState},
+    activate_socket(NewState),
     Reply = ok,
-    {reply, Reply, State};
+    {reply, Reply, NewState};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.

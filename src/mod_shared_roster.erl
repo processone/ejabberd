@@ -332,7 +332,8 @@ get_user_displayed_groups(US) ->
     [Group || Group <- DisplayedGroups1, is_group_enabled(Host, Group)].
 
 is_user_in_group(US, Group, Host) ->
-    case mnesia:match_object(#sr_user{us=US, group_host={Group, Host}}) of
+    case catch mnesia:dirty_match_object(
+		 #sr_user{us=US, group_host={Group, Host}}) of
 	[] -> false;
 	_  -> true
     end.

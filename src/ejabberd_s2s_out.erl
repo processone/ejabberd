@@ -36,8 +36,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(state, {socket, receiver,
-		sockmod,
+-record(state, {socket,
 		streamid,
 		use_v10,
 		tls = false,
@@ -152,9 +151,6 @@ open_socket(init, StateData) ->
 			end
 		     end, {error, badarg}, AddrList) of
 	{ok, Socket} ->
-	    ReceiverPid = ejabberd_receiver:start(Socket, gen_tcp, none),
-	    ok = gen_tcp:controlling_process(Socket, ReceiverPid),
-	    ejabberd_receiver:become_controller(ReceiverPid),
 	    Version = if
 			  StateData#state.use_v10 ->
 			      " version='1.0'";
@@ -162,9 +158,7 @@ open_socket(init, StateData) ->
 			      ""
 		      end,
 	    NewStateData = StateData#state{socket = Socket,
-					   sockmod = gen_tcp,
 					   tls_enabled = false,
-					   receiver = ReceiverPid,
 					   streamid = new_id()},
 	    send_text(NewStateData, io_lib:format(?STREAM_HEADER,
 					    [StateData#state.server,
@@ -184,20 +178,23 @@ open_socket1(Addr, Port) ->
 	      false -> {error, badarg};
 	      ASCIIAddr ->
 		  ?DEBUG("s2s_out: connecting to ~s:~p~n", [ASCIIAddr, Port]),
-		  case catch gen_tcp:connect(ASCIIAddr, Port,
-					     [binary, {packet, 0},
-					      {active, false}]) of
+		  case catch ejabberd_socket:connect(
+			       ASCIIAddr, Port,
+			       [binary, {packet, 0},
+				{active, false}]) of
 		      {ok, _Socket} = R -> R;
 		      {error, Reason1} ->
 			  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
-			  catch gen_tcp:connect(Addr, Port,
-						[binary, {packet, 0},
-						 {active, false}, inet6]);
+			  catch ejabberd_socket:connect(
+				  Addr, Port,
+				  [binary, {packet, 0},
+				   {active, false}, inet6]);
 		      {'EXIT', Reason1} ->
 			  ?DEBUG("s2s_out: connect crashed ~p~n", [Reason1]),
-			  catch gen_tcp:connect(Addr, Port,
-						[binary, {packet, 0},
-						 {active, false}, inet6])
+			  catch ejabberd_socket:connect(
+				  Addr, Port,
+				  [binary, {packet, 0},
+				   {active, false}, inet6])
 		  end
 	  end,
     case Res of
@@ -363,7 +360,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		StartTLSRequired and (not StateData#state.tls) ->
 		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
 						 StateData#state.server}]),
-		    ejabberd_receiver:close(StateData#state.receiver),
+		    ejabberd_socket:close(StateData#state.socket),
 		    {next_state, reopen_socket,
 		     StateData#state{socket = undefined,
 				     use_v10 = false}};
@@ -373,7 +370,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
 						 StateData#state.server}]),
 		    % TODO: clear message queue
-		    ejabberd_receiver:close(StateData#state.receiver),
+		    ejabberd_socket:close(StateData#state.socket),
 		    {next_state, reopen_socket, StateData#state{socket = undefined,
 								use_v10 = false}}
 	    end;
@@ -406,8 +403,7 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 		?NS_SASL ->
 		    ?INFO_MSG("auth: ~p", [{StateData#state.myname,
 					    StateData#state.server}]),
-		    ejabberd_receiver:reset_stream(
-		      StateData#state.receiver),
+		    ejabberd_socket:reset_stream(StateData#state.socket),
 		    send_text(StateData,
 			      io_lib:format(?STREAM_HEADER,
 					    [StateData#state.server,
@@ -427,7 +423,7 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 		?NS_SASL ->
 		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
 						 StateData#state.server}]),
-		    ejabberd_receiver:close(StateData#state.receiver),
+		    ejabberd_socket:close(StateData#state.socket),
 		    {next_state, reopen_socket,
 		     StateData#state{socket = undefined}};
 		_ ->
@@ -477,11 +473,8 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 					 certfile, 1,
 					 StateData#state.tls_options)]
 			      end,
-		    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
-		    ejabberd_receiver:starttls(
-		      StateData#state.receiver, TLSSocket),
-		    NewStateData = StateData#state{sockmod = tls,
-						   socket = TLSSocket,
+		    TLSSocket = ejabberd_socket:starttls(Socket, TLSOpts),
+		    NewStateData = StateData#state{socket = TLSSocket,
 						   streamid = new_id(),
 						   tls_enabled = true
 						  },
@@ -672,7 +665,7 @@ terminate(Reason, StateName, StateData) ->
 	undefined ->
 	    ok;
 	_Socket ->
-	    ejabberd_receiver:close(StateData#state.receiver)
+	    ejabberd_socket:close(StateData#state.socket)
     end,
     ok.
 
@@ -681,7 +674,7 @@ terminate(Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 send_text(StateData, Text) ->
-    (StateData#state.sockmod):send(StateData#state.socket, Text).
+    ejabberd_socket:send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_string(El)).

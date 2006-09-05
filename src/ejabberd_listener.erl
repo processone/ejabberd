@@ -92,14 +92,7 @@ accept(ListenSocket, Module, Opts) ->
 		_ ->
 		    ok
 	    end,
-	    {ok, Pid} = Module:start({gen_tcp, Socket}, Opts),
-	    case gen_tcp:controlling_process(Socket, Pid) of
-		ok ->
-		    ok;
-		{error, _Reason} ->
-		    gen_tcp:close(Socket)
-	    end,
-	    Module:become_controller(Pid),
+	    ejabberd_socket:start(Module, gen_tcp, Socket, Opts),
 	    accept(ListenSocket, Module, Opts);
 	{error, Reason} ->
 	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
