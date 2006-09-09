@@ -658,7 +658,7 @@ htmlize2(S1) ->
     S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
     S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
     S5 = element(2, regexp:gsub(S4, "(http|ftp)://.[^ ]*", "<a href=\"&\">&</a>")),
-    S6.
+    S5.
 
 get_room_info(RoomJID, Opts) ->
     Title =
