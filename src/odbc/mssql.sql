@@ -88,7 +88,6 @@ CREATE TABLE [dbo].[last] (
 	[username] [varchar] (250) NOT NULL ,
 	[seconds] [varchar] (50) NOT NULL ,
 	[state] [varchar] (100) NULL ,
-	[Modify_Date] [datetime] NULL 
 ) ON [PRIMARY]
 GO
 
@@ -118,7 +117,6 @@ CREATE TABLE [dbo].[spool] (
 	[xml] [text] NULL ,
 	[notifyprocessed] [bit] NULL ,
 	[created] [datetime] NULL ,
-	[MustDelete] [bit] NULL 
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 
