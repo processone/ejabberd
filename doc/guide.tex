@@ -1985,15 +1985,14 @@ Options:
 
 Examples:
 \begin{itemize}
-\item Next example prohibits the registration of too short account names and of
-  account names with exotic characters in it:
-  \begin{verbatim}
+\item Next example prohibits the registration of too short account names:
+\begin{verbatim}
   {acl, shortname, {user_glob, "?"}}.
   {acl, shortname, {user_glob, "??"}}.
-  {acl, strangename, {user_regexp, "^..?$"}}.
+  % The same using regexp:
+  %{acl, shortname, {user_regexp, "^..?$"}}.
   ...
   {access, register, [{deny, shortname},
-                      {deny, strangename},
                       {allow, all}]}.
   ...
   {modules,
@@ -2291,6 +2290,338 @@ Examples:
    ]}.
 \end{verbatim}
 \end{itemize}
+
+\subsection{LDAP and \modvcardldap{}}
+\label{sec:ldap}
+\ind{modules!\modvcardldap{}}\ind{JUD}\ind{Jabber User Directory}\ind{vCard}\ind{protocols!JEP-0054: vcard-temp}
+
+
+\subsubsection{Features}
+\label{sec:ldapfeatures}
+
+\ejabberd{} has built-in LDAP support.  You can authenticate users against LDAP
+server and use LDAP directory as vCard storage. Shared rosters are not
+supported yet.
+
+
+\subsubsection{Connection}
+\label{sec:ldapconnection}
+
+Parameters:
+
+\begin{description}
+\titem{ldap\_server} \ind{options!ldap_server}IP address or dns name of your
+LDAP server. This option is required.
+\titem{ldap\_port} \ind{options!ldap_port}Port to connect to LDAP server.
+Default is~389.
+\titem{ldap\_rootdn} \ind{options!ldap_rootdn}Bind DN.  Default is~\term{""}
+which means anonymous connection.
+\titem{ldap\_password} \ind{options!ldap_password}Bind password. Default
+is~\term{""}.
+\end{description}
+
+Example:
+\begin{verbatim}
+  {auth_method, ldap}.
+  {ldap_servers, ["ldap.mydomain.org"]}.
+  {ldap_port, 389}.
+  {ldap_rootdn, "cn=Manager,dc=domain,dc=org"}.
+  {ldap_password, "secret"}.
+\end{verbatim}
+
+Note that current LDAP implementation doesn't support SSL connection and SASL
+authentication.
+
+
+\subsubsection{Authentication}
+\label{sec:ldapauthentication}
+
+You can authenticate users against LDAP directory.  Available parameters are
+listed below:
+
+\begin{description}
+\titem{ldap\_base} \ind{options!ldap_base}LDAP base directory which stores users
+accounts.  This option is required.
+\titem{ldap\_uidattr} \ind{options!ldap_uidattr}LDAP attribute which holds
+user's part of JID.  Default is \term{"uid"}.
+\titem{ldap\_uidattr\_format} \ind{options!ldap_uidattr_format}Format of the
+\term{ldap\_uidattr} variable.  Format MUST contain one and only one pattern
+variable \term{"\%u"} which will be replaced by user's part of JID. For example,
+\term{"\%u@mydomain.org"}.  Default value is \term{"\%u"}.
+\titem{ldap\_filter} \ind{options!ldap_filter}RFC 2254 LDAP filter.  Default is
+\term{none}.  Example: \term{"(\&(objectClass=shadowAccount)(memberOf=Jabber
+  Users))"}. Please, don't forget closing brackets and don't use superfluous
+whitespaces. Also you MUST NOT use \option{ldap\_uidattr} attribute in filter
+because this attribute will be substituted in LDAP filter automatically.
+\end{description}
+
+
+\subsubsection{vCards and Search}
+\label{sec:modvcardldap}
+
+\ejabberd{} can map LDAP attributes to vCard fields.  This behaviour is
+implemented in \modvcardldap{} module.  This module doesn't depend on
+authentication method.  \modvcardldap{} module has it's own optional
+parameters.  The first group of parameters has the same meaning as top-level
+LDAP parameters: \option{ldap\_servers}, \option{ldap\_port},
+\option{ldap\_rootdn}, \option{ldap\_password}, \option{ldap\_base},
+\option{ldap\_uidattr}, \option{ldap\_uidattr\_format} and
+\option{ldap\_filter}.  If one of this option is not set \ejabberd{} will look
+for top-level option with the same name.  The second group of parameters
+consists of the following options:
+
+\begin{description}
+\hostitem{vjud}
+\iqdiscitem{\ns{vcard-temp}}
+\titem{search} \ind{options!search}This option specifies whether the search
+  functionality is enabled (value: \term{true}) or disabled
+  (value: \term{false}).  If disabled, the option \term{hosts} will be
+  ignored and the \Jabber{} User Directory service will not appear in the
+  Service Discovery item list.  The default value is \term{true}.
+\titem{ldap\_vcard\_map} \ind{options!ldap_vcard_map}the table which defines
+reflection of LDAP attributes to vCard fields.
+	Format is:
+		\term{[{Name\_of\_vcard\_field, Pattern, List\_of\_LDAP\_attributes}, ...]}
+	where
+		\term{Name\_of\_vcard\_field} is the type name of vCard as defined
+                in RFC 2426,
+		Pattern is a string which contains pattern variables \term{"\%u"}, \term{"\%d"} or \term{"\%s"},
+		\term{List\_of\_LDAP\_attributes} is the list which contains of LDAP attributes.
+	Pattern variables \term{"\%s"} will be sequentially replaced with the values of
+	LDAP attributes from \term{List\_of\_LDAP\_attributes}; \term{"\%u"} will be replaced with
+	user's part of JID and \term{"\%d"} will be replaced with domain part of JID.
+	Example:
+\begin{verbatim}
+  {ldap_vcard_map,
+   [{"NICKNAME", "%u", []},
+    {"FN", "%s", ["displayName"]},
+    {"CTRY", "Russia", []},
+    {"EMAIL", "%u@%d", []},
+    {"DESC", "%s\n%s", ["title", "description"]}
+   ]},
+\end{verbatim}
+
+Default is:
+\begin{verbatim}
+  [{"NICKNAME", "%u", []},
+   {"FN", "%s", ["displayName"]},
+   {"FAMILY", "%s", ["sn"]},
+   {"GIVEN", "%s", ["givenName"]},
+   {"MIDDLE", "%s", ["initials"]},
+   {"ORGNAME", "%s", ["o"]},
+   {"ORGUNIT", "%s", ["ou"]},
+   {"CTRY", "%s", ["c"]},
+   {"LOCALITY", "%s", ["l"]},
+   {"STREET", "%s", ["street"]},
+   {"REGION", "%s", ["st"]},
+   {"PCODE", "%s", ["postalCode"]},
+   {"TITLE", "%s", ["title"]},
+   {"URL", "%s", ["labeleduri"]},
+   {"DESC", "%s", ["description"]},
+   {"TEL", "%s", ["telephoneNumber"]},
+   {"EMAIL", "%s", ["mail"]},
+   {"BDAY", "%s", ["birthDay"]},
+   {"ROLE", "%s", ["employeeType"]},
+   {"PHOTO", "%s", ["jpegPhoto"]}]
+\end{verbatim}
+\titem{ldap\_search\_fields} \ind{options!ldap_search_fields}This option defines
+search form and LDAP attributes to search.
+	Format:
+		\term{[{Name, Attribute}, ...]}
+	where
+		\term{Name} is the name of field in the search form.  Will be automatically
+			translated according to definitions in translation files (see
+			\term{msgs/*.msg} for available words).
+		Attribute is the LDAP attribute or the pattern \term{"\%u"}
+                  Example:
+\begin{verbatim}
+  {ldap_search_fields,
+   [{"User", "uid"},
+    {"Full Name", "displayName"},
+    {"Email", "mail"}
+   ]},
+\end{verbatim}
+
+Default is:
+\begin{verbatim}
+  [{"User", "%u"},
+   {"Full Name", "displayName"},
+   {"Given Name", "givenName"},
+   {"Middle Name", "initials"},
+   {"Family Name", "sn"},
+   {"Nickname", "%u"},
+   {"Birthday", "birthDay"},
+   {"Country", "c"},
+   {"City", "l"},
+   {"Email", "mail"},
+   {"Organization Name", "o"},
+   {"Organization Unit", "ou"}]
+\end{verbatim}
+\titem{ldap\_search\_reported} \ind{options!ldap_search_reported}This option defines search fields to be reported.
+	Format:
+		\term{[{Name, VCard\_Name}, ...]}
+	where
+		\term{Name} is the name of field in the search form. Will be automatically
+			translated according to definitions in translation files (see
+			\term{msgs/*.msg} for available words).
+		\term{VCard\_Name} is the name of vCard field defined in \option{ldap\_vcard\_map} option.
+                Example:
+\begin{verbatim}
+  {ldap_search_reported,
+   [{"Full Name", "FN"},
+    {"Email", "EMAIL"},
+    {"Birthday", "BDAY"},
+    {"Nickname", "NICKNAME"}
+   ]},
+\end{verbatim}
+
+Default is:
+\begin{verbatim}
+  [{"Full Name", "FN"},
+   {"Given Name", "GIVEN"},
+   {"Middle Name", "MIDDLE"},
+   {"Family Name", "FAMILY"},
+   {"Nickname", "NICKNAME"},
+   {"Birthday", "BDAY"},
+   {"Country", "CTRY"},
+   {"City", "LOCALITY"},
+   {"Email", "EMAIL"},
+   {"Organization Name", "ORGNAME"},
+   {"Organization Unit", "ORGUNIT"}]
+\end{verbatim}
+\end{description}
+
+
+\subsubsection{Examples}
+\label{sec:ldapexamples}
+
+\paragraph{Common example}
+
+Let's say \term{ldap.mydomain.org} is the name of our LDAP server. We have
+users with their passwords in \term{"ou=Users,dc=mydomain,dc=org"} directory.
+Also we have addressbook, which contains users emails and their additional
+infos in \term{"ou=AddressBook,dc=mydomain,dc=org"} directory.  Corresponding
+authentication section should looks like this:
+
+\begin{verbatim}
+  %% authentication method
+  {auth_method, ldap}.
+  %% DNS name of our LDAP server
+  {ldap_servers, ["ldap.mydomain.org"]}.
+  %% Bind to LDAP server as "cn=Manager,dc=mydomain,dc=org" with password "secret"
+  {ldap_rootdn, "cn=Manager,dc=mydomain,dc=org"}.
+  {ldap_password, "secret"}.
+  %% define the user's base
+  {ldap_base, "ou=Users,dc=mydomain,dc=org"}.
+  %% We want to authorize users from 'shadowAccount' object class only
+  {ldap_filter, "(objectClass=shadowAccount)"}.
+\end{verbatim}
+
+Now we want to use users LDAP-info as their vCards.  We have four attributes
+defined in our LDAP schema: \term{"mail"} --- email address, \term{"givenName"}
+--- first name, \term{"sn"} --- second name, \term{"birthDay"} --- birthday.
+Also we want users to search each other.  Let's see how we can set it up:
+
+\begin{verbatim}
+  {modules,
+    ...
+    {mod_vcard_ldap,
+     [
+      %% We use the same server and port, but want to bind anonymously because
+      %% our LDAP server accepts anonymous requests to
+      %% "ou=AddressBook,dc=mydomain,dc=org" subtree.
+      {ldap_rootdn, ""},
+      {ldap_password, ""},
+      %% define the addressbook's base
+      {ldap_base, "ou=AddressBook,dc=mydomain,dc=org"},
+      %% user's part of JID is located in the "mail" attribute
+      {ldap_uidattr, "mail"},
+      %% common format for our emails
+      {ldap_uidattr_format, "%u@mail.mydomain.org"},
+      %% We have to define empty filter here, because entries in addressbook doesn't
+      %% belong to shadowAccount object class
+      {ldap_filter, ""},
+      %% Now we want to define vCard pattern
+      {ldap_vcard_map,
+       [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
+        {"GIVEN", "%s", ["givenName"]},
+        {"FAMILY", "%s", ["sn"]},
+        {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
+        {"EMAIL", "%s", ["mail"]},
+        {"BDAY", "%s", ["birthDay"]}]},
+      %% Search form
+      {ldap_search_fields,
+       [{"User", "%u"},
+        {"Name", "givenName"},
+        {"Family Name", "sn"},
+        {"Email", "mail"},
+        {"Birthday", "birthDay"}]},
+      %% vCard fields to be reported
+      %% Note that JID is always returned with search results
+      {ldap_search_reported,
+       [{"Full Name", "FN"},
+        {"Nickname", "NICKNAME"},
+        {"Birthday", "BDAY"}]}
+    ]}
+    ...
+  }.
+\end{verbatim}
+
+Note that \modvcardldap{} module checks an existence of the user before
+searching his info in LDAP.
+
+
+\paragraph{Active Directory}
+
+Active Directory is just an LDAP-server with predefined attributes.  Sample
+config file is listed below:
+
+\begin{verbatim}
+  {auth_method, ldap}.
+  {ldap_servers, ["office.org"]}.    % List of LDAP servers
+  {ldap_base, "DC=office,DC=org"}. % Search base of LDAP directory
+  {ldap_rootdn, "CN=Administrator,CN=Users,DC=office,DC=org"}. % LDAP manager
+  {ldap_password, "*******"}. % Password to LDAP manager
+  {ldap_uidattr, "sAMAccountName"}.
+  {ldap_filter, "(memberOf=*)"}.
+  
+  {mod_vcard_ldap,
+   [{ldap_vcard_map,
+     [{"NICKNAME", "%u", []},
+      {"GIVEN", "%s", ["givenName"]},
+      {"MIDDLE", "%s", ["initials"]},
+      {"FAMILY", "%s", ["sn"]},
+      {"FN", "%s", ["displayName"]},
+      {"EMAIL", "%s", ["mail"]},
+      {"ORGNAME", "%s", ["company"]},
+      {"ORGUNIT", "%s", ["department"]},
+      {"CTRY", "%s", ["c"]},
+      {"LOCALITY", "%s", ["l"]},
+      {"STREET", "%s", ["streetAddress"]},
+      {"REGION", "%s", ["st"]},
+      {"PCODE", "%s", ["postalCode"]},
+      {"TITLE", "%s", ["title"]},
+      {"URL", "%s", ["wWWHomePage"]},
+      {"DESC", "%s", ["description"]},
+      {"TEL", "%s", ["telephoneNumber"]}]},
+    {ldap_search_fields,
+     [{"User", "%u"},
+      {"Name", "givenName"},
+      {"Family Name", "sn"},
+      {"Email", "mail"},
+      {"Company", "company"},
+      {"Department", "department"},
+      {"Role", "title"},
+      {"Description", "description"},
+      {"Phone", "telephoneNumber"}]},
+    {ldap_search_reported,
+     [{"Full Name", "FN"},
+      {"Nickname", "NICKNAME"},
+      {"Email", "EMAIL"}]}
+   ]
+  }.
+\end{verbatim}
+
 
 \subsection{\modversion{}}
 \label{sec:modversion}
