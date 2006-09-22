@@ -2310,13 +2310,13 @@ supported yet.
 Parameters:
 
 \begin{description}
-\titem{ldap\_server} \ind{options!ldap_server}IP address or dns name of your
+\titem{ldap\_server} \ind{options!ldap\_server}IP address or dns name of your
 LDAP server. This option is required.
-\titem{ldap\_port} \ind{options!ldap_port}Port to connect to LDAP server.
+\titem{ldap\_port} \ind{options!ldap\_port}Port to connect to LDAP server.
 Default is~389.
-\titem{ldap\_rootdn} \ind{options!ldap_rootdn}Bind DN.  Default is~\term{""}
+\titem{ldap\_rootdn} \ind{options!ldap\_rootdn}Bind DN.  Default is~\term{""}
 which means anonymous connection.
-\titem{ldap\_password} \ind{options!ldap_password}Bind password. Default
+\titem{ldap\_password} \ind{options!ldap\_password}Bind password. Default
 is~\term{""}.
 \end{description}
 
@@ -2340,15 +2340,15 @@ You can authenticate users against LDAP directory.  Available parameters are
 listed below:
 
 \begin{description}
-\titem{ldap\_base} \ind{options!ldap_base}LDAP base directory which stores users
+\titem{ldap\_base} \ind{options!ldap\_base}LDAP base directory which stores users
 accounts.  This option is required.
-\titem{ldap\_uidattr} \ind{options!ldap_uidattr}LDAP attribute which holds
+\titem{ldap\_uidattr} \ind{options!ldap\_uidattr}LDAP attribute which holds
 user's part of JID.  Default is \term{"uid"}.
-\titem{ldap\_uidattr\_format} \ind{options!ldap_uidattr_format}Format of the
+\titem{ldap\_uidattr\_format} \ind{options!ldap\_uidattr\_format}Format of the
 \term{ldap\_uidattr} variable.  Format MUST contain one and only one pattern
 variable \term{"\%u"} which will be replaced by user's part of JID. For example,
 \term{"\%u@mydomain.org"}.  Default value is \term{"\%u"}.
-\titem{ldap\_filter} \ind{options!ldap_filter}RFC 2254 LDAP filter.  Default is
+\titem{ldap\_filter} \ind{options!ldap\_filter}RFC 2254 LDAP filter.  Default is
 \term{none}.  Example: \term{"(\&(objectClass=shadowAccount)(memberOf=Jabber
   Users))"}. Please, don't forget closing brackets and don't use superfluous
 whitespaces. Also you MUST NOT use \option{ldap\_uidattr} attribute in filter
@@ -2378,7 +2378,7 @@ consists of the following options:
   (value: \term{false}).  If disabled, the option \term{hosts} will be
   ignored and the \Jabber{} User Directory service will not appear in the
   Service Discovery item list.  The default value is \term{true}.
-\titem{ldap\_vcard\_map} \ind{options!ldap_vcard_map}the table which defines
+\titem{ldap\_vcard\_map} \ind{options!ldap\_vcard\_map}the table which defines
 reflection of LDAP attributes to vCard fields.
 	Format is:
 		\term{[{Name\_of\_vcard\_field, Pattern, List\_of\_LDAP\_attributes}, ...]}
@@ -2424,7 +2424,7 @@ Default is:
    {"ROLE", "%s", ["employeeType"]},
    {"PHOTO", "%s", ["jpegPhoto"]}]
 \end{verbatim}
-\titem{ldap\_search\_fields} \ind{options!ldap_search_fields}This option defines
+\titem{ldap\_search\_fields} \ind{options!ldap\_search\_fields}This option defines
 search form and LDAP attributes to search.
 	Format:
 		\term{[{Name, Attribute}, ...]}
@@ -2457,7 +2457,7 @@ Default is:
    {"Organization Name", "o"},
    {"Organization Unit", "ou"}]
 \end{verbatim}
-\titem{ldap\_search\_reported} \ind{options!ldap_search_reported}This option defines search fields to be reported.
+\titem{ldap\_search\_reported} \ind{options!ldap\_search\_reported}This option defines search fields to be reported.
 	Format:
 		\term{[{Name, VCard\_Name}, ...]}
 	where

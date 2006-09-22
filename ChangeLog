@@ -1,3 +1,7 @@
+2006-09-14  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Minor fix on index generation.
+
 2006-09-14  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Updated (thanks to Evgeniy Khramtsov)
