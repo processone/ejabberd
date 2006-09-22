@@ -1,5 +1,7 @@
 2006-09-22  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/msgs/fr.msg: updated French translation.
+	
 	* doc/guide.tex: Large improvements for ejabberd 1.1.2 (thanks to
 	Sander Devrieze)
 	* doc/version.tex: Likewise.
