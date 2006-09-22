@@ -74,7 +74,6 @@
 
 % src/mod_vcard_ldap.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Serveur Jabber Erlang\nCopyright (c) 2002-2006 Alexey Shchepin"}.
-{"Given Name", "Prénom"}.
 {"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module vCard ejabberd\nCopyright (c) 2003-2006 Alexey Shchepin"}.
 {"Email", "Email"}.
 {"Search Results for ", "Résultats de recherche pour "}.
@@ -213,7 +212,6 @@
 {"Make room public searchable", "Rendre le salon public"}.
 {"Make participants list public", "Rendre la liste des participants publique"}.
 {"Make room password protected", "Protéger le salon par mot de passe"}.
-{"Make room semianonymous", "Rendre le salon semi-anonyme"}.
 {"Make room members-only", "Réserver le salon aux membres uniquement"}.
 {"Make room moderated", "Rendre le salon modéré"}.
 {"Default users as participants", "Les utilisateurs sont par défaut participant"}.
@@ -224,6 +222,7 @@
 {"Enable logging", "Activer l'archivage"}.
 {"Description", "Description"}.
 {"Number of occupants", "Nombre d'occupants"}.
+{"Who may discover real JIDs?", "Qui peut découvrir les vrais JIDs ?"}.
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module IRC ejabberd\nCopyright (c) 2003-2006 Alexey Shchepin"}.
