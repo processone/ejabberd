@@ -14,10 +14,10 @@
 
 
 %% External exports
--export([start_link/6,
-	 start_link/5,
+-export([start_link/7,
+	 start_link/6,
+	 start/7,
 	 start/6,
-	 start/5,
 	 route/4]).
 
 %% gen_fsm callbacks
@@ -85,22 +85,22 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Host, ServerHost, Access, Room, Creator, Nick) ->
+start(Host, ServerHost, Access, Room, HistorySize, Creator, Nick) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
     supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, Creator, Nick]).
+      Supervisor, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick]).
 
-start(Host, ServerHost, Access, Room, Opts) ->
+start(Host, ServerHost, Access, Room, HistorySize, Opts) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
     supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, Opts]).
+      Supervisor, [Host, ServerHost, Access, Room, HistorySize, Opts]).
 
-start_link(Host, ServerHost, Access, Room, Creator, Nick) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, Creator, Nick],
+start_link(Host, ServerHost, Access, Room, HistorySize, Creator, Nick) ->
+    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick],
 		       ?FSMOPTS).
 
-start_link(Host, ServerHost, Access, Room, Opts) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, Opts],
+start_link(Host, ServerHost, Access, Room, HistorySize, Opts) ->
+    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize, Opts],
 		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -114,20 +114,22 @@ start_link(Host, ServerHost, Access, Room, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Host, ServerHost, Access, Room, Creator, _Nick]) ->
+init([Host, ServerHost, Access, Room, HistorySize, Creator, _Nick]) ->
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
 				   server_host = ServerHost,
 				   access = Access,
 				   room = Room,
+				   history = lqueue_new(HistorySize),
 				   jid = jlib:make_jid(Room, Host, ""),
 				   just_created = true}),
     {ok, normal_state, State};
-init([Host, ServerHost, Access, Room, Opts]) ->
+init([Host, ServerHost, Access, Room, HistorySize, Opts]) ->
     State = set_opts(Opts, #state{host = Host,
 				  server_host = ServerHost,
 				  access = Access,
 				  room = Room,
+				  history = lqueue_new(HistorySize),
 				  jid = jlib:make_jid(Room, Host, "")}),
     {ok, normal_state, State}.
 
@@ -1372,7 +1374,11 @@ lqueue_new(Max) ->
 	    len = 0,
 	    max = Max}.
 
-lqueue_in(Item, #lqueue{queue = Q1, len = Len, max = Max}) ->
+%% If the message queue limit is set to 0, do not store messages.
+lqueue_in(Item, LQ = #lqueue{max = 0}) ->
+    LQ;
+%% Otherwise, rotate messages in the queue store.
+lqueue_in(Item, LQ = #lqueue{queue = Q1, len = Len, max = Max}) ->
     Q2 = queue:in(Item, Q1),
     if
 	Len >= Max ->
