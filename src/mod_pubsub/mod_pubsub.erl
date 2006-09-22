@@ -318,7 +318,7 @@ iq_disco_info(SNode) ->
 	    [{xmlelement, "identity",
 	      [{"category", "pubsub"},
 	       {"type", "generic"},
-	       {"name", "ejabberd/mod_pubsub"}], []},
+	       {"name", "Publish-Subscribe"}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB_EVENT}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB_OWNER}], []},

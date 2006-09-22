@@ -291,7 +291,7 @@ iq_disco() ->
     [{xmlelement, "identity",
       [{"category", "conference"},
        {"type", "irc"},
-       {"name", "ejabberd/mod_irc"}], []},
+       {"name", "IRC Transport"}], []},
      {xmlelement, "feature",
       [{"var", ?NS_MUC}], []},
      {xmlelement, "feature",

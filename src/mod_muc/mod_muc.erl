@@ -446,7 +446,7 @@ iq_disco_info() ->
     [{xmlelement, "identity",
       [{"category", "conference"},
        {"type", "text"},
-       {"name", "ejabberd/mod_muc"}], []},
+       {"name", "Chatrooms"}], []},
      {xmlelement, "feature", [{"var", ?NS_MUC}], []},
      {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
