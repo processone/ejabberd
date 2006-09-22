@@ -1,5 +1,10 @@
 2006-09-22  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_muc/mod_muc.erl: Component name is now more user friendly
+	(thanks to Badlop).
+	* src/mod_irc/mod_irc.erl: Likewise.
+	* src/mod_pubsub/mod_pubsub.erl: Likewise. 
+
 	* src/msgs/fr.msg: updated French translation.
 	
 	* doc/guide.tex: Large improvements for ejabberd 1.1.2 (thanks to
