@@ -141,11 +141,10 @@ get_user_roster(Acc, {LUser, LServer}) ->
 				   R ->
 				       SJID = jlib:jid_to_string(R#roster.jid),
 				       Groups = lists:flatmap(
-						  fun({S, G}) ->
-							  case jlib:jid_tolower(S) of
-							      SJID -> [G];
-							      _ -> []
-							  end
+						  fun({S, G}) when S == SJID ->
+							  [G];
+						     (_) ->
+							  []
 						  end, JIDGroups),
 				       [R#roster{groups = Groups}]
 			       end
