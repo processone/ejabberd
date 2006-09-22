@@ -1375,10 +1375,10 @@ lqueue_new(Max) ->
 	    max = Max}.
 
 %% If the message queue limit is set to 0, do not store messages.
-lqueue_in(Item, LQ = #lqueue{max = 0}) ->
+lqueue_in(_Item, LQ = #lqueue{max = 0}) ->
     LQ;
 %% Otherwise, rotate messages in the queue store.
-lqueue_in(Item, LQ = #lqueue{queue = Q1, len = Len, max = Max}) ->
+lqueue_in(Item, #lqueue{queue = Q1, len = Len, max = Max}) ->
     Q2 = queue:in(Item, Q1),
     if
 	Len >= Max ->

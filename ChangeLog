@@ -1,3 +1,9 @@
+2006-09-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_log.erl: Fixed html special characters
+	escaping, added new image buttons, chatroom titles now point to
+	xmpp: URIs (thanks to Badlop)
+
 2006-09-05  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_muc/mod_muc.erl: It is now possible to configure the MUC room

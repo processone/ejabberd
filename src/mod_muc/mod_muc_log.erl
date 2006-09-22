@@ -179,10 +179,10 @@ add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
 	{false, false} ->
 	    ok;
 	{false, SubEl} ->
-	    Message = {body, htmlize(xml:get_tag_cdata(SubEl))},
+	    Message = {body, xml:get_tag_cdata(SubEl)},
 	    add_message_to_log(Nick, Message, Room, Opts, State);
 	{SubEl, _} ->
-	    Message = {subject, htmlize(xml:get_tag_cdata(SubEl))},
+	    Message = {subject, xml:get_tag_cdata(SubEl)},
 	    add_message_to_log(Nick, Message, Room, Opts, State)
     end;
 
@@ -238,16 +238,24 @@ get_timestamp_daydiff(TimeStamp, Daydiff) ->
     {Date2, HMS}.
 
 % Try to close the previous day log, if it exists
-close_previous_log(Fn) ->
+close_previous_log(Fn, Images_dir) ->
     case file:read_file_info(Fn) of
 	{ok, _} ->
 	    {ok, F} = file:open(Fn, [append]),
-	    fw(F, "<div class=\"legend\">ejabberd/mod_muc log<span class=\"w3c\"><a href=\"http://validator.w3.org/check?uri=referer\"><img src=\"http://www.w3.org/Icons/valid-xhtml10\" alt=\"Valid XHTML 1.0 Transitional\" height=\"31\" width=\"88\" /></a> <a href=\"http://jigsaw.w3.org/css-validator/\"><img style=\"border:0;width:88px;height:31px\" src=\"http://jigsaw.w3.org/css-validator/images/vcss\" alt=\"Valid CSS!\" /></a></span></div></body></html>"),
+	    %fw(F, "<div class=\"legend\">ejabberd/mod_muc log<span class=\"w3c\">"),
+	    fw(F, "<div class=\"legend\">"),
+	    fw(F, "  <a href=\"http://ejabberd.jabber.ru\"><img style=\"border:0\" src=\"~s/powered-by-ejabberd.png\" alt=\"Powered by ejabberd\"/></a>", [Images_dir]),
+	    fw(F, "  <a href=\"http://www.erlang.org/\"><img style=\"border:0\" src=\"~s/powered-by-erlang.png\" alt=\"Powered by Erlang\"/></a>", [Images_dir]),
+	    fw(F, "<span class=\"w3c\">"),
+	    fw(F, "  <a href=\"http://validator.w3.org/check?uri=referer\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/valid-xhtml10.png\" alt=\"Valid XHTML 1.0 Transitional\" /></a>", [Images_dir]),
+	    fw(F, "  <a href=\"http://jigsaw.w3.org/css-validator/\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/vcss.png\" alt=\"Valid CSS!\"/></a>", [Images_dir]),
+	    fw(F, "</span></div></body></html>"),
 	    file:close(F);
 	_ -> ok
     end.
 
-add_message_to_log(Nick, Message, RoomJID, Opts, State) ->
+add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
+    Nick = htmlize(Nick1),
     #state{out_dir = OutDir,
 	   dir_type = DirType,
 	   css_file = CSSFile,
@@ -286,7 +294,14 @@ add_message_to_log(Nick, Message, RoomJID, Opts, State) ->
 	    put_header(F, Room, Datestring, CSSFile, Lang,
 		       HourOffset, DatePrev, DateNext, TopLink),
 
-	    close_previous_log(FnYesterday)
+		Images_dir = filename:join([OutDir, "images"]),
+	    file:make_dir(Images_dir),
+		create_image_files(Images_dir),
+		Images_url = case DirType of
+			subdirs -> "../../../images";
+			plain -> "../images"
+		end,
+	    close_previous_log(FnYesterday, Images_url)
     end,
 
     % Build message
@@ -304,33 +319,33 @@ add_message_to_log(Nick, Message, RoomJID, Opts, State) ->
 				 [Nick, ?T("leaves the room")]);
 	       {leave, Reason} ->  
 		   io_lib:format("<font class=\"ml\">~s ~s: ~s</font><br/>", 
-				 [Nick, ?T("leaves the room"), Reason]);
+				 [Nick, ?T("leaves the room"), htmlize(Reason)]);
 	       {kickban, "307", ""} ->  
 		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
 				 [Nick, ?T("has been kicked")]);
 	       {kickban, "307", Reason} ->  
 		   io_lib:format("<font class=\"mk\">~s ~s: ~s</font><br/>", 
-				 [Nick, ?T("has been kicked"), Reason]);
+				 [Nick, ?T("has been kicked"), htmlize(Reason)]);
 	       {kickban, "301", ""} ->  
 		   io_lib:format("<font class=\"mb\">~s ~s</font><br/>", 
 				 [Nick, ?T("has been banned")]);
 	       {kickban, "301", Reason} ->  
 		   io_lib:format("<font class=\"mb\">~s ~s: ~s</font><br/>", 
-				 [Nick, ?T("has been banned"), Reason]);
+				 [Nick, ?T("has been banned"), htmlize(Reason)]);
 	       {nickchange, OldNick} ->  
 		   io_lib:format("<font class=\"mnc\">~s ~s ~s</font><br/>", 
 				 [OldNick, ?T("is now known as"), Nick]);
 	       {subject, T} ->  
 		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>", 
-				 [Nick, ?T(" has set the subject to: "), T]);
+				 [Nick, ?T(" has set the subject to: "), htmlize(T)]);
 	       {body, T} ->  
 		   case regexp:first_match(T, "^/me\s") of
 		       {match, _, _} ->
 			   io_lib:format("<font class=\"mne\">~s ~s</font><br/>", 
-					 [Nick, string:substr(T, 5)]);
+					 [Nick, string:substr(htmlize(T), 5)]);
 		       nomatch ->
 			   io_lib:format("<font class=\"mn\">&lt;~s&gt;</font> ~s<br/>", 
-					 [Nick, T])
+					 [Nick, htmlize(T)])
 		   end
 	   end,
     {Hour, Minute, Second} = Time,
@@ -391,6 +406,160 @@ make_dir_rec(Dir) ->
 	    file:make_dir(Dir)
     end.
 
+
+% {ok, F1}=file:open("valid-xhtml10.png", [read]).
+% {ok, F1b}=file:read(F1, 1000000).
+% c("../../ejabberd/src/jlib.erl").
+% jlib:encode_base64(F1b).
+
+image_base64("powered-by-erlang.png") ->
+	"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAYAAAD+xQNoAAADN0lEQVRo3u1a"
+	"P0waURz+rjGRRQ+nUyRCYmJyDPTapDARaSIbTUjt1gVSh8ZW69aBAR0cWLSx"
+	"CXWp59LR1jbdqKnGxoQuRZZrSYyHEVM6iZMbHewROA7u3fHvkr5vOn737vcu"
+	"33ffu9/vcQz+gef5Cij6CkmSGABgFEH29r5SVvqIsTEOHo8HkiQxDBXEOjg9"
+	"PcHc3BxuUSqsI8jR0REAUFGsCCoKFYWCBAN6AxyO0Z7cyMXFb6oGqSgAsIrJ"
+	"ut9hMQlvdNbUhKWshLd3HtTF4jihShgVpRaBxKKmIGX5HL920/hz/BM2+zAm"
+	"pn2YioQaxnECj0BiEYcrG0Tzzc8/rfudSm02jaVSm9Vr1MdG8rSKKXlJ7lHr"
+	"fjouCut2IrC82BDPbe/gc+xlXez7KxEz63H4lmIN473Rh8Si1BKhRY6aEJI8"
+	"pLmbjSPN0xOnBBILmg5RC6Lg28preKOzsNmHG8R1Bf0o7GdMucUslDy1pJLG"
+	"2sndVVG0lq3c9vum4zmBR1kuwiYMN5ybmCYXxQg57ThFOTYznzpPO+IQi+IK"
+	"+jXjg/YhuIJ+cIIHg+wQJoJ+2N3jYN3Olvk4ge/IU98spne+FfGtlslm16nn"
+	"a8fduntfDscoVjGJqUgIjz686ViFUdjP4N39x9Xq638viZVtlq2tLXKncLf5"
+	"ticuZSWU5XOUshJKxxKtfdtdvs4OyNb/68urKvlluYizgwwu5SLK8jllu1t9"
+	"ihYOlzdwdpBBKSvh+vKKzHkCj1JW3y1m+hSj13WjqOiJKK0qpXKhSFxJAYBv"
+	"KYaZ9TjWRu4SiWi2LyDtb6wghGmn5HfTml16ILGA/G5al2DW7URYTFYrOU7g"
+	"icQ020sYqYDM9CbdgqFd4vzHL03JfvLjk6ZgADAVCSEsJvHsdL+utNYrm2uf"
+	"ZDVZSkzPKaQkW8kthpyS297BvRdRzR6DdTurJbPy9Ov1K6xr3HBPQuIMowR3"
+	"asegUyDuU9SuUG+dmIGyZ0b7FBN9St3WunyC5yMsrVv7uXzRP58s/qKn6C4q"
+	"lQoVxVIvd4YBwzBUFKs6ZaD27U9hEdcAN98Sx2IxykafIYrizbfESoB+dd9/"
+	"KF/d/wX3cJvREzl1vAAAAABJRU5ErkJggg==";
+
+image_base64("valid-xhtml10.png") ->
+	"iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAAEjEcpEAAACiFBMVEUAAADe"
+	"5+fOezmtra3ejEKlhELvvWO9WlrehELOe3vepaWclHvetVLGc3PerVKcCAj3"
+	"vVqUjHOUe1JjlL0xOUpjjL2UAAC91ueMrc7vrVKlvdbW3u+EpcbO3ufO1ucY"
+	"WpSMKQi9SiF7e3taWkoQEAiMczkQSoxaUkpzc3O1lEoICACEazEhGAgIAACE"
+	"YzFra2utjELWcznGnEr/7+9jY2POazHOYzGta2NShLVrlL05OUqctdacCADG"
+	"a2ucAADGpVqUtc61ORg5OTmlUikYGAiUezl7YzEYEAiUczkxMTG9nEqtIRDe"
+	"3t4AMXu9lEoQCACMazEAKXspKSmljFrW1ta1jELOzs7n7/fGxsa9pVqEOSkp"
+	"Y5xznL29tZxahLXOpVr/99ZrY1L/79ZjUiljSikAOYTvxmMAMYScezmchFqU"
+	"czGtlFp7c2utjFqUlJStxt73///39/9Ce61CSkq9xsZznMbW5+9Cc62MjIxC"
+	"Qkrv9/fv7/fOzsbnlErWjIz/3mtCORhza1IpIRBzWjH/1mtCMRhzY1L/zmvn"
+	"vVpSQiHOpVJrUinntVr3zmOEc1L3xmNaWlq1nFo5QkrGWim1lFoISpRSUlK1"
+	"zt4hWpwASoz///////8xa6WUaykAQoxKe61KSkp7nMbWtWPe5+9jWlL39/f3"
+	"9/fWrWNCQkLera3nvWPv7+85MRjntWPetVp7c1IxKRCUlHtKORh7a1IxIRCU"
+	"jHtaSiHWrVIpIQhzWinvvVpaQiH/1mPWpVKMe1L/zmP/xmNrUiGErc4YGBj/"
+	"73PG1ucQWpT/53O9nFoQUpS1SiEQEBC9zt69vb05c6UISoxSUko5a6UICAhS"
+	"SkohUpS1tbXetWMAQoSUgD+kAAAA2HRSTlP/////////iP9sSf//dP//////"
+	"//////////////////////////////////////////8M////////////ef//"
+	"////////////////////////////////////////////////////////////"
+	"//////////////////////9d////////////////////////////////////"
+	"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"
+	"QZ+RYfpNE/4Xosmq7jsZAJsAAAAASUVORK5CYII=";
+
+image_base64("vcss.png") ->
+	"iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAABUFvrSAAABKVBMVEUAAAAj"
+	"Ix8MR51ZVUqAdlmdnZ3ejEWLDAuNjY1kiMG0n2d9fX19Ghfrp1FtbW3y39+3"
+	"Ph6lIRNdXV2qJBFcVUhcVUhPT0/dsmpUfLr57+/u7u4/PDWZAACZAADOp1Gd"
+	"GxG+SyTgvnNdSySzk16+mkuxw+BOS0BOS0DOzs7MzMy4T09RRDwsJBG+vr73"
+	"wV6fkG6eCQRFcLSurq6/X1+ht9nXfz5sepHuwV59ZTHetFjQ2+wMCQQ2ZK5t"
+	"WCsmWajsz8+Sq9NMPh4hVaY8MRj///////////////////////9MTEyOp9Lu"
+	"8vhXU1A8PDyjOSTBz+YLRJ2rLy8sLCwXTaKujEUcHByDn82dfz7/zGafDw+f"
+	"Dw+zRSlzlMcMDAyNcji1tbXf5vIcFgvATJOjAAAAY3RSTlP/8///////////"
+	"//////8A//////P/////ov//8//////////////z///T//////////+i////"
+	"//////////8w/////6IA/xAgMP//////////8/////////8w0/////////+z"
+	"ehebAAACkUlEQVR42u2VfVPTQBDG19VqC6LY+lKrRIxFQaFSBPuSvhBPF8SI"
+	"UZK2J5Yav/+HcO8uZdLqTCsU/nKnyWwvk1/unnt2D9ZmH+8/cMAaTRFy+ng6"
+	"9/yiwC/+gy8R3McGv5zHvGJEGAdR4eBgi1IbZwevIEZE24pFtBtzG1Q4AoD5"
+	"zvw5pEDcJvIQV/TE3/l+H9GnNJwcdABS5wAbFQLMqI98/UReoAaOTlaJsp0z"
+	"aHx7LwZvY0BUR2xpWTzqam0gzY8KGzG4MhBCNGucha4QbpETy+Yk/BP85nt7"
+	"34AjpQLTsE4ZFpf/dnkUCglXVNYB+OfUZJHvAqAoa45OeuPgm4+Xjtv7xm4N"
+	"7PMV4C61+Mrz3H2WImm3ATiWrAiwZRWcUA5Ej4dgIEMxDv6yxHHcNuAutnjv"
+	"2HZ1NeuycoVPh0mwC834zZC9Ao5dkZZKwLVGwT+WdLw0YOZ1saEkUDoT+QGW"
+	"KZ0E2xpcrPakVW2KXwyUtYEtlEAj3GXD/fYwrryAdeiyGqidQSw1eqtJcA8c"
+	"Zq4zXqhPuCBYE1fKJjh/5X6MwRm9c2xf7WVdLf5oSdt64esVIwVAKC1HJ2ol"
+	"i8vj3L0YzC4zjkMagt+arDAs6bApbL1RVlWIqrJbreqKZmh4y6VR7rAJeUYD"
+	"VRj9VqRXkErpJ9lbEwtE83KlIfeG4p52t7zWIMO1XcaGz54uUyet+hBM7BXX"
+	"DS8Xc5+8Gmmbu1xwSoGIokA3oTptQecQ4Iimm/Ew7jwbPfMi3TM91T9XVIGo"
+	"+W9xC8oWpugVCXLuwXijjxJ3r/6PjX7nlFua8QmyM+TO/Gja2TTc2Z95C5ua"
+	"ewGH6cJi6bJO6Z+TY276eH3tbgy+/3ly3Js+rj66osG/AV5htgaQ9SeRAAAA"
+	"AElFTkSuQmCC";
+
+image_base64("powered-by-ejabberd.png") ->
+	"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAMAAADJG/NaAAAAw1BMVEUAAAAj"
+	"BgYtBAM5AwFCAAAYGAJNAABcAABIDQ5qAAAoJRV7AACFAAAoKSdJHByLAAAw"
+	"Lwk1NQA1MzFJKyo4NxtDQQBEQT5KSCxSTgBSUBlgQ0JYSEpZWQJPUU5hYABb"
+	"W0ZiYClcW1poaCVwbQRpaDhzYWNsakhuZ2VrbFZ8dwCEgAB3dnd4d2+OjACD"
+	"hYKcmACJi4iQkpWspgCYmJm5swCmqazEwACwsbS4ub3X0QLExsPLyszW1Nnc"
+	"3ODm5ugMBwAWAwPHm1IFAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJ"
+	"cEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfVCRQOBA7VBkCMAAACcElEQVRI"
+	"x72WjXKiMBSFQalIFbNiy1pdrJZaRVYR5deGwPs/VRNBSBB2OjvQO0oYjPfj"
+	"5J6bCcdx8i2UldxKcDhk1HbIPwFBF/kHKJfjPSVAyIRHF9rRZ4sUX3EDdWOv"
+	"1+u2tESaavpnYTbv9zvd0WwDy3/QcGQXlH5uTxB1l07MJlRpsUei0JF6Qi+O"
+	"HyGK7ijXxPklHe/umIllim3iUBMJDIEULxxPP0TVWhhKJoN9fUpdmQLteV8a"
+	"DgEAg9gIcTjL4F4L+r4WVKEF+rbJdwYYAoQHY+oQjnGootyKwxapoi73WkyF"
+	"FySQBv988naEEp4+YMMec5VUCQDJTscEy7Kc0HsLmqNE7rovDjMpIHHGYeid"
+	"Xn4TQcaxMYqP3RV3C8oCl2WvrlSPaNpGZadRnmPGCk8ylM2okAJ4i9TEe1Ke"
+	"rsXxSl6jUt5uayiIodirtcKLOaWblj50wiyMv1F9lm9TUDArGAD0FmEpvCUs"
+	"VoZy6dW81Fg0aDaHogQa36ekAPG5DDGsbdZrGsrzZUnzvBo1I2tLmuL69kSi"
+	"tAweyHKN9b3leDfQMnu3nIIKWfmXnqGVKedJT6QpICbJvf2f8aOsvn68v+k7"
+	"/cwUQdPoxaMoRTnKFHNlKsKQphCTOa84u64vpi8bH31CqsbF6lSONRTkTyQG"
+	"Arq49/fEvjBwz4eDS2/JpaXRNOoXRD/VmOrDVTJJRIZCTLav3VrqbPvP3vdd"
+	"uGEhQJzilncbpSA4F3vsihErO+dayv/sY5/yRE0GDEXCu2VoNiMlo5i+P2Kl"
+	"gMEvTNk2eYa5XEyh12Ex17Z8vzQUR3KEPbYd6XG87eC4Ly75RneS5ZYHAAAA"
+	"AElFTkSuQmCC".
+
+create_image_files(Images_dir) ->
+	Filenames = [
+	    "powered-by-ejabberd.png",
+	    "powered-by-erlang.png",
+	    "valid-xhtml10.png",
+	    "vcss.png"
+	],
+	lists:foreach(
+		fun(Filename) ->
+			Filename_full = filename:join([Images_dir, Filename]),
+			{ok, F} = file:open(Filename_full, [write]),
+			Image = jlib:decode_base64(image_base64(Filename)),
+			io:format(F, "~s", [Image]),
+			file:close(F)
+		end,
+		Filenames),
+	ok.
+
 fw(F, S, O) -> io:format(F, S ++ "~n", O).
 fw(F, S) -> fw(F, S, []).
 
@@ -399,19 +568,19 @@ put_header(F, Room, Date, CSSFile, Lang, Hour_offset, Date_prev, Date_next, Top_
     fw(F, "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"~s\" lang=\"~s\">", [Lang, Lang]),
     fw(F, "<head>"),
     fw(F, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />"),
-    fw(F, "<title>~s - ~s</title>", [Room#room.title, Date]),
+    fw(F, "<title>~s - ~s</title>", [htmlize(Room#room.title), Date]),
     put_header_css(F, CSSFile),
     put_header_script(F),
     fw(F, "</head>"),
     fw(F, "<body>"),
     {Top_url, Top_text} = Top_link,
     fw(F, "<div style=\"text-align: right;\"><a style=\"color: #AAAAAA; font-family: monospace; text-decoration: none; font-weight: bold;\" href=\"~s\">~s</a></div>", [Top_url, Top_text]),
-    fw(F, "<div class=\"roomtitle\"><a class=\"roomtitle\" href=\"xmpp:~s?join\">~s</a></div>", [Room#room.jid, Room#room.title]),
+    fw(F, "<div class=\"roomtitle\">~s</div>", [htmlize(Room#room.title)]),
     fw(F, "<a class=\"roomjid\" href=\"xmpp:~s?join\">~s</a>", [Room#room.jid, Room#room.jid]),
     fw(F, "<div class=\"logdate\">~s<span class=\"w3c\"><a class=\"nav\" href=\"~s\">&lt;</a> <a class=\"nav\" href=\".\/\">^</a> <a class=\"nav\" href=\"~s\">&gt;</a></span></div>", [Date, Date_prev, Date_next]),
-    case {Room#room.subject_author, Room#room.subject} of
+    case {htmlize(Room#room.subject_author), htmlize(Room#room.subject)} of
 	{"", ""} -> ok;
-	{SuA, Su} -> fw(F, "<div class=\"roomsubject\">~s~s~s</div>", [SuA, ?T(" has set the subject to: "), htmlize(Su)])
+	{SuA, Su} -> fw(F, "<div class=\"roomsubject\">~s~s~s</div>", [SuA, ?T(" has set the subject to: "), Su])
     end,
     RoomConfig = roomconfig_to_string(Room#room.config, Lang),
     put_room_config(F, RoomConfig, Lang),
@@ -436,7 +605,7 @@ put_header_css(F, false) ->
     fw(F, ".mne {color: #AA0099;}"),
     fw(F, "a.nav {color: #AAAAAA; font-family: monospace; letter-spacing: 3px; text-decoration: none;}"),
     fw(F, "div.roomtitle {border-bottom: #224466 solid 3pt; margin-left: 20pt;}"),
-    fw(F, "a.roomtitle {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}"),
+    fw(F, "div.roomtitle {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}"),
     fw(F, "a.roomjid {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; margin-left: 20pt; text-decoration: none;}"),
     fw(F, "div.logdate {color: #663399; font-size: 20px; font-weight: bold; font-family: sans-serif; letter-spacing: 2px; border-bottom: #224466 solid 1pt; margin-left:80pt; margin-top:20px;}"),
     fw(F, "div.roomsubject {color: #336699; font-size: 18px; font-family: sans-serif; margin-left: 80pt; margin-bottom: 10px;}"),
@@ -485,11 +654,11 @@ htmlize(S1) ->
       S2_list).
 
 htmlize2(S1) ->
-    S2 = element(2, regexp:gsub(S1, "<", "\\&lt;")),
-    S3 = element(2, regexp:gsub(S2, ">", "\\&gt;")),
-    S4 = element(2, regexp:gsub(S3, "(http|ftp)://.[^ ]*", "<a href=\"&\">&</a>")),
-    %element(2, regexp:gsub(S4, "  ", "\\&nbsp;")).
-    S4.
+    S2 = element(2, regexp:gsub(S1, "\\&", "\\&amp;")),
+    S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
+    S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
+    S5 = element(2, regexp:gsub(S4, "(http|ftp)://.[^ ]*", "<a href=\"&\">&</a>")),
+    S6.
 
 get_room_info(RoomJID, Opts) ->
     Title =
@@ -544,7 +713,7 @@ roomconfig_to_string(Options, Lang) ->
 			       T -> 
 				   case Opt of
 				       password -> "<div class=\"rcoe\">" ++ OptText ++ "</div>";
-				       title -> "<div class=\"rcot\">" ++ ?T("Room title") ++ ": \"" ++ T ++ "\"</div>";
+				       title -> "<div class=\"rcot\">" ++ ?T("Room title") ++ ": \"" ++ htmlize(T) ++ "\"</div>";
 				       _ -> "\"" ++ T ++ "\""
 				   end
 			   end,
