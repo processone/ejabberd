@@ -1,3 +1,12 @@
+2006-09-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated (thanks to Evgeniy Khramtsov)
+
+	* src/ejabberd_auth_ldap.erl: Better LDAP support (thanks to
+	Evgeniy Khramtsov)
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/eldap/eldap_filter.erl: Likewise
+
 2006-09-11  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/odbc/mssql.sql: Removed unused fields.

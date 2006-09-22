@@ -12,7 +12,8 @@ OUTDIR = ..
 EFLAGS = -I .. -pz ..
 OBJS   = \
 	$(OUTDIR)/eldap.beam \
-	$(OUTDIR)/ELDAPv3.beam
+	$(OUTDIR)/ELDAPv3.beam \
+	$(OUTDIR)/eldap_filter.beam
 
 all:    $(OBJS)
 
