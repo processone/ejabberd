@@ -29,24 +29,31 @@
 
 %% Modules
 \newcommand{\module}[1]{\texttt{#1}}
+\newcommand{\modadhoc}{\module{mod\_adhoc}}
 \newcommand{\modannounce}{\module{mod\_announce}}
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
+\newcommand{\modecho}{\module{mod\_echo}}
 \newcommand{\modirc}{\module{mod\_irc}}
 \newcommand{\modlast}{\module{mod\_last}}
+\newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
-\newcommand{\modecho}{\module{mod\_echo}}
+\newcommand{\modmuclog}{\module{mod\_muc\_log}}
 \newcommand{\modoffline}{\module{mod\_offline}}
+\newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
 \newcommand{\modprivate}{\module{mod\_private}}
 \newcommand{\modpubsub}{\module{mod\_pubsub}}
 \newcommand{\modregister}{\module{mod\_register}}
 \newcommand{\modroster}{\module{mod\_roster}}
+\newcommand{\modrosterodbc}{\module{mod\_roster\_odbc}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
 \newcommand{\modstats}{\module{mod\_stats}}
 \newcommand{\modtime}{\module{mod\_time}}
 \newcommand{\modvcard}{\module{mod\_vcard}}
+\newcommand{\modvcardldap}{\module{mod\_vcard\_ldap}}
+\newcommand{\modvcardodbc}{\module{mod\_vcard\_odbc}}
 \newcommand{\modversion}{\module{mod\_version}}
 
 %% Title page
@@ -89,7 +96,7 @@
 % Input introduction.tex
 \input{introduction}
 
-\section{How it works}
+\section{How it Works}
 \label{sec:howitworks}
 
 
@@ -150,7 +157,7 @@ does not exist, then it is opened and registered.
 
 
 
-\section{XML representation}
+\section{XML Representation}
 \label{sec:xmlrepr}
 
 Each XML stanza is represented as the following tuple:
@@ -254,14 +261,14 @@ Err = term()
 \end{description}
 
 
-\section{\ejabberd{} modules}
+\section{Modules}
 \label{sec:emods}
 
 
-\subsection{gen\_mod behaviour}
-\label{sec:genmod}
+%\subsection{gen\_mod behaviour}
+%\label{sec:genmod}
 
-TBD
+%TBD
 
 \subsection{Module gen\_iq\_handler}
 \label{sec:geniqhandl}
@@ -345,10 +352,10 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 \subsection{Services}
 \label{sec:services}
 
-TBD
+%TBD
 
 
-TODO: use \verb|proc_lib|
+%TODO: use \verb|proc_lib|
 \begin{verbatim}
 -module(mod_echo).
 

@@ -78,9 +78,14 @@ the processing discipline for #1 IQ queries
 \newcommand{\hostitem}[1]{
   \titem{hosts} \ind{options!hosts} This option defines the hostnames of the
   service (see section~\ref{sec:modhostsoption}). If neither \texttt{hosts} nor
-  the old \texttt{host} is present, the prefix ``\jid{#1.}'' is added to all
+  the old \texttt{host} is present, the prefix `\jid{#1.}' is added to all
   \ejabberd{} hostnames.
 }
+
+%\newcommand{\quoting}[2][yozhik]{\begin{quotation}\textcolor{#1}{\textit{#2}}\end{quotation}} % Quotes enabled
+%\renewcommand{command}[args][default]{def}
+%\renewcommand{\headrule}{{\color{ejblue}%
+%\hrule width\headwidth height\headrulewidth \vskip-\headrulewidth}}
 
 %% Title page
 \include{version}
@@ -92,9 +97,11 @@ the processing discipline for #1 IQ queries
 %% Options
 \newcommand{\marking}[1]{#1} % Marking disabled
 \newcommand{\quoting}[2][yozhik]{} % Quotes disabled
-\newcommand{\new}{\begin{latexonly}\marginpar{\textsc{new}}\end{latexonly}} % Highlight new features
-\newcommand{\improved}{\begin{latexonly}\marginpar{\textsc{improved}}\end{latexonly}} % Highlight improved features
-\newcommand{\moreinfo}[1]{} % Hide details
+\newcommand{\new}{\marginpar{\textsc{new}}} % Highlight new features
+\newcommand{\improved}{\marginpar{\textsc{improved}}} % Highlight improved features
+
+%% To by-pass errors in the HTML version.
+\newstyle{SPAN}{width:20\%; float:right; text-align:left; margin-left:auto;}
 
 %% Footnotes
 \begin{latexonly}
@@ -108,7 +115,7 @@ the processing discipline for #1 IQ queries
 
 \begin{document}
 
-\label{sec:titlepage}
+\label{titlepage}
 \begin{titlepage}
   \maketitle{}
 
@@ -118,7 +125,7 @@ the processing discipline for #1 IQ queries
   }
   \end{center}
 
-  \begin{quotation}\textit{I can thoroughly recommend ejabberd for ease of setup --
+  \begin{quotation}\textit{I can thoroughly recommend ejabberd for ease of setup ---
   Kevin Smith, Current maintainer of the Psi project}\end{quotation}
 
 \end{titlepage}
@@ -135,31 +142,30 @@ the processing discipline for #1 IQ queries
 % Input introduction.tex
 \input{introduction}
 
-\section{Installation from Source}
-\label{sec:installation}
+\section{\aname{installsource}{Installation from Source}}
+\label{sec:installsource}
 \ind{installation}
 
-\subsection{Installation Requirements}
+\subsection{\aname{installreq}{Installation Requirements}}
 \label{sec:installreq}
+\ind{installation!requirements}
 
-\subsubsection{``Unix-like'' operating systems}
+\subsubsection{\aname{installrequnix}{`Unix-like' operating systems}}
 \label{sec:installrequnix}
-\ind{installation!requirements for ``Unix-like'' operating systems}
 
-To compile \ejabberd{} on a ``Unix-like'' operating system, you need:
+To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \begin{itemize}
-\item GNU Make;
-\item GCC;
-\item libexpat 1.95 or higher;
-\item Erlang/OTP R9C-2 or higher;
-\item OpenSSL 0.9.6 or higher (optional).
-\item Zlib 1.2.3 or higher (optional).
-\item GNU Iconv 1.8 or higher (optional, not needed at all on systems with GNU libc).
+\item GNU Make
+\item GCC
+\item libexpat 1.95 or higher
+\item Erlang/OTP R9C-2 or higher
+\item OpenSSL 0.9.6 or higher (optional)
+\item Zlib 1.2.3 or higher (optional)
+\item GNU Iconv 1.8 or higher (optional, not needed on systems with GNU libc)
 \end{itemize}
 
-\subsubsection{Windows}
+\subsubsection{\aname{installreqwin}{Windows}}
 \label{sec:installreqwin}
-\ind{installation!requirements for Windows}
 
 To compile \ejabberd{} on a Windows flavour, you need:
 \begin{itemize}
@@ -174,7 +180,7 @@ To compile \ejabberd{} on a Windows flavour, you need:
 \item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
 \end{itemize}
 
-\subsection{Obtaining \ejabberd{}}
+\subsection{\aname{obtaining}{Obtaining \ejabberd{}}}
 \label{sec:obtaining}
 
 \ind{download}
@@ -187,15 +193,14 @@ The latest development version can be retrieved from the Subversion repository\@
   svn co http://svn.process-one.net/ejabberd/trunk ejabberd
 \end{verbatim}
 
-\subsection{Compilation}
-\label{sec:compilation}
-\ind{compilation}
+\subsection{\aname{compile}{Compilation}}
+\label{sec:compile}
+\ind{installation!compilation}
 
-\subsubsection{``Unix-like'' operating systems}
-\label{sec:compilationunix}
-\ind{compilation!on ``Unix-like'' operating systems}
+\subsubsection{\aname{compileunix}{`Unix-like' operating systems}}
+\label{sec:compileunix}
 
-Compile \ejabberd{} on a ``Unix-like'' operating system by executing:
+Compile \ejabberd{} on a `Unix-like' operating system by executing:
 
 \begin{verbatim}
   ./configure
@@ -211,9 +216,12 @@ These commands will:
 \item create a directory called \verb|/var/log/ejabberd| to store log files.
 \end{itemize}
 
-\subsubsection{Windows}
-\label{sec:compilationwin}
-\ind{compilation!on Windows}
+Note: if you want to use an external database, you need to execute the configure
+script with the option(s) \term{--enable-odbc} or \term{--enable-odbc
+--enable-mssql}. See section~\ref{sec:database} for more information.
+
+\subsubsection{\aname{compilewin}{Windows}}
+\label{sec:compilewin}
 
 \begin{itemize}
 \item Install Erlang emulator (for example, into \verb|C:\Program Files\erl5.3|).
@@ -246,9 +254,12 @@ werl -s ejabberd -name ejabberd
 \end{verbatim}
 \end{itemize}
 
-\subsection{Starting}
-\label{sec:starting}
+%TODO: how to compile database support on windows?
+
+\subsection{\aname{start}{Starting}}
+\label{sec:start}
 \ind{starting}
+%TODO: update when the ejabberdctl script is made more userfriendly
 
 Execute the following command to start \ejabberd{}:
 \begin{verbatim}
@@ -259,7 +270,7 @@ or
   erl -pa /var/lib/ejabberd/ebin -sname ejabberd -s ejabberd
 \end{verbatim}
 In the latter case the Erlang node will be identified using only the first part
-of the host name, i.\,e. other Erlang nodes outside this domain can't contact
+of the host name, i.\,e. other Erlang nodes outside this domain cannot contact
 this node.
 
 Note that when using the above command, \ejabberd{} will search for the
@@ -297,11 +308,8 @@ To reduce memory usage, you may set the environment variable
 But in this case \ejabberd{} can start to work slower.
 
 
-\section{Configuration}
-\label{sec:configuration}
-
-\subsection{Initial Configuration}
-\label{sec:initconfig}
+\section{\aname{basicconfig}{Basic Configuration}}
+\label{sec:basicconfig}
 \ind{configuration file}
 
 The configuration file will be loaded the first time you start \ejabberd{}. The
@@ -311,7 +319,7 @@ configuration file are appended to the entries in the database. The
 configuration file contains a sequence of Erlang terms. Lines beginning with a
 \term{`\%'} sign are ignored. Each term is a tuple of which the first element is
 the name of an option, and any further elements are that option's values. If the
-configuration file do not contain for instance the ``hosts'' option, the old
+configuration file do not contain for instance the `hosts' option, the old
 host name(s) stored in the database will be used.
 
 
@@ -325,8 +333,8 @@ the configuration file:
 With these lines the old global options, local options and ACLs will be removed
 before new ones are added.
 
-\subsubsection{Host Names}
-\label{sec:confighostname}
+\subsection{\aname{hostnames}{Host Names}}
+\label{sec:hostnames}
 \ind{options!hosts}\ind{host names}
 
 The option \option{hosts} defines a list containing one or more domains that
@@ -335,46 +343,382 @@ The option \option{hosts} defines a list containing one or more domains that
 Examples:
 \begin{itemize}
 \item Serving one domain:
-\begin{itemize}
-\item \begin{verbatim}
+  \begin{verbatim}
   {hosts, ["example.org"]}.
 \end{verbatim}
-\item Backwards compatibility with older \ejabberd{} versions can be retained
-  with:
+\item Serving one domain, and backwards compatible with older \ejabberd{}
+  versions:
   \begin{verbatim}
   {host, "example.org"}.
 \end{verbatim}
-\end{itemize}
 \item Serving two domains:
 \begin{verbatim}
   {hosts, ["example.net", "example.com"]}.
 \end{verbatim}
 \end{itemize}
 
-\subsubsection{Default Language}
-\label{sec:configlanguage}
-\ind{options!language}\ind{language}
+\subsection{\aname{virtualhost}{Virtual Hosting}}
+\label{sec:virtualhost}
+\ind{virtual hosting}\ind{virtual hosts}\ind{virtual domains}
 
-The option \option{language} defines the default language of server strings that
-can be seen by \Jabber{} clients. If a \Jabber{} client do not support
-\option{xml:lang}, the specified language is used. The default value for the
-option \option{language} is \term{"en"}. In order to take effect there must be a
-translation file \term{<language>.msg} in \ejabberd{}'s \term{msgs} directory.
+Options can be defined separately for every virtual host using the
+\term{host\_config} option.\ind{options!host\_config} It has the following
+syntax:
+\begin{verbatim}
+  {host_config, <hostname>, [<option>, <option>, ...]}.
+\end{verbatim}
 
 Examples:
 \begin{itemize}
-\item To set Russian as default language:
+\item Domain \jid{example.net} is using the internal authentication method while
+  domain \jid{example.com} is using the \ind{LDAP}LDAP server running on the
+  domain \jid{localhost} to perform authentication:
 \begin{verbatim}
-  {language, "ru"}.
+{host_config, "example.net", [{auth_method, internal}]}.
+
+{host_config, "example.com", [{auth_method, ldap},
+                              {ldap_servers, ["localhost"]},
+                              {ldap_uidattr, "uid"},
+                              {ldap_rootdn, "dc=localdomain"},
+                              {ldap_rootdn, "dc=example,dc=com"},
+                              {ldap_password, ""}]}.
 \end{verbatim}
-\item To set Spanish as default language:
+\item Domain \jid{example.net} is using \ind{ODBC}ODBC to perform authentication
+  while domain \jid{example.com} is using the LDAP servers running on the domains
+  \jid{localhost} and \jid{otherhost}:
 \begin{verbatim}
-  {language, "es"}.
+{host_config, "example.net", [{auth_method, odbc},
+                              {odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}]}.
+
+{host_config, "example.com", [{auth_method, ldap},
+                              {ldap_servers, ["localhost", "otherhost"]},
+                              {ldap_uidattr, "uid"},
+                              {ldap_rootdn, "dc=localdomain"},
+                              {ldap_rootdn, "dc=example,dc=com"},
+                              {ldap_password, ""}]}.
 \end{verbatim}
 \end{itemize}
 
-\subsubsection{Access Rules}
-\label{sec:configaccess}
+\subsection{\aname{listened}{Listened Sockets}}
+\label{sec:listened}
+\ind{options!listen}
+
+The option \option{listen} defines for which addresses and ports \ejabberd{}
+will listen and what services will be run on them. Each element of the list is a
+tuple with the following elements:
+\begin{itemize}
+\item Port number.
+\item Module that serves this port.
+\item Options to this module.
+\end{itemize}
+
+\ind{modules!ejabberd\_c2s}\ind{modules!ejabberd\_s2s\_in}\ind{modules!ejabberd\_service}\ind{modules!ejabberd\_http}\ind{protocols!JEP-0114: Jabber Component Protocol}
+Currently next modules are implemented:
+\begin{table}[H]
+  \centering
+  \def\arraystretch{1.4}
+  \begin{tabular}{|l|l|p{87mm}|}
+  \hline \texttt{ejabberd\_c2s}& Description& Handles c2s connections.\\
+    \cline{2-3} & Options& \texttt{access}, \texttt{certfile}, \texttt{inet6},
+    \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper}, \texttt{ssl},
+    \texttt{tls}, \texttt{starttls}, \texttt{starttls\_required},
+    \texttt{zlib}\\
+  \hline \texttt{ejabberd\_s2s\_in}& Description& Handles incoming s2s
+  connections.\\
+    \cline{2-3} & Options& \texttt{inet6}, \texttt{ip},
+    \texttt{max\_stanza\_size}\\
+  \hline \texttt{ejabberd\_service}& Description& Interacts with external
+  components (*).\\
+    \cline{2-3} & Options& \texttt{access}, \texttt{hosts}, \texttt{inet6},
+    \texttt{ip}, \texttt{shaper}\\
+  \hline \texttt{ejabberd\_http}& Description& Handles incoming HTTP
+  connections.\\
+    \cline{2-3} & Options& \texttt{certfile}, \texttt{http\_poll},
+    \texttt{inet6}, \texttt{ip}, \texttt{tls}, \texttt{web\_admin}\\
+  \hline
+  \end{tabular}
+\end{table}
+
+(*) The mechanism for \footahref{http://ejabberd.jabber.ru/tutorials-transports}{external components} is defined in Jabber Component Protocol (\jepref{0114}).
+
+The following options are available:
+\begin{description}
+  \titem{\{access, <access rule>\}} \ind{options!access}This option defines
+    access to the port. The default value is \term{all}.
+  \titem{\{certfile, Path\}} Path to a file containing the SSL certificate.
+  \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}This option
+    defines one or more hostnames of connected services and enables you to
+    specify additional options including \poption{\{password, Secret\}}.
+  \titem{http\_poll} \ind{options!http\_poll}\ind{protocols!JEP-0025: HTTP Polling}\ind{JWChat}\ind{web-based Jabber client}
+    This option enables HTTP Polling (\jepref{0025}) support. HTTP Polling
+    enables access via HTTP requests to \ejabberd{} from behind firewalls which
+    do not allow outgoing sockets on port 5222.
+
+    If HTTP Polling is enabled, it will be available at
+    \verb|http://server:port/http-poll/|. Be aware that support for HTTP Polling
+    is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
+    interesting to host a web-based \Jabber{} client such as
+    \footahref{http://jwchat.sourceforge.net/}{JWChat} (there is a tutorial to
+    \footahref{http://ejabberd.jabber.ru/jwchat}{install JWChat} with
+    instructions for \ejabberd{}).
+  \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6.
+  \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
+    interface to listen for. For example \verb|{ip, {192, 168, 1, 1}}|.
+  \titem{\{max\_stanza\_size, Size\}} \ind{options!max\_stanza\_size}This
+    option specifies an approximate maximum size in bytes of XML stanzas.
+    Approximate, because it is calculated with the precision of one block of
+    readed data. For example \verb|{max\_stanza\_size, 65536}|.  The default
+    value is \term{infinity}.
+  \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
+    shaper for the port (see section~\ref{sec:shapers}). The default value
+    is \term{none}.
+  \titem{ssl} \ind{options!ssl}\ind{SSL}This option specifies that traffic on
+    the port will be encrypted using SSL. You should also set the
+    \option{certfile} option. It is recommended to use the \term{tls} option
+    instead.
+  \titem{starttls} \ind{options!starttls}\ind{STARTTLS}This option
+    specifies that STARTTLS encryption is available on connections to the port.
+    You should also set the \option{certfile} option.
+  \titem{starttls\_required} \ind{options!starttls\_required}This option
+    specifies that STARTTLS encryption is required on connections to the port.
+    No unencrypted connections will be allowed. You should also set the
+    \option{certfile} option.
+  \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
+    the port will be encrypted using SSL immediately after connecting. You
+    should also set the \option{certfile} option.
+  \titem{zlib} \ind{options!zlib}\ind{protocols!JEP-0138: Stream Compression}\ind{Zlib}This
+    option specifies that Zlib stream compression (as defined in \jepref{0138})
+    is available on connections to the port. Client connections cannot use
+    stream compression and stream encryption simultaneously. Hence, if you
+    specify both \option{tls} (or \option{ssl}) and \option{zlib}, the latter
+    option will not affect connections (there will be no stream compression).
+  \titem{web\_admin} \ind{options!web\_admin}\ind{web interface}This option
+    enables the web interface for \ejabberd{} administration which is available
+    at \verb|http://server:port/admin/|. Login and password are the username and
+    password of one of the registered users who are granted access by the
+    `configure' access rule.
+\end{description}
+
+In addition, the following options are available for s2s connections:
+\begin{description}
+  \titem{\{s2s\_use\_starttls, true|false\}}
+  \ind{options!s2s\_use\_starttls}\ind{STARTTLS}This option defines whether to
+  use STARTTLS for s2s connections.
+  \titem{\{s2s\_certfile, Path\}} \ind{options!s2s\_certificate}Path to a
+  file containing a SSL certificate.
+  \titem{\{domain\_certfile, Domain, Path\}} \ind{options!domain\_certfile}Path
+  to the file containing the SSL certificate for the specified domain.
+\end{description}
+
+For instance, the following configuration defines that:
+\begin{itemize}
+\item c2s connections are listened for on port 5222 and 5223 (SSL) and denied
+  for the user called `\term{bad}'.
+\item s2s connections are listened for on port 5269 with STARTTLS for secured
+  traffic enabled.
+\item Port 5280 is serving the web interface and the HTTP Polling service. Note
+  that it is also possible to serve them on different ports. The second
+  example in section~\ref{sec:webinterface} shows how exactly this can be done.
+\item All users except for the administrators have a traffic of limit 
+  1,000\,Bytes/second
+\item \ind{transports!AIM}The
+  \footahref{http://ejabberd.jabber.ru/pyaimt}{AIM transport}
+  \jid{aim.example.org} is connected to port 5233 with password
+  `\term{aimsecret}'.
+\item \ind{transports!ICQ}The ICQ transport JIT (\jid{icq.example.org} and
+  \jid{sms.example.org}) is connected to port 5234 with password
+  `\term{jitsecret}'.
+\item \ind{transports!MSN}The
+  \footahref{http://ejabberd.jabber.ru/pymsnt}{MSN transport}
+  \jid{msn.example.org} is connected to port 5235 with password
+  `\term{msnsecret}'.
+\item \ind{transports!Yahoo}The
+  \footahref{http://ejabberd.jabber.ru/yahoo-transport-2}{Yahoo! transport}
+  \jid{yahoo.example.org} is connected to port 5236 with password
+  `\term{yahoosecret}'.
+\item \ind{transports!Gadu-Gadu}The \footahref{http://ejabberd.jabber.ru/jabber-gg-transport}{Gadu-Gadu transport} \jid{gg.example.org} is
+  connected to port 5237 with password `\term{ggsecret}'.
+\item \ind{transports!email notifier}The
+  \footahref{http://ejabberd.jabber.ru/jmc}{Jabber Mail Component}
+  \jid{jmc.example.org} is connected to port 5238 with password
+  `\term{jmcsecret}'.
+\end{itemize}
+\begin{verbatim}
+  {acl, blocked, {user, "bad"}}.
+  {access, c2s, [{deny, blocked},
+                 {allow, all}]}.
+  {shaper, normal, {maxrate, 1000}}.
+  {access, c2s_shaper, [{none, admin},
+                        {normal, all}]}.
+  {listen,
+   [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
+    {5223, ejabberd_c2s,     [{access, c2s},
+                              ssl, {certfile, "/path/to/ssl.pem"}]},
+    {5269, ejabberd_s2s_in,  []},
+    {5280, ejabberd_http,    [http_poll, web_admin]},
+    {5233, ejabberd_service, [{host, "aim.example.org",
+                               [{password, "aimsecret"}]}]},
+    {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
+                               [{password, "jitsecret"}]}]},
+    {5235, ejabberd_service, [{host, "msn.example.org",
+                               [{password, "msnsecret"}]}]},
+    {5236, ejabberd_service, [{host, "yahoo.example.org",
+                               [{password, "yahoosecret"}]}]},
+    {5237, ejabberd_service, [{host, "gg.example.org",
+                               [{password, "ggsecret"}]}]},
+    {5238, ejabberd_service, [{host, "jmc.example.org",
+                               [{password, "jmcsecret"}]}]}
+   ]
+  }.
+  {s2s_use_starttls, true}.
+  {s2s_certfile, "/path/to/ssl.pem"}.
+\end{verbatim}
+Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based
+services you have to make the transports log and do \ind{XDB}XDB by themselves:
+\begin{verbatim}
+  <!--
+     You have to add elogger and rlogger entries here when using ejabberd.
+     In this case the transport will do the logging.
+  -->
+
+  <log id='logger'>
+    <host/>
+    <logtype/>
+    <format>%d: [%t] (%h): %s</format>
+    <file>/var/log/jabber/service.log</file>
+  </log>
+
+  <!--
+     Some Jabber server implementations do not provide
+     XDB services (for example, jabberd2 and ejabberd).
+     xdb_file.so is loaded in to handle all XDB requests.
+  -->
+
+  <xdb id="xdb">
+    <host/>
+    <load>
+      <!-- this is a lib of wpjabber or jabberd -->
+      <xdb_file>/usr/lib/jabber/xdb_file.so</xdb_file>
+      </load>
+    <xdb_file xmlns="jabber:config:xdb_file">
+      <spool><jabberd:cmdline flag='s'>/var/spool/jabber</jabberd:cmdline></spool>
+    </xdb_file>
+  </xdb>
+\end{verbatim}
+
+\subsection{\aname{auth}{Authentication}}
+\label{sec:auth}
+\ind{authentication}\ind{options!auth\_method}
+
+The option \option{auth\_method} defines the authentication method that is used
+for user authentication:
+\begin{verbatim}
+  {auth_method, [<method>]}.
+\end{verbatim}
+
+The following authentication methods are supported by \ejabberd{}:
+\begin{itemize}
+\item internal (default) --- See section~\ref{sec:internalauth}.
+\item external --- There are \footahref{http://ejabberd.jabber.ru/extauth}{some
+ example authentication scripts}.
+\item ldap --- See section~\ref{sec:ldap}.
+\item odbc --- See section~\ref{sec:mysql}, \ref{sec:pgsql},
+  \ref{sec:mssql} and \ref{sec:odbc}.
+\item anonymous --- See section~\ref{sec:saslanonymous}.
+\end{itemize}
+
+\subsubsection{\aname{internalauth}{Internal}}
+\label{sec:internalauth}
+\ind{internal authentication}\ind{Mnesia}
+
+\ejabberd{} uses its internal Mnesia database as the default authentication method.
+
+\begin{itemize}
+\item \term{auth\_method}: The value \term{internal} will enable the internal
+  authentication method.
+\end{itemize}
+
+Examples:
+\begin{itemize}
+\item To use internal authentication on \jid{example.org} and LDAP
+  authentication on \jid{example.net}:
+  \begin{verbatim}
+{host_config, "example.org", [{auth_method, [internal]}]}.
+{host_config, "example.net", [{auth_method, [ldap]}]}.
+\end{verbatim}
+\item To use internal authentication on all virtual hosts:
+  \begin{verbatim}
+{auth_method, internal}.
+\end{verbatim}
+\end{itemize}
+
+\subsubsection{\aname{saslanonymous}{SASL Anonymous and Anonymous Login}}
+\label{sec:saslanonymous}
+\ind{sasl anonymous}\ind{anonymous login}
+
+%TODO: introduction; tell what people can do with this
+The anonymous authentication method can be configured with the following
+options. Remember that you can use the \term{host\_config} option to set virtual
+host specific options (see section~\ref{sec:virtualhost}). Note that there also
+is a detailed tutorial regarding \footahref{http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support}{SASL
+Anonymous and anonymous login configuration}.
+
+\begin{itemize}
+\item \term{auth\_method}: The value \term{anonymous} will enable the anonymous
+  authentication method.
+\item \term{allow\_multiple\_connections}: This value for this option can be
+  either \term{true} or \term{false} and is only used when the anonymous mode is
+  enabled. Setting it to \term{true} means that the same username can be taken
+  multiple times in anonymous login mode if different resource are used to
+  connect. This option is only useful in very special occasions. The default
+  value is \term{false}.
+\item \term{anonymous\_protocol}: This option can take three values:
+  \term{sasl\_anon}, \term{login\_anon} or \term{both}. \term{sasl\_anon} means
+  that the SASL Anonymous method will be used. \term{login\_anon} means that the
+  anonymous login method will be used. \term{both} means that SASL Anonymous and
+  login anonymous are both enabled.
+\end{itemize}
+
+Those options are defined for each virtual host with the \term{host\_config}
+parameter (see section~\ref{sec:virtualhost}).
+
+Examples:
+\begin{itemize}
+\item To enable anonymous login on all virtual hosts:
+  \begin{verbatim}
+{auth_method, [anonymous]}.
+{anonymous_protocol, login_anon}.
+  \end{verbatim}
+\item Similar as previous example, but limited to \jid{public.example.org}:
+  \begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous]},
+                                     {anonymous_protocol, login_anon}]}.
+\end{verbatim}
+\item To enable anonymous login and internal authentication on a virtual host:
+  \begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
+                                     {anonymous_protocol, login_anon}]}.
+\end{verbatim}
+\item To enable SASL Anonymous on a virtual host:
+  \begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous]},
+                                     {anonymous_protocol, sasl_anon}]}.
+\end{verbatim}
+\item To enable SASL Anonymous and anonymous login on a virtual host:
+  \begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous]},
+                                     {anonymous_protocol, both}]}.
+\end{verbatim}
+\item To enable SASL Anonymous, anonymous login, and internal authentication on
+a virtual host:
+  \begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
+                                     {anonymous_protocol, both}]}.
+\end{verbatim}
+\end{itemize}
+
+\subsection{\aname{accessrules}{Access Rules}}
+\label{sec:accessrules}
 \ind{options!acl}\ind{access rules}\ind{ACL}\ind{Access Control List}
 
 Access control in \ejabberd{} is performed via Access Control Lists (ACLs). The
@@ -459,7 +803,8 @@ this:
 When a JID is checked to have access to \term{<accessname>}, the server
 sequentially checks if that JID mathes any of the ACLs that are named in the
 second elements of the tuples in the list. If it matches, the first element of
-the first matched tuple is returned, otherwise ``\term{deny}'' is returned.
+the first matched tuple is returned, otherwise the value `\term{deny}' is
+returned.
 
 Example:
 \begin{verbatim}
@@ -470,12 +815,12 @@ Example:
 
 The following access rules are pre-defined:
 \begin{description}
-\titem{all} Always returns ``\term{allow}''
-\titem{none} Always returns ``\term{deny}''
+\titem{all} Always returns the value `\term{allow}'.
+\titem{none} Always returns the value `\term{deny}'.
 \end{description}
 
-\subsubsection{Shapers}
-\label{sec:configshaper}
+\subsection{\aname{shapers}{Shapers}}
+\label{sec:shapers}
 \ind{options!shaper}\ind{options!maxrate}\ind{shapers}\ind{maxrate}\ind{traffic speed}
 
 Shapers enable you to limit connection traffic. The syntax of
@@ -493,255 +838,567 @@ second.
 
 Examples:
 \begin{itemize}
-\item To define a shaper named ``\term{normal}'' with traffic speed limited to
+\item To define a shaper named `\term{normal}' with traffic speed limited to
 1,000\,bytes/second:
 \begin{verbatim}
   {shaper, normal, {maxrate, 1000}}.
 \end{verbatim}
-\item To define a shaper named ``\term{fast}'' with traffic speed limited to
+\item To define a shaper named `\term{fast}' with traffic speed limited to
 50,000\,bytes/second:
 \begin{verbatim}
   {shaper, fast, {maxrate, 50000}}.
 \end{verbatim}
 \end{itemize}
 
-\subsubsection{Limitation of the number of opened sessions}
+\subsection{Limiting Opened Sessions}
 \label{sec:configmaxsessions}
 \ind{options!max\_user\_sessions}
 
 This option specifies the maximum number of sessions (authenticated
-connections) per user. If a user tries to open more than the maximum number of
-allowed sessions, with different resources, the first opened session will be
-disconnected. The error ``\term{session replaced}'' is send to the
-disconnected session. This value is either a number or \term{infinity}.  For
-example \verb|{max\_user\_sessions, 10}|.  The default value is \term{10}.
+connections) per user. If a user tries to open more sessions by using different
+resources, the first opened session will be disconnected. The error
+\term{session replaced} will be sent to the disconnected session. The value
+for this option can be either a number, or \term{infinity}.  The default
+value is \term{10}.
 
-This option can be define per virtual host. See section~\ref{sec:configvirtualhost}.
-
-\subsubsection{Listened Sockets}
-\label{sec:configlistened}
-\ind{options!listen}
-
-The option \option{listen} defines for which addresses and ports \ejabberd{}
-will listen and what services will be run on them. Each element of the list is a
-tuple with the following elements:
+Examples:
 \begin{itemize}
-\item Port number.
-\item Module that serves this port.
-\item Options to this module.
-\end{itemize}
-
-\ind{modules!ejabberd\_c2s}\ind{modules!ejabberd\_s2s\_in}\ind{modules!ejabberd\_service}\ind{modules!ejabberd\_http}\ind{protocols!JEP-0114: Jabber Component Protocol}
-Currently next modules are implemented:
-\begin{table}[H]
-  \centering
-  \def\arraystretch{1.4}
-  \begin{tabular}{|l|l|p{87mm}|}
-  \hline \texttt{ejabberd\_c2s}& Description& Handles c2s connections.\\
-    \cline{2-3} & Options& \texttt{access}, \texttt{certfile}, \texttt{inet6},
-    \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper}, \texttt{ssl},
-    \texttt{tls}, \texttt{starttls}, \texttt{starttls\_required},
-    \texttt{zlib}\\
-  \hline \texttt{ejabberd\_s2s\_in}& Description& Handles incoming s2s
-  connections.\\
-    \cline{2-3} & Options& \texttt{inet6}, \texttt{ip},
-    \texttt{max\_stanza\_size}\\
-  \hline \texttt{ejabberd\_service}& Description& Interacts with external
-  components (*).\\
-    \cline{2-3} & Options& \texttt{access}, \texttt{hosts}, \texttt{inet6},
-    \texttt{ip}, \texttt{shaper}\\
-  \hline \texttt{ejabberd\_http}& Description& Handles incoming HTTP
-  connections.\\
-    \cline{2-3} & Options& \texttt{certfile}, \texttt{http\_poll},
-    \texttt{inet6}, \texttt{ip}, \texttt{tls}, \texttt{web\_admin}\\
-  \hline
-  \end{tabular}
-\end{table}
-
-(*) The mechanism for \footahref{http://ejabberd.jabber.ru/tutorials-transports}{external components} is defined in Jabber Component Protocol (\jepref{0114}).
-
-The following options are available:
-\begin{description}
-  \titem{\{access, <access rule>\}} \ind{options!access}This option defines
-    access to the port. The default value is ``\term{all}''.
-  \titem{\{certfile, Path\}} Path to a file containing the SSL certificate.
-  \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}This option
-    defines one or more hostnames of connected services and enables you to
-    specify additional options including \poption{\{password, Secret\}}.
-  \titem{http\_poll} \ind{options!http\_poll}\ind{protocols!JEP-0025: HTTP Polling}\ind{JWChat}\ind{web-based Jabber client}
-    This option enables HTTP Polling (\jepref{0025}) support. HTTP Polling
-    enables access via HTTP requests to \ejabberd{} from behind firewalls which
-    do not allow outgoing sockets on port 5222.
-
-    If HTTP Polling is enabled, it will be available at
-    \verb|http://server:port/http-poll/|. Be aware that support for HTTP Polling
-    is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
-    interesting to host a web-based \Jabber{} client such as
-    \footahref{http://jwchat.sourceforge.net/}{JWChat} (there is a tutorial to
-    \footahref{http://ejabberd.jabber.ru/jwchat}{install JWChat} with
-    instructions for \ejabberd{}).
-  \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6.
-  \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
-    interface to listen for. For example \verb|{ip, {192, 168, 1, 1}}|.
-  \titem{\{max\_stanza\_size, Size\}} \ind{options!max\_stanza\_size}This
-    option specifies an approximate maximal size in bytes of XML stanzas.
-    For example \verb|{max\_stanza\_size, 65536}|.  The default value
-    is ``\term{infinity}''.
-  \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
-    shaper for the port (see section~\ref{sec:configshaper}). The default value
-    is ``\term{none}''.
-  \titem{ssl} \ind{options!ssl}\ind{SSL}This option specifies that traffic on
-    the port will be encrypted using SSL. You should also set the
-    \option{certfile} option. It is recommended to use the \term{tls} option
-    instead.
-  \titem{starttls} \ind{options!starttls}\ind{modules!STARTTLS}This option
-    specifies that STARTTLS encryption is available on connections to the port.
-    You should also set the \option{certfile} option.
-  \titem{starttls\_required} \ind{options!starttls\_required}This option
-    specifies that STARTTLS encryption is required on connections to the port.
-    No unencrypted connections will be allowed. You should also set the
-    \option{certfile} option.
-  \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
-    the port will be encrypted using SSL immediately after connecting. You
-    should also set the \option{certfile} option.
-  \titem{zlib} \ind{options!zlib}\ind{protocols!JEP-0138: Stream Compression}\ind{Zlib}This
-    option specifies that Zlib stream compression (as defined in \jepref{0138})
-    is available on connections to the port. Client cannot use stream compression and
-    stream encryption simultaneously, so if you specify both \option{tls} (or \option{ssl})
-    and \option{zlib} the latter option will not affect connection at all.
-  \titem{web\_admin} \ind{options!web\_admin}\ind{web interface}This option
-    enables the web interface for \ejabberd{} administration which is available
-    at \verb|http://server:port/admin/|. Login and password are the username and
-    password of one of the registered users who are granted access by the
-    ``configure'' access rule.
-\end{description}
-
-Also the following global options are available for s2s connections:
-\begin{description}
-  \titem{\{s2s\_use\_starttls, true|false\}}
-  \ind{options!s2s\_use\_starttls}This option defines whether to use STARTTLS
-  for s2s connections.
-  \titem{\{s2s\_certfile, Path\}} \ind{options!s2s\_certificate}Path to the
-  file containing the SSL certificate.
-  \titem{\{domain\_certfile, Domain, Path\}} \ind{options!domain\_certfile}Path
-  to the file containing the SSL certificate for the specified domain.
-\end{description}
-
-For instance, the following configuration defines that:
-\begin{itemize}
-\item c2s connections are listened for on port 5222 and 5223 (SSL) and denied
-  for the user ``\term{bad}''
-\item s2s connections are listened for on port 5269 with STARTTLS for secured
-  traffic enabled.
-\item Port 5280 is serving the web interface and the HTTP Polling service. Note
-  that it is also possible to serve them on different ports. The second
-  example in section~\ref{sec:webadm} shows how exactly this can be done.
-\item All users except for the administrators have a traffic of limit 
-  1,000\,Bytes/second
-\item \ind{transports!AIM}The
-  \footahref{http://ejabberd.jabber.ru/pyaimt}{AIM transport}
-  \jid{aim.example.org} is connected to port 5233 with password
-  ``\term{aimsecret}''
-\item \ind{transports!ICQ}The ICQ transport JIT (\jid{icq.example.org} and
-  \jid{sms.example.org}) is connected to port 5234 with password
-  ``\term{jitsecret}''
-\item \ind{transports!MSN}The
-  \footahref{http://ejabberd.jabber.ru/pymsnt}{MSN transport}
-  \jid{msn.example.org} is connected to port 5235 with password
-  ``\term{msnsecret}''
-\item \ind{transports!Yahoo}The
-  \footahref{http://ejabberd.jabber.ru/yahoo-transport-2}{Yahoo! transport}
-  \jid{yahoo.example.org} is connected to port 5236 with password
-  ``\term{yahoosecret}''
-\item \ind{transports!Gadu-Gadu}The \footahref{http://ejabberd.jabber.ru/jabber-gg-transport}{Gadu-Gadu transport} \jid{gg.example.org} is
-  connected to port 5237 with password ``\term{ggsecret}''
-\item \ind{transports!email notifier}The
-  \footahref{http://ejabberd.jabber.ru/jmc}{Jabber Mail Component}
-  \jid{jmc.example.org} is connected to port 5238 with password
-  ``\term{jmcsecret}''
-\end{itemize}
+\item To limit the number of sessions per user to 10 on all virtual
+hosts:
 \begin{verbatim}
-  {acl, blocked, {user, "bad"}}.
-  {access, c2s, [{deny, blocked},
-                 {allow, all}]}.
-  {shaper, normal, {maxrate, 1000}}.
-  {access, c2s_shaper, [{none, admin},
-                        {normal, all}]}.
-  {listen,
-   [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
-    {5223, ejabberd_c2s,     [{access, c2s},
-                              ssl, {certfile, "/path/to/ssl.pem"}]},
-    {5269, ejabberd_s2s_in,  []},
-    {5280, ejabberd_http,    [http_poll, web_admin]},
-    {5233, ejabberd_service, [{host, "aim.example.org",
-                               [{password, "aimsecret"}]}]},
-    {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
-                               [{password, "jitsecret"}]}]},
-    {5235, ejabberd_service, [{host, "msn.example.org",
-                               [{password, "msnsecret"}]}]},
-    {5236, ejabberd_service, [{host, "yahoo.example.org",
-                               [{password, "yahoosecret"}]}]},
-    {5237, ejabberd_service, [{host, "gg.example.org",
-                               [{password, "ggsecret"}]}]},
-    {5238, ejabberd_service, [{host, "jmc.example.org",
-                               [{password, "jmcsecret"}]}]}
+  {max\_user\_sessions, 10}.
+\end{verbatim}
+\item This option can be defined per virtual host (see
+section~\ref{sec:virtualhost}). In next example the number of
+sessions per user on the first host is six, while there is no limit on the
+second host:
+\begin{verbatim}
+  {host_config, "example.net", [{max\_user\_sessions, 6}]}.
+  {host_config, "example.com", [{max\_user\_sessions, infinity}]}.
+\end{verbatim}
+\end{itemize}
+
+\subsection{\aname{language}{Default Language}}
+\label{sec:language}
+\ind{options!language}\ind{language}
+
+The option \option{language} defines the default language of server strings that
+can be seen by \Jabber{} clients. If a \Jabber{} client do not support
+\option{xml:lang}, the specified language is used. The default value is
+\term{en}. In order to take effect there must be a translation file
+\term{<language>.msg} in \ejabberd{}'s \term{msgs} directory.
+
+Examples:
+\begin{itemize}
+\item To set Russian as default language:
+\begin{verbatim}
+  {language, "ru"}.
+\end{verbatim}
+\item To set Spanish as default language:
+\begin{verbatim}
+  {language, "es"}.
+\end{verbatim}
+\end{itemize}
+
+
+\section{\aname{database}{Database Configuration}}
+\label{sec:database}
+\ind{database}
+%TODO: this whole section is not yet 100% optimized
+
+\ejabberd{} uses its internal Mnesia database by default. However, it is
+possible to use a relational database or an LDAP server to store persistant,
+long-living data. \ejabberd{} is very flexible: you can configure different
+authentication methods for different virtual hosts, you can configure different
+authentication mechanisms for the same virtual host (fallback), you can set
+different storage systems for modules, and so forth.
+
+The following databases are supported by \ejabberd{}:
+\begin{itemize}
+\item \footahref{http://www.microsoft.com/sql/}{Microsoft SQL Server}
+\item \footahref{http://www.erlang.org/doc/doc-5.5.1/lib/mnesia-4.3.2/doc/}{Mnesia}
+\item \footahref{http://mysql.com/}{MySQL}
+\item \footahref{http://en.wikipedia.org/wiki/Open\_Database\_Connectivity}{Any ODBC compatible database}
+\item \footahref{http://www.postgresql.org/}{PostgreSQL}
+\end{itemize}
+
+The following LDAP servers are tested with \ejabberd{}:
+\begin{itemize}
+\item \footahref{http://www.microsoft.com/activedirectory/}{Active Directory}
+  (see section~\ref{sec:ad})
+\item \footahref{http://www.openldap.org/}{OpenLDAP}
+\item Normally any LDAP compatible server should work; inform us about your
+  success with a not-listed server so that we can list it here.
+\end{itemize}
+
+\subsection{\aname{mysql}{MySQL}}
+\label{sec:mysql}
+\ind{MySQL}\ind{MySQL!schema}
+
+Although this section will describe \ejabberd{}'s configuration when you want to
+use the native MySQL driver, it does not describe MySQL's installation and
+database creation. Check the MySQL documentation and the tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
+Note that the tutorial contains information about \ejabberd{}'s configuration
+which is duplicate to this section.
+
+Moreover, the file mysql.sql in the directory src/odbc might be interesting for
+you. This file contains the ejabberd schema for MySQL. At the end of the file
+you can find information to update your database schema.
+
+\subsubsection{\aname{compilemysql}{Driver Compilation}}
+\label{sec:compilemysql}
+\ind{MySQL!Driver Compilation}
+
+You can skip this step if you installed \ejabberd{} using a binary installer or
+if the binary packages of \ejabberd{} you are using include support for MySQL.
+
+\begin{enumerate}
+\item First, install the \footahref{http://support.process-one.net/doc/display/CONTRIBS/Yxa}{Erlang
+  MySQL library}. Make sure the compiled files are in your Erlang path; you can
+  put them for example in the same directory as your ejabberd .beam files.
+\item Then, configure and install \ejabberd{} with ODBC support enabled (this is
+  also needed for native MySQL support!). This can be done, by using next
+  commands:
+  \begin{verbatim}
+./configure --enable-odbc && make install
+\end{verbatim}
+\end{enumerate}
+
+\subsubsection{\aname{mysqlauth}{Authentication}}
+\label{sec:mysqlauth}
+\ind{MySQL!authentication}
+
+The option value name may be misleading, as the \term{auth\_method} name is used
+for access to a relational database through ODBC, as well as through the native
+MySQL interface. Anyway, the first configuration step is to define the odbc
+\term{auth\_method}. For example:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [odbc]}]}.
+\end{verbatim}
+
+The actual database access is defined in the option \term{odbc\_server}. Its
+value is used to define if we want to use ODBC, or one of the two native
+interface available, PostgreSQL or MySQL.
+
+To use the native MySQL interface, you can pass a tuple of the following form as
+parameter:
+\begin{verbatim}
+{mysql, "Server", "Database", "Username", "Password"}
+\end{verbatim}
+
+\term{mysql} is a keyword that should be kept as is. For example:
+\begin{verbatim}
+{odbc_server, {mysql, "localhost", "test", "root", "password"}}.
+\end{verbatim}
+
+\subsubsection{\aname{mysqlstorage}{Storage}}
+\label{sec:mysqlstorage}
+\ind{MySQL!storage}
+
+MySQL also can be used to store information into from several \ejabberd{}
+modules. See section~\ref{sec:modoverview} to see which modules have a version
+with the `\_odbc'. This suffix indicates that the module can be used with
+relational databases like MySQL. To enable storage to your database, just make
+sure that your database is running well (see previous sections), and replace the
+suffix-less or ldap module variant with the odbc module variant. Keep in mind
+that you cannot have several variants of the same module loaded!
+
+\subsection{\aname{mssql}{Microsoft SQL Server}}
+\label{sec:mssql}
+\ind{Microsoft SQL Server}\ind{Microsoft SQL Server!schema}
+
+Although this section will describe \ejabberd{}'s configuration when you want to
+use Microsoft SQL Server, it does not describe Microsoft SQL Server's
+installation and database creation. Check the MySQL documentation and the
+tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
+Note that the tutorial contains information about \ejabberd{}'s configuration
+which is duplicate to this section.
+
+Moreover, the file mssql.sql in the directory src/odbc might be interesting for
+you. This file contains the ejabberd schema for Microsoft SQL Server. At the end
+of the file you can find information to update your database schema.
+
+\subsubsection{\aname{compilemssql}{Driver Compilation}}
+\label{sec:compilemssql}
+\ind{Microsoft SQL Server!Driver Compilation}
+
+You can skip this step if you installed \ejabberd{} using a binary installer or
+if the binary packages of \ejabberd{} you are using include support for ODBC.
+
+If you want to use Microsoft SQL Server with ODBC, you need to configure,
+compile and install \ejabberd{} with support for ODBC and Microsoft SQL Server
+enabled. This can be done, by using next commands:
+\begin{verbatim}
+./configure --enable-odbc --enable-mssql && make install
+\end{verbatim}
+
+\subsubsection{\aname{mssqlauth}{Authentication}}
+\label{sec:mssqlauth}
+\ind{Microsoft SQL Server!authentication}
+
+%TODO: not sure if this section is right!!!!!!
+
+The configuration of Microsoft SQL Server is the same as the configuration of
+ODBC compatible serers (see section~\ref{sec:odbcauth}).
+
+\subsubsection{\aname{mssqlstorage}{Storage}}
+\label{sec:mssqlstorage}
+\ind{Microsoft SQL Server!storage}
+
+Microsoft SQL Server also can be used to store information into from several
+\ejabberd{} modules. See section~\ref{sec:modoverview} to see which modules have
+a version with the `\_odbc'. This suffix indicates that the module can be used
+with relational databases like Microsoft SQL Server. To enable storage to your
+database, just make sure that your database is running well (see previous
+sections), and replace the suffix-less or ldap module variant with the odbc
+module variant. Keep in mind that you cannot have several variants of the same
+module loaded!
+
+\subsection{\aname{pgsql}{PostgreSQL}}
+\label{sec:pgsql}
+\ind{PostgreSQL}\ind{PostgreSQL!schema}
+
+Although this section will describe \ejabberd{}'s configuration when you want to
+use the native PostgreSQL driver, it does not describe PostgreSQL's installation
+and database creation. Check the PostgreSQL documentation and the tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
+Note that the tutorial contains information about \ejabberd{}'s configuration
+which is duplicate to this section.
+
+Also the file pg.sql in the directory src/odbc might be interesting for you.
+This file contains the ejabberd schema for PostgreSQL. At the end of the file
+you can find information to update your database schema.
+
+\subsubsection{\aname{compilepgsql}{Driver Compilation}}
+\label{sec:compilepgsql}
+\ind{PostgreSQL!Driver Compilation}
+
+You can skip this step if you installed \ejabberd{} using a binary installer or
+if the binary packages of \ejabberd{} you are using include support for
+PostgreSQL.
+
+\begin{enumerate}
+\item First, install the Erlang PgSQL library from
+  \footahref{http://jungerl.sourceforge.net/}{Jungerl}. Make sure the compiled
+  files are in your Erlang path; you can put them for example in the same
+  directory as your ejabberd .beam files.
+\item Then, configure, compile and install \ejabberd{} with ODBC support enabled
+  (this is also needed for native PostgreSQL support!). This can be done, by
+  using next commands:
+  \begin{verbatim}
+./configure --enable-odbc && make install
+\end{verbatim}
+\end{enumerate}
+
+\subsubsection{\aname{pgsqlauth}{Authentication}}
+\label{sec:pgsqlauth}
+\ind{PostgreSQL!authentication}
+
+The option value name may be misleading, as the \term{auth\_method} name is used
+for access to a relational database through ODBC, as well as through the native
+PostgreSQL interface. Anyway, the first configuration step is to define the odbc
+\term{auth\_method}. For example:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [odbc]}]}.
+\end{verbatim}
+
+The actual database access is defined in the option \term{odbc\_server}. Its
+value is used to define if we want to use ODBC, or one of the two native
+interface available, PostgreSQL or MySQL.
+
+To use the native PostgreSQL interface, you can pass a tuple of the following
+form as parameter:
+\begin{verbatim}
+{pgsql, "Server", "Database", "Username", "Password"}
+\end{verbatim}
+
+\term{pgsql} is a keyword that should be kept as is. For example:
+\begin{verbatim}
+{odbc_server, {pgsql, "localhost", "database", "ejabberd", "password"}}.
+\end{verbatim}
+
+\subsubsection{\aname{pgsqlstorage}{Storage}}
+\label{sec:pgsqlstorage}
+\ind{PostgreSQL!storage}
+
+PostgreSQL also can be used to store information into from several \ejabberd{}
+modules. See section~\ref{sec:modoverview} to see which modules have a version
+with the `\_odbc'. This suffix indicates that the module can be used with
+relational databases like PostgreSQL. To enable storage to your database, just
+make sure that your database is running well (see previous sections), and
+replace the suffix-less or ldap module variant with the odbc module variant.
+Keep in mind that you cannot have several variants of the same module loaded!
+
+\subsection{\aname{odbc}{ODBC Compatible}}
+\label{sec:odbc}
+\ind{databases!ODBC}
+
+Although this section will describe \ejabberd{}'s configuration when you want to
+use the ODBC driver, it does not describe the installation and database creation
+of your database. Check the documentation of your database. The tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} also can help you. Note that the tutorial
+contains information about \ejabberd{}'s configuration which is duplicate to
+this section.
+
+\subsubsection{\aname{compileodbc}{Compilation}}
+\label{sec:compileodbc}
+
+You can skip this step if you installed \ejabberd{} using a binary installer or
+if the binary packages of \ejabberd{} you are using include support for
+ODBC.
+
+\begin{enumerate}
+\item First, install the \footahref{http://support.process-one.net/doc/display/CONTRIBS/Yxa}{Erlang
+  MySQL library}. Make sure the compiled files are in your Erlang path; you can
+  put them for example in the same directory as your ejabberd .beam files.
+\item Then, configure, compile and install \ejabberd{} with ODBC support
+  enabled. This can be done, by using next commands:
+  \begin{verbatim}
+./configure --enable-odbc && make install
+\end{verbatim}
+\end{enumerate}
+
+\subsubsection{\aname{odbcauth}{Authentication}}
+\label{sec:odbcauth}
+\ind{ODBC!authentication}
+
+The first configuration step is to define the odbc \term{auth\_method}. For
+example:
+\begin{verbatim}
+{host_config, "public.example.org", [{auth_method, [odbc]}]}.
+\end{verbatim}
+
+The actual database access is defined in the option \term{odbc\_server}. Its
+value is used to defined if we want to use ODBC, or one of the two native
+interface available, PostgreSQL or MySQL.
+
+To use a relational database through ODBC, you can pass the ODBC connection
+string as \term{odbc\_server} parameter. For example:
+\begin{verbatim}
+{odbc_server, "DSN=database;UID=ejabberd;PWD=password"}.
+\end{verbatim}
+
+\subsubsection{\aname{odbcstorage}{Storage}}
+\label{sec:odbcstorage}
+\ind{ODBC!storage}
+
+An ODBC compatible database also can be used to store information into from
+several \ejabberd{} modules. See section~\ref{sec:modoverview} to see which
+modules have a version with the `\_odbc'. This suffix indicates that the module
+can be used with ODBC compatible relational databases. To enable storage to your
+database, just make sure that your database is running well (see previous
+sections), and replace the suffix-less or ldap module variant with the odbc
+module variant. Keep in mind that you cannot have several variants of the same
+module loaded!
+
+\subsection{\aname{ldap}{LDAP}}
+\label{sec:ldap}
+\ind{databases!LDAP}
+
+\ejabberd{} has built-in LDAP support. You can authenticate users against LDAP
+server and use LDAP directory as vCard storage. Shared rosters are not supported
+yet.
+
+\subsubsection{\aname{ldapconnection}{Connection}}
+\label{sec:ldapconnection}
+
+Parameters:
+\begin{description}
+\titem{ldap\_server} \ind{options!ldap\_server}IP address or dns name of your
+LDAP server. This option is required.
+\titem{ldap\_port} \ind{options!ldap\_port}Port to connect to your LDAP server.
+  The default value is~389.
+\titem{ldap\_rootdn} \ind{options!ldap\_rootdn}Bind DN. The default value
+  is~\term{""} which means `anonymous connection'.
+\titem{ldap\_password} \ind{options!ldap\_password}Bind password. The default
+  value is \term{""}.
+\end{description}
+
+Example:
+\begin{verbatim}
+  {auth_method, ldap}.
+  {ldap_servers, ["ldap.example.org"]}.
+  {ldap_port, 389}.
+  {ldap_rootdn, "cn=Manager,dc=domain,dc=org"}.
+  {ldap_password, "secret"}.
+\end{verbatim}
+
+Note that current LDAP implementation does not support SSL secured communication
+and SASL authentication.
+
+\subsubsection{\aname{ldapauth}{Authentication}}
+\label{sec:ldapauth}
+
+You can authenticate users against an LDAP directory. Available options are:
+
+\begin{description}
+\titem{ldap\_base}\ind{options!ldap\_base}LDAP base directory which stores users
+  accounts. This option is required.
+\titem{ldap\_uidattr}\ind{options!ldap\_uidattr}LDAP attribute which holds
+  the user's part of a JID. The default value is \term{"uid"}.
+\titem{ldap\_uidattr\_format}\ind{options!ldap\_uidattr\_format}Format of the
+  \term{ldap\_uidattr} variable. The format \emph{must} contain one and only one
+  pattern variable \term{"\%u"} which will be replaced by the user's part of a
+  JID. For example, \term{"\%u@example.org"}. The default value is \term{"\%u"}.
+\titem{ldap\_filter}\ind{options!ldap\_filter}\ind{protocols!RFC 2254: The String Representation of LDAP Search Filters}
+  \footahref{http://www.faqs.org/rfcs/rfc2254.html}{RFC 2254} LDAP filter. The
+  default is \term{none}. Example:
+  \term{"(\&(objectClass=shadowAccount)(memberOf=Jabber Users))"}. Please, do
+  not forget to close brackets and do not use superfluous whitespaces. Also you
+  \emph{must not} use \option{ldap\_uidattr} attribute in filter because this
+  attribute will be substituted in LDAP filter automatically.
+\end{description}
+
+\subsubsection{\aname{ldapexamples}{Examples}}
+\label{sec:ldapexamples}
+
+\paragraph{\aname{ldapcommonexample}{Common example}}
+
+Let's say \term{ldap.example.org} is the name of our LDAP server. We have
+users with their passwords in \term{"ou=Users,dc=example,dc=org"} directory.
+Also we have addressbook, which contains users emails and their additional
+infos in \term{"ou=AddressBook,dc=example,dc=org"} directory.  Corresponding
+authentication section should looks like this:
+
+\begin{verbatim}
+  %% authentication method
+  {auth_method, ldap}.
+  %% DNS name of our LDAP server
+  {ldap_servers, ["ldap.example.org"]}.
+  %% Bind to LDAP server as "cn=Manager,dc=example,dc=org" with password "secret"
+  {ldap_rootdn, "cn=Manager,dc=example,dc=org"}.
+  {ldap_password, "secret"}.
+  %% define the user's base
+  {ldap_base, "ou=Users,dc=example,dc=org"}.
+  %% We want to authorize users from 'shadowAccount' object class only
+  {ldap_filter, "(objectClass=shadowAccount)"}.
+\end{verbatim}
+
+Now we want to use users LDAP-info as their vCards.  We have four attributes
+defined in our LDAP schema: \term{"mail"} --- email address, \term{"givenName"}
+--- first name, \term{"sn"} --- second name, \term{"birthDay"} --- birthday.
+Also we want users to search each other.  Let's see how we can set it up:
+
+\begin{verbatim}
+  {modules,
+    ...
+    {mod_vcard_ldap,
+     [
+      %% We use the same server and port, but want to bind anonymously because
+      %% our LDAP server accepts anonymous requests to
+      %% "ou=AddressBook,dc=example,dc=org" subtree.
+      {ldap_rootdn, ""},
+      {ldap_password, ""},
+      %% define the addressbook's base
+      {ldap_base, "ou=AddressBook,dc=example,dc=org"},
+      %% user's part of JID is located in the "mail" attribute
+      {ldap_uidattr, "mail"},
+      %% common format for our emails
+      {ldap_uidattr_format, "%u@mail.example.org"},
+      %% We have to define empty filter here, because entries in addressbook does not
+      %% belong to shadowAccount object class
+      {ldap_filter, ""},
+      %% Now we want to define vCard pattern
+      {ldap_vcard_map,
+       [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
+        {"GIVEN", "%s", ["givenName"]},
+        {"FAMILY", "%s", ["sn"]},
+        {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
+        {"EMAIL", "%s", ["mail"]},
+        {"BDAY", "%s", ["birthDay"]}]},
+      %% Search form
+      {ldap_search_fields,
+       [{"User", "%u"},
+        {"Name", "givenName"},
+        {"Family Name", "sn"},
+        {"Email", "mail"},
+        {"Birthday", "birthDay"}]},
+      %% vCard fields to be reported
+      %% Note that JID is always returned with search results
+      {ldap_search_reported,
+       [{"Full Name", "FN"},
+        {"Nickname", "NICKNAME"},
+        {"Birthday", "BDAY"}]}
+    ]}
+    ...
+  }.
+\end{verbatim}
+
+Note that \modvcardldap{} module checks for the existence of the user before
+searching in his information in LDAP.
+
+
+\paragraph{\aname{ad}{Active Directory}}
+\label{sec:ad}
+\ind{databases!Active Directory}
+
+Active Directory is just an LDAP-server with predefined attributes. A sample
+configuration is showed below:
+
+\begin{verbatim}
+  {auth_method, ldap}.
+  {ldap_servers, ["office.org"]}.    % List of LDAP servers
+  {ldap_base, "DC=office,DC=org"}. % Search base of LDAP directory
+  {ldap_rootdn, "CN=Administrator,CN=Users,DC=office,DC=org"}. % LDAP manager
+  {ldap_password, "*******"}. % Password to LDAP manager
+  {ldap_uidattr, "sAMAccountName"}.
+  {ldap_filter, "(memberOf=*)"}.
+  
+  {mod_vcard_ldap,
+   [{ldap_vcard_map,
+     [{"NICKNAME", "%u", []},
+      {"GIVEN", "%s", ["givenName"]},
+      {"MIDDLE", "%s", ["initials"]},
+      {"FAMILY", "%s", ["sn"]},
+      {"FN", "%s", ["displayName"]},
+      {"EMAIL", "%s", ["mail"]},
+      {"ORGNAME", "%s", ["company"]},
+      {"ORGUNIT", "%s", ["department"]},
+      {"CTRY", "%s", ["c"]},
+      {"LOCALITY", "%s", ["l"]},
+      {"STREET", "%s", ["streetAddress"]},
+      {"REGION", "%s", ["st"]},
+      {"PCODE", "%s", ["postalCode"]},
+      {"TITLE", "%s", ["title"]},
+      {"URL", "%s", ["wWWHomePage"]},
+      {"DESC", "%s", ["description"]},
+      {"TEL", "%s", ["telephoneNumber"]}]},
+    {ldap_search_fields,
+     [{"User", "%u"},
+      {"Name", "givenName"},
+      {"Family Name", "sn"},
+      {"Email", "mail"},
+      {"Company", "company"},
+      {"Department", "department"},
+      {"Role", "title"},
+      {"Description", "description"},
+      {"Phone", "telephoneNumber"}]},
+    {ldap_search_reported,
+     [{"Full Name", "FN"},
+      {"Nickname", "NICKNAME"},
+      {"Email", "EMAIL"}]}
    ]
   }.
-  {s2s_use_starttls, true}.
-  {s2s_certfile, "/path/to/ssl.pem"}.
-\end{verbatim}
-Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based
-services you have to make the transports log and do \ind{XDB}XDB by themselves:
-\begin{verbatim}
-  <!--
-     You have to add elogger and rlogger entries here when using ejabberd.
-     In this case the transport will do the logging.
-  -->
-
-  <log id='logger'>
-    <host/>
-    <logtype/>
-    <format>%d: [%t] (%h): %s</format>
-    <file>/var/log/jabber/service.log</file>
-  </log>
-
-  <!--
-     Some Jabber server implementations do not provide
-     XDB services (for example, jabberd2 and ejabberd).
-     xdb_file.so is loaded in to handle all XDB requests.
-  -->
-
-  <xdb id="xdb">
-    <host/>
-    <load>
-      <!-- this is a lib of wpjabber or jabberd -->
-      <xdb_file>/usr/lib/jabber/xdb_file.so</xdb_file>
-      </load>
-    <xdb_file xmlns="jabber:config:xdb_file">
-      <spool><jabberd:cmdline flag='s'>/var/spool/jabber</jabberd:cmdline></spool>
-    </xdb_file>
-  </xdb>
 \end{verbatim}
 
-\subsubsection{Modules}
-\label{sec:configmodules}
+
+\section{\aname{modules}{Modules Configuration}}
+\label{sec:modules}
 \ind{modules}
 
 The option \term{modules} defines the list of modules that will be loaded after
 \ejabberd{}'s startup. Each entry in the list is a tuple in which the first
 element is the name of a module and the second is a list of options for that
-module. Read section~\ref{sec:modules} for detailed information about modules.
+module.
 
 Examples:
 \begin{itemize}
-\item In this simple example, only the module \modecho{} is loaded and no
-  options are specified between square brackets:
+\item In this example only the module \modecho{} is loaded and no module
+  options are specified between the square brackets:
   \begin{verbatim}
   {modules,
    [{mod_echo,      []}
    ]}.
 \end{verbatim}
-\item The second example is also simple: the modules \modecho{}, \modtime{}, and
+\item In the second example the modules \modecho{}, \modtime{}, and
   \modversion{} are loaded without options. Remark that, besides the last entry,
   all entries end with a comma:
   \begin{verbatim}
@@ -753,195 +1410,27 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsubsection{Virtual Hosting}
-\label{sec:configvirtualhost}
-\ind{virtual hosting}\ind{virtual hosts}
+\subsection{\aname{modoverview}{Overview}}
+\label{sec:modoverview}
+\ind{modules!overview}\ind{XMPP compliancy}
 
-Options can be defined separately for every virtual host using the
-\term{host\_config} option.\ind{options!host\_config} It has the following
-syntax:
-\begin{verbatim}
-  {host_config, <hostname>, [<option>, <option>, ...]}.
-\end{verbatim}
+The following table lists all modules available in the official \ejabberd{}
+distribution. You can find more
+\footahref{http://ejabberd.jabber.ru/contributions}{contributed modules} on the
+\ejabberd{} website. Please remember that these contributions might not work or
+that they can contain severe bugs and security leaks. Therefore, use them at
+your own risk!
 
-Examples:
+You can see which database backend each module needs by looking at the suffix:
 \begin{itemize}
-\item Domain \jid{example.net} is using the internal authentication method while
-  domain \jid{example.com} is using the \ind{LDAP}LDAP server running on the domain
-  \jid{localhost} to perform authentication:
-\begin{verbatim}
-{host_config, "example.net", [{auth_method, internal}]}.
-
-{host_config, "example.com", [{auth_method, ldap},
-                              {ldap_servers, ["localhost"]},
-                              {ldap_uidattr, "uid"},
-                              {ldap_rootdn, "dc=localdomain"},
-                              {ldap_rootdn, "dc=example,dc=com"},
-                              {ldap_password, ""}]}.
-\end{verbatim}
-\item Domain \jid{example.net} is using \ind{ODBC}ODBC to perform authentication
-  while domain \jid{example.com} is using the LDAP servers running on the domains
-  \jid{localhost} and \jid{otherhost}:
-\begin{verbatim}
-{host_config, "example.net", [{auth_method, odbc},
-                              {odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}]}.
-
-{host_config, "example.com", [{auth_method, ldap},
-                              {ldap_servers, ["localhost", "otherhost"]},
-                              {ldap_uidattr, "uid"},
-                              {ldap_rootdn, "dc=localdomain"},
-                              {ldap_rootdn, "dc=example,dc=com"},
-                              {ldap_password, ""}]}.
-\end{verbatim}
+\item `\_ldap', this means that the module needs an LDAP server as backend.
+\item `\_odbc', this means that the module needs a supported database
+  (see~\ref{sec:database}) as backend.
+\item No suffix, this means that the modules uses Erlang's built-in database
+  Mnesia as backend.
 \end{itemize}
 
-\subsubsection{SASL anonymous and anonymous login}
-\label{sec:configsaslanonymous}
-\ind{sasl anonymous}\ind{anonymous login}
-
-The configuration of the anonymous mode can be done with three
-\term{host\_config} parameters:
-
-\begin{itemize} 
-\item \term{auth\_method}: This value is used for defining the authentication method:
-internal, odbc, ldap, external). You now have a special extra option to enable
-anonymous mode: anonymous.
-
-\item \term{allow\_multiple\_connections}: This option can be either true or false and
-is only used when the anonymous mode is enabled. Setting it to true means that
-the same username will be able to be taken several time in anonymous login
-mode if different resource are used to connect. This option is only useful in
-very special cases. It defaults to false.
-
-\item \term{anonymous\_protocol}: This option can take three values:
-  \term{sasl\_anon}, \term{login\_anon} or both.  \term{sasl\_anon} means that
-  SASL anonymous mode is enabled.  \term{login\_anon} means that anonymous
-  login mode is enabled. both means that SASL anonymous and login anonymous are
-  enabled.
-\end{itemize}
-
-Those options are defined for each virtual host with the \term{host\_config}
-parameter (see section~\ref{sec:configvirtualhost}).
-
-Examples:
-\begin{itemize}
-\item To enable anonymous login on a virtual host:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, anonymous},
-                                     {anonymous_protocol, login_anon}]}.
-\end{verbatim}
-\item To enable anonymous login and internal authentication on a virtual host:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
-                                     {anonymous_protocol, login_anon}]}.
-\end{verbatim}
-\item To enable SASL anonymous on a virtual host:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous]},
-                                     {anonymous_protocol, sasl_anon}]}.
-\end{verbatim}
-\item To enable SASL anonymous and anonymous login on a virtual host:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous]},
-                                     {anonymous_protocol, both}]}.
-\end{verbatim}
-\item To enable SASL anonymous, anonymous login and internal authentication on
-a virtual host:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
-                                     {anonymous_protocol, both}]}.
-\end{verbatim}
-\end{itemize}
-
-A detailled tutorial on SASL anonymous and anonymous login support is
-available from:
-\ahrefurl{http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support}
-
-\subsection{Relational Database Support}
-\label{sec:relationaldatabase}
-
-\subsubsection{Preliminary steps}
-\label{sec:relationaldatabasecompilation}
-
-If you have installed ejabberd using a binary version, the compilation steps
-are not needed as they have already been done correctly.
-
-Otherwise, to be able to use ejabberd with a relational database you need to
-enable ODBC modules during compilation, even if you want to use ejabberd with
-MySQL or PostgreSQL in native mode. The following \term{configure} command can
-be used to enable the relational modules:
-\begin{verbatim}
-./configure --enable-odbc
-\end{verbatim}
-
-If you are planning to use Microsoft SQL Server with ODBC, you need to specify
-it from the \term{configure} command before compilation:
-\begin{verbatim}
-./configure --enable-odbc --enable-mssql
-\end{verbatim}
-
-\subsubsection{Authentication against a relational database}
-\label{sec:relationaldatabaseauth}
-
-ejabberd use its internal Mnesia database as a default. It is however possible
-to use relational database to store persistant, long-living data. When
-switching the \term{auth\_method} from internal to \term{odbc}, you are
-telling ejabberd to use a relational database for authentication. Different
-\term{auth\_method} values can be used for different virtual hosts in the
-system.
-
-The option value name be misleading, as the method name is use both for access
-to relational database through ODBC or through the native interface. In any
-case, the first step is to define the odbc \term{auth\_method}. For example:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [odbc]}]}.
-\end{verbatim}
-
-The actual database access is defined in the option \term{odbc\_server}. Its
-value is use to defined if we want to use ODBC, or one of the two native
-interface available, PostgreSQL or MySQL.
-
-To use a relational database through ODBC, you can pass the ODBC connection
-string as \term{odbc\_server} parameter. For example:
-\begin{verbatim}
-{odbc_server, "DSN=database;UID=ejabberd;PWD=password"}.
-\end{verbatim}
-
-To use the native PostgreSQL interface, you can pass a tuple of the following form as
-parameter:
-\begin{verbatim}
-{pgsql, "Server", "Database", "Username", "Password"}
-\end{verbatim}
-
-\term{pgsql} is a keyword that should be kept as is. For example:
-\begin{verbatim}
-{odbc_server, {pgsql, "localhost", "database", "ejabberd", "password"}}.
-\end{verbatim}
-
-Note that you need to install the Erlang PgSQL library first. This library is
-available from Sourceforge: \ahrefurl{http://cvs.sourceforge.net/viewcvs.py/jungerl/jungerl/lib/pgsql/}
-
-To use the native MySQL interface, the same tuple should be passed, except
-that you now have to use the \term{mysql} keyword instead of the \term{pgsql}
-keyword:
-\begin{verbatim}
-{mysql, "Server", "Database", "Username", "Password"}
-\end{verbatim}
-
-\term{mysql} is a keyword that should be kept as is. For example:
-\begin{verbatim}
-{odbc_server, {mysql, "localhost", "test", "root", "password"}}.
-\end{verbatim}
-
-Note that you need to install the Erlang MySQL library first. This library is
-directly available from Process-one website: \ahrefurl{http://support.process-one.net/doc/display/CONTRIBS/Yxa}
-
-A detailled tutorial to set-up \ejabberd{} using the native MySQL interface is
-available from: \ahrefurl{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}
-
-\subsubsection{Relational database for other modules}
-\label{sec:relationaldatabaseextra}
-
+If you want to
 It is possible to use a relational database to store pieces of
 information. You can do this by changing the module name to a name with an
 \term{\_odbc} suffix in \ejabberd{} config file. You can use a relational
@@ -956,363 +1445,6 @@ database for the following data:
 \item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
 \end{itemize}
 
-\subsection{Creating an Initial Administrator}
-\label{sec:initialadmin}
-
-Before the web interface can be entered to perform administration tasks, an
-account with administrator rights is needed on your \ejabberd{} deployment.
-
-Instructions to create an initial administrator account:
-\begin{enumerate}
-\item Register an account on your \ejabberd{} deployment. An account can be
-  created in two ways:
-  \begin{enumerate}
-  \item Using the tool \term{ejabberdctl}\ind{ejabberdctl} (see
-    section~\ref{sec:ejabberdctl}):
-    \begin{verbatim}
-% ejabberdctl node@host register admin example.org password
-\end{verbatim} 
-  \item Using In-Band Registration (see section~\ref{sec:modregister}): you can
-    use a \Jabber{} client to register an account.
-  \end{enumerate}
-\item Edit the configuration file to promote the account created in the previous
-  step to an account with administrator rights. Note that if you want to add
-  more administrators, a seperate acl entry is needed for each administrator.
-  \begin{verbatim}
-  {acl, admins, {user, "admin", "example.org"}}.
-  {access, configure, [{allow, admins}]}.
-\end{verbatim} 
-\item Restart \ejabberd{} to load the new configuration.
-\item Open the web interface (\verb|http://server:port/admin/|) in your
-  favourite browser. Make sure to enter the \emph{full} JID as username (in this
-  example: \jid{admin@example.org}. The reason that you also need to enter the
-  suffix, is because \ejabberd{}'s virtual hosting support.
-\end{enumerate}
-
-\subsection{Online Configuration and Monitoring}
-\label{sec:onlineconfig}
-
-\subsubsection{Web Interface}
-\label{sec:webadm}
-\ind{web interface}
-
-To perform online configuration of \ejabberd{} you need to enable the
-\term{ejabberd\_http} listener with the option \term{web\_admin} (see
-section~\ref{sec:configlistened}). Then you can open 
-\verb|http://server:port/admin/| in your favourite web browser. You
-will be asked to enter the username (the \emph{full} \Jabber{} ID) and password
-of an \ejabberd{} user with administrator rights. After authentication
-you will see a page similar to figure~\ref{fig:webadmmain}.
-
-\begin{figure}[htbp]
-  \centering
-  \insimg{webadmmain.png}
-  \caption{Top page from the web interface}
-  \label{fig:webadmmain}
-\end{figure}
-Here you can edit access restrictions, manage users, create backups,
-manage the database, enable/disable ports listened for, view server
-statistics,\ldots
-
-Examples:
-\begin{itemize}
-\item You can serve the web interface on the same port as the
-  \ind{protocols!JEP-0025: HTTP Polling}HTTP Polling interface. In this example
-  you should point your web browser to \verb|http://example.org:5280/admin/| to
-  administer all virtual hosts or to
-  \verb|http://example.org:5280/admin/server/example.com/| to administer only
-  the virtual host \jid{example.com}. Before you get access to the web interface
-  you need to enter as username, the JID and password from a registered user
-  that is allowed to configure \ejabberd{}. In this example you can enter as
-  username ``\jid{admin@example.net}'' to administer all virtual hosts (first
-  URL). If you log in with ``\jid{admin@example.com}'' on \\
-  \verb|http://example.org:5280/admin/server/example.com/| you can only
-  administer the virtual host \jid{example.com}.
-  \begin{verbatim}
-  ...
-  {acl, admins, {user, "admin", "example.net"}}.
-  {host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
-  {access, configure, [{allow, admins}]}.
-  ...
-  {hosts, ["example.org"]}.
-  ...
-  {listen,
-   [...
-    {5280, ejabberd_http, [http_poll, web_admin]},
-    ...
-   ]
-  }.
-\end{verbatim}
-\item For security reasons, you can serve the web interface on a secured
-  connection, on a port differing from the HTTP Polling interface, and bind it
-  to the internal LAN IP. The web interface will be accessible by pointing your
-  web browser to \verb|https://192.168.1.1:5280/admin/|:
-  \begin{verbatim}
-  ...
-  {hosts, ["example.org"]}.
-  ...
-  {listen,
-   [...
-    {5270, ejabberd_http,    [http_poll]},
-    {5280, ejabberd_http,    [web_admin, {ip, {192, 168, 1, 1}},
-                              tls, {certfile, "/usr/local/etc/server.pem"}]},
-    ...
-   ]
-  }.
-\end{verbatim}
-\end{itemize}
-
-\subsubsection{\term{ejabberdctl}}
-\label{sec:ejabberdctl}
-
-It is possible to do some administration operations using the command
-line tool \term{ejabberdctl}. You can list all available options by
-running \term{ejabberdctl} without arguments:
-\begin{verbatim}
-% ejabberdctl
-Usage: ejabberdctl node command
-
-Available commands:
-  status                        get ejabberd status
-  stop                          stop ejabberd
-  restart                       restart ejabberd
-  reopen-log                    reopen log file
-  register user server password register a user
-  unregister user server        unregister a user
-  backup file                   store a database backup to file
-  restore file                  restore a database backup from file
-  install-fallback file         install a database fallback from file
-  dump file                     dump a database to a text file
-  load file                     restore a database from a text file
-  import-file file              import user data from jabberd 1.4 spool file
-  import-dir dir                import user data from jabberd 1.4 spool directory
-  registered-users              list all registered users
-  delete-expired-messages       delete expired offline messages from database
-
-Example:
-  ejabberdctl ejabberd@host restart
-\end{verbatim}
-
-Additional information:
-\begin{description}
-\titem{reopen-log } If you use a tool to rotate logs, you have to configure it
-  so that this command is executed after each rotation.
-\titem {backup, restore, install-fallback, dump, load} You can use these
-  commands to create and restore backups. 
-%%More information about backuping can
-%%  be found in section~\ref{sec:backup}.
-\titem{import-file, import-dir} \ind{migration!from jabberd 1.4}\ind{migration!from jabberd2}
-  These options can be used to migrate from other \Jabber{}/XMPP servers. There
-  exist tutorials to \footahref{http://ejabberd.jabber.ru/jabberd1-to-ejabberd}{migrate from jabberd 1.4}
-  and to \footahref{http://ejabberd.jabber.ru/jabberd2-to-ejabberd}{migrate from jabberd2}.
-\titem{delete-expired-messages} This option can be used to delete old messages
-  in offline storage. This might be useful when the number of offline messages
-  is very high.
-\end{description}
-
-
-\section{Firewall Settings}
-\label{sec:firewall}
-\ind{firewall}\ind{ports}\ind{SASL}\ind{TLS}\ind{clustering!ports}
-
-You need to take the following TCP ports in mind when configuring your firewall:
-\begin{table}[H]
-  \centering
-  \begin{tabular}{|l|l|}
-    \hline Port& Description\\
-    \hline \hline 5222& SASL and unencrypted c2s connections.\\
-    \hline 5223& Obsolete SSL c2s connections.\\
-    \hline 5269& s2s connections.\\
-    \hline 4369& Only for clustering (see~\ref{sec:clustering}).\\
-    \hline port range& Only for clustring (see~\ref{sec:clustering}). This range
-    is configurable (see~\ref{sec:starting}).\\
-    \hline
-  \end{tabular}
-\end{table}
-
-
-\section{SRV Records}
-\label{sec:srv}
-\ind{SRV Records}\ind{clustering!SRV Records}
-
-\begin{itemize}
-\item General information:
-  \footahref{http://en.wikipedia.org/wiki/SRV\_record}{SRV record}
-\item Practical information:
-  \footahref{http://jabberd.jabberstudio.org/2/docs/section05.html\#5\_7}{Setting DNS SRV Records}
-\end{itemize}
-
-
-\section{Clustering}
-\label{sec:clustering}
-\ind{clustering}
-
-\subsection{How it Works}
-\label{sec:howitworks}
-\ind{clustering!how it works}
-
-A \Jabber{} domain is served by one or more \ejabberd{} nodes. These nodes can
-be run on different machines that are connected via a network. They all
-must have the ability to connect to port 4369 of all another nodes, and must
-have the same magic cookie (see Erlang/OTP documentation, in other words the
-file \term{\~{}ejabberd/.erlang.cookie} must be the same on all nodes). This is
-needed because all nodes exchange information about connected users, s2s
-connections, registered services, etc\ldots
-
-Each \ejabberd{} node has the following modules:
-\begin{itemize}
-\item router,
-\item local router,
-\item session manager,
-\item s2s manager.
-\end{itemize}
-
-\subsubsection{Router}
-\ind{clustering!router}
-
-This module is the main router of \Jabber{} packets on each node. It
-routes them based on their destination's domains. It uses a global
-routing table. The domain of the packet's destination is searched in the
-routing table, and if it is found, the packet is routed to the
-appropriate process. If not, it is sent to the s2s manager.
-
-\subsubsection{Local Router}
-\ind{clustering!local router}
-
-This module routes packets which have a destination domain equal to
-one of this server's host names. If the destination JID has a non-empty user
-part, it is routed to the session manager, otherwise it is processed depending
-on its content.
-
-\subsubsection{Session Manager}
-\ind{clustering!session manager}
-
-This module routes packets to local users. It looks up to which user
-resource a packet must be sent via a presence table. Then the packet is
-either routed to the appropriate c2s process, or stored in offline
-storage, or bounced back.
-
-\subsubsection{s2s Manager}
-\ind{clustering!s2s manager}
-
-This module routes packets to other \Jabber{} servers. First, it
-checks if an opened s2s connection from the domain of the packet's
-source to the domain of the packet's destination exists. If that is the case,
-the s2s manager routes the packet to the process
-serving this connection, otherwise a new connection is opened.
-
-\subsection{Clustering Setup}
-\label{sec:cluster}
-\ind{clustering!setup}
-
-Suppose you already configured \ejabberd{} on one machine named (\term{first}),
-and you need to setup another one to make an \ejabberd{} cluster. Then do
-following steps:
-
-\begin{enumerate}
-\item Copy \verb|~ejabberd/.erlang.cookie| file from \term{first} to
-  \term{second}.
-
-  (alt) You can also add ``\verb|-cookie content_of_.erlang.cookie|''
-  option to all ``\shell{erl}'' commands below.
-
-\item On \term{second} run as the `\term{ejabberd}' user in the directory
-  where \ejabberd{} will work later the following command:
-
-\begin{verbatim}
-erl -sname ejabberd \
-    -mnesia extra_db_nodes "['ejabberd@first']" \
-    -s mnesia
-\end{verbatim}
-
-  This will start Mnesia serving the same database as \node{ejabberd@first}.
-  You can check this by running the command ``\verb|mnesia:info().|''. You
-  should see a lot of remote tables and a line like the following:
-
-\begin{verbatim}
-running db nodes   = [ejabberd@first, ejabberd@second]
-\end{verbatim}
-
-
-\item Now run the following in the same ``\shell{erl}'' session:
-
-\begin{verbatim}
-mnesia:change_table_copy_type(schema, node(), disc_copies).
-\end{verbatim}
-
-  This will create local disc storage for the database.
-
-  (alt) Change storage type of `\term{scheme}' table to ``RAM and disc
-  copy'' on the second node via the web interface.
-
-
-\item Now you can add replicas of various tables to this node with
-  ``\verb|mnesia:add_table_copy|'' or
-  ``\verb|mnesia:change_table_copy_type|'' as above (just replace
-  ``\verb|schema|'' with another table name and ``\verb|disc_copies|''
-  can be replaced with ``\verb|ram_copies|'' or
-  ``\verb|disc_only_copies|'').
-
-  Which tables to replicate is very dependant on your needs, you can get
-  some hints from the command ``\verb|mnesia:info().|'', by looking at the
-  size of tables and the default storage type for each table on 'first'.
-
-  Replicating a table makes lookups in this table faster on this node.
-  Writing, on the other hand, will be slower. And of course if machine with one
-  of the replicas is down, other replicas will be used.
-
-  Also \footahref{http://www.erlang.se/doc/doc-5.4.9/lib/mnesia-4.2.2/doc/html/Mnesia\_chap5.html\#5.3}
-  {section 5.3 (Table Fragmentation) of Mnesia User's Guide} can be helpful.
-  % The above URL needs update every Erlang release!
-
-  (alt) Same as in previous item, but for other tables.
-
-
-\item Run ``\verb|init:stop().|'' or just ``\verb|q().|'' to exit from
-  the Erlang shell. This probably can take some time if Mnesia has not yet
-  transfered and processed all data it needed from \term{first}.
-
-
-\item Now run \ejabberd{} on \term{second} with almost the same config as
-  on \term{first} (you probably don't need to duplicate ``\verb|acl|''
-  and ``\verb|access|'' options --- they will be taken from
-  \term{first}, and \verb|mod_muc| and \verb|mod_irc| should be
-  enabled only on one machine in the cluster).
-\end{enumerate}
-
-You can repeat these steps for other machines supposed to serve this
-domain.
-
-% TODO
-% See also the section about ejabberdctl!!!!
-%\section{Backup and Restore}
-%\label{sec:backup}
-%\ind{backup}
-
-\appendix{}
-\section{Built-in Modules}
-\label{sec:modules}
-\ind{modules}
-
-\subsection{Overview}
-\label{sec:modoverview}
-\ind{modules!overview}\ind{XMPP compliancy}
-
-The following table lists all modules available in the official \ejabberd{}
-distribution. You can find more
-\footahref{http://ejabberd.jabber.ru/contributions}{contributed modules} on the
-ejabberd website. Please remember that these contributions might not work or
-that they can contain severe bugs and security leaks. Therefore, use them at
-your own risk!
-
-You can see which database backend each module needs by looking at the suffix:
-\begin{itemize}
-\item ``\_ldap'', this means that the module needs an LDAP server as backend.
-\item ``\_odbc'', this means that the module needs an ODBC compatible database,
-  a MySQL database, or a PostgreSQL database as backend.
-\item Nothing, this means that the modules uses Erlang's built-in database
-  Mnesia as backend.
-\end{itemize}
 
 \begin{table}[H]
   \centering
@@ -1321,28 +1453,22 @@ You can see which database backend each module needs by looking at the suffix:
     \hline \hline \modadhoc{} & Ad-Hoc Commands (\jepref{0050}) &  & No \\ 
     \hline \modannounce{} & Manage announcements & \modadhoc{} & No \\ 
     \hline \modconfigure{} & Support for online & \modadhoc{} & No \\ 
-    & configuration of ejabberd & & \\ 
+    & configuration of \ejabberd{} & & \\ 
     \hline \moddisco{} & Service Discovery (\jepref{0030}) &  & No \\ 
     \hline \modecho{} & Echoes Jabber packets &  & No \\ 
     \hline \modirc{} & IRC transport &  & No \\ 
     \hline \modlast{} & Last Activity (\jepref{0012}) &  & No \\ 
-    \hline \modlastodbc{} & Last Activity (\jepref{0012}) & ODBC compatible & No \\ 
-    & & database, MySQL & \\
-    & & or PostgreSQL & \\
+    \hline \modlastodbc{} & Last Activity (\jepref{0012}) & supported database (*) & No \\ 
     \hline \modmuc{} & Multi-User Chat (\jepref{0045}) &  & No \\ 
     \hline \modmuclog{} & Multi-User Chat room logging & \modmuc{} & No \\ 
     \hline \modoffline{} & Offline message storage &  & No \\ 
-    \hline \modofflineodbc{} & Offline message storage & ODBC compatible & No \\ 
-    & & database, MySQL & \\
-    & & or PostgreSQL & \\
+    \hline \modofflineodbc{} & Offline message storage & supported database (*) & No \\ 
     \hline \modprivacy{} & Blocking Communication &  & Yes \\ 
     \hline \modprivate{} & Private XML Storage (\jepref{0049}) &  & No \\ 
     \hline \modpubsub{} & Publish-Subscribe (\jepref{0060}) &  & No \\ 
     \hline \modregister{} & In-Band Registration (\jepref{0077}) &  & No \\ 
-    \hline \modroster{} & Roster management &  & Yes (*) \\ 
-    \hline \modrosterodbc{} & Roster management & ODBC compatible & Yes (*) \\ 
-    & & database, MySQL & \\
-    & & or PostgreSQL & \\
+    \hline \modroster{} & Roster management &  & Yes (**) \\ 
+    \hline \modrosterodbc{} & Roster management & supported database (*) & Yes (**) \\ 
     \hline \modservicelog{} & Copy user messages to logger service &  & No \\ 
     \hline \modsharedroster{} & Shared roster management & \modroster{} or & No \\ 
     & & \modrosterodbc{} & \\ 
@@ -1350,24 +1476,25 @@ You can see which database backend each module needs by looking at the suffix:
     \hline \modtime{} & Entity Time (\jepref{0090}) &  & No \\ 
     \hline \modvcard{} & vcard-temp (\jepref{0054}) &  & No \\ 
     \hline \modvcardldap{} & vcard-temp (\jepref{0054}) & LDAP server & No \\ 
-    \hline \modvcardodbc{} & vcard-temp (\jepref{0054}) & ODBC compatible & No \\ 
-    & & database, MySQL & \\
-    & & or PostgreSQL & \\
+    \hline \modvcardodbc{} & vcard-temp (\jepref{0054}) & supported database (*) & No \\ 
     \hline \modversion{} & Software Version (\jepref{0092}) &  & No\\
     \hline
   \end{tabular}
 \end{table}
 
-(*) This module or a similar one with another database backend is needed for
+\begin{itemize}
+\item (*) For a list of supported databases, see section~\ref{sec:database}.
+\item (**) This module or a similar one with another database backend is needed for
 XMPP compliancy.
+\end{itemize}
 
-\subsection{Common Options}
-\label{sec:modcommonopts}
+\subsection{\aname{modcommonoptions}{Common Options}}
+\label{sec:modcommonoptions}
 
 The following options are used by many modules. Therefore, they are described in
 this separate section.
 
-\subsubsection{\option{iqdisc}}
+\subsubsection{\option{\aname{modiqdiscoption}{iqdisc}}}
 \label{sec:modiqdiscoption}
 \ind{options!iqdisc}
 
@@ -1401,7 +1528,7 @@ Example:
    ]}.
 \end{verbatim}
 
-\subsubsection{\option{hosts}}
+\subsubsection{\option{\aname{modhostsoption}{hosts}}}
 \label{sec:modhostsoption}
 \ind{options!hosts}
 
@@ -1421,7 +1548,7 @@ Examples:
     ...
    ]}.
 \end{verbatim}
-  \item Backwards compatibility with older ejabberd versions can be retained
+  \item Backwards compatibility with older \ejabberd{} versions can be retained
     with:
     \begin{verbatim}
   {modules,
@@ -1443,7 +1570,7 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsection{\modannounce{}}
+\subsection{\aname{modannounce}{\modannounce{}}}
 \label{sec:modannounce}
 \ind{modules!\modannounce{}}\ind{MOTD}\ind{message of the day}\ind{announcements}
 
@@ -1512,7 +1639,7 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsection{\moddisco{}}
+\subsection{\aname{moddisco}{\moddisco{}}}
 \label{sec:moddisco}
 \ind{modules!\moddisco{}}\ind{protocols!JEP-0030: Service Discovery}\ind{protocols!JEP-0011: Jabber Browsing}\ind{protocols!JEP-0094: Agent Information}
 
@@ -1566,7 +1693,7 @@ Examples:
 \end{itemize}
 
 
-\subsection{\modecho{}}
+\subsection{\aname{modecho}{\modecho{}}}
 \label{sec:modecho}
 \ind{modules!\modecho{}}\ind{debugging}
 
@@ -1595,7 +1722,7 @@ Examples:
   you can find a few more examples in section~\ref{sec:modhostsoption}.
 \end{itemize}
 
-\subsection{\modirc{}}
+\subsection{\aname{modirc}{\modirc{}}}
 \label{sec:modirc}
 \ind{modules!\modirc{}}\ind{IRC}
 
@@ -1605,16 +1732,16 @@ servers.
 End user information:
 \ind{protocols!groupchat 1.0}\ind{protocols!JEP-0045: Multi-User Chat}
 \begin{itemize}
-\item A \Jabber{} client with ``groupchat 1.0'' support or Multi-User
+\item A \Jabber{} client with `groupchat 1.0' support or Multi-User
   Chat support (\jepref{0045}) is necessary to join IRC channels.
 \item An IRC channel can be joined in nearly the same way as joining a
   \Jabber{} Multi-User Chat room. The difference is that the room name will
-  be ``channel\%\jid{irc.example.org}'' in case \jid{irc.example.org} is
-  the IRC server hosting ``channel''. And of course the host should point
+  be `channel\%\jid{irc.example.org}' in case \jid{irc.example.org} is
+  the IRC server hosting `channel'. And of course the host should point
   to the IRC transport instead of the Multi-User Chat service.
-\item You can register your nickame by sending ``IDENTIFY password'' to \\
+\item You can register your nickame by sending `IDENTIFY password' to \\
   \jid{nickserver!irc.example.org@irc.jabberserver.org}.
-\item Entering your password is possible by sending ``LOGIN nick password'' \\
+\item Entering your password is possible by sending `LOGIN nick password' \\
   to \jid{nickserver!irc.example.org@irc.jabberserver.org}.
 \item When using a popular \Jabber{} server, it can occur that no
   connection can be achieved with some IRC servers because they limit the
@@ -1631,7 +1758,7 @@ Options:
 Examples:
 \begin{itemize}
 \item In the first example, the IRC transport is available on (all) your
-  virtual host(s) with the prefix ``\jid{irc.}''. Furthermore, anyone is
+  virtual host(s) with the prefix `\jid{irc.}'. Furthermore, anyone is
   able to use the transport.
   \begin{verbatim}
   {modules,
@@ -1641,7 +1768,8 @@ Examples:
     ...
    ]}.
 \end{verbatim}
-% bug in current svn!!: irc-transport.example.com will *not* show up in the service discovery items; instead you will see irc.example.com!!!!
+%TODO: bug in current svn!: irc-transport.example.com will *not* show up in the
+%      service discovery items; instead you will see irc.example.com
 \item In next example the IRC transport is available on the two virtual hosts
   \jid{example.net} and \jid{example.com} with different prefixes on each host.
   Moreover, the transport is only accessible by paying customers registered on
@@ -1664,7 +1792,7 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsection{\modlast{}}
+\subsection{\aname{modlast}{\modlast{}}}
 \label{sec:modlast}
 \ind{modules!\modlast{}}\ind{protocols!JEP-0012: Last Activity}
 
@@ -1678,7 +1806,7 @@ Options:
 \iqdiscitem{Last activity (\ns{jabber:iq:last})}
 \end{description}
 
-\subsection{\modmuc{}}
+\subsection{\aname{modmuc}{\modmuc{}}}
 \label{sec:modmuc}
 \ind{modules!\modmuc{}}\ind{protocols!JEP-0045: Multi-User Chat}\ind{conferencing}
 
@@ -1710,13 +1838,13 @@ Options:
   administer his room). By sending a message to the service JID,
   administrators can send service messages that will be displayed in every
   active room.
-
-  \titem{history\_size} \ind{options!history\_size}a small history of the
-  current discussion is send to users when they enter the room. This option make
-  it possible to define the number of history messages to keep and send to the
-  user joining the room. The value is a integer. Setting the value to \term{0}
-  disable the history feature and nothing is kept in memory. The default value
-  is \term{20}. This value is global and affects all MUC rooms on the server.
+\titem{history\_size} \ind{options!history\_size}A small history of the
+  current discussion is sent to users when they enter the room. With this option
+  you can define the number of history messages to keep and send to users
+  joining the room. The value is an integer. Setting the value to \term{0}
+  disables the history feature and, as a result, nothing is kept in memory. The
+  default value is \term{20}. This value is global and thus affects all rooms on
+  the server.
 \end{description}
 
 Examples:
@@ -1725,9 +1853,9 @@ Examples:
   service. Everyone will also be able to create new rooms but only the user
   \jid{admin@example.org} is allowed to administrate any room. In this
   example he is also a global administrator. When \jid{admin@example.org}
-  sends a message such as ``Tomorrow, the \Jabber{} server will be moved
+  sends a message such as `Tomorrow, the \Jabber{} server will be moved
   to new hardware. This will involve service breakdowns around 23:00 UMT.
-  We apologise for this inconvenience.'' to \jid{conference.example.org},
+  We apologise for this inconvenience.' to \jid{conference.example.org},
   it will be displayed in all active rooms. In this example the history
   feature is disabled.
   \begin{verbatim}
@@ -1749,9 +1877,9 @@ Examples:
   paying customers registered on our domains and on other servers. Of course
   the administrator is also allowed to access rooms. In addition, he is the
   only authority able to create and administer rooms. When
-  \jid{admin@example.org} sends a message such as ``Tomorrow, the \Jabber{}
+  \jid{admin@example.org} sends a message such as `Tomorrow, the \Jabber{}
   server will be moved to new hardware. This will involve service breakdowns
-  around 23:00 UMT. We apologise for this inconvenience.'' to
+  around 23:00 UMT. We apologise for this inconvenience.' to
   \jid{conference.example.org}, it will be displayed in all active rooms. No
   \term{history\_size} option is used, this means that the feature is enabled
   and the default value of 20 history messages will be send to the users.
@@ -1778,64 +1906,79 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsection{\modmuclog{}}
+\subsection{\aname{modmuclog}{\modmuclog{}}}
 \label{sec:modmuclog}
 \ind{modules!\modmuclog{}}
 
-This module enables optional logging of Multi-User Chat conversations to HTML.
-Once you enable this module, join a chatroom with enought privileges using a MUC capable Jabber client,
-request the configuration form and there you will have an option to enable chatroom logging.
+This module enables optional logging of Multi-User Chat (MUC) conversations to
+HTML. Once you enable this module, users can join a chatroom using a MUC capable
+Jabber client, and if they have enough privileges, they can request the
+configuration form in which they can set the option to enable chatroom logging.
 
-Some of the features of generated logs:
+Features:
 \begin{itemize}
-\item A lot of information about chatroom is added on top of the page: Room title, JID, subject author, subject and configuration.
-\item Room title and JID are links to join the chatroom (using XMPP-IRI).
+\item Chatroom details are added on top of each page: room title, JID,
+  author, subject and configuration.
+\item \ind{protocols!RFC 4622: Internationalized Resource Identifiers (IRIs) and Uniform Resource Identifiers (URIs) for the Extensible Messaging and Presence Protocol (XMPP)}
+  Room title and JID are links to join the chatroom (using
+  \footahref{http://www.ietf.org/rfc/rfc4622.txt}{XMPP URIs}).
 \item Subject and chatroom configuration changes are tracked and displayed.
-\item Joins, leaves, nick changes, kicks, bans and /me are tracked and displayed, including the reason when available.
+\item Joins, leaves, nick changes, kicks, bans and `/me' are tracked and
+  displayed, including the reason if available.
 \item Generated HTML files are XHTML 1.0 Transitional and CSS compliant.
 \item Timestamps are self-referencing links.
 \item Links on top for quicker navigation: Previous day, Next day, Up.
 \item CSS is used for style definition, and a custom CSS file can be used.
 \item URLs on messages and subjects are converted to hyperlinks.
 \item Timezone used on timestamps is shown on the log files.
-\item A custom link can be added on top of page.
+\item A custom link can be added on top of each page.
 \end{itemize}
 
 Options:
 \begin{description}
 \titem{access\_log}\ind{options!access\_log}
-    Restricts which users are allowed to enable or disable chatroom logging using ACL and ACCESS.
-    Default: \term{muc\_admin}.
-    If you want to allow any chatroom owner put: \term{muc}.
+  This option restricts which users are allowed to enable or disable chatroom
+  logging. The default value is \term{muc\_admin}. Note for this default setting
+  you need to have an access rule for \term{muc\_admin} in order to take effect.
 \titem{cssfile}\ind{options!cssfile}
-    If HTMLs will use a custom CSS file or the embedded one.
-    Allowed values:
-        \term{false}: HTMLs will include the standard CSS code;
-        \term{"CSS-URL"}: the URL of the CSS file (for example: "http://example.com/my.css").
-    Default: \term{false}.
+  With this option you can set whether the HTML files should have a custom CSS
+  file or if they need to use the embedded CSS file. Allowed values are
+  \term{false} and an URL to a CSS file. With the first value, HTML files will
+  include the embedded CSS code. With the latter, you can specify the URL of the
+  custom CSS file (for example: `http://example.com/my.css'). The default value
+  is \term{false}.
 \titem{dirtype}\ind{options!dirtype}
-    Type of directory that will be created.
-	Allowed values: 
-		\term{subdirs}: creates subdirectories for year and month; 
-        \term{plain}: the filename contains the full date, no subdirs.
-    Default: \term{subdirs}.
+  The type of the created directories can be specified with this option. Allowed
+  values are \term{subdirs} and \term{plain}. With the first value,
+  subdirectories are created for each year and month. With the latter, the
+  names of the log files contain the full date, and there are no subdirectories.
+  The default value is \term{subdirs}.
 \titem{outdir}\ind{options!outdir}
-    Full path to the directory where html will be generated.
-    Make sure the system user has write access on that directory. 
-    Default: \term{"www/muc"}.
+  This option sets the full path to the directory in which the HTML files should
+  be stored. Make sure the \ejabberd{} daemon user has write access on that
+  directory. The default value is \term{"www/muc"}.
 \titem{timezone}\ind{options!timezone}
-    What timezone should be used.
-    Allowed values:
-		\term{local}: use local time, as reported to Erlang by the operating system;
-        \term{universal}: use GMT/UTC time.
-    Default: \term{local}.
+  The time zone for the logs is configurable with this option. Allowed values
+  are \term{local} and \term{universal}. With the first value, the local time,
+  as reported to Erlang by the operating system, will be used. With the latter,
+  GMT/UTC time will be used. The default value is \term{local}.
 \titem{top\_link}\ind{options!top\_link}
-    Customizable link on top right corner. Syntax of this option: \term{\{"URL", "Text"\}}.
-    Default: \term{\{"/", "Home"\}}.
+  With this option you can customize the link on the top right corner of each
+  log file. The syntax of this option is \term{\{"URL", "Text"\}}. The default
+  value is \term{\{"/", "Home"\}}.
 \end{description}
 
-Example configuration:
-\begin{verbatim}
+Examples:
+\begin{itemize}
+\item In the first example any chatroom owner can enable logging, and a
+  custom CSS file will be used (http://example.com/my.css). Further, the names
+  of the log files will contain the full date, and there will be no
+  subdirectories. The log files will be stored in /var/www/muclogs, and the
+  time zone will be GMT/UTC. Finally, the top link will be
+  \verb|<a href="http://www.jabber.ru">Jabber.ru</a>|.
+  \begin{verbatim}
+  {access, muc, [{allow, all}]}.
+  ...
   {modules,
    [
     ...
@@ -1850,8 +1993,35 @@ Example configuration:
     ...
    ]}.
 \end{verbatim}
+  \item In the second example only \jid{admin1@example.org} and
+  \jid{admin2@example.net} can enable logging, and the embedded CSS file will be
+  used. Further, the names of the log files will only contain the day (number),
+  and there will be subdirectories for each year and month. The log files will
+  be stored in /var/www/muclogs, and the local time will be used. Finally, the
+  top link will be the default \verb|<a href="/">Home</a>|.
+  \begin{verbatim}
+  {acl, admins, {user, "admin1", "example.org"}}.
+  {acl, admins, {user, "admin2", "example.net"}}.
+  ...
+  {access, muc_log, [{allow, admins},
+                     {deny, all}]}.
+  ...
+  {modules,
+   [
+    ...
+    {mod_muc_log, [
+               {access_log, muc_log},
+               {cssfile, false},
+               {dirtype, subdirs},
+               {outdir, "/var/www/muclogs"},
+               {timezone, local}
+    ]},
+    ...
+   ]}.
+\end{verbatim}
+\end{itemize}
 
-\subsection{\modoffline{}}
+\subsection{\aname{modoffline}{\modoffline{}}}
 \label{sec:modoffline}
 \ind{modules!\modoffline{}}
 
@@ -1861,7 +2031,7 @@ online again. Thus it is very similar to how email works. Note that
 \term{ejabberdctl}\ind{ejabberdctl} has a command to delete expired messages
 (see section~\ref{sec:ejabberdctl}).
 
-\subsection{\modprivacy{}}
+\subsection{\aname{modprivacy}{\modprivacy{}}}
 \label{sec:modprivacy}
 \ind{modules!\modprivacy{}}\ind{Blocking Communication}\ind{Privacy Rules}\ind{protocols!RFC 3921: XMPP IM}
 
@@ -1870,19 +2040,19 @@ as defined in section 10 from XMPP IM. If end users have support for it in
 their \Jabber{} client, they will be able to:
 \begin{quote}
 \begin{itemize}
-\item Retrieving one's privacy lists. 
-\item Adding, removing, and editing one's privacy lists. 
-\item Setting, changing, or declining active lists. 
+\item Retrieving one's privacy lists.
+\item Adding, removing, and editing one's privacy lists.
+\item Setting, changing, or declining active lists.
 \item Setting, changing, or declining the default list (i.e., the list that
-  is active by default). 
+  is active by default).
 \item Allowing or blocking messages based on JID, group, or subscription type
-  (or globally). 
+  (or globally).
 \item Allowing or blocking inbound presence notifications based on JID, group,
-  or subscription type (or globally). 
+  or subscription type (or globally).
 \item Allowing or blocking outbound presence notifications based on JID, group,
-  or subscription type (or globally). 
+  or subscription type (or globally).
 \item Allowing or blocking IQ stanzas based on JID, group, or subscription type
-  (or globally). 
+  (or globally).
 \item Allowing or blocking all communications based on JID, group, or
   subscription type (or globally).
 \end{itemize}
@@ -1894,7 +2064,7 @@ Options:
 \iqdiscitem{Blocking Communication (\ns{jabber:iq:privacy})}
 \end{description}
 
-\subsection{\modprivate{}}
+\subsection{\aname{modprivate}{\modprivate{}}}
 \label{sec:modprivate}
 \ind{modules!\modprivate{}}\ind{protocols!JEP-0049: Private XML Storage}\ind{protocols!JEP-0048: Bookmark Storage}
 
@@ -1911,7 +2081,7 @@ Options:
 \iqdiscitem{Private XML Storage (\ns{jabber:iq:private})}
 \end{description}
 
-\subsection{\modpubsub{}}
+\subsection{\aname{modpubsub}{\modpubsub{}}}
 \label{sec:modpubsub}
 \ind{modules!\modpubsub{}}\ind{protocols!JEP-0060: Publish-Subscribe}
 
@@ -1945,8 +2115,8 @@ Options:
   be served, you can use this option. If absent, only the main \ejabberd{}
   host is served. % Not a straigtforward description! This needs to be improved!
 \titem{access\_createnode} \ind{options!access\_createnode}
-    Restricts which users are allowed to create pubsub nodes using ACL and ACCESS.
-    Default: \term{pubsub\_createnode}.
+  This option restricts which users are allowed to create pubsub nodes using
+  ACL and ACCESS. The default value is \term{pubsub\_createnode}. % Not clear enough + do not use abbreviations.
 \end{description}
 
 Example:
@@ -1961,7 +2131,7 @@ Example:
    ]}.
 \end{verbatim}
 
-\subsection{\modregister{}}
+\subsection{\aname{modregister}{\modregister{}}}
 \label{sec:modregister}
 \ind{modules!\modregister{}}\ind{protocols!JEP-0077: In-Band Registration}\ind{public registration}
 
@@ -1977,7 +2147,7 @@ enables end users to use a \Jabber{} client to:
 Options:
 \begin{description}
 \titem{access} \ind{options!access}This option can be configured to specify
-  rules to restrict registration. If a rule returns ``deny'' on the requested
+  rules to restrict registration. If a rule returns `deny' on the requested
   user name, registration for that user name is dennied. (there are no
   restrictions by default).
 \iqdiscitem{In-Band Registration (\ns{jabber:iq:register})}
@@ -2019,7 +2189,7 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsection{\modroster{}}
+\subsection{\aname{modroster}{\modroster{}}}
 \label{sec:modroster}
 \ind{modules!\modroster{}}\ind{roster management}\ind{protocols!RFC 3921: XMPP IM}
 
@@ -2030,7 +2200,7 @@ Options:
 \iqdiscitem{Roster Management (\ns{jabber:iq:roster})}
 \end{description}
 
-\subsection{\modservicelog{}}
+\subsection{\aname{modservicelog}{\modservicelog{}}}
 \label{sec:modservicelog}
 \ind{modules!\modservicelog{}}\ind{message auditing}\ind{Bandersnatch}
 
@@ -2072,7 +2242,7 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsection{\modsharedroster{}}
+\subsection{\aname{modsharedroster}{\modsharedroster{}}}
 \label{sec:modsharedroster}
 \ind{modules!\modsharedroster{}}\ind{shared roster groups}
 
@@ -2086,7 +2256,7 @@ Shared roster groups can be edited \emph{only} via the web interface. Each group
 has a unique identification and the following parameters:
 \begin{description}
 \item[Name] The name of the group, which will be displayed in the roster.
-\item[Description] The description of the group. This parameter doesn't affect
+\item[Description] The description of the group. This parameter does not affect
   anything.
 \item[Members] A list of full JIDs of group members, entered one per line in
   the web interface.
@@ -2175,7 +2345,7 @@ Examples:
 \end{table}
 \end{itemize}
 
-\subsection{\modstats{}}
+\subsection{\aname{modstats}{\modstats{}}}
 \label{sec:modstats}
 \ind{modules!\modstats{}}\ind{protocols!JEP-0039: Statistics Gathering}\ind{statistics}
 
@@ -2218,7 +2388,7 @@ in order to get the statistics. Here they are:
 \end{verbatim}
 \end{itemize}
 
-\subsection{\modtime{}}
+\subsection{\aname{modtime}{\modtime{}}}
 \label{sec:modtime}
 \ind{modules!\modtime{}}\ind{protocols!JEP-0090: Entity Time}
 
@@ -2230,7 +2400,7 @@ Options:
 \iqdiscitem{Entity Time (\ns{jabber:iq:time})}
 \end{description}
 
-\subsection{\modvcard{}}
+\subsection{\aname{modvcard}{\modvcard{}}}
 \label{sec:modvcard}
 \ind{modules!\modvcard{}}\ind{JUD}\ind{Jabber User Directory}\ind{vCard}\ind{protocols!JEP-0054: vcard-temp}
 
@@ -2243,22 +2413,21 @@ Options:
 \begin{description}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
-\titem{search} \ind{options!search}This option specifies whether the search
-  functionality is enabled (value: \term{true}) or disabled
-  (value: \term{false}). If disabled, the option \term{hosts} will be
-  ignored and the \Jabber{} User Directory service will not appear in the
-  Service Discovery item list. The default value is \term{true}.
-\titem{matches} \ind{options!matches}With this option, the number of reported
+\titem{search}\ind{options!search}This option specifies whether the search
+  functionality is enabled (value: \term{true}) or disabled (value:
+  \term{false}). If disabled, the option \term{hosts} will be ignored and the
+  \Jabber{} User Directory service will not appear in the Service Discovery item
+  list. The default value is \term{true}.
+\titem{matches}\ind{options!matches}With this option, the number of reported
   search results can be limited. If the option's value is set to \term{infinity},
   all search results are reported. The default value is \term{30}.
-\titem{allow\_return\_all} \ind{options!allow\_return\_all}This option enables
-  you to specify if search operations with empty input fields should return
-  all users who added some information to their vCard. The default value is
+\titem{allow\_return\_all}\ind{options!allow\_return\_all}This option enables
+  you to specify if search operations with empty input fields should return all
+  users who added some information to their vCard. The default value is
   \term{false}.
-\titem{search\_all\_hosts} \ind{options!search\_all\_hosts}If this option is
-  set to \term{true}, search operations will apply to all virtual hosts.
-  Otherwise only the current host will be searched. The default value is
-  \term{true}.
+\titem{search\_all\_hosts}\ind{options!search\_all\_hosts}If this option is set
+  to \term{true}, search operations will apply to all virtual hosts. Otherwise
+  only the current host will be searched. The default value is \term{true}.
 \end{description}
 
 Examples:
@@ -2291,118 +2460,45 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsection{LDAP and \modvcardldap{}}
-\label{sec:ldap}
+\subsection{\aname{modvcardldap}{\modvcardldap{}}}
+\label{sec:modvcardldap}
 \ind{modules!\modvcardldap{}}\ind{JUD}\ind{Jabber User Directory}\ind{vCard}\ind{protocols!JEP-0054: vcard-temp}
 
+%TODO: verify if the referers to the LDAP section are still correct
 
-\subsubsection{Features}
-\label{sec:ldapfeatures}
-
-\ejabberd{} has built-in LDAP support.  You can authenticate users against LDAP
-server and use LDAP directory as vCard storage. Shared rosters are not
-supported yet.
-
-
-\subsubsection{Connection}
-\label{sec:ldapconnection}
-
-Parameters:
-
-\begin{description}
-\titem{ldap\_server} \ind{options!ldap\_server}IP address or dns name of your
-LDAP server. This option is required.
-\titem{ldap\_port} \ind{options!ldap\_port}Port to connect to LDAP server.
-Default is~389.
-\titem{ldap\_rootdn} \ind{options!ldap\_rootdn}Bind DN.  Default is~\term{""}
-which means anonymous connection.
-\titem{ldap\_password} \ind{options!ldap\_password}Bind password. Default
-is~\term{""}.
-\end{description}
-
-Example:
-\begin{verbatim}
-  {auth_method, ldap}.
-  {ldap_servers, ["ldap.mydomain.org"]}.
-  {ldap_port, 389}.
-  {ldap_rootdn, "cn=Manager,dc=domain,dc=org"}.
-  {ldap_password, "secret"}.
-\end{verbatim}
-
-Note that current LDAP implementation doesn't support SSL connection and SASL
-authentication.
-
-
-\subsubsection{Authentication}
-\label{sec:ldapauthentication}
-
-You can authenticate users against LDAP directory.  Available parameters are
-listed below:
-
-\begin{description}
-\titem{ldap\_base} \ind{options!ldap\_base}LDAP base directory which stores users
-accounts.  This option is required.
-\titem{ldap\_uidattr} \ind{options!ldap\_uidattr}LDAP attribute which holds
-user's part of JID.  Default is \term{"uid"}.
-\titem{ldap\_uidattr\_format} \ind{options!ldap\_uidattr\_format}Format of the
-\term{ldap\_uidattr} variable.  Format MUST contain one and only one pattern
-variable \term{"\%u"} which will be replaced by user's part of JID. For example,
-\term{"\%u@mydomain.org"}.  Default value is \term{"\%u"}.
-\titem{ldap\_filter} \ind{options!ldap\_filter}RFC 2254 LDAP filter.  Default is
-\term{none}.  Example: \term{"(\&(objectClass=shadowAccount)(memberOf=Jabber
-  Users))"}. Please, don't forget closing brackets and don't use superfluous
-whitespaces. Also you MUST NOT use \option{ldap\_uidattr} attribute in filter
-because this attribute will be substituted in LDAP filter automatically.
-\end{description}
-
-
-\subsubsection{vCards and Search}
-\label{sec:modvcardldap}
-
-\ejabberd{} can map LDAP attributes to vCard fields.  This behaviour is
-implemented in \modvcardldap{} module.  This module doesn't depend on
-authentication method.  \modvcardldap{} module has it's own optional
-parameters.  The first group of parameters has the same meaning as top-level
-LDAP parameters: \option{ldap\_servers}, \option{ldap\_port},
-\option{ldap\_rootdn}, \option{ldap\_password}, \option{ldap\_base},
-\option{ldap\_uidattr}, \option{ldap\_uidattr\_format} and
-\option{ldap\_filter}.  If one of this option is not set \ejabberd{} will look
-for top-level option with the same name.  The second group of parameters
-consists of the following options:
+\ejabberd{} can map LDAP attributes to vCard fields. This behaviour is
+implemented in the \modvcardldap{} module. This module does not depend on the
+authentication method (see~\ref{sec:ldapauth}). The \modvcardldap{} module
+has its own optional parameters. The first group of parameters has the same
+meaning as the top-level LDAP parameters to set the authentication method:
+\option{ldap\_servers}, \option{ldap\_port}, \option{ldap\_rootdn},
+\option{ldap\_password}, \option{ldap\_base}, \option{ldap\_uidattr},
+\option{ldap\_uidattr\_format} and \option{ldap\_filter}. See
+section~\ref{sec:ldapauth} for detailed information about these options. If one
+of these options is not set, \ejabberd{} will look for the top-level option with
+the same name. The second group of parameters consists of the following
+\modvcardldap{}-specific options:
 
 \begin{description}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
-\titem{search} \ind{options!search}This option specifies whether the search
-  functionality is enabled (value: \term{true}) or disabled
-  (value: \term{false}).  If disabled, the option \term{hosts} will be
-  ignored and the \Jabber{} User Directory service will not appear in the
-  Service Discovery item list.  The default value is \term{true}.
-\titem{ldap\_vcard\_map} \ind{options!ldap\_vcard\_map}the table which defines
-reflection of LDAP attributes to vCard fields.
-	Format is:
-		\term{[{Name\_of\_vcard\_field, Pattern, List\_of\_LDAP\_attributes}, ...]}
-	where
-		\term{Name\_of\_vcard\_field} is the type name of vCard as defined
-                in RFC 2426,
-		Pattern is a string which contains pattern variables \term{"\%u"}, \term{"\%d"} or \term{"\%s"},
-		\term{List\_of\_LDAP\_attributes} is the list which contains of LDAP attributes.
-	Pattern variables \term{"\%s"} will be sequentially replaced with the values of
-	LDAP attributes from \term{List\_of\_LDAP\_attributes}; \term{"\%u"} will be replaced with
-	user's part of JID and \term{"\%d"} will be replaced with domain part of JID.
-	Example:
-\begin{verbatim}
-  {ldap_vcard_map,
-   [{"NICKNAME", "%u", []},
-    {"FN", "%s", ["displayName"]},
-    {"CTRY", "Russia", []},
-    {"EMAIL", "%u@%d", []},
-    {"DESC", "%s\n%s", ["title", "description"]}
-   ]},
-\end{verbatim}
-
-Default is:
-\begin{verbatim}
+\titem{search}\ind{options!search}This option specifies whether the search
+  functionality is enabled (value: \term{true}) or disabled (value:
+  \term{false}). If disabled, the option \term{hosts} will be ignored and the
+  \Jabber{} User Directory service will not appear in the Service Discovery item
+  list. The default value is \term{true}.
+\titem{ldap\_vcard\_map}\ind{options!ldap\_vcard\_map}With this option you can
+  set the table that maps LDAP attributes to vCard fields. The format is:
+  \term{[{Name\_of\_vCard\_field, Pattern, List\_of\_LDAP\_attributes}, ...]}.\ind{protocols!RFC 2426: vCard MIME Directory Profile}
+  \term{Name\_of\_vcard\_field} is the type name of the vCard as defined in
+  \footahref{http://www.ietf.org/rfc/rfc2426.txt}{RFC 2426}. \term{Pattern} is a
+  string which contains pattern variables \term{"\%u"}, \term{"\%d"} or
+  \term{"\%s"}. \term{List\_of\_LDAP\_attributes} is the list containing LDAP
+  attributes. The pattern variables \term{"\%s"} will be sequentially replaced
+  with the values of LDAP attributes from \term{List\_of\_LDAP\_attributes},
+  \term{"\%u"} will be replaced with the user part of a JID, and \term{"\%d"}
+  will be replaced with the domain part of a JID. The default is:
+  \begin{verbatim}
   [{"NICKNAME", "%u", []},
    {"FN", "%s", ["displayName"]},
    {"FAMILY", "%s", ["sn"]},
@@ -2424,26 +2520,13 @@ Default is:
    {"ROLE", "%s", ["employeeType"]},
    {"PHOTO", "%s", ["jpegPhoto"]}]
 \end{verbatim}
-\titem{ldap\_search\_fields} \ind{options!ldap\_search\_fields}This option defines
-search form and LDAP attributes to search.
-	Format:
-		\term{[{Name, Attribute}, ...]}
-	where
-		\term{Name} is the name of field in the search form.  Will be automatically
-			translated according to definitions in translation files (see
-			\term{msgs/*.msg} for available words).
-		Attribute is the LDAP attribute or the pattern \term{"\%u"}
-                  Example:
-\begin{verbatim}
-  {ldap_search_fields,
-   [{"User", "uid"},
-    {"Full Name", "displayName"},
-    {"Email", "mail"}
-   ]},
-\end{verbatim}
-
-Default is:
-\begin{verbatim}
+\titem{ldap\_search\_fields}\ind{options!ldap\_search\_fields}This option
+  defines the search form and the LDAP attributes to search within. The format
+  is: \term{[{Name, Attribute}, ...]}. \term{Name} is the name of a search form
+  field which will be automatically translated by using the translation
+  files (see \term{msgs/*.msg} for available words). \term{Attribute} is the
+  LDAP attribute or the pattern \term{"\%u"}. The default is:
+  \begin{verbatim}
   [{"User", "%u"},
    {"Full Name", "displayName"},
    {"Given Name", "givenName"},
@@ -2457,25 +2540,13 @@ Default is:
    {"Organization Name", "o"},
    {"Organization Unit", "ou"}]
 \end{verbatim}
-\titem{ldap\_search\_reported} \ind{options!ldap\_search\_reported}This option defines search fields to be reported.
-	Format:
-		\term{[{Name, VCard\_Name}, ...]}
-	where
-		\term{Name} is the name of field in the search form. Will be automatically
-			translated according to definitions in translation files (see
-			\term{msgs/*.msg} for available words).
-		\term{VCard\_Name} is the name of vCard field defined in \option{ldap\_vcard\_map} option.
-                Example:
-\begin{verbatim}
-  {ldap_search_reported,
-   [{"Full Name", "FN"},
-    {"Email", "EMAIL"},
-    {"Birthday", "BDAY"},
-    {"Nickname", "NICKNAME"}
-   ]},
-\end{verbatim}
-
-Default is:
+\titem{ldap\_search\_reported}\ind{options!ldap\_search\_reported}This option
+  defines which search fields should be reported. The format is:
+  \term{[{Name, vCard\_Name}, ...]}. \term{Name} is the name of a search form
+  field which will be automatically translated by using the translation
+  files (see \term{msgs/*.msg} for available words). \term{vCard\_Name} is the
+  vCard field name defined in the \option{ldap\_vcard\_map} option. The default
+  is:
 \begin{verbatim}
   [{"Full Name", "FN"},
    {"Given Name", "GIVEN"},
@@ -2491,36 +2562,30 @@ Default is:
 \end{verbatim}
 \end{description}
 
+%TODO: this examples still should be organised better
+Examples:
+\begin{itemize}
+\item 
 
-\subsubsection{Examples}
-\label{sec:ldapexamples}
-
-\paragraph{Common example}
-
-Let's say \term{ldap.mydomain.org} is the name of our LDAP server. We have
-users with their passwords in \term{"ou=Users,dc=mydomain,dc=org"} directory.
+Let's say \term{ldap.example.org} is the name of our LDAP server. We have
+users with their passwords in \term{"ou=Users,dc=example,dc=org"} directory.
 Also we have addressbook, which contains users emails and their additional
-infos in \term{"ou=AddressBook,dc=mydomain,dc=org"} directory.  Corresponding
+infos in \term{"ou=AddressBook,dc=example,dc=org"} directory.  Corresponding
 authentication section should looks like this:
 
 \begin{verbatim}
   %% authentication method
   {auth_method, ldap}.
   %% DNS name of our LDAP server
-  {ldap_servers, ["ldap.mydomain.org"]}.
-  %% Bind to LDAP server as "cn=Manager,dc=mydomain,dc=org" with password "secret"
-  {ldap_rootdn, "cn=Manager,dc=mydomain,dc=org"}.
-  {ldap_password, "secret"}.
-  %% define the user's base
-  {ldap_base, "ou=Users,dc=mydomain,dc=org"}.
+  {ldap_servers, ["ldap.example.org"]}.
   %% We want to authorize users from 'shadowAccount' object class only
   {ldap_filter, "(objectClass=shadowAccount)"}.
 \end{verbatim}
 
-Now we want to use users LDAP-info as their vCards.  We have four attributes
+Now we want to use users LDAP-info as their vCards. We have four attributes
 defined in our LDAP schema: \term{"mail"} --- email address, \term{"givenName"}
 --- first name, \term{"sn"} --- second name, \term{"birthDay"} --- birthday.
-Also we want users to search each other.  Let's see how we can set it up:
+Also we want users to search each other. Let's see how we can set it up:
 
 \begin{verbatim}
   {modules,
@@ -2529,16 +2594,16 @@ Also we want users to search each other.  Let's see how we can set it up:
      [
       %% We use the same server and port, but want to bind anonymously because
       %% our LDAP server accepts anonymous requests to
-      %% "ou=AddressBook,dc=mydomain,dc=org" subtree.
+      %% "ou=AddressBook,dc=example,dc=org" subtree.
       {ldap_rootdn, ""},
       {ldap_password, ""},
       %% define the addressbook's base
-      {ldap_base, "ou=AddressBook,dc=mydomain,dc=org"},
+      {ldap_base, "ou=AddressBook,dc=example,dc=org"},
       %% user's part of JID is located in the "mail" attribute
       {ldap_uidattr, "mail"},
       %% common format for our emails
-      {ldap_uidattr_format, "%u@mail.mydomain.org"},
-      %% We have to define empty filter here, because entries in addressbook doesn't
+      {ldap_uidattr_format, "%u@mail.example.org"},
+      %% We have to define empty filter here, because entries in addressbook does not
       %% belong to shadowAccount object class
       {ldap_filter, ""},
       %% Now we want to define vCard pattern
@@ -2570,60 +2635,36 @@ Also we want users to search each other.  Let's see how we can set it up:
 Note that \modvcardldap{} module checks an existence of the user before
 searching his info in LDAP.
 
-
-\paragraph{Active Directory}
-
-Active Directory is just an LDAP-server with predefined attributes.  Sample
-config file is listed below:
-
+\item \term{ldap\_vcard\_map} example:
 \begin{verbatim}
-  {auth_method, ldap}.
-  {ldap_servers, ["office.org"]}.    % List of LDAP servers
-  {ldap_base, "DC=office,DC=org"}. % Search base of LDAP directory
-  {ldap_rootdn, "CN=Administrator,CN=Users,DC=office,DC=org"}. % LDAP manager
-  {ldap_password, "*******"}. % Password to LDAP manager
-  {ldap_uidattr, "sAMAccountName"}.
-  {ldap_filter, "(memberOf=*)"}.
-  
-  {mod_vcard_ldap,
-   [{ldap_vcard_map,
-     [{"NICKNAME", "%u", []},
-      {"GIVEN", "%s", ["givenName"]},
-      {"MIDDLE", "%s", ["initials"]},
-      {"FAMILY", "%s", ["sn"]},
-      {"FN", "%s", ["displayName"]},
-      {"EMAIL", "%s", ["mail"]},
-      {"ORGNAME", "%s", ["company"]},
-      {"ORGUNIT", "%s", ["department"]},
-      {"CTRY", "%s", ["c"]},
-      {"LOCALITY", "%s", ["l"]},
-      {"STREET", "%s", ["streetAddress"]},
-      {"REGION", "%s", ["st"]},
-      {"PCODE", "%s", ["postalCode"]},
-      {"TITLE", "%s", ["title"]},
-      {"URL", "%s", ["wWWHomePage"]},
-      {"DESC", "%s", ["description"]},
-      {"TEL", "%s", ["telephoneNumber"]}]},
-    {ldap_search_fields,
-     [{"User", "%u"},
-      {"Name", "givenName"},
-      {"Family Name", "sn"},
-      {"Email", "mail"},
-      {"Company", "company"},
-      {"Department", "department"},
-      {"Role", "title"},
-      {"Description", "description"},
-      {"Phone", "telephoneNumber"}]},
-    {ldap_search_reported,
-     [{"Full Name", "FN"},
-      {"Nickname", "NICKNAME"},
-      {"Email", "EMAIL"}]}
-   ]
-  }.
+  {ldap_vcard_map,
+   [{"NICKNAME", "%u", []},
+    {"FN", "%s", ["displayName"]},
+    {"CTRY", "Russia", []},
+    {"EMAIL", "%u@%d", []},
+    {"DESC", "%s\n%s", ["title", "description"]}
+   ]},
 \end{verbatim}
+\item \term{ldap\_search\_fields} example:
+\begin{verbatim}
+  {ldap_search_fields,
+   [{"User", "uid"},
+    {"Full Name", "displayName"},
+    {"Email", "mail"}
+   ]},
+\end{verbatim}
+\item \term{ldap\_search\_reported} example:
+\begin{verbatim}
+  {ldap_search_reported,
+   [{"Full Name", "FN"},
+    {"Email", "EMAIL"},
+    {"Birthday", "BDAY"},
+    {"Nickname", "NICKNAME"}
+   ]},
+\end{verbatim}
+\end{itemize}
 
-
-\subsection{\modversion{}}
+\subsection{\aname{modversion}{\modversion{}}}
 \label{sec:modversion}
 \ind{modules!\modversion{}}\ind{protocols!JEP-0092: Software Version}
 
@@ -2636,7 +2677,346 @@ Options:
 \end{description}
 
 
-\section{Internationalization and Localization}
+\section{\aname{initialadmin}{Creating an Initial Administrator}}
+\label{sec:initialadmin}
+
+Before the web interface can be entered to perform administration tasks, an
+account with administrator rights is needed on your \ejabberd{} deployment.
+
+Instructions to create an initial administrator account:
+\begin{enumerate}
+\item Register an account on your \ejabberd{} deployment. An account can be
+  created in two ways:
+  \begin{enumerate}
+  \item Using the tool \term{ejabberdctl}\ind{ejabberdctl} (see
+    section~\ref{sec:ejabberdctl}):
+    \begin{verbatim}
+% ejabberdctl node@host register admin example.org password
+\end{verbatim} 
+  \item Using In-Band Registration (see section~\ref{sec:modregister}): you can
+    use a \Jabber{} client to register an account.
+  \end{enumerate}
+\item Edit the configuration file to promote the account created in the previous
+  step to an account with administrator rights. Note that if you want to add
+  more administrators, a seperate acl entry is needed for each administrator.
+  \begin{verbatim}
+  {acl, admins, {user, "admin", "example.org"}}.
+  {access, configure, [{allow, admins}]}.
+\end{verbatim} 
+\item Restart \ejabberd{} to load the new configuration.
+\item Open the web interface (\verb|http://server:port/admin/|) in your
+  favourite browser. Make sure to enter the \emph{full} JID as username (in this
+  example: \jid{admin@example.org}. The reason that you also need to enter the
+  suffix, is because \ejabberd{}'s virtual hosting support.
+\end{enumerate}
+
+
+\section{\aname{onlineconfig}{Online Configuration and Monitoring}}
+\label{sec:onlineconfig}
+
+\subsection{\aname{webinterface}{Web Interface}}
+\label{sec:webinterface}
+\ind{web interface}
+
+To perform online configuration of \ejabberd{} you need to enable the
+\term{ejabberd\_http} listener with the option \term{web\_admin} (see
+section~\ref{sec:listened}). Then you can open 
+\verb|http://server:port/admin/| in your favourite web browser. You
+will be asked to enter the username (the \emph{full} \Jabber{} ID) and password
+of an \ejabberd{} user with administrator rights. After authentication
+you will see a page similar to figure~\ref{fig:webadmmain}.
+
+\begin{figure}[htbp]
+  \centering
+  \insimg{webadmmain.png}
+  \caption{Top page from the web interface}
+  \label{fig:webadmmain}
+\end{figure}
+Here you can edit access restrictions, manage users, create backups,
+manage the database, enable/disable ports listened for, view server
+statistics,\ldots
+
+Examples:
+\begin{itemize}
+\item You can serve the web interface on the same port as the
+  \ind{protocols!JEP-0025: HTTP Polling}HTTP Polling interface. In this example
+  you should point your web browser to \verb|http://example.org:5280/admin/| to
+  administer all virtual hosts or to
+  \verb|http://example.org:5280/admin/server/example.com/| to administer only
+  the virtual host \jid{example.com}. Before you get access to the web interface
+  you need to enter as username, the JID and password from a registered user
+  that is allowed to configure \ejabberd{}. In this example you can enter as
+  username `\jid{admin@example.net}' to administer all virtual hosts (first
+  URL). If you log in with `\jid{admin@example.com}' on \\
+  \verb|http://example.org:5280/admin/server/example.com/| you can only
+  administer the virtual host \jid{example.com}.
+  \begin{verbatim}
+  ...
+  {acl, admins, {user, "admin", "example.net"}}.
+  {host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
+  {access, configure, [{allow, admins}]}.
+  ...
+  {hosts, ["example.org"]}.
+  ...
+  {listen,
+   [...
+    {5280, ejabberd_http, [http_poll, web_admin]},
+    ...
+   ]
+  }.
+\end{verbatim}
+\item For security reasons, you can serve the web interface on a secured
+  connection, on a port differing from the HTTP Polling interface, and bind it
+  to the internal LAN IP. The web interface will be accessible by pointing your
+  web browser to \verb|https://192.168.1.1:5280/admin/|:
+  \begin{verbatim}
+  ...
+  {hosts, ["example.org"]}.
+  ...
+  {listen,
+   [...
+    {5270, ejabberd_http,    [http_poll]},
+    {5280, ejabberd_http,    [web_admin, {ip, {192, 168, 1, 1}},
+                              tls, {certfile, "/usr/local/etc/server.pem"}]},
+    ...
+   ]
+  }.
+\end{verbatim}
+\end{itemize}
+
+\subsection{\aname{ejabberdctl}{\term{ejabberdctl}}}
+\label{sec:ejabberdctl}
+%TODO: update when the ejabberdctl script is made more userfriendly
+
+It is possible to do some administration operations using the command
+line tool \term{ejabberdctl}. You can list all available options by
+running \term{ejabberdctl} without arguments:
+\begin{verbatim}
+% ejabberdctl
+Usage: ejabberdctl node command
+
+Available commands:
+  status                        get ejabberd status
+  stop                          stop ejabberd
+  restart                       restart ejabberd
+  reopen-log                    reopen log file
+  register user server password register a user
+  unregister user server        unregister a user
+  backup file                   store a database backup to file
+  restore file                  restore a database backup from file
+  install-fallback file         install a database fallback from file
+  dump file                     dump a database to a text file
+  load file                     restore a database from a text file
+  import-file file              import user data from jabberd 1.4 spool file
+  import-dir dir                import user data from jabberd 1.4 spool directory
+  registered-users              list all registered users
+  delete-expired-messages       delete expired offline messages from database
+
+Example:
+  ejabberdctl ejabberd@host restart
+\end{verbatim}
+
+Additional information:
+\begin{description}
+\titem{reopen-log } If you use a tool to rotate logs, you have to configure it
+  so that this command is executed after each rotation.
+\titem {backup, restore, install-fallback, dump, load} You can use these
+  commands to create and restore backups. 
+%%More information about backuping can
+%%  be found in section~\ref{sec:backup}.
+\titem{import-file, import-dir} \ind{migration from other software}
+  These options can be used to migrate from other \Jabber{}/XMPP servers. There
+  exist tutorials to \footahref{http://ejabberd.jabber.ru/migrate-to-ejabberd}{migrate from other software to ejabberd}.
+\titem{delete-expired-messages} This option can be used to delete old messages
+  in offline storage. This might be useful when the number of offline messages
+  is very high.
+\end{description}
+
+
+\section{\aname{firewall}{Firewall Settings}}
+\label{sec:firewall}
+\ind{firewall}\ind{ports}\ind{SASL}\ind{TLS}\ind{clustering!ports}
+
+You need to take the following TCP ports in mind when configuring your firewall:
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline Port& Description\\
+    \hline \hline 5222& SASL and unencrypted c2s connections.\\
+    \hline 5223& Obsolete SSL c2s connections.\\
+    \hline 5269& s2s connections.\\
+    \hline 4369& Only for clustering (see~\ref{sec:clustering}).\\
+    \hline port range& Only for clustring (see~\ref{sec:clustering}). This range
+    is configurable (see~\ref{sec:start}).\\
+    \hline
+  \end{tabular}
+\end{table}
+
+
+\section{\aname{srv}{SRV Records}}
+\label{sec:srv}
+\ind{SRV Records}\ind{clustering!SRV Records}
+
+\begin{itemize}
+\item General information:
+  \footahref{http://en.wikipedia.org/wiki/SRV\_record}{SRV record}
+\item Practical information:
+  \footahref{http://jabberd.jabberstudio.org/2/docs/section05.html\#5\_7}{Setting DNS SRV Records}
+\end{itemize}
+
+
+\section{\aname{clustering}{Clustering}}
+\label{sec:clustering}
+\ind{clustering}
+
+\subsection{\aname{howitworks}{How it Works}}
+\label{sec:howitworks}
+\ind{clustering!how it works}
+
+A \Jabber{} domain is served by one or more \ejabberd{} nodes. These nodes can
+be run on different machines that are connected via a network. They all
+must have the ability to connect to port 4369 of all another nodes, and must
+have the same magic cookie (see Erlang/OTP documentation, in other words the
+file \term{\~{}ejabberd/.erlang.cookie} must be the same on all nodes). This is
+needed because all nodes exchange information about connected users, s2s
+connections, registered services, etc\ldots
+
+Each \ejabberd{} node has the following modules:
+\begin{itemize}
+\item router,
+\item local router,
+\item session manager,
+\item s2s manager.
+\end{itemize}
+
+\subsubsection{\aname{router}{Router}}
+\label{sec:router}
+\ind{clustering!router}
+
+This module is the main router of \Jabber{} packets on each node. It
+routes them based on their destination's domains. It uses a global
+routing table. The domain of the packet's destination is searched in the
+routing table, and if it is found, the packet is routed to the
+appropriate process. If not, it is sent to the s2s manager.
+
+\subsubsection{\aname{localrouter}{Local Router}}
+\label{sec:localrouter}
+\ind{clustering!local router}
+
+This module routes packets which have a destination domain equal to
+one of this server's host names. If the destination JID has a non-empty user
+part, it is routed to the session manager, otherwise it is processed depending
+on its content.
+
+\subsubsection{\aname{sessionmanager}{Session Manager}}
+\label{sec:sessionmanager}
+\ind{clustering!session manager}
+
+This module routes packets to local users. It looks up to which user
+resource a packet must be sent via a presence table. Then the packet is
+either routed to the appropriate c2s process, or stored in offline
+storage, or bounced back.
+
+\subsubsection{\aname{s2smanager}{s2s Manager}}
+\label{sec:s2smanager}
+\ind{clustering!s2s manager}
+
+This module routes packets to other \Jabber{} servers. First, it
+checks if an opened s2s connection from the domain of the packet's
+source to the domain of the packet's destination exists. If that is the case,
+the s2s manager routes the packet to the process
+serving this connection, otherwise a new connection is opened.
+
+\subsection{\aname{cluster}{Clustering Setup}}
+\label{sec:cluster}
+\ind{clustering!setup}
+
+Suppose you already configured \ejabberd{} on one machine named (\term{first}),
+and you need to setup another one to make an \ejabberd{} cluster. Then do
+following steps:
+
+\begin{enumerate}
+\item Copy \verb|~ejabberd/.erlang.cookie| file from \term{first} to
+  \term{second}.
+
+  (alt) You can also add `\verb|-cookie content_of_.erlang.cookie|'
+  option to all `\shell{erl}' commands below.
+
+\item On \term{second} run the following command as the \ejabberd{} daemon user,
+  in the working directory of \ejabberd{}:
+
+\begin{verbatim}
+erl -sname ejabberd \
+    -mnesia extra_db_nodes "['ejabberd@first']" \
+    -s mnesia
+\end{verbatim}
+
+  This will start Mnesia serving the same database as \node{ejabberd@first}.
+  You can check this by running the command `\verb|mnesia:info().|'. You
+  should see a lot of remote tables and a line like the following:
+
+\begin{verbatim}
+running db nodes   = [ejabberd@first, ejabberd@second]
+\end{verbatim}
+
+
+\item Now run the following in the same `\shell{erl}' session:
+
+\begin{verbatim}
+mnesia:change_table_copy_type(schema, node(), disc_copies).
+\end{verbatim}
+
+  This will create local disc storage for the database.
+
+  (alt) Change storage type of the \term{scheme} table to `RAM and disc
+  copy' on the second node via the web interface.
+
+
+\item Now you can add replicas of various tables to this node with
+  `\verb|mnesia:add_table_copy|' or
+  `\verb|mnesia:change_table_copy_type|' as above (just replace
+  `\verb|schema|' with another table name and `\verb|disc_copies|'
+  can be replaced with `\verb|ram_copies|' or
+  `\verb|disc_only_copies|').
+
+  Which tables to replicate is very dependant on your needs, you can get
+  some hints from the command `\verb|mnesia:info().|', by looking at the
+  size of tables and the default storage type for each table on 'first'.
+
+  Replicating a table makes lookups in this table faster on this node.
+  Writing, on the other hand, will be slower. And of course if machine with one
+  of the replicas is down, other replicas will be used.
+
+  Also \footahref{http://www.erlang.se/doc/doc-5.4.9/lib/mnesia-4.2.2/doc/html/Mnesia\_chap5.html\#5.3}
+  {section 5.3 (Table Fragmentation) of Mnesia User's Guide} can be helpful.
+  % The above URL needs update every Erlang release!
+
+  (alt) Same as in previous item, but for other tables.
+
+
+\item Run `\verb|init:stop().|' or just `\verb|q().|' to exit from
+  the Erlang shell. This probably can take some time if Mnesia has not yet
+  transfered and processed all data it needed from \term{first}.
+
+
+\item Now run \ejabberd{} on \term{second} with almost the same config as
+  on \term{first} (you probably do not need to duplicate `\verb|acl|'
+  and `\verb|access|' options --- they will be taken from
+  \term{first}, and \verb|mod_muc| and \verb|mod_irc| should be
+  enabled only on one machine in the cluster).
+\end{enumerate}
+
+You can repeat these steps for other machines supposed to serve this
+domain.
+
+% TODO
+% See also the section about ejabberdctl!!!!
+%\section{Backup and Restore}
+%\label{sec:backup}
+%\ind{backup}
+
+\appendix{}
+\section{\aname{i18nl10n}{Internationalization and Localization}}
 \label{sec:i18nl10n}
 \ind{xml:lang}\ind{internationalization}\ind{localization}\ind{i18n}\ind{l10n}
 
@@ -2665,12 +3045,17 @@ figure~\ref{fig:webadmmainru} with figure~\ref{fig:webadmmain})
   \centering
   \insimg{webadmmainru.png}
   \caption{Top page from the web interface with HTTP header
-    ``Accept-Language: ru''}
+    `Accept-Language: ru'}
   \label{fig:webadmmainru}
 \end{figure}
 
+
+%\section{\aname{ultracomplexexample}{Ultra Complex Example}}
+%\label{sec:ultracomplexexample}
+%TODO: a very big example covering the whole guide, with a good explanation before the example: different authenticaton mechanisms, transports, ACLs, multple virtual hosts, virtual host specific settings and general settings, modules,...
+
 \newpage
-\section{Release Notes}
+\section{\aname{releasenotes}{Release Notes}}
 \label{sec:releasenotes}
 \ind{release notes}
 
@@ -2692,12 +3077,14 @@ figure~\ref{fig:webadmmainru} with figure~\ref{fig:webadmmain})
 \subsection{ejabberd 1.1.1}
 \verbatiminput{release_notes_1.1.1.txt}
 
-\section{Acknowledgements}
+
+\section{\aname{acknowledgements}{Acknowledgements}}
 \label{sec:acknowledgements}
-\ind{acknowledgements}
 Thanks to all people who contributed to this guide:
 \begin{itemize}
 \item Alexey Shchepin (\ahrefurl{xmpp:aleksey@jabber.ru})
+\item Badlop (\ahrefurl{xmpp:badlop@jabberes.org})
+\item Evgeniy Khramtsov (\ahrefurl{xmpp:xram@jabber.ru})
 \item Florian Zumbiehl (\ahrefurl{xmpp:florz@florz.de})
 \item Michael Grigutsch (\ahrefurl{xmpp:migri@jabber.i-pobox.net})
 \item Mickael Remond (\ahrefurl{xmpp:mremond@erlang-projects.org})
@@ -2706,8 +3093,29 @@ Thanks to all people who contributed to this guide:
 \item Vsevolod Pelipas (\ahrefurl{xmpp:vsevoload@jabber.ru})
 \end{itemize}
 
-% TODO
-%\section{Glossary}
+
+\section{\aname{copyright}{Copyright Information}}
+\label{sec:copyright}
+
+Ejabberd Installation and Operation Guide.\\
+Copyright \copyright{} January 23, 2003 --- \today{} Alexey Shchepin
+
+This document is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This document is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this document; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+%TODO: a glossary describing common terms
+%\section{\aname{glossary}{Glossary}}
 %\label{sec:glossary}
 %\ind{glossary}
 
@@ -2732,12 +3140,10 @@ Thanks to all people who contributed to this guide:
 %\titem{Regular Expression}
 %\titem{ACL} (Access Control List) <Wikipedia>
 %\titem{IPv6} <Wikipedia>
-%\titem{XDB} ???
+%\titem{Jabber}
 %\titem{LDAP} (Lightweight Directory Access Protocol) <Wikipedia>
 %\titem{ODBC} (Open Database Connectivity) <Wikipedia>
 %\titem{Virtual Hosting} <Wikipedia>
-%\titem{}
-%\titem{}
 
 %\end{description}
 

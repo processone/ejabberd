@@ -9,7 +9,7 @@
         Feature\ Sheet,pdfauthor=Sander\
         Devrieze,pdfsubject=ejabberd,pdfkeywords=ejabberd]{hyperref}
 \usepackage{verbatim}
-\usepackage{xcolor}
+\usepackage{color}
 
 %% Index
 % Remove the index anchors from the HTML version to save size and bandwith.
@@ -49,10 +49,13 @@
 % Options
 \newcommand{\marking}[1]{\textbf{\begin{large}\textcolor{ejblue}{#1}\end{large}}} % Marking enabled
 \newcommand{\quoting}[2][yozhik]{\begin{quotation}\textcolor{#1}{\textit{#2}}\end{quotation}} % Quotes enabled
-\newcommand{\new}{\begin{latexonly}\marginpar{\textcolor{red}{\textsc{new}}}\end{latexonly}} % Highlight new features
-\newcommand{\improved}{\begin{latexonly}\marginpar{\textcolor{orange}{\textsc{improved}}}\end{latexonly}} % Highlight improved features
-\newcommand{\moreinfo}[1]{} % Hide details
+\newcommand{\new}{\marginpar{\textcolor{red}{\textsc{new}}}} % Highlight new features
+\newcommand{\improved}{\marginpar{\textcolor{orange}{\textsc{improved}}}} % Highlight improved features
 \setcounter{secnumdepth}{-1} % Disable section numbering
+
+%% To by-pass errors in the HTML version.
+\newstyle{SPAN}{width:20\%; float:right; text-align:left; margin-left:auto;}
+\definecolor{orange}       {cmyk}{0.000,0.333,1.000,0.000}
 
 %% Footnotes
 \begin{latexonly}
@@ -67,7 +70,7 @@
 %% Fancy header
 \fancyhf{}
 \pagestyle{fancy}
-\rhead{\textcolor{ejblue}{The expandable Jabber daemon.}}
+\rhead{\textcolor{ejblue}{The Expandable Jabber Daemon.}}
 \renewcommand{\headrule}{{\color{ejblue}%
 \hrule width\headwidth height\headrulewidth \vskip-\headrulewidth}}
 \lhead{\setlength{\unitlength}{-6mm}
@@ -85,7 +88,7 @@
 
 \begin{document}
 
-\label{sec:titlepage}
+\label{titlepage}
 \begin{titlepage}
   \maketitle{}
 
@@ -107,9 +110,8 @@
 % the same identifier".
 \begin{latexonly}
 \setcounter{page}{2}
-\end{latexonly}
-
 \pagecolor{ejgreenwhite}
+\end{latexonly}
 
 % Input introduction.tex
 \input{introduction}

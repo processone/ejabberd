@@ -1,3 +1,12 @@
+2006-09-22  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Large improvements for ejabberd 1.1.2 (thanks to
+	Sander Devrieze)
+	* doc/version.tex: Likewise.
+	* doc/features.tex: Likewise.
+	* doc/Makefile: Likewise.
+	* doc/dev.tex: Likewise.
+	
 2006-09-14  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: Minor fix on index generation.
