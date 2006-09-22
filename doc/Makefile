@@ -27,16 +27,13 @@ clean:
 	rm -f *.toc
 
 guide.html:	guide.tex
-		hevea guide.tex
-		hevea guide.tex
-
+		hevea -fix -noiso -pedantic guide.tex
+		
 dev.html:	dev.tex
-		hevea dev.tex
-		hevea dev.tex
+		hevea -fix -noiso -pedantic dev.tex
 
 features.html:	features.tex
-		hevea features.tex
-		hevea features.tex
+		hevea -fix -noiso -pedantic features.tex
 
 guide.pdf:	guide.tex
 		pdflatex guide.tex
