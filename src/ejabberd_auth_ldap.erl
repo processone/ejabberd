@@ -44,6 +44,7 @@
 
 -record(state, {host,
 		eldap_id,
+		bind_eldap_id,
 		servers,
 		port,
 		dn,
@@ -97,6 +98,11 @@ terminate(_Reason, State) ->
 init(Host) ->
     State = parse_options(Host),
     eldap:start_link(State#state.eldap_id,
+		     State#state.servers,
+		     State#state.port,
+		     State#state.dn,
+		     State#state.password),
+    eldap:start_link(State#state.bind_eldap_id,
 		     State#state.servers,
 		     State#state.port,
 		     State#state.dn,
@@ -174,7 +180,7 @@ handle_call({check_pass, User, Password}, _From, State) ->
 		false ->
 		    false;
 		DN ->
-		    case eldap:bind(State#state.eldap_id, DN, Password) of
+		    case eldap:bind(State#state.bind_eldap_id, DN, Password) of
 			ok -> true;
 			_ -> false
 		    end
@@ -327,6 +333,7 @@ usort_attrs(_) ->
 
 parse_options(Host) ->
     Eldap_ID = atom_to_list(gen_mod:get_module_proc(Host, ?MODULE)),
+    Bind_Eldap_ID = atom_to_list(gen_mod:get_module_proc(Host, bind_ejabberd_auth_ldap)),
     LDAPServers = ejabberd_config:get_local_option({ldap_servers, Host}),
     LDAPPort = case ejabberd_config:get_local_option({ldap_port, Host}) of
 		   undefined -> 389;
@@ -363,6 +370,7 @@ parse_options(Host) ->
 	end,
     #state{host = Host,
 	   eldap_id = Eldap_ID,
+	   bind_eldap_id = Bind_Eldap_ID,
 	   servers = LDAPServers,
 	   port = LDAPPort,
 	   dn = RootDN,
