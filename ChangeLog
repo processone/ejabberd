@@ -1,5 +1,7 @@
 2006-09-22  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/msgs/cs.msg: Added Czech translation (thanks to Milos Svasek).
+	
 	* src/mod_muc/mod_muc.erl: Component name is now more user friendly
 	(thanks to Badlop).
 	* src/mod_irc/mod_irc.erl: Likewise.
