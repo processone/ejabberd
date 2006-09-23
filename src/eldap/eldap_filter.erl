@@ -202,8 +202,12 @@ do_sub(S, []) ->
 do_sub([], _) ->
     [];
 
-do_sub(S, [H | T]) ->
-    Result = do_sub(S, H, 1),
+do_sub(S, [{RegExp, New} | T]) ->
+    Result = do_sub(S, {RegExp, replace_amps(New)}, 1),
+    do_sub(Result, T);
+
+do_sub(S, [{RegExp, New, Times} | T]) ->
+    Result = do_sub(S, {RegExp, replace_amps(New), Times}, 1),
     do_sub(Result, T).
 
 do_sub(S, {RegExp, New}, Iter) ->
@@ -245,6 +249,18 @@ remove_extra_asterisks(String) ->
 		 end,
 		 {"", ""}, String),
     Res.
+
+replace_amps(String) ->
+	lists:foldl(
+		fun(X, Acc) ->
+			if
+				X == $& ->
+					Acc ++ "\\&";
+				true ->
+					Acc ++ [X]
+			end
+		end,
+	"", String).
 
 split_attribute(String) ->
     split_attribute(String, "", $0).

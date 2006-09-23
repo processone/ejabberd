@@ -670,14 +670,9 @@ map_vcard_attr(VCardName, Attributes, Pattern, UD) ->
 	_ -> ""
     end.
 
-process_pattern(Str, {User, Domain}, Attrs) ->
-    Res = lists:foldl(
-	    fun(X, Acc) ->
-		    {ok, NewStr, _} = regexp:sub(Acc, "%s", X),
-		    NewStr
-	    end,
-	    Str, Attrs),
-    eldap_filter:do_sub(Res, [{"%u", User},{"%d", Domain}]).
+process_pattern(Str, {User, Domain}, AttrValues) ->
+	eldap_filter:do_sub(Str,
+		[{"%s", V, 1} || V <- AttrValues] ++ [{"%u", User},{"%d", Domain}]).
 
 get_ldap_attr(LDAPAttr, Attributes) ->
     Res = lists:filter(

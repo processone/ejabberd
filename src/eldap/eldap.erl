@@ -808,7 +808,7 @@ polish([], Res, Ref) ->
 %%-----------------------------------------------------------------------
 connect_bind(S) ->
     Host = next_host(S#eldap.host, S#eldap.hosts),
-    TcpOpts = [{packet, asn1}, {active, true}, binary],
+    TcpOpts = [{packet, asn1}, {active, true}, {keepalive, true}, binary],
     case gen_tcp:connect(Host, S#eldap.port, TcpOpts) of
 	{ok, Socket} ->
 	    case bind_request(Socket, S) of
