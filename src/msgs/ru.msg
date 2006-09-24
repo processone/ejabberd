@@ -159,7 +159,7 @@
  "Вы должны заполнить поле \"Псевдоним\" в форме"}.
 {"Specified nickname is already registered", "Указанный псевдоним уже зарегистрирован"}.
 
-% /home/sergei/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
+% mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Конфигурация комнаты изменилась"}.
 {"joins the room", "вошёл(а) в комнату"}.
 {"leaves the room", "вышел(а) из комнаты"}.
@@ -211,7 +211,9 @@
  "Разрешить пользователям посылать приглашения"}.
 {"Make room password protected", "Сделать комнату защищённой паролем"}.
 {"Password", "Пароль"}.
-{"Make room semianonymous", "Сделать комнату полуанонимной"}.
+{"Make real JIDs discovered for", "Сделать реальные JID участников видимыми"}.
+{"moderators only", "только модераторам"}.
+{"anyone", "всем участникам"}.
 {"Enable logging", "Включить журналирование"}.
 {"Only moderators and participants are allowed to change subject in this room",
  "Только модераторы и участники могут изменять тему в этой комнате"}.

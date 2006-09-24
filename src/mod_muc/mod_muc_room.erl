@@ -2137,7 +2137,7 @@ get_config(Lang, StateData, From) ->
 			end),
 	 {xmlelement, "field",
 	  [{"type", "list-single"},
-	   {"label", translate:translate(Lang, "Who may discover real JIDs?")},
+	   {"label", translate:translate(Lang, "Make real JIDs discovered for")},
 	   {"var", "muc#roomconfig_whois"}],
 	  [{xmlelement, "value", [], [{xmlcdata,
 				       if Config#config.anonymous ->
@@ -2145,9 +2145,9 @@ get_config(Lang, StateData, From) ->
 					  true ->
 					       "anyone"
 				       end}]},
-	   {xmlelement, "option", [{"label", "Moderators only"}],
+	   {xmlelement, "option", [{"label", translate:translate(Lang, "moderators only")}],
 	    [{xmlelement, "value", [], [{xmlcdata, "moderators"}]}]},
-	   {xmlelement, "option", [{"label", "Anyone"}],
+	   {xmlelement, "option", [{"label", translate:translate(Lang, "anyone")}],
 	    [{xmlelement, "value", [], [{xmlcdata, "anyone"}]}]}]},
 	 ?BOOLXFIELD("Make room members-only",
 		     "muc#roomconfig_membersonly",
