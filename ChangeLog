@@ -1,5 +1,7 @@
 2006-09-24  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/msgs/es.msg: Updated Spanish translation (thanks to Badlop).
+
 	* src/mod_muc/mod_muc_room.erl: Strings update (thanks to Serguei
 	 Golovan).
 	* src/msgs/ru.msg: Updated Russian translation (thanks to Serguei
