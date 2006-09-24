@@ -135,7 +135,7 @@
 {"Make participants list public", "La lista de participantes es pública"}.
 {"Make room persistent", "Sala permanente"}.
 {"Make room moderated", "Sala moderada"}.
-{"Default users as participants", "Los usuarios on participantes por defecto"}.
+{"Default users as participants", "Los usuarios son participantes por defecto"}.
 {"Make room members-only", "Sala sólo para miembros"}.
 {"Allow users to send invites", "Permitir a los usuarios enviar invitaciones"}.
 {"Make room password protected", "Proteger la sala con contraseña"}.
@@ -167,9 +167,11 @@
 {"Invalid role: ~s", "Rol no válido: ~s"}.
 {"Owner privileges required", "Se requieren privilegios de propietario de la sala"}.
 {"private, ", "privado"}.
-{"Make room semianonymous", "Hacer la sala semianónima"}.
 {"Description", "Descripción"}.
 {"Number of occupants", "Número de ocupantes"}.
+{"Make real JIDs discovered for", "Los JID reales pueden verlos"}.
+{"moderators only", "solo moderadores"}.
+{"anyone", "cualquiera"}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Configuración de la sala modificada"}.
@@ -320,7 +322,6 @@
 {"Replaced by new connection", "Reemplazado por una nueva conexión"}.
 
 % mod_vcard_ldap.erl
-{"Given Name", "Nombre dado"}.
 {"Fill in fields to search for any matching Jabber User", "Rellena campos para buscar usuarios Jabber que concuerden"}.
 
 % mod_adhoc.erl
