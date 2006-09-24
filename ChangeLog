@@ -1,5 +1,13 @@
 2006-09-24  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Strings update (thanks to Serguei
+	 Golovan).
+	* src/msgs/ru.msg: Updated Russian translation (thanks to Serguei
+	 Golovan).
+	* src/msgs/uk.msg: Updated Ukrainian translation (thanks to Serguei
+	 Golovan).
+	* src/msgs/fr.msg: Update French translation.
+
 	* src/doc/guide.html: Minor W3C compliance fix in an Hevea
 	generated URL.
 	

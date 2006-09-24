@@ -210,7 +210,9 @@
  "Дозволити користувачам надсилати запрошення"}.
 {"Make room password protected", "Зробити кімнату захищеною паролем"}.
 {"Password", "Пароль"}.
-{"Make room semianonymous", "Зробити кімнату напіванонімною"}.
+{"Make real JIDs discovered for", "Зробити реальні JID учасників видимими"}.
+{"moderators only", "тільки модераторам"}.
+{"anyone", "всім учасникам"}.
 {"Enable logging", "Включити журнал роботи"}.
 {"Only moderators and participants are allowed to change subject in this room",
  "Тільки модератори та учасники можуть змінювати тему в цій кімнаті"}.

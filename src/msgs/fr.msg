@@ -222,7 +222,9 @@
 {"Enable logging", "Activer l'archivage"}.
 {"Description", "Description"}.
 {"Number of occupants", "Nombre d'occupants"}.
-{"Who may discover real JIDs?", "Qui peut découvrir les vrais JIDs ?"}.
+{"Make real JIDs discovered for", "Rendre le JID réel visible pour"}.
+{"moderators only", "modérateurs seulement"}.
+{"anyone", "tout le monde"}.
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module IRC ejabberd\nCopyright (c) 2003-2006 Alexey Shchepin"}.
