@@ -1,5 +1,8 @@
 2006-09-24  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/doc/guide.html: Minor W3C compliance fix in an Hevea
+	generated URL.
+	
 	* src/doc/features.html: Added to be consistent (guide.html is in the
 	repository to make Latex optional, but still allow access to the doc).
 
