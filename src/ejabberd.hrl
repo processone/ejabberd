@@ -6,7 +6,7 @@
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
--define(VERSION, "1.1.1").
+-define(VERSION, "1.1.2").
 
 %-define(ejabberd_debug, true).
 %-define(DBGFSM, true).
