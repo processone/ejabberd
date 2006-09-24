@@ -1,3 +1,12 @@
+2006-09-24  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/doc/features.html: Added to be consistent (guide.html is in the
+	repository to make Latex optional, but still allow access to the doc).
+
+2006-09-23  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd.hrl: Updated to version 1.1.2
+
 2006-09-23  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/eldap/eldap.erl: Enable the keepalive socket option (thanks
