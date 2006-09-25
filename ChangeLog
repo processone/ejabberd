@@ -1,5 +1,8 @@
 2006-09-25  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/msgs/cs.msg: Updated Czech translation and removed unused
+	strings.
+
 	* doc/introduction.tex: Minor doc updates for release 1.1.2.
 
 2006-09-25  Alexey Shchepin  <alexey@sevcom.net>

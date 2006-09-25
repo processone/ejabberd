@@ -46,7 +46,6 @@
 {"Configuration", "Konfigurace"}.
 {"Online Users", "Online uživatelé"}.
 {"All Users", "Všichni uživatelé"}.
-{"Outgoing S2S connections", "Odchozí spojení S2S"}.
 {"To ~s", "Pre ~s"}.
 {"From ~s", "Od  ~s"}.
 {"Running Nodes", "Bežící uzly"}.
@@ -55,12 +54,10 @@
 {"Access Control Lists", "Seznamy přístupových práv (ACL)"}.
 {"Access Rules", "Pravidla přístupů"}.
 {"Remove Users", "Odstranit uživatele"}.
-{"DB", "DB"}.
 {"Modules", "Moduly"}.
 {"Start Modules", "Spustit moduly"}.
 {"Stop Modules", "Zastavit moduly"}.
 {"Backup Management", "Správa zálohování"}.
-{"Import users from jabberd1.4 spool files", "Importovat uživatele z jabberd1.4 spool souborů"}.
 {"Backup", "Zálohovat"}.
 {"Restore", "Obnovit"}.
 {"Dump to Text File", "Uložit do textového souboru"}.
@@ -77,7 +74,6 @@
 {"Search users in ", "Hledat uživatele v "}.
 {"Fill in fields to search for any matching Jabber User",
  "Vyplňte políčka pro vyhledávání Jabber uživatele"}.
-{"Results of search in ", "Výsledky vyhledávání v "}.
 
 {"User",              "Uživatel: "}.
 {"Full Name", 	      "Celé jméno: "}.
@@ -88,7 +84,6 @@
 {"Birthday", 	      "Datum narození: "}.
 {"Country", 	      "Země: "}.
 {"City", 	      "Město: "}.
-{"email", 	      "E-mail: "}.
 {"Organization Name", "Název firmy: "}.
 {"Organization Unit", "Oddělení: "}.
 
@@ -101,7 +96,6 @@
  "Pouze správci služby mají povolené odesílání servisních zpráv"}.
 {"Conference room does not exist", "Konferenční místnost neexistuje"}.
 {"Access denied by service policy", "Přístup byl zamítnutý nastavením služby"}.
-{"You must fill in field \"nick\" in the form", "Musíte vyplnit políčko \"prezdívka\"  ve formuláři"}.
 {"Specified nickname is already registered", "Zadaná prezdívka je již registrována"}.
 
 % mod_muc/mod_muc_room.erl
@@ -110,22 +104,7 @@
  "Ke konfiguraci místnosti potřebujete klienta podporujícího z x:data"}.
 {"Configuration for ", "Konfigurace pre "}.
 {"Room title", "Název místnosti"}.
-{"Allow users to change subject?", "Povolit uživatelům menit téma?"}.
-{"Allow users to query other users?",
- "Povolit uživatelům odesílat požadavky (query) ostatním uživatelům?"}.
-{"Allow users to send private messages?",
- "Povolit uživatelům odesíelat soukromé zprávy?"}.
-{"Make room public searchable?", "Nastavit místnost jako veřejně prohledávatelnou?"}.
-{"Make participants list public?", "Nastavit seznam účastníků jako veřejný?"}.
-{"Make room persistent?", "Nastavit místnost jako trvalou (persistent)?"}.
-{"Make room moderated?", "Nastavit místnost jako moderovanou?"}.
-{"Default users as members?", "Uživatelé jsou implicitně členy?"}.
-{"Make room members only?", "Nastavit místnost jen pro členy?"}.
-{"Allow users to send invites?", "Povolit uživatelům odesíelat pozvánky?"}.
-{"Make room password protected?", "Chránit místnost heslem?"}.
 {"Password", "Heslo"}.
-{"Make room anonymous?", "Nastavit místnost jako anonymní?"}.
-{"Enable logging?", "Zapnout ukládání historie?"}.
 {"Only moderators and participants are allowed to change subject in this room",
  "Jen moderátoři a účastníci mají povoleno měnit téma této místnosti"}.
 {"Only moderators are allowed to change subject in this room",
@@ -160,6 +139,9 @@
 {"Invalid role: ~s", "Neplatná role: ~s"}.
 {"Owner privileges required", "Jsou vyžadována práva vlastníka"}.
 {"private, ", "soukromá, "}.
+{"Make real JIDs discovered for", "Zjisti skutečné JIDy pro"}.
+{"moderators only", "pouze pro moderátory"}.
+{"anyone", "každý"}.
 
 % mod_irc/mod_irc.erl
 {"You need an x:data capable client to configure mod_irc settings",
@@ -173,91 +155,57 @@
 {"Encodings", "Kódování"}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd administration", "Administrace Ejabberd"}.
 {"Users", "Uživatelé"}.
 {"Nodes", "Uzly"}.
 {"Statistics", "Statistiky"}.
-{"(raw)", "(zdroj)"}.
-{"submitted", "odeslané"}.
-{"bad format", "nesprávný formát"}.
-{"raw", "zdroj"}.
-{"ejabberd access control lists configuration", "Konfigurace seznamu přístupových práv (ACL) Ejabberd"}.
+{"Submitted", "Odeslané"}.
+{"CPU Time:", "Čas procesoru"}.
 {"Delete Selected", "Smazat vybrané"}.
 {"Submit", "Odeslat"}.
-{"ejabberd access rules configuration", "Konfigurace pravidel přístupů Ejabberd"}.
 {"~s access rule configuration", "~s konfigurace pravidla přístupu"}.
-{"ejabberd users", "Uživatelé Ejabberd"}.
-{"ejabberd stats", "Statistiky Ejabberd"}.
 {"Node not found", "Uzel nenalezen"}.
 {"Add New", "Přidat nový"}.
-{"Registered users", "Registrovaní uživatelé"}.
-{"Online users", "Online uživatelé"}.
-{"Outgoing S2S servers", "Servery S2S pro odchozí komunikaci"}.
 {"Change Password", "Změnit heslo"}.
 {"Connected Resources:", "Připojené zdroje:"}.
 {"Password:", "Heslo:"}.
 {"None", "Nic"}.
 {"Node ", "Uzel "}.
-{"DB Management", "Správa databáze"}.
-{"Listened Ports Management", "Správa otevřených portů"}.
 {"Restart", "Restart"}.
 {"Stop", "Stop"}.
-{"RPC call error", "Chyba RPC volání"}.
-{"DB Tables at ", "Databázové tabulky na "}.
 {"Name", "Jméno"}.
 {"Storage Type", "Typ úložiště"}.
 {"Size", "Velikost"}.
 {"Memory", "Paměť"}.
-{"Backup Management at ", "Správa záloh na "}.
-{"Store a backup in a file", "Uložit zálohu do souboru "}.
 {"OK", "OK"}.
-{"Restore a backup from a file", "Obnovit zálohu ze souboru"}.
-{"Install a database fallback from a file", "Instalovat nouzovou (fallback) databázi ze souboru"}.
-{"Dump a database in a text file", "Uložit databázi do textového souboru"}.
-{"Restore a database from a text file", "Obnovit databázi z textového souboru"}.
 {"Listened Ports at ", "Otevřené porty na "}.
-{"~p statistics", "~p statistiky"}.
-{"Uptime", "Čas běhu"}.
-{"CPU Time", "Čas procesoru"}.
-{"Transactions commited", "Transakce potvrzena"}.
-{"Transactions aborted", "Transakce zrušena"}.
-{"Transactions restarted", "Transakce restartována"}.
-{"Transactions logged", "Transakce zaznamenána"}.
 {"Port", "Port"}.
 {"Module", "Modul"}.
 {"Options", "Nastavení"}.
 {"Update", "Aktualizovat"}.
 {"Delete", "Smazat"}.
 {"Add User", "Přidat uživatele"}.
-{"Offline messages", "Offline zprávy"}.
 {"Last Activity", "Poslední aktivita"}.
 {"Never", "Nikdy"}.
-{"~s offline messages queue", "~s offline zpráv(y)"}.
 {"Time", "Čas"}.
 {"From", "Od"}.
 {"To", "Pro"}.
 {"Packet", "Paket"}.
-{"Offline messages:", "Offline zprávy:"}.
 {"Roster", "Seznam kontaktů"}.
 {"Nickname", "Prezdívka"}.
 {"Subscription", "Přihlášení"}.
 {"Pending", "Čekající"}.
 {"Groups", "Skupiny"}.
 {"Remove", "Odstranit"}.
-{"Add JID", "Přidat JID"}.
 {"User ", "Uživatel "}.
 {"Roster of ", "Seznam kontaktů "}.
 {"Shared Roster", "Sdílený seznam kontaktů"}.
 {"Online", "Online"}.
 {"Validate", "Ověřit"}.
-{"Not found", "Nenalezeno"}.
-{"Shared roster groups", "Skupiny pre sdíelený seznam kontaktů"}.
 {"Name:", "Jméno:"}.
 {"Description:", "Popis:"}.
 {"Members:", "Členové:"}.
 {"Displayed Groups:", "Zobrazené skupiny:"}.
 {"Group ", "Skupina "}.
-{"Users last activity", "Poslední aktivita uživatele"}.
 {"Period: ", "Čas:"}.
 {"Last month", "Poslední měsíc"}.
 {"Last year", "Poslední rok"}.
@@ -265,35 +213,21 @@
 {"Show Ordinary Table", "Zobrazit bežnou tabulku"}.
 {"Show Integral Table", "Zobrazit kompletní tabulku"}.
 {"Start", "Start"}.
-{"Modules Management", "Správa modulů"}.
 {"Modules at ", "Moduly na "}.
-{"No data", "Žádná data"}.
 {"Virtual Hosts", "Virtuální servery"}.
 {"ejabberd virtual hosts", "Ejabberd virtuální servery"}.
 {"Host", "Server"}.
 {"ejabberd Web Interface", "Ejabberd Web rozhraní"}.
 
 % mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", 
  "Pro vyhledání Jabber uživatele vyplňte formulář (přidejte znak * na konec, pro vyhledání podřetězce)"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd vCard modul\nCopyright (c) 2003-2005 Alexey Shchepin"}.
-{"JID", "JID"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Je vyžadováno STARTTLS."}.
 {"Replaced by new connection", "Nahrazeno novým spojením"}.
 
-% mod_configure.erl
-{"DB Tables Configuration at ", "Databázové tabulky s konfigurácí na "}.
-
-% mod_vcard_ldap.erl
-{"Given Name", "Křestní jméno"}.
-
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", 
- "Ejabberd pub/sub modul\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {[], " "}.
 {"Node Creator", "Majitel uzlu"}.
 {"Deliver payloads with event notifications", "Doručovat náklad s upozorněním na událost"}.
@@ -310,27 +244,12 @@
 {"Only deliver notifications to available users", "Doručovat upozornení jen aktuálně přihlášeným uživatelům"}.
 {"Specify the current subscription approver", "Zadat současného schvalovatele přihlášení "}.
 
-% web/ejabberd_web_admin.erl
-{"ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One", 
- "Ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One"}.
-{"(raw)", "(zdroj)"}.
-{"raw", "zdroj"}.
-{"Authenticated users", "Ověření uživatelé"}.
-
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", 
- "Ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", 
  "Pokud chcete zadat jiné kódování pro IRC servery, vyplňte seznam s hodnotami ve formátě '{\"irc server\",\"encoding\"}'. Předvolené kódování pro tuto službu je \"~s\"."}.
 
 % mod_muc/mod_muc.erl
 {"Room creation is denied by service policy", "Vytváranie miestnosti nie je povolené"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2005 Alexey Shchepin"}.
-
-% Local Variables:
-% mode: erlang
-% End:
-
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_vcard_odbc.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", 
@@ -378,7 +297,6 @@
 {"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", 
  "Ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
 {"(Raw)", "(Zdroj)"}.
-{"Submitted", "Odeslané"}.
 {"Bad format", "Nesprávný formát"}.
 {"Raw", "Zdroj"}.
 {"Users Last Activity", "Poslední aktivita uživatele"}.
@@ -407,7 +325,6 @@
 {"Restore plain text backup immediately:", "Okamžitě obnovit zálohu z textového souboru:"}.
 {"Statistics of ~p", "Statistiky ~p"}.
 {"Uptime:", "Čas běhu"}.
-{"CPU Time:", "Čas procesoru"}.
 {"Transactions Commited:", "Transakce potvrzena"}.
 {"Transactions Aborted:", "Transakce zrušena"}.
 {"Transactions Restarted:", "Transakce restartována"}.
@@ -464,7 +381,6 @@
 {"Make room public searchable", "Nastavit místnost jako veřejně prohldávatelnou"}.
 {"Make participants list public", "Nastavit seznam účastníků jako veřejný"}.
 {"Make room password protected", "Chránit místnost heslem"}.
-{"Make room semianonymous", "Nastavit místnost jako částečně anonymní"}.
 {"Make room members-only", "Nastavit místnost jen pro členy"}.
 {"Make room moderated", "Nastavit místnost jako moderovanou"}.
 {"Default users as participants", "Uživatelé jsou implicitně členy"}.
@@ -475,3 +391,7 @@
 {"Enable logging", "Zapnout ukládání historie"}.
 {"Description", "Popis"}.
 {"Number of occupants", "Počet účastníků"}.
+
+% Local Variables:
+% mode: erlang
+% End:
