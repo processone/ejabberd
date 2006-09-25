@@ -19,7 +19,9 @@
 	 get_key/1,
 	 try_register/1,
 	 remove_connection/1,
-	 dirty_get_connections/0]).
+	 dirty_get_connections/0,
+	 ctl_process/2
+	]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -27,6 +29,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("ejabberd_ctl.hrl").
 
 -record(s2s, {fromto, pid, key}).
 -record(state, {}).
@@ -112,6 +115,10 @@ init([]) ->
 			      {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
+    ejabberd_ctl:register_commands(
+      [{"incoming-s2s-number", "print a number of incoming s2s connections"},
+       {"outgoing-s2s-number", "print a number of outgoing s2s connections"}],
+      ?MODULE, ctl_process),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -239,6 +246,17 @@ find_connection(From, To) ->
 
 send_element(Pid, El) ->
     Pid ! {send_element, El}.
+
+ctl_process(_Val, ["incoming-s2s-number"]) ->
+    N = length(supervisor:which_children(ejabberd_s2s_in_sup)),
+    io:format("~p~n", [N]),
+    {stop, ?STATUS_SUCCESS};
+ctl_process(_Val, ["outgoing-s2s-number"]) ->
+    N = length(supervisor:which_children(ejabberd_s2s_out_sup)),
+    io:format("~p~n", [N]),
+    {stop, ?STATUS_SUCCESS};
+ctl_process(Val, _Args) ->
+    Val.
 
 update_tables() ->
     case catch mnesia:table_info(s2s, attributes) of

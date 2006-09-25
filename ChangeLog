@@ -7,6 +7,9 @@
 
 2006-09-25  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_s2s.erl: Added incoming-s2s-number and
+	outgoing-s2s-number ejabberdctl commands
+
 	* src/ejabberd_socket.erl: Support for non-xml sockets
 	* src/ejabberd_c2s.erl: Likewise
 	* src/ejabberd_s2s_in.erl: Likewise
