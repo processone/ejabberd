@@ -1,5 +1,8 @@
 2006-09-25  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/msgs/pl.msg: Updated German translation (thanks to Zbyszek
+	Zolkiewski).
+
 	* src/msgs/de.msg: Updated German translation (thanks to Marvin
 	Preuss).
 
