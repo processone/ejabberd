@@ -17,6 +17,7 @@
 	 start_link/2,
 	 send_text/2,
 	 send_element/2,
+	 socket_type/0,
 	 get_presence/1]).
 
 %% gen_fsm callbacks
@@ -97,6 +98,9 @@ start(SockData, Opts) ->
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_c2s, [SockData, Opts], ?FSMOPTS).
+
+socket_type() ->
+    xml_stream.
 
 %% Return Username, Resource and presence information
 get_presence(FsmRef) ->

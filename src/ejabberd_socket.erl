@@ -32,23 +32,35 @@
 %% Description:
 %%--------------------------------------------------------------------
 start(Module, SockMod, Socket, Opts) ->
-    MaxStanzaSize =
-	case lists:keysearch(max_stanza_size, 1, Opts) of
-	    {value, {_, Size}} -> Size;
-	    _ -> infinity
-	end,
-    Receiver = ejabberd_receiver:start(Socket, SockMod, none, MaxStanzaSize),
-    SocketData = #socket_state{sockmod = SockMod,
-			       socket = Socket,
-			       receiver = Receiver},
-    {ok, Pid} = Module:start(SocketData, Opts),
-    case SockMod:controlling_process(Socket, Receiver) of
-	ok ->
-	    ok;
-	{error, _Reason} ->
-	    SockMod:close(Socket)
-    end,
-    ejabberd_receiver:become_controller(Receiver, Pid).
+    case Module:socket_type() of
+	xml_stream ->
+	    MaxStanzaSize =
+		case lists:keysearch(max_stanza_size, 1, Opts) of
+		    {value, {_, Size}} -> Size;
+		    _ -> infinity
+		end,
+	    Receiver = ejabberd_receiver:start(Socket, SockMod, none, MaxStanzaSize),
+	    SocketData = #socket_state{sockmod = SockMod,
+				       socket = Socket,
+				       receiver = Receiver},
+	    {ok, Pid} = Module:start(SocketData, Opts),
+	    case SockMod:controlling_process(Socket, Receiver) of
+		ok ->
+		    ok;
+		{error, _Reason} ->
+		    SockMod:close(Socket)
+	    end,
+	    ejabberd_receiver:become_controller(Receiver, Pid);
+	raw ->
+	    {ok, Pid} = Module:start({SockMod, Socket}, Opts),
+	    case SockMod:controlling_process(Socket, Pid) of
+		ok ->
+		    ok;
+		{error, _Reason} ->
+		    SockMod:close(Socket)
+	    end,
+	    ejabberd_receiver:become_controller(Pid)
+    end.
 
 connect(Addr, Port, Opts) ->
     case gen_tcp:connect(Addr, Port, Opts) of
@@ -66,7 +78,7 @@ connect(Addr, Port, Opts) ->
 		    gen_tcp:close(Socket),
 		    Error
 	    end;
-	{error, Reason} = Error ->
+	{error, _Reason} = Error ->
 	    Error
     end.
 

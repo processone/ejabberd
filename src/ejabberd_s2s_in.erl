@@ -14,7 +14,8 @@
 %% External exports
 -export([start/2,
 	 start_link/2,
-	 match_domain/2]).
+	 match_domain/2,
+	 socket_type/0]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -83,6 +84,9 @@ start(SockData, Opts) ->
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_s2s_in, [SockData, Opts], ?FSMOPTS).
+
+socket_type() ->
+    xml_stream.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm

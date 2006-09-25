@@ -14,6 +14,7 @@
 -export([start/2,
 	 start_link/2,
 	 become_controller/1,
+	 socket_type/0,
 	 receive_headers/1,
 	 url_encode/1]).
 
@@ -84,6 +85,9 @@ start_link({SockMod, Socket}, Opts) ->
 
 become_controller(_Pid) ->
     ok.
+
+socket_type() ->
+    raw.
 
 send_text(State, Text) ->
     (State#state.sockmod):send(State#state.socket, Text).

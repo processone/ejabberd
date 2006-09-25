@@ -16,7 +16,8 @@
 -export([start/2,
 	 start_link/2,
 	 send_text/2,
-	 send_element/2]).
+	 send_element/2,
+	 socket_type/0]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -77,6 +78,9 @@ start(SockData, Opts) ->
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_service, [SockData, Opts], ?FSMOPTS).
+
+socket_type() ->
+    xml_stream.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
