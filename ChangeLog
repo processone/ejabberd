@@ -1,7 +1,10 @@
 2006-09-25  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/msgs/nl.msg: Updated Dutch translation (thanks to Sander
+	 Devrieze).
+
 	* src/msgs/cs.msg: Updated Czech translation and removed unused
-	strings.
+	 strings.
 
 	* doc/introduction.tex: Minor doc updates for release 1.1.2.
 
