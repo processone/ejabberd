@@ -1,5 +1,8 @@
 2006-09-25  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/msgs/de.msg: Updated German translation (thanks to Nikolaus
+	Polak).
+
 	* src/ejabberd.app: Version update for ejabberd 1.1.2.
 
 	* src/msgs/pl.msg: Updated Polish translation (thanks to Zbyszek
