@@ -236,9 +236,6 @@
 {"Group ", "Gruppe "}.
 {"ejabberd Web Interface", "ejabberd Web Interface"}.
 
-% mod_vcard_ldap.erl
-{"Given Name", "Vorname"}.
-
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Verwendung von STARTTLS erforderlich"}.
 {"Replaced by new connection", "Durch neue Verbindung ersetzt"}.
@@ -352,7 +349,6 @@
 {"Make room public searchable", "Raum öffentlich durchsuchbar machen"}.
 {"Make participants list public", "Teilnehmerliste öffentlich machen"}.
 {"Make room password protected", "Raum passwortgeschützt machen"}.
-{"Make room semianonymous", "Raum semi-anonym machen"}.
 {"Make room members-only", "Raum members-only machen"}.
 {"Make room moderated", "Raum modieriert machen"}.
 {"Default users as participants", "Standartbenutzer als Teilnehmer"}.
@@ -363,6 +359,10 @@
 {"Enable logging", "Log-Funktion aktivieren"}.
 {"Description", "Beschreibung"}.
 {"Number of occupants", "Anzahl der Teilnehmer"}.
+{"Make real JIDs discovered for", "Jabber IDs können eingesehen werden
+für"}.
+{"moderators only", "Nur Moderatoren"}.
+{"anyone", "Jeder"}.
 
 % Local Variables:
 % mode: erlang
