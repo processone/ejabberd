@@ -2137,7 +2137,7 @@ get_config(Lang, StateData, From) ->
 			end),
 	 {xmlelement, "field",
 	  [{"type", "list-single"},
-	   {"label", translate:translate(Lang, "Make real JIDs discovered for")},
+	   {"label", translate:translate(Lang, "Present real JIDs to")},
 	   {"var", "muc#roomconfig_whois"}],
 	  [{xmlelement, "value", [], [{xmlcdata,
 				       if Config#config.anonymous ->

@@ -222,7 +222,7 @@
 {"Enable logging", "Activer l'archivage"}.
 {"Description", "Description"}.
 {"Number of occupants", "Nombre d'occupants"}.
-{"Make real JIDs discovered for", "Rendre le JID réel visible pour"}.
+{"Present real JIDs to", "Rendre le JID réel visible pour"}.
 {"moderators only", "modérateurs seulement"}.
 {"anyone", "tout le monde"}.
 

@@ -359,7 +359,7 @@
 {"Enable logging", "Log-Funktion aktivieren"}.
 {"Description", "Beschreibung"}.
 {"Number of occupants", "Anzahl der Teilnehmer"}.
-{"Make real JIDs discovered for", "Echte Jabber IDs anzeigen für"}.
+{"Present real JIDs to", "Echte Jabber IDs anzeigen für"}.
 {"moderators only", "nur Moderatoren"}.
 {"anyone", "jeden"}.
 

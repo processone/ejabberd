@@ -370,7 +370,7 @@
 {"Enable logging", "Permitir criação de logs"}.
 {"Description", "Descrição"}.
 {"Number of occupants", "Número de participantes"}.
-{"Make real JIDs discovered for", "Tornar o JID real visível por"}.
+{"Present real JIDs to", "Tornar o JID real visível por"}.
 {"moderators only", "apenas moderadores"}.
 {"anyone", "qualquer um"}.
 {"is now known as", "é agora conhecido como"}.

@@ -136,7 +136,7 @@
 {"Invalid role: ~s", "Nieprawidłowa rola: ~s"}.
 {"Owner privileges required", "Wymagane uprawnienia właściciela	"}.
 {"private, ", "prywatny, "}.
-{"Make real JIDs discovered for", "Kto może widzieć prawdziwe JIDy?"}.
+{"Present real JIDs to", "Kto może widzieć prawdziwe JIDy?"}.
 {"moderators only", "tylko moderatorzy"}.
 {"anyone", "każdy"}.
 

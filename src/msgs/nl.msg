@@ -178,7 +178,7 @@
 {"You need an x:data capable client to configure room", "U hebt een client nodig die x:data ondersteunt om deze chatruimte in te stellen"}.
 {"Description", "Beschrijving"}.
 {"Number of occupants", "Aantal aanwezigen"}.
-{"Make real JIDs discovered for", "Jabber ID's kunnen achterhaald worden door"}.
+{"Present real JIDs to", "Jabber ID's kunnen achterhaald worden door"}.
 {"moderators only", "moderators"}.
 {"anyone", "iedereen"}.
 
