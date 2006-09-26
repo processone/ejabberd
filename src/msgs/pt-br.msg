@@ -47,15 +47,12 @@
 {"Backup", "Salvar cópia de segurança"}.
 {"Backup Management", "Gestão de copia de segurança"}.
 {"Configuration", "Configuração"}.
-{"DB", "BD"}.
 {"Dump to Text File", "Exportar para arquivo de texto"}.
 {"From ~s", "De ~s"}.
 {"Import Directory", "Importar diretório"}.
 {"Import File", "Importar arquivo"}.
-{"Import users from jabberd1.4 spool files", "Importar usuários a partir de arquivos da spool do jabberd1.4"}.
 {"Modules", "Módulos"}.
 {"Online Users", "Usuários conectados"}.
-{"Outgoing S2S connections", "Conexões S2S de saída"}. 
 {"Remove Users", "Remover usuários"}.
 {"Restore", "Restaurar"}.
 {"Running Nodes", "Nos em execução"}.
@@ -74,7 +71,6 @@
 {"City", "Cidade"}.
 {"Country","País"}.
 {"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo vCard para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
-{"email", "e-mail"}.
 {"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Servidor Jabber em Erlang\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Family Name", "Nome de família"}.
 {"Fill in fields to search for any matching Jabber User", "Preencha os campos para procurar usuários Jabber coincidentes"}.
@@ -85,7 +81,6 @@
 {"Nickname", "Nick"}.
 {"Organization Name", "Nome da organização"}.
 {"Organization Unit", "Unidade da organização"}.
-{"Results of search in ", "Resultados da busca em "}.
 {"Search users in ", "Procurar usuários em "}.
 {"User", "Usuário"}.
 {"You need an x:data capable client to search", "Necessitas um cliente com suporte de x:data para poder buscar"}.
@@ -110,19 +105,11 @@
 {"Whether to allow subscriptions", "Permitir subscrições"}.
 
 % mod_muc/mod_muc.erl
-{"Allow users to change subject?", "Permitir aos usuários mudar o tópico?"}.
-{"Allow users to query other users?", "Permitir aos usuários consultar outros usuários?"}.
-{"Allow users to send invites?", "Permitir que os usuários enviem convites?"}.
-{"Allow users to send private messages?", "Permitir que os usuários enviem mensagens privadas?"}.
-{"Default users as members?", "Os usuários padrão são membros?"}.
-{"Enable logging?", "Salvar históricos?"}.
 {"Access denied by service policy", "Aceso denegado por la política do serviço"}.
 {"Conference room does not exist", "La sala de conferencias não existe"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Enter nickname you want to register", "Introduza o apelido que quer registrar"}.
 {"Incorrect password", "Senha incorreta"}.
-{"Make room anonymous?", "Tornar a sala anônima?"}.
-{"Make room password protected?", "Proteger a sala com senha?"}.
 {"Nickname is already in use by another occupant", "O apelido já está em uso por outro ocupante"}.
 {"Nickname is registered by another person", "O apelido já está registrado por outra pessoa"}.
 {"Nickname Registration at ", "Registro do apelido em "}.
@@ -131,18 +118,11 @@
 {"Password", "Senha"}.
 {"Room creation is denied by service policy", "Se te a denegado criar la sala por política do serviço"}.
 {"Specified nickname is already registered", "O apelido especificado já está registrado"}.
-{"You must fill in field \"nick\" in the form", "Deve preencher o campo \"apelido\" no formulário"}.
 {"You need an x:data capable client to register nickname", "Necessitas um cliente com suporte de x:data para poder registrar o nick"}.
 
 % mod_muc/mod_muc_room.erl
 {"Administrator privileges required", "Se necessita privilégios de administrador"}.
-{"Allow users to change subject?", "Permitir aos usuários cambiar o assunto"}.
-{"Allow users to query other users?", "Permitir aos usuários consultar a outros usuários"}.
-{"Allow users to send invites?", "Permitir aos usuários enviar convides"}.
-{"Allow users to send private messages?", "Permitir aos usuários enviar mensagens privados"}.
 {"Configuration for ", "Configuração para "}.
-{"Default users as members?", "Os usuários são membros por defeito"}.
-{"Enable logging?", "Guardar históricos"}.
 {" has set the subject to: ", " a posto o assunto: "}.
 {"Improper message type", "Tipo de mensagem incorreto"}.
 {"Incorrect password", "Senha incorreta"}.
@@ -152,13 +132,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"", "No está permitido enviar mensagens privados do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference", "Impedir o envio de mensagens privados a la sala"}.
 {"JID ~s is invalid", "O JID ~s não es válido"}.
-{"Make participants list public?", "Fazer pública la lista de participantes"}.
-{"Make room anonymous?", "Fazer anônima la sala"}.
-{"Make room members only?", "Fazer la sala solo para membros"}.
-{"Make room moderated?", "Fazer la sala moderada"}.
-{"Make room password protected?", "Proteger la sala com senha"}.
-{"Make room persistent?", "Fazer la sala permanente"}.
-{"Make room public searchable?", "Fazer a sala publicamente visível"}.
 {"Membership required to enter this room", "Necessitas ser membro de esta sala para poder entrar"}.
 {"Moderator privileges required", "Se necessita privilégios de moderador"}.
 {"Nickname is already in use by another occupant", "O nick já está sendo usado por outro ocupante"}.
@@ -192,91 +165,57 @@
 
 
 % web/ejabberd_web_admin.erl
-{"Add JID", "Adicionar JID"}.
 {"Add New", "Adicionar novo"}.
 {"Add User", "Adicionar usuário"}.
 {"All activity", "Toda la atividade"}.
-{"Backup Management at ", "Gestão de copia de segurança em "}.
-{"bad format", "mal formato"}.
 {"Change Password", "Mudar senha"}.
 {"Connected Resources:", "Recursos conectados:"}.
-{"CPU Time", "Tempo de processador consumido"}.
-{"DB Management", "Gestão do BD"}.
-{"DB Tables at ", "Tabelas do BD em "}.
 {"Delete", "Eliminar"}.
 {"Delete Selected", "Remover os selecionados"}.
-{"Dump a database in a text file", "Exportar uma Base de Dados para um arquivo de texto"}.
-{"ejabberd access control lists configuration", "Configuração das Listas de Controle de Acesso do ejabberd"}.
-{"ejabberd access rules configuration", "Configuração de las Regras de Aceso de ejabberd"}.
-{"ejabberd administration", "Administração de ejabberd"}.
 {"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
-{"ejabberd stats", "Estatísticas de ejabberd"}.
-{"ejabberd users", "Usuários do ejabberd"}.
 {"ejabberd virtual hosts", "Maquinas virtuais de ejabberd"}.
 {"From", "De"}.
 {"Group ", "Grupo "}.
 {"Groups", "Grupos"}.
 {"Host", "Máquina"}.
-{"Install a database fallback from a file", "Instalar uma recuperação de BD a partir de um arquivo"}.
-{"JID", "JID"}.
 {"Last Activity", "Última atividade"}.
 {"Last month", "Último mês"}.
 {"Last year", "Último ano"}.
 {"Listened Ports at ", "Portas de escuta em "}.
-{"Listened Ports Management", "Gestão dos portas de escuta"}.
 {"Members:", "Miembros:"}.
 {"Memory", "Memória"}.
 {"Module", "Módulo"}.
 {"Modules at ", "Módulos em "}.
-{"Modules Management", "Gestão de módulos"}.
 {"Name:", "Nome:"}.
 {"Name", "Nome"}.
 {"Never", "Nunca"}.
 {"Nickname", "Apelido"}.
 {"Online", "Conectado"}.
-{"Online users", "Usuários conectados"}.
 {"Options", "Opções"}.
-{"Outgoing S2S servers", "Servidores conectados"}.
 {"Packet", "Pacote"}.
 {"Password:", "Senha:"}.
 {"Pending", "Pendente"}.
 {"Period: ", "Período: "}.
 {"Port", "Porta"}.
-{"~p statistics", "Estatísticas de ~p"}.
-{"(raw)", "(cru)"}.
-{"raw", "cru"}.
-{"Registered users", "Usuários registrados"}.
 {"Remove", "Borrar"}.
 {"Restart", "Reiniciar"}.
-{"Restore a backup from a file", "Recuperar uma cópia de segurança a partir do arquivo"}.
-{"Restore a database from a text file", "Restaurar uma Base de Dados a partir de um arquivo de texto"}.
 {"Roster", "Lista de contatos"}.
 {"Roster of ", "Lista de contatos de "}.
-{"RPC call error", "Erro em la chamada RPC"}.
 {"~s access rule configuration", "Configuração da Regra de Acesso ~s"}.
-{"Shared roster groups", "Grupos compartilhado"}.
 {"Shared Roster", "Lista de contatos compartilhada"}.
 {"Show Integral Table", "Mostrar Tabela Integral"}.
 {"Show Ordinary Table", "Mostrar Tabela Ordinária"}.
 {"Size", "Tamanho"}.
-{"~s offline messages queue", "~s cola de mensagens diferidos"}.
 {"Start", "Iniciar"}.
 {"Statistics", "Estatísticas"}.
 {"Stop", "Parar"}.
 {"Storage Type", "Tipo de armazenamento"}.
-{"Store a backup in a file", "Armazenar uma cópia de segurança no arquivo"}.
 {"Submit", "Enviar"}.
-{"submitted", "enviado"}.
 {"Subscription", "Subscrição"}.
 {"Time", "Fecha"}.
 {"To", "Para"}.
-{"Transactions aborted", "Transações abortadas"}.
-{"Transactions commited", "Transações realizadas"}.
-{"Transactions logged", "Transações armazenadas"}.
-{"Transactions restarted", "Transações reiniciadas"}.
+
 {"Update", "Atualizar"}.
-{"Uptime", "Tempo de funcionamento"}.
-{"Users last activity", "Última atividades dos usuários"}.
 {"Users", "Usuários"}.
 {"User ", "Usuário"}.
 {"Validate", "Validar"}.
@@ -288,8 +227,7 @@
 
 % mod_vcard_ldap.erl
 {"Fill in fields to search for any matching Jabber User", "Preencha campos para buscar usuários Jabber que concordem"}.
-{"Given Name", "Nome dado"}.
-{"JID", "JID"}.
+
 
 
 % mod_adhoc.erl
@@ -384,8 +322,6 @@
 {"Description:", "Descrição:"}.
 {"Displayed Groups:", "Grupos Indicados"}.
 
-% mod_irc/mod_irc.erl
-
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Configuração da sala de bate-papo modificada"}.
 {"joins the room", "Entrar na sala"}.
@@ -424,7 +360,6 @@
 {"Make room public searchable", "Tornar sala pública possível de ser encontrada"}.
 {"Make participants list public", "Tornar pública a lista de participantes"}.
 {"Make room password protected", "Tornar protegida a senha da sala"}.
-{"Make room semianonymous", "Tornar sala semi-anônima"}.
 {"Make room members-only", "Tornar sala apenas para membros"}.
 {"Make room moderated", "Tornar a sala moderada"}.
 {"Default users as participants", "Usuários padrões como participantes"}.
@@ -435,6 +370,10 @@
 {"Enable logging", "Permitir criação de logs"}.
 {"Description", "Descrição"}.
 {"Number of occupants", "Número de participantes"}.
+{"Make real JIDs discovered for", "Tornar o JID real visível por"}.
+{"moderators only", "apenas moderadores"}.
+{"anyone", "qualquer um"}.
+{"is now known as", "é agora conhecido como"}.
 
 % Local Variables:
 % mode: erlang

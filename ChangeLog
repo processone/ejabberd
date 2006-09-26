@@ -1,3 +1,8 @@
+2006-09-26  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/msgs/pt-br.msg: Updated Brazilian translation (thanks to
+	Renato Botelho) and clean-up.
+
 2006-09-25  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/msgs/de.msg: Updated German translation (thanks to Nikolaus
