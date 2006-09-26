@@ -116,8 +116,8 @@ init([]) ->
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
     ejabberd_ctl:register_commands(
-      [{"incoming-s2s-number", "print a number of incoming s2s connections"},
-       {"outgoing-s2s-number", "print a number of outgoing s2s connections"}],
+      [{"incoming-s2s-number", "print number of incoming s2s connections on the node"},
+       {"outgoing-s2s-number", "print number of outgoing s2s connections on the node"}],
       ?MODULE, ctl_process),
     {ok, #state{}}.
 
