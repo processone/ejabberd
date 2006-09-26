@@ -1,0 +1,120 @@
+				Release Notes
+				ejabberd 1.1.2
+			      27 September 2006
+
+   This document describes the main changes in ejabberd 1.1.2.
+
+   This version is a major improvement over ejabberd 1.1.1, improving the
+   overall behaviour of the server in many areas. Users of ejabberd 1.1.1
+   should upgrade to this new release.
+
+   ejabberd can be downloaded from the Process-one website:
+   http://www.process-one.net/en/projects/ejabberd/
+
+   Detailed information can be found in the ejabberd Feature Sheet and User
+   Guide which are available on the Process-one website:
+   http://www.process-one.net/en/projects/ejabberd/docs.html
+
+   A complete list of changes is available from:
+   https://support.process-one.net/secure/ConfigureReport.jspa?filterid=10110&mapper=components&selectedProjectId=10011&reportKey=com.atlassian.jira.plugin.system.reports%3Asinglelevelgroupby&Next=Next
+
+
+   Recent changes include:
+
+LDAP Support 
+
+  - Major improvements have been made on the LDAP module. It is now more
+    flexible and more robust.
+
+HTTP Polling fixes
+
+  - The HTTP poll modules have been fixed and improved: The connection are
+    closed properly and polled messages can no more be lost.
+
+Roster management improvement
+
+  - Roster management improvements make it more reliable, especially in cases
+    where users are on different servers.
+  - Shared rosters are now more reliable.
+
+Improved Robustness
+
+  - It is now possible to limit the number of opened connections for a single
+  user.
+
+Relational database support
+
+  - Database support: Microsoft SQL Server is now officially supported (ODBC
+  mode).
+
+Pubsub improvements
+
+  - Nodes creation can now be prevented with a dedicated ACL rule.
+
+Localization
+
+  - A Czech translation has been added.
+  - Translations have been updated.
+
+Binary installer
+
+  - The same completly packaged binary installer is now available on Windows,
+  Linux and MacOSX PPC.
+
+
+- Anonymous login bugfixes.
+
+XMPP compliance
+
+  - Some protocol compliance fix have been added, after the Portland XMPP
+   Interop Meeting in July.
+
+Various improvements
+
+  - MUC have been improved (logging rendering).
+  - The command line tool ejabberdctl has been improved.
+  - The build chain has been improved, including MacOSX support.
+  - A Czech translation has been added.
+
+Bugfixes
+
+   - Please refer to the ChangeLog file supplied with this release regarding
+     all improvements in ejabberd.
+
+
+   Installation Notes
+
+Supported Erlang Version
+
+   - You need at least Erlang/OTP R9C-2 to run ejabberd 1.1.2.
+
+Installation
+
+   Installers are provided for Microsoft Windows, Linux/x86 and MacOSX/PPC.
+   Installers can be retrieved from:
+   http://www.process-one.net/en/projects/ejabberd/download.html
+
+Migration Notes
+
+   - Before any migration, ejabberd system and database must be properly
+   backed up.
+   - The relational database schema has changed between version 1.1.1 and
+   1.1.2. A "askmessage" column need to be added in the "rosterusers" table to
+   perform the migration.
+
+
+References
+
+   Contributed tutorials and documents of interest are:
+   - Migration from Jabberd1.4, Jabberd2 and WPJabber to ejabberd:
+     http://ejabberd.jabber.ru/migrate-to-ejabberd     
+   - Transport configuration for connecting to other networks:
+     http://ejabberd.jabber.ru/tutorials-transports
+   - Using ejabberd with MySQL native driver:
+     http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver
+   - Anonymous User Support:
+     http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support
+   - Frequently Asked Questions:
+     http://ejabberd.jabber.ru/faq
+
+END
