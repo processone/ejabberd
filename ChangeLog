@@ -1,5 +1,16 @@
 2006-09-26  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Minor english update.
+	* src/msgs/pl.msg: Likewise.
+	* src/msgs/uk.msg: Likewise.
+	* src/msgs/pt-br.msg: Likewise.
+	* src/msgs/cs.msg: Likewise.
+	* src/msgs/ru.msg: Likewise.
+	* src/msgs/es.msg: Likewise.
+	* src/msgs/fr.msg: Likewise.
+	* src/msgs/de.msg: Likewise.
+	* src/msgs/nl.msg: Likewise.
+
 	* src/msgs/pt-br.msg: Updated Brazilian translation (thanks to
 	Renato Botelho) and clean-up.
 

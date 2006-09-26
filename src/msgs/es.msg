@@ -169,7 +169,7 @@
 {"private, ", "privado"}.
 {"Description", "Descripción"}.
 {"Number of occupants", "Número de ocupantes"}.
-{"Make real JIDs discovered for", "Los JID reales pueden verlos"}.
+{"Present real JIDs to", "Los JID reales pueden verlos"}.
 {"moderators only", "solo moderadores"}.
 {"anyone", "cualquiera"}.
 

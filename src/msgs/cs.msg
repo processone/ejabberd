@@ -139,7 +139,7 @@
 {"Invalid role: ~s", "Neplatná role: ~s"}.
 {"Owner privileges required", "Jsou vyžadována práva vlastníka"}.
 {"private, ", "soukromá, "}.
-{"Make real JIDs discovered for", "Zjisti skutečné JIDy pro"}.
+{"Present real JIDs to", "Zjisti skutečné JIDy pro"}.
 {"moderators only", "pouze pro moderátory"}.
 {"anyone", "každý"}.
 
