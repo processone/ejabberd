@@ -136,9 +136,10 @@
 {"Invalid role: ~s", "Nieprawidłowa rola: ~s"}.
 {"Owner privileges required", "Wymagane uprawnienia właściciela	"}.
 {"private, ", "prywatny, "}.
-{"Present real JIDs to", "Kto może widzieć prawdziwe JIDy?"}.
+{"Present real JIDs to", "Kto może widzieć prawdziwe JID-y?"}.
 {"moderators only", "tylko moderatorzy"}.
-{"anyone", "każdy"}.
+{"anyone", "wszyscy"}.
+
 
 % mod_irc/mod_irc.erl
 {"You need an x:data capable client to configure mod_irc settings",
@@ -224,7 +225,7 @@
 % mod_pubsub/mod_pubsub.erl
 {[], " "}.
 {"Node Creator", "Tworzenie gałęzi"}.
-{"Deliver payloads with event notifications", "Do?cz zawarto? publikowanego przedmiotu podczas wysy?nia powiadomienia o publikacji"}.
+{"Deliver payloads with event notifications", "Dołącz zawartość publikowanego przedmiotu podczas wysyłania powiadomienia o publikacji"}.
 {"Notify subscribers when the node configuration changes", "Informuj subskrybentów gdy konfiguracja gałęzi się zmieni"}.
 {"Notify subscribers when the node is deleted", "Informuj subskrybentów gdy gałąż zostanie wykasowana"}.
 {"Notify subscribers when items are removed from the node", "Informuj subskrybentów kiedy zostaną z gałęzi usunięte jakieś elementy"}.
@@ -233,7 +234,7 @@
 {"Whether to allow subscriptions", "Czy pozwolić na subskrypcje"}.
 {"Specify the subscriber model", "Oznacz model subskrybenta"}.
 {"Specify the publisher model", "Oznacz model publikującego"}.
-{"Max payload size in bytes", "Maksymalna wielko? powiadomienia w bajtach"}.
+{"Max payload size in bytes", "Maksymalna wielkość powiadomienia w bajtach"}.
 {"Send items to new subscribers", "Wysyłaj rzeczy do nowych subskrybentów"}.
 {"Only deliver notifications to available users", "Dostarczaj notyfikacje tylko do osiągalnych użytkowników"}.
 {"Specify the current subscription approver", "Wyznacz aprobującego obecne subskrypcje "}.
@@ -368,7 +369,7 @@
 {"Make room public searchable", "Pozwól wyszukiwać pokój"}.
 {"Make participants list public", "Upublicznij listę uczestników"}.
 {"Make room password protected", "Zabezpiecz pokój hasłem"}.
-{"Make room members-only", "Utwórz pokój tylko dla członków"}.
+{"Make room members-only", "Utwórz pokój tylko dla uczestnikóww"}.
 {"Make room moderated", "Moderuj pokój"}.
 {"Default users as participants", "Domyślni użytkownicy jako uczestnicy"}.
 {"Allow users to change subject", "Pozwól użytkownikom zmienić tytuł pokoju"}.
@@ -384,9 +385,41 @@
 {"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin"}.
 {"Jabber ID", "Jabber ID"}.
 
-% mod_vcard.erl
-{"Email", "E-mail"}.
+% ./mod_presence.erl
+{"You need an x:data capable client to register presence", "Potrzebujesz klinta kompatybilnego z x:data aby zarejestrować widoczność "}.
+{"Presence registration at ", "Rejestracja widoczności na "}.
+{"What presence features do you want to register?", "Jakie usługi widoczności chcesz zarejestrować?"}.
+{"Raw XML", ""}.
+{"Specified presence is already registered", "Określona widoczność już jest zarejestrowana"}.
+{"You must fill in field \"Xml\" in the form", "Musisz wypełnić w formularzu pole \"XML\""}.
+{"You must fill in field \"Icon\" in the form", "Musisz wypełnić w formularzu pole \"Icon\""}.
+{"ejabberd presence module\nCopyright (c) 2006 Igor Goryachev", ""}.
 
-% Local Variables:
-% mode: erlang
-% End:
+% ./mod_presence/mod_presence.erl
+{"Raw XML export", "Eksport XML do raw"}.
+{"Allow icon export", "Pozwól na eksport ikon"}.
+
+% ./mod_stats2file.erl
+{"CPUtime", "Czas procesora"}.
+
+% ./mod_vcard_odbc.erl
+{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", ""}.
+{"Email", ""}.
+{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"Jabber ID", ""}.
+
+% ./mod_pubsub/mod_pubsub.erl
+{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+
+% ./web/ejabberd_web_admin.erl
+{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", ""}.
+{"(Raw)", ""}.
+{"Raw", ""}.
+{"Low level update script", "Skrypt aktualizacyjny niskiego poziomu"}.
+
+% ./mod_irc/mod_irc.erl
+{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+
+% ./mod_muc/mod_muc.erl
+{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+

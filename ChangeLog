@@ -1,5 +1,7 @@
 2006-09-26  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk).
+
 	* src/ejabberd_s2s.erl: Added incoming-s2s-number and
 	outgoing-s2s-number ejabberdctl commands
 	
