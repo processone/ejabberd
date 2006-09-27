@@ -7,11 +7,11 @@
 2006-09-26  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/release_notes_1.1.2.txt: Draft release notes.
-	
+
 	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk).
 
-	* src/ejabberd_s2s.erl: More precise message for the new s2s
-	statistic command.
+	* src/ejabberd_s2s.erl: Added incoming-s2s-number and
+	outgoing-s2s-number ejabberdctl commands
 	
 	* src/mod_muc/mod_muc_room.erl: Minor english update.
 	* src/msgs/pl.msg: Likewise.
@@ -48,39 +48,27 @@
 
 	* doc/introduction.tex: Minor doc updates for release 1.1.2.
 
-2006-09-25  Alexey Shchepin  <alexey@sevcom.net>
-
-	* src/ejabberd_s2s.erl: Added incoming-s2s-number and
-	outgoing-s2s-number ejabberdctl commands
-
-	* src/ejabberd_socket.erl: Support for non-xml sockets
-	* src/ejabberd_c2s.erl: Likewise
-	* src/ejabberd_s2s_in.erl: Likewise
-	* src/ejabberd_service.erl: Likewise
-	* src/web/ejabberd_http.erl: Likewise
-
 2006-09-24  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/msgs/es.msg: Updated Spanish translation (thanks to Badlop).
 
-	* src/mod_muc/mod_muc_room.erl: Strings update (thanks to Sergei
-	Golovan).
-	* src/msgs/ru.msg: Updated Russian translation (thanks to Sergei
-	Golovan).
-	* src/msgs/uk.msg: Updated Ukrainian translation (thanks to Sergei
-	Golovan).
-	* src/msgs/fr.msg: Update French translation.
-
+	* src/mod_muc/mod_muc_room.erl: Strings update (thanks to Serguei
+	 Golovan).
+	* src/msgs/ru.msg: Updated Russian translation (thanks to Serguei
+	 Golovan).
+	* src/msgs/uk.msg: Updated Ukrainian translation (thanks to Serguei
+	 Golovan).
+	* src/msgs/fr.msg: Updated French translation.
+	
 	* src/doc/guide.html: Minor W3C compliance fix in an Hevea
 	generated URL.
 	
-	* src/doc/features.html: Added to be consistent (guide.html is in
-	the repository to make Latex optional, but still allow access to
-	the doc).
+	* src/doc/features.html: Added to be consistent (guide.html is in the
+	repository to make Latex optional, but still allow access to the doc).
 
 2006-09-23  Mickael Remond  <mickael.remond@process-one.net>
 
-	* src/ejabberd.hrl: Updated to version 1.1.2
+        * src/ejabberd.hrl: Updated to version 1.1.2
 
 2006-09-23  Alexey Shchepin  <alexey@sevcom.net>
 
@@ -136,8 +124,6 @@
 	escaping, added new image buttons, chatroom titles now point to
 	xmpp: URIs (thanks to Badlop)
 
-	* src/ejabberd_listener.erl: Bugfix
-
 2006-09-05  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_muc/mod_muc.erl: It is now possible to configure the MUC room
@@ -148,14 +134,6 @@
 	* doc/guide.tex: Likewise.
 
 2006-09-05  Alexey Shchepin  <alexey@sevcom.net>
-
-	* src/ejabberd_socket.erl: All XML socket operations moved here
-	* src/ejabberd_listener.erl: Updated
-	* src/ejabberd_receiver.erl: Likewise
-	* src/ejabberd_c2s.erl: Likewise
-	* src/ejabberd_s2s_in.erl: Likewise
-	* src/ejabberd_s2s_out.erl: Likewise
-	* src/ejabberd_service.erl: Likewise
 
 	* src/mod_shared_roster.erl: Bugfix
 

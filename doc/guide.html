@@ -182,9 +182,10 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 <LI CLASS="li-toc"><A HREF="#htoc88">B.4&nbsp;&nbsp;ejabberd 1.0.0</A>
 <LI CLASS="li-toc"><A HREF="#htoc89">B.5&nbsp;&nbsp;ejabberd 1.1.0</A>
 <LI CLASS="li-toc"><A HREF="#htoc90">B.6&nbsp;&nbsp;ejabberd 1.1.1</A>
+<LI CLASS="li-toc"><A HREF="#htoc91">B.7&nbsp;&nbsp;ejabberd 1.1.2</A>
 </UL>
-<LI CLASS="li-toc"><A HREF="#htoc91">C&nbsp;&nbsp;Acknowledgements</A>
-<LI CLASS="li-toc"><A HREF="#htoc92">D&nbsp;&nbsp;Copyright Information</A>
+<LI CLASS="li-toc"><A HREF="#htoc92">C&nbsp;&nbsp;Acknowledgements</A>
+<LI CLASS="li-toc"><A HREF="#htoc93">D&nbsp;&nbsp;Copyright Information</A>
 </UL>
 
 <!--TOC section Introduction-->
@@ -3987,9 +3988,136 @@ References
 
 END
 </PRE>
+<!--TOC subsection ejabberd 1.1.2-->
+
+<H3 CLASS="subsection"><A NAME="htoc91">B.7</A>&nbsp;&nbsp;ejabberd 1.1.2</H3><!--SEC END -->
+
+<PRE CLASS="verbatim">
+    Release Notes
+    ejabberd 1.1.2
+         27 September 2006
+
+   This document describes the main changes in ejabberd 1.1.2.
+
+   This version is a major improvement over ejabberd 1.1.1, improving the
+   overall behaviour of the server in many areas. Users of ejabberd 1.1.1
+   should upgrade to this new release for improved robustness and compliance.
+
+   ejabberd can be downloaded from the Process-one website:
+   http://www.process-one.net/en/projects/ejabberd/
+
+   Detailed information can be found in the Feature Sheet and in the
+   Installation and Operation Guide which are both available on the
+   Process-one website:
+   http://www.process-one.net/en/projects/ejabberd/docs.html
+
+   ejabberd includes 44 improvements. A complete list of changes can be
+   retrieved from:
+   http://redir.process-one.net/ejabberd-1.1.2
+
+
+   Recent changes include:
+
+LDAP Improvements
+
+  - Major improvements have been made on the LDAP module. It is now more
+    flexible and more robust.
+
+HTTP Polling Fixes
+
+  - The HTTP polling modules have been fixed and improved: the connections are
+    closed properly and polled messages cannot be lost anymore.
+
+Roster Management Improvement
+
+  - Roster management improvements increase reliability, especially in cases
+  where users are on different servers.
+  - Shared rosters are more reliable.
+
+Improved Robustness
+
+  - It is now possible to limit the number of opened connections for a single
+  user.
+
+Relational databases
+
+  - Database support: Microsoft SQL Server is now officially supported in ODBC
+  mode.
+
+Publish-Subscribe Improvement
+
+  - Restricting node creation with a dedicated ACL rule is now possible.
+
+Localization
+
+  - A Czech translation has been added.
+  - Translations have been updated.
+
+Binary Installer
+
+  - New binary installer for Windows including all requirements.
+  - Improved installers for Linux and MacOSX (PowerPC)
+
+
+- Anonymous login bugfixes.
+
+XMPP Compliancy
+
+  - Some protocol compliance fix have been added, after the Portland XMPP
+    Interop Meeting in July.
+
+Miscelanous
+
+  - MUC have been improved (logging rendering).
+  - The command line tool ejabberdctl has been improved.
+  - The build chain has been improved, including MacOSX support.
+  - The documentation has been improved and updated to describe the new
+    features.
+
+Bugfixes
+
+   - Please refer to the ChangeLog file supplied with this release regarding
+     all improvements in ejabberd.
+
+
+   Installation Notes
+
+Supported Erlang Version
+
+   - You need at least Erlang/OTP R9C-2 to run ejabberd 1.1.2.
+   - The recommanded version is Erlang/OTP R10B-10.
+   - Erlang/OTP R11B has not yet been fully certified for ejabberd.
+
+Installation
+
+   Installers are provided for Microsoft Windows, Linux/x86 and MacOSX/PPC.
+   They can be retrieved from:
+   http://www.process-one.net/en/projects/ejabberd/download.html
+
+Migration Notes
+
+   - Before any migration, ejabberd system and database must be properly
+   backed up.
+   - The relational database schema has changed between version 1.1.1 and
+   1.1.2. An "askmessage" column needs to be added in the "rosterusers" table
+   to perform the migration.
+
+
+References
+
+   Contributed tutorials and documents of interest are:
+   - Migration from other XMPP servers to ejabberd:
+     http://ejabberd.jabber.ru/migrate-to-ejabberd     
+   - Transport configuration for connecting to other networks:
+     http://ejabberd.jabber.ru/tutorials-transports
+   - Frequently Asked Questions:
+     http://ejabberd.jabber.ru/faq
+
+END
+</PRE>
 <!--TOC section Acknowledgements-->
 
-<H2 CLASS="section"><A NAME="htoc91">C</A>&nbsp;&nbsp;<A NAME="acknowledgements">Acknowledgements</A></H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc92">C</A>&nbsp;&nbsp;<A NAME="acknowledgements">Acknowledgements</A></H2><!--SEC END -->
 
 <A NAME="sec:acknowledgements"></A>
 Thanks to all people who contributed to this guide:
@@ -4006,7 +4134,7 @@ Alexey Shchepin (<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT
 </UL>
 <!--TOC section Copyright Information-->
 
-<H2 CLASS="section"><A NAME="htoc92">D</A>&nbsp;&nbsp;<A NAME="copyright">Copyright Information</A></H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc93">D</A>&nbsp;&nbsp;<A NAME="copyright">Copyright Information</A></H2><!--SEC END -->
 
 <A NAME="sec:copyright"></A>
 Ejabberd Installation and Operation Guide.<BR>

@@ -17,7 +17,7 @@
 	 start_link/2,
 	 send_text/2,
 	 send_element/2,
-	 socket_type/0]).
+	 become_controller/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -33,7 +33,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(state, {socket, streamid,
+-record(state, {socket, receiver, streamid, sockmod,
 		hosts, password, access}).
 
 %-define(DBGFSM, true).
@@ -79,8 +79,8 @@ start(SockData, Opts) ->
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_service, [SockData, Opts], ?FSMOPTS).
 
-socket_type() ->
-    xml_stream.
+become_controller(Pid) ->
+    gen_fsm:send_all_state_event(Pid, become_controller).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -93,7 +93,7 @@ socket_type() ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket, Opts]) ->
+init([{SockMod, Socket}, Opts]) ->
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -123,8 +123,11 @@ init([Socket, Opts]) ->
 			false
 		end
 	end,
+    ReceiverPid = ejabberd_receiver:start(Socket, SockMod, none),
     {ok, wait_for_stream, #state{socket = Socket,
+				 receiver = ReceiverPid,
 				 streamid = new_id(),
+				 sockmod = SockMod,
 				 hosts = Hosts,
 				 password = Password,
 				 access = Access
@@ -256,6 +259,12 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_event(become_controller, StateName, StateData) ->
+    ok = (StateData#state.sockmod):controlling_process(
+	   StateData#state.socket,
+	   StateData#state.receiver),
+    ejabberd_receiver:become_controller(StateData#state.receiver),
+    {next_state, StateName, StateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -319,7 +328,7 @@ terminate(Reason, StateName, StateData) ->
 	_ ->
 	    ok
     end,
-    ejabberd_socket:close(StateData#state.socket),
+    ejabberd_receiver:close(StateData#state.receiver),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -327,10 +336,11 @@ terminate(Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 send_text(StateData, Text) ->
-    ejabberd_socket:send(StateData#state.socket, Text).
+    (StateData#state.sockmod):send(StateData#state.socket,Text).
 
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_string(El)).
+
 
 new_id() ->
     randoms:get_string().
