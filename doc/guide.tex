@@ -467,7 +467,7 @@ The following options are available:
   \titem{\{max\_stanza\_size, Size\}} \ind{options!max\_stanza\_size}This
     option specifies an approximate maximum size in bytes of XML stanzas.
     Approximate, because it is calculated with the precision of one block of
-    readed data. For example \verb|{max\_stanza\_size, 65536}|.  The default
+    readed data. For example \verb|{max_stanza_size, 65536}|.  The default
     value is \term{infinity}.
   \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{sec:shapers}). The default value
@@ -866,15 +866,15 @@ Examples:
 \item To limit the number of sessions per user to 10 on all virtual
 hosts:
 \begin{verbatim}
-  {max\_user\_sessions, 10}.
+  {max_user_sessions, 10}.
 \end{verbatim}
 \item This option can be defined per virtual host (see
 section~\ref{sec:virtualhost}). In next example the number of
 sessions per user on the first host is six, while there is no limit on the
 second host:
 \begin{verbatim}
-  {host_config, "example.net", [{max\_user\_sessions, 6}]}.
-  {host_config, "example.com", [{max\_user\_sessions, infinity}]}.
+  {host_config, "example.net", [{max_user_sessions, 6}]}.
+  {host_config, "example.com", [{max_user_sessions, infinity}]}.
 \end{verbatim}
 \end{itemize}
 

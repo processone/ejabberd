@@ -321,7 +321,7 @@ To compile <TT>ejabberd</TT> on a Windows flavour, you need:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 MS Visual C++ 6.0 Compiler
 <LI CLASS="li-itemize"><A HREF="http://erlang.org/download.html">Erlang/OTP R9C-2 or higher</A>
-<LI CLASS="li-itemize"><A HREF="http://sourceforge.net/project/showfiles.php?group_id=10127&amp;package_id=11277">Expat 1.95.7 or higher</A>
+<LI CLASS="li-itemize"><A HREF="http://sourceforge.net/project/showfiles.php?group_id=10127&package_id=11277">Expat 1.95.7 or higher</A>
 <LI CLASS="li-itemize"><A HREF="http://www.gnu.org/software/libiconv/">GNU Iconv 1.9.1</A>
 (optional)
 <LI CLASS="li-itemize"><A HREF="http://www.slproweb.com/products/Win32OpenSSL.html">Shining Light OpenSSL</A>
@@ -627,7 +627,7 @@ If HTTP Polling is enabled, it will be available at
  <DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B><DD CLASS="dd-description"> This
  option specifies an approximate maximum size in bytes of XML stanzas.
  Approximate, because it is calculated with the precision of one block of
- readed data. For example <CODE>{max\_stanza\_size, 65536}</CODE>. The default
+ readed data. For example <CODE>{max_stanza_size, 65536}</CODE>. The default
  value is <TT>infinity</TT>.
  <DT CLASS="dt-description"><B><TT>{shaper, &lt;access rule&gt;}</TT></B><DD CLASS="dd-description"> This option defines a
  shaper for the port (see section&nbsp;<A HREF="#sec:shapers">3.6</A>). The default value
@@ -997,14 +997,14 @@ Examples:
 To limit the number of sessions per user to 10 on all virtual
 hosts:
 <PRE CLASS="verbatim">
-  {max\_user\_sessions, 10}.
+  {max_user_sessions, 10}.
 </PRE><LI CLASS="li-itemize">This option can be defined per virtual host (see
 section&nbsp;<A HREF="#sec:virtualhost">3.2</A>). In next example the number of
 sessions per user on the first host is six, while there is no limit on the
 second host:
 <PRE CLASS="verbatim">
-  {host_config, "example.net", [{max\_user\_sessions, 6}]}.
-  {host_config, "example.com", [{max\_user\_sessions, infinity}]}.
+  {host_config, "example.net", [{max_user_sessions, 6}]}.
+  {host_config, "example.com", [{max_user_sessions, infinity}]}.
 </PRE></UL>
 <!--TOC subsection Default Language-->
 
