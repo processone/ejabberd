@@ -6,7 +6,7 @@
 
    This version is a major improvement over ejabberd 1.1.1, improving the
    overall behaviour of the server in many areas. Users of ejabberd 1.1.1
-   should upgrade to this new release.
+   should upgrade to this new release for improved robustness and compliance.
 
    ejabberd can be downloaded from the Process-one website:
    http://www.process-one.net/en/projects/ejabberd/
@@ -15,8 +15,9 @@
    Guide which are available on the Process-one website:
    http://www.process-one.net/en/projects/ejabberd/docs.html
 
-   A complete list of changes is available from:
-   https://support.process-one.net/secure/ConfigureReport.jspa?filterid=10110&mapper=components&selectedProjectId=10011&reportKey=com.atlassian.jira.plugin.system.reports%3Asinglelevelgroupby&Next=Next
+   ejabberd includes 44 improvements. A complete list of changes is available
+   from:
+   http://redir.process-one.net/ejabberd-1.1.2
 
 
    Recent changes include:
@@ -67,13 +68,15 @@ Binary installer
 XMPP compliance
 
   - Some protocol compliance fix have been added, after the Portland XMPP
-   Interop Meeting in July.
+    Interop Meeting in July.
 
 Various improvements
 
   - MUC have been improved (logging rendering).
   - The command line tool ejabberdctl has been improved.
   - The build chain has been improved, including MacOSX support.
+  - The documentation has been improved and updated to describe the new
+    features.
   - A Czech translation has been added.
 
 Bugfixes
