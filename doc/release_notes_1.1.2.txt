@@ -63,9 +63,6 @@ Binary Installer
   - New binary installer for Windows including all requirements.
   - Improved installers for Linux and MacOSX (PowerPC)
 
-
-- Anonymous login bugfixes.
-
 XMPP Compliancy
 
   - Some protocol compliance fix have been added, after the Portland XMPP
@@ -81,6 +78,7 @@ Miscelanous
 
 Bugfixes
 
+   - Anonymous login bugfixes.
    - Please refer to the ChangeLog file supplied with this release regarding
      all improvements in ejabberd.
 
