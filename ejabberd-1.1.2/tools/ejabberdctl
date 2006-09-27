@@ -1,0 +1,4 @@
+#!/bin/sh
+
+exec erl -noinput -sname ejabberdctl -s ejabberd_ctl -extra $@
+

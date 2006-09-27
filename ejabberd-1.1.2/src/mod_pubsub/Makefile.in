@@ -1,0 +1,29 @@
+# $Id$
+
+CC = @CC@
+CFLAGS = @CFLAGS@ @ERLANG_CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@ @ERLANG_LIBS@
+
+SUBDIRS = 
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+OBJS   = \
+	$(OUTDIR)/mod_pubsub.beam
+
+all:    $(OBJS)
+
+$(OUTDIR)/%.beam:       %.erl
+	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
+
+clean:
+	rm -f $(OBJS)
+
+distclean: clean
+	rm -f Makefile
+
+TAGS:
+	etags *.erl
+

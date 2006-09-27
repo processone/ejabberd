@@ -1,0 +1,3393 @@
+2006-09-27  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/release_notes_1.1.2.txt: Minor fixes.
+
+	* doc/guide.tex: Fixed Latexish typos.
+
+2006-09-26  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/release_notes_1.1.2.txt: Draft release notes.
+
+	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk).
+
+	* src/ejabberd_s2s.erl: Added incoming-s2s-number and
+	outgoing-s2s-number ejabberdctl commands
+	
+	* src/mod_muc/mod_muc_room.erl: Minor english update.
+	* src/msgs/pl.msg: Likewise.
+	* src/msgs/uk.msg: Likewise.
+	* src/msgs/pt-br.msg: Likewise.
+	* src/msgs/cs.msg: Likewise.
+	* src/msgs/ru.msg: Likewise.
+	* src/msgs/es.msg: Likewise.
+	* src/msgs/fr.msg: Likewise.
+	* src/msgs/de.msg: Likewise.
+	* src/msgs/nl.msg: Likewise.
+
+	* src/msgs/pt-br.msg: Updated Brazilian translation (thanks to
+	Renato Botelho) and clean-up.
+
+2006-09-25  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/msgs/de.msg: Updated German translation (thanks to Nikolaus
+	Polak).
+
+	* src/ejabberd.app: Version update for ejabberd 1.1.2.
+
+	* src/msgs/pl.msg: Updated Polish translation (thanks to Zbyszek
+	Zolkiewski).
+
+	* src/msgs/de.msg: Updated German translation (thanks to Marvin
+	Preuss).
+
+	* src/msgs/nl.msg: Updated Dutch translation (thanks to Sander
+	 Devrieze).
+
+	* src/msgs/cs.msg: Updated Czech translation and removed unused
+	 strings.
+
+	* doc/introduction.tex: Minor doc updates for release 1.1.2.
+
+2006-09-24  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/msgs/es.msg: Updated Spanish translation (thanks to Badlop).
+
+	* src/mod_muc/mod_muc_room.erl: Strings update (thanks to Serguei
+	 Golovan).
+	* src/msgs/ru.msg: Updated Russian translation (thanks to Serguei
+	 Golovan).
+	* src/msgs/uk.msg: Updated Ukrainian translation (thanks to Serguei
+	 Golovan).
+	* src/msgs/fr.msg: Updated French translation.
+	
+	* src/doc/guide.html: Minor W3C compliance fix in an Hevea
+	generated URL.
+	
+	* src/doc/features.html: Added to be consistent (guide.html is in the
+	repository to make Latex optional, but still allow access to the doc).
+
+2006-09-23  Mickael Remond  <mickael.remond@process-one.net>
+
+        * src/ejabberd.hrl: Updated to version 1.1.2
+
+2006-09-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/eldap/eldap.erl: Enable the keepalive socket option (thanks
+	to Evgeniy Khramtsov)
+
+	* src/ejabberd_auth_ldap.erl: Now uses two LDAP connections
+	(thanks to Evgeniy Khramtsov)
+
+	* src/eldap/eldap_filter.erl: Bugfix (thanks to Evgeniy Khramtsov)
+	* src/mod_vcard_ldap.erl: Likewise
+
+2006-09-22  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/msgs/cs.msg: Added Czech translation (thanks to Milos Svasek).
+	
+	* src/mod_muc/mod_muc.erl: Component name is now more user friendly
+	(thanks to Badlop).
+	* src/mod_irc/mod_irc.erl: Likewise.
+	* src/mod_pubsub/mod_pubsub.erl: Likewise. 
+
+	* src/msgs/fr.msg: updated French translation.
+	
+	* doc/guide.tex: Large improvements for ejabberd 1.1.2 (thanks to
+	Sander Devrieze)
+	* doc/version.tex: Likewise.
+	* doc/features.tex: Likewise.
+	* doc/Makefile: Likewise.
+	* doc/dev.tex: Likewise.
+	
+2006-09-14  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Minor fix on index generation.
+
+2006-09-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated (thanks to Evgeniy Khramtsov)
+
+	* src/ejabberd_auth_ldap.erl: Better LDAP support (thanks to
+	Evgeniy Khramtsov)
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/eldap/eldap_filter.erl: Likewise
+
+2006-09-11  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/mssql.sql: Removed unused fields.
+
+2006-09-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejd2odbc.erl: Updated
+
+	* src/mod_muc/mod_muc_log.erl: Fixed html special characters
+	escaping, added new image buttons, chatroom titles now point to
+	xmpp: URIs (thanks to Badlop)
+
+2006-09-05  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_muc/mod_muc.erl: It is now possible to configure the MUC room
+	history feature. A new option has been added in ejabberd muc module
+	configuration (history_size) to define the size of the history. 0 is
+        used to disable the feature.
+	* src/mod_muc/mod_muc_room.erl: Likewise.
+	* doc/guide.tex: Likewise.
+
+2006-09-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_shared_roster.erl: Bugfix
+
+	* src/mod_roster_odbc.erl: Bugfix
+
+2006-09-03  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/odbc_queries.erl: Support for Microsoft SQL Server as a
+	database backend (via ODBC).
+	* src/odbc/ejabberd_odbc.erl: Likewise.
+	* src/odbc/mssql.sql: Likewise.
+	* src/odbc/Makefile.in: Likewise.
+	* src/ejabberd_auth_odbc.erl: Likewise.
+	* src/mod_offline_odbc.erl: Likewise.
+	* src/mod_roster_odbc.erl: Likewise.
+	* src/mod_last_odbc.erl: Likewise.
+	* src/configure.ac: Likewise
+	* doc/guide.tex: Likewise.
+	* doc/introduction.tex: Likewise.
+	* src/odbc/pg.sql: Minor fix. 
+
+2006-08-28  Mickael Remond  <mickael.remond@process-one.net>
+
+	* Makefile.in: Fix for MacOSX compilation.
+	* ejabberd_zlib/Makefile.in: Likewise.
+	* mod_irc/Makefile.in: Likewise.
+	* stringprep/Makefile.in: Likewise.
+	* tls/Makefile.in: Likewise. 
+
+	* src/ejabberd.app: Updated to the current version.
+
+2006-08-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fixed logging configuring
+	permission check
+
+2006-08-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_router.erl: Now filter_packet hook works in
+	'global' context
+
+2006-08-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls_drv.c: Report OpenSSL error messages (thanks to
+	Magnus Henoch)
+
+	* src/mod_muc/mod_muc_room.erl: Use standardized MUC room
+	configuration fields (thanks to Magnus Henoch and Andy Turner)
+
+2006-08-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix
+
+2006-07-28  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bugfix: added a missing catch and fixed the
+	error code used on unknown namespace.
+	* src/ejabberd_s2s_out.erl: Improved s2s connection negociation
+	(dialback namespace usage) when using tls.
+	* src/ejabberd_sm.erl: Fixed the error code used on unknown namespace.
+	* src/mod_register.erl: ejabberd now sends iq result and stream end on
+	user remove.
+
+2006-07-16  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/acl.erl: The server does not crash anymore on wrong acl rule. Add
+	rule error message in log file.
+
+2006-07-07  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: User creation form now creates the
+	user for the current virual host only and does not require to type
+	the hostname.
+	* src/jlib.erl: String to JID conversion now returns an error if the
+	JID string contains two arobases.
+
+2006-07-06  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_shared_roster.erl: Shared roster entries can now be moved or
+	rename from a client without breaking current presence status.
+	* src/mod_roster.erl: Likewise.
+	* src/mod_roster_odbc.erl: Likewise.
+
+	* src/mod_muc/mod_muc_room.erl: Fixed the order in which room presence
+	packets are sent (First existing presence to new occupant, then new
+	occupant presence to existing users.
+
+2006-07-05  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: More flexible parsing the shared
+	roster members list from the configuration form.
+	* src/mod_shared_roster.erl: Deletng a shared roster group now
+	correctly deletes its user entries.
+
+	* src/mod_shared_roster.erl: The logged user (self) is now removed from
+	the shared roster list.
+	* src/ejabberd_auth.erl: Better handling of errors when the server for
+	authentication is unknown.
+
+2006-06-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_in.erl: Removed needless check for xmlns:db
+	when starttls is enabled
+
+2006-06-15  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Bugfix: using tuple instead of a Pid
+	to send Erlang messages in a rarely used case.
+
+2006-06-13  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_auth.erl: Fixed broken multiple connection with
+	anonymous login problem.
+	* src/ejabberd_auth_anonymous.erl: Likewise.
+
+2006-06-07  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Support for pubsub node creation
+	ACL. It is now possible to limit the node creation rights using an
+	ACL from ejabberd config file (Thanks to Christophe Romain).
+	* doc/guide.tex: Likewise.
+	* src/ejabberd.cfg.example.
+
+	* src/mod_pubsub/mod_pubsub.erl: Discovery query on an item does
+	no more return an "item not found error". Discovery stop correctly
+	at the item level (Thanks to Christophe Romain).
+	
+2006-06-02  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Messages polled between the
+	the last client request and the polling timeout were lost. Those
+	messages are now resent using ejabberd routing mechanisms.
+
+	* src/web/ejabberd_http.erl: The web module now accepts HTTP
+	absolute URL (used behind a proxy). This apply to HTTP polling and
+	to the web interface (Thanks to Jean-Sebastien Pedron).
+	
+2006-05-29  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_roster.erl: According to RFC3921 section 9.2, outbound
+	subscribe presence packets must be sent, even if the user has already
+	asked for subcription previously (subscription: none and pending: out).
+	The mod_roster now conforms to this behaviour. 
+	* src/mod_roster_odbc.erl: Likewise.
+
+2006-05-27  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/configure.ac: Added an optional check for krb5.h in
+	configure. ejabberd can now be build directly on RedHat and
+	OpenBSD.
+
+2006-05-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/sk.msg: Slovak translation (thanks to Juraj Michalek
+	and SkLUG)
+
+2006-05-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/pg.sql: Updated
+
+	* src/mod_shared_roster.erl: Updated
+
+	* src/ejabberd_sm.erl: Bugfix
+
+	* src/mod_roster.erl: Bugfix
+	* src/mod_roster_odbc.erl: Likewise
+
+2006-05-23  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_roster.erl: The subscribe request are now resend at login as
+	long as they have not been answered. mod_roster do no more depends on
+        mod_offline.
+	* src/ejabberd_sm.erl: Likewise.
+	* src/ejabberd_c2s.erl: Likewise.
+	* src/mod_roster_odbc.erl: Likewise (The ODBC/relational support has
+	not yet been tested).
+	* src/mod_roster.hrl: Likewise.
+	* src/mod_offline.erl: Likewise.
+	* src/mod_offline_odbc.erl: Likewise.
+	* odbc/pg.sql: Likewise.
+	* odbc/mysql.sql: Likewise.
+
+2006-05-22  Mickael Remond  <mickael.remond@process-one.net>
+	
+	* src/ejabberd_sm.erl: The max_user_sessions has been moved to
+	host configuration.
+	* src/ejabberd.cfg.example: Likewise.
+	* doc/guide.tex: Likewise.
+
+2006-05-21  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_sm.erl: An option to limit the number of opened sessions
+	for a given user have been added. As a default, a given user can only
+	log in 10 times with different resources. After that, new connections
+        replace the older ones.
+	* src/ejabberd.cfg.example: Likewise.
+	* doc/guide.tex: Likewise.
+
+2006-05-15  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Timeout disconnection were not
+	properly handled after "active once" migration. This is now fixed.
+	
+2006-05-07  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_configure.erl: Unknown tables or tables from now unused
+	modules are ignored during restore. The restore can now be performed in
+        such case.
+	* src/web/ejabberd_web_admin.erl: Likewise.
+	* src/ejabberd_admin.erl: Code refactoring. Common Mnesia database
+	restore function.
+
+	* src/ejabberd_ctl.erl: Now prints a user-friendly when trying to
+	restore a backup from a non-existent file.
+
+	* src/ejabberd_ctl.erl: Added a way to delete the older message
+	from the offline message table. This function is only available if
+	offline message queue is stored in Mnesia internal database. The
+	function delete_old_messages is not available in mod_offline_odbc.
+
+2006-05-01  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_ctl.erl: Unknown tables or tables from now unused
+	modules are ignored during restore. The restore can now be performed in
+        such case.
+
+2006-04-28  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd.hrl: release 1.1.1
+	* doc/version.tex: Likewise
+	* doc/guide.tex: Likewise
+
+2006-04-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl.erl: Bugfix: anonymous authentication was always
+	enabled
+
+2006-04-27  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_ctl.erl: The status now only returns "started" if
+	ejabberd is started and ready to accept requests.
+
+2006-04-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Added a documentation for max_stanza_size option
+
+2006-04-24  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd.hrl: Updated for version 1.1.0.
+
+2006-04-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/configure: Removed '==' bashism (thanks to Magnus Henoch)
+	* src/aclocal.m4: Likewise
+
+	* src/ejabberd_c2s.erl: Resend messages when leaving negative
+	presence state (thanks to Magnus Henoch)
+
+2006-04-23  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/msgs/fr.msg: Updated
+	* src/msgs/de.msg: Updated (thanks to Nikolaus Polak)
+	* src/ejabberd_sm.erl: Now delivering messages to all resources with
+	max equal priority when this priority is non-negative.
+
+	* src/guide.tex: Added documentation for native database configuration.
+
+2006-04-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/pt-br.msg: Updated (thanks to Lucius Curado)
+
+	* src/xml_stream.erl: Support for stanza size limit (thanks to
+	Igor Goryachev)
+	* src/ejabberd_receiver.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_auth.erl: Fixed try_register/3 behaviour
+
+2006-04-20  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd.cfg.example: Update of the example for anonymous.
+	Removed unnecessary parameter.
+	* src/ejabberd_auth_anonymous.erl: Removed unnecessary parameter /
+	bugfix.
+	* src/ejabberd_auth.erl: Bugfix: We now are forced to check is an
+	anonymous user is log under a given user name before trying to
+	register it.
+	* doc/guide.tex: Updated (SASL anonymous and anonymous login).
+
+2006-04-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk)
+
+2006-04-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/xml_stream.erl: Cleanup
+
+	* src/ejabberd_service.erl: Updated to use ejabberd_receiver
+
+2006-04-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Minor fix
+
+	* src/ejabberd_c2s.erl: Bugfix (thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
+2006-04-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+
+	* src/ejabberd.cfg.example: Updated (thanks to Badlop)
+
+	* doc/guide.tex: Updated (thanks to Badlop)
+
+2006-04-07  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fixed pubsub root node creation
+	(conflict error was send on node creation)
+
+2006-04-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: SASL Anonymous + Anonymous login support
+	(thanks to Mickael Remond and Magnus Henoch)
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_auth.erl: Likewise
+	* src/ejabberd_auth_anonymous.erl: Likewise
+	* src/cyrsasl.erl: Likewise
+	* src/cyrsasl_anonymous.erl: Likewise
+	* src/ejabberd.cfg.example: Likewise
+
+2006-04-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/expat_erl.c: Use binaries for CDATA
+	* src/xml.erl: Likewise
+
+2006-04-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* src/mod_configure.erl: Updated translation strings (thanks to
+	Sergei Golovan)
+	* src/web/ejabberd_web_admin.erl: Likewise
+
+	* src/ejabberd_s2s_in.erl: Changed a path to PKIX includes (thanks
+	to Sergei Golovan)
+
+2006-04-01  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/Makefile.in: Added an option to compile ejabberd with debug
+	print-out (make ejabberd_debug=true).
+	* src/ejabberd_c2s.erl: Added a new debug printout: We can now print
+	the XML packets send by the server.
+
+2006-03-31  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix
+
+2006-03-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Enable zlib only over TCP
+
+2006-03-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix (thanks to Sergei Golovan)
+
+2006-03-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_privacy.erl: Fixed privacy list pushing (thanks to
+	Sergei Golovan)
+	* src/ejabberd_c2s.erl: Likewise
+
+2006-03-16  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_sm.erl: Remove unnecessary use delete_object, which can,
+	in some context break indexes, when used on non bag table.
+
+2006-03-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix
+
+2006-03-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/xml_stream.erl: Added catching of gen_fsm:send_event errors
+
+	* src/ejabberd_s2s_out.erl: Better support for multiple SRV
+	records (thanks to Sergei Golovan)
+
+	* src/mod_muc/mod_muc_log.erl: Support for chatroom logging
+	(thanks to Badlop)
+	* src/mod_muc/mod_muc_room.erl: Likewise
+	* src/mod_muc/Makefile.in: Likewise
+	* src/mod_muc/Makefile.win32: Likewise
+
+2006-03-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/gen_iq_handler.erl: Added support for {queues, N} IQ handler
+	type
+
+2006-03-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Bugfix
+
+2006-03-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix
+
+	* src/ejabberd_auth_odbc.erl: Bugfix
+
+2006-03-04  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_logger_h.erl: reopen-log function now rename the log
+	file if it has not been already renamed by a logrotate process. This
+	change allow ejabberd administrators to rotate log files on Windows
+        (EJAB-52).
+
+2006-02-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Added a interface for node
+	updating
+	* src/ejabberd_update.erl: Added function update_info/0
+
+2006-02-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* contrib/extract_translations/extract_translations.erl: Minor
+	update (thanks to Sergei Golovan)
+
+	* src/ejabberd_zlib/Makefile.win32: Zlib support for Windows build
+	(thanks to Sergei Golovan)
+	* src/Makefile.win32: Likewise
+	* src/configure.erl: Likewise
+
+2006-02-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_ctl.erl: Added API for virtual host specific
+	commands, removed registered-users command
+	* src/ejabberd_auth.erl: Added processing of registered-users
+	command
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_app.erl: Added inititalization of ejabberd_ctl
+	* src/ejabberd_sm.erl: Minor update
+
+2006-02-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Added handling for "%", "&"
+	and "~" prefixes in IRC nicknames (thanks to Vladimir Kulev)
+
+	* src/mod_irc/mod_irc_connection.erl: Added /msg and /ctcp
+	commands, improved handling of channel topic and kick, mirc colors
+	now filtered, other minor improvements (thanks to Oleg V. Motienko
+	and Magnus Henoch)
+
+	* src/mod_configure.erl: Improved strings (thanks to Sander
+	Devrieze)
+	* src/mod_vcard.erl: Likewise
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/mod_vcard_odbc.erl: Likewise
+	* src/web/ejabberd_web_admin.erl: Likewise
+
+2006-02-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_service_log.erl: Bugfix (thanks to Badlop)
+
+	* src/jd2ejd.erl: Use mod_vcard_odbc if it is loaded (thanks to
+	Tomasz Sterna)
+
+2006-02-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Added a few ejabberdctl commands
+
+	* src/ejabberd_ctl.erl: New interface for command registration
+
+2006-02-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_ctl.erl: Partially rewritten
+	* src/ejabberd_ctl.hrl: Definitions of exit status codes moved
+	here
+
+2006-02-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix
+
+2006-02-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/ejabberd_odbc.erl: Reconnect on ODBC connection closing
+
+2006-02-07  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_auth.erl: plugin authentication modules can now
+	be used in the configuration file: {auth_method, module} will now
+	use the module ejabberd_auth_module.erl for authentication.
+
+2006-02-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Kick non-members when room
+	reconfigured to be member-only or when membership is revoked in
+	member-only room, allowed "true" and "false" in x:data forms
+	(thanks to Sergei Golovan)
+
+	* src/mod_configure.erl: Added "Host" parameter to get_form and
+	set_form functions (thanks to Sergei Golovan)
+
+	* src/ejabberd_s2s_out.erl: Bugfix
+
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+
+	* src/web/ejabberd_web.erl: Bugfix (thanks to Badlop)
+
+	* src/mod_irc/mod_irc.erl: Updated copyright dates
+	* src/mod_muc/mod_muc.erl: Likewise
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/mod_vcard_odbc.erl: Likewise
+	* src/web/ejabberd_web_admin.erl: Likewise
+
+2006-02-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_auth_odbc.erl: Added ejabberd_odbc_sup to ejabberd
+	supervision tree
+
+	* src/web/ejabberd_http.erl: Authentication check moved to
+	ejabberd_web.erl
+	* src/web/ejabberd_web.erl: Likewise
+
+	* src/web/Makefile.in: Added ejabberd_http.hrl dependency
+
+	* src/web/ejabberd_http_poll.erl: Updated to use {active, once}
+	socket mode
+
+	* src/mod_irc/mod_irc.erl: Updated to use gen_server behaviour and
+	ejabberd supervision tree
+	* src/mod_irc/mod_irc_connection.erl: Likewise
+
+2006-02-02  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/configure.ac: --prefix option can now override the default
+	install dir
+	* src/configure: Likewise
+	* src/Makefile.in: Likewise
+
+2006-02-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Updated to use gen_server
+	behaviour and ejabberd supervision tree
+	* src/mod_echo.erl: Likewise
+
+2006-02-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Added a supervisor for conference room
+	processes
+	* src/mod_muc/mod_muc_room.erl: Likewise
+
+2006-01-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/pg.sql: Fixed syntax error
+
+2006-01-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_router.erl: Updated to use gen_server behaviour
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_s2s.erl: Likewise
+	* src/gen_iq_handler.erl: Likewise
+
+	* src/ejabberd_sup.erl: Added supervisor for ejabberd_receiver
+	* src/ejabberd_receiver.erl: Updated
+
+2006-01-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_update.erl: Support for run-time ejabberd updating
+	(not completed)
+	* src/ejabberd_c2s.erl: Added 'update_info' module attribute for
+	testing ejabberd_update
+
+2006-01-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Remove top-level xmlns from incoming
+	stanzas
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_service.erl: Likewise
+
+	* src/ejabberd_c2s.erl: Better error handling for stream
+	compression support (thanks to Sergei Golovan)
+
+2006-01-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix
+
+2006-01-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Partially rewritten to work more
+	efficiently and avoid race conditions
+	* src/ejabberd_c2s.erl: Likewise
+
+2006-01-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Cleanup
+
+2006-01-20  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_receiver.erl: Added new debugging trace: It is now
+	possible to dump the XML stream received from a client (usefull for
+        client debugging).
+
+2006-01-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/aclocal.m4: Updated for zlib support
+	* src/configure.ac: Likewise
+
+	* src/mod_muc/mod_muc_room.erl: Weakened presence filtering, added
+	warning in non-anonymous rooms, room destroying updated to latest
+	JEP-0045, added a number of occupants and room name in room's
+	disco#info reply, miscellaneous internal changes (thanks to Sergei
+	Golovan)
+
+	* src/mod_muc/mod_muc.erl: Better support for nick unregistration
+	(thanks to Sergei Golovan)
+
+	* src/ejabberd_zlib/ejabberd_zlib.erl: Zlib support (thanks to
+	Sergei Golovan)
+	* src/ejabberd_zlib/ejabberd_zlib_drv.c: Likewise
+	* src/ejabberd_zlib/Makefile.in: Likewise
+	* src/ejabberd_c2s.erl: Stream compression support (JEP-0138)
+	* src/ejabberd_receiver.erl: Likewise
+
+	* src/mod_disco.erl: Don't split node name before calling hooks
+	(thanks to Sergei Golovan)
+
+	* src/mod_configure.erl: Support for configuration using ad-hoc
+	commands (thanks to Sergei Golovan)
+
+	* src/mod_announce.erl: Support for sending announce messages
+	using ad-hoc commands (thanks to Sergei Golovan)
+
+	* src/mod_adhoc.erl: Ad-hoc support (JEP-0050) (thanks to Magnus
+	Henoch)
+	* src/adhoc.erl: Likewise
+	* src/adhoc.hrl: Likewise
+
+	* src/jlib.hrl: Updated (thanks to Sergei Golovan)
+
+	* src/gen_mod.erl: Added function is_loaded/2 (thanks to Sergei
+	Golovan)
+
+	* src/ejabberd_service.erl: Changed error message on handshake
+	error (thanks to Sergei Golovan)
+
+	* src/ejabberd.cfg.example: Updated (thanks to Sergei Golovan)
+
+2006-01-13  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: underscore and percent are now only
+	escaped in like queries. MySQL where not escaping those escaped
+	characters in other context.
+	* src/mod_vcard_odbc.erl: likewise.
+	* src/odbc/mysql.sql: Fixed MySQL database creation script: Was
+	not properly working with all MySQL version.
+	* src/odbc/ejabberd_odbc.erl: Added a way to retry database
+	connection connect for 5 minutes when the connection is lost. No
+	further connection is retry after. 
+	* src/odbc/ejabberd_odbc_sup.erl: likewise.
+	
+2006-01-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_service.erl: Bugfix
+
+	* src/ejabberd_receiver.erl: Rewritten to use {active, once} mode
+	for socket
+	* src/ejabberd_c2s.erl: Update
+	* src/ejabberd_listener.erl: Likewise
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd_service.erl: Likewise
+	* src/shaper.erl: Likewise
+	* src/tls/tls.erl: Likewise
+	* src/web/ejabberd_http.erl: Likewise
+
+2006-01-02  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: Native MySQL support
+
+2005-12-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_logger_h.erl: Speed optimizations
+
+2005-12-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/Makefile.in: Clean results of ASN.1 compiler (thanks to
+	Sergei Golovan)
+
+	* src/win32/ejabberd.nsh: Removed (thanks to Sergei Golovan)
+
+2005-12-22  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: Added error message on ODBC
+	connection to help ODBC configuration troubleshooting.
+
+2005-12-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/Makefile.win32: Updated (thanks to Sergei Golovan)
+	* src/configure.erl: Likewise
+	* src/win32/CheckReqs.ini: Likewise
+	* src/win32/CheckReqs1.ini: Likewise
+	* src/win32/CheckReqs1H.ini: Likewise
+	* src/win32/ejabberd.nsh: Likewise
+	* src/win32/ejabberd.nsi: Likewise
+
+	* src/odbc/ejabberd_odbc.erl: Bugfix
+
+2005-12-21  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/mysql.sql: Database description for MySQL Database 4.1
+	(Max version, with Innodb)
+	* src/ejabberd_auth_odbc.erl: MySQL ODBC support
+	* src/mod_offline_odbc.erl: Likewise
+	* src/mod_vcard_odbc.erl: Likewsie
+	* src/mod_roster_odbc.erl: Likewise
+	* src/odbc/ejabberd_odbc.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+
+2005-12-16  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/Makefile: Added helper to generate the docs (Thanks to Sander
+	Devrieze)
+	* doc/guide.tex: Added ejabberd 1.0.0 release notes.
+	* doc/dev.tex: Code clean-up (Thanks to Sander Devrieze) 
+
+2005-12-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/features.tex: Added feature sheet (Thanks to Sander
+	Devrieze)
+
+2005-12-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/iconv_erl.c: Bugfix (thanks to Tomas Janousek)
+
+2005-12-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/win32/ejabberd.nsi: Updated (thanks to Maxim Ryazanov)
+
+	* src/ejabberd.hrl: Updated version
+	* src/ejabberd.app: Likewise
+	* doc/version.tex: Likewise
+
+2005-12-13  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/release_notes_1.0.0.txt: Added preliminary version of ejabberd
+	1.0.0 release notes.
+	* doc/guide.html: Generated the updated HTML version of the documentation.
+
+2005-12-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Workaround for gateway subscriptions now
+	should be enabled with --enable-roster-gateway-workaround
+	* src/mod_roster_odbc.erl: Likewise
+	* src/configure.ac: Likewise
+	* src/Makefile.in: Likewise
+
+2005-12-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_service.erl: Added logging of termination
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* src/msgs/*.msg: Updated (thanks to Badlop)
+
+2005-12-08  Mickael Remond  <mickael.remond@process-one.net>
+
+	* contribs/contrib/extract_translations/prepare-translation.sh:
+	Small improvements.
+	* src/msgs/fr.msg: Updated
+
+2005-12-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/pl.msg: Fixed syntax error
+
+	* src/mod_offline.erl: Don't store headline messages
+	* src/mod_offline_odbc.erl: Likewise
+
+2005-12-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+2005-12-06  Mickael Remond  <mickael.remond@process-one.net>
+        
+	* src/ejabberd.cfg.example: Updated
+
+	* src/Makefile.*: Can now be build when the Erlang environment is
+	not Erlang/OTP but the Erlang REPOS CDROM.  Still compatible with
+	standard Erlang/OTP install
+	* aclocal.m4: Likewise
+	* src/Makefile.*: Can now be build with Erlang debug_info with
+	'make debug=true'
+
+2005-12-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/pt-br.msg: Updated (thanks to Victor Hugo dos Santos)
+
+	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk)
+
+	* src/msgs/sv.msg: Updated (thanks to Magnus Henoch)
+
+	* src/msgs/de.msg: Updated (thanks to Patrick Dreker)
+
+2005-11-30  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/yozhikheader.png: Added feature sheet header (Thanks to Sander
+	Devrieze)
+
+2005-11-28  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Improved and updated documentation (Thanks to Sander
+        Devrieze)
+	* doc/guide.html: Likewise
+	* doc/features.tex: Likewise
+	* doc/introduction.tex: Likewise
+	* doc/version.tex: Likewise
+	* doc/logo.png: New logo for ejabberd doc (Thanks to Sander Devrieze)
+
+2005-11-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Now web interface is compliant to
+	XHTML 1.0 Transitional (thanks to Sander Devrieze)
+	* src/web/ejabberd_web_admin.erl: Likewise
+
+2005-11-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/Makefile: Now really added
+
+2005-11-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: The "id" attribute of roster push packet was
+	missed (thanks to Maxim Ryazanov)
+	* src/mod_roster_odbc.erl: Likewise
+
+	* src/web/ejabberd_web_admin.erl: Fixed encoding of user names in
+	URLs
+
+	* src/web/ejabberd_http.erl: Added url_encode function from yaws
+
+	* src/ejabberd_c2s.erl: Send stream error when connection is
+	replaced (thanks to Maxim Ryazanov)
+
+2005-11-19  Mickael Remond  <mickael.remond@process-one.net>
+
+	* contrib/extract_translations/prepare-translation.sh: Added
+	wrapper to extract_translation.erl (thanks to Badlop)
+
+2005-11-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard.erl: Fixed xmlns in disco items replies (thanks to
+	Maxim Ryazanov)
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/mod_vcard_odbc.erl: Likewise
+
+	* src/tls/Makefile.in: Use CPPFLAGS (thanks to Magnus Henoch)
+
+2005-11-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_in.erl: Support for dNSName certificate field
+	and DNS name matching
+	* src/XmppAddr.asn1: Moved here from src/tls/XmppAddr.asn1
+	* src/tls/XmppAddr.asn1: Likewise    
+	* src/Makefile.in: Updated
+	* src/tls/Makefile.in: Updated
+
+2005-11-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/ejabberd_odbc.erl: Support for mnesia-like transaction
+	interface
+	* src/mod_roster_odbc.erl: Updated to use
+	ejabberd_odbc:sql_transaction/2
+
+2005-11-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Fixed invalid behaviour upon
+	connecting to host with invalid domain
+	* src/ejabberd_s2s.erl: Likewise
+
+2005-11-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_config.erl: Support for per host certificates
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_s2s_in.erl: Fixed id-on-xmppAddr processing
+
+2005-11-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_disco.erl: Fixed extra_domains option processing
+
+	* src/ejabberd_s2s_out.erl: Support for STARTTLS+SASL EXTERNAL
+	(not well-tested yet)
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/tls/tls.erl: Likewise
+	* src/tls/tls_drv.c: Likewise
+	* src/tls/XmppAddr.asn1: Likewise
+	* src/tls/Makefile.in: Likewise
+
+2005-10-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_disco.erl: Minor fix
+
+2005-10-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix
+
+2005-10-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls.erl: Accept {error,already_loaded} from
+	erl_ddll:load_driver/2
+	* src/stringprep/stringprep.erl: Likewise
+	* src/mod_irc/iconv.erl: Likewise
+	* src/ejabberd_app.erl: Likewise
+
+	* src/tls/tls_drv.c: Support for "connect" method
+	* src/tls/tls.erl: Likewise
+
+	* src/ejabberd_s2s_in.erl: Support for STARTTLS+Dialback
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd_receiver.erl: Added a few hacks ({active,once} mode
+	should be used instead of recv/3 call to avoid them)
+	* src/ejabberd_config.erl: Added s2s_use_starttls and s2s_certfile
+	options
+	* src/ejabberd.cfg.example: Likewise
+
+2005-10-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_app.erl: Try to load tls_drv at startup to avoid
+	unloading of libssl (thanks to Brian Campbell)
+
+2005-10-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/pg.sql: Added spool.seq field for offline messages
+	sorting
+	* src/mod_offline_odbc.erl: Likewise
+
+2005-10-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix
+
+2005-10-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/gen_iq_handler.erl: Bugfix
+
+2005-10-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_auth_odbc.erl: Minor fix
+
+	* src/odbc/ejabberd_odbc.erl: Updated pgsql support
+
+	* src/mod_roster_odbc.erl: Bugfix
+
+	* src/ejabberd_c2s.erl: Updated to work correctly with
+	mod_vcard_odbc
+
+2005-10-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/ejabberd_odbc.erl: Experimental support for pgsql
+	library
+
+	* src/ejabberd_auth_odbc.erl: Bugfix
+
+	* src/mod_roster_odbc.erl: Bugfix
+
+2005-10-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejd2odbc.erl: Added vCard converter
+
+	* src/mod_vcard_odbc.erl: vCard support via ODBC
+
+	* src/odbc/pg.sql: Updated
+
+2005-09-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Updated API for better
+	integration with J-EAI web interface
+
+	* src/mod_shared_roster.erl: Now possible to specify all users on
+	virtual host in group
+	* src/web/ejabberd_web_admin.erl: Likewise
+
+2005-09-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.erl: Bugfix
+
+2005-09-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejd2odbc.erl: Updated
+
+2005-09-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_disco.erl: Disco publishing support (thanks to Magnus
+	Henoch)
+
+	* src/mod_disco.erl: Functions register_sm_feature and
+	register_sm_node replaced with hooks (thanks to Sergei Golovan)
+	* src/mod_vcard.erl: Updated
+	* src/mod_vcard_ldap.erl: Likewise
+
+	* src/mod_disco.erl: Now mod_disco doesn't depend on mod_configure
+	(thanks to Sergei Golovan)
+	* src/mod_configure.erl: Likewise
+
+2005-08-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejd2odbc.erl: Converter from mnesia to ODBC
+
+	* src/mod_offline_odbc.erl: Minor fix
+
+2005-08-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard_ldap.erl: Bugfix
+
+	* src/mod_vcard.erl: Bugfix
+
+2005-08-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_auth_odbc.erl: Bugfix
+
+2005-08-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/dev.tex: Updated
+
+2005-08-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl_digest.erl: Fixed challenge/response parsing (thanks
+	to Martin Pokorny)
+
+2005-08-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/pl.msg: Updated (thanks to Andrew Smyk)
+
+	* src/web/ejabberd_web_admin.erl: Bugfix (thanks to Badlop)
+
+2005-08-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/win32/inetrc: Added (thanks to Sergei Golovan)
+
+	* src/Makefile.win32: Updated (thanks to Sergei Golovan)
+	* src/win32/ejabberd.cfg: Likewise
+	* src/win32/ejabberd.nsi: Likewise
+
+	* doc/guide.tex: Updated
+
+	* src/ejabberd.hrl: Updated version
+
+2005-08-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
+2005-08-01  Mickael Remond  <mremond@erlang-fr.org>
+
+	* (all): ejabberd-0.9.8 released
+
+	* src/msgs/fr.msg: Updated
+
+2005-07-31  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_config.erl: Added host_config option
+	* doc/guide.tex: Updated
+
+	* src/ejabberd_auth_ldap.erl: Bugfix
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* src/msgs/de.msg: Updated (thanks to Torsten Werner)
+
+	* src/web/ejabberd_web_admin.erl: Fixed CSS style sheet to be
+	standards compliant (thanks to Sander Devrieze)
+
+2005-07-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Added "Virtual Hosts" page
+
+2005-07-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_router.erl: Added filter_packet hook
+
+2005-07-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jd2ejd.erl: Updated to work with ODBC
+
+	* src/mod_roster_odbc.erl: Updated
+
+2005-07-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline_odbc.erl: Bugfix
+
+	* src/mod_last_odbc.erl: Bugfix
+
+2005-07-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Updated to J-EAI version
+
+2005-07-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/acl.erl: Slightly changed "access" option processing
+
+	* src/mod_disco.erl: Fixed processing of host features and
+	extra_domains option
+
+	* src/ejabberd_c2s.erl: Processing of jabber:iq:register totally
+	moved to mod_register.erl (thanks to Sergei Golovan)
+	* src/mod_register.erl: Likewise
+
+	* src/win32/ejabberd.nsi: Added two pictures in installer (thanks
+	to Maxim Ryazanov)
+	* src/win32/ejabberd_header.bmp: Likewise
+	* src/win32/ejabberd_intro.bmp: Likewise
+
+	* src/web/ejabberd_web_admin.erl: Fixed spelling of word
+	"authentication"
+	* src/ejabberd_c2s.erl: Likewise
+
+2005-07-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_register.erl: Bugfix
+
+	* src/mod_vcard.erl: Bugfix
+
+	* src/ejabberd_app.erl: Updated to allow different authentication
+	methods for different virtual hosts
+	* src/ejabberd_auth.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/cyrsasl.erl: Likewise
+	* src/cyrsasl_digest.erl: Likewise
+	* src/cyrsasl_plain.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_config.erl: Likewise
+	* src/extauth.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+	* src/mod_roster_odbc.erl: Likewise
+	* src/odbc/ejabberd_odbc.erl: Likewise
+	* src/odbc/ejabberd_odbc_sup.erl: Likewise
+
+2005-07-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_app.erl: Bugfix
+
+	* src/ejabberd_config.erl: Bugfix
+
+2005-06-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline.erl: Bugfix
+
+2005-06-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Enhanced virtual hosting support
+
+2005-05-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Bugfix
+
+2005-05-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/pt-br.msg: New Brazilian Portuguese translation (thanks
+	to Felipe Brito Vasconcellos)
+
+2005-05-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): ejabberd-0.9.1 released
+
+	* src/msgs/fr.msg: Updated (thanks to Mickael Remond)
+
+	* src/odbc/Makefile.in: Added
+
+	* src/configure.ac: Updated for odbc support
+	* src/Makefile.in: Likewise
+
+	* src/aclocal.m4: Bugfix
+
+	* src/mod_last_odbc.erl: Added store_last_info/4 function (thanks
+	to Sergei Golovan)
+	* src/mod_last.erl: Likewise
+
+	* src/jd2ejd.erl: Support for exporting iq:last information,
+	better error handling (thanks to Sergei Golovan)
+
+	* src/ejabberd_ctl.erl: Added "import-file" and "import-dir"
+	commands (thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+	* doc/dev.tex: Likewise
+	* doc/disco.png: Likewise
+	* doc/discorus.png: Likewise
+	* doc/webadmin.png: Likewise
+	* doc/webadminru.png: Likewise
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* src/web/ejabberd_web_admin.erl: Updated CSS, added modules
+	management, fixed bug with configuring of listened ports on
+	different nodes (thanks to Sergei Golovan)
+
+	* src/gen_mod.erl: Added function loaded_modules_with_opts/0, new
+	API for module stopping (thanks to Sergei Golovan)
+	* src/mod_muc/mod_muc.erl: Moved a process name to a macros,
+	updated module stopping (thanks to Sergei Golovan)
+	* src/mod_irc/mod_irc.erl: Likewise
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+	* src/mod_announce.erl: Updated module stopping (thanks to Sergei
+	Golovan)
+	* src/mod_echo.erl: Likewise
+	* src/mod_offline.erl: Likewise
+
+	* src/web/ejabberd_http.erl: "Connection:" header value now
+	matched case-insensitive, and returned to client, replaced
+	duplicate is_space($\r) with is_space($\t) (thanks to Maxim
+	Ryazanov)
+
+2005-05-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fixed XML element name for
+	pubsub#event namespace (thanks to Magnus Henoch)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+
+2005-05-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Now possible to subscribe to a
+	pubsub node with a JID that includes a resource (thanks to Martijn
+	van Beers)
+
+	* src/stringprep/uni_parse2.tcl: Bugfix
+	* src/stringprep/stringprep_drv.c: Likewise
+	* src/stringprep/uni_norm.c: Regenerated
+
+2005-05-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Added support for WHOIS
+	requests and reply to USERINFO (thanks to Oleg V. Motienko)
+
+2005-05-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/stringprep_drv.c: Bugfix
+
+2005-05-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/win32/ejabberd.cfg: Updated (thanks to Sergei Golovan)
+
+	* src/odbc/Makefile.win32: Added (thanks to Sergei Golovan)
+
+	* src/Makefile.win32: Updated (thanks to Sergei Golovan)
+
+2005-05-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jd2ejd.erl: Fixed private xml setting
+
+	* src/mod_last.erl: Bugfix
+	* src/mod_last_odbc.erl: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: Fixed service stopping
+
+2005-05-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fixed bug with storing
+	affiliations of invited users in members-only room (thanks to
+	Sergei Golovan)
+
+	* src/ejabberd_c2s.erl: Fixed starttls_required behaviour for
+	legacy connections (thanks to Brian Campbell)
+
+	* src/web/ejabberd_web_admin.erl: Images now specified via CSS,
+	design slightly updated, added last activity statistics (thanks to
+	Sergei Golovan)
+
+2005-05-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/stringprep_drv.c: Added check for bidi
+
+	* src/stringprep/uni_parse.tcl: Now handle all Unicode code points
+	up to U+10FFFF
+	* src/stringprep/uni_parse2.tcl: Likewise
+	* src/stringprep/uni_data.c: Regenerated
+	* src/stringprep/uni_norm.c: Likewise
+
+2005-05-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/uni_norm.c: Regenerated with Unicode 3.2 tables
+	as required by RFC3454
+
+	* src/stringprep/uni_parse2.tcl: Bugfixes
+
+	* src/stringprep/stringprep_drv.c: Bugfixes, added hangul
+	composition
+
+2005-05-05  Mickael Remond  <mremond@erlang-fr.org>
+
+	* src/msgs/fr.msg: Added missing version 0.9 fields and removed unused
+	ones.
+
+2005-05-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Store ban reasons for outcast
+	items, updated affiliation matching rules to latest JEP-0045
+
+2005-05-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Updated changing roles and
+	affiliations tables to latest JEP-0045
+
+2005-05-01  Mickael Remond  <mremond@erlang-fr.org>
+
+	* src/msgs/fr.msg: Updated
+
+2005-05-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/sw.msg: Renamed to sv.msg
+	* src/msgs/sv.msg: Likewise
+
+	* src/msgs/pl.msg: Updated (thanks to Andrew Smyk)
+
+	* contrib/extract_translations/README: Better phrasing (thanks to
+	Sergei Golovan)
+
+	* contrib/extract_translations/extract_translations.erl: Fix to
+	avoid duplication of lines (thanks to Sergei Golovan)
+
+	* src/msgs/sw.msg: New Swedish translation (thanks to Magnus
+	Henoch)
+
+	* src/msgs/pt.msg: New Portuguese translation (thanks to iceburn)
+
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
+2005-04-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_auth_ldap.erl: Added listing of users support
+
+	* src/ejabberd.cfg.example: Updated LDAP options
+
+	* src/ejabberd_ctl.erl: Better spelling, now prints full file
+	paths, fixed checking of mnesia:install_fallback result, now
+	"dump" command dumps only persistent tables
+
+	* contrib/extract_translations/: A tool for extracting of
+	translation strings from ejabberd code (thanks to Sergei Golovan)
+
+2005-04-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard_ldap.erl: Bugfix (thanks to Mickael Remond)
+
+2005-04-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Added translation to submit
+	button and "shared roster groups" header (thanks to iceburn and
+	Sergei Golovan)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+	* src/msgs/uk.msg: Likewise
+
+	* src/mod_muc/mod_muc_room.erl: Minor update to simplify
+	translation (thanks to Sergei Golovan)
+
+	* src/tls/tls_drv.c: Reverted previous patch
+
+2005-04-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Added mod_shared_roster documentation
+
+	* src/ejabberd.hrl: Updated version
+
+2005-04-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jd2ejd.erl: Bugfix
+
+2005-04-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_auth.erl: Added check for domain of registered user
+
+	* src/web/ejabberd_web_admin.erl: Fixed user registration via web
+	interface, fixed path to user's offline messages (thanks to
+	Mickael Remond)
+
+	* src/mod_disco.erl: Fixed domain listing when one virtual host is
+	a subdomain of another
+
+2005-04-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): ejabberd-0.9 released
+
+	* src/web/ejabberd_web_admin.erl: Added link to shared roster page
+
+	* src/odbc/ejabberd_odbc.erl: ODBC connection string can be
+	specified via odbc_server option now
+	* src/ejabberd.cfg.example: Added ODBC usage example
+
+	* doc/guide.tex: Updated
+
+	* src/msgs/pl.msg: New Polish translation (thanks to Andrew Smyk)
+
+2005-04-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Merged virtual hosting support
+
+2005-04-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Send new id for each new stream inside one
+	session (thanks to Maxim Ryazanov)
+
+	* src/tls/tls_drv.c: Now reads all certificates from certificate
+	file instead of reading only first one (thanks to Karl-Johan
+	Karlsson)
+
+2005-04-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/transport-configs/init-scripts/jabber-gg-transport:
+	Fixed typo (thanks to Sander Devrieze)
+
+2005-04-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/transport-configs/configs/msn-transport.xml: Fixed typo
+	(thanks to Sander Devrieze)
+
+2005-04-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/transport-configs/: Updated (thanks to Sander Devrieze)
+
+2005-03-31  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_ctl.erl: Bugfix
+
+2005-03-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Bugfix
+
+2005-03-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Bugfix
+
+2005-03-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_router.erl: Bugfix
+
+2005-01-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Added filtering of quit
+	status
+
+2005-01-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Copyright update
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+	* src/mod_muc/mod_muc.erl: Likewise
+	* src/mod_irc/mod_irc.erl: Likewise
+
+2004-12-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/ejabberd_odbc.erl: Load-balance ODBC requests between
+	several connections
+
+	* src/odbc/ejabberd_odbc_sup.erl: Supervisor for ODBC connections
+
+	* src/mod_muc/mod_muc_room.erl: Added missed type='form' attribute
+	in room configuration response (thanks to Badlop)
+
+2004-12-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Roster support via ODBC (not completed)
+
+	* src/ejabberd_auth_internal.erl: Added remove_user hook
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/mod_roster.erl: Use remove_user hook
+	* src/mod_offline.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+	* src/mod_last.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+	* src/mod_private.erl: Likewise
+
+	* src/mod_roster.erl: Added hooks for functions exported by
+	mod_roster
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_sm.erl: Likewise
+	* src/mod_privacy.erl: Likewise
+	* src/mod_last.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+
+2004-12-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Updated missed message passing from
+	previous patch
+
+2004-12-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/odbc/pg.sql: DB creation script for postgres
+
+	* src/odbc/ejabberd_odbc.erl: Experimental support for ODBC
+	* src/mod_last_odbc.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_auth.erl: Likewise
+
+2004-12-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_stats.erl: Minor optimizations
+
+	* src/ejabberd_sm.erl: Added unset_presence_hook
+	* src/mod_last.erl: Use unset_presence_hook instead of direct call
+
+	* src/ejabberd_auth.erl: Splitted into ejabberd_auth_internal.erl,
+	ejabberd_auth_ldap.erl, and ejabberd_auth_external.erl,
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+
+2004-12-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Changed type of password field
+	to "password"
+
+	* src/jlib.hrl: More stream error defines (thanks to Sergei
+	Golovan)
+
+	* src/ejabberd_c2s.erl: Support for starttls_required option
+	(thanks to Sergei Golovan)
+
+	* src/mod_muc/mod_muc_room.erl: Fixed mistake in case condition
+	(thanks to Sergei Golovan)
+
+	* src/xml_stream.erl: Added function parse_element/1
+
+	* src/expat_erl.c: Added PARSE_FINAL_COMMAND
+
+2004-12-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_listener.erl: Enable keepalive option
+
+	* src/xml_stream.erl: Added API for managing xml streams without
+	creating process
+	* src/ejabberd_receiver.erl: Use this API, now 2 processes are
+	created per C2S connection
+
+2004-12-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/expat_erl.c: Now uses port control instead of port output
+	* src/xml_stream.erl: Likewise
+
+2004-11-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/stringprep.erl: Now register port instead of
+	storing it in ets table
+
+2004-11-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated URLs to R10C release
+
+2004-11-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard.erl: Added missed index
+
+2004-11-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated (thanks to Sander Devrieze)
+
+2004-11-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/aclocal.m4: Fixed headers detecting in AM_WITH_OPENSSL
+	(thanks to Leif Johansson)
+
+	* src/ejabberd_auth.erl: Added support for ldap_rootdn and
+	ldap_password options (thanks to Stefan de Konink)
+	* src/mod_vcard_ldap.erl: Likewise
+
+	* src/ejabberd_router.erl: Now possible to route packet via
+	function call instead of message sending
+	* src/ejabberd_sm.erl: Added function route/3, use it in route
+	table
+	* src/ejabberd_local.erl: Likewise
+	* src/ejabberd_s2s.erl: Likewise
+
+2004-10-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Fixed spelling of word "authentication"
+
+	* src/*/Makefile.in: Replaced erlc with @ERLC@
+
+2004-10-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s.erl: Added remove_connection/1
+	* src/ejabberd_s2s_out.erl: Use ejabberd_s2s:remove_connection/1
+
+	* src/ejabberd_s2s_in.erl: Minor cleanup
+
+	* examples/transport-configs/: Transport config examples (thanks
+	to Sander Devrieze)
+
+	* src/msgs/de.msg: German translation (thanks to Marina Hahn)
+
+2004-10-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/win32/: Updated (thanks to Sergei Golovan)
+
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+
+	* src/mod_irc/iconv_erl.c: Bugfix (thanks to Jacek Konieczny)
+
+2004-10-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): ejabberd-0.7.5 released
+
+	* src/tls/Makefile.win32: Added (thanks to Sergei Golovan)
+
+	* src/win32/: Updated (thanks to Sergei Golovan)
+
+2004-10-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Fixed user listing
+
+	* src/msgs/uk.msg: Updated (thanks to Sergei Golovan)
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
+	* src/msgs/ua.msg: Renamed to uk.msg
+
+	* COPYING: Added permission to link with OpenSSL
+
+2004-10-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ua.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_muc/mod_muc_room.erl: Fixed room destroying
+
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_sm.erl: Fixed message routing when all resources
+	have negative priority
+
+	* src/msgs/*.msg: Updated (thanks to Sergei Golovan)
+
+	* src/web/ejabberd_web_admin.erl: Table titles now bold (thanks to
+	Sergei Golovan)
+
+2004-10-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+	* src/ejabberd_s2s_out.erl: Fixed socket closing condition
+
+2004-10-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http_poll.erl: Properly handle bad requests
+
+	* src/web/ejabberd_web_admin.erl: Ported features from J-EAI
+
+2004-09-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Fixed processing of POST body for
+	HTTP Polling
+
+	* src/web/ejabberd_http.erl: Support for "Connection" HTTP header
+	(thanks to Sergei Golovan)
+
+	* src/translate.erl: Much better handling of xml:lang (thanks to
+	Sergei Golovan)
+
+2004-09-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_listener.erl: Check result of controlling_process
+
+	* src/web/ejabberd_http.erl: Bugfix
+
+2004-09-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/Makefile.in: Updated (thanks to Badlop)
+
+2004-09-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/aclocal.m4: Better expat and openssl detection (thanks to
+	Anton Vanin)
+
+	* src/**/Makefile.in: Updated (thanks to Anton Vanin)
+	* src/configure.ac: Likewise
+
+2004-09-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Added namespace for iq-register stream feature
+	* src/ejabberd_c2s.erl: Send iq-register feature
+
+	* src/ejabberd_config.erl: Config file can be configured via
+	environment variable (thanks to Mickael Remond)
+
+	* src/web/ejabberd_http.erl: Added SSL support (thanks to Sergei
+	Golovan)
+
+	* src/msgs/*.msg: Updated (thanks to Sergei Golovan)
+
+	* src/jlib.hrl: Updated error codes (thanks to Sergei Golovan)
+	* src/ejabberd_c2s.erl: Likewise
+
+2004-09-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Send password in room invitation
+	(thanks to Sergei Golovan)
+
+	* src/mod_disco.erl: Added registration of sm features and nodes
+	(thanks to Sergei Golovan)
+	* src/mod_vcard.erl: Register vcard-temp feature (thanks to Sergei
+	Golovan)
+
+	* src/jlib.erl: Added functions now_to_utc_string/1,
+	now_to_local_string/1, and datetime_string_to_timestamp/1 (thanks
+	to Sergei Golovan)
+	* src/mod_muc/mod_muc_room.erl: Use time parsing functions from
+	jlib (thanks to Sergei Golovan)
+
+2004-09-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* ejabberd/src/mod_pubsub/mod_pubsub.erl: Bugfix (thanks to
+	Mickael Remond)
+
+2004-09-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Bugfix
+
+2004-09-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* tools/ejabberdctl: Added call to "exec" (thanks to Sergei
+	Golovan)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_vcard.erl: Support for searching of prefix substring and
+	limiting of result items (thanks to Sergei Golovan)
+
+	* src/mod_offline.erl: Support for message expiration (JEP-0023)
+	(thanks to Sergei Golovan)
+	* src/jlib.hrl: Added NS_EXPIRE macros (thanks to Sergei Golovan)
+
+	* src/ejabberd_logger_h.erl: Added reopen_log/0 (thanks to Sergei
+	Golovan)
+
+	* src/ejabberd_ctl.erl: Added return codes, updated "reopen-log"
+	command, added "delete-expired-messages" and "status" commands
+	(thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+2004-09-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Removed useless transactions
+
+2004-08-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Fix (thanks to Sander Devrieze)
+
+2004-08-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/xml_stream.erl: Few optimizations
+
+2004-08-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_service_log.erl: Support for logging of user packets via
+	external service (e.g. bandersnatch)
+	* doc/guide.tex: Updated
+
+2004-08-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline.erl: Added entire table locking on large message
+	queue
+
+	* src/ejabberd_sm.erl: Added offline_subscription_hook
+	* src/mod_offline.erl: Use offline_subscription_hook
+
+	* src/configure.erl: Updated (thanks to Sergei Golovan)
+	* src/Makefile.win32: Likewise
+	* src/tls/Makefile.win32: Likewise
+	* src/win32/: Likewise
+
+	* src/mod_announce.erl: Added announce to all users (thanks to
+	Sergei Golovan)
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+2004-08-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
+	* src/web/ejabberd_http_poll.erl: Fixed sending of Set-Cookie
+	header
+
+2004-08-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix in resend_offline_messages/1
+
+	* src/mod_announce.erl: New module to manage announce messages
+	(thanks to Sergei Golovan)
+
+	* src/ejabberd_local.erl: Moved processing of announce messages to
+	mod_announce (thanks to Sergei Golovan)
+
+	* src/ejabberd_c2s.erl: Added several hooks
+
+	* src/ejabberd_hooks.erl: Fixed run_fold (thanks to Sergei
+	Golovan)
+
+	* src/ejabberd.cfg.example: Updated (thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+2004-08-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Use resend_offline_messages_hook to fetch
+	offline messages
+	* src/mod_offline.erl: Likewise
+
+	* src/mod_offline.erl: Added table locking in
+	remove_old_messages/1
+
+	* src/ejabberd_sm.erl: Use offline_message_hook to store offline
+	messages
+	* src/mod_offline.erl: Likewise
+
+	* src/ejabberd_hooks.erl: Hooks support
+	* src/ejabberd_sup.erl: Added ejabberd_hooks
+
+	* doc/guide.tex: Updated
+
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_c2s.erl: Changed TLS options (thanks to Sergei
+	Golovan)
+
+2004-08-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/aclocal.m4: Updated to check for openssl library (thanks to
+	AV)
+	* src/configure.ac: Likewise
+	* src/configure: Likewise
+	* src/Makefile.in: Likewise
+	* src/tls/Makefile.in: Likewise
+
+2004-08-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Added user's roster page
+
+	* src/mod_irc/mod_irc_connection.erl: Bugfix
+
+2004-08-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls.erl: Added recv_data/2 function
+
+	* src/jlib.erl: Added NS_TLS macro
+
+	* src/ejabberd_receiver.erl: Support for STARTTLS
+	* src/ejabberd_c2s.erl: Likewise
+
+2004-07-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/extauth/check_pass_null.pl: A reference "null"
+	implementation of external authentication script (thanks to Leif
+	Johansson)
+
+	* src/extauth.erl: Support for external authentication
+	(thanks to Leif Johansson)
+	* src/ejabberd_auth.erl: Likewise
+
+	* src/mod_vcard_ldap.erl: A drop-in replacement for mod_vcard.erl
+	which uses ldap for JUD and vCard (thanks to Leif Johansson)
+
+2004-07-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls_drv.c: Added freeing of SSL stuff
+
+	* src/xml_stream.erl: Added start/2 function
+	* src/ejabberd_receiver.erl: Now using xml_stream:start/2
+
+2004-07-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Support for TLS library (not completed)
+
+	* src/tls/tls_drv.c: Updated to return binaries instead of lists
+	* src/tls/tls.erl: Likewise
+
+2004-07-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/tls.erl: Updated
+
+2004-07-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/tls/: Library for TLS support (not completed)
+
+	* src/ejabberd_auth.erl: Now uses two LDAP connections
+
+	* src/ejabberd_c2s.erl: Return resource on get_presence request
+	(thanks to Mickael Remond)
+
+	* src/mod_configure2.erl: Bugfix (thanks to Sergei Golovan)
+
+	* src/msgs/ua.msg: New Ukrainian translation (thanks to usercard)
+
+	* src/msgs/nl.msg: Updated (thanks to Sander Devrieze)
+
+2004-07-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/eldap/eldap.erl: Bugfix
+
+2004-07-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): ejabberd-0.7 released
+
+	* src/web/ejabberd_web_admin.erl: Better i18n support (thanks to
+	Sergei Golovan)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/msgs/fr.msg: Added missed entries (thanks to Sergei Golovan)
+	* src/msgs/nl.msg: Likewise
+
+	* src/msgs/es.msg: New spanish translation (thanks to Badlop)
+
+2004-07-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_last.erl: Supprot for storing status from latest
+	unavailable presence (thanks to Sergei Golovan)
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/mod_vcard.erl: Minor update (thanks to Sergei Golovan)
+
+	* src/mod_register.erl: Added "access" option (thanks to Sergei
+	Golovan)
+	* src/mod_irc/mod_irc.erl: Likewise
+	* src/ejabberd.cfg.example: Updated
+	* src/win32/ejabberd.cfg: Likewise
+
+	* src/mod_privacy.erl: Fixed module stopping (thanks to Sergei
+	Golovan)
+	* src/mod_private.erl: Likewise
+
+	* src/gen_mod.erl: Added function get_module_opt/3 (thanks to
+	Sergei Golovan)
+
+	* src/ejabberd_local.erl: Minor fix (thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+2004-07-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Removed superfluous include_lib line
+
+	* doc/guide.tex: Updated
+
+	* src/msgs/fr.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_irc/mod_irc.erl: Added handler for disco items requests
+	(thanks to Sergei Golovan)
+
+	* src/mod_vcard.erl: Added option for JUD disabling (thanks to
+	Sergei Golovan)
+
+	* src/mod_configure2.erl: Fixed module stopping (thanks to Sergei
+	Golovan)
+	* src/mod_last.erl: Likewise
+	* src/mod_privacy.erl: Likewise
+	* src/mod_register.erl: Likewise
+	* src/mod_roster.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+
+	* src/jd2ejd.erl: Added emergency catches (thanks to Sergei
+	Golovan)
+	* src/mod_last.erl: Likewise
+
+	* src/ejabberd_sm.erl: Removed needless call to
+	mod_disco:unregister_feature (thanks to Sergei Golovan)
+
+	* src/ejabberd_local.erl: Better support for mod_disco (thanks to
+	Sergei Golovan)
+	* src/mod_disco.erl: Likewise
+
+	* src/translate.erl: Suport for "default language" option (thanks
+	to Sergei Golovan)
+	* src/ejabberd_config.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd.hrl: Added 'MYLANG' macros
+
+	* src/ejabberd.cfg.example: Updated (thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+2004-07-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/win32/ejabberd.cfg: Updated (thanks to Sergei Golovan)
+
+2004-07-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/Makefile.win32: Updated (thanks to Sergei Golovan)
+
+	* src/Makefile.in: Added installation of ejabberd.cfg (thanks to
+	Sergei Golovan)
+
+	* src/web/ejabberd_http.erl: Fixed support for HTTP/1.0 clients
+
+2004-07-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+	* src/ejabberd_auth.erl: Minor fix
+
+	* src/ejabberd_c2s.erl: Fixed sending of presence to own resources
+
+2004-06-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Added configuration of listened
+	ports
+	* src/ejabberd_listener.erl: Added API for configuration of port
+	listeners
+
+	* src/web/ejabberd_web_admin.erl: Fixed "Stop" button on node
+	management page
+
+2004-05-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/nl.msg: Dutch translation (thanks to Sander Devrieze)
+
+	* src/web/ejabberd_http.erl: Added options for enabling HTTP
+	polling and admin interface
+	* src/web/ejabberd_web.erl: Likewise
+	* src/ejabberd.cfg.example: Updated
+
+	* src/web/ejabberd_web_admin.erl: Updated
+
+	* doc/guide.tex: Updated
+
+2004-05-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Added access rules for using serveice
+	and creating rooms (thanks to Sergei Golovan)
+
+	* src/win32/ejabberd.nsi: Updated (thanks to Sergei Golovan)
+	* src/win32/CheckUserH.ini: Likewise
+
+	* src/translate.erl: Search translations in priv_dir instead of
+	lib_dir (thanks to Sergei Golovan)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/ejabberd.cfg.example: Updated (thanks to Sergei Golovan)
+
+	* src/**/Makefile.in: Updated (thanks to Sergei Golovan)
+	* src/**/Makefile.win32: Likewise
+
+2004-05-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Updated
+
+2004-05-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Updated
+
+2004-05-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Updated
+
+	* src/ejabberd_listener.erl: Added API for adding/removing
+	listeners
+
+2004-05-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+	* src/ejabberd_listener.erl: Now possible to specify interface on
+	which one socket will be listened, also added another way to
+	specify SSL options
+	* src/ejabberd.cfg.example: Updated
+
+2004-05-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Updated (thanks to Andrey
+	Zamaraev)
+
+2004-05-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_ctl.erl: Added command for listing all registered
+	users
+
+	* src/ejabberd_ctl.erl: Bugfix, support for text-load and restore
+	(thanks to Leif Johansson)
+
+2004-05-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Updated
+
+2004-05-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: 'Accept-Language' header support
+	* src/web/ejabberd_web_admin.erl: Likewise
+	* src/msgs/ru.msg: Updated
+
+	* src/mod_muc/mod_muc_room.erl: Send status code "201" on room
+	creation
+
+2004-04-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/translate.erl: Search translations directory in priv_dir
+	instead of lib_dir (thanks to Sergei Golovan)
+
+	* src/**/Makefile.in: Updated (thanks to Sergei Golovan)
+
+	* src/win32/: Win32 installer stuff (thanks to Sergei Golovan)
+
+	* src/**/Makefile.win32: Updated (thanks to Sergei Golovan)
+	* src/configure.bat: Likewise
+	* src/configure.erl: Likewise
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+2004-04-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Better design for administration
+	interface (not completed) (thanks to Andrey Zamaraev)
+	* src/web/ejabberd_http.erl: Updated
+	* src/web/ejabberd_web.erl: Likewise
+
+2004-04-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Increased receive buffer
+
+	* src/mod_irc/mod_irc_connection.erl: Support for "/quote" command
+
+2004-04-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd.erl: Added searching of files in code:priv_lib
+	(thanks to Sergei Golovan)
+	* src/translate.erl: Likewise
+
+	* src/ejabberd_app.erl: Added "log_path" configuration parameter
+	(thanks to Sergei Golovan)
+
+	* src/**/Makefile.win32: Updated (thanks to Sergei Golovan)
+
+	* src/**/*.c: Updated (thanks to Sergei Golovan)
+
+	* src/configure.erl: Added writing of version to Makefile.inc
+	(thanks to Sergei Golovan)
+
+	* doc/guide.tex: Updated link to expat (thanks to Sergei Golovan)
+
+2004-04-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/idna.erl: Support for IDNA (RFC3490)
+	* src/ejabberd_s2s_out.erl: Likewise
+
+2004-04-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/xml.erl: element_to_string/1 and crypt/1 now returns deep
+	list
+	* src/mod_muc/mod_muc_room.erl (add_message_to_history): Replaced
+	string:len with lists:flatlength
+
+2004-03-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Updated win32 stuff (thanks to Sergei Golovan)
+
+	* src/web/ejabberd_web.erl: Added interface for access rules
+	configuration
+
+2004-03-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+	* src/web/ejabberd_web.erl: Updated
+
+	* src/web/ejabberd_http.erl: Bugfix
+
+2004-03-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Bugfix
+
+	* src/ejabberd_s2s.erl: More verbose error handling
+
+2004-03-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web.erl: Minor update
+
+2004-03-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web.erl: Added interface for users listsing and
+	statistics
+
+2004-03-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web.erl: New interface for ACLs editing
+
+	* src/web/ejabberd_http_poll.erl: Fixed "Content-Type" header,
+	"Set-Cookie" is included only in first response in session, added
+	missed behaviour definition
+
+	* src/web/ejabberd_http.erl: "Content-Type" header now can be
+	changed
+
+2004-03-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web.erl: Experiments with web-interface
+
+	* src/configure.ac: Updated
+	* src/Makefile.in: Likewise
+
+2004-03-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Removed debugging output
+
+	* src/ejabberd_c2s.erl: Fixed processing of get_presence request
+	(thanks to Mickael Remond)
+
+2004-03-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_muc/mod_muc_room.erl: Now private conferences are
+	visible to admins and owners of this conference (thanks to Sergei
+	Golovan)
+
+	* src/mod_muc/mod_muc.erl: More xml:lang support (thanks to Sergei
+	Golovan)
+
+	* src/mod_vcard.erl: Better processing of EMAIL tag (thanks to
+	Sergei Golovan)
+
+	* src/ejabberd_s2s_out.erl: Added "catch" to "open_socket" (thanks
+	to Sergei Golovan)
+
+2004-03-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http_poll.erl: Completed
+
+2004-03-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/: Support for HTTP Polling (JEP-0025) (almost complete)
+
+2004-03-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/: Updated
+
+2004-03-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/: Minor update
+
+2004-03-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/: Small HTTP server and admin web-interface to ejabberd
+	(not completed yet)
+	* src/ejabberd_sup.erl: Added HTTP processes supervisor
+
+	* src/ejabberd_c2s.erl: Added API to ask presence (thanks to
+	Mickael Remond)
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_muc/mod_muc_room.erl: Updated date parser (thanks to
+	Sergei Golovan)
+
+	* src/mod_muc/mod_muc.erl: Added error descriptions (thanks to
+	Sergei Golovan)
+	* src/mod_muc/mod_muc_room.erl: Likewise
+
+	* src/mod_vcard.erl: Fixed vCard tag (thanks to Sergei Golovan)
+	* src/mod_irc/mod_irc.erl: Likewise
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+
+	* src/jlib.hrl: Added macros for errors with <text/> (thanks to
+	Sergei Golovan)
+
+2004-02-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_muc/mod_muc_room.erl: Updated error codes, removed
+	trailing "-" in history. updated subject sending, added <title/>
+	in configuration form (thanks to Sergei Golovan)
+
+	* src/mod_irc/mod_irc.erl: Added vCard, ejabberd:configure
+	replaced with jabber:iq:register (thanks to Sergei Golovan)
+
+	* src/mod_configure.erl: Updated "xml:lang" usage, updated some
+	messages (thanks to Sergei Golovan)
+	* src/mod_configure2.erl: Likewise
+	* src/mod_disco.erl: Likewise
+	* src/mod_register.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+	* src/mod_irc/mod_irc.erl: Likewise
+	* src/mod_muc/mod_muc.erl: Likewise
+	* src/mod_muc/mod_muc_room.erl: Likewise
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+
+	* src/jlib.hrl: Added "lang" field in "iq" record (thanks to
+	Sergei Golovan)
+	* src/jlib.erl: Likewise
+
+	* src/ejabberd_c2s.erl: Updated to latest JEP-0078 (thanks to
+	Sergei Golovan)
+
+2004-02-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Bugfix
+
+2004-02-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Support for history management
+	(thanks to Sergei Golovan)
+
+	* src/mod_stats.erl: Updated error codes (thanks to Sergei
+	Golovan)
+	* src/mod_irc/mod_irc.erl: Likewise
+
+	* src/mod_configure.erl: "jabber:iq:data" replaced with
+	"ejabberd:config" namespace (thanks to Sergei Golovan)
+	* src/mod_disco.erl: Likewise
+
+2004-02-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Added <session/> to stream features
+
+2004-02-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_irc/mod_irc.erl: Now uses "ejabberd:config" namespace
+	(thanks to Sergei Golovan)
+
+	* src/mod_disco.erl: Fixed disco category and type (thanks to
+	Sergei Golovan)
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+
+	* src/jlib.hrl: Added "ejabberd:config" namespace (thanks to
+	Sergei Golovan)
+
+2004-01-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_ctl.erl: Added command for log reopening
+
+2004-01-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_ctl.erl: Added commands for backup processing
+
+	* src/ejabberd_c2s.erl: Added processing of xml:lang according to
+	latest XMPP-IM draft
+
+	* src/xml.erl: Added replace_tag_attr/3 function
+
+	* src/mod_roster.erl: Added auto-reply on incoming subscription
+	request according to latest XMPP-IM draft
+
+	* src/mod_offline.erl: Added pop_offline_messages/1 function
+	* src/ejabberd_c2s.erl: Updated sending of offline messages
+
+2004-01-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Bugfix, updated error codes
+	(thanks to Sergei Golovan)
+
+	* src/jlib.hrl: Updated error codes (thanks to Sergei Golovan)
+
+2004-01-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Fixed bind namespace
+
+	* src/ejabberd_ctl.erl: New module for ejabberd administration
+	* tools/ejabberdctl: Shell script for ejabberd administration
+
+	* src/mod_vcard.erl: Copyright update
+
+	* src/ejabberd_service.erl: Now possible to specify access rules
+	for service
+	* src/ejabberd.cfg.example: Updated
+
+2004-01-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_router.erl: Added monitoring of processess that
+	serve domains
+
+	* src/ejabberd_app.erl: Bugfix
+
+2004-01-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_router.erl (do_route/3): Slightly changed behaviour
+
+2004-01-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl (do_route/3): Minor fix
+
+	* src/ejabberd_sm.erl (route_message/3): Minor changes
+
+2003-12-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_app.erl: Now possible to specify path to log file
+	via "EJABBERD_LOG_PATH" environment variable
+
+	* src/translate.erl: Now possible to specify path to "msgs"
+	directory via "EJABBERD_MSGS_PATH" environment variable
+
+	* src/ejabberd.erl: Added get_so_path/0 function
+	* src/ejabberd_app.erl: Use ejabberd:get_so_path/0 to load .so
+	* src/mod_irc/iconv.erl: Likewise
+	* src/stringprep/stringprep.erl: Likewise
+
+2003-12-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Presence probe now sended from full JID
+
+	* src/mod_roster.erl: Bugfix
+
+2003-12-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix
+
+2003-12-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Added workaround for legacy gateways
+	(passing of "subscribed" presence)
+
+	* src/ejabberd_sm.erl: Minor fix in subscription processing
+
+2003-12-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Added declaration of "iq" record
+	* (all): Updated to use "iq" record
+
+2003-12-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_local.erl: Replaced register_local_route to
+	register_route
+	* src/ejabberd_service.erl: Likewise
+	* src/mod_echo.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+
+	* src/ejabberd_router.erl: Partially rewrited
+	* src/ejabberd_sm.erl: Likewise
+
+2003-12-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s.erl: Partially rewrited
+
+	* src/mod_roster.erl: Removed debugging code
+
+2003-12-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Bugfix
+
+2003-12-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Updated subscription handling to latest
+	XMPP-IM draft
+
+2003-12-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_in.erl: Changed timeout processing, bugfix
+
+	* src/ejabberd_s2s_out.erl: Changed timeout processing
+
+	* src/msgs/ru.msg: Updated (thanks to Sergei Golovan)
+
+	* src/mod_muc/mod_muc.erl: Better i18n support, added support for
+	<registered/> field in iq:register replies (thanks to Sergei
+	Golovan)
+
+	* src/mod_register.erl: More i18n support (thanks to Sergei
+	Golovan)
+
+2003-12-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix in processing of connection
+	replacement
+
+2003-11-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Added workaround for some Java clients
+
+2003-11-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/mtr/ejabberd.cfg: Updated (thanks to Marshall T. Rose)
+
+	* src/ejabberd_auth.erl: LDAP attribute that holds user ID now
+	configurable
+	* src/ejabberd.cfg.example: Updated
+
+2003-11-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Fixed processing of presence probe from
+	client
+
+2003-11-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl_digest.erl: Bugfix (thanks to Sergei Golovan)
+
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_auth.erl: Support for LDAP authentication
+	* src/cyrsasl_digest.erl: Likewise
+	* src/mod_register.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/eldap/: Imported "eldap" package
+
+	* src/ejabberd_sm.erl: Bugfix
+
+2003-11-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Bugfixes
+
+	* (all): Version 0.5 released
+
+2003-11-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/mtr/ejabberd: Updated (thanks to Marshall T. Rose)
+
+	* src/Makefile.in: Added installation of msgs/ directory
+
+2003-11-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/dev.tex: Developers documentation (not completed)
+
+	* src/ejabberd_c2s.erl: Better handling of malformed JIDs
+
+	* src/mod_register.erl (try_register/2): Now returns "jid
+	malformed" error if user name is invalid
+
+2003-11-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_s2s_in.erl: Added support for shapers
+
+	* src/ejabberd_c2s.erl: Moved receiver functions to
+	ejabberd_receiver module
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_receiver.erl: Likewise
+
+	* src/mod_muc/mod_muc_room.erl: Bugfix
+
+	* src/ejabberd_sm.erl (route_message/3): Bugfix
+
+2003-11-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Bugfix for previous resource handling
+	change
+
+	* src/mod_configure.erl: Password changing now implemented
+
+2003-11-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl.erl: Updated SASL authentication
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/ejabberd_sm.erl: Better resource handling
+
+	* src/jlib.hrl: Added NS_BIND macros
+
+2003-11-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_configure2.erl: Added reporting of outgoing S2S
+	connections number
+
+	* src/mod_disco.erl (get_outgoing_s2s): Minor fix
+
+2003-11-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_configure2.erl: Yet another configure interface (not
+	completed yet)
+
+2003-11-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_last.erl: Added remove_user/1 function
+
+	* src/mod_configure.erl: Removing of user's stuff moved to
+	ejabberd_auth
+	* src/ejabberd_auth.erl: Likewise
+
+2003-10-31  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Updated to work more
+	correctly with latest jlib
+
+2003-10-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: More strong check for authenticated JID
+
+	* src/mod_roster.erl: Bugfix
+
+2003-10-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_listener.erl: Fixed starting of SSL connection
+
+	* src/ejabberd_s2s_in.erl: Partially rewriten
+
+	* src/ejabberd_router.erl: More verbose error report
+	* src/ejabberd_local.erl: Likewise
+	* src/ejabberd_sm.erl: Likewise
+
+	* src/ejabberd_s2s_out.erl: Updated to be compatible with R9C
+
+	* src/ejabberd_c2s.erl: Minor fix
+
+2003-10-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_listener.erl: Added handling of accept errors,
+	added timeout value to ssl:accept
+
+	* src/mod_vcard.erl: Added checks for all empty input fields
+
+	* src/mod_offline.erl: More strong checks for stored packets
+
+	* src/ejabberd_sm.erl: Bugfix
+
+2003-10-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_auth.erl: Minor change in check_password/4
+
+	* src/mod_roster.erl: Workaround for PSI bug with roster
+
+	* src/ejabberd_logger_h.erl: Added support for log rotation
+
+2003-10-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline.erl: Added function remove_old_messages/1
+
+	* src/mod_last.erl: jabber:iq:last support (JEP-0012)
+	* src/ejabberd_sm.erl: Likewise
+
+	* src/jlib.hrl: Added NS_LAST macros
+
+2003-10-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_logger_h.erl: New error_logger handler
+	* src/ejabberd_app.erl: Now uses ejabberd_logger_h.erl
+
+2003-10-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/Makefile.in: Added install rule
+
+	* src/jlib.erl: Added checks for JID parts length
+
+2003-10-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard.erl: Added checks for stringprep results
+
+	* src/expat_erl.c: Workaround for EI encode_string bug
+
+	* src/xml_stream.erl: Slightly changed protocol to expat driver
+	* src/expat_erl.c: Likewise
+
+	* src/mod_configure.erl: Minor fix
+
+2003-10-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Fixed typo
+
+	* src/ejabberd_local.erl: Added support for announce/online
+	messages
+
+	* src/ejabberd.cfg.example: Updated
+
+	* src/mod_register.erl: Added support for sending registration
+	notifications
+
+2003-10-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_service.erl: Added supports for multiple hosts per
+	service
+
+	* src/Makefile.in: Minor fix
+
+2003-10-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/configure.ac: Build system now done using autoconf (thanks
+	to Balabanov Dmitry)
+	* src/aclocal.m4: Likewise
+	* src/**/Makefile.in: Likewise
+
+	* src/mod_roster.erl (process_item_set_t): Slightly improved
+	performance
+
+	* src/jd2ejd.erl: Added missed closing of XML stream process,
+	removed timeout value from import_file/1
+
+	* src/ejabberd_auth.erl: Added checks for invalid user name
+
+2003-10-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_configure.erl: Fixed some error codes
+
+	* src/cyrsasl_digest.erl: Bugfix (thanks to Justin Karneges)
+
+2003-10-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_local.erl: Bugfix
+
+	* src/mod_register.erl: Added support for sending of "welcome"
+	message
+	* src/ejabberd.cfg.example: Updated
+
+	* src/ejabberd_s2s_out.erl: Replaced "_jabber-server" with
+	"_xmpp-server"
+
+2003-10-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+	* src/ejabberd_s2s_out.erl: Added support for IPv6 and
+	"_jabber-server.tcp" lookups
+
+	* src/jlib.erl (string_to_jid1): Bugfix
+
+	* src/ejabberd_config.erl: Now possible to specify path to config
+	file in command line
+
+2003-10-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated
+
+	* src/ejabberd.cfg: Added "register" rule, added some comments,
+	this file renamed to ejabberd.cfg.example
+
+	* src/mod_register.erl (try_register): Fixed error reply, added
+	check for "register" access rule
+
+2003-10-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/Makefile.win32: Added Makefile for Win32 (thanks
+	to Sergei Golovan)
+
+	* src/stringprep/stringprep_drv.c: Removed needless iconv.h
+	include
+
+	* src/ejabberd_c2s.erl: Added filtering of presence packets with
+	privacy rules
+
+	* src/mod_roster.erl (get_jid_info): Bugfix
+
+	* src/ejabberd_app.erl: Removed periodical dumping of opened ports
+
+2003-10-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Added authentication logging
+
+	* src/ejabberd_listener.erl: Added logging of accepted connections
+
+	* src/stringprep/stringprep_drv.c: Cleanup
+
+	* src/jd2ejd.erl: Added support for iq:private importing
+
+	* src/mod_configure.erl: Fixed user removal
+
+	* src/mod_private.erl: Added remove_user/1
+
+	* doc/guide.tex: Updated
+
+	* src/mod_disco.erl: Added "extra_domains" option
+
+2003-10-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Added support for "jid-malformed" error
+
+	* src/stringprep/stringprep_drv.c: Bugfix
+
+2003-10-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Changed JID storage format, added support for stringprep
+
+	* src/stringprep/: Added support for Unicode normalization form KC
+
+2003-10-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/: Added support for case convertion to multiple
+	characters
+
+	* src/cyrsasl_digest.erl: Temporary removed "auth-int" QOP
+
+2003-09-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/stringprep_drv.c: Added support for nameprep,
+	nodeprep and resourceprep
+	* src/stringprep/stringprep.erl: Likewise
+
+	* src/ejabberd_sup.erl: Added loading of stringprep
+
+	* src/ejabberd_sm.erl: Cleanup
+
+2003-09-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/stringprep/: Support for stringprep (not completed yet)
+
+2003-09-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Replaced io:format calls to ?DEBUG ones
+
+2003-09-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Debug output switched off
+
+	* src/mod_disco.erl: Server identity changed to "service/im"
+
+	* src/mod_register.erl: Fixed jabber:iq:register handler
+	registration, fixed registration removal processing
+
+2003-09-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_disco.erl: Now only admin can discovery some nodes,
+	fixed "node" attribute in replies
+
+2003-09-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/mtr/ejabberd.cfg: Updated (thanks to Marshall T. Rose)
+	* examples/mtr/ejabberd: Likewise
+
+2003-09-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/mtr/ejabberd.cfg: Updated (thanks to Marshall T. Rose)
+
+2003-09-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* examples/mtr/*: Example config and scripts for NetBSD (thanks to
+	Marshall T. Rose)
+
+2003-09-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_in.erl: Fixed "id" attribute processing
+	* src/ejabberd_s2s_out.erl: Likewise
+
+	* src/ejabberd_c2s.erl: Added sending of empty <stream:features/>
+	element after opening of authenticated stream
+
+2003-09-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_in.erl: Temporary hack for "id" attribute
+	processing
+	* src/ejabberd_s2s_out.erl: Likewise
+
+2003-08-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_listener.erl: Fixed SSL options
+
+2003-08-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Support for filtering of incoming messages
+	and IQs, presence filtering will be after some xmpp-im
+	clarifications
+
+2003-08-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Fixed handling of room names with
+	uppercase letters
+
+	* src/mod_muc/mod_muc_room.erl: Added support for
+	password-protected rooms
+
+2003-08-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Added handling for
+	jabber:iq:version and jabber:iq:time requests, participant address
+	now added to presence status
+
+2003-08-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_privacy.erl: Privacy rules support (not completed yet)
+	* src/ejabberd_c2s.erl: Likewise
+	* src/mod_roster.erl: Likewise
+
+2003-07-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl (create_new_node): Bugfix
+
+2003-07-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard.erl: Bugfix
+
+	* src/mod_roster.erl: Bugfix
+
+	* src/jlib.hrl: Added iq:privacy namespace
+
+	* src/mod_irc/mod_irc_connection.erl: Added support for NOTICE and
+	CODEPAGE commands, better support for QUIT and PART commands
+	(thanks to Oleg V. Motienko)
+
+2003-07-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Reorganized supervision tree
+
+2003-07-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_register.erl: Bugfix
+
+2003-07-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Close connection after key
+	verification
+
+	* src/ejabberd_c2s.erl: start replaced with start_link
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd_service.erl: Likewise
+
+	* src/ejabberd_listener.erl: Now uses proc_lib to spawn listeners,
+	removed 3rd parameter in listener configuration (assumed to equal
+	start_link)
+
+	* src/ejabberd.rel: Updated
+
+	* doc/guide.tex: Small changes
+
+	* doc/Makefile: Added implicit charset specification to hevea
+
+2003-07-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* doc/guide.tex: Updated (thanks to Sergei Golovan)
+
+	* src/expat_erl.c: Added #ifdef for WIN32 (thanks to Sergei
+	Golovan)
+	* src/mod_irc/iconv_erl.c: Likewise
+
+	* src/configure.erl: Defines ERLANG_DIR variable (thanks to Sergei
+	Golovan)
+	* **/Makefile: Use ERLANG_DIR (thanks to Sergei Golovan)
+
+	* **/Makefile.win32: Makefiles for windows build (thanks to Sergei
+	Golovan)
+	* src/configure.bat: Configuration script for windows (thanks to
+	Sergei Golovan)
+
+2003-07-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Added suport for meta-node
+	"pubsub/nodes"
+
+2003-07-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Most of functions now works
+
+2003-07-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Pub/sub implementation (not
+	completed yet)
+
+2003-07-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Added pub/sub namespaces
+
+2003-07-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/iconv_erl.c (iconv_erl_control): Bugfix
+
+2003-06-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fixed room destroying
+	* src/mod_muc/mod_muc.erl: Likewise
+
+2003-06-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Error stanzas updated to confirm latest xmpp-core
+
+2003-06-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Returned stream restarting
+
+2003-06-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Removed stream restarting
+
+2003-06-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: SASL support updated to xmpp-core-13
+
+2003-06-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl*.erl: Support for authzid
+
+2003-06-03  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/fr.msg: New french translation (thanks to Vincent Ricard)
+
+2003-05-31  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Updated SASL namespace
+
+2003-05-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_service.erl: Proper handling of bad XML
+
+	* src/mod_muc/mod_muc_room.erl: Append number of participants in
+	disco replies if requester allowed to see participant list
+
+	* src/mod_muc/mod_muc.erl (iq_disco_items): Pass requester JID to
+	room process
+
+	* src/mod_irc/mod_irc_connection.erl: Exit on receiving of
+	presence or message error
+
+	* src/mod_irc/mod_irc_connection.erl (handle_info): Return
+	"feature not implemented" on iq request with unknown namespace
+
+2003-05-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Now body of message from admin to MUC
+	service is broadcasted to all conferences
+	* src/mod_muc/mod_muc_room.erl: Likewise
+
+2003-05-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s.erl: Added error catching for do_route/3
+	* src/ejabberd_local.erl: Likewise for do_route/4
+
+	* src/msgs/ru.msg: Updated
+
+	* src/mod_muc/mod_muc_room.erl: New option to allow to view list
+	of participants for non-ones via disco#items
+
+	* src/mod_muc/mod_muc_room.erl: Store room subject with
+	configuration options
+
+2003-05-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Remove user from room on receiving
+	of message or presence error from him
+
+2003-05-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Fixed error replies, added timeouts
+	* src/ejabberd_s2s_in.erl: Likewise
+
+2003-05-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_local.erl: Updated missed errors to new style
+	* src/mod_register.erl: Likewise
+	* src/mod_version.erl: Likewise
+	* src/mod_time.erl: Likewise
+	* src/mod_stats.erl: Likewise
+	* src/mod_register.erl: Likewise
+	* src/mod_private.erl: Likewise
+	* src/mod_configure.erl: Likewise
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_service.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+	* src/mod_roster.erl: Likewise
+
+	* src/mod_muc/mod_muc.erl: Added vcard to mod_muc module
+
+	* src/ejabberd_app.erl: Dump list of opened ports every hour
+
+	* src/ejabberd.hrl: Added INFO_MSG macros, ERROR_LOG_PATH renamed
+	to LOG_PATH
+
+2003-05-08  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Denied usage of empty nick
+
+2003-05-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Return bad-request if no x:data form
+	submited with nick registration
+
+	* src/mod_muc/mod_muc_room.erl: Don't check permissions on disco
+	info query processing
+
+2003-04-29  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Workaround to make SSL work properly
+
+2003-04-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Fixed URL to ejabberd
+
+2003-04-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Support for nick registration
+
+2003-04-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Some fixes in work with socket
+
+2003-04-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Support for members-only
+	conferences, invitations.  Bugfix in affiliation change processing
+
+	* src/jlib.hrl: Added jabber:x:conference namespace definition
+
+2003-04-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Added jaber:iq:auth:error namespace and
+	appropriate errors
+	* src/ejabberd_c2s.erl: Use auth:error in appropriate places
+
+	* src/jlib.hrl: Changed stream error and stanza error namespace
+	names due to last XMPP Core changes
+
+2003-03-28  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc_room.erl: Added support for grant/revoke
+	administrative/owner priveledges, fixed work with affiliations
+
+2003-03-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd.cfg: Updated
+
+	* src/mod_muc/mod_muc_room.erl: Support for service admin,
+	kick/ban reasons, more options
+
+	* src/msgs/ru.msg: Added translations for MUC messages
+
+	* src/ejabberd_s2s_in.erl: Bugfix
+
+	* src/mod_muc/: Small fixes in discovering
+
+2003-03-26  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/: Support for discovering service and more
+	configuration options
+
+2003-03-25  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/: Support for more configuration options and
+	persistent rooms
+
+2003-03-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/: MUC support (not completed yet)
+
+2003-03-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/xml_stream.erl: Removed "link" which cause not improper
+	closing of xml connections
+
+2003-03-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/jlib.hrl: Added "invalid-namespace" error
+	* src/ejabberd_c2s.erl: Likewise
+
+2003-03-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s_out.erl: Fixed ports leak
+	* src/ejabberd_listener.erl: Likewise
+
+	* src/ejabberd_c2s.erl: Fixes for SASL support
+
+	* src/cyrsasl.erl: Fixes
+
+	* src/cyrsasl_digest.erl: DIGEST-MD5 SASL mechanism support
+
+2003-03-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/cyrsasl*.erl: SASL support (currently support only PLAIN
+	mechanism)
+	* src/ejabberd_c2s.erl: Likewise
+
+	(all): Support for new-style error elements (except old errors
+	"Not Acceptable", "Not Found", "Invalid Namespace" and "Server
+	Connect Failed", so ejabberd may work unstable)
+
+2003-03-02  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: More correct stream closing
+
+2003-02-27  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Support for topic changes
+
+2003-02-24  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/mod_irc_connection.erl: /kick support
+
+2003-02-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/: Added configuration interface
+
+	* src/mod_configure.erl: Use jabber:iq:data instead of
+	jabber:x:data
+	* src/mod_disco.erl: Likewise
+
+2003-02-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_configure.erl: Backup management support
+	* src/mod_disco.erl: Likewise
+
+2003-02-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_offline.erl: Now possible to unload this module
+	* src/ejabberd_sm.erl: Added checks to work correctly when
+	mod_offline not loaded
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/mod_register.erl: Added support for users removal
+
+	* src/ejabberd_auth.erl: Added function to remove user only if
+	specified password correct
+
+	* src/mod_irc/mod_irc_connection.erl: Fixed bug with changing
+	availability status, added processing of "QUIT" message
+
+2003-02-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster.erl: Fixed bug with handling of roster set
+	stanzas which contains CDATA
+
+	* src/mod_irc/mod_irc_connection.erl (handle_info/3): Fixed
+	parsing of string that have "\n" line separators (not "\r\n")
+
+2003-02-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/: Added support for private chats, nicks changes and
+	error handling
+
+2003-02-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/: Still not completed...
+
+2003-02-16  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_irc/: New IRC transport (not completed yet)
+
+2003-02-14  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_service.erl: Answer "Bad Request" on unknown tags
+
+2003-02-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Bugfix: close socket when stream is closed
+
+	* src/mod_offline.erl: Now all offline packets processed in
+	separate queue to avoid delaying of other packets transmission.
+	Also all packets in queue processed in one transaction.
+
+2003-02-11  Alexey Shchepin  <alexey@sevcom.net>
+
+	* (all): Version 0.1-alpha released
+

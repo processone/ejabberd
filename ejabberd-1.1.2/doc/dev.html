@@ -1,0 +1,449 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+
+<HEAD>
+
+<TITLE>Ejabberd 1.1.2 Developers Guide</TITLE>
+
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<META name="GENERATOR" content="hevea 1.08">
+<STYLE type="text/css">
+.toc{list-style:none;}
+.title{margin:auto;text-align:center}
+.center{text-align:center;margin-left:auto;margin-right:auto;}
+.flushleft{text-align:left;margin-left:0ex;margin-right:auto;}
+.flushright{text-align:right;margin-left:auto;margin-right:0ex;}
+DIV TABLE{margin-left:inherit;margin-right:inherit;}
+PRE{text-align:left;margin-left:0ex;margin-right:auto;}
+BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
+.part{margin:auto;text-align:center}
+</STYLE>
+</HEAD>
+
+<BODY >
+<!--HEVEA command line is: hevea -fix -noiso -pedantic dev.tex -->
+<!--HTMLHEAD-->
+<!--ENDHTML-->
+<!--PREFIX <ARG ></ARG>-->
+<!--CUT DEF section 1 -->
+
+<BR>
+<BR>
+<A NAME="sec:titlepage"></A>
+
+ <TABLE CLASS="title">
+<TR><TD>
+<H1 CLASS="titlemain">Ejabberd 1.1.2 Developers Guide</H1>
+<H3 CLASS="titlerest">Alexey Shchepin<BR>
+<A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
+<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3></TD>
+</TR></TABLE><BR>
+<BR>
+<DIV CLASS="center">
+ 
+ <IMG SRC="logo.png" ALT="logo.png">
+ 
+
+ <BR>
+<BR>
+
+ </DIV>
+<BLOCKQUOTE CLASS="quotation"><I>I can thoroughly recommend ejabberd for ease of setup &ndash;
+ Kevin Smith, Current maintainer of the Psi project</I></BLOCKQUOTE>
+<!--TOC section Contents-->
+
+<H2 CLASS="section">Contents</H2><!--SEC END -->
+
+<UL CLASS="toc"><LI CLASS="li-toc">
+<A HREF="#htoc1">1&nbsp;&nbsp;Introduction</A>
+<UL CLASS="toc"><LI CLASS="li-toc">
+<A HREF="#htoc2">1.1&nbsp;&nbsp;Key Features</A>
+<LI CLASS="li-toc"><A HREF="#htoc3">1.2&nbsp;&nbsp;Additional Features</A>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc4">2&nbsp;&nbsp;How it Works</A>
+<UL CLASS="toc"><LI CLASS="li-toc">
+<A HREF="#htoc5">2.1&nbsp;&nbsp;Router</A>
+<LI CLASS="li-toc"><A HREF="#htoc6">2.2&nbsp;&nbsp;Local Router</A>
+<LI CLASS="li-toc"><A HREF="#htoc7">2.3&nbsp;&nbsp;Session Manager</A>
+<LI CLASS="li-toc"><A HREF="#htoc8">2.4&nbsp;&nbsp;S2S Manager</A>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc9">3&nbsp;&nbsp;XML Representation</A>
+<LI CLASS="li-toc"><A HREF="#htoc10">4&nbsp;&nbsp;Module <TT>xml</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc11">5&nbsp;&nbsp;Module <TT>xml_stream</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc12">6&nbsp;&nbsp;Modules</A>
+<UL CLASS="toc"><LI CLASS="li-toc">
+<A HREF="#htoc13">6.1&nbsp;&nbsp;Module gen_iq_handler</A>
+<LI CLASS="li-toc"><A HREF="#htoc14">6.2&nbsp;&nbsp;Services</A>
+</UL>
+</UL>
+
+<!--TOC section Introduction-->
+
+<H2 CLASS="section"><A NAME="htoc1">1</A>&nbsp;&nbsp;<A NAME="intro">Introduction</A></H2><!--SEC END -->
+
+<A NAME="sec:intro"></A>
+ 
+<TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang</A>.<BR>
+<BR>
+<TT>ejabberd</TT> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.<BR>
+<BR>
+<TT>ejabberd</TT> is designed to be a rock-solid and feature rich XMPP server.<BR>
+<BR>
+<TT>ejabberd</TT> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.<BR>
+<BR>
+<!--TOC subsection Key Features-->
+
+<H3 CLASS="subsection"><A NAME="htoc2">1.1</A>&nbsp;&nbsp;<A NAME="keyfeatures">Key Features</A></H3><!--SEC END -->
+
+<A NAME="sec:keyfeatures"></A>
+
+<TT>ejabberd</TT> is:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Cross-platform: <TT>ejabberd</TT> runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.<BR>
+<BR>
+<LI CLASS="li-itemize">Distributed: You can run <TT>ejabberd</TT> on a cluster of machines and all of them will serve the same Jabber domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.<BR>
+<BR>
+<LI CLASS="li-itemize">Fault-tolerant: You can deploy an <TT>ejabberd</TT> cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced `on the fly'.<BR>
+<BR>
+<LI CLASS="li-itemize">Administrator Friendly: <TT>ejabberd</TT> is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Comprehensive documentation.
+<LI CLASS="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows.
+<LI CLASS="li-itemize">Web interface for administration tasks.
+<LI CLASS="li-itemize">Shared Roster Groups.
+<LI CLASS="li-itemize">Command line administration tool.
+<LI CLASS="li-itemize">Can integrate with existing authentication mechanisms.
+<LI CLASS="li-itemize">Capability to send announce messages.
+</UL><BR>
+<BR>
+<LI CLASS="li-itemize">Internationalized: <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Translated in 12 languages.
+<LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
+</UL><BR>
+<BR>
+<LI CLASS="li-itemize">Open Standards: <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Fully XMPP compliant.
+<LI CLASS="li-itemize">XML-based protocol.
+<LI CLASS="li-itemize"><A HREF="http://ejabberd.jabber.ru/protocols">Many JEPs supported</A>.
+</UL></UL>
+<!--TOC subsection Additional Features-->
+
+<H3 CLASS="subsection"><A NAME="htoc3">1.2</A>&nbsp;&nbsp;<A NAME="addfeatures">Additional Features</A></H3><!--SEC END -->
+
+<A NAME="sec:addfeatures"></A>
+
+Moreover, <TT>ejabberd</TT> comes with a wide range of other state-of-the-art features:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Modular
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Load only the modules you want.
+<LI CLASS="li-itemize">Extend <TT>ejabberd</TT> with your own custom modules.
+</UL>
+<LI CLASS="li-itemize">Security
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+SASL and STARTTLS for c2s and s2s connections.
+<LI CLASS="li-itemize">STARTTLS and Dialback s2s connections.
+<LI CLASS="li-itemize">Web interface accessible via HTTPS secure access.
+</UL>
+<LI CLASS="li-itemize">Databases
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Native MySQL support.
+<LI CLASS="li-itemize">Native PostgreSQL support.
+<LI CLASS="li-itemize">Mnesia.
+<LI CLASS="li-itemize">ODBC data storage support.
+<LI CLASS="li-itemize">Microsoft SQL Server support.
+</UL>
+<LI CLASS="li-itemize">Authentication
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+LDAP and ODBC.
+<LI CLASS="li-itemize">External Authentication script.
+<LI CLASS="li-itemize">Internal Authentication.
+</UL>
+<LI CLASS="li-itemize">Others
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Compressing XML streams with Stream Compression (<A HREF="http://www.jabber.org/jeps/jep-0138.html">JEP-0138</A>).
+<LI CLASS="li-itemize">Interface with networks such as AIM, ICQ and MSN.
+<LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>).
+<LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0045.html">Multi-User Chat</A> module with logging.
+<LI CLASS="li-itemize">Users Directory based on users vCards.
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0060.html">Publish-Subscribe</A> component.
+<LI CLASS="li-itemize">Support for virtual hosting.
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A> service.
+<LI CLASS="li-itemize">IRC transport.
+</UL>
+</UL>
+<!--TOC section How it Works-->
+
+<H2 CLASS="section"><A NAME="htoc4">2</A>&nbsp;&nbsp;How it Works</H2><!--SEC END -->
+
+<A NAME="sec:howitworks"></A>
+A Jabber domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
+be run on different machines that are connected via a network. They all must
+have the ability to connect to port 4369 of all another nodes, and must have
+the same magic cookie (see Erlang/OTP documentation, in other words the file
+<TT>~ejabberd/.erlang.cookie</TT> must be the same on all nodes). This is
+needed because all nodes exchange information about connected users, S2S
+connections, registered services, etc...<BR>
+<BR>
+Each <TT>ejabberd</TT> node have following modules:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+router;
+<LI CLASS="li-itemize">local router.
+<LI CLASS="li-itemize">session manager;
+<LI CLASS="li-itemize">S2S manager;
+</UL>
+<!--TOC subsection Router-->
+
+<H3 CLASS="subsection"><A NAME="htoc5">2.1</A>&nbsp;&nbsp;Router</H3><!--SEC END -->
+
+This module is the main router of Jabber packets on each node. It routes
+them based on their destinations domains. It has two tables: local and global
+routes. First, domain of packet destination searched in local table, and if it
+found, then the packet is routed to appropriate process. If no, then it
+searches in global table, and is routed to the appropriate <TT>ejabberd</TT> node or
+process. If it does not exists in either tables, then it sent to the S2S
+manager.<BR>
+<BR>
+<!--TOC subsection Local Router-->
+
+<H3 CLASS="subsection"><A NAME="htoc6">2.2</A>&nbsp;&nbsp;Local Router</H3><!--SEC END -->
+
+This module routes packets which have a destination domain equal to this server
+name. If destination JID has a non-empty user part, then it routed to the
+session manager, else it is processed depending on it's content.<BR>
+<BR>
+<!--TOC subsection Session Manager-->
+
+<H3 CLASS="subsection"><A NAME="htoc7">2.3</A>&nbsp;&nbsp;Session Manager</H3><!--SEC END -->
+
+This module routes packets to local users. It searches for what user resource
+packet must be sended via presence table. If this resource is connected to
+this node, it is routed to C2S process, if it connected via another node, then
+the packet is sent to session manager on that node.<BR>
+<BR>
+<!--TOC subsection S2S Manager-->
+
+<H3 CLASS="subsection"><A NAME="htoc8">2.4</A>&nbsp;&nbsp;S2S Manager</H3><!--SEC END -->
+
+This module routes packets to other Jabber servers. First, it checks if an
+open S2S connection from the domain of the packet source to the domain of
+packet destination already exists. If it is open on another node, then it
+routes the packet to S2S manager on that node, if it is open on this node, then
+it is routed to the process that serves this connection, and if a connection
+does not exist, then it is opened and registered.<BR>
+<BR>
+<!--TOC section XML Representation-->
+
+<H2 CLASS="section"><A NAME="htoc9">3</A>&nbsp;&nbsp;XML Representation</H2><!--SEC END -->
+
+<A NAME="sec:xmlrepr"></A>
+Each XML stanza is represented as the following tuple:
+<PRE CLASS="verbatim">
+XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
+        Name = string()
+        Attrs = [Attr]
+        Attr = {Key, Val}
+        Key = string()
+        Val = string()
+        ElementOrCDATA = XMLElement | CDATA
+        CDATA = {xmlcdata, string()}
+</PRE>E.&nbsp;g. this stanza:
+<PRE CLASS="verbatim">
+&lt;message to='test@conference.example.org' type='groupchat'&gt;
+  &lt;body&gt;test&lt;/body&gt;
+&lt;/message&gt;
+</PRE>is represented as the following structure:
+<PRE CLASS="verbatim">
+{xmlelement, "message",
+    [{"to", "test@conference.example.org"},
+     {"type", "groupchat"}],
+    [{xmlelement, "body",
+         [],
+         [{xmlcdata, "test"}]}]}}
+</PRE>
+<!--TOC section Module <TT>xml</TT>-->
+
+<H2 CLASS="section"><A NAME="htoc10">4</A>&nbsp;&nbsp;Module <TT>xml</TT></H2><!--SEC END -->
+
+<A NAME="sec:xmlmod"></A>
+<DL CLASS="description" COMPACT=compact><DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>element_to_string(El) -&gt; string()</CODE>
+<PRE CLASS="verbatim">
+El = XMLElement
+</PRE>Returns string representation of XML stanza <TT>El</TT>.<BR>
+<BR>
+<DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>crypt(S) -&gt; string()</CODE>
+<PRE CLASS="verbatim">
+S = string()
+</PRE>Returns string which correspond to <TT>S</TT> with encoded XML special
+ characters.<BR>
+<BR>
+<DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>remove_cdata(ECList) -&gt; EList</CODE>
+<PRE CLASS="verbatim">
+ECList = [ElementOrCDATA]
+EList = [XMLElement]
+</PRE><TT>EList</TT> is a list of all non-CDATA elements of ECList.<BR>
+<BR>
+<DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>get_path_s(El, Path) -&gt; Res</CODE>
+<PRE CLASS="verbatim">
+El = XMLElement
+Path = [PathItem]
+PathItem = PathElem | PathAttr | PathCDATA
+PathElem = {elem, Name}
+PathAttr = {attr, Name}
+PathCDATA = cdata
+Name = string()
+Res = string() | XMLElement
+</PRE>If <TT>Path</TT> is empty, then returns <TT>El</TT>. Else sequentially
+ consider elements of <TT>Path</TT>. Each element is one of:
+ <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>{elem, Name}</CODE> <TT>Name</TT> is name of subelement of
+ <TT>El</TT>, if such element exists, then this element considered in
+ following steps, else returns empty string.
+ <DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>{attr, Name}</CODE> If <TT>El</TT> have attribute <TT>Name</TT>, then
+ returns value of this attribute, else returns empty string.
+ <DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>cdata</CODE> Returns CDATA of <TT>El</TT>.
+ </DL><BR>
+<BR>
+<DT CLASS="dt-description"><DD CLASS="dd-description">TODO:
+<PRE CLASS="verbatim">
+         get_cdata/1, get_tag_cdata/1
+         get_attr/2, get_attr_s/2
+         get_tag_attr/2, get_tag_attr_s/2
+         get_subtag/2
+</PRE></DL>
+<!--TOC section Module <TT>xml_stream</TT>-->
+
+<H2 CLASS="section"><A NAME="htoc11">5</A>&nbsp;&nbsp;Module <TT>xml_stream</TT></H2><!--SEC END -->
+
+<A NAME="sec:xmlstreammod"></A>
+<DL CLASS="description" COMPACT=compact><DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>parse_element(Str) -&gt; XMLElement | {error, Err}</CODE>
+<PRE CLASS="verbatim">
+Str = string()
+Err = term()
+</PRE>Parses <TT>Str</TT> using XML parser, returns either parsed element or error
+ tuple.
+</DL>
+<!--TOC section Modules-->
+
+<H2 CLASS="section"><A NAME="htoc12">6</A>&nbsp;&nbsp;Modules</H2><!--SEC END -->
+
+<A NAME="sec:emods"></A>
+<!--TOC subsection Module gen_iq_handler-->
+
+<H3 CLASS="subsection"><A NAME="htoc13">6.1</A>&nbsp;&nbsp;Module gen_iq_handler</H3><!--SEC END -->
+
+<A NAME="sec:geniqhandl"></A>
+The module <CODE>gen_iq_handler</CODE> allows to easily write handlers for IQ packets
+of particular XML namespaces that addressed to server or to users bare JIDs.<BR>
+<BR>
+In this module the following functions are defined:
+<DL CLASS="description" COMPACT=compact><DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>add_iq_handler(Component, Host, NS, Module, Function, Type)</CODE>
+<PRE CLASS="verbatim">
+Component = Module = Function = atom()
+Host = NS = string()
+Type = no_queue | one_queue | parallel
+</PRE>Registers function <CODE>Module:Function</CODE> as handler for IQ packets on
+ virtual host <CODE>Host</CODE> that contain child of namespace <CODE>NS</CODE> in
+ <CODE>Component</CODE>. Queueing discipline is <CODE>Type</CODE>. There are at least
+ two components defined:
+ <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>ejabberd_local</CODE> Handles packets that addressed to server JID;
+ <DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>ejabberd_sm</CODE> Handles packets that addressed to users bare JIDs.
+ </DL>
+<DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>remove_iq_handler(Component, Host, NS)</CODE>
+<PRE CLASS="verbatim">
+Component = atom()
+Host = NS = string()
+</PRE>Removes IQ handler on virtual host <CODE>Host</CODE> for namespace <CODE>NS</CODE> from
+ <CODE>Component</CODE>.
+</DL>
+Handler function must have the following type:
+<DL CLASS="description" COMPACT=compact><DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>Module:Function(From, To, IQ)</CODE>
+<PRE CLASS="verbatim">
+From = To = jid()
+</PRE></DL>
+<PRE CLASS="verbatim">
+-module(mod_cputime).
+
+-behaviour(gen_mod).
+
+-export([start/2,
+         stop/1,
+         process_local_iq/3]).
+
+-include("ejabberd.hrl").
+-include("jlib.hrl").
+
+-define(NS_CPUTIME, "ejabberd:cputime").
+
+start(Host, Opts) -&gt;
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_CPUTIME,
+                                  ?MODULE, process_local_iq, IQDisc).
+
+stop(Host) -&gt;
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_CPUTIME).
+
+process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) -&gt;
+    case Type of
+        set -&gt;
+            {iq, ID, error, XMLNS,
+             [SubEl, ?ERR_NOT_ALLOWED]};
+        get -&gt;
+            CPUTime = element(1, erlang:statistics(runtime))/1000,
+            SCPUTime = lists:flatten(io_lib:format("~.3f", CPUTime)),
+            {iq, ID, result, XMLNS,
+             [{xmlelement, "query",
+               [{"xmlns", ?NS_CPUTIME}],
+               [{xmlelement, "cputime", [], [{xmlcdata, SCPUTime}]}]}]}
+    end.
+</PRE>
+<!--TOC subsection Services-->
+
+<H3 CLASS="subsection"><A NAME="htoc14">6.2</A>&nbsp;&nbsp;Services</H3><!--SEC END -->
+
+<A NAME="sec:services"></A>
+<PRE CLASS="verbatim">
+-module(mod_echo).
+
+-behaviour(gen_mod).
+
+-export([start/2, init/1, stop/1]).
+
+-include("ejabberd.hrl").
+-include("jlib.hrl").
+
+start(Host, Opts) -&gt;
+    MyHost = gen_mod:get_opt(host, Opts, "echo." ++ Host),
+    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+             spawn(?MODULE, init, [MyHost])).
+
+init(Host) -&gt;
+    ejabberd_router:register_local_route(Host),
+    loop(Host).
+
+loop(Host) -&gt;
+    receive
+        {route, From, To, Packet} -&gt;
+            ejabberd_router:route(To, From, Packet),
+            loop(Host);
+        stop -&gt;
+            ejabberd_router:unregister_route(Host),
+            ok;
+        _ -&gt;
+            loop(Host)
+    end.
+
+stop(Host) -&gt;
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc ! stop,
+    {wait, Proc}.
+</PRE>
+<!--HTMLFOOT-->
+<!--ENDHTML-->
+<!--FOOTER-->
+<HR SIZE=2><BLOCKQUOTE CLASS="quote"><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</EM><A HREF="http://pauillac.inria.fr/~maranget/hevea/index.html"><EM>H<FONT SIZE=2><sup>E</sup></FONT>V<FONT SIZE=2><sup>E</sup></FONT>A</EM></A><EM>.</EM></BLOCKQUOTE></BODY>
+</HTML>

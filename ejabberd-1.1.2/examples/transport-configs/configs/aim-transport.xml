@@ -1,0 +1,77 @@
+<!-- aim-transport.xml -->
+
+<jabber>
+
+  <!--
+     You need to add elogger and rlogger entries when using ejabberd.
+     In this case the transport will do the logging.
+  -->
+
+  <log id='elogger'>
+    <host/>
+    <logtype/>
+    <format>%d: [%t] (%h): %s</format>
+    <file>/var/log/jabber/aim-transport-error.log</file>
+  </log>
+
+  <log id='rlogger'>
+    <host/>
+    <logtype>record</logtype>
+    <format>%d %h %s</format>
+    <file>/var/log/jabber/aim-transport-record.log</file>
+  </log>
+
+  <!--
+     ejabberd do not provide XDB services.
+     xdb_file.so is loaded in to handle all XDB requests.
+  -->
+
+  <xdb id="xdb">
+    <host/>
+    <load>
+      <xdb_file>/usr/local/lib/jabber/libjabberdxdbfile.so</xdb_file> <!-- This file is part of jabberd-1.4.x. -->
+      </load>
+    <xdb_file xmlns="jabber:config:xdb_file">
+      <spool><jabberd:cmdline flag='s'>/var/spool/jabber</jabberd:cmdline></spool>
+    </xdb_file>
+  </xdb>
+
+  <!--
+     Make sure that all host names here are resolveable via DNS if you
+     want the transport to be available to the public.
+  -->
+
+  <service id='aim.SERVER.COM'>
+    <!-- aim-transport configuration. -->
+    <aimtrans xmlns='jabber:config:aimtrans'>
+      <vCard>
+        <FN>AIM/ICQ Transport</FN>
+        <DESC>This is the AIM/ICQ Transport.</DESC>
+        <MAIL>EMAIL@ADDRESS.COM</MAIL>
+        <URL>http://aim-transport.jabberstudio.org/</URL>
+      </vCard>
+      <charset>cp1252</charset>
+    </aimtrans>
+    <!-- aim-transport module. -->
+    <load>
+      <aim_transport>/usr/local/lib/jabber/aim-transport.so</aim_transport>
+    </load>
+  </service>
+
+  <!--
+     The settings below have to match the settings you made
+     in your ejabberd.cfg configuration file.
+  -->
+
+  <service id="icq-linker">
+    <uplink/>
+    <connect>
+      <ip>127.0.0.1</ip>
+      <port>5233</port>
+      <secret>SECRET</secret>
+    </connect>
+  </service>
+
+  <pidfile>/var/run/jabber/aim-transport.pid</pidfile>
+
+</jabber>

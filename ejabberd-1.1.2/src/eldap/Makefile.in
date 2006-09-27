@@ -1,0 +1,39 @@
+# $Id$
+
+CC = @CC@
+CFLAGS = @CFLAGS@ @ERLANG_CFLAGS@ 
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@ @ERLANG_LIBS@
+
+SUBDIRS = 
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+OBJS   = \
+	$(OUTDIR)/eldap.beam \
+	$(OUTDIR)/ELDAPv3.beam \
+	$(OUTDIR)/eldap_filter.beam
+
+all:    $(OBJS)
+
+ELDAPv3.erl:       ELDAPv3.asn
+	@ERLC@ -bber_bin -W $(EFLAGS) $<
+
+$(OUTDIR)/%.beam:	%.erl ELDAPv3.erl
+	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
+
+
+clean:
+	rm -f ELDAPv3.asn1db
+	rm -f ELDAPv3.erl
+	rm -f ELDAPv3.hrl
+	rm -f ELDAPv3.beam
+	rm -f $(OBJS)
+
+distclean: clean
+	rm -f Makefile
+
+TAGS:
+	etags *.erl
+

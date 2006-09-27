@@ -1,0 +1,163 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+
+<HEAD>
+
+<TITLE>Ejabberd 1.1.2 Feature Sheet</TITLE>
+
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<META name="GENERATOR" content="hevea 1.08">
+<STYLE type="text/css">
+.toc{list-style:none;}
+.title{margin:auto;text-align:center}
+.center{text-align:center;margin-left:auto;margin-right:auto;}
+.flushleft{text-align:left;margin-left:0ex;margin-right:auto;}
+.flushright{text-align:right;margin-left:auto;margin-right:0ex;}
+DIV TABLE{margin-left:inherit;margin-right:inherit;}
+PRE{text-align:left;margin-left:0ex;margin-right:auto;}
+BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
+.part{margin:auto;text-align:center}
+SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
+</STYLE>
+</HEAD>
+
+<BODY >
+<!--HEVEA command line is: hevea -fix -noiso -pedantic features.tex -->
+<!--HTMLHEAD-->
+<!--ENDHTML-->
+<!--PREFIX <ARG ></ARG>-->
+<!--CUT DEF section 1 -->
+
+<BR>
+<BR>
+<A NAME="titlepage"></A>
+
+ <TABLE CLASS="title">
+<TR><TD>
+<H1 CLASS="titlemain">Ejabberd 1.1.2 Feature Sheet</H1>
+<H3 CLASS="titlerest">Sander Devrieze<BR>
+<A HREF="mailto:s.devrieze@pandora.be"><TT>mailto:s.devrieze@pandora.be</TT></A><BR>
+<A HREF="xmpp:sander@devrieze.dyndns.org"><TT>xmpp:sander@devrieze.dyndns.org</TT></A></H3></TD>
+</TR></TABLE><BR>
+<BR>
+<DIV CLASS="center">
+ 
+ <IMG SRC="logo.png" ALT="logo.png">
+ 
+
+ <BR>
+<BR>
+
+ </DIV>
+ <BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>I can thoroughly recommend ejabberd for ease of setup &ndash;
+ Kevin Smith, Current maintainer of the Psi project</I></FONT></BLOCKQUOTE>
+<!--TOC section Introduction-->
+
+<H2 CLASS="section"><A NAME="intro">Introduction</A></H2><!--SEC END -->
+
+<A NAME="sec:intro"></A>
+<BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>I just tried out ejabberd and was impressed both by ejabberd itself and the language it is written in, Erlang. &mdash;
+Joeri</I></FONT></BLOCKQUOTE> 
+<TT>ejabberd</TT> is a <B><FONT SIZE=4><FONT COLOR="#001376">free and open source</FONT></FONT></B> instant messaging server written in <A HREF="http://www.erlang.org/">Erlang</A>.<BR>
+<BR>
+<TT>ejabberd</TT> is <B><FONT SIZE=4><FONT COLOR="#001376">cross-platform</FONT></FONT></B>, distributed, fault-tolerant, and based on open standards to achieve real-time communication.<BR>
+<BR>
+<TT>ejabberd</TT> is designed to be a <B><FONT SIZE=4><FONT COLOR="#001376">rock-solid and feature rich</FONT></FONT></B> XMPP server.<BR>
+<BR>
+<TT>ejabberd</TT> is suitable for small deployments, whether they need to be <B><FONT SIZE=4><FONT COLOR="#001376">scalable</FONT></FONT></B> or not, as well as extremely big deployments.<BR>
+<BR>
+<!--TOC subsection Key Features-->
+
+<H3 CLASS="subsection"><A NAME="keyfeatures">Key Features</A></H3><!--SEC END -->
+
+<A NAME="sec:keyfeatures"></A>
+
+<BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>Erlang seems to be tailor-made for writing stable, robust servers. &mdash;
+Peter Saint-Andr&eacute;, Executive Director of the Jabber Software Foundation</I></FONT></BLOCKQUOTE>
+<TT>ejabberd</TT> is:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+<B><FONT SIZE=4><FONT COLOR="#001376">Cross-platform:</FONT></FONT></B> <TT>ejabberd</TT> runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.<BR>
+<BR>
+<LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Distributed:</FONT></FONT></B> You can run <TT>ejabberd</TT> on a cluster of machines and all of them will serve the same Jabber domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.<BR>
+<BR>
+<LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Fault-tolerant:</FONT></FONT></B> You can deploy an <TT>ejabberd</TT> cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced `on the fly'.<BR>
+<BR>
+<LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Administrator Friendly:</FONT></FONT></B> <TT>ejabberd</TT> is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Comprehensive documentation.
+<LI CLASS="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows.<FONT COLOR="#FFAA00"><SPAN STYLE="font-variant:small-caps">improved</SPAN></FONT>
+<LI CLASS="li-itemize">Web interface for administration tasks.
+<LI CLASS="li-itemize">Shared Roster Groups.
+<LI CLASS="li-itemize">Command line administration tool.<FONT COLOR="#FFAA00"><SPAN STYLE="font-variant:small-caps">improved</SPAN></FONT>
+<LI CLASS="li-itemize">Can integrate with existing authentication mechanisms.
+<LI CLASS="li-itemize">Capability to send announce messages.
+</UL><BR>
+<BR>
+<LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Internationalized:</FONT></FONT></B> <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Translated in 12 languages.<FONT COLOR="#FFAA00"><SPAN STYLE="font-variant:small-caps">improved</SPAN></FONT>
+<LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
+</UL><BR>
+<BR>
+<LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Open Standards:</FONT></FONT></B> <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Fully XMPP compliant.
+<LI CLASS="li-itemize">XML-based protocol.
+<LI CLASS="li-itemize"><A HREF="http://ejabberd.jabber.ru/protocols">Many JEPs supported</A>.
+</UL></UL>
+<!--TOC subsection Additional Features-->
+
+<H3 CLASS="subsection"><A NAME="addfeatures">Additional Features</A></H3><!--SEC END -->
+
+<A NAME="sec:addfeatures"></A>
+
+<BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>ejabberd is making inroads to solving the "buggy incomplete server" problem &mdash;
+Justin Karneges, Founder of the Psi and the Delta projects</I></FONT></BLOCKQUOTE>
+Moreover, <TT>ejabberd</TT> comes with a wide range of other state-of-the-art features:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Modular
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Load only the modules you want.
+<LI CLASS="li-itemize">Extend <TT>ejabberd</TT> with your own custom modules.
+</UL>
+<LI CLASS="li-itemize">Security
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+SASL and STARTTLS for c2s and s2s connections.
+<LI CLASS="li-itemize">STARTTLS and Dialback s2s connections.
+<LI CLASS="li-itemize">Web interface accessible via HTTPS secure access.
+</UL>
+<LI CLASS="li-itemize">Databases
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Native MySQL support.
+<LI CLASS="li-itemize">Native PostgreSQL support.
+<LI CLASS="li-itemize">Mnesia.
+<LI CLASS="li-itemize">ODBC data storage support.
+<LI CLASS="li-itemize">Microsoft SQL Server support.<FONT COLOR="red"><SPAN STYLE="font-variant:small-caps">new</SPAN></FONT>
+</UL>
+<LI CLASS="li-itemize">Authentication
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+LDAP and ODBC.<FONT COLOR="#FFAA00"><SPAN STYLE="font-variant:small-caps">improved</SPAN></FONT>
+<LI CLASS="li-itemize">External Authentication script.
+<LI CLASS="li-itemize">Internal Authentication.
+</UL>
+<LI CLASS="li-itemize">Others
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Compressing XML streams with Stream Compression (<A HREF="http://www.jabber.org/jeps/jep-0138.html">JEP-0138</A>).
+<LI CLASS="li-itemize">Interface with networks such as AIM, ICQ and MSN.
+<LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>).
+<LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0045.html">Multi-User Chat</A> module with logging.<FONT COLOR="#FFAA00"><SPAN STYLE="font-variant:small-caps">improved</SPAN></FONT>
+<LI CLASS="li-itemize">Users Directory based on users vCards.
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0060.html">Publish-Subscribe</A> component.
+<LI CLASS="li-itemize">Support for virtual hosting.
+<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A> service.
+<LI CLASS="li-itemize">IRC transport.
+</UL>
+</UL>
+<!--HTMLFOOT-->
+<!--ENDHTML-->
+<!--FOOTER-->
+<HR SIZE=2><BLOCKQUOTE CLASS="quote"><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</EM><A HREF="http://pauillac.inria.fr/~maranget/hevea/index.html"><EM>H<FONT SIZE=2><sup>E</sup></FONT>V<FONT SIZE=2><sup>E</sup></FONT>A</EM></A><EM>.</EM></BLOCKQUOTE></BODY>
+</HTML>

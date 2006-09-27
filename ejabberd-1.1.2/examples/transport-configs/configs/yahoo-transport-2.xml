@@ -1,0 +1,86 @@
+<!-- yahoo-transport-2.xml -->
+
+<jabber>
+
+  <!--
+  You need to add the elogger entry here when using ejabberd.
+  In this case the transport will do the logging.
+  -->
+
+  <log id='elogger'>
+    <host/>
+    <logtype/>
+    <format>%d: [%t] (%h): %s</format>
+    <file>/var/log/jabber/yahoo-transport-2-error.log</file>
+    <stderr/>
+  </log>
+
+  <!--
+     ejabberd do not provide XDB services.
+     xdb_file.so is loaded in to handle all XDB requests.
+  -->
+
+  <xdb id="xdb">
+    <host/>
+    <load>
+      <xdb_file>/usr/local/lib/jabber/libjabberdxdbfile.so</xdb_file>
+      </load>
+    <xdb_file xmlns="jabber:config:xdb_file">
+      <spool><jabberd:cmdline flag='s'>/var/spool/jabber</jabberd:cmdline></spool>
+    </xdb_file>
+  </xdb>
+
+  <!--
+     Make sure that all host names here are resolveable via DNS if you
+     want the transport to be available to the public.
+  -->
+
+  <service id="yahoo.SERVER.COM">
+    <!-- yahoo-transport-2 configuration. -->
+    <config xmlns="jabber:config:yahoo">
+      <vCard>
+        <NAME>Yahoo! Transport</NAME>
+        <FN>vCard not implemented in current version</FN>
+        <DESC>This is the Yahoo! transport.</DESC>
+        <MAIL>EMAIL@ADDRESS.COM</MAIL>
+        <URL>http://yahoo-transport-2.jabberstudio.org/</URL>
+      </vCard>
+      <instructions>Fill in your YAHOO! Messenger username and password to register on this transport.</instructions>
+      <server>scs.msg.yahoo.com</server>
+      <port>5050</port>
+      <!--
+         The character map. This provides character set translation from UTF-8
+         to the indicated character map. See the man page for 'iconv' for available
+         character maps on your platform. CP1252 is the standard Windows character
+         set.
+      -->
+      <charmap>CP1252</charmap>
+      <!--
+         When this element exists, the transport will send new mail notifications as
+         well as a count of unread messages when the user initially logs in.
+      -->
+      <newmail/>
+    </config>
+    <!-- yahoo-transport-2 module. -->
+    <load>
+      <yahoo_transport>/usr/local/lib/jabber/yahoo-transport-2.so</yahoo_transport>
+    </load>
+  </service>
+
+  <!--
+     The settings below have to match the settings you made
+     in your ejabberd.cfg configuration file.
+  -->
+
+  <service id="yahoo-linker">
+    <uplink/>
+    <connect>
+      <ip>127.0.0.1</ip>
+      <port>5236</port>
+      <secret>SECRET</secret>
+    </connect>
+  </service>
+
+  <pidfile>/var/run/jabber/yahoo-transport-2.pid</pidfile>
+
+</jabber>

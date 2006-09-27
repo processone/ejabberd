@@ -1,0 +1,28 @@
+
+include ..\Makefile.inc
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+OBJS = \
+	$(OUTDIR)\ejabberd_http.beam \
+	$(OUTDIR)\ejabberd_web.beam  \
+	$(OUTDIR)\ejabberd_web_admin.beam  \
+	$(OUTDIR)\ejabberd_http_poll.beam
+
+ALL : $(OBJS)
+
+CLEAN :
+	-@erase $(OBJS)
+
+$(OUTDIR)\ejabberd_http.beam : ejabberd_http.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_http.erl
+
+$(OUTDIR)\ejabberd_web.beam : ejabberd_web.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_web.erl
+
+$(OUTDIR)\ejabberd_web_admin.beam : ejabberd_web_admin.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_web_admin.erl
+
+$(OUTDIR)\ejabberd_http_poll.beam : ejabberd_http_poll.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_http_poll.erl

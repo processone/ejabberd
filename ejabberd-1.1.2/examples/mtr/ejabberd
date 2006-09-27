@@ -1,0 +1,75 @@
+#!/bin/sh
+#
+# PROVIDE: ejabberd
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+#
+
+HOME=/usr/pkg/jabber D=/usr/pkg/jabber/ejabberd export HOME
+
+name="ejabberd"
+rcvar=$name
+
+if [ -r /etc/rc.conf ]
+then
+        . /etc/rc.conf
+else
+        eval ${rcvar}=YES
+fi
+
+# $flags from environment overrides ${rcvar}_flags
+if [ -n "${flags}" ]
+then
+        eval ${rcvar}_flags="${flags}"
+fi
+
+checkyesno()
+{
+        eval _value=\$${1}
+        case $_value in
+        [Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]|[Oo][Nn]|1)       return 0 ;;
+        [Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]|[Oo][Ff][Ff]|0)   return 1 ;;
+        *)
+                echo "\$${1} is not set properly."
+                return 1
+                ;;
+        esac
+}
+
+cmd=${1:-start}
+case ${cmd} in
+force*)
+        cmd=${cmd#force}
+        eval ${rcvar}=YES
+        ;;
+esac
+
+if checkyesno ${rcvar}
+then
+else
+    exit 0
+fi
+
+case ${cmd} in
+start)
+        if [ -x $D/src ]; then
+            echo "Starting ${name}."
+            cd $D/src
+            ERL_MAX_PORTS=32000 export ERL_MAX_PORTS
+            ulimit -n $ERL_MAX_PORTS
+            su jabber -c "/usr/pkg/bin/erl -sname ejabberd -s ejabberd -heart -detached -sasl sasl_error_logger '{file, \"ejabberd-sasl.log\"}' &" \
+                      1>/dev/null 2>&1
+        fi
+        ;;
+stop)
+        echo "rpc:call('ejabberd@`hostname -s`', init, stop, [])." | \
+             su jabber -c "/usr/pkg/bin/erl -sname ejabberdstop"
+        ;;
+restart)
+        echo "rpc:call('ejabberd@`hostname -s`', init, restart, [])." | \
+             su jabber -c "/usr/pkg/bin/erl -sname ejabberdrestart"
+        ;;
+*)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac

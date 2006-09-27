@@ -1,0 +1,47 @@
+#!/bin/sh
+#########################################################
+#
+#     jabber-gg-transport -- script to start jabber-gg-transport.
+#
+#########################################################
+
+DAEMON=/usr/local/sbin/jggtrans
+CONF=/etc/jabber/jabber-gg-transport.xml
+NAME=jggtrans
+HOME=/etc/jabber/
+USER=ejabberd
+
+#########################################################
+
+if [ "`/usr/bin/whoami`" != "$USER" ]; then
+
+       echo "You need to be" $USER "user to run this script."
+       exit 1
+fi
+
+case "$1" in
+  debug)
+        test -f $DAEMON -a -f $CONF || exit 0
+        echo "Starting $NAME in debugging mode."
+        $DAEMON -D -H $HOME -c $CONF &
+        ;;
+  start)
+	test -f $DAEMON -a -f $CONF || exit 0
+	echo "Starting $NAME."
+	$DAEMON $CONF &
+	;;
+  stop)
+	echo "Stopping $NAME."
+	killall $NAME &
+	rm /var/run/jabber/jabber-gg-transport.pid
+        ;;
+
+  restart|reload)
+	$0 stop
+	sleep 3
+	$0 start
+	;;
+  *)
+	echo "Usage: $0 {debug|start|stop|restart}"
+	exit 1
+esac

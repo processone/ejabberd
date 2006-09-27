@@ -1,0 +1,16 @@
+
+include ..\Makefile.inc
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+OBJS = \
+	$(OUTDIR)\mod_pubsub.beam
+
+ALL : $(OBJS)
+
+CLEAN :
+	-@erase $(OBJS)
+
+$(OUTDIR)\mod_pubsub.beam : mod_pubsub.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_pubsub.erl

@@ -1,0 +1,136 @@
+<!-- ile.xml -->
+
+<config>
+  <jabber>
+    <server>127.0.0.1</server>
+    <port>5238</port>
+    <secret>SECRET</secret>
+    <service>ile.SERVER.COM</service>
+    <connectsleep>7</connectsleep> <!-- seconds to wait if we get disconnected -->
+    <language>en</language>
+    <vCard>
+      <FN>I Love Email</FN>
+      <DESC>With this service you can receive email notifications.
+
+Security warning: Be careful when using this. Your password will travel in clear from your client to your jabber server if you don't use SSL and it will probably travel in clear from the jabber server to your email server. Use with care. This shouldn't be an issue in your Intranet, but it is if you use an ILE installed in a foreign jabber server.</DESC>
+      <MAIL>EMAIL@ADDRESS.COM</MAIL>
+      <URL>http://ile.jabberstudio.org/</URL>
+    </vCard>
+  </jabber>
+
+  <debug>
+    <file>/var/log/jabber/ile.log</file>
+    <level>1</level> <!-- man Net::Jabber::Debug -->
+  </debug>
+
+  <mail>
+    <checkinterval>10</checkinterval> <!-- in minutes --> 
+    <timeout>20</timeout> <!-- timeout for IMAP/POP connection, in seconds -->
+  </mail>
+
+  <files>
+    <users>/var/spool/jabber/ile.SERVER.COM/users.db</users>
+    <passwords>/var/spool/jabber/ile.SERVER.COM/passwords.db</passwords>
+    <hosts>/var/spool/jabber/ile.SERVER.COM/hosts.db</hosts>
+    <types>/var/spool/jabber/ile.SERVER.COM/types.db</types>
+    <notifyxa>/var/spool/jabber/ile.SERVER.COM/notifyxa.db</notifyxa>
+    <notifydnd>/var/spool/jabber/ile.SERVER.COM/notifydnd.db</notifydnd>
+    <urls>/var/spool/jabber/ile.SERVER.COM/urls.db</urls>
+  </files>
+
+  <form>
+    <en>
+      <instructions>Please fill in the fields,according to your email account settings and notification preferences</instructions>
+      <title>ILE: Email notification service</title>
+      <email_options>Email account settings</email_options>
+      <user>Username</user>
+      <pass>Password</pass>
+      <host>Hostname</host>
+      <type>Type</type>
+      <newmail>You have received NUM email messages since last time I checked, which was CHECKINTERVAL minutes ago.</newmail>
+      <errorcheck>There was an error while trying to check mail for ACCOUNT.</errorcheck>
+      <notify_options>Notification Options</notify_options>
+      <notifyxa>Notify even when Xtended Away (XA)</notifyxa>
+      <notifydnd>Notify even when Do Not Disturb (DND)</notifydnd>
+      <webmail_url>Webmail URL</webmail_url>
+      <webmail_login>Login to ACCOUNT</webmail_login>
+      <iledesc>ILE: an email notifier component: http://ile.jabberstudio.org</iledesc>
+    </en>
+
+    <es>
+      <instructions>Por favor, rellene los campos del formulario.</instructions>
+      <title>ILE: Servicio de notificaciÃ³n de correo</title>
+      <email_options>ConfiguraciÃ³n de la cuenta de correo</email_options>
+      <user>Usuario</user>
+      <pass>Clave</pass>
+      <host>Host</host>
+      <type>Tipo</type>
+      <newmail>Ha recibido NUM email(s) desde la Ãºltima comprobaciÃ³n que fue hace CHECKINTERVAL minutos</newmail>
+      <errorcheck>Ha habido un error en la comprobaciÃ³n del correo para la cuenta ACCOUNT.</errorcheck>
+      <notify_options>Opciones de notificaciÃ³n</notify_options>
+      <notifyxa>Notificar incluso si muy ausente (XA)</notifyxa>
+      <notifydnd>Notificar incluso si no molestar (DND)</notifydnd>
+      <webmail_url>Webmail URL</webmail_url>
+      <webmail_login>Leer correo de ACCOUNT</webmail_login>
+      <iledesc>ILE: un notificador de nuevo email - http://ile.jabberstudio.org</iledesc>
+    </es>
+
+    <ca>
+      <instructions>Ompli els camps del formulari.</instructions>
+      <title>ILE: Servei de notificaciÃ³ de nou email</title>
+      <email_options>Dades del compte de mail</email_options>
+      <user>Usuari</user>
+      <pass>Clau</pass>
+      <host>Host</host>
+      <type>Tipus</type>
+      <newmail>Ha rebut NUM email(s) des de la Ãºltima comprobaciÃ³ que va ser fa CHECKINTERVAL minuts.</newmail>
+      <errorcheck>S'ha produit un error en la comprobaciÃ³ del correu per al compte ACCOUNT.</errorcheck>
+      <notify_options>Opcions de notificaciÃ³</notify_options>
+      <notifyxa>Notificar si molt absent (XA)</notifyxa>
+      <notifydnd>Notificar si no molestar (DND)</notifydnd>
+      <webmail_url>Webmail URL</webmail_url>
+      <webmail_login>Llegir correu de ACCOUNT</webmail_login>
+      <iledesc>ILE: un notificador de nou email - http://ile.jabberstudio.org</iledesc>
+    </ca>
+
+    <ro>
+      <!-- Contributed by Adrian Rappa -->
+      <instructions>Va rog completati urmatoarele campuri</instructions>
+      <title>I Love Email: new email notification service</title>
+      <email_options>Email account settings</email_options>
+      <user>Nume utilizator</user>
+      <pass>Parola</pass>
+      <host>Nume gazda</host>
+      <type>Tip</type>
+      <newmail>Ati primit NUM mesaj(e) de la ultima verificare, care a fost acum CHECKINTERVAL minute.</newmail>
+      <errorcheck>A fost eroare in timp ce incercam sa verific posta pentru ACCOUNT.</errorcheck>
+      <notify_options>Notification Options</notify_options>
+      <notifyxa>Notify even when Xtended Away (XA)</notifyxa>
+      <notifydnd>Notify even when Do Not Disturb (DND)</notifydnd>
+      <webmail_url>Webmail URL</webmail_url>
+      <webmail_login>Login to ACCOUNT</webmail_login>
+      <iledesc>ILE: an email notifier component: http://ile.jabberstudio.org</iledesc>
+    </ro>
+
+    <nl>
+      <!-- Contributed by Sander Devrieze -->
+      <instructions>Vul volgende velden in.</instructions>
+      <title>ILE: Dienst voor e-mailnotificaties</title>
+      <email_options>Instellingen van e-mailaccount</email_options>
+      <user>Gebruikersnaam</user>
+      <pass>Wachtwoord</pass>
+      <host>Inkomende mailserver</host>
+      <type>Type verbinding</type>
+      <newmail>U hebt NUM berichten ontvangen sinds CHECKINTERVAL minuten geleden.</newmail>
+      <errorcheck>Fout tijdens controle op nieuwe e-mails bij ACCOUNT. ILE zal deze account niet meer opnieuw controleren tot u uw registratiegegevens wijzigt of opnieuw aanmeldt.</errorcheck>
+      <notify_options>Notificatie-instellingen</notify_options>
+      <notifyxa>Notificeer ook in de status Niet Beschikbaar (XA)</notifyxa>
+      <notifydnd>Notificeer ook in de status Niet Storen (DND)</notifydnd>
+      <webmail_url>URL van webmail</webmail_url>
+      <webmail_login>Aanmelden op ACCOUNT</webmail_login>
+      <iledesc>ILE: een dienst om e-mailnotificaties te ontvangen: http://ile.jabberstudio.org</iledesc>
+    </nl>
+
+  </form>
+
+</config>

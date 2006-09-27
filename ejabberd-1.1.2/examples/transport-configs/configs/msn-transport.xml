@@ -1,0 +1,118 @@
+<!-- msn-transport.xml -->
+
+<jabber>
+
+  <!--
+     You need to add elogger and rlogger entries here when using ejabberd.
+     In this case the transport will do the logging.
+  -->
+
+  <log id='elogger'>
+    <host/>
+    <logtype/>
+    <format>%d: [%t] (%h): %s</format>
+    <file>/var/log/jabber/msn-transport-error.log</file>
+  </log>
+
+  <log id='rlogger'>
+    <host/>
+    <logtype>record</logtype>
+    <format>%d %h %s</format>
+    <file>/var/log/jabber/msn-transport-record.log</file>
+  </log>
+
+  <!--
+     ejabberd do not provide XDB services.
+     xdb_file.so is loaded in to handle all XDB requests.
+  -->
+
+  <xdb id="xdb">
+    <host/>
+    <load>
+      <xdb_file>/usr/local/lib/jabber/libjabberdxdbfile.so</xdb_file>
+      </load>
+    <xdb_file xmlns="jabber:config:xdb_file">
+      <spool><jabberd:cmdline flag='s'>/var/spool/jabber</jabberd:cmdline></spool>
+    </xdb_file>
+  </xdb>
+
+  <!--
+     Make sure that all host names here are resolveable via DNS if you
+     want the transport to be available to the public.
+  -->
+
+  <service id="msn.SERVER.COM">
+    <!-- msn-transport configuration. -->
+    <msntrans xmlns="jabber:config:msntrans">
+      <instructions>Fill in your MSN account and password (eg: user1@hotmail.com).  A nickname is optional.</instructions>
+      <vCard>
+        <FN>MSN Transport</FN>
+        <DESC>This is the MSN Transport.</DESC>
+        <EMAIL>EMAIL@ADDRESS.COM</EMAIL>
+        <URL>http://msn-transport.jabberstudio.org/</URL>
+      </vCard>
+      <!--
+         Conference support allows you to create groupchat rooms on the
+         msn-transport and invite MSN users to join. 
+      -->
+      <conference id="conference.msn.SERVER.COM">
+        <!--
+           This will make MSN transport invite you to a special groupchat
+           room when more then one user joins a normal one-on-one session.
+           Joining this room will make MSN transport "switch" the session
+           into groupchat mode.  If you ignore it, MSN transport will
+           continue to send the messages as one-on-one chats. 
+        -->
+        <invite>More than one user entered this chat session. Enter this room to switch to groupchat modus.</invite>
+        <notice>
+          <join> is available</join>
+          <leave> has leaved the room</leave>
+        </notice>
+      </conference>
+      <!-- Enable Hotmail inbox notification. -->
+      <headlines/>
+      <!--
+         Enable fancy friendly names
+         If the user enters a nickname upon registration, and the user has
+         a status message, their MSN friendly name will be "nickname - status message".
+
+         If the user does not enter a nickname on registration, but they do have
+         a status message, their friendly name will just be their status message.
+
+         If the user did enter a nickname on registration, but they have a blank status message,
+         then their friendly name will just be the registered nickname.
+
+         If the user did not enter a nickname on registration, and they have a blank status message,
+         their nickname will just be the username portion of their JID.
+
+         If the above chosen friendly name is too long, then it will be truncated and "..." placed
+         at the end. MSN only supports friendly names of 128 characters, so this is unavoidable.
+
+         If this is disabled, then the registered nick is always sent as the MSN friendly name,
+         or if that is blank, the username portion of their JID is sent instead.
+      -->
+      <fancy_friendly/>
+    </msntrans>
+    <!-- msn-transport module. -->
+    <load>
+      <msntrans>/usr/local/lib/jabber/msn-transport.so</msntrans>
+    </load>
+  </service>
+
+  <!--
+     The settings below have to match the settings you made
+     in your ejabberd.cfg configuration file.
+  -->
+
+  <service id="msn-linker">
+    <uplink/>
+    <connect>
+      <ip>127.0.0.1</ip>
+      <port>5235</port>
+      <secret>SECRET</secret>
+    </connect>
+  </service>
+
+  <pidfile>/var/run/jabber/msn-transport.pid</pidfile>
+
+</jabber>

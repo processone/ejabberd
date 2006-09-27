@@ -1,0 +1,43 @@
+#!/bin/sh
+#########################################################
+#
+#     ile -- script to start ILE.
+#
+#########################################################
+
+DAEMON=/usr/local/sbin/ile.pl
+NAME=ile.pl
+CONF=/etc/jabber/ile.xml
+USER=ejabberd
+
+#########################################################
+
+if [ "`/usr/bin/whoami`" != "$USER" ]; then
+
+       echo "You need to be" $USER "user to run this script."
+       exit 1
+fi
+
+case "$1" in
+  debug)
+	echo "Not implemented yet. Starting in normal mode"
+	$0 start
+	;;
+  start)
+	test -f $DAEMON || exit 0
+	echo "Starting $NAME."
+	$DAEMON $CONF &
+	;;
+  stop)
+	echo "Stopping $NAME."
+	killall $NAME &
+  	;;
+  restart|reload)
+	$0 stop
+	sleep 3
+	$0 start
+	;;
+  *)
+	echo "Usage: $0 {debug|start|stop|status|restart}"
+	exit 1
+esac

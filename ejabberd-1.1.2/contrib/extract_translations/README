@@ -1,0 +1,21 @@
+extract_translations - auxiliary tool that extracts lines to be translated
+from ejabberd source tree.
+
+Building:
+    erlc extract_translations.erl
+
+Invoking 1:
+    erl -noinput -s extract_translations -extra dirname message_file
+
+    where dirname is the directory "src" in ejabberd's source tree root,
+    message_file is a file with translated messages (src/msgs/*.msg).
+
+    Result is a list of messages from source files which aren't contained in
+    message file.
+
+Invoking 2:
+    erl -noinput -s extract_translations -extra -unused dirname message_file
+
+    Result is a list of messages from message file which aren't in source
+    files anymore.
+

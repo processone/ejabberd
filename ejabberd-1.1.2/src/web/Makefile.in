@@ -1,0 +1,34 @@
+# $Id$
+
+CC = @CC@
+CFLAGS = @CFLAGS@ @ERLANG_CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@ @ERLANG_LIBS@
+
+SUBDIRS = 
+
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+OBJS   = \
+	$(OUTDIR)/ejabberd_http.beam \
+	$(OUTDIR)/ejabberd_web.beam  \
+	$(OUTDIR)/ejabberd_web_admin.beam  \
+	$(OUTDIR)/ejabberd_http_poll.beam
+
+all:    $(OBJS)
+
+$(OUTDIR)/%.beam:	%.erl ejabberd_http.hrl
+	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
+
+
+clean:
+	rm -f $(OBJS)
+
+distclean: clean
+	rm -f Makefile
+
+TAGS:
+	etags *.erl
+

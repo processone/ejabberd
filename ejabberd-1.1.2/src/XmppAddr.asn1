@@ -1,0 +1,14 @@
+XmppAddr { iso(1) identified-organization(3)	
+           dod(6) internet(1) security(5) mechanisms(5) pkix(7)
+	   id-on(8) id-on-xmppAddr(5) }
+
+DEFINITIONS EXPLICIT TAGS ::=
+BEGIN
+
+id-on-xmppAddr  OBJECT IDENTIFIER ::= { iso(1) identified-organization(3)
+                dod(6) internet(1) security(5) mechanisms(5) pkix(7)
+                id-on(8) 5 }
+
+XmppAddr ::= UTF8String
+
+END

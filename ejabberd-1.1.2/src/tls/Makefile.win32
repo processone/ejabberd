@@ -1,0 +1,37 @@
+
+include ..\Makefile.inc
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+OBJS = \
+	$(OUTDIR)\tls.beam
+
+SOURCE = tls_drv.c
+OBJECT = tls_drv.o
+DLL    = $(OUTDIR)\tls_drv.dll
+
+ALL : $(DLL) $(OBJS)
+
+CLEAN :
+	-@erase $(DLL)
+	-@erase $(OUTDIR)\tls_drv.exp
+	-@erase $(OUTDIR)\tls_drv.lib
+	-@erase $(OBJECT)
+	-@erase $(OBJS)
+
+$(OUTDIR)\tls.beam : tls.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) tls.erl
+
+CC=cl.exe
+CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include" -I"$(OPENSSL_DIR)\include"
+
+LD=link.exe
+LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" "$(OPENSSL_DIR)\lib\VC\ssleay32.lib" "$(OPENSSL_DIR)\lib\VC\libeay32.lib" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
+
+$(DLL) : $(OBJECT)
+	$(LD) $(LD_FLAGS) -out:$(DLL) $(OBJECT)
+
+$(OBJECT) : $(SOURCE)
+    	$(CC) $(CC_FLAGS) -c -Fo$(OBJECT) $(SOURCE) 
+
