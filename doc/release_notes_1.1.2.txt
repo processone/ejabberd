@@ -11,73 +11,73 @@
    ejabberd can be downloaded from the Process-one website:
    http://www.process-one.net/en/projects/ejabberd/
 
-   Detailed information can be found in the ejabberd Feature Sheet and User
-   Guide which are available on the Process-one website:
+   Detailed information can be found in the Feature Sheet and in the
+   Installation and Operation Guide which are both available on the
+   Process-one website:
    http://www.process-one.net/en/projects/ejabberd/docs.html
 
-   ejabberd includes 44 improvements. A complete list of changes is available
-   from:
+   ejabberd includes 44 improvements. A complete list of changes can be
+   retrieved from:
    http://redir.process-one.net/ejabberd-1.1.2
 
 
    Recent changes include:
 
-LDAP Support 
+LDAP Improvements
 
   - Major improvements have been made on the LDAP module. It is now more
     flexible and more robust.
 
-HTTP Polling fixes
+HTTP Polling Fixes
 
-  - The HTTP poll modules have been fixed and improved: The connection are
-    closed properly and polled messages can no more be lost.
+  - The HTTP polling modules have been fixed and improved: the connections are
+    closed properly and polled messages cannot be lost anymore.
 
-Roster management improvement
+Roster Management Improvement
 
-  - Roster management improvements make it more reliable, especially in cases
-    where users are on different servers.
-  - Shared rosters are now more reliable.
+  - Roster management improvements increase reliability, especially in cases
+  where users are on different servers.
+  - Shared rosters are more reliable.
 
 Improved Robustness
 
   - It is now possible to limit the number of opened connections for a single
   user.
 
-Relational database support
+Relational databases
 
-  - Database support: Microsoft SQL Server is now officially supported (ODBC
-  mode).
+  - Database support: Microsoft SQL Server is now officially supported in ODBC
+  mode.
 
-Pubsub improvements
+Publish-Subscribe Improvement
 
-  - Nodes creation can now be prevented with a dedicated ACL rule.
+  - Restricting node creation with a dedicated ACL rule is now possible.
 
 Localization
 
   - A Czech translation has been added.
   - Translations have been updated.
 
-Binary installer
+Binary Installer
 
-  - The same completly packaged binary installer is now available on Windows,
-  Linux and MacOSX PPC.
+  - New binary installer for Windows including all requirements.
+  - Improved installers for Linux and MacOSX (PowerPC)
 
 
 - Anonymous login bugfixes.
 
-XMPP compliance
+XMPP Compliancy
 
   - Some protocol compliance fix have been added, after the Portland XMPP
     Interop Meeting in July.
 
-Various improvements
+Miscelanous
 
   - MUC have been improved (logging rendering).
   - The command line tool ejabberdctl has been improved.
   - The build chain has been improved, including MacOSX support.
   - The documentation has been improved and updated to describe the new
     features.
-  - A Czech translation has been added.
 
 Bugfixes
 
@@ -90,11 +90,13 @@ Bugfixes
 Supported Erlang Version
 
    - You need at least Erlang/OTP R9C-2 to run ejabberd 1.1.2.
+   - The recommanded version is Erlang/OTP R10B-10.
+   - Erlang/OTP R11B has not yet been fully certified for ejabberd.
 
 Installation
 
    Installers are provided for Microsoft Windows, Linux/x86 and MacOSX/PPC.
-   Installers can be retrieved from:
+   They can be retrieved from:
    http://www.process-one.net/en/projects/ejabberd/download.html
 
 Migration Notes
@@ -102,21 +104,17 @@ Migration Notes
    - Before any migration, ejabberd system and database must be properly
    backed up.
    - The relational database schema has changed between version 1.1.1 and
-   1.1.2. A "askmessage" column need to be added in the "rosterusers" table to
-   perform the migration.
+   1.1.2. An "askmessage" column needs to be added in the "rosterusers" table
+   to perform the migration.
 
 
 References
 
    Contributed tutorials and documents of interest are:
-   - Migration from Jabberd1.4, Jabberd2 and WPJabber to ejabberd:
+   - Migration from other XMPP servers to ejabberd:
      http://ejabberd.jabber.ru/migrate-to-ejabberd     
    - Transport configuration for connecting to other networks:
      http://ejabberd.jabber.ru/tutorials-transports
-   - Using ejabberd with MySQL native driver:
-     http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver
-   - Anonymous User Support:
-     http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support
    - Frequently Asked Questions:
      http://ejabberd.jabber.ru/faq
 
