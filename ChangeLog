@@ -1,5 +1,7 @@
 2006-09-27  Mickael Remond  <mickael.remond@process-one.net>
 
+	* doc/release_notes_1.1.2.txt: Minor fixes.
+
 	* doc/guide.tex: Fixed Latexish typos.
 
 2006-09-26  Mickael Remond  <mickael.remond@process-one.net>
