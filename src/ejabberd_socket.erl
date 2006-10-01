@@ -13,7 +13,9 @@
 -export([start/4,
 	 connect/3,
 	 starttls/2,
+	 starttls/3,
 	 compress/1,
+	 compress/2,
 	 reset_stream/1,
 	 send/2,
 	 change_shaper/2,
@@ -43,7 +45,7 @@ start(Module, SockMod, Socket, Opts) ->
 	    SocketData = #socket_state{sockmod = SockMod,
 				       socket = Socket,
 				       receiver = Receiver},
-	    {ok, Pid} = Module:start(SocketData, Opts),
+	    {ok, Pid} = Module:start({?MODULE, SocketData}, Opts),
 	    case SockMod:controlling_process(Socket, Receiver) of
 		ok ->
 		    ok;
@@ -58,8 +60,7 @@ start(Module, SockMod, Socket, Opts) ->
 		    ok;
 		{error, _Reason} ->
 		    SockMod:close(Socket)
-	    end,
-	    ejabberd_receiver:become_controller(Pid)
+	    end
     end.
 
 connect(Addr, Port, Opts) ->
@@ -87,11 +88,25 @@ starttls(SocketData, TLSOpts) ->
     ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
     SocketData#socket_state{socket = TLSSocket, sockmod = tls}.
 
+starttls(SocketData, TLSOpts, Data) ->
+    {ok, TLSSocket} = tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
+    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
+    send(SocketData, Data),
+    SocketData#socket_state{socket = TLSSocket, sockmod = tls}.
+
 compress(SocketData) ->
     {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
 			 SocketData#socket_state.sockmod,
 			 SocketData#socket_state.socket),
     ejabberd_receiver:compress(SocketData#socket_state.receiver, ZlibSocket),
+    SocketData#socket_state{socket = ZlibSocket, sockmod = ejabberd_zlib}.
+
+compress(SocketData, Data) ->
+    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
+			 SocketData#socket_state.sockmod,
+			 SocketData#socket_state.socket),
+    ejabberd_receiver:compress(SocketData#socket_state.receiver, ZlibSocket),
+    send(SocketData, Data),
     SocketData#socket_state{socket = ZlibSocket, sockmod = ejabberd_zlib}.
 
 reset_stream(SocketData) ->

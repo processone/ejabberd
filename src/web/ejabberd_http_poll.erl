@@ -71,7 +71,7 @@ send({http_poll, FsmRef}, Packet) ->
 setopts({http_poll, FsmRef}, Opts) ->
     case lists:member({active, once}, Opts) of
 	true ->
-	    gen_fsm:sync_send_all_state_event(FsmRef, activate);
+	    gen_fsm:send_all_state_event(FsmRef, {activate, self()});
 	_ ->
 	    ok
     end.
@@ -148,8 +148,9 @@ process_request(_Request) ->
 init([ID, Key]) ->
     ?INFO_MSG("started: ~p", [{ID, Key}]),
     Opts = [], % TODO
-    {ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
-    ejabberd_c2s:become_controller(C2SPid),
+    ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_poll, self()}, Opts),
+    %{ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
+    %ejabberd_c2s:become_controller(C2SPid),
     Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
     {ok, loop, #state{id = ID,
 		      key = Key,
@@ -182,6 +183,20 @@ init([ID, Key]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_event({activate, From}, StateName, StateData) ->
+    case StateData#state.input of
+	"" ->
+	    {next_state, StateName,
+	     StateData#state{waiting_input = {From, ok}}};
+	Input ->
+            {Receiver, _Tag} = From,
+	    Receiver ! {tcp, {http_poll, self()}, list_to_binary(Input)},
+	    {next_state, StateName, StateData#state{input = "",
+						    waiting_input = false,
+						    last_receiver = From
+						   }}
+    end;
+
 handle_event(Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -198,19 +213,6 @@ handle_sync_event({send, Packet}, From, StateName, StateData) ->
     Output = StateData#state.output ++ [lists:flatten(Packet)],
     Reply = ok,
     {reply, Reply, StateName, StateData#state{output = Output}};
-
-handle_sync_event(activate, From, StateName, StateData) ->
-    case StateData#state.input of
-	"" ->
-	    {reply, ok, StateName, StateData#state{waiting_input = From}};
-	Input ->
-            {Receiver, _Tag} = From,
-	    Receiver ! {tcp, {http_poll, self()}, list_to_binary(Input)},
-	    {reply, ok, StateName, StateData#state{input = "",
-						   waiting_input = false,
-						   last_receiver = From
-						  }}
-    end;
 
 handle_sync_event(stop, From, StateName, StateData) ->
     Reply = ok,

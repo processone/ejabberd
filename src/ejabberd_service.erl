@@ -33,7 +33,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(state, {socket, streamid,
+-record(state, {socket, sockmod, streamid,
 		hosts, password, access}).
 
 %-define(DBGFSM, true).
@@ -93,7 +93,7 @@ socket_type() ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket, Opts]) ->
+init([{SockMod, Socket}, Opts]) ->
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -124,6 +124,7 @@ init([Socket, Opts]) ->
 		end
 	end,
     {ok, wait_for_stream, #state{socket = Socket,
+				 sockmod = SockMod,
 				 streamid = new_id(),
 				 hosts = Hosts,
 				 password = Password,
@@ -319,7 +320,7 @@ terminate(Reason, StateName, StateData) ->
 	_ ->
 	    ok
     end,
-    ejabberd_socket:close(StateData#state.socket),
+    (StateData#state.sockmod):close(StateData#state.socket),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -327,7 +328,7 @@ terminate(Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 send_text(StateData, Text) ->
-    ejabberd_socket:send(StateData#state.socket, Text).
+    (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_string(El)).

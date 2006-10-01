@@ -37,6 +37,7 @@
 -define(DICT, dict).
 
 -record(state, {socket,
+		sockmod,
 		streamid,
 		shaper,
 		tls = false,
@@ -99,7 +100,7 @@ socket_type() ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket, Opts]) ->
+init([{SockMod, Socket}, Opts]) ->
     ?INFO_MSG("started: ~p", [Socket]),
     Shaper = case lists:keysearch(shaper, 1, Opts) of
 		 {value, {_, S}} -> S;
@@ -120,6 +121,7 @@ init([Socket, Opts]) ->
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, wait_for_stream,
      #state{socket = Socket,
+	    sockmod = SockMod,
 	    streamid = new_id(),
 	    shaper = Shaper,
 	    tls = StartTLS,
@@ -144,10 +146,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    SASL =
 		if
 		    StateData#state.tls_enabled ->
-			case ejabberd_socket:get_peer_certificate(
+			case (StateData#state.sockmod):get_peer_certificate(
 			       StateData#state.socket) of
 			    {ok, _Cert} ->
-				case ejabberd_socket:get_verify_result(
+				case (StateData#state.sockmod):get_verify_result(
 				       StateData#state.socket) of
 				    0 ->
 					[{xmlelement, "mechanisms",
@@ -204,7 +206,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
-    SockMod = ejabberd_socket:get_sockmod(StateData#state.socket),
+    SockMod = (StateData#state.sockmod):get_sockmod(StateData#state.socket),
     case {xml:get_attr_s("xmlns", Attrs), Name} of
 	{?NS_TLS, "starttls"} when TLS == true,
 				   TLSEnabled == false,
@@ -212,9 +214,10 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    ?INFO_MSG("starttls", []),
 	    Socket = StateData#state.socket,
 	    TLSOpts = StateData#state.tls_options,
-	    TLSSocket = ejabberd_socket:starttls(Socket, TLSOpts),
-	    send_element(StateData,
-			 {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []}),
+	    TLSSocket = (StateData#state.sockmod):starttls(
+			  Socket, TLSOpts,
+			  xml:element_to_string(
+			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket,
 			     streamid = new_id(),
@@ -227,10 +230,10 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		    Auth = jlib:decode_base64(xml:get_cdata(Els)),
 		    AuthDomain = jlib:nameprep(Auth),
 		    AuthRes =
-			case ejabberd_socket:get_peer_certificate(
+			case (StateData#state.sockmod):get_peer_certificate(
 			       StateData#state.socket) of
 			    {ok, Cert} ->
-				case ejabberd_socket:get_verify_result(
+				case (StateData#state.sockmod):get_verify_result(
 				       StateData#state.socket) of
 				    0 ->
 					case AuthDomain of
@@ -256,7 +259,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			end,
 		    if
 			AuthRes ->
-			    ejabberd_socket:reset_stream(
+			    (StateData#state.sockmod):reset_stream(
 			      StateData#state.socket),
 			    send_element(StateData,
 					 {xmlelement, "success",
@@ -500,7 +503,7 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
-    ejabberd_socket:close(StateData#state.socket),
+    (StateData#state.sockmod):close(StateData#state.socket),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -508,7 +511,7 @@ terminate(Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 send_text(StateData, Text) ->
-    ejabberd_socket:send(StateData#state.socket, Text).
+    (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_string(El)).
@@ -516,7 +519,7 @@ send_element(StateData, El) ->
 
 change_shaper(StateData, Host, JID) ->
     Shaper = acl:match_rule(Host, StateData#state.shaper, JID),
-    ejabberd_socket:change_shaper(StateData#state.socket, Shaper).
+    (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 
 new_id() ->

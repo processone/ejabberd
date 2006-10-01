@@ -41,6 +41,7 @@
 -define(SETS, gb_sets).
 
 -record(state, {socket,
+		sockmod,
 		streamid,
 		sasl_state,
 		access,
@@ -117,7 +118,7 @@ get_presence(FsmRef) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Socket, Opts]) ->
+init([{SockMod, Socket}, Opts]) ->
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -137,11 +138,12 @@ init([Socket, Opts]) ->
     Socket1 =
 	if
 	    TLSEnabled ->
-		ejabberd_socket:starttls(Socket, TLSOpts);
+		SockMod:starttls(Socket, TLSOpts);
 	    true ->
 		Socket
 	end,
     {ok, wait_for_stream, #state{socket       = Socket1,
+				 sockmod      = SockMod,
 				 zlib         = Zlib,
 				 tls          = TLS,
 				 tls_required = StartTLSRequired,
@@ -198,8 +200,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						      {xmlelement, "mechanism", [],
 						       [{xmlcdata, S}]}
 					      end, cyrsasl:listmech(Server)),
-				    SockMod = ejabberd_socket:get_sockmod(
-						StateData#state.socket),
+				    SockMod =
+					(StateData#state.sockmod):get_sockmod(
+					  StateData#state.socket),
 				    Zlib = StateData#state.zlib,
 				    CompressFeature =
 					case Zlib andalso
@@ -453,7 +456,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
     TLSRequired = StateData#state.tls_required,
-    SockMod = ejabberd_socket:get_sockmod(StateData#state.socket),
+    SockMod = (StateData#state.sockmod):get_sockmod(StateData#state.socket),
     case {xml:get_attr_s("xmlns", Attrs), Name} of
 	{?NS_SASL, "auth"} when not ((SockMod == gen_tcp) and TLSRequired) ->
 	    Mech = xml:get_attr_s("mechanism", Attrs),
@@ -462,7 +465,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				      Mech,
 				      ClientIn) of
 		{ok, Props} ->
-		    ejabberd_socket:reset_stream(StateData#state.socket),
+		    (StateData#state.sockmod):reset_stream(
+		      StateData#state.socket),
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
@@ -502,9 +506,10 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				 certfile, 1, StateData#state.tls_options)]
 		      end,
 	    Socket = StateData#state.socket,
-	    TLSSocket = ejabberd_socket:starttls(Socket, TLSOpts),
-	    send_element(StateData,
-			 {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []}),
+	    TLSSocket = (StateData#state.sockmod):starttls(
+			  Socket, TLSOpts,
+			  xml:element_to_string(
+			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket,
 			     streamid = new_id(),
@@ -523,10 +528,11 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		    case xml:get_tag_cdata(Method) of
 			"zlib" ->
 			    Socket = StateData#state.socket,
-			    ZlibSocket = ejabberd_socket:compress(Socket),
-			    send_element(StateData,
-					 {xmlelement, "compressed",
-					  [{"xmlns", ?NS_COMPRESS}], []}),
+			    ZlibSocket = (StateData#state.sockmod):compress(
+					   Socket,
+					   xml:element_to_string(
+					     {xmlelement, "compressed",
+					      [{"xmlns", ?NS_COMPRESS}], []})),
 			    {next_state, wait_for_stream,
 			     StateData#state{socket = ZlibSocket,
 					     streamid = new_id()
@@ -575,7 +581,8 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 	    case cyrsasl:server_step(StateData#state.sasl_state,
 				     ClientIn) of
 		{ok, Props} ->
-		    ejabberd_socket:reset_stream(StateData#state.socket),
+		    (StateData#state.sockmod):reset_stream(
+		      StateData#state.socket),
 		    send_element(StateData,
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
@@ -1167,7 +1174,7 @@ terminate(_Reason, StateName, StateData) ->
 	_ ->
 	    ok
     end,
-    ejabberd_socket:close(StateData#state.socket),
+    (StateData#state.sockmod):close(StateData#state.socket),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -1177,11 +1184,11 @@ terminate(_Reason, StateName, StateData) ->
 change_shaper(StateData, JID) ->
     Shaper = acl:match_rule(StateData#state.server,
 			    StateData#state.shaper, JID),
-    ejabberd_socket:change_shaper(StateData#state.socket, Shaper).
+    (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
-    ejabberd_socket:send(StateData#state.socket, Text).
+    (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_string(El)).

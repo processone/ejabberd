@@ -1,3 +1,14 @@
+2006-10-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_frontend_socket.erl: Support for frontend
+	connection manager
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_listener.erl: Likewise
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_service.erl: Likewise
+	* src/ejabberd_socket.erl: Likewise
+	* src/web/ejabberd_http_poll.erl: Likewise
+
 2006-09-27  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/release_notes_1.1.2.txt: Minor fixes.

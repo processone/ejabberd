@@ -93,9 +93,8 @@ accept(ListenSocket, Module, Opts) ->
 		    ok
 	    end,
 	    case Module of
-		ejabberd_http ->
-		    {ok, Pid} = Module:start({gen_tcp, Socket}, Opts),
-		    catch gen_tcp:controlling_process(Socket, Pid);
+		{frontend, Mod} ->
+		    ejabberd_frontend_socket:start(Mod, gen_tcp, Socket, Opts);
 		_ ->
 		    ejabberd_socket:start(Module, gen_tcp, Socket, Opts)
 	    end,
