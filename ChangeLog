@@ -1,5 +1,8 @@
 2006-10-01  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/shaper.erl: Bugfix
+	* src/ejabberd_config.erl: Likewise
+
 	* src/ejabberd_frontend_socket.erl: Support for frontend
 	connection manager
 	* src/ejabberd_c2s.erl: Likewise
