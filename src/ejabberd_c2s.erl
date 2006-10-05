@@ -390,11 +390,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    Fs1 = [LJID | Fs],
 			    Ts1 = [LJID | Ts],
 			    PrivList =
-				case catch mod_privacy:get_user_list(
-					     U, StateData#state.server) of
-				    {'EXIT', _} -> none;
-				    PL -> PL
-				end,
+				ejabberd_hooks:run_fold(
+				  privacy_get_user_list, StateData#state.server,
+				  none,
+				  [U, StateData#state.server]),
 			    {next_state, session_established,
 			     StateData#state{user = U,
 					     resource = R,
@@ -700,11 +699,10 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    Fs1 = [LJID | Fs],
 		    Ts1 = [LJID | Ts],
 		    PrivList =
-			case catch mod_privacy:get_user_list(
-				     U, StateData#state.server) of
-			    {'EXIT', _} -> none;
-			    PL -> PL
-			end,
+			ejabberd_hooks:run_fold(
+			  privacy_get_user_list, StateData#state.server,
+			  none,
+			  [U, StateData#state.server]),
 		    {next_state, session_established,
 		     StateData#state{sid = SID,
 				     pres_f = ?SETS:from_list(Fs1),
@@ -950,15 +948,14 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    "unsubscribed" ->
 			{true, Attrs, StateData};
 		    _ ->
-%-ifdef(PRIVACY_SUPPORT).
-			case catch mod_privacy:check_packet(
-				     StateData#state.user,
-				     StateData#state.server,
-				     StateData#state.privacy_list,
-				     {From, To, Packet},
-				     in) of
-			    {'EXIT', _Reason} ->
-				{true, Attrs, StateData};
+			case ejabberd_hooks:run_fold(
+			       privacy_check_packet, StateData#state.server,
+			       allow,
+			       [StateData#state.user,
+				StateData#state.server,
+				StateData#state.privacy_list,
+				{From, To, Packet},
+				in]) of
 			    allow ->
 				LFrom = jlib:jid_tolower(From),
 				LBFrom = jlib:jid_remove_resource(LFrom),
@@ -994,9 +991,6 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			    deny ->
 				{false, Attrs, StateData}
 			end
-%-elseif.
-%			{true, Attrs, StateData}
-%-endif.
 		end;
 	    "broadcast" ->
 		?DEBUG("broadcast~n~p~n", [Els]),
@@ -1008,28 +1002,30 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    [{exit, Reason}] ->
 			{exit, Attrs, Reason};
 		    [{privacy_list, PrivList, PrivListName}] ->
-			 case catch mod_privacy:updated_list(
-				      StateData#state.privacy_list,
-				      PrivList) of
-			     {'EXIT', _} ->
-				 {false, Attrs, StateData};
-			     NewPL ->
-				 PrivPushIQ =
-				     #iq{type = set, xmlns = ?NS_PRIVACY,
-					 id = "push",
-					 sub_el = [{xmlelement, "query",
-						    [{"xmlns", ?NS_PRIVACY}],
-						    [{xmlelement, "list",
-						      [{"name", PrivListName}],
-						      []}]}]},
-				 PrivPushEl =
-				     jlib:replace_from_to(
-				       jlib:jid_remove_resource(
-					 StateData#state.jid),
-				       StateData#state.jid,
-				       jlib:iq_to_xml(PrivPushIQ)),
-				 send_element(StateData, PrivPushEl),
-				 {false, Attrs, StateData#state{privacy_list = NewPL}}
+			case ejabberd_hooks:run_fold(
+			       privacy_updated_list, StateData#state.server,
+			       false,
+			       [StateData#state.privacy_list,
+				PrivList]) of
+			    false ->
+				{false, Attrs, StateData};
+			    NewPL ->
+				PrivPushIQ =
+				    #iq{type = set, xmlns = ?NS_PRIVACY,
+					id = "push",
+					sub_el = [{xmlelement, "query",
+						   [{"xmlns", ?NS_PRIVACY}],
+						   [{xmlelement, "list",
+						     [{"name", PrivListName}],
+						     []}]}]},
+				PrivPushEl =
+				    jlib:replace_from_to(
+				      jlib:jid_remove_resource(
+					StateData#state.jid),
+				      StateData#state.jid,
+				      jlib:iq_to_xml(PrivPushIQ)),
+				send_element(StateData, PrivPushEl),
+				{false, Attrs, StateData#state{privacy_list = NewPL}}
 			end;
 		    _ ->
 			{false, Attrs, StateData}
@@ -1049,16 +1045,15 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				ejabberd_router:route(To, From, Err)
 			end,
 			{false, Attrs, StateData};
-%-ifdef(PRIVACY_SUPPORT).
 		    #iq{} ->
-			case catch mod_privacy:check_packet(
-				     StateData#state.user,
-				     StateData#state.server,
-				     StateData#state.privacy_list,
-				     {From, To, Packet},
-				     in) of
-			    {'EXIT', _Reason} ->
-				{true, Attrs, StateData};
+			case ejabberd_hooks:run_fold(
+			       privacy_check_packet, StateData#state.server,
+			       allow,
+			       [StateData#state.user,
+				StateData#state.server,
+				StateData#state.privacy_list,
+				{From, To, Packet},
+				in]) of
 			    allow ->
 				{true, Attrs, StateData};
 			    deny ->
@@ -1067,26 +1062,23 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				ejabberd_router:route(To, From, Err),
 				{false, Attrs, StateData}
 			end;
-%-endif.
 		    _ ->
 			{true, Attrs, StateData}
 		end;
-%-ifdef(PRIVACY_SUPPORT).
 	    "message" ->
-		case catch mod_privacy:check_packet(
-			     StateData#state.user,
-			     StateData#state.server,
-			     StateData#state.privacy_list,
-			     {From, To, Packet},
-			     in) of
-		    {'EXIT', _Reason} ->
-			{true, Attrs, StateData};
+		case ejabberd_hooks:run_fold(
+		       privacy_check_packet, StateData#state.server,
+		       allow,
+		       [StateData#state.user,
+			StateData#state.server,
+			StateData#state.privacy_list,
+			{From, To, Packet},
+			in]) of
 		    allow ->
 			{true, Attrs, StateData};
 		    deny ->
 			{false, Attrs, StateData}
 		end;
-%-endif.
 	    _ ->
 		{true, Attrs, StateData}
 	end,
@@ -1252,21 +1244,19 @@ process_presence_probe(From, To, StateData) ->
 	    if
 		Cond1 ->
 		    Packet = StateData#state.pres_last,
-%-ifdef(PRIVACY_SUPPORT).
-		    case catch mod_privacy:check_packet(
-				 StateData#state.user,
-				 StateData#state.server,
-				 StateData#state.privacy_list,
-				 {To, From, Packet},
-				 out) of
+		    case ejabberd_hooks:run_fold(
+			   privacy_check_packet, StateData#state.server,
+			   allow,
+			   [StateData#state.user,
+			    StateData#state.server,
+			    StateData#state.privacy_list,
+			    {To, From, Packet},
+			    out]) of
 			deny ->
 			    ok;
-			_ ->
-%-endif.
+			allow ->
 			    ejabberd_router:route(To, From, Packet)
-%-ifdef(PRIVACY_SUPPORT).
 		    end;
-%-endif.
 		Cond2 ->
 		    ejabberd_router:route(To, From,
 					  {xmlelement, "presence",
@@ -1420,21 +1410,19 @@ presence_track(From, To, Packet, StateData) ->
 	    ejabberd_router:route(From, To, Packet),
 	    StateData;
 	_ ->
-%-ifdef(PRIVACY_SUPPORT).
-	    case catch mod_privacy:check_packet(
-			 StateData#state.user,
-			 StateData#state.server,
-			 StateData#state.privacy_list,
-			 {From, To, Packet},
-			 out) of
+	    case ejabberd_hooks:run_fold(
+		   privacy_check_packet, StateData#state.server,
+		   allow,
+		   [StateData#state.user,
+		    StateData#state.server,
+		    StateData#state.privacy_list,
+		    {From, To, Packet},
+		    out]) of
 		deny ->
 		    ok;
-		_ ->
-%-endif.
+		allow ->
 		    ejabberd_router:route(From, To, Packet)
-%-ifdef(PRIVACY_SUPPORT).
 	    end,
-%-endif.
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = ?SETS:add_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
@@ -1444,21 +1432,19 @@ presence_track(From, To, Packet, StateData) ->
 presence_broadcast(StateData, From, JIDSet, Packet) ->
     lists:foreach(fun(JID) ->
 			  FJID = jlib:make_jid(JID),
-%-ifdef(PRIVACY_SUPPORT).
-			  case catch mod_privacy:check_packet(
-				       StateData#state.user,
-				       StateData#state.server,
-				       StateData#state.privacy_list,
-				       {From, FJID, Packet},
-				       out) of
+			  case ejabberd_hooks:run_fold(
+				 privacy_check_packet, StateData#state.server,
+				 allow,
+				 [StateData#state.user,
+				  StateData#state.server,
+				  StateData#state.privacy_list,
+				  {From, FJID, Packet},
+				  out]) of
 			      deny ->
 				  ok;
-			      _ ->
-%-endif.
+			      allow ->
 				  ejabberd_router:route(From, FJID, Packet)
-%-ifdef(PRIVACY_SUPPORT).
 			  end
-%-endif.
 		  end, ?SETS:to_list(JIDSet)).
 
 presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
@@ -1467,21 +1453,19 @@ presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
 	      case ?SETS:is_element(JID, T) of
 		  true ->
 		      FJID = jlib:make_jid(JID),
-%-ifdef(PRIVACY_SUPPORT).
-		      case catch mod_privacy:check_packet(
-				   StateData#state.user,
-				   StateData#state.server,
-				   StateData#state.privacy_list,
-				   {From, FJID, Packet},
-				   out) of
+		      case ejabberd_hooks:run_fold(
+			     privacy_check_packet, StateData#state.server,
+			     allow,
+			     [StateData#state.user,
+			      StateData#state.server,
+			      StateData#state.privacy_list,
+			      {From, FJID, Packet},
+			      out]) of
 			  deny ->
 			      ok;
-			  _ ->
-%-endif.
+			  allow ->
 			      ejabberd_router:route(From, FJID, Packet)
-%-ifdef(PRIVACY_SUPPORT).
 		      end;
-%-endif.
 		  _ ->
 		      ok
 	      end
@@ -1507,21 +1491,19 @@ presence_broadcast_first(From, StateData, Packet) ->
 	    As = ?SETS:fold(
 		    fun(JID, A) ->
 			    FJID = jlib:make_jid(JID),
-%-ifdef(PRIVACY_SUPPORT).
-			    case catch mod_privacy:check_packet(
-					 StateData#state.user,
-					 StateData#state.server,
-					 StateData#state.privacy_list,
-					 {From, FJID, Packet},
-					 out) of
+			    case ejabberd_hooks:run_fold(
+				   privacy_check_packet, StateData#state.server,
+				   allow,
+				   [StateData#state.user,
+				    StateData#state.server,
+				    StateData#state.privacy_list,
+				    {From, FJID, Packet},
+				    out]) of
 				deny ->
 				    ok;
-				_ ->
-%-endif.
+				allow ->
 				    ejabberd_router:route(From, FJID, Packet)
-%-ifdef(PRIVACY_SUPPORT).
 			    end,
-%-endif.
 			    ?SETS:add_element(JID, A)
 		    end,
 		    StateData#state.pres_a,
@@ -1571,15 +1553,17 @@ roster_change(IJID, ISubscription, StateData) ->
 	    if
 		Cond1 ->
 		    ?DEBUG("C1: ~p~n", [LIJID]),
-		    case catch mod_privacy:check_packet(
-				 StateData#state.user,
-				 StateData#state.server,
-				 StateData#state.privacy_list,
-				 {From, To, P},
-				 out) of
+		    case ejabberd_hooks:run_fold(
+			   privacy_check_packet, StateData#state.server,
+			   allow,
+			   [StateData#state.user,
+			    StateData#state.server,
+			    StateData#state.privacy_list,
+			    {From, To, P},
+			    out]) of
 			deny ->
 			    ok;
-			_ ->
+			allow ->
 			    ejabberd_router:route(From, To, P)
 		    end,
 		    A = ?SETS:add_element(LIJID,
@@ -1591,15 +1575,17 @@ roster_change(IJID, ISubscription, StateData) ->
 		    ?DEBUG("C2: ~p~n", [LIJID]),
 		    PU = {xmlelement, "presence",
 			  [{"type", "unavailable"}], []},
-		    case catch mod_privacy:check_packet(
-				 StateData#state.user,
-				 StateData#state.server,
-				 StateData#state.privacy_list,
-				 {From, To, PU},
-				 out) of
+		    case ejabberd_hooks:run_fold(
+			   privacy_check_packet, StateData#state.server,
+			   allow,
+			   [StateData#state.user,
+			    StateData#state.server,
+			    StateData#state.privacy_list,
+			    {From, To, PU},
+			    out]) of
 			deny ->
 			    ok;
-			_ ->
+			allow ->
 			    ejabberd_router:route(From, To, PU)
 		    end,
 		    I = remove_element(LIJID,
@@ -1642,20 +1628,16 @@ process_privacy_iq(From, To,
     {Res, NewStateData} =
 	case Type of
 	    get ->
-		case catch
-		    mod_privacy:process_iq_get(
-		      From, To, IQ,
-		      StateData#state.privacy_list) of
-		    {'EXIT', _} ->
-			{{error, ?ERR_FEATURE_NOT_IMPLEMENTED}, StateData};
-		    R -> {R, StateData}
-		end;
+		R = ejabberd_hooks:run_fold(
+		      privacy_iq_get, StateData#state.server,
+		      {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
+		      [From, To, IQ, StateData#state.privacy_list]),
+		{R, StateData};
 	    set ->
-		case catch
-		    mod_privacy:process_iq_set(
-		      From, To, IQ) of
-		    {'EXIT', _} ->
-			{{error, ?ERR_FEATURE_NOT_IMPLEMENTED}, StateData};
+		case ejabberd_hooks:run_fold(
+		       privacy_iq_set, StateData#state.server,
+		       {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
+		       [From, To, IQ]) of
 		    {result, R, NewPrivList} ->
 			{{result, R},
 			 StateData#state{privacy_list = NewPrivList}};
@@ -1685,14 +1667,14 @@ resend_offline_messages(#state{user = User,
 	    lists:foreach(
 	      fun({route,
 		   From, To, {xmlelement, Name, Attrs, Els} = Packet}) ->
-		      Pass = case catch mod_privacy:check_packet(
-					  User,
-					  Server,
-					  PrivList,
-					  {From, To, Packet},
-					  in) of
-				 {'EXIT', _Reason} ->
-				     true;
+		      Pass = case ejabberd_hooks:run_fold(
+				    privacy_check_packet, Server,
+				    allow,
+				    [User,
+				     Server,
+				     PrivList,
+				     {From, To, Packet},
+				     in]) of
 				 allow ->
 				     true;
 				 deny ->

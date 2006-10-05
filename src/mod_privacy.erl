@@ -14,13 +14,12 @@
 
 -export([start/2, stop/1,
 	 process_iq/3,
-	 process_iq_set/3,
-	 process_iq_get/4,
-	 get_user_list/2,
-	 check_packet/5,
-	 updated_list/2]).
+	 process_iq_set/4,
+	 process_iq_get/5,
+	 get_user_list/3,
+	 check_packet/6,
+	 updated_list/3]).
 
-%-include_lib("mnemosyne/include/mnemosyne.hrl").
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
@@ -47,37 +46,38 @@ start(Host, Opts) ->
     mnesia:create_table(privacy, [{disc_copies, [node()]},
 				  {attributes, record_info(fields, privacy)}]),
     update_table(),
+    ejabberd_hooks:add(privacy_iq_get, Host,
+		       ?MODULE, process_iq_get, 50),
+    ejabberd_hooks:add(privacy_iq_set, Host,
+		       ?MODULE, process_iq_set, 50),
+    ejabberd_hooks:add(privacy_get_user_list, Host,
+		       ?MODULE, get_user_list, 50),
+    ejabberd_hooks:add(privacy_check_packet, Host,
+		       ?MODULE, check_packet, 50),
+    ejabberd_hooks:add(privacy_updated_list, Host,
+		       ?MODULE, updated_list, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
+    ejabberd_hooks:delete(privacy_iq_get, Host,
+			  ?MODULE, process_iq_get, 50),
+    ejabberd_hooks:delete(privacy_iq_set, Host,
+			  ?MODULE, process_iq_set, 50),
+    ejabberd_hooks:delete(privacy_get_user_list, Host,
+			  ?MODULE, get_user_list, 50),
+    ejabberd_hooks:delete(privacy_check_packet, Host,
+			  ?MODULE, check_packet, 50),
+    ejabberd_hooks:delete(privacy_updated_list, Host,
+			  ?MODULE, updated_list, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY).
 
-process_iq(From, _To, IQ) ->
-    #iq{type = Type, sub_el = SubEl} = IQ,
-    #jid{lserver = Server} = From,
-    Res =
-	case ?MYNAME of
-	    Server ->
-		case Type of
-		    set ->
-		        %process_iq_set(From, To, IQ);
-			{error, ?ERR_NOT_ALLOWED};
-		    get ->
-			{error, ?ERR_NOT_ALLOWED}
-		end;
-	    _ ->
-		{error, ?ERR_NOT_ALLOWED}
-	end,
-    case Res of
-	{result, IQRes} ->
-	    IQ#iq{type = result, sub_el = IQRes};
-	{error, Error} ->
-	    IQ#iq{type = error, sub_el = [SubEl, Error]}
-    end.
+process_iq(_From, _To, IQ) ->
+    SubEl = IQ#iq.sub_el,
+    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
 
-process_iq_get(From, _To, #iq{sub_el = SubEl},
+process_iq_get(_, From, _To, #iq{sub_el = SubEl},
 	       #userlist{name = Active}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     {xmlelement, _, _, Els} = SubEl,
@@ -242,7 +242,7 @@ list_to_action(S) ->
 
 
 
-process_iq_set(From, _To, #iq{sub_el = SubEl}) ->
+process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
@@ -517,7 +517,7 @@ parse_matches1(_Item, [{xmlelement, _, _, _} | _Els]) ->
 
 
 
-get_user_list(User, Server) ->
+get_user_list(_, User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
@@ -541,7 +541,7 @@ get_user_list(User, Server) ->
     end.
 
 
-check_packet(User, Server,
+check_packet(_, User, Server,
 	     #userlist{list = List},
 	     {From, To, {xmlelement, PName, _, _}},
 	     Dir) ->
@@ -662,7 +662,8 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
     end.
 
 
-updated_list(#userlist{name = OldName} = Old,
+updated_list(_,
+	     #userlist{name = OldName} = Old,
 	     #userlist{name = NewName} = New) ->
     if
 	OldName == NewName ->

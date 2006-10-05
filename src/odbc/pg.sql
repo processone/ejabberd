@@ -91,6 +91,28 @@ CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
 CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
 CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
 
+CREATE TABLE privacy_default_list (
+    username text PRIMARY KEY,
+    name text NOT NULL
+);
+
+CREATE TABLE privacy_list (
+    username text NOT NULL,
+    name text NOT NULL,
+    type character(1) NOT NULL,
+    value text NOT NULL,
+    action character(1) NOT NULL,
+    ord NUMERIC NOT NULL,
+    match_all boolean NOT NULL,
+    match_iq boolean NOT NULL,
+    match_message boolean NOT NULL,
+    match_presence_in boolean NOT NULL,
+    match_presence_out boolean NOT NULL
+);
+
+CREATE INDEX i_privacy_list_username ON privacy_list USING btree (username);
+
+
 --- To update from 0.9.8:
 -- CREATE SEQUENCE spool_seq_seq;
 -- ALTER TABLE spool ADD COLUMN seq integer;
