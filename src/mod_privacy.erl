@@ -359,8 +359,8 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      jlib:make_jid(LUser, ?MYNAME, ""),
-		      jlib:make_jid(LUser, ?MYNAME, ""),
+		      jlib:make_jid(LUser, LServer, ""),
+		      jlib:make_jid(LUser, LServer, ""),
 		      {xmlelement, "broadcast", [],
 		       [{privacy_list,
 			 #userlist{name = Name, list = []},

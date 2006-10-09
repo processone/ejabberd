@@ -189,11 +189,11 @@ handle_event({activate, From}, StateName, StateData) ->
 	    {next_state, StateName,
 	     StateData#state{waiting_input = {From, ok}}};
 	Input ->
-            {Receiver, _Tag} = From,
+            Receiver = From,
 	    Receiver ! {tcp, {http_poll, self()}, list_to_binary(Input)},
 	    {next_state, StateName, StateData#state{input = "",
 						    waiting_input = false,
-						    last_receiver = From
+						    last_receiver = Receiver
 						   }}
     end;
 

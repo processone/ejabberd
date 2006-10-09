@@ -99,7 +99,15 @@ CREATE TABLE privacy_default_list (
 CREATE TABLE privacy_list (
     username text NOT NULL,
     name text NOT NULL,
-    type character(1) NOT NULL,
+    id SERIAL UNIQUE
+);
+
+CREATE INDEX i_privacy_list_username ON privacy_list USING btree (username);
+CREATE UNIQUE INDEX i_privacy_list_username_name ON privacy_list USING btree (username, name);
+
+CREATE TABLE privacy_list_data (
+    id bigint REFERENCES privacy_list(id) ON DELETE CASCADE,
+    t character(1) NOT NULL,
     value text NOT NULL,
     action character(1) NOT NULL,
     ord NUMERIC NOT NULL,
@@ -110,7 +118,6 @@ CREATE TABLE privacy_list (
     match_presence_out boolean NOT NULL
 );
 
-CREATE INDEX i_privacy_list_username ON privacy_list USING btree (username);
 
 
 --- To update from 0.9.8:

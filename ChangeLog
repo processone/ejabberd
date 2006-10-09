@@ -1,3 +1,12 @@
+2006-10-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_privacy_odbc.erl: Privacy rules support using odbc
+	* src/odbc/pg.sql: Likewise
+
+2006-10-06  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http_poll.erl: Bugfix
+
 2006-10-05  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_privacy.erl: Use hooks instead of direct function calls
