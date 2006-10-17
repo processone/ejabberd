@@ -1,7 +1,8 @@
 2006-10-17 Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_auth_ldap.erl: LDAP authentication now allows to
-	match on several alternative attributes.
+	match on several alternative attributes (thanks to Evgeniy
+        Khramtsov).
 	* src/mod_vcard_ldap.erl: Likewise.
 	* doc/guide.tex: Updated. 
 	* eldap_utils.erl: Refactoring.
