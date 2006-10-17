@@ -46,8 +46,7 @@
 		dn,
 		base,
 		password,
-		uid,
-		uid_format,
+		uids,
 		vcard_map,
 		vcard_map_attrs,
 		user_filter,
@@ -552,10 +551,9 @@ search(State, Data) ->
     Base = State#state.base,
     SearchFilter = State#state.search_filter,
     Eldap_ID = State#state.eldap_id,
-    UA = State#state.uid,
-    UAF = State#state.uid_format,
+    UIDs = State#state.uids,
     ReportedAttrs = State#state.search_reported_attrs,
-    Filter = eldap:'and'([SearchFilter, make_filter(Data, UA, UAF)]),
+    Filter = eldap:'and'([SearchFilter, eldap_utils:make_filter(Data, UIDs)]),
     case eldap:search(Eldap_ID, [{base, Base},
 				 {filter, Filter},
 				 {attributes, ReportedAttrs}]) of
@@ -569,8 +567,7 @@ search_items(Entries, State) ->
     LServer = State#state.serverhost,
     SearchReported = State#state.search_reported,
     VCardMap = State#state.vcard_map,
-    UIDAttr = State#state.uid,
-    UIDAttrFormat = State#state.uid_format,
+	UIDs = State#state.uids,
     Attributes = lists:map(
 		   fun(E) ->
 			   #eldap_entry{attributes = Attrs} = E,
@@ -578,12 +575,13 @@ search_items(Entries, State) ->
 		   end, Entries),
     lists:flatmap(
       fun(Attrs) ->
-	      U = get_ldap_attr(UIDAttr, Attrs),
-	      case get_user_part(U, UIDAttrFormat) of
-		  {ok, Username} ->
-		      case ejabberd_auth:is_user_exists(Username, LServer) of
-			  true ->
-			      RFields = lists:map(
+	      case eldap_utils:find_ldap_attrs(UIDs, Attrs) of
+	      {U, UIDAttrFormat} ->
+	          case eldap_utils:get_user_part(U, UIDAttrFormat) of
+		      {ok, Username} ->
+		          case ejabberd_auth:is_user_exists(Username, LServer) of
+			      true ->
+			        RFields = lists:map(
 					  fun({_, VCardName}) ->
 						  {VCardName,
 						   map_vcard_attr(
@@ -592,40 +590,19 @@ search_items(Entries, State) ->
 						     VCardMap,
 						     {Username, ?MYNAME})}
 					  end, SearchReported),
-			      Result = [?FIELD("jid", Username ++ "@" ++ LServer)] ++
-				  [?FIELD(Name, Value) || {Name, Value} <- RFields],
-			      [{xmlelement, "item", [], Result}];
-			  _ ->
-			      []
-		      end;
-		  _ ->
+			        Result = [?FIELD("jid", Username ++ "@" ++ LServer)] ++
+				    [?FIELD(Name, Value) || {Name, Value} <- RFields],
+			        [{xmlelement, "item", [], Result}];
+			      _ ->
+			          []
+		          end;
+		      _ ->
+		         []
+	          end;
+          "" ->
 		      []
-	      end
+		  end
       end, Attributes).
-
-make_filter(Data, UAttr, UAttrFormat) ->
-    Filter = lists:flatmap(
-	       fun({Name, [Value | _]}) ->
-		       case Name of
-			   "%u" when Value /= "" ->
-			       {ok, UAF, _} = regexp:sub(UAttrFormat, "%u", "*%u*"),
-			       case eldap_filter:parse(
-				      "("++UAttr++"="++UAF++")", [{"%u", Value}]) of
-				   {ok, F} -> [F];
-				   _ -> []
-			       end;
-			   _ when Value /= "" ->
-			       [eldap:substrings(Name, [{any, Value}])];
-			   _ ->
-			       []
-		       end
-	       end, Data),
-    case Filter of
-	[F] ->
-	    F;
-	_ ->
-	    eldap:'and'(Filter)
-    end.
 
 remove_user(_User) ->
     true.
@@ -634,55 +611,21 @@ remove_user(_User) ->
 %%% Auxiliary functions.
 %%%-----------------------
 
-get_user_part(String, Pattern) ->
-    F = fun(S, P) ->
-		First = string:str(P, "%u"),
-		TailLength = length(P) - (First+1),
-		string:sub_string(S, First, length(S) - TailLength)
-	end,
-    case catch F(String, Pattern) of
-	{'EXIT', _} ->
-	    {error, badmatch};
-	Result ->
-	    case regexp:sub(Pattern, "%u", Result) of
-		{ok, String, _} -> {ok, Result};
-		_ -> {error, badmatch}
-	    end
-    end.
-
-case_insensitive_match(X, Y) ->
-    X1 = stringprep:tolower(X),
-    Y1 = stringprep:tolower(Y),
-    if
-	X1 == Y1 -> true;
-	true -> false
-    end.
-
 map_vcard_attr(VCardName, Attributes, Pattern, UD) ->
     Res = lists:filter(
 	    fun({Name, _, _}) ->
-		    case_insensitive_match(Name, VCardName)
+		    eldap_utils:case_insensitive_match(Name, VCardName)
 	    end, Pattern),
     case Res of
 	[{_, Str, Attrs}] ->
 	    process_pattern(Str, UD,
-			    [get_ldap_attr(X, Attributes) || X<-Attrs]);
+			    [eldap_utils:get_ldap_attr(X, Attributes) || X<-Attrs]);
 	_ -> ""
     end.
 
 process_pattern(Str, {User, Domain}, AttrValues) ->
 	eldap_filter:do_sub(Str,
 		[{"%s", V, 1} || V <- AttrValues] ++ [{"%u", User},{"%d", Domain}]).
-
-get_ldap_attr(LDAPAttr, Attributes) ->
-    Res = lists:filter(
-	    fun({Name, _}) ->
-		    case_insensitive_match(Name, LDAPAttr)
-	    end, Attributes),
-    case Res of
-	[{_, [Value|_]}] -> Value;
-	_ -> ""
-    end.
 
 find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
@@ -721,22 +664,14 @@ parse_options(Host, Opts) ->
 		       ejabberd_config:get_local_option({ldap_base, Host});
 		   B -> B
 	       end,
-    UIDAttr = case gen_mod:get_opt(ldap_uidattr, Opts, undefined) of
-		  undefined ->
-		      case ejabberd_config:get_local_option({ldap_uidattr, Host}) of
-			  undefined -> "uid";
-			  UA -> UA
-		      end;
-		  UA -> UA
-	      end,
-    UIDAttrFormat = case gen_mod:get_opt(ldap_uidattr_format, Opts, undefined) of
-			undefined ->
-			    case ejabberd_config:get_local_option({ldap_uidattr_format, Host}) of
-				undefined -> "%u";
-				UAF -> UAF
-			    end;
-			UAF -> UAF
-		    end,
+	UIDs = case gen_mod:get_opt(ldap_uids, Opts, undefined) of
+	    undefined ->
+		    case ejabberd_config:get_local_option({ldap_uids, Host}) of
+			undefined -> [{"uid", "%u"}];
+			UI -> UI
+			end;
+		UI -> UI
+		end,
     RootDN = case gen_mod:get_opt(ldap_rootdn, Opts, undefined) of
 		 undefined ->
 		     case ejabberd_config:get_local_option({ldap_rootdn, Host}) of
@@ -753,7 +688,7 @@ parse_options(Host, Opts) ->
 		       end;
 		   Pass -> Pass
 	       end,
-    SubFilter = "("++UIDAttr++"="++UIDAttrFormat++")",
+    SubFilter = lists:flatten(eldap_utils:generate_subfilter(UIDs)),
     UserFilter = case gen_mod:get_opt(ldap_filter, Opts, undefined) of
 		     undefined ->
 			 case ejabberd_config:get_local_option({ldap_filter, Host}) of
@@ -772,8 +707,9 @@ parse_options(Host, Opts) ->
     %% In search requests we need to fetch only attributes defined
     %% in vcard-map and search-reported. In some cases,
     %% this will essentially reduce network traffic from an LDAP server.
+	UIDAttrs = [UAttr || {UAttr, _} <- UIDs],
     VCardMapAttrs = lists:usort(
-		      lists:append([A || {_, _, A} <- VCardMap]) ++ [UIDAttr]),
+		      lists:append([A || {_, _, A} <- VCardMap]) ++ UIDAttrs),
     SearchReportedAttrs =
 	lists:usort(lists:flatmap(
 		      fun({_, N}) ->
@@ -781,7 +717,7 @@ parse_options(Host, Opts) ->
 				  {value, {_, _, L}} -> L;
 				  _ -> []
 			      end
-		      end, SearchReported) ++ [UIDAttr]),
+		      end, SearchReported) ++ UIDAttrs),
     #state{serverhost = Host,
 	   myhost = MyHost,
 	   eldap_id = Eldap_ID,
@@ -791,8 +727,7 @@ parse_options(Host, Opts) ->
 	   dn = RootDN,
 	   base = LDAPBase,
 	   password = Password,
-	   uid = UIDAttr,
-	   uid_format = UIDAttrFormat,
+	   uids = UIDs,
 	   vcard_map = VCardMap,
 	   vcard_map_attrs = VCardMapAttrs,
 	   user_filter = UserFilter,

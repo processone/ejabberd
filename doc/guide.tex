@@ -378,7 +378,7 @@ Examples:
 
 {host_config, "example.com", [{auth_method, ldap},
                               {ldap_servers, ["localhost"]},
-                              {ldap_uidattr, "uid"},
+                              {ldap_uids, [{"uid"}]},
                               {ldap_rootdn, "dc=localdomain"},
                               {ldap_rootdn, "dc=example,dc=com"},
                               {ldap_password, ""}]}.
@@ -392,7 +392,7 @@ Examples:
 
 {host_config, "example.com", [{auth_method, ldap},
                               {ldap_servers, ["localhost", "otherhost"]},
-                              {ldap_uidattr, "uid"},
+                              {ldap_uids, [{"uid"}]},
                               {ldap_rootdn, "dc=localdomain"},
                               {ldap_rootdn, "dc=example,dc=com"},
                               {ldap_password, ""}]}.
@@ -1230,15 +1230,27 @@ and SASL authentication.
 You can authenticate users against an LDAP directory. Available options are:
 
 \begin{description}
-\titem{ldap\_base}\ind{options!ldap\_base}LDAP base directory which stores users
-  accounts. This option is required.
-\titem{ldap\_uidattr}\ind{options!ldap\_uidattr}LDAP attribute which holds
-  the user's part of a JID. The default value is \term{"uid"}.
-\titem{ldap\_uidattr\_format}\ind{options!ldap\_uidattr\_format}Format of the
-  \term{ldap\_uidattr} variable. The format \emph{must} contain one and only one
-  pattern variable \term{"\%u"} which will be replaced by the user's part of a
-  JID. For example, \term{"\%u@example.org"}. The default value is \term{"\%u"}.
-\titem{ldap\_filter}\ind{options!ldap\_filter}\ind{protocols!RFC 2254: The String Representation of LDAP Search Filters}
+\titem{ldap\_base}\ind{options!ldap\_base}LDAP base directory which stores
+  users accounts. This option is required.
+  \titem{ldap\_uids}\ind{options!ldap\_uids}LDAP attribute which holds a list
+  of attributes to use as alternatives for getting the JID. The value is of
+  the form: \term{[\{ldap\_uidattr\}]} or \term{[\{ldap\_uidattr,
+  ldap\_uidattr\_format\}]}. You can use as many comma separated tuples
+  \term{\{ldap\_uidattr, ldap\_uidattr\_format\}} that is needed. The default
+  value is \term{[\{"uid", "\%u"\}]}. The defaut \term{ldap\_uidattr\_format}
+  is \term{"\%u"}. The values for \term{ldap\_uidattr} and
+  \term{ldap\_uidattr\_format} are described as follow:
+  \begin{description}
+    \titem{ldap\_uidattr}\ind{options!ldap\_uidattr}LDAP attribute which holds
+    the user's part of a JID. The default value is \term{"uid"}.
+    \titem{ldap\_uidattr\_format}\ind{options!ldap\_uidattr\_format}Format of
+    the \term{ldap\_uidattr} variable. The format \emph{must} contain one and
+    only one pattern variable \term{"\%u"} which will be replaced by the
+    user's part of a JID. For example, \term{"\%u@example.org"}. The default
+    value is \term{"\%u"}.
+  \end{description}
+  \titem{ldap\_filter}\ind{options!ldap\_filter}\ind{protocols!RFC 2254: The
+  String Representation of LDAP Search Filters}
   \footahref{http://www.faqs.org/rfcs/rfc2254.html}{RFC 2254} LDAP filter. The
   default is \term{none}. Example:
   \term{"(\&(objectClass=shadowAccount)(memberOf=Jabber Users))"}. Please, do
@@ -1289,10 +1301,9 @@ Also we want users to search each other.  Let's see how we can set it up:
       {ldap_password, ""},
       %% define the addressbook's base
       {ldap_base, "ou=AddressBook,dc=example,dc=org"},
-      %% user's part of JID is located in the "mail" attribute
-      {ldap_uidattr, "mail"},
-      %% common format for our emails
-      {ldap_uidattr_format, "%u@mail.example.org"},
+      %% uidattr: user's part of JID is located in the "mail" attribute
+      %% uidattr_format: common format for our emails
+      {ldap_uids, [{"mail", "%u@mail.example.org"}]},
       %% We have to define empty filter here, because entries in addressbook does not
       %% belong to shadowAccount object class
       {ldap_filter, ""},
@@ -1339,7 +1350,7 @@ configuration is showed below:
   {ldap_base, "DC=office,DC=org"}. % Search base of LDAP directory
   {ldap_rootdn, "CN=Administrator,CN=Users,DC=office,DC=org"}. % LDAP manager
   {ldap_password, "*******"}. % Password to LDAP manager
-  {ldap_uidattr, "sAMAccountName"}.
+  {ldap_uids, [{"sAMAccountName"}]}.
   {ldap_filter, "(memberOf=*)"}.
   
   {mod_vcard_ldap,
@@ -2599,10 +2610,9 @@ Also we want users to search each other. Let's see how we can set it up:
       {ldap_password, ""},
       %% define the addressbook's base
       {ldap_base, "ou=AddressBook,dc=example,dc=org"},
-      %% user's part of JID is located in the "mail" attribute
-      {ldap_uidattr, "mail"},
-      %% common format for our emails
-      {ldap_uidattr_format, "%u@mail.example.org"},
+      %% uidattr: user's part of JID is located in the "mail" attribute
+      %% uidattr_format: common format for our emails
+      {ldap_uids, [{"mail","%u@mail.example.org"}]},
       %% We have to define empty filter here, because entries in addressbook does not
       %% belong to shadowAccount object class
       {ldap_filter, ""},

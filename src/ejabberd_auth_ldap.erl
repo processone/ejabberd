@@ -50,8 +50,7 @@
 		dn,
 		password,
 		base,
-		uidattr,
-		uidattr_format,
+		uids,
 		ufilter,
 		sfilter,
 		dn_filter,
@@ -188,11 +187,10 @@ handle_call({check_pass, User, Password}, _From, State) ->
     {reply, Reply, State};
 
 handle_call(get_vh_registered_users, _From, State) ->
-    UA = State#state.uidattr,
-    UAF = State#state.uidattr_format,
+    UIDs = State#state.uids,
     Eldap_ID = State#state.eldap_id,
     Server = State#state.host,
-    SortedDNAttrs = usort_attrs(State#state.dn_filter_attrs),
+    SortedDNAttrs = eldap_utils:usort_attrs(State#state.dn_filter_attrs),
     Reply = case eldap_filter:parse(State#state.sfilter) of
 		{ok, EldapFilter} ->
 		    case eldap:search(Eldap_ID, [{base, State#state.base},
@@ -205,10 +203,10 @@ handle_call(get_vh_registered_users, _From, State) ->
 				      case is_valid_dn(DN, Attrs, State) of
 					  false -> [];
 					  _ ->
-					      case get_ldap_attr(UA, Attrs) of
+					      case eldap_utils:find_ldap_attrs(UIDs, Attrs) of
 						  "" -> [];
-						  User ->
-						      case get_user_part(User, UAF) of
+						  {User, UIDFormat} ->
+						      case eldap_utils:get_user_part(User, UIDFormat) of
 							  {ok, U} ->
 							      case jlib:nodeprep(U) of
 								  error -> [];
@@ -241,7 +239,7 @@ handle_call(_Request, _From, State) ->
     {reply, bad_request, State}.
 
 find_user_dn(User, State) ->
-    DNAttrs = usort_attrs(State#state.dn_filter_attrs),
+    DNAttrs = eldap_utils:usort_attrs(State#state.dn_filter_attrs),
     case eldap_filter:parse(State#state.ufilter, [{"%u", User}]) of
 	{ok, Filter} ->
 	    case eldap:search(State#state.eldap_id, [{base, State#state.base},
@@ -262,13 +260,12 @@ is_valid_dn(DN, _, #state{dn_filter = undefined}) ->
 
 is_valid_dn(DN, Attrs, State) ->
     DNAttrs = State#state.dn_filter_attrs,
-    UA = State#state.uidattr,
-    UAF = State#state.uidattr_format,
-    Values = [{"%s", get_ldap_attr(Attr, Attrs), 1} || Attr <- DNAttrs],
-    SubstValues = case get_ldap_attr(UA, Attrs) of
+    UIDs = State#state.uids,
+    Values = [{"%s", eldap_utils:get_ldap_attr(Attr, Attrs), 1} || Attr <- DNAttrs],
+    SubstValues = case eldap_utils:find_ldap_attrs(UIDs, Attrs) of
 		      "" -> Values;
-		      S ->
-			  case get_user_part(S, UAF) of
+		      {S, UAF} ->
+			  case eldap_utils:get_user_part(S, UAF) of
 			      {ok, U} -> [{"%u", U} | Values];
 			      _ -> Values
 			  end
@@ -291,46 +288,6 @@ is_valid_dn(DN, Attrs, State) ->
 %%%----------------------------------------------------------------------
 %%% Auxiliary functions
 %%%----------------------------------------------------------------------
-get_user_part(String, Pattern) ->
-    F = fun(S, P) ->
-		First = string:str(P, "%u"),
-		TailLength = length(P) - (First+1),
-		string:sub_string(S, First, length(S) - TailLength)
-	end,
-    case catch F(String, Pattern) of
-	{'EXIT', _} ->
-	    {error, badmatch};
-	Result ->
-	    case regexp:sub(Pattern, "%u", Result) of
-		{ok, String, _} -> {ok, Result};
-		_ -> {error, badmatch}
-	    end
-    end.
-
-case_insensitive_match(X, Y) ->
-    X1 = stringprep:tolower(X),
-    Y1 = stringprep:tolower(Y),
-    if
-	X1 == Y1 -> true;
-	true -> false
-    end.
-
-get_ldap_attr(LDAPAttr, Attributes) ->
-    Res = lists:filter(
-	    fun({Name, _}) ->
-		    case_insensitive_match(Name, LDAPAttr)
-	    end, Attributes),
-    case Res of
-	[{_, [Value|_]}] -> Value;
-	_ -> ""
-    end.
-
-usort_attrs(Attrs) when is_list(Attrs) ->
-    lists:usort(Attrs);
-
-usort_attrs(_) ->
-    [].
-
 parse_options(Host) ->
     Eldap_ID = atom_to_list(gen_mod:get_module_proc(Host, ?MODULE)),
     Bind_Eldap_ID = atom_to_list(gen_mod:get_module_proc(Host, bind_ejabberd_auth_ldap)),
@@ -347,15 +304,11 @@ parse_options(Host) ->
 		   undefined -> "";
 		   Pass -> Pass
 	       end,
-    UIDAttr = case ejabberd_config:get_local_option({ldap_uidattr, Host}) of
-		  undefined -> "uid";
-		  UA -> UA
-	      end,
-    UIDAttrFormat = case ejabberd_config:get_local_option({ldap_uidattr_format, Host}) of
-			undefined -> "%u";
-			UAF -> UAF
-		    end,
-    SubFilter = "(" ++ UIDAttr ++ "=" ++ UIDAttrFormat ++ ")",
+    UIDs = case ejabberd_config:get_local_option({ldap_uids, Host}) of
+	       undefined -> [{"uid", "%u"}];
+	       UI -> UI
+	   end,
+    SubFilter = lists:flatten(eldap_utils:generate_subfilter(UIDs)),
     UserFilter = case ejabberd_config:get_local_option({ldap_filter, Host}) of
 		     undefined -> SubFilter;
 		     "" -> SubFilter;
@@ -376,8 +329,7 @@ parse_options(Host) ->
 	   dn = RootDN,
 	   password = Password,
 	   base = LDAPBase,
-	   uidattr = UIDAttr,
-	   uidattr_format = UIDAttrFormat,
+	   uids = UIDs,
 	   ufilter = UserFilter,
 	   sfilter = SearchFilter,
 	   dn_filter = DNFilter,

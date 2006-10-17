@@ -521,7 +521,7 @@ Domain <TT>example.net</TT> is using the internal authentication method while
 
 {host_config, "example.com", [{auth_method, ldap},
                               {ldap_servers, ["localhost"]},
-                              {ldap_uidattr, "uid"},
+                              {ldap_uids, [{"uid"}]},
                               {ldap_rootdn, "dc=localdomain"},
                               {ldap_rootdn, "dc=example,dc=com"},
                               {ldap_password, ""}]}.
@@ -534,7 +534,7 @@ Domain <TT>example.net</TT> is using the internal authentication method while
 
 {host_config, "example.com", [{auth_method, ldap},
                               {ldap_servers, ["localhost", "otherhost"]},
-                              {ldap_uidattr, "uid"},
+                              {ldap_uids, [{"uid"}]},
                               {ldap_rootdn, "dc=localdomain"},
                               {ldap_rootdn, "dc=example,dc=com"},
                               {ldap_password, ""}]}.
@@ -1372,15 +1372,26 @@ and SASL authentication.<BR>
 <A NAME="sec:ldapauth"></A>
 You can authenticate users against an LDAP directory. Available options are:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
-<B><TT>ldap_base</TT></B><DD CLASS="dd-description">LDAP base directory which stores users
- accounts. This option is required.
-<DT CLASS="dt-description"><B><TT>ldap_uidattr</TT></B><DD CLASS="dd-description">LDAP attribute which holds
+<B><TT>ldap_base</TT></B><DD CLASS="dd-description">LDAP base directory which stores
+ users accounts. This option is required.
+ <DT CLASS="dt-description"><B><TT>ldap_uids</TT></B><DD CLASS="dd-description">LDAP attribute which holds a list
+ of attributes to use as alternatives for getting the JID. The value is of
+ the form: <TT>[{ldap_uidattr}]</TT> or <TT>[{ldap_uidattr,
+ ldap_uidattr_format}]</TT>. You can use as many comma separated tuples
+ <TT>{ldap_uidattr, ldap_uidattr_format}</TT> that is needed. The default
+ value is <TT>[{"uid", "%u"}]</TT>. The defaut <TT>ldap_uidattr_format</TT>
+ is <TT>"%u"</TT>. The values for <TT>ldap_uidattr</TT> and
+ <TT>ldap_uidattr_format</TT> are described as follow:
+ <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
+ <B><TT>ldap_uidattr</TT></B><DD CLASS="dd-description">LDAP attribute which holds
  the user's part of a JID. The default value is <TT>"uid"</TT>.
-<DT CLASS="dt-description"><B><TT>ldap_uidattr_format</TT></B><DD CLASS="dd-description">Format of the
- <TT>ldap_uidattr</TT> variable. The format <EM>must</EM> contain one and only one
- pattern variable <TT>"%u"</TT> which will be replaced by the user's part of a
- JID. For example, <TT>"%u@example.org"</TT>. The default value is <TT>"%u"</TT>.
-<DT CLASS="dt-description"><B><TT>ldap_filter</TT></B><DD CLASS="dd-description">
+ <DT CLASS="dt-description"><B><TT>ldap_uidattr_format</TT></B><DD CLASS="dd-description">Format of
+ the <TT>ldap_uidattr</TT> variable. The format <EM>must</EM> contain one and
+ only one pattern variable <TT>"%u"</TT> which will be replaced by the
+ user's part of a JID. For example, <TT>"%u@example.org"</TT>. The default
+ value is <TT>"%u"</TT>.
+ </DL>
+ <DT CLASS="dt-description"><B><TT>ldap_filter</TT></B><DD CLASS="dd-description">
  <A HREF="http://www.faqs.org/rfcs/rfc2254.html">RFC 2254</A> LDAP filter. The
  default is <TT>none</TT>. Example:
  <TT>"(&amp;(objectClass=shadowAccount)(memberOf=Jabber Users))"</TT>. Please, do
@@ -1431,10 +1442,9 @@ Also we want users to search each other. Let's see how we can set it up:
       {ldap_password, ""},
       %% define the addressbook's base
       {ldap_base, "ou=AddressBook,dc=example,dc=org"},
-      %% user's part of JID is located in the "mail" attribute
-      {ldap_uidattr, "mail"},
-      %% common format for our emails
-      {ldap_uidattr_format, "%u@mail.example.org"},
+      %% uidattr: user's part of JID is located in the "mail" attribute
+      %% uidattr_format: common format for our emails
+      {ldap_uids, [{"mail", "%u@mail.example.org"}]},
       %% We have to define empty filter here, because entries in addressbook does not
       %% belong to shadowAccount object class
       {ldap_filter, ""},
@@ -1480,7 +1490,7 @@ configuration is showed below:
   {ldap_base, "DC=office,DC=org"}. % Search base of LDAP directory
   {ldap_rootdn, "CN=Administrator,CN=Users,DC=office,DC=org"}. % LDAP manager
   {ldap_password, "*******"}. % Password to LDAP manager
-  {ldap_uidattr, "sAMAccountName"}.
+  {ldap_uids, [{"sAMAccountName"}]}.
   {ldap_filter, "(memberOf=*)"}.
   
   {mod_vcard_ldap,
@@ -2881,10 +2891,9 @@ Also we want users to search each other. Let's see how we can set it up:
       {ldap_password, ""},
       %% define the addressbook's base
       {ldap_base, "ou=AddressBook,dc=example,dc=org"},
-      %% user's part of JID is located in the "mail" attribute
-      {ldap_uidattr, "mail"},
-      %% common format for our emails
-      {ldap_uidattr_format, "%u@mail.example.org"},
+      %% uidattr: user's part of JID is located in the "mail" attribute
+      %% uidattr_format: common format for our emails
+      {ldap_uids, [{"mail","%u@mail.example.org"}]},
       %% We have to define empty filter here, because entries in addressbook does not
       %% belong to shadowAccount object class
       {ldap_filter, ""},
