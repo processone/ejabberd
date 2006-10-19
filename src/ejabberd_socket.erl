@@ -2,7 +2,7 @@
 %%% File    : ejabberd_socket.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Socket with zlib and TLS support library
-%%% Created : 23 Aug 2006 by Alexey Shchepin <alex@alex.sevcom.net>
+%%% Created : 23 Aug 2006 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
@@ -22,7 +22,8 @@
 	 get_sockmod/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
-	 close/1]).
+	 close/1,
+	 sockname/1, peername/1]).
 
 -record(socket_state, {sockmod, socket, receiver}).
 
@@ -130,6 +131,22 @@ get_verify_result(SocketData) ->
 
 close(SocketData) ->
     ejabberd_receiver:close(SocketData#socket_state.receiver).
+
+sockname(#socket_state{sockmod = SockMod, socket = Socket}) ->
+    case SockMod of
+	gen_tcp ->
+	    inet:sockname(Socket);
+	_ ->
+	    SockMod:sockname(Socket)
+    end.
+
+peername(#socket_state{sockmod = SockMod, socket = Socket}) ->
+    case SockMod of
+	gen_tcp ->
+	    inet:peername(Socket);
+	_ ->
+	    SockMod:peername(Socket)
+    end.
 
 %%====================================================================
 %% Internal functions

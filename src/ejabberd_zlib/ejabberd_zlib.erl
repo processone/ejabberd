@@ -17,6 +17,7 @@
 	 send/2,
 	 recv/2, recv/3, recv_data/2,
 	 setopts/2,
+	 sockname/1, peername/1,
 	 controlling_process/2,
 	 close/1]).
 
@@ -122,6 +123,22 @@ setopts(#zlibsock{sockmod = SockMod, socket = Socket}, Opts) ->
 	    inet:setopts(Socket, Opts);
 	_ ->
 	    SockMod:setopts(Socket, Opts)
+    end.
+
+sockname(#zlibsock{sockmod = SockMod, socket = Socket}) ->
+    case SockMod of
+	gen_tcp ->
+	    inet:sockname(Socket);
+	_ ->
+	    SockMod:sockname(Socket)
+    end.
+
+peername(#zlibsock{sockmod = SockMod, socket = Socket}) ->
+    case SockMod of
+	gen_tcp ->
+	    inet:peername(Socket);
+	_ ->
+	    SockMod:peername(Socket)
     end.
 
 controlling_process(#zlibsock{sockmod = SockMod, socket = Socket}, Pid) ->

@@ -25,7 +25,8 @@
 	 get_sockmod/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
-	 close/1]).
+	 close/1,
+	 sockname/1, peername/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -108,6 +109,12 @@ get_verify_result(FsmRef) ->
 
 close(FsmRef) ->
     gen_server:call(FsmRef, close).
+
+sockname(FsmRef) ->
+    gen_server:call(FsmRef, sockname).
+
+peername(FsmRef) ->
+    gen_server:call(FsmRef, peername).
 
 
 %%====================================================================
@@ -204,6 +211,28 @@ handle_call(close, _From, State) ->
     ejabberd_receiver:close(State#state.receiver),
     Reply = ok,
     {stop, normal, Reply, State};
+
+handle_call(sockname, _From, State) ->
+    #state{sockmod = SockMod, socket = Socket} = State,
+    Reply =
+	case SockMod of
+	    gen_tcp ->
+		inet:sockname(Socket);
+	    _ ->
+		SockMod:sockname(Socket)
+	end,
+    {reply, Reply, State};
+
+handle_call(peername, _From, State) ->
+    #state{sockmod = SockMod, socket = Socket} = State,
+    Reply =
+	case SockMod of
+	    gen_tcp ->
+		inet:peername(Socket);
+	    _ ->
+		SockMod:peername(Socket)
+	end,
+    {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,

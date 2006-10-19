@@ -118,6 +118,14 @@ CREATE TABLE privacy_list_data (
     match_presence_out boolean NOT NULL
 );
 
+CREATE TABLE private_storage (
+    username text NOT NULL,
+    namespace text NOT NULL,
+    data text NOT NULL
+);
+
+CREATE INDEX i_private_storage_username ON private_storage USING btree (username);
+CREATE UNIQUE INDEX i_private_storage_username_namespace ON private_storage USING btree (username, namespace);
 
 
 --- To update from 0.9.8:

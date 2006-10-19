@@ -1,3 +1,14 @@
+2006-10-17  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_socket.erl: Added sockname/1 and peername/1
+	functions
+	* src/ejabberd_frontend_socket.erl: Likewise
+	* src/tls/tls.erl: Likewise
+	* src/ejabberd_zlib/ejabberd_zlib.erl: Likewise
+
+	* src/mod_private_odbc.erl: Private storage support using odbc
+	* src/odbc/pg.sql: Likewise
+
 2006-10-17 Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_auth_ldap.erl: LDAP authentication now allows to

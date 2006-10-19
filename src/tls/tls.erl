@@ -17,6 +17,7 @@
 	 send/2,
 	 recv/2, recv/3, recv_data/2,
 	 setopts/2,
+	 sockname/1, peername/1,
 	 controlling_process/2,
 	 close/1,
 	 get_peer_certificate/1,
@@ -179,6 +180,12 @@ send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 
 setopts(#tlssock{tcpsock = TCPSocket}, Opts) ->
     inet:setopts(TCPSocket, Opts).
+
+sockname(#tlssock{tcpsock = TCPSocket}) ->
+    inet:sockname(TCPSocket).
+
+peername(#tlssock{tcpsock = TCPSocket}) ->
+    inet:peername(TCPSocket).
 
 controlling_process(#tlssock{tcpsock = TCPSocket}, Pid) ->
     gen_tcp:controlling_process(TCPSocket, Pid).
