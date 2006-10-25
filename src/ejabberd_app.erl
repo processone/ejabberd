@@ -28,6 +28,7 @@ start(normal, _Args) ->
     gen_mod:start(),
     ejabberd_config:start(),
     Sup = ejabberd_sup:start_link(),
+    ejabberd_rdbms:start(),
     ejabberd_auth:start(),
     cyrsasl:start(),
     % Profiling

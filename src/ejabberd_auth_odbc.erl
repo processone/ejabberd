@@ -34,14 +34,6 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
-    ChildSpec =
-	{gen_mod:get_module_proc(Host, ejabberd_odbc_sup),
-	 {ejabberd_odbc_sup, start_link, [Host]},
-	 temporary,
-	 infinity,
-	 supervisor,
-	 [ejabberd_odbc_sup]},
-    supervisor:start_child(ejabberd_sup, ChildSpec),
     ejabberd_ctl:register_commands(
       Host,
       [{"registered-users", "list all registered users"}],

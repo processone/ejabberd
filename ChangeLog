@@ -1,3 +1,12 @@
+2006-10-25  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_rdbms.erl: It is now possible to use ldap or internal
+	authentication with some other modules using relationnal database
+	storage. Refactored relational databases connections initialisation.
+	* src/ejabberd_auth_odbc.erl: Likewise. odbc supervisor startup is now
+	delegated to the ejabberd rdbms module.
+	* src/ejabberd_app.erl: Likewise.
+
 2006-10-17  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_socket.erl: Added sockname/1 and peername/1
