@@ -2479,16 +2479,15 @@ Examples:
 
 \ejabberd{} can map LDAP attributes to vCard fields. This behaviour is
 implemented in the \modvcardldap{} module. This module does not depend on the
-authentication method (see~\ref{sec:ldapauth}). The \modvcardldap{} module
-has its own optional parameters. The first group of parameters has the same
+authentication method (see~\ref{sec:ldapauth}). The \modvcardldap{} module has
+its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 \option{ldap\_servers}, \option{ldap\_port}, \option{ldap\_rootdn},
-\option{ldap\_password}, \option{ldap\_base}, \option{ldap\_uidattr},
-\option{ldap\_uidattr\_format} and \option{ldap\_filter}. See
-section~\ref{sec:ldapauth} for detailed information about these options. If one
-of these options is not set, \ejabberd{} will look for the top-level option with
-the same name. The second group of parameters consists of the following
-\modvcardldap{}-specific options:
+\option{ldap\_password}, \option{ldap\_base}, \option{ldap\_uids}, and
+\option{ldap\_filter}. See section~\ref{sec:ldapauth} for detailed information
+about these options. If one of these options is not set, \ejabberd{} will look
+for the top-level option with the same name. The second group of parameters
+consists of the following \modvcardldap{}-specific options:
 
 \begin{description}
 \hostitem{vjud}

@@ -2762,16 +2762,15 @@ In this first situation, search results are limited to twenty items,
 
 <TT>ejabberd</TT> can map LDAP attributes to vCard fields. This behaviour is
 implemented in the <TT>mod_vcard_ldap</TT> module. This module does not depend on the
-authentication method (see&nbsp;<A HREF="#sec:ldapauth">4.5.2</A>). The <TT>mod_vcard_ldap</TT> module
-has its own optional parameters. The first group of parameters has the same
+authentication method (see&nbsp;<A HREF="#sec:ldapauth">4.5.2</A>). The <TT>mod_vcard_ldap</TT> module has
+its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 <TT>ldap_servers</TT>, <TT>ldap_port</TT>, <TT>ldap_rootdn</TT>,
-<TT>ldap_password</TT>, <TT>ldap_base</TT>, <TT>ldap_uidattr</TT>,
-<TT>ldap_uidattr_format</TT> and <TT>ldap_filter</TT>. See
-section&nbsp;<A HREF="#sec:ldapauth">4.5.2</A> for detailed information about these options. If one
-of these options is not set, <TT>ejabberd</TT> will look for the top-level option with
-the same name. The second group of parameters consists of the following
-<TT>mod_vcard_ldap</TT>-specific options:
+<TT>ldap_password</TT>, <TT>ldap_base</TT>, <TT>ldap_uids</TT>, and
+<TT>ldap_filter</TT>. See section&nbsp;<A HREF="#sec:ldapauth">4.5.2</A> for detailed information
+about these options. If one of these options is not set, <TT>ejabberd</TT> will look
+for the top-level option with the same name. The second group of parameters
+consists of the following <TT>mod_vcard_ldap</TT>-specific options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 
  <B><TT>hosts</TT></B><DD CLASS="dd-description">  This option defines the hostnames of the
