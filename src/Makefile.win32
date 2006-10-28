@@ -59,6 +59,9 @@ release : build release_clean
 	copy mod_muc\*.erl $(SRC_DIR)\mod_muc
 	mkdir $(SRC_DIR)\mod_pubsub
 	copy mod_pubsub\*.erl $(SRC_DIR)\mod_pubsub
+	mkdir $(SRC_DIR)\mod_proxy65
+	copy mod_proxy65\*.erl $(SRC_DIR)\mod_proxy65
+	copy mod_proxy65\*.hrl $(SRC_DIR)\mod_proxy65
 	mkdir $(SRC_DIR)\stringprep
 	copy stringprep\*.erl $(SRC_DIR)\stringprep
 	copy stringprep\*.c $(SRC_DIR)\stringprep
@@ -93,6 +96,8 @@ all-recursive :
 	cd ..\mod_muc
 	nmake -nologo -f Makefile.win32
 	cd ..\mod_pubsub
+	nmake -nologo -f Makefile.win32
+	cd ..\mod_proxy65
 	nmake -nologo -f Makefile.win32
 	cd ..\stringprep
 	nmake -nologo -f Makefile.win32
@@ -132,6 +137,8 @@ clean-recursive :
 	cd ..\mod_muc
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\mod_pubsub
+	nmake -nologo -f Makefile.win32 clean
+	cd ..\mod_proxy65
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\stringprep
 	nmake -nologo -f Makefile.win32 clean

@@ -39,3 +39,4 @@
 
 -define(PRIVACY_SUPPORT, true).
 
+-define(EJABBERD_URI, "http://ejabberd.jabber.ru").

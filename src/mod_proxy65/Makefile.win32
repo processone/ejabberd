@@ -1,0 +1,32 @@
+
+include ..\Makefile.inc
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+
+OBJS   = \
+	$(OUTDIR)\mod_proxy65.beam \
+	$(OUTDIR)\mod_proxy65_service.beam \
+	$(OUTDIR)\mod_proxy65_sm.beam \
+	$(OUTDIR)\mod_proxy65_stream.beam \
+	$(OUTDIR)\mod_proxy65_lib.beam
+
+ALL : $(OBJS)
+
+CLEAN :
+	-@erase $(OBJS)
+
+$(OUTDIR)\mod_proxy65.beam : mod_proxy65.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_proxy65.erl
+
+$(OUTDIR)\mod_proxy65_service.beam : mod_proxy65_service.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_proxy65_service.erl
+
+$(OUTDIR)\mod_proxy65_sm.beam : mod_proxy65_sm.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_mod_proxy65_sm.erl
+
+$(OUTDIR)\mod_proxy65_stream.beam : mod_proxy65_stream.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_proxy65_stream.erl
+
+$(OUTDIR)\mod_proxy65_lib.beam : mod_proxy65_lib.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) mod_proxy65_lib.erl

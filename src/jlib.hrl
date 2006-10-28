@@ -34,6 +34,7 @@
 -define(NS_PUBSUB_OWNER, "http://jabber.org/protocol/pubsub#owner").
 -define(NS_PUBSUB_NMI,   "http://jabber.org/protocol/pubsub#node-meta-info").
 -define(NS_COMMANDS,     "http://jabber.org/protocol/commands").
+-define(NS_BYTESTREAMS,  "http://jabber.org/protocol/bytestreams").
 
 -define(NS_EJABBERD_CONFIG, "ejabberd:config").
 
