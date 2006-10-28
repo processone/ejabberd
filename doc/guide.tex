@@ -696,7 +696,7 @@ Examples:
 \end{verbatim}
 \item To enable anonymous login and internal authentication on a virtual host:
   \begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
+{host_config, "public.example.org", [{auth_method, [internal,anonymous]},
                                      {anonymous_protocol, login_anon}]}.
 \end{verbatim}
 \item To enable SASL Anonymous on a virtual host:
@@ -712,7 +712,7 @@ Examples:
 \item To enable SASL Anonymous, anonymous login, and internal authentication on
 a virtual host:
   \begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
+{host_config, "public.example.org", [{auth_method, [internal,anonymous]},
                                      {anonymous_protocol, both}]}.
 \end{verbatim}
 \end{itemize}

@@ -847,7 +847,7 @@ To enable anonymous login on all virtual hosts:
                                      {anonymous_protocol, login_anon}]}.
 </PRE><LI CLASS="li-itemize">To enable anonymous login and internal authentication on a virtual host:
  <PRE CLASS="verbatim">
-{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
+{host_config, "public.example.org", [{auth_method, [internal,anonymous]},
                                      {anonymous_protocol, login_anon}]}.
 </PRE><LI CLASS="li-itemize">To enable SASL Anonymous on a virtual host:
  <PRE CLASS="verbatim">
@@ -860,7 +860,7 @@ To enable anonymous login on all virtual hosts:
 </PRE><LI CLASS="li-itemize">To enable SASL Anonymous, anonymous login, and internal authentication on
 a virtual host:
  <PRE CLASS="verbatim">
-{host_config, "public.example.org", [{auth_method, [anonymous,internal]},
+{host_config, "public.example.org", [{auth_method, [internal,anonymous]},
                                      {anonymous_protocol, both}]}.
 </PRE></UL>
 <!--TOC subsection Access Rules-->

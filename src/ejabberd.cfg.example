@@ -110,7 +110,7 @@
 %%                                     {allow_multiple_connections, false},
 %%                                     {anonymous_protocol, sasl_anon}]}.
 %% To use both anonymous and internal authentication:
-%%{host_config, "public.example.org", [{auth_method, [anonymous, internal]}]}.
+%%{host_config, "public.example.org", [{auth_method, [internal,anonymous]}]}.
 
 % Default language for server messages
 {language, "en"}.
