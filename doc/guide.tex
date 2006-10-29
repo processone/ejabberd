@@ -58,6 +58,7 @@
 \newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
 \newcommand{\modprivate}{\module{mod\_private}}
+\newcommand{\modproxy}{\module{mod\_proxy65}}
 \newcommand{\modpubsub}{\module{mod\_pubsub}}
 \newcommand{\modregister}{\module{mod\_register}}
 \newcommand{\modroster}{\module{mod\_roster}}
@@ -1476,6 +1477,7 @@ database for the following data:
     \hline \modofflineodbc{} & Offline message storage & supported database (*) & No \\ 
     \hline \modprivacy{} & Blocking Communication &  & Yes \\ 
     \hline \modprivate{} & Private XML Storage (\jepref{0049}) &  & No \\ 
+    \hline \modproxy{} & SOCKS5 Bytestreams (\jepref{0065}) &  & No\\
     \hline \modpubsub{} & Publish-Subscribe (\jepref{0060}) &  & No \\ 
     \hline \modregister{} & In-Band Registration (\jepref{0077}) &  & No \\ 
     \hline \modroster{} & Roster management &  & Yes (**) \\ 
@@ -2091,6 +2093,73 @@ Options:
 \begin{description}
 \iqdiscitem{Private XML Storage (\ns{jabber:iq:private})}
 \end{description}
+
+\subsection{\aname{modproxy}{\modproxy{}}}
+\label{sec:modproxy}
+\ind{modules!\modversion{}}\ind{protocols!JEP-0065: SOCKS5 Bytestreams}
+
+This module implements SOCKS5 Bytestreams (\jepref{0065}).
+It allows \ejabberd{} to act as a file transfer proxy between two
+XMPP clients.
+
+Options:
+\begin{description}
+\titem{host}\ind{options!host}This option defines the hostname of the service.
+If this option is not set, the prefix `\jid{proxy.}' is added to \ejabberd{}
+hostname.
+\titem{name}\ind{options!name}Defines Service Discovery name of the service.
+Default is \term{"SOCKS5 Bytestreams"}.
+\titem{ip}\ind{options!ip}This option specifies which network interface
+to listen for. Default is an IP address of the service's DNS name, or,
+if fails, \verb|{127,0,0,1}|.
+\titem{port}\ind{options!port}This option defines port to listen for
+incoming connections. Default is~7777.
+\titem{auth\_type}\ind{options!auth\_type}SOCKS5 authentication type.
+Possible values are \term{anonymous} and \term{plain}. Default is
+\term{anonymous}.
+\titem{access}\ind{options!access}Defines ACL for file transfer initiators.
+Default is \term{all}.
+\titem{max\_connections}\ind{options!max\_connections}Maximum number of
+active connections per file transfer initiator. No limit by default.
+\titem{shaper}\ind{options!shaper}This option defines shaper for
+the file transfer peers. Shaper with the maximum bandwidth will be selected.
+Default is \term{none}.
+\end{description}
+
+Examples:
+\begin{itemize}
+\item The simpliest configuration of the module:
+  \begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_proxy65, []},
+    ...
+  ]}.
+\end{verbatim}
+\item More complicated configuration.
+  \begin{verbatim}
+  {acl, proxy_users, {server, "example.org"}}.
+  {access, proxy65_access, [{allow, proxy_users}, {deny, all}]}.
+  ...
+  {acl, admin, {user, "admin", "example.org"}}.
+  {shaper, normal, {maxrate, 10240}}. %% 10 Kbytes/sec
+  {access, proxy65_shaper, [{none, admin}, {normal, all}]}.
+  ...
+  {modules,
+   [
+    ...
+    {mod_proxy65, [{host, "proxy1.example.org"},
+                   {name, "File Transfer Proxy"},
+                   {ip, {200,150,100,1}},
+                   {port, 7778},
+                   {max_connections, 5},
+                   {access, proxy65_access},
+                   {shaper, proxy65_shaper}]},
+    ...
+  ]}.
+\end{verbatim}
+\end{itemize}
 
 \subsection{\aname{modpubsub}{\modpubsub{}}}
 \label{sec:modpubsub}
