@@ -15,7 +15,8 @@
 	 get_ldap_attr/2,
 	 usort_attrs/1,
 	 get_user_part/2,
-	 make_filter/2]).
+	 make_filter/2,
+	 case_insensitive_match/2]).
 
 %% Generate an 'or' LDAP query on one or several attributes
 %% If there is only one attribute

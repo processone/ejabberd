@@ -1,3 +1,7 @@
+2006-11-04  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/eldap_utils.erl: Fixed missing export.
+
 2006-10-29  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: XEP-0065 proxy documentation (thanks to Evgeniy
