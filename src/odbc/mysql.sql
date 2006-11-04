@@ -1,4 +1,4 @@
--- Needs MySQL (at least 4.1.x) with innodb back-end
+-- Needs MySQL (at least 4.0.x) with innodb back-end
 SET table_type=InnoDB;
 
 CREATE TABLE users (
@@ -26,9 +26,9 @@ CREATE TABLE rosterusers (
     type text
 ) CHARACTER SET utf8;
 
-CREATE UNIQUE INDEX i_rosteru_user_jid USING HASH ON rosterusers(username(75), jid(75));
-CREATE INDEX i_rosteru_username USING HASH ON rosterusers(username);
-CREATE INDEX i_rosteru_jid USING HASH ON rosterusers(jid);
+CREATE UNIQUE INDEX i_rosteru_user_jid ON rosterusers(username(75), jid(75));
+CREATE INDEX i_rosteru_username ON rosterusers(username);
+CREATE INDEX i_rosteru_jid ON rosterusers(jid);
 
 CREATE TABLE rostergroups (
     username varchar(250) NOT NULL,
@@ -36,13 +36,13 @@ CREATE TABLE rostergroups (
     grp text NOT NULL
 ) CHARACTER SET utf8;
 
-CREATE INDEX pk_rosterg_user_jid USING HASH ON rostergroups(username(75), jid(75));
+CREATE INDEX pk_rosterg_user_jid ON rostergroups(username(75), jid(75));
 
 
 CREATE TABLE spool (
     username varchar(250) NOT NULL,
     xml text,
-    seq SERIAL
+    seq INTEGER UNSIGNED NOT NULL AUTO_INCREMENT
 ) CHARACTER SET utf8;
 
 CREATE INDEX i_despool USING BTREE ON spool(username);

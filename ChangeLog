@@ -6,6 +6,9 @@
 	* src/odbc/mysql.sql: Likewise.
 	* src/odbc/mssql.sql: Likewise.
 
+	* src/odbc/mysql: Database creation script should now be compliant with
+	MySQL 4.0.x.
+
 2006-10-29  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: XEP-0065 proxy documentation (thanks to Evgeniy
