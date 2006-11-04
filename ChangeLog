@@ -1,6 +1,10 @@
 2006-11-04  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/eldap_utils.erl: Fixed missing export.
+	
+	* src/odbc/pg.sql: Database scripts consistency.
+	* src/odbc/mysql.sql: Likewise.
+	* src/odbc/mssql.sql: Likewise.
 
 2006-10-29  Mickael Remond  <mickael.remond@process-one.net>
 
