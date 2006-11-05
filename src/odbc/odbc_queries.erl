@@ -31,6 +31,9 @@
 	 update_roster_sql/4,
 	 roster_subscribe/4,
 	 get_subscription/3,
+	 set_private_data/4,
+	 get_private_data/3,
+	 del_user_private_storage/2,
 	 escape/1]).
 
 %-define(generic, true).
@@ -250,6 +253,28 @@ get_subscription(LServer, Username, SJID) ->
        "where username='", Username, "' "
        "and jid='", SJID, "'"]).
 
+set_private_data(_LServer, Username, LXMLNS, SData) ->
+    ejabberd_odbc:sql_query_t(
+      ["delete from private_storage "
+       "where username='", Username, "' and "
+       "namespace='", LXMLNS, "';"]),
+    ejabberd_odbc:sql_query_t(
+      ["insert into private_storage(username, namespace, data) "
+       "values ('", Username, "', '", LXMLNS, "', "
+       "'", SData, "');"]).
+       			       
+get_private_data(LServer, Username, LXMLNS) ->
+    ejabberd_odbc:sql_query(
+		 LServer,
+		 ["select data from private_storage "
+		  "where username='", Username, "' and "
+		  "namespace='", LXMLNS, "';"]).
+
+del_user_private_storage(LServer, Username) ->
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      ["delete from private_storage where username='", Username, "';"]).
+
 %% Characters to escape
 escape($\0) -> "\\0";
 escape($\n) -> "\\n";
@@ -422,6 +447,21 @@ get_subscription(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
       LServer,
       ["EXECUTE dbo.get_subscription '", Username, "' , '", SJID, "'"]).
+      
+set_private_data(_LServer, Username, LXMLNS, SData) ->
+    ejabberd_odbc:sql_query(
+	    LServer,
+	    ["EXECUTE dbo.set_private_data '", Username, "' , '", LXMLNS, "' , '", SData, "'"]).
+	    
+get_private_data(LServer, Username, LXMLNS) ->
+    ejabberd_odbc:sql_query(
+        LServer,
+        ["EXECUTE dbo.get_private_data '", Username, "' , '", LXMLNS, "'"]).
+
+del_user_private_storage(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+        LServer,
+        ["EXECUTE dbo.del_user_storage '", Username, "'"]).
 
 %% Characters to escape
 escape($\0) -> "\\0";

@@ -46,7 +46,7 @@ process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 					  set_data(LUser, LServer, El)
 				  end, Els)
 			end,
-		    ejabberd_odbc:sql_transaction(LServer, F),
+		    odbc_queries:sql_transaction(LServer, F),
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, Name, Attrs, []}]};
 		get ->
@@ -64,7 +64,7 @@ process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
     end.
 
-set_data(LUser, _LServer, El) ->
+set_data(LUser, LServer, El) ->
     case El of
 	{xmlelement, _Name, Attrs, _Els} ->
 	    XMLNS = xml:get_attr_s("xmlns", Attrs),
@@ -76,14 +76,7 @@ set_data(LUser, _LServer, El) ->
 		    LXMLNS = ejabberd_odbc:escape(XMLNS),
 		    SData = ejabberd_odbc:escape(
 			       lists:flatten(xml:element_to_string(El))),
-		    ejabberd_odbc:sql_query_t(
-		      ["delete from private_storage "
-		       "where username='", Username, "' and "
-		       "namespace='", LXMLNS, "';"]),
-		    ejabberd_odbc:sql_query_t(
-		      ["insert into private_storage(username, namespace, data) "
-		       "values ('", Username, "', '", LXMLNS, "', "
-		       "'", SData, "');"])
+			odbc_queries:set_private_data(LServer, Username, LXMLNS, SData)
 	    end;
 	_ ->
 	    ignore
@@ -100,17 +93,14 @@ get_data(LUser, LServer, [El | Els], Res) ->
 	    XMLNS = xml:get_attr_s("xmlns", Attrs),
 	    Username = ejabberd_odbc:escape(LUser),
 	    LXMLNS = ejabberd_odbc:escape(XMLNS),
-	    case catch ejabberd_odbc:sql_query(
-			 LServer,
-			 ["select data from private_storage "
-			  "where username='", Username, "' and "
-			  "namespace='", LXMLNS, "';"]) of
+	    case catch odbc_queries:get_private_data(LServer, Username, LXMLNS) of
 		{selected, ["data"], [{SData}]} ->
 		    case xml_stream:parse_element(SData) of
 			Data when element(1, Data) == xmlelement ->
 			    get_data(LUser, LServer, Els,
 				     [Data | Res])
 		    end;
+		%% MREMOND: I wonder when the query could return a vcard ?
 		{selected, ["vcard"], []} ->
 		    get_data(LUser, LServer, Els,
 			     [El | Res])
@@ -124,8 +114,4 @@ remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_transaction(
-      LServer,
-      ["delete from private_storage where username='", Username, "';"]).
-
-
+    odbc_queries:del_user_private_storage(LServer, Username).

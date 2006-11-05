@@ -1,3 +1,10 @@
+2006-11-05  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_private_odbc.erl: Support for MySQL and MSSQL.
+	* src/odbc/odbc_queries.erl: Likewise.
+	* src/odbc/mysql.sql: Likewise.
+	* src/odbc/mssql.sql: Likewise.
+
 2006-11-04  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/eldap_utils.erl: Fixed missing export.

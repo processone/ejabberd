@@ -93,6 +93,15 @@ CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
 CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
 CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
 
+CREATE TABLE private_storage (
+    username varchar(250) NOT NULL,
+    namespace varchar(250) NOT NULL,
+    data text NOT NULL
+) CHARACTER SET utf8;
+
+CREATE INDEX i_private_storage_username USING BTREE ON private_storage(username);
+CREATE UNIQUE INDEX i_private_storage_username_namespace USING BTREE ON private_storage(username, namespace);
+
 --- To update from 1.x:
 -- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;
 -- UPDATE rosterusers SET askmessage = '';

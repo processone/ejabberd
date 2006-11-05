@@ -84,6 +84,10 @@ if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[vcard]') a
 drop table [dbo].[vcard]
 GO
 
+if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[private_storage]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+drop table [dbo].[private_storage]
+GO
+
 CREATE TABLE [dbo].[last] (
 	[username] [varchar] (250) NOT NULL ,
 	[seconds] [varchar] (50) NOT NULL ,
@@ -148,6 +152,13 @@ CREATE TABLE [dbo].[vcard] (
 	[role] [varchar] (50) NULL ,
 	[b_day] [datetime] NULL ,
 	[descr] [varchar] (500) NULL 
+) ON [PRIMARY]
+GO
+
+CREATE TABLE [dbo].[private_storage] (
+    [username] [varchar] (250) NOT NULL ,
+    [namespace] [varchar] (250) NOT NULL ,
+    [data] [text] NOT NULL
 ) ON [PRIMARY]
 GO
 
@@ -226,6 +237,12 @@ GO
 
  CREATE  INDEX [IK_Spool_Created] ON [dbo].[spool]([created]) WITH  FILLFACTOR = 90 ON [PRIMARY]
 GO
+
+ CREATE  INDEX [IX_private_user] ON [dbo].[private_storage]([username]) WITH  FILLFACTOR = 90 ON [PRIMARY]
+GO
+ CREATE  INDEX [IX_private_user_ns] ON [dbo].[private_storage]([username], [namespace]) WITH  FILLFACTOR = 90 ON [PRIMARY]
+GO
+
 
 /*********************************************************/
 /** These store procedures are for use with ejabberd    **/
@@ -484,6 +501,7 @@ BEGIN
     END
 END
 GO
+
 /******************************************************************/
 /****** Object:  StoredProcedure [dbo].[get_password]            **/
 /** Retrive the user password                                    **/
@@ -557,7 +575,6 @@ BEGIN
     DELETE FROM rostergroups 
     WITH (ROWLOCK)
     WHERE (rostergroups.username = @Username) AND (rostergroups.jid = @JID);
-
   COMMIT
 END
 GO
@@ -627,7 +644,6 @@ BEGIN
     DELETE FROM rostergroups 
     WITH (ROWLOCK)
     WHERE rostergroups.username = @Username;
-
   COMMIT
 END
 GO
@@ -682,7 +698,7 @@ GO
 /** Retrive the user roster                                      **/
 /******************************************************************/
 CREATE PROCEDURE [dbo].[get_roster]
-  @Username varchar(200)
+  @Username varchar(250)
 AS
 DECLARE
   @vRosterusers table( username      varchar(1), 
@@ -855,7 +871,7 @@ GO
 
 /******************************************************************/
 /****** Object:  StoredProcedure [dbo].[list_users]              **/
-/** Retrive a list of all users                                  **/
+/** Retrieve a list of all users                                 **/
 /******************************************************************/
 CREATE PROCEDURE [dbo].[list_users]
 AS
@@ -897,3 +913,76 @@ BEGIN
     END
 END
 GO
+
+/******************************************************************/
+/****** Object:  StoredProcedure [dbo].[set_private_data]        **/
+/** store user private data by namespace                         **/
+/******************************************************************/
+CREATE PROCEDURE [dbo].[set_private_data]
+    @Username  varchar(250),
+    @Namespace varchar(250),
+    @Data varchar(8000)
+AS
+BEGIN
+  IF EXISTS (SELECT username FROM private_storage with (nolock) WHERE private_storage.username = @Username AND private_storage.namespace = @Namespace)
+    BEGIN
+        UPDATE [private_storage]
+        SET [private_storage].username = @Username,
+            [private_storage].namespace = @Namespace,
+            [private_storage].data = @Data
+            WHERE private_storage.username = @Username AND private_storage.namespace = @Namespace;
+    END
+  ELSE
+    BEGIN
+        INSERT INTO [private_storage]
+            ( [private_storage].username,
+              [private_storage].namespace,
+              [private_storage].data
+            )
+        VALUES
+            ( @Username,
+              @Namespace,
+              @Data
+            )
+    END
+END
+GO
+
+ejabberd_odbc:sql_query_t(
+  ["delete from private_storage "
+ "where username='", Username, "' and "
+         "namespace='", LXMLNS, "';"]),
+      ejabberd_odbc:sql_query_t(
+        ["insert into private_storage(username, namespace, data) "
+         "values ('", Username, "', '", LXMLNS, "', "
+         "'", SData, "');"]).
+
+/******************************************************************/
+/****** Object:  StoredProcedure [dbo].[get_private_data]        **/
+/** Retrieve user private data by namespace                      **/
+/******************************************************************/
+CREATE PROCEDURE [dbo].[get_private_data]
+    @Username  varchar(250),
+    @Namespace varchar(250)
+AS
+BEGIN
+  SELECT private_storage.data AS data
+  FROM private_storage WITH (NOLOCK)
+  WHERE username=@Username and namespace=@Namespace;
+END
+GO
+
+/***************************************************************/
+/****** Object:  StoredProcedure [dbo].[del_user_storage] ******/
+/** Delete private storage area for a given user              **/
+/***************************************************************/
+CREATE PROCEDURE [dbo].[del_user_storage]
+  @Username  varchar(250)
+AS
+BEGIN
+  DELETE FROM [private_storage]
+  WITH (ROWLOCK)
+  WHERE [private_storage].username=@Username;
+END
+GO
+
