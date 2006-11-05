@@ -42,7 +42,7 @@ CREATE INDEX pk_rosterg_user_jid ON rostergroups(username(75), jid(75));
 CREATE TABLE spool (
     username varchar(250) NOT NULL,
     xml text,
-    seq INTEGER UNSIGNED NOT NULL AUTO_INCREMENT
+    seq BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
 ) CHARACTER SET utf8;
 
 CREATE INDEX i_despool USING BTREE ON spool(username);
@@ -100,7 +100,7 @@ CREATE TABLE private_storage (
 ) CHARACTER SET utf8;
 
 CREATE INDEX i_private_storage_username USING BTREE ON private_storage(username);
-CREATE UNIQUE INDEX i_private_storage_username_namespace USING BTREE ON private_storage(username, namespace);
+CREATE UNIQUE INDEX i_private_storage_username_namespace USING BTREE ON private_storage(username(75), namespace(75));
 
 --- To update from 1.x:
 -- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;
