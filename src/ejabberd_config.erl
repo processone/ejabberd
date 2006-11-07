@@ -115,6 +115,12 @@ process_term(Term, State) ->
 	    add_option(s2s_certfile, CertFile, State);
 	{domain_certfile, Domain, CertFile} ->
 	    add_option({domain_certfile, Domain}, CertFile, State);
+	{node_type, NodeType} ->
+	    add_option(node_type, NodeType, State);
+	{cluster_nodes, Nodes} ->
+	    add_option(cluster_nodes, Nodes, State);
+	{domain_balancing, Domain, Balancing} ->
+	    add_option({domain_balancing, Domain}, Balancing, State);
 	{Opt, Val} ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
 			State, State#state.hosts)

@@ -13,7 +13,7 @@
 
 %% API
 -export([start/4,
-	 start_link/4,
+	 start_link/5,
 	 %connect/3,
 	 starttls/2,
 	 starttls/3,
@@ -41,9 +41,9 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Module, SockMod, Socket, Opts) ->
+start_link(Module, SockMod, Socket, Opts, Receiver) ->
     gen_server:start_link(?MODULE,
-			  [Module, SockMod, Socket, Opts], []).
+			  [Module, SockMod, Socket, Opts, Receiver], []).
 
 start(Module, SockMod, Socket, Opts) ->
     case Module:socket_type() of
@@ -60,8 +60,8 @@ start(Module, SockMod, Socket, Opts) ->
 		{error, _Reason} ->
 		    SockMod:close(Socket)
 	    end,
-	    gen_server:start(?MODULE,
-			     [Module, SockMod, Socket, Opts, Receiver], []);
+	    supervisor:start_child(ejabberd_frontend_socket_sup,
+				   [Module, SockMod, Socket, Opts, Receiver]);
 	raw ->
 	    %{ok, Pid} = Module:start({SockMod, Socket}, Opts),
 	    %case SockMod:controlling_process(Socket, Pid) of
@@ -129,8 +129,7 @@ peername(FsmRef) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Module, SockMod, Socket, Opts, Receiver]) ->
-    Nodes = mnesia:table_info(schema, disc_copies),
-    Node = lists:nth(erlang:phash(now(), length(Nodes)), Nodes),
+    Node = ejabberd_node_groups:get_closest_node(backend),
     {ok, Pid} =
 	rpc:call(Node, Module, start, [{?MODULE, self()}, Opts]),
     ejabberd_receiver:become_controller(Receiver, Pid),

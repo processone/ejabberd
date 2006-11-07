@@ -220,7 +220,6 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(OrigFrom, OrigTo, OrigPacket) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n",
 	   [OrigFrom, OrigTo, OrigPacket]),
-    LOrigDstDomain = OrigTo#jid.lserver,
     case ejabberd_hooks:run_fold(filter_packet,
 				 {OrigFrom, OrigTo, OrigPacket}, []) of
 	{From, To, Packet} ->
@@ -244,12 +243,25 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 		Rs ->
 		    case [R || R <- Rs, node(R#route.pid) == node()] of
 			[] ->
-			    R = lists:nth(erlang:phash(now(), length(Rs)), Rs),
+			    Value = case ejabberd_config:get_local_option(
+					   {domain_balancing, LDstDomain}) of
+					source -> jlib:jid_tolower(From);
+					destination -> jlib:jid_tolower(To);
+					random -> now();
+					undefined -> now()
+				    end,
+			    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
 			    Pid = R#route.pid,
 			    Pid ! {route, From, To, Packet};
 			LRs ->
-			    LRs,
-			    R = lists:nth(erlang:phash(now(), length(LRs)), LRs),
+			    Value = case ejabberd_config:get_local_option(
+					   {domain_balancing, LDstDomain}) of
+					source -> jlib:jid_tolower(From);
+					destination -> jlib:jid_tolower(To);
+					random -> now();
+					undefined -> now()
+				    end,
+			    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
 			    Pid = R#route.pid,
 			    case R#route.local_hint of
 				{apply, Module, Function} ->

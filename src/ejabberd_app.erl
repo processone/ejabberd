@@ -27,6 +27,8 @@ start(normal, _Args) ->
     ejabberd_ctl:init(),
     gen_mod:start(),
     ejabberd_config:start(),
+    start(),
+    connect_nodes(),
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
     ejabberd_auth:start(),
@@ -35,7 +37,6 @@ start(normal, _Args) ->
     %eprof:start(),
     %eprof:profile([self()]),
     %fprof:trace(start, "/tmp/fprof"),
-    start(),
     load_modules(),
     Sup;
 start(_, _) ->
@@ -102,4 +103,16 @@ load_modules() ->
 			end, Modules)
 	      end
       end, ?MYHOSTS).
+
+connect_nodes() ->
+    case ejabberd_config:get_local_option(cluster_nodes) of
+	undefined ->
+	    ok;
+	Nodes when is_list(Nodes) ->
+	    lists:foreach(fun(Node) ->
+				  net_kernel:connect_node(Node)
+			  end, Nodes)
+    end.
+
+
 
