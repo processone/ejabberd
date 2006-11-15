@@ -648,6 +648,10 @@ handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
 		    false
 	    end,
     {reply, Reply, StateName, StateData};
+handle_sync_event(get_config, _From, StateName, StateData) ->
+    {reply, StateData#state.config, StateName, StateData};
+handle_sync_event(get_state, _From, StateName, StateData) ->
+    {reply, StateData, StateName, StateData};
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
