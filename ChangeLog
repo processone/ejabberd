@@ -1,3 +1,14 @@
+2006-11-20  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejd2odbc.erl: Copy mod_private data from Mnesia to
+	relational database.  
+	* src/odbc/odbc_queries.erl: Refactoring.  
+	* src/odbc/mssql.sql: Likewise.
+
+	* src/odbc/mysql.sql: Started integration of mod_privacy_odbc for
+	MySQL and MSSQL.
+	* src/odbc/mssql.sql: Likewise.
+	
 2006-11-15  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: API improvement: It is now easier to

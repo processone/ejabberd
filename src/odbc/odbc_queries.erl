@@ -32,6 +32,7 @@
 	 roster_subscribe/4,
 	 get_subscription/3,
 	 set_private_data/4,
+	 set_private_data_sql/3,
 	 get_private_data/3,
 	 del_user_private_storage/2,
 	 escape/1]).
@@ -46,6 +47,9 @@
 get_db_type() ->
     generic.
 
+%% F can be either a fun or a list of queries
+%% TODO: We should probably move the list of queries transaction wrapper from the ejabberd_odbc module
+%%       to this one (odbc_queries)
 sql_transaction(LServer, F) ->
     ejabberd_odbc:sql_transaction(LServer, F).
 
@@ -254,14 +258,18 @@ get_subscription(LServer, Username, SJID) ->
        "and jid='", SJID, "'"]).
 
 set_private_data(_LServer, Username, LXMLNS, SData) ->
-    ejabberd_odbc:sql_query_t(
-      ["delete from private_storage "
+    lists:foreach(fun(Query) ->
+            ejabberd_odbc:sql_query_t(Query)
+        end,
+        set_private_data_sql(Username, LXMLNS, SData)).
+       
+set_private_data_sql(Username, LXMLNS, SData) ->
+    [["delete from private_storage "
        "where username='", Username, "' and "
-       "namespace='", LXMLNS, "';"]),
-    ejabberd_odbc:sql_query_t(
+       "namespace='", LXMLNS, "';"],
       ["insert into private_storage(username, namespace, data) "
        "values ('", Username, "', '", LXMLNS, "', "
-       "'", SData, "');"]).
+       "'", SData, "');"]].    
        			       
 get_private_data(LServer, Username, LXMLNS) ->
     ejabberd_odbc:sql_query(
@@ -295,8 +303,19 @@ escape(C)   -> C.
 get_db_type() ->
     mssql.
 
-sql_transaction(_LServer, F) ->
-    {atomic, catch F()}.
+%% Queries can be either a fun or a list of queries
+sql_transaction(_LServer, Queries) when is_list(Queries) ->
+    %% SQL transaction based on a list of queries
+    %% This function automatically 
+    F = fun() ->
+    	lists:foreach(fun(Query) ->
+    			      sql_query(Query)
+    		      end,
+    		      Queries)
+      end,
+    {atomic, catch F()};
+sql_transaction(_LServer, FQueries) ->
+    {atomic, catch FQueries()}.
 
 get_last(LServer, Username) ->
     ejabberd_odbc:sql_query(
@@ -447,11 +466,14 @@ get_subscription(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
       LServer,
       ["EXECUTE dbo.get_subscription '", Username, "' , '", SJID, "'"]).
-      
+
 set_private_data(_LServer, Username, LXMLNS, SData) ->
     ejabberd_odbc:sql_query(
 	    LServer,
-	    ["EXECUTE dbo.set_private_data '", Username, "' , '", LXMLNS, "' , '", SData, "'"]).
+	    set_private_data_sql(Username, LXMLNS, SData)).
+
+set_private_data_sql(Username, LXMLNS, SData) ->
+    ["EXECUTE dbo.set_private_data '", Username, "' , '", LXMLNS, "' , '", SData, "'"].
 	    
 get_private_data(LServer, Username, LXMLNS) ->
     ejabberd_odbc:sql_query(

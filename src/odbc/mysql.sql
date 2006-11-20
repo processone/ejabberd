@@ -93,6 +93,33 @@ CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
 CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
 CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
 
+CREATE TABLE privacy_default_list (
+    username varchar(250) PRIMARY KEY,
+    name varchar(250) NOT NULL
+) CHARACTER SET utf8;
+
+CREATE TABLE privacy_list (
+    username varchar(250) NOT NULL,
+    name varchar(250) NOT NULL,
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+) CHARACTER SET utf8;
+
+CREATE INDEX i_privacy_list_username  USING BTREE ON privacy_list(username);
+CREATE UNIQUE INDEX i_privacy_list_username_name USING BTREE ON privacy_list (username(75), name(75));
+
+CREATE TABLE privacy_list_data (
+    id bigint,
+    t character(1) NOT NULL,
+    value text NOT NULL,
+    action character(1) NOT NULL,
+    ord NUMERIC NOT NULL,
+    match_all boolean NOT NULL,
+    match_iq boolean NOT NULL,
+    match_message boolean NOT NULL,
+    match_presence_in boolean NOT NULL,
+    match_presence_out boolean NOT NULL
+) CHARACTER SET utf8;
+
 CREATE TABLE private_storage (
     username varchar(250) NOT NULL,
     namespace varchar(250) NOT NULL,
