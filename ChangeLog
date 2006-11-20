@@ -4,6 +4,7 @@
 	relational database.  
 	* src/odbc/odbc_queries.erl: Refactoring.  
 	* src/odbc/mssql.sql: Likewise.
+	* doc/guide.tex: Doc updated to mention mod_private_odbc.
 
 	* src/odbc/mysql.sql: Started integration of mod_privacy_odbc for
 	MySQL and MSSQL.
