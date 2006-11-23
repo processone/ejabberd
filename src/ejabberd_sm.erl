@@ -515,7 +515,7 @@ check_max_sessions(LUser, LServer) ->
     SIDs =  mnesia:dirty_select(
              session,
              [{#session{sid = '$1', usr = {LUser, LServer, '_'}, _ = '_'}, [], ['$1']}]),
-    MaxSessions = get_max_user_sessions(LServer),
+    MaxSessions = get_max_user_sessions(LUser, LServer),
     if length(SIDs) =< MaxSessions -> ok;
        true -> {_, Pid} = lists:min(SIDs),
                Pid ! replaced
@@ -526,10 +526,12 @@ check_max_sessions(LUser, LServer) ->
 %% This option defines the max number of time a given users are allowed to
 %% log in
 %% Defaults to infinity
-get_max_user_sessions(Host) ->
-    case ejabberd_config:get_local_option({max_user_sessions, Host}) of 
-	undefined -> ?MAX_USER_SESSIONS;
-	Max -> Max
+get_max_user_sessions(LUser, Host) ->
+    case acl:match_rule(
+	   Host, max_user_sessions, jlib:make_jid(LUser, Host, "")) of
+	Max when is_integer(Max) -> Max;
+	infinity -> infinity;
+	_ -> ?MAX_USER_SESSIONS
     end.
 
 

@@ -713,7 +713,7 @@ recvd_wait_bind_response(Pkt, S) ->
 	    check_id(S#eldap.id, Msg#'LDAPMessage'.messageID),
 	    case Msg#'LDAPMessage'.protocolOp of
 		{bindResponse, Result} ->
-		    case Result#'LDAPResult'.resultCode of
+		    case Result#'BindResponse'.resultCode of
 			success -> bound;
 			Error   -> {fail_bind, Error}
 		    end

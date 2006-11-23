@@ -1,3 +1,11 @@
+2006-11-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/eldap/eldap.erl: Bugfix (thanks to Evgeniy Khramtsov)
+
+	* src/ejabberd_sm.erl: The max_user_sessions option is now
+	configured via access rule
+	* src/ejabberd.cfg.example: Likewise
+
 2006-11-20  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejd2odbc.erl: Copy mod_private data from Mnesia to

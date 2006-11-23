@@ -100,7 +100,7 @@
 {hosts, ["localhost"]}.
 
 %% Define the maximum number of time a single user is allowed to connect:
-{max_user_sessions, 10}.
+{access, max_user_sessions, [{10, all}]}.
 
 %% Anonymous login support:
 %%  auth_method: anonymous
