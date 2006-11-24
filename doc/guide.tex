@@ -753,18 +753,18 @@ declarations of ACLs in the configuration file have the following syntax:
 \titem{\{user\_regexp, <regexp>\}} Matches any local user with a name that
   matches \term{<regexp>} at the first virtual host. Example:
 \begin{verbatim}
-{acl, tests, {user, "^test[0-9]*$"}}.
+{acl, tests, {user_regexp, "^test[0-9]*$"}}.
 \end{verbatim}
 %$
 \titem{\{user\_regexp, <regexp>, <server>\}} Matches any user with a name
   that matches \term{<regexp>} at server \term{<server>}. Example:
 \begin{verbatim}
-{acl, tests, {user, "^test", "example.org"}}.
+{acl, tests, {user_regexp, "^test", "example.org"}}.
 \end{verbatim}
 \titem{\{server\_regexp, <regexp>\}} Matches any JID from the server that
   matches \term{<regexp>}. Example:
 \begin{verbatim}
-{acl, icq, {server, "^icq\\."}}.
+{acl, icq, {server_regexp, "^icq\\."}}.
 \end{verbatim}
 \titem{\{node\_regexp, <user\_regexp>, <server\_regexp>\}} Matches any user
   with a name that matches \term{<user\_regexp>} at any server that matches
