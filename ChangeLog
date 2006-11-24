@@ -2,6 +2,10 @@
 
 	* doc/guide.tex: Fixed regexp ACL configuration examples
 	(Thanks to Massimiliano Mirra).
+	
+	* src/muc/mod_muc_room.erl: API improvement. It is now possible
+	to read and write a room config from a developer module (Thanks
+	to Massimiliano Mirra).
 
 2006-11-23  Alexey Shchepin  <alexey@sevcom.net>
 
