@@ -1337,8 +1337,12 @@ presence_update(From, Packet, StateData) ->
 			ejabberd_hooks:run(user_available_hook,
 					   StateData#state.server,
 					   [StateData#state.jid]),
-			resend_offline_messages(StateData),
-			resend_subscription_requests(StateData),
+			if NewPriority >= 0 ->
+				resend_offline_messages(StateData),
+				resend_subscription_requests(StateData);
+			   true ->
+				ok
+			end,
 			presence_broadcast_first(
 			  From, StateData#state{pres_last = Packet,
 						pres_invis = false

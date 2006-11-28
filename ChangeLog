@@ -1,3 +1,8 @@
+2006-11-28  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_c2s.erl: User login in with negative priority must not
+	receive offline messages (Thanks to Badlop).
+
 2006-11-24  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: Fixed regexp ACL configuration examples
