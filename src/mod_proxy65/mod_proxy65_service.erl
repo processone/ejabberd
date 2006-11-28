@@ -181,10 +181,7 @@ parse_options(ServerHost, Opts) ->
     Name = gen_mod:get_opt(name, Opts, "SOCKS5 Bytestreams"),
     IP = case gen_mod:get_opt(ip, Opts, none) of
 	     none ->
-		 case inet:getaddr(MyHost, inet) of
-		     {ok, Addr} -> Addr;
-		     {error, _} -> {127,0,0,1}
-		 end;
+		 {0,0,0,0};
 	     Addr ->
 		 Addr
 	 end,

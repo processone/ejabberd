@@ -1,5 +1,8 @@
 2006-11-28  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_proxy65/mod_proxy65_services.erl: Now using all interfaces as
+        default value for proxy listen parameter.
+
 	* src/ejabberd_c2s.erl: User login in with negative priority must not
 	receive offline messages (Thanks to Badlop).
 
