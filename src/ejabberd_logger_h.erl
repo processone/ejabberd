@@ -7,9 +7,7 @@
 
 -module(ejabberd_logger_h).
 -author('alexey@sevcom.net').
-
-%%-compile(export_all).
-%%-export([Function/Arity, ...]).
+-svn('$Revision$ ').
 
 -behaviour(gen_event).
 
