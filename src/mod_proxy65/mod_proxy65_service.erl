@@ -197,7 +197,7 @@ get_proxy_or_domainip(ServerHost, MyHost) ->
     case inet:getaddr(MyHost, inet) of
         {ok, Addr} -> Addr;
         {error, _} ->
-            case inet:getaddr(ServerHost) of
+            case inet:getaddr(ServerHost, inet) of
                 {ok, Addr} -> Addr;
                 {error, _} -> {127,0,0,1}
             end
