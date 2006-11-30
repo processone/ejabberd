@@ -1,3 +1,9 @@
+2006-11-30  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_proxy65/mod_proxy65_services.erl: We now try to get the
+	address of the component (if registered in DNS) or otherwise get the
+	IP of the XMPP domain.
+
 2006-11-29  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_logger_h.erl: Removed useless comments.

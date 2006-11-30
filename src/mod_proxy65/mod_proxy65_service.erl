@@ -180,11 +180,9 @@ parse_options(ServerHost, Opts) ->
     ACL = gen_mod:get_opt(access, Opts, all),
     Name = gen_mod:get_opt(name, Opts, "SOCKS5 Bytestreams"),
     IP = case gen_mod:get_opt(ip, Opts, none) of
-	     none ->
-		 {0,0,0,0};
-	     Addr ->
-		 Addr
-	 end,
+	         none -> get_proxy_or_domainip(ServerHost, MyHost);
+	         Addr -> Addr
+	     end,
     [_ | StrIP] = lists:append([[$. | integer_to_list(X)] || X <- inet:ip_to_bytes(IP)]),
     StreamAddr = [{"jid", MyHost}, {"host", StrIP}, {"port", integer_to_list(Port)}],
     {IP, #state{myhost      = MyHost,
@@ -193,3 +191,14 @@ parse_options(ServerHost, Opts) ->
 		port        = Port,
 		stream_addr = StreamAddr, 
 		acl         = ACL}}.
+
+%% Return the IP of the proxy host, or if not found, the ip of the xmpp domain
+get_proxy_or_domainip(ServerHost, MyHost) ->
+    case inet:getaddr(MyHost, inet) of
+        {ok, Addr} -> Addr;
+        {error, _} ->
+            case inet:getaddr(ServerHost) of
+                {ok, Addr} -> Addr;
+                {error, _} -> {127,0,0,1}
+            end
+    end.
