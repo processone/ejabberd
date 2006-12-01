@@ -1,3 +1,7 @@
+2006-12-01  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_receiver.erl: Bugfix
+
 2006-11-30  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_proxy65/mod_proxy65_services.erl: We now try to get the

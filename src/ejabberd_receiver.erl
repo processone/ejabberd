@@ -117,7 +117,12 @@ handle_call({starttls, TLSSocket}, _From,
 	    #state{xml_stream_state = XMLStreamState,
 		   c2s_pid = C2SPid,
 		   max_stanza_size = MaxStanzaSize} = State) ->
-    xml_stream:close(XMLStreamState),
+    if
+	XMLStreamState /= undefined ->
+	    xml_stream:close(XMLStreamState);
+	true ->
+	    ok
+    end,
     NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     NewState = State#state{socket = TLSSocket,
 			   sock_mod = tls,
