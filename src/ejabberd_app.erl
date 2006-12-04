@@ -17,6 +17,7 @@
 -include("ejabberd.hrl").
 
 start(normal, _Args) ->
+    ejabberd_loglevel:set(4),
     application:start(sasl),
     randoms:start(),
     db_init(),
