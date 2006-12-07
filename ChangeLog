@@ -1,3 +1,9 @@
+2006-12-05  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Better error handling
+
+	* src/web/ejabberd_http_poll.erl: Minor fix
+
 2006-12-04  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_loglevel.erl: Preliminary dynamic loglevel support.

@@ -702,11 +702,15 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 		    end,
 		    lists:flatmap(
 		      fun(I) ->
-			      R = raw_to_record(LServer, I),
-			      case R#roster.ask of
-				  in   -> [R];
-				  both -> [R];
-				  _ -> []
+			      case raw_to_record(LServer, I) of
+				  error ->
+				      [];
+				  R ->
+				      case R#roster.ask of
+					  in   -> [R];
+					  both -> [R];
+					  _ -> []
+				      end
 			      end
 		      end,
 		      Items));

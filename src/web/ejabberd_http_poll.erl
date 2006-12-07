@@ -305,7 +305,7 @@ terminate(Reason, StateName, StateData) ->
 	{Receiver, _Tag} ->
 	    Receiver ! {tcp_closed, {http_poll, self()}}
     end,
-    resend_messages(StateData#state.output),
+    catch resend_messages(StateData#state.output),
     ok.
 
 %%%----------------------------------------------------------------------
