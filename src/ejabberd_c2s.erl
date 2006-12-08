@@ -312,6 +312,14 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    {stop, normal, StateData}
     end;
 
+wait_for_stream({xmlstreamelement, _}, StateData) ->
+    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+wait_for_stream({xmlstreamend, _}, StateData) ->
+    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
 wait_for_stream({xmlstreamerror, _}, StateData) ->
     Header = io_lib:format(?STREAM_HEADER,
 			   ["none", ?MYNAME, " version='1.0'", ""]),
