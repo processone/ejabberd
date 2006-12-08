@@ -236,7 +236,12 @@ handle_info(_Info, State) ->
 terminate(_Reason, #state{xml_stream_state = XMLStreamState,
 			  c2s_pid = C2SPid} = State) ->
     xml_stream:close(XMLStreamState),
-    gen_fsm:send_event(C2SPid, closed),
+    if
+	C2SPid /= undefined ->
+	    gen_fsm:send_event(C2SPid, closed);
+	true ->
+	    ok
+    end,
     catch (State#state.sock_mod):close(State#state.socket),
     ok.
 
