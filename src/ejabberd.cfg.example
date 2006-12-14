@@ -1,8 +1,9 @@
 % $Id$
 
+% ejabberd loglevel (0: no log -> 5: debug))
+{loglevel, 4}.
+
 %override_acls.
-
-
 % Users that have admin access.  Add line like one of the following after you
 % will be successfully registered on server to get admin access:
 %{acl, admin, {user, "aleksey"}}.
