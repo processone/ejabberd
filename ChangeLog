@@ -1,5 +1,9 @@
 2006-12-15  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_echo.erl: The mod_echo can now be stopped without errors.
+	This is not a major issue, but can mislead other developers learning
+	from this example and test module (Thanks to Magnus Henoch).
+	
 	* TODO: Removed. The roadmap is managed on:
 	http://support.process-one.net/browse/EJAB
 
