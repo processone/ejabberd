@@ -1,6 +1,6 @@
 % $Id$
 
-% ejabberd loglevel (0: no log -> 5: debug))
+% ejabberd loglevel (0: no log -> 5: debug)
 {loglevel, 4}.
 
 %override_acls.

@@ -185,7 +185,7 @@ process(["delete-old-messages", Days]) ->
 	    {atomic, _} = mod_offline:remove_old_messages(Integer),
 	    io:format("Removed messages older than ~s days~n", [Days]),
 	    ?STATUS_SUCCESS;
-	Integer ->
+	_Integer ->
 	    io:format("Can't delete old messages. Please pass a positive integer as parameter.~n", []),
 	    ?STATUS_ERROR
     end;
@@ -260,7 +260,7 @@ print_usage() ->
 print_vhost_usage(Host) ->
     CmdDescs =
 	ets:select(ejabberd_ctl_host_cmds,
-		   [{{Host, '$1', '$2'}, [], [{{'$1', '$2'}}]}]),
+		   [{{{Host, '$1'}, '$2'}, [], [{{'$1', '$2'}}]}]),
     MaxCmdLen =
 	if
 	    CmdDescs == [] ->
@@ -294,7 +294,7 @@ register_commands(CmdDescs, Module, Function) ->
 
 register_commands(Host, CmdDescs, Module, Function) ->
     ets:insert(ejabberd_ctl_host_cmds,
-	       [{Host, Cmd, Desc} || {Cmd, Desc} <- CmdDescs]),
+	       [{{Host, Cmd}, Desc} || {Cmd, Desc} <- CmdDescs]),
     ejabberd_hooks:add(ejabberd_ctl_process, Host,
 		       Module, Function, 50),
     ok.
@@ -310,7 +310,7 @@ unregister_commands(CmdDescs, Module, Function) ->
 unregister_commands(Host, CmdDescs, Module, Function) ->
     lists:foreach(fun({Cmd, Desc}) ->
 			  ets:delete_object(ejabberd_ctl_host_cmds,
-					    {Host, Cmd, Desc})
+					    {{Host, Cmd}, Desc})
 		  end, CmdDescs),
     ejabberd_hooks:delete(ejabberd_ctl_process,
 			  Module, Function, 50),
