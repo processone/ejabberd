@@ -1,3 +1,7 @@
+2006-12-16  Mickael Remond  <mickael.remond@process-one.net>
+
+	* README: Added this file as a quickstart guide.
+
 2006-12-15  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_echo.erl: The mod_echo can now be stopped without errors.
