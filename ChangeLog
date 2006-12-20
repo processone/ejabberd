@@ -1,3 +1,7 @@
+2006-12-21  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejd2odbc.erl: Bugfix
+
 2006-12-16  Mickael Remond  <mickael.remond@process-one.net>
 
 	* README: Added this file as a quickstart guide.
@@ -67,7 +71,7 @@
 
 	* doc/guide.tex: Fixed regexp ACL configuration examples
 	(Thanks to Massimiliano Mirra).
-	
+
 	* src/muc/mod_muc_room.erl: API improvement. It is now possible
 	to read and write a room config from a developer module (Thanks
 	to Massimiliano Mirra).

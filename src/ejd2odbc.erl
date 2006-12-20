@@ -229,17 +229,18 @@ export_vcard_search(Server, Output) ->
 
 export_private_storage(Server, Output) ->
     export_common(
-        Server, private_storage, Output,
-        fun(Host, #private_storage{usns = {LUser, LServer, XMLNS},
-      			       xml = Data})
-      	  when LServer == Host ->
-      	      Username = ejabberd_odbc:escape(LUser),
+      Server, private_storage, Output,
+      fun(Host, #private_storage{usns = {LUser, LServer, XMLNS},
+				 xml = Data})
+	 when LServer == Host ->
+	      Username = ejabberd_odbc:escape(LUser),
       	      LXMLNS = ejabberd_odbc:escape(XMLNS),
-      	      SData = ejabberd_odbc:escape(Data),
+	      SData = ejabberd_odbc:escape(
+			lists:flatten(xml:element_to_string(Data))),
       	      odbc_queries:set_private_data_sql(Username, LXMLNS, SData);
-      	   (_Host, _R) ->
+	 (_Host, _R) ->
       	      []
-    end).
+      end).
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
