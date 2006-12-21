@@ -103,7 +103,9 @@ get_data(LUser, LServer, [El | Els], Res) ->
 		%% MREMOND: I wonder when the query could return a vcard ?
 		{selected, ["vcard"], []} ->
 		    get_data(LUser, LServer, Els,
-			     [El | Res])
+			     [El | Res]);
+	    _ -> 
+	        get_data(LUser, LServer, Els,[El | Res])
 	    end;
 	_ ->
 	    get_data(LUser, LServer, Els, Res)
