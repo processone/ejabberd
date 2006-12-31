@@ -141,7 +141,11 @@ init([From, Server, Type]) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
-    AddrList = get_addr_port(StateData#state.server),
+    AddrList = case idna:domain_utf8_to_ascii(StateData#state.server) of
+		   false -> [];
+		   ASCIIAddr ->
+		       get_addr_port(ASCIIAddr)
+	       end,
     case lists:foldl(fun({Addr, Port}, Acc) ->
 			case Acc of
 			    {ok, Socket} ->
@@ -174,28 +178,24 @@ open_socket(_, StateData) ->
 
 %%----------------------------------------------------------------------
 open_socket1(Addr, Port) ->
-    Res = case idna:domain_utf8_to_ascii(Addr) of
-	      false -> {error, badarg};
-	      ASCIIAddr ->
-		  ?DEBUG("s2s_out: connecting to ~s:~p~n", [ASCIIAddr, Port]),
-		  case catch ejabberd_socket:connect(
-			       ASCIIAddr, Port,
-			       [binary, {packet, 0},
-				{active, false}]) of
-		      {ok, _Socket} = R -> R;
-		      {error, Reason1} ->
-			  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
-			  catch ejabberd_socket:connect(
-				  Addr, Port,
-				  [binary, {packet, 0},
-				   {active, false}, inet6]);
-		      {'EXIT', Reason1} ->
-			  ?DEBUG("s2s_out: connect crashed ~p~n", [Reason1]),
-			  catch ejabberd_socket:connect(
-				  Addr, Port,
-				  [binary, {packet, 0},
-				   {active, false}, inet6])
-		  end
+    ?DEBUG("s2s_out: connecting to ~s:~p~n", [Addr, Port]),
+    Res = case catch ejabberd_socket:connect(
+		       Addr, Port,
+		       [binary, {packet, 0},
+			{active, false}]) of
+	      {ok, _Socket} = R -> R;
+	      {error, Reason1} ->
+		  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
+		  catch ejabberd_socket:connect(
+			  Addr, Port,
+			  [binary, {packet, 0},
+			   {active, false}, inet6]);
+	      {'EXIT', Reason1} ->
+		  ?DEBUG("s2s_out: connect crashed ~p~n", [Reason1]),
+		  catch ejabberd_socket:connect(
+			  Addr, Port,
+			  [binary, {packet, 0},
+			   {active, false}, inet6])
 	  end,
     case Res of
 	{ok, Socket} ->
