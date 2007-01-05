@@ -658,7 +658,8 @@ htmlize2(S1) ->
     S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
     S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
     S5 = element(2, regexp:gsub(S4, "(http|ftp)://.[^ ]*", "<a href=\"&\">&</a>")),
-    S5.
+    %% Remove 'right-to-left override' unicode character 0x202e
+    element(2, regexp:gsub(S5, [226,128,174], "[RLO]")).
 
 get_room_info(RoomJID, Opts) ->
     Title =
