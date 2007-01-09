@@ -1,7 +1,7 @@
 2007-01-08  Christophe Romain <christophe.romain@process-one.net>
 
-    * src/mod_pubsub/mod_pubsub.erl: add presence_based_delivery cluster
-    support
+	* src/mod_pubsub/mod_pubsub.erl: add presence_based_delivery cluster
+	support
 
 2007-01-05  Alexey Shchepin  <alexey@sevcom.net>
 
