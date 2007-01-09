@@ -40,6 +40,7 @@
 -define(MAX_PAYLOAD_SIZE, 100000).
 
 -record(pubsub_node, {host_node, host_parent, info}).
+-record(pubsub_presence, {key, presence}).
 -record(nodeinfo, {items = [],
 		   options = [],
 		   entities = ?DICT:new()
@@ -118,6 +119,9 @@ init([ServerHost, Opts]) ->
     mnesia:create_table(pubsub_node,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, pubsub_node)}]),
+    mnesia:create_table(pubsub_presence,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, pubsub_presence)}]),
     Host = gen_mod:get_opt(host, Opts, "pubsub." ++ ServerHost),
     update_table(Host),
     mnesia:add_table_index(pubsub_node, host_parent),
@@ -132,8 +136,6 @@ init([ServerHost, Opts]) ->
     lists:foreach(fun(H) ->
 			  create_new_node(Host, ["home", H], ?MYJID)
 		  end, ServedHosts),
-    ets:new(gen_mod:get_module_proc(Host, pubsub_presence),
-	    [set, named_table]),
     {ok, #state{host = Host, server_host = ServerHost, access = Access}}.
 
 %%--------------------------------------------------------------------
@@ -279,13 +281,9 @@ do_route(Host, ServerHost, Access, From, To, Packet) ->
 		    Type = xml:get_attr_s("type", Attrs),
 		    if
 			(Type == "unavailable") or (Type == "error") ->
-			    ets:delete(
-			      gen_mod:get_module_proc(Host, pubsub_presence),
-			      {From#jid.luser, From#jid.lserver});
+                mnesia:dirty_delete(pubsub_presence, {Host, From#jid.luser, From#jid.lserver});
 			true ->
-			    ets:insert(
-			      gen_mod:get_module_proc(Host, pubsub_presence),
-			      {{From#jid.luser, From#jid.lserver}, []})
+                mnesia:dirty_write(#pubsub_presence{key={Host, From#jid.luser, From#jid.lserver}, presence=[]})
 		    end,
 		    ok;
 		_ ->
@@ -1177,17 +1175,12 @@ broadcast_publish_item(Host, Node, ItemID, Payload) ->
 		       Present = case get_node_option(
 					Info, presence_based_delivery) of
 				     true ->
-					 case ets:lookup(
-						gen_mod:get_module_proc(Host, pubsub_presence),
-						{element(1, JID),
-						 element(2, JID)}) of
-					     [_] ->
-						 true;
-					     [] ->
-						 false
-					 end;
+                         case mnesia:dirty_read(pubsub_presence, {Host, element(1, JID), element(2, JID)}) of
+                         [_] -> true;
+                         [] -> false
+                         end;
 				     false ->
-					 true
+                         true
 				 end,
 		       if
 			   (Subscription /= none) and
@@ -1300,17 +1293,12 @@ broadcast_config_notification(Host, Node, Lang) ->
 			       Present = case get_node_option(
 						Info, presence_based_delivery) of
 					     true ->
-						 case ets:lookup(
-							gen_mod:get_module_proc(Host, pubsub_presence),
-							{element(1, JID),
-							 element(2, JID)}) of
-						     [_] ->
-							 true;
-						     [] ->
-							 false
-						 end;
-					     false ->
-						 true
+                             case mnesia:dirty_read(pubsub_presence, {Host, element(1, JID), element(2, JID)}) of
+                             [_] -> true;
+                             [] -> false
+                             end;
+                         false ->
+                             true
 					 end,
 			       if
 				   (Subscription /= none) and
