@@ -5,9 +5,12 @@ all:	release pdf html
 release:
 	@echo "Notes for the releaser:"
 	@echo "* Do not forget to add a link to the release notes in guide.tex"
-	@echo "* Do not forget to change the version number in version.tex"
+	@echo "* Do not forget to update the version number in src/ejabberd.hrl!"
 	@echo "* Do not forget to update the features in introduction.tex (including \new{} and \improved{} tags)."
 	@read -p "press any key to continue"
+	@echo "% ejabberd version (automatically generated)." > version.tex
+	@echo "\newcommand{\version}{"`cat ../src/ejabberd.hrl | grep VERSION |\
+	sed s/-define\(VERSION,\ \"//g | sed s/\"\).//g`"}" >> version.tex
 
 html:	guide.html dev.html features.html
 

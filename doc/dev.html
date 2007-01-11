@@ -6,7 +6,7 @@
 
 <TITLE>Ejabberd 1.1.2 Developers Guide</TITLE>
 
-<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <META name="GENERATOR" content="hevea 1.08">
 <STYLE type="text/css">
 .toc{list-style:none;}
@@ -22,7 +22,7 @@ BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
 </HEAD>
 
 <BODY >
-<!--HEVEA command line is: hevea -fix -noiso -pedantic dev.tex -->
+<!--HEVEA command line is: /usr/bin/hevea -fix -noiso -pedantic dev.tex -->
 <!--HTMLHEAD-->
 <!--ENDHTML-->
 <!--PREFIX <ARG ></ARG>-->
@@ -30,7 +30,7 @@ BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
 
 <BR>
 <BR>
-<A NAME="sec:titlepage"></A>
+<A NAME="titlepage"></A>
 
  <TABLE CLASS="title">
 <TR><TD>
@@ -80,9 +80,9 @@ BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
 
 <!--TOC section Introduction-->
 
-<H2 CLASS="section"><A NAME="htoc1">1</A>&nbsp;&nbsp;<A NAME="intro">Introduction</A></H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc1">1</A>&nbsp;&nbsp;Introduction</H2><!--SEC END -->
 
-<A NAME="sec:intro"></A>
+<A NAME="intro"></A>
  
 <TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang</A>.<BR>
 <BR>
@@ -94,9 +94,9 @@ BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
 <BR>
 <!--TOC subsection Key Features-->
 
-<H3 CLASS="subsection"><A NAME="htoc2">1.1</A>&nbsp;&nbsp;<A NAME="keyfeatures">Key Features</A></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc2">1.1</A>&nbsp;&nbsp;Key Features</H3><!--SEC END -->
 
-<A NAME="sec:keyfeatures"></A>
+<A NAME="keyfeatures"></A>
 
 <TT>ejabberd</TT> is:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -127,13 +127,13 @@ Translated in 12 languages.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Fully XMPP compliant.
 <LI CLASS="li-itemize">XML-based protocol.
-<LI CLASS="li-itemize"><A HREF="http://ejabberd.jabber.ru/protocols">Many JEPs supported</A>.
+<LI CLASS="li-itemize"><A HREF="http://ejabberd.jabber.ru/protocols">Many protocols supported</A>.
 </UL></UL>
 <!--TOC subsection Additional Features-->
 
-<H3 CLASS="subsection"><A NAME="htoc3">1.2</A>&nbsp;&nbsp;<A NAME="addfeatures">Additional Features</A></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc3">1.2</A>&nbsp;&nbsp;Additional Features</H3><!--SEC END -->
 
-<A NAME="sec:addfeatures"></A>
+<A NAME="addfeatures"></A>
 
 Moreover, <TT>ejabberd</TT> comes with a wide range of other state-of-the-art features:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -164,15 +164,15 @@ LDAP and ODBC.
 </UL>
 <LI CLASS="li-itemize">Others
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Compressing XML streams with Stream Compression (<A HREF="http://www.jabber.org/jeps/jep-0138.html">JEP-0138</A>).
+Compressing XML streams with Stream Compression (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>).
 <LI CLASS="li-itemize">Interface with networks such as AIM, ICQ and MSN.
-<LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.jabber.org/jeps/jep-0039.html">JEP-0039</A>).
+<LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
 <LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
-<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0045.html">Multi-User Chat</A> module with logging.
+<LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with logging.
 <LI CLASS="li-itemize">Users Directory based on users vCards.
-<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0060.html">Publish-Subscribe</A> component.
+<LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component.
 <LI CLASS="li-itemize">Support for virtual hosting.
-<LI CLASS="li-itemize"><A HREF="http://www.jabber.org/jeps/jep-0025.html">HTTP Polling</A> service.
+<LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> service.
 <LI CLASS="li-itemize">IRC transport.
 </UL>
 </UL>
@@ -180,7 +180,7 @@ Compressing XML streams with Stream Compression (<A HREF="http://www.jabber.org/
 
 <H2 CLASS="section"><A NAME="htoc4">2</A>&nbsp;&nbsp;How it Works</H2><!--SEC END -->
 
-<A NAME="sec:howitworks"></A>
+<A NAME="howitworks"></A>
 A Jabber domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
 be run on different machines that are connected via a network. They all must
 have the ability to connect to port 4369 of all another nodes, and must have
@@ -240,7 +240,7 @@ does not exist, then it is opened and registered.<BR>
 
 <H2 CLASS="section"><A NAME="htoc9">3</A>&nbsp;&nbsp;XML Representation</H2><!--SEC END -->
 
-<A NAME="sec:xmlrepr"></A>
+<A NAME="xmlrepr"></A>
 Each XML stanza is represented as the following tuple:
 <PRE CLASS="verbatim">
 XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
@@ -269,7 +269,7 @@ XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
 
 <H2 CLASS="section"><A NAME="htoc10">4</A>&nbsp;&nbsp;Module <TT>xml</TT></H2><!--SEC END -->
 
-<A NAME="sec:xmlmod"></A>
+<A NAME="xmlmod"></A>
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>element_to_string(El) -&gt; string()</CODE>
 <PRE CLASS="verbatim">
 El = XMLElement
@@ -318,7 +318,7 @@ Res = string() | XMLElement
 
 <H2 CLASS="section"><A NAME="htoc11">5</A>&nbsp;&nbsp;Module <TT>xml_stream</TT></H2><!--SEC END -->
 
-<A NAME="sec:xmlstreammod"></A>
+<A NAME="xmlstreammod"></A>
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description"><DD CLASS="dd-description"><CODE>parse_element(Str) -&gt; XMLElement | {error, Err}</CODE>
 <PRE CLASS="verbatim">
 Str = string()
@@ -330,12 +330,12 @@ Err = term()
 
 <H2 CLASS="section"><A NAME="htoc12">6</A>&nbsp;&nbsp;Modules</H2><!--SEC END -->
 
-<A NAME="sec:emods"></A>
+<A NAME="emods"></A>
 <!--TOC subsection Module gen_iq_handler-->
 
 <H3 CLASS="subsection"><A NAME="htoc13">6.1</A>&nbsp;&nbsp;Module gen_iq_handler</H3><!--SEC END -->
 
-<A NAME="sec:geniqhandl"></A>
+<A NAME="geniqhandl"></A>
 The module <CODE>gen_iq_handler</CODE> allows to easily write handlers for IQ packets
 of particular XML namespaces that addressed to server or to users bare JIDs.<BR>
 <BR>
@@ -404,7 +404,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) -&gt;
 
 <H3 CLASS="subsection"><A NAME="htoc14">6.2</A>&nbsp;&nbsp;Services</H3><!--SEC END -->
 
-<A NAME="sec:services"></A>
+<A NAME="services"></A>
 <PRE CLASS="verbatim">
 -module(mod_echo).
 

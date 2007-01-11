@@ -71,12 +71,12 @@
 \newcommand{\moreinfo}[1]{} % Hide details
 
 %% Footnotes
-\newcommand{\tjepref}[2]{\footahref{http://www.jabber.org/jeps/jep-#1.html}{#2}}
-\newcommand{\jepref}[1]{\tjepref{#1}{JEP-#1}}
+\newcommand{\txepref}[2]{\footahref{http://www.xmpp.org/extensions/xep-#1.html}{#2}}
+\newcommand{\xepref}[1]{\txepref{#1}{XEP-#1}}
 
 \begin{document}
 
-\label{sec:titlepage}
+\label{titlepage}
 \begin{titlepage}
   \maketitle{}
 
@@ -97,7 +97,7 @@
 \input{introduction}
 
 \section{How it Works}
-\label{sec:howitworks}
+\label{howitworks}
 
 
 A \Jabber{} domain is served by one or more \ejabberd{} nodes.  These nodes can
@@ -158,7 +158,7 @@ does not exist, then it is opened and registered.
 
 
 \section{XML Representation}
-\label{sec:xmlrepr}
+\label{xmlrepr}
 
 Each XML stanza is represented as the following tuple:
 \begin{verbatim}
@@ -190,7 +190,7 @@ is represented as the following structure:
 
 
 \section{Module \texttt{xml}}
-\label{sec:xmlmod}
+\label{xmlmod}
 
 \begin{description}
 \item{\verb|element_to_string(El) -> string()|}
@@ -248,7 +248,7 @@ Res = string() | XMLElement
 
 
 \section{Module \texttt{xml\_stream}}
-\label{sec:xmlstreammod}
+\label{xmlstreammod}
 
 \begin{description}
 \item{\verb!parse_element(Str) -> XMLElement | {error, Err}!}
@@ -262,16 +262,16 @@ Err = term()
 
 
 \section{Modules}
-\label{sec:emods}
+\label{emods}
 
 
 %\subsection{gen\_mod behaviour}
-%\label{sec:genmod}
+%\label{genmod}
 
 %TBD
 
 \subsection{Module gen\_iq\_handler}
-\label{sec:geniqhandl}
+\label{geniqhandl}
 
 The module \verb|gen_iq_handler| allows to easily write handlers for IQ packets
 of particular XML namespaces that addressed to server or to users bare JIDs.
@@ -350,7 +350,7 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) ->
 
 
 \subsection{Services}
-\label{sec:services}
+\label{services}
 
 %TBD
 

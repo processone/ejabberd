@@ -1,3 +1,11 @@
+2007-01-11  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Latex / Hevea related improvements for documentation
+	generation (thanks to Sander Devrieze). 
+	* doc/introduction.tex: Likewise.
+	* doc/dev.tex: Likewise.
+	* doc/features.tex: Likewise.
+
 2007-01-08  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: add presence_based_delivery cluster
