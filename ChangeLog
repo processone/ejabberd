@@ -1,3 +1,15 @@
+2007-01-19  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_muc/mod_muc.erl: Now mod_muc can be distributed on
+	several nodes
+	* src/mod_muc/mod_muc_room.erl: Likewise
+
+	* src/ejabberd_router.erl: Added bare_source and bare_destination
+	service balancing options and domain_balancing_component_number
+	option for specifying the number of connected components for the
+	domain
+	* src/ejabberd_config.erl: Likewise
+
 2007-01-11  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: Latex / Hevea related improvements for documentation

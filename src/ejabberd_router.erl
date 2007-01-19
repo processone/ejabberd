@@ -56,30 +56,54 @@ route(From, To, Packet) ->
     end.
 
 register_route(Domain) ->
-    case jlib:nameprep(Domain) of
-	error ->
-	    [] = {invalid_domain, Domain};
-	LDomain ->
-	    Pid = self(),
-	    F = fun() ->
-			mnesia:write(#route{domain = LDomain,
-					    pid = Pid})
-		end,
-	    mnesia:transaction(F)
-    end.
+    register_route(Domain, undefined).
 
 register_route(Domain, LocalHint) ->
     case jlib:nameprep(Domain) of
 	error ->
-	    [] = {invalid_domain, Domain};
+	    erlang:error({invalid_domain, Domain});
 	LDomain ->
 	    Pid = self(),
-	    F = fun() ->
-			mnesia:write(#route{domain = LDomain,
-					    pid = Pid,
-					    local_hint = LocalHint})
-		end,
-	    mnesia:transaction(F)
+	    case get_component_number(LDomain) of
+		undefined ->
+		    F = fun() ->
+				mnesia:write(#route{domain = LDomain,
+						    pid = Pid,
+						    local_hint = LocalHint})
+			end,
+		    mnesia:transaction(F);
+		N ->
+		    F = fun() ->
+				case mnesia:read({route, LDomain}) of
+				    [] ->
+					mnesia:write(
+					  #route{domain = LDomain,
+						 pid = Pid,
+						 local_hint = 1}),
+					lists:foreach(
+					  fun(I) ->
+						  mnesia:write(
+						    #route{domain = LDomain,
+							   pid = undefined,
+							   local_hint = I})
+					  end, lists:seq(2, N));
+				    Rs ->
+					lists:any(
+					  fun(#route{pid = undefined,
+						     local_hint = I} = R) ->
+						  mnesia:write(
+						    #route{domain = LDomain,
+							   pid = Pid,
+							   local_hint = I}),
+						  mnesia:delete_object(R),
+						  true;
+					     (_) ->
+						  false
+					  end, Rs)
+				end
+			end,
+		    mnesia:transaction(F)
+	    end
     end.
 
 register_routes(Domains) ->
@@ -90,14 +114,40 @@ register_routes(Domains) ->
 unregister_route(Domain) ->
     case jlib:nameprep(Domain) of
 	error ->
-	    [] = {invalid_domain, Domain};
+	    erlang:error({invalid_domain, Domain});
 	LDomain ->
 	    Pid = self(),
-	    F = fun() ->
-			mnesia:delete_object(#route{domain = LDomain,
-						    pid = Pid})
-		end,
-	    mnesia:transaction(F)
+	    case get_component_number(LDomain) of
+		undefined ->
+		    F = fun() ->
+				case mnesia:match(#route{domain = LDomain,
+							 pid = Pid,
+							 _ = '_'}) of
+				    [R] ->
+					mnesia:delete_object(R);
+				    _ ->
+					ok
+				end
+			end,
+		    mnesia:transaction(F);
+		_ ->
+		    F = fun() ->
+				case mnesia:match(#route{domain = LDomain,
+							 pid = Pid,
+							 _ = '_'}) of
+				    [R] ->
+					I = R#route.local_hint,
+					mnesia:write(
+					  #route{domain = LDomain,
+						 pid = undefined,
+						 local_hint = I}),
+					mnesia:delete_object(R);
+				    _ ->
+					ok
+				end
+			end,
+		    mnesia:transaction(F)
+	    end
     end.
 
 unregister_routes(Domains) ->
@@ -188,9 +238,21 @@ handle_info({'DOWN', _Ref, _Type, Pid, _Info}, State) ->
 		       [{#route{pid = Pid, _ = '_'},
 			 [],
 			 ['$_']}]),
-		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E)
-			      end, Es)
+		lists:foreach(
+		  fun(E) ->
+			  if
+			      is_integer(E#route.local_hint) ->
+				  LDomain = E#route.domain,
+				  I = E#route.local_hint,
+				  mnesia:write(
+				    #route{domain = LDomain,
+					   pid = undefined,
+					   local_hint = I}),
+				  mnesia:delete_object(E);
+			      true ->
+				  mnesia:delete_object(E)
+			  end
+		  end, Es)
 	end,
     mnesia:transaction(F),
     {noreply, State};
@@ -237,37 +299,56 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 				_ ->
 				    Pid ! {route, From, To, Packet}
 			    end;
+			is_pid(Pid) ->
+			    Pid ! {route, From, To, Packet};
 			true ->
-			    Pid ! {route, From, To, Packet}
+			    drop
 		    end;
 		Rs ->
-		    case [R || R <- Rs, node(R#route.pid) == node()] of
-			[] ->
-			    Value = case ejabberd_config:get_local_option(
-					   {domain_balancing, LDstDomain}) of
-					source -> jlib:jid_tolower(From);
-					destination -> jlib:jid_tolower(To);
-					random -> now();
-					undefined -> now()
-				    end,
-			    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
+		    Value = case ejabberd_config:get_local_option(
+				   {domain_balancing, LDstDomain}) of
+				undefined -> now();
+				random -> now();
+				source -> jlib:jid_tolower(From);
+				destination -> jlib:jid_tolower(To);
+				bare_source ->
+				    jlib:jid_remove_resource(
+				      jlib:jid_tolower(From));
+				bare_destination ->
+				    jlib:jid_remove_resource(
+				      jlib:jid_tolower(To))
+			    end,
+		    case get_component_number(LDstDomain) of
+			undefined ->
+			    case [R || R <- Rs, node(R#route.pid) == node()] of
+				[] ->
+				    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
+				    Pid = R#route.pid,
+				    if
+					is_pid(Pid) ->
+					    Pid ! {route, From, To, Packet};
+					true ->
+					    drop
+				    end;
+				LRs ->
+				    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
+				    Pid = R#route.pid,
+				    case R#route.local_hint of
+					{apply, Module, Function} ->
+					    Module:Function(From, To, Packet);
+					_ ->
+					    Pid ! {route, From, To, Packet}
+				    end
+			    end;
+			_ ->
+			    SRs = lists:ukeysort(#route.local_hint, Rs),
+			    R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
 			    Pid = R#route.pid,
-			    Pid ! {route, From, To, Packet};
-			LRs ->
-			    Value = case ejabberd_config:get_local_option(
-					   {domain_balancing, LDstDomain}) of
-					source -> jlib:jid_tolower(From);
-					destination -> jlib:jid_tolower(To);
-					random -> now();
-					undefined -> now()
-				    end,
-			    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
-			    Pid = R#route.pid,
-			    case R#route.local_hint of
-				{apply, Module, Function} ->
-				    Module:Function(From, To, Packet);
-				_ ->
-				    Pid ! {route, From, To, Packet}
+			    if
+				is_pid(Pid) ->
+				    Pid ! {route, From, To, Packet};
+				true ->
+				    drop
 			    end
 		    end
 	    end;
@@ -275,7 +356,15 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 	    ok
     end.
 
-
+get_component_number(LDomain) ->
+    case ejabberd_config:get_local_option(
+	   {domain_balancing_component_number, LDomain}) of
+	N when is_integer(N),
+	       N > 1 ->
+	    N;
+	_ ->
+	    undefined
+    end.
 
 update_tables() ->
     case catch mnesia:table_info(route, attributes) of

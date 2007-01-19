@@ -121,9 +121,11 @@ process_term(Term, State) ->
 	    add_option(cluster_nodes, Nodes, State);
 	{domain_balancing, Domain, Balancing} ->
 	    add_option({domain_balancing, Domain}, Balancing, State);
-    {loglevel, Loglevel} ->
-    	ejabberd_loglevel:set(Loglevel),
-    	State;
+	{domain_balancing_component_number, Domain, N} ->
+	    add_option({domain_balancing_component_number, Domain}, N, State);
+	{loglevel, Loglevel} ->
+	    ejabberd_loglevel:set(Loglevel),
+	    State;
 	{Opt, Val} ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
 			State, State#state.hosts)

@@ -17,7 +17,7 @@
 -export([start_link/2,
 	 start/2,
 	 stop/1,
-	 room_destroyed/3,
+	 room_destroyed/4,
 	 store_room/3,
 	 restore_room/2,
 	 forget_room/2,
@@ -69,9 +69,9 @@ stop(Host) ->
     gen_server:call(Proc, stop),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-room_destroyed(Host, Room, ServerHost) ->
+room_destroyed(Host, Room, Pid, ServerHost) ->
     gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
-	{room_destroyed, {Room, Host}},
+	{room_destroyed, {Room, Host}, Pid},
     ok.
 
 store_room(Host, Name, Opts) ->
@@ -142,6 +142,10 @@ init([Host, Opts]) ->
     mnesia:create_table(muc_registered,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, muc_registered)}]),
+    mnesia:create_table(muc_online_room,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, muc_online_room)}]),
+    mnesia:add_table_copy(muc_online_room, node(), ram_copies),
     MyHost = gen_mod:get_opt(host, Opts, "conference." ++ Host),
     update_tables(MyHost),
     mnesia:add_table_index(muc_registered, nick),
@@ -149,9 +153,6 @@ init([Host, Opts]) ->
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
-    catch ets:new(muc_online_room, [named_table,
-				    public,
-				    {keypos, #muc_online_room.name_host}]),
     ejabberd_router:register_route(MyHost),
     load_permanent_rooms(MyHost, Host, {Access, AccessCreate, AccessAdmin},
 			 HistorySize),
@@ -199,8 +200,12 @@ handle_info({route, From, To, Packet},
 	    ok
     end,
     {noreply, State};
-handle_info({room_destroyed, RoomHost}, State) ->
-    ets:delete(muc_online_room, RoomHost),
+handle_info({room_destroyed, RoomHost, Pid}, State) ->
+    F = fun() ->
+		mnesia:delete_object(#muc_online_room{name_host = RoomHost,
+						      pid = Pid})
+	end,
+    mnesia:transaction(F),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -373,7 +378,7 @@ do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
 		    end
 	    end;
 	_ ->
-	    case ets:lookup(muc_online_room, {Room, Host}) of
+	    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 		[] ->
 		    Type = xml:get_attr_s("type", Attrs),
 		    case {Name, Type} of
@@ -385,10 +390,7 @@ do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
 						  Host, ServerHost, Access,
 						  Room, HistorySize, From,
 						  Nick),
-				    ets:insert(
-				      muc_online_room,
-				      #muc_online_room{name_host = {Room, Host},
-						       pid = Pid}),
+				    register_room(Host, Room, Pid),
 				    mod_muc_room:route(Pid, From, Nick, Packet),
 				    ok;
 				_ ->
@@ -425,21 +427,31 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize) ->
 	    ?ERROR_MSG("~p", [Reason]),
 	    ok;
 	Rs ->
-	    lists:foreach(fun(R) ->
-				  {Room, Host} = R#muc_room.name_host,
-				  {ok, Pid} = mod_muc_room:start(
-						Host,
-						ServerHost,
-						Access,
-						Room,
-						HistorySize,
-						R#muc_room.opts),
-				  ets:insert(
-				    muc_online_room,
-				    #muc_online_room{name_host = {Room, Host},
-						     pid = Pid})
-			  end, Rs)
+	    lists:foreach(
+	      fun(R) ->
+		      {Room, Host} = R#muc_room.name_host,
+		      case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+			  [] ->
+			      {ok, Pid} = mod_muc_room:start(
+					    Host,
+					    ServerHost,
+					    Access,
+					    Room,
+					    HistorySize,
+					    R#muc_room.opts),
+			      register_room(Host, Room, Pid);
+			  _ ->
+			      ok
+		      end
+	      end, Rs)
     end.
+
+register_room(Host, Room, Pid) ->
+    F = fun() ->
+		mnesia:write(#muc_online_room{name_host = {Room, Host},
+					      pid = Pid})
+	end,
+    mnesia:transaction(F).
 
 
 iq_disco_info() ->
@@ -598,10 +610,10 @@ broadcast_service_message(Host, Msg) ->
       end, get_vh_rooms(Host)).
 
 get_vh_rooms(Host) ->
-    ets:select(muc_online_room,
-	       [{#muc_online_room{name_host = '$1', _ = '_'},
-		 [{'==', {element, 2, '$1'}, Host}],
-		 ['$_']}]).
+    mnesia:dirty_select(muc_online_room,
+			[{#muc_online_room{name_host = '$1', _ = '_'},
+			  [{'==', {element, 2, '$1'}, Host}],
+			  ['$_']}]).
 
 
 
