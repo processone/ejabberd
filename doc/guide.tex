@@ -906,8 +906,13 @@ Examples:
 \end{itemize}
 
 \section{Advanced configuration}
-
 \subsection{Components Load-Balancing}
+\label{componentlb}
+\ind{component load-balancing}
+
+\subsection{Domain Load-Balancing Algorithm}
+\label{domainlb}
+\ind{options!domain\_balancing}
 
 \ejabberd{} includes an algorithm to load balance the components that are plugged on an ejabberd cluster. It means that you can plug one or several instances of the same component on each ejabberd cluster and that the traffic will be automatically distributed.
 
@@ -928,6 +933,19 @@ Several balancing criterium are available:
 \end{itemize}
 
 If the value corresponding to the criterium is the same, the same component instance in the cluster will be used.
+
+\subsection{Load-Balancing Buckets}
+\label{lbbuckets}
+\ind{options!domain_balancing_component_number}
+
+When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failling the service will not work correctly unless the sessions are rebalanced.
+
+In this case, it is best to limit the problem to the sessions handled by the failling component. This is what the \term{domain_balancing_component_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
+
+The syntax is the following:
+\begin{verbatim}
+    {domain_balancing_component_number, "component.example.com", N}
+\end{verbatim}
 
 \section{Database and LDAP Configuration}
 \label{database}

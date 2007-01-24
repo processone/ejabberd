@@ -1,5 +1,8 @@
 2007-01-24  Mickael Remond  <mickael.remond@process-one.net>
 
+	* doc/guide.tex: Documentation for the
+	domain_balancing_component_number option.
+
 	* doc/guide.tex: Documentation for domain balancing.
 
 	* doc/guide.tex: mod_muc now supports cluster.
