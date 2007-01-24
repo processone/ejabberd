@@ -6,7 +6,7 @@
 
 <TITLE>Ejabberd 1.1.2 Installation and Operation Guide</TITLE>
 
-<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <META name="GENERATOR" content="hevea 1.08">
 <STYLE type="text/css">
 .toc{list-style:none;}
@@ -23,7 +23,7 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 </HEAD>
 
 <BODY >
-<!--HEVEA command line is: /usr/bin/hevea -fix -noiso -pedantic guide.tex -->
+<!--HEVEA command line is: hevea -fix -noiso -pedantic guide.tex -->
 <!--HTMLHEAD-->
 <!--ENDHTML-->
 <!--PREFIX <ARG ></ARG>-->
@@ -36,9 +36,7 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
  <TABLE CLASS="title">
 <TR><TD>
 <H1 CLASS="titlemain">Ejabberd 1.1.2 Installation and Operation Guide</H1>
-<H3 CLASS="titlerest">Alexey Shchepin<BR>
-<A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
-<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3></TD>
+<H3 CLASS="titlerest">ejabberd development Team</H3></TD>
 </TR></TABLE><BR>
 <BR>
 <DIV CLASS="center">
@@ -88,105 +86,110 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 <LI CLASS="li-toc"><A HREF="#htoc19">3.4.2&nbsp;&nbsp;SASL Anonymous and Anonymous Login</A>
 </UL>
 <LI CLASS="li-toc"><A HREF="#htoc20">3.5&nbsp;&nbsp;Access Rules</A>
-<LI CLASS="li-toc"><A HREF="#htoc21">3.6&nbsp;&nbsp;Shapers</A>
-<LI CLASS="li-toc"><A HREF="#htoc22">3.7&nbsp;&nbsp;Limiting Opened Sessions</A>
-<LI CLASS="li-toc"><A HREF="#htoc23">3.8&nbsp;&nbsp;Default Language</A>
-</UL>
-<LI CLASS="li-toc"><A HREF="#htoc24">4&nbsp;&nbsp;Database Configuration</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc25">4.1&nbsp;&nbsp;MySQL</A>
+<A HREF="#htoc21">3.5.1&nbsp;&nbsp;ACL Definition</A>
+<LI CLASS="li-toc"><A HREF="#htoc22">3.5.2&nbsp;&nbsp;Access Rights</A>
+<LI CLASS="li-toc"><A HREF="#htoc23">3.5.3&nbsp;&nbsp;Limiting Opened Sessions with ACL</A>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc24">3.6&nbsp;&nbsp;Shapers</A>
+<LI CLASS="li-toc"><A HREF="#htoc25">3.7&nbsp;&nbsp;Default Language</A>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc26">4&nbsp;&nbsp;Advanced configuration</A>
+<LI CLASS="li-toc"><A HREF="#htoc27">5&nbsp;&nbsp;Database and LDAP Configuration</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc26">4.1.1&nbsp;&nbsp;Driver Compilation</A>
-<LI CLASS="li-toc"><A HREF="#htoc27">4.1.2&nbsp;&nbsp;Authentication</A>
-<LI CLASS="li-toc"><A HREF="#htoc28">4.1.3&nbsp;&nbsp;Storage</A>
-</UL>
-<LI CLASS="li-toc"><A HREF="#htoc29">4.2&nbsp;&nbsp;Microsoft SQL Server</A>
+<A HREF="#htoc28">5.1&nbsp;&nbsp;MySQL</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc30">4.2.1&nbsp;&nbsp;Driver Compilation</A>
-<LI CLASS="li-toc"><A HREF="#htoc31">4.2.2&nbsp;&nbsp;Authentication</A>
-<LI CLASS="li-toc"><A HREF="#htoc32">4.2.3&nbsp;&nbsp;Storage</A>
+<A HREF="#htoc29">5.1.1&nbsp;&nbsp;Driver Compilation</A>
+<LI CLASS="li-toc"><A HREF="#htoc30">5.1.2&nbsp;&nbsp;Authentication</A>
+<LI CLASS="li-toc"><A HREF="#htoc31">5.1.3&nbsp;&nbsp;Storage</A>
 </UL>
-<LI CLASS="li-toc"><A HREF="#htoc33">4.3&nbsp;&nbsp;PostgreSQL</A>
+<LI CLASS="li-toc"><A HREF="#htoc32">5.2&nbsp;&nbsp;Microsoft SQL Server</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc34">4.3.1&nbsp;&nbsp;Driver Compilation</A>
-<LI CLASS="li-toc"><A HREF="#htoc35">4.3.2&nbsp;&nbsp;Authentication</A>
-<LI CLASS="li-toc"><A HREF="#htoc36">4.3.3&nbsp;&nbsp;Storage</A>
+<A HREF="#htoc33">5.2.1&nbsp;&nbsp;Driver Compilation</A>
+<LI CLASS="li-toc"><A HREF="#htoc34">5.2.2&nbsp;&nbsp;Authentication</A>
+<LI CLASS="li-toc"><A HREF="#htoc35">5.2.3&nbsp;&nbsp;Storage</A>
 </UL>
-<LI CLASS="li-toc"><A HREF="#htoc37">4.4&nbsp;&nbsp;ODBC Compatible</A>
+<LI CLASS="li-toc"><A HREF="#htoc36">5.3&nbsp;&nbsp;PostgreSQL</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc38">4.4.1&nbsp;&nbsp;Compilation</A>
-<LI CLASS="li-toc"><A HREF="#htoc39">4.4.2&nbsp;&nbsp;Authentication</A>
-<LI CLASS="li-toc"><A HREF="#htoc40">4.4.3&nbsp;&nbsp;Storage</A>
+<A HREF="#htoc37">5.3.1&nbsp;&nbsp;Driver Compilation</A>
+<LI CLASS="li-toc"><A HREF="#htoc38">5.3.2&nbsp;&nbsp;Authentication</A>
+<LI CLASS="li-toc"><A HREF="#htoc39">5.3.3&nbsp;&nbsp;Storage</A>
 </UL>
-<LI CLASS="li-toc"><A HREF="#htoc41">4.5&nbsp;&nbsp;LDAP</A>
+<LI CLASS="li-toc"><A HREF="#htoc40">5.4&nbsp;&nbsp;ODBC Compatible</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc42">4.5.1&nbsp;&nbsp;Connection</A>
-<LI CLASS="li-toc"><A HREF="#htoc43">4.5.2&nbsp;&nbsp;Authentication</A>
-<LI CLASS="li-toc"><A HREF="#htoc44">4.5.3&nbsp;&nbsp;Examples</A>
+<A HREF="#htoc41">5.4.1&nbsp;&nbsp;Compilation</A>
+<LI CLASS="li-toc"><A HREF="#htoc42">5.4.2&nbsp;&nbsp;Authentication</A>
+<LI CLASS="li-toc"><A HREF="#htoc43">5.4.3&nbsp;&nbsp;Storage</A>
 </UL>
-</UL>
-<LI CLASS="li-toc"><A HREF="#htoc45">5&nbsp;&nbsp;Modules Configuration</A>
+<LI CLASS="li-toc"><A HREF="#htoc44">5.5&nbsp;&nbsp;LDAP</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc46">5.1&nbsp;&nbsp;Overview</A>
-<LI CLASS="li-toc"><A HREF="#htoc47">5.2&nbsp;&nbsp;Common Options</A>
+<A HREF="#htoc45">5.5.1&nbsp;&nbsp;Connection</A>
+<LI CLASS="li-toc"><A HREF="#htoc46">5.5.2&nbsp;&nbsp;Authentication</A>
+<LI CLASS="li-toc"><A HREF="#htoc47">5.5.3&nbsp;&nbsp;Examples</A>
+</UL>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc48">6&nbsp;&nbsp;Modules Configuration</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc48">5.2.1&nbsp;&nbsp;<TT>iqdisc</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc49">5.2.2&nbsp;&nbsp;<TT>hosts</TT></A>
-</UL>
-<LI CLASS="li-toc"><A HREF="#htoc50">5.3&nbsp;&nbsp;<TT>mod_announce</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc51">5.4&nbsp;&nbsp;<TT>mod_disco</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc52">5.5&nbsp;&nbsp;<TT>mod_echo</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc53">5.6&nbsp;&nbsp;<TT>mod_irc</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc54">5.7&nbsp;&nbsp;<TT>mod_last</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc55">5.8&nbsp;&nbsp;<TT>mod_muc</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc56">5.9&nbsp;&nbsp;<TT>mod_muc_log</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc57">5.10&nbsp;&nbsp;<TT>mod_offline</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc58">5.11&nbsp;&nbsp;<TT>mod_privacy</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc59">5.12&nbsp;&nbsp;<TT>mod_private</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc60">5.13&nbsp;&nbsp;<TT>mod_proxy65</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc61">5.14&nbsp;&nbsp;<TT>mod_pubsub</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc62">5.15&nbsp;&nbsp;<TT>mod_register</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc63">5.16&nbsp;&nbsp;<TT>mod_roster</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc64">5.17&nbsp;&nbsp;<TT>mod_service_log</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc65">5.18&nbsp;&nbsp;<TT>mod_shared_roster</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc66">5.19&nbsp;&nbsp;<TT>mod_stats</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc67">5.20&nbsp;&nbsp;<TT>mod_time</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc68">5.21&nbsp;&nbsp;<TT>mod_vcard</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc69">5.22&nbsp;&nbsp;<TT>mod_vcard_ldap</TT></A>
-<LI CLASS="li-toc"><A HREF="#htoc70">5.23&nbsp;&nbsp;<TT>mod_version</TT></A>
-</UL>
-<LI CLASS="li-toc"><A HREF="#htoc71">6&nbsp;&nbsp;Creating an Initial Administrator</A>
-<LI CLASS="li-toc"><A HREF="#htoc72">7&nbsp;&nbsp;Online Configuration and Monitoring</A>
+<A HREF="#htoc49">6.1&nbsp;&nbsp;Overview</A>
+<LI CLASS="li-toc"><A HREF="#htoc50">6.2&nbsp;&nbsp;Common Options</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc73">7.1&nbsp;&nbsp;Web Interface</A>
-<LI CLASS="li-toc"><A HREF="#htoc74">7.2&nbsp;&nbsp;<TT>ejabberdctl</TT></A>
+<A HREF="#htoc51">6.2.1&nbsp;&nbsp;<TT>iqdisc</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc52">6.2.2&nbsp;&nbsp;<TT>hosts</TT></A>
 </UL>
-<LI CLASS="li-toc"><A HREF="#htoc75">8&nbsp;&nbsp;Firewall Settings</A>
-<LI CLASS="li-toc"><A HREF="#htoc76">9&nbsp;&nbsp;SRV Records</A>
-<LI CLASS="li-toc"><A HREF="#htoc77">10&nbsp;&nbsp;Clustering</A>
+<LI CLASS="li-toc"><A HREF="#htoc53">6.3&nbsp;&nbsp;<TT>mod_announce</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc54">6.4&nbsp;&nbsp;<TT>mod_disco</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc55">6.5&nbsp;&nbsp;<TT>mod_echo</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc56">6.6&nbsp;&nbsp;<TT>mod_irc</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc57">6.7&nbsp;&nbsp;<TT>mod_last</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc58">6.8&nbsp;&nbsp;<TT>mod_muc</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc59">6.9&nbsp;&nbsp;<TT>mod_muc_log</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc60">6.10&nbsp;&nbsp;<TT>mod_offline</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc61">6.11&nbsp;&nbsp;<TT>mod_privacy</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc62">6.12&nbsp;&nbsp;<TT>mod_private</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc63">6.13&nbsp;&nbsp;<TT>mod_proxy65</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc64">6.14&nbsp;&nbsp;<TT>mod_pubsub</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc65">6.15&nbsp;&nbsp;<TT>mod_register</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc66">6.16&nbsp;&nbsp;<TT>mod_roster</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc67">6.17&nbsp;&nbsp;<TT>mod_service_log</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc68">6.18&nbsp;&nbsp;<TT>mod_shared_roster</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc69">6.19&nbsp;&nbsp;<TT>mod_stats</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc70">6.20&nbsp;&nbsp;<TT>mod_time</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc71">6.21&nbsp;&nbsp;<TT>mod_vcard</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc72">6.22&nbsp;&nbsp;<TT>mod_vcard_ldap</TT></A>
+<LI CLASS="li-toc"><A HREF="#htoc73">6.23&nbsp;&nbsp;<TT>mod_version</TT></A>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc74">7&nbsp;&nbsp;Creating an Initial Administrator</A>
+<LI CLASS="li-toc"><A HREF="#htoc75">8&nbsp;&nbsp;Online Configuration and Monitoring</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc78">10.1&nbsp;&nbsp;How it Works</A>
+<A HREF="#htoc76">8.1&nbsp;&nbsp;Web Interface</A>
+<LI CLASS="li-toc"><A HREF="#htoc77">8.2&nbsp;&nbsp;<TT>ejabberdctl</TT></A>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc78">9&nbsp;&nbsp;Firewall Settings</A>
+<LI CLASS="li-toc"><A HREF="#htoc79">10&nbsp;&nbsp;SRV Records</A>
+<LI CLASS="li-toc"><A HREF="#htoc80">11&nbsp;&nbsp;Clustering</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc79">10.1.1&nbsp;&nbsp;Router</A>
-<LI CLASS="li-toc"><A HREF="#htoc80">10.1.2&nbsp;&nbsp;Local Router</A>
-<LI CLASS="li-toc"><A HREF="#htoc81">10.1.3&nbsp;&nbsp;Session Manager</A>
-<LI CLASS="li-toc"><A HREF="#htoc82">10.1.4&nbsp;&nbsp;s2s Manager</A>
-</UL>
-<LI CLASS="li-toc"><A HREF="#htoc83">10.2&nbsp;&nbsp;Clustering Setup</A>
-</UL>
-<LI CLASS="li-toc"><A HREF="#htoc84">A&nbsp;&nbsp;Internationalization and Localization</A>
-<LI CLASS="li-toc"><A HREF="#htoc85">B&nbsp;&nbsp;Release Notes</A>
+<A HREF="#htoc81">11.1&nbsp;&nbsp;How it Works</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc86">B.1&nbsp;&nbsp;ejabberd 0.9</A>
-<LI CLASS="li-toc"><A HREF="#htoc87">B.2&nbsp;&nbsp;ejabberd 0.9.1</A>
-<LI CLASS="li-toc"><A HREF="#htoc88">B.3&nbsp;&nbsp;ejabberd 0.9.8</A>
-<LI CLASS="li-toc"><A HREF="#htoc89">B.4&nbsp;&nbsp;ejabberd 1.0.0</A>
-<LI CLASS="li-toc"><A HREF="#htoc90">B.5&nbsp;&nbsp;ejabberd 1.1.0</A>
-<LI CLASS="li-toc"><A HREF="#htoc91">B.6&nbsp;&nbsp;ejabberd 1.1.1</A>
-<LI CLASS="li-toc"><A HREF="#htoc92">B.7&nbsp;&nbsp;ejabberd 1.1.2</A>
+<A HREF="#htoc82">11.1.1&nbsp;&nbsp;Router</A>
+<LI CLASS="li-toc"><A HREF="#htoc83">11.1.2&nbsp;&nbsp;Local Router</A>
+<LI CLASS="li-toc"><A HREF="#htoc84">11.1.3&nbsp;&nbsp;Session Manager</A>
+<LI CLASS="li-toc"><A HREF="#htoc85">11.1.4&nbsp;&nbsp;s2s Manager</A>
 </UL>
-<LI CLASS="li-toc"><A HREF="#htoc93">C&nbsp;&nbsp;Acknowledgements</A>
-<LI CLASS="li-toc"><A HREF="#htoc94">D&nbsp;&nbsp;Copyright Information</A>
+<LI CLASS="li-toc"><A HREF="#htoc86">11.2&nbsp;&nbsp;Clustering Setup</A>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc87">A&nbsp;&nbsp;Internationalization and Localization</A>
+<LI CLASS="li-toc"><A HREF="#htoc88">B&nbsp;&nbsp;Release Notes</A>
+<UL CLASS="toc"><LI CLASS="li-toc">
+<A HREF="#htoc89">B.1&nbsp;&nbsp;ejabberd 0.9</A>
+<LI CLASS="li-toc"><A HREF="#htoc90">B.2&nbsp;&nbsp;ejabberd 0.9.1</A>
+<LI CLASS="li-toc"><A HREF="#htoc91">B.3&nbsp;&nbsp;ejabberd 0.9.8</A>
+<LI CLASS="li-toc"><A HREF="#htoc92">B.4&nbsp;&nbsp;ejabberd 1.0.0</A>
+<LI CLASS="li-toc"><A HREF="#htoc93">B.5&nbsp;&nbsp;ejabberd 1.1.0</A>
+<LI CLASS="li-toc"><A HREF="#htoc94">B.6&nbsp;&nbsp;ejabberd 1.1.1</A>
+<LI CLASS="li-toc"><A HREF="#htoc95">B.7&nbsp;&nbsp;ejabberd 1.1.2</A>
+</UL>
+<LI CLASS="li-toc"><A HREF="#htoc96">C&nbsp;&nbsp;Acknowledgements</A>
+<LI CLASS="li-toc"><A HREF="#htoc97">D&nbsp;&nbsp;Copyright Information</A>
 </UL>
 
 <!--TOC section Introduction-->
@@ -370,7 +373,7 @@ install <TT>ejabberd</TT> into the directory <CODE>/var/lib/ejabberd</CODE>,
 </UL>
 Note: if you want to use an external database, you need to execute the configure
 script with the option(s) <TT>&ndash;enable-odbc</TT> or <TT>&ndash;enable-odbc
-&ndash;enable-mssql</TT>. See section&nbsp;<A HREF="#database">4</A> for more information.<BR>
+&ndash;enable-mssql</TT>. See section&nbsp;<A HREF="#database">5</A> for more information.<BR>
 <BR>
 <!--TOC subsubsection Windows-->
 
@@ -678,7 +681,7 @@ c2s connections are listened for on port 5222 and 5223 (SSL) and denied
  traffic enabled.
 <LI CLASS="li-itemize">Port 5280 is serving the web interface and the HTTP Polling service. Note
  that it is also possible to serve them on different ports. The second
- example in section&nbsp;<A HREF="#webinterface">7.1</A> shows how exactly this can be done.
+ example in section&nbsp;<A HREF="#webinterface">8.1</A> shows how exactly this can be done.
 <LI CLASS="li-itemize">All users except for the administrators have a traffic of limit 
  1,000&nbsp;Bytes/second
 <LI CLASS="li-itemize">The
@@ -780,9 +783,9 @@ The following authentication methods are supported by <TT>ejabberd</TT>:
 internal (default) &mdash; See section&nbsp;<A HREF="#internalauth">3.4.1</A>.
 <LI CLASS="li-itemize">external &mdash; There are <A HREF="http://ejabberd.jabber.ru/extauth">some
  example authentication scripts</A>.
-<LI CLASS="li-itemize">ldap &mdash; See section&nbsp;<A HREF="#ldap">4.5</A>.
-<LI CLASS="li-itemize">odbc &mdash; See section&nbsp;<A HREF="#mysql">4.1</A>, <A HREF="#pgsql">4.3</A>,
- <A HREF="#mssql">4.2</A> and <A HREF="#odbc">4.4</A>.
+<LI CLASS="li-itemize">ldap &mdash; See section&nbsp;<A HREF="#ldap">5.5</A>.
+<LI CLASS="li-itemize">odbc &mdash; See section&nbsp;<A HREF="#mysql">5.1</A>, <A HREF="#pgsql">5.3</A>,
+ <A HREF="#mssql">5.2</A> and <A HREF="#odbc">5.4</A>.
 <LI CLASS="li-itemize">anonymous &mdash; See section&nbsp;<A HREF="#saslanonymous">3.4.2</A>.
 </UL>
 <!--TOC subsubsection Internal-->
@@ -870,6 +873,12 @@ a virtual host:
 
 <A NAME="accessrules"></A>
 
+<!--TOC subsubsection ACL Definition-->
+
+<H4 CLASS="subsubsection"><A NAME="htoc21">3.5.1</A>&nbsp;&nbsp;ACL Definition</H4><!--SEC END -->
+
+<A NAME="ACL Definition"></A>
+
 Access control in <TT>ejabberd</TT> is performed via Access Control Lists (ACLs). The
 declarations of ACLs in the configuration file have the following syntax:
 <PRE CLASS="verbatim">
@@ -928,6 +937,12 @@ The following ACLs are pre-defined:
 <B><TT>all</TT></B><DD CLASS="dd-description"> Matches any JID.
 <DT CLASS="dt-description"><B><TT>none</TT></B><DD CLASS="dd-description"> Matches no JID.
 </DL>
+<!--TOC subsubsection Access Rights-->
+
+<H4 CLASS="subsubsection"><A NAME="htoc22">3.5.2</A>&nbsp;&nbsp;Access Rights</H4><!--SEC END -->
+
+<A NAME="ACL Definition"></A>
+
 An entry allowing or denying access to different services looks similar to
 this:
 <PRE CLASS="verbatim">
@@ -952,9 +967,34 @@ The following access rules are pre-defined:
 <B><TT>all</TT></B><DD CLASS="dd-description"> Always returns the value `<TT>allow</TT>'.
 <DT CLASS="dt-description"><B><TT>none</TT></B><DD CLASS="dd-description"> Always returns the value `<TT>deny</TT>'.
 </DL>
+<!--TOC subsubsection Limiting Opened Sessions with ACL-->
+
+<H4 CLASS="subsubsection"><A NAME="htoc23">3.5.3</A>&nbsp;&nbsp;Limiting Opened Sessions with ACL</H4><!--SEC END -->
+
+<A NAME="configmaxsessions"></A>
+
+The special access <TT>max_user_sessions</TT> specifies the maximum number of sessions (authenticated
+connections) per user. If a user tries to open more sessions by using different
+resources, the first opened session will be disconnected. The error
+<TT>session replaced</TT> will be sent to the disconnected session. The value
+for this option can be either a number, or <TT>infinity</TT>. The default
+value is <TT>infinity</TT>.<BR>
+<BR>
+The syntax is:
+<PRE CLASS="verbatim">
+  {access, max_user_sessions, [{&lt;maxnumber&gt;, &lt;aclname&gt;},
+                               ...
+                              ]}.
+</PRE>
+Examples:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+To limit the number of sessions per user to 10 for all users:
+<PRE CLASS="verbatim">
+  {access, max_user_sessions, [{10, all}]}.
+</PRE></UL>
 <!--TOC subsection Shapers-->
 
-<H3 CLASS="subsection"><A NAME="htoc21">3.6</A>&nbsp;&nbsp;Shapers</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc24">3.6</A>&nbsp;&nbsp;Shapers</H3><!--SEC END -->
 
 <A NAME="shapers"></A>
 
@@ -980,36 +1020,9 @@ To define a shaper named `<TT>normal</TT>' with traffic speed limited to
 <PRE CLASS="verbatim">
   {shaper, fast, {maxrate, 50000}}.
 </PRE></UL>
-<!--TOC subsection Limiting Opened Sessions-->
-
-<H3 CLASS="subsection"><A NAME="htoc22">3.7</A>&nbsp;&nbsp;Limiting Opened Sessions</H3><!--SEC END -->
-
-<A NAME="configmaxsessions"></A>
-
-This option specifies the maximum number of sessions (authenticated
-connections) per user. If a user tries to open more sessions by using different
-resources, the first opened session will be disconnected. The error
-<TT>session replaced</TT> will be sent to the disconnected session. The value
-for this option can be either a number, or <TT>infinity</TT>. The default
-value is <TT>10</TT>.<BR>
-<BR>
-Examples:
-<UL CLASS="itemize"><LI CLASS="li-itemize">
-To limit the number of sessions per user to 10 on all virtual
-hosts:
-<PRE CLASS="verbatim">
-  {max_user_sessions, 10}.
-</PRE><LI CLASS="li-itemize">This option can be defined per virtual host (see
-section&nbsp;<A HREF="#virtualhost">3.2</A>). In next example the number of
-sessions per user on the first host is six, while there is no limit on the
-second host:
-<PRE CLASS="verbatim">
-  {host_config, "example.net", [{max_user_sessions, 6}]}.
-  {host_config, "example.com", [{max_user_sessions, infinity}]}.
-</PRE></UL>
 <!--TOC subsection Default Language-->
 
-<H3 CLASS="subsection"><A NAME="htoc23">3.8</A>&nbsp;&nbsp;Default Language</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc25">3.7</A>&nbsp;&nbsp;Default Language</H3><!--SEC END -->
 
 <A NAME="language"></A>
 
@@ -1028,9 +1041,13 @@ To set Russian as default language:
 <PRE CLASS="verbatim">
   {language, "es"}.
 </PRE></UL>
-<!--TOC section Database Configuration-->
+<!--TOC section Advanced configuration-->
 
-<H2 CLASS="section"><A NAME="htoc24">4</A>&nbsp;&nbsp;Database Configuration</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc26">4</A>&nbsp;&nbsp;Advanced configuration</H2><!--SEC END -->
+
+<!--TOC section Database and LDAP Configuration-->
+
+<H2 CLASS="section"><A NAME="htoc27">5</A>&nbsp;&nbsp;Database and LDAP Configuration</H2><!--SEC END -->
 
 <A NAME="database"></A>
 
@@ -1053,14 +1070,14 @@ The following databases are supported by <TT>ejabberd</TT>:
 The following LDAP servers are tested with <TT>ejabberd</TT>:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 <A HREF="http://www.microsoft.com/activedirectory/">Active Directory</A>
- (see section&nbsp;<A HREF="#ad">4.5.3</A>)
+ (see section&nbsp;<A HREF="#ad">5.5.3</A>)
 <LI CLASS="li-itemize"><A HREF="http://www.openldap.org/">OpenLDAP</A>
 <LI CLASS="li-itemize">Normally any LDAP compatible server should work; inform us about your
  success with a not-listed server so that we can list it here.
 </UL>
 <!--TOC subsection MySQL-->
 
-<H3 CLASS="subsection"><A NAME="htoc25">4.1</A>&nbsp;&nbsp;MySQL</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc28">5.1</A>&nbsp;&nbsp;MySQL</H3><!--SEC END -->
 
 <A NAME="mysql"></A>
 
@@ -1076,7 +1093,7 @@ you can find information to update your database schema.<BR>
 <BR>
 <!--TOC subsubsection Driver Compilation-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc26">4.1.1</A>&nbsp;&nbsp;Driver Compilation</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc29">5.1.1</A>&nbsp;&nbsp;Driver Compilation</H4><!--SEC END -->
 
 <A NAME="compilemysql"></A>
 
@@ -1094,7 +1111,7 @@ First, install the <A HREF="http://support.process-one.net/doc/display/CONTRIBS/
 </PRE></OL>
 <!--TOC subsubsection Authentication-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc27">4.1.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc30">5.1.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
 
 <A NAME="mysqlauth"></A>
 
@@ -1120,12 +1137,12 @@ parameter:
 </PRE>
 <!--TOC subsubsection Storage-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc28">4.1.3</A>&nbsp;&nbsp;Storage</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc31">5.1.3</A>&nbsp;&nbsp;Storage</H4><!--SEC END -->
 
 <A NAME="mysqlstorage"></A>
 
 MySQL also can be used to store information into from several <TT>ejabberd</TT>
-modules. See section&nbsp;<A HREF="#modoverview">5.1</A> to see which modules have a version
+modules. See section&nbsp;<A HREF="#modoverview">6.1</A> to see which modules have a version
 with the `_odbc'. This suffix indicates that the module can be used with
 relational databases like MySQL. To enable storage to your database, just make
 sure that your database is running well (see previous sections), and replace the
@@ -1134,7 +1151,7 @@ that you cannot have several variants of the same module loaded!<BR>
 <BR>
 <!--TOC subsection Microsoft SQL Server-->
 
-<H3 CLASS="subsection"><A NAME="htoc29">4.2</A>&nbsp;&nbsp;Microsoft SQL Server</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc32">5.2</A>&nbsp;&nbsp;Microsoft SQL Server</H3><!--SEC END -->
 
 <A NAME="mssql"></A>
 
@@ -1151,7 +1168,7 @@ of the file you can find information to update your database schema.<BR>
 <BR>
 <!--TOC subsubsection Driver Compilation-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc30">4.2.1</A>&nbsp;&nbsp;Driver Compilation</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc33">5.2.1</A>&nbsp;&nbsp;Driver Compilation</H4><!--SEC END -->
 
 <A NAME="compilemssql"></A>
 
@@ -1166,21 +1183,21 @@ enabled. This can be done, by using next commands:
 </PRE>
 <!--TOC subsubsection Authentication-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc31">4.2.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc34">5.2.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
 
 <A NAME="mssqlauth"></A>
 
 The configuration of Microsoft SQL Server is the same as the configuration of
-ODBC compatible serers (see section&nbsp;<A HREF="#odbcauth">4.4.2</A>).<BR>
+ODBC compatible serers (see section&nbsp;<A HREF="#odbcauth">5.4.2</A>).<BR>
 <BR>
 <!--TOC subsubsection Storage-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc32">4.2.3</A>&nbsp;&nbsp;Storage</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc35">5.2.3</A>&nbsp;&nbsp;Storage</H4><!--SEC END -->
 
 <A NAME="mssqlstorage"></A>
 
 Microsoft SQL Server also can be used to store information into from several
-<TT>ejabberd</TT> modules. See section&nbsp;<A HREF="#modoverview">5.1</A> to see which modules have
+<TT>ejabberd</TT> modules. See section&nbsp;<A HREF="#modoverview">6.1</A> to see which modules have
 a version with the `_odbc'. This suffix indicates that the module can be used
 with relational databases like Microsoft SQL Server. To enable storage to your
 database, just make sure that your database is running well (see previous
@@ -1190,7 +1207,7 @@ module loaded!<BR>
 <BR>
 <!--TOC subsection PostgreSQL-->
 
-<H3 CLASS="subsection"><A NAME="htoc33">4.3</A>&nbsp;&nbsp;PostgreSQL</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc36">5.3</A>&nbsp;&nbsp;PostgreSQL</H3><!--SEC END -->
 
 <A NAME="pgsql"></A>
 
@@ -1206,7 +1223,7 @@ you can find information to update your database schema.<BR>
 <BR>
 <!--TOC subsubsection Driver Compilation-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc34">4.3.1</A>&nbsp;&nbsp;Driver Compilation</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc37">5.3.1</A>&nbsp;&nbsp;Driver Compilation</H4><!--SEC END -->
 
 <A NAME="compilepgsql"></A>
 
@@ -1226,7 +1243,7 @@ First, install the Erlang PgSQL library from
 </PRE></OL>
 <!--TOC subsubsection Authentication-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc35">4.3.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc38">5.3.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
 
 <A NAME="pgsqlauth"></A>
 
@@ -1252,12 +1269,12 @@ form as parameter:
 </PRE>
 <!--TOC subsubsection Storage-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc36">4.3.3</A>&nbsp;&nbsp;Storage</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc39">5.3.3</A>&nbsp;&nbsp;Storage</H4><!--SEC END -->
 
 <A NAME="pgsqlstorage"></A>
 
 PostgreSQL also can be used to store information into from several <TT>ejabberd</TT>
-modules. See section&nbsp;<A HREF="#modoverview">5.1</A> to see which modules have a version
+modules. See section&nbsp;<A HREF="#modoverview">6.1</A> to see which modules have a version
 with the `_odbc'. This suffix indicates that the module can be used with
 relational databases like PostgreSQL. To enable storage to your database, just
 make sure that your database is running well (see previous sections), and
@@ -1266,7 +1283,7 @@ Keep in mind that you cannot have several variants of the same module loaded!<BR
 <BR>
 <!--TOC subsection ODBC Compatible-->
 
-<H3 CLASS="subsection"><A NAME="htoc37">4.4</A>&nbsp;&nbsp;ODBC Compatible</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc40">5.4</A>&nbsp;&nbsp;ODBC Compatible</H3><!--SEC END -->
 
 <A NAME="odbc"></A>
 
@@ -1278,7 +1295,7 @@ this section.<BR>
 <BR>
 <!--TOC subsubsection Compilation-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc38">4.4.1</A>&nbsp;&nbsp;Compilation</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc41">5.4.1</A>&nbsp;&nbsp;Compilation</H4><!--SEC END -->
 
 <A NAME="compileodbc"></A>
 You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
@@ -1295,7 +1312,7 @@ First, install the <A HREF="http://support.process-one.net/doc/display/CONTRIBS/
 </PRE></OL>
 <!--TOC subsubsection Authentication-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc39">4.4.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc42">5.4.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
 
 <A NAME="odbcauth"></A>
 
@@ -1315,12 +1332,12 @@ string as <TT>odbc_server</TT> parameter. For example:
 </PRE>
 <!--TOC subsubsection Storage-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc40">4.4.3</A>&nbsp;&nbsp;Storage</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc43">5.4.3</A>&nbsp;&nbsp;Storage</H4><!--SEC END -->
 
 <A NAME="odbcstorage"></A>
 
 An ODBC compatible database also can be used to store information into from
-several <TT>ejabberd</TT> modules. See section&nbsp;<A HREF="#modoverview">5.1</A> to see which
+several <TT>ejabberd</TT> modules. See section&nbsp;<A HREF="#modoverview">6.1</A> to see which
 modules have a version with the `_odbc'. This suffix indicates that the module
 can be used with ODBC compatible relational databases. To enable storage to your
 database, just make sure that your database is running well (see previous
@@ -1330,7 +1347,7 @@ module loaded!<BR>
 <BR>
 <!--TOC subsection LDAP-->
 
-<H3 CLASS="subsection"><A NAME="htoc41">4.5</A>&nbsp;&nbsp;LDAP</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc44">5.5</A>&nbsp;&nbsp;LDAP</H3><!--SEC END -->
 
 <A NAME="ldap"></A>
 
@@ -1340,7 +1357,7 @@ yet.<BR>
 <BR>
 <!--TOC subsubsection Connection-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc42">4.5.1</A>&nbsp;&nbsp;Connection</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc45">5.5.1</A>&nbsp;&nbsp;Connection</H4><!--SEC END -->
 
 <A NAME="ldapconnection"></A>
 Parameters:
@@ -1367,7 +1384,7 @@ and SASL authentication.<BR>
 <BR>
 <!--TOC subsubsection Authentication-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc43">4.5.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc46">5.5.2</A>&nbsp;&nbsp;Authentication</H4><!--SEC END -->
 
 <A NAME="ldapauth"></A>
 You can authenticate users against an LDAP directory. Available options are:
@@ -1401,7 +1418,7 @@ You can authenticate users against an LDAP directory. Available options are:
 </DL>
 <!--TOC subsubsection Examples-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc44">4.5.3</A>&nbsp;&nbsp;Examples</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc47">5.5.3</A>&nbsp;&nbsp;Examples</H4><!--SEC END -->
 
 <A NAME="ldapexamples"></A>
 <!--TOC paragraph Common example-->
@@ -1531,7 +1548,7 @@ configuration is showed below:
 </PRE>
 <!--TOC section Modules Configuration-->
 
-<H2 CLASS="section"><A NAME="htoc45">5</A>&nbsp;&nbsp;Modules Configuration</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc48">6</A>&nbsp;&nbsp;Modules Configuration</H2><!--SEC END -->
 
 <A NAME="modules"></A>
 
@@ -1560,7 +1577,7 @@ In this example only the module <TT>mod_echo</TT> is loaded and no module
 </PRE></UL>
 <!--TOC subsection Overview-->
 
-<H3 CLASS="subsection"><A NAME="htoc46">5.1</A>&nbsp;&nbsp;Overview</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc49">6.1</A>&nbsp;&nbsp;Overview</H3><!--SEC END -->
 
 <A NAME="modoverview"></A>
 
@@ -1575,7 +1592,7 @@ You can see which database backend each module needs by looking at the suffix:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 `_ldap', this means that the module needs an LDAP server as backend.
 <LI CLASS="li-itemize">`_odbc', this means that the module needs a supported database
- (see&nbsp;<A HREF="#database">4</A>) as backend.
+ (see&nbsp;<A HREF="#database">5</A>) as backend.
 <LI CLASS="li-itemize">No suffix, this means that the modules uses Erlang's built-in database
  Mnesia as backend.
 </UL>
@@ -1751,13 +1768,13 @@ Last connection date and time: Use <TT>mod_last_odbc</TT> instead of
 </TR></TABLE>
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-(*) For a list of supported databases, see section&nbsp;<A HREF="#database">4</A>.
+(*) For a list of supported databases, see section&nbsp;<A HREF="#database">5</A>.
 <LI CLASS="li-itemize">(**) This module or a similar one with another database backend is needed for
 XMPP compliancy.
 </UL>
 <!--TOC subsection Common Options-->
 
-<H3 CLASS="subsection"><A NAME="htoc47">5.2</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc50">6.2</A>&nbsp;&nbsp;Common Options</H3><!--SEC END -->
 
 <A NAME="modcommonoptions"></A>
 The following options are used by many modules. Therefore, they are described in
@@ -1765,7 +1782,7 @@ this separate section.<BR>
 <BR>
 <!--TOC subsubsection <TT>iqdisc</TT>-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc48">5.2.1</A>&nbsp;&nbsp;<TT>iqdisc</TT></H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc51">6.2.1</A>&nbsp;&nbsp;<TT>iqdisc</TT></H4><!--SEC END -->
 
 <A NAME="modiqdiscoption"></A>
 
@@ -1799,7 +1816,7 @@ Example:
 </PRE>
 <!--TOC subsubsection <TT>hosts</TT>-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc49">5.2.2</A>&nbsp;&nbsp;<TT>hosts</TT></H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc52">6.2.2</A>&nbsp;&nbsp;<TT>hosts</TT></H4><!--SEC END -->
 
 <A NAME="modhostsoption"></A>
 
@@ -1838,7 +1855,7 @@ Serving the echo module on one domain:
 </PRE></UL>
 <!--TOC subsection <TT>mod_announce</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc50">5.3</A>&nbsp;&nbsp;<TT>mod_announce</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc53">6.3</A>&nbsp;&nbsp;<TT>mod_announce</TT></H3><!--SEC END -->
 
 <A NAME="modannounce"></A>
 
@@ -1854,7 +1871,7 @@ hosts:
  to several resources, only the resource with the highest priority will receive
  the message. If the registered user is not connected, the message will be
  stored offline in assumption that offline storage
- (see section&nbsp;<A HREF="#modoffline">5.10</A>) is enabled.
+ (see section&nbsp;<A HREF="#modoffline">6.10</A>) is enabled.
 <DT CLASS="dt-description"><B><TT>example.org/announce/online (example.org/announce/all-hosts/online)</TT></B><DD CLASS="dd-description">The
  message is sent to all connected users. If the user is online and connected
  to several resources, all resources will receive the message.
@@ -1904,7 +1921,7 @@ Only administrators can send announcements:
 </PRE></UL>
 <!--TOC subsection <TT>mod_disco</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc51">5.4</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc54">6.4</A>&nbsp;&nbsp;<TT>mod_disco</TT></H3><!--SEC END -->
 
 <A NAME="moddisco"></A>
 
@@ -1921,7 +1938,7 @@ Options:
 <B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for Service Discovery (<TT>http://jabber.org/protocol/disco#items</TT> and
  <TT>http://jabber.org/protocol/disco#info</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 <DT CLASS="dt-description"><B><TT>extra_domains</TT></B><DD CLASS="dd-description"> With this option,
  extra domains can be added to the Service Discovery item list.
 </DL>
@@ -1956,7 +1973,7 @@ To serve a link to the Jabber User Directory on <TT>jabber.org</TT>:
 </PRE></UL>
 <!--TOC subsection <TT>mod_echo</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc52">5.5</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc55">6.5</A>&nbsp;&nbsp;<TT>mod_echo</TT></H3><!--SEC END -->
 
 <A NAME="modecho"></A>
 
@@ -1968,7 +1985,7 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 
  <B><TT>hosts</TT></B><DD CLASS="dd-description">  This option defines the hostnames of the
- service (see section&nbsp;<A HREF="#modhostsoption">5.2.2</A>). If neither <TT>hosts</TT> nor
+ service (see section&nbsp;<A HREF="#modhostsoption">6.2.2</A>). If neither <TT>hosts</TT> nor
  the old <TT>host</TT> is present, the prefix `<TT>echo.</TT>' is added to all
  <TT>ejabberd</TT> hostnames.
 
@@ -1985,11 +2002,11 @@ Mirror, mirror, on the wall, who is the most beautiful
     ...
    ]}.
 </PRE><LI CLASS="li-itemize">If you still do not understand the inner workings of <TT>mod_echo</TT>,
- you can find a few more examples in section&nbsp;<A HREF="#modhostsoption">5.2.2</A>.
+ you can find a few more examples in section&nbsp;<A HREF="#modhostsoption">6.2.2</A>.
 </UL>
 <!--TOC subsection <TT>mod_irc</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc53">5.6</A>&nbsp;&nbsp;<TT>mod_irc</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc56">6.6</A>&nbsp;&nbsp;<TT>mod_irc</TT></H3><!--SEC END -->
 
 <A NAME="modirc"></A>
 
@@ -2018,7 +2035,7 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 
  <B><TT>hosts</TT></B><DD CLASS="dd-description">  This option defines the hostnames of the
- service (see section&nbsp;<A HREF="#modhostsoption">5.2.2</A>). If neither <TT>hosts</TT> nor
+ service (see section&nbsp;<A HREF="#modhostsoption">6.2.2</A>). If neither <TT>hosts</TT> nor
  the old <TT>host</TT> is present, the prefix `<TT>irc.</TT>' is added to all
  <TT>ejabberd</TT> hostnames.
 
@@ -2059,7 +2076,7 @@ In the first example, the IRC transport is available on (all) your
 </PRE></UL>
 <!--TOC subsection <TT>mod_last</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc54">5.7</A>&nbsp;&nbsp;<TT>mod_last</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc57">6.7</A>&nbsp;&nbsp;<TT>mod_last</TT></H3><!--SEC END -->
 
 <A NAME="modlast"></A>
 
@@ -2072,11 +2089,11 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for Last activity (<TT>jabber:iq:last</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_muc</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc55">5.8</A>&nbsp;&nbsp;<TT>mod_muc</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc58">6.8</A>&nbsp;&nbsp;<TT>mod_muc</TT></H3><!--SEC END -->
 
 <A NAME="modmuc"></A>
 
@@ -2096,7 +2113,7 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 
  <B><TT>hosts</TT></B><DD CLASS="dd-description">  This option defines the hostnames of the
- service (see section&nbsp;<A HREF="#modhostsoption">5.2.2</A>). If neither <TT>hosts</TT> nor
+ service (see section&nbsp;<A HREF="#modhostsoption">6.2.2</A>). If neither <TT>hosts</TT> nor
  the old <TT>host</TT> is present, the prefix `<TT>conference.</TT>' is added to all
  <TT>ejabberd</TT> hostnames.
 
@@ -2177,7 +2194,7 @@ In the first example everyone is allowed to use the Multi-User Chat
 </PRE></UL>
 <!--TOC subsection <TT>mod_muc_log</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc56">5.9</A>&nbsp;&nbsp;<TT>mod_muc_log</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc59">6.9</A>&nbsp;&nbsp;<TT>mod_muc_log</TT></H3><!--SEC END -->
 
 <A NAME="modmuclog"></A>
 
@@ -2289,7 +2306,7 @@ In the first example any chatroom owner can enable logging, and a
 </PRE></UL>
 <!--TOC subsection <TT>mod_offline</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc57">5.10</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc60">6.10</A>&nbsp;&nbsp;<TT>mod_offline</TT></H3><!--SEC END -->
 
 <A NAME="modoffline"></A>
 
@@ -2297,11 +2314,11 @@ This module implements offline message storage. This means that all messages
 sent to an offline user will be stored on the server until that user comes
 online again. Thus it is very similar to how email works. Note that
 <TT>ejabberdctl</TT> has a command to delete expired messages
-(see section&nbsp;<A HREF="#ejabberdctl">7.2</A>).<BR>
+(see section&nbsp;<A HREF="#ejabberdctl">8.2</A>).<BR>
 <BR>
 <!--TOC subsection <TT>mod_privacy</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc58">5.11</A>&nbsp;&nbsp;<TT>mod_privacy</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc61">6.11</A>&nbsp;&nbsp;<TT>mod_privacy</TT></H3><!--SEC END -->
 
 <A NAME="modprivacy"></A>
 
@@ -2332,11 +2349,11 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for Blocking Communication (<TT>jabber:iq:privacy</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_private</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc59">5.12</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc62">6.12</A>&nbsp;&nbsp;<TT>mod_private</TT></H3><!--SEC END -->
 
 <A NAME="modprivate"></A>
 
@@ -2351,11 +2368,11 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for Private XML Storage (<TT>jabber:iq:private</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_proxy65</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc60">5.13</A>&nbsp;&nbsp;<TT>mod_proxy65</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc63">6.13</A>&nbsp;&nbsp;<TT>mod_proxy65</TT></H3><!--SEC END -->
 
 <A NAME="modproxy"></A>
 
@@ -2420,7 +2437,7 @@ The simpliest configuration of the module:
 </PRE></UL>
 <!--TOC subsection <TT>mod_pubsub</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc61">5.14</A>&nbsp;&nbsp;<TT>mod_pubsub</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc64">6.14</A>&nbsp;&nbsp;<TT>mod_pubsub</TT></H3><!--SEC END -->
 
 <A NAME="modpubsub"></A>
 
@@ -2450,7 +2467,7 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 
  <B><TT>hosts</TT></B><DD CLASS="dd-description">  This option defines the hostnames of the
- service (see section&nbsp;<A HREF="#modhostsoption">5.2.2</A>). If neither <TT>hosts</TT> nor
+ service (see section&nbsp;<A HREF="#modhostsoption">6.2.2</A>). If neither <TT>hosts</TT> nor
  the old <TT>host</TT> is present, the prefix `<TT>pubsub.</TT>' is added to all
  <TT>ejabberd</TT> hostnames.
 
@@ -2472,7 +2489,7 @@ Example:
 </PRE>
 <!--TOC subsection <TT>mod_register</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc62">5.15</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc65">6.15</A>&nbsp;&nbsp;<TT>mod_register</TT></H3><!--SEC END -->
 
 <A NAME="modregister"></A>
 
@@ -2491,7 +2508,7 @@ Options:
  restrictions by default).
 <DT CLASS="dt-description"><B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for In-Band Registration (<TT>jabber:iq:register</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 </DL>
 Examples:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -2528,7 +2545,7 @@ Next example prohibits the registration of too short account names:
 </PRE></UL>
 <!--TOC subsection <TT>mod_roster</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc63">5.16</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc66">6.16</A>&nbsp;&nbsp;<TT>mod_roster</TT></H3><!--SEC END -->
 
 <A NAME="modroster"></A>
 
@@ -2538,11 +2555,11 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for Roster Management (<TT>jabber:iq:roster</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_service_log</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc64">5.17</A>&nbsp;&nbsp;<TT>mod_service_log</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc67">6.17</A>&nbsp;&nbsp;<TT>mod_service_log</TT></H3><!--SEC END -->
 
 <A NAME="modservicelog"></A>
 
@@ -2582,7 +2599,7 @@ To log all end user packets to the Bandersnatch service running on
 </PRE></UL>
 <!--TOC subsection <TT>mod_shared_roster</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc65">5.18</A>&nbsp;&nbsp;<TT>mod_shared_roster</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc68">6.18</A>&nbsp;&nbsp;<TT>mod_shared_roster</TT></H3><!--SEC END -->
 
 <A NAME="modsharedroster"></A>
 
@@ -2709,7 +2726,7 @@ Take the case of a computer club that wants all its members seeing each
 </UL>
 <!--TOC subsection <TT>mod_stats</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc66">5.19</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc69">6.19</A>&nbsp;&nbsp;<TT>mod_stats</TT></H3><!--SEC END -->
 
 <A NAME="modstats"></A>
 
@@ -2725,7 +2742,7 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for Statistics Gathering (<TT>http://jabber.org/protocol/stats</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 </DL>
 As there are only a small amount of clients (for example
 <A HREF="http://tkabber.jabber.ru/">Tkabber</A>) and software libraries with
@@ -2751,7 +2768,7 @@ You can request the number of online users on the current virtual host
 </PRE></UL>
 <!--TOC subsection <TT>mod_time</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc67">5.20</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc70">6.20</A>&nbsp;&nbsp;<TT>mod_time</TT></H3><!--SEC END -->
 
 <A NAME="modtime"></A>
 
@@ -2762,11 +2779,11 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for Entity Time (<TT>jabber:iq:time</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 </DL>
 <!--TOC subsection <TT>mod_vcard</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc68">5.21</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc71">6.21</A>&nbsp;&nbsp;<TT>mod_vcard</TT></H3><!--SEC END -->
 
 <A NAME="modvcard"></A>
 
@@ -2779,13 +2796,13 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 
  <B><TT>hosts</TT></B><DD CLASS="dd-description">  This option defines the hostnames of the
- service (see section&nbsp;<A HREF="#modhostsoption">5.2.2</A>). If neither <TT>hosts</TT> nor
+ service (see section&nbsp;<A HREF="#modhostsoption">6.2.2</A>). If neither <TT>hosts</TT> nor
  the old <TT>host</TT> is present, the prefix `<TT>vjud.</TT>' is added to all
  <TT>ejabberd</TT> hostnames.
 
 <DT CLASS="dt-description"><B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for <TT>vcard-temp</TT> IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 <DT CLASS="dt-description"><B><TT>search</TT></B><DD CLASS="dd-description">This option specifies whether the search
  functionality is enabled (value: <TT>true</TT>) or disabled (value:
  <TT>false</TT>). If disabled, the option <TT>hosts</TT> will be ignored and the
@@ -2831,31 +2848,31 @@ In this first situation, search results are limited to twenty items,
 </PRE></UL>
 <!--TOC subsection <TT>mod_vcard_ldap</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc69">5.22</A>&nbsp;&nbsp;<TT>mod_vcard_ldap</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc72">6.22</A>&nbsp;&nbsp;<TT>mod_vcard_ldap</TT></H3><!--SEC END -->
 
 <A NAME="modvcardldap"></A>
 
 <TT>ejabberd</TT> can map LDAP attributes to vCard fields. This behaviour is
 implemented in the <TT>mod_vcard_ldap</TT> module. This module does not depend on the
-authentication method (see&nbsp;<A HREF="#ldapauth">4.5.2</A>). The <TT>mod_vcard_ldap</TT> module has
+authentication method (see&nbsp;<A HREF="#ldapauth">5.5.2</A>). The <TT>mod_vcard_ldap</TT> module has
 its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 <TT>ldap_servers</TT>, <TT>ldap_port</TT>, <TT>ldap_rootdn</TT>,
 <TT>ldap_password</TT>, <TT>ldap_base</TT>, <TT>ldap_uids</TT>, and
-<TT>ldap_filter</TT>. See section&nbsp;<A HREF="#ldapauth">4.5.2</A> for detailed information
+<TT>ldap_filter</TT>. See section&nbsp;<A HREF="#ldapauth">5.5.2</A> for detailed information
 about these options. If one of these options is not set, <TT>ejabberd</TT> will look
 for the top-level option with the same name. The second group of parameters
 consists of the following <TT>mod_vcard_ldap</TT>-specific options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 
  <B><TT>hosts</TT></B><DD CLASS="dd-description">  This option defines the hostnames of the
- service (see section&nbsp;<A HREF="#modhostsoption">5.2.2</A>). If neither <TT>hosts</TT> nor
+ service (see section&nbsp;<A HREF="#modhostsoption">6.2.2</A>). If neither <TT>hosts</TT> nor
  the old <TT>host</TT> is present, the prefix `<TT>vjud.</TT>' is added to all
  <TT>ejabberd</TT> hostnames.
 
 <DT CLASS="dt-description"><B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for <TT>vcard-temp</TT> IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 <DT CLASS="dt-description"><B><TT>search</TT></B><DD CLASS="dd-description">This option specifies whether the search
  functionality is enabled (value: <TT>true</TT>) or disabled (value:
  <TT>false</TT>). If disabled, the option <TT>hosts</TT> will be ignored and the
@@ -3026,7 +3043,7 @@ searching his info in LDAP.<BR>
 </PRE></UL>
 <!--TOC subsection <TT>mod_version</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc70">5.23</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc73">6.23</A>&nbsp;&nbsp;<TT>mod_version</TT></H3><!--SEC END -->
 
 <A NAME="modversion"></A>
 
@@ -3037,11 +3054,11 @@ Options:
 <DL CLASS="description" COMPACT=compact><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B><DD CLASS="dd-description"> This specifies 
 the processing discipline for Software Version (<TT>jabber:iq:version</TT>) IQ queries
-(see section&nbsp;<A HREF="#modiqdiscoption">5.2.1</A>).
+(see section&nbsp;<A HREF="#modiqdiscoption">6.2.1</A>).
 </DL>
 <!--TOC section Creating an Initial Administrator-->
 
-<H2 CLASS="section"><A NAME="htoc71">6</A>&nbsp;&nbsp;Creating an Initial Administrator</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc74">7</A>&nbsp;&nbsp;Creating an Initial Administrator</H2><!--SEC END -->
 
 <A NAME="initialadmin"></A>
 Before the web interface can be entered to perform administration tasks, an
@@ -3053,10 +3070,10 @@ Register an account on your <TT>ejabberd</TT> deployment. An account can be
  created in two ways:
  <OL CLASS="enumerate" type=a><LI CLASS="li-enumerate">
  Using the tool <TT>ejabberdctl</TT> (see
- section&nbsp;<A HREF="#ejabberdctl">7.2</A>):
+ section&nbsp;<A HREF="#ejabberdctl">8.2</A>):
  <PRE CLASS="verbatim">
 % ejabberdctl node@host register admin example.org password
-</PRE><LI CLASS="li-enumerate">Using In-Band Registration (see section&nbsp;<A HREF="#modregister">5.15</A>): you can
+</PRE><LI CLASS="li-enumerate">Using In-Band Registration (see section&nbsp;<A HREF="#modregister">6.15</A>): you can
  use a Jabber client to register an account.
  </OL>
 <LI CLASS="li-enumerate">Edit the configuration file to promote the account created in the previous
@@ -3073,12 +3090,12 @@ Register an account on your <TT>ejabberd</TT> deployment. An account can be
 </OL>
 <!--TOC section Online Configuration and Monitoring-->
 
-<H2 CLASS="section"><A NAME="htoc72">7</A>&nbsp;&nbsp;Online Configuration and Monitoring</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc75">8</A>&nbsp;&nbsp;Online Configuration and Monitoring</H2><!--SEC END -->
 
 <A NAME="onlineconfig"></A>
 <!--TOC subsection Web Interface-->
 
-<H3 CLASS="subsection"><A NAME="htoc73">7.1</A>&nbsp;&nbsp;Web Interface</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc76">8.1</A>&nbsp;&nbsp;Web Interface</H3><!--SEC END -->
 
 <A NAME="webinterface"></A>
 
@@ -3152,7 +3169,7 @@ You can serve the web interface on the same port as the
 </PRE></UL>
 <!--TOC subsection <TT>ejabberdctl</TT>-->
 
-<H3 CLASS="subsection"><A NAME="htoc74">7.2</A>&nbsp;&nbsp;<TT>ejabberdctl</TT></H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc77">8.2</A>&nbsp;&nbsp;<TT>ejabberdctl</TT></H3><!--SEC END -->
 
 <A NAME="ejabberdctl"></A>
 
@@ -3198,7 +3215,7 @@ Additional information:
 </DL>
 <!--TOC section Firewall Settings-->
 
-<H2 CLASS="section"><A NAME="htoc75">8</A>&nbsp;&nbsp;Firewall Settings</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc78">9</A>&nbsp;&nbsp;Firewall Settings</H2><!--SEC END -->
 
 <A NAME="firewall"></A>
 
@@ -3218,16 +3235,16 @@ You need to take the following TCP ports in mind when configuring your firewall:
 <TD ALIGN=left NOWRAP>s2s connections.</TD>
 </TR>
 <TR><TD ALIGN=left NOWRAP>4369</TD>
-<TD ALIGN=left NOWRAP>Only for clustering (see&nbsp;<A HREF="#clustering">10</A>).</TD>
+<TD ALIGN=left NOWRAP>Only for clustering (see&nbsp;<A HREF="#clustering">11</A>).</TD>
 </TR>
 <TR><TD ALIGN=left NOWRAP>port range</TD>
-<TD ALIGN=left NOWRAP>Only for clustring (see&nbsp;<A HREF="#clustering">10</A>). This range
+<TD ALIGN=left NOWRAP>Only for clustring (see&nbsp;<A HREF="#clustering">11</A>). This range
  is configurable (see&nbsp;<A HREF="#start">2.4</A>).</TD>
 </TR></TABLE>
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC section SRV Records-->
 
-<H2 CLASS="section"><A NAME="htoc76">9</A>&nbsp;&nbsp;SRV Records</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc79">10</A>&nbsp;&nbsp;SRV Records</H2><!--SEC END -->
 
 <A NAME="srv"></A>
 
@@ -3239,13 +3256,13 @@ General information:
 </UL>
 <!--TOC section Clustering-->
 
-<H2 CLASS="section"><A NAME="htoc77">10</A>&nbsp;&nbsp;Clustering</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc80">11</A>&nbsp;&nbsp;Clustering</H2><!--SEC END -->
 
 <A NAME="clustering"></A>
 
 <!--TOC subsection How it Works-->
 
-<H3 CLASS="subsection"><A NAME="htoc78">10.1</A>&nbsp;&nbsp;How it Works</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc81">11.1</A>&nbsp;&nbsp;How it Works</H3><!--SEC END -->
 
 <A NAME="howitworks"></A>
 
@@ -3266,7 +3283,7 @@ router,
 </UL>
 <!--TOC subsubsection Router-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc79">10.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc82">11.1.1</A>&nbsp;&nbsp;Router</H4><!--SEC END -->
 
 <A NAME="router"></A>
 
@@ -3278,7 +3295,7 @@ appropriate process. If not, it is sent to the s2s manager.<BR>
 <BR>
 <!--TOC subsubsection Local Router-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc80">10.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc83">11.1.2</A>&nbsp;&nbsp;Local Router</H4><!--SEC END -->
 
 <A NAME="localrouter"></A>
 
@@ -3289,7 +3306,7 @@ on its content.<BR>
 <BR>
 <!--TOC subsubsection Session Manager-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc81">10.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc84">11.1.3</A>&nbsp;&nbsp;Session Manager</H4><!--SEC END -->
 
 <A NAME="sessionmanager"></A>
 
@@ -3300,7 +3317,7 @@ storage, or bounced back.<BR>
 <BR>
 <!--TOC subsubsection s2s Manager-->
 
-<H4 CLASS="subsubsection"><A NAME="htoc82">10.1.4</A>&nbsp;&nbsp;s2s Manager</H4><!--SEC END -->
+<H4 CLASS="subsubsection"><A NAME="htoc85">11.1.4</A>&nbsp;&nbsp;s2s Manager</H4><!--SEC END -->
 
 <A NAME="s2smanager"></A>
 
@@ -3312,7 +3329,7 @@ serving this connection, otherwise a new connection is opened.<BR>
 <BR>
 <!--TOC subsection Clustering Setup-->
 
-<H3 CLASS="subsection"><A NAME="htoc83">10.2</A>&nbsp;&nbsp;Clustering Setup</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc86">11.2</A>&nbsp;&nbsp;Clustering Setup</H3><!--SEC END -->
 
 <A NAME="cluster"></A>
 
@@ -3385,7 +3402,7 @@ domain.<BR>
 
 <!--TOC section Internationalization and Localization-->
 
-<H2 CLASS="section"><A NAME="htoc84">A</A>&nbsp;&nbsp;Internationalization and Localization</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc87">A</A>&nbsp;&nbsp;Internationalization and Localization</H2><!--SEC END -->
 
 <A NAME="i18nl10n"></A>
 
@@ -3428,13 +3445,13 @@ figure&nbsp;<A HREF="#fig:webadmmainru">3</A> with figure&nbsp;<A HREF="#fig:web
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 <!--TOC section Release Notes-->
 
-<H2 CLASS="section"><A NAME="htoc85">B</A>&nbsp;&nbsp;Release Notes</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc88">B</A>&nbsp;&nbsp;Release Notes</H2><!--SEC END -->
 
 <A NAME="releasenotes"></A>
 
 <!--TOC subsection ejabberd 0.9-->
 
-<H3 CLASS="subsection"><A NAME="htoc86">B.1</A>&nbsp;&nbsp;ejabberd 0.9</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc89">B.1</A>&nbsp;&nbsp;ejabberd 0.9</H3><!--SEC END -->
 
 <PRE CLASS="verbatim">
        Release notes
@@ -3528,7 +3545,7 @@ Bugfixes
 </PRE>
 <!--TOC subsection ejabberd 0.9.1-->
 
-<H3 CLASS="subsection"><A NAME="htoc87">B.2</A>&nbsp;&nbsp;ejabberd 0.9.1</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc90">B.2</A>&nbsp;&nbsp;ejabberd 0.9.1</H3><!--SEC END -->
 
 <PRE CLASS="verbatim">
        Release notes
@@ -3596,7 +3613,7 @@ Bugfixes
 </PRE>
 <!--TOC subsection ejabberd 0.9.8-->
 
-<H3 CLASS="subsection"><A NAME="htoc88">B.3</A>&nbsp;&nbsp;ejabberd 0.9.8</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc91">B.3</A>&nbsp;&nbsp;ejabberd 0.9.8</H3><!--SEC END -->
 
 <PRE CLASS="verbatim">
        Release notes
@@ -3701,7 +3718,7 @@ END
 </PRE>
 <!--TOC subsection ejabberd 1.0.0-->
 
-<H3 CLASS="subsection"><A NAME="htoc89">B.4</A>&nbsp;&nbsp;ejabberd 1.0.0</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc92">B.4</A>&nbsp;&nbsp;ejabberd 1.0.0</H3><!--SEC END -->
 
 <PRE CLASS="verbatim">
        Release Notes
@@ -3827,7 +3844,7 @@ END
 </PRE>
 <!--TOC subsection ejabberd 1.1.0-->
 
-<H3 CLASS="subsection"><A NAME="htoc90">B.5</A>&nbsp;&nbsp;ejabberd 1.1.0</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc93">B.5</A>&nbsp;&nbsp;ejabberd 1.1.0</H3><!--SEC END -->
 
 <PRE CLASS="verbatim">
     Release Notes
@@ -3948,7 +3965,7 @@ END
 </PRE>
 <!--TOC subsection ejabberd 1.1.1-->
 
-<H3 CLASS="subsection"><A NAME="htoc91">B.6</A>&nbsp;&nbsp;ejabberd 1.1.1</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc94">B.6</A>&nbsp;&nbsp;ejabberd 1.1.1</H3><!--SEC END -->
 
 <PRE CLASS="verbatim">
     Release Notes
@@ -4073,7 +4090,7 @@ END
 </PRE>
 <!--TOC subsection ejabberd 1.1.2-->
 
-<H3 CLASS="subsection"><A NAME="htoc92">B.7</A>&nbsp;&nbsp;ejabberd 1.1.2</H3><!--SEC END -->
+<H3 CLASS="subsection"><A NAME="htoc95">B.7</A>&nbsp;&nbsp;ejabberd 1.1.2</H3><!--SEC END -->
 
 <PRE CLASS="verbatim">
     Release Notes
@@ -4198,7 +4215,7 @@ END
 </PRE>
 <!--TOC section Acknowledgements-->
 
-<H2 CLASS="section"><A NAME="htoc93">C</A>&nbsp;&nbsp;Acknowledgements</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc96">C</A>&nbsp;&nbsp;Acknowledgements</H2><!--SEC END -->
 
 <A NAME="acknowledgements"></A>
 Thanks to all people who contributed to this guide:
@@ -4215,7 +4232,7 @@ Alexey Shchepin (<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT
 </UL>
 <!--TOC section Copyright Information-->
 
-<H2 CLASS="section"><A NAME="htoc94">D</A>&nbsp;&nbsp;Copyright Information</H2><!--SEC END -->
+<H2 CLASS="section"><A NAME="htoc97">D</A>&nbsp;&nbsp;Copyright Information</H2><!--SEC END -->
 
 <A NAME="copyright"></A>
 Ejabberd Installation and Operation Guide.<BR>
