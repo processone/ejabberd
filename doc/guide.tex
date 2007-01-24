@@ -1926,6 +1926,8 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+The Multi-Users Chat module now supports clustering and load balancing. One module can be started per cluster node. Rooms are distributed at creation time on all available MUC module instances. The multi-user chat module is clustered but the room themselves are not clustered nor fault-tolerant: If the not managing a set of rooms goes down, the rooms disappear and they will be recreated on an available node on first connection attempt.
+
 \subsection{\modmuclog{}}
 \label{modmuclog}
 \ind{modules!\modmuclog{}}
