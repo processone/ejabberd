@@ -1,3 +1,7 @@
+2007-01-24  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Updated the max_user_sessions section. 
+
 2007-01-19  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_muc/mod_muc.erl: Now mod_muc can be distributed on

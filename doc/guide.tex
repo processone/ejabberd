@@ -92,9 +92,7 @@ the processing discipline for #1 IQ queries
 %% Title page
 \include{version}
 \title{Ejabberd \version\ Installation and Operation Guide}
-\author{Alexey Shchepin \\
-  \ahrefurl{mailto:alexey@sevcom.net} \\
-  \ahrefurl{xmpp:aleksey@jabber.ru}}
+\author{ejabberd development Team}
 
 %% Options
 \newcommand{\marking}[1]{#1} % Marking disabled
@@ -721,7 +719,11 @@ a virtual host:
 
 \subsection{Access Rules}
 \label{accessrules}
-\ind{options!acl}\ind{access rules}\ind{ACL}\ind{Access Control List}
+\ind{access rules}\ind{ACL}\ind{Access Control List}
+
+\subsubsection{ACL Definition}
+\label{ACL Definition}
+\ind{ACL}\ind{options!acl}\ind{ACL}\ind{Access Control List}
 
 Access control in \ejabberd{} is performed via Access Control Lists (ACLs). The
 declarations of ACLs in the configuration file have the following syntax:
@@ -793,6 +795,10 @@ The following ACLs are pre-defined:
 \titem{none} Matches no JID.
 \end{description}
 
+\subsubsection{Access Rights}
+\label{ACL Definition}
+\ind{access}\ind{ACL}\ind{options!acl}\ind{ACL}\ind{Access Control List}
+
 An entry allowing or denying access to different services looks similar to
 this:
 \begin{verbatim}
@@ -819,6 +825,32 @@ The following access rules are pre-defined:
 \titem{all} Always returns the value `\term{allow}'.
 \titem{none} Always returns the value `\term{deny}'.
 \end{description}
+
+\subsubsection{Limiting Opened Sessions with ACL}
+\label{configmaxsessions}
+\ind{options!max\_user\_sessions}
+
+The special access \term{max\_user\_sessions} specifies the maximum number of sessions (authenticated
+connections) per user. If a user tries to open more sessions by using different
+resources, the first opened session will be disconnected. The error
+\term{session replaced} will be sent to the disconnected session. The value
+for this option can be either a number, or \term{infinity}.  The default
+value is \term{infinity}.
+
+The syntax is:
+\begin{verbatim}
+  {access, max_user_sessions, [{<maxnumber>, <aclname>},
+                               ...
+                              ]}.
+\end{verbatim}
+
+Examples:
+\begin{itemize}
+\item To limit the number of sessions per user to 10 for all users:
+\begin{verbatim}
+  {access, max_user_sessions, [{10, all}]}.
+\end{verbatim}
+\end{itemize}
 
 \subsection{Shapers}
 \label{shapers}
@@ -851,34 +883,6 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\subsection{Limiting Opened Sessions}
-\label{configmaxsessions}
-\ind{options!max\_user\_sessions}
-
-This option specifies the maximum number of sessions (authenticated
-connections) per user. If a user tries to open more sessions by using different
-resources, the first opened session will be disconnected. The error
-\term{session replaced} will be sent to the disconnected session. The value
-for this option can be either a number, or \term{infinity}.  The default
-value is \term{10}.
-
-Examples:
-\begin{itemize}
-\item To limit the number of sessions per user to 10 on all virtual
-hosts:
-\begin{verbatim}
-  {max_user_sessions, 10}.
-\end{verbatim}
-\item This option can be defined per virtual host (see
-section~\ref{virtualhost}). In next example the number of
-sessions per user on the first host is six, while there is no limit on the
-second host:
-\begin{verbatim}
-  {host_config, "example.net", [{max_user_sessions, 6}]}.
-  {host_config, "example.com", [{max_user_sessions, infinity}]}.
-\end{verbatim}
-\end{itemize}
-
 \subsection{Default Language}
 \label{language}
 \ind{options!language}\ind{language}
@@ -901,8 +905,10 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+\section{Advanced configuration}
 
-\section{Database Configuration}
+
+\section{Database and LDAP Configuration}
 \label{database}
 \ind{database}
 %TODO: this whole section is not yet 100% optimized
