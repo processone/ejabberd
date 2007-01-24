@@ -907,6 +907,27 @@ Examples:
 
 \section{Advanced configuration}
 
+\subsection{Components Load-Balancing}
+
+\ejabberd{} includes an algorithm to load balance the components that are plugged on an ejabberd cluster. It means that you can plug one or several instances of the same component on each ejabberd cluster and that the traffic will be automatically distributed.
+
+The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is choosen randomly. If no instance is available locally, one instance is choosen randomly among the remote component instances.
+
+If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain_balancing}. The syntax of the option is the following:
+
+\begin{verbatim}
+	{domain_balancing, "component.example.com", <balancing_criterium>}.                                   
+\end{verbatim}
+
+Several balancing criterium are available:
+\begin{itemize}
+\item \term{destination}: the full JID of the packet \term{to} attribute is used.
+\item \term{source}: the full JID of the packet \term{from} attribute is used.
+\item \term{bare_destination}: the bare JID (without resource) of the packet \term{to} attribute is used.
+\item \term{bare_source}: the bare JID (without resource) of the packet \term{from} attribute is used.
+\end{itemize}
+
+If the value corresponding to the criterium is the same, the same component instance in the cluster will be used.
 
 \section{Database and LDAP Configuration}
 \label{database}

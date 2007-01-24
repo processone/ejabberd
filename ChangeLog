@@ -1,6 +1,8 @@
 2007-01-24  Mickael Remond  <mickael.remond@process-one.net>
 
-	* doc/guide.tex: mod_muc now support cluster.
+	* doc/guide.tex: Documentation for domain balancing.
+
+	* doc/guide.tex: mod_muc now supports cluster.
 
 	* doc/guide.tex: Updated the max_user_sessions section. 
 
