@@ -918,7 +918,7 @@ Examples:
 
 The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is choosen randomly. If no instance is available locally, one instance is choosen randomly among the remote component instances.
 
-If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain_balancing}. The syntax of the option is the following:
+If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain\_balancing}. The syntax of the option is the following:
 
 \begin{verbatim}
 	{domain_balancing, "component.example.com", <balancing_criterium>}.                                   
@@ -928,19 +928,19 @@ Several balancing criterium are available:
 \begin{itemize}
 \item \term{destination}: the full JID of the packet \term{to} attribute is used.
 \item \term{source}: the full JID of the packet \term{from} attribute is used.
-\item \term{bare_destination}: the bare JID (without resource) of the packet \term{to} attribute is used.
-\item \term{bare_source}: the bare JID (without resource) of the packet \term{from} attribute is used.
+\item \term{bare\_destination}: the bare JID (without resource) of the packet \term{to} attribute is used.
+\item \term{bare\_source}: the bare JID (without resource) of the packet \term{from} attribute is used.
 \end{itemize}
 
 If the value corresponding to the criterium is the same, the same component instance in the cluster will be used.
 
 \subsection{Load-Balancing Buckets}
 \label{lbbuckets}
-\ind{options!domain_balancing_component_number}
+\ind{options!domain\_balancing\_component\_number}
 
 When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failling the service will not work correctly unless the sessions are rebalanced.
 
-In this case, it is best to limit the problem to the sessions handled by the failling component. This is what the \term{domain_balancing_component_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
+In this case, it is best to limit the problem to the sessions handled by the failling component. This is what the \term{domain\_balancing\_component\_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
 
 The syntax is the following:
 \begin{verbatim}
