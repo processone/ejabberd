@@ -1,3 +1,7 @@
+2007-01-25  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/eldap/Makefile.win32: fix build error on Windows.
+
 2007-01-25  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/*: Plugin architecture for HTTP modules (thanks to

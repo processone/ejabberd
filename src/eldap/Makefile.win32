@@ -26,3 +26,6 @@ $(OUTDIR)\eldap.beam : eldap.erl ELDAPv3.erl
 
 $(OUTDIR)\ELDAPv3.beam : ELDAPv3.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) ELDAPv3.erl
+
+$(OUTDIR)\eldap_filter.beam : eldap_filter.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) eldap_filter.erl
