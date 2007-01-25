@@ -14,7 +14,9 @@
 -vsn('$Revision$ ').
 
 %% External exports
--export([process_admin/2,
+-export([process/2,
+         %% XXX bard: unexported, since it is only called from process/2 now
+         %% process_admin/2,
 	 list_users/4,
 	 list_users_in_diapason/4]).
 
@@ -53,6 +55,75 @@
 		      {"value", Value},
 		      {"size", Size}])).
 -define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
+
+
+process(["server", SHost | RPath], #request{auth = Auth,
+                                            q = Query,
+                                            lang = Lang} = Request) ->
+    Host = jlib:nameprep(SHost),
+    case lists:member(Host, ?MYHOSTS) of
+	true ->
+	    case get_auth(Auth) of
+		{User, Server} ->
+		    case acl:match_rule(
+			   Host, configure, jlib:make_jid(User, Server, "")) of
+			deny ->
+                            ejabberd_web:error(not_allowed);
+			allow ->
+			    process_admin(
+			      Host, Request#request{path = RPath,
+						    us = {User, Server}})
+		    end;
+		unauthorized ->
+		    {401,
+		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
+		     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
+                                               [{xmlcdata, "401 Unauthorized"}]}])}
+	    end;
+	false ->
+            ejabberd_web:error(not_found)
+    end;
+
+process(RPath, #request{auth = Auth,
+                        q = Query,
+                        lang = Lang} = Request) ->
+    case get_auth(Auth) of
+	{User, Server} ->
+	    case acl:match_rule(
+		   global, configure, jlib:make_jid(User, Server, "")) of
+		deny ->
+                    ejabberd_web:error(not_allowed);
+		allow ->
+		    process_admin(
+		      global, Request#request{path = RPath,
+					      us = {User, Server}})
+	    end;
+	unauthorized ->
+            %% XXX bard: any reason to send this data now and not
+            %% always in case of an 401? ought to check http specs...
+	    {401, 
+	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
+	     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
+				       [{xmlcdata, "401 Unauthorized"}]}])}
+    end.
+
+get_auth(Auth) ->
+    case Auth of
+        {SJID, P} ->
+            case jlib:string_to_jid(SJID) of
+                error ->
+                    unauthorized;
+                #jid{user = U, server = S} ->
+                    case ejabberd_auth:check_password(U, S, P) of
+                        true ->
+                            {U, S};
+                        false ->
+                            unauthorized
+                    end
+            end;
+         _ ->
+            unauthorized
+    end.
 
 make_xhtml(Els, global, Lang) ->
     {200, [html],

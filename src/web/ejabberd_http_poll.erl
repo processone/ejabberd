@@ -24,7 +24,7 @@
 	 setopts/2,
 	 controlling_process/2,
 	 close/1,
-	 process_request/1]).
+	 process/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -83,8 +83,7 @@ close({http_poll, FsmRef}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
 
-process_request(#request{path = [],
-			 data = Data} = Request) ->
+process([], #request{data = Data} = Request) ->
     case catch parse_request(Data) of
 	{ok, ID1, Key, NewKey, Packet} ->
 	    ID = if
@@ -130,7 +129,7 @@ process_request(#request{path = [],
 	_ ->
 	    {200, [?CT, {"Set-Cookie", "ID=-2:0; expires=-1"}], ""}
     end;
-process_request(_Request) ->
+process(_, _Request) ->
     {400, [], {xmlelement, "h1", [],
 	       [{xmlcdata, "400 Bad Request"}]}}.
 

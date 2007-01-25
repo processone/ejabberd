@@ -31,8 +31,15 @@
 		request_keepalive,
 		request_content_length,
 		request_lang = "en",
-		use_http_poll = false,
-		use_web_admin = false,
+		%% XXX bard: request handlers are configured in
+		%% ejabberd.cfg under the HTTP service.	 For example,
+		%% to have the module test_web handle requests with
+		%% paths starting with "/test/module":
+		%%
+		%%   {5280, ejabberd_http,    [http_poll, web_admin,
+		%%			       {request_handlers, [{["test", "module"], mod_test_web}]}]}
+		%%
+		request_handlers = [],
 		end_of_request = false,
 		trail = ""
 	       }).
@@ -71,16 +78,32 @@ start_link({SockMod, Socket}, Opts) ->
 	_ ->
 	    ok
     end,
-    UseHTTPPoll = lists:member(http_poll, Opts),
-    UseWebAdmin = lists:member(web_admin, Opts),
-    ?DEBUG("S: ~p~n", [{UseHTTPPoll, UseWebAdmin}]),
+
+    %% XXX bard: for backward compatibility: expand web_admin and
+    %% http_poll in Opts respectively to {["admin"],
+    %% ejabberd_web_admin} and {["http-poll"], ejabberd_http_poll}
+        
+    RequestHandlers =
+	case lists:keysearch(request_handlers, 1, Opts) of
+             {value, {request_handlers, H}} -> H;
+             false -> []
+        end ++
+        case lists:member(web_admin, Opts) of
+            true -> [{["admin"], ejabberd_web_admin}];
+            false -> []
+        end ++
+        case lists:member(http_poll, Opts) of
+            true -> [{["http-poll"], ejabberd_http_poll}];
+            false -> []
+        end,
+    ?DEBUG("S: ~p~n", [RequestHandlers]),
+
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     {ok, proc_lib:spawn_link(ejabberd_http,
 			     receive_headers,
 			     [#state{sockmod = SockMod1,
 				     socket = Socket1,
-				     use_http_poll = UseHTTPPoll,
-				     use_web_admin = UseWebAdmin}])}.
+				     request_handlers = RequestHandlers}])}.
 
 
 become_controller(_Pid) ->
@@ -192,23 +215,44 @@ process_header(State, Data) ->
 		    end,
 		    #state{sockmod = SockMod,
 			   socket = Socket,
-			   use_http_poll = State#state.use_http_poll,
-			   use_web_admin = State#state.use_web_admin};
+			   request_handlers = State#state.request_handlers};
 		_ ->
-		    #state{end_of_request = true}
+		    #state{end_of_request = true,
+			   request_handlers = State#state.request_handlers}
 	    end;
 	{error, _Reason} ->
-	    #state{end_of_request = true};
+	    #state{end_of_request = true,
+		   request_handlers = State#state.request_handlers};
 	_ ->
-	    #state{end_of_request = true}
+	    #state{end_of_request = true,
+		   request_handlers = State#state.request_handlers}
+    end.
+
+%% XXX bard: search through request handlers looking for one that
+%% matches the requested URL path, and pass control to it.  If none is
+%% found, answer with HTTP 404.
+process([], _) ->
+    ejabberd_web:error(not_found);
+process(Handlers, Request) ->
+    [{PathPattern, HandlerModule} | HandlersLeft] = Handlers,
+    
+    case lists:prefix(PathPattern, Request#request.path) of
+	true ->
+            %% LocalPath is the path "local to the handler", i.e. if
+            %% the handler was registered to handle "/test/" and the
+            %% requested path is "/test/foo/bar", the local path is
+            %% ["foo", "bar"]
+            LocalPath = lists:nthtail(length(PathPattern), Request#request.path),
+	    HandlerModule:process(LocalPath, Request);
+	false ->
+	    process(HandlersLeft, Request)
     end.
 
 process_request(#state{request_method = 'GET',
 		       request_path = {abs_path, Path},
 		       request_auth = Auth,
 		       request_lang = Lang,
-		       use_http_poll = UseHTTPPoll,
-		       use_web_admin = UseWebAdmin} = State) ->
+		       request_handlers = RequestHandlers} = State) ->
     case (catch url_decode_q_split(Path)) of
 	{'EXIT', _} ->
 	    process_request(false);
@@ -225,8 +269,11 @@ process_request(#state{request_method = 'GET',
 			       q = LQuery,
 			       auth = Auth,
 			       lang = Lang},
-	    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
-					  Request) of
+	    %% XXX bard: This previously passed control to
+	    %% ejabberd_web:process_get, now passes it to a local
+	    %% procedure (process) that handles dispatching based on
+	    %% URL path prefix.
+	    case process(RequestHandlers, Request) of
 		El when element(1, El) == xmlelement ->
 		    make_xhtml_output(State, 200, [], El);
 		{Status, Headers, El} when
@@ -247,8 +294,7 @@ process_request(#state{request_method = 'POST',
 		       request_lang = Lang,
 		       sockmod = SockMod,
 		       socket = Socket,
-		       use_http_poll = UseHTTPPoll,
-		       use_web_admin = UseWebAdmin} = State)
+		       request_handlers = RequestHandlers} = State)
   when is_integer(Len) ->
     case SockMod of
 	gen_tcp ->
@@ -275,8 +321,7 @@ process_request(#state{request_method = 'POST',
 			       auth = Auth,
 			       data = Data,
 			       lang = Lang},
-	    case ejabberd_web:process_get({UseHTTPPoll, UseWebAdmin},
-					  Request) of
+	    case process(RequestHandlers, Request) of
 		El when element(1, El) == xmlelement ->
 		    make_xhtml_output(State, 200, [], El);
 		{Status, Headers, El} when
