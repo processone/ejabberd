@@ -1,3 +1,7 @@
+2007-01-26  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Fixed typos in labels.
+
 2007-01-25  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/eldap/Makefile.win32: fix build error on Windows.
