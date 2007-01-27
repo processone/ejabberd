@@ -7,11 +7,13 @@ EFLAGS = -I .. -pz ..
 OBJS = \
 	$(OUTDIR)\eldap.beam \
 	$(OUTDIR)\ELDAPv3.beam \
-	$(OUTDIR)\eldap_filter.beam
+	$(OUTDIR)\eldap_filter.beam \
+	$(OUTDIR)\eldap_utils.beam \
+	$(OUTDIR)\eldap_pool.beam
 
 ALL : $(OBJS)
 
-CLEAN :
+Clean :
 	-@erase ELDAPv3.asn1db
 	-@erase ELDAPv3.erl
 	-@erase ELDAPv3.hrl
@@ -29,3 +31,9 @@ $(OUTDIR)\ELDAPv3.beam : ELDAPv3.erl
 
 $(OUTDIR)\eldap_filter.beam : eldap_filter.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) eldap_filter.erl
+
+$(OUTDIR)\eldap_utils.beam : eldap_utils.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) eldap_utils.erl
+
+$(OUTDIR)\eldap_pool.beam : eldap_pool.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) eldap_pool.erl

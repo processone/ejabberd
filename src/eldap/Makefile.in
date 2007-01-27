@@ -14,7 +14,8 @@ OBJS   = \
 	$(OUTDIR)/eldap.beam \
 	$(OUTDIR)/ELDAPv3.beam \
 	$(OUTDIR)/eldap_filter.beam \
-	$(OUTDIR)/eldap_utils.beam
+	$(OUTDIR)/eldap_utils.beam \
+	$(OUTDIR)/eldap_pool.beam
 
 all:    $(OBJS)
 

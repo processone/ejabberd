@@ -1,3 +1,17 @@
+2007-01-27  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_vcard_ldap.erl: LDAP server pool support (thanks to Evgeniy
+	Khramtsov)
+	* src/eldap/Makefile.in: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/eldap_pool.erl: Likewise
+
+	* src/eldap/eldap_utils.erl: Implemented LDAP domain substitution
+
+	* src/eldap/eldap.erl: Implemented queue to avoid bind deadlock under
+	heavy load (thanks to Evgeniy Khramtsov)
+	* src/eldap/eldap.hrl: Likewise
+
 2007-01-26  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: Fixed typos in labels.

@@ -16,7 +16,9 @@
 	 usort_attrs/1,
 	 get_user_part/2,
 	 make_filter/2,
-	 case_insensitive_match/2]).
+	 get_state/2,
+	 case_insensitive_match/2,
+	 uids_domain_subst/2]).
 
 %% Generate an 'or' LDAP query on one or several attributes
 %% If there is only one attribute
@@ -109,3 +111,17 @@ case_insensitive_match(X, Y) ->
 	true -> false
     end.
 
+get_state(Server, Module) ->
+    Proc = gen_mod:get_module_proc(Server, Module),
+    gen_server:call(Proc, get_state).
+
+%% From the list of uids attribute:
+%% we look from alias domain (%d) and make the substitution
+%% with the actual host domain
+%% This help when you need to configure many virtual domains.
+uids_domain_subst(Host, UIDs) ->
+    lists:map(fun({U,V}) ->
+                      {U, eldap_filter:do_sub(V,[{"%d", Host}])};
+                  (A) -> A 
+              end,
+              UIDs).

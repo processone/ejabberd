@@ -28,7 +28,8 @@
 	 get_sm_features/5,
 	 process_local_iq/3,
 	 process_sm_iq/3,
-	 remove_user/1
+	 remove_user/1,
+	 route/4
 	]).
 
 -include("ejabberd.hrl").
@@ -42,6 +43,7 @@
 		eldap_id,
 		search,
 		servers,
+		backups,
 		port,
 		dn,
 		base,
@@ -53,7 +55,8 @@
 		search_filter,
 		search_fields,
 		search_reported,
-		search_reported_attrs
+		search_reported_attrs,
+		matches
 	       }).
 
 -define(VCARD_MAP,
@@ -120,7 +123,7 @@ start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {
       Proc, {?MODULE, start_link, [Host, Opts]},
-      permanent, 1000, worker, [?MODULE]
+      transient, 1000, worker, [?MODULE]
      },
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
@@ -148,14 +151,15 @@ start_link(Host, Opts) ->
 
 init([Host, Opts]) ->
     State = parse_options(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, parallel),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
-    eldap:start_link(State#state.eldap_id,
+    eldap_pool:start_link(State#state.eldap_id,
 		     State#state.servers,
+		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
 		     State#state.password),
@@ -169,14 +173,13 @@ init([Host, Opts]) ->
 
 handle_info({route, From, To, Packet}, State) ->
     case catch do_route(State, From, To, Packet) of
-	{'EXIT', Reason} ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_INTERNAL_SERVER_ERROR),
-	    ejabberd_router:route(To, From, Err),
-	    %% Fail-Stop. Let the supervisor restarts us
-	    {stop, Reason, State};
+	Pid when is_pid(Pid) ->
+	    ok;
 	_ ->
-	    {noreply, State}
-    end;
+	    Err = jlib:make_error_reply(Packet, ?ERR_INTERNAL_SERVER_ERROR),
+	    ejabberd_router:route(To, From, Err)
+    end,
+    {noreply, State};
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -220,52 +223,42 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 			     ]}]}
     end.
 
--define(SM_IQ_TIMEOUT, 20000).
-
-process_sm_iq(From, #jid{lserver=LServer} = To, #iq{sub_el = SubEl} = IQ) ->
-    Proc = gen_mod:get_module_proc(LServer, ?PROCNAME),
-    case catch gen_server:call(Proc,
-			       {process_sm_iq, From, To, IQ}, ?SM_IQ_TIMEOUT) of
-	{'EXIT', Reason} ->
-	    case Reason of
-		{timeout, _} ->
-		    IQ#iq{type = error,
-			  sub_el = [SubEl, ?ERR_REMOTE_SERVER_TIMEOUT]};
-		_ ->
-		    IQ#iq{type = error,
-			  sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
-	    end;
+process_sm_iq(_From, #jid{lserver=LServer} = To, #iq{sub_el = SubEl} = IQ) ->
+    case catch process_vcard_ldap(To, IQ, LServer) of
+	{'EXIT', _} ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
 	Other ->
 	    Other
     end.
 
-handle_call({process_sm_iq, _From, To, IQ}, _FromPid, State) ->
+process_vcard_ldap(To, IQ, Server) ->
+    {ok, State} = eldap_utils:get_state(Server, ?PROCNAME),
     #iq{type = Type, sub_el = SubEl} = IQ,
-    Reply = case Type of
-		set ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-		get ->
-		    #jid{luser = LUser} = To,
-		    LServer = State#state.serverhost,
-		    case ejabberd_auth:is_user_exists(LUser, LServer) of
-			true ->
-			    VCardMap = State#state.vcard_map,
-			    case find_ldap_user(LUser, State) of
-				#eldap_entry{attributes = Attributes} ->
-				    Vcard = ldap_attributes_to_vcard(Attributes, VCardMap, {LUser, LServer}),
-				    IQ#iq{type = result, sub_el = Vcard};
-				_ ->
-				    IQ#iq{type = result, sub_el = []}
-			    end;
+    case Type of
+	set ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	get ->
+	    #jid{luser = LUser} = To,
+	    LServer = State#state.serverhost,
+	    case ejabberd_auth:is_user_exists(LUser, LServer) of
+		true ->
+		    VCardMap = State#state.vcard_map,
+		    case find_ldap_user(LUser, State) of
+			#eldap_entry{attributes = Attributes} ->
+			    Vcard = ldap_attributes_to_vcard(Attributes, VCardMap, {LUser, LServer}),
+			    IQ#iq{type = result, sub_el = Vcard};
 			_ ->
 			    IQ#iq{type = result, sub_el = []}
-		    end
-	    end,
-    {reply, Reply, State};
+		    end;
+		_ ->
+		    IQ#iq{type = result, sub_el = []}
+	    end
+	end.
 
+handle_call(get_state, _From, State) ->
+    {reply, {ok, State}, State};
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
-
 handle_call(_Request, _From, State) ->
     {reply, bad_request, State}.
 
@@ -276,7 +269,7 @@ find_ldap_user(User, State) ->
     VCardAttrs = State#state.vcard_map_attrs,
     case eldap_filter:parse(RFC2254_Filter, [{"%u", User}]) of
 	{ok, EldapFilter} ->
-	    case eldap:search(Eldap_ID, [{base, Base},
+	    case eldap_pool:search(Eldap_ID, [{base, Base},
 					 {filter, EldapFilter},
 					 {attributes, VCardAttrs}]) of
 		#eldap_search_result{entries = [E | _]} ->
@@ -391,6 +384,9 @@ ldap_attribute_to_vcard(_, _) ->
 	  ] ++ lists:map(fun({X,Y}) -> ?TLFIELD("text-single", X, Y) end, SearchFields)}]).
 
 do_route(State, From, To, Packet) ->
+    spawn(?MODULE, route, [State, From, To, Packet]).
+
+route(State, From, To, Packet) ->
     #jid{user = User, resource = Resource} = To,
     if
 	(User /= "") or (Resource /= "") ->
@@ -552,10 +548,12 @@ search(State, Data) ->
     SearchFilter = State#state.search_filter,
     Eldap_ID = State#state.eldap_id,
     UIDs = State#state.uids,
+    Limit = State#state.matches,
     ReportedAttrs = State#state.search_reported_attrs,
     Filter = eldap:'and'([SearchFilter, eldap_utils:make_filter(Data, UIDs)]),
-    case eldap:search(Eldap_ID, [{base, Base},
+    case eldap_pool:search(Eldap_ID, [{base, Base},
 				 {filter, Filter},
+				 {limit, Limit},
 				 {attributes, ReportedAttrs}]) of
 	#eldap_search_result{entries = E} ->
 	    search_items(E, State);
@@ -645,11 +643,20 @@ find_xdata_el1([_ | Els]) ->
 parse_options(Host, Opts) ->
     MyHost = gen_mod:get_opt(host, Opts, "vjud." ++ Host),
     Search = gen_mod:get_opt(search, Opts, true),
+    Matches = case gen_mod:get_opt(matches, Opts, 30) of
+		infinity  -> 0;
+		N         -> N
+	    end,
     Eldap_ID = atom_to_list(gen_mod:get_module_proc(Host, ?PROCNAME)),
     LDAPServers = case gen_mod:get_opt(ldap_servers, Opts, undefined) of
 		      undefined ->
 			  ejabberd_config:get_local_option({ldap_servers, Host});
 		      S -> S
+		  end,
+    LDAPBackups = case gen_mod:get_opt(ldap_backups, Opts, undefined) of
+		      undefined ->
+			  ejabberd_config:get_local_option({ldap_servers, Host});
+		      Backups -> Backups
 		  end,
     LDAPPort = case gen_mod:get_opt(ldap_port, Opts, undefined) of
 		   undefined ->
@@ -668,9 +675,9 @@ parse_options(Host, Opts) ->
 	    undefined ->
 		    case ejabberd_config:get_local_option({ldap_uids, Host}) of
 			undefined -> [{"uid", "%u"}];
-			UI -> UI
+			UI -> eldap_utils:uids_domain_subst(Host, UI)
 			end;
-		UI -> UI
+		UI -> eldap_utils:uids_domain_subst(Host, UI)
 		end,
     RootDN = case gen_mod:get_opt(ldap_rootdn, Opts, undefined) of
 		 undefined ->
@@ -723,6 +730,7 @@ parse_options(Host, Opts) ->
 	   eldap_id = Eldap_ID,
 	   search = Search,
 	   servers = LDAPServers,
+	   backups = LDAPBackups,
 	   port = LDAPPort,
 	   dn = RootDN,
 	   base = LDAPBase,
@@ -734,5 +742,6 @@ parse_options(Host, Opts) ->
 	   search_filter = SearchFilter,
 	   search_fields = SearchFields,
 	   search_reported = SearchReported,
-	   search_reported_attrs = SearchReportedAttrs
+	   search_reported_attrs = SearchReportedAttrs,
+	   matches = Matches
 	  }.

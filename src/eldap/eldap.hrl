@@ -1,6 +1,7 @@
 -record(eldap_search, {scope = wholeSubtree,
 		       base = [],
 		       filter,
+		       limit = 0,
 		       attributes = [],
 		       types_only = false,
 		       timeout = 0}).

@@ -46,6 +46,7 @@
 		eldap_id,
 		bind_eldap_id,
 		servers,
+		backups,
 		port,
 		dn,
 		password,
@@ -74,7 +75,7 @@ start(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     ChildSpec = {
       Proc, {?MODULE, start_link, [Host]},
-      permanent, 1000, worker, [?MODULE]
+      transient, 1000, worker, [?MODULE]
      },
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
@@ -96,13 +97,15 @@ terminate(_Reason, State) ->
 
 init(Host) ->
     State = parse_options(Host),
-    eldap:start_link(State#state.eldap_id,
+    eldap_pool:start_link(State#state.eldap_id,
 		     State#state.servers,
+		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
 		     State#state.password),
-    eldap:start_link(State#state.bind_eldap_id,
+    eldap_pool:start_link(State#state.bind_eldap_id,
 		     State#state.servers,
+		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
 		     State#state.password),
@@ -112,15 +115,11 @@ init(Host) ->
       ejabberd_auth, ctl_process_get_registered),
     {ok, State}.
 
--define(REPLY_TIMEOUT, 10000).
-
 plain_password_required() ->
     true.
 
 check_password(User, Server, Password) ->
-    Proc = gen_mod:get_module_proc(Server, ?MODULE),
-    case catch gen_server:call(Proc,
-			       {check_pass, User, Password}, ?REPLY_TIMEOUT) of
+    case catch check_password_ldap(User, Server, Password) of
 	{'EXIT', _} ->
 	    false;
 	Result ->
@@ -140,14 +139,10 @@ dirty_get_registered_users() ->
     get_vh_registered_users(?MYNAME).
 
 get_vh_registered_users(Server) ->
-    Proc = gen_mod:get_module_proc(Server, ?MODULE),
-    case catch gen_server:call(Proc,
-			       get_vh_registered_users, ?REPLY_TIMEOUT) of
-	{'EXIT', _} ->
-	    [];
-	Result ->
-	    Result
-    end.
+    case catch get_vh_registered_users_ldap(Server) of
+	{'EXIT', _} -> [];
+	Result -> Result
+	end.
 
 get_password(_User, _Server) ->
     false.
@@ -156,9 +151,7 @@ get_password_s(_User, _Server) ->
     "".
 
 is_user_exists(User, Server) ->
-    Proc = gen_mod:get_module_proc(Server, ?MODULE),
-    case catch gen_server:call(Proc,
-			       {is_user_exists, User}, ?REPLY_TIMEOUT) of
+    case catch is_user_exists_ldap(User, Server) of
 	{'EXIT', _} ->
 	    false;
 	Result ->
@@ -174,26 +167,27 @@ remove_user(_User, _Server, _Password) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-handle_call({check_pass, User, Password}, _From, State) ->
-    Reply = case find_user_dn(User, State) of
-		false ->
-		    false;
-		DN ->
-		    case eldap:bind(State#state.bind_eldap_id, DN, Password) of
-			ok -> true;
-			_ -> false
-		    end
-	    end,
-    {reply, Reply, State};
+check_password_ldap(User, Server, Password) ->
+	{ok, State} = eldap_utils:get_state(Server, ?MODULE),
+	case find_user_dn(User, State) of
+	false ->
+	    false;
+	DN ->
+	    case eldap_pool:bind(State#state.bind_eldap_id, DN, Password) of
+		ok -> true;
+		_ -> false
+	    end
+	end.
 
-handle_call(get_vh_registered_users, _From, State) ->
+get_vh_registered_users_ldap(Server) ->
+    {ok, State} = eldap_utils:get_state(Server, ?MODULE),
     UIDs = State#state.uids,
     Eldap_ID = State#state.eldap_id,
     Server = State#state.host,
     SortedDNAttrs = eldap_utils:usort_attrs(State#state.dn_filter_attrs),
-    Reply = case eldap_filter:parse(State#state.sfilter) of
+    case eldap_filter:parse(State#state.sfilter) of
 		{ok, EldapFilter} ->
-		    case eldap:search(Eldap_ID, [{base, State#state.base},
+		    case eldap_pool:search(Eldap_ID, [{base, State#state.base},
 						 {filter, EldapFilter},
 						 {attributes, SortedDNAttrs}]) of
 			#eldap_search_result{entries = Entries} ->
@@ -222,15 +216,17 @@ handle_call(get_vh_registered_users, _From, State) ->
 		    end;
 		_ ->
 		    []
-	    end,
-    {reply, Reply, State};
+	end.
 
-handle_call({is_user_exists, User}, _From, State) ->
-    Reply = case find_user_dn(User, State) of
+is_user_exists_ldap(User, Server) ->
+    {ok, State} = eldap_utils:get_state(Server, ?MODULE),
+    case find_user_dn(User, State) of
 		false -> false;
 		_DN -> true
-	    end,
-    {reply, Reply, State};
+	end.
+
+handle_call(get_state, _From, State) ->
+	{reply, {ok, State}, State};
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
@@ -242,7 +238,7 @@ find_user_dn(User, State) ->
     DNAttrs = eldap_utils:usort_attrs(State#state.dn_filter_attrs),
     case eldap_filter:parse(State#state.ufilter, [{"%u", User}]) of
 	{ok, Filter} ->
-	    case eldap:search(State#state.eldap_id, [{base, State#state.base},
+	    case eldap_pool:search(State#state.eldap_id, [{base, State#state.base},
 						     {filter, Filter},
 						     {attributes, DNAttrs}]) of
 		#eldap_search_result{entries = [#eldap_entry{attributes = Attrs,
@@ -272,7 +268,7 @@ is_valid_dn(DN, Attrs, State) ->
 		  end ++ [{"%d", State#state.host}, {"%D", DN}],
     case eldap_filter:parse(State#state.dn_filter, SubstValues) of
 	{ok, EldapFilter} ->
-	    case eldap:search(State#state.eldap_id, [
+	    case eldap_pool:search(State#state.eldap_id, [
 						     {base, State#state.base},
 						     {filter, EldapFilter},
 						     {attributes, ["dn"]}]) of
@@ -292,6 +288,10 @@ parse_options(Host) ->
     Eldap_ID = atom_to_list(gen_mod:get_module_proc(Host, ?MODULE)),
     Bind_Eldap_ID = atom_to_list(gen_mod:get_module_proc(Host, bind_ejabberd_auth_ldap)),
     LDAPServers = ejabberd_config:get_local_option({ldap_servers, Host}),
+    LDAPBackups = case ejabberd_config:get_local_option({ldap_backups, Host}) of
+		   undefined -> [];
+		   Backups -> Backups
+		   end,
     LDAPPort = case ejabberd_config:get_local_option({ldap_port, Host}) of
 		   undefined -> 389;
 		   P -> P
@@ -306,7 +306,7 @@ parse_options(Host) ->
 	       end,
     UIDs = case ejabberd_config:get_local_option({ldap_uids, Host}) of
 	       undefined -> [{"uid", "%u"}];
-	       UI -> UI
+	       UI -> eldap_utils:uids_domain_subst(Host, UI)
 	   end,
     SubFilter = lists:flatten(eldap_utils:generate_subfilter(UIDs)),
     UserFilter = case ejabberd_config:get_local_option({ldap_filter, Host}) of
@@ -325,6 +325,7 @@ parse_options(Host) ->
 	   eldap_id = Eldap_ID,
 	   bind_eldap_id = Bind_Eldap_ID,
 	   servers = LDAPServers,
+	   backups = LDAPBackups,
 	   port = LDAPPort,
 	   dn = RootDN,
 	   password = Password,
