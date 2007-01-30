@@ -825,12 +825,13 @@ record_to_string(#roster{us = {User, _Server},
 	       in	   -> "I";
 	       none	   -> "N"
 	   end,
+    SAskMessage = ejabberd_odbc:escape(AskMessage),
     ["'", Username, "',"
      "'", SJID, "',"
      "'", Nick, "',"
      "'", SSubscription, "',"
      "'", SAsk, "',"
-     "'", AskMessage, "',"
+     "'", SAskMessage, "',"
      "'N', '', 'item'"].
 
 groups_to_string(#roster{us = {User, _Server},

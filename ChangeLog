@@ -1,3 +1,9 @@
+2007-01-30  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Bugfix (thanks to asdx
+	<asdx@jabber.snc.ru>)
+	* src/ejd2odbc.erl: Likewise
+
 2007-01-27  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_vcard_ldap.erl: LDAP server pool support (thanks to Evgeniy
