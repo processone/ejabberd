@@ -1,7 +1,7 @@
 2007-02-02  Christophe Romain <christophe.romain@process-one.net>
 
-    * doc/release_notes_1.1.3.txt: Creation.
-    * src/mod_roster_odbc.erl: Security bugfix.
+	* doc/release_notes_1.1.3.txt: Creation.
+	* src/mod_roster_odbc.erl: Security bugfix.
 
 2006-09-27  Mickael Remond  <mickael.remond@process-one.net>
 
