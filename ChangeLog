@@ -1,3 +1,9 @@
+2007-02-04  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.erl: Added separate version of
+	element_to_string for HTML encoding
+	* src/xml.erl: Reverted previous change
+
 2007-02-04  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/xml.erl: &apos; entity replaced by &#39; Should work more

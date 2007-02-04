@@ -366,10 +366,10 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
     Data = case lists:member(html, Headers) of
 	       true ->
 		   list_to_binary([?HTML_DOCTYPE,
-				   xml:element_to_string(XHTML)]);
+				   element_to_string(XHTML)]);
 	       _ ->
 		   list_to_binary([?XHTML_DOCTYPE,
-				   xml:element_to_string(XHTML)])
+				   element_to_string(XHTML)])
 	   end,
     Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
 		   {value, _} ->
@@ -449,6 +449,38 @@ parse_lang(Langs) ->
 	    "en"
     end.
 
+element_to_string(El) ->
+    case El of
+	{xmlelement, Name, Attrs, Els} ->
+	    if
+		Els /= [] ->
+		    [$<, Name, attrs_to_list(Attrs), $>,
+		     [element_to_string(E) || E <- Els],
+		     $<, $/, Name, $>];
+	       true ->
+		    [$<, Name, attrs_to_list(Attrs), $/, $>]
+	       end;
+	{xmlcdata, CData} ->
+	    crypt(CData)
+    end.
+
+attrs_to_list(Attrs) ->
+    [attr_to_list(A) || A <- Attrs].
+
+attr_to_list({Name, Value}) ->
+    [$\s, crypt(Name), $=, $", crypt(Value), $"].
+
+crypt(S) when is_list(S) ->
+    [case C of
+	 $& -> "&amp;";
+	 $< -> "&lt;";
+	 $> -> "&gt;";
+	 $" -> "&quot;";
+	 $' -> "&#39;";
+	 _ -> C
+     end || C <- S];
+crypt(S) when is_binary(S) ->
+    crypt(binary_to_list(S)).
 
 
 % Code below is taken (with some modifications) from the yaws webserver, which
