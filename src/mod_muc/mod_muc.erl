@@ -149,6 +149,7 @@ init([Host, Opts]) ->
     MyHost = gen_mod:get_opt(host, Opts, "conference." ++ Host),
     update_tables(MyHost),
     mnesia:add_table_index(muc_registered, nick),
+    mnesia:subscribe(system),
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
@@ -206,6 +207,9 @@ handle_info({room_destroyed, RoomHost, Pid}, State) ->
 						      pid = Pid})
 	end,
     mnesia:transaction(F),
+    {noreply, State};
+handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
+    clean_table_from_bad_node(Node),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -615,6 +619,19 @@ get_vh_rooms(Host) ->
 			  [{'==', {element, 2, '$1'}, Host}],
 			  ['$_']}]).
 
+
+clean_table_from_bad_node(Node) ->
+    F = fun() ->
+		Es = mnesia:select(
+		       muc_online_room,
+		       [{#muc_online_room{pid = '$1', _ = '_'},
+			 [{'==', {node, '$1'}, Node}],
+			 ['$_']}]),
+		lists:foreach(fun(E) ->
+				      mnesia:delete_object(E)
+			      end, Es)
+        end,
+    mnesia:transaction(F).
 
 
 update_tables(Host) ->
