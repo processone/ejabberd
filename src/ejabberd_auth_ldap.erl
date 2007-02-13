@@ -54,6 +54,7 @@
 		uids,
 		ufilter,
 		sfilter,
+		lfilter, %% Local filter (performed by ejabberd, not LDAP)
 		dn_filter,
 		dn_filter_attrs
 	       }).
@@ -243,7 +244,7 @@ find_user_dn(User, State) ->
 						     {attributes, DNAttrs}]) of
 		#eldap_search_result{entries = [#eldap_entry{attributes = Attrs,
 							     object_name = DN} | _]} ->
-		    is_valid_dn(DN, Attrs, State);
+			dn_filter(DN, Attrs, State);
 		_ ->
 		    false
 	    end;
@@ -251,6 +252,15 @@ find_user_dn(User, State) ->
 	    false
     end.
 
+%% apply the dn filter and the local filter:
+dn_filter(DN, Attrs, State) ->
+    %% Check if user is denied access by attribute value (local check)
+    case check_local_filter(Attrs, State) of
+        false -> false;
+        true -> is_valid_dn(DN, Attrs, State)
+    end.
+
+%% Check that the DN is valid, based on the dn filter
 is_valid_dn(DN, _, #state{dn_filter = undefined}) ->
     DN;
 
@@ -280,6 +290,28 @@ is_valid_dn(DN, Attrs, State) ->
 	_ ->
 	    false
     end.
+
+%% The local filter is used to check an attribute in ejabberd
+%% and not in LDAP to limit the load on the LDAP directory.
+%% A local rule can be either:
+%%    {equal, {"accountStatus",["active"]}}
+%%    {notequal, {"accountStatus",["disabled"]}}
+%% {ldap_local_filter, {notequal, {"accountStatus",["disabled"]}}}
+check_local_filter(_Attrs, #state{lfilter = undefined}) ->
+    true;
+check_local_filter(Attrs, #state{lfilter = LocalFilter}) ->
+    {Operation, FilterMatch} = LocalFilter,
+    local_filter(Operation, Attrs, FilterMatch).
+    
+local_filter(equal, Attrs, FilterMatch) ->
+    {Attr, Value} = FilterMatch,
+    case lists:keysearch(Attr, 1, Attrs) of
+        false -> false;
+        {value,{Attr,Value}} -> true;
+        _ -> false
+    end;
+local_filter(notequal, Attrs, FilterMatch) ->
+    not local_filter(equal, Attrs, FilterMatch).
 
 %%%----------------------------------------------------------------------
 %%% Auxiliary functions
@@ -321,6 +353,7 @@ parse_options(Host) ->
 	    undefined -> {undefined, undefined};
 	    {DNF, DNFA} -> {DNF, DNFA}
 	end,
+	LocalFilter = ejabberd_config:get_local_option({ldap_local_filter, Host}),
     #state{host = Host,
 	   eldap_id = Eldap_ID,
 	   bind_eldap_id = Bind_Eldap_ID,
@@ -333,6 +366,7 @@ parse_options(Host) ->
 	   uids = UIDs,
 	   ufilter = UserFilter,
 	   sfilter = SearchFilter,
+	   lfilter = LocalFilter,
 	   dn_filter = DNFilter,
 	   dn_filter_attrs = DNFilterAttrs
 	  }.
