@@ -1,3 +1,8 @@
+2007-02-18  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_muc/mod_muc.erl: Node now try to clean its own online room
+	when restarting (EJAB-182).
+
 2007-02-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_muc/mod_muc.erl: Clean online room table on cluster node
