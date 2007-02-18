@@ -203,7 +203,6 @@ do_route(From, To, Packet) ->
     case find_connection(From, To) of
 	{atomic, Pid} when pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
-	    % TODO
 	    {xmlelement, Name, Attrs, Els} = Packet,
 	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						  jlib:jid_to_string(To),
@@ -211,7 +210,9 @@ do_route(From, To, Packet) ->
 	    send_element(Pid, {xmlelement, Name, NewAttrs, Els}),
 	    ok;
 	{aborted, Reason} ->
-	    ?DEBUG("delivery failed: ~p~n", [Reason]),
+	    Err = jlib:make_error_reply(
+		    Packet, ?ERR_SERVICE_UNAVAILABLE),
+	    ejabberd_router:route(To, From, Err),
 	    false
     end.
 
@@ -223,26 +224,58 @@ find_connection(From, To) ->
 	{'EXIT', Reason} ->
 	    {aborted, Reason};
 	[] ->
-	    ?DEBUG("starting new s2s connection~n", []),
-	    Key = randoms:get_string(),
-	    {ok, Pid} = ejabberd_s2s_out:start(MyServer, Server, {new, Key}),
-	    F = fun() ->
-			case mnesia:read({s2s, FromTo}) of
-			    [El] ->
-				El#s2s.pid;
-			    [] ->
-				mnesia:write(#s2s{fromto = FromTo,
-						  pid = Pid,
-						  key = Key}),
-				Pid
-			end
-		end,
-	    TRes = mnesia:transaction(F),
-	    ejabberd_s2s_out:start_connection(Pid),
-	    TRes;
+	    case is_service(From, To) of
+		true ->
+		    {aborted, error};
+		false ->
+		    ?DEBUG("starting new s2s connection~n", []),
+		    Key = randoms:get_string(),
+		    {ok, Pid} = ejabberd_s2s_out:start(
+				  MyServer, Server, {new, Key}),
+		    F = fun() ->
+				case mnesia:read({s2s, FromTo}) of
+				    [El] ->
+					El#s2s.pid;
+				    [] ->
+					mnesia:write(#s2s{fromto = FromTo,
+							  pid = Pid,
+							  key = Key}),
+					Pid
+				end
+			end,
+		    TRes = mnesia:transaction(F),
+		    ejabberd_s2s_out:start_connection(Pid),
+		    TRes
+	    end;
 	[El] ->
 	    {atomic, El#s2s.pid}
     end.
+
+
+%%--------------------------------------------------------------------
+%% Function: is_service(From, To) -> true | false
+%% Description: Return true if the destination must be considered as a
+%% service.
+%% --------------------------------------------------------------------
+is_service(From, To) ->
+    LFromDomain = From#jid.lserver,
+    case ejabberd_config:get_local_option({route_subdomains, LFromDomain}) of
+	s2s -> % bypass RFC 3920 10.3
+	    false;
+	_ ->
+	    LDstDomain = To#jid.lserver,
+	    P = fun(Domain) -> is_subdmomain(LDstDomain, Domain) end,
+	    lists:any(P, ?MYHOSTS)
+    end.
+
+%%--------------------------------------------------------------------
+%% Function: is_subdmomain(Domain1, Domain2) -> true | false
+%% Description: Return true if Domain1 (a string representing an
+%% internet domain name) is a subdomain (or the same domain) of
+%% Domain2
+%% --------------------------------------------------------------------
+is_subdmomain(Domain1, Domain2) ->
+    lists:suffix(string:tokens(Domain2, "."), string:tokens(Domain1, ".")).
 
 send_element(Pid, El) ->
     Pid ! {send_element, El}.
@@ -274,4 +307,3 @@ update_tables() ->
 	false ->
 	    ok
     end.
-
