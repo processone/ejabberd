@@ -64,9 +64,8 @@ AC_DEFUN(AM_WITH_ERLANG,
 [ AC_ARG_WITH(erlang,
 	      [  --with-erlang=PREFIX    path to erlc and erl ])
 
-
-   AC_PATH_TOOL(ERLC, erlc, , $PATH:$with_erlang:$with_erlang/bin)
-   AC_PATH_TOOL(ERL, erl, , $PATH:$with_erlang:$with_erlang/bin)
+   AC_PATH_TOOL(ERLC, erlc, , $with_erlang:$with_erlang/bin:$PATH)
+   AC_PATH_TOOL(ERL, erl, , $with_erlang:$with_erlang/bin:$PATH)
    
    if test "z$ERLC" = "z" || test "z$ERL" = "z"; then
    		AC_MSG_ERROR([erlang not found])
