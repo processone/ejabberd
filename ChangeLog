@@ -1,5 +1,8 @@
 2007-02-19  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/cyrsasl_plain.erl: bad-auth error code replaced by not-authorized
+	(EJAB-187).
+	
 	* src/aclocal.m4: configure --with-erlang option is now working (Thanks
 	to Jerome Sautret) (EJAB-186).
 
