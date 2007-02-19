@@ -1,5 +1,9 @@
 2007-02-19  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/odbc/pg.sql: last table, state column cannot be NULL (EJAB-191).
+	* src/odbc/mysql.sql: likewise.
+	* src/odbc/mssql.sql. likewise.
+
 	* src/ejabberd_auth_ldap.erl: prevent anonymous bind on LDAP servers
 	as ejabberd is providing other anonymous authentication mechanism
 	(EJAB-190).

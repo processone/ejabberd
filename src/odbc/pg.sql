@@ -8,7 +8,7 @@ CREATE TABLE users (
 CREATE TABLE last (
     username text PRIMARY KEY,
     seconds text NOT NULL,
-    state text
+    state text NOT NULL
 );
 
 

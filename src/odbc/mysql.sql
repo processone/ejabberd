@@ -10,7 +10,7 @@ CREATE TABLE users (
 CREATE TABLE last (
     username varchar(250) PRIMARY KEY,
     seconds text NOT NULL,
-    state text
+    state text NOT NULl
 ) CHARACTER SET utf8;
 
 

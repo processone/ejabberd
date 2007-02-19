@@ -91,7 +91,7 @@ GO
 CREATE TABLE [dbo].[last] (
 	[username] [varchar] (250) NOT NULL ,
 	[seconds] [varchar] (50) NOT NULL ,
-	[state] [varchar] (100) NULL ,
+	[state] [varchar] (100) NOT NULL ,
 ) ON [PRIMARY]
 GO
 
