@@ -2023,6 +2023,11 @@ Options:
   are \term{local} and \term{universal}. With the first value, the local time,
   as reported to Erlang by the operating system, will be used. With the latter,
   GMT/UTC time will be used. The default value is \term{local}.
+\titem{spam\_prevention}\ind{options!spam\_prevention}
+  To prevent spam, the \term{spam_prevention} option adds a special attribute
+  to links that prevent their indexation by search engines. The default value
+  is \term{true}, which mean that nofollow attributes will be added to user
+  submitted links. 
 \titem{top\_link}\ind{options!top\_link}
   With this option you can customize the link on the top right corner of each
   log file. The syntax of this option is \term{\{"URL", "Text"\}}. The default
@@ -2049,6 +2054,7 @@ Examples:
                {dirtype, plain},
                {outdir, "/var/www/muclogs"},
                {timezone, universal},
+               {spam_prevention, true},
                {top_link, {"http://www.jabber.ru", "Jabber.ru"}}
     ]},
     ...

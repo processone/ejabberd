@@ -38,6 +38,7 @@
 		access,
 		lang,
 		timezone,
+		spam_prevention,
 		top_link}).
 
 %%====================================================================
@@ -98,6 +99,7 @@ init([Host, Opts]) ->
     AccessLog = gen_mod:get_opt(access_log, Opts, muc_admin),
     Timezone = gen_mod:get_opt(timezone, Opts, local),
     Top_link = gen_mod:get_opt(top_link, Opts, {"/", "Home"}),
+    NoFollow = gen_mod:get_opt(spam_prevention, Opts, true),
     Lang = case ejabberd_config:get_local_option({language, Host}) of
 	       undefined ->
 		   "";
@@ -111,6 +113,7 @@ init([Host, Opts]) ->
 		access = AccessLog,
 		lang = Lang,
 		timezone = Timezone,
+		spam_prevention = NoFollow,
 		top_link = Top_link}}.
 
 %%--------------------------------------------------------------------
@@ -261,6 +264,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	   css_file = CSSFile,
 	   lang = Lang,
 	   timezone = Timezone,
+	   spam_prevention = NoFollow,
 	   top_link = TopLink} = State,
     Room = get_room_info(RoomJID, Opts),
 
@@ -319,7 +323,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 				 [Nick, ?T("leaves the room")]);
 	       {leave, Reason} ->  
 		   io_lib:format("<font class=\"ml\">~s ~s: ~s</font><br/>", 
-				 [Nick, ?T("leaves the room"), htmlize(Reason)]);
+				 [Nick, ?T("leaves the room"), htmlize(Reason,NoFollow)]);
 	       {kickban, "307", ""} ->  
 		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
 				 [Nick, ?T("has been kicked")]);
@@ -337,7 +341,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 				 [OldNick, ?T("is now known as"), Nick]);
 	       {subject, T} ->  
 		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>", 
-				 [Nick, ?T(" has set the subject to: "), htmlize(T)]);
+				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow)]);
 	       {body, T} ->  
 		   case regexp:first_match(T, "^/me\s") of
 		       {match, _, _} ->
@@ -345,7 +349,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 					 [Nick, string:substr(htmlize(T), 5)]);
 		       nomatch ->
 			   io_lib:format("<font class=\"mn\">&lt;~s&gt;</font> ~s<br/>", 
-					 [Nick, htmlize(T)])
+					 [Nick, htmlize(T,NoFollow)])
 		   end
 	   end,
     {Hour, Minute, Second} = Time,
@@ -640,11 +644,19 @@ put_room_config(F, RoomConfig, Lang) ->
     fw(F,   "<div class=\"rcos\" id=\"a~p\" style=\"display: none;\" ><br/>~s</div>", [Now2, RoomConfig]),
     fw(F, "</div>").
 
+%% htmlize
+%% The default behaviour is to ignore the nofollow spam prevention on links
+%% (NoFollow=false)
 htmlize(S1) ->
+    htmlize(S1, false).
+
+%% The NoFollow parameter tell if the spam prevention should be applied to the link found
+%% true means 'apply nofollow on links'.
+htmlize(S1, NoFollow) ->
     S2_list = string:tokens(S1, "\n"),
     lists:foldl(
       fun(Si, Res) -> 
-	      Si2 = htmlize2(Si),
+	      Si2 = htmlize2(Si, NoFollow),
 	      case Res of
 		  "" -> Si2;
 		  _ -> Res ++ "<br/>" ++ Si2
@@ -653,13 +665,20 @@ htmlize(S1) ->
       "",
       S2_list).
 
-htmlize2(S1) ->
+htmlize2(S1, NoFollow) ->
     S2 = element(2, regexp:gsub(S1, "\\&", "\\&amp;")),
     S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
     S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
-    S5 = element(2, regexp:gsub(S4, "(http|ftp)://.[^ ]*", "<a href=\"&\">&</a>")),
+    S5 = element(2, regexp:gsub(S4, "(http|ftp)://.[^ ]*", link_regexp(NoFollow))),
     %% Remove 'right-to-left override' unicode character 0x202e
     element(2, regexp:gsub(S5, [226,128,174], "[RLO]")).
+
+%% Regexp link
+%% Add the nofollow rel attribute when required
+link_regexp(false) ->
+    "<a href=\"&\">&</a>";
+link_regexp(true) ->
+    "<a href=\"&\" rel=\"nofollow\">&</a>".
 
 get_room_info(RoomJID, Opts) ->
     Title =
