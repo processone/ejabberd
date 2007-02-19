@@ -621,6 +621,9 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
 handle_event(destroy, StateName, StateData) ->
     handle_event({destroy, none}, StateName, StateData);
 
+handle_event({set_affiliations, Affiliations}, StateName, StateData) ->
+    {next_state, StateName, StateData#state{affiliations = Affiliations}};
+
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -664,12 +667,12 @@ handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
 	    end,
     {reply, Reply, StateName, StateData};
 handle_sync_event(get_config, _From, StateName, StateData) ->
-    {reply, StateData#state.config, StateName, StateData};
+    {reply, {ok, StateData#state.config}, StateName, StateData};
 handle_sync_event(get_state, _From, StateName, StateData) ->
-    {reply, StateData, StateName, StateData};
+    {reply, {ok, StateData}, StateName, StateData};
 handle_sync_event({change_config, Config}, _From, StateName, StateData) ->
     {result, [], NSD} = change_config(Config, StateData),
-    {reply, NSD#state.config, StateName, NSD};
+    {reply, {ok, NSD#state.config}, StateName, NSD};
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
