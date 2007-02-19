@@ -606,6 +606,21 @@ handle_event({service_message, Msg}, _StateName, StateData) ->
 				 StateData),
     {next_state, normal_state, NSD};
 
+handle_event({destroy, Reason}, _StateName, StateData) ->
+    {result, [], stop} =
+        destroy_room(
+          {xmlelement, "destroy",
+           [{"xmlns", ?NS_MUC_OWNER}],
+           case Reason of
+               none -> [];
+               _Else ->
+                   [{xmlelement, "reason",
+                     [], [{xmlcdata, Reason}]}]
+           end}, StateData),
+    {stop, stopped_by_event, StateData};
+handle_event(destroy, StateName, StateData) ->
+    handle_event({destroy, none}, StateName, StateData);
+
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
