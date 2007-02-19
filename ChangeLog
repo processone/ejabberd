@@ -1,33 +1,46 @@
+2007-02-20  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_c2s.erl: Init shaper with a default value first
+	after stream opening
+
+	* src/ejabberd_c2s.erl: Log failed SASL login attempts
+	* src/cyrsasl.erl: Updated API
+	* src/cyrsasl_plain.erl: Likewise
+	* src/cyrsasl_digest.erl: Likewise
+
 2007-02-19  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Added an option set affiliations.
 
-	* doc/api/*: Added Erlang documentation generation script (EJAB-188).
+	* doc/api/*: Added Erlang documentation generation script
+	(EJAB-188).
 	* doc/version.tex: Updated.
 	* src/ejabberd.app: Updated.
 
-	* src/odbc/pg.sql: last table, state column cannot be NULL (EJAB-191).
+	* src/odbc/pg.sql: last table, state column cannot be NULL
+	(EJAB-191).
 	* src/odbc/mysql.sql: likewise.
-	* src/odbc/mssql.sql. likewise.
+	* src/odbc/mssql.sql: likewise.
 
-	* src/ejabberd_auth_ldap.erl: prevent anonymous bind on LDAP servers
-	as ejabberd is providing other anonymous authentication mechanism
+	* src/ejabberd_auth_ldap.erl: prevent anonymous bind on LDAP
+	servers as ejabberd is providing other anonymous authentication
+	mechanism
 	(EJAB-190).
 
-	* src/cyrsasl_plain.erl: bad-auth error code replaced by not-authorized
-	(EJAB-187).
+	* src/cyrsasl_plain.erl: bad-auth error code replaced by
+	not-authorized (EJAB-187).
 	
-	* src/aclocal.m4: configure --with-erlang option is now working (Thanks
-	to Jerome Sautret) (EJAB-186).
+	* src/aclocal.m4: configure --with-erlang option is now working
+	(Thanks to Jerome Sautret) (EJAB-186).
 
-	* src/mod_muc/mod_muc_log.erl: Spam prevention: The default behaviour 
-	is now to use the nofollow rel attributes for links that are submitted
-	by users (EJAB-185).
+	* src/mod_muc/mod_muc_log.erl: Spam prevention: The default
+	behaviour is now to use the nofollow rel attributes for links that
+	are submitted by users (EJAB-185).
 	* doc/guide.tex: Likewise.
 
-	* src/mod_muc/mod_muc_room.erl: API improvement: Implementation of an
-	event to destroy MUC room from an external application (Thanks to
-    Massimiliano Mirra) (EJAB-184).
+	* src/mod_muc/mod_muc_room.erl: API improvement: Implementation of
+	an event to destroy MUC room from an external application (Thanks
+	to Massimiliano Mirra) (EJAB-184).
 
 2007-02-18  Alexey Shchepin  <alexey@sevcom.net>
 
@@ -119,16 +132,16 @@
 
 2007-01-11  Mickael Remond  <mickael.remond@process-one.net>
 
-	* doc/guide.tex: Latex / Hevea related improvements for documentation
-	generation (thanks to Sander Devrieze). 
+	* doc/guide.tex: Latex / Hevea related improvements for
+	documentation generation (thanks to Sander Devrieze).
 	* doc/introduction.tex: Likewise.
 	* doc/dev.tex: Likewise.
 	* doc/features.tex: Likewise.
 
 2007-01-08  Christophe Romain <christophe.romain@process-one.net>
 
-	* src/mod_pubsub/mod_pubsub.erl: add presence_based_delivery cluster
-	support
+	* src/mod_pubsub/mod_pubsub.erl: add presence_based_delivery
+	cluster support
 
 2007-01-05  Alexey Shchepin  <alexey@sevcom.net>
 

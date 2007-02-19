@@ -174,6 +174,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
 		    Lang = xml:get_attr_s("xml:lang", Attrs),
+		    change_shaper(StateData, jlib:make_jid("", Server, "")),
 		    case xml:get_attr_s("version", Attrs) of
 			"1.0" ->
 			    Header = io_lib:format(?STREAM_HEADER,
@@ -493,6 +494,16 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				    jlib:encode_base64(ServerOut)}]}),
 		    {next_state, wait_for_sasl_response,
 		     StateData#state{sasl_state = NewSASLState}};
+		{error, Error, Username} ->
+		    ?INFO_MSG(
+		       "(~w) Failed authentication for ~s@~s",
+		       [StateData#state.socket,
+			Username, StateData#state.server]),
+		    send_element(StateData,
+				 {xmlelement, "failure",
+				  [{"xmlns", ?NS_SASL}],
+				  [{xmlelement, Error, [], []}]}),
+		    {next_state, wait_for_feature_request, StateData};
 		{error, Error} ->
 		    send_element(StateData,
 				 {xmlelement, "failure",
@@ -609,6 +620,16 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				    jlib:encode_base64(ServerOut)}]}),
 		    {next_state, wait_for_sasl_response,
 		     StateData#state{sasl_state = NewSASLState}};
+		{error, Error, Username} ->
+		    ?INFO_MSG(
+		       "(~w) Failed authentication for ~s@~s",
+		       [StateData#state.socket,
+			Username, StateData#state.server]),
+		    send_element(StateData,
+				 {xmlelement, "failure",
+				  [{"xmlns", ?NS_SASL}],
+				  [{xmlelement, Error, [], []}]}),
+		    {next_state, wait_for_feature_request, StateData};
 		{error, Error} ->
 		    send_element(StateData,
 				 {xmlelement, "failure",

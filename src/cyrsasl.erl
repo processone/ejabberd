@@ -136,6 +136,8 @@ server_step(State, ClientIn) ->
 	{continue, ServerOut, NewMechState} ->
 	    {continue, ServerOut,
 	     State#sasl_state{mech_state = NewMechState}};
+	{error, Error, Username} ->
+	    {error, Error, Username};
 	{error, Error} ->
 	    {error, Error}
     end.

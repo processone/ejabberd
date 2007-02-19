@@ -44,7 +44,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	    AuthzId = xml:get_attr_s("authzid", KeyVals),
 	    case (State#state.get_password)(UserName) of
 		false ->
-		    {error, "not-authorized"};
+		    {error, "not-authorized", UserName};
 		Passwd ->
 		    Response = response(KeyVals, UserName, Passwd,
 					Nonce, AuthzId, "AUTHENTICATE"),
@@ -59,7 +59,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 					 username = UserName,
 					 authzid = AuthzId}};
 			_ ->
-			    {error, "not-authorized"}
+			    {error, "not-authorized", UserName}
 		    end
 	    end
     end;
