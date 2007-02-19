@@ -120,11 +120,16 @@ plain_password_required() ->
     true.
 
 check_password(User, Server, Password) ->
-    case catch check_password_ldap(User, Server, Password) of
-	{'EXIT', _} ->
-	    false;
-	Result ->
-	    Result
+    %% In LDAP spec: empty password means anonymous authentication.
+    %% As ejabberd is providing other anonymous authentication mechanisms
+    %% we simply prevent the use of LDAP anonymous authentication.
+    if Password == "" ->
+        false;
+    true ->
+        case catch check_password_ldap(User, Server, Password) of
+	        {'EXIT', _} -> false;
+	        Result -> Result
+        end
     end.
 
 check_password(User, Server, Password, _StreamID, _Digest) ->
