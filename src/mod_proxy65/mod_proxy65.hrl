@@ -27,7 +27,7 @@
 
 %% RFC 1928 replies
 -define(SUCCESS, 0).
--define(ERR_GENERAL_FAILURE, 0).
+-define(ERR_GENERAL_FAILURE, 1).
 -define(ERR_NOT_ALLOWED, 2).
 -define(ERR_NETWORK_UNREACHABLE, 3).
 -define(ERR_HOST_UNREACHABLE, 4).

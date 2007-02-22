@@ -51,8 +51,7 @@
 	  sha1,          %% SHA1 key
 	  host,          %% virtual host
 	  auth_type,     %% authentication type: anonymous or plain
-	  shaper,        %% Shaper name
-	  active = false %% Activity flag
+	  shaper         %% Shaper name
 	 }).
 
 %% Unused callbacks
@@ -83,9 +82,9 @@ init([Socket, Host, Opts]) ->
 			       shaper    = Shaper,
 			       timer     = TRef}}.
 
-terminate(_Reason, _StateName, #state{sha1=SHA1,active=Flag}) ->
+terminate(_Reason, StateName, #state{sha1=SHA1}) ->
     catch mod_proxy65_sm:unregister_stream(SHA1),
-    if Flag==true ->
+    if StateName == stream_established ->
 	    ?INFO_MSG("Bytestream terminated", []);
        true ->
 	    ok
@@ -199,7 +198,7 @@ handle_info({activate, PeerPid, PeerSocket, IJid, TJid},
     Host = StateData#state.host,
     MaxRate = find_maxrate(Shaper, IJid, TJid, Host),
     spawn_link(?MODULE, relay, [MySocket, PeerSocket, MaxRate]),
-    {next_state, stream_established, StateData#state{active=true}};
+    {next_state, stream_established, StateData};
 
 %% Socket closed
 handle_info({tcp_closed, _Socket}, _StateName, StateData) ->

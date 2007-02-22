@@ -1,3 +1,14 @@
+2007-02-22  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_proxy65/mod_proxy65_sm.erl: Cluster support (thanks to
+	Evgeniy Khramtsov)
+
+	* src/mod_proxy65/mod_proxy65_stream.erl: Code cleanup (thanks to
+	Evgeniy Khramtsov)
+
+	* src/mod_proxy65/mod_proxy65.hrl: Fixed typo (thanks to Evgeniy
+	Khramtsov)
+
 2007-02-20  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_c2s.erl: Init shaper with a default value first
