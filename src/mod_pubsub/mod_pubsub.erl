@@ -78,7 +78,7 @@ start(Host, Opts) ->
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, stop),
-    supervisor:stop_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc).
 
 delete_item(From, Node, ItemID) ->
     delete_item(get_host(), From, Node, ItemID).
