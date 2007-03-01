@@ -91,6 +91,13 @@
 {"Import File", "Импорт из файла"}.
 {"Import Directory", "Импорт из директории"}.
 
+% mod_proxy65.erl
+{"SOCKS5 bytestreams proxy", "Потоковый SOCKS5 прокси"}.
+
+% mod_proxy65/mod_proxy65_service.erl
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin",
+ "ejabberd SOCKS5 Bytestreams модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
+
 % mod_register.erl
 {"Choose a username and password to register with this server",
  "Выберите имя пользователя и пароль для регистрации на этом сервере"}.
