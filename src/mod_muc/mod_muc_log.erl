@@ -76,7 +76,7 @@ check_access_log(Host, From) ->
     case catch gen_server:call(get_proc_name(Host),
 			       {check_access_log, Host, From}) of
 	{'EXIT', _Error} ->
-	    false;
+	    deny;
 	Res ->
 	    Res
     end.
