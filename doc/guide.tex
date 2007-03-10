@@ -1037,6 +1037,20 @@ parameter:
 {odbc_server, {mysql, "localhost", "test", "root", "password"}}.
 \end{verbatim}
 
+Optionally, it is possible to define the MySQL port to use. This
+option is only useful, in very rare cases, when you are not running
+MySQL with the default port setting. The \term{mysql} parameter
+can thus take the following form:
+\begin{verbatim}
+{mysql, "Server", Port, "Database", "Username", "Password"}
+\end{verbatim}
+
+The \term{Port} value should be an integer, without quotes. For example:
+\begin{verbatim}
+{odbc_server, {mysql, "localhost", Port, "test", "root", "password"}}.
+\end{verbatim}
+
+
 \subsubsection{Storage}
 \label{mysqlstorage}
 \ind{MySQL!storage}
@@ -1160,6 +1174,19 @@ form as parameter:
 \term{pgsql} is a keyword that should be kept as is. For example:
 \begin{verbatim}
 {odbc_server, {pgsql, "localhost", "database", "ejabberd", "password"}}.
+\end{verbatim}
+
+Optionally, it is possible to define the PostgreSQL port to use. This
+option is only useful, in very rare cases, when you are not running
+PostgreSQL with the default port setting. The \term{pgsql} parameter
+can thus take the following form:
+\begin{verbatim}
+{pgsql, "Server", Port, "Database", "Username", "Password"}
+\end{verbatim}
+
+The \term{Port} value should be an integer, without quotes. For example:
+\begin{verbatim}
+{odbc_server, {pgsql, "localhost", 5432, "database", "ejabberd", "password"}}.
 \end{verbatim}
 
 \subsubsection{Storage}

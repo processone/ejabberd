@@ -1,3 +1,10 @@
+2007-03-10  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: ejabberd admin can now choose the
+	relational database port to user from ejabberd configuration
+	file (EJAB-195).
+	* src/doc/guide.tex: Likewise.
+
 2007-03-02  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_muc/mod_muc_log.erl: Fix wrong return on check access log.

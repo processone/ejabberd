@@ -34,6 +34,7 @@
 
 -define(STATE_KEY, ejabberd_odbc_state).
 -define(MAX_TRANSACTION_RESTARTS, 10).
+-define(PGSQL_PORT, 5432).
 -define(MYSQL_PORT, 3306).
 
 %%%----------------------------------------------------------------------
@@ -113,10 +114,16 @@ escape_like(C)  -> odbc_queries:escape(C).
 init([Host]) ->
     SQLServer = ejabberd_config:get_local_option({odbc_server, Host}),
     case SQLServer of
+	%% Default pgsql port
 	{pgsql, Server, DB, Username, Password} ->
-	    pgsql_connect(Server, DB, Username, Password);
+	    pgsql_connect(Server, ?PGSQL_PORT, DB, Username, Password);
+	{pgsql, Server, Port, DB, Username, Password} when is_integer(Port) ->
+	    pgsql_connect(Server, Port, DB, Username, Password);
+	%% Default mysql port
 	{mysql, Server, DB, Username, Password} ->
-	    mysql_connect(Server, DB, Username, Password);
+	    mysql_connect(Server, ?MYSQL_PORT, DB, Username, Password);
+	{mysql, Server, Port, DB, Username, Password} when is_integer(Port) ->
+	    mysql_connect(Server, Port, DB, Username, Password);
 	_ when is_list(SQLServer) ->
 	    odbc_connect(SQLServer)
     end.
@@ -229,8 +236,8 @@ odbc_connect(SQLServer) ->
 
 %% part of init/1
 %% Open a database connection to PostgreSQL
-pgsql_connect(Server, DB, Username, Password) ->
-    case pgsql:connect(Server, DB, Username, Password) of
+pgsql_connect(Server, Port, DB, Username, Password) ->
+    case pgsql:connect(Server, DB, Username, Password, Port) of
 	{ok, Ref} -> 
 	    {ok, #state{db_ref = Ref, db_type = pgsql}};
 	{error, Reason} ->
@@ -267,9 +274,9 @@ pgsql_item_to_odbc(_) ->
 
 %% part of init/1
 %% Open a database connection to MySQL
-mysql_connect(Server, DB, Username, Password) ->
+mysql_connect(Server, Port, DB, Username, Password) ->
     NoLogFun = fun(_Level,_Format,_Argument) -> ok end,
-    case mysql_conn:start(Server, ?MYSQL_PORT, Username, Password, DB, NoLogFun) of
+    case mysql_conn:start(Server, Port, Username, Password, DB, NoLogFun) of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
