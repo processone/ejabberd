@@ -234,15 +234,16 @@ process_header(State, Data) ->
 process([], _) ->
     ejabberd_web:error(not_found);
 process(Handlers, Request) ->
-    [{PathPattern, HandlerModule} | HandlersLeft] = Handlers,
-    
-    case lists:prefix(PathPattern, Request#request.path) of
+    [{HandlerPathPrefix, HandlerModule} | HandlersLeft] = Handlers,
+
+    case lists:prefix(HandlerPathPrefix, Request#request.path) of
 	true ->
+            ?DEBUG("~p matches ~p", [Request#request.path, HandlerPathPrefix]),
             %% LocalPath is the path "local to the handler", i.e. if
             %% the handler was registered to handle "/test/" and the
             %% requested path is "/test/foo/bar", the local path is
             %% ["foo", "bar"]
-            LocalPath = lists:nthtail(length(PathPattern), Request#request.path),
+            LocalPath = lists:nthtail(length(HandlerPathPrefix), Request#request.path),
 	    HandlerModule:process(LocalPath, Request);
 	false ->
 	    process(HandlersLeft, Request)
@@ -279,11 +280,10 @@ process_request(#state{request_method = 'GET',
 		{Status, Headers, El} when
 		element(1, El) == xmlelement ->
 		    make_xhtml_output(State, Status, Headers, El);
-		Text when is_list(Text) ->
-		    make_text_output(State, 200, [], Text);
-		{Status, Headers, Text} when
-		is_list(Text) ->
-		    make_text_output(State, Status, Headers, Text)
+		Output when is_list(Output) or is_binary(Output) ->
+		    make_text_output(State, 200, [], Output);
+		{Status, Headers, Output} when is_list(Output) or is_binary(Output) ->
+		    make_text_output(State, Status, Headers, Output)
 	    end
     end;
 
@@ -327,10 +327,10 @@ process_request(#state{request_method = 'POST',
 		{Status, Headers, El} when
 		element(1, El) == xmlelement ->
 		    make_xhtml_output(State, Status, Headers, El);
-		Text when is_list(Text) ->
-		    make_text_output(State, 200, [], Text);
-		{Status, Headers, Text} when is_list(Text) ->
-		    make_text_output(State, Status, Headers, Text)
+		Output when is_list(Output) or is_binary(Output) ->
+		    make_text_output(State, 200, [], Output);
+		{Status, Headers, Output} when is_list(Output) or is_binary(Output) ->
+		    make_text_output(State, Status, Headers, Output)
 	    end
     end;
 
@@ -405,8 +405,10 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
 	  code_to_phrase(Status), "\r\n"],
     [SL, H, "\r\n", Data].
 
-make_text_output(State, Status, Headers, Text) ->
-    Data = list_to_binary(Text),
+make_text_output(State, Status, Headers, Text) when is_list(Text) ->
+    make_text_output(State, Status, Headers, list_to_binary(Text));
+
+make_text_output(State, Status, Headers, Data) when is_binary(Data) ->
     Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
 		   {value, _} ->
 		       [{"Content-Length", integer_to_list(size(Data))} |

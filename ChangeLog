@@ -1,5 +1,8 @@
 2007-03-10  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/web/ejabberd_http.erl: Support for binaries in ejabberd HTTP
+	server (Thanks to Massimiliano Mirra) (EJAB-197).
+
 	* src/configure.ac: autoconf improvements (thanks to Tony Finch) (EJAB-204).
 	* src/aclocal.m4: Likewise.
 					 
