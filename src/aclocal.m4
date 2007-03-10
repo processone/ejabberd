@@ -19,11 +19,14 @@ AC_DEFUN(AM_WITH_EXPAT,
 	fi
 	expat_save_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS $EXPAT_CFLAGS"
+       expat_save_CPPFLAGS="$CPPFLAGS"
+       CPPFLAGS="$CPPFLAGS $EXPAT_CFLAGS"
 	AC_CHECK_HEADERS(expat.h, , expat_found=no)
 	if test $expat_found = no; then
 		AC_MSG_ERROR([Could not find expat.h])
 	fi
 	CFLAGS="$expat_save_CFLAGS"
+       CPPFLAGS="$expat_save_CPPFLAGS"
 
   AC_SUBST(EXPAT_CFLAGS)
   AC_SUBST(EXPAT_LIBS)
@@ -50,11 +53,14 @@ AC_DEFUN(AM_WITH_ZLIB,
 	fi
 	zlib_save_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS $ZLIB_CFLAGS"
+       zlib_save_CPPFLAGS="$CFLAGS"
+       CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
 	AC_CHECK_HEADERS(zlib.h, , zlib_found=no)
 	if test $zlib_found = no; then
 		AC_MSG_ERROR([Could not find zlib.h])
 	fi
 	CFLAGS="$zlib_save_CFLAGS"
+       CPPFLAGS="$zlib_save_CPPFLAGS"
 
   AC_SUBST(ZLIB_CFLAGS)
   AC_SUBST(ZLIB_LIBS)
@@ -265,19 +271,19 @@ have_openssl=no
 if test x"$tls" != x; then
     for ssl_prefix in $withval /usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr; do
         printf "looking for openssl in $ssl_prefix...\n"
-        SSL_CFLAGS="-I$ssl_prefix/include/openssl"
+        SSL_CFLAGS="-I$ssl_prefix/include"
         SSL_LIBS="-L$ssl_prefix/lib -lcrypto"
         AC_CHECK_LIB(ssl, SSL_new, [ have_openssl=yes ], [ have_openssl=no ], [ $SSL_LIBS $SSL_CFLAGS ])
         if test x"$have_openssl" = xyes; then
             save_CPPFLAGS=$CPPFLAGS
-            CPPFLAGS="-I$ssl_prefix/lib $CPPFLAGS"
+            CPPFLAGS="-I$ssl_prefix/include $CPPFLAGS"
             AC_CHECK_HEADERS(openssl/ssl.h, have_openssl_h=yes)
             CPPFLAGS=$save_CPPFLAGS
             if test x"$have_openssl_h" = xyes; then
                 have_openssl=yes
                 printf "openssl found in $ssl_prefix\n";
                 SSL_LIBS="-L$ssl_prefix/lib -lssl -lcrypto"
-                CPPFLAGS="-I$ssl_prefix/lib $CPPFLAGS"
+                CPPFLAGS="-I$ssl_prefix/include $CPPFLAGS"
                 SSL_CFLAGS="-DHAVE_SSL"
                 break
             fi

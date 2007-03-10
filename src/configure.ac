@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
+AC_INIT(ejabberd.erl,, ejabberd@process-one.net)
 
 # Checks for programs.
 AC_PROG_CC
@@ -21,7 +21,7 @@ AM_WITH_ZLIB
 AC_C_CONST
 
 # Change default prefix
-AC_PREFIX_DEFAULT /
+AC_PREFIX_DEFAULT(/)
 
 # Checks for library functions.
 AC_FUNC_MALLOC

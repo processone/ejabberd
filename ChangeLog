@@ -1,5 +1,8 @@
 2007-03-10  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/configure.ac: autoconf improvements (thanks to Tony Finch) (EJAB-204).
+	* src/aclocal.m4: Likewise.
+					 
 	* src/odbc/ejabberd_odbc.erl: ejabberd admin can now choose the
 	relational database port to user from ejabberd configuration
 	file (EJAB-195).
