@@ -35,7 +35,6 @@
 
 -record(state, {socket, sockmod, streamid,
 		hosts, password, access}).
--record(socket_state, {sockmod, socket, receiver}).
 
 %-define(DBGFSM, true).
 
@@ -95,12 +94,7 @@ socket_type() ->
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
-    ?INFO_MSG("External service connected on receiver ~p,~n~p:~n~p~n",
-	      [Socket#socket_state.receiver,
-	       Socket#socket_state.socket,
-	       {erlang:port_info(Socket#socket_state.socket),
-		inet:sockname(Socket#socket_state.socket),
-		inet:peername(Socket#socket_state.socket)}]),
+    ?INFO_MSG("(~w) External service connected", [Socket]),
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -130,6 +124,11 @@ init([{SockMod, Socket}, Opts]) ->
 			false
 		end
 	end,
+    Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
+		 {value, {_, S}} -> S;
+		 _ -> none
+	     end,
+    SockMod:change_shaper(Socket, Shaper),
     {ok, wait_for_stream, #state{socket = Socket,
 				 sockmod = SockMod,
 				 streamid = new_id(),

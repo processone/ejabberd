@@ -131,7 +131,7 @@
 			    {max_stanza_size, 131072}
 			   ]},
   {5280, ejabberd_http,    [http_poll, web_admin]},
-  {8888, ejabberd_service, [{access, all},
+  {8888, ejabberd_service, [{access, all}, {shaper_rule, fast},
 			    {hosts, ["icq.localhost", "sms.localhost"],
 			     [{password, "secret"}]}]}
  ]}.

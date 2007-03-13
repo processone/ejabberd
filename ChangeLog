@@ -1,3 +1,8 @@
+2007-03-13  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_service.erl: Added shaper_rule option, changed
+	service connection log message
+
 2007-03-13  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_service.erl: Add extra info in the log about which
@@ -10,17 +15,19 @@
 	* src/web/ejabberd_http.erl: Support for binaries in ejabberd HTTP
 	server (Thanks to Massimiliano Mirra) (EJAB-197).
 
-	* src/configure.ac: autoconf improvements (thanks to Tony Finch) (EJAB-204).
+	* src/configure.ac: autoconf improvements (thanks to Tony Finch)
+	(EJAB-204).
 	* src/aclocal.m4: Likewise.
 					 
 	* src/odbc/ejabberd_odbc.erl: ejabberd admin can now choose the
-	relational database port to user from ejabberd configuration
-	file (EJAB-195).
+	relational database port to user from ejabberd configuration file
+	(EJAB-195).
 	* src/doc/guide.tex: Likewise.
 
 2007-03-02  Mickael Remond  <mickael.remond@process-one.net>
 
-	* src/mod_muc/mod_muc_log.erl: Fix wrong return on check access log.
+	* src/mod_muc/mod_muc_log.erl: Fix wrong return on check access
+	log.
 
 2007-03-01  Alexey Shchepin  <alexey@sevcom.net>
 
