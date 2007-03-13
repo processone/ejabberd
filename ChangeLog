@@ -1,3 +1,10 @@
+2007-03-13  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_service.erl: Add extra info in the log about which
+	components is connected and which Erlang process is handling
+	it. This is usefull in context where many types of components are
+	used (Thanks to Jerome Sautret) (EJAB-211).
+
 2007-03-10  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_http.erl: Support for binaries in ejabberd HTTP

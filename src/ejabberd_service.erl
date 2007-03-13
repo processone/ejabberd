@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_service.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -35,6 +35,7 @@
 
 -record(state, {socket, sockmod, streamid,
 		hosts, password, access}).
+-record(socket_state, {sockmod, socket, receiver}).
 
 %-define(DBGFSM, true).
 
@@ -91,9 +92,15 @@ socket_type() ->
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
-%%          {stop, StopReason}                   
+%%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
+    ?INFO_MSG("External service connected on receiver ~p,~n~p:~n~p~n",
+	      [Socket#socket_state.receiver,
+	       Socket#socket_state.socket,
+	       {erlang:port_info(Socket#socket_state.socket),
+		inet:sockname(Socket#socket_state.socket),
+		inet:peername(Socket#socket_state.socket)}]),
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -135,7 +142,7 @@ init([{SockMod, Socket}, Opts]) ->
 %% Func: StateName/2
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
@@ -172,7 +179,8 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 		    send_text(StateData, "<handshake/>"),
 		    lists:foreach(
 		      fun(H) ->
-			      ejabberd_router:register_route(H)
+			      ejabberd_router:register_route(H),
+			      ?INFO_MSG("Route registered for service ~p~n", [H])
 		      end, StateData#state.hosts),
 		    {next_state, stream_established, StateData};
 		_ ->
@@ -245,7 +253,7 @@ stream_established(closed, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 %state_name(Event, From, StateData) ->
 %    Reply = ok,
@@ -255,7 +263,7 @@ stream_established(closed, StateData) ->
 %% Func: handle_event/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -267,7 +275,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
@@ -280,7 +288,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
@@ -335,4 +343,3 @@ send_element(StateData, El) ->
 
 new_id() ->
     randoms:get_string().
-
