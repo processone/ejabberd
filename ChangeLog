@@ -1,5 +1,8 @@
 2007-03-18  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_s2s.erl: Don't bounce packets with "error" and
+	"result" type
+
 	* src/ejabberd_s2s.erl: Fixed spelling
 
 	* src/ejabberd_s2s.erl: Don't start s2s process for existing

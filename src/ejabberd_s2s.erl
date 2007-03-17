@@ -210,9 +210,14 @@ do_route(From, To, Packet) ->
 	    send_element(Pid, {xmlelement, Name, NewAttrs, Els}),
 	    ok;
 	{aborted, Reason} ->
-	    Err = jlib:make_error_reply(
-		    Packet, ?ERR_SERVICE_UNAVAILABLE),
-	    ejabberd_router:route(To, From, Err),
+	    case xml:get_tag_attr_s("type", Packet) of
+		"error" -> ok;
+		"result" -> ok;
+		_ ->
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERR_SERVICE_UNAVAILABLE),
+		    ejabberd_router:route(To, From, Err)
+	    end,
 	    false
     end.
 
