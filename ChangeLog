@@ -1,5 +1,7 @@
 2007-03-18  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_s2s.erl: Fixed spelling
+
 	* src/ejabberd_s2s.erl: Don't start s2s process for existing
 	connection in case of race condition
 
@@ -23,9 +25,9 @@
 	* src/configure.ac: autoconf improvements (thanks to Tony Finch)
 	(EJAB-204).
 	* src/aclocal.m4: Likewise.
-					 
+
 	* src/odbc/ejabberd_odbc.erl: ejabberd admin can now choose the
-	relational database port to user from ejabberd configuration file
+	relational database port to use from ejabberd configuration file
 	(EJAB-195).
 	* src/doc/guide.tex: Likewise.
 

@@ -269,17 +269,17 @@ is_service(From, To) ->
 	    false;
 	_ ->
 	    LDstDomain = To#jid.lserver,
-	    P = fun(Domain) -> is_subdmomain(LDstDomain, Domain) end,
+	    P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
 	    lists:any(P, ?MYHOSTS)
     end.
 
 %%--------------------------------------------------------------------
-%% Function: is_subdmomain(Domain1, Domain2) -> true | false
+%% Function: is_subdomain(Domain1, Domain2) -> true | false
 %% Description: Return true if Domain1 (a string representing an
 %% internet domain name) is a subdomain (or the same domain) of
 %% Domain2
 %% --------------------------------------------------------------------
-is_subdmomain(Domain1, Domain2) ->
+is_subdomain(Domain1, Domain2) ->
     lists:suffix(string:tokens(Domain2, "."), string:tokens(Domain1, ".")).
 
 send_element(Pid, El) ->
