@@ -244,7 +244,12 @@ find_connection(From, To) ->
 				end
 			end,
 		    TRes = mnesia:transaction(F),
-		    ejabberd_s2s_out:start_connection(Pid),
+		    case TRes of
+			{atomic, Pid} ->
+			    ejabberd_s2s_out:start_connection(Pid);
+			_ ->
+			    ok
+		    end,
 		    TRes
 	    end;
 	[El] ->

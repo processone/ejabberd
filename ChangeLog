@@ -1,3 +1,8 @@
+2007-03-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s.erl: Don't start s2s process for existing
+	connection in case of race condition
+
 2007-03-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_service.erl: Added shaper_rule option, changed
@@ -73,8 +78,7 @@
 
 	* src/ejabberd_auth_ldap.erl: prevent anonymous bind on LDAP
 	servers as ejabberd is providing other anonymous authentication
-	mechanism
-	(EJAB-190).
+	mechanism (EJAB-190).
 
 	* src/cyrsasl_plain.erl: bad-auth error code replaced by
 	not-authorized (EJAB-187).
