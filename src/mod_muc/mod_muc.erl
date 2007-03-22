@@ -474,6 +474,7 @@ iq_disco_items(Host, From, Lang) ->
 		     case catch gen_fsm:sync_send_all_state_event(
 				  Pid, {get_disco_item, From, Lang}, 100) of
 			 {item, Desc} ->
+			     flush(),
 			     {true,
 			      {xmlelement, "item",
 			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
@@ -483,6 +484,13 @@ iq_disco_items(Host, From, Lang) ->
 		     end
 	     end, get_vh_rooms(Host)).
 
+flush() ->
+    receive
+	_ ->
+	    flush()
+    after 0 ->
+	    ok
+    end.
 
 -define(XFIELD(Type, Label, Var, Val),
 	{xmlelement, "field", [{"type", Type},
