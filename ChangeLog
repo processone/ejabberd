@@ -1,3 +1,11 @@
+2007-04-09  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_sm.erl: Minor optimisation
+
+	* src/ejabberd_system_monitor.erl: Experimental watchdog
+	* src/ejabberd_sup.erl: Likewise
+	* src/ejabberd_config.erl: Likewise
+
 2007-03-22  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/guide.tex: Fixed typo.
@@ -95,7 +103,7 @@
 
 	* src/cyrsasl_plain.erl: bad-auth error code replaced by
 	not-authorized (EJAB-187).
-	
+
 	* src/aclocal.m4: configure --with-erlang option is now working
 	(Thanks to Jerome Sautret) (EJAB-186).
 

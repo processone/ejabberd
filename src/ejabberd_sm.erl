@@ -429,6 +429,10 @@ route_message(From, To, Packet) ->
 	    case xml:get_tag_attr_s("type", Packet) of
 		"error" ->
 		    ok;
+		"groupchat" ->
+		    bounce_offline_message(From, To, Packet);
+		"headline" ->
+		    bounce_offline_message(From, To, Packet);
 		_ ->
 		    case ejabberd_auth:is_user_exists(LUser, LServer) of
 			true ->
