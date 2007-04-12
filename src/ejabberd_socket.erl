@@ -19,6 +19,7 @@
 	 reset_stream/1,
 	 send/2,
 	 change_shaper/2,
+	 monitor/1,
 	 get_sockmod/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
@@ -119,6 +120,9 @@ send(SocketData, Data) ->
 
 change_shaper(SocketData, Shaper) ->
     ejabberd_receiver:change_shaper(SocketData#socket_state.receiver, Shaper).
+
+monitor(SocketData) ->
+    erlang:monitor(process, SocketData#socket_state.receiver).
 
 get_sockmod(SocketData) ->
     SocketData#socket_state.sockmod.

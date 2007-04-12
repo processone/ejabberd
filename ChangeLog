@@ -1,3 +1,13 @@
+2007-04-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_socket.erl: Added API for monitoring socket
+	processes
+	* src/ejabberd_frontend_socket.erl: Likewise
+	* src/ejabberd_c2s.erl: Added socket monitoring
+
+	* src/mod_muc/mod_muc_room.erl: Fixed the stop reason for the
+	destroy event
+
 2007-04-09  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_sm.erl: Minor optimisation

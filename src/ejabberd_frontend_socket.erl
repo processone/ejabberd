@@ -22,6 +22,7 @@
 	 reset_stream/1,
 	 send/2,
 	 change_shaper/2,
+	 monitor/1,
 	 get_sockmod/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
@@ -98,6 +99,9 @@ send(FsmRef, Data) ->
 change_shaper(FsmRef, Shaper) ->
     gen_server:call(FsmRef, {change_shaper, Shaper}).
 
+monitor(FsmRef) ->
+    erlang:monitor(process, FsmRef).
+
 get_sockmod(FsmRef) ->
     gen_server:call(FsmRef, get_sockmod).
 
@@ -129,6 +133,7 @@ peername(FsmRef) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Module, SockMod, Socket, Opts, Receiver]) ->
+    %% TODO: monitor the receiver
     Node = ejabberd_node_groups:get_closest_node(backend),
     {ok, Pid} =
 	rpc:call(Node, Module, start, [{?MODULE, self()}, Opts]),

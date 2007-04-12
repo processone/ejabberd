@@ -42,6 +42,7 @@
 
 -record(state, {socket,
 		sockmod,
+		socket_monitor,
 		streamid,
 		sasl_state,
 		access,
@@ -142,16 +143,18 @@ init([{SockMod, Socket}, Opts]) ->
 	    true ->
 		Socket
 	end,
-    {ok, wait_for_stream, #state{socket       = Socket1,
-				 sockmod      = SockMod,
-				 zlib         = Zlib,
-				 tls          = TLS,
-				 tls_required = StartTLSRequired,
-				 tls_enabled  = TLSEnabled,
-				 tls_options  = TLSOpts,
-				 streamid     = new_id(),
-				 access       = Access,
-				 shaper       = Shaper}}.
+    SocketMonitor = SockMod:monitor(Socket1),
+    {ok, wait_for_stream, #state{socket         = Socket1,
+				 sockmod        = SockMod,
+				 socket_monitor = SocketMonitor,
+				 zlib           = Zlib,
+				 tls            = TLS,
+				 tls_required   = StartTLSRequired,
+				 tls_enabled    = TLSEnabled,
+				 tls_options    = TLSOpts,
+				 streamid       = new_id(),
+				 access         = Access,
+				 shaper         = Shaper}}.
 
 
 %%----------------------------------------------------------------------
@@ -1129,6 +1132,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	true ->
 	    {next_state, StateName, NewState}
     end;
+handle_info({'DOWN', Monitor, _Type, _Object, _Info}, _StateName, StateData)
+  when Monitor == StateData#state.socket_monitor ->
+    {stop, normal, StateData};
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {next_state, StateName, StateData}.

@@ -617,7 +617,7 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
                    [{xmlelement, "reason",
                      [], [{xmlcdata, Reason}]}]
            end}, StateData),
-    {stop, stopped_by_event, StateData};
+    {stop, normal, StateData};
 handle_event(destroy, StateName, StateData) ->
     handle_event({destroy, none}, StateName, StateData);
 
