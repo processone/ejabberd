@@ -129,7 +129,11 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
 get_user_roster(Acc, US) ->
     case catch mnesia:dirty_index_read(roster, US, #roster.us) of
 	Items when is_list(Items) ->
-	    Items ++ Acc;
+	    lists:filter(fun(#roster{subscription = none, ask = in}) ->
+				 false;
+			    (_) ->
+				 true
+			 end, Items) ++ Acc;
 	_ ->
 	    Acc
     end.
@@ -450,8 +454,14 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 	    end,
 	    case Push of
 		{push, Item} ->
-		    push_item(User, Server,
-			      jlib:make_jid("", Server, ""), Item),
+		    if
+			Item#roster.subscription == none,
+			Item#roster.ask == in ->
+			    ok;
+			true ->
+			    push_item(User, Server,
+				      jlib:make_jid("", Server, ""), Item)
+		    end,
 		    true;
 		none ->
 		    false

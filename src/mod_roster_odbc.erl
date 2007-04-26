@@ -138,6 +138,9 @@ get_user_roster(Acc, {LUser, LServer}) ->
 			       case raw_to_record(LServer, I) of
 				   error ->
 				       [];
+				   #roster{subscription = none,
+					   ask = in} ->
+				       [];
 				   R ->
 				       SJID = jlib:jid_to_string(R#roster.jid),
 				       Groups = lists:flatmap(
@@ -488,8 +491,14 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 	    end,
 	    case Push of
 		{push, Item} ->
-		    push_item(User, Server,
-			      jlib:make_jid("", Server, ""), Item),
+		    if
+			Item#roster.subscription == none,
+			Item#roster.ask == in ->
+			    ok;
+			true ->
+			    push_item(User, Server,
+				      jlib:make_jid("", Server, ""), Item)
+		    end,
 		    true;
 		none ->
 		    false
