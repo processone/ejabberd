@@ -89,7 +89,7 @@ install: all
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
 	install -d $(ETCDIR)
-	install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
+	[ -f $(ETCDIR)/ejabberd.cfg ] && install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new || install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
 	install -d $(LOGDIR)
 
 clean: clean-recursive clean-local
