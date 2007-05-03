@@ -111,7 +111,9 @@ get_user_resources(User, Server) ->
     end.
 
 set_presence(SID, User, Server, Resource, Priority) ->
-    set_session(SID, User, Server, Resource, Priority).
+    set_session(SID, User, Server, Resource, Priority),
+    ejabberd_hooks:run(set_presence_hook, jlib:nameprep(Server),
+		       [User, Server, Resource, Priority]).
 
 unset_presence(SID, User, Server, Resource, Status) ->
     set_session(SID, User, Server, Resource, undefined),
