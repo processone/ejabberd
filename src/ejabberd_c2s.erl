@@ -1362,7 +1362,7 @@ presence_update(From, Packet, StateData) ->
 				  get_priority_from_presence(OldPresence)
 			  end,
 	    NewPriority = get_priority_from_presence(Packet),
-	    update_priority(NewPriority, StateData),
+	    update_priority(NewPriority, Packet, StateData),
 	    FromUnavail = (StateData#state.pres_last == undefined) or
 		StateData#state.pres_invis,
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
@@ -1641,12 +1641,13 @@ roster_change(IJID, ISubscription, StateData) ->
     end.
 
 
-update_priority(Pri, StateData) ->
+update_priority(Priority, Packet, StateData) ->
     ejabberd_sm:set_presence(StateData#state.sid,
 			     StateData#state.user,
 			     StateData#state.server,
 			     StateData#state.resource,
-			     Pri).
+			     Priority,
+			     Packet).
 
 get_priority_from_presence(PresencePacket) ->
     case xml:get_subtag(PresencePacket, "priority") of

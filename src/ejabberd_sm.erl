@@ -19,7 +19,7 @@
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
-	 set_presence/5,
+	 set_presence/6,
 	 unset_presence/5,
 	 close_session_unset_presence/5,
 	 dirty_get_sessions_list/0,
@@ -110,10 +110,10 @@ get_user_resources(User, Server) ->
 	    [element(3, S#session.usr) || S <- clean_session_list(Ss)]
     end.
 
-set_presence(SID, User, Server, Resource, Priority) ->
+set_presence(SID, User, Server, Resource, Priority, Presence) ->
     set_session(SID, User, Server, Resource, Priority),
     ejabberd_hooks:run(set_presence_hook, jlib:nameprep(Server),
-		       [User, Server, Resource, Priority]).
+		       [User, Server, Resource, Presence]).
 
 unset_presence(SID, User, Server, Resource, Status) ->
     set_session(SID, User, Server, Resource, undefined),
