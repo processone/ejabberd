@@ -249,11 +249,10 @@ normal_state({route, From, "",
 		      From, Err),
 		    {next_state, normal_state, StateData};
 		Type when (Type == "") or (Type == "normal") ->
-		    case check_invitation(From, Els, StateData) of
-			error ->
-			    ErrText = "It is not allowed to send normal messages to the conference",
+		    case catch check_invitation(From, Els, StateData) of
+			{error, Error} ->
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+				    Packet, Error),
 			    ejabberd_router:route(
 			      StateData#state.jid,
 			      From, Err),
@@ -2517,69 +2516,65 @@ check_invitation(From, Els, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     CanInvite = (StateData#state.config)#config.allow_user_invites
 	orelse (FAffiliation == admin) orelse (FAffiliation == owner),
-    case xml:remove_cdata(Els) of
-	[{xmlelement, "x", _Attrs1, Els1} = XEl] ->
-	    case xml:get_tag_attr_s("xmlns", XEl) of
-		?NS_MUC_USER ->
-		    case xml:remove_cdata(Els1) of
-			[{xmlelement, "invite", Attrs2, _Els2} = InviteEl] ->
-			    case jlib:string_to_jid(
-				   xml:get_attr_s("to", Attrs2)) of
-				error ->
-				    error;
-				JID ->
-				    case CanInvite of
-					true ->
-					    Reason =
-						xml:get_path_s(
-						  InviteEl,
-						  [{elem, "reason"}, cdata]),
-					    IEl =
-						[{xmlelement, "invite",
-						  [{"from",
-						    jlib:jid_to_string(From)}],
-						  [{xmlelement, "reason", [],
-						    [{xmlcdata, Reason}]}]}],
-					    PasswdEl = 
-						case (StateData#state.config)#config.password_protected of
-						    true ->
-							[{xmlelement, "password", [],
-							[{xmlcdata, (StateData#state.config)#config.password}]}];
-						    _ ->
-							[]
-						end,
-					    Msg =
-						{xmlelement, "message",
-						 [{"type", "normal"}],
-						 [{xmlelement, "x",
-						   [{"xmlns", ?NS_MUC_USER}],
-						   IEl ++ PasswdEl},
-						  {xmlelement, "x",
-						   [{"xmlns",
-						     ?NS_XCONFERENCE},
-						    {"jid",
-						     jlib:jid_to_string(
-						       {StateData#state.room,
-							StateData#state.host,
-							""})}],
-						   [{xmlcdata, Reason}]}]},
-					    ejabberd_router:route(
-					      StateData#state.jid,
-					      JID,
-					      Msg),
-					    JID;
-					_ ->
-					    error
-				    end
-			    end;
-			_ ->
-			    error
-		    end;
-		_ ->
-		    error
-	    end;
-	_ ->
-	    error
+    InviteEl = case xml:remove_cdata(Els) of
+		   [{xmlelement, "x", _Attrs1, Els1} = XEl] ->
+		       case xml:get_tag_attr_s("xmlns", XEl) of
+			   ?NS_MUC_USER ->
+			       ok;
+			   _ ->
+			       throw({error, ?ERR_BAD_REQUEST})
+		       end,
+		       case xml:remove_cdata(Els1) of
+			   [{xmlelement, "invite", _Attrs2, _Els2} = InviteEl1] ->
+			       InviteEl1;
+			   _ ->
+			       throw({error, ?ERR_BAD_REQUEST})
+		       end;
+		   _ ->
+		       throw({error, ?ERR_BAD_REQUEST})
+	       end,
+    JID = case jlib:string_to_jid(
+		 xml:get_tag_attr_s("to", InviteEl)) of
+	      error ->
+		  throw({error, ?ERR_JID_MALFORMED});
+	      JID1 ->
+		  JID1
+	  end,
+    case CanInvite of
+	false ->
+	    throw({error, ?ERR_NOT_ALLOWED});
+	true ->
+	    Reason =
+		xml:get_path_s(
+		  InviteEl,
+		  [{elem, "reason"}, cdata]),
+	    IEl =
+		[{xmlelement, "invite",
+		  [{"from",
+		    jlib:jid_to_string(From)}],
+		  [{xmlelement, "reason", [],
+		    [{xmlcdata, Reason}]}]}],
+	    PasswdEl = 
+		case (StateData#state.config)#config.password_protected of
+		    true ->
+			[{xmlelement, "password", [],
+			  [{xmlcdata, (StateData#state.config)#config.password}]}];
+		    _ ->
+			[]
+		end,
+	    Msg =
+		{xmlelement, "message",
+		 [{"type", "normal"}],
+		 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}], IEl ++ PasswdEl},
+		  {xmlelement, "x",
+		   [{"xmlns", ?NS_XCONFERENCE},
+		    {"jid", jlib:jid_to_string(
+			      {StateData#state.room,
+			       StateData#state.host,
+			       ""})}],
+		   [{xmlcdata, Reason}]}]},
+	    ejabberd_router:route(StateData#state.jid, JID, Msg),
+	    JID
     end.
 
 
