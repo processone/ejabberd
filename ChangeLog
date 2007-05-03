@@ -1,5 +1,8 @@
 2007-05-03  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_sm.erl: Added check for existence of incoming
+	subscription destination
+
 	* src/msgs/it.msg: Added italian translation (thanks to Luca
 	Brivio)
 

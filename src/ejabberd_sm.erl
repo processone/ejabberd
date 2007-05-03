@@ -15,6 +15,7 @@
 -export([start_link/0,
 	 route/3,
 	 open_session/4, close_session/4,
+	 check_in_subscription/6,
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
@@ -78,6 +79,14 @@ close_session(SID, User, Server, Resource) ->
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
 		       [SID, JID]).
+
+check_in_subscription(Acc, User, Server, JID, Type, Reason) ->
+    case ejabberd_auth:is_user_exists(User, Server) of
+	true ->
+	    Acc;
+	false ->
+	    {stop, false}
+    end.
 
 bounce_offline_message(From, To, Packet) ->
     Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
@@ -170,6 +179,8 @@ init([]) ->
     ets:new(sm_iqtable, [named_table]),
     lists:foreach(
       fun(Host) ->
+	      ejabberd_hooks:add(roster_in_subscription, Host,
+				 ejabberd_sm, check_in_subscription, 20),
 	      ejabberd_hooks:add(offline_message_hook, Host,
 				 ejabberd_sm, bounce_offline_message, 100),
 	      ejabberd_hooks:add(remove_user, Host,
