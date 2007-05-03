@@ -1,5 +1,8 @@
 2007-05-03  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/it.msg: Added italian translation (thanks to Luca
+	Brivio)
+
 	* src/mod_muc/mod_muc_room.erl: More accurate invitation errors
 	(thanks to Magnus Henoch)
 
