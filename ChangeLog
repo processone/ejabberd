@@ -1,7 +1,12 @@
 2007-05-07  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_receiver.erl: Workaround for inet_drv bug
+
+	* src/web/ejabberd_http_poll.erl: Added sockname/1 and peername/1
+	stubs
+
 	* src/web/ejabberd_http.hrl: Added "ip" field in the "request"
-	record
+	record (thanks to Jerome Sautret and Mickael Remond)
 	* src/web/ejabberd_http.erl: Likewise
 
 2007-05-03  Alexey Shchepin  <alexey@sevcom.net>

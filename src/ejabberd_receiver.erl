@@ -258,11 +258,20 @@ code_change(_OldVsn, State, _Extra) ->
 
 activate_socket(#state{socket = Socket,
 		       sock_mod = SockMod}) ->
-    case SockMod of
-	gen_tcp ->
-	    inet:setopts(Socket, [{active, once}]);
-	_ ->
-	    SockMod:setopts(Socket, [{active, once}])
+    PeerName =
+	case SockMod of
+	    gen_tcp ->
+		inet:setopts(Socket, [{active, once}]),
+		inet:peername(Socket);
+	    _ ->
+		SockMod:setopts(Socket, [{active, once}]),
+		SockMod:peername(Socket)
+	end,
+    case PeerName of
+	{error, _Reason} ->
+	    self() ! {tcp_closed, Socket};
+	{ok, _} ->
+	    ok
     end.
 
 process_data(Data,

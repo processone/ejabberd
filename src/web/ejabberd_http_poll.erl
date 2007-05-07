@@ -22,6 +22,7 @@
 	 terminate/3,
 	 send/2,
 	 setopts/2,
+	 sockname/1, peername/1,
 	 controlling_process/2,
 	 close/1,
 	 process/2]).
@@ -75,6 +76,12 @@ setopts({http_poll, FsmRef}, Opts) ->
 	_ ->
 	    ok
     end.
+
+sockname(_Socket) ->
+    {ok, {{0, 0, 0, 0}, 0}}.
+
+peername(_Socket) ->
+    {ok, {{0, 0, 0, 0}, 0}}.
 
 controlling_process(_Socket, _Pid) ->
     ok.
