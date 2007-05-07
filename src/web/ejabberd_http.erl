@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_http.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 27 Feb 2004 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -82,7 +82,7 @@ start_link({SockMod, Socket}, Opts) ->
     %% XXX bard: for backward compatibility: expand web_admin and
     %% http_poll in Opts respectively to {["admin"],
     %% ejabberd_web_admin} and {["http-poll"], ejabberd_http_poll}
-        
+
     RequestHandlers =
 	case lists:keysearch(request_handlers, 1, Opts) of
              {value, {request_handlers, H}} -> H;
@@ -253,7 +253,9 @@ process_request(#state{request_method = 'GET',
 		       request_path = {abs_path, Path},
 		       request_auth = Auth,
 		       request_lang = Lang,
-		       request_handlers = RequestHandlers} = State) ->
+		       request_handlers = RequestHandlers,
+		       sockmod = SockMod,
+		       socket = Socket} = State) ->
     case (catch url_decode_q_split(Path)) of
 	{'EXIT', _} ->
 	    process_request(false);
@@ -265,11 +267,19 @@ process_request(#state{request_method = 'GET',
 			     LQ
 		     end,
 	    LPath = string:tokens(NPath, "/"),
+	    {ok, {IP, _Port}} =
+		case SockMod of
+		    gen_tcp ->
+			inet:peername(Socket);
+		    _ ->
+			SockMod:peername(Socket)
+		end,
 	    Request = #request{method = 'GET',
 			       path = LPath,
 			       q = LQuery,
 			       auth = Auth,
-			       lang = Lang},
+			       lang = Lang,
+			       ip=IP},
 	    %% XXX bard: This previously passed control to
 	    %% ejabberd_web:process_get, now passes it to a local
 	    %% procedure (process) that handles dispatching based on
@@ -335,7 +345,7 @@ process_request(#state{request_method = 'POST',
     end;
 
 process_request(State) ->
-    make_xhtml_output(State, 
+    make_xhtml_output(State,
       400,
       [],
       ejabberd_web:make_xhtml([{xmlelement, "h1", [],
@@ -383,9 +393,9 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
     HeadersOut = case {State#state.request_version,
 		       State#state.request_keepalive} of
 		     {{1, 1}, true} -> Headers1;
-		     {_, true} -> 
+		     {_, true} ->
 			 [{"Connection", "keep-alive"} | Headers1];
-		     {_, false} -> 
+		     {_, false} ->
 			 % not required for http versions < 1.1
 			 % but would make no harm
 			 [{"Connection", "close"} | Headers1]
@@ -395,7 +405,7 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
 		  {1, 1} -> "HTTP/1.1 ";
 		  _ -> "HTTP/1.0 "
 	      end,
-	       
+
     H = lists:map(fun({Attr, Val}) ->
 			  [Attr, ": ", Val, "\r\n"];
 		     (_) ->
@@ -422,9 +432,9 @@ make_text_output(State, Status, Headers, Data) when is_binary(Data) ->
     HeadersOut = case {State#state.request_version,
 		       State#state.request_keepalive} of
 		     {{1, 1}, true} -> Headers1;
-		     {_, true} -> 
+		     {_, true} ->
 			 [{"Connection", "keep-alive"} | Headers1];
-		     {_, false} -> 
+		     {_, false} ->
 			 % not required for http versions < 1.1
 			 % but would make no harm
 			 [{"Connection", "close"} | Headers1]
@@ -533,7 +543,7 @@ start_dir(N, Path, "./"  ++ T ) -> start_dir(N    , Path, T);
 start_dir(N, Path, "../" ++ T ) -> start_dir(N + 1, Path, T);
 start_dir(N, Path,          T ) -> rest_dir (N    , Path, T).
 
-rest_dir (_N, Path, []         ) -> case Path of 
+rest_dir (_N, Path, []         ) -> case Path of
 				       [] -> "/";
 				       _  -> Path
 				   end;
@@ -761,7 +771,7 @@ get_req(Data) ->
     {FirstLine, Trail} = lists:splitwith(fun not_eol/1, Data),
     R = parse_req(FirstLine),
     {R, Trail}.
-	    
+
 
 not_eol($\r)->
     false;
@@ -940,11 +950,11 @@ drop_spaces(YS=[X|XS]) ->
 
 is_nb_space(X) ->
     lists:member(X, [$\s, $\t]).
-    
+
 
 % ret: {line, Line, Trail} | {lastline, Line, Trail}
 
-get_line(L) ->    
+get_line(L) ->
     get_line(L, []).
 get_line("\r\n\r\n" ++ Tail, Cur) ->
     {lastline, lists:reverse(Cur), Tail};
@@ -954,7 +964,7 @@ get_line("\r\n" ++ Tail, Cur) ->
 	    {incomplete, lists:reverse(Cur) ++ "\r\n"};
 	_ ->
 	    case is_nb_space(hd(Tail)) of
-		true ->  %% multiline ... continue 
+		true ->  %% multiline ... continue
 		    get_line(Tail, [$\n, $\r | Cur]);
 		false ->
 		    {line, lists:reverse(Cur), Tail}
@@ -962,4 +972,3 @@ get_line("\r\n" ++ Tail, Cur) ->
     end;
 get_line([H|T], Cur) ->
     get_line(T, [H|Cur]).
-

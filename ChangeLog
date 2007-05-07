@@ -1,3 +1,9 @@
+2007-05-07  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_http.hrl: Added "ip" field in the "request"
+	record
+	* src/web/ejabberd_http.erl: Likewise
+
 2007-05-03  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_sm.erl: Added set_presence_hook
