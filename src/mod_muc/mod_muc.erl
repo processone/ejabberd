@@ -146,9 +146,9 @@ init([Host, Opts]) ->
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, muc_online_room)}]),
     mnesia:add_table_copy(muc_online_room, node(), ram_copies),
-    clean_table_from_bad_node(node()),
     MyHost = gen_mod:get_opt(host, Opts, "conference." ++ Host),
     update_tables(MyHost),
+    clean_table_from_bad_node(node(), MyHost),
     mnesia:add_table_index(muc_registered, nick),
     mnesia:subscribe(system),
     Access = gen_mod:get_opt(access, Opts, all),
@@ -634,6 +634,21 @@ clean_table_from_bad_node(Node) ->
 		Es = mnesia:select(
 		       muc_online_room,
 		       [{#muc_online_room{pid = '$1', _ = '_'},
+			 [{'==', {node, '$1'}, Node}],
+			 ['$_']}]),
+		lists:foreach(fun(E) ->
+				      mnesia:delete_object(E)
+			      end, Es)
+        end,
+    mnesia:transaction(F).
+
+clean_table_from_bad_node(Node, Host) ->
+    F = fun() ->
+		Es = mnesia:select(
+		       muc_online_room,
+		       [{#muc_online_room{pid = '$1',
+					  name_host = {'_', Host},
+					  _ = '_'},
 			 [{'==', {node, '$1'}, Node}],
 			 ['$_']}]),
 		lists:foreach(fun(E) ->
