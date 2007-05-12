@@ -15,6 +15,7 @@
 	 del_user/2,
 	 del_user_return_password/3,
 	 list_users/1,
+	 users_number/1,
 	 add_spool_sql/2,
 	 add_spool/2,
 	 get_and_del_spool_msg_t/2,
@@ -108,6 +109,20 @@ list_users(LServer) ->
     ejabberd_odbc:sql_query(
       LServer,
       "select username from users").
+
+users_number(LServer) ->
+    case ejabberd_config:get_local_option(
+	   {pgsql_users_number_estimate, LServer}) of
+	true ->
+	    ejabberd_odbc:sql_query(
+	      LServer,
+	      "select reltuples from pg_class "
+	      "where oid = 'users'::regclass::oid");
+	_ ->
+	    ejabberd_odbc:sql_query(
+	      LServer,
+	      "select count(*) from users")
+    end.
 
 add_spool_sql(Username, XML) ->
     ["insert into spool(username, xml) "

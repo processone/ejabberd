@@ -18,6 +18,7 @@
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
+	 get_vh_registered_users_number/1,
 	 get_password/2,
 	 get_password_s/2,
 	 is_user_exists/2,
@@ -27,8 +28,6 @@
 	]).
 
 -include("ejabberd.hrl").
-
--record(passwd, {user, password}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -121,6 +120,15 @@ get_vh_registered_users(Server) ->
 	    [{U, LServer} || {U} <- Res];
 	_ ->
 	    []
+    end.
+
+get_vh_registered_users_number(Server) ->
+    LServer = jlib:nameprep(Server),
+    case catch odbc_queries:users_number(LServer) of
+	{selected, [_], [{Res}]} ->
+	    list_to_integer(Res);
+	_ ->
+	    0
     end.
 
 get_password(User, Server) ->

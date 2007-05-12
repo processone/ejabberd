@@ -96,6 +96,10 @@
 %{auth_method, odbc}.
 %{odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}.
 
+% Uncomment this if you are using postgres, having a large DB, and need a
+% faster but inexact replacement for "select count(*) from users"
+%{pgsql_users_number_estimate, true}.
+
 
 % Host name:
 {hosts, ["localhost"]}.
