@@ -129,11 +129,11 @@ get_local_stat(Server, [], Name) when Name == "users/online" ->
 
 get_local_stat(Server, [], Name) when Name == "users/total" ->
     LServer = jlib:nameprep(Server),
-    case catch ejabberd_auth:get_vh_registered_users(Server) of
+    case catch ejabberd_auth:get_vh_registered_users_number(Server) of
 	{'EXIT', Reason} ->
 	    ?STATERR("500", "Internal Server Error");
-	Users ->
-	    ?STATVAL(integer_to_list(length(Users)), "users")
+	NUsers ->
+	    ?STATVAL(integer_to_list(NUsers), "users")
     end;
 
 get_local_stat(_Server, [], Name) when Name == "users/all-hosts/online" ->

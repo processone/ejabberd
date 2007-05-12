@@ -6,6 +6,8 @@
 	* src/odbc/odbc_queries.erl: Added users_number/1 function
 	* src/ejabberd.cfg.example: Added an example for
 	pgsql_users_number_estimate option
+	* src/mod_stats.erl: Updated
+	* src/web/ejabberd_web_admin.erl: Likewise
 
 	* src/ejabberd_auth_anonymous.erl: Added anonymous_purge_hook
 	(thanks to Christophe Romain and Mickael Remond)

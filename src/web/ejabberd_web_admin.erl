@@ -1289,7 +1289,7 @@ list_vhosts(Lang) ->
 			OnlineUsers =
 			    length(ejabberd_sm:get_vh_session_list(Host)),
 			RegisteredUsers =
-			    length(ejabberd_auth:get_vh_registered_users(Host)),
+			    ejabberd_auth:get_vh_registered_users_number(Host),
 			?XE("tr",
 			    [?XE("td", [?AC("../server/" ++ Host ++ "/", Host)]),
 			     ?XC("td", integer_to_list(RegisteredUsers)),
@@ -1461,7 +1461,7 @@ get_stats(global, Lang) ->
 
 get_stats(Host, Lang) ->
     OnlineUsers = length(ejabberd_sm:get_vh_session_list(Host)),
-    RegisteredUsers = length(ejabberd_auth:get_vh_registered_users(Host)),
+    RegisteredUsers = ejabberd_auth:get_vh_registered_users_number(Host),
     [?XAE("table", [],
 	  [?XE("tbody",
 	       [?XE("tr", [?XCT("td", "Registered Users:"),
