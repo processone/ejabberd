@@ -315,7 +315,8 @@ record_to_string(#roster{usj = {User, _Server, JID},
 	       in	   -> "I";
 	       none	   -> "N"
 	   end,
-    SAskMessage = ejabberd_odbc:escape(AskMessage),
+    SAskMessage = ejabberd_odbc:escape(
+		    binary_to_list(list_to_binary([AskMessage]))),
     ["("
      "'", Username, "',"
      "'", SJID, "',"
