@@ -804,15 +804,22 @@ session_established({xmlstreamelement, El}, StateData) ->
 	    _ ->
 		case Name of
 		    "presence" ->
+			PresenceEl = ejabberd_hooks:run_fold(
+				       c2s_update_presence,
+				       Server,
+				       NewEl,
+				       [User, Server]),
 			case ToJID of
 			    #jid{user = User,
 				 server = Server,
 				 resource = ""} ->
 				?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
-				       [FromJID, NewEl, StateData]),
-				presence_update(FromJID, NewEl, StateData);
+				       [FromJID, PresenceEl, StateData]),
+				presence_update(FromJID, PresenceEl,
+						StateData);
 			    _ ->
-				presence_track(FromJID, ToJID, NewEl, StateData)
+				presence_track(FromJID, ToJID, PresenceEl,
+					       StateData)
 			end;
 		    "iq" ->
 			case StateData#state.privacy_list of

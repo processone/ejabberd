@@ -970,9 +970,26 @@ is_nick_change(JID, Nick, StateData) ->
 
 add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     Lang = xml:get_attr_s("xml:lang", Attrs),
+    Affiliation = get_affiliation(From, StateData),
     case {is_nick_exists(Nick, StateData),
-	  mod_muc:can_use_nick(StateData#state.host, From, Nick)} of
-	{true, _} ->
+	  mod_muc:can_use_nick(StateData#state.host, From, Nick),
+	  get_default_role(Affiliation, StateData)} of
+	{_, _, none} ->
+	    Err = jlib:make_error_reply(
+		    Packet,
+		    case Affiliation of
+			outcast ->
+			    ErrText = "You have been banned from this room",
+			    ?ERRT_FORBIDDEN(Lang, ErrText);
+			_ ->
+			    ErrText = "Membership required to enter this room",
+			    ?ERRT_REGISTRATION_REQUIRED(Lang, ErrText)
+		    end),
+	    ejabberd_router:route( % TODO: s/Nick/""/
+	      jlib:jid_replace_resource(StateData#state.jid, Nick),
+	      From, Err),
+	    StateData;
+	{true, _, _} ->
 	    ErrText = "Nickname is already in use by another occupant",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
 	    ejabberd_router:route(
@@ -980,7 +997,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
-	{_, false} ->
+	{_, false, _} ->
 	    ErrText = "Nickname is registered by another person",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
 	    ejabberd_router:route(
@@ -988,81 +1005,61 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
-	_ ->
-	    Affiliation = get_affiliation(From, StateData),
-	    Role = get_default_role(Affiliation, StateData),
-	    case Role of
-		none ->
+	{_, _, Role} ->
+	    case check_password(Affiliation, Els, StateData) of
+		true ->
+		    NewState =
+			add_user_presence(
+			  From, Packet,
+			  add_online_user(From, Nick, Role, StateData)),
+		    if not (NewState#state.config)#config.anonymous ->
+			    WPacket = {xmlelement, "message", [{"type", "groupchat"}],
+				       [{xmlelement, "body", [],
+					 [{xmlcdata, translate:translate(
+						       Lang,
+						       "This room is not anonymous")}]},
+					{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
+					 [{xmlelement, "status", [{"code", "100"}], []}]}]},
+			    ejabberd_router:route(
+			      StateData#state.jid,
+			      From, WPacket);
+			true ->
+			    ok
+		    end,
+		    send_existing_presences(From, NewState),
+		    send_new_presence(From, NewState),
+		    Shift = count_stanza_shift(Nick, Els, NewState),
+		    case send_history(From, Shift, NewState) of
+			true ->
+			    ok;
+			_ ->
+			    send_subject(From, Lang, StateData)
+		    end,
+		    case NewState#state.just_created of
+			true ->
+			    NewState#state{just_created = false};
+			false ->
+			    NewState
+		    end;
+		nopass ->
+		    ErrText = "Password required to enter this room",
 		    Err = jlib:make_error_reply(
-			    Packet,
-			    case Affiliation of
-				outcast ->
-				    ErrText = "You have been banned from this room",
-				    ?ERRT_FORBIDDEN(Lang, ErrText);
-				_ ->
-				    ErrText = "Membership required to enter this room",
-				    ?ERRT_REGISTRATION_REQUIRED(Lang, ErrText)
-			    end),
+			    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
 		    ejabberd_router:route( % TODO: s/Nick/""/
-		      jlib:jid_replace_resource(StateData#state.jid, Nick),
+		      jlib:jid_replace_resource(
+			StateData#state.jid, Nick),
 		      From, Err),
 		    StateData;
 		_ ->
-		    case check_password(Affiliation, Els, StateData) of
-			true ->
-			    NewState =
-				add_user_presence(
-				  From, Packet,
-				  add_online_user(From, Nick, Role, StateData)),
-			    if not (NewState#state.config)#config.anonymous ->
-				    WPacket = {xmlelement, "message", [{"type", "groupchat"}],
-					       [{xmlelement, "body", [],
-						 [{xmlcdata, translate:translate(
-							       Lang,
-							       "This room is not anonymous")}]},
-						{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-						 [{xmlelement, "status", [{"code", "100"}], []}]}]},
-				    ejabberd_router:route(
-				      StateData#state.jid,
-				      From, WPacket);
-				true ->
-				    ok
-			    end,
-			    send_existing_presences(From, NewState),
-			    send_new_presence(From, NewState),
-			    Shift = count_stanza_shift(Nick, Els, NewState),
-			    case send_history(From, Shift, NewState) of
-				true ->
-				    ok;
-				_ ->
-				    send_subject(From, Lang, StateData)
-			    end,
-			    case NewState#state.just_created of
-				true ->
-				    NewState#state{just_created = false};
-				false ->
-				    NewState
-			    end;
-			nopass ->
-			    ErrText = "Password required to enter this room",
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
-			    ejabberd_router:route( % TODO: s/Nick/""/
-			      jlib:jid_replace_resource(
-				StateData#state.jid, Nick),
-			      From, Err),
-			    StateData;
-			_ ->
-			    ErrText = "Incorrect password",
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
-			    ejabberd_router:route( % TODO: s/Nick/""/
-			      jlib:jid_replace_resource(
-				StateData#state.jid, Nick),
-			      From, Err),
-			    StateData
-		    end
-	    end
+		    ErrText = "Incorrect password",
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
+		    ejabberd_router:route( % TODO: s/Nick/""/
+		      jlib:jid_replace_resource(
+			StateData#state.jid, Nick),
+		      From, Err),
+		    StateData
+	   end
     end.
 
 check_password(owner, _Els, _StateData) ->
