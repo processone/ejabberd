@@ -1,3 +1,8 @@
+2007-05-18  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/msgs/zh.msg: New chinese translation (thanks to Shelley
+	Shyan)
+
 2007-05-16  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/mod_muc/mod_muc_room.erl: Corrected error messages when
