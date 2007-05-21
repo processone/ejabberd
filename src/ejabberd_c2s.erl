@@ -64,6 +64,7 @@
 		pres_timestamp,
 		pres_invis = false,
 		privacy_list = none,
+		ip,
 		lang}).
 
 %-define(DBGFSM, true).
@@ -136,6 +137,7 @@ init([{SockMod, Socket}, Opts]) ->
     TLSOpts = lists:filter(fun({certfile, _}) -> true;
 			      (_) -> false
 			   end, Opts),
+    IP = peerip(SockMod, Socket),
     Socket1 =
 	if
 	    TLSEnabled ->
@@ -154,7 +156,8 @@ init([{SockMod, Socket}, Opts]) ->
 				 tls_options    = TLSOpts,
 				 streamid       = new_id(),
 				 access         = Access,
-				 shaper         = Shaper}}.
+				 shaper         = Shaper,
+				 ip             = IP}}.
 
 
 %%----------------------------------------------------------------------
@@ -386,8 +389,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
 			    SID = {now(), self()},
+			    IP = StateData#state.ip,
 			    ejabberd_sm:open_session(
-			      SID, U, StateData#state.server, R),
+			      SID, U, StateData#state.server, R, IP),
 			    Res1 = jlib:make_result_iq_reply(El),
 			    Res = setelement(4, Res1, []),
 			    send_element(StateData, Res),
@@ -717,8 +721,9 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			      [StateData#state.socket,
 			       jlib:jid_to_string(JID)]),
 		    SID = {now(), self()},
+		    IP = StateData#state.ip,
 		    ejabberd_sm:open_session(
-		      SID, U, StateData#state.server, R),
+		      SID, U, StateData#state.server, R, IP),
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
@@ -1323,7 +1328,8 @@ presence_update(From, Packet, StateData) ->
 				       StateData#state.user,
 				       StateData#state.server,
 				       StateData#state.resource,
-				       Status),
+				       Status,
+				       StateData#state.ip),
 	    presence_broadcast(StateData, From, StateData#state.pres_a, Packet),
 	    presence_broadcast(StateData, From, StateData#state.pres_i, Packet),
 	    StateData#state{pres_last = undefined,
@@ -1654,7 +1660,8 @@ update_priority(Priority, Packet, StateData) ->
 			     StateData#state.server,
 			     StateData#state.resource,
 			     Priority,
-			     Packet).
+			     Packet,
+			     StateData#state.ip).
 
 get_priority_from_presence(PresencePacket) ->
     case xml:get_subtag(PresencePacket, "priority") of
@@ -1795,3 +1802,12 @@ process_unauthenticated_stanza(StateData, El) ->
 	    ok
     end.
 
+peerip(SockMod, Socket) ->
+    IP = case SockMod of
+	     gen_tcp -> inet:peername(Socket);
+	     _ -> SockMod:peername(Socket)
+	 end,
+    case IP of
+	{ok, IPOK} -> IPOK;
+	_ -> undefined
+    end.
