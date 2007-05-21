@@ -1,5 +1,10 @@
 2007-05-21  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberdctl.template: Updated version of ejabberdctl (thanks
+	to Christophe Romain)
+	* tools/ejabberdctl: Likewise
+	* src/Makefile.in: Updated
+
 	* src/ejabberd_sm.erl: Updated the session table to store
 	additional session info
 	* src/ejabberd_c2s.erl: Report IP address to ejabberd_sm (thanks

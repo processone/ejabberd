@@ -4,18 +4,16 @@ NODE=ejabberd
 HOST=localhost
 
 # Define ejabberd environment
-base="`dirname $(which "$0")`/.."
-ROOTDIR=`(cd "$base"; echo $PWD)`
-SASL_LOG_PATH=$ROOTDIR/sasl.log
-EJABBERD_DB=$ROOTDIR/database/$NODE
-export EJABBERD_LOG_PATH=$ROOTDIR/ejabberd.log
-export EJABBERD_CONFIG_PATH=$ROOTDIR/ejabberd.cfg
-export EJABBERD_MSGS_PATH=$ROOTDIR/src/msgs
-export EJABBERD_SO_PATH=$ROOTDIR/src
+ROOTDIR=@prefix@
+SASL_LOG_PATH=$ROOTDIR/var/log/ejabberd/sasl.log
+EJABBERD_DB=$ROOTDIR/var/lib/ejabberd/db/$NODE
+export EJABBERD_LOG_PATH=$ROOTDIR/var/log/ejabberd/ejabberd.log
+export EJABBERD_CONFIG_PATH=$ROOTDIR/etc/ejabberd/ejabberd.cfg
+export EJABBERD_MSGS_PATH=$ROOTDIR/var/lib/ejabberd/priv/msgs
+export EJABBERD_SO_PATH=$ROOTDIR/var/lib/ejabberd/priv/lib
 export ERL_MAX_PORTS=32000
 
 [ -d $EJABBERD_DB ] || mkdir -p $EJABBERD_DB
-[ -f $EJABBERD_CONFIG_PATH ] || cp $ROOTDIR/src/ejabberd.cfg.example $EJABBERD_CONFIG_PATH
 
 function start
 {
