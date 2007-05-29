@@ -19,6 +19,11 @@ ERLSHLIBS = ../iconv_erl.so
 
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
+# make debug=true to compile Erlang module with debug informations.
+ifdef debug
+  EFLAGS+=+debug_info
+endif
+
 OBJS   = \
 	$(OUTDIR)/mod_irc.beam \
 	$(OUTDIR)/mod_irc_connection.beam \

@@ -12,6 +12,7 @@ ERLANG_CFLAGS= @ERLANG_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
+ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
   ERLC_FLAGS+=+debug_info
@@ -42,8 +43,6 @@ MSGSDIR = $(PRIVDIR)/msgs
 LOGDIR = $(DESTDIR)@prefix@/var/log/ejabberd
 ETCDIR = $(DESTDIR)@prefix@/etc/ejabberd
 
-ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
-
 ifeq ($(shell uname),Darwin)
 DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
 else
@@ -71,6 +70,7 @@ mostlyclean-recursive maintainer-clean-recursive:
 
 %.hrl: %.asn1
 	@ERLC@ $(ASN_FLAGS) $<
+	@ERLC@ -W $(ERLC_FLAGS) $*.erl
 
 $(ERLSHLIBS):	%.so:	%.c
 			gcc -Wall $(CFLAGS) $(LDFLAGS) $(LIBS) \
@@ -109,3 +109,7 @@ TAGS:
 	etags *.erl
 
 Makefile: Makefile.in
+
+dialyzer: $(BEAMS)
+	@dialyzer -c .
+

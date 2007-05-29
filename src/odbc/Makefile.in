@@ -8,9 +8,13 @@ LIBS = @LIBS@ @ERLANG_LIBS@
 
 SUBDIRS = 
 
-
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
+# make debug=true to compile Erlang module with debug informations.
+ifdef debug
+  EFLAGS+=+debug_info
+endif
+
 OBJS   = \
 	$(OUTDIR)/ejabberd_odbc.beam \
 	$(OUTDIR)/ejabberd_odbc_sup.beam \

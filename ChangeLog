@@ -1,5 +1,19 @@
 2007-05-29  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/Makefile.in: Added Dialyzer target (EJAB-189 - Thanks
+	to Geoff Cant)
+	* src/Makefile.in: Build XmppAddr.beam in a single pass
+	* src/mod_muc/Makefile.in: +debug_info directive support
+	* src/stringprep/Makefile.in: Likewise
+	* src/mod_irc/Makefile.in: Likewise
+	* src/web/Makefile.in: Likewise
+	* src/eldap/Makefile.in: Likewise
+	* src/mod_pubsub/Makefile.in: Likewise
+	* src/ejabberd_zlib/Makefile.in: Likewise
+	* src/mod_proxy65/Makefile.in: Likewise
+	* src/tls/Makefile.in: Likewise
+	* src/odbc/Makefile.in: Likewise
+
 	* src/mod_vcard.erl: Make services description translatable in 
 	discovery (EJAB-236 - thanks to Badlop)
 	* src/mod_muc/mod_muc.erl: Likewise

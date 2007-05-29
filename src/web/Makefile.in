@@ -11,6 +11,11 @@ SUBDIRS =
 
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
+# make debug=true to compile Erlang module with debug informations.
+ifdef debug
+  EFLAGS+=+debug_info
+endif
+
 OBJS   = \
 	$(OUTDIR)/ejabberd_http.beam \
 	$(OUTDIR)/ejabberd_web.beam  \
