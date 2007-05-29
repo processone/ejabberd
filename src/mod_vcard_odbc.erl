@@ -357,7 +357,7 @@ do_route(ServerHost, From, To, Packet) ->
 						   [{"category", "directory"},
 						    {"type", "user"},
 						    {"name",
-						     "vCard User Search"}],
+						     translate:translate(Lang, "vCard User Search")}],
 						   []},
 						  {xmlelement, "feature",
 						   [{"var", ?NS_SEARCH}], []},

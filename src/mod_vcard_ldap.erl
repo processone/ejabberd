@@ -442,7 +442,7 @@ route(State, From, To, Packet) ->
 						  From,
 						  jlib:iq_to_xml(ResIQ))
 		    end;
-		#iq{type = Type, xmlns = ?NS_DISCO_INFO} ->
+		#iq{type = Type, xmlns = ?NS_DISCO_INFO, lang = Lang} ->
 		    case Type of
 			set ->
 			    Err = jlib:make_error_reply(
@@ -458,7 +458,7 @@ route(State, From, To, Packet) ->
 						   [{"category", "directory"},
 						    {"type", "user"},
 						    {"name",
-						     "vCard User Search"}],
+						     translate:translate(Lang, "vCard User Search")}],
 						   []},
 						  {xmlelement, "feature",
 						   [{"var", ?NS_SEARCH}], []},

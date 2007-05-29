@@ -1,5 +1,9 @@
 2007-05-29  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_vcard_odbc.erl: Make service description translatable in 
+	discovery (EJAB-236)
+	* src/mod_vcard_ldap.erl: Likewise 
+	
 	* src/Makefile.in: Added Dialyzer target (EJAB-189 - Thanks
 	to Geoff Cant)
 	* src/Makefile.in: Build XmppAddr.beam in a single pass
