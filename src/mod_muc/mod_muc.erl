@@ -280,11 +280,11 @@ do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
 			"iq" ->
 			    case jlib:iq_query_info(Packet) of
 				#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
-				    sub_el = _SubEl} = IQ ->
+ 				    sub_el = _SubEl, lang = Lang} = IQ ->
 				    Res = IQ#iq{type = result,
 						sub_el = [{xmlelement, "query",
 							   [{"xmlns", XMLNS}],
-							   iq_disco_info()}]},
+							   iq_disco_info(Lang)}]},
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res));
@@ -459,11 +459,11 @@ register_room(Host, Room, Pid) ->
     mnesia:transaction(F).
 
 
-iq_disco_info() ->
+iq_disco_info(Lang) ->
     [{xmlelement, "identity",
       [{"category", "conference"},
        {"type", "text"},
-       {"name", "Chatrooms"}], []},
+       {"name", translate:translate(Lang, "Chatrooms")}], []},
      {xmlelement, "feature", [{"var", ?NS_MUC}], []},
      {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].

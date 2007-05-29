@@ -84,9 +84,9 @@ handle_info(_Info, State) ->
 %%%------------------------
 
 %% disco#info request
-process_iq(_, #iq{type = get, xmlns = ?NS_DISCO_INFO} = IQ, #state{name=Name}) ->
+process_iq(_, #iq{type = get, xmlns = ?NS_DISCO_INFO, lang = Lang} = IQ, #state{name=Name}) ->
     IQ#iq{type = result, sub_el =
-	  [{xmlelement, "query", [{"xmlns", ?NS_DISCO_INFO}], iq_disco_info(Name)}]};
+	  [{xmlelement, "query", [{"xmlns", ?NS_DISCO_INFO}], iq_disco_info(Lang, Name)}]};
 
 %% disco#items request
 process_iq(_, #iq{type = get, xmlns = ?NS_DISCO_ITEMS} = IQ, _) ->
@@ -155,11 +155,11 @@ process_iq(_, _, _) ->
 %%%-------------------------
 -define(FEATURE(Feat), {xmlelement,"feature",[{"var", Feat}],[]}).
 
-iq_disco_info(Name) ->
+iq_disco_info(Lang, Name) ->
     [{xmlelement, "identity",
       [{"category", "proxy"},
        {"type", "bytestreams"},
-       {"name", Name}], []},
+       {"name", translate:translate(Lang, Name)}], []},
      ?FEATURE(?NS_DISCO_INFO),
      ?FEATURE(?NS_DISCO_ITEMS),
      ?FEATURE(?NS_VCARD),

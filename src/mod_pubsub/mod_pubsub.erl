@@ -206,13 +206,13 @@ do_route(Host, ServerHost, Access, From, To, Packet) ->
 		"iq" ->
 		    case jlib:iq_query_info(Packet) of
 			#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
-			    sub_el = SubEl} = IQ ->
+			    sub_el = SubEl, lang = Lang} = IQ ->
 			    {xmlelement, _, QAttrs, _} = SubEl,
 			    Node = xml:get_attr_s("node", QAttrs),
 			    Res = IQ#iq{type = result,
 					sub_el = [{xmlelement, "query",
 						   QAttrs,
-						   iq_disco_info(Node)}]},
+						   iq_disco_info(Node, Lang)}]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
@@ -309,14 +309,14 @@ node_to_string(Node) ->
 		 right, $/).
 
 
-iq_disco_info(SNode) ->
+iq_disco_info(SNode, Lang) ->
     Node = string:tokens(SNode, "/"),
     case Node of
 	[] ->
 	    [{xmlelement, "identity",
 	      [{"category", "pubsub"},
 	       {"type", "generic"},
-	       {"name", "Publish-Subscribe"}], []},
+	       {"name", translate:translate(Lang, "Publish-Subscribe")}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB_EVENT}], []},
 	     {xmlelement, "feature", [{"var", ?NS_PUBSUB_OWNER}], []},

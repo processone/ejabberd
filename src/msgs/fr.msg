@@ -83,7 +83,7 @@
 {"You need an x:data capable client to search",
  "Vous avez besoin d'un client supportant x:data pour faire une recherche"}.
 {"Search users in ", "Rechercher des utilisateurs "}.
-
+{"vCard User Search", "Recherche dans l'annnuaire"}.
 {"Fill in fields to search for any matching Jabber User",
  "Remplissez les champs pour rechercher un utilisateur Jabber"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Remplissez le formulaire pour recherche un utilisateur Jabber (Ajouter * à la fin du champ pour chercher n'importe quelle fin de chaîne"}.
@@ -135,6 +135,8 @@
 {"Send items to new subscribers", "Envoyer les anciens éléments aux nouveaux abonnés"}.
 {"Only deliver notifications to available users", "Envoyer les notifications uniquement aux utilisateurs disponibles"}.
 {"Specify the current subscription approver", "Définir l'utilisateur qui valide les abonnements"}.
+{"Publish-Subscribe", "Publication-Abonnement"}.
+
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Configuration du salon modifiée"}.
@@ -175,6 +177,8 @@
 {"Access denied by service policy", "L'accès au service est refusé"}.
 {"Specified nickname is already registered", "Le pseudo demandé est déjà enregistré"}.
 {"You must fill in field \"Nickname\" in the form", "Vous devez préciser le champ \"pseudo\" dans le formulaire"}.
+{"Chatrooms", "Salons de discussion"}.
+
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " a changé le sujet pour: "}.
@@ -235,6 +239,7 @@
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Si vous voulez préciser différents encodages pour les serveurs IRC, remplissez cette liste avec des valeurs dans le format '{\"serveur irc\", \"encodage\"}'. Par défaut ce service utilise l'encodage \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Exemple: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Encodages"}.
+{"IRC Transport", "Passerelle IRC"}.
 
 % web/ejabberd_web_admin.erl
 {"Administration", "Administration"}.
@@ -342,6 +347,14 @@
 {"Shared Roster Groups", "Groupes de liste de contacts partagée"}.
 {"Last Activity", "Dernière Activité"}.
 
+% mod_proxy65_service.erl
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin",
+  "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+
+
 % Local Variables:
 % mode: erlang
 % End:
+
+
+

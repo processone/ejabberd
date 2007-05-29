@@ -193,11 +193,11 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 		"" ->
 		    case jlib:iq_query_info(Packet) of
 			#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
-			    sub_el = SubEl} = IQ ->
+			    sub_el = SubEl, lang = Lang} = IQ ->
 			    Res = IQ#iq{type = result,
 					sub_el = [{xmlelement, "query",
 						   [{"xmlns", XMLNS}],
-						   iq_disco()}]},
+						   iq_disco(Lang)}]},
 			    ejabberd_router:route(To,
 						  From,
 						  jlib:iq_to_xml(Res));
@@ -287,11 +287,11 @@ closed_connection(Host, From, Server) ->
     ets:delete(irc_connection, {From, Server, Host}).
 
 
-iq_disco() ->
+iq_disco(Lang) ->
     [{xmlelement, "identity",
       [{"category", "conference"},
        {"type", "irc"},
-       {"name", "IRC Transport"}], []},
+       {"name", translate:translate(Lang, "IRC Transport")}], []},
      {xmlelement, "feature",
       [{"var", ?NS_MUC}], []},
      {xmlelement, "feature",
