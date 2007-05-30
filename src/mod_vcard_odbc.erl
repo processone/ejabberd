@@ -341,7 +341,7 @@ do_route(ServerHost, From, To, Packet) ->
 						  From,
 						  jlib:iq_to_xml(ResIQ))
 		    end;
-		#iq{type = Type, xmlns = ?NS_DISCO_INFO} ->
+		#iq{type = Type, xmlns = ?NS_DISCO_INFO, lang = Lang} ->
 		    case Type of
 			set ->
 			    Err = jlib:make_error_reply(

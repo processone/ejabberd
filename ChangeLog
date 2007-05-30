@@ -1,3 +1,8 @@
+2007-05-31  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_vcard_odbc.erl: Fix for previous commit (thanks to
+	Badlop)
+
 2007-05-29  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_vcard_odbc.erl: Make service description translatable in 
