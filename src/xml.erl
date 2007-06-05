@@ -16,7 +16,7 @@
 	 get_cdata/1, get_tag_cdata/1,
 	 get_attr/2, get_attr_s/2,
 	 get_tag_attr/2, get_tag_attr_s/2,
-	 get_subtag/2,
+	 get_subtag/2, get_subtag_cdata/2,
 	 get_path_s/2,
 	 replace_tag_attr/3]).
 
@@ -209,6 +209,13 @@ get_subtag1([El | Els], Name) ->
 get_subtag1([], _) ->
     false.
 
+get_subtag_cdata(Tag, Name) ->
+    case get_subtag(Tag, Name) of
+	false ->
+	    "";
+	Subtag ->
+	    get_tag_cdata(Subtag)
+    end.
 
 get_path_s(El, []) ->
     El;
