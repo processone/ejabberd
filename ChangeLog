@@ -1,5 +1,8 @@
 2007-06-07  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/ejabberd_config.erl: Fixed "language" option processing
+	(thanks to Badlop)
+
 	* src/msgs/zh.msg: Updated (thanks to Shelley Shyan)
 
 	* src/msgs/ca.msg: New Catalan translation (thanks to Vicent

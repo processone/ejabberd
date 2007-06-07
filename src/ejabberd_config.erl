@@ -107,6 +107,8 @@ process_term(Term, State) ->
 			State, Terms);
 	{listen, Val} ->
 	    add_option(listen, Val, State);
+	{language, Val} ->
+	    add_option(language, Val, State);
 	{outgoing_s2s_port, Port} ->
 	    add_option(outgoing_s2s_port, Port, State);
 	{s2s_use_starttls, Port} ->
