@@ -1,16 +1,16 @@
 % $Id$
 
 % jlib.hrl
-{"No resource provided", "不提供任何资源"}.
+{"No resource provided", "无资源提供"}.
 
 % mod_configure.erl
 
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd SOCKS5 字节流模块\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd SOCKS5 字节流模块\n版权所有 (c) 2003-2006 Alexey Shchepin"}.
 
 
 
 {"Choose storage type of tables", "请选择表格的存储类型"}.
-{"RAM copy", "内存(RAM)复制"}.
+{"RAM copy", "内存 (RAM) 复制"}.
 {"RAM and disc copy", "内存与磁盘复制"}.
 {"Disc only copy", "仅复制磁盘"}.
 {"Remote copy", "远程复制"}.
@@ -22,10 +22,10 @@
 {"Backup to File at ", "将文件备份到"}.
 {"Enter path to backup file", "请输入备份文件的路径"}.
 {"Path to File", "文件路径"}.
-{"Restore Backup from File at ", "要恢复的备份文件位于 "}.
-{"Dump Backup to Text File at ", "转储备份到文本文件 "}.
+{"Restore Backup from File at ", "要恢复的备份文件位于"}.
+{"Dump Backup to Text File at ", "转储备份到文本文件"}.
 {"Enter path to text file", "请输入文本文件的路径"}.
-{"Import User from File at ", "从文件导入用户 "}.
+{"Import User from File at ", "用来导入用户的文件位于 "}.
 {"Enter path to jabberd1.4 spool file", "请输入jabberd1.4 spool文件的路径"}.
 {"Import Users from Dir at ", "从目录导入用户 "}.
 {"Enter path to jabberd1.4 spool dir", "请输入jabberd1.4 spool目录的路径"}.
@@ -33,35 +33,35 @@
 {"Hostname Configuration", "主机配置"}.
 {"Choose host name", "选择主机名称"}.
 {"Host name", "主机名称"}.
-{"Access Control List Configuration", "访问控制列表(ACL)配置"}.
-{"Access control lists", "访问控制列表(ACL)"}.
+{"Access Control List Configuration", "访问控制列表 (ACL) 配置"}.
+{"Access control lists", "访问控制列表 (ACL)"}.
 {"Access Configuration", "访问配置"}.
 {"Access rules", "访问规则"}.
 {"Remove Users", "删除用户"}.
 {"Choose users to remove", "选择要删除的用户"}.
-{"Administration of ", "管理 "}.
+{"Administration of ", "管理"}.
 {"Action on user", "对用户的动作"}.
 {"Edit Properties", "编辑属性"}.
 {"Remove User", "删除用户"}.
 {"Database", "数据库"}.
 {"Outgoing s2s Connections", "流出的s2s连接"}.
 {"Import Users From jabberd 1.4 Spool Files", "从Jabberd 1.4 Spool文件导入用户"}.
-{"Database Tables Configuration at ", "数据库表格配置位于 "}.
+{"Database Tables Configuration at ", "数据库表格配置位于"}.
 
 % src/ejabberd_c2s.erl
 {"Use of STARTTLS required", "要求使用STARTTLS"}.
 {"Replaced by new connection", "被新的连接替换"}.
 
 % mod_disco.erl
-{"Configuration", "配置"}.
+{"Configuration", "配 置"}.
 {"Online Users", "在线用户"}.
 {"All Users", "所有用户"}.
 {"To ~s", "发送给 ~s"}.
 {"From ~s", "来自 ~s"}.
 {"Running Nodes", "正在运行的节点"}.
-{"Stopped Nodes", "已停止的节点"}.
-{"Host Name", "主机名"}.
-{"Access Control Lists", "访问控制列表(ACL)"}.
+{"Stopped Nodes", "已经停止的节点"}.
+{"Host Name", "主机名称"}.
+{"Access Control Lists", "访问控制列表 (ACL)"}.
 {"Access Rules", "访问规则"}.
 {"Remove Users", "删除用户"}.
 {"Modules", "模块"}.
@@ -78,29 +78,28 @@
 {"Choose a username and password to register with this server", "请选择在此服务器上注册所需的用户名和密码"}.
 
 % src/mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Erlang Jabber 服务器\nCopyright (c) 2002-2006 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd vCard 模块\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Erlang Jabber 服务器\n版权所有 (c) 2002-2006 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd vCard 模块\n版权所有 (c) 2003-2006 Alexey Shchepin"}.
 {"Email", "电子邮件"}.
 {"Search Results for ", "搜索结果属于关键词 "}.
 {"Jabber ID", "Jabber ID"}.
 
 % mod_vcard.erl
-{"You need an x:data capable client to search",
- "您需要一个兼容x:data的客户端来搜索"}.
+{"You need an x:data capable client to search", "您需要一个兼容x:data的客户端来搜索"}.
 {"Search users in ", "要搜索的用户位于 "}.
 
 {"Fill in fields to search for any matching Jabber User", "填充字段以搜索任何匹配的Jabber用户"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "填充表单以搜索任何匹配的Jabber用户(在字段末添加*来匹配子串)"}.
 
-{"User",              "用户"}.
-{"Full Name", 	      "全名"}.
-{"Name", 	      "名字"}.
-{"Middle Name",       "中间名"}.
-{"Family Name",       "姓"}.
-{"Nickname", 	      "昵称"}.
-{"Birthday", 	      "出生日期"}.
-{"Country", 	      "国家"}.
-{"City", 	      "城市"}.
+{"User",         "用户"}.
+{"Full Name", 	  "全名"}.
+{"Name", 	     "名字"}.
+{"Middle Name",  "中间名"}.
+{"Family Name",  "姓氏"}.
+{"Nickname", 	  "昵称"}.
+{"Birthday", 	  "出生日期"}.
+{"Country", 	  "国家"}.
+{"City", 	     "城市"}.
 {"Organization Name", "组织名称"}.
 {"Organization Unit", "组织单位"}.
 
@@ -123,7 +122,7 @@
 {"Delete message of the day", "删除该天的消息"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd公共/子 模块 \nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd公共/子 模块 \n版权所有 (c) 2003-2006 Alexey Shchepin"}.
 {[], ""}.
 {"Node Creator", "节点创始人"}.
 {"Deliver payloads with event notifications", "用事件通告传输有效负载"}.
@@ -172,7 +171,7 @@
 {"You need an x:data capable client to register nickname", "您需要一个兼容x:data的客户端来注册昵称"}.
 {"Nickname Registration at ", "昵称注册于 "}.
 {"Enter nickname you want to register", "请输入您想要注册的昵称"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd MUC 模块\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd MUC 模块\n版权所有 (c) 2003-2006 Alexey Shchepin"}.
 {"Only service administrators are allowed to send service messages", "只有服务管理员可以发送服务消息"}.
 {"Room creation is denied by service policy", "创建房间被服务政策拒绝"}.
 {"Conference room does not exist", "会议室不存在"}.
@@ -231,7 +230,7 @@
 {"anyone", "任何人"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd IRC 模块\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd IRC 模块\n版权所有 (c) 2003-2006 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings", "您需要一个兼容x:data的客户端来配置mod_irc设置"}.
 {"Registration in mod_irc for ", "mod_irc中的注册是为 "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "请输入您想使用的用来连接到IRC服务器的用户名和编码"}.
@@ -241,33 +240,33 @@
 {"Encodings", "编码"}.
 
 % web/ejabberd_web_admin.erl
-{"Administration", "管理"}.
+{"Administration", "管    理"}.
 {"Users", "用户"}.
 {"Nodes", "节点"}.
-{"Shared Roster", "共享的花名册"}.
+{"Shared Roster", "共享花名册"}.
 {"Statistics", "统计"}.
 {"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
-{"(Raw)", "(Brut)"}.
+{"(Raw)", "(原始格式)"}.
 {"Submitted", "已提交"}.
 {"Bad format", "格式错误"}.
-{"Raw", "Brut"}.
+{"Raw", "原始格式"}.
 {"Delete Selected", "删除已选内容"}.
 {"Submit", "提交"}.
 {"~s access rule configuration", "~s 的访问规则设置"}.
 {"Node not found", "没有找到节点"}.
 {"Add New", "添加新用户"}.
-{"Registered Users", "已注册用户"}.
-{"Registered Users:", "已注册用户："}.
+{"Registered Users", "注册用户"}.
+{"Registered Users:", "注册用户："}.
 {"Change Password", "更改密码"}.
 {"Connected Resources:", "已连接资源"}.
 {"Password:", "密码："}.
-{"None", "没有"}.
+{"None", "无"}.
 {"Node ", "节点 "}.
 {"Listened Ports", "监听端口"}.
 {"Restart", "重启"}.
 {"Stop", "停止"}.
 {"RPC Call Error", "RPC呼叫错误"}.
-{"Name", "名字"}.
+{"Name", "名称"}.
 {"Storage Type", "存储类型"}.
 {"Size", "大小"}.
 {"Memory", "内存"}.
@@ -285,15 +284,15 @@
 {"Update", "更新"}.
 {"Delete", "删除"}.
 {"Add User", "添加用户"}.
-{"Offline Messages", "下线消息"}.
-{"Users Last Activity", "用户的最后一次活动"}.
+{"Offline Messages", "离线消息"}.
+{"Users Last Activity", "用户最后一次活动"}.
 {"Never", "从未"}.
 {"~s's Offline Messages Queue", "~s 下线消息队列"}.
 {"Time", "时间"}.
-{"From", "来自"}.
+{"From", "从"}.
 {"To", "到"}.
-{"Packet", "包"}.
-{"Offline Messages:", "下线消息："}.
+{"Packet", "包裹"}.
+{"Offline Messages:", "离线消息: "}.
 {"Roster", "花名册"}.
 {"Nickname", "昵称"}.
 {"Subscription", "订阅"}.
@@ -301,25 +300,25 @@
 {"Groups", "组"}.
 {"Remove", "移除"}.
 {"Add Jabber ID", "添加 Jabber ID"}.
-{"User ", "用户"}.
-{"Roster of ", "Liste de contact de "}.
-{"Online", "上线"}.
+{"User ", "用户 "}.
+{"Roster of ", "花名册属于 "}.
+{"Online", "在线"}.
 {"Validate", "确认"}.
-{"Name:", "名字："}.
-{"Description:", "描述："}.
-{"Members:", "会员："}.
+{"Name:", "名称: "}.
+{"Description:", "描述: "}.
+{"Members:", "会员: "}.
 {"Displayed Groups:", "已显示的组"}.
 {"Group ", "组 "}.
-{"Period: ", "持续时间:"}.
+{"Period: ", "持续时间: "}.
 {"Last month", "上个月"}.
-{"Last year", "去年"}.
+{"Last year", "上一年"}.
 {"All activity", "所有活动"}.
 {"Show Ordinary Table", "显示普通列表"}.
 {"Show Integral Table", "显示完整列表"}.
 {"Modules at ", "模块位于 "}.
 {"Start", "开始"}.
 {"Virtual Hosts", "虚拟主机"}.
-{"ejabberd virtual hosts", "ejabberd虚拟主机"}.
+{"ejabberd virtual hosts", "ejabberd 虚拟主机"}.
 {"Host", "主机"}.
 {"Authenticated Users:", "已认证用户："}.
 {"No Data", "没有数据"}.
