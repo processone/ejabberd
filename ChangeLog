@@ -1,3 +1,8 @@
+2007-06-10  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/web/ejabberd_web_admin.erl: Show IP address of connected
+	resources on user info page (thanks to Oleg Palij)
+
 2007-06-07  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_config.erl: Fixed "language" option processing

@@ -1493,7 +1493,18 @@ user_info(User, Server, Query, Lang) ->
 	    _ ->
 		[?XE("ul",
 		     lists:map(fun(R) ->
-				       ?LI([?C(R)])
+				       FIP = case ejabberd_sm:get_user_ip(
+						    User, Server, R) of
+						 undefined ->
+						     "";
+						 {IP, Port} ->
+						     " (" ++
+							 inet_parse:ntoa(IP) ++
+							 ":" ++
+							 integer_to_list(Port)
+							 ++ ")"
+					     end,
+				       ?LI([?C(R ++ FIP)])
 			       end, lists:sort(Resources)))]
 	end,
     Password = ejabberd_auth:get_password_s(User, Server),
