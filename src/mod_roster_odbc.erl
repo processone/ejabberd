@@ -748,7 +748,7 @@ get_jid_info(_, User, Server, JID) ->
 			       "F" -> from;
 			       _ -> none
 			   end,
-	    Groups = case catch odbc_queries:get_roster_group_by_jid(LServer, Username, SJID) of
+	    Groups = case catch odbc_queries:get_rostergroup_by_jid(LServer, Username, SJID) of
 			 {selected, ["grp"], JGrps} when is_list(JGrps) ->
 			     [JGrp || {JGrp} <- JGrps];
 			 _ ->

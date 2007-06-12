@@ -1,3 +1,7 @@
+2007-06-12  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/mod_roster_odbc.erl: Fixed typo
+
 2007-06-10  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/web/ejabberd_web_admin.erl: Show IP address of connected
