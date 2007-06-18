@@ -381,6 +381,11 @@ list_users(LServer) ->
       LServer,
       "EXECUTE dbo.list_users").
 
+users_number(LServer) ->
+	ejabberd_odbc:sql_query(
+	      LServer,
+	      "select count(*) from users with (nolock)").
+
 add_spool_sql(Username, XML) ->
     ["EXECUTE dbo.add_spool '", Username, "' , '",XML,"'"].
 
