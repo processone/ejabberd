@@ -773,7 +773,7 @@ set_affiliation_and_reason(JID, Affiliation, Reason, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
 get_affiliation(JID, StateData) ->
-    {_AccessRoute, _AccessCreate, AccessAdmin} = StateData#state.access,
+    {_AccessRoute, _AccessCreate, AccessAdmin, _AccessPersistent} = StateData#state.access,
     Res =
 	case acl:match_rule(StateData#state.server_host, AccessAdmin, JID) of
 	    allow ->
@@ -2041,9 +2041,10 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 			{?NS_XDATA, "cancel"} ->
 			    {result, [], StateData};
 			{?NS_XDATA, "submit"} ->
-			    case check_allowed_log_change(XEl, StateData, From) of
-					allow -> set_config(XEl, StateData);
-					deny -> {error, ?ERR_BAD_REQUEST}
+			    case {check_allowed_log_change(XEl, StateData, From),
+					check_allowed_persistent_change(XEl, StateData, From)} of
+					{allow, allow} -> set_config(XEl, StateData);
+					_ -> {error, ?ERR_BAD_REQUEST}
 				end;
 			_ ->
 			    {error, ?ERR_BAD_REQUEST}
@@ -2104,6 +2105,15 @@ check_allowed_log_change(XEl, StateData, From) ->
 	      StateData#state.server_host, From)
     end.
 
+check_allowed_persistent_change(XEl, StateData, From) ->
+    case lists:keymember("muc#roomconfig_persistentroom", 1,
+			 jlib:parse_xdata_submit(XEl)) of
+	false ->
+	    allow;
+	true ->
+		{_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = StateData#state.access,
+		acl:match_rule(StateData#state.server_host, AccessPersistent, From)
+    end.
 
 -define(XFIELD(Type, Label, Var, Val),
 	{xmlelement, "field", [{"type", Type},
@@ -2126,6 +2136,7 @@ check_allowed_log_change(XEl, StateData, From) ->
 
 
 get_config(Lang, StateData, From) ->
+    {_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = StateData#state.access,
     Config = StateData#state.config,
     Res =
 	[{xmlelement, "title", [],
@@ -2137,10 +2148,16 @@ get_config(Lang, StateData, From) ->
 	    [{xmlcdata, "http://jabber.org/protocol/muc#roomconfig"}]}]},
 	 ?STRINGXFIELD("Room title",
 		       "muc#roomconfig_roomname",
-		       Config#config.title),
-	 ?BOOLXFIELD("Make room persistent",
-		     "muc#roomconfig_persistentroom",
-		     Config#config.persistent),
+		       Config#config.title)
+	] ++
+	 case acl:match_rule(StateData#state.server_host, AccessPersistent, From) of
+		allow ->
+			[?BOOLXFIELD(
+			 "Make room persistent",
+			 "muc#roomconfig_persistentroom",
+			 Config#config.persistent)];
+		_ -> []
+	 end ++ [
 	 ?BOOLXFIELD("Make room public searchable",
 		     "muc#roomconfig_publicroom",
 		     Config#config.public),

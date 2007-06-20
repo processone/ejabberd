@@ -154,13 +154,14 @@ init([Host, Opts]) ->
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
+    AccessPersistent = gen_mod:get_opt(access_persistent, Opts, all),
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
     ejabberd_router:register_route(MyHost),
-    load_permanent_rooms(MyHost, Host, {Access, AccessCreate, AccessAdmin},
+    load_permanent_rooms(MyHost, Host, {Access, AccessCreate, AccessAdmin, AccessPersistent},
 			 HistorySize),
     {ok, #state{host = MyHost,
 		server_host = Host,
-		access = {Access, AccessCreate, AccessAdmin},
+		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
 		history_size = HistorySize}}.
 
 %%--------------------------------------------------------------------
@@ -254,7 +255,7 @@ stop_supervisor(Host) ->
     supervisor:delete_child(ejabberd_sup, Proc).
 
 do_route(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
-    {AccessRoute, _AccessCreate, _AccessAdmin} = Access,
+    {AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
 	    do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet);
@@ -269,7 +270,7 @@ do_route(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
 
 
 do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
-    {_AccessRoute, AccessCreate, AccessAdmin} = Access,
+    {_AccessRoute, AccessCreate, AccessAdmin, AccessPersistent} = Access,
     {Room, _, Nick} = jlib:jid_tolower(To),
     {xmlelement, Name, Attrs, _Els} = Packet,
     case Room of

@@ -172,9 +172,11 @@
 %   host: "conference." ++ ?MYNAME
 %   access: all
 %   access_create: all
+%   access_persistent: all
 %   access_admin: none (only room creator has owner privileges)
   {mod_muc,        [{access, muc},
 		    {access_create, muc},
+		    {access_persistent, muc},
 		    {access_admin, muc_admin}]},
 %  {mod_muc_log,    []},
 %  {mod_shared_roster, []},

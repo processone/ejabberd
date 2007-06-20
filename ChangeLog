@@ -1,3 +1,11 @@
+2007-06-20  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: It is now possible to limit who is
+	allowed to create persistent MUC rooms (Thanks to Badlop) (EJAB-257)
+	* src/mod_muc/mod_muc.erl: Likewise
+	* doc/guide.tex: Likewise
+	* src/ejabberd.cfg.example: Likewise
+
 2007-06-18  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/odbc/odbc_queries.erl: Added missing users_number/1 for MSSQL
