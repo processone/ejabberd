@@ -1,5 +1,8 @@
 2007-06-22  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_disco.erl: Don't override accumulated value in
+	get_local_identity/5 (thanks to Magnus Henoch and Badlop)
+
 	* src/web/ejabberd_web_admin.erl: Added links to server and
 	virtual host homes (thanks to Badlop)
 

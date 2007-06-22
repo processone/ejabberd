@@ -168,12 +168,12 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 	    end
     end.
 
-get_local_identity(_Acc, _From, _To, [], _Lang) ->
-     [{xmlelement, "identity",
-       [{"category", "server"},
-	{"type", "im"},
-	{"name", "ejabberd"}], []}];
- 
+get_local_identity(Acc, _From, _To, [], _Lang) ->
+    Acc ++ [{xmlelement, "identity",
+	     [{"category", "server"},
+	      {"type", "im"},
+	      {"name", "ejabberd"}], []}];
+
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
