@@ -1839,18 +1839,19 @@ Options:
 \hostitem{irc}
 \titem{access} \ind{options!access}This option can be used to specify who
   may use the IRC transport (default value: \term{all}).
+\titem{default\_encoding} \ind{options!defaultencoding}Set the default IRC encoding (default value: \term{"koi8-r"}).
 \end{description}
 
 Examples:
 \begin{itemize}
 \item In the first example, the IRC transport is available on (all) your
   virtual host(s) with the prefix `\jid{irc.}'. Furthermore, anyone is
-  able to use the transport.
+  able to use the transport. The default encoding is set to "iso8859-15".
   \begin{verbatim}
   {modules,
    [
     ...
-    {mod_irc, [{access, all}]},
+    {mod_irc, [{access, all}, {default\_encoding, "iso8859-15"}]},
     ...
    ]}.
 \end{verbatim}

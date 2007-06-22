@@ -17,8 +17,7 @@
 -export([start_link/2,
 	 start/2,
 	 stop/1,
-	 closed_connection/3,
-	 get_user_and_encoding/3]).
+	 closed_connection/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -27,12 +26,10 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--define(DEFAULT_IRC_ENCODING, "koi8-r").
-
 -record(irc_connection, {jid_server_host, pid}).
 -record(irc_custom, {us_host, data}).
 
--record(state, {host, server_host, access}).
+-record(state, {host, server_host, default_encoding, access}).
 
 -define(PROCNAME, ejabberd_mod_irc).
 
@@ -84,12 +81,14 @@ init([Host, Opts]) ->
     MyHost = gen_mod:get_opt(host, Opts, "irc." ++ Host),
     update_table(MyHost),
     Access = gen_mod:get_opt(access, Opts, all),
+	DefaultEncoding = gen_mod:get_opt(default_encoding, Opts, "koi8-r"),
     catch ets:new(irc_connection, [named_table,
 				   public,
 				   {keypos, #irc_connection.jid_server_host}]),
     ejabberd_router:register_route(MyHost),
     {ok, #state{host = MyHost,
 		server_host = Host,
+		default_encoding = DefaultEncoding,
 		access = Access}}.
 
 %%--------------------------------------------------------------------
@@ -122,8 +121,9 @@ handle_cast(_Msg, State) ->
 handle_info({route, From, To, Packet},
 	    #state{host = Host,
 		   server_host = ServerHost,
+		   default_encoding = DefEnc,
 		   access = Access} = State) ->
-    case catch do_route(Host, ServerHost, Access, From, To, Packet) of
+    case catch do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -171,10 +171,10 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, From, To, Packet) ->
+do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) ->
     case acl:match_rule(Host, Access, From) of
 	allow ->
-	    do_route1(Host, ServerHost, From, To, Packet);
+	    do_route1(Host, ServerHost, From, To, Packet, DefEnc);
 	_ ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
 	    Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -184,7 +184,7 @@ do_route(Host, ServerHost, Access, From, To, Packet) ->
 	    ejabberd_router:route(To, From, Err)
     end.
 
-do_route1(Host, ServerHost, From, To, Packet) ->
+do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
     #jid{user = ChanServ, resource = Resource} = To,
     {xmlelement, _Name, Attrs, _Els} = Packet,
     case ChanServ of
@@ -210,7 +210,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 						  From,
 						  jlib:iq_to_xml(Res));
 			#iq{xmlns = ?NS_REGISTER} = IQ ->
-			    process_register(Host, From, To, IQ);
+			    process_register(Host, From, To, DefEnc, IQ);
 			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
 			    lang = Lang} = IQ ->
 			    Res = IQ#iq{type = result,
@@ -239,7 +239,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 			[] ->
 			    io:format("open new connection~n"),
 			    {Username, Encoding} = get_user_and_encoding(
-						     Host, From, Server),
+						     Host, From, Server, DefEnc),
 			    {ok, Pid} = mod_irc_connection:start(
 					  From, Host, ServerHost, Server,
 					  Username, Encoding),
@@ -309,8 +309,8 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, translate:translate(Lang, "ejabberd IRC module\n"
         "Copyright (c) 2003-2006 Alexey Shchepin")}]}].
 
-process_register(Host, From, To, #iq{} = IQ) ->
-    case catch process_irc_register(Host, From, To, IQ) of
+process_register(Host, From, To, DefEnc, #iq{} = IQ) ->
+    case catch process_irc_register(Host, From, To, DefEnc, IQ) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	ResIQ ->
@@ -340,7 +340,7 @@ find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
-process_irc_register(Host, From, To,
+process_irc_register(Host, From, To, DefEnc,
 		     #iq{type = Type, xmlns = XMLNS,
 			 lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -386,7 +386,7 @@ process_irc_register(Host, From, To,
 	get ->
 	    Node =
 		string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-	    case get_form(Host, From, Node, Lang) of
+	    case get_form(Host, From, Node, Lang ,DefEnc) of
 		{result, Res} ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -401,7 +401,7 @@ process_irc_register(Host, From, To,
 
 
 
-get_form(Host, From, [], Lang) ->
+get_form(Host, From, [], Lang, DefEnc) ->
     #jid{user = User, server = Server,
 	 luser = LUser, lserver = LServer} = From,
     US = {LUser, LServer},
@@ -455,7 +455,7 @@ get_form(Host, From, [], Lang) ->
 			   "for IRC servers, fill this list with values "
 			   "in format '{\"irc server\", \"encoding\"}'.  "
 			   "By default this service use \"~s\" encoding."),
-		         [?DEFAULT_IRC_ENCODING]))}]}]},
+		         [DefEnc]))}]}]},
 	        {xmlelement, "field", [{"type", "fixed"}],
 	         [{xmlelement, "value", [],
 		   [{xmlcdata,
@@ -480,7 +480,7 @@ get_form(Host, From, [], Lang) ->
 	       ]}]}
     end;
 
-get_form(_Host, _, _, Lang) ->
+get_form(_Host, _, _, Lang, _) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
@@ -530,19 +530,19 @@ set_form(_Host, _, _, Lang, XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
-get_user_and_encoding(Host, From, IRCServer) ->
+get_user_and_encoding(Host, From, IRCServer, DefEnc) ->
     #jid{user = User, server = Server,
 	 luser = LUser, lserver = LServer} = From,
     US = {LUser, LServer},
     case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	{'EXIT', Reason} ->
-	    {User, ?DEFAULT_IRC_ENCODING};
+	    {User, DefEnc};
 	[] ->
-	    {User, ?DEFAULT_IRC_ENCODING};
+	    {User, DefEnc};
 	[#irc_custom{data = Data}] ->
 	    {xml:get_attr_s(username, Data),
 	     case xml:get_attr_s(IRCServer, xml:get_attr_s(encodings, Data)) of
-		"" -> ?DEFAULT_IRC_ENCODING;
+		"" -> DefEnc;
 		E -> E
 	     end}
     end.

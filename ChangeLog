@@ -1,5 +1,9 @@
 2007-06-22  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_irc/mod_irc.erl: Added an option for default IRC
+	encoding (thanks to Badlop)
+	* doc/guide.tex: Updated
+
 	* src/mod_disco.erl: Don't override accumulated value in
 	get_local_identity/5 (thanks to Magnus Henoch and Badlop)
 
