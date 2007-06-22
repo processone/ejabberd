@@ -189,12 +189,16 @@ make_xhtml(Els, Host, Lang) ->
 		 [?XAE("div",
 		       [{"id", "header"}],
 		       [?XE("h1",
-			    [?ACT(Base, "Administration")]
+			    [?ACT("/admin/", "Administration")]
 			   )]),
 		  ?XAE("div",
 		       [{"id", "navigation"}],
 		       [?XE("ul",
-			    [?LI([?ACT(Base ++ "acls/", "Access Control Lists")]),
+			    [?LI([?XAE("div",
+			        [{"id", "navheadhost"}],
+			        [?AC(Base, Host)]
+			     )]),
+			     ?LI([?ACT(Base ++ "acls/", "Access Control Lists")]),
 			     ?LI([?ACT(Base ++ "access/", "Access Rules")]),
 			     ?LI([?ACT(Base ++ "users/", "Users")]),
 			     ?LI([?ACT(Base ++ "online-users/", "Online Users")]),
@@ -352,6 +356,11 @@ html>body #container {
   border-color: #fc8800;
   color: #FFF;
   background: #332;
+}
+
+#navheadhost {
+  text-align: left;
+  border-bottom: 2px solid #d47911;
 }
 
 #lastactivity li {
