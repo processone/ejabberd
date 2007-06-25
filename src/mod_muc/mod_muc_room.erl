@@ -59,6 +59,10 @@
 	       role,
 	       last_presence}).
 
+-record(activity, {message_time = 0,
+		   presence_time = 0,
+		   presence}).
+
 -record(state, {room,
 		host,
 		server_host,
@@ -70,7 +74,8 @@
 		history = lqueue_new(20),
 		subject = "",
 		subject_author = "",
-		just_created = false}).
+		just_created = false,
+		activity = ?DICT:new()}).
 
 
 %-define(DBGFSM, true).
@@ -147,79 +152,30 @@ normal_state({route, From, "",
 	true ->
 	    case xml:get_attr_s("type", Attrs) of
 		"groupchat" ->
-		    {ok, #user{nick = FromNick, role = Role}} =
-			?DICT:find(jlib:jid_tolower(From),
-				   StateData#state.users),
+		    Activity = case ?DICT:find(jlib:jid_tolower(From),
+					       StateData#state.activity) of
+				   {ok, A} -> A;
+				   error -> #activity{}
+			       end,
+		    Now = now_to_usec(now()),
+		    MinMessageInterval =
+			trunc(gen_mod:get_module_opt(
+				StateData#state.server_host,
+				mod_muc, min_message_interval, 0) * 1000000),
 		    if
-			(Role == moderator) or (Role == participant) ->
-			    {NewStateData1, IsAllowed} =
-				case check_subject(Packet) of
-				    false ->
-					{StateData, true};
-				    Subject ->
-					case can_change_subject(Role,
-								StateData) of
-					    true ->
-						NSD =
-						    StateData#state{
-						      subject = Subject,
-						      subject_author =
-						      FromNick},
-						case (NSD#state.config)#config.persistent of
-						    true ->
-							mod_muc:store_room(
-							  NSD#state.host,
-							  NSD#state.room,
-							  make_opts(NSD));
-						    _ ->
-							ok
-						end,
-						{NSD, true};
-					    _ ->
-						{StateData, false}
-					end
-				end,
-			    case IsAllowed of
-				true ->
-				    lists:foreach(
-				      fun({_LJID, Info}) ->
-					      ejabberd_router:route(
-						jlib:jid_replace_resource(
-						  StateData#state.jid,
-						  FromNick),
-						Info#user.jid,
-						Packet)
-				      end,
-				      ?DICT:to_list(StateData#state.users)),
-				    NewStateData2 =
-					add_message_to_history(FromNick,
-							       Packet,
-							       NewStateData1),
-				    {next_state, normal_state, NewStateData2};
-				_ ->
-				    Err = 
-					case (StateData#state.config)#config.allow_change_subj of
-					    true ->
-						?ERRT_FORBIDDEN(
-						  Lang,
-						  "Only moderators and participants "
-						  "are allowed to change subject in this room");
-					    _ ->
-						?ERRT_FORBIDDEN(
-						  Lang,
-						  "Only moderators "
-						  "are allowed to change subject in this room")
-					end,
-				    ejabberd_router:route(
-				      StateData#state.jid,
-				      From,
-				      jlib:make_error_reply(Packet, Err)),
-			    {next_state, normal_state, StateData}
-			    end;
+			Now >= Activity#activity.message_time + MinMessageInterval ->
+			    NewActivity = Activity#activity{message_time = Now},
+			    StateData1 =
+				StateData#state{
+				  activity = ?DICT:store(
+						jlib:jid_tolower(From),
+						NewActivity,
+						StateData#state.activity)},
+			    process_groupchat_message(From, Packet, StateData1);
 			true ->
-			    ErrText = "Visitors are not allowed to send messages to all occupants",
+			    ErrText = "Message frequency is too high",
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+				    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
 			    ejabberd_router:route(
 			      StateData#state.jid,
 			      From, Err),
@@ -361,92 +317,44 @@ normal_state({route, From, "",
 normal_state({route, From, Nick,
 	      {xmlelement, "presence", Attrs, _Els} = Packet},
 	     StateData) ->
-    Type = xml:get_attr_s("type", Attrs),
-    Lang = xml:get_attr_s("xml:lang", Attrs),
-    StateData1 =
-	case Type of
-	    "unavailable" ->
-		case is_user_online(From, StateData) of
-		    true ->
-			NewState =
-			    add_user_presence_un(From, Packet, StateData),
-			send_new_presence(From, NewState),
-			Reason = case xml:get_subtag(Packet, "status") of
-				false -> "";
-				Status_el -> xml:get_tag_cdata(Status_el)
-			end,
-			remove_online_user(From, NewState, Reason);
-		    _ ->
-			StateData
-		end;
-	    "error" ->
-		case is_user_online(From, StateData) of
-		    true ->
-			NewState =
-			    add_user_presence_un(
-			      From,
-			      {xmlelement, "presence",
-			       [{"type", "unavailable"}], []},
-			      StateData),
-			send_new_presence(From, NewState),
-			remove_online_user(From, NewState);
-		    _ ->
-			StateData
-		end;
-	    "" ->
-		case is_user_online(From, StateData) of
-		    true ->
-			case is_nick_change(From, Nick, StateData) of
-			    true ->
-				case {is_nick_exists(Nick, StateData),
-				      mod_muc:can_use_nick(
-					StateData#state.host, From, Nick)} of
-				    {true, _} ->
-					Lang = xml:get_attr_s("xml:lang", Attrs),
-					ErrText = "Nickname is already in use by another occupant",
-					Err = jlib:make_error_reply(
-						Packet,
-						?ERRT_CONFLICT(Lang, ErrText)),
-					ejabberd_router:route(
-					  jlib:jid_replace_resource(
-					    StateData#state.jid,
-					    Nick), % TODO: s/Nick/""/
-					  From, Err),
-					StateData;
-				    {_, false} ->
-					ErrText = "Nickname is registered by another person",
-					Err = jlib:make_error_reply(
-						Packet,
-						?ERRT_CONFLICT(Lang, ErrText)),
-					ejabberd_router:route(
-					  % TODO: s/Nick/""/
-					  jlib:jid_replace_resource(
-					    StateData#state.jid,
-					    Nick),
-					  From, Err),
-					StateData;
-				    _ ->
-					change_nick(From, Nick, StateData)
-				end;
-			    _ ->
-				NewState =
-				    add_user_presence(From, Packet, StateData),
-				send_new_presence(From, NewState),
-				NewState
-			end;
-		    _ ->
-			add_new_user(From, Nick, Packet, StateData)
-		end;
-	    _ ->
-		StateData
-	end,
-    %io:format("STATE1: ~p~n", [?DICT:to_list(StateData#state.users)]),
-    %io:format("STATE2: ~p~n", [?DICT:to_list(StateData1#state.users)]),
-    case (not (StateData1#state.config)#config.persistent) andalso
-	(?DICT:to_list(StateData1#state.users) == []) of
+    Activity = case ?DICT:find(jlib:jid_tolower(From),
+			       StateData#state.activity) of
+		   {ok, A} -> A;
+		   error -> #activity{}
+	       end,
+    Now = now_to_usec(now()),
+    MinPresenceInterval =
+	trunc(gen_mod:get_module_opt(
+		StateData#state.server_host,
+		mod_muc, min_presence_interval, 0) * 1000000),
+    if
+	(Now >= Activity#activity.presence_time + MinPresenceInterval) and
+	(Activity#activity.presence == undefined) ->
+	    NewActivity = Activity#activity{presence_time = Now},
+	    StateData1 =
+		StateData#state{
+		  activity = ?DICT:store(
+				jlib:jid_tolower(From),
+				NewActivity,
+				StateData#state.activity)},
+	    process_presence(From, Nick, Packet, StateData1);
 	true ->
-	    {stop, normal, StateData1};
-	_ ->
+	    if
+		Activity#activity.presence == undefined ->
+		    Interval = (Activity#activity.presence_time +
+				MinPresenceInterval - Now) div 1000,
+		    erlang:send_after(
+		      Interval, self(), {process_presence, From});
+		true ->
+		    ok
+	    end,
+	    NewActivity = Activity#activity{presence = {Nick, Packet}},
+	    StateData1 =
+		StateData#state{
+		  activity = ?DICT:store(
+				jlib:jid_tolower(From),
+				NewActivity,
+				StateData#state.activity)},
 	    {next_state, normal_state, StateData1}
     end;
 
@@ -685,6 +593,23 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_info({process_presence, From}, normal_state = StateName, StateData) ->
+    Activity = case ?DICT:find(jlib:jid_tolower(From),
+			       StateData#state.activity) of
+		   {ok, A} -> A;
+		   error -> #activity{}
+	       end,
+    Now = now_to_usec(now()),
+    {Nick, Packet} = Activity#activity.presence,
+    NewActivity = Activity#activity{presence_time = Now,
+				    presence = undefined},
+    StateData1 =
+	StateData#state{
+	  activity = ?DICT:store(
+			jlib:jid_tolower(From),
+			NewActivity,
+			StateData#state.activity)},
+    process_presence(From, Nick, Packet, StateData1);
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -705,6 +630,176 @@ terminate(_Reason, _StateName, StateData) ->
 route(Pid, From, ToNick, Packet) ->
     gen_fsm:send_event(Pid, {route, From, ToNick, Packet}).
 
+process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
+			  StateData) ->
+    Lang = xml:get_attr_s("xml:lang", Attrs),
+    {ok, #user{nick = FromNick, role = Role}} =
+	?DICT:find(jlib:jid_tolower(From),
+		   StateData#state.users),
+    if
+	(Role == moderator) or (Role == participant) ->
+	    {NewStateData1, IsAllowed} =
+		case check_subject(Packet) of
+		    false ->
+			{StateData, true};
+		    Subject ->
+			case can_change_subject(Role,
+						StateData) of
+			    true ->
+				NSD =
+				    StateData#state{
+				      subject = Subject,
+				      subject_author =
+				      FromNick},
+				case (NSD#state.config)#config.persistent of
+				    true ->
+					mod_muc:store_room(
+					  NSD#state.host,
+					  NSD#state.room,
+					  make_opts(NSD));
+				    _ ->
+					ok
+				end,
+				{NSD, true};
+			    _ ->
+				{StateData, false}
+			end
+		end,
+	    case IsAllowed of
+		true ->
+		    lists:foreach(
+		      fun({_LJID, Info}) ->
+			      ejabberd_router:route(
+				jlib:jid_replace_resource(
+				  StateData#state.jid,
+				  FromNick),
+				Info#user.jid,
+				Packet)
+		      end,
+		      ?DICT:to_list(StateData#state.users)),
+		    NewStateData2 =
+			add_message_to_history(FromNick,
+					       Packet,
+					       NewStateData1),
+		    {next_state, normal_state, NewStateData2};
+		_ ->
+		    Err = 
+			case (StateData#state.config)#config.allow_change_subj of
+			    true ->
+				?ERRT_FORBIDDEN(
+				   Lang,
+				   "Only moderators and participants "
+				   "are allowed to change subject in this room");
+			    _ ->
+				?ERRT_FORBIDDEN(
+				   Lang,
+				   "Only moderators "
+				   "are allowed to change subject in this room")
+			end,
+		    ejabberd_router:route(
+		      StateData#state.jid,
+		      From,
+		      jlib:make_error_reply(Packet, Err)),
+		    {next_state, normal_state, StateData}
+	    end;
+	true ->
+	    ErrText = "Visitors are not allowed to send messages to all occupants",
+	    Err = jlib:make_error_reply(
+		    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+	    ejabberd_router:route(
+	      StateData#state.jid,
+	      From, Err),
+	    {next_state, normal_state, StateData}
+    end.
+
+process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
+		 StateData) ->
+    Type = xml:get_attr_s("type", Attrs),
+    Lang = xml:get_attr_s("xml:lang", Attrs),
+    StateData1 =
+	case Type of
+	    "unavailable" ->
+		case is_user_online(From, StateData) of
+		    true ->
+			NewState =
+			    add_user_presence_un(From, Packet, StateData),
+			send_new_presence(From, NewState),
+			Reason = case xml:get_subtag(Packet, "status") of
+				false -> "";
+				Status_el -> xml:get_tag_cdata(Status_el)
+			end,
+			remove_online_user(From, NewState, Reason);
+		    _ ->
+			StateData
+		end;
+	    "error" ->
+		case is_user_online(From, StateData) of
+		    true ->
+			NewState =
+			    add_user_presence_un(
+			      From,
+			      {xmlelement, "presence",
+			       [{"type", "unavailable"}], []},
+			      StateData),
+			send_new_presence(From, NewState),
+			remove_online_user(From, NewState);
+		    _ ->
+			StateData
+		end;
+	    "" ->
+		case is_user_online(From, StateData) of
+		    true ->
+			case is_nick_change(From, Nick, StateData) of
+			    true ->
+				case {is_nick_exists(Nick, StateData),
+				      mod_muc:can_use_nick(
+					StateData#state.host, From, Nick)} of
+				    {true, _} ->
+					Lang = xml:get_attr_s("xml:lang", Attrs),
+					ErrText = "Nickname is already in use by another occupant",
+					Err = jlib:make_error_reply(
+						Packet,
+						?ERRT_CONFLICT(Lang, ErrText)),
+					ejabberd_router:route(
+					  jlib:jid_replace_resource(
+					    StateData#state.jid,
+					    Nick), % TODO: s/Nick/""/
+					  From, Err),
+					StateData;
+				    {_, false} ->
+					ErrText = "Nickname is registered by another person",
+					Err = jlib:make_error_reply(
+						Packet,
+						?ERRT_CONFLICT(Lang, ErrText)),
+					ejabberd_router:route(
+					  % TODO: s/Nick/""/
+					  jlib:jid_replace_resource(
+					    StateData#state.jid,
+					    Nick),
+					  From, Err),
+					StateData;
+				    _ ->
+					change_nick(From, Nick, StateData)
+				end;
+			    _ ->
+				NewState =
+				    add_user_presence(From, Packet, StateData),
+				send_new_presence(From, NewState),
+				NewState
+			end;
+		    _ ->
+			add_new_user(From, Nick, Packet, StateData)
+		end;
+	    _ ->
+		StateData
+	end,
+    case (not (StateData1#state.config)#config.persistent) andalso
+	(?DICT:to_list(StateData1#state.users) == []) of
+	true ->
+	    {stop, normal, StateData1};
+	_ ->
+	    {next_state, normal_state, StateData1}
+    end.
 
 is_user_online(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -1318,6 +1413,10 @@ send_existing_presences(ToJID, StateData) ->
 
 append_subtags({xmlelement, Name, Attrs, SubTags1}, SubTags2) ->
     {xmlelement, Name, Attrs, SubTags1 ++ SubTags2}.
+
+
+now_to_usec({MSec, Sec, USec}) ->
+    (MSec*1000000 + Sec)*1000000 + USec.
 
 
 change_nick(JID, Nick, StateData) ->

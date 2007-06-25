@@ -1,5 +1,9 @@
 2007-06-25  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: New anti-abuse options:
+	min_presence_interval and min_message_interval
+	* doc/guide.tex: Likewise 
+
 	* doc/guide.tex: Documentation improvements on watchdog
 
 	* doc/guide.tex: No need to escape underscore in Latex verbatim
