@@ -42,6 +42,7 @@ SODIR = $(PRIVDIR)/lib
 MSGSDIR = $(PRIVDIR)/msgs
 LOGDIR = $(DESTDIR)@prefix@/var/log/ejabberd
 ETCDIR = $(DESTDIR)@prefix@/etc/ejabberd
+SBINDIR = $(DESTDIR)@prefix@/sbin
 
 ifeq ($(shell uname),Darwin)
 DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
@@ -91,7 +92,8 @@ install: all
 	install -d $(ETCDIR)
 	[ -f $(ETCDIR)/ejabberd.cfg ] && install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new || install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
 	sed -e "s*@rootdir@*@prefix@*" ejabberdctl.template > ejabberdctl.example
-	install -m 755 ejabberdctl.example $(DESTDIR)@prefix@/usr/sbin/ejabberdctl
+	install -d $(SBINDIR)
+	install -m 755 ejabberdctl.example $(SBINDIR)/ejabberdctl
 	install -d $(LOGDIR)
 
 clean: clean-recursive clean-local
