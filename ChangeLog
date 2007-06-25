@@ -1,5 +1,8 @@
 2007-06-25  Mickael Remond  <mickael.remond@process-one.net>
 
+	* doc/guide.text: No need to escape underscore in Latex verbatim
+	sections
+
 	* doc/guide.tex: Watchdog alert documentation
 	* src/ejabberd.cfg.example: Likewise
 
