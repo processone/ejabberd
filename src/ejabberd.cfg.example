@@ -45,6 +45,11 @@
 %{registration_watchers, ["admin1@localhost",
 %                         "admin2@localhost"]}.
 
+% Debug: 
+% watchdog admins receive live notifications on ejabberd process consuming too
+% much memory
+% {watchdog_admins, ["admin1@localhost"]}.
+
 % Only admins can send announcement messages:
 {access, announce, [{allow, admin}]}.
 

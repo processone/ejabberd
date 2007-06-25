@@ -3178,6 +3178,24 @@ domain.
 %\label{backup}
 %\ind{backup}
 
+\section{Debugging}
+\label{debugging}
+\ind{debugging}
+
+\subsection{Watchdog alerts}
+\label{watchdog}
+\ind{debugging!watchdog}
+
+ejabberd including a watchdog mechanism to be notified in realtime
+through XMPP when any processus consumes too much memory.
+
+To enable the watchdog, add the \term{watchdog\_admins}
+\ind{options!watchdog\_admins} option in the config file:
+
+\begin{verbatim}
+{watchdog_admins, [``admin@localhost'']}.
+\end{verbatim}
+
 \appendix{}
 \section{Internationalization and Localization}
 \label{i18nl10n}
