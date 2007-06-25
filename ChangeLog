@@ -1,5 +1,7 @@
 2007-06-25  Mickael Remond  <mickael.remond@process-one.net>
 
+	* doc/guide.tex: Typos
+
 	* src/mod_muc/mod_muc_room.erl: New anti-abuse options:
 	min_presence_interval and min_message_interval
 	* doc/guide.tex: Likewise 

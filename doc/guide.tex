@@ -1949,7 +1949,7 @@ describing the reason why the message is not acceptable.
 This option defines the minimum of time between presence changes
 coming from a given user in seconds. This option is global and valid
 for all chat rooms. A decimal value can be used. When this option is
-not defined, no restriction are applied. This option can be used to
+not defined, no restriction is applied. This option can be used to
 protect a MUC service for users abuses, as fastly changing a user
 presence will result in possible large presence packet broadcast. If a
 user tries to change its presence more often than the specified
@@ -2039,7 +2039,7 @@ The Multi-Users Chat module now supports clustering and load
 balancing. One module can be started per cluster node. Rooms are
 distributed at creation time on all available MUC module
 instances. The multi-user chat module is clustered but the room
-themselves are not clustered nor fault-tolerant: If the not managing a
+themselves are not clustered nor fault-tolerant: If the node managing a
 set of rooms goes down, the rooms disappear and they will be recreated
 on an available node on first connection attempt.
 
