@@ -205,7 +205,7 @@ normal_state({route, From, "",
 		      From, Err),
 		    {next_state, normal_state, StateData};
 		Type when (Type == "") or (Type == "normal") ->
-		    case catch check_invitation(From, Els, StateData) of
+		    case catch check_invitation(From, Els, Lang, StateData) of
 			{error, Error} ->
 			    Err = jlib:make_error_reply(
 				    Packet, Error),
@@ -2625,7 +2625,7 @@ get_title(StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
 
-check_invitation(From, Els, StateData) ->
+check_invitation(From, Els, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     CanInvite = (StateData#state.config)#config.allow_user_invites
 	orelse (FAffiliation == admin) orelse (FAffiliation == owner),
@@ -2675,6 +2675,32 @@ check_invitation(From, Els, StateData) ->
 		    _ ->
 			[]
 		end,
+	    Body =
+		{xmlelement, "body", [],
+		 [{xmlcdata,
+		   lists:flatten(
+		     io_lib:format(
+		       translate:translate(
+			 Lang,
+			 "You have been invited to ~s by ~s"),
+		       [jlib:jid_to_string({StateData#state.room,
+					    StateData#state.host,
+					    ""}),
+			jlib:jid_to_string(From)])) ++
+		   case (StateData#state.config)#config.password_protected of
+		       true ->
+			   ", " ++
+			       translate:translate(Lang, "the password is") ++
+			       " '" ++
+			       (StateData#state.config)#config.password ++ "'";
+		       _ ->
+			   ""
+		   end ++
+		   case Reason of
+		       "" -> "";
+		       _ -> " (" ++ Reason ++ ") "
+		   end
+		  }]},
 	    Msg =
 		{xmlelement, "message",
 		 [{"type", "normal"}],
@@ -2685,7 +2711,8 @@ check_invitation(From, Els, StateData) ->
 			      {StateData#state.room,
 			       StateData#state.host,
 			       ""})}],
-		   [{xmlcdata, Reason}]}]},
+		   [{xmlcdata, Reason}]},
+		  Body]},
 	    ejabberd_router:route(StateData#state.jid, JID, Msg),
 	    JID
     end.
