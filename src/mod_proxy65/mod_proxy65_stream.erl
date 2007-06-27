@@ -163,7 +163,7 @@ wait_for_request(Packet, #state{socket=Socket} = StateData) ->
 		    {stop, normal, StateData}
 	    end;
 	#s5_request{cmd=udp} ->
-	    Err = mod_proxy65_lib:make_error_reply(Request, ?ERR_COMMAND_NOT_SUPPORTED),
+	    Err = mod_proxy65_lib:make_error_reply(Request, ?SOCKS5_ERR_COMMAND_NOT_SUPPORTED),
 	    gen_tcp:send(Socket, Err),
 	    {stop, normal, StateData};
 	_ ->

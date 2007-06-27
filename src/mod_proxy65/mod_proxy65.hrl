@@ -27,20 +27,37 @@
 
 %% RFC 1928 replies
 -define(SUCCESS, 0).
--define(ERR_GENERAL_FAILURE, 1).
--define(ERR_NOT_ALLOWED, 2).
--define(ERR_NETWORK_UNREACHABLE, 3).
--define(ERR_HOST_UNREACHABLE, 4).
--define(ERR_CONNECTION_REFUSED, 5).
--define(ERR_TTL_EXPIRED, 6).
--define(ERR_COMMAND_NOT_SUPPORTED, 7).
--define(ERR_ADDRESS_TYPE_NOT_SUPPORTED, 8).
+-define(SOCKS5_ERR_GENERAL_FAILURE, 1).
+-define(SOCKS5_ERR_NOT_ALLOWED, 2).
+-define(SOCKS5_ERR_NETWORK_UNREACHABLE, 3).
+-define(SOCKS5_ERR_HOST_UNREACHABLE, 4).
+-define(SOCKS5_ERR_CONNECTION_REFUSED, 5).
+-define(SOCKS5_ERR_TTL_EXPIRED, 6).
+-define(SOCKS5_ERR_COMMAND_NOT_SUPPORTED, 7).
+-define(SOCKS5_ERR_ADDRESS_TYPE_NOT_SUPPORTED, 8).
 
 %% RFC 1928 defined timeout.
 -define(SOCKS5_REPLY_TIMEOUT, 10000).
+
+-record(bytestream, {
+	  sha1,           %% SHA1 key
+	  target,         %% Target Pid
+	  initiator,      %% Initiator Pid
+	  active = false, %% Activity flag
+	  jid_i,          %% Initiator's JID
+	  jid_t,          %% Target's JID (for http file transfert)
+	  file,           %% store status of file (for http file transfert)
+	  myhost          %% proxy's jid
+	 }).
 
 -record(s5_request, {
 	  rsv = 0,
 	  cmd,
 	  sha1
 	 }).
+
+% For http transfer
+-define(NS_HTTP_BYTESTREAMS, "http://oneteam.im/bs-proxy").
+-define(DEFAULT_HTTP_BASE_PATH, "/proxy").
+-define(DEFAULT_HTTP_UPLOAD_PATH, "/upload").
+-define(DEFAULT_STORE_PATH, "/tmp").

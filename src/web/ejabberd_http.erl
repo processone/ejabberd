@@ -16,7 +16,10 @@
 	 become_controller/1,
 	 socket_type/0,
 	 receive_headers/1,
-	 url_encode/1]).
+	 url_encode/1,
+	 test/0, get_line/1, data/0,
+	 parse_data/2
+	]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -30,6 +33,7 @@
 		request_auth,
 		request_keepalive,
 		request_content_length,
+		request_content_type,
 		request_lang = "en",
 		%% XXX bard: request handlers are configured in
 		%% ejabberd.cfg under the HTTP service.	 For example,
@@ -194,6 +198,8 @@ process_header(State, Data) ->
 		_ ->
 		    State
 	    end;
+	{ok, {http_header, _, 'Content-Type', _, ContentType}} ->
+	    State#state{request_content_type = ContentType};
 	{ok, {http_header, _, 'Accept-Language', _, Langs}} ->
 	    State#state{request_lang = parse_lang(Langs)};
 	{ok, {http_header, _, _, _, _}} ->
@@ -302,6 +308,7 @@ process_request(#state{request_method = 'POST',
 		       request_auth = Auth,
 		       request_content_length = Len,
 		       request_lang = Lang,
+		       request_content_type = ContentType,
 		       sockmod = SockMod,
 		       socket = Socket,
 		       request_handlers = RequestHandlers} = State)
@@ -317,7 +324,7 @@ process_request(#state{request_method = 'POST',
     case (catch url_decode_q_split(Path)) of
 	{'EXIT', _} ->
 	    process_request(false);
-	{NPath, Query} ->
+	{NPath, _Query} ->
 	    LPath = string:tokens(NPath, "/"),
 	    LQuery = case (catch parse_urlencoded(Data)) of
 			 {'EXIT', _Reason} ->
@@ -329,6 +336,7 @@ process_request(#state{request_method = 'POST',
 			       path = LPath,
 			       q = LQuery,
 			       auth = Auth,
+			       content_type = ContentType,
 			       data = Data,
 			       lang = Lang},
 	    case process(RequestHandlers, Request) of
@@ -355,7 +363,7 @@ process_request(State) ->
 recv_data(State, Len) ->
     recv_data(State, Len, []).
 
-recv_data(State, 0, Acc) ->
+recv_data(_State, 0, Acc) ->
     binary_to_list(list_to_binary(Acc));
 recv_data(State, Len, Acc) ->
     case State#state.trail of
@@ -615,7 +623,7 @@ code_to_phrase(504) -> "Gateway Timeout";
 code_to_phrase(505) -> "HTTP Version Not Supported".
 
 
-parse_auth(Orig = "Basic " ++ Auth64) ->
+parse_auth(_Orig = "Basic " ++ Auth64) ->
     case decode_base64(Auth64) of
 	{error, _Err} ->
 	    undefined;
@@ -972,3 +980,102 @@ get_line("\r\n" ++ Tail, Cur) ->
     end;
 get_line([H|T], Cur) ->
     get_line(T, [H|Cur]).
+
+% return {Value, [{Arg, ArgValue}]}
+% example, for
+% String = "form-data; name=\"FILE\"; filename=\"TEST\""
+% return
+% {"form-data", [{"name", "FILE"}, {"filename", "TEST"}]}
+% XXX TODO: don't work if an arg value contains a semicolon ;
+parse_header(String) ->
+    [Value | Args] = string:tokens(String, ";"),
+    catch {string:strip(Value),
+	   lists:map(fun(Arg) ->
+			     [ArgName, ArgValue] = string:tokens(string:strip(Arg), "="),
+			     {string:strip(ArgName), string:strip(string:strip(ArgValue), both, $")}
+		     end, Args)}.
+
+% return [#http_data]
+parse_data(Data, ContentType) ->
+    case parse_header(ContentType) of
+	{"multipart/form-data", Args} ->
+	    case lists:keysearch("boundary", 1, Args) of
+		{value, {"boundary", Boundary}} ->
+		    parse_multipart_data(Data, "--"++Boundary);
+		false ->
+		    {error, "no boundary for multipart/form-data Content-Type"}
+	    end;
+	{'EXIT', _} ->
+	    {error, "malformed Content-Type"};
+	_ ->
+	    [#http_data{content_type=ContentType, data=Data}]
+    end.
+
+parse_multipart_data(Data, Boundary)->
+    case catch parse_multipart_data([], Data, Boundary) of
+	{'EXIT', _Reason} ->
+	    {error, "malformed multipart/form-data body"};
+	List ->
+	    List
+    end.
+
+parse_multipart_data(Acc, Tail, Boundary) ->
+    BoundaryEnd = Boundary++"--\r\n",
+    case get_line(Tail) of
+	{incomplete, BoundaryEnd} ->
+	    lists:reverse(Acc);
+	{line, Boundary, Tail2} ->
+	    parse_multipart_headers([#http_data{data=[]} | Acc], Tail2, Boundary);
+	{line, Line, Tail2} ->
+	    [#http_data{data=Data} = Cur | T] = Acc,
+	    parse_multipart_data([Cur#http_data{data=Data++Line++"\r\n"} | T], Tail2, Boundary);
+	{lastline, Line, Tail2} ->
+	    [#http_data{data=Data} = Cur | T] = Acc,
+	    parse_multipart_data([Cur#http_data{data=Data++Line++"\r\n\r\n"} | T], Tail2, Boundary)
+    end.
+parse_multipart_headers([#http_data{args=Args} = Cur | T], Tail, Boundary) ->
+    case get_line(Tail) of
+	{LineType, Line, Tail2} when Line /= Boundary ->
+	    NewCur = case Line of
+			  "Content-Type:"++Value ->
+			      {Header, NewArgs} = parse_header(Value),
+			      Cur#http_data{content_type=Header,
+					    args=Args++NewArgs};
+			  "Content-Disposition:"++Value ->
+			      {Header, NewArgs} = parse_header(Value),
+			      Cur#http_data{content_disposition=Header,
+					    args=Args++NewArgs};
+			  _ ->
+			      Cur
+		      end,
+	    case LineType of
+		line ->
+		    parse_multipart_headers([NewCur | T], Tail2, Boundary);
+		lastline ->
+		    parse_multipart_data([NewCur | T], Tail2, Boundary)
+	    end
+    end.
+
+
+data() ->
+    S="-----------------------------7148830871206398517200280906
+Content-Type: text/plain; charset=ISO-8859-2
+Content-Disposition: form-data; name=\"SIDHASH\"
+
+SIDHASH
+-----------------------------7148830871206398517200280906
+Content-Disposition: form-data; name=\"FILE\"; filename=\"TEST\"
+Content-Type: application/octet-stream
+
+TEST
+
+-----------------------------7148830871206398517200280906--
+",
+lists:flatten(lists:map( fun($\n) ->
+		   "\r\n";
+	      (C) ->
+		   C
+	   end, S)).
+
+test() ->
+parse_data(data(), "multipart/form-data; boundary=---------------------------7148830871206398517200280906").

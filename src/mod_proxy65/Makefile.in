@@ -1,12 +1,12 @@
 # $Id$
 
-CC = @CC@ 
+CC = @CC@
 CFLAGS = @CFLAGS@ @ERLANG_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ @ERLANG_LIBS@
 
-SUBDIRS = 
+SUBDIRS =
 
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
@@ -20,6 +20,7 @@ OBJS   = \
 	$(OUTDIR)/mod_proxy65_service.beam \
 	$(OUTDIR)/mod_proxy65_sm.beam \
 	$(OUTDIR)/mod_proxy65_stream.beam \
+	$(OUTDIR)/mod_proxy65_http.beam \
 	$(OUTDIR)/mod_proxy65_lib.beam
 
 all:    $(OBJS)
@@ -35,4 +36,3 @@ distclean: clean
 
 TAGS:
 	etags *.erl
-

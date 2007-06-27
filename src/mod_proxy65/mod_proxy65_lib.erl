@@ -53,7 +53,7 @@ make_init_reply(Method) ->
     [?VERSION_5, Method].
 
 make_auth_reply(true) -> [1, ?SUCCESS];
-make_auth_reply(false) -> [1, ?ERR_NOT_ALLOWED].
+make_auth_reply(false) -> [1, ?SOCKS5_ERR_NOT_ALLOWED].
 
 %% WARNING: According to SOCKS5 RFC, this reply is _incorrect_, but
 %% Psi writes junk to the beginning of the file on correct reply.
@@ -63,7 +63,7 @@ make_reply() ->
     [?VERSION_5, ?SUCCESS, 0, 0, 0, 0].
 
 make_error_reply(Request) ->
-    make_error_reply(Request, ?ERR_NOT_ALLOWED).
+    make_error_reply(Request, ?SOCKS5_ERR_NOT_ALLOWED).
 
 make_error_reply(#s5_request{rsv = RSV, sha1 = SHA1}, Reason) ->
     [?VERSION_5, Reason, RSV, ?ATYP_DOMAINNAME, length(SHA1), SHA1, 0,0].
