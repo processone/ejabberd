@@ -24,14 +24,18 @@
 -export([
 	 start_link/2,
 	 register_stream/1,
-	 register_stream/5,
 	 unregister_stream/1,
-	 activate_stream/5
+	 activate_stream/4
 	]).
 
--include("mod_proxy65.hrl").
-
 -record(state, {max_connections}).
+-record(bytestream, {
+	  sha1,           %% SHA1 key
+	  target,         %% Target Pid
+	  initiator,      %% Initiator Pid
+	  active = false, %% Activity flag
+	  jid_i           %% Initiator's JID
+	 }).
 
 -define(PROCNAME, ejabberd_mod_proxy65_sm).
 
@@ -51,7 +55,6 @@ start_link(Host, Opts) ->
 init([Opts]) ->
     mnesia:create_table(bytestream, [{ram_copies, [node()]},
 				     {attributes, record_info(fields, bytestream)}]),
-    mnesia:add_table_index(bytestream, file),
     mnesia:add_table_copy(bytestream, node(), ram_copies),
     MaxConnections = gen_mod:get_opt(max_connections, Opts, infinity),
     {ok, #state{max_connections=MaxConnections}}.
@@ -64,7 +67,7 @@ handle_call({activate, SHA1, IJid}, _From, State) ->
     F = fun() ->
 		case mnesia:read(bytestream, SHA1, write) of
 		    [#bytestream{target = TPid, initiator = IPid} = ByteStream]
-		    when is_pid(TPid), is_pid(IPid)  ->
+		    when is_pid(TPid), is_pid(IPid) ->
 			ActiveFlag = ByteStream#bytestream.active,
 			if
 			    ActiveFlag == false ->
@@ -106,20 +109,13 @@ handle_call(_Request, _From, State) ->
 %%%                          transaction abort
 %%% SHA1 = string()
 %%%---------------------------------------------------
-register_stream(SHA1) ->
-    register_stream(SHA1, undefined, undefined, undefined, undefined).
-register_stream(SHA1, JID, URL, MyHost, InitiatorPID) when is_list(SHA1) ->
-    % PIDs are not used for http, we set it for compatibilty with plain socks5
+register_stream(SHA1) when is_list(SHA1) ->
     StreamPid = self(),
     F = fun() ->
 		case mnesia:read(bytestream, SHA1, write) of
 		    [] ->
 			mnesia:write(#bytestream{sha1 = SHA1,
-						 target = StreamPid,
-						 initiator = InitiatorPID,
-						 jid_t = JID,
-						 file = URL,
-						 myhost = MyHost});
+						 target = StreamPid});
 		    [#bytestream{target = Pid,
 				 initiator = undefined} = ByteStream]
 		    when is_pid(Pid), Pid /= StreamPid ->
@@ -149,14 +145,14 @@ unregister_stream(SHA1) when is_list(SHA1) ->
 %%% IJid = TJid = jid()
 %%% Host = string()
 %%%--------------------------------------------------------
-activate_stream(SHA1, IJid, TJid, Host, Module) when is_list(SHA1) ->
+activate_stream(SHA1, IJid, TJid, Host) when is_list(SHA1) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     case catch gen_server:call(Proc, {activate, SHA1, IJid}) of
 	{atomic, {ok, IPid, TPid}} ->
-	    Module:activate({IPid, IJid}, {TPid, TJid});
+	    mod_proxy65_stream:activate({IPid, IJid}, {TPid, TJid});
 	{atomic, {limit, IPid, TPid}} ->
-	    Module:stop(IPid),
-	    Module:stop(TPid),
+	    mod_proxy65_stream:stop(IPid),
+	    mod_proxy65_stream:stop(TPid),
 	    limit;
 	{atomic, conflict} ->
 	    conflict;

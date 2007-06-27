@@ -12,13 +12,6 @@
 		  us,
 		  auth,
 		  lang = "",
-		  content_type,
 		  data = "",
 		  ip
 		 }).
-
--record(http_data, {content_type,
-		    content_disposition,
-		    args=[],
-		    data
-		   }).

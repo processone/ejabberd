@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_web.erl
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose :
+%%% Purpose : 
 %%% Created : 28 Feb 2004 by Alexey Shchepin <alexey@sevcom.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
@@ -53,11 +53,7 @@ make_xhtml(Els) ->
 		      {"name", Name},
 		      {"value", Value}])).
 
-error(bad_request) ->
-    {400, [], make_xhtml([?XC("h1", "400 Bad Request")])};
-error(not_allowed) ->
-    {401, [], make_xhtml([?XC("h1", "401 Unauthorized")])};
 error(not_found) ->
     {404, [], make_xhtml([?XC("h1", "404 Not Found")])};
-error(internal) ->
-    {500, [], make_xhtml([?XC("h1", "500 Internal Error")])}.
+error(not_allowed) ->
+    {401, [], make_xhtml([?XC("h1", "401 Unauthorized")])}.

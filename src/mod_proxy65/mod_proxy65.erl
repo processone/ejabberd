@@ -50,14 +50,8 @@ init([Host, Opts]) ->
 	  [gen_mod:get_module_proc(Host, ejabberd_mod_proxy65_sup),
 	   mod_proxy65_stream]},
       transient, infinity, supervisor, [ejabberd_tmp_sup]},
-    HttpStreamSupervisor =
-	{ejabberd_mod_proxy65_http_sup,
-	 {ejabberd_tmp_sup, start_link,
-	  [gen_mod:get_module_proc(Host, ejabberd_mod_proxy65_http_sup),
-	   mod_proxy65_http]},
-      transient, infinity, supervisor, [ejabberd_tmp_sup]},
     StreamManager =
 	{mod_proxy65_sm, {mod_proxy65_sm, start_link, [Host, Opts]},
 	 transient, 5000, worker, [mod_proxy65_sm]},
     {ok, {{one_for_one, 10, 1},
-	  [StreamManager, StreamSupervisor, HttpStreamSupervisor, Service]}}.
+	  [StreamManager, StreamSupervisor, Service]}}.

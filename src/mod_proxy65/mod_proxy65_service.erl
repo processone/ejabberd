@@ -23,7 +23,6 @@
 %% API.
 -export([start_link/2]).
 
--include("mod_proxy65.hrl").
 -include("../ejabberd.hrl").
 -include("../jlib.hrl").
 
@@ -35,8 +34,6 @@
 	  name,
 	  stream_addr,
 	  port,
-	  http_port,
-	  http_base_path,
 	  acl
 	 }).
 
@@ -87,14 +84,12 @@ handle_info(_Info, State) ->
 %%%------------------------
 
 %% disco#info request
-process_iq(_, #iq{type = get, xmlns = ?NS_DISCO_INFO} = IQ, #state{name=Name, http_port=HTTP_Port}) ->
-    io:format("~p~n", [IQ]),
+process_iq(_, #iq{type = get, xmlns = ?NS_DISCO_INFO, lang = Lang} = IQ, #state{name=Name}) ->
     IQ#iq{type = result, sub_el =
-	  [{xmlelement, "query", [{"xmlns", ?NS_DISCO_INFO}], iq_disco_info(Name, HTTP_Port)}]};
+	  [{xmlelement, "query", [{"xmlns", ?NS_DISCO_INFO}], iq_disco_info(Lang, Name)}]};
 
 %% disco#items request
 process_iq(_, #iq{type = get, xmlns = ?NS_DISCO_ITEMS} = IQ, _) ->
-    io:format("~p~n", [IQ]),
     IQ#iq{type = result, sub_el =
 	  [{xmlelement, "query", [{"xmlns", ?NS_DISCO_ITEMS}], []}]};
 
@@ -106,7 +101,6 @@ process_iq(_, #iq{type = get, xmlns = ?NS_VCARD, lang = Lang} = IQ, _) ->
 %% bytestreams info request
 process_iq(JID, #iq{type = get, sub_el = SubEl, xmlns = ?NS_BYTESTREAMS} = IQ,
 	   #state{acl = ACL, stream_addr = StreamAddr, serverhost = ServerHost}) ->
-    io:format("~p~n", [IQ]),
     case acl:match_rule(ServerHost, ACL, JID) of
 	allow ->
 	    StreamHostEl = [{xmlelement, "streamhost", StreamAddr, []}],
@@ -116,39 +110,9 @@ process_iq(JID, #iq{type = get, sub_el = SubEl, xmlns = ?NS_BYTESTREAMS} = IQ,
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
     end;
 
-
-%% bytestream target fake connection (for later http connection)
-process_iq(TargetJID, #iq{type = set, sub_el = SubEl, xmlns = ?NS_HTTP_BYTESTREAMS} = IQ,
-	   #state{acl = _ACL, myhost = MyHost,
-		  http_port=HTTP_Port, http_base_path=HTTP_Base_Path}) ->
-    % XXX TODO: acl
-    SID = xml:get_tag_attr_s("sid", SubEl),
-    case catch jlib:string_to_jid(xml:get_tag_attr_s("jid", SubEl)) of
-	InitiatorJID when is_record(InitiatorJID, jid), SID /= "",
-			  length(SID) =< 128, TargetJID /= InitiatorJID ->
-	    Target = jlib:jid_to_string(jlib:jid_tolower(TargetJID)),
-	    Initiator = jlib:jid_to_string(jlib:jid_tolower(InitiatorJID)),
-	    SHA1 = sha:sha(SID ++ Initiator ++ Target),
-	    URL = "http://" ++ MyHost ++ ":"++HTTP_Port++ HTTP_Base_Path,
-	    case catch mod_proxy65_sm:register_stream(SHA1, TargetJID, URL, MyHost, self()) of
-		{atomic, ok} ->
-		    IQ#iq{type = result, sub_el =
-			  [{xmlelement, "connected",
-			    [{"xmlns", ?NS_HTTP_BYTESTREAMS}, {"jid", MyHost}], []}]};
-		_Reason ->
-		    ?ERROR_MSG("process IQ set ~p:~n~p~n", [?NS_HTTP_BYTESTREAMS, _Reason]),
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
-	    end;
-	_Reason ->
-	    ?ERROR_MSG("process IQ set ~p:~n~p~n", [?NS_HTTP_BYTESTREAMS, _Reason]),
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
-    end;
-
-
 %% bytestream activation request
 process_iq(InitiatorJID, #iq{type = set, sub_el = SubEl, xmlns = ?NS_BYTESTREAMS} = IQ,
-	   #state{acl = ACL, serverhost = ServerHost, myhost = MyHost,
-		  http_port=HTTP_Port, http_base_path=HTTP_Base_Path}) ->
+	   #state{acl = ACL, serverhost = ServerHost}) ->
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
 	allow ->
 	    ActivateEl = xml:get_path_s(SubEl, [{elem, "activate"}]),
@@ -159,21 +123,9 @@ process_iq(InitiatorJID, #iq{type = set, sub_el = SubEl, xmlns = ?NS_BYTESTREAMS
 		    Target = jlib:jid_to_string(jlib:jid_tolower(TargetJID)),
 		    Initiator = jlib:jid_to_string(jlib:jid_tolower(InitiatorJID)),
 		    SHA1 = sha:sha(SID ++ Initiator ++ Target),
-		    {Module, Activated} =
-			case xml:get_path_s(SubEl, [{elem, "x"}]) of
-			    {xmlelement, "x", [{"xmlns", ?NS_HTTP_BYTESTREAMS}], _} ->
-				{mod_proxy65_http,
-				 [{xmlelement, "activated",
-				  [{"xmlns", ?NS_HTTP_BYTESTREAMS},
-				   {"url", "http://" ++ MyHost ++ ":"++HTTP_Port++
-				   HTTP_Base_Path ++ ?DEFAULT_HTTP_UPLOAD_PATH}], []}]};
-			    _ ->
-				{mod_proxy65_sm, []}
-			end,
-		    case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID, TargetJID,
-							ServerHost, Module) of
+		    case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID, TargetJID, ServerHost) of
 			ok ->
-			    IQ#iq{type = result, sub_el = Activated};
+			    IQ#iq{type = result, sub_el = []};
 			false ->
 			    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
 			limit ->
@@ -183,8 +135,7 @@ process_iq(InitiatorJID, #iq{type = set, sub_el = SubEl, xmlns = ?NS_BYTESTREAMS
 			_ ->
 			    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
 		    end;
-		_Reason ->
-		    ?ERROR_MSG("process IQ set ~p:~n~p~n", [?NS_BYTESTREAMS, _Reason]),
+		_ ->
 		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
 	    end;
 	deny ->
@@ -204,21 +155,15 @@ process_iq(_, _, _) ->
 %%%-------------------------
 -define(FEATURE(Feat), {xmlelement,"feature",[{"var", Feat}],[]}).
 
-iq_disco_info(Name, HTTP_Port) ->
-    HTTP_Bytestreams = case HTTP_Port of
-			   "0" ->
-			       [];
-			   _ ->
-			      [?FEATURE(?NS_HTTP_BYTESTREAMS)]
-		       end,
+iq_disco_info(Lang, Name) ->
     [{xmlelement, "identity",
       [{"category", "proxy"},
        {"type", "bytestreams"},
-       {"name", Name}], []},
+       {"name", translate:translate(Lang, Name)}], []},
      ?FEATURE(?NS_DISCO_INFO),
      ?FEATURE(?NS_DISCO_ITEMS),
      ?FEATURE(?NS_VCARD),
-     ?FEATURE(?NS_BYTESTREAMS)] ++ HTTP_Bytestreams.
+     ?FEATURE(?NS_BYTESTREAMS)].
 
 iq_vcard(Lang) ->
     [{xmlelement, "FN", [],
@@ -232,8 +177,6 @@ iq_vcard(Lang) ->
 parse_options(ServerHost, Opts) ->
     MyHost = gen_mod:get_opt(host, Opts, "proxy." ++ ServerHost),
     Port = gen_mod:get_opt(port, Opts, 7777),
-    HTTP_Port = integer_to_list(gen_mod:get_opt(http_port, Opts, 0)),
-    HTTP_Base_Path = gen_mod:get_opt(http_base_path, Opts, ?DEFAULT_HTTP_BASE_PATH),
     ACL = gen_mod:get_opt(access, Opts, all),
     Name = gen_mod:get_opt(name, Opts, "SOCKS5 Bytestreams"),
     IP = case gen_mod:get_opt(ip, Opts, none) of
@@ -246,9 +189,7 @@ parse_options(ServerHost, Opts) ->
 		serverhost  = ServerHost,
 		name        = Name,
 		port        = Port,
-		http_port   = HTTP_Port,
-		http_base_path = HTTP_Base_Path,
-		stream_addr = StreamAddr,
+		stream_addr = StreamAddr, 
 		acl         = ACL}}.
 
 %% Return the IP of the proxy host, or if not found, the ip of the xmpp domain
