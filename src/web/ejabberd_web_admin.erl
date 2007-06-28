@@ -1447,8 +1447,7 @@ su_to_list({Server, User}) ->
 
 
 get_stats(global, Lang) ->
-    OnlineUsers = mnesia:table_info(presence, size),
-    AuthUsers = mnesia:table_info(session, size),
+    OnlineUsers = mnesia:table_info(session, size),
     RegisteredUsers = mnesia:table_info(passwd, size),
     S2SConns = ejabberd_s2s:dirty_get_connections(),
     S2SConnections = length(S2SConns),
@@ -1457,8 +1456,6 @@ get_stats(global, Lang) ->
 	  [?XE("tbody",
 	       [?XE("tr", [?XCT("td", "Registered Users:"),
 			   ?XC("td", integer_to_list(RegisteredUsers))]),
-		?XE("tr", [?XCT("td", "Authenticated Users:"),
-			   ?XC("td", integer_to_list(AuthUsers))]),
 		?XE("tr", [?XCT("td", "Online Users:"),
 			   ?XC("td", integer_to_list(OnlineUsers))]),
 		?XE("tr", [?XCT("td", "Outgoing s2s Connections:"),
@@ -2114,8 +2111,7 @@ get_node(global, Node, ["stats"], Query, Lang) ->
     UpTimeS = io_lib:format("~.3f", [element(1, UpTime)/1000]),
     CPUTime = rpc:call(Node, erlang, statistics, [runtime]),
     CPUTimeS = io_lib:format("~.3f", [element(1, CPUTime)/1000]),
-    Users = length(
-	      rpc:call(Node, ejabberd_sm, dirty_get_my_sessions_list, [])),
+    OnlineUsers = mnesia:table_info(session, size),
     TransactionsCommited =
 	rpc:call(Node, mnesia, system_info, [transaction_commits]),
     TransactionsAborted =
@@ -2134,9 +2130,9 @@ get_node(global, Node, ["stats"], Query, Lang) ->
 		?XE("tr", [?XCT("td", "CPU Time:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				CPUTimeS)]),
-		?XE("tr", [?XCT("td", "Authenticated Users:"),
+		?XE("tr", [?XCT("td", "Online Users:"),
 			   ?XAC("td", [{"class", "alignright"}],
-				integer_to_list(Users))]),
+				integer_to_list(OnlineUsers))]),
 		?XE("tr", [?XCT("td", "Transactions Commited:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				integer_to_list(TransactionsCommited))]),
