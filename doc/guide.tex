@@ -1,17 +1,30 @@
-\documentclass[a4paper,10pt]{article}
+\documentclass[a4paper,10pt]{book}
 
 %% Packages
 \usepackage{float}
 \usepackage{graphics}
 \usepackage{hevea}
 \usepackage[pdftex,colorlinks,unicode,urlcolor=blue,linkcolor=blue,
-        pdftitle=Ejabberd\ Installation\ and\ Operation\ Guide,pdfauthor=Alexey\
-        Shchepin,pdfsubject=ejabberd,pdfkeywords=ejabberd,
+        pdftitle=Ejabberd\ Installation\ and\ Operation\ Guide,pdfauthor=Process-one,pdfsubject=ejabberd,pdfkeywords=ejabberd,
         pdfpagelabels=false]{hyperref}
 \usepackage{makeidx}
 %\usepackage{showidx} % Only for verifying the index entries.
 \usepackage{verbatim}
 \usepackage{geometry}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}                         %Forces the page to use the fancy template
+\renewcommand{\chaptermark}[1]{\markboth{\textbf{\thechapter}.\ \emph{#1}}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\ \boldmath\textbf{#1}\unboldmath}}
+\fancyhf{}
+\fancyhead[LE,RO]{\textbf{\thepage}}      %Displays the page number in bold in the header,
+                                           % to the left on even pages and to the right on odd pages.
+\fancyhead[RE]{\nouppercase{\leftmark}}    %Displays the upper-level (chapter) information---
+                                           % as determined above---in non-upper case in the header, to the right on even pages.
+\fancyhead[LO]{\rightmark}                 %Displays the lower-level (section) information---as
+                                           % determined above---in the header, to the left on odd pages.
+\renewcommand{\headrulewidth}{0.5pt}       %Underlines the header. (Set to 0pt if not required).
+\renewcommand{\footrulewidth}{0.5pt}       %Underlines the footer. (Set to 0pt if not required).
 
 %% Index
 \makeindex
@@ -75,8 +88,7 @@
 
 %% Common options
 \newcommand{\iqdiscitem}[1]{\titem{iqdisc} \ind{options!iqdisc}This specifies 
-the processing discipline for #1 IQ queries
-(see section~\ref{modiqdiscoption}).}
+the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).}
 \newcommand{\hostitem}[1]{
   \titem{hosts} \ind{options!hosts} This option defines the hostnames of the
   service (see section~\ref{modhostsoption}). If neither \texttt{hosts} nor
@@ -84,21 +96,36 @@ the processing discipline for #1 IQ queries
   \ejabberd{} hostnames.
 }
 
-%\newcommand{\quoting}[2][yozhik]{\begin{quotation}\textcolor{#1}{\textit{#2}}\end{quotation}} % Quotes enabled
-%\renewcommand{command}[args][default]{def}
-%\renewcommand{\headrule}{{\color{ejblue}%
-%\hrule width\headwidth height\headrulewidth \vskip-\headrulewidth}}
-
 %% Title page
 \include{version}
-\title{Ejabberd \version\ Installation and Operation Guide}
-\author{ejabberd development Team}
+\newlength{\larg}
+\setlength{\larg}{14.5cm}
+\title{
+{\rule{\larg}{1mm}}\vspace{7mm}
+\begin{tabular}{p{4cm} r}
+   & {\huge {\bf ejabberd \version\ }} \\
+   & \\
+   & {\huge Installation and Operation Guide}
+\end{tabular}\\
+\vspace{2mm}
+{\rule{\larg}{1mm}}
+\vspace{2mm} \\
+\begin{tabular}{p{11cm} r}
+   & {\large  \bf \today}
+\end{tabular}\\
+\vspace{5.5cm}
+}
+\author{\begin{tabular}{p{13.7cm}}
+ejabberd Development Team
+\end{tabular}}
+\date{}
+
 
 %% Options
 \newcommand{\marking}[1]{#1} % Marking disabled
 \newcommand{\quoting}[2][yozhik]{} % Quotes disabled
-\newcommand{\new}{\marginpar{\textsc{new}}} % Highlight new features
-\newcommand{\improved}{\marginpar{\textsc{improved}}} % Highlight improved features
+%\newcommand{\new}{\marginpar{\textsc{new}}} % Highlight new features
+%\newcommand{\improved}{\marginpar{\textsc{improved}}} % Highlight improved features
 
 %% To by-pass errors in the HTML version.
 \newstyle{SPAN}{width:20\%; float:right; text-align:left; margin-left:auto;}
@@ -119,14 +146,15 @@ the processing discipline for #1 IQ queries
 \begin{titlepage}
   \maketitle{}
 
-  \begin{center}
-  {\insscaleimg{\logoscale}{logo.png}
-    \par
-  }
-  \end{center}
+%% Commenting. Breaking clean layout for now:
+%%  \begin{center}
+%%  {\insscaleimg{\logoscale}{logo.png}
+%%    \par
+%%  }
+%%  \end{center}
 
-  \begin{quotation}\textit{I can thoroughly recommend ejabberd for ease of setup ---
-  Kevin Smith, Current maintainer of the Psi project}\end{quotation}
+%%  \begin{quotation}\textit{I can thoroughly recommend ejabberd for ease of setup ---
+%%  Kevin Smith, Current maintainer of the Psi project}\end{quotation}
 
 \end{titlepage}
 
@@ -141,6 +169,17 @@ the processing discipline for #1 IQ queries
 
 % Input introduction.tex
 \input{introduction}
+
+\chapter{Installing ejabberd}
+\section{Installing ejabberd with Graphical Installer}
+
+The easiest approach to install an ejabberd Instant Messaging server
+is to use the graphical installer. The installer is available from
+Process-one
+website\footahref{http://www.process-one.net/en/ejabberd/downloads/}.
+
+The installer will deploy and configure a full featured ejabberd
+server and does not require any extra dependancies.
 
 \section{Installation from Source}
 \label{installsource}
@@ -307,7 +346,41 @@ To reduce memory usage, you may set the environment variable
 \end{verbatim}
 But in this case \ejabberd{} can start to work slower.
 
+\section{Creating an Initial Administrator}
+\label{initialadmin}
 
+Before the web interface can be entered to perform administration tasks, an
+account with administrator rights is needed on your \ejabberd{} deployment.
+
+Instructions to create an initial administrator account:
+\begin{enumerate}
+\item Register an account on your \ejabberd{} deployment. An account can be
+  created in two ways:
+  \begin{enumerate}
+  \item Using the tool \term{ejabberdctl}\ind{ejabberdctl} (see
+    section~\ref{ejabberdctl}):
+    \begin{verbatim}
+% ejabberdctl node@host register admin example.org password
+\end{verbatim} 
+  \item Using In-Band Registration (see section~\ref{modregister}): you can
+    use a \Jabber{} client to register an account.
+  \end{enumerate}
+\item Edit the configuration file to promote the account created in the previous
+  step to an account with administrator rights. Note that if you want to add
+  more administrators, a seperate acl entry is needed for each administrator.
+  \begin{verbatim}
+  {acl, admins, {user, "admin", "example.org"}}.
+  {access, configure, [{allow, admins}]}.
+\end{verbatim} 
+\item Restart \ejabberd{} to load the new configuration.
+\item Open the web interface (\verb|http://server:port/admin/|) in your
+  favourite browser. Make sure to enter the \emph{full} JID as username (in this
+  example: \jid{admin@example.org}. The reason that you also need to enter the
+  suffix, is because \ejabberd{}'s virtual hosting support.
+\end{enumerate}
+
+
+\chapter{Configuring ejabberd}
 \section{Basic Configuration}
 \label{basicconfig}
 \ind{configuration file}
@@ -904,48 +977,6 @@ Examples:
   {language, "es"}.
 \end{verbatim}
 \end{itemize}
-
-\section{Advanced configuration}
-\subsection{Components Load-Balancing}
-\label{componentlb}
-\ind{component load-balancing}
-
-\subsection{Domain Load-Balancing Algorithm}
-\label{domainlb}
-\ind{options!domain\_balancing}
-
-\ejabberd{} includes an algorithm to load balance the components that are plugged on an ejabberd cluster. It means that you can plug one or several instances of the same component on each ejabberd cluster and that the traffic will be automatically distributed.
-
-The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is choosen randomly. If no instance is available locally, one instance is choosen randomly among the remote component instances.
-
-If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain\_balancing}. The syntax of the option is the following:
-
-\begin{verbatim}
-	{domain_balancing, "component.example.com", <balancing_criterium>}.                                   
-\end{verbatim}
-
-Several balancing criteria are available:
-\begin{itemize}
-\item \term{destination}: the full JID of the packet \term{to} attribute is used.
-\item \term{source}: the full JID of the packet \term{from} attribute is used.
-\item \term{bare\_destination}: the bare JID (without resource) of the packet \term{to} attribute is used.
-\item \term{bare\_source}: the bare JID (without resource) of the packet \term{from} attribute is used.
-\end{itemize}
-
-If the value corresponding to the criterium is the same, the same component instance in the cluster will be used.
-
-\subsection{Load-Balancing Buckets}
-\label{lbbuckets}
-\ind{options!domain\_balancing\_component\_number}
-
-When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failling the service will not work correctly unless the sessions are rebalanced.
-
-In this case, it is best to limit the problem to the sessions handled by the failling component. This is what the \term{domain\_balancing\_component\_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
-
-The syntax is the following:
-\begin{verbatim}
-    {domain_balancing_component_number, "component.example.com", N}
-\end{verbatim}
 
 \section{Database and LDAP Configuration}
 \label{database}
@@ -2884,41 +2915,7 @@ Options:
 \iqdiscitem{Software Version (\ns{jabber:iq:version})}
 \end{description}
 
-
-\section{Creating an Initial Administrator}
-\label{initialadmin}
-
-Before the web interface can be entered to perform administration tasks, an
-account with administrator rights is needed on your \ejabberd{} deployment.
-
-Instructions to create an initial administrator account:
-\begin{enumerate}
-\item Register an account on your \ejabberd{} deployment. An account can be
-  created in two ways:
-  \begin{enumerate}
-  \item Using the tool \term{ejabberdctl}\ind{ejabberdctl} (see
-    section~\ref{ejabberdctl}):
-    \begin{verbatim}
-% ejabberdctl node@host register admin example.org password
-\end{verbatim} 
-  \item Using In-Band Registration (see section~\ref{modregister}): you can
-    use a \Jabber{} client to register an account.
-  \end{enumerate}
-\item Edit the configuration file to promote the account created in the previous
-  step to an account with administrator rights. Note that if you want to add
-  more administrators, a seperate acl entry is needed for each administrator.
-  \begin{verbatim}
-  {acl, admins, {user, "admin", "example.org"}}.
-  {access, configure, [{allow, admins}]}.
-\end{verbatim} 
-\item Restart \ejabberd{} to load the new configuration.
-\item Open the web interface (\verb|http://server:port/admin/|) in your
-  favourite browser. Make sure to enter the \emph{full} JID as username (in this
-  example: \jid{admin@example.org}. The reason that you also need to enter the
-  suffix, is because \ejabberd{}'s virtual hosting support.
-\end{enumerate}
-
-
+\chapter{Managing an ejabberd server}
 \section{Online Configuration and Monitoring}
 \label{onlineconfig}
 
@@ -3040,7 +3037,7 @@ Additional information:
   is very high.
 \end{description}
 
-
+\chapter{Securing ejabberd}
 \section{Firewall Settings}
 \label{firewall}
 \ind{firewall}\ind{ports}\ind{SASL}\ind{TLS}\ind{clustering!ports}
@@ -3060,7 +3057,7 @@ You need to take the following TCP ports in mind when configuring your firewall:
   \end{tabular}
 \end{table}
 
-
+\chapter{Integrating ejabberd with other Instant Messaging servers}
 \section{SRV Records}
 \label{srv}
 \ind{SRV Records}\ind{clustering!SRV Records}
@@ -3072,12 +3069,11 @@ You need to take the following TCP ports in mind when configuring your firewall:
   \footahref{http://jabberd.jabberstudio.org/2/docs/section05.html\#5\_7}{Setting DNS SRV Records}
 \end{itemize}
 
-
-\section{Clustering}
+\chapter{Clustering}
 \label{clustering}
 \ind{clustering}
 
-\subsection{How it Works}
+\section{How it Works}
 \label{howitworks}
 \ind{clustering!how it works}
 
@@ -3097,7 +3093,7 @@ Each \ejabberd{} node has the following modules:
 \item s2s manager.
 \end{itemize}
 
-\subsubsection{Router}
+\subsection{Router}
 \label{router}
 \ind{clustering!router}
 
@@ -3107,7 +3103,7 @@ routing table. The domain of the packet's destination is searched in the
 routing table, and if it is found, the packet is routed to the
 appropriate process. If not, it is sent to the s2s manager.
 
-\subsubsection{Local Router}
+\subsection{Local Router}
 \label{localrouter}
 \ind{clustering!local router}
 
@@ -3116,7 +3112,7 @@ one of this server's host names. If the destination JID has a non-empty user
 part, it is routed to the session manager, otherwise it is processed depending
 on its content.
 
-\subsubsection{Session Manager}
+\subsection{Session Manager}
 \label{sessionmanager}
 \ind{clustering!session manager}
 
@@ -3125,7 +3121,7 @@ resource a packet must be sent via a presence table. Then the packet is
 either routed to the appropriate c2s process, or stored in offline
 storage, or bounced back.
 
-\subsubsection{s2s Manager}
+\subsection{s2s Manager}
 \label{s2smanager}
 \ind{clustering!s2s manager}
 
@@ -3135,7 +3131,7 @@ source to the domain of the packet's destination exists. If that is the case,
 the s2s manager routes the packet to the process
 serving this connection, otherwise a new connection is opened.
 
-\subsection{Clustering Setup}
+\section{Clustering Setup}
 \label{cluster}
 \ind{clustering!setup}
 
@@ -3217,17 +3213,61 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
 You can repeat these steps for other machines supposed to serve this
 domain.
 
+\section{Service Load-Balancing}
+\subsection{Components Load-Balancing}
+\label{componentlb}
+\ind{component load-balancing}
+
+\subsection{Domain Load-Balancing Algorithm}
+\label{domainlb}
+\ind{options!domain\_balancing}
+
+\ejabberd{} includes an algorithm to load balance the components that are plugged on an ejabberd cluster. It means that you can plug one or several instances of the same component on each ejabberd cluster and that the traffic will be automatically distributed.
+
+The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is choosen randomly. If no instance is available locally, one instance is choosen randomly among the remote component instances.
+
+If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain\_balancing}. The syntax of the option is the following:
+
+\begin{verbatim}
+	{domain_balancing, "component.example.com", <balancing_criterium>}.                                   
+\end{verbatim}
+
+Several balancing criteria are available:
+\begin{itemize}
+\item \term{destination}: the full JID of the packet \term{to} attribute is used.
+\item \term{source}: the full JID of the packet \term{from} attribute is used.
+\item \term{bare\_destination}: the bare JID (without resource) of the packet \term{to} attribute is used.
+\item \term{bare\_source}: the bare JID (without resource) of the packet \term{from} attribute is used.
+\end{itemize}
+
+If the value corresponding to the criterium is the same, the same component instance in the cluster will be used.
+
+\subsection{Load-Balancing Buckets}
+\label{lbbuckets}
+\ind{options!domain\_balancing\_component\_number}
+
+When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failling the service will not work correctly unless the sessions are rebalanced.
+
+In this case, it is best to limit the problem to the sessions handled by the failling component. This is what the \term{domain\_balancing\_component\_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
+
+The syntax is the following:
+\begin{verbatim}
+    {domain_balancing_component_number, "component.example.com", N}
+\end{verbatim}
+
+
+
 % TODO
 % See also the section about ejabberdctl!!!!
 %\section{Backup and Restore}
 %\label{backup}
 %\ind{backup}
 
-\section{Debugging}
+\chapter{Debugging}
 \label{debugging}
 \ind{debugging}
 
-\subsection{Watchdog alerts}
+\section{Watchdog alerts}
 \label{watchdog}
 \ind{debugging!watchdog}
 
@@ -3242,7 +3282,7 @@ To enable the watchdog, add the \term{watchdog\_admins}
 \end{verbatim}
 
 \appendix{}
-\section{Internationalization and Localization}
+\chapter{Internationalization and Localization}
 \label{i18nl10n}
 \ind{xml:lang}\ind{internationalization}\ind{localization}\ind{i18n}\ind{l10n}
 
@@ -3281,32 +3321,32 @@ figure~\ref{fig:webadmmainru} with figure~\ref{fig:webadmmain})
 %TODO: a very big example covering the whole guide, with a good explanation before the example: different authenticaton mechanisms, transports, ACLs, multple virtual hosts, virtual host specific settings and general settings, modules,...
 
 \newpage
-\section{Release Notes}
+\chapter{Release Notes}
 \label{releasenotes}
 \ind{release notes}
 
-\subsection{ejabberd 0.9}
+\section{ejabberd 0.9}
 \verbatiminput{release_notes_0.9.txt}
 
-\subsection{ejabberd 0.9.1}
+\section{ejabberd 0.9.1}
 \verbatiminput{release_notes_0.9.1.txt}
 
-\subsection{ejabberd 0.9.8}
+\section{ejabberd 0.9.8}
 \verbatiminput{release_notes_0.9.8.txt}
 
-\subsection{ejabberd 1.0.0}
+\section{ejabberd 1.0.0}
 \verbatiminput{release_notes_1.0.0.txt}
 
-\subsection{ejabberd 1.1.0}
+\section{ejabberd 1.1.0}
 \verbatiminput{release_notes_1.1.0.txt}
 
-\subsection{ejabberd 1.1.1}
+\section{ejabberd 1.1.1}
 \verbatiminput{release_notes_1.1.1.txt}
 
-\subsection{ejabberd 1.1.2}
+\section{ejabberd 1.1.2}
 \verbatiminput{release_notes_1.1.2.txt}
 
-\section{Acknowledgements}
+\chapter{Acknowledgements}
 \label{acknowledgements}
 Thanks to all people who contributed to this guide:
 \begin{itemize}
@@ -3322,7 +3362,7 @@ Thanks to all people who contributed to this guide:
 \end{itemize}
 
 
-\section{Copyright Information}
+\chapter{Copyright Information}
 \label{copyright}
 
 Ejabberd Installation and Operation Guide.\\

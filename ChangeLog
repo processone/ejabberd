@@ -1,7 +1,12 @@
+2007-06-28  Mickael Remond  <mickael.remond@process-one.net>
+
+	* doc/guide.tex: Documentation rework started (EJAB-272)
+	* doc/introduction.tex: Likewise
+
 2007-06-28  Christophe Romain <christophe.romain@process-one.net>
 
-    * src/web/ejabberd_web_admin.erl: corrects EJAB-273,
-    remove obsolete OnlineUsers calculation
+	* src/web/ejabberd_web_admin.erl: corrects (EJAB-273),
+	remove obsolete OnlineUsers calculation
 
 2007-06-26  Alexey Shchepin  <alexey@sevcom.net>
 
