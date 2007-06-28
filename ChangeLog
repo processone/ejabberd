@@ -1,5 +1,8 @@
 2007-06-28  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/ejabberd_auth_anonymous.erl: Do not purge non anonymous accounts
+	when using anonymous authentication with another type of auth.
+
 	* src/ejabberd_service.erl: Added an option to disable from attribute
 	checks in packets coming from an external component (EJAB-275)
 	* doc/guide.tex: Likewise

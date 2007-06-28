@@ -136,8 +136,15 @@ register_connection(SID, #jid{luser = LUser, lserver = LServer}) ->
 
 %% Remove an anonymous user from the anonymous users table
 unregister_connection(SID, #jid{luser = LUser, lserver = LServer}) ->
-    ejabberd_hooks:run(anonymous_purge_hook, jlib:nameprep(LServer), [LUser, LServer]),
+    purge_hook(anonymous_user_exist(LUser, LServer),
+	       LUser, LServer),
     remove_connection(SID, LUser, LServer).
+
+%% Launch the hook to purge user data only for anonymous users
+purge_hook(false, _LUser, _LServer) ->
+    ok;
+purge_hook(true, LUser, LServer) ->
+    ejabberd_hooks:run(anonymous_purge_hook, LServer, [LUser, LServer]).
 
 %% ---------------------------------
 %% Specific anonymous auth functions
