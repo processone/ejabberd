@@ -255,7 +255,9 @@ These commands will:
 \item create a directory called \verb|/var/log/ejabberd| to store log files.
 \end{itemize}
 
-Note: if you want to use an external database, you need to execute the configure
+\subsubsection{Compilation options}
+
+If you want to use an external database, you need to execute the configure
 script with the option(s) \term{--enable-odbc} or \term{--enable-odbc
 --enable-mssql}. See section~\ref{database} for more information.
 
@@ -570,6 +572,11 @@ The following options are available:
     at \verb|http://server:port/admin/|. Login and password are the username and
     password of one of the registered users who are granted access by the
     `configure' access rule.
+    \titem{component\_check\_from} \ind{options!service\_check\_from}
+    This option can be used with \term{ejabberd\_service} only. It is
+    used to disable control on the from field on packets send by an
+    external components. The option can be either \term{true} or
+    \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
 \end{description}
 
 In addition, the following options are available for s2s connections:
@@ -615,6 +622,7 @@ For instance, the following configuration defines that:
   \footahref{http://ejabberd.jabber.ru/jmc}{Jabber Mail Component}
   \jid{jmc.example.org} is connected to port 5238 with password
   `\term{jmcsecret}'.
+\item The service custom has enabled the special option to avoiding checking the \term{from} attribute in the packets send by this component. The component can send packets in behalf of any users from the server, or even on behalf of any server.
 \end{itemize}
 \begin{verbatim}
   {acl, blocked, {user, "bad"}}.
@@ -640,10 +648,13 @@ For instance, the following configuration defines that:
     {5237, ejabberd_service, [{host, "gg.example.org",
                                [{password, "ggsecret"}]}]},
     {5238, ejabberd_service, [{host, "jmc.example.org",
-                               [{password, "jmcsecret"}]}]}
+                               [{password, "jmcsecret"}]}]},
+    {5239, ejabberd_service, [{host, "custom.example.org",
+                               [{password, "customsecret"}]},
+                              {service_check_from, false}]}
    ]
   }.
-  {s2s_use_starttls, true}.
+  {S2s_use_starttls, true}.
   {s2s_certfile, "/path/to/ssl.pem"}.
 \end{verbatim}
 Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based

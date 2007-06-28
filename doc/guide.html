@@ -348,7 +348,8 @@ The latest development version can be retrieved from the Subversion repository.
 install <TT>ejabberd</TT> into the directory <CODE>/var/lib/ejabberd</CODE>,
 </LI><LI CLASS="li-itemize">install the configuration file into <CODE>/etc/ejabberd</CODE>,
 </LI><LI CLASS="li-itemize">create a directory called <CODE>/var/log/ejabberd</CODE> to store log files.
-</LI></UL><P>Note: if you want to use an external database, you need to execute the configure
+</LI></UL><!--TOC subsubsection Compilation options-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR -->Compilation options</H4><!--SEC END --><P>If you want to use an external database, you need to execute the configure
 script with the option(s) <TT>&#X2013;enable-odbc</TT> or <TT>&#X2013;enable-odbc
 &#X2013;enable-mssql</TT>. See section&#XA0;<A HREF="#database">3.2</A> for more information.</P><!--TOC subsubsection Windows-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Windows</H4><!--SEC END --><P>
@@ -573,6 +574,11 @@ enables the web interface for <TT>ejabberd</TT> administration which is availabl
 at <CODE>http://server:port/admin/</CODE>. Login and password are the username and
 password of one of the registered users who are granted access by the
 `configure' access rule.
+</DD><DT CLASS="dt-description"><B><TT>component_check_from</TT></B></DT><DD CLASS="dd-description"> 
+This option can be used with <TT>ejabberd_service</TT> only. It is
+used to disable control on the from field on packets send by an
+external components. The option can be either <TT>true</TT> or
+<TT>false</TT>. The default value is <TT>true</TT> which conforms to <A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A>.
 </DD></DL><P>In addition, the following options are available for s2s connections:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{s2s_use_starttls, true|false}</TT></B></DT><DD CLASS="dd-description">
@@ -614,6 +620,7 @@ connected to port 5237 with password `<TT>ggsecret</TT>'.
 <A HREF="http://ejabberd.jabber.ru/jmc">Jabber Mail Component</A>
 <TT>jmc.example.org</TT> is connected to port 5238 with password
 `<TT>jmcsecret</TT>'.
+</LI><LI CLASS="li-itemize">The service custom has enabled the special option to avoiding checking the <TT>from</TT> attribute in the packets send by this component. The component can send packets in behalf of any users from the server, or even on behalf of any server.
 </LI></UL><PRE CLASS="verbatim">  {acl, blocked, {user, "bad"}}.
   {access, c2s, [{deny, blocked},
                  {allow, all}]}.
@@ -637,10 +644,13 @@ connected to port 5237 with password `<TT>ggsecret</TT>'.
     {5237, ejabberd_service, [{host, "gg.example.org",
                                [{password, "ggsecret"}]}]},
     {5238, ejabberd_service, [{host, "jmc.example.org",
-                               [{password, "jmcsecret"}]}]}
+                               [{password, "jmcsecret"}]}]},
+    {5239, ejabberd_service, [{host, "custom.example.org",
+                               [{password, "customsecret"}]},
+                              {service_check_from, false}]}
    ]
   }.
-  {s2s_use_starttls, true}.
+  {S2s_use_starttls, true}.
   {s2s_certfile, "/path/to/ssl.pem"}.
 </PRE><P>Note, that for jabberd 1.4- or WPJabber-based
 services you have to make the transports log and do XDB by themselves:

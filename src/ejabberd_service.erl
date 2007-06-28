@@ -34,9 +34,10 @@
 -include("jlib.hrl").
 
 -record(state, {socket, sockmod, streamid,
-		hosts, password, access}).
+		hosts, password, access,
+		check_from}).
 
-%-define(DBGFSM, true).
+%-Define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
@@ -128,13 +129,18 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
+    CheckFrom = case lists:keysearch(service_check_from, 1, Opts) of
+		 {value, {_, CF}} -> CF;
+		 _ -> true
+	     end,
     SockMod:change_shaper(Socket, Shaper),
     {ok, wait_for_stream, #state{socket = Socket,
 				 sockmod = SockMod,
 				 streamid = new_id(),
 				 hosts = Hosts,
 				 password = Password,
-				 access = Access
+				 access = Access,
+				 check_from = CheckFrom
 				 }}.
 
 %%----------------------------------------------------------------------
@@ -205,14 +211,23 @@ stream_established({xmlstreamelement, El}, StateData) ->
     NewEl = jlib:remove_attr("xmlns", El),
     {xmlelement, Name, Attrs, _Els} = NewEl,
     From = xml:get_attr_s("from", Attrs),
-    FromJID1 = jlib:string_to_jid(From),
-    FromJID = case FromJID1 of
-		  #jid{lserver = Server} ->
-		      case lists:member(Server, StateData#state.hosts) of
-			  true -> FromJID1;
-			  false -> error
-		      end;
-		  _ -> error
+    FromJID = case StateData#state.check_from of
+		  %% If the admin does not want to check the from field
+		  %% when accept packets from any address.
+		  %% In this case, the component can send packet of
+		  %% behalf of the server users.
+		  false -> jlib:string_to_jid(From);
+		  %% The default is the standard behaviour in XEP-0114
+		  _ ->
+		      FromJID1 = jlib:string_to_jid(From),
+		      case FromJID1 of
+			  #jid{lserver = Server} ->
+			      case lists:member(Server, StateData#state.hosts) of
+				  true -> FromJID1;
+				  false -> error
+			      end;
+			  _ -> error
+		      end
 	      end,
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of

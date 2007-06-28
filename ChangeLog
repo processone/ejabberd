@@ -1,5 +1,9 @@
 2007-06-28  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/ejabberd_service.erl: Added an option to disable from attribute
+	checks in packets coming from an external component (EJAB-275)
+	* doc/guide.tex: Likewise
+
 	* doc/guide.tex: Documentation rework started (EJAB-272)
 	* doc/introduction.tex: Likewise
 
