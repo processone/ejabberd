@@ -25,7 +25,8 @@ ifdef debug
 endif
 
 OBJS   = \
-	$(OUTDIR)/stringprep.beam
+	$(OUTDIR)/stringprep.beam \
+	$(OUTDIR)/stringprep_sup.beam
 
 all:    $(OBJS) $(ERLSHLIBS)
 

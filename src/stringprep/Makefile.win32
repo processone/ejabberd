@@ -9,7 +9,8 @@ AUXIL  = uni_data.c uni_norm.c
 OBJECT = stringprep_drv.o
 DLL    = $(OUTDIR)\stringprep_drv.dll
 
-ALL : $(DLL) $(OUTDIR)\stringprep.beam
+ALL : $(DLL) $(OUTDIR)\stringprep.beam \
+	$(OUTDIR)\stringprep_sup.beam
 
 CLEAN :
 	-@erase $(DLL)
@@ -17,9 +18,13 @@ CLEAN :
 	-@erase $(OUTDIR)\stringprep_drv.lib
 	-@erase $(OBJECT)
 	-@erase $(OUTDIR)\stringprep.beam
+	-@erase $(OUTDIR)\stringprep_sup.beam
 
 $(OUTDIR)\stringprep.beam : stringprep.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) stringprep.erl
+
+$(OUTDIR)\stringprep_sup.beam : stringprep_sup.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) stringprep_sup.erl
 
 CC=cl.exe
 CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include"

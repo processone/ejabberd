@@ -37,7 +37,7 @@
 		hosts, password, access,
 		check_from}).
 
-%-Define(DBGFSM, true).
+%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).

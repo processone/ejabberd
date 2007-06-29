@@ -63,7 +63,7 @@ search_hosts(Term, State) ->
 	{host, Host} ->
 	    if
 		State#state.hosts == [] ->
-		    add_option(hosts, [Host], State#state{hosts = [Host]});
+		    add_hosts_to_option([Host], State);
 		true ->
 		    ?ERROR_MSG("Can't load config file: "
 			       "too many hosts definitions", []),
@@ -72,7 +72,7 @@ search_hosts(Term, State) ->
 	{hosts, Hosts} ->
 	    if
 		State#state.hosts == [] ->
-		    add_option(hosts, Hosts, State#state{hosts = Hosts});
+		    add_hosts_to_option(Hosts, State);
 		true ->
 		    ?ERROR_MSG("Can't load config file: "
 			       "too many hosts definitions", []),
@@ -80,6 +80,24 @@ search_hosts(Term, State) ->
 	    end;
 	_ ->
 	    State
+    end.
+
+add_hosts_to_option(Hosts, State) ->
+    PrepHosts = normalize_hosts(Hosts),
+    add_option(hosts, PrepHosts, State#state{hosts = PrepHosts}).
+
+normalize_hosts(Hosts) ->
+    normalize_hosts(Hosts,[]).
+normalize_hosts([], PrepHosts) ->
+    lists:reverse(PrepHosts);
+normalize_hosts([Host|Hosts], PrepHosts) ->
+    case jlib:nodeprep(Host) of
+	error ->
+	    ?ERROR_MSG("Can't load config file: "
+		       "invalid host name [~p]", [Host]),
+	    exit("invalid hostname");
+	PrepHost ->
+	    normalize_hosts(Hosts, [PrepHost|PrepHosts])
     end.
 
 process_term(Term, State) ->

@@ -17,7 +17,6 @@
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-
 init([]) ->
     Hooks =
 	{ejabberd_hooks,
@@ -26,13 +25,6 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_hooks]},
-    StringPrep =
-	{stringprep,
-	 {stringprep, start_link, []},
-	 permanent,
-	 brutal_kill,
-	 worker,
-	 [stringprep]},
     NodeGroups =
 	{ejabberd_node_groups,
 	 {ejabberd_node_groups, start_link, []},
@@ -155,7 +147,6 @@ init([]) ->
 	 [ejabberd_tmp_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
-	   StringPrep,
 	   NodeGroups,
 	   SystemMonitor,
 	   Router,

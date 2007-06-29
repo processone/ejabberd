@@ -23,6 +23,7 @@ start(normal, _Args) ->
     db_init(),
     sha:start(),
     catch ssl:start(),
+    stringprep_sup:start_link(),
     translate:start(),
     acl:start(),
     ejabberd_ctl:init(),
