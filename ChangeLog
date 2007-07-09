@@ -1,3 +1,10 @@
+2007-07-09  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/mssql.sql: Nickname cannot be null in rosterusers table
+	(MSSQL)
+	* src/odbc/mysql.sql: Likewise
+	* src/odbc/pg.sql: Likewise
+
 2007-06-29  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_config.erl: Normalize hostnames in config file. If mixed

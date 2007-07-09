@@ -105,7 +105,7 @@ GO
 CREATE TABLE [dbo].[rosterusers] (
 	[username] [varchar] (250) NOT NULL ,
 	[jid] [varchar] (250) NOT NULL ,
-	[nick] [varchar] (50) NULL ,
+	[nick] [varchar] (50) NOT NULL ,
 	[subscription] [char] (1) NOT NULL ,
 	[ask] [char] (1) NOT NULL ,
 	[askmessage] [varchar] (250) NOT NULL ,

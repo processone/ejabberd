@@ -17,7 +17,7 @@ CREATE TABLE last (
 CREATE TABLE rosterusers (
     username varchar(250) NOT NULL,
     jid varchar(250) NOT NULL,
-    nick text,
+    nick text NOT NULL,
     subscription character(1) NOT NULL,
     ask character(1) NOT NULL,
     askmessage text,

@@ -15,7 +15,7 @@ CREATE TABLE last (
 CREATE TABLE rosterusers (
     username text NOT NULL,
     jid text NOT NULL,
-    nick text,
+    nick text NOT NULL,
     subscription character(1) NOT NULL,
     ask character(1) NOT NULL,
     askmessage text NOT NULL,
