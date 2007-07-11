@@ -1,3 +1,11 @@
+2007-07-11  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_echo.erl: mod_echo does not reply to other
+	components. This is to make sure that a component will not
+	discover its own capabilities (EJAB-281).
+	* src/ejabberd.cfg: disable mod_echo in the example config
+	file. mod_echo is mainly a development/test module.
+
 2007-07-09  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/odbc/mssql.sql: Nickname cannot be null in rosterusers table

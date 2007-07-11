@@ -100,7 +100,11 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
-    ejabberd_router:route(To, From, Packet),
+	Packet2 = case From#jid.user of
+		"" -> jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST);
+		_ -> Packet
+	end,
+    ejabberd_router:route(To, From, Packet2),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
