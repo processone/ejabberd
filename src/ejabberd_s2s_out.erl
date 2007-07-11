@@ -3,7 +3,6 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : 
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_s2s_out).
@@ -653,7 +652,6 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
-    bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
     case StateData#state.new of
 	false ->
 	    ok;
@@ -661,6 +659,7 @@ terminate(Reason, StateName, StateData) ->
 	    ejabberd_s2s:remove_connection({StateData#state.myname,
 	        			    StateData#state.server})
     end,
+    bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
     case StateData#state.socket of
 	undefined ->
 	    ok;
