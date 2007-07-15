@@ -19,6 +19,7 @@
 	 get_key/1,
 	 try_register/1,
 	 remove_connection/1,
+	 remove_connection/3,
 	 dirty_get_connections/0,
 	 ctl_process/2
 	]).
@@ -56,6 +57,14 @@ route(From, To, Packet) ->
 remove_connection(FromTo) ->
     F = fun() ->
 		mnesia:delete({s2s, FromTo})
+	end,
+    mnesia:transaction(F).
+
+remove_connection(FromTo, Pid, Key) ->
+    F = fun() ->
+		mnesia:delete_object(#s2s{fromto = FromTo,
+					  pid = Pid,
+					  key = Key})
 	end,
     mnesia:transaction(F).
 

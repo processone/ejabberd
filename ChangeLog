@@ -1,3 +1,8 @@
+2007-07-15  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/ejabberd_s2s.erl: Added remove_connection/3
+	* src/ejabberd_s2s_out.erl: Bugfix: remove only own s2s record
+
 2007-07-11  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_s2s_out.erl: Bounce packets after unregistering s2s

@@ -656,8 +656,8 @@ terminate(Reason, StateName, StateData) ->
 	false ->
 	    ok;
 	Key ->
-	    ejabberd_s2s:remove_connection({StateData#state.myname,
-	        			    StateData#state.server})
+	    ejabberd_s2s:remove_connection(
+	      {StateData#state.myname, StateData#state.server}, self(), Key)
     end,
     bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
     case StateData#state.socket of
