@@ -408,8 +408,8 @@ get_local_items(Host, ["online users"], _Server, _Lang) ->
 get_local_items(Host, ["all users"], _Server, _Lang) ->
     {result, get_all_vh_users(Host)};
 
-get_local_items(_Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
-    case catch ejabberd_auth:dirty_get_registered_users() of
+get_local_items(Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
+    case catch ejabberd_auth:get_vh_registered_users(Host) of
 	{'EXIT', _Reason} ->
 	    ?ERR_INTERNAL_SERVER_ERROR;
 	Users ->
