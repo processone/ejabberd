@@ -101,7 +101,6 @@ start_connection(Pid) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([From, Server, Type]) ->
-    ?INFO_MSG("started: ~p", [{From, Server, Type}]),
     TLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
 	      undefined ->
 		  false;
@@ -140,6 +139,10 @@ init([From, Server, Type]) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
+    ?INFO_MSG("open_socket: ~p", [{StateData#state.myname,
+                                   StateData#state.server,
+				   StateData#state.new,
+				   StateData#state.verify}]),
     AddrList = case idna:domain_utf8_to_ascii(StateData#state.server) of
 		   false -> [];
 		   ASCIIAddr ->
@@ -651,7 +654,7 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
-    ?INFO_MSG("terminated: ~p", [Reason]),
+    ?INFO_MSG("terminated: ~p", [{Reason, StateName}]),
     case StateData#state.new of
 	false ->
 	    ok;
