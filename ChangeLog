@@ -1,5 +1,8 @@
 2007-07-17  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_muc/mod_muc_log.erl: Recognise more URI schemes in
+	logged HTML (EJAB-279) (Thanks to qu1j0t3).
+
 	* src/ejabberd_s2s_out.erl: Improved place of the INFO /
 	DEBUG printout.
 
