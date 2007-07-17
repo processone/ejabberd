@@ -1,3 +1,8 @@
+2007-07-17  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: Better error handling for MySQL
+	native driver (EJAB-224).
+
 2007-07-15  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_s2s.erl: Added remove_connection/3
@@ -12,7 +17,7 @@
 
 	* src/mod_echo.erl: mod_echo does not reply to other
 	components. This is to make sure that a component will not
-	discover its own capabilities (EJAB-281).
+	discover its own capabilities (Thanks to Badlop) (EJAB-281).
 	* src/ejabberd.cfg: disable mod_echo in the example config
 	file. mod_echo is mainly a development/test module.
 

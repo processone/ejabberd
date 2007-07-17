@@ -293,6 +293,8 @@ mysql_to_odbc({updated, MySQLRes}) ->
 mysql_to_odbc({data, MySQLRes}) ->
     mysql_item_to_odbc(mysql:get_result_field_info(MySQLRes),
 		       mysql:get_result_rows(MySQLRes));
+mysql_to_odbc({error, MySQLRes}) when is_list(MySQLRes) ->
+    {error, MySQLRes};
 mysql_to_odbc({error, MySQLRes}) ->
     {error, mysql:get_result_reason(MySQLRes)}.
 
