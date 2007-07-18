@@ -1,5 +1,7 @@
 2007-07-18  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/ejabberd_s2s.erl: Fixed typos.
+
 	* src/ejabberd_s2s.erl: Implements s2s hosts whitelist / blacklist
 	* src/ejabberd.cfg.example: Likewise
 

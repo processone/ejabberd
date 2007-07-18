@@ -345,7 +345,7 @@ allow_host(MyServer, S2SHost) ->
 	    case ejabberd_config:get_local_option({s2s_default_policy, MyServer}) of
 		deny -> false;
 		allow -> true;
-		_ -> allow %% The default s2s policy is allow
+		_ -> true %% The default s2s policy is allow
 	    end
     end.
     
