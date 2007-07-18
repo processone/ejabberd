@@ -243,10 +243,12 @@ find_connection(From, To) ->
 	{'EXIT', Reason} ->
 	    {aborted, Reason};
 	[] ->
-	    case is_service(From, To) of
-		true ->
-		    {aborted, error};
-		false ->
+	    %% We try to establish connection if the host is not a
+	    %% service and if the s2s host is not blacklisted or
+	    %% is in whitelist:
+	    case {is_service(From, To),
+		  allow_host(MyServer, Server)} of
+		{false, true} ->
 		    ?DEBUG("starting new s2s connection~n", []),
 		    Key = randoms:get_string(),
 		    {ok, Pid} = ejabberd_s2s_out:start(
@@ -269,7 +271,9 @@ find_connection(From, To) ->
 			_ ->
 			    ejabberd_s2s_out:stop_connection(Pid)
 		    end,
-		    TRes
+		    TRes;
+		_ ->
+		    {aborted, error}
 	    end;
 	[El] ->
 	    {atomic, El#s2s.pid}
@@ -331,3 +335,18 @@ update_tables() ->
 	false ->
 	    ok
     end.
+
+%% Check if host is in blacklist or white list
+allow_host(MyServer, S2SHost) ->
+    case ejabberd_config:get_local_option({{s2s_host, S2SHost},MyServer}) of
+	deny -> false;
+	allow -> true;
+	_ ->
+	    case ejabberd_config:get_local_option({s2s_default_policy, MyServer}) of
+		deny -> false;
+		allow -> true;
+		_ -> allow %% The default s2s policy is allow
+	    end
+    end.
+    
+    

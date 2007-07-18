@@ -152,6 +152,11 @@
 %{domain_certfile, "example.org", "./example_org.pem"}.
 %{domain_certfile, "example.com", "./example_com.pem"}.
 
+%% S2S Whitelist or blacklist:
+%{s2s_default_policy, allow}. %% Default s2s policy for undefined hosts
+%%{{s2s_host,"goodhost.org"}, allow}.
+%{{s2s_host,"badhost.org"}, deny}. 
+
 % If SRV lookup fails, then port 5269 is used to communicate with remote server
 {outgoing_s2s_port, 5269}.
 
