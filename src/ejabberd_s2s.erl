@@ -61,12 +61,17 @@ remove_connection(FromTo) ->
     mnesia:transaction(F).
 
 remove_connection(FromTo, Pid, Key) ->
-    F = fun() ->
-		mnesia:delete_object(#s2s{fromto = FromTo,
-					  pid = Pid,
-					  key = Key})
-	end,
-    mnesia:transaction(F).
+    case catch mnesia:dirty_read(s2s, FromTo) of
+	[#s2s{pid = Pid, key = Key}] ->
+	    F = fun() ->
+			mnesia:delete_object(#s2s{fromto = FromTo,
+						  pid = Pid,
+						  key = Key})
+		end,
+	    mnesia:transaction(F);
+	_ ->
+	    ok
+    end.
 
 have_connection(FromTo) ->
     case catch mnesia:dirty_read(s2s, FromTo) of
@@ -262,7 +267,7 @@ find_connection(From, To) ->
 			{atomic, Pid} ->
 			    ejabberd_s2s_out:start_connection(Pid);
 			_ ->
-			    ok
+			    ejabberd_s2s_out:stop_connection(Pid)
 		    end,
 		    TRes
 	    end;

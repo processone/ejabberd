@@ -13,7 +13,8 @@
 %% External exports
 -export([start/3,
 	 start_link/3,
-	 start_connection/1]).
+	 start_connection/1,
+	 stop_connection/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -88,6 +89,9 @@ start_link(From, Host, Type) ->
 
 start_connection(Pid) ->
     gen_fsm:send_event(Pid, init).
+
+stop_connection(Pid) ->
+    gen_fsm:send_event(Pid, stop).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -175,6 +179,8 @@ open_socket(init, StateData) ->
 	    bounce_messages(Error),
 	    {stop, normal, StateData}
     end;
+open_socket(stop, StateData) ->
+    {stop, normal, StateData};
 open_socket(_, StateData) ->
     {next_state, open_socket, StateData}.
 
