@@ -74,6 +74,9 @@
 -define(HOST_UNKNOWN_ERR,
 	xml:element_to_string(?SERR_HOST_UNKNOWN)).
 
+-define(INVALID_FROM_ERR,                             
+        xml:element_to_string(?SERR_INVALID_FROM)).
+
 -define(INVALID_XML_ERR,
 	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
 
@@ -309,8 +312,11 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    ?INFO_MSG("GET KEY: ~p", [{To, From, Id, Key}]),
 	    LTo = jlib:nameprep(To),
 	    LFrom = jlib:nameprep(From),
-	    case lists:member(LTo, ejabberd_router:dirty_get_all_domains()) of
-		true ->
+	    %% Checks if the from domain is allowed and if the to               
+            %% domain is handled by this server:                                
+            case {ejabberd_s2s:allow_host(To, From),
+                  lists:member(LTo, ejabberd_router:dirty_get_all_domains())} of
+                {true, true} ->
 		    ejabberd_s2s_out:start(To, From,
 					   {verify, self(),
 					    Key, StateData#state.streamid}),
@@ -321,9 +327,12 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		     stream_established,
 		     StateData#state{connections = Conns,
 				     timer = Timer}};
-		_ ->
+		{_, false} ->
 		    send_text(StateData, ?HOST_UNKNOWN_ERR),
-		    {stop, normal, StateData}
+		    {stop, normal, StateData};
+                {false, _} ->
+                    send_text(StateData, ?INVALID_FROM_ERR),
+                    {stop, normal, StateData}
 	    end;
 	{verify, To, From, Id, Key} ->
 	    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),

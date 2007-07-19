@@ -21,6 +21,7 @@
 	 remove_connection/1,
 	 remove_connection/3,
 	 dirty_get_connections/0,
+	 allow_host/2,
 	 ctl_process/2
 	]).
 
