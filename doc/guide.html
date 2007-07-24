@@ -6,7 +6,7 @@
  
  
 
-   & ejabberd 2.0.0 beta 1 
+   & ejabberd 1.1.2 
    &
    & Installation and Operation Guide
  
@@ -85,7 +85,7 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 <HR SIZE=2><BR>
 <BR>
 
-<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD VALIGN=top ALIGN=left>&nbsp;</TD><TD VALIGN=top ALIGN=right NOWRAP><FONT SIZE=6><B>ejabberd 2.0.0 beta 1 </B></FONT></TD></TR>
+<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD VALIGN=top ALIGN=left>&nbsp;</TD><TD VALIGN=top ALIGN=right NOWRAP><FONT SIZE=6><B>ejabberd 1.1.2 </B></FONT></TD></TR>
 <TR><TD VALIGN=top ALIGN=left>&nbsp;</TD><TD VALIGN=top ALIGN=right NOWRAP>&nbsp;</TD></TR>
 <TR><TD VALIGN=top ALIGN=left>&nbsp;</TD><TD VALIGN=top ALIGN=right NOWRAP><FONT SIZE=6>Installation and Operation Guide</FONT></TD></TR>
 </TABLE><BR>
@@ -541,11 +541,15 @@ instructions for <TT>ejabberd</TT>).
 </P></DD><DT CLASS="dt-description"><B><TT>inet6</TT></B></DT><DD CLASS="dd-description"> Set up the socket for IPv6.
 </DD><DT CLASS="dt-description"><B><TT>{ip, IPAddress}</TT></B></DT><DD CLASS="dd-description"> This option specifies which network
 interface to listen for. For example <CODE>{ip, {192, 168, 1, 1}}</CODE>.
-</DD><DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B></DT><DD CLASS="dd-description"> This
-option specifies an approximate maximum size in bytes of XML stanzas.
-Approximate, because it is calculated with the precision of one block of
-readed data. For example <CODE>{max_stanza_size, 65536}</CODE>. The default
-value is <TT>infinity</TT>.
+</DD><DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B></DT><DD CLASS="dd-description">
+This option specifies an
+approximate maximum size in bytes of XML stanzas. Approximate,
+because it is calculated with the precision of one block of readed
+data. For example <CODE>{max_stanza_size, 65536}</CODE>. The default
+value is <TT>infinity</TT>. Recommanded values are 65536 for c2s
+connections and 131072 for s2s connections. s2s max stanza size
+must always much higher than c2s limit. Change this value with
+extreme care as it can cause unwanted disconnect if set too low.
 </DD><DT CLASS="dt-description"><B><TT>{shaper, &lt;access rule&gt;}</TT></B></DT><DD CLASS="dd-description"> This option defines a
 shaper for the port (see section&#XA0;<A HREF="#shapers">3.1.6</A>). The default value
 is <TT>none</TT>.

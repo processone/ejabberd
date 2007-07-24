@@ -1,5 +1,8 @@
 2007-07-24  Mickael Remond  <mickael.remond@process-one.net>
 
+	* doc/guide.tex: Added recommandations on max_stanza options
+	usage.
+
 	* src/ejabberd_s2s_out.erl: Autodisconnect s2s connections which
 	are overloaded (EJAB-287).
 	* src/p1_fsm.erl: Likewise.

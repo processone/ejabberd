@@ -539,11 +539,15 @@ The following options are available:
   \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6.
   \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
     interface to listen for. For example \verb|{ip, {192, 168, 1, 1}}|.
-  \titem{\{max\_stanza\_size, Size\}} \ind{options!max\_stanza\_size}This
-    option specifies an approximate maximum size in bytes of XML stanzas.
-    Approximate, because it is calculated with the precision of one block of
-    readed data. For example \verb|{max_stanza_size, 65536}|.  The default
-    value is \term{infinity}.
+    \titem{\{max\_stanza\_size, Size\}}
+    \ind{options!max\_stanza\_size}This option specifies an
+    approximate maximum size in bytes of XML stanzas.  Approximate,
+    because it is calculated with the precision of one block of readed
+    data. For example \verb|{max_stanza_size, 65536}|.  The default
+    value is \term{infinity}. Recommanded values are 65536 for c2s
+    connections and 131072 for s2s connections. s2s max stanza size
+    must always much higher than c2s limit. Change this value with
+    extreme care as it can cause unwanted disconnect if set too low.
   \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{shapers}). The default value
     is \term{none}.
