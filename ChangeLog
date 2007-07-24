@@ -1,3 +1,9 @@
+2007-07-24  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejabberd_s2s_out.erl: Autodisconnect s2s connections which
+	are overloaded (EJAB-287).
+	* src/p1_fsm.erl: Likewise.
+
 2007-07-19  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_s2s_in.erl: Add s2s whitelist / blacklist support
@@ -684,7 +690,7 @@
 	* src/mod_private_odbc.erl: Private storage support using odbc
 	* src/odbc/pg.sql: Likewise
 
-2006-10-17 Mickael Remond  <mickael.remond@process-one.net>
+1999-11-30  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejabberd_auth_ldap.erl: LDAP authentication now allows to
 	match on several alternative attributes (thanks to Evgeniy

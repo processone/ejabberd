@@ -1,12 +1,12 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_s2s_out.erl
-%%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
-%%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
+%%% Author  : Alexey Shchepin <alexey@process-one.net>
+%%% Purpose : Manage outgoing server-to-server connections
+%%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_s2s_out).
--author('alexey@sevcom.net').
+-author('alexey@process-one.net').
 
 -behaviour(gen_fsm).
 
@@ -58,6 +58,10 @@
 -define(FSMOPTS, []).
 -endif.
 
+%% Only change this value if you now what your are doing:
+-define(FSMLIMITS,[]).
+%% -define(FSMLIMITS, [{max_queue, 2000}]).
+
 -define(STREAM_HEADER,
 	"<?xml version='1.0'?>"
 	"<stream:stream "
@@ -85,13 +89,14 @@ start(From, Host, Type) ->
     supervisor:start_child(ejabberd_s2s_out_sup, [From, Host, Type]).
 
 start_link(From, Host, Type) ->
-    gen_fsm:start_link(ejabberd_s2s_out, [From, Host, Type], ?FSMOPTS).
+    p1_fsm:start_link(ejabberd_s2s_out, [From, Host, Type],
+		       ?FSMLIMITS ++ ?FSMOPTS).
 
 start_connection(Pid) ->
-    gen_fsm:send_event(Pid, init).
+    p1_fsm:send_event(Pid, init).
 
 stop_connection(Pid) ->
-    gen_fsm:send_event(Pid, stop).
+    p1_fsm:send_event(Pid, stop).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -105,6 +110,7 @@ stop_connection(Pid) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([From, Server, Type]) ->
+    process_flag(trap_exit, true),
     TLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
 	      undefined ->
 		  false;
@@ -269,12 +275,12 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 		{Pid, _Key, _SID} ->
 		    case Type of
 			"valid" ->
-			    gen_fsm:send_event(
+			    p1_fsm:send_event(
 			      Pid, {valid,
 				    StateData#state.server,
 				    StateData#state.myname});
 			_ ->
-			    gen_fsm:send_event(
+			    p1_fsm:send_event(
 			      Pid, {invalid,
 				    StateData#state.server,
 				    StateData#state.myname})
@@ -525,7 +531,7 @@ reopen_socket({xmlstreamerror, _}, StateData) ->
 reopen_socket(timeout, StateData) ->
     {stop, normal, StateData};
 reopen_socket(closed, StateData) ->
-    gen_fsm:send_event(self(), init),
+    p1_fsm:send_event(self(), init),
     {next_state, open_socket, StateData}.
 
 
@@ -538,12 +544,12 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		{VPid, _VKey, _SID} ->
 		    case VType of
 			"valid" ->
-			    gen_fsm:send_event(
+			    p1_fsm:send_event(
 			      VPid, {valid,
 				     StateData#state.server,
 				     StateData#state.myname});
 			_ ->
-			    gen_fsm:send_event(
+			    p1_fsm:send_event(
 			      VPid, {invalid,
 				     StateData#state.server,
 				     StateData#state.myname})
@@ -634,18 +640,6 @@ handle_info({send_element, El}, StateName, StateData) ->
 	    {next_state, StateName, StateData#state{queue = Q,
 						    timer = Timer}}
     end;
-
-%handle_info({tcp, Socket, Data}, StateName, StateData) ->
-%    xml_stream:send_text(StateData#state.xmlpid, Data),
-%    {next_state, StateName, StateData};
-%
-%handle_info({tcp_closed, Socket}, StateName, StateData) ->
-%    gen_fsm:send_event(self(), closed),
-%    {next_state, StateName, StateData};
-%
-%handle_info({tcp_error, Socket, Reason}, StateName, StateData) ->
-%    gen_fsm:send_event(self(), closed),
-%    {next_state, StateName, StateData};
 
 handle_info({timeout, Timer, _}, StateName,
 	    #state{timer = Timer} = StateData) ->
