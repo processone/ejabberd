@@ -360,29 +360,29 @@ init_it(Starter, Parent, Name, Mod, Args, Options) ->
 %% First we test if we have reach a defined limit ...
 loop(Parent, Name, StateName, StateData, Mod, Time, Debug, Limits) ->
     try 	
-	message_queue_len(Limits),
+	message_queue_len(Limits)
 	%% TODO: We can add more limit checking here...
-	process_message(Parent, Name, StateName, StateData,
-			Mod, Time, Debug, Limits)
     catch
 	{process_limit, Limit} ->
 	    Reason = {process_limit, Limit},
 	    Msg = {'EXIT', Parent, {error, {process_limit, Limit}}},
 	    terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug)
-    end.
+    end,
+    process_message(Parent, Name, StateName, StateData,
+		    Mod, Time, Debug, Limits).
 %% ... then we can process a new message:
 process_message(Parent, Name, StateName, StateData, Mod, Time, Debug, Limits) ->
     Msg = receive
 	      {'EXIT', Parent, priority_shutdown} ->
 		  {'EXIT', Parent, priority_shutdown}
-	      after 0 ->
-		      receive
-			  Input ->
-			      Input
-		      after Time ->
-			      {'$gen_event', timeout}
-		      end
-	      end,
+	  after 0 ->
+		  receive
+		      Input ->
+			  Input
+		  after Time ->
+			  {'$gen_event', timeout}
+		  end
+	  end,
     case Msg of
         {system, From, Req} ->
 	    sys:handle_system_msg(Req, From, Parent, ?MODULE, Debug,
