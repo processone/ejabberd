@@ -1,5 +1,7 @@
 2007-07-26  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/gen_mod.erl: Throw error more cleanly.
+	
 	* src/mod_configure.erl: One ACL call was not virtual host
 	compliant.
 
