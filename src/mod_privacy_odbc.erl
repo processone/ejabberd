@@ -22,24 +22,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
-
--record(privacy, {us,
-		  default = none,
-		  lists = []}).
-
--record(listitem, {type = none,
-		   value = none,
-		   action,
-		   order,
-		   match_all = false,
-		   match_iq = false,
-		   match_message = false,
-		   match_presence_in = false,
-		   match_presence_out = false
-		  }).
-
--record(userlist, {name = none, list = []}).
-
+-include("mod_privacy.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),

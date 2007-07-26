@@ -1,7 +1,12 @@
 2007-07-26  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_last_odbc.erl: Adapted to mod_privacy changes.
+	* src/mod_privacy_odbc.erl: Refactoring to extract records in
+	include file.
+	
 	* src/mod_last.erl: Adapted to mod_privacy changes.
-	* src/mod_privacy.erl: Refactoring to extract records in include file.
+	* src/mod_privacy.erl: Refactoring to extract records in include
+	file.
 	* src/mod_privacy.hrl: Likewise.
 
 	* src/mod_roster_odbc.erl: Fixed wrong call.
