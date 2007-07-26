@@ -171,20 +171,16 @@ find_x_expire(TimeStamp, [{xmlcdata, _} | Els]) ->
 find_x_expire(TimeStamp, [El | Els]) ->
     case xml:get_tag_attr_s("xmlns", El) of
 	?NS_EXPIRE ->
-	    case xml:get_tag_attr_s("seconds", El) of
-		Val ->
-		    case catch list_to_integer(Val) of
-		        {'EXIT', _} ->
-			    never;
-			Int when Int > 0 ->
-			    {MegaSecs, Secs, MicroSecs} = TimeStamp,
-			    S = MegaSecs * 1000000 + Secs + Int,
-			    MegaSecs1 = S div 1000000,
-			    Secs1 = S rem 1000000,
-			    {MegaSecs1, Secs1, MicroSecs};
-			_ ->
-			    never
-		    end;
+	    Val = xml:get_tag_attr_s("seconds", El),
+	    case catch list_to_integer(Val) of
+		{'EXIT', _} ->
+		    never;
+		Int when Int > 0 ->
+		    {MegaSecs, Secs, MicroSecs} = TimeStamp,
+		    S = MegaSecs * 1000000 + Secs + Int,
+		    MegaSecs1 = S div 1000000,
+		    Secs1 = S rem 1000000,
+		    {MegaSecs1, Secs1, MicroSecs};
 		_ ->
 		    never
 	    end;
