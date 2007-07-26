@@ -621,7 +621,7 @@ set_items(User, Server, SubEl) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    catch odbc_queries:transaction(
+    catch odbc_queries:sql_transaction(
 	    LServer,
 	     lists:map(fun(El) ->
 			       process_item_set_t(LUser, LServer, El)
