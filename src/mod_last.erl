@@ -22,6 +22,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("mod_privacy.hrl").
 
 -record(last_activity, {us, timestamp, status}).
 
@@ -76,23 +77,22 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 		  {none, []}, [User, Server, From]),
 	    if
 		(Subscription == both) or (Subscription == from) ->
-		    case catch mod_privacy:get_user_list(User, Server) of
-			{'EXIT', _Reason} ->
+		    UserListRecord = ejabberd_hooks:run_fold(
+				       privacy_get_user_list, Server,
+				       #userlist{},
+				       [User, Server]),
+		    case ejabberd_hooks:run_fold(
+			   privacy_check_packet, Server,
+			   allow,
+			   [User, Server, UserListRecord,
+			    {From, To,
+			     {xmlelement, "presence", [], []}},
+			    out]) of
+			allow ->
 			    get_last(IQ, SubEl, User, Server);
-			List ->
-			    case catch mod_privacy:check_packet(
-					 User, Server, List,
-					 {From, To,
-					  {xmlelement, "presence", [], []}},
-					 out) of
-				{'EXIT', _Reason} ->
-				    get_last(IQ, SubEl, User, Server);
-				allow ->
-				    get_last(IQ, SubEl, User, Server);
-				deny ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
-			    end
+			deny ->
+			    IQ#iq{type = error,
+				  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 		    end;
 		true ->
 		    IQ#iq{type = error,
