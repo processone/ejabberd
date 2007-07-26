@@ -1,5 +1,8 @@
 2007-07-26  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_configure.erl: One ACL call was not virtual host
+	compliant.
+
 	* src/ejabberd_auth_odbc.erl: Fixed wrong call preventing user
 	removal with relational databases.
 
