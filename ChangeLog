@@ -1,5 +1,8 @@
 2007-07-26  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/ejabberd_auth_odbc.erl: Fixed wrong call preventing user
+	removal with relational databases.
+
 	* src/mod_last_odbc.erl: Adapted to mod_privacy changes.
 	* src/mod_privacy_odbc.erl: Refactoring to extract records in
 	include file.

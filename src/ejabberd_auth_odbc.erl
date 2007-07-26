@@ -210,6 +210,6 @@ remove_user(User, Server, Password) ->
 				not_allowed
 			end
 		end,
-	    {atomic, Result} = odbc_queries:transaction(LServer, F),
+	    {atomic, Result} = odbc_queries:sql_transaction(LServer, F),
 	    Result
     end.
