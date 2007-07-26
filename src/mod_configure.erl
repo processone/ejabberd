@@ -1210,7 +1210,7 @@ set_form(_Host, ["config", "hostname"], _Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(_Host, ["config", "acls"], _Lang, XData) ->
+set_form(Host, ["config", "acls"], _Lang, XData) ->
     case lists:keysearch("acls", 1, XData) of
 	{value, {_, Strings}} ->
 	    String = lists:foldl(fun(S, Res) ->
@@ -1220,7 +1220,7 @@ set_form(_Host, ["config", "acls"], _Lang, XData) ->
 		{ok, Tokens, _} ->
 		    case erl_parse:parse_term(Tokens) of
 			{ok, ACLs} ->
-			    case acl:add_list(ACLs, true) of
+			    case acl:add_list(Host, ACLs, true) of
 				ok ->
 				    {result, []};
 				_ ->
