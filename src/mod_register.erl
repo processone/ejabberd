@@ -82,6 +82,12 @@ process_iq(From, To,
 					ok ->
 					    IQ#iq{type = result,
 						  sub_el = [SubEl]};
+					%% TODO FIXME: This piece of
+					%% code does not work since
+					%% the code have been changed
+					%% to allow several auth
+					%% modules.  lists:foreach can
+					%% only return ok:
 					not_allowed ->
 					    IQ#iq{type = error,
 						  sub_el =
