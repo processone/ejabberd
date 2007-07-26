@@ -1589,7 +1589,6 @@ user_queue(User, Server, Query, Lang) ->
 			     [us_to_list(US)]))] ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -1953,7 +1952,7 @@ get_node(global, Node, ["db"], Query, Lang) ->
 	{badrpc, _Reason} ->
 	    [?XCT("h1", "RPC Call Error")];
 	Tables ->
-	    Res = node_db_parse_query(Node, Tables, Query),
+	    node_db_parse_query(Node, Tables, Query),
 	    STables = lists:sort(Tables),
 	    Rows = lists:map(
 		     fun(Table) ->
@@ -1990,11 +1989,7 @@ get_node(global, Node, ["db"], Query, Lang) ->
 				 ])
 		     end, STables),
 	    [?XC("h1", ?T("Database Tables at ") ++ atom_to_list(Node))] ++
-		case Res of
-		    ok -> [?CT("Submitted"), ?P];
-		    error -> [?CT("Bad format"), ?P];
-		    nothing -> []
-		end ++
+		[?CT("Submitted"), ?P] ++
 		[?XAE("form", [{"action", ""}, {"method", "post"}],
 		      [?XAE("table", [],
 			    [?XE("thead",
