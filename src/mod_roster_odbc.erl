@@ -140,6 +140,7 @@ get_user_roster(Acc, {LUser, LServer}) ->
 	    RItems = lists:flatmap(
 		       fun(I) ->
 			       case raw_to_record(LServer, I) of
+				   %% Bad JID in database:
 				   error ->
 				       [];
 				   #roster{subscription = none,
@@ -223,11 +224,20 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 					       us = {LUser, LServer},
 					       jid = LJID};
 				   [I] ->
-				       (raw_to_record(LServer, I))#roster{
-					 usj = {LUser, LServer, LJID},
-					 us = {LUser, LServer},
-					 jid = LJID,
-					 name = ""}
+				       R = raw_to_record(LServer, I),
+				       case R of
+					   %% Bad JID in database:
+					   error ->
+					       #roster{usj = {LUser, LServer, LJID},
+						       us = {LUser, LServer},
+						       jid = LJID};
+					   _ ->
+					       R#roster{
+						 usj = {LUser, LServer, LJID},
+						 us = {LUser, LServer},
+						 jid = LJID,
+						 name = ""}
+				       end
 			       end,
 			Item1 = process_item_attrs(Item, Attrs),
 			Item2 = process_item_els(Item1, Els),
@@ -388,16 +398,22 @@ get_subscription_lists(_, User, Server) ->
 
 fill_subscription_lists(LServer, [RawI | Is], F, T) ->
     I = raw_to_record(LServer, RawI),
-    J = I#roster.jid,
-    case I#roster.subscription of
-	both ->
-	    fill_subscription_lists(LServer, Is, [J | F], [J | T]);
-	from ->
-	    fill_subscription_lists(LServer, Is, [J | F], T);
-	to ->
-	    fill_subscription_lists(LServer, Is, F, [J | T]);
+    case I of
+	%% Bad JID in database:
+	error ->
+	    fill_subscription_lists(LServer, Is, F, T);
 	_ ->
-	    fill_subscription_lists(LServer, Is, F, T)
+	    J = I#roster.jid,
+	    case I#roster.subscription of
+		both ->
+		    fill_subscription_lists(LServer, Is, [J | F], [J | T]);
+		from ->
+		    fill_subscription_lists(LServer, Is, [J | F], T);
+		to ->
+		    fill_subscription_lists(LServer, Is, F, [J | T]);
+		_ ->
+		    fill_subscription_lists(LServer, Is, F, T)
+	    end
     end;
 fill_subscription_lists(_LServer, [], F, T) ->
     {F, T}.
@@ -427,6 +443,8 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			 ["username", "jid", "nick", "subscription", "ask",
 			  "askmessage", "server", "subscribe", "type"],
 			 [I]} ->
+			    %% raw_to_record can return error, but
+			    %% jlib_to_string would fail before this point
 			    R = raw_to_record(LServer, I),
 			    Groups =
 				case odbc_queries:get_roster_groups(LServer, Username, SJID) of
@@ -716,6 +734,7 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 		    lists:flatmap(
 		      fun(I) ->
 			      case raw_to_record(LServer, I) of
+				  %% Bad JID in database:
 				  error ->
 				      [];
 				  R ->
