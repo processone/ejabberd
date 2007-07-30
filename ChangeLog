@@ -1,5 +1,8 @@
 2007-07-30  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/xml.erl: Better escaping management with CDATA. We only add
+	CDATA enclosure when needed. CDATA end token is properly escaped.
+
 	* src/xml.erl: Only wrap xmldata nodes in xml cdata "tag" if
 	bigger than 50 bytes. Shorter xmlcdata nodes will be escaped.
 	
