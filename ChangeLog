@@ -1,5 +1,7 @@
 2007-07-30  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/acl.erl: Remove compilation warnings (EJAB-290).
+
 	* src/xml_stream.erl: Group CDATA on a single xmlcdata
 	node (splitting is not relevant as dependant on TCP/IP packet
 	fragmentation) (EJAB-292).

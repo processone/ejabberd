@@ -115,7 +115,7 @@ match_rule(Host, Rule, JID) ->
 	    end
     end.
 
-match_acls([], _, Host) ->
+match_acls([], _, _Host) ->
     deny;
 match_acls([{Access, ACL} | ACLs], JID, Host) ->
     case match_acl(ACL, JID, Host) of
@@ -130,7 +130,7 @@ match_acl(ACL, JID, Host) ->
 	all -> true;
 	none -> false;
 	_ ->
-	    {User, Server, Resource} = jlib:jid_tolower(JID),
+	    {User, Server, _Resource} = jlib:jid_tolower(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->
 			      case Spec of
 				  all ->
