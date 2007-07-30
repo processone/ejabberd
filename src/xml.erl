@@ -57,49 +57,11 @@ crypt(S) when is_list(S) ->
      end || C <- S];
 crypt(S) when is_binary(S) ->
     crypt(binary_to_list(S)).
-
-%crypt1(S) ->
-%    lists:flatten([case C of
-%		       $& -> "&amp;";
-%		       $< -> "&lt;";
-%		       $> -> "&gt;";
-%		       $" -> "&quot;";
-%		       $' -> "&apos;";
-%		       _ -> C
-%		   end || C <- S]).
-
-%crypt([$& | S]) ->
-%    [$&, $a, $m, $p, $; | crypt(S)];
-%crypt([$< | S]) ->
-%    [$&, $l, $t, $; | crypt(S)];
-%crypt([$> | S]) ->
-%    [$&, $g, $t, $; | crypt(S)];
-%crypt([$" | S]) ->
-%    [$&, $q, $u, $o, $t, $; | crypt(S)];
-%crypt([$' | S]) ->
-%    [$&, $a, $p, $o, $s, $; | crypt(S)];
-%crypt([C | S]) ->
-%    [C | crypt(S)];
-%crypt([]) ->
-%    [].
-
 	 
-
 remove_cdata_p({xmlelement, Name, Attrs, Els}) -> true;
 remove_cdata_p(_) -> false.
 
 remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
-
-
-%remove_cdata(L) ->
-%    lists:reverse(remove_cdata(L, [])).
-%
-%remove_cdata([{xmlelement, Name, Attrs, Els} | L], R) ->
-%    remove_cdata(L, [{xmlelement, Name, Attrs, Els} | R]);
-%remove_cdata([{xmlcdata, CData} | L], R) ->
-%    remove_cdata(L, R);
-%remove_cdata([], R) ->
-%    R.
 
 get_cdata(L) ->
     binary_to_list(list_to_binary(get_cdata(L, ""))).
