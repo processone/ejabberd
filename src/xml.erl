@@ -20,50 +20,6 @@
 	 get_path_s/2,
 	 replace_tag_attr/3]).
 
-%element_to_string(El) ->
-%    case El of
-%	{xmlelement, Name, Attrs, Els} ->
-%	    if length(Els) > 0 ->
-%		    "<" ++ Name ++ attrs_to_string(Attrs) ++ ">" ++
-%			lists:append(
-%			  lists:map(fun(E) -> element_to_string(E) end, Els))
-%			++ "</" ++ Name ++ ">";
-%	       true ->
-%		    "<" ++ Name ++ attrs_to_string(Attrs) ++ "/>"
-%	       end;
-%	{xmlcdata, CData} -> crypt(CData)
-%    end.
-%
-%
-%attrs_to_string(Attrs) ->
-%    lists:append(lists:map(fun(A) -> attr_to_string(A) end, Attrs)).
-%
-%attr_to_string({Name, Value}) ->
-%    " " ++ crypt(Name) ++ "='" ++ crypt(Value) ++ "'".
-
-
-%element_to_string2(El) ->
-%    lists:flatten(element_to_string21(El)).
-%
-%element_to_string21(El) ->
-%    case El of
-%	{xmlelement, Name, Attrs, Els} ->
-%	    if length(Els) > 0 ->
-%		    [[$< | Name], attrs_to_list(Attrs), ">",
-%		     lists:map(fun(E) -> element_to_string21(E) end, Els),
-%		     "</", Name, ">"];
-%	       true ->
-%		    ["<", Name, attrs_to_list(Attrs), "/>"]
-%	       end;
-%	{xmlcdata, CData} -> crypt(CData)
-%    end.
-%
-%attrs_to_list(Attrs) ->
-%    lists:map(fun(A) -> attr_to_list(A) end, Attrs).
-%
-%attr_to_list({Name, Value}) ->
-%    [" ", crypt(Name), "='", crypt(Value), "'"].
-
 element_to_string(El) ->
     case El of
 	{xmlelement, Name, Attrs, Els} ->
@@ -75,8 +31,13 @@ element_to_string(El) ->
 	       true ->
 		    [$<, Name, attrs_to_list(Attrs), $/, $>]
 	       end;
-	{xmlcdata, CData} ->
-	    crypt(CData)
+	{xmlcdata, CData} when list(CData) ->
+	    crypt(CData);
+	%% We do not crypt CDATA binary, but we enclose it in XML CDATA
+	{xmlcdata, CData} when binary(CData) ->
+	    CDATA1 = <<"<![CDATA[">>,
+	    CDATA2 = <<"]]>">>,
+	    concat_binary([CDATA1, CData, CDATA2])	    
     end.
 
 attrs_to_list(Attrs) ->
@@ -84,26 +45,6 @@ attrs_to_list(Attrs) ->
 
 attr_to_list({Name, Value}) ->
     [$\s, crypt(Name), $=, $', crypt(Value), $'].
-
-
-
-%crypt(S) ->
-%    lists:reverse(crypt(S, "")).
-%
-%crypt([$& | S], R) ->
-%    crypt(S, [$;, $p, $m, $a, $& | R]);
-%crypt([$< | S], R) ->
-%    crypt(S, [$;, $t, $l, $& | R]);
-%crypt([$> | S], R) ->
-%    crypt(S, [$;, $t, $g, $& | R]);
-%crypt([$" | S], R) ->
-%    crypt(S, [$;, $t, $o, $u, $q, $& | R]);
-%crypt([$' | S], R) ->
-%    crypt(S, [$;, $s, $o, $p, $a, $& | R]);
-%crypt([C | S], R) ->
-%    crypt(S, [C | R]);
-%crypt([], R) ->
-%    R.
 
 crypt(S) when is_list(S) ->
     [case C of
