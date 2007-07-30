@@ -1,5 +1,7 @@
 2007-07-30  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/tls/tls_drv.c: Sends the entire certificate chain (EJAB-209).
+
 	* src/acl.erl: Remove compilation warnings (EJAB-290).
 
 	* src/xml_stream.erl: Group CDATA on a single xmlcdata
