@@ -1,5 +1,7 @@
 2007-07-30  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/xml.erl: Remove compilation warnings (EJAB-290).
+
 	* src/xml.erl: Do not crypt binary CData, but enclose the value in
 	XML CDATA "tag".
 	

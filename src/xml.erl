@@ -58,7 +58,7 @@ crypt(S) when is_list(S) ->
 crypt(S) when is_binary(S) ->
     crypt(binary_to_list(S)).
 	 
-remove_cdata_p({xmlelement, Name, Attrs, Els}) -> true;
+remove_cdata_p({xmlelement, _Name, _Attrs, _Els}) -> true;
 remove_cdata_p(_) -> false.
 
 remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
@@ -73,7 +73,7 @@ get_cdata([_ | L], S) ->
 get_cdata([], S) ->
     S.
 
-get_tag_cdata({xmlelement, Name, Attrs, Els}) ->
+get_tag_cdata({xmlelement, _Name, _Attrs, Els}) ->
     get_cdata(Els).
 
 get_attr(AttrName, Attrs) ->
@@ -92,10 +92,10 @@ get_attr_s(AttrName, Attrs) ->
 	    ""
     end.
 
-get_tag_attr(AttrName, {xmlelement, Name, Attrs, Els}) ->
+get_tag_attr(AttrName, {xmlelement, _Name, Attrs, _Els}) ->
     get_attr(AttrName, Attrs).
 
-get_tag_attr_s(AttrName, {xmlelement, Name, Attrs, Els}) ->
+get_tag_attr_s(AttrName, {xmlelement, _Name, Attrs, _Els}) ->
     get_attr_s(AttrName, Attrs).
 
 
