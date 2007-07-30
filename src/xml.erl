@@ -20,6 +20,9 @@
 	 get_path_s/2,
 	 replace_tag_attr/3]).
 
+%% XML CDATA bigger than this will be enclosed in CDATA XML "tag"
+-define(CDATA_BINARY_THRESHOLD, 50).
+
 element_to_string(El) ->
     case El of
 	{xmlelement, Name, Attrs, Els} ->
@@ -31,13 +34,16 @@ element_to_string(El) ->
 	       true ->
 		    [$<, Name, attrs_to_list(Attrs), $/, $>]
 	       end;
-	{xmlcdata, CData} when list(CData) ->
-	    crypt(CData);
 	%% We do not crypt CDATA binary, but we enclose it in XML CDATA
-	{xmlcdata, CData} when binary(CData) ->
+	%% if they are long enough to be worth it.
+	{xmlcdata, CData} when binary(CData), size(CData) > ?CDATA_BINARY_THRESHOLD ->
 	    CDATA1 = <<"<![CDATA[">>,
 	    CDATA2 = <<"]]>">>,
-	    concat_binary([CDATA1, CData, CDATA2])	    
+	    concat_binary([CDATA1, CData, CDATA2]);
+	%% We crypt list and short binaries (implies a conversion to
+	%% list).
+	{xmlcdata, CData} ->
+	    crypt(CData)
     end.
 
 attrs_to_list(Attrs) ->

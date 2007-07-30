@@ -1,5 +1,8 @@
 2007-07-30  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/xml.erl: Only wrap xmldata nodes in xml cdata "tag" if
+	bigger than 50 bytes. Shorter xmlcdata nodes will be escaped.
+	
 	* src/tls/tls_drv.c: Sends the entire certificate chain (EJAB-209).
 
 	* src/acl.erl: Remove compilation warnings (EJAB-290).
