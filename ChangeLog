@@ -1,5 +1,9 @@
 2007-07-31  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/zh.msg: Updated (thanks to Shelley Shyan)
+
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+
 	* src/msgs/gl.msg: New galician translation (thanks to
 	Carlos E. Lopez)
 

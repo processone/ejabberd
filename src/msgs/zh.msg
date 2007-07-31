@@ -4,11 +4,6 @@
 {"No resource provided", "无资源提供"}.
 
 % mod_configure.erl
-
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd SOCKS5 字节流模块\n版权所有 (c) 2003-2006 Alexey Shchepin"}.
-
-
-
 {"Choose storage type of tables", "请选择表格的存储类型"}.
 {"RAM copy", "内存 (RAM) 复制"}.
 {"RAM and disc copy", "内存与磁盘复制"}.
@@ -123,7 +118,7 @@
 
 % mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd公共/子 模块 \n版权所有 (c) 2003-2006 Alexey Shchepin"}.
-{[], ""}.
+{"Publish-Subscribe", "发行－订阅"}.
 {"Node Creator", "节点创始人"}.
 {"Deliver payloads with event notifications", "用事件通告传输有效负载"}.
 {"Notify subscribers when the node configuration changes", "当节点设置改变时通知订阅人"}.
@@ -138,6 +133,7 @@
 {"Send items to new subscribers", "向新订阅人发送条款"}.
 {"Only deliver notifications to available users", "仅将通知发送给有效用户"}.
 {"Specify the current subscription approver", "指定当前订阅赞成人"}.
+{[], " "}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "聊天室设置已修改"}.
@@ -178,6 +174,7 @@
 {"Access denied by service policy", "访问被服务政策拒绝"}.
 {"Specified nickname is already registered", "指定的名称已被注册"}.
 {"You must fill in field \"Nickname\" in the form", "您必须填充表单中\"昵称\"项"}.
+{"Chatrooms", "聊天室"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", "已将标题设置为： "}.
@@ -189,7 +186,6 @@
 {"Only moderators are allowed to change subject in this room", "只允许调解人更改此房间的标题"}.
 {"Visitors are not allowed to send messages to all occupants", "不允许访客给所有占有者发送消息"}.
 {"Only occupants are allowed to send messages to the conference", "只允许占有者向会议发送消息"}.
-{"It is not allowed to send normal messages to the conference", "不允许向会议发送正常消息"}.
 {"It is not allowed to send private messages to the conference", "不允许向会议发送隐私消息"}.
 {"Improper message type", "消息类型不恰当"}.
 {"Nickname is already in use by another occupant", "昵称已被另一用户占用"}.
@@ -238,6 +234,7 @@
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "如果您想为IRC服务器指定不同的编码, 请用'{\"irc 服务器\", \"编码\"}'格式的值填充此表单. 默认情况下此服务使用\"~s\"编码."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "例如: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "编码"}.
+{"IRC Transport", "IRC 传输"}.
 
 % web/ejabberd_web_admin.erl
 {"Administration", "管    理"}.
@@ -344,6 +341,12 @@
 {"Not Found", "没有找到"}.
 {"Shared Roster Groups", "共享的花名册组群"}.
 {"Last Activity", "上一次活动"}.
+
+% mod_proxy65/mod_proxy65_service.erl
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd SOCKS5 字节流模块\n版权所有 (c) 2003-2006 Alexey Shchepin"}.
+
+% mod_vcard_odbc.erl
+{"vCard User Search", "vCard用户搜索"}.
 
 % Local Variables:
 % mode: erlang

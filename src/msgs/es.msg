@@ -80,6 +80,7 @@
 {"Email", "correo"}.
 {"Search Results for ", "Buscar resultados por "}.
 {"Jabber ID", "Jabber ID"}.
+{"vCard User Search", "Buscar vCard de usuario"}.
 
 {"User",              "Usuario"}.
 {"Full Name", 	      "Nombre completo"}.
@@ -110,6 +111,7 @@
 {"Send items to new subscribers", "Enviar elementos a los nuevos subscriptores"}.
 {"Only deliver notifications to available users", "Solo enviar notificaciones a los usuarios disponibles"}.
 {"Specify the current subscription approver", "Especificar el aprobador de subscripción actual"}.
+{"Publish-Subscribe", "Servicio de Publicar-Subscribir"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Necesitas un cliente con soporte de x:data para poder registrar el apodo"}.
@@ -122,6 +124,7 @@
 {"Specified nickname is already registered", "El apodo especificado ya está registrado, tendrás que buscar otro"}.
 {"Room creation is denied by service policy", "Se te ha denegado crear la sala por política del servicio"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2006 Alexey Shchepin"}.
+{"Chatrooms", "Salas de charla"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " ha puesto el asunto: "}.
@@ -146,7 +149,6 @@
 {"Only moderators are allowed to change subject in this room", "Solo los moderadores pueden cambiar el asunto de esta sala"}.
 {"Visitors are not allowed to send messages to all occupants", "Los visitantes no pueden enviar mensajes a todos los ocupantes"}.
 {"Only occupants are allowed to send messages to the conference", "Solo los ocupantes pueden enviar mensajes a la sala"}.
-{"It is not allowed to send normal messages to the conference", "Impedir el envio de mensajes normales a la sala"}.
 {"It is not allowed to send private messages to the conference", "Impedir el envio de mensajes privados a la sala"}.
 {"Improper message type", "Tipo de mensaje incorrecto"}.
 {"Nickname is already in use by another occupant", "El apodo ya está siendo usado por otro ocupante"}.
@@ -200,6 +202,7 @@
 {"November", "noviembre"}.
 {"December", "diciembre"}.
 {"Room Configuration", "Configuración de la sala"}.
+
 % mod_irc/mod_irc.erl
 {"You need an x:data capable client to configure mod_irc settings", "Necesitas un cliente con soporte de x:data para configurar las opciones de mod_irc"}.
 {"Registration in mod_irc for ", "Registro en mod_irc para"}.
@@ -209,6 +212,7 @@
 {"Encodings", "Codificaciones"}.
 {"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Ejemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
+{"IRC Transport", "Transporte de IRC"}.
 
 % web/ejabberd_web_admin.erl
 {"Users", "Usuarios"}.
@@ -341,6 +345,9 @@
 {"Set message of the day and send to online users", "Poner mensaje del dia y enviar a todos los usuarios conectados"}.
 {"Update message of the day (don't send)", "Actualizar mensaje del dia, pero no enviarlo"}.
 {"Delete message of the day", "Borrar mensaje del dia"}.
+
+% mod_proxy65/mod_proxy65_service.erl
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin", "Módulo SOCKS5 Bytestreams para ejabberd\nCopyright (c) 2002-2006 Alexey Shchepin"}.
 
 % Local Variables:
 % mode: erlang
