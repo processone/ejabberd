@@ -3,12 +3,10 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Load config file
 %%% Created : 14 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_config).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start/0, load_file/1,
 	 add_global_option/2, add_local_option/2,
@@ -188,8 +186,26 @@ add_option(Opt, Val, State) ->
 	    State#state{opts = [#config{key = Opt, value = Val} |
 				State#state.opts]};
 	local_config ->
-	    State#state{opts = [#local_config{key = Opt, value = Val} |
-				State#state.opts]}
+	    case Opt of
+		{{add, OptName}, Host} ->
+		    State#state{opts = compact({OptName, Host}, Val,
+					       State#state.opts, [])};
+		_ ->
+		    State#state{opts = [#local_config{key = Opt, value = Val} |
+					State#state.opts]}
+	    end
+    end.
+
+compact(Opt, Val, [], Os) ->
+    [#local_config{key = Opt, value = Val}] ++ Os;
+compact(Opt, Val, [O | Os1], Os2) ->
+    case O#local_config.key of
+	Opt ->
+	    Os2 ++ [#local_config{key = Opt,
+				  value = Val++O#local_config.value}
+		   ] ++ Os1;
+	_ ->
+	    compact(Opt, Val, Os1, Os2++[O])
     end.
 
 

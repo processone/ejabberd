@@ -740,6 +740,25 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+If you want to define more \term{registration\_watchers} or \term{modules} for a virtual host and add them to the defined for all the Jabber server, instead of defining the option name simply as \term{modules} use this: \term{\{add, modules\}}.
+
+Examples:
+\begin{itemize}
+	\item If you defined two global watchers but on a certain virtual host only Ann should be watcher:
+\begin{verbatim}
+{registration_watchers, ["tom@example.com", "moe@example.net"]}.
+
+{host_config, "example.org", [{registration_watchers, ["ann@example.net"]}]}.
+\end{verbatim}
+
+\item If you prefer all three to be registration watchers on that virtual host:
+\begin{verbatim}
+{registration_watchers, ["tom@example.com", "moe@example.net"]}.
+
+{host_config, "example.org", [{{add, registration_watchers}, ["ann@example.net"]}]}.
+\end{verbatim}
+\end{itemize}
+
 \subsubsection{SASL Anonymous and Anonymous Login}
 \label{saslanonymous}
 \ind{sasl anonymous}\ind{anonymous login}
