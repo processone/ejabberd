@@ -56,7 +56,6 @@ attr_to_list({Name, Value}) ->
     [$\s, crypt(Name), $=, $', crypt(Value), $'].
 
 crypt(S) when is_list(S) ->
-    io:format("MREMOND crypt~n",[]),
     [case C of
 	 $& -> "&amp;";
 	 $< -> "&lt;";
@@ -70,7 +69,6 @@ crypt(S) when is_binary(S) ->
 
 %% Make a cdata_binary depending on what characters it contains
 make_text_node(CData) ->
-    io:format("MREMOND CDATA~n",[]),
     case cdata_need_escape(CData) of
 	cdata ->
 	    CDATA1 = <<"<![CDATA[">>,
