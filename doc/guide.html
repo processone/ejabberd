@@ -715,6 +715,16 @@ authentication on <TT>example.net</TT>:
 {host_config, "example.net", [{auth_method, [ldap]}]}.
 </PRE></LI><LI CLASS="li-itemize">To use internal authentication on all virtual hosts:
 <PRE CLASS="verbatim">{auth_method, internal}.
+</PRE></LI></UL><P>If you want to define more <TT>registration_watchers</TT> or <TT>modules</TT> for a virtual host and add them to the defined for all the Jabber server, instead of defining the option name simply as <TT>modules</TT> use this: <TT>{add, modules}</TT>.</P><P>Examples:
+</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+	If you defined two global watchers but on a certain virtual host only Ann should be watcher:
+<PRE CLASS="verbatim">{registration_watchers, ["tom@example.com", "moe@example.net"]}.
+
+{host_config, "example.org", [{registration_watchers, ["ann@example.net"]}]}.
+</PRE></LI><LI CLASS="li-itemize">If you prefer all three to be registration watchers on that virtual host:
+<PRE CLASS="verbatim">{registration_watchers, ["tom@example.com", "moe@example.net"]}.
+
+{host_config, "example.org", [{{add, registration_watchers}, ["ann@example.net"]}]}.
 </PRE></LI></UL><!--TOC subsubsection SASL Anonymous and Anonymous Login-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->SASL Anonymous and Anonymous Login</H4><!--SEC END --><P>
 <A NAME="saslanonymous"></A>
@@ -2400,7 +2410,9 @@ searching his info in LDAP.</P></LI><LI CLASS="li-itemize"><TT>ldap_vcard_map</T
 </P><P>This module implements Software Version (<A HREF="http://www.xmpp.org/extensions/xep-0092.html">XEP-0092</A>). Consequently, it
 answers <TT>ejabberd</TT>'s version when queried.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies 
+<B><TT>show_os</TT></B></DT><DD CLASS="dd-description">Should the operating system be revealed or not.
+The default value is <TT>true</TT>.
+</DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies 
 the processing discipline for Software Version (<TT>jabber:iq:version</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><!--TOC chapter Managing an ejabberd server-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc51">Chapter&#XA0;4</A>&#XA0;&#XA0;Managing an ejabberd server</H1><!--SEC END --><!--TOC section Online Configuration and Monitoring-->
