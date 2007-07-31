@@ -1,5 +1,9 @@
 2007-07-31  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/mod_version.erl: Added option to hide OS version (thanks to
+	Badlop)
+	* doc/guide.tex: Updated
+
 	* src/msgs/zh.msg: Updated (thanks to Shelley Shyan)
 
 	* src/msgs/es.msg: Updated (thanks to Badlop)
