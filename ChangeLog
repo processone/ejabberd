@@ -1,5 +1,8 @@
 2007-07-31  Alexey Shchepin  <alexey@sevcom.net>
 
+	* src/msgs/gl.msg: New galician translation (thanks to
+	Carlos E. Lopez)
+
 	* src/ejabberd_config.erl: Added possibility for appending values
 	to config options (thanks to Badlop)
 	* doc/guide.tex: Updated
