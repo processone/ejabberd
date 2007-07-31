@@ -310,7 +310,7 @@ ac_includes_default="\
 #endif"
 
 ac_default_prefix=/
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SET_MAKE ERLC ac_pt_ERLC ERL ac_pt_ERL ERLANG_CFLAGS ERLANG_LIBS LIBICONV CPP EGREP EXPAT_CFLAGS EXPAT_LIBS ZLIB_CFLAGS ZLIB_LIBS LIBOBJS mod_pubsub make_mod_pubsub mod_irc make_mod_irc mod_muc make_mod_muc mod_proxy65 make_mod_proxy65 eldap make_eldap web make_web tls make_tls odbc make_odbc ejabberd_zlib make_ejabberd_zlib roster_gateway_workaround db_type SSL_LIBS SSL_CFLAGS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SET_MAKE ERLC ac_pt_ERLC ERL ac_pt_ERL ERLANG_CFLAGS ERLANG_LIBS LIBICONV CPP EGREP EXPAT_CFLAGS EXPAT_LIBS ZLIB_CFLAGS ZLIB_LIBS LIBOBJS mod_pubsub make_mod_pubsub mod_irc make_mod_irc mod_muc make_mod_muc mod_proxy65 make_mod_proxy65 eldap make_eldap web make_web tls make_tls odbc make_odbc ejabberd_zlib make_ejabberd_zlib roster_gateway_workaround db_type full_xml SSL_LIBS SSL_CFLAGS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -852,6 +852,7 @@ Optional Features:
   --enable-ejabberd_zlib        enable ejabberd_zlib (default: yes)
   --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions (default: no)
   --enable-mssql    Use Microsoft SQL Server database (default: no, requires --enable-odbc)
+  --enable-full-xml    Use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -4569,6 +4570,21 @@ else
 fi;
 
 
+# Check whether --enable-full_xml or --disable-full_xml was given.
+if test "${enable_full_xml+set}" = set; then
+  enableval="$enable_full_xml"
+  case "${enableval}" in
+  yes) full_xml=true ;;
+  no)  full_xml=false ;;
+  *) { { echo "$as_me:$LINENO: error: bad value ${enableval} for --enable-full-xml" >&5
+echo "$as_me: error: bad value ${enableval} for --enable-full-xml" >&2;}
+   { (exit 1); exit 1; }; } ;;
+esac
+else
+  full_xml=false
+fi;
+
+
                                                                                                               ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_mod_proxy65 $make_eldap $make_web stringprep/Makefile $make_tls $make_odbc $make_ejabberd_zlib"
 
 #openssl
@@ -5669,6 +5685,7 @@ s,@ejabberd_zlib@,$ejabberd_zlib,;t t
 s,@make_ejabberd_zlib@,$make_ejabberd_zlib,;t t
 s,@roster_gateway_workaround@,$roster_gateway_workaround,;t t
 s,@db_type@,$db_type,;t t
+s,@full_xml@,$full_xml,;t t
 s,@SSL_LIBS@,$SSL_LIBS,;t t
 s,@SSL_CFLAGS@,$SSL_CFLAGS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t

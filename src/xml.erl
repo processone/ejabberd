@@ -11,7 +11,7 @@
 -vsn('$Revision$ ').
 
 -export([element_to_string/1,
-	 crypt/1,
+	 crypt/1, make_text_node/1,
 	 remove_cdata/1,
 	 get_cdata/1, get_tag_cdata/1,
 	 get_attr/2, get_attr_s/2,
@@ -19,6 +19,15 @@
 	 get_subtag/2, get_subtag_cdata/2,
 	 get_path_s/2,
 	 replace_tag_attr/3]).
+
+%% Select at compile time how to escape characters in binary text
+%% nodes.
+%% Can be choosen with ./configure --enable-full-xml
+-ifdef(FULL_XML_SUPPORT).
+-define(ESCAPE_BINARY(CData), make_text_node(CData)).
+-else.
+-define(ESCAPE_BINARY(CData), crypt(CData)).
+-endif.
 
 element_to_string(El) ->
     case El of
@@ -32,11 +41,10 @@ element_to_string(El) ->
 		    [$<, Name, attrs_to_list(Attrs), $/, $>]
 	       end;
 	%% We do not crypt CDATA binary, but we enclose it in XML CDATA
-	{xmlcdata, CData}
-	when binary(CData) ->
-	    make_text_node(CData);
-	%% We crypt list and short binaries (implies a conversion to
-	%% list).
+	{xmlcdata, CData} when binary(CData) ->
+	    ?ESCAPE_BINARY(CData);
+	%% We crypt list and possibly binaries if full XML usage is
+	%% disabled unsupported (implies a conversion to list).
 	{xmlcdata, CData} ->
 	    crypt(CData)
     end.
@@ -48,6 +56,7 @@ attr_to_list({Name, Value}) ->
     [$\s, crypt(Name), $=, $', crypt(Value), $'].
 
 crypt(S) when is_list(S) ->
+    io:format("MREMOND crypt~n",[]),
     [case C of
 	 $& -> "&amp;";
 	 $< -> "&lt;";
@@ -61,6 +70,7 @@ crypt(S) when is_binary(S) ->
 
 %% Make a cdata_binary depending on what characters it contains
 make_text_node(CData) ->
+    io:format("MREMOND CDATA~n",[]),
     case cdata_need_escape(CData) of
 	cdata ->
 	    CDATA1 = <<"<![CDATA[">>,

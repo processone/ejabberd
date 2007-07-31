@@ -55,6 +55,15 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 AC_SUBST(db_type)
 
+AC_ARG_ENABLE(full_xml,
+[  --enable-full-xml    Use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)],
+[case "${enableval}" in
+  yes) full_xml=true ;;
+  no)  full_xml=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-full-xml) ;;
+esac],[full_xml=false])
+AC_SUBST(full_xml)
+
 AC_CONFIG_FILES([Makefile
                  $make_mod_irc
                  $make_mod_muc
