@@ -1,3 +1,8 @@
+2007-08-01  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_private.erl: Reduce memory consumption on user private
+	storage removal (EJAB-299).
+
 2007-07-31  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/xml.erl: Making use of CDATA escaping optional through with

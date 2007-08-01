@@ -107,21 +107,21 @@ get_data(LUser, LServer, [El | Els], Res) ->
 	    get_data(LUser, LServer, Els, Res)
     end.
 
-
-% TODO: use mnesia:select
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     F = fun() ->
+		Namespaces = mnesia:select(
+			    private_storage,
+			    [{#private_storage{usns={LUser, LServer, '$1'},
+					       _ = '_'},
+			     [],
+			     ['$$']}]),
 		lists:foreach(
-		  fun({U, S, _} = Key) ->
-			  if
-			      (U == LUser) and (S == LServer) ->
-				  mnesia:delete({private_storage, Key});
-			      true ->
-				  ok
-			  end
-		  end, mnesia:all_keys(private_storage))
+		  fun([Namespace]) ->
+			  mnesia:delete({private_storage,
+					 {LUser, LServer, Namespace}})
+		     end, Namespaces)
         end,
     mnesia:transaction(F).
 
