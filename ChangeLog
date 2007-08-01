@@ -1,7 +1,11 @@
 2007-08-01  Mickael Remond  <mickael.remond@process-one.net>
 
+	* doc/guide.tex: Front page table formatting that render correctly
+	in HTML and update mentionning CEAN as a way to install
+	ejabberd (Thanks to Badlop) (EJAB-272).
+
 	* src/ejabberd_s2s_out.erl: Avoid bouncing messages twice if
-	terminate happens during open_connect.
+	terminate happens during open_socket.
 
 	* src/ejabberd_s2s_out.erl: On terminate, bounce internal process
 	queue and Erlang message queue.

@@ -102,16 +102,16 @@ the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).
 \setlength{\larg}{14.5cm}
 \title{
 {\rule{\larg}{1mm}}\vspace{7mm}
-\begin{tabular}{p{4cm} r}
-   & {\huge {\bf ejabberd \version\ }} \\
-   & \\
-   & {\huge Installation and Operation Guide}
+\begin{tabular}{r}
+    {\huge {\bf ejabberd \version\ }} \\
+    \\
+    {\huge Installation and Operation Guide}
 \end{tabular}\\
 \vspace{2mm}
 {\rule{\larg}{1mm}}
 \vspace{2mm} \\
-\begin{tabular}{p{11cm} r}
-   & {\large  \bf \today}
+\begin{tabular}{r}
+    {\large  \bf \today}
 \end{tabular}\\
 \vspace{5.5cm}
 }
@@ -174,12 +174,29 @@ ejabberd Development Team
 \section{Installing ejabberd with Graphical Installer}
 
 The easiest approach to install an ejabberd Instant Messaging server
-is to use the graphical installer. The installer is available from
-Process-one
-website\footahref{http://www.process-one.net/en/ejabberd/downloads/}.
+is to use the graphical installer. The installer is available in
+ejabberd Process-one 
+\footahref{http://www.process-one.net/en/ejabberd/downloads/}{downloads page}.
 
 The installer will deploy and configure a full featured ejabberd
 server and does not require any extra dependancies.
+
+\section{Installing ejabberd with Operating System specific packages}
+
+Some Operating Systems provide a specific ejabberd package adapted to 
+your system architecture and libraries, which also checks dependencies 
+and performs basic configuration tasks like creating the initial
+administrator account. Some examples are Debian and Gentoo. Consult the
+resources provided by your Operating System for more information.
+
+\section{Installing ejabberd with CEAN}
+
+\footahref{http://cean.process-one.net/}{CEAN}
+(Comprehensive Erlang Archive Network) is a repository that hosts binary
+packages from many Erlang programs, including ejabberd and all its dependencies.
+The binaries are available for many different system architectures, so this is an
+alternative to the binary installer and Operating System's ejabberd packages.
+
 
 \section{Installation from Source}
 \label{installsource}
