@@ -1,5 +1,8 @@
 2007-08-01  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/ejabberd_s2s_out.erl: On terminate, bounce internal process
+	queue and Erlang message queue.
+
 	* src/mod_private.erl: Reduce memory consumption on user private
 	storage removal (EJAB-299).
 

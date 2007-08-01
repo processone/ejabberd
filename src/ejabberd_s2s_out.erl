@@ -663,6 +663,7 @@ terminate(Reason, StateName, StateData) ->
 	      {StateData#state.myname, StateData#state.server}, self(), Key)
     end,
     bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
+    bounce_messages(?ERR_REMOTE_SERVER_NOT_FOUND),
     case StateData#state.socket of
 	undefined ->
 	    ok;
