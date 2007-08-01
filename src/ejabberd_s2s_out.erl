@@ -181,8 +181,6 @@ open_socket(init, StateData) ->
 					     Version])),
 	    {next_state, wait_for_stream, NewStateData};
 	{error, _Reason} ->
-	    Error = ?ERR_REMOTE_SERVER_NOT_FOUND,
-	    bounce_messages(Error),
 	    {stop, normal, StateData}
     end;
 open_socket(stop, StateData) ->
