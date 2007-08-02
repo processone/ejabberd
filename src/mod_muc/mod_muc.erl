@@ -3,12 +3,10 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : MUC support (JEP-0045)
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_muc).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -36,7 +34,7 @@
 -record(muc_online_room, {name_host, pid}).
 -record(muc_registered, {us_host, nick}).
 
--record(state, {host, server_host, access, history_size}).
+-record(state, {host, server_host, access, history_size, default_room_opts}).
 
 -define(PROCNAME, ejabberd_mod_muc).
 
@@ -156,12 +154,14 @@ init([Host, Opts]) ->
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
     AccessPersistent = gen_mod:get_opt(access_persistent, Opts, all),
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
+    DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
     ejabberd_router:register_route(MyHost),
     load_permanent_rooms(MyHost, Host, {Access, AccessCreate, AccessAdmin, AccessPersistent},
 			 HistorySize),
     {ok, #state{host = MyHost,
 		server_host = Host,
 		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
+		default_room_opts = DefRoomOpts,
 		history_size = HistorySize}}.
 
 %%--------------------------------------------------------------------
@@ -195,8 +195,9 @@ handle_info({route, From, To, Packet},
 	    #state{host = Host,
 		   server_host = ServerHost,
 		   access = Access,
+ 		   default_room_opts = DefRoomOpts,
 		   history_size = HistorySize} = State) ->
-    case catch do_route(Host, ServerHost, Access, HistorySize, From, To, Packet) of
+    case catch do_route(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -254,11 +255,11 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
-    {AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = Access,
+do_route(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) ->
+    {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
-	    do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet);
+	    do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts);
 	_ ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
 	    Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -269,8 +270,8 @@ do_route(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
     end.
 
 
-do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
-    {_AccessRoute, AccessCreate, AccessAdmin, AccessPersistent} = Access,
+do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) ->
+    {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
     {Room, _, Nick} = jlib:jid_tolower(To),
     {xmlelement, Name, Attrs, _Els} = Packet,
     case Room of
@@ -395,7 +396,7 @@ do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet) ->
 				    {ok, Pid} = mod_muc_room:start(
 						  Host, ServerHost, Access,
 						  Room, HistorySize, From,
-						  Nick),
+						  Nick, DefRoomOpts),
 				    register_room(Host, Room, Pid),
 				    mod_muc_room:route(Pid, From, Nick, Packet),
 				    ok;

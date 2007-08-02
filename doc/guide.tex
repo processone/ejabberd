@@ -2039,6 +2039,18 @@ interval, the presence is cached by ejabberd and only the last
 presence is broadcasted to all users in the room after expiration of
 the interval delay. Intermediate presence packets are silently
 discarded. A good value for this option is 4 seconds.
+\titem{default\_room\_opts} \ind{options!default\_room\_opts}This option allow
+  to define the desired default room options.
+  Obviously, the room creator can modify the room options at any time.
+  The available room options are:
+  \option{allow\_change\_subj}, \option{allow\_private\_messages},
+  \option{allow\_query\_users}, \option{allow\_user\_invites},
+  \option{anonymous}, \option{logging}, \option{members\_by\_default},
+  \option{members\_only}, \option{moderated}, \option{password},
+  \option{password\_protected}, \option{persistent},
+  \option{public}, \option{public\_list}, \option{title}.
+  All of them can be set to \option{true} or \option{false},
+  except \option{password} and \option{title} which are strings.
 \end{description}
 
 Examples:
@@ -2115,6 +2127,26 @@ defined, but some user restriction could be added as well:
    ]}.
 \end{verbatim}
 
+\item This example shows how to use \option{default\_room\_opts} to make sure
+  newly created chatrooms have by default those options.
+  \begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_muc, [{access, muc_access},
+               {access_create, muc_admins},
+               {default_room_options, [
+                 {allow_change_subj, false},
+                 {allow_query_users, true},
+                 {allow_private_messages, true},
+                 {members_by_default, false},
+                 {title, "New chatroom"},
+                 {anonymous, false}
+               ]},
+               {access_admin, muc_admins}]},
+    ...
+   ]}.
+\end{verbatim}
 \end{itemize}
 
 The Multi-Users Chat module now supports clustering and load

@@ -14,9 +14,9 @@
 
 
 %% External exports
--export([start_link/7,
+-export([start_link/8,
 	 start_link/6,
-	 start/7,
+	 start/8,
 	 start/6,
 	 route/4]).
 
@@ -90,18 +90,18 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Host, ServerHost, Access, Room, HistorySize, Creator, Nick) ->
+start(Host, ServerHost, Access, Room, HistorySize, Creator, Nick, DefRoomOpts) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
     supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick]).
+      Supervisor, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick, DefRoomOpts]).
 
 start(Host, ServerHost, Access, Room, HistorySize, Opts) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
     supervisor:start_child(
       Supervisor, [Host, ServerHost, Access, Room, HistorySize, Opts]).
 
-start_link(Host, ServerHost, Access, Room, HistorySize, Creator, Nick) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick],
+start_link(Host, ServerHost, Access, Room, HistorySize, Creator, Nick, DefRoomOpts) ->
+    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick, DefRoomOpts],
 		       ?FSMOPTS).
 
 start_link(Host, ServerHost, Access, Room, HistorySize, Opts) ->
@@ -119,7 +119,7 @@ start_link(Host, ServerHost, Access, Room, HistorySize, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Host, ServerHost, Access, Room, HistorySize, Creator, _Nick]) ->
+init([Host, ServerHost, Access, Room, HistorySize, Creator, _Nick, DefRoomOpts]) ->
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
 				   server_host = ServerHost,
@@ -128,7 +128,8 @@ init([Host, ServerHost, Access, Room, HistorySize, Creator, _Nick]) ->
 				   history = lqueue_new(HistorySize),
 				   jid = jlib:make_jid(Room, Host, ""),
 				   just_created = true}),
-    {ok, normal_state, State};
+    State1 = set_opts(DefRoomOpts, State),
+    {ok, normal_state, State1};
 init([Host, ServerHost, Access, Room, HistorySize, Opts]) ->
     State = set_opts(Opts, #state{host = Host,
 				  server_host = ServerHost,
@@ -315,7 +316,7 @@ normal_state({route, From, "",
     end;
 
 normal_state({route, From, Nick,
-	      {xmlelement, "presence", Attrs, _Els} = Packet},
+	      {xmlelement, "presence", _Attrs, _Els} = Packet},
 	     StateData) ->
     Activity = case ?DICT:find(jlib:jid_tolower(From),
 			       StateData#state.activity) of
@@ -593,7 +594,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_info({process_presence, From}, normal_state = StateName, StateData) ->
+handle_info({process_presence, From}, normal_state = _StateName, StateData) ->
     Activity = case ?DICT:find(jlib:jid_tolower(From),
 			       StateData#state.activity) of
 		   {ok, A} -> A;
