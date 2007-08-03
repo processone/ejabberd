@@ -1410,7 +1410,7 @@ with:
 <A NAME="modannounce"></A>
 </P><P>This module enables configured users to broadcast announcements and to set
 the message of the day (MOTD). Configured users can do these actions with their
-Jabber client by sending messages to specific JIDs. These JIDs are listed in
+Jabber client using Ad-hoc commands or by sending messages to specific JIDs. These JIDs are listed in
 next paragraph. The first JID in each entry will apply only to the virtual host
 <TT>example.org</TT>, while the JID between brackets will apply to all virtual
 hosts:
@@ -1463,7 +1463,9 @@ Only administrators can send announcements:
     {mod_announce, [{access, announce}]},
     ...
    ]}.
-</PRE></LI></UL><!--TOC subsection <TT>mod_disco</TT>-->
+</PRE></LI></UL><P>Note that <TT>mod_announce</TT> can be resource intensive on large
+deployments as it can broadcast lot of messages. This module should be
+disabled for instances of ejabberd with hundreds of thousands users.</P><!--TOC subsection <TT>mod_disco</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc33">3.3.4</A>&#XA0;&#XA0;<TT>mod_disco</TT></H3><!--SEC END --><P>
 <A NAME="moddisco"></A>
 </P><P>This module adds support for Service Discovery (<A HREF="http://www.xmpp.org/extensions/xep-0030.html">XEP-0030</A>). With

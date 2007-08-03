@@ -57,6 +57,9 @@ loop() ->
 	{announce_all, From, To, Packet} ->
 	    announce_all(From, To, Packet),
 	    loop();
+	{announce_all_hosts_all, From, To, Packet} ->
+	    announce_all_hosts_all(From, To, Packet),
+	    loop();
 	{announce_online, From, To, Packet} ->
 	    announce_online(From, To, Packet),
 	    loop();
@@ -66,11 +69,20 @@ loop() ->
 	{announce_motd, From, To, Packet} ->
 	    announce_motd(From, To, Packet),
 	    loop();
+	{announce_all_hosts_motd, From, To, Packet} ->
+	    announce_all_hosts_motd(From, To, Packet),
+	    loop();
 	{announce_motd_update, From, To, Packet} ->
 	    announce_motd_update(From, To, Packet),
 	    loop();
+	{announce_all_hosts_motd_update, From, To, Packet} ->
+	    announce_all_hosts_motd_update(From, To, Packet),
+	    loop();
 	{announce_motd_delete, From, To, Packet} ->
 	    announce_motd_delete(From, To, Packet),
+	    loop();
+	{announce_all_hosts_motd_delete, From, To, Packet} ->
+	    announce_all_hosts_motd_delete(From, To, Packet),
 	    loop();
 	_ ->
 	    loop()
@@ -100,6 +112,9 @@ announce(From, To, Packet) ->
 		{"announce/all", "message"} ->
 		    Proc ! {announce_all, From, To, Packet},
 		    stop;
+		{"announce/all-hosts/all", "message"} ->
+		    Proc ! {announce_all_hosts_all, From, To, Packet},
+		    stop;
 		{"announce/online", "message"} ->
 		    Proc ! {announce_online, From, To, Packet},
 		    stop;
@@ -109,11 +124,20 @@ announce(From, To, Packet) ->
 		{"announce/motd", "message"} ->
 		    Proc ! {announce_motd, From, To, Packet},
 		    stop;
+		{"announce/all-hosts/motd", "message"} ->
+		    Proc ! {announce_all_hosts_motd, From, To, Packet},
+		    stop;
 		{"announce/motd/update", "message"} ->
 		    Proc ! {announce_motd_update, From, To, Packet},
 		    stop;
+		{"announce/all-hosts/motd/update", "message"} ->
+		    Proc ! {announce_all_hosts_motd_update, From, To, Packet},
+		    stop;
 		{"announce/motd/delete", "message"} ->
 		    Proc ! {announce_motd_delete, From, To, Packet},
+		    stop;
+		{"announce/all-hosts/motd/delete", "message"} ->
+		    Proc ! {announce_all_hosts_motd_delete, From, To, Packet},
 		    stop;
 		_ ->
 		    ok
@@ -134,15 +158,23 @@ disco_identity(Acc, _From, _To, Node, Lang) ->
     case Node of
 	"announce/all" ->
 	    ?INFO_COMMAND(Lang, Node);
-	"announce/all-hosts/online" ->
+	"announce/all-hosts/all" ->
 	    ?INFO_COMMAND(Lang, Node);
 	"announce/online" ->
 	    ?INFO_COMMAND(Lang, Node);
+	"announce/all-hosts/online" ->
+	    ?INFO_COMMAND(Lang, Node);
 	"announce/motd" ->
+	    ?INFO_COMMAND(Lang, Node);
+	"announce/all-hosts/motd" ->
 	    ?INFO_COMMAND(Lang, Node);
 	"announce/motd/delete" ->
 	    ?INFO_COMMAND(Lang, Node);
+	"announce/all-hosts/motd/delete" ->
+	    ?INFO_COMMAND(Lang, Node);
 	"announce/motd/update" ->
+	    ?INFO_COMMAND(Lang, Node);
+	"announce/all-hosts/motd/update" ->
 	    ?INFO_COMMAND(Lang, Node);
 	_ ->
 	    Acc
@@ -176,7 +208,12 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To,
     end;
 
 disco_features(Acc, From, #jid{lserver = LServer} = _To,
-	       "announce/all-hosts/online", _Lang) ->
+	       Node, _Lang)
+	       when (Node == "announce/all-hosts/online")
+	       or (Node == "announce/all-hosts/all")
+	       or (Node == "announce/all-hosts/motd")
+	       or (Node == "announce/all-hosts/motd/update")
+	       or (Node == "announce/all-hosts/motd/delete") ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -257,8 +294,12 @@ disco_items(Acc, From, #jid{lserver = LServer} = To, "announce", Lang) ->
 	    announce_items(Acc, From, To, Lang)
     end;
 
-disco_items(Acc, From, #jid{lserver = LServer} = _To,
-	    "announce/all-hosts/online", _Lang) ->
+disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang)
+	       when (Node == "announce/all-hosts/online")
+	       or (Node == "announce/all-hosts/all")
+	       or (Node == "announce/all-hosts/motd")
+	       or (Node == "announce/all-hosts/motd/update")
+	       or (Node == "announce/all-hosts/motd/delete") ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -308,7 +349,11 @@ announce_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, Lang) 
     Access2 = gen_mod:get_module_opt(global, ?MODULE, access, none),
     Nodes2 = case acl:match_rule(global, Access2, From) of
 		 allow ->
-		     [?NODE_TO_ITEM(Lang, Server, "announce/all-hosts/online")];
+		     [?NODE_TO_ITEM(Lang, Server, "announce/all-hosts/all"),
+		      ?NODE_TO_ITEM(Lang, Server, "announce/all-hosts/online"),
+		      ?NODE_TO_ITEM(Lang, Server, "announce/all-hosts/motd"),
+		      ?NODE_TO_ITEM(Lang, Server, "announce/all-hosts/motd/update"),
+		      ?NODE_TO_ITEM(Lang, Server, "announce/all-hosts/motd/delete")];
 		 deny ->
 		     []
 	     end,
@@ -335,7 +380,12 @@ announce_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, Lang) 
 
 announce_commands(_Acc, From, To,
 		  #adhoc_request{
-		     node = "announce/all-hosts/online"} = Request) ->
+		     node = Node} = Request)
+	       when (Node == "announce/all-hosts/online")
+	       or (Node == "announce/all-hosts/all")
+	       or (Node == "announce/all-hosts/motd")
+	       or (Node == "announce/all-hosts/motd/update")
+	       or (Node == "announce/all-hosts/motd/delete") ->
     Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
     Allow = acl:match_rule(global, Access, From),
     ?COMMANDS_RESULT(Allow, From, To, Request);
@@ -400,7 +450,8 @@ generate_adhoc_form(Lang, Node) ->
       {"type", "form"}],
      [{xmlelement, "title", [], [{xmlcdata, get_title(Lang, Node)}]}]
      ++
-      if Node == "announce/motd/delete" ->
+      if (Node == "announce/motd/delete")
+         or (Node == "announce/all-hosts/motd/delete") ->
 	      [{xmlelement, "field",
 	       [{"var", "confirm"},
 		{"type", "boolean"},
@@ -485,6 +536,13 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	       true ->
 		    adhoc:produce_response(Response)
 	    end;
+	{"announce/all-hosts/motd/delete", _} ->
+	    if	Confirm ->
+		    Proc ! {announce_all_hosts_motd_delete, From, To, Packet},
+		    adhoc:produce_response(Response);
+	       true ->
+		    adhoc:produce_response(Response)
+	    end;
 	{_, []} ->
 	    %% An announce message with no body is definitely an operator error.
 	    %% Throw an error and give him/her a chance to send message again.
@@ -497,6 +555,9 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	{"announce/all", _} ->
 	    Proc ! {announce_all, From, To, Packet},
 	    adhoc:produce_response(Response);
+	{"announce/all-hosts/all", _} ->	    
+	    Proc ! {announce_all_hosts_all, From, To, Packet},
+	    adhoc:produce_response(Response);
 	{"announce/online", _} ->
 	    Proc ! {announce_online, From, To, Packet},
 	    adhoc:produce_response(Response);
@@ -506,8 +567,14 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	{"announce/motd", _} ->
 	    Proc ! {announce_motd, From, To, Packet},
 	    adhoc:produce_response(Response);
+	{"announce/all-hosts/motd", _} ->	    
+	    Proc ! {announce_all_hosts_motd, From, To, Packet},
+	    adhoc:produce_response(Response);
 	{"announce/motd/update", _} ->
 	    Proc ! {announce_motd_update, From, To, Packet},
+	    adhoc:produce_response(Response);
+	{"announce/all-hosts/motd/update", _} ->	    
+	    Proc ! {announce_all_hosts_motd_update, From, To, Packet},
 	    adhoc:produce_response(Response);
 	_ ->
 	    %% This can't happen, as we haven't registered any other
@@ -519,16 +586,24 @@ get_title(Lang, "announce") ->
     translate:translate(Lang, "Announcements");
 get_title(Lang, "announce/all") ->
     translate:translate(Lang, "Send announcement to all users");
+get_title(Lang, "announce/all-hosts/all") ->
+    translate:translate(Lang, "Send announcement to all users on all hosts");
 get_title(Lang, "announce/online") ->
     translate:translate(Lang, "Send announcement to all online users");
 get_title(Lang, "announce/all-hosts/online") ->
     translate:translate(Lang, "Send announcement to all online users on all hosts");
 get_title(Lang, "announce/motd") ->
     translate:translate(Lang, "Set message of the day and send to online users");
+get_title(Lang, "announce/all-hosts/motd") ->
+    translate:translate(Lang, "Set message of the day on all hosts and send to online users");
 get_title(Lang, "announce/motd/update") ->
     translate:translate(Lang, "Update message of the day (don't send)");
+get_title(Lang, "announce/all-hosts/motd/update") ->
+    translate:translate(Lang, "Update message of the day on all hosts (don't send)");
 get_title(Lang, "announce/motd/delete") ->
-    translate:translate(Lang, "Delete message of the day").
+    translate:translate(Lang, "Delete message of the day");
+get_title(Lang, "announce/all-hosts/motd/delete") ->
+    translate:translate(Lang, "Delete message of the day on all hosts").
 
 %-------------------------------------------------------------------------
 
@@ -546,6 +621,21 @@ announce_all(From, To, Packet) ->
 			Dest = jlib:make_jid(User, Server, ""),
 			ejabberd_router:route(Local, Dest, Packet)
 		end, ejabberd_auth:get_vh_registered_users(Host))
+    end.
+
+announce_all_hosts_all(From, To, Packet) ->
+    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
+    case acl:match_rule(global, Access, From) of
+	deny ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    ejabberd_router:route(To, From, Err);
+	allow ->
+	    Local = jlib:make_jid("", To#jid.server, ""),
+	    lists:foreach(
+		fun({User, Server}) ->
+			Dest = jlib:make_jid(User, Server, ""),
+			ejabberd_router:route(Local, Dest, Packet)
+		end, ejabberd_auth:dirty_get_registered_users())
     end.
 
 announce_online(From, To, Packet) ->
@@ -589,17 +679,31 @@ announce_motd(From, To, Packet) ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    announce_motd_update(To#jid.lserver, Packet),
-	    Sessions = ejabberd_sm:get_vh_session_list(Host),
-	    announce_online1(Sessions, To#jid.server, Packet),
-	    F = fun() ->
-			lists:foreach(
-			  fun({U, S, _R}) ->
-				  mnesia:write(#motd_users{us = {U, S}})
-			  end, Sessions)
-		end,
-	    mnesia:transaction(F)
+		announce_motd(Host, Packet)
     end.
+
+announce_all_hosts_motd(From, To, Packet) ->
+    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
+    case acl:match_rule(global, Access, From) of
+	deny ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    ejabberd_router:route(To, From, Err);
+	allow ->
+	    Hosts = ?MYHOSTS,
+	    [announce_motd(Host, Packet) || Host <- Hosts]
+    end.
+
+announce_motd(Host, Packet) ->
+    announce_motd_update(Host, Packet),
+    Sessions = ejabberd_sm:get_vh_session_list(Host),
+    announce_online1(Sessions, Host, Packet),
+    F = fun() ->
+		lists:foreach(
+		  fun({U, S, _R}) ->
+			  mnesia:write(#motd_users{us = {U, S}})
+		  end, Sessions)
+	end,
+    mnesia:transaction(F).
 
 announce_motd_update(From, To, Packet) ->
     Host = To#jid.lserver,
@@ -610,6 +714,17 @@ announce_motd_update(From, To, Packet) ->
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd_update(Host, Packet)
+    end.
+
+announce_all_hosts_motd_update(From, To, Packet) ->
+    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
+    case acl:match_rule(global, Access, From) of
+	deny ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    ejabberd_router:route(To, From, Err);
+	allow ->
+	    Hosts = ?MYHOSTS,
+	    [announce_motd_update(Host, Packet) || Host <- Hosts]
     end.
 
 announce_motd_update(LServer, Packet) ->
@@ -628,6 +743,17 @@ announce_motd_delete(From, To, Packet) ->
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd_delete(Host)
+    end.
+
+announce_all_hosts_motd_delete(From, To, Packet) ->
+    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
+    case acl:match_rule(global, Access, From) of
+	deny ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    ejabberd_router:route(To, From, Err);
+	allow ->
+	    Hosts = ?MYHOSTS,
+	    [announce_motd_delete(Host) || Host <- Hosts]
     end.
 
 announce_motd_delete(LServer) ->
@@ -754,4 +880,3 @@ update_motd_users_table() ->
 	    ?INFO_MSG("Recreating motd_users table", []),
 	    mnesia:transform_table(motd_users, ignore, Fields)
     end.
-

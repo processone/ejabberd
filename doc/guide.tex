@@ -1744,7 +1744,7 @@ Examples:
 
 This module enables configured users to broadcast announcements and to set
 the message of the day (MOTD). Configured users can do these actions with their
-\Jabber{} client by sending messages to specific JIDs. These JIDs are listed in
+\Jabber{} client using Ad-hoc commands or by sending messages to specific JIDs. These JIDs are listed in
 next paragraph. The first JID in each entry will apply only to the virtual host
 \jid{example.org}, while the JID between brackets will apply to all virtual
 hosts:
@@ -1790,7 +1790,7 @@ Examples:
    ]}.
 \end{verbatim}
 \item Administrators as well as the direction can send announcements:
-  \begin{verbatim}
+\begin{verbatim}
   {acl, direction, {user, "big_boss", "example.org"}}.
   {acl, direction, {user, "assistant", "example.org"}}.
   {acl, admins, {user, "admin", "example.org"}}.
@@ -1806,6 +1806,10 @@ Examples:
    ]}.
 \end{verbatim}
 \end{itemize}
+
+Note that \modannounce{} can be resource intensive on large
+deployments as it can broadcast lot of messages. This module should be
+disabled for instances of ejabberd with hundreds of thousands users.
 
 \subsection{\moddisco{}}
 \label{moddisco}

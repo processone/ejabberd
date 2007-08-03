@@ -107,6 +107,23 @@ get_opt(Opt, Opts, Default) ->
 	    Val
     end.
 
+get_module_opt(global, Module, Opt, Default) ->
+	Hosts = ?MYHOSTS,
+	[Value | Values] = lists:map(
+		fun(Host) ->
+			get_module_opt(Host, Module, Opt, Default)
+		end,
+		Hosts),
+	Same_all = lists:all(
+		fun(Other_value) -> 
+			Other_value == Value
+		end, 
+		Values),
+	case Same_all of
+		true -> Value;
+		false -> Default
+	end;
+
 get_module_opt(Host, Module, Opt, Default) ->
     OptsList = ets:lookup(ejabberd_modules, {Module, Host}),
     case OptsList of
