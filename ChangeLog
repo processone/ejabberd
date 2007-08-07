@@ -1,3 +1,11 @@
+2007-08-07  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_offline.erl: Started implementation of mod_offline
+	quota. For now, it require change in code. Will be turn into a
+	config file parameter soon. (EJAB-314).
+	* src/p1_mnesia.erl: Added memory efficient record count in
+	Mnesia.
+
 2007-08-03  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_announce.erl: Added support to all the announce features

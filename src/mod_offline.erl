@@ -1,13 +1,13 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_offline.erl
-%%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
-%%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
+%%% Author  : Alexey Shchepin <alexey@process-one.net>
+%%% Purpose : Store and manage offline messages in Mnesia database.
+%%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_offline).
--author('alexey@sevcom.net').
+-author('alexey@process-one.net').
 
 -behaviour(gen_mod).
 
@@ -28,6 +28,10 @@
 
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
+
+%% TODO: Move this part as a module config file parameter:
+%% Can be an integer > 0 or infinity:
+-define(MAX_OFFLINE_MSGS, infinity).
 
 start(Host, _Opts) ->
     mnesia:create_table(offline_msg,
@@ -51,19 +55,28 @@ init() ->
 
 loop() ->
     receive
-	#offline_msg{} = Msg ->
-	    Msgs = receive_all([Msg]),
+	#offline_msg{us=US} = Msg ->
+	    Msgs = receive_all(US, [Msg]),
 	    Len = length(Msgs),
 	    F = fun() ->
+			Count = Len + p1_mnesia:count_records(
+					offline_msg, 
+					#offline_msg{us=US, _='_'}),
 			if
-			    Len >= ?OFFLINE_TABLE_LOCK_THRESHOLD ->
-				mnesia:write_lock_table(offline_msg);
+			    Count > ?MAX_OFFLINE_MSGS ->
+				%% TODO: Warn that messages have been discarded
+				ok;
 			    true ->
-				ok
-			end,
-			lists:foreach(fun(M) ->
-					      mnesia:write(M)
-				      end, Msgs)
+				if
+				    Len >= ?OFFLINE_TABLE_LOCK_THRESHOLD ->
+					mnesia:write_lock_table(offline_msg);
+				    true ->
+					ok
+				end,
+				lists:foreach(fun(M) ->
+						      mnesia:write(M)
+					      end, Msgs)
+			end
 		end,
 	    mnesia:transaction(F),
 	    loop();
@@ -71,10 +84,10 @@ loop() ->
 	    loop()
     end.
 
-receive_all(Msgs) ->
+receive_all(US, Msgs) ->
     receive
-	#offline_msg{} = Msg ->
-	    receive_all([Msg | Msgs])
+	#offline_msg{us=US} = Msg ->
+	    receive_all(US, [Msg | Msgs])
     after 0 ->
 	    Msgs
     end.
@@ -387,4 +400,3 @@ update_table() ->
 	    ?INFO_MSG("Recreating offline_msg table", []),
 	    mnesia:transform_table(offline_msg, ignore, Fields)
     end.
-
