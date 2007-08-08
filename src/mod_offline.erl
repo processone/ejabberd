@@ -60,7 +60,7 @@ loop() ->
 	    Len = length(Msgs),
 	    F = fun() ->
 			%% Only count messages if needed:
-			Count = if ?MAX_OFFLINE_MSGS == infinity ->
+			Count = if ?MAX_OFFLINE_MSGS =/= infinity ->
 					Len + p1_mnesia:count_records(
 						offline_msg, 
 						#offline_msg{us=US, _='_'});
