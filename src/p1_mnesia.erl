@@ -26,9 +26,9 @@
 %% getting the record by small increment and by using continuation.
 -define(BATCHSIZE, 100).
 count_records(Tab, MatchExpression) ->
-    %% the result contains the atom a for each match: We do not need
+    %% the result contains list of [] for each match: We do not need
     %% actual values as we only count the data.
-    case mnesia:select(Tab, [{MatchExpression, [], [a]}], ?BATCHSIZE, read) of
+    case mnesia:select(Tab, [{MatchExpression, [], [[]]}], ?BATCHSIZE, read) of
 	{Result,Cont} ->
 	    Count = length(Result),
 	    count_records_cont(Cont, Count);

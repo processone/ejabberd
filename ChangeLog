@@ -1,3 +1,9 @@
+2007-08-08  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_offline.erl: Only count messages if a quota has been
+	actually set (EJAB-314).
+	* src/p1_mnesia.erl: Minor coding style change.
+
 2007-08-07  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_offline.erl: Started implementation of mod_offline

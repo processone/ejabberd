@@ -59,9 +59,14 @@ loop() ->
 	    Msgs = receive_all(US, [Msg]),
 	    Len = length(Msgs),
 	    F = fun() ->
-			Count = Len + p1_mnesia:count_records(
-					offline_msg, 
-					#offline_msg{us=US, _='_'}),
+			%% Only count messages if needed:
+			Count = if ?MAX_OFFLINE_MSGS == infinity ->
+					Len + p1_mnesia:count_records(
+						offline_msg, 
+						#offline_msg{us=US, _='_'});
+				   true -> 
+					0
+				end,
 			if
 			    Count > ?MAX_OFFLINE_MSGS ->
 				%% TODO: Warn that messages have been discarded
