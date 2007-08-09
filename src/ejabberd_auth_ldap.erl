@@ -119,13 +119,20 @@ plain_password_required() ->
     true.
 
 check_password(User, Server, Password) ->
-    Proc = gen_mod:get_module_proc(Server, ?MODULE),
-    case catch gen_server:call(Proc,
-			       {check_pass, User, Password}, ?REPLY_TIMEOUT) of
-	{'EXIT', _} ->
+    %% In LDAP spec: empty password means anonymous authentication.
+    %% As ejabberd is providing other anonymous authentication mechanisms
+    %% we simply prevent the use of LDAP anonymous authentication.
+    if Password == "" ->
 	    false;
-	Result ->
-	    Result
+       true ->
+	    Proc = gen_mod:get_module_proc(Server, ?MODULE),
+	    case catch gen_server:call(Proc,
+				       {check_pass, User, Password}, ?REPLY_TIMEOUT) of
+		{'EXIT', _} ->
+		    false;
+		Result ->
+		    Result
+	    end
     end.
 
 check_password(User, Server, Password, _StreamID, _Digest) ->
