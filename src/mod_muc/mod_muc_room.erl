@@ -87,13 +87,17 @@
 %%%----------------------------------------------------------------------
 start(Host, ServerHost, Access, Room, HistorySize, Creator, Nick) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
-    supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick]).
+    %%supervisor:start_child(
+    %%  Supervisor, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick]).
+    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+			    Creator, Nick], ?FSMOPTS).
 
 start(Host, ServerHost, Access, Room, HistorySize, Opts) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
-    supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, HistorySize, Opts]).
+    %%supervisor:start_child(
+    %%  Supervisor, [Host, ServerHost, Access, Room, HistorySize, Opts]).
+    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize, Opts],
+		  ?FSMOPTS).
 
 start_link(Host, ServerHost, Access, Room, HistorySize, Creator, Nick) ->
     gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize, Creator, Nick],

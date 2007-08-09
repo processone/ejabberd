@@ -95,7 +95,8 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(SockData, Opts) ->
-    supervisor:start_child(ejabberd_c2s_sup, [SockData, Opts]).
+    %%supervisor:start_child(ejabberd_c2s_sup, [SockData, Opts]).
+    gen_fsm:start(ejabberd_c2s, [SockData, Opts], ?FSMOPTS).
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_c2s, [SockData, Opts], ?FSMOPTS).
@@ -378,10 +379,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			   U, StateData#state.server, P,
 			   StateData#state.streamid, D) of
 			true ->
-			    ?INFO_MSG(
-			       "(~w) Accepted legacy authentication for ~s",
-			       [StateData#state.socket,
-				jlib:jid_to_string(JID)]),
+			    %%?INFO_MSG(
+			    %%   "(~w) Accepted legacy authentication for ~s",
+			    %%   [StateData#state.socket,
+			    %%	jlib:jid_to_string(JID)]),
 			    SID = {now(), self()},
 			    ejabberd_sm:open_session(
 			      SID, U, StateData#state.server, R),
@@ -479,8 +480,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
-		    ?INFO_MSG("(~w) Accepted authentication for ~s",
-			      [StateData#state.socket, U]),
+		    %%?INFO_MSG("(~w) Accepted authentication for ~s",
+		    %%	      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
 		     StateData#state{streamid = new_id(),
 				     authenticated = true,
@@ -598,8 +599,8 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
-		    ?INFO_MSG("(~w) Accepted authentication for ~s",
-			      [StateData#state.socket, U]),
+		    %%?INFO_MSG("(~w) Accepted authentication for ~s",
+		    %%	      [StateData#state.socket, U]),
 		    {next_state, wait_for_stream,
 		     StateData#state{streamid = new_id(),
 				     authenticated = true,
@@ -693,9 +694,9 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 	    case acl:match_rule(StateData#state.server,
 				StateData#state.access, JID) of
 		allow ->
-		    ?INFO_MSG("(~w) Opened session for ~s",
-			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
+		    %%?INFO_MSG("(~w) Opened session for ~s",
+		    %%	      [StateData#state.socket,
+		    %%	       jlib:jid_to_string(JID)]),
 		    SID = {now(), self()},
 		    ejabberd_sm:open_session(
 		      SID, U, StateData#state.server, R),
@@ -1158,9 +1159,9 @@ terminate(_Reason, StateName, StateData) ->
 		    presence_broadcast(
 		      StateData, From, StateData#state.pres_i, Packet);
 		_ ->
-		    ?INFO_MSG("(~w) Close session for ~s",
-			      [StateData#state.socket,
-			       jlib:jid_to_string(StateData#state.jid)]),
+		    %%?INFO_MSG("(~w) Close session for ~s",
+		    %%	      [StateData#state.socket,
+		    %%	       jlib:jid_to_string(StateData#state.jid)]),
 
 		    EmptySet = ?SETS:new(),
 		    case StateData of
