@@ -1,3 +1,5 @@
+
+
 2007-06-29  Mickael Remond  <mickael.remond@process-one.net>
   	 	
 	* src/ejabberd_config.erl: Normalize hostnames in config file. If mixed
@@ -12,6 +14,10 @@
 
 	* doc/release_notes_1.1.3.txt: Creation.
 	* src/mod_roster_odbc.erl: Security bugfix.
+
+2006-11-23  Alexey Shchepin  <alexey@sevcom.net>
+
+	* src/eldap/eldap.erl: Bugfix (thanks to Evgeniy Khramtsov)
 
 2006-09-27  Mickael Remond  <mickael.remond@process-one.net>
 
