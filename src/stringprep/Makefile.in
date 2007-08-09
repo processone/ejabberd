@@ -20,7 +20,8 @@ ERLSHLIBS = ../stringprep_drv.so
 OUTDIR = ..
 EFLAGS = -I .. -pz ..
 OBJS   = \
-	$(OUTDIR)/stringprep.beam
+	$(OUTDIR)/stringprep.beam \
+	$(OUTDIR)/stringprep_sup.beam
 
 all:    $(OBJS) $(ERLSHLIBS)
 

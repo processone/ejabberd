@@ -26,13 +26,6 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_hooks]},
-    StringPrep =
-	{stringprep,
-	 {stringprep, start_link, []},
-	 permanent,
-	 brutal_kill,
-	 worker,
-	 [stringprep]},
     Router =
 	{ejabberd_router,
 	 {ejabberd_router, start_link, []},
@@ -133,7 +126,6 @@ init([]) ->
 	 [ejabberd_tmp_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
-	   StringPrep,
 	   Router,
 	   SM,
 	   S2S,

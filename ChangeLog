@@ -1,3 +1,13 @@
+2007-06-29  Mickael Remond  <mickael.remond@process-one.net>
+  	 	
+	* src/ejabberd_config.erl: Normalize hostnames in config file. If mixed
+  	 case is used, the hostname will be now useable (EJAB-277).
+	* src/stringprep/stringprep_sup.erl: Likewise
+	* src/stringprep/Makefile.in: Likewise
+	* src/stringprep/Makefile.win32: Likewise
+	* src/ejabberd_app.erl: Likewise
+	* src/ejabberd_sup.erl: Likewise
+
 2007-02-02  Christophe Romain <christophe.romain@process-one.net>
 
 	* doc/release_notes_1.1.3.txt: Creation.
