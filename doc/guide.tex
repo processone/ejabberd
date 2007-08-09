@@ -422,8 +422,9 @@ the configuration file:
   override_local.
   override_acls.
 \end{verbatim}
-With these lines the old global options, local options and ACLs will be removed
-before new ones are added.
+With these lines the old global options (shared between all ejabberd nodes in a
+cluster), local options (which are specific for this particular ejabberd node)
+and ACLs will be removed before new ones are added.
 
 \subsection{Host Names}
 \label{hostnames}
