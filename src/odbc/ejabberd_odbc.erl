@@ -272,6 +272,7 @@ mysql_connect(Server, DB, Username, Password) ->
     case mysql_conn:start(Server, ?MYSQL_PORT, Username, Password, DB, NoLogFun) of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
+            mysql_conn:fetch(Ref, ["set names 'utf8';"], self()), 
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("MySQL connection failed: ~p~n", [Reason]),

@@ -1,3 +1,7 @@
+2007-08-12  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: UTF-8 support for MySQL5 (EJAB-318).
+
 2007-08-01  Mickael Remond  <mickael.remond@process-one.net>
 
   	* src/mod_private.erl: Reduce memory consumption on user private
