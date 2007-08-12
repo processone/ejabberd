@@ -1,3 +1,7 @@
+2007-08-12  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: UTF-8 support for MySQL5 (EJAB-318).
+
 2007-08-09  Alexey Shchepin  <alexey@sevcom.net>
 
 	* doc/guide.tex: Minor update (thanks to Sergei Golovan)
