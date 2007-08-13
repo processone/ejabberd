@@ -5,13 +5,15 @@
 \usepackage{graphics}
 \usepackage{hevea}
 \usepackage[pdftex,colorlinks,unicode,urlcolor=blue,linkcolor=blue,
-        pdftitle=Ejabberd\ Installation\ and\ Operation\ Guide,pdfauthor=Alexey\
-        Shchepin,pdfsubject=ejabberd,pdfkeywords=ejabberd,
+        pdftitle=Ejabberd\ Installation\ and\ Operation\ Guide,pdfauthor=Process-one,pdfsubject=ejabberd,pdfkeywords=ejabberd,
         pdfpagelabels=false]{hyperref}
 \usepackage{makeidx}
 %\usepackage{showidx} % Only for verifying the index entries.
 \usepackage{verbatim}
 \usepackage{geometry}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}                         %Forces the page to use the fancy template
 
 %% Index
 \makeindex
@@ -89,10 +91,28 @@ the processing discipline for #1 IQ queries
 
 %% Title page
 \include{version}
-\title{Ejabberd \version\ Installation and Operation Guide}
-\author{Alexey Shchepin \\
-  \ahrefurl{mailto:alexey@sevcom.net} \\
-  \ahrefurl{xmpp:aleksey@jabber.ru}}
+\newlength{\larg}
+\setlength{\larg}{14.5cm}
+\title{
+{\rule{\larg}{1mm}}\vspace{7mm}
+\begin{tabular}{r}
+    {\huge {\bf ejabberd \version\ }} \\
+    \\
+    {\huge Installation and Operation Guide}
+\end{tabular}\\
+\vspace{2mm}
+{\rule{\larg}{1mm}}
+\vspace{2mm} \\
+\begin{tabular}{r}
+    {\large  \bf \today}
+\end{tabular}\\
+\vspace{5.5cm}
+}
+\author{\begin{tabular}{p{13.7cm}}
+ejabberd Development Team
+\end{tabular}}
+\date{}
+
 
 %% Options
 \newcommand{\marking}[1]{#1} % Marking disabled
@@ -119,14 +139,15 @@ the processing discipline for #1 IQ queries
 \begin{titlepage}
   \maketitle{}
 
-  \begin{center}
-  {\insscaleimg{\logoscale}{logo.png}
-    \par
-  }
-  \end{center}
+%% Commenting. Breaking clean layout for now:
+%%  \begin{center}
+%%  {\insscaleimg{\logoscale}{logo.png}
+%%    \par
+%%  }
+%%  \end{center}
 
-  \begin{quotation}\textit{I can thoroughly recommend ejabberd for ease of setup ---
-  Kevin Smith, Current maintainer of the Psi project}\end{quotation}
+%%  \begin{quotation}\textit{I can thoroughly recommend ejabberd for ease of setup ---
+%%  Kevin Smith, Current maintainer of the Psi project}\end{quotation}
 
 \end{titlepage}
 
@@ -3059,26 +3080,7 @@ figure~\ref{fig:webadmmainru} with figure~\ref{fig:webadmmain})
 \label{sec:releasenotes}
 \ind{release notes}
 
-\subsection{ejabberd 0.9}
-\verbatiminput{release_notes_0.9.txt}
-
-\subsection{ejabberd 0.9.1}
-\verbatiminput{release_notes_0.9.1.txt}
-
-\subsection{ejabberd 0.9.8}
-\verbatiminput{release_notes_0.9.8.txt}
-
-\subsection{ejabberd 1.0.0}
-\verbatiminput{release_notes_1.0.0.txt}
-
-\subsection{ejabberd 1.1.0}
-\verbatiminput{release_notes_1.1.0.txt}
-
-\subsection{ejabberd 1.1.1}
-\verbatiminput{release_notes_1.1.1.txt}
-
-\subsection{ejabberd 1.1.2}
-\verbatiminput{release_notes_1.1.2.txt}
+Release notes are available from \footahref{http://www.process-one.net/en/ejabberd/release\_notes/}{ejabberd Home Page}
 
 \section{\aname{acknowledgements}{Acknowledgements}}
 \label{sec:acknowledgements}
@@ -3100,7 +3102,7 @@ Thanks to all people who contributed to this guide:
 \label{sec:copyright}
 
 Ejabberd Installation and Operation Guide.\\
-Copyright \copyright{} January 23, 2003 --- \today{} Alexey Shchepin
+Copyright \copyright{} 2003 --- 2007 Process-one
 
 This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
