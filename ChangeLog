@@ -1,3 +1,8 @@
+2007-08-13  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/mod_offline.erl: Returns an error message to sender when
+	message is discarded due to quota (EJAB-314).
+	
 2007-08-12  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: UTF-8 support for MySQL5 (EJAB-318).

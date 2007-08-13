@@ -31,7 +31,8 @@
 
 %% TODO: Move this part as a module config file parameter:
 %% Can be an integer > 0 or infinity:
--define(MAX_OFFLINE_MSGS, infinity).
+%%-define(MAX_OFFLINE_MSGS, infinity).
+-define(MAX_OFFLINE_MSGS, 5).
 
 start(Host, _Opts) ->
     mnesia:create_table(offline_msg,
@@ -69,8 +70,7 @@ loop() ->
 				end,
 			if
 			    Count > ?MAX_OFFLINE_MSGS ->
-				%% TODO: Warn that messages have been discarded
-				ok;
+				discard_warn_sender(Msgs);
 			    true ->
 				if
 				    Len >= ?OFFLINE_TABLE_LOCK_THRESHOLD ->
@@ -405,3 +405,19 @@ update_table() ->
 	    ?INFO_MSG("Recreating offline_msg table", []),
 	    mnesia:transform_table(offline_msg, ignore, Fields)
     end.
+
+
+%% Helper functions:
+
+%% Warn senders that their messages have been discarded:
+discard_warn_sender(Msgs) ->
+    lists:foreach(
+      fun(#offline_msg{from=From, to=To, packet=Packet}) ->
+	      ErrText = "Your contact offline message queue is full. The message has been discarded.",
+	      Lang = xml:get_tag_attr_s("xml:lang", Packet),
+	      Err = jlib:make_error_reply(
+		      Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
+	      ejabberd_router:route(
+		To,
+		From, Err)
+      end, Msgs).
