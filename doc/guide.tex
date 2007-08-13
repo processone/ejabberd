@@ -2293,6 +2293,14 @@ online again. Thus it is very similar to how email works. Note that
 \term{ejabberdctl}\ind{ejabberdctl} has a command to delete expired messages
 (see section~\ref{ejabberdctl}).
 
+\begin{description}
+  \titem{user\_max\_messages}\ind{options!user\_max\_messages}This option
+  is use to set a max number of offline messages per user (quota). Its
+  value can be either \term{infinity} or a strictly positive
+  integer. The default value is \term{infinity}.
+\end{description}
+
+
 \subsection{\modprivacy{}}
 \label{modprivacy}
 \ind{modules!\modprivacy{}}\ind{Blocking Communication}\ind{Privacy Rules}\ind{protocols!RFC 3921: XMPP IM}
@@ -3410,31 +3418,11 @@ figure~\ref{fig:webadmmainru} with figure~\ref{fig:webadmmain})
 %\label{ultracomplexexample}
 %TODO: a very big example covering the whole guide, with a good explanation before the example: different authenticaton mechanisms, transports, ACLs, multple virtual hosts, virtual host specific settings and general settings, modules,...
 
-\newpage
 \chapter{Release Notes}
 \label{releasenotes}
 \ind{release notes}
 
-\section{ejabberd 0.9}
-\verbatiminput{release_notes_0.9.txt}
-
-\section{ejabberd 0.9.1}
-\verbatiminput{release_notes_0.9.1.txt}
-
-\section{ejabberd 0.9.8}
-\verbatiminput{release_notes_0.9.8.txt}
-
-\section{ejabberd 1.0.0}
-\verbatiminput{release_notes_1.0.0.txt}
-
-\section{ejabberd 1.1.0}
-\verbatiminput{release_notes_1.1.0.txt}
-
-\section{ejabberd 1.1.1}
-\verbatiminput{release_notes_1.1.1.txt}
-
-\section{ejabberd 1.1.2}
-\verbatiminput{release_notes_1.1.2.txt}
+Release notes are available from \footahref{}{ejabberd Home Page}
 
 \chapter{Acknowledgements}
 \label{acknowledgements}
@@ -3456,7 +3444,7 @@ Thanks to all people who contributed to this guide:
 \label{copyright}
 
 Ejabberd Installation and Operation Guide.\\
-Copyright \copyright{} January 23, 2003 --- \today{} Alexey Shchepin
+Copyright \copyright{} 2003 --- 2007 Process-one
 
 This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

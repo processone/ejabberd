@@ -1,5 +1,10 @@
 2007-08-13  Mickael Remond  <mickael.remond@process-one.net>
 
+	* doc/guide.tex: Added documentation for the mod_offline quota
+	(EJAB-314).
+
+	* doc/guide.tex: Remove release notes (EJAB-323).
+
 	* src/mod_offline.erl: Returns an error message to sender when
 	message is discarded due to quota (EJAB-314).
 	

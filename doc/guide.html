@@ -217,17 +217,8 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 </LI></UL>
 </LI><LI CLASS="li-toc"><A HREF="#htoc74">Appendix&#XA0;A&#XA0;&#XA0;Internationalization and Localization</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc75">Appendix&#XA0;B&#XA0;&#XA0;Release Notes</A>
-<UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc76">B.1&#XA0;&#XA0;ejabberd 0.9</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc77">B.2&#XA0;&#XA0;ejabberd 0.9.1</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc78">B.3&#XA0;&#XA0;ejabberd 0.9.8</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc79">B.4&#XA0;&#XA0;ejabberd 1.0.0</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc80">B.5&#XA0;&#XA0;ejabberd 1.1.0</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc81">B.6&#XA0;&#XA0;ejabberd 1.1.1</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc82">B.7&#XA0;&#XA0;ejabberd 1.1.2</A>
-</LI></UL>
-</LI><LI CLASS="li-toc"><A HREF="#htoc83">Appendix&#XA0;C&#XA0;&#XA0;Acknowledgements</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc84">Appendix&#XA0;D&#XA0;&#XA0;Copyright Information</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc76">Appendix&#XA0;C&#XA0;&#XA0;Acknowledgements</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc77">Appendix&#XA0;D&#XA0;&#XA0;Copyright Information</A>
 </LI></UL><!--TOC chapter Introduction-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc1">Chapter&#XA0;1</A>&#XA0;&#XA0;Introduction</H1><!--SEC END --><P>
 <A NAME="intro"></A></P><P><TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang</A>.</P><P><TT>ejabberd</TT> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a rock-solid and feature rich XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
@@ -450,8 +441,9 @@ the configuration file:
 </P><PRE CLASS="verbatim">  override_global.
   override_local.
   override_acls.
-</PRE><P>With these lines the old global options, local options and ACLs will be removed
-before new ones are added.</P><!--TOC subsection Host Names-->
+</PRE><P>With these lines the old global options (shared between all ejabberd nodes in a
+cluster), local options (which are specific for this particular ejabberd node)
+and ACLs will be removed before new ones are added.</P><!--TOC subsection Host Names-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc16">3.1.1</A>&#XA0;&#XA0;Host Names</H3><!--SEC END --><P>
 <A NAME="hostnames"></A>
 </P><P>The option <TT>hosts</TT> defines a list containing one or more domains that
@@ -1665,6 +1657,18 @@ interval, the presence is cached by ejabberd and only the last
 presence is broadcasted to all users in the room after expiration of
 the interval delay. Intermediate presence packets are silently
 discarded. A good value for this option is 4 seconds.
+</DD><DT CLASS="dt-description"><B><TT>default_room_opts</TT></B></DT><DD CLASS="dd-description"> This option allow
+to define the desired default room options.
+Obviously, the room creator can modify the room options at any time.
+The available room options are:
+<TT>allow_change_subj</TT>, <TT>allow_private_messages</TT>,
+<TT>allow_query_users</TT>, <TT>allow_user_invites</TT>,
+<TT>anonymous</TT>, <TT>logging</TT>, <TT>members_by_default</TT>,
+<TT>members_only</TT>, <TT>moderated</TT>, <TT>password</TT>,
+<TT>password_protected</TT>, <TT>persistent</TT>,
+<TT>public</TT>, <TT>public_list</TT>, <TT>title</TT>.
+All of them can be set to <TT>true</TT> or <TT>false</TT>,
+except <TT>password</TT> and <TT>title</TT> which are strings.
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 In the first example everyone is allowed to use the Multi-User Chat
@@ -1727,6 +1731,24 @@ defined, but some user restriction could be added as well:<PRE CLASS="verbatim">
     ...
     {mod_muc, [{min_message_interval, 0.4},
                {min_presence_interval, 4}]},
+    ...
+   ]}.
+</PRE></LI><LI CLASS="li-itemize">This example shows how to use <TT>default_room_opts</TT> to make sure
+newly created chatrooms have by default those options.
+<PRE CLASS="verbatim">  {modules,
+   [
+    ...
+    {mod_muc, [{access, muc_access},
+               {access_create, muc_admins},
+               {default_room_options, [
+                 {allow_change_subj, false},
+                 {allow_query_users, true},
+                 {allow_private_messages, true},
+                 {members_by_default, false},
+                 {title, "New chatroom"},
+                 {anonymous, false}
+               ]},
+               {access_admin, muc_admins}]},
     ...
    ]}.
 </PRE></LI></UL><P>The Multi-Users Chat module now supports clustering and load
@@ -1850,7 +1872,12 @@ top link will be the default <CODE>&lt;a href="/"&gt;Home&lt;/a&gt;</CODE>.
 sent to an offline user will be stored on the server until that user comes
 online again. Thus it is very similar to how email works. Note that
 <TT>ejabberdctl</TT> has a command to delete expired messages
-(see section&#XA0;<A HREF="#ejabberdctl">4.1.2</A>).</P><!--TOC subsection <TT>mod_privacy</TT>-->
+(see section&#XA0;<A HREF="#ejabberdctl">4.1.2</A>).</P><DL CLASS="description"><DT CLASS="dt-description">
+<B><TT>user_max_messages</TT></B></DT><DD CLASS="dd-description">This option
+is use to set a max number of offline messages per user (quota). Its
+value can be either <TT>infinity</TT> or a strictly positive
+integer. The default value is <TT>infinity</TT>.
+</DD></DL><!--TOC subsection <TT>mod_privacy</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc40">3.3.11</A>&#XA0;&#XA0;<TT>mod_privacy</TT></H3><!--SEC END --><P>
 <A NAME="modprivacy"></A>
 </P><P>This module implements Blocking Communication (also known as Privacy Rules)
@@ -2691,737 +2718,8 @@ figure&#XA0;<A HREF="#fig:webadmmainru">A.2</A> with figure&#XA0;<A HREF="#fig:w
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC chapter Release Notes-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc75">Appendix&#XA0;B</A>&#XA0;&#XA0;Release Notes</H1><!--SEC END --><P>
 <A NAME="releasenotes"></A>
-</P><!--TOC section ejabberd 0.9-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc76">B.1</A>&#XA0;&#XA0;ejabberd 0.9</H2><!--SEC END --><PRE CLASS="verbatim">       Release notes
-        ejabberd 0.9
-
-    This document describes the major new features of and changes to
-    ejabberd 0.9, compared to latest public release ejabber 0.7.5.
-
-    For more detailed information, please refer to ejabberd User
-    Guide.
-
-
-Virtual Hosting
-
-    ejabberd now can host several domain on the same instance.
-    This option is enabled by using:
-
-      {hosts, ["erlang-projects.org", "erlang-fr.org"]}.
-
-    instead of the previous host directive.
-
-    Note that you are now using a list of hosts. The main one should
-    be the first listed. See migration section further in this release
-    note for details.
-      
-
-Shared Roster
-
-    Shared roster is a new feature that allow the ejabberd
-    administrator to add jabber user that will be present in the
-    roster of every users on the server.
-    Shared roster are enabled by adding:
-
-            {mod_shared_roster, []}
-
-    at the end of your module list in your ejabberd.cfg file.
-
-
-PostgreSQL (ODBC) support
-
-    This feature is experimental and not yet properly documented. This
-    feature is released for testing purpose.
-
-    You need to have Erlang/OTP R10 to compile with ODBC on various
-    flavour of *nix. You should use Erlang/OTP R10B-4, as this task
-    has became easier with this release. It comes already build in
-    Erlang/OTP Microsoft Windows binary.
-
-    PostgreSQL support is enabled by using the following module in
-    ejabberd.cfg instead of their standard counterpart:
-
-     mod_last_odbc.erl
-     mod_offline_odbc.erl
-     mod_roster_odbc.erl
-
-    The database schema is located in the src/odbc/pq.sql file.
-
-    Look at the src/ejabberd.cfg.example file for more information on
-    how to configure ejabberd with odbc support. You can get support
-    on how to configure ejabberd with a relational database.
-
-
-Migration from ejabberd 0.7.5
-
-    Migration is pretty straightforward as Mnesia database schema
-    conversions is handled automatically. Remember however that you
-    must backup your ejabberd database before migration.
-
-    Here are the following steps to proceed:
-
-    1. Stop your instance of ejabberd.
-
-    2. In ejabberd.cfg, define the host lists. Change the host
-    directive to the hosts one:
-    Before:
-      {host, "erlang-projects.org"}.
-    After:
-      {hosts, ["erlang-projects.org", "erlang-fr.org"]}.
-    Note that when you restart the server the existing users will be
-    affected to the first virtual host, so the order is important. You
-    should keep the previous hostname as the first virtual host.
-
-    3. Restart ejabberd.
-
-
-Bugfixes
-
-    This release contains several bugfixes and architectural changes.
-    Please refer to the Changelog file supplied with this release for
-    details of all improvements in the ejabberd code.
-</PRE><!--TOC section ejabberd 0.9.1-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc77">B.2</A>&#XA0;&#XA0;ejabberd 0.9.1</H2><!--SEC END --><PRE CLASS="verbatim">       Release notes
-       ejabberd 0.9.1
-
-   This document describes the main changes from [25]ejabberd 0.9.
-
-   The code can be downloaded from the [26]download page.
-
-   For more detailed information, please refer to ejabberd [27]User Guide.
-
-
-Groupchat (Multi-user chat and IRC) improvements
-
-   The multi-user chat code has been improved to comply with the latest version
-   of Jabber Enhancement Proposal 0045.
-
-   The IRC (Internet Relay Chat) features now support WHOIS and USERINFO
-   requests.
-
-
-Web interface
-
-   ejabberd modules management features have been added to the web interface.
-   They now allow to start or stop extension module without restarting the
-   ejabberd server.
-
-
-Publish and subscribe
-
-   It is now possible to a subscribe node with a JabberID that includes a
-   resource.
-
-
-Translations
-
-   A new script has been included to help translate ejabberd into new languages
-   and maintain existing translations.
-
-   As a result, ejabberd is now translating into 10 languages:
-     * Dutch
-     * English
-     * French
-     * German
-     * Polish
-     * Portuguese
-     * Russian
-     * Spanish
-     * Swedish
-     * Ukrainian
-
-
-Migration
-
-   No changes have been made to the database. No particular conversion steps
-   are needed. However, you should backup your database before upgrading to a
-   new ejabberd version.
-
-
-Bugfixes
-
-   This release contains several bugfixes and architectural changes. Please
-   refer to the Changelog file supplied with this release for details of all
-   improvements in the ejabberd code.
-</PRE><!--TOC section ejabberd 0.9.8-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc78">B.3</A>&#XA0;&#XA0;ejabberd 0.9.8</H2><!--SEC END --><PRE CLASS="verbatim">       Release notes
-       ejabberd 0.9.8
-         2005-08-01
-
-   This document describes the main changes in ejabberd 0.9.8. This
-   version prepares the way for the release of ejabberd 1.0, which 
-   is due later this year.
-
-   The code can be downloaded from the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/
-
-   For more detailed information, please refer to ejabberd User Guide
-   on the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/docs.html
-
-
-   Recent changes include....
-
-
-Enhanced virtual hosting
-
-   Virtual hosting applies to many more setting options and
-   features and is transparent. Virtual hosting accepts different
-   parameters for different virtual hosts regarding the following
-   features: authentication method, access control lists and access
-   rules, users management, statistics, and shared roster. The web
-   interface gives access to each virtual host's parameters.
-
-
-Enhanced Publish-Subscribe module
-
-   ejabberd's Publish-Subscribe module integrates enhancements
-   coming from J-EAI, an XMPP-based integration server built on
-   ejabberd. ejabberd thus supports Publish-Subscribe node
-   configuration. It is possible to define nodes that should be
-   persistent, and the number of items to persist. Besides that, it
-   is also possible to define various notification parameters, such
-   as the delivery of the payload with the notifications, and the
-   notification of subscribers when some changes occur on items.
-   Other examples are: the maximum size of the items payload, the
-   subscription approvers, the limitation of the notification to
-   online users only, etc.
-
-
-Code reorganisation and update
-
-   - The mod_register module has been cleaned up.
-   - ODBC support has been updated and several bugs have been fixed.
-
-
-Development API
-
-   To ease the work of Jabber/XMPP developers, a filter_packet hook
-   has been added. As a result it is possible to develop plugins to
-   filter or modify packets flowing through ejabberd.
-
-
-Translations
-
-   - Translations have been updated to support the new Publish-Subscribe features.
-   - A new Brazilian Portuguese translation has been contributed.
-
-
-Web interface
-
-   - The CSS stylesheet from the web interface is W3C compliant.
-
-
-Installers
-
-   Installers are provided for Microsoft Windows and Linux/x86. The
-   Linux installer includes Erlang ASN.1 modules for LDAP
-   authentication support.
-
-
-Bugfixes
-
-   - This release contains several bugfixes and architectural
-     changes. Among other bugfixes include improvements in LDAP
-     authentication. Please refer to the ChangeLog file supplied 
-     with this release regarding all improvements in ejabberd.
-
-
-References
-
-   The ejabberd feature sheet helps comparing with other Jabber/XMPP 
-   servers:
-   http://www.process-one.net/en/projects/ejabberd/docs/features.pdf
-
-   Contributed tutorials of interest are:
-   - Migration from Jabberd1.4 to ejabberd:
-     http://ejabberd.jabber.ru/jabberd1-to-ejabberd
-   - Migration from Jabberd2 to ejabberd:
-     http://ejabberd.jabber.ru/jabberd2-to-ejabberd
-   - Transport configuration for connecting to other networks:
-     http://ejabberd.jabber.ru/tutorials-transports
-
-END
-
-</PRE><!--TOC section ejabberd 1.0.0-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc79">B.4</A>&#XA0;&#XA0;ejabberd 1.0.0</H2><!--SEC END --><PRE CLASS="verbatim">       Release Notes
-       ejabberd 1.0.0
-       14 December 2005
-
-   This document describes the main changes in ejabberd 1.0.0. Unique in this
-   version is the compliancy with the XMPP (eXtensible Messaging and Presence
-   Protocol) standard. ejabberd is the first Open Source Jabber server claiming
-   to fully comply to the XMPP standard.
-
-   ejabberd can be downloaded from the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/
-
-   Detailed information can be found in the ejabberd Feature Sheet and User
-   Guide which are available on the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/docs.html
-
-
-   Recent changes include:
-
-
-Server-to-server Encryption for Enhanced Security
-
-  - Support for STARTTLS and SASL EXTERNAL to secure server-to-server traffic
-    has been added.
-  - Also, STARTTLS and Dialback has been implemented for server-to-server (s2s)
-    connections. Detailed information about these new features can be found on
-    http://ejabberd.jabber.ru/s2s-encryption
-  - commonName and dNSName fields matching were introduced to ease the process
-    of retrieving certificates.
-  - Different certificates can be defined for each virtual host.
-
-ODBC Support
-
-  - ODBC support has been improved to allow production use of ejabberd with
-    relational databases.
-  - Support for vCard storage in ODBC has been added.
-  - ejd2odbc.erl is a tool to convert an installation from Erlang's database
-    Mnesia to an ODBC compatible relational database.
-
-Native PostgreSQL Support
-
-  - Native PostgreSQL support gives you a better performance when you use
-    PostgreSQL.
-
-Shared Roster groups
-
-  - Shared Roster groups support has been enhanced. New is the ability to add
-    all registered users to everyone's roster. Detailed information about this
-    new feature can be found on http://ejabberd.jabber.ru/shared-roster-all
-
-Web Interface
-
-   - The web interface internal code has been modified for better integration
-     and compliancy with J-EAI, an ejabberd-based Enterprise Application
-     Integration platform.
-   - More XHTML 1.0 Transitional compliancy work was done.
-
-Transports
-
-   - A transport workaround can be enabled during compilation. To do this, you
-     can pass the "--enable-roster-gateway-workaround" option to the configure
-     script. (./configure --enable-roster-gateway-workaround)
-     This option allows transports to add items with subscription "to" in the
-     roster by sending &lt;presence type='subscribed'/&gt; stanza to user. This option
-     is only needed for JIT ICQ transport.
-     Warning: by enabling this option, ejabberd will not be fully XMPP compliant
-              anymore.
-
-Documentation and Internationalization
-
-   - Documentation has been extended to cover more topics.
-   - Translations have been updated.
-
-Bugfixes
-
-   - This release contains several bugfixes.
-   - Among other bugfixes include improvements to the client-to-server (c2s)
-     connection management module.
-   - Please refer to the ChangeLog file supplied
-     with this release regarding all improvements in ejabberd.
-
-
-   Installation Notes
-
-
-Supported Erlang Version
-
-   - You need at least Erlang/OTP R9C to run ejabberd 1.0.0.
-
-Installation
-
-   Installers are provided for Microsoft Windows and Linux/x86.
-   Installers can be retrieved from:
-   http://www.process-one.net/en/projects/ejabberd/download.html
-
-Migration Notes
-
-   - Before any migration, ejabberd system and database must be properly
-     backed up.
-   - When upgrading an ODBC-based installation, you will need to change the
-     relational database schema. The following SQL commands must be run on the
-     database:
-       CREATE SEQUENCE spool_seq_seq;
-       ALTER TABLE spool ADD COLUMN seq integer;
-       ALTER TABLE spool ALTER COLUMN seq SET DEFAULT nextval('spool_seq_seq');
-       UPDATE spool SET seq = DEFAULT;
-       ALTER TABLE spool ALTER COLUMN seq SET NOT NULL;
-
-References
-
-   Contributed tutorials of interest are:
-   - Migration from Jabberd1.4 to ejabberd:
-     http://ejabberd.jabber.ru/jabberd1-to-ejabberd
-   - Migration from Jabberd2 to ejabberd:
-     http://ejabberd.jabber.ru/jabberd2-to-ejabberd
-   - Transport configuration for connecting to other networks:
-     http://ejabberd.jabber.ru/tutorials-transports
-
-END
-
-</PRE><!--TOC section ejabberd 1.1.0-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc80">B.5</A>&#XA0;&#XA0;ejabberd 1.1.0</H2><!--SEC END --><PRE CLASS="verbatim">    Release Notes
-    ejabberd 1.1.0
-    24 April 2006
-
-   This document describes the main changes in ejabberd 1.1.0. This version
-   introduce new features including support for new Jabber Enhancement
-   Proposals and several performance improvements enabling deployments on an
-   even larger scale than already possible.
-
-   ejabberd can be downloaded from the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/
-
-   Detailed information can be found in the ejabberd Feature Sheet and User
-   Guide which are available on the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/docs.html
-
-   A complete list of changes is available from:
-   http://support.process-one.net/secure/ReleaseNote.jspa?projectId=10011&amp;styleName=Html&amp;version=10025
-
-
-   Recent changes include:
-
-
-New Jabber Enhancement Proposal support:
-
-  - JEP-0050: Ad-Hoc Commands.
-  - JEP-0138: Stream Compression.
-  - JEP-0175: SASL anonymous.
-
-Anonymous login
-
-  - SASL anonymous.
-  - Anonymous login for clients that do not yet support SASL Anonymous.
-  
-Relational database Support
-
-  - MySQL is now fully supported through ODBC and in native mode.
-  - Various improvements to the native database interfaces.
-  - The migration tool can use relational databases.
-
-Multi-User Chat improvements
-
-  - Logging of room discussion to text file is now supported.
-  - Better reconfiguration support.
-  - Security oriented fixes.
-  - Several improvements and updates to latest JEP-0045.
-
-Performance scalability improvements for large clusters
-
-  - Improved session synchronisation management between cluster nodes.
-  - Internal architecture has been reworked to use generalize Erlang/OTP
-    framework usage.
-  - Speed improvement on logger.
-  - TCP/IP packet reception change for better network throttling and
-    regulation.
-  As a result, these improvements will reduce load on large scale deployments.
-
-XMPP Protocol related improvements
-
-  - XML stanza size can be limited.
-  - Messages are send to all resources with the same highest priority.
-
-Documentation and Internationalization
-
-   - Documentation has been extended to cover more topics.
-   - Translations have been updated.
-
-Web interface
-
-   - XHTML 1.0 compliance.
-
-Bugfixes
-
-   - This release contains many bugfixes on various areas such as Publish-Subscribe, build
-     chain, installers, IRC gateway, ejabberdctl, amongst others.
-   - Please refer to the ChangeLog file supplied with this release regarding
-     all improvements in ejabberd.
-
-
-
-   Installation Notes
-
-Supported Erlang Version
-
-   - You need at least Erlang/OTP R9C-2 to run ejabberd 1.1.0.
-
-Installation
-
-   Installers are provided for Microsoft Windows, Linux/x86 and MacOSX/PPC.
-   Installers can be retrieved from:
-   http://www.process-one.net/en/projects/ejabberd/download.html
-
-Migration Notes
-
-   - Before any migration, ejabberd system and database must be properly
-     backed up.
-   - The database schema has not been changed comparing to version 1.0.0 and
-     consequently it does not require any migration.
-
-
-References
-
-   Contributed tutorials and documents of interest are:
-   - Migration from Jabberd1.4, Jabberd2 and WPJabber to ejabberd:
-     http://ejabberd.jabber.ru/migrate-to-ejabberd     
-   - Transport configuration for connecting to other networks:
-     http://ejabberd.jabber.ru/tutorials-transports
-   - Using ejabberd with MySQL native driver:
-     http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver
-   - Anonymous User Support:
-     http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support
-   - Frequently Asked Questions:
-     http://ejabberd.jabber.ru/faq
-
-END
-</PRE><!--TOC section ejabberd 1.1.1-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc81">B.6</A>&#XA0;&#XA0;ejabberd 1.1.1</H2><!--SEC END --><PRE CLASS="verbatim">    Release Notes
-    ejabberd 1.1.1 
-    28 April 2006
-
-   This document describes the main changes in ejabberd 1.1.x. This version
-   introduce new features including support for new Jabber Enhancement
-   Proposals and several performance improvements enabling deployments on an
-   even larger scale than already possible.
-
-   This release fix a security issue introduced in ejabberd 1.1.0. In SASL
-   mode, anonymous login was enabled as a default. Upgrading ejabberd 1.1.0 to
-   ejabberd 1.1.1 is highly recommended.
-
-   ejabberd can be downloaded from the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/
-
-   Detailed information can be found in the ejabberd Feature Sheet and User
-   Guide which are available on the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/docs.html
-
-   A complete list of changes is available from:
-   http://support.process-one.net/secure/ReleaseNote.jspa?projectId=10011&amp;styleName=Html&amp;version=10025
-
-
-   Recent changes include:
-
-
-New Jabber Enhancement Proposal support:
-
-  - JEP-0050: Ad-Hoc Commands.
-  - JEP-0138: Stream Compression.
-  - JEP-0175: SASL anonymous.
-
-Anonymous login
-
-  - SASL anonymous.
-  - Anonymous login for clients that do not yet support SASL Anonymous.
-  
-Relational database Support
-
-  - MySQL is now fully supported through ODBC and in native mode.
-  - Various improvements to the native database interfaces.
-  - The migration tool can use relational databases.
-
-Multi-User Chat improvements
-
-  - Logging of room discussion to text file is now supported.
-  - Better reconfiguration support.
-  - Security oriented fixes.
-  - Several improvements and updates to latest JEP-0045.
-
-Performance scalability improvements for large clusters
-
-  - Improved session synchronisation management between cluster nodes.
-  - Internal architecture has been reworked to use generalize Erlang/OTP
-    framework usage.
-  - Speed improvement on logger.
-  - TCP/IP packet reception change for better network throttling and
-    regulation.
-  As a result, these improvements will reduce load on large scale deployments.
-
-XMPP Protocol related improvements
-
-  - XML stanza size can be limited.
-  - Messages are send to all resources with the same highest priority.
-
-Documentation and Internationalization
-
-   - Documentation has been extended to cover more topics.
-   - Translations have been updated.
-
-Web interface
-
-   - XHTML 1.0 compliance.
-
-Bugfixes
-
-   - This release contains many bugfixes on various areas such as Publish-Subscribe, build
-     chain, installers, IRC gateway, ejabberdctl, amongst others.
-   - Please refer to the ChangeLog file supplied with this release regarding
-     all improvements in ejabberd.
-
-
-
-   Installation Notes
-
-Supported Erlang Version
-
-   - You need at least Erlang/OTP R9C-2 to run ejabberd 1.1.0.
-
-Installation
-
-   Installers are provided for Microsoft Windows, Linux/x86 and MacOSX/PPC.
-   Installers can be retrieved from:
-   http://www.process-one.net/en/projects/ejabberd/download.html
-
-Migration Notes
-
-   - Before any migration, ejabberd system and database must be properly
-     backed up.
-   - The database schema has not been changed comparing to version 1.0.0 and
-     consequently it does not require any migration.
-
-
-References
-
-   Contributed tutorials and documents of interest are:
-   - Migration from Jabberd1.4, Jabberd2 and WPJabber to ejabberd:
-     http://ejabberd.jabber.ru/migrate-to-ejabberd     
-   - Transport configuration for connecting to other networks:
-     http://ejabberd.jabber.ru/tutorials-transports
-   - Using ejabberd with MySQL native driver:
-     http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver
-   - Anonymous User Support:
-     http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support
-   - Frequently Asked Questions:
-     http://ejabberd.jabber.ru/faq
-
-END
-</PRE><!--TOC section ejabberd 1.1.2-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc82">B.7</A>&#XA0;&#XA0;ejabberd 1.1.2</H2><!--SEC END --><PRE CLASS="verbatim">    Release Notes
-    ejabberd 1.1.2
-         27 September 2006
-
-   This document describes the main changes in ejabberd 1.1.2.
-
-   This version is a major improvement over ejabberd 1.1.1, improving the
-   overall behaviour of the server in many areas. Users of ejabberd 1.1.1
-   should upgrade to this new release for improved robustness and compliance.
-
-   ejabberd can be downloaded from the Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/
-
-   Detailed information can be found in the Feature Sheet and in the
-   Installation and Operation Guide which are both available on the
-   Process-one website:
-   http://www.process-one.net/en/projects/ejabberd/docs.html
-
-   ejabberd includes 44 improvements. A complete list of changes can be
-   retrieved from:
-   http://redir.process-one.net/ejabberd-1.1.2
-
-
-   Recent changes include:
-
-LDAP Improvements
-
-  - Major improvements have been made on the LDAP module. It is now more
-    flexible and more robust.
-
-HTTP Polling Fixes
-
-  - The HTTP polling modules have been fixed and improved: the connections are
-    closed properly and polled messages cannot be lost anymore.
-
-Roster Management Improvement
-
-  - Roster management improvements increase reliability, especially in cases
-  where users are on different servers.
-  - Shared rosters are more reliable.
-
-Improved Robustness
-
-  - It is now possible to limit the number of opened connections for a single
-  user.
-
-Relational databases
-
-  - Database support: Microsoft SQL Server is now officially supported in ODBC
-  mode.
-
-Publish-Subscribe Improvement
-
-  - Restricting node creation with a dedicated ACL rule is now possible.
-
-Localization
-
-  - A Czech translation has been added.
-  - Translations have been updated.
-
-Binary Installer
-
-  - New binary installer for Windows including all requirements.
-  - Improved installers for Linux and MacOSX (PowerPC)
-
-XMPP Compliancy
-
-  - Some protocol compliance fix have been added, after the Portland XMPP
-    Interop Meeting in July.
-
-Miscelanous
-
-  - MUC have been improved (logging rendering).
-  - The command line tool ejabberdctl has been improved.
-  - The build chain has been improved, including MacOSX support.
-  - The documentation has been improved and updated to describe the new
-    features.
-
-Bugfixes
-
-   - Anonymous login bugfixes.
-   - Please refer to the ChangeLog file supplied with this release regarding
-     all improvements in ejabberd.
-
-
-   Installation Notes
-
-Supported Erlang Version
-
-   - You need at least Erlang/OTP R9C-2 to run ejabberd 1.1.2.
-   - The recommanded version is Erlang/OTP R10B-10.
-   - Erlang/OTP R11B has not yet been fully certified for ejabberd.
-
-Installation
-
-   Installers are provided for Microsoft Windows, Linux/x86 and MacOSX/PPC.
-   They can be retrieved from:
-   http://www.process-one.net/en/projects/ejabberd/download.html
-
-Migration Notes
-
-   - Before any migration, ejabberd system and database must be properly
-   backed up.
-   - The relational database schema has changed between version 1.1.1 and
-   1.1.2. An "askmessage" column needs to be added in the "rosterusers" table
-   to perform the migration.
-
-
-References
-
-   Contributed tutorials and documents of interest are:
-   - Migration from other XMPP servers to ejabberd:
-     http://ejabberd.jabber.ru/migrate-to-ejabberd     
-   - Transport configuration for connecting to other networks:
-     http://ejabberd.jabber.ru/tutorials-transports
-   - Frequently Asked Questions:
-     http://ejabberd.jabber.ru/faq
-
-END
-</PRE><!--TOC chapter Acknowledgements-->
-<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc83">Appendix&#XA0;C</A>&#XA0;&#XA0;Acknowledgements</H1><!--SEC END --><P>
+</P><P>Release notes are available from <A HREF="">ejabberd Home Page</A></P><!--TOC chapter Acknowledgements-->
+<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc76">Appendix&#XA0;C</A>&#XA0;&#XA0;Acknowledgements</H1><!--SEC END --><P>
 <A NAME="acknowledgements"></A>
 Thanks to all people who contributed to this guide:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -3435,9 +2733,9 @@ Alexey Shchepin (<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT
 </LI><LI CLASS="li-itemize">Sergei Golovan (<A HREF="xmpp:sgolovan@nes.ru"><TT>xmpp:sgolovan@nes.ru</TT></A>)
 </LI><LI CLASS="li-itemize">Vsevolod Pelipas (<A HREF="xmpp:vsevoload@jabber.ru"><TT>xmpp:vsevoload@jabber.ru</TT></A>)
 </LI></UL><!--TOC chapter Copyright Information-->
-<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc84">Appendix&#XA0;D</A>&#XA0;&#XA0;Copyright Information</H1><!--SEC END --><P>
+<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc77">Appendix&#XA0;D</A>&#XA0;&#XA0;Copyright Information</H1><!--SEC END --><P>
 <A NAME="copyright"></A></P><P>Ejabberd Installation and Operation Guide.<BR>
-Copyright &#XA9; January 23, 2003 &#X2014;  Alexey Shchepin</P><P>This document is free software; you can redistribute it and/or
+Copyright &#XA9; 2003 &#X2014; 2007 Process-one</P><P>This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.</P><P>This document is distributed in the hope that it will be useful,
