@@ -1,5 +1,7 @@
 2007-08-13  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/ejabberd.hrl: Updated version number to 1.1.4.
+	
 	* src/ejd2odbc.erl: Upgrade to latest SVN trunk (EJAB-321). 
 
 2007-08-12  Mickael Remond  <mickael.remond@process-one.net>
