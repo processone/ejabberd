@@ -1,50 +1,14 @@
-				Release Notes
-				ejabberd 1.1.3
-			      2 February 2007
+			    Release Notes
+			    ejabberd 1.1.3
+			   2 February 2007
 
-   This document describes the change in ejabberd 1.1.3.
+  ejabberd 1.1.3 is a security fix release for ejabberd roster ODBC
+  module.
 
-   This version is a security improvement over ejabberd 1.1.2, solving
-   the mod_roster_odbc SQL injection issue.
+  The upgrade is only necessary if you are using ejabberd with the
+  mod_roster_odbc.
 
-   Users of ejabberd 1.1.2 that are using mod_roster_odbc MUST upgrade to
-   this new release.
-
-   ejabberd can be downloaded from the Process-one website:
-   http://www.process-one.net/en/ejabberd/
-
-   Detailed information can be found in the Feature Sheet and in the
-   Installation and Operation Guide which are both available on the
-   Process-one website:
-   http://www.process-one.net/en/ejabberd/docs.html
-
-   Installation Notes
-
-Supported Erlang Version
-
-   - You need at least Erlang/OTP R9C-2 to run ejabberd 1.1.3.
-   - The recommanded version is Erlang/OTP R11B-3.
-
-Installation
-
-   Installers are provided for Microsoft Windows, Linux/x86 and MacOSX/PPC.
-   They can be retrieved from:
-   http://www.process-one.net/en/ejabberd/download.html
-
-Migration Notes
-
-   - Before any migration, ejabberd system and database must be properly
-   backed up.
-
-
-References
-
-   Contributed tutorials and documents of interest are:
-   - Migration from other XMPP servers to ejabberd:
-     http://ejabberd.jabber.ru/migrate-to-ejabberd     
-   - Transport configuration for connecting to other networks:
-     http://ejabberd.jabber.ru/tutorials-transports
-   - Frequently Asked Questions:
-     http://ejabberd.jabber.ru/faq
+  The new code can be downloaded from ejabberd download page:
+     http://www.process-one.net/en/projects/ejabberd/
 
 END
