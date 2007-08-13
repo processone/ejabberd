@@ -1,5 +1,8 @@
 2007-08-13  Mickael Remond  <mickael.remond@process-one.net>
 
+	* src/mod_offline.erl: Added a config option to define the maximum
+	number of offline messages per user (EJAB-314).
+
 	* doc/guide.tex: Added documentation for the mod_offline quota
 	(EJAB-314).
 

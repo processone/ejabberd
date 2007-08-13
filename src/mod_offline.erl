@@ -12,7 +12,7 @@
 -behaviour(gen_mod).
 
 -export([start/2,
-	 init/0,
+	 init/1,
 	 stop/1,
 	 store_packet/3,
 	 resend_offline_messages/2,
@@ -29,12 +29,7 @@
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
-%% TODO: Move this part as a module config file parameter:
-%% Can be an integer > 0 or infinity:
-%%-define(MAX_OFFLINE_MSGS, infinity).
--define(MAX_OFFLINE_MSGS, 5).
-
-start(Host, _Opts) ->
+start(Host, Opts) ->
     mnesia:create_table(offline_msg,
 			[{disc_only_copies, [node()]},
 			 {type, bag},
@@ -48,20 +43,25 @@ start(Host, _Opts) ->
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host,
 		       ?MODULE, remove_user, 50),
+    MAX_OFFLINE_MSGS = gen_mod:get_opt(user_max_messages, Opts, infinity),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [])).
+	     spawn(?MODULE, init, [MAX_OFFLINE_MSGS])).
 
-init() ->
-    loop().
+%% MAX_OFFLINE_MSGS is either infinity of integer > 0
+init(infinity) ->
+    loop(infinity);
+init(MAX_OFFLINE_MSGS) 
+  when integer(MAX_OFFLINE_MSGS), MAX_OFFLINE_MSGS > 0 ->
+    loop(MAX_OFFLINE_MSGS).
 
-loop() ->
+loop(MAX_OFFLINE_MSGS) ->
     receive
 	#offline_msg{us=US} = Msg ->
 	    Msgs = receive_all(US, [Msg]),
 	    Len = length(Msgs),
 	    F = fun() ->
 			%% Only count messages if needed:
-			Count = if ?MAX_OFFLINE_MSGS =/= infinity ->
+			Count = if MAX_OFFLINE_MSGS =/= infinity ->
 					Len + p1_mnesia:count_records(
 						offline_msg, 
 						#offline_msg{us=US, _='_'});
@@ -69,7 +69,7 @@ loop() ->
 					0
 				end,
 			if
-			    Count > ?MAX_OFFLINE_MSGS ->
+			    Count > MAX_OFFLINE_MSGS ->
 				discard_warn_sender(Msgs);
 			    true ->
 				if
@@ -84,9 +84,9 @@ loop() ->
 			end
 		end,
 	    mnesia:transaction(F),
-	    loop();
+	    loop(MAX_OFFLINE_MSGS);
 	_ ->
-	    loop()
+	    loop(MAX_OFFLINE_MSGS)
     end.
 
 receive_all(US, Msgs) ->
