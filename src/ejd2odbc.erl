@@ -16,7 +16,8 @@
 	 export_offline/2,
 	 export_last/2,
 	 export_vcard/2,
-	 export_vcard_search/2]).
+	 export_vcard_search/2,
+	 export_private_storage/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -39,17 +40,24 @@
 		       orgname,	 lorgname,
 		       orgunit,	 lorgunit
 		      }).
+-record(private_storage, {usns, xml}).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 1000).
 
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+%%% How to use:
+%%% A table can be converted from Mnesia to an ODBC database by calling
+%%% one of the API function with the following parameters:
+%%% - Server is the server domain you want to convert
+%%% - Output can be either odbc to export to the configured relational
+%%%   database or "Filename" to export to text file.
 
 export_passwd(Server, Output) ->
     export_common(
       Server, passwd, Output,
-      fun(Host, {passwd, {LUser, LServer}, Password} = R)
+      fun(Host, {passwd, {LUser, LServer}, Password} = _R)
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      Pass = ejabberd_odbc:escape(Password),
@@ -219,6 +227,21 @@ export_vcard_search(Server, Output) ->
 	      []
       end).
 
+export_private_storage(Server, Output) ->
+    export_common(
+      Server, private_storage, Output,
+      fun(Host, #private_storage{usns = {LUser, LServer, XMLNS},
+				 xml = Data})
+	 when LServer == Host ->
+	      Username = ejabberd_odbc:escape(LUser),
+      	      LXMLNS = ejabberd_odbc:escape(XMLNS),
+	      SData = ejabberd_odbc:escape(
+			lists:flatten(xml:element_to_string(Data))),
+      	      odbc_queries:set_private_data_sql(Username, LXMLNS, SData);
+	 (_Host, _R) ->
+      	      []
+      end).
+
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
@@ -246,6 +269,7 @@ export_common(Server, Table, Output, ConvertFun) ->
 					N < ?MAX_RECORDS_PER_TRANSACTION - 1 ->
 					    {N + 1, [SQL | SQLs]};
 					true ->
+					    %% Execute full SQL transaction
 					    output(LServer, IO,
 						   ["begin;",
 						    lists:reverse([SQL | SQLs]),
@@ -254,6 +278,7 @@ export_common(Server, Table, Output, ConvertFun) ->
 				    end
 			    end
 		    end, {0, []}, Table),
+		  %% Execute SQL transaction with remaining records
 	      output(LServer, IO,
 		     ["begin;",
 		      lists:reverse(SQLs),
@@ -268,7 +293,7 @@ output(LServer, IO, SQL) ->
 	    file:write(IO, [SQL, $;, $\n])
     end.
 
-record_to_string(#roster{usj = {User, Server, JID},
+record_to_string(#roster{usj = {User, _Server, JID},
 			 name = Name,
 			 subscription = Subscription,
 			 ask = Ask,
@@ -290,16 +315,24 @@ record_to_string(#roster{usj = {User, Server, JID},
 	       in	   -> "I";
 	       none	   -> "N"
 	   end,
+    SAskMessage =
+	case catch ejabberd_odbc:escape(
+		     binary_to_list(list_to_binary([AskMessage]))) of
+	    {'EXIT', _Reason} ->
+		[];
+	    SAM ->
+		SAM
+	end,
     ["("
      "'", Username, "',"
      "'", SJID, "',"
      "'", Nick, "',"
      "'", SSubscription, "',"
      "'", SAsk, "',"
-     "'", AskMessage, "',"
+     "'", SAskMessage, "',"
      "'N', '', 'item')"].
 
-groups_to_string(#roster{usj = {User, Server, JID},
+groups_to_string(#roster{usj = {User, _Server, JID},
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(JID)),
@@ -307,4 +340,3 @@ groups_to_string(#roster{usj = {User, Server, JID},
       "'", Username, "',"
       "'", SJID, "',"
       "'", ejabberd_odbc:escape(Group), "')"] || Group <- Groups].
-

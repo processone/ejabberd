@@ -1,10 +1,14 @@
+2007-08-13  Mickael Remond  <mickael.remond@process-one.net>
+
+	* src/ejd2odbc.erl: Upgrade to latest SVN trunk (EJAB-321). 
+
 2007-08-12  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: UTF-8 support for MySQL5 (EJAB-318).
 
 2007-08-01  Mickael Remond  <mickael.remond@process-one.net>
 
-  	* src/mod_private.erl: Reduce memory consumption on user private
+	* src/mod_private.erl: Reduce memory consumption on user private
 	storage removal (EJAB-299).
 
 2007-06-29  Mickael Remond  <mickael.remond@process-one.net>
