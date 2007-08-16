@@ -18,7 +18,8 @@
 	 sql_query_t/1,
 	 sql_transaction/2,
 	 escape/1,
-	 escape_like/1]).
+	 escape_like/1,
+	 keep_alive/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -37,6 +38,8 @@
 -define(PGSQL_PORT, 5432).
 -define(MYSQL_PORT, 3306).
 
+-define(KEEPALIVE_QUERY, "SELECT 1;").
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -51,7 +54,7 @@ sql_query(Host, Query) ->
 		    {sql_query, Query}, 60000).
 
 %% SQL transaction based on a list of queries
-%% This function automatically 
+%% This function automatically
 sql_transaction(Host, Queries) when is_list(Queries) ->
     F = fun() ->
 		lists:foreach(fun(Query) ->
@@ -112,6 +115,14 @@ escape_like(C)  -> odbc_queries:escape(C).
 %%          {stop, Reason}
 %%----------------------------------------------------------------------
 init([Host]) ->
+    case ejabberd_config:get_local_option({odbc_keepalive_interval, Host}) of
+	Interval when is_integer(Interval) ->
+	    timer:apply_interval(Interval*1000, ?MODULE, keep_alive, [self()]);
+	undefined ->
+	    ok;
+	_Other ->
+	    ?ERROR_MSG("Wrong odbc_keepalive_interval definition '~p' for host ~p.~n", [_Other, Host])
+    end,
     SQLServer = ejabberd_config:get_local_option({odbc_server, Host}),
     case SQLServer of
 	%% Default pgsql port
@@ -127,7 +138,6 @@ init([Host]) ->
 	_ when is_list(SQLServer) ->
 	    odbc_connect(SQLServer)
     end.
-
 
 %%----------------------------------------------------------------------
 %% Func: handle_call/3
@@ -220,7 +230,7 @@ execute_transaction(State, F, NRestarts) ->
 %% Open an ODBC database connection
 odbc_connect(SQLServer) ->
     case odbc:connect(SQLServer,[{scrollable_cursors, off}]) of
-	{ok, Ref} -> 
+	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
 	    {ok, #state{db_ref = Ref, db_type = odbc}};
 	{error, Reason} ->
@@ -238,7 +248,7 @@ odbc_connect(SQLServer) ->
 %% Open a database connection to PostgreSQL
 pgsql_connect(Server, Port, DB, Username, Password) ->
     case pgsql:connect(Server, DB, Username, Password, Port) of
-	{ok, Ref} -> 
+	{ok, Ref} ->
 	    {ok, #state{db_ref = Ref, db_type = pgsql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("PostgreSQL connection failed: ~p~n", [Reason]),
@@ -306,3 +316,7 @@ mysql_item_to_odbc(Columns, Recs) ->
     {selected,
      [element(2, Column) || Column <- Columns],
      [list_to_tuple(Rec) || Rec <- Recs]}.
+
+% perform a harmless query on all opened connexions to avoid connexion close.
+keep_alive(PID) ->
+    gen_server:call(PID, {sql_query, ?KEEPALIVE_QUERY}, 60000).

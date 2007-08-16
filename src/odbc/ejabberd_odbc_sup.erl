@@ -10,6 +10,7 @@
 -author('alexey@sevcom.net').
 -vsn('$Revision$ ').
 
+%% API
 -export([start_link/1,
 	 init/1,
 	 get_pids/1,
@@ -18,13 +19,23 @@
 
 -include("ejabberd.hrl").
 
+-define(DEFAULT_POOL_SIZE, 10).
+
 start_link(Host) ->
     supervisor:start_link({local, gen_mod:get_module_proc(Host, ?MODULE)},
 			  ?MODULE, [Host]).
 
 init([Host]) ->
-    % TODO
-    N = 10,
+    N = case ejabberd_config:get_local_option({odbc_pool_size, Host}) of
+	    I when is_integer(I) ->
+		I;
+	    undefined ->
+		?DEFAULT_POOL_SIZE;
+	    Other ->
+		?ERROR_MSG("Wrong odbc_pool_size definition '~p' for host ~p, default to ~p~n",
+			   [Other, Host, ?DEFAULT_POOL_SIZE]),
+		?DEFAULT_POOL_SIZE
+	end,
     {ok, {{one_for_one, 10, 6},
 	  lists:map(
 	    fun(I) ->
@@ -45,4 +56,3 @@ get_pids(Host) ->
 get_random_pid(Host) ->
     Pids = get_pids(Host),
     lists:nth(erlang:phash(now(), length(Pids)), Pids).
-
