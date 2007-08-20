@@ -3,7 +3,6 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Roster management
 %%% Created : 11 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_roster).
@@ -433,6 +432,10 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			     end,
 		case NewState of
 		    none ->
+			{none, AutoReply};
+		    {none, none} when Item#roster.subscription == none,
+		                      Item#roster.ask == in ->
+			mnesia:delete({roster, {LUser, LServer, LJID}}),
 			{none, AutoReply};
 		    {Subscription, Pending} ->
 			NewItem = Item#roster{subscription = Subscription,

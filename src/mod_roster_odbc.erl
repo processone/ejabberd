@@ -3,7 +3,6 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Roster management
 %%% Created : 15 Dec 2004 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_roster_odbc).
@@ -209,7 +208,6 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 	error ->
 	    ok;
 	_ ->
-	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
 	    LJID = jlib:jid_tolower(JID1),
 	    Username = ejabberd_odbc:escape(LUser),
 	    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
@@ -329,7 +327,7 @@ process_item_attrs(Item, []) ->
     Item.
 
 
-process_item_els(Item, [{xmlelement, Name, Attrs, SEls} | Els]) ->
+process_item_els(Item, [{xmlelement, Name, _Attrs, SEls} | Els]) ->
     case Name of
 	"group" ->
 	    Groups = [xml:get_cdata(SEls) | Item#roster.groups],
@@ -487,6 +485,10 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			     end,
 		case NewState of
 		    none ->
+			{none, AutoReply};
+		    {none, none} when Item#roster.subscription == none,
+		                      Item#roster.ask == in ->
+			odbc_queries:del_roster(LServer, Username, SJID),
 			{none, AutoReply};
 		    {Subscription, Pending} ->
 			NewItem = Item#roster{subscription = Subscription,
@@ -651,7 +653,6 @@ process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
 	error ->
 	    [];
 	_ ->
-	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
 	    LJID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
 	    Username = ejabberd_odbc:escape(LUser),
 	    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),

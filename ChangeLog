@@ -1,5 +1,9 @@
 2007-08-20  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/mod_roster.erl: Don't send roster push when unsubscribing in
+	"None + Pending In" state
+	* src/mod_roster_odbc.erl: Likewise
+
 	* src/mod_offline.erl: Renamed MAX_OFFLINE_MSGS to MaxOfflineMsgs
 
 	* src/odbc/ejabberd_odbc_sup.erl: Add an odbc_pool_size config
