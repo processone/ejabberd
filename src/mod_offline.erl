@@ -3,7 +3,6 @@
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Store and manage offline messages in Mnesia database.
 %%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_offline).
@@ -43,25 +42,25 @@ start(Host, Opts) ->
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host,
 		       ?MODULE, remove_user, 50),
-    MAX_OFFLINE_MSGS = gen_mod:get_opt(user_max_messages, Opts, infinity),
+    MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [MAX_OFFLINE_MSGS])).
+	     spawn(?MODULE, init, [MaxOfflineMsgs])).
 
-%% MAX_OFFLINE_MSGS is either infinity of integer > 0
+%% MaxOfflineMsgs is either infinity of integer > 0
 init(infinity) ->
     loop(infinity);
-init(MAX_OFFLINE_MSGS) 
-  when integer(MAX_OFFLINE_MSGS), MAX_OFFLINE_MSGS > 0 ->
-    loop(MAX_OFFLINE_MSGS).
+init(MaxOfflineMsgs) 
+  when integer(MaxOfflineMsgs), MaxOfflineMsgs > 0 ->
+    loop(MaxOfflineMsgs).
 
-loop(MAX_OFFLINE_MSGS) ->
+loop(MaxOfflineMsgs) ->
     receive
 	#offline_msg{us=US} = Msg ->
 	    Msgs = receive_all(US, [Msg]),
 	    Len = length(Msgs),
 	    F = fun() ->
 			%% Only count messages if needed:
-			Count = if MAX_OFFLINE_MSGS =/= infinity ->
+			Count = if MaxOfflineMsgs =/= infinity ->
 					Len + p1_mnesia:count_records(
 						offline_msg, 
 						#offline_msg{us=US, _='_'});
@@ -69,7 +68,7 @@ loop(MAX_OFFLINE_MSGS) ->
 					0
 				end,
 			if
-			    Count > MAX_OFFLINE_MSGS ->
+			    Count > MaxOfflineMsgs ->
 				discard_warn_sender(Msgs);
 			    true ->
 				if
@@ -84,9 +83,9 @@ loop(MAX_OFFLINE_MSGS) ->
 			end
 		end,
 	    mnesia:transaction(F),
-	    loop(MAX_OFFLINE_MSGS);
+	    loop(MaxOfflineMsgs);
 	_ ->
-	    loop(MAX_OFFLINE_MSGS)
+	    loop(MaxOfflineMsgs)
     end.
 
 receive_all(US, Msgs) ->
