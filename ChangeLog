@@ -1,3 +1,10 @@
+2007-08-20  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/odbc/ejabberd_odbc_sup.erl: Add an odbc_pool_size config
+	file option to choose the number of SQL connection in each pool
+	(EJAB-58) (thanks to Jerome Sautret)
+	* src/odbc/ejabberd_odbc.erl: Likewise
+
 2007-08-13  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_offline.erl: Added a config option to define the maximum
