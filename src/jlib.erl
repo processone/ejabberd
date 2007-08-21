@@ -566,6 +566,14 @@ check_list(List) ->
 %
 
 decode_base64(S) ->
+    case catch http_base_64:decode(S) of
+	{'EXIT', _Err} ->
+	    decode_base64_old(S);
+	Res ->
+	    Res
+    end.
+
+decode_base64_old(S) ->
     decode1_base64([C || C <- S,
 			 C /= $ ,
 			 C /= $\t,

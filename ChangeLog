@@ -1,3 +1,7 @@
+2007-08-22  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/jlib.erl: Use http_base_64:decode if available
+
 2007-08-20  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_roster.erl: Don't send roster push when unsubscribing in
