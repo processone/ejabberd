@@ -1,3 +1,13 @@
+2007-08-23  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: Added hooks to allow plugins to
+	add their pages without modifying ejabberd_web_admin.erl (thanks
+	to Badlop)
+	* src/web/ejabberd_web_admin.hrl: Macro definitions moved here
+	* src/mod_shared_roster.erl: Updated
+	* src/mod_offline.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+
 2007-08-22  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/jlib.erl: Use http_base_64:decode if available

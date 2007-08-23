@@ -12,6 +12,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1,
+	 webadmin_menu/2, webadmin_page/3,
 	 get_user_roster/2,
 	 get_subscription_lists/3,
 	 get_jid_info/4,
@@ -32,6 +33,8 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_roster.hrl").
+-include("web/ejabberd_http.hrl").
+-include("web/ejabberd_web_admin.hrl").
 
 -record(sr_group, {group_host, opts}).
 -record(sr_user, {us, group_host}).
@@ -45,6 +48,10 @@ start(Host, _Opts) ->
 			 {type, bag},
 			 {attributes, record_info(fields, sr_user)}]),
     mnesia:add_table_index(sr_user, group_host),
+    ejabberd_hooks:add(webadmin_menu_host, Host,
+		       ?MODULE, webadmin_menu, 70),
+    ejabberd_hooks:add(webadmin_page_host, Host,
+		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(roster_get, Host,
 		       ?MODULE, get_user_roster, 70),
     ejabberd_hooks:add(roster_in_subscription, Host,
@@ -61,6 +68,10 @@ start(Host, _Opts) ->
     %    	       ?MODULE, remove_user, 50),
 
 stop(Host) ->
+    ejabberd_hooks:delete(webadmin_menu_host, Host,
+			  ?MODULE, webadmin_menu, 70),
+    ejabberd_hooks:delete(webadmin_page_host, Host,
+			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(roster_get, Host,
 			  ?MODULE, get_user_roster, 70),
     ejabberd_hooks:delete(roster_in_subscription, Host,
@@ -352,3 +363,249 @@ remove_user_from_group(Host, US, Group) ->
 		mnesia:delete_object(R)
 	end,
     mnesia:transaction(F).
+
+
+%%---------------------
+%% Web Admin
+%%---------------------
+
+webadmin_menu(Acc, _Host) ->
+    [{"shared-roster", "Shared Roster"} | Acc].
+
+webadmin_page(_, Host,
+	      #request{us = US,
+		       path = ["shared-roster"],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    Res = list_shared_roster_groups(Host, Query, Lang),
+    {stop, Res};
+
+webadmin_page(_, Host,
+	      #request{us = US,
+		       path = ["shared-roster", Group],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    Res = shared_roster_group(Host, Group, Query, Lang),
+    {stop, Res};
+
+webadmin_page(Acc, _, _) -> Acc.
+
+list_shared_roster_groups(Host, Query, Lang) ->
+    Res = list_sr_groups_parse_query(Host, Query),
+    SRGroups = mod_shared_roster:list_groups(Host),
+    FGroups =
+	?XAE("table", [],
+	     [?XE("tbody",
+		  lists:map(
+		    fun(Group) ->
+			    ?XE("tr",
+				[?XE("td", [?INPUT("checkbox", "selected",
+						   Group)]),
+				 ?XE("td", [?AC(Group ++ "/", Group)])
+				]
+			       )
+		    end, lists:sort(SRGroups)) ++
+		  [?XE("tr",
+		       [?X("td"),
+			?XE("td", [?INPUT("text", "namenew", "")]),
+			?XE("td", [?INPUTT("submit", "addnew", "Add New")])
+		       ]
+		      )]
+		 )]),
+    [?XC("h1", ?T("Shared Roster Groups"))] ++
+	case Res of
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	      [FGroups,
+	       ?BR,
+	       ?INPUTT("submit", "delete", "Delete Selected")
+	      ])
+	].
+
+list_sr_groups_parse_query(Host, Query) ->
+    case lists:keysearch("addnew", 1, Query) of
+	{value, _} ->
+	    list_sr_groups_parse_addnew(Host, Query);
+	_ ->
+	    case lists:keysearch("delete", 1, Query) of
+		{value, _} ->
+		    list_sr_groups_parse_delete(Host, Query);
+		_ ->
+		    nothing
+	    end
+    end.
+
+list_sr_groups_parse_addnew(Host, Query) ->
+    case lists:keysearch("namenew", 1, Query) of
+	{value, {_, Group}} when Group /= "" ->
+	    mod_shared_roster:create_group(Host, Group),
+	    ok;
+	_ ->
+	    error
+    end.
+
+list_sr_groups_parse_delete(Host, Query) ->
+    SRGroups = mod_shared_roster:list_groups(Host),
+    lists:foreach(
+      fun(Group) ->
+	      case lists:member({"selected", Group}, Query) of
+		  true ->
+		      mod_shared_roster:delete_group(Host, Group);
+		  _ ->
+		      ok
+	      end
+      end, SRGroups),
+    ok.
+
+
+shared_roster_group(Host, Group, Query, Lang) ->
+    Res = shared_roster_group_parse_query(Host, Group, Query),
+    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
+    Name = get_opt(GroupOpts, name, ""),
+    Description = get_opt(GroupOpts, description, ""),
+    AllUsers = get_opt(GroupOpts, all_users, false),
+    Disabled = false,
+    DisplayedGroups = get_opt(GroupOpts, displayed_groups, []),
+    Members = mod_shared_roster:get_group_explicit_users(Host, Group),
+    FMembers =
+	if
+	    AllUsers ->
+		"@all@\n";
+	    true ->
+		[]
+	end ++ [[us_to_list(Member), $\n] || Member <- Members],
+    FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
+    FGroup =
+	?XAE("table", [],
+	     [?XE("tbody",
+		  [?XE("tr",
+		       [?XCT("td", "Name:"),
+			?XE("td", [?INPUT("text", "name", Name)])
+		       ]
+		      ),
+		   ?XE("tr",
+		       [?XCT("td", "Description:"),
+			?XE("td", [?XAC("textarea", [{"name", "description"},
+						     {"rows", "3"},
+						     {"cols", "20"}],
+					Description)])
+		       ]
+		      ),
+		   ?XE("tr",
+		       [?XCT("td", "Members:"),
+			?XE("td", [?XAC("textarea", [{"name", "members"},
+						     {"rows", "3"},
+						     {"cols", "20"}],
+					FMembers)])
+		       ]
+		      ),
+		   ?XE("tr",
+		       [?XCT("td", "Displayed Groups:"),
+			?XE("td", [?XAC("textarea", [{"name", "dispgroups"},
+						     {"rows", "3"},
+						     {"cols", "20"}],
+					FDisplayedGroups)])
+		       ]
+		      )]
+		 )]),
+    [?XC("h1", ?T("Shared Roster Groups"))] ++
+	[?XC("h2", ?T("Group ") ++ Group)] ++
+	case Res of
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	      [FGroup,
+	       ?BR,
+	       ?INPUTT("submit", "submit", "Submit")
+	      ])
+	].
+
+shared_roster_group_parse_query(Host, Group, Query) ->
+    case lists:keysearch("submit", 1, Query) of
+	{value, _} ->
+	    {value, {_, Name}} = lists:keysearch("name", 1, Query),
+	    {value, {_, Description}} = lists:keysearch("description", 1, Query),
+	    {value, {_, SMembers}} = lists:keysearch("members", 1, Query),
+	    {value, {_, SDispGroups}} = lists:keysearch("dispgroups", 1, Query),
+	    NameOpt =
+		if
+		    Name == "" -> [];
+		    true -> [{name, Name}]
+		end,
+	    DescriptionOpt =
+		if
+		    Description == "" -> [];
+		    true -> [{description, Description}]
+		end,
+	    DispGroups = string:tokens(SDispGroups, "\r\n"),
+	    DispGroupsOpt =
+		if
+		    DispGroups == [] -> [];
+		    true -> [{displayed_groups, DispGroups}]
+		end,
+
+	    OldMembers = mod_shared_roster:get_group_explicit_users(
+			   Host, Group),
+	    SJIDs = string:tokens(SMembers, ", \r\n"),
+	    NewMembers =
+		lists:foldl(
+		  fun(_SJID, error) -> error;
+		     (SJID, USs) ->
+			  case SJID of
+			      "@all@" ->
+				  USs;
+			      _ ->
+				  case jlib:string_to_jid(SJID) of
+				      JID when is_record(JID, jid) ->
+					  [{JID#jid.luser, JID#jid.lserver} | USs];
+				      error ->
+					  error
+				  end
+			  end
+		  end, [], SJIDs),
+	    AllUsersOpt =
+		case lists:member("@all@", SJIDs) of
+		    true -> [{all_users, true}];
+		    false -> []
+		end,
+
+	    mod_shared_roster:set_group_opts(
+	      Host, Group,
+	      NameOpt ++ DispGroupsOpt ++ DescriptionOpt ++ AllUsersOpt),
+
+	    if
+		NewMembers == error -> error;
+		true ->
+		    AddedMembers = NewMembers -- OldMembers,
+		    RemovedMembers = OldMembers -- NewMembers,
+		    lists:foreach(
+		      fun(US) ->
+			      mod_shared_roster:remove_user_from_group(
+				Host, US, Group)
+		      end, RemovedMembers),
+		    lists:foreach(
+		      fun(US) ->
+			      mod_shared_roster:add_user_to_group(
+				Host, US, Group)
+		      end, AddedMembers),
+		    ok
+	    end;
+	_ ->
+	    nothing
+    end.
+
+get_opt(Opts, Opt, Default) ->
+    case lists:keysearch(Opt, 1, Opts) of
+	{value, {_, Val}} ->
+	    Val;
+	false ->
+	    Default
+    end.
+
+us_to_list({User, Server}) ->
+    jlib:jid_to_string({User, Server, ""}).

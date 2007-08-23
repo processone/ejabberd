@@ -18,10 +18,14 @@
 	 pop_offline_messages/3,
 	 remove_expired_messages/0,
 	 remove_old_messages/1,
-	 remove_user/2]).
+	 remove_user/2,
+	 webadmin_page/3,
+	 webadmin_user/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("web/ejabberd_http.hrl").
+-include("web/ejabberd_web_admin.hrl").
 
 -record(offline_msg, {us, timestamp, expire, from, to, packet}).
 
@@ -42,6 +46,10 @@ start(Host, Opts) ->
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host,
 		       ?MODULE, remove_user, 50),
+    ejabberd_hooks:add(webadmin_page_host, Host,
+		       ?MODULE, webadmin_page, 50),
+    ejabberd_hooks:add(webadmin_user, Host,
+		       ?MODULE, webadmin_user, 50),
     MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, init, [MaxOfflineMsgs])).
@@ -106,6 +114,10 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(webadmin_page_host, Host,
+			  ?MODULE, webadmin_page, 50),
+    ejabberd_hooks:delete(webadmin_user, Host,
+			  ?MODULE, webadmin_user, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
     {wait, Proc}.
@@ -420,3 +432,107 @@ discard_warn_sender(Msgs) ->
 		To,
 		From, Err)
       end, Msgs).
+
+
+webadmin_page(_, Host,
+	      #request{us = _US,
+		       path = ["user", U, "queue"],
+		       q = Query,
+		       lang = Lang} = _Request) ->
+    Res = user_queue(U, Host, Query, Lang),
+    {stop, Res};
+
+webadmin_page(Acc, _, _) -> Acc.
+
+user_queue(User, Server, Query, Lang) ->
+    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
+    Res = user_queue_parse_query(US, Query),
+    Msgs = lists:keysort(#offline_msg.timestamp,
+			 mnesia:dirty_read({offline_msg, US})),
+    FMsgs =
+	lists:map(
+	  fun(#offline_msg{timestamp = TimeStamp, from = From, to = To,
+			   packet = {xmlelement, Name, Attrs, Els}} = Msg) ->
+		  ID = jlib:encode_base64(binary_to_list(term_to_binary(Msg))),
+		  {{Year, Month, Day}, {Hour, Minute, Second}} =
+		      calendar:now_to_local_time(TimeStamp),
+		  Time = lists:flatten(
+			   io_lib:format(
+			     "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+			     [Year, Month, Day, Hour, Minute, Second])),
+		  SFrom = jlib:jid_to_string(From),
+		  STo = jlib:jid_to_string(To),
+		  Attrs2 = jlib:replace_from_to_attrs(SFrom, STo, Attrs),
+		  Packet = {xmlelement, Name, Attrs2, Els},
+		  FPacket = ejabberd_web_admin:pretty_print_xml(Packet),
+		  ?XE("tr",
+		      [?XAE("td", [{"class", "valign"}], [?INPUT("checkbox", "selected", ID)]),
+		       ?XAC("td", [{"class", "valign"}], Time),
+		       ?XAC("td", [{"class", "valign"}], SFrom),
+		       ?XAC("td", [{"class", "valign"}], STo),
+		       ?XAE("td", [{"class", "valign"}], [?XC("pre", FPacket)])]
+		     )
+	  end, Msgs),
+    [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
+			     [us_to_list(US)]))] ++
+	case Res of
+	    ok -> [?CT("Submitted"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	      [?XE("table",
+		   [?XE("thead",
+			[?XE("tr",
+			     [?X("td"),
+			      ?XCT("td", "Time"),
+			      ?XCT("td", "From"),
+			      ?XCT("td", "To"),
+			      ?XCT("td", "Packet")
+			     ])]),
+		    ?XE("tbody",
+			if
+			    FMsgs == [] ->
+				[?XE("tr",
+				     [?XAC("td", [{"colspan", "4"}], " ")]
+				    )];
+			    true ->
+				FMsgs
+			end
+		       )]),
+	       ?BR,
+	       ?INPUTT("submit", "delete", "Delete Selected")
+	      ])].
+
+user_queue_parse_query(US, Query) ->
+    case lists:keysearch("delete", 1, Query) of
+	{value, _} ->
+	    Msgs = lists:keysort(#offline_msg.timestamp,
+				 mnesia:dirty_read({offline_msg, US})),
+	    F = fun() ->
+			lists:foreach(
+			  fun(Msg) ->
+				  ID = jlib:encode_base64(
+					 binary_to_list(term_to_binary(Msg))),
+				  case lists:member({"selected", ID}, Query) of
+				      true ->
+					  mnesia:delete_object(Msg);
+				      false ->
+					  ok
+				  end
+			  end, Msgs)
+		end,
+	    mnesia:transaction(F),
+	    ok;
+	false ->
+	    nothing
+    end.
+
+us_to_list({User, Server}) ->
+    jlib:jid_to_string({User, Server, ""}).
+
+webadmin_user(Acc, User, Server, Lang) ->
+    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
+    QueueLen = length(mnesia:dirty_read({offline_msg, US})),
+    FQueueLen = [?AC("queue/",
+		     integer_to_list(QueueLen))],
+    Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen.
