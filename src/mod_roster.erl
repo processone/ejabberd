@@ -7,10 +7,6 @@
 
 -module(mod_roster).
 -author('alexey@sevcom.net').
-v v v v v v v
-*************
--vsn('$Revision$ ').
-^ ^ ^ ^ ^ ^ ^
 
 -behaviour(gen_mod).
 

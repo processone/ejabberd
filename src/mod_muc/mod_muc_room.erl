@@ -3,12 +3,10 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : MUC room stuff
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_muc_room).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_fsm).
 

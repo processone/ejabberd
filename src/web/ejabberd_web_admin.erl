@@ -10,7 +10,6 @@
 
 -module(ejabberd_web_admin).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 %% External exports
 -export([process/2,
