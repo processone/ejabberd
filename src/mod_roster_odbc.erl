@@ -20,11 +20,16 @@
 	 out_subscription/4,
 	 set_items/3,
 	 remove_user/2,
-	 get_jid_info/4]).
+	 get_jid_info/4,
+	 webadmin_page/3,
+	 webadmin_user/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_roster.hrl").
+-include("web/ejabberd_http.hrl").
+-include("web/ejabberd_web_admin.hrl").
+
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -44,6 +49,10 @@ start(Host, Opts) ->
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(resend_subscription_requests_hook, Host,
 		       ?MODULE, get_in_pending_subscriptions, 50),
+    ejabberd_hooks:add(webadmin_page_host, Host,
+		       ?MODULE, webadmin_page, 50),
+    ejabberd_hooks:add(webadmin_user, Host,
+		       ?MODULE, webadmin_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
@@ -64,6 +73,10 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(resend_subscription_requests_hook, Host,
 		       ?MODULE, get_in_pending_subscriptions, 50),
+    ejabberd_hooks:delete(webadmin_page_host, Host,
+			  ?MODULE, webadmin_page, 50),
+    ejabberd_hooks:delete(webadmin_user, Host,
+			  ?MODULE, webadmin_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 
@@ -124,6 +137,14 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
     end.
 
 get_user_roster(Acc, {LUser, LServer}) ->
+    Items = get_roster(LUser, LServer),
+    lists:filter(fun(#roster{subscription = none, ask = in}) ->
+			 false;
+		    (_) ->
+			 true
+		 end, Items) ++ Acc.
+
+get_roster(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",
@@ -142,9 +163,6 @@ get_user_roster(Acc, {LUser, LServer}) ->
 				   %% Bad JID in database:
 				   error ->
 				       [];
-				   #roster{subscription = none,
-					   ask = in} ->
-				       [];
 				   R ->
 				       SJID = jlib:jid_to_string(R#roster.jid),
 				       Groups = lists:flatmap(
@@ -156,9 +174,9 @@ get_user_roster(Acc, {LUser, LServer}) ->
 				       [R#roster{groups = Groups}]
 			       end
 		       end, Items),
-	    RItems ++ Acc;
+	    RItems;
 	_ ->
-	    Acc
+	    []
     end.
 
 
@@ -881,4 +899,165 @@ groups_to_string(#roster{us = {User, _Server},
 				  "'", SJID, "',"
 				  "'", ejabberd_odbc:escape(Group), "'"],
 			[String|Acc] end, [], Groups).
+
+webadmin_page(_, Host,
+	      #request{us = _US,
+		       path = ["user", U, "roster"],
+		       q = Query,
+		       lang = Lang} = _Request) ->
+    Res = user_roster(U, Host, Query, Lang),
+    {stop, Res};
+
+webadmin_page(Acc, _, _) -> Acc.
+
+user_roster(User, Server, Query, Lang) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
+    Items1 = get_roster(LUser, LServer),
+    Res = user_roster_parse_query(User, Server, Items1, Query),
+    Items = get_roster(LUser, LServer),
+    SItems = lists:sort(Items),
+    FItems =
+	case SItems of
+	    [] ->
+		[?CT("None")];
+	    _ ->
+		[?XE("table",
+		     [?XE("thead",
+			  [?XE("tr",
+			       [?XCT("td", "Jabber ID"),
+				?XCT("td", "Nickname"),
+				?XCT("td", "Subscription"),
+				?XCT("td", "Pending"),
+				?XCT("td", "Groups")
+			       ])]),
+		      ?XE("tbody",
+			  lists:map(
+			    fun(R) ->
+				    Groups =
+					lists:flatmap(
+					  fun(Group) ->
+						  [?C(Group), ?BR]
+					  end, R#roster.groups),
+				    Pending = ask_to_pending(R#roster.ask),
+				    ?XE("tr",
+					[?XAC("td", [{"class", "valign"}],
+					      jlib:jid_to_string(R#roster.jid)),
+					 ?XAC("td", [{"class", "valign"}],
+					      R#roster.name),
+					 ?XAC("td", [{"class", "valign"}],
+					      atom_to_list(R#roster.subscription)),
+					 ?XAC("td", [{"class", "valign"}],
+					      atom_to_list(Pending)),
+					 ?XAE("td", [{"class", "valign"}], Groups),
+					 if
+					     Pending == in ->
+						 ?XAE("td", [{"class", "valign"}],
+						      [?INPUTT("submit",
+							       "validate" ++
+							       ejabberd_web_admin:term_to_id(R#roster.jid),
+							       "Validate")]);
+					     true ->
+						 ?X("td")
+					 end,
+					 ?XAE("td", [{"class", "valign"}],
+					      [?INPUTT("submit",
+						       "remove" ++
+						       ejabberd_web_admin:term_to_id(R#roster.jid),
+						       "Remove")])])
+			    end, SItems))])]
+	end,
+    [?XC("h1", ?T("Roster of ") ++ us_to_list(US))] ++
+	case Res of
+	    ok -> [?CT("Submitted"), ?P];
+	    error -> [?CT("Bad format"), ?P];
+	    nothing -> []
+	end ++
+	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	      FItems ++
+	      [?P,
+	       ?INPUT("text", "newjid", ""), ?C(" "),
+	       ?INPUTT("submit", "addjid", "Add Jabber ID")
+	      ])].
+
+user_roster_parse_query(User, Server, Items, Query) ->
+    case lists:keysearch("addjid", 1, Query) of
+	{value, _} ->
+	    case lists:keysearch("newjid", 1, Query) of
+		{value, {_, undefined}} ->
+		    error;
+		{value, {_, SJID}} ->
+		    case jlib:string_to_jid(SJID) of
+			JID when is_record(JID, jid) ->
+			    user_roster_subscribe_jid(User, Server, JID),
+			    ok;
+			error ->
+			    error
+		    end;
+		false ->
+		    error
+	    end;
+	false ->
+	    case catch user_roster_item_parse_query(
+			 User, Server, Items, Query) of
+		submitted ->
+		    ok;
+		{'EXIT', _Reason} ->
+		    error;
+		_ ->
+		    nothing
+	    end
+    end.
+
+
+user_roster_subscribe_jid(User, Server, JID) ->
+    out_subscription(User, Server, JID, subscribe),
+    UJID = jlib:make_jid(User, Server, ""),
+    ejabberd_router:route(
+      UJID, JID, {xmlelement, "presence", [{"type", "subscribe"}], []}).
+
+user_roster_item_parse_query(User, Server, Items, Query) ->
+    lists:foreach(
+      fun(R) ->
+	      JID = R#roster.jid,
+	      case lists:keysearch(
+		     "validate" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
+		  {value, _} ->
+		      JID1 = jlib:make_jid(JID),
+		      out_subscription(
+			User, Server, JID1, subscribed),
+		      UJID = jlib:make_jid(User, Server, ""),
+		      ejabberd_router:route(
+			UJID, JID1, {xmlelement, "presence",
+				     [{"type", "subscribed"}], []}),
+		      throw(submitted);
+		  false ->
+		      case lists:keysearch(
+			     "remove" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
+			  {value, _} ->
+			      UJID = jlib:make_jid(User, Server, ""),
+			      process_iq(
+				UJID, UJID,
+				#iq{type = set,
+				    sub_el = {xmlelement, "query",
+					      [{"xmlns", ?NS_ROSTER}],
+					      [{xmlelement, "item",
+						[{"jid", jlib:jid_to_string(JID)},
+						 {"subscription", "remove"}],
+						[]}]}}),
+			      throw(submitted);
+			  false ->
+			      ok
+		      end
+
+	      end
+      end, Items),
+    nothing.
+
+us_to_list({User, Server}) ->
+    jlib:jid_to_string({User, Server, ""}).
+
+webadmin_user(Acc, _User, _Server, Lang) ->
+    Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].
 

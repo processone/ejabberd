@@ -16,7 +16,8 @@
 -export([process/2,
 	 list_users/4,
 	 list_users_in_diapason/4,
-	 pretty_print_xml/1]).
+	 pretty_print_xml/1,
+	 term_to_id/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -959,14 +960,6 @@ process_admin(Host,
 
 process_admin(Host,
 	      #request{us = US,
-		       path = ["user", U, "roster"],
-		       q = Query,
-		       lang = Lang} = Request) ->
-    Res = user_roster(U, Host, Query, Lang, true),
-    make_xhtml(Res, Host, Lang);
-
-process_admin(Host,
-	      #request{us = US,
 		       path = ["nodes"],
 		       q = Query,
 		       lang = Lang} = Request) ->
@@ -1469,7 +1462,6 @@ user_info(User, Server, Query, Lang) ->
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?XCT("h3", "Connected Resources:")] ++ FResources ++
 	      [?XCT("h3", "Password:")] ++ FPassword ++
-	      [?XE("h3", [?ACT("roster/", "Roster")])] ++
 	      UserItems ++
 	      [?P, ?INPUTT("submit", "removeuser", "Remove User")])].
 
@@ -1496,165 +1488,6 @@ user_parse_query(User, Server, Query) ->
 	    end
     end.
 
-
-
--record(roster, {usj,
-		 us,
-		 jid,
-		 name = "",
-		 subscription = none,
-		 ask = none,
-		 groups = [],
-		 xattrs = [],
-		 xs = []}).
-
-ask_to_pending(subscribe) -> out;
-ask_to_pending(unsubscribe) -> none;
-ask_to_pending(Ask) -> Ask.
-
-
-user_roster(User, Server, Query, Lang, Admin) ->
-    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
-    Items1 = mnesia:dirty_index_read(roster, US, #roster.us),
-    Res = user_roster_parse_query(User, Server, Items1, Query, Admin),
-    Items = mnesia:dirty_index_read(roster, US, #roster.us),
-    SItems = lists:sort(Items),
-    FItems =
-	case SItems of
-	    [] ->
-		[?CT("None")];
-	    _ ->
-		[?XE("table",
-		     [?XE("thead",
-			  [?XE("tr",
-			       [?XCT("td", "Jabber ID"),
-				?XCT("td", "Nickname"),
-				?XCT("td", "Subscription"),
-				?XCT("td", "Pending"),
-				?XCT("td", "Groups")
-			       ])]),
-		      ?XE("tbody",
-			  lists:map(
-			    fun(R) ->
-				    Groups =
-					lists:flatmap(
-					  fun(Group) ->
-						  [?C(Group), ?BR]
-					  end, R#roster.groups),
-				    Pending = ask_to_pending(R#roster.ask),
-				    ?XE("tr",
-					[?XAC("td", [{"class", "valign"}],
-					      jlib:jid_to_string(R#roster.jid)),
-					 ?XAC("td", [{"class", "valign"}],
-					      R#roster.name),
-					 ?XAC("td", [{"class", "valign"}],
-					      atom_to_list(R#roster.subscription)),
-					 ?XAC("td", [{"class", "valign"}],
-					      atom_to_list(Pending)),
-					 ?XAE("td", [{"class", "valign"}], Groups),
-					 if
-					     Pending == in ->
-						 ?XAE("td", [{"class", "valign"}],
-						      [?INPUTT("submit",
-							       "validate" ++
-							       term_to_id(R#roster.jid),
-							       "Validate")]);
-					     true ->
-						 ?X("td")
-					 end,
-					 ?XAE("td", [{"class", "valign"}],
-					      [?INPUTT("submit",
-						       "remove" ++
-						       term_to_id(R#roster.jid),
-						       "Remove")])])
-			    end, SItems))])]
-	end,
-    [?XC("h1", ?T("Roster of ") ++ us_to_list(US))] ++
-	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
-	    nothing -> []
-	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
-	      FItems ++
-	      [?P,
-	       ?INPUT("text", "newjid", ""), ?C(" "),
-	       ?INPUTT("submit", "addjid", "Add Jabber ID")
-	      ])].
-
-user_roster_parse_query(User, Server, Items, Query, Admin) ->
-    case lists:keysearch("addjid", 1, Query) of
-	{value, _} ->
-	    case lists:keysearch("newjid", 1, Query) of
-		{value, {_, undefined}} ->
-		    error;
-		{value, {_, SJID}} ->
-		    case jlib:string_to_jid(SJID) of
-			JID when is_record(JID, jid) ->
-			    user_roster_subscribe_jid(User, Server, JID),
-			    ok;
-			error ->
-			    error
-		    end;
-		false ->
-		    error
-	    end;
-	false ->
-	    case catch user_roster_item_parse_query(
-			 User, Server, Items, Query) of
-		submitted ->
-		    ok;
-		{'EXIT', _Reason} ->
-		    error;
-		_ ->
-		    nothing
-	    end
-    end.
-
-
-user_roster_subscribe_jid(User, Server, JID) ->
-    mod_roster:out_subscription(User, Server, JID, subscribe),
-    UJID = jlib:make_jid(User, Server, ""),
-    ejabberd_router:route(
-      UJID, JID, {xmlelement, "presence", [{"type", "subscribe"}], []}).
-
-user_roster_item_parse_query(User, Server, Items, Query) ->
-    lists:foreach(
-      fun(R) ->
-	      JID = R#roster.jid,
-	      case lists:keysearch(
-		     "validate" ++ term_to_id(JID), 1, Query) of
-		  {value, _} ->
-		      JID1 = jlib:make_jid(JID),
-		      mod_roster:out_subscription(
-			User, Server, JID1, subscribed),
-		      UJID = jlib:make_jid(User, Server, ""),
-		      ejabberd_router:route(
-			UJID, JID1, {xmlelement, "presence",
-				     [{"type", "subscribed"}], []}),
-		      throw(submitted);
-		  false ->
-		      case lists:keysearch(
-			     "remove" ++ term_to_id(JID), 1, Query) of
-			  {value, _} ->
-			      UJID = jlib:make_jid(User, Server, ""),
-			      mod_roster:process_iq(
-				UJID, UJID,
-				#iq{type = set,
-				    sub_el = {xmlelement, "query",
-					      [{"xmlns", ?NS_ROSTER}],
-					      [{xmlelement, "item",
-						[{"jid", jlib:jid_to_string(JID)},
-						 {"subscription", "remove"}],
-						[]}]}}),
-			      throw(submitted);
-			  false ->
-			      ok
-		      end
-
-	      end
-      end, Items),
-    nothing.
 
 
 list_last_activity(Host, Lang, Integral, Period) ->
