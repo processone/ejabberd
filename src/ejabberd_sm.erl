@@ -3,7 +3,6 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Session manager
 %%% Created : 24 Nov 2002 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_sm).
@@ -374,15 +373,10 @@ do_route(From, To, Packet) ->
 					   LUser, LServer),
 			    lists:foreach(
 			      fun({_, R}) ->
-				      if LFrom /=
-					 {LUser, LServer, R} ->
-					      do_route(
-						From,
-						jlib:jid_replace_resource(To, R),
-						Packet);
-					 true ->
-					      ok
-				      end
+				      do_route(
+					From,
+					jlib:jid_replace_resource(To, R),
+					Packet)
 			      end, PResources);
 		       true ->
 			    ok

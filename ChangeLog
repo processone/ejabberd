@@ -1,5 +1,8 @@
 2007-08-23  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/ejabberd_sm.erl: Removed check which denies resource to
+	receive its own presence
+
 	* src/web/ejabberd_web_admin.erl: Added hooks to allow plugins to
 	add their pages without modifying ejabberd_web_admin.erl (thanks
 	to Badlop)
