@@ -3,7 +3,6 @@
 %%% Author  : Evgeniy Khramtsov <xram@jabber.ru>
 %%% Purpose : SOCKS5 Bytestreams XMPP service.
 %%% Created : 12 Oct 2006 by Evgeniy Khramtsov <xram@jabber.ru>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_proxy65_service).
@@ -175,7 +174,7 @@ iq_vcard(Lang) ->
        "Copyright (c) 2003-2006 Alexey Shchepin")}]}].
 
 parse_options(ServerHost, Opts) ->
-    MyHost = gen_mod:get_opt(host, Opts, "proxy." ++ ServerHost),
+    MyHost = gen_mod:get_opt_host(ServerHost, Opts, "proxy.@HOST@"),
     Port = gen_mod:get_opt(port, Opts, 7777),
     ACL = gen_mod:get_opt(access, Opts, all),
     Name = gen_mod:get_opt(name, Opts, "SOCKS5 Bytestreams"),

@@ -3,12 +3,10 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : 
 %%% Created : 15 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_echo).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -68,7 +66,7 @@ stop(Host) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    MyHost = gen_mod:get_opt(host, Opts, "echo." ++ Host),
+    MyHost = gen_mod:get_opt_host(Host, Opts, "echo.@HOST@"),
     ejabberd_router:register_route(MyHost),
     {ok, #state{host = MyHost}}.
 

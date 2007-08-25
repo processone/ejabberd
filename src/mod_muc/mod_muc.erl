@@ -144,7 +144,7 @@ init([Host, Opts]) ->
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, muc_online_room)}]),
     mnesia:add_table_copy(muc_online_room, node(), ram_copies),
-    MyHost = gen_mod:get_opt(host, Opts, "conference." ++ Host),
+    MyHost = gen_mod:get_opt_host(Host, Opts, "conference.@HOST@"),
     update_tables(MyHost),
     clean_table_from_bad_node(node(), MyHost),
     mnesia:add_table_index(muc_registered, nick),

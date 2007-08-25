@@ -3,12 +3,10 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Pub/sub support (JEP-0060)
 %%% Created :  4 Jul 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_pubsub).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -122,7 +120,7 @@ init([ServerHost, Opts]) ->
     mnesia:create_table(pubsub_presence,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, pubsub_presence)}]),
-    Host = gen_mod:get_opt(host, Opts, "pubsub." ++ ServerHost),
+    Host = gen_mod:get_opt_host(ServerHost, Opts, "pubsub.@HOST@"),
     update_table(Host),
     mnesia:add_table_index(pubsub_node, host_parent),
     ServedHosts = gen_mod:get_opt(served_hosts, Opts, []),

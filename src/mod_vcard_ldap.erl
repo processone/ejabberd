@@ -3,12 +3,10 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Support for VCards from LDAP storage.
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_vcard_ldap).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -641,7 +639,7 @@ find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
 parse_options(Host, Opts) ->
-    MyHost = gen_mod:get_opt(host, Opts, "vjud." ++ Host),
+    MyHost = gen_mod:get_opt_host(Host, Opts, "vjud.@HOST@"),
     Search = gen_mod:get_opt(search, Opts, true),
     Matches = case gen_mod:get_opt(matches, Opts, 30) of
 		infinity  -> 0;

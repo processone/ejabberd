@@ -3,18 +3,17 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : 
 %%% Created : 24 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(gen_mod).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start/0,
 	 start_module/3,
 	 stop_module/2,
 	 get_opt/2,
 	 get_opt/3,
+	 get_opt_host/3,
 	 get_module_opt/4,
 	 loaded_modules/1,
 	 loaded_modules_with_opts/1,
@@ -132,6 +131,10 @@ get_module_opt(Host, Module, Opt, Default) ->
 	[#ejabberd_module{opts = Opts} | _] ->
 	    get_opt(Opt, Opts, Default)
     end.
+
+get_opt_host(Host, Opts, Default) ->
+    Val = get_opt(host, Opts, Default),
+    element(2, regexp:gsub(Val, "@HOST@", Host)).
 
 loaded_modules(Host) ->
     ets:select(ejabberd_modules,
