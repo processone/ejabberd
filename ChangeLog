@@ -1,3 +1,8 @@
+2007-08-26  Alexey Shchepin  <alexey@process-one.net>
+
+	* doc/guide.tex: Removed mentions of unexistent 'hosts' modules
+	option (thanks to Badlop)
+
 2007-08-25  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/gen_mod.erl: Substitute @HOST@ with hostname in the 'host'

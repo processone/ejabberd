@@ -90,10 +90,9 @@
 \newcommand{\iqdiscitem}[1]{\titem{iqdisc} \ind{options!iqdisc}This specifies 
 the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).}
 \newcommand{\hostitem}[1]{
-  \titem{hosts} \ind{options!hosts} This option defines the hostnames of the
-  service (see section~\ref{modhostsoption}). If neither \texttt{hosts} nor
-  the old \texttt{host} is present, the prefix `\jid{#1.}' is added to all
-  \ejabberd{} hostnames.
+  \titem{host} \ind{options!host} This option defines the Jabber ID of the
+  service. If the \texttt{host} option is not specified, the Jabber ID will be the
+  hostname of the virtual host with the prefix `\jid{#1.}'.
 }
 
 %% Title page
@@ -1697,47 +1696,23 @@ Example:
    ]}.
 \end{verbatim}
 
-\subsubsection{\option{hosts}}
-\label{modhostsoption}
-\ind{options!hosts}
+\subsubsection{\option{host}}
+\label{modhostoption}
+\ind{options!host}
 
-A module acting as a service can have one or more hostnames. These hostnames
-can be defined with the \option{hosts} option.
+This option defines the Jabber ID of a service provided by an ejabberd module.
 
-Examples:
-\begin{itemize}
-\item Serving the \ind{modules!\modecho{}}echo module on one domain:
-  \begin{itemize}
-  \item
+This example configures
+the \ind{modules!\modecho{}}echo module to provide its echoing service 
+in the Jabber ID \jid{mirror.example.org}:
     \begin{verbatim}
   {modules,
    [
     ...
-    {mod_echo, [{hosts, ["echo.example.org"]}]},
+    {mod_echo, [{host, "mirror.example.org"}]},
     ...
    ]}.
 \end{verbatim}
-  \item Backwards compatibility with older \ejabberd{} versions can be retained
-    with:
-    \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_echo, [{host, "echo.example.org"}]},
-    ...
-   ]}.
-\end{verbatim}
-  \end{itemize}
-  \item Serving the echo module on two domains:
-    \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_echo, [{hosts, ["echo.example.net", "echo.example.com"]}]},
-    ...
-   ]}.
-\end{verbatim}
-\end{itemize}
 
 \subsection{\modannounce{}}
 \label{modannounce}
@@ -1879,21 +1854,16 @@ Options:
 \hostitem{echo}
 \end{description}
 
-Examples:
-\begin{itemize}
-\item Mirror, mirror, on the wall, who is the most beautiful
+Example: Mirror, mirror, on the wall, who is the most beautiful
   of them all?
   \begin{verbatim}
   {modules,
    [
     ...
-    {mod_echo, [{hosts, ["mirror.example.org"]}]},
+    {mod_echo, [{host, "mirror.example.org"}]},
     ...
    ]}.
 \end{verbatim}
-\item If you still do not understand the inner workings of \modecho{},
-  you can find a few more examples in section~\ref{modhostsoption}.
-\end{itemize}
 
 \subsection{\modirc{}}
 \label{modirc}
@@ -1942,10 +1912,7 @@ Examples:
     ...
    ]}.
 \end{verbatim}
-%TODO: bug in current svn!: irc-transport.example.com will *not* show up in the
-%      service discovery items; instead you will see irc.example.com
-\item In next example the IRC transport is available on the two virtual hosts
-  \jid{example.net} and \jid{example.com} with different prefixes on each host.
+\item In next example the IRC transport is available with JIDs with prefix \jid{irc-t.net}.
   Moreover, the transport is only accessible by paying customers registered on
   our domains and on other servers.
   \begin{verbatim}
@@ -1960,7 +1927,7 @@ Examples:
    [
     ...
     {mod_irc, [{access, paying_customers},
-               {hosts, ["irc.example.net", "irc-transport.example.com"]}]},
+               {host, "irc.example.net"}]},
     ...
    ]}.
 \end{verbatim}
@@ -2752,7 +2719,7 @@ Options:
 \iqdiscitem{\ns{vcard-temp}}
 \titem{search}\ind{options!search}This option specifies whether the search
   functionality is enabled (value: \term{true}) or disabled (value:
-  \term{false}). If disabled, the option \term{hosts} will be ignored and the
+  \term{false}). If disabled, the option \term{host} will be ignored and the
   \Jabber{} User Directory service will not appear in the Service Discovery item
   list. The default value is \term{true}.
 \titem{matches}\ind{options!matches}With this option, the number of reported
@@ -2820,7 +2787,7 @@ consists of the following \modvcardldap{}-specific options:
 \iqdiscitem{\ns{vcard-temp}}
 \titem{search}\ind{options!search}This option specifies whether the search
   functionality is enabled (value: \term{true}) or disabled (value:
-  \term{false}). If disabled, the option \term{hosts} will be ignored and the
+  \term{false}). If disabled, the option \term{host} will be ignored and the
   \Jabber{} User Directory service will not appear in the Service Discovery item
   list. The default value is \term{true}.
 \titem{ldap\_vcard\_map}\ind{options!ldap\_vcard\_map}With this option you can
