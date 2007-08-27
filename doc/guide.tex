@@ -92,7 +92,8 @@ the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).
 \newcommand{\hostitem}[1]{
   \titem{host} \ind{options!host} This option defines the Jabber ID of the
   service. If the \texttt{host} option is not specified, the Jabber ID will be the
-  hostname of the virtual host with the prefix `\jid{#1.}'.
+  hostname of the virtual host with the prefix `\jid{#1.}'. The keyword "@HOST@"
+  is replaced at start time with the real virtual host name.
 }
 
 %% Title page
@@ -1701,6 +1702,7 @@ Example:
 \ind{options!host}
 
 This option defines the Jabber ID of a service provided by an ejabberd module.
+The keyword "@HOST@" is replaced at start time with the real virtual host string.
 
 This example configures
 the \ind{modules!\modecho{}}echo module to provide its echoing service 
@@ -1710,6 +1712,17 @@ in the Jabber ID \jid{mirror.example.org}:
    [
     ...
     {mod_echo, [{host, "mirror.example.org"}]},
+    ...
+   ]}.
+\end{verbatim}
+
+However, if there are several virtual hosts and this module is enabled in all of them,
+the "@HOST@" keyword must be used:
+    \begin{verbatim}
+  {modules,
+   [
+    ...
+    {mod_echo, [{host, "mirror.@HOST@"}]},
     ...
    ]}.
 \end{verbatim}

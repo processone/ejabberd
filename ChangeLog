@@ -1,3 +1,7 @@
+2007-08-28  Alexey Shchepin  <alexey@process-one.net>
+
+	* doc/guide.tex: Described @HOST@ feature (thanks to Badlop)
+
 2007-08-26  Alexey Shchepin  <alexey@process-one.net>
 
 	* doc/guide.tex: Removed mentions of unexistent 'hosts' modules
