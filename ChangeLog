@@ -51,10 +51,14 @@
 
 	* src/mod_offline.erl: Renamed MAX_OFFLINE_MSGS to MaxOfflineMsgs
 
+2007-08-16  Jerome Sautret  <jsautret@process-one.net>
+
 	* src/odbc/ejabberd_odbc_sup.erl: Add an odbc_pool_size config
-	file option to choose the number of SQL connection in each pool
-	(EJAB-58) (thanks to Jerome Sautret)
-	* src/odbc/ejabberd_odbc.erl: Likewise
+	file option to choose the number of SQL connection in each
+	pool (EJAB-58).
+	* src/odbc/ejabberd_odbc.erl: Add an odbc_keepalive_interval
+	config file option to perform a keep alive query at given
+	interval (EJAB-206).
 
 2007-08-13  Mickael Remond  <mickael.remond@process-one.net>
 
