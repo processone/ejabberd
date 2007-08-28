@@ -1,3 +1,9 @@
+2007-08-28  Mickael Remond  <mremond@process-one.net>
+
+	* src/mod_offline_odbc.erl: Implements quota for offline messages
+	in relational database (EJAB-314)
+	* src/odbc/odbc_queries.erl: Likewise
+	
 2007-08-28  Alexey Shchepin  <alexey@process-one.net>
 
 	* doc/guide.tex: Described @HOST@ feature (thanks to Badlop)
