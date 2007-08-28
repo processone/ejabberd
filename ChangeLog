@@ -2,6 +2,11 @@
 
 	* doc/guide.tex: Described @HOST@ feature (thanks to Badlop)
 
+2007-08-26  Mickael Remond  <mremond@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Implements muc max users option
+	from XEP-0045 (Thanks to Jerome Sautret) (EJAB-248).
+
 2007-08-26  Alexey Shchepin  <alexey@process-one.net>
 
 	* doc/guide.tex: Removed mentions of unexistent 'hosts' modules

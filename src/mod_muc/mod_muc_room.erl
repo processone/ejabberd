@@ -30,6 +30,9 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
+-define(MAX_USERS_DEFAULT, 100).
+-define(MAX_USERS_DEFAULT_LIST, [5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
+
 -define(SETS, gb_sets).
 -define(DICT, dict).
 
@@ -49,6 +52,7 @@
 		 password_protected = false,
 		 password = "",
 		 anonymous = true,
+		 max_users = ?MAX_USERS_DEFAULT,
 		 logging = false
 		}).
 
@@ -115,7 +119,7 @@ start_link(Host, ServerHost, Access, Room, HistorySize, Opts) ->
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
-%%          {stop, StopReason}                   
+%%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([Host, ServerHost, Access, Room, HistorySize, Creator, _Nick, DefRoomOpts]) ->
     State = set_affiliation(Creator, owner,
@@ -141,7 +145,7 @@ init([Host, ServerHost, Access, Room, HistorySize, Opts]) ->
 %% Func: StateName/2
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 normal_state({route, From, "",
 	      {xmlelement, "message", Attrs, Els} = Packet},
@@ -493,7 +497,7 @@ normal_state(_Event, StateData) ->
 %% Func: handle_event/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event({service_message, Msg}, _StateName, StateData) ->
     MessagePkt = {xmlelement, "message",
@@ -540,7 +544,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
     FAffiliation = get_affiliation(JID, StateData),
@@ -590,7 +594,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({process_presence, From}, normal_state = _StateName, StateData) ->
     Activity = case ?DICT:find(jlib:jid_tolower(From),
@@ -682,7 +686,7 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 					       NewStateData1),
 		    {next_state, normal_state, NewStateData2};
 		_ ->
-		    Err = 
+		    Err =
 			case (StateData#state.config)#config.allow_change_subj of
 			    true ->
 				?ERRT_FORBIDDEN(
@@ -1064,11 +1068,24 @@ is_nick_change(JID, Nick, StateData) ->
 
 add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     Lang = xml:get_attr_s("xml:lang", Attrs),
+    MaxUsers = (StateData#state.config)#config.max_users,
+    UsersNb = length(?DICT:to_list(StateData#state.users)),
     Affiliation = get_affiliation(From, StateData),
-    case {is_nick_exists(Nick, StateData),
+    case {(Affiliation == admin orelse Affiliation == owner)
+	  orelse (MaxUsers == none orelse UsersNb+1 =< MaxUsers),
+	  is_nick_exists(Nick, StateData),
 	  mod_muc:can_use_nick(StateData#state.host, From, Nick),
 	  get_default_role(Affiliation, StateData)} of
-	{_, _, none} ->
+	{false, _, _, _} ->
+	    % max user reached and user is not admin or owner
+	    Err = jlib:make_error_reply(
+		    Packet,
+		    ?ERR_SERVICE_UNAVAILABLE),
+	    ejabberd_router:route( % TODO: s/Nick/""/
+	      jlib:jid_replace_resource(StateData#state.jid, Nick),
+	      From, Err),
+	    StateData;
+	{_, _, _, none} ->
 	    Err = jlib:make_error_reply(
 		    Packet,
 		    case Affiliation of
@@ -1083,7 +1100,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
-	{true, _, _} ->
+	{_, true, _, _} ->
 	    ErrText = "Nickname is already in use by another occupant",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
 	    ejabberd_router:route(
@@ -1091,7 +1108,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
-	{_, false, _} ->
+	{_, _, false, _} ->
 	    ErrText = "Nickname is registered by another person",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
 	    ejabberd_router:route(
@@ -1099,7 +1116,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
-	{_, _, Role} ->
+	{_, _, _, Role} ->
 	    case check_password(Affiliation, Els, StateData) of
 		true ->
 		    NewState =
@@ -1762,7 +1779,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	    Err
     end.
 
-    
+
 find_changed_items(_UJID, _UAffiliation, _URole, [], _Lang, _StateData, Res) ->
     {result, Res};
 find_changed_items(UJID, UAffiliation, URole, [{xmlcdata, _} | Items],
@@ -2273,6 +2290,22 @@ get_config(Lang, StateData, From) ->
 			end),
 	 {xmlelement, "field",
 	  [{"type", "list-single"},
+	   {"label", translate:translate(Lang, "Maximum Number of Occupants")},
+	   {"var", "muc#roomconfig_maxusers"}],
+	  [{xmlelement, "value", [], [{xmlcdata,
+				       case Config#config.max_users of
+					  none -> "none";
+					  N -> erlang:integer_to_list(N)
+				       end
+				      }]},
+	   {xmlelement, "option", [{"label", translate:translate(Lang, "No limit")}],
+	    [{xmlelement, "value", [], [{xmlcdata, "none"}]}]} |
+	   [{xmlelement, "option", [{"label", erlang:integer_to_list(N)}],
+	    [{xmlelement, "value", [], [{xmlcdata, erlang:integer_to_list(N)}]}]} ||
+	       N <- ?MAX_USERS_DEFAULT_LIST]
+	  ]},
+	 {xmlelement, "field",
+	  [{"type", "list-single"},
 	   {"label", translate:translate(Lang, "Present real JIDs to")},
 	   {"var", "muc#roomconfig_whois"}],
 	  [{xmlelement, "value", [], [{xmlcdata,
@@ -2319,7 +2352,7 @@ get_config(Lang, StateData, From) ->
     {result, [{xmlelement, "instructions", [],
 	       [{xmlcdata,
 		 translate:translate(
-		   Lang, "You need an x:data capable client to configure room")}]}, 
+		   Lang, "You need an x:data capable client to configure room")}]},
 	      {xmlelement, "x", [{"xmlns", ?NS_XDATA},
 				 {"type", "form"}],
 	       Res}],
@@ -2396,6 +2429,18 @@ set_xoption([{"muc#roomconfig_whois", [Val]} | Opts], Config) ->
 	_ ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
+set_xoption([{"muc#roomconfig_maxusers", [Val]} | Opts], Config) ->
+    case Val of
+	"none" ->
+	    ?SET_STRING_XOPT(max_users, none);
+	_ ->
+	    case string:to_integer(Val) of
+		{error, _} ->
+		    {error, ?ERR_BAD_REQUEST};
+		{I, _} ->
+		    ?SET_STRING_XOPT(max_users, I)
+	    end
+    end;
 set_xoption([{"muc#roomconfig_enablelogging", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(logging, Val);
 set_xoption([{"FORM_TYPE", _} | Opts], Config) ->
@@ -2463,6 +2508,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      ?CASE_CONFIG_OPT(password);
 	      ?CASE_CONFIG_OPT(anonymous);
 	      ?CASE_CONFIG_OPT(logging);
+	      ?CASE_CONFIG_OPT(max_users);
 	      affiliations ->
 		  StateData#state{affiliations = ?DICT:from_list(Val)};
 	      subject ->
@@ -2493,6 +2539,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(password),
      ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging),
+     ?MAKE_CONFIG_OPT(max_users),
      {affiliations, ?DICT:to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author}
@@ -2666,7 +2713,7 @@ check_invitation(From, Els, Lang, StateData) ->
 		    jlib:jid_to_string(From)}],
 		  [{xmlelement, "reason", [],
 		    [{xmlcdata, Reason}]}]}],
-	    PasswdEl = 
+	    PasswdEl =
 		case (StateData#state.config)#config.password_protected of
 		    true ->
 			[{xmlelement, "password", [],
