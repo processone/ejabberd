@@ -1,5 +1,8 @@
 2007-08-28  Mickael Remond  <mremond@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Changed default max number of user
+	in a room to 200 (EJAB-248)
+	
 	* src/mod_offline_odbc.erl: Implements quota for offline messages
 	in relational database (EJAB-314)
 	* src/odbc/odbc_queries.erl: Likewise
