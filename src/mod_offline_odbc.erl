@@ -1,17 +1,19 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_offline_odbc.erl
-%%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
-%%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
+%%% Author  : Alexey Shchepin <alexey@process-one.net>
+%%% Purpose : Store and manage offline messages in relational database.
+%%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%----------------------------------------------------------------------
 
 -module(mod_offline_odbc).
--author('alexey@sevcom.net').
+-author('alexey@process-one.net').
 
 -behaviour(gen_mod).
 
+-export([count_offline_messages/2]).
+
 -export([start/2,
-	 init/1,
+	 init/2,
 	 stop/1,
 	 store_packet/3,
 	 pop_offline_messages/3,
@@ -29,7 +31,7 @@
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
-start(Host, _Opts) ->
+start(Host, Opts) ->
     ejabberd_hooks:add(offline_message_hook, Host,
 		       ?MODULE, store_packet, 50),
     ejabberd_hooks:add(resend_offline_messages_hook, Host,
@@ -42,56 +44,72 @@ start(Host, _Opts) ->
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, Host,
 		       ?MODULE, webadmin_user, 50),
+    MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [Host])).
+	     spawn(?MODULE, init, [Host, MaxOfflineMsgs])).
 
-init(Host) ->
-    loop(Host).
+%% MaxOfflineMsgs is either infinity of integer > 0
+init(Host, infinity) ->
+    loop(Host, infinity);
+init(Host, MaxOfflineMsgs) 
+  when integer(MaxOfflineMsgs), MaxOfflineMsgs > 0 ->
+    loop(Host, MaxOfflineMsgs).
 
-loop(Host) ->
+loop(Host, MaxOfflineMsgs) ->
     receive
-	#offline_msg{} = Msg ->
-	    Msgs = receive_all([Msg]),
-	    % TODO
-	    Query = lists:map(
-		      fun(M) ->
-			      Username =
-				  ejabberd_odbc:escape(
-				    (M#offline_msg.to)#jid.luser),
-			      From = M#offline_msg.from,
-			      To = M#offline_msg.to,
-			      {xmlelement, Name, Attrs, Els} =
-				  M#offline_msg.packet,
-			      Attrs2 = jlib:replace_from_to_attrs(
-					 jlib:jid_to_string(From),
-					 jlib:jid_to_string(To),
-					 Attrs),
-			      Packet = {xmlelement, Name, Attrs2,
-					Els ++
-					[jlib:timestamp_to_xml(
-					   calendar:now_to_universal_time(
-					     M#offline_msg.timestamp))]},
-			      XML =
-				  ejabberd_odbc:escape(
-				    lists:flatten(
-				      xml:element_to_string(Packet))),
-			      odbc_queries:add_spool_sql(Username, XML)
-		      end, Msgs),
-	    case catch odbc_queries:add_spool(Host, Query) of
-		{'EXIT', Reason} ->
-		    ?ERROR_MSG("~p~n", [Reason]);
-		_ ->
-		    ok
+	#offline_msg{user=Username} = Msg ->
+	    Msgs = receive_all(Username, [Msg]),
+	    Len = length(Msgs),
+
+	    %% Only count existing messages if needed:
+	    Count = if MaxOfflineMsgs =/= infinity ->
+			    Len + count_offline_messages(Username, Host);
+		       true -> 0
+		    end,
+	    if 
+		Count > MaxOfflineMsgs ->
+		    discard_warn_sender(Msgs);
+		true ->
+		    Query = lists:map(
+			      fun(M) ->
+				      Username =
+					  ejabberd_odbc:escape(
+					    (M#offline_msg.to)#jid.luser),
+				      From = M#offline_msg.from,
+				      To = M#offline_msg.to,
+				      {xmlelement, Name, Attrs, Els} =
+					  M#offline_msg.packet,
+				      Attrs2 = jlib:replace_from_to_attrs(
+						 jlib:jid_to_string(From),
+						 jlib:jid_to_string(To),
+						 Attrs),
+				      Packet = {xmlelement, Name, Attrs2,
+						Els ++
+						[jlib:timestamp_to_xml(
+						   calendar:now_to_universal_time(
+						     M#offline_msg.timestamp))]},
+				      XML =
+					  ejabberd_odbc:escape(
+					    lists:flatten(
+					      xml:element_to_string(Packet))),
+				      odbc_queries:add_spool_sql(Username, XML)
+			      end, Msgs),
+		    case catch odbc_queries:add_spool(Host, Query) of
+			{'EXIT', Reason} ->
+			    ?ERROR_MSG("~p~n", [Reason]);
+			_ ->
+			    ok
+		    end
 	    end,
-	    loop(Host);
+	    loop(Host, MaxOfflineMsgs);
 	_ ->
-	    loop(Host)
+	    loop(Host, MaxOfflineMsgs)
     end.
 
-receive_all(Msgs) ->
+receive_all(Username, Msgs) ->
     receive
-	#offline_msg{} = Msg ->
-	    receive_all([Msg | Msgs])
+	#offline_msg{user=Username} = Msg ->
+	    receive_all(Username, [Msg | Msgs])
     after 0 ->
 	    lists:reverse(Msgs)
     end.
@@ -247,6 +265,25 @@ remove_user(User, Server) ->
     odbc_queries:del_spool_msg(LServer, Username).
 
 
+%% Helper functions:
+
+%% TODO: Warning - This function is a duplicate from mod_offline.erl
+%% It is duplicate to stay consistent (many functions are duplicated
+%% in this module). It will be refactored later on.
+%% Warn senders that their messages have been discarded:
+discard_warn_sender(Msgs) ->
+    lists:foreach(
+      fun(#offline_msg{from=From, to=To, packet=Packet}) ->
+	      ErrText = "Your contact offline message queue is full. The message has been discarded.",
+	      Lang = xml:get_tag_attr_s("xml:lang", Packet),
+	      Err = jlib:make_error_reply(
+		      Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
+	      ejabberd_router:route(
+		To,
+		From, Err)
+      end, Msgs).
+
+
 webadmin_page(_, Host,
 	      #request{us = _US,
 		       path = ["user", U, "queue"],
@@ -382,3 +419,16 @@ webadmin_user(Acc, User, Server, Lang) ->
 	       end,
     FQueueLen = [?AC("queue/", QueueLen)],
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen.
+
+%% ------------------------------------------------
+%% mod_offline: number of messages quota management
+
+%% Returns as integer the number of offline messages for a given user
+count_offline_messages(LUser, LServer) ->
+    case catch odbc_queries:count_records_where(
+		 LServer, "spool", "where username='" ++ LUser ++ "'") of
+        {selected, [_], [{Res}]} ->
+            list_to_integer(Res);
+        _ ->
+            0
+    end.

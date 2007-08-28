@@ -1,4 +1,4 @@
-%% Copyrigh 2006, Process-one
+%% Copyrigh 2006 Process-one
 %% This module is intended to take into account relational databases behaviour
 %% differences
 -module(odbc_queries).
@@ -36,7 +36,8 @@
 	 set_private_data_sql/3,
 	 get_private_data/3,
 	 del_user_private_storage/2,
-	 escape/1]).
+	 escape/1,
+	 count_records_where/3]).
 
 %-define(generic, true).
 %-define(mssql, true).
@@ -309,6 +310,11 @@ escape($")  -> "\\\"";
 escape($\\) -> "\\\\";
 escape(C)   -> C.
 
+%% Count number of records in a table given a where clause
+count_records_where(LServer, Table, WhereClause) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select count(*) from ", Table, " ", WhereClause, ";"]).
 -endif.
 
 %% -----------------
@@ -513,4 +519,10 @@ escape($\r) -> "\\r";
 escape($')  -> "\''";
 escape($")  -> "\\\"";
 escape(C)   -> C.
+
+%% Count number of records in a table given a where clause
+count_records_where(LServer, Table, WhereClause) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select count(*) from ", Table, " ", WhereClause, " with (nolock)"]).
 -endif.
