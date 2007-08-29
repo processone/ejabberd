@@ -3,7 +3,6 @@
 %%% Author  : Badlop
 %%% Purpose : MUC room logging
 %%% Created : 12 Mar 2006 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_muc_log).
@@ -338,7 +337,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 				 [Nick, ?T("has been banned"), htmlize(Reason)]);
 	       {nickchange, OldNick} ->  
 		   io_lib:format("<font class=\"mnc\">~s ~s ~s</font><br/>", 
-				 [OldNick, ?T("is now known as"), Nick]);
+				 [htmlize(OldNick), ?T("is now known as"), Nick]);
 	       {subject, T} ->  
 		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>", 
 				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow)]);
