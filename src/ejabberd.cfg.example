@@ -179,7 +179,7 @@
   {mod_private,    []},
   {mod_irc,        []},
 % Default options for mod_muc:
-%   host: "conference." ++ ?MYNAME
+%   host: "conference.@HOST@"
 %   access: all
 %   access_create: all
 %   access_persistent: all
