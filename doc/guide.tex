@@ -272,7 +272,13 @@ These commands will:
 \item create a directory called \verb|/var/log/ejabberd| to store log files.
 \end{itemize}
 
-\subsubsection{Compilation options}
+\subsubsection{Build options}
+
+If you want to enable the use of XML based optimisations, you can use
+the option\term{--enable-full-xml} when running the \term{configure}
+command. It will for example use CDATA to escape characters in the
+XMPP stream. Do not use this option if all your clients are not using
+a fully compliant XML parser.
 
 If you want to use an external database, you need to execute the configure
 script with the option(s) \term{--enable-odbc} or \term{--enable-odbc

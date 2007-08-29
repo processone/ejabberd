@@ -347,8 +347,12 @@ The latest development version can be retrieved from the Subversion repository.
 install <TT>ejabberd</TT> into the directory <CODE>/var/lib/ejabberd</CODE>,
 </LI><LI CLASS="li-itemize">install the configuration file into <CODE>/etc/ejabberd</CODE>,
 </LI><LI CLASS="li-itemize">create a directory called <CODE>/var/log/ejabberd</CODE> to store log files.
-</LI></UL><!--TOC subsubsection Compilation options-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR -->Compilation options</H4><!--SEC END --><P>If you want to use an external database, you need to execute the configure
+</LI></UL><!--TOC subsubsection Build options-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR -->Build options</H4><!--SEC END --><P>If you want to enable the use of XML based optimisations, you can use
+the option<TT>&#X2013;enable-full-xml</TT> when running the <TT>configure</TT>
+command. It will for example use CDATA to escape characters in the
+XMPP stream. Do not use this option if all your clients are not using
+a fully compliant XML parser.</P><P>If you want to use an external database, you need to execute the configure
 script with the option(s) <TT>&#X2013;enable-odbc</TT> or <TT>&#X2013;enable-odbc
 &#X2013;enable-mssql</TT>. See section&#XA0;<A HREF="#database">3.2</A> for more information.</P><!--TOC subsubsection Windows-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Windows</H4><!--SEC END --><P>
@@ -1367,37 +1371,28 @@ number of processes (32000 by default).
     {mod_time, [{iqdisc, no_queue}]},
     ...
    ]}.
-</PRE><!--TOC subsubsection <TT>hosts</TT>-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><TT>hosts</TT></H4><!--SEC END --><P>
-<A NAME="modhostsoption"></A>
-</P><P>A module acting as a service can have one or more hostnames. These hostnames
-can be defined with the <TT>hosts</TT> option.</P><P>Examples:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Serving the echo module on one domain:
-<UL CLASS="itemize"><LI CLASS="li-itemize">
-<PRE CLASS="verbatim">  {modules,
+</PRE><!--TOC subsubsection <TT>host</TT>-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><TT>host</TT></H4><!--SEC END --><P>
+<A NAME="modhostoption"></A>
+</P><P>This option defines the Jabber ID of a service provided by an ejabberd module.
+The keyword "@HOST@" is replaced at start time with the real virtual host string.</P><P>This example configures
+the echo module to provide its echoing service 
+in the Jabber ID <TT>mirror.example.org</TT>:
+</P><PRE CLASS="verbatim">  {modules,
    [
     ...
-    {mod_echo, [{hosts, ["echo.example.org"]}]},
+    {mod_echo, [{host, "mirror.example.org"}]},
     ...
    ]}.
-</PRE></LI><LI CLASS="li-itemize">Backwards compatibility with older <TT>ejabberd</TT> versions can be retained
-with:
-<PRE CLASS="verbatim">  {modules,
+</PRE><P>However, if there are several virtual hosts and this module is enabled in all of them,
+the "@HOST@" keyword must be used:
+</P><PRE CLASS="verbatim">  {modules,
    [
     ...
-    {mod_echo, [{host, "echo.example.org"}]},
+    {mod_echo, [{host, "mirror.@HOST@"}]},
     ...
    ]}.
-</PRE></LI></UL>
-</LI><LI CLASS="li-itemize">Serving the echo module on two domains:
-<PRE CLASS="verbatim">  {modules,
-   [
-    ...
-    {mod_echo, [{hosts, ["echo.example.net", "echo.example.com"]}]},
-    ...
-   ]}.
-</PRE></LI></UL><!--TOC subsection <TT>mod_announce</TT>-->
+</PRE><!--TOC subsection <TT>mod_announce</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc32">3.3.3</A>&#XA0;&#XA0;<TT>mod_announce</TT></H3><!--SEC END --><P>
 <A NAME="modannounce"></A>
 </P><P>This module enables configured users to broadcast announcements and to set
@@ -1506,24 +1501,20 @@ packet back to the sender. This mirror can be of interest for
 <TT>ejabberd</TT> and Jabber client debugging.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 
-<B><TT>hosts</TT></B></DT><DD CLASS="dd-description">  This option defines the hostnames of the
-service (see section&#XA0;<A HREF="#modhostsoption">3.3.2</A>). If neither <TT>hosts</TT> nor
-the old <TT>host</TT> is present, the prefix `<TT>echo.</TT>' is added to all
-<TT>ejabberd</TT> hostnames.
+<B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
+service. If the <TT>host</TT> option is not specified, the Jabber ID will be the
+hostname of the virtual host with the prefix `<TT>echo.</TT>'. The keyword "@HOST@"
+is replaced at start time with the real virtual host name.
 
-</DD></DL><P>Examples:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Mirror, mirror, on the wall, who is the most beautiful
+</DD></DL><P>Example: Mirror, mirror, on the wall, who is the most beautiful
 of them all?
-<PRE CLASS="verbatim">  {modules,
+</P><PRE CLASS="verbatim">  {modules,
    [
     ...
-    {mod_echo, [{hosts, ["mirror.example.org"]}]},
+    {mod_echo, [{host, "mirror.example.org"}]},
     ...
    ]}.
-</PRE></LI><LI CLASS="li-itemize">If you still do not understand the inner workings of <TT>mod_echo</TT>,
-you can find a few more examples in section&#XA0;<A HREF="#modhostsoption">3.3.2</A>.
-</LI></UL><!--TOC subsection <TT>mod_irc</TT>-->
+</PRE><!--TOC subsection <TT>mod_irc</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc35">3.3.6</A>&#XA0;&#XA0;<TT>mod_irc</TT></H3><!--SEC END --><P>
 <A NAME="modirc"></A>
 </P><P>This module is an IRC transport that can be used to join channels on IRC
@@ -1547,10 +1538,10 @@ number of conections from one IP.
 </LI></UL><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 
-<B><TT>hosts</TT></B></DT><DD CLASS="dd-description">  This option defines the hostnames of the
-service (see section&#XA0;<A HREF="#modhostsoption">3.3.2</A>). If neither <TT>hosts</TT> nor
-the old <TT>host</TT> is present, the prefix `<TT>irc.</TT>' is added to all
-<TT>ejabberd</TT> hostnames.
+<B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
+service. If the <TT>host</TT> option is not specified, the Jabber ID will be the
+hostname of the virtual host with the prefix `<TT>irc.</TT>'. The keyword "@HOST@"
+is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>access</TT></B></DT><DD CLASS="dd-description"> This option can be used to specify who
 may use the IRC transport (default value: <TT>all</TT>).
@@ -1566,8 +1557,7 @@ able to use the transport. The default encoding is set to "iso8859-15".
     {mod_irc, [{access, all}, {default_encoding, "iso8859-15"}]},
     ...
    ]}.
-</PRE></LI><LI CLASS="li-itemize">In next example the IRC transport is available on the two virtual hosts
-<TT>example.net</TT> and <TT>example.com</TT> with different prefixes on each host.
+</PRE></LI><LI CLASS="li-itemize">In next example the IRC transport is available with JIDs with prefix <TT>irc-t.net</TT>.
 Moreover, the transport is only accessible by paying customers registered on
 our domains and on other servers.
 <PRE CLASS="verbatim">  {acl, paying_customers, {user, "customer1", "example.net"}}.
@@ -1581,7 +1571,7 @@ our domains and on other servers.
    [
     ...
     {mod_irc, [{access, paying_customers},
-               {hosts, ["irc.example.net", "irc-transport.example.com"]}]},
+               {host, "irc.example.net"}]},
     ...
    ]}.
 </PRE></LI></UL><!--TOC subsection <TT>mod_last</TT>-->
@@ -1609,10 +1599,10 @@ Sending private messages to room participants.
 </LI></UL><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 
-<B><TT>hosts</TT></B></DT><DD CLASS="dd-description">  This option defines the hostnames of the
-service (see section&#XA0;<A HREF="#modhostsoption">3.3.2</A>). If neither <TT>hosts</TT> nor
-the old <TT>host</TT> is present, the prefix `<TT>conference.</TT>' is added to all
-<TT>ejabberd</TT> hostnames.
+<B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
+service. If the <TT>host</TT> option is not specified, the Jabber ID will be the
+hostname of the virtual host with the prefix `<TT>conference.</TT>'. The keyword "@HOST@"
+is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>access</TT></B></DT><DD CLASS="dd-description"> You can specify who is allowed to use
 the Multi-User Chat service (by default, everyone is allowed to use it).
@@ -2000,10 +1990,10 @@ known as ESB, the Enterprise Service Bus). The J-EAI project builts upon
 <TT>ejabberd</TT>'s codebase and has contributed several features to <TT>mod_pubsub</TT>.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 
-<B><TT>hosts</TT></B></DT><DD CLASS="dd-description">  This option defines the hostnames of the
-service (see section&#XA0;<A HREF="#modhostsoption">3.3.2</A>). If neither <TT>hosts</TT> nor
-the old <TT>host</TT> is present, the prefix `<TT>pubsub.</TT>' is added to all
-<TT>ejabberd</TT> hostnames.
+<B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
+service. If the <TT>host</TT> option is not specified, the Jabber ID will be the
+hostname of the virtual host with the prefix `<TT>pubsub.</TT>'. The keyword "@HOST@"
+is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>served_hosts</TT></B></DT><DD CLASS="dd-description"> To specify which hosts needs to
 be served, you can use this option. If absent, only the main <TT>ejabberd</TT>
@@ -2223,16 +2213,16 @@ implements an uncomplicated Jabber User Directory based on the vCards of
 these users. Moreover, it enables the server to send its vCard when queried.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 
-<B><TT>hosts</TT></B></DT><DD CLASS="dd-description">  This option defines the hostnames of the
-service (see section&#XA0;<A HREF="#modhostsoption">3.3.2</A>). If neither <TT>hosts</TT> nor
-the old <TT>host</TT> is present, the prefix `<TT>vjud.</TT>' is added to all
-<TT>ejabberd</TT> hostnames.
+<B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
+service. If the <TT>host</TT> option is not specified, the Jabber ID will be the
+hostname of the virtual host with the prefix `<TT>vjud.</TT>'. The keyword "@HOST@"
+is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies 
 the processing discipline for <TT>vcard-temp</TT> IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD><DT CLASS="dt-description"><B><TT>search</TT></B></DT><DD CLASS="dd-description">This option specifies whether the search
 functionality is enabled (value: <TT>true</TT>) or disabled (value:
-<TT>false</TT>). If disabled, the option <TT>hosts</TT> will be ignored and the
+<TT>false</TT>). If disabled, the option <TT>host</TT> will be ignored and the
 Jabber User Directory service will not appear in the Service Discovery item
 list. The default value is <TT>true</TT>.
 </DD><DT CLASS="dt-description"><B><TT>matches</TT></B></DT><DD CLASS="dd-description">With this option, the number of reported
@@ -2284,16 +2274,16 @@ about these options. If one of these options is not set, <TT>ejabberd</TT> will 
 for the top-level option with the same name. The second group of parameters
 consists of the following <TT>mod_vcard_ldap</TT>-specific options:</P><DL CLASS="description"><DT CLASS="dt-description">
 
-<B><TT>hosts</TT></B></DT><DD CLASS="dd-description">  This option defines the hostnames of the
-service (see section&#XA0;<A HREF="#modhostsoption">3.3.2</A>). If neither <TT>hosts</TT> nor
-the old <TT>host</TT> is present, the prefix `<TT>vjud.</TT>' is added to all
-<TT>ejabberd</TT> hostnames.
+<B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
+service. If the <TT>host</TT> option is not specified, the Jabber ID will be the
+hostname of the virtual host with the prefix `<TT>vjud.</TT>'. The keyword "@HOST@"
+is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies 
 the processing discipline for <TT>vcard-temp</TT> IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD><DT CLASS="dt-description"><B><TT>search</TT></B></DT><DD CLASS="dd-description">This option specifies whether the search
 functionality is enabled (value: <TT>true</TT>) or disabled (value:
-<TT>false</TT>). If disabled, the option <TT>hosts</TT> will be ignored and the
+<TT>false</TT>). If disabled, the option <TT>host</TT> will be ignored and the
 Jabber User Directory service will not appear in the Service Discovery item
 list. The default value is <TT>true</TT>.
 </DD><DT CLASS="dt-description"><B><TT>ldap_vcard_map</TT></B></DT><DD CLASS="dd-description">With this option you can

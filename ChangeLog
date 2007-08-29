@@ -1,5 +1,10 @@
-2007-08-29  Alexey Shchepin  <alexey@process-one.net>
+2007-08-29  Mickael Remond  <mremond@process-one.net>
 
+	* doc/guide.tex: Documentation for XML based optimisation build
+	time option (EJAB-298)
+
+2007-08-29  Alexey Shchepin  <alexey@process-one.net>
+	
 	* src/mod_muc/mod_muc_log.erl: Added missed HTMLization in a
 	nickname change logging (thanks to Badlop)
 
