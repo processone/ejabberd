@@ -1,3 +1,10 @@
+2007-08-29  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: The mod_muc option max_users now
+	limits max number of users in rooms and max_users_admin_threshold
+	sets a number of admin or owner accounts allowd to join after
+	max_users occupants
+
 2007-08-29  Mickael Remond  <mremond@process-one.net>
 
 	* doc/guide.tex: Documentation for XML based optimisation build

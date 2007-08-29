@@ -31,7 +31,8 @@
 -include("jlib.hrl").
 
 -define(MAX_USERS_DEFAULT, 200).
--define(MAX_USERS_DEFAULT_LIST, [5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
+-define(MAX_USERS_DEFAULT_LIST,
+	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
 
 -define(SETS, gb_sets).
 -define(DICT, dict).
@@ -910,6 +911,16 @@ get_affiliation(JID, StateData) ->
 	    Res
     end.
 
+get_service_affiliation(JID, StateData) ->
+    {_AccessRoute, _AccessCreate, AccessAdmin, _AccessPersistent} =
+	StateData#state.access,
+    case acl:match_rule(StateData#state.server_host, AccessAdmin, JID) of
+	allow ->
+	    owner;
+	_ ->
+	    none
+    end.
+
 set_role(JID, Role, StateData) ->
     LJID = jlib:jid_tolower(JID),
     LJIDs = case LJID of
@@ -975,6 +986,22 @@ get_default_role(Affiliation, StateData) ->
 		    end
 	    end
     end.
+
+get_max_users(StateData) ->
+    MaxUsers = (StateData#state.config)#config.max_users,
+    ServiceMaxUsers = get_service_max_users(StateData),
+    if
+	MaxUsers =< ServiceMaxUsers -> MaxUsers;
+	true -> ServiceMaxUsers
+    end.
+
+get_service_max_users(StateData) ->
+    gen_mod:get_module_opt(StateData#state.server_host,
+			   mod_muc, max_users, ?MAX_USERS_DEFAULT).
+
+get_max_users_admin_threshold(StateData) ->
+    gen_mod:get_module_opt(StateData#state.server_host,
+			   mod_muc, max_users_admin_threshold, 5).
 
 
 add_online_user(JID, Nick, Role, StateData) ->
@@ -1068,11 +1095,17 @@ is_nick_change(JID, Nick, StateData) ->
 
 add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     Lang = xml:get_attr_s("xml:lang", Attrs),
-    MaxUsers = (StateData#state.config)#config.max_users,
-    UsersNb = length(?DICT:to_list(StateData#state.users)),
+    MaxUsers = get_max_users(StateData),
+    MaxAdminUsers = MaxUsers + get_max_users_admin_threshold(StateData),
+    NUsers = dict:fold(fun(_, _, Acc) -> Acc + 1 end, 0,
+		       StateData#state.users),
     Affiliation = get_affiliation(From, StateData),
-    case {(Affiliation == admin orelse Affiliation == owner)
-	  orelse (MaxUsers == none orelse UsersNb+1 =< MaxUsers),
+    ServiceAffiliation = get_service_affiliation(From, StateData),
+    case {ServiceAffiliation == owner orelse
+	  MaxUsers == none orelse
+	  ((Affiliation == admin orelse Affiliation == owner) andalso
+	   NUsers < MaxAdminUsers) orelse
+	  NUsers < MaxUsers,
 	  is_nick_exists(Nick, StateData),
 	  mod_muc:can_use_nick(StateData#state.host, From, Nick),
 	  get_default_role(Affiliation, StateData)} of
@@ -2252,6 +2285,7 @@ check_allowed_persistent_change(XEl, StateData, From) ->
 
 get_config(Lang, StateData, From) ->
     {_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = StateData#state.access,
+    ServiceMaxUsers = get_service_max_users(StateData),
     Config = StateData#state.config,
     Res =
 	[{xmlelement, "title", [],
@@ -2293,17 +2327,24 @@ get_config(Lang, StateData, From) ->
 	   {"label", translate:translate(Lang, "Maximum Number of Occupants")},
 	   {"var", "muc#roomconfig_maxusers"}],
 	  [{xmlelement, "value", [], [{xmlcdata,
-				       case Config#config.max_users of
-					  none -> "none";
-					  N -> erlang:integer_to_list(N)
+				       case get_max_users(StateData) of
+					   N when is_integer(N) ->
+					       erlang:integer_to_list(N);
+					   _ -> "none"
 				       end
-				      }]},
-	   {xmlelement, "option", [{"label", translate:translate(Lang, "No limit")}],
-	    [{xmlelement, "value", [], [{xmlcdata, "none"}]}]} |
-	   [{xmlelement, "option", [{"label", erlang:integer_to_list(N)}],
-	    [{xmlelement, "value", [], [{xmlcdata, erlang:integer_to_list(N)}]}]} ||
-	       N <- ?MAX_USERS_DEFAULT_LIST]
-	  ]},
+				      }]}] ++
+	  if
+	      is_integer(ServiceMaxUsers) -> [];
+	      true ->
+		  [{xmlelement, "option",
+		    [{"label", translate:translate(Lang, "No limit")}],
+		    [{xmlelement, "value", [], [{xmlcdata, "none"}]}]}]
+	  end ++
+	  [{xmlelement, "option", [{"label", erlang:integer_to_list(N)}],
+	    [{xmlelement, "value", [],
+	      [{xmlcdata, erlang:integer_to_list(N)}]}]} ||
+	      N <- ?MAX_USERS_DEFAULT_LIST, N =< ServiceMaxUsers]
+	 },
 	 {xmlelement, "field",
 	  [{"type", "list-single"},
 	   {"label", translate:translate(Lang, "Present real JIDs to")},
@@ -2386,6 +2427,15 @@ set_config(XEl, StateData) ->
 	    _ -> {error, ?ERR_BAD_REQUEST}
 	end).
 
+-define(SET_NAT_XOPT(Opt, Val),
+	case catch list_to_integer(Val) of
+	    I when is_integer(I),
+	           I > 0 ->
+		set_xoption(Opts, Config#config{Opt = I});
+	    _ ->
+		{error, ?ERR_BAD_REQUEST}
+	end).
+
 -define(SET_STRING_XOPT(Opt, Val),
 	set_xoption(Opts, Config#config{Opt = Val})).
 
@@ -2434,12 +2484,7 @@ set_xoption([{"muc#roomconfig_maxusers", [Val]} | Opts], Config) ->
 	"none" ->
 	    ?SET_STRING_XOPT(max_users, none);
 	_ ->
-	    case string:to_integer(Val) of
-		{error, _} ->
-		    {error, ?ERR_BAD_REQUEST};
-		{I, _} ->
-		    ?SET_STRING_XOPT(max_users, I)
-	    end
+	    ?SET_NAT_XOPT(max_users, Val)
     end;
 set_xoption([{"muc#roomconfig_enablelogging", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(logging, Val);
@@ -2508,7 +2553,15 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      ?CASE_CONFIG_OPT(password);
 	      ?CASE_CONFIG_OPT(anonymous);
 	      ?CASE_CONFIG_OPT(logging);
-	      ?CASE_CONFIG_OPT(max_users);
+	      max_users ->
+		  ServiceMaxUsers = get_service_max_users(StateData),
+		  MaxUsers = if
+				 Val =< ServiceMaxUsers -> Val;
+				 true -> ServiceMaxUsers
+			     end,
+		  StateData#state{
+		    config = (StateData#state.config)#config{
+			       max_users = MaxUsers}};
 	      affiliations ->
 		  StateData#state{affiliations = ?DICT:from_list(Val)};
 	      subject ->
