@@ -1490,7 +1490,7 @@ Also we want users to search each other.  Let's see how we can set it up:
        [{"Full Name", "FN"},
         {"Nickname", "NICKNAME"},
         {"Birthday", "BDAY"}]}
-    ]}
+    ]},
     ...
   }.
 \end{verbatim}
@@ -1504,7 +1504,7 @@ searching in his information in LDAP.
 \ind{databases!Active Directory}
 
 Active Directory is just an LDAP-server with predefined attributes. A sample
-configuration is showed below:
+configuration is shown below:
 
 \begin{verbatim}
   {auth_method, ldap}.
@@ -1515,40 +1515,43 @@ configuration is showed below:
   {ldap_uids, [{"sAMAccountName"}]}.
   {ldap_filter, "(memberOf=*)"}.
 
-  {mod_vcard_ldap,
-   [{ldap_vcard_map,
-     [{"NICKNAME", "%u", []},
-      {"GIVEN", "%s", ["givenName"]},
-      {"MIDDLE", "%s", ["initials"]},
-      {"FAMILY", "%s", ["sn"]},
-      {"FN", "%s", ["displayName"]},
-      {"EMAIL", "%s", ["mail"]},
-      {"ORGNAME", "%s", ["company"]},
-      {"ORGUNIT", "%s", ["department"]},
-      {"CTRY", "%s", ["c"]},
-      {"LOCALITY", "%s", ["l"]},
-      {"STREET", "%s", ["streetAddress"]},
-      {"REGION", "%s", ["st"]},
-      {"PCODE", "%s", ["postalCode"]},
-      {"TITLE", "%s", ["title"]},
-      {"URL", "%s", ["wWWHomePage"]},
-      {"DESC", "%s", ["description"]},
-      {"TEL", "%s", ["telephoneNumber"]}]},
-    {ldap_search_fields,
-     [{"User", "%u"},
-      {"Name", "givenName"},
-      {"Family Name", "sn"},
-      {"Email", "mail"},
-      {"Company", "company"},
-      {"Department", "department"},
-      {"Role", "title"},
-      {"Description", "description"},
-      {"Phone", "telephoneNumber"}]},
-    {ldap_search_reported,
-     [{"Full Name", "FN"},
-      {"Nickname", "NICKNAME"},
-      {"Email", "EMAIL"}]}
-   ]
+  {modules,
+    ...
+    {mod_vcard_ldap,
+     [{ldap_vcard_map,
+       [{"NICKNAME", "%u", []},
+        {"GIVEN", "%s", ["givenName"]},
+        {"MIDDLE", "%s", ["initials"]},
+        {"FAMILY", "%s", ["sn"]},
+        {"FN", "%s", ["displayName"]},
+        {"EMAIL", "%s", ["mail"]},
+        {"ORGNAME", "%s", ["company"]},
+        {"ORGUNIT", "%s", ["department"]},
+        {"CTRY", "%s", ["c"]},
+        {"LOCALITY", "%s", ["l"]},
+        {"STREET", "%s", ["streetAddress"]},
+        {"REGION", "%s", ["st"]},
+        {"PCODE", "%s", ["postalCode"]},
+        {"TITLE", "%s", ["title"]},
+        {"URL", "%s", ["wWWHomePage"]},
+        {"DESC", "%s", ["description"]},
+        {"TEL", "%s", ["telephoneNumber"]}]},
+      {ldap_search_fields,
+       [{"User", "%u"},
+        {"Name", "givenName"},
+        {"Family Name", "sn"},
+        {"Email", "mail"},
+        {"Company", "company"},
+        {"Department", "department"},
+        {"Role", "title"},
+        {"Description", "description"},
+        {"Phone", "telephoneNumber"}]},
+      {ldap_search_reported,
+       [{"Full Name", "FN"},
+        {"Nickname", "NICKNAME"},
+        {"Email", "EMAIL"}]}
+    ]},
+    ...
   }.
 \end{verbatim}
 

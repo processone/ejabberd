@@ -1205,7 +1205,7 @@ Also we want users to search each other. Let's see how we can set it up:</P><PRE
        [{"Full Name", "FN"},
         {"Nickname", "NICKNAME"},
         {"Birthday", "BDAY"}]}
-    ]}
+    ]},
     ...
   }.
 </PRE><P>Note that <TT>mod_vcard_ldap</TT> module checks for the existence of the user before
@@ -1213,7 +1213,7 @@ searching in his information in LDAP.</P><!--TOC paragraph Active Directory-->
 <H5 CLASS="paragraph"><!--SEC ANCHOR -->Active Directory</H5><!--SEC END --><P>
 <A NAME="ad"></A>
 </P><P>Active Directory is just an LDAP-server with predefined attributes. A sample
-configuration is showed below:</P><PRE CLASS="verbatim">  {auth_method, ldap}.
+configuration is shown below:</P><PRE CLASS="verbatim">  {auth_method, ldap}.
   {ldap_servers, ["office.org"]}.    % List of LDAP servers
   {ldap_base, "DC=office,DC=org"}. % Search base of LDAP directory
   {ldap_rootdn, "CN=Administrator,CN=Users,DC=office,DC=org"}. % LDAP manager
@@ -1221,40 +1221,43 @@ configuration is showed below:</P><PRE CLASS="verbatim">  {auth_method, ldap}.
   {ldap_uids, [{"sAMAccountName"}]}.
   {ldap_filter, "(memberOf=*)"}.
 
-  {mod_vcard_ldap,
-   [{ldap_vcard_map,
-     [{"NICKNAME", "%u", []},
-      {"GIVEN", "%s", ["givenName"]},
-      {"MIDDLE", "%s", ["initials"]},
-      {"FAMILY", "%s", ["sn"]},
-      {"FN", "%s", ["displayName"]},
-      {"EMAIL", "%s", ["mail"]},
-      {"ORGNAME", "%s", ["company"]},
-      {"ORGUNIT", "%s", ["department"]},
-      {"CTRY", "%s", ["c"]},
-      {"LOCALITY", "%s", ["l"]},
-      {"STREET", "%s", ["streetAddress"]},
-      {"REGION", "%s", ["st"]},
-      {"PCODE", "%s", ["postalCode"]},
-      {"TITLE", "%s", ["title"]},
-      {"URL", "%s", ["wWWHomePage"]},
-      {"DESC", "%s", ["description"]},
-      {"TEL", "%s", ["telephoneNumber"]}]},
-    {ldap_search_fields,
-     [{"User", "%u"},
-      {"Name", "givenName"},
-      {"Family Name", "sn"},
-      {"Email", "mail"},
-      {"Company", "company"},
-      {"Department", "department"},
-      {"Role", "title"},
-      {"Description", "description"},
-      {"Phone", "telephoneNumber"}]},
-    {ldap_search_reported,
-     [{"Full Name", "FN"},
-      {"Nickname", "NICKNAME"},
-      {"Email", "EMAIL"}]}
-   ]
+  {modules,
+    ...
+    {mod_vcard_ldap,
+     [{ldap_vcard_map,
+       [{"NICKNAME", "%u", []},
+        {"GIVEN", "%s", ["givenName"]},
+        {"MIDDLE", "%s", ["initials"]},
+        {"FAMILY", "%s", ["sn"]},
+        {"FN", "%s", ["displayName"]},
+        {"EMAIL", "%s", ["mail"]},
+        {"ORGNAME", "%s", ["company"]},
+        {"ORGUNIT", "%s", ["department"]},
+        {"CTRY", "%s", ["c"]},
+        {"LOCALITY", "%s", ["l"]},
+        {"STREET", "%s", ["streetAddress"]},
+        {"REGION", "%s", ["st"]},
+        {"PCODE", "%s", ["postalCode"]},
+        {"TITLE", "%s", ["title"]},
+        {"URL", "%s", ["wWWHomePage"]},
+        {"DESC", "%s", ["description"]},
+        {"TEL", "%s", ["telephoneNumber"]}]},
+      {ldap_search_fields,
+       [{"User", "%u"},
+        {"Name", "givenName"},
+        {"Family Name", "sn"},
+        {"Email", "mail"},
+        {"Company", "company"},
+        {"Department", "department"},
+        {"Role", "title"},
+        {"Description", "description"},
+        {"Phone", "telephoneNumber"}]},
+      {ldap_search_reported,
+       [{"Full Name", "FN"},
+        {"Nickname", "NICKNAME"},
+        {"Email", "EMAIL"}]}
+    ]},
+    ...
   }.
 </PRE><!--TOC section Modules Configuration-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc29">3.3</A>&#XA0;&#XA0;Modules Configuration</H2><!--SEC END --><P>
