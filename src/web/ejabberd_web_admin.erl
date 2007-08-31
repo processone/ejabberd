@@ -1,15 +1,15 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_web_admin.erl
-%%% Author  : Alexey Shchepin <alexey@sevcom.net>
+%%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Administration web interface
-%%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@sevcom.net>
+%%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%----------------------------------------------------------------------
 %%% Copyright (c) 2004-2006 Alexey Shchepin
 %%% Copyright (c) 2004-2006 Process One
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_web_admin).
--author('alexey@sevcom.net').
+-author('alexey@process-one.net').
 
 %% External exports
 -export([process/2,
@@ -1871,8 +1871,8 @@ get_node(global, Node, ["update"], Query, Lang) ->
 
 get_node(Host, Node, NPath, Query, Lang) ->
     {Hook, Opts} = case Host of
-		       global -> {webadmin_page_node, [Node, NPath, Query]};
-		       Host -> {webadmin_page_hostnode, [Host, Node, NPath, Query]}
+		       global -> {webadmin_page_node, [Node, NPath, Query, Lang]};
+		       Host -> {webadmin_page_hostnode, [Host, Node, NPath, Query, Lang]}
 		   end,
     case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
 	[] -> [?XC("h1", "Not Found")];
