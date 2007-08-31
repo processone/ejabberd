@@ -1,5 +1,12 @@
 2007-08-31  Mickael Remond  <mremond@process-one.net>
 
+	* doc/guide.tex: Documentation for mod_muc option for server-wide
+	limitation of the maximum number of users per room (EJAB-344).
+
+	* doc/guide.tex: Documentation for mod_muc option to allow admin
+	to enter room even if the maximum number of users
+	reached (EJAB-345).
+
 	* src/web/ejabberd_web_admin.erl: Make the web interface pages
 	"translatable" (Thanks to Badlop) (EJAB-11).
 

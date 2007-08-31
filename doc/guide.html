@@ -849,7 +849,7 @@ returned.</P><P>Example:
 </DD></DL><!--TOC subsubsection Limiting Opened Sessions with ACL-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Limiting Opened Sessions with ACL</H4><!--SEC END --><P>
 <A NAME="configmaxsessions"></A>
-</P><P>The special access <TT>max_user_sessions</TT> specifies the maximum number of sessions (authenticated
+</P><P>The special access <TT>max_users</TT> specifies the maximum number of sessions (authenticated
 connections) per user. If a user tries to open more sessions by using different
 resources, the first opened session will be disconnected. The error
 <TT>session replaced</TT> will be sent to the disconnected session. The value
@@ -1624,8 +1624,15 @@ you can define the number of history messages to keep and send to users
 joining the room. The value is an integer. Setting the value to <TT>0</TT>
 disables the history feature and, as a result, nothing is kept in memory. The
 default value is <TT>20</TT>. This value is global and thus affects all rooms on
-the server.
-</DD><DT CLASS="dt-description"><B><TT>min_message_interval</TT></B></DT><DD CLASS="dd-description"> 
+the server.</DD><DT CLASS="dt-description"><B><TT>max_users</TT></B></DT><DD CLASS="dd-description">  This option defines at
+the server level, the maximum number of users allowed per MUC
+room. It can be lowered in each room configuration but cannot be
+increased in individual MUC room configuration. The default value is
+200.</DD><DT CLASS="dt-description"><B><TT>max_users_admin_threshold</TT></B></DT><DD CLASS="dd-description">
+ This option defines the
+number of MUC admins or owners to allow to enter the room even if
+the maximum number of allowed users is reached. The default limits
+is 5. In most cases this default value is the best setting.</DD><DT CLASS="dt-description"><B><TT>min_message_interval</TT></B></DT><DD CLASS="dd-description"> 
 This option defines the minimum interval between two messages send by
 a user in seconds. This option is global and valid for all chat
 rooms. A decimal value can be used. When this option is not defined,

@@ -961,7 +961,7 @@ The following access rules are pre-defined:
 \label{configmaxsessions}
 \ind{options!max\_user\_sessions}
 
-The special access \term{max\_user\_sessions} specifies the maximum number of sessions (authenticated
+The special access \term{max\_users} specifies the maximum number of sessions (authenticated
 connections) per user. If a user tries to open more sessions by using different
 resources, the first opened session will be disconnected. The error
 \term{session replaced} will be sent to the disconnected session. The value
@@ -2008,6 +2008,19 @@ Options:
   disables the history feature and, as a result, nothing is kept in memory. The
   default value is \term{20}. This value is global and thus affects all rooms on
   the server.
+
+  \titem{max\_users} \ind{options!max\_users} This option defines at
+  the server level, the maximum number of users allowed per MUC
+  room. It can be lowered in each room configuration but cannot be
+  increased in individual MUC room configuration. The default value is
+  200.
+
+  \titem{max\_users\_admin\_threshold}
+  \ind{options!max\_users\_admin\_threshold} This option defines the
+  number of MUC admins or owners to allow to enter the room even if
+  the maximum number of allowed users is reached. The default limits
+  is 5. In most cases this default value is the best setting.
+ 
 \titem{min\_message\_interval} \ind{options!min\_message\_interval}
 This option defines the minimum interval between two messages send by
 a user in seconds. This option is global and valid for all chat
