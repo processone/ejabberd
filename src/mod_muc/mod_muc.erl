@@ -34,7 +34,12 @@
 -record(muc_online_room, {name_host, pid}).
 -record(muc_registered, {us_host, nick}).
 
--record(state, {host, server_host, access, history_size, default_room_opts}).
+-record(state, {host,
+		server_host,
+		access,
+		history_size,
+		default_room_opts,
+		room_shaper}).
 
 -define(PROCNAME, ejabberd_mod_muc).
 
@@ -155,14 +160,18 @@ init([Host, Opts]) ->
     AccessPersistent = gen_mod:get_opt(access_persistent, Opts, all),
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
     DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
+    RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
     ejabberd_router:register_route(MyHost),
-    load_permanent_rooms(MyHost, Host, {Access, AccessCreate, AccessAdmin, AccessPersistent},
-			 HistorySize),
+    load_permanent_rooms(MyHost, Host,
+			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
+			 HistorySize,
+			 RoomShaper),
     {ok, #state{host = MyHost,
 		server_host = Host,
 		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
 		default_room_opts = DefRoomOpts,
-		history_size = HistorySize}}.
+		history_size = HistorySize,
+		room_shaper = RoomShaper}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -196,8 +205,10 @@ handle_info({route, From, To, Packet},
 		   server_host = ServerHost,
 		   access = Access,
  		   default_room_opts = DefRoomOpts,
-		   history_size = HistorySize} = State) ->
-    case catch do_route(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) of
+		   history_size = HistorySize,
+		   room_shaper = RoomShaper} = State) ->
+    case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
+			From, To, Packet, DefRoomOpts) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -255,11 +266,13 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) ->
+do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
+	 From, To, Packet, DefRoomOpts) ->
     {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
-	    do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts);
+	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
+		      From, To, Packet, DefRoomOpts);
 	_ ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
 	    Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -270,7 +283,8 @@ do_route(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) -
     end.
 
 
-do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) ->
+do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
+	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
     {Room, _, Nick} = jlib:jid_tolower(To),
     {xmlelement, Name, Attrs, _Els} = Packet,
@@ -395,7 +409,8 @@ do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) 
 				    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 				    {ok, Pid} = mod_muc_room:start(
 						  Host, ServerHost, Access,
-						  Room, HistorySize, From,
+						  Room, HistorySize,
+						  RoomShaper, From,
 						  Nick, DefRoomOpts),
 				    register_room(Host, Room, Pid),
 				    mod_muc_room:route(Pid, From, Nick, Packet),
@@ -425,7 +440,7 @@ do_route1(Host, ServerHost, Access, HistorySize, From, To, Packet, DefRoomOpts) 
 
 
 
-load_permanent_rooms(Host, ServerHost, Access, HistorySize) ->
+load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
     case catch mnesia:dirty_select(
 		 muc_room, [{#muc_room{name_host = {'_', Host}, _ = '_'},
 			     [],
@@ -445,6 +460,7 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize) ->
 					    Access,
 					    Room,
 					    HistorySize,
+					    RoomShaper,
 					    R#muc_room.opts),
 			      register_room(Host, Room, Pid);
 			  _ ->

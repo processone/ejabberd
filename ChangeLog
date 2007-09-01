@@ -1,3 +1,9 @@
+2007-09-01  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Added user_message_shaper and
+	room_shaper options
+	* src/mod_muc/mod_muc.erl: Likewise
+
 2007-08-31  Mickael Remond  <mremond@process-one.net>
 
 	* doc/guide.tex: Minor examples improvement in LDAP
