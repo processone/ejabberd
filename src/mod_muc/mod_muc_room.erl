@@ -1905,6 +1905,8 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
     URole = get_role(UJID, StateData),
     case find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, []) of
 	{result, Res} ->
+	    ?INFO_MSG("Processing MUC admin query from ~s:~n ~p~n",
+		      [jlib:jid_to_string(UJID), Res]),
 	    NSD =
 		lists:foldl(
 		  fun(E, SD) ->

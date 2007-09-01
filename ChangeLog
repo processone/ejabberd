@@ -1,3 +1,8 @@
+2007-09-02  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Added logging of MUC admin/owner
+	queries
+
 2007-09-01  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Added user_message_shaper and
