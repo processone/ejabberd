@@ -1,5 +1,7 @@
 2007-09-02  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/jlib.erl: Removed http_base_64:decode call
+
 	* src/mod_muc/mod_muc_room.erl: Added logging of MUC admin/owner
 	queries
 
