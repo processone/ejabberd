@@ -849,12 +849,13 @@ returned.</P><P>Example:
 </DD></DL><!--TOC subsubsection Limiting Opened Sessions with ACL-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Limiting Opened Sessions with ACL</H4><!--SEC END --><P>
 <A NAME="configmaxsessions"></A>
-</P><P>The special access <TT>max_users</TT> specifies the maximum number of sessions (authenticated
-connections) per user. If a user tries to open more sessions by using different
-resources, the first opened session will be disconnected. The error
-<TT>session replaced</TT> will be sent to the disconnected session. The value
-for this option can be either a number, or <TT>infinity</TT>. The default
-value is <TT>infinity</TT>.</P><P>The syntax is:
+</P><P>The special access <TT>max_user_sesssions</TT> specifies the maximum
+number of sessions (authenticated connections) per user. If a user
+tries to open more sessions by using different resources, the first
+opened session will be disconnected. The error <TT>session replaced</TT>
+will be sent to the disconnected session. The value for this option
+can be either a number, or <TT>infinity</TT>. The default value is
+<TT>infinity</TT>.</P><P>The syntax is:
 </P><PRE CLASS="verbatim">  {access, max_user_sessions, [{&lt;maxnumber&gt;, &lt;aclname&gt;},
                                ...
                               ]}.
