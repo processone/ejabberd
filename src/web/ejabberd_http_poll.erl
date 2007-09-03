@@ -208,7 +208,7 @@ handle_sync_event(activate, From, StateName, StateData) ->
 	    Receiver ! {tcp, {http_poll, self()}, list_to_binary(Input)},
 	    {reply, ok, StateName, StateData#state{input = "",
 						   waiting_input = false,
-						   last_receiver = From
+						   last_receiver = Receiver
 						  }}
     end;
 

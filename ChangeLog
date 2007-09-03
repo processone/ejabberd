@@ -40,6 +40,10 @@
 
 	* src/eldap/eldap.erl: Bugfix (thanks to Evgeniy Khramtsov)
 
+2006-10-06  Alexey Shchepin  <alexey@sevcom.net>
+  	 	
+	* src/web/ejabberd_http_poll.erl: Bugfix
+
 2006-09-27  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/release_notes_1.1.2.txt: Minor fixes.
