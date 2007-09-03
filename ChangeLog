@@ -1,3 +1,8 @@
+2007-09-03  Mickael Remond  <mremond@process-one.net>
+
+        * examples/extauth/check_pass_null.pl: Perl is generally available
+        as a default in most Linux distributions.
+
 2007-08-13  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: cleaner, shorter documentation (EJAB-323).
