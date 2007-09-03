@@ -1,3 +1,8 @@
+2007-09-03  Mickael Remond  <mremond@process-one.net>
+
+	* examples/extauth/check_pass_null.pl: Perl is generally available
+	as a default in most Linux distributions.
+
 2007-09-02  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/jlib.erl: Removed http_base_64:decode call
