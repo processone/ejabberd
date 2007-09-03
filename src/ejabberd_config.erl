@@ -113,8 +113,9 @@ process_term(Term, State) ->
 	{access, RuleName, Rules} ->
 	    process_host_term(Term, global, State);
 	{shaper, Name, Data} ->
-	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
-			State, State#state.hosts);
+	    %lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
+	    %		State, State#state.hosts);
+	    process_host_term(Term, global, State);
 	{host, Host} ->
 	    State;
 	{hosts, Hosts} ->

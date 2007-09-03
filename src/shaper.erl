@@ -16,7 +16,7 @@
 
 
 new(Name) ->
-    Data = case ejabberd_config:get_global_option({shaper, Name}) of
+    Data = case ejabberd_config:get_global_option({shaper, Name, global}) of
 	       undefined ->
 		   none;
 	       D ->
