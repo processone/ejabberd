@@ -1,3 +1,13 @@
+2007-09-04  Mickael Remond  <mremond@process-one.net>
+
+	* src/mod_register.erl: update ejabberd commands to support
+	XEP-0133 (initial patch by Badlop) (EJAB-325).
+	* src/mod_configure.erl: Likewise.
+	* src/mod_announce.erl: Likewise.
+	* src/jlib.hrl: Likewise.
+	* src/ejabberd.cfg.example: Likewise.
+	* doc/guide.tex: Likewise.
+
 2007-09-03  Mickael Remond  <mremond@process-one.net>
 
 	* examples/extauth/check_pass_null.pl: Perl is generally available
