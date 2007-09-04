@@ -2490,6 +2490,11 @@ Options:
   rules to restrict registration. If a rule returns `deny' on the requested
   user name, registration for that user name is dennied. (there are no
   restrictions by default).
+\titem{welcome\_message} \ind{options!welcomem}Set a welcome message that
+  is sent to each newly registered account. The first string is the subject, and 
+  the second string is the message body.
+\titem{registration\_watchers} \ind{options!rwatchers}This option defines a 
+  list of JIDs which will be notified each time a new account is registered.
 \iqdiscitem{In-Band Registration (\ns{jabber:iq:register})}
 \end{description}
 
@@ -2524,6 +2529,18 @@ Examples:
    [
     ...
 %    {mod_register, [{access, register}]},
+    ...
+   ]}.
+\end{verbatim}
+\item Define the welcome message and three registration watchers:
+  \begin{verbatim}
+  {modules,
+   [
+    ...
+     {mod_register, [
+        {welcome_message, {"Welcome!", "Welcome to this Jabber server. For information about Jabber visit http://www.jabber.org"}},
+        {registration_watchers, ["admin1@example.org", "admin2@example.org", "boss@example.net"]}
+     ]},
     ...
    ]}.
 \end{verbatim}

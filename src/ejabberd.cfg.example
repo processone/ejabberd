@@ -32,19 +32,6 @@
 % in-band registration
 {access, register, [{allow, all}]}.
 
-% After successful registration user will get message with following subject
-% and body:
-{welcome_message,
- {"Welcome!",
-  "Welcome to Jabber Service.  "
-  "For information about Jabber visit http://jabber.org"}}.
-% Replace them with 'none' if you don't want to send such message:
-%{welcome_message, none}.
-
-% List of people who will get notifications about registered users
-%{registration_watchers, ["admin1@localhost",
-%                         "admin2@localhost"]}.
-
 % Debug: 
 % watchdog admins receive live notifications on ejabberd process consuming too
 % much memory
@@ -164,7 +151,13 @@
 % Used modules:
 {modules,
  [
-  {mod_register,   [{access, register}]},
+  {mod_register,   [
+	%% After successful registration user will get message with following subject and body:
+	%{welcome_message, {"Welcome!", "Welcome to this Jabber server."}},
+	%% List of people who will get notifications when users register
+	%{registration_watchers, ["admin1@example.org", "admin2@example.org"]},
+	{access, register}
+  ]},
   {mod_roster,     []},
   {mod_privacy,    []},
   {mod_adhoc,      []},

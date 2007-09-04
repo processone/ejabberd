@@ -192,7 +192,7 @@ try_register(User, Server, Password) ->
 
 send_welcome_message(JID) ->
     Host = JID#jid.lserver,
-    case ejabberd_config:get_local_option({welcome_message, Host}) of
+    case gen_mod:get_module_opt(Host, ?MODULE, welcome_message, {"", ""}) of
 	{"", ""} ->
 	    ok;
 	{Subj, Body} ->
@@ -208,7 +208,7 @@ send_welcome_message(JID) ->
 
 send_registration_notifications(UJID) ->
     Host = UJID#jid.lserver,
-    case ejabberd_config:get_local_option({registration_watchers, Host}) of
+    case gen_mod:get_module_opt(Host, ?MODULE, registration_watchers, []) of
 	[] -> ok;
 	JIDs when is_list(JIDs) ->
 	    Body = lists:flatten(
@@ -231,4 +231,3 @@ send_registration_notifications(UJID) ->
 	_ ->
 	    ok
     end.
-
