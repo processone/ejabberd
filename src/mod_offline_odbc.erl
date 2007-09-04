@@ -57,13 +57,13 @@ init(Host, MaxOfflineMsgs)
 
 loop(Host, MaxOfflineMsgs) ->
     receive
-	#offline_msg{user=Username} = Msg ->
-	    Msgs = receive_all(Username, [Msg]),
+	#offline_msg{user = User} = Msg ->
+	    Msgs = receive_all(User, [Msg]),
 	    Len = length(Msgs),
 
 	    %% Only count existing messages if needed:
 	    Count = if MaxOfflineMsgs =/= infinity ->
-			    Len + count_offline_messages(Username, Host);
+			    Len + count_offline_messages(User, Host);
 		       true -> 0
 		    end,
 	    if 

@@ -1,3 +1,7 @@
+2007-09-05  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_offline_odbc.erl: Bugfix
+
 2007-09-04  Mickael Remond  <mremond@process-one.net>
 
 	* src/mod_register.erl: update ejabberd commands to support
