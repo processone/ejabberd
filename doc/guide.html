@@ -492,6 +492,43 @@ while domain <TT>example.com</TT> is using the LDAP servers running on the domai
                               {ldap_rootdn, "dc=localdomain"},
                               {ldap_rootdn, "dc=example,dc=com"},
                               {ldap_password, ""}]}.
+</PRE></LI></UL><P>If you have several virtual hosts, 
+and you want to define options such as <TT>modules</TT>
+with values specific for some virtual host, 
+instead of defining each option with the syntax
+</P><PRE CLASS="verbatim">  {&lt;option-name&gt;, &lt;option-value&gt;}
+</PRE><P>you must use this syntax:
+</P><PRE CLASS="verbatim">  {{add, &lt;option-name&gt;}, &lt;option-value&gt;}
+</PRE><P>Example:
+</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+	In this example three virtual hosts have some similar modules, but there are also
+	other different modules for some specific virtual hosts:
+<PRE CLASS="verbatim">% This ejabberd server has three vhosts:
+{hosts, ["one.example.org", "two.example.org", "three.example.org"]}.
+
+% Configuration of modules that are common to all vhosts
+{modules,
+ [
+  {mod_roster,     []},
+  {mod_configure,  []},
+  {mod_disco,      []},
+  {mod_private,    []},
+  {mod_time,       []},
+  {mod_last,       []},
+  {mod_version,    []}
+ ]}.
+
+% Add some modules to vhost one:
+{host_config, "one.example.org", [{{add, modules}, [
+  {mod_echo,       [{host, "echo-service.one.example.org"}]}
+  {mod_http_bind,  []},
+  {mod_logxml,     []}
+]}]}.
+
+% Add a module just to vhost two:
+{host_config, "two.example.org", [{{add, modules}, [
+  {mod_echo,       [{host, "mirror.two.example.org"}]}
+]}]}.
 </PRE></LI></UL><!--TOC subsection Listened Sockets-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc18">3.1.3</A>&#XA0;&#XA0;Listened Sockets</H3><!--SEC END --><P>
 <A NAME="listened"></A>
@@ -719,16 +756,6 @@ authentication on <TT>example.net</TT>:
 {host_config, "example.net", [{auth_method, [ldap]}]}.
 </PRE></LI><LI CLASS="li-itemize">To use internal authentication on all virtual hosts:
 <PRE CLASS="verbatim">{auth_method, internal}.
-</PRE></LI></UL><P>If you want to define more <TT>registration_watchers</TT> or <TT>modules</TT> for a virtual host and add them to the defined for all the Jabber server, instead of defining the option name simply as <TT>modules</TT> use this: <TT>{add, modules}</TT>.</P><P>Examples:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-	If you defined two global watchers but on a certain virtual host only Ann should be watcher:
-<PRE CLASS="verbatim">{registration_watchers, ["tom@example.com", "moe@example.net"]}.
-
-{host_config, "example.org", [{registration_watchers, ["ann@example.net"]}]}.
-</PRE></LI><LI CLASS="li-itemize">If you prefer all three to be registration watchers on that virtual host:
-<PRE CLASS="verbatim">{registration_watchers, ["tom@example.com", "moe@example.net"]}.
-
-{host_config, "example.org", [{{add, registration_watchers}, ["ann@example.net"]}]}.
 </PRE></LI></UL><!--TOC subsubsection SASL Anonymous and Anonymous Login-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->SASL Anonymous and Anonymous Login</H4><!--SEC END --><P>
 <A NAME="saslanonymous"></A>

@@ -497,6 +497,52 @@ Examples:
                               {ldap_password, ""}]}.
 \end{verbatim}
 \end{itemize}
+ 
+If you have several virtual hosts, 
+and you want to define options such as \term{modules}
+with values specific for some virtual host, 
+instead of defining each option with the syntax
+\begin{verbatim}
+  {<option-name>, <option-value>}
+\end{verbatim}
+you must use this syntax:
+\begin{verbatim}
+  {{add, <option-name>}, <option-value>}
+\end{verbatim}
+
+Example:
+\begin{itemize}
+	\item In this example three virtual hosts have some similar modules, but there are also
+	other different modules for some specific virtual hosts:
+\begin{verbatim}
+% This ejabberd server has three vhosts:
+{hosts, ["one.example.org", "two.example.org", "three.example.org"]}.
+
+% Configuration of modules that are common to all vhosts
+{modules,
+ [
+  {mod_roster,     []},
+  {mod_configure,  []},
+  {mod_disco,      []},
+  {mod_private,    []},
+  {mod_time,       []},
+  {mod_last,       []},
+  {mod_version,    []}
+ ]}.
+
+% Add some modules to vhost one:
+{host_config, "one.example.org", [{{add, modules}, [
+  {mod_echo,       [{host, "echo-service.one.example.org"}]}
+  {mod_http_bind,  []},
+  {mod_logxml,     []}
+]}]}.
+
+% Add a module just to vhost two:
+{host_config, "two.example.org", [{{add, modules}, [
+  {mod_echo,       [{host, "mirror.two.example.org"}]}
+]}]}.
+\end{verbatim}
+\end{itemize}
 
 \subsection{Listened Sockets}
 \label{listened}
@@ -761,25 +807,6 @@ Examples:
 \item To use internal authentication on all virtual hosts:
   \begin{verbatim}
 {auth_method, internal}.
-\end{verbatim}
-\end{itemize}
-
-If you want to define more \term{registration\_watchers} or \term{modules} for a virtual host and add them to the defined for all the Jabber server, instead of defining the option name simply as \term{modules} use this: \term{\{add, modules\}}.
-
-Examples:
-\begin{itemize}
-	\item If you defined two global watchers but on a certain virtual host only Ann should be watcher:
-\begin{verbatim}
-{registration_watchers, ["tom@example.com", "moe@example.net"]}.
-
-{host_config, "example.org", [{registration_watchers, ["ann@example.net"]}]}.
-\end{verbatim}
-
-\item If you prefer all three to be registration watchers on that virtual host:
-\begin{verbatim}
-{registration_watchers, ["tom@example.com", "moe@example.net"]}.
-
-{host_config, "example.org", [{{add, registration_watchers}, ["ann@example.net"]}]}.
 \end{verbatim}
 \end{itemize}
 
