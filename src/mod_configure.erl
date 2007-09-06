@@ -141,8 +141,6 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 	    ?INFO_COMMAND("Get Number of Registered Users", Lang);
 	?NS_ADMINL("get-online-users-num") ->
 	    ?INFO_COMMAND("Get Number of Online Users", Lang);
-	["config", "hostname"] ->
-	    ?INFO_COMMAND("Host Name", Lang);
 	["config", "acls"] ->
 	    ?INFO_COMMAND("Access Control Lists", Lang);
 	["config", "access"] ->
@@ -445,8 +443,7 @@ get_local_items(_Host, [], Server, Lang) ->
 
 get_local_items(_Host, ["config"], Server, Lang) ->
     {result,
-     [?NODE("Host Name",            "config/hostname"),
-      ?NODE("Access Control Lists", "config/acls"),
+     [?NODE("Access Control Lists", "config/acls"),
       ?NODE("Access Rules",         "config/access")
      ]};
 
@@ -505,8 +502,8 @@ get_local_items(Host, ["outgoing s2s"], _Server, Lang) ->
 get_local_items(Host, ["outgoing s2s", To], _Server, Lang) ->
     {result, get_outgoing_s2s(Host, Lang, To)};
 
-get_local_items(_Host, ["running nodes"], _Server, Lang) ->
-    {result, get_running_nodes(Lang)};
+get_local_items(_Host, ["running nodes"], Server, Lang) ->
+    {result, get_running_nodes(Server, Lang)};
 
 get_local_items(_Host, ["stopped nodes"], _Server, Lang) ->
     {result, get_stopped_nodes(Lang)};
@@ -657,7 +654,7 @@ get_outgoing_s2s(Host, Lang, To) ->
     end.
 
 
-get_running_nodes(_Lang) ->
+get_running_nodes(Server, _Lang) ->
     case catch mnesia:system_info(running_db_nodes) of
 	{'EXIT', _Reason} ->
 	    [];
@@ -666,7 +663,7 @@ get_running_nodes(_Lang) ->
 	      fun(N) ->
 		      S = atom_to_list(N),
 		      {xmlelement, "item",
-		       [{"jid", ?MYNAME},
+		       [{"jid", Server},
 			{"node", "running nodes/" ++ S},
 			{"name", S}],
 		       []}
@@ -1070,26 +1067,7 @@ get_form(_Host, ["running nodes", _ENode, "shutdown"], Lang) ->
 		 []}
 	       ]}]};
 
-get_form(_Host, ["config", "hostname"], Lang) ->
-    {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
-	       [?HFIELD(),
-		{xmlelement, "title", [],
-		 [{xmlcdata,
-		   ?T(
-		      Lang, "Hostname Configuration")}]},
-	        {xmlelement, "instructions", [],
-	         [{xmlcdata,
-		   ?T(
-		      Lang, "Choose host name")}]},
-	        {xmlelement, "field", [{"type", "text-single"},
-				       {"label",
-				        ?T(Lang,
-					   "Host name")},
-				       {"var", "hostname"}],
-	         [{xmlelement, "value", [], [{xmlcdata, ?MYNAME}]}]}
-	       ]}]};
-
-get_form(_Host, ["config", "acls"], Lang) ->
+get_form(Host, ["config", "acls"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [?HFIELD(),
 		{xmlelement, "title", [],
@@ -1105,13 +1083,19 @@ get_form(_Host, ["config", "acls"], Lang) ->
 				   {xmlelement, "value", [], [{xmlcdata, S}]}
 			   end,
 			   string:tokens(
-			     lists:flatten(io_lib:format("~p.",
-						         [ets:tab2list(acl)])),
+			     lists:flatten(
+			       io_lib:format(
+				 "~p.",
+				 [ets:select(acl,
+					     [{{acl, {'$1', '$2'}, '$3'},
+					       [{'==', '$2', Host}],
+					       [{{acl, '$1', '$3'}}]}])
+			         ])),
 			     "\n"))
 	        }
 	       ]}]};
 
-get_form(_Host, ["config", "access"], Lang) ->
+get_form(Host, ["config", "access"], Lang) ->
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
 	       [?HFIELD(),
 		{xmlelement, "title", [],
@@ -1131,9 +1115,9 @@ get_form(_Host, ["config", "access"], Lang) ->
 			       io_lib:format(
 			         "~p.",
 			         [ets:select(config,
-					     [{{config, {access, '$1'}, '$2'},
-					       [],
-					       [{{access, '$1', '$2'}}]}])
+					     [{{config, {access, '$1', '$2'}, '$3'},
+					       [{'==', '$2', Host}],
+					       [{{access, '$1', '$3'}}]}])
 			         ])),
 			     "\n"))
 	        }
@@ -1467,19 +1451,6 @@ set_form(From, Host, ["running nodes", ENode, "restart"], _Lang, XData) ->
 set_form(From, Host, ["running nodes", ENode, "shutdown"], _Lang, XData) ->
     stop_node(From, Host, ENode, stop, XData);
 
-set_form(_From, _Host, ["config", "hostname"], _Lang, XData) ->
-    case lists:keysearch("hostname", 1, XData) of
-	false ->
-	    {error, ?ERR_BAD_REQUEST};
-	{value, {_, [""]}} ->
-	    {error, ?ERR_BAD_REQUEST};
-	{value, {_, [NewName]}} ->
-	    ejabberd_config:add_global_option(hostname, NewName),
-	    {result, []};
-	_ ->
-	    {error, ?ERR_BAD_REQUEST}
-    end;
-
 set_form(_From, Host, ["config", "acls"], _Lang, XData) ->
     case lists:keysearch("acls", 1, XData) of
 	{value, {_, Strings}} ->
@@ -1506,14 +1477,14 @@ set_form(_From, Host, ["config", "acls"], _Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(_From, _Host, ["config", "access"], _Lang, XData) ->
+set_form(_From, Host, ["config", "access"], _Lang, XData) ->
     SetAccess =
 	fun(Rs) ->
 		mnesia:transaction(
 		  fun() ->
 			  Os = mnesia:select(config,
-					     [{{config, {access, '$1'}, '$2'},
-					       [],
+					     [{{config, {access, '$1', '$2'}, '$3'},
+					       [{'==', '$2', Host}],
 					       ['$_']}]),
 			  lists:foreach(fun(O) ->
 						mnesia:delete_object(O)
@@ -1521,7 +1492,7 @@ set_form(_From, _Host, ["config", "access"], _Lang, XData) ->
 			  lists:foreach(
 			    fun({access, Name, Rules}) ->
 				    mnesia:write({config,
-						  {access, Name},
+						  {access, Name, Host},
 						  Rules})
 			    end, Rs)
 		  end)
