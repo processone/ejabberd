@@ -1,3 +1,11 @@
+2007-09-06  Mickael Remond  <mremond@process-one.net>
+
+	* src/guide.tex: Improved documentation for adding a vhost
+	specific option (EJAB-297).
+	
+	* src/mod_configure.erl: Virtual host support for
+	mod_configure (Thanks to Badlop) (EJAB-285).
+
 2007-09-05  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_offline_odbc.erl: Bugfix
