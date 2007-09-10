@@ -910,7 +910,7 @@ declarations of ACLs in the configuration file have the following syntax:
 {acl, exampleorg, {server, "example.org"}}.
 \end{verbatim}
 \titem{\{user\_regexp, <regexp>\}} Matches any local user with a name that
-  matches \term{<regexp>} at the first virtual host. Example:
+  matches \term{<regexp>} on local virtual hosts. Example:
 \begin{verbatim}
 {acl, tests, {user_regexp, "^test[0-9]*$"}}.
 \end{verbatim}

@@ -822,7 +822,7 @@ declarations of ACLs in the configuration file have the following syntax:
 <TT>&lt;server&gt;</TT>. Example:
 <PRE CLASS="verbatim">{acl, exampleorg, {server, "example.org"}}.
 </PRE></DD><DT CLASS="dt-description"><B><TT>{user_regexp, &lt;regexp&gt;}</TT></B></DT><DD CLASS="dd-description"> Matches any local user with a name that
-matches <TT>&lt;regexp&gt;</TT> at the first virtual host. Example:
+matches <TT>&lt;regexp&gt;</TT> on local virtual hosts. Example:
 <PRE CLASS="verbatim">{acl, tests, {user_regexp, "^test[0-9]*$"}}.
 </PRE></DD><DT CLASS="dt-description"><B><TT>{user_regexp, &lt;regexp&gt;, &lt;server&gt;}</TT></B></DT><DD CLASS="dd-description"> Matches any user with a name
 that matches <TT>&lt;regexp&gt;</TT> at server <TT>&lt;server&gt;</TT>. Example:
