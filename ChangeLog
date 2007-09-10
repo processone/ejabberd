@@ -1,3 +1,8 @@
+2007-09-10  Mickael Remond  <mremond@process-one.net>
+
+	* src/guide.tex: Fix: user_regexp acls are valid for all local
+	users (all vhosts).
+
 2007-09-06  Mickael Remond  <mremond@process-one.net>
 
 	* src/guide.tex: Improved documentation for adding a vhost
