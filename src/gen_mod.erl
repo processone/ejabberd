@@ -15,6 +15,7 @@
 	 get_opt/3,
 	 get_opt_host/3,
 	 get_module_opt/4,
+	 get_module_opt_host/3,
 	 loaded_modules/1,
 	 loaded_modules_with_opts/1,
 	 get_hosts/2,
@@ -92,7 +93,7 @@ wait_for_stop1(MonitorReference) ->
 get_opt(Opt, Opts) ->
     case lists:keysearch(Opt, 1, Opts) of
 	false ->
- 	    % TODO: replace with more appropriate function
+	    % TODO: replace with more appropriate function
 	    throw({undefined_option, Opt});
 	{value, {_, Val}} ->
 	    Val
@@ -114,9 +115,9 @@ get_module_opt(global, Module, Opt, Default) ->
 		end,
 		Hosts),
 	Same_all = lists:all(
-		fun(Other_value) -> 
+		fun(Other_value) ->
 			Other_value == Value
-		end, 
+		end,
 		Values),
 	case Same_all of
 		true -> Value;
@@ -131,6 +132,10 @@ get_module_opt(Host, Module, Opt, Default) ->
 	[#ejabberd_module{opts = Opts} | _] ->
 	    get_opt(Opt, Opts, Default)
     end.
+
+get_module_opt_host(Host, Module, Default) ->
+    Val = get_module_opt(Host, Module, host, Default),
+    element(2, regexp:gsub(Val, "@HOST@", Host)).
 
 get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, Default),
