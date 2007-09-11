@@ -7,7 +7,7 @@
 
 	* src/guide.tex: Improved documentation for adding a vhost
 	specific option (EJAB-297).
-	
+
 	* src/mod_configure.erl: Virtual host support for
 	mod_configure (Thanks to Badlop) (EJAB-285).
 
@@ -74,7 +74,7 @@
 	time option (EJAB-298)
 
 2007-08-29  Alexey Shchepin  <alexey@process-one.net>
-	
+
 	* src/mod_muc/mod_muc_log.erl: Added missed HTMLization in a
 	nickname change logging (thanks to Badlop)
 
@@ -166,7 +166,7 @@
 
 	* src/mod_offline.erl: Returns an error message to sender when
 	message is discarded due to quota (EJAB-314).
-	
+
 2007-08-12  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: UTF-8 support for MySQL5 (EJAB-318).
@@ -251,7 +251,7 @@
 
 	* src/xml.erl: Only wrap xmldata nodes in xml cdata "tag" if
 	bigger than 50 bytes. Shorter xmlcdata nodes will be escaped.
-	
+
 	* src/tls/tls_drv.c: Sends the entire certificate chain (EJAB-209).
 
 	* src/acl.erl: Remove compilation warnings (EJAB-290).
@@ -259,12 +259,12 @@
 	* src/xml_stream.erl: Group CDATA on a single xmlcdata
 	node (splitting is not relevant as dependant on TCP/IP packet
 	fragmentation) (EJAB-292).
-	
+
 	* src/xml.erl: Remove compilation warnings (EJAB-290).
 
 	* src/xml.erl: Do not crypt binary CData, but enclose the value in
 	XML CDATA "tag".
-	
+
 	* src/xml.erl: Code clean-up: removed old code in comments.
 
 2007-07-28  Mickael Remond  <mickael.remond@process-one.net>
@@ -275,11 +275,11 @@
 2007-07-26  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: Code clean-up.
-	
+
 	* src/mod_offline.erl: Code clean-up.
 
 	* src/gen_mod.erl: Throw error more cleanly.
-	
+
 	* src/mod_configure.erl: One ACL call was not virtual host
 	compliant.
 
@@ -289,14 +289,14 @@
 	* src/mod_last_odbc.erl: Adapted to mod_privacy changes.
 	* src/mod_privacy_odbc.erl: Refactoring to extract records in
 	include file.
-	
+
 	* src/mod_last.erl: Adapted to mod_privacy changes.
 	* src/mod_privacy.erl: Refactoring to extract records in include
 	file.
 	* src/mod_privacy.hrl: Likewise.
 
 	* src/mod_roster_odbc.erl: Fixed wrong call.
-					 
+
 2007-07-24  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: Added recommandations on max_stanza options
@@ -398,7 +398,7 @@
 
 	* src/mod_muc/mod_muc_room.erl: New anti-abuse options:
 	min_presence_interval and min_message_interval
-	* doc/guide.tex: Likewise 
+	* doc/guide.tex: Likewise
 
 	* doc/guide.tex: Documentation improvements on watchdog
 
@@ -463,10 +463,10 @@
 
 2007-05-29  Mickael Remond  <mickael.remond@process-one.net>
 
-	* src/mod_vcard_odbc.erl: Make service description translatable in 
+	* src/mod_vcard_odbc.erl: Make service description translatable in
 	discovery (EJAB-236)
-	* src/mod_vcard_ldap.erl: Likewise 
-	
+	* src/mod_vcard_ldap.erl: Likewise
+
 	* src/Makefile.in: Added Dialyzer target (EJAB-189 - Thanks
 	to Geoff Cant)
 	* src/Makefile.in: Build XmppAddr.beam in a single pass
@@ -481,7 +481,7 @@
 	* src/tls/Makefile.in: Likewise
 	* src/odbc/Makefile.in: Likewise
 
-	* src/mod_vcard.erl: Make services description translatable in 
+	* src/mod_vcard.erl: Make services description translatable in
 	discovery (EJAB-236 - thanks to Badlop)
 	* src/mod_muc/mod_muc.erl: Likewise
 	* src/mod_irc/mod_irc.erl: Likewise
@@ -772,7 +772,7 @@
 
 	* doc/guide.tex: mod_muc now supports cluster.
 
-	* doc/guide.tex: Updated the max_user_sessions section. 
+	* doc/guide.tex: Updated the max_user_sessions section.
 
 2007-01-19  Alexey Shchepin  <alexey@sevcom.net>
 
@@ -826,7 +826,7 @@
 	* src/mod_echo.erl: The mod_echo can now be stopped without errors.
 	This is not a major issue, but can mislead other developers learning
 	from this example and test module (Thanks to Magnus Henoch).
-	
+
 	* TODO: Removed. The roadmap is managed on:
 	http://support.process-one.net/browse/EJAB
 
@@ -877,7 +877,7 @@
 2006-11-28  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_proxy65/mod_proxy65_services.erl: Now using all interfaces as
-        default value for proxy listen parameter.
+	default value for proxy listen parameter.
 
 	* src/ejabberd_c2s.erl: User login in with negative priority must not
 	receive offline messages (Thanks to Badlop).
@@ -902,15 +902,15 @@
 2006-11-20  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/ejd2odbc.erl: Copy mod_private data from Mnesia to
-	relational database.  
-	* src/odbc/odbc_queries.erl: Refactoring.  
+	relational database.
+	* src/odbc/odbc_queries.erl: Refactoring.
 	* src/odbc/mssql.sql: Likewise.
 	* doc/guide.tex: Doc updated to mention mod_private_odbc.
 
 	* src/odbc/mysql.sql: Started integration of mod_privacy_odbc for
 	MySQL and MSSQL.
 	* src/odbc/mssql.sql: Likewise.
-	
+
 2006-11-15  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: API improvement: It is now easier to
@@ -969,7 +969,7 @@
 	* src/ejabberd.hrl: Added the ejabberd URL
 
 2006-10-27  Mickael Remond  <mickael.remond@process-one.net>
-	
+
 	* src/guide.tex: Fixed typos.
 
 2006-10-25  Mickael Remond  <mickael.remond@process-one.net>
@@ -996,9 +996,9 @@
 
 	* src/ejabberd_auth_ldap.erl: LDAP authentication now allows to
 	match on several alternative attributes (thanks to Evgeniy
-        Khramtsov).
+	Khramtsov).
 	* src/mod_vcard_ldap.erl: Likewise.
-	* doc/guide.tex: Updated. 
+	* doc/guide.tex: Updated.
 	* eldap_utils.erl: Refactoring.
 	* src/eldap/Makefile.in: Likewise.
 
@@ -1039,12 +1039,12 @@
 2006-09-26  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/release_notes_1.1.2.txt: Draft release notes.
-	
+
 	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk).
 
 	* src/ejabberd_s2s.erl: More precise message for the new s2s
 	statistic command.
-	
+
 	* src/mod_muc/mod_muc_room.erl: Minor english update.
 	* src/msgs/pl.msg: Likewise.
 	* src/msgs/uk.msg: Likewise.
@@ -1105,7 +1105,7 @@
 
 	* src/doc/guide.html: Minor W3C compliance fix in an Hevea
 	generated URL.
-	
+
 	* src/doc/features.html: Added to be consistent (guide.html is in
 	the repository to make Latex optional, but still allow access to
 	the doc).
@@ -1128,21 +1128,21 @@
 2006-09-22  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/msgs/cs.msg: Added Czech translation (thanks to Milos Svasek).
-	
+
 	* src/mod_muc/mod_muc.erl: Component name is now more user friendly
 	(thanks to Badlop).
 	* src/mod_irc/mod_irc.erl: Likewise.
-	* src/mod_pubsub/mod_pubsub.erl: Likewise. 
+	* src/mod_pubsub/mod_pubsub.erl: Likewise.
 
 	* src/msgs/fr.msg: updated French translation.
-	
+
 	* doc/guide.tex: Large improvements for ejabberd 1.1.2 (thanks to
 	Sander Devrieze)
 	* doc/version.tex: Likewise.
 	* doc/features.tex: Likewise.
 	* doc/Makefile: Likewise.
 	* doc/dev.tex: Likewise.
-	
+
 2006-09-14  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: Minor fix on index generation.
@@ -1175,7 +1175,7 @@
 	* src/mod_muc/mod_muc.erl: It is now possible to configure the MUC room
 	history feature. A new option has been added in ejabberd muc module
 	configuration (history_size) to define the size of the history. 0 is
-        used to disable the feature.
+	used to disable the feature.
 	* src/mod_muc/mod_muc_room.erl: Likewise.
 	* doc/guide.tex: Likewise.
 
@@ -1207,7 +1207,7 @@
 	* src/configure.ac: Likewise
 	* doc/guide.tex: Likewise.
 	* doc/introduction.tex: Likewise.
-	* src/odbc/pg.sql: Minor fix. 
+	* src/odbc/pg.sql: Minor fix.
 
 2006-08-28  Mickael Remond  <mickael.remond@process-one.net>
 
@@ -1215,7 +1215,7 @@
 	* ejabberd_zlib/Makefile.in: Likewise.
 	* mod_irc/Makefile.in: Likewise.
 	* stringprep/Makefile.in: Likewise.
-	* tls/Makefile.in: Likewise. 
+	* tls/Makefile.in: Likewise.
 
 	* src/ejabberd.app: Updated to the current version.
 
@@ -1314,7 +1314,7 @@
 	* src/mod_pubsub/mod_pubsub.erl: Discovery query on an item does
 	no more return an "item not found error". Discovery stop correctly
 	at the item level (Thanks to Christophe Romain).
-	
+
 2006-06-02  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: Messages polled between the
@@ -1324,13 +1324,13 @@
 	* src/web/ejabberd_http.erl: The web module now accepts HTTP
 	absolute URL (used behind a proxy). This apply to HTTP polling and
 	to the web interface (Thanks to Jean-Sebastien Pedron).
-	
+
 2006-05-29  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_roster.erl: According to RFC3921 section 9.2, outbound
 	subscribe presence packets must be sent, even if the user has already
 	asked for subcription previously (subscription: none and pending: out).
-	The mod_roster now conforms to this behaviour. 
+	The mod_roster now conforms to this behaviour.
 	* src/mod_roster_odbc.erl: Likewise.
 
 2006-05-27  Mickael Remond  <mickael.remond@process-one.net>
@@ -1359,7 +1359,7 @@
 
 	* src/mod_roster.erl: The subscribe request are now resend at login as
 	long as they have not been answered. mod_roster do no more depends on
-        mod_offline.
+	mod_offline.
 	* src/ejabberd_sm.erl: Likewise.
 	* src/ejabberd_c2s.erl: Likewise.
 	* src/mod_roster_odbc.erl: Likewise (The ODBC/relational support has
@@ -1371,7 +1371,7 @@
 	* odbc/mysql.sql: Likewise.
 
 2006-05-22  Mickael Remond  <mickael.remond@process-one.net>
-	
+
 	* src/ejabberd_sm.erl: The max_user_sessions has been moved to
 	host configuration.
 	* src/ejabberd.cfg.example: Likewise.
@@ -1382,7 +1382,7 @@
 	* src/ejabberd_sm.erl: An option to limit the number of opened sessions
 	for a given user have been added. As a default, a given user can only
 	log in 10 times with different resources. After that, new connections
-        replace the older ones.
+	replace the older ones.
 	* src/ejabberd.cfg.example: Likewise.
 	* doc/guide.tex: Likewise.
 
@@ -1390,12 +1390,12 @@
 
 	* src/web/ejabberd_http_poll.erl: Timeout disconnection were not
 	properly handled after "active once" migration. This is now fixed.
-	
+
 2006-05-07  Mickael Remond  <mickael.remond@process-one.net>
 
 	* src/mod_configure.erl: Unknown tables or tables from now unused
 	modules are ignored during restore. The restore can now be performed in
-        such case.
+	such case.
 	* src/web/ejabberd_web_admin.erl: Likewise.
 	* src/ejabberd_admin.erl: Code refactoring. Common Mnesia database
 	restore function.
@@ -1412,7 +1412,7 @@
 
 	* src/ejabberd_ctl.erl: Unknown tables or tables from now unused
 	modules are ignored during restore. The restore can now be performed in
-        such case.
+	such case.
 
 2006-04-28  Mickael Remond  <mickael.remond@process-one.net>
 
@@ -1607,7 +1607,7 @@
 	* src/ejabberd_logger_h.erl: reopen-log function now rename the log
 	file if it has not been already renamed by a logrotate process. This
 	change allow ejabberd administrators to rotate log files on Windows
-        (EJAB-52).
+	(EJAB-52).
 
 2006-02-27  Alexey Shchepin  <alexey@sevcom.net>
 
@@ -1800,7 +1800,7 @@
 
 	* src/ejabberd_receiver.erl: Added new debugging trace: It is now
 	possible to dump the XML stream received from a client (usefull for
-        client debugging).
+	client debugging).
 
 2006-01-19  Alexey Shchepin  <alexey@sevcom.net>
 
@@ -1857,9 +1857,9 @@
 	not properly working with all MySQL version.
 	* src/odbc/ejabberd_odbc.erl: Added a way to retry database
 	connection connect for 5 minutes when the connection is lost. No
-	further connection is retry after. 
+	further connection is retry after.
 	* src/odbc/ejabberd_odbc_sup.erl: likewise.
-	
+
 2006-01-13  Alexey Shchepin  <alexey@sevcom.net>
 
 	* src/ejabberd_service.erl: Bugfix
@@ -1923,7 +1923,7 @@
 	* doc/Makefile: Added helper to generate the docs (Thanks to Sander
 	Devrieze)
 	* doc/guide.tex: Added ejabberd 1.0.0 release notes.
-	* doc/dev.tex: Code clean-up (Thanks to Sander Devrieze) 
+	* doc/dev.tex: Code clean-up (Thanks to Sander Devrieze)
 
 2005-12-16  Alexey Shchepin  <alexey@sevcom.net>
 
@@ -1983,7 +1983,7 @@
 	* doc/guide.tex: Updated
 
 2005-12-06  Mickael Remond  <mickael.remond@process-one.net>
-        
+
 	* src/ejabberd.cfg.example: Updated
 
 	* src/Makefile.*: Can now be build when the Erlang environment is
@@ -2011,7 +2011,7 @@
 2005-11-28  Mickael Remond  <mickael.remond@process-one.net>
 
 	* doc/guide.tex: Improved and updated documentation (Thanks to Sander
-        Devrieze)
+	Devrieze)
 	* doc/guide.html: Likewise
 	* doc/features.tex: Likewise
 	* doc/introduction.tex: Likewise
@@ -2061,7 +2061,7 @@
 	* src/ejabberd_s2s_in.erl: Support for dNSName certificate field
 	and DNS name matching
 	* src/XmppAddr.asn1: Moved here from src/tls/XmppAddr.asn1
-	* src/tls/XmppAddr.asn1: Likewise    
+	* src/tls/XmppAddr.asn1: Likewise
 	* src/Makefile.in: Updated
 	* src/tls/Makefile.in: Updated
 
@@ -4444,4 +4444,3 @@
 2003-02-11  Alexey Shchepin  <alexey@sevcom.net>
 
 	* (all): Version 0.1-alpha released
-
