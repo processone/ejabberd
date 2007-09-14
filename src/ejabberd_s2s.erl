@@ -253,7 +253,14 @@ find_connection(From, To) ->
 	    case {is_service(From, To),
 		  allow_host(MyServer, Server)} of
 		{false, true} ->
-		    new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number);
+		    Connections_Result = [new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number)
+				   || _N <- lists:seq(1, Max_S2S_Connexions_Number)],
+		    case [PID || {atomic, PID} <- Connections_Result] of
+			[] ->
+			    hd(Connections_Result);
+			PIDs ->
+			    {atomic, choose_connection(From, PIDs)}
+		    end;
 		_ ->
 		    {aborted, error}
 	    end;
@@ -266,11 +273,17 @@ find_connection(From, To) ->
     end.
 
 choose_connection(From, Connections) ->
-    % use sticky connections based on the full JID of the sender
-    El = lists:nth(erlang:phash(From, length(Connections)), Connections),
     %El = lists:nth(random:uniform(length(Connections)), Connections),
-    ?ERROR_MSG("XXX using ejabberd_s2s_out ~p~n", [El#s2s.pid]),
-    El#s2s.pid.
+    % use sticky connections based on the full JID of the sender
+    Pid = case lists:nth(erlang:phash(From, length(Connections)), Connections) of
+	      El when is_record(El, s2s) ->
+		  El#s2s.pid;
+	      P when is_pid(P) ->
+		  P
+	  end,
+    ?ERROR_MSG("XXX using ejabberd_s2s_out ~p~n", [Pid]),
+    Pid.
+
 
 new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number) ->
     Key = randoms:get_string(),
