@@ -8,7 +8,7 @@
 -module(ejabberd_s2s_out).
 -author('alexey@process-one.net').
 
--behaviour(gen_fsm).
+-behaviour(p1_fsm).
 
 %% External exports
 -export([start/3,
@@ -16,7 +16,7 @@
 	 start_connection/1,
 	 stop_connection/1]).
 
-%% gen_fsm callbacks
+%% p1_fsm callbacks (same as gen_fsm)
 -export([init/1,
 	 open_socket/2,
 	 wait_for_stream/2,
@@ -110,7 +110,7 @@ stop_connection(Pid) ->
     p1_fsm:send_event(Pid, stop).
 
 %%%----------------------------------------------------------------------
-%%% Callback functions from gen_fsm
+%%% Callback functions from p1_fsm
 %%%----------------------------------------------------------------------
 
 %%----------------------------------------------------------------------
