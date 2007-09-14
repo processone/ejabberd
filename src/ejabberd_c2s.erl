@@ -84,6 +84,10 @@
 						 [SockData, Opts])).
 -endif.
 
+%% This is the timeout to apply between event when starting a new
+%% session:
+-define(C2S_OPEN_TIMEOUT, 5000).
+
 -define(STREAM_HEADER,
 	"<?xml version='1.0'?>"
 	"<stream:stream xmlns='jabber:client' "
@@ -166,7 +170,7 @@ init([{SockMod, Socket}, Opts]) ->
 				 streamid       = new_id(),
 				 access         = Access,
 				 shaper         = Shaper,
-				 ip             = IP}}.
+				 ip             = IP}, ?C2S_OPEN_TIMEOUT}.
 
 
 %%----------------------------------------------------------------------
@@ -265,7 +269,8 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				    {next_state, wait_for_feature_request,
 				     StateData#state{server = Server,
 						     sasl_state = SASLState,
-						     lang = Lang}};
+						     lang = Lang},
+				     ?C2S_OPEN_TIMEOUT};
 				_ ->
 				    case StateData#state.resource of
 					"" ->
@@ -278,7 +283,8 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						 [{"xmlns", ?NS_SESSION}], []}]}),
 					    {next_state, wait_for_bind,
 					     StateData#state{server = Server,
-							     lang = Lang}};
+							     lang = Lang},
+					     ?C2S_OPEN_TIMEOUT};
 					_ ->
 					    send_element(
 					      StateData,
@@ -328,6 +334,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    {stop, normal, StateData}
     end;
 
+wait_for_stream(timeout, StateData) ->
+    {stop, normal, StateData};
+
 wait_for_stream({xmlstreamelement, _}, StateData) ->
     send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
@@ -376,13 +385,13 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			     ]}]}
 		  end,
 	    send_element(StateData, Res),
-	    {next_state, wait_for_auth, StateData};
+	    {next_state, wait_for_auth, StateData, ?C2S_OPEN_TIMEOUT};
 	{auth, _ID, set, {_U, _P, _D, ""}} ->
 	    Err = jlib:make_error_reply(
 		    El,
 		    ?ERR_AUTH_NO_RESOURCE_PROVIDED(StateData#state.lang)),
 	    send_element(StateData, Err),
-	    {next_state, wait_for_auth, StateData};
+	    {next_state, wait_for_auth, StateData, ?C2S_OPEN_TIMEOUT};
 	{auth, _ID, set, {U, P, D, R}} ->
 	    JID = jlib:make_jid(U, StateData#state.server, R),
 	    case (JID /= error) andalso
@@ -435,7 +444,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    Err = jlib:make_error_reply(
 				    El, ?ERR_NOT_AUTHORIZED),
 			    send_element(StateData, Err),
-			    {next_state, wait_for_auth, StateData}
+			    {next_state, wait_for_auth, StateData,
+			     ?C2S_OPEN_TIMEOUT}
 		    end;
 		_ ->
 		    if
@@ -446,7 +456,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			       [StateData#state.socket, U, R]),
 			    Err = jlib:make_error_reply(El, ?ERR_JID_MALFORMED),
 			    send_element(StateData, Err),
-			    {next_state, wait_for_auth, StateData};
+			    {next_state, wait_for_auth, StateData,
+			     ?C2S_OPEN_TIMEOUT};
 			true ->
 			    ?INFO_MSG(
 			       "(~w) Forbidden legacy authentication for ~s",
@@ -454,13 +465,17 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				jlib:jid_to_string(JID)]),
 			    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 			    send_element(StateData, Err),
-			    {next_state, wait_for_auth, StateData}
+			    {next_state, wait_for_auth, StateData,
+			     ?C2S_OPEN_TIMEOUT}
 		    end
 	    end;
 	_ ->
 	    process_unauthenticated_stanza(StateData, El),
-	    {next_state, wait_for_auth, StateData}
+	    {next_state, wait_for_auth, StateData, ?C2S_OPEN_TIMEOUT}
     end;
+
+wait_for_auth(timeout, StateData) ->
+    {stop, normal, StateData};
 
 wait_for_auth({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
@@ -501,7 +516,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		     StateData#state{streamid = new_id(),
 				     authenticated = true,
 				     user = U
-				    }};
+				    }, ?C2S_OPEN_TIMEOUT};
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 				 {xmlelement, "challenge",
@@ -509,7 +524,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				  [{xmlcdata,
 				    jlib:encode_base64(ServerOut)}]}),
 		    {next_state, wait_for_sasl_response,
-		     StateData#state{sasl_state = NewSASLState}};
+		     StateData#state{sasl_state = NewSASLState},
+		     ?C2S_OPEN_TIMEOUT};
 		{error, Error, Username} ->
 		    ?INFO_MSG(
 		       "(~w) Failed authentication for ~s@~s",
@@ -519,13 +535,15 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "failure",
 				  [{"xmlns", ?NS_SASL}],
 				  [{xmlelement, Error, [], []}]}),
-		    {next_state, wait_for_feature_request, StateData};
+		    {next_state, wait_for_feature_request, StateData,
+		     ?C2S_OPEN_TIMEOUT};
 		{error, Error} ->
 		    send_element(StateData,
 				 {xmlelement, "failure",
 				  [{"xmlns", ?NS_SASL}],
 				  [{xmlelement, Error, [], []}]}),
-		    {next_state, wait_for_feature_request, StateData}
+		    {next_state, wait_for_feature_request, StateData,
+		     ?C2S_OPEN_TIMEOUT}
 	    end;
 	{?NS_TLS, "starttls"} when TLS == true,
 				   TLSEnabled == false,
@@ -548,7 +566,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	     StateData#state{socket = TLSSocket,
 			     streamid = new_id(),
 			     tls_enabled = true
-			    }};
+			    }, ?C2S_OPEN_TIMEOUT};
 	{?NS_COMPRESS, "compress"} when Zlib == true,
 					SockMod == gen_tcp ->
 	    case xml:get_subtag(El, "method") of
@@ -557,7 +575,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		                 {xmlelement, "failure",
 				  [{"xmlns", ?NS_COMPRESS}],
 				  [{xmlelement, "setup-failed", [], []}]}),
-		    {next_state, wait_for_feature_request, StateData};
+		    {next_state, wait_for_feature_request, StateData,
+		     ?C2S_OPEN_TIMEOUT};
 		Method ->
 		    case xml:get_tag_cdata(Method) of
 			"zlib" ->
@@ -570,14 +589,15 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    {next_state, wait_for_stream,
 			     StateData#state{socket = ZlibSocket,
 					     streamid = new_id()
-					    }};
+					    }, ?C2S_OPEN_TIMEOUT};
 			_ ->
 			    send_element(StateData,
 					 {xmlelement, "failure",
 					  [{"xmlns", ?NS_COMPRESS}],
 					  [{xmlelement, "unsupported-method",
 					    [], []}]}),
-			    {next_state, wait_for_feature_request, StateData}
+			    {next_state, wait_for_feature_request, StateData,
+			     ?C2S_OPEN_TIMEOUT}
 		    end
 	    end;
 	_ ->
@@ -591,9 +611,13 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		    {stop, normal, StateData};
 		true ->
 		    process_unauthenticated_stanza(StateData, El),
-		    {next_state, wait_for_feature_request, StateData}
+		    {next_state, wait_for_feature_request, StateData,
+		     ?C2S_OPEN_TIMEOUT}
 	    end
     end;
+
+wait_for_feature_request(timeout, StateData) ->
+    {stop, normal, StateData};
 
 wait_for_feature_request({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
@@ -627,7 +651,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		     StateData#state{streamid = new_id(),
 				     authenticated = true,
 				     user = U
-				    }};
+				    }, ?C2S_OPEN_TIMEOUT};
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 				 {xmlelement, "challenge",
@@ -645,18 +669,24 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "failure",
 				  [{"xmlns", ?NS_SASL}],
 				  [{xmlelement, Error, [], []}]}),
-		    {next_state, wait_for_feature_request, StateData};
+		    {next_state, wait_for_feature_request, StateData,
+		     ?C2S_OPEN_TIMEOUT};
 		{error, Error} ->
 		    send_element(StateData,
 				 {xmlelement, "failure",
 				  [{"xmlns", ?NS_SASL}],
 				  [{xmlelement, Error, [], []}]}),
-		    {next_state, wait_for_feature_request, StateData}
+		    {next_state, wait_for_feature_request, StateData,
+		     ?C2S_OPEN_TIMEOUT}
 	    end;
 	_ ->
 	    process_unauthenticated_stanza(StateData, El),
-	    {next_state, wait_for_feature_request, StateData}
+	    {next_state, wait_for_feature_request, StateData,
+	     ?C2S_OPEN_TIMEOUT}
     end;
+
+wait_for_sasl_response(timeout, StateData) ->
+    {stop, normal, StateData};
 
 wait_for_sasl_response({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
@@ -687,7 +717,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		error ->
 		    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
 		    send_element(StateData, Err),
-		    {next_state, wait_for_bind, StateData};
+		    {next_state, wait_for_bind, StateData, ?C2S_OPEN_TIMEOUT};
 		_ ->
 		    JID = jlib:make_jid(U, StateData#state.server, R),
 		    Res = IQ#iq{type = result,
@@ -698,11 +728,15 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 					       jlib:jid_to_string(JID)}]}]}]},
 		    send_element(StateData, jlib:iq_to_xml(Res)),
 		    {next_state, wait_for_session,
-		     StateData#state{resource = R, jid = JID}}
+		     StateData#state{resource = R, jid = JID},
+		     ?C2S_OPEN_TIMEOUT}
 	    end;
 	_ ->
-	    {next_state, wait_for_bind, StateData}
+	    {next_state, wait_for_bind, StateData, ?C2S_OPEN_TIMEOUT}
     end;
+
+wait_for_bind(timeout, StateData) ->
+    {stop, normal, StateData};
 
 wait_for_bind({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
@@ -760,11 +794,15 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			       jlib:jid_to_string(JID)]),
 		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 		    send_element(StateData, Err),
-		    {next_state, wait_for_session, StateData}
+		    {next_state, wait_for_session, StateData,
+		     ?C2S_OPEN_TIMEOUT}
 	    end;
 	_ ->
-	    {next_state, wait_for_session, StateData}
+	    {next_state, wait_for_session, StateData, ?C2S_OPEN_TIMEOUT}
     end;
+
+wait_for_session(timeout, StateData) ->
+    {stop, normal, StateData};
 
 wait_for_session({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
