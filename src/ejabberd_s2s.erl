@@ -57,7 +57,6 @@ route(From, To, Packet) ->
     end.
 
 remove_connection(FromTo, Pid, Key) ->
-    ?ERROR_MSG("XXXXXXXXXXX ~p~n", [{FromTo, Pid, Key}]),
     case catch mnesia:dirty_match_object(s2s, {s2s, FromTo, Pid, '_'}) of
         [#s2s{pid = Pid, key = Key}] ->
             F = fun() ->
@@ -91,10 +90,10 @@ has_key(FromTo, Key) ->
 
 try_register(FromTo) ->
     Key = randoms:get_string(),
-    Max_S2S_Connexions_Number = max_s2s_connexions_number(element(1, FromTo)),
+    Max_S2S_Connections_Number = max_s2s_connexions_number(element(1, FromTo)),
     F = fun() ->
                 case mnesia:read({s2s, FromTo}) of
-                    L when length(L) < Max_S2S_Connexions_Number ->
+                    L when length(L) < Max_S2S_Connections_Number ->
                            mnesia:write(#s2s{fromto = FromTo,
                                              pid = self(),
                                              key = Key}),
@@ -241,31 +240,26 @@ find_connection(From, To) ->
     #jid{lserver = MyServer} = From,
     #jid{lserver = Server} = To,
     FromTo = {MyServer, Server},
-    Max_S2S_Connexions_Number = max_s2s_connexions_number(MyServer),
-    ?ERROR_MSG("XXX Finding connection for ~p~n", [FromTo]),
+    Max_S2S_Connections_Number = max_s2s_connexions_number(MyServer),
+    ?INFO_MSG("Finding connection for ~p~n", [FromTo]),
     case catch mnesia:dirty_read(s2s, FromTo) of
         {'EXIT', Reason} ->
             {aborted, Reason};
         [] ->
-            %% We try to establish connection if the host is not a
+            %% We try to establish all the connections if the host is not a
             %% service and if the s2s host is not blacklisted or
             %% is in whitelist:
             case not is_service(From, To) andalso allow_host(MyServer, Server) of
                 true ->
-                    Connections_Result = [new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number)
-                                   || _N <- lists:seq(1, Max_S2S_Connexions_Number)],
-                    case [PID || {atomic, PID} <- Connections_Result] of
-                        [] ->
-                            hd(Connections_Result);
-                        PIDs ->
-                            {atomic, choose_connection(From, PIDs)}
-                    end;
+		    open_several_connections(Max_S2S_Connections_Number, MyServer,
+					     Server, From, FromTo, Max_S2S_Connections_Number);
                 false ->
                     {aborted, error}
             end;
-        L when is_list(L) , length(L) < Max_S2S_Connexions_Number ->
-            %% We establish another connection for this pair.
-            new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number);
+        L when is_list(L) , length(L) < Max_S2S_Connections_Number ->
+            %% We establish the missing connections for this pair.
+	    open_several_connections(Max_S2S_Connections_Number-length(L), MyServer,
+				     Server, From, FromTo, Max_S2S_Connections_Number);
         L when is_list(L) ->
             %% We choose a connexion from the pool of opened ones.
             {atomic, choose_connection(From, L)}
@@ -280,21 +274,30 @@ choose_connection(From, Connections) ->
               P when is_pid(P) ->
                   P
           end,
-    ?ERROR_MSG("XXX using ejabberd_s2s_out ~p~n", [Pid]),
+    ?INFO_MSG("Using ejabberd_s2s_out ~p~n", [Pid]),
     Pid.
 
+open_several_connections(N, MyServer, Server, From, FromTo, Max_S2S_Connections_Number) ->
+    Connections_Result = [new_connection(MyServer, Server, From, FromTo, Max_S2S_Connections_Number)
+			  || _N <- lists:seq(1, N)],
+    case [PID || {atomic, PID} <- Connections_Result] of
+	[] ->
+	    hd(Connections_Result);
+	PIDs ->
+	    {atomic, choose_connection(From, PIDs)}
+    end.
 
-new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number) ->
+new_connection(MyServer, Server, From, FromTo, Max_S2S_Connections_Number) ->
     Key = randoms:get_string(),
     {ok, Pid} = ejabberd_s2s_out:start(
                   MyServer, Server, {new, Key}),
     F = fun() ->
                 case mnesia:read({s2s, FromTo}) of
-                    L when length(L) < Max_S2S_Connexions_Number ->
+                    L when length(L) < Max_S2S_Connections_Number ->
                         mnesia:write(#s2s{fromto = FromTo,
                                           pid = Pid,
                                           key = Key}),
-                        ?ERROR_MSG("XXX new s2s connection started ~p~n", [Pid]),
+                        ?INFO_MSG("New s2s connection started ~p~n", [Pid]),
                         Pid;
                     L ->
                         choose_connection(From, L)
