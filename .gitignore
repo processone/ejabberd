@@ -1,4 +1,12 @@
 *.beam
-Makefile
 *~
 *.so
+Makefile
+XmppAddr.asn1db
+XmppAddr.erl
+XmppAddr.hrl
+config.log
+config.status
+ELDAPv3.asn1db
+ELDAPv3.erl
+ELDAPv3.hrl
