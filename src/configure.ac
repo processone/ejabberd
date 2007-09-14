@@ -55,6 +55,15 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 AC_SUBST(db_type)
 
+AC_ARG_ENABLE(transient_supervisors,
+[  --enable-transient_supervisors    Use Erlang supervision for transient process (default: yes)],
+[case "${enableval}" in
+  yes) transient_supervisors=true ;;
+  no)  transient_supervisors=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-full-xml) ;;
+esac],[transient_supervisors=true])
+AC_SUBST(transient_supervisors)
+
 AC_ARG_ENABLE(full_xml,
 [  --enable-full-xml    Use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)],
 [case "${enableval}" in

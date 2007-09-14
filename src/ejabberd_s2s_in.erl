@@ -57,6 +57,15 @@
 -define(FSMOPTS, []).
 -endif.
 
+%% Module start with or without supervisor:
+-ifdef(NO_TRANSIENT_SUPERVISORS).
+-define(SUPERVISOR_START, gen_fsm:start(ejabberd_s2s_in, [SockData, Opts],
+					?FSMOPTS)).
+-else.
+-define(SUPERVISOR_START, supervisor:start_child(ejabberd_s2s_in_sup,
+						 [SockData, Opts])).
+-endif.
+
 -define(STREAM_HEADER(Version),
 	("<?xml version='1.0'?>"
 	 "<stream:stream "
@@ -84,7 +93,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(SockData, Opts) ->
-    supervisor:start_child(ejabberd_s2s_in_sup, [SockData, Opts]).
+    ?SUPERVISOR_START.
 
 start_link(SockData, Opts) ->
     gen_fsm:start_link(ejabberd_s2s_in, [SockData, Opts], ?FSMOPTS).

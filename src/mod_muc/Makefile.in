@@ -15,6 +15,11 @@ ifdef debug
   EFLAGS+=+debug_info
 endif
 
+ifeq (@transient_supervisors@, false)
+  EFLAGS+=-DNO_TRANSIENT_SUPERVISORS
+endif
+
+
 OBJS   = \
 	$(OUTDIR)/mod_muc.beam \
 	$(OUTDIR)/mod_muc_log.beam \

@@ -30,6 +30,10 @@ ifeq (@full_xml@, true)
   ERLC_FLAGS+=-DFULL_XML_SUPPORT
 endif
 
+ifeq (@transient_supervisors@, false)
+  ERLC_FLAGS+=-DNO_TRANSIENT_SUPERVISORS
+endif
+
 prefix = @prefix@
 
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @web@ stringprep @tls@ @odbc@ @ejabberd_zlib@

@@ -94,16 +94,26 @@
 -define(FSMOPTS, []).
 -endif.
 
+%% Module start with or without supervisor:
+-ifdef(NO_TRANSIENT_SUPERVISORS).
+-define(SUPERVISOR_START, 
+	gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+				RoomShaper, Creator, Nick, DefRoomOpts],
+		      ?FSMOPTS)).
+-else.
+-define(SUPERVISOR_START, 
+	Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
+	supervisor:start_child(
+	  Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
+		       Creator, Nick, DefRoomOpts])).
+-endif.
 
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
       Creator, Nick, DefRoomOpts) ->
-    Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
-    supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
-		   Creator, Nick, DefRoomOpts]).
+    ?SUPERVISOR_START.
 
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),

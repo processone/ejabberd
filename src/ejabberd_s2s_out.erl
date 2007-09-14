@@ -58,6 +58,15 @@
 -define(FSMOPTS, []).
 -endif.
 
+%% Module start with or without supervisor:
+-ifdef(NO_TRANSIENT_SUPERVISORS).
+-define(SUPERVISOR_START, p1_fsm:start(ejabberd_s2s_out, [From, Host, Type],
+			    ?FSMOPTS)).
+-else.
+-define(SUPERVISOR_START, supervisor:start_child(ejabberd_s2s_out_sup,
+				      [From, Host, Type])).
+-endif.
+
 %% Only change this value if you now what your are doing:
 -define(FSMLIMITS,[]).
 %% -define(FSMLIMITS, [{max_queue, 2000}]).
@@ -86,7 +95,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(From, Host, Type) ->
-    supervisor:start_child(ejabberd_s2s_out_sup, [From, Host, Type]).
+    ?SUPERVISOR_START.
 
 start_link(From, Host, Type) ->
     p1_fsm:start_link(ejabberd_s2s_out, [From, Host, Type],
