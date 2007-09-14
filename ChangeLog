@@ -1,3 +1,56 @@
+2007-09-14  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_s2s_out.erl: Changed to actual p1_fsm behaviour. It
+	was working correctly as the API of p1_fsm and gen_fsm is strictly
+	the same.
+	
+	* src/ejabberd_s2_in.erl: Added debug hook for s2s loop (EJAB-358).
+	
+	* src/ejabberd_c2s.erl: Added debug hook for c2s loop (EJAB-358).
+	
+	* src/ejabberd_s2s.erl: open all missing connections if
+	needed (Jerome Sautret).
+	
+	* src/ejabberd_s2s.erl: don't check blacklist for services (Jerome
+	Sautret).
+	
+	* src/ejabberd_s2s.erl: Try to open all s2s connections at the
+	same time, to guarantee the right order of the packets (Jerome
+	Sautret).
+	
+	* src/ejabberd_s2s.erl: max_s2s_connexions_number local parameter
+	added (Jerome Sautret).
+
+	* src/ejabberd_s2s_out.erl: Implements s2s negociation timeouts
+	and s2s connection retrial interval (EJAB-357, EJAB-294).
+	
+	* src/ejabberd_c2s.erl: Implements timeouts during session opening
+	negociation (EJAB-355).
+
+	* doc/guide.tex: Documentation for new configure option
+	--disable-transient-supersisors (EJAB-354).
+	
+	* src/ejabberd_c2s.erl: Option to prevent the use of Erlang OTP
+	supervisor for transient processes (EJAB-354).
+	* src/ejabberd_s2s_in.erl: Likewise.
+	* src/ejabberd_s2s_out.erl: Likewise.
+	* src/mod_muc/mod_muc_room.erl: Likewise.
+	* src/configure.ac: Likewise.
+	* src/configure: Likewise.
+	* src/Makefile.in: Likewise.
+	* src/mod_muc/Makefile.in: Likewise.
+
+	* src/ejabberd_s2s_out.erl: Moved s2s connexion information from
+	INFO level to DEBUG level and more human readable information
+	explai
+
+	* src/ejabberd_s2s_in.erl: Moved s2s connexion information from
+	INFO level to DEBUG level (EJAB-353).
+
+	* src/ejabberd_s2s_out.erl: open up to 3 s2s outgoing connection
+	per domain pair (Jerome Sautret).
+	* src/ejabberd_s2s.erl: Likewise.
+
 2007-09-11  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/gen_mod.erl: Added get_module_opt_host/3 (thanks to Badlop)
