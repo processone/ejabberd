@@ -104,7 +104,7 @@ socket_type() ->
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
-    ?INFO_MSG("started: ~p", [Socket]),
+    ?DEBUG("started: ~p", [{SockMod, Socket}]),
     Shaper = case lists:keysearch(shaper, 1, Opts) of
 		 {value, {_, S}} -> S;
 		 _ -> none
@@ -214,7 +214,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	{?NS_TLS, "starttls"} when TLS == true,
 				   TLSEnabled == false,
 				   SockMod == gen_tcp ->
-	    ?INFO_MSG("starttls", []),
+	    ?DEBUG("starttls", []),
 	    Socket = StateData#state.socket,
 	    TLSOpts = StateData#state.tls_options,
 	    TLSSocket = (StateData#state.sockmod):starttls(
@@ -267,7 +267,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    send_element(StateData,
 					 {xmlelement, "success",
 					  [{"xmlns", ?NS_SASL}], []}),
-			    ?INFO_MSG("(~w) Accepted s2s authentication for ~s",
+			    ?DEBUG("(~w) Accepted s2s authentication for ~s",
 				      [StateData#state.socket, AuthDomain]),
 			    {next_state, wait_for_stream,
 			     StateData#state{streamid = new_id(),
@@ -309,7 +309,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     case is_key_packet(El) of
 	{key, To, From, Id, Key} ->
-	    ?INFO_MSG("GET KEY: ~p", [{To, From, Id, Key}]),
+	    ?DEBUG("GET KEY: ~p", [{To, From, Id, Key}]),
 	    LTo = jlib:nameprep(To),
 	    LFrom = jlib:nameprep(From),
 	    %% Checks if the from domain is allowed and if the to
@@ -335,7 +335,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
                     {stop, normal, StateData}
 	    end;
 	{verify, To, From, Id, Key} ->
-	    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
+	    ?DEBUG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
 	    LTo = jlib:nameprep(To),
 	    LFrom = jlib:nameprep(From),
 	    Type = case ejabberd_s2s:has_key({LTo, LFrom}, Key) of
@@ -514,7 +514,7 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
-    ?INFO_MSG("terminated: ~p", [Reason]),
+    ?DEBUG("terminated: ~p", [Reason]),
     (StateData#state.sockmod):close(StateData#state.socket),
     ok.
 
