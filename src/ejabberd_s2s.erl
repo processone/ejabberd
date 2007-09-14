@@ -32,6 +32,8 @@
 -include("jlib.hrl").
 -include("ejabberd_ctl.hrl").
 
+-define(DEFAULT_MAX_S2S_CONNEXIONS_NUMBER, 3).
+
 -record(s2s, {fromto, pid, key}).
 -record(state, {}).
 
@@ -89,7 +91,7 @@ has_key(FromTo, Key) ->
 
 try_register(FromTo) ->
     Key = randoms:get_string(),
-    Max_S2S_Connexions_Number = 3,
+    Max_S2S_Connexions_Number = max_s2s_connexions_number(element(1, FromTo)),
     F = fun() ->
 		case mnesia:read({s2s, FromTo}) of
 		    L when length(L) < Max_S2S_Connexions_Number ->
@@ -239,7 +241,7 @@ find_connection(From, To) ->
     #jid{lserver = MyServer} = From,
     #jid{lserver = Server} = To,
     FromTo = {MyServer, Server},
-    Max_S2S_Connexions_Number = 3,
+    Max_S2S_Connexions_Number = max_s2s_connexions_number(MyServer),
     ?ERROR_MSG("XXX Finding connection for ~p~n", [FromTo]),
     case catch mnesia:dirty_read(s2s, FromTo) of
 	{'EXIT', Reason} ->
@@ -293,6 +295,14 @@ new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number) ->
 	    ejabberd_s2s_out:stop_connection(Pid)
     end,
     TRes.
+
+max_s2s_connexions_number(Host) ->
+    case ejabberd_config:get_local_option({max_s2s_connexions_number, Host}) of
+	N when is_integer(N) ->
+	    N;
+	_ ->
+	    ?DEFAULT_MAX_S2S_CONNEXIONS_NUMBER
+    end.
 
 
 %%--------------------------------------------------------------------
