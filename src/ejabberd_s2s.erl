@@ -266,6 +266,7 @@ find_connection(From, To) ->
     end.
 
 choose_connection(From, Connections) ->
+    % use sticky connections based on the full JID of the sender
     El = lists:nth(erlang:phash(From, length(Connections)), Connections),
     %El = lists:nth(random:uniform(length(Connections)), Connections),
     ?ERROR_MSG("XXX using ejabberd_s2s_out ~p~n", [El#s2s.pid]),
