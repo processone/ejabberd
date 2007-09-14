@@ -276,11 +276,11 @@ choose_connection(From, Connections) ->
     %El = lists:nth(random:uniform(length(Connections)), Connections),
     % use sticky connections based on the full JID of the sender
     Pid = case lists:nth(erlang:phash(From, length(Connections)), Connections) of
-	      El when is_record(El, s2s) ->
-		  El#s2s.pid;
-	      P when is_pid(P) ->
-		  P
-	  end,
+              El when is_record(El, s2s) ->
+                  El#s2s.pid;
+              P when is_pid(P) ->
+                  P
+          end,
     ?ERROR_MSG("XXX using ejabberd_s2s_out ~p~n", [Pid]),
     Pid.
 
@@ -288,36 +288,35 @@ choose_connection(From, Connections) ->
 new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number) ->
     Key = randoms:get_string(),
     {ok, Pid} = ejabberd_s2s_out:start(
-		  MyServer, Server, {new, Key}),
+                  MyServer, Server, {new, Key}),
     F = fun() ->
-		case mnesia:read({s2s, FromTo}) of
-		    L when length(L) < Max_S2S_Connexions_Number ->
-			mnesia:write(#s2s{fromto = FromTo,
-					  pid = Pid,
-					  key = Key}),
-			?ERROR_MSG("XXX new s2s connection started ~p~n", [Pid]),
-			Pid;
-		    L ->
-			choose_connection(From, L)
-		end
-	end,
+                case mnesia:read({s2s, FromTo}) of
+                    L when length(L) < Max_S2S_Connexions_Number ->
+                        mnesia:write(#s2s{fromto = FromTo,
+                                          pid = Pid,
+                                          key = Key}),
+                        ?ERROR_MSG("XXX new s2s connection started ~p~n", [Pid]),
+                        Pid;
+                    L ->
+                        choose_connection(From, L)
+                end
+        end,
     TRes = mnesia:transaction(F),
     case TRes of
-	{atomic, Pid} ->
-	    ejabberd_s2s_out:start_connection(Pid);
-	_ ->
-	    ejabberd_s2s_out:stop_connection(Pid)
+        {atomic, Pid} ->
+            ejabberd_s2s_out:start_connection(Pid);
+        _ ->
+            ejabberd_s2s_out:stop_connection(Pid)
     end,
     TRes.
 
 max_s2s_connexions_number(Host) ->
     case ejabberd_config:get_local_option({max_s2s_connexions_number, Host}) of
-	N when is_integer(N) ->
-	    N;
-	_ ->
-	    ?DEFAULT_MAX_S2S_CONNEXIONS_NUMBER
+        N when is_integer(N) ->
+            N;
+        _ ->
+            ?DEFAULT_MAX_S2S_CONNEXIONS_NUMBER
     end.
-
 
 %%--------------------------------------------------------------------
 %% Function: is_service(From, To) -> true | false
