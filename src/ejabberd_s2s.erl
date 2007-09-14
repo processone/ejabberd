@@ -14,19 +14,19 @@
 
 %% API
 -export([start_link/0,
-	 route/3,
-	 have_connection/1,
-	 has_key/2,
-	 try_register/1,
-	 remove_connection/3,
-	 dirty_get_connections/0,
-	 allow_host/2,
-	 ctl_process/2
-	]).
+         route/3,
+         have_connection/1,
+         has_key/2,
+         try_register/1,
+         remove_connection/3,
+         dirty_get_connections/0,
+         allow_host/2,
+         ctl_process/2
+        ]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+         terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -49,65 +49,65 @@ start_link() ->
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {From, To, Packet}]);
-	_ ->
-	    ok
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("~p~nwhen processing: ~p",
+                       [Reason, {From, To, Packet}]);
+        _ ->
+            ok
     end.
 
 remove_connection(FromTo, Pid, Key) ->
     ?ERROR_MSG("XXXXXXXXXXX ~p~n", [{FromTo, Pid, Key}]),
     case catch mnesia:dirty_match_object(s2s, {s2s, FromTo, Pid, '_'}) of
-	[#s2s{pid = Pid, key = Key}] ->
-	    F = fun() ->
-			mnesia:delete_object(#s2s{fromto = FromTo,
-						  pid = Pid,
-						  key = Key})
-		end,
-	    mnesia:transaction(F);
-	_ ->
-	    ok
+        [#s2s{pid = Pid, key = Key}] ->
+            F = fun() ->
+                        mnesia:delete_object(#s2s{fromto = FromTo,
+                                                  pid = Pid,
+                                                  key = Key})
+                end,
+            mnesia:transaction(F);
+        _ ->
+            ok
     end.
 
 have_connection(FromTo) ->
     case catch mnesia:dirty_read(s2s, FromTo) of
-	[_] ->
-	    true;
-	_ ->
-	    false
+        [_] ->
+            true;
+        _ ->
+            false
     end.
 
 has_key(FromTo, Key) ->
     case mnesia:dirty_select(s2s,
-			     [{#s2s{fromto = FromTo, key = Key, _ = '_'},
-			       [],
-			       ['$_']}]) of
-	[] ->
-	    false;
-	_ ->
-	    true
+                             [{#s2s{fromto = FromTo, key = Key, _ = '_'},
+                               [],
+                               ['$_']}]) of
+        [] ->
+            false;
+        _ ->
+            true
     end.
 
 try_register(FromTo) ->
     Key = randoms:get_string(),
     Max_S2S_Connexions_Number = max_s2s_connexions_number(element(1, FromTo)),
     F = fun() ->
-		case mnesia:read({s2s, FromTo}) of
-		    L when length(L) < Max_S2S_Connexions_Number ->
-			   mnesia:write(#s2s{fromto = FromTo,
-					     pid = self(),
-					     key = Key}),
-			   {key, Key};
-		    _ ->
-			false
-		end
+                case mnesia:read({s2s, FromTo}) of
+                    L when length(L) < Max_S2S_Connexions_Number ->
+                           mnesia:write(#s2s{fromto = FromTo,
+                                             pid = self(),
+                                             key = Key}),
+                           {key, Key};
+                    _ ->
+                        false
+                end
         end,
     case mnesia:transaction(F) of
-	{atomic, Res} ->
-	    Res;
-	_ ->
-	    false
+        {atomic, Res} ->
+            Res;
+        _ ->
+            false
     end.
 
 dirty_get_connections() ->
@@ -127,7 +127,7 @@ dirty_get_connections() ->
 init([]) ->
     update_tables(),
     mnesia:create_table(s2s, [{ram_copies, [node()]}, {type, bag},
-			      {attributes, record_info(fields, s2s)}]),
+                              {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:add_table_index(s2s, key),
     mnesia:subscribe(system),
@@ -170,11 +170,11 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     {noreply, State};
 handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {From, To, Packet}]);
-	_ ->
-	    ok
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("~p~nwhen processing: ~p",
+                       [Reason, {From, To, Packet}]);
+        _ ->
+            ok
     end,
     {noreply, State};
 handle_info(_Info, State) ->
@@ -202,39 +202,39 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 clean_table_from_bad_node(Node) ->
     F = fun() ->
-		Es = mnesia:select(
-		       s2s,
-		       [{#s2s{pid = '$1', _ = '_'},
-			 [{'==', {node, '$1'}, Node}],
-			 ['$_']}]),
-		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E)
-			      end, Es)
+                Es = mnesia:select(
+                       s2s,
+                       [{#s2s{pid = '$1', _ = '_'},
+                         [{'==', {node, '$1'}, Node}],
+                         ['$_']}]),
+                lists:foreach(fun(E) ->
+                                      mnesia:delete_object(E)
+                              end, Es)
         end,
     mnesia:transaction(F).
 
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
-	   [From, To, Packet, 8]),
+           [From, To, Packet, 8]),
     case find_connection(From, To) of
-	{atomic, Pid} when pid(Pid) ->
-	    ?DEBUG("sending to process ~p~n", [Pid]),
-	    {xmlelement, Name, Attrs, Els} = Packet,
-	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-						  jlib:jid_to_string(To),
-						  Attrs),
-	    send_element(Pid, {xmlelement, Name, NewAttrs, Els}),
-	    ok;
-	{aborted, _Reason} ->
-	    case xml:get_tag_attr_s("type", Packet) of
-		"error" -> ok;
-		"result" -> ok;
-		_ ->
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_SERVICE_UNAVAILABLE),
-		    ejabberd_router:route(To, From, Err)
-	    end,
-	    false
+        {atomic, Pid} when pid(Pid) ->
+            ?DEBUG("sending to process ~p~n", [Pid]),
+            {xmlelement, Name, Attrs, Els} = Packet,
+            NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
+                                                  jlib:jid_to_string(To),
+                                                  Attrs),
+            send_element(Pid, {xmlelement, Name, NewAttrs, Els}),
+            ok;
+        {aborted, _Reason} ->
+            case xml:get_tag_attr_s("type", Packet) of
+                "error" -> ok;
+                "result" -> ok;
+                _ ->
+                    Err = jlib:make_error_reply(
+                            Packet, ?ERR_SERVICE_UNAVAILABLE),
+                    ejabberd_router:route(To, From, Err)
+            end,
+            false
     end.
 
 find_connection(From, To) ->
@@ -244,31 +244,31 @@ find_connection(From, To) ->
     Max_S2S_Connexions_Number = max_s2s_connexions_number(MyServer),
     ?ERROR_MSG("XXX Finding connection for ~p~n", [FromTo]),
     case catch mnesia:dirty_read(s2s, FromTo) of
-	{'EXIT', Reason} ->
-	    {aborted, Reason};
-	[] ->
-	    %% We try to establish connection if the host is not a
-	    %% service and if the s2s host is not blacklisted or
-	    %% is in whitelist:
-	    case not is_service(From, To) andalso allow_host(MyServer, Server) of
-		true ->
-		    Connections_Result = [new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number)
-				   || _N <- lists:seq(1, Max_S2S_Connexions_Number)],
-		    case [PID || {atomic, PID} <- Connections_Result] of
-			[] ->
-			    hd(Connections_Result);
-			PIDs ->
-			    {atomic, choose_connection(From, PIDs)}
-		    end;
-		false ->
-		    {aborted, error}
-	    end;
-	L when is_list(L) , length(L) < Max_S2S_Connexions_Number ->
-	    %% We establish another connection for this pair.
-	    new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number);
-	L when is_list(L) ->
-	    %% We choose a connexion from the pool of opened ones.
-	    {atomic, choose_connection(From, L)}
+        {'EXIT', Reason} ->
+            {aborted, Reason};
+        [] ->
+            %% We try to establish connection if the host is not a
+            %% service and if the s2s host is not blacklisted or
+            %% is in whitelist:
+            case not is_service(From, To) andalso allow_host(MyServer, Server) of
+                true ->
+                    Connections_Result = [new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number)
+                                   || _N <- lists:seq(1, Max_S2S_Connexions_Number)],
+                    case [PID || {atomic, PID} <- Connections_Result] of
+                        [] ->
+                            hd(Connections_Result);
+                        PIDs ->
+                            {atomic, choose_connection(From, PIDs)}
+                    end;
+                false ->
+                    {aborted, error}
+            end;
+        L when is_list(L) , length(L) < Max_S2S_Connexions_Number ->
+            %% We establish another connection for this pair.
+            new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number);
+        L when is_list(L) ->
+            %% We choose a connexion from the pool of opened ones.
+            {atomic, choose_connection(From, L)}
     end.
 
 choose_connection(From, Connections) ->
@@ -325,12 +325,12 @@ max_s2s_connexions_number(Host) ->
 is_service(From, To) ->
     LFromDomain = From#jid.lserver,
     case ejabberd_config:get_local_option({route_subdomains, LFromDomain}) of
-	s2s -> % bypass RFC 3920 10.3
-	    false;
-	_ ->
-	    LDstDomain = To#jid.lserver,
-	    P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
-	    lists:any(P, ?MYHOSTS)
+        s2s -> % bypass RFC 3920 10.3
+            false;
+        _ ->
+            LDstDomain = To#jid.lserver,
+            P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
+            lists:any(P, ?MYHOSTS)
     end.
 
 %%--------------------------------------------------------------------
@@ -358,39 +358,39 @@ ctl_process(Val, _Args) ->
 
 update_tables() ->
     case catch mnesia:table_info(s2s, type) of
-	bag ->
-	    ok;
-	{'EXIT', _} ->
-	    ok;
-	_ ->
-	    % XXX TODO convert it ?
-	    mnesia:delete_table(s2s)
+        bag ->
+            ok;
+        {'EXIT', _} ->
+            ok;
+        _ ->
+            % XXX TODO convert it ?
+            mnesia:delete_table(s2s)
     end,
     case catch mnesia:table_info(s2s, attributes) of
-	[fromto, node, key] ->
-	    mnesia:transform_table(s2s, ignore, [fromto, pid, key]),
-	    mnesia:clear_table(s2s);
-	[fromto, pid, key] ->
-	    ok;
-	{'EXIT', _} ->
-	    ok
+        [fromto, node, key] ->
+            mnesia:transform_table(s2s, ignore, [fromto, pid, key]),
+            mnesia:clear_table(s2s);
+        [fromto, pid, key] ->
+            ok;
+        {'EXIT', _} ->
+            ok
     end,
     case lists:member(local_s2s, mnesia:system_info(tables)) of
-	true ->
-	    mnesia:delete_table(local_s2s);
-	false ->
-	    ok
+        true ->
+            mnesia:delete_table(local_s2s);
+        false ->
+            ok
     end.
 
 %% Check if host is in blacklist or white list
 allow_host(MyServer, S2SHost) ->
     case ejabberd_config:get_local_option({{s2s_host, S2SHost},MyServer}) of
-	deny -> false;
-	allow -> true;
-	_ ->
-	    case ejabberd_config:get_local_option({s2s_default_policy, MyServer}) of
-		deny -> false;
-		allow -> true;
-		_ -> true %% The default s2s policy is allow
-	    end
+        deny -> false;
+        allow -> true;
+        _ ->
+            case ejabberd_config:get_local_option({s2s_default_policy, MyServer}) of
+                deny -> false;
+                allow -> true;
+                _ -> true %% The default s2s policy is allow
+            end
     end.
