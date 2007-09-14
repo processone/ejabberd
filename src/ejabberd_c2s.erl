@@ -897,6 +897,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 			StateData
 		end
 	end,
+    ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, El}]),
     fsm_next_state(session_established, NewState);
 
 %% We hibernate the process to reduce memory consumption after a
@@ -978,6 +979,8 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
+    ejabberd_hooks:run(c2s_loop_debug, [Text]),
+    
     fsm_next_state(StateName, StateData);
 handle_info(replaced, _StateName, StateData) ->
     Lang = StateData#state.lang,
@@ -1189,8 +1192,10 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    ejabberd_hooks:run(user_receive_packet,
 			       StateData#state.server,
 			       [StateData#state.jid, From, To, FixedPacket]),
+	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, NewState);
 	true ->
+	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, NewState)
     end;
 handle_info({'DOWN', Monitor, _Type, _Object, _Info}, _StateName, StateData)
@@ -1860,7 +1865,7 @@ peerip(SockMod, Socket) ->
 	{ok, IPOK} -> IPOK;
 	_ -> undefined
     end.
-    
+
 %% fsm_next_state: Generate the next_state FSM tuple with different
 %% timeout, depending on the future state
 fsm_next_state(session_established, StateData) ->
