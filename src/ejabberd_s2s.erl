@@ -250,9 +250,8 @@ find_connection(From, To) ->
 	    %% We try to establish connection if the host is not a
 	    %% service and if the s2s host is not blacklisted or
 	    %% is in whitelist:
-	    case {is_service(From, To),
-		  allow_host(MyServer, Server)} of
-		{false, true} ->
+	    case not is_service(From, To) andalso allow_host(MyServer, Server) of
+		true ->
 		    Connections_Result = [new_connection(MyServer, Server, From, FromTo, Max_S2S_Connexions_Number)
 				   || _N <- lists:seq(1, Max_S2S_Connexions_Number)],
 		    case [PID || {atomic, PID} <- Connections_Result] of
@@ -261,7 +260,7 @@ find_connection(From, To) ->
 			PIDs ->
 			    {atomic, choose_connection(From, PIDs)}
 		    end;
-		_ ->
+		false ->
 		    {aborted, error}
 	    end;
 	L when is_list(L) , length(L) < Max_S2S_Connexions_Number ->
