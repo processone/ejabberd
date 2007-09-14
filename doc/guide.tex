@@ -275,10 +275,12 @@ These commands will:
 \subsubsection{Build options}
 
 If you want to enable the use of XML based optimisations, you can use
-the option\term{--enable-full-xml} when running the \term{configure}
+the option \term{--enable-full-xml} when running the \term{configure}
 command. It will for example use CDATA to escape characters in the
 XMPP stream. Do not use this option if all your clients are not using
 a fully compliant XML parser.
+
+In some case, you might want to disable the use of Erlang OTP supervision for transient processes. In this case, you can \term{configure} ejabberd with the option \term{--disable-transient-supervisors}.
 
 If you want to use an external database, you need to execute the configure
 script with the option(s) \term{--enable-odbc} or \term{--enable-odbc

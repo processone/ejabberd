@@ -349,10 +349,10 @@ install <TT>ejabberd</TT> into the directory <CODE>/var/lib/ejabberd</CODE>,
 </LI><LI CLASS="li-itemize">create a directory called <CODE>/var/log/ejabberd</CODE> to store log files.
 </LI></UL><!--TOC subsubsection Build options-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Build options</H4><!--SEC END --><P>If you want to enable the use of XML based optimisations, you can use
-the option<TT>&#X2013;enable-full-xml</TT> when running the <TT>configure</TT>
+the option <TT>&#X2013;enable-full-xml</TT> when running the <TT>configure</TT>
 command. It will for example use CDATA to escape characters in the
 XMPP stream. Do not use this option if all your clients are not using
-a fully compliant XML parser.</P><P>If you want to use an external database, you need to execute the configure
+a fully compliant XML parser.</P><P>In some case, you might want to disable the use of Erlang OTP supervision for transient processes. In this case, you can <TT>configure</TT> ejabberd with the option <TT>&#X2013;disable-transient-supervisors</TT>.</P><P>If you want to use an external database, you need to execute the configure
 script with the option(s) <TT>&#X2013;enable-odbc</TT> or <TT>&#X2013;enable-odbc
 &#X2013;enable-mssql</TT>. See section&#XA0;<A HREF="#database">3.2</A> for more information.</P><!--TOC subsubsection Windows-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Windows</H4><!--SEC END --><P>
