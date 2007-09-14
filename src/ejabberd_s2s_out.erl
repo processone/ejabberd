@@ -107,7 +107,7 @@ stop_connection(Pid) ->
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
-%%          {stop, StopReason}                   
+%%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([From, Server, Type]) ->
     process_flag(trap_exit, true),
@@ -146,7 +146,7 @@ init([From, Server, Type]) ->
 %% Func: StateName/2
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
     ?INFO_MSG("open_socket: ~p", [{StateData#state.myname,
@@ -583,7 +583,7 @@ stream_established(closed, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 %state_name(Event, From, StateData) ->
 %    Reply = ok,
@@ -593,7 +593,7 @@ stream_established(closed, StateData) ->
 %% Func: handle_event/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event(Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -605,7 +605,7 @@ handle_event(Event, StateName, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event(Event, From, StateName, StateData) ->
     Reply = ok,
@@ -618,7 +618,7 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
@@ -848,4 +848,3 @@ test_get_addr_port(Server) ->
 			lists:keyreplace(HostPort, 1, Acc, {HostPort, Num + 1})
 		end
 	  end, [], lists:seq(1, 100000)).
-

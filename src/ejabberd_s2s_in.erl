@@ -3,7 +3,7 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Serve incoming s2s connection
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
+%%% Id      : $Id: ejabberd_s2s_in.erl 820 2007-07-19 21:17:13Z mremond $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_s2s_in).
@@ -74,7 +74,7 @@
 -define(HOST_UNKNOWN_ERR,
 	xml:element_to_string(?SERR_HOST_UNKNOWN)).
 
--define(INVALID_FROM_ERR,                             
+-define(INVALID_FROM_ERR,
         xml:element_to_string(?SERR_INVALID_FROM)).
 
 -define(INVALID_XML_ERR,
@@ -101,7 +101,7 @@ socket_type() ->
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
-%%          {stop, StopReason}                   
+%%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
     ?INFO_MSG("started: ~p", [Socket]),
@@ -136,7 +136,7 @@ init([{SockMod, Socket}, Opts]) ->
 %% Func: StateName/2
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
@@ -312,8 +312,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    ?INFO_MSG("GET KEY: ~p", [{To, From, Id, Key}]),
 	    LTo = jlib:nameprep(To),
 	    LFrom = jlib:nameprep(From),
-	    %% Checks if the from domain is allowed and if the to               
-            %% domain is handled by this server:                                
+	    %% Checks if the from domain is allowed and if the to
+            %% domain is handled by this server:
             case {ejabberd_s2s:allow_host(To, From),
                   lists:member(LTo, ejabberd_router:dirty_get_all_domains())} of
                 {true, true} ->
@@ -338,10 +338,13 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    ?INFO_MSG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
 	    LTo = jlib:nameprep(To),
 	    LFrom = jlib:nameprep(From),
-	    Key1 = ejabberd_s2s:get_key({LTo, LFrom}),
-	    Type = if Key == Key1 -> "valid";
-		      true -> "invalid"
+	    Type = case ejabberd_s2s:has_key({LTo, LFrom}, Key) of
+		       true -> "valid";
+		       _ -> "invalid"
 		   end,
+	    %Type = if Key == Key1 -> "valid";
+	    % true -> "invalid"
+	    % end,
 	    send_element(StateData,
 			 {xmlelement,
 			  "db:verify",
@@ -456,7 +459,7 @@ stream_established(closed, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 %state_name(Event, From, StateData) ->
 %    Reply = ok,
@@ -466,7 +469,7 @@ stream_established(closed, StateData) ->
 %% Func: handle_event/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -478,7 +481,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
@@ -491,7 +494,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
@@ -677,5 +680,3 @@ match_labels([DL | DLabels], [PL | PLabels]) ->
 	false ->
 	    false
     end.
-
-
