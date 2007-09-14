@@ -111,6 +111,7 @@ stop_connection(Pid) ->
 %%----------------------------------------------------------------------
 init([From, Server, Type]) ->
     process_flag(trap_exit, true),
+    ?DEBUG("started: ~p", [{From, Server, Type}]),
     TLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
 	      undefined ->
 		  false;
@@ -149,7 +150,10 @@ init([From, Server, Type]) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
-    ?INFO_MSG("open_socket: ~p", [{StateData#state.myname,
+    log_s2s_out(StateData#state.new,
+		StateData#state.myname,
+		StateData#state.server),
+    ?DEBUG("open_socket: ~p", [{StateData#state.myname,
                                    StateData#state.server,
 				   StateData#state.new,
 				   StateData#state.verify}]),
@@ -181,6 +185,8 @@ open_socket(init, StateData) ->
 					     Version])),
 	    {next_state, wait_for_stream, NewStateData};
 	{error, _Reason} ->
+	    ?INFO_MSG("s2s connection: ~s -> ~s (remote server not found)",
+		      [StateData#state.myname, StateData#state.server]),
 	    {stop, normal, StateData}
     end;
 open_socket(stop, StateData) ->
@@ -236,18 +242,26 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    {next_state, wait_for_features, StateData#state{db_enabled = false}};
 	_ ->
 	    send_text(StateData, ?INVALID_NAMESPACE_ERR),
+	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid namespace)",
+		      [StateData#state.myname, StateData#state.server]),
 	    {stop, normal, StateData}
     end;
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
     send_text(StateData,
 	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid xml)",
+	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
 
 wait_for_stream(timeout, StateData) ->
+    ?INFO_MSG("Closing s2s connection: ~s -> ~s (timeout in wait_for_stream)",
+	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
 
 wait_for_stream(closed, StateData) ->
+    ?INFO_MSG("Closing s2s connection: ~s -> ~s (close in wait_for_stream)",
+	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData}.
 
 
@@ -255,18 +269,22 @@ wait_for_stream(closed, StateData) ->
 wait_for_validation({xmlstreamelement, El}, StateData) ->
     case is_verify_res(El) of
 	{result, To, From, Id, Type} ->
-	    ?INFO_MSG("recv result: ~p", [{From, To, Id, Type}]),
+	    ?DEBUG("recv result: ~p", [{From, To, Id, Type}]),
 	    case Type of
 		"valid" ->
 		    send_queue(StateData, StateData#state.queue),
+		    ?INFO_MSG("Connection established: ~s -> ~s",
+			      [StateData#state.myname, StateData#state.server]),
 		    {next_state, stream_established,
 		     StateData#state{queue = queue:new()}};
 		_ ->
-		    % TODO: bounce packets
+		    %% TODO: bounce packets
+		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid dialback key)",
+			      [StateData#state.myname, StateData#state.server]),
 		    {stop, normal, StateData}
 	    end;
 	{verify, To, From, Id, Type} ->
-	    ?INFO_MSG("recv verify: ~p", [{From, To, Id, Type}]),
+	    ?DEBUG("recv verify: ~p", [{From, To, Id, Type}]),
 	    case StateData#state.verify of
 		false ->
 		    {next_state, wait_for_validation, StateData};
@@ -350,6 +368,8 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		(not SASLEXT) and (not StartTLS) and
 		StateData#state.authenticated ->
 		    send_queue(StateData, StateData#state.queue),
+		    ?INFO_MSG("Connection established: ~s -> ~s",
+			      [StateData#state.myname, StateData#state.server]),
 		    {next_state, stream_established,
 		     StateData#state{queue = queue:new()}};
 		SASLEXT and StateData#state.try_auth and
@@ -370,7 +390,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 				  [{"xmlns", ?NS_TLS}], []}),
 		    {next_state, wait_for_starttls_proceed, StateData};
 		StartTLSRequired and (not StateData#state.tls) ->
-		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
+		    ?DEBUG("restarted: ~p", [{StateData#state.myname,
 						 StateData#state.server}]),
 		    ejabberd_socket:close(StateData#state.socket),
 		    {next_state, reopen_socket,
@@ -379,7 +399,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		StateData#state.db_enabled ->
 		    send_db_request(StateData);
 		true ->
-		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
+		    ?DEBUG("restarted: ~p", [{StateData#state.myname,
 						 StateData#state.server}]),
 		    % TODO: clear message queue
 		    ejabberd_socket:close(StateData#state.socket),
@@ -390,21 +410,27 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 	    send_text(StateData,
 		      xml:element_to_string(?SERR_BAD_FORMAT) ++
 		      ?STREAM_TRAILER),
+	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
+		      [StateData#state.myname, StateData#state.server]),
 	    {stop, normal, StateData}
     end;
 
 wait_for_features({xmlstreamend, Name}, StateData) ->
+    ?INFO_MSG("wait_for_features: xmlstreamend", []),
     {stop, normal, StateData};
 
 wait_for_features({xmlstreamerror, _}, StateData) ->
     send_text(StateData,
 	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    ?INFO_MSG("wait for features: xmlstreamerror", []),
     {stop, normal, StateData};
 
 wait_for_features(timeout, StateData) ->
+    ?INFO_MSG("wait for features: timeout", []),
     {stop, normal, StateData};
 
 wait_for_features(closed, StateData) ->
+    ?INFO_MSG("wait for features: closed", []),
     {stop, normal, StateData}.
 
 
@@ -413,7 +439,7 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 	{xmlelement, "success", Attrs, _Els} ->
 	    case xml:get_attr_s("xmlns", Attrs) of
 		?NS_SASL ->
-		    ?INFO_MSG("auth: ~p", [{StateData#state.myname,
+		    ?DEBUG("auth: ~p", [{StateData#state.myname,
 					    StateData#state.server}]),
 		    ejabberd_socket:reset_stream(StateData#state.socket),
 		    send_text(StateData,
@@ -428,12 +454,14 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 		    send_text(StateData,
 			      xml:element_to_string(?SERR_BAD_FORMAT) ++
 			      ?STREAM_TRAILER),
+		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
+			      [StateData#state.myname, StateData#state.server]),
 		    {stop, normal, StateData}
 	    end;
 	{xmlelement, "failure", Attrs, _Els} ->
 	    case xml:get_attr_s("xmlns", Attrs) of
 		?NS_SASL ->
-		    ?INFO_MSG("restarted: ~p", [{StateData#state.myname,
+		    ?DEBUG("restarted: ~p", [{StateData#state.myname,
 						 StateData#state.server}]),
 		    ejabberd_socket:close(StateData#state.socket),
 		    {next_state, reopen_socket,
@@ -442,27 +470,35 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 		    send_text(StateData,
 			      xml:element_to_string(?SERR_BAD_FORMAT) ++
 			      ?STREAM_TRAILER),
+		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
+			      [StateData#state.myname, StateData#state.server]),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
 	    send_text(StateData,
 		      xml:element_to_string(?SERR_BAD_FORMAT) ++
 		      ?STREAM_TRAILER),
+	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
+		      [StateData#state.myname, StateData#state.server]),
 	    {stop, normal, StateData}
     end;
 
 wait_for_auth_result({xmlstreamend, Name}, StateData) ->
+    ?INFO_MSG("wait for auth result: xmlstreamend", []),
     {stop, normal, StateData};
 
 wait_for_auth_result({xmlstreamerror, _}, StateData) ->
     send_text(StateData,
 	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    ?INFO_MSG("wait for auth result: xmlstreamerror", []),
     {stop, normal, StateData};
 
 wait_for_auth_result(timeout, StateData) ->
+    ?INFO_MSG("wait for auth result: timeout", []),
     {stop, normal, StateData};
 
 wait_for_auth_result(closed, StateData) ->
+    ?INFO_MSG("wait for auth result: closed", []),
     {stop, normal, StateData}.
 
 
@@ -471,7 +507,7 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 	{xmlelement, "proceed", Attrs, _Els} ->
 	    case xml:get_attr_s("xmlns", Attrs) of
 		?NS_TLS ->
-		    ?INFO_MSG("starttls: ~p", [{StateData#state.myname,
+		    ?DEBUG("starttls: ~p", [{StateData#state.myname,
 						StateData#state.server}]),
 		    Socket = StateData#state.socket,
 		    TLSOpts = case ejabberd_config:get_local_option(
@@ -499,24 +535,32 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 		    send_text(StateData,
 			      xml:element_to_string(?SERR_BAD_FORMAT) ++
 			      ?STREAM_TRAILER),
+		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
+		      [StateData#state.myname, StateData#state.server]),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
+	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
+		      [StateData#state.myname, StateData#state.server]),
 	    {stop, normal, StateData}
     end;
 
 wait_for_starttls_proceed({xmlstreamend, Name}, StateData) ->
+    ?INFO_MSG("wait for starttls proceed: xmlstreamend", []),
     {stop, normal, StateData};
 
 wait_for_starttls_proceed({xmlstreamerror, _}, StateData) ->
     send_text(StateData,
 	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    ?INFO_MSG("wait for starttls proceed: xmlstreamerror", []),
     {stop, normal, StateData};
 
 wait_for_starttls_proceed(timeout, StateData) ->
+    ?INFO_MSG("wait for starttls proceed: timeout", []),
     {stop, normal, StateData};
 
 wait_for_starttls_proceed(closed, StateData) ->
+    ?INFO_MSG("wait for starttls proceed: closed", []),
     {stop, normal, StateData}.
 
 
@@ -534,10 +578,10 @@ reopen_socket(closed, StateData) ->
 
 
 stream_established({xmlstreamelement, El}, StateData) ->
-    ?INFO_MSG("stream established", []),
+    ?DEBUG("s2S stream established", []),
     case is_verify_res(El) of
 	{verify, VTo, VFrom, VId, VType} ->
-	    ?INFO_MSG("recv verify: ~p", [{VFrom, VTo, VId, VType}]),
+	    ?DEBUG("recv verify: ~p", [{VFrom, VTo, VId, VType}]),
 	    case StateData#state.verify of
 		{VPid, _VKey, _SID} ->
 		    case VType of
@@ -561,17 +605,25 @@ stream_established({xmlstreamelement, El}, StateData) ->
     {next_state, stream_established, StateData};
 
 stream_established({xmlstreamend, Name}, StateData) ->
+    ?INFO_MSG("stream established: ~s -> ~s (xmlstreamend)",
+	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
 
 stream_established({xmlstreamerror, _}, StateData) ->
     send_text(StateData,
 	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    ?INFO_MSG("stream established: ~s -> ~s (xmlstreamerror)",
+	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
 
 stream_established(timeout, StateData) ->
+    ?INFO_MSG("stream established: ~s -> ~s (timeout)",
+	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
 
 stream_established(closed, StateData) ->
+    ?INFO_MSG("stream established: ~s -> ~s (closed)",
+	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData}.
 
 
@@ -652,7 +704,7 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
-    ?INFO_MSG("terminated: ~p", [{Reason, StateName}]),
+    ?DEBUG("terminated: ~p", [{Reason, StateName}]),
     case StateData#state.new of
 	false ->
 	    ok;
@@ -660,6 +712,7 @@ terminate(Reason, StateName, StateData) ->
 	    ejabberd_s2s:remove_connection(
 	      {StateData#state.myname, StateData#state.server}, self(), Key)
     end,
+    %% bounce queue manage by process and Erlang message queue
     bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
     bounce_messages(?ERR_REMOTE_SERVER_NOT_FOUND),
     case StateData#state.socket of
@@ -848,3 +901,10 @@ test_get_addr_port(Server) ->
 			lists:keyreplace(HostPort, 1, Acc, {HostPort, Num + 1})
 		end
 	  end, [], lists:seq(1, 100000)).
+
+%% Human readable S2S logging: Log only new outgoing connections as INFO
+%% Do not log dialback
+log_s2s_out(false, _, _) -> ok;
+%% Log new outgoing connections:
+log_s2s_out(_, Myname, Server) ->
+    ?INFO_MSG("Trying to open s2s connection: ~s -> ~s",[Myname, Server]).
