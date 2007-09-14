@@ -412,6 +412,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		true ->
 		    error
 	    end,
+	    ejabberd_hooks:run(s2s_loop_debug, [{xmlstreamelement, El}]),
 	    {next_state, stream_established, StateData#state{timer = Timer}}
     end;
 
