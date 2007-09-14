@@ -911,6 +911,7 @@ test_get_addr_port(Server) ->
 		end
 	  end, [], lists:seq(1, 100000)).
 
+
 %% Human readable S2S logging: Log only new outgoing connections as INFO
 %% Do not log dialback
 log_s2s_out(false, _, _) -> ok;
