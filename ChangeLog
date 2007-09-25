@@ -1,10 +1,16 @@
+2007-09-25  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_s2s.erl: Max number of connections and max number
+	of connections per node now can be specified via
+	max_s2s_connections and max_s2s_connections_per_node acl rules
+
 2007-09-14  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_s2s_out.erl: Changed to actual p1_fsm behaviour. It
 	was working correctly as the API of p1_fsm and gen_fsm is strictly
 	the same.
 	
-	* src/ejabberd_s2_in.erl: Added debug hook for s2s loop (EJAB-358).
+	* src/ejabberd_s2s_in.erl: Added debug hook for s2s loop (EJAB-358).
 	
 	* src/ejabberd_c2s.erl: Added debug hook for c2s loop (EJAB-358).
 	
