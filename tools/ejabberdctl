@@ -8,6 +8,7 @@ base="`dirname $(which "$0")`/.."
 ROOTDIR=`(cd "$base"; echo $PWD)`
 SASL_LOG_PATH=$ROOTDIR/sasl.log
 EJABBERD_DB=$ROOTDIR/database/$NODE
+EJABBERD_EBIN=$ROOTDIR/src
 export EJABBERD_LOG_PATH=$ROOTDIR/ejabberd.log
 export EJABBERD_CONFIG_PATH=$ROOTDIR/ejabberd.cfg
 export EJABBERD_MSGS_PATH=$ROOTDIR/src/msgs
@@ -22,7 +23,7 @@ function start
     erl \
       -noinput -detached \
       -sname $NODE@$HOST \
-      -pa $ROOTDIR/src \
+      -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
       -s ejabberd \
       -ejabberd config \"$EJABBERD_CONFIG_PATH\" \
@@ -34,7 +35,7 @@ function debug
 {
     erl \
       -sname debug$NODE@$HOST \
-      -pa $ROOTDIR/src \
+      -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
       -remsh $NODE@$HOST
 }
@@ -44,7 +45,7 @@ function ctl
     erl \
       -noinput \
       -sname ejabberdctl@$HOST \
-      -pa $ROOTDIR/src \
+      -pa $EJABBERD_EBIN \
       -s ejabberd_ctl -extra $NODE@$HOST $@
 }
 

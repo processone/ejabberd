@@ -1,3 +1,8 @@
+2007-09-27  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/ejabberdctl.template: apply rootdir patch from Badlop (EJAB-385)
+	* tools/ejabberdctl: define EJABBERD_EBIN as from ejabberdctl.template
+    
 2007-09-25  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/ejabberd_s2s.erl: Max number of connections and max number
