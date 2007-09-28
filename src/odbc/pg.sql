@@ -40,7 +40,7 @@ CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
 
 CREATE TABLE spool (
     username text NOT NULL,
-    xml text,
+    xml text NOT NULL,
     seq SERIAL
 );
 

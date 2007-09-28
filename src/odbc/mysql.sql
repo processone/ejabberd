@@ -20,9 +20,9 @@ CREATE TABLE rosterusers (
     nick text NOT NULL,
     subscription character(1) NOT NULL,
     ask character(1) NOT NULL,
-    askmessage text,
+    askmessage text NOT NULL,
     server character(1) NOT NULL,
-    subscribe text,
+    subscribe text NOT NULL,
     type text
 ) CHARACTER SET utf8;
 
@@ -41,7 +41,7 @@ CREATE INDEX pk_rosterg_user_jid ON rostergroups(username(75), jid(75));
 
 CREATE TABLE spool (
     username varchar(250) NOT NULL,
-    xml text,
+    xml text NOT NULL,
     seq BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
 ) CHARACTER SET utf8;
 

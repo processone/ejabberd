@@ -1,3 +1,9 @@
+2007-09-28  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/odbc/mysql.sql: Added some missing NOT NULL restrictions
+	* src/odbc/mssql.sql: Likewise
+	* src/odbc/pg.sql: Likewise
+
 2007-09-27  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/ejabberdctl.template: apply rootdir patch from Badlop (EJAB-385)

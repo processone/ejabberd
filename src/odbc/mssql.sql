@@ -118,7 +118,7 @@ GO
 CREATE TABLE [dbo].[spool] (
 	[id] [numeric](19, 0) IDENTITY (1, 1) NOT NULL ,
 	[username] [varchar] (250) NOT NULL ,
-	[xml] [text] NULL ,
+	[xml] [text] NOT NULL ,
 	[notifyprocessed] [bit] NULL ,
 	[created] [datetime] NULL ,
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
