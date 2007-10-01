@@ -785,6 +785,7 @@ The following authentication methods are supported by \ejabberd{}:
 \item odbc --- See section~\ref{mysql}, \ref{pgsql},
   \ref{mssql} and \ref{odbc}.
 \item anonymous --- See section~\ref{saslanonymous}.
+\item pam --- See section~\ref{pam}.
 \end{itemize}
 
 \subsubsection{Internal}
@@ -875,6 +876,60 @@ a virtual host:
 {host_config, "public.example.org", [{auth_method, [internal,anonymous]},
                                      {anonymous_protocol, both}]}.
 \end{verbatim}
+\end{itemize}
+
+\subsubsection{PAM Authentication}
+\label{pam}
+\ind{PAM authentication}\ind{Pluggable Authentication Modules}
+
+\ejabberd{} supports authentication via Pluggable Authentication Modules (PAM).
+PAM is currently supported in AIX, FreeBSD, HP-UX, Linux, Mac OS X, NetBSD and Solaris.
+PAM authentication is disabled by default, so you have to configure and compile
+\ejabberd{} with PAM support enabled:
+\begin{verbatim}
+./configure --enable-pam && make install
+\end{verbatim}
+
+Options:
+\begin{description}
+\titem{pam\_service}\ind{options!pam\_service}This option defines the PAM service name.
+Default is \term{"ejabberd"}. Refer to the PAM documentation of your operation system
+for more information.
+\end{description}
+
+Example:
+\begin{verbatim}
+  {auth_method, [pam]}.
+  {pam_service, "ejabberd"}.
+\end{verbatim}
+
+Though it is quite easy to set up PAM support in \ejabberd{}, PAM itself introduces some
+security issues:
+
+\begin{itemize}
+\item To perform PAM authentication \ejabberd{} uses external C-program called
+\term{epam}. By default, it is located in \verb|/var/lib/ejabberd/priv/lib/|
+directory. You have to set it root on execution in the case when your PAM module
+requires root privileges (\term{pam\_unix.so} for example). Also you have to grant access
+for \ejabberd{} to this file and remove all other permissions from it:
+\begin{verbatim}
+# chown root:ejabberd /var/lib/ejabberd/priv/lib/epam
+# chmod 4750 /var/lib/ejabberd/priv/lib/epam
+\end{verbatim}
+\item Make sure you have the latest version of PAM installed on your system.
+Some old versions of PAM modules cause memory leaks. If you are not able to use the latest
+version, you can \term{kill(1)} \term{epam} process periodically to reduce its memory
+consumption: \ejabberd{} will restart this process immediately.
+\item \term{epam} program tries to turn off delays on authentication failures.
+However, some PAM modules ignore this behavior and rely on their own configuration options.
+The example configuration file \term{ejabberd.pam} shows how to turn off delays in
+\term{pam\_unix.so} module. It is not a ready to use configuration file: you must use it
+as a hint when building your own PAM configuration instead. Note that if you want to disable
+delays on authentication failures in the PAM configuration file, you have to restrict access
+to this file, so a malicious user can't use your configuration to perform brute-force
+attacks.
+\item You may want to allow login access only for certain users. \term{pam\_listfile.so}
+module provides such functionality.
 \end{itemize}
 
 \subsection{Access Rules}

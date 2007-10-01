@@ -66,6 +66,40 @@ AC_DEFUN(AM_WITH_ZLIB,
   AC_SUBST(ZLIB_LIBS)
 ])
 
+AC_DEFUN(AM_WITH_PAM,
+[ AC_ARG_WITH(pam,
+	      [  --with-pam=PREFIX	prefix where PAM is installed])
+
+  PAM_CFLAGS=
+  PAM_LIBS=
+	if test x"$with_pam" != x; then
+		PAM_CFLAGS="-I$with_pam/include"
+		PAM_LIBS="-L$with_pam/lib"
+	fi
+	
+	AC_CHECK_LIB(pam, pam_start,
+		     [ PAM_LIBS="$PAM_LIBS -lpam"
+		       pam_found=yes ],
+		     [ pam_found=no ],
+		     "$PAM_LIBS")
+	if test $pam_found = no; then
+		AC_MSG_WARN([Could not find the PAM library])
+	fi
+	pam_save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $PAM_CFLAGS"
+       pam_save_CPPFLAGS="$CPPFLAGS"
+       CPPFLAGS="$CPPFLAGS $PAM_CFLAGS"
+	AC_CHECK_HEADERS(security/pam_appl.h, , pam_found=no)
+	if test $pam_found = no; then
+		AC_MSG_WARN([Could not find security/pam_appl.h])
+	fi
+	CFLAGS="$pam_save_CFLAGS"
+       CPPFLAGS="$pam_save_CPPFLAGS"
+
+  AC_SUBST(PAM_CFLAGS)
+  AC_SUBST(PAM_LIBS)
+])
+
 AC_DEFUN(AM_WITH_ERLANG,
 [ AC_ARG_WITH(erlang,
 	      [  --with-erlang=PREFIX    path to erlc and erl ])

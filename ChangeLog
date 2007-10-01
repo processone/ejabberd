@@ -1,3 +1,14 @@
+2007-10-01  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_auth_pam.erl: Support for PAM authentication
+	(thanks to Evgeniy Khramtsov)
+	* src/ejabberd.cfg.example: Likewise
+	* src/configure.ac: Likewise
+	* src/aclocal.m4: Likewise
+	* src/Makefile.in: Likewise
+	* examples/ejabberd.pam: Likewise
+	* doc/guide.tex: Likewise
+
 2007-09-28  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/odbc/mysql.sql: Added some missing NOT NULL restrictions

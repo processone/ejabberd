@@ -36,7 +36,7 @@ endif
 
 prefix = @prefix@
 
-SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @web@ stringprep @tls@ @odbc@ @ejabberd_zlib@
+SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @pam@ @web@ stringprep @tls@ @odbc@ @ejabberd_zlib@
 ERLSHLIBS = expat_erl.so
 SOURCES = $(wildcard *.erl)
 BEAMS = $(SOURCES:.erl=.beam)
@@ -95,6 +95,7 @@ install: all
 	install -m 644 *.app $(BEAMDIR)
 	install -d $(SODIR)
 	install -m 644 *.so $(SODIR)
+	install -m 750 epam $(SODIR)
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
 	install -d $(ETCDIR)
@@ -107,7 +108,7 @@ install: all
 clean: clean-recursive clean-local
 
 clean-local:
-	rm -f *.beam $(ERLSHLIBS)
+	rm -f *.beam $(ERLSHLIBS) epam
 	rm -f XmppAddr.asn1db XmppAddr.erl XmppAddr.hrl
 
 distclean: distclean-recursive clean-local

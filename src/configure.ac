@@ -16,6 +16,8 @@ AM_ICONV
 AM_WITH_EXPAT
 #locating zlib
 AM_WITH_ZLIB
+#locating PAM
+AM_WITH_PAM
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -32,6 +34,7 @@ AC_MOD_ENABLE(mod_irc, yes)
 AC_MOD_ENABLE(mod_muc, yes)
 AC_MOD_ENABLE(mod_proxy65, yes)
 AC_MOD_ENABLE(eldap, yes)
+AC_MOD_ENABLE(pam, no)
 AC_MOD_ENABLE(web, yes)
 AC_MOD_ENABLE(tls, yes)
 AC_MOD_ENABLE(odbc, no)
@@ -79,6 +82,7 @@ AC_CONFIG_FILES([Makefile
                  $make_mod_pubsub
                  $make_mod_proxy65
                  $make_eldap
+                 $make_pam
                  $make_web
                  stringprep/Makefile
                  $make_tls

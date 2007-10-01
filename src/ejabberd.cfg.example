@@ -84,6 +84,10 @@
 %{auth_method, external}.
 %{extauth_program, "/path/to/authentication/script"}.
 
+% For authentication via PAM use the following:
+%{auth_method, pam}.
+%{pam_service, "pamservicename"}.
+
 % For authentication via ODBC use the following:
 %{auth_method, odbc}.
 %{odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}.
