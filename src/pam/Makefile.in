@@ -1,0 +1,43 @@
+# $Id: Makefile.in 775 2007-05-29 14:31:12Z mremond $
+
+CC = @CC@
+CFLAGS = @CFLAGS@ @PAM_CFLAGS@ @ERLANG_CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@ @PAM_LIBS@ @ERLANG_LIBS@
+
+SUBDIRS = 
+
+ERLSHLIBS = ../epam
+
+OUTDIR = ..
+EFLAGS = -I .. -pz ..
+# make debug=true to compile Erlang module with debug informations.
+ifdef debug
+  EFLAGS+=+debug_info
+endif
+
+OBJS   = \
+	$(OUTDIR)/epam.beam
+
+all:    $(OBJS) $(ERLSHLIBS)
+
+$(OUTDIR)/%.beam:       %.erl
+	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
+
+#all:	$(ERLSHLIBS)
+#	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
+
+$(ERLSHLIBS):	../%:	%.c
+			$(CC) -Wall $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) \
+			$(subst ../,,$(subst ,.c,$@)) $(LIBS) \
+			-o $@ -lpthread
+
+clean:
+	rm -f $(OBJS) $(ERLSHLIBS)
+
+distclean: clean
+	rm -f Makefile
+
+TAGS:
+	etags *.erl
