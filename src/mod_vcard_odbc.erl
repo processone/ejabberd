@@ -647,7 +647,7 @@ remove_user(User, Server) ->
     Username = ejabberd_odbc:escape(LUser),
     ejabberd_odbc:sql_transaction(
       LServer,
-      [["delete from vcard where username='", Username, "';"],
+      [["delete from vcard where lusername='", Username, "';"],
        ["delete from vcard_search where lusername='", Username, "';"]]).
 
 

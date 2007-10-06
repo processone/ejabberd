@@ -1,5 +1,7 @@
 2007-10-06  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/mod_vcard_odbc.erl: Bugfix
+
 	* src/mod_offline_odbc.erl: Bugfix
 
 2007-10-01  Alexey Shchepin  <alexey@process-one.net>
