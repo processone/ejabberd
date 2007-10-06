@@ -425,8 +425,9 @@ webadmin_user(Acc, User, Server, Lang) ->
 
 %% Returns as integer the number of offline messages for a given user
 count_offline_messages(LUser, LServer) ->
+    Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:count_records_where(
-		 LServer, "spool", "where username='" ++ LUser ++ "'") of
+		 LServer, "spool", "where username='" ++ Username ++ "'") of
         {selected, [_], [{Res}]} ->
             list_to_integer(Res);
         _ ->
