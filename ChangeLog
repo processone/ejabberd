@@ -1,3 +1,7 @@
+2007-10-07  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_vcard_odbc.erl: Reverted previous change
+
 2007-10-06  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_vcard_odbc.erl: Bugfix
