@@ -1,5 +1,12 @@
 2007-10-17  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/ejabberdctl.template: Several improvements (EJAB-380)
+	(thanks to Sander Devrieze, Sergei Golovan, Torsten Werner and
+	Badlop)
+	* src/ejabberdctl.cfg.example: Likewise
+	* src/ejabberd.inetrc: Likewise
+	* src/Makefile.in: Likewise
+
 	* src/mod_privacy.erl: Bugfix
 
 2007-10-07  Alexey Shchepin  <alexey@process-one.net>

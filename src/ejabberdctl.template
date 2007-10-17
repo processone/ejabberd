@@ -2,40 +2,101 @@
 
 NODE=ejabberd
 HOST=localhost
+ERLANG_NODE=$NODE@$HOST
 
 # Define ejabberd environment
 ROOTDIR=@rootdir@
-SASL_LOG_PATH=$ROOTDIR/var/log/ejabberd/sasl.log
-EJABBERD_DB=$ROOTDIR/var/lib/ejabberd/db/$NODE
+EJABBERD_CFG=$ROOTDIR/etc/ejabberd/ejabberd.cfg
+EJABBERDCTL_CFG=$ROOTDIR/etc/ejabberd/ejabberdctl.cfg
+EJABBERD_INETRC=$ROOTDIR/etc/ejabberd/ejabberd.inetrc
 EJABBERD_EBIN=$ROOTDIR/var/lib/ejabberd/ebin
-export EJABBERD_LOG_PATH=$ROOTDIR/var/log/ejabberd/ejabberd.log
-export EJABBERD_CONFIG_PATH=$ROOTDIR/etc/ejabberd/ejabberd.cfg
-export EJABBERD_MSGS_PATH=$ROOTDIR/var/lib/ejabberd/priv/msgs
-export EJABBERD_SO_PATH=$ROOTDIR/var/lib/ejabberd/priv/lib
-export ERL_MAX_PORTS=32000
+EJABBERD_DB=$ROOTDIR/var/lib/ejabberd/db/$NODE
+EJABBERD_MSGS_PATH=$ROOTDIR/var/lib/ejabberd/priv/msgs
+EJABBERD_SO_PATH=$ROOTDIR/var/lib/ejabberd/priv/lib
+EJABBERD_LOG_PATH=$ROOTDIR/var/log/ejabberd/ejabberd.log
+SASL_LOG_PATH=$ROOTDIR/var/log/ejabberd/sasl.log
 
 [ -d $EJABBERD_DB ] || mkdir -p $EJABBERD_DB
+
+[ -f $EJABBERDCTL_CFG ] && . $EJABBERDCTL_CFG
+
+HOME=$ROOTDIR/var/lib/ejabberd
+export HOME
+
+if [ $# -ne 0 ] ; then
+    case $1 in
+        --node) shift ; ERLANG_NODE=$1 ; shift ;;
+    esac
+fi
+
+if [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] ; then
+    SNAME="-kernel inetrc \""$EJABBERD_INETRC"\" -sname"
+else
+    SNAME=-name
+fi
+
+ERLANG_OPTS="$POLL $PROCESSES $ERL_MAX_ETS_TABLES"
 
 function start
 {
     erl \
+      $SNAME $ERLANG_NODE \
+      $ERLANG_OPTS \
       -noinput -detached \
       -sname $NODE@$HOST \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
       -s ejabberd \
-      -ejabberd config \"$EJABBERD_CONFIG_PATH\" \
+      -ejabberd config \"$EJABBERD_CFG\" \
                 log_path \"$EJABBERD_LOG_PATH\" \
       -sasl sasl_error_logger \{file,\"$SASL_LOG_PATH\"\}
 }
 
 function debug
 {
+    echo "--------------------------------------------------------------------"
+    echo ""
+    echo "IMPORTANT: we will attempt to attach an INTERACTIVE shell"
+    echo "to an already running ejabberd node."
+    echo "If an ERROR is printed, it means the connection was not succesfull."
+    echo "You can interact with the ejabberd node if you know how to use it."
+    echo "Please be extremely cautious with your actions,"
+    echo "and exit immediately if you are not completely sure."
+    echo ""
+    echo "To detach this shell from ejabberd, press:"
+    echo "  control+c, control+c"
+    echo ""
+    echo "--------------------------------------------------------------------"
+    read -p "Press any key to continue"
+    echo ""
     erl \
-      -sname debug$NODE@$HOST \
+      $SNAME debug \
+      -remsh $ERLANG_NODE
+}
+
+function live
+{
+    echo "--------------------------------------------------------------------"
+    echo ""
+    echo "IMPORTANT: ejabberd is going to start in LIVE (interactive) mode."
+    echo "All log messages will be shown in the command shell."
+    echo "You can interact with the ejabberd node if you know how to use it."
+    echo "Please be extremely cautious with your actions,"
+    echo "and exit immediately if you are not completely sure."
+    echo ""
+    echo "To exit this LIVE mode and stop ejabberd, press:"
+    echo "  q().  and press the Enter key"
+    echo ""
+    echo "--------------------------------------------------------------------"
+    read -p "Press any key to continue"
+    echo ""
+    erl \
+      $SNAME $ERLANG_NODE \
+      $ERLANG_OPTS \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
-      -remsh $NODE@$HOST
+      -ejabberd config \"$EJABBERD_CFG\" \
+      -s ejabberd
 }
 
 function ctl
@@ -44,7 +105,11 @@ function ctl
       -noinput \
       -sname ejabberdctl@$HOST \
       -pa $EJABBERD_EBIN \
-      -s ejabberd_ctl -extra $NODE@$HOST $@
+      -s ejabberd_ctl -extra $ERLANG_NODE $@
+    case $? in
+       2) help_start;;
+       3) help_start;;
+    esac
 }
 
 function usage
@@ -53,11 +118,19 @@ function usage
     exit
 }
 
-[ $# -lt 1 ] && usage
+function help_start
+{
+    echo ""
+    echo "Commands to start an ejabberd node:"
+    echo "  start    Start an ejabberd node in server mode"
+    echo "  debug    Attach an interactive Erlang shell to a running ejabberd node"
+    echo "  live     Start an ejabberd node in live (interactive) mode"
+    echo ""
+}
 
 case $1 in
     start) start;;
     debug) debug;;
+    live) live;;
     *) ctl $@;;
 esac
-
