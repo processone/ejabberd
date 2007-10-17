@@ -1,3 +1,7 @@
+2007-09-28  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/ejabberdctl.template: Bugfix on previous change (EJAB-380)
+
 2007-10-17  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/ejabberdctl.template: Several improvements (EJAB-380)

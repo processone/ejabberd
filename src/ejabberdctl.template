@@ -43,7 +43,6 @@ function start
       $SNAME $ERLANG_NODE \
       $ERLANG_OPTS \
       -noinput -detached \
-      -sname $NODE@$HOST \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
       -s ejabberd \
@@ -102,8 +101,8 @@ function live
 function ctl
 {
     erl \
+      $SNAME ejabberdctl \
       -noinput \
-      -sname ejabberdctl@$HOST \
       -pa $EJABBERD_EBIN \
       -s ejabberd_ctl -extra $ERLANG_NODE $@
     case $? in
