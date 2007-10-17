@@ -1,3 +1,7 @@
+2007-10-17  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_privacy.erl: Bugfix
+
 2007-10-07  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_vcard_odbc.erl: Reverted previous change
