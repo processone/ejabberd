@@ -155,7 +155,73 @@ it is routed to the process that serves this connection, and if a connection
 does not exist, then it is opened and registered.
 
 
+\section{Authentication}
 
+\subsubsection{External}
+\label{externalauth}
+\ind{external authentication}
+
+The external authentication script follows
+\footahref{http://www.erlang.org/doc/tutorial/c_portdriver.html}{the erlang port driver API}.
+
+That script is supposed to do theses actions, in an infinite loop:
+\begin{itemize}
+\item read from stdin: AABBBBBBBBB.....
+    \begin{itemize}
+    \item A: 2 bytes of length data (a short in network byte order)
+    \item B: a string of length found in A that contains operation in plain text
+    operation are as follows:
+    \begin{itemize}
+    \item auth:User:Server:Password (check if a username/password pair is correct)
+    \item isuser:User:Server (check if it's a valid user)
+    \item setpass:User:Server:Password (set user's password)
+    \end{itemize}
+    \end{itemize}
+\item write to stdout: AABB
+    A: the number 2 (coded as a short, which is bytes length of following result)
+    B: the result code (coded as a short), should be 1 for success/valid, or 0 for failure/invalid
+\end{itemize}
+
+Example python script
+\begin{verbatim}
+#!/usr/bin/python
+
+import sys
+from struct import *
+
+def from_ejabberd():
+    input_length = sys.stdin.read(2)
+    (size,) = unpack('>h', input_length)
+    return sys.stdin.read(size).split(':')
+
+def to_ejabberd(bool):
+    answer = 0
+    if bool:
+        answer = 1
+    token = pack('>hh', 2, answer)
+    sys.stdout.write(token)
+    sys.stdout.flush()
+
+def auth(username, server, password):
+    return True
+
+def isuser(username, server):
+    return True
+
+def setpass(username, server, password):
+    return True
+
+while True:
+    data = from_ejabberd()
+    success = False
+    if data[0] == "auth":
+        success = auth(data[1], data[2], data[3])
+    elif data[0] == "isuser":
+        success = isuser(data[1], data[2])
+    elif data[0] == "setpass":
+        success = setpass(data[1], data[2], data[3])
+    to_ejabberd(success)
+\end{verbatim}
 
 \section{XML Representation}
 \label{xmlrepr}
