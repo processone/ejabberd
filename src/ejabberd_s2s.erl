@@ -3,12 +3,12 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : S2S connections manager
 %%% Created :  7 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id$
+%%% Id      : $Id: ejabberd_s2s.erl 820 2007-07-19 21:17:13Z mremond $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_s2s).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
+-vsn('$Revision: 820 $ ').
 
 -behaviour(gen_server).
 
@@ -26,7 +26,7 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+         terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -50,11 +50,11 @@ start_link() ->
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {From, To, Packet}]);
-	_ ->
-	    ok
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("~p~nwhen processing: ~p",
+                       [Reason, {From, To, Packet}]);
+        _ ->
+            ok
     end.
 
 remove_connection(FromTo, Pid, Key) ->
@@ -74,10 +74,10 @@ remove_connection(FromTo, Pid, Key) ->
 
 have_connection(FromTo) ->
     case catch mnesia:dirty_read(s2s, FromTo) of
-	[_] ->
-	    true;
-	_ ->
-	    false
+        [_] ->
+            true;
+        _ ->
+            false
     end.
 
 has_key(FromTo, Key) ->
@@ -112,10 +112,10 @@ try_register(FromTo) ->
 		end
 	end,
     case mnesia:transaction(F) of
-	{atomic, Res} ->
-	    Res;
-	_ ->
-	    false
+        {atomic, Res} ->
+            Res;
+        _ ->
+            false
     end.
 
 dirty_get_connections() ->
@@ -177,11 +177,11 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     {noreply, State};
 handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {From, To, Packet}]);
-	_ ->
-	    ok
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("~p~nwhen processing: ~p",
+                       [Reason, {From, To, Packet}]);
+        _ ->
+            ok
     end,
     {noreply, State};
 handle_info(_Info, State) ->
@@ -222,7 +222,7 @@ clean_table_from_bad_node(Node) ->
 
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
-	   [From, To, Packet, 8]),
+           [From, To, Packet, 8]),
     case find_connection(From, To) of
 	{atomic, Pid} when pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
@@ -296,8 +296,11 @@ choose_pid(From, Pids) ->
 		[] -> Pids;
 		Ps -> Ps
 	    end,
-    %% use sticky connections based on the full JID of the sender
-    Pid = lists:nth(erlang:phash(From, length(Pids1)), Pids1),
+    % Use sticky connections based on the JID of the sender (whithout
+    % the resource to ensure that a muc room always uses the same
+    % connection)
+    Pid = lists:nth(erlang:phash(jlib:jid_remove_resource(From), length(Pids1)),
+		    Pids1),
     ?DEBUG("Using ejabberd_s2s_out ~p~n", [Pid]),
     Pid.
 
@@ -373,12 +376,12 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 is_service(From, To) ->
     LFromDomain = From#jid.lserver,
     case ejabberd_config:get_local_option({route_subdomains, LFromDomain}) of
-	s2s -> % bypass RFC 3920 10.3
-	    false;
-	_ ->
-	    LDstDomain = To#jid.lserver,
-	    P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
-	    lists:any(P, ?MYHOSTS)
+        s2s -> % bypass RFC 3920 10.3
+            false;
+        _ ->
+            LDstDomain = To#jid.lserver,
+            P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
+            lists:any(P, ?MYHOSTS)
     end.
 
 %%--------------------------------------------------------------------
@@ -415,31 +418,30 @@ update_tables() ->
 	    mnesia:delete_table(s2s)
     end,
     case catch mnesia:table_info(s2s, attributes) of
-	[fromto, node, key] ->
-	    mnesia:transform_table(s2s, ignore, [fromto, pid, key]),
-	    mnesia:clear_table(s2s);
-	[fromto, pid, key] ->
-	    ok;
-	{'EXIT', _} ->
-	    ok
+        [fromto, node, key] ->
+            mnesia:transform_table(s2s, ignore, [fromto, pid, key]),
+            mnesia:clear_table(s2s);
+        [fromto, pid, key] ->
+            ok;
+        {'EXIT', _} ->
+            ok
     end,
     case lists:member(local_s2s, mnesia:system_info(tables)) of
-	true ->
-	    mnesia:delete_table(local_s2s);
-	false ->
-	    ok
+        true ->
+            mnesia:delete_table(local_s2s);
+        false ->
+            ok
     end.
 
 %% Check if host is in blacklist or white list
 allow_host(MyServer, S2SHost) ->
     case ejabberd_config:get_local_option({{s2s_host, S2SHost},MyServer}) of
-	deny -> false;
-	allow -> true;
-	_ ->
-	    case ejabberd_config:get_local_option({s2s_default_policy, MyServer}) of
-		deny -> false;
-		allow -> true;
-		_ -> true %% The default s2s policy is allow
-	    end
+        deny -> false;
+        allow -> true;
+        _ ->
+            case ejabberd_config:get_local_option({s2s_default_policy, MyServer}) of
+                deny -> false;
+                allow -> true;
+                _ -> true %% The default s2s policy is allow
+            end
     end.
-

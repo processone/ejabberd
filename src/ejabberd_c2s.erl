@@ -132,7 +132,7 @@ get_presence(FsmRef) ->
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
-%%          {stop, StopReason}                   
+%%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
     Access = case lists:keysearch(access, 1, Opts) of
@@ -178,7 +178,7 @@ init([{SockMod, Socket}, Opts]) ->
 %% Func: StateName/2
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
@@ -313,7 +313,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				    {stop, normal, StateData};
 				true ->
 				    send_text(StateData, Header),
-				    fsm_next_state(wait_for_auth, 
+				    fsm_next_state(wait_for_auth,
 					       StateData#state{
 						 server = Server,
 						 lang = Lang})
@@ -929,7 +929,7 @@ session_established(closed, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 %state_name(Event, From, StateData) ->
 %    Reply = ok,
@@ -939,7 +939,7 @@ session_established(closed, StateData) ->
 %% Func: handle_event/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
     fsm_next_state(StateName, StateData).
@@ -951,7 +951,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({get_presence}, _From, StateName, StateData) ->
     User = StateData#state.user,
@@ -975,12 +975,11 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     ejabberd_hooks:run(c2s_loop_debug, [Text]),
-    
     fsm_next_state(StateName, StateData);
 handle_info(replaced, _StateName, StateData) ->
     Lang = StateData#state.lang,
@@ -1848,7 +1847,7 @@ process_unauthenticated_stanza(StateData, El) ->
 			     jlib:make_jid("", "", ""),
 			     jlib:iq_to_xml(ResIQ)),
 		    send_element(StateData, jlib:remove_attr("to", Res1));
-		_ ->                    
+		_ ->
 		    send_element(StateData, Res)
 	    end;
 	_ ->

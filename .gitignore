@@ -1,6 +1,12 @@
 *.beam
 *~
 *.so
+*.flc
+*.log
+erl_crash.dump
+ejabberd.cfg
+ejabberd.sh
+Mnesia.*
 Makefile
 XmppAddr.asn1db
 XmppAddr.erl
