@@ -1,4 +1,14 @@
-2007-09-28  Christophe Romain  <christophe.romain@process-one.net>
+2007-10-30  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/ejabberd_s2s.erl: don't use the resource of the sender to choose
+	a s2s connection to ensure that a muc room always uses the same
+	connection (EJAB-360)
+
+2007-10-23  Christophe Romain  <christophe.romain@process-one.net>
+
+	* doc/dev.tex: Added extauth script details (EJAB-334)
+	
+2007-10-17  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/ejabberdctl.template: Bugfix on previous change (EJAB-380)
 
@@ -25,7 +35,7 @@
 
 2007-10-01  Alexey Shchepin  <alexey@process-one.net>
 
-	* src/ejabberd_auth_pam.erl: Support for PAM authentication
+	* src/ejabberd_auth_pam.erl: Support for PAM authentication (EJAB-307) 
 	(thanks to Evgeniy Khramtsov)
 	* src/ejabberd.cfg.example: Likewise
 	* src/configure.ac: Likewise
