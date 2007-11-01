@@ -1,13 +1,13 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_http_poll.erl
-%%% Author  : Alexey Shchepin <alexey@sevcom.net>
+%%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : HTTP Polling support (JEP-0025)
-%%% Created :  4 Mar 2004 by Alexey Shchepin <alexey@sevcom.net>
+%%% Created :  4 Mar 2004 by Alexey Shchepin <alexey@process-one.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_poll).
--author('alexey@sevcom.net').
+-author('alexey@process-one.net').
 -vsn('$Revision$ ').
 
 -behaviour(gen_fsm).
@@ -153,7 +153,15 @@ process(_, _Request) ->
 %%----------------------------------------------------------------------
 init([ID, Key]) ->
     ?INFO_MSG("started: ~p", [{ID, Key}]),
-    Opts = [], % TODO
+
+    %% Read c2s options from the first ejabberd_c2s configuration in
+    %% the config file listen section
+    %% TODO: We should have different access and shaper values for
+    %% each connector. The default behaviour should be however to use
+    %% the default c2s restrictions if not defined for the current
+    %% connector.
+    Opts = get_c2s_opts(),
+
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_poll, self()}, Opts),
     %{ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
     %ejabberd_c2s:become_controller(C2SPid),
@@ -317,6 +325,34 @@ terminate(Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
+
+%% Get first c2s configuration limitations to apply it to other c2s
+%% connectors.
+get_c2s_opts() ->
+    case ejabberd_config:get_local_option(listen) of
+	undefined ->
+	    [];
+	C2SFirstListen ->
+	    case lists:keysearch(ejabberd_c2s, 2, C2SFirstListen) of
+		false ->
+		    [];
+		{value, {_Port, ejabberd_c2s, Opts}} ->
+		    select_opts_values(Opts)
+	    end
+    end.
+%% Only get access, shaper and max_stanza_size values
+select_opts_values(Opts) ->
+    select_opts_values(Opts, []).
+select_opts_values([], SelectedValues) ->
+    SelectedValues;
+select_opts_values([{access,Value}|Opts], SelectedValues) ->
+    select_opts_values(Opts, [{access, Value}|SelectedValues]);
+select_opts_values([{shaper,Value}|Opts], SelectedValues) ->
+    select_opts_values(Opts, [{shaper, Value}|SelectedValues]);
+select_opts_values([{max_stanza_size,Value}|Opts], SelectedValues) ->
+    select_opts_values(Opts, [{max_stanza_size, Value}|SelectedValues]);
+select_opts_values([_Opt|Opts], SelectedValues) ->
+    select_opts_values(Opts, SelectedValues).
 
 
 http_put(ID, Key, NewKey, Packet) ->
