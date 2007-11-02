@@ -160,7 +160,7 @@ init([ID, Key]) ->
     %% each connector. The default behaviour should be however to use
     %% the default c2s restrictions if not defined for the current
     %% connector.
-    Opts = get_c2s_opts(),
+    Opts = ejabberd_c2s_config:get_c2s_limits(),
 
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_poll, self()}, Opts),
     %{ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
@@ -325,35 +325,6 @@ terminate(Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-
-%% Get first c2s configuration limitations to apply it to other c2s
-%% connectors.
-get_c2s_opts() ->
-    case ejabberd_config:get_local_option(listen) of
-	undefined ->
-	    [];
-	C2SFirstListen ->
-	    case lists:keysearch(ejabberd_c2s, 2, C2SFirstListen) of
-		false ->
-		    [];
-		{value, {_Port, ejabberd_c2s, Opts}} ->
-		    select_opts_values(Opts)
-	    end
-    end.
-%% Only get access, shaper and max_stanza_size values
-select_opts_values(Opts) ->
-    select_opts_values(Opts, []).
-select_opts_values([], SelectedValues) ->
-    SelectedValues;
-select_opts_values([{access,Value}|Opts], SelectedValues) ->
-    select_opts_values(Opts, [{access, Value}|SelectedValues]);
-select_opts_values([{shaper,Value}|Opts], SelectedValues) ->
-    select_opts_values(Opts, [{shaper, Value}|SelectedValues]);
-select_opts_values([{max_stanza_size,Value}|Opts], SelectedValues) ->
-    select_opts_values(Opts, [{max_stanza_size, Value}|SelectedValues]);
-select_opts_values([_Opt|Opts], SelectedValues) ->
-    select_opts_values(Opts, SelectedValues).
-
 
 http_put(ID, Key, NewKey, Packet) ->
     case mnesia:dirty_read({http_poll, ID}) of

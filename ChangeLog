@@ -1,3 +1,9 @@
+2007-11-02  Mickael Remond  <mremond@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Refactoring. Moved c2s limits
+	acquisition to a separate module.
+	* src/ejabberd_c2s_config.erl: Likewise.
+	
 2007-11-01  Mickael Remond  <mremond@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: Support for c2s ACL access,
