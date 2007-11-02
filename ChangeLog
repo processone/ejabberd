@@ -7,7 +7,7 @@
 2007-11-01  Mickael Remond  <mremond@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: Support for c2s ACL access,
-	max_stanza and shaper on http_bind connections (EJAB-243,
+	max_stanza and shaper on http_poll connections (EJAB-243,
 	EJAB-415, EJAB-416)
 
 2007-10-30  Jerome Sautret  <jerome.sautret@process-one.net>
