@@ -15,7 +15,9 @@
 	 del_user/2,
 	 del_user_return_password/3,
 	 list_users/1,
+         list_users/2,
 	 users_number/1,
+         users_number/2,
 	 add_spool_sql/2,
 	 add_spool/2,
 	 get_and_del_spool_msg_t/2,
@@ -111,6 +113,34 @@ list_users(LServer) ->
       LServer,
       "select username from users").
 
+list_users(LServer, [{from, Start}, {to, End}]) when is_integer(Start) and
+                                                     is_integer(End) ->
+    list_users(LServer, [{limit, End-Start}, {offset, Start-1}]);
+list_users(LServer, [{prefix, Prefix}, {from, Start}, {to, End}]) when is_list(Prefix) and
+                                                                       is_integer(Start) and
+                                                                       is_integer(End) ->
+    list_users(LServer, [{prefix, Prefix}, {limit, End-Start}, {offset, Start}]);
+
+list_users(LServer, [{limit, Limit}, {offset, Offset}]) when is_integer(Limit) and
+                                                             is_integer(Offset) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      io_lib:format(
+        "select username from users " ++
+        "order by username " ++
+        "limit ~w offset ~w", [Limit, Offset]));
+list_users(LServer, [{prefix, Prefix},
+                     {limit, Limit},
+                     {offset, Offset}]) when is_list(Prefix) and
+                                             is_integer(Limit) and
+                                             is_integer(Offset) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      io_lib:format("select username from users " ++
+                    "where username like '~s%' " ++
+                    "order by username " ++
+                    "limit ~w offset ~w ", [Prefix, Limit, Offset])).
+
 users_number(LServer) ->
     case ejabberd_config:get_local_option(
 	   {pgsql_users_number_estimate, LServer}) of
@@ -124,6 +154,17 @@ users_number(LServer) ->
 	      LServer,
 	      "select count(*) from users")
     end.
+
+users_number(LServer, [{prefix, Prefix}]) when is_list(Prefix) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      io_lib:fwrite("select count(*) from users " ++
+                    %% Warning: Escape prefix at higher level to prevent SQL
+                    %%          injection. 
+                    "where username like '~s%'", [Prefix]));
+users_number(LServer, []) ->
+    users_number(LServer).
+
 
 add_spool_sql(Username, XML) ->
     ["insert into spool(username, xml) "

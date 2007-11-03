@@ -18,7 +18,9 @@
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
+         get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
+         get_vh_registered_users_number/2,
 	 get_password/2,
 	 get_password_s/2,
 	 is_user_exists/2,
@@ -122,12 +124,30 @@ get_vh_registered_users(Server) ->
 	    []
     end.
 
+get_vh_registered_users(Server, Opts) ->
+    LServer = jlib:nameprep(Server),
+    case catch odbc_queries:list_users(LServer, Opts) of
+	{selected, ["username"], Res} ->
+	    [{U, LServer} || {U} <- Res];
+	_ ->
+	    []
+    end.
+
 get_vh_registered_users_number(Server) ->
     LServer = jlib:nameprep(Server),
     case catch odbc_queries:users_number(LServer) of
 	{selected, [_], [{Res}]} ->
 	    list_to_integer(Res);
 	_ ->
+	    0
+    end.
+
+get_vh_registered_users_number(Server, Opts) ->
+    LServer = jlib:nameprep(Server),
+    case catch odbc_queries:users_number(LServer, Opts) of
+	{selected, [_], [{Res}]} ->
+	    list_to_integer(Res);
+	Other ->
 	    0
     end.
 

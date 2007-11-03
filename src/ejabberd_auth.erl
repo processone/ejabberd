@@ -22,7 +22,9 @@
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
+         get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
+         get_vh_registered_users_number/2,
 	 get_password/2,
 	 get_password_s/2,
 	 is_user_exists/2,
@@ -108,6 +110,12 @@ get_vh_registered_users(Server) ->
 	      M:get_vh_registered_users(Server)
       end, auth_modules(Server)).
 
+get_vh_registered_users(Server, Opts) ->
+    lists:flatmap(
+      fun(M) ->
+	      M:get_vh_registered_users(Server, Opts)
+      end, auth_modules(Server)).
+
 get_vh_registered_users_number(Server) ->
     lists:sum(
       lists:map(
@@ -116,6 +124,19 @@ get_vh_registered_users_number(Server) ->
 		       M, get_vh_registered_users_number, 1) of
 		    true ->
 			M:get_vh_registered_users_number(Server);
+		    false ->
+			length(M:get_vh_registered_users(Server))
+		end
+	end, auth_modules(Server))).
+
+get_vh_registered_users_number(Server, Opts) ->
+    lists:sum(
+      lists:map(
+	fun(M) ->
+		case erlang:function_exported(
+		       M, get_vh_registered_users_number, 2) of
+		    true ->
+			M:get_vh_registered_users_number(Server, Opts);
 		    false ->
 			length(M:get_vh_registered_users(Server))
 		end
