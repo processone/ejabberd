@@ -13,14 +13,7 @@
 	 get_global_option/1, get_local_option/1]).
 
 -include("ejabberd.hrl").
-
--record(config, {key, value}).
--record(local_config, {key, value}).
--record(state, {opts = [],
-		hosts = [],
-		override_local = false,
-		override_global = false,
-		override_acls = false}).
+-include("ejabberd_config.hrl").
 
 start() ->
     mnesia:create_table(config,

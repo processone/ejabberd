@@ -1,3 +1,9 @@
+2007-11-05  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_config.erl: Refactoring: Move internal
+	data structure to an include file.
+	* src/ejabberd_config.hrl: Likewise.
+
 2007-11-03  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_auth.erl: Better count management and batch users
