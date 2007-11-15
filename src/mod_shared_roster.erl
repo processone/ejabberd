@@ -3,7 +3,7 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Shared roster management
 %%% Created :  5 Mar 2005 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id: mod_shared_roster.erl 24 2005-04-14 01:15:31Z alexey $
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(mod_shared_roster).

@@ -3,7 +3,7 @@
 %%% Author  : Mickael Remond <mickael.remond@process-one.net>
 %%% Purpose : ejabberd configuration internal data structures.
 %%% Created : 5 Nov 2007 by Mickael Remond <mickael.remond@process-one.net>
-%%% Id      : $Id: $
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -record(config, {key, value}).

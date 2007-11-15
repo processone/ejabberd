@@ -3,7 +3,7 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Update ejabberd
 %%% Created : 27 Jan 2006 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id: ejabberd_c2s.erl 492 2006-01-25 00:35:12Z alexey $
+%%% Id      : $Id$
 %%%-------------------------------------------------------------------
 
 -module(ejabberd_update).

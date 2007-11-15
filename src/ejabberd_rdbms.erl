@@ -3,12 +3,12 @@
 %%% Author  : Mickael Remond <mickael.remond@process-one.net>
 %%% Purpose : Manage the start of the database modules when needed
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id: $
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_rdbms).
 -author('alexey@sevcom.net').
--svn('$Revision: $ ').
+-svn('$Revision$ ').
 
 -export([start/0]).
 -include("ejabberd.hrl").

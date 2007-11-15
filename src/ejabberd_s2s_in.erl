@@ -3,7 +3,7 @@
 %%% Author  : Alexey Shchepin <alexey@sevcom.net>
 %%% Purpose : Serve incoming s2s connection
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id: ejabberd_s2s_in.erl 820 2007-07-19 21:17:13Z mremond $
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_s2s_in).

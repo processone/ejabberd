@@ -8,14 +8,14 @@
 %%%               - adhoc mode
 %%%
 %%% Created :  7 May 2006 by Mickael Remond <mremond@process-one.net>
-%%% Id      : $Id: $
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 %%% Copyright (c) 2006 Process One
 %%%-------------------------------------------------------------------
 
 -module(ejabberd_admin).
 -author('mickael.remond@process-one.net').
--vsn('$Revision: $ ').
+-vsn('$Revision$ ').
 
 -export([restore/1]).
 

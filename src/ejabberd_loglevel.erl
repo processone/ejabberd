@@ -10,7 +10,7 @@
 %%%----------------------------------------------------------------------
 -module(ejabberd_loglevel).
 -author('mickael.remond@process-one.net').
--svn('$Revision: 685 $ ').
+-svn('$Revision$ ').
 
 -export([set/1]).
 
@@ -72,7 +72,7 @@ ejabberd_logger_src(Loglevel) ->
     L = integer_to_list(Loglevel),
     "-module(ejabberd_logger).
     -author('mickael.remond@process-one.net').
-    -svn('$Revision: 685 $ ').
+    -svn('$Revision$ ').
 
     -export([debug_msg/4,
              info_msg/4,

@@ -3,12 +3,12 @@
 %%% Author  : Mickael Remond <mickael.remond@process-one.net>
 %%% Purpose : ejabberd LDAP helper functions
 %%% Created : 12 Oct 2006 by Mickael Remond <mickael.remond@process-one.net>
-%%% Id      : $Id: ejabberd_auth_ldap.erl 623 2006-09-23 09:52:53Z mremond $
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(eldap_utils).
 -author('mickael.remond@process-one.net').
--svn('$Revision: $ ').
+-svn('$Revision$ ').
 
 -export([generate_subfilter/1,
 	 find_ldap_attrs/2,

@@ -4,12 +4,12 @@
 %%% Purpose : Functions for c2s interactions from other client
 %%%           connector modules
 %%% Created :  2 Nov 2007 by Mickael Remond <mremond@process-one.net>
-%%% Id      : $Id: $
+%%% Id      : $Id$
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_c2s_config).
 -author('mremond@process-one.net').
--svn('$Revision: 965 $ ').
+-svn('$Revision$ ').
 
 -export([get_c2s_limits/0]).
 
