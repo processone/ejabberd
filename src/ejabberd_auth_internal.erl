@@ -18,6 +18,9 @@
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
+	 get_vh_registered_users/2,
+	 get_vh_registered_users_number/1,
+	 get_vh_registered_users_number/2,
 	 get_password/2,
 	 get_password_s/2,
 	 is_user_exists/2,
@@ -122,9 +125,66 @@ get_vh_registered_users(Server) ->
     LServer = jlib:nameprep(Server),
     mnesia:dirty_select(
       passwd,
-      [{#passwd{us = '$1', _ = '_'},
-	[{'==', {element, 2, '$1'}, LServer}],
+      [{#passwd{us = '$1', _ = '_'}, 
+	[{'==', {element, 2, '$1'}, LServer}], 
 	['$1']}]).
+
+get_vh_registered_users(Server, [{from, Start}, {to, End}]) 
+	when is_integer(Start) and is_integer(End) ->
+    get_vh_registered_users(Server, [{limit, End-Start+1}, {offset, Start}]);
+
+get_vh_registered_users(Server, [{limit, Limit}, {offset, Offset}]) 
+	when is_integer(Limit) and is_integer(Offset) ->
+    case get_vh_registered_users(Server) of
+    [] ->
+	[];
+    Users ->
+	Set = lists:keysort(1, Users),
+	L = length(Set),
+	Start = if Offset < 1 -> 1;
+	           Offset > L -> L;
+	           true -> Offset
+	        end,
+	lists:sublist(Set, Start, Limit)
+    end;
+
+get_vh_registered_users(Server, [{prefix, Prefix}]) 
+	when is_list(Prefix) ->
+    Set = [{U,S} || {U, S} <- get_vh_registered_users(Server), lists:prefix(Prefix, U)],
+    lists:keysort(1, Set);
+
+get_vh_registered_users(Server, [{prefix, Prefix}, {from, Start}, {to, End}]) 
+	when is_list(Prefix) and is_integer(Start) and is_integer(End) ->
+    get_vh_registered_users(Server, [{prefix, Prefix}, {limit, End-Start+1}, {offset, Start}]);
+
+get_vh_registered_users(Server, [{prefix, Prefix}, {limit, Limit}, {offset, Offset}]) 
+	when is_list(Prefix) and is_integer(Limit) and is_integer(Offset) ->
+    case [{U,S} || {U, S} <- get_vh_registered_users(Server), lists:prefix(Prefix, U)] of
+    [] ->
+	[];
+    Users ->
+	Set = lists:keysort(1, Users),
+	L = length(Set),
+	Start = if Offset < 1 -> 1;
+	           Offset > L -> L;
+	           true -> Offset
+	        end,
+	lists:sublist(Set, Start, Limit)
+    end;
+
+get_vh_registered_users(Server, _) ->
+    get_vh_registered_users(Server).
+
+get_vh_registered_users_number(Server) ->
+    Set = get_vh_registered_users(Server),
+    length(Set).
+
+get_vh_registered_users_number(Server, [{prefix, Prefix}]) when is_list(Prefix) ->
+    Set = [{U, S} || {U, S} <- get_vh_registered_users(Server), lists:prefix(Prefix, U)],
+    length(Set);
+    
+get_vh_registered_users_number(Server, _) ->
+    get_vh_registered_users_number(Server).
 
 get_password(User, Server) ->
     LUser = jlib:nodeprep(User),
