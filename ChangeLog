@@ -1,7 +1,12 @@
 2007-11-16  Christophe Romain <christophe.romain@process-one.net>
 
-	* src/ejabberd_auth_internal.erl: Better count management and batch users
-	retrieval internal database
+	* src/ejabberd_auth_internal.erl: Better count management and
+	batch users retrieval internal database
+
+2007-11-14  Mickael Remond  <mremond@process-one.net>
+
+	* examples/extauth/check_pass_null.pl: Fixed external
+	authentication example script (EJAB-404)
 
 2007-11-05  Mickael Remond  <mremond@process-one.net>
 

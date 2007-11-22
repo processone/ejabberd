@@ -18,7 +18,7 @@ while(1)
     my $len = unpack "n",$buf;
     my $nread = sysread STDIN,$buf,$len;
 
-    my ($op,$user,$password) = split /:/,$buf;
+    my ($op,$user,$host,$password) = split /:/,$buf;
     #$user =~ s/\./\//og;
     my $jid = "$user\@$domain";
     my $result;
