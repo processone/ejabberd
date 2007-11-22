@@ -46,7 +46,7 @@ load_file(File) ->
 	    set_opts(Res);
 	{error, Reason} ->
 	    ?ERROR_MSG("Can't load config file ~p: ~p", [File, Reason]),
-	    exit(file:format_error(Reason))
+	    exit(File ++ ": " ++ file:format_error(Reason))
     end.
 
 search_hosts(Term, State) ->

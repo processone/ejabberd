@@ -1,3 +1,8 @@
+2007-11-22  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_config.erl: Improved error message when ejabberd
+	config file is not found.
+
 2007-11-16  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_auth_internal.erl: Better count management and
