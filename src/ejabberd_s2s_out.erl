@@ -101,7 +101,7 @@ start(From, Host, Type) ->
 
 start_link(From, Host, Type) ->
     p1_fsm:start_link(ejabberd_s2s_out, [From, Host, Type],
-                       ?FSMLIMITS ++ ?FSMOPTS).
+		      ?FSMLIMITS ++ ?FSMOPTS).
 
 start_connection(Pid) ->
     p1_fsm:send_event(Pid, init).
@@ -165,9 +165,9 @@ open_socket(init, StateData) ->
 		StateData#state.myname,
 		StateData#state.server),
     ?DEBUG("open_socket: ~p", [{StateData#state.myname,
-                                   StateData#state.server,
-				   StateData#state.new,
-				   StateData#state.verify}]),
+				StateData#state.server,
+				StateData#state.new,
+				StateData#state.verify}]),
     AddrList = case idna:domain_utf8_to_ascii(StateData#state.server) of
 		   false -> [];
 		   ASCIIAddr ->
@@ -789,10 +789,16 @@ send_queue(StateData, Q) ->
 
 %% Bounce a single message (xmlelement)
 bounce_element(El, Error) ->
-    Err = jlib:make_error_reply(El, Error),
-    From = jlib:string_to_jid(xml:get_tag_attr_s("from", El)),
-    To = jlib:string_to_jid(xml:get_tag_attr_s("to", El)),
-    ejabberd_router:route(To, From, Err).
+    {xmlelement, _Name, Attrs, _SubTags} = El,
+    case xml:get_attr_s("type", Attrs) of
+	"error" -> ok;
+	"result" -> ok;
+	_ ->
+	    Err = jlib:make_error_reply(El, Error),
+	    From = jlib:string_to_jid(xml:get_tag_attr_s("from", El)),
+	    To = jlib:string_to_jid(xml:get_tag_attr_s("to", El)),
+	    ejabberd_router:route(To, From, Err)
+    end.
 
 bounce_queue(Q, Error) ->
     case queue:out(Q) of
@@ -818,13 +824,7 @@ cancel_timer(Timer) ->
 bounce_messages(Error) ->
     receive
 	{send_element, El} ->
-	    {xmlelement, _Name, Attrs, _SubTags} = El,
-	    case xml:get_attr_s("type", Attrs) of
-	        "error" ->
-	            ok;
-	        _ ->
-		    bounce_element(El, Error)
-	    end,
+	    bounce_element(El, Error),
 	    bounce_messages(Error)
     after 0 ->
 	    ok

@@ -1,5 +1,7 @@
 2007-11-25  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/ejabberd_s2s_out.erl: Bugfix
+
 	* src/ejabberd_sm.erl: Optimized check_max_sessions (thanks to
 	Christophe Romain)
 
