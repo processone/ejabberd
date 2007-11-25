@@ -540,13 +540,16 @@ check_existing_resources(LUser, LServer, LResource) ->
 check_max_sessions(LUser, LServer) ->
     %% If the max number of sessions for a given is reached, we replace the
     %% first one
-    SIDs =  mnesia:dirty_select(
-             session,
-             [{#session{sid = '$1', usr = {LUser, LServer, '_'}, _ = '_'}, [], ['$1']}]),
+    SIDs = mnesia:dirty_select(
+	     session,
+	     [{#session{us = {LUser, LServer}, _ = '_'}, [], [[]]}]),
     MaxSessions = get_max_user_sessions(LUser, LServer),
-    if length(SIDs) =< MaxSessions -> ok;
-       true -> {_, Pid} = lists:min(SIDs),
-               Pid ! replaced
+    if
+	length(SIDs) =< MaxSessions ->
+	    ok;
+	true ->
+	    {_, Pid} = lists:min(SIDs),
+	    Pid ! replaced
     end.
 
 

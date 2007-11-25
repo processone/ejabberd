@@ -1,3 +1,8 @@
+2007-11-25  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_sm.erl: Optimized check_max_sessions (thanks to
+	Christophe Romain)
+
 2007-11-22  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_config.erl: Improved error message when ejabberd
