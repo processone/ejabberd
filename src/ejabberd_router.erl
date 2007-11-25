@@ -120,9 +120,10 @@ unregister_route(Domain) ->
 	    case get_component_number(LDomain) of
 		undefined ->
 		    F = fun() ->
-				case mnesia:match(#route{domain = LDomain,
-							 pid = Pid,
-							 _ = '_'}) of
+				case mnesia:match_object(
+				       #route{domain = LDomain,
+					      pid = Pid,
+					      _ = '_'}) of
 				    [R] ->
 					mnesia:delete_object(R);
 				    _ ->
