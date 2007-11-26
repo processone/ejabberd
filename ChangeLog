@@ -1,5 +1,8 @@
 2007-11-26  Badlop  <badlop@process-one.net>
 
+	* src/msgs/wa.msg: New Walon translation (thanks to 
+	Pablo Saratxaga) (EJAB-374).
+
 	* doc/guide.tex: Describe how ejabberd treats ejabberd.cfg file
 	(EJAB-384).
 
