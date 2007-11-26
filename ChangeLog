@@ -1,5 +1,7 @@
 2007-11-26  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Added a favicon (EJAB-379).
+
 	* src/msgs/wa.msg: New Walon translation (thanks to 
 	Pablo Saratxaga) (EJAB-374).
 

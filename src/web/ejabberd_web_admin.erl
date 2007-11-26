@@ -103,6 +103,9 @@ make_xhtml(Els, global, Lang) ->
 	[?XCT("title", "ejabberd Web Interface"),
 	 {xmlelement, "meta", [{"http-equiv", "Content-Type"},
 			       {"content", "text/html; charset=utf-8"}], []},
+	 {xmlelement, "link", [{"href", "/admin/favicon.ico"},
+			       {"type", "image/x-icon"},
+			       {"rel", "shortcut icon"}], []},
 	 {xmlelement, "link", [{"href", "/admin/style.css"},
 			       {"type", "text/css"},
 			       {"rel", "stylesheet"}], []}]},
@@ -151,6 +154,9 @@ make_xhtml(Els, Host, Lang) ->
 	[?XCT("title", "ejabberd Web Interface"),
 	 {xmlelement, "meta", [{"http-equiv", "Content-Type"},
 			       {"content", "text/html; charset=utf-8"}], []},
+	 {xmlelement, "link", [{"href", "/admin/favicon.ico"},
+			       {"type", "image/x-icon"},
+			       {"rel", "shortcut icon"}], []},
 	 {xmlelement, "link", [{"href", Base ++ "style.css"},
 			       {"type", "text/css"},
 			       {"rel", "stylesheet"}], []}]},
@@ -542,6 +548,17 @@ h3 {
 
 ".
 
+favicon() ->
+    jlib:decode_base64(
+      "AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAJf+cAAIPsAAGC8gAVhecAAIr8ACiR7wBBmO"
+      "cAUKPsAFun8ABhqeoAgLryAJLB8ACz1PcAv9r7AMvi+gAAAAAAAgICARMhI"
+      "CAkJCQkQkFCQgICN2d2cSMgJCRevdvVQkICAlqYh5MgICQkXrRCQkJCMgI7"
+      "kiAjICAUFF2swkFBQRQUXazCQUFBAgI7kiAgICAkJF60QkJCQgICOpiHkyA"
+      "gJCRevdvlQkICAjdndnMgICQkJCRCQkJCAgICARAgICAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAA").
+
 logo() ->
     jlib:decode_base64(
       "iVBORw0KGgoAAAANSUhEUgAAAVcAAAA3CAMAAACPbPnEAAAAYFBMVEX///8C"
@@ -615,6 +632,13 @@ process_admin(Host,
 		       q = Query,
 		       lang = Lang} = Request) ->
     {200, [{"Content-Type", "text/css"}], css(Host)};
+
+process_admin(Host,
+	      #request{us = US,
+		       path = ["favicon.ico"],
+		       q = Query,
+		       lang = Lang} = Request) ->
+    {200, [{"Content-Type", "image/x-icon"}], favicon()};
 
 process_admin(Host,
 	      #request{us = US,
