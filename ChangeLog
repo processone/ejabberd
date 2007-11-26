@@ -1,5 +1,7 @@
 2007-11-26  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Describe in mod_muc: nick register and service admin message (EJAB-400).
+
 	* src/mod_echo.erl: Example function that demonstrates how to receive XMPP packets using Erlang's message passing mechanism (EJAB-247).
 
 	* src/ejabberdctl.template: Removed bashisms (EJAB-399). Set environment variables instead of passing parameters when calling erl (EJAB-421). Write erl_crash.dump in the log/ directory, with unique filename (EJAB-433).

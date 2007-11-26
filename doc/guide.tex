@@ -2104,9 +2104,7 @@ Options:
 \ind{modules!\modmuc{}}\ind{protocols!XEP-0045: Multi-User Chat}\ind{conferencing}
 
 With this module enabled, your server will support Multi-User Chat
-(\xepref{0045}). End users will be able to join text conferences. Notice
-that this module is not (yet) clusterable.
-
+(\xepref{0045}). End users will be able to join text conferences.
 
 Some of the features of Multi-User Chat:
 \begin{itemize}
@@ -2116,6 +2114,23 @@ Some of the features of Multi-User Chat:
 \item Creating password protected rooms.
 \item Kicking and banning participants.
 \end{itemize}
+
+The MUC service allows any Jabber ID to register a nickname,
+so nobody else can use that nickname in any room in the MUC service.
+To register a nickname, open the Service Discovery in your 
+Jabber client and Register in the MUC service.
+
+The MUC service allows the service administrator to send a message
+to all existing chatrooms. 
+To do so, send the message to the Jabber ID of the MUC service.
+
+This module supports clustering and load
+balancing. One module can be started per cluster node. Rooms are
+distributed at creation time on all available MUC module
+instances. The multi-user chat module is clustered but the room
+themselves are not clustered nor fault-tolerant: if the node managing a
+set of rooms goes down, the rooms disappear and they will be recreated
+on an available node on first connection attempt.
 
 Options:
 \begin{description}
@@ -2285,14 +2300,6 @@ defined, but some user restriction could be added as well:
    ]}.
 \end{verbatim}
 \end{itemize}
-
-The Multi-Users Chat module now supports clustering and load
-balancing. One module can be started per cluster node. Rooms are
-distributed at creation time on all available MUC module
-instances. The multi-user chat module is clustered but the room
-themselves are not clustered nor fault-tolerant: If the node managing a
-set of rooms goes down, the rooms disappear and they will be recreated
-on an available node on first connection attempt.
 
 \subsection{\modmuclog{}}
 \label{modmuclog}
