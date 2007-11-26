@@ -458,10 +458,17 @@ Instructions to create an initial administrator account:
 \ind{configuration file}
 
 The configuration file will be loaded the first time you start \ejabberd{}. The
-content from this file will be parsed and stored in a database. Subsequently the
+content from this file will be parsed and stored in the internal ejabberd database. Subsequently the
 configuration will be loaded from the database and any commands in the
-configuration file are appended to the entries in the database. The
-configuration file contains a sequence of Erlang terms. Lines beginning with a
+configuration file are appended to the entries in the database. 
+
+Note that ejabberd never edits the configuration file. 
+So, the configuration changes done using the web interface
+are stored in the database, but are not reflected in the configuration file.
+If you want those changes to be use after ejabberd restart, you can either
+edit the configuration file, or remove all its content.
+
+The configuration file contains a sequence of Erlang terms. Lines beginning with a
 \term{`\%'} sign are ignored. Each term is a tuple of which the first element is
 the name of an option, and any further elements are that option's values. If the
 configuration file do not contain for instance the `hosts' option, the old

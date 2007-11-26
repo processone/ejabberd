@@ -1,16 +1,28 @@
 2007-11-26  Badlop  <badlop@process-one.net>
 
-	* src/ejabberd.cfg.example: Huge reorganization and grouping of options (EJAB-392).
+	* doc/guide.tex: Describe how ejabberd treats ejabberd.cfg file
+	(EJAB-384).
 
-	* doc/guide.tex: Describe in mod_muc: nick register and service admin message (EJAB-400).
+	* src/ejabberd.cfg.example: Huge reorganization and grouping of 
+	options (EJAB-392).
 
-	* src/mod_echo.erl: Example function that demonstrates how to receive XMPP packets using Erlang's message passing mechanism (EJAB-247).
+	* doc/guide.tex: Describe in mod_muc: nick register and service 
+	admin message (EJAB-400).
 
-	* src/ejabberdctl.template: Removed bashisms (EJAB-399). Set environment variables instead of passing parameters when calling erl (EJAB-421). Write erl_crash.dump in the log/ directory, with unique filename (EJAB-433).
+	* src/mod_echo.erl: Example function that demonstrates how to 
+	receive XMPP packets using Erlang's message passing mechanism 
+	(EJAB-247).
 
-	* src/ejabberd_ctl.erl: Improvements in the help messages (EJAB-399).
+	* src/ejabberdctl.template: Removed bashisms (EJAB-399). Set 
+	environment variables instead of passing parameters when 
+	calling erl (EJAB-421). Write erl_crash.dump in the log/ 
+	directory, with unique filename (EJAB-433).
 
-	* doc/guide.tex: Improvements in sections ejabberdctl, and Install from Source (EJAB-399).
+	* src/ejabberd_ctl.erl: Improvements in the help messages 
+	(EJAB-399).
+
+	* doc/guide.tex: Improvements in sections ejabberdctl, and 
+	Install from Source (EJAB-399).
 
 2007-11-25  Alexey Shchepin  <alexey@process-one.net>
 
