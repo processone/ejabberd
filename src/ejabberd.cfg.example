@@ -205,6 +205,12 @@
 %%{extauth_program, "/path/to/authentication/script"}.
 
 %%
+%% Authentication using ODBC
+%% Remember to setup a database in the next section.
+%%
+%%{auth_method, odbc}.
+
+%%
 %% Authentication using PAM
 %%
 %%{auth_method, pam}.
@@ -231,18 +237,6 @@
 %%{ldap_password, "******"}. 
 
 %%
-%% Authentication using ODBC
-%%
-%%{auth_method, odbc}.
-%%{odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}.
-
-%%
-%% If you use PostgreSQL, have a large database, and need a
-%% faster but inexact replacement for "select count(*) from users"
-%%
-%%{pgsql_users_number_estimate, true}.
-
-%%
 %% Anonymous login support:
 %%   auth_method: anonymous
 %%   anonymous_protocol: sasl_anon | login_anon | both
@@ -257,12 +251,40 @@
 %%{host_config, "public.example.org", [{auth_method, [internal, anonymous]}]}.
 
 
-%%%   ================
-%%%   DATABASE STORAGE
+%%%   ==============
+%%%   DATABASE SETUP
 
-%% ejabberd uses by default the internal Mnesia database.
-%% For instructions about using other database backends,
-%% please consult the ejabberd Guide.
+%% ejabberd uses by default the internal Mnesia database,
+%% so you can avoid this section.
+%% This section provides configuration examples in case
+%% you want to use other database backends.
+%% Please consult the ejabberd Guide for details about database creation.
+
+%%
+%% MySQL server:
+%%
+%%{odbc_server, {mysql, "server", "database", "username", "password"}}.
+%%
+%% If you want to specify the port:
+%%{odbc_server, {mysql, "server", 1234, "database", "username", "password"}}.
+
+%%
+%% PostgreSQL server:
+%%
+%%{odbc_server, {pgsql, "server", "database", "username", "password"}}.
+%%
+%% If you want to specify the port:
+%%{odbc_server, {pgsql, "server", 1234, "database", "username", "password"}}.
+%%
+%% If you use PostgreSQL, have a large database, and need a
+%% faster but inexact replacement for "select count(*) from users"
+%%
+%%{pgsql_users_number_estimate, true}.
+
+%%
+%% ODBC compatible or MSSQL server:
+%%
+%%{odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}.
 
 
 %%%   ===============

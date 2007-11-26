@@ -1,5 +1,7 @@
 2007-11-26  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.cfg.example: Added example configuration of databases.
+
 	* doc/guide.tex: Fixed several typos.
 
 	* src/ejabberd_config.erl: Print error when the configuration 
