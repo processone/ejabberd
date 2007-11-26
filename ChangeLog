@@ -1,5 +1,7 @@
 2007-11-26  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.cfg.example: Huge reorganization and grouping of options (EJAB-392).
+
 	* doc/guide.tex: Describe in mod_muc: nick register and service admin message (EJAB-400).
 
 	* src/mod_echo.erl: Example function that demonstrates how to receive XMPP packets using Erlang's message passing mechanism (EJAB-247).
