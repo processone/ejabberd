@@ -17,6 +17,9 @@ EJABBERD_SO_PATH=$ROOTDIR/var/lib/ejabberd/priv/lib
 EJABBERD_LOG_PATH=$ROOTDIR/var/log/ejabberd/ejabberd.log
 export EJABBERD_LOG_PATH
 SASL_LOG_PATH=$ROOTDIR/var/log/ejabberd/sasl.log
+DATETIME=`date "+%Y%m%d-%H%M%S"`
+ERL_CRASH_DUMP=$ROOTDIR/var/log/ejabberd/erl_crash.dump.$DATETIME
+export ERL_CRASH_DUMP
 
 [ -d $EJABBERD_DB ] || mkdir -p $EJABBERD_DB
 
