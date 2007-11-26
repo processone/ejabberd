@@ -24,7 +24,21 @@
 start() ->
     case init:get_plain_arguments() of
 	[SNode | Args] ->
-	    Node = list_to_atom(SNode),
+	    SNode1 = case string:tokens(SNode, "@") of
+		[_Node, _Server] ->
+		    SNode;
+		_ ->
+		    case net_kernel:longnames() of
+			 true ->
+			     SNode ++ "@" ++ inet_db:gethostname() ++
+				      "." ++ inet_db:res_option(domain);
+			 false ->
+			     SNode ++ "@" ++ inet_db:gethostname();
+			 _ ->
+			     SNode
+		     end
+	    end,
+	    Node = list_to_atom(SNode1),
 	    Status = case rpc:call(Node, ?MODULE, process, [Args]) of
 			 {badrpc, Reason} ->
 			     io:format("RPC failed on the node ~p: ~p~n",
@@ -248,13 +262,15 @@ print_usage() ->
 		   Desc, NewLine]
 	  end, CmdDescs),
     io:format(
-      "Usage: ejabberdctl node command~n"
+      "Usage: ejabberdctl [--node nodename] command [options]~n"
       "~n"
-      "Available commands:~n"
+      "Available commands in this ejabberd node:~n"
       ++ FmtCmdDescs ++
       "~n"
-      "Example:~n"
-      "  ejabberdctl ejabberd@host restart~n"
+      "Examples:~n"
+      "  ejabberdctl restart~n"
+      "  ejabberdctl --node ejabberd@host restart~n"
+      "  ejabberdctl vhost jabber.example.org ...~n"
      ).
 
 print_vhost_usage(Host) ->
@@ -279,11 +295,13 @@ print_vhost_usage(Host) ->
 		   Desc, NewLine]
 	  end, CmdDescs),
     io:format(
-      "Usage: ejabberdctl node vhost host command~n"
+      "Usage: ejabberdctl [--node nodename] vhost hostname command [options]~n"
       "~n"
-      "Available commands:~n"
+      "Available commands in this ejabberd node and this vhost:~n"
       ++ FmtCmdDescs ++
       "~n"
+      "Examples:~n"
+      "  ejabberdctl vhost "++Host++" registered-users~n"
      ).
 
 register_commands(CmdDescs, Module, Function) ->

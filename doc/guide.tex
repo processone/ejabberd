@@ -198,16 +198,13 @@ The binaries are available for many different system architectures, so this is a
 alternative to the binary installer and Operating System's ejabberd packages.
 
 
-\section{Installation from Source}
-\label{installsource}
-\ind{installation}
+\section{Installing ejabberd from Source Code}
+\label{installation}
+\ind{install}
 
-\subsection{Installation Requirements}
+\subsection{Requirements}
 \label{installreq}
 \ind{installation!requirements}
-
-\subsubsection{`Unix-like' operating systems}
-\label{installrequnix}
 
 To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \begin{itemize}
@@ -220,10 +217,157 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GNU Iconv 1.8 or higher (optional, not needed on systems with GNU libc)
 \end{itemize}
 
-\subsubsection{Windows}
-\label{installreqwin}
+\subsection{Download Source Sode}
+\label{download}
+\ind{install!download}
 
-To compile \ejabberd{} on a Windows flavour, you need:
+Released versions of \ejabberd{} can be obtained from \\
+\ahrefurl{http://www.process-one.net/en/ejabberd/download.html}
+
+\ind{Subversion repository}
+The latest development version can be retrieved from the Subversion repository using this command:
+\begin{verbatim}
+  svn co http://svn.process-one.net/ejabberd/trunk ejabberd
+\end{verbatim}
+
+
+\subsection{Compile}
+\label{compile}
+\ind{install!compile}
+
+To compile \ejabberd{} execute the commands:
+\begin{verbatim}
+  ./configure
+  make
+\end{verbatim}
+The compilation process may report several warnings related to unusued variables.
+This is common, and is not a problem.
+
+The build configuration script provides several parameters.
+To get the full list run the command:
+\begin{verbatim}
+  ./configure --help
+\end{verbatim}
+
+Some options that you may be interested in modifying:
+\begin{description}
+	\titem{--prefix=/} 
+	Specify the path prefix where the files will be copied when running the make install command.
+
+	\titem{--enable-pam} 
+	Enable the PAM authentication method.
+
+	\titem{--enable-odbc or --enable-mssql}
+	Required if you want to use an external database.
+	See section~\ref{database} for more information.
+
+	\titem{--enable-full-xml} 
+	Enable the use of XML based optimisations.
+	It will for example use CDATA to escape characters in the XMPP stream. 
+	Use this option only if you are sure your Jabber clients include a fully compliant XML parser.
+
+	\titem{--disable-transient-supervisors}
+	Disable the use of Erlang/OTP supervision for transient processes. 
+\end{description}
+
+
+\subsection{Install}
+\label{install}
+\ind{install!install}
+
+To install ejabberd in the destination directories, run the command:
+\begin{verbatim}
+  make install
+\end{verbatim}
+Note that you may need to have administrative privileges in the system.
+
+The files and directories created are, by default:
+\begin{description}
+	\titem{/etc/ejabberd/} Configuration files:
+		\begin{description}
+			\titem{ejabberd.cfg} ejabberd configuration file
+			\titem{ejabberd.inetrc} Network DNS configuration
+			\titem{ejabberdctl.cfg} Configuration file of the administration script
+		\end{description}
+	\titem{/sbin/ejabberdctl} Administration script
+	\titem{/var/lib/ejabberd/}
+		\begin{description}
+			\titem{.erlang.cookie} Erlang cookie file
+			\titem{db} Database spool files
+			\titem{ebin} Binary Erlang files (*.beam)
+			\titem{priv}
+				\begin{description}
+					\titem{lib} Binary system libraries (*.so)
+					\titem{msgs} Translated strings (*.msgs)
+				\end{description}
+		\end{description}
+	\titem{/var/log/ejabberd/} Log files:
+		\begin{description}
+			\titem{ejabberd.log} Messages reported by ejabberd code
+			\titem{sasl.log} Messages reported by Erlang/OTP
+		\end{description}
+\end{description}
+
+
+\subsection{Start}
+\label{start}
+\ind{install!start}
+
+You can use the ejabberdctl command line administration script to start and stop ejabberd.
+Please refer to the section~\ref{ejabberdctl} for details about ejabberdctl.
+
+The command line parameters used by the ejabberdctl administration script 
+when starting the Erlang/OTP virtual machine are:
+\begin{description}
+  \titem{-pa /var/lib/ejabberd/ebin} 
+	Specify the directory where Erlang binary files (*.beam) are located.
+  \titem{-sname ejabberd} 
+	The Erlang node will be identified using only the first part
+	of the host name, i.\,e. other Erlang nodes outside this domain cannot contact
+	this node. This is the preferable option in most cases.
+  \titem{-name ejabberd} 
+	The Erlang node will be fully identified.
+    This is only useful if you plan to setup an ejabberd cluster with nodes in different networks.
+  \titem{-s ejabberd} 
+	This paramaters tells the Erlang machine to start the ejabberd application
+  \titem{-mnesia dir "/var/lib/ejabberd/spool"}
+	Specify the Mnesia database directory.
+  \titem{-ejabberd config "/etc/ejabberd/ejabberd.cfg"} 
+	Specify the ejabberd configuration file.
+  \titem{-ejabberd log\_path "/var/log/ejabberd/ejabberd.log"} 
+	Specify the directory for the ejabberd.log file.
+  \titem{-sasl sasl\_error\_logger \{file,\"/var/log/ejabberd/sasl.log"\}}
+	Specify the directory for the sasl.log file.
+  \titem{-env ERL\_MAX\_PORTS=32000}
+	Allow up to 32000 connections. The default limit is just 1024.
+	With this value, \ejabberd{} will use more memory (approximately 6 MB more).
+  \titem{-env ERL\_FULLSWEEP\_AFTER=0}
+	May reduce memory usage, but \ejabberd{} may consume more processor.
+\end{description}
+
+Note that some characters need to be escaped when used in shell scripts, for instance \verb|"| and \verb|{}|.
+
+You can find other options in the Erlang manual page (\shell{erl -man erl}).
+
+
+\subsection{Specific Notes for BSD}
+\label{bsd}
+\ind{install!bsd}
+
+The command to compile ejabberd in BSD systems is:
+\begin{verbatim}
+  gmake
+\end{verbatim}
+
+
+\subsection{Specific Notes for Microsoft Windows}
+\label{windows}
+\ind{install!windows}
+
+\subsubsection{Requirements}
+\label{windowsreq}
+
+To compile \ejabberd{} on a Microsoft Windows system, you need:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
 \item \footahref{http://erlang.org/download.html}{Erlang/OTP R9C-2 or higher}
@@ -236,60 +380,11 @@ To compile \ejabberd{} on a Windows flavour, you need:
 \item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
 \end{itemize}
 
-\subsection{Obtaining \ejabberd{}}
-\label{obtaining}
 
-\ind{download}
-Released versions of \ejabberd{} can be obtained from \\
-\ahrefurl{http://www.process-one.net/en/projects/ejabberd/download.html}.
+\subsubsection{Compilation}
+\label{windowscom}
 
-\ind{Subversion repository}
-The latest development version can be retrieved from the Subversion repository\@.
-\begin{verbatim}
-  svn co http://svn.process-one.net/ejabberd/trunk ejabberd
-\end{verbatim}
-
-\subsection{Compilation}
-\label{compile}
-\ind{installation!compilation}
-
-\subsubsection{`Unix-like' operating systems}
-\label{compileunix}
-
-Compile \ejabberd{} on a `Unix-like' operating system by executing:
-
-\begin{verbatim}
-  ./configure
-  make
-  su
-  make install
-\end{verbatim}
-
-These commands will:
-\begin{itemize}
-\item install \ejabberd{} into the directory \verb|/var/lib/ejabberd|,
-\item install the configuration file into \verb|/etc/ejabberd|,
-\item create a directory called \verb|/var/log/ejabberd| to store log files.
-\end{itemize}
-
-\subsubsection{Build options}
-
-If you want to enable the use of XML based optimisations, you can use
-the option \term{--enable-full-xml} when running the \term{configure}
-command. It will for example use CDATA to escape characters in the
-XMPP stream. Do not use this option if all your clients are not using
-a fully compliant XML parser.
-
-In some case, you might want to disable the use of Erlang OTP supervision for transient processes. In this case, you can \term{configure} ejabberd with the option \term{--disable-transient-supervisors}.
-
-If you want to use an external database, you need to execute the configure
-script with the option(s) \term{--enable-odbc} or \term{--enable-odbc
---enable-mssql}. See section~\ref{database} for more information.
-
-\subsubsection{Windows}
-\label{compilewin}
-
-\begin{itemize}
+\begin{enumerate}
 \item Install Erlang emulator (for example, into \verb|C:\Program Files\erl5.3|).
 \item Install Expat library into \verb|C:\Program Files\Expat-1.95.7|
   directory.
@@ -318,60 +413,10 @@ nmake -f Makefile.win32
 \begin{verbatim}
 werl -s ejabberd -name ejabberd
 \end{verbatim}
-\end{itemize}
+\end{enumerate}
 
 %TODO: how to compile database support on windows?
 
-\subsection{Starting}
-\label{start}
-\ind{starting}
-%TODO: update when the ejabberdctl script is made more userfriendly
-
-Execute the following command to start \ejabberd{}:
-\begin{verbatim}
-  erl -pa /var/lib/ejabberd/ebin -name ejabberd -s ejabberd
-\end{verbatim}
-or
-\begin{verbatim}
-  erl -pa /var/lib/ejabberd/ebin -sname ejabberd -s ejabberd
-\end{verbatim}
-In the latter case the Erlang node will be identified using only the first part
-of the host name, i.\,e. other Erlang nodes outside this domain cannot contact
-this node.
-
-Note that when using the above command, \ejabberd{} will search for the
-configuration file in the current directory and will use the current directory
-for storing its user database and for logging.
-
-To specify the path to the configuration file, the log files and the Mnesia
-database directory, you may use the following command:
-\begin{verbatim}
-  erl -pa /var/lib/ejabberd/ebin \
-      -sname ejabberd \
-      -s ejabberd \
-      -ejabberd config \"/etc/ejabberd/ejabberd.cfg\" \
-                log_path \"/var/log/ejabberd/ejabberd.log\" \
-      -sasl sasl_error_logger \{file,\"/var/log/ejabberd/sasl.log\"\} \
-      -mnesia dir \"/var/lib/ejabberd/spool\"
-\end{verbatim}
-
-You can find other useful options in the Erlang manual page
-(\shell{erl -man erl}).
-
-To use more than 1024 connections, you should set the environment variable
-\verb|ERL_MAX_PORTS|:
-\begin{verbatim}
-  export ERL_MAX_PORTS=32000
-\end{verbatim}
-Note that with this value, \ejabberd{} will use more memory (approximately 6\,MB
-more).
-
-To reduce memory usage, you may set the environment variable
-\verb|ERL_FULLSWEEP_AFTER|:
-\begin{verbatim}
-  export ERL_FULLSWEEP_AFTER=0
-\end{verbatim}
-But in this case \ejabberd{} can start to work slower.
 
 \section{Creating an Initial Administrator}
 \label{initialadmin}
@@ -381,7 +426,7 @@ account with administrator rights is needed on your \ejabberd{} deployment.
 
 Instructions to create an initial administrator account:
 \begin{enumerate}
-\item Register an account on your \ejabberd{} deployment. An account can be
+\item Register a Jabber account on your \ejabberd{} server. An account can be
   created in two ways:
   \begin{enumerate}
   \item Using the tool \term{ejabberdctl}\ind{ejabberdctl} (see
@@ -3191,41 +3236,29 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+
 \subsection{\term{ejabberdctl}}
 \label{ejabberdctl}
-%TODO: update when the ejabberdctl script is made more userfriendly
 
-It is possible to do some administration operations using the command
-line tool \term{ejabberdctl}. You can list all available options by
-running \term{ejabberdctl} without arguments:
-\begin{verbatim}
-% ejabberdctl
-Usage: ejabberdctl node command
+The \term{ejabberdctl} command line script allows to start, stop and perform 
+many other administrative tasks in a local or remote ejabberd server.
 
-Available commands:
-  status                        get ejabberd status
-  stop                          stop ejabberd
-  restart                       restart ejabberd
-  reopen-log                    reopen log file
-  register user server password register a user
-  unregister user server        unregister a user
-  backup file                   store a database backup to file
-  restore file                  restore a database backup from file
-  install-fallback file         install a database fallback from file
-  dump file                     dump a database to a text file
-  load file                     restore a database from a text file
-  import-file file              import user data from jabberd 1.4 spool file
-  import-dir dir                import user data from jabberd 1.4 spool directory
-  registered-users              list all registered users
-  delete-expired-messages       delete expired offline messages from database
-
-Example:
-  ejabberdctl ejabberd@host restart
-\end{verbatim}
-
-Additional information:
+When \term{ejabberdctl} is executed without any parameter,
+it displays the available options. If there isn't an ejabberd server running, 
+the available parameters are:
 \begin{description}
-\titem{reopen-log } If you use a tool to rotate logs, you have to configure it
+\titem{start} Start ejabberd in background mode. This is the default method.
+\titem{debug} Attach an Erlang shell to an already existing ejabberd server. This allows to execute commands interactively in the ejabberd server.
+\titem{live} Start ejabberd in live mode: the shell keeps attached to the started server, showing log messages and allowing to execute interactive commands.
+\end{description}
+
+If there is an ejabberd server running in the system,
+\term{ejabberdctl} shows all the available commands in that server.
+The more interesting ones are:
+\begin{description}
+\titem{status} Check the status of the ejabberd server.
+\titem{stop} Stop the ejabberd server which is running in the machine.
+\titem{reopen-log} If you use a tool to rotate logs, you have to configure it
   so that this command is executed after each rotation.
 \titem {backup, restore, install-fallback, dump, load} You can use these
   commands to create and restore backups. 
@@ -3233,11 +3266,18 @@ Additional information:
 %%  be found in section~\ref{backup}.
 \titem{import-file, import-dir} \ind{migration from other software}
   These options can be used to migrate from other \Jabber{}/XMPP servers. There
-  exist tutorials to \footahref{http://ejabberd.jabber.ru/migrate-to-ejabberd}{migrate from other software to ejabberd}.
+  exist tutorials to \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
 \titem{delete-expired-messages} This option can be used to delete old messages
   in offline storage. This might be useful when the number of offline messages
   is very high.
 \end{description}
+
+The \term{ejabberdctl} script also allows the argument \term{--node NODENAME}.
+This allows to administer a remote node.
+
+The \term{ejabberdctl} administration script can be configured in the file ejabberdctl.cfg.
+This file provides detailed information about each configurable option.
+
 
 \chapter{Securing ejabberd}
 \section{Firewall Settings}

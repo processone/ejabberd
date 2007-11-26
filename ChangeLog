@@ -1,3 +1,11 @@
+2007-11-26  Badlop  <badlop@process-one.net>
+
+	* src/ejabberdctl.template: Removed bashisms (EJAB-399). Set environment variables instead of passing parameters when calling erl (EJAB-421).
+
+	* src/ejabberd_ctl.erl: Improvements in the help messages (EJAB-399).
+
+	* doc/guide.tex: Improvements in sections ejabberdctl, and Install from Source (EJAB-399).
+
 2007-11-25  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/ejabberd_router.erl: Bugfix
