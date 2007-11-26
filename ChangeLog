@@ -1,5 +1,7 @@
 2007-11-26  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Fixed several typos.
+
 	* src/ejabberd_config.erl: Print error when the configuration 
 	requires ODBC, MySQL or PostgreSQL libraries but are not 
 	installed (EJAB-210).

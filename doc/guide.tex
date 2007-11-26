@@ -179,7 +179,7 @@ ejabberd Process-one
 \footahref{http://www.process-one.net/en/ejabberd/downloads/}{downloads page}.
 
 The installer will deploy and configure a full featured ejabberd
-server and does not require any extra dependancies.
+server and does not require any extra dependencies.
 
 \section{Installing ejabberd with Operating System specific packages}
 
@@ -439,7 +439,7 @@ Instructions to create an initial administrator account:
   \end{enumerate}
 \item Edit the configuration file to promote the account created in the previous
   step to an account with administrator rights. Note that if you want to add
-  more administrators, a seperate acl entry is needed for each administrator.
+  more administrators, a separate ACL entry is needed for each administrator.
   \begin{verbatim}
   {acl, admins, {user, "admin", "example.org"}}.
   {access, configure, [{allow, admins}]}.
@@ -668,7 +668,7 @@ The following options are available:
     approximate maximum size in bytes of XML stanzas.  Approximate,
     because it is calculated with the precision of one block of readed
     data. For example \verb|{max_stanza_size, 65536}|.  The default
-    value is \term{infinity}. Recommanded values are 65536 for c2s
+    value is \term{infinity}. Recommended values are 65536 for c2s
     connections and 131072 for s2s connections. s2s max stanza size
     must always much higher than c2s limit. Change this value with
     extreme care as it can cause unwanted disconnect if set too low.
@@ -1075,7 +1075,7 @@ this:
                          ]}.
 \end{verbatim}
 When a JID is checked to have access to \term{<accessname>}, the server
-sequentially checks if that JID mathes any of the ACLs that are named in the
+sequentially checks if that JID matches any of the ACLs that are named in the
 second elements of the tuples in the list. If it matches, the first element of
 the first matched tuple is returned, otherwise the value `\term{deny}' is
 returned.
@@ -1097,7 +1097,7 @@ The following access rules are pre-defined:
 \label{configmaxsessions}
 \ind{options!max\_user\_sessions}
 
-The special access \term{max\_user\_sesssions} specifies the maximum
+The special access \term{max\_user\_sessions} specifies the maximum
 number of sessions (authenticated connections) per user. If a user
 tries to open more sessions by using different resources, the first
 opened session will be disconnected. The error \term{session replaced}
@@ -1134,7 +1134,7 @@ following syntax:
 \begin{verbatim}
   {maxrate, <rate>}
 \end{verbatim}
-where \term{<rate>} stands for the maximum allowed incomig rate in bytes per
+where \term{<rate>} stands for the maximum allowed incoming rate in bytes per
 second.
 
 Examples:
@@ -1179,7 +1179,7 @@ Examples:
 %TODO: this whole section is not yet 100% optimized
 
 \ejabberd{} uses its internal Mnesia database by default. However, it is
-possible to use a relational database or an LDAP server to store persistant,
+possible to use a relational database or an LDAP server to store persistent,
 long-living data. \ejabberd{} is very flexible: you can configure different
 authentication methods for different virtual hosts, you can configure different
 authentication mechanisms for the same virtual host (fallback), you can set
@@ -1325,7 +1325,7 @@ enabled. This can be done, by using next commands:
 %TODO: not sure if this section is right!!!!!!
 
 The configuration of Microsoft SQL Server is the same as the configuration of
-ODBC compatible serers (see section~\ref{odbcauth}).
+ODBC compatible servers (see section~\ref{odbcauth}).
 
 \subsubsection{Storage}
 \label{mssqlstorage}
@@ -2572,7 +2572,7 @@ This module offers a Publish-Subscribe Service (\xepref{0060}).
 Publish-Subscribe can be used to develop (examples are taken from the XEP):
 \begin{quote}
 \begin{itemize}
-\item news feeds and content syndacation,
+\item news feeds and content syndication,
 \item avatar management,
 \item shared bookmarks,
 \item auction and trading systems,
@@ -2631,7 +2631,7 @@ Options:
 \begin{description}
 \titem{access} \ind{options!access}This option can be configured to specify
   rules to restrict registration. If a rule returns `deny' on the requested
-  user name, registration for that user name is dennied. (there are no
+  user name, registration for that user name is denied. (there are no
   restrictions by default).
 \titem{welcome\_message} \ind{options!welcomem}Set a welcome message that
   is sent to each newly registered account. The first string is the subject, and 
@@ -2788,7 +2788,7 @@ Examples:
 \end{table}
 \item In another case we have a company which has three divisions: Management,
   Marketing and Sales. All group members should see all other members in their
-  rosters. Additonally, all managers should have all marketing and sales people
+  rosters. Additionally, all managers should have all marketing and sales people
   in their roster. Simultaneously, all marketeers and the whole sales team
   should see all managers. This scenario can be achieved by creating shared
   roster groups as shown in the following table:
@@ -3480,7 +3480,7 @@ domain.
 
 \ejabberd{} includes an algorithm to load balance the components that are plugged on an ejabberd cluster. It means that you can plug one or several instances of the same component on each ejabberd cluster and that the traffic will be automatically distributed.
 
-The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is choosen randomly. If no instance is available locally, one instance is choosen randomly among the remote component instances.
+The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is chosen randomly. If no instance is available locally, one instance is chosen randomly among the remote component instances.
 
 If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain\_balancing}. The syntax of the option is the following:
 
@@ -3496,15 +3496,15 @@ Several balancing criteria are available:
 \item \term{bare\_source}: the bare JID (without resource) of the packet \term{from} attribute is used.
 \end{itemize}
 
-If the value corresponding to the criterium is the same, the same component instance in the cluster will be used.
+If the value corresponding to the criteria is the same, the same component instance in the cluster will be used.
 
 \subsection{Load-Balancing Buckets}
 \label{lbbuckets}
 \ind{options!domain\_balancing\_component\_number}
 
-When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failling the service will not work correctly unless the sessions are rebalanced.
+When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failing the service will not work correctly unless the sessions are rebalanced.
 
-In this case, it is best to limit the problem to the sessions handled by the failling component. This is what the \term{domain\_balancing\_component\_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
+In this case, it is best to limit the problem to the sessions handled by the failing component. This is what the \term{domain\_balancing\_component\_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
 
 The syntax is the following:
 \begin{verbatim}
@@ -3527,7 +3527,7 @@ The syntax is the following:
 \label{watchdog}
 \ind{debugging!watchdog}
 
-ejabberd includes a watchdog mechanism to notify admins in realtime
+ejabberd includes a watchdog mechanism to notify administrators in realtime
 through XMPP when any process consumes too much memory.
 
 To enable the watchdog, add the \term{watchdog\_admins}
