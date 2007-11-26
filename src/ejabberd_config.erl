@@ -161,6 +161,9 @@ process_host_term(Term, Host, State) ->
 	    State;
 	{hosts, Hosts} ->
 	    State;
+	{odbc_server, ODBC_server} ->
+	    odbc_modules_found = check_odbc_modules(ODBC_server),
+	    add_option({odbc_server, Host}, ODBC_server, State);
 	{Opt, Val} ->
 	    add_option({Opt, Host}, Val, State)
     end.
@@ -269,3 +272,32 @@ get_local_option(Opt) ->
     end.
 
 
+check_odbc_modules(ODBC_server) ->
+    case catch check_odbc_modules2(ODBC_server) of
+	{'EXIT', {undef, [{Module, module_info, []} | _]}} ->
+	    ?CRITICAL_MSG("ejabberd is configured to use ODBC, but the Erlang module '~p' is not installed.", [Module]),
+	    odbc_module_not_found;
+	_ -> odbc_modules_found
+    end.
+
+check_odbc_modules2(ODBC_server) ->
+    check_modules_exists([ejabberd_odbc, ejabberd_odbc_sup, odbc_queries]),
+    case ODBC_server of
+	{mysql, _Server, _DB, _Username, _Password} ->
+	    check_modules_exists([mysql, mysql_auth, mysql_conn, mysql_recv]);
+	
+	{mysql, _Server, _Port, _DB, _Username, _Password} ->
+	    check_modules_exists([mysql, mysql_auth, mysql_conn, mysql_recv]);
+	
+	{pgsql, _Server, _DB, _Username, _Password} ->
+	    check_modules_exists([pgsql, pgsql_proto, pgsql_tcp, pgsql_util]);
+	
+	{pgsql, _Server, _Port, _DB, _Username, _Password} ->
+	    check_modules_exists([pgsql, pgsql_proto, pgsql_tcp, pgsql_util]);
+	
+	Server when is_list(Server) ->
+	    ok
+    end.
+
+check_modules_exists(Modules) ->
+    [true = is_list(Module:module_info()) || Module <- Modules].

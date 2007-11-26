@@ -1,5 +1,9 @@
 2007-11-26  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_config.erl: Print error when the configuration 
+	requires ODBC, MySQL or PostgreSQL libraries but are not 
+	installed (EJAB-210).
+
 	* src/web/ejabberd_web_admin.erl: Added a favicon (EJAB-379).
 
 	* src/msgs/wa.msg: New Walon translation (thanks to 
