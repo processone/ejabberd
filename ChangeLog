@@ -1,5 +1,10 @@
 2007-11-27  Badlop  <badlop@process-one.net>
 
+	* src/mod_configure.erl: The command get-user-lastlogin is now
+	compatible with both Mnesia and ODBC (EJAB-383)
+	* src/mod_last.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+
 	* doc/guide.tex: Document ejabberd_http's
 	request_handlers (EJAB-372). Fixed small Latex problems.
 	Sort options of listening sockets.

@@ -18,6 +18,7 @@
 	 process_sm_iq/3,
 	 on_presence_update/4,
 	 store_last_info/4,
+	 get_last_info/2,
 	 remove_user/2]).
 
 -include("ejabberd.hrl").
@@ -100,6 +101,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    end
     end.
 
+%% TODO: This function could use get_last_info/2
 get_last(IQ, SubEl, LUser, LServer) ->
     case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
@@ -135,6 +137,16 @@ store_last_info(User, Server, TimeStamp, Status) ->
 	end,
     mnesia:transaction(F).
     
+%% Returns: {ok, Timestamp, Status} | not_found
+get_last_info(LUser, LServer) ->
+    case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
+	{'EXIT', _Reason} ->
+	    not_found;
+	[] ->
+	    not_found;
+	[#last_activity{timestamp = TimeStamp, status = Status}] ->
+	    {ok, TimeStamp, Status}
+    end.
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),

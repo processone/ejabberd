@@ -18,6 +18,7 @@
 	 process_sm_iq/3,
 	 on_presence_update/4,
 	 store_last_info/4,
+	 get_last_info/2,
 	 remove_user/2]).
 
 -include("ejabberd.hrl").
@@ -92,6 +93,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    end
     end.
 
+%% TODO: This function could use get_last_info/2
 get_last(IQ, SubEl, LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of
@@ -129,6 +131,22 @@ store_last_info(User, Server, TimeStamp, Status) ->
     State = ejabberd_odbc:escape(Status),
     odbc_queries:set_last_t(LServer, Username, Seconds, State).
 
+%% Returns: {ok, Timestamp, Status} | not_found
+get_last_info(LUser, LServer) ->
+    Username = ejabberd_odbc:escape(LUser),
+    case catch odbc_queries:get_last(LServer, Username) of
+	{'EXIT', _Reason} ->
+	    not_found;
+	{selected, ["seconds","state"], []} ->
+	    not_found;
+	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
+	    case catch list_to_integer(STimeStamp) of
+		TimeStamp when is_integer(TimeStamp) ->
+		    {ok, TimeStamp, Status};
+		_ ->
+		    not_found
+	    end
+    end.
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),

@@ -1606,11 +1606,11 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
 	case ejabberd_sm:get_user_resources(User, Server) of
 	    [] ->
 		US = {User, Server},
-		case mnesia:dirty_read({last_activity, US}) of
-		    [] ->
+		case get_last_info(User, Server) of
+		    not_found ->
 			?T(Lang, "Never");
-		    [E] ->
-			Shift = element(3, E),
+		    {ok, Timestamp, _Status} ->
+			Shift = Timestamp,
 			TimeStamp = {Shift div 1000000,
 				     Shift rem 1000000,
 				     0},
@@ -1709,6 +1709,16 @@ stop_node(From, Host, ENode, Action, XData) ->
     Node = list_to_atom(ENode),
     {ok, _} = timer:apply_after(Time, rpc, call, [Node, init, Action, []]),
     {result, []}.
+
+
+get_last_info(User, Server) ->
+    ML = lists:member(mod_last, gen_mod:loaded_modules(Server)),
+    MLO = lists:member(mod_last_odbc, gen_mod:loaded_modules(Server)),
+    case {ML, MLO} of
+	{true, _} -> mod_last:get_last_info(User, Server);
+	{false, true} -> mod_last_odbc:get_last_info(User, Server);
+	{false, false} -> not_found
+    end.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
