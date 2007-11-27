@@ -1504,7 +1504,11 @@ Parameters:
 \titem{ldap\_server} \ind{options!ldap\_server}IP address or dns name of your
 LDAP server. This option is required.
 \titem{ldap\_port} \ind{options!ldap\_port}Port to connect to your LDAP server.
-  The default value is~389.
+  The initial default value is~389, so it is used when nothing is set into the 
+configuration file. 
+If you configure a value, it is stored in ejabberd's database. 
+Then, if you remove that value from the configuration file, 
+the value previously stored in the database will be used instead of the default 389.
 \titem{ldap\_rootdn} \ind{options!ldap\_rootdn}Bind DN. The default value
   is~\term{""} which means `anonymous connection'.
 \titem{ldap\_password} \ind{options!ldap\_password}Bind password. The default
