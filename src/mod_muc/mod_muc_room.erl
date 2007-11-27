@@ -2851,9 +2851,6 @@ iq_disco_info_extras(Lang, StateData) ->
     [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "result"}],
       [?RFIELDT("hidden", "FORM_TYPE",
 		"http://jabber.org/protocol/muc#roominfo"),
-       ?RFIELD("Description", "muc#roominfo_description",
-	       (StateData#state.config)#config.title),
-       %?RFIELD("Subject", "muc#roominfo_subject", StateData#state.subject),
        ?RFIELD("Number of occupants", "muc#roominfo_occupants",
 	       integer_to_list(Len))
       ]}].
