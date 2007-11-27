@@ -1,3 +1,8 @@
+2007-11-27  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document ejabberd_http's
+	request_handlers (EJAB-372). Fixed small Latex problems.
+
 2007-11-27  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_announce.erl: Bugfix (thanks to Christophe Romain)
