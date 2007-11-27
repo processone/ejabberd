@@ -2,6 +2,7 @@
 
 	* doc/guide.tex: Document ejabberd_http's
 	request_handlers (EJAB-372). Fixed small Latex problems.
+	Sort options of listening sockets.
 
 2007-11-27  Alexey Shchepin  <alexey@process-one.net>
 

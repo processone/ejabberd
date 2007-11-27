@@ -612,7 +612,7 @@ tuple with the following elements:
 \end{itemize}
 
 \ind{modules!ejabberd\_c2s}\ind{modules!ejabberd\_s2s\_in}\ind{modules!ejabberd\_service}\ind{modules!ejabberd\_http}\ind{protocols!XEP-0114: Jabber Component Protocol}
-Currently next modules are implemented:
+The available modules, their purpose and the options allowed by each one are:
 \begin{table}[H]
   \centering
   \def\arraystretch{1.4}
@@ -620,14 +620,15 @@ Currently next modules are implemented:
   \hline \texttt{ejabberd\_c2s}& Description& Handles c2s connections.\\
     \cline{2-3} & Options& \texttt{access}, \texttt{certfile}, \texttt{inet6},
     \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper}, \texttt{ssl},
-    \texttt{tls}, \texttt{starttls}, \texttt{starttls\_required},
+    \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
     \texttt{zlib}\\
   \hline \texttt{ejabberd\_s2s\_in}& Description& Handles incoming s2s
   connections.\\
     \cline{2-3} & Options& \texttt{inet6}, \texttt{ip},
     \texttt{max\_stanza\_size}\\
-  \hline \texttt{ejabberd\_service}& Description& Interacts with external
-  components (*).\\
+  \hline \texttt{ejabberd\_service}& Description& Interacts with 
+    \footahref{http://www.ejabberd.im/tutorials-transports}{external components} 
+    (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     \cline{2-3} & Options& \texttt{access}, \texttt{hosts}, \texttt{inet6},
     \texttt{ip}, \texttt{shaper}\\
   \hline \texttt{ejabberd\_http}& Description& Handles incoming HTTP
@@ -638,13 +639,16 @@ Currently next modules are implemented:
   \end{tabular}
 \end{table}
 
-(*) The mechanism for \footahref{http://ejabberd.jabber.ru/tutorials-transports}{external components} is defined in Jabber Component Protocol (\xepref{0114}).
-
-The following options are available:
+This is a detailed description of each option:
 \begin{description}
   \titem{\{access, <access rule>\}} \ind{options!access}This option defines
     access to the port. The default value is \term{all}.
   \titem{\{certfile, Path\}} Path to a file containing the SSL certificate.
+  \titem{component\_check\_from} \ind{options!service\_check\_from}
+    This option can be used with \term{ejabberd\_service} only. It is
+    used to disable control on the from field on packets send by an
+    external components. The option can be either \term{true} or
+    \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
   \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}This option
     defines one or more hostnames of connected services and enables you to
     specify additional options including \poption{\{password, Secret\}}.
@@ -672,6 +676,11 @@ The following options are available:
     connections and 131072 for s2s connections. s2s max stanza size
     must always much higher than c2s limit. Change this value with
     extreme care as it can cause unwanted disconnect if set too low.
+  \titem{\{request\_handlers, [\{Path, Module\}]\}} To define one or several handlers that will serve HTTP requests.
+    The Path is a list of strings; so the URIs that start with that Path will be served by Module.
+    For example, if you want \term{mod\_foo} to serve the URIs that start with \term{/a/b/},
+    and you also want \term{mod\_http\_bind} to serve the URIs \term{/http-bind/},
+    use this option: \term{\{request\_handlers, [\{["a", "b"], mod\_foo\}, \{["http-bind"], mod\_http\_bind\}]\}}
   \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{shapers}). The default value
     is \term{none}.
@@ -689,27 +698,17 @@ The following options are available:
   \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
     the port will be encrypted using SSL immediately after connecting. You
     should also set the \option{certfile} option.
+  \titem{web\_admin} \ind{options!web\_admin}\ind{web interface}This option
+    enables the web interface for \ejabberd{} administration which is available
+    at \verb|http://server:port/admin/|. Login and password are the username and
+    password of one of the registered users who are granted access by the
+    `configure' access rule.
   \titem{zlib} \ind{options!zlib}\ind{protocols!XEP-0138: Stream Compression}\ind{Zlib}This
     option specifies that Zlib stream compression (as defined in \xepref{0138})
     is available on connections to the port. Client connections cannot use
     stream compression and stream encryption simultaneously. Hence, if you
     specify both \option{tls} (or \option{ssl}) and \option{zlib}, the latter
     option will not affect connections (there will be no stream compression).
-  \titem{web\_admin} \ind{options!web\_admin}\ind{web interface}This option
-    enables the web interface for \ejabberd{} administration which is available
-    at \verb|http://server:port/admin/|. Login and password are the username and
-    password of one of the registered users who are granted access by the
-    `configure' access rule.
-  \titem{\{request\_handlers, [\{Path, Module\}]\}} To define one or several handlers that will serve HTTP requests.
-    The Path is a list of strings; so the URIs that start with that Path will be served by Module.
-    For example, if you want \term{mod\_foo} to serve the URIs that start with \term{/a/b/},
-    and you also want \term{mod\_http\_bind} to serve the URIs \term{/http-bind/},
-    use this option: \term{\{request\_handlers, [\{["a", "b"], mod\_foo\}, \{["http-bind"], mod\_http\_bind\}]\}}
-  \titem{component\_check\_from} \ind{options!service\_check\_from}
-    This option can be used with \term{ejabberd\_service} only. It is
-    used to disable control on the from field on packets send by an
-    external components. The option can be either \term{true} or
-    \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
 \end{description}
 
 In addition, the following options are available for s2s connections:
