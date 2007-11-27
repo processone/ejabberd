@@ -46,6 +46,7 @@ start_module(Host, Module, Opts) ->
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
+	    set_module_opts_mnesia(Host, Module, Opts),
 	    ets:insert(ejabberd_modules,
 		       #ejabberd_module{module_host = {Module, Host},
 					opts = Opts}),
@@ -58,13 +59,16 @@ stop_module(Host, Module) ->
 	    ?ERROR_MSG("~p", [Reason]);
 	{wait, ProcList} when is_list(ProcList) ->
 	    lists:foreach(fun wait_for_process/1, ProcList),
+	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok;
 	{wait, Process} ->
 	    wait_for_process(Process),
+	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok;
 	_ ->
+	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok
     end.
@@ -153,6 +157,27 @@ loaded_modules_with_opts(Host) ->
 				  opts = '$2'},
 		 [],
 		 [{{'$1', '$2'}}]}]).
+
+set_module_opts_mnesia(Host, Module, Opts) ->
+    Modules = case ejabberd_config:get_local_option({modules, Host}) of
+		  undefined ->
+		      [];
+		  Ls ->
+		      Ls
+	      end,
+    Modules1 = lists:keydelete(Module, 1, Modules),
+    Modules2 = [{Module, Opts} | Modules1],
+    ejabberd_config:add_local_option({modules, Host}, Modules2).
+
+del_module_mnesia(Host, Module) ->
+    Modules = case ejabberd_config:get_local_option({modules, Host}) of
+		  undefined ->
+		      [];
+		  Ls ->
+		      Ls
+	      end,
+    Modules1 = lists:keydelete(Module, 1, Modules),
+    ejabberd_config:add_local_option({modules, Host}, Modules1).
 
 get_hosts(Opts, Prefix) ->
     case catch gen_mod:get_opt(hosts, Opts) of

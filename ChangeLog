@@ -1,5 +1,8 @@
 2007-11-27  Badlop  <badlop@process-one.net>
 
+	* src/gen_mod.erl: Update in database the configuration changes in
+	modules (EJAB-330)
+
 	* src/mod_configure.erl: The command get-user-lastlogin is now
 	compatible with both Mnesia and ODBC (EJAB-383)
 	* src/mod_last.erl: Likewise
