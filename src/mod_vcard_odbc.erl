@@ -272,10 +272,10 @@ set_vcard(User, LServer, VCARD) ->
 					    "match substring)")}]},
 	   ?TLFIELD("text-single", "User", "user"),
 	   ?TLFIELD("text-single", "Full Name", "fn"),
-	   ?TLFIELD("text-single", "Name", "given"),
+	   ?TLFIELD("text-single", "Name", "first"),
 	   ?TLFIELD("text-single", "Middle Name", "middle"),
-	   ?TLFIELD("text-single", "Family Name", "family"),
-	   ?TLFIELD("text-single", "Nickname", "nickname"),
+	   ?TLFIELD("text-single", "Family Name", "last"),
+	   ?TLFIELD("text-single", "Nickname", "nick"),
 	   ?TLFIELD("text-single", "Birthday", "bday"),
 	   ?TLFIELD("text-single", "Country", "ctry"),
 	   ?TLFIELD("text-single", "City", "locality"),
@@ -439,10 +439,10 @@ search_result(Lang, JID, ServerHost, Data) ->
      {xmlelement, "reported", [],
       [?LFIELD("Jabber ID", "jid"),
        ?LFIELD("Full Name", "fn"),
-       ?LFIELD("Name", "given"),
+       ?LFIELD("Name", "first"),
        ?LFIELD("Middle Name", "middle"),
-       ?LFIELD("Family Name", "family"),
-       ?LFIELD("Nickname", "nickname"),
+       ?LFIELD("Family Name", "last"),
+       ?LFIELD("Nickname", "nick"),
        ?LFIELD("Birthday", "bday"),
        ?LFIELD("Country", "ctry"),
        ?LFIELD("City", "locality"),
@@ -465,10 +465,10 @@ record_to_item(LServer, {Username, FN, Family, Given, Middle,
      [
        ?FIELD("jid",      Username ++ "@" ++ LServer),
        ?FIELD("fn",       FN),
-       ?FIELD("family",   Family),
-       ?FIELD("given",    Given),
+       ?FIELD("last",     Family),
+       ?FIELD("first",    Given),
        ?FIELD("middle",   Middle),
-       ?FIELD("nickname", Nickname),
+       ?FIELD("nick",     Nickname),
        ?FIELD("bday",     BDay),
        ?FIELD("ctry",     CTRY),
        ?FIELD("locality", Locality),
@@ -533,10 +533,10 @@ filter_fields([{SVar, [Val]} | Ds], Match, LServer)
     NewMatch = case SVar of
                    "user"     -> make_val(Match, "lusername", LVal);
                    "fn"       -> make_val(Match, "lfn",       LVal);
-                   "family"   -> make_val(Match, "lfamily",   LVal);
-                   "given"    -> make_val(Match, "lgiven",    LVal);
+                   "last"     -> make_val(Match, "lfamily",   LVal);
+                   "first"    -> make_val(Match, "lgiven",    LVal);
                    "middle"   -> make_val(Match, "lmiddle",   LVal);
-                   "nickname" -> make_val(Match, "lnickname", LVal);
+                   "nick"     -> make_val(Match, "lnickname", LVal);
                    "bday"     -> make_val(Match, "lbday",     LVal);
                    "ctry"     -> make_val(Match, "lctry",     LVal);
                    "locality" -> make_val(Match, "llocality", LVal);

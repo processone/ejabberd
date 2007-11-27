@@ -272,10 +272,10 @@ set_vcard(User, LServer, VCARD) ->
 					    "match substring)")}]},
 	   ?TLFIELD("text-single", "User", "user"),
 	   ?TLFIELD("text-single", "Full Name", "fn"),
-	   ?TLFIELD("text-single", "Name", "given"),
+	   ?TLFIELD("text-single", "Name", "first"),
 	   ?TLFIELD("text-single", "Middle Name", "middle"),
-	   ?TLFIELD("text-single", "Family Name", "family"),
-	   ?TLFIELD("text-single", "Nickname", "nickname"),
+	   ?TLFIELD("text-single", "Family Name", "last"),
+	   ?TLFIELD("text-single", "Nickname", "nick"),
 	   ?TLFIELD("text-single", "Birthday", "bday"),
 	   ?TLFIELD("text-single", "Country", "ctry"),
 	   ?TLFIELD("text-single", "City", "locality"),
@@ -442,10 +442,10 @@ search_result(Lang, JID, ServerHost, Data) ->
      {xmlelement, "reported", [],
       [?LFIELD("Jabber ID", "jid"),
        ?LFIELD("Full Name", "fn"),
-       ?LFIELD("Name", "given"),
+       ?LFIELD("Name", "first"),
        ?LFIELD("Middle Name", "middle"),
-       ?LFIELD("Family Name", "family"),
-       ?LFIELD("Nickname", "nickname"),
+       ?LFIELD("Family Name", "last"),
+       ?LFIELD("Nickname", "nick"),
        ?LFIELD("Birthday", "bday"),
        ?LFIELD("Country", "ctry"),
        ?LFIELD("City", "locality"),
@@ -465,10 +465,10 @@ record_to_item(R) ->
      [
        ?FIELD("jid",      User ++ "@" ++ Server),
        ?FIELD("fn",       R#vcard_search.fn),
-       ?FIELD("family",   R#vcard_search.family),
-       ?FIELD("given",    R#vcard_search.given),
+       ?FIELD("last",     R#vcard_search.family),
+       ?FIELD("first",    R#vcard_search.given),
        ?FIELD("middle",   R#vcard_search.middle),
-       ?FIELD("nickname", R#vcard_search.nickname),
+       ?FIELD("nick",     R#vcard_search.nickname),
        ?FIELD("bday",     R#vcard_search.bday),
        ?FIELD("ctry",     R#vcard_search.ctry),
        ?FIELD("locality", R#vcard_search.locality),
@@ -530,10 +530,10 @@ filter_fields([{SVar, [Val]} | Ds], Match, LServer)
 			       Match#vcard_search{us = {make_val(LVal), Host}}
 		       end;
                    "fn"       -> Match#vcard_search{lfn       = make_val(LVal)};
-                   "family"   -> Match#vcard_search{lfamily   = make_val(LVal)};
-                   "given"    -> Match#vcard_search{lgiven    = make_val(LVal)};
+                   "last"     -> Match#vcard_search{lfamily   = make_val(LVal)};
+                   "first"    -> Match#vcard_search{lgiven    = make_val(LVal)};
                    "middle"   -> Match#vcard_search{lmiddle   = make_val(LVal)};
-                   "nickname" -> Match#vcard_search{lnickname = make_val(LVal)};
+                   "nick"     -> Match#vcard_search{lnickname = make_val(LVal)};
                    "bday"     -> Match#vcard_search{lbday     = make_val(LVal)};
                    "ctry"     -> Match#vcard_search{lctry     = make_val(LVal)};
                    "locality" -> Match#vcard_search{llocality = make_val(LVal)};

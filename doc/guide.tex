@@ -2998,10 +2998,10 @@ consists of the following \modvcardldap{}-specific options:
   \term{"\%u"} will be replaced with the user part of a JID, and \term{"\%d"}
   will be replaced with the domain part of a JID. The default is:
   \begin{verbatim}
-  [{"NICKNAME", "%u", []},
+  [{"NICK", "%u", []},
    {"FN", "%s", ["displayName"]},
-   {"FAMILY", "%s", ["sn"]},
-   {"GIVEN", "%s", ["givenName"]},
+   {"LAST", "%s", ["sn"]},
+   {"FIRST", "%s", ["givenName"]},
    {"MIDDLE", "%s", ["initials"]},
    {"ORGNAME", "%s", ["o"]},
    {"ORGUNIT", "%s", ["ou"]},
@@ -3048,10 +3048,10 @@ consists of the following \modvcardldap{}-specific options:
   is:
 \begin{verbatim}
   [{"Full Name", "FN"},
-   {"Given Name", "GIVEN"},
+   {"Given Name", "FIRST"},
    {"Middle Name", "MIDDLE"},
-   {"Family Name", "FAMILY"},
-   {"Nickname", "NICKNAME"},
+   {"Family Name", "LAST"},
+   {"Nickname", "NICK"},
    {"Birthday", "BDAY"},
    {"Country", "CTRY"},
    {"City", "LOCALITY"},
@@ -3106,9 +3106,9 @@ Also we want users to search each other. Let's see how we can set it up:
       {ldap_filter, ""},
       %% Now we want to define vCard pattern
       {ldap_vcard_map,
-       [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
-        {"GIVEN", "%s", ["givenName"]},
-        {"FAMILY", "%s", ["sn"]},
+       [{"NICK", "%u", []}, % just use user's part of JID as his nickname
+        {"FIRST", "%s", ["givenName"]},
+        {"LAST", "%s", ["sn"]},
         {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
         {"EMAIL", "%s", ["mail"]},
         {"BDAY", "%s", ["birthDay"]}]},
@@ -3123,7 +3123,7 @@ Also we want users to search each other. Let's see how we can set it up:
       %% Note that JID is always returned with search results
       {ldap_search_reported,
        [{"Full Name", "FN"},
-        {"Nickname", "NICKNAME"},
+        {"Nickname", "NICK"},
         {"Birthday", "BDAY"}]}
     ]}
     ...
@@ -3136,7 +3136,7 @@ searching his info in LDAP.
 \item \term{ldap\_vcard\_map} example:
 \begin{verbatim}
   {ldap_vcard_map,
-   [{"NICKNAME", "%u", []},
+   [{"NICK", "%u", []},
     {"FN", "%s", ["displayName"]},
     {"CTRY", "Russia", []},
     {"EMAIL", "%u@%d", []},
@@ -3157,7 +3157,7 @@ searching his info in LDAP.
    [{"Full Name", "FN"},
     {"Email", "EMAIL"},
     {"Birthday", "BDAY"},
-    {"Nickname", "NICKNAME"}
+    {"Nickname", "NICK"}
    ]},
 \end{verbatim}
 \end{itemize}
