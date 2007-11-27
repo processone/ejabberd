@@ -101,7 +101,7 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 50),
     ejabberd_hooks:delete(local_send_to_resource_hook, Host,
 			  ?MODULE, announce, 50),
-    ejabberd_hooks:delete(sm_register_connection_hook, Host,
+    ejabberd_hooks:delete(user_available_hook, Host,
 			  ?MODULE, send_motd, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
