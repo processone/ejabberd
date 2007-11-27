@@ -104,7 +104,7 @@
 {"Only deliver notifications to available users", "Sols enviar notificacions als usuaris disponibles"}.
 {"Specify the current subscription approver", "Especificar l'aprovador de subscripció actual"}.
 {"Publish-Subscribe", "Publicar-subscriure't"}.
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "mòdul ejabberd pub/sub \nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "mòdul ejabberd pub/sub \nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Necessites un client amb suport x:data per a poder registrar el Nickname"}.
@@ -117,7 +117,7 @@
 {"Room creation is denied by service policy", "Se t'ha denegat el crear la sala per política del servei"}.
 {"Chatrooms", "Sales de xat"}.
 {"You must fill in field \"Nickname\" in the form", "Deus d'omplir el camp \"Nickname\" al formulari"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "mòdul ejabberd MUC\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "mòdul ejabberd MUC\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " ha posat l'assumpte: "}.
@@ -205,7 +205,7 @@
 {"Encodings", "Codificacions"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Exemple: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"IRC Transport", "Transport a IRC"}.
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "mòdul ejabberd IRC\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "mòdul ejabberd IRC\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % web/ejabberd_web_admin.erl
 {"Users", "Usuaris"}.
@@ -270,7 +270,7 @@
 {"Host", "Host"}.
 {"ejabberd Web Interface", "Interficie Web del ejabberd"}.
 {"Administration", "Administració"}.
-{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(en format text)"}.
 {"Submitted", "Enviat"}.
 {"Bad format", "Format erroni"}.
@@ -321,10 +321,10 @@
 {"Fill in fields to search for any matching Jabber User", "Emplena camps per a buscar usuaris Jabber que concorden"}.
 
 % mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Servidor Erlang Jabber \nCopyright (c) 2002-2006 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Servidor Erlang Jabber \nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Email", "Email"}.
 {"vCard User Search", "Recerca de vCard d'usuari"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Mòdul ejabberd vCard \nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Mòdul ejabberd vCard \nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Search Results for ", "Resultat de la búsqueda"}.
 {"Jabber ID", "ID Jabber"}.
 
@@ -347,7 +347,7 @@
 {"Delete message of the day", "Eliminar el missatge del dia"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin", "mòdul ejabberd SOCKS5 Bytestreams \nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "mòdul ejabberd SOCKS5 Bytestreams \nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % Local Variables:
 % mode: erlang

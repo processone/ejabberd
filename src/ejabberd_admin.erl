@@ -10,7 +10,7 @@
 %%% Created :  7 May 2006 by Mickael Remond <mremond@process-one.net>
 %%% Id      : $Id$
 %%%----------------------------------------------------------------------
-%%% Copyright (c) 2006 Process One
+%%% Copyright (c) 2006-2007 Process One
 %%%-------------------------------------------------------------------
 
 -module(ejabberd_admin).

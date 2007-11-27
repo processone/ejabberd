@@ -246,9 +246,9 @@
 {"Room creation is denied by service policy", "Tworzenie pokoju jest zabronione przez polisę"}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Email", ""}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Search Results for ", "Wyniki wyszukiwania dla "}.
 {"Jabber ID", "Jabber ID"}.
 
@@ -280,12 +280,12 @@
 {"Database Tables Configuration at ", "Konfiguracja tabel bazy na "}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
 % /usr/home/src/ejabberd/ejabberd/src/web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Interfejs WWW serwera ejabberd"}.
 {"Administration", "Administracja"}.
-{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", ""}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", ""}.
 {"(Raw)", ""}.
 {"Submitted", "Wprowadzone"}.
 {"Bad format", "Zły format"}.
@@ -329,7 +329,7 @@
 {"Shared Roster Groups", "Grupy współdzielone"}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Konfiguracja pokoju zmodyfikowana"}.
@@ -361,7 +361,7 @@
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc.erl
 {"You must fill in field \"Nickname\" in the form", "Musisz wypełnić pole NICKNAME w formularzu"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_room.erl
 {"This room is not anonymous", "Pokój nie jest nieznany"}.
@@ -381,8 +381,8 @@
 {"Number of occupants", "Liczba uczestników"}.
 
 % mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Jabber ID", "Jabber ID"}.
 
 % ./mod_presence.erl
@@ -393,7 +393,7 @@
 {"Specified presence is already registered", "Określona widoczność już jest zarejestrowana"}.
 {"You must fill in field \"Xml\" in the form", "Musisz wypełnić w formularzu pole \"XML\""}.
 {"You must fill in field \"Icon\" in the form", "Musisz wypełnić w formularzu pole \"Icon\""}.
-{"ejabberd presence module\nCopyright (c) 2006 Igor Goryachev", ""}.
+{"ejabberd presence module\nCopyright (c) 2007 Igor Goryachev", ""}.
 
 % ./mod_presence/mod_presence.erl
 {"Raw XML export", "Eksport XML do raw"}.
@@ -403,23 +403,23 @@
 {"CPUtime", "Czas procesora"}.
 
 % ./mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", ""}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", ""}.
 {"Email", ""}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 {"Jabber ID", ""}.
 
 % ./mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
 % ./web/ejabberd_web_admin.erl
-{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", ""}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", ""}.
 {"(Raw)", ""}.
 {"Raw", ""}.
 {"Low level update script", "Skrypt aktualizacyjny niskiego poziomu"}.
 
 % ./mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
 % ./mod_muc/mod_muc.erl
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", ""}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 

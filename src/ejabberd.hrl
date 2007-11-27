@@ -39,4 +39,4 @@
 
 -define(PRIVACY_SUPPORT, true).
 
--define(EJABBERD_URI, "http://ejabberd.jabber.ru").
+-define(EJABBERD_URI, "http://www.process-one.net/en/ejabberd/").

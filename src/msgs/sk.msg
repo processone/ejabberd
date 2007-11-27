@@ -327,9 +327,9 @@
 
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Email", "E-mail"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Ejabberd vCard modul\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd vCard modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Search Results for ", "Hľadať výsledky pre "}.
 {"Jabber ID", "Jabber ID"}.
 
@@ -361,12 +361,12 @@
 {"Database Tables Configuration at ", "Konfigurácia databázových tabuliek "}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd pub/sub modul\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd pub/sub modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % /usr/home/src/ejabberd/ejabberd/src/web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Ejabberd Web rozhranie"}.
 {"Administration", "Administrácia"}.
-{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "Ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "Ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(Raw)"}.
 {"Submitted", "Odoslané"}.
 {"Bad format", "Zlý formát"}.
@@ -410,7 +410,7 @@
 {"Shared Roster Groups", "Skupiny pre zdieľaný zoznam kontaktov"}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Ejabberd IRC modul\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd IRC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Nastavenie diskusnej miestnosti bolo zmenené"}.
@@ -442,7 +442,7 @@
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc.erl
 {"You must fill in field \"Nickname\" in the form", "Musíte vyplniť políčko \"Prezývka\" vo formulári"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_room.erl
 {"This room is not anonymous", "Táto miestnosť nie je anonymná"}.

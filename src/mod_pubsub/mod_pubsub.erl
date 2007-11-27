@@ -402,13 +402,12 @@ iq_get_vcard(Lang) ->
     [{xmlelement, "FN", [],
       [{xmlcdata, "ejabberd/mod_pubsub"}]},
      {xmlelement, "URL", [],
-      [{xmlcdata,
-	"http://ejabberd.jabberstudio.org/"}]},
+      [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
       [{xmlcdata, translate:translate(
 		    Lang,
 		    "ejabberd pub/sub module\n"
-		    "Copyright (c) 2003-2006 Alexey Shchepin")}]}].
+		    "Copyright (c) 2003-2007 Alexey Shchepin")}]}].
 
 
 iq_pubsub(Host, ServerHost, From, Type, SubEl, Access) ->

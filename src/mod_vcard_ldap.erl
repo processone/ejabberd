@@ -208,14 +208,13 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 			     [{xmlelement, "FN", [],
 			       [{xmlcdata, "ejabberd"}]},
 			      {xmlelement, "URL", [],
-			       [{xmlcdata,
-				 "http://ejabberd.jabber.ru/"}]},
+			       [{xmlcdata, ?EJABBERD_URI}]},
 			      {xmlelement, "DESC", [],
 			       [{xmlcdata,
 				 translate:translate(
 				   Lang,
 				   "Erlang Jabber Server\n"
-				   "Copyright (c) 2002-2006 Alexey Shchepin")}]},
+				   "Copyright (c) 2002-2007 Alexey Shchepin")}]},
 			      {xmlelement, "BDAY", [],
 			       [{xmlcdata, "2002-11-16"}]}
 			     ]}]}
@@ -506,13 +505,12 @@ iq_get_vcard(Lang) ->
     [{xmlelement, "FN", [],
       [{xmlcdata, "ejabberd/mod_vcard"}]},
      {xmlelement, "URL", [],
-      [{xmlcdata,
-        "http://ejabberd.jabber.ru/"}]},
+      [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
       [{xmlcdata, translate:translate(
 		    Lang,
 		    "ejabberd vCard module\n"
-		    "Copyright (c) 2003-2006 Alexey Shchepin")}]}].
+		    "Copyright (c) 2003-2007 Alexey Shchepin")}]}].
 
 -define(LFIELD(Label, Var),
 	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},

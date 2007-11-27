@@ -859,7 +859,7 @@ process_version(StateData, Nick, From) ->
 		    "\001\r\n",
 		    [FromUser, ?VERSION]) ++
       io_lib:format("NOTICE ~s :\001VERSION "
-		    "http://ejabberd.jabberstudio.org/"
+		    ?EJABBERD_URI
 		    "\001\r\n",
 		    [FromUser])).
 

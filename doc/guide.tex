@@ -222,7 +222,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \ind{install!download}
 
 Released versions of \ejabberd{} can be obtained from \\
-\ahrefurl{http://www.process-one.net/en/ejabberd/download.html}
+\ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 \ind{Subversion repository}
 The latest development version can be retrieved from the Subversion repository using this command:
@@ -662,7 +662,7 @@ This is a detailed description of each option:
     is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
     interesting to host a web-based \Jabber{} client such as
     \footahref{http://jwchat.sourceforge.net/}{JWChat} (there is a tutorial to
-    \footahref{http://ejabberd.jabber.ru/jwchat}{install JWChat} with
+    \footahref{http://www.ejabberd.im/jwchat}{install JWChat} with
     instructions for \ejabberd{}).
   \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6.
   \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
@@ -734,24 +734,24 @@ For instance, the following configuration defines that:
 \item All users except for the administrators have a traffic of limit 
   1,000\,Bytes/second
 \item \ind{transports!AIM}The
-  \footahref{http://ejabberd.jabber.ru/pyaimt}{AIM transport}
+  \footahref{http://www.ejabberd.im/pyaimt}{AIM transport}
   \jid{aim.example.org} is connected to port 5233 with password
   `\term{aimsecret}'.
 \item \ind{transports!ICQ}The ICQ transport JIT (\jid{icq.example.org} and
   \jid{sms.example.org}) is connected to port 5234 with password
   `\term{jitsecret}'.
 \item \ind{transports!MSN}The
-  \footahref{http://ejabberd.jabber.ru/pymsnt}{MSN transport}
+  \footahref{http://www.ejabberd.im/pymsnt}{MSN transport}
   \jid{msn.example.org} is connected to port 5235 with password
   `\term{msnsecret}'.
 \item \ind{transports!Yahoo}The
-  \footahref{http://ejabberd.jabber.ru/yahoo-transport-2}{Yahoo! transport}
+  \footahref{http://www.ejabberd.im/yahoo-transport-2}{Yahoo! transport}
   \jid{yahoo.example.org} is connected to port 5236 with password
   `\term{yahoosecret}'.
-\item \ind{transports!Gadu-Gadu}The \footahref{http://ejabberd.jabber.ru/jabber-gg-transport}{Gadu-Gadu transport} \jid{gg.example.org} is
+\item \ind{transports!Gadu-Gadu}The \footahref{http://www.ejabberd.im/jabber-gg-transport}{Gadu-Gadu transport} \jid{gg.example.org} is
   connected to port 5237 with password `\term{ggsecret}'.
 \item \ind{transports!email notifier}The
-  \footahref{http://ejabberd.jabber.ru/jmc}{Jabber Mail Component}
+  \footahref{http://www.ejabberd.im/jmc}{Jabber Mail Component}
   \jid{jmc.example.org} is connected to port 5238 with password
   `\term{jmcsecret}'.
 \item The service custom has enabled the special option to avoiding checking the \term{from} attribute in the packets send by this component. The component can send packets in behalf of any users from the server, or even on behalf of any server.
@@ -835,7 +835,7 @@ for user authentication:
 The following authentication methods are supported by \ejabberd{}:
 \begin{itemize}
 \item internal (default) --- See section~\ref{internalauth}.
-\item external --- There are \footahref{http://ejabberd.jabber.ru/extauth}{some
+\item external --- There are \footahref{http://www.ejabberd.im/extauth}{some
  example authentication scripts}.
 \item ldap --- See section~\ref{ldap}.
 \item odbc --- See section~\ref{mysql}, \ref{pgsql},
@@ -1737,7 +1737,7 @@ Examples:
 
 The following table lists all modules available in the official \ejabberd{}
 distribution. You can find more
-\footahref{http://ejabberd.jabber.ru/contributions}{contributed modules} on the
+\footahref{http://www.ejabberd.im/contributions}{contributed modules} on the
 \ejabberd{} website. Please remember that these contributions might not work or
 that they can contain severe bugs and security leaks. Therefore, use them at
 your own risk!
@@ -2594,7 +2594,7 @@ Publish-Subscribe can be used to develop (examples are taken from the XEP):
 \end{quote} 
 
 \ind{J-EAI}\ind{EAI}\ind{ESB}\ind{Enterprise Application Integration}\ind{Enterprise Service Bus}
-Another example is \footahref{http://www.process-one.net/en/projects/j-eai/}{J-EAI}.
+Another example is \footahref{http://www.process-one.net/en/jeai/}{J-EAI}.
 This is an XMPP-based Enterprise Application Integration (EAI) platform (also
 known as ESB, the Enterprise Service Bus). The J-EAI project builts upon
 \ejabberd{}'s codebase and has contributed several features to \modpubsub{}.

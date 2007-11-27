@@ -73,8 +73,8 @@
 {"Choose a username and password to register with this server", "Choisissez un nom d'utilisateur et un mot de passe pour s'enregistrer sur ce serveur"}.
 
 % src/mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Serveur Jabber Erlang\nCopyright (c) 2002-2006 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module vCard ejabberd\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Serveur Jabber Erlang\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module vCard ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Email", "Email"}.
 {"Search Results for ", "Résultats de recherche pour "}.
 {"Jabber ID", "Jabber ID"}.
@@ -119,7 +119,7 @@
 {"Delete message of the day", "Supprimer le message du jour"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {[], ""}.
 {"Node Creator", "Créateur du noeud"}.
 {"Deliver payloads with event notifications", "Inclure le contenu du message avec la notification"}.
@@ -170,7 +170,7 @@
 {"You need an x:data capable client to register nickname", "Vous avez besoin d'un client supportant x:data pour enregistrer un pseudo"}.
 {"Nickname Registration at ", "Enregistrement d'un pseudo sur "}.
 {"Enter nickname you want to register", "Entrez le pseudo que vous souhaitez enregistrer"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module MUC ejabberd\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module MUC ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Only service administrators are allowed to send service messages", "Seuls les administrateurs du service sont autoriser à envoyer des messages de service"}.
 {"Room creation is denied by service policy", "La création de salons est interdite par le service"}.
 {"Conference room does not exist", "La salle de conférence n'existe pas"}.
@@ -231,7 +231,7 @@
 {"anyone", "tout le monde"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module IRC ejabberd\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module IRC ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings", "Vous avez besoin d'un client supportant x:data pour configurer le module IRC"}.
 {"Registration in mod_irc for ", "Enregistrement du mod_irc pour "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Entrez le nom d'utilisateur et les encodages que vous souhaitez utiliser pour vous connecter aux serveurs IRC"}.
@@ -247,7 +247,7 @@
 {"Nodes", "Noeuds"}.
 {"Shared Roster", "Liste de contacts partagée"}.
 {"Statistics", "Statistiques"}.
-{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(Brut)"}.
 {"Submitted", "Soumis"}.
 {"Bad format", "Mauvais format"}.
@@ -348,8 +348,8 @@
 {"Last Activity", "Dernière Activité"}.
 
 % mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin",
-  "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin",
+  "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 
 % Local Variables:

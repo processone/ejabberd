@@ -95,18 +95,18 @@
 {"SOCKS5 bytestreams proxy", "Потоковый SOCKS5 прокси"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin",
- "ejabberd SOCKS5 Bytestreams модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin",
+ "ejabberd SOCKS5 Bytestreams модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
 
 % mod_register.erl
 {"Choose a username and password to register with this server",
  "Выберите имя пользователя и пароль для регистрации на этом сервере"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2006 Алексей Щепин"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin",
- "ejabberd vCard модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin",
+ "Erlang Jabber Server\nCopyright (c) 2002-2007 Алексей Щепин"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin",
+ "ejabberd vCard модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
 {"You need an x:data capable client to search",
  "Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Search users in ", "Поиск пользователей в "}.
@@ -132,8 +132,8 @@
 {"Given Name", "Имя"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin",
- "ejabberd pub/sub модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin",
+ "ejabberd pub/sub модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
 {"Node Creator", "Создатель сборника"}.
 {"Deliver payloads with event notifications", "Доставлять вместе с уведомлениями o публикациях сами публикации"}.
 {"Notify subscribers when the node configuration changes", "Уведомлять подписчиков об изменении конфигурации сборника"}.
@@ -154,8 +154,8 @@
  "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"Nickname Registration at ", "Регистрация псевдонима на "}.
 {"Enter nickname you want to register", "Введите псевдоним, который Вы хотели бы зарегистрировать"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin",
- "ejabberd MUC модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin",
+ "ejabberd MUC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
 {"Only service administrators are allowed to send service messages",
  "Только администратор службы может посылать служебные сообщения"}.
 {"Room creation is denied by service policy",
@@ -260,8 +260,8 @@
 {"Number of occupants", "Число присутствующих"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin",
- "ejabberd IRC модуль\nCopyright (c) 2003-2006 Алексей Щепин"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin",
+ "ejabberd IRC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
 {"You need an x:data capable client to configure mod_irc settings",
  "Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"Registration in mod_irc for ", "Регистрация в mod_irc для "}.
@@ -336,7 +336,7 @@
 {"Update", "Обновить"}.
 {"Delete", "Удалить"}.
 {"Add User", "Добавить пользователя"}.
-{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Алексей Щепин, 2004-2006 Process One"}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Алексей Щепин, 2004-2007 Process One"}.
 {"Offline Messages", "Офлайновые сообщения"}.
 {"Offline Messages:", "Офлайновые сообщения:"}.
 {"Last Activity", "Последнее подключение"}.

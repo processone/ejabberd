@@ -83,8 +83,8 @@
 {"Choose a username and password to register with this server", "Tchoezixhoz on no d' uzeu eyet on scret po vs edjîstrer so ç' sierveu ci"}.
 
 % mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Sierveu Jabber Erlang\nCopyright © 2002-2006 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module vCard ejabberd\nCopyright © 2003-2006 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Sierveu Jabber Erlang\nCopyright © 2002-2007 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module vCard ejabberd\nCopyright © 2003-2007 Alexey Shchepin"}.
 {"Email", "Emile"}.
 {"Search Results for ", "Rizultats do cweraedje po "}.
 {"Jabber ID", "ID Jabber"}.
@@ -136,7 +136,7 @@
 {"Delete message of the day on all hosts", "Disfacer l' messaedje do djoû so tos les lodjoes"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright © 2003-2006 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright © 2003-2007 Alexey Shchepin"}.
 {"Publish-Subscribe", "Eplaiaedje-abounmint"}.
 {[], ""}.
 {"Node Creator", "Ahiveu do nuk"}.
@@ -183,7 +183,7 @@
 {"You need an x:data capable client to register nickname", "Vos avoz mezåjhe d' on cliyint ki sopoite x:data po-z edjîstrer on metou no"}.
 {"Nickname Registration at ", "Edjîstraedje di metou no amon "}.
 {"Enter nickname you want to register", "Dinez l' metou no ki vos vloz edjîstrer"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module MUC (såles di berdelaedje) po ejabberd\nCopyright © 2003-2006 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module MUC (såles di berdelaedje) po ejabberd\nCopyright © 2003-2007 Alexey Shchepin"}.
 {"Only service administrators are allowed to send service messages", "Seulmint les manaedjeus d' siervices polèt evoyî des messaedjes di siervice"}.
 {"Room creation is denied by service policy", "L' ahivaedje del såle est rfuzé pal politike do siervice"}.
 {"Conference room does not exist", "Li såle di conferince n' egzistêye nén"}.
@@ -247,7 +247,7 @@ di conferince"}.
 
 % mod_irc/mod_irc.erl
 {"IRC Transport", "Transpoirt IRC"}.
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module IRC po ejabberd\nCopyright © 2003-2006 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module IRC po ejabberd\nCopyright © 2003-2007 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings", "Vos avoz mezåjhe d' on cliyint ki sopoite x:data po candjî ls apontiaedjes di mod_irc"}.
 {"Registration in mod_irc for ", "Edjîstraedje dins mod_irc po "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Dinez les nos d' uzeu et ls ecôdaedjes ki vos vloz eployî po vs raloyî åzès sierveus IRC"}.
@@ -261,7 +261,7 @@ di conferince"}.
 {"Users", "Uzeus"}.
 {"Nodes", "Nuks"}.
 {"Statistics", "Sitatistikes"}.
-{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd © 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd © 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(Dinêyes brutes)"}.
 {"Submitted", "Candjmints evoyîs"}.
 {"Bad format", "Mwais fôrmat"}.
@@ -368,7 +368,7 @@ di conferince"}.
 {"Your contact offline message queue is full. The message has been discarded.", "Li cawêye di messaedjes e môde disraloyî di vosse soçon est plinne. Li messaedje a stî tapé å diale."}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2006 Alexey Shchepin", "Module SOCKS5 Bytestreams po ejabberd\nCopyright © 2003-2006 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module SOCKS5 Bytestreams po ejabberd\nCopyright © 2003-2007 Alexey Shchepin"}.
 
 % Local Variables:
 % mode: erlang

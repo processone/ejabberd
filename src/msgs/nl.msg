@@ -1,7 +1,7 @@
 % $Id$
 
 % mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2006 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"You need an x:data capable client to search", "U hebt een client nodig die x:data ondersteunt om te zoeken"}.
 {"Search users in ", "Gebruikers zoeken in "}.
 {"Fill in fields to search for any matching Jabber User", "Vul de velden in om te zoeken naar Jabber-gebruikers op deze server"}.
@@ -16,7 +16,7 @@
 {"Email", "E-mail"}.
 {"Organization Name", "Organisatie"}.
 {"Organization Unit", "Afdeling"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd's vCard-module\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's vCard-module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Search Results for ", "Zoekresultaten voor "}.
 {"Jabber ID", "Jabber ID"}.
 
@@ -133,7 +133,7 @@
 {"Enter nickname you want to register", "Voer de bijnaam in die u wilt registreren"}.
 {"Specified nickname is already registered", "De gekozen bijnaam is al geregistreerd"}.
 {"You must fill in field \"Nickname\" in the form", "U moet het veld \"bijnaam\" invullen"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd's MUC module\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's MUC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % mod_muc/mod_muc_room.erl
 {"Only moderators and participants are allowed to change subject in this room", "Alleen moderators en deelnemers mogen het onderwerp van deze chatruimte veranderen"}.
@@ -183,7 +183,7 @@
 {"anyone", "iedereen"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd's IRC-module\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's IRC-module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings", "U hebt een client nodig die x:data ondersteunt om dit IRC-transport in te stellen"}.
 {"Registration in mod_irc for ", "Registratie van "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Voer de gebruikersnaam en de coderingen in die u wilt gebruiken voor verbindingen met IRC-servers"}.
@@ -211,7 +211,7 @@
 {"Delete message of the day", "Bericht van de dag verwijderen"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin", "ejabberd's pub/sub module\nCopyright (c) 2003-2006 Alexey Shchepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {[], "[]"}.
 {"Node Creator", "Auteur van de node"}.
 {"Deliver payloads with event notifications", "Berichten bezorgen samen met gebeurtenisnotificaties"}.
@@ -234,7 +234,7 @@
 {"Virtual Hosts", "Virtuele hosts"}.
 {"Nodes", "Nodes"}.
 {"Statistics", "Statistieken"}.
-{"ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One", "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One"}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"Users", "Gebruikers"}.
 {"Last Activity", "Laatste activiteit"}.
 {"Shared Roster", "Gedeeld roster"}.

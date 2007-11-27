@@ -246,7 +246,7 @@ close_previous_log(Fn, Images_dir) ->
 	    {ok, F} = file:open(Fn, [append]),
 	    %fw(F, "<div class=\"legend\">ejabberd/mod_muc log<span class=\"w3c\">"),
 	    fw(F, "<div class=\"legend\">"),
-	    fw(F, "  <a href=\"http://ejabberd.jabber.ru\"><img style=\"border:0\" src=\"~s/powered-by-ejabberd.png\" alt=\"Powered by ejabberd\"/></a>", [Images_dir]),
+	    fw(F, "  <a href=\"http://www.ejabberd.im\"><img style=\"border:0\" src=\"~s/powered-by-ejabberd.png\" alt=\"Powered by ejabberd\"/></a>", [Images_dir]),
 	    fw(F, "  <a href=\"http://www.erlang.org/\"><img style=\"border:0\" src=\"~s/powered-by-erlang.png\" alt=\"Powered by Erlang\"/></a>", [Images_dir]),
 	    fw(F, "<span class=\"w3c\">"),
 	    fw(F, "  <a href=\"http://validator.w3.org/check?uri=referer\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/valid-xhtml10.png\" alt=\"Valid XHTML 1.0 Transitional\" /></a>", [Images_dir]),

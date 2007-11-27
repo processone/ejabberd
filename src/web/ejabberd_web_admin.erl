@@ -4,8 +4,8 @@
 %%% Purpose : Administration web interface
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%----------------------------------------------------------------------
-%%% Copyright (c) 2004-2006 Alexey Shchepin
-%%% Copyright (c) 2004-2006 Process One
+%%% Copyright (c) 2004-2007 Alexey Shchepin
+%%% Copyright (c) 2004-2007 Process One
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_web_admin).
@@ -138,7 +138,7 @@ make_xhtml(Els, global, Lang) ->
 		 [?XAE("div",
 		       [{"id", "copyright"}],
 		       [?XCT("p",
-			     "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One")
+			     "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One")
 		       ])])])
       ]}};
 
@@ -195,7 +195,7 @@ make_xhtml(Els, Host, Lang) ->
 		 [?XAE("div",
 		       [{"id", "copyright"}],
 		       [?XCT("p",
-			     "ejabberd (c) 2002-2006 Alexey Shchepin, 2004-2006 Process One")
+			     "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One")
 		       ])])])
       ]}}.
 
