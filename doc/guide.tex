@@ -639,11 +639,12 @@ The available modules, their purpose and the options allowed by each one are:
   \end{tabular}
 \end{table}
 
-This is a detailed description of each option:
+This is a detailed description of each option allowed by the listening modules:
 \begin{description}
   \titem{\{access, <access rule>\}} \ind{options!access}This option defines
     access to the port. The default value is \term{all}.
-  \titem{\{certfile, Path\}} Path to a file containing the SSL certificate.
+  \titem{\{certfile, Path\}} Full path to a file containing the default SSL certificate.
+    To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
   \titem{component\_check\_from} \ind{options!service\_check\_from}
     This option can be used with \term{ejabberd\_service} only. It is
     used to disable control on the from field on packets send by an
@@ -687,14 +688,16 @@ This is a detailed description of each option:
   \titem{ssl} \ind{options!ssl}\ind{SSL}This option specifies that traffic on
     the port will be encrypted using SSL. You should also set the
     \option{certfile} option. It is recommended to use the \term{tls} option
-    instead.
+    instead of this one.
   \titem{starttls} \ind{options!starttls}\ind{STARTTLS}This option
     specifies that STARTTLS encryption is available on connections to the port.
     You should also set the \option{certfile} option.
+    You can define a certificate file for a specific domain using the global option \option{domain\_certfile}.
   \titem{starttls\_required} \ind{options!starttls\_required}This option
     specifies that STARTTLS encryption is required on connections to the port.
-    No unencrypted connections will be allowed. You should also set the
-    \option{certfile} option.
+    No unencrypted connections will be allowed. 
+    You should also set the \option{certfile} option.
+    You can define a certificate file for a specific domain using the global option \option{domain\_certfile}.
   \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
     the port will be encrypted using SSL immediately after connecting. You
     should also set the \option{certfile} option.
@@ -711,18 +714,64 @@ This is a detailed description of each option:
     option will not affect connections (there will be no stream compression).
 \end{description}
 
-In addition, the following options are available for s2s connections:
+There are some additional global options:
 \begin{description}
   \titem{\{s2s\_use\_starttls, true|false\}}
   \ind{options!s2s\_use\_starttls}\ind{STARTTLS}This option defines whether to
   use STARTTLS for s2s connections.
-  \titem{\{s2s\_certfile, Path\}} \ind{options!s2s\_certificate}Path to a
+  \titem{\{s2s\_certfile, Path\}} \ind{options!s2s\_certificate}Full path to a
   file containing a SSL certificate.
-  \titem{\{domain\_certfile, Domain, Path\}} \ind{options!domain\_certfile}Path
-  to the file containing the SSL certificate for the specified domain.
+  \titem{\{domain\_certfile, Domain, Path\}} \ind{options!domain\_certfile}
+  Full path to the file containing the SSL certificate for a specific domain.
 \end{description}
 
-For instance, the following configuration defines that:
+For example, the following simple configuration defines:
+\begin{itemize}
+\item There are three domains. The default certificate file is \term{server.pem}.
+However, the c2s and s2s connections to the domain \term{example.com} use the file \term{example\_com.pem}.
+\item Port 5222 listens for c2s connections with STARTTLS, 
+  and also allows plain connections for old clients.
+\item Port 5223 listens for c2s connections with the old SSL.
+\item Port 5269 listens for s2s connections with STARTTLS.
+\item Port 5280 listens for HTTP requests, and serves the HTTP Poll service.
+\item Port 5281 listens for HTTP requests, and serves the web interface using HTTPS as explained in
+  section~\ref{webinterface}.
+\end{itemize}
+\begin{verbatim}
+{hosts, ["example.com", "example.org", "example.net"]}.
+{listen,
+ [
+  {5222, ejabberd_c2s, [
+                        {access, c2s}, 
+                        {shaper, c2s_shaper},
+                        starttls, {certfile, "/etc/ejabberd/server.pem"},
+                        {max_stanza_size, 65536}
+                       ]},
+  {5223, ejabberd_c2s, [
+                        {access, c2s},
+                        {shaper, c2s_shaper},
+                        tls, {certfile, "/etc/ejabberd/server.pem"},
+                        {max_stanza_size, 65536}
+                       ]},
+  {5269, ejabberd_s2s_in, [
+                           {shaper, s2s_shaper},
+                           {max_stanza_size, 131072}
+                          ]},
+  {5280, ejabberd_http, [
+                         http_poll
+                        ]},
+  {5281, ejabberd_http, [
+                         web_admin,
+                         tls, {certfile, "/etc/ejabberd/server.pem"},
+                        ]}
+ ]
+}.
+{s2s_use_starttls, true}.
+{s2s_certfile, "/etc/ejabberd/server.pem"}.
+{domain_certfile, "example.com", "/etc/ejabberd/example_com.pem"}.
+\end{verbatim}
+
+In this example, the following configuration defines that:
 \begin{itemize}
 \item c2s connections are listened for on port 5222 and 5223 (SSL) and denied
   for the user called `\term{bad}'.
@@ -786,7 +835,7 @@ For instance, the following configuration defines that:
                               {service_check_from, false}]}
    ]
   }.
-  {S2s_use_starttls, true}.
+  {s2s_use_starttls, true}.
   {s2s_certfile, "/path/to/ssl.pem"}.
 \end{verbatim}
 Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based

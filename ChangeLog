@@ -1,5 +1,9 @@
 2007-11-28  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: It should be made more clear that domain_certfile
+	works for both s2s and c2s connections (EJAB-212). Added another
+	example of listening ports.
+	
 	* doc/guide.tex: Update URI of ejabberd official home page, URI
 	of ejabberd.jabber.ru, and copyright dates (EJAB-366)
 	* doc/introduction.tex: 
