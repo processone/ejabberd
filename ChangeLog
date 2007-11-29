@@ -1,6 +1,10 @@
 2007-11-29  Badlop  <badlop@process-one.net>
 
-	* src/configure.ac: Don't hardcode gcc and options (EJAB-436)
+	* src/aclocal.m4: Fix autoconf caching for SSL libraries (thanks
+	to Michael Shields) (EJAB-439)
+
+	* src/configure.ac: Don't hardcode gcc and gcc options in
+	Makefiles (thanks to Etan Reisner) (EJAB-436)
 	* src/Makefile.in: 
 	* src/ejabberd_zlib/Makefile.in: 
 	* src/eldap/Makefile.in: 

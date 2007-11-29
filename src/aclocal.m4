@@ -321,6 +321,10 @@ if test x"$tls" != x; then
                 SSL_CFLAGS="-DHAVE_SSL"
                 break
             fi
+	else
+	    # Clear this from the autoconf cache, so in the next pass of
+	    # this loop with different -L arguments, it will test again.
+	    unset ac_cv_lib_ssl_SSL_new
         fi
     done
 if test x${have_openssl} != xyes; then
