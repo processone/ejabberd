@@ -1,10 +1,13 @@
 # $Id: Makefile.in 775 2007-05-29 14:31:12Z mremond $
 
 CC = @CC@
-CFLAGS = @CFLAGS@ @PAM_CFLAGS@ @ERLANG_CFLAGS@
+CFLAGS = @CFLAGS@ @PAM_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ @PAM_LIBS@ @ERLANG_LIBS@
+LIBS = @LIBS@ @PAM_LIBS@
+ 
+ERLANG_CFLAGS = @ERLANG_CFLAGS@
+ERLANG_LIBS = @ERLANG_LIBS@
 
 SUBDIRS = 
 
@@ -29,8 +32,9 @@ $(OUTDIR)/%.beam:       %.erl
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
 $(ERLSHLIBS):	../%:	%.c
-			$(CC) -Wall $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) \
+			$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) \
 			$(subst ../,,$(subst ,.c,$@)) $(LIBS) \
+			$(ERLANG_LIBS) $(ERLANG_CFLAGS) \
 			-o $@ -lpthread
 
 clean:

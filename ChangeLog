@@ -1,5 +1,19 @@
 2007-11-29  Badlop  <badlop@process-one.net>
 
+	* src/configure.ac: Don't hardcode gcc and options (EJAB-436)
+	* src/Makefile.in: 
+	* src/ejabberd_zlib/Makefile.in: 
+	* src/eldap/Makefile.in: 
+	* src/mod_irc/Makefile.in: 
+	* src/mod_muc/Makefile.in: 
+	* src/mod_proxy65/Makefile.in: 
+	* src/mod_pubsub/Makefile.in: 
+	* src/odbc/Makefile.in: 
+	* src/pam/Makefile.in: 
+	* src/stringprep/Makefile.in: 
+	* src/tls/Makefile.in: 
+	* src/web/Makefile.in: 
+
 	* src/mod_muc/mod_muc_room.erl: Hide the option 'Make room
 	moderated' because it isn't implemented, and set the default value
 	of 'moderated' to true because that is the behaviour

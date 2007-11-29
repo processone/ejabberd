@@ -82,7 +82,7 @@ mostlyclean-recursive maintainer-clean-recursive:
 	@ERLC@ -W $(ERLC_FLAGS) $*.erl
 
 $(ERLSHLIBS):	%.so:	%.c
-			gcc -Wall $(CFLAGS) $(LDFLAGS) $(LIBS) \
+			$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) \
 			$(subst ../,,$(subst .so,.c,$@)) \
 			$(EXPAT_LIBS) $(EXPAT_CFLAGS) \
 			$(ERLANG_LIBS) $(ERLANG_CFLAGS) \

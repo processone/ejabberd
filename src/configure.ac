@@ -8,6 +8,10 @@ AC_INIT(ejabberd.erl,, ejabberd@process-one.net)
 AC_PROG_CC
 AC_PROG_MAKE_SET
 
+if test "x$GCC" = "xyes"; then
+    CFLAGS="$CFLAGS -Wall"
+fi
+
 #locating erlang
 AM_WITH_ERLANG
 #locating iconv

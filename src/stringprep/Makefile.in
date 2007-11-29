@@ -1,10 +1,13 @@
 # $Id$
 
 CC = @CC@
-CFLAGS = @CFLAGS@ @ERLANG_CFLAGS@
+CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ @ERLANG_LIBS@
+LIBS = @LIBS@
+
+ERLANG_CFLAGS = @ERLANG_CFLAGS@
+ERLANG_LIBS = @ERLANG_LIBS@
 
 ifeq ($(shell uname),Darwin)
 DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
@@ -37,8 +40,9 @@ $(OUTDIR)/%.beam:       %.erl
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
 $(ERLSHLIBS):	../%.so:	%.c uni_data.c uni_norm.c
-			gcc -Wall -O2 $(CFLAGS) $(LDFLAGS) $(INCLUDES) \
+			$(CC) $(CFLAGS) $(LDFLAGS) $(INCLUDES) \
 			$(subst ../,,$(subst .so,.c,$@)) $(LIBS) \
+			$(ERLANG_LIBS) $(ERLANG_CFLAGS) \
 			-o $@ $(DYNAMIC_LIB_CFLAGS)
 
 clean:
