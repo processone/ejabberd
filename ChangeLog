@@ -1,3 +1,10 @@
+2007-11-29  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Hide the option 'Make room
+	moderated' because it isn't implemented, and set the default value
+	of 'moderated' to true because that is the behaviour
+	implemented (EJAB-419)
+
 2007-11-28  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: It should be made more clear that domain_certfile

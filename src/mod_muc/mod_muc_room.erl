@@ -46,7 +46,7 @@
 		 public = true,
 		 public_list = true,
 		 persistent = false,
-		 moderated = false, % TODO
+		 moderated = true, % TODO
 		 members_by_default = true,
 		 members_only = false,
 		 allow_user_invites = false,
@@ -2536,9 +2536,9 @@ get_config(Lang, StateData, From) ->
 	 ?BOOLXFIELD("Make room members-only",
 		     "muc#roomconfig_membersonly",
 		     Config#config.members_only),
-	 ?BOOLXFIELD("Make room moderated",
-		     "muc#roomconfig_moderatedroom",
-		     Config#config.moderated),
+	 %%?BOOLXFIELD("Make room moderated",
+	 %%	     "muc#roomconfig_moderatedroom",
+	 %%	     Config#config.moderated),
 	 ?BOOLXFIELD("Default users as participants",
 		     "members_by_default",
 		     Config#config.members_by_default),
