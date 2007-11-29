@@ -522,9 +522,9 @@ search_result(Lang, JID, State, Data) ->
 	       [{xmlcdata, translate:translate(Lang, "Search Results for ") ++
 		 jlib:jid_to_string(JID)}]},
 	      {xmlelement, "reported", [],
-	       [?LFIELD("Jabber ID", "jid")] ++
+	       [?TLFIELD("text-single", "Jabber ID", "jid")] ++
 	       lists:map(
-		 fun({Name, Value}) -> ?LFIELD(Name, Value) end,
+		 fun({Name, Value}) -> ?TLFIELD("text-single", Name, Value) end,
 		 SearchReported)
 	      }],
     case search(State, Data) of

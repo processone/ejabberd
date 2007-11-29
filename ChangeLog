@@ -1,5 +1,10 @@
 2007-11-29  Badlop  <badlop@process-one.net>
 
+	* src/mod_vcard.erl: Add type of x:data field to search
+	results (thanks to Robin Redeker) (EJAB-327)
+	* src/mod_vcard_ldap.erl: 
+	* src/mod_vcard_odbc.erl: 
+
 	* src/aclocal.m4: Fix autoconf caching for SSL libraries (thanks
 	to Michael Shields) (EJAB-439)
 

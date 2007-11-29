@@ -435,18 +435,18 @@ search_result(Lang, JID, ServerHost, Data) ->
       [{xmlcdata, translate:translate(Lang, "Search Results for ") ++
 	jlib:jid_to_string(JID)}]},
      {xmlelement, "reported", [],
-      [?LFIELD("Jabber ID", "jid"),
-       ?LFIELD("Full Name", "fn"),
-       ?LFIELD("Name", "first"),
-       ?LFIELD("Middle Name", "middle"),
-       ?LFIELD("Family Name", "last"),
-       ?LFIELD("Nickname", "nick"),
-       ?LFIELD("Birthday", "bday"),
-       ?LFIELD("Country", "ctry"),
-       ?LFIELD("City", "locality"),
-       ?LFIELD("Email", "email"),
-       ?LFIELD("Organization Name", "orgname"),
-       ?LFIELD("Organization Unit", "orgunit")
+      [?TLFIELD("text-single", "Jabber ID", "jid"),
+       ?TLFIELD("text-single", "Full Name", "fn"),
+       ?TLFIELD("text-single", "Name", "first"),
+       ?TLFIELD("text-single", "Middle Name", "middle"),
+       ?TLFIELD("text-single", "Family Name", "last"),
+       ?TLFIELD("text-single", "Nickname", "nick"),
+       ?TLFIELD("text-single", "Birthday", "bday"),
+       ?TLFIELD("text-single", "Country", "ctry"),
+       ?TLFIELD("text-single", "City", "locality"),
+       ?TLFIELD("text-single", "Email", "email"),
+       ?TLFIELD("text-single", "Organization Name", "orgname"),
+       ?TLFIELD("text-single", "Organization Unit", "orgunit")
       ]}] ++ lists:map(fun(R) -> record_to_item(ServerHost, R) end,
 		       search(ServerHost, Data)).
 
