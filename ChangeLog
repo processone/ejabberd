@@ -1,3 +1,8 @@
+2007-11-30  Mickael Remond  <mremond@process-one.net>
+
+	* src/odbc_queries.erl: Added a default define value so that we can
+	recompile the file manually with a simple erlc command.
+
 2007-11-29  Badlop  <badlop@process-one.net>
 
 	* src/mod_vcard.erl: Add type of x:data field to search
