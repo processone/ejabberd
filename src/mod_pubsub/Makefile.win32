@@ -10,7 +10,6 @@ OBJS = \
 	$(OUTDIR)/nodetree_default.beam \
 	$(OUTDIR)/nodetree_virtual.beam \
 	$(OUTDIR)/mod_pubsub.beam \
-	$(OUTDIR)/mod_pubsub_old.beam \
 	$(OUTDIR)/node_default.beam \
 	$(OUTDIR)/node_pep.beam 
 
