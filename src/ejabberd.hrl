@@ -8,7 +8,7 @@
 %-define(ejabberd_debug, true).
 %-define(DBGFSM, true).
 
--define(VERSION, "1.1.2").
+-define(VERSION, "2.0.0b1").
 
 %% ---------------------------------
 %% Logging mechanism

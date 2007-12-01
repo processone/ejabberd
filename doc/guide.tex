@@ -370,12 +370,12 @@ The command to compile ejabberd in BSD systems is:
 To compile \ejabberd{} on a Microsoft Windows system, you need:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
-\item \footahref{http://erlang.org/download.html}{Erlang/OTP R9C-2 or higher}
-\item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 1.95.7 or higher}
+\item \footahref{http://erlang.org/download.html}{Erlang/OTP R11B-5 or higher}
+\item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 2.0.0 or higher}
 \item
-\footahref{http://www.gnu.org/software/libiconv/}{GNU Iconv 1.9.1}
+\footahref{http://www.gnu.org/software/libiconv/}{GNU Iconv 1.9.2}
 (optional)
-\item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL}
+\item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL 0.9.8d or higher}
 (to enable SSL connections)
 \item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
 \end{itemize}
@@ -384,26 +384,33 @@ To compile \ejabberd{} on a Microsoft Windows system, you need:
 \subsubsection{Compilation}
 \label{windowscom}
 
+We assume that we will try to put as much library as possible into \verb|C:\sdk\| to make it easier to track what is install for ejabberd.
+
 \begin{enumerate}
-\item Install Erlang emulator (for example, into \verb|C:\Program Files\erl5.3|).
-\item Install Expat library into \verb|C:\Program Files\Expat-1.95.7|
+\item Install Erlang emulator (for example, into \verb|C:\sdk\erl5.5.5|).
+\item Install Expat library into \verb|C:\sdk\Expat-2.0.0|
   directory.
 
-  Copy file \verb|C:\Program Files\Expat-1.95.7\Libs\libexpat.dll|
+  Copy file \verb|C:\sdk\Expat-2.0.0\Libs\libexpat.dll|
   to your Windows system directory (for example, \verb|C:\WINNT| or
   \verb|C:\WINNT\System32|)
 \item Build and install the Iconv library into the directory
-  \verb|C:\Program Files\iconv-1.9.1|.
+  \verb|C:\sdk\GnuWin32|.
 
-  Copy file \verb|C:\Program Files\iconv-1.9.1\bin\iconv.dll| to your
+  Copy file \verb|C:\sdk\GnuWin32\bin\lib*.dll| to your
   Windows system directory (more installation instructions can be found in the
   file README.woe32 in the iconv distribution).
 
   Note: instead of copying libexpat.dll and iconv.dll to the Windows
   directory, you can add the directories
-  \verb|C:\Program Files\Expat-1.95.7\Libs| and
-  \verb|C:\Program Files\iconv-1.9.1\bin| to the \verb|PATH| environment
+  \verb|C:\sdk\Expat-2.0.0\Libs| and
+  \verb|C:\sdk\GnuWin32\bin| to the \verb|PATH| environment
   variable.
+\item Install OpenSSL in \verb|C:\sdk\OpenSSL| and add \verb|C:\sdk\OpenSSL\lib\VC| to your path or copy the binaries to your system directory.
+\item Install ZLib in \verb|C:\sdk\gnuWin32|. Copy 
+  \verb|C:\sdk\GnuWin32\bin\zlib1.dll| to your system directory. If you change your path it should already be set after  libiconv install. 
+\item Make sure the you can access Erlang binaries from your path. For example: \verb|set PATH=%PATH%;"C:\sdk\erl5.5.5\bin"|
+\item Depending on how you end up actually installing the library you might need to check and tweak the paths in the file configure.erl.
 \item While in the directory \verb|ejabberd\src| run:
 \begin{verbatim}
 configure.bat

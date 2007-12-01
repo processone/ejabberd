@@ -27,25 +27,25 @@ start() ->
 	true ->
 	    ExpatLib  = "EXPAT_LIB = $(EXPAT_DIR)\\StaticLibs\\libexpatMT.lib\n",
 	    ExpatFlag = "EXPAT_FLAG = -DXML_STATIC\n",
-	    IconvDir  = "ICONV_DIR = c:\\progra~1\\libiconv-1.9.1-static\n",
-	    IconvLib  = "ICONV_LIB = $(ICONV_DIR)\\lib\\iconv.lib\n",
-	    ZlibDir   = "ZLIB_DIR = c:\\progra~1\\zlib-1.2.3\n",
+	    IconvDir  = "ICONV_DIR = c:\\sdk\\GnuWin32\n",
+	    IconvLib  = "ICONV_LIB = $(ICONV_DIR)\\lib\\libiconv.lib\n",
+	    ZlibDir   = "ZLIB_DIR = c:\\sdk\\GnuWin32\n",
 	    ZlibLib   = "ZLIB_LIB = $(ZLIB_DIR)\\lib\\zlib.lib\n";
 	false ->
 	    ExpatLib  = "EXPAT_LIB = $(EXPAT_DIR)\\Libs\\libexpat.lib\n",
 	    ExpatFlag = "",
-	    IconvDir  = "ICONV_DIR = c:\\progra~1\\libiconv-1.9.1\n",
-	    IconvLib  = "ICONV_LIB = $(ICONV_DIR)\\lib\\iconv.lib\n",
-	    ZlibDir   = "ZLIB_DIR = c:\\progra~1\\zlib-1.2.3\n",
-	    ZlibLib   = "ZLIB_LIB = $(ZLIB_DIR)\\lib\\zlib1.lib\n"
+	    IconvDir  = "ICONV_DIR = c:\\sdk\\GnuWin32\n",
+	    IconvLib  = "ICONV_LIB = $(ICONV_DIR)\\lib\\libiconv.lib\n",
+	    ZlibDir   = "ZLIB_DIR = c:\\sdk\\GnuWin32\n",
+	    ZlibLib   = "ZLIB_LIB = $(ZLIB_DIR)\\lib\\zlib.lib\n"
     end,
 
     EVersion = "ERLANG_VERSION = " ++ erlang:system_info(version) ++ "\n",
     EIDirS   = "EI_DIR = " ++ code:lib_dir("erl_interface") ++ "\n",
     RootDirS = "ERLANG_DIR = " ++ code:root_dir() ++ "\n",
     Version  = "EJABBERD_VERSION = " ++ ?VERSION ++ "\n",
-    ExpatDir = "EXPAT_DIR = c:\\progra~1\\expat-1.95.7\n",
-    OpenSSLDir = "OPENSSL_DIR = c:\\progra~1\\OpenSSL\n",
+    ExpatDir = "EXPAT_DIR = c:\\sdk\\Expat-2.0.0\n",
+    OpenSSLDir = "OPENSSL_DIR = c:\\sdk\\OpenSSL\n",
     DBType = "DBTYPE = generic\n",    %% 'generic' or 'mssql'
 
     SSLDir    = "SSLDIR = " ++ code:lib_dir("ssl") ++ "\n",
