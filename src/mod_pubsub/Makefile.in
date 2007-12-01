@@ -15,11 +15,18 @@ OUTDIR = ..
 EFLAGS = -I .. -pz ..
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-  EFLAGS+=+debug_info
+EFLAGS+=+debug_info
 endif
 
 OBJS   = \
-	$(OUTDIR)/mod_pubsub.beam
+	$(OUTDIR)/gen_pubsub_node.beam \
+	$(OUTDIR)/gen_pubsub_nodetree.beam \
+	$(OUTDIR)/nodetree_default.beam \
+	$(OUTDIR)/nodetree_virtual.beam \
+	$(OUTDIR)/mod_pubsub.beam \
+	$(OUTDIR)/mod_pubsub_old.beam \
+	$(OUTDIR)/node_default.beam \
+	$(OUTDIR)/node_pep.beam 
 
 all:    $(OBJS)
 

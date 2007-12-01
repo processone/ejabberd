@@ -32,6 +32,7 @@
 	 jid_replace_resource/2,
 	 get_iq_namespace/1,
 	 iq_query_info/1,
+	 iq_query_or_response_info/1,
 	 is_iq_request_type/1,
 	 iq_to_xml/1,
 	 parse_xdata_submit/1,
@@ -331,39 +332,66 @@ get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == "iq" ->
 get_iq_namespace(_) ->
     "".
 
-iq_query_info({xmlelement, Name, Attrs, Els}) when Name == "iq" ->
+iq_query_info(El) ->
+    iq_info_internal(El, request).
+
+iq_query_or_response_info(El) ->
+    iq_info_internal(El, any).
+
+iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
+    %% Filter is either request or any.  If it is request, any replies
+    %% are converted to the atom reply.
     ID = xml:get_attr_s("id", Attrs),
     Type = xml:get_attr_s("type", Attrs),
     Lang = xml:get_attr_s("xml:lang", Attrs),
-    Type1 = case Type of
-		"set" -> set;
-		"get" -> get;
-		"result" -> reply;
-		"error" -> reply;
-		_ -> invalid
+    {Type1, Class} = case Type of
+			 "set" -> {set, request};
+			 "get" -> {get, request};
+			 "result" -> {result, reply};
+			 "error" -> {error, reply};
+			 _ -> {invalid, invalid}
 	    end,
     if
-	(Type1 /= invalid) and (Type1 /= reply) ->
-	    case xml:remove_cdata(Els) of
-		[{xmlelement, Name2, Attrs2, Els2}] ->
-		    XMLNS = xml:get_attr_s("xmlns", Attrs2),
-		    if
-			XMLNS /= "" ->
+	Type1 == invalid ->
+	    invalid;
+	Class == request; Filter == any ->
+	    %% The iq record is a bit strange.  The sub_el field is an
+	    %% XML tuple for requests, but a list of XML tuples for
+	    %% responses.
+	    FilteredEls = xml:remove_cdata(Els),
+	    {XMLNS, SubEl} =
+		case {Class, FilteredEls} of
+		    {request, [{xmlelement, _Name2, Attrs2, _Els2}]} ->
+			{xml:get_attr_s("xmlns", Attrs2),
+			 hd(FilteredEls)};
+		    {reply, _} ->
+			%% Find the namespace of the first non-error
+			%% element, if there is one.
+			NonErrorEls = [El || 
+					  {xmlelement, SubName, _, _} = El
+					      <- FilteredEls, 
+					  SubName /= "error"],
+			{case NonErrorEls of
+			     [NonErrorEl] -> xml:get_tag_attr_s("xmlns", NonErrorEl);
+			     _ -> invalid
+			 end,
+			 FilteredEls};
+		    _ ->
+			{invalid, invalid}
+		end,
+	    if XMLNS == "", Class == request ->
+		    invalid;
+	       true ->
 			    #iq{id = ID,
 				type = Type1,
 				xmlns = XMLNS,
 				lang = Lang,
-				sub_el = {xmlelement, Name2, Attrs2, Els2}};
-			true ->
-			    invalid
+			sub_el = SubEl}
 		    end;
-		_ ->
-		    invalid
-	    end;
-	true ->
-	    Type1
+	Class == reply, Filter /= any ->
+	    reply
     end;
-iq_query_info(_) ->
+iq_info_internal(_, _) ->
     not_iq.
 
 is_iq_request_type(set) -> true;

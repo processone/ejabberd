@@ -1,0 +1,166 @@
+%%% ====================================================================
+%%% This software is copyright 2007, Process-one.
+%%%
+%%% @copyright 2007 Process-one
+%%% @author Christophe romain <christophe.romain@process-one.net>
+%%%   [http://www.process-one.net/]
+%%% @version {@vsn}, {@date} {@time}
+%%% @end
+%%% ====================================================================
+
+-module(node_dispatch).
+-author('christophe.romain@process-one.net').
+
+-include("pubsub.hrl").
+-include("jlib.hrl").
+
+-behaviour(gen_pubsub_node).
+
+%%% @doc <p>The <strong>{@module}</strong> module is a PubSub plugin whose
+%%% goal is to republished each published item to all its children.</p>
+%%% <p>Users cannot subscribe to this node, but are supposed to subscribe to
+%%% its children.</p>
+%%% This module can not work with virtual nodetree
+
+%% API definition
+-export([init/3, terminate/2,
+	 options/0, features/0,
+	 create_node_permission/6,
+	 create_node/3,
+	 delete_node/2,
+	 purge_node/3,
+	 subscribe_node/8,
+	 unsubscribe_node/5,
+	 publish_item/7,
+	 delete_item/4,
+	 remove_extra_items/4,
+	 get_entity_affiliations/2,
+	 get_node_affiliations/2,
+	 get_affiliation/3,
+	 set_affiliation/4,
+	 get_entity_subscriptions/2,
+	 get_node_subscriptions/2,
+	 get_subscription/3,
+	 set_subscription/4,
+	 get_states/2,
+	 get_state/3,
+	 set_state/1,
+	 get_items/2,
+	 get_item/3,
+	 set_item/1
+	]).
+
+
+init(Host, ServerHost, Opts) ->
+    node_default:init(Host, ServerHost, Opts).
+
+terminate(Host, ServerHost) ->
+    node_default:terminate(Host, ServerHost).
+
+options() ->
+    [{node_type, dispatch},
+     {deliver_payloads, true},
+     {notify_config, false},
+     {notify_delete, false},
+     {notify_retract, true},
+     {persist_items, true},
+     {max_items, ?MAXITEMS div 2},
+     {subscribe, true},
+     {access_model, open},
+     {access_roster_groups, []},
+     {publish_model, publishers},
+     {max_payload_size, ?MAX_PAYLOAD_SIZE},
+     {send_last_published_item, never},
+     {deliver_notifications, true},
+     {presence_based_delivery, false}].
+
+features() ->
+    ["create-nodes",
+     "delete-nodes",
+     "instant-nodes",
+     "item-ids",
+     "outcast-affiliation",
+     "persistent-items",
+     "publish",
+     %%"purge-nodes",
+     %%"retract-items",
+     %%"retrieve-affiliations",
+     "retrieve-items",
+     %%"retrieve-subscriptions",
+     %%"subscribe",
+     %%"subscription-notifications",
+    ].
+
+create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
+    node_default:create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access).
+
+create_node(Host, Node, Owner) ->
+    node_default:create_node(Host, Node, Owner).
+
+delete_node(Host, Removed) ->
+    node_default:delete_node(Host, Removed).
+
+subscribe_node(_Host, _Node, _Sender, _Subscriber, _AccessModel,
+	       _SendLast, _PresenceSubscription, _RosterGroup) ->
+    {error, ?ERR_FORBIDDEN}.
+
+unsubscribe_node(_Host, _Node, _Sender, _Subscriber, _SubID) ->
+    {error, ?ERR_FORBIDDEN}.
+
+publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload) ->
+    lists:foreach(fun(SubNode) ->
+			  node_default:publish_item(
+			    Host, SubNode, Publisher, Model,
+			    MaxItems, ItemId, Payload)
+		  end, nodetree_default:get_subnodes(Host, Node)).
+
+remove_extra_items(_Host, _Node, _MaxItems, ItemIds) ->
+    {result, {ItemsIds, []}}.
+
+delete_item(_Host, _Node, _JID, _ItemId) ->
+    {error, ?ERR_ITEM_NOT_FOUND}.
+
+purge_node(_Host, _Node, _Owner) ->
+    {error, ?ERR_FORBIDDEN}.
+
+get_entity_affiliations(_Host, _Owner) ->
+    {result, []}.
+
+get_node_affiliations(_Host, _Node) ->
+    {result, []}.
+
+get_affiliation(_Host, _Node, _Owner) ->
+    {result, []}.
+
+set_affiliation(Host, Node, Owner, Affiliation) ->
+    node_default:set_affiliation(Host, Node, Owner, Affiliation).
+
+get_entity_subscriptions(_Host, _Owner) ->
+    {result, []}.
+
+get_node_subscriptions(_Host, _Node) ->
+    {result, []}.
+
+get_subscription(_Host, _Node, _Owner) ->
+    {result, []}.
+
+set_subscription(Host, Node, Owner, Subscription) ->
+    node_default:set_subscription(Host, Node, Owner, Subscription).
+
+get_states(Host, Node) ->
+    node_default:get_states(Host, Node).
+
+get_state(Host, Node, JID) ->
+    node_default:get_state(Host, Node, JID).
+
+set_state(State) ->
+    node_default:set_state(State).
+
+get_items(Host, Node) ->
+    node_default:get_items(Host, Node).
+
+get_item(Host, Node, ItemId) ->
+    node_default:get_items(Host, Node, ItemId).
+
+set_item(Item) ->
+    node_default:set_item(Item).

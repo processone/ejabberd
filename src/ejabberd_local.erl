@@ -18,6 +18,7 @@
 -export([route/3,
 	 register_iq_handler/4,
 	 register_iq_handler/5,
+	 register_iq_response_handler/4,
 	 unregister_iq_handler/2,
 	 refresh_iq_handlers/0,
 	 bounce_resource_packet/3
@@ -31,6 +32,8 @@
 -include("jlib.hrl").
 
 -record(state, {}).
+
+-record(iq_response, {id, module, function}).
 
 -define(IQTABLE, local_iqtable).
 
@@ -68,11 +71,36 @@ process_iq(From, To, Packet) ->
 		    ejabberd_router:route(To, From, Err)
 	    end;
 	reply ->
-	    ok;
+	    process_iq_reply(From, To, Packet);
 	_ ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
 	    ejabberd_router:route(To, From, Err),
 	    ok
+    end.
+
+process_iq_reply(From, To, Packet) ->
+    IQ = jlib:iq_query_or_response_info(Packet),
+    #iq{id = ID} = IQ,
+    case catch mnesia:dirty_read(iq_response, ID) of
+	[] ->
+	    ok;
+	_ ->
+	    F = fun() ->
+			case mnesia:read({iq_response, ID}) of
+			    [] ->
+				nothing;
+			    [#iq_response{module = Module,
+					  function = Function}] ->
+				mnesia:delete({iq_response, ID}),
+				{Module, Function}
+			end
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, {Module, Function}} ->
+		    Module:Function(From, To, IQ);
+		_ ->
+		    ok
+	    end
     end.
 
 route(From, To, Packet) ->
@@ -83,6 +111,9 @@ route(From, To, Packet) ->
 	_ ->
 	    ok
     end.
+
+register_iq_response_handler(Host, ID, Module, Fun) ->
+    ejabberd_local ! {register_iq_response_handler, Host, ID, Module, Fun}.
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun}.
@@ -120,6 +151,9 @@ init([]) ->
 				 ?MODULE, bounce_resource_packet, 100)
       end, ?MYHOSTS),
     catch ets:new(?IQTABLE, [named_table, public]),
+    mnesia:create_table(iq_response,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, iq_response)}]),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -158,6 +192,9 @@ handle_info({route, From, To, Packet}, State) ->
 	_ ->
 	    ok
     end,
+    {noreply, State};
+handle_info({register_iq_response_handler, _Host, ID, Module, Function}, State) ->
+    mnesia:dirty_write(#iq_response{id = ID, module = Module, function = Function}),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
     ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),

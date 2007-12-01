@@ -1,32 +1,44 @@
+2007-12-01  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_caps.erl: CAPS support (thanks to Magnus Henoch)
+	* src/ejabberd_local.erl: Support for IQ responses
+	* src/jlib.erl: Added iq_query_or_response_info/1 function
+	* src/jlib.hrl: Added NS_PUBSUB_ERRORS and NS_CAPS
+
+	* src/mod_pubsub/Makefile.in: New pubsub+pep implementation
+	(thanks to Christophe Romain and Magnus Henoch)
+	* src/ejabberd_sm.erl: Added get_session_pid/3 function
+	* src/ejabberd_c2s.erl: Added get_subscribed_and_online/1 function
+
 2007-11-30  Mickael Remond  <mremond@process-one.net>
 
-	* src/odbc_queries.erl: Added a default define value so that we can
-	recompile the file manually with a simple erlc command.
+	* src/odbc_queries.erl: Added a default define value so that we
+	can recompile the file manually with a simple erlc command.
 
 2007-11-29  Badlop  <badlop@process-one.net>
 
-	* src/mod_vcard.erl: Add type of x:data field to search
-	results (thanks to Robin Redeker) (EJAB-327)
-	* src/mod_vcard_ldap.erl: 
-	* src/mod_vcard_odbc.erl: 
+	* src/mod_vcard.erl: Add type of x:data field to search results
+	(thanks to Robin Redeker) (EJAB-327)
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/mod_vcard_odbc.erl: Likewise
 
 	* src/aclocal.m4: Fix autoconf caching for SSL libraries (thanks
 	to Michael Shields) (EJAB-439)
 
 	* src/configure.ac: Don't hardcode gcc and gcc options in
 	Makefiles (thanks to Etan Reisner) (EJAB-436)
-	* src/Makefile.in: 
-	* src/ejabberd_zlib/Makefile.in: 
-	* src/eldap/Makefile.in: 
-	* src/mod_irc/Makefile.in: 
-	* src/mod_muc/Makefile.in: 
-	* src/mod_proxy65/Makefile.in: 
-	* src/mod_pubsub/Makefile.in: 
-	* src/odbc/Makefile.in: 
-	* src/pam/Makefile.in: 
-	* src/stringprep/Makefile.in: 
-	* src/tls/Makefile.in: 
-	* src/web/Makefile.in: 
+	* src/Makefile.in: Likewise
+	* src/ejabberd_zlib/Makefile.in: Likewise
+	* src/eldap/Makefile.in: Likewise
+	* src/mod_irc/Makefile.in: Likewise
+	* src/mod_muc/Makefile.in: Likewise
+	* src/mod_proxy65/Makefile.in: Likewise
+	* src/mod_pubsub/Makefile.in: Likewise
+	* src/odbc/Makefile.in: Likewise
+	* src/pam/Makefile.in: Likewise
+	* src/stringprep/Makefile.in: Likewise
+	* src/tls/Makefile.in: Likewise
+	* src/web/Makefile.in: Likewise
 
 	* src/mod_muc/mod_muc_room.erl: Hide the option 'Make room
 	moderated' because it isn't implemented, and set the default value

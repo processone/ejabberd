@@ -28,6 +28,7 @@
 	 register_iq_handler/5,
 	 unregister_iq_handler/2,
 	 ctl_process/2,
+	 get_session_pid/3,
 	 get_user_ip/3
 	]).
 
@@ -74,7 +75,7 @@ open_session(SID, User, Server, Resource, IP) ->
 close_session(SID, User, Server, Resource) ->
     F = fun() ->
 		mnesia:delete({session, SID})
-        end,
+	end,
     mnesia:sync_dirty(F),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
@@ -139,6 +140,15 @@ close_session_unset_presence(SID, User, Server, Resource, Status) ->
     ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
 		       [User, Server, Resource, Status]).
 
+get_session_pid(User, Server, Resource) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    LResource = jlib:resourceprep(Resource),
+    USR = {LUser, LServer, LResource},
+    case catch mnesia:dirty_index_read(session, USR, #session.usr) of
+	[#session{sid = {_, Pid}}] -> Pid;
+	_ -> none
+    end.
 
 dirty_get_sessions_list() ->
     mnesia:dirty_select(
@@ -315,7 +325,7 @@ clean_table_from_bad_node(Node) ->
 		lists:foreach(fun(E) ->
 				      mnesia:delete({session, E#session.sid})
 			      end, Es)
-        end,
+	end,
     mnesia:sync_dirty(F).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -368,7 +378,6 @@ do_route(From, To, Packet) ->
 				{true, false}
 			end,
 		    if Pass ->
-			    LFrom = jlib:jid_tolower(From),
 			    PResources = get_user_present_resources(
 					   LUser, LServer),
 			    lists:foreach(
@@ -377,7 +386,9 @@ do_route(From, To, Packet) ->
 					From,
 					jlib:jid_replace_resource(To, R),
 					Packet)
-			      end, PResources);
+			      end, PResources),
+			    ejabberd_hooks:run(incoming_presence_hook, LServer,
+					       [From, To, Packet]);
 		       true ->
 			    ok
 		    end;
@@ -649,4 +660,3 @@ update_tables() ->
 	false ->
 	    ok
     end.
-
