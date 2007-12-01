@@ -9,8 +9,7 @@ release:
 	@echo "* Do not forget to update the features in introduction.tex (including \new{} and \improved{} tags)."
 	@read -p "press any key to continue"
 	@echo "% ejabberd version (automatically generated)." > version.tex
-	@echo "\newcommand{\version}{"`cat ../src/ejabberd.hrl | grep VERSION |\
-	sed s/-define\(VERSION,\ \"//g | sed s/\"\).//g`"}" >> version.tex
+	@echo "\\\newcommand{\\\version}{"`cat ../src/ejabberd.hrl | grep VERSION | sed s/-define\(VERSION,\ \"//g | sed s/\"\).//g`"}" >> version.tex
 
 html:	guide.html dev.html features.html
 
@@ -31,7 +30,7 @@ clean:
 
 guide.html:	guide.tex
 		hevea -fix -noiso -pedantic guide.tex
-		
+
 dev.html:	dev.tex
 		hevea -fix -noiso -pedantic dev.tex
 

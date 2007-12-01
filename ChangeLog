@@ -1,6 +1,10 @@
 2007-12-01  Mickael Remond  <mremond@process-one.net>
 
-	* doc/guide.tex: Updated Windows compilation instructions.
+	* doc/Makefile: echo seems to interpret \n and \v under MacOSX
+	Leopard. I fixed the problem but let me know if it breaks build
+	chain in other contexts.
+
+	* Doc/guide.tex: Updated Windows compilation instructions.
 	* src/configure.erl: Likewise.
 
 	* doc/ejabberd.hrl: Preparing ejabberd 2.0.0 beta release.
