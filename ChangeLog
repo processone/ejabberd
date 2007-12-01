@@ -1,5 +1,8 @@
 2007-12-01  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/odbc/odbc_queries.erl: Reverted the previous patch because
+	it produces "redefining macro 'generic'" compilation error
+
 	* src/mod_caps.erl: CAPS support (thanks to Magnus Henoch)
 	* src/ejabberd_local.erl: Support for IQ responses
 	* src/jlib.erl: Added iq_query_or_response_info/1 function
