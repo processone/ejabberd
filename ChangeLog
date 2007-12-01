@@ -1,5 +1,11 @@
 2007-12-01  Mickael Remond  <mremond@process-one.net>
 
+	* doc/guide.tex: Updated Windows compilation instructions.
+	* src/configure.erl: Likewise.
+
+	* doc/ejabberd.hrl: Preparing ejabberd 2.0.0 beta release.
+	* doc/version.tex: Likewise.
+	
 	* src/tls/Makefile.win32: Updated for latest Win32 OpenSSL library.
 
 	* src/odbc_queries.erl: Added a default define value so that we
