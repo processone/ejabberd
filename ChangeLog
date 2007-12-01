@@ -1,3 +1,9 @@
+2007-12-01  Mickael Remond  <mremond@process-one.net>
+
+	* src/odbc_queries.erl: Added a default define value so that we
+	can recompile the file manually with a simple erlc command (with the
+        default generic value).
+
 2007-12-01  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_pubsub/Makefile.in: Removed mod_pubsub_old mentioning

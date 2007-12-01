@@ -44,9 +44,10 @@
 %% We have only two compile time options for db queries:
 %-define(generic, true).
 %-define(mssql, true).
-%-ifndef(mssql).
-%-define(generic, true).
-%-endif.
+-ifndef(mssql).
+-undef(generic).
+-define(generic, true).
+-endif.
 
 %% -----------------
 %% Generic queries
