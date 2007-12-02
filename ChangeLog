@@ -1,3 +1,8 @@
+2007-12-02  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in: New options make uninstall and
+	uninstall-all (EJAB-293)
+
 2007-12-01  Mickael Remond  <mremond@process-one.net>
 
 	* doc/Makefile: echo seems to interpret \n and \v under MacOSX

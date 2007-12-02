@@ -107,6 +107,20 @@ install: all
 	install -m 755 ejabberdctl.example $(SBINDIR)/ejabberdctl
 	install -d $(LOGDIR)
 
+uninstall: uninstall-binary
+
+uninstall-binary:
+	rm -rf $(BEAMDIR)
+	rm -rf $(SODIR)
+	rm -rf $(MSGSDIR)
+	rm -rf $(PRIVDIR)
+	rm -rf $(SBINDIR)/ejabberdctl
+
+uninstall-all: uninstall-binary
+	rm -rf $(ETCDIR)
+	rm -rf $(LOGDIR)
+	rm -rf $(EJABBERDDIR)
+
 clean: clean-recursive clean-local
 
 clean-local:
