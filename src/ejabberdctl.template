@@ -43,7 +43,7 @@ fi
 # Compatibility in ZSH
 #setopt shwordsplit 2>/dev/null
 
-ERLANG_OPTS="$POLL $PROCESSES $ERL_MAX_ETS_TABLES"
+ERLANG_OPTS="$POLL $SMP $PROCESSES $ERL_MAX_ETS_TABLES"
 
 start ()
 {

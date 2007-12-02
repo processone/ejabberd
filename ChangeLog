@@ -1,5 +1,9 @@
 2007-12-02  Badlop  <badlop@process-one.net>
 
+	* src/ejabberdctl.cfg.example: Bugfix in kernel poll. Added SMP
+	option. Reorganization of options
+	* src/ejabberdctl.template: Added SMP option
+
 	* src/Makefile.in: New options make uninstall and
 	uninstall-all (EJAB-293)
 
