@@ -85,6 +85,10 @@
 		room_shaper,
 		room_queue = queue:new()}).
 
+-record(muc_online_users, {us,
+			   room,
+			   host}).
+
 
 %-define(DBGFSM, true).
 
@@ -741,6 +745,10 @@ handle_info(_Info, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
+    ?DICT:fold(
+       fun(J, _, _) ->
+	       tab_remove_online_user(J, StateData)
+       end, [], StateData#state.users),
     mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
 			   StateData#state.server_host),
     ok.
@@ -1184,6 +1192,7 @@ add_online_user(JID, Nick, Role, StateData) ->
 			      role = Role},
 			StateData#state.users),
     add_to_log(join, Nick, StateData),
+    tab_add_online_user(JID, StateData),
     StateData#state{users = Users}.
 
 remove_online_user(JID, StateData) ->
@@ -1194,6 +1203,7 @@ remove_online_user(JID, StateData, Reason) ->
     {ok, #user{nick = Nick}} =
     	?DICT:find(LJID, StateData#state.users),
     add_to_log(leave, {Nick, Reason}, StateData),
+    tab_remove_online_user(JID, StateData),
     Users = ?DICT:erase(LJID, StateData#state.users),
     StateData#state{users = Users}.
 
@@ -1273,11 +1283,16 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		       StateData#state.users),
     Affiliation = get_affiliation(From, StateData),
     ServiceAffiliation = get_service_affiliation(From, StateData),
-    case {ServiceAffiliation == owner orelse
-	  MaxUsers == none orelse
-	  ((Affiliation == admin orelse Affiliation == owner) andalso
-	   NUsers < MaxAdminUsers) orelse
-	  NUsers < MaxUsers,
+    NConferences = tab_count_user(From),
+    MaxConferences = gen_mod:get_module_opt(
+		       StateData#state.server_host,
+		       mod_muc, max_user_conferences, 10),
+    case {(ServiceAffiliation == owner orelse
+	   MaxUsers == none orelse
+	   ((Affiliation == admin orelse Affiliation == owner) andalso
+	    NUsers < MaxAdminUsers) orelse
+	   NUsers < MaxUsers) andalso
+	  NConferences < MaxConferences,
 	  is_nick_exists(Nick, StateData),
 	  mod_muc:can_use_nick(StateData#state.host, From, Nick),
 	  get_default_role(Affiliation, StateData)} of
@@ -2316,6 +2331,7 @@ send_kickban_presence(JID, Reason, Code, StateData) ->
 			  {ok, #user{nick = Nick}} =
 			      ?DICT:find(J, StateData#state.users),
 			  add_to_log(kickban, {Nick, Reason, Code}, StateData),
+			  tab_remove_online_user(J, StateData),
 			  send_kickban_presence1(J, Reason, Code, StateData)
 		  end, LJIDs).
 
@@ -2999,4 +3015,38 @@ add_to_log(Type, Data, StateData) ->
 	      StateData#state.jid, make_opts(StateData));
 	false ->
 	    ok
+    end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Users number checking
+
+tab_add_online_user(JID, StateData) ->
+    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    US = {LUser, LServer},
+    Room = StateData#state.room,
+    Host = StateData#state.host,
+    catch ets:insert(
+	    muc_online_users,
+	    #muc_online_users{us = US, room = Room, host = Host}).
+
+
+tab_remove_online_user(JID, StateData) ->
+    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    US = {LUser, LServer},
+    Room = StateData#state.room,
+    Host = StateData#state.host,
+    catch ets:delete_object(
+	    muc_online_users,
+	    #muc_online_users{us = US, room = Room, host = Host}).
+
+tab_count_user(JID) ->
+    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    US = {LUser, LServer},
+    case catch ets:select(
+		 muc_online_users,
+		 [{#muc_online_users{us = US, _ = '_'}, [], [[]]}]) of
+	Res when is_list(Res) ->
+	    length(Res);
+	_ ->
+	    0
     end.
