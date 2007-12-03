@@ -1,5 +1,12 @@
-2007-12-02  Badlop  <badlop@process-one.net>
+2007-12-03  Mickael Remond  <mremond@process-one.net>
 
+	* src/mod_muc.erl: Added option to limit the number of room a user is
+	allowed to connect to (EJAB-445).
+	* src/mod_muc_room.erl: Likewise.
+	* doc/guide.tex: Likewise.:ChangeLog
+
+2007-12-02  Badlop  <badlop@process-one.net>
+	
 	* src/ejabberdctl.cfg.example: Bugfix in kernel poll. Added SMP
 	option. Reorganization of options
 	* src/ejabberdctl.template: Added SMP option

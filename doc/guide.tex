@@ -2220,13 +2220,15 @@ Options:
   administer his room). By sending a message to the service JID,
   administrators can send service messages that will be displayed in every
   active room.
-\titem{history\_size} \ind{options!history\_size}A small history of the
-  current discussion is sent to users when they enter the room. With this option
-  you can define the number of history messages to keep and send to users
-  joining the room. The value is an integer. Setting the value to \term{0}
-  disables the history feature and, as a result, nothing is kept in memory. The
-  default value is \term{20}. This value is global and thus affects all rooms on
-  the server.
+
+  \titem{history\_size} \ind{options!history\_size}A small history of
+  the current discussion is sent to users when they enter the
+  room. With this option you can define the number of history messages
+  to keep and send to users joining the room. The value is an
+  integer. Setting the value to \term{0} disables the history feature
+  and, as a result, nothing is kept in memory. The default value is
+  \term{20}. This value is global and thus affects all rooms on the
+  server.
 
   \titem{max\_users} \ind{options!max\_users} This option defines at
   the server level, the maximum number of users allowed per MUC
@@ -2239,41 +2241,51 @@ Options:
   number of MUC admins or owners to allow to enter the room even if
   the maximum number of allowed users is reached. The default limits
   is 5. In most cases this default value is the best setting.
+
+  \titem{max\_user\_conferences}
+  \ind{options!max\_user\_conferences} This option define the maximum
+  number of chat room any given user will be able to join. The default
+  is 10. This option is used to prevent possible abuses. Note that
+  this is a soft limits: Some users can sometime join more conferences
+  in cluster configurations.
  
-\titem{min\_message\_interval} \ind{options!min\_message\_interval}
-This option defines the minimum interval between two messages send by
-a user in seconds. This option is global and valid for all chat
-rooms. A decimal value can be used. When this option is not defined,
-message rate is not limited. This feature can be used to protect a MUC
-service from users abuses and limit number of messages that will be
-broadcasted by the service. A good value for this minimum message
-interval is 0.4 second. If a user tries to send messages faster, an
-error is send back explaining that the message have been discarded and
-describing the reason why the message is not acceptable.
-\titem{min\_presence\_interval} \ind{options!min\_presence\_interval}
-This option defines the minimum of time between presence changes
-coming from a given user in seconds. This option is global and valid
-for all chat rooms. A decimal value can be used. When this option is
-not defined, no restriction is applied. This option can be used to
-protect a MUC service for users abuses, as fastly changing a user
-presence will result in possible large presence packet broadcast. If a
-user tries to change its presence more often than the specified
-interval, the presence is cached by ejabberd and only the last
-presence is broadcasted to all users in the room after expiration of
-the interval delay. Intermediate presence packets are silently
-discarded. A good value for this option is 4 seconds.
-\titem{default\_room\_opts} \ind{options!default\_room\_opts}This option allow
-  to define the desired default room options.
-  Obviously, the room creator can modify the room options at any time.
-  The available room options are:
-  \option{allow\_change\_subj}, \option{allow\_private\_messages},
-  \option{allow\_query\_users}, \option{allow\_user\_invites},
-  \option{anonymous}, \option{logging}, \option{members\_by\_default},
-  \option{members\_only}, \option{moderated}, \option{password},
-  \option{password\_protected}, \option{persistent},
-  \option{public}, \option{public\_list}, \option{title}.
-  All of them can be set to \option{true} or \option{false},
-  except \option{password} and \option{title} which are strings.
+  \titem{min\_message\_interval} \ind{options!min\_message\_interval}
+  This option defines the minimum interval between two messages send
+  by a user in seconds. This option is global and valid for all chat
+  rooms. A decimal value can be used. When this option is not defined,
+  message rate is not limited. This feature can be used to protect a
+  MUC service from users abuses and limit number of messages that will
+  be broadcasted by the service. A good value for this minimum message
+  interval is 0.4 second. If a user tries to send messages faster, an
+  error is send back explaining that the message have been discarded
+  and describing the reason why the message is not acceptable.
+  
+  \titem{min\_presence\_interval}
+  \ind{options!min\_presence\_interval} This option defines the
+  minimum of time between presence changes coming from a given user in
+  seconds. This option is global and valid for all chat rooms. A
+  decimal value can be used. When this option is not defined, no
+  restriction is applied. This option can be used to protect a MUC
+  service for users abuses, as fastly changing a user presence will
+  result in possible large presence packet broadcast. If a user tries
+  to change its presence more often than the specified interval, the
+  presence is cached by ejabberd and only the last presence is
+  broadcasted to all users in the room after expiration of the
+  interval delay. Intermediate presence packets are silently
+  discarded. A good value for this option is 4 seconds.
+
+  \titem{default\_room\_opts} \ind{options!default\_room\_opts}This
+  option allow to define the desired default room options.  Obviously,
+  the room creator can modify the room options at any time.  The
+  available room options are: \option{allow\_change\_subj},
+  \option{allow\_private\_messages}, \option{allow\_query\_users},
+  \option{allow\_user\_invites}, \option{anonymous}, \option{logging},
+  \option{members\_by\_default}, \option{members\_only},
+  \option{moderated}, \option{password}, \option{password\_protected},
+  \option{persistent}, \option{public}, \option{public\_list},
+  \option{title}.  All of them can be set to \option{true} or
+  \option{false}, except \option{password} and \option{title} which
+  are strings.
 \end{description}
 
 Examples:

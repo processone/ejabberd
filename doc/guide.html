@@ -2481,14 +2481,16 @@ Options:
  value is <TT>none</TT>, which means that only the room creator can
  administer his room). By sending a message to the service JID,
  administrators can send service messages that will be displayed in every
- active room.
-<DT CLASS="dt-description"><B><TT>history_size</TT></B><DD CLASS="dd-description"> A small history of the
- current discussion is sent to users when they enter the room. With this option
- you can define the number of history messages to keep and send to users
- joining the room. The value is an integer. Setting the value to <TT>0</TT>
- disables the history feature and, as a result, nothing is kept in memory. The
- default value is <TT>20</TT>. This value is global and thus affects all rooms on
- the server.<BR>
+ active room.<BR>
+<BR>
+<DT CLASS="dt-description"><B><TT>history_size</TT></B><DD CLASS="dd-description"> A small history of
+ the current discussion is sent to users when they enter the
+ room. With this option you can define the number of history messages
+ to keep and send to users joining the room. The value is an
+ integer. Setting the value to <TT>0</TT> disables the history feature
+ and, as a result, nothing is kept in memory. The default value is
+ <TT>20</TT>. This value is global and thus affects all rooms on the
+ server.<BR>
 <BR>
 <DT CLASS="dt-description"><B><TT>max_users</TT></B><DD CLASS="dd-description">  This option defines at
  the server level, the maximum number of users allowed per MUC
@@ -2502,40 +2504,50 @@ Options:
  the maximum number of allowed users is reached. The default limits
  is 5. In most cases this default value is the best setting.<BR>
 <BR>
+<DT CLASS="dt-description"><B><TT>max_user_conferences</TT></B><DD CLASS="dd-description">
+  This option define the maximum
+ number of chat room any given user will be able to join. The default
+ is 10. This option is used to prevent possible abuses. Note that
+ this is a soft limits: Some users can sometime join more conferences
+ in cluster configurations.<BR>
+<BR>
 <DT CLASS="dt-description"><B><TT>min_message_interval</TT></B><DD CLASS="dd-description"> 
-This option defines the minimum interval between two messages send by
-a user in seconds. This option is global and valid for all chat
-rooms. A decimal value can be used. When this option is not defined,
-message rate is not limited. This feature can be used to protect a MUC
-service from users abuses and limit number of messages that will be
-broadcasted by the service. A good value for this minimum message
-interval is 0.4 second. If a user tries to send messages faster, an
-error is send back explaining that the message have been discarded and
-describing the reason why the message is not acceptable.
-<DT CLASS="dt-description"><B><TT>min_presence_interval</TT></B><DD CLASS="dd-description"> 
-This option defines the minimum of time between presence changes
-coming from a given user in seconds. This option is global and valid
-for all chat rooms. A decimal value can be used. When this option is
-not defined, no restriction is applied. This option can be used to
-protect a MUC service for users abuses, as fastly changing a user
-presence will result in possible large presence packet broadcast. If a
-user tries to change its presence more often than the specified
-interval, the presence is cached by ejabberd and only the last
-presence is broadcasted to all users in the room after expiration of
-the interval delay. Intermediate presence packets are silently
-discarded. A good value for this option is 4 seconds.
-<DT CLASS="dt-description"><B><TT>default_room_opts</TT></B><DD CLASS="dd-description"> This option allow
- to define the desired default room options.
- Obviously, the room creator can modify the room options at any time.
- The available room options are:
- <TT>allow_change_subj</TT>, <TT>allow_private_messages</TT>,
- <TT>allow_query_users</TT>, <TT>allow_user_invites</TT>,
- <TT>anonymous</TT>, <TT>logging</TT>, <TT>members_by_default</TT>,
- <TT>members_only</TT>, <TT>moderated</TT>, <TT>password</TT>,
- <TT>password_protected</TT>, <TT>persistent</TT>,
- <TT>public</TT>, <TT>public_list</TT>, <TT>title</TT>.
- All of them can be set to <TT>true</TT> or <TT>false</TT>,
- except <TT>password</TT> and <TT>title</TT> which are strings.
+ This option defines the minimum interval between two messages send
+ by a user in seconds. This option is global and valid for all chat
+ rooms. A decimal value can be used. When this option is not defined,
+ message rate is not limited. This feature can be used to protect a
+ MUC service from users abuses and limit number of messages that will
+ be broadcasted by the service. A good value for this minimum message
+ interval is 0.4 second. If a user tries to send messages faster, an
+ error is send back explaining that the message have been discarded
+ and describing the reason why the message is not acceptable.<BR>
+<BR>
+<DT CLASS="dt-description"><B><TT>min_presence_interval</TT></B><DD CLASS="dd-description">
+  This option defines the
+ minimum of time between presence changes coming from a given user in
+ seconds. This option is global and valid for all chat rooms. A
+ decimal value can be used. When this option is not defined, no
+ restriction is applied. This option can be used to protect a MUC
+ service for users abuses, as fastly changing a user presence will
+ result in possible large presence packet broadcast. If a user tries
+ to change its presence more often than the specified interval, the
+ presence is cached by ejabberd and only the last presence is
+ broadcasted to all users in the room after expiration of the
+ interval delay. Intermediate presence packets are silently
+ discarded. A good value for this option is 4 seconds.<BR>
+<BR>
+<DT CLASS="dt-description"><B><TT>default_room_opts</TT></B><DD CLASS="dd-description"> This
+ option allow to define the desired default room options. Obviously,
+ the room creator can modify the room options at any time. The
+ available room options are: <TT>allow_change_subj</TT>,
+ <TT>allow_private_messages</TT>, <TT>allow_query_users</TT>,
+ <TT>allow_user_invites</TT>, <TT>anonymous</TT>, <TT>logging</TT>,
+ <TT>members_by_default</TT>, <TT>members_only</TT>,
+ <TT>moderated</TT>, <TT>password</TT>, <TT>password_protected</TT>,
+ <TT>persistent</TT>, <TT>public</TT>, <TT>public_list</TT>,
+ <TT>title</TT>. All of them can be set to <TT>true</TT> or
+ <TT>false</TT>, except <TT>password</TT> and <TT>title</TT> which
+ are strings.
 </DL>
 Examples:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
