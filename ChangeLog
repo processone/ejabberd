@@ -3,6 +3,7 @@
 	* src/mod_muc.erl: Added option to limit the number of room a user is
 	allowed to connect to (EJAB-445).
 	* src/mod_muc_room.erl: Likewise.
+<<<<<<< HEAD:ChangeLog
 	* doc/guide.tex: Likewise.:ChangeLog
 
 2007-12-02  Badlop  <badlop@process-one.net>
@@ -13,6 +14,9 @@
 
 	* src/Makefile.in: New options make uninstall and
 	uninstall-all (EJAB-293)
+=======
+	* doc/guide.tex: Likewise.
+>>>>>>> * ChangeLog: Update.:ChangeLog
 
 2007-12-01  Mickael Remond  <mremond@process-one.net>
 
