@@ -49,7 +49,7 @@ process(Dir, File, Used) ->
 	    case Used of
 		unused ->
 		    ets:foldl(fun({Key, _}, _) ->
-				    io:format("~p~n", [Key])
+				      io:format("Unused string: ~p~n", [Key])
 			      end, ok, translations); 
 		_ ->
 		    ok
@@ -122,7 +122,10 @@ process_string(_Dir, File, Str, Used) ->
 		    io:format("~n% ~s~n", [File]),
 		    ets:insert(files, {File})
 	    end,
-	    io:format("{~p, \"\"}.~n", [Str]),
+	    case Str of
+		[] -> ok;
+		_ -> io:format("{~p, \"\"}.~n", [Str])
+	    end,
 	    ets:insert(translations, {Str, ""});
 	_ ->
 	    ok

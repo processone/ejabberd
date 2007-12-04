@@ -1,3 +1,8 @@
+2007-12-05  Badlop  <badlop@process-one.net>
+
+	* contrib/extract_translations/extract_translations.erl: Don't
+	report [] to be translated. Identify unusued strings.
+
 2007-12-04  Badlop  <badlop@process-one.net>
 
 	* .gitignore: Removed (EJAB-441)
