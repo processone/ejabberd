@@ -1,5 +1,8 @@
 2007-12-04  Badlop  <badlop@process-one.net>
 
+	* .gitignore: Removed (EJAB-441)
+	* src/.cvsignore: Likewise
+
 	* src/mod_pubsub/mod_pubsub.erl: Bugfix: don't report the Jabber
 	server as a pubsub service. Fixed URI.
 
