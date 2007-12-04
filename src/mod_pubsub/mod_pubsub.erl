@@ -294,15 +294,12 @@ update_database(Host) ->
 %%
 
 disco_local_identity(Acc, _From, _To, [], _Lang) ->
-    Acc ++ [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "service"}], []},
-	    {xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []} ];
+    Acc ++ [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []} ];
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 disco_sm_identity(Acc, _From, _To, [], _Lang) ->
-    Acc ++ [
-	    {xmlelement, "identity", [{"category", "pubsub"}, {"type", "service"}], []},
-	    {xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []} ];
+    Acc ++ [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []} ];
 disco_sm_identity(Acc, From, To, Node, _Lang) ->
     LOwner = jlib:jid_tolower(jlib:jid_remove_resource(To)),
     Acc ++ case node_disco_identity(LOwner, From, Node) of
