@@ -1,7 +1,7 @@
 2007-12-04  Badlop  <badlop@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Bugfix: don't report the Jabber
-	server as a pubsub service.
+	server as a pubsub service. Fixed URI.
 
 2007-12-03  Mickael Remond  <mremond@process-one.net>
 

@@ -854,7 +854,7 @@ iq_sm(From, To, #iq{type = Type, sub_el = SubEl, xmlns = XMLNS, lang = Lang} = I
 
 iq_get_vcard(Lang) ->
     [{xmlelement, "FN", [], [{xmlcdata, "ejabberd/mod_pubsub"}]},
-     {xmlelement, "URL", [], [{xmlcdata, "http://www.process-one.net/en/projects/ejabberd/"}]},
+     {xmlelement, "URL", [], [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
       [{xmlcdata,
 	translate:translate(Lang,
