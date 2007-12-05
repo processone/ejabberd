@@ -1,5 +1,7 @@
 2007-12-05  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.hrl: Set more proper version number
+
 	* contrib/extract_translations/extract_translations.erl: Don't
 	report [] to be translated. Identify unusued strings.
 
