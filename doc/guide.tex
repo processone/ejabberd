@@ -301,7 +301,7 @@ The files and directories created are, by default:
 					\titem{msgs} Translated strings (*.msgs)
 				\end{description}
 		\end{description}
-	\titem{/var/log/ejabberd/} Log files:
+	\titem{/var/log/ejabberd/} Log files (see section~\ref{logfiles}:
 		\begin{description}
 			\titem{ejabberd.log} Messages reported by ejabberd code
 			\titem{sasl.log} Messages reported by Erlang/OTP
@@ -313,41 +313,21 @@ The files and directories created are, by default:
 \label{start}
 \ind{install!start}
 
-You can use the ejabberdctl command line administration script to start and stop ejabberd.
-Please refer to the section~\ref{ejabberdctl} for details about ejabberdctl.
+You can use the \term{ejabberdctl} command line administration script to start and stop ejabberd.
+You must execute this program with root access. For example:
+\begin{verbatim}
+$ sudo ejabberdctl start
 
-The command line parameters used by the ejabberdctl administration script 
-when starting the Erlang/OTP virtual machine are:
-\begin{description}
-  \titem{-pa /var/lib/ejabberd/ebin} 
-	Specify the directory where Erlang binary files (*.beam) are located.
-  \titem{-sname ejabberd} 
-	The Erlang node will be identified using only the first part
-	of the host name, i.\,e. other Erlang nodes outside this domain cannot contact
-	this node. This is the preferable option in most cases.
-  \titem{-name ejabberd} 
-	The Erlang node will be fully identified.
-    This is only useful if you plan to setup an ejabberd cluster with nodes in different networks.
-  \titem{-s ejabberd} 
-	This paramaters tells the Erlang machine to start the ejabberd application
-  \titem{-mnesia dir "/var/lib/ejabberd/spool"}
-	Specify the Mnesia database directory.
-  \titem{-ejabberd config "/etc/ejabberd/ejabberd.cfg"} 
-	Specify the ejabberd configuration file.
-  \titem{-ejabberd log\_path "/var/log/ejabberd/ejabberd.log"} 
-	Specify the directory for the ejabberd.log file.
-  \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/sasl.log"\}}
-	Specify the directory for the sasl.log file.
-  \titem{-env ERL\_MAX\_PORTS=32000}
-	Allow up to 32000 connections. The default limit is just 1024.
-	With this value, \ejabberd{} will use more memory (approximately 6 MB more).
-  \titem{-env ERL\_FULLSWEEP\_AFTER=0}
-	May reduce memory usage, but \ejabberd{} may consume more processor.
-\end{description}
+$ sudo ejabberdctl status
+Node ejabberd@localhost is started. Status: started
+ejabberd is running
 
-Note that some characters need to be escaped when used in shell scripts, for instance \verb|"| and \verb|{}|.
+$ sudo ejabberdctl stop
 
-You can find other options in the Erlang manual page (\shell{erl -man erl}).
+$      
+\end{verbatim}
+Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
+and configurable options to fine tune the Erlang runtime system.
 
 
 \subsection{Specific Notes for BSD}
@@ -425,36 +405,32 @@ werl -s ejabberd -name ejabberd
 %TODO: how to compile database support on windows?
 
 
-\section{Creating an Initial Administrator}
+\section{Create a Jabber Account for Administration}
 \label{initialadmin}
 
-Before the web interface can be entered to perform administration tasks, an
-account with administrator rights is needed on your \ejabberd{} deployment.
-
-Instructions to create an initial administrator account:
+You need a Jabber account and grant him administrative privileges
+to enter the ejabberd web interface:
 \begin{enumerate}
-\item Register a Jabber account on your \ejabberd{} server. An account can be
-  created in two ways:
+\item Register a Jabber account on your \ejabberd{} server, for example \term{admin1@example.org}. 
+  There are two ways to register a Jabber account:
   \begin{enumerate}
-  \item Using the tool \term{ejabberdctl}\ind{ejabberdctl} (see
-    section~\ref{ejabberdctl}):
+  \item Using \term{ejabberdctl}\ind{ejabberdctl} (see section~\ref{ejabberdctl}):
     \begin{verbatim}
-% ejabberdctl node@host register admin example.org password
+% ejabberdctl register admin1 example.org FgT5bk3
 \end{verbatim} 
-  \item Using In-Band Registration (see section~\ref{modregister}): you can
-    use a \Jabber{} client to register an account.
+  \item Using a Jabber client and In-Band Registration (see section~\ref{modregister}).
   \end{enumerate}
-\item Edit the configuration file to promote the account created in the previous
-  step to an account with administrator rights. Note that if you want to add
-  more administrators, a separate ACL entry is needed for each administrator.
+\item Edit the ejabberd configuration file to give administration rights to the Jabber account you created:
   \begin{verbatim}
-  {acl, admins, {user, "admin", "example.org"}}.
+  {acl, admins, {user, "admin1", "example.org"}}.
   {access, configure, [{allow, admins}]}.
 \end{verbatim} 
+  You can grant administrative privileges to many Jabber accounts,
+  and also to accounts in other Jabber servers.
 \item Restart \ejabberd{} to load the new configuration.
 \item Open the web interface (\verb|http://server:port/admin/|) in your
   favourite browser. Make sure to enter the \emph{full} JID as username (in this
-  example: \jid{admin@example.org}. The reason that you also need to enter the
+  example: \jid{admin1@example.org}. The reason that you also need to enter the
   suffix, is because \ejabberd{}'s virtual hosting support.
 \end{enumerate}
 
@@ -1791,37 +1767,7 @@ Examples:
 \label{modoverview}
 \ind{modules!overview}\ind{XMPP compliancy}
 
-The following table lists all modules available in the official \ejabberd{}
-distribution. You can find more
-\footahref{http://www.ejabberd.im/contributions}{contributed modules} on the
-\ejabberd{} website. Please remember that these contributions might not work or
-that they can contain severe bugs and security leaks. Therefore, use them at
-your own risk!
-
-You can see which database backend each module needs by looking at the suffix:
-\begin{itemize}
-\item `\_ldap', this means that the module needs an LDAP server as backend.
-\item `\_odbc', this means that the module needs a supported database
-  (see~\ref{database}) as backend.
-\item No suffix, this means that the modules uses Erlang's built-in database
-  Mnesia as backend.
-\end{itemize}
-
-If you want to
-It is possible to use a relational database to store pieces of
-information. You can do this by changing the module name to a name with an
-\term{\_odbc} suffix in \ejabberd{} config file. You can use a relational
-database for the following data:
-
-\begin{itemize}
-\item Last connection date and time: Use \term{mod\_last\_odbc} instead of
-  \term{mod\_last}.
-\item Offline messages: Use \term{mod\_offline\_odbc} instead of
-  \term{mod\_offline}.
-\item Rosters: Use \term{mod\_roster\_odbc} instead of \term{mod\_roster}.
-\item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
-\end{itemize}
-
+The following table lists all modules included in \ejabberd{}.
 
 \begin{table}[H]
   \centering
@@ -1829,8 +1775,7 @@ database for the following data:
     \hline Module & Feature & Dependencies & Needed for XMPP? \\ 
     \hline \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  & No \\ 
     \hline \modannounce{} & Manage announcements & \modadhoc{} & No \\ 
-    \hline \modconfigure{} & Support for online & \modadhoc{} & No \\ 
-    & configuration of \ejabberd{} & & \\ 
+    \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} & No \\ 
     \hline \moddisco{} & Service Discovery (\xepref{0030}) &  & No \\ 
     \hline \modecho{} & Echoes Jabber packets &  & No \\ 
     \hline \modirc{} & IRC transport &  & No \\ 
@@ -1866,6 +1811,38 @@ database for the following data:
 \item (**) This module or a similar one with another database backend is needed for
 XMPP compliancy.
 \end{itemize}
+
+You can see which database backend each module needs by looking at the suffix:
+\begin{itemize}
+\item No suffix, this means that the modules uses Erlang's built-in database
+  Mnesia as backend.
+\item `\_odbc', this means that the module needs a supported database
+  (see~\ref{database}) as backend.
+\item `\_ldap', this means that the module needs an LDAP server as backend.
+\end{itemize}
+
+If you want to,
+it is possible to use a relational database to store pieces of
+information. You can do this by changing the module name to a name with an
+\term{\_odbc} suffix in \ejabberd{} config file. You can use a relational
+database for the following data:
+
+\begin{itemize}
+\item Last connection date and time: Use \term{mod\_last\_odbc} instead of
+  \term{mod\_last}.
+\item Offline messages: Use \term{mod\_offline\_odbc} instead of
+  \term{mod\_offline}.
+\item Rosters: Use \term{mod\_roster\_odbc} instead of \term{mod\_roster}.
+\item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
+\item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
+\end{itemize}
+
+You can find more
+\footahref{http://www.ejabberd.im/contributions}{contributed modules} on the
+\ejabberd{} website. Please remember that these contributions might not work or
+that they can contain severe bugs and security leaks. Therefore, use them at
+your own risk!
+
 
 \subsection{Common Options}
 \label{modcommonoptions}
@@ -3253,10 +3230,91 @@ Options:
 \end{description}
 
 \chapter{Managing an ejabberd server}
-\section{Online Configuration and Monitoring}
-\label{onlineconfig}
 
-\subsection{Web Interface}
+
+\section{\term{ejabberdctl}}
+\label{ejabberdctl}
+
+\subsection{Commands}
+\label{commands}
+
+The \term{ejabberdctl} command line script allows to start, stop and perform 
+many other administrative tasks in a local or remote ejabberd server.
+
+When \term{ejabberdctl} is executed without any parameter,
+it displays the available options. If there isn't an ejabberd server running, 
+the available parameters are:
+\begin{description}
+\titem{start} Start ejabberd in background mode. This is the default method.
+\titem{debug} Attach an Erlang shell to an already existing ejabberd server. This allows to execute commands interactively in the ejabberd server.
+\titem{live} Start ejabberd in live mode: the shell keeps attached to the started server, showing log messages and allowing to execute interactive commands.
+\end{description}
+
+If there is an ejabberd server running in the system,
+\term{ejabberdctl} shows all the available commands in that server.
+The more interesting ones are:
+\begin{description}
+\titem{status} Check the status of the ejabberd server.
+\titem{stop} Stop the ejabberd server which is running in the machine.
+\titem{reopen-log} If you use a tool to rotate logs, you have to configure it
+  so that this command is executed after each rotation.
+\titem {backup, restore, install-fallback, dump, load} You can use these
+  commands to create and restore backups. 
+%%More information about backuping can
+%%  be found in section~\ref{backup}.
+\titem{import-file, import-dir} \ind{migration from other software}
+  These options can be used to migrate from other \Jabber{}/XMPP servers. There
+  exist tutorials to \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
+\titem{delete-expired-messages} This option can be used to delete old messages
+  in offline storage. This might be useful when the number of offline messages
+  is very high.
+\end{description}
+
+The \term{ejabberdctl} script also allows the argument \term{--node NODENAME}.
+This allows to administer a remote node.
+
+The \term{ejabberdctl} administration script can be configured in the file ejabberdctl.cfg.
+This file provides detailed information about each configurable option.
+
+
+\subsection{Erlang configuration}
+\label{erlangconfiguration}
+
+The basic parameters used by \term{ejabberdctl} when starting the Erlang node:
+\begin{description}
+  \titem{-sname ejabberd} 
+	The Erlang node will be identified using only the first part
+	of the host name, i.\,e. other Erlang nodes outside this domain cannot contact
+	this node. This is the preferable option in most cases.
+  \titem{-name ejabberd} 
+	The Erlang node will be fully identified.
+    This is only useful if you plan to setup an ejabberd cluster with nodes in different networks.
+  \titem{-kernel inetrc "/etc/ejabberd/ejabberd.inetrc"} 
+	Indicates which IP name resolution to use. It is required if using \term{-sname}.
+  \titem{-detached} 
+        Starts the Erlang system detached from the system console. 
+	Useful for running daemons and backgrounds processes. 
+  \titem{-noinput} 
+	Ensures that the Erlang system never tries to read any input.
+	Useful for running daemons and backgrounds processes. 
+  \titem{-pa /var/lib/ejabberd/ebin} 
+	Specify the directory where Erlang binary files (*.beam) are located.
+  \titem{-s ejabberd} 
+	Tell Erlang runtime system to start the ejabberd application.
+  \titem{-mnesia dir "/var/lib/ejabberd/db/nodename"}
+	Specify the Mnesia database directory.
+  \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/sasl.log"\}}
+	Specify the directory for the sasl.log file.
+\end{description}
+Note that some characters need to be escaped when used in shell scripts, for instance \verb|"| and \verb|{}|.
+You can find other options in the Erlang manual page (\shell{erl -man erl}).
+
+In addition, there are several configurable parameters 
+in the file \term{/etc/ejabberd/ejabberdctl.cfg}
+to fine tune the Erlang runtime system.
+
+
+\section{Web Interface}
 \label{webinterface}
 \ind{web interface}
 
@@ -3327,46 +3385,15 @@ Examples:
 \end{itemize}
 
 
-\subsection{\term{ejabberdctl}}
-\label{ejabberdctl}
+\section{Ad-hoc Commands}
+\label{adhoccommands}
 
-The \term{ejabberdctl} command line script allows to start, stop and perform 
-many other administrative tasks in a local or remote ejabberd server.
-
-When \term{ejabberdctl} is executed without any parameter,
-it displays the available options. If there isn't an ejabberd server running, 
-the available parameters are:
-\begin{description}
-\titem{start} Start ejabberd in background mode. This is the default method.
-\titem{debug} Attach an Erlang shell to an already existing ejabberd server. This allows to execute commands interactively in the ejabberd server.
-\titem{live} Start ejabberd in live mode: the shell keeps attached to the started server, showing log messages and allowing to execute interactive commands.
-\end{description}
-
-If there is an ejabberd server running in the system,
-\term{ejabberdctl} shows all the available commands in that server.
-The more interesting ones are:
-\begin{description}
-\titem{status} Check the status of the ejabberd server.
-\titem{stop} Stop the ejabberd server which is running in the machine.
-\titem{reopen-log} If you use a tool to rotate logs, you have to configure it
-  so that this command is executed after each rotation.
-\titem {backup, restore, install-fallback, dump, load} You can use these
-  commands to create and restore backups. 
-%%More information about backuping can
-%%  be found in section~\ref{backup}.
-\titem{import-file, import-dir} \ind{migration from other software}
-  These options can be used to migrate from other \Jabber{}/XMPP servers. There
-  exist tutorials to \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
-\titem{delete-expired-messages} This option can be used to delete old messages
-  in offline storage. This might be useful when the number of offline messages
-  is very high.
-\end{description}
-
-The \term{ejabberdctl} script also allows the argument \term{--node NODENAME}.
-This allows to administer a remote node.
-
-The \term{ejabberdctl} administration script can be configured in the file ejabberdctl.cfg.
-This file provides detailed information about each configurable option.
+If you enable \modconfigure\ and \modadhoc,
+you can perform several administrative tasks in ejabberd
+with a Jabber client.
+The client must support Ad-Hoc Commands (\xepref{0050}),
+and you must login in the Jabber server with
+an account with proper privileges.
 
 
 \chapter{Securing ejabberd}
@@ -3461,19 +3488,6 @@ because it may be possible to fake the fact that you are on another network
 using a modified version of Erlang \term{epmd}.
 The recommended way to secure the Erlang node is to block the port 4369.
 
-
-
-\chapter{Integrating ejabberd with other Instant Messaging servers}
-\section{SRV Records}
-\label{srv}
-\ind{SRV Records}\ind{clustering!SRV Records}
-
-\begin{itemize}
-\item General information:
-  \footahref{http://en.wikipedia.org/wiki/SRV\_record}{SRV record}
-\item Practical information:
-  \footahref{http://jabberd.jabberstudio.org/2/docs/section05.html\#5\_7}{Setting DNS SRV Records}
-\end{itemize}
 
 \chapter{Clustering}
 \label{clustering}
@@ -3677,14 +3691,39 @@ The syntax is the following:
 \label{watchdog}
 \ind{debugging!watchdog}
 
-ejabberd includes a watchdog mechanism to notify administrators in realtime
-through XMPP when any process consumes too much memory.
-
-To enable the watchdog, add the \term{watchdog\_admins}
-\ind{options!watchdog\_admins} option in the config file:
-
+ejabberd includes a watchdog mechanism.
+If a process in the ejabberd server consumes too much memory,
+a message is sent to the Jabber accounts defined with the option
+\term{watchdog\_admins}
+\ind{options!watchdog\_admins} in the ejabberd configuration file.
+Example configuration:
 \begin{verbatim}
-{watchdog_admins, [``admin@localhost'']}.
+{watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
+\end{verbatim}
+
+
+\section{Log files}
+\label{logfiles}
+
+ejabberd writes messages in two log files:
+\begin{description}
+	\titem{ejabberd.log} Messages reported by ejabberd code
+	\titem{sasl.log} Messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
+\end{description}
+
+The option \term{loglevel} modifies the verbosity of the file ejabberd.log.
+There possible levels are:
+\begin{description}
+	\titem{0} No ejabberd log at all (not recommended)
+	\titem{1} Critical
+	\titem{2} Error
+	\titem{3} Warning
+	\titem{4} Info
+	\titem{5} Debug
+\end{description}
+For example, the default configuration is:
+\begin{verbatim}
+{loglevel, 4}.
 \end{verbatim}
 
 \appendix{}

@@ -1,3 +1,9 @@
+2007-12-06  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Improvements in sections: Start, Creating Initial
+	Account, Module Overview, Managing an ejabberd server, and
+	Debugging
+
 2007-12-05  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Added explanations about epmd, cookie and node
