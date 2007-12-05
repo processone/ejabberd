@@ -1,5 +1,7 @@
 2007-12-05  Badlop  <badlop@process-one.net>
 
+	* src/msgs/zh.msg: Updated (thanks to Shelley Shyan)
+
 	* src/mod_muc/mod_muc_room.erl: Rephrase the invitation sentence
 	to make more natural
 

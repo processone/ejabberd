@@ -3,9 +3,12 @@
 % jlib.hrl
 {"No resource provided", "无资源提供"}.
 
+% mod_offline_odbc.erl
+{"Your contact offline message queue is full. The message has been discarded.", "您的联系人离线消息队列已满. 消息已被丢弃"}.
+
 % mod_configure.erl
 {"Choose storage type of tables", "请选择表格的存储类型"}.
-{"RAM copy", "内存 (RAM) 复制"}.
+{"RAM copy", "内存 (RAM)复制"}.
 {"RAM and disc copy", "内存与磁盘复制"}.
 {"Disc only copy", "仅复制磁盘"}.
 {"Remote copy", "远程复制"}.
@@ -25,15 +28,10 @@
 {"Import Users from Dir at ", "从目录导入用户 "}.
 {"Enter path to jabberd1.4 spool dir", "请输入jabberd1.4 spool目录的路径"}.
 {"Path to Dir", "目录的路径"}.
-{"Hostname Configuration", "主机配置"}.
-{"Choose host name", "选择主机名称"}.
-{"Host name", "主机名称"}.
-{"Access Control List Configuration", "访问控制列表 (ACL) 配置"}.
-{"Access control lists", "访问控制列表 (ACL)"}.
+{"Access Control List Configuration", "访问控制列表(ACL)配置"}.
+{"Access control lists", "访问控制列表(ACL)"}.
 {"Access Configuration", "访问配置"}.
 {"Access rules", "访问规则"}.
-{"Remove Users", "删除用户"}.
-{"Choose users to remove", "选择要删除的用户"}.
 {"Administration of ", "管理"}.
 {"Action on user", "对用户的动作"}.
 {"Edit Properties", "编辑属性"}.
@@ -42,6 +40,25 @@
 {"Outgoing s2s Connections", "流出的s2s连接"}.
 {"Import Users From jabberd 1.4 Spool Files", "从Jabberd 1.4 Spool文件导入用户"}.
 {"Database Tables Configuration at ", "数据库表格配置位于"}.
+{"Restart Service", "重启服务"}.
+{"Shut Down Service", "关闭服务"}.
+{"Delete User", "删除用户"}.
+{"End User Session", "终端用户会话"}.
+{"Get User Password", "获取用户密码"}.
+{"Change User Password", "更改用户密码"}.
+{"Get User Last Login Time", "获取用户上次登陆时间"}.
+{"Get User Statistics", "获取用户统计"}.
+{"Get Number of Registered Users", "获取注册用户数"}.
+{"Get Number of Online Users", "获取在线用户数"}.
+{"User Management", "用户管理"}.
+{"Time delay", "时间延迟"}.
+{"Password Verification", "确认密码"}.
+{"Number of registered users", "注册用户数"}.
+{"Number of online users", "在线用户数"}.
+{"Last login", "上次登陆"}.
+{"Roster size", "花名册大小"}.
+{"IP addresses", "IP地址"}.
+{"Resources", "资源"}.
 
 % src/ejabberd_c2s.erl
 {"Use of STARTTLS required", "要求使用STARTTLS"}.
@@ -51,14 +68,12 @@
 {"Configuration", "配 置"}.
 {"Online Users", "在线用户"}.
 {"All Users", "所有用户"}.
-{"To ~s", "发送给 ~s"}.
-{"From ~s", "来自 ~s"}.
+{"To ~s", "发送给~s"}.
+{"From ~s", "来自~s"}.
 {"Running Nodes", "正在运行的节点"}.
 {"Stopped Nodes", "已经停止的节点"}.
-{"Host Name", "主机名称"}.
-{"Access Control Lists", "访问控制列表 (ACL)"}.
+{"Access Control Lists", "访问控制列表(ACL)"}.
 {"Access Rules", "访问规则"}.
-{"Remove Users", "删除用户"}.
 {"Modules", "模块"}.
 {"Start Modules", "启动模块"}.
 {"Stop Modules", "停止模块"}.
@@ -115,24 +130,33 @@
 {"Set message of the day and send to online users", "设定当日消息并发送给所有在线用户"}.
 {"Update message of the day (don't send)", "更新该天的消息(不发送)"}.
 {"Delete message of the day", "删除该天的消息"}.
+{"Send announcement to all users on all hosts", "给所有主机上的所有用户发送通知"}.
+{"Set message of the day on all hosts and send to online users", "设置当日所有主机上 的消息并发送给在线用户"}.
+{"Update message of the day on all hosts (don't send)", "更新当日所有主机上 的消息(不发送)"}.
+{"Delete message of the day on all hosts", "删除当日所有主机上 的消息"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd公共/子 模块 \n版权所有 (c) 2003-2007 Alexey Shchepin"}.
-{"Publish-Subscribe", "发行－订阅"}.
-{"Node Creator", "节点创始人"}.
+{"Publish-Subscribe", "发行-订阅"}.
 {"Deliver payloads with event notifications", "用事件通告传输有效负载"}.
 {"Notify subscribers when the node configuration changes", "当节点设置改变时通知订阅人"}.
 {"Notify subscribers when the node is deleted", "当节点被删除时通知订阅人"}.
 {"Notify subscribers when items are removed from the node", "当从节点删除条款时通知订阅人"}.
 {"Persist items to storage", "要存储的持续条款"}.
-{"Max # of items to persist", "最多持续条款数"}.
+{"Max # of items to persist", "最多持有条款数"}.
 {"Whether to allow subscriptions", "是否允许订阅"}.
-{"Specify the subscriber model", "指定订阅人样式"}.
 {"Specify the publisher model", "指定发布人样式"}.
 {"Max payload size in bytes", "最大有效负载比特数"}.
-{"Send items to new subscribers", "向新订阅人发送条款"}.
 {"Only deliver notifications to available users", "仅将通知发送给有效用户"}.
-{"Specify the current subscription approver", "指定当前订阅赞成人"}.
+{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd发行-订阅模块\nCopyright (c) 2004-2007 Process-One"}.
+{"PubSub subscriber request", "PubSub订阅人请求"}.
+{"Choose whether to approve this entity's subscription.", "选择是否赞成该实体的订阅"}.
+{"Node ID", "节点ID"}.
+{"Subscriber Address", "订阅人地址"}.
+{"Allow this JID to subscribe to this pubsub node?", "允许该JID订阅该pubsub节点?"}.
+{"Deliver event notifications", "传递事件通知"}.
+{"Specify the access model", "指定访问模式"}.
+{"Roster groups that may subscribe (if access model is roster)", "可能订阅的花名册组(若访问模式为花名册)"}.
+{"When to send the last published item", "何时发送最新公布的条款"}.
 {[], " "}.
 
 % mod_muc/mod_muc_log.erl
@@ -167,7 +191,7 @@
 {"You need an x:data capable client to register nickname", "您需要一个兼容x:data的客户端来注册昵称"}.
 {"Nickname Registration at ", "昵称注册于 "}.
 {"Enter nickname you want to register", "请输入您想要注册的昵称"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC 模块\n版权所有 (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC模块\n版权所有 (c) 2003-2007 Alexey Shchepin"}.
 {"Only service administrators are allowed to send service messages", "只有服务管理员可以发送服务消息"}.
 {"Room creation is denied by service policy", "创建房间被服务政策拒绝"}.
 {"Conference room does not exist", "会议室不存在"}.
@@ -177,13 +201,18 @@
 {"Chatrooms", "聊天室"}.
 
 % mod_muc/mod_muc_room.erl
+{"Traffic rate limit is exceeded", "已经超过传输率限制"}.
+{"Maximum Number of Occupants", "占有人最大数"}.
+{"No limit", "不限"}.
+{"~s invites you to the room ~s", "~s邀请你到~s房间"}.
+{"the password is", "密码是"}.
 {" has set the subject to: ", "已将标题设置为： "}.
 {"You need an x:data capable client to configure room", "您需要一个兼容x:data的客户端来配置房间"}.
 {"Configuration for ", "配置 "}.
-{"Room title", "房间冠名"}.
+{"Room title", "房间标题"}.
 {"Password", "密码"}.
-{"Only moderators and participants are allowed to change subject in this room", "只允许调解人和参与人更改此房间的标题"}.
-{"Only moderators are allowed to change subject in this room", "只允许调解人更改此房间的标题"}.
+{"Only moderators and participants are allowed to change subject in this room", "只允许调解人和参与人更改此房间的主题"}.
+{"Only moderators are allowed to change subject in this room", "只允许调解人更改此房间的主题"}.
 {"Visitors are not allowed to send messages to all occupants", "不允许访客给所有占有者发送消息"}.
 {"Only occupants are allowed to send messages to the conference", "只允许占有者向会议发送消息"}.
 {"It is not allowed to send private messages to the conference", "不允许向会议发送隐私消息"}.
@@ -200,8 +229,8 @@
 {"Incorrect password", "密码不正确"}.
 {"Administrator privileges required", "需要管理员权限"}.
 {"Moderator privileges required", "需要调解人权限"}.
-{"JID ~s is invalid", "JID ~s 无效"}.
-{"Nickname ~s does not exist in the room", "昵称 ~s 不在该房间"}.
+{"JID ~s is invalid", "JID ~s无效"}.
+{"Nickname ~s does not exist in the room", "昵称~s不在该房间"}.
 {"Invalid affiliation: ~s", "无效加入: ~s"}.
 {"Invalid role: ~s", "无效角色: ~s"}.
 {"Owner privileges required", "需要持有人权限"}.
@@ -212,14 +241,12 @@
 {"Make participants list public", "公开参与人列表"}.
 {"Make room password protected", "保护房间密码"}.
 {"Make room members-only", "设置房间只接收会员"}.
-{"Make room moderated", "设置房间适中"}.
 {"Default users as participants", "将默认用户视为参与人"}.
 {"Allow users to change subject", "允许用户更改主题"}.
 {"Allow users to send private messages", "允许用户发送隐私消息"}.
 {"Allow users to query other users", "允许用户查询其它用户"}.
 {"Allow users to send invites", "允许用户发送邀请"}.
 {"Enable logging", "允许使用日志"}.
-{"Description", "描述"}.
 {"Number of occupants", "占用人数"}.
 {"Present real JIDs to", "将真实JID显示给"}.
 {"moderators only", "仅一般人"}.
@@ -234,13 +261,12 @@
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "如果您想为IRC服务器指定不同的编码, 请用'{\"irc 服务器\", \"编码\"}'格式的值填充此表单. 默认情况下此服务使用\"~s\"编码."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "例如: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "编码"}.
-{"IRC Transport", "IRC 传输"}.
+{"IRC Transport", "IRC传输"}.
 
 % web/ejabberd_web_admin.erl
-{"Administration", "管    理"}.
+{"Administration", "管理"}.
 {"Users", "用户"}.
 {"Nodes", "节点"}.
-{"Shared Roster", "共享花名册"}.
 {"Statistics", "统计"}.
 {"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(原始格式)"}.
@@ -249,7 +275,7 @@
 {"Raw", "原始格式"}.
 {"Delete Selected", "删除已选内容"}.
 {"Submit", "提交"}.
-{"~s access rule configuration", "~s 的访问规则设置"}.
+{"~s access rule configuration", "~s访问规则设置"}.
 {"Node not found", "没有找到节点"}.
 {"Add New", "添加新用户"}.
 {"Registered Users", "注册用户"}.
@@ -282,28 +308,28 @@
 {"Delete", "删除"}.
 {"Add User", "添加用户"}.
 {"Offline Messages", "离线消息"}.
-{"Users Last Activity", "用户最后一次活动"}.
+{"Users Last Activity", "用户上次活动"}.
 {"Never", "从未"}.
-{"~s's Offline Messages Queue", "~s 下线消息队列"}.
+{"~s's Offline Messages Queue", "~s的离线消息队列"}.
 {"Time", "时间"}.
 {"From", "从"}.
 {"To", "到"}.
 {"Packet", "包裹"}.
-{"Offline Messages:", "离线消息: "}.
+{"Offline Messages:", "离线消息:"}.
 {"Roster", "花名册"}.
 {"Nickname", "昵称"}.
 {"Subscription", "订阅"}.
 {"Pending", "搁浅"}.
 {"Groups", "组"}.
 {"Remove", "移除"}.
-{"Add Jabber ID", "添加 Jabber ID"}.
+{"Add Jabber ID", "添加Jabber ID"}.
 {"User ", "用户 "}.
 {"Roster of ", "花名册属于 "}.
 {"Online", "在线"}.
 {"Validate", "确认"}.
-{"Name:", "名称: "}.
-{"Description:", "描述: "}.
-{"Members:", "会员: "}.
+{"Name:", "名称:"}.
+{"Description:", "描述:"}.
+{"Members:", "会员:"}.
 {"Displayed Groups:", "已显示的组"}.
 {"Group ", "组 "}.
 {"Period: ", "持续时间: "}.
@@ -315,12 +341,11 @@
 {"Modules at ", "模块位于 "}.
 {"Start", "开始"}.
 {"Virtual Hosts", "虚拟主机"}.
-{"ejabberd virtual hosts", "ejabberd 虚拟主机"}.
+{"ejabberd virtual hosts", "ejabberd虚拟主机"}.
 {"Host", "主机"}.
-{"Authenticated Users:", "已认证用户："}.
 {"No Data", "没有数据"}.
-{"ejabberd Web Interface", "Ejabberd Web 接口"}.
-{"Online Users:", "在线用户："}.
+{"ejabberd Web Interface", "Ejabberd网页接口"}.
+{"Online Users:", "在线用户:"}.
 {"Outgoing s2s Connections:", "流出的s2s连接:"}.
 {"Outgoing s2s Servers:", "流出的s2s服务器"}.
 {"Database Tables at ", "数据库列表位于 "}.
@@ -338,12 +363,11 @@
 {"Update script", "更新脚本"}.
 {"Low level update script", "低度更新脚本"}.
 {"Script check", "检查脚本"}.
-{"Not Found", "没有找到"}.
 {"Shared Roster Groups", "共享的花名册组群"}.
-{"Last Activity", "上一次活动"}.
+{"Last Activity", "上次活动"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 字节流模块\n版权所有 (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5字节流模块\n版权所有 (c) 2003-2007 Alexey Shchepin"}.
 
 % mod_vcard_odbc.erl
 {"vCard User Search", "vCard用户搜索"}.
