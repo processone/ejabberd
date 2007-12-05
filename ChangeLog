@@ -1,5 +1,9 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* src/ejabberdctl.template: The parameter 'kernel inetrc' is used
+	even with -sname to guarantee the same behaviour that when using
+	-name (EJAB-317)
+
 	* doc/guide.tex: Improvements in sections: Start, Creating Initial
 	Account, Module Overview, Managing an ejabberd server, and
 	Debugging

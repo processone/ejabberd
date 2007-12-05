@@ -35,7 +35,7 @@ if [ $# -ne 0 ] ; then
 fi
 
 if [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] ; then
-    SNAME="-kernel inetrc \""$EJABBERD_INETRC"\" -sname"
+    SNAME=-sname
 else
     SNAME=-name
 fi
@@ -43,7 +43,7 @@ fi
 # Compatibility in ZSH
 #setopt shwordsplit 2>/dev/null
 
-ERLANG_OPTS="$POLL $SMP $PROCESSES $ERL_MAX_ETS_TABLES"
+ERLANG_OPTS="$POLL $SMP $PROCESSES $ERL_MAX_ETS_TABLES -kernel inetrc \""$EJABBERD_INETRC"\" "
 
 start ()
 {
