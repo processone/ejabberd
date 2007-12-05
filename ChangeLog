@@ -1,5 +1,8 @@
 2007-12-05  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Rephrase the invitation sentence
+	to make more natural
+
 	* src/msgs/es.msg: Updated
 
 	* src/ejabberd.hrl: Set more proper version number

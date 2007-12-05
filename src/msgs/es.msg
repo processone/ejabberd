@@ -192,7 +192,7 @@
 {"Traffic rate limit is exceeded", "Se ha exedido el límite de tráfico"}.
 {"Maximum Number of Occupants", "Número máximo de ocupantes"}.
 {"No limit", "Sin límite"}.
-{"You have been invited to ~s by ~s", "Has sido invitado a la sala de charla ~s. La invitación te la envió ~s"}.
+{"~s invites you to the room ~s", "~s te invita a la sala ~s"}.
 {"the password is", "la contraseña es"}.
 
 % mod_muc/mod_muc_log.erl

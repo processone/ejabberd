@@ -2968,11 +2968,12 @@ check_invitation(From, Els, Lang, StateData) ->
 		     io_lib:format(
 		       translate:translate(
 			 Lang,
-			 "You have been invited to ~s by ~s"),
-		       [jlib:jid_to_string({StateData#state.room,
+			 "~s invites you to the room ~s"),
+		       [jlib:jid_to_string(From),
+			jlib:jid_to_string({StateData#state.room,
 					    StateData#state.host,
-					    ""}),
-			jlib:jid_to_string(From)])) ++
+					    ""})
+		       ])) ++
 		   case (StateData#state.config)#config.password_protected of
 		       true ->
 			   ", " ++
