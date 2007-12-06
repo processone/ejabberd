@@ -1,6 +1,9 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
-	* src/Makefile.in: Allow compilation with HiPE (EJAB-412)
+	* src/Makefile.in: Allow compilation with HiPE, disabled by
+	default, undocumented and unrecommended because it is experimental
+	and doesn't seem to provide meaningful gains currently (thanks to
+	Samuel Tardieu) (EJAB-412)
 	* src/configure.ac: Likewise
 
 	* src/msgs/cs.msg: Updated (thanks to Lukáš Polívka alias
