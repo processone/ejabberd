@@ -707,7 +707,7 @@ process_admin(Host,
 			path = ["acls"],
 			q = Query,
 			lang = Lang} = Request) ->
-    ?INFO_MSG("query: ~p", [Query]),
+    ?DEBUG("query: ~p", [Query]),
     Res = case Method of
 	      'POST' ->
 		  case catch acl_parse_query(Host, Query) of
@@ -820,7 +820,7 @@ process_admin(Host,
 		       path = ["access"],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    ?INFO_MSG("query: ~p", [Query]),
+    ?DEBUG("query: ~p", [Query]),
     Res = case Method of
 	      'POST' ->
 		  case catch access_parse_query(Host, Query) of
@@ -857,7 +857,7 @@ process_admin(Host,
 		       path = ["access", SName],
 		       q = Query,
 		       lang = Lang} = Request) ->
-    ?INFO_MSG("query: ~p", [Query]),
+    ?DEBUG("query: ~p", [Query]),
     Name = list_to_atom(SName),
     Res = case lists:keysearch("rules", 1, Query) of
 	      {value, {_, String}} ->
@@ -930,7 +930,7 @@ process_admin(Host,
 		       path = ["last-activity"],
 		       q = Query,
 		       lang = Lang} = Request) when is_list(Host) ->
-    ?INFO_MSG("query: ~p", [Query]),
+    ?DEBUG("query: ~p", [Query]),
     Month = case lists:keysearch("period", 1, Query) of
 		{value, {_, Val}} ->
 		    Val;

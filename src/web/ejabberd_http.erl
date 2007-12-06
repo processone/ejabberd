@@ -199,7 +199,7 @@ process_header(State, Data) ->
 	{ok, {http_header, _, _, _, _}} ->
 	    State;
 	{ok, http_eoh} ->
-	    ?INFO_MSG("(~w) http query: ~w ~s~n",
+	    ?DEBUG("(~w) http query: ~w ~s~n",
 		      [State#state.socket,
 		       State#state.request_method,
 		       element(2, State#state.request_path)]),
