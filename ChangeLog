@@ -1,5 +1,8 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* src/ejabberdctl.cfg.example: Explain that each connection uses
+	two or three ports (thanks to Max Loparyev)
+
 	* src/configure: Regenerated
 	* doc/dev.html: Likewise
 	* doc/features.html: Likewise

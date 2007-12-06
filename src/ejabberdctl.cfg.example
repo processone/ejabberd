@@ -27,9 +27,9 @@
 
 # ERL_MAX_PORTS: Maximum number of simultaneously open Erlang ports
 #
-# Erlang consumes one port for every connection, either from a client or from
-# another Jabber server. The option ERL_MAX_PORTS limits the number of
-# concurrent connections and can be specified when starting ejabberd.
+# ejabberd consumes two or three ports for every connection, either 
+# from a client or from another Jabber server. So take this into
+# account when setting this limit.
 #
 # Default: 1024
 # Maximum: 268435456
