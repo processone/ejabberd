@@ -59,6 +59,7 @@
 \newcommand{\module}[1]{\texttt{#1}}
 \newcommand{\modadhoc}{\module{mod\_adhoc}}
 \newcommand{\modannounce}{\module{mod\_announce}}
+\newcommand{\modcaps}{\module{mod\_caps}}
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
 \newcommand{\modecho}{\module{mod\_echo}}
@@ -1775,6 +1776,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline Module & Feature & Dependencies & Needed for XMPP? \\ 
     \hline \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  & No \\ 
     \hline \modannounce{} & Manage announcements & \modadhoc{} & No \\ 
+    \hline \modcaps{} &  Request and cache Entity Capabilities (\xepref{0115}) & & No \\ 
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} & No \\ 
     \hline \moddisco{} & Service Discovery (\xepref{0030}) &  & No \\ 
     \hline \modecho{} & Echoes Jabber packets &  & No \\ 
@@ -1789,7 +1791,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \modprivate{} & Private XML Storage (\xepref{0049}) &  & No \\ 
     \hline \modprivateodbc{} & Private XML Storage (\xepref{0049}) & supported database (*) & No \\ 
     \hline \modproxy{} & SOCKS5 Bytestreams (\xepref{0065}) &  & No\\
-    \hline \modpubsub{} & Publish-Subscribe (\xepref{0060}) &  & No \\ 
+    \hline \modpubsub{} & Publish-Subscribe (\xepref{0060}) and PEP (\xepref{0163}) & \modcaps{} & No \\ 
     \hline \modregister{} & In-Band Registration (\xepref{0077}) &  & No \\ 
     \hline \modroster{} & Roster management &  & Yes (**) \\ 
     \hline \modrosterodbc{} & Roster management & supported database (*) & Yes (**) \\ 
@@ -2622,34 +2624,13 @@ Examples:
 \ind{modules!\modpubsub{}}\ind{protocols!XEP-0060: Publish-Subscribe}
 
 This module offers a Publish-Subscribe Service (\xepref{0060}).
-Publish-Subscribe can be used to develop (examples are taken from the XEP):
-\begin{quote}
-\begin{itemize}
-\item news feeds and content syndication,
-\item avatar management,
-\item shared bookmarks,
-\item auction and trading systems,
-\item online catalogs,
-\item workflow systems,
-\item network management systems,
-\item NNTP gateways,
-\item vCard/profile management,
-\item and weblogs.
-\end{itemize}
-\end{quote} 
-
-\ind{J-EAI}\ind{EAI}\ind{ESB}\ind{Enterprise Application Integration}\ind{Enterprise Service Bus}
-Another example is \footahref{http://www.process-one.net/en/jeai/}{J-EAI}.
-This is an XMPP-based Enterprise Application Integration (EAI) platform (also
-known as ESB, the Enterprise Service Bus). The J-EAI project builts upon
-\ejabberd{}'s codebase and has contributed several features to \modpubsub{}.
+The functionality in \modpubsub{} can be extended using plugins.
+The plugin that implements PEP (Personal Eventing via Pubsub) (\xepref{0163})
+is enabled by default, and requires \modcaps{}.
 
 Options:
 \begin{description}
 \hostitem{pubsub}
-\titem{served\_hosts} \ind{options!served\_hosts}To specify which hosts needs to
-  be served, you can use this option. If absent, only the main \ejabberd{}
-  host is served. % Not a straigtforward description! This needs to be improved!
 \titem{access\_createnode} \ind{options!access\_createnode}
   This option restricts which users are allowed to create pubsub nodes using
   ACL and ACCESS. The default value is \term{pubsub\_createnode}. % Not clear enough + do not use abbreviations.
@@ -2658,6 +2639,8 @@ Options:
 \titem{nodetree} To specify which nodetree to use. If not defined, the default pubsub
   nodetree is used. Nodetrees are default and virtual. Only one nodetree can be used
   and is shared by all node plugins. 
+\titem{served\_hosts} \ind{options!served\_hosts}
+  This option allows to create additional pubsub virtual hosts in a single module instance.
 \end{description}
 
 Example:
@@ -2665,10 +2648,11 @@ Example:
   {modules,
    [
     ...
-    {mod_pubsub, [{served_hosts, ["example.com",
-                                  "example.org"]},
+    {mod_pubsub, [
                   {access_createnode, pubsub_createnode},
-                  {plugins, ["default","pep"]}]}
+                  {plugins, ["default", "pep"]},
+                  {served_hosts, ["example.com", "example.org"]}
+                 ]}
     ...
    ]}.
 \end{verbatim}

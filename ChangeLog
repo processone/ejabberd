@@ -1,3 +1,8 @@
+2007-12-06  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Add mod_caps and improve mod_pubsub documentation
+	* src/ejabberd.cfg.example: Added mod_caps enabled by default
+
 2007-12-06  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/node_dispatch.erl: Correct syntax issue
