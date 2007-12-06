@@ -8,7 +8,6 @@
 
 -module(gen_iq_handler).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 

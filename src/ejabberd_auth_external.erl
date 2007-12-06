@@ -8,7 +8,6 @@
 
 -module(ejabberd_auth_external).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 %% External exports
 -export([start/1,

@@ -12,7 +12,6 @@
 
 -module(ejabberd_auth_anonymous).
 -author('mickael.remond@process-one.net').
--vsn('$Revision$ ').
 
 -export([start/1,
 	 allow_anonymous/1,

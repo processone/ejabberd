@@ -8,7 +8,6 @@
 
 -module(xml_stream).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([new/1,
 	 new/2,

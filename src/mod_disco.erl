@@ -8,7 +8,6 @@
 
 -module(mod_disco).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 

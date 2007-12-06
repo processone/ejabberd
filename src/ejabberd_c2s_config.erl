@@ -9,7 +9,6 @@
 
 -module(ejabberd_c2s_config).
 -author('mremond@process-one.net').
--svn('$Revision$ ').
 
 -export([get_c2s_limits/0]).
 

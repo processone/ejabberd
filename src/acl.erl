@@ -8,7 +8,6 @@
 
 -module(acl).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start/0,
 	 to_record/3,

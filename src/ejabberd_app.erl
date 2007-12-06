@@ -8,7 +8,6 @@
 
 -module(ejabberd_app).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(application).
 

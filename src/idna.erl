@@ -8,7 +8,6 @@
 
 -module(idna).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 %-compile(export_all).
 -export([domain_utf8_to_ascii/1,

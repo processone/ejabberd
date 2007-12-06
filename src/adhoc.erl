@@ -8,7 +8,6 @@
 
 -module(adhoc).
 -author('henoch@dtek.chalmers.se').
--vsn('$Revision$ ').
 
 -export([parse_request/1,
 	 produce_response/2,

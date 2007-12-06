@@ -10,7 +10,6 @@
 
 -module(mod_configure).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 

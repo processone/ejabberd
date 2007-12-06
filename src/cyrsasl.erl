@@ -8,7 +8,6 @@
 
 -module(cyrsasl).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start/0,
 	 register_mechanism/3,

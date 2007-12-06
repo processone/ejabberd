@@ -8,7 +8,6 @@
 
 -module(ejabberd_web).
 -author('alexey@sevcom.net').
--vsn('$Revision$  ').
 
 %% External exports
 -export([make_xhtml/1,

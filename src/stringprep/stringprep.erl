@@ -8,7 +8,6 @@
 
 -module(stringprep).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 

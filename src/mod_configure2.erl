@@ -8,7 +8,6 @@
 
 -module(mod_configure2).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 

@@ -8,7 +8,6 @@
 
 -module(mod_stats).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 

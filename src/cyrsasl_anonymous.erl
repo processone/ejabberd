@@ -9,7 +9,6 @@
 %% See http://www.ietf.org/internet-drafts/draft-ietf-sasl-anon-05.txt
 
 -module(cyrsasl_anonymous).
--vsn('$Revision$').
 
 -export([start/1, stop/0, mech_new/3, mech_step/2]).
 

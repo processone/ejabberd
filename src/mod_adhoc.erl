@@ -8,7 +8,6 @@
 
 -module(mod_adhoc).
 -author('henoch@dtek.chalmers.se').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 

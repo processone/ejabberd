@@ -8,7 +8,6 @@
 
 -module(ejabberd_tmp_sup).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start_link/2, init/1]).
 

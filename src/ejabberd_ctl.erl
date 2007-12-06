@@ -8,7 +8,6 @@
 
 -module(ejabberd_ctl).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start/0,
 	 init/0,

@@ -8,7 +8,6 @@
 
 -module(xml).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([element_to_string/1,
 	 crypt/1, make_text_node/1,

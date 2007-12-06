@@ -8,7 +8,6 @@
 
 -module(ejabberd_auth_ldap).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 

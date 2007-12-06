@@ -8,7 +8,6 @@
 
 -module(ejabberd_sup).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(supervisor).
 

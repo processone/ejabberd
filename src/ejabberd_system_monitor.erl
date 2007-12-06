@@ -8,7 +8,6 @@
 
 -module(ejabberd_system_monitor).
 -author('alexey@process-one.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 

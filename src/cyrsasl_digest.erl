@@ -8,7 +8,6 @@
 
 -module(cyrsasl_digest).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start/1,
 	 stop/0,

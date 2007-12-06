@@ -8,7 +8,6 @@
 
 -module(ejabberd_zlib).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 

@@ -8,7 +8,6 @@
 
 -module(ejabberd_http_poll).
 -author('alexey@process-one.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_fsm).
 

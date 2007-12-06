@@ -8,7 +8,6 @@
 
 -module(ejabberd_listener).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start_link/0, init/1, start/3,
 	 init/3,

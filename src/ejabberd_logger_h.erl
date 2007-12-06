@@ -7,7 +7,6 @@
 
 -module(ejabberd_logger_h).
 -author('alexey@sevcom.net').
--svn('$Revision$ ').
 
 -behaviour(gen_event).
 

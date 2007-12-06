@@ -15,7 +15,6 @@
 
 -module(ejabberd_admin).
 -author('mickael.remond@process-one.net').
--vsn('$Revision$ ').
 
 -export([restore/1]).
 

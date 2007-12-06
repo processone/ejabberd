@@ -8,7 +8,6 @@
 
 -module(jlib).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([make_result_iq_reply/1,
 	 make_error_reply/3,

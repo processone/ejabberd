@@ -8,7 +8,6 @@
 
 -module(ejabberd_auth_odbc).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 %% External exports
 -export([start/1,

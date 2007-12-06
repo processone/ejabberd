@@ -8,7 +8,6 @@
 
 -module(sha).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start/0, sha/1]).
 

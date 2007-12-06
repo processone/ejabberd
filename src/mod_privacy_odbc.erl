@@ -8,7 +8,6 @@
 
 -module(mod_privacy_odbc).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 

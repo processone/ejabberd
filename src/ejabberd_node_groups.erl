@@ -8,7 +8,6 @@
 
 -module(ejabberd_node_groups).
 -author('alexey@process-one.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 

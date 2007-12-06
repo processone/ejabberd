@@ -8,7 +8,6 @@
 
 -module(ejabberd_s2s).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_server).
 

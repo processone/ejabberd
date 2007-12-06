@@ -8,7 +8,6 @@
 
 -module(randoms).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([get_string/0]).
 

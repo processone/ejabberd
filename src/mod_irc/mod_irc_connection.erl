@@ -8,7 +8,6 @@
 
 -module(mod_irc_connection).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_fsm).
 

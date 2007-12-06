@@ -8,7 +8,6 @@
 
 -module(mod_privacy).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 

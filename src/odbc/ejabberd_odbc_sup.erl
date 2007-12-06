@@ -8,7 +8,6 @@
 
 -module(ejabberd_odbc_sup).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 %% API
 -export([start_link/1,

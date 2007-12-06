@@ -1,5 +1,9 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* src/acl.erl and other 64 files: Remove Erlang module attribute
+	'vsn' because it doesn't provide any worth feature, and it
+	difficults hot code update (EJAB-440)
+
 	* src/ejabberdctl.cfg.example: Explain that each connection uses
 	two or three ports (thanks to Max Loparyev)
 

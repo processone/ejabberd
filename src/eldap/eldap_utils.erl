@@ -8,7 +8,6 @@
 
 -module(eldap_utils).
 -author('mickael.remond@process-one.net').
--svn('$Revision$ ').
 
 -export([generate_subfilter/1,
 	 find_ldap_attrs/2,

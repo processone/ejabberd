@@ -8,7 +8,6 @@
 
 -module(shaper).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([new/1, new1/1, update/2]).
 

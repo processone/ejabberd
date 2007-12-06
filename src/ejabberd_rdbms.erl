@@ -8,7 +8,6 @@
 
 -module(ejabberd_rdbms).
 -author('alexey@sevcom.net').
--svn('$Revision$ ').
 
 -export([start/0]).
 -include("ejabberd.hrl").

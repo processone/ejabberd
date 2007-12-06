@@ -8,7 +8,6 @@
 
 -module(configure).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -export([start/0]).
 

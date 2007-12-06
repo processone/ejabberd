@@ -8,7 +8,6 @@
 
 -module(ejabberd_service).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 -behaviour(gen_fsm).
 

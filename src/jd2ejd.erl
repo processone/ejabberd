@@ -8,7 +8,6 @@
 
 -module(jd2ejd).
 -author('alexey@sevcom.net').
--vsn('$Revision$ ').
 
 %% External exports
 -export([import_file/1,
