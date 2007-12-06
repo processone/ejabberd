@@ -89,7 +89,7 @@
 
 %% This is the timeout to apply between event when starting a new
 %% session:
--define(C2S_OPEN_TIMEOUT, 5000).
+-define(C2S_OPEN_TIMEOUT, 60000).
 -define(C2S_HIBERNATE_TIMEOUT, 90000).
 
 -define(STREAM_HEADER,

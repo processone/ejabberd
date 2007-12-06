@@ -1,5 +1,9 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_c2s.erl: Increase the timeout of open socket
+	without authentication to 60 seconds because many Jabber clients
+	are not yet capable of handling this correctly (EJAB-355)
+
 	* src/Makefile.in: Allow compilation with HiPE, disabled by
 	default, undocumented and unrecommended because it is experimental
 	and doesn't seem to provide meaningful gains currently (thanks to
