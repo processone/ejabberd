@@ -1,5 +1,8 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* src/Makefile.in: Allow compilation with HiPE (EJAB-412)
+	* src/configure.ac: Likewise
+
 	* src/msgs/cs.msg: Updated (thanks to Lukáš Polívka alias
 	Spike411)
 

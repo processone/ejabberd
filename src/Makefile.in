@@ -22,6 +22,10 @@ ifdef ejabberd_debug
   ERLC_FLAGS+=-Dejabberd_debug
 endif
 
+ifeq (@hipe@, true)
+  ERLC_FLAGS+=+native
+endif
+
 ifeq (@roster_gateway_workaround@, true)
   ERLC_FLAGS+=-DROSTER_GATEWAY_WORKAROUND
 endif

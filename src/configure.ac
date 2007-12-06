@@ -44,6 +44,15 @@ AC_MOD_ENABLE(tls, yes)
 AC_MOD_ENABLE(odbc, no)
 AC_MOD_ENABLE(ejabberd_zlib, yes)
 
+AC_ARG_ENABLE(hipe,
+[  --enable-hipe        Compile natively with HiPE, not recommended (default: no)],
+[case "${enableval}" in
+  yes) hipe=true ;;
+  no)  hipe=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-hipe) ;;
+esac],[hipe=false])
+AC_SUBST(hipe)
+
 AC_ARG_ENABLE(roster_gateway_workaround,
 [  --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions (default: no)],
 [case "${enableval}" in
