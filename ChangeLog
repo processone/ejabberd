@@ -1,5 +1,9 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc.erl: Catch creation of table
+	muc_online_users: it may be already created by other mod_muc
+	instance
+
 	* doc/Makefile: Remove bashism
 
 	* doc/guide.tex: Document how to change computer
