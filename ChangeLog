@@ -1,5 +1,13 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* src/configure: Regenerated
+	* doc/dev.html: Likewise
+	* doc/features.html: Likewise
+	* doc/guide.html: Likewise
+	* doc/version.tex: Likewise
+
+	* doc/introduction.tex: Updated number of translated languages
+	
 	* src/web/ejabberd_web_admin.erl: Support more native acl_type on
 	web interface (EJAB-253)
 

@@ -694,6 +694,7 @@ odbc
 make_odbc
 ejabberd_zlib
 make_ejabberd_zlib
+hipe
 roster_gateway_workaround
 db_type
 transient_supervisors
@@ -1289,6 +1290,7 @@ Optional Features:
   --enable-tls        enable tls (default: yes)
   --enable-odbc        enable odbc (default: no)
   --enable-ejabberd_zlib        enable ejabberd_zlib (default: yes)
+  --enable-hipe        Compile natively with HiPE, not recommended (default: no)
   --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions (default: no)
   --enable-mssql    Use Microsoft SQL Server database (default: no, requires --enable-odbc)
   --enable-transient_supervisors    Use Erlang supervision for transient process (default: yes)
@@ -2687,6 +2689,10 @@ echo "${ECHO_T}no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
 
+
+if test "x$GCC" = "xyes"; then
+    CFLAGS="$CFLAGS -Wall"
+fi
 
 #locating erlang
 
@@ -5368,6 +5374,21 @@ echo "${ECHO_T}$mr_enable_ejabberd_zlib" >&6; }
 
 
 
+# Check whether --enable-hipe was given.
+if test "${enable_hipe+set}" = set; then
+  enableval=$enable_hipe; case "${enableval}" in
+  yes) hipe=true ;;
+  no)  hipe=false ;;
+  *) { { echo "$as_me:$LINENO: error: bad value ${enableval} for --enable-hipe" >&5
+echo "$as_me: error: bad value ${enableval} for --enable-hipe" >&2;}
+   { (exit 1); exit 1; }; } ;;
+esac
+else
+  hipe=false
+fi
+
+
+
 # Check whether --enable-roster_gateway_workaround was given.
 if test "${enable_roster_gateway_workaround+set}" = set; then
   enableval=$enable_roster_gateway_workaround; case "${enableval}" in
@@ -5664,6 +5685,10 @@ done
                 SSL_CFLAGS="-DHAVE_SSL"
                 break
             fi
+	else
+	    # Clear this from the autoconf cache, so in the next pass of
+	    # this loop with different -L arguments, it will test again.
+	    unset ac_cv_lib_ssl_SSL_new
         fi
     done
 if test x${have_openssl} != xyes; then
@@ -6536,6 +6561,7 @@ odbc!$odbc$ac_delim
 make_odbc!$make_odbc$ac_delim
 ejabberd_zlib!$ejabberd_zlib$ac_delim
 make_ejabberd_zlib!$make_ejabberd_zlib$ac_delim
+hipe!$hipe$ac_delim
 roster_gateway_workaround!$roster_gateway_workaround$ac_delim
 db_type!$db_type$ac_delim
 transient_supervisors!$transient_supervisors$ac_delim
@@ -6545,7 +6571,7 @@ SSL_CFLAGS!$SSL_CFLAGS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 87; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -6871,3 +6897,4 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
+
