@@ -25,7 +25,7 @@
 
 behaviour_info(callbacks) ->
     [{mech_new, 3}, {mech_step, 2}];
-behaviour_info(Other) ->
+behaviour_info(_Other) ->
     undefined.
 
 start() ->
@@ -43,44 +43,44 @@ register_mechanism(Mechanism, Module, RequirePlainPassword) ->
 			       module = Module,
 			       require_plain_password = RequirePlainPassword}).
 
-% TODO: use callbacks
--include("ejabberd.hrl").
--include("jlib.hrl").
-check_authzid(State, Props) ->
-    AuthzId = xml:get_attr_s(authzid, Props),
-    case jlib:string_to_jid(AuthzId) of
-	error ->
-	    {error, "invalid-authzid"};
-	JID ->
-	    LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
-	    {U, S, R} = jlib:jid_tolower(JID),
-	    case R of
-		"" ->
-		    {error, "invalid-authzid"};
-		_ ->
-		    case {LUser, ?MYNAME} of
-			{U, S} ->
-			    ok;
-			_ ->
-			    {error, "invalid-authzid"}
-		    end
-	    end
-    end.
+%%% TODO: use callbacks
+%%-include("ejabberd.hrl").
+%%-include("jlib.hrl").
+%%check_authzid(_State, Props) ->
+%%    AuthzId = xml:get_attr_s(authzid, Props),
+%%    case jlib:string_to_jid(AuthzId) of
+%%	error ->
+%%	    {error, "invalid-authzid"};
+%%	JID ->
+%%	    LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
+%%	    {U, S, R} = jlib:jid_tolower(JID),
+%%	    case R of
+%%		"" ->
+%%		    {error, "invalid-authzid"};
+%%		_ ->
+%%		    case {LUser, ?MYNAME} of
+%%			{U, S} ->
+%%			    ok;
+%%			_ ->
+%%			    {error, "invalid-authzid"}
+%%		    end
+%%	    end
+%%    end.
 
-check_credentials(State, Props) ->
+check_credentials(_State, Props) ->
     User = xml:get_attr_s(username, Props),
     case jlib:nodeprep(User) of
 	error ->
 	    {error, "not-authorized"};
 	"" ->
 	    {error, "not-authorized"};
-	LUser ->
+	_LUser ->
 	    ok
     end.
 
 listmech(Host) ->
     RequirePlainPassword = ejabberd_auth:plain_password_required(Host),
-    
+
     Mechs = ets:select(sasl_mechanism,
 		       [{#sasl_mechanism{mechanism = '$1',
 					 require_plain_password = '$2',
@@ -94,7 +94,7 @@ listmech(Host) ->
 			 ['$1']}]),
     filter_anonymous(Host, Mechs).
 
-server_new(Service, ServerFQDN, UserRealm, SecFlags,
+server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 	   GetPassword, CheckPassword) ->
     #sasl_state{service = Service,
 		myname = ServerFQDN,

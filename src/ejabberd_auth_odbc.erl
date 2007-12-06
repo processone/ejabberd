@@ -146,7 +146,7 @@ get_vh_registered_users_number(Server, Opts) ->
     case catch odbc_queries:users_number(LServer, Opts) of
 	{selected, [_], [{Res}]} ->
 	    list_to_integer(Res);
-	Other ->
+	_Other ->
 	    0
     end.
 

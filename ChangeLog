@@ -1,3 +1,14 @@
+2007-12-07  Badlop  <badlop@process-one.net>
+
+	* src/cyrsasl.erl: Fix compilation warnings: Part 1 (EJAB-290)
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_config.erl: Likewise
+	* src/ejabberd_hooks.erl: Likewise
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd_sm.erl: Likewise
+	* src/idna.erl: Likewise
+	* src/jd2ejd.erl: Likewise
+
 2007-12-06  Badlop  <badlop@process-one.net>
 
 	* src/acl.erl and other 64 files: Remove Erlang module attribute

@@ -341,7 +341,7 @@ do_route(From, To, Packet) ->
 	"" ->
 	    case Name of
 		"presence" ->
-		    {Pass, Subsc} =
+		    {Pass, _Subsc} =
 			case xml:get_attr_s("type", Attrs) of
 			    "subscribe" ->
 				Reason = xml:get_path_s(
@@ -448,7 +448,7 @@ route_message(From, To, Packet) ->
 		      USR = {LUser, LServer, LResource},
 		      case mnesia:dirty_index_read(session, USR, #session.usr) of
 			  [] ->
-			      ok;				% Race condition
+			      ok; % Race condition
 			  Ss ->
 			      Session = lists:max(Ss),
 			      Pid = element(2, Session#session.sid),

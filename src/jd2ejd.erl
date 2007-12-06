@@ -37,7 +37,7 @@ import_file(File) ->
 				    ?ERROR_MSG(
 				       "Error while processing file \"~s\": ~p~n",
 				       [File, Reason]),
-				       {error, Reason};
+				    {error, Reason};
 				_ ->
 				    ok
 			    end;
@@ -94,7 +94,7 @@ process_xdb(User, Server, {xmlelement, Name, _Attrs, Els}) ->
     end.
 
 
-xdb_data(User, Server, {xmlcdata, _CData}) ->
+xdb_data(_User, _Server, {xmlcdata, _CData}) ->
     ok;
 xdb_data(User, Server, {xmlelement, _Name, Attrs, _Els} = El) ->
     From = jlib:make_jid(User, Server, ""),

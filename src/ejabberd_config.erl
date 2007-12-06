@@ -99,17 +99,17 @@ process_term(Term, State) ->
 	    State#state{override_local = true};
 	override_acls ->
 	    State#state{override_acls = true};
-	{acl, ACLName, ACLData} ->
+	{acl, _ACLName, _ACLData} ->
 	    process_host_term(Term, global, State);
-	{access, RuleName, Rules} ->
+	{access, _RuleName, _Rules} ->
 	    process_host_term(Term, global, State);
-	{shaper, Name, Data} ->
-	    %lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
-	    %    	State, State#state.hosts);
+	{shaper, _Name, _Data} ->
+	    %%lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
+	    %%    	State, State#state.hosts);
 	    process_host_term(Term, global, State);
-	{host, Host} ->
+	{host, _Host} ->
 	    State;
-	{hosts, Hosts} ->
+	{hosts, _Hosts} ->
 	    State;
 	{host_config, Host, Terms} ->
 	    lists:foldl(fun(T, S) -> process_host_term(T, Host, S) end,
@@ -139,7 +139,7 @@ process_term(Term, State) ->
 	{loglevel, Loglevel} ->
 	    ejabberd_loglevel:set(Loglevel),
 	    State;
-	{Opt, Val} ->
+	{_Opt, _Val} ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
 			State, State#state.hosts)
     end.
@@ -148,7 +148,7 @@ process_host_term(Term, Host, State) ->
     case Term of
 	{acl, ACLName, ACLData} ->
 	    State#state{opts =
-		   [acl:to_record(Host, ACLName, ACLData) | State#state.opts]};
+			[acl:to_record(Host, ACLName, ACLData) | State#state.opts]};
 	{access, RuleName, Rules} ->
 	    State#state{opts = [#config{key = {access, RuleName, Host},
 					value = Rules} |
@@ -159,7 +159,7 @@ process_host_term(Term, Host, State) ->
 				State#state.opts]};
 	{host, Host} ->
 	    State;
-	{hosts, Hosts} ->
+	{hosts, _Hosts} ->
 	    State;
 	{odbc_server, ODBC_server} ->
 	    odbc_modules_found = check_odbc_modules(ODBC_server),
@@ -285,16 +285,16 @@ check_odbc_modules2(ODBC_server) ->
     case ODBC_server of
 	{mysql, _Server, _DB, _Username, _Password} ->
 	    check_modules_exists([mysql, mysql_auth, mysql_conn, mysql_recv]);
-	
+
 	{mysql, _Server, _Port, _DB, _Username, _Password} ->
 	    check_modules_exists([mysql, mysql_auth, mysql_conn, mysql_recv]);
-	
+
 	{pgsql, _Server, _DB, _Username, _Password} ->
 	    check_modules_exists([pgsql, pgsql_proto, pgsql_tcp, pgsql_util]);
-	
+
 	{pgsql, _Server, _Port, _DB, _Username, _Password} ->
 	    check_modules_exists([pgsql, pgsql_proto, pgsql_tcp, pgsql_util]);
-	
+
 	Server when is_list(Server) ->
 	    ok
     end.
