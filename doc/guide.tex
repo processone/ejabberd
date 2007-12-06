@@ -3687,7 +3687,7 @@ The syntax is the following:
 \label{debugging}
 \ind{debugging}
 
-\section{Watchdog alerts}
+\section{Watchdog Alerts}
 \label{watchdog}
 \ind{debugging!watchdog}
 
@@ -3702,7 +3702,7 @@ Example configuration:
 \end{verbatim}
 
 
-\section{Log files}
+\section{Log Files}
 \label{logfiles}
 
 ejabberd writes messages in two log files:
@@ -3725,6 +3725,21 @@ For example, the default configuration is:
 \begin{verbatim}
 {loglevel, 4}.
 \end{verbatim}
+
+
+\section{Debug Console}
+\label{debugconsole}
+
+The Debug Console is an Erlang shell attached to an already running ejabberd server.
+With this Erlang shell, an experienced administrator can perform complex tasks.
+
+This shell gives complete control over the ejabberd server,
+so it is important to use it with extremely care.
+There are some simple and safe examples in the article 
+\footahref{http://www.ejabberd.im/interconnect-erl-nodes}{Interconnecting Erlang Nodes}
+
+To exit the shell, close the window or press the keys: control+c control+c.
+
 
 \appendix{}
 \chapter{Internationalization and Localization}

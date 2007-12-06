@@ -1,5 +1,7 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Document the Debug Console (EJAB-395)
+
 	* src/ejabberdctl.template: The parameter 'kernel inetrc' is used
 	even with -sname to guarantee the same behaviour that when using
 	-name (EJAB-317)
