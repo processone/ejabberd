@@ -1,5 +1,10 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* doc/Makefile: Remove bashism
+
+	* doc/guide.tex: Document how to change computer
+	hostname (EJAB-320)
+
 	* src/web/ejabberd_http.erl: Change loglevel for http
 	queries (EJAB-363)
 	* src/web/ejabberd_web_admin.erl: Likewise

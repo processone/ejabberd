@@ -3386,6 +3386,33 @@ and you must login in the Jabber server with
 an account with proper privileges.
 
 
+\section{Change Computer Hostname}
+\label{changeerlangnodename}
+
+ejabberd uses the distributed Mnesia database. 
+Being distributed, Mnesia enforces consistency of its file,
+so it stores the name of the Erlang node in it.
+The name of an Erlang node includes the hostname of the computer.
+So, the name of the Erlang node changes
+if you change the name of the machine in which ejabberd runs,
+or when you move ejabberd to a different machine.
+
+So, if you want to change the computer hostname where ejabberd is installed,
+you must follow these instructions:
+\begin{enumerate}
+	\item In the old server, backup the Mnesia database using the Web Interface or \term{ejabberdctl}.
+	For example: 
+\begin{verbatim}
+ejabberdctl backup /tmp/ejabberd-oldhost.backup
+\end{verbatim}
+	\item In the new server, restore the backup file using the Web Interface or \term{ejabberdctl}.
+	For example:
+\begin{verbatim}
+ejabberdctl restore /tmp/ejabberd-oldhost.backup
+\end{verbatim}
+\end{enumerate}
+
+
 \chapter{Securing ejabberd}
 \section{Firewall Settings}
 \label{firewall}
