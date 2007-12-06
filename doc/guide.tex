@@ -2653,6 +2653,11 @@ Options:
 \titem{access\_createnode} \ind{options!access\_createnode}
   This option restricts which users are allowed to create pubsub nodes using
   ACL and ACCESS. The default value is \term{pubsub\_createnode}. % Not clear enough + do not use abbreviations.
+\titem{plugins} To specify which pubsub node plugins to use. If not defined, the default
+  pubsub plugin is always used.
+\titem{nodetree} To specify which nodetree to use. If not defined, the default pubsub
+  nodetree is used. Nodetrees are default and virtual. Only one nodetree can be used
+  and is shared by all node plugins. 
 \end{description}
 
 Example:
@@ -2662,7 +2667,8 @@ Example:
     ...
     {mod_pubsub, [{served_hosts, ["example.com",
                                   "example.org"]},
-                  {access_createnode, pubsub_createnode}]}
+                  {access_createnode, pubsub_createnode},
+                  {plugins, ["default","pep"]}]}
     ...
    ]}.
 \end{verbatim}

@@ -407,7 +407,7 @@
   {mod_privacy,  []},
   {mod_private,  []},
   %%{mod_proxy65,[]},
-  {mod_pubsub,   [{access_createnode, pubsub_createnode}]},
+  {mod_pubsub,   [{access_createnode, pubsub_createnode},{plugins,["default","pep"]}]},
   {mod_register, [
 		  %%
 		  %% After successful registration, the user receives 

@@ -25,7 +25,12 @@ OBJS   = \
 	$(OUTDIR)/nodetree_virtual.beam \
 	$(OUTDIR)/mod_pubsub.beam \
 	$(OUTDIR)/node_default.beam \
-	$(OUTDIR)/node_pep.beam 
+	$(OUTDIR)/node_pep.beam \
+	$(OUTDIR)/node_buddy.beam \
+	$(OUTDIR)/node_club.beam \
+	$(OUTDIR)/node_dispatch.beam \
+	$(OUTDIR)/node_private.beam \
+	$(OUTDIR)/node_public.beam
 
 all:    $(OBJS)
 

@@ -85,7 +85,7 @@ features() ->
      %%"purge-nodes",
      %%"retract-items",
      %%"retrieve-affiliations",
-     "retrieve-items",
+     "retrieve-items"
      %%"retrieve-subscriptions",
      %%"subscribe",
      %%"subscription-notifications",
@@ -115,7 +115,7 @@ publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload) ->
 		  end, nodetree_default:get_subnodes(Host, Node)).
 
 remove_extra_items(_Host, _Node, _MaxItems, ItemIds) ->
-    {result, {ItemsIds, []}}.
+    {result, {ItemIds, []}}.
 
 delete_item(_Host, _Node, _JID, _ItemId) ->
     {error, ?ERR_ITEM_NOT_FOUND}.

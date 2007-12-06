@@ -1,3 +1,12 @@
+2007-12-06  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/node_dispatch.erl: Correct syntax issue
+	* src/mod_pubsub/Makefile.in: include example plugins
+	* src/mod_pubsub/Makefile.win32: likewise
+	* src/ejabberd.cfg.example: use default and pep pubsub plugins
+	* doc/guide.tex: add nodetree and plugins pubsub option
+	* doc/guite.html: likewise
+
 2007-12-06  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Document the Debug Console (EJAB-395)

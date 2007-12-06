@@ -2933,7 +2933,14 @@ Options:
  be served, you can use this option. If absent, only the main <TT>ejabberd</TT>
  host is served. <DT CLASS="dt-description"><B><TT>access_createnode</TT></B><DD CLASS="dd-description"> 
  This option restricts which users are allowed to create pubsub nodes using
- ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DL>
+ ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>.
+ 
+<DT CLASS="dt-description"><B><TT>plugins</TT></B><DD CLASS="dd-description"> To specify which pubsub node plugins to use.
+ If not defined, the default plugin is always used.
+
+<DT CLASS="dt-description"><B><TT>nodetree</TT></B><DD CLASS="dd-description"> To specify which nodetree plugin to use.
+ If not defined, the default pubsub nodetree used. Nodetrees are default and virtual. Only one nodetree can be used 
+  and is shared by all node plugins. </DL>
 Example:
 <PRE CLASS="verbatim">
   {modules,
@@ -2941,7 +2948,8 @@ Example:
     ...
     {mod_pubsub, [{served_hosts, ["example.com",
                                   "example.org"]},
-                  {access_createnode, pubsub_createnode}]}
+                  {access_createnode, pubsub_createnode},
+                  {plugins, ["default","pep"]}]}
     ...
    ]}.
 </PRE>
