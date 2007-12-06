@@ -1044,6 +1044,30 @@ acl_spec_to_text({server, S}) ->
 acl_spec_to_text({user, U, S}) ->
     {user_server, U ++ "@" ++ S};
 
+acl_spec_to_text({user_regexp, RU}) ->
+    {user_regexp, RU};
+
+acl_spec_to_text({user_regexp, RU, S}) ->
+    {user_regexp, RU ++ "@" ++ S};
+
+acl_spec_to_text({server_regexp, RS}) ->
+    {server_regexp, RS};
+
+acl_spec_to_text({node_regexp, RU, RS}) ->
+    {node_regexp, RU ++ "@" ++ RS};
+
+acl_spec_to_text({user_glob, RU}) ->
+    {user_glob, RU};
+
+acl_spec_to_text({user_glob, RU, S}) ->
+    {user_glob, RU ++ "@" ++ S};
+
+acl_spec_to_text({server_glob, RS}) ->
+    {server_glob, RS};
+
+acl_spec_to_text({node_glob, RU, RS}) ->
+    {node_glob, RU ++ "@" ++ RS};
+
 acl_spec_to_text(Spec) ->
     {raw, term_to_string(Spec)}.
 
@@ -1063,7 +1087,8 @@ acl_spec_select(ID, Opt) ->
 			?XAC("option",
 			     Sel ++ [{"value", atom_to_list(O)}],
 			     atom_to_list(O))
-		end, [user, server, user_server, raw]))]).
+		end, [user, server, user_server, user_regexp, server_regexp, 
+		      node_regexp, user_glob, server_glob, node_glob, raw]))]).
 
 
 term_to_string(T) ->
@@ -1128,6 +1153,20 @@ string_to_spec("server", Val) ->
 string_to_spec("user_server", Val) ->
     #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
     {user, U, S};
+string_to_spec("user_regexp", Val) ->
+    {user_regexp, Val};
+string_to_spec("server_regexp", Val) ->
+    {server_regexp, Val};
+string_to_spec("node_regexp", Val) ->
+    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    {node_regexp, U, S};
+string_to_spec("user_glob", Val) ->
+    {user_glob, Val};
+string_to_spec("server_glob", Val) ->
+    {server_glob, Val};
+string_to_spec("node_glob", Val) ->
+    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    {node_glob, U, S};
 string_to_spec("raw", Val) ->
     {ok, Tokens, _} = erl_scan:string(Val ++ "."),
     {ok, NewSpec} = erl_parse:parse_term(Tokens),

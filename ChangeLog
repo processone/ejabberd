@@ -1,5 +1,8 @@
 2007-12-06  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Support more native acl_type on
+	web interface (EJAB-253)
+
 	* src/ejabberd_c2s.erl: Increase the timeout of open socket
 	without authentication to 60 seconds because many Jabber clients
 	are not yet capable of handling this correctly (EJAB-355)
