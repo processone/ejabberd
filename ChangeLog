@@ -1,5 +1,13 @@
 2007-12-07  Badlop  <badlop@process-one.net>
 
+	* src/mod_caps.erl: Fix compilation warnings: Part 2 (EJAB-290)
+	* src/mod_configure.erl: 
+	* src/mod_configure2.erl: 
+	* src/mod_offline_odbc.erl: 
+	* src/mod_shared_roster.erl: 
+	* src/mod_stats.erl: 
+	* src/mod_version.erl: 
+
 	* src/cyrsasl.erl: Fix compilation warnings: Part 1 (EJAB-290)
 	* src/ejabberd_auth_odbc.erl: Likewise
 	* src/ejabberd_config.erl: Likewise

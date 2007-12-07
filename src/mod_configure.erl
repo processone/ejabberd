@@ -1261,7 +1261,7 @@ set_form(_From, _Host, ["running nodes", ENode, "DB"], _Lang, XData) ->
 	Node ->
 	    lists:foreach(
 	      fun({SVar, SVals}) ->
-			%% We believe that this is allowed only for good people
+		      %% We believe that this is allowed only for good people
 		      Table = list_to_atom(SVar),
 		      Type = case SVals of
 				 ["unknown"] -> unknown;
@@ -1604,7 +1604,7 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     FLast =
 	case ejabberd_sm:get_user_resources(User, Server) of
 	    [] ->
-		US = {User, Server},
+		_US = {User, Server},
 		case get_last_info(User, Server) of
 		    not_found ->
 			?T(Lang, "Never");

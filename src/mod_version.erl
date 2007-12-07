@@ -28,8 +28,8 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VERSION).
 
 
-process_local_iq(From, To, #iq{id = ID, type = Type,
-			       xmlns = XMLNS, sub_el = SubEl} = IQ) ->
+process_local_iq(_From, To, #iq{id = _ID, type = Type,
+			       xmlns = _XMLNS, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};

@@ -64,8 +64,8 @@ start(Host, _Opts) ->
         	       ?MODULE, get_jid_info, 70),
     ejabberd_hooks:add(roster_process_item, Host,
         	       ?MODULE, process_item, 50).
-    %ejabberd_hooks:add(remove_user, Host,
-    %    	       ?MODULE, remove_user, 50),
+%%ejabberd_hooks:add(remove_user, Host,
+%%    	       ?MODULE, remove_user, 50),
 
 stop(Host) ->
     ejabberd_hooks:delete(webadmin_menu_host, Host,
@@ -84,8 +84,8 @@ stop(Host) ->
         		  ?MODULE, get_jid_info, 70),
     ejabberd_hooks:delete(roster_process_item, Host,
 			  ?MODULE, process_item, 50).
-    %ejabberd_hooks:delete(remove_user, Host,
-    %    		  ?MODULE, remove_user, 50),
+%%ejabberd_hooks:delete(remove_user, Host,
+%%    		  ?MODULE, remove_user, 50),
 
 
 get_user_roster(Items, US) ->
@@ -120,7 +120,7 @@ get_user_roster(Items, US) ->
 			  {Item, SRUsers1}
 		  end
 	  end, SRUsers, Items),
-    
+
     %% Export items in roster format:
     SRItems = [#roster{usj = {U, S, {U1, S1, ""}},
 		       us = US,
@@ -313,11 +313,11 @@ get_group_users(Host, Group) ->
 get_group_explicit_users(Host, Group) ->
     case catch mnesia:dirty_index_read(
 		 sr_user, {Group, Host}, #sr_user.group_host) of
-	Rs when is_list(Rs) ->
-	    [R#sr_user.us || R <- Rs];
-	_ ->
-	    []
-    end.
+								  Rs when is_list(Rs) ->
+		 [R#sr_user.us || R <- Rs];
+	       _ ->
+		 []
+	 end.
 
 get_group_name(Host, Group) ->
     get_group_opt(Host, Group, name, Group).
@@ -373,18 +373,18 @@ webadmin_menu(Acc, _Host) ->
     [{"shared-roster", "Shared Roster"} | Acc].
 
 webadmin_page(_, Host,
-	      #request{us = US,
+	      #request{us = _US,
 		       path = ["shared-roster"],
 		       q = Query,
-		       lang = Lang} = Request) ->
+		       lang = Lang} = _Request) ->
     Res = list_shared_roster_groups(Host, Query, Lang),
     {stop, Res};
 
 webadmin_page(_, Host,
-	      #request{us = US,
+	      #request{us = _US,
 		       path = ["shared-roster", Group],
 		       q = Query,
-		       lang = Lang} = Request) ->
+		       lang = Lang} = _Request) ->
     Res = shared_roster_group(Host, Group, Query, Lang),
     {stop, Res};
 
@@ -467,7 +467,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
     Name = get_opt(GroupOpts, name, ""),
     Description = get_opt(GroupOpts, description, ""),
     AllUsers = get_opt(GroupOpts, all_users, false),
-    Disabled = false,
+    %%Disabled = false,
     DisplayedGroups = get_opt(GroupOpts, displayed_groups, []),
     Members = mod_shared_roster:get_group_explicit_users(Host, Group),
     FMembers =

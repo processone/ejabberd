@@ -30,7 +30,7 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE).
 
 
-process_local_iq(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
+process_local_iq(From, To, #iq{type = Type, lang = _Lang, sub_el = SubEl} = IQ) ->
     case acl:match_rule(To#jid.lserver, configure, From) of
 	deny ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
@@ -39,38 +39,38 @@ process_local_iq(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) -
 		set ->
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
-		    %case xml:get_tag_attr_s("type", SubEl) of
-		    %    "cancel" ->
-		    %        IQ#iq{type = result,
-		    %		   sub_el = [{xmlelement, "query",
-		    %			      [{"xmlns", XMLNS}], []}]};
-		    %    "submit" ->
-		    %        XData = jlib:parse_xdata_submit(SubEl),
-		    %        case XData of
-		    %    	invalid ->
-		    %    	    IQ#iq{type = error,
-		    %			  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-		    %    	_ ->
-		    %    	    Node =
-		    %    		string:tokens(
-		    %    		  xml:get_tag_attr_s("node", SubEl),
-		    %    		  "/"),
-		    %    	    case set_form(Node, Lang, XData) of
-		    %    		{result, Res} ->
-		    %    		    IQ#iq{type = result,
-		    %				  sub_el = [{xmlelement, "query",
-		    %					     [{"xmlns", XMLNS}],
-		    %					     Res
-		    %					    }]};
-		    %    		{error, Error} ->
-		    %    		    IQ#iq{type = error,
-		    %				  sub_el = [SubEl, Error]}
-		    %    	    end
-		    %        end;
-		    %    _ ->
-		    %        IQ#iq{type = error,
-		    %		   sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
-		    %end;
+		    %%case xml:get_tag_attr_s("type", SubEl) of
+		    %%    "cancel" ->
+		    %%        IQ#iq{type = result,
+		    %%		   sub_el = [{xmlelement, "query",
+		    %%			      [{"xmlns", XMLNS}], []}]};
+		    %%    "submit" ->
+		    %%        XData = jlib:parse_xdata_submit(SubEl),
+		    %%        case XData of
+		    %%    	invalid ->
+		    %%    	    IQ#iq{type = error,
+		    %%			  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+		    %%    	_ ->
+		    %%    	    Node =
+		    %%    		string:tokens(
+		    %%    		  xml:get_tag_attr_s("node", SubEl),
+		    %%    		  "/"),
+		    %%    	    case set_form(Node, Lang, XData) of
+		    %%    		{result, Res} ->
+		    %%    		    IQ#iq{type = result,
+		    %%				  sub_el = [{xmlelement, "query",
+		    %%					     [{"xmlns", XMLNS}],
+		    %%					     Res
+		    %%					    }]};
+		    %%    		{error, Error} ->
+		    %%    		    IQ#iq{type = error,
+		    %%				  sub_el = [SubEl, Error]}
+		    %%    	    end
+		    %%        end;
+		    %%    _ ->
+		    %%        IQ#iq{type = error,
+		    %%		   sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+		    %%end;
 		get ->
 		    case process_get(SubEl) of
 			{result, Res} ->
@@ -145,8 +145,8 @@ process_get({xmlelement, "last", Attrs, _SubEls}) ->
 		      [[integer_to_list(TimeStamp - V), " "] || V <- Vals])),
 	    {result, {xmlelement, "last", Attrs, [{xmlcdata, Str}]}}
     end;
-%process_get({xmlelement, Name, Attrs, SubEls}) ->
-%    {result, };
+%%process_get({xmlelement, Name, Attrs, SubEls}) ->
+%%    {result, };
 process_get(_) ->
     {error, ?ERR_BAD_REQUEST}.
 

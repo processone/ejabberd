@@ -320,7 +320,7 @@ user_queue(User, Server, Query, Lang) ->
 	   end,
     FMsgs =
 	lists:map(
-	  fun({xmlelement, Name, Attrs, Els} = Msg) ->
+	  fun({xmlelement, _Name, _Attrs, _Els} = Msg) ->
 		  ID = jlib:encode_base64(binary_to_list(term_to_binary(Msg))),
 		  Packet = Msg,
 		  FPacket = ejabberd_web_admin:pretty_print_xml(Packet),

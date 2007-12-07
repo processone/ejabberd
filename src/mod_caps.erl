@@ -140,7 +140,7 @@ maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
 timestamp() ->
     {MegaSecs, Secs, _MicroSecs} = now(),
     MegaSecs * 1000000 + Secs.
-    
+
 handle_call({get_features, Caps}, From, State) ->
     case maybe_get_features(Caps) of
 	{ok, Features} -> 
@@ -204,7 +204,7 @@ handle_cast({disco_response, From, _To,
 		 sub_el = SubEls}},
 	    #state{disco_requests = Requests} = State) ->
     case {Type, SubEls} of
-	{result, [{xmlelement, "query", Attrs, Els}]} ->
+	{result, [{xmlelement, "query", _Attrs, Els}]} ->
 	    case ?DICT:find(ID, Requests) of
 		{ok, {Node, SubNode}} ->
 		    Features =
