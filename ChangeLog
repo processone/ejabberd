@@ -1,5 +1,10 @@
 2007-12-07  Badlop  <badlop@process-one.net>
 
+	* src/Makefile.in: Fix compilation warnings: Part 5: To fix a
+	warning about behaviour undefined, the erlang module that
+	implements the behaviour must be compiled before the module that
+	uses such behaviour (EJAB-290)
+
 	* src/eldap/eldap.erl: Fix compilation warnings: Part 4 (EJAB-290)
 	* src/web/ejabberd_web_admin.erl: Likewise
 
