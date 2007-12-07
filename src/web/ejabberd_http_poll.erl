@@ -89,7 +89,7 @@ close({http_poll, FsmRef}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
 
-process([], #request{data = Data} = Request) ->
+process([], #request{data = Data} = _Request) ->
     case catch parse_request(Data) of
 	{ok, ID1, Key, NewKey, Packet} ->
 	    ID = if
@@ -210,7 +210,7 @@ handle_event({activate, From}, StateName, StateData) ->
 						   }}
     end;
 
-handle_event(Event, StateName, StateData) ->
+handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -222,17 +222,17 @@ handle_event(Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event({send, Packet}, From, StateName, StateData) ->
+handle_sync_event({send, Packet}, _From, StateName, StateData) ->
     Output = StateData#state.output ++ [lists:flatten(Packet)],
     Reply = ok,
     {reply, Reply, StateName, StateData#state{output = Output}};
 
-handle_sync_event(stop, From, StateName, StateData) ->
+handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 
 handle_sync_event({http_put, Key, NewKey, Packet},
-		  From, StateName, StateData) ->
+		  _From, StateName, StateData) ->
     Allow = case StateData#state.key of
 		"" ->
 		    true;
@@ -271,15 +271,15 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 	    {reply, Reply, StateName, StateData}
     end;
 
-handle_sync_event(http_get, From, StateName, StateData) ->
+handle_sync_event(http_get, _From, StateName, StateData) ->
     Reply = {ok, StateData#state.output},
     {reply, Reply, StateName, StateData#state{output = ""}};
 
-handle_sync_event(Event, From, StateName, StateData) ->
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
 
-code_change(OldVsn, StateName, StateData, Extra) ->
+code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
@@ -288,7 +288,7 @@ code_change(OldVsn, StateName, StateData, Extra) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_info({timeout, Timer, _}, StateName,
+handle_info({timeout, Timer, _}, _StateName,
 	    #state{timer = Timer} = StateData) ->
     {stop, normal, StateData};
 
@@ -300,7 +300,7 @@ handle_info(_, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(Reason, StateName, StateData) ->
+terminate(_Reason, _StateName, StateData) ->
     mnesia:transaction(
       fun() ->
 	      mnesia:delete({http_poll, StateData#state.id})

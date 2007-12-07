@@ -185,14 +185,14 @@ do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) ->
 
 do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
     #jid{user = ChanServ, resource = Resource} = To,
-    {xmlelement, _Name, Attrs, _Els} = Packet,
+    {xmlelement, _Name, _Attrs, _Els} = Packet,
     case ChanServ of
 	"" ->
 	    case Resource of
 		"" ->
 		    case jlib:iq_query_info(Packet) of
 			#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
-			    sub_el = SubEl, lang = Lang} = IQ ->
+			    sub_el = _SubEl, lang = Lang} = IQ ->
 			    Res = IQ#iq{type = result,
 					sub_el = [{xmlelement, "query",
 						   [{"xmlns", XMLNS}],
@@ -220,7 +220,7 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
                             ejabberd_router:route(To,
                                                   From,
                                                   jlib:iq_to_xml(Res));
-			#iq{} = IQ ->
+			#iq{} = _IQ ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
 			    ejabberd_router:route(To, From, Err);
@@ -338,7 +338,7 @@ find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
-process_irc_register(Host, From, To, DefEnc,
+process_irc_register(Host, From, _To, DefEnc,
 		     #iq{type = Type, xmlns = XMLNS,
 			 lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -347,7 +347,7 @@ process_irc_register(Host, From, To, DefEnc,
 	    case XDataEl of
 		false ->
 		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
-		{xmlelement, _Name, Attrs, SubEls} ->
+		{xmlelement, _Name, Attrs, _SubEls} ->
 		    case xml:get_attr_s("type", Attrs) of
 			"cancel" ->
 			    IQ#iq{type = result,
@@ -405,7 +405,7 @@ get_form(Host, From, [], Lang, DefEnc) ->
     US = {LUser, LServer},
     Customs =
 	case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
-	    {'EXIT', Reason} ->
+	    {'EXIT', _Reason} ->
 		{error, ?ERR_INTERNAL_SERVER_ERROR};
 	    [] ->
 		{User, []};
@@ -478,13 +478,13 @@ get_form(Host, From, [], Lang, DefEnc) ->
 	       ]}]}
     end;
 
-get_form(_Host, _, _, Lang, _) ->
+get_form(_Host, _, _, _Lang, _) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 
 
-set_form(Host, From, [], Lang, XData) ->
+set_form(Host, From, [], _Lang, XData) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     US = {LUser, LServer},
     case {lists:keysearch("username", 1, XData),
@@ -524,16 +524,16 @@ set_form(Host, From, [], Lang, XData) ->
     end;
 
 
-set_form(_Host, _, _, Lang, XData) ->
+set_form(_Host, _, _, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 get_user_and_encoding(Host, From, IRCServer, DefEnc) ->
-    #jid{user = User, server = Server,
+    #jid{user = User, server = _Server,
 	 luser = LUser, lserver = LServer} = From,
     US = {LUser, LServer},
     case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
-	{'EXIT', Reason} ->
+	{'EXIT', _Reason} ->
 	    {User, DefEnc};
 	[] ->
 	    {User, DefEnc};

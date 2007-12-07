@@ -1,12 +1,20 @@
 2007-12-07  Badlop  <badlop@process-one.net>
 
+	* src/mod_irc/iconv.erl: Fix compilation warnings: 3 (EJAB-290)
+	* src/mod_irc/mod_irc.erl: Likewise
+	* src/mod_irc/mod_irc_connection.erl: Likewise
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+	* src/stringprep/stringprep.erl: Likewise
+	* src/web/ejabberd_http.erl: Likewise
+	* src/web/ejabberd_http_poll.erl: Likewise
+
 	* src/mod_caps.erl: Fix compilation warnings: Part 2 (EJAB-290)
-	* src/mod_configure.erl: 
-	* src/mod_configure2.erl: 
-	* src/mod_offline_odbc.erl: 
-	* src/mod_shared_roster.erl: 
-	* src/mod_stats.erl: 
-	* src/mod_version.erl: 
+	* src/mod_configure.erl: Likewise
+	* src/mod_configure2.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+	* src/mod_shared_roster.erl: Likewise
+	* src/mod_stats.erl: Likewise
+	* src/mod_version.erl: Likewise
 
 	* src/cyrsasl.erl: Fix compilation warnings: Part 1 (EJAB-290)
 	* src/ejabberd_auth_odbc.erl: Likewise

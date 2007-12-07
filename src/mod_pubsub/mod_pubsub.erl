@@ -722,7 +722,7 @@ node_disco_identity(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, false).
 node_disco_features(Host, Node, From) ->
     node_disco_info(Host, Node, From, false, true).
-node_disco_info(Host, Node, From, Identity, Features) ->
+node_disco_info(Host, Node, _From, Identity, Features) ->
     Action =
 	fun(#pubsub_node{type = Type}) ->
 		I = case Identity of
@@ -868,7 +868,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
 	      end,
     iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, Plugins).
 
-iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
+iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
     {xmlelement, _, _, SubEls} = SubEl,
     WithoutCdata = xml:remove_cdata(SubEls),
     Configuration = lists:filter(fun({xmlelement, Name, _, _}) ->
@@ -1083,7 +1083,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 			_ -> false
 		    end,
 	    Action = fun(#pubsub_node{type = Type,
-				      options = Options,
+				      %%options = Options,
 				      owners = Owners}) ->
 			     IsApprover = lists:member(jlib:jid_tolower(jlib:jid_remove_resource(From)), Owners),
 			     Subscription = node_call(Type, get_subscription, [Host, Node, Subscriber]),
@@ -2052,7 +2052,7 @@ string_to_node(SNode) ->
 
 %%%%%% broadcast functions
 
-broadcast_publish_item(Host, Node, ItemId, From, Payload) ->
+broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
     Action =
 	fun(#pubsub_node{options = Options, type = Type}) ->
 		case node_call(Type, get_states, [Host, Node]) of
@@ -2306,7 +2306,7 @@ broadcast_config_notification(Host, Node, Lang) ->
 
 %% broadcast Stanza to all contacts of the user that are advertising
 %% interest in this kind of Node.
-broadcast_by_caps({LUser, LServer, LResource}, Node, Type, Stanza) ->
+broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
     ?DEBUG("looking for pid of ~p@~p/~p", [LUser, LServer, LResource]),
     %% We need to know the resource, so we can ask for presence data.
     SenderResources = ejabberd_sm:get_user_resources(LUser, LServer),
@@ -2329,7 +2329,7 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, Type, Stanza) ->
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
 	    Sender = jlib:make_jid(LUser, LServer, ""),
-	    ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
+	    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
 	    case catch ejabberd_c2s:get_subscribed_and_online(C2SPid) of
 		ContactsWithCaps when is_list(ContactsWithCaps) ->
 		    ?DEBUG("found contacts with caps: ~p", [ContactsWithCaps]),
@@ -2479,7 +2479,7 @@ max_items(Options) ->
 		    atom_to_list(get_option(Options, Var)),
 		    [atom_to_list(O) || O <- Opts])).
 
-get_configure_xfields(Type, Options, Owners, Lang) ->
+get_configure_xfields(_Type, Options, _Owners, Lang) ->
     [?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NODE_CONFIG),
      ?BOOL_CONFIG_FIELD("Deliver payloads with event notifications", deliver_payloads),
      ?BOOL_CONFIG_FIELD("Deliver event notifications", deliver_notifications),
@@ -2695,7 +2695,7 @@ features(Type) ->
 		      {'EXIT', {undef, _}} -> [];
 		      Result -> Result
 		  end.
-features(Host, []) ->
+features(_Host, []) ->
     features(?STDNODE);
 features(Host, Node) ->
     {result, Features} = node_action(Host, Node, features, []),

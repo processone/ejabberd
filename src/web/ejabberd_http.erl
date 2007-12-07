@@ -316,7 +316,7 @@ process_request(#state{request_method = 'POST',
     case (catch url_decode_q_split(Path)) of
 	{'EXIT', _} ->
 	    process_request(false);
-	{NPath, Query} ->
+	{NPath, _Query} ->
 	    LPath = string:tokens(NPath, "/"),
 	    LQuery = case (catch parse_urlencoded(Data)) of
 			 {'EXIT', _Reason} ->
@@ -354,7 +354,7 @@ process_request(State) ->
 recv_data(State, Len) ->
     recv_data(State, Len, []).
 
-recv_data(State, 0, Acc) ->
+recv_data(_State, 0, Acc) ->
     binary_to_list(list_to_binary(Acc));
 recv_data(State, Len, Acc) ->
     case State#state.trail of
@@ -614,7 +614,7 @@ code_to_phrase(504) -> "Gateway Timeout";
 code_to_phrase(505) -> "HTTP Version Not Supported".
 
 
-parse_auth(Orig = "Basic " ++ Auth64) ->
+parse_auth(_Orig = "Basic " ++ Auth64) ->
     case decode_base64(Auth64) of
 	{error, _Err} ->
 	    undefined;
