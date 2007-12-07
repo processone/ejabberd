@@ -24,9 +24,7 @@
 -include("ejabberd_web_admin.hrl").
 
 
-process(["server", SHost | RPath], #request{auth = Auth,
-                                            q = Query,
-                                            lang = Lang} = Request) ->
+process(["server", SHost | RPath], #request{auth = Auth} = Request) ->
     Host = jlib:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
 	true ->
@@ -51,9 +49,7 @@ process(["server", SHost | RPath], #request{auth = Auth,
             ejabberd_web:error(not_found)
     end;
 
-process(RPath, #request{auth = Auth,
-                        q = Query,
-                        lang = Lang} = Request) ->
+process(RPath, #request{auth = Auth} = Request) ->
     case get_auth(Auth) of
 	{User, Server} ->
 	    case acl:match_rule(
@@ -584,10 +580,8 @@ logo_fill() ->
       "RK5CYII=").
 
 process_admin(global,
-	      #request{us = US,
-		       path = [],
-		       q = Query,
-		       lang = Lang} = Request) ->
+	      #request{path = [],
+		       lang = Lang}) ->
     MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_main, [], []),
     MenuItems2 = [?LI([?ACT("/admin/"++MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
     make_xhtml([?XCT("h1", "Administration"),
@@ -604,10 +598,8 @@ process_admin(global,
 	       ], global, Lang);
 
 process_admin(Host,
-	      #request{us = US,
-		       path = [],
-		       q = Query,
-		       lang = Lang} = Request) ->
+	      #request{path = [],
+		       lang = Lang}) ->
     Base = "/admin/server/" ++ Host ++ "/",
     MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host]),
     MenuItems2 = [?LI([?ACT(Base ++ MI_uri ++ "/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
@@ -626,39 +618,22 @@ process_admin(Host,
 		   )
 	       ], Host, Lang);
 
-process_admin(Host,
-	      #request{us = US,
-		       path = ["style.css"],
-		       q = Query,
-		       lang = Lang} = Request) ->
+process_admin(Host, #request{path = ["style.css"]}) ->
     {200, [{"Content-Type", "text/css"}], css(Host)};
 
-process_admin(Host,
-	      #request{us = US,
-		       path = ["favicon.ico"],
-		       q = Query,
-		       lang = Lang} = Request) ->
+process_admin(_Host, #request{path = ["favicon.ico"]}) ->
     {200, [{"Content-Type", "image/x-icon"}], favicon()};
 
-process_admin(Host,
-	      #request{us = US,
-		       path = ["logo.png"],
-		       q = Query,
-		       lang = Lang} = Request) ->
+process_admin(_Host, #request{path = ["logo.png"]}) ->
     {200, [{"Content-Type", "image/png"}], logo()};
 
-process_admin(Host,
-	      #request{us = US,
-		       path = ["logo-fill.png"],
-		       q = Query,
-		       lang = Lang} = Request) ->
+process_admin(_Host, #request{path = ["logo-fill.png"]}) ->
     {200, [{"Content-Type", "image/png"}], logo_fill()};
 
 process_admin(Host,
-	      #request{us = US,
-		       path = ["acls-raw"],
+	      #request{path = ["acls-raw"],
 		       q = Query,
-		       lang = Lang} = Request) ->
+		       lang = Lang}) ->
     Res = case lists:keysearch("acls", 1, Query) of
 	      {value, {_, String}} ->
 		  case erl_scan:string(String) of
@@ -703,10 +678,9 @@ process_admin(Host,
 
 process_admin(Host,
 	      #request{method = Method,
-			us = US,
 			path = ["acls"],
 			q = Query,
-			lang = Lang} = Request) ->
+			lang = Lang}) ->
     ?DEBUG("query: ~p", [Query]),
     Res = case Method of
 	      'POST' ->
@@ -746,10 +720,9 @@ process_admin(Host,
 	       ], Host, Lang);
 
 process_admin(Host,
-	      #request{us = US,
-			path = ["access-raw"],
+	      #request{path = ["access-raw"],
 			q = Query,
-			lang = Lang} = Request) ->
+			lang = Lang}) ->
     SetAccess =
 	fun(Rs) ->
 		mnesia:transaction(
@@ -816,10 +789,9 @@ process_admin(Host,
 
 process_admin(Host,
 	      #request{method = Method,
-		       us = US,
 		       path = ["access"],
 		       q = Query,
-		       lang = Lang} = Request) ->
+		       lang = Lang}) ->
     ?DEBUG("query: ~p", [Query]),
     Res = case Method of
 	      'POST' ->
@@ -852,11 +824,9 @@ process_admin(Host,
 	       ], Host, Lang);
 
 process_admin(Host,
-	      #request{method = Method,
-		       us = US,
-		       path = ["access", SName],
+	      #request{path = ["access", SName],
 		       q = Query,
-		       lang = Lang} = Request) ->
+		       lang = Lang}) ->
     ?DEBUG("query: ~p", [Query]),
     Name = list_to_atom(SName),
     Res = case lists:keysearch("rules", 1, Query) of
@@ -893,43 +863,35 @@ process_admin(Host,
 	       ], Host, Lang);
 
 process_admin(global,
-	      #request{us = US,
-		       path = ["vhosts"],
-		       q = Query,
-		       lang = Lang} = Request) ->
+	      #request{path = ["vhosts"],
+		       lang = Lang}) ->
     Res = list_vhosts(Lang),
     make_xhtml([?XCT("h1", "ejabberd virtual hosts")] ++ Res, global, Lang);
 
 process_admin(Host,
-	      #request{us = US,
-		       path = ["users"],
+	      #request{path = ["users"],
 		       q = Query,
-		       lang = Lang} = Request) when is_list(Host) ->
+		       lang = Lang}) when is_list(Host) ->
     Res = list_users(Host, Query, Lang, fun url_func/1),
     make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
-	      #request{us = US,
-		       path = ["users", Diap],
-		       q = Query,
-		       lang = Lang} = Request) when is_list(Host) ->
+	      #request{path = ["users", Diap],
+		       lang = Lang}) when is_list(Host) ->
     Res = list_users_in_diapason(Host, Diap, Lang, fun url_func/1),
     make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
-	      #request{us = US,
+	      #request{
 		       path = ["online-users"],
-		       q = Query,
-		       lang = Lang} = Request) when is_list(Host) ->
+		       lang = Lang}) when is_list(Host) ->
     Res = list_online_users(Host, Lang),
     make_xhtml([?XCT("h1", "Online Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
-	      #request{method = Method,
-		       us = US,
-		       path = ["last-activity"],
+	      #request{path = ["last-activity"],
 		       q = Query,
-		       lang = Lang} = Request) when is_list(Host) ->
+		       lang = Lang}) when is_list(Host) ->
     ?DEBUG("query: ~p", [Query]),
     Month = case lists:keysearch("period", 1, Query) of
 		{value, {_, Val}} ->
@@ -966,34 +928,28 @@ process_admin(Host,
 	       Res, Host, Lang);
 
 process_admin(Host,
-	      #request{us = US,
-		       path = ["stats"],
-		       q = Query,
-		       lang = Lang} = Request) ->
+	      #request{path = ["stats"],
+		       lang = Lang}) ->
     Res = get_stats(Host, Lang),
     make_xhtml([?XCT("h1", "Statistics")] ++ Res, Host, Lang);
 
 process_admin(Host,
-	      #request{us = US,
-		       path = ["user", U],
+	      #request{path = ["user", U],
 		       q = Query,
-		       lang = Lang} = Request) ->
+		       lang = Lang}) ->
     Res = user_info(U, Host, Query, Lang),
     make_xhtml(Res, Host, Lang);
 
 process_admin(Host,
-	      #request{us = US,
-		       path = ["nodes"],
-		       q = Query,
-		       lang = Lang} = Request) ->
+	      #request{path = ["nodes"],
+		       lang = Lang}) ->
     Res = get_nodes(Lang),
     make_xhtml(Res, Host, Lang);
 
 process_admin(Host,
-	      #request{us = US,
-		       path = ["node", SNode | NPath],
+	      #request{path = ["node", SNode | NPath],
 		       q = Query,
-		       lang = Lang} = Request) ->
+		       lang = Lang}) ->
     case search_running_node(SNode) of
 	false ->
 	    make_xhtml([?XCT("h1", "Node not found")], Host, Lang);
@@ -1115,7 +1071,7 @@ acl_parse_submit(ACLs, Query) ->
     NewACLs =
 	lists:map(
 	  fun({acl, Name, Spec} = ACL) ->
-		  SName = atom_to_list(Name),
+		  %%SName = atom_to_list(Name),
 		  ID = term_to_id(ACL),
 		  case {lists:keysearch("type" ++ ID, 1, Query),
 			lists:keysearch("value" ++ ID, 1, Query)} of
@@ -1176,7 +1132,7 @@ string_to_spec("raw", Val) ->
 acl_parse_delete(ACLs, Query) ->
     NewACLs =
 	lists:filter(
-	  fun({acl, Name, Spec} = ACL) ->
+	  fun({acl, _Name, _Spec} = ACL) ->
 		  ID = term_to_id(ACL),
 		  not lists:member({"selected", ID}, Query)
 	  end, ACLs),
@@ -1221,7 +1177,7 @@ access_parse_query(Host, Query) ->
 	    end
     end.
 
-access_parse_addnew(AccessRules, Host, Query) ->
+access_parse_addnew(_AccessRules, Host, Query) ->
     case lists:keysearch("namenew", 1, Query) of
 	{value, {_, String}} when String /= "" ->
 	    Name = list_to_atom(String),
@@ -1250,7 +1206,7 @@ access_parse_delete(AccessRules, Host, Query) ->
 
 access_rule_to_xhtml(Rules) ->
     Text = lists:flatmap(
-	     fun({Access, ACL} = Rule) ->
+	     fun({Access, ACL} = _Rule) ->
 		     SAccess = atom_to_list(Access),
 		     SACL = atom_to_list(ACL),
 		     SAccess ++ "\t" ++ SACL ++ "\n"
@@ -1318,7 +1274,7 @@ list_users(Host, Query, Lang, URLFunc) ->
 		lists:flatmap(
 		  fun(K) ->
 			  L = K + M - 1,
-			  Node = integer_to_list(K) ++ "-" ++ integer_to_list(L),
+			  %%Node = integer_to_list(K) ++ "-" ++ integer_to_list(L),
 			  Last = if L < N -> su_to_list(lists:nth(L, SUsers));
 				    true -> su_to_list(lists:last(SUsers))
 				 end,
@@ -1397,7 +1353,7 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 		   ?XCT("td", "Last Activity")])]),
 	 ?XE("tbody",
 	     lists:map(
-	       fun(SU = {Server, User}) ->
+	       fun(_SU = {Server, User}) ->
 		       US = {User, Server},
 		       QueueLen = length(mnesia:dirty_read({offline_msg, US})),
 		       FQueueLen = [?AC(URLFunc({users_queue, Prefix,
@@ -1475,10 +1431,10 @@ get_stats(Host, Lang) ->
 
 
 list_online_users(Host, _Lang) ->
-    Users = [{S, U} || {U, S, R} <- ejabberd_sm:get_vh_session_list(Host)],
+    Users = [{S, U} || {U, S, _R} <- ejabberd_sm:get_vh_session_list(Host)],
     SUsers = lists:usort(Users),
     lists:flatmap(
-      fun({S, U} = SU) ->
+      fun({_S, U} = SU) ->
 	      [?AC("../user/" ++ ejabberd_http:url_encode(U) ++ "/",
 		   su_to_list(SU)),
 	       ?BR]
@@ -1696,7 +1652,7 @@ get_node(global, Node, [], Query, Lang) ->
 	       ?INPUTT("submit", "stop", "Stop")])
 	];
 
-get_node(Host, Node, [], Query, Lang) ->
+get_node(Host, Node, [], _Query, Lang) ->
     MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_hostnode, Host, [], [Host, Node]),
     MenuItems2 = [?LI([?ACT(MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
     [?XC("h1", ?T("Node ") ++ atom_to_list(Node)),
@@ -1768,7 +1724,7 @@ get_node(global, Node, ["db"], Query, Lang) ->
     end;
 
 get_node(global, Node, ["backup"], Query, Lang) ->
-    Res = node_backup_parse_query(Node, Query),
+    _Res = node_backup_parse_query(Node, Query),
     [?XC("h1", ?T("Backup of ") ++ atom_to_list(Node)),
      ?XCT("p", "Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
      ?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -1858,7 +1814,7 @@ get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
 	      [node_modules_to_xhtml(NewModules, Lang)])
 	];
 
-get_node(global, Node, ["stats"], Query, Lang) ->
+get_node(global, Node, ["stats"], _Query, Lang) ->
     UpTime = rpc:call(Node, erlang, statistics, [wall_clock]),
     UpTimeS = io_lib:format("~.3f", [element(1, UpTime)/1000]),
     CPUTime = rpc:call(Node, erlang, statistics, [runtime]),
@@ -1904,7 +1860,7 @@ get_node(global, Node, ["update"], Query, Lang) ->
     rpc:call(Node, code, purge, [ejabberd_update]),
     Res = node_update_parse_query(Node, Query),
     rpc:call(Node, code, load_file, [ejabberd_update]),
-    {ok, Dir, UpdatedBeams, Script, LowLevelScript, Check} =
+    {ok, _Dir, UpdatedBeams, Script, LowLevelScript, Check} =
 	rpc:call(Node, ejabberd_update, update_info, []),
     Mods =
 	case UpdatedBeams of
@@ -2071,10 +2027,10 @@ node_ports_to_xhtml(Ports, Lang) ->
 		   ])]),
 	  ?XE("tbody",
 	      lists:map(
-		fun({Port, Module, Opts} = E) ->
+		fun({Port, Module, Opts} = _E) ->
 			SPort = integer_to_list(Port),
 			SModule = atom_to_list(Module),
-			ID = term_to_id(E),
+			%%ID = term_to_id(E),
 			?XE("tr",
 			    [?XC("td", SPort),
 			     ?XE("td", [?INPUT("text", "module" ++ SPort,
@@ -2151,9 +2107,9 @@ node_modules_to_xhtml(Modules, Lang) ->
 		   ])]),
 	  ?XE("tbody",
 	      lists:map(
-		fun({Module, Opts} = E) ->
+		fun({Module, Opts} = _E) ->
 			SModule = atom_to_list(Module),
-			ID = term_to_id(E),
+			%%ID = term_to_id(E),
 			?XE("tr",
 			    [?XC("td", SModule),
 			     ?XE("td", [?INPUTS("text", "opts" ++ SModule,
@@ -2274,8 +2230,8 @@ pretty_print_xml({xmlelement, Name, Attrs, Els}, Prefix) ->
 
 url_func({user_diapason, From, To}) ->
     integer_to_list(From) ++ "-" ++ integer_to_list(To) ++ "/";
-url_func({users_queue, Prefix, User, Server}) ->
+url_func({users_queue, Prefix, User, _Server}) ->
     Prefix ++ "user/" ++ User ++ "/queue/";
-url_func({user, Prefix, User, Server}) ->
+url_func({user, Prefix, User, _Server}) ->
     Prefix ++ "user/" ++ User ++ "/".
 

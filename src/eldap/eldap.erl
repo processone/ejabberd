@@ -104,7 +104,7 @@ start_link(Name) ->
     gen_fsm:start_link({local, Reg_name}, ?MODULE, [], []).
 
 start_link(Name, Hosts, Port, Rootdn, Passwd) ->
-    Log = fun(N, Fmt, Args) -> io:format("---- " ++ Fmt, [Args]) end,
+    Log = fun(_N, Fmt, Args) -> io:format("---- " ++ Fmt, [Args]) end,
     Reg_name = list_to_atom("eldap_" ++ Name),
     gen_fsm:start_link({local, Reg_name}, ?MODULE, {Hosts, Port, Rootdn, Passwd, Log}, []).
 
@@ -299,7 +299,7 @@ parse_search_args([{timeout, Timeout}|T],A) when integer(Timeout) ->
     parse_search_args(T,A#eldap_search{timeout = Timeout});
 parse_search_args([{limit, Limit}|T],A) when is_integer(Limit) ->
     parse_search_args(T,A#eldap_search{limit = Limit});
-parse_search_args([H|T],A) ->
+parse_search_args([H|_],_) ->
     throw({error,{unknown_arg, H}});
 parse_search_args([],A) ->
     A.
@@ -414,11 +414,11 @@ connecting(timeout, S) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-connecting(Event, From, S) ->
+connecting(_Event, _From, S) ->
     Reply = {error, connecting},
     {reply, Reply, connecting, S}.
 
-wait_bind_response(Event, From, S) ->
+wait_bind_response(_Event, _From, S) ->
     Reply = {error, wait_bind_response},
     {reply, Reply, wait_bind_response, S}.
 
@@ -454,7 +454,7 @@ active_bind(Event, From, S) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
-handle_event(close, StateName, S) ->
+handle_event(close, _StateName, S) ->
     gen_tcp:close(S#eldap.fd),
     {stop, closed, S};
 
@@ -471,7 +471,7 @@ handle_event(process_bind_q, active_bind, #eldap{bind_q=Q} = S) ->
 	    {next_state, active, S}
     end;
 
-handle_event(Event, StateName, S) ->
+handle_event(_Event, StateName, S) ->
     {next_state, StateName, S}.
 
 %%----------------------------------------------------------------------
@@ -484,15 +484,16 @@ handle_event(Event, StateName, S) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event({debug_level, N}, From, StateName, S) ->
+handle_sync_event({debug_level, N}, _From, StateName, S) ->
     {reply, ok, StateName, S#eldap{debug_level = N}};
 
-handle_sync_event(Event, From, StateName, S) ->
-    {reply, {StateName, S}, StateName, S};
+handle_sync_event(_Event, _From, StateName, S) ->
+    {reply, {StateName, S}, StateName, S}.
 
-handle_sync_event(Event, From, StateName, S) ->
-    Reply = ok,
-    {reply, Reply, StateName, S}.
+%% TODO: Check this clause, because it never matches:
+%%handle_sync_event(Event, From, StateName, S) ->
+%%    Reply = ok,
+%%    {reply, Reply, StateName, S}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_info/3
@@ -504,34 +505,34 @@ handle_sync_event(Event, From, StateName, S) ->
 %%
 %% Packets arriving in various states
 %%
-handle_info({tcp, Socket, Data}, connecting, S) ->
+handle_info({tcp, _Socket, Data}, connecting, S) ->
     log1("eldap. tcp packet received when disconnected!~n~p~n", [Data], S),
     {next_state, connecting, S};
 
-handle_info({tcp, Socket, Data}, wait_bind_response, S) ->
+handle_info({tcp, _Socket, Data}, wait_bind_response, S) ->
     cancel_timer(S#eldap.bind_timer),
     case catch recvd_wait_bind_response(Data, S) of
 	bound                -> {next_state, active, S};
-	{fail_bind, Reason}  -> close_and_retry(S),
+	{fail_bind, _Reason}  -> close_and_retry(S),
 				{next_state, connecting, S#eldap{fd = null}};
-	{'EXIT', Reason}     -> close_and_retry(S),
+	{'EXIT', _Reason}     -> close_and_retry(S),
 				{next_state, connecting, S#eldap{fd = null}};
-	{error, Reason}      -> close_and_retry(S),
+	{error, _Reason}      -> close_and_retry(S),
 				{next_state, connecting, S#eldap{fd = null}}
     end;
 
-handle_info({tcp, Socket, Data}, StateName, S)
+handle_info({tcp, _Socket, Data}, StateName, S)
   when StateName==active; StateName==active_bind ->
     case catch recvd_packet(Data, S) of
 	{reply, Reply, To, NewS} -> gen_fsm:reply(To, Reply),
 				    {next_state, StateName, NewS};
 	{ok, NewS}               -> {next_state, StateName, NewS};
-	{'EXIT', Reason}         -> {next_state, StateName, S};
-	{error, Reason}          -> {next_state, StateName, S}
+	{'EXIT', _Reason}         -> {next_state, StateName, S};
+	{error, _Reason}          -> {next_state, StateName, S}
     end;
 
-handle_info({tcp_closed, Socket}, All_fsm_states, S) ->
-    F = fun(Id, [{Timer, From, Name}|Res]) ->
+handle_info({tcp_closed, _Socket}, _All_fsm_states, S) ->
+    F = fun(_Id, [{Timer, From, _Name}|_]) ->
 		gen_fsm:reply(From, {error, tcp_closed}),
 		cancel_timer(Timer)
 	end,
@@ -540,7 +541,7 @@ handle_info({tcp_closed, Socket}, All_fsm_states, S) ->
     {next_state, connecting, S#eldap{fd = null,
 				     dict = dict:new(), bind_q=queue:new()}};
 
-handle_info({tcp_error, Socket, Reason}, Fsm_state, S) ->
+handle_info({tcp_error, _Socket, Reason}, Fsm_state, S) ->
     log1("eldap received tcp_error: ~p~nIn State: ~p~n", [Reason, Fsm_state], S),
     {next_state, Fsm_state, S};
 %%
@@ -550,14 +551,14 @@ handle_info({timeout, Timer, {cmd_timeout, Id}}, active, S) ->
     case cmd_timeout(Timer, Id, S) of
 	{reply, To, Reason, NewS} -> gen_fsm:reply(To, Reason),
 				     {next_state, active, NewS};
-	{error, Reason}           -> {next_state, active, S}
+	{error, _Reason}           -> {next_state, active, S}
     end;
 
 handle_info({timeout, retry_connect}, connecting, S) ->
     {ok, NextState, NewS} = connect_bind(S), 
     {next_state, NextState, NewS};
 
-handle_info({timeout, Timer, bind_timeout}, wait_bind_response, S) ->
+handle_info({timeout, _Timer, bind_timeout}, wait_bind_response, S) ->
     close_and_retry(S),
     {next_state, connecting, S#eldap{fd = null}};
 
@@ -574,7 +575,7 @@ handle_info(Info, StateName, S) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(Reason, StateName, StatData) ->
+terminate(_Reason, _StateName, _StatData) ->
     ok.
 
 %%----------------------------------------------------------------------
@@ -582,7 +583,7 @@ terminate(Reason, StateName, StatData) ->
 %% Purpose: Convert process state when code is changed
 %% Returns: {ok, NewState, NewStateData}
 %%----------------------------------------------------------------------
-code_change(OldVsn, StateName, S, Extra) ->
+code_change(_OldVsn, StateName, S, _Extra) ->
     {ok, StateName, S}.
 
 %%%----------------------------------------------------------------------
@@ -713,18 +714,18 @@ recvd_packet(Pkt, S) ->
 	Error -> Error
     end.
 
-check_reply(#'LDAPResult'{resultCode = success}, From) ->
+check_reply(#'LDAPResult'{resultCode = success}, _From) ->
     ok;
-check_reply(#'LDAPResult'{resultCode = Reason}, From) ->
+check_reply(#'LDAPResult'{resultCode = Reason}, _From) ->
     {error, Reason};
-check_reply(Other, From) ->
+check_reply(Other, _From) ->
     {error, Other}.
 
-check_bind_reply(#'BindResponse'{resultCode = success}, From) ->
+check_bind_reply(#'BindResponse'{resultCode = success}, _From) ->
     ok;
-check_bind_reply(#'BindResponse'{resultCode = Reason}, From) ->
+check_bind_reply(#'BindResponse'{resultCode = Reason}, _From) ->
     {error, Reason};
-check_bind_reply(Other, From) ->
+check_bind_reply(Other, _From) ->
     {error, Other}.
 
 get_op_rec(Id, Dict) ->
@@ -781,9 +782,9 @@ cancel_timer(Timer) ->
 %%% Sanity check of received packet
 check_tag(Data) ->
     case asn1rt_ber_bin:decode_tag(Data) of
-	{Tag, Data1, Rb} ->
+	{_Tag, Data1, _Rb} ->
 	    case asn1rt_ber_bin:decode_length(Data1) of
-		{{Len,Data2}, Rb2} -> ok;
+		{{_Len,_Data2}, _Rb2} -> ok;
 		_ -> throw({error,decoded_tag_length})
 	    end;
 	_ -> throw({error,decoded_tag})
@@ -813,7 +814,7 @@ cmd_timeout(Timer, Id, S) ->
 				   #eldap_search_result{entries = Res1,
 							referrals = Ref1}},
 		     S#eldap{dict = New_dict}};
-		Others ->
+		_ ->
 		    New_dict = dict:erase(Id, Dict),
 		    {reply, From, {error, timeout}, S#eldap{dict = New_dict}}
 	    end;
@@ -857,13 +858,13 @@ connect_bind(S) ->
 		    {ok, wait_bind_response, NewS#eldap{fd = Socket,
 							host = Host,
 							bind_timer = Timer}};
-		{error, Reason} ->
+		{error, _Reason} ->
 		    gen_tcp:close(Socket),
 		    erlang:send_after(?RETRY_TIMEOUT, self(),
 				      {timeout, retry_connect}),
 		    {ok, connecting, S#eldap{host = Host}}
 	    end;
-	{error, Reason} ->
+	{error, _Reason} ->
 	    erlang:send_after(?RETRY_TIMEOUT, self(), 
 			      {timeout, retry_connect}),
 	    {ok, connecting, S#eldap{host = Host}}
@@ -887,9 +888,9 @@ next_host(Host, Hosts) ->			% Find next in turn
     next_host(Host, Hosts, Hosts).
 
 next_host(Host, [Host], Hosts) -> hd(Hosts);	% Wrap back to first
-next_host(Host, [Host|Tail], Hosts) -> hd(Tail);	% Take next
-next_host(Host, [], Hosts) -> hd(Hosts);	% Never connected before? (shouldn't happen)
-next_host(Host, [H|T], Hosts) -> next_host(Host, T, Hosts).
+next_host(Host, [Host|Tail], _Hosts) -> hd(Tail);	% Take next
+next_host(_Host, [], Hosts) -> hd(Hosts);	% Never connected before? (shouldn't happen)
+next_host(Host, [_|T], Hosts) -> next_host(Host, T, Hosts).
 
 
 %%% --------------------------------------------------------------------
@@ -918,7 +919,7 @@ v_modifications(Mods) ->
 
 v_substr([{Key,Str}|T]) when list(Str),Key==initial;Key==any;Key==final ->
     [{Key,Str}|v_substr(T)];
-v_substr([H|T]) ->
+v_substr([H|_]) ->
     throw({error,{substring_arg,H}});
 v_substr([]) -> 
     [].
@@ -973,7 +974,7 @@ get_integer(Key, List) ->
     case lists:keysearch(Key, 1, List) of
 	{value, {Key, Value}} when integer(Value) ->
 	    Value;
-	{value, {Key, Value}} ->
+	{value, {Key, _Value}} ->
 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
 	false ->
 	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
@@ -983,7 +984,7 @@ get_list(Key, List) ->
     case lists:keysearch(Key, 1, List) of
 	{value, {Key, Value}} when list(Value) ->
 	    Value;
-	{value, {Key, Value}} ->
+	{value, {Key, _Value}} ->
 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
 	false ->
 	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
@@ -993,10 +994,10 @@ get_log(Key, List) ->
     case lists:keysearch(Key, 1, List) of
 	{value, {Key, Value}} when function(Value) ->
 	    Value;
-	{value, {Key, Else}} ->
+	{value, {Key, _Else}} ->
 	    false;
 	false ->
-	    fun(Level, Format, Args) -> io:format("--- " ++ Format, Args) end
+	    fun(_Level, Format, Args) -> io:format("--- " ++ Format, Args) end
     end.
 
 get_hosts(Key, List) ->
@@ -1009,7 +1010,7 @@ get_hosts(Key, List) ->
 		 ({Key1, Value}) when list(Value),
 				      Key == Key1->
 		      Value;
-		 ({Else, Value}) ->
+		 ({_Else, _Value}) ->
 		      throw({error, "Bad Hostname in config"}) 
 	      end, List).
 

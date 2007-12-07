@@ -1,5 +1,8 @@
 2007-12-07  Badlop  <badlop@process-one.net>
 
+	* src/eldap/eldap.erl: Fix compilation warnings: Part 4 (EJAB-290)
+	* src/web/ejabberd_web_admin.erl: Likewise
+
 	* src/mod_irc/iconv.erl: Fix compilation warnings: 3 (EJAB-290)
 	* src/mod_irc/mod_irc.erl: Likewise
 	* src/mod_irc/mod_irc_connection.erl: Likewise
