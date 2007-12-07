@@ -553,7 +553,8 @@ check_max_sessions(LUser, LServer) ->
     %% first one
     SIDs = mnesia:dirty_select(
 	     session,
-	     [{#session{us = {LUser, LServer}, _ = '_'}, [], [[]]}]),
+	     [{#session{sid = '$1', us = {LUser, LServer}, _ = '_'}, [],
+	       ['$1']}]),
     MaxSessions = get_max_user_sessions(LUser, LServer),
     if
 	length(SIDs) =< MaxSessions ->
