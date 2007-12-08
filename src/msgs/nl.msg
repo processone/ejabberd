@@ -1,4 +1,6 @@
 % $Id$
+% Author: Sander Devrieze
+% Author: Andreas from Unstable.nl
 
 % mod_vcard_ldap.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
@@ -35,7 +37,6 @@
 {"Dump to Text File", "Backup naar een tekstbestand schrijven"}.
 {"Import File", "Bestand importeren"}.
 {"Import Directory", "Directory importeren"}.
-{"Host Name", "Hostnaam"}.
 {"Access Control Lists", "Access control lists"}.
 {"Access Rules", "Access rules"}.
 {"Online Users", "Online gebruikers"}.
@@ -70,20 +71,34 @@
 {"Import Users from Dir at ", "Gebruikers importeren vanaf directory op "}.
 {"Enter path to jabberd1.4 spool dir", "Voer pad naar jabberd 1.4-spool-directory in"}.
 {"Path to Dir", "Pad naar directory"}.
-{"Hostname Configuration", "Instellingen van hostnaam"}.
-{"Choose host name", "Hostnaam kiezen"}.
-{"Host name", "Hostnaam"}.
 {"Access Control List Configuration", "Instellingen van access control lists"}.
 {"Access control lists", "Access control lists"}.
 {"Access Configuration", "Toegangsinstellingen"}.
 {"Access rules", "Access rules"}.
-{"Remove Users", "Gebruikers verwijderen"}.
-{"Choose users to remove", "Selecteer de gebruikers die u wilt verwijderen"}.
 {"Administration of ", "Beheer van "}.
 {"Action on user", "Actie op gebruiker"}.
 {"Edit Properties", "Eigenschappen bewerken"}.
 {"Remove User", "Gebruiker verwijderen"}.
 {"Password", "Wachtwoord"}.
+{"Restart Service", "Herstart Service"}.
+{"Shut Down Service", "Stop Service"}.
+{"Delete User", "Verwijder Gebruiker"}.
+{"End User Session", "Verwijder Gebruikers-sessie"}.
+{"Get User Password", "Gebruikerswachtwoord Opvragen"}.
+{"Change User Password", "Verander Gebruikerswachtwoord"}.
+{"Get User Last Login Time", "Tijd van Laatste Aanmelding Opvragen"}.
+{"Get User Statistics", "Gebruikers-statistieken Opvragen"}.
+{"Get Number of Registered Users", "Aantal Geregistreerde Gebruikers Opvragen"}.
+{"Get Number of Online Users", "Aantal Aanwezige Gebruikers Opvragen"}.
+{"User Management", "Gebruikersbeheer"}.
+{"Time delay", "Vertraging"}.
+{"Password Verification", "Wachtwoord Bevestiging"}.
+{"Number of registered users", "Aantal Geregistreerde Gebruikers"}.
+{"Number of online users", "Aantal Aanwezige Gebruikers"}.
+{"Last login", "Laatste Aanmelding"}.
+{"Roster size", "Contactlijst Groote"}.
+{"IP addresses", "IP-adres"}.
+{"Resources", "Bronnen"}.
 
 % mod_register.erl
 {"Choose a username and password to register with this server", "Kies een gebruikersnaam en een wachtwoord om u te registreren op deze server"}.
@@ -134,13 +149,13 @@
 {"Specified nickname is already registered", "De gekozen bijnaam is al geregistreerd"}.
 {"You must fill in field \"Nickname\" in the form", "U moet het veld \"bijnaam\" invullen"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's MUC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"Chatrooms", "Groepsgesprekken"}.
 
 % mod_muc/mod_muc_room.erl
 {"Only moderators and participants are allowed to change subject in this room", "Alleen moderators en deelnemers mogen het onderwerp van deze chatruimte veranderen"}.
 {"Only moderators are allowed to change subject in this room", "Alleen moderators mogen het onderwerp van deze chatruimte veranderen"}.
 {"Visitors are not allowed to send messages to all occupants", "Bezoekers mogen geen berichten verzenden naar alle aanwezigen"}.
 {"It is not allowed to send private messages to the conference", "Er mogen geen privéberichten naar de chatruimte worden verzonden"}.
-{"It is not allowed to send normal messages to the conference", "Er mogen geen normale berichten naar de chatruimte worden verzonden"}.
 {"Improper message type", "Onjuist berichttype"}.
 {"Only occupants are allowed to send messages to the conference", "Alleen aanwezigen mogen berichten naar de chatruimte verzenden"}.
 {"Nickname is already in use by another occupant", "Deze bijnaam is al in gebruik door een andere aanwezige"}.
@@ -168,7 +183,6 @@
 {"Make participants list public", "Deelnemerslijst publiek maken"}.
 {"Make room password protected", "Chatruimte beveiligen met een wachtwoord"}.
 {"Make room members-only", "Chatruimte enkel toegankelijk maken voor leden"}.
-{"Make room moderated", "Chatruimte gemodereerd maken"}.
 {"Default users as participants", "Gebruikers standaard instellen als deelnemers"}.
 {"Allow users to change subject", "Gebruikers mogen het onderwerp veranderen"}.
 {"Allow users to send private messages", "Gebruikers mogen privéberichten verzenden"}.
@@ -176,11 +190,15 @@
 {"Allow users to send invites", "Gebruikers mogen uitnodigingen verzenden"}.
 {"Enable logging", "Logs aanzetten"}.
 {"You need an x:data capable client to configure room", "U hebt een client nodig die x:data ondersteunt om deze chatruimte in te stellen"}.
-{"Description", "Beschrijving"}.
 {"Number of occupants", "Aantal aanwezigen"}.
 {"Present real JIDs to", "Jabber ID's kunnen achterhaald worden door"}.
 {"moderators only", "moderators"}.
 {"anyone", "iedereen"}.
+{"Traffic rate limit is exceeded", "Dataverkeerslimiet overschreden"}.
+{"Maximum Number of Occupants", "Maximum aantal aanwezigen"}.
+{"No limit", "Geen limiet"}.
+{"~s invites you to the room ~s", "~s nodigt je uit voor het groepsgesprek ~s"}.
+{"the password is", "het wachtwoord is"}.
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's IRC-module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
@@ -191,6 +209,7 @@
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Als u verschillende coderingen wilt opgeven voor elke IRC-server, ga dan voor elke server te werk op als volgt: '{\"IRC-server\", \"codering\"}'. Standaard gebruikt dit IRC-transport de codering \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Voorbeeld: [{\"irc.example.org\", \"koi8-r\"}, {\"vendetta.example.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Coderingen:"}.
+{"IRC Transport", "IRC Transport"}.
 
 % mod_adhoc.erl
 {"Commands", "Commando's"}.
@@ -209,11 +228,12 @@
 {"Set message of the day and send to online users", "Bericht van de dag instellen en verzenden naar online gebruikers"}.
 {"Update message of the day (don't send)", "Bericht van de dag bijwerken (niet verzenden)"}.
 {"Delete message of the day", "Bericht van de dag verwijderen"}.
+{"Send announcement to all users on all hosts", "Stuur aankondiging aan alle gebruikers op alle hosts"}.
+{"Set message of the day on all hosts and send to online users", "Stel bericht-van-de-dag in op alle hosts en stuur naar aanwezige gebruikers"}.
+{"Update message of the day on all hosts (don't send)", "Verander bericht-van-de-dag op alle hosts (niet versturen)"}.
+{"Delete message of the day on all hosts", "Verwijder bericht-van-de-dag op alle hosts"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-{[], "[]"}.
-{"Node Creator", "Auteur van de node"}.
 {"Deliver payloads with event notifications", "Berichten bezorgen samen met gebeurtenisnotificaties"}.
 {"Notify subscribers when the node configuration changes", "Abonnees informeren wanneer de instellingen van de node veranderen"}.
 {"Notify subscribers when the node is deleted", "Abonnees informeren wanneer de node verwijderd word"}.
@@ -221,12 +241,20 @@
 {"Persist items to storage", "Items in het geheugen bewaren"}.
 {"Max # of items to persist", "Maximum aantal in het geheugen te bewaren items"}.
 {"Whether to allow subscriptions", "Abonnementsaanvraag toestaan"}.
-{"Specify the subscriber model", "Abonnementstype opgeven"}.
 {"Specify the publisher model", "Publicatietype opgeven"}.
 {"Max payload size in bytes", "Maximumgrootte van bericht in bytes"}.
-{"Send items to new subscribers", "Items naar nieuwe abonnees verzenden"}.
 {"Only deliver notifications to available users", "Notificaties alleen verzenden naar online gebruikers"}.
-{"Specify the current subscription approver", "Huidige verlener van abonnementen opgeven"}.
+{"Publish-Subscribe", "Publish-Subscribe"}.
+{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One"}.
+{"PubSub subscriber request", "PubSub abonnee verzoek"}.
+{"Choose whether to approve this entity's subscription.", "Beslis of dit verzoek tot abonneren zal worden goedgekeurd"}.
+{"Node ID", "Node ID"}.
+{"Subscriber Address", "Abonnee Adres"}.
+{"Allow this JID to subscribe to this pubsub node?", "Deze gebruiker toestaan te abonneren op deze pubsub node?"}.
+{"Deliver event notifications", "Gebeurtenisbevestigingen Sturen"}.
+{"Specify the access model", "Geef toegangsmodel"}.
+{"Roster groups that may subscribe (if access model is roster)", "Contactlijst groepen die kunnen abonneren (als contactlijst het toegangsmodel is)"}.
+{"When to send the last published item", "Wanneer het laatst gepubliceerde item verzonden moet worden"}.
 
 % web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "ejabberd's webinterface"}.
@@ -237,7 +265,6 @@
 {"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"Users", "Gebruikers"}.
 {"Last Activity", "Laatste activiteit"}.
-{"Shared Roster", "Gedeeld roster"}.
 {"(Raw)", "(Ruw)"}.
 {"Submitted", "Verzonden"}.
 {"Bad format", "Slecht formaat"}.
@@ -262,7 +289,6 @@
 {"Never", "Nooit"}.
 {"Online", "Online"}.
 {"Registered Users:", "Geregistreerde gebruikers:"}.
-{"Authenticated Users:", "Aangemelde gebruikers:"}.
 {"Online Users:", "Online gebruikers:"}.
 {"Outgoing s2s Connections:", "Uitgaande s2s-verbindingen:"}.
 {"Outgoing s2s Servers:", "Uitgaande s2s-verbindingen:"}.
@@ -319,7 +345,6 @@
 {"Update script", "Script voor de opwaardering"}.
 {"Low level update script", "Lowlevel script voor de opwaardering"}.
 {"Script check", "Controle van script"}.
-{"Not Found", "Niet gevonden"}.
 {"Port", "Poort"}.
 {"Module", "Module"}.
 {"Options", "Opties"}.
@@ -332,3 +357,16 @@
 {"Displayed Groups:", "Weergegeven groepen:"}.
 {"Group ", "Groep "}.
 
+% mod_vcard_odbc.erl
+{"vCard User Search", "Gebruikers zoeken"}.
+
+% mod_offline_odbc.erl
+{"Your contact offline message queue is full. The message has been discarded.", "Te veel offline berichten voor dit contactpersoon. Het bericht is niet opgeslagen."}.
+
+% mod_proxy65/mod_proxy65_service.erl
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+
+% Local Variables:
+% mode: erlang
+% End:
+% vim: set filetype=erlang tabstop=8:

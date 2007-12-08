@@ -1,5 +1,9 @@
 2007-12-08  Badlop  <badlop@process-one.net>
 
+	* src/msgs/ja.msg: New translation (thanks to Tsukasa Hamano)
+
+	* src/msgs/nl.msg: Updated (thanks to Andreas from Unstable.nl)
+
 	* src/ejabberd_config.erl: Report human-readable message when
 	Mnesia spool files are not readable.
 
