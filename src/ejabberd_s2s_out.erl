@@ -305,8 +305,10 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 	    ?DEBUG("recv verify: ~p", [{From, To, Id, Type}]),
 	    case StateData#state.verify of
 		false ->
+		    NextState = wait_for_validation,
 		    %% TODO: Should'nt we close the connection here ?
-		    {next_state, wait_for_validation, StateData, ?FSMTIMEOUT};
+		    {next_state, NextState, StateData,
+		     get_timeout_interval(NextState)};
 		{Pid, _Key, _SID} ->
 		    case Type of
 			"valid" ->
@@ -324,8 +326,9 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 			StateData#state.verify == false ->
 			    {stop, normal, StateData};
 			true ->
-			    {next_state, wait_for_validation, StateData,
-			     ?FSMTIMEOUT*3}
+			    NextState = wait_for_validation,
+			    {next_state, NextState, StateData,
+			     get_timeout_interval(NextState)}
 		    end
 	    end;
 	_ ->

@@ -1,5 +1,9 @@
+2007-12-08  Mickael Remond  <mremond@process-one.net>
 
-2007-12-06  Christophe Romain <christophe.romain@process-one.net>
+	* src/ejabberd_s2s_out.erl: Increase dialback timeout as dialback can
+        sometimes take longer than expected.
+
+2007-12-08  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: disco_sm_items bugfix
 
