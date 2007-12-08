@@ -347,7 +347,7 @@ disco_sm_items(Acc, _From, To, Node, _Lang) ->
     %% TODO, use iq_disco_items(Host, Node, From)
     Host = To#jid.lserver,
     LJID = jlib:jid_tolower(jlib:jid_remove_resource(To)),
-    case tree_action(Host, get_items, [Host, Node]) of
+    case get_items(Host, Node) of
 	[] ->
 	    Acc;
 	AllItems ->
@@ -2705,11 +2705,10 @@ features(Host, Node) ->
 tree_call({_User, Server, _Resource}, Function, Args) ->
     tree_call(Server, Function, Args);
 tree_call(Host, Function, Args) ->
-    Module = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state),
-			     nodetree) of
-		 [{nodetree, N}] -> N;
-		 _ -> list_to_atom(?TREE_PREFIX ++ ?STDNODE)
-	     end,
+    Module = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
+	[{nodetree, N}] -> N;
+	_ -> list_to_atom(?TREE_PREFIX ++ ?STDNODE)
+    end,
     catch apply(Module, Function, Args).
 tree_action(Host, Function, Args) ->
     Fun = fun() -> tree_call(Host, Function, Args) end,

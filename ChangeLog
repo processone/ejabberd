@@ -1,3 +1,8 @@
+
+2007-12-06  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: disco_sm_items bugfix
+
 2007-12-07  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/ejabberd_sm.erl: Bugfix
