@@ -239,7 +239,20 @@ set_opts(State) ->
 				      mnesia:write(R)
 			      end, Opts)
 	end,
-    {atomic, _} = mnesia:transaction(F).
+    case mnesia:transaction(F) of
+	{atomic, _} -> ok;
+	{aborted,{no_exists,Table}} ->
+	    MnesiaDirectory = mnesia:system_info(directory),
+	    ?ERROR_MSG("Error reading Mnesia database spool files:~n"
+		       "The Mnesia database couldn't read the spool file for the table '~p'.~n"
+		       "ejabberd needs read and write access in the directory:~n   ~s~n"
+		       "Maybe the problem is a change in the computer hostname,~n"
+		       "or a change in the Erlang node name, which is currently:~n   ~p~n"
+		       "Check the ejabberd guide for details about changing the~n"
+		       "computer hostname or Erlang node name.~n",
+		       [Table, MnesiaDirectory, node()]),
+	    exit("Error reading Mnesia database")
+    end.
 
 
 add_global_option(Opt, Val) ->
