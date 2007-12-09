@@ -1,3 +1,7 @@
+2007-12-09  Mickael Remond  <mremond@process-one.net>
+
+	* src/msg/fr.msg: Added missing space.
+
 2007-12-09  Badlop  <badlop@process-one.net>
 
 	* src/msgs/ru.msg: Updated (thanks to Konstantin Khomoutov)

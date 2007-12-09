@@ -302,7 +302,7 @@
 {"Groups", "Groupes"}.
 {"Remove", "Enlever"}.
 {"Add Jabber ID", "Ajouter un Jabber ID"}.
-{"User ", "Utilisateur"}.
+{"User ", "Utilisateur "}.
 {"Roster of ", "Liste de contact de "}.
 {"Online", "En ligne"}.
 {"Validate", "Valider"}.
