@@ -1,4 +1,6 @@
 % $Id$
+% Author: Sergei Golovan
+% Author: Konstantin Khomoutov
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Вы обязаны использовать STARTTLS"}.
@@ -6,8 +8,6 @@
 
 % jlib.hrl
 {"No resource provided", "Не указан ресурс"}.
-{"Illegal resource format", "Неправильный формат ресурса"}.
-{"Resource conflict", "Конфликт ресурсов"}.
 
 % mod_adhoc.erl
 {"Commands", "Команды"}.
@@ -22,12 +22,14 @@
 {"Announcements", "Объявления"}.
 {"Send announcement to all users", "Разослать объявление всем пользователям"}.
 {"Send announcement to all online users", "Разослать объявление всем подключённым пользователям"}.
-{"Send announcement to all online users on all hosts",
- "Разослать объявление всем подключённым пользователям на всех виртуальных серверах"}.
-{"Set message of the day and send to online users",
- "Установить сообщение дня и разослать его подключённым пользователям"}.
+{"Send announcement to all online users on all hosts", "Разослать объявление всем подключённым пользователям на всех виртуальных серверах"}.
+{"Set message of the day and send to online users", "Установить сообщение дня и разослать его подключённым пользователям"}.
 {"Update message of the day (don't send)", "Обновить сообщение дня (не рассылать)"}.
 {"Delete message of the day", "Удалить сообщение дня"}.
+{"Send announcement to all users on all hosts", "Разослать объявление всем пользователям на всех виртуальных серверах"}.
+{"Set message of the day on all hosts and send to online users", "Установить сообщение дня на всех виртуальных серверах и разослать его подключённым пользователям"}.
+{"Update message of the day on all hosts (don't send)", "Обновить сообщение дня на всех виртуальных серверах (не рассылать)"}.
+{"Delete message of the day on all hosts", "Удалить сообщение дня со всех виртуальных серверов"}.
 
 % mod_configure.erl
 {"Database Tables Configuration at ", "Конфигурация таблиц базы данных на "}.
@@ -52,19 +54,33 @@
 {"Import Users from Dir at ", "Импорт пользователей из директории на "}.
 {"Enter path to jabberd1.4 spool dir", "Введите путь к директории спула jabberd1.4"}.
 {"Path to Dir", "Путь к директории"}.
-{"Hostname Configuration", "Конфигурация имени хоста"}.
-{"Choose host name", "Выберите имя хоста"}.
-{"Host name", "Имя хоста"}.
 {"Access Control List Configuration", "Конфигурация списков управления доступом"}.
 {"Access control lists", "Списки управления доступом"}.
 {"Access Configuration", "Конфигурация доступа"}.
 {"Access rules", "Правила доступа"}.
-{"Remove Users", "Удаление пользователей"}.
-{"Choose users to remove", "Выберите пользователей, которых следует удалить"}.
 {"Administration of ", "Администрирование "}.
 {"Action on user", "Действие над пользователем"}.
 {"Edit Properties", "Изменить параметры"}.
 {"Remove User", "Удалить пользователя"}.
+{"Restart Service", "Перезапустить службу"}.
+{"Shut Down Service", "Остановить службу"}.
+{"Delete User", "Удалить пользователя"}.
+{"End User Session", "Завершить сеанс пользователя"}.
+{"Get User Password", "Получить пароль пользователя"}.
+{"Change User Password", "Изменить пароль пользователя"}.
+{"Get User Last Login Time", "Получить время последнего подключения пользователя"}.
+{"Get User Statistics", "Получить статистику по пользователю"}.
+{"Get Number of Registered Users", "Получить количество зарегистрированных пользователей"}.
+{"Get Number of Online Users", "Получить количество подключённых пользователей"}.
+{"User Management", "Управление пользователями"}.
+{"Time delay", "По истечение"}.
+{"Password Verification", "Проверка пароля"}.
+{"Number of registered users", "Количество зарегистрированных пользователей"}.
+{"Number of online users", "Количество подключённых пользователей"}.
+{"Last login", "Время последнего подключения"}.
+{"Roster size", "Размер списка контактов"}.
+{"IP addresses", "IP адреса"}.
+{"Resources", "Ресурсы"}.
 
 % mod_disco.erl
 {"Configuration", "Конфигурация"}.
@@ -75,10 +91,8 @@
 {"From ~s", "От ~s"}.
 {"Running Nodes", "Работающие узлы"}.
 {"Stopped Nodes", "Остановленные узлы"}.
-{"Host Name", "Имя хоста"}.
 {"Access Control Lists", "Списки управления доступом"}.
 {"Access Rules", "Правила доступа"}.
-{"Remove Users", "Удаление пользователей"}.
 {"Database", "База данных"}.
 {"Modules", "Модули"}.
 {"Start Modules", "Запуск модулей"}.
@@ -92,26 +106,19 @@
 {"Import Directory", "Импорт из директории"}.
 
 % mod_proxy65.erl
-{"SOCKS5 bytestreams proxy", "Потоковый SOCKS5 прокси"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd SOCKS5 Bytestreams модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
 
 % mod_register.erl
-{"Choose a username and password to register with this server",
- "Выберите имя пользователя и пароль для регистрации на этом сервере"}.
+{"Choose a username and password to register with this server", "Выберите имя пользователя и пароль для регистрации на этом сервере"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2007 Алексей Щепин"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd vCard модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
-{"You need an x:data capable client to search",
- "Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Алексей Щепин"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"You need an x:data capable client to search", "Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Search users in ", "Поиск пользователей в "}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)",
-"Заполните форму для поиска пользователя Jabber (Если добавить * в конец поля, то происходит поиск подстроки)"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Заполните форму для поиска пользователя Jabber (Если добавить * в конец поля, то происходит поиск подстроки)"}.
 {"Search Results for ", "Результаты поиска в "}.
 {"Jabber ID",         "Jabber ID"}.
 {"User",              "Пользователь"}.
@@ -129,12 +136,8 @@
 
 % mod_vcard_ldap.erl
 {"Fill in fields to search for any matching Jabber User", "Заполните форму для поиска пользователя Jabber"}.
-{"Given Name", "Имя"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd pub/sub модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
-{"Node Creator", "Создатель сборника"}.
 {"Deliver payloads with event notifications", "Доставлять вместе с уведомлениями o публикациях сами публикации"}.
 {"Notify subscribers when the node configuration changes", "Уведомлять подписчиков об изменении конфигурации сборника"}.
 {"Notify subscribers when the node is deleted", "Уведомлять подписчиков об удалении сборника"}.
@@ -142,29 +145,33 @@
 {"Persist items to storage", "Сохранять публикации в хранилище"}.
 {"Max # of items to persist", "Максимальное число сохраняемых публикаций"}.
 {"Whether to allow subscriptions", "Разрешить подписку"}.
-{"Specify the subscriber model", "Условия подписки"}.
 {"Specify the publisher model", "Условия публикации"}.
 {"Max payload size in bytes", "Максимальный размер полезной нагрузки в байтах"}.
-{"Send items to new subscribers", "Отправлять публикации новым подписчикам"}.
 {"Only deliver notifications to available users", "Доставлять уведомления только доступным пользователям"}.
-{"Specify the current subscription approver", "JID пользователя, утверждающего подписку"}.
+{"Publish-Subscribe", "Публикация-Подписка"}.
+{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "Модуль ejabberd Публикации-Подписки\nCopyright (c) 2004-2007 Process-One"}.
+{"PubSub subscriber request", "Запрос подписчика PubSub"}.
+{"Choose whether to approve this entity's subscription.", "Решите: предоставить ли подписку этому объекту."}.
+{"Node ID", "ID узла"}.
+{"Subscriber Address", "Адрес подписчика"}.
+{"Allow this JID to subscribe to this pubsub node?", "Разрешить этому JID подписаться на данный узел?"}.
+{"Deliver event notifications", "Доставлять уведомления о событиях"}.
+{"Specify the access model", "Укажите механизм управления доступом"}.
+{"Roster groups that may subscribe (if access model is roster)", "Группы списка контактов, которые могут подписываться (если механизм управления доступом - roster)"}.
+{"When to send the last published item", "Когда посылать последний опубликованный элемент"}.
 
 % mod_muc/mod_muc.erl
-{"You need an x:data capable client to register nickname",
- "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
+{"You need an x:data capable client to register nickname", "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"Nickname Registration at ", "Регистрация псевдонима на "}.
 {"Enter nickname you want to register", "Введите псевдоним, который Вы хотели бы зарегистрировать"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd MUC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
-{"Only service administrators are allowed to send service messages",
- "Только администратор службы может посылать служебные сообщения"}.
-{"Room creation is denied by service policy",
- "Cоздавать конференцию запрещено политикой службы"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"Only service administrators are allowed to send service messages", "Только администратор службы может посылать служебные сообщения"}.
+{"Room creation is denied by service policy", "Cоздавать конференцию запрещено политикой службы"}.
 {"Conference room does not exist", "Конференция не существует"}.
 {"Access denied by service policy", "Доступ запрещён политикой службы"}.
-{"You must fill in field \"Nickname\" in the form",
- "Вы должны заполнить поле \"Псевдоним\" в форме"}.
+{"You must fill in field \"Nickname\" in the form", "Вы должны заполнить поле \"Псевдоним\" в форме"}.
 {"Specified nickname is already registered", "Указанный псевдоним уже зарегистрирован"}.
+{"Chatrooms", "Комнаты"}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Конфигурация комнаты изменилась"}.
@@ -197,53 +204,36 @@
 % mod_muc/mod_muc_room.erl
 {"This room is not anonymous", "Эта комната не анонимная"}.
 {" has set the subject to: ", " установил(а) тему: "}.
-{"You need an x:data capable client to configure room",
- "Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"}.
+{"You need an x:data capable client to configure room", "Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"}.
 {"Configuration for ", "Конфигурация "}.
 {"Room title", "Название комнаты"}.
 {"Allow users to change subject", "Разрешить пользователям изменять тему"}.
-{"Allow users to query other users",
- "Разрешить iq-запросы к пользователям"}.
-{"Allow users to send private messages",
- "Разрешить приватные сообщения"}.
+{"Allow users to query other users", "Разрешить iq-запросы к пользователям"}.
+{"Allow users to send private messages", "Разрешить приватные сообщения"}.
 {"Make room public searchable", "Сделать комнату видимой всем"}.
 {"Make participants list public", "Сделать список участников видимым всем"}.
 {"Make room persistent", "Сделать комнату постоянной"}.
-{"Make room moderated", "Сделать комнату модерируемой"}.
-{"Default users as participants",
- "Сделать пользователей участниками по умолчанию"}.
-{"Make room members-only",
- "Комната только для зарегистрированных участников"}.
-{"Allow users to send invites",
- "Разрешить пользователям посылать приглашения"}.
+{"Default users as participants", "Сделать пользователей участниками по умолчанию"}.
+{"Make room members-only", "Комната только для зарегистрированных участников"}.
+{"Allow users to send invites", "Разрешить пользователям посылать приглашения"}.
 {"Make room password protected", "Сделать комнату защищённой паролем"}.
 {"Password", "Пароль"}.
 {"Present real JIDs to", "Сделать реальные JID участников видимыми"}.
 {"moderators only", "только модераторам"}.
 {"anyone", "всем участникам"}.
 {"Enable logging", "Включить журналирование"}.
-{"Only moderators and participants are allowed to change subject in this room",
- "Только модераторы и участники могут изменять тему в этой комнате"}.
-{"Only moderators are allowed to change subject in this room",
- "Только модераторы могут изменять тему в этой комнате"}.
-{"Visitors are not allowed to send messages to all occupants",
- "Посетителям не разрешается посылать сообщения всем присутствующим"}.
-{"Only occupants are allowed to send messages to the conference",
- "Только присутствующим разрешается посылать сообщения в конференцию"}.
-{"It is not allowed to send normal messages to the conference",
- "Нельзя посылать обычные сообщения в конференцию"}.
-{"It is not allowed to send private messages to the conference",
- "Не разрешается посылать частные сообщения прямо в конференцию"}.
+{"Only moderators and participants are allowed to change subject in this room", "Только модераторы и участники могут изменять тему в этой комнате"}.
+{"Only moderators are allowed to change subject in this room", "Только модераторы могут изменять тему в этой комнате"}.
+{"Visitors are not allowed to send messages to all occupants", "Посетителям не разрешается посылать сообщения всем присутствующим"}.
+{"Only occupants are allowed to send messages to the conference", "Только присутствующим разрешается посылать сообщения в конференцию"}.
+{"It is not allowed to send private messages to the conference", "Не разрешается посылать частные сообщения прямо в конференцию"}.
 {"Improper message type", "Неправильный тип сообщения"}.
 {"Nickname is already in use by another occupant", "Псевдоним занят кем-то из присутствующих"}.
 {"Nickname is registered by another person", "Псевдоним зарегистирован кем-то другим"}.
-{"It is not allowed to send private messages of type \"groupchat\"",
- "Нельзя посылать частные сообщения типа \"groupchat\""}.
+{"It is not allowed to send private messages of type \"groupchat\"", "Нельзя посылать частные сообщения типа \"groupchat\""}.
 {"Recipient is not in the conference room", "Адресата нет в конференции"}.
-{"Only occupants are allowed to send queries to the conference",
- "Только присутствующим разрешается посылать запросы в конференцию"}.
-{"Queries to the conference members are not allowed in this room",
- "Запросы к пользователям в этой конференции запрещены"}.
+{"Only occupants are allowed to send queries to the conference", "Только присутствующим разрешается посылать запросы в конференцию"}.
+{"Queries to the conference members are not allowed in this room", "Запросы к пользователям в этой конференции запрещены"}.
 {"You have been banned from this room", "Вам запрещено входить в эту конференцию"}.
 {"Membership required to enter this room", "В эту конференцию могут входить только её члены"}.
 {"Password required to enter this room", "Чтобы войти в эту конференцию, нужен пароль"}.
@@ -256,21 +246,23 @@
 {"Invalid role: ~s", "Недопустимая роль: ~s"}.
 {"Owner privileges required", "Требуются права владельца"}.
 {"private, ", "приватная, "}.
-{"Description", "Описание"}.
 {"Number of occupants", "Число присутствующих"}.
+{"Traffic rate limit is exceeded", "Превышен лимит скорости посылки информации"}.
+{"Maximum Number of Occupants", "Максимальное количество участников"}.
+{"No limit", "Не ограничено"}.
+{"~s invites you to the room ~s", "~s приглашает вас в комнату ~s"}.
+{"the password is", "пароль:"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd IRC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
-{"You need an x:data capable client to configure mod_irc settings",
- "Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"You need an x:data capable client to configure mod_irc settings", "Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"Registration in mod_irc for ", "Регистрация в mod_irc для "}.
-{"Enter username and encodings you wish to use for connecting to IRC servers",
- "Введите имя пользователя и кодировки, которые будут использоваться при подключении к IRC-серверам"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "Введите имя пользователя и кодировки, которые будут использоваться при подключении к IRC-серверам"}.
 {"IRC Username", "Имя пользователя IRC"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Чтобы указать различные кодировки для разных серверов IRC, заполните список значениями в формате '{\"irc server\", \"encoding\"}'. По умолчанию эта служба использует кодировку \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Примеры: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Кодировки"}.
+{"IRC Transport", "IRC Транспорт"}.
 
 % web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Web-интерфейс ejabberd"}.
@@ -289,7 +281,6 @@
 {"Add New", "Добавить"}.
 {"Registered Users", "Зарегистрированные пользователи"}.
 {"Registered Users:", "Зарегистрированные пользователи:"}.
-{"Authenticated Users:", "Аутентифицированные пользователи:"}.
 {"Online Users", "Подключённые пользователи"}.
 {"Online Users:", "Подключённые пользователи:"}.
 {"Outgoing s2s Connections:", "Исходящие s2s-серверы:"}.
@@ -355,10 +346,8 @@
 {"Add Jabber ID", "Добавить Jabber ID"}.
 {"User ", "Пользователь "}.
 {"Roster of ", "Ростер пользователя "}.
-{"Shared Roster", "Общие контакты"}.
 {"Online", "Подключён"}.
 {"Validate", "Утвердить"}.
-{"Not Found", "Не найдено"}.
 {"Shared Roster Groups", "Группы общих контактов"}.
 {"Name:", "Название:"}.
 {"Description:", "Описание:"}.
@@ -379,6 +368,13 @@
 {"ejabberd virtual hosts", "Виртуальные хосты ejabberd"}.
 {"Host", "Хост"}.
 
+% mod_vcard_odbc.erl
+{"vCard User Search", "Поиск пользователей по vCard"}.
+ 
+% mod_offline_odbc.erl
+{"Your contact offline message queue is full. The message has been discarded.", "Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
+
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

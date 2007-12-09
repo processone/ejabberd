@@ -1,3 +1,7 @@
+2007-12-09  Badlop  <badlop@process-one.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Konstantin Khomoutov)
+
 2007-12-08  Badlop  <badlop@process-one.net>
 
 	* src/msgs/ja.msg: New translation (thanks to Tsukasa Hamano)
