@@ -513,22 +513,16 @@ crypt(S) when is_binary(S) ->
 url_decode_q_split(Path) ->
     url_decode_q_split(Path, []).
 
-url_decode_q_split([$%, $C, $2, $%, Hi, Lo | Tail], Ack) ->
-    Hex = hex_to_integer([Hi, Lo]),
-    url_decode_q_split(Tail, [Hex|Ack]);
-url_decode_q_split([$%, $C, $3, $%, Hi, Lo | Tail], Ack) when Hi > $9 ->
-    Hex = hex_to_integer([Hi+4, Lo]),
-    url_decode_q_split(Tail, [Hex|Ack]);
-url_decode_q_split([$%, $C, $3, $%, Hi, Lo | Tail], Ack) when Hi < $A ->
-    Hex = hex_to_integer([Hi+4+7, Lo]),
-    url_decode_q_split(Tail, [Hex|Ack]);
 url_decode_q_split([$%, Hi, Lo | Tail], Ack) ->
     Hex = hex_to_integer([Hi, Lo]),
+    if Hex  == 0 -> exit(badurl);
+       true -> ok
+    end,
     url_decode_q_split(Tail, [Hex|Ack]);
 url_decode_q_split([$?|T], Ack) ->
     %% Don't decode the query string here, that is parsed separately.
     {path_norm_reverse(Ack), T};
-url_decode_q_split([H|T], Ack) ->
+url_decode_q_split([H|T], Ack) when H /= 0 -> 
     url_decode_q_split(T, [H|Ack]);
 url_decode_q_split([], Ack) ->
     {path_norm_reverse(Ack), []}.
@@ -542,15 +536,14 @@ start_dir(N, Path, "./"  ++ T ) -> start_dir(N    , Path, T);
 start_dir(N, Path, "../" ++ T ) -> start_dir(N + 1, Path, T);
 start_dir(N, Path,          T ) -> rest_dir (N    , Path, T).
 
-rest_dir (_N, Path, []         ) -> case Path of
+rest_dir (_N, Path, []         ) -> case Path of 
 				       [] -> "/";
 				       _  -> Path
 				   end;
 rest_dir (0, Path, [ $/ | T ] ) -> start_dir(0    , [ $/ | Path ], T);
 rest_dir (N, Path, [ $/ | T ] ) -> start_dir(N - 1,        Path  , T);
 rest_dir (0, Path, [  H | T ] ) -> rest_dir (0    , [  H | Path ], T);
-rest_dir (N, Path, [ _H | T ] ) -> rest_dir (N    ,        Path  , T).
-
+rest_dir (N, Path, [  _H | T ] ) -> rest_dir (N    ,        Path  , T).
 
 %% hex_to_integer
 

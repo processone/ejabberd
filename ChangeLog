@@ -1,5 +1,7 @@
 2007-12-09  Mickael Remond  <mremond@process-one.net>
 
+	* src/web/ejabberd_http.erl: Fixed URL decoding code (EJAB-450)
+
 	* src/msg/fr.msg: Added missing space.
 
 2007-12-09  Badlop  <badlop@process-one.net>
