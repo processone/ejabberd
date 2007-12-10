@@ -37,6 +37,7 @@
 
 -define(STDTREE, "default").
 -define(STDNODE, "default").
+-define(PEPNODE, "pep").
 
 %% exports for hooks
 -export([set_presence/4,
@@ -198,9 +199,9 @@ init_plugins(Host, ServerHost, Opts) ->
 			      gen_mod:get_opt(nodetree, Opts, ?STDTREE)),
     ?INFO_MSG("** tree plugin is ~p",[TreePlugin]),
     TreePlugin:init(Host, ServerHost, Opts),
-    Plugins = lists:usort(gen_mod:get_opt(plugins, Opts, []) ++ [?STDNODE]),
+    Plugins = lists:usort(gen_mod:get_opt(plugins, Opts, []) ++ [?STDNODE,?PEPNODE]),
     lists:foreach(fun(Name) ->
-			  ?INFO_MSG("** init ~s plugin~n",[Name]),
+			  ?INFO_MSG("** init ~s plugin",[Name]),
 			  Plugin = list_to_atom(?PLUGIN_PREFIX ++ Name),
 			  Plugin:init(Host, ServerHost, Opts)
 		  end, Plugins),
@@ -208,7 +209,7 @@ init_plugins(Host, ServerHost, Opts) ->
 
 terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     lists:foreach(fun(Name) ->
-			  ?INFO_MSG("** terminate ~s plugin~n",[Name]),
+			  ?INFO_MSG("** terminate ~s plugin",[Name]),
 			  Plugin = list_to_atom(?PLUGIN_PREFIX++Name),
 			  Plugin:terminate(Host, ServerHost)
 		  end, Plugins),
@@ -1193,7 +1194,7 @@ create_node(Host, ServerHost, [], Owner, Type, Access, Configuration) ->
     end;
 create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
     Type = case Host of
-	       {_User, _Server, _Resource} -> "pep";
+	       {_User, _Server, _Resource} -> ?PEPNODE;
 	       _ -> GivenType
 	   end,
     Parent = lists:sublist(Node, length(Node) - 1),
@@ -1498,28 +1499,21 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	{error, ?ERR_ITEM_NOT_FOUND} ->
 	    %% handles auto-create feature
 	    %% for automatic node creation. we'll take the default node type:
-	    %% first listed into the plugins configuration option
-	    Type = case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), plugins) of
-		       [{plugins, PL}] -> hd(PL);
-		       _ -> ?STDNODE
-		   end,
+	    %% first listed into the plugins configuration option, or pep
+	    Type = case Host of
+		{_User, _Server, _Resource} -> 
+		    ?PEPNODE;
+		_ -> 
+		    case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), plugins) of
+			[{plugins, PL}] -> hd(PL);
+			_ -> ?STDNODE
+		    end
+	    end,
 	    case lists:member("auto-create", features(Type)) of
 		true ->
 		    case create_node(Host, ServerHost, Node, Publisher, Type) of
-			{result, [CreateRes]} ->
-			    %% Ugly hack
-			    SNewNode = xml:get_path_s(
-					 CreateRes,
-					 [{elem, "create"},
-					  {attr, "node"}]),
-			    NewNode = string_to_node(SNewNode),
-			    if
-				NewNode /= Node ->
-				    publish_item(Host, ServerHost, NewNode,
-						 Publisher, ItemId, Payload);
-				true ->
-				    {error, ?ERR_ITEM_NOT_FOUND}
-			    end;
+			{result, _} ->
+			    publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload);
 			_ ->
 			    {error, ?ERR_ITEM_NOT_FOUND}
 		    end;

@@ -1,6 +1,7 @@
 2007-12-10  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: database upgrade bugfix
+	* src/mod_pubsub/mod_pubsub.erl: auto-create pep node bugfix
 
 2007-12-09  Mickael Remond  <mremond@process-one.net>
 
