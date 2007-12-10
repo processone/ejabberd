@@ -171,7 +171,7 @@ stop_supervisor(Host) ->
     supervisor:delete_child(ejabberd_sup, Proc).
 
 do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) ->
-    case acl:match_rule(Host, Access, From) of
+    case acl:match_rule(ServerHost, Access, From) of
 	allow ->
 	    do_route1(Host, ServerHost, From, To, Packet, DefEnc);
 	_ ->
