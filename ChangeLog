@@ -1,3 +1,7 @@
+2007-12-10  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: database upgrade bugfix
+
 2007-12-09  Mickael Remond  <mremond@process-one.net>
 
 	* src/web/ejabberd_http.erl: Fixed URL decoding code (EJAB-450)
