@@ -2793,7 +2793,10 @@ This module enables you to create shared roster groups. This means that you can
 create groups of people that can see members from (other) groups in their
 rosters. The big advantages of this feature are that end users do not need to
 manually add all users to their rosters, and that they cannot permanently delete
-users from the shared roster groups.
+users from the shared roster groups. 
+A shared roster group can have members from any Jabber server,
+but the presence will only be available from and to members 
+of the same virtual host where the group is created.
 
 Shared roster groups can be edited \emph{only} via the web interface. Each group
 has a unique identification and the following parameters:
@@ -2803,6 +2806,9 @@ has a unique identification and the following parameters:
   anything.
 \item[Members] A list of full JIDs of group members, entered one per line in
   the web interface.
+  To put as members all the registered users in the virtual hosts,
+  you can use the special directive: @all@.
+  Note that this directive is designed for a small server with just a few hundred users.
 \item[Displayed groups] A list of groups that will be in the rosters of this
   group's members.
 \end{description}

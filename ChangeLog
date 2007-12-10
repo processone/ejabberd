@@ -1,5 +1,7 @@
 2007-12-10  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Small improvement in mod_shared_roster
+
 	* src/mod_irc/mod_irc.erl: Bugfix in ACL check (thanks to Sergei
 	Golovan)
 
