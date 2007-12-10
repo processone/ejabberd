@@ -35,6 +35,7 @@
 {"Organization Unit", "部署名"}.
 
 % mod_configure.erl
+{"Action on user", "ユーザー操作"}.
 {"Configuration", "設定"}.
 {"Database", "データーベース"}.
 {"Start Modules", "モジュールの起動"}.
@@ -91,7 +92,7 @@
 {"Enter path to jabberd1.4 spool dir", "jabberd1.4 spool ディレクトリのパスを入力して下さい"}.
 {"Path to Dir", "ディレクトリのパス"}.
 {"Time delay", "遅延時間"}.
-{"Send announcement to all online users on all hosts", "全てのホストのオンラインユーザへアナウンスを送信"}.
+{"Send announcement to all online users on all hosts", "全ホストのオンラインユーザへアナウンスを送信"}.
 {"Subject", "件名"}.
 {"Message body", "本文"}.
 {"Access Control List Configuration", "アクセスコントロールリスト設定"}.
@@ -133,6 +134,7 @@
 {"Choose a username and password to register with this server", "サーバーに登録するユーザー名とパスワードを選択して下さい"}.
 
 % ejabberd_c2s.erl
+{"Replaced by new connection", "新しいコネクションによって置き換えられました"}.
 {"Use of STARTTLS required", "STARTTLS を使用"}.
 {"No resource provided", "リソースが提供されませんでした"}.
 
@@ -164,6 +166,7 @@
 {"December", "12月"}.
 {"Room Configuration", "チャットルーム設定"}.
 {"Room title", "チャットルームタイトル"}.
+{"is now known as", "は名前を変更しました: "}.
 
 % mod_muc/mod_muc.erl
 {"Access denied by service policy", "サービスポリシーによってアクセスが禁止されました"}.
@@ -179,18 +182,42 @@
 {"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages of type \"groupchat\"", "種別が\"groupchat\" であるプライベートメッセージは許可されていません"}.
+{"Invalid affiliation: ~s", "無効な提携です: ~s"}.
+{"Invalid role: ~s", "無効なロールです: ~s"}.
+{"Owner privileges required", "オーナー権限が必要です"}.
+{"Configuration for ", "設定: "}.
+{"Make room persistent", "チャットルームを永続化します"}.
+{"Make room public searchable", "チャットルームを検索可能にします"}.
+{"Make participants list public", "参加者一覧を公開します"}.
+{"Make room password protected", "チャットルームにパスワードを設定します"}.
+{"Maximum Number of Occupants", "最大移住者数"}.
+{"No limit", "制限無し"}.
+{"Present real JIDs to", "本当の JID を公開する"}.
+{"moderators only", "モデレーターのみ"}.
+{"anyone", "誰でも"}.
+{"Make room members-only", "チャットルームをメンバーのみに制限する"}.
+{"Default users as participants", "デフォルトのユーザーは参加者にする"}.
+{"Allow users to change subject", "ユーザーによる件名の変更を許可する"}.
+{"Allow users to send private messages", "ユーザーによるプライベートメッセージの送信を許可する"}.
+{"Allow users to query other users", "ユーザーによる他のユーザーへの問い合わせを許可する"}.
+{"Allow users to send invites", "ユーザーによる招待を許可する"}.
+{"Enable logging", "ロギングを有効にする"}.
+{"Number of occupants", "居住者の数"}.
+{"~s invites you to the room ~s", "~s はあなたをチャットルーム ~s に招待しています"}.
+{"the password is", "パスワードは"}.
 {"Traffic rate limit is exceeded", "トラフィックレートの制限を超えました"}.
 {"It is not allowed to send private messages to the conference", "カンファレンスルームにプライベートメッセージを送信することは出来ません"}.
 {"Improper message type", "誤ったメッセージタイプです"}.
-{"Only occupants are allowed to send messages to the conference", "参加者のみがカンファレンスに"}.
+{"Only occupants are allowed to send messages to the conference", "移住者のみがカンファレンスに"}.
 {"Recipient is not in the conference room", "受信者がカンファレンスルームに居ません"}.
-{"Only occupants are allowed to send queries to the conference", "参加者のみがカンファレンスにクエリーを送信出来ます"}.
+{"Only occupants are allowed to send queries to the conference", "移住者のみがカンファレンスにクエリーを送信出来ます"}.
 {"Queries to the conference members are not allowed in this room", "このチャットルームではカンファレンスメンバーへのクエリーは禁止されています"}.
 {"private, ", "プライベート"}.
 {"Only moderators and participants are allowed to change subject in this room", "モデレーターと参加者のみがチャットルームの件名を変更出来ます"}.
 {"Only moderators are allowed to change subject in this room", "モデレーターのみがチャットルームの件名を変更出来ます"}.
-{"Visitors are not allowed to send messages to all occupants", "ビジターが参加者にメッセージを送ることは許可されていません"}.
-{"Nickname is already in use by another occupant", "ニックネームは既に他の参加者によって使用されています"}.
+{"Visitors are not allowed to send messages to all occupants", "ビジターが移住者ににメッセージを送ることは許可されていません"}.
+{"Nickname is already in use by another occupant", "ニックネームは既に他の移住者によって使用されています"}.
 {"Nickname is registered by another person", "ニックネームは他の人によって登録されています"}.
 {"You have been banned from this room", "あなたはチャットルームからバンされています"}.
 {"Membership required to enter this room", "チャットルームに入るにはメンバーでなければなりません"}.
@@ -204,6 +231,10 @@
 {"You need an x:data capable client to configure room", "チャットルームを設定するにはにはクライアントが x:data をサポートする必要があります"}.
 
 % mod_irc/mod_irc.erl
+{"Registration in mod_irc for ", "mod_irc での登録: "}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "IRCサーバーに接続先する為のユーザー名と文字エンコーディングを入力して下さい"}.
+{"IRC Username", "IRCユーザー名"}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "別の文字エンコーディングを使用したい場合、'{\"irc server\", \"encoding\"}' という形式のリストを入力して下さい。デフォルトで \"~s\" を使用します"}.
 {"IRC Transport", "IRC トランスポート"}.
 {"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings", "mod_irc の設定にはクライアントが x:data をサポートする必要があります"}.
@@ -216,7 +247,16 @@
 {"Pong", "Pong"}.
 
 % mod_announce.erl
-{"Send announcement to all users", "アナウンスを全ユーザーに送信"}.
+{"Really delete message of the day?", "本当にお知らせメッセージを削除しますか？"}.
+{"No body provided for announce message", "アナウンスメッセージはありませんでした"}.
+{"Announcements", "アナウンス"}.
+{"Set message of the day and send to online users", "お知らせメッセージを設定し、オンラインユーザーに送信する"}.
+{"Set message of the day on all hosts and send to online users", "全ホストのお知らせメッセージを設定し、オンラインユーザーに送信する"}.
+{"Update message of the day (don't send)", "お知らせメッセージを更新する(送信しない)"}.
+{"Update message of the day on all hosts (don't send)", "全ホストのお知らせメッセージを更新する"}.
+{"Delete message of the day", "お知らせメッセージを削除する"}.
+{"Delete message of the day on all hosts", "全ホストのお知らせメッセージを削除する"}.
+{"Send announcement to all users", "アナウンスを全てのユーザーに送信"}.
 {"Send announcement to all users on all hosts", "アナウンスを全ホストのユーザーに送信"}.
 {"Send announcement to all online users", "アナウンスを全てのオンラインユーザーに送信"}.
 
@@ -234,8 +274,32 @@
 {"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Publish-Subscribe", "Publish-Subscribe"}.
+{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One"}.
+{"PubSub subscriber request", "PubSub 購読リクエスト"}.
+{"Choose whether to approve this entity's subscription.", "このエントリを承認するかどうかを選択して下さい"}.
+{"Node ID", "ノードID"}.
+{"Subscriber Address", "購読アドレス"}.
+{"Allow this JID to subscribe to this pubsub node?", "この JID をこの pubsubノードへ購読することを許可しますか？"}.
+{"Deliver payloads with event notifications", "イベント通知と同時にペイロードを配送します"}.
+{"Deliver event notifications", "イベント通知を配送します"}.
+{"Notify subscribers when the node configuration changes", "ノード設定に変更があった時に購読者へ通知します"}.
+{"Notify subscribers when the node is deleted", "ノードが削除された時に購読者へ通知します"}.
+{"Notify subscribers when items are removed from the node", "アイテムがノードから消された時に購読者へ通知します"}.
+{"Persist items to storage", "アイテムをストレージに保存する"}.
+{"Max # of items to persist", "アイテムの最大保存数 #"}.
+{"Whether to allow subscriptions", "購読を許可するかどうか"}.
+{"Specify the access model", "アクセスモデルを設定する"}.
+{"Roster groups that may subscribe (if access model is roster)", "購読可能な名簿グループ(アクセスモデルが名簿であれば)"}.
+{"Specify the publisher model", "公開モデルを指定する"}.
+{"Max payload size in bytes", "最大ぺイロードサイズ(byte)"}.
+{"When to send the last published item", "最後の公開アイテムを送信するタイミングで"}.
+{"Only deliver notifications to available users", "有効なユーザーにのみ告知を送信する"}.
 
 % web/ejabberd_web_admin.erl
+{"All activity", "全て"}.
+{"Show Ordinary Table", "Ordinaryテーブルを表示"}.
+{"Show Integral Table", "Integralテーブルを表示"}.
 {"ejabberd Web Interface", "ejabberd WEBインターフェイス"}.
 {"Administration", "管理"}.
 {"Virtual Hosts", "ヴァーチャルホスト"}.
