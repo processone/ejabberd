@@ -1,14 +1,16 @@
-% $Id$
+% $Id:$
+% Language: Chinese (中文)
+% Author: Shelley Shyan - skylarkbj AT 163 DOT com
 
 % jlib.hrl
 {"No resource provided", "无资源提供"}.
 
 % mod_offline_odbc.erl
-{"Your contact offline message queue is full. The message has been discarded.", "您的联系人离线消息队列已满. 消息已被丢弃"}.
+{"Your contact offline message queue is full. The message has been discarded.", "您联系人的离线消息队列已满. 消息已被丢弃"}.
 
 % mod_configure.erl
 {"Choose storage type of tables", "请选择表格的存储类型"}.
-{"RAM copy", "内存 (RAM)复制"}.
+{"RAM copy", "内存(RAM)复制"}.
 {"RAM and disc copy", "内存与磁盘复制"}.
 {"Disc only copy", "仅复制磁盘"}.
 {"Remote copy", "远程复制"}.
@@ -21,11 +23,11 @@
 {"Enter path to backup file", "请输入备份文件的路径"}.
 {"Path to File", "文件路径"}.
 {"Restore Backup from File at ", "要恢复的备份文件位于"}.
-{"Dump Backup to Text File at ", "转储备份到文本文件"}.
+{"Dump Backup to Text File at ", "转储备份到文本文件于"}.
 {"Enter path to text file", "请输入文本文件的路径"}.
-{"Import User from File at ", "用来导入用户的文件位于 "}.
+{"Import User from File at ", "导入用户的文件位于 "}.
 {"Enter path to jabberd1.4 spool file", "请输入jabberd1.4 spool文件的路径"}.
-{"Import Users from Dir at ", "从目录导入用户 "}.
+{"Import Users from Dir at ", "导入用户的目录位于 "}.
 {"Enter path to jabberd1.4 spool dir", "请输入jabberd1.4 spool目录的路径"}.
 {"Path to Dir", "目录的路径"}.
 {"Access Control List Configuration", "访问控制列表(ACL)配置"}.
@@ -119,7 +121,7 @@
 {"Pong", "Pong"}.
 
 % mod_announce.erl
-{"Really delete message of the day?", "确实要删除该天的消息吗?"}.
+{"Really delete message of the day?", "确实要删除当日的消息吗?"}.
 {"Subject", "标题"}.
 {"Message body", "消息主体"}.
 {"No body provided for announce message", "没有人提供通知消息"}.
@@ -128,8 +130,8 @@
 {"Send announcement to all online users", "将通知发送给所有在线用户"}.
 {"Send announcement to all online users on all hosts", "将通知发送给所有主机的所有用户"}.
 {"Set message of the day and send to online users", "设定当日消息并发送给所有在线用户"}.
-{"Update message of the day (don't send)", "更新该天的消息(不发送)"}.
-{"Delete message of the day", "删除该天的消息"}.
+{"Update message of the day (don't send)", "更新当日的消息(不发送)"}.
+{"Delete message of the day", "删除当日的消息"}.
 {"Send announcement to all users on all hosts", "给所有主机上的所有用户发送通知"}.
 {"Set message of the day on all hosts and send to online users", "设置当日所有主机上 的消息并发送给在线用户"}.
 {"Update message of the day on all hosts (don't send)", "更新当日所有主机上 的消息(不发送)"}.
@@ -146,7 +148,7 @@
 {"Whether to allow subscriptions", "是否允许订阅"}.
 {"Specify the publisher model", "指定发布人样式"}.
 {"Max payload size in bytes", "最大有效负载比特数"}.
-{"Only deliver notifications to available users", "仅将通知发送给有效用户"}.
+{"Only deliver notifications to available users", "仅将通知发送给可发送的用户"}.
 {"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd发行-订阅模块\nCopyright (c) 2004-2007 Process-One"}.
 {"PubSub subscriber request", "PubSub订阅人请求"}.
 {"Choose whether to approve this entity's subscription.", "选择是否赞成该实体的订阅"}.
@@ -160,7 +162,7 @@
 {[], " "}.
 
 % mod_muc/mod_muc_log.erl
-{"Chatroom configuration modified", "聊天室设置已修改"}.
+{"Chatroom configuration modified", "聊天室配置已修改"}.
 {"joins the room", "加入房间"}.
 {"leaves the room", "离开房间"}.
 {"has been kicked", "已被踢出"}.
@@ -185,7 +187,7 @@
 {"October", "十月"}.
 {"November", "十一月"}.
 {"December", "十二月"}.
-{"Room Configuration", "房间设置"}.
+{"Room Configuration", "房间配置"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "您需要一个兼容x:data的客户端来注册昵称"}.
@@ -275,7 +277,7 @@
 {"Raw", "原始格式"}.
 {"Delete Selected", "删除已选内容"}.
 {"Submit", "提交"}.
-{"~s access rule configuration", "~s访问规则设置"}.
+{"~s access rule configuration", "~s访问规则配置"}.
 {"Node not found", "没有找到节点"}.
 {"Add New", "添加新用户"}.
 {"Registered Users", "注册用户"}.
@@ -301,11 +303,11 @@
 {"Transactions Aborted:", "要取消的事务:"}.
 {"Transactions Restarted:", "要重启的事务:"}.
 {"Transactions Logged:", "要记入日志的事务:"}.
-{"Port", "端口"}.
-{"Module", "模块"}.
+{"Port",    "端口"}.
+{"Module",  "模块"}.
 {"Options", "选项"}.
-{"Update", "更新"}.
-{"Delete", "删除"}.
+{"Update",  "更新"}.
+{"Delete",  "删除"}.
 {"Add User", "添加用户"}.
 {"Offline Messages", "离线消息"}.
 {"Users Last Activity", "用户上次活动"}.
@@ -330,9 +332,9 @@
 {"Name:", "名称:"}.
 {"Description:", "描述:"}.
 {"Members:", "会员:"}.
-{"Displayed Groups:", "已显示的组"}.
-{"Group ", "组 "}.
-{"Period: ", "持续时间: "}.
+{"Displayed Groups:", "已显示的组:"}.
+{"Group ", "组"}.
+{"Period: ", "持续时间:"}.
 {"Last month", "上个月"}.
 {"Last year", "上一年"}.
 {"All activity", "所有活动"}.
@@ -375,3 +377,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

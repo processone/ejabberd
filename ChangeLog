@@ -1,3 +1,9 @@
+2007-12-11  Badlop  <badlop@process-one.net>
+
+	* src/msgs/tr.msg: New translation (thanks to Doruk Fisek)
+
+	* src/msgs/zh.msg: Updated (thanks to Shelley Shyan)
+
 2007-12-10  Badlop  <badlop@process-one.net>
 
 	* src/msgs/ja.msg: Updated (thanks to Tsukasa Hamano)
