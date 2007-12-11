@@ -1,3 +1,9 @@
+2007-12-11  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: notification broadcast bugfix
+
+	* src/jlib.hrl: add pubsub namespace
+
 2007-12-11  Badlop  <badlop@process-one.net>
 
 	* src/msgs/tr.msg: New translation (thanks to Doruk Fisek)
@@ -15,8 +21,8 @@
 
 2007-12-10  Christophe Romain <christophe.romain@process-one.net>
 
-	* src/mod_pubsub/mod_pubsub.erl: database upgrade bugfix
-	* src/mod_pubsub/mod_pubsub.erl: auto-create pep node bugfix
+	* src/mod_pubsub/mod_pubsub.erl: database upgrade and auto-create
+	pep node bugfix
 
 2007-12-09  Mickael Remond  <mremond@process-one.net>
 

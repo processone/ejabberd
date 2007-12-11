@@ -9,10 +9,6 @@
 -define(PUBSUB_JID, {jid, "", Host, "", "", Host, ""}).
 -define(ERR_EXTENDED(E,C), mod_pubsub:extended_error(E,C)).
 
-% TODO: move to jlib.hrl
--define(NS_PUBSUB_NODE_CONFIG, "http://jabber.org/protocol/pubsub#node_config").
--define(NS_PUBSUB_SUB_AUTH, "http://jabber.org/protocol/pubsub#subscribe_authorization").
-
 %% this is currently a hard limit.
 %% Would be nice to have it configurable. 
 -define(MAXITEMS, 20).

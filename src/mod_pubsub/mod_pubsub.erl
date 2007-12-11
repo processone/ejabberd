@@ -44,6 +44,8 @@
 	 unset_presence/4,
 	 incoming_presence/3,
 	 disco_local_identity/5,
+	 disco_local_features/5,
+	 disco_local_items/5,
 	 disco_sm_identity/5,
 	 disco_sm_features/5,
 	 disco_sm_items/5
@@ -143,16 +145,13 @@ init([ServerHost, Opts]) ->
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, pubsub_presence)}]),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
-    ejabberd_hooks:add(disco_local_identity, ServerHost,
-		       ?MODULE, disco_local_identity, 75),
-    ejabberd_hooks:add(disco_sm_identity, ServerHost,
-		       ?MODULE, disco_sm_identity, 75),
-    ejabberd_hooks:add(disco_sm_features, ServerHost,
-		       ?MODULE, disco_sm_features, 75),
-    ejabberd_hooks:add(disco_sm_items, ServerHost,
-		       ?MODULE, disco_sm_items, 75),
-    ejabberd_hooks:add(incoming_presence_hook, ServerHost,
-		       ?MODULE, incoming_presence, 50),
+    ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
+    ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
+    ejabberd_hooks:add(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
+    ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
+    ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
+    ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
+    ejabberd_hooks:add(incoming_presence_hook, ServerHost, ?MODULE, incoming_presence, 50),
     %%ejabberd_hooks:add(set_presence_hook, ServerHost, ?MODULE, set_presence, 50),
     %%ejabberd_hooks:add(unset_presence_hook, ServerHost, ?MODULE, unset_presence, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -291,12 +290,27 @@ update_database(Host) ->
     end.
 
 %% -------
-%% hooks handling functions
+%% disco hooks handling functions
 %%
 
 disco_local_identity(Acc, _From, _To, [], _Lang) ->
     Acc ++ [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []} ];
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
+disco_local_features(Acc, _From, To, Node, _Lang) ->
+    Host = To#jid.lserver,
+    Feats = case Acc of
+	{result, I} -> I;
+	_ -> [] 
+    end,    
+    {result, Feats ++ lists:map(fun(Feature) ->
+	?NS_PUBSUB++"#"++Feature
+    end, features(Host, Node))}.
+
+disco_local_items(Acc, _From, _To, [], _Lang) ->
+    Acc;
+disco_local_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 disco_sm_identity(Acc, _From, _To, [], _Lang) ->
@@ -368,6 +382,9 @@ disco_sm_items(Acc, _From, To, Node, _Lang) ->
 	    {result, NodeItems ++ Items}
     end.
 
+%% -------
+%% presence hooks handling functions
+%%
 
 set_presence(User, Server, Resource, Presence) ->
     Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
@@ -577,16 +594,13 @@ terminate(_Reason, #state{host = Host,
 			  plugins = Plugins}) ->
     terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
     ejabberd_router:unregister_route(Host),
-    ejabberd_hooks:delete(disco_local_identity, ServerHost,
-			  ?MODULE, disco_local_identity, 75),
-    ejabberd_hooks:delete(disco_sm_identity, ServerHost,
-			  ?MODULE, disco_sm_identity, 75),
-    ejabberd_hooks:delete(disco_sm_features, ServerHost,
-			  ?MODULE, disco_sm_features, 75),
-    ejabberd_hooks:delete(disco_sm_items, ServerHost,
-			  ?MODULE, disco_sm_items, 75),
-    ejabberd_hooks:delete(incoming_presence_hook, ServerHost,
-			  ?MODULE, incoming_presence, 50),
+    ejabberd_hooks:delete(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
+    ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
+    ejabberd_hooks:delete(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
+    ejabberd_hooks:delete(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
+    ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
+    ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
+    ejabberd_hooks:delete(incoming_presence_hook, ServerHost, ?MODULE, incoming_presence, 50),
     %%ejabberd_hooks:delete(set_presence_hook, ServerHost, ?MODULE, set_presence, 50),
     %%ejabberd_hooks:delete(unset_presence_hook, ServerHost, ?MODULE, unset_presence, 50),
     lists:foreach(fun({NS,Mod}) ->
@@ -772,8 +786,8 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	      {xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
 	      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}] ++
 	     lists:map(fun(Feature) ->
-			       {xmlelement, "feature", [{"var", ?NS_PUBSUB++"#"++Feature}], []}
-		       end, features(Host, Node))};
+		 {xmlelement, "feature", [{"var", ?NS_PUBSUB++"#"++Feature}], []}
+	     end, features(Host, SNode))};
 	_ ->
 	    node_disco_info(Host, Node, From)
     end.
@@ -865,7 +879,7 @@ iq_get_vcard(Lang) ->
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
     Plugins = case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), plugins) of
 		  [{plugins, PL}] -> PL;
-		  _ -> [?STDNODE]
+		  _ -> [?STDNODE,?PEPNODE]
 	      end,
     iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, Plugins).
 
@@ -1761,7 +1775,7 @@ get_affiliations(Host, JID, Plugins) when is_list(Plugins) ->
 				   [{"node", node_to_string(Node)},
 				    {"affiliation", affiliation_to_string(Affiliation)}],
 				   []}]
-			 end, lists:flatten(Affiliations)),
+			 end, lists:usort(lists:flatten(Affiliations))),
 	    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
 		       [{xmlelement, "affiliations", [],
 			 Entities}]}]};
@@ -1887,7 +1901,7 @@ get_subscriptions(Host, JID, Plugins) when is_list(Plugins) ->
 				    {"jid", jlib:jid_to_string(SubJID)},
 				    {"subscription", subscription_to_string(Subscription)}],
 				   []}]
-			 end, lists:flatten(Subscriptions)),
+			 end, lists:usort(lists:flatten(Subscriptions))),
 	    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
 		       [{xmlelement, "subscriptions", [],
 			 Entities}]}]};
@@ -2043,6 +2057,19 @@ node_to_string(Node) ->
 string_to_node(SNode) ->
     string:tokens(SNode, "/").
 
+%% @spec (Host, JID, PresenceDelivery) -> boolean()
+%%	Host = host()
+%%	JID = jid()
+%%	PresenceDelivery = boolean()
+%% @doc <p>Check if a notification must be delivered or not
+to_be_delivered(_Host, _JID, false) -> 
+    % default is true
+    true;
+to_be_delivered(Host, JID, true) ->
+    case mnesia:dirty_read(pubsub_presence, {Host, element(1, JID), element(2, JID)}) of
+    [_] -> true;
+    [] -> false
+    end.
 
 %%%%%% broadcast functions
 
@@ -2054,57 +2081,41 @@ broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
 		    {result, []} -> {result, false};
 		    {result, States} ->
 			PresenceDelivery = get_option(Options, presence_based_delivery),
-			DeliverPayloads = get_option(Options, deliver_payloads),
 			BroadcastAll = get_option(Options, broadcast_all_resources),
+			Content = case get_option(Options, deliver_payloads) of
+			    true -> Payload;
+			    false -> []
+			end,
+			ItemAttrs = case ItemId of
+			    "" -> [];
+			    _ -> [{"id", ItemId}]
+			end,
+			Stanza = {xmlelement, "message", [],
+				   [{xmlelement, "event",
+				     [{"xmlns", ?NS_PUBSUB_EVENT}],
+				       [{xmlelement, "items", [{"node", node_to_string(Node)}],
+				         [{xmlelement, "item", ItemAttrs, Content}]}]}]},
 			lists:foreach(
 			  fun(#pubsub_state{stateid = {JID, _},
 					    subscription = Subscription}) ->
-				  ToBeSent =
-				      case PresenceDelivery of
-					  true ->
-					      case mnesia:dirty_read(
-						     pubsub_presence,
-						     {Host,
-						      element(1, JID),
-						      element(2, JID)}) of
-						  [_] -> true;
-						  [] -> false
-					      end;
-					  false ->
-					      true
-				      end,
-				  if
-				      (Subscription /= none) and
-				      (Subscription /= pending) and
-				      ToBeSent ->
-					  ItemAttrs = case ItemId of
-							  "" -> [];
-							  _ -> [{"id", ItemId}]
-						      end,
-					  Content = case DeliverPayloads of
-							true -> Payload;
-							false -> []
-						    end,
-					  DestJIDs = case BroadcastAll of
-							 true -> ejabberd_sm:get_user_resources(element(1, JID), element(2, JID));
-							 false -> [JID]
-						     end,
-					  Stanza =
-					      {xmlelement, "message", [],
-					       [{xmlelement, "event",
-						 [{"xmlns", ?NS_PUBSUB_EVENT}],
-						 [{xmlelement, "items", [{"node", node_to_string(Node)}],
-						   [{xmlelement, "item", ItemAttrs, Content}]}]}]},
-					  lists:foreach(
+				ToBeSent = to_be_delivered(Host, JID, PresenceDelivery),
+				if
+				    (Subscription /= none) and
+				    (Subscription /= pending) and
+				    ToBeSent ->
+					DestJIDs = case BroadcastAll of
+					    true -> ejabberd_sm:get_user_resources(element(1, JID), element(2, JID));
+					    false -> [JID]
+					end,
+					lists:foreach(
 					    fun(DestJID) ->
-						    ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(DestJID), Stanza)
-					    end, DestJIDs),
-					  broadcast_by_caps(Host, Node, Type, Stanza),
-					  true;
-				      true ->
-					  false
-				  end
+						ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(DestJID), Stanza)
+					    end, DestJIDs);
+				    true ->
+					ok
+				end
 			  end, States),
+			broadcast_by_caps(Host, Node, Type, Stanza),
 			{result, true}
 		end
 	end,
@@ -2123,31 +2134,28 @@ broadcast_retract_item(Host, Node, ItemId, ForceNotify) ->
 				     true -> true;
 				     _ -> get_option(Options, notify_retract)
 				 end,
+			ItemAttrs = case ItemId of
+			    "" -> [];
+			    _ -> [{"id", ItemId}]
+			end,
+			Stanza = {xmlelement, "message", [],
+				   [{xmlelement, "x",
+				     [{"xmlns", ?NS_PUBSUB_EVENT}],
+				       [{xmlelement, "items", [{"node", node_to_string(Node)}],
+				         [{xmlelement, "retract", ItemAttrs, []}]}]}]},
 			case Notify of
 			    true ->
 				lists:foreach(
 				  fun(#pubsub_state{stateid = {JID, _},
 						    subscription = Subscription}) ->
-					  if (Subscription /= none) and
-					     (Subscription /= pending) ->
-						  ItemAttrs =
-						      case ItemId of
-							  "" -> [];
-							  _ -> [{"id", ItemId}]
-						      end,
-						  Stanza =
-						      {xmlelement, "message", [],
-						       [{xmlelement, "x",
-							 [{"xmlns", ?NS_PUBSUB_EVENT}],
-							 [{xmlelement, "items", [{"node", node_to_string(Node)}],
-							   [{xmlelement, "retract", ItemAttrs, []}]}]}]},
-						  ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza),
-						  broadcast_by_caps(Host, Node, Type, Stanza),
-						  true;
-					     true ->
-						  false
-					  end
+					if (Subscription /= none) and
+					   (Subscription /= pending) ->
+					    ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza);
+					   true ->
+					    ok
+					end
 				  end, States),
+				broadcast_by_caps(Host, Node, Type, Stanza),
 				{result, true};
 			    false ->
 				{result, false}
@@ -2163,25 +2171,24 @@ broadcast_purge_node(Host, Node) ->
 		    {error, _} -> {result, false};
 		    {result, []} -> {result, false};
 		    {result, States} ->
+			Stanza = {xmlelement, "message", [],
+				   [{xmlelement, "event",
+				     [{"xmlns", ?NS_PUBSUB_EVENT}],
+				       [{xmlelement, "purge", [{"node", node_to_string(Node)}],
+				         []}]}]},
 			case get_option(Options, notify_retract) of
 			    true ->
 				lists:foreach(
 				  fun(#pubsub_state{stateid = {JID,_},
 						    subscription = Subscription}) ->
-					  if (Subscription /= none) and
-					     (Subscription /= pending) ->
-						  Stanza = {xmlelement, "message", [],
-							    [{xmlelement, "event",
-							      [{"xmlns", ?NS_PUBSUB_EVENT}],
-							      [{xmlelement, "purge", [{"node", node_to_string(Node)}],
-								[]}]}]},
-						  ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza),
-						  broadcast_by_caps(Host, Node, Type, Stanza),
-						  true;
-					     true ->
-						  false
-					  end
+					if (Subscription /= none) and
+					   (Subscription /= pending) ->
+						ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza);
+					   true ->
+					    ok
+					end
 				  end, States),
+				broadcast_by_caps(Host, Node, Type, Stanza),
 				{result, true};
 			    false ->
 				{result, false}
@@ -2195,33 +2202,32 @@ broadcast_removed_node(Host, Removed) ->
       fun(Node) ->
 	      Action =
 		  fun(#pubsub_node{options = Options, type = Type}) ->
-			  case get_option(Options, notify_delete) of
-			      true ->
-				  case node_call(Type, get_states, [Host, Node]) of
-				      {result, States} ->
-					  lists:foreach(
+			Stanza = {xmlelement, "message", [],
+				 [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
+				   [{xmlelement, "delete", [{"node", node_to_string(Node)}],
+				     []}]}]},
+			case get_option(Options, notify_delete) of
+			    true ->
+				case node_call(Type, get_states, [Host, Node]) of
+				    {result, States} ->
+					lists:foreach(
 					    fun(#pubsub_state{stateid = {JID, _},
-							      subscription = Subscription}) ->
-						    if (Subscription /= none) and
-						       (Subscription /= pending) ->
-							    Stanza = {xmlelement, "message", [],
-								      [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
-									[{xmlelement, "delete", [{"node", node_to_string(Node)}],
-									  []}]}]},
-							    ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza),
-							    broadcast_by_caps(Host, Node, Type, Stanza),
-							    true;
-						       true ->
-							    false
-						    end
-					    end, States),
-					  {result, true};
-				      _ ->
-					  {result, false}
-				  end;
-			      _ ->
-				  {result, false}
-			  end
+						subscription = Subscription}) ->
+					    if (Subscription /= none) and
+					       (Subscription /= pending) ->
+						ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza);
+					       true ->
+						ok
+					    end
+					end, States),
+					broadcast_by_caps(Host, Node, Type, Stanza),
+					{result, true};
+				    _ ->
+					{result, false}
+				end;
+			    _ ->
+				{result, false}
+			end
 		  end,
 	      transaction(Host, Node, Action, sync_dirty)
       end, Removed).
@@ -2235,41 +2241,32 @@ broadcast_config_notification(Host, Node, Lang) ->
 		    {result, States} ->
 			case get_option(Options, notify_config) of
 			    true ->
+				PresenceDelivery = get_option(Options, presence_based_delivery),
+				Content = case get_option(Options, deliver_payloads) of
+				    true ->
+					[{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+					get_configure_xfields(Type, Options, Lang, Owners)}];
+				    false ->
+					[]
+				end,
+				Stanza = {xmlelement, "message", [],
+					   [{xmlelement, "x", [{"xmlns", ?NS_PUBSUB_EVENT}],
+					     [{xmlelement, "items", [{"node", node_to_string(Node)}],
+					       [{xmlelement, "item", [{"id", "configuration"}],
+					         Content}]}]}]},
 				lists:foreach(
 				  fun(#pubsub_state{stateid = {JID, _},
 						    subscription = Subscription}) ->
-					  ToBeSent = case get_option(Options, presence_based_delivery) of
-							 true ->
-							     case mnesia:dirty_read(pubsub_presence,
-										    {Host, element(1, JID), element(2, JID)}) of
-								 [_] -> true;
-								 [] -> false
-							     end;
-							 false ->
-							     true
-						     end,
-					  if (Subscription /= none) and
-					     (Subscription /= pending) and
-					     ToBeSent ->
-						  Content = case get_option(Options, deliver_payloads) of
-								true ->
-								    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-								      get_configure_xfields(Type, Options, Lang, Owners)}];
-								false ->
-								    []
-							    end,
-						  Stanza = {xmlelement, "message", [],
-							    [{xmlelement, "x", [{"xmlns", ?NS_PUBSUB_EVENT}],
-							      [{xmlelement, "items", [{"node", node_to_string(Node)}],
-								[{xmlelement, "item", [{"id", "configuration"}],
-								  Content}]}]}]},
-						  ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza),
-						  broadcast_by_caps(Host, Node, Type, Stanza),
-						  true;
-					     true ->
-						  false
-					  end
+					ToBeSent = to_be_delivered(Host, JID, PresenceDelivery),
+					if (Subscription /= none) and
+					   (Subscription /= pending) and
+					   ToBeSent ->
+						ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza);
+					   true ->
+						ok
+					end
 				  end, States),
+				broadcast_by_caps(Host, Node, Type, Stanza),
 				{result, true};
 			    _ ->
 				{result, false}
@@ -2690,10 +2687,10 @@ features(Type) ->
 		      Result -> Result
 		  end.
 features(_Host, []) ->
-    features(?STDNODE);
+    lists:usort(features(?STDNODE) ++ features(?PEPNODE));
 features(Host, Node) ->
     {result, Features} = node_action(Host, Node, features, []),
-    features() ++ Features.
+    lists:usort(features() ++ Features).
 
 %% @doc <p>node tree plugin call.</p>
 tree_call({_User, Server, _Resource}, Function, Args) ->
