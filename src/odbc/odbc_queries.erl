@@ -433,10 +433,18 @@ list_users(LServer) ->
       LServer,
       "EXECUTE dbo.list_users").
 
+list_users(LServer, _) ->
+    % scope listing not supported
+    list_users(LServer).
+    
 users_number(LServer) ->
 	ejabberd_odbc:sql_query(
 	      LServer,
 	      "select count(*) from users with (nolock)").
+
+users_number(LServer, _) ->
+    % scope listing not supported
+    users_number(LServer).
 
 add_spool_sql(Username, XML) ->
     ["EXECUTE dbo.add_spool '", Username, "' , '",XML,"'"].
@@ -539,7 +547,7 @@ get_subscription(LServer, Username, SJID) ->
       LServer,
       ["EXECUTE dbo.get_subscription '", Username, "' , '", SJID, "'"]).
 
-set_private_data(_LServer, Username, LXMLNS, SData) ->
+set_private_data(LServer, Username, LXMLNS, SData) ->
     ejabberd_odbc:sql_query(
 	    LServer,
 	    set_private_data_sql(Username, LXMLNS, SData)).
