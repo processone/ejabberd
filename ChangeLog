@@ -1,3 +1,7 @@
+2007-12-12  Badlop  <badlop@process-one.net>
+
+	* src/msgs/it.msg: Updated (thanks to Luca Brivio)
+
 2007-12-11  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: notification broadcast bugfix

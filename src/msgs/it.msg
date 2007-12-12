@@ -1,9 +1,30 @@
 % $Id$
+% Language: Italian (Italiano)
+% Author: Luca Brivio
 
 % jlib.hrl
 {"No resource provided", "Nessuna risorsa fornita"}.
 
 % mod_configure.erl
+{"Restart Service", "Riavviare il servizio"}.
+{"Shut Down Service", "Terminare il servizio"}.
+{"Delete User", "Eliminare l'utente"}.
+{"End User Session", "Terminare la sessione dell'utente"}.
+{"Get User Password", "Ottenere la password dell'utente"}.
+{"Change User Password", "Cambiare la password dell'utente"}.
+{"Get User Last Login Time", "Ottenere la data di ultimo accesso dell'utente"}.
+{"Get User Statistics", "Ottenere le statistiche dell'utente"}.
+{"Get Number of Registered Users", "Ottenere il numero di utenti registrati"}.
+{"Get Number of Online Users", "Ottenere il numero di utenti online"}.
+{"User Management", "Gestione degli utenti"}.
+{"Time delay", "Ritardo"}.
+{"Password Verification", "Verifica della password"}.
+{"Number of registered users", "Numero di utenti registrati"}.
+{"Number of online users", "Numero di utenti online"}.
+{"Last login", "Ultimo accesso"}.
+{"Roster size", "Dimensione della lista dei contatti"}.
+{"IP addresses", "Indirizzi IP"}.
+{"Resources", "Risorse"}.
 {"Choose storage type of tables", "Selezionare una modalità di conservazione delle tabelle"}.
 {"RAM copy", "Copia in memoria (RAM)"}.
 {"RAM and disc copy", "Copia in memoria (RAM) e su disco"}.
@@ -80,12 +101,10 @@
 {"Jabber ID", "Jabber ID (JID)"}.
 
 % mod_vcard.erl
-{"You need an x:data capable client to search",
- "Per effettuare ricerche è necessario un client che supporti x:data"}.
+{"You need an x:data capable client to search", "Per effettuare ricerche è necessario un client che supporti x:data"}.
 {"Search users in ", "Cercare utenti in "}.
 
-{"Fill in fields to search for any matching Jabber User",
- "Riempire i campi per la ricerca di utenti Jabber corrispondenti ai criteri"}.
+{"Fill in fields to search for any matching Jabber User", "Riempire i campi per la ricerca di utenti Jabber corrispondenti ai criteri"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Riempire il modulo per la ricerca di utenti Jabber corrispondenti ai criteri (Aggiungere * alla fine del campo per la ricerca di una sottostringa"}.
 
 {"User",              "Utente"}.
@@ -106,6 +125,10 @@
 {"Pong", "Pong"}.
 
 % mod_announce.erl
+{"Send announcement to all users on all hosts", "Inviare l'annuncio a tutti gli utenti su tutti gli host"}.
+{"Set message of the day on all hosts and send to online users", "Impostare il messaggio del giorno (MOTD) su tutti gli host e inviarlo agli utenti online"}.
+{"Update message of the day on all hosts (don't send)", "Aggiornare il messaggio del giorno (MOTD) su tutti gli host (non inviarlo)"}.
+{"Delete message of the day on all hosts", "Eliminare il messaggio del giorno (MOTD) su tutti gli host"}.
 {"Really delete message of the day?", "Si conferma l'eliminazione del messaggio del giorno (MOTD)?"}.
 {"Subject", "Oggetto"}.
 {"Message body", "Corpo del messaggio"}.
@@ -119,8 +142,18 @@
 {"Delete message of the day", "Eliminare il messaggio del giorno (MOTD)"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright (c) 2003-2007 Alexey Shchepin"}.
-{[], ""}.
+{"Publish-Subscribe", "Pubblicazione-Iscrizione"}.
+{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "Modulo Pubblicazione/Iscrizione (PubSub) per ejabberd\nCopyright (c) 2004-2007 Process-One"}.
+{"PubSub subscriber request", "Richiesta di iscrizione per PubSub"}.
+{"Choose whether to approve this entity's subscription.", "Scegliere se approvare l'iscrizione per questa entità"}.
+{"Node ID", "ID del nodo"}.
+{"Subscriber Address", "Indirizzo dell'iscritta/o"}.
+{"Allow this JID to subscribe to this pubsub node?", "Consentire a questo JID l'iscrizione a questo nodo pubsub?"}.
+{"Deliver event notifications", "Inviare notifiche degli eventi"}.
+{"Specify the access model", "Specificare il modello di accesso"}.
+{"Roster groups that may subscribe (if access model is roster)", "Gruppi di liste di contatti che possono iscriversi (se il modello di accesso è: lista di contatti)"}.
+{"When to send the last published item", "Quando inviare l'ultimo elemento pubblicato"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Modulo pub/sub ejabberd \nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Node Creator", "Creatore del nodo"}.
 {"Deliver payloads with event notifications", "Inviare il contenuto del messaggio con la notifica dell'evento"}.
 {"Notify subscribers when the node configuration changes", "Notificare gli iscritti quando la configurazione del nodo cambia"}.
@@ -165,6 +198,7 @@
 {"Room Configuration", "Configurazione della stanza"}.
 
 % mod_muc/mod_muc.erl
+{"Chatrooms", "Stanze"}.
 {"You need an x:data capable client to register nickname", "Per registrare un nickname è necessario un client che supporti x:data"}.
 {"Nickname Registration at ", "Registrazione di un nickname su "}.
 {"Enter nickname you want to register", "Immettere il nickname che si vuole registrare"}.
@@ -177,6 +211,11 @@
 {"You must fill in field \"Nickname\" in the form", "Si deve riempire il campo \"Nickname\" nel modulo"}.
 
 % mod_muc/mod_muc_room.erl
+{"Traffic rate limit is exceeded", "Limite di traffico superato"}.
+{"Maximum Number of Occupants", "Numero massimo di occupanti"}.
+{"No limit", "Nessun limite"}.
+{"~s invites you to the room ~s", "~s ti invita nella stanza ~s"}.
+{"the password is", "la password è"}.
 {" has set the subject to: ", " ha modificato l'oggetto in: "}.
 {"You need an x:data capable client to configure room", "Per la configurazione della stanza è necessario un client che supporti x:data"}.
 {"Configuration for ", "Configurazione per "}.
@@ -227,6 +266,7 @@
 {"anyone", "tutti"}.
 
 % mod_irc/mod_irc.erl
+{"IRC Transport", "Transport IRC"}.
 {"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Modulo IRC per ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"You need an x:data capable client to configure mod_irc settings", "Per la configurazione del modulo IRC è necessario un client che supporti x:data"}.
 {"Registration in mod_irc for ", "Registrazione in mod_irc per "}.
@@ -325,7 +365,7 @@
 {"Outgoing s2s Servers:", "Server s2s in uscita"}.
 {"Database Tables at ", "Tabelle del database su "}.
 {"Backup of ", "Salvataggio di "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "N.B. : Queste opzioni comportano il salvataggio solamente del database interno Mnesia. Se si sta utilizzando il modulo ODBC, è necessario salvare il proprio database SQL separatamente."}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "N.B.: Queste opzioni comportano il salvataggio solamente del database interno Mnesia. Se si sta utilizzando il modulo ODBC, è necessario salvare il proprio database SQL separatamente."}.
 {"Store binary backup:", "Conservare un salvataggio binario:"}.
 {"Restore binary backup immediately:", "Recuperare un salvataggio binario adesso:"}.
 {"Restore binary backup after next ejabberd restart (requires less memory):", "Recuperare un salvataggio binario dopo il prossimo riavvio di ejabberd (necessita di meno memoria):"}.
@@ -342,6 +382,16 @@
 {"Shared Roster Groups", "Gruppi di liste di contatti comuni"}.
 {"Last Activity", "Ultima attività"}.
 
+% mod_vcard_odbc.erl
+{"vCard User Search", "Ricerca di utenti per vCard"}.
+
+% mod_offline_odbc.erl
+{"Your contact offline message queue is full. The message has been discarded.", "La coda dei messaggi offline del contatto è piena. Il messaggio è stato scartato"}.
+
+% mod_proxy65/mod_proxy65_service.erl
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "Modulo SOCKS5 Bytestreams per ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:
