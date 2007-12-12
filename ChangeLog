@@ -1,3 +1,8 @@
+2007-12-12  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: presence handler bugfix
+	* src/mod_pubsub/node_default.erl: Allow send last item on presence
+	
 2007-12-12  Badlop  <badlop@process-one.net>
 
 	* src/msgs/it.msg: Updated (thanks to Luca Brivio)

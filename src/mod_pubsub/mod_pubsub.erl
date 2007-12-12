@@ -458,56 +458,55 @@ handle_cast({presence, From, To, Packet}, State) ->
     end,
     if PreviouslyAvailable == false,
        PresenceType == available ->
-	    %% A new resource is available. Loop through all nodes
-	    %% and see if the contact is subscribed, and if so, and if
-	    %% the node is so configured, send the last item.
-	    Host = From#jid.lserver,
+	    %% A new resource is available. Loop through all subscriptions
+	    %% and if the node is so configured, send the last item.
 	    JID = jlib:jid_tolower(From),
+	    Host = State#state.host,
+	    ServerHost = State#state.server_host,
 	    lists:foreach(
-	      fun(Type) ->
-		      {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, From]),
-		      lists:foreach(
+		fun(Type) ->
+		    {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, From]),
+		    Options = node_options(Type),
+		    SendLast = get_option(Options, send_last_published_item),
+		    AccessModel = get_option(Options, access_model),
+		    AllowedGroups = get_option(Options, roster_groups_allowed),
+		    lists:foreach(
 			fun({Node, Subscription}) ->
-				Options = node_options(Type),
-				SendLast = get_option(Options, send_last_published_item),
-				if
-				    Subscription /= none, Subscription /= pending, SendLast == on_sub_and_presence ->
-					send_last_item(Host, Node, JID);
-				    SendLast == on_sub_and_presence ->
-					AccessModel = get_option(Options, access_model),
-					AllowedGroups = get_option(Options, roster_groups_allowed),
-					{PresenceSubscription, RosterGroup} = get_roster_info(
-										To#jid.luser, To#jid.lserver, JID, AllowedGroups),
-					Features = case catch mod_caps:get_features(Host, mod_caps:read_caps(element(4, Packet))) of
-						       F when is_list(F) -> F;
-						       _ -> []
-						   end,
-					case lists:member(Node ++ "+notify", Features) of
-					    true ->
-						MaySubscribe =
-						    case AccessModel of
-							open -> true;
-							presence -> PresenceSubscription;
-							whitelist -> false; % subscribers are added manually
-							authorize -> false; % likewise
-							roster -> RosterGroup
-						    end,
-						if MaySubscribe ->
-							send_last_item(
-							  Host, Node, JID);
-						   true ->
-							ok
-						end;
-					    false ->
-						ok
-					end;
-				    true ->
-					ok
-				end;
-			   (_) ->
-				ok
-			end, Subscriptions)
-	      end, Plugins),
+			    if
+				Subscription /= none, Subscription /= pending, SendLast == on_sub_and_presence ->
+				    send_last_item(Host, Node, JID);
+				SendLast == on_sub_and_presence ->
+				    {PresenceSubscription, RosterGroup} = get_roster_info(
+									    To#jid.luser, To#jid.lserver, JID, AllowedGroups),
+				    Features = case catch mod_caps:get_features(ServerHost, mod_caps:read_caps(element(4, Packet))) of
+						    F when is_list(F) -> F;
+						    _ -> []
+						end,
+				    case lists:member(Node ++ "+notify", Features) of
+					true ->
+					    MaySubscribe =
+						case AccessModel of
+						    open -> true;
+						    presence -> PresenceSubscription;
+						    whitelist -> false; % subscribers are added manually
+						    authorize -> false; % likewise
+						    roster -> RosterGroup
+						end,
+					    if MaySubscribe ->
+						    send_last_item(Host, Node, JID);
+						true ->
+						    ok
+					    end;
+					false ->
+					    ok
+				    end;
+				true ->
+				    ok
+			    end;
+			(_) ->
+			    ok
+		    end, Subscriptions)
+		end, Plugins),
 	    {noreply, State};
        true ->
 	    {noreply, State}
@@ -517,46 +516,6 @@ handle_cast({set_presence, _User, _Server, _Resource, _Presence}, State) ->
     {noreply, State};
 handle_cast({unset_presence, _User, _Server, _Resource, _Status}, State) ->
     {noreply, State};
-%	Owner = jlib:jid_tolower(jlib:jid_remove_resource(#jid{luser = User, lserver = Server, lresource = Resource})),
-%	JID = User ++ "@" ++ Server ++ "/" ++ Resource,
-%	F = fun() ->
-%		case mnesia:dirty_match_object(#pubsub_state{stateid = {Owner, '_'}, _ = '_'}) of
-%		[] ->
-%			{error, ?ERR_ITEM_NOT_FOUND};
-%		States ->
-%			{result, lists:foldl(
-%				fun(#pubsub_state{stateid = {_, {Host, Node}}, items = Items} = S, ItemsList) ->
-%					%% To make this code work for nodetree_default system, we must be sure node type is correct
-%					%% this can be done asking a match {Host, Node} when Type=this_module_type
-%					%% case mnesia:dirty_match_object(#pubsub_node{nodeid={Host, Node}, type=virtual, _ = '_'})
-%					%% this call should be handled by the nodetree plugin
-%					%% but at this stage we don't know what is the actual nodetree plugin
-%					%% this must be implemented into the API, mod_pubsub telling us what is the nodetree plugin
-%					NewItems = lists:filter(fun(ItemID) -> ItemID /= JID end, Items),
-%					if NewItems /= Items ->
-%						mnesia:dirty_write(S#pubsub_state{items = NewItems}),
-%						Key = {JID, {Host, Node}},
-%						mnesia:dirty_delete({pubsub_item, Key}),
-%						ItemsList ++ [Key];
-%					true ->
-%						ItemsList
-%					end
-%				end, [], States)}
-%		end
-%	end,
-%	case catch mnesia:sync_dirty(F) of
-%	{'EXIT', Reason} ->
-%		{error, Reason};
-%	{error, Reason} ->
-%		{error, Reason};
-%	{result, Items} ->
-%		lists:foreach(fun({ItemID, {Host, Node}}) ->
-%				mod_pubsub:broadcast_retract_item(Host, Node, ItemID)
-%			end, Items),
-%		{result, []};
-%	_ ->
-%		{error, ?ERR_INTERNAL_SERVER_ERROR}
-%	end.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -2327,7 +2286,7 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
 		    LookingFor = Node ++ "+notify",
 		    lists:foreach(
 		      fun({JID, Caps}) ->
-			      case catch mod_caps:get_features(?MYNAME, Caps) of
+			      case catch mod_caps:get_features(LServer, Caps) of
 				  Features when is_list(Features) ->
 				      case lists:member(LookingFor, Features) of
 					  true ->
