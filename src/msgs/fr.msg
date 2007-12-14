@@ -1,4 +1,7 @@
 % $Id$
+% Language: French (française)
+% Author: Mickaël Rémond
+% Author: Vincent Ricard
 
 % jlib.hrl
 {"No resource provided", "Aucune ressource fournie"}.
@@ -80,14 +83,11 @@
 {"Jabber ID", "Jabber ID"}.
 
 % mod_vcard.erl
-{"You need an x:data capable client to search",
- "Vous avez besoin d'un client supportant x:data pour faire une recherche"}.
+{"You need an x:data capable client to search", "Vous avez besoin d'un client supportant x:data pour faire une recherche"}.
 {"Search users in ", "Rechercher des utilisateurs "}.
 {"vCard User Search", "Recherche dans l'annnuaire"}.
-{"Fill in fields to search for any matching Jabber User",
- "Remplissez les champs pour rechercher un utilisateur Jabber"}.
+{"Fill in fields to search for any matching Jabber User", "Remplissez les champs pour rechercher un utilisateur Jabber"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Remplissez le formulaire pour recherche un utilisateur Jabber (Ajouter * à la fin du champ pour chercher n'importe quelle fin de chaîne"}.
-
 {"User",              "Utilisateur"}.
 {"Full Name", 	      "Nom complet"}.
 {"Name", 	      "Nom"}.
@@ -120,7 +120,6 @@
 
 % mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright (c) 2003-2007 Alexey Shchepin"}.
-{[], ""}.
 {"Node Creator", "Créateur du noeud"}.
 {"Deliver payloads with event notifications", "Inclure le contenu du message avec la notification"}.
 {"Notify subscribers when the node configuration changes", "Avertir les abonnés lorsque la configuration du noeud change"}.
@@ -136,7 +135,6 @@
 {"Only deliver notifications to available users", "Envoyer les notifications uniquement aux utilisateurs disponibles"}.
 {"Specify the current subscription approver", "Définir l'utilisateur qui valide les abonnements"}.
 {"Publish-Subscribe", "Publication-Abonnement"}.
-
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Configuration du salon modifiée"}.
@@ -178,7 +176,6 @@
 {"Specified nickname is already registered", "Le pseudo demandé est déjà enregistré"}.
 {"You must fill in field \"Nickname\" in the form", "Vous devez préciser le champ \"pseudo\" dans le formulaire"}.
 {"Chatrooms", "Salons de discussion"}.
-
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " a changé le sujet pour: "}.
@@ -348,13 +345,9 @@
 {"Last Activity", "Dernière Activité"}.
 
 % mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin",
-  "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % Local Variables:
 % mode: erlang
 % End:
-
-
-
+% vim: set filetype=erlang tabstop=8:

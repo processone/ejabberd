@@ -1,5 +1,5 @@
 % $Id$
-% Walon translation (Walloon)
+% Language: Walon (Walloon)
 % Author: Pablo Saratxaga
 
 % jlib.hrl
@@ -93,12 +93,10 @@
 {"vCard User Search", "Calpin des uzeus"}.
 
 % mod_vcard.erl
-{"You need an x:data capable client to search",
- "Vos avoz mezåjhe d' on cliyint ki sopoite x:data po fé on cweraedje"}.
+{"You need an x:data capable client to search", "Vos avoz mezåjhe d' on cliyint ki sopoite x:data po fé on cweraedje"}.
 {"Search users in ", "Cweri des uzeus dins "}.
 
-{"Fill in fields to search for any matching Jabber User",
- "Rimplixhoz les tchamps po cweri èn uzeu Jabber"}.
+{"Fill in fields to search for any matching Jabber User", "Rimplixhoz les tchamps po cweri èn uzeu Jabber"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Rimplixhoz les tchamps do formulaire po cweri èn uzeu Jabber (radjouter «*» al fén do tchamp po cweri tot l' minme kéne fén d' tchinne"}.
 
 {"User",              "Uzeu"}.
@@ -138,7 +136,6 @@
 % mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Module pub/sub ejabberd \nCopyright © 2003-2007 Alexey Shchepin"}.
 {"Publish-Subscribe", "Eplaiaedje-abounmint"}.
-{[], ""}.
 {"Node Creator", "Ahiveu do nuk"}.
 {"Notify subscribers when the node configuration changes", "Notifyî åzès abounés cwand l' apontiaedje do nuk candje"}.
 {"Notify subscribers when the node is deleted", "Notifyî åzès abounés cwand l' nuk est disfacé"}.
@@ -373,3 +370,4 @@ di conferince"}.
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

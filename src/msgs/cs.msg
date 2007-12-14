@@ -1,7 +1,7 @@
 % $Id$
-% Czech translation
-% Author: Milos Svasek [DuxforD] from openheads.net
+% Language: Czech (čeština)
 % Author: Lukáš Polívka [spike411] xmpp:spike411@jabber.cz
+% Author: Milos Svasek [DuxforD] from openheads.net
 
 % jlib.hrl
 {"No resource provided", "Nebyl poskytnut žádný zdroj"}.
@@ -77,15 +77,12 @@
 {"Import Directory", "Import adresáře"}.
 
 % mod_register.erl
-{"Choose a username and password to register with this server",
- "Zadejte jméno uživatele a heslo pro registraci na tomto serveru"}.
+{"Choose a username and password to register with this server", "Zadejte jméno uživatele a heslo pro registraci na tomto serveru"}.
 
 % mod_vcard.erl
-{"You need an x:data capable client to search",
- "K vyhledávání potřebujete klienta podporujícího x:data"}.
+{"You need an x:data capable client to search", "K vyhledávání potřebujete klienta podporujícího x:data"}.
 {"Search users in ", "Hledat uživatele v "}.
-{"Fill in fields to search for any matching Jabber User",
- "Vyplňte políčka pro vyhledání uživatele Jabberu"}.
+{"Fill in fields to search for any matching Jabber User", "Vyplňte políčka pro vyhledání uživatele Jabberu"}.
 
 {"User",              "Uživatel: "}.
 {"Full Name", 	      "Celé jméno: "}.
@@ -100,43 +97,32 @@
 {"Organization Unit", "Oddělení: "}.
 
 % mod_muc/mod_muc.erl
-{"You need an x:data capable client to register nickname",
- "K registraci přezdívky potřebujete klienta podporujícího x:data"}.
+{"You need an x:data capable client to register nickname", "K registraci přezdívky potřebujete klienta podporujícího x:data"}.
 {"Nickname Registration at ", "Registrace prezdívky na "}.
 {"Enter nickname you want to register", "Zadejte přezdívku, kterou chcete zaregistrovat"}.
-{"Only service administrators are allowed to send service messages",
- "Pouze správci služby mají povolené odesílání servisních zpráv"}.
+{"Only service administrators are allowed to send service messages", "Pouze správci služby mají povolené odesílání servisních zpráv"}.
 {"Conference room does not exist", "Konferenční místnost neexistuje"}.
 {"Access denied by service policy", "Přístup byl zamítnut nastavením služby"}.
 {"Specified nickname is already registered", "Zadaná přezdívka je již zaregistrována"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", "změnil(a) téma na: "}.
-{"You need an x:data capable client to configure room",
- "Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"}.
+{"You need an x:data capable client to configure room", "Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"}.
 {"Configuration for ", "Konfigurace pro "}.
 {"Room title", "Název místnosti"}.
 {"Password", "Heslo"}.
-{"Only moderators and participants are allowed to change subject in this room",
- "Jen moderátoři a účastníci mají povoleno měnit téma této místnosti"}.
-{"Only moderators are allowed to change subject in this room",
- "Jen moderátoři mají povoleno měnit téma místnosti"}.
-{"Visitors are not allowed to send messages to all occupants",
- "Návštevníci nemají povoleno zasílat zprávy všem přihlášeným do konference"}.
-{"Only occupants are allowed to send messages to the conference",
- "Jen členové mají povolené zasílat správy do konference"}.
-{"It is not allowed to send private messages to the conference",
- "Není povoleno odesílat soukromé zprávy do konference"}.
+{"Only moderators and participants are allowed to change subject in this room", "Jen moderátoři a účastníci mají povoleno měnit téma této místnosti"}.
+{"Only moderators are allowed to change subject in this room", "Jen moderátoři mají povoleno měnit téma místnosti"}.
+{"Visitors are not allowed to send messages to all occupants", "Návštevníci nemají povoleno zasílat zprávy všem přihlášeným do konference"}.
+{"Only occupants are allowed to send messages to the conference", "Jen členové mají povolené zasílat správy do konference"}.
+{"It is not allowed to send private messages to the conference", "Není povoleno odesílat soukromé zprávy do konference"}.
 {"Improper message type", "Nesprávný typ zprávy"}.
 {"Nickname is already in use by another occupant", "Přezdívka je již používána jiným členem"}.
 {"Nickname is registered by another person", "Přezdívka je zaregistrována jinou osobou"}.
-{"It is not allowed to send private messages of type \"groupchat\"",
- "Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
+{"It is not allowed to send private messages of type \"groupchat\"", "Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
 {"Recipient is not in the conference room", "Příjemce se nenachází v konferenční místnosti"}.
-{"Only occupants are allowed to send queries to the conference",
- "Jen členové mohou odesílat požadavky (query) do konference"}.
-{"Queries to the conference members are not allowed in this room",
- "Požadavky (queries) na členy konference nejsou v této místnosti povolené"}.
+{"Only occupants are allowed to send queries to the conference", "Jen členové mohou odesílat požadavky (query) do konference"}.
+{"Queries to the conference members are not allowed in this room", "Požadavky (queries) na členy konference nejsou v této místnosti povolené"}.
 {"You have been banned from this room", "Byl jste vyloučen z této místnosti"}.
 {"Membership required to enter this room", "Pro vstup do místnosti musíte být členem"}.
 {"Password required to enter this room", "Pro vstup do místnosti musíte zadat heslo"}.
@@ -159,14 +145,11 @@
 {"the password is", "heslo je"}.
 
 % mod_irc/mod_irc.erl
-{"You need an x:data capable client to configure mod_irc settings",
- "Pro konfiguraci mod_irc potřebujete klienta podporujícího x:data"}.
+{"You need an x:data capable client to configure mod_irc settings", "Pro konfiguraci mod_irc potřebujete klienta podporujícího x:data"}.
 {"Registration in mod_irc for ", "Registrace do mod_irc na "}.
-{"Enter username and encodings you wish to use for connecting to IRC servers",
- "Vložte jméno uživatele a kódování, které chcete používat při připojení na IRC server"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "Vložte jméno uživatele a kódování, které chcete používat při připojení na IRC server"}.
 {"IRC Username", "IRC přezdívka"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].",
- "Příklad: [{\"irc.freenode.net\",\"utf-8\"}, {\irc.freenode.net\", \"iso8859-2\"}]."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Příklad: [{\"irc.freenode.net\",\"utf-8\"}, {\irc.freenode.net\", \"iso8859-2\"}]."}.
 {"Encodings", "Kódování"}.
 {"IRC Transport", "IRC transport"}.
 
@@ -235,8 +218,7 @@
 {"ejabberd Web Interface", "Webové rozhraní ejabberd"}.
 
 % mod_vcard_odbc.erl
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", 
- "Pro vyhledání uživatele Jabberu vyplňte formulář (přidejte znak * na konec, pro vyhledání podřetězce)"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Pro vyhledání uživatele Jabberu vyplňte formulář (přidejte znak * na konec, pro vyhledání podřetězce)"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Je vyžadováno STARTTLS."}.
@@ -254,33 +236,27 @@
 {"Max payload size in bytes", "Maximální náklad v bajtech"}.
 {"Only deliver notifications to available users", "Doručovat upozornění jen právě přihlášeným uživatelům"}.
 {"Publish-Subscribe", "Publish-Subscribe"}.
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One",
-"ejabberd Publish-Subscribe modul\nCopyright (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd Publish-Subscribe modul\nCopyright (c) 2004-2007 Process-One"}.
 {"PubSub subscriber request", "Žádost odběratele PubSub"}.
-{"Choose whether to approve this entity's subscription.",
-"Zvolte, zda chcete schválit odebírání touto entitou"}.
+{"Choose whether to approve this entity's subscription.", "Zvolte, zda chcete schválit odebírání touto entitou"}.
 {"Node ID", "ID uzlu"}.
 {"Subscriber Address", "Adresa odběratele"}.
 {"Allow this JID to subscribe to this pubsub node?", "Povolit tomuto JID odebírat tento pubsub uzel?"}.
 {"Deliver event notifications", "Doručovat upozornění na události"}.
 {"Specify the access model", "Uveďte přístupový model"}.
-{"Roster groups that may subscribe (if access model is roster)",
-"Skupiny kontaktů, které mohou odebírat (pokud je přístupový model seznam kontaktů)"}.
+{"Roster groups that may subscribe (if access model is roster)", "Skupiny kontaktů, které mohou odebírat (pokud je přístupový model seznam kontaktů)"}.
 {"When to send the last published item", "Kdy odeslat poslední publikovanou položku"}.
 
 % mod_irc/mod_irc.erl
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", 
- "Pokud chcete zadat jiné kódování pro IRC servery, vyplňte seznam s hodnotami ve formátu '{\"irc server\",\"encoding\"}'. Předvolené kódování pro tuto službu je \"~s\"."}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Pokud chcete zadat jiné kódování pro IRC servery, vyplňte seznam s hodnotami ve formátu '{\"irc server\",\"encoding\"}'. Předvolené kódování pro tuto službu je \"~s\"."}.
 
 % mod_muc/mod_muc.erl
 {"Room creation is denied by service policy", "Pravidla služby nepovolují vytvořit místnost"}.
 
 % mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", 
- "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Email", "E-mail"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd vCard modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Search Results for ", "Výsledky hledání pro "}.
 {"Jabber ID", "Jabber ID"}.
 
@@ -318,8 +294,7 @@
 % web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Ejabberd Web rozhraní"}.
 {"Administration", "Administrace"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", 
- "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(Zdroj)"}.
 {"Bad format", "Nesprávný formát"}.
 {"Raw", "Zdroj"}.
@@ -338,12 +313,10 @@
 {"RPC Call Error", "Chyba RPC volání"}.
 {"Database Tables at ", "Databázové tabulky na "}.
 {"Backup of ", "Záloha na "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", 
- "Podotýkáme, že tato nastavení budou zálohována do zabudované databáze Mnesia. Pokud používáte ODBC modul, musíte zálohovat svoji SQL databázi samostatně."}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "Podotýkáme, že tato nastavení budou zálohována do zabudované databáze Mnesia. Pokud používáte ODBC modul, musíte zálohovat svoji SQL databázi samostatně."}.
 {"Store binary backup:", "Uložit binární zálohu:"}.
 {"Restore binary backup immediately:", "Okamžitě obnovit binární zálohu:"}.
-{"Restore binary backup after next ejabberd restart (requires less memory):", 
- "Obnovit binární zálohu při následujícím restartu ejabberd (vyžaduje méně paměti)"}.
+{"Restore binary backup after next ejabberd restart (requires less memory):", "Obnovit binární zálohu při následujícím restartu ejabberd (vyžaduje méně paměti)"}.
 {"Store plain text backup:", "Uložit zálohu do textového souboru:"}.
 {"Restore plain text backup immediately:", "Okamžitě obnovit zálohu z textového souboru:"}.
 {"Statistics of ~p", "Statistiky ~p"}.
@@ -392,10 +365,8 @@
 {"Room Configuration", "Nastavení místnosti"}.
 
 % mod_muc/mod_muc.erl
-{"You must fill in field \"Nickname\" in the form", 
- "Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", 
- "Ejabberd MUC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"You must fill in field \"Nickname\" in the form", "Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Chatrooms", "Konference"}.
 
 % mod_muc/mod_muc_room.erl
@@ -417,13 +388,12 @@
 {"vCard User Search", "Hledání uživatelů podle vizitek"}.
 
 % mod_offline_odbc.erl
-{"Your contact offline message queue is full. The message has been discarded.",
-"Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
+{"Your contact offline message queue is full. The message has been discarded.", "Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin",
-"ejabberd SOCKS5 Bytestreams modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

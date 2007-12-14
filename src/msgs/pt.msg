@@ -1,6 +1,6 @@
 % $Id$
-
-% ejabberd - Portuguese 
+% Language: Portuguese (português)
+% Author: Iceburn
 
 % jlib.hrl
 {"No resource provided", "Não foi passado nenhum recurso"}.
@@ -77,7 +77,6 @@
 {"Search users in ", "Procurar utilizadores em "}.
 {"Fill in fields to search for any matching Jabber User", "Preencha os campos para procurar utilizadores Jabber coincidentes"}.
 {"Results of search in ", "Resultados da procura em "}.
-
 {"User",              "Utilizador"}.
 {"Full Name", 	      "Nome completo"}.
 {"Name", 	      "Nome"}.
@@ -241,3 +240,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

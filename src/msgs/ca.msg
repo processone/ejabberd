@@ -1,6 +1,6 @@
 % $Id$
-
-% Ejabberd - Catalan - Vicent Alberola Canet
+% Language: Catalan (català)
+% Author: Vicent Alberola Canet
 
 % jlib.hrl
 {"No resource provided", "Recurs no disponible"}.
@@ -89,7 +89,6 @@
 
 % mod_pubsub/mod_pubsub.erl
 {"Node Creator", "Creador del node"}.
-{[], " "}.
 {"Deliver payloads with event notifications", "Enviar payloads junt a les notificacions d'events"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptors quan canvia la configuració del node"}.
 {"Notify subscribers when the node is deleted", "Notificar subscriptors quan el node és eliminat"}.
@@ -352,3 +351,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

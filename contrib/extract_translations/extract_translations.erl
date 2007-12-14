@@ -49,7 +49,7 @@ process(Dir, File, Used) ->
 	    case Used of
 		unused ->
 		    ets:foldl(fun({Key, _}, _) ->
-				      io:format("Unused string: ~p~n", [Key])
+				      io:format("~p~n", [Key])
 			      end, ok, translations); 
 		_ ->
 		    ok

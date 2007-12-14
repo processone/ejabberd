@@ -1,4 +1,6 @@
 % $Id$
+% Language: Ukrainian (українська)
+% Author: Serge Golovan
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Ви мусите використовувати STARTTLS"}.
@@ -93,23 +95,17 @@
 {"SOCKS5 bytestreams proxy", "Потоковий SOCKS5 проксі"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd SOCKS5 Bytestreams модуль\nCopyright (c) 2003-2007 Олексій Щепін"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams модуль\nCopyright (c) 2003-2007 Олексій Щепін"}.
 
 % mod_register.erl
-{"Choose a username and password to register with this server",
- "Виберіть назву користувача та пароль для реєстрації на цьому сервері"}.
+{"Choose a username and password to register with this server", "Виберіть назву користувача та пароль для реєстрації на цьому сервері"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2007 Олексій Щепін"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd vCard модуль\nCopyright (c) 2003-2007 Олексій Щепін"}.
-{"You need an x:data capable client to search",
- "Для пошуку необхідний x:data-придатний клієнт"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Олексій Щепін"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard модуль\nCopyright (c) 2003-2007 Олексій Щепін"}.
+{"You need an x:data capable client to search", "Для пошуку необхідний x:data-придатний клієнт"}.
 {"Search users in ", "Пошук користувачів в "}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)",
- "Заповніть поля для пошуку користувача Jabber (Додайте * в кінець поля для пошуку підрядка)"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Заповніть поля для пошуку користувача Jabber (Додайте * в кінець поля для пошуку підрядка)"}.
 {"Search Results for ", "Результати пошуку в "}.
 {"Jabber ID",         "Jabber ID"}.
 {"User",              "Користувач"}.
@@ -127,12 +123,10 @@
 
 % mod_vcard_ldap.erl
 {"Given Name", "Ім'я"}.
-{"Fill in fields to search for any matching Jabber User",
- "Заповніть поля для пошуку користувача Jabber"}.
+{"Fill in fields to search for any matching Jabber User", "Заповніть поля для пошуку користувача Jabber"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd pub/sub модуль\nCopyright (c) 2003-2007 Олексій Щепін"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd pub/sub модуль\nCopyright (c) 2003-2007 Олексій Щепін"}.
 {"Node Creator", "Створювач збірника"}.
 {"Deliver payloads with event notifications", "Доставляти разом з повідомленнями про публікації самі публікації"}.
 {"Notify subscribers when the node configuration changes", "Повідомляти передплатників про зміни в конфігурації збірника"}.
@@ -149,20 +143,15 @@
 {"Specify the current subscription approver", "JID користувача, який затверджує передплату"}.
 
 % mod_muc/mod_muc.erl
-{"You need an x:data capable client to register nickname",
- "Для реєстрації псевдоніму необхідний x:data-придатний клієнт"}.
+{"You need an x:data capable client to register nickname", "Для реєстрації псевдоніму необхідний x:data-придатний клієнт"}.
 {"Nickname Registration at ", "Реєстрація псевдоніма на "}.
 {"Enter nickname you want to register", "Введіть псевдонім, який ви хочете зареєструвати"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd MUC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
-{"Only service administrators are allowed to send service messages",
- "Тільки адміністратор сервісу може надсилати службові повідомлення"}.
-{"Room creation is denied by service policy",
- "Створювати конференцію заборонено політикою служби"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"Only service administrators are allowed to send service messages", "Тільки адміністратор сервісу може надсилати службові повідомлення"}.
+{"Room creation is denied by service policy", "Створювати конференцію заборонено політикою служби"}.
 {"Conference room does not exist", "Конференція не існує"}.
 {"Access denied by service policy", "Доступ заборонений політикою служби"}.
-{"You must fill in field \"Nickname\" in the form",
- "Вам необхідно заповнити поле \"Псевдонім\" у формі"}.
+{"You must fill in field \"Nickname\" in the form", "Вам необхідно заповнити поле \"Псевдонім\" у формі"}.
 {"Specified nickname is already registered", "Вказаний псевдонім вже зареєстрований"}.
 
 % /home/sergei/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
@@ -196,53 +185,38 @@
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " встановив(ла) тему: "}.
 {"This room is not anonymous", "Ця кімната не анонімна"}.
-{"You need an x:data capable client to configure room",
- "Для конфігурування кімнати необхідний x:data-придатний кліент"}.
+{"You need an x:data capable client to configure room", "Для конфігурування кімнати необхідний x:data-придатний кліент"}.
 {"Configuration for ", "Конфігурація "}.
 {"Room title", "Назва кімнати"}.
 {"Allow users to change subject", "Дозволити користувачам змінювати тему"}.
-{"Allow users to query other users",
- "Дозволити iq-запити до користувачів"}.
-{"Allow users to send private messages",
- "Дозволити приватні повідомлення"}.
+{"Allow users to query other users", "Дозволити iq-запити до користувачів"}.
+{"Allow users to send private messages", "Дозволити приватні повідомлення"}.
 {"Make room public searchable", "Зробити кімнату видимою всім"}.
 {"Make participants list public", "Зробити список учасників видимим всім"}.
 {"Make room persistent", "Зробити кімнату постійною"}.
 {"Make room moderated", "Зробити кімнату модерованою"}.
-{"Default users as participants",
- "Зробити користувачів учасниками за замовчуванням"}.
-{"Make room members-only",
- "Кімната тільки для зареєтрованых учасників"}.
-{"Allow users to send invites",
- "Дозволити користувачам надсилати запрошення"}.
+{"Default users as participants", "Зробити користувачів учасниками за замовчуванням"}.
+{"Make room members-only", "Кімната тільки для зареєтрованых учасників"}.
+{"Allow users to send invites", "Дозволити користувачам надсилати запрошення"}.
 {"Make room password protected", "Зробити кімнату захищеною паролем"}.
 {"Password", "Пароль"}.
 {"Present real JIDs to", "Зробити реальні JID учасників видимими"}.
 {"moderators only", "тільки модераторам"}.
 {"anyone", "всім учасникам"}.
 {"Enable logging", "Включити журнал роботи"}.
-{"Only moderators and participants are allowed to change subject in this room",
- "Тільки модератори та учасники можуть змінювати тему в цій кімнаті"}.
-{"Only moderators are allowed to change subject in this room",
- "Тільки модератори можуть змінювати тему в цій кімнаті"}.
-{"Visitors are not allowed to send messages to all occupants",
- "Відвідувачам не дозволяється надсилати повідомлення всім присутнім"}.
-{"Only occupants are allowed to send messages to the conference",
- "Тільки присутнім дозволяється надсилати повідомленняя в конференцію"}.
-{"It is not allowed to send normal messages to the conference",
- "Не дозволяється надсилати звичайні повідомлення в конференцію"}.
-{"It is not allowed to send private messages to the conference",
- "Не дозволяється надсилати приватні повідомлення  в конференцію"}.
+{"Only moderators and participants are allowed to change subject in this room", "Тільки модератори та учасники можуть змінювати тему в цій кімнаті"}.
+{"Only moderators are allowed to change subject in this room", "Тільки модератори можуть змінювати тему в цій кімнаті"}.
+{"Visitors are not allowed to send messages to all occupants", "Відвідувачам не дозволяється надсилати повідомлення всім присутнім"}.
+{"Only occupants are allowed to send messages to the conference", "Тільки присутнім дозволяється надсилати повідомленняя в конференцію"}.
+{"It is not allowed to send normal messages to the conference", "Не дозволяється надсилати звичайні повідомлення в конференцію"}.
+{"It is not allowed to send private messages to the conference", "Не дозволяється надсилати приватні повідомлення  в конференцію"}.
 {"Improper message type", "Неправильний тип повідомлення"}.
 {"Nickname is already in use by another occupant", "Псевдонім зайнятий кимось з присутніх"}.
 {"Nickname is registered by another person", "Псевдонім зареєстрований кимось іншим"}.
-{"It is not allowed to send private messages of type \"groupchat\"",
- "Не дозволяється надсилати приватні повідомлення типу \"groupchat\""}.
+{"It is not allowed to send private messages of type \"groupchat\"", "Не дозволяється надсилати приватні повідомлення типу \"groupchat\""}.
 {"Recipient is not in the conference room", "Адресата немає в конференції"}.
-{"Only occupants are allowed to send queries to the conference",
- "Тільки присутнім дозволяється відправляти запити в конференцію"}.
-{"Queries to the conference members are not allowed in this room",
- "Запити до користувачів в цій конференції зоборонені"}.
+{"Only occupants are allowed to send queries to the conference", "Тільки присутнім дозволяється відправляти запити в конференцію"}.
+{"Queries to the conference members are not allowed in this room", "Запити до користувачів в цій конференції зоборонені"}.
 {"You have been banned from this room", "Вам заборонено входити в цю конференцію"}.
 {"Membership required to enter this room", "В цю конференціию можуть входити тільки її члени"}.
 {"Password required to enter this room", "Щоб зайти в цю конференцію, необхідний пароль"}.
@@ -259,13 +233,10 @@
 {"Number of occupants", "Кількість присутніх"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin",
- "ejabberd IRC модуль\nCopyright (c) 2003-2007 Олексій Щепін"}.
-{"You need an x:data capable client to configure mod_irc settings",
- "Для налагодження параметрів mod_irc необхідний x:data-придатний клієнт"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC модуль\nCopyright (c) 2003-2007 Олексій Щепін"}.
+{"You need an x:data capable client to configure mod_irc settings", "Для налагодження параметрів mod_irc необхідний x:data-придатний клієнт"}.
 {"Registration in mod_irc for ", "Реєстрація в mod_irc для "}.
-{"Enter username and encodings you wish to use for connecting to IRC servers",
- "Введіть ім'я користувача та кодування, які будуть використовуватися при підключенні до IRC-серверів"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "Введіть ім'я користувача та кодування, які будуть використовуватися при підключенні до IRC-серверів"}.
 {"IRC Username", "Ім'я користувача IRC"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Щоб вказати різні кодування для різних серверів IRC, заповніть список значеннями в форматі '{\"irc server\", \"encoding\"}'. За замовчуванням ця служба використовує кодування \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Приклад: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
@@ -335,8 +306,7 @@
 {"Update", "Обновити"}.
 {"Delete", "Видалити"}.
 {"Add User", "Додати користувача"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One",
- "ejabberd (c) 2002-2007 Олексій Щепін, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Олексій Щепін, 2004-2007 Process One"}.
 {"Offline Messages", "Офлайнові повідомлення"}.
 {"Offline Messages:", "Офлайнові повідомлення:"}.
 {"Last Activity", "Останнє підключення"}.
@@ -382,3 +352,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

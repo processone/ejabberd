@@ -1,6 +1,6 @@
 % $Id$
-
-% Ejabberd - Spanish - badlop AT jabberes.org
+% Language: Spanish (castellano)
+% Author: Badlop
 
 % jlib.hrl
 {"No resource provided", "No se ha proporcionado recurso"}.
@@ -93,7 +93,6 @@
 {"Search Results for ", "Buscar resultados por "}.
 {"Jabber ID", "Jabber ID"}.
 {"vCard User Search", "Buscar vCard de usuario"}.
-
 {"User",              "Usuario"}.
 {"Full Name", 	      "Nombre completo"}.
 {"Name", 	      "Nombre"}.
@@ -107,7 +106,6 @@
 {"Organization Unit", "Unidad de la organización"}.
 
 % mod_pubsub/mod_pubsub.erl
-{[], " "}.
 {"Deliver payloads with event notifications", "Enviar payloads junto con las notificaciones de eventos"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptores cuando cambia la configuración del nodo"}.
 {"Notify subscribers when the node is deleted", "Notificar subscriptores cuando el nodo se borra"}.
@@ -376,3 +374,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

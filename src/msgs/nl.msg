@@ -1,6 +1,7 @@
 % $Id$
-% Author: Sander Devrieze
+% Language: Dutch (nederlands)
 % Author: Andreas from Unstable.nl
+% Author: Sander Devrieze
 
 % mod_vcard_ldap.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.

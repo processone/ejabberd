@@ -1,4 +1,4 @@
-% $Id:$
+% $Id$
 % Language: Chinese (中文)
 % Author: Shelley Shyan - skylarkbj AT 163 DOT com
 
@@ -159,7 +159,6 @@
 {"Specify the access model", "指定访问模式"}.
 {"Roster groups that may subscribe (if access model is roster)", "可能订阅的花名册组(若访问模式为花名册)"}.
 {"When to send the last published item", "何时发送最新公布的条款"}.
-{[], " "}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "聊天室配置已修改"}.

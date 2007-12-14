@@ -1,4 +1,7 @@
 % $Id$
+% Language: Swedish (svenska)
+% Author: Magnus Henoch
+% Author: Jonas Ådahl
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Du måste använda STARTTLS"}.
@@ -70,19 +73,14 @@
 {"Import Directory", "Importera katalog"}.
 
 % mod_register.erl
-{"Choose a username and password to register with this server",
- "Välj ett användarnamn och lösenord för att registrera mot denna server"}.
+{"Choose a username and password to register with this server", "Välj ett användarnamn och lösenord för att registrera mot denna server"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin",
- "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexej Sjtjepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin",
- "ejabberd vCard-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
-{"You need an x:data capable client to search",
- "Du behöver en klient som stödjer x:data, för att kunna söka"}.
+{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexej Sjtjepin"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd vCard-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
+{"You need an x:data capable client to search", "Du behöver en klient som stödjer x:data, för att kunna söka"}.
 {"Search users in ", "Sök efter användare på "}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)",
-"Fyll i formuläret för att söka efter en användare (lägg till * på slutet av fältet för att hitta alla som börjar så)"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Fyll i formuläret för att söka efter en användare (lägg till * på slutet av fältet för att hitta alla som börjar så)"}.
 {"Results of search in ", "Sökresultat på "}.
 {"User",              "Användarnamn"}.
 {"Full Name", 	      "Fullständigt namn"}.
@@ -105,10 +103,8 @@
 {"JID", "JID"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin",
- "ejabberd pub/sub-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
+{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd pub/sub-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
 {"Node Creator", "Nodskapare"}.
-{[], " "}.
 {"Deliver payloads with event notifications", "Skicka innehåll tillsammans med notifikationer"}.
 {"Notify subscribers when the node configuration changes", "Meddela prenumeranter när nodens konfiguration ändras"}.
 {"Notify subscribers when the node is deleted", "Meddela prenumeranter när noden tas bort"}.
@@ -124,69 +120,49 @@
 {"Specify the current subscription approver", "Ange prenumerationsgodkännare"}.
 
 % mod_muc/mod_muc.erl
-{"You need an x:data capable client to register nickname",
- "Du behöver en klient som stödjer x:data för att registrera smeknamn"}.
+{"You need an x:data capable client to register nickname", "Du behöver en klient som stödjer x:data för att registrera smeknamn"}.
 {"Nickname Registration at ", "Registrera smeknamn på "}.
 {"Enter nickname you want to register", "Skriv in smeknamnet du vill registrera"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin",
- "ejabberd MUC modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
-{"Only service administrators are allowed to send service messages",
- "Endast administratörer får skicka tjänstmeddelanden"}.
-{"Room creation is denied by service policy",
- "Skapandet av rum är förbjudet enligt lokal policy"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd MUC modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
+{"Only service administrators are allowed to send service messages", "Endast administratörer får skicka tjänstmeddelanden"}.
+{"Room creation is denied by service policy", "Skapandet av rum är förbjudet enligt lokal policy"}.
 {"Conference room does not exist", "Rummet finns inte"}.
 {"Access denied by service policy", "Åtkomst nekad enligt lokal policy"}.
-{"You must fill in field \"nick\" in the form",
- "Du måste fylla i fältet \"nick\" i formuläret"}.
+{"You must fill in field \"nick\" in the form", "Du måste fylla i fältet \"nick\" i formuläret"}.
 {"Specified nickname is already registered", "Detta smeknamnet är redan registrerat"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " har satt ämnet till: "}.
-{"You need an x:data capable client to configure room",
- "Du behöver en klient som stödjer x:data för att konfiguera detta rum"}.
+{"You need an x:data capable client to configure room", "Du behöver en klient som stödjer x:data för att konfiguera detta rum"}.
 {"Configuration for ", "Konfiguration för "}.
 {"Room title", "Rumstitel"}.
 {"Allow users to change subject?", "Tillåt användare att ändra ämnet?"}.
-{"Allow users to query other users?",
- "Tillåt användare att skicka iq-queries"}.
-{"Allow users to send private messages?",
- "Tillåt användare att skicka privata meddelanden"}.
+{"Allow users to query other users?", "Tillåt användare att skicka iq-queries"}.
+{"Allow users to send private messages?", "Tillåt användare att skicka privata meddelanden"}.
 {"Make room public searchable?", "Gör rummet synligt för alla?"}.
 {"Make participants list public?", "Gör användarlistan publik?"}.
 {"Make room persistent?", "Gör rummet permanent?"}.
 {"Make room moderated?", "Gör rummet modererat?"}.
-{"Default users as members?",
- "Gör användare deltagare som standard?"}.
-{"Make room members only?",
- "Stäng ute icke medlemmar?"}.
-{"Allow users to send invites?",
- "Tillåt användare att skicka inbjudningar?"}.
+{"Default users as members?", "Gör användare deltagare som standard?"}.
+{"Make room members only?", "Stäng ute icke medlemmar?"}.
+{"Allow users to send invites?", "Tillåt användare att skicka inbjudningar?"}.
 {"Make room password protected?", "Lösenordsskydda rummet?"}.
 {"Password", "Lösenord"}.
 {"Make room anonymous?", "Anonymt rum?"}.
 {"Enable logging?", "Aktivera loggning?"}.
-{"Only moderators and participants are allowed to change subject in this room",
- "Endast moderatorer och deltagare har tillåtelse att ändra ämnet i det här rummet"}.
-{"Only moderators are allowed to change subject in this room",
- "Endast moderatorer får ändra ämnet i det här rummet"}.
-{"Visitors are not allowed to send messages to all occupants",
- "Besökare får inte skicka medelande till alla"}.
-{"Only occupants are allowed to send messages to the conference",
- "Utomstående får inte skicka medelanden till den här konferensen"}.
-{"It is not allowed to send normal messages to the conference",
- "Det är inte tillåtet att skicka normala medelanden till den här konferensen"}.
-{"It is not allowed to send private messages to the conference",
- "Det är inte tillåtet att skicka privata medelanden till den här konferensen"}.
+{"Only moderators and participants are allowed to change subject in this room", "Endast moderatorer och deltagare har tillåtelse att ändra ämnet i det här rummet"}.
+{"Only moderators are allowed to change subject in this room", "Endast moderatorer får ändra ämnet i det här rummet"}.
+{"Visitors are not allowed to send messages to all occupants", "Besökare får inte skicka medelande till alla"}.
+{"Only occupants are allowed to send messages to the conference", "Utomstående får inte skicka medelanden till den här konferensen"}.
+{"It is not allowed to send normal messages to the conference", "Det är inte tillåtet att skicka normala medelanden till den här konferensen"}.
+{"It is not allowed to send private messages to the conference", "Det är inte tillåtet att skicka privata medelanden till den här konferensen"}.
 {"Improper message type", "Felaktig medelandetyp"}.
 {"Nickname is already in use by another occupant", "Smeknamnet används redan"}.
 {"Nickname is registered by another person", "Smeknamnet är reserverat"}.
-{"It is not allowed to send private messages of type \"groupchat\"",
- "Det är inte tillåtet att skicka privata medelanden med typen  \"groupchat\""}.
+{"It is not allowed to send private messages of type \"groupchat\"", "Det är inte tillåtet att skicka privata medelanden med typen  \"groupchat\""}.
 {"Recipient is not in the conference room", "Mottagaren finns inte i rummet"}.
-{"Only occupants are allowed to send queries to the conference",
- "Utomstående får inte skicka iq-queries till den här konferensen"}.
-{"Queries to the conference members are not allowed in this room",
- "Det är förbjudet att skicka iq-queries till konferensdeltagare"}.
+{"Only occupants are allowed to send queries to the conference", "Utomstående får inte skicka iq-queries till den här konferensen"}.
+{"Queries to the conference members are not allowed in this room", "Det är förbjudet att skicka iq-queries till konferensdeltagare"}.
 {"You have been banned from this room", "Du har blivit bannlyst från det här rummet"}.
 {"Membership required to enter this room", "Du måste vara medlem för att komma in i det här rummet"}.
 {"Password required to enter this room", "Lösenord erfordras"}.
@@ -201,13 +177,10 @@
 {"private, ", "privat, "}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin",
- "ejabberd IRC-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
-{"You need an x:data capable client to configure mod_irc settings",
- "Du behöer en klient som stöjer x:data för att konfigurera mod_irc"}.
+{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd IRC-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
+{"You need an x:data capable client to configure mod_irc settings", "Du behöer en klient som stöjer x:data för att konfigurera mod_irc"}.
 {"Registration in mod_irc for ", "mod_irc-registrering för "}.
-{"Enter username and encodings you wish to use for connecting to IRC servers",
- "Skriv in användarnamn och textkodning du vill använda för att ansluta till IRC-servrar"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "Skriv in användarnamn och textkodning du vill använda för att ansluta till IRC-servrar"}.
 {"IRC Username", "IRC-användarnamn"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Om du vill specifiera textkodning för IRC-servrar, fyll i listan med värden i formatet '{\"irc server\", \"encoding\"}'. Som standard används \"~s\"."}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Exempel: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
@@ -319,3 +292,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

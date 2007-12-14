@@ -1,4 +1,10 @@
 % $Id$
+% Language: German (deutsch)
+% Author: Nikolaus Polak
+% Author: Marvin Preuss
+% Author: Patrick Dreker
+% Author: Torsten Werner
+% Author: Marina Hahn
 
 % jlib.hrl
 {"No resource provided", "Keine Ressource zur Verfügung"}.
@@ -62,16 +68,13 @@
 {"Import Directory", "Verzeichnis importieren"}.
 
 % mod_register.erl
-{"Choose a username and password to register with this server",
- "Wählen Sie zum Registrieren einen Benutzernamen und ein Passwort"}.
+{"Choose a username and password to register with this server", "Wählen Sie zum Registrieren einen Benutzernamen und ein Passwort"}.
 
 % mod_vcard.erl
 {"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-{"You need an x:data capable client to search",
- "Sie brauchen einen x:data kompatiblen Client um suchen zu können"}.
+{"You need an x:data capable client to search", "Sie brauchen einen x:data kompatiblen Client um suchen zu können"}.
 {"Search users in ", "Benutzer suchen in "}.
-{"Fill in fields to search for any matching Jabber User",
- "Felder ausfüllen, um nach passenden Jabber Benutzern zu suchen"}.
+{"Fill in fields to search for any matching Jabber User", "Felder ausfüllen, um nach passenden Jabber Benutzern zu suchen"}.
 
 {"User",              "Benutzer"}.
 {"Full Name", 	      "Ganzer Name"}.
@@ -87,7 +90,6 @@
 
 % mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-{[], " "}.
 {"Node Creator", "Knoten Erschaffer"}.
 {"Deliver payloads with event notifications", "Nutzlast mit Benachrichtigungen versenden"}.
 {"Notify subscribers when the node configuration changes", "Benutzer benachrichtigen, wenn die Knotenkonfiguration sich ändert"}.
@@ -104,13 +106,11 @@
 {"Specify the current subscription approver", "Geben Sie an, wer die Abonnements bestätigt"}.
 
 % mod_muc/mod_muc.erl
-{"You need an x:data capable client to register nickname",
- "Sie brauchen einen für x:data geeigneten Client, um sich mit dem Spitznamen zu registrieren"}.
+{"You need an x:data capable client to register nickname", "Sie brauchen einen für x:data geeigneten Client, um sich mit dem Spitznamen zu registrieren"}.
 {"Nickname Registration at ", "Registrieren des Spitznamens "}.
 {"Enter nickname you want to register", "Geben Sie den zu registrierenden Spitznamen ein"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-{"Only service administrators are allowed to send service messages",
- "Nur Service Administratoren sind berechtigt, Servicenachrichten zu senden"}.
+{"Only service administrators are allowed to send service messages", "Nur Service Administratoren sind berechtigt, Servicenachrichten zu senden"}.
 {"Conference room does not exist", "Konferenzraum existiert nicht"}.
 {"Access denied by service policy", "Zutritt verweigert von der Service Policy"}.
 {"You must fill in field \"Nickname\" in the form", "Sie müssen etwas ins Feld \"Nickname\" eintragen"}.
@@ -119,33 +119,23 @@
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", " hat das Thema geändert zu "}.
-{"You need an x:data capable client to configure room",
- "Sie brauchen einen für x:data geeigneten Client um den Raum zu konfigurieren"}.
+{"You need an x:data capable client to configure room", "Sie brauchen einen für x:data geeigneten Client um den Raum zu konfigurieren"}.
 {"Configuration for ", "Konfiguration für "}.
 {"Room title", "Raumname"}.
 {"Password", "Passwort"}.
-{"Only moderators and participants are allowed to change subject in this room",
- "Nur Moderatoren und Teilnehmer dürfen das Thema in diesem Raum ändern"}.
-{"Only moderators are allowed to change subject in this room",
- "Nur Moderatoren dürfen das Thema in diesem Raum ändern"}.
-{"Visitors are not allowed to send messages to all occupants",
- "Besucher dürfen nicht an alle im Raum Nachrichten verschicken"}.
-{"Only occupants are allowed to send messages to the conference",
- "Nur Leute im Raum dürfen Nachrichten an die Konferenz schicken"}.
-{"It is not allowed to send normal messages to the conference",
- "Es ist nicht erlaubt normale Nachrichten an die Konferenz zu schicken"}.
-{"It is not allowed to send private messages to the conference",
- "Es ist nicht erlaubt private Nachrichten an die Konferenz zu schicken"}.
+{"Only moderators and participants are allowed to change subject in this room", "Nur Moderatoren und Teilnehmer dürfen das Thema in diesem Raum ändern"}.
+{"Only moderators are allowed to change subject in this room", "Nur Moderatoren dürfen das Thema in diesem Raum ändern"}.
+{"Visitors are not allowed to send messages to all occupants", "Besucher dürfen nicht an alle im Raum Nachrichten verschicken"}.
+{"Only occupants are allowed to send messages to the conference", "Nur Leute im Raum dürfen Nachrichten an die Konferenz schicken"}.
+{"It is not allowed to send normal messages to the conference", "Es ist nicht erlaubt normale Nachrichten an die Konferenz zu schicken"}.
+{"It is not allowed to send private messages to the conference", "Es ist nicht erlaubt private Nachrichten an die Konferenz zu schicken"}.
 {"Improper message type", "Unzulässiger Nachrichtentyp"}.
 {"Nickname is already in use by another occupant", "Spitzname wird schon von jemand anderem genutzt"}.
 {"Nickname is registered by another person", "Spitzname wurde schon von jemand anderem registriert"}.
-{"It is not allowed to send private messages of type \"groupchat\"",
- "Es ist nicht erlaubt private Nachrichten des Typs \"Gruppenchat\" zu senden"}.
+{"It is not allowed to send private messages of type \"groupchat\"", "Es ist nicht erlaubt private Nachrichten des Typs \"Gruppenchat\" zu senden"}.
 {"Recipient is not in the conference room", "Der Empfänger ist nicht im Konferenzraum"}.
-{"Only occupants are allowed to send queries to the conference",
- "Nur Teilnehmer sind berechtig Anfragen an die Konferenz zu senden"}.
-{"Queries to the conference members are not allowed in this room",
- "Anfragen an die Konferenzmitglieder sind in diesem Raum nicht erlaubt"}.
+{"Only occupants are allowed to send queries to the conference", "Nur Teilnehmer sind berechtig Anfragen an die Konferenz zu senden"}.
+{"Queries to the conference members are not allowed in this room", "Anfragen an die Konferenzmitglieder sind in diesem Raum nicht erlaubt"}.
 {"You have been banned from this room", "Sie wurden aus diesem Raum verbannt"}.
 {"Membership required to enter this room", "Um diesen Raum zu betreten müssen sie ein Mitglied sein"}.
 {"Password required to enter this room", "Sie brauchen ein Passwort um diesen Raum zu betreten"}.
@@ -161,14 +151,11 @@
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-{"You need an x:data capable client to configure mod_irc settings",
- "Sie brauchen einen x:data kompatiblen Client um die mod_irc Einstellungen zu konfigurieren"}.
+{"You need an x:data capable client to configure mod_irc settings", "Sie brauchen einen x:data kompatiblen Client um die mod_irc Einstellungen zu konfigurieren"}.
 {"Registration in mod_irc for ", "Registrierung in mod_irc für "}.
-{"Enter username and encodings you wish to use for connecting to IRC servers",
- "Geben Sie Benutzernamen und Verschlüsselung für die Verbindung zum IRC Server an"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "Geben Sie Benutzernamen und Verschlüsselung für die Verbindung zum IRC Server an"}.
 {"IRC Username", "IRC Benutzername"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].",
- "Beispiel: [{\"irc.lucky.net\",\"koi8-r\"}, {\vendetta.fef.net\", \"iso8859-1\"}]."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Beispiel: [{\"irc.lucky.net\",\"koi8-r\"}, {\vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Verschlüsselungen"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Wenn Sie verschiedene Verschlüsselungen für IRC Server angeben, schreiben Sie diese im Format '{\"irc server\", \"encoding\"}'. Standardmäßig benutzt der Dienst die  \"~s\" Verschlüsselung"}.
 
@@ -366,3 +353,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

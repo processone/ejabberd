@@ -1,3 +1,21 @@
+2007-12-14  Badlop  <badlop@process-one.net>
+
+	* src/msgs/*: Unified file format: First line is SVN Id
+	tag. Second is Language name. Next lines are authors, adding the
+	new ones on top. Each string must be in a single line (to
+	facilitate the automatic removal of unused strings). Last four
+	lines report file format for Emacs and Vim.
+	
+	* contrib/extract_translations/prepare-translation.sh: New
+	features: extract all translations, include explanation for
+	translators in the file, remove unused strings from file, include
+	unused strings in a section for reference, provide information
+	about current translation and number of missing strings, compress
+	the files to a zip
+
+	* contrib/extract_translations/extract_translations.erl: Reverted
+	to the original version
+
 2007-12-14  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/ejabberd_s2s_out.erl: Bugfix

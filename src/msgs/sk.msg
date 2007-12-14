@@ -1,4 +1,7 @@
 % $Id$
+% Language: Slovak (slovenčina)
+% Author: Juraj Michalek
+% Author: SkLUG
 
 % jlib.hrl
 {"No resource provided", "Nebol poskytnutý žiadny zdroj"}.
@@ -38,6 +41,11 @@
 {"Action on user", "Operácia aplikovaná na používateľa"}.
 {"Edit Properties", "Editovať vlastnosti"}.
 {"Remove User", "Odstrániť používateľa"}.
+{"DB Tables Configuration at ", "Databázové tabuľky s konfiguráciou na "}.
+{"Database", "Databáza"}.
+{"Outgoing s2s Connections", "Odchdazájuce s2s spojenie"}.
+{"Import Users From jabberd 1.4 Spool Files", "Importovať používateľov z jabber 1.4 spool súborov"}.
+{"Database Tables Configuration at ", "Konfigurácia databázových tabuliek "}.
 
 % mod_disco.erl
 {"Configuration", "Konfigurácia"}.
@@ -65,17 +73,13 @@
 {"Import Directory", "Import adresára"}.
 
 % mod_register.erl
-{"Choose a username and password to register with this server",
- "Vybrať meno používateľa a heslo pre registráciu na tomto serveri"}.
+{"Choose a username and password to register with this server", "Vybrať meno používateľa a heslo pre registráciu na tomto serveri"}.
 
 % mod_vcard.erl
-{"You need an x:data capable client to search",
- "Na vyhľadávanie potrebujete klienta podporujúceho x:data"}.
+{"You need an x:data capable client to search", "Na vyhľadávanie potrebujete klienta podporujúceho x:data"}.
 {"Search users in ", "Hľadať používateľov v "}.
-{"Fill in fields to search for any matching Jabber User",
- "Vyplnte políčka pre vyhľadávanie Jabber používateľa"}.
+{"Fill in fields to search for any matching Jabber User", "Vyplnte políčka pre vyhľadávanie Jabber používateľa"}.
 {"Results of search in ", "Výsledky vyhľadávania v "}.
-
 {"User",              "Používateľ: "}.
 {"Full Name", 	      "Celé meno: "}.
 {"Name", 	      "Meno: "}.
@@ -90,64 +94,65 @@
 {"Organization Unit", "Organizačná jednotka: "}.
 
 % mod_muc/mod_muc.erl
-{"You need an x:data capable client to register nickname",
- "Na registráciu prezývky potrebujete klienta podporujúceho z x:data"}.
+{"You need an x:data capable client to register nickname", "Na registráciu prezývky potrebujete klienta podporujúceho z x:data"}.
 {"Nickname Registration at ", "Registrácia prezývky na "}.
 {"Enter nickname you want to register", "Zadajte prezývku, ktorú chete registrovať"}.
-{"Only service administrators are allowed to send service messages",
- "Iba správcovia služby majú povolené odosielanie servisných správ"}.
+{"Only service administrators are allowed to send service messages", "Iba správcovia služby majú povolené odosielanie servisných správ"}.
 {"Conference room does not exist", "Konferenčná miestnosť neexistuje"}.
 {"Access denied by service policy", "Prístup bol zamiestnutý nastavení služby"}.
 {"You must fill in field \"nick\" in the form", "Musíte vyplniť políčko \"prezývka\"  vo formulári"}.
 {"Specified nickname is already registered", "Zadaná prezývka je už registrovaná"}.
+{"You must fill in field \"Nickname\" in the form", "Musíte vyplniť políčko \"Prezývka\" vo formulári"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
 % mod_muc/mod_muc_room.erl
+{"This room is not anonymous", "Táto miestnosť nie je anonymná"}.
+{"Make room persistent", "Nastaviť miestnosť ako trvalú"}.
+{"Make room public searchable", "Nastaviť miestnosť ako verejne prehľadávateľnú"}.
+{"Make participants list public", "Nastaviť zoznam zúčastnených ako verejný"}.
+{"Make room password protected", "Chrániť miestnosť heslom"}.
+{"Make room semianonymous", "Nastaviť miestnosť ako čiastočne anonymnú"}.
+{"Make room members-only", "Nastaviť miestnosť len pre členov"}.
+{"Make room moderated", "Nastaviť miestnosť ako moderovanú"}.
+{"Default users as participants", "Používatelia sú implicitne členmi"}.
+{"Allow users to change subject", "Povoliť používateľom zmeniť tému tejto miestnosti"}.
+{"Allow users to send private messages", "Povoliť používateľom odosielať súkromné správy"}.
+{"Allow users to query other users", "Povoliť používateľom odosielať požiadavky (query) ostatným používateľom"}.
+{"Allow users to send invites", "povoliť používateľom posielanie pozvánok"}.
+{"Enable logging", "Zapnúť zaznamenávanie histórie"}.
+{"Description", "Popis"}.
+{"Number of occupants", "Počet zúčastnených"}.
 {" has set the subject to: ", "zmiel(a) tému na: "}.
-{"You need an x:data capable client to configure room",
- "Na konfiguráciu miestnosti potrebujete klienta podporujúceho x:data"}.
+{"You need an x:data capable client to configure room", "Na konfiguráciu miestnosti potrebujete klienta podporujúceho x:data"}.
 {"Configuration for ", "Konfigurácia pre "}.
 {"Room title", "Názov miestnosti"}.
 {"Allow users to change subject?", "Povoliť používateľom meniť tému?"}.
-{"Allow users to query other users?",
- "Povoliť používateľom odosielať požiadavky (query) ostatným používateľom?"}.
-{"Allow users to send private messages?",
- "Povoliť používateľom odosielať súkromné správy?"}.
+{"Allow users to query other users?", "Povoliť používateľom odosielať požiadavky (query) ostatným používateľom?"}.
+{"Allow users to send private messages?", "Povoliť používateľom odosielať súkromné správy?"}.
 {"Make room public searchable?", "Nastaviť miestnosť ako verejne prehľadávateľnú?"}.
 {"Make participants list public?", "Nastaviť zoznam zúčastnených ako verejný?"}.
 {"Make room persistent?", "Nastaviť miestnosť ako trvalú (persistent)?"}.
 {"Make room moderated?", "Nastaviť miestnosť ako moderovanú?"}.
-{"Default users as members?",
- "Používatelia sú implicitne členmi?"}.
-{"Make room members only?",
- "Nastaviť miestnosť len pre členov?"}.
-{"Allow users to send invites?",
- "Povoliť používateľom odosielať pozvánky?"}.
+{"Default users as members?", "Používatelia sú implicitne členmi?"}.
+{"Make room members only?", "Nastaviť miestnosť len pre členov?"}.
+{"Allow users to send invites?", "Povoliť používateľom odosielať pozvánky?"}.
 {"Make room password protected?", "Chrániť miestnosť heslom?"}.
 {"Password", "Heslo"}.
 {"Make room anonymous?", "Nastaviť miestnosť ako anonymnú?"}.
 {"Enable logging?", "Zapnúť zaznamenávanie histórie?"}.
-{"Only moderators and participants are allowed to change subject in this room",
- "Len moderátori a zúčastnený majú povolené meniť tému tejto miestnosti"}.
-{"Only moderators are allowed to change subject in this room",
- "Len moderátori majú povolené meniť tému miestnosti"}.
-{"Visitors are not allowed to send messages to all occupants",
- "Návštevníci nemajú povolené zasielať správy všetkým prihláseným do konferencie"}.
-{"Only occupants are allowed to send messages to the conference",
- "Len členovia majú povolené zasielať správy do konferencie"}.
-{"It is not allowed to send normal messages to the conference",
- "Nie je povolené odosielať normálne správy do konferencie"}.
-{"It is not allowed to send private messages to the conference",
- "Nie je povolené odosielať súkromné správy do konferencie"}.
+{"Only moderators and participants are allowed to change subject in this room", "Len moderátori a zúčastnený majú povolené meniť tému tejto miestnosti"}.
+{"Only moderators are allowed to change subject in this room", "Len moderátori majú povolené meniť tému miestnosti"}.
+{"Visitors are not allowed to send messages to all occupants", "Návštevníci nemajú povolené zasielať správy všetkým prihláseným do konferencie"}.
+{"Only occupants are allowed to send messages to the conference", "Len členovia majú povolené zasielať správy do konferencie"}.
+{"It is not allowed to send normal messages to the conference", "Nie je povolené odosielať normálne správy do konferencie"}.
+{"It is not allowed to send private messages to the conference", "Nie je povolené odosielať súkromné správy do konferencie"}.
 {"Improper message type", "Nesprávny typ správy"}.
 {"Nickname is already in use by another occupant", "Prezývka je už používaná iným členom"}.
 {"Nickname is registered by another person", "Prezývka je registrovaná inou osobou"}.
-{"It is not allowed to send private messages of type \"groupchat\"",
- "Nie je dovolené odoslanie súkromnej správy typu \"Skupinová správa\" "}.
+{"It is not allowed to send private messages of type \"groupchat\"", "Nie je dovolené odoslanie súkromnej správy typu \"Skupinová správa\" "}.
 {"Recipient is not in the conference room", "Príjemca sa nenachádza v konferenčnej miestnosti"}.
-{"Only occupants are allowed to send queries to the conference",
- "Len členovia majú povolené odosielať požiadavky (query) do konferencie"}.
-{"Queries to the conference members are not allowed in this room",
- "Požiadavky (queries) na členov konferencie nie sú povolené v tejto miestnosti"}.
+{"Only occupants are allowed to send queries to the conference", "Len členovia majú povolené odosielať požiadavky (query) do konferencie"}.
+{"Queries to the conference members are not allowed in this room", "Požiadavky (queries) na členov konferencie nie sú povolené v tejto miestnosti"}.
 {"You have been banned from this room", "Boli ste vylúčený z tejto miestnosti"}.
 {"Membership required to enter this room", "Pre vstup do miestnosti je potrebné byť členom"}.
 {"Password required to enter this room", "Pre vstup do miestnosti je potrebné heslo"}.
@@ -162,14 +167,11 @@
 {"private, ", "súkromná, "}.
 
 % mod_irc/mod_irc.erl
-{"You need an x:data capable client to configure mod_irc settings",
- "Pre konfiguráciu mod_irc potrebujete klienta podporujúceho x:data"}.
+{"You need an x:data capable client to configure mod_irc settings", "Pre konfiguráciu mod_irc potrebujete klienta podporujúceho x:data"}.
 {"Registration in mod_irc for ", "Registrácia do mod_irc na "}.
-{"Enter username and encodings you wish to use for connecting to IRC servers",
- "Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na IRC server"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na IRC server"}.
 {"IRC Username", "IRC prezývka"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].",
- "Príklad: [{\"irc.freenode.net\",\"utf-8\"}, {\irc.freenode.net\", \"iso8859-2\"}]."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Príklad: [{\"irc.freenode.net\",\"utf-8\"}, {\irc.freenode.net\", \"iso8859-2\"}]."}.
 {"Encodings", "Kódovania"}.
 
 % web/ejabberd_web_admin.erl
@@ -272,98 +274,9 @@
 {"ejabberd virtual hosts", "Ejabberd virtuálne servery"}.
 {"Host", "Server"}.
 {"ejabberd Web Interface", "Ejabberd Web rozhranie"}.
-
-% mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin"}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Pre vyhľadanie Jabber používateľa vyplňte formulár (pridajte znak * na koniec, pre vyhľadanie podreťazca)"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd vCard modul\nCopyright (c) 2003-2005 Alexey Shchepin"}.
-{"JID", "JID"}.
-
-% ejabberd_c2s.erl
-{"Use of STARTTLS required", "Použitie STARTTLS je vyžadované"}.
-{"Replaced by new connection", "Nahradené novým spojením"}.
-
-% mod_configure.erl
-{"DB Tables Configuration at ", "Databázové tabuľky s konfiguráciou na "}.
-
-% mod_vcard_ldap.erl
-{"Given Name", "Meno"}.
-
-% mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd pub/sub modul\nCopyright (c) 2003-2005 Alexey Shchepin"}.
-{[], " "}.
-{"Node Creator", "Tvorca uzlu"}.
-{"Deliver payloads with event notifications", "Doručovanie payload s upozorňovaním na udalosti"}.
-{"Notify subscribers when the node configuration changes", "Upozorniť prihlásených používateľov na zmenu nastavenia uzlu"}.
-{"Notify subscribers when the node is deleted", "Upozorniť prihlásených používateľov na zmazanie uzlu"}.
-{"Notify subscribers when items are removed from the node", "Upozorniť prihlásených používateľov na odstránenie položiek z uzlu"}.
-{"Persist items to storage", "Uložiť položky natrvalo do úložiska"}.
-{"Max # of items to persist", "Maximálny počet položiek, ktoré je možné natrvalo uložiť"}.
-{"Whether to allow subscriptions", "Povoliť prihlasovanie"}.
-{"Specify the subscriber model", "Špecifikovať prihlasovací model"}.
-{"Specify the publisher model", "Špecifikovať model publikovania"}.
-{"Max payload size in bytes", "Maximálny payload v bajtoch"}.
-{"Send items to new subscribers", "Odoslať položky novým používateľom"}.
-{"Only deliver notifications to available users", "Doručovať upozornenia len aktuálne prihláseným používateľom"}.
-{"Specify the current subscription approver", "Zadať súčasného schvaľovateľa prihlásení "}.
-
-% web/ejabberd_web_admin.erl
-{"ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One", "Ejabberd (c) 2002-2005 Alexey Shchepin, 2004-2005 Process One"}.
 {"(raw)", "(raw)"}.
 {"raw", "raw"}.
 {"Authenticated users", "Autentifikovaný používatelia"}.
-
-% mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Ak chcete zadať iné kódovania pre IRC servery, vyplnte zoznam s hodnotami vo formáte '{\"irc server\",\"encoding\"}'. Predvolené kódovanie pre túto službu je \"~s\"."}.
-
-% mod_muc/mod_muc.erl
-{"Room creation is denied by service policy", "Vytváranie miestnosti nie je povolené"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2005 Alexey Shchepin"}.
-
-% Local Variables:
-% mode: erlang
-% End:
-
-
-% /usr/home/src/ejabberd/ejabberd/src/mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
-{"Email", "E-mail"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd vCard modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-{"Search Results for ", "Hľadať výsledky pre "}.
-{"Jabber ID", "Jabber ID"}.
-
-% /usr/home/src/ejabberd/ejabberd/src/mod_adhoc.erl
-{"Commands", "Príkazy"}.
-{"Ping", "Ping"}.
-{"Pong", "Pong"}.
-
-% /usr/home/src/ejabberd/ejabberd/src/ejabberd_c2s.erl
-{"Replaced by new connection", "Nahradené novým spojením"}.
-
-% /usr/home/src/ejabberd/ejabberd/src/mod_announce.erl
-{"Really delete message of the day?", "Skutočne zmazať správu dňa?"}.
-{"Subject", "Predmet"}.
-{"Message body", "Telo správy"}.
-{"No body provided for announce message", "Správa neobsahuje text"}.
-{"Announcements", "Oznámenia"}.
-{"Send announcement to all users", "Odoslať oznam všetkým používateľom"}.
-{"Send announcement to all online users", "Odoslať zoznam všetkým online používateľom"}.
-{"Send announcement to all online users on all hosts", "Odoslať oznam všetkým online používateľom na všetkých serveroch"}.
-{"Set message of the day and send to online users", "Nastaviť správu dňa a odoslať ju online používateľom"}.
-{"Update message of the day (don't send)", "Aktualizovať správu dňa (neodosielať)"}.
-{"Delete message of the day", "Zmazať správu dňa"}.
-
-% /usr/home/src/ejabberd/ejabberd/src/mod_configure.erl
-{"Database", "Databáza"}.
-{"Outgoing s2s Connections", "Odchdazájuce s2s spojenie"}.
-{"Import Users From jabberd 1.4 Spool Files", "Importovať používateľov z jabber 1.4 spool súborov"}.
-{"Database Tables Configuration at ", "Konfigurácia databázových tabuliek "}.
-
-% /usr/home/src/ejabberd/ejabberd/src/mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd pub/sub modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-
-% /usr/home/src/ejabberd/ejabberd/src/web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Ejabberd Web rozhranie"}.
 {"Administration", "Administrácia"}.
 {"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "Ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
@@ -409,10 +322,70 @@
 {"Not Found", "Nenájdené"}.
 {"Shared Roster Groups", "Skupiny pre zdieľaný zoznam kontaktov"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_irc/mod_irc.erl
+% mod_vcard_odbc.erl
+{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Email", "E-mail"}.
+{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd vCard modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"Search Results for ", "Hľadať výsledky pre "}.
+{"Jabber ID", "Jabber ID"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Pre vyhľadanie Jabber používateľa vyplňte formulár (pridajte znak * na koniec, pre vyhľadanie podreťazca)"}.
+{"JID", "JID"}.
+
+% ejabberd_c2s.erl
+{"Replaced by new connection", "Nahradené novým spojením"}.
+{"Use of STARTTLS required", "Použitie STARTTLS je vyžadované"}.
+{"Replaced by new connection", "Nahradené novým spojením"}.
+
+% mod_vcard_ldap.erl
+{"Given Name", "Meno"}.
+
+% mod_pubsub/mod_pubsub.erl
+{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd pub/sub modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"Node Creator", "Tvorca uzlu"}.
+{"Deliver payloads with event notifications", "Doručovanie payload s upozorňovaním na udalosti"}.
+{"Notify subscribers when the node configuration changes", "Upozorniť prihlásených používateľov na zmenu nastavenia uzlu"}.
+{"Notify subscribers when the node is deleted", "Upozorniť prihlásených používateľov na zmazanie uzlu"}.
+{"Notify subscribers when items are removed from the node", "Upozorniť prihlásených používateľov na odstránenie položiek z uzlu"}.
+{"Persist items to storage", "Uložiť položky natrvalo do úložiska"}.
+{"Max # of items to persist", "Maximálny počet položiek, ktoré je možné natrvalo uložiť"}.
+{"Whether to allow subscriptions", "Povoliť prihlasovanie"}.
+{"Specify the subscriber model", "Špecifikovať prihlasovací model"}.
+{"Specify the publisher model", "Špecifikovať model publikovania"}.
+{"Max payload size in bytes", "Maximálny payload v bajtoch"}.
+{"Send items to new subscribers", "Odoslať položky novým používateľom"}.
+{"Only deliver notifications to available users", "Doručovať upozornenia len aktuálne prihláseným používateľom"}.
+{"Specify the current subscription approver", "Zadať súčasného schvaľovateľa prihlásení "}.
+
+% mod_irc/mod_irc.erl
+{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Ak chcete zadať iné kódovania pre IRC servery, vyplnte zoznam s hodnotami vo formáte '{\"irc server\",\"encoding\"}'. Predvolené kódovanie pre túto službu je \"~s\"."}.
+
+% mod_muc/mod_muc.erl
+{"Room creation is denied by service policy", "Vytváranie miestnosti nie je povolené"}.
+{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+
+% mod_adhoc.erl
+{"Commands", "Príkazy"}.
+{"Ping", "Ping"}.
+{"Pong", "Pong"}.
+
+% mod_announce.erl
+{"Really delete message of the day?", "Skutočne zmazať správu dňa?"}.
+{"Subject", "Predmet"}.
+{"Message body", "Telo správy"}.
+{"No body provided for announce message", "Správa neobsahuje text"}.
+{"Announcements", "Oznámenia"}.
+{"Send announcement to all users", "Odoslať oznam všetkým používateľom"}.
+{"Send announcement to all online users", "Odoslať zoznam všetkým online používateľom"}.
+{"Send announcement to all online users on all hosts", "Odoslať oznam všetkým online používateľom na všetkých serveroch"}.
+{"Set message of the day and send to online users", "Nastaviť správu dňa a odoslať ju online používateľom"}.
+{"Update message of the day (don't send)", "Aktualizovať správu dňa (neodosielať)"}.
+{"Delete message of the day", "Zmazať správu dňa"}.
+
+% mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd IRC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
+% mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Nastavenie diskusnej miestnosti bolo zmenené"}.
 {"joins the room", "vstúpil(a) do miestnosti"}.
 {"leaves the room", "odišiel(a) z miestnosti"}.
@@ -440,24 +413,7 @@
 {"December", "December"}.
 {"Room Configuration", "Nastavenia miestnosti"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc.erl
-{"You must fill in field \"Nickname\" in the form", "Musíte vyplniť políčko \"Prezývka\" vo formulári"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
-
-% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_room.erl
-{"This room is not anonymous", "Táto miestnosť nie je anonymná"}.
-{"Make room persistent", "Nastaviť miestnosť ako trvalú"}.
-{"Make room public searchable", "Nastaviť miestnosť ako verejne prehľadávateľnú"}.
-{"Make participants list public", "Nastaviť zoznam zúčastnených ako verejný"}.
-{"Make room password protected", "Chrániť miestnosť heslom"}.
-{"Make room semianonymous", "Nastaviť miestnosť ako čiastočne anonymnú"}.
-{"Make room members-only", "Nastaviť miestnosť len pre členov"}.
-{"Make room moderated", "Nastaviť miestnosť ako moderovanú"}.
-{"Default users as participants", "Používatelia sú implicitne členmi"}.
-{"Allow users to change subject", "Povoliť používateľom zmeniť tému tejto miestnosti"}.
-{"Allow users to send private messages", "Povoliť používateľom odosielať súkromné správy"}.
-{"Allow users to query other users", "Povoliť používateľom odosielať požiadavky (query) ostatným používateľom"}.
-{"Allow users to send invites", "povoliť používateľom posielanie pozvánok"}.
-{"Enable logging", "Zapnúť zaznamenávanie histórie"}.
-{"Description", "Popis"}.
-{"Number of occupants", "Počet zúčastnených"}.
+% Local Variables:
+% mode: erlang
+% End:
+% vim: set filetype=erlang tabstop=8:

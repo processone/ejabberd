@@ -1,5 +1,5 @@
 % $Id$
-% Language: Turkish (Türkçe)
+% Language: Turkish (türkçe)
 % Author: Doruk Fisek 
 
 % jlib.hrl
@@ -101,8 +101,7 @@
 {"Jabber ID", "Jabber ID"}.
 
 % mod_vcard.erl
-{"You need an x:data capable client to search",
- "Arama yapabilmek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
+{"You need an x:data capable client to search", "Arama yapabilmek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"Search users in ", "Kullanıcılarda arama yap : "}.
 {"vCard User Search", "vCard Kullanıcı Araması"}.
 {"Fill in fields to search for any matching Jabber User", "Eşleşen jabber kullanıcılarını aramak için alanları doldurunuz"}.
@@ -384,8 +383,7 @@
 {"Last Activity", "Son Aktivite"}.
 
 % mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin",
-  "ejabberd SOCKS5 Bytestreams modülü\nTelif Hakkı (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams modülü\nTelif Hakkı (c) 2003-2007 Alexey Shchepin"}.
 
 % mod_offline_odbc.erl
 {"Your contact offline message queue is full. The message has been discarded.", "Çevirim-dışı mesaj kuyruğunuz dolu. Mesajını dikkate alınmadı."}.

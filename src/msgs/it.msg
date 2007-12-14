@@ -1,5 +1,5 @@
 % $Id$
-% Language: Italian (Italiano)
+% Language: Italian (italiano)
 % Author: Luca Brivio
 
 % jlib.hrl
@@ -103,10 +103,8 @@
 % mod_vcard.erl
 {"You need an x:data capable client to search", "Per effettuare ricerche è necessario un client che supporti x:data"}.
 {"Search users in ", "Cercare utenti in "}.
-
 {"Fill in fields to search for any matching Jabber User", "Riempire i campi per la ricerca di utenti Jabber corrispondenti ai criteri"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Riempire il modulo per la ricerca di utenti Jabber corrispondenti ai criteri (Aggiungere * alla fine del campo per la ricerca di una sottostringa"}.
-
 {"User",              "Utente"}.
 {"Full Name", 	      "Nome completo"}.
 {"Name", 	      "Nome"}.

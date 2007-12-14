@@ -1,4 +1,5 @@
 % $Id$
+% Language: Russian (русский)
 % Author: Sergei Golovan
 % Author: Konstantin Khomoutov
 

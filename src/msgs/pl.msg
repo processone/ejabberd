@@ -1,4 +1,8 @@
 % $Id$
+% Language: Polish (polski)
+% Author: Andrzej Smyk
+% Author: Mateusz Gajewski
+% Author: Zbyszek Zolkiewski
 
 % jlib.hrl
 {"No resource provided", "Brak dostarczonych zasobów"}.
@@ -62,16 +66,12 @@
 {"Import Directory", "Importuj katalog"}.
 
 % mod_register.erl
-{"Choose a username and password to register with this server",
- "Wybierz nazwę użytkownika i hasło aby zarejestrować się na tym serwerze"}.
+{"Choose a username and password to register with this server", "Wybierz nazwę użytkownika i hasło aby zarejestrować się na tym serwerze"}.
 
 % mod_vcard.erl
-{"You need an x:data capable client to search",
- "Potrzebujesz klienta kompatybilnego z x:data aby wyszukiwać"}.
+{"You need an x:data capable client to search", "Potrzebujesz klienta kompatybilnego z x:data aby wyszukiwać"}.
 {"Search users in ", "Wyszukaj użytkowników w "}.
-{"Fill in fields to search for any matching Jabber User",
- "Wypełnij pola aby znaleźdź pasujących użytkowników Jabbera"}.
-
+{"Fill in fields to search for any matching Jabber User", "Wypełnij pola aby znaleźdź pasujących użytkowników Jabbera"}.
 {"User",              "Użytkownik: "}.
 {"Full Name", 	      "Pełna nazwa: "}.
 {"Name", 	      "Imię: "}.
@@ -85,45 +85,33 @@
 {"Organization Unit", "Dział: "}.
 
 % mod_muc/mod_muc.erl
-{"You need an x:data capable client to register nickname",
- "Potrzebujesz klienta kompatybilnego z x:data aby zarejestrować nick"}.
+{"You need an x:data capable client to register nickname", "Potrzebujesz klienta kompatybilnego z x:data aby zarejestrować nick"}.
 {"Nickname Registration at ", "Rejestracja nicka na "}.
 {"Enter nickname you want to register", "Wprowadz nicka którego chcesz zarejestrować"}.
-{"Only service administrators are allowed to send service messages",
- "Jedynie administrator może wysyłać wiadomości serwisowe"}.
+{"Only service administrators are allowed to send service messages", "Jedynie administrator może wysyłać wiadomości serwisowe"}.
 {"Conference room does not exist", "Pokój konferencyjny nie istnieje"}.
 {"Access denied by service policy", "Dostęp zabroniony przez zabezpieczenia serwera"}.
 {"Specified nickname is already registered", "Podany nick jest już zarejestrowany"}.
 
 % mod_muc/mod_muc_room.erl
 {" has set the subject to: ", "zmieł(a) temat na: "}.
-{"You need an x:data capable client to configure room",
- "Potrzebujesz klienta kompatybilnego z x:data aby skonfigurować pokój"}.
+{"You need an x:data capable client to configure room", "Potrzebujesz klienta kompatybilnego z x:data aby skonfigurować pokój"}.
 {"Configuration for ", "Konfiguracja dla "}.
 {"Room title", "Tytuł pokoju"}.
 {"Password", "Hasło"}.
-{"Only moderators and participants are allowed to change subject in this room",
- "Tylko moderatorzy i wlasciciele mogą zmienić temat tego pokoju"}.
-{"Only moderators are allowed to change subject in this room",
- "Tylko moderatorzy mogą zmienić temat tego pokoju"}.
-{"Visitors are not allowed to send messages to all occupants",
- "Odwiedzający nie mogą wysyłać wiadomości do wszystkich obecnych"}.
-{"Only occupants are allowed to send messages to the conference",
- "Tylko obecni mogą wysyłać wiadomości na konferencje"}.
-{"It is not allowed to send normal messages to the conference",
- "Nie można wysyłać normalnych wiadomości na konferencje"}.
-{"It is not allowed to send private messages to the conference",
- "Nie wolno wysyłac prywatnych wiadomości na konferencje"}.
+{"Only moderators and participants are allowed to change subject in this room", "Tylko moderatorzy i wlasciciele mogą zmienić temat tego pokoju"}.
+{"Only moderators are allowed to change subject in this room", "Tylko moderatorzy mogą zmienić temat tego pokoju"}.
+{"Visitors are not allowed to send messages to all occupants", "Odwiedzający nie mogą wysyłać wiadomości do wszystkich obecnych"}.
+{"Only occupants are allowed to send messages to the conference", "Tylko obecni mogą wysyłać wiadomości na konferencje"}.
+{"It is not allowed to send normal messages to the conference", "Nie można wysyłać normalnych wiadomości na konferencje"}.
+{"It is not allowed to send private messages to the conference", "Nie wolno wysyłac prywatnych wiadomości na konferencje"}.
 {"Improper message type", "Nieprawidłowy typ wiadomości"}.
 {"Nickname is already in use by another occupant", "Nick jest używany przez innego użytkownika"}.
 {"Nickname is registered by another person", "Nick jest już zarejestrowany przez inną osobę"}.
-{"It is not allowed to send private messages of type \"groupchat\"",
- "Nie mozna wysyłac prywatnych wiadomości typu \"Groupchat\" "}.
+{"It is not allowed to send private messages of type \"groupchat\"", "Nie mozna wysyłac prywatnych wiadomości typu \"Groupchat\" "}.
 {"Recipient is not in the conference room", "Odbiorca nie jest obecny w pokoju"}.
-{"Only occupants are allowed to send queries to the conference",
- "Tylko użytkownicy mogą wysyłać zapytania do pokoju konferencyjnego"}.
-{"Queries to the conference members are not allowed in this room",
- "Zapytania do członków konferencji nie są dozwolone w tym pokoju"}.
+{"Only occupants are allowed to send queries to the conference", "Tylko użytkownicy mogą wysyłać zapytania do pokoju konferencyjnego"}.
+{"Queries to the conference members are not allowed in this room", "Zapytania do członków konferencji nie są dozwolone w tym pokoju"}.
 {"You have been banned from this room", "Zostałeś zabanowany w tym pokoju"}.
 {"Membership required to enter this room", "Aby wejść do pokoju wymagane jest jego członkostwo"}.
 {"Password required to enter this room", "Aby wejść do pokoju wymagane jest hasło"}.
@@ -142,14 +130,11 @@
 
 
 % mod_irc/mod_irc.erl
-{"You need an x:data capable client to configure mod_irc settings",
- "Potrzebujesz klienta kompatybilnego z x:data aby skonfigurować mod_irc"}.
+{"You need an x:data capable client to configure mod_irc settings", "Potrzebujesz klienta kompatybilnego z x:data aby skonfigurować mod_irc"}.
 {"Registration in mod_irc for ", "Rejestracja w mod_irc dla "}.
-{"Enter username and encodings you wish to use for connecting to IRC servers",
- "Wprowadź nazwę użytkownika i kodowanie których chcesz używać do łączenia z serwerami IRC"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "Wprowadź nazwę użytkownika i kodowanie których chcesz używać do łączenia z serwerami IRC"}.
 {"IRC Username", "Nazwa użytkownika"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].",
- "Przykład: [{\"wroclaw.irc.pl\",\"utf-8\"}, {\warszawa.irc.pl\", \"iso8859-2\"}]."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Przykład: [{\"wroclaw.irc.pl\",\"utf-8\"}, {\warszawa.irc.pl\", \"iso8859-2\"}]."}.
 {"Encodings", "Kodowania"}.
 
 % web/ejabberd_web_admin.erl
@@ -223,7 +208,6 @@
 {"Replaced by new connection", ""}.
 
 % mod_pubsub/mod_pubsub.erl
-{[], " "}.
 {"Node Creator", "Tworzenie gałęzi"}.
 {"Deliver payloads with event notifications", "Dołącz zawartość publikowanego przedmiotu podczas wysyłania powiadomienia o publikacji"}.
 {"Notify subscribers when the node configuration changes", "Informuj subskrybentów gdy konfiguracja gałęzi się zmieni"}.
@@ -245,22 +229,22 @@
 % mod_muc/mod_muc.erl
 {"Room creation is denied by service policy", "Tworzenie pokoju jest zabronione przez polisę"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_vcard_odbc.erl
+% mod_vcard_odbc.erl
 {"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Email", ""}.
 {"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Search Results for ", "Wyniki wyszukiwania dla "}.
 {"Jabber ID", "Jabber ID"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_adhoc.erl
+% mod_adhoc.erl
 {"Commands", "Polecenia"}.
 {"Ping", "Ping"}.
 {"Pong", "Pong"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/ejabberd_c2s.erl
+% ejabberd_c2s.erl
 {"Replaced by new connection", "Podmienione przez nowe połączenie"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_announce.erl
+% mod_announce.erl
 {"Really delete message of the day?", "Na pewno usunąć wiadomość dnia?"}.
 {"Subject", "Temat"}.
 {"Message body", "Treść wiadomości"}.
@@ -273,16 +257,16 @@
 {"Update message of the day (don't send)", "Zmień wiadomość dnia (nie wysyłaj)"}.
 {"Delete message of the day", "Usuń wiadomość dnia"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_configure.erl
+% mod_configure.erl
 {"Database", "Baza"}.
 {"Outgoing s2s Connections", "Wychodzące połączenia s2s"}.
 {"Import Users From jabberd 1.4 Spool Files", "Importuj użytkowników z plików spool serwera jabber 1.4"}.
 {"Database Tables Configuration at ", "Konfiguracja tabel bazy na "}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_pubsub/mod_pubsub.erl
+% mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
-% /usr/home/src/ejabberd/ejabberd/src/web/ejabberd_web_admin.erl
+% web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Interfejs WWW serwera ejabberd"}.
 {"Administration", "Administracja"}.
 {"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", ""}.
@@ -328,10 +312,10 @@
 {"Not Found", "Nie znaleziono"}.
 {"Shared Roster Groups", "Grupy współdzielone"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_irc/mod_irc.erl
+% mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
+% mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Konfiguracja pokoju zmodyfikowana"}.
 {"joins the room", "dołączył(a) się do pokoju"}.
 {"leaves the room", "opóścił(a) pokój"}.
@@ -359,11 +343,11 @@
 {"December", "Grudzień"}.
 {"Room Configuration", "Konfiguracja pokoju"}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc.erl
+% mod_muc/mod_muc.erl
 {"You must fill in field \"Nickname\" in the form", "Musisz wypełnić pole NICKNAME w formularzu"}.
 {"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
-% /usr/home/src/ejabberd/ejabberd/src/mod_muc/mod_muc_room.erl
+% mod_muc/mod_muc_room.erl
 {"This room is not anonymous", "Pokój nie jest nieznany"}.
 {"Make room persistent", "Utwórz pokój na stałe"}.
 {"Make room public searchable", "Pozwól wyszukiwać pokój"}.
@@ -385,7 +369,7 @@
 {"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Jabber ID", "Jabber ID"}.
 
-% ./mod_presence.erl
+% mod_presence.erl
 {"You need an x:data capable client to register presence", "Potrzebujesz klinta kompatybilnego z x:data aby zarejestrować widoczność "}.
 {"Presence registration at ", "Rejestracja widoczności na "}.
 {"What presence features do you want to register?", "Jakie usługi widoczności chcesz zarejestrować?"}.
@@ -394,32 +378,10 @@
 {"You must fill in field \"Xml\" in the form", "Musisz wypełnić w formularzu pole \"XML\""}.
 {"You must fill in field \"Icon\" in the form", "Musisz wypełnić w formularzu pole \"Icon\""}.
 {"ejabberd presence module\nCopyright (c) 2007 Igor Goryachev", ""}.
-
-% ./mod_presence/mod_presence.erl
 {"Raw XML export", "Eksport XML do raw"}.
 {"Allow icon export", "Pozwól na eksport ikon"}.
 
-% ./mod_stats2file.erl
-{"CPUtime", "Czas procesora"}.
-
-% ./mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", ""}.
-{"Email", ""}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
-{"Jabber ID", ""}.
-
-% ./mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
-
-% ./web/ejabberd_web_admin.erl
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", ""}.
-{"(Raw)", ""}.
-{"Raw", ""}.
-{"Low level update script", "Skrypt aktualizacyjny niskiego poziomu"}.
-
-% ./mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
-
-% ./mod_muc/mod_muc.erl
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
-
+% Local Variables:
+% mode: erlang
+% End:
+% vim: set filetype=erlang tabstop=8:

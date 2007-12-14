@@ -1,4 +1,5 @@
 % $Id$
+% Language: Japanese (日本語)
 % Author: Tsukasa Hamano
 
 % mod_offline_odbc.erl

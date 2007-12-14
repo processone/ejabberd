@@ -1,12 +1,12 @@
 % $Id$
-% Brazilian Portuguese translation
-% Authors: Victor Hugo dos Santos, Lucius Curado
-
-
+% Language: Portuguese (Brazil)
+% Author: Renato Botelho
+% Author: Lucius Curado
+% Author: Felipe Brito Vasconcellos
+% Author: Victor Hugo dos Santos
 
 % jlib.hrl
 {"No resource provided", "Recurso não foi fornecido"}.
-
 
 % mod_configure.erl
 {"Access Configuration", "Configuração de Acesso"}.
@@ -39,7 +39,6 @@
 {"Restore Backup from File at ", "Restaura cópia de segurança a partir do arquivo em "}.
 {"Start Modules at ", "Iniciar módulos em "}.
 
-
 % mod_disco.erl
 {"Access Control Lists", "Listas de Controle de Acesso"}.
 {"Access Rules", "Regras de Aceso"}.
@@ -61,10 +60,8 @@
 {"Stopped Nodes", "Nos parados"}.
 {"To ~s", "Para ~s"}.
 
-
 % mod_register.erl
 {"Choose a username and password to register with this server", "Escolha um nome de usuário e senha para registrar-se neste servidor"}.
-
 
 % mod_vcard.erl
 {"Birthday","Aniversário"}.
@@ -84,10 +81,8 @@
 {"Search users in ", "Procurar usuários em "}.
 {"User", "Usuário"}.
 {"You need an x:data capable client to search", "Necessitas um cliente com suporte de x:data para poder buscar"}.
+
 % mod_pubsub/mod_pubsub.erl
-
-
-{[], " "}.
 {"Deliver payloads with event notifications", "Enviar payloads junto com as notificações de eventos"}.
 {"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Max # of items to persist", "Máximo # de elementos que persistem"}.
@@ -152,7 +147,6 @@
 {"You have been banned from this room", "As sido bloqueado em esta sala"}.
 {"You need an x:data capable client to configure room", "Necessitas um cliente com suporte de x:data para configurar la sala"}.
 
-
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Encodings", "Codificação"}.
@@ -162,7 +156,6 @@
 {"IRC Username", "Nome de usuário no IRC"}.
 {"Registration in mod_irc for ", "Registro em mod_irc para"}.
 {"You need an x:data capable client to configure mod_irc settings", "Necessitas um cliente com suporte de x:data para configurar las opções de mod_irc"}.
-
 
 % web/ejabberd_web_admin.erl
 {"Add New", "Adicionar novo"}.
@@ -224,11 +217,8 @@
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "É obrigatório usar STARTTLS"}.
 
-
 % mod_vcard_ldap.erl
 {"Fill in fields to search for any matching Jabber User", "Preencha campos para buscar usuários Jabber que concordem"}.
-
-
 
 % mod_adhoc.erl
 {"Commands", "Comandos"}.
@@ -267,8 +257,6 @@
 {"Hostname Configuration", "Configuração do Hostname"}.
 {"Choose host name", "Definir nome da máquina"}.
 {"Host name", "Nome da máquina"}.
-
-% mod_pubsub/mod_pubsub.erl
 
 % web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Interface Web do ejabberd"}.
@@ -378,3 +366,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:

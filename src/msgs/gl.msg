@@ -1,6 +1,6 @@
 % $Id: gl.msg 641 2007-09-26 10:48:05Z mremond $
-
-% Ejabberd - Gallego - suso AT jabber-hispano.org
+% Language: Galician (galego)
+% Author: Carlos E. Lopez - suso AT jabber-hispano.org
 
 % jlib.hrl
 {"No resource provided", "Non se proporcionou recurso"}.
@@ -80,7 +80,6 @@
 {"Email", "Email"}.
 {"Search Results for ", "Buscar resultados por "}.
 {"Jabber ID", "Jabber ID"}.
-
 {"User",              "Usuario"}.
 {"Full Name", 	      "Nome completo"}.
 {"Name", 	      "Nome"}.
@@ -97,7 +96,6 @@
 % mod_pubsub/mod_pubsub.erl
 {"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
 {"Node Creator", "Creador do nodo"}.
-{[], " "}.
 {"Deliver payloads with event notifications", "Enviar payloads xunto coas notificacións de eventos"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptores cando cambia a configuración do nodo"}.
 {"Notify subscribers when the node is deleted", "Notificar subscriptores cando o nodo bórrase"}.
@@ -352,3 +350,4 @@
 % Local Variables:
 % mode: erlang
 % End:
+% vim: set filetype=erlang tabstop=8:
