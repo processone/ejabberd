@@ -1,3 +1,7 @@
+2007-12-14  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_s2s_out.erl: Bugfix
+
 2007-12-12  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: presence handler bugfix

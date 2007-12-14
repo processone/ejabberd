@@ -152,7 +152,7 @@ init([From, Server, Type]) ->
 			     server = Server,
 			     new = New,
 			     verify = Verify,
-			     timer = Timer}, ?FSMTIMEOUT}.
+			     timer = Timer}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -210,7 +210,7 @@ open_socket(timeout, StateData) ->
 	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
 open_socket(_, StateData) ->
-    {next_state, open_socket, StateData, ?FSMTIMEOUT}.
+    {next_state, open_socket, StateData}.
 
 %%----------------------------------------------------------------------
 open_socket1(Addr, Port) ->
