@@ -1,5 +1,12 @@
 2007-12-15  Badlop  <badlop@process-one.net>
 
+	* src/mod_irc/iconv.erl: Changed order of handle_info
+	clause (EJAB-290)
+	* src/stringprep/stringprep.erl: Likesise
+
+	* src/eldap/eldap.erl: Removed handle_sync_event clause because it
+	is never called (EJAB-290)
+
 	* src/mod_irc/mod_irc.erl: No need to translate copyright notice
 	* src/mod_muc/mod_muc.erl: Likewise
 	* src/mod_proxy65/mod_proxy65_service.erl: Likewise

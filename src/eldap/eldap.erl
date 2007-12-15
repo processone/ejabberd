@@ -490,11 +490,6 @@ handle_sync_event({debug_level, N}, _From, StateName, S) ->
 handle_sync_event(_Event, _From, StateName, S) ->
     {reply, {StateName, S}, StateName, S}.
 
-%% TODO: Check this clause, because it never matches:
-%%handle_sync_event(Event, From, StateName, S) ->
-%%    Reply = ok,
-%%    {reply, Reply, StateName, S}.
-
 %%----------------------------------------------------------------------
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |

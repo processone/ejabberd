@@ -50,11 +50,10 @@ handle_call(_, _, State) ->
 handle_cast(_, State) ->
     {noreply, State}.
 
+handle_info({'EXIT', Port, Reason}, Port) ->
+    {stop, {port_died, Reason}, Port};
 handle_info({'EXIT', _Pid, _Reason}, Port) ->
     {noreply, Port};
-%% TODO: Check this clause, because it never matches:
-%%handle_info({'EXIT', Port, Reason}, Port) ->
-%%    {stop, {port_died, Reason}, Port};
 handle_info(_, State) ->
     {noreply, State}.
 
