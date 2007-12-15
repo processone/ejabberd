@@ -76,8 +76,8 @@
 {"Choose a username and password to register with this server", "Välj ett användarnamn och lösenord för att registrera mot denna server"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2005 Alexej Sjtjepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd vCard-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
+{"ejabberd vCard module", "ejabberd vCard-modul"}.
 {"You need an x:data capable client to search", "Du behöver en klient som stödjer x:data, för att kunna söka"}.
 {"Search users in ", "Sök efter användare på "}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Fyll i formuläret för att söka efter en användare (lägg till * på slutet av fältet för att hitta alla som börjar så)"}.
@@ -103,7 +103,7 @@
 {"JID", "JID"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd pub/sub-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
+{"ejabberd pub/sub module", "ejabberd pub/sub-modul"}.
 {"Node Creator", "Nodskapare"}.
 {"Deliver payloads with event notifications", "Skicka innehåll tillsammans med notifikationer"}.
 {"Notify subscribers when the node configuration changes", "Meddela prenumeranter när nodens konfiguration ändras"}.
@@ -123,7 +123,7 @@
 {"You need an x:data capable client to register nickname", "Du behöver en klient som stödjer x:data för att registrera smeknamn"}.
 {"Nickname Registration at ", "Registrera smeknamn på "}.
 {"Enter nickname you want to register", "Skriv in smeknamnet du vill registrera"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd MUC modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
+{"ejabberd MUC module", "ejabberd MUC modul"}.
 {"Only service administrators are allowed to send service messages", "Endast administratörer får skicka tjänstmeddelanden"}.
 {"Room creation is denied by service policy", "Skapandet av rum är förbjudet enligt lokal policy"}.
 {"Conference room does not exist", "Rummet finns inte"}.
@@ -177,7 +177,7 @@
 {"private, ", "privat, "}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "ejabberd IRC-modul\nCopyright (c) 2003-2005 Alexej Sjtjepin"}.
+{"ejabberd IRC module", "ejabberd IRC-modul"}.
 {"You need an x:data capable client to configure mod_irc settings", "Du behöer en klient som stöjer x:data för att konfigurera mod_irc"}.
 {"Registration in mod_irc for ", "mod_irc-registrering för "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Skriv in användarnamn och textkodning du vill använda för att ansluta till IRC-servrar"}.

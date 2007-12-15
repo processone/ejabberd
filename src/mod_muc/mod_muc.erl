@@ -629,8 +629,8 @@ iq_get_vcard(Lang) ->
      {xmlelement, "URL", [],
       [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(Lang, "ejabberd MUC module\n"
-	"Copyright (c) 2003-2007 Alexey Shchepin")}]}].
+      [{xmlcdata, translate:translate(Lang, "ejabberd MUC module") ++
+	  "\nCopyright (c) 2003-2007 Alexey Shchepin"}]}].
 
 
 broadcast_service_message(Host, Msg) ->

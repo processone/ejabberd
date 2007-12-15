@@ -304,8 +304,8 @@ iq_get_vcard(Lang) ->
      {xmlelement, "URL", [],
       [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(Lang, "ejabberd IRC module\n"
-        "Copyright (c) 2003-2007 Alexey Shchepin")}]}].
+      [{xmlcdata, translate:translate(Lang, "ejabberd IRC module") ++
+        "\nCopyright (c) 2003-2007 Alexey Shchepin"}]}].
 
 process_register(Host, From, To, DefEnc, #iq{} = IQ) ->
     case catch process_irc_register(Host, From, To, DefEnc, IQ) of

@@ -70,9 +70,9 @@
 {"Choose a username and password to register with this server", "Escolle un nome de usuario e contraseña para rexistrarche neste servidor"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Servidor Jabber en Erlang\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Servidor Jabber en Erlang"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Enche o formulario para buscar usuarios Jabber. Engade * ao final dun campo para buscar subcadenas."}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo vCard para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd vCard module", "Módulo vCard para ejabberd"}.
 {"You need an x:data capable client to search", "Necesitas un cliente con soporte de x:data para poder buscar"}.
 {"Search users in ", "Buscar usuarios en "}.
 
@@ -94,7 +94,7 @@
 {"vCard User Search", "Procura de usuario en vCard"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd pub/sub module", "Módulo Pub/Sub para ejabberd"}.
 {"Node Creator", "Creador do nodo"}.
 {"Deliver payloads with event notifications", "Enviar payloads xunto coas notificacións de eventos"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptores cando cambia a configuración do nodo"}.
@@ -121,7 +121,7 @@
 {"You must fill in field \"Nickname\" in the form", "Debes encher o campo \"Alcumo\" no formulario"}.
 {"Specified nickname is already registered", "O alcume especificado xa está rexistrado, terás que buscar outro"}.
 {"Room creation is denied by service policy", "Denegar crear a sala por política do servizo"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "Módulo de MUC para ejabbed"}.
 {"Chatrooms", "Salas de charla"}.
 
 % mod_muc/mod_muc_room.erl
@@ -208,7 +208,7 @@
 {"IRC Username", "Nome de usuario en IRC"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Se queres especificar codificaciones de carácteres distintos para cada servidor IRC rechea esta lista con valores no formato '{\"servidor irc\", \"codificación\"}'. Este servizo usa por defecto a codificación \"~s\"."}.
 {"Encodings", "Codificaciones"}.
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "Módulo de IRC para ejabberd"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Ejemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"IRC Transport", "Transporte IRC"}.
 
@@ -345,7 +345,7 @@
 {"Delete message of the day", "Borrar mensaxe do dia"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams module"}.
 
 % Local Variables:
 % mode: erlang

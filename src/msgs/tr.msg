@@ -94,8 +94,8 @@
 {"Choose a username and password to register with this server", "Bu sunucuya kayıt olmak için bir kullanıcı ismi ve parola seçiniz"}.
 
 % src/mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Sunucusu\nTelif Hakkı (c) 2002-2007 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard modülü\nTelif Hakkı (c) 2003-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Sunucusu"}.
+{"ejabberd vCard module", "ejabberd vCard modülü"}.
 {"Email", "E-posta"}.
 {"Search Results for ", "Arama sonuçları : "}.
 {"Jabber ID", "Jabber ID"}.
@@ -142,7 +142,7 @@
 {"Delete message of the day", "Günün mesajını sil"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd Publish-Subscribe modülü\nTelif Hakkı (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe modülü"}.
 {"PubSub subscriber request", "PubSub üye isteği"}.
 {"Choose whether to approve this entity's subscription.", "Bu varlığın üyeliğini onaylayıp onaylamamayı seçiniz."}.
 {"Node ID", "Düğüm ID"}.
@@ -152,14 +152,11 @@
 {"Specify the access model", "Erişim modelini belirtiniz"}.
 {"Roster groups that may subscribe (if access model is roster)", "Üye olabilecek kontak listesi grupları (eğer erişim modeli 'kontak listesi' ise)"}.
 {"When to send the last published item", "Son yayınlanan öğe ne zaman gönderilsin"}.
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "pub/sub ejabberd modülü\nTelif Hakkı (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd pub/sub module", "pub/sub ejabberd modülü"}.
 {"Node Creator", "Düğüm Oluşturucu"}.
-{"Deliver payloads with event notifications", ""}.
 {"Notify subscribers when the node configuration changes", "Düğüm ayarları değiştiğinde üyeleri uyar"}.
 {"Notify subscribers when the node is deleted", "Bir düğüm silindiğinde üyeleri uyar"}.
 {"Notify subscribers when items are removed from the node", "Düğümden öğeler kaldırıldığında üyeleri uyar"}.
-{"Persist items to storage", ""}.
-{"Max # of items to persist", ""}.
 {"Whether to allow subscriptions", "Üyeliklere izin verilsin mi"}.
 {"Specify the subscriber model", "Üye olma modelini belirtiniz"}.
 {"Specify the publisher model", "Yayıncı modelini belirtiniz"}.
@@ -201,7 +198,7 @@
 {"You need an x:data capable client to register nickname", "Takma isminizi kaydettirmek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"Nickname Registration at ", "Takma İsim Kaydı : "}.
 {"Enter nickname you want to register", "Kaydettirmek istediğiniz takma ismi giriniz"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC modülü\nTelif Hakkı (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "ejabberd MUC modülü"}.
 {"Only service administrators are allowed to send service messages", "Sadece servis yöneticileri servis mesajı gönderebilirler"}.
 {"Room creation is denied by service policy", "Odanın oluşturulması servis politikası gereği reddedildi"}.
 {"Conference room does not exist", "Konferans odası bulunamadı"}.
@@ -266,7 +263,7 @@
 {"anyone", "herkes"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC modülü\nTelif Hakkı (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "ejabberd IRC modülü"}.
 {"You need an x:data capable client to configure mod_irc settings", "mod_irc ayarlarını düzenlemek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"Registration in mod_irc for ", "mod_irc'ye kayıt : "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "IRC sunuculara bağlanmak için kullanmak istediğiniz kullanıcı isimleri ve kodlamaları giriniz"}.
@@ -383,7 +380,7 @@
 {"Last Activity", "Son Aktivite"}.
 
 % mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams modülü\nTelif Hakkı (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams modülü"}.
 
 % mod_offline_odbc.erl
 {"Your contact offline message queue is full. The message has been discarded.", "Çevirim-dışı mesaj kuyruğunuz dolu. Mesajını dikkate alınmadı."}.

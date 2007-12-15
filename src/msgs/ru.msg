@@ -109,14 +109,14 @@
 % mod_proxy65.erl
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams модуль"}.
 
 % mod_register.erl
 {"Choose a username and password to register with this server", "Выберите имя пользователя и пароль для регистрации на этом сервере"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Алексей Щепин"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
+{"ejabberd vCard module", "ejabberd vCard модуль"}.
 {"You need an x:data capable client to search", "Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Search users in ", "Поиск пользователей в "}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Заполните форму для поиска пользователя Jabber (Если добавить * в конец поля, то происходит поиск подстроки)"}.
@@ -150,7 +150,7 @@
 {"Max payload size in bytes", "Максимальный размер полезной нагрузки в байтах"}.
 {"Only deliver notifications to available users", "Доставлять уведомления только доступным пользователям"}.
 {"Publish-Subscribe", "Публикация-Подписка"}.
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "Модуль ejabberd Публикации-Подписки\nCopyright (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module", "Модуль ejabberd Публикации-Подписки"}.
 {"PubSub subscriber request", "Запрос подписчика PubSub"}.
 {"Choose whether to approve this entity's subscription.", "Решите: предоставить ли подписку этому объекту."}.
 {"Node ID", "ID узла"}.
@@ -165,7 +165,7 @@
 {"You need an x:data capable client to register nickname", "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"Nickname Registration at ", "Регистрация псевдонима на "}.
 {"Enter nickname you want to register", "Введите псевдоним, который Вы хотели бы зарегистрировать"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"ejabberd MUC module", "ejabberd MUC модуль"}.
 {"Only service administrators are allowed to send service messages", "Только администратор службы может посылать служебные сообщения"}.
 {"Room creation is denied by service policy", "Cоздавать конференцию запрещено политикой службы"}.
 {"Conference room does not exist", "Конференция не существует"}.
@@ -255,7 +255,7 @@
 {"the password is", "пароль:"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC модуль\nCopyright (c) 2003-2007 Алексей Щепин"}.
+{"ejabberd IRC module", "ejabberd IRC модуль"}.
 {"You need an x:data capable client to configure mod_irc settings", "Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"Registration in mod_irc for ", "Регистрация в mod_irc для "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Введите имя пользователя и кодировки, которые будут использоваться при подключении к IRC-серверам"}.

@@ -71,7 +71,7 @@
 {"Choose a username and password to register with this server", "Wählen Sie zum Registrieren einen Benutzernamen und ein Passwort"}.
 
 % mod_vcard.erl
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd vCard module", "ejabberd vCard module"}.
 {"You need an x:data capable client to search", "Sie brauchen einen x:data kompatiblen Client um suchen zu können"}.
 {"Search users in ", "Benutzer suchen in "}.
 {"Fill in fields to search for any matching Jabber User", "Felder ausfüllen, um nach passenden Jabber Benutzern zu suchen"}.
@@ -89,7 +89,7 @@
 {"Organization Unit", "Abteilung"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd pub/sub module", "ejabberd pub/sub module"}.
 {"Node Creator", "Knoten Erschaffer"}.
 {"Deliver payloads with event notifications", "Nutzlast mit Benachrichtigungen versenden"}.
 {"Notify subscribers when the node configuration changes", "Benutzer benachrichtigen, wenn die Knotenkonfiguration sich ändert"}.
@@ -109,7 +109,7 @@
 {"You need an x:data capable client to register nickname", "Sie brauchen einen für x:data geeigneten Client, um sich mit dem Spitznamen zu registrieren"}.
 {"Nickname Registration at ", "Registrieren des Spitznamens "}.
 {"Enter nickname you want to register", "Geben Sie den zu registrierenden Spitznamen ein"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "ejabberd MUC module"}.
 {"Only service administrators are allowed to send service messages", "Nur Service Administratoren sind berechtigt, Servicenachrichten zu senden"}.
 {"Conference room does not exist", "Konferenzraum existiert nicht"}.
 {"Access denied by service policy", "Zutritt verweigert von der Service Policy"}.
@@ -150,7 +150,7 @@
 {"private, ", "privat"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "ejabberd IRC module"}.
 {"You need an x:data capable client to configure mod_irc settings", "Sie brauchen einen x:data kompatiblen Client um die mod_irc Einstellungen zu konfigurieren"}.
 {"Registration in mod_irc for ", "Registrierung in mod_irc für "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Geben Sie Benutzernamen und Verschlüsselung für die Verbindung zum IRC Server an"}.
@@ -228,7 +228,7 @@
 {"Replaced by new connection", "Durch neue Verbindung ersetzt"}.
 
 % mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Füllen Sie die Felder aus, um nach passenden Jabber benutzern zu suchen (beenden Sie ein Feld mit *, um auch nach Teilzeichenketten zu suchen)"}.
 {"Email", "E-Mail"}.
 {"Search Results for ", "Suchergebnisse für"}.

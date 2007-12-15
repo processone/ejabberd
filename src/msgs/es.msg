@@ -82,9 +82,9 @@
 {"Choose a username and password to register with this server", "Escoge un nombre de usuario y contraseña para registrarte en este servidor"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Servidor Jabber en Erlang\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Servidor Jabber en Erlang"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Rellena el formulario para buscar usuarios Jabber. Añade * al final de un campo para buscar subcadenas."}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo vCard para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd vCard module", "Módulo vCard para ejabberd"}.
 {"You need an x:data capable client to search", "Necesitas un cliente con soporte de x:data para poder buscar"}.
 {"Search users in ", "Buscar usuarios en "}.
 
@@ -117,7 +117,7 @@
 {"Max payload size in bytes", "Máximo tamaño del payload en bytes"}.
 {"Only deliver notifications to available users", "Solo enviar notificaciones a los usuarios disponibles"}.
 {"Publish-Subscribe", "Servicio de Publicar-Subscribir"}.
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "Módulo de Publicar-Subscribir de ejabberd\nCopyright (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module", "Módulo de Publicar-Subscribir de ejabberd"}.
 {"PubSub subscriber request", "Petición de subscriptor de PubSub"}.
 {"Choose whether to approve this entity's subscription.", "Decidir si aprobar la subscripción de esta entidad."}.
 {"Node ID", "Nodo ID"}.
@@ -138,7 +138,7 @@
 {"You must fill in field \"Nickname\" in the form", "Debes rellenar el campo \"Apodo\" en el formulario"}.
 {"Specified nickname is already registered", "El apodo especificado ya está registrado, tendrás que buscar otro"}.
 {"Room creation is denied by service policy", "Se te ha denegado crear la sala por política del servicio"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "Módulo de MUC para ejabbed"}.
 {"Chatrooms", "Salas de charla"}.
 
 % mod_muc/mod_muc_room.erl
@@ -228,7 +228,7 @@
 {"IRC Username", "Nombre de usuario en IRC"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Si quieres especificar codificaciones de carácteres distintos para cada servidor IRC rellena esta lista con valores en el formato '{\"servidor irc\", \"codificación\"}'.  Este servicio usa por defecto la codificación \"~s\"."}.
 {"Encodings", "Codificaciones"}.
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "Módulo de IRC para ejabberd"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Ejemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"IRC Transport", "Transporte de IRC"}.
 
@@ -366,7 +366,7 @@
 {"Delete message of the day on all hosts", "Borrar el mensaje del día en todos los dominios"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo SOCKS5 Bytestreams para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module", "Módulo SOCKS5 Bytestreams para ejabberd"}.
 
 % mod_offline_odbc.erl
 {"Your contact offline message queue is full. The message has been discarded.", "Tu cola de mensajes diferidos de contactos está llena. El mensaje se ha descartado."}.

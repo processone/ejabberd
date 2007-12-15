@@ -236,7 +236,7 @@
 {"Max payload size in bytes", "Maximální náklad v bajtech"}.
 {"Only deliver notifications to available users", "Doručovat upozornění jen právě přihlášeným uživatelům"}.
 {"Publish-Subscribe", "Publish-Subscribe"}.
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd Publish-Subscribe modul\nCopyright (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe modul"}.
 {"PubSub subscriber request", "Žádost odběratele PubSub"}.
 {"Choose whether to approve this entity's subscription.", "Zvolte, zda chcete schválit odebírání touto entitou"}.
 {"Node ID", "ID uzlu"}.
@@ -254,9 +254,9 @@
 {"Room creation is denied by service policy", "Pravidla služby nepovolují vytvořit místnost"}.
 
 % mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
 {"Email", "E-mail"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd vCard module", "ejabberd vCard modul"}.
 {"Search Results for ", "Výsledky hledání pro "}.
 {"Jabber ID", "Jabber ID"}.
 
@@ -334,7 +334,7 @@
 {"Shared Roster Groups", "Skupiny pro sdílený seznam kontaktů"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd IRC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "Ejabberd IRC modul"}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Nastavení diskuzní místnosti bylo změněno"}.
@@ -366,7 +366,7 @@
 
 % mod_muc/mod_muc.erl
 {"You must fill in field \"Nickname\" in the form", "Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "Ejabberd MUC modul"}.
 {"Chatrooms", "Konference"}.
 
 % mod_muc/mod_muc_room.erl
@@ -391,7 +391,7 @@
 {"Your contact offline message queue is full. The message has been discarded.", "Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams modul"}.
 
 % Local Variables:
 % mode: erlang

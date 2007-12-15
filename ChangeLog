@@ -1,3 +1,16 @@
+2007-12-15  Badlop  <badlop@process-one.net>
+
+	* src/mod_irc/mod_irc.erl: No need to translate copyright notice
+	* src/mod_muc/mod_muc.erl: Likewise
+	* src/mod_proxy65/mod_proxy65_service.erl: Likewise
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+	* src/mod_vcard.erl: Likewise
+	* src/mod_vcard_ldap.erl: Likewise
+	* src/mod_vcard_odbc.erl: Likewise
+	* src/msgs/*.msg: Likewise
+
+	* contrib/extract_translations/prepare-translation.sh: Bugfix
+
 2007-12-14  Badlop  <badlop@process-one.net>
 
 	* src/msgs/*: Unified file format: First line is SVN Id

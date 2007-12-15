@@ -94,8 +94,8 @@
 {"Choose a username and password to register with this server", "Scegliere un nome utente e una password per la registrazione con questo server"}.
 
 % src/mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Modulo vCard per ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
+{"ejabberd vCard module", "Modulo vCard per ejabberd"}.
 {"Email", "E-mail"}.
 {"Search Results for ", "Risultati della ricerca per "}.
 {"Jabber ID", "Jabber ID (JID)"}.
@@ -141,7 +141,7 @@
 
 % mod_pubsub/mod_pubsub.erl
 {"Publish-Subscribe", "Pubblicazione-Iscrizione"}.
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "Modulo Pubblicazione/Iscrizione (PubSub) per ejabberd\nCopyright (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module", "Modulo Pubblicazione/Iscrizione (PubSub) per ejabberd"}.
 {"PubSub subscriber request", "Richiesta di iscrizione per PubSub"}.
 {"Choose whether to approve this entity's subscription.", "Scegliere se approvare l'iscrizione per questa entità"}.
 {"Node ID", "ID del nodo"}.
@@ -151,7 +151,7 @@
 {"Specify the access model", "Specificare il modello di accesso"}.
 {"Roster groups that may subscribe (if access model is roster)", "Gruppi di liste di contatti che possono iscriversi (se il modello di accesso è: lista di contatti)"}.
 {"When to send the last published item", "Quando inviare l'ultimo elemento pubblicato"}.
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Modulo pub/sub ejabberd \nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd pub/sub module", "Modulo pub/sub ejabberd"}.
 {"Node Creator", "Creatore del nodo"}.
 {"Deliver payloads with event notifications", "Inviare il contenuto del messaggio con la notifica dell'evento"}.
 {"Notify subscribers when the node configuration changes", "Notificare gli iscritti quando la configurazione del nodo cambia"}.
@@ -200,7 +200,7 @@
 {"You need an x:data capable client to register nickname", "Per registrare un nickname è necessario un client che supporti x:data"}.
 {"Nickname Registration at ", "Registrazione di un nickname su "}.
 {"Enter nickname you want to register", "Immettere il nickname che si vuole registrare"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Modulo MUC per ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "Modulo MUC per ejabberd"}.
 {"Only service administrators are allowed to send service messages", "L'invio di messaggi di servizio è consentito solamente agli amministratori del servizio"}.
 {"Room creation is denied by service policy", "La creazione di stanze è impedita dalle politiche del servizio"}.
 {"Conference room does not exist", "La stanza per conferenze non esiste"}.
@@ -265,7 +265,7 @@
 
 % mod_irc/mod_irc.erl
 {"IRC Transport", "Transport IRC"}.
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Modulo IRC per ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "Modulo IRC per ejabberd"}.
 {"You need an x:data capable client to configure mod_irc settings", "Per la configurazione del modulo IRC è necessario un client che supporti x:data"}.
 {"Registration in mod_irc for ", "Registrazione in mod_irc per "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Immettere il nome utente e le codifiche che si desidera utilizzare per la connessione ai server IRC"}.
@@ -387,7 +387,7 @@
 {"Your contact offline message queue is full. The message has been discarded.", "La coda dei messaggi offline del contatto è piena. Il messaggio è stato scartato"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "Modulo SOCKS5 Bytestreams per ejabberd\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module", "Modulo SOCKS5 Bytestreams per ejabberd"}.
 
 % Local Variables:
 % mode: erlang

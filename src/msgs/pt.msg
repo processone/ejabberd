@@ -71,8 +71,8 @@
 {"Choose a username and password to register with this server", "Escolha um nome de utilizador e palavra-chave para se registar neste servidor"}.
 
 % mod_vcard.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2005 Alexey Shchepin", "Servidor Jabber em Erlang\nCopyright (c) 2002-2005 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo vCard de ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Servidor Jabber em Erlang"}.
+{"ejabberd vCard module", "Módulo vCard de ejabberd"}.
 {"You need an x:data capable client to search", "É necessário um cliente com suporte de x:data para poder procurar"}.
 {"Search users in ", "Procurar utilizadores em "}.
 {"Fill in fields to search for any matching Jabber User", "Preencha os campos para procurar utilizadores Jabber coincidentes"}.
@@ -91,13 +91,13 @@
 {"Organization Unit", "Unidade da organização"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo pub/sub de ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd pub/sub module", "Módulo pub/sub de ejabberd"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "É necessário um cliente com suporte de x:data para poder registar a alcunha"}.
 {"Nickname Registration at ", "Registo da alcunha em "}.
 {"Enter nickname you want to register", "Introduza a alcunha que quer registar"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo MUC de ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd MUC module", "Módulo MUC de ejabberd"}.
 {"Only service administrators are allowed to send service messages", "Só os administradores do serviço têm permissão para enviar mensagens de serviço"}.
 {"Conference room does not exist", "A sala não existe"}.
 {"Access denied by service policy", "Acesso negado pela política de serviço"}.
@@ -150,7 +150,7 @@
 {"private, ", "privado"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Módulo de IRC ejabberd\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd IRC module", "Módulo de IRC ejabberd"}.
 {"You need an x:data capable client to configure mod_irc settings", "É necessário um cliente com suporte de x:data para configurar as opções do mod_irc"}.
 {"Registration in mod_irc for ", "Registo no mod_irc para"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Introduza o nome de utilizador e codificações de caracteres que quer usar ao conectar-se aos servidores de IRC"}.

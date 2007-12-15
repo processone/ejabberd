@@ -103,7 +103,7 @@
 {"You must fill in field \"nick\" in the form", "Musíte vyplniť políčko \"prezývka\"  vo formulári"}.
 {"Specified nickname is already registered", "Zadaná prezývka je už registrovaná"}.
 {"You must fill in field \"Nickname\" in the form", "Musíte vyplniť políčko \"Prezývka\" vo formulári"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "Ejabberd MUC modul"}.
 
 % mod_muc/mod_muc_room.erl
 {"This room is not anonymous", "Táto miestnosť nie je anonymná"}.
@@ -323,9 +323,9 @@
 {"Shared Roster Groups", "Skupiny pre zdieľaný zoznam kontaktov"}.
 
 % mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
 {"Email", "E-mail"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd vCard modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd vCard module", "Ejabberd vCard modul"}.
 {"Search Results for ", "Hľadať výsledky pre "}.
 {"Jabber ID", "Jabber ID"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Pre vyhľadanie Jabber používateľa vyplňte formulár (pridajte znak * na koniec, pre vyhľadanie podreťazca)"}.
@@ -340,7 +340,7 @@
 {"Given Name", "Meno"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd pub/sub modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd pub/sub module", "ejabberd pub/sub modul"}.
 {"Node Creator", "Tvorca uzlu"}.
 {"Deliver payloads with event notifications", "Doručovanie payload s upozorňovaním na udalosti"}.
 {"Notify subscribers when the node configuration changes", "Upozorniť prihlásených používateľov na zmenu nastavenia uzlu"}.
@@ -357,12 +357,12 @@
 {"Specify the current subscription approver", "Zadať súčasného schvaľovateľa prihlásení "}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd IRC module\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd IRC module", "Ejabberd IRC module"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Ak chcete zadať iné kódovania pre IRC servery, vyplnte zoznam s hodnotami vo formáte '{\"irc server\",\"encoding\"}'. Predvolené kódovanie pre túto službu je \"~s\"."}.
 
 % mod_muc/mod_muc.erl
 {"Room creation is denied by service policy", "Vytváranie miestnosti nie je povolené"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2005 Alexey Shchepin", "Ejabberd MUC modul\nCopyright (c) 2003-2005 Alexey Shchepin"}.
+{"ejabberd MUC module", "Ejabberd MUC modul"}.
 
 % mod_adhoc.erl
 {"Commands", "Príkazy"}.
@@ -383,7 +383,7 @@
 {"Delete message of the day", "Zmazať správu dňa"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Ejabberd IRC modul\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "Ejabberd IRC modul"}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Nastavenie diskusnej miestnosti bolo zmenené"}.

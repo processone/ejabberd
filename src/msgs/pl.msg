@@ -198,14 +198,12 @@
 {"Virtual Hosts", "Wirtualne hosty"}.
 {"ejabberd virtual hosts", "wirtualne hosty ejabberda"}.
 {"Host", "Host"}.
-{"ejabberd Web Interface", ""}.
 
 % mod_vcard_odbc.erl
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Wypełnij formularz aby wyszukać pasujących użytkowników Jabbera (dodaj * na koniec pola aby dopasować)"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Wymagane użycie STARTTLS"}.
-{"Replaced by new connection", ""}.
 
 % mod_pubsub/mod_pubsub.erl
 {"Node Creator", "Tworzenie gałęzi"}.
@@ -230,9 +228,8 @@
 {"Room creation is denied by service policy", "Tworzenie pokoju jest zabronione przez polisę"}.
 
 % mod_vcard_odbc.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
-{"Email", ""}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
+{"ejabberd vCard module", "Erlang Jabber Server"}.
 {"Search Results for ", "Wyniki wyszukiwania dla "}.
 {"Jabber ID", "Jabber ID"}.
 
@@ -263,17 +260,11 @@
 {"Import Users From jabberd 1.4 Spool Files", "Importuj użytkowników z plików spool serwera jabber 1.4"}.
 {"Database Tables Configuration at ", "Konfiguracja tabel bazy na "}.
 
-% mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
-
 % web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Interfejs WWW serwera ejabberd"}.
 {"Administration", "Administracja"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", ""}.
-{"(Raw)", ""}.
 {"Submitted", "Wprowadzone"}.
 {"Bad format", "Zły format"}.
-{"Raw", ""}.
 {"Users Last Activity", "Ostatnia aktywność użytkowników"}.
 {"Registered Users", "Użytkownicy zarejestrowani"}.
 {"Offline Messages", "Wiadomości offline"}.
@@ -307,13 +298,9 @@
 {"Update plan", "Uaktualnij plan"}.
 {"Updated modules", "Uaktualnione moduły"}.
 {"Update script", "Uaktualnij skrypt"}.
-{"Low level update script", ""}.
 {"Script check", "Sprawdź skrypt"}.
 {"Not Found", "Nie znaleziono"}.
 {"Shared Roster Groups", "Grupy współdzielone"}.
-
-% mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Konfiguracja pokoju zmodyfikowana"}.
@@ -345,7 +332,6 @@
 
 % mod_muc/mod_muc.erl
 {"You must fill in field \"Nickname\" in the form", "Musisz wypełnić pole NICKNAME w formularzu"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", ""}.
 
 % mod_muc/mod_muc_room.erl
 {"This room is not anonymous", "Pokój nie jest nieznany"}.
@@ -365,19 +351,15 @@
 {"Number of occupants", "Liczba uczestników"}.
 
 % mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
 {"Jabber ID", "Jabber ID"}.
 
 % mod_presence.erl
 {"You need an x:data capable client to register presence", "Potrzebujesz klinta kompatybilnego z x:data aby zarejestrować widoczność "}.
 {"Presence registration at ", "Rejestracja widoczności na "}.
 {"What presence features do you want to register?", "Jakie usługi widoczności chcesz zarejestrować?"}.
-{"Raw XML", ""}.
 {"Specified presence is already registered", "Określona widoczność już jest zarejestrowana"}.
 {"You must fill in field \"Xml\" in the form", "Musisz wypełnić w formularzu pole \"XML\""}.
 {"You must fill in field \"Icon\" in the form", "Musisz wypełnić w formularzu pole \"Icon\""}.
-{"ejabberd presence module\nCopyright (c) 2007 Igor Goryachev", ""}.
 {"Raw XML export", "Eksport XML do raw"}.
 {"Allow icon export", "Pozwól na eksport ikon"}.
 

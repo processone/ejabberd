@@ -67,8 +67,8 @@
 {"Birthday","Aniversário"}.
 {"City", "Cidade"}.
 {"Country","País"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo vCard para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Servidor Jabber em Erlang\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd vCard module", "Módulo vCard para ejabberd"}.
+{"Erlang Jabber Server", "Servidor Jabber em Erlang"}.
 {"Family Name", "Nome de família"}.
 {"Fill in fields to search for any matching Jabber User", "Preencha os campos para procurar usuários Jabber coincidentes"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Preencha o formulário para buscar usuários Jabber. Agrega * ao final de um campo para buscar sub-palavras."}.
@@ -84,7 +84,7 @@
 
 % mod_pubsub/mod_pubsub.erl
 {"Deliver payloads with event notifications", "Enviar payloads junto com as notificações de eventos"}.
-{"ejabberd pub/sub module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo Pub/Sub para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd pub/sub module", "Módulo Pub/Sub para ejabberd"}.
 {"Max # of items to persist", "Máximo # de elementos que persistem"}.
 {"Max payload size in bytes", "Máximo tamanho do payload em bytes"}.
 {"Node Creator", "Criador do nodo"}.
@@ -102,7 +102,7 @@
 % mod_muc/mod_muc.erl
 {"Access denied by service policy", "Aceso denegado por la política do serviço"}.
 {"Conference room does not exist", "La sala de conferencias não existe"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo de MUC para ejabbed\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "Módulo de MUC para ejabbed"}.
 {"Enter nickname you want to register", "Introduza o apelido que quer registrar"}.
 {"Incorrect password", "Senha incorreta"}.
 {"Nickname is already in use by another occupant", "O apelido já está em uso por outro ocupante"}.
@@ -148,7 +148,7 @@
 {"You need an x:data capable client to configure room", "Necessitas um cliente com suporte de x:data para configurar la sala"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "Módulo de IRC para ejabberd\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "Módulo de IRC para ejabberd"}.
 {"Encodings", "Codificação"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Introduza o nome de usuário e codificações de caracteres que quer usar ao conectar-se aos servidores de IRC"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Exemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
@@ -316,7 +316,6 @@
 {"leaves the room", "Sair da sala"}.
 {"has been kicked", "foi removido"}.
 {"has been banned", "foi banido"}.
-{"is now known as", ""}.
 {"Monday", "Segunda"}.
 {"Tuesday", "Terça"}.
 {"Wednesday", "Quarta"}.

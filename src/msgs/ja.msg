@@ -11,12 +11,12 @@
 {"Offline Messages:", "オフラインメッセージ"}.
 
 % mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
 {"You need an x:data capable client to search", "検索を行うためにはクライアントが x:data をサポートする必要があります"}.
 {"Search users in ", "ユーザーの検索: "}.
 {"Fill in fields to search for any matching Jabber User", "項目を埋めて Jabber User を検索して下さい"}.
 {"vCard User Search", "vCard ユーザー検索"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd vCard module", "ejabberd vCard module"}.
 {"Search Results for ", "検索結果: "}.
 {"Jabber ID", "Jabber ID"}.
 
@@ -180,7 +180,7 @@
 {"Enter nickname you want to register", "登録するニックネームを入力して下さい"}.
 {"Specified nickname is already registered", "指定されたニックネームは既に登録されています"}.
 {"You must fill in field \"Nickname\" in the form", "フォームの\"ニックネーム\"フィールドを入力する必要があります"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "ejabberd MUC module"}.
 
 % mod_muc/mod_muc_room.erl
 {"It is not allowed to send private messages of type \"groupchat\"", "種別が\"groupchat\" であるプライベートメッセージは許可されていません"}.
@@ -237,7 +237,7 @@
 {"IRC Username", "IRCユーザー名"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "別の文字エンコーディングを使用したい場合、'{\"irc server\", \"encoding\"}' という形式のリストを入力して下さい。デフォルトで \"~s\" を使用します"}.
 {"IRC Transport", "IRC トランスポート"}.
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "ejabberd IRC module"}.
 {"You need an x:data capable client to configure mod_irc settings", "mod_irc の設定にはクライアントが x:data をサポートする必要があります"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "例: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "エンコーディング"}.
@@ -272,11 +272,11 @@
 {"Submit", "送信"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams module"}.
 
 % mod_pubsub/mod_pubsub.erl
 {"Publish-Subscribe", "Publish-Subscribe"}.
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe module"}.
 {"PubSub subscriber request", "PubSub 購読リクエスト"}.
 {"Choose whether to approve this entity's subscription.", "このエントリを承認するかどうかを選択して下さい"}.
 {"Node ID", "ノードID"}.

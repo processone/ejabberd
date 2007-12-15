@@ -832,8 +832,8 @@ iq_get_vcard(Lang) ->
      {xmlelement, "DESC", [],
       [{xmlcdata,
 	translate:translate(Lang,
-			    "ejabberd Publish-Subscribe module\n"
-			    "Copyright (c) 2004-2007 Process-One")}]}].
+			    "ejabberd Publish-Subscribe module") ++
+			    "\nCopyright (c) 2004-2007 Process-One"}]}].
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
     Plugins = case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), plugins) of

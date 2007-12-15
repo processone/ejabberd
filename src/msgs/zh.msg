@@ -90,8 +90,8 @@
 {"Choose a username and password to register with this server", "请选择在此服务器上注册所需的用户名和密码"}.
 
 % src/mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber 服务器\n版权所有 (c) 2002-2007 Alexey Shchepin"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd vCard 模块\n版权所有 (c) 2003-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber 服务器"}.
+{"ejabberd vCard module", "ejabberd vCard 模块"}.
 {"Email", "电子邮件"}.
 {"Search Results for ", "搜索结果属于关键词 "}.
 {"Jabber ID", "Jabber ID"}.
@@ -149,7 +149,7 @@
 {"Specify the publisher model", "指定发布人样式"}.
 {"Max payload size in bytes", "最大有效负载比特数"}.
 {"Only deliver notifications to available users", "仅将通知发送给可发送的用户"}.
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd发行-订阅模块\nCopyright (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module", "ejabberd发行-订阅模块"}.
 {"PubSub subscriber request", "PubSub订阅人请求"}.
 {"Choose whether to approve this entity's subscription.", "选择是否赞成该实体的订阅"}.
 {"Node ID", "节点ID"}.
@@ -192,7 +192,7 @@
 {"You need an x:data capable client to register nickname", "您需要一个兼容x:data的客户端来注册昵称"}.
 {"Nickname Registration at ", "昵称注册于 "}.
 {"Enter nickname you want to register", "请输入您想要注册的昵称"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd MUC模块\n版权所有 (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "ejabberd MUC模块"}.
 {"Only service administrators are allowed to send service messages", "只有服务管理员可以发送服务消息"}.
 {"Room creation is denied by service policy", "创建房间被服务政策拒绝"}.
 {"Conference room does not exist", "会议室不存在"}.
@@ -254,7 +254,7 @@
 {"anyone", "任何人"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd IRC 模块\n版权所有 (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "ejabberd IRC 模块"}.
 {"You need an x:data capable client to configure mod_irc settings", "您需要一个兼容x:data的客户端来配置mod_irc设置"}.
 {"Registration in mod_irc for ", "mod_irc中的注册是为 "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "请输入您想使用的用来连接到IRC服务器的用户名和编码"}.
@@ -368,7 +368,7 @@
 {"Last Activity", "上次活动"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5字节流模块\n版权所有 (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5字节流模块"}.
 
 % mod_vcard_odbc.erl
 {"vCard User Search", "vCard用户搜索"}.

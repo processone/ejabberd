@@ -78,13 +78,13 @@ extract_lang ()
 extract_lang_all ()
 {
 	cd $MSGS_DIR
-
 	for i in *.msg; do 
 		extract_lang $i;
 	done
 
 	echo -e "File\tMissing\tLanguage\t\tLast translator"
 	echo -e "----\t-------\t--------\t\t---------------"
+	cd $MSGS_DIR
 	for i in *.msg; do 
 		MISSING=`cat $i.translate | grep "\", \"\"}." | wc -l`
 		LANGUAGE=`grep "Language:" $i.translate | sed 's/% Language: //g'`
@@ -119,6 +119,8 @@ find_unused_full ()
 	cp $DATFILE $DATFILEI
 	cp $DATFILE $DATFILE2
 
+	cp $DELFILE2 $DELFILE1
+	STRING=`head -1 $DELFILE1`
 	until [[ $STRING == ENDFILEMARK ]]; do 
 		cp $DELFILE2 $DELFILE1
 		cp $DATFILE2 $DATFILE1

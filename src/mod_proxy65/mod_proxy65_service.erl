@@ -170,8 +170,8 @@ iq_vcard(Lang) ->
      {xmlelement, "URL", [],
       [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(Lang, "ejabberd SOCKS5 Bytestreams module\n"
-       "Copyright (c) 2003-2007 Alexey Shchepin")}]}].
+      [{xmlcdata, translate:translate(Lang, "ejabberd SOCKS5 Bytestreams module") ++
+       "\nCopyright (c) 2003-2007 Alexey Shchepin"}]}].
 
 parse_options(ServerHost, Opts) ->
     MyHost = gen_mod:get_opt_host(ServerHost, Opts, "proxy.@HOST@"),

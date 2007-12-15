@@ -4,7 +4,7 @@
 % Author: Sander Devrieze
 
 % mod_vcard_ldap.erl
-{"Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin", "Erlang Jabber Server\nCopyright (c) 2002-2007 Alexey Shchepin"}.
+{"Erlang Jabber Server", "Erlang Jabber Server"}.
 {"You need an x:data capable client to search", "U hebt een client nodig die x:data ondersteunt om te zoeken"}.
 {"Search users in ", "Gebruikers zoeken in "}.
 {"Fill in fields to search for any matching Jabber User", "Vul de velden in om te zoeken naar Jabber-gebruikers op deze server"}.
@@ -19,7 +19,7 @@
 {"Email", "E-mail"}.
 {"Organization Name", "Organisatie"}.
 {"Organization Unit", "Afdeling"}.
-{"ejabberd vCard module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's vCard-module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd vCard module", "ejabberd's vCard-module"}.
 {"Search Results for ", "Zoekresultaten voor "}.
 {"Jabber ID", "Jabber ID"}.
 
@@ -149,7 +149,7 @@
 {"Enter nickname you want to register", "Voer de bijnaam in die u wilt registreren"}.
 {"Specified nickname is already registered", "De gekozen bijnaam is al geregistreerd"}.
 {"You must fill in field \"Nickname\" in the form", "U moet het veld \"bijnaam\" invullen"}.
-{"ejabberd MUC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's MUC module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd MUC module", "ejabberd's MUC module"}.
 {"Chatrooms", "Groepsgesprekken"}.
 
 % mod_muc/mod_muc_room.erl
@@ -202,7 +202,7 @@
 {"the password is", "het wachtwoord is"}.
 
 % mod_irc/mod_irc.erl
-{"ejabberd IRC module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd's IRC-module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd IRC module", "ejabberd's IRC-module"}.
 {"You need an x:data capable client to configure mod_irc settings", "U hebt een client nodig die x:data ondersteunt om dit IRC-transport in te stellen"}.
 {"Registration in mod_irc for ", "Registratie van "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Voer de gebruikersnaam en de coderingen in die u wilt gebruiken voor verbindingen met IRC-servers"}.
@@ -246,7 +246,7 @@
 {"Max payload size in bytes", "Maximumgrootte van bericht in bytes"}.
 {"Only deliver notifications to available users", "Notificaties alleen verzenden naar online gebruikers"}.
 {"Publish-Subscribe", "Publish-Subscribe"}.
-{"ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One", "ejabberd Publish-Subscribe module\nCopyright (c) 2004-2007 Process-One"}.
+{"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe module"}.
 {"PubSub subscriber request", "PubSub abonnee verzoek"}.
 {"Choose whether to approve this entity's subscription.", "Beslis of dit verzoek tot abonneren zal worden goedgekeurd"}.
 {"Node ID", "Node ID"}.
@@ -365,7 +365,7 @@
 {"Your contact offline message queue is full. The message has been discarded.", "Te veel offline berichten voor dit contactpersoon. Het bericht is niet opgeslagen."}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin", "ejabberd SOCKS5 Bytestreams module\nCopyright (c) 2003-2007 Alexey Shchepin"}.
+{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams module"}.
 
 % Local Variables:
 % mode: erlang
