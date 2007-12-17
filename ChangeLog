@@ -1,5 +1,19 @@
 2007-12-17  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_zlib/Makefile.in: Compile all erl files found in
+	the directory, so it isn't needed to provide an explicit list of
+	target files
+	* src/eldap/Makefile.in: Likewise
+	* src/mod_irc/Makefile.in: Likewise
+	* src/mod_muc/Makefile.in: Likewise
+	* src/mod_proxy65/Makefile.in: Likewise
+	* src/mod_pubsub/Makefile.in: Likewise
+	* src/odbc/Makefile.in: Likewise
+	* src/pam/Makefile.in: Likewise
+	* src/stringprep/Makefile.in: Likewise
+	* src/tls/Makefile.in: Likewise
+	* src/web/Makefile.in: Likewise
+
 	* doc/guide.tex: Remove 'ssl' option from documentation and
 	configuration load (EJAB-461)
 	* src/ejabberd_listener.erl: Likewise

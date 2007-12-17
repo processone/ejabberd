@@ -9,36 +9,24 @@ LIBS = @LIBS@
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
-SUBDIRS = 
-
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-EFLAGS+=+debug_info
+	EFLAGS+=+debug_info
 endif
 
-OBJS   = \
-	$(OUTDIR)/gen_pubsub_node.beam \
-	$(OUTDIR)/gen_pubsub_nodetree.beam \
-	$(OUTDIR)/nodetree_default.beam \
-	$(OUTDIR)/nodetree_virtual.beam \
-	$(OUTDIR)/mod_pubsub.beam \
-	$(OUTDIR)/node_default.beam \
-	$(OUTDIR)/node_pep.beam \
-	$(OUTDIR)/node_buddy.beam \
-	$(OUTDIR)/node_club.beam \
-	$(OUTDIR)/node_dispatch.beam \
-	$(OUTDIR)/node_private.beam \
-	$(OUTDIR)/node_public.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-all:    $(OBJS)
+
+all:    $(BEAMS)
 
 $(OUTDIR)/%.beam:       %.erl
 	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(BEAMS)
 
 distclean: clean
 	rm -f Makefile

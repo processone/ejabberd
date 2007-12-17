@@ -9,30 +9,23 @@ LIBS = @LIBS@
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
-SUBDIRS = 
-
-
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-  EFLAGS+=+debug_info
+	EFLAGS+=+debug_info
 endif
 
-OBJS   = \
-	$(OUTDIR)/ejabberd_http.beam \
-	$(OUTDIR)/ejabberd_web.beam  \
-	$(OUTDIR)/ejabberd_web_admin.beam  \
-	$(OUTDIR)/ejabberd_http_poll.beam
+SOURCES = $(wildcard *.erl)
+OUTDIR = ..
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-all:    $(OBJS)
+all: $(BEAMS)
 
 $(OUTDIR)/%.beam:	%.erl ejabberd_http.hrl
 	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
 
-
 clean:
-	rm -f $(OBJS)
+	rm -f $(BEAMS)
 
 distclean: clean
 	rm -f Makefile

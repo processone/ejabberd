@@ -10,28 +10,25 @@ ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
 ifeq ($(shell uname),Darwin)
-DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
+	DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
 else
-# Assume Linux-style dynamic library flags
-DYNAMIC_LIB_CFLAGS = -fpic -shared
+	# Assume Linux-style dynamic library flags
+	DYNAMIC_LIB_CFLAGS = -fpic -shared
 endif
 
-SUBDIRS = 
-
-ERLSHLIBS = ../stringprep_drv.so
-
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-  EFLAGS+=+debug_info
+	EFLAGS+=+debug_info
 endif
 
-OBJS   = \
-	$(OUTDIR)/stringprep.beam \
-	$(OUTDIR)/stringprep_sup.beam
+ERLSHLIBS = ../stringprep_drv.so
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-all:    $(OBJS) $(ERLSHLIBS)
+
+all:    $(BEAMS) $(ERLSHLIBS)
 
 $(OUTDIR)/%.beam:       %.erl
 	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
@@ -46,7 +43,7 @@ $(ERLSHLIBS):	../%.so:	%.c uni_data.c uni_norm.c
 			-o $@ $(DYNAMIC_LIB_CFLAGS)
 
 clean:
-	rm -f $(OBJS) $(ERLSHLIBS)
+	rm -f $(BEAMS) $(ERLSHLIBS)
 
 distclean: clean
 	rm -f Makefile

@@ -5,25 +5,23 @@ CFLAGS = @CFLAGS@ @PAM_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ @PAM_LIBS@
- 
+
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
-SUBDIRS = 
-
-ERLSHLIBS = ../epam
-
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-  EFLAGS+=+debug_info
+	EFLAGS+=+debug_info
 endif
 
-OBJS   = \
-	$(OUTDIR)/epam.beam
+ERLSHLIBS = ../epam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-all:    $(OBJS) $(ERLSHLIBS)
+
+all:    $(BEAMS) $(ERLSHLIBS)
 
 $(OUTDIR)/%.beam:       %.erl
 	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
@@ -38,7 +36,7 @@ $(ERLSHLIBS):	../%:	%.c
 			-o $@ -lpthread
 
 clean:
-	rm -f $(OBJS) $(ERLSHLIBS)
+	rm -f $(BEAMS) $(ERLSHLIBS)
 
 distclean: clean
 	rm -f Makefile
