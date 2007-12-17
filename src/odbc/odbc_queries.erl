@@ -371,14 +371,13 @@ get_db_type() ->
     mssql.
 
 %% Queries can be either a fun or a list of queries
-sql_transaction(_LServer, Queries) when is_list(Queries) ->
+sql_transaction(LServer, Queries) when is_list(Queries) ->
     %% SQL transaction based on a list of queries
     %% This function automatically 
     F = fun() ->
     	lists:foreach(fun(Query) ->
-    			      sql_query(Query)
-    		      end,
-    		      Queries)
+    		ejabberd_odbc:sql_query(LServer, Query)
+    	end, Queries)
       end,
     {atomic, catch F()};
 sql_transaction(_LServer, FQueries) ->
