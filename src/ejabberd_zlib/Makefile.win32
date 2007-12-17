@@ -1,24 +1,24 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-OBJS = \
-	$(OUTDIR)\ejabberd_zlib.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
 SOURCE = ejabberd_zlib_drv.c
 OBJECT = ejabberd_zlib_drv.o
 DLL    = $(OUTDIR)\ejabberd_zlib_drv.dll
 
-ALL : $(DLL) $(OBJS)
+ALL : $(DLL) $(BEAMS)
 
 CLEAN :
 	-@erase $(DLL)
 	-@erase $(OUTDIR)\ejabberd_zlib_drv.exp
 	-@erase $(OUTDIR)\ejabberd_zlib_drv.lib
 	-@erase $(OBJECT)
-	-@erase $(OBJS)
+	-@erase $(BEAMS)
 
 $(OUTDIR)\ejabberd_zlib.beam : ejabberd_zlib.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_zlib.erl

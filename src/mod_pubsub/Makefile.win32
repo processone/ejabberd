@@ -1,27 +1,16 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-OBJS = \
-	$(OUTDIR)/gen_pubsub_node.beam \
-	$(OUTDIR)/gen_pubsub_nodetree.beam \
-	$(OUTDIR)/nodetree_default.beam \
-	$(OUTDIR)/nodetree_virtual.beam \
-	$(OUTDIR)/mod_pubsub.beam \
-	$(OUTDIR)/node_default.beam \
-	$(OUTDIR)/node_pep.beam \
-	$(OUTDIR)/node_buddy.beam \
-	$(OUTDIR)/node_club.beam \
-	$(OUTDIR)/node_dispatch.beam \
-	$(OUTDIR)/node_private.beam \
-	$(OUTDIR)/node_public.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-ALL : $(OBJS)
+ALL : $(BEAMS)
 
 CLEAN :
-	-@erase $(OBJS)
+	-@erase $(BEAMS)
 
 $(OUTDIR)\gen_pubsub_node.beam : gen_pubsub_node.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) gen_pubsub_node.erl

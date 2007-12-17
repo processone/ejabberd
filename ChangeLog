@@ -13,6 +13,16 @@
 	* src/stringprep/Makefile.in: Likewise
 	* src/tls/Makefile.in: Likewise
 	* src/web/Makefile.in: Likewise
+	* src/ejabberd_zlib/Makefile.win32: Likewise
+	* src/eldap/Makefile.win32: Likewise
+	* src/mod_irc/Makefile.win32: Likewise
+	* src/mod_muc/Makefile.win32: Likewise
+	* src/mod_proxy65/Makefile.win32: Likewise
+	* src/mod_pubsub/Makefile.win32: Likewise
+	* src/odbc/Makefile.win32: Likewise
+	* src/stringprep/Makefile.win32: Likewise
+	* src/tls/Makefile.win32: Likewise
+	* src/web/Makefile.win32: Likewise
 
 	* doc/guide.tex: Remove 'ssl' option from documentation and
 	configuration load (EJAB-461)

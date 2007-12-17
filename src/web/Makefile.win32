@@ -1,19 +1,16 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-OBJS = \
-	$(OUTDIR)\ejabberd_http.beam \
-	$(OUTDIR)\ejabberd_web.beam  \
-	$(OUTDIR)\ejabberd_web_admin.beam  \
-	$(OUTDIR)\ejabberd_http_poll.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-ALL : $(OBJS)
+ALL : $(BEAMS)
 
 CLEAN :
-	-@erase $(OBJS)
+	-@erase $(BEAMS)
 
 $(OUTDIR)\ejabberd_http.beam : ejabberd_http.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_http.erl

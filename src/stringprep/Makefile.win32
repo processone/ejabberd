@@ -1,24 +1,25 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
+
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
 SOURCE = stringprep_drv.c
 AUXIL  = uni_data.c uni_norm.c
 OBJECT = stringprep_drv.o
 DLL    = $(OUTDIR)\stringprep_drv.dll
 
-ALL : $(DLL) $(OUTDIR)\stringprep.beam \
-	$(OUTDIR)\stringprep_sup.beam
+ALL : $(DLL) $(BEAMS)
 
 CLEAN :
 	-@erase $(DLL)
 	-@erase $(OUTDIR)\stringprep_drv.exp
 	-@erase $(OUTDIR)\stringprep_drv.lib
 	-@erase $(OBJECT)
-	-@erase $(OUTDIR)\stringprep.beam
-	-@erase $(OUTDIR)\stringprep_sup.beam
+	-@erase $(BEAMS)
 
 $(OUTDIR)\stringprep.beam : stringprep.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) stringprep.erl

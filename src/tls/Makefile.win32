@@ -1,24 +1,24 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-OBJS = \
-	$(OUTDIR)\tls.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
 SOURCE = tls_drv.c
 OBJECT = tls_drv.o
 DLL    = $(OUTDIR)\tls_drv.dll
 
-ALL : $(DLL) $(OBJS)
+ALL : $(DLL) $(BEAMS)
 
 CLEAN :
 	-@erase $(DLL)
 	-@erase $(OUTDIR)\tls_drv.exp
 	-@erase $(OUTDIR)\tls_drv.lib
 	-@erase $(OBJECT)
-	-@erase $(OBJS)
+	-@erase $(BEAMS)
 
 $(OUTDIR)\tls.beam : tls.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) tls.erl

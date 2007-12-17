@@ -1,26 +1,24 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-OBJS = \
-	$(OUTDIR)\iconv.beam \
-	$(OUTDIR)\mod_irc.beam \
-	$(OUTDIR)\mod_irc_connection.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
 SOURCE = iconv_erl.c
 OBJECT = iconv_erl.o
 DLL    = $(OUTDIR)\iconv_erl.dll
 
-ALL : $(DLL) $(OBJS)
+ALL : $(DLL) $(BEAMS)
 
 CLEAN :
 	-@erase $(DLL)
 	-@erase $(OUTDIR)\iconv_erl.exp
 	-@erase $(OUTDIR)\iconv_erl.lib
 	-@erase $(OBJECT)
-	-@erase $(OBJS)
+	-@erase $(BEAMS)
 
 $(OUTDIR)\iconv.beam : iconv.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) iconv.erl

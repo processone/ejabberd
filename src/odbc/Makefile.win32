@@ -1,18 +1,16 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-OBJS = \
-	$(OUTDIR)\ejabberd_odbc.beam \
-	$(OUTDIR)\ejabberd_odbc_sup.beam \
-	$(OUTDIR)\odbc_queries.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-ALL : $(OBJS)
+ALL : $(BEAMS)
 
 CLEAN :
-	-@erase $(OBJS)
+	-@erase $(BEAMS)
 
 $(OUTDIR)\ejabberd_odbc.beam : ejabberd_odbc.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) ejabberd_odbc.erl

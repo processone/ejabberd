@@ -1,24 +1,20 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-OBJS = \
-	$(OUTDIR)\eldap.beam \
-	$(OUTDIR)\ELDAPv3.beam \
-	$(OUTDIR)\eldap_filter.beam \
-	$(OUTDIR)\eldap_utils.beam \
-	$(OUTDIR)\eldap_pool.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-ALL : $(OBJS)
+ALL : $(BEAMS)
 
 Clean :
 	-@erase ELDAPv3.asn1db
 	-@erase ELDAPv3.erl
 	-@erase ELDAPv3.hrl
 	-@erase ELDAPv3.beam
-	-@erase $(OBJS)
+	-@erase $(BEAMS)
 
 ELDAPv3.erl : ELDAPv3.asn
 	erlc -bber_bin -W $(EFLAGS) ELDAPv3.asn

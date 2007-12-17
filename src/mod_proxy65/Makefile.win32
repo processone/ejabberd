@@ -1,20 +1,16 @@
 
 include ..\Makefile.inc
 
-OUTDIR = ..
 EFLAGS = -I .. -pz ..
 
-OBJS   = \
-	$(OUTDIR)\mod_proxy65.beam \
-	$(OUTDIR)\mod_proxy65_service.beam \
-	$(OUTDIR)\mod_proxy65_sm.beam \
-	$(OUTDIR)\mod_proxy65_stream.beam \
-	$(OUTDIR)\mod_proxy65_lib.beam
+OUTDIR = ..
+SOURCES = $(wildcard *.erl)
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
-ALL : $(OBJS)
+ALL : $(BEAMS)
 
 CLEAN :
-	-@erase $(OBJS)
+	-@erase $(BEAMS)
 
 $(OUTDIR)\mod_proxy65.beam : mod_proxy65.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) mod_proxy65.erl
