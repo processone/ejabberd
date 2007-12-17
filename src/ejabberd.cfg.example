@@ -126,7 +126,7 @@
   %%{5223, ejabberd_c2s, [
   %%			{access, c2s},
   %%			{shaper, c2s_shaper},
-  %%			tls, {certfile, "/path/to/ssl.pem"},
+  %%			{certfile, "/path/to/ssl.pem"}, tls,
   %%			{max_stanza_size, 65536}
   %%		       ]},
 

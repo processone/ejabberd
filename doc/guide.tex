@@ -582,7 +582,7 @@ Example:
 \end{verbatim}
 \end{itemize}
 
-\subsection{Listened Sockets}
+\subsection{Listening Ports}
 \label{listened}
 \ind{options!listen}
 
@@ -603,7 +603,7 @@ The available modules, their purpose and the options allowed by each one are:
   \begin{tabular}{|l|l|p{87mm}|}
   \hline \texttt{ejabberd\_c2s}& Description& Handles c2s connections.\\
     \cline{2-3} & Options& \texttt{access}, \texttt{certfile}, \texttt{inet6},
-    \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper}, \texttt{ssl},
+    \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper},
     \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
     \texttt{zlib}\\
   \hline \texttt{ejabberd\_s2s\_in}& Description& Handles incoming s2s
@@ -669,10 +669,6 @@ This is a detailed description of each option allowed by the listening modules:
   \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{shapers}). The default value
     is \term{none}.
-  \titem{ssl} \ind{options!ssl}\ind{SSL}This option specifies that traffic on
-    the port will be encrypted using SSL. You should also set the
-    \option{certfile} option. It is recommended to use the \term{tls} option
-    instead of this one.
   \titem{starttls} \ind{options!starttls}\ind{STARTTLS}This option
     specifies that STARTTLS encryption is available on connections to the port.
     You should also set the \option{certfile} option.

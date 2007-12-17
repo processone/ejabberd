@@ -43,15 +43,20 @@ init(_) ->
 
 
 start(Port, Module, Opts) ->
+    SSLError = "There is a problem with your ejabberd configuration file: the option 'ssl' for listening sockets is no longer available. To get SSL encryption use the option 'tls'.",
     case lists:keysearch(ssl, 1, Opts) of
-	{value, {ssl, SSLOpts}} ->
-	    {ok, proc_lib:spawn_link(?MODULE, init_ssl,
-				     [Port, Module, Opts, SSLOpts])};
+	{value, {ssl, _SSLOpts}} ->
+	    %%{ok, proc_lib:spawn_link(?MODULE, init_ssl,
+	    %%		     [Port, Module, Opts, SSLOpts])};
+	    ?ERROR_MSG(SSLError, []),
+	    {error, SSLError};
 	_ ->
 	    case lists:member(ssl, Opts) of
 		true ->
-		    {ok, proc_lib:spawn_link(?MODULE, init_ssl,
-					     [Port, Module, Opts, []])};
+		    %%{ok, proc_lib:spawn_link(?MODULE, init_ssl,
+		    %%		     [Port, Module, Opts, []])};
+		    ?ERROR_MSG(SSLError, []),
+		    {error, SSLError};
 		false ->
 		    {ok, proc_lib:spawn_link(?MODULE, init,
 					     [Port, Module, Opts])}

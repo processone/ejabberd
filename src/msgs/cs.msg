@@ -106,7 +106,7 @@
 {"Specified nickname is already registered", "Zadaná přezdívka je již zaregistrována"}.
 
 % mod_muc/mod_muc_room.erl
-{" has set the subject to: ", "změnil(a) téma na: "}.
+{" has set the subject to: ", " změnil(a) téma na: "}.
 {"You need an x:data capable client to configure room", "Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"}.
 {"Configuration for ", "Konfigurace pro "}.
 {"Room title", "Název místnosti"}.

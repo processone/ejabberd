@@ -1,8 +1,19 @@
+2007-12-17  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Remove 'ssl' option from documentation and
+	configuration load (EJAB-461)
+	* src/ejabberd_listener.erl: Likewise
+
+	* src/msgs/cs.msg: Small typo (thanks to Lukas Polivka alias
+	Spike411)
+
+	* src/ejabberd.cfg.example: Small change in order of options
+
 2007-12-15  Badlop  <badlop@process-one.net>
 
 	* src/mod_irc/iconv.erl: Changed order of handle_info
 	clause (EJAB-290)
-	* src/stringprep/stringprep.erl: Likesise
+	* src/stringprep/stringprep.erl: Likewise
 
 	* src/eldap/eldap.erl: Removed handle_sync_event clause because it
 	is never called (EJAB-290)
