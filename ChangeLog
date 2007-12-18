@@ -1,3 +1,9 @@
+2007-12-18  Badlop  <badlop@process-one.net>
+
+	* doc/Makefile: Support for conditional inclusion of documentation
+	from contributed modules
+	* doc/guide.tex: Likewise
+
 2007-12-18  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Purge related pep nodes at remove_user

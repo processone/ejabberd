@@ -87,6 +87,14 @@
 \newcommand{\modvcardodbc}{\module{mod\_vcard\_odbc}}
 \newcommand{\modversion}{\module{mod\_version}}
 
+%% Contributed modules
+\usepackage{ifthen}
+\newboolean{modhttpbind}
+\newcommand{\modhttpbind}{\module{mod\_http\_bind}}
+\newboolean{modhttpfileserver}
+\newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
+\include{contributed_modules}
+
 %% Common options
 \newcommand{\iqdiscitem}[1]{\titem{iqdisc} \ind{options!iqdisc}This specifies 
 the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).}
@@ -2062,6 +2070,10 @@ Example: Mirror, mirror, on the wall, who is the most beautiful
     ...
    ]}.
 \end{verbatim}
+
+\ifthenelse{\boolean{modhttpbind}}{\input{mod_http_bind.tex}}{}
+
+\ifthenelse{\boolean{modhttpfileserver}}{\input{mod_http_fileserver.tex}}{}
 
 \subsection{\modirc{}}
 \label{modirc}

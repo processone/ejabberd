@@ -1,5 +1,14 @@
 # $Id$
 
+CONTRIBUTED_MODULES = ""
+ifeq ($(shell ls mod_http_bind.tex),mod_http_bind.tex)
+	CONTRIBUTED_MODULES += "\\r\\n\\setboolean{modhttpbind}{true}"
+endif
+ifeq ($(shell ls mod_http_fileserver.tex),mod_http_fileserver.tex)
+	CONTRIBUTED_MODULES += "\\r\\n\\setboolean{modhttpfileserver}{true}"
+endif
+
+
 all:	release pdf html
 
 release:
@@ -11,6 +20,8 @@ release:
 	@read foo
 	@echo "% ejabberd version (automatically generated)." > version.tex
 	@echo "\\\newcommand{\\\version}{"`cat ../src/ejabberd.hrl | grep VERSION | sed s/-define\(VERSION,\ \"//g | sed s/\"\).//g`"}" >> version.tex
+	@echo -n "% Contributed modules (automatically generated)."  > contributed_modules.tex
+	@echo "$(CONTRIBUTED_MODULES)" >> contributed_modules.tex
 
 html:	guide.html dev.html features.html
 
