@@ -1,3 +1,8 @@
+2007-12-18  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Purge related pep nodes at remove_user
+	* src/mod_pubsub/node_pep.erl: Likewise
+
 2007-12-17  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_zlib/Makefile.in: Compile all erl files found in

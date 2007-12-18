@@ -43,6 +43,7 @@
 -export([set_presence/4,
 	 unset_presence/4,
 	 incoming_presence/3,
+	 remove_user/2,
 	 disco_local_identity/5,
 	 disco_local_features/5,
 	 disco_local_items/5,
@@ -100,7 +101,7 @@
 		host,
 		access,
 		nodetree = ?STDTREE,
-		plugins = [?STDNODE]}).
+		plugins = [?STDNODE,?PEPNODE]}).
 
 %%====================================================================
 %% API
@@ -154,6 +155,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(incoming_presence_hook, ServerHost, ?MODULE, incoming_presence, 50),
     %%ejabberd_hooks:add(set_presence_hook, ServerHost, ?MODULE, set_presence, 50),
     %%ejabberd_hooks:add(unset_presence_hook, ServerHost, ?MODULE, unset_presence, 50),
+    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     lists:foreach(
       fun({NS,Mod,Fun}) ->
@@ -396,6 +398,16 @@ incoming_presence(From, #jid{lserver = Host} = To, Packet) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {presence, From, To, Packet}).
 
+%% -------
+%% user remove hook handling function
+%%
+
+remove_user(User, Server) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
+    gen_server:cast(Proc, {remove, LUser, LServer}).
+
 %%--------------------------------------------------------------------
 %% Function:
 %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -517,6 +529,11 @@ handle_cast({set_presence, _User, _Server, _Resource, _Presence}, State) ->
 handle_cast({unset_presence, _User, _Server, _Resource, _Status}, State) ->
     {noreply, State};
 
+handle_cast({remove, User, Server}, State) ->
+    Owner = jlib:make_jid(User, Server, ""),
+    delete_nodes(Server, Owner, State#state.plugins),
+    {noreply, State};
+
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -562,6 +579,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(incoming_presence_hook, ServerHost, ?MODULE, incoming_presence, 50),
     %%ejabberd_hooks:delete(set_presence_hook, ServerHost, ?MODULE, set_presence, 50),
     %%ejabberd_hooks:delete(unset_presence_hook, ServerHost, ?MODULE, unset_presence, 50),
+    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
     lists:foreach(fun({NS,Mod}) ->
 			  gen_iq_handler:remove_iq_handler(Mod, ServerHost, NS)
 		  end, [{?NS_PUBSUB, ejabberd_local},
@@ -861,7 +879,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 			[{xmlelement, "configure", _, Config}] ->
 			    %% Get the type of the node
 			    Type = case xml:get_attr_s("type", Attrs) of
-				       [] -> ?STDNODE;
+				       [] -> hd(Plugins);
 				       T -> T
 				   end,
 			    %% we use Plugins list matching because we do not want to allocate
@@ -1292,6 +1310,25 @@ delete_node(Host, Node, Owner) ->
 	{result, Result} ->
 	    {result, Result}
     end.
+delete_nodes(Host, Owner, Plugins) ->
+    %% This removes only PEP nodes when user is removed
+    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    lists:foreach(fun(#pubsub_node{nodeid={NodeKey, NodeName}}) ->
+	delete_node(NodeKey, NodeName, Owner)
+    end, tree_action(Host, get_nodes, [OwnerKey])).
+%   TODO: may be best to use the generic following code
+%   lists:foreach(fun(Type) ->
+%	    {result, Affiliations} = node_action(Type, get_entity_affiliations, [Host, Owner]),
+%	    NodeKey = case Type of
+%	    ?PEPNODE -> OwnerKey;
+%	    _ -> Host
+%	    end,
+%	    lists:foreach(
+%		fun({NodeId, owner}) -> delete_node(NodeKey, NodeId, Owner);
+%		   (_) -> ok
+%		end
+%	    end, Affiliations)
+%	end, Plugins),
 
 %% @spec (Host, Node, From, JID) ->
 %%		  {error, Reason::stanzaError()} |

@@ -130,36 +130,31 @@ delete_item(Host, Node, JID, ItemId) ->
 purge_node(Host, Node, Owner) ->
     node_default:purge_node(Host, Node, Owner).
 
-get_entity_affiliations(Host, Owner) ->
-    %node_default:get_entity_affiliations(Host, Owner).
+get_entity_affiliations(_Host, Owner) ->
+    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    node_default:get_entity_affiliations(OwnerKey, Owner).
+    %{result, []}.
+
+get_node_affiliations(_Host, _Node) ->
     {result, []}.
 
-get_node_affiliations(Host, Node) ->
-    %node_default:get_node_affiliations(Host, Node).
-    {result, []}.
+get_affiliation(_Host, Node, Owner) ->
+    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    node_default:get_affiliation(OwnerKey, Node, Owner).
 
-get_affiliation(Host, Node, Owner) ->
-    %node_default:get_affiliation(Host, Node, Owner).
-    {result, unknown}.
-
-set_affiliation(Host, Node, Owner, Affiliation) ->
-    %node_default:set_affiliation(Host, Node, Owner, Affiliation).
+set_affiliation(_Host, _Node, _Owner, _Affiliation) ->
     ok.
 
-get_entity_subscriptions(Host, Owner) ->
-    %node_default:get_entity_subscriptions(Host, Owner).
+get_entity_subscriptions(_Host, _Owner) ->
     {result, []}.
 
-get_node_subscriptions(Host, Node) ->
-    %node_default:get_node_subscriptions(Host, Node).
+get_node_subscriptions(_Host, _Node) ->
     {result, []}.
 
-get_subscription(Host, Node, Owner) ->
-    %node_default:get_subscription(Host, Node, Owner).
+get_subscription(_Host, _Node, _Owner) ->
     {result, unknown}.
 
-set_subscription(Host, Node, Owner, Subscription) ->
-    %node_default:set_subscription(Host, Node, Owner, Subscription).
+set_subscription(_Host, _Node, _Owner, _Subscription) ->
     ok.
 
 get_states(Host, Node) ->
