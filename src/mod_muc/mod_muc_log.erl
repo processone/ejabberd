@@ -323,18 +323,27 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	       {leave, Reason} ->  
 		   io_lib:format("<font class=\"ml\">~s ~s: ~s</font><br/>", 
 				 [Nick, ?T("leaves the room"), htmlize(Reason,NoFollow)]);
-	       {kickban, "307", ""} ->  
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
-				 [Nick, ?T("has been kicked")]);
-	       {kickban, "307", Reason} ->  
-		   io_lib:format("<font class=\"mk\">~s ~s: ~s</font><br/>", 
-				 [Nick, ?T("has been kicked"), htmlize(Reason)]);
 	       {kickban, "301", ""} ->  
 		   io_lib:format("<font class=\"mb\">~s ~s</font><br/>", 
 				 [Nick, ?T("has been banned")]);
 	       {kickban, "301", Reason} ->  
 		   io_lib:format("<font class=\"mb\">~s ~s: ~s</font><br/>", 
 				 [Nick, ?T("has been banned"), htmlize(Reason)]);
+	       {kickban, "307", ""} ->  
+		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
+				 [Nick, ?T("has been kicked")]);
+	       {kickban, "307", Reason} ->  
+		   io_lib:format("<font class=\"mk\">~s ~s: ~s</font><br/>", 
+				 [Nick, ?T("has been kicked"), htmlize(Reason)]);
+	       {kickban, "321", ""} ->  
+		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
+				 [Nick, ?T("has been kicked because of an affiliation change")]);
+	       {kickban, "322", ""} ->  
+		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
+				 [Nick, ?T("has been kicked because the room has been changed to members-only")]);
+	       {kickban, "332", ""} ->  
+		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
+				 [Nick, ?T("has been kicked because of a system shutdown")]);
 	       {nickchange, OldNick} ->  
 		   io_lib:format("<font class=\"mnc\">~s ~s ~s</font><br/>", 
 				 [htmlize(OldNick), ?T("is now known as"), Nick]);

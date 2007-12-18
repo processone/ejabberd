@@ -1,5 +1,7 @@
 2007-12-18  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_log.erl: Add handling of kicks 321, 322, 332
+
 	* doc/guide.tex: Document mod_privacy_odbc
 	
 	* doc/Makefile: Support for conditional inclusion of documentation
