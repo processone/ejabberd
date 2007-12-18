@@ -1,5 +1,7 @@
 2007-12-18  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Document mod_privacy_odbc
+	
 	* doc/Makefile: Support for conditional inclusion of documentation
 	from contributed modules
 	* doc/guide.tex: Likewise

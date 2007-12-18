@@ -71,6 +71,7 @@
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
+\newcommand{\modprivacyodbc}{\module{mod\_privacy\_odbc}}
 \newcommand{\modprivate}{\module{mod\_private}}
 \newcommand{\modprivateodbc}{\module{mod\_private\_odbc}}
 \newcommand{\modproxy}{\module{mod\_proxy65}}
@@ -1791,7 +1792,8 @@ The following table lists all modules included in \ejabberd{}.
     \hline \modmuclog{} & Multi-User Chat room logging & \modmuc{} & No \\ 
     \hline \modoffline{} & Offline message storage &  & No \\ 
     \hline \modofflineodbc{} & Offline message storage & supported database (*) & No \\ 
-    \hline \modprivacy{} & Blocking Communication &  & Yes \\ 
+    \hline \modprivacy{} & Blocking Communications &  & Yes \\ 
+    \hline \modprivacyodbc{} & Blocking Communications & supported database (*) & Yes \\ 
     \hline \modprivate{} & Private XML Storage (\xepref{0049}) &  & No \\ 
     \hline \modprivateodbc{} & Private XML Storage (\xepref{0049}) & supported database (*) & No \\ 
     \hline \modproxy{} & SOCKS5 Bytestreams (\xepref{0065}) &  & No\\
@@ -1841,6 +1843,7 @@ database for the following data:
 \item Rosters: Use \term{mod\_roster\_odbc} instead of \term{mod\_roster}.
 \item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
 \item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
+\item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
 \end{itemize}
 
 You can find more
