@@ -3,11 +3,31 @@
 % Author: Andrzej Smyk
 % Author: Mateusz Gajewski
 % Author: Zbyszek Zolkiewski
+	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk)
 
 % jlib.hrl
 {"No resource provided", "Brak dostarczonych zasobów"}.
 
 % mod_configure.erl
+{"Restart Service", "Restart serwisu"}.
+{"Shut Down Service", "Wyłączenie serwisu"}.
+{"Delete User", "Usuń użytkownika"}.
+{"End User Session", "Zakończ sesję uzytkownika"}.
+{"Get User Password", "Pobierz hasło użytkownika"}.
+{"Change User Password", "Zmień hasło użytkownika"}.
+{"Get User Last Login Time", "Pokaż czas ostatniego zalogowania uzytkownika"}.
+{"Get User Statistics", "Pobierz statystyki użytkownika"}.
+{"Get Number of Registered Users", "Pokaż liczbę zarejestrowanych użytkowników"}.
+{"Get Number of Online Users", "Pokaż ilość użytkowników online"}.
+{"User Management", "Zarządzanie użytkownikami"}.
+{"Time delay", "Opóźnienie czasu"}.
+{"Password Verification", "Weryfikacja hasła"}.
+{"Number of registered users", "Ilość zarejestrowanych użytkowników"}.
+{"Number of online users", "Ilość użytkowników online"}.
+{"Last login", "Ostatnie logowanie"}.
+{"Roster size", "Rozmiar rostera"}.
+{"IP addresses", "Adresy IP"}.
+{"Resources", "Zasoby"}.
 {"Choose storage type of tables", "Wybierz typ przechowalni tablic"}.
 {"RAM copy", "Kopia RAM"}.
 {"RAM and disc copy", "Kopia ramu i dysku"}.
@@ -85,6 +105,8 @@
 {"Organization Unit", "Dział: "}.
 
 % mod_muc/mod_muc.erl
+{"Chatrooms", "Pokoje rozmów"}.
+{"ejabberd MUC module", "Moduł MUC"}.
 {"You need an x:data capable client to register nickname", "Potrzebujesz klienta kompatybilnego z x:data aby zarejestrować nick"}.
 {"Nickname Registration at ", "Rejestracja nicka na "}.
 {"Enter nickname you want to register", "Wprowadz nicka którego chcesz zarejestrować"}.
@@ -94,6 +116,11 @@
 {"Specified nickname is already registered", "Podany nick jest już zarejestrowany"}.
 
 % mod_muc/mod_muc_room.erl
+{"Traffic rate limit is exceeded", "Limit transferu przekroczony"}.
+{"Maximum Number of Occupants", "Maksymalna liczba uczestników"}.
+{"No limit", "Bez limitu"}.
+{"~s invites you to the room ~s", "~ zaprasza Cię do pokoju ~s"}.
+{"the password is", "hasło to"}.
 {" has set the subject to: ", "zmieł(a) temat na: "}.
 {"You need an x:data capable client to configure room", "Potrzebujesz klienta kompatybilnego z x:data aby skonfigurować pokój"}.
 {"Configuration for ", "Konfiguracja dla "}.
@@ -130,6 +157,8 @@
 
 
 % mod_irc/mod_irc.erl
+{"IRC Transport", "Transport IRC"}.
+{"ejabberd IRC module", "Moduł IRC"}.
 {"You need an x:data capable client to configure mod_irc settings", "Potrzebujesz klienta kompatybilnego z x:data aby skonfigurować mod_irc"}.
 {"Registration in mod_irc for ", "Rejestracja w mod_irc dla "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Wprowadź nazwę użytkownika i kodowanie których chcesz używać do łączenia z serwerami IRC"}.
@@ -138,6 +167,7 @@
 {"Encodings", "Kodowania"}.
 
 % web/ejabberd_web_admin.erl
+{"Low level update script", "Skrypt update-u niskiego poziomu"}.
 {"Users", "Użytkownicy"}.
 {"Nodes", "Gałęzie"}.
 {"Statistics", "Statystyki"}.
@@ -200,12 +230,24 @@
 {"Host", "Host"}.
 
 % mod_vcard_odbc.erl
+{"Email", "Email"}.
+{"vCard User Search", "Wyszukiwanie vCard użytkowników"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Wypełnij formularz aby wyszukać pasujących użytkowników Jabbera (dodaj * na koniec pola aby dopasować)"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Wymagane użycie STARTTLS"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"ejabberd Publish-Subscribe module", "Moduł Publish-Subscribe"}.
+{"PubSub subscriber request", "Rządzanie subskrybenta PubSub"}.
+{"Choose whether to approve this entity's subscription.", "Wybierz, czy akceptować subskrypcję tej jednostki"}.
+{"Node ID", "ID noda"}.
+{"Subscriber Address", "Adres subskrybenta"}.
+{"Allow this JID to subscribe to this pubsub node?", "Pozwól temu JID na zapisanie się do tego noda pubsub"}.
+{"Deliver event notifications", "Dostarczaj powiadomienia o zdarzeniach"}.
+{"Specify the access model", "Oznacz model dostępu"}.
+{"Roster groups that may subscribe (if access model is roster)", "Grupy rostera jakie mogą subskrybować (jeśli model dostępu to roster"}.
+{"When to send the last published item", "Kiedy wysłać ostatnio opublikowaną rzecz"}.
 {"Node Creator", "Tworzenie gałęzi"}.
 {"Deliver payloads with event notifications", "Dołącz zawartość publikowanego przedmiotu podczas wysyłania powiadomienia o publikacji"}.
 {"Notify subscribers when the node configuration changes", "Informuj subskrybentów gdy konfiguracja gałęzi się zmieni"}.
@@ -242,6 +284,10 @@
 {"Replaced by new connection", "Podmienione przez nowe połączenie"}.
 
 % mod_announce.erl
+{"Send announcement to all users on all hosts", "Wyślij powiadomienie do wszystkich użytkowników na wszystkich hostach"}.
+{"Set message of the day on all hosts and send to online users", "Ustaw wiadomość dnia dla wszystkich hostów i wyślij do uzytkowników online"}.
+{"Update message of the day on all hosts (don't send)", "Odśwież wiadomośc dnia na wszystkich hostach (nie wysyłaj)"}.
+{"Delete message of the day on all hosts", "Usuń wiadomość dnia ze wszystkich hostów"}.
 {"Really delete message of the day?", "Na pewno usunąć wiadomość dnia?"}.
 {"Subject", "Temat"}.
 {"Message body", "Treść wiadomości"}.
@@ -362,6 +408,12 @@
 {"You must fill in field \"Icon\" in the form", "Musisz wypełnić w formularzu pole \"Icon\""}.
 {"Raw XML export", "Eksport XML do raw"}.
 {"Allow icon export", "Pozwól na eksport ikon"}.
+
+% mod_proxy65/mod_proxy65_service.erl
+{"ejabberd SOCKS5 Bytestreams module", "Mudł SOCKS5 Bytestreams"}.
+
+% mod_offline.erl
+{"Your contact offline message queue is full. The message has been discarded.", "Twoja kolejka wiadomoci offline jest pełna. Wiadomoć została odrzucona."}.
 
 % Local Variables:
 % mode: erlang

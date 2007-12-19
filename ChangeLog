@@ -1,3 +1,17 @@
+2007-12-19  Badlop  <badlop@process-one.net>
+
+	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk)(EJAB-463)
+
+	* src/msgs/de.msg: Updated (thanks to Cord Beermann)
+
+	* src/msgs/es.msg: Small update (thanks to Badlop)
+
+	* src/msgs/cs.msg: Small update (thanks to Lukas Polivka alias
+	Spike411)
+
+	* src/web/ejabberd_web_admin.erl: No need to translate copyright
+	notice
+
 2007-12-18  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_log.erl: Add handling of kicks 321, 322, 332

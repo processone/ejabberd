@@ -194,6 +194,9 @@
 {"the password is", "la contraseña es"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "ha sido expulsado por un cambio de su afiliación"}.
+{"has been kicked because the room has been changed to members-only", "ha sido expulsado porque la sala es ahora solo para miembros"}.
+{"has been kicked because of a system shutdown", "ha sido expulsado porque el sistema se va a detener"}.
 {"Chatroom configuration modified", "Configuración de la sala modificada"}.
 {"joins the room", "entra en la sala"}.
 {"leaves the room", "sale de la sala"}.
@@ -275,7 +278,6 @@
 {"Remove", "Borrar"}.
 {"User ", "Usuario "}.
 {"Roster of ", "Lista de contactos de "}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"Online", "Conectado"}.
 {"Validate", "Validar"}.
 {"Name:", "Nombre:"}.

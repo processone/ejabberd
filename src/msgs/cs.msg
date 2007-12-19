@@ -294,7 +294,6 @@
 % web/ejabberd_web_admin.erl
 {"ejabberd Web Interface", "Ejabberd Web rozhraní"}.
 {"Administration", "Administrace"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(Zdroj)"}.
 {"Bad format", "Nesprávný formát"}.
 {"Raw", "Zdroj"}.
@@ -337,6 +336,9 @@
 {"ejabberd IRC module", "Ejabberd IRC modul"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "byl(a) vyhozen(a) kvůli změně přiřazení"}.
+{"has been kicked because the room has been changed to members-only", "byl(a) vyhozen(a), protože mísnost je nyní pouze pro členy"}.
+{"has been kicked because of a system shutdown", "byl(a) vyhozen(a), protože dojde k vypnutí systému"}.
 {"Chatroom configuration modified", "Nastavení diskuzní místnosti bylo změněno"}.
 {"joins the room", "vstoupil(a) do místnosti"}.
 {"leaves the room", "opustil(a) místnost"}.

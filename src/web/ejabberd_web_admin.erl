@@ -133,7 +133,7 @@ make_xhtml(Els, global, Lang) ->
 		 [{"id", "copyrightouter"}],
 		 [?XAE("div",
 		       [{"id", "copyright"}],
-		       [?XCT("p",
+		       [?XC("p",
 			     "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One")
 		       ])])])
       ]}};
@@ -190,7 +190,7 @@ make_xhtml(Els, Host, Lang) ->
 		 [{"id", "copyrightouter"}],
 		 [?XAE("div",
 		       [{"id", "copyright"}],
-		       [?XCT("p",
+		       [?XC("p",
 			     "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One")
 		       ])])])
       ]}}.
