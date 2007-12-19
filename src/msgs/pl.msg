@@ -3,7 +3,6 @@
 % Author: Andrzej Smyk
 % Author: Mateusz Gajewski
 % Author: Zbyszek Zolkiewski
-	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk)
 
 % jlib.hrl
 {"No resource provided", "Brak dostarczonych zasobów"}.
