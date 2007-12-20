@@ -6,6 +6,9 @@
 
 	* src/mod_pubsub/mod_pubsub.erl: PEP notification bugfix
 
+	* src/odbc/odbc_queries.erl: User count performance improvements
+	(EJAB-239)
+
 2007-12-20  Badlop  <badlop@process-one.net>
 
 	* src/msgs/zh.msg: Small update (thanks to Shelley Shyan)

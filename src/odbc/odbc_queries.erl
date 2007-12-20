@@ -147,17 +147,26 @@ list_users(LServer, [{prefix, Prefix},
                     "limit ~w offset ~w ", [Prefix, Limit, Offset])).
 
 users_number(LServer) ->
-    case ejabberd_config:get_local_option(
-	   {pgsql_users_number_estimate, LServer}) of
+    case element(1, ejabberd_config:get_local_option({odbc_server, LServer})) of
+    mysql ->
+	ejabberd_odbc:sql_query(
+	LServer,
+	"select table_rows from information_schema.tables where table_name='users'");
+    pgsql ->
+	case ejabberd_config:get_local_option({pgsql_users_number_estimate, LServer}) of
 	true ->
 	    ejabberd_odbc:sql_query(
-	      LServer,
-	      "select reltuples from pg_class "
-	      "where oid = 'users'::regclass::oid");
+	    LServer,
+	    "select reltuples from pg_class where oid = 'users'::regclass::oid");
 	_ ->
 	    ejabberd_odbc:sql_query(
-	      LServer,
-	      "select count(*) from users")
+	    LServer,
+	    "select count(*) from users")
+        end;
+    _ ->
+	ejabberd_odbc:sql_query(
+	LServer,
+	"select count(*) from users")
     end.
 
 users_number(LServer, [{prefix, Prefix}]) when is_list(Prefix) ->
