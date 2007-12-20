@@ -2341,13 +2341,15 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
 		_ ->
 		    ok
 	    end,
-	    %% also send a notification to any
-	    %% of the account owner's available resources.
-	    %% See: XEP-0163 1.1 section 3
-	    lists:foreach(fun(Resource) ->
-				  To = jlib:make_jid(LUser, LServer, Resource),
-				  ejabberd_router:route(Sender, To, Stanza)
-			  end, SenderResources),
+	%% also send a notification to any
+	%% of the account owner's available resources.
+	%% See: XEP-0163 1.1 section 3
+	%% Note: ejabberd_c2s:get_subscribed_and_online already returns owner online resources
+	%%       this loop should be deleted
+	%    lists:foreach(fun(Resource) ->
+	%			  To = jlib:make_jid(LUser, LServer, Resource),
+	%			  ejabberd_router:route(Sender, To, Stanza)
+	%		  end, SenderResources),
 	    ok;
 	_ ->
 	    ok
