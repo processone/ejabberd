@@ -161,6 +161,9 @@
 {"When to send the last published item", "何时发送最新公布的条款"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "已经因联属关系改变而被踢出"}.
+{"has been kicked because the room has been changed to members-only", "已经因该房间已被改为只对会员开放而被踢出"}.
+{"has been kicked because of a system shutdown", "已经因系统关机而被踢出"}.
 {"Chatroom configuration modified", "聊天室配置已修改"}.
 {"joins the room", "加入房间"}.
 {"leaves the room", "离开房间"}.
@@ -269,7 +272,6 @@
 {"Users", "用户"}.
 {"Nodes", "节点"}.
 {"Statistics", "统计"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(原始格式)"}.
 {"Submitted", "已提交"}.
 {"Bad format", "格式错误"}.

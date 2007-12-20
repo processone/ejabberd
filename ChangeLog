@@ -1,3 +1,9 @@
+2007-12-20  Badlop  <badlop@process-one.net>
+
+	* src/msgs/zh.msg: Small update (thanks to Shelley Shyan)
+
+	* src/msgs/ru.msg: Small update (thanks to Konstantin Khomoutov)
+
 2007-12-19  Badlop  <badlop@process-one.net>
 
 	* src/msgs/pl.msg: Updated (thanks to Andrzej Smyk)(EJAB-463)

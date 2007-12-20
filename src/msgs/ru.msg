@@ -1,7 +1,7 @@
 % $Id$
 % Language: Russian (русский)
-% Author: Sergei Golovan
 % Author: Konstantin Khomoutov
+% Author: Sergei Golovan
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Вы обязаны использовать STARTTLS"}.
@@ -175,6 +175,9 @@
 {"Chatrooms", "Комнаты"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "выгнали из комнаты вследствие смены ранга"}.
+{"has been kicked because the room has been changed to members-only", "выгнали из комнаты потому что она стала только для членов"}.
+{"has been kicked because of a system shutdown", "выгнали из комнаты из-за останова системы"}.
 {"Chatroom configuration modified", "Конфигурация комнаты изменилась"}.
 {"joins the room", "вошёл(а) в комнату"}.
 {"leaves the room", "вышел(а) из комнаты"}.
