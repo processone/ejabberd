@@ -191,6 +191,13 @@ ejabberd Process-one
 The installer will deploy and configure a full featured ejabberd
 server and does not require any extra dependencies.
 
+The installer must be set executable and started. Example:
+\begin{verbatim}
+  wget http://www.process-one.net/downloads/ejabberd/1.1.4/ejabberd-1.1.4_2-linux-x86-installer.bin
+  chmod +x ejabberd-1.1.4_2-linux-x86-installer.bin
+  ./ejabberd-1.1.4_2-linux-x86-installer.bin
+\end{verbatim}
+
 \section{Installing ejabberd with Operating System specific packages}
 
 Some Operating Systems provide a specific ejabberd package adapted to 
@@ -206,7 +213,6 @@ resources provided by your Operating System for more information.
 packages from many Erlang programs, including ejabberd and all its dependencies.
 The binaries are available for many different system architectures, so this is an
 alternative to the binary installer and Operating System's ejabberd packages.
-
 
 \section{Installing ejabberd from Source Code}
 \label{installation}
@@ -324,21 +330,29 @@ The files and directories created are, by default:
 \ind{install!start}
 
 You can use the \term{ejabberdctl} command line administration script to start and stop ejabberd.
-You must execute this program with root access. For example:
-\begin{verbatim}
-$ sudo ejabberdctl start
+This script is located into tools directory of sources archive. If you installed ejabberd from sources,
+\term{ejabberdctl} is located into destination sbin directory (default /usr/local/sbin). If you installed
+ejabberd with the installer, \term{ejabberdctl} is located into ejabberd's bin directory.
 
-$ sudo ejabberdctl status
+Usage example:
+\begin{verbatim}
+$ ejabberdctl start
+
+$ ejabberdctl status
 Node ejabberd@localhost is started. Status: started
 ejabberd is running
 
-$ sudo ejabberdctl stop
-
-$      
+$ ejabberdctl stop
 \end{verbatim}
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
 
+Note: if you installed ejabberd with your distribution packaging system, \term{ejabberdctl} should be called
+by an /etc/init.d/ejabberd script to allow you to start and stop ejabberd as a service at boot time.
+
+If you installed ejabberd using CEAN package, you will have to create your own ejabberd start
+script depending of how you handle your CEAN installation. The default \term{ejabberdctl} script is located
+into ejabberd's priv directory and can be used as an example.
 
 \subsection{Specific Notes for BSD}
 \label{bsd}

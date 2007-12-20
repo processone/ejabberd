@@ -140,7 +140,7 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 <UL CLASS="toc"><LI CLASS="li-toc">
 <A HREF="#htoc19">3.1.1&#XA0;&#XA0;Host Names</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc20">3.1.2&#XA0;&#XA0;Virtual Hosting</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc21">3.1.3&#XA0;&#XA0;Listened Sockets</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc21">3.1.3&#XA0;&#XA0;Listening Ports</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc22">3.1.4&#XA0;&#XA0;Authentication</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc23">3.1.5&#XA0;&#XA0;Access Rules</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc24">3.1.6&#XA0;&#XA0;Shapers</A>
@@ -294,7 +294,11 @@ Compressing XML streams with Stream Compression (<A HREF="http://www.xmpp.org/ex
 is to use the graphical installer. The installer is available in
 ejabberd Process-one 
 <A HREF="http://www.process-one.net/en/ejabberd/downloads/">downloads page</A>.</P><P>The installer will deploy and configure a full featured ejabberd
-server and does not require any extra dependencies.</P><!--TOC section Installing ejabberd with Operating System specific packages-->
+server and does not require any extra dependencies.</P><P>The installer must be set executable and started. Example:
+</P><PRE CLASS="verbatim">  wget http://www.process-one.net/downloads/ejabberd/1.1.4/ejabberd-1.1.4_2-linux-x86-installer.bin
+  chmod +x ejabberd-1.1.4_2-linux-x86-installer.bin
+  ./ejabberd-1.1.4_2-linux-x86-installer.bin
+</PRE><!--TOC section Installing ejabberd with Operating System specific packages-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc6">2.2</A>&#XA0;&#XA0;Installing ejabberd with Operating System specific packages</H2><!--SEC END --><P>Some Operating Systems provide a specific ejabberd package adapted to 
 your system architecture and libraries, which also checks dependencies 
 and performs basic configuration tasks like creating the initial
@@ -381,18 +385,21 @@ To get the full list run the command:
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc13">2.4.5</A>&#XA0;&#XA0;Start</H3><!--SEC END --><P>
 <A NAME="start"></A>
 </P><P>You can use the <TT>ejabberdctl</TT> command line administration script to start and stop ejabberd.
-You must execute this program with root access. For example:
-</P><PRE CLASS="verbatim">$ sudo ejabberdctl start
+This script is located into tools directory of sources archive. If you installed ejabberd from sources,
+<TT>ejabberdctl</TT> is located into destination sbin directory (default /usr/local/sbin). If you installed
+ejabberd with the installer, <TT>ejabberdctl</TT> is located into ejabberd&#X2019;s bin directory.</P><P>Usage example:
+</P><PRE CLASS="verbatim">$ ejabberdctl start
 
-$ sudo ejabberdctl status
+$ ejabberdctl status
 Node ejabberd@localhost is started. Status: started
 ejabberd is running
 
-$ sudo ejabberdctl stop
-
-$      
+$ ejabberdctl stop
 </PRE><P>Please refer to the section&#XA0;<A HREF="#ejabberdctl">4.1</A> for details about <TT>ejabberdctl</TT>,
-and configurable options to fine tune the Erlang runtime system.</P><!--TOC subsection Specific Notes for BSD-->
+and configurable options to fine tune the Erlang runtime system.</P><P>Note: if you installed ejabberd with your distribution packaging system, <TT>ejabberdctl</TT> should be called
+by an /etc/init.d/ejabberd script to allow you to start and stop ejabberd as a service at boot time.</P><P>If you installed ejabberd using CEAN package, you will have to create your own ejabberd start
+script depending of how you handle your CEAN installation. The default <TT>ejabberdctl</TT> script is located
+into ejabberd&#X2019;s priv directory and can be used as an example.</P><!--TOC subsection Specific Notes for BSD-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc14">2.4.6</A>&#XA0;&#XA0;Specific Notes for BSD</H3><!--SEC END --><P>
 <A NAME="bsd"></A>
 </P><P>The command to compile ejabberd in BSD systems is:
@@ -564,8 +571,8 @@ instead of defining each option with the syntax
 {host_config, "two.example.org", [{{add, modules}, [
   {mod_echo,       [{host, "mirror.two.example.org"}]}
 ]}]}.
-</PRE></LI></UL><!--TOC subsection Listened Sockets-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc21">3.1.3</A>&#XA0;&#XA0;Listened Sockets</H3><!--SEC END --><P>
+</PRE></LI></UL><!--TOC subsection Listening Ports-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc21">3.1.3</A>&#XA0;&#XA0;Listening Ports</H3><!--SEC END --><P>
 <A NAME="listened"></A>
 </P><P>The option <TT>listen</TT> defines for which addresses and ports <TT>ejabberd</TT>
 will listen and what services will be run on them. Each element of the list is a
@@ -580,7 +587,7 @@ The available modules, their purpose and the options allowed by each one are:
 
 <TABLE BORDER=1 CELLSPACING=0 CELLPADDING=1><TR><TD VALIGN=top ALIGN=left NOWRAP><TT>ejabberd_c2s</TT></TD><TD VALIGN=top ALIGN=left NOWRAP>Description</TD><TD VALIGN=top ALIGN=left>Handles c2s connections.</TD></TR>
 <TR><TD VALIGN=top ALIGN=left NOWRAP>&nbsp;</TD><TD VALIGN=top ALIGN=left NOWRAP>Options</TD><TD VALIGN=top ALIGN=left><TT>access</TT>, <TT>certfile</TT>, <TT>inet6</TT>,
-<TT>ip</TT>, <TT>max_stanza_size</TT>, <TT>shaper</TT>, <TT>ssl</TT>,
+<TT>ip</TT>, <TT>max_stanza_size</TT>, <TT>shaper</TT>,
 <TT>starttls</TT>, <TT>starttls_required</TT>, <TT>tls</TT>,
 <TT>zlib</TT></TD></TR>
 <TR><TD VALIGN=top ALIGN=left NOWRAP><TT>ejabberd_s2s_in</TT></TD><TD VALIGN=top ALIGN=left NOWRAP>Description</TD><TD VALIGN=top ALIGN=left>Handles incoming s2s
@@ -641,10 +648,6 @@ use this option: <TT>{request_handlers, [{["a", "b"], mod_foo}, {["http-bind"], 
 </DD><DT CLASS="dt-description"><B><TT>{shaper, &lt;access rule&gt;}</TT></B></DT><DD CLASS="dd-description"> This option defines a
 shaper for the port (see section&#XA0;<A HREF="#shapers">3.1.6</A>). The default value
 is <TT>none</TT>.
-</DD><DT CLASS="dt-description"><B><TT>ssl</TT></B></DT><DD CLASS="dd-description"> This option specifies that traffic on
-the port will be encrypted using SSL. You should also set the
-<TT>certfile</TT> option. It is recommended to use the <TT>tls</TT> option
-instead of this one.
 </DD><DT CLASS="dt-description"><B><TT>starttls</TT></B></DT><DD CLASS="dd-description"> This option
 specifies that STARTTLS encryption is available on connections to the port.
 You should also set the <TT>certfile</TT> option.
@@ -1456,7 +1459,8 @@ all entries end with a comma:
 <TR><TD ALIGN=left NOWRAP><TT>mod_muc_log</TT></TD><TD ALIGN=left NOWRAP>Multi-User Chat room logging</TD><TD ALIGN=left NOWRAP><TT>mod_muc</TT></TD><TD ALIGN=left NOWRAP>No</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_offline</TT></TD><TD ALIGN=left NOWRAP>Offline message storage</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>No</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_offline_odbc</TT></TD><TD ALIGN=left NOWRAP>Offline message storage</TD><TD ALIGN=left NOWRAP>supported database (*)</TD><TD ALIGN=left NOWRAP>No</TD></TR>
-<TR><TD ALIGN=left NOWRAP><TT>mod_privacy</TT></TD><TD ALIGN=left NOWRAP>Blocking Communication</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>Yes</TD></TR>
+<TR><TD ALIGN=left NOWRAP><TT>mod_privacy</TT></TD><TD ALIGN=left NOWRAP>Blocking Communications</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>Yes</TD></TR>
+<TR><TD ALIGN=left NOWRAP><TT>mod_privacy_odbc</TT></TD><TD ALIGN=left NOWRAP>Blocking Communications</TD><TD ALIGN=left NOWRAP>supported database (*)</TD><TD ALIGN=left NOWRAP>Yes</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_private</TT></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://www.xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>No</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_private_odbc</TT></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://www.xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>supported database (*)</TD><TD ALIGN=left NOWRAP>No</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_proxy65</TT></TD><TD ALIGN=left NOWRAP>SOCKS5 Bytestreams (<A HREF="http://www.xmpp.org/extensions/xep-0065.html">XEP-0065</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>No</TD></TR>
@@ -1497,6 +1501,7 @@ Last connection date and time: Use <TT>mod_last_odbc</TT> instead of
 </LI><LI CLASS="li-itemize">Rosters: Use <TT>mod_roster_odbc</TT> instead of <TT>mod_roster</TT>.
 </LI><LI CLASS="li-itemize">Users&#X2019; VCARD: Use <TT>mod_vcard_odbc</TT> instead of <TT>mod_vcard</TT>.
 </LI><LI CLASS="li-itemize">Private XML storage: Use <TT>mod_private_odbc</TT> instead of <TT>mod_private</TT>.
+</LI><LI CLASS="li-itemize">User rules for blocking communications: Use <TT>mod_privacy_odbc</TT> instead of <TT>mod_privacy</TT>.
 </LI></UL><P>You can find more
 <A HREF="http://www.ejabberd.im/contributions">contributed modules</A> on the
 <TT>ejabberd</TT> website. Please remember that these contributions might not work or
@@ -2282,7 +2287,10 @@ To log all end user packets to the Bandersnatch service running on
 create groups of people that can see members from (other) groups in their
 rosters. The big advantages of this feature are that end users do not need to
 manually add all users to their rosters, and that they cannot permanently delete
-users from the shared roster groups.</P><P>Shared roster groups can be edited <EM>only</EM> via the web interface. Each group
+users from the shared roster groups. 
+A shared roster group can have members from any Jabber server,
+but the presence will only be available from and to members 
+of the same virtual host where the group is created.</P><P>Shared roster groups can be edited <EM>only</EM> via the web interface. Each group
 has a unique identification and the following parameters:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B>Name</B></DT><DD CLASS="dd-description"> The name of the group, which will be displayed in the roster.
@@ -2290,6 +2298,9 @@ has a unique identification and the following parameters:
 anything.
 </DD><DT CLASS="dt-description"><B>Members</B></DT><DD CLASS="dd-description"> A list of full JIDs of group members, entered one per line in
 the web interface.
+To put as members all the registered users in the virtual hosts,
+you can use the special directive: @all@.
+Note that this directive is designed for a small server with just a few hundred users.
 </DD><DT CLASS="dt-description"><B>Displayed groups</B></DT><DD CLASS="dd-description"> A list of groups that will be in the rosters of this
 group&#X2019;s members.
 </DD></DL><P>Examples:

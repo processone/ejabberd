@@ -1,3 +1,9 @@
+2007-12-20  Christophe Romain <christophe.romain@process-one.net>
+
+	* doc/guide.tex: Explain how to launch installer and improve
+	ejabberdctl usage example (EJAB-420)
+	* doc/guide.html: Likewise
+
 2007-12-20  Badlop  <badlop@process-one.net>
 
 	* src/msgs/zh.msg: Small update (thanks to Shelley Shyan)
