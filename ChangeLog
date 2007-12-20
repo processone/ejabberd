@@ -1,3 +1,8 @@
+2007-12-20  Badlop  <badlop@process-one.net>
+
+	* src/mod_caps.erl: Don't include the Node attribute from C
+	element in the disco#info query
+
 2007-12-20  Christophe Romain <christophe.romain@process-one.net>
 
 	* doc/guide.tex: Explain how to launch installer and improve
