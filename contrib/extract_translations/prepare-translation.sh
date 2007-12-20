@@ -66,8 +66,6 @@ extract_lang ()
 	echo "" >>$MSGS_PATH2
 	cat $MSGS_PATH.old_cleaned >>$MSGS_PATH2
 
-	echo "" >>$MSGS_PATH2
-
 	echo " ok"
 
 	rm $MSGS_PATH.new

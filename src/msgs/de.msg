@@ -15,7 +15,7 @@
 {"From", "Von"}.
 {"To", "Zu"}.
 {"Packet", "Paket"}.
-{"Delete Selected", "Lösche Markiertes"}.
+{"Delete Selected", "Markiertes löschen"}.
 {"Offline Messages:", "Offline Nachrichten:"}.
 
 % mod_register.erl
@@ -25,28 +25,28 @@
 {"None", "Keine"}.
 {"Jabber ID", "Jabber ID"}.
 {"Nickname", "Spitzname"}.
-{"Subscription", "Subskription"}.
+{"Subscription", "Abonnement"}.
 {"Pending", "schwebend"}.
-{"Groups", "Gruppe"}.
+{"Groups", "Gruppen"}.
 {"Validate", "Validieren"}.
 {"Remove", "Entfernen"}.
-{"Roster of ", "Verzeichnis von "}.
+{"Roster of ", "Kontaktliste von "}.
 {"Bad format", "Ungültiges Format"}.
 {"Add Jabber ID", "Jabber ID hinzufügen"}.
-{"Roster", "Verzeichnis"}.
+{"Roster", "Kontaktliste"}.
 
 % mod_proxy65/mod_proxy65_service.erl
-{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams module"}.
+{"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams Modul"}.
 
 % mod_vcard_odbc.erl
 {"Erlang Jabber Server", "Erlang Jabber Server"}.
-{"You need an x:data capable client to search", "Sie brauchen einen x:data kompatiblen Client um suchen zu können"}.
+{"You need an x:data capable client to search", "Sie benötigen einen Client, der x:data unterstützt, um suchen zu können"}.
 {"Search users in ", "Benutzer suchen in "}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Füllen Sie die Felder aus, um nach passenden Jabber Benutzern zu suchen (beenden Sie ein Feld mit *, um auch nach Teilzeichenketten zu suchen)"}.
 {"User", "Benutzer"}.
 {"Full Name", "Ganzer Name"}.
 {"Name", "Vorname"}.
-{"Middle Name", "Mittelname"}.
+{"Middle Name", "Zweiter Vorname"}.
 {"Family Name", "Nachname"}.
 {"Birthday", "Geburtsdatum"}.
 {"Country", "Land"}.
@@ -55,7 +55,7 @@
 {"Organization Name", "Firmenname"}.
 {"Organization Unit", "Abteilung"}.
 {"vCard User Search", "vCard Benutzer Suche"}.
-{"ejabberd vCard module", "ejabberd vCard module"}.
+{"ejabberd vCard module", "ejabberd vCard Modul"}.
 {"Search Results for ", "Suchergebnisse für "}.
 
 % mod_adhoc.erl
@@ -71,10 +71,10 @@
 {"Announcements", "Ankündigungen"}.
 {"Send announcement to all users", "Sende Ankündigung an alle Benutzer"}.
 {"Send announcement to all users on all hosts", "Sende Ankündigung an alle Benutzer auf allen Hosts"}.
-{"Send announcement to all online users", "Sende Ankündigung an alle online Benutzer"}.
-{"Send announcement to all online users on all hosts", "Sende Ankündigung an alle online Benutzer auf allen Hosts"}.
-{"Set message of the day and send to online users", "Setze Nachricht des Tages und sende sie an alle online Benutzer"}.
-{"Set message of the day on all hosts and send to online users", "Setze Nachricht des Tages auf allen Hosts und sende sie an alle online Benutzer"}.
+{"Send announcement to all online users", "Sende Ankündigung an alle angemeldeten Benutzer"}.
+{"Send announcement to all online users on all hosts", "Sende Ankündigung an alle angemeldeten Benutzer auf allen Hosts"}.
+{"Set message of the day and send to online users", "Setze Nachricht des Tages und sende sie an alle angemeldeten Benutzer"}.
+{"Set message of the day on all hosts and send to online users", "Setze Nachricht des Tages auf allen Hosts und sende sie an alle angemeldeten Benutzer"}.
 {"Update message of the day (don't send)", "Aktualisiere Nachricht des Tages (nicht senden)"}.
 {"Update message of the day on all hosts (don't send)", "Aktualisiere Nachricht des Tages auf allen Hosts (nicht senden)"}.
 {"Delete message of the day", "Lösche Nachricht des Tages"}.
@@ -87,14 +87,14 @@
 
 % mod_pubsub/mod_pubsub.erl
 {"Publish-Subscribe", "Publish-Subscribe"}.
-{"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe module"}.
+{"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe Modul"}.
 {"PubSub subscriber request", "PubSub Abonnenten Anfrage"}.
 {"Choose whether to approve this entity's subscription.", "Wähle ob dieses Abonnement bestätigt wird."}.
 {"Node ID", "Knoten ID"}.
 {"Subscriber Address", "Abonnenten Adresse"}.
 {"Allow this JID to subscribe to this pubsub node?", "Erlauben Sie dieser JID das Abonnement dieses pubsub Knotens?"}.
 {"Deliver payloads with event notifications", "Versende Nutzlast mit Ereignis Benachrichtigung"}.
-{"Deliver event notifications", "Versende Ereignis Benachrichtigung"}.
+{"Deliver event notifications", "Versende Ereignisbenachrichtigung"}.
 {"Notify subscribers when the node configuration changes", "Abonnenten benachrichtigen, wenn die Knotenkonfiguration sich ändert"}.
 {"Notify subscribers when the node is deleted", "Abonnenten benachrichtigen, wenn der Knoten gelöscht wird"}.
 {"Notify subscribers when items are removed from the node", "Abonnenten benachrichtigen, wenn Einträge vom Knoten entfernt werden"}.
@@ -102,7 +102,7 @@
 {"Max # of items to persist", "Maximale Anzahl dauerhaft zu speichernder Einträge"}.
 {"Whether to allow subscriptions", "Ob Abonnements erlaubt sind"}.
 {"Specify the access model", "Geben Sie das Zugangsmodell an"}.
-{"Roster groups that may subscribe (if access model is roster)", "Verzeichnis Gruppen die abonnieren (wenn Zugangsmodell Verzeichnis ist)"}.
+{"Roster groups that may subscribe (if access model is roster)", "Kontaktlisten-Gruppen die abonnieren dürfen (wenn Zugangsmodell Kontaktliste gewählt wurde)"}.
 {"Specify the publisher model", "Geben Sie das Publikationsmodell an"}.
 {"Max payload size in bytes", "Maximale Nutzlastgrösse in Bytes"}.
 {"When to send the last published item", "Wann soll das letzte veröffentlichte Objekt gesendet werden"}.
@@ -128,11 +128,11 @@
 {"Get User Last Login Time", "letzte Anmeldezeit abrufen"}.
 {"Get User Statistics", "Benutzer Statistik abrufen"}.
 {"Get Number of Registered Users", "Anzahl der registrierten Benutzer abrufen"}.
-{"Get Number of Online Users", "Anzahl der aktiven Benutzer abrufen"}.
-{"Access Control Lists", "Access Control Listen"}.
+{"Get Number of Online Users", "Anzahl der angemeldeten Benutzer abrufen"}.
+{"Access Control Lists", "Zugangskontroll-Listen (ACL)"}.
 {"Access Rules", "Zugangsregeln"}.
 {"User Management", "Benutzer Verwaltung"}.
-{"Online Users", "Aktive Benutzer"}.
+{"Online Users", "Angemeldete Benutzer"}.
 {"All Users", "Alle Benutzer"}.
 {"Outgoing s2s Connections", "Ausgehende s2s Verbindungen"}.
 {"Running Nodes", "Aktive Knoten"}.
@@ -151,7 +151,7 @@
 {"Stop Modules at ", "Stoppe Module bei "}.
 {"Choose modules to stop", "Wähle zu stoppende Module"}.
 {"Start Modules at ", "Starte Module bei "}.
-{"Enter list of {Module, [Options]}", "Geben Sie die Liste der {Module, [Optionen]} ein"}.
+{"Enter list of {Module, [Options]}", "Geben Sie eine Liste bestehend aus {Modul, [Optionen]} ein"}.
 {"List of modules to start", "Liste der zu startenden Module"}.
 {"Backup to File at ", "Datensicherung in die Datei "}.
 {"Enter path to backup file", "Geben Sie den Pfad zur Datensicherung ein"}.
@@ -165,18 +165,18 @@
 {"Enter path to jabberd1.4 spool dir", "Geben Sie den Pfad zum jabberd1.4 spool Verzeichnis ein"}.
 {"Path to Dir", "Pfad zum Verzeichnis"}.
 {"Time delay", "Zeitverzögerung"}.
-{"Access Control List Configuration", "Access Control List(ACL) Konfiguration"}.
-{"Access control lists", "Access Control Listen"}.
+{"Access Control List Configuration", "Zugangskontroll-Liste (ACL) Konfiguration"}.
+{"Access control lists", "Zugangskontroll-Listen (ACL)"}.
 {"Access Configuration", "Zugangskonfiguration"}.
 {"Access rules", "Zugangsregeln"}.
 {"Password", "Passwort"}.
-{"Password Verification", "Passwort abgleichen"}.
+{"Password Verification", "Passwort bestätigen"}.
 {"Number of registered users", "Anzahl der registrierten Benutzer"}.
-{"Number of online users", "Anzahl der aktiven Benutzer"}.
+{"Number of online users", "Anzahl der angemeldeten Benutzer"}.
 {"Never", "Nie"}.
-{"Online", "Online"}.
+{"Online", "Angemeldet"}.
 {"Last login", "Letzte Anmeldung"}.
-{"Roster size", "Verzeichnisgrösse"}.
+{"Roster size", "Kontaktlistengrösse"}.
 {"IP addresses", "IP Addresse"}.
 {"Resources", "Resource"}.
 {"Administration of ", "Administration der "}.
@@ -195,7 +195,7 @@
 {"(Raw)", "(unformatiert)"}.
 {"Submit", "Senden"}.
 {"Raw", "Unformatiert"}.
-{"~s access rule configuration", "~s Zutrittsregel Konfiguration"}.
+{"~s access rule configuration", "~s Zugangsregel Konfiguration"}.
 {"ejabberd virtual hosts", "ejabberd virtuelle Hosts"}.
 {"Users Last Activity", "Letzte Benutzeraktivität"}.
 {"Period: ", "Zeitraum: "}.
@@ -210,7 +210,7 @@
 {"Registered Users", "Registrierte Benutzer"}.
 {"Offline Messages", "Offline Nachrichten"}.
 {"Registered Users:", "Registrierte Benutzer:"}.
-{"Online Users:", "Aktive Benutzer:"}.
+{"Online Users:", "Angemeldete Benutzer:"}.
 {"Outgoing s2s Connections:", "Ausgehende s2s Verbindungen:"}.
 {"Outgoing s2s Servers:", "Ausgehende s2s Server:"}.
 {"Change Password", "Passwort ändern"}.
@@ -230,12 +230,12 @@
 {"Memory", "Speicher"}.
 {"Backup of ", "Sicherung von "}.
 {"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "Beachten sie, das diese Optionen nur die eingebaute Mnesia Datenbank sichert. Wenn sie das ODBC Modul verwenden, müssen sie die SQL Datenbank manuell sichern."}.
-{"Store binary backup:", "Speichere binäres Sicherung:"}.
+{"Store binary backup:", "Speichere binäre Sicherung:"}.
 {"OK", "OK"}.
 {"Restore binary backup immediately:", "Stelle binäre Sicherung sofort wieder her:"}.
 {"Restore binary backup after next ejabberd restart (requires less memory):", "Stelle binäre Sicherung beim nächsten ejabberd Neustart wieder her (benötigt weniger Speicher):"}.
-{"Store plain text backup:", "Speichere plaintext Sicherung:"}.
-{"Restore plain text backup immediately:", "Stelle plaintext Sicherung sofort wieder her:"}.
+{"Store plain text backup:", "Speichere Klartext-Sicherung:"}.
+{"Restore plain text backup immediately:", "Stelle Klartext-Sicherung sofort wieder her:"}.
 {"Listened Ports at ", "aktive Ports "}.
 {"Modules at ", "Module auf "}.
 {"Statistics of ~p", "Statistiken von ~p"}.
@@ -245,7 +245,7 @@
 {"Transactions Aborted:", "Vorgänge abgebrochen:"}.
 {"Transactions Restarted:", "Vorgänge neu gestartet:"}.
 {"Transactions Logged:", "Vorgänge protokolliert:"}.
-{"Update ", "Aktualisierung"}.
+{"Update ", "Aktualisierung "}.
 {"Update plan", "Aktualisierungsplan"}.
 {"Updated modules", "Aktualisierte Module"}.
 {"Update script", "Aktualisierungsscript"}.
@@ -258,20 +258,19 @@
 {"Start", "Anfang"}.
 
 % mod_irc/mod_irc.erl
-{"Access denied by service policy", "Zutritt verweigert von der Service Policy"}.
+{"Access denied by service policy", "Zugang aufgrund der Dienstrichtlinien verweigert"}.
 {"IRC Transport", "IRC Transport"}.
-{"ejabberd IRC module", "ejabberd IRC module"}.
-{"You need an x:data capable client to configure mod_irc settings", "Sie brauchen einen x:data kompatiblen Client um die mod_irc Einstellungen zu konfigurieren"}.
+{"ejabberd IRC module", "ejabberd IRC Modul"}.
+{"You need an x:data capable client to configure mod_irc settings", "Sie benötigen einen Client, der x:data unterstützt, um die mod_irc Einstellungen zu konfigurieren"}.
 {"Registration in mod_irc for ", "Registrierung in mod_irc für "}.
-{"Enter username and encodings you wish to use for connecting to IRC servers", "Geben Sie Benutzernamen und Enkodierung für die Verbindung zum IRC Server an"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers", "Geben Sie Benutzernamen und Kodierung für die Verbindung zum IRC Server an"}.
 {"IRC Username", "IRC Benutzername"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", 
-"Wenn Sie verschiedene Enkodierungen für IRC Server angeben, schreiben Sie diese im Format '{\"irc server\", \"encoding\"}'. Standarmässig benutzt der Dienst die \"~s\" Enkodierung"}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Wenn Sie verschiedene Kodierungen für IRC Server angeben, schreiben Sie diese im Format '{\"Irc Server\", \"Kodierung\"}'. Standardmässig benutzt der Dienst die \"~s\" Kodierung"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Beispiel: [{\"irc.lucky.net\",\"koi8-r\"}, {\vendetta.fef.net\", \"iso8859-1\"}]."}.
-{"Encodings", "Enkodierung"}.
+{"Encodings", "Kodierung"}.
 
 % mod_shared_roster.erl
-{"Shared Roster Groups", "Gruppen des gemeinsamen Verzeichnisses"}.
+{"Shared Roster Groups", "Gruppen der gemeinsamen Kontaktliste"}.
 {"Name:", "Name:"}.
 {"Description:", "Beschreibung:"}.
 {"Members:", "Mitglieder:"}.
@@ -287,11 +286,11 @@
 {"leaves the room", "verlässt den Raum"}.
 {"has been banned", "wurde gebannt"}.
 {"has been kicked", "wurde gekickt"}.
-{"has been kicked because of an affiliation change", "wurde gekickt wegen Änderung des Mitgliederstatus"}.
+{"has been kicked because of an affiliation change", "wurde wegen Änderung des Mitgliederstatus gekickt"}.
 {"has been kicked because the room has been changed to members-only", "wurde gekickt weil der Raum auf Nur-Mitglieder umgestellt wurde"}.
-{"has been kicked because of a system shutdown", "wurde gekickt wegen Systemabschaltung"}.
+{"has been kicked because of a system shutdown", "wurde wegen Systemabschaltung gekickt"}.
 {"is now known as", "ist nun bekannt als"}.
-{" has set the subject to: ", " hat das Thema geändert: "}.
+{" has set the subject to: ", " hat das Thema geändert auf: "}.
 {"Monday", "Montag"}.
 {"Tuesday", "Dienstag"}.
 {"Wednesday", "Mittwoch"}.
@@ -316,21 +315,21 @@
 
 % mod_muc/mod_muc.erl
 {"Only service administrators are allowed to send service messages", "Nur Service Administratoren sind berechtigt, Servicenachrichten zu senden"}.
-{"Room creation is denied by service policy", "Anlegen des Raumes aufgrund von Servereinstellungen verweigert"}.
+{"Room creation is denied by service policy", "Anlegen des Raumes aufgrund der Dienstrichtlinien verweigert"}.
 {"Conference room does not exist", "Konferenzraum existiert nicht"}.
 {"Chatrooms", "Raum"}.
-{"You need an x:data capable client to register nickname", "Sie brauchen einen für x:data geeigneten Client, um Ihren Spitznamen zu registrieren"}.
+{"You need an x:data capable client to register nickname", "Sie benötigen einen Client, der x:data unterstützt, um Ihren Spitznamen zu registrieren"}.
 {"Nickname Registration at ", "Registrieren des Spitznamens "}.
 {"Enter nickname you want to register", "Geben Sie den zu registrierenden Spitznamen ein"}.
 {"Specified nickname is already registered", "Der angegebene Name ist bereits vergeben"}.
 {"You must fill in field \"Nickname\" in the form", "Sie müssen das Feld \"Spitzname\" ausfüllen"}.
-{"ejabberd MUC module", "ejabberd MUC module"}.
+{"ejabberd MUC module", "ejabberd MUC Modul"}.
 
 % mod_muc/mod_muc_room.erl
 {"Traffic rate limit is exceeded", "Datenrate ist zu hoch"}.
 {"It is not allowed to send private messages to the conference", "Es ist nicht erlaubt private Nachrichten an den Raum zu schicken"}.
 {"Improper message type", "Unzulässiger Nachrichtentyp"}.
-{"Only occupants are allowed to send messages to the conference", "Nur Leute im Raum dürfen Nachrichten schicken"}.
+{"Only occupants are allowed to send messages to the conference", "Nur Teilnehmer dürfen Nachrichten an den Raum schicken"}.
 {"It is not allowed to send private messages of type \"groupchat\"", "Es ist nicht erlaubt private Nachrichten des Typs \"Gruppenchat\" zu senden"}.
 {"Recipient is not in the conference room", "Der Empfänger ist nicht im Raum"}.
 {"Only occupants are allowed to send queries to the conference", "Nur Teilnehmer sind berechtig Anfragen an die Konferenz zu senden"}.
@@ -338,9 +337,9 @@
 {"private, ", "privat, "}.
 {"Only moderators and participants are allowed to change subject in this room", "Nur Moderatoren und Teilnehmer dürfen das Thema in diesem Raum ändern"}.
 {"Only moderators are allowed to change subject in this room", "Nur Moderatoren dürfen das Thema in diesem Raum ändern"}.
-{"Visitors are not allowed to send messages to all occupants", "Besucher dürfen nicht an alle im Raum Nachrichten verschicken"}.
-{"Nickname is already in use by another occupant", "Spitzname wird schon von jemand anderem genutzt"}.
-{"Nickname is registered by another person", "Spitzname wurde schon von jemand anderem registriert"}.
+{"Visitors are not allowed to send messages to all occupants", "Besucher dürfen nicht an alle Teilnehmer Nachrichten verschicken"}.
+{"Nickname is already in use by another occupant", "Spitzname wird bereits von einem Teilnehmer genutzt"}.
+{"Nickname is registered by another person", "Spitzname wurde bereits von jemand anderem registriert"}.
 {"You have been banned from this room", "Sie wurden aus diesem Raum verbannt"}.
 {"Membership required to enter this room", "Um diesen Raum zu betreten müssen sie Mitglied sein"}.
 {"This room is not anonymous", "Dieser Raum ist nicht anonym"}.
@@ -358,11 +357,11 @@
 {"Make room public searchable", "Raum öffentlich suchbar machen"}.
 {"Make participants list public", "Teilnehmerliste öffentlich machen"}.
 {"Make room password protected", "Raum passwortgeschützt machen"}.
-{"Maximum Number of Occupants", "maximale Anzahl von Anwesenden"}.
+{"Maximum Number of Occupants", "maximale Anzahl von Teilnehmern"}.
 {"No limit", "keine Begrenzung"}.
 {"Present real JIDs to", "Echte Jabber IDs anzeigen für"}.
 {"moderators only", "ausschliesslich Moderatoren"}.
-{"anyone", "jeden"}.
+{"anyone", "jeder"}.
 {"Make room members-only", "Raum nur für Mitglieder zugänglich machen"}.
 {"Default users as participants", "Standardbenutzer als Teilnehmer"}.
 {"Allow users to change subject", "Erlaube Benutzern das Thema zu ändern"}.
@@ -370,7 +369,7 @@
 {"Allow users to query other users", "Erlaube Benutzern andere Benutzer abzufragen"}.
 {"Allow users to send invites", "Erlaube Benutzern Einladungen zu senden"}.
 {"Enable logging", "Log-Funktion aktivieren"}.
-{"You need an x:data capable client to configure room", "Sie brauchen einen für x:data geeigneten Client um den Raum zu konfigurieren"}.
+{"You need an x:data capable client to configure room", "Sie benötigen einen Client, der x:data unterstützt, um den Raum zu konfigurieren"}.
 {"Number of occupants", "Anzahl der Teilnehmer"}.
 {"~s invites you to the room ~s", "~s lädt sie in den Raum ~s ein"}.
 {"the password is", "das Passwort ist"}.

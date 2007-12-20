@@ -1,5 +1,6 @@
 % $Id$
 % Language: Ukrainian (українська)
+% Author: Ruslan Rakhmanin
 % Author: Serge Golovan
 
 % ejabberd_c2s.erl
@@ -8,8 +9,6 @@
 
 % jlib.hrl
 {"No resource provided", "Не вказаний ресурс"}.
-{"Illegal resource format", "Неправильний формат ресурсу"}.
-{"Resource conflict", "Конфлікт ресурсів"}.
 
 % mod_adhoc.erl
 {"Commands", "Команди"}.
@@ -17,6 +16,10 @@
 {"Pong", "Понг"}.
 
 % mod_announce.erl
+{"Send announcement to all users on all hosts", "Надіслати сповіщення до усіх користувачів на усіх хостах"}.
+{"Set message of the day on all hosts and send to online users", "Встановити повідомлення дня на всіх хостах та надійслати його підключеним користувачам"}.
+{"Update message of the day on all hosts (don't send)", "Оновити повідомлення дня на всіх хостах (не надсилати)"}.
+{"Delete message of the day on all hosts", "Видалити повідомлення дня на усіх хостах"}.
 {"Really delete message of the day?", "Дійсно видалити повідомлення дня"}.
 {"Subject", "Тема"}.
 {"Message body", "Тіло повідомлення"}.
@@ -30,6 +33,25 @@
 {"Delete message of the day", "Видалити повідомлення дня"}.
 
 % mod_configure.erl
+{"Restart Service", "Перезапустити Сервіс"}.
+{"Shut Down Service", "Відключити Сервіс"}.
+{"Delete User", "Видалити Користувача"}.
+{"End User Session", "Закінчити Сеанс Користувача"}.
+{"Get User Password", "Отримати Пароль Користувача"}.
+{"Change User Password", "Змінити Пароль Користувача"}.
+{"Get User Last Login Time", "Отримати Час Останнього Підключення Користувача"}.
+{"Get User Statistics", "Отримати Статистику по Користувачу"}.
+{"Get Number of Registered Users", "Отримати Кількість Зареєстрованих Користувачів"}.
+{"Get Number of Online Users", "Отримати Кількість Підключених Користувачів"}.
+{"User Management", "Управління Користувачами"}.
+{"Time delay", "Час затримки"}.
+{"Password Verification", "Перевірка Пароля"}.
+{"Number of registered users", "Кількість Зареєстрованих Користувачів"}.
+{"Number of online users", "Кількість Підключених Користувачів"}.
+{"Last login", "Останнє підключення"}.
+{"Roster size", "Кількість контактів"}.
+{"IP addresses", "IP адреси"}.
+{"Resources", "Ресурси"}.
 {"Database Tables Configuration at ", "Конфігурація таблиць бази даних на "}.
 {"Choose storage type of tables", "Оберіть тип збереження таблиць"}.
 {"RAM copy", "ОЗП"}.
@@ -52,15 +74,10 @@
 {"Import Users from Dir at ", "Імпортування користувача з директорії на "}.
 {"Enter path to jabberd1.4 spool dir", "Введіть шлях до директорії спула jabberd1.4"}.
 {"Path to Dir", "шлях до директорії"}.
-{"Hostname Configuration", "Конфігурація назви хоста"}.
-{"Choose host name", "Оберіть назву хоста"}.
-{"Host name", "Назва хоста"}.
 {"Access Control List Configuration", "Конфігурація списків керування доступом"}.
 {"Access control lists", "Списки керування доступом"}.
 {"Access Configuration", "Конфігурація доступа"}.
 {"Access rules", "Правила доступу"}.
-{"Remove Users", "Видалення користувачів"}.
-{"Choose users to remove", "Оберіть користувачів, яких необхідно видалити"}.
 {"Administration of ", "Адміністрування "}.
 {"Action on user", "Дія над користувачем"}.
 {"Edit Properties", "Змінити параметри"}.
@@ -75,10 +92,8 @@
 {"From ~s", "Від ~s"}.
 {"Running Nodes", "Працюючі вузли"}.
 {"Stopped Nodes", "Зупинені вузли"}.
-{"Host Name", "Назва хоста"}.
 {"Access Control Lists", "Списки керування доступом"}.
 {"Access Rules", "Правила доступу"}.
-{"Remove Users", "Видалення користувачів"}.
 {"Database", "База даних"}.
 {"Modules", "Модулі"}.
 {"Start Modules", "Запуск модулів"}.
@@ -92,7 +107,6 @@
 {"Import Directory", "Імпорт з директорії"}.
 
 % mod_proxy65.erl
-{"SOCKS5 bytestreams proxy", "Потоковий SOCKS5 проксі"}.
 
 % mod_proxy65/mod_proxy65_service.erl
 {"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams модуль"}.
@@ -122,27 +136,33 @@
 {"Organization Unit", "Відділ організації"}.
 
 % mod_vcard_ldap.erl
-{"Given Name", "Ім'я"}.
 {"Fill in fields to search for any matching Jabber User", "Заповніть поля для пошуку користувача Jabber"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module", "ejabberd pub/sub модуль"}.
-{"Node Creator", "Створювач збірника"}.
+{"Publish-Subscribe", "Опублікувати-Абонувати"}.
+{"ejabberd Publish-Subscribe module", "Модуль ejabberd Публікації-Абонування"}.
+{"PubSub subscriber request", "Запит на абонування PubSub"}.
+{"Choose whether to approve this entity's subscription.", "Вирішіть, чи задовольнити запит цього об'єкту на підписку"}.
+{"Node ID", "ID вузла"}.
+{"Subscriber Address", "Адреса абонента"}.
+{"Allow this JID to subscribe to this pubsub node?", "Чи дозволити цьому JID абонувати новини наданого вузла"}.
+{"Deliver event notifications", "Доставляти сповіщення про події"}.
+{"Specify the access model", "Визначити модель доступу"}.
+{"Roster groups that may subscribe (if access model is roster)", "Контакти з обраних груп списку контактів мають право абонувати (якщо обрана модель доступу - список контактів)"}.
+{"When to send the last published item", "Коли надсилати останній опублікований елемент"}.
 {"Deliver payloads with event notifications", "Доставляти разом з повідомленнями про публікації самі публікації"}.
-{"Notify subscribers when the node configuration changes", "Повідомляти передплатників про зміни в конфігурації збірника"}.
-{"Notify subscribers when the node is deleted", "Повідомляти передплатників про видалення збірника"}.
-{"Notify subscribers when items are removed from the node", "Повідомляти передплатників про видалення публікацій із збірника"}.
+{"Notify subscribers when the node configuration changes", "Повідомляти абонентів про зміни в конфігурації збірника"}.
+{"Notify subscribers when the node is deleted", "Повідомляти абонентів про видалення збірника"}.
+{"Notify subscribers when items are removed from the node", "Повідомляти абонентів про видалення публікацій із збірника"}.
 {"Persist items to storage", "Зберегати публікації до сховища"}.
 {"Max # of items to persist", "Максимальне число збережених публікацій"}.
 {"Whether to allow subscriptions", "Дозволити передплату"}.
-{"Specify the subscriber model", "Умови передплати"}.
 {"Specify the publisher model", "Умови публікації"}.
 {"Max payload size in bytes", "Максимальний розмір корисного навантаження в байтах"}.
-{"Send items to new subscribers", "Відправляти публікації новим передплатникам"}.
 {"Only deliver notifications to available users", "Доставляти повідомленнями тільки доступним користувачам"}.
-{"Specify the current subscription approver", "JID користувача, який затверджує передплату"}.
 
 % mod_muc/mod_muc.erl
+{"Chatrooms", "Кімнати"}.
 {"You need an x:data capable client to register nickname", "Для реєстрації псевдоніму необхідний x:data-придатний клієнт"}.
 {"Nickname Registration at ", "Реєстрація псевдоніма на "}.
 {"Enter nickname you want to register", "Введіть псевдонім, який ви хочете зареєструвати"}.
@@ -155,6 +175,9 @@
 {"Specified nickname is already registered", "Вказаний псевдонім вже зареєстрований"}.
 
 % /home/sergei/src/ejabberd/ejabberd/src/mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "вигнано з кімнати як наслідок зміни ранга"}.
+{"has been kicked because the room has been changed to members-only", "вигнано з кімнати тому, що воня стала тільки для учасників"}.
+{"has been kicked because of a system shutdown", "вигнано з кімнати як наслідок зупинки системи"}.
 {"Chatroom configuration modified", "Конфігурація кімнати змінилась"}.
 {"joins the room", "увійшов(ла) в кімнату"}.
 {"leaves the room", "вийшов(ла) з кімнати"}.
@@ -183,6 +206,11 @@
 {"Room Configuration", "Конфігурація кімнати"}.
 
 % mod_muc/mod_muc_room.erl
+{"Traffic rate limit is exceeded", "Швидкість передачі інформації було перевищено"}.
+{"Maximum Number of Occupants", "Максимальна кількість учасників"}.
+{"No limit", "Без обмежень"}.
+{"~s invites you to the room ~s", "~s запрошує вас до кімнати ~s"}.
+{"the password is", "пароль:"}.
 {" has set the subject to: ", " встановив(ла) тему: "}.
 {"This room is not anonymous", "Ця кімната не анонімна"}.
 {"You need an x:data capable client to configure room", "Для конфігурування кімнати необхідний x:data-придатний кліент"}.
@@ -194,7 +222,8 @@
 {"Make room public searchable", "Зробити кімнату видимою всім"}.
 {"Make participants list public", "Зробити список учасників видимим всім"}.
 {"Make room persistent", "Зробити кімнату постійною"}.
-{"Make room moderated", "Зробити кімнату модерованою"}.
+{"Make
+ room moderated", "Зробити кімнату модерованою"}.
 {"Default users as participants", "Зробити користувачів учасниками за замовчуванням"}.
 {"Make room members-only", "Кімната тільки для зареєтрованых учасників"}.
 {"Allow users to send invites", "Дозволити користувачам надсилати запрошення"}.
@@ -208,7 +237,6 @@
 {"Only moderators are allowed to change subject in this room", "Тільки модератори можуть змінювати тему в цій кімнаті"}.
 {"Visitors are not allowed to send messages to all occupants", "Відвідувачам не дозволяється надсилати повідомлення всім присутнім"}.
 {"Only occupants are allowed to send messages to the conference", "Тільки присутнім дозволяється надсилати повідомленняя в конференцію"}.
-{"It is not allowed to send normal messages to the conference", "Не дозволяється надсилати звичайні повідомлення в конференцію"}.
 {"It is not allowed to send private messages to the conference", "Не дозволяється надсилати приватні повідомлення  в конференцію"}.
 {"Improper message type", "Неправильний тип повідомлення"}.
 {"Nickname is already in use by another occupant", "Псевдонім зайнятий кимось з присутніх"}.
@@ -229,10 +257,10 @@
 {"Invalid role: ~s", "Недопустима роль: ~s"}.
 {"Owner privileges required", "Необхідні права власника"}.
 {"private, ", "приватна, "}.
-{"Description", "Опис"}.
 {"Number of occupants", "Кількість присутніх"}.
 
 % mod_irc/mod_irc.erl
+{"IRC Transport", "IRC Транспорт"}.
 {"ejabberd IRC module", "ejabberd IRC модуль"}.
 {"You need an x:data capable client to configure mod_irc settings", "Для налагодження параметрів mod_irc необхідний x:data-придатний клієнт"}.
 {"Registration in mod_irc for ", "Реєстрація в mod_irc для "}.
@@ -259,7 +287,6 @@
 {"Add New", "Додати"}.
 {"Registered Users", "Зареєстровані користувачі"}.
 {"Registered Users:", "Зареєстровані користувачі:"}.
-{"Authenticated Users:", "Аутентифіковані користувачі:"}.
 {"Online Users", "Підключені користувачі"}.
 {"Online Users:", "Підключені користувачі:"}.
 {"Outgoing s2s Connections:", "Вихідні s2s-з'єднання:"}.
@@ -306,7 +333,6 @@
 {"Update", "Обновити"}.
 {"Delete", "Видалити"}.
 {"Add User", "Додати користувача"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Олексій Щепін, 2004-2007 Process One"}.
 {"Offline Messages", "Офлайнові повідомлення"}.
 {"Offline Messages:", "Офлайнові повідомлення:"}.
 {"Last Activity", "Останнє підключення"}.
@@ -325,10 +351,8 @@
 {"Add Jabber ID", "Додати Jabber ID"}.
 {"User ", "Користувач "}.
 {"Roster of ", "Ростер користувача "}.
-{"Shared Roster", "Спільні контакти"}.
 {"Online", "Підключений"}.
 {"Validate", "Затвердити"}.
-{"Not Found", "Не знайдено"}.
 {"Shared Roster Groups", "Спільні групи контактів"}.
 {"Name:", "Назва:"}.
 {"Description:", "Опис:"}.
@@ -349,7 +373,14 @@
 {"ejabberd virtual hosts", "віртуальні хости ejabberd"}.
 {"Host", "Хост"}.
 
+% mod_vcard_odbc.erl
+{"vCard User Search", "Пошук користувачів по vCard"}.
+
+% mod_offline_odbc.erl
+{"Your contact offline message queue is full. The message has been discarded.", "Черга повідомлень, що не були доставлені, переповнена. Повідомлення не було збережено."}.
+
 % Local Variables:
 % mode: erlang
 % End:
 % vim: set filetype=erlang tabstop=8:
+
