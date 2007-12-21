@@ -1,0 +1,104 @@
+			      Release Notes
+			   ejabberd 2.0.0 beta 1
+			     xx december 2007
+
+  ejabberd 2.0.0 is a major new version for ejabberd adding plenty of
+  new features, performance improvements and architectural changes.
+
+  ejabberd 2.0.0 includes near that 200 improvements over ejabberd
+  1.1.x. A complete list of changes can be retrieved from:
+   http://redir.process-one.net/ejabberd-2.0.0
+
+  The new code can be downloaded from ejabberd download page:
+     http://www.process-one.net/en/projects/ejabberd/
+
+
+   Recent changes include:
+
+
+* Clustering and Architecture
+
+- New front-end and back-end cluster architecture for better
+  scalability and robustness. Back-end nodes are able to run a fully
+  fault-tolerant XMPP router and services, but you can now deployed
+  many front-end nodes to share the load without needed to synchronize
+  state with the back-ends.
+- All components now run in cluster mode (Multi-User chat service and
+  file transfer proxy).
+- New load balancing algorithm to support Multi-User chat clustering
+  and gateways clustering. More generally it supports any external
+  component load balacing.
+- ejabberd watchdog to 
+- Traffic shapers are now supported on components.
+
+* Publish and Subscribe
+
+- Complete rewrite of the PubSub module. The new PubSub module is
+  plugin-based, allowing developer to create new node type. Any
+  application can be plugged to ejabberd and provide rich presence as
+  a pubsub plugin.
+- Personal Eventing via Pubsub support (XEP-0163). This module is
+  implemented as a PubSub service. It supports user mood (XEP-107),
+  User Tune (XEP-118), user location (XEP-0080) or user avatar
+  (XEP-0084) for example.
+
+
+* Server to Server (s2s)
+
+- More robust code with connection timeout implementation.
+- Support for multiple s2s connections per domain.
+- s2s whitelist and blacklist support.
+
+
+* Multi-user chat
+
+- Clustering support
+
+
+* File transfer
+
+- Proxy65 file transfer proxy (XEP-0065). The proxy can run in
+  cluster.
+
+
+* Authentication
+
+- PAM (Pluggable Authentication Modules) support on *nix systems.
+- External Authentication protocol is now fully documented.
+
+
+* Web client support
+
+- XEP-
+- HTTP module can now server static document. It is needed for
+  high-performance Web2.0 chat / IM application. System administrators
+  can now avoid using a proxy (like Apache) that handles much less
+  simultaneous than ejabberd HTTP module.
+- Added limitation enforcement on HTTP poll and HTTP bind modules.
+
+
+* System administration
+
+- Dynamic log levels: Improved logging with more log levels. You can
+  now change the loglevel at run time. No performance penality is
+  involved when
+
+- Better command-line tool, with more options available.
+
+
+* Build and Installer
+
+- Many launch script improvements.
+- New translations. The binary installer is now available in Chinese,
+  Dutch, English, French, German, Spanish, Russian.
+- Makefile now implements uninstall command
+- Full MacOSX compliance in Makefile
+- Configure script is clever at finding libraries in unusual places.
+				   
+				   
+Bugs report
+
+  You can officially report bugs on Process-one support site:
+  https://support.process-one.net/
+
+END
