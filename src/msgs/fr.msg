@@ -1,4 +1,4 @@
-@% $Id$
+% $Id$
 % Language: French (française)
 % Author: Mickaël Rémond
 % Author: Vincent Ricard
