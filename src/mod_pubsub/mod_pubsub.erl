@@ -300,15 +300,17 @@ disco_local_identity(Acc, _From, _To, [], _Lang) ->
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-disco_local_features(Acc, _From, To, Node, _Lang) ->
+disco_local_features(Acc, _From, To, [], _Lang) ->
     Host = To#jid.lserver,
     Feats = case Acc of
 	{result, I} -> I;
-	_ -> [] 
-    end,    
+	_ -> []
+    end,
     {result, Feats ++ lists:map(fun(Feature) ->
 	?NS_PUBSUB++"#"++Feature
-    end, features(Host, Node))}.
+    end, features(Host, []))};
+disco_local_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
 
 disco_local_items(Acc, _From, _To, [], _Lang) ->
     Acc;

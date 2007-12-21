@@ -1,3 +1,7 @@
+2007-12-21  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: disco#items bugfix (EJAB-465)
+
 2007-12-21  Badlop  <badlop@process-one.net>
 
 	* src/msgs/uk.msg: Updated (thanks to Ruslan Rakhmanin)
