@@ -1,4 +1,4 @@
-% $Id$
+@% $Id$
 % Language: French (française)
 % Author: Mickaël Rémond
 % Author: Vincent Ricard
@@ -13,10 +13,10 @@
 {"Disc only copy", "Copie sur disque uniquement"}.
 {"Remote copy", "Copie distante"}.
 {"Stop Modules at ", "Arrêter les modules sur "}.
-{"Choose modules to stop", "Sélectionnez les modules à�arrêter"}.
+{"Choose modules to stop", "Sélectionnez les modules à arrêter"}.
 {"Start Modules at ", "Démarrer les modules sur "}.
 {"Enter list of {Module, [Options]}", "Entrez une liste de {Module, [Options]}"}.
-{"List of modules to start", "Liste des modules à�démarrer"}.
+{"List of modules to start", "Liste des modules à démarrer"}.
 {"Backup to File at ", "Sauvegarde sur fichier sur "}.
 {"Enter path to backup file", "Entrez le chemin vers le fichier de sauvegarde"}.
 {"Path to File", "Chemin vers le fichier"}.
@@ -28,15 +28,10 @@
 {"Import Users from Dir at ", "Importer des utilisateurs depuis le répertoire sur "}.
 {"Enter path to jabberd1.4 spool dir", "Entrez le chemin vers le répertoire de spool jabberd1.4"}.
 {"Path to Dir", "Chemin vers le répertoire"}.
-{"Hostname Configuration", "Configuration du nom d'hôte"}.
-{"Choose host name", "Choisissez le nom d'hôte"}.
-{"Host name", "Nom d'hôte"}.
 {"Access Control List Configuration", "Configuration des droits (ACL)"}.
 {"Access control lists", "Droits (ACL)"}.
 {"Access Configuration", "Configuration d'accès"}.
 {"Access rules", "Règles d'accès"}.
-{"Remove Users", "Supprimer des utilisateurs"}.
-{"Choose users to remove", "Sélectionner les utilisateurs à supprimer"}.
 {"Administration of ", "Administration de "}.
 {"Action on user", "Action sur l'utilisateur"}.
 {"Edit Properties", "Modifier les propriétés"}.
@@ -45,6 +40,26 @@
 {"Outgoing s2s Connections", "Connexions s2s sortantes"}.
 {"Import Users From jabberd 1.4 Spool Files", "Importer des utilisateurs depuis un fichier spool Jabberd 1.4"}.
 {"Database Tables Configuration at ", "Configuration des tables de base de données sur "}.
+{"Restart Service", "Redémarrer le service"}.
+{"Shut Down Service", "Arrêter le service"}.
+{"Delete User", "Supprimer l'utilisateur"}.
+{"End User Session", "Terminer la session de l'utilisateur"}.
+{"Get User Password", "Récupérer le mot de passe de l'utilisateur"}.
+{"Change User Password", "Changer le mot de passe de l'utilisateur"}.
+{"Get User Last Login Time", "Récupérer la dernière date de connexion de l'utilisateur"}.
+{"Get User Statistics", "Récupérer les statistiques de l'utilisateur"}.
+{"Get Number of Registered Users", "Récupérer le nombre d'utilisateurs enregistrés"}.
+{"Get Number of Online Users", "Récupérer le nombre d'utilisateurs en ligne"}.
+{"User Management", "Gestion des utilisateurs"}.
+{"Time delay", "Délais"}.
+{"Password Verification", "Vérification du mot de passe"}.
+{"Number of registered users", "Nombre d'utilisateurs enregistrés"}.
+{"Number of online users", "Nombre d'utilisateurs en ligne"}.
+{"Last login", "Dernière connexion"}.
+{"Roster size", "Taille de la liste de contacts"}.
+{"IP addresses", "Adresses IP"}.
+{"Resources", "Ressources"}.
+
 
 % src/ejabberd_c2s.erl
 {"Use of STARTTLS required", "L'utilisation de STARTTLS est impérative"}.
@@ -58,10 +73,8 @@
 {"From ~s", "De ~s"}.
 {"Running Nodes", "Noeuds actifs"}.
 {"Stopped Nodes", "Noeuds arrêtés"}.
-{"Host Name", "Nom du serveur"}.
 {"Access Control Lists", "Droits (ACL)"}.
 {"Access Rules", "Règles d'accès"}.
-{"Remove Users", "Supprimer des utilisateurs"}.
 {"Modules", "Modules"}.
 {"Start Modules", "Modules de démarrage"}.
 {"Stop Modules", "Modules d'arrêt"}.
@@ -117,10 +130,13 @@
 {"Set message of the day and send to online users", "Définir le message du jour et l'envoyer aux utilisateurs en ligne"}.
 {"Update message of the day (don't send)", "Mise à jour du message du jour (pas d'envoi)"}.
 {"Delete message of the day", "Supprimer le message du jour"}.
+{"Send announcement to all users on all hosts", "Envoyer une annonce à tous les utilisateurs de tous les domaines"}.
+{"Set message of the day on all hosts and send to online users", "Définir le message du jour pour tous domaines et l'envoyer aux utilisateurs en ligne"}.
+{"Update message of the day on all hosts (don't send)", "Mettre à jour le message du jour sur tous les domaines (ne pas envoyer)"}.
+{"Delete message of the day on all hosts", "Supprimer le message du jour sur tous les domaines"}.
+
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module", "Module pub/sub ejabberd"}.
-{"Node Creator", "Créateur du noeud"}.
 {"Deliver payloads with event notifications", "Inclure le contenu du message avec la notification"}.
 {"Notify subscribers when the node configuration changes", "Avertir les abonnés lorsque la configuration du noeud change"}.
 {"Notify subscribers when the node is deleted", "Avertir les abonnés lorsque le noeud est supprimé"}.
@@ -128,13 +144,20 @@
 {"Persist items to storage", "Stockage persistant des éléments"}.
 {"Max # of items to persist", "Nombre maximum d'éléments à stocker"}.
 {"Whether to allow subscriptions", "Autoriser l'abonnement ?"}.
-{"Specify the subscriber model", "Définir le modèle d'abonnement"}.
 {"Specify the publisher model", "Définir le modèle de publication"}.
 {"Max payload size in bytes", "Taille maximum pour le contenu du message en octet"}.
-{"Send items to new subscribers", "Envoyer les anciens éléments aux nouveaux abonnés"}.
 {"Only deliver notifications to available users", "Envoyer les notifications uniquement aux utilisateurs disponibles"}.
-{"Specify the current subscription approver", "Définir l'utilisateur qui valide les abonnements"}.
 {"Publish-Subscribe", "Publication-Abonnement"}.
+{"ejabberd Publish-Subscribe module", "Module Publish-Subscribe d'ejabberd"}.
+{"PubSub subscriber request", "Demande d'abonnement PubSub"}.
+{"Choose whether to approve this entity's subscription.", ""}.
+{"Node ID", "Identifiant du noeud"}.
+{"Subscriber Address", "Adresse de l'abonné"}.
+{"Allow this JID to subscribe to this pubsub node?", "Autoriser ce JID à s'abonner à ce noeud pubsub"}.
+{"Deliver event notifications", "Envoyer les notifications d'événement"}.
+{"Specify the access model", "Définir le modèle d'accès"}.
+{"Roster groups that may subscribe (if access model is roster)", "Groupes de liste de contact qui peuvent s'abonner (si le modèle d'accès est roster)"}.
+{"When to send the last published item", "A quel moment envoyer le dernier élément publié"}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Configuration du salon modifiée"}.
@@ -163,6 +186,10 @@
 {"November", "Novembre"}.
 {"December", "Décembre"}.
 {"Room Configuration", "Configuration du salon"}.
+{"has been kicked because of an affiliation change", "a été éjecté à cause d'un changement d'autorisation"}.
+{"has been kicked because the room has been changed to members-only", "a été éjecté car la salle est désormais réservée aux membres"}.
+{"has been kicked because of a system shutdown", "a été éjecté en raison de l'arrêt du système"}.
+
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Vous avez besoin d'un client supportant x:data pour enregistrer un pseudo"}.
@@ -187,7 +214,6 @@
 {"Only moderators are allowed to change subject in this room", "Seuls les modérateurs peuvent changer le sujet dans ce salon"}.
 {"Visitors are not allowed to send messages to all occupants", "Les visiteurs ne sont pas autorisés à envoyer des messages à tout les occupants"}.
 {"Only occupants are allowed to send messages to the conference", "Seuls les occupants peuvent envoyer des messages à la conférence"}.
-{"It is not allowed to send normal messages to the conference", "Il n'est pas permis d'envoyer des messages \"normaux\" à la conférence"}.
 {"It is not allowed to send private messages to the conference", "Il n'est pas permis d'envoyer des messages \"normaux\" à la conférence"}.
 {"Improper message type", "Mauvais type de message"}.
 {"Nickname is already in use by another occupant", "Le pseudo est déjà utilisé par un autre occupant"}.
@@ -214,18 +240,21 @@
 {"Make participants list public", "Rendre la liste des participants publique"}.
 {"Make room password protected", "Protéger le salon par mot de passe"}.
 {"Make room members-only", "Réserver le salon aux membres uniquement"}.
-{"Make room moderated", "Rendre le salon modéré"}.
 {"Default users as participants", "Les utilisateurs sont par défaut participant"}.
 {"Allow users to change subject", "Autoriser les utilisateurs à changer le sujet"}.
 {"Allow users to send private messages", "Autoriser les utilisateurs à envoyer des messages privés"}.
 {"Allow users to query other users", "Permettre aux utilisateurs d'envoyer des requêtes aux autres utilisateurs"}.
 {"Allow users to send invites", "Permettre aux utilisateurs d'envoyer des invitations"}.
 {"Enable logging", "Activer l'archivage"}.
-{"Description", "Description"}.
 {"Number of occupants", "Nombre d'occupants"}.
 {"Present real JIDs to", "Rendre le JID réel visible pour"}.
 {"moderators only", "modérateurs seulement"}.
 {"anyone", "tout le monde"}.
+{"Traffic rate limit is exceeded", "La limite de trafic a été dépassée"}.
+{"Maximum Number of Occupants", "Nombre maximum d'occupants"}.
+{"No limit", "Pas de limite"}.
+{"~s invites you to the room ~s", "~s vous a invité dans la salle de discussion ~s"}.
+{"the password is", "le mot de passe est"}.
 
 % mod_irc/mod_irc.erl
 {"ejabberd IRC module", "Module IRC ejabberd"}.
@@ -242,9 +271,7 @@
 {"Administration", "Administration"}.
 {"Users", "Utilisateurs"}.
 {"Nodes", "Noeuds"}.
-{"Shared Roster", "Liste de contacts partagée"}.
 {"Statistics", "Statistiques"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(Brut)"}.
 {"Submitted", "Soumis"}.
 {"Bad format", "Mauvais format"}.
@@ -319,7 +346,6 @@
 {"Virtual Hosts", "Serveurs virtuels"}.
 {"ejabberd virtual hosts", "Serveurs virtuels d'ejabberd"}.
 {"Host", "Serveur"}.
-{"Authenticated Users:", "Utilisateurs authentifiés:"}.
 {"No Data", "Aucune information disponible"}.
 {"ejabberd Web Interface", "Ejabberd - Interface Web"}.
 {"Online Users:", "Utilisateurs connectés:"}.
@@ -340,12 +366,14 @@
 {"Update script", "Script de mise à jour"}.
 {"Low level update script", "Script de mise à jour de bas-niveau"}.
 {"Script check", "Validation du script"}.
-{"Not Found", "Non trouvé"}.
 {"Shared Roster Groups", "Groupes de liste de contacts partagée"}.
 {"Last Activity", "Dernière Activité"}.
 
 % mod_proxy65_service.erl
 {"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams module"}.
+
+% mod_offline_odbc.erl
+{"Your contact offline message queue is full. The message has been discarded.", "La file d'attente de message de votre contact est pleine. Votre message a été détruit."}.
 
 % Local Variables:
 % mode: erlang

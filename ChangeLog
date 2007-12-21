@@ -1,3 +1,7 @@
+2007-12-21  Mickael Remond  <mremond@process-one.net>
+
+	* src/msgs/fr.msg: Updated French translation (EJAB-295)
+
 2007-12-21  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: disco#items bugfix (EJAB-465)
