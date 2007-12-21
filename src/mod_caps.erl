@@ -146,6 +146,7 @@ handle_call({get_features, Caps}, From, State) ->
 	{ok, Features} -> 
 	    {reply, Features, State};
 	wait ->
+	    gen_server:cast(self(), visit_feature_queries),
 	    Timeout = timestamp() + 10,
 	    FeatureQueries = State#state.feature_queries,
 	    NewFeatureQueries = [{From, Caps, Timeout} | FeatureQueries],
@@ -221,6 +222,9 @@ handle_cast({disco_response, From, _To,
 		error ->
 		    ?ERROR_MSG("ID '~s' matches no query", [ID])
 	    end;
+	{error, _} ->
+	    gen_server:cast(self(), visit_feature_queries),
+	    ?ERROR_MSG("Error IQ reponse IQ from ~s: ~p", [jlib:jid_to_string(From), SubEls]);
 	{result, _} ->
 	    ?ERROR_MSG("Invalid IQ contents from ~s: ~p", [jlib:jid_to_string(From), SubEls]);
 	_ ->
@@ -234,7 +238,7 @@ handle_cast(visit_feature_queries, #state{feature_queries = FeatureQueries} = St
     NewFeatureQueries =
 	lists:foldl(fun({From, Caps, Timeout}, Acc) ->
 			    case maybe_get_features(Caps) of
-				wait when Timeout < Timestamp -> [{From, Caps, Timeout} | Acc];
+				wait when Timeout > Timestamp -> [{From, Caps, Timeout} | Acc];
 				wait -> Acc;
 				{ok, Features} ->
 				    gen_server:reply(From, Features),

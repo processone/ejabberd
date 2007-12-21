@@ -1,3 +1,8 @@
+2007-12-22  Badlop  <badlop@process-one.net>
+
+	* src/mod_caps.erl: Bugfix in timeout checking. Check for timeout
+	when an error response is received, and also before querying
+
 2007-12-21  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_ctl.erl: Added new command: mnesia (thanks to
