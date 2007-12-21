@@ -1,3 +1,8 @@
+2007-12-21  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_ctl.erl: Added new command: mnesia (thanks to
+	Tsukasa Hamano)
+
 2007-12-21  Mickael Remond  <mremond@process-one.net>
 
 	* src/msgs/fr.msg: Updated French translation (EJAB-295)

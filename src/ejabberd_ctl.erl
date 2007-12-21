@@ -188,6 +188,21 @@ process(["delete-expired-messages"]) ->
     mod_offline:remove_expired_messages(),
     ?STATUS_SUCCESS;
 
+process(["mnesia"]) ->
+    io:format("~p~n", [mnesia:system_info(all)]),
+    ?STATUS_SUCCESS;
+
+process(["mnesia", "info"]) ->
+    mnesia:info(),
+    ?STATUS_SUCCESS;
+
+process(["mnesia", Arg]) when is_list(Arg) ->
+    case catch mnesia:system_info(list_to_atom(Arg)) of
+	{'EXIT', Error} -> io:format("Error: ~p~n", [Error]);
+	Return -> io:format("~p~n", [Return])
+    end,
+    ?STATUS_SUCCESS;
+
 process(["delete-old-messages", Days]) ->
     case catch list_to_integer(Days) of
 	{'EXIT',{Reason, _Stack}} ->
@@ -246,6 +261,7 @@ print_usage() ->
 	 {"import-dir dir", "import user data from jabberd 1.4 spool directory"},
 	 {"delete-expired-messages", "delete expired offline messages from database"},
 	 {"delete-old-messages n", "delete offline messages older than n days from database"},
+	 {"mnesia [info]", "show information of Mnesia system"},
 	 {"vhost host ...", "execute host-specific commands"}] ++
 	ets:tab2list(ejabberd_ctl_cmds),
     MaxCmdLen =
