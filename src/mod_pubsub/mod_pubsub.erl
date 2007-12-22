@@ -23,7 +23,6 @@
 
 %%% TODO
 %%% plugin: generate Reply (do not use broadcast atom anymore)
-%%% to be implemented: deliver_notifications
 
 -module(mod_pubsub).
 -version('1.10-01').
@@ -40,9 +39,7 @@
 -define(PEPNODE, "pep").
 
 %% exports for hooks
--export([set_presence/4,
-	 unset_presence/4,
-	 incoming_presence/3,
+-export([presence_probe/3,
 	 remove_user/2,
 	 disco_local_identity/5,
 	 disco_local_features/5,
@@ -142,9 +139,6 @@ init([ServerHost, Opts]) ->
     Host = gen_mod:get_opt_host(ServerHost, Opts, "pubsub.@HOST@"),
     ServedHosts = gen_mod:get_opt(served_hosts, Opts, []),
     Access = gen_mod:get_opt(access_createnode, Opts, all),
-    mnesia:create_table(pubsub_presence,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, pubsub_presence)}]),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
     ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
@@ -152,9 +146,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
-    ejabberd_hooks:add(incoming_presence_hook, ServerHost, ?MODULE, incoming_presence, 50),
-    %%ejabberd_hooks:add(set_presence_hook, ServerHost, ?MODULE, set_presence, 50),
-    %%ejabberd_hooks:add(unset_presence_hook, ServerHost, ?MODULE, unset_presence, 50),
+    ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     lists:foreach(
@@ -218,12 +210,12 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     ok.
 
 init_nodes(Host, ServerHost, ServedHosts) ->
-    create_node(Host, ServerHost, ["pubsub"], ?PUBSUB_JID, ?STDNODE),
-    create_node(Host, ServerHost, ["pubsub", "nodes"], ?PUBSUB_JID, ?STDNODE),
-    create_node(Host, ServerHost, ["home"], ?PUBSUB_JID, ?STDNODE),
+    create_node(Host, ServerHost, ["pubsub"], service_jid(Host), ?STDNODE),
+    create_node(Host, ServerHost, ["pubsub", "nodes"], service_jid(Host), ?STDNODE),
+    create_node(Host, ServerHost, ["home"], service_jid(Host), ?STDNODE),
     lists:foreach(
       fun(H) ->
-	      create_node(Host, ServerHost, ["home", H], ?PUBSUB_JID, ?STDNODE)
+	      create_node(Host, ServerHost, ["home", H], service_jid(Host), ?STDNODE)
       end, [ServerHost | ServedHosts]),
     ok.
 
@@ -390,13 +382,7 @@ disco_sm_items(Acc, _From, To, Node, _Lang) ->
 %% presence hooks handling functions
 %%
 
-set_presence(User, Server, Resource, Presence) ->
-    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
-    gen_server:cast(Proc, {set_presence, User, Server, Resource, Presence}).
-unset_presence(User, Server, Resource, Status) ->
-    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
-    gen_server:cast(Proc, {unset_presence, User, Server, Resource, Status}).
-incoming_presence(From, #jid{lserver = Host} = To, Packet) ->
+presence_probe(#jid{lserver = Host} = From, To, Packet) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {presence, From, To, Packet}).
 
@@ -438,102 +424,70 @@ handle_call(stop, _From, State) ->
 %%--------------------------------------------------------------------
 %% @private
 handle_cast({presence, From, To, Packet}, State) ->
-    Plugins = State#state.plugins,
-    Key = {To#jid.lserver, From#jid.luser, From#jid.lserver},
-    Record = #pubsub_presence{key = Key, resource = From#jid.lresource},
-    Priority = case xml:get_subtag(Packet, "priority") of
-		   false -> 0;
-		   SubEl ->
-		       case catch list_to_integer(xml:get_tag_cdata(SubEl)) of
-			   P when is_integer(P) -> P;
-			   _ -> 0
-		       end
-	       end,
-    PresenceType = case xml:get_tag_attr_s("type", Packet) of
-		       "" ->
-			   if Priority < 0 -> unavailable;
-			      true -> available
-			   end;
-		       "unavailable" -> unavailable;
-		       "error" -> unavailable;
-		       _ -> none
-		   end,
-    PreviouslyAvailable =
-	lists:member(From#jid.lresource,
-		     lists:map(fun(#pubsub_presence{resource = R}) -> R end,
-			       case catch mnesia:dirty_read(pubsub_presence, Key) of
-				   Result when is_list(Result) -> Result;
-				   _ -> []
-			       end)),
-    case PresenceType of
-	available -> mnesia:dirty_write(Record);
-	unavailable -> mnesia:dirty_delete_object(Record);
-	_ -> ok
-    end,
-    if PreviouslyAvailable == false,
-       PresenceType == available ->
-	    %% A new resource is available. Loop through all subscriptions
-	    %% and if the node is so configured, send the last item.
-	    JID = jlib:jid_tolower(From),
-	    Host = State#state.host,
-	    ServerHost = State#state.server_host,
+    %% A new resource is available. send last published items
+    JID = jlib:jid_tolower(From),
+    Host = State#state.host,
+    ServerHost = State#state.server_host,
+    if From == To ->
+	%% for each node From is subscribed to
+	%% and if the node is so configured, send the last published item to From
+	lists:foreach(fun(Type) ->
+	    {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, From]),
 	    lists:foreach(
-		fun(Type) ->
-		    {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, From]),
-		    Options = node_options(Type),
-		    SendLast = get_option(Options, send_last_published_item),
-		    AccessModel = get_option(Options, access_model),
-		    AllowedGroups = get_option(Options, roster_groups_allowed),
-		    lists:foreach(
-			fun({Node, Subscription}) ->
-			    if
-				Subscription /= none, Subscription /= pending, SendLast == on_sub_and_presence ->
+		fun({Node, subscribed}) -> 
+		    case tree_action(Host, get_node, [Host, Node]) of
+			#pubsub_node{options = Options} ->
+			    case get_option(Options, send_last_published_item) of
+				on_sub_and_presence ->
 				    send_last_item(Host, Node, JID);
-				SendLast == on_sub_and_presence ->
-				    {PresenceSubscription, RosterGroup} = get_roster_info(
-									    To#jid.luser, To#jid.lserver, JID, AllowedGroups),
-				    Features = case catch mod_caps:get_features(ServerHost, mod_caps:read_caps(element(4, Packet))) of
-						    F when is_list(F) -> F;
-						    _ -> []
-						end,
-				    case lists:member(Node ++ "+notify", Features) of
-					true ->
-					    MaySubscribe =
-						case AccessModel of
-						    open -> true;
-						    presence -> PresenceSubscription;
-						    whitelist -> false; % subscribers are added manually
-						    authorize -> false; % likewise
-						    roster -> RosterGroup
-						end,
-					    if MaySubscribe ->
-						    send_last_item(Host, Node, JID);
-						true ->
-						    ok
-					    end;
-					false ->
-					    ok
-				    end;
-				true ->
+				_ ->
 				    ok
 			    end;
-			(_) ->
+			_ ->
 			    ok
-		    end, Subscriptions)
-		end, Plugins),
-	    {noreply, State};
-       true ->
-	    {noreply, State}
-    end;
-
-handle_cast({set_presence, _User, _Server, _Resource, _Presence}, State) ->
-    {noreply, State};
-handle_cast({unset_presence, _User, _Server, _Resource, _Status}, State) ->
+		    end;
+		   (_) ->
+		    ok
+		end, Subscriptions)
+	end, State#state.plugins);
+    true ->
+	ok
+    end,
+    %% and send to From last PEP events published by To
+    PepKey = jlib:jid_tolower(jlib:jid_remove_resource(To)),
+    Caps = mod_caps:read_caps(element(4, Packet)),
+    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
+	case get_option(Options, send_last_published_item) of
+	    on_sub_and_presence ->
+		case is_caps_notify(ServerHost, Node, Caps) of
+		    true ->
+			AllowedGroups = get_option(Options, roster_groups_allowed),
+			{PresenceSubscription, RosterGroup} = get_roster_info(
+					To#jid.luser, To#jid.lserver, JID, AllowedGroups),
+			Subscribed = case get_option(Options, access_model) of
+			    open -> true;
+			    presence -> PresenceSubscription;
+			    whitelist -> false; % subscribers are added manually
+			    authorize -> false; % likewise
+			    roster -> RosterGroup
+			end,
+			if Subscribed ->
+			    send_last_item(PepKey, Node, JID);
+			true ->
+			    ok
+			end;
+		    false ->
+			ok
+		end;
+	    _ ->
+		ok
+	end
+    end, tree_action(Host, get_nodes, [PepKey])),
     {noreply, State};
 
 handle_cast({remove, User, Server}, State) ->
     Owner = jlib:make_jid(User, Server, ""),
-    delete_nodes(Server, Owner, State#state.plugins),
+    delete_nodes(Server, Owner),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
@@ -578,9 +532,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
-    ejabberd_hooks:delete(incoming_presence_hook, ServerHost, ?MODULE, incoming_presence, 50),
-    %%ejabberd_hooks:delete(set_presence_hook, ServerHost, ?MODULE, set_presence, 50),
-    %%ejabberd_hooks:delete(unset_presence_hook, ServerHost, ?MODULE, unset_presence, 50),
+    ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
     lists:foreach(fun({NS,Mod}) ->
 			  gen_iq_handler:remove_iq_handler(Mod, ServerHost, NS)
@@ -666,9 +618,7 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			    Res = IQ#iq{type = result,
 					sub_el = [{xmlelement, "vCard", [{"xmlns", XMLNS}],
 						   iq_get_vcard(Lang)}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(Res));
+			    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
 			#iq{} ->
 			    Err = jlib:make_error_reply(
 				    Packet,
@@ -678,7 +628,7 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			    ok
 		    end;
 		"presence" ->
-		    incoming_presence(From, To, Packet),
+		    presence_probe(From, To, Packet),
 		    ok;
 		"message" ->
 		    case xml:get_attr_s("type", Attrs) of
@@ -1022,8 +972,7 @@ send_authorization_request(Host, Node, Subscriber) ->
 	#pubsub_node{owners = Owners} ->
 	    lists:foreach(
 	      fun(Owner) ->
-		      ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(Owner),
-					    Stanza)
+		      ejabberd_router ! {route, service_jid(Host), jlib:make_jid(Owner), Stanza}
 	      end, Owners),
 	    ok;
 	_ ->
@@ -1096,8 +1045,9 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 		     end,
 	    case transaction(Host, Node, Action, sync_dirty) of
 		{error, Error} ->
-		    ejabberd_router:route(To, From,
-					  jlib:make_error_reply(Packet, Error));
+		    ejabberd_router:route(
+		     To, From,
+		     jlib:make_error_reply(Packet, Error));
 		{result, _NewSubscription} ->
 		    %% XXX: notify about subscription state change, section 12.11
 		    ok;
@@ -1312,25 +1262,12 @@ delete_node(Host, Node, Owner) ->
 	{result, Result} ->
 	    {result, Result}
     end.
-delete_nodes(Host, Owner, Plugins) ->
+delete_nodes(Host, Owner) ->
     %% This removes only PEP nodes when user is removed
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     lists:foreach(fun(#pubsub_node{nodeid={NodeKey, NodeName}}) ->
 	delete_node(NodeKey, NodeName, Owner)
     end, tree_action(Host, get_nodes, [OwnerKey])).
-%   TODO: may be best to use the generic following code
-%   lists:foreach(fun(Type) ->
-%	    {result, Affiliations} = node_action(Type, get_entity_affiliations, [Host, Owner]),
-%	    NodeKey = case Type of
-%	    ?PEPNODE -> OwnerKey;
-%	    _ -> Host
-%	    end,
-%	    lists:foreach(
-%		fun({NodeId, owner}) -> delete_node(NodeKey, NodeId, Owner);
-%		   (_) -> ok
-%		end
-%	    end, Affiliations)
-%	end, Plugins),
 
 %% @spec (Host, Node, From, JID) ->
 %%		  {error, Reason::stanzaError()} |
@@ -1407,7 +1344,6 @@ subscribe_node(Host, Node, From, JID) ->
 	{error, Error} ->
 	    {error, Error};
 	{result, {Result, subscribed, send_last}} ->
-	    %% TODO was send_last_published_item
 	    send_all_items(Host, Node, Subscriber),
 	    case Result of
 		default -> {result, Reply(subscribed)};
@@ -1505,7 +1441,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			     node_call(Type, publish_item, [Host, Node, Publisher, Model, MaxItems, ItemId, Payload])
 		     end
 	     end,
-    %%ejabberd_hooks:run(pubsub_publish_item, Host, [Host, Node, JID, ?PUBSUB_JID, ItemId, Payload]),
+    %%ejabberd_hooks:run(pubsub_publish_item, Host, [Host, Node, JID, service_jid(Host), ItemId, Payload]),
     Reply = [],
     case transaction(Host, Node, Action, sync_dirty) of
 	{error, ?ERR_ITEM_NOT_FOUND} ->
@@ -1741,7 +1677,7 @@ send_items(Host, Node, LJID, Number) ->
 	      [{xmlelement, "x", [{"xmlns", ?NS_PUBSUB_EVENT}],
 		[{xmlelement, "items", [{"node", node_to_string(Node)}],
 		  ItemsEls}]}]},
-    ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(LJID), Stanza).
+    ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza}.
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
 %%	 Host = host()
@@ -2055,18 +1991,30 @@ node_to_string(Node) ->
 string_to_node(SNode) ->
     string:tokens(SNode, "/").
 
-%% @spec (Host, JID, PresenceDelivery) -> boolean()
+%% @spec (Host) -> jid()
 %%	Host = host()
-%%	JID = jid()
+%% @doc <p>Generate pubsub service JID.</p>
+service_jid(Host) ->
+    case Host of 
+    {U,S,_} -> {jid, U, S, "", U, S, ""}; 
+    _ -> {jid, "", Host, "", "", Host, ""}
+    end.
+
+%% @spec (LJID, PresenceDelivery) -> boolean()
+%%	LJID = jid()
+%%	Subscription = atom()
 %%	PresenceDelivery = boolean()
 %% @doc <p>Check if a notification must be delivered or not
-to_be_delivered(_Host, _JID, false) -> 
-    % default is true
-    true;
-to_be_delivered(Host, JID, true) ->
-    case mnesia:dirty_read(pubsub_presence, {Host, element(1, JID), element(2, JID)}) of
-    [_] -> true;
-    [] -> false
+is_to_delivered(_, none, _) -> false;
+is_to_delivered(_, pending, _) -> false;
+is_to_delivered(_, _, false) -> true;
+is_to_delivered({User, Server, _}, _, true) ->
+    case mnesia:dirty_match_object({session, '_', '_', {User, Server}, '_', '_'}) of
+    [] -> false;
+    Ss ->
+	lists:foldl(fun({session, _, _, _, undefined, _}, Acc) -> Acc;
+	               ({session, _, _, _, _Priority, _}, _Acc) -> true
+	end, false, Ss)
     end.
 
 %%%%%% broadcast functions
@@ -2094,22 +2042,19 @@ broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
 				       [{xmlelement, "items", [{"node", node_to_string(Node)}],
 				         [{xmlelement, "item", ItemAttrs, Content}]}]}]},
 			lists:foreach(
-			  fun(#pubsub_state{stateid = {JID, _},
+			  fun(#pubsub_state{stateid = {LJID, _},
 					    subscription = Subscription}) ->
-				ToBeSent = to_be_delivered(Host, JID, PresenceDelivery),
-				if
-				    (Subscription /= none) and
-				    (Subscription /= pending) and
-				    ToBeSent ->
+				case is_to_delivered(LJID, Subscription, PresenceDelivery) of
+				    true ->
 					DestJIDs = case BroadcastAll of
-					    true -> ejabberd_sm:get_user_resources(element(1, JID), element(2, JID));
-					    false -> [JID]
+					    true -> ejabberd_sm:get_user_resources(element(1, LJID), element(2, LJID));
+					    false -> [LJID]
 					end,
 					lists:foreach(
 					    fun(DestJID) ->
-						ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(DestJID), Stanza)
+						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(DestJID), Stanza}
 					    end, DestJIDs);
-				    true ->
+				    false ->
 					ok
 				end
 			  end, States),
@@ -2148,7 +2093,7 @@ broadcast_retract_item(Host, Node, ItemId, ForceNotify) ->
 						    subscription = Subscription}) ->
 					if (Subscription /= none) and
 					   (Subscription /= pending) ->
-					    ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza);
+					    ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza};
 					   true ->
 					    ok
 					end
@@ -2181,7 +2126,7 @@ broadcast_purge_node(Host, Node) ->
 						    subscription = Subscription}) ->
 					if (Subscription /= none) and
 					   (Subscription /= pending) ->
-						ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza);
+						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza};
 					   true ->
 					    ok
 					end
@@ -2213,7 +2158,7 @@ broadcast_removed_node(Host, Removed) ->
 						subscription = Subscription}) ->
 					    if (Subscription /= none) and
 					       (Subscription /= pending) ->
-						ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza);
+						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza};
 					       true ->
 						ok
 					    end
@@ -2253,14 +2198,12 @@ broadcast_config_notification(Host, Node, Lang) ->
 					       [{xmlelement, "item", [{"id", "configuration"}],
 					         Content}]}]}]},
 				lists:foreach(
-				  fun(#pubsub_state{stateid = {JID, _},
+				  fun(#pubsub_state{stateid = {LJID, _},
 						    subscription = Subscription}) ->
-					ToBeSent = to_be_delivered(Host, JID, PresenceDelivery),
-					if (Subscription /= none) and
-					   (Subscription /= pending) and
-					   ToBeSent ->
-						ejabberd_router:route(?PUBSUB_JID, jlib:make_jid(JID), Stanza);
-					   true ->
+					case is_to_delivered(LJID, Subscription, PresenceDelivery) of
+					    true ->
+						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza};
+					    false ->
 						ok
 					end
 				  end, States),
@@ -2298,11 +2241,10 @@ broadcast_config_notification(Host, Node, Lang) ->
 broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
     ?DEBUG("looking for pid of ~p@~p/~p", [LUser, LServer, LResource]),
     %% We need to know the resource, so we can ask for presence data.
-    SenderResources = ejabberd_sm:get_user_resources(LUser, LServer),
     SenderResource = case LResource of
 			 "" ->
 			     %% If we don't know the resource, just pick one.
-			     case SenderResources of
+			     case ejabberd_sm:get_user_resources(LUser, LServer) of
 				 [R|_] ->
 				     R;
 				 [] ->
@@ -2322,42 +2264,31 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
 	    case catch ejabberd_c2s:get_subscribed_and_online(C2SPid) of
 		ContactsWithCaps when is_list(ContactsWithCaps) ->
 		    ?DEBUG("found contacts with caps: ~p", [ContactsWithCaps]),
-		    LookingFor = Node ++ "+notify",
 		    lists:foreach(
 		      fun({JID, Caps}) ->
-			      case catch mod_caps:get_features(LServer, Caps) of
-				  Features when is_list(Features) ->
-				      case lists:member(LookingFor, Features) of
-					  true ->
-					      To = jlib:make_jid(JID),
-					      ejabberd_router:route(Sender, To, Stanza);
-					  _ ->
-					      ok
-				      end;
-				  _ ->
-				      %% couldn't get entity capabilities.
-				      %% nothing to do about that...
-				      ok
-			      end
+			    case is_caps_notify(LServer, Node, Caps) of
+				true ->
+				    To = jlib:make_jid(JID),
+				    ejabberd_router ! {route, Sender, To, Stanza};
+				false ->
+				    ok
+			    end
 		      end, ContactsWithCaps);
 		_ ->
 		    ok
 	    end,
-	%% also send a notification to any
-	%% of the account owner's available resources.
-	%% See: XEP-0163 1.1 section 3
-	%% Note: ejabberd_c2s:get_subscribed_and_online already returns owner online resources
-	%%       this loop should be deleted
-	%    lists:foreach(fun(Resource) ->
-	%			  To = jlib:make_jid(LUser, LServer, Resource),
-	%			  ejabberd_router:route(Sender, To, Stanza)
-	%		  end, SenderResources),
 	    ok;
 	_ ->
 	    ok
     end;
 broadcast_by_caps(_, _, _, _) ->
     ok.
+
+is_caps_notify(Host, Node, Caps) ->
+    case catch mod_caps:get_features(Host, Caps) of
+	Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
+	_ -> false
+    end.
 
 %%%%%%% Configuration handling
 

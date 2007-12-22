@@ -177,21 +177,21 @@ create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
     LOwner = jlib:jid_tolower(Owner),
     {User, Server, _Resource} = LOwner,
     Allowed = case acl:match_rule(ServerHost, Access, LOwner) of
-		  allow ->
-		      if Server == Host ->  %% Server == ServerHost ??
-			      true;
-			 true ->
-			      case Node of
-				  ["home", Server, User | _] -> true;
-				  _ -> false
-			      end
-		      end;
-		  _ ->
-		      case Owner of
-			  ?PUBSUB_JID -> true;
-			  _ -> false
-		      end
-	      end,
+		allow ->
+		    if Server == Host ->  %% Server == ServerHost ??
+			true;
+		    true ->
+			case Node of
+			    ["home", Server, User | _] -> true;
+			    _ -> false
+			end
+		    end;
+		_ ->
+		    case Owner of
+			{jid, "", _, "", "", _, ""} -> true;
+			_ -> false
+		    end
+	    end,
     ChildOK = true, %% TODO test with ParentNode
     {result, Allowed and ChildOK}.
 

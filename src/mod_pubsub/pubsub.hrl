@@ -1,12 +1,11 @@
 %%% ====================================================================
-%%% This software is copyright 2006, Process-one.
+%%% This software is copyright 2007, Process-one.
 %%%
 %%% This file contains pubsub types definition.
 %%% ====================================================================
 
 %% -------------------------------
 %% Pubsub constants
--define(PUBSUB_JID, {jid, "", Host, "", "", Host, ""}).
 -define(ERR_EXTENDED(E,C), mod_pubsub:extended_error(E,C)).
 
 %% this is currently a hard limit.

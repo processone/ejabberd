@@ -386,9 +386,7 @@ do_route(From, To, Packet) ->
 					From,
 					jlib:jid_replace_resource(To, R),
 					Packet)
-			      end, PResources),
-			    ejabberd_hooks:run(incoming_presence_hook, LServer,
-					       [From, To, Packet]);
+			      end, PResources);
 		       true ->
 			    ok
 		    end;

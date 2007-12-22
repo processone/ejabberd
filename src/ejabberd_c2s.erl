@@ -1385,6 +1385,7 @@ process_presence_probe(From, To, StateData) ->
 			deny ->
 			    ok;
 			allow ->
+			    ejabberd_hooks:run(presence_probe_hook, StateData#state.server, [From, To, Packet]),
 			    ejabberd_router:route(To, From, Packet)
 		    end;
 		Cond2 ->

@@ -1,3 +1,14 @@
+2007-12-22  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_sm.erl: change incoming_presence_hook to
+	presence_probe_hook
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: send last pep item bugfix and
+	broadcast optimization (EJAB-468) (EJAB-467) (EJAB-460)
+	* src/mod_pubsub/pubsub.hrl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+
 2007-12-22  Badlop  <badlop@process-one.net>
 
 	* src/mod_caps.erl: Bugfix in timeout checking. Check for timeout
