@@ -78,17 +78,22 @@ start_link({SockMod, Socket}, Opts) ->
 	    ok
     end,
 
-    %% XXX bard: for backward compatibility: expand web_admin and
-    %% http_poll in Opts respectively to {["admin"],
-    %% ejabberd_web_admin} and {["http-poll"], ejabberd_http_poll}
+    %% XXX bard: for backward compatibility, expand in Opts:
+    %%  web_admin -> {["admin"], ejabberd_web_admin} 
+    %%  http_bind -> {["http-bind"], mod_http_bind}
+    %%  http_poll -> {["http-poll"], ejabberd_http_poll}
 
     RequestHandlers =
 	case lists:keysearch(request_handlers, 1, Opts) of
-             {value, {request_handlers, H}} -> H;
-             false -> []
+	    {value, {request_handlers, H}} -> H;
+	    false -> []
         end ++
         case lists:member(web_admin, Opts) of
             true -> [{["admin"], ejabberd_web_admin}];
+            false -> []
+        end ++
+        case lists:member(http_bind, Opts) of
+            true -> [{["http-bind"], mod_http_bind}];
             false -> []
         end ++
         case lists:member(http_poll, Opts) of
