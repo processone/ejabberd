@@ -1,5 +1,8 @@
 2007-12-22  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.app: Update ejabberd.app: add new erlang
+	modules (EJAB-466)
+
 	* doc/introduction.tex: Small updates
 
 	* doc/guide.tex: Small fixes in Install. Added http_bind to
