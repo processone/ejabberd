@@ -1,3 +1,9 @@
+2007-12-22  Badlop  <badlop@process-one.net>
+
+	* src/mod_announce.erl: Fixed unnoticeable bug related to Node
+	matching. Renamed some nonstandard node names according to
+	XEP-0133. Small reordering of clauses.
+
 2007-12-22  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_sm.erl: change incoming_presence_hook to

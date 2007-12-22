@@ -162,25 +162,25 @@ announce(From, To, Packet) ->
 disco_identity(Acc, _From, _To, Node, Lang) ->
     LNode = tokenize(Node),
     case LNode of
+	?NS_ADMINL("announce") ->
+	    ?INFO_COMMAND(Lang, Node);
+	?NS_ADMINL("announce-allhosts") ->
+	    ?INFO_COMMAND(Lang, Node);
 	?NS_ADMINL("announce-all") ->
 	    ?INFO_COMMAND(Lang, Node);
 	?NS_ADMINL("announce-all-allhosts") ->
 	    ?INFO_COMMAND(Lang, Node);
-	?NS_ADMINL("announce") ->
-	    ?INFO_COMMAND(Lang, Node);
-	?NS_ADMINL("announce-online-allhosts") ->
-	    ?INFO_COMMAND(Lang, Node);
 	?NS_ADMINL("set-motd") ->
 	    ?INFO_COMMAND(Lang, Node);
-	?NS_ADMINL("motd-allhosts") ->
-	    ?INFO_COMMAND(Lang, Node);
-	?NS_ADMINL("delete-motd") ->
-	    ?INFO_COMMAND(Lang, Node);
-	?NS_ADMINL("delete-motd-allhosts") ->
+	?NS_ADMINL("set-motd-allhosts") ->
 	    ?INFO_COMMAND(Lang, Node);
 	?NS_ADMINL("edit-motd") ->
 	    ?INFO_COMMAND(Lang, Node);
 	?NS_ADMINL("edit-motd-allhosts") ->
+	    ?INFO_COMMAND(Lang, Node);
+	?NS_ADMINL("delete-motd") ->
+	    ?INFO_COMMAND(Lang, Node);
+	?NS_ADMINL("delete-motd-allhosts") ->
 	    ?INFO_COMMAND(Lang, Node);
 	_ ->
 	    Acc
@@ -214,22 +214,6 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To,
     end;
 
 disco_features(Acc, From, #jid{lserver = LServer} = _To,
-	       Node, _Lang)
-  when (Node == [?NS_ADMIN | "#announce-online-allhosts"])
-or (Node == [?NS_ADMIN | "#announce-all-allhosts"])
-or (Node == [?NS_ADMIN | "#motd-allhosts"])
-or (Node == [?NS_ADMIN | "#edit-motd-allhosts"])
-or (Node == [?NS_ADMIN | "#delete-motd-allhosts"]) ->
-    case gen_mod:is_loaded(LServer, mod_adhoc) of
-	false ->
-	    Acc;
-	_ ->
-	    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
-	    Allow = acl:match_rule(global, Access, From),
-	    ?INFO_RESULT(Allow, [?NS_COMMANDS])
-    end;
-
-disco_features(Acc, From, #jid{lserver = LServer} = _To,
 	       Node, _Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
@@ -237,17 +221,29 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To,
 	_ ->
 	    Access = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
 	    Allow = acl:match_rule(LServer, Access, From),
+	    AccessGlobal = gen_mod:get_module_opt(global, ?MODULE, access, none),
+	    AllowGlobal = acl:match_rule(global, AccessGlobal, From),
 	    case Node of
-		?NS_ADMIN ++ "#announce-all" ->
-		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
 		?NS_ADMIN ++ "#announce" ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?NS_ADMIN ++ "#announce-all" ->
 		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
 		?NS_ADMIN ++ "#set-motd" ->
 		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
-		?NS_ADMIN ++ "#delete-motd" ->
-		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
 		?NS_ADMIN ++ "#edit-motd" ->
 		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?NS_ADMIN ++ "#delete-motd" ->
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?NS_ADMIN ++ "#announce-allhosts" ->
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		?NS_ADMIN ++ "#announce-all-allhosts" ->
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		?NS_ADMIN ++ "#set-motd-allhosts" ->
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		?NS_ADMIN ++ "#edit-motd-allhosts" ->
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		?NS_ADMIN ++ "#delete-motd-allhosts" ->
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
 		_ ->
 		    Acc
 	    end
@@ -300,21 +296,6 @@ disco_items(Acc, From, #jid{lserver = LServer} = To, "announce", Lang) ->
 	    announce_items(Acc, From, To, Lang)
     end;
 
-disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang)
-  when (Node == [?NS_ADMIN | "#announce-online-allhosts"])
-or (Node == [?NS_ADMIN | "#announce-all-allhosts"])
-or (Node == [?NS_ADMIN | "#motd-allhosts"])
-or (Node == [?NS_ADMIN | "#edit-motd-allhosts"])
-or (Node == [?NS_ADMIN | "#delete-motd-allhosts"]) ->
-    case gen_mod:is_loaded(LServer, mod_adhoc) of
-	false ->
-	    Acc;
-	_ ->
-	    Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
-	    Allow = acl:match_rule(global, Access, From),
-	    ?ITEMS_RESULT(Allow, [])
-    end;
-
 disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
@@ -322,17 +303,29 @@ disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
 	_ ->
 	    Access = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
 	    Allow = acl:match_rule(LServer, Access, From),
+	    AccessGlobal = gen_mod:get_module_opt(global, ?MODULE, access, none),
+	    AllowGlobal = acl:match_rule(global, AccessGlobal, From),
 	    case Node of
-		?NS_ADMIN ++ "#announce-all" ->
-		    ?ITEMS_RESULT(Allow, []);
 		?NS_ADMIN ++ "#announce" ->
+		    ?ITEMS_RESULT(Allow, []);
+		?NS_ADMIN ++ "#announce-all" ->
 		    ?ITEMS_RESULT(Allow, []);
 		?NS_ADMIN ++ "#set-motd" ->
 		    ?ITEMS_RESULT(Allow, []);
-		?NS_ADMIN ++ "#delete-motd" ->
-		    ?ITEMS_RESULT(Allow, []);
 		?NS_ADMIN ++ "#edit-motd" ->
 		    ?ITEMS_RESULT(Allow, []);
+		?NS_ADMIN ++ "#delete-motd" ->
+		    ?ITEMS_RESULT(Allow, []);
+		?NS_ADMIN ++ "#announce-allhosts" ->
+		    ?ITEMS_RESULT(AllowGlobal, []);
+		?NS_ADMIN ++ "#announce-all-allhosts" ->
+		    ?ITEMS_RESULT(AllowGlobal, []);
+		?NS_ADMIN ++ "#set-motd-allhosts" ->
+		    ?ITEMS_RESULT(AllowGlobal, []);
+		?NS_ADMIN ++ "#edit-motd-allhosts" ->
+		    ?ITEMS_RESULT(AllowGlobal, []);
+		?NS_ADMIN ++ "#delete-motd-allhosts" ->
+		    ?ITEMS_RESULT(AllowGlobal, []);
 		_ ->
 		    Acc
 	    end
@@ -344,20 +337,20 @@ announce_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, Lang) 
     Access1 = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
     Nodes1 = case acl:match_rule(LServer, Access1, From) of
 		 allow ->
-		     [?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#announce-all"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#announce"),
+		     [?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#announce"),
+		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#announce-all"),
 		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#set-motd"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#delete-motd"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#edit-motd")];
+		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#edit-motd"),
+		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#delete-motd")];
 		 deny ->
 		     []
 	     end,
     Access2 = gen_mod:get_module_opt(global, ?MODULE, access, none),
     Nodes2 = case acl:match_rule(global, Access2, From) of
 		 allow ->
-		     [?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#announce-all-allhosts"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#announce-online-allhosts"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#motd-allhosts"),
+		     [?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#announce-allhosts"),
+		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#announce-all-allhosts"),
+		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#set-motd-allhosts"),
 		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#edit-motd-allhosts"),
 		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN ++ "#delete-motd-allhosts")];
 		 deny ->
@@ -394,24 +387,24 @@ announce_commands(Acc, From, #jid{lserver = LServer} = To,
 		commands_result(Allow, From, To, Request)
 	end,
     R = case LNode of
-	    ?NS_ADMINL("announce-online-allhosts") -> F();
+	    ?NS_ADMINL("announce-allhosts") -> F();
 	    ?NS_ADMINL("announce-all-allhosts") -> F();
-	    ?NS_ADMINL("motd-allhosts") -> F();
+	    ?NS_ADMINL("set-motd-allhosts") -> F();
 	    ?NS_ADMINL("edit-motd-allhosts") -> F();
 	    ?NS_ADMINL("delete-motd-allhosts") -> F();
 	    _ ->
 		Access = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
 		Allow = acl:match_rule(LServer, Access, From),
 		case LNode of
-		    ?NS_ADMINL("announce-all") ->
-			commands_result(Allow, From, To, Request);
 		    ?NS_ADMINL("announce") ->
+			commands_result(Allow, From, To, Request);
+		    ?NS_ADMINL("announce-all") ->
 			commands_result(Allow, From, To, Request);
 		    ?NS_ADMINL("set-motd") ->
 			commands_result(Allow, From, To, Request);
-		    ?NS_ADMINL("delete-motd") ->
-			commands_result(Allow, From, To, Request);
 		    ?NS_ADMINL("edit-motd") ->
+			commands_result(Allow, From, To, Request);
+		    ?NS_ADMINL("delete-motd") ->
 			commands_result(Allow, From, To, Request);
 		    _ ->
 			unknown
@@ -458,10 +451,12 @@ announce_commands(From, To,
 	    {error, ?ERR_BAD_REQUEST}
     end.
 
+-define(VVALUE(Val),
+	{xmlelement, "value", [], [{xmlcdata, Val}]}).
 -define(TVFIELD(Type, Var, Val),
 	{xmlelement, "field", [{"type", Type},
 			       {"var", Var}],
-	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+	 [?VVALUE(Val)]}).
 -define(HFIELD(), ?TVFIELD("hidden", "FORM_TYPE", ?NS_ADMIN)).
 
 generate_adhoc_form(Lang, Node) ->
@@ -574,22 +569,22 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	%% Now send the packet to ?PROCNAME.
 	%% We don't use direct announce_* functions because it
 	%% leads to large delay in response and <iq/> queries processing
+	{?NS_ADMIN ++ "#announce", _} ->
+	    Proc ! {announce_online, From, To, Packet},
+	    adhoc:produce_response(Response);
+	{?NS_ADMIN ++ "#announce-allhosts", _} ->	    
+	    Proc ! {announce_all_hosts_online, From, To, Packet},
+	    adhoc:produce_response(Response);
 	{?NS_ADMIN ++ "#announce-all", _} ->
 	    Proc ! {announce_all, From, To, Packet},
 	    adhoc:produce_response(Response);
 	{?NS_ADMIN ++ "#announce-all-allhosts", _} ->	    
 	    Proc ! {announce_all_hosts_all, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN ++ "#announce", _} ->
-	    Proc ! {announce_online, From, To, Packet},
-	    adhoc:produce_response(Response);
-	{?NS_ADMIN ++ "#announce-online-allhosts", _} ->	    
-	    Proc ! {announce_all_hosts_online, From, To, Packet},
-	    adhoc:produce_response(Response);
 	{?NS_ADMIN ++ "#set-motd", _} ->
 	    Proc ! {announce_motd, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN ++ "#motd-allhosts", _} ->	    
+	{?NS_ADMIN ++ "#set-motd-allhosts", _} ->	    
 	    Proc ! {announce_all_hosts_motd, From, To, Packet},
 	    adhoc:produce_response(Response);
 	{?NS_ADMIN ++ "#edit-motd", _} ->
@@ -612,11 +607,11 @@ get_title(Lang, ?NS_ADMIN ++ "#announce-all-allhosts") ->
     translate:translate(Lang, "Send announcement to all users on all hosts");
 get_title(Lang, ?NS_ADMIN ++ "#announce") ->
     translate:translate(Lang, "Send announcement to all online users");
-get_title(Lang, ?NS_ADMIN ++ "#announce-online-allhosts") ->
+get_title(Lang, ?NS_ADMIN ++ "#announce-allhosts") ->
     translate:translate(Lang, "Send announcement to all online users on all hosts");
 get_title(Lang, ?NS_ADMIN ++ "#set-motd") ->
     translate:translate(Lang, "Set message of the day and send to online users");
-get_title(Lang, ?NS_ADMIN ++ "#motd-allhosts") ->
+get_title(Lang, ?NS_ADMIN ++ "#set-motd-allhosts") ->
     translate:translate(Lang, "Set message of the day on all hosts and send to online users");
 get_title(Lang, ?NS_ADMIN ++ "#edit-motd") ->
     translate:translate(Lang, "Update message of the day (don't send)");
