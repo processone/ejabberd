@@ -105,29 +105,29 @@ Moreover, \ejabberd{} comes with a wide range of other state-of-the-art features
 \end{itemize}
 \item Databases
 \begin{itemize}
+\item Internal database for fast deployment (Mnesia).
 \item Native MySQL support.
 \item Native PostgreSQL support.
-\item Mnesia.
 \item ODBC data storage support.
 \item Microsoft SQL Server support. %%\new{}
 \end{itemize}
 \item Authentication
 \begin{itemize}
+\item Internal Authentication.
 \item PAM, LDAP and ODBC.  %%\improved{}
 \item External Authentication script.
-\item Internal Authentication.
 \end{itemize}
 \item Others
 \begin{itemize}
+\item Support for virtual hosting.
 \item Compressing XML streams with Stream Compression (\xepref{0138}).
-\item Interface with networks such as AIM, ICQ and MSN.
 \item Statistics via Statistics Gathering (\xepref{0039}).
 \item IPv6 support both for c2s and s2s connections.
-\item \txepref{0045}{Multi-User Chat} module with logging. %%\improved{}
+\item \txepref{0045}{Multi-User Chat} module with support for clustering and HTML logging. %%\improved{}
 \item Users Directory based on users vCards.
-\item \txepref{0060}{Publish-Subscribe} component.
-\item Support for virtual hosting.
-\item \txepref{0025}{HTTP Polling} service.
+\item \txepref{0060}{Publish-Subscribe} component with support for \txepref{00163}{Personal Eventing via Pubsub}.
+\item Support for web clients: \txepref{0025}{HTTP Polling} and \txepref{0206}{HTTP Binding (BOSH)} services.
 \item IRC transport.
+\item Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
 \end{itemize}
 \end{itemize}

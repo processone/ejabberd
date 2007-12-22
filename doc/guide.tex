@@ -181,22 +181,23 @@ ejabberd Development Team
 \input{introduction}
 
 \chapter{Installing ejabberd}
-\section{Installing ejabberd with Graphical Installer}
+\section{Installing ejabberd with Binary Installer}
 
-The easiest approach to install an ejabberd Instant Messaging server
-is to use the graphical installer. The installer is available in
-ejabberd Process-one 
-\footahref{http://www.process-one.net/en/ejabberd/downloads/}{downloads page}.
+Probably the easiest way to install an ejabberd Instant Messaging server
+is using the binary installer published by Process-one. 
+The binary installers of released ejabberd versions 
+are available in the Process-one ejabberd download page:
+\ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 The installer will deploy and configure a full featured ejabberd
 server and does not require any extra dependencies.
 
-The installer must be set executable and started. Example:
+In *nix systems, remember to set executable the binary installer before starting it. For example:
 \begin{verbatim}
-  wget http://www.process-one.net/downloads/ejabberd/1.1.4/ejabberd-1.1.4_2-linux-x86-installer.bin
-  chmod +x ejabberd-1.1.4_2-linux-x86-installer.bin
-  ./ejabberd-1.1.4_2-linux-x86-installer.bin
+  chmod +x ejabberd-2.0.0_1-linux-x86-installer.bin
+  ./ejabberd-2.0.0_1-linux-x86-installer.bin
 \end{verbatim}
+
 
 \section{Installing ejabberd with Operating System specific packages}
 
@@ -218,6 +219,10 @@ alternative to the binary installer and Operating System's ejabberd packages.
 \label{installation}
 \ind{install}
 
+The canonical form for distribution of ejabberd stable releases is the source code package.
+Compiling ejabberd from source code is quite easy in *nix systems, 
+as long as your system have all the dependencies.
+
 \subsection{Requirements}
 \label{installreq}
 \ind{installation!requirements}
@@ -233,15 +238,15 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GNU Iconv 1.8 or higher (optional, not needed on systems with GNU libc)
 \end{itemize}
 
-\subsection{Download Source Sode}
+\subsection{Download Source Code}
 \label{download}
 \ind{install!download}
 
-Released versions of \ejabberd{} can be obtained from \\
+Released versions of \ejabberd{} are available in the Process-one ejabberd download page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 \ind{Subversion repository}
-The latest development version can be retrieved from the Subversion repository using this command:
+Alternatively, the latest development version can be retrieved from the Subversion repository using this command:
 \begin{verbatim}
   svn co http://svn.process-one.net/ejabberd/trunk ejabberd
 \end{verbatim}
@@ -640,7 +645,7 @@ The available modules, their purpose and the options allowed by each one are:
     \texttt{ip}, \texttt{shaper}\\
   \hline \texttt{ejabberd\_http}& Description& Handles incoming HTTP
   connections.\\
-    \cline{2-3} & Options& \texttt{certfile}, \texttt{http\_poll},
+    \cline{2-3} & Options& \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
     \texttt{inet6}, \texttt{ip}, \texttt{request\_handlers}, \texttt{tls}, \texttt{web\_admin}\\
   \hline
   \end{tabular}
@@ -660,6 +665,20 @@ This is a detailed description of each option allowed by the listening modules:
   \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}This option
     defines one or more hostnames of connected services and enables you to
     specify additional options including \poption{\{password, Secret\}}.
+  \titem{http\_bind} \ind{options!http\_bind}\ind{protocols!XEP-0206: HTTP Binding}\ind{JWChat}\ind{web-based Jabber client}
+    This option enables HTTP Binding (\xepref{0124} and \xepref{0206}) support. HTTP Bind
+    enables access via HTTP requests to \ejabberd{} from behind firewalls which
+    do not allow outgoing sockets on port 5222.
+
+    Remember that you must also install and enable the module mod\_http\_bind.
+
+    If HTTP Bind is enabled, it will be available at
+    \verb|http://server:port/http-bind/|. Be aware that support for HTTP Bind
+    is also needed in the \Jabber{} client. Remark also that HTTP Bind can be
+    interesting to host a web-based \Jabber{} client such as
+    \footahref{http://jwchat.sourceforge.net/}{JWChat} (there is a tutorial to
+    \footahref{http://www.ejabberd.im/jwchat}{install JWChat} with
+    instructions for \ejabberd{}).
   \titem{http\_poll} \ind{options!http\_poll}\ind{protocols!XEP-0025: HTTP Polling}\ind{JWChat}\ind{web-based Jabber client}
     This option enables HTTP Polling (\xepref{0025}) support. HTTP Polling
     enables access via HTTP requests to \ejabberd{} from behind firewalls which
