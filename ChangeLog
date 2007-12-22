@@ -2,7 +2,8 @@
 
 	* src/mod_announce.erl: Fixed unnoticeable bug related to Node
 	matching. Renamed some nonstandard node names according to
-	XEP-0133. Small reordering of clauses.
+	XEP-0133. Small reordering of clauses. When editing MOTD, display
+	current value (EJAB-475)
 
 2007-12-22  Christophe Romain <christophe.romain@process-one.net>
 

@@ -434,7 +434,7 @@ announce_commands(From, To,
 				   #adhoc_response{status = canceled});
        XData == false, ActionIsExecute ->
 	    %% User requests form
-	    Elements = generate_adhoc_form(Lang, Node),
+	    Elements = generate_adhoc_form(Lang, Node, To#jid.lserver),
 	    adhoc:produce_response(
 	      Request,
 	      #adhoc_response{status = executing,
@@ -453,14 +453,25 @@ announce_commands(From, To,
 
 -define(VVALUE(Val),
 	{xmlelement, "value", [], [{xmlcdata, Val}]}).
+-define(VVALUEL(Val),
+	case Val of
+	    "" -> [];
+	    _ -> [?VVALUE(Val)]
+	end).
 -define(TVFIELD(Type, Var, Val),
 	{xmlelement, "field", [{"type", Type},
 			       {"var", Var}],
-	 [?VVALUE(Val)]}).
+	 ?VVALUEL(Val)}).
 -define(HFIELD(), ?TVFIELD("hidden", "FORM_TYPE", ?NS_ADMIN)).
 
-generate_adhoc_form(Lang, Node) ->
+generate_adhoc_form(Lang, Node, ServerHost) ->
     LNode = tokenize(Node),
+    {OldSubject, OldBody} = if (LNode == ?NS_ADMINL("edit-motd")) 
+			       or (LNode == ?NS_ADMINL("edit-motd-allhosts")) ->
+				    get_stored_motd(ServerHost);
+			       true -> 
+				    {[], []}
+			    end,
     {xmlelement, "x",
      [{"xmlns", ?NS_XDATA},
       {"type", "form"}],
@@ -481,12 +492,12 @@ generate_adhoc_form(Lang, Node) ->
 	       [{"var", "subject"},
 		{"type", "text-single"},
 		{"label", translate:translate(Lang, "Subject")}],
-	       []},
+	       ?VVALUEL(OldSubject)},
 	      {xmlelement, "field",
 	       [{"var", "body"},
 		{"type", "text-multi"},
 		{"label", translate:translate(Lang, "Message body")}],
-	       []}]
+	       ?VVALUEL(OldBody)}]
      end}.
 
 join_lines([]) ->
@@ -805,6 +816,15 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID) ->
 	    end;
 	_ ->
 	    ok
+    end.
+
+get_stored_motd(LServer) ->
+    case catch mnesia:dirty_read({motd, LServer}) of
+	[#motd{packet = Packet}] ->
+	    {xml:get_subtag_cdata(Packet, "subject"),
+	     xml:get_subtag_cdata(Packet, "body")};
+	_ ->
+	    {"", ""}
     end.
 
 %%-------------------------------------------------------------------------
