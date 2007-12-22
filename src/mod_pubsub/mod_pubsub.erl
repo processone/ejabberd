@@ -1687,6 +1687,7 @@ send_items(Host, Node, LJID, Number) ->
 %%	 Response = [pubsubIQResponse()]
 %% @doc <p>Return the list of affiliations as an XMPP response.</p>
 get_affiliations(Host, JID, Plugins) when is_list(Plugins) ->
+    ?INFO_MSG("**1 ~p",[{Host,JID,Plugins}]),
     Result = lists:foldl(
 	       fun(Type, {Status, Acc}) ->
 		       Features = features(Type),

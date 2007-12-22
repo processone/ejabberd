@@ -143,6 +143,7 @@ features() ->
      "instant-nodes",
      "item-ids",
      "manage-subscriptions",
+     "modify-affiliations",
      "outcast-affiliation",
      "persistent-items",
      "publish",

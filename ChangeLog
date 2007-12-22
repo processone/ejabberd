@@ -5,7 +5,7 @@
 	* src/ejabberd_c2s.erl: Likewise
 
 	* src/mod_pubsub/mod_pubsub.erl: send last pep item bugfix and
-	broadcast optimization (EJAB-468) (EJAB-467) (EJAB-460)
+	broadcast optimization (EJAB-468) (EJAB-467) (EJAB-460) (EJAB-469)
 	* src/mod_pubsub/pubsub.hrl: Likewise
 	* src/mod_pubsub/node_default.erl: Likewise
 
