@@ -27,15 +27,10 @@
 {"Import Users from Dir at ", "Importar usuarios desde o directorio en "}.
 {"Enter path to jabberd1.4 spool dir", "Introduce a ruta ao directorio de jabberd1.4 spools"}.
 {"Path to Dir", "Ruta ao directorio"}.
-{"Hostname Configuration", "Configuración do nome de máquina"}.
-{"Choose host name", "Indica o nome da máquina"}.
-{"Host name", "Nome da máquina"}.
 {"Access Control List Configuration", "Configuración da Lista de Control de Acceso"}.
 {"Access control lists", "Listas de Control de Acceso"}.
 {"Access Configuration", "Configuración de accesos"}.
 {"Access rules", "Regras de acceso"}.
-{"Remove Users", "Eliminar usuarios"}.
-{"Choose users to remove", "Selecciona usuarios a eliminar"}.
 {"Administration of ", "Administración de "}.
 {"Action on user", "Acción no usuario"}.
 {"Edit Properties", "Editar propiedades"}.
@@ -44,6 +39,25 @@
 {"Outgoing s2s Connections", "Conexións S2S saíntes"}.
 {"Import Users From jabberd 1.4 Spool Files", "Importar usuarios de ficheiros spool de jabberd-1.4"}.
 {"Database Tables Configuration at ", "Configuración de táboas da base de datos en "}.
+{"Restart Service", "Reiniciar o servizo"}.
+{"Shut Down Service", "Deter o servizo"}.
+{"Delete User", "Borrar usuario"}.
+{"End User Session", "Pechar sesión de usuario"}.
+{"Get User Password", "Ver contraseña de usuario"}.
+{"Change User Password", "Cambiar contraseña de usuario"}.
+{"Get User Last Login Time", "Ver data da última conexión de usuario"}.
+{"Get User Statistics", "Ver estatísticas de usuario"}.
+{"Get Number of Registered Users", "Ver número de usuarios rexistrados"}.
+{"Get Number of Online Users", "Ver número de usuarios conectados"}.
+{"User Management", "Administración de usuarios"}.
+{"Time delay", "Atraso temporal"}.
+{"Password Verification", "Verificación da contraseña"}.
+{"Number of registered users", "Número de usuarios rexistrados"}.
+{"Number of online users", "Número de usuarios conectados"}.
+{"Last login", "Última conexión"}.
+{"Roster size", "Tamaño da lista de contactos"}.
+{"IP addresses", "Direccións IP"}.
+{"Resources", "Recursos"}.
 
 % mod_disco.erl
 {"Configuration", "Configuración"}.
@@ -53,10 +67,8 @@
 {"From ~s", "De ~s"}.
 {"Running Nodes", "Nodos funcionando"}.
 {"Stopped Nodes", "Nodos detidos"}.
-{"Host Name", "Nome da máquina"}.
 {"Access Control Lists", "Listas de Control de Acceso"}.
 {"Access Rules", "Regras de Acceso"}.
-{"Remove Users", "Eliminar usuarios"}.
 {"Modules", "Módulos"}.
 {"Start Modules", "Iniciar módulos"}.
 {"Stop Modules", "Detener módulos"}.
@@ -94,8 +106,6 @@
 {"vCard User Search", "Procura de usuario en vCard"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module", "Módulo Pub/Sub para ejabberd"}.
-{"Node Creator", "Creador do nodo"}.
 {"Deliver payloads with event notifications", "Enviar payloads xunto coas notificacións de eventos"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptores cando cambia a configuración do nodo"}.
 {"Notify subscribers when the node is deleted", "Notificar subscriptores cando o nodo bórrase"}.
@@ -103,13 +113,20 @@
 {"Persist items to storage", "Persistir elementos ao almacenar"}.
 {"Max # of items to persist", "Máximo # de elementos que persisten"}.
 {"Whether to allow subscriptions", "Permitir subscripciones"}.
-{"Specify the subscriber model", "Especificar o modelo do subscriptor"}.
 {"Specify the publisher model", "Especificar o modelo do publicante"}.
 {"Max payload size in bytes", "Máximo tamaño do payload en bytes"}.
-{"Send items to new subscribers", "Enviar elementos aos novos subscriptores"}.
 {"Only deliver notifications to available users", "Só enviar notificacións aos usuarios dispoñibles"}.
-{"Specify the current subscription approver", "Especificar o aprobador de subscripción actual"}.
-{"Publish-Subscribe", "Subscripción-publica"}.
+{"Publish-Subscribe", "Publicar-Subscribir"}.
+{"ejabberd Publish-Subscribe module", "Módulo de Publicar-Subscribir de ejabberd"}.
+{"PubSub subscriber request", "Petición de subscriptor de PubSub"}.
+{"Choose whether to approve this entity's subscription.", "Decidir se aprobar a subscripción desta entidade."}.
+{"Node ID", "Nodo IDE"}.
+{"Subscriber Address", "Dirección do subscriptor"}.
+{"Allow this JID to subscribe to this pubsub node?", "Desexas permitir a este JabberID que se subscriba a este nodo PubSub?"}.
+{"Deliver event notifications", "Entregar notificacións de eventos"}.
+{"Specify the access model", "Especifica o modelo de acceso"}.
+{"Roster groups that may subscribe (if access model is roster)", "Grupos de contactos que poderán subscribirse (se o modelo de acceso é 'roster')"}.
+{"When to send the last published item", "Cando enviar o último elemento publicado"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Necesitas un cliente con soporte de x:data para poder rexistrar o alcume"}.
@@ -135,7 +152,6 @@
 {"Make room public searchable", "Sala publicamente visible"}.
 {"Make participants list public", "A lista de participantes é pública"}.
 {"Make room persistent", "Sala permanente"}.
-{"Make room moderated", "Sala moderada"}.
 {"Default users as participants", "Os usuarios son participantes por defecto"}.
 {"Make room members-only", "Sala só para membros"}.
 {"Allow users to send invites", "Permitir aos usuarios enviar invitacións"}.
@@ -167,11 +183,15 @@
 {"Invalid role: ~s", "Rol non válido: ~s"}.
 {"Owner privileges required", "Requírense privilexios de propietario da sala"}.
 {"private, ", "privado"}.
-{"Description", "Descripción"}.
 {"Number of occupants", "Número de ocupantes"}.
 {"Present real JIDs to", "Os JID reais poden velos"}.
 {"moderators only", "só moderadores"}.
 {"anyone", "calquera"}.
+{"Traffic rate limit is exceeded", "Hase exedido o límite de tráfico"}.
+{"Maximum Number of Occupants", "Número máximo de ocupantes"}.
+{"No limit", "Sen límite"}.
+{"~s invites you to the room ~s", "~s invítache á sala ~s"}.
+{"the password is", "a contraseña é"}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Configuración de la sala modificada"}.
@@ -255,8 +275,6 @@
 {"Remove", "Borrar"}.
 {"User ", "Usuario "}.
 {"Roster of ", "Lista de contactos de "}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
-{"Shared Roster", "Grupos Compartidos"}.
 {"Online", "Conectado"}.
 {"Validate", "Validar"}.
 {"Name:", "Nome:"}.
@@ -290,7 +308,6 @@
 {"Update script", "Script de actualización"}.
 {"Low level update script", "Script de actualización a baixo nivel"}.
 {"Script check", "Comprobación de script"}.
-{"Not Found", "Non atopado"}.
 {"Shared Roster Groups", "Grupos Compartidos"}.
 {"Administration", "Administración"}.
 {"(Raw)", "(Cru)"}.
@@ -301,7 +318,6 @@
 {"Registered Users", "Usuarios rexistrados"}.
 {"Offline Messages", "Mensaxes diferidas"}.
 {"Registered Users:", "Usuarios rexistrados:"}.
-{"Authenticated Users:", "Usuarios autenticados:"}.
 {"Online Users:", "Usuarios conectados:"}.
 {"Outgoing s2s Connections:", "Conexións S2S saíntes:"}.
 {"Outgoing s2s Servers:", "Servidores S2S saíntes:"}.
@@ -343,9 +359,16 @@
 {"Set message of the day and send to online users", "Pór mensaxe do dia e enviar a todos os usuarios conectados"}.
 {"Update message of the day (don't send)", "Actualizar mensaxe do dia, pero non envialo"}.
 {"Delete message of the day", "Borrar mensaxe do dia"}.
+{"Send announcement to all users on all hosts", "Enviar anuncio a todos os usuarios en todos os dominios"}.
+{"Set message of the day on all hosts and send to online users", "Pór mensaxe do día en todos os dominios e enviar aos usuarios conectados"}.
+{"Update message of the day on all hosts (don't send)", "Actualizar a mensaxe do día en todos os dominos (pero non envialo)"}.
+{"Delete message of the day on all hosts", "Borrar a mensaxe do día en todos os dominios"}.
 
 % mod_proxy65/mod_proxy65_service.erl
 {"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams module"}.
+
+% mod_offline_odbc.erl
+{"Your contact offline message queue is full. The message has been discarded.", "A túa cola de mensaxes diferidas de contactos está chea. A mensaxe descartouse."}.
 
 % Local Variables:
 % mode: erlang

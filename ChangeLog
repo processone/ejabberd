@@ -1,5 +1,13 @@
 2007-12-23  Badlop  <badlop@process-one.net>
 
+	* src/msgs/vi.msg: New Vietnamese translation (thanks to EQHO
+	Communications)
+
+	* src/msgs/th.msg: New Thai translation (thanks to EQHO
+	Communications)
+
+	* src/msgs/gl.msg: Updated (thanks to Carlos E. Lopez)
+
 	* src/mod_muc/mod_muc_room.erl: Log room creation and
 	destruction. Ensure JID of owners of MUC room are user, not
 	server (EJAB-435)
