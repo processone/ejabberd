@@ -159,6 +159,8 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 				   just_created = true,
 				   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
+    ?INFO_MSG("Created MUC room ~s@~s by ~s", 
+	      [Room, Host, jlib:jid_to_string(Creator)]),
     {ok, normal_state, State1};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     Shaper = shaper:new(RoomShaper),
@@ -1930,13 +1932,18 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
     URole = get_role(UJID, StateData),
     case find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, []) of
 	{result, Res} ->
-	    ?INFO_MSG("Processing MUC admin query from ~s:~n ~p~n",
-		      [jlib:jid_to_string(UJID), Res]),
+	    ?INFO_MSG("Processing MUC admin query from ~s in room ~s:~n ~p",
+		      [jlib:jid_to_string(UJID), jlib:jid_to_string(StateData#state.jid), Res]),
 	    NSD =
 		lists:foldl(
 		  fun(E, SD) ->
 			  case catch (
 				 case E of
+				     {JID, affiliation, owner, _} 
+				     when (JID#jid.luser == "") ->
+					 %% If the provided JID does not have username,
+					 %% forget the affiliation completely
+					 SD;
 				     {JID, role, none, Reason} ->
 					 catch send_kickban_presence(
 						 JID, Reason, "307", SD),
@@ -2388,6 +2395,8 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 			    {error, ?ERR_BAD_REQUEST}
 		    end;
 		[{xmlelement, "destroy", _Attrs1, _Els1} = SubEl1] ->
+		    ?INFO_MSG("Destroyed MUC room ~s by ~s", 
+			      [jlib:jid_to_string(StateData#state.jid), jlib:jid_to_string(From)]),
 		    destroy_room(SubEl1, StateData);
 		Items ->
 		    process_admin_items_set(From, Items, Lang, StateData)

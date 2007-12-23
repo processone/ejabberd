@@ -1,3 +1,9 @@
+2007-12-23  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Log room creation and
+	destruction. Ensure JID of owners of MUC room are user, not
+	server (EJAB-435)
+
 2007-12-22  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd.app: Update ejabberd.app: add new erlang
