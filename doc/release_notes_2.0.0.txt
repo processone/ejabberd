@@ -109,7 +109,7 @@
   client, through adhoc commands.
 - Dynamic log levels: Improved logging with more log levels. You can
   now change the loglevel at run time. No performance penalty is
-  involved when
+  involved when less verbose levels are used.
 - Better command-line tool, with more options available.
 
 
