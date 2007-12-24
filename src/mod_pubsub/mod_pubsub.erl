@@ -461,15 +461,14 @@ handle_cast({presence, From, To, Packet}, State) ->
 	    on_sub_and_presence ->
 		case is_caps_notify(ServerHost, Node, Caps) of
 		    true ->
-			AllowedGroups = get_option(Options, roster_groups_allowed),
-			{PresenceSubscription, RosterGroup} = get_roster_info(
-					To#jid.luser, To#jid.lserver, JID, AllowedGroups),
 			Subscribed = case get_option(Options, access_model) of
 			    open -> true;
-			    presence -> PresenceSubscription;
+			    presence -> true;
 			    whitelist -> false; % subscribers are added manually
 			    authorize -> false; % likewise
-			    roster -> RosterGroup
+			    roster ->
+				Grps = get_option(Options, roster_groups_allowed),
+				element(2, get_roster_info(To#jid.luser, To#jid.lserver, JID, Grps))
 			end,
 			if Subscribed ->
 			    send_last_item(PepKey, Node, JID);

@@ -1,3 +1,8 @@
+2007-12-24  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: remove useless get_roster_info call in
+	presence_probe handling when access rule is presence
+
 2007-12-24  Mickael Remond  <mremond@process-one.net>
 
 	* doc/release_notes_2.0.0.txt: ejabberd 2.0.0 beta 1 release
