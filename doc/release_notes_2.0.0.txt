@@ -115,7 +115,7 @@
 
 * Localization
 
-- ejabberd is now available in 21 languages: Catalan, Chinese, Czech,
+- ejabberd is now available in 22 languages: Catalan, Chinese, Czech,
   Dutch, French, Galicia, German, Italian, Japanese, Polish,
   Portuguese, Portuguese (Brazil), Russian, Slovak, Spanish, Swedish,
   Thai, Turkish, Ukrainian, Vietnamese, Wallon.
