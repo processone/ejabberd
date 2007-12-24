@@ -126,8 +126,8 @@
 - Many launch script improvements.
 - New translations. The binary installer is now available in Chinese,
   Dutch, English, French, German, Spanish, Russian.
-- Makefile now implements uninstall command
-- Full MacOSX compliance in Makefile
+- Makefile now implements uninstall command.
+- Full MacOSX compliance in Makefile.
 - Configure script is clever at finding libraries in unusual places.
 				   
 				   
