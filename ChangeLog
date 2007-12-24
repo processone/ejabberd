@@ -1,3 +1,8 @@
+2007-12-24  Mickael Remond  <mremond@process-one.net>
+
+	* doc/release_notes_2.0.0.txt: ejabberd 2.0.0 beta 1 release
+	notes.
+
 2007-12-23  Badlop  <badlop@process-one.net>
 
 	* src/msgs/vi.msg: New Vietnamese translation (thanks to EQHO

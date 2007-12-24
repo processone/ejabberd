@@ -1,6 +1,6 @@
 			      Release Notes
 			   ejabberd 2.0.0 beta 1
-			     xx december 2007
+			     24 december 2007
 
   ejabberd 2.0.0 is a major new version for ejabberd adding plenty of
   new features, performance and scalability improvements and
@@ -51,11 +51,28 @@
 - More robust code with connection timeout implementation.
 - Support for multiple s2s connections per domain.
 - s2s whitelist and blacklist support.
+- s2s retrial interval.
+
+
+* LDAP
+
+- Many enterprise-class enhancements such as better behaviour under
+  heavy load.
+- Support for LDAP servers pool.
+- Simplified use of virtual hosting with LDAP with domain substitution
+  in config.
+- Ability to match on several userid attibutes.
 
 
 * Multi-user chat
 
-- Clustering support
+- Clustering and load balancing support.
+- Ability to define default room configuration in ejabberd config file.
+- Many anti abuse features have been added:
+  . New ACL to limit the creation of persistent room to autorized users.
+  . Ability to define the maximum number of users per room.
+  . Limitation of the rate of message and presence packets.
+  . Limitation of the maximum number of room a user can join at the same time.
 
 
 * File transfer
@@ -87,16 +104,21 @@
 
 * System administration
 
+- XEP-0133 - Service administration support. System administrators can
+  now performs lot of ejabberd related admin tasks from their XMPP
+  client, through adhoc commands.
 - Dynamic log levels: Improved logging with more log levels. You can
   now change the loglevel at run time. No performance penality is
   involved when
 - Better command-line tool, with more options available.
 
 
-* Development API
+* Localization
 
-- Several hooks have been added for module developers (most notably
-  presence related hooks).
+- ejabberd is now available in 21 languages: Catalan, Chinese, Czech,
+  Dutch, French, Galicia, German, Italian, Japanese, Polish,
+  Portuguese, Portuguese (Brazil), Russian, Slovak, Spanish, Swedish,
+  Thai, Turkish, Ukrainian, Vietnamese, Wallon.
 
 
 * Build and Installer
@@ -109,6 +131,20 @@
 - Configure script is clever at finding libraries in unusual places.
 				   
 				   
+* Development API
+
+- Several hooks have been added for module developers (most notably
+  presence related hooks).
+- HTTP request handler to write HTTP based plugins.
+- Manage connections IP address.
+
+
+* Bugfixes
+
+- ejabberd 2.0 also fixes numerous small bugs :) Read the full
+  changelog for details.
+
+
 Bugs report
 
   You can officially report bugs on Process-one support site:
