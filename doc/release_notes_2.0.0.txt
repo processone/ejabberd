@@ -6,12 +6,12 @@
   new features, performance and scalability improvements and
   architectural changes.
 
-  ejabberd 2.0.0 includes near that 200 improvements over ejabberd
+  ejabberd 2.0.0 includes near than 200 improvements over ejabberd
   1.1.x. A complete list of changes can be retrieved from:
    http://redir.process-one.net/ejabberd-2.0.0
 
   The new code can be downloaded from ejabberd download page:
-     http://www.process-one.net/en/projects/ejabberd/
+     http://www.process-one.net/en/ejabberd/
 
 
    Recent changes include:
@@ -105,10 +105,10 @@
 * System administration
 
 - XEP-0133 - Service administration support. System administrators can
-  now performs lot of ejabberd related admin tasks from their XMPP
+  now perform lot of ejabberd related admin tasks from their XMPP
   client, through adhoc commands.
 - Dynamic log levels: Improved logging with more log levels. You can
-  now change the loglevel at run time. No performance penality is
+  now change the loglevel at run time. No performance penalty is
   involved when
 - Better command-line tool, with more options available.
 
@@ -116,7 +116,7 @@
 * Localization
 
 - ejabberd is now available in 22 languages: Catalan, Chinese, Czech,
-  Dutch, French, Galicia, German, Italian, Japanese, Polish,
+  Dutch, English, French, Galicia, German, Italian, Japanese, Polish,
   Portuguese, Portuguese (Brazil), Russian, Slovak, Spanish, Swedish,
   Thai, Turkish, Ukrainian, Vietnamese, Wallon.
 
