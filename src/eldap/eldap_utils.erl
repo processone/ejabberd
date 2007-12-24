@@ -1,13 +1,31 @@
 %%%----------------------------------------------------------------------
 %%% File    : eldap_utils.erl
-%%% Author  : Mickael Remond <mickael.remond@process-one.net>
+%%% Author  : Mickael Remond <mremond@process-one.net>
 %%% Purpose : ejabberd LDAP helper functions
-%%% Created : 12 Oct 2006 by Mickael Remond <mickael.remond@process-one.net>
-%%% Id      : $Id$
+%%% Created : 12 Oct 2006 by Mickael Remond <mremond@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2007   Process-one
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%                         
+%%% You should have received a copy of the GNU General Public License
+%%% along with this program; if not, write to the Free Software
+%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+%%% 02111-1307 USA
+%%%
 %%%----------------------------------------------------------------------
 
 -module(eldap_utils).
--author('mickael.remond@process-one.net').
+-author('mremond@process-one.net').
 
 -export([generate_subfilter/1,
 	 find_ldap_attrs/2,

@@ -5,7 +5,7 @@
 %%%           The interface is based on RFC 1823, and
 %%%           draft-ietf-asid-ldap-c-api-00.txt
 %%%
-%%% Copyright (C) 2000  Torbj�n T�nkvist, tnt@home.se
+%%% Copyright (C) 2000  Torbjorn Tornkvist, tnt@home.se
 %%% 
 %%% This program is free software; you can redistribute it and/or modify
 %%% it under the terms of the GNU General Public License as published by

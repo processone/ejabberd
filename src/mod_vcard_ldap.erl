@@ -233,7 +233,7 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 				 translate:translate(
 				   Lang,
 				   "Erlang Jabber Server") ++
-				   "\nCopyright (c) 2002-2007 Alexey Shchepin"}]},
+				   "\nCopyright (c) 2002-2007 ProcessOne"}]},
 			      {xmlelement, "BDAY", [],
 			       [{xmlcdata, "2002-11-16"}]}
 			     ]}]}
@@ -529,7 +529,7 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, translate:translate(
 		    Lang,
 		    "ejabberd vCard module") ++
-		    "\nCopyright (c) 2003-2007 Alexey Shchepin"}]}].
+		    "\nCopyright (c) 2003-2007 ProcessOne"}]}].
 
 -define(LFIELD(Label, Var),
 	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},

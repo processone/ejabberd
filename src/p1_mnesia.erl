@@ -10,11 +10,9 @@
 %% under the License.
 %% 
 %% The Initial Developer of the Original Code is Process-one.
-%% Portions created by Process-one are Copyright 2007, Process-one
+%% Portions created by Process-one are Copyright 2006-2007, Process-one
 %% All Rights Reserved.''
-%% 
-%%     $Id$
-%%
+
 -module(p1_mnesia).
 -author('mickael.remond@process-one.net').
 
