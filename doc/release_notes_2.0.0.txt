@@ -3,7 +3,8 @@
 			     xx december 2007
 
   ejabberd 2.0.0 is a major new version for ejabberd adding plenty of
-  new features, performance improvements and architectural changes.
+  new features, performance and scalability improvements and
+  architectural changes.
 
   ejabberd 2.0.0 includes near that 200 improvements over ejabberd
   1.1.x. A complete list of changes can be retrieved from:
@@ -20,23 +21,25 @@
 
 - New front-end and back-end cluster architecture for better
   scalability and robustness. Back-end nodes are able to run a fully
-  fault-tolerant XMPP router and services, but you can now deployed
-  many front-end nodes to share the load without needed to synchronize
-  state with the back-ends.
-- All components now run in cluster mode (Multi-User chat service and
-  file transfer proxy).
-- New load balancing algorithm to support Multi-User chat clustering
-  and gateways clustering. More generally it supports any external
-  component load balacing.
-- ejabberd watchdog to 
-- Traffic shapers are now supported on components.
+  fault-tolerant XMPP router and services, but you can now deploy
+  many front-end nodes to share the load without needing to synchronize
+  any state with the back-ends.
+- All components now run in cluster mode (For example, Multi-User chat
+  service and file transfer proxy).
+- New load balancing algorithm to support Multi-User chat and gateways
+  clustering. More generally it supports any external component load
+  balancing.
+- ejabberd watchdog to receive warning on suspicious resources consumption.
+- Traffic shapers are now supported on components. This protect
+  ejabberd from components and gateways abuses.
+
 
 * Publish and Subscribe
 
 - Complete rewrite of the PubSub module. The new PubSub module is
-  plugin-based, allowing developer to create new node type. Any
-  application can be plugged to ejabberd and provide rich presence as
-  a pubsub plugin.
+  plugin-based, allowing developers to create new nodes type. Any
+  application can be plugged to ejabberd and can provide rich presence
+  as a pubsub plugin.
 - Personal Eventing via Pubsub support (XEP-0163). This module is
   implemented as a PubSub service. It supports user mood (XEP-107),
   User Tune (XEP-118), user location (XEP-0080) or user avatar
@@ -57,8 +60,8 @@
 
 * File transfer
 
-- Proxy65 file transfer proxy (XEP-0065). The proxy can run in
-  cluster.
+- XEP-0065 - Proxy65 file transfer proxy. The proxy can run in
+  cluster mode.
 
 
 * Authentication
@@ -69,12 +72,17 @@
 
 * Web client support
 
-- XEP-
-- HTTP module can now server static document. It is needed for
-  high-performance Web2.0 chat / IM application. System administrators
-  can now avoid using a proxy (like Apache) that handles much less
-  simultaneous than ejabberd HTTP module.
-- Added limitation enforcement on HTTP poll and HTTP bind modules.
+- XEP-0124 - BOSH support: BOSH (Bidirectional-streams Over
+  Synchronous HTTP) was formerly known as "HTTP binding". It provides
+  an efficient alternative to HTTP polling for scalable Web based chat
+  solutions.
+- HTTP module can now serve static documents (with
+  mod_http_fileserver). It is needed for high-performance Web2.0 chat
+  / IM application. System administrators can now avoid using a proxy
+  (like Apache) that handles much less simultaneous than ejabberd HTTP
+  module.
+- Added limitations enforcement on HTTP poll and HTTP bind modules
+  (bandwidth, packet size).
 
 
 * System administration
@@ -82,8 +90,13 @@
 - Dynamic log levels: Improved logging with more log levels. You can
   now change the loglevel at run time. No performance penality is
   involved when
-
 - Better command-line tool, with more options available.
+
+
+* Development API
+
+- Several hooks have been added for module developers (most notably
+  presence related hooks).
 
 
 * Build and Installer
