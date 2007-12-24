@@ -1,4 +1,4 @@
-$%%%-------------------------------------------------------------------
+%%%-------------------------------------------------------------------
 %%% File    : ejabberd_admin.erl
 %%% Author  : Mickael Remond <mremond@process-one.net>
 %%% Description : This module gathers admin functions used by different
