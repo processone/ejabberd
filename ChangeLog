@@ -1,3 +1,8 @@
+2007-12-25  Badlop  <badlop@process-one.net>
+
+	* src/mod_configure.erl: Bugfix, update to match changes in
+	mod_announce SVN r1099
+
 2007-12-24  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: remove useless get_roster_info call in
