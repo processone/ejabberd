@@ -1709,9 +1709,7 @@ stop_node(From, Host, ENode, Action, XData) ->
 	[] -> ok;
 	SubEls ->
 	    Request = #adhoc_request{
-	      lang = "es",
-	      node = ?NS_ADMINX("announce-online-allhosts"),
-	      sessionid = "2007-08-17T15:28:40.517806Z",
+	      node = ?NS_ADMINX("announce-allhosts"),
 	      action = "complete",
 	      xdata = {xmlelement, "x",
 		       [{"xmlns","jabber:x:data"},{"type","submit"}],
