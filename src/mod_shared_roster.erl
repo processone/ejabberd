@@ -30,7 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1,
-	 webadmin_menu/2, webadmin_page/3,
+	 webadmin_menu/3, webadmin_page/3,
 	 get_user_roster/2,
 	 get_subscription_lists/3,
 	 get_jid_info/4,
@@ -387,8 +387,8 @@ remove_user_from_group(Host, US, Group) ->
 %% Web Admin
 %%---------------------
 
-webadmin_menu(Acc, _Host) ->
-    [{"shared-roster", "Shared Roster"} | Acc].
+webadmin_menu(Acc, _Host, Lang) ->
+    [{"shared-roster", ?T("Shared Roster Groups")} | Acc].
 
 webadmin_page(_, Host,
 	      #request{us = _US,

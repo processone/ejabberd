@@ -1,5 +1,9 @@
 2007-12-26  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Translate menu items of webadmin
+	hooks in each module (EJAB-485)
+	* src/mod_shared_roster.erl: Likewise
+
 	* src/web/ejabberd_web_admin.erl: max_user_sessions access rule
 	contains an integer, but webadmin always expects atoms (EJAB-482)
 

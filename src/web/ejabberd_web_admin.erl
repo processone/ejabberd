@@ -105,8 +105,8 @@ get_auth(Auth) ->
     end.
 
 make_xhtml(Els, global, Lang) ->
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_main, [], []),
-    MenuItems2 = [?LI([?ACT("/admin/"++MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_main, [], [Lang]),
+    MenuItems2 = [?LI([?AC("/admin/"++MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
     {200, [html],
      {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
 			   {"xml:lang", Lang},
@@ -156,8 +156,8 @@ make_xhtml(Els, global, Lang) ->
 
 make_xhtml(Els, Host, Lang) ->
     Base = "/admin/server/" ++ Host ++ "/",
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host]),
-    MenuItems2 = [?LI([?ACT(Base ++ MI_uri ++ "/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host, Lang]),
+    MenuItems2 = [?LI([?AC(Base ++ MI_uri ++ "/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
     {200, [html],
      {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
 			   {"xml:lang", Lang},
@@ -598,8 +598,8 @@ logo_fill() ->
 process_admin(global,
 	      #request{path = [],
 		       lang = Lang}) ->
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_main, [], []),
-    MenuItems2 = [?LI([?ACT("/admin/"++MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_main, [], [Lang]),
+    MenuItems2 = [?LI([?AC("/admin/"++MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
     make_xhtml([?XCT("h1", "Administration"),
 		?XE("ul",
 		    [?LI([?ACT("/admin/acls/", "Access Control Lists"), ?C(" "),
@@ -617,8 +617,8 @@ process_admin(Host,
 	      #request{path = [],
 		       lang = Lang}) ->
     Base = "/admin/server/" ++ Host ++ "/",
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host]),
-    MenuItems2 = [?LI([?ACT(Base ++ MI_uri ++ "/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host, Lang]),
+    MenuItems2 = [?LI([?AC(Base ++ MI_uri ++ "/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
     make_xhtml([?XCT("h1", "Administration"),
 		?XE("ul",
 		    [?LI([?ACT(Base ++ "acls/", "Access Control Lists"), ?C(" "),
@@ -1647,8 +1647,8 @@ search_running_node(SNode, [Node | Nodes]) ->
 
 get_node(global, Node, [], Query, Lang) ->
     Res = node_parse_query(Node, Query),
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_node, [], [Node]),
-    MenuItems2 = [?LI([?ACT(MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_node, [], [Node, Lang]),
+    MenuItems2 = [?LI([?AC(MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
     [?XC("h1", ?T("Node ") ++ atom_to_list(Node))] ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
@@ -1669,8 +1669,8 @@ get_node(global, Node, [], Query, Lang) ->
 	];
 
 get_node(Host, Node, [], _Query, Lang) ->
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_hostnode, Host, [], [Host, Node]),
-    MenuItems2 = [?LI([?ACT(MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_hostnode, Host, [], [Host, Node, Lang]),
+    MenuItems2 = [?LI([?AC(MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
     [?XC("h1", ?T("Node ") ++ atom_to_list(Node)),
      ?XE("ul",
 	 [?LI([?ACT("modules/", "Modules")])] ++ MenuItems2)
