@@ -1223,7 +1223,7 @@ access_parse_delete(AccessRules, Host, Query) ->
 access_rule_to_xhtml(Rules) ->
     Text = lists:flatmap(
 	     fun({Access, ACL} = _Rule) ->
-		     SAccess = atom_to_list(Access),
+		     SAccess = element_to_list(Access),
 		     SACL = atom_to_list(ACL),
 		     SAccess ++ "\t" ++ SACL ++ "\n"
 	     end, Rules),
@@ -1238,7 +1238,7 @@ parse_access_rule(Text) ->
 		 fun(String) ->
 			 case string:tokens(String, "\s\t") of
 			     [Access, ACL] ->
-				 [{list_to_atom(Access), list_to_atom(ACL)}];
+				 [{list_to_element(Access), list_to_atom(ACL)}];
 			     [] ->
 				 []
 			 end
@@ -2243,6 +2243,13 @@ pretty_print_xml({xmlelement, Name, Attrs, Els}, Prefix) ->
 	     end
      end].
 
+element_to_list(X) when is_atom(X) -> atom_to_list(X);
+element_to_list(X) when is_integer(X) -> integer_to_list(X).
+
+list_to_element(List) ->
+    {ok, Tokens, _} = erl_scan:string(List),
+    [{_, _, Element}] = Tokens,
+    Element.
 
 url_func({user_diapason, From, To}) ->
     integer_to_list(From) ++ "-" ++ integer_to_list(To) ++ "/";

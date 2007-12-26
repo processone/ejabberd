@@ -1,3 +1,8 @@
+2007-12-26  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: max_user_sessions access rule
+	contains an integer, but webadmin always expects atoms (EJAB-482)
+
 2007-12-25  Badlop  <badlop@process-one.net>
 
 	* src/mod_configure.erl: Bugfix, update to match changes in
