@@ -1,3 +1,7 @@
+2007-12-27  Badlop  <badlop@process-one.net>
+
+	* src/mod_vcard_ldap.erl: Fix some field names (EJAB-483)
+
 2007-12-26  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: Translate menu items of webadmin
