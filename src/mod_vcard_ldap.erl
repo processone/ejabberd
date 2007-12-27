@@ -80,7 +80,7 @@
 	[{"NICKNAME", "%u", []},
 	 {"FN", "%s", ["displayName"]},
 	 {"FAMILY", "%s", ["sn"]},
-	 {"FIRST", "%s", ["givenName"]},
+	 {"GIVEN", "%s", ["givenName"]},
 	 {"MIDDLE", "%s", ["initials"]},
 	 {"ORGNAME", "%s", ["o"]},
 	 {"ORGUNIT", "%s", ["ou"]},
@@ -318,7 +318,7 @@ ldap_attribute_to_vcard(vCard, {"fn", Value}) ->
     {xmlelement,"FN",[],[{xmlcdata,Value}]};
 
 ldap_attribute_to_vcard(vCard, {"nickname", Value}) ->
-    {xmlelement,"NICK",[],[{xmlcdata,Value}]};
+    {xmlelement,"NICKNAME",[],[{xmlcdata,Value}]};
 
 ldap_attribute_to_vcard(vCard, {"title", Value}) ->
     {xmlelement,"TITLE",[],[{xmlcdata,Value}]};
@@ -350,10 +350,10 @@ ldap_attribute_to_vcard(vCard, {"photo", Value}) ->
 			    {xmlelement,"BINVAL",[],[{xmlcdata, jlib:encode_base64(Value)}]}]};
 
 ldap_attribute_to_vcard(vCardN, {"family", Value}) ->
-    {xmlelement,"LAST",[],[{xmlcdata,Value}]};
+    {xmlelement,"FAMILY",[],[{xmlcdata,Value}]};
 
 ldap_attribute_to_vcard(vCardN, {"given", Value}) ->
-    {xmlelement,"FIRST",[],[{xmlcdata,Value}]};
+    {xmlelement,"GIVEN",[],[{xmlcdata,Value}]};
 
 ldap_attribute_to_vcard(vCardN, {"middle", Value}) ->
     {xmlelement,"MIDDLE",[],[{xmlcdata,Value}]};
