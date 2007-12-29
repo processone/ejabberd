@@ -1,7 +1,7 @@
 2007-12-29  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/ejabberd_s2s_out.erl: Fixed behavior when outgoing_s2s_port
-	option is not defined
+	option is not defined (EJAB-487)
 
 2007-12-27  Badlop  <badlop@process-one.net>
 
