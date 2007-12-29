@@ -923,14 +923,13 @@ get_addr_port(Server) ->
     case Res of
 	{error, Reason} ->
 	    ?DEBUG("srv lookup of '~s' failed: ~p~n", [Server, Reason]),
-	    [{Server, ejabberd_config:get_local_option(outgoing_s2s_port)}];
+	    [{Server, outgoing_s2s_port()}];
 	{ok, HEnt} ->
 	    ?DEBUG("srv lookup of '~s': ~p~n",
 		   [Server, HEnt#hostent.h_addr_list]),
 	    case HEnt#hostent.h_addr_list of
 		[] ->
-		    [{Server,
-		      ejabberd_config:get_local_option(outgoing_s2s_port)}];
+		    [{Server, outgoing_s2s_port()}];
 		AddrList ->
 		    %% Probabilities are not exactly proportional to weights
 		    %% for simplicity (higher weigths are overvalued)
@@ -945,8 +944,7 @@ get_addr_port(Server) ->
 					  {Priority * 65536 - N, Host, Port}
 				  end, AddrList)) of
 			{'EXIT', _Reasn} ->
-			    [{Server,
-			      ejabberd_config:get_local_option(outgoing_s2s_port)}];
+			    [{Server, outgoing_s2s_port()}];
 			SortedList ->
 			    List = lists:map(
 				     fun({_, Host, Port}) ->
@@ -970,6 +968,13 @@ test_get_addr_port(Server) ->
 	      end
       end, [], lists:seq(1, 100000)).
 
+outgoing_s2s_port() ->
+    case ejabberd_config:get_local_option(outgoing_s2s_port) of
+	Port when is_integer(Port) ->
+	    Port;
+	undefined ->
+	    5269
+    end.
 
 %% Human readable S2S logging: Log only new outgoing connections as INFO
 %% Do not log dialback
