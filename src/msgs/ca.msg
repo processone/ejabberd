@@ -6,6 +6,25 @@
 {"No resource provided", "Recurs no disponible"}.
 
 % mod_configure.erl
+{"Restart Service", "Reiniciar el Servei"}.
+{"Shut Down Service", "Apager el Servei"}.
+{"Delete User", "Eliminar Usuari"}.
+{"End User Session", "Finalitzar Sesió d'Usuari"}.
+{"Get User Password", "Obtenir Password d'usuari"}.
+{"Change User Password", "Canviar Password d'Usuari"}.
+{"Get User Last Login Time", "Obtenir la última connexió d'Usuari"}.
+{"Get User Statistics", "Obtenir Estadístiques d'Usuari"}.
+{"Get Number of Registered Users", "Obtenir Número d'Usuaris Registrats"}.
+{"Get Number of Online Users", "Obtenir Número d'Usuaris Connectats"}.
+{"User Management", "Gestió d'Usuaris"}.
+{"Time delay", "Temps de retràs"}.
+{"Password Verification", "Verificació del Password"}.
+{"Number of registered users", "Número d'Usuaris Registrats"}.
+{"Number of online users", "Número d'usuaris connectats"}.
+{"Last login", "Últim login"}.
+{"Roster size", "Tamany de la llista"}.
+{"IP addresses", "Adreça IP"}.
+{"Resources", "Recursos"}.
 {"Choose storage type of tables", "Selecciona el tipus d'almacenament de les taules"}.
 {"RAM copy", "Còpia en RAM"}.
 {"RAM and disc copy", "Còpia en RAM i disc"}.
@@ -27,15 +46,10 @@
 {"Import Users from Dir at ", "Importar usuaris des del directori en "}.
 {"Enter path to jabberd1.4 spool dir", "Introdueix la ruta al directori de jabberd1.4 spools"}.
 {"Path to Dir", "Ruta al directori"}.
-{"Hostname Configuration", "Configuració del nom de màquina"}.
-{"Choose host name", "Indica el nom de la màquina"}.
-{"Host name", "Nom de la màquina"}.
 {"Access Control List Configuration", "Configuració de la Llista de Control d'Accés"}.
 {"Access control lists", "Llistes de Control de Accés"}.
 {"Access Configuration", "Configuració d'accesos"}.
 {"Access rules", "Regles d'accés"}.
-{"Remove Users", "Eliminar usuaris"}.
-{"Choose users to remove", "Selecciona usuaris a eliminar"}.
 {"Administration of ", "Administració de "}.
 {"Action on user", "Acció en l'usuari"}.
 {"Edit Properties", "Editar propietats"}.
@@ -53,10 +67,8 @@
 {"From ~s", "De ~s"}.
 {"Running Nodes", "Nodes funcionant"}.
 {"Stopped Nodes", "Nodes parats"}.
-{"Host Name", "Nom de la màquina"}.
 {"Access Control Lists", "Llista de Control d'Accés"}.
 {"Access Rules", "Regles d'Accés"}.
-{"Remove Users", "Eliminar usuaris"}.
 {"Modules", "Mòduls"}.
 {"Start Modules", "Iniciar mòduls"}.
 {"Stop Modules", "Parar mòduls"}.
@@ -88,7 +100,16 @@
 {"Organization Unit", "Unitat de la organizació"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"Node Creator", "Creador del node"}.
+{"ejabberd Publish-Subscribe module", "Mòdul ejannerd Publicar-Subscriure"}.
+{"PubSub subscriber request", "Petició de PubSub subscriure"}.
+{"Choose whether to approve this entity's subscription.", "Tria si aprova aquesta entitat de subscripció"}.
+{"Node ID", "ID del Node"}.
+{"Subscriber Address", "Adreça del Subscriptor"}.
+{"Allow this JID to subscribe to this pubsub node?", "Deixar que aquesta JID es puga subscriure a aquest node pubsub"}.
+{"Deliver event notifications", "Entrega de notificacions d'events"}.
+{"Specify the access model", "Especificar el model d'accés"}.
+{"Roster groups that may subscribe (if access model is roster)", "Llista de grups que cal subscriures (si el model d'accés és per llista)"}.
+{"When to send the last published item", "Quan s'ha enviat l'última publicació"}.
 {"Deliver payloads with event notifications", "Enviar payloads junt a les notificacions d'events"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptors quan canvia la configuració del node"}.
 {"Notify subscribers when the node is deleted", "Notificar subscriptors quan el node és eliminat"}.
@@ -96,14 +117,10 @@
 {"Persist items to storage", "Persistir elements al guardar"}.
 {"Max # of items to persist", "Màxim # d'elements que persistixen"}.
 {"Whether to allow subscriptions", "Permetre subscripcions"}.
-{"Specify the subscriber model", "Especificar el model del subscriptor"}.
 {"Specify the publisher model", "Especificar el model del publicant"}.
 {"Max payload size in bytes", "Màxim tamany del payload en bytes"}.
-{"Send items to new subscribers", "Enviar elements als nous subscriptors"}.
 {"Only deliver notifications to available users", "Sols enviar notificacions als usuaris disponibles"}.
-{"Specify the current subscription approver", "Especificar l'aprovador de subscripció actual"}.
 {"Publish-Subscribe", "Publicar-subscriure't"}.
-{"ejabberd pub/sub module", "mòdul ejabberd pub/sub"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Necessites un client amb suport x:data per a poder registrar el Nickname"}.
@@ -119,6 +136,11 @@
 {"ejabberd MUC module", "mòdul ejabberd MUC"}.
 
 % mod_muc/mod_muc_room.erl
+{"Traffic rate limit is exceeded", "El llímit de tràfic ha sigut sobrepassat"}.
+{"Maximum Number of Occupants", "Número màxim d'ocupants"}.
+{"No limit", "Sense Llímit"}.
+{"~s invites you to the room ~s", "~s et convida a la sala ~s"}.
+{"the password is", "el password és"}.
 {" has set the subject to: ", " ha posat l'assumpte: "}.
 {"You need an x:data capable client to configure room", "Necessites un client amb suport x:data per a configurar la sala"}.
 {"Configuration for ", "Configuració per a "}.
@@ -157,17 +179,18 @@
 {"moderators only", "sols moderadors"}.
 {"anyone", "qualsevol"}.
 {"Make room members-only", "Crear una sala de \"soles membres\""}.
-{"Make room moderated", "Crear una sala moderada"}.
 {"Default users as participants", "Els usuaris per defecte són els participants"}.
 {"Allow users to change subject", "Permetre que els usuaris canvien el tema"}.
 {"Allow users to send private messages", "Permetre que els usuaris envien missatges privats"}.
 {"Allow users to query other users", "Permetre que els usuaris fagen peticions a altres usuaris"}.
 {"Allow users to send invites", "Permetre que els usuaris envien invitacions"}.
 {"Enable logging", "Habilitar el registre de la conversa"}.
-{"Description", "Descripció"}.
 {"Number of occupants", "Número d'ocupants"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "Has sigut expulsat a causa d'un canvi d'afiliació"}.
+{"has been kicked because the room has been changed to members-only", "Has sigut expulsat perquè la sala ha canviat a sols membres"}.
+{"has been kicked because of a system shutdown", "Has sigut expulsat perquè el sistema s'ha apagat"}.
 {"Chatroom configuration modified", "Configuració de la sala de xat modificada"}.
 {"joins the room", "Entrar a la sala"}.
 {"leaves the room", "Deixar la sala"}.
@@ -248,7 +271,6 @@
 {"Remove", "Borrar"}.
 {"User ", "Usuari "}.
 {"Roster of ", "Llista de contactes de "}.
-{"Shared Roster", "Grups Compartits"}.
 {"Online", "Connectat"}.
 {"Validate", "Validar"}.
 {"Name:", "Nom:"}.
@@ -269,7 +291,6 @@
 {"Host", "Host"}.
 {"ejabberd Web Interface", "Interficie Web del ejabberd"}.
 {"Administration", "Administració"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
 {"(Raw)", "(en format text)"}.
 {"Submitted", "Enviat"}.
 {"Bad format", "Format erroni"}.
@@ -278,7 +299,6 @@
 {"Registered Users", "Usuaris registrats"}.
 {"Offline Messages", "Missatges offline"}.
 {"Registered Users:", "Usuaris registrats:"}.
-{"Authenticated Users:", "Usuaris autenticats:"}.
 {"Online Users:", "Usuaris en línia:"}.
 {"Outgoing s2s Connections:", "Connexions d'eixida s2s"}.
 {"Outgoing s2s Servers:", "Servidors d'eixida de s2s"}.
@@ -308,7 +328,6 @@
 {"Update script", "Script d'actualització"}.
 {"Low level update script", "Script d'actualització de baix nivell"}.
 {"Script check", "Comprovar script"}.
-{"Not Found", "No trobat"}.
 {"Shared Roster Groups", "Grups de contactes compartits"}.
 {"Uptime:", "Temps en marxa"}.
 
@@ -333,6 +352,10 @@
 {"Pong", "Pong"}.
 
 % mod_announce.erl
+{"Send announcement to all users on all hosts", "Enviar anunci a tots els usuaris de tots els hosts"}.
+{"Set message of the day on all hosts and send to online users", "Escriure missatge del dia en tots els hosts i envia als usuaris connectats"}.
+{"Update message of the day on all hosts (don't send)", "Actualitza el missatge del dia en tots els hosts (no enviar)"}.
+{"Delete message of the day on all hosts", "Elimina el missatge del dis de tots els hosts"}.
 {"Really delete message of the day?", "Segur que vols eliminar el missatge del dia?"}.
 {"Subject", "Assumpte"}.
 {"Message body", "Missatge"}.
@@ -347,6 +370,9 @@
 
 % mod_proxy65/mod_proxy65_service.erl
 {"ejabberd SOCKS5 Bytestreams module", "mòdul ejabberd SOCKS5 Bytestreams"}.
+
+% mod_offline_odbc.erl
+{"Your contact offline message queue is full. The message has been discarded.", "La cua de missatges offline és plena. El missatge ha sigut descartat"}.
 
 % Local Variables:
 % mode: erlang
