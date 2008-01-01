@@ -107,7 +107,7 @@ install: all
 	[ -f $(ETCDIR)/ejabberd.cfg ] && install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new || install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
 	sed -e "s*@rootdir@*@prefix@*" ejabberdctl.template > ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] && install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new || install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
-	install -b -m 644 ejabberd.inetrc $(ETCDIR)/ejabberd.inetrc
+	install -b -m 644 inetrc $(ETCDIR)/inetrc
 	install -d $(SBINDIR)
 	install -m 755 ejabberdctl.example $(SBINDIR)/ejabberdctl
 	install -d $(LOGDIR)

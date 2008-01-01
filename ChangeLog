@@ -1,5 +1,22 @@
-2007-12-31  Badlop  <badlop@process-one.net>
+2008-01-01  Badlop  <badlop@process-one.net>
 
+	* src/ejabberdctl.template: Create logs_dir if doesn't exist. New
+	parameters --config, --ctl-config, --logs, --spool. Crash dump
+	renamed to erl_crash_DATETIME.dump.
+	
+	* src/ejabberdctl.template: Backport improvements from binary
+	installer (EJAB-488): options are simple values; enable Kernel
+	Poll by default, set SMP to auto, set max ports to 32000, max
+	processes to 250000.
+	* src/ejabberdctl.cfg.example: Likewise
+
+	* src/ejabberd.inetrc: Renamed ejabberd.inetrc to inetrc
+	* src/inetrc: Likewise
+	* src/Makefile.in: Likewise
+	* doc/guide.tex: Likewise
+
+2007-12-31  Badlop  <badlop@process-one.net>
+	
 	* src/msgs/ca.msg: Updated (thanks to Vicent Alberola Canet)
 
 2007-12-29  Alexey Shchepin  <alexey@process-one.net>
