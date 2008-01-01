@@ -1,5 +1,8 @@
 2008-01-01  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Resend 'continue' elements in muc
+	room invitations (EJAB-490)
+
 	* src/ejabberdctl.template: Create logs_dir if doesn't exist. New
 	parameters --config, --ctl-config, --logs, --spool. Crash dump
 	renamed to erl_crash_DATETIME.dump.

@@ -2975,12 +2975,19 @@ check_invitation(From, Els, Lang, StateData) ->
 		xml:get_path_s(
 		  InviteEl,
 		  [{elem, "reason"}, cdata]),
+	    ContinueEl =
+		case xml:get_path_s(
+		       InviteEl,
+		       [{elem, "continue"}]) of
+		    [] -> [];
+		    Continue1 -> [Continue1]
+		end,
 	    IEl =
 		[{xmlelement, "invite",
 		  [{"from",
 		    jlib:jid_to_string(From)}],
 		  [{xmlelement, "reason", [],
-		    [{xmlcdata, Reason}]}]}],
+		    [{xmlcdata, Reason}]}] ++ ContinueEl}],
 	    PasswdEl =
 		case (StateData#state.config)#config.password_protected of
 		    true ->
