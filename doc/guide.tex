@@ -180,16 +180,16 @@ ejabberd Development Team
 % Input introduction.tex
 \input{introduction}
 
-\chapter{Installing ejabberd}
-\section{Installing ejabberd with Binary Installer}
+\chapter{Installing \ejabberd{}}
+\section{Installing \ejabberd{} with Binary Installer}
 
-Probably the easiest way to install an ejabberd Instant Messaging server
+Probably the easiest way to install an \ejabberd{} Instant Messaging server
 is using the binary installer published by Process-one. 
-The binary installers of released ejabberd versions 
-are available in the Process-one ejabberd download page:
+The binary installers of released \ejabberd{} versions 
+are available in the Process-one \ejabberd{} download page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
-The installer will deploy and configure a full featured ejabberd
+The installer will deploy and configure a full featured \ejabberd{}
 server and does not require any extra dependencies.
 
 In *nix systems, remember to set executable the binary installer before starting it. For example:
@@ -199,28 +199,28 @@ In *nix systems, remember to set executable the binary installer before starting
 \end{verbatim}
 
 
-\section{Installing ejabberd with Operating System specific packages}
+\section{Installing \ejabberd{} with Operating System specific packages}
 
-Some Operating Systems provide a specific ejabberd package adapted to 
+Some Operating Systems provide a specific \ejabberd{} package adapted to 
 your system architecture and libraries, which also checks dependencies 
 and performs basic configuration tasks like creating the initial
 administrator account. Some examples are Debian and Gentoo. Consult the
 resources provided by your Operating System for more information.
 
-\section{Installing ejabberd with CEAN}
+\section{Installing \ejabberd{} with CEAN}
 
 \footahref{http://cean.process-one.net/}{CEAN}
 (Comprehensive Erlang Archive Network) is a repository that hosts binary
-packages from many Erlang programs, including ejabberd and all its dependencies.
+packages from many Erlang programs, including \ejabberd{} and all its dependencies.
 The binaries are available for many different system architectures, so this is an
-alternative to the binary installer and Operating System's ejabberd packages.
+alternative to the binary installer and Operating System's \ejabberd{} packages.
 
-\section{Installing ejabberd from Source Code}
+\section{Installing \ejabberd{} from Source Code}
 \label{installation}
 \ind{install}
 
-The canonical form for distribution of ejabberd stable releases is the source code package.
-Compiling ejabberd from source code is quite easy in *nix systems, 
+The canonical form for distribution of \ejabberd{} stable releases is the source code package.
+Compiling \ejabberd{} from source code is quite easy in *nix systems, 
 as long as your system have all the dependencies.
 
 \subsection{Requirements}
@@ -242,7 +242,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \label{download}
 \ind{install!download}
 
-Released versions of \ejabberd{} are available in the Process-one ejabberd download page:
+Released versions of \ejabberd{} are available in the Process-one \ejabberd{} download page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 \ind{Subversion repository}
@@ -296,7 +296,7 @@ Some options that you may be interested in modifying:
 \label{install}
 \ind{install!install}
 
-To install ejabberd in the destination directories, run the command:
+To install \ejabberd{} in the destination directories, run the command:
 \begin{verbatim}
   make install
 \end{verbatim}
@@ -334,10 +334,10 @@ The files and directories created are, by default:
 \label{start}
 \ind{install!start}
 
-You can use the \term{ejabberdctl} command line administration script to start and stop ejabberd.
-This script is located into tools directory of sources archive. If you installed ejabberd from sources,
+You can use the \term{ejabberdctl} command line administration script to start and stop \ejabberd{}.
+This script is located into tools directory of sources archive. If you installed \ejabberd{} from sources,
 \term{ejabberdctl} is located into destination sbin directory (default /usr/local/sbin). If you installed
-ejabberd with the installer, \term{ejabberdctl} is located into ejabberd's bin directory.
+\ejabberd{} with the installer, \term{ejabberdctl} is located into \ejabberd{}'s bin directory.
 
 Usage example:
 \begin{verbatim}
@@ -352,18 +352,18 @@ $ ejabberdctl stop
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
 
-Note: if you installed ejabberd with your distribution packaging system, \term{ejabberdctl} should be called
-by an /etc/init.d/ejabberd script to allow you to start and stop ejabberd as a service at boot time.
+Note: if you installed \ejabberd{} with your distribution packaging system, \term{ejabberdctl} should be called
+by an /etc/init.d/ejabberd script to allow you to start and stop \ejabberd{} as a service at boot time.
 
-If you installed ejabberd using CEAN package, you will have to create your own ejabberd start
+If you installed \ejabberd{} using CEAN package, you will have to create your own \ejabberd{} start
 script depending of how you handle your CEAN installation. The default \term{ejabberdctl} script is located
-into ejabberd's priv directory and can be used as an example.
+into \ejabberd{}'s priv directory and can be used as an example.
 
 \subsection{Specific Notes for BSD}
 \label{bsd}
 \ind{install!bsd}
 
-The command to compile ejabberd in BSD systems is:
+The command to compile \ejabberd{} in BSD systems is:
 \begin{verbatim}
   gmake
 \end{verbatim}
@@ -393,7 +393,7 @@ To compile \ejabberd{} on a Microsoft Windows system, you need:
 \subsubsection{Compilation}
 \label{windowscom}
 
-We assume that we will try to put as much library as possible into \verb|C:\sdk\| to make it easier to track what is install for ejabberd.
+We assume that we will try to put as much library as possible into \verb|C:\sdk\| to make it easier to track what is install for \ejabberd{}.
 
 \begin{enumerate}
 \item Install Erlang emulator (for example, into \verb|C:\sdk\erl5.5.5|).
@@ -438,7 +438,7 @@ werl -s ejabberd -name ejabberd
 \label{initialadmin}
 
 You need a Jabber account and grant him administrative privileges
-to enter the ejabberd web interface:
+to enter the \ejabberd{} Web Admin:
 \begin{enumerate}
 \item Register a Jabber account on your \ejabberd{} server, for example \term{admin1@example.org}. 
   There are two ways to register a Jabber account:
@@ -449,7 +449,7 @@ to enter the ejabberd web interface:
 \end{verbatim} 
   \item Using a Jabber client and In-Band Registration (see section~\ref{modregister}).
   \end{enumerate}
-\item Edit the ejabberd configuration file to give administration rights to the Jabber account you created:
+\item Edit the \ejabberd{} configuration file to give administration rights to the Jabber account you created:
   \begin{verbatim}
   {acl, admins, {user, "admin1", "example.org"}}.
   {access, configure, [{allow, admins}]}.
@@ -457,27 +457,27 @@ to enter the ejabberd web interface:
   You can grant administrative privileges to many Jabber accounts,
   and also to accounts in other Jabber servers.
 \item Restart \ejabberd{} to load the new configuration.
-\item Open the web interface (\verb|http://server:port/admin/|) in your
+\item Open the Web Admin (\verb|http://server:port/admin/|) in your
   favourite browser. Make sure to enter the \emph{full} JID as username (in this
   example: \jid{admin1@example.org}. The reason that you also need to enter the
   suffix, is because \ejabberd{}'s virtual hosting support.
 \end{enumerate}
 
 
-\chapter{Configuring ejabberd}
+\chapter{Configuring \ejabberd{}}
 \section{Basic Configuration}
 \label{basicconfig}
 \ind{configuration file}
 
 The configuration file will be loaded the first time you start \ejabberd{}. The
-content from this file will be parsed and stored in the internal ejabberd database. Subsequently the
+content from this file will be parsed and stored in the internal \ejabberd{} database. Subsequently the
 configuration will be loaded from the database and any commands in the
 configuration file are appended to the entries in the database. 
 
-Note that ejabberd never edits the configuration file. 
-So, the configuration changes done using the web interface
+Note that \ejabberd{} never edits the configuration file. 
+So, the configuration changes done using the Web Admin
 are stored in the database, but are not reflected in the configuration file.
-If you want those changes to be use after ejabberd restart, you can either
+If you want those changes to be use after \ejabberd{} restart, you can either
 edit the configuration file, or remove all its content.
 
 The configuration file contains a sequence of Erlang terms. Lines beginning with a
@@ -494,8 +494,8 @@ the configuration file:
   override_local.
   override_acls.
 \end{verbatim}
-With these lines the old global options (shared between all ejabberd nodes in a
-cluster), local options (which are specific for this particular ejabberd node)
+With these lines the old global options (shared between all \ejabberd{} nodes in a
+cluster), local options (which are specific for this particular \ejabberd{} node)
 and ACLs will be removed before new ones are added.
 
 \subsection{Host Names}
@@ -723,8 +723,8 @@ This is a detailed description of each option allowed by the listening modules:
   \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
     the port will be encrypted using SSL immediately after connecting. You
     should also set the \option{certfile} option.
-  \titem{web\_admin} \ind{options!web\_admin}\ind{web interface}This option
-    enables the web interface for \ejabberd{} administration which is available
+  \titem{web\_admin} \ind{options!web\_admin}\ind{web admin}This option
+    enables the Web Admin for \ejabberd{} administration which is available
     at \verb|http://server:port/admin/|. Login and password are the username and
     password of one of the registered users who are granted access by the
     `configure' access rule.
@@ -756,8 +756,8 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
 \item Port 5223 listens for c2s connections with the old SSL.
 \item Port 5269 listens for s2s connections with STARTTLS.
 \item Port 5280 listens for HTTP requests, and serves the HTTP Poll service.
-\item Port 5281 listens for HTTP requests, and serves the web interface using HTTPS as explained in
-  section~\ref{webinterface}.
+\item Port 5281 listens for HTTP requests, and serves the Web Admin using HTTPS as explained in
+  section~\ref{webadmin}.
 \end{itemize}
 \begin{verbatim}
 {hosts, ["example.com", "example.org", "example.net"]}.
@@ -799,7 +799,7 @@ In this example, the following configuration defines that:
   for the user called `\term{bad}'.
 \item s2s connections are listened for on port 5269 with STARTTLS for secured
   traffic enabled.
-\item Port 5280 is serving the web interface and the HTTP Polling service. Note
+\item Port 5280 is serving the Web Admin and the HTTP Polling service. Note
   that it is also possible to serve them on different ports. The second
   example in section~\ref{webinterface} shows how exactly this can be done.
 \item All users except for the administrators have a traffic of limit 
@@ -1289,7 +1289,7 @@ Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
 Moreover, the file mysql.sql in the directory src/odbc might be interesting for
-you. This file contains the ejabberd schema for MySQL. At the end of the file
+you. This file contains the \ejabberd{} schema for MySQL. At the end of the file
 you can find information to update your database schema.
 
 \subsubsection{Driver Compilation}
@@ -1302,7 +1302,7 @@ if the binary packages of \ejabberd{} you are using include support for MySQL.
 \begin{enumerate}
 \item First, install the \footahref{http://support.process-one.net/doc/display/CONTRIBS/Yxa}{Erlang
   MySQL library}. Make sure the compiled files are in your Erlang path; you can
-  put them for example in the same directory as your ejabberd .beam files.
+  put them for example in the same directory as your \ejabberd{} .beam files.
 \item Then, configure and install \ejabberd{} with ODBC support enabled (this is
   also needed for native MySQL support!). This can be done, by using next
   commands:
@@ -1376,7 +1376,7 @@ Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
 Moreover, the file mssql.sql in the directory src/odbc might be interesting for
-you. This file contains the ejabberd schema for Microsoft SQL Server. At the end
+you. This file contains the \ejabberd{} schema for Microsoft SQL Server. At the end
 of the file you can find information to update your database schema.
 
 \subsubsection{Driver Compilation}
@@ -1426,7 +1426,7 @@ Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
 Also the file pg.sql in the directory src/odbc might be interesting for you.
-This file contains the ejabberd schema for PostgreSQL. At the end of the file
+This file contains the \ejabberd{} schema for PostgreSQL. At the end of the file
 you can find information to update your database schema.
 
 \subsubsection{Driver Compilation}
@@ -1441,7 +1441,7 @@ PostgreSQL.
 \item First, install the Erlang PgSQL library from
   \footahref{http://jungerl.sourceforge.net/}{Jungerl}. Make sure the compiled
   files are in your Erlang path; you can put them for example in the same
-  directory as your ejabberd .beam files.
+  directory as your \ejabberd{} .beam files.
 \item Then, configure, compile and install \ejabberd{} with ODBC support enabled
   (this is also needed for native PostgreSQL support!). This can be done, by
   using next commands:
@@ -1522,7 +1522,7 @@ ODBC.
 \begin{enumerate}
 \item First, install the \footahref{http://support.process-one.net/doc/display/CONTRIBS/Yxa}{Erlang
   MySQL library}. Make sure the compiled files are in your Erlang path; you can
-  put them for example in the same directory as your ejabberd .beam files.
+  put them for example in the same directory as your \ejabberd{} .beam files.
 \item Then, configure, compile and install \ejabberd{} with ODBC support
   enabled. This can be done, by using next commands:
   \begin{verbatim}
@@ -1581,7 +1581,7 @@ LDAP server. This option is required.
 \titem{ldap\_port} \ind{options!ldap\_port}Port to connect to your LDAP server.
   The initial default value is~389, so it is used when nothing is set into the 
 configuration file. 
-If you configure a value, it is stored in ejabberd's database. 
+If you configure a value, it is stored in \ejabberd{}'s database. 
 Then, if you remove that value from the configuration file, 
 the value previously stored in the database will be used instead of the default 389.
 \titem{ldap\_rootdn} \ind{options!ldap\_rootdn}Bind DN. The default value
@@ -1930,7 +1930,7 @@ Example:
 \label{modhostoption}
 \ind{options!host}
 
-This option defines the Jabber ID of a service provided by an ejabberd module.
+This option defines the Jabber ID of a service provided by an \ejabberd{} module.
 The keyword "@HOST@" is replaced at start time with the real virtual host string.
 
 This example configures
@@ -2027,7 +2027,7 @@ Examples:
 
 Note that \modannounce{} can be resource intensive on large
 deployments as it can broadcast lot of messages. This module should be
-disabled for instances of ejabberd with hundreds of thousands users.
+disabled for instances of \ejabberd{} with hundreds of thousands users.
 
 \subsection{\moddisco{}}
 \label{moddisco}
@@ -2292,7 +2292,7 @@ Options:
   service for users abuses, as fastly changing a user presence will
   result in possible large presence packet broadcast. If a user tries
   to change its presence more often than the specified interval, the
-  presence is cached by ejabberd and only the last presence is
+  presence is cached by \ejabberd{} and only the last presence is
   broadcasted to all users in the room after expiration of the
   interval delay. Intermediate presence packets are silently
   discarded. A good value for this option is 4 seconds.
@@ -2842,14 +2842,14 @@ A shared roster group can have members from any Jabber server,
 but the presence will only be available from and to members 
 of the same virtual host where the group is created.
 
-Shared roster groups can be edited \emph{only} via the web interface. Each group
+Shared roster groups can be edited \emph{only} via the Web Admin. Each group
 has a unique identification and the following parameters:
 \begin{description}
 \item[Name] The name of the group, which will be displayed in the roster.
 \item[Description] The description of the group. This parameter does not affect
   anything.
 \item[Members] A list of full JIDs of group members, entered one per line in
-  the web interface.
+  the Web Admin.
   To put as members all the registered users in the virtual hosts,
   you can use the special directive: @all@.
   Note that this directive is designed for a small server with just a few hundred users.
@@ -3269,7 +3269,7 @@ Options:
 \iqdiscitem{Software Version (\ns{jabber:iq:version})}
 \end{description}
 
-\chapter{Managing an ejabberd server}
+\chapter{Managing an \ejabberd{} server}
 
 
 \section{\term{ejabberdctl}}
@@ -3279,23 +3279,23 @@ Options:
 \label{commands}
 
 The \term{ejabberdctl} command line script allows to start, stop and perform 
-many other administrative tasks in a local or remote ejabberd server.
+many other administrative tasks in a local or remote \ejabberd{} server.
 
 When \term{ejabberdctl} is executed without any parameter,
-it displays the available options. If there isn't an ejabberd server running, 
+it displays the available options. If there isn't an \ejabberd{} server running, 
 the available parameters are:
 \begin{description}
-\titem{start} Start ejabberd in background mode. This is the default method.
-\titem{debug} Attach an Erlang shell to an already existing ejabberd server. This allows to execute commands interactively in the ejabberd server.
-\titem{live} Start ejabberd in live mode: the shell keeps attached to the started server, showing log messages and allowing to execute interactive commands.
+\titem{start} Start \ejabberd{} in background mode. This is the default method.
+\titem{debug} Attach an Erlang shell to an already existing \ejabberd{} server. This allows to execute commands interactively in the \ejabberd{} server.
+\titem{live} Start \ejabberd{} in live mode: the shell keeps attached to the started server, showing log messages and allowing to execute interactive commands.
 \end{description}
 
-If there is an ejabberd server running in the system,
+If there is an \ejabberd{} server running in the system,
 \term{ejabberdctl} shows all the available commands in that server.
 The more interesting ones are:
 \begin{description}
-\titem{status} Check the status of the ejabberd server.
-\titem{stop} Stop the ejabberd server which is running in the machine.
+\titem{status} Check the status of the \ejabberd{} server.
+\titem{stop} Stop the \ejabberd{} server which is running in the machine.
 \titem{reopen-log} If you use a tool to rotate logs, you have to configure it
   so that this command is executed after each rotation.
 \titem {backup, restore, install-fallback, dump, load} You can use these
@@ -3328,7 +3328,7 @@ The basic parameters used by \term{ejabberdctl} when starting the Erlang node:
 	this node. This is the preferable option in most cases.
   \titem{-name ejabberd} 
 	The Erlang node will be fully identified.
-    This is only useful if you plan to setup an ejabberd cluster with nodes in different networks.
+    This is only useful if you plan to setup an \ejabberd{} cluster with nodes in different networks.
   \titem{-kernel inetrc "/etc/ejabberd/inetrc"} 
 	Indicates which IP name resolution to use. It is required if using \term{-sname}.
   \titem{-detached} 
@@ -3340,7 +3340,7 @@ The basic parameters used by \term{ejabberdctl} when starting the Erlang node:
   \titem{-pa /var/lib/ejabberd/ebin} 
 	Specify the directory where Erlang binary files (*.beam) are located.
   \titem{-s ejabberd} 
-	Tell Erlang runtime system to start the ejabberd application.
+	Tell Erlang runtime system to start the \ejabberd{} application.
   \titem{-mnesia dir "/var/lib/ejabberd/db/nodename"}
 	Specify the Mnesia database directory.
   \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/sasl.log"\}}
@@ -3354,13 +3354,15 @@ in the file \term{/etc/ejabberd/ejabberdctl.cfg}
 to fine tune the Erlang runtime system.
 
 
-\section{Web Interface}
-\label{webinterface}
-\ind{web interface}
+\section{Web Admin}
+\label{webadmin}
+\ind{web admin}
 
-To perform online configuration of \ejabberd{} you need to enable the
-\term{ejabberd\_http} listener with the option \term{web\_admin} (see
-section~\ref{listened}). Then you can open 
+The \ejabberd{} Web Admin allows to administer most of \ejabberd{} using a web browser.
+
+This feature is enabled by default:
+a \term{ejabberd\_http} listener with the option \term{web\_admin} (see
+section~\ref{listened}) is included in the listening ports. Then you can open 
 \verb|http://server:port/admin/| in your favourite web browser. You
 will be asked to enter the username (the \emph{full} \Jabber{} ID) and password
 of an \ejabberd{} user with administrator rights. After authentication
@@ -3369,7 +3371,7 @@ you will see a page similar to figure~\ref{fig:webadmmain}.
 \begin{figure}[htbp]
   \centering
   \insimg{webadmmain.png}
-  \caption{Top page from the web interface}
+  \caption{Top page from the Web Admin}
   \label{fig:webadmmain}
 \end{figure}
 Here you can edit access restrictions, manage users, create backups,
@@ -3378,12 +3380,12 @@ statistics,\ldots
 
 Examples:
 \begin{itemize}
-\item You can serve the web interface on the same port as the
+\item You can serve the Web Admin on the same port as the
   \ind{protocols!XEP-0025: HTTP Polling}HTTP Polling interface. In this example
   you should point your web browser to \verb|http://example.org:5280/admin/| to
   administer all virtual hosts or to
   \verb|http://example.org:5280/admin/server/example.com/| to administer only
-  the virtual host \jid{example.com}. Before you get access to the web interface
+  the virtual host \jid{example.com}. Before you get access to the Web Admin
   you need to enter as username, the JID and password from a registered user
   that is allowed to configure \ejabberd{}. In this example you can enter as
   username `\jid{admin@example.net}' to administer all virtual hosts (first
@@ -3405,9 +3407,9 @@ Examples:
    ]
   }.
 \end{verbatim}
-\item For security reasons, you can serve the web interface on a secured
+\item For security reasons, you can serve the Web Admin on a secured
   connection, on a port differing from the HTTP Polling interface, and bind it
-  to the internal LAN IP. The web interface will be accessible by pointing your
+  to the internal LAN IP. The Web Admin will be accessible by pointing your
   web browser to \verb|https://192.168.1.1:5280/admin/|:
   \begin{verbatim}
   ...
@@ -3429,7 +3431,7 @@ Examples:
 \label{adhoccommands}
 
 If you enable \modconfigure\ and \modadhoc,
-you can perform several administrative tasks in ejabberd
+you can perform several administrative tasks in \ejabberd{}
 with a Jabber client.
 The client must support Ad-Hoc Commands (\xepref{0050}),
 and you must login in the Jabber server with
@@ -3439,23 +3441,23 @@ an account with proper privileges.
 \section{Change Computer Hostname}
 \label{changeerlangnodename}
 
-ejabberd uses the distributed Mnesia database. 
+\ejabberd{} uses the distributed Mnesia database. 
 Being distributed, Mnesia enforces consistency of its file,
 so it stores the name of the Erlang node in it.
 The name of an Erlang node includes the hostname of the computer.
 So, the name of the Erlang node changes
-if you change the name of the machine in which ejabberd runs,
-or when you move ejabberd to a different machine.
+if you change the name of the machine in which \ejabberd{} runs,
+or when you move \ejabberd{} to a different machine.
 
-So, if you want to change the computer hostname where ejabberd is installed,
+So, if you want to change the computer hostname where \ejabberd{} is installed,
 you must follow these instructions:
 \begin{enumerate}
-	\item In the old server, backup the Mnesia database using the Web Interface or \term{ejabberdctl}.
+	\item In the old server, backup the Mnesia database using the Web Admin or \term{ejabberdctl}.
 	For example: 
 \begin{verbatim}
 ejabberdctl backup /tmp/ejabberd-oldhost.backup
 \end{verbatim}
-	\item In the new server, restore the backup file using the Web Interface or \term{ejabberdctl}.
+	\item In the new server, restore the backup file using the Web Admin or \term{ejabberdctl}.
 	For example:
 \begin{verbatim}
 ejabberdctl restore /tmp/ejabberd-oldhost.backup
@@ -3463,7 +3465,7 @@ ejabberdctl restore /tmp/ejabberd-oldhost.backup
 \end{enumerate}
 
 
-\chapter{Securing ejabberd}
+\chapter{Securing \ejabberd{}}
 \section{Firewall Settings}
 \label{firewall}
 \ind{firewall}\ind{ports}\ind{SASL}\ind{TLS}\ind{clustering!ports}
@@ -3488,24 +3490,24 @@ You need to take the following TCP ports in mind when configuring your firewall:
 \footahref{http://www.erlang.org/doc/man/epmd.html}{epmd (Erlang Port Mapper Daemon)}
 is a small name server included in Erlang/OTP 
 and used by Erlang programs when establishing distributed Erlang communications. 
-ejabberd needs \term{epmd} to use \term{ejabberdctl} and also when clustering ejabberd nodes. 
+\ejabberd{} needs \term{epmd} to use \term{ejabberdctl} and also when clustering \ejabberd{} nodes. 
 This small program is automatically started by Erlang, and is never stopped.
-If ejabberd is stopped, and there aren't any other Erlang programs 
+If \ejabberd{} is stopped, and there aren't any other Erlang programs 
 running in the system, you can safely stop \term{epmd} if you want.
 
-ejabberd runs inside an Erlang node. 
-To communicate with ejabberd, the script \term{ejabberdctl} starts a new Erlang node 
-and connects to the Erlang node that holds ejabberd.
+\ejabberd{} runs inside an Erlang node. 
+To communicate with \ejabberd{}, the script \term{ejabberdctl} starts a new Erlang node 
+and connects to the Erlang node that holds \ejabberd{}.
 In order for this communication to work,
 \term{epmd} must be running and listening for name requests in the port 4369.
 You should block the port 4369 in the firewall,
 so only the programs in your machine can access it.
 
-If you build a cluster of several ejabberd instances,
-each ejabberd instance is called an ejabberd node.
-Those ejabberd nodes use a special Erlang communication method to
+If you build a cluster of several \ejabberd{} instances,
+each \ejabberd{} instance is called an \ejabberd{} node.
+Those \ejabberd{} nodes use a special Erlang communication method to
 build the cluster, and EPMD is again needed listening in the port 4369.
-So, if you plan to build a cluster of ejabberd nodes
+So, if you plan to build a cluster of \ejabberd{} nodes
 you must open the port 4369 for the machines involved in the cluster.
 Remember to block the port so Internet doesn't have access to it.
 
@@ -3660,7 +3662,7 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
   This will create local disc storage for the database.
 
   (alt) Change storage type of the \term{scheme} table to `RAM and disc
-  copy' on the second node via the web interface.
+  copy' on the second node via the Web Admin.
 
 
 \item Now you can add replicas of various tables to this node with
@@ -3709,7 +3711,7 @@ domain.
 \label{domainlb}
 \ind{options!domain\_balancing}
 
-\ejabberd{} includes an algorithm to load balance the components that are plugged on an ejabberd cluster. It means that you can plug one or several instances of the same component on each ejabberd cluster and that the traffic will be automatically distributed.
+\ejabberd{} includes an algorithm to load balance the components that are plugged on an \ejabberd{} cluster. It means that you can plug one or several instances of the same component on each \ejabberd{} cluster and that the traffic will be automatically distributed.
 
 The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is chosen randomly. If no instance is available locally, one instance is chosen randomly among the remote component instances.
 
@@ -3758,11 +3760,11 @@ The syntax is the following:
 \label{watchdog}
 \ind{debugging!watchdog}
 
-ejabberd includes a watchdog mechanism.
-If a process in the ejabberd server consumes too much memory,
+\ejabberd{} includes a watchdog mechanism.
+If a process in the \ejabberd{} server consumes too much memory,
 a message is sent to the Jabber accounts defined with the option
 \term{watchdog\_admins}
-\ind{options!watchdog\_admins} in the ejabberd configuration file.
+\ind{options!watchdog\_admins} in the \ejabberd{} configuration file.
 Example configuration:
 \begin{verbatim}
 {watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
@@ -3772,9 +3774,9 @@ Example configuration:
 \section{Log Files}
 \label{logfiles}
 
-ejabberd writes messages in two log files:
+\ejabberd{} writes messages in two log files:
 \begin{description}
-	\titem{ejabberd.log} Messages reported by ejabberd code
+	\titem{ejabberd.log} Messages reported by \ejabberd{} code
 	\titem{sasl.log} Messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
 \end{description}
 
@@ -3797,10 +3799,10 @@ For example, the default configuration is:
 \section{Debug Console}
 \label{debugconsole}
 
-The Debug Console is an Erlang shell attached to an already running ejabberd server.
+The Debug Console is an Erlang shell attached to an already running \ejabberd{} server.
 With this Erlang shell, an experienced administrator can perform complex tasks.
 
-This shell gives complete control over the ejabberd server,
+This shell gives complete control over the \ejabberd{} server,
 so it is important to use it with extremely care.
 There are some simple and safe examples in the article 
 \footahref{http://www.ejabberd.im/interconnect-erl-nodes}{Interconnecting Erlang Nodes}
@@ -3831,13 +3833,13 @@ Figure~\ref{fig:discorus}, for example, shows the reply to the following query:
   \label{fig:discorus}
 \end{figure}
 
-The web interface also supports the \verb|Accept-Language| HTTP header (compare
+The Web Admin also supports the \verb|Accept-Language| HTTP header (compare
 figure~\ref{fig:webadmmainru} with figure~\ref{fig:webadmmain})
 
 \begin{figure}[htbp]
   \centering
   \insimg{webadmmainru.png}
-  \caption{Top page from the web interface with HTTP header
+  \caption{Top page from the Web Admin with HTTP header
     `Accept-Language: ru'}
   \label{fig:webadmmainru}
 \end{figure}

@@ -1,5 +1,13 @@
 2008-01-01  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Uniformize the name of
+	ejabberd's web admin to: 'Web Admin' (EjAB-472)
+	* doc/guide.tex: Likewise
+	* doc/introduction.tex: Likewise
+
+	* src/web/ejabberd_web_admin.erl: Uniformize ejabberd name in the
+	text using the Latex command
+	
 	* src/mod_muc/mod_muc_room.erl: Resend 'continue' elements in muc
 	room invitations (EJAB-490)
 
