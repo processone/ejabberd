@@ -307,8 +307,8 @@ The files and directories created are, by default:
 	\titem{/etc/ejabberd/} Configuration files:
 		\begin{description}
 			\titem{ejabberd.cfg} ejabberd configuration file
-			\titem{ejabberd.inetrc} Network DNS configuration
 			\titem{ejabberdctl.cfg} Configuration file of the administration script
+			\titem{inetrc} Network DNS configuration
 		\end{description}
 	\titem{/sbin/ejabberdctl} Administration script
 	\titem{/var/lib/ejabberd/}
@@ -322,7 +322,7 @@ The files and directories created are, by default:
 					\titem{msgs} Translated strings (*.msgs)
 				\end{description}
 		\end{description}
-	\titem{/var/log/ejabberd/} Log files (see section~\ref{logfiles}:
+	\titem{/var/log/ejabberd/} Log files (see section~\ref{logfiles}):
 		\begin{description}
 			\titem{ejabberd.log} Messages reported by ejabberd code
 			\titem{sasl.log} Messages reported by Erlang/OTP
@@ -3329,7 +3329,7 @@ The basic parameters used by \term{ejabberdctl} when starting the Erlang node:
   \titem{-name ejabberd} 
 	The Erlang node will be fully identified.
     This is only useful if you plan to setup an ejabberd cluster with nodes in different networks.
-  \titem{-kernel inetrc "/etc/ejabberd/ejabberd.inetrc"} 
+  \titem{-kernel inetrc "/etc/ejabberd/inetrc"} 
 	Indicates which IP name resolution to use. It is required if using \term{-sname}.
   \titem{-detached} 
         Starts the Erlang system detached from the system console. 

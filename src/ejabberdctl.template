@@ -1,62 +1,90 @@
 #!/bin/sh
 
+# define default configuration
+POLL=true
+SMP=auto
+ERL_MAX_PORTS=32000
+ERL_PROCESSES=250000
+ERL_MAX_ETS_TABLES=1400
+ERL_FULLSWEEP_AFTER=65536
+
+# define default environment variables
 NODE=ejabberd
 HOST=localhost
 ERLANG_NODE=$NODE@$HOST
-
-# Define ejabberd environment
 ROOTDIR=@rootdir@
 EJABBERD_CONFIG_PATH=$ROOTDIR/etc/ejabberd/ejabberd.cfg
-export EJABBERD_CONFIG_PATH
-EJABBERDCTL_CFG=$ROOTDIR/etc/ejabberd/ejabberdctl.cfg
-EJABBERD_INETRC=$ROOTDIR/etc/ejabberd/ejabberd.inetrc
-EJABBERD_EBIN=$ROOTDIR/var/lib/ejabberd/ebin
+LOGS_DIR=$ROOTDIR/var/log/ejabberd/
 EJABBERD_DB=$ROOTDIR/var/lib/ejabberd/db/$NODE
+
+# read custom configuration
+CONFIG=$ROOTDIR/etc/ejabberd/ejabberdctl.cfg
+[ -f "$CONFIG" ] && . "$CONFIG"
+
+# parse command line parameters
+ARGS=
+while [ $# -ne 0 ] ; do
+    PARAM=$1
+    shift
+    case $PARAM in
+        --) break ;;
+        --node) ERLANG_NODE=$1; shift ;;
+        --config) EJABBERD_CONFIG_PATH=$1 ; shift ;;
+        --ctl-config) CONFIG=$1 ; shift ;;
+        --logs) LOGS_DIR=$1 ; shift ;;
+        --spool) EJABBERD_DB=$1 ; shift ;;
+        *) ARGS="$ARGS $PARAM" ;;
+    esac
+done
+
+NAME=-name
+[ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && NAME=-sname
+
+ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES"
+
+# define additional environment variables
+ERL_INETRC_PATH=$ROOTDIR/etc/ejabberd/inetrc
+EJABBERD_EBIN=$ROOTDIR/var/lib/ejabberd/ebin
 EJABBERD_MSGS_PATH=$ROOTDIR/var/lib/ejabberd/priv/msgs
 EJABBERD_SO_PATH=$ROOTDIR/var/lib/ejabberd/priv/lib
-EJABBERD_LOG_PATH=$ROOTDIR/var/log/ejabberd/ejabberd.log
-export EJABBERD_LOG_PATH
-SASL_LOG_PATH=$ROOTDIR/var/log/ejabberd/sasl.log
+EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
+SASL_LOG_PATH=$LOGS_DIR/sasl.log
 DATETIME=`date "+%Y%m%d-%H%M%S"`
-ERL_CRASH_DUMP=$ROOTDIR/var/log/ejabberd/erl_crash.dump.$DATETIME
+ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
+HOME=$ROOTDIR/var/lib/ejabberd
+
+# export global variables
+export EJABBERD_CONFIG_PATH
+export EJABBERD_MSGS_PATH
+export EJABBERD_SO_PATH
+export ERL_MAX_PORTS
+export ERL_MAX_ETS_TABLES
 export ERL_CRASH_DUMP
+export EJABBERD_LOG_PATH
+export HOME
+[ $ERL_FULLSWEEP_AFTER = "disabled" ] || export ERL_FULLSWEEP_AFTER
 
 [ -d $EJABBERD_DB ] || mkdir -p $EJABBERD_DB
-
-[ -f $EJABBERDCTL_CFG ] && . $EJABBERDCTL_CFG
-
-HOME=$ROOTDIR/var/lib/ejabberd
-export HOME
-
-if [ $# -ne 0 ] ; then
-    case $1 in
-        --node) shift ; ERLANG_NODE=$1 ; shift ;;
-    esac
-fi
-
-if [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] ; then
-    SNAME=-sname
-else
-    SNAME=-name
-fi
+[ -d $LOGS_DIR ] || mkdir -p $LOGS_DIR
 
 # Compatibility in ZSH
 #setopt shwordsplit 2>/dev/null
 
-ERLANG_OPTS="$POLL $SMP $PROCESSES $ERL_MAX_ETS_TABLES -kernel inetrc \""$EJABBERD_INETRC"\" "
-
+# start server
 start ()
 {
     erl \
-      $SNAME $ERLANG_NODE \
-      $ERLANG_OPTS \
+      $NAME $ERLANG_NODE \
       -noinput -detached \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
+      -kernel inetrc "\"$ERL_INETRC_PATH\"" \
       -s ejabberd \
-      -sasl sasl_error_logger \{file,\"$SASL_LOG_PATH\"\}
+      -sasl sasl_error_logger \{file,\"$SASL_LOG_PATH\"\} \
+      $ERLANG_OPTS $ARGS "$@"
 }
 
+# attach to server
 debug ()
 {
     echo "--------------------------------------------------------------------"
@@ -76,10 +104,13 @@ debug ()
     read foo
     echo ""
     erl \
-      $SNAME debug \
-      -remsh $ERLANG_NODE
+      $NAME ${NODE}debug \
+      -kernel inetrc \"$ERL_INETRC_PATH\" \
+      -remsh $ERLANG_NODE \
+      $ERLANG_OPTS $ARGS "$@"
 }
 
+# start interactive server
 live ()
 {
     echo "--------------------------------------------------------------------"
@@ -98,45 +129,54 @@ live ()
     read foo
     echo ""
     erl \
-      $SNAME $ERLANG_NODE \
+      $NAME $ERLANG_NODE \
       $ERLANG_OPTS \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
-      -s ejabberd
+      -kernel inetrc "\"$ERL_INETRC_PATH\"" \
+      -s ejabberd \
+      $ERLANG_OPTS $ARGS "$@"
 }
 
+# common control function
 ctl ()
 {
     erl \
-      $SNAME ejabberdctl \
+      $NAME ejabberdctl \
       -noinput \
       -pa $EJABBERD_EBIN \
+      -kernel inetrc \"$ERL_INETRC_PATH\" \
       -s ejabberd_ctl -extra $ERLANG_NODE $@
-    case $? in
-       2) help_start;;
-       3) help_start;;
+    result=$?
+    case $result in
+    0) :;;
+    *)
+        echo ""
+        echo "Commands to start an ejabberd node:"
+        echo "  start  Start an ejabberd node in server mode"
+        echo "  debug  Attach an interactive Erlang shell to a running ejabberd node"
+        echo "  live   Start an ejabberd node in live (interactive) mode"
+        echo ""
+        echo "Optional parameters when starting an ejabberd node:"
+        echo "  --config file      Config file of ejabberd:    $EJABBERD_CONFIG_PATH"
+        echo "  --ctl-config file  Config file of ejabberdctl: $CONFIG"
+        echo "  --logs dir         Directory for logs:         $LOGS_DIR"
+        echo "  --spool dir        Database spool dir:         $EJABBERD_DB"
+        echo "";;
     esac
+    return $result
 }
 
+# display ctl usage
 usage ()
 {
     ctl
     exit
 }
 
-help_start ()
-{
-    echo ""
-    echo "Commands to start an ejabberd node:"
-    echo "  start    Start an ejabberd node in server mode"
-    echo "  debug    Attach an interactive Erlang shell to a running ejabberd node"
-    echo "  live     Start an ejabberd node in live (interactive) mode"
-    echo ""
-}
-
-case $1 in
-    start) start;;
-    debug) debug;;
-    live) live;;
-    *) ctl $@;;
+case $ARGS in
+    ' start') start;;
+    ' debug') debug;;
+    ' live') live;;
+    *) ctl $ARGS;;
 esac
