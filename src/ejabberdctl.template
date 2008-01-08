@@ -6,7 +6,6 @@ SMP=auto
 ERL_MAX_PORTS=32000
 ERL_PROCESSES=250000
 ERL_MAX_ETS_TABLES=1400
-ERL_FULLSWEEP_AFTER=65536
 
 # define default environment variables
 NODE=ejabberd
@@ -62,7 +61,6 @@ export ERL_MAX_ETS_TABLES
 export ERL_CRASH_DUMP
 export EJABBERD_LOG_PATH
 export HOME
-[ $ERL_FULLSWEEP_AFTER = "disabled" ] || export ERL_FULLSWEEP_AFTER
 
 [ -d $EJABBERD_DB ] || mkdir -p $EJABBERD_DB
 [ -d $LOGS_DIR ] || mkdir -p $LOGS_DIR

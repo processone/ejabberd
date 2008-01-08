@@ -61,20 +61,6 @@
 #
 #ERL_MAX_ETS_TABLES=1400
 
-# ERL_FULLSWEEP_AFTER: Maximum number of collections before a forced fullsweep
-#
-# To reduce memory usage, you can set environment variable ERL_FULLSWEEP_AFTER.
-# But in this case ejabberd may work slower.
-#
-# The ERL_FULLSWEEP_AFTER option shrinks the size of the Erlang process after
-# RAM intensive events. Note that this option may downgrade performance. Hence
-# this option is only interesting on machines that also host other services
-# (webserver, mail) on which ejabberd does not receive constant load.
-#
-# Default: 65535
-#
-#ERL_FULLSWEEP_AFTER=65536
-
 # The next variable allows to explicitly specify erlang node for ejabberd
 # It can be given in different formats:
 # ERLANG_NODE=ejabberd

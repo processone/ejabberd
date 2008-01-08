@@ -19,7 +19,7 @@ release:
 	@echo "Press any key to continue"
 	@read foo
 	@echo "% ejabberd version (automatically generated)." > version.tex
-	@echo "\\\newcommand{\\\version}{"`cat ../src/ejabberd.hrl | grep VERSION | sed s/-define\(VERSION,\ \"//g | sed s/\"\).//g`"}" >> version.tex
+	@echo "\newcommand{\version}{"`sed '/VERSION/!d;s/\(.*\)"\(.*\)"\(.*\)/\2/' ../src/ejabberd.hrl`"}" >> version.tex
 	@echo -n "% Contributed modules (automatically generated)."  > contributed_modules.tex
 	@echo "$(CONTRIBUTED_MODULES)" >> contributed_modules.tex
 

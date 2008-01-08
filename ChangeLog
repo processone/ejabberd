@@ -1,7 +1,17 @@
+2008-01-08  Badlop  <badlop@process-one.net>
+
+	* src/ejabberdctl.template: Removed the option ERL_FULLSWEEP_AFTER
+	because it is almost useless regarding ejabberd's performance.
+	* src/ejabberdctl.cfg.example: Likewise
+
+2008-01-08  Christophe Romain  <christophe.romain@process-one.net>
+
+	* doc/Makefile: fix version.tex generation bug
+
 2008-01-01  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: Uniformize the name of
-	ejabberd's web admin to: 'Web Admin' (EjAB-472)
+	ejabberd's web admin to: 'Web Admin' (EJAB-472)
 	* doc/guide.tex: Likewise
 	* doc/introduction.tex: Likewise
 
