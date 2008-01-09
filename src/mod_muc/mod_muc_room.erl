@@ -469,71 +469,53 @@ normal_state({route, From, ToNick,
 	     StateData) ->
     Type = xml:get_attr_s("type", Attrs),
     Lang = xml:get_attr_s("xml:lang", Attrs),
-    case Type of
-	"error" ->
-	    case is_user_online(From, StateData) of
-		true ->
-		    NewState =
-			add_user_presence_un(
-			  From,
-			  {xmlelement, "presence",
-			   [{"type", "unavailable"}], []},
-			  StateData),
-		    send_new_presence(From, NewState),
-		    {next_state, normal_state,
-		     remove_online_user(From, NewState)};
+    case (StateData#state.config)#config.allow_private_messages
+	andalso is_user_online(From, StateData) of
+	true ->
+	    case Type of
+		"groupchat" ->
+		    ErrText = "It is not allowed to send private "
+			"messages of type \"groupchat\"",
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
+		    ejabberd_router:route(
+		      jlib:jid_replace_resource(
+			StateData#state.jid,
+			ToNick),
+		      From, Err);
 		_ ->
-		    {next_state, normal_state, StateData}
+		    case find_jid_by_nick(ToNick, StateData) of
+			false ->
+			    ErrText = "Recipient is not in the conference room",
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+			    ejabberd_router:route(
+			      jlib:jid_replace_resource(
+				StateData#state.jid,
+				ToNick),
+			      From, Err);
+			ToJID ->
+			    {ok, #user{nick = FromNick}} =
+				?DICT:find(jlib:jid_tolower(From),
+					   StateData#state.users),
+			    ejabberd_router:route(
+			      jlib:jid_replace_resource(
+				StateData#state.jid,
+				FromNick),
+			      ToJID, Packet)
+		    end
 	    end;
 	_ ->
-	    case (StateData#state.config)#config.allow_private_messages
-		andalso is_user_online(From, StateData) of
-		true ->
-		    case Type of
-			"groupchat" ->
-			    ErrText = "It is not allowed to send private "
-				      "messages of type \"groupchat\"",
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
-			    ejabberd_router:route(
-				jlib:jid_replace_resource(
-				    StateData#state.jid,
-				    ToNick),
-				From, Err);
-			_ ->
-			    case find_jid_by_nick(ToNick, StateData) of
-				false ->
-				    ErrText = "Recipient is not in the conference room",
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-				    ejabberd_router:route(
-					jlib:jid_replace_resource(
-					    StateData#state.jid,
-					    ToNick),
-					From, Err);
-				ToJID ->
-				    {ok, #user{nick = FromNick}} =
-					?DICT:find(jlib:jid_tolower(From),
-						StateData#state.users),
-				    ejabberd_router:route(
-					jlib:jid_replace_resource(
-					    StateData#state.jid,
-					    FromNick),
-					ToJID, Packet)
-			    end
-		    end;
-		_ ->
-		    ErrText = "Only occupants are allowed to send messages to the conference",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-		    ejabberd_router:route(
-			jlib:jid_replace_resource(
-			    StateData#state.jid,
-			    ToNick),
-			From, Err)
-	    end,
-	    {next_state, normal_state, StateData}
-    end;
+	    ErrText = "Only occupants are allowed to send messages to the conference",
+	    Err = jlib:make_error_reply(
+		    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+	    ejabberd_router:route(
+	      jlib:jid_replace_resource(
+		StateData#state.jid,
+		ToNick),
+	      From, Err)
+    end,
+    {next_state, normal_state, StateData};
 
 normal_state({route, From, ToNick,
 	      {xmlelement, "iq", Attrs, _Els} = Packet},

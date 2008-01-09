@@ -1,3 +1,8 @@
+2008-01-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: MUC kicks a participant if sends a
+	private message with type=error (EJAB-496)
+
 2008-01-08  Badlop  <badlop@process-one.net>
 
 	* src/ejabberdctl.template: Removed the option ERL_FULLSWEEP_AFTER
