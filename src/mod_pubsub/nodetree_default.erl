@@ -144,11 +144,15 @@ create_node(Key, Node, Type, Owner, Options) ->
 			{[], true};
 		    _ ->
 			Parent = lists:sublist(Node, length(Node) - 1),
-			(Parent == []) orelse
+			case Parent of
+			[] -> 
+			    {[], true};
+			_ ->
 			    case mnesia:read({pubsub_node, {Key, Parent}}) of
 				[] -> {Parent, false};
 				_ -> {Parent, true}
 			    end
+			end
 		end,
 	    case ParentExists of
 		true ->
