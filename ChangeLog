@@ -1,3 +1,11 @@
+2008-01-10  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/nodetree_default: Force PEP parent node to be []
+
+	* src/mod_pubsub/mod_pubsub.erl: Send last published PEP event now checks
+	the correct peer caps (EJAB-491)
+	* src/ejabberd_c2s.erl: Likewise
+
 2008-01-09  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: MUC kicks a participant if sends a
