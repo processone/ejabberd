@@ -136,18 +136,18 @@ create_node(Key, Node, Type, Owner, Options) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     case mnesia:read({pubsub_node, {Key, Node}}) of
 	[] ->
-	    Parent = lists:sublist(Node, length(Node) - 1),
-	    ParentExists =
+	    {ParentNode, ParentExists} =
 		case Key of
 		    {_U, _S, _R} ->
 			%% This is special case for PEP handling
 			%% PEP does not uses hierarchy
-			true;
+			{[], true};
 		    _ ->
+			Parent = lists:sublist(Node, length(Node) - 1),
 			(Parent == []) orelse
 			    case mnesia:read({pubsub_node, {Key, Parent}}) of
-				[] -> false;
-				_ -> true
+				[] -> {Parent, false};
+				_ -> {Parent, true}
 			    end
 		end,
 	    case ParentExists of
@@ -155,7 +155,7 @@ create_node(Key, Node, Type, Owner, Options) ->
 		    %% Service requires registration
 		    %%{error, ?ERR_REGISTRATION_REQUIRED};
 		    mnesia:write(#pubsub_node{nodeid = {Key, Node},
-					      parentid = {Key, Parent},
+					      parentid = {Key, ParentNode},
 					      type = Type,
 					      owners = [OwnerKey],
 					      options = Options});

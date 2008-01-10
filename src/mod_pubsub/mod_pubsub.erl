@@ -396,9 +396,9 @@ disco_sm_items(Acc, _From, To, Node, _Lang) ->
 %% presence hooks handling functions
 %%
 
-presence_probe(#jid{lserver = Host} = From, To, Packet) ->
+presence_probe(#jid{lserver = Host} = From, To, Caps) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:cast(Proc, {presence, From, To, Packet}).
+    gen_server:cast(Proc, {presence, From, To, Caps}).
 
 %% -------
 %% user remove hook handling function
@@ -437,9 +437,9 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 %% @private
-handle_cast({presence, From, To, Packet}, State) ->
+handle_cast({presence, From, To, Caps}, State) ->
     %% A new resource is available. send last published items
-    JID = jlib:jid_tolower(From),
+    LFrom = jlib:jid_tolower(From),
     Host = State#state.host,
     ServerHost = State#state.server_host,
     if From == To ->
@@ -453,7 +453,7 @@ handle_cast({presence, From, To, Packet}, State) ->
 			#pubsub_node{options = Options} ->
 			    case get_option(Options, send_last_published_item) of
 				on_sub_and_presence ->
-				    send_last_item(Host, Node, JID);
+				    send_last_item(Host, Node, LFrom);
 				_ ->
 				    ok
 			    end;
@@ -468,8 +468,8 @@ handle_cast({presence, From, To, Packet}, State) ->
 	ok
     end,
     %% and send to From last PEP events published by To
+    ?DEBUG("got presence probe from ~s to ~s",[jlib:jid_to_string(From),jlib:jid_to_string(To)]),
     PepKey = jlib:jid_tolower(jlib:jid_remove_resource(To)),
-    Caps = mod_caps:read_caps(element(4, Packet)),
     lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
 	case get_option(Options, send_last_published_item) of
 	    on_sub_and_presence ->
@@ -482,10 +482,11 @@ handle_cast({presence, From, To, Packet}, State) ->
 			    authorize -> false; % likewise
 			    roster ->
 				Grps = get_option(Options, roster_groups_allowed),
-				element(2, get_roster_info(To#jid.luser, To#jid.lserver, JID, Grps))
+				element(2, get_roster_info(To#jid.luser, To#jid.lserver, LFrom, Grps))
 			end,
 			if Subscribed ->
-			    send_last_item(PepKey, Node, JID);
+			    ?DEBUG("send ~s's ~s event to ~s",[jlib:jid_to_string(PepKey),Node,jlib:jid_to_string(From)]),
+			    send_last_item(PepKey, Node, LFrom);
 			true ->
 			    ok
 			end;
