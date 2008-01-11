@@ -64,20 +64,29 @@
 %% <presence/> stanza) and returns an opaque value representing the
 %% Entity Capabilities contained therein, or the atom nothing if no
 %% capabilities are advertised.
-read_caps([{xmlelement, "c", Attrs, _Els} | Tail]) ->
+read_caps(Els) ->
+    read_caps(Els, nothing).
+read_caps([{xmlelement, "c", Attrs, _Els} | Tail], Result) ->
     case xml:get_attr_s("xmlns", Attrs) of
 	?NS_CAPS ->
 	    Node = xml:get_attr_s("node", Attrs),
 	    Version = xml:get_attr_s("ver", Attrs),
 	    Exts = string:tokens(xml:get_attr_s("ext", Attrs), " "),
-	    #caps{node = Node, version = Version, exts = Exts};
+	    read_caps(Tail, #caps{node = Node, version = Version, exts = Exts});
 	_ ->
-	    read_caps(Tail)
+	    read_caps(Tail, Result)
     end;
-read_caps([_ | Tail]) ->
-    read_caps(Tail);
-read_caps([]) ->
-    nothing.
+read_caps([{xmlelement, "x", Attrs, _Els} | Tail], Result) ->
+    case xml:get_attr_s("xmlns", Attrs) of
+	?NS_MUC_USER ->
+	    nothing;
+	_ ->
+	    read_caps(Tail, Result)
+    end;
+read_caps([_ | Tail], Result) ->
+    read_caps(Tail, Result);
+read_caps([], Result) ->
+    Result.
 
 %% note_caps should be called to make the module request disco
 %% information.  Host is the host that asks, From is the full JID that
