@@ -396,9 +396,11 @@ disco_sm_items(Acc, _From, To, Node, _Lang) ->
 %% presence hooks handling functions
 %%
 
-presence_probe(#jid{lserver = Host} = From, To, Caps) ->
+presence_probe(#jid{lserver = Host} = JID, JID, Pid) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:cast(Proc, {presence, From, To, Caps}).
+    gen_server:cast(Proc, {presence, JID, Pid});
+presence_probe(_, _, _) ->
+    ok.
 
 %% -------
 %% user remove hook handling function
@@ -437,66 +439,72 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 %% @private
-handle_cast({presence, From, To, Caps}, State) ->
+handle_cast({presence, JID, Pid}, State) ->
     %% A new resource is available. send last published items
-    LFrom = jlib:jid_tolower(From),
+    LJID = jlib:jid_tolower(JID),
     Host = State#state.host,
     ServerHost = State#state.server_host,
-    if From == To ->
-	%% for each node From is subscribed to
-	%% and if the node is so configured, send the last published item to From
-	lists:foreach(fun(Type) ->
-	    {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, From]),
-	    lists:foreach(
-		fun({Node, subscribed}) -> 
-		    case tree_action(Host, get_node, [Host, Node]) of
-			#pubsub_node{options = Options} ->
-			    case get_option(Options, send_last_published_item) of
-				on_sub_and_presence ->
-				    send_last_item(Host, Node, LFrom);
-				_ ->
-				    ok
-			    end;
-			_ ->
-			    ok
-		    end;
-		   (_) ->
-		    ok
-		end, Subscriptions)
-	end, State#state.plugins);
-    true ->
-	ok
-    end,
-    %% and send to From last PEP events published by To
-    ?DEBUG("got presence probe from ~s to ~s",[jlib:jid_to_string(From),jlib:jid_to_string(To)]),
-    PepKey = jlib:jid_tolower(jlib:jid_remove_resource(To)),
-    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
-	case get_option(Options, send_last_published_item) of
-	    on_sub_and_presence ->
-		case is_caps_notify(ServerHost, Node, Caps) of
-		    true ->
-			Subscribed = case get_option(Options, access_model) of
-			    open -> true;
-			    presence -> true;
-			    whitelist -> false; % subscribers are added manually
-			    authorize -> false; % likewise
-			    roster ->
-				Grps = get_option(Options, roster_groups_allowed),
-				element(2, get_roster_info(To#jid.luser, To#jid.lserver, LFrom, Grps))
-			end,
-			if Subscribed ->
-			    ?DEBUG("send ~s's ~s event to ~s",[jlib:jid_to_string(PepKey),Node,jlib:jid_to_string(From)]),
-			    send_last_item(PepKey, Node, LFrom);
-			true ->
-			    ok
+    %% for each node From is subscribed to
+    %% and if the node is so configured, send the last published item to From
+    lists:foreach(fun(Type) ->
+	{result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, JID]),
+	lists:foreach(
+	    fun({Node, subscribed}) -> 
+		case tree_action(Host, get_node, [Host, Node]) of
+		    #pubsub_node{options = Options} ->
+			case get_option(Options, send_last_published_item) of
+			    on_sub_and_presence ->
+				send_last_item(Host, Node, LJID);
+			    _ ->
+				ok
 			end;
-		    false ->
+		    _ ->
 			ok
 		end;
-	    _ ->
+		(_) ->
 		ok
-	end
-    end, tree_action(Host, get_nodes, [PepKey])),
+	    end, Subscriptions)
+    end, State#state.plugins),
+    %% and send to From last PEP events published by its contacts
+    case catch ejabberd_c2s:get_subscribed_and_online(Pid) of
+	ContactsWithCaps when is_list(ContactsWithCaps) ->
+	    Caps = proplists:get_value(LJID, ContactsWithCaps),
+	    ContactsUsers = lists:usort(lists:map(
+				fun({{User, Server, _}, _}) -> {User, Server} end, ContactsWithCaps)),
+	    lists:foreach(
+		fun({User, Server}) ->
+		    PepKey = {User, Server, ""},
+		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
+			case get_option(Options, send_last_published_item) of
+			    on_sub_and_presence ->
+				case is_caps_notify(ServerHost, Node, Caps) of
+				    true ->
+					Subscribed = case get_option(Options, access_model) of
+					    open -> true;
+					    presence -> true;
+					    whitelist -> false; % subscribers are added manually
+					    authorize -> false; % likewise
+					    roster ->
+						Grps = get_option(Options, roster_groups_allowed),
+						element(2, get_roster_info(User, Server, LJID, Grps))
+					end,
+					if Subscribed ->
+					    ?DEBUG("send ~s's ~s event to ~s",[jlib:jid_to_string(PepKey),Node,jlib:jid_to_string(LJID)]),
+					    send_last_item(PepKey, Node, LJID);
+					true ->
+					    ok
+					end;
+				    false ->
+					ok
+				end;
+			    _ ->
+				ok
+			end
+		    end, tree_action(Host, get_nodes, [PepKey]))
+		end, ContactsUsers);
+	_ ->
+	    ok
+    end,
     {noreply, State};
 
 handle_cast({remove, User, Server}, State) ->
@@ -641,9 +649,6 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			_ ->
 			    ok
 		    end;
-		"presence" ->
-		    presence_probe(From, To, Packet),
-		    ok;
 		"message" ->
 		    case xml:get_attr_s("type", Attrs) of
 			"error" ->

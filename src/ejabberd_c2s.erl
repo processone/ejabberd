@@ -1403,11 +1403,8 @@ process_presence_probe(From, To, StateData) ->
 			deny ->
 			    ok;
 			allow ->
-			    Caps = case ?DICT:find(jlib:jid_tolower(To), StateData#state.pres_available) of
-				{ok, Value} -> Value;
-				_ -> mod_caps:read_caps(element(4, Packet)) % This is From=To case, so we can read Caps from Packet
-			    end,
-			    ejabberd_hooks:run(presence_probe_hook, StateData#state.server, [From, To, Caps]),
+			    Pid=element(2, StateData#state.sid),
+			    ejabberd_hooks:run(presence_probe_hook, StateData#state.server, [From, To, Pid]),
 			    ejabberd_router:route(To, From, Packet)
 		    end;
 		Cond2 ->
