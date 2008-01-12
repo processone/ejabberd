@@ -1912,7 +1912,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 			  error;
 		      _ ->
 			  case El of
-			      {xmlelement, "subscriptions", Attrs, _} ->
+			      {xmlelement, "subscription", Attrs, _} ->
 				  JID = jlib:string_to_jid(
 					  xml:get_attr_s("jid", Attrs)),
 				  Subscription = string_to_subscription(
