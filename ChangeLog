@@ -1,3 +1,9 @@
+2008-01-13  Badlop  <badlop@process-one.net>
+
+	* src/ejabberdctl.template: Instead of using the Erlang kernel
+	variable 'inetrc', use the ERL_INETRC environment variable that is
+	available since Erlang/OTP R10B-5.
+	
 2008-01-12  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: set_subscription fix (EJAB-494)

@@ -42,7 +42,6 @@ NAME=-name
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES"
 
 # define additional environment variables
-ERL_INETRC_PATH=$ROOTDIR/etc/ejabberd/inetrc
 EJABBERD_EBIN=$ROOTDIR/var/lib/ejabberd/ebin
 EJABBERD_MSGS_PATH=$ROOTDIR/var/lib/ejabberd/priv/msgs
 EJABBERD_SO_PATH=$ROOTDIR/var/lib/ejabberd/priv/lib
@@ -50,16 +49,18 @@ EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
 SASL_LOG_PATH=$LOGS_DIR/sasl.log
 DATETIME=`date "+%Y%m%d-%H%M%S"`
 ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
+ERL_INETRC=$ROOTDIR/etc/ejabberd/inetrc
 HOME=$ROOTDIR/var/lib/ejabberd
 
 # export global variables
 export EJABBERD_CONFIG_PATH
 export EJABBERD_MSGS_PATH
+export EJABBERD_LOG_PATH
 export EJABBERD_SO_PATH
+export ERL_CRASH_DUMP
+export ERL_INETRC
 export ERL_MAX_PORTS
 export ERL_MAX_ETS_TABLES
-export ERL_CRASH_DUMP
-export EJABBERD_LOG_PATH
 export HOME
 
 [ -d $EJABBERD_DB ] || mkdir -p $EJABBERD_DB
@@ -76,7 +77,6 @@ start ()
       -noinput -detached \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
-      -kernel inetrc "\"$ERL_INETRC_PATH\"" \
       -s ejabberd \
       -sasl sasl_error_logger \{file,\"$SASL_LOG_PATH\"\} \
       $ERLANG_OPTS $ARGS "$@"
@@ -103,7 +103,6 @@ debug ()
     echo ""
     erl \
       $NAME ${NODE}debug \
-      -kernel inetrc \"$ERL_INETRC_PATH\" \
       -remsh $ERLANG_NODE \
       $ERLANG_OPTS $ARGS "$@"
 }
@@ -131,7 +130,6 @@ live ()
       $ERLANG_OPTS \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
-      -kernel inetrc "\"$ERL_INETRC_PATH\"" \
       -s ejabberd \
       $ERLANG_OPTS $ARGS "$@"
 }
@@ -143,7 +141,6 @@ ctl ()
       $NAME ejabberdctl \
       -noinput \
       -pa $EJABBERD_EBIN \
-      -kernel inetrc \"$ERL_INETRC_PATH\" \
       -s ejabberd_ctl -extra $ERLANG_NODE $@
     result=$?
     case $result in
