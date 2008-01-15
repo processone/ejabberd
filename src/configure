@@ -663,6 +663,7 @@ ERLC
 ERL
 ERLANG_CFLAGS
 ERLANG_LIBS
+ERLANG_SSL39
 LIBICONV
 CPP
 GREP
@@ -2924,13 +2925,20 @@ echo "$as_me: error: erlang not found" >&2;}
 -author('alexey@sevcom.net').
 
 -export([start/0]).
+-include_lib("ssl/include/ssl_pkix.hrl").
 
 start() ->
     EIDirS = code:lib_dir("erl_interface") ++ "\n",
     EILibS =  libpath("erl_interface") ++ "\n",
     RootDirS = code:root_dir() ++ "\n",
-    file:write_file("conftest.out", list_to_binary(EIDirS ++ EILibS ++ RootDirS)),
+    file:write_file("conftest.out", list_to_binary(EIDirS ++ EILibS ++ ssldef() ++ RootDirS)),
     halt().
+
+-ifdef('id-pkix').
+ssldef() -> "-DSSL39\n".
+-else.
+ssldef() -> "\n".
+-endif.
 
 %% return physical architecture based on OS/Processor
 archname() ->
@@ -2986,10 +2994,13 @@ echo "$as_me: error: erlang program was not properly executed, (conftest.out was
    # Second line
    ERLANG_EI_LIB=`cat conftest.out | head -n 2 | tail -n 1`
    # Third line
+   ERLANG_SSL39=`cat conftest.out | head -n 3 | tail -n 1`
+   # End line
    ERLANG_DIR=`cat conftest.out | tail -n 1`
 
    ERLANG_CFLAGS="-I$ERLANG_EI_DIR/include -I$ERLANG_DIR/usr/include"
    ERLANG_LIBS="-L$ERLANG_EI_LIB -lerl_interface -lei"
+
 
 
 
@@ -6530,6 +6541,7 @@ ERLC!$ERLC$ac_delim
 ERL!$ERL$ac_delim
 ERLANG_CFLAGS!$ERLANG_CFLAGS$ac_delim
 ERLANG_LIBS!$ERLANG_LIBS$ac_delim
+ERLANG_SSL39!$ERLANG_SSL39$ac_delim
 LIBICONV!$LIBICONV$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
@@ -6571,7 +6583,7 @@ SSL_CFLAGS!$SSL_CFLAGS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 89; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -6898,3 +6910,12 @@ if test "$no_create" != yes; then
   $ac_cs_success || { (exit 1); exit 1; }
 fi
 
+
+if test -n "$ERLANG_SSL39" ; then
+	echo
+	echo "**************** WARNING ! ********************"
+	echo "ejabberd will be compiled with Erlang R12."
+	echo "This version of Erlang is not supported"
+	echo "and not recommended for production servers"
+	echo "***********************************************"
+fi
