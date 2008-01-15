@@ -279,7 +279,7 @@
 {"Nodes", "Düğümler"}.
 {"Shared Roster", "Paylaşılmış Kontak Listesi"}.
 {"Statistics", "İstatistikler"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"(Raw)", "(Ham)"}.
 {"Submitted", "Gönderilenler"}.
 {"Bad format", "Kötü biçem"}.

@@ -165,7 +165,7 @@
 {"Connected Resources:", "Recursos conectados:"}.
 {"Delete", "Eliminar"}.
 {"Delete Selected", "Remover os selecionados"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"ejabberd virtual hosts", "Maquinas virtuais de ejabberd"}.
 {"From", "De"}.
 {"Group ", "Grupo "}.

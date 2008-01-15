@@ -258,7 +258,7 @@ di conferince"}.
 {"Users", "Uzeus"}.
 {"Nodes", "Nuks"}.
 {"Statistics", "Sitatistikes"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd © 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd © 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"(Raw)", "(Dinêyes brutes)"}.
 {"Submitted", "Candjmints evoyîs"}.
 {"Bad format", "Mwais fôrmat"}.

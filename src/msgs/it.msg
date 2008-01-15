@@ -280,7 +280,7 @@
 {"Nodes", "Nodi"}.
 {"Shared Roster", "Lista di contatti comuni"}.
 {"Statistics", "Statistiche"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"(Raw)", "(Grezzo)"}.
 {"Submitted", "Inviato"}.
 {"Bad format", "Formato non valido"}.
