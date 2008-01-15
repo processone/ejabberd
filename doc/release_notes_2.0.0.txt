@@ -1,16 +1,16 @@
 			      Release Notes
-			   ejabberd 2.0.0 beta 1
-			     24 december 2007
+			   ejabberd 2.0.0 rc1
+			     16 January 2008
 
   ejabberd 2.0.0 is a major new version for ejabberd adding plenty of
   new features, performance and scalability improvements and
   architectural changes.
 
-  ejabberd 2.0.0 includes near than 200 improvements over ejabberd
+  ejabberd 2.0.0 includes more than 200 improvements over ejabberd
   1.1.x. A complete list of changes can be retrieved from:
    http://redir.process-one.net/ejabberd-2.0.0
 
-  The new code can be downloaded from ejabberd download page:
+  The new code can be downloaded from ejabberd downloads page:
      http://www.process-one.net/en/ejabberd/
 
 
@@ -61,7 +61,7 @@
 - Support for LDAP servers pool.
 - Simplified use of virtual hosting with LDAP with domain substitution
   in config.
-- Ability to match on several userid attibutes.
+- Ability to match on several userid attributes.
 
 
 * Multi-user chat
@@ -69,7 +69,7 @@
 - Clustering and load balancing support.
 - Ability to define default room configuration in ejabberd config file.
 - Many anti abuse features have been added:
-  . New ACL to limit the creation of persistent room to autorized users.
+  . New ACL to limit the creation of persistent room to authorized users.
   . Ability to define the maximum number of users per room.
   . Limitation of the rate of message and presence packets.
   . Limitation of the maximum number of room a user can join at the same time.
@@ -94,7 +94,7 @@
   an efficient alternative to HTTP polling for scalable Web based chat
   solutions.
 - HTTP module can now serve static documents (with
-  mod_http_fileserver). It is needed for high-performance Web2.0 chat
+  mod_http_fileserver). It is needed for high-performance Web 2.0 chat
   / IM application. System administrators can now avoid using a proxy
   (like Apache) that handles much less simultaneous than ejabberd HTTP
   module.
@@ -110,13 +110,14 @@
 - Dynamic log levels: Improved logging with more log levels. You can
   now change the loglevel at run time. No performance penalty is
   involved when less verbose levels are used.
-- Better command-line tool, with more options available.
+- The ejabberdctl command-line administration script now can start 
+  and stop ejabberd. It also includes other useful options.
 
 
 * Localization
 
 - ejabberd is now available in 22 languages: Catalan, Chinese, Czech,
-  Dutch, English, French, Galicia, German, Italian, Japanese, Polish,
+  Dutch, English, French, Galician, German, Italian, Japanese, Polish,
   Portuguese, Portuguese (Brazil), Russian, Slovak, Spanish, Swedish,
   Thai, Turkish, Ukrainian, Vietnamese, Wallon.
 
@@ -141,11 +142,26 @@
 
 * Bugfixes
 
-- ejabberd 2.0 also fixes numerous small bugs :) Read the full
+- ejabberd 2.0.0 also fixes numerous small bugs :) Read the full
   changelog for details.
 
 
-Bugs report
+
+   Important Notes:
+
+- Since this release, ejabberd requires Erlang R10B-5 or higher. 
+  R11B-5 is the recommended version. R12 is not yet officially 
+  supported, and is not recommended for production servers.
+
+- The 'ssl' option is no longer available in the listening ports. 
+  To get legacy SSL encryption use the option 'tls'.
+
+- The new ejabberdctl command line administration script can start, 
+  stop and perform many other administrative tasks in ejabberd.
+
+
+
+Bug reports
 
   You can officially report bugs on Process-one support site:
   https://support.process-one.net/

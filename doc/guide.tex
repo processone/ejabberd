@@ -181,12 +181,13 @@ ejabberd Development Team
 \input{introduction}
 
 \chapter{Installing \ejabberd{}}
+
 \section{Installing \ejabberd{} with Binary Installer}
 
-Probably the easiest way to install an \ejabberd{} Instant Messaging server
+Probably the easiest way to install an \ejabberd{} instant messaging server
 is using the binary installer published by Process-one. 
 The binary installers of released \ejabberd{} versions 
-are available in the Process-one \ejabberd{} download page:
+are available in the Process-one \ejabberd{} downloads page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 The installer will deploy and configure a full featured \ejabberd{}
@@ -198,14 +199,33 @@ In *nix systems, remember to set executable the binary installer before starting
   ./ejabberd-2.0.0_1-linux-x86-installer.bin
 \end{verbatim}
 
+The installer generates desktop shortcuts to start and stop ejabberd.
+
+The Windows installer also adds ejabberd as a system service,
+and a shortcut to a debug console for experienced administrators.
+You can start ejabberd using the shortcut or the Windows service. 
+If you want ejabberd to be started automatically at boot time, 
+go to service settings and set ejabberd to be automatic started.
+
+On a Linux system, if you want ejabberd to start as daemon at boot time, 
+copy \term{ejabberd.init} from the bin directory to something like \term{/etc/init.d/ejabberd}
+(depending on your distribution) and call \term{/etc/inid.d/ejabberd start} to start it.
+
+The \term{ejabberdctl} administration script is included in the \term{bin} directory.
+Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
+and configurable options to fine tune the Erlang runtime system.
 
 \section{Installing \ejabberd{} with Operating System specific packages}
 
 Some Operating Systems provide a specific \ejabberd{} package adapted to 
-your system architecture and libraries, which also checks dependencies 
+the system architecture and libraries.
+It usually also checks dependencies 
 and performs basic configuration tasks like creating the initial
 administrator account. Some examples are Debian and Gentoo. Consult the
 resources provided by your Operating System for more information.
+
+Usually those packages create a script like \term{/etc/init.d/ejabberd}
+to start and stop \ejabberd{} as a service at boot time.
 
 \section{Installing \ejabberd{} with CEAN}
 
@@ -214,6 +234,11 @@ resources provided by your Operating System for more information.
 packages from many Erlang programs, including \ejabberd{} and all its dependencies.
 The binaries are available for many different system architectures, so this is an
 alternative to the binary installer and Operating System's \ejabberd{} packages.
+
+You will have to create your own \ejabberd{} start
+script depending of how you handle your CEAN installation. 
+The default \term{ejabberdctl} script is located
+into \ejabberd{}'s priv directory and can be used as an example.
 
 \section{Installing \ejabberd{} from Source Code}
 \label{installation}
@@ -231,18 +256,18 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \begin{itemize}
 \item GNU Make
 \item GCC
-\item libexpat 1.95 or higher
-\item Erlang/OTP R9C-2 or higher
-\item OpenSSL 0.9.6 or higher (optional)
-\item Zlib 1.2.3 or higher (optional)
-\item GNU Iconv 1.8 or higher (optional, not needed on systems with GNU libc)
+\item Libexpat 1.95 or higher
+\item Erlang/OTP R10B-9 up to R11B-5. Erlang R12 releases are not yet officially supported, and are not recommended for production servers.
+\item OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
+\item Zlib 1.2.3 or higher, for Stream Compression support (XEP-0138). Optional.
+\item GNU Iconv 1.8 or higher, for the IRC Transport (mod\_irc). Optional. Not needed on systems with GNU Libc.
 \end{itemize}
 
 \subsection{Download Source Code}
 \label{download}
 \ind{install!download}
 
-Released versions of \ejabberd{} are available in the Process-one \ejabberd{} download page:
+Released versions of \ejabberd{} are available in the Process-one \ejabberd{} downloads page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 \ind{Subversion repository}
@@ -261,8 +286,6 @@ To compile \ejabberd{} execute the commands:
   ./configure
   make
 \end{verbatim}
-The compilation process may report several warnings related to unusued variables.
-This is common, and is not a problem.
 
 The build configuration script provides several parameters.
 To get the full list run the command:
@@ -335,9 +358,6 @@ The files and directories created are, by default:
 \ind{install!start}
 
 You can use the \term{ejabberdctl} command line administration script to start and stop \ejabberd{}.
-This script is located into tools directory of sources archive. If you installed \ejabberd{} from sources,
-\term{ejabberdctl} is located into destination sbin directory (default /usr/local/sbin). If you installed
-\ejabberd{} with the installer, \term{ejabberdctl} is located into \ejabberd{}'s bin directory.
 
 Usage example:
 \begin{verbatim}
@@ -351,13 +371,6 @@ $ ejabberdctl stop
 \end{verbatim}
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
-
-Note: if you installed \ejabberd{} with your distribution packaging system, \term{ejabberdctl} should be called
-by an /etc/init.d/ejabberd script to allow you to start and stop \ejabberd{} as a service at boot time.
-
-If you installed \ejabberd{} using CEAN package, you will have to create your own \ejabberd{} start
-script depending of how you handle your CEAN installation. The default \term{ejabberdctl} script is located
-into \ejabberd{}'s priv directory and can be used as an example.
 
 \subsection{Specific Notes for BSD}
 \label{bsd}
@@ -462,6 +475,18 @@ to enter the \ejabberd{} Web Admin:
   example: \jid{admin1@example.org}. The reason that you also need to enter the
   suffix, is because \ejabberd{}'s virtual hosting support.
 \end{enumerate}
+
+\section{Upgrading \ejabberd{}}
+
+To upgrade an ejabberd installation to a new version,
+simply uninstall the old version, and then install the new one.
+Of course, it is important that the configuration file 
+and Mnesia database spool directory are not removed.
+
+\ejabberd{} automatically updates the Mnesia table definitions at startup when needed.
+If you also use an external database for storage of some modules,
+check if the release notes of the new ejabberd version
+indicates you need to also update those tables.
 
 
 \chapter{Configuring \ejabberd{}}
@@ -3317,10 +3342,41 @@ The \term{ejabberdctl} administration script can be configured in the file ejabb
 This file provides detailed information about each configurable option.
 
 
-\subsection{Erlang configuration}
+\subsection{Erlang runtime system}
 \label{erlangconfiguration}
 
-The basic parameters used by \term{ejabberdctl} when starting the Erlang node:
+\ejabberd{} is an Erlang/OTP application that runs inside an Erlang runtime system.
+This system is configured using environment variables and command line parameters.
+The \term{ejabberdctl} administration script uses many of those possibilities.
+You can configure some of them with the file \term{ejabberdctl.cfg}, 
+which includes detailed description about them.
+This section describes for reference purposes 
+all the environment variables and command line parameters.
+
+The environment variables:
+\begin{description}
+  \titem{EJABBERD\_CONFIG\_PATH} 
+	Path to the ejabberd configuration file.
+  \titem{EJABBERD\_MSGS\_PATH} 
+	Path to the directory with translated strings.
+  \titem{EJABBERD\_LOG\_PATH} 
+	Path to the ejabberd log file.
+  \titem{EJABBERD\_SO\_PATH} 
+	Path to the directory with binary system libraries.
+  \titem{HOME} 
+	Path to the directory that is considered \ejabberd{}'s home.
+	This path is used to read the file \term{.erlang.cookie}.
+  \titem{ERL\_CRASH\_DUMP} 
+	Path to the file where crash reports will be dumped.
+  \titem{ERL\_INETRC} 
+	Indicates which IP name resolution to use. It is required if using \term{-sname}.
+  \titem{ERL\_MAX\_PORTS} 
+	Maximum number of simultaneously open Erlang ports.
+  \titem{ERL\_MAX\_ETS\_TABLES} 
+	Maximum number of ETS and Mnesia tables.
+\end{description}
+
+The command line parameters:
 \begin{description}
   \titem{-sname ejabberd} 
 	The Erlang node will be identified using only the first part
@@ -3345,13 +3401,17 @@ The basic parameters used by \term{ejabberdctl} when starting the Erlang node:
 	Specify the Mnesia database directory.
   \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/sasl.log"\}}
 	Specify the directory for the sasl.log file.
+  \titem{+K [true|false]} 
+	Kernel polling.
+  \titem{-smp [auto|enable|disable]} 
+	SMP support.
+  \titem{+P 250000} 
+	Maximum number of Erlang processes.
+  \titem{-remsh ejabberd@localhost} 
+	Open an Erlang shell in a remote Erlang node.
 \end{description}
 Note that some characters need to be escaped when used in shell scripts, for instance \verb|"| and \verb|{}|.
 You can find other options in the Erlang manual page (\shell{erl -man erl}).
-
-In addition, there are several configurable parameters 
-in the file \term{/etc/ejabberd/ejabberdctl.cfg}
-to fine tune the Erlang runtime system.
 
 
 \section{Web Admin}

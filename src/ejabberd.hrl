@@ -22,7 +22,7 @@
 %-define(ejabberd_debug, true).
 %-define(DBGFSM, true).
 
--define(VERSION, "2.0.0-beta1").
+-define(VERSION, "2.0.0-rc1").
 
 %% ---------------------------------
 %% Logging mechanism
