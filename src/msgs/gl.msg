@@ -1,4 +1,4 @@
-% $Id: gl.msg 641 2007-09-26 10:48:05Z mremond $
+% $Id: gl.msg 641 2008-09-26 10:48:05Z mremond $
 % Language: Galician (galego)
 % Author: Carlos E. Lopez - suso AT jabber-hispano.org
 

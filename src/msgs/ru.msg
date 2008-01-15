@@ -331,7 +331,7 @@
 {"Update", "Обновить"}.
 {"Delete", "Удалить"}.
 {"Add User", "Добавить пользователя"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Алексей Щепин, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Алексей Щепин, 2004-2008 Process One"}.
 {"Offline Messages", "Офлайновые сообщения"}.
 {"Offline Messages:", "Офлайновые сообщения:"}.
 {"Last Activity", "Последнее подключение"}.

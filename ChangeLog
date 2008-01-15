@@ -1,3 +1,8 @@
+2008-01-15  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Updated copyright dates to 2008.
+	* src/*: Likewise
+
 2008-01-15  Jérôme Sautret <jerome.sautret@process-one.net>
 
 	* src/Makefile.in: Allow compilation with Erlang R12 (EJAB-446)

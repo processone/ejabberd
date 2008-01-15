@@ -306,7 +306,7 @@
 {"Virtual Hosts", "ヴァーチャルホスト"}.
 {"Nodes", "ノード"}.
 {"Statistics", "統計"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"Users", "ユーザー"}.
 {"Last Activity", "活動履歴"}.
 {"(Raw)", "(Raw)"}.

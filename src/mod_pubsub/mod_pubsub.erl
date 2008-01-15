@@ -11,11 +11,11 @@
 %%% under the License.
 %%% 
 %%% The Initial Developer of the Original Code is Process-one.
-%%% Portions created by Process-one are Copyright 2006-2007, Process-one
+%%% Portions created by Process-one are Copyright 2006-2008, Process-one
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2007, Process-one.
+%%% This software is copyright 2006-2008, Process-one.
 %%%
-%%% @copyright 2006-2007 Process-one
+%%% @copyright 2006-2008 Process-one
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -822,7 +822,7 @@ iq_get_vcard(Lang) ->
       [{xmlcdata,
 	translate:translate(Lang,
 			    "ejabberd Publish-Subscribe module") ++
-			    "\nCopyright (c) 2004-2007 Process-One"}]}].
+			    "\nCopyright (c) 2004-2008 Process-One"}]}].
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
     Plugins = case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), plugins) of

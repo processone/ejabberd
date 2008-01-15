@@ -279,7 +279,7 @@
 {"Authenticated users", "Autentifikovaný používatelia"}.
 {"ejabberd Web Interface", "Ejabberd Web rozhranie"}.
 {"Administration", "Administrácia"}.
-{"ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One", "Ejabberd (c) 2002-2007 Alexey Shchepin, 2004-2007 Process One"}.
+{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "Ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"(Raw)", "(Raw)"}.
 {"Submitted", "Odoslané"}.
 {"Bad format", "Zlý formát"}.
