@@ -1,7 +1,7 @@
 2008-01-15  Jérôme Sautret <jerome.sautret@process-one.net>
 
-	* src/Makefile.in: Allow compilation with Erlang R12 (EJAB-446),
-	thanks to Sergei Golovan and Maxim Treskin. Erlang R12 version is
+	* src/Makefile.in: Allow compilation with Erlang R12 (EJAB-446)
+	(thanks to Sergei Golovan and Maxim Treskin). Erlang R12 version is
 	not supported and not recommended for production servers.
 	* src/aclocal.m4: Likewise
 	* src/configure.ac: Likewise
