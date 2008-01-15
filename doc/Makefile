@@ -1,5 +1,7 @@
 # $Id$
 
+SHELL = /bin/bash
+
 CONTRIBUTED_MODULES = ""
 ifeq ($(shell ls mod_http_bind.tex),mod_http_bind.tex)
 	CONTRIBUTED_MODULES += "\\r\\n\\setboolean{modhttpbind}{true}"

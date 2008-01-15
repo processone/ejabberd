@@ -1,5 +1,20 @@
 2008-01-15  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Improved the documentation of Binary
+	installer. Updated the requirements, specifically: Erlang R10B-9
+	is required as minimum, and R12 is not yet supported. Added
+	section Upgrading ejabberd. Improved documentation about Erlang
+	runtime system environment variables and command-line parameters.
+	* doc/guide.html: Likewise
+
+	* doc/release_notes_2.0.0.txt: Updated to RC1
+	* doc/version.tex: Likewise
+	* src/ejabberd.hrl: Likewise
+
+	* doc/introduction.tex: Updated to 22 languages
+	
+	* doc/Makefile: Ensure that Bash is used
+
 	* doc/guide.tex: Updated copyright dates to 2008.
 	* src/*: Likewise
 
