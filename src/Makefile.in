@@ -12,6 +12,8 @@ ERLANG_CFLAGS= @ERLANG_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
+ERLC_FLAGS += @ERLANG_SSL39@
+
 ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
@@ -46,7 +48,7 @@ ERLBEHAVS = cyrsasl.erl gen_mod.erl p1_fsm.erl
 SOURCES = $(ERLBEHAVS) $(wildcard *.erl)
 BEAMS = $(SOURCES:.erl=.beam)
 
-DESTDIR = 
+DESTDIR =
 
 EJABBERDDIR = $(DESTDIR)@prefix@/var/lib/ejabberd
 BEAMDIR = $(EJABBERDDIR)/ebin
@@ -144,4 +146,3 @@ Makefile: Makefile.in
 
 dialyzer: $(BEAMS)
 	@dialyzer -c .
-

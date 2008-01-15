@@ -1,9 +1,19 @@
+2008-01-15  Jérôme Sautret <jerome.sautret@process-one.net>
+
+	* src/Makefile.in: Allow compilation with Erlang R12 (EJAB-446)
+	(thanks to Sergei Golovan and Maxim Treskin). Erlang R12 version is
+	not supported and not recommended for production servers.
+	* src/aclocal.m4: Likewise
+	* src/configure.ac: Likewise
+	* src/configure: Likewise
+	* src/ejabberd_s2s_in.erl: Likewise
+
 2008-01-13  Badlop  <badlop@process-one.net>
 
 	* src/ejabberdctl.template: Instead of using the Erlang kernel
 	variable 'inetrc', use the ERL_INETRC environment variable that is
 	available since Erlang/OTP R10B-5.
-	
+
 2008-01-12  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: set_subscription fix (EJAB-494)
@@ -45,14 +55,14 @@
 
 	* src/web/ejabberd_web_admin.erl: Uniformize ejabberd name in the
 	text using the Latex command
-	
+
 	* src/mod_muc/mod_muc_room.erl: Resend 'continue' elements in muc
 	room invitations (EJAB-490)
 
 	* src/ejabberdctl.template: Create logs_dir if doesn't exist. New
 	parameters --config, --ctl-config, --logs, --spool. Crash dump
 	renamed to erl_crash_DATETIME.dump.
-	
+
 	* src/ejabberdctl.template: Backport improvements from binary
 	installer (EJAB-488): options are simple values; enable Kernel
 	Poll by default, set SMP to auto, set max ports to 32000, max
@@ -65,7 +75,7 @@
 	* doc/guide.tex: Likewise
 
 2007-12-31  Badlop  <badlop@process-one.net>
-	
+
 	* src/msgs/ca.msg: Updated (thanks to Vicent Alberola Canet)
 
 2007-12-29  Alexey Shchepin  <alexey@process-one.net>
@@ -212,7 +222,7 @@
 	* src/mod_muc/mod_muc_log.erl: Add handling of kicks 321, 322, 332
 
 	* doc/guide.tex: Document mod_privacy_odbc
-	
+
 	* doc/Makefile: Support for conditional inclusion of documentation
 	from contributed modules
 	* doc/guide.tex: Likewise
@@ -284,7 +294,7 @@
 	new ones on top. Each string must be in a single line (to
 	facilitate the automatic removal of unused strings). Last four
 	lines report file format for Emacs and Vim.
-	
+
 	* contrib/extract_translations/prepare-translation.sh: New
 	features: extract all translations, include explanation for
 	translators in the file, remove unused strings from file, include
@@ -303,7 +313,7 @@
 
 	* src/mod_pubsub/mod_pubsub.erl: presence handler bugfix
 	* src/mod_pubsub/node_default.erl: Allow send last item on presence
-	
+
 2007-12-12  Badlop  <badlop@process-one.net>
 
 	* src/msgs/it.msg: Updated (thanks to Luca Brivio)

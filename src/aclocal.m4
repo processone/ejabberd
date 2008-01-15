@@ -8,7 +8,7 @@ AC_DEFUN(AM_WITH_EXPAT,
 		EXPAT_CFLAGS="-I$with_expat/include"
 		EXPAT_LIBS="-L$with_expat/lib"
 	fi
-	
+
 	AC_CHECK_LIB(expat, XML_ParserCreate,
 		     [ EXPAT_LIBS="$EXPAT_LIBS -lexpat"
 		       expat_found=yes ],
@@ -42,7 +42,7 @@ AC_DEFUN(AM_WITH_ZLIB,
 		ZLIB_CFLAGS="-I$with_zlib/include"
 		ZLIB_LIBS="-L$with_zlib/lib"
 	fi
-	
+
 	AC_CHECK_LIB(z, gzgets,
 		     [ ZLIB_LIBS="$ZLIB_LIBS -lz"
 		       zlib_found=yes ],
@@ -76,7 +76,7 @@ AC_DEFUN(AM_WITH_PAM,
 		PAM_CFLAGS="-I$with_pam/include"
 		PAM_LIBS="-L$with_pam/lib"
 	fi
-	
+
 	AC_CHECK_LIB(pam, pam_start,
 		     [ PAM_LIBS="$PAM_LIBS -lpam"
 		       pam_found=yes ],
@@ -106,25 +106,32 @@ AC_DEFUN(AM_WITH_ERLANG,
 
    AC_PATH_TOOL(ERLC, erlc, , $with_erlang:$with_erlang/bin:$PATH)
    AC_PATH_TOOL(ERL, erl, , $with_erlang:$with_erlang/bin:$PATH)
-   
+
    if test "z$ERLC" = "z" || test "z$ERL" = "z"; then
    		AC_MSG_ERROR([erlang not found])
    fi
-   
-   
+
+
    cat >>conftest.erl <<_EOF
-   
+
 -module(conftest).
 -author('alexey@sevcom.net').
 
 -export([[start/0]]).
+-include_lib("ssl/include/ssl_pkix.hrl").
 
 start() ->
     EIDirS = code:lib_dir("erl_interface") ++ "\n",
     EILibS =  libpath("erl_interface") ++ "\n",
     RootDirS = code:root_dir() ++ "\n",
-    file:write_file("conftest.out", list_to_binary(EIDirS ++ EILibS ++ RootDirS)),
+    file:write_file("conftest.out", list_to_binary(EIDirS ++ EILibS ++ ssldef() ++ RootDirS)),
     halt().
+
+-[ifdef]('id-pkix').
+ssldef() -> "-DSSL39\n".
+-else.
+ssldef() -> "\n".
+-endif.
 
 %% return physical architecture based on OS/Processor
 archname() ->
@@ -154,33 +161,36 @@ libpath(App) ->
 	%% ({error, enoent}):
 	_Error -> code:lib_dir("erl_interface") ++ "/lib"
     end.
-	   
+
 _EOF
-   
+
    if ! $ERLC conftest.erl; then
    	   AC_MSG_ERROR([could not compile sample program])
    fi
-   
+
    if ! $ERL -s conftest -noshell; then
        AC_MSG_ERROR([could not run sample program])
    fi
-   
+
    if ! test -f conftest.out; then
        AC_MSG_ERROR([erlang program was not properly executed, (conftest.out was not produced)])
    fi
-   
+
    # First line
    ERLANG_EI_DIR=`cat conftest.out | head -n 1`
    # Second line
    ERLANG_EI_LIB=`cat conftest.out | head -n 2 | tail -n 1`
    # Third line
+   ERLANG_SSL39=`cat conftest.out | head -n 3 | tail -n 1`
+   # End line
    ERLANG_DIR=`cat conftest.out | tail -n 1`
-   
+
    ERLANG_CFLAGS="-I$ERLANG_EI_DIR/include -I$ERLANG_DIR/usr/include"
    ERLANG_LIBS="-L$ERLANG_EI_LIB -lerl_interface -lei"
-   
+
    AC_SUBST(ERLANG_CFLAGS)
    AC_SUBST(ERLANG_LIBS)
+   AC_SUBST(ERLANG_SSL39)
    AC_SUBST(ERLC)
    AC_SUBST(ERL)
 ])
@@ -262,7 +272,7 @@ AC_DEFUN([AM_ICONV],
 		CFLAGS="$am_save_CFLAGS")
       LIBS="$am_save_LIBS"
     fi
-	
+
   ])
   if test "$am_cv_func_iconv" = yes; then
     AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
