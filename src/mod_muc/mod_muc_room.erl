@@ -612,8 +612,12 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
                    [{xmlelement, "reason",
                      [], [{xmlcdata, Reason}]}]
            end}, StateData),
+    ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
+	      [jlib:jid_to_string(StateData#state.jid), Reason]),
     {stop, normal, StateData};
 handle_event(destroy, StateName, StateData) ->
+    ?INFO_MSG("Destroyed MUC room ~s", 
+	      [jlib:jid_to_string(StateData#state.jid)]),
     handle_event({destroy, none}, StateName, StateData);
 
 handle_event({set_affiliations, Affiliations}, StateName, StateData) ->
@@ -938,6 +942,8 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
     case (not (StateData1#state.config)#config.persistent) andalso
 	(?DICT:to_list(StateData1#state.users) == []) of
 	true ->
+	    ?INFO_MSG("Destroyed MUC room ~s because it's temporary and empty", 
+		      [jlib:jid_to_string(StateData#state.jid)]),
 	    {stop, normal, StateData1};
 	_ ->
 	    {next_state, normal_state, StateData1}
@@ -2396,7 +2402,7 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 			    {error, ?ERR_BAD_REQUEST}
 		    end;
 		[{xmlelement, "destroy", _Attrs1, _Els1} = SubEl1] ->
-		    ?INFO_MSG("Destroyed MUC room ~s by ~s", 
+		    ?INFO_MSG("Destroyed MUC room ~s by the owner ~s", 
 			      [jlib:jid_to_string(StateData#state.jid), jlib:jid_to_string(From)]),
 		    destroy_room(SubEl1, StateData);
 		Items ->

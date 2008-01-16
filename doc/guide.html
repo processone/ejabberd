@@ -383,7 +383,7 @@ To get the full list run the command:
 	</DD><DT CLASS="dt-description"><B><TT>/var/lib/ejabberd/</TT></B></DT><DD CLASS="dd-description">
 		<DL CLASS="description"><DT CLASS="dt-description">
 			<B><TT>.erlang.cookie</TT></B></DT><DD CLASS="dd-description"> Erlang cookie file
-			</DD><DT CLASS="dt-description"><B><TT>db</TT></B></DT><DD CLASS="dd-description"> Database spool files
+			</DD><DT CLASS="dt-description"><B><TT>db</TT></B></DT><DD CLASS="dd-description"> Mnesia database spool files
 			</DD><DT CLASS="dt-description"><B><TT>ebin</TT></B></DT><DD CLASS="dd-description"> Binary Erlang files (*.beam)
 			</DD><DT CLASS="dt-description"><B><TT>priv</TT></B></DT><DD CLASS="dd-description">
 				<DL CLASS="description"><DT CLASS="dt-description">
@@ -393,8 +393,8 @@ To get the full list run the command:
 		</DD></DL>
 	</DD><DT CLASS="dt-description"><B><TT>/var/log/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Log files (see section&#XA0;<A HREF="#logfiles">7.2</A>):
 		<DL CLASS="description"><DT CLASS="dt-description">
-			<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> Messages reported by ejabberd code
-			</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> Messages reported by Erlang/OTP
+			<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> ejabberd service log
+			</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> Erlang/OTP system log
 		</DD></DL>
 </DD></DL><!--TOC subsection Start-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc13">2.4.5</A>&#XA0;&#XA0;Start</H3><!--SEC END --><P>
@@ -2706,7 +2706,7 @@ all the environment variables and command line parameters.</P><P>The environment
 </DD><DT CLASS="dt-description"><B><TT>EJABBERD_MSGS_PATH</TT></B></DT><DD CLASS="dd-description"> 
 	Path to the directory with translated strings.
 </DD><DT CLASS="dt-description"><B><TT>EJABBERD_LOG_PATH</TT></B></DT><DD CLASS="dd-description"> 
-	Path to the ejabberd log file.
+	Path to the ejabberd service log file.
 </DD><DT CLASS="dt-description"><B><TT>EJABBERD_SO_PATH</TT></B></DT><DD CLASS="dd-description"> 
 	Path to the directory with binary system libraries.
 </DD><DT CLASS="dt-description"><B><TT>HOME</TT></B></DT><DD CLASS="dd-description"> 
@@ -2744,7 +2744,7 @@ Starts the Erlang system detached from the system console.
 </DD><DT CLASS="dt-description"><B><TT>-mnesia dir "/var/lib/ejabberd/db/nodename"</TT></B></DT><DD CLASS="dd-description">
 	Specify the Mnesia database directory.
 </DD><DT CLASS="dt-description"><B><TT>-sasl sasl_error_logger {file, "/var/log/ejabberd/sasl.log"}</TT></B></DT><DD CLASS="dd-description">
-	Specify the directory for the sasl.log file.
+	Path to the Erlang/OTP system log file.
 </DD><DT CLASS="dt-description"><B><TT>+K [true|false]</TT></B></DT><DD CLASS="dd-description"> 
 	Kernel polling.
 </DD><DT CLASS="dt-description"><B><TT>-smp [auto|enable|disable]</TT></B></DT><DD CLASS="dd-description"> 
