@@ -337,7 +337,7 @@ The files and directories created are, by default:
 	\titem{/var/lib/ejabberd/}
 		\begin{description}
 			\titem{.erlang.cookie} Erlang cookie file
-			\titem{db} Database spool files
+			\titem{db} Mnesia database spool files
 			\titem{ebin} Binary Erlang files (*.beam)
 			\titem{priv}
 				\begin{description}
@@ -347,8 +347,8 @@ The files and directories created are, by default:
 		\end{description}
 	\titem{/var/log/ejabberd/} Log files (see section~\ref{logfiles}):
 		\begin{description}
-			\titem{ejabberd.log} Messages reported by ejabberd code
-			\titem{sasl.log} Messages reported by Erlang/OTP
+			\titem{ejabberd.log} ejabberd service log
+			\titem{sasl.log} Erlang/OTP system log
 		\end{description}
 \end{description}
 
@@ -3360,7 +3360,7 @@ The environment variables:
   \titem{EJABBERD\_MSGS\_PATH} 
 	Path to the directory with translated strings.
   \titem{EJABBERD\_LOG\_PATH} 
-	Path to the ejabberd log file.
+	Path to the ejabberd service log file.
   \titem{EJABBERD\_SO\_PATH} 
 	Path to the directory with binary system libraries.
   \titem{HOME} 
@@ -3400,7 +3400,7 @@ The command line parameters:
   \titem{-mnesia dir "/var/lib/ejabberd/db/nodename"}
 	Specify the Mnesia database directory.
   \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/sasl.log"\}}
-	Specify the directory for the sasl.log file.
+	Path to the Erlang/OTP system log file.
   \titem{+K [true|false]} 
 	Kernel polling.
   \titem{-smp [auto|enable|disable]} 
@@ -3834,14 +3834,14 @@ Example configuration:
 \section{Log Files}
 \label{logfiles}
 
-\ejabberd{} writes messages in two log files:
+An \ejabberd{} node writes two log files:
 \begin{description}
-	\titem{ejabberd.log} Messages reported by \ejabberd{} code
-	\titem{sasl.log} Messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
+	\titem{ejabberd.log} is the ejabberd service log, with the messages reported by \ejabberd{} code
+	\titem{sasl.log} is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
 \end{description}
 
 The option \term{loglevel} modifies the verbosity of the file ejabberd.log.
-There possible levels are:
+The possible levels are:
 \begin{description}
 	\titem{0} No ejabberd log at all (not recommended)
 	\titem{1} Critical

@@ -1,3 +1,13 @@
+2008-01-16  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Updated the names of log files.
+	* doc/guide.html: Likewise
+
+	* src/mod_muc/mod_muc_room.erl: Added log messages for room
+	destroy
+
+	* src/mod_caps.erl: Small beautify of log error messages
+
 2008-01-15  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Improved the documentation of Binary
