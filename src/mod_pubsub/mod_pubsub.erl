@@ -2233,7 +2233,7 @@ broadcast_config_notification(Host, Node, Lang) ->
 			end
 		end
 	end,
-    transaction(Host, Node, Action, dirty_sync).
+    transaction(Host, Node, Action, sync_dirty).
 
 %TODO: simplify broadcast_* using a generic function like that:
 %broadcast(Host, Node, Fun) ->
