@@ -1,5 +1,8 @@
 2008-01-25  Badlop  <badlop@process-one.net>
 
+	* doc/introduction.tex: Updated list of languages
+	* doc/release_notes_2.0.0.txt: Likewise
+
 	* src/msgs/eo.msg: New Esperanto translation (thanks to Andreas
 	van Cranenburgh)
 
