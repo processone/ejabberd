@@ -80,7 +80,7 @@ options() ->
      {max_items, ?MAXITEMS div 2},
      {subscribe, true},
      {access_model, presence},
-     {access_roster_groups, []},
+     {roster_groups_allowed, []},
      {publish_model, publishers},
      {max_payload_size, ?MAX_PAYLOAD_SIZE},
      {send_last_published_item, on_sub_and_presence},
