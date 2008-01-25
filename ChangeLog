@@ -1,3 +1,13 @@
+2008-01-25  Badlop  <badlop@process-one.net>
+
+	* src/msgs/eo.msg: New Esperanto translation (thanks to Andreas
+	van Cranenburgh)
+
+	* src/msgs/no.msg: New Norwegian translation (thanks to Stian
+	B. Barmen)
+
+	* doc/Makefile: Fixed small problem with contributed_modules.tex
+
 2008-01-25  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Setting boolean node configuration
@@ -402,7 +412,7 @@
 
 	* src/msgs/ja.msg: New translation (thanks to Tsukasa Hamano)
 
-	* src/msgs/nl.msg: Updated (thanks to Andreas from Unstable.nl)
+	* src/msgs/nl.msg: Updated (thanks to Andreas van Cranenburgh)
 
 	* src/ejabberd_config.erl: Report human-readable message when
 	Mnesia spool files are not readable.
