@@ -1,3 +1,17 @@
+2008-01-25  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Setting boolean node configuration
+	fixed (EJAB-509)
+	* src/mod_pubsub/node_default.erl: Use roster_groups_allowed instead
+	of access_roster_groups (EJAB-508)
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+	* src/mod_pubsub/node_dispatch.erl: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
+
 2008-01-16  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Updated the names of log files.

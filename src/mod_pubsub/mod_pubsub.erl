@@ -2434,7 +2434,7 @@ get_configure_xfields(_Type, Options, _Owners, Lang) ->
 			 [open, authorize, presence, roster, whitelist]),
      %% XXX: change to list-multi, include current roster groups as options
      {xmlelement, "field", [{"type", "text-multi"},
-			    {"label", translate:translate(Lang, "Roster groups that may subscribe (if access model is roster)")},
+			    {"label", translate:translate(Lang, "Roster groups allowed to subscribe")},
 			    {"var", "pubsub#roster_groups_allowed"}],
       [{xmlelement, "value", [], [{xmlcdata, Value}]} ||
 	  Value <- get_option(Options, roster_groups_allowed)]},
@@ -2515,7 +2515,7 @@ add_opt(Key, Value, Opts) ->
 		  end,
 	case BoolVal of
 	    error -> {error, ?ERR_NOT_ACCEPTABLE};
-	    _ -> set_xoption(Opts, add_opt(Opt, false, NewOpts))
+	    _ -> set_xoption(Opts, add_opt(Opt, BoolVal, NewOpts))
 	end).
 
 -define(SET_STRING_XOPT(Opt, Val),
