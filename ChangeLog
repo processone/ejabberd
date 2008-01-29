@@ -1,3 +1,8 @@
+2008-01-29  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: MUC kicks a participant if sends a
+	private message with type=error (EJAB-496)
+
 2008-01-25  Badlop  <badlop@process-one.net>
 
 	* doc/introduction.tex: Updated list of languages
