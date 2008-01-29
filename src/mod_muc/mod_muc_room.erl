@@ -298,7 +298,10 @@ normal_state({route, From, "",
 				add_user_presence_un(
 				  From,
 				  {xmlelement, "presence",
-				   [{"type", "unavailable"}], []},
+				   [{"type", "unavailable"}],
+				   [{xmlelement, "status", [],
+				     [{xmlcdata,
+				       "This participant sent a bad error message to the room."}]}]},
 			      StateData),
 			    send_new_presence(From, NewState),
 			    {next_state, normal_state,
@@ -465,57 +468,75 @@ normal_state({route, From, Nick,
     end;
 
 normal_state({route, From, ToNick,
-	      {xmlelement, "message", Attrs, _Els} = Packet},
+	      {xmlelement, "message", Attrs, _} = Packet},
 	     StateData) ->
     Type = xml:get_attr_s("type", Attrs),
     Lang = xml:get_attr_s("xml:lang", Attrs),
-    case (StateData#state.config)#config.allow_private_messages
-	andalso is_user_online(From, StateData) of
-	true ->
-	    case Type of
-		"groupchat" ->
-		    ErrText = "It is not allowed to send private "
-			"messages of type \"groupchat\"",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
-		    ejabberd_router:route(
-		      jlib:jid_replace_resource(
-			StateData#state.jid,
-			ToNick),
-		      From, Err);
-		_ ->
-		    case find_jid_by_nick(ToNick, StateData) of
-			false ->
-			    ErrText = "Recipient is not in the conference room",
+    case decide_fate_message(Type, Packet, From, StateData) of
+	{expulse_sender, Reason} ->
+	    ?INFO_MSG(Reason, []),
+	    Status_text = "This participant sent a bad error message to another participant.",
+	    NewState =
+		add_user_presence_un(
+		  From,
+		  {xmlelement, "presence",
+		   [{"type", "unavailable"}],
+		   [{xmlelement, "status", [], [{xmlcdata, Status_text}]}]},
+		  StateData),
+	    send_new_presence(From, NewState),
+	    {next_state, normal_state,
+	     remove_online_user(From, NewState)};
+	forget_message ->
+	    {next_state, normal_state, StateData};
+	continue_delivery ->
+	    case (StateData#state.config)#config.allow_private_messages
+		andalso is_user_online(From, StateData) of
+		true ->
+		    case Type of
+			"groupchat" ->
+			    ErrText = "It is not allowed to send private "
+				"messages of type \"groupchat\"",
 			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+				    Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
 			    ejabberd_router:route(
 			      jlib:jid_replace_resource(
 				StateData#state.jid,
 				ToNick),
 			      From, Err);
-			ToJID ->
-			    {ok, #user{nick = FromNick}} =
-				?DICT:find(jlib:jid_tolower(From),
-					   StateData#state.users),
-			    ejabberd_router:route(
-			      jlib:jid_replace_resource(
-				StateData#state.jid,
-				FromNick),
-			      ToJID, Packet)
-		    end
-	    end;
-	_ ->
-	    ErrText = "Only occupants are allowed to send messages to the conference",
-	    Err = jlib:make_error_reply(
-		    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-	    ejabberd_router:route(
-	      jlib:jid_replace_resource(
-		StateData#state.jid,
-		ToNick),
-	      From, Err)
-    end,
-    {next_state, normal_state, StateData};
+			_ ->
+			    case find_jid_by_nick(ToNick, StateData) of
+				false ->
+				    ErrText = "Recipient is not in the conference room",
+				    Err = jlib:make_error_reply(
+					    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+				    ejabberd_router:route(
+				      jlib:jid_replace_resource(
+					StateData#state.jid,
+					ToNick),
+				      From, Err);
+				ToJID ->
+				    {ok, #user{nick = FromNick}} =
+					?DICT:find(jlib:jid_tolower(From),
+						   StateData#state.users),
+				    ejabberd_router:route(
+				      jlib:jid_replace_resource(
+					StateData#state.jid,
+					FromNick),
+				      ToJID, Packet)
+			    end
+		    end;
+		_ ->
+		    ErrText = "Only occupants are allowed to send messages to the conference",
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+		    ejabberd_router:route(
+		      jlib:jid_replace_resource(
+			StateData#state.jid,
+			ToNick),
+		      From, Err)
+	    end,
+	    {next_state, normal_state, StateData}
+    end;
 
 normal_state({route, From, ToNick,
 	      {xmlelement, "iq", Attrs, _Els} = Packet},
@@ -885,7 +906,9 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 			    add_user_presence_un(
 			      From,
 			      {xmlelement, "presence",
-			       [{"type", "unavailable"}], []},
+			       [{"type", "unavailable"}],
+			       [{xmlelement, "status", [],
+				 [{xmlcdata, "This participant sent a bad error presence."}]}]},
 			      StateData),
 			send_new_presence(From, NewState),
 			remove_online_user(From, NewState);
@@ -987,6 +1010,50 @@ list_to_affiliation(Affiliation) ->
 	"none" ->    none
     end.
 
+%% Decide the fate of the message and its sender
+%% Returns: continue_delivery | forget_message | {expulse_sender, Reason}
+decide_fate_message("error", Packet, From, StateData) ->
+    case catch check_error_kick(Packet) of
+	%% If this is an error stanza and its condition matches a criteria
+	true ->
+	    %% If the sender of the message is online
+	    case is_user_online(From, StateData) of
+		true ->
+		    Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
+					   [jlib:jid_to_string(From)]),
+		    {expulse_sender, Reason};
+		false ->
+		    forget_message
+	    end;
+	false ->
+	    continue_delivery;
+	{'EXIT', Error} ->
+	    Reason = io_lib:format(
+		       "This participant sent a problematic packet and is expulsed: ~s~nPacket: ~p~nError: ~p",
+		       [jlib:jid_to_string(From), Packet, Error]),
+	    {expulse_sender, Reason}
+    end;
+decide_fate_message(_, _, _, _) ->
+    continue_delivery.
+
+%% Check if the elements of this error stanza indicate
+%% that the sender is a dead participant.
+%% If so, return true to kick the participant.
+check_error_kick(Packet) ->
+    {xmlelement, _, _, EEls} = xml:get_subtag(Packet, "error"),
+    [{xmlelement, Name, _, _}] = xml:remove_cdata(EEls),
+    case Name of
+	"gone" -> true;
+	"internal-server-error" -> true;
+	"item-not-found" -> true;
+	"jid-malformed" -> true;
+	"recipient-unavailable" -> true;
+	"redirect" -> true;
+	"remote-server-not-found" -> true;
+	"remote-server-timeout" -> true;
+	"service-unavailable" -> true;
+	_ -> false
+    end.
 
 
 set_affiliation(JID, Affiliation, StateData) ->
