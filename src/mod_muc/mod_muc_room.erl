@@ -474,7 +474,7 @@ normal_state({route, From, ToNick,
     Lang = xml:get_attr_s("xml:lang", Attrs),
     case decide_fate_message(Type, Packet, From, StateData) of
 	{expulse_sender, Reason} ->
-	    ?INFO_MSG(Reason, []),
+	    ?DEBUG(Reason, []),
 	    Status_text = "This participant sent a bad error message to another participant.",
 	    NewState =
 		add_user_presence_un(
@@ -1013,26 +1013,33 @@ list_to_affiliation(Affiliation) ->
 %% Decide the fate of the message and its sender
 %% Returns: continue_delivery | forget_message | {expulse_sender, Reason}
 decide_fate_message("error", Packet, From, StateData) ->
-    case catch check_error_kick(Packet) of
-	%% If this is an error stanza and its condition matches a criteria
-	true ->
-	    %% If the sender of the message is online
+    %% Make a preliminary decision
+    PD = case catch check_error_kick(Packet) of
+	     %% If this is an error stanza and its condition matches a criteria
+	     true ->
+		 Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
+					[jlib:jid_to_string(From)]),
+		 {expulse_sender, Reason};
+	     false ->
+		 continue_delivery;
+	     {'EXIT', Error} ->
+		 Reason = io_lib:format(
+			    "This participant sent a problematic packet and is expulsed: ~s~nPacket: ~p~nError: ~p",
+			    [jlib:jid_to_string(From), Packet, Error]),
+		 {expulse_sender, Reason}
+	 end,
+    case PD of
+	{expulse_sender, R} ->
 	    case is_user_online(From, StateData) of
 		true ->
-		    Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
-					   [jlib:jid_to_string(From)]),
-		    {expulse_sender, Reason};
+		    {expulse_sender, R};
 		false ->
 		    forget_message
 	    end;
-	false ->
-	    continue_delivery;
-	{'EXIT', Error} ->
-	    Reason = io_lib:format(
-		       "This participant sent a problematic packet and is expulsed: ~s~nPacket: ~p~nError: ~p",
-		       [jlib:jid_to_string(From), Packet, Error]),
-	    {expulse_sender, Reason}
+	Other ->
+	    Other
     end;
+
 decide_fate_message(_, _, _, _) ->
     continue_delivery.
 
