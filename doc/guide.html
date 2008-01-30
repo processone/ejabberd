@@ -243,7 +243,7 @@ Comprehensive documentation.
 </LI><LI CLASS="li-itemize">Capability to send announce messages.
 </LI></UL></LI><LI CLASS="li-itemize">Internationalized: <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Translated to 22 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
+Translated to 24 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
 </LI></UL></LI><LI CLASS="li-itemize">Open Standards: <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Fully XMPP compliant.
@@ -2193,16 +2193,13 @@ pubsub plugin is always used.
 </DD><DT CLASS="dt-description"><B><TT>nodetree</TT></B></DT><DD CLASS="dd-description"> To specify which nodetree to use. If not defined, the default pubsub
 nodetree is used. Nodetrees are default and virtual. Only one nodetree can be used
 and is shared by all node plugins. 
-</DD><DT CLASS="dt-description"><B><TT>served_hosts</TT></B></DT><DD CLASS="dd-description"> 
-This option allows to create additional pubsub virtual hosts in a single module instance.
 </DD></DL><P>Example:
 </P><PRE CLASS="verbatim">  {modules,
    [
     ...
     {mod_pubsub, [
                   {access_createnode, pubsub_createnode},
-                  {plugins, ["default", "pep"]},
-                  {served_hosts, ["example.com", "example.org"]}
+                  {plugins, ["default", "pep"]}
                  ]}
     ...
    ]}.
@@ -3016,12 +3013,12 @@ Example configuration:
 </P><PRE CLASS="verbatim">{watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
 </PRE><!--TOC section Log Files-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc82">7.2</A>&#XA0;&#XA0;Log Files</H2><!--SEC END --><P>
-<A NAME="logfiles"></A></P><P><TT>ejabberd</TT> writes messages in two log files:
+<A NAME="logfiles"></A></P><P>An <TT>ejabberd</TT> node writes two log files:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-	<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> Messages reported by <TT>ejabberd</TT> code
-	</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> Messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
+	<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> is the ejabberd service log, with the messages reported by <TT>ejabberd</TT> code
+	</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
 </DD></DL><P>The option <TT>loglevel</TT> modifies the verbosity of the file ejabberd.log.
-There possible levels are:
+The possible levels are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>0</TT></B></DT><DD CLASS="dd-description"> No ejabberd log at all (not recommended)
 	</DD><DT CLASS="dt-description"><B><TT>1</TT></B></DT><DD CLASS="dd-description"> Critical
