@@ -1,3 +1,8 @@
+2008-01-30  Badlop  <badlop@process-one.net>
+
+	* src/mod_echo.erl: Put in comments the call to the educational
+	function do_client_version
+
 2008-01-29  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: MUC kicks a participant if sends a
