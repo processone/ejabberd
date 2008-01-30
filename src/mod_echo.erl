@@ -121,7 +121,7 @@ handle_info({route, From, To, Packet}, State) ->
 		"" -> jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST);
 		_ -> Packet
 	end,
-    do_client_version(To, From),
+    %%do_client_version(To, From),
     ejabberd_router:route(To, From, Packet2),
     {noreply, State};
 handle_info(_Info, State) ->
@@ -146,8 +146,11 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%--------------------------------------------------------------------
-%%% Internal functions
+%% Example of routing XMPP packets using Erlang's message passing
 %%--------------------------------------------------------------------
+
+%% To enable this educational example, uncomment the call to the 
+%% function do_client_version in handle_info.
 
 %% ejabberd provides a method to receive XMPP packets using Erlang's 
 %% message passing mechanism. 
