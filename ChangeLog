@@ -1,3 +1,13 @@
+2008-02-02  Mickael Remond  <mremond@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Added the from field in the
+	get_subnodes pubsub plugin API function. This is usefull to write
+	plugins to generate the pubsub hierarchy dynamically, based on who
+	is doing the browsing request.
+	* src/mod_pubsub/gen_pubsub_nodetree.erl: Likewise
+	* src/mod_pubsub/nodetree_default.erl: Likewise
+	* src/mod_pubsub/nodetree_virtual.erl: Likewise
+	
 2008-01-30  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Removed the option served_hosts in mod_pubsub

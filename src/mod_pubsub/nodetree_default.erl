@@ -47,7 +47,7 @@
 	 set_node/1,
 	 get_node/2,
 	 get_nodes/1,
-	 get_subnodes/2,
+	 get_subnodes/3,
 	 get_subnodes_tree/2,
 	 create_node/5,
 	 delete_node/2
@@ -109,10 +109,11 @@ get_node(Host, Node) ->
 get_nodes(Key) ->
     mnesia:match_object(#pubsub_node{nodeid = {Key, '_'}, _ = '_'}).
 
-%% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
+%% @spec (Host, Node, From) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
-get_subnodes(Host, Node) ->
+%%     From = mod_pubsub:jid()
+get_subnodes(Host, Node, _From) ->
     mnesia:index_read(pubsub_node, {Host, Node}, #pubsub_node.parentid).
 
 %% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}

@@ -44,7 +44,7 @@ behaviour_info(callbacks) ->
 	 {set_node, 1},
 	 {get_node, 2},
 	 {get_nodes, 1},
-	 {get_subnodes, 2},
+	 {get_subnodes, 3},
 	 {get_subnodes_tree, 2},
 	 {create_node, 5},
 	 {delete_node, 2}

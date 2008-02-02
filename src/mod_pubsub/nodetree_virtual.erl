@@ -45,7 +45,7 @@
 	 set_node/1,
 	 get_node/2,
 	 get_nodes/1,
-	 get_subnodes/2,
+	 get_subnodes/3,
 	 get_subnodes_tree/2,
 	 create_node/5,
 	 delete_node/2
@@ -96,11 +96,12 @@ get_node(Host, Node) ->
 get_nodes(_Key) ->
     [].
 
-%% @spec (Host, Index) -> [pubsubNode()]
+%% @spec (Host, Node, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
-get_subnodes(_Host, _Node) ->
+get_subnodes(_Host, _Node, _From) ->
     [].
 
 %% @spec (Host, Index) -> [pubsubNode()]

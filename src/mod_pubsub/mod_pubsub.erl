@@ -685,7 +685,7 @@ node_disco_identity(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, false).
 node_disco_features(Host, Node, From) ->
     node_disco_info(Host, Node, From, false, true).
-node_disco_info(Host, Node, _From, Identity, Features) ->
+node_disco_info(Host, Node, From, Identity, Features) ->
     Action =
 	fun(#pubsub_node{type = Type}) ->
 		I = case Identity of
@@ -693,7 +693,7 @@ node_disco_info(Host, Node, _From, Identity, Features) ->
 			    [];
 			true ->
 			    Types =
-				case tree_call(Host, get_subnodes, [Host, Node]) of
+				case tree_call(Host, get_subnodes, [Host, Node, From]) of
 				    [] ->
 					["leaf"]; %% No sub-nodes: it's a leaf node
 				    _ ->
@@ -740,7 +740,7 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	    node_disco_info(Host, Node, From)
     end.
 
-iq_disco_items(Host, [], _From) ->
+iq_disco_items(Host, [], From) ->
     {result, lists:map(
 	       fun(#pubsub_node{nodeid = {_, SubNode}}) ->
 		       SN = node_to_string(SubNode),
@@ -749,8 +749,8 @@ iq_disco_items(Host, [], _From) ->
 		       {xmlelement, "item", [{"jid", Host},
 					     {"node", SN},
 					     {"name", RN}], []}
-	       end, tree_action(Host, get_subnodes, [Host, []]))};
-iq_disco_items(Host, Item, _From) ->
+	       end, tree_action(Host, get_subnodes, [Host, [], From]))};
+iq_disco_items(Host, Item, From) ->
     case string:tokens(Item, "!") of
 	[_SNode, _ItemID] ->
 	    {result, []};
@@ -771,7 +771,7 @@ iq_disco_items(Host, Item, _From) ->
 					  SN = node_to_string(SubNode),
 					  RN = lists:last(SubNode),
 					  {xmlelement, "item", [{"jid", Host}, {"node", SN}, {"name", RN}], []}
-				  end, tree_call(Host, get_subnodes, [Host, Node])),
+				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
 					  SN = node_to_string(Node) ++ "!" ++ RN,
