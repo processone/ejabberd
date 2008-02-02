@@ -1,4 +1,6 @@
-2008-02-02  Mickael Remond  <mremond@process-one.net>
+2008-02-02  Mickael Remond  <mremond@process-one.net
+
+	* src/mod_pubsub/nodetree_virtual.erl: Fixed error report at startup.
 
 	* src/mod_pubsub/mod_pubsub.erl: Added the from field in the
 	get_subnodes pubsub plugin API function. This is usefull to write
