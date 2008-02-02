@@ -1,3 +1,7 @@
+2008-02-02  Mickael Remond <mremond@process-one.net>
+
+	* src/mod_pubsub/nodetree_virtual.erl: Fixed error report at startup.
+
 2008-01-30  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Removed the option served_hosts in mod_pubsub
