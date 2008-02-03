@@ -1,4 +1,9 @@
-2008-02-02  Mickael Remond  <mremond@process-one.net
+2008-02-04  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Append "(n/a)" to disco room
+	descriptions when a number of occupants is not available
+
+2008-02-02  Mickael Remond  <mremond@process-one.net>
 
 	* src/mod_pubsub/nodetree_virtual.erl: Fixed error report at startup.
 

@@ -675,7 +675,7 @@ handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
 				 StateData#state.users),
 		" (" ++ Desc ++ integer_to_list(Len) ++ ")";
 	    _ ->
-		""
+		" (n/a)"
 	end,
     Reply = case ((StateData#state.config)#config.public == true) orelse
 		(FRole /= none) orelse
