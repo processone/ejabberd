@@ -1,3 +1,11 @@
+2008-02-04  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd.hrl: Updated version to 2.1.0-alpha
+	* doc/dev.html: Likewise
+	* doc/features.html: Likewise
+	* doc/guide.html: Likewise
+	* doc/version.tex: Likewise
+
 2008-02-04  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Append "(n/a)" to disco room
