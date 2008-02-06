@@ -368,10 +368,7 @@ normal_state({route, From, "",
 		"error" ->
 		    ok;
 		_ ->
-		    ErrText = "Only occupants are allowed to send messages to the conference",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-		    ejabberd_router:route(StateData#state.jid, From, Err)
+		    handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From)
 	    end,
 	    {next_state, normal_state, StateData}
     end;
@@ -3100,6 +3097,54 @@ check_invitation(From, Els, Lang, StateData) ->
 	    ejabberd_router:route(StateData#state.jid, JID, Msg),
 	    JID
     end.
+
+%% Handle a message sent to the room by a non-participant.
+%% If it is a decline, send to the inviter.
+%% Otherwise, an error message is sent to the sender.
+handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From) ->
+    case catch check_decline_invitation(Packet) of
+	{true, Decline_data} ->
+	    send_decline_invitation(Decline_data, StateData#state.jid);
+	_ ->
+	    send_error_only_occupants(Packet, Lang, StateData#state.jid, From)
+    end.
+
+%% Check in the packet is a decline.
+%% If so, also returns the splitted packet.
+%% This function must be catched, 
+%% because it crashes when the packet is not a decline message.
+check_decline_invitation(Packet) ->
+    {xmlelement, "message", PAttrs, _} = Packet,
+    XEl = xml:get_subtag(Packet, "x"),
+    ?NS_MUC_USER = xml:get_tag_attr_s("xmlns", XEl),
+    DEl = xml:get_subtag(XEl, "decline"),
+    {value, FromString} = xml:get_attr("from", PAttrs),
+    ToString = xml:get_tag_attr_s("to", DEl),
+    ToJID = jlib:string_to_jid(ToString),
+    {true, {Packet, XEl, DEl, FromString, ToJID}}.
+
+%% Send the decline to the inviter user.
+%% The original stanza must be slightly modified.
+send_decline_invitation({Packet, XEl, DEl, FromString, ToJID}, RoomJID) ->
+    {xmlelement, "decline", DAttrs, DEls} = DEl,
+    DAttrs2 = lists:keydelete("to", 1, DAttrs),
+    DAttrs3 = [{"from", FromString} | DAttrs2],
+    DEl2 = {xmlelement, "decline", DAttrs3, DEls},
+    XEl2 = replace_subelement(XEl, DEl2),
+    Packet2 = replace_subelement(Packet, XEl2),
+    ejabberd_router:route(RoomJID, ToJID, Packet2).
+
+%% Given an element and a new subelement, 
+%% replace the instance of the subelement in element with the new subelement.
+replace_subelement({xmlelement, Name, Attrs, SubEls}, NewSubEl) ->
+    {_, NameNewSubEl, _, _} = NewSubEl,
+    SubEls2 = lists:keyreplace(NameNewSubEl, 2, SubEls, NewSubEl),
+    {xmlelement, Name, Attrs, SubEls2}.
+
+send_error_only_occupants(Packet, Lang, RoomJID, From) ->
+    ErrText = "Only occupants are allowed to send messages to the conference",
+    Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+    ejabberd_router:route(RoomJID, From, Err).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
