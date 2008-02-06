@@ -64,7 +64,8 @@
 	 set_state/1,
 	 get_items/2,
 	 get_item/3,
-	 set_item/1
+	 set_item/1,
+	 get_item_name/3
 	]).
 
 
@@ -172,7 +173,12 @@ get_items(Host, Node) ->
     node_default:get_items(Host, Node).
 
 get_item(Host, Node, ItemId) ->
-    node_default:get_items(Host, Node, ItemId).
+    node_default:get_item(Host, Node, ItemId).
 
 set_item(Item) ->
     node_default:set_item(Item).
+
+%% @doc <p>Return the name of the node if known: Default is to return
+%% node id.</p>
+get_item_name(Host, Node, Id) ->
+    node_default:get_item_name(Host, Node, Id).

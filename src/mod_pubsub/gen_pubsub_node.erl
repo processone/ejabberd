@@ -64,7 +64,8 @@ behaviour_info(callbacks) ->
      {set_state, 1},
      {get_items, 2},
      {get_item, 3},
-     {set_item, 1}
+     {set_item, 1},
+     {get_item_name, 3}
     ];
 behaviour_info(_Other) ->
     undefined.

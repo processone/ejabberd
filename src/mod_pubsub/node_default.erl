@@ -71,7 +71,8 @@
 	 set_state/1,
 	 get_items/2,
 	 get_item/3,
-	 set_item/1
+	 set_item/1,
+	 get_item_name/3
 	]).
 
 %% ================
@@ -726,3 +727,8 @@ set_item(Item) when is_record(Item, pubsub_item) ->
     mnesia:write(Item);
 set_item(_) ->
     {error, ?ERR_INTERNAL_SERVER_ERROR}.
+
+%% @doc <p>Return the name of the node if known: Default is to return
+%% node id.</p>
+get_item_name(_Host, _Node, Id) ->
+    Id.

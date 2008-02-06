@@ -89,7 +89,9 @@
 	 string_to_subscription/1,
 	 string_to_affiliation/1,
 	 extended_error/2,
-	 extended_error/3
+	 extended_error/3,
+	 make_stanza/3,
+	 route_stanza/3
 	]).
 
 %% API and gen_server callbacks
@@ -386,7 +388,7 @@ disco_sm_items(Acc, _From, To, Node, _Lang) ->
 				  %% "node" is forbidden by XEP-0060.
 				  {xmlelement, "item",
 				   [{"jid", jlib:jid_to_string(LJID)},
-				    {"name", Id}],
+				    {"name", get_item_name(Host, Node, Id)}],
 				   []}
 			  end, AllItems),
 	    {result, NodeItems ++ Items}
@@ -770,12 +772,14 @@ iq_disco_items(Host, Item, From) ->
 				  fun(#pubsub_node{nodeid = {_, SubNode}}) ->
 					  SN = node_to_string(SubNode),
 					  RN = lists:last(SubNode),
-					  {xmlelement, "item", [{"jid", Host}, {"node", SN}, {"name", RN}], []}
+					  {xmlelement, "item", [{"jid", Host}, {"node", SN}, 
+								{"name", RN}], []}
 				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
 					  SN = node_to_string(Node) ++ "!" ++ RN,
-					  {xmlelement, "item", [{"jid", Host}, {"node", SN}, {"name", RN}], []}
+					  {xmlelement, "item", [{"jid", Host}, {"node", SN},
+								{"name", get_item_name(Host, Node, RN)}], []}
 				  end, NodeItems),
 			{result, Nodes ++ Items}
 		end,
@@ -2055,11 +2059,7 @@ broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
 			    "" -> [];
 			    _ -> [{"id", ItemId}]
 			end,
-			Stanza = {xmlelement, "message", [],
-				   [{xmlelement, "event",
-				     [{"xmlns", ?NS_PUBSUB_EVENT}],
-				       [{xmlelement, "items", [{"node", node_to_string(Node)}],
-				         [{xmlelement, "item", ItemAttrs, Content}]}]}]},
+			Stanza = make_stanza(Node, ItemAttrs, Content),
 			lists:foreach(
 			  fun(#pubsub_state{stateid = {LJID, _},
 					    subscription = Subscription}) ->
@@ -2069,10 +2069,7 @@ broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
 					    true -> ejabberd_sm:get_user_resources(element(1, LJID), element(2, LJID));
 					    false -> [LJID]
 					end,
-					lists:foreach(
-					    fun(DestJID) ->
-						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(DestJID), Stanza}
-					    end, DestJIDs);
+					route_stanza(Host, DestJIDs, Stanza);
 				    false ->
 					ok
 				end
@@ -2082,6 +2079,22 @@ broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
 		end
 	end,
     transaction(Host, Node, Action, sync_dirty).
+
+%% ItemAttrs is a list of tuples:
+%% For example: [{"id", ItemId}]
+make_stanza(Node, ItemAttrs, Payload) ->
+    {xmlelement, "message", [],
+     [{xmlelement, "event",
+       [{"xmlns", ?NS_PUBSUB_EVENT}],
+       [{xmlelement, "items", [{"node", node_to_string(Node)}],
+	 [{xmlelement, "item", ItemAttrs, Payload}]}]}]}.
+
+%% DestJIDs = [{LUser, LServer, LResource}]
+route_stanza(Host, DestJIDs, Stanza) ->
+    lists:foreach(
+      fun(DestJID) ->
+	      ejabberd_router ! {route, service_jid(Host), jlib:make_jid(DestJID), Stanza}
+      end, DestJIDs). 
 
 broadcast_retract_item(Host, Node, ItemId) ->
     broadcast_retract_item(Host, Node, ItemId, false).
@@ -2725,3 +2738,8 @@ extended_error({xmlelement, Error, Attrs, SubEls}, Ext, ExtAttrs) ->
 uniqid() ->
     {T1, T2, T3} = now(),
     lists:flatten(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
+
+%% @doc Return the name of a given node if available.
+get_item_name(Host, Node, Id) ->
+    {result, Name} = node_action(Host, Node, get_item_name, [Host, Node, Id]),
+    Name.

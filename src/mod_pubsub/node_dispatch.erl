@@ -62,7 +62,8 @@
 	 set_state/1,
 	 get_items/2,
 	 get_item/3,
-	 set_item/1
+	 set_item/1,
+	 get_item_name/3
 	]).
 
 
@@ -179,3 +180,6 @@ get_item(Host, Node, ItemId) ->
 
 set_item(Item) ->
     node_default:set_item(Item).
+
+get_item_name(Host, Node, Id) ->
+    node_default:get_item_name(Host, Node, Id).
