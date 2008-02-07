@@ -10,6 +10,7 @@
 	* src/mod_pubsub/node_dispatch.erl: Likewise
 	* src/mod_pubsub/node_pep.erl: Likewise
 	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
 	
 	* src/mod_pubsub/gen_pubsub_node.erl: API improvement: Added a way
 	to generate custom item name
