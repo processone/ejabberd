@@ -175,7 +175,7 @@ get_items(Host, Node) ->
     node_default:get_items(Host, Node).
 
 get_item(Host, Node, ItemId) ->
-    node_default:get_items(Host, Node, ItemId).
+    node_default:get_item(Host, Node, ItemId).
 
 set_item(Item) ->
     node_default:set_item(Item).

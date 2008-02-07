@@ -1,3 +1,13 @@
+2008-02-06  Mickael Remond <mremond@process-one.net>
+
+	* src/mod_pubsub/node_buddy.erl: Fixed typo
+	* src/mod_pubsub/node_club.erl: Likewise
+	* src/mod_pubsub/node_dispatch.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
+
 2008-02-02  Mickael Remond <mremond@process-one.net>
 
 	* src/mod_pubsub/nodetree_virtual.erl: Fixed error report at startup.
