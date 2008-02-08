@@ -1317,6 +1317,20 @@ Moreover, the file mysql.sql in the directory src/odbc might be interesting for
 you. This file contains the \ejabberd{} schema for MySQL. At the end of the file
 you can find information to update your database schema.
 
+By default \ejabberd{} opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+\begin{verbatim}
+{odbc_pool_size, 10}.
+\end{verbatim}
+
+You can configure an interval to make a dummy SQL request 
+to keep alive the connections to the database. 
+The default value is 'undefined', so no keepalive requests are made. 
+Specify in seconds: for example 28800 means 8 hours.
+\begin{verbatim}
+{odbc_keepalive_interval, undefined}.
+\end{verbatim}
+
 \subsubsection{Driver Compilation}
 \label{compilemysql}
 \ind{MySQL!Driver Compilation}
@@ -1404,6 +1418,20 @@ Moreover, the file mssql.sql in the directory src/odbc might be interesting for
 you. This file contains the \ejabberd{} schema for Microsoft SQL Server. At the end
 of the file you can find information to update your database schema.
 
+By default \ejabberd{} opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+\begin{verbatim}
+{odbc_pool_size, 10}.
+\end{verbatim}
+
+You can configure an interval to make a dummy SQL request 
+to keep alive the connections to the database. 
+The default value is 'undefined', so no keepalive requests are made. 
+Specify in seconds: for example 28800 means 8 hours.
+\begin{verbatim}
+{odbc_keepalive_interval, undefined}.
+\end{verbatim}
+
 \subsubsection{Driver Compilation}
 \label{compilemssql}
 \ind{Microsoft SQL Server!Driver Compilation}
@@ -1454,6 +1482,20 @@ Also the file pg.sql in the directory src/odbc might be interesting for you.
 This file contains the \ejabberd{} schema for PostgreSQL. At the end of the file
 you can find information to update your database schema.
 
+By default \ejabberd{} opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+\begin{verbatim}
+{odbc_pool_size, 10}.
+\end{verbatim}
+
+You can configure an interval to make a dummy SQL request 
+to keep alive the connections to the database. 
+The default value is 'undefined', so no keepalive requests are made. 
+Specify in seconds: for example 28800 means 8 hours.
+\begin{verbatim}
+{odbc_keepalive_interval, undefined}.
+\end{verbatim}
+
 \subsubsection{Driver Compilation}
 \label{compilepgsql}
 \ind{PostgreSQL!Driver Compilation}
@@ -1463,8 +1505,9 @@ if the binary packages of \ejabberd{} you are using include support for
 PostgreSQL.
 
 \begin{enumerate}
-\item First, install the Erlang PgSQL library from
-  \footahref{http://jungerl.sourceforge.net/}{Jungerl}. Make sure the compiled
+\item First, install the Erlang pgsql library from
+  \footahref{http://www.ejabberd.im/ejabberd-modules/}{ejabberd-modules SVN repository}. 
+  Make sure the compiled
   files are in your Erlang path; you can put them for example in the same
   directory as your \ejabberd{} .beam files.
 \item Then, configure, compile and install \ejabberd{} with ODBC support enabled
@@ -1537,7 +1580,21 @@ of your database. Check the documentation of your database. The tutorial \footah
 contains information about \ejabberd{}'s configuration which is duplicate to
 this section.
 
-\subsubsection{Compilation}
+By default \ejabberd{} opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+\begin{verbatim}
+{odbc_pool_size, 10}.
+\end{verbatim}
+
+You can configure an interval to make a dummy SQL request 
+to keep alive the connections to the database. 
+The default value is 'undefined', so no keepalive requests are made. 
+Specify in seconds: for example 28800 means 8 hours.
+\begin{verbatim}
+{odbc_keepalive_interval, undefined}.
+\end{verbatim}
+
+\subsubsection{Driver Compilation}
 \label{compileodbc}
 
 You can skip this step if you installed \ejabberd{} using a binary installer or

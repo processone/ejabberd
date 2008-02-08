@@ -286,6 +286,17 @@
 %%
 %%{odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}.
 
+%%
+%% Number of connections to open to the database for each virtual host
+%%
+%%{odbc_pool_size, 10}.
+
+%%
+%% Interval to make a dummy SQL request to keep alive the connections
+%% to the database. Specify in seconds: for example 28800 means 8 hours
+%%
+%%{odbc_keepalive_interval, undefined}.
+
 
 %%%   ===============
 %%%   TRAFFIC SHAPERS

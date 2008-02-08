@@ -1,3 +1,10 @@
+2008-02-08  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd.cfg.example: Document options to SQL keep alive
+	interval and pool size (EJAB-206)
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
 2008-02-06  Mickael Remond <mremond@process-one.net>
 
 	* src/mod_pubsub/node_buddy.erl: Fixed typo

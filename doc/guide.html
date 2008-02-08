@@ -1108,7 +1108,15 @@ database creation. Check the MySQL documentation and the tutorial <A HREF="http:
 Note that the tutorial contains information about <TT>ejabberd</TT>&#X2019;s configuration
 which is duplicate to this section.</P><P>Moreover, the file mysql.sql in the directory src/odbc might be interesting for
 you. This file contains the <TT>ejabberd</TT> schema for MySQL. At the end of the file
-you can find information to update your database schema.</P><!--TOC subsubsection Driver Compilation-->
+you can find information to update your database schema.</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
+</PRE><P>You can configure an interval to make a dummy SQL request 
+to keep alive the connections to the database. 
+The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made. 
+Specify in seconds: for example 28800 means 8 hours.
+</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
+</PRE><!--TOC subsubsection Driver Compilation-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Driver Compilation</H4><!--SEC END --><P>
 <A NAME="compilemysql"></A>
 </P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
@@ -1161,7 +1169,15 @@ tutorial <A HREF="http://support.process-one.net/doc/display/MESSENGER/Using+eja
 Note that the tutorial contains information about <TT>ejabberd</TT>&#X2019;s configuration
 which is duplicate to this section.</P><P>Moreover, the file mssql.sql in the directory src/odbc might be interesting for
 you. This file contains the <TT>ejabberd</TT> schema for Microsoft SQL Server. At the end
-of the file you can find information to update your database schema.</P><!--TOC subsubsection Driver Compilation-->
+of the file you can find information to update your database schema.</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
+</PRE><P>You can configure an interval to make a dummy SQL request 
+to keep alive the connections to the database. 
+The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made. 
+Specify in seconds: for example 28800 means 8 hours.
+</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
+</PRE><!--TOC subsubsection Driver Compilation-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Driver Compilation</H4><!--SEC END --><P>
 <A NAME="compilemssql"></A>
 </P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
@@ -1192,14 +1208,23 @@ and database creation. Check the PostgreSQL documentation and the tutorial <A HR
 Note that the tutorial contains information about <TT>ejabberd</TT>&#X2019;s configuration
 which is duplicate to this section.</P><P>Also the file pg.sql in the directory src/odbc might be interesting for you.
 This file contains the <TT>ejabberd</TT> schema for PostgreSQL. At the end of the file
-you can find information to update your database schema.</P><!--TOC subsubsection Driver Compilation-->
+you can find information to update your database schema.</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
+</PRE><P>You can configure an interval to make a dummy SQL request 
+to keep alive the connections to the database. 
+The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made. 
+Specify in seconds: for example 28800 means 8 hours.
+</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
+</PRE><!--TOC subsubsection Driver Compilation-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Driver Compilation</H4><!--SEC END --><P>
 <A NAME="compilepgsql"></A>
 </P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
 if the binary packages of <TT>ejabberd</TT> you are using include support for
 PostgreSQL.</P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
-First, install the Erlang PgSQL library from
-<A HREF="http://jungerl.sourceforge.net/">Jungerl</A>. Make sure the compiled
+First, install the Erlang pgsql library from
+<A HREF="http://www.ejabberd.im/ejabberd-modules/">ejabberd-modules SVN repository</A>. 
+Make sure the compiled
 files are in your Erlang path; you can put them for example in the same
 directory as your <TT>ejabberd</TT> .beam files.
 </LI><LI CLASS="li-enumerate">Then, configure, compile and install <TT>ejabberd</TT> with ODBC support enabled
@@ -1244,8 +1269,16 @@ Keep in mind that you cannot have several variants of the same module loaded!</P
 use the ODBC driver, it does not describe the installation and database creation
 of your database. Check the documentation of your database. The tutorial <A HREF="http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver">Using ejabberd with MySQL native driver</A> also can help you. Note that the tutorial
 contains information about <TT>ejabberd</TT>&#X2019;s configuration which is duplicate to
-this section.</P><!--TOC subsubsection Compilation-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR -->Compilation</H4><!--SEC END --><P>
+this section.</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
+</PRE><P>You can configure an interval to make a dummy SQL request 
+to keep alive the connections to the database. 
+The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made. 
+Specify in seconds: for example 28800 means 8 hours.
+</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
+</PRE><!--TOC subsubsection Driver Compilation-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR -->Driver Compilation</H4><!--SEC END --><P>
 <A NAME="compileodbc"></A></P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
 if the binary packages of <TT>ejabberd</TT> you are using include support for
 ODBC.</P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
