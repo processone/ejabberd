@@ -1,5 +1,9 @@
 2008-02-08  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Include the error condition in the
+	presence status when kicking a participant due to an error
+	stanza (EJAB-496)
+
 	* src/ejabberd.cfg.example: Document options to SQL keep alive
 	interval and pool size (EJAB-206)
 	* doc/guide.tex: Likewise

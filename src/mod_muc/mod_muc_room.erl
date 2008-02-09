@@ -294,18 +294,11 @@ normal_state({route, From, "",
 		"error" ->
 		    case is_user_online(From, StateData) of
 			true ->
-			    NewState =
-				add_user_presence_un(
-				  From,
-				  {xmlelement, "presence",
-				   [{"type", "unavailable"}],
-				   [{xmlelement, "status", [],
-				     [{xmlcdata,
-				       "This participant sent a bad error message to the room."}]}]},
-			      StateData),
-			    send_new_presence(From, NewState),
-			    {next_state, normal_state,
-			     remove_online_user(From, NewState)};
+			    ErrorText = "This participant is kicked from the room because "
+				"he sent an error message",
+			    NewState = expulse_participant(Packet, From, StateData, 
+					 translate:translate(Lang, ErrorText)),
+			    {next_state, normal_state, NewState};
 			_ ->
 			    {next_state, normal_state, StateData}
 		    end;
@@ -472,17 +465,11 @@ normal_state({route, From, ToNick,
     case decide_fate_message(Type, Packet, From, StateData) of
 	{expulse_sender, Reason} ->
 	    ?DEBUG(Reason, []),
-	    Status_text = "This participant sent a bad error message to another participant.",
-	    NewState =
-		add_user_presence_un(
-		  From,
-		  {xmlelement, "presence",
-		   [{"type", "unavailable"}],
-		   [{xmlelement, "status", [], [{xmlcdata, Status_text}]}]},
-		  StateData),
-	    send_new_presence(From, NewState),
-	    {next_state, normal_state,
-	     remove_online_user(From, NewState)};
+	    ErrorText = "This participant is kicked from the room because "
+		"he sent an error message to another participant",
+	    NewState = expulse_participant(Packet, From, StateData, 
+					   translate:translate(Lang, ErrorText)),
+	    {next_state, normal_state, NewState};
 	forget_message ->
 	    {next_state, normal_state, StateData};
 	continue_delivery ->
@@ -899,16 +886,10 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 	    "error" ->
 		case is_user_online(From, StateData) of
 		    true ->
-			NewState =
-			    add_user_presence_un(
-			      From,
-			      {xmlelement, "presence",
-			       [{"type", "unavailable"}],
-			       [{xmlelement, "status", [],
-				 [{xmlcdata, "This participant sent a bad error presence."}]}]},
-			      StateData),
-			send_new_presence(From, NewState),
-			remove_online_user(From, NewState);
+			ErrorText = "This participant is kicked from the room because "
+			    "he sent an error presence",
+			expulse_participant(Packet, From, StateData,
+					    translate:translate(Lang, ErrorText));
 		    _ ->
 			StateData
 		end;
@@ -1011,19 +992,14 @@ list_to_affiliation(Affiliation) ->
 %% Returns: continue_delivery | forget_message | {expulse_sender, Reason}
 decide_fate_message("error", Packet, From, StateData) ->
     %% Make a preliminary decision
-    PD = case catch check_error_kick(Packet) of
+    PD = case check_error_kick(Packet) of
 	     %% If this is an error stanza and its condition matches a criteria
 	     true ->
 		 Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
 					[jlib:jid_to_string(From)]),
 		 {expulse_sender, Reason};
 	     false ->
-		 continue_delivery;
-	     {'EXIT', Error} ->
-		 Reason = io_lib:format(
-			    "This participant sent a problematic packet and is expulsed: ~s~nPacket: ~p~nError: ~p",
-			    [jlib:jid_to_string(From), Packet, Error]),
-		 {expulse_sender, Reason}
+		 continue_delivery
 	 end,
     case PD of
 	{expulse_sender, R} ->
@@ -1044,9 +1020,7 @@ decide_fate_message(_, _, _, _) ->
 %% that the sender is a dead participant.
 %% If so, return true to kick the participant.
 check_error_kick(Packet) ->
-    {xmlelement, _, _, EEls} = xml:get_subtag(Packet, "error"),
-    [{xmlelement, Name, _, _}] = xml:remove_cdata(EEls),
-    case Name of
+    case get_error_condition(Packet) of
 	"gone" -> true;
 	"internal-server-error" -> true;
 	"item-not-found" -> true;
@@ -1058,6 +1032,32 @@ check_error_kick(Packet) ->
 	"service-unavailable" -> true;
 	_ -> false
     end.
+
+get_error_condition(Packet) ->
+	case catch get_error_condition2(Packet) of
+	     {condition, ErrorCondition} ->
+		ErrorCondition;
+	     {'EXIT', Error} ->
+		"badformed error stanza"
+	end.
+get_error_condition2(Packet) ->
+	{xmlelement, _, _, EEls} = xml:get_subtag(Packet, "error"),
+	[Condition] = [Name || {xmlelement, Name, [{"xmlns", ?NS_STANZAS}], []} <- EEls],
+	{condition, Condition}.
+
+expulse_participant(Packet, From, StateData, Reason1) ->
+	ErrorCondition = get_error_condition(Packet),
+	Reason2 = io_lib:format(Reason1 ++ ": " ++ "~s", [ErrorCondition]),
+	NewState = add_user_presence_un(
+		From,
+		{xmlelement, "presence",
+		[{"type", "unavailable"}],
+		[{xmlelement, "status", [],
+		[{xmlcdata, Reason2}]
+		}]},
+	StateData),
+	send_new_presence(From, NewState),
+	remove_online_user(From, NewState).
 
 
 set_affiliation(JID, Affiliation, StateData) ->
