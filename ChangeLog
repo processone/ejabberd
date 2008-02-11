@@ -1,3 +1,8 @@
+2008-02-11  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Bugfix: event used in place of x when
+	xmlns is pubsub#event (EJAB-518)
+
 2008-02-08  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Include the error condition in the
