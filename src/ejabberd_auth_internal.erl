@@ -72,7 +72,7 @@ check_password(User, Server, Password) ->
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
 	[#passwd{password = Password}] ->
-	    true;
+	    Password /= "";
 	_ ->
 	    false
     end.
@@ -112,7 +112,6 @@ set_password(User, Server, Password) ->
 		end,
 	    mnesia:transaction(F)
     end.
-
 
 try_register(User, Server, Password) ->
     LUser = jlib:nodeprep(User),

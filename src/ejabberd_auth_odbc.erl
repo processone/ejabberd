@@ -70,7 +70,7 @@ check_password(User, Server, Password) ->
 	    LServer = jlib:nameprep(Server),
 	    case catch odbc_queries:get_password(LServer, Username) of
 		{selected, ["password"], [{Password}]} ->
-		    true;
+		    Password /= "";
 		_ ->
 		    false
 	    end

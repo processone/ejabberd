@@ -85,6 +85,9 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	      M:check_password(User, Server, Password, StreamID, Digest)
       end, auth_modules(Server)).
 
+%% We do not allow empty password:
+set_password(_User, _Server, "") ->
+    {error, not_allowed};
 set_password(User, Server, Password) ->
     lists:foldl(
       fun(M, {error, _}) ->
@@ -93,6 +96,9 @@ set_password(User, Server, Password) ->
 	      Res
       end, {error, not_allowed}, auth_modules(Server)).
 
+%% We do not allow empty password:
+try_register(_User, _Server, "") ->
+    {error, not_allowed};    
 try_register(User, Server, Password) ->
     case is_user_exists(User,Server) of
 	true ->

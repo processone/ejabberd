@@ -55,7 +55,7 @@ plain_password_required() ->
     true.
 
 check_password(User, Server, Password) ->
-    extauth:check_password(User, Server, Password).
+    extauth:check_password(User, Server, Password) andalso Password /= "".
 
 check_password(User, Server, Password, _StreamID, _Digest) ->
     check_password(User, Server, Password).
