@@ -1,5 +1,12 @@
 2008-02-11  Mickael Remond <mremond@process-one.net>
 
+	* src/ejabberd_auth.erl: Do not allow empty password at
+	creation. On authent, check in all cases that password is not
+	empty.
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+
 	* src/ejabberd_receiver.erl: Avoid crash to appear in log, when
 	trying to close a stream with an undefined state.
 
