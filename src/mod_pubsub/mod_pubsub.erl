@@ -1656,7 +1656,7 @@ get_items(Host, Node, _JID, SMaxItems) ->
 						     end,
 					 {xmlelement, "item", ItemAttrs, Payload}
 				 end, lists:sublist(Items, MaxItems)),
-		    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_EVENT}],
+		    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
 			       [{xmlelement, "items", [{"node", node_to_string(Node)}],
 				 ItemsEls}]}]}
 	    end
@@ -1697,7 +1697,7 @@ send_items(Host, Node, LJID, Number) ->
 			 {xmlelement, "item", ItemAttrs, Payload}
 		 end, ToSend),
     Stanza = {xmlelement, "message", [],
-	      [{xmlelement, "x", [{"xmlns", ?NS_PUBSUB_EVENT}],
+	      [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
 		[{xmlelement, "items", [{"node", node_to_string(Node)}],
 		  ItemsEls}]}]},
     ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza}.
@@ -2114,7 +2114,7 @@ broadcast_retract_item(Host, Node, ItemId, ForceNotify) ->
 			    _ -> [{"id", ItemId}]
 			end,
 			Stanza = {xmlelement, "message", [],
-				   [{xmlelement, "x",
+				   [{xmlelement, "event",
 				     [{"xmlns", ?NS_PUBSUB_EVENT}],
 				       [{xmlelement, "items", [{"node", node_to_string(Node)}],
 				         [{xmlelement, "retract", ItemAttrs, []}]}]}]},
@@ -2225,7 +2225,7 @@ broadcast_config_notification(Host, Node, Lang) ->
 					[]
 				end,
 				Stanza = {xmlelement, "message", [],
-					   [{xmlelement, "x", [{"xmlns", ?NS_PUBSUB_EVENT}],
+					   [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
 					     [{xmlelement, "items", [{"node", node_to_string(Node)}],
 					       [{xmlelement, "item", [{"id", "configuration"}],
 					         Content}]}]}]},
