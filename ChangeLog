@@ -1,3 +1,8 @@
+2008-02-11  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Bugfix: local message stanza may
+	not have an attribute From (EJAB-515)
+
 2008-02-08  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Include the error condition in the

@@ -1037,7 +1037,7 @@ get_error_condition(Packet) ->
 	case catch get_error_condition2(Packet) of
 	     {condition, ErrorCondition} ->
 		ErrorCondition;
-	     {'EXIT', Error} ->
+	     {'EXIT', _} ->
 		"badformed error stanza"
 	end.
 get_error_condition2(Packet) ->
@@ -3104,7 +3104,7 @@ check_invitation(From, Els, Lang, StateData) ->
 handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From) ->
     case catch check_decline_invitation(Packet) of
 	{true, Decline_data} ->
-	    send_decline_invitation(Decline_data, StateData#state.jid);
+	    send_decline_invitation(Decline_data, StateData#state.jid, From);
 	_ ->
 	    send_error_only_occupants(Packet, Lang, StateData#state.jid, From)
     end.
@@ -3114,18 +3114,18 @@ handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From) ->
 %% This function must be catched, 
 %% because it crashes when the packet is not a decline message.
 check_decline_invitation(Packet) ->
-    {xmlelement, "message", PAttrs, _} = Packet,
+    {xmlelement, "message", _, _} = Packet,
     XEl = xml:get_subtag(Packet, "x"),
     ?NS_MUC_USER = xml:get_tag_attr_s("xmlns", XEl),
     DEl = xml:get_subtag(XEl, "decline"),
-    {value, FromString} = xml:get_attr("from", PAttrs),
     ToString = xml:get_tag_attr_s("to", DEl),
     ToJID = jlib:string_to_jid(ToString),
-    {true, {Packet, XEl, DEl, FromString, ToJID}}.
+    {true, {Packet, XEl, DEl, ToJID}}.
 
 %% Send the decline to the inviter user.
 %% The original stanza must be slightly modified.
-send_decline_invitation({Packet, XEl, DEl, FromString, ToJID}, RoomJID) ->
+send_decline_invitation({Packet, XEl, DEl, ToJID}, RoomJID, FromJID) ->
+    FromString = jlib:jid_to_string(FromJID),
     {xmlelement, "decline", DAttrs, DEls} = DEl,
     DAttrs2 = lists:keydelete("to", 1, DAttrs),
     DAttrs3 = [{"from", FromString} | DAttrs2],
