@@ -134,12 +134,7 @@ handle_call({starttls, TLSSocket}, _From,
 	    #state{xml_stream_state = XMLStreamState,
 		   c2s_pid = C2SPid,
 		   max_stanza_size = MaxStanzaSize} = State) ->
-    if
-	XMLStreamState /= undefined ->
-	    xml_stream:close(XMLStreamState);
-	true ->
-	    ok
-    end,
+    close_stream(XMLStreamState),
     NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     NewState = State#state{socket = TLSSocket,
 			   sock_mod = tls,
@@ -154,7 +149,7 @@ handle_call({compress, ZlibSocket}, _From,
 	    #state{xml_stream_state = XMLStreamState,
 		   c2s_pid = C2SPid,
 		   max_stanza_size = MaxStanzaSize} = State) ->
-    xml_stream:close(XMLStreamState),
+    close_stream(XMLStreamState),
     NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     NewState = State#state{socket = ZlibSocket,
 			   sock_mod = ejabberd_zlib,
@@ -169,7 +164,7 @@ handle_call(reset_stream, _From,
 	    #state{xml_stream_state = XMLStreamState,
 		   c2s_pid = C2SPid,
 		   max_stanza_size = MaxStanzaSize} = State) ->
-    xml_stream:close(XMLStreamState),
+    close_stream(XMLStreamState),
     NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     Reply = ok,
     {reply, Reply, State#state{xml_stream_state = NewXMLStreamState}};
@@ -252,7 +247,7 @@ handle_info(_Info, State) ->
 %%--------------------------------------------------------------------
 terminate(_Reason, #state{xml_stream_state = XMLStreamState,
 			  c2s_pid = C2SPid} = State) ->
-    xml_stream:close(XMLStreamState),
+    close_stream(XMLStreamState),
     if
 	C2SPid /= undefined ->
 	    gen_fsm:send_event(C2SPid, closed);
@@ -306,3 +301,7 @@ process_data(Data,
     State#state{xml_stream_state = XMLStreamState1,
 		shaper_state = NewShaperState}.
 
+close_stream(undefined) ->
+    ok;
+close_stream(XMLStreamState) ->
+    xml_stream:close(XMLStreamState).
