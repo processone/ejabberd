@@ -1,3 +1,8 @@
+2008-02-12  Badlop  <badlop@process-one.net>
+
+	* src/acl.erl: Normalize ACL before adding to the configuration
+	tables (EJAB-521)
+
 2008-02-11  Mickael Remond <mremond@process-one.net>
 
 	* src/ejabberd_auth.erl: Do not allow empty password at
