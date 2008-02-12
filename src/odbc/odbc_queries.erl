@@ -143,11 +143,11 @@ list_users(LServer) ->
 
 list_users(LServer, [{from, Start}, {to, End}]) when is_integer(Start) and
                                                      is_integer(End) ->
-    list_users(LServer, [{limit, End-Start}, {offset, Start-1}]);
+    list_users(LServer, [{limit, End-Start+1}, {offset, Start-1}]);
 list_users(LServer, [{prefix, Prefix}, {from, Start}, {to, End}]) when is_list(Prefix) and
                                                                        is_integer(Start) and
                                                                        is_integer(End) ->
-    list_users(LServer, [{prefix, Prefix}, {limit, End-Start}, {offset, Start-1}]);
+    list_users(LServer, [{prefix, Prefix}, {limit, End-Start+1}, {offset, Start-1}]);
 
 list_users(LServer, [{limit, Limit}, {offset, Offset}]) when is_integer(Limit) and
                                                              is_integer(Offset) ->
