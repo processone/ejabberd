@@ -1,5 +1,8 @@
 2008-02-12  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Fixed native support for all the
+	ACL types (EJAB-253)
+
 	* src/acl.erl: Normalize ACL before adding to the configuration
 	tables (EJAB-521)
 
