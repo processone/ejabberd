@@ -1,3 +1,8 @@
+2008-02-12  Badlop  <badlop@process-one.net>
+
+	* src/acl.erl: Normalize ACL before adding to the configuration
+	tables (EJAB-521)
+
 2008-02-11  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Bugfix: event used in place of x when

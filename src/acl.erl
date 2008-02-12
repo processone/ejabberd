@@ -48,12 +48,12 @@ start() ->
     ok.
 
 to_record(Host, ACLName, ACLSpec) ->
-    #acl{aclname = {ACLName, Host}, aclspec = ACLSpec}.
+    #acl{aclname = {ACLName, Host}, aclspec = normalize_spec(ACLSpec)}.
 
 add(Host, ACLName, ACLSpec) ->
     F = fun() ->
 		mnesia:write(#acl{aclname = {ACLName, Host},
-				  aclspec = ACLSpec})
+				  aclspec = normalize_spec(ACLSpec)})
 	end,
     mnesia:transaction(F).
 
@@ -75,7 +75,7 @@ add_list(Host, ACLs, Clear) ->
 					       aclspec = ACLSpec} ->
 					      mnesia:write(
 						#acl{aclname = {ACLName, Host},
-						     aclspec = ACLSpec})
+						     aclspec = normalize_spec(ACLSpec)})
 				      end
 			      end, ACLs)
 	end,
@@ -85,6 +85,17 @@ add_list(Host, ACLs, Clear) ->
 	_ ->
 	    false
     end.
+
+normalize(A) ->
+    jlib:nodeprep(A).
+normalize_spec({A, B}) ->
+    {A, normalize(B)};
+normalize_spec({A, B, C}) ->
+    {A, normalize(B), normalize(C)};
+normalize_spec(all) ->
+    all;
+normalize_spec(none) ->
+    none.
 
 
 
