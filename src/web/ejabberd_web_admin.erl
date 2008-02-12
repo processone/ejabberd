@@ -1014,7 +1014,7 @@ acl_spec_to_text({server, S}) ->
     {server, S};
 
 acl_spec_to_text({user, U, S}) ->
-    {user_server, U ++ "@" ++ S};
+    {user, U ++ "@" ++ S};
 
 acl_spec_to_text({user_regexp, RU}) ->
     {user_regexp, RU};
@@ -1040,6 +1040,9 @@ acl_spec_to_text({server_glob, RS}) ->
 acl_spec_to_text({node_glob, RU, RS}) ->
     {node_glob, RU ++ "@" ++ RS};
 
+acl_spec_to_text(all) ->
+    {all, ""};
+
 acl_spec_to_text(Spec) ->
     {raw, term_to_string(Spec)}.
 
@@ -1059,8 +1062,8 @@ acl_spec_select(ID, Opt) ->
 			?XAC("option",
 			     Sel ++ [{"value", atom_to_list(O)}],
 			     atom_to_list(O))
-		end, [user, server, user_server, user_regexp, server_regexp, 
-		      node_regexp, user_glob, server_glob, node_glob, raw]))]).
+		end, [user, server, user_regexp, server_regexp, 
+		      node_regexp, user_glob, server_glob, node_glob, all, raw]))]).
 
 
 term_to_string(T) ->
@@ -1119,30 +1122,38 @@ acl_parse_submit(ACLs, Query) ->
     NewACLs ++ NewACL.
 
 string_to_spec("user", Val) ->
-    {user, Val};
+    string_to_spec2(user, Val);
 string_to_spec("server", Val) ->
     {server, Val};
-string_to_spec("user_server", Val) ->
-    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
-    {user, U, S};
 string_to_spec("user_regexp", Val) ->
-    {user_regexp, Val};
+    string_to_spec2(user_regexp, Val);
 string_to_spec("server_regexp", Val) ->
     {server_regexp, Val};
 string_to_spec("node_regexp", Val) ->
     #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
     {node_regexp, U, S};
 string_to_spec("user_glob", Val) ->
-    {user_glob, Val};
+    string_to_spec2(user_glob, Val);
 string_to_spec("server_glob", Val) ->
     {server_glob, Val};
 string_to_spec("node_glob", Val) ->
     #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
     {node_glob, U, S};
+string_to_spec("all", _) ->
+    all;
 string_to_spec("raw", Val) ->
     {ok, Tokens, _} = erl_scan:string(Val ++ "."),
     {ok, NewSpec} = erl_parse:parse_term(Tokens),
     NewSpec.
+
+string_to_spec2(ACLName, Val) ->
+    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    case U of
+	"" -> 
+	    {ACLName, S};
+	_ -> 
+	    {ACLName, U, S}
+    end.
 
 
 acl_parse_delete(ACLs, Query) ->
