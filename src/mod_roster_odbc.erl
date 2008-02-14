@@ -99,25 +99,6 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 
--define(PSI_ROSTER_WORKAROUND, true).
-
--ifdef(PSI_ROSTER_WORKAROUND).
-
-process_iq(From, To, IQ) ->
-    #iq{sub_el = SubEl} = IQ,
-    #jid{lserver = LServer} = From,
-    case lists:member(LServer, ?MYHOSTS) of
-	true ->
-	    ResIQ = process_local_iq(From, To, IQ),
-	    ejabberd_router:route(From, From,
-				  jlib:iq_to_xml(ResIQ)),
-	    ignore;
-	_ ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
-    end.
-
--else.
-
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
@@ -127,8 +108,6 @@ process_iq(From, To, IQ) ->
 	_ ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
     end.
-
--endif.
 
 process_local_iq(From, To, #iq{type = Type} = IQ) ->
     case Type of
@@ -390,22 +369,7 @@ push_item(User, Server, From, Item) ->
 		  end, ejabberd_sm:get_user_resources(User, Server)).
 
 % TODO: don't push to those who not load roster
--ifdef(PSI_ROSTER_WORKAROUND).
-
-push_item(User, Server, Resource, _From, Item) ->
-    ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
-		id = "push",
-		sub_el = [{xmlelement, "query",
-			   [{"xmlns", ?NS_ROSTER}],
-			   [item_to_xml(Item)]}]},
-    ejabberd_router:route(
-      jlib:make_jid(User, Server, Resource),
-      jlib:make_jid(User, Server, Resource),
-      jlib:iq_to_xml(ResIQ)).
-
--else.
-
-push_item(User, Resource, From, Item) ->
+push_item(User, Server, Resource, From, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
 		id = "push",
 		sub_el = [{xmlelement, "query",
@@ -415,8 +379,6 @@ push_item(User, Resource, From, Item) ->
       From,
       jlib:make_jid(User, Server, Resource),
       jlib:iq_to_xml(ResIQ)).
-
--endif.
 
 get_subscription_lists(_, User, Server) ->
     LUser = jlib:nodeprep(User),

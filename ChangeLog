@@ -1,3 +1,8 @@
+2008-02-14  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_roster.erl: Removed the ancient Psi roster workaround
+	* src/mod_roster_odbc.erl: Likewise
+
 2008-02-12  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: Fixed native support for all the
