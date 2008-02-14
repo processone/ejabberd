@@ -115,6 +115,7 @@
 {"Specified nickname is already registered", "Podany nick jest już zarejestrowany"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Moderuj pokój"}.
 {"Traffic rate limit is exceeded", "Limit transferu przekroczony"}.
 {"Maximum Number of Occupants", "Maksymalna liczba uczestników"}.
 {"No limit", "Bez limitu"}.

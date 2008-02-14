@@ -106,6 +106,7 @@
 {"ejabberd MUC module", "Ejabberd MUC modul"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Nastaviť miestnosť ako moderovanú"}.
 {"This room is not anonymous", "Táto miestnosť nie je anonymná"}.
 {"Make room persistent", "Nastaviť miestnosť ako trvalú"}.
 {"Make room public searchable", "Nastaviť miestnosť ako verejne prehľadávateľnú"}.

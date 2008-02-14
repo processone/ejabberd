@@ -142,6 +142,7 @@
 {"Chatrooms", "Salas de charla"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Sala moderada"}.
 {" has set the subject to: ", " ha puesto el asunto: "}.
 {"You need an x:data capable client to configure room", "Necesitas un cliente con soporte de x:data para configurar la sala"}.
 {"Configuration for ", "Configuración para "}.

@@ -326,6 +326,7 @@
 {"ejabberd MUC module", "ejabberd MUC Modul"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Raum modieriert machen"}.
 {"Traffic rate limit is exceeded", "Datenrate ist zu hoch"}.
 {"It is not allowed to send private messages to the conference", "Es ist nicht erlaubt private Nachrichten an den Raum zu schicken"}.
 {"Improper message type", "Unzulässiger Nachrichtentyp"}.

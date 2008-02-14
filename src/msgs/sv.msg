@@ -132,6 +132,7 @@
 {"Specified nickname is already registered", "Detta smeknamnet är redan registrerat"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Gör rummet modererat"}.
 {" has set the subject to: ", " har satt ämnet till: "}.
 {"You need an x:data capable client to configure room", "Du behöver en klient som stödjer x:data för att konfiguera detta rum"}.
 {"Configuration for ", "Konfiguration för "}.

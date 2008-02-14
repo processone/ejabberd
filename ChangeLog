@@ -1,3 +1,9 @@
+2008-02-14  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Allow unmoderated rooms (EJAB-437)
+	* src/msgs/*: Recover old translations to several languages from
+	ejabberd 1.1.4
+
 2008-02-14  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/cyrsasl_digest.erl: Unquote backslash in DIGEST-MD5 quoted

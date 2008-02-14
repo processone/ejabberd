@@ -206,6 +206,7 @@
 {"Room Configuration", "Конфігурація кімнати"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Зробити кімнату модерованою"}.
 {"Traffic rate limit is exceeded", "Швидкість передачі інформації було перевищено"}.
 {"Maximum Number of Occupants", "Максимальна кількість учасників"}.
 {"No limit", "Без обмежень"}.
@@ -383,4 +384,3 @@
 % mode: erlang
 % End:
 % vim: set filetype=erlang tabstop=8:
-
