@@ -1,5 +1,8 @@
 2008-02-14  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/cyrsasl_digest.erl: Unquote backslash in DIGEST-MD5 quoted
+	strings (EJAB-304)
+
 	* src/mod_roster.erl: Removed the ancient Psi roster workaround
 	* src/mod_roster_odbc.erl: Likewise
 
