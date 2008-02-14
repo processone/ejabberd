@@ -65,7 +65,7 @@
 		 public = true,
 		 public_list = true,
 		 persistent = false,
-		 moderated = true, % TODO
+		 moderated = true,
 		 members_by_default = true,
 		 members_only = false,
 		 allow_user_invites = false,
@@ -790,7 +790,8 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 		?DICT:find(jlib:jid_tolower(From),
 			   StateData#state.users),
 	    if
-		(Role == moderator) or (Role == participant) ->
+		(Role == moderator) or (Role == participant) 
+		or ((StateData#state.config)#config.moderated == false) ->
 		    {NewStateData1, IsAllowed} =
 			case check_subject(Packet) of
 			    false ->
@@ -2646,9 +2647,9 @@ get_config(Lang, StateData, From) ->
 	 ?BOOLXFIELD("Make room members-only",
 		     "muc#roomconfig_membersonly",
 		     Config#config.members_only),
-	 %%?BOOLXFIELD("Make room moderated",
-	 %%	     "muc#roomconfig_moderatedroom",
-	 %%	     Config#config.moderated),
+	 ?BOOLXFIELD("Make room moderated",
+		     "muc#roomconfig_moderatedroom",
+		     Config#config.moderated),
 	 ?BOOLXFIELD("Default users as participants",
 		     "members_by_default",
 		     Config#config.members_by_default),

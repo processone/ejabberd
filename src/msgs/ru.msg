@@ -206,6 +206,7 @@
 {"Room Configuration", "Конфигурация комнаты"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Сделать комнату модерируемой"}.
 {"This room is not anonymous", "Эта комната не анонимная"}.
 {" has set the subject to: ", " установил(а) тему: "}.
 {"You need an x:data capable client to configure room", "Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"}.

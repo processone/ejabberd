@@ -153,6 +153,7 @@
 {"Chatrooms", "Groepsgesprekken"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Chatruimte gemodereerd maken"}.
 {"Only moderators and participants are allowed to change subject in this room", "Alleen moderators en deelnemers mogen het onderwerp van deze chatruimte veranderen"}.
 {"Only moderators are allowed to change subject in this room", "Alleen moderators mogen het onderwerp van deze chatruimte veranderen"}.
 {"Visitors are not allowed to send messages to all occupants", "Bezoekers mogen geen berichten verzenden naar alle aanwezigen"}.

@@ -105,6 +105,7 @@
 {"Specified nickname is already registered", "A alcunha especificada já está registada"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Tornar a sala moderada"}.
 {" has set the subject to: ", " colocou o tópico: "}.
 {"You need an x:data capable client to configure room", "É necessário um cliente com suporte de x:data para configurar a sala"}.
 {"Configuration for ", "Configuração para "}.

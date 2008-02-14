@@ -116,6 +116,7 @@
 {"You need an x:data capable client to register nickname", "Necessitas um cliente com suporte de x:data para poder registrar o nick"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "Tornar a sala moderada"}.
 {"Administrator privileges required", "Se necessita privilégios de administrador"}.
 {"Configuration for ", "Configuração para "}.
 {" has set the subject to: ", " a posto o assunto: "}.
