@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -143,11 +143,11 @@ list_users(LServer) ->
 
 list_users(LServer, [{from, Start}, {to, End}]) when is_integer(Start) and
                                                      is_integer(End) ->
-    list_users(LServer, [{limit, End-Start}, {offset, Start-1}]);
+    list_users(LServer, [{limit, End-Start+1}, {offset, Start-1}]);
 list_users(LServer, [{prefix, Prefix}, {from, Start}, {to, End}]) when is_list(Prefix) and
                                                                        is_integer(Start) and
                                                                        is_integer(End) ->
-    list_users(LServer, [{prefix, Prefix}, {limit, End-Start}, {offset, Start}]);
+    list_users(LServer, [{prefix, Prefix}, {limit, End-Start+1}, {offset, Start-1}]);
 
 list_users(LServer, [{limit, Limit}, {offset, Offset}]) when is_integer(Limit) and
                                                              is_integer(Offset) ->
@@ -197,7 +197,7 @@ users_number(LServer, [{prefix, Prefix}]) when is_list(Prefix) ->
       LServer,
       io_lib:fwrite("select count(*) from users " ++
                     %% Warning: Escape prefix at higher level to prevent SQL
-                    %%          injection. 
+                    %%          injection.
                     "where username like '~s%'", [Prefix]));
 users_number(LServer, []) ->
     users_number(LServer).
@@ -356,15 +356,15 @@ set_private_data(_LServer, Username, LXMLNS, SData) ->
             ejabberd_odbc:sql_query_t(Query)
         end,
         set_private_data_sql(Username, LXMLNS, SData)).
-       
+
 set_private_data_sql(Username, LXMLNS, SData) ->
     [["delete from private_storage "
        "where username='", Username, "' and "
        "namespace='", LXMLNS, "';"],
       ["insert into private_storage(username, namespace, data) "
        "values ('", Username, "', '", LXMLNS, "', "
-       "'", SData, "');"]].    
-       			       
+       "'", SData, "');"]].
+
 get_private_data(LServer, Username, LXMLNS) ->
     ejabberd_odbc:sql_query(
 		 LServer,
@@ -405,7 +405,7 @@ get_db_type() ->
 %% Queries can be either a fun or a list of queries
 sql_transaction(LServer, Queries) when is_list(Queries) ->
     %% SQL transaction based on a list of queries
-    %% This function automatically 
+    %% This function automatically
     F = fun() ->
     	lists:foreach(fun(Query) ->
     		ejabberd_odbc:sql_query(LServer, Query)
@@ -429,7 +429,7 @@ set_last_t(LServer, Username, Seconds, State) ->
 
 del_last(LServer, Username) ->
     ejabberd_odbc:sql_query(
-      LServer,      
+      LServer,
       ["EXECUTE dbo.del_last '", Username, "'"]).
 
 get_password(LServer, Username) ->
@@ -467,7 +467,7 @@ list_users(LServer) ->
 list_users(LServer, _) ->
     % scope listing not supported
     list_users(LServer).
-    
+
 users_number(LServer) ->
 	ejabberd_odbc:sql_query(
 	      LServer,
@@ -520,7 +520,7 @@ get_roster_groups(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
       LServer,
       ["EXECUTE dbo.get_roster_groups '", Username, "' , '", SJID, "'"]).
-    
+
 del_user_roster_t(LServer, Username) ->
     Result = ejabberd_odbc:sql_query(
 		      LServer,
@@ -585,7 +585,7 @@ set_private_data(LServer, Username, LXMLNS, SData) ->
 
 set_private_data_sql(Username, LXMLNS, SData) ->
     ["EXECUTE dbo.set_private_data '", Username, "' , '", LXMLNS, "' , '", SData, "'"].
-	    
+
 get_private_data(LServer, Username, LXMLNS) ->
     ejabberd_odbc:sql_query(
         LServer,
