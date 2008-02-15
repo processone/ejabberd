@@ -33,8 +33,8 @@
 	 is_login_anonymous_enabled/1,
 	 anonymous_user_exist/2,
 	 allow_multiple_connections/1,
-	 register_connection/2,
-	 unregister_connection/2
+	 register_connection/3,
+	 unregister_connection/3
 	]).
 
 
@@ -141,14 +141,14 @@ remove_connection(SID, LUser, LServer) ->
     mnesia:transaction(F).
 
 %% Register connection
-register_connection(SID, #jid{luser = LUser, lserver = LServer}) ->
+register_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
     US = {LUser, LServer},
     mnesia:sync_dirty(
       fun() -> mnesia:write(#anonymous{us = US, sid=SID})
       end).
 
 %% Remove an anonymous user from the anonymous users table
-unregister_connection(SID, #jid{luser = LUser, lserver = LServer}) ->
+unregister_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
     purge_hook(anonymous_user_exist(LUser, LServer),
 	       LUser, LServer),
     remove_connection(SID, LUser, LServer).

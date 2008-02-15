@@ -1,3 +1,10 @@
+2008-02-15  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_sm.erl: Retreive connection type in
+    sm_register_connection_hook
+	* src/ejabberd_c2s.erl: Likewise
+	* src/ejabberd_auth_anonymous.erl: Likewise
+
 2008-02-14  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Allow unmoderated rooms (EJAB-437)

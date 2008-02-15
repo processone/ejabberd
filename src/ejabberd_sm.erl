@@ -48,6 +48,7 @@
 	 unregister_iq_handler/2,
 	 ctl_process/2,
 	 get_session_pid/3,
+	 get_user_info/3,
 	 get_user_ip/3
 	]).
 
@@ -84,21 +85,25 @@ route(From, To, Packet) ->
 	    ok
     end.
 
-open_session(SID, User, Server, Resource, IP) ->
-    set_session(SID, User, Server, Resource, undefined, IP),
+open_session(SID, User, Server, Resource, Info) ->
+    set_session(SID, User, Server, Resource, undefined, Info),
     check_for_sessions_to_replace(User, Server, Resource),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_register_connection_hook, JID#jid.lserver,
-		       [SID, JID]).
+		       [SID, JID, Info]).
 
 close_session(SID, User, Server, Resource) ->
+    Info = case mnesia:dirty_read({session, SID}) of
+	[] -> [];
+	[#session{info=I}] -> I
+    end,
     F = fun() ->
 		mnesia:delete({session, SID})
 	end,
     mnesia:sync_dirty(F),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
-		       [SID, JID]).
+		       [SID, JID, Info]).
 
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
     case ejabberd_auth:is_user_exists(User, Server) of
@@ -143,14 +148,29 @@ get_user_ip(User, Server, Resource) ->
 	    proplists:get_value(ip, Session#session.info)
     end.
 
+get_user_info(User, Server, Resource) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    LResource = jlib:resourceprep(Resource),
+    USR = {LUser, LServer, LResource},
+    case mnesia:dirty_index_read(session, USR, #session.usr) of
+	[] ->
+	    offline;
+	Ss ->
+	    Session = lists:max(Ss),
+	    Node = node(element(2, Session#session.sid)),
+	    Conn = proplists:get_value(conn, Session#session.info),
+	    IP = proplists:get_value(ip, Session#session.info),
+	    [{node, Node}, {conn, Conn}, {ip, IP}]
+    end.
 
-set_presence(SID, User, Server, Resource, Priority, Presence, IP) ->
-    set_session(SID, User, Server, Resource, Priority, IP),
+set_presence(SID, User, Server, Resource, Priority, Presence, Info) ->
+    set_session(SID, User, Server, Resource, Priority, Info),
     ejabberd_hooks:run(set_presence_hook, jlib:nameprep(Server),
 		       [User, Server, Resource, Presence]).
 
-unset_presence(SID, User, Server, Resource, Status, IP) ->
-    set_session(SID, User, Server, Resource, undefined, IP),
+unset_presence(SID, User, Server, Resource, Status, Info) ->
+    set_session(SID, User, Server, Resource, undefined, Info),
     ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
 		       [User, Server, Resource, Status]).
 
@@ -318,13 +338,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-set_session(SID, User, Server, Resource, Priority, IP) ->
+set_session(SID, User, Server, Resource, Priority, Info) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LResource = jlib:resourceprep(Resource),
     US = {LUser, LServer},
     USR = {LUser, LServer, LResource},
-    Info = [{ip, IP}],
     F = fun() ->
 		mnesia:write(#session{sid = SID,
 				      usr = USR,
@@ -348,7 +367,6 @@ clean_table_from_bad_node(Node) ->
     mnesia:sync_dirty(F).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",

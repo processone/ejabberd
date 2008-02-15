@@ -85,6 +85,7 @@
 		pres_timestamp,
 		pres_invis = false,
 		privacy_list = none,
+		conn = unknown,
 		ip,
 		lang}).
 
@@ -437,9 +438,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
 			    SID = {now(), self()},
-			    IP = StateData#state.ip,
+			    Conn = get_conn_type(StateData),
+			    Info = [{ip, StateData#state.ip}, {conn, Conn}],
 			    ejabberd_sm:open_session(
-			      SID, U, StateData#state.server, R, IP),
+			      SID, U, StateData#state.server, R, Info),
 			    Res1 = jlib:make_result_iq_reply(El),
 			    Res = setelement(4, Res1, []),
 			    send_element(StateData, Res),
@@ -464,6 +466,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     resource = R,
 					     jid = JID,
 					     sid = SID,
+					     conn = Conn,
 					     pres_f = ?SETS:from_list(Fs1),
 					     pres_t = ?SETS:from_list(Ts1),
 					     privacy_list = PrivList});
@@ -785,9 +788,10 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			      [StateData#state.socket,
 			       jlib:jid_to_string(JID)]),
 		    SID = {now(), self()},
-		    IP = StateData#state.ip,
+		    Conn = get_conn_type(StateData),
+		    Info = [{ip, StateData#state.ip}, {conn, Conn}],
 		    ejabberd_sm:open_session(
-		      SID, U, StateData#state.server, R, IP),
+		      SID, U, StateData#state.server, R, Info),
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
@@ -807,6 +811,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    fsm_next_state(session_established,
 				   StateData#state{
 				     sid = SID,
+				     conn = Conn,
 				     pres_f = ?SETS:from_list(Fs1),
 				     pres_t = ?SETS:from_list(Ts1),
 				     privacy_list = PrivList});
@@ -1368,6 +1373,17 @@ get_auth_tags([_ | L], U, P, D, R) ->
 get_auth_tags([], U, P, D, R) ->
     {U, P, D, R}.
 
+get_conn_type(StateData) ->
+    case StateData#state.sockmod of
+    ejabberd_http_poll -> http_poll;
+    ejabberd_http_bind -> http_bind;
+    _ ->
+        case (StateData#state.sockmod):get_sockmod(StateData#state.socket) of
+        ejabberd_zlib -> c2s_compressed;
+        tls -> c2s_tls;
+        gen_tcp -> c2s
+        end
+    end.
 
 process_presence_probe(From, To, StateData) ->
     LFrom = jlib:jid_tolower(From),
@@ -1427,12 +1443,13 @@ presence_update(From, Packet, StateData) ->
 			 StatusTag ->
 			    xml:get_tag_cdata(StatusTag)
 		     end,
+	    Info = [{ip, StateData#state.ip},{conn, StateData#state.conn}],
 	    ejabberd_sm:unset_presence(StateData#state.sid,
 				       StateData#state.user,
 				       StateData#state.server,
 				       StateData#state.resource,
 				       Status,
-				       StateData#state.ip),
+				       Info),
 	    presence_broadcast(StateData, From, StateData#state.pres_a, Packet),
 	    presence_broadcast(StateData, From, StateData#state.pres_i, Packet),
 	    StateData#state{pres_last = undefined,
@@ -1758,13 +1775,14 @@ roster_change(IJID, ISubscription, StateData) ->
 
 
 update_priority(Priority, Packet, StateData) ->
+    Info = [{ip, StateData#state.ip},{conn, StateData#state.conn}],
     ejabberd_sm:set_presence(StateData#state.sid,
 			     StateData#state.user,
 			     StateData#state.server,
 			     StateData#state.resource,
 			     Priority,
 			     Packet,
-			     StateData#state.ip).
+			     Info).
 
 get_priority_from_presence(PresencePacket) ->
     case xml:get_subtag(PresencePacket, "priority") of
