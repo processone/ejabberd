@@ -1,3 +1,8 @@
+2008-02-15  Badlop  <badlop@process-one.net>
+
+	* doc/release_notes_2.0.0.txt: Describe in the Release Notes the
+	upgrade instructions (EJAB-522)
+
 2008-02-15  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_sm.erl: Retreive connection type in

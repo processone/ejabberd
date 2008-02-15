@@ -147,21 +147,58 @@
 
 
 
-   Important Notes:
+   Important Note:
 
 - Since this release, ejabberd requires Erlang R10B-5 or higher. 
   R11B-5 is the recommended version. R12 is not yet officially 
   supported, and is not recommended for production servers.
 
-- The 'ssl' option is no longer available in the listening ports. 
-  To get legacy SSL encryption use the option 'tls'.
-
-- The new ejabberdctl command line administration script can start, 
-  stop and perform many other administrative tasks in ejabberd.
 
 
+   Upgrading From ejabberd 1.x:
 
-Bug reports
+- If you upgrade from a version older than 1.1.4, please check the
+  Release Notes of the intermediate versions for additional
+  information about database or configuration changes.
+
+- The database schemas didn't change since ejabberd 1.1.4. Of course,
+  you are encouraged to make a database backup of your SQL database,
+  or your Mnesia spool directory before upgrading ejabberd.
+
+- The ejabberdctl command line administration script is improved in
+  ejabberd 2.0.0, and now it can start and stop ejabberd. If you
+  already wrote your own start script for ejabberd 1.x, you can
+  continue using it, or try ejabberdctl. For your convenience, the
+  ejabberd Guide describes all the ejabberd and Erlang options used by
+  ejabberdctl.
+
+- The example ejabberd.cfg file has been reorganized, but its format
+  and syntax rules are the same. So, you can continue using your
+  ejabberd.cfg file from 1.x if you want. The most important changes
+  are described now.
+
+- The 'ssl' option is no longer available in the listening ports. For
+  legacy SSL encryption use the option 'tls'. For STARTTLS encryption
+  as defined in RFC 3920 XMPP-CORE use the option 'starttls'. Check
+  the ejabberd Guide for more information about configuring listening
+  ports.
+
+- The options 'welcome_message' and 'registration_watchers' are now
+  options of the module mod_register. Check in the ejabberd Guide how
+  to configure that module.
+
+- To enable PEP support in mod_pubsub, you need to enable it in the
+  mod_pubsub configuration, and also enable the new module
+  mod_caps. Check the section about mod_pubsub in the ejabberd Guide.
+
+- Other new features and improvements also require changes in the
+  ejabberd.cfg, like mod_http_bind, mod_http_fileserver, mod_proxy65,
+  loglevel, pam_service, and watchdog_admins. Search for those words
+  in the ejabberd Guide and the example ejabberd.cfg.
+ 
+
+
+   Bug reports
 
   You can officially report bugs on Process-one support site:
   https://support.process-one.net/
