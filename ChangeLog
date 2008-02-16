@@ -1,3 +1,8 @@
+2008-02-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Merge SVN r1164, and fix the merge
+	of SVN r1179 (EJAB-496)
+
 2008-02-15  Badlop  <badlop@process-one.net>
 
 	* doc/release_notes_2.0.0.txt: Describe in the Release Notes the

@@ -361,10 +361,10 @@ normal_state({route, From, "",
 		"error" ->
 		    ok;
 		_ ->
-		    ErrText = "Only occupants are allowed to send messages to the conference",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-		    ejabberd_router:route(StateData#state.jid, From, Err)
+                    ErrText = "Only occupants are allowed to send messages to the conference",
+                    Err = jlib:make_error_reply(
+                            Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+                    ejabberd_router:route(StateData#state.jid, From, Err)
 	    end,
 	    {next_state, normal_state, StateData}
     end;
@@ -467,18 +467,12 @@ normal_state({route, From, ToNick,
     Lang = xml:get_attr_s("xml:lang", Attrs),
     case decide_fate_message(Type, Packet, From, StateData) of
 	{expulse_sender, Reason} ->
-	    ?INFO_MSG(Reason, []),
-	    Status_text = "This participant sent a bad error message to another participant.",
-	    NewState =
-		add_user_presence_un(
-		  From,
-		  {xmlelement, "presence",
-		   [{"type", "unavailable"}],
-		   [{xmlelement, "status", [], [{xmlcdata, Status_text}]}]},
-		  StateData),
-	    send_new_presence(From, NewState),
-	    {next_state, normal_state,
-	     remove_online_user(From, NewState)};
+	    ?DEBUG(Reason, []),
+	    ErrorText = "This participant is kicked from the room because "
+		"he sent an error message to another participant",
+	    NewState = expulse_participant(Packet, From, StateData, 
+					   translate:translate(Lang, ErrorText)),
+	    {next_state, normal_state, NewState};
 	forget_message ->
 	    {next_state, normal_state, StateData};
 	continue_delivery ->
@@ -1001,26 +995,28 @@ list_to_affiliation(Affiliation) ->
 %% Decide the fate of the message and its sender
 %% Returns: continue_delivery | forget_message | {expulse_sender, Reason}
 decide_fate_message("error", Packet, From, StateData) ->
-    case catch check_error_kick(Packet) of
-	%% If this is an error stanza and its condition matches a criteria
-	true ->
-	    %% If the sender of the message is online
+    %% Make a preliminary decision
+    PD = case check_error_kick(Packet) of
+	     %% If this is an error stanza and its condition matches a criteria
+	     true ->
+		 Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
+					[jlib:jid_to_string(From)]),
+		 {expulse_sender, Reason};
+	     false ->
+		 continue_delivery
+	 end,
+    case PD of
+	{expulse_sender, R} ->
 	    case is_user_online(From, StateData) of
 		true ->
-		    Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
-					   [jlib:jid_to_string(From)]),
-		    {expulse_sender, Reason};
+		    {expulse_sender, R};
 		false ->
 		    forget_message
 	    end;
-	false ->
-	    continue_delivery;
-	{'EXIT', Error} ->
-	    Reason = io_lib:format(
-		       "This participant sent a problematic packet and is expulsed: ~s~nPacket: ~p~nError: ~p",
-		       [jlib:jid_to_string(From), Packet, Error]),
-	    {expulse_sender, Reason}
+	Other ->
+	    Other
     end;
+
 decide_fate_message(_, _, _, _) ->
     continue_delivery.
 
@@ -1045,7 +1041,7 @@ get_error_condition(Packet) ->
 	case catch get_error_condition2(Packet) of
 	     {condition, ErrorCondition} ->
 		ErrorCondition;
-	     {'EXIT', Error} ->
+	     {'EXIT', _} ->
 		"badformed error stanza"
 	end.
 get_error_condition2(Packet) ->
@@ -3105,6 +3101,7 @@ check_invitation(From, Els, Lang, StateData) ->
 	    ejabberd_router:route(StateData#state.jid, JID, Msg),
 	    JID
     end.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
