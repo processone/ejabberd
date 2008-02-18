@@ -1,3 +1,8 @@
+2008-02-18  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bug in get_conn_type since SVN r1194 crashes
+	http-bind and http-poll (thanks to Brian Cully) (EJAB-526)
+
 2008-02-16  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Merge SVN r1164, and fix the merge
@@ -11,7 +16,7 @@
 2008-02-15  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_sm.erl: Retreive connection type in
-    sm_register_connection_hook
+	sm_register_connection_hook
 	* src/ejabberd_c2s.erl: Likewise
 	* src/ejabberd_auth_anonymous.erl: Likewise
 
