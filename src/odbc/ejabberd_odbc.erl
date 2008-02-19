@@ -266,6 +266,7 @@ odbc_connect(SQLServer) ->
 pgsql_connect(Server, Port, DB, Username, Password) ->
     case pgsql:connect(Server, DB, Username, Password, Port) of
 	{ok, Ref} ->
+	    erlang:monitor(process, Ref),
 	    {ok, #state{db_ref = Ref, db_type = pgsql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("PostgreSQL connection failed: ~p~n", [Reason]),

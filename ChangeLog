@@ -1,3 +1,7 @@
+2008-02-19  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: add pgsql driver monitoring
+
 2008-02-19  Mickael Remond <mremond@process-one.net>
 
 	* src/ejabberd_config.erl: dirty_get_registered_users now
