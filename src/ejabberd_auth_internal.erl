@@ -135,6 +135,7 @@ try_register(User, Server, Password) ->
 	    mnesia:transaction(F)
     end.
 
+%% Get all registered users in Mnesia
 dirty_get_registered_users() ->
     mnesia:dirty_all_keys(passwd).
 

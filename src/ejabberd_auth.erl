@@ -116,7 +116,7 @@ dirty_get_registered_users() ->
     lists:flatmap(
       fun(M) ->
 	      M:dirty_get_registered_users()
-      end, auth_modules(?MYNAME)).
+      end, auth_modules()).
 
 %% Registered users list do not include anonymous users logged
 get_vh_registered_users(Server) ->
@@ -201,7 +201,6 @@ remove_user(User, Server, Password) ->
 	      M:remove_user(User, Server, Password)
       end, auth_modules(Server)).
 
-
 ctl_process_get_registered(_Val, Host, ["registered-users"]) ->
     Users = ejabberd_auth:get_vh_registered_users(Host),
     NewLine = io_lib:format("~n", []),
@@ -215,6 +214,16 @@ ctl_process_get_registered(Val, _Host, _Args) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
+%% Return the lists of all the auth modules actually used in the
+%% configuration
+auth_modules() ->
+    lists:usort(
+      lists:flatmap(
+	fun(Server) ->
+		auth_modules(Server)
+	end, ?MYHOSTS)).
+
+%% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
     LServer = jlib:nameprep(Server),
     Method = ejabberd_config:get_local_option({auth_method, LServer}),

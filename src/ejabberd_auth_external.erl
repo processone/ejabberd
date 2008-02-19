@@ -66,6 +66,8 @@ set_password(User, Server, Password) ->
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
 
+%% TODO
+%% Return the list of all users handled by external
 dirty_get_registered_users() ->
     [].
 
