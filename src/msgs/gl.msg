@@ -1,4 +1,4 @@
-% $Id: gl.msg 641 2008-09-26 10:48:05Z mremond $
+% $Id: gl.msg 641 2008-02-15 10:48:05Z mremond $
 % Language: Galician (galego)
 % Author: Carlos E. Lopez - suso AT jabber-hispano.org
 
@@ -125,8 +125,9 @@
 {"Allow this JID to subscribe to this pubsub node?", "Desexas permitir a este JabberID que se subscriba a este nodo PubSub?"}.
 {"Deliver event notifications", "Entregar notificacións de eventos"}.
 {"Specify the access model", "Especifica o modelo de acceso"}.
-{"Roster groups that may subscribe (if access model is roster)", "Grupos de contactos que poderán subscribirse (se o modelo de acceso é 'roster')"}.
+
 {"When to send the last published item", "Cando enviar o último elemento publicado"}.
+{"Roster groups allowed to subscribe", "Lista de grupos autorizados a subscribir"}.
 
 % mod_muc/mod_muc.erl
 {"You need an x:data capable client to register nickname", "Necesitas un cliente con soporte de x:data para poder rexistrar o alcume"}.
@@ -192,6 +193,10 @@
 {"No limit", "Sen límite"}.
 {"~s invites you to the room ~s", "~s invítache á sala ~s"}.
 {"the password is", "a contraseña é"}.
+{"This participant is kicked from the room because he sent an error message", "Este participante é expulsado da sala, xa que enviou unha mensaxe de erro"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Este participante é expulsado da sala, porque el enviou unha mensaxe de erro a outro participante"}.
+{"This participant is kicked from the room because he sent an error presence", "Este participante é expulsado da sala, porque el enviou un erro de presenza"}.
+{"Make room moderated", "Facer Sala moderada"}.
 
 % mod_muc/mod_muc_log.erl
 {"Chatroom configuration modified", "Configuración de la sala modificada"}.
@@ -219,7 +224,10 @@
 {"October", "Outubro"}.
 {"November", "Novembro"}.
 {"December", "Decembro"}.
-{"Room Configuration", "Configuración da sala"}.
+{"Room Configuration", "Configuración da Sala"}.
+{"has been kicked because of an affiliation change", "foi expulsado debido a un cambio de afiliación"}.
+{"has been kicked because the room has been changed to members-only", "foi expulsado, porque a sala cambiouse a só-membros"}.
+{"has been kicked because of a system shutdown", "foi expulsado por mor dun sistema de peche"}.
 
 % mod_irc/mod_irc.erl
 {"You need an x:data capable client to configure mod_irc settings", "Necesitas un cliente con soporte de x:data para configurar as opcións de mod_irc"}.
@@ -293,7 +301,6 @@
 {"Virtual Hosts", "Hosts Virtuais"}.
 {"ejabberd virtual hosts", "Hosts virtuais de ejabberd"}.
 {"Host", "Host"}.
-{"ejabberd Web Interface", "Interfaz Web de ejabberd"}.
 {"Restore plain text backup immediately:", "Restaurar copias de seguridade de texto plano inmediatamente:"}.
 {"Statistics of ~p", "Estatísticas de ~p"}.
 {"Uptime:", "Tempo desde o inicio:"}.
@@ -334,6 +341,7 @@
 {"Restore binary backup immediately:", "Restaurar inmediatamente copia de seguridade binaria:"}.
 {"Restore binary backup after next ejabberd restart (requires less memory):", "Restaurar copia de seguridade binaria no seguinte reinicio de ejabberd (require menos memoria que se instantánea):"}.
 {"Store plain text backup:", "Gardar copia de seguridade en texto plano:"}.
+{"ejabberd Web Admin", "Ejabberd Administrador Web"}.
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "É obrigatorio usar STARTTLS"}.

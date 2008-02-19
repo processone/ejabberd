@@ -114,6 +114,7 @@
 {"Jabber ID", "Jabber ID"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Kontaktliste grupper som tillates å abonnere"}.
 {"Publish-Subscribe", "Publish-Subscribe"}.
 {"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe modul"}.
 {"PubSub subscriber request", "PubSub abonements forespørsel"}.
@@ -123,7 +124,6 @@
 {"Allow this JID to subscribe to this pubsub node?", "Tillat denne JID å abonnere på denne pubsub noden?"}.
 {"Deliver event notifications", "Lever begivenhets kunngjøringer"}.
 {"Specify the access model", "Spesifiser aksess modellen"}.
-{"Roster groups that may subscribe (if access model is roster)", "Kontaktlistegrupper som kan abonnere (dersom tilgangs modell er kontaktliste)"}.
 {"When to send the last published item", "Når skal siste publiserte artikkel sendes"}.
 {"Deliver payloads with event notifications", "Send innhold sammen med kunngjøringer"}.
 {"Notify subscribers when the node configuration changes", "Informer abonnenter når node konfigurasjonen endres"}.
@@ -151,6 +151,10 @@
 {"Specified nickname is already registered", "Dette kallenavnet er allerede registrert"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding til en annen deltaker"}.
+{"This participant is kicked from the room because he sent an error presence", "Denne deltakeren er kastet ut av rommet fordi han sendte feil tilstederværelse"}.
+{"Make room moderated", "Gjør rommet redaktørstyrt"}.
 {"Traffic rate limit is exceeded", "Trafikkmengde grense overskredet"}.
 {"This room is not anonymous", "Dette rommet er ikke anonymt"}.
 {"Make room persistent", "Gjør rommet permanent"}.
@@ -160,7 +164,7 @@
 {"Maximum Number of Occupants", "Maksimum Antall Deltakere"}.
 {"No limit", "Ingen grense"}.
 {"Present real JIDs to", "Presenter ekte JIDer til"}.
-{"moderators only", "kun for ordstyrere"}.
+{"moderators only", "kun for redaktører"}.
 {"anyone", "hvem som helst"}.
 {"Make room members-only", "Gjør rommet tilgjengelig kun for medlemmer"}.
 {"Default users as participants", "Standard brukere som deltakere"}.
@@ -177,8 +181,8 @@
 {"Configuration for ", "Konfigurasjon for "}.
 {"Room title", "Romtittel"}.
 {"Password", "Passord"}.
-{"Only moderators and participants are allowed to change subject in this room", "Bare moderatorer og deltakere kan endre emnet i dette rommet"}.
-{"Only moderators are allowed to change subject in this room", "Bare moderatorer kan endre emnet i dette rommet"}.
+{"Only moderators and participants are allowed to change subject in this room", "Bare redaktører og deltakere kan endre emnet i dette rommet"}.
+{"Only moderators are allowed to change subject in this room", "Bare redaktører kan endre emnet i dette rommet"}.
 {"Visitors are not allowed to send messages to all occupants", "Besøkende får ikke sende meldinger til alle deltakere"}.
 {"Only occupants are allowed to send messages to the conference", "Bare deltakere får sende normale meldinger til konferansen"}.
 {"It is not allowed to send private messages to the conference", "Det er ikke tillatt å sende private meldinger til konferansen"}.
@@ -194,7 +198,7 @@
 {"Password required to enter this room", "Passord kreves for å komme inn i dette rommet"}.
 {"Incorrect password", "Feil passord"}.
 {"Administrator privileges required", "Administratorprivilegier kreves"}.
-{"Moderator privileges required", "Moderatorprivilegier kreves"}.
+{"Moderator privileges required", "Redaktørprivilegier kreves"}.
 {"JID ~s is invalid", "Ugyldig JID ~s"}.
 {"Nickname ~s does not exist in the room", "Kallenavn ~s eksisterer ikke i dette rommet"}.
 {"Invalid affiliation: ~s", "Ugyldig rang: ~s"}.

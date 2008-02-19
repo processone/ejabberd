@@ -100,6 +100,7 @@
 {"Organization Unit", "Unitat de la organizació"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Llista de grups que tenen permés subscriures"}.
 {"ejabberd Publish-Subscribe module", "Mòdul ejannerd Publicar-Subscriure"}.
 {"PubSub subscriber request", "Petició de PubSub subscriure"}.
 {"Choose whether to approve this entity's subscription.", "Tria si aprova aquesta entitat de subscripció"}.
@@ -108,7 +109,6 @@
 {"Allow this JID to subscribe to this pubsub node?", "Deixar que aquesta JID es puga subscriure a aquest node pubsub"}.
 {"Deliver event notifications", "Entrega de notificacions d'events"}.
 {"Specify the access model", "Especificar el model d'accés"}.
-{"Roster groups that may subscribe (if access model is roster)", "Llista de grups que cal subscriures (si el model d'accés és per llista)"}.
 {"When to send the last published item", "Quan s'ha enviat l'última publicació"}.
 {"Deliver payloads with event notifications", "Enviar payloads junt a les notificacions d'events"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptors quan canvia la configuració del node"}.
@@ -136,6 +136,10 @@
 {"ejabberd MUC module", "mòdul ejabberd MUC"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Aquest participant ha sigut expulsat de la sala perque ha enviat un missatge d'error"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Aquest participant ha sigut expulsat de la sala perque ha enviat un missatge erroni a un altre participant"}.
+{"This participant is kicked from the room because he sent an error presence", "Aquest participant ha sigut expulsat de la sala perque ha enviat un error de presencia"}.
+{"Make room moderated", "Crear una sala moderada"}.
 {"Traffic rate limit is exceeded", "El llímit de tràfic ha sigut sobrepassat"}.
 {"Maximum Number of Occupants", "Número màxim d'ocupants"}.
 {"No limit", "Sense Llímit"}.
@@ -230,6 +234,7 @@
 {"ejabberd IRC module", "mòdul ejabberd IRC"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "Web d'administració del ejabberd"}.
 {"Users", "Usuaris"}.
 {"Nodes", "Nodes"}.
 {"Statistics", "Estadístiques"}.
@@ -289,7 +294,6 @@
 {"Virtual Hosts", "Hosts Virtuals"}.
 {"ejabberd virtual hosts", "Hosts virtuals del ejabberd"}.
 {"Host", "Host"}.
-{"ejabberd Web Interface", "Interficie Web del ejabberd"}.
 {"Administration", "Administració"}.
 {"(Raw)", "(en format text)"}.
 {"Submitted", "Enviat"}.
