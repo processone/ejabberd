@@ -1,3 +1,14 @@
+2008-02-19  Mickael Remond <mremond@process-one.net>
+
+	* src/ejabberd_config.erl: dirty_get_registered_users now
+	correctly returns all users for all vhosts no matter which
+	back-end is used (EJAB-527)
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+
 2008-02-18  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_c2s.erl: Bug in get_conn_type since SVN r1194 crashes

@@ -159,7 +159,11 @@ try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
 
 dirty_get_registered_users() ->
-    get_vh_registered_users(?MYNAME).
+    Servers = ejabberd_config:get_vh_by_auth_method(ldap),
+    lists:flatmap(
+      fun(Server) ->
+	      get_vh_registered_users(Server)
+      end, Servers).
 
 get_vh_registered_users(Server) ->
     case catch get_vh_registered_users_ldap(Server) of

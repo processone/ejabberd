@@ -130,7 +130,11 @@ try_register(User, Server, Password) ->
     end.
 
 dirty_get_registered_users() ->
-    get_vh_registered_users(?MYNAME).
+    Servers = ejabberd_config:get_vh_by_auth_method(odbc),
+    lists:flatmap(
+      fun(Server) ->
+	      get_vh_registered_users(Server)
+      end, Servers).
 
 get_vh_registered_users(Server) ->
     LServer = jlib:nameprep(Server),
