@@ -106,6 +106,9 @@
 {"Specified nickname is already registered", "Zadaná přezdívka je již zaregistrována"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Tento účastník byl vyhozen, protože odeslal chybovou zprávu"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Tento účastník byl vyhozen, protože odeslal chybovou zprávu jinému účastníkovi"}.
+{"This participant is kicked from the room because he sent an error presence", "Tento účastník byl vyhozen, protože odeslal chybový status"}.
 {"Make room moderated", "Nastavit místnost jako moderovanou"}.
 {" has set the subject to: ", " změnil(a) téma na: "}.
 {"You need an x:data capable client to configure room", "Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"}.
@@ -155,6 +158,7 @@
 {"IRC Transport", "IRC transport"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "Webová administrace ejabberd"}.
 {"Users", "Uživatelé"}.
 {"Nodes", "Uzly"}.
 {"Statistics", "Statistiky"}.
@@ -216,7 +220,6 @@
 {"Virtual Hosts", "Virtuální hostitelé"}.
 {"ejabberd virtual hosts", "Virtuální hostitelé ejabberd"}.
 {"Host", "Hostitel"}.
-{"ejabberd Web Interface", "Webové rozhraní ejabberd"}.
 
 % mod_vcard_odbc.erl
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)", "Pro vyhledání uživatele Jabberu vyplňte formulář (přidejte znak * na konec, pro vyhledání podřetězce)"}.
@@ -226,6 +229,7 @@
 {"Replaced by new connection", "Nahrazeno novým spojením"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Skupiny kontaktů, které mohou odebírat"}.
 {"Deliver payloads with event notifications", "Doručovat náklad s upozorněním na událost"}.
 {"Notify subscribers when the node configuration changes", "Upozornit odběratele na změnu nastavení uzlu"}.
 {"Notify subscribers when the node is deleted", "Upozornit odběratele na smazání uzlu"}.
@@ -245,7 +249,6 @@
 {"Allow this JID to subscribe to this pubsub node?", "Povolit tomuto JID odebírat tento pubsub uzel?"}.
 {"Deliver event notifications", "Doručovat upozornění na události"}.
 {"Specify the access model", "Uveďte přístupový model"}.
-{"Roster groups that may subscribe (if access model is roster)", "Skupiny kontaktů, které mohou odebírat (pokud je přístupový model seznam kontaktů)"}.
 {"When to send the last published item", "Kdy odeslat poslední publikovanou položku"}.
 
 % mod_irc/mod_irc.erl
@@ -293,7 +296,6 @@
 {"Database Tables Configuration at ", "Konfigurace databázových tabulek "}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd Web Interface", "Ejabberd Web rozhraní"}.
 {"Administration", "Administrace"}.
 {"(Raw)", "(Zdroj)"}.
 {"Bad format", "Nesprávný formát"}.

@@ -86,6 +86,7 @@
 {"Replaced by new connection", "Durch neue Verbindung ersetzt"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Kontaktlisten-Gruppen die abonnieren dürfen"}.
 {"Publish-Subscribe", "Publish-Subscribe"}.
 {"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe Modul"}.
 {"PubSub subscriber request", "PubSub Abonnenten Anfrage"}.
@@ -102,7 +103,6 @@
 {"Max # of items to persist", "Maximale Anzahl dauerhaft zu speichernder Einträge"}.
 {"Whether to allow subscriptions", "Ob Abonnements erlaubt sind"}.
 {"Specify the access model", "Geben Sie das Zugangsmodell an"}.
-{"Roster groups that may subscribe (if access model is roster)", "Kontaktlisten-Gruppen die abonnieren dürfen (wenn Zugangsmodell Kontaktliste gewählt wurde)"}.
 {"Specify the publisher model", "Geben Sie das Publikationsmodell an"}.
 {"Max payload size in bytes", "Maximale Nutzlastgrösse in Bytes"}.
 {"When to send the last published item", "Wann soll das letzte veröffentlichte Objekt gesendet werden"}.
@@ -185,7 +185,7 @@
 {"Remove User", "Benutzer löschen"}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd Web Interface", "ejabberd Web Interface"}.
+{"ejabberd Web Admin", "ejabberd Web Admin"}.
 {"Administration", "Verwaltung"}.
 {"Virtual Hosts", "Virtuelle Hosts"}.
 {"Nodes", "Knoten"}.
@@ -326,6 +326,9 @@
 {"ejabberd MUC module", "ejabberd MUC Modul"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Dieser Teilnehmer wurde aus dem Raum gekickt, da er eine Fehlernachricht gesendet hat"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Dieser Teilnehmer wurde aus dem Raum gekickt, da er eine Fehlernachricht an einen anderen Teilnehmer gesendet hat"}.
+{"This participant is kicked from the room because he sent an error presence", "Dieser Teilnehmer wurde aus dem Raum gekickt, da er einen fehlerhaften Status gesendet hat"}.
 {"Make room moderated", "Raum modieriert machen"}.
 {"Traffic rate limit is exceeded", "Datenrate ist zu hoch"}.
 {"It is not allowed to send private messages to the conference", "Es ist nicht erlaubt private Nachrichten an den Raum zu schicken"}.

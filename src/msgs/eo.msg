@@ -114,6 +114,7 @@
 {"Jabber ID", "Jabber ID"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Kontaktlist-grupoj kiuj rajtas aboni"}.
 {"Publish-Subscribe", "Public-Abonado"}.
 {"ejabberd Publish-Subscribe module", "ejabberd Public-Abonada modulo"}.
 {"PubSub subscriber request", "PubAbo abonpeto"}.
@@ -123,7 +124,6 @@
 {"Allow this JID to subscribe to this pubsub node?", "Ĉu permesi ĉi tiun JID aboni al la jena PubAbo-nodo"}.
 {"Deliver event notifications", "Liveru event-sciigojn"}.
 {"Specify the access model", "Specifu atingo-modelon"}.
-{"Roster groups that may subscribe (if access model is roster)", "Kontaktlist-grupoj kiu rajtas aboni (se atingo-modelo estas kontaktlista)"}.
 {"When to send the last published item", "Kiam sendi la laste publicitan eron"}.
 {"Deliver payloads with event notifications", "Liveru aĵojn de event-sciigoj"}.
 {"Notify subscribers when the node configuration changes", "Sciigu abonantoj kiam la agordo de la nodo ŝanĝas"}.
@@ -151,6 +151,10 @@
 {"Specified nickname is already registered", "Donita kaŝnomo jam estas registrita"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Ĉi tiu partoprenanta estas forpelata de la babilejo pro sendado de erar-mesaĝo"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-mesaĝo al alia partoprenanto"}.
+{"This participant is kicked from the room because he sent an error presence", "Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-ĉeesto"}.  %FIXME: a less literal translation anyone?
+{"Make room moderated", "Farigu babilejon moderigata"}.
 {"Traffic rate limit is exceeded", "Trafikrapida limigo superita"}.
 {"This room is not anonymous", "Ĉi tiu babilejo ne estas anonima"}.
 {"Make room persistent", "Farigu babilejon daŭra"}.

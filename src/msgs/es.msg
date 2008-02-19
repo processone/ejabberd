@@ -106,6 +106,7 @@
 {"Organization Unit", "Unidad de la organización"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Grupos de contactos que pueden suscribirse"}.
 {"Deliver payloads with event notifications", "Enviar payloads junto con las notificaciones de eventos"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptores cuando cambia la configuración del nodo"}.
 {"Notify subscribers when the node is deleted", "Notificar subscriptores cuando el nodo se borra"}.
@@ -125,7 +126,6 @@
 {"Allow this JID to subscribe to this pubsub node?", "¿Deseas permitir a este JabberID que se subscriba a este nodo PubSub?"}.
 {"Deliver event notifications", "Entregar notificaciones de eventos"}.
 {"Specify the access model", "Especifica el modelo de acceso"}.
-{"Roster groups that may subscribe (if access model is roster)", "Grupos de contactos que podrán subscribirse (si el modelo de acceso es 'roster')"}.
 {"When to send the last published item", "Cuando enviar el último elemento publicado"}.
 
 % mod_muc/mod_muc.erl
@@ -142,6 +142,9 @@
 {"Chatrooms", "Salas de charla"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message to another participant", "Este participante ha sido expulsado de la sala porque envió un mensaje de error a otro participante"}.
+{"This participant is kicked from the room because he sent an error message", "Este participante ha sido expulsado de la sala porque envió un mensaje de error"}.
+{"This participant is kicked from the room because he sent an error presence", "Este participante ha sido expulsado de la sala porque envió una presencia de error"}.
 {"Make room moderated", "Sala moderada"}.
 {" has set the subject to: ", " ha puesto el asunto: "}.
 {"You need an x:data capable client to configure room", "Necesitas un cliente con soporte de x:data para configurar la sala"}.
@@ -237,6 +240,7 @@
 {"IRC Transport", "Transporte de IRC"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "ejabberd Web Admin"}.
 {"Users", "Usuarios"}.
 {"Nodes", "Nodos"}.
 {"Statistics", "Estadísticas"}.
@@ -297,7 +301,6 @@
 {"Virtual Hosts", "Dominios"}.
 {"ejabberd virtual hosts", "Dominios de ejabberd"}.
 {"Host", "Dominio"}.
-{"ejabberd Web Interface", "Interfaz Web de ejabberd"}.
 {"Restore plain text backup immediately:", "Restaurar copias de seguridad de texto plano inmediatamente:"}.
 {"Statistics of ~p", "Estadísticas de ~p"}.
 {"Uptime:", "Tiempo desde el inicio:"}.

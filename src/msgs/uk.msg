@@ -1,7 +1,8 @@
 % $Id$
 % Language: Ukrainian (українська)
+% Author: Stoune
 % Author: Ruslan Rakhmanin
-% Author: Serge Golovan
+% Author: Sergei Golovan
 
 % ejabberd_c2s.erl
 {"Use of STARTTLS required", "Ви мусите використовувати STARTTLS"}.
@@ -139,6 +140,7 @@
 {"Fill in fields to search for any matching Jabber User", "Заповніть поля для пошуку користувача Jabber"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Дозволені для абонування групи ростера"}.
 {"Publish-Subscribe", "Опублікувати-Абонувати"}.
 {"ejabberd Publish-Subscribe module", "Модуль ejabberd Публікації-Абонування"}.
 {"PubSub subscriber request", "Запит на абонування PubSub"}.
@@ -148,7 +150,6 @@
 {"Allow this JID to subscribe to this pubsub node?", "Чи дозволити цьому JID абонувати новини наданого вузла"}.
 {"Deliver event notifications", "Доставляти сповіщення про події"}.
 {"Specify the access model", "Визначити модель доступу"}.
-{"Roster groups that may subscribe (if access model is roster)", "Контакти з обраних груп списку контактів мають право абонувати (якщо обрана модель доступу - список контактів)"}.
 {"When to send the last published item", "Коли надсилати останній опублікований елемент"}.
 {"Deliver payloads with event notifications", "Доставляти разом з повідомленнями про публікації самі публікації"}.
 {"Notify subscribers when the node configuration changes", "Повідомляти абонентів про зміни в конфігурації збірника"}.
@@ -206,6 +207,9 @@
 {"Room Configuration", "Конфігурація кімнати"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення іншому учаснику"}.
+{"This participant is kicked from the room because he sent an error presence", "Цього учасника було відключено від кімнати через те, що він надіслав помилковий статус присутності"}.
 {"Make room moderated", "Зробити кімнату модерованою"}.
 {"Traffic rate limit is exceeded", "Швидкість передачі інформації було перевищено"}.
 {"Maximum Number of Occupants", "Максимальна кількість учасників"}.
@@ -272,7 +276,7 @@
 {"Encodings", "Кодування"}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd Web Interface", "Web-інтерфейс ejabberd"}.
+{"ejabberd Web Admin", "Веб-інтерфейс Адміністрування ejabberd"}.
 {"Administration", "Адміністрування"}.
 {"Users", "Користувачі"}.
 {"Nodes", "Вузли"}.

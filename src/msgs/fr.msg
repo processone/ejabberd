@@ -1,5 +1,6 @@
 % $Id$
 % Language: French (française)
+% Author: Christophe Romain
 % Author: Mickaël Rémond
 % Author: Vincent Ricard
 
@@ -137,6 +138,8 @@
 
 
 % mod_pubsub/mod_pubsub.erl
+{"Choose whether to approve this entity's subscription.", "Accepter cet abonnement ?"}.
+{"Roster groups allowed to subscribe", "Groupes de liste de contact autorisés à s'abonner"}.
 {"Deliver payloads with event notifications", "Inclure le contenu du message avec la notification"}.
 {"Notify subscribers when the node configuration changes", "Avertir les abonnés lorsque la configuration du noeud change"}.
 {"Notify subscribers when the node is deleted", "Avertir les abonnés lorsque le noeud est supprimé"}.
@@ -150,13 +153,11 @@
 {"Publish-Subscribe", "Publication-Abonnement"}.
 {"ejabberd Publish-Subscribe module", "Module Publish-Subscribe d'ejabberd"}.
 {"PubSub subscriber request", "Demande d'abonnement PubSub"}.
-{"Choose whether to approve this entity's subscription.", ""}.
 {"Node ID", "Identifiant du noeud"}.
 {"Subscriber Address", "Adresse de l'abonné"}.
 {"Allow this JID to subscribe to this pubsub node?", "Autoriser ce JID à s'abonner à ce noeud pubsub"}.
 {"Deliver event notifications", "Envoyer les notifications d'événement"}.
 {"Specify the access model", "Définir le modèle d'accès"}.
-{"Roster groups that may subscribe (if access model is roster)", "Groupes de liste de contact qui peuvent s'abonner (si le modèle d'accès est roster)"}.
 {"When to send the last published item", "A quel moment envoyer le dernier élément publié"}.
 
 % mod_muc/mod_muc_log.erl
@@ -205,6 +206,9 @@
 {"Chatrooms", "Salons de discussion"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Ce participant est expulsé du salon pour avoir envoyé un message erroné"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Ce participant est expulsé du salon pour avoir envoyé un message erroné à un autre participant"}.
+{"This participant is kicked from the room because he sent an error presence", "Ce participant est expulsé du salon pour avoir envoyé une présence erroné"}.
 {"Make room moderated", "Rendre le salon modéré"}.
 {" has set the subject to: ", " a changé le sujet pour: "}.
 {"You need an x:data capable client to configure room", "Vous avez besoin d'un client supportant x:data pour configurer le salon"}.
@@ -269,6 +273,7 @@
 {"IRC Transport", "Passerelle IRC"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "Console Web d'administration de ejabberd"}.
 {"Administration", "Administration"}.
 {"Users", "Utilisateurs"}.
 {"Nodes", "Noeuds"}.
@@ -348,7 +353,6 @@
 {"ejabberd virtual hosts", "Serveurs virtuels d'ejabberd"}.
 {"Host", "Serveur"}.
 {"No Data", "Aucune information disponible"}.
-{"ejabberd Web Interface", "Ejabberd - Interface Web"}.
 {"Online Users:", "Utilisateurs connectés:"}.
 {"Outgoing s2s Connections:", "Connexions s2s sortantes:"}.
 {"Outgoing s2s Servers:", "Serveurs s2s sortants"}.

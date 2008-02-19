@@ -1,6 +1,6 @@
 % $Id$
 % Language: Dutch (nederlands)
-% Author: Andreas from Unstable.nl
+% Author: Andreas van Cranenburgh
 % Author: Sander Devrieze
 
 % mod_vcard_ldap.erl
@@ -110,6 +110,9 @@
 {"Replaced by new connection", "Vervangen door een nieuwe verbinding"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "is weggestuurd vanwege een affiliatieverandering"}.
+{"has been kicked because the room has been changed to members-only", "is weggestuurd omdat de chatruimte vanaf heden alleen toegankelijk is voor leden"}.
+{"has been kicked because of a system shutdown", "is weggestuurd omdat het systeem gestopt wordt"}.
 {"Chatroom configuration modified", "De instellingen van de chatruimte werden veranderd"}.
 {"joins the room", "betrad de chatruimte"}.
 {"leaves the room", "verliet de chatruimte"}.
@@ -153,6 +156,9 @@
 {"Chatrooms", "Groepsgesprekken"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht aan een andere deelnemer"}.
+{"This participant is kicked from the room because he sent an error presence", "Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmelding-aanwezigheid"}.
 {"Make room moderated", "Chatruimte gemodereerd maken"}.
 {"Only moderators and participants are allowed to change subject in this room", "Alleen moderators en deelnemers mogen het onderwerp van deze chatruimte veranderen"}.
 {"Only moderators are allowed to change subject in this room", "Alleen moderators mogen het onderwerp van deze chatruimte veranderen"}.
@@ -236,6 +242,7 @@
 {"Delete message of the day on all hosts", "Verwijder bericht-van-de-dag op alle hosts"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Contactlijst-groepen die mogen abonneren"}.
 {"Deliver payloads with event notifications", "Berichten bezorgen samen met gebeurtenisnotificaties"}.
 {"Notify subscribers when the node configuration changes", "Abonnees informeren wanneer de instellingen van de node veranderen"}.
 {"Notify subscribers when the node is deleted", "Abonnees informeren wanneer de node verwijderd word"}.
@@ -255,16 +262,14 @@
 {"Allow this JID to subscribe to this pubsub node?", "Deze gebruiker toestaan te abonneren op deze pubsub node?"}.
 {"Deliver event notifications", "Gebeurtenisbevestigingen Sturen"}.
 {"Specify the access model", "Geef toegangsmodel"}.
-{"Roster groups that may subscribe (if access model is roster)", "Contactlijst groepen die kunnen abonneren (als contactlijst het toegangsmodel is)"}.
 {"When to send the last published item", "Wanneer het laatst gepubliceerde item verzonden moet worden"}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd Web Interface", "ejabberd's webinterface"}.
+{"ejabberd Web Admin", "ejabberd Webbeheer"}.
 {"Administration", "Beheer"}.
 {"Virtual Hosts", "Virtuele hosts"}.
 {"Nodes", "Nodes"}.
 {"Statistics", "Statistieken"}.
-{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"Users", "Gebruikers"}.
 {"Last Activity", "Laatste activiteit"}.
 {"(Raw)", "(Ruw)"}.
