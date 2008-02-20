@@ -1,6 +1,6 @@
-			      Release Notes
-			   ejabberd 2.0.0 rc1
-			     16 January 2008
+                              Release Notes
+                             ejabberd 2.0.0
+                            20 February 2008
 
   ejabberd 2.0.0 is a major new version for ejabberd adding plenty of
   new features, performance and scalability improvements and
