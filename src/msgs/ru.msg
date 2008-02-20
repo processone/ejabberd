@@ -139,6 +139,7 @@
 {"Fill in fields to search for any matching Jabber User", "Заполните форму для поиска пользователя Jabber"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Группы списка контактов, которым разрешена подписка"}.
 {"Deliver payloads with event notifications", "Доставлять вместе с уведомлениями o публикациях сами публикации"}.
 {"Notify subscribers when the node configuration changes", "Уведомлять подписчиков об изменении конфигурации сборника"}.
 {"Notify subscribers when the node is deleted", "Уведомлять подписчиков об удалении сборника"}.
@@ -158,7 +159,6 @@
 {"Allow this JID to subscribe to this pubsub node?", "Разрешить этому JID подписаться на данный узел?"}.
 {"Deliver event notifications", "Доставлять уведомления о событиях"}.
 {"Specify the access model", "Укажите механизм управления доступом"}.
-{"Roster groups that may subscribe (if access model is roster)", "Группы списка контактов, которые могут подписываться (если механизм управления доступом - roster)"}.
 {"When to send the last published item", "Когда посылать последний опубликованный элемент"}.
 
 % mod_muc/mod_muc.erl
@@ -206,6 +206,9 @@
 {"Room Configuration", "Конфигурация комнаты"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке другому участнику"}.
+{"This participant is kicked from the room because he sent an error presence", "Этого участника выгнали из комнаты за то, что он послал присутствие с ошибкой"}.
 {"Make room moderated", "Сделать комнату модерируемой"}.
 {"This room is not anonymous", "Эта комната не анонимная"}.
 {" has set the subject to: ", " установил(а) тему: "}.
@@ -270,7 +273,7 @@
 {"IRC Transport", "IRC Транспорт"}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd Web Interface", "Web-интерфейс ejabberd"}.
+{"ejabberd Web Admin", "Web-интерфейс администрирования ejabberd"}.
 {"Administration", "Администрирование"}.
 {"Users", "Пользователи"}.
 {"Nodes", "Узлы"}.
@@ -332,7 +335,6 @@
 {"Update", "Обновить"}.
 {"Delete", "Удалить"}.
 {"Add User", "Добавить пользователя"}.
-{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Алексей Щепин, 2004-2008 Process One"}.
 {"Offline Messages", "Офлайновые сообщения"}.
 {"Offline Messages:", "Офлайновые сообщения:"}.
 {"Last Activity", "Последнее подключение"}.

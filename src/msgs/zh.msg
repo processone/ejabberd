@@ -1,5 +1,7 @@
 % $Id$
 % Language: Chinese (中文)
+% Author: Mike Wang
+% Author: Zhan Caibao - zhancaibao AT gmail DOT com
 % Author: Shelley Shyan - skylarkbj AT 163 DOT com
 
 % jlib.hrl
@@ -39,13 +41,13 @@
 {"Edit Properties", "编辑属性"}.
 {"Remove User", "删除用户"}.
 {"Database", "数据库"}.
-{"Outgoing s2s Connections", "流出的s2s连接"}.
+{"Outgoing s2s Connections", "出站s2s连接"}.
 {"Import Users From jabberd 1.4 Spool Files", "从Jabberd 1.4 Spool文件导入用户"}.
 {"Database Tables Configuration at ", "数据库表格配置位于"}.
 {"Restart Service", "重启服务"}.
 {"Shut Down Service", "关闭服务"}.
 {"Delete User", "删除用户"}.
-{"End User Session", "终端用户会话"}.
+{"End User Session", "结束用户会话"}.
 {"Get User Password", "获取用户密码"}.
 {"Change User Password", "更改用户密码"}.
 {"Get User Last Login Time", "获取用户上次登陆时间"}.
@@ -138,7 +140,8 @@
 {"Delete message of the day on all hosts", "删除当日所有主机上 的消息"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"Publish-Subscribe", "发行-订阅"}.
+{"Roster groups allowed to subscribe", "允许订阅的花名册组"}.
+{"Publish-Subscribe", "发布-订阅"}.
 {"Deliver payloads with event notifications", "用事件通告传输有效负载"}.
 {"Notify subscribers when the node configuration changes", "当节点设置改变时通知订阅人"}.
 {"Notify subscribers when the node is deleted", "当节点被删除时通知订阅人"}.
@@ -157,7 +160,6 @@
 {"Allow this JID to subscribe to this pubsub node?", "允许该JID订阅该pubsub节点?"}.
 {"Deliver event notifications", "传递事件通知"}.
 {"Specify the access model", "指定访问模式"}.
-{"Roster groups that may subscribe (if access model is roster)", "可能订阅的花名册组(若访问模式为花名册)"}.
 {"When to send the last published item", "何时发送最新公布的条款"}.
 
 % mod_muc/mod_muc_log.erl
@@ -205,6 +207,10 @@
 {"Chatrooms", "聊天室"}.
 
 % mod_muc/mod_muc_room.erl
+{"Make room moderated", "使房间处于监管状态"}.
+{"This participant is kicked from the room because he sent an error message", "该用户由于发生了错误而被踢出了聊天室"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "该用户由于给其他人发送了出错信息而被踢出了聊天室"}.
+{"This participant is kicked from the room because he sent an error presence", "该用户由于状态信息错误而被踢出了聊天室"}.
 {"Traffic rate limit is exceeded", "已经超过传输率限制"}.
 {"Maximum Number of Occupants", "占有人最大数"}.
 {"No limit", "不限"}.
@@ -268,6 +274,7 @@
 {"IRC Transport", "IRC传输"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "ejabberd网页管理"}.
 {"Administration", "管理"}.
 {"Users", "用户"}.
 {"Nodes", "节点"}.
@@ -291,7 +298,7 @@
 {"Listened Ports", "监听端口"}.
 {"Restart", "重启"}.
 {"Stop", "停止"}.
-{"RPC Call Error", "RPC呼叫错误"}.
+{"RPC Call Error", "RPC调用错误"}.
 {"Name", "名称"}.
 {"Storage Type", "存储类型"}.
 {"Size", "大小"}.
@@ -317,12 +324,12 @@
 {"Time", "时间"}.
 {"From", "从"}.
 {"To", "到"}.
-{"Packet", "包裹"}.
+{"Packet", "数据包"}.
 {"Offline Messages:", "离线消息:"}.
 {"Roster", "花名册"}.
 {"Nickname", "昵称"}.
 {"Subscription", "订阅"}.
-{"Pending", "搁浅"}.
+{"Pending", "待审"}.
 {"Groups", "组"}.
 {"Remove", "移除"}.
 {"Add Jabber ID", "添加Jabber ID"}.
@@ -347,10 +354,9 @@
 {"ejabberd virtual hosts", "ejabberd虚拟主机"}.
 {"Host", "主机"}.
 {"No Data", "没有数据"}.
-{"ejabberd Web Interface", "Ejabberd网页接口"}.
 {"Online Users:", "在线用户:"}.
-{"Outgoing s2s Connections:", "流出的s2s连接:"}.
-{"Outgoing s2s Servers:", "流出的s2s服务器"}.
+{"Outgoing s2s Connections:", "出站s2s连接:"}.
+{"Outgoing s2s Servers:", "出站s2s服务器"}.
 {"Database Tables at ", "数据库列表位于 "}.
 {"Backup of ", "备份来源 "}.
 {"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "注意：这些选项仅将备份内置的Mnesia数据库. 如果您在使用ODBC模块, 您还需要分别备份您的数据库."}.
@@ -364,7 +370,7 @@
 {"Update plan", "更新计划"}.
 {"Updated modules", "更新模块"}.
 {"Update script", "更新脚本"}.
-{"Low level update script", "低度更新脚本"}.
+{"Low level update script", "低级别更新脚本"}.
 {"Script check", "检查脚本"}.
 {"Shared Roster Groups", "共享的花名册组群"}.
 {"Last Activity", "上次活动"}.
