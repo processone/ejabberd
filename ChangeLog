@@ -1,5 +1,7 @@
 2008-02-20  Badlop  <badlop@process-one.net>
 
+	* README: Updated to match the content of the ejabberd Guide
+
 	* doc/release_notes_2.0.0.txt: Updated version number and date
 
 	* src/ejabberd.hrl: Updated version number
