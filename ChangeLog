@@ -1,5 +1,8 @@
 2008-02-20  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Mentioned the problems about Windows service
+	* doc/guide.html: Likewise
+
 	* src/msgs/ru.msg: Updated (thanks to Konstantin Khomoutov)
 	* src/msgs/zh.msg: Updated (thanks to Mike Wang and Zhan Caibao)
 

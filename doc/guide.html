@@ -302,8 +302,10 @@ server and does not require any extra dependencies.</P><P>In *nix systems, remem
 </PRE><P>The installer generates desktop shortcuts to start and stop ejabberd.</P><P>The Windows installer also adds ejabberd as a system service,
 and a shortcut to a debug console for experienced administrators.
 You can start ejabberd using the shortcut or the Windows service. 
+Note that the Windows service is a feature still in development, 
+and for example it doesn&#X2019;t keep track of changes made manually in ejabberdctl.cfg.
 If you want ejabberd to be started automatically at boot time, 
-go to service settings and set ejabberd to be automatic started.</P><P>On a Linux system, if you want ejabberd to start as daemon at boot time, 
+go to the Windows service settings and set ejabberd to be automatic started.</P><P>On a Linux system, if you want ejabberd to start as daemon at boot time, 
 copy <TT>ejabberd.init</TT> from the bin directory to something like <TT>/etc/init.d/ejabberd</TT>
 (depending on your distribution) and call <TT>/etc/inid.d/ejabberd start</TT> to start it.</P><P>The <TT>ejabberdctl</TT> administration script is included in the <TT>bin</TT> directory.
 Please refer to the section&#XA0;<A HREF="#ejabberdctl">4.1</A> for details about <TT>ejabberdctl</TT>,
