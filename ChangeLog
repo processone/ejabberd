@@ -1,3 +1,8 @@
+2008-02-20  Badlop  <badlop@process-one.net>
+
+	* src/msgs/ru.msg: Updated (thanks to Konstantin Khomoutov)
+	* src/msgs/zh.msg: Updated (thanks to Mike Wang and Zhan Caibao)
+
 2008-02-19  Badlop  <badlop@process-one.net>
 
 	* src/msgs/ca.msg: Updated (thanks to Vicent Alberola Canet)
@@ -12,7 +17,7 @@
 	* src/msgs/no.msg: Updated (thanks to Stian B. Barmen)
 	* src/msgs/pt-br.msg: Updated (thanks to Otavio Fernandes)
 	* src/msgs/uk.msg: Updated (thanks to Stoune and Ruslan Rakhmanin)
-	
+
 2008-02-19  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: add pgsql driver monitoring
