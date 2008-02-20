@@ -2,7 +2,7 @@
             "http://www.w3.org/TR/REC-html40/loose.dtd">
 <HTML>
 <HEAD>
-<TITLE>Ejabberd 2.0.0-beta1 Feature Sheet
+<TITLE>Ejabberd 2.0.0 Feature Sheet
 </TITLE>
 
 <META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
@@ -50,7 +50,7 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 <!--HEVEA command line is: /usr/bin/hevea -fix -noiso -pedantic features.tex -->
 <!--CUT DEF section 1 --><P><A NAME="titlepage"></A>
 
-</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.0.0-beta1 Feature Sheet</H1><H3 CLASS="titlerest">Sander Devrieze<BR>
+</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.0.0 Feature Sheet</H1><H3 CLASS="titlerest">Sander Devrieze<BR>
  <A HREF="mailto:s.devrieze@pandora.be"><TT>mailto:s.devrieze@pandora.be</TT></A><BR>
  <A HREF="xmpp:sander@devrieze.dyndns.org"><TT>xmpp:sander@devrieze.dyndns.org</TT></A></H3></TD></TR>
 </TABLE><DIV CLASS="center">
@@ -70,13 +70,13 @@ Peter Saint-Andr&#XE9;, Executive Director of the Jabber Software Foundation</I>
 <B><FONT SIZE=4><FONT COLOR="#001376">Cross-platform:</FONT></FONT></B> <TT>ejabberd</TT> runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.</LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Distributed:</FONT></FONT></B> You can run <TT>ejabberd</TT> on a cluster of machines and all of them will serve the same Jabber domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.</LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Fault-tolerant:</FONT></FONT></B> You can deploy an <TT>ejabberd</TT> cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced &#X2018;on the fly&#X2019;.</LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Administrator Friendly:</FONT></FONT></B> <TT>ejabberd</TT> is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Comprehensive documentation.
-</LI><LI CLASS="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows. </LI><LI CLASS="li-itemize">Web interface for administration tasks.
+</LI><LI CLASS="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows. </LI><LI CLASS="li-itemize">Web Administration.
 </LI><LI CLASS="li-itemize">Shared Roster Groups.
 </LI><LI CLASS="li-itemize">Command line administration tool. </LI><LI CLASS="li-itemize">Can integrate with existing authentication mechanisms.
 </LI><LI CLASS="li-itemize">Capability to send announce messages.
 </LI></UL></LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Internationalized:</FONT></FONT></B> <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Translated in 17 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
+Translated to 24 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
 </LI></UL></LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Open Standards:</FONT></FONT></B> <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Fully XMPP compliant.
@@ -97,31 +97,31 @@ Load only the modules you want.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 SASL and STARTTLS for c2s and s2s connections.
 </LI><LI CLASS="li-itemize">STARTTLS and Dialback s2s connections.
-</LI><LI CLASS="li-itemize">Web interface accessible via HTTPS secure access.
+</LI><LI CLASS="li-itemize">Web Admin accessible via HTTPS secure access.
 </LI></UL>
 </LI><LI CLASS="li-itemize">Databases
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Native MySQL support.
+Internal database for fast deployment (Mnesia).
+</LI><LI CLASS="li-itemize">Native MySQL support.
 </LI><LI CLASS="li-itemize">Native PostgreSQL support.
-</LI><LI CLASS="li-itemize">Mnesia.
 </LI><LI CLASS="li-itemize">ODBC data storage support.
 </LI><LI CLASS="li-itemize">Microsoft SQL Server support. </LI></UL>
 </LI><LI CLASS="li-itemize">Authentication
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-PAM, LDAP and ODBC. </LI><LI CLASS="li-itemize">External Authentication script.
-</LI><LI CLASS="li-itemize">Internal Authentication.
+Internal Authentication.
+</LI><LI CLASS="li-itemize">PAM, LDAP and ODBC. </LI><LI CLASS="li-itemize">External Authentication script.
 </LI></UL>
 </LI><LI CLASS="li-itemize">Others
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Compressing XML streams with Stream Compression (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>).
-</LI><LI CLASS="li-itemize">Interface with networks such as AIM, ICQ and MSN.
+Support for virtual hosting.
+</LI><LI CLASS="li-itemize">Compressing XML streams with Stream Compression (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>).
 </LI><LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
 </LI><LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component.
-</LI><LI CLASS="li-itemize">Support for virtual hosting.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> service.
+</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with support for clustering and HTML logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
+</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-00163.html">Personal Eventing via Pubsub</A>.
+</LI><LI CLASS="li-itemize">Support for web clients: <A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</A> services.
 </LI><LI CLASS="li-itemize">IRC transport.
+</LI><LI CLASS="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
 </LI></UL>
 </LI></UL><!--CUT END -->
 <!--HTMLFOOT-->

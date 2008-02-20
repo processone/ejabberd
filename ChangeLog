@@ -1,5 +1,14 @@
 2008-02-20  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.hrl: Updated version number
+	* doc/dev.html: Likewise
+	* doc/features.html: Likewise
+	* doc/guide.html: Likewise
+	* doc/version.tex: Likewise
+
+	* doc/guide.tex: Mentioned the problems about Windows service
+	* doc/guide.html: Likewise
+
 	* src/msgs/ru.msg: Updated (thanks to Konstantin Khomoutov)
 	* src/msgs/zh.msg: Updated (thanks to Mike Wang and Zhan Caibao)
 
