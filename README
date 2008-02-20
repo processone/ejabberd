@@ -2,37 +2,48 @@ ejabberd - High-Performance Enterprise Instant Messaging Server
 
 Quickstart guide
 
-0. Dependancies
 
-To build ejabberd, you need:
+0. Requirements
+
+To compile ejabberd you need:
  - GNU Make
  - GCC
  - libexpat 1.95 or higher
- - Erlang/OTP R9C-2 or higher
- - OpenSSL 0.9.6 or higher (optional)
- - Zlib 1.2.3 or higher (optional)
- - GNU Iconv 1.8 or higher (optional, not needed on systems with GNU libc)
+ - Erlang/OTP R10B-9 up to R11B-5. Erlang R12 releases are not yet
+   officially supported, and are not recommended for production
+   servers
+ - OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL
+   encryption. Optional, highly recommended.
+ - Zlib 1.2.3 or higher, for Stream Compression support
+   (XEP-0138). Optional.
+ - GNU Iconv 1.8 or higher, for the IRC Transport
+   (mod_irc). Optional. Not needed on systems with GNU Libc.
 
-1. Build and install on *nix systems
 
-To build ejabberd, please go into the src directory and type the 
-following commands:
- ./configure && make
- sudo make install
+1. Compile and install on *nix systems
+
+To compile ejabberd, go to the directory src/ and execute the commands:
+  ./configure
+  make
+
+To install ejabberd, run this command with system administrator rights
+(root user):
+
+  sudo make install
 
 These commands will:
- - install a startup script into the directory /usr/sbin,
- - install ejabberd into the directory /var/lib/ejabberd,
- - install the configuration file into /etc/ejabberd,
- - create a directory called /var/log/ejabberd to store log files.
+ - Install a startup script: /sbin/ejabberdctl
+ - Install ejabberd in /var/lib/ejabberd/
+ - Install the configuration files in /etc/ejabberd/
+ - Create a directory for log files: /var/log/ejabberd/
 
-Note: "sudo make install" means that the "make install" command should
-      be run with system administrator rights (root).
 
-2. Run
+2. Start ejabberd
 
-To run ejabberd, type the following command:
- erl -pa /var/lib/ejabberd/ebin -sname ejabberd -s ejabberd
+You can use the ejabberdctl command line administration script to
+start and stop ejabberd. For example:
+  ejabberdctl start
 
-For detailled informations, please refer to:
-http://www.process-one.net/en/projects/ejabberd/docs/guide_en.html
+
+For detailed information please refer to the
+ejabberd Installation and Operation Guide
