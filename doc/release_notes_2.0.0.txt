@@ -1,6 +1,7 @@
+
                               Release Notes
                              ejabberd 2.0.0
-                            20 February 2008
+                            21 February 2008
 
   ejabberd 2.0.0 is a major new version for ejabberd adding plenty of
   new features, performance and scalability improvements and
@@ -64,7 +65,7 @@
 - Ability to match on several userid attributes.
 
 
-* Multi-user chat
+* Multi-User Chat
 
 - Clustering and load balancing support.
 - Ability to define default room configuration in ejabberd config file.
@@ -75,7 +76,7 @@
   . Limitation of the maximum number of room a user can join at the same time.
 
 
-* File transfer
+* File Transfer
 
 - XEP-0065 - Proxy65 file transfer proxy. The proxy can run in
   cluster mode.
@@ -87,7 +88,7 @@
 - External Authentication protocol is now fully documented.
 
 
-* Web client support
+* Web Client Support
 
 - XEP-0124 - BOSH support: BOSH (Bidirectional-streams Over
   Synchronous HTTP) was formerly known as "HTTP binding". It provides
@@ -102,7 +103,7 @@
   (bandwidth, packet size).
 
 
-* System administration
+* System Administration
 
 - XEP-0133 - Service administration support. System administrators can
   now perform lot of ejabberd related admin tasks from their XMPP
@@ -130,8 +131,8 @@
 - Makefile now implements uninstall command.
 - Full MacOSX compliance in Makefile.
 - Configure script is clever at finding libraries in unusual places.
-				   
-				   
+
+
 * Development API
 
 - Several hooks have been added for module developers (most notably
@@ -195,12 +196,13 @@
   ejabberd.cfg, like mod_http_bind, mod_http_fileserver, mod_proxy65,
   loglevel, pam_service, and watchdog_admins. Search for those words
   in the ejabberd Guide and the example ejabberd.cfg.
- 
 
 
-   Bug reports
+
+   Bug Reports
 
   You can officially report bugs on Process-one support site:
   https://support.process-one.net/
+
 
 END
