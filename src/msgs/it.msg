@@ -1,5 +1,6 @@
 % $Id$
 % Language: Italian (italiano)
+% Author: Smart2128
 % Author: Luca Brivio
 
 % jlib.hrl
@@ -46,15 +47,10 @@
 {"Import Users from Dir at ", "Importare utenti dalla directory "}.
 {"Enter path to jabberd1.4 spool dir", "Immettere il percorso della directory di spool di jabberd1.4"}.
 {"Path to Dir", "Percorso della directory"}.
-{"Hostname Configuration", "Configurazione del nome dell'host"}.
-{"Choose host name", "Selezionare il nome dell'host"}.
-{"Host name", "Nome dell'host"}.
 {"Access Control List Configuration", "Configurazione dei diritti di accesso (ACL)"}.
 {"Access control lists", "Diritti di accesso (ACL)"}.
 {"Access Configuration", "Configurazione dell'accesso"}.
 {"Access rules", "Regole di accesso"}.
-{"Remove Users", "Eliminare utenti"}.
-{"Choose users to remove", "Selezionare gli utenti da eliminare"}.
 {"Administration of ", "Amministrazione di "}.
 {"Action on user", "Azione sull'utente"}.
 {"Edit Properties", "Modificare le proprietà"}.
@@ -76,10 +72,8 @@
 {"From ~s", "Da ~s"}.
 {"Running Nodes", "Nodi attivi"}.
 {"Stopped Nodes", "Nodi arrestati"}.
-{"Host Name", "Nome dell'host"}.
 {"Access Control Lists", "Diritti di accesso (ACL)"}.
 {"Access Rules", "Regole di accesso"}.
-{"Remove Users", "Eliminare utenti"}.
 {"Modules", "Moduli"}.
 {"Start Modules", "Avviare moduli"}.
 {"Stop Modules", "Arrestare moduli"}.
@@ -140,6 +134,7 @@
 {"Delete message of the day", "Eliminare il messaggio del giorno (MOTD)"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Roster groups allowed to subscribe", "Gruppi roster abilitati alla registrazione"}.
 {"Publish-Subscribe", "Pubblicazione-Iscrizione"}.
 {"ejabberd Publish-Subscribe module", "Modulo Pubblicazione/Iscrizione (PubSub) per ejabberd"}.
 {"PubSub subscriber request", "Richiesta di iscrizione per PubSub"}.
@@ -149,10 +144,7 @@
 {"Allow this JID to subscribe to this pubsub node?", "Consentire a questo JID l'iscrizione a questo nodo pubsub?"}.
 {"Deliver event notifications", "Inviare notifiche degli eventi"}.
 {"Specify the access model", "Specificare il modello di accesso"}.
-{"Roster groups that may subscribe (if access model is roster)", "Gruppi di liste di contatti che possono iscriversi (se il modello di accesso è: lista di contatti)"}.
 {"When to send the last published item", "Quando inviare l'ultimo elemento pubblicato"}.
-{"ejabberd pub/sub module", "Modulo pub/sub ejabberd"}.
-{"Node Creator", "Creatore del nodo"}.
 {"Deliver payloads with event notifications", "Inviare il contenuto del messaggio con la notifica dell'evento"}.
 {"Notify subscribers when the node configuration changes", "Notificare gli iscritti quando la configurazione del nodo cambia"}.
 {"Notify subscribers when the node is deleted", "Notificare gli iscritti quando il nodo è cancellato"}.
@@ -160,14 +152,14 @@
 {"Persist items to storage", "Conservazione persistente degli elementi"}.
 {"Max # of items to persist", "Numero massimo di elementi da conservare persistentemente"}.
 {"Whether to allow subscriptions", "Consentire iscrizioni?"}.
-{"Specify the subscriber model", "Definire il modello di iscrizione"}.
 {"Specify the publisher model", "Definire il modello di pubblicazione"}.
 {"Max payload size in bytes", "Dimensione massima del contenuto del messaggio in byte"}.
-{"Send items to new subscribers", "Inviare gli elementi ai nuovi iscritti"}.
 {"Only deliver notifications to available users", "Inviare le notifiche solamente agli utenti disponibili"}.
-{"Specify the current subscription approver", "Definire l'attuale moderatore delle iscrizioni"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "è stato espulso a causa di un cambiamento di appartenenza"}.
+{"has been kicked because the room has been changed to members-only", "è stato espulso per la limitazione della stanza ai soli membri"}.
+{"has been kicked because of a system shutdown", "è stato espulso a causa dello spegnimento del sistema"}.
 {"Chatroom configuration modified", "Configurazione della stanza modificata"}.
 {"joins the room", "entra nella stanza"}.
 {"leaves the room", "esce dalla stanza"}.
@@ -209,6 +201,9 @@
 {"You must fill in field \"Nickname\" in the form", "Si deve riempire il campo \"Nickname\" nel modulo"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Partecipante espulso dalla stanza perché ha inviato un messaggio non valido"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Partecipante espulso dalla stanza perché ha inviato un messaggio non valido a un altro partecipante"}.
+{"This participant is kicked from the room because he sent an error presence", "Partecipante espulso dalla stanza perché ha inviato una presenza non valido"}.
 {"Traffic rate limit is exceeded", "Limite di traffico superato"}.
 {"Maximum Number of Occupants", "Numero massimo di occupanti"}.
 {"No limit", "Nessun limite"}.
@@ -223,7 +218,6 @@
 {"Only moderators are allowed to change subject in this room", "La modifica dell'oggetto di questa stanza è consentita soltanto ai moderatori"}.
 {"Visitors are not allowed to send messages to all occupants", "Non è consentito ai visitatori l'invio di messaggi a tutti i presenti"}.
 {"Only occupants are allowed to send messages to the conference", "L'invio di messaggi alla conferenza è consentito soltanto ai presenti"}.
-{"It is not allowed to send normal messages to the conference", "Non è consentito l'invio di messaggi normali alla conferenza"}.
 {"It is not allowed to send private messages to the conference", "Non è consentito l'invio di messaggi privati alla conferenza"}.
 {"Improper message type", "Tipo di messaggio non corretto"}.
 {"Nickname is already in use by another occupant", "Il nickname è già in uso all'interno della conferenza"}.
@@ -257,7 +251,6 @@
 {"Allow users to query other users", "Consentire agli utenti query verso altri utenti"}.
 {"Allow users to send invites", "Consentire agli utenti l'invio di inviti"}.
 {"Enable logging", "Abilitare i log"}.
-{"Description", "Descrizione"}.
 {"Number of occupants", "Numero di presenti"}.
 {"Present real JIDs to", "Rendere visibile il JID reale a"}.
 {"moderators only", "moderatori soltanto"}.
@@ -275,12 +268,11 @@
 {"Encodings", "Codifiche"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "Amministrazione web ejabberd"}.
 {"Administration", "Amministrazione"}.
 {"Users", "Utenti"}.
 {"Nodes", "Nodi"}.
-{"Shared Roster", "Lista di contatti comuni"}.
 {"Statistics", "Statistiche"}.
-{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"(Raw)", "(Grezzo)"}.
 {"Submitted", "Inviato"}.
 {"Bad format", "Formato non valido"}.
@@ -355,9 +347,7 @@
 {"Virtual Hosts", "Host virtuali"}.
 {"ejabberd virtual hosts", "Host virtuali di ejabberd"}.
 {"Host", "Host"}.
-{"Authenticated Users:", "Utenti autenticati:"}.
 {"No Data", "Nessuna informazione"}.
-{"ejabberd Web Interface", "Ejabberd - Interfaccia web"}.
 {"Online Users:", "Utenti connessi:"}.
 {"Outgoing s2s Connections:", "Connessioni s2s in uscita:"}.
 {"Outgoing s2s Servers:", "Server s2s in uscita"}.
@@ -376,7 +366,6 @@
 {"Update script", "Script di aggiornamento"}.
 {"Low level update script", "Script di aggiornamento di basso livello"}.
 {"Script check", "Verifica dello script"}.
-{"Not Found", "Non trovato"}.
 {"Shared Roster Groups", "Gruppi di liste di contatti comuni"}.
 {"Last Activity", "Ultima attività"}.
 

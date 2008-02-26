@@ -1,3 +1,7 @@
+2008-02-26  Badlop  <badlop@process-one.net>
+
+	* src/msgs/it.msg: Updated (thanks to Smart2128)
+
 2008-02-21  Badlop  <badlop@process-one.net>
 
 	* doc/release_notes_2.0.0.txt: Small fixes and update date
@@ -187,7 +191,7 @@
 	* doc/guide.tex: Updated copyright dates to 2008.
 	* src/*: Likewise
 
-2008-01-15  Jérôme Sautret <jerome.sautret@process-one.net>
+2008-01-15  Jerome Sautret <jerome.sautret@process-one.net>
 
 	* src/Makefile.in: Allow compilation with Erlang R12 (EJAB-446)
 	(thanks to Sergei Golovan and Maxim Treskin). Erlang R12 version is
