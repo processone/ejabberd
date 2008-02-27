@@ -46,6 +46,7 @@ start(normal, _Args) ->
     ejabberd_ctl:init(),
     gen_mod:start(),
     ejabberd_config:start(),
+    ejabberd_check:config(),
     start(),
     connect_nodes(),
     Sup = ejabberd_sup:start_link(),
