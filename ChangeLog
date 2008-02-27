@@ -1,3 +1,10 @@
+2008-02-27  Mickael Remond <mremond@process-one.net>
+
+	* src/ejabberd_check.erl: Separate config loading from
+	configuration sanity checks (EJAB-533)
+	* src/src/ejabberd_app.erl: Likewise
+	* src/ejabberd_app.erl: Likewise
+	
 2008-02-26  Badlop  <badlop@process-one.net>
 
 	* src/msgs/it.msg: Updated (thanks to Smart2128)
