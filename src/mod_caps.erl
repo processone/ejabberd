@@ -127,8 +127,7 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
-    supervisor:stop_child(ejabberd_sup, Proc).
+    gen_server:call(Proc, stop).
 
 %%====================================================================
 %% gen_server callbacks

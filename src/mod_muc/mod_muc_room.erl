@@ -167,6 +167,7 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
+    process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
@@ -182,6 +183,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 	      [Room, Host, jlib:jid_to_string(Creator)]),
     {ok, normal_state, State1};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
+    process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_opts(Opts, #state{host = Host,
 				  server_host = ServerHost,
