@@ -1,3 +1,14 @@
+2008-02-28  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_app.erl (prep_stop): Stop modules when stopping
+	ejabberd (EJAB-536)
+	* src/mod_caps.erl (stop): Probably not needed to stop supervisor
+	child (EJAB-536)
+	* src/mod_muc/mod_muc.erl (room_destroyed): Catch message
+	sending (EJAB-536)
+	* src/mod_muc/mod_muc_room.erl (init): Ensure rooms are called
+	when the process dies due to a linked die (EJAB-536)
+
 2008-02-27  Mickael Remond <mremond@process-one.net>
 
 	* src/ejabberd_check.erl: Separate config loading from

@@ -91,8 +91,14 @@ stop(Host) ->
     gen_server:call(Proc, stop),
     supervisor:delete_child(ejabberd_sup, Proc).
 
+%% This function is called by a room in three situations:
+%% A) The owner of the room destroyed it
+%% B) The only participant of a temporary room leaves it
+%% C) mod_muc:stop was called, and each room is being terminated
+%%    In this case, the mod_muc process died before the room processes
+%%    So the message sending must be catched
 room_destroyed(Host, Room, Pid, ServerHost) ->
-    gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
+    catch gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
 	{room_destroyed, {Room, Host}, Pid},
     ok.
 
