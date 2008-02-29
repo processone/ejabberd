@@ -558,7 +558,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			    ok;
 			true ->
 			    push_item(User, Server,
-				      jlib:make_jid("", Server, ""), Item)
+				      jlib:make_jid(User, Server, ""), Item)
 		    end,
 		    true;
 		none ->
