@@ -97,4 +97,6 @@ get_db_used() ->
 check_odbc_option(odbc) ->
     true;
 check_odbc_option(AuthMethods) when is_list(AuthMethods) ->
-    lists:member(odbc, AuthMethods).
+    lists:member(odbc, AuthMethods);
+check_odbc_option(_) ->
+    false.
