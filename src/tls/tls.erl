@@ -149,7 +149,15 @@ recv(#tlssock{tcpsock = TCPSocket} = TLSSock,
 	    Error
     end.
 
-recv_data(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
+recv_data(TLSSock, Packet) ->
+    case catch recv_data1(TLSSock, Packet) of
+	{'EXIT', Reason} ->
+	    {error, Reason};
+	Res ->
+	    Res
+    end.
+
+recv_data1(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
     case port_control(Port, ?SET_ENCRYPTED_INPUT, Packet) of
 	<<0>> ->
 	    case port_control(Port, ?GET_DECRYPTED_INPUT, []) of

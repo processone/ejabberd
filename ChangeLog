@@ -1,3 +1,8 @@
+2008-03-03  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/tls/tls.erl: recv_data/2 doesn't throw exceptions now
+	* src/ejabberd_zlib/ejabberd_zlib.erl: Likewise
+
 2008-02-29  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_roster.erl: Fixed "from" attribute in roster pushes

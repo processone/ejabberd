@@ -100,7 +100,7 @@ enable_zlib(SockMod, Socket) ->
     end,
     Port = open_port({spawn, ejabberd_zlib_drv}, [binary]),
     {ok, #zlibsock{sockmod = SockMod, socket = Socket, zlibport = Port}}.
-    
+
 disable_zlib(#zlibsock{sockmod = SockMod, socket = Socket, zlibport = Port}) ->
     port_close(Port),
     {SockMod, Socket}.
@@ -116,7 +116,15 @@ recv(#zlibsock{sockmod = SockMod, socket = Socket} = ZlibSock,
 	    Error
     end.
 
-recv_data(#zlibsock{zlibport = Port} = _ZlibSock, Packet) ->
+recv_data(ZlibSock, Packet) ->
+    case catch recv_data1(ZlibSock, Packet) of
+	{'EXIT', Reason} ->
+	    {error, Reason};
+	Res ->
+	    Res
+    end.
+
+recv_data1(#zlibsock{zlibport = Port} = _ZlibSock, Packet) ->
     case port_control(Port, ?INFLATE, Packet) of
 	<<0, In/binary>> ->
 	    {ok, In};
