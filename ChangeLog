@@ -1,5 +1,11 @@
 2008-03-04  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Improve documentation of host_config
+	add (EJAB-544)
+	* doc/guide.html: Likewise
+	* src/ejabberd.cfg.example: Likewise
+	* src/ejabberd_config.erl: Likewise
+
 	* doc/guide.tex: mod_announce recommends, but doesn't require
 	mod_adhoc (thanks to Anastasia Gornostaeva)
 	* doc/guide.html: Likewise

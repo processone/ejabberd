@@ -211,11 +211,16 @@ add_option(Opt, Val, State) ->
 	    end
     end.
 
-compact(Opt, Val, [], Os) ->
+compact({OptName, Host} = Opt, Val, [], Os) ->
+    ?WARNING_MSG("The option '~p' is defined for the host ~p using host_config "
+    "before the global '~p' option. This host_config option may get overwritten.", [OptName, Host, OptName]),
     [#local_config{key = Opt, value = Val}] ++ Os;
+%% Traverse the list of the options already parsed
 compact(Opt, Val, [O | Os1], Os2) ->
-    case O#local_config.key of
+    case catch O#local_config.key of
+	%% If the key of a local_config matches the Opt that wants to be added
 	Opt ->
+	    %% Then prepend the new value to the list of old values
 	    Os2 ++ [#local_config{key = Opt,
 				  value = Val++O#local_config.value}
 		   ] ++ Os1;

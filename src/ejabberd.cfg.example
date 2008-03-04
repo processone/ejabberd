@@ -341,6 +341,15 @@
 %%{acl, test, {user_regexp, "^test"}}.
 %%{acl, test, {user_glob, "test*"}}.
 
+%%
+%% Define specific ACLs in a virtual host.
+%%
+%%{host_config, "localhost",
+%% [
+%%  {acl, admin, {user, "bob-local", "localhost"}}
+%% ]
+%%}.
+
 
 %%%   ============
 %%%   ACCESS RULES
@@ -381,6 +390,16 @@
 %% Everybody can create pubsub nodes
 {access, pubsub_createnode, [{allow, all}]}.
 
+%%
+%% Define specific Access rules in a virtual host.
+%%
+%%{host_config, "localhost",
+%% [
+%%  {access, c2s, [{allow, admin}, {deny, all}]},
+%%  {access, register, [{deny, all}]}
+%% ]
+%%}.
+
 
 %%%   ================
 %%%   DEFAULT LANGUAGE
@@ -389,6 +408,13 @@
 %% language: Default language used for server messages.
 %%
 {language, "en"}.
+
+%%
+%% Set a different language in a virtual host.
+%%
+%%{host_config, "localhost",
+%% [{language, "ru"}]
+%%}.
 
 
 %%%   =======
@@ -447,6 +473,17 @@
   {mod_vcard,    []},
   {mod_version,  []}
  ]}.
+
+%%
+%% Enable modules with custom options in a specific virtual host
+%%
+%%{host_config, "localhost",
+%% [{{add, modules},
+%%   [
+%%    {mod_echo, [{host, "mirror.localhost"}]}
+%%   ]
+%%  }
+%% ]}.
 
 
 %%% $Id$
