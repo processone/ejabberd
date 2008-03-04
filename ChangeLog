@@ -1,3 +1,10 @@
+2008-03-04  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: mod_announce recommends, but doesn't require
+	mod_adhoc (thanks to Anastasia Gornostaeva)
+	* doc/guide.html: Likewise
+	* src/ejabberd.cfg.example: Likewise
+
 2008-03-03  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/tls/tls.erl: recv_data/2 doesn't throw exceptions now
