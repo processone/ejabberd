@@ -554,18 +554,16 @@ while domain <TT>example.com</TT> is using the LDAP servers running on the domai
                               {ldap_rootdn, "dc=localdomain"},
                               {ldap_rootdn, "dc=example,dc=com"},
                               {ldap_password, ""}]}.
-</PRE></LI></UL><P>If you have several virtual hosts, 
-and you want to define options such as <TT>modules</TT>
-with values specific for some virtual host, 
-instead of defining each option with the syntax
+</PRE></LI></UL><P>To define specific ejabberd modules in a virtual host,
+you can define the global <TT>modules</TT> option with the common modules,
+and later add specific modules to certain virtual hosts.
+To accomplish that, instead of defining each option in <TT>host_config</TT> with the syntax
 </P><PRE CLASS="verbatim">  {&lt;option-name&gt;, &lt;option-value&gt;}
 </PRE><P>you must use this syntax:
 </P><PRE CLASS="verbatim">  {{add, &lt;option-name&gt;}, &lt;option-value&gt;}
-</PRE><P>Example:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-	In this example three virtual hosts have some similar modules, but there are also
-	other different modules for some specific virtual hosts:
-<PRE CLASS="verbatim">% This ejabberd server has three vhosts:
+</PRE><P>In this example three virtual hosts have some similar modules, but there are also
+other different modules for some specific virtual hosts:
+</P><PRE CLASS="verbatim">% This ejabberd server has three vhosts:
 {hosts, ["one.example.org", "two.example.org", "three.example.org"]}.
 
 % Configuration of modules that are common to all vhosts
@@ -591,7 +589,7 @@ instead of defining each option with the syntax
 {host_config, "two.example.org", [{{add, modules}, [
   {mod_echo,       [{host, "mirror.two.example.org"}]}
 ]}]}.
-</PRE></LI></UL><!--TOC subsection Listening Ports-->
+</PRE><!--TOC subsection Listening Ports-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc22">3.1.3</A>&#XA0;&#XA0;Listening Ports</H3><!--SEC END --><P>
 <A NAME="listened"></A>
 </P><P>The option <TT>listen</TT> defines for which addresses and ports <TT>ejabberd</TT>

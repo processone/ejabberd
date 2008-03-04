@@ -591,22 +591,20 @@ Examples:
 \end{verbatim}
 \end{itemize}
  
-If you have several virtual hosts, 
-and you want to define options such as \term{modules}
-with values specific for some virtual host, 
-instead of defining each option with the syntax
+To define specific ejabberd modules in a virtual host,
+you can define the global \term{modules} option with the common modules,
+and later add specific modules to certain virtual hosts.
+To accomplish that, instead of defining each option in \term{host\_config} with the syntax
 \begin{verbatim}
   {<option-name>, <option-value>}
 \end{verbatim}
-you must use this syntax:
+use this syntax:
 \begin{verbatim}
   {{add, <option-name>}, <option-value>}
 \end{verbatim}
 
-Example:
-\begin{itemize}
-	\item In this example three virtual hosts have some similar modules, but there are also
-	other different modules for some specific virtual hosts:
+In this example three virtual hosts have some similar modules, but there are also
+other different modules for some specific virtual hosts:
 \begin{verbatim}
 % This ejabberd server has three vhosts:
 {hosts, ["one.example.org", "two.example.org", "three.example.org"]}.
@@ -635,7 +633,6 @@ Example:
   {mod_echo,       [{host, "mirror.two.example.org"}]}
 ]}]}.
 \end{verbatim}
-\end{itemize}
 
 \subsection{Listening Ports}
 \label{listened}
