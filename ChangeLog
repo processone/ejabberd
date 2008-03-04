@@ -1,3 +1,10 @@
+2008-03-04  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: mod_announce recommends, but doesn't require
+	mod_adhoc (thanks to Anastasia Gornostaeva)
+	* doc/guide.html: Likewise
+	* src/ejabberd.cfg.example: Likewise
+
 2008-02-29  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_roster.erl: Fixed "from" attribute in roster pushes

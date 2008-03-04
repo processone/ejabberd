@@ -1510,7 +1510,7 @@ all entries end with a comma:
 </P><P>The following table lists all modules included in <TT>ejabberd</TT>.</P><BLOCKQUOTE CLASS="table"><DIV CLASS="center"><DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV>
 <TABLE BORDER=1 CELLSPACING=0 CELLPADDING=1><TR><TD ALIGN=left NOWRAP>Module</TD><TD ALIGN=left NOWRAP>Feature</TD><TD ALIGN=left NOWRAP>Dependencies</TD><TD ALIGN=left NOWRAP>Needed for XMPP?</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_adhoc</TT></TD><TD ALIGN=left NOWRAP>Ad-Hoc Commands (<A HREF="http://www.xmpp.org/extensions/xep-0050.html">XEP-0050</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>No</TD></TR>
-<TR><TD ALIGN=left NOWRAP><TT>mod_announce</TT></TD><TD ALIGN=left NOWRAP>Manage announcements</TD><TD ALIGN=left NOWRAP><TT>mod_adhoc</TT></TD><TD ALIGN=left NOWRAP>No</TD></TR>
+<TR><TD ALIGN=left NOWRAP><TT>mod_announce</TT></TD><TD ALIGN=left NOWRAP>Manage announcements</TD><TD ALIGN=left NOWRAP>recommends <TT>mod_adhoc</TT></TD><TD ALIGN=left NOWRAP>No</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_caps</TT></TD><TD ALIGN=left NOWRAP>Request and cache Entity Capabilities (<A HREF="http://www.xmpp.org/extensions/xep-0115.html">XEP-0115</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>No</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_configure</TT></TD><TD ALIGN=left NOWRAP>Server configuration using Ad-Hoc</TD><TD ALIGN=left NOWRAP><TT>mod_adhoc</TT></TD><TD ALIGN=left NOWRAP>No</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_disco</TT></TD><TD ALIGN=left NOWRAP>Service Discovery (<A HREF="http://www.xmpp.org/extensions/xep-0030.html">XEP-0030</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>No</TD></TR>
@@ -1625,11 +1625,13 @@ the "@HOST@" keyword must be used:
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc36">3.3.3</A>&#XA0;&#XA0;<TT>mod_announce</TT></H3><!--SEC END --><P>
 <A NAME="modannounce"></A>
 </P><P>This module enables configured users to broadcast announcements and to set
-the message of the day (MOTD). Configured users can do these actions with their
-Jabber client using Ad-hoc commands or by sending messages to specific JIDs. These JIDs are listed in
-next paragraph. The first JID in each entry will apply only to the virtual host
+the message of the day (MOTD). </P><P>Configured users can perform these actions with a
+Jabber client either using Ad-hoc commands
+or sending messages to specific JIDs.</P><P>The Ad-hoc commands are listed in the Server Discovery.
+For this feature to work, <TT>mod_adhoc</TT>must be enabled.</P><P>The specific JIDs where messages can be sent are listed listed now.
+The first JID in each entry will apply only to the specified virtual host
 <TT>example.org</TT>, while the JID between brackets will apply to all virtual
-hosts:
+hosts in ejabberd:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>example.org/announce/all (example.org/announce/all-hosts/all)</TT></B></DT><DD CLASS="dd-description"> The
 message is sent to all registered users. If the user is online and connected
@@ -1662,6 +1664,7 @@ Only administrators can send announcements:
   {modules,
    [
     ...
+    {mod_adhoc, []},
     {mod_announce, [{access, announce}]},
     ...
    ]}.
@@ -1676,6 +1679,7 @@ Only administrators can send announcements:
   {modules,
    [
     ...
+    {mod_adhoc, []},
     {mod_announce, [{access, announce}]},
     ...
    ]}.

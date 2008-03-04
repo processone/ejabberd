@@ -1897,7 +1897,7 @@ The following table lists all modules included in \ejabberd{}.
   \begin{tabular}{|l|l|l|l|}
     \hline Module & Feature & Dependencies & Needed for XMPP? \\ 
     \hline \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  & No \\ 
-    \hline \modannounce{} & Manage announcements & \modadhoc{} & No \\ 
+    \hline \modannounce{} & Manage announcements & recommends \modadhoc{} & No \\ 
     \hline \modcaps{} &  Request and cache Entity Capabilities (\xepref{0115}) & & No \\ 
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} & No \\ 
     \hline \moddisco{} & Service Discovery (\xepref{0030}) &  & No \\ 
@@ -2045,11 +2045,18 @@ the "@HOST@" keyword must be used:
 \ind{modules!\modannounce{}}\ind{MOTD}\ind{message of the day}\ind{announcements}
 
 This module enables configured users to broadcast announcements and to set
-the message of the day (MOTD). Configured users can do these actions with their
-\Jabber{} client using Ad-hoc commands or by sending messages to specific JIDs. These JIDs are listed in
-next paragraph. The first JID in each entry will apply only to the virtual host
+the message of the day (MOTD).  
+Configured users can perform these actions with a
+\Jabber{} client either using Ad-hoc commands
+or sending messages to specific JIDs.
+
+The Ad-hoc commands are listed in the Server Discovery.
+For this feature to work, \modadhoc{} must be enabled.
+
+The specific JIDs where messages can be sent are listed bellow.
+The first JID in each entry will apply only to the specified virtual host
 \jid{example.org}, while the JID between brackets will apply to all virtual
-hosts:
+hosts in ejabberd.
 \begin{description}
 \titem{example.org/announce/all (example.org/announce/all-hosts/all)} The
   message is sent to all registered users. If the user is online and connected
@@ -2087,6 +2094,7 @@ Examples:
   {modules,
    [
     ...
+    {mod_adhoc, []},
     {mod_announce, [{access, announce}]},
     ...
    ]}.
@@ -2103,6 +2111,7 @@ Examples:
   {modules,
    [
     ...
+    {mod_adhoc, []},
     {mod_announce, [{access, announce}]},
     ...
    ]}.

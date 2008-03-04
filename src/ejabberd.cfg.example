@@ -400,7 +400,7 @@
 {modules,
  [
   {mod_adhoc,    []},
-  {mod_announce, [{access, announce}]}, % requires mod_adhoc
+  {mod_announce, [{access, announce}]}, % recommends mod_adhoc
   {mod_caps,     []}, 
   {mod_configure,[]}, % requires mod_adhoc
   {mod_disco,    []},
