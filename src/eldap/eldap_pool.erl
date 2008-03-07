@@ -66,7 +66,7 @@ do_request(Name, {F, Args}) ->
 	Pid when is_pid(Pid) ->
 	    case catch apply(eldap, F, [Pid | Args]) of
 		{'EXIT', Reason} ->
-		    ?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ",
+		    ?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ~p",
 			       [F, Args, Reason]),
 		    {error, Reason};
 		Reply ->
