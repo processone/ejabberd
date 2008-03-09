@@ -1,3 +1,31 @@
+2008-03-09  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Fixed HTTP headers when a
+	requested session doesn't exist
+
+2008-03-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_proxy65/mod_proxy65_service.erl: Implement alternative
+	to the deprecated function inet:ip_to_bytes (thanks to Evgeniy
+	Khramtsov)(EJAB-542)
+
+2008-03-07  Mickael Remond  <mremond@process-one.net>
+
+	* src/eldap/eldap_pool.erl: Improved logging
+
+2008-03-04  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Improve documentation of host_config
+	add (EJAB-544)
+	* doc/guide.html: Likewise
+	* src/ejabberd.cfg.example: Likewise
+	* src/ejabberd_config.erl: Likewise
+
+	* doc/guide.tex: mod_announce recommends, but doesn't require
+	mod_adhoc (thanks to Anastasia Gornostaeva)
+	* doc/guide.html: Likewise
+	* src/ejabberd.cfg.example: Likewise
+
 2008-03-03  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/tls/tls.erl: recv_data/2 doesn't throw exceptions now
