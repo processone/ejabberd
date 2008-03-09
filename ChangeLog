@@ -1,3 +1,9 @@
+2008-03-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_proxy65/mod_proxy65_service.erl: Implement alternative
+	to the deprecated function inet:ip_to_bytes (thanks to Evgeniy
+	Khramtsov)(EJAB-542)
+
 2008-03-04  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Improve documentation of host_config

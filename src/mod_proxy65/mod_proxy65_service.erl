@@ -201,7 +201,7 @@ parse_options(ServerHost, Opts) ->
 	         none -> get_proxy_or_domainip(ServerHost, MyHost);
 	         Addr -> Addr
 	     end,
-    [_ | StrIP] = lists:append([[$. | integer_to_list(X)] || X <- inet:ip_to_bytes(IP)]),
+    StrIP = inet_parse:ntoa(IP),
     StreamAddr = [{"jid", MyHost}, {"host", StrIP}, {"port", integer_to_list(Port)}],
     {IP, #state{myhost      = MyHost,
 		serverhost  = ServerHost,
