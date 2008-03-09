@@ -134,7 +134,7 @@ process([], #request{data = Data} = _Request) ->
 		    end,
 		    case http_get(ID) of
 			{error, not_exists} ->
-			    {200, [?BAD_REQUEST], ""};
+			    {200, ?BAD_REQUEST, ""};
 			{ok, OutPacket} ->
 			    if
 				ID == ID1 ->
