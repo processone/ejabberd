@@ -1,3 +1,8 @@
+2008-03-10  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_update.erl: Fix crash when browsing the Update
+	page in Erlang R12 (EJAB-552)
+
 2008-03-09  Badlop  <badlop@process-one.net>
 
 	* src/mod_proxy65/mod_proxy65_service.erl: Implement alternative
