@@ -55,12 +55,12 @@ update_info() ->
 	    UpdatedBeams =
 		lists:filter(
 		  fun(Module) ->
-			  {ok, {Module, [NewVsn]}} =
+			  {ok, {Module, NewVsn}} =
 			      beam_lib:version(code:which(Module)),
 			  case code:is_loaded(Module) of
 			      {file, _} ->
 				  Attrs = Module:module_info(attributes),
-				  {value, {vsn, [CurVsn]}} =
+				  {value, {vsn, CurVsn}} =
 				      lists:keysearch(vsn, 1, Attrs),
 				  NewVsn /= CurVsn;
 			      false ->
