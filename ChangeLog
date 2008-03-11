@@ -1,3 +1,9 @@
+2008-03-11  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_s2s_in.erl (get_cert_domains): When compiling with
+	Erlang R12, replace the calls to deprecated module PKIX1Explicit88
+	with OTP-PKIX (EJAB-556)
+
 2008-03-10  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_update.erl: Fix crash when browsing the Update
