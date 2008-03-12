@@ -121,7 +121,7 @@ handle_info({route, From, To, Packet}, State) ->
 		"" -> jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST);
 		_ -> Packet
 	end,
-    %%do_client_version(To, From),
+    do_client_version(disabled, To, From), % Put 'enabled' to enable it
     ejabberd_router:route(To, From, Packet2),
     {noreply, State};
 handle_info(_Info, State) ->
@@ -149,8 +149,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% Example of routing XMPP packets using Erlang's message passing
 %%--------------------------------------------------------------------
 
-%% To enable this educational example, uncomment the call to the 
-%% function do_client_version in handle_info.
+%% To enable this educational example, edit the function handle_info:
+%% replace the argument 'disabled' with 'enabled' in the call to the
+%% function do_client_version.
 
 %% ejabberd provides a method to receive XMPP packets using Erlang's 
 %% message passing mechanism. 
@@ -167,7 +168,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% using exactly the same JID. We add a (mostly) random resource to
 %% try to guarantee that the received response matches the request sent.
 %% Finally, the received response is printed in the ejabberd log file.
-do_client_version(From, To) ->
+do_client_version(disabled, _From, _To) ->
+    ok;
+do_client_version(enabled, From, To) ->
     ToS = jlib:jid_to_string(To),
     %% It is important to identify this process and packet
     Random_resource = integer_to_list(random:uniform(100000)),
