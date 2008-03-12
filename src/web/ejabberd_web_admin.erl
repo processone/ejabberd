@@ -1067,7 +1067,10 @@ acl_spec_select(ID, Opt) ->
 
 
 term_to_string(T) ->
-    lists:flatten(io_lib:format("~1000000p", [T])).
+    StringParagraph = lists:flatten(io_lib:format("~1000000p", [T])),
+    %% Remove from the string all the carriage returns characters
+    {ok, StringLine, _} = regexp:gsub(StringParagraph, "\\n ", ""),
+    StringLine.
 
 term_to_id(T) ->
     jlib:encode_base64(binary_to_list(term_to_binary(T))).
