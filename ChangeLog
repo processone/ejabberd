@@ -1,3 +1,8 @@
+2008-03-12  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl (term_to_string): Show Erlang
+	terms in one line in Erlang R12 (EJAB-503)
+
 2008-03-11  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_s2s_in.erl (get_cert_domains): When compiling with
