@@ -246,6 +246,7 @@ execute_transaction(State, F, NRestarts) ->
 %% part of init/1
 %% Open an ODBC database connection
 odbc_connect(SQLServer) ->
+    application:start(odbc),
     case odbc:connect(SQLServer,[{scrollable_cursors, off}]) of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
