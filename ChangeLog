@@ -1,5 +1,8 @@
 2008-03-13  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.hrl: Removed unused ejabberd_debug and
+	PRIVACY_SUPPORT. Reordered the remaining options
+
 	* doc/guide.tex: Describe option Matches in mod_vcard_ldap (thanks
 	to Evgeniy Khramtsov)(EJAB-530).  Fix typo in the description of
 	ldap_server option.

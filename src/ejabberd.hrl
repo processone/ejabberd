@@ -19,10 +19,21 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%-define(ejabberd_debug, true).
-%-define(DBGFSM, true).
-
 -define(VERSION, "2.0.0").
+
+-define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
+-define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).
+-define(MYLANG, ejabberd_config:get_global_option(language)).
+
+-define(MSGS_DIR, "msgs").
+-define(CONFIG_PATH, "ejabberd.cfg").
+-define(LOG_PATH, "ejabberd.log").
+
+-define(EJABBERD_URI, "http://www.process-one.net/en/ejabberd/").
+
+-define(S2STIMEOUT, 600000).
+
+%%-define(DBGFSM, true).
 
 %% ---------------------------------
 %% Logging mechanism
@@ -42,15 +53,3 @@
 -define(CRITICAL_MSG(Format, Args),
     ejabberd_logger:critical_msg(?MODULE,?LINE,Format, Args)).
 
--define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
--define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).
--define(S2STIMEOUT, 600000).
--define(MYLANG, ejabberd_config:get_global_option(language)).
-
--define(MSGS_DIR, "msgs").
--define(CONFIG_PATH, "ejabberd.cfg").
--define(LOG_PATH, "ejabberd.log").
-
--define(PRIVACY_SUPPORT, true).
-
--define(EJABBERD_URI, "http://www.process-one.net/en/ejabberd/").
