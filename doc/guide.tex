@@ -1657,8 +1657,8 @@ yet.
 
 Parameters:
 \begin{description}
-\titem{ldap\_server} \ind{options!ldap\_server}IP address or dns name of your
-LDAP server. This option is required.
+\titem{ldap\_servers} \ind{options!ldap\_server}List of IP addresses or DNS names of your
+LDAP servers. This option is required.
 \titem{ldap\_port} \ind{options!ldap\_port}Port to connect to your LDAP server.
   The initial default value is~389, so it is used when nothing is set into the 
 configuration file. 
@@ -3111,6 +3111,7 @@ Options:
 \titem{search\_all\_hosts}\ind{options!search\_all\_hosts}If this option is set
   to \term{true}, search operations will apply to all virtual hosts. Otherwise
   only the current host will be searched. The default value is \term{true}.
+  This option is available in \modvcard, but not available in \modvcardodbc.
 \end{description}
 
 Examples:
@@ -3151,14 +3152,18 @@ Examples:
 
 \ejabberd{} can map LDAP attributes to vCard fields. This behaviour is
 implemented in the \modvcardldap{} module. This module does not depend on the
-authentication method (see~\ref{ldapauth}). The \modvcardldap{} module has
+authentication method (see~\ref{ldapauth}).
+
+The \modvcardldap{} module has
 its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 \option{ldap\_servers}, \option{ldap\_port}, \option{ldap\_rootdn},
 \option{ldap\_password}, \option{ldap\_base}, \option{ldap\_uids}, and
 \option{ldap\_filter}. See section~\ref{ldapauth} for detailed information
 about these options. If one of these options is not set, \ejabberd{} will look
-for the top-level option with the same name. The second group of parameters
+for the top-level option with the same name.
+
+The second group of parameters
 consists of the following \modvcardldap{}-specific options:
 
 \begin{description}
@@ -3169,6 +3174,9 @@ consists of the following \modvcardldap{}-specific options:
   \term{false}). If disabled, the option \term{host} will be ignored and the
   \Jabber{} User Directory service will not appear in the Service Discovery item
   list. The default value is \term{true}.
+\titem{matches}\ind{options!matches}With this option, the number of reported
+  search results can be limited. If the option's value is set to \term{infinity},
+  all search results are reported. The default value is \term{30}.
 \titem{ldap\_vcard\_map}\ind{options!ldap\_vcard\_map}With this option you can
   set the table that maps LDAP attributes to vCard fields. The format is:
   \term{[{Name\_of\_vCard\_field, Pattern, List\_of\_LDAP\_attributes}, ...]}.\ind{protocols!RFC 2426: vCard MIME Directory Profile}

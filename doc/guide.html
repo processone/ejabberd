@@ -559,7 +559,7 @@ you can define the global <TT>modules</TT> option with the common modules,
 and later add specific modules to certain virtual hosts.
 To accomplish that, instead of defining each option in <TT>host_config</TT> with the syntax
 </P><PRE CLASS="verbatim">  {&lt;option-name&gt;, &lt;option-value&gt;}
-</PRE><P>you must use this syntax:
+</PRE><P>use this syntax:
 </P><PRE CLASS="verbatim">  {{add, &lt;option-name&gt;}, &lt;option-value&gt;}
 </PRE><P>In this example three virtual hosts have some similar modules, but there are also
 other different modules for some specific virtual hosts:
@@ -1320,8 +1320,8 @@ yet.</P><!--TOC subsubsection Connection-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Connection</H4><!--SEC END --><P>
 <A NAME="ldapconnection"></A></P><P>Parameters:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>ldap_server</TT></B></DT><DD CLASS="dd-description"> IP address or dns name of your
-LDAP server. This option is required.
+<B><TT>ldap_servers</TT></B></DT><DD CLASS="dd-description"> List of IP addresses or DNS names of your
+LDAP servers. This option is required.
 </DD><DT CLASS="dt-description"><B><TT>ldap_port</TT></B></DT><DD CLASS="dd-description"> Port to connect to your LDAP server.
 The initial default value is&#XA0;389, so it is used when nothing is set into the 
 configuration file. 
@@ -1623,13 +1623,14 @@ the "@HOST@" keyword must be used:
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc36">3.3.3</A>&#XA0;&#XA0;<TT>mod_announce</TT></H3><!--SEC END --><P>
 <A NAME="modannounce"></A>
 </P><P>This module enables configured users to broadcast announcements and to set
-the message of the day (MOTD). </P><P>Configured users can perform these actions with a
+the message of the day (MOTD). 
+Configured users can perform these actions with a
 Jabber client either using Ad-hoc commands
 or sending messages to specific JIDs.</P><P>The Ad-hoc commands are listed in the Server Discovery.
-For this feature to work, <TT>mod_adhoc</TT>must be enabled.</P><P>The specific JIDs where messages can be sent are listed listed now.
+For this feature to work, <TT>mod_adhoc</TT> must be enabled.</P><P>The specific JIDs where messages can be sent are listed bellow.
 The first JID in each entry will apply only to the specified virtual host
 <TT>example.org</TT>, while the JID between brackets will apply to all virtual
-hosts in ejabberd:
+hosts in ejabberd.
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>example.org/announce/all (example.org/announce/all-hosts/all)</TT></B></DT><DD CLASS="dd-description"> The
 message is sent to all registered users. If the user is online and connected
@@ -2573,6 +2574,7 @@ users who added some information to their vCard. The default value is
 </DD><DT CLASS="dt-description"><B><TT>search_all_hosts</TT></B></DT><DD CLASS="dd-description">If this option is set
 to <TT>true</TT>, search operations will apply to all virtual hosts. Otherwise
 only the current host will be searched. The default value is <TT>true</TT>.
+This option is available in <TT>mod_vcard</TT>, but not available in <TT>mod_vcard_odbc</TT>.
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 In this first situation, search results are limited to twenty items,
@@ -2602,14 +2604,14 @@ and that all virtual hosts will be searched instead of only the current one:
 <A NAME="modvcardldap"></A>
 </P><P><TT>ejabberd</TT> can map LDAP attributes to vCard fields. This behaviour is
 implemented in the <TT>mod_vcard_ldap</TT> module. This module does not depend on the
-authentication method (see&#XA0;<A HREF="#ldapauth">3.2.5</A>). The <TT>mod_vcard_ldap</TT> module has
+authentication method (see&#XA0;<A HREF="#ldapauth">3.2.5</A>).</P><P>The <TT>mod_vcard_ldap</TT> module has
 its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 <TT>ldap_servers</TT>, <TT>ldap_port</TT>, <TT>ldap_rootdn</TT>,
 <TT>ldap_password</TT>, <TT>ldap_base</TT>, <TT>ldap_uids</TT>, and
 <TT>ldap_filter</TT>. See section&#XA0;<A HREF="#ldapauth">3.2.5</A> for detailed information
 about these options. If one of these options is not set, <TT>ejabberd</TT> will look
-for the top-level option with the same name. The second group of parameters
+for the top-level option with the same name.</P><P>The second group of parameters
 consists of the following <TT>mod_vcard_ldap</TT>-specific options:</P><DL CLASS="description"><DT CLASS="dt-description">
 
 <B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
@@ -2624,6 +2626,9 @@ functionality is enabled (value: <TT>true</TT>) or disabled (value:
 <TT>false</TT>). If disabled, the option <TT>host</TT> will be ignored and the
 Jabber User Directory service will not appear in the Service Discovery item
 list. The default value is <TT>true</TT>.
+</DD><DT CLASS="dt-description"><B><TT>matches</TT></B></DT><DD CLASS="dd-description">With this option, the number of reported
+search results can be limited. If the option&#X2019;s value is set to <TT>infinity</TT>,
+all search results are reported. The default value is <TT>30</TT>.
 </DD><DT CLASS="dt-description"><B><TT>ldap_vcard_map</TT></B></DT><DD CLASS="dd-description">With this option you can
 set the table that maps LDAP attributes to vCard fields. The format is:
 <TT>[</TT><TT>Name_of_vCard_field, Pattern, List_of_LDAP_attributes</TT><TT>, ...]</TT>.

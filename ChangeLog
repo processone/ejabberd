@@ -1,5 +1,10 @@
 2008-03-13  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Describe option Matches in mod_vcard_ldap (thanks
+	to Evgeniy Khramtsov)(EJAB-530).  Fix typo in the description of
+	ldap_server option.
+	* doc/guide.html: Likewise
+
 	* src/mod_echo.erl: Small change to avoid a compilation warning of
 	unused function
 
