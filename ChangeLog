@@ -1,5 +1,9 @@
 2008-03-13  Badlop  <badlop@process-one.net>
 
+	* src/odbc/ejabberd_odbc.erl: Start ODBC explicitely because
+	Erlang R12 doesn't start automatically like in R11 and
+	older (thanks to Sergei Golovan)(EJAB-541)
+
 	* src/ejabberd.hrl: Removed unused ejabberd_debug and
 	PRIVACY_SUPPORT. Reordered the remaining options
 
