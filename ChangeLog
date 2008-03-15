@@ -1,3 +1,8 @@
+2008-03-15  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_s2s.erl: API improvement: Added s2s_connect_hook
+	(EJAB-566).
+
 2008-03-13  Badlop  <badlop@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: Start ODBC explicitely because
