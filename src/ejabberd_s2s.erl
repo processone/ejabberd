@@ -359,6 +359,7 @@ new_connection(MyServer, Server, From, FromTo,
     TRes = mnesia:transaction(F),
     case TRes of
 	{atomic, Pid} ->
+	    ejabberd_hooks:run(s2s_connect_hook, [MyServer, Server]),
 	    ejabberd_s2s_out:start_connection(Pid);
 	_ ->
 	    ejabberd_s2s_out:stop_connection(Pid)
