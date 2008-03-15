@@ -97,6 +97,8 @@ process(["restart"]) ->
     ?STATUS_SUCCESS;
 
 process(["reopen-log"]) ->
+    ejabberd_hooks:run(reopen_log_hook, []),
+    %% TODO: Use the Reopen log API for logger_h ?
     ejabberd_logger_h:reopen_log(),
     ?STATUS_SUCCESS;
 
