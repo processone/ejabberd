@@ -1,3 +1,9 @@
+2008-03-17  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_s2s.erl: Only trigger s2s_connect_hook on
+	successful connection (EJAB-566)
+	* src/ejabberd_s2s_out.erl: Likewise
+
 2008-03-15  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_ctl.erl: API improvement: Added

@@ -312,6 +312,9 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 		    send_queue(StateData, StateData#state.queue),
 		    ?INFO_MSG("Connection established: ~s -> ~s",
 			      [StateData#state.myname, StateData#state.server]),
+		    ejabberd_hooks:run(s2s_connect_hook,
+				       [StateData#state.myname,
+					StateData#state.server]),
 		    {next_state, stream_established,
 		     StateData#state{queue = queue:new()}};
 		_ ->
@@ -420,6 +423,9 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		    send_queue(StateData, StateData#state.queue),
 		    ?INFO_MSG("Connection established: ~s -> ~s",
 			      [StateData#state.myname, StateData#state.server]),
+		    ejabberd_hooks:run(s2s_connect_hook,
+				       [StateData#state.myname,
+					StateData#state.server]),
 		    {next_state, stream_established,
 		     StateData#state{queue = queue:new()}};
 		SASLEXT and StateData#state.try_auth and
