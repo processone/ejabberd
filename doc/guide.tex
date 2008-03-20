@@ -199,18 +199,23 @@ In *nix systems, remember to set executable the binary installer before starting
   ./ejabberd-2.0.0_1-linux-x86-installer.bin
 \end{verbatim}
 
-The installer generates desktop shortcuts to start and stop ejabberd.
+\ejabberd{} can be started manually at any time,
+or automatically by the operating system at system boot time.
+
+To start and stop \ejabberd{} manually,
+use the desktop shortcuts created by the installer.
+If the machine doesn't have a graphical system, use the scripts 'start' 
+and 'stop' in the 'bin' directory where \ejabberd{} is installed.
 
 The Windows installer also adds ejabberd as a system service,
 and a shortcut to a debug console for experienced administrators.
-You can start ejabberd using the shortcut or the Windows service. 
-Note that the Windows service is a feature still in development, 
-and for example it doesn't keep track of changes made manually in ejabberdctl.cfg.
 If you want ejabberd to be started automatically at boot time, 
-go to the Windows service settings and set ejabberd to be automatic started.
+go to the Windows service settings and set ejabberd to be automatically started.
+Note that the Windows service is a feature still in development, 
+and for example it doesn't read the file ejabberdctl.cfg.
 
-On a Linux system, if you want ejabberd to start as daemon at boot time, 
-copy \term{ejabberd.init} from the bin directory to something like \term{/etc/init.d/ejabberd}
+On a *nix system, if you want ejabberd to be started as daemon at boot time, 
+copy \term{ejabberd.init} from the 'bin' directory to something like \term{/etc/init.d/ejabberd}
 (depending on your distribution) and call \term{/etc/inid.d/ejabberd start} to start it.
 
 The \term{ejabberdctl} administration script is included in the \term{bin} directory.
@@ -394,7 +399,7 @@ The command to compile \ejabberd{} in BSD systems is:
 To compile \ejabberd{} on a Microsoft Windows system, you need:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
-\item \footahref{http://erlang.org/download.html}{Erlang/OTP R11B-5 or higher}
+\item \footahref{http://erlang.org/download.html}{Erlang/OTP R11B-5}
 \item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 2.0.0 or higher}
 \item
 \footahref{http://www.gnu.org/software/libiconv/}{GNU Iconv 1.9.2}
@@ -1235,6 +1240,8 @@ following syntax:
 \end{verbatim}
 where \term{<rate>} stands for the maximum allowed incoming rate in bytes per
 second.
+When a connection exceeds this limit, \ejabberd{} stops reading from the socket 
+until the average rate is again below the allowed maximum.
 
 Examples:
 \begin{itemize}

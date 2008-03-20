@@ -1,3 +1,10 @@
+2008-03-20  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Improve explanation of how to start ejabberd when
+	binary installer. Don't recommend R12 in Windows compilation.
+	Describe what happens if maxrate shaper is exceeded.
+	* doc/guide.html: Likewise
+
 2008-03-20  Mickael Remond  <mremond@process-one.net>
 
 	* src/eldap.erl: Improved logging. We now use ejabberd logging

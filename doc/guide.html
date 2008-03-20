@@ -301,14 +301,17 @@ are available in the Process-one <TT>ejabberd</TT> downloads page:
 server and does not require any extra dependencies.</P><P>In *nix systems, remember to set executable the binary installer before starting it. For example:
 </P><PRE CLASS="verbatim">  chmod +x ejabberd-2.0.0_1-linux-x86-installer.bin
   ./ejabberd-2.0.0_1-linux-x86-installer.bin
-</PRE><P>The installer generates desktop shortcuts to start and stop ejabberd.</P><P>The Windows installer also adds ejabberd as a system service,
+</PRE><P><TT>ejabberd</TT> can be started manually at any time,
+or automatically by the operating system at system boot time.</P><P>To start and stop <TT>ejabberd</TT> manually,
+use the desktop shortcuts created by the installer.
+If the machine doesn&#X2019;t have a graphical system, use the scripts &#X2019;start&#X2019; 
+and &#X2019;stop&#X2019; in the &#X2019;bin&#X2019; directory where <TT>ejabberd</TT> is installed.</P><P>The Windows installer also adds ejabberd as a system service,
 and a shortcut to a debug console for experienced administrators.
-You can start ejabberd using the shortcut or the Windows service. 
-Note that the Windows service is a feature still in development, 
-and for example it doesn&#X2019;t keep track of changes made manually in ejabberdctl.cfg.
 If you want ejabberd to be started automatically at boot time, 
-go to the Windows service settings and set ejabberd to be automatic started.</P><P>On a Linux system, if you want ejabberd to start as daemon at boot time, 
-copy <TT>ejabberd.init</TT> from the bin directory to something like <TT>/etc/init.d/ejabberd</TT>
+go to the Windows service settings and set ejabberd to be automatically started.
+Note that the Windows service is a feature still in development, 
+and for example it doesn&#X2019;t read the file ejabberdctl.cfg.</P><P>On a *nix system, if you want ejabberd to be started as daemon at boot time, 
+copy <TT>ejabberd.init</TT> from the &#X2019;bin&#X2019; directory to something like <TT>/etc/init.d/ejabberd</TT>
 (depending on your distribution) and call <TT>/etc/inid.d/ejabberd start</TT> to start it.</P><P>The <TT>ejabberdctl</TT> administration script is included in the <TT>bin</TT> directory.
 Please refer to the section&#XA0;<A HREF="#ejabberdctl">4.1</A> for details about <TT>ejabberdctl</TT>,
 and configurable options to fine tune the Erlang runtime system.</P><!--TOC section Installing <TT>ejabberd</TT> with Operating System specific packages-->
@@ -425,7 +428,7 @@ and configurable options to fine tune the Erlang runtime system.</P><!--TOC subs
 <A NAME="windowsreq"></A></P><P>To compile <TT>ejabberd</TT> on a Microsoft Windows system, you need:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 MS Visual C++ 6.0 Compiler
-</LI><LI CLASS="li-itemize"><A HREF="http://erlang.org/download.html">Erlang/OTP R11B-5 or higher</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://erlang.org/download.html">Erlang/OTP R11B-5</A>
 </LI><LI CLASS="li-itemize"><A HREF="http://sourceforge.net/project/showfiles.php?group_id=10127&package_id=11277">Expat 2.0.0 or higher</A>
 </LI><LI CLASS="li-itemize"><A HREF="http://www.gnu.org/software/libiconv/">GNU Iconv 1.9.2</A>
 (optional)
@@ -1057,7 +1060,9 @@ shapers is like this:
 following syntax:
 </P><PRE CLASS="verbatim">  {maxrate, &lt;rate&gt;}
 </PRE><P>where <TT>&lt;rate&gt;</TT> stands for the maximum allowed incoming rate in bytes per
-second.</P><P>Examples:
+second.
+When a connection exceeds this limit, <TT>ejabberd</TT> stops reading from the socket 
+until the average rate is again below the allowed maximum.</P><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 To define a shaper named &#X2018;<TT>normal</TT>&#X2019; with traffic speed limited to
 1,000&#XA0;bytes/second:
