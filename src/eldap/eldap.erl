@@ -35,6 +35,14 @@
 
 %%% Modified by Evgeniy Khramtsov <xram@jabber.ru>
 %%% Implemented queue for bind() requests to prevent pending binds.
+
+%%% Modified by Christophe Romain <christophe.romain@process-one.net>
+%%% Improve error case handling
+
+%%% Modified by Mickael Remond <mremond@process-one.net>
+%%% Now use ejabberd log mechanism
+
+
 %%% --------------------------------------------------------------------
 -vc('$Id$ ').
 
@@ -48,20 +56,19 @@
 %%%     active_bind - sent bind() request and waiting for response
 %%%----------------------------------------------------------------------
 
-%%-compile(export_all).
-%%-export([Function/Arity, ...]).
-
 -behaviour(gen_fsm).
 
+-include("ejabberd.hrl").
+
 %% External exports
--export([start_link/1, start_link/5, start_link/6]).
+-export([start_link/1, start_link/5]).
 
 -export([baseObject/0,singleLevel/0,wholeSubtree/0,close/1,
 	 equalityMatch/2,greaterOrEqual/2,lessOrEqual/2,
 	 approxMatch/2,search/2,substrings/2,present/1,
 	 'and'/1,'or'/1,'not'/1,modify/3, mod_add/2, mod_delete/2,
 	 mod_replace/2, add/3, delete/2, modify_dn/5, bind/3]).
--export([debug_level/2, get_status/1]).
+-export([get_status/1]).
 
 %% gen_fsm callbacks
 -export([init/1, connecting/2,
@@ -75,26 +82,24 @@
 -include("eldap.hrl").
 
 -define(LDAP_VERSION, 3).
--define(RETRY_TIMEOUT, 5000).
+-define(RETRY_TIMEOUT, 500).
 -define(BIND_TIMEOUT, 10000).
 -define(CMD_TIMEOUT, 100000).
 -define(MAX_TRANSACTION_ID, 65535).
 -define(MIN_TRANSACTION_ID, 0).
 
 -record(eldap, {version = ?LDAP_VERSION,
-		hosts,	       % Possible hosts running LDAP servers
+		hosts,         % Possible hosts running LDAP servers
 		host = null,   % Connected Host LDAP server
-		port = 389 ,   % The LDAP server port
+		port = 389,    % The LDAP server port
 		fd = null,     % Socket filedescriptor.
 		rootdn = "",   % Name of the entry to bind as
 		passwd,        % Password for (above) entry
 		id = 0,        % LDAP Request ID 
-		log,           % User provided log function
 		bind_timer,    % Ref to bind timeout
 		dict,          % dict holding operation params and results
-		bind_q,        % Queue for bind() requests
-		debug_level    % Integer debug/logging level
-	       }).
+		bind_q         % Queue for bind() requests
+	}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -104,20 +109,8 @@ start_link(Name) ->
     gen_fsm:start_link({local, Reg_name}, ?MODULE, [], []).
 
 start_link(Name, Hosts, Port, Rootdn, Passwd) ->
-    Log = fun(_N, Fmt, Args) -> io:format("---- " ++ Fmt, [Args]) end,
     Reg_name = list_to_atom("eldap_" ++ Name),
-    gen_fsm:start_link({local, Reg_name}, ?MODULE, {Hosts, Port, Rootdn, Passwd, Log}, []).
-
-start_link(Name, Hosts, Port, Rootdn, Passwd, Log) ->
-    Reg_name = list_to_atom("eldap_" ++ Name),
-    gen_fsm:start_link({local, Reg_name}, ?MODULE, {Hosts, Port, Rootdn, Passwd, Log}, []).
-
-%%% --------------------------------------------------------------------
-%%% Set Debug Level. 0 - none, 1 - errors, 2 - ldap events
-%%% --------------------------------------------------------------------
-debug_level(Handle, N) when integer(N) ->
-    Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_all_state_event(Handle1, {debug_level,N}).
+    gen_fsm:start_link({local, Reg_name}, ?MODULE, {Hosts, Port, Rootdn, Passwd}, []).
 
 %%% --------------------------------------------------------------------
 %%% Get status of connection.
@@ -377,21 +370,19 @@ get_handle(Name) when list(Name) -> list_to_atom("eldap_" ++ Name).
 %%----------------------------------------------------------------------
 init([]) ->
     case get_config() of
-	{ok, Hosts, Rootdn, Passwd, Log} ->
-	    init({Hosts, Rootdn, Passwd, Log});
+	{ok, Hosts, Rootdn, Passwd} ->
+	    init({Hosts, Rootdn, Passwd});
 	{error, Reason} ->
 	    {stop, Reason}
     end;
-init({Hosts, Port, Rootdn, Passwd, Log}) ->
+init({Hosts, Port, Rootdn, Passwd}) ->
     {ok, connecting, #eldap{hosts = Hosts,
 			    port = Port,
 			    rootdn = Rootdn,
 			    passwd = Passwd,
 			    id = 0,
-			    log = Log,
 			    dict = dict:new(),
-			    bind_q = queue:new(),
-			    debug_level = 0}, 0}.
+			    bind_q = queue:new()}, 0}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -484,9 +475,6 @@ handle_event(_Event, StateName, S) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
-handle_sync_event({debug_level, N}, _From, StateName, S) ->
-    {reply, ok, StateName, S#eldap{debug_level = N}};
-
 handle_sync_event(_Event, _From, StateName, S) ->
     {reply, {StateName, S}, StateName, S}.
 
@@ -501,7 +489,7 @@ handle_sync_event(_Event, _From, StateName, S) ->
 %% Packets arriving in various states
 %%
 handle_info({tcp, _Socket, Data}, connecting, S) ->
-    log1("eldap. tcp packet received when disconnected!~n~p~n", [Data], S),
+    ?DEBUG("eldap. tcp packet received when disconnected!~n~p", [Data]),
     {next_state, connecting, S};
 
 handle_info({tcp, _Socket, Data}, wait_bind_response, S) ->
@@ -526,19 +514,26 @@ handle_info({tcp, _Socket, Data}, StateName, S)
 	{error, _Reason}          -> {next_state, StateName, S}
     end;
 
-handle_info({tcp_closed, _Socket}, _All_fsm_states, S) ->
+handle_info({tcp_closed, _Socket}, Fsm_state, S) ->
+    ?WARNING_MSG("LDAP server closed the connection: ~s:~p~nIn State: ~p",
+	  [S#eldap.host, S#eldap.port ,Fsm_state]),
     F = fun(_Id, [{Timer, From, _Name}|_]) ->
 		gen_fsm:reply(From, {error, tcp_closed}),
 		cancel_timer(Timer)
 	end,
     dict:map(F, S#eldap.dict),
-    retry_connect(),
-    {next_state, connecting, S#eldap{fd = null,
-				     dict = dict:new(), bind_q=queue:new()}};
+    {ok, NextState, NewS} = connect_bind(S#eldap{fd = null,
+						 dict = dict:new(),
+						 bind_q=queue:new()}),
+    {next_state, NextState, NewS};
 
 handle_info({tcp_error, _Socket, Reason}, Fsm_state, S) ->
-    log1("eldap received tcp_error: ~p~nIn State: ~p~n", [Reason, Fsm_state], S),
+    ?DEBUG("eldap received tcp_error: ~p~nIn State: ~p", [Reason, Fsm_state]),
+    %% XXX wouldn't it be safer to try reconnect ?
+    %% if we were waiting a result, we may mait forever
+    %% cause request is probably lost....
     {next_state, Fsm_state, S};
+
 %%
 %% Timers
 %%
@@ -561,8 +556,8 @@ handle_info({timeout, _Timer, bind_timeout}, wait_bind_response, S) ->
 %% Make sure we don't fill the message queue with rubbish
 %%
 handle_info(Info, StateName, S) ->
-    log1("eldap. Unexpected Info: ~p~nIn state: ~p~n when StateData is: ~p~n",
-	 [Info, StateName, S], S),
+    ?DEBUG("eldap. Unexpected Info: ~p~nIn state: ~p~n when StateData is: ~p",
+	 [Info, StateName, S]),
     {next_state, StateName, S}.
 
 %%----------------------------------------------------------------------
@@ -589,13 +584,16 @@ send_command(Command, From, S) ->
     {Name, Request} = gen_req(Command),
     Message = #'LDAPMessage'{messageID  = Id,
 			     protocolOp = {Name, Request}},
-    log2("~p~n",[{Name, Request}], S),
+    ?DEBUG("~p~n",[{Name, Request}]),
     {ok, Bytes} = asn1rt:encode('ELDAPv3', 'LDAPMessage', Message),
-    ok = gen_tcp:send(S#eldap.fd, Bytes),
-    Timer = erlang:start_timer(?CMD_TIMEOUT, self(), {cmd_timeout, Id}),
-    New_dict = dict:store(Id, [{Timer, From, Name}], S#eldap.dict),
-    {ok, S#eldap{id = Id,
-		 dict = New_dict}}.
+    case gen_tcp:send(S#eldap.fd, Bytes) of
+    ok ->
+	Timer = erlang:start_timer(?CMD_TIMEOUT, self(), {cmd_timeout, Id}),
+	New_dict = dict:store(Id, [{Timer, From, Name}], S#eldap.dict),
+	{ok, S#eldap{id = Id, dict = New_dict}};
+    Error ->
+	Error
+    end.
 
 gen_req({search, A}) ->
     {searchRequest,
@@ -647,7 +645,7 @@ recvd_packet(Pkt, S) ->
     case asn1rt:decode('ELDAPv3', 'LDAPMessage', Pkt) of
 	{ok,Msg} ->
 	    Op = Msg#'LDAPMessage'.protocolOp,
-	    log2("~p~n",[Op], S),
+	    ?DEBUG("~p",[Op]),
 	    Dict = S#eldap.dict,
 	    Id = Msg#'LDAPMessage'.messageID,
 	    {Timer, From, Name, Result_so_far} = get_op_rec(Id, Dict),
@@ -744,7 +742,7 @@ recvd_wait_bind_response(Pkt, S) ->
     check_tag(Pkt),
     case asn1rt:decode('ELDAPv3', 'LDAPMessage', Pkt) of
 	{ok,Msg} ->
-	    log2("~p", [Msg], S),
+	    ?DEBUG("~p", [Msg]),
 	    check_id(S#eldap.id, Msg#'LDAPMessage'.messageID),
 	    case Msg#'LDAPMessage'.protocolOp of
 		{bindResponse, Result} ->
@@ -844,6 +842,7 @@ polish([], Res, Ref) ->
 connect_bind(S) ->
     Host = next_host(S#eldap.host, S#eldap.hosts),
     TcpOpts = [{packet, asn1}, {active, true}, {keepalive, true}, binary],
+    ?INFO_MSG("LDAP connection on ~s:~p", [Host, S#eldap.port]),
     case gen_tcp:connect(Host, S#eldap.port, TcpOpts) of
 	{ok, Socket} ->
 	    case bind_request(Socket, S) of
@@ -853,15 +852,15 @@ connect_bind(S) ->
 		    {ok, wait_bind_response, NewS#eldap{fd = Socket,
 							host = Host,
 							bind_timer = Timer}};
-		{error, _Reason} ->
+		{error, Reason} ->
+		    ?ERROR_MSG("LDAP bind failed on ~s:~p~nReason: ~p", [Host, S#eldap.port, Reason]),
 		    gen_tcp:close(Socket),
-		    erlang:send_after(?RETRY_TIMEOUT, self(),
-				      {timeout, retry_connect}),
+		    retry_connect(),
 		    {ok, connecting, S#eldap{host = Host}}
 	    end;
-	{error, _Reason} ->
-	    erlang:send_after(?RETRY_TIMEOUT, self(), 
-			      {timeout, retry_connect}),
+	{error, Reason} ->
+	    ?ERROR_MSG("LDAP connection failed on ~s:~p~nReason: ~p", [Host, S#eldap.port, Reason]),
+	    retry_connect(),
 	    {ok, connecting, S#eldap{host = Host}}
     end.
 
@@ -872,10 +871,12 @@ bind_request(Socket, S) ->
 			 authentication = {simple, S#eldap.passwd}},
     Message = #'LDAPMessage'{messageID  = Id,
 			     protocolOp = {bindRequest, Req}},
-    log2("Message:~p~n",[Message], S),
+    ?DEBUG("Bind Request Message:~p~n",[Message]),
     {ok, Bytes} = asn1rt:encode('ELDAPv3', 'LDAPMessage', Message),
-    ok = gen_tcp:send(Socket, Bytes),
-    {ok, S#eldap{id = Id}}.
+    case gen_tcp:send(Socket, Bytes) of
+	ok -> {ok, S#eldap{id = Id}};
+	Error -> Error
+    end.
 
 %% Given last tried Server, find next one to try
 next_host(null, [H|_]) -> H;			% First time, take first
@@ -946,8 +947,8 @@ get_config() ->
     case file:consult(File) of
 	{ok, Entries} ->
 	    case catch parse(Entries) of
-		{ok, Hosts, Port, Rootdn, Passwd, Log} ->
-		    {ok, Hosts, Port, Rootdn, Passwd, Log};
+		{ok, Hosts, Port, Rootdn, Passwd} ->
+		    {ok, Hosts, Port, Rootdn, Passwd};
 		{error, Reason} ->
 		    {error, Reason};
 		{'EXIT', Reason} ->
@@ -962,8 +963,7 @@ parse(Entries) ->
      get_hosts(host, Entries),
      get_integer(port, Entries),
      get_list(rootdn, Entries),
-     get_list(passwd, Entries),
-     get_log(log, Entries)}.
+     get_list(passwd, Entries)}.
 
 get_integer(Key, List) ->
     case lists:keysearch(Key, 1, List) of
@@ -983,16 +983,6 @@ get_list(Key, List) ->
 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
 	false ->
 	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
-    end.
-
-get_log(Key, List) ->
-    case lists:keysearch(Key, 1, List) of
-	{value, {Key, Value}} when function(Value) ->
-	    Value;
-	{value, {Key, _Else}} ->
-	    false;
-	false ->
-	    fun(_Level, Format, Args) -> io:format("--- " ++ Format, Args) end
     end.
 
 get_hosts(Key, List) ->
@@ -1016,15 +1006,3 @@ bump_id(#eldap{id = Id}) when Id > ?MAX_TRANSACTION_ID ->
     ?MIN_TRANSACTION_ID;
 bump_id(#eldap{id = Id}) ->
     Id + 1.
-
-%%% --------------------------------------------------------------------
-%%% Log routines. Call a user provided log routine Fun.
-%%% --------------------------------------------------------------------
-
-log1(Str, Args, #eldap{log = Fun, debug_level = N}) -> log(Fun, Str, Args, 1, N).
-log2(Str, Args, #eldap{log = Fun, debug_level = N}) -> log(Fun, Str, Args, 2, N).
-
-log(Fun, Str, Args, This_level, Status) when function(Fun), This_level =< Status ->
-    catch Fun(This_level, Str, Args);
-log(_, _, _, _, _) -> 
-    ok.
