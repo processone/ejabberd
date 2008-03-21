@@ -251,9 +251,9 @@ handle_cast({disco_response, From, _To,
 	    end;
 	{error, _} ->
 	    gen_server:cast(self(), visit_feature_queries),
-	    ?ERROR_MSG("Error IQ reponse IQ from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
+	    ?DEBUG("Error IQ reponse from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
 	{result, _} ->
-	    ?ERROR_MSG("Invalid IQ contents from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
+	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
 	_ ->
 	    %% Can't do anything about errors
 	    ok
