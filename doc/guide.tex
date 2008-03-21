@@ -774,6 +774,13 @@ There are some additional global options:
   file containing a SSL certificate.
   \titem{\{domain\_certfile, Domain, Path\}} \ind{options!domain\_certfile}
   Full path to the file containing the SSL certificate for a specific domain.
+  \titem{\{s2s\_default\_policy, allow|deny\}}
+  The default policy for incoming and outgoing s2s connections to other Jabber servers.
+  The default value is \term{allow}.
+  \titem{\{\{s2s\_host, Host\}, allow|deny\}}
+  Defines if incoming and outgoing s2s connections with a specific remote host are allowed or denied.
+  This allows to restrict ejabberd to only stablish s2s connections 
+  with a small list of trusted servers, or to block some specific servers.
 \end{description}
 
 For example, the following simple configuration defines:
@@ -828,6 +835,8 @@ In this example, the following configuration defines that:
   for the user called `\term{bad}'.
 \item s2s connections are listened for on port 5269 with STARTTLS for secured
   traffic enabled.
+  Incoming and outgoing connections of remote Jabber servers are denied,
+  only two servers can connect: "jabber.example.org" and "example.com".
 \item Port 5280 is serving the Web Admin and the HTTP Polling service. Note
   that it is also possible to serve them on different ports. The second
   example in section~\ref{webinterface} shows how exactly this can be done.
@@ -888,6 +897,9 @@ In this example, the following configuration defines that:
   }.
   {s2s_use_starttls, true}.
   {s2s_certfile, "/path/to/ssl.pem"}.
+  {s2s_default_policy, deny}.
+  {{s2s_host,"jabber.example.org"}, allow}.
+  {{s2s_host,"example.com"}, allow}.
 \end{verbatim}
 Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based
 services you have to make the transports log and do \ind{XDB}XDB by themselves:

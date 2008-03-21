@@ -711,6 +711,13 @@ use STARTTLS for s2s connections.
 file containing a SSL certificate.
 </DD><DT CLASS="dt-description"><B><TT>{domain_certfile, Domain, Path}</TT></B></DT><DD CLASS="dd-description"> 
 Full path to the file containing the SSL certificate for a specific domain.
+</DD><DT CLASS="dt-description"><B><TT>{s2s_default_policy, allow|deny}</TT></B></DT><DD CLASS="dd-description">
+The default policy for incoming and outgoing s2s connections to other Jabber servers.
+The default value is <TT>allow</TT>.
+</DD><DT CLASS="dt-description"><B><TT>{{s2s_host, Host}, allow|deny}</TT></B></DT><DD CLASS="dd-description">
+Defines if incoming and outgoing s2s connections with a specific remote host are allowed or denied.
+This allows to restrict ejabberd to only stablish s2s connections 
+with a small list of trusted servers, or to block some specific servers.
 </DD></DL><P>For example, the following simple configuration defines:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 There are three domains. The default certificate file is <TT>server.pem</TT>.
@@ -759,6 +766,8 @@ c2s connections are listened for on port 5222 and 5223 (SSL) and denied
 for the user called &#X2018;<TT>bad</TT>&#X2019;.
 </LI><LI CLASS="li-itemize">s2s connections are listened for on port 5269 with STARTTLS for secured
 traffic enabled.
+Incoming and outgoing connections of remote Jabber servers are denied,
+only two servers can connect: "jabber.example.org" and "example.com".
 </LI><LI CLASS="li-itemize">Port 5280 is serving the Web Admin and the HTTP Polling service. Note
 that it is also possible to serve them on different ports. The second
 example in section&#XA0;<A HREF="#webinterface">??</A> shows how exactly this can be done.
@@ -817,6 +826,9 @@ connected to port 5237 with password &#X2018;<TT>ggsecret</TT>&#X2019;.
   }.
   {s2s_use_starttls, true}.
   {s2s_certfile, "/path/to/ssl.pem"}.
+  {s2s_default_policy, deny}.
+  {{s2s_host,"jabber.example.org"}, allow}.
+  {{s2s_host,"example.com"}, allow}.
 </PRE><P>Note, that for jabberd 1.4- or WPJabber-based
 services you have to make the transports log and do XDB by themselves:
 </P><PRE CLASS="verbatim">  &lt;!--
