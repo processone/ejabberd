@@ -254,7 +254,7 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
 		[[_ | _] = Channel, [_ | _] = Server] ->
 		    case ets:lookup(irc_connection, {From, Server, Host}) of
 			[] ->
-			    io:format("open new connection~n"),
+			    ?DEBUG("open new connection~n", []),
 			    {Username, Encoding} = get_user_and_encoding(
 						     Host, From, Server, DefEnc),
 			    {ok, Pid} = mod_irc_connection:start(
@@ -269,7 +269,7 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
 			    ok;
 			[R] ->
 			    Pid = R#irc_connection.pid,
-			    io:format("send to process ~p~n",
+			    ?DEBUG("send to process ~p~n",
 				      [Pid]),
 			    mod_irc_connection:route_chan(
 			      Pid, Channel, Resource, Packet),
@@ -285,7 +285,7 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
 				    ejabberd_router:route(To, From, Err);
 				[R] ->
 				    Pid = R#irc_connection.pid,
-				    io:format("send to process ~p~n",
+				    ?DEBUG("send to process ~p~n",
 					      [Pid]),
 				    mod_irc_connection:route_nick(
 				      Pid, Nick, Packet),

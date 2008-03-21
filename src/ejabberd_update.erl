@@ -30,6 +30,8 @@
 %% API
 -export([update/0, update_info/0]).
 
+-include("ejabberd.hrl").
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -40,7 +42,7 @@ update() ->
 		release_handler_1:eval_script(
 		  LowLevelScript, [],
 		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    io:format("eval: ~p~n", [Eval]),
+	    ?INFO_MSG("eval: ~p~n", [Eval]),
 	    Eval;
 	{error, Reason} ->
 	    {error, Reason}
@@ -67,16 +69,16 @@ update_info() ->
 				  false
 			  end
 		  end, Beams),
-	    io:format("beam files: ~p~n", [UpdatedBeams]),
+	    ?INFO_MSG("beam files: ~p~n", [UpdatedBeams]),
 	    Script = make_script(UpdatedBeams),
-	    io:format("script: ~p~n", [Script]),
+	    ?INFO_MSG("script: ~p~n", [Script]),
 	    LowLevelScript = make_low_level_script(UpdatedBeams, Script),
-	    io:format("low level script: ~p~n", [LowLevelScript]),
+	    ?INFO_MSG("low level script: ~p~n", [LowLevelScript]),
 	    Check =
 		release_handler_1:check_script(
 		  LowLevelScript,
 		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    io:format("check: ~p~n", [Check]),
+	    ?INFO_MSG("check: ~p~n", [Check]),
 	    {ok, Dir, UpdatedBeams, Script, LowLevelScript, Check};
 	{error, Reason} ->
 	    {error, Reason}

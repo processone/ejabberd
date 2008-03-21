@@ -652,18 +652,18 @@ ctl_process(_Val, ["connected-users"]) ->
     NewLine = io_lib:format("~n", []),
     SUSRs = lists:sort(USRs),
     FUSRs = lists:map(fun({U, S, R}) -> [U, $@, S, $/, R, NewLine] end, SUSRs),
-    io:format("~s", [FUSRs]),
+    ?PRINT("~s", [FUSRs]),
     {stop, ?STATUS_SUCCESS};
 ctl_process(_Val, ["connected-users-number"]) ->
     N = length(dirty_get_sessions_list()),
-    io:format("~p~n", [N]),
+    ?PRINT("~p~n", [N]),
     {stop, ?STATUS_SUCCESS};
 ctl_process(_Val, ["user-resources", User, Server]) ->
     Resources =  get_user_resources(User, Server),
     NewLine = io_lib:format("~n", []),
     SResources = lists:sort(Resources),
     FResources = lists:map(fun(R) -> [R, NewLine] end, SResources),
-    io:format("~s", [FResources]),
+    ?PRINT("~s", [FResources]),
     {stop, ?STATUS_SUCCESS};
 ctl_process(Val, _Args) ->
     Val.

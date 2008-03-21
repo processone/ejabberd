@@ -398,7 +398,7 @@ resend_message(Packet) ->
     ParsedPacket = xml_stream:parse_element(Packet),
     From = get_jid("from", ParsedPacket),
     To = get_jid("to", ParsedPacket),
-    io:format("MREMOND: Resend ~p ~p ~p~n",[From,To, ParsedPacket]),
+    ?DEBUG("Resend ~p ~p ~p~n",[From,To, ParsedPacket]),
     ejabberd_router:route(From, To, ParsedPacket).
 
 %% Type can be "from" or "to"

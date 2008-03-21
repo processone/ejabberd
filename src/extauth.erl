@@ -30,6 +30,7 @@
 -export([start/2, stop/1, init/2,
 	 check_password/3, set_password/3, is_user_exists/2]).
 
+-include("ejabberd.hrl").
 
 start(Host, ExtPrg) ->
     spawn(?MODULE, init, [Host, ExtPrg]).
@@ -76,7 +77,7 @@ loop(Port) ->
 		    exit(normal)
 	    end;
 	{'EXIT', Port, Reason} ->
-	    io:format("~p ~n", [Reason]),
+	    ?CRITICAL_MSG("~p ~n", [Reason]),
 	    exit(port_terminated)
     end.
 
