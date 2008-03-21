@@ -1,5 +1,8 @@
 2008-03-21  Badlop  <badlop@process-one.net>
 
+	* src/mod_caps.erl: Move two log calls ERROR_MSG to DEBUG
+	* src/shaper.erl: Move log call INFO_MSG to DEBUG
+
 	* doc/guide.tex: Document s2s_default_policy and
 	s2s_host (EJAB-575)
 	* doc/guide.html: Likewise

@@ -58,7 +58,7 @@ update(#maxrate{} = State, Size) ->
     MinInterv = 1000 * Size /
 	(2 * State#maxrate.maxrate - State#maxrate.lastrate),
     Interv = (now_to_usec(now()) - State#maxrate.lasttime) / 1000,
-    ?INFO_MSG("State: ~p, Size=~p~nM=~p, I=~p~n",
+    ?DEBUG("State: ~p, Size=~p~nM=~p, I=~p~n",
               [State, Size, MinInterv, Interv]),
     Pause = if
 		MinInterv > Interv ->
