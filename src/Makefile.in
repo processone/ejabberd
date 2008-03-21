@@ -54,6 +54,7 @@ EJABBERDDIR = $(DESTDIR)@prefix@/var/lib/ejabberd
 BEAMDIR = $(EJABBERDDIR)/ebin
 PRIVDIR = $(EJABBERDDIR)/priv
 SODIR = $(PRIVDIR)/lib
+PBINDIR = $(PRIVDIR)/bin
 MSGSDIR = $(PRIVDIR)/msgs
 LOGDIR = $(DESTDIR)@prefix@/var/log/ejabberd
 ETCDIR = $(DESTDIR)@prefix@/etc/ejabberd
@@ -101,8 +102,9 @@ install: all
 	rm -f $(BEAMDIR)/configure.beam
 	install -m 644 *.app $(BEAMDIR)
 	install -d $(SODIR)
+	install -d $(PBINDIR)
 	install -m 644 *.so $(SODIR)
-	-install -m 750 epam $(SODIR)
+	install -m 750 epam $(PBINDIR)
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
 	install -d $(ETCDIR)
