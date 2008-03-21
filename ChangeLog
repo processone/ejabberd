@@ -5,6 +5,9 @@
 	* src/ejabberdctl.template: Likewise
 	* tools/ejabberdctl: Likewise
 
+	* src/mod_pubsub/mod_pubsub.erl: Pubsub subscription is now wrapped in
+	pubsub tags (EJAB-580)
+
 2008-03-21  Badlop  <badlop@process-one.net>
 
 	* src/cyrsasl_digest.erl: Rewrite io:format calls to loglevel

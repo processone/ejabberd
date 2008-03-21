@@ -1351,13 +1351,12 @@ subscribe_node(Host, Node, From, JID) ->
 			[{"node", node_to_string(Node)},
 			 {"jid", jlib:jid_to_string(Subscriber)},
 			 {"subscription", subscription_to_string(Subscription)}],
-		    case Subscription of
-			subscribed ->
-			    [{xmlelement, "subscription",
-			      Fields ++ [{"subid", SubId}], []}];
-			_ ->
-			    [{xmlelement, "subscription", Fields, []}]
-		    end
+		    [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], 
+			[{xmlelement, "subscription",
+			    case Subscription of
+			    subscribed -> [{"subid", SubId}|Fields];
+			    _ -> Fields
+			    end, []}]}]
 	    end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{error, Error} ->
