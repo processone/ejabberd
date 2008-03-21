@@ -58,7 +58,7 @@ start() ->
 	    Node = list_to_atom(SNode1),
 	    Status = case rpc:call(Node, ?MODULE, process, [Args]) of
 			 {badrpc, Reason} ->
-			     io:format("RPC failed on the node ~p: ~p~n",
+			     ?PRINT("RPC failed on the node ~p: ~p~n",
 				       [Node, Reason]),
 			     ?STATUS_BADRPC;
 			 S ->
@@ -77,14 +77,14 @@ init() ->
 
 process(["status"]) ->
     {InternalStatus, ProvidedStatus} = init:get_status(),
-    io:format("Node ~p is ~p. Status: ~p~n",
+    ?PRINT("Node ~p is ~p. Status: ~p~n",
               [node(), InternalStatus, ProvidedStatus]),
     case lists:keysearch(ejabberd, 1, application:which_applications()) of
         false ->
-            io:format("ejabberd is not running~n", []),
+            ?PRINT("ejabberd is not running~n", []),
             ?STATUS_ERROR;
         {value,_Version} ->
-            io:format("ejabberd is running~n", []),
+            ?PRINT("ejabberd is running~n", []),
             ?STATUS_SUCCESS
     end;
 
@@ -105,11 +105,11 @@ process(["register", User, Server, Password]) ->
 	{atomic, ok} ->
 	    ?STATUS_SUCCESS;
 	{atomic, exists} ->
-	    io:format("User ~p already registered at node ~p~n",
+	    ?PRINT("User ~p already registered at node ~p~n",
 		      [User ++ "@" ++ Server, node()]),
 	    ?STATUS_ERROR;
 	{error, Reason} ->
-	    io:format("Can't register user ~p at node ~p: ~p~n",
+	    ?PRINT("Can't register user ~p at node ~p: ~p~n",
 		      [User ++ "@" ++ Server, node(), Reason]),
 	    ?STATUS_ERROR
     end;
@@ -117,7 +117,7 @@ process(["register", User, Server, Password]) ->
 process(["unregister", User, Server]) ->
     case ejabberd_auth:remove_user(User, Server) of
 	{error, Reason} ->
-	    io:format("Can't unregister user ~p at node ~p: ~p~n",
+	    ?PRINT("Can't unregister user ~p at node ~p: ~p~n",
 		      [User ++ "@" ++ Server, node(), Reason]),
 	    ?STATUS_ERROR;
 	_ ->
@@ -129,7 +129,7 @@ process(["backup", Path]) ->
         ok ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
-	    io:format("Can't store backup in ~p at node ~p: ~p~n",
+	    ?PRINT("Can't store backup in ~p at node ~p: ~p~n",
 		      [filename:absname(Path), node(), Reason]),
 	    ?STATUS_ERROR
     end;
@@ -139,7 +139,7 @@ process(["dump", Path]) ->
 	ok ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
-            io:format("Can't store dump in ~p at node ~p: ~p~n",
+            ?PRINT("Can't store dump in ~p at node ~p: ~p~n",
                       [filename:absname(Path), node(), Reason]),
 	    ?STATUS_ERROR
     end;
@@ -149,7 +149,7 @@ process(["load", Path]) ->
         {atomic, ok} ->
             ?STATUS_SUCCESS;
         {error, Reason} ->
-            io:format("Can't load dump in ~p at node ~p: ~p~n",
+            ?PRINT("Can't load dump in ~p at node ~p: ~p~n",
                       [filename:absname(Path), node(), Reason]),
 	    ?STATUS_ERROR
     end;
@@ -159,15 +159,15 @@ process(["restore", Path]) ->
 	{atomic, _} ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
-	    io:format("Can't restore backup from ~p at node ~p: ~p~n",
+	    ?PRINT("Can't restore backup from ~p at node ~p: ~p~n",
 		      [filename:absname(Path), node(), Reason]),
 	    ?STATUS_ERROR;
 	{aborted,{no_exists,Table}} ->
-	    io:format("Can't restore backup from ~p at node ~p: Table ~p does not exist.~n",
+	    ?PRINT("Can't restore backup from ~p at node ~p: Table ~p does not exist.~n",
 		      [filename:absname(Path), node(), Table]),
 	    ?STATUS_ERROR;
 	{aborted,enoent} ->
-	    io:format("Can't restore backup from ~p at node ~p: File not found.~n",
+	    ?PRINT("Can't restore backup from ~p at node ~p: File not found.~n",
 		      [filename:absname(Path), node()]),
 	    ?STATUS_ERROR
     end;
@@ -177,7 +177,7 @@ process(["install-fallback", Path]) ->
 	ok ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
-	    io:format("Can't install fallback from ~p at node ~p: ~p~n",
+	    ?PRINT("Can't install fallback from ~p at node ~p: ~p~n",
 		      [filename:absname(Path), node(), Reason]),
 	    ?STATUS_ERROR
     end;
@@ -187,7 +187,7 @@ process(["import-file", Path]) ->
         ok ->
             ?STATUS_SUCCESS;
         {error, Reason} ->
-            io:format("Can't import jabberd 1.4 spool file ~p at node ~p: ~p~n",
+            ?PRINT("Can't import jabberd 1.4 spool file ~p at node ~p: ~p~n",
                       [filename:absname(Path), node(), Reason]),
 	    ?STATUS_ERROR
     end;
@@ -197,7 +197,7 @@ process(["import-dir", Path]) ->
         ok ->
             ?STATUS_SUCCESS;
         {error, Reason} ->
-            io:format("Can't import jabberd 1.4 spool dir ~p at node ~p: ~p~n",
+            ?PRINT("Can't import jabberd 1.4 spool dir ~p at node ~p: ~p~n",
                       [filename:absname(Path), node(), Reason]),
 	    ?STATUS_ERROR
     end;
@@ -207,7 +207,7 @@ process(["delete-expired-messages"]) ->
     ?STATUS_SUCCESS;
 
 process(["mnesia"]) ->
-    io:format("~p~n", [mnesia:system_info(all)]),
+    ?PRINT("~p~n", [mnesia:system_info(all)]),
     ?STATUS_SUCCESS;
 
 process(["mnesia", "info"]) ->
@@ -216,30 +216,30 @@ process(["mnesia", "info"]) ->
 
 process(["mnesia", Arg]) when is_list(Arg) ->
     case catch mnesia:system_info(list_to_atom(Arg)) of
-	{'EXIT', Error} -> io:format("Error: ~p~n", [Error]);
-	Return -> io:format("~p~n", [Return])
+	{'EXIT', Error} -> ?PRINT("Error: ~p~n", [Error]);
+	Return -> ?PRINT("~p~n", [Return])
     end,
     ?STATUS_SUCCESS;
 
 process(["delete-old-messages", Days]) ->
     case catch list_to_integer(Days) of
 	{'EXIT',{Reason, _Stack}} ->
-            io:format("Can't delete old messages (~p). Please pass an integer as parameter.~n",
+            ?PRINT("Can't delete old messages (~p). Please pass an integer as parameter.~n",
                       [Reason]),
 	    ?STATUS_ERROR;
 	Integer when Integer >= 0 ->
 	    {atomic, _} = mod_offline:remove_old_messages(Integer),
-	    io:format("Removed messages older than ~s days~n", [Days]),
+	    ?PRINT("Removed messages older than ~s days~n", [Days]),
 	    ?STATUS_SUCCESS;
 	_Integer ->
-	    io:format("Can't delete old messages. Please pass a positive integer as parameter.~n", []),
+	    ?PRINT("Can't delete old messages. Please pass a positive integer as parameter.~n", []),
 	    ?STATUS_ERROR
     end;
 
 process(["vhost", H | Args]) ->
     case jlib:nameprep(H) of
 	false ->
-	    io:format("Bad hostname: ~p~n", [H]),
+	    ?PRINT("Bad hostname: ~p~n", [H]),
 	    ?STATUS_ERROR;
 	Host ->
 	    case ejabberd_hooks:run_fold(
@@ -294,7 +294,7 @@ print_usage() ->
 		  ["  ", Cmd, string:chars($\s, MaxCmdLen - length(Cmd) + 2),
 		   Desc, NewLine]
 	  end, CmdDescs),
-    io:format(
+    ?PRINT(
       "Usage: ejabberdctl [--node nodename] command [options]~n"
       "~n"
       "Available commands in this ejabberd node:~n"
@@ -303,8 +303,8 @@ print_usage() ->
       "Examples:~n"
       "  ejabberdctl restart~n"
       "  ejabberdctl --node ejabberd@host restart~n"
-      "  ejabberdctl vhost jabber.example.org ...~n"
-     ).
+      "  ejabberdctl vhost jabber.example.org ...~n",
+     []).
 
 print_vhost_usage(Host) ->
     CmdDescs =
@@ -327,15 +327,15 @@ print_vhost_usage(Host) ->
 		  ["  ", Cmd, string:chars($\s, MaxCmdLen - length(Cmd) + 2),
 		   Desc, NewLine]
 	  end, CmdDescs),
-    io:format(
+    ?PRINT(
       "Usage: ejabberdctl [--node nodename] vhost hostname command [options]~n"
       "~n"
       "Available commands in this ejabberd node and this vhost:~n"
       ++ FmtCmdDescs ++
       "~n"
       "Examples:~n"
-      "  ejabberdctl vhost "++Host++" registered-users~n"
-     ).
+      "  ejabberdctl vhost "++Host++" registered-users~n",
+     []).
 
 register_commands(CmdDescs, Module, Function) ->
     ets:insert(ejabberd_ctl_cmds, CmdDescs),

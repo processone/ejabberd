@@ -206,7 +206,7 @@ ctl_process_get_registered(_Val, Host, ["registered-users"]) ->
     NewLine = io_lib:format("~n", []),
     SUsers = lists:sort(Users),
     FUsers = lists:map(fun({U, _S}) -> [U, NewLine] end, SUsers),
-    io:format("~s", [FUsers]),
+    ?PRINT("~s", [FUsers]),
     {stop, ?STATUS_SUCCESS};
 ctl_process_get_registered(Val, _Host, _Args) ->
     Val.

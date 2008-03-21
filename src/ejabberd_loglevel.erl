@@ -33,6 +33,8 @@
 
 -export([set/1]).
 
+-include("ejabberd.hrl").
+
 -define(LOGMODULE, "error_logger").
 
 %% Error levels:
@@ -80,7 +82,7 @@ load_logger(Forms, Mod, Loglevel) ->
         {ok, M, Bin} ->
             code:load_binary(M, Fname, Bin);
         Error ->
-            io:format("Error ~p~n", [Error])
+            ?CRITICAL_MSG("Error ~p~n", [Error])
     end.
 
 %% --------------------------------------------------------------

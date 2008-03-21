@@ -14,6 +14,8 @@
 	 mech_new/3,
 	 mech_step/2]).
 
+-include("ejabberd.hrl").
+
 -behaviour(cyrsasl).
 
 -record(state, {step, nonce, username, authzid, get_password}).
@@ -67,7 +69,7 @@ mech_step(#state{step = 5,
 		 authzid = AuthzId}, "") ->
     {ok, [{username, UserName}, {authzid, AuthzId}]};
 mech_step(A, B) ->
-    io:format("SASL DIGEST: A ~p B ~p", [A,B]),
+    ?DEBUG("SASL DIGEST: A ~p B ~p", [A,B]),
     {error, "bad-protocol"}.
 
 

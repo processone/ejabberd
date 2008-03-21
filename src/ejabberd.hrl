@@ -38,6 +38,10 @@
 %% ---------------------------------
 %% Logging mechanism
 
+%% Print in standard output
+-define(PRINT(Format, Args),
+    io:format(Format, Args)).
+
 -define(DEBUG(Format, Args),
     ejabberd_logger:debug_msg(?MODULE,?LINE,Format, Args)).
 

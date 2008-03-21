@@ -49,6 +49,8 @@
 	 code_change/3,
 	 terminate/2]).
 
+-include("ejabberd.hrl").
+
 -define(SET_CERTIFICATE_FILE_ACCEPT, 1).
 -define(SET_CERTIFICATE_FILE_CONNECT, 2).
 -define(SET_ENCRYPTED_INPUT,  3).
@@ -158,7 +160,7 @@ recv_data(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 			<<0, Out/binary>> ->
 			    case gen_tcp:send(TCPSocket, Out) of
 				ok ->
-				    %io:format("IN: ~p~n", [{TCPSocket, binary_to_list(In)}]),
+				    %?PRINT("IN: ~p~n", [{TCPSocket, binary_to_list(In)}]),
 				    {ok, In};
 				Error ->
 				    Error
@@ -176,7 +178,7 @@ recv_data(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
     case port_control(Port, ?SET_DECRYPTED_OUTPUT, Packet) of
 	<<0>> ->
-	    %io:format("OUT: ~p~n", [{TCPSocket, lists:flatten(Packet)}]),
+	    %?PRINT("OUT: ~p~n", [{TCPSocket, lists:flatten(Packet)}]),
 	    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
 		<<0, Out/binary>> ->
 		    gen_tcp:send(TCPSocket, Out);
@@ -235,50 +237,50 @@ test() ->
 	{error, already_loaded} -> ok
     end,
     Port = open_port({spawn, tls_drv}, [binary]),
-    io:format("open_port: ~p~n", [Port]),
+    ?PRINT("open_port: ~p~n", [Port]),
     PCRes = port_control(Port, ?SET_CERTIFICATE_FILE_ACCEPT,
 			 "./ssl.pem" ++ [0]),
-    io:format("port_control: ~p~n", [PCRes]),
+    ?PRINT("port_control: ~p~n", [PCRes]),
     {ok, ListenSocket} = gen_tcp:listen(1234, [binary,
 					       {packet, 0}, 
 					       {active, true},
 					       {reuseaddr, true},
 					       {nodelay, true}]),
-    io:format("listen: ~p~n", [ListenSocket]),
+    ?PRINT("listen: ~p~n", [ListenSocket]),
     {ok, Socket} = gen_tcp:accept(ListenSocket),
-    io:format("accept: ~p~n", [Socket]),
+    ?PRINT("accept: ~p~n", [Socket]),
     loop(Port, Socket).
 
 
 loop(Port, Socket) ->
     receive
 	{tcp, Socket, Data} ->
-	    %io:format("read: ~p~n", [Data]),
+	    %?PRINT("read: ~p~n", [Data]),
 	    Res = port_control(Port, ?SET_ENCRYPTED_INPUT, Data),
-	    io:format("SET_ENCRYPTED_INPUT: ~p~n", [Res]),
+	    ?PRINT("SET_ENCRYPTED_INPUT: ~p~n", [Res]),
 
 	    DIRes = port_control(Port, ?GET_DECRYPTED_INPUT, Data),
-	    io:format("GET_DECRYPTED_INPUT: ~p~n", [DIRes]),
+	    ?PRINT("GET_DECRYPTED_INPUT: ~p~n", [DIRes]),
 	    case DIRes of
 		<<0, In/binary>> ->
-		    io:format("input: ~s~n", [binary_to_list(In)]);
+		    ?PRINT("input: ~s~n", [binary_to_list(In)]);
 		<<1, DIError/binary>> ->
-		    io:format("GET_DECRYPTED_INPUT error: ~p~n", [binary_to_list(DIError)])
+		    ?PRINT("GET_DECRYPTED_INPUT error: ~p~n", [binary_to_list(DIError)])
 	    end,
 
 	    EORes = port_control(Port, ?GET_ENCRYPTED_OUTPUT, Data),
-	    io:format("GET_ENCRYPTED_OUTPUT: ~p~n", [EORes]),
+	    ?PRINT("GET_ENCRYPTED_OUTPUT: ~p~n", [EORes]),
 	    case EORes of
 		<<0, Out/binary>> ->
 		    gen_tcp:send(Socket, Out);
 		<<1, EOError/binary>> ->
-		    io:format("GET_ENCRYPTED_OUTPUT error: ~p~n", [binary_to_list(EOError)])
+		    ?PRINT("GET_ENCRYPTED_OUTPUT error: ~p~n", [binary_to_list(EOError)])
 	    end,
 		    
 
 	    loop(Port, Socket);
 	Msg ->
-	    io:format("receive: ~p~n", [Msg]),
+	    ?PRINT("receive: ~p~n", [Msg]),
 	    loop(Port, Socket)
     end.
 

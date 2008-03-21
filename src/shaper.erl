@@ -29,6 +29,8 @@
 
 -export([new/1, new1/1, update/2]).
 
+-include("ejabberd.hrl").
+
 -record(maxrate, {maxrate, lastrate, lasttime}).
 
 
@@ -56,8 +58,8 @@ update(#maxrate{} = State, Size) ->
     MinInterv = 1000 * Size /
 	(2 * State#maxrate.maxrate - State#maxrate.lastrate),
     Interv = (now_to_usec(now()) - State#maxrate.lasttime) / 1000,
-    %io:format("State: ~p, Size=~p~nM=~p, I=~p~n",
-    %          [State, Size, MinInterv, Interv]),
+    ?INFO_MSG("State: ~p, Size=~p~nM=~p, I=~p~n",
+              [State, Size, MinInterv, Interv]),
     Pause = if
 		MinInterv > Interv ->
 		    1 + trunc(MinInterv - Interv);
