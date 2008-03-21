@@ -13,6 +13,7 @@ export EJABBERD_LOG_PATH=$ROOTDIR/ejabberd.log
 export EJABBERD_CONFIG_PATH=$ROOTDIR/ejabberd.cfg
 export EJABBERD_MSGS_PATH=$ROOTDIR/src/msgs
 export EJABBERD_SO_PATH=$ROOTDIR/src
+export EJABBERD_BIN_PATH=$ROOTDIR/src
 export ERL_MAX_PORTS=32000
 
 [ -d $EJABBERD_DB ] || mkdir -p $EJABBERD_DB

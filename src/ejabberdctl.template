@@ -45,6 +45,7 @@ ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES"
 EJABBERD_EBIN=$ROOTDIR/var/lib/ejabberd/ebin
 EJABBERD_MSGS_PATH=$ROOTDIR/var/lib/ejabberd/priv/msgs
 EJABBERD_SO_PATH=$ROOTDIR/var/lib/ejabberd/priv/lib
+EJABBERD_BIN_PATH=$ROOTDIR/var/lib/ejabberd/priv/bin
 EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
 SASL_LOG_PATH=$LOGS_DIR/sasl.log
 DATETIME=`date "+%Y%m%d-%H%M%S"`
@@ -57,6 +58,7 @@ export EJABBERD_CONFIG_PATH
 export EJABBERD_MSGS_PATH
 export EJABBERD_LOG_PATH
 export EJABBERD_SO_PATH
+export EJABBERD_BIN_PATH
 export ERL_CRASH_DUMP
 export ERL_INETRC
 export ERL_MAX_PORTS

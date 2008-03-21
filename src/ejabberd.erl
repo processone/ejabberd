@@ -28,7 +28,7 @@
 -author('alexey@process-one.net').
 
 -export([start/0, stop/0,
-	 get_so_path/0]).
+	 get_so_path/0, get_bin_path/0]).
 
 start() ->
     application:start(ejabberd).
@@ -45,6 +45,19 @@ get_so_path() ->
 		    ".";
 		Path ->
 		    filename:join([Path, "lib"])
+	    end;
+	Path ->
+	    Path
+    end.
+
+get_bin_path() ->
+    case os:getenv("EJABBERD_BIN_PATH") of
+	false ->
+	    case code:priv_dir(ejabberd) of
+		{error, _} ->
+		    ".";
+		Path ->
+		    filename:join([Path, "bin"])
 	    end;
 	Path ->
 	    Path
