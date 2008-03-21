@@ -79,7 +79,7 @@ acct_mgmt(Srv, User) when is_list(Srv), is_list(User) ->
 %% gen_server callbacks
 %%====================================================================
 init([]) ->
-    FileName = filename:join(ejabberd:get_so_path(), "epam"),
+    FileName = filename:join(ejabberd:get_bin_path(), "epam"),
     case file:read_file_info(FileName) of
 	{ok, Info} ->
 	    Mode = Info#file_info.mode band 16#801,

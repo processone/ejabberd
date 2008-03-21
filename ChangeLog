@@ -1,3 +1,10 @@
+2008-03-21  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/pam/epam.erl: Seek epam binary into priv/bin (EJAB-573)
+	* src/ejabberd.erl: Likewise
+	* src/ejabberdctl.template: Likewise
+	* tools/ejabberdctl: Likewise
+
 2008-03-21  Badlop  <badlop@process-one.net>
 
 	* src/cyrsasl_digest.erl: Rewrite io:format calls to loglevel
