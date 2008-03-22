@@ -266,7 +266,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item Libexpat 1.95 or higher
 \item Erlang/OTP R10B-9 up to R11B-5. Erlang R12 releases are not yet officially supported, and are not recommended for production servers.
 \item OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
-\item Zlib 1.2.3 or higher, for Stream Compression support (XEP-0138). Optional.
+\item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
 \item GNU Iconv 1.8 or higher, for the IRC Transport (mod\_irc). Optional. Not needed on systems with GNU Libc.
 \end{itemize}
 
@@ -671,7 +671,7 @@ The available modules, their purpose and the options allowed by each one are:
     \footahref{http://www.ejabberd.im/tutorials-transports}{external components} 
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     \cline{2-3} & Options& \texttt{access}, \texttt{hosts}, \texttt{inet6},
-    \texttt{ip}, \texttt{shaper}\\
+    \texttt{ip}, \texttt{shaper}, \texttt{service\_check\_from}\\
   \hline \texttt{ejabberd\_http}& Description& Handles incoming HTTP
   connections.\\
     \cline{2-3} & Options& \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
@@ -737,6 +737,11 @@ This is a detailed description of each option allowed by the listening modules:
     For example, if you want \term{mod\_foo} to serve the URIs that start with \term{/a/b/},
     and you also want \term{mod\_http\_bind} to serve the URIs \term{/http-bind/},
     use this option: \term{\{request\_handlers, [\{["a", "b"], mod\_foo\}, \{["http-bind"], mod\_http\_bind\}]\}}
+  \titem{\{service\_check\_from, true|false\}}
+    By enabling this option, \ejabberd{} allows the component to send packets with any arbitrary domain in the 'from' attribute.
+    Note that \xepref{0114} requires that the domain must match the hostname of the component.
+    Only enable this option if you are completely sure you need to enable it.
+    Default value: false.
   \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{shapers}). The default value
     is \term{none}.

@@ -344,7 +344,7 @@ GNU Make
 </LI><LI CLASS="li-itemize">Libexpat 1.95 or higher
 </LI><LI CLASS="li-itemize">Erlang/OTP R10B-9 up to R11B-5. Erlang R12 releases are not yet officially supported, and are not recommended for production servers.
 </LI><LI CLASS="li-itemize">OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
-</LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (XEP-0138). Optional.
+</LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
 </LI><LI CLASS="li-itemize">GNU Iconv 1.8 or higher, for the IRC Transport (mod_irc). Optional. Not needed on systems with GNU Libc.
 </LI></UL><!--TOC subsection Download Source Code-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc10">2.4.2</A>&#XA0;&#XA0;Download Source Code</H3><!--SEC END --><P>
@@ -619,7 +619,7 @@ connections.</TD></TR>
 <A HREF="http://www.ejabberd.im/tutorials-transports">external components</A> 
 (as defined in the Jabber Component Protocol (<A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A>).</TD></TR>
 <TR><TD VALIGN=top ALIGN=left NOWRAP>&nbsp;</TD><TD VALIGN=top ALIGN=left NOWRAP>Options</TD><TD VALIGN=top ALIGN=left><TT>access</TT>, <TT>hosts</TT>, <TT>inet6</TT>,
-<TT>ip</TT>, <TT>shaper</TT></TD></TR>
+<TT>ip</TT>, <TT>shaper</TT>, <TT>service_check_from</TT></TD></TR>
 <TR><TD VALIGN=top ALIGN=left NOWRAP><TT>ejabberd_http</TT></TD><TD VALIGN=top ALIGN=left NOWRAP>Description</TD><TD VALIGN=top ALIGN=left>Handles incoming HTTP
 connections.</TD></TR>
 <TR><TD VALIGN=top ALIGN=left NOWRAP>&nbsp;</TD><TD VALIGN=top ALIGN=left NOWRAP>Options</TD><TD VALIGN=top ALIGN=left><TT>certfile</TT>, <TT>http_bind</TT>, <TT>http_poll</TT>,
@@ -676,6 +676,11 @@ The Path is a list of strings; so the URIs that start with that Path will be ser
 For example, if you want <TT>mod_foo</TT> to serve the URIs that start with <TT>/a/b/</TT>,
 and you also want <TT>mod_http_bind</TT> to serve the URIs <TT>/http-bind/</TT>,
 use this option: <TT>{request_handlers, [{["a", "b"], mod_foo}, {["http-bind"], mod_http_bind}]}</TT>
+</DD><DT CLASS="dt-description"><B><TT>{service_check_from, true|false}</TT></B></DT><DD CLASS="dd-description">
+By enabling this option, <TT>ejabberd</TT> allows the component to send packets with any arbitrary domain in the &#X2019;from&#X2019; attribute.
+Note that <A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A> requires that the domain must match the hostname of the component.
+Only enable this option if you are completely sure you need to enable it.
+Default value: false.
 </DD><DT CLASS="dt-description"><B><TT>{shaper, &lt;access rule&gt;}</TT></B></DT><DD CLASS="dd-description"> This option defines a
 shaper for the port (see section&#XA0;<A HREF="#shapers">3.1.6</A>). The default value
 is <TT>none</TT>.
