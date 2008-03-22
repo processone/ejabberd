@@ -1,3 +1,8 @@
+2008-03-22  Mickael Remond  <mremond@process-one.net>
+
+	* src/eldap/Makefile.in: Generate ELDAPv3.beam during first Makefile
+	pass (EJAB-583).
+
 2008-03-22  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Document service_check_from (EJAB-576)
