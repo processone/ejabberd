@@ -1,3 +1,8 @@
+2008-03-22  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document service_check_from (EJAB-576)
+	* doc/guide.html: Likewise
+
 2008-03-21  Badlop  <badlop@process-one.net>
 
 	* src/mod_caps.erl: Move two log calls ERROR_MSG to DEBUG
