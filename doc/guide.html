@@ -2662,7 +2662,7 @@ attributes. The pattern variables <TT>"%s"</TT> will be sequentially replaced
 with the values of LDAP attributes from <TT>List_of_LDAP_attributes</TT>,
 <TT>"%u"</TT> will be replaced with the user part of a JID, and <TT>"%d"</TT>
 will be replaced with the domain part of a JID. The default is:
-<PRE CLASS="verbatim">  [{"NICK", "%u", []},
+<PRE CLASS="verbatim">  [{"NICKNAME", "%u", []},
    {"FN", "%s", ["displayName"]},
    {"LAST", "%s", ["sn"]},
    {"FIRST", "%s", ["givenName"]},
@@ -2711,7 +2711,7 @@ is:
    {"Given Name", "FIRST"},
    {"Middle Name", "MIDDLE"},
    {"Family Name", "LAST"},
-   {"Nickname", "NICK"},
+   {"Nickname", "NICKNAME"},
    {"Birthday", "BDAY"},
    {"Country", "CTRY"},
    {"City", "LOCALITY"},
@@ -2752,7 +2752,7 @@ Also we want users to search each other. Let&#X2019;s see how we can set it up:<
       {ldap_filter, ""},
       %% Now we want to define vCard pattern
       {ldap_vcard_map,
-       [{"NICK", "%u", []}, % just use user's part of JID as his nickname
+       [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
         {"FIRST", "%s", ["givenName"]},
         {"LAST", "%s", ["sn"]},
         {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
@@ -2769,7 +2769,7 @@ Also we want users to search each other. Let&#X2019;s see how we can set it up:<
       %% Note that JID is always returned with search results
       {ldap_search_reported,
        [{"Full Name", "FN"},
-        {"Nickname", "NICK"},
+        {"Nickname", "NICKNAME"},
         {"Birthday", "BDAY"}]}
     ]}
     ...
@@ -2777,7 +2777,7 @@ Also we want users to search each other. Let&#X2019;s see how we can set it up:<
 </PRE><P>Note that <TT>mod_vcard_ldap</TT> module checks an existence of the user before
 searching his info in LDAP.</P></LI><LI CLASS="li-itemize"><TT>ldap_vcard_map</TT> example:
 <PRE CLASS="verbatim">  {ldap_vcard_map,
-   [{"NICK", "%u", []},
+   [{"NICKNAME", "%u", []},
     {"FN", "%s", ["displayName"]},
     {"CTRY", "Russia", []},
     {"EMAIL", "%u@%d", []},
@@ -2794,7 +2794,7 @@ searching his info in LDAP.</P></LI><LI CLASS="li-itemize"><TT>ldap_vcard_map</T
    [{"Full Name", "FN"},
     {"Email", "EMAIL"},
     {"Birthday", "BDAY"},
-    {"Nickname", "NICK"}
+    {"Nickname", "NICKNAME"}
    ]},
 </PRE></LI></UL><!--TOC subsection <TT>mod_version</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc58">3.3.25</A>&#XA0;&#XA0;<TT>mod_version</TT></H3><!--SEC END --><P>

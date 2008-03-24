@@ -1,5 +1,9 @@
 2008-03-24  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: mod_vcard_ldap replace NICK with NICKNAME (thanks
+	to Andreas Ntaflos)
+	* doc/guide.html: Likewise
+
 	* src/msgs/de.msg: Fix irc typo (thanks to Jonathan Schleifer)
 	* src/msgs/cs.msg: Likewise
 	* src/msgs/pl.msg: Likewise

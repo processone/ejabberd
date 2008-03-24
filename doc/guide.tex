@@ -3213,7 +3213,7 @@ consists of the following \modvcardldap{}-specific options:
   \term{"\%u"} will be replaced with the user part of a JID, and \term{"\%d"}
   will be replaced with the domain part of a JID. The default is:
   \begin{verbatim}
-  [{"NICK", "%u", []},
+  [{"NICKNAME", "%u", []},
    {"FN", "%s", ["displayName"]},
    {"LAST", "%s", ["sn"]},
    {"FIRST", "%s", ["givenName"]},
@@ -3266,7 +3266,7 @@ consists of the following \modvcardldap{}-specific options:
    {"Given Name", "FIRST"},
    {"Middle Name", "MIDDLE"},
    {"Family Name", "LAST"},
-   {"Nickname", "NICK"},
+   {"Nickname", "NICKNAME"},
    {"Birthday", "BDAY"},
    {"Country", "CTRY"},
    {"City", "LOCALITY"},
@@ -3321,7 +3321,7 @@ Also we want users to search each other. Let's see how we can set it up:
       {ldap_filter, ""},
       %% Now we want to define vCard pattern
       {ldap_vcard_map,
-       [{"NICK", "%u", []}, % just use user's part of JID as his nickname
+       [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
         {"FIRST", "%s", ["givenName"]},
         {"LAST", "%s", ["sn"]},
         {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
@@ -3338,7 +3338,7 @@ Also we want users to search each other. Let's see how we can set it up:
       %% Note that JID is always returned with search results
       {ldap_search_reported,
        [{"Full Name", "FN"},
-        {"Nickname", "NICK"},
+        {"Nickname", "NICKNAME"},
         {"Birthday", "BDAY"}]}
     ]}
     ...
@@ -3351,7 +3351,7 @@ searching his info in LDAP.
 \item \term{ldap\_vcard\_map} example:
 \begin{verbatim}
   {ldap_vcard_map,
-   [{"NICK", "%u", []},
+   [{"NICKNAME", "%u", []},
     {"FN", "%s", ["displayName"]},
     {"CTRY", "Russia", []},
     {"EMAIL", "%u@%d", []},
@@ -3372,7 +3372,7 @@ searching his info in LDAP.
    [{"Full Name", "FN"},
     {"Email", "EMAIL"},
     {"Birthday", "BDAY"},
-    {"Nickname", "NICK"}
+    {"Nickname", "NICKNAME"}
    ]},
 \end{verbatim}
 \end{itemize}
