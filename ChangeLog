@@ -1,3 +1,10 @@
+2008-03-24  Badlop  <badlop@process-one.net>
+
+	* src/msgs/de.msg: Fix irc typo (thanks to Jonathan Schleifer)
+	* src/msgs/cs.msg: Likewise
+	* src/msgs/pl.msg: Likewise
+	* src/msgs/sk.msg: Likewise
+
 2008-03-22  Mickael Remond  <mremond@process-one.net>
 
 	* src/eldap/Makefile.in: Generate ELDAPv3.beam during first Makefile

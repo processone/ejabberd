@@ -266,7 +266,7 @@
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Geben Sie Benutzernamen und Kodierung für die Verbindung zum IRC Server an"}.
 {"IRC Username", "IRC Benutzername"}.
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Wenn Sie verschiedene Kodierungen für IRC Server angeben, schreiben Sie diese im Format '{\"Irc Server\", \"Kodierung\"}'. Standardmässig benutzt der Dienst die \"~s\" Kodierung"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Beispiel: [{\"irc.lucky.net\",\"koi8-r\"}, {\vendetta.fef.net\", \"iso8859-1\"}]."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Beispiel: [{\"irc.lucky.net\",\"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Encodings", "Kodierung"}.
 
 % mod_shared_roster.erl
