@@ -153,7 +153,7 @@
 {"Registration in mod_irc for ", "Registrace do mod_irc na "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Vložte jméno uživatele a kódování, které chcete používat při připojení na IRC server"}.
 {"IRC Username", "IRC přezdívka"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Příklad: [{\"irc.freenode.net\",\"utf-8\"}, {\irc.freenode.net\", \"iso8859-2\"}]."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Příklad: [{\"irc.freenode.net\",\"utf-8\"}, {\"irc.freenode.net\", \"iso8859-2\"}]."}.
 {"Encodings", "Kódování"}.
 {"IRC Transport", "IRC transport"}.
 

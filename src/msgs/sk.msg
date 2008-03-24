@@ -172,7 +172,7 @@
 {"Registration in mod_irc for ", "Registrácia do mod_irc na "}.
 {"Enter username and encodings you wish to use for connecting to IRC servers", "Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na IRC server"}.
 {"IRC Username", "IRC prezývka"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Príklad: [{\"irc.freenode.net\",\"utf-8\"}, {\irc.freenode.net\", \"iso8859-2\"}]."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].", "Príklad: [{\"irc.freenode.net\",\"utf-8\"}, {\"irc.freenode.net\", \"iso8859-2\"}]."}.
 {"Encodings", "Kódovania"}.
 
 % web/ejabberd_web_admin.erl
