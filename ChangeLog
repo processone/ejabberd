@@ -1,3 +1,9 @@
+2008-03-26  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_local.erl: The iq_response table wasn't cloned
+	automatically on all nodes which resulted in a single point of
+	failure
+
 2008-03-25  Badlop  <badlop@process-one.net>
 
 	* src/Makefile.in: Failure to install epam is not
