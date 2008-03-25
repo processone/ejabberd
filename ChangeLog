@@ -1,7 +1,8 @@
 2008-03-25  Badlop  <badlop@process-one.net>
 
 	* src/Makefile.in: Failure to install epam is not
-	critical (EJAB-573)
+	critical (EJAB-573). Only try to install epam if pam was enabled
+	in configure script (thanks to Etan Reisner)(EJAB-586)
 
 2008-03-24  Badlop  <badlop@process-one.net>
 
