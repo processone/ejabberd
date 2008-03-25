@@ -1,3 +1,8 @@
+2008-03-25  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in: Failure to install epam is not
+	critical (EJAB-573)
+
 2008-03-24  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: mod_vcard_ldap replace NICK with NICKNAME (thanks
