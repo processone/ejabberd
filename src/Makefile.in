@@ -40,6 +40,11 @@ ifeq (@transient_supervisors@, false)
   ERLC_FLAGS+=-DNO_TRANSIENT_SUPERVISORS
 endif
 
+INSTALL_EPAM=
+ifeq (@pam@, pam)
+  INSTALL_EPAM=install -m 750 epam $(PBINDIR)
+endif
+
 prefix = @prefix@
 
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @pam@ @web@ stringprep @tls@ @odbc@ @ejabberd_zlib@
@@ -104,7 +109,7 @@ install: all
 	install -d $(SODIR)
 	install -d $(PBINDIR)
 	install -m 644 *.so $(SODIR)
-	-install -m 750 epam $(PBINDIR)
+	$(INSTALL_EPAM)
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
 	install -d $(ETCDIR)
