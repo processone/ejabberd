@@ -104,7 +104,7 @@ install: all
 	install -d $(SODIR)
 	install -d $(PBINDIR)
 	install -m 644 *.so $(SODIR)
-	install -m 750 epam $(PBINDIR)
+	-install -m 750 epam $(PBINDIR)
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
 	install -d $(ETCDIR)
