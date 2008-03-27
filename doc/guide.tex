@@ -1086,8 +1086,8 @@ directory. You have to set it root on execution in the case when your PAM module
 requires root privileges (\term{pam\_unix.so} for example). Also you have to grant access
 for \ejabberd{} to this file and remove all other permissions from it:
 \begin{verbatim}
-# chown root:ejabberd /var/lib/ejabberd/priv/lib/epam
-# chmod 4750 /var/lib/ejabberd/priv/lib/epam
+# chown root:ejabberd /var/lib/ejabberd/priv/bin/epam
+# chmod 4750 /var/lib/ejabberd/priv/bin/epam
 \end{verbatim}
 \item Make sure you have the latest version of PAM installed on your system.
 Some old versions of PAM modules cause memory leaks. If you are not able to use the latest
