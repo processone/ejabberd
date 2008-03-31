@@ -1,3 +1,20 @@
+2008-03-31  Badlop  <badlop@process-one.net>
+
+	* doc/webadmmain.png: Updated to ejabberd 2.0.0
+	* doc/webadmmainru.png: Likewise
+
+	* doc/disco.png: Removed because not used
+	
+	* doc/guide.tex: Fix Latex reference to webadmin section. Update
+	explanation of screenshots. Update xmpp addresses of Mickael
+	Remond and Sander Devrieze.
+	* doc/guide.html: Likewise
+
+	* doc/Makefile: Remove the Hevea deprecated option -noiso
+	* doc/guide.html: Likewise
+	* doc/dev.html: Likewise
+	* doc/features.html: Likewise
+
 2008-03-27  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Fix epam location (thanks to Evgeniy Khramtsov)

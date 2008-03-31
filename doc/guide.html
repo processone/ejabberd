@@ -76,7 +76,7 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 </STYLE>
 </HEAD>
 <BODY >
-<!--HEVEA command line is: /usr/bin/hevea -fix -noiso -pedantic guide.tex -->
+<!--HEVEA command line is: /usr/bin/hevea -fix -pedantic guide.tex -->
 <!--CUT DEF chapter 1 --><P><A NAME="titlepage"></A>
 
 </P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">
@@ -775,7 +775,7 @@ Incoming and outgoing connections of remote Jabber servers are denied,
 only two servers can connect: "jabber.example.org" and "example.com".
 </LI><LI CLASS="li-itemize">Port 5280 is serving the Web Admin and the HTTP Polling service. Note
 that it is also possible to serve them on different ports. The second
-example in section&#XA0;<A HREF="#webinterface">??</A> shows how exactly this can be done.
+example in section&#XA0;<A HREF="#webadmin">4.2</A> shows how exactly this can be done.
 </LI><LI CLASS="li-itemize">All users except for the administrators have a traffic of limit 
 1,000&#XA0;Bytes/second
 </LI><LI CLASS="li-itemize">The
@@ -3203,14 +3203,13 @@ Figure&#XA0;<A HREF="#fig:discorus">A.1</A>, for example, shows the reply to the
 <DIV CLASS="caption"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD VALIGN=top ALIGN=left>Figure A.1: Service Discovery when <TT>xml:lang=&#X2019;ru&#X2019;</TT></TD></TR>
 </TABLE></DIV>
 <A NAME="fig:discorus"></A>
-<DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><P>The Web Admin also supports the <CODE>Accept-Language</CODE> HTTP header (compare
-figure&#XA0;<A HREF="#fig:webadmmainru">A.2</A> with figure&#XA0;<A HREF="#fig:webadmmain">4.1</A>)</P><BLOCKQUOTE CLASS="figure"><DIV CLASS="center"><DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV>
+<DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><P>The Web Admin also supports the <CODE>Accept-Language</CODE> HTTP header.</P><BLOCKQUOTE CLASS="figure"><DIV CLASS="center"><DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV>
 
 <IMG SRC="webadmmainru.png" ALT="webadmmainru.png">
 
 
-<DIV CLASS="caption"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD VALIGN=top ALIGN=left>Figure A.2: Top page from the Web Admin with HTTP header
-&#X2018;Accept-Language: ru&#X2019;</TD></TR>
+<DIV CLASS="caption"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD VALIGN=top ALIGN=left>Figure A.2: Web Admin showing a virtual host when the web browser provides the 
+HTTP header &#X2018;Accept-Language: ru&#X2019;</TD></TR>
 </TABLE></DIV>
 <A NAME="fig:webadmmainru"></A>
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC chapter Release Notes-->
@@ -3226,8 +3225,8 @@ Alexey Shchepin (<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT
 </LI><LI CLASS="li-itemize">Evgeniy Khramtsov (<A HREF="xmpp:xram@jabber.ru"><TT>xmpp:xram@jabber.ru</TT></A>)
 </LI><LI CLASS="li-itemize">Florian Zumbiehl (<A HREF="xmpp:florz@florz.de"><TT>xmpp:florz@florz.de</TT></A>)
 </LI><LI CLASS="li-itemize">Michael Grigutsch (<A HREF="xmpp:migri@jabber.i-pobox.net"><TT>xmpp:migri@jabber.i-pobox.net</TT></A>)
-</LI><LI CLASS="li-itemize">Mickael Remond (<A HREF="xmpp:mremond@erlang-projects.org"><TT>xmpp:mremond@erlang-projects.org</TT></A>)
-</LI><LI CLASS="li-itemize">Sander Devrieze (<A HREF="xmpp:sander@devrieze.dyndns.org"><TT>xmpp:sander@devrieze.dyndns.org</TT></A>)
+</LI><LI CLASS="li-itemize">Mickael Remond (<A HREF="xmpp:mremond@process-one.net"><TT>xmpp:mremond@process-one.net</TT></A>)
+</LI><LI CLASS="li-itemize">Sander Devrieze (<A HREF="xmpp:s.devrieze@gmail.com"><TT>xmpp:s.devrieze@gmail.com</TT></A>)
 </LI><LI CLASS="li-itemize">Sergei Golovan (<A HREF="xmpp:sgolovan@nes.ru"><TT>xmpp:sgolovan@nes.ru</TT></A>)
 </LI><LI CLASS="li-itemize">Vsevolod Pelipas (<A HREF="xmpp:vsevoload@jabber.ru"><TT>xmpp:vsevoload@jabber.ru</TT></A>)
 </LI></UL><!--TOC chapter Copyright Information-->

@@ -844,7 +844,7 @@ In this example, the following configuration defines that:
   only two servers can connect: "jabber.example.org" and "example.com".
 \item Port 5280 is serving the Web Admin and the HTTP Polling service. Note
   that it is also possible to serve them on different ports. The second
-  example in section~\ref{webinterface} shows how exactly this can be done.
+  example in section~\ref{webadmin} shows how exactly this can be done.
 \item All users except for the administrators have a traffic of limit 
   1,000\,Bytes/second
 \item \ind{transports!AIM}The
@@ -3990,14 +3990,13 @@ Figure~\ref{fig:discorus}, for example, shows the reply to the following query:
   \label{fig:discorus}
 \end{figure}
 
-The Web Admin also supports the \verb|Accept-Language| HTTP header (compare
-figure~\ref{fig:webadmmainru} with figure~\ref{fig:webadmmain})
+The Web Admin also supports the \verb|Accept-Language| HTTP header.
 
 \begin{figure}[htbp]
   \centering
   \insimg{webadmmainru.png}
-  \caption{Top page from the Web Admin with HTTP header
-    `Accept-Language: ru'}
+  \caption{Web Admin showing a virtual host when the web browser provides the 
+     HTTP header `Accept-Language: ru'}
   \label{fig:webadmmainru}
 \end{figure}
 
@@ -4021,8 +4020,8 @@ Thanks to all people who contributed to this guide:
 \item Evgeniy Khramtsov (\ahrefurl{xmpp:xram@jabber.ru})
 \item Florian Zumbiehl (\ahrefurl{xmpp:florz@florz.de})
 \item Michael Grigutsch (\ahrefurl{xmpp:migri@jabber.i-pobox.net})
-\item Mickael Remond (\ahrefurl{xmpp:mremond@erlang-projects.org})
-\item Sander Devrieze (\ahrefurl{xmpp:sander@devrieze.dyndns.org})
+\item Mickael Remond (\ahrefurl{xmpp:mremond@process-one.net})
+\item Sander Devrieze (\ahrefurl{xmpp:s.devrieze@gmail.com})
 \item Sergei Golovan (\ahrefurl{xmpp:sgolovan@nes.ru})
 \item Vsevolod Pelipas (\ahrefurl{xmpp:vsevoload@jabber.ru})
 \end{itemize}
