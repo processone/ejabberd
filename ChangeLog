@@ -1,3 +1,8 @@
+2008-03-31  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_listener.erl (start_listener): Start also the
+	supervisor of the module
+
 2008-03-27  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Fix epam location (thanks to Evgeniy Khramtsov)

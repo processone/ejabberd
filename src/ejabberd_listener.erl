@@ -179,6 +179,21 @@ accept_ssl(ListenSocket, Module, Opts) ->
 
 
 start_listener(Port, Module, Opts) ->
+    start_module_sup(Module),
+    start_listener_sup(Port, Module, Opts).
+
+start_module_sup(Module) ->
+    Proc = gen_mod:get_module_proc("sup", Module),
+    ChildSpec =
+	{Proc,
+	 {ejabberd_tmp_sup, start_link, [Proc, Module]},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [ejabberd_tmp_sup]},
+    supervisor:start_child(ejabberd_sup, ChildSpec).
+
+start_listener_sup(Port, Module, Opts) ->
     ChildSpec = {Port,
 		 {?MODULE, start, [Port, Module, Opts]},
 		 transient,
