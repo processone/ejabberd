@@ -29,7 +29,6 @@
 
 -export([start_link/0, init/1, start/3,
 	 init/3,
-	 init_ssl/4,
 	 start_listener/3,
 	 stop_listener/1,
 	 add_listener/3,
@@ -61,24 +60,27 @@ init(_) ->
 
 
 start(Port, Module, Opts) ->
-    SSLError = "There is a problem with your ejabberd configuration file: the option 'ssl' for listening sockets is no longer available. To get SSL encryption use the option 'tls'.",
+    case includes_deprecated_ssl_option(Opts) of
+	false ->
+	    {ok, proc_lib:spawn_link(?MODULE, init,
+				     [Port, Module, Opts])};
+	true ->
+            SSLErr="There is a problem with your ejabberd configuration file: "
+		"the option 'ssl' for listening sockets is no longer available."
+		"To get SSL encryption use the option 'tls'.",
+	    ?ERROR_MSG(SSLErr, []),
+	    {error, SSLErr}
+    end.
+
+%% Parse the options of the socket,
+%% and return if the deprecated option 'ssl' is included
+%% @spec(Opts::[opt()]) -> true | false
+includes_deprecated_ssl_option(Opts) ->
     case lists:keysearch(ssl, 1, Opts) of
 	{value, {ssl, _SSLOpts}} ->
-	    %%{ok, proc_lib:spawn_link(?MODULE, init_ssl,
-	    %%		     [Port, Module, Opts, SSLOpts])};
-	    ?ERROR_MSG(SSLError, []),
-	    {error, SSLError};
+	    true;
 	_ ->
-	    case lists:member(ssl, Opts) of
-		true ->
-		    %%{ok, proc_lib:spawn_link(?MODULE, init_ssl,
-		    %%		     [Port, Module, Opts, []])};
-		    ?ERROR_MSG(SSLError, []),
-		    {error, SSLError};
-		false ->
-		    {ok, proc_lib:spawn_link(?MODULE, init,
-					     [Port, Module, Opts])}
-	    end
+	    lists:member(ssl, Opts)
     end.
 
 init(Port, Module, Opts) ->
@@ -126,57 +128,6 @@ accept(ListenSocket, Module, Opts) ->
 		      [ListenSocket, Reason]),
 	    accept(ListenSocket, Module, Opts)
     end.
-
-
-init_ssl(Port, Module, Opts, SSLOpts) ->
-    SockOpts = lists:filter(fun({ip, _}) -> true;
-			       (inet6) -> true;
-			       (inet) -> true;
-			       ({verify, _}) -> true;
-			       ({depth, _}) -> true;
-			       ({certfile, _}) -> true;
-			       ({keyfile, _}) -> true;
-			       ({password, _}) -> true;
-			       ({cacertfile, _}) -> true;
-			       ({ciphers, _}) -> true;
-			       (_) -> false
-			    end, Opts),
-    Res = ssl:listen(Port, [binary,
-			    {packet, 0}, 
-			    {active, false},
-			    {nodelay, true} |
-			    SockOpts ++ SSLOpts]),
-    case Res of
-	{ok, ListenSocket} ->
-	    accept_ssl(ListenSocket, Module, Opts);
-	{error, Reason} ->
-	    ?ERROR_MSG("Failed to open socket for ~p: ~p",
-		       [{Port, Module, Opts}, Reason]),
-	    error
-    end.
-
-accept_ssl(ListenSocket, Module, Opts) ->
-    case ssl:accept(ListenSocket, 200) of
-	{ok, Socket} ->
-	    case {ssl:sockname(Socket), ssl:peername(Socket)} of
-		{{ok, Addr}, {ok, PAddr}} ->
-		    ?INFO_MSG("(~w) Accepted SSL connection ~w -> ~w",
-			      [Socket, PAddr, Addr]);
-		_ ->
-		    ok
-	    end,
-	    {ok, Pid} = Module:start({ssl, Socket}, Opts),
-	    catch ssl:controlling_process(Socket, Pid),
-	    Module:become_controller(Pid),
-	    accept_ssl(ListenSocket, Module, Opts);
-	{error, timeout} ->
-	    accept_ssl(ListenSocket, Module, Opts);
-	{error, Reason} ->
-	    ?INFO_MSG("(~w) Failed SSL handshake: ~w",
-		      [ListenSocket, Reason]),
-	    accept_ssl(ListenSocket, Module, Opts)
-    end.
-
 
 start_listener(Port, Module, Opts) ->
     start_module_sup(Module),

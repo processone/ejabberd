@@ -1,5 +1,9 @@
 2008-03-31  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_listener.erl: Remove code of the unused listening
+	socket option 'ssl' (EJAB-159)
+	* src/ejabberd_app.erl: Likewise
+
 	* doc/webadmmain.png: Updated to ejabberd 2.0.0
 	* doc/webadmmainru.png: Likewise
 
