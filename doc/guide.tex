@@ -3466,7 +3466,8 @@ The environment variables:
   \titem{ERL\_CRASH\_DUMP} 
 	Path to the file where crash reports will be dumped.
   \titem{ERL\_INETRC} 
-	Indicates which IP name resolution to use. It is required if using \term{-sname}.
+	Indicates which IP name resolution to use.
+	If using \term{-sname}, specify either this option or \term{-kernel inetrc filepath}.
   \titem{ERL\_MAX\_PORTS} 
 	Maximum number of simultaneously open Erlang ports.
   \titem{ERL\_MAX\_ETS\_TABLES} 
@@ -3483,7 +3484,10 @@ The command line parameters:
 	The Erlang node will be fully identified.
     This is only useful if you plan to setup an \ejabberd{} cluster with nodes in different networks.
   \titem{-kernel inetrc "/etc/ejabberd/inetrc"} 
-	Indicates which IP name resolution to use. It is required if using \term{-sname}.
+	Indicates which IP name resolution to use. 
+	If using \term{-sname}, specify either this option or \term{ERL\_INETRC}.
+  \titem{-kernel inet\_dist\_listen\_min 4200 inet\_dist\_listen\_min 4210} 
+	Define the first and last ports that \term{epmd} (section \ref{epmd}) can listen to.
   \titem{-detached} 
         Starts the Erlang system detached from the system console. 
 	Useful for running daemons and backgrounds processes. 
@@ -3635,8 +3639,8 @@ You need to take the following TCP ports in mind when configuring your firewall:
     \hline \hline 5222& Standard port for Jabber/XMPP client connections, plain or STARTTLS.\\
     \hline 5223& Standard port for Jabber client connections using the old SSL method.\\
     \hline 5269& Standard port for Jabber/XMPP server connections.\\
-    \hline 4369& Port used by EPMD for communication between Erlang nodes.\\
-    \hline port range& Used for connections between Erlang nodes. This range is configurable.\\
+    \hline 4369& EPMD (section \ref{epmd}) listens for Erlang node name requests.\\
+    \hline port range& Used for connections between Erlang nodes. This range is configurable (see section \ref{epmd}).\\
     \hline
   \end{tabular}
 \end{table}
@@ -3657,8 +3661,8 @@ To communicate with \ejabberd{}, the script \term{ejabberdctl} starts a new Erla
 and connects to the Erlang node that holds \ejabberd{}.
 In order for this communication to work,
 \term{epmd} must be running and listening for name requests in the port 4369.
-You should block the port 4369 in the firewall,
-so only the programs in your machine can access it.
+You should block the port 4369 in the firewall in such a way that
+only the programs in your machine can access it.
 
 If you build a cluster of several \ejabberd{} instances,
 each \ejabberd{} instance is called an \ejabberd{} node.
@@ -3670,8 +3674,9 @@ Remember to block the port so Internet doesn't have access to it.
 
 Once an Erlang node solved the node name of another Erlang node using EPMD and port 4369,
 the nodes communicate directly.
-The ports used in this case are random. 
-You can limit the range of ports when starting Erlang with a command-line parameter, for example:
+The ports used in this case by default are random, 
+but can be configured in the file \term{ejabberdctl.cfg}.
+The Erlang command-line parameter used internally is, for example:
 \begin{verbatim}
 erl ... -kernel inet_dist_listen_min 4370 inet_dist_listen_max 4375
 \end{verbatim}
