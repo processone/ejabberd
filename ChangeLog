@@ -1,3 +1,8 @@
+2008-04-01  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberdctl.template: Add firewalling port range definition
+	* src/ejabberdctl.cfg.example: Likewise
+
 2008-03-31  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_listener.erl: Remove code of the unused listening

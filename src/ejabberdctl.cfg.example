@@ -36,6 +36,17 @@
 #
 #ERL_MAX_PORTS=32000
 
+# FIREWALL_WINDOW: Range of allowed ports to pass through a firewall
+#
+# If Ejabberd is configured to run in cluster, and a firewall is blocking ports,
+# it's possible to make Erlang use a defined range of port (instead of dynamic ports)
+# for node communication.
+#
+# Default: not defined
+# Example: 4200-4210
+#
+#FIREWALL_WINDOW=
+
 # PROCESSES: Maximum number of Erlang processes
 #
 # Erlang consumes a lot of lightweight processes. If there is a lot of activity
