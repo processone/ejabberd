@@ -1,5 +1,5 @@
 APPNAME = ejabberd
-VSN = SVN
+VSN = $(shell sed '/VERSION/!d;s/\(.*\)"\(.*\)"\(.*\)/\2/' ../../src/ejabberd.hrl)
 
 DOCDIR=.
 SRCDIR=../../src
@@ -11,6 +11,7 @@ all: docs
 clean:
 	rm -f *.html
 	rm edoc-info
+	rm erlang.png
 
 docs:
 	erl -noshell -run edoc_run application \

@@ -2818,21 +2818,21 @@ set_opts([], StateData) ->
     StateData;
 set_opts([{Opt, Val} | Opts], StateData) ->
     NSD = case Opt of
-	      ?CASE_CONFIG_OPT(title);
-	      ?CASE_CONFIG_OPT(allow_change_subj);
-	      ?CASE_CONFIG_OPT(allow_query_users);
-	      ?CASE_CONFIG_OPT(allow_private_messages);
-	      ?CASE_CONFIG_OPT(public);
-	      ?CASE_CONFIG_OPT(public_list);
-	      ?CASE_CONFIG_OPT(persistent);
-	      ?CASE_CONFIG_OPT(moderated);
-	      ?CASE_CONFIG_OPT(members_by_default);
-	      ?CASE_CONFIG_OPT(members_only);
-	      ?CASE_CONFIG_OPT(allow_user_invites);
-	      ?CASE_CONFIG_OPT(password_protected);
-	      ?CASE_CONFIG_OPT(password);
-	      ?CASE_CONFIG_OPT(anonymous);
-	      ?CASE_CONFIG_OPT(logging);
+	      title -> StateData#state{config = (StateData#state.config)#config{title = Val}};
+	      allow_change_subj -> StateData#state{config = (StateData#state.config)#config{allow_change_subj = Val}};
+	      allow_query_users -> StateData#state{config = (StateData#state.config)#config{allow_query_users = Val}};
+	      allow_private_messages -> StateData#state{config = (StateData#state.config)#config{allow_private_messages = Val}};
+	      public -> StateData#state{config = (StateData#state.config)#config{public = Val}};
+	      public_list -> StateData#state{config = (StateData#state.config)#config{public_list = Val}};
+	      persistent -> StateData#state{config = (StateData#state.config)#config{persistent = Val}};
+	      moderated -> StateData#state{config = (StateData#state.config)#config{moderated = Val}};
+	      members_by_default -> StateData#state{config = (StateData#state.config)#config{members_by_default = Val}};
+	      members_only -> StateData#state{config = (StateData#state.config)#config{members_only = Val}};
+	      allow_user_invites -> StateData#state{config = (StateData#state.config)#config{allow_user_invites = Val}};
+	      password_protected -> StateData#state{config = (StateData#state.config)#config{password_protected = Val}};
+	      password -> StateData#state{config = (StateData#state.config)#config{password = Val}};
+	      anonymous -> StateData#state{config = (StateData#state.config)#config{anonymous = Val}};
+	      logging -> StateData#state{config = (StateData#state.config)#config{logging = Val}};
 	      max_users ->
 		  ServiceMaxUsers = get_service_max_users(StateData),
 		  MaxUsers = if

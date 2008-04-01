@@ -16,7 +16,7 @@
 %%% This software is copyright 2006-2008, Process-one.
 %%%
 %%%
-%%% @copyright 2006-2008 Process-one
+%%% copyright 2006-2008 Process-one
 %%%
 %%% This file contains pubsub types definition.
 %%% ====================================================================
@@ -122,7 +122,7 @@
 
 %% @type pubsubPresence() = #pubsub_presence{
 %%     key = {Host::host(), User::string(), Server::string()},
-%%     presence = list().
+%%     presence = list()}.
 %%% <p>This is the format of the <tt>published presence</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>ram</tt>.</p>
 -record(pubsub_presence, {key,

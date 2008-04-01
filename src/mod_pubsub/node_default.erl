@@ -79,9 +79,9 @@
 %% API definition
 %% ================
 
-%% @spec (Host) -> any()
+%% @spec (Host, ServerHost, Opts) -> any()
 %%	 Host = mod_pubsub:host()
-%%	 ServerHost = host()
+%%	 ServerHost = mod_pubsub:host()
 %%	 Opts = list()
 %% @doc <p>Called during pubsub modules initialisation. Any pubsub plugin must
 %% implement this function. It can return anything.</p>
@@ -109,8 +109,9 @@ init(_Host, _ServerHost, _Opts) ->
     end,
     ok.
 
-%% @spec (Host) -> any()
+%% @spec (Host, ServerHost) -> any()
 %%	 Host = mod_pubsub:host()
+%%	 ServerHost = host()
 %% @doc <p>Called during pubsub modules termination. Any pubsub plugin must
 %% implement this function. It can return anything.</p>
 terminate(_Host, _ServerHost) ->
@@ -172,10 +173,11 @@ features() ->
      "subscription-notifications"
     ].
 
-%% @spec (Host, Node, Owner, Access) -> bool()
+%% @spec (Host, ServerHost, Node, ParentNode, Owner, Access) -> bool()
 %%	 Host = mod_pubsub:host()
 %%	 ServerHost = mod_pubsub:host()
 %%	 Node = mod_pubsub:pubsubNode()
+%%	 ParentNode = mod_pubsub:pubsubNode()
 %%	 Owner = mod_pubsub:jid()
 %%	 Access = all | atom()
 %% @doc Checks if the current user has the permission to create the requested node
@@ -246,7 +248,7 @@ delete_node(Host, Removed) ->
       end, Removed),
     {result, {default, broadcast, Removed}}.
 
-%% @spec (Host, Node, Sender, Subscriber, AccessModel, SendLast) ->
+%% @spec (Host, Node, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
 %%		 {error, Reason} | {result, Result}
 %% @doc <p>Accepts or rejects subcription requests on a PubSub node.</p>
 %% <p>The mechanism works as follow:
@@ -531,7 +533,12 @@ delete_item(Host, Node, Publisher, ItemId) ->
 	    end
     end.
 
-%% @spec (TODO)
+%% @spec (Host, Node, Owner) ->
+%%		  {error, Reason::stanzaError()} |
+%%		  {result, {default, broadcast}}
+%%	 Host = mod_pubsub:host()
+%%	 Node = mod_pubsub:pubsubNode()
+%%	 Owner = mod_pubsub:jid()
 purge_node(Host, Node, Owner) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     case get_state(Host, Node, OwnerKey) of
@@ -597,9 +604,10 @@ set_affiliation(Host, Node, Owner, Affiliation) ->
     set_state(Record),
     ok.
 
-%% @spec (Host) -> [{Node,Subscription}]
+%% @spec (Host, Owner) -> [{Node,Subscription}]
 %%	 Host = host()
-%%	 JID = mod_pubsub:jid()
+%%	 Owner = mod_pubsub:jid()
+%%	 Node = mod_pubsub:pubsubNode()
 %% @doc <p>Return the current subscriptions for the given user</p>
 %% <p>The default module reads subscriptions in the main Mnesia
 %% <tt>pubsub_state</tt> table. If a plugin stores its data in the same
@@ -679,7 +687,7 @@ get_state(Host, Node, JID) ->
 	    {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
-%% @spec (State) -> ok | {error, ?ERR_INTERNAL_SERVER_ERROR}
+%% @spec (State) -> ok | {error, Reason::stanzaError()}
 %%	 State = mod_pubsub:pubsubStates()
 %% @doc <p>Write a state into database.</p>
 set_state(State) when is_record(State, pubsub_state) ->
@@ -720,7 +728,7 @@ get_item(Host, Node, ItemId) ->
 	    {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
-%% @spec (Item) -> ok | {error, ?ERR_INTERNAL_SERVER_ERROR}
+%% @spec (Item) -> ok | {error, Reason::stanzaError()}
 %%	 Item = mod_pubsub:pubsubItems()
 %% @doc <p>Write a state into database.</p>
 set_item(Item) when is_record(Item, pubsub_item) ->

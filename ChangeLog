@@ -1,3 +1,16 @@
+2008-04-01  Badlop  <badlop@process-one.net>
+
+	* doc/api/Makefile: Report the correct ejabberd version. When
+	cleaning, remove also erlang.png
+
+	* src/mod_muc/mod_muc_room.erl: Update source code to prevent
+	warning messages from EDoc
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/nodetree_default.erl: Likewise
+	* src/mod_pubsub/nodetree_virtual.erl: Likewise
+	* src/mod_pubsub/pubsub.hrl: Likewise
+
 2008-04-01  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberdctl.template: Add firewalling port range definition
