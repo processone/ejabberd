@@ -42,7 +42,7 @@ NAME=-name
 if [ "$FIREWALL_WINDOW" = "" ] ; then
     KERNEL_OPTS=""
 else
-    KERNEL_OPTS="-kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} net_dist_listen_max ${FIREWALL_WINDOW#*-}"
+    KERNEL_OPTS="-kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
 fi
 
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $KERNEL_OPTS"
