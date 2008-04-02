@@ -1,3 +1,8 @@
+2008-04-02  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: add condition inclusion of pep in
+	disco identity (EJAB-564)
+
 2008-03-31  Badlop  <badlop@process-one.net>
 
 	* doc/webadmmain.png: Updated to ejabberd 2.0.0

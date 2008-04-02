@@ -112,7 +112,7 @@
 		host,
 		access,
 		nodetree = ?STDTREE,
-		plugins = [?STDNODE,?PEPNODE]}).
+		plugins = [?STDNODE]}).
 
 %%====================================================================
 %% API
@@ -206,7 +206,7 @@ init_plugins(Host, ServerHost, Opts) ->
 			      gen_mod:get_opt(nodetree, Opts, ?STDTREE)),
     ?INFO_MSG("** tree plugin is ~p",[TreePlugin]),
     TreePlugin:init(Host, ServerHost, Opts),
-    Plugins = lists:usort(gen_mod:get_opt(plugins, Opts, []) ++ [?STDNODE,?PEPNODE]),
+    Plugins = lists:usort(gen_mod:get_opt(plugins, Opts, []) ++ [?STDNODE]),
     lists:foreach(fun(Name) ->
 			  ?INFO_MSG("** init ~s plugin",[Name]),
 			  Plugin = list_to_atom(?PLUGIN_PREFIX ++ Name),
@@ -301,8 +301,15 @@ update_database(Host) ->
 %% disco hooks handling functions
 %%
 
-disco_local_identity(Acc, _From, _To, [], _Lang) ->
-    Acc ++ [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []} ];
+identity(Host) ->
+    Identity = case lists:member(?PEPNODE, plugins(Host)) of
+    true -> [{"category", "pubsub"}, {"type", "pep"}];
+    false -> [{"category", "pubsub"}]
+    end,
+    {xmlelement, "identity", Identity, []}.
+
+disco_local_identity(Acc, _From, To, [], _Lang) ->
+    Acc ++ [identity(To#jid.lserver)];
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -323,8 +330,8 @@ disco_local_items(Acc, _From, _To, [], _Lang) ->
 disco_local_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-disco_sm_identity(Acc, _From, _To, [], _Lang) ->
-    Acc ++ [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []} ];
+disco_sm_identity(Acc, _From, To, [], _Lang) ->
+    Acc ++ [identity(To#jid.lserver)];
 disco_sm_identity(Acc, From, To, Node, _Lang) ->
     LOwner = jlib:jid_tolower(jlib:jid_remove_resource(To)),
     Acc ++ case node_disco_identity(LOwner, From, Node) of
@@ -825,11 +832,7 @@ iq_get_vcard(Lang) ->
 			    "\nCopyright (c) 2004-2008 Process-One"}]}].
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
-    Plugins = case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), plugins) of
-		  [{plugins, PL}] -> PL;
-		  _ -> [?STDNODE,?PEPNODE]
-	      end,
-    iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, Plugins).
+    iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, plugins(ServerHost)).
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
     {xmlelement, _, _, SubEls} = SubEl,
@@ -1470,10 +1473,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		{_User, _Server, _Resource} -> 
 		    ?PEPNODE;
 		_ -> 
-		    case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), plugins) of
-			[{plugins, PL}] -> hd(PL);
-			_ -> ?STDNODE
-		    end
+		    hd(plugins(ServerHost))
 	    end,
 	    case lists:member("auto-create", features(Type)) of
 		true ->
@@ -2584,6 +2584,12 @@ set_xoption([_ | _Opts], _NewOpts) ->
 
 %%%% plugin handling
 
+plugins(Host) ->
+    case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), plugins) of
+    [{plugins, PL}] -> PL;
+    _ -> [?STDNODE]
+    end.
+
 features() ->
 	[
 	 %"access-authorize",   % OPTIONAL
@@ -2635,8 +2641,10 @@ features(Type) ->
 		      {'EXIT', {undef, _}} -> [];
 		      Result -> Result
 		  end.
-features(_Host, []) ->
-    lists:usort(features(?STDNODE) ++ features(?PEPNODE));
+features(Host, []) ->
+    lists:usort(lists:foldl(fun(Plugin, Acc) ->
+	Acc ++ features(Plugin)
+    end, [], plugins(Host)));
 features(Host, Node) ->
     {result, Features} = node_action(Host, Node, features, []),
     lists:usort(features() ++ Features).
