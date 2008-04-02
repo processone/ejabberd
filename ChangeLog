@@ -3,6 +3,9 @@
 	* src/mod_pubsub/mod_pubsub.erl: add condition inclusion of pep in
 	disco identity (EJAB-564)
 
+	* src/Makefile.in: Do not ignore values passed from configure
+	(thanks to Justin Boffemmyer)(EJAB-592)
+
 2008-04-01  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Updated command line parameters, epmd section
