@@ -46,6 +46,7 @@ ifeq (@pam@, pam)
 endif
 
 prefix = @prefix@
+exec_prefix = @exec_prefix@
 
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @pam@ @web@ stringprep @tls@ @odbc@ @ejabberd_zlib@
 ERLSHLIBS = expat_erl.so
@@ -55,15 +56,15 @@ BEAMS = $(SOURCES:.erl=.beam)
 
 DESTDIR =
 
-EJABBERDDIR = $(DESTDIR)@prefix@/var/lib/ejabberd
+EJABBERDDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
 BEAMDIR = $(EJABBERDDIR)/ebin
 PRIVDIR = $(EJABBERDDIR)/priv
 SODIR = $(PRIVDIR)/lib
 PBINDIR = $(PRIVDIR)/bin
 MSGSDIR = $(PRIVDIR)/msgs
-LOGDIR = $(DESTDIR)@prefix@/var/log/ejabberd
-ETCDIR = $(DESTDIR)@prefix@/etc/ejabberd
-SBINDIR = $(DESTDIR)@prefix@/sbin
+LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
+ETCDIR = $(DESTDIR)@sysconfdir@/ejabberd
+SBINDIR = $(DESTDIR)@sbindir@
 
 ifeq ($(shell uname),Darwin)
 DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
