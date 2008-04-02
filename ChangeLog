@@ -2,6 +2,9 @@
 
 	* src/mod_pubsub/mod_pubsub.erl: add condition inclusion of pep in
 	disco identity (EJAB-564)
+	* src/ejabberd_local.erl: The iq_response table wasn't cloned
+	automatically on all nodes which resulted in a single point of
+	failure (backport from trunk, thanks to Alexey)
 
 2008-03-31  Badlop  <badlop@process-one.net>
 

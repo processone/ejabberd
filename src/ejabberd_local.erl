@@ -171,6 +171,7 @@ init([]) ->
     mnesia:create_table(iq_response,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, iq_response)}]),
+    mnesia:add_table_copy(iq_response, node(), ram_copies),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
