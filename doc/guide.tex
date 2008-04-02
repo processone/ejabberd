@@ -1296,6 +1296,147 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+\subsection{Include Additional Configuration Files}
+\label{includeconfigfile}
+\ind{options!includeconfigfile}\ind{includeconfigfile}
+
+The option \option{include\_config\_file} in a configuration file instructs \ejabberd{} to include other configuration files immediately.
+
+The basic usage is:
+\begin{verbatim}
+  {include_config_file, <filename>}.
+\end{verbatim}
+It is also possible to specify suboptions:
+\begin{verbatim}
+  {include_config_file, <filename>, [<suboption>, <suboption>, ...]}.
+\end{verbatim}
+
+The filename can be indicated either as an absolute path,
+or relative to the main \ejabberd{} configuration file.
+It isn't possible to use wildcards.
+The file must exist and be readable.
+
+The allowed suboptions are:
+\begin{description}
+  \titem{\{disallow, [<option>, <option>, ...]\}} Disallows the usage of those options in the included configuration file.
+  The options that match this criteria are not accepted.
+  The default value is an empty list: \term{[]}
+  \titem{\{allow\_only, [<option>, <option>, ...]\}} Allows only the usage of those options in the included configuration file.
+  The options that do not match this criteria are not accepted.
+  The default value is: \term{all}
+\end{description}
+
+This is a basic example:
+\begin{verbatim}
+  {include_config_file, "/etc/ejabberd/additional.cfg"}.
+\end{verbatim}
+
+In this example, the included file is not allowed to contain a \term{listen} option.
+If such an option is present, the option will not be accepted.
+The file is in a subdirectory from where the main configuration file is.
+\begin{verbatim}
+  {include_config_file, "./example.org/additional_not_listen.cfg", [{disallow, [listen]}]}.
+\end{verbatim}
+
+In this example, \term{ejabberd.cfg} defines some ACL and Access rules, 
+and later includes another file with additional rules:
+\begin{verbatim}
+  {acl, admin, {user, "admin", "localhost"}}.
+  {access, announce, [{allow, admin}]}.
+  {include_config_file, "/etc/ejabberd/acl_and_access.cfg", [{allow_only, [acl, access]}]}.
+\end{verbatim}
+and content of the file \term{acl\_and\_access.cfg} can be, for example:
+\begin{verbatim}
+  {acl, admin, {user, "bob", "localhost"}}.
+  {acl, admin, {user, "jan", "localhost"}}.
+\end{verbatim}
+
+
+\subsection{Option Macros in Configuration File}
+\label{optionmacros}
+\ind{options!optionmacros}\ind{optionmacros}
+
+In the \ejabberd{} configuration file,
+it is possible to define a macro for a value
+and later use this macro when defining an option.
+
+A macro is defined with this syntax:
+\begin{verbatim}
+  {define_macro, '<MACRO>', <value>}.
+\end{verbatim}
+The \term{MACRO} must be surrounded by commas, and all in uppercase.
+The \term{value} can be any valid arbitrary Erlang term.
+
+The first definition of a macro is preserved,
+and additional definitions of the same macro are forgotten.
+
+Macros are processed after
+additional configuration files have been included,
+so it is possible to use macros that
+are defined in configuration files included before the usage.
+
+It isn't possible to use a macro in the definition
+of another macro.
+
+There are two ways to use a macro:
+\begin{description}
+
+  \titem{'<MACRO>'}
+  You can put this instead of a value in an \ejabberd{} option,
+  and will be replaced with the \term{value} previously defined.
+  If the macro is not defined previously,
+  the program will crash and report an error.
+
+  \titem{\{use\_macro, '<MACRO>', <defaultvalue>\}}
+  Use a macro even if it may not be defined.
+  If the macro is not defined previously,
+  the provided \term{defaultvalue} is used.
+  This usage behaves as if it were defined and used this way:
+  \begin{verbatim}
+    {define_macro, '<MACRO>', <defaultvalue>}.
+    '<MACRO>'
+  \end{verbatim}
+
+\end{description}
+
+This example shows the basic usage of a macro:
+\begin{verbatim}
+  {define_macro, 'LOG_LEVEL_NUMBER', 5}.
+  {loglevel, 'LOG_LEVEL_NUMBER'}.
+\end{verbatim}
+The resulting option interpreted by \ejabberd{} is: \term{\{loglevel, 5\}}.
+
+This example shows that values can be any arbitrary Erlang term:
+\begin{verbatim}
+  {define_macro, 'USERBOB', {user, "bob", "localhost"}}.
+  {acl, admin, 'USERBOB'}.
+\end{verbatim}
+The resulting option interpreted by \ejabberd{} is: \term{\{acl, admin, \{user, "bob", "localhost"\}\}}.
+
+This complex example:
+\begin{verbatim}
+{define_macro, 'NUMBER_PORT_C2S', 5222}.
+{define_macro, 'PORT_S2S_IN', {5269, ejabberd_s2s_in, []}}.
+{listen,
+ [
+  {'NUMBER_PORT_C2S', ejabberd_c2s, []},
+  'PORT_S2S_IN',
+  {{use_macro, 'NUMBER_PORT_HTTP', 5280}, ejabberd_http, []}
+ ]
+}.
+\end{verbatim}
+produces this result after being interpreted:
+\begin{verbatim}
+{listen,
+ [
+  {5222, ejabberd_c2s, []},
+  {5269, ejabberd_s2s_in, []},
+  {5280, ejabberd_http, []}
+ ]
+}.
+\end{verbatim}
+
+
 \section{Database and LDAP Configuration}
 \label{database}
 \ind{database}

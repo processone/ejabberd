@@ -35,6 +35,15 @@
 -include("ejabberd.hrl").
 -include("ejabberd_config.hrl").
 
+
+%% @type macro() = {macro_key(), macro_value()}
+
+%% @type macro_key() = atom().
+%% The atom must have all characters in uppercase.
+
+%% @type macro_value() = term().
+
+
 start() ->
     mnesia:create_table(config,
 			[{disc_copies, [node()]},
@@ -45,29 +54,66 @@ start() ->
 			 {local_content, true},
 			 {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
-    Config = case application:get_env(config) of
-		 {ok, Path} -> Path;
-		 undefined -> 
-		     case os:getenv("EJABBERD_CONFIG_PATH") of
-			 false ->
-			     ?CONFIG_PATH;
-			 Path ->
-			     Path
-		     end
-	     end,
+    Config = get_ejabberd_config_path(),
     load_file(Config).
 
+%% @doc Get the filename of the ejabberd configuration file.
+%% The filename can be specified with: erl -config "/path/to/ejabberd.cfg".
+%% It can also be specified with the environtment variable EJABBERD_CONFIG_PATH.
+%% If not specified, the default value 'ejabberd.cfg' is assumed.
+%% @spec () -> string()
+get_ejabberd_config_path() ->
+    case application:get_env(config) of
+	{ok, Path} -> Path;
+	undefined ->
+	    case os:getenv("EJABBERD_CONFIG_PATH") of
+		false ->
+		    ?CONFIG_PATH;
+		Path ->
+		    Path
+	    end
+    end.
 
+%% @doc Load the ejabberd configuration file.
+%% It also includes additional configuration files and replaces macros.
+%% @spec (File::string()) -> [term()]
 load_file(File) ->
+    Terms = get_plain_terms_file(File),
+    State = lists:foldl(fun search_hosts/2, #state{}, Terms),
+    Terms_macros = replace_macros(Terms),
+    Res = lists:foldl(fun process_term/2, State, Terms_macros),
+    set_opts(Res).
+
+%% @doc Read an ejabberd configuration file and return the terms.
+%% Input is an absolute or relative path to an ejabberd config file.
+%% Returns a list of plain terms,
+%% in which the options 'include_config_file' were parsed
+%% and the terms in those files were included.
+%% @spec(string()) -> [term()]
+get_plain_terms_file(File1) ->
+    File = get_absolute_path(File1),
     case file:consult(File) of
 	{ok, Terms} ->
-	    State = lists:foldl(fun search_hosts/2, #state{}, Terms),
-	    Res = lists:foldl(fun process_term/2, State, Terms),
-	    set_opts(Res);
+	    include_config_files(Terms);
 	{error, Reason} ->
 	    ?ERROR_MSG("Can't load config file ~p: ~p", [File, Reason]),
 	    exit(File ++ ": " ++ file:format_error(Reason))
     end.
+
+%% @doc Convert configuration filename to absolute path.
+%% Input is an absolute or relative path to an ejabberd configuration file.
+%% And returns an absolute path to the configuration file.
+%% @spec (string()) -> string()
+get_absolute_path(File) ->
+    case filename:pathtype(File) of
+	absolute ->
+	    File;
+	relative ->
+	    Config_path = get_ejabberd_config_path(),
+	    Config_dir = filename:dirname(Config_path),
+	    filename:absname_join(Config_dir, File)
+    end.
+
 
 search_hosts(Term, State) ->
     case Term of
@@ -110,6 +156,140 @@ normalize_hosts([Host|Hosts], PrepHosts) ->
 	PrepHost ->
 	    normalize_hosts(Hosts, [PrepHost|PrepHosts])
     end.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Support for 'include_config_file'
+
+%% @doc Include additional configuration files in the list of terms.
+%% @spec ([term()]) -> [term()]
+include_config_files(Terms) ->
+    include_config_files(Terms, []).
+
+include_config_files([], Res) ->
+    Res;
+include_config_files([{include_config_file, Filename} | Terms], Res) ->
+    include_config_files([{include_config_file, Filename, []} | Terms], Res);
+include_config_files([{include_config_file, Filename, Options} | Terms], Res) ->
+    Included_terms = get_plain_terms_file(Filename),
+    Disallow = proplists:get_value(disallow, Options, []),
+    Included_terms2 = delete_disallowed(Disallow, Included_terms),
+    Allow_only = proplists:get_value(allow_only, Options, all),
+    Included_terms3 = keep_only_allowed(Allow_only, Included_terms2),
+    include_config_files(Terms, Res ++ Included_terms3);
+include_config_files([Term | Terms], Res) ->
+    include_config_files(Terms, Res ++ [Term]).
+
+%% @doc Filter from the list of terms the disallowed.
+%% Returns a sublist of Terms without the ones which first element is
+%% included in Disallowed.
+%% @spec (Disallowed::[atom()], Terms::[term()]) -> [term()]
+delete_disallowed(Disallowed, Terms) ->
+    lists:foldl(
+      fun(Dis, Ldis) ->
+	      delete_disallowed2(Dis, Ldis)
+      end,
+      Terms,
+      Disallowed).
+
+delete_disallowed2(Disallowed, [H|T]) ->
+    case element(1, H) of
+	Disallowed ->
+	    ?WARNING_MSG("The option '~p' is disallowed, "
+			 "and will not be accepted", [Disallowed]),
+	    delete_disallowed2(Disallowed, T);
+	_ ->
+	    [H|delete_disallowed2(Disallowed, T)]
+    end;
+delete_disallowed2(_, []) ->
+    [].
+
+%% @doc Keep from the list only the allowed terms.
+%% Returns a sublist of Terms with only the ones which first element is
+%% included in Allowed.
+%% @spec (Allowed::[atom()], Terms::[term()]) -> [term()]
+keep_only_allowed(all, Terms) ->
+    Terms;
+keep_only_allowed(Allowed, Terms) ->
+    {As, NAs} = lists:partition(
+		  fun(Term) ->
+			  lists:member(element(1, Term), Allowed)
+		  end,
+		  Terms),
+    [?WARNING_MSG("This option is not allowed, "
+		  "and will not be accepted:~n~p", [NA])
+     || NA <- NAs],
+    As.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Support for Macro
+
+%% @doc Replace the macros with their defined values.
+%% @spec (Terms::[term()]) -> [term()]
+replace_macros(Terms) ->
+    {TermsOthers, Macros} = split_terms_macros(Terms),
+    replace(TermsOthers, Macros).
+
+%% @doc Split Terms into normal terms and macro definitions.
+%% @spec (Terms) -> {Terms, Macros}
+%%       Terms = [term()]
+%%       Macros = [macro()]
+split_terms_macros(Terms) ->
+    lists:foldl(
+      fun(Term, {TOs, Ms}) ->
+	      case Term of
+			  {define_macro, Key, Value} -> 
+			  case is_atom(Key) and is_all_uppercase(Key) of
+				true -> 
+					{TOs, Ms++[{Key, Value}]};
+				false -> 
+					exit({macro_not_properly_defined, Term})
+				end;
+				Term ->
+					{TOs ++ [Term], Ms}
+	      end
+      end,
+	  {[], []},
+      Terms).
+
+%% @doc Recursively replace in Terms macro usages with the defined value.
+%% @spec (Terms, Macros) -> Terms
+%%       Terms = [term()]
+%%       Macros = [macro()]
+replace([], _) ->
+    [];
+replace([Term|Terms], Macros) ->
+    [replace_term(Term, Macros) | replace(Terms, Macros)].
+
+replace_term(Key, Macros) when is_atom(Key) ->
+	case is_all_uppercase(Key) of
+		true ->
+			case proplists:get_value(Key, Macros) of
+				undefined -> exit({undefined_macro, Key});
+				Value -> Value
+			end;
+		false ->
+			Key
+	end;
+replace_term({use_macro, Key, Value}, Macros) ->
+    proplists:get_value(Key, Macros, Value);
+replace_term(Term, Macros) when is_list(Term) ->
+    replace(Term, Macros);
+replace_term(Term, Macros) when is_tuple(Term) ->
+    List = tuple_to_list(Term),
+    List2 = replace(List, Macros),
+    list_to_tuple(List2);
+replace_term(Term, _) ->
+    Term.
+
+is_all_uppercase(Atom) ->
+	String = erlang:atom_to_list(Atom),
+	(String == string:to_upper(String)).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Process terms
 
 process_term(Term, State) ->
     case Term of
