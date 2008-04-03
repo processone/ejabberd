@@ -1419,7 +1419,13 @@ process_presence_probe(From, To, StateData) ->
 			allow ->
 			    Pid=element(2, StateData#state.sid),
 			    ejabberd_hooks:run(presence_probe_hook, StateData#state.server, [From, To, Pid]),
-			    ejabberd_router:route(To, From, Packet)
+			    %% Don't route a presence probe to oneself
+			    case From == To of
+				false ->
+				    ejabberd_router:route(To, From, Packet);
+			    	true ->
+				    ok
+			    end
 		    end;
 		Cond2 ->
 		    ejabberd_router:route(To, From,
