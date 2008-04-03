@@ -1,3 +1,8 @@
+2008-04-04  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_c2s.erl (process_presence_probe): Don't route a
+	presence probe to oneself (EJAB-498)
+
 2008-04-02  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: add condition inclusion of pep in
