@@ -1,5 +1,8 @@
 2008-04-04  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_auth_ldap.erl (get_vh_registered_users_number): New
+	function that returns 0 registered users (EJAB-331).
+
 	* src/ejabberd_c2s.erl (process_presence_probe): Don't route a
 	presence probe to oneself (EJAB-498)
 
