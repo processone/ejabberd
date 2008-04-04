@@ -48,6 +48,7 @@
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
+	 get_vh_registered_users_number/1,
 	 get_password/2,
 	 get_password_s/2,
 	 is_user_exists/2,
@@ -170,6 +171,9 @@ get_vh_registered_users(Server) ->
 	{'EXIT', _} -> [];
 	Result -> Result
 	end.
+
+get_vh_registered_users_number(_Server) ->
+    0.
 
 get_password(_User, _Server) ->
     false.
