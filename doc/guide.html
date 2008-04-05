@@ -2005,7 +2005,7 @@ to change its presence more often than the specified interval, the
 presence is cached by <TT>ejabberd</TT> and only the last presence is
 broadcasted to all users in the room after expiration of the
 interval delay. Intermediate presence packets are silently
-discarded. A good value for this option is 4 seconds.</DD><DT CLASS="dt-description"><B><TT>default_room_opts</TT></B></DT><DD CLASS="dd-description"> This
+discarded. A good value for this option is 4 seconds.</DD><DT CLASS="dt-description"><B><TT>default_room_options</TT></B></DT><DD CLASS="dd-description"> This
 option allow to define the desired default room options. Obviously,
 the room creator can modify the room options at any time. The
 available room options are: <TT>allow_change_subj</TT>,
@@ -2081,7 +2081,7 @@ defined, but some user restriction could be added as well:<PRE CLASS="verbatim">
                {min_presence_interval, 4}]},
     ...
    ]}.
-</PRE></LI><LI CLASS="li-itemize">This example shows how to use <TT>default_room_opts</TT> to make sure
+</PRE></LI><LI CLASS="li-itemize">This example shows how to use <TT>default_room_options</TT> to make sure
 newly created chatrooms have by default those options.
 <PRE CLASS="verbatim">  {modules,
    [
