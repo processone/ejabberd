@@ -2014,6 +2014,9 @@ these queries. Possible values are:
   of IQ queries of a namespace with this discipline. In addition, the processing
   of this queue is done in parallel with that of other packets. This discipline
   is most recommended.
+  \titem{\{queues, N\}}: N separate queues are created to process the
+  queries. The queries are thus process in parallel, but in a
+  controlled way.
 \titem{parallel} For every packet with this discipline a separate Erlang process
   is spawned. Consequently, all these packets are processed in parallel.
   Although spawning of Erlang process has a relatively low cost, this can break

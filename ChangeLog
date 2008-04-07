@@ -1,3 +1,7 @@
+2008-04-07  Mickael Remond  <mremond@process-one.net>
+
+	* doc/guide.tex: Documented the IQ discipline {queue, N}.
+
 2008-04-05  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Fix default_room_opts with default_room_options
