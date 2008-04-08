@@ -1,3 +1,10 @@
+2008-04-08  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_auth_ldap.erl: LDAP function to get the number of
+	registered users is too slow (EJAB-331): set timeout in LDAP
+	search queries (thanks to Evgeniy Khramtsov) and return the number
+	of registered users.
+
 2008-04-07  Mickael Remond  <mremond@process-one.net>
 
 	* doc/guide.tex: Documented the IQ discipline {queue, N}.

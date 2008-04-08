@@ -86,6 +86,10 @@ handle_info(_Info, State) ->
     {noreply, State}.
 %% -----
 
+
+-define(LDAP_SEARCH_TIMEOUT, 5). % Timeout for LDAP search queries in seconds
+
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -172,8 +176,8 @@ get_vh_registered_users(Server) ->
 	Result -> Result
 	end.
 
-get_vh_registered_users_number(_Server) ->
-    0.
+get_vh_registered_users_number(Server) ->
+    length(get_vh_registered_users(Server)).
 
 get_password(_User, _Server) ->
     false.
@@ -220,6 +224,7 @@ get_vh_registered_users_ldap(Server) ->
 		{ok, EldapFilter} ->
 		    case eldap_pool:search(Eldap_ID, [{base, State#state.base},
 						 {filter, EldapFilter},
+						 {timeout, ?LDAP_SEARCH_TIMEOUT},
 						 {attributes, SortedDNAttrs}]) of
 			#eldap_search_result{entries = Entries} ->
 			    lists:flatmap(
