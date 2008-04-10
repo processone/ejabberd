@@ -56,6 +56,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("mod_privacy.hrl").
 
 -define(SETS, gb_sets).
 -define(DICT, dict).
@@ -84,7 +85,7 @@
 		pres_last, pres_pri,
 		pres_timestamp,
 		pres_invis = false,
-		privacy_list = none,
+		privacy_list = #userlist{},
 		conn = unknown,
 		ip,
 		lang}).
@@ -342,9 +343,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				true ->
 				    send_text(StateData, Header),
 				    fsm_next_state(wait_for_auth,
-					       StateData#state{
-						 server = Server,
-						 lang = Lang})
+						   StateData#state{
+						     server = Server,
+						     lang = Lang})
 			    end
 		    end;
 		_ ->
@@ -458,7 +459,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    PrivList =
 				ejabberd_hooks:run_fold(
 				  privacy_get_user_list, StateData#state.server,
-				  none,
+				  #userlist{},
 				  [U, StateData#state.server]),
 			    fsm_next_state(session_established,
 					   StateData#state{
@@ -806,7 +807,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    PrivList =
 			ejabberd_hooks:run_fold(
 			  privacy_get_user_list, StateData#state.server,
-			  none,
+			  #userlist{},
 			  [U, StateData#state.server]),
 		    fsm_next_state(session_established,
 				   StateData#state{
@@ -900,24 +901,18 @@ session_established({xmlstreamelement, El}, StateData) ->
 					       StateData)
 			end;
 		    "iq" ->
-			case StateData#state.privacy_list of
-			    none ->
-				ejabberd_router:route(FromJID, ToJID, NewEl),
-				StateData;
-			    _PrivList ->
-				case jlib:iq_query_info(NewEl) of
-				    #iq{xmlns = ?NS_PRIVACY} = IQ ->
-					process_privacy_iq(
-					  FromJID, ToJID, IQ, StateData);
-				    _ ->
-					ejabberd_hooks:run(
-					  user_send_packet,
-					  Server,
-					  [FromJID, ToJID, NewEl]),
-					ejabberd_router:route(
-					  FromJID, ToJID, NewEl),
-					StateData
-				end
+			case jlib:iq_query_info(NewEl) of
+			    #iq{xmlns = ?NS_PRIVACY} = IQ ->
+				process_privacy_iq(
+				  FromJID, ToJID, IQ, StateData);
+			    _ ->
+				ejabberd_hooks:run(
+				  user_send_packet,
+				  Server,
+				  [FromJID, ToJID, NewEl]),
+				ejabberd_router:route(
+				  FromJID, ToJID, NewEl),
+				StateData
 			end;
 		    "message" ->
 			ejabberd_hooks:run(user_send_packet,
