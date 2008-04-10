@@ -1,7 +1,7 @@
 2008-04-10  Mickael Remond  <mremond@process-one.net>
 
 	*src/ejabberd_c2s.erl: Uniform default value for empty privacy
-	list. Fixex (EJAB-603).
+	list. Fixes (EJAB-603).
 
 2008-04-08  Badlop  <badlop@process-one.net>
 
