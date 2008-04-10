@@ -74,6 +74,7 @@ init(_Host, _ServerHost, _Opts) ->
 			 {index, [type,parentid]}]),
     NodesFields = record_info(fields, pubsub_node),
     case mnesia:table_info(pubsub_node, attributes) of
+	[host_node, host_parent, info] -> ok;  % old schema, updated later by pubsub
 	NodesFields -> ok;
 	_ -> mnesia:transform_table(pubsub_node, ignore, NodesFields)
     end,

@@ -1,6 +1,12 @@
+2008-04-10  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: fix identity and database update
+	bugfix
+	* src/mod_pubsub/nodetree_default.erl: Likewise
+
 2008-04-10  Mickael Remond  <mremond@process-one.net>
 
-	*src/ejabberd_c2s.erl: Uniform default value for empty privacy
+	* src/ejabberd_c2s.erl: Uniform default value for empty privacy
 	list. Fixes (EJAB-603).
 
 2008-04-08  Badlop  <badlop@process-one.net>

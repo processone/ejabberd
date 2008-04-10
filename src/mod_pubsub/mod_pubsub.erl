@@ -230,7 +230,7 @@ init_nodes(Host, ServerHost, ServedHosts) ->
     lists:foreach(
       fun(H) ->
 	      create_node(Host, ServerHost, ["home", H], service_jid(Host), ?STDNODE)
-      end, [ServerHost | ServedHosts]),
+      end, lists:usort([ServerHost | ServedHosts])),
     ok.
 
 update_database(Host) ->
@@ -304,7 +304,7 @@ update_database(Host) ->
 identity(Host) ->
     Identity = case lists:member(?PEPNODE, plugins(Host)) of
     true -> [{"category", "pubsub"}, {"type", "pep"}];
-    false -> [{"category", "pubsub"}]
+    false -> [{"category", "pubsub"}, {"type", "service"}]
     end,
     {xmlelement, "identity", Identity, []}.
 
@@ -2266,38 +2266,44 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
 				 [R|_] ->
 				     R;
 				 [] ->
-				     ?ERROR_MSG("~p@~p is offline; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
 				     ""
 			     end;
 			 _ ->
 			     LResource
 		     end,
-    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
-	C2SPid when is_pid(C2SPid) ->
-	    %% set the from address on the notification to the bare JID of the account owner
-	    %% Also, add "replyto" if entity has presence subscription to the account owner
-	    %% See XEP-0163 1.1 section 4.3.1
-	    Sender = jlib:make_jid(LUser, LServer, ""),
-	    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
-	    case catch ejabberd_c2s:get_subscribed_and_online(C2SPid) of
-		ContactsWithCaps when is_list(ContactsWithCaps) ->
-		    ?DEBUG("found contacts with caps: ~p", [ContactsWithCaps]),
-		    lists:foreach(
-		      fun({JID, Caps}) ->
-			    case is_caps_notify(LServer, Node, Caps) of
-				true ->
-				    To = jlib:make_jid(JID),
-				    ejabberd_router ! {route, Sender, To, Stanza};
-				false ->
-				    ok
-			    end
-		      end, ContactsWithCaps);
-		_ ->
-		    ok
-	    end,
-	    ok;
-	_ ->
-	    ok
+    case SenderResource of
+    "" ->
+	?DEBUG("~p@~p is offline; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
+	ok;
+    _ ->
+	case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
+	    C2SPid when is_pid(C2SPid) ->
+		%% set the from address on the notification to the bare JID of the account owner
+		%% Also, add "replyto" if entity has presence subscription to the account owner
+		%% See XEP-0163 1.1 section 4.3.1
+		Sender = jlib:make_jid(LUser, LServer, ""),
+		%%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
+		case catch ejabberd_c2s:get_subscribed_and_online(C2SPid) of
+		    ContactsWithCaps when is_list(ContactsWithCaps) ->
+			?DEBUG("found contacts with caps: ~p", [ContactsWithCaps]),
+			lists:foreach(
+			fun({JID, Caps}) ->
+				case is_caps_notify(LServer, Node, Caps) of
+				    true ->
+					To = jlib:make_jid(JID),
+					ejabberd_router ! {route, Sender, To, Stanza};
+				    false ->
+					ok
+				end
+			end, ContactsWithCaps);
+		    _ ->
+			ok
+		end,
+		ok;
+	    _ ->
+		?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
+		ok
+	end
     end;
 broadcast_by_caps(_, _, _, _) ->
     ok.
