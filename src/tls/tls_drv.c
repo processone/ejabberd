@@ -250,7 +250,7 @@ static int tls_drv_control(ErlDrvData handle,
 	       rlen++;
 	       b = driver_alloc_binary(rlen);
 	       b->orig_bytes[0] = 0;
-	       tmp_buf = &b->orig_bytes[1];
+	       tmp_buf = (unsigned char *)&b->orig_bytes[1];
 	       i2d_X509(cert, &tmp_buf);
 	       X509_free(cert);
 	       *rbuf = (char *)b;
