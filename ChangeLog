@@ -1,5 +1,11 @@
 2008-04-11  Badlop  <badlop@process-one.net>
 
+	* src/Makefile.in: Improved indentation of GCC call
+	* src/ejabberd_zlib/Makefile.in: Likewise
+	* src/mod_irc/Makefile.in: Likewise
+	* src/stringprep/Makefile.in: Likewise
+	* src/tls/Makefile.in: Likewise
+
 	* src/ejabberd_listener.erl (start_listener): Revert SVN r1260.
 
 2008-04-11  Alexey Shchepin  <alexey@process-one.net>

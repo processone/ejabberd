@@ -39,11 +39,15 @@ $(OUTDIR)/%.beam:       %.erl
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
 $(ERLSHLIBS):	../%.so:	%.c
-			$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) \
-			$(subst ../,,$(subst .so,.c,$@)) $(LIBS) \
-			$(ZLIB_LIBS) $(ZLIB_CFLAGS) \
-			$(ERLANG_LIBS) $(ERLANG_CFLAGS) \
-			-o $@ $(DYNAMIC_LIB_CFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) \
+		$(subst ../,,$(subst .so,.c,$@)) \
+		$(LIBS) \
+		$(ZLIB_LIBS) \
+		$(ZLIB_CFLAGS) \
+		$(ERLANG_LIBS) \
+		$(ERLANG_CFLAGS) \
+		-o $@ \
+		$(DYNAMIC_LIB_CFLAGS)
 
 clean:
 	rm -f $(BEAMS) $(ERLSHLIBS)
