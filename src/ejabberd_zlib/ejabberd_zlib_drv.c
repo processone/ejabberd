@@ -107,14 +107,14 @@ static int ejabberd_zlib_drv_control(ErlDrvData handle,
 	 b = driver_alloc_binary(size);
 	 b->orig_bytes[0] = 0;
 
-	 d->d_stream->next_in = buf;
+	 d->d_stream->next_in = (unsigned char *)buf;
 	 d->d_stream->avail_in = len;
 	 d->d_stream->avail_out = 0;
 	 err = Z_OK;
 
 	 while (err == Z_OK && d->d_stream->avail_out == 0)
 	 {
-	    d->d_stream->next_out = b->orig_bytes + rlen;
+	    d->d_stream->next_out = (unsigned char *)b->orig_bytes + rlen;
 	    d->d_stream->avail_out = BUF_SIZE;
 
 	    err = deflate(d->d_stream, Z_SYNC_FLUSH);
@@ -135,14 +135,14 @@ static int ejabberd_zlib_drv_control(ErlDrvData handle,
 	 b->orig_bytes[0] = 0;
 
 	 if (len > 0) {
-	    d->i_stream->next_in = buf;
+	    d->i_stream->next_in = (unsigned char *)buf;
 	    d->i_stream->avail_in = len;
 	    d->i_stream->avail_out = 0;
 	    err = Z_OK;
 
 	    while (err == Z_OK && d->i_stream->avail_out == 0)
 	    {
-	       d->i_stream->next_out = b->orig_bytes + rlen;
+	       d->i_stream->next_out = (unsigned char *)b->orig_bytes + rlen;
 	       d->i_stream->avail_out = BUF_SIZE;
 
 	       err = inflate(d->i_stream, Z_SYNC_FLUSH);
