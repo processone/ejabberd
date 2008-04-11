@@ -2,10 +2,10 @@
 
 	* src/ejabberd_config.erl: Removed a dependency on string:to_upper
 
-	* src/tls/tls_drv.c: Fixed gcc signedness warnings
+	* src/tls/tls_drv.c: Fixed gcc signedness warnings (EJAB-447)
 	* src/ejabberd_zlib/ejabberd_zlib_drv.c: Likewise
 
-	* src/expat_erl.c: Removed R9B workaround
+	* src/expat_erl.c: Removed R9B workaround (EJAB-447)
 
 2008-04-10  Christophe Romain <christophe.romain@process-one.net>
 
