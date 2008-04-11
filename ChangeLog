@@ -1,3 +1,7 @@
+2008-04-11  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_listener.erl (start_listener): Revert SVN r1260.
+
 2008-04-11  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/ejabberd_config.erl: Removed a dependency on string:to_upper
