@@ -239,18 +239,18 @@ split_terms_macros(Terms) ->
     lists:foldl(
       fun(Term, {TOs, Ms}) ->
 	      case Term of
-			  {define_macro, Key, Value} -> 
-			  case is_atom(Key) and is_all_uppercase(Key) of
-				true -> 
-					{TOs, Ms++[{Key, Value}]};
-				false -> 
-					exit({macro_not_properly_defined, Term})
-				end;
-				Term ->
-					{TOs ++ [Term], Ms}
+		  {define_macro, Key, Value} -> 
+		      case is_atom(Key) and is_all_uppercase(Key) of
+			  true -> 
+			      {TOs, Ms++[{Key, Value}]};
+			  false -> 
+			      exit({macro_not_properly_defined, Term})
+		      end;
+		  Term ->
+		      {TOs ++ [Term], Ms}
 	      end
       end,
-	  {[], []},
+      {[], []},
       Terms).
 
 %% @doc Recursively replace in Terms macro usages with the defined value.
@@ -263,15 +263,15 @@ replace([Term|Terms], Macros) ->
     [replace_term(Term, Macros) | replace(Terms, Macros)].
 
 replace_term(Key, Macros) when is_atom(Key) ->
-	case is_all_uppercase(Key) of
-		true ->
-			case proplists:get_value(Key, Macros) of
-				undefined -> exit({undefined_macro, Key});
-				Value -> Value
-			end;
-		false ->
-			Key
-	end;
+    case is_all_uppercase(Key) of
+	true ->
+	    case proplists:get_value(Key, Macros) of
+		undefined -> exit({undefined_macro, Key});
+		Value -> Value
+	    end;
+	false ->
+	    Key
+    end;
 replace_term({use_macro, Key, Value}, Macros) ->
     proplists:get_value(Key, Macros, Value);
 replace_term(Term, Macros) when is_list(Term) ->
@@ -284,9 +284,10 @@ replace_term(Term, _) ->
     Term.
 
 is_all_uppercase(Atom) ->
-	String = erlang:atom_to_list(Atom),
-	(String == string:to_upper(String)).
-
+    String = erlang:atom_to_list(Atom),
+    lists:all(fun(C) when C >= $a, C =< $z -> false;
+		 (_) -> true
+	      end, String).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Process terms

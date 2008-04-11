@@ -1,5 +1,7 @@
 2008-04-11  Alexey Shchepin  <alexey@process-one.net>
 
+	* src/ejabberd_config.erl: Removed a dependency on string:to_upper
+
 	* src/tls/tls_drv.c: Fixed gcc signedness warnings
 	* src/ejabberd_zlib/ejabberd_zlib_drv.c: Likewise
 
