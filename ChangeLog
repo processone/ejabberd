@@ -1,3 +1,8 @@
+2008-04-12  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: Include Last-Modified HTTP
+	header in responses to allow caching (EJAB-546)
+
 2008-04-11  Badlop  <badlop@process-one.net>
 
 	* src/Makefile.in: Improved indentation of GCC call

@@ -635,16 +635,16 @@ process_admin(Host,
 	       ], Host, Lang);
 
 process_admin(Host, #request{path = ["style.css"]}) ->
-    {200, [{"Content-Type", "text/css"}], css(Host)};
+    {200, [{"Content-Type", "text/css"}, last_modified(), cache_control_public()], css(Host)};
 
 process_admin(_Host, #request{path = ["favicon.ico"]}) ->
-    {200, [{"Content-Type", "image/x-icon"}], favicon()};
+    {200, [{"Content-Type", "image/x-icon"}, last_modified(), cache_control_public()], favicon()};
 
 process_admin(_Host, #request{path = ["logo.png"]}) ->
-    {200, [{"Content-Type", "image/png"}], logo()};
+    {200, [{"Content-Type", "image/png"}, last_modified(), cache_control_public()], logo()};
 
 process_admin(_Host, #request{path = ["logo-fill.png"]}) ->
-    {200, [{"Content-Type", "image/png"}], logo_fill()};
+    {200, [{"Content-Type", "image/png"}, last_modified(), cache_control_public()], logo_fill()};
 
 process_admin(Host,
 	      #request{path = ["acls-raw"],
@@ -2272,3 +2272,7 @@ url_func({users_queue, Prefix, User, _Server}) ->
 url_func({user, Prefix, User, _Server}) ->
     Prefix ++ "user/" ++ User ++ "/".
 
+last_modified() ->
+    {"Last-Modified", "Mon, 25 Feb 2008 13:23:30 GMT"}.
+cache_control_public() ->
+    {"Cache-Control", "public"}.
