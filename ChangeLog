@@ -1,3 +1,7 @@
+2008-04-14  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_caps.erl: Cache negative response (EJAB-474)
+
 2008-04-11  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/tls/tls_drv.c: Fixed gcc signedness warnings (EJAB-447)
