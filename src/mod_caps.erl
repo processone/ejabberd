@@ -250,8 +250,21 @@ handle_cast({disco_response, From, _To,
 		    ?ERROR_MSG("ID '~s' matches no query", [ID])
 	    end;
 	{error, _} ->
-	    gen_server:cast(self(), visit_feature_queries),
-	    ?DEBUG("Error IQ reponse from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
+	    %% XXX: if we get error, we cache empty feature not to probe the client continuously
+	    case ?DICT:find(ID, Requests) of
+		{ok, {Node, SubNode}} ->
+		    Features = [],
+		    mnesia:transaction(
+		      fun() ->
+			      mnesia:write(#caps_features{node_pair = {Node, SubNode},
+							  features = Features})
+		      end),
+		    gen_server:cast(self(), visit_feature_queries);
+		error ->
+		    ?ERROR_MSG("ID '~s' matches no query", [ID])
+	    end;
+	    %gen_server:cast(self(), visit_feature_queries),
+	    %?DEBUG("Error IQ reponse from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
 	{result, _} ->
 	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
 	_ ->
