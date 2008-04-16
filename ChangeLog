@@ -1,3 +1,7 @@
+2008-04-16  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Clarification: PEP is enabled in default config
+
 2008-04-14  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_caps.erl: Cache negative response (EJAB-474)
