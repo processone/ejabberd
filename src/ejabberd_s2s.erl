@@ -34,6 +34,7 @@
 	 route/3,
 	 have_connection/1,
 	 has_key/2,
+	 get_connections_pids/1,
 	 try_register/1,
 	 remove_connection/3,
 	 dirty_get_connections/0,
@@ -106,6 +107,14 @@ has_key(FromTo, Key) ->
 	    false;
 	_ ->
 	    true
+    end.
+
+get_connections_pids(FromTo) ->
+    case catch mnesia:dirty_read(s2s, FromTo) of
+	L when is_list(L) ->
+	    [Connection#s2s.pid || Connection <- L];
+	_ ->
+	    []
     end.
 
 try_register(FromTo) ->
