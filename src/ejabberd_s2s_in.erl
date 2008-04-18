@@ -352,6 +352,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
             case {ejabberd_s2s:allow_host(To, From),
                   lists:member(LTo, ejabberd_router:dirty_get_all_domains())} of
                 {true, true} ->
+		    ejabberd_s2s_out:terminate_if_waiting_delay(To, From),
 		    ejabberd_s2s_out:start(To, From,
 					   {verify, self(),
 					    Key, StateData#state.streamid}),

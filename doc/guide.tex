@@ -786,6 +786,9 @@ There are some additional global options:
   Defines if incoming and outgoing s2s connections with a specific remote host are allowed or denied.
   This allows to restrict ejabberd to only stablish s2s connections 
   with a small list of trusted servers, or to block some specific servers.
+  \titem{\{s2s\_max\_retry\_delay, Seconds\}} \ind{options!s2s\_max\_retry\_delay}
+  The maximum allowed delay for retry to connect after a failed connection attempt.
+  Specified in seconds. The default value is 300 seconds (5 minutes).
 \end{description}
 
 For example, the following simple configuration defines:

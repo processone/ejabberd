@@ -33,6 +33,7 @@
 -export([start/3,
 	 start_link/3,
 	 start_connection/1,
+	 terminate_if_waiting_delay/2,
 	 stop_connection/1]).
 
 %% p1_fsm callbacks (same as gen_fsm)
@@ -67,6 +68,7 @@
 		db_enabled = true,
 		try_auth = true,
 		myname, server, queue,
+		delay_to_retry = undefined_delay,
 		new = false, verify = false,
 		timer}).
 
@@ -91,6 +93,10 @@
 -define(FSMLIMITS,[]).
 %% -define(FSMLIMITS, [{max_queue, 2000}]).
 -define(FSMTIMEOUT, 5000).
+
+%% Maximum delay to wait before retrying to connect after a failed attempt.
+%% Specified in miliseconds. Default value is 5 minutes.
+-define(MAX_RETRY_DELAY, 300000).
 
 -define(STREAM_HEADER,
 	"<?xml version='1.0'?>"
@@ -217,7 +223,7 @@ open_socket(init, StateData) ->
 	{error, _Reason} ->
 	    ?INFO_MSG("s2s connection: ~s -> ~s (remote server not found)",
 		      [StateData#state.myname, StateData#state.server]),
-	    wait_before_reconnect(StateData, 300000)
+	    wait_before_reconnect(StateData)
 	    %%{stop, normal, StateData}
     end;
 open_socket(stop, StateData) ->
@@ -768,6 +774,12 @@ handle_info({timeout, Timer, _}, _StateName,
     ?INFO_MSG("Closing connection with ~s: timeout", [StateData#state.server]),
     {stop, normal, StateData};
 
+handle_info(terminate_if_waiting_before_retry, wait_before_retry, StateData) ->
+    {stop, normal, StateData};
+
+handle_info(terminate_if_waiting_before_retry, StateName, StateData) ->
+    {next_state, StateName, StateData, get_timeout_interval(StateName)};
+
 handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData, get_timeout_interval(StateName)}.
 
@@ -989,7 +1001,7 @@ log_s2s_out(false, _, _) -> ok;
 log_s2s_out(_, Myname, Server) ->
     ?INFO_MSG("Trying to open s2s connection: ~s -> ~s",[Myname, Server]).
 
-%% Calcultate timeout depending on which state we are in:
+%% Calculate timeout depending on which state we are in:
 %% Can return integer > 0 | infinity
 get_timeout_interval(StateName) ->
     case StateName of
@@ -1005,11 +1017,45 @@ get_timeout_interval(StateName) ->
 
 %% This function is intended to be called at the end of a state
 %% function that want to wait for a reconnect delay before stopping.
-wait_before_reconnect(StateData, Delay) ->
+wait_before_reconnect(StateData) ->
     %% bounce queue manage by process and Erlang message queue
     bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
     bounce_messages(?ERR_REMOTE_SERVER_NOT_FOUND),
     cancel_timer(StateData#state.timer),
+    Delay = case StateData#state.delay_to_retry of
+		undefined_delay ->
+		    %% The initial delay is random between 1 and 15 seconds
+		    %% Return a random integer between 1000 and 15000
+		    {_, _, MicroSecs} = now(),
+		    (MicroSecs rem 14000) + 1000;
+		D1 ->
+		    %% Duplicate the delay with each successive failed
+		    %% reconnection attempt, but don't exceed the max
+		    lists:min([D1 * 2, get_max_retry_delay()])
+	    end,
     Timer = erlang:start_timer(Delay, self(), []),
     {next_state, wait_before_retry, StateData#state{timer=Timer,
+						    delay_to_retry = Delay,
 						    queue = queue:new()}}.
+
+%% @doc Get the maximum allowed delay for retry to reconnect (in miliseconds).
+%% The default value is 5 minutes.
+%% The option {s2s_max_retry_delay, Seconds} can be used (in seconds).
+%% @spec () -> integer()
+get_max_retry_delay() ->
+    case ejabberd_config:get_local_option(s2s_max_retry_delay) of
+	Seconds when is_integer(Seconds) ->
+	    Seconds*1000;
+	_ ->
+	    ?MAX_RETRY_DELAY
+    end.
+
+%% Terminate s2s_out connections that are in state wait_before_retry
+terminate_if_waiting_delay(From, To) ->
+    FromTo = {From, To},
+    Pids = ejabberd_s2s:get_connections_pids(FromTo),
+    lists:foreach(
+      fun(Pid) ->
+	      Pid ! terminate_if_waiting_before_retry
+      end,
+      Pids).

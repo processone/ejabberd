@@ -1,3 +1,11 @@
+2008-04-18  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_s2s_out.erl: Fix long timeout when reconnecting s2s
+	after a remote server crash (EJAB-540)
+	* src/ejabberd_s2s_in.erl: Likewise
+	* src/ejabberd_s2s.erl: Likewise
+	* doc/guide.tex: Likewise
+
 2008-04-16  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Clarification: PEP is enabled in default config
