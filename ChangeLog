@@ -1,3 +1,17 @@
+2008-04-22  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_auth.erl: Improve anonymous authentication to not
+	remove rosters accidentally (EJAB-549). New functions in
+	ejabberd_auth to get/check password and know which module accepted
+	the authentication. New element 'auth_module' in ejabberd_c2s
+	record 'statedata'. Cyrsasl provides a new property in the
+	response: {auth_module, AuthModule}.
+	* src/ejabberd_auth_anonymous.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+	* src/cyrsasl_anonymous.erl: Likewise
+	* src/cyrsasl_digest.erl: Likewise
+	* src/cyrsasl_plain.erl: Likewise
+
 2008-04-18  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_s2s_out.erl: Fix long timeout when reconnecting s2s
