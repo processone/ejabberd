@@ -1,3 +1,12 @@
+2008-04-23  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_register.erl: Restrict registration frequency per IP or
+	user
+	* src/ejabberd_c2s.erl: Pass IP to the c2s_unauthenticated_iq hook
+	* src/ejabberd_config.erl: Added registration_timeout option
+
+	* src/treap.erl: Treaps implementation
+
 2008-04-22  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_auth.erl: Improve anonymous authentication to not

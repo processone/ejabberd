@@ -1908,7 +1908,8 @@ process_unauthenticated_stanza(StateData, El) ->
 	    Res = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
 					  StateData#state.server,
 					  empty,
-					  [StateData#state.server, IQ]),
+					  [StateData#state.server, IQ,
+					   StateData#state.ip]),
 	    case Res of
 		empty ->
 		    % The only reasonable IQ's here are auth and register IQ's
