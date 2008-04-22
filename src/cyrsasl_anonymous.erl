@@ -51,5 +51,6 @@ mech_step(State, _ClientIn) ->
     %% Checks that the username is available
     case ejabberd_auth:is_user_exists(User, Server) of
 	true  -> {error, "not-authorized"};
-	false -> {ok, [{username, User}]}
+	false -> {ok, [{username, User},
+		       {auth_module, ejabberd_auth_anonymous}]}
     end.

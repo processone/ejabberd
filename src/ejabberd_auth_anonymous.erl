@@ -141,11 +141,17 @@ remove_connection(SID, LUser, LServer) ->
     mnesia:transaction(F).
 
 %% Register connection
-register_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
-    US = {LUser, LServer},
-    mnesia:sync_dirty(
-      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
-      end).
+register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
+    AuthModule = xml:get_attr_s(auth_module, Info),
+    case AuthModule == ?MODULE of
+	true ->
+	    US = {LUser, LServer},
+	    mnesia:sync_dirty(
+	      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
+	      end);
+	false ->
+	    ok
+    end.
 
 %% Remove an anonymous user from the anonymous users table
 unregister_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->

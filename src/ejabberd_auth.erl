@@ -34,6 +34,8 @@
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
+	 check_password_with_authmodule/3,
+	 check_password_with_authmodule/5,
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
@@ -42,6 +44,7 @@
 	 get_vh_registered_users_number/2,
 	 get_password/2,
 	 get_password_s/2,
+	 get_password_with_authmodule/2,
 	 is_user_exists/2,
 	 is_user_exists_in_other_modules/3,
 	 remove_user/2,
@@ -73,17 +76,56 @@ plain_password_required(Server) ->
 	      M:plain_password_required()
       end, auth_modules(Server)).
 
+%% @doc Check if the user and password can login in server.
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%     true | false
 check_password(User, Server, Password) ->
     lists:any(
       fun(M) ->
 	      M:check_password(User, Server, Password)
       end, auth_modules(Server)).
 
+%% @doc Check if the user and password can login in server.
+%% @spec (User::string(), Server::string(), Password::string(),
+%%        StreamID::string(), Digest::string()) ->
+%%     true | false
 check_password(User, Server, Password, StreamID, Digest) ->
     lists:any(
       fun(M) ->
 	      M:check_password(User, Server, Password, StreamID, Digest)
       end, auth_modules(Server)).
+
+%% @doc Check if the user and password can login in server.
+%% The user can login if at least an authentication method accepts the user
+%% and the password.
+%% The first authentication method that accepts the credentials is returned.
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%     {true, AuthModule} | false
+%% where
+%%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
+%%                 | ejabberd_auth_internal | ejabberd_auth_ldap
+%%                 | ejabberd_auth_odbc | ejabberd_auth_pam
+check_password_with_authmodule(User, Server, Password) ->
+    Res = lists:dropwhile(
+	    fun(M) ->
+		    not apply(M, check_password,
+			      [User, Server, Password])
+	    end, auth_modules(Server)),
+    case Res of
+	[] -> false;
+	[AuthMod | _] -> {true, AuthMod}
+    end.
+
+check_password_with_authmodule(User, Server, Password, StreamID, Digest) ->
+    Res = lists:dropwhile(
+	    fun(M) ->
+		    not apply(M, check_password,
+			      [User, Server, Password, StreamID, Digest])
+	    end, auth_modules(Server)),
+    case Res of
+	[] -> false;
+	[AuthMod | _] -> {true, AuthMod}
+    end.
 
 set_password(User, Server, Password) ->
     lists:foldl(
@@ -157,6 +199,8 @@ get_vh_registered_users_number(Server, Opts) ->
 		end
 	end, auth_modules(Server))).
 
+%% @doc Get the password of the user.
+%% @spec (User::string(), Server::string()) -> Password::string()
 get_password(User, Server) ->
     lists:foldl(
       fun(M, false) ->
@@ -172,6 +216,17 @@ get_password_s(User, Server) ->
 	Password ->
 	    Password
     end.
+
+%% @doc Get the password of the user and the auth module.
+%% @spec (User::string(), Server::string()) ->
+%%     {Password::string(), AuthModule::atom()} | {false, none}
+get_password_with_authmodule(User, Server) ->
+    lists:foldl(
+      fun(M, {false, _}) ->
+	      {M:get_password(User, Server), M};
+	 (_M, {Password, AuthModule}) ->
+	      {Password, AuthModule}
+      end, {false, none}, auth_modules(Server)).
 
 %% Returns true if the user exists in the DB or if an anonymous user is logged
 %% under the given name

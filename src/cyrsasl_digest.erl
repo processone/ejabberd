@@ -18,7 +18,7 @@
 
 -behaviour(cyrsasl).
 
--record(state, {step, nonce, username, authzid, get_password}).
+-record(state, {step, nonce, username, authzid, get_password, auth_module}).
 
 start(_Opts) ->
     cyrsasl:register_mechanism("DIGEST-MD5", ?MODULE, true).
@@ -44,9 +44,9 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	    UserName = xml:get_attr_s("username", KeyVals),
 	    AuthzId = xml:get_attr_s("authzid", KeyVals),
 	    case (State#state.get_password)(UserName) of
-		false ->
+		{false, _} ->
 		    {error, "not-authorized", UserName};
-		Passwd ->
+		{Passwd, AuthModule} ->
 		    Response = response(KeyVals, UserName, Passwd,
 					Nonce, AuthzId, "AUTHENTICATE"),
 		    case xml:get_attr_s("response", KeyVals) of
@@ -57,6 +57,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 			    {continue,
 			     "rspauth=" ++ RspAuth,
 			     State#state{step = 5,
+					 auth_module = AuthModule,
 					 username = UserName,
 					 authzid = AuthzId}};
 			_ ->
@@ -65,9 +66,11 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	    end
     end;
 mech_step(#state{step = 5,
+		 auth_module = AuthModule,
 		 username = UserName,
 		 authzid = AuthzId}, "") ->
-    {ok, [{username, UserName}, {authzid, AuthzId}]};
+    {ok, [{username, UserName}, {authzid, AuthzId},
+	  {auth_module, AuthModule}]};
 mech_step(A, B) ->
     ?DEBUG("SASL DIGEST: A ~p B ~p", [A,B]),
     {error, "bad-protocol"}.

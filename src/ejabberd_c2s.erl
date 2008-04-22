@@ -87,6 +87,7 @@
 		pres_invis = false,
 		privacy_list = #userlist{},
 		conn = unknown,
+		auth_module = unknown,
 		ip,
 		lang}).
 
@@ -238,11 +239,11 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					cyrsasl:server_new(
 					  "jabber", Server, "", [],
 					  fun(U) ->
-						  ejabberd_auth:get_password(
+						  ejabberd_auth:get_password_with_authmodule(
 						    U, Server)
 					  end,
 					  fun(U, P) ->
-						  ejabberd_auth:check_password(
+						  ejabberd_auth:check_password_with_authmodule(
 						    U, Server, P)
 					  end),
 				    Mechs = lists:map(
@@ -430,17 +431,18 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		(acl:match_rule(StateData#state.server,
 				StateData#state.access, JID) == allow) of
 		true ->
-		    case ejabberd_auth:check_password(
+		    case ejabberd_auth:check_password_with_authmodule(
 			   U, StateData#state.server, P,
 			   StateData#state.streamid, D) of
-			true ->
+			{true, AuthModule} ->
 			    ?INFO_MSG(
 			       "(~w) Accepted legacy authentication for ~s",
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
 			    SID = {now(), self()},
 			    Conn = get_conn_type(StateData),
-			    Info = [{ip, StateData#state.ip}, {conn, Conn}],
+			    Info = [{ip, StateData#state.ip}, {conn, Conn},
+				    {auth_module, AuthModule}],
 			    ejabberd_sm:open_session(
 			      SID, U, StateData#state.server, R, Info),
 			    Res1 = jlib:make_result_iq_reply(El),
@@ -468,6 +470,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     jid = JID,
 					     sid = SID,
 					     conn = Conn,
+					     auth_module = AuthModule,
 					     pres_f = ?SETS:from_list(Fs1),
 					     pres_t = ?SETS:from_list(Ts1),
 					     privacy_list = PrivList});
@@ -674,12 +677,14 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
+		    AuthModule = xml:get_attr_s(auth_module, Props),
 		    ?INFO_MSG("(~w) Accepted authentication for ~s",
 			      [StateData#state.socket, U]),
 		    fsm_next_state(wait_for_stream,
 				   StateData#state{
 				     streamid = new_id(),
 				     authenticated = true,
+				     auth_module = AuthModule,
 				     user = U});
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
@@ -790,7 +795,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			       jlib:jid_to_string(JID)]),
 		    SID = {now(), self()},
 		    Conn = get_conn_type(StateData),
-		    Info = [{ip, StateData#state.ip}, {conn, Conn}],
+		    Info = [{ip, StateData#state.ip}, {conn, Conn},
+			    {auth_module, StateData#state.auth_module}],
 		    ejabberd_sm:open_session(
 		      SID, U, StateData#state.server, R, Info),
 		    Res = jlib:make_result_iq_reply(El),

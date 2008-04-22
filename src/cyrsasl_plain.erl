@@ -47,8 +47,9 @@ mech_step(State, ClientIn) ->
     case parse(ClientIn) of
 	[AuthzId, User, Password] ->
 	    case (State#state.check_password)(User, Password) of
-		true ->
-		    {ok, [{username, User}, {authzid, AuthzId}]};
+		{true, AuthModule} ->
+		    {ok, [{username, User}, {authzid, AuthzId},
+			  {auth_module, AuthModule}]};
 		_ ->
 		    {error, "not-authorized", User}
 	    end;
