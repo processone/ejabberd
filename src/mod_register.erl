@@ -52,6 +52,7 @@ start(Host, Opts) ->
 			[{ram_copies, [node()]},
 			 {local_content, true},
 			 {attributes, [key, value]}]),
+    mnesia:add_table_copy(mod_register_ip, node(), ram_copies),
     ok.
 
 stop(Host) ->
@@ -212,14 +213,18 @@ try_register(User, Server, Password, Source) ->
 				    send_welcome_message(JID),
 				    send_registration_notifications(JID),
 				    ok;
-				{atomic, exists} ->
-				    {error, ?ERR_CONFLICT};
-				{error, invalid_jid} ->
-				    {error, ?ERR_JID_MALFORMED};
-				{error, not_allowed} ->
-				    {error, ?ERR_NOT_ALLOWED};
-				{error, _Reason} ->
-				    {error, ?ERR_INTERNAL_SERVER_ERROR}
+				Error ->
+				    remove_timeout(Source),
+				    case Error of
+					{atomic, exists} ->
+					    {error, ?ERR_CONFLICT};
+					{error, invalid_jid} ->
+					    {error, ?ERR_JID_MALFORMED};
+					{error, not_allowed} ->
+					    {error, ?ERR_NOT_ALLOWED};
+					{error, _Reason} ->
+					    {error, ?ERR_INTERNAL_SERVER_ERROR}
+				    end
 			    end;
 			false ->
 			    {error, ?ERR_RESOURCE_CONSTRAINT}
@@ -327,3 +332,36 @@ clean_treap(Treap, CleanPriority) ->
 		    Treap
 	    end
     end.
+
+remove_timeout(undefined) ->
+    true;
+remove_timeout(Source) ->
+    Timeout = case ejabberd_config:get_local_option(registration_timeout) of
+		  undefined -> 600;
+		  TO -> TO
+	      end,
+    if
+	is_integer(Timeout) ->
+	    F = fun() ->
+			Treap = case mnesia:read(mod_register_ip, treap,
+						 write) of
+				    [] ->
+					treap:empty();
+				    [{mod_register_ip, treap, T}] -> T
+				end,
+			Treap1 = treap:delete(Source, Treap),
+			mnesia:write({mod_register_ip, treap, Treap1}),
+			ok
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, ok} ->
+		    ok;
+		{aborted, Reason} ->
+		    ?ERROR_MSG("mod_register: timeout remove error: ~p~n",
+			       [Reason]),
+		    ok
+	    end;
+	true ->
+	    ok
+    end.
+

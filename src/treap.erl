@@ -103,7 +103,7 @@ heapify({HashKey, Priority, Value,
 
 delete(Key, Tree) ->
     HashKey = {erlang:phash2(Key), Key},
-    delete1(Tree, HashKey).
+    delete1(HashKey, Tree).
 
 delete1(HashKey, {HashKey1, Priority1, Value1, Left, Right} = Tree) ->
     if
