@@ -158,7 +158,7 @@ match_acl(ACL, JID, Host) ->
 	all -> true;
 	none -> false;
 	_ ->
-	    {User, Server, _Resource} = jlib:jid_tolower(JID),
+	    {User, Server, Resource} = jlib:jid_tolower(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->
 			      case Spec of
 				  all ->
@@ -173,6 +173,8 @@ match_acl(ACL, JID, Host) ->
 				      (U == User) andalso (S == Server);
 				  {server, S} ->
 				      S == Server;
+				  {resource, R} ->
+				      R == Resource;
 				  {user_regexp, UR} ->
 				      ((Host == Server) orelse
 				       ((Host == global) andalso
@@ -183,6 +185,8 @@ match_acl(ACL, JID, Host) ->
 					  is_regexp_match(User, UR);
 				  {server_regexp, SR} ->
 				      is_regexp_match(Server, SR);
+				  {resource_regexp, RR} ->
+				      is_regexp_match(Resource, RR);
 				  {node_regexp, UR, SR} ->
 				      is_regexp_match(Server, SR) andalso
 					  is_regexp_match(User, UR);
@@ -197,6 +201,8 @@ match_acl(ACL, JID, Host) ->
 					  is_glob_match(User, UR);
 				  {server_glob, SR} ->
 				      is_glob_match(Server, SR);
+				  {resource_glob, RR} ->
+				      is_glob_match(Resource, RR);
 				  {node_glob, UR, SR} ->
 				      is_glob_match(Server, SR) andalso
 					  is_glob_match(User, UR);

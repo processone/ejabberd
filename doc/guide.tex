@@ -1142,6 +1142,11 @@ declarations of ACLs in the configuration file have the following syntax:
 \begin{verbatim}
 {acl, exampleorg, {server, "example.org"}}.
 \end{verbatim}
+\titem{\{resource, <resource>\}} Matches any JID with a resource
+  \term{<resource>}. Example:
+\begin{verbatim}
+{acl, mucklres, {resource, "muckl"}}.
+\end{verbatim}
 \titem{\{user\_regexp, <regexp>\}} Matches any local user with a name that
   matches \term{<regexp>} on local virtual hosts. Example:
 \begin{verbatim}
@@ -1158,6 +1163,11 @@ declarations of ACLs in the configuration file have the following syntax:
 \begin{verbatim}
 {acl, icq, {server_regexp, "^icq\\."}}.
 \end{verbatim}
+\titem{\{resource\_regexp, <regexp>\}} Matches any JID with a resource that
+  matches \term{<regexp>}. Example:
+\begin{verbatim}
+{acl, icq, {resource_regexp, "^laptop\\."}}.
+\end{verbatim}
 \titem{\{node\_regexp, <user\_regexp>, <server\_regexp>\}} Matches any user
   with a name that matches \term{<user\_regexp>} at any server that matches
   \term{<server\_regexp>}. Example:
@@ -1167,6 +1177,7 @@ declarations of ACLs in the configuration file have the following syntax:
 \titem{\{user\_glob, <glob>\}}
 \titem{\{user\_glob, <glob>, <server>\}}
 \titem{\{server\_glob, <glob>\}}
+\titem{\{resource\_glob, <glob>\}}
 \titem{\{node\_glob, <user\_glob>, <server\_glob>\}} This is the same as
   above. However, it uses shell glob patterns instead of regexp. These patterns
   can have the following special characters:

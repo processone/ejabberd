@@ -1,3 +1,11 @@
+2008-04-25  Badlop  <badlop@process-one.net>
+	
+	* src/ejabberd_c2s.erl: Added forbidden_session_hook
+
+	* src/acl.erl: New access types: resource, resource_regexp and
+	resource_glob
+	* doc/guide.tex: Likewise
+
 2008-04-23  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/treap.erl: Bugfix

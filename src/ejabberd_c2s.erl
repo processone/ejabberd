@@ -823,6 +823,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				     pres_t = ?SETS:from_list(Ts1),
 				     privacy_list = PrivList});
 		_ ->
+		    ejabberd_hooks:run(forbidden_session_hook, 
+				       StateData#state.server, [JID]),
 		    ?INFO_MSG("(~w) Forbidden session for ~s",
 			      [StateData#state.socket,
 			       jlib:jid_to_string(JID)]),
