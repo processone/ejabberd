@@ -1,3 +1,7 @@
+2008-04-26  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document option registration_timeout (EJAB-614)
+
 2008-04-25  Badlop  <badlop@process-one.net>
 	
 	* src/ejabberd_c2s.erl: Added forbidden_session_hook
@@ -14,7 +18,7 @@
 	activated when registration fails
 
 	* src/mod_register.erl: Restrict registration frequency per IP or
-	user
+	user (EJAB-614)
 	* src/ejabberd_c2s.erl: Pass IP to the c2s_unauthenticated_iq hook
 	* src/ejabberd_config.erl: Added registration_timeout option
 
