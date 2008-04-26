@@ -1,3 +1,10 @@
+2008-04-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_shared_roster.erl: Fix for new registered accounts not
+	being immediately shown in an 'all' special shared roster
+	group (thanks to Alexey Shchepin) (EJAB-71)
+	* src/mod_register.erl: New vhost event user_registered
+
 2008-04-22  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_auth.erl: Improve anonymous authentication to not

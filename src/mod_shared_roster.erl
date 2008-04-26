@@ -37,6 +37,7 @@
 	 process_item/2,
 	 in_subscription/6,
 	 out_subscription/4,
+	 user_registered/2,
 	 list_groups/1,
 	 create_group/2,
 	 create_group/3,
@@ -81,7 +82,9 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(roster_get_jid_info, Host,
         	       ?MODULE, get_jid_info, 70),
     ejabberd_hooks:add(roster_process_item, Host,
-        	       ?MODULE, process_item, 50).
+		       ?MODULE, process_item, 50),
+    ejabberd_hooks:add(user_registered, Host,
+		       ?MODULE, user_registered, 50).
 %%ejabberd_hooks:add(remove_user, Host,
 %%    	       ?MODULE, remove_user, 50),
 
@@ -101,7 +104,9 @@ stop(Host) ->
     ejabberd_hooks:delete(roster_get_jid_info, Host,
         		  ?MODULE, get_jid_info, 70),
     ejabberd_hooks:delete(roster_process_item, Host,
-			  ?MODULE, process_item, 50).
+			  ?MODULE, process_item, 50),
+    ejabberd_hooks:delete(user_registered, Host,
+			  ?MODULE, user_registered, 50).
 %%ejabberd_hooks:delete(remove_user, Host,
 %%    		  ?MODULE, remove_user, 50),
 
@@ -252,6 +257,14 @@ list_groups(Host) ->
 	[{'==', '$2', Host}],
 	['$1']}]).
 
+groups_with_opts(Host) ->
+    Gs = mnesia:dirty_select(
+	   sr_group,
+	   [{#sr_group{group_host={'$1', Host}, opts='$2', _='_'},
+	     [],
+	     [['$1','$2']] }]),
+    lists:map(fun([G,O]) -> {G, O} end, Gs).
+
 create_group(Host, Group) ->
     create_group(Host, Group, []).
 
@@ -297,7 +310,7 @@ get_user_groups(US) ->
 	    [Group || #sr_user{group_host = {Group, H}} <- Rs, H == Host];
 	_ ->
 	    []
-    end ++ get_all_users_groups(Host).
+    end ++ get_special_users_groups(Host).
 
 is_group_enabled(Host, Group) ->
     case catch mnesia:dirty_read(sr_group, {Group, Host}) of
@@ -328,22 +341,63 @@ get_group_users(Host, Group) ->
 	    []
     end ++ get_group_explicit_users(Host, Group).
 
+get_group_users(_User, Host, Group, GroupOpts) ->
+    case proplists:get_value(all_users, GroupOpts, false) of
+	true ->
+	    ejabberd_auth:get_vh_registered_users(Host);
+	false ->
+	    []
+    end ++ get_group_explicit_users(Host, Group).
+
 get_group_explicit_users(Host, Group) ->
-    case catch mnesia:dirty_index_read(
-		 sr_user, {Group, Host}, #sr_user.group_host) of
-								  Rs when is_list(Rs) ->
-		 [R#sr_user.us || R <- Rs];
-	       _ ->
-		 []
-	 end.
+    Read = (catch mnesia:dirty_index_read(
+		    sr_user,
+		    {Group, Host},
+		    #sr_user.group_host)),
+    case Read of
+	Rs when is_list(Rs) ->
+	    [R#sr_user.us || R <- Rs];
+	_ ->
+	    []
+    end.
 
 get_group_name(Host, Group) ->
     get_group_opt(Host, Group, name, Group).
 
-get_all_users_groups(Host) ->
+get_special_users_groups(Host) ->
     lists:filter(
-      fun(Group) -> get_group_opt(Host, Group, all_users, false) end,
+      fun(Group) ->
+	      get_group_opt(Host, Group, all_users, false)
+      end,
       list_groups(Host)).
+
+displayed_groups(GroupsOpts, SelectedGroupsOpts) ->
+    DisplayedGroups =
+	lists:usort(
+	  lists:flatmap(
+	    fun({_Group, Opts}) ->
+		    [G || G <- proplists:get_value(displayed_groups, Opts, []),
+			  not lists:member(disabled, Opts)]
+	    end, SelectedGroupsOpts)),
+    [G || G <- DisplayedGroups,
+	  not lists:member(disabled, proplists:get_value(G, GroupsOpts, []))].
+
+get_special_displayed_groups(GroupsOpts) ->
+    Groups = lists:filter(
+	       fun({_Group, Opts}) ->
+		       proplists:get_value(all_users, Opts, false)
+	       end, GroupsOpts),
+    displayed_groups(GroupsOpts, Groups).
+
+get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
+    Groups = case catch mnesia:dirty_read(sr_user, {LUser, LServer}) of
+		 Rs when is_list(Rs) ->
+		     [{Group, proplists:get_value(Group, GroupsOpts, [])} ||
+			 #sr_user{group_host = {Group, H}} <- Rs, H == LServer];
+		 _ ->
+		     []
+	     end,
+    displayed_groups(GroupsOpts, Groups).
 
 get_user_displayed_groups(US) ->
     Host = element(2, US),
@@ -381,6 +435,91 @@ remove_user_from_group(Host, US, Group) ->
 		mnesia:delete_object(R)
 	end,
     mnesia:transaction(F).
+
+user_registered(User, Server) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    GroupsOpts = groups_with_opts(LServer),
+    SpecialGroups = get_special_displayed_groups(GroupsOpts),
+    UserGroups = get_user_displayed_groups(LUser, LServer, GroupsOpts),
+    lists:foreach(
+      fun(Group) ->
+	      GroupOpts = proplists:get_value(Group, GroupsOpts, []),
+	      GroupName = proplists:get_value(name, GroupOpts, Group),
+	      lists:foreach(
+		fun({U, S}) ->
+			Item = #roster{usj = {U, S, {LUser, LServer, ""}},
+				       us = {U, S},
+				       jid = {LUser, LServer, ""},
+				       name = "",
+				       subscription = both,
+				       ask = none,
+				       groups = [GroupName]},
+			push_item(U, S, jlib:make_jid("", S, ""), Item)
+		end, get_group_users(LUser, LServer, Group, GroupOpts))
+      end, lists:usort(SpecialGroups++UserGroups)).
+
+push_item(_User, _Server, _From, none) ->
+    ok;
+push_item(User, Server, From, Item) ->
+    %% It was
+    %%  ejabberd_sm:route(jlib:make_jid("", "", ""),
+    %%                    jlib:make_jid(User, Server, "")
+    %% why?
+    ejabberd_sm:route(From, jlib:make_jid(User, Server, ""),
+		      {xmlelement, "broadcast", [],
+		       [{item,
+			 Item#roster.jid,
+			 Item#roster.subscription}]}),
+    Stanza = jlib:iq_to_xml(
+	       #iq{type = set, xmlns = ?NS_ROSTER,
+		   id = "push",
+		   sub_el = [{xmlelement, "query",
+			      [{"xmlns", ?NS_ROSTER}],
+			      [item_to_xml(Item)]}]}),
+    lists:foreach(
+      fun(Resource) ->
+	      JID = jlib:make_jid(User, Server, Resource),
+	      ejabberd_router:route(JID, JID, Stanza)
+      end, ejabberd_sm:get_user_resources(User, Server)).
+
+item_to_xml(Item) ->
+    Attrs1 = [{"jid", jlib:jid_to_string(Item#roster.jid)}],
+    Attrs2 = case Item#roster.name of
+		 "" ->
+		     Attrs1;
+		 Name ->
+		     [{"name", Name} | Attrs1]
+	     end,
+    Attrs3 = case Item#roster.subscription of
+		 none ->
+		     [{"subscription", "none"} | Attrs2];
+		 from ->
+		     [{"subscription", "from"} | Attrs2];
+		 to ->
+		     [{"subscription", "to"} | Attrs2];
+		 both ->
+		     [{"subscription", "both"} | Attrs2];
+		 remove ->
+		     [{"subscription", "remove"} | Attrs2]
+	     end,
+    Attrs4 = case ask_to_pending(Item#roster.ask) of
+		 out ->
+		     [{"ask", "subscribe"} | Attrs3];
+		 both ->
+		     [{"ask", "subscribe"} | Attrs3];
+		 _ ->
+		     Attrs3
+	     end,
+    SubEls1 = lists:map(fun(G) ->
+				{xmlelement, "group", [], [{xmlcdata, G}]}
+			end, Item#roster.groups),
+    SubEls = SubEls1 ++ Item#roster.xs,
+    {xmlelement, "item", Attrs4, SubEls}.
+
+ask_to_pending(subscribe) -> out;
+ask_to_pending(unsubscribe) -> none;
+ask_to_pending(Ask) -> Ask.
 
 
 %%---------------------

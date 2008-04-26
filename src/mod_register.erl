@@ -192,6 +192,8 @@ try_register(User, Server, Password) ->
 		allow ->
 		    case ejabberd_auth:try_register(User, Server, Password) of
 			{atomic, ok} ->
+			    ejabberd_hooks:run(user_registered, Server,
+					       [User, Server]),
 			    send_welcome_message(JID),
 			    send_registration_notifications(JID),
 			    ok;
