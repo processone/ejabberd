@@ -2,6 +2,10 @@
 
 	* doc/guide.tex: Document the option max_s2s_connections
 
+2008-04-27  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fixed room shaper processing
+
 2008-04-26  Badlop  <badlop@process-one.net>
 
 	* src/mod_shared_roster.erl: Fix for new registered accounts not
