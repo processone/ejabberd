@@ -1,3 +1,7 @@
+2008-04-28  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document the option max_s2s_connections
+
 2008-04-26  Badlop  <badlop@process-one.net>
 
 	* src/mod_shared_roster.erl: Fix for new registered accounts not

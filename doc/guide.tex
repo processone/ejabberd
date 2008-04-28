@@ -1244,6 +1244,30 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+\subsubsection{Several connections to a remote Jabber server with ACL}
+\label{configmaxs2sconns}
+\ind{options!max\_s2s\_connections}
+
+The special access \term{max\_s2s\_connections} specifies how many
+simultaneus S2S connections can be stablished to a specific remote Jabber server.
+The default value is \term{1}.
+There's also available the access \term{max\_s2s\_connections\_per\_node}.
+
+The syntax is:
+\begin{verbatim}
+  {access, max_s2s_connections, [{<maxnumber>, <aclname>},
+                                 ...
+                                ]}.
+\end{verbatim}
+
+Examples:
+\begin{itemize}
+\item Allow up to 3 connections with each remote server:
+\begin{verbatim}
+  {access, max_s2s_connections, [{3, all}]}.
+\end{verbatim}
+\end{itemize}
+
 \subsection{Shapers}
 \label{shapers}
 \ind{options!shaper}\ind{options!maxrate}\ind{shapers}\ind{maxrate}\ind{traffic speed}
