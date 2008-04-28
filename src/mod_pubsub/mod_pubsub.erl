@@ -151,9 +151,8 @@ stop(Host) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([ServerHost, Opts]) ->
-    ?INFO_MSG("pubsub init ~p ~p",[ServerHost,Opts]),
+    ?DEBUG("pubsub init ~p ~p",[ServerHost,Opts]),
     Host = gen_mod:get_opt_host(ServerHost, Opts, "pubsub.@HOST@"),
-    ServedHosts = gen_mod:get_opt(served_hosts, Opts, []),
     Access = gen_mod:get_opt(access_createnode, Opts, all),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
@@ -183,7 +182,7 @@ init([ServerHost, Opts]) ->
     ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {plugins, Plugins}),
-    init_nodes(Host, ServerHost, ServedHosts),
+    init_nodes(Host, ServerHost),
     {ok, #state{host = Host,
 		server_host = ServerHost,
 		access = Access,
@@ -206,11 +205,11 @@ init([ServerHost, Opts]) ->
 init_plugins(Host, ServerHost, Opts) ->
     TreePlugin = list_to_atom(?TREE_PREFIX ++
 			      gen_mod:get_opt(nodetree, Opts, ?STDTREE)),
-    ?INFO_MSG("** tree plugin is ~p",[TreePlugin]),
+    ?DEBUG("** tree plugin is ~p",[TreePlugin]),
     TreePlugin:init(Host, ServerHost, Opts),
     Plugins = lists:usort(gen_mod:get_opt(plugins, Opts, []) ++ [?STDNODE]),
     lists:foreach(fun(Name) ->
-			  ?INFO_MSG("** init ~s plugin",[Name]),
+			  ?DEBUG("** init ~s plugin",[Name]),
 			  Plugin = list_to_atom(?PLUGIN_PREFIX ++ Name),
 			  Plugin:init(Host, ServerHost, Opts)
 		  end, Plugins),
@@ -218,21 +217,18 @@ init_plugins(Host, ServerHost, Opts) ->
 
 terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     lists:foreach(fun(Name) ->
-			  ?INFO_MSG("** terminate ~s plugin",[Name]),
+			  ?DEBUG("** terminate ~s plugin",[Name]),
 			  Plugin = list_to_atom(?PLUGIN_PREFIX++Name),
 			  Plugin:terminate(Host, ServerHost)
 		  end, Plugins),
     TreePlugin:terminate(Host, ServerHost),
     ok.
 
-init_nodes(Host, ServerHost, ServedHosts) ->
+init_nodes(Host, ServerHost) ->
     create_node(Host, ServerHost, ["pubsub"], service_jid(Host), ?STDNODE),
     create_node(Host, ServerHost, ["pubsub", "nodes"], service_jid(Host), ?STDNODE),
     create_node(Host, ServerHost, ["home"], service_jid(Host), ?STDNODE),
-    lists:foreach(
-      fun(H) ->
-	      create_node(Host, ServerHost, ["home", H], service_jid(Host), ?STDNODE)
-      end, lists:usort([ServerHost | ServedHosts])),
+    create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), ?STDNODE),
     ok.
 
 update_database(Host) ->

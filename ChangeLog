@@ -1,3 +1,8 @@
+2008-04-28  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: remove unused served_hosts option
+	and make init message be debug and not info
+
 2008-04-27  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Fixed room shaper processing
