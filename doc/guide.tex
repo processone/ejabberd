@@ -2873,6 +2873,14 @@ Options:
 \iqdiscitem{In-Band Registration (\ns{jabber:iq:register})}
 \end{description}
 
+This module reads also another option defined globably for the server:
+\term{\{registration\_timeout, Timeout\}}. \ind{options!registratimeout}
+This option limits the frequency of registration from a given IP or username.
+So, a user can't register a new account from the same IP address or JID during
+this number of seconds after previous registration.
+Timeout is expressed in seconds, and must be an integer.
+Default value: 600 seconds.
+
 Examples:
 \begin{itemize}
 \item Next example prohibits the registration of too short account names:
@@ -2907,8 +2915,10 @@ Examples:
     ...
    ]}.
 \end{verbatim}
-\item Define the welcome message and three registration watchers:
+\item Define the welcome message and three registration watchers.
+Also define a registration timeout of one hour:
   \begin{verbatim}
+  {registration_timeout, 3600}.
   {modules,
    [
     ...

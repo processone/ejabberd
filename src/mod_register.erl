@@ -32,7 +32,7 @@
 -export([start/2,
 	 stop/1,
 	 stream_feature_register/1,
-	 unauthenticated_iq_register/3,
+	 unauthenticated_iq_register/4,
 	 process_iq/3]).
 
 -include("ejabberd.hrl").
@@ -48,6 +48,11 @@ start(Host, Opts) ->
  		       ?MODULE, stream_feature_register, 50),
     ejabberd_hooks:add(c2s_unauthenticated_iq, Host,
  		       ?MODULE, unauthenticated_iq_register, 50),
+    mnesia:create_table(mod_register_ip,
+			[{ram_copies, [node()]},
+			 {local_content, true},
+			 {attributes, [key, value]}]),
+    mnesia:add_table_copy(mod_register_ip, node(), ram_copies),
     ok.
 
 stop(Host) ->
@@ -63,20 +68,30 @@ stream_feature_register(Acc) ->
     [{xmlelement, "register",
       [{"xmlns", ?NS_FEATURE_IQREGISTER}], []} | Acc].
 
-unauthenticated_iq_register(_Acc, Server, #iq{xmlns = ?NS_REGISTER} = IQ) ->
+unauthenticated_iq_register(_Acc,
+			    Server, #iq{xmlns = ?NS_REGISTER} = IQ, IP) ->
+    Address = case IP of
+		 {A, _Port} -> A;
+		  _ -> undefined
+	      end,
     ResIQ = process_iq(jlib:make_jid("", "", ""),
  		       jlib:make_jid("", Server, ""),
- 		       IQ),
+ 		       IQ,
+		       Address),
     Res1 = jlib:replace_from_to(jlib:make_jid("", Server, ""),
  				jlib:make_jid("", "", ""),
  				jlib:iq_to_xml(ResIQ)),
     jlib:remove_attr("to", Res1);
 
-unauthenticated_iq_register(Acc, _Server, _IQ) ->
+unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
     Acc.
 
+process_iq(From, To, IQ) ->
+    process_iq(From, To, IQ, jlib:jid_tolower(jlib:jid_remove_resource(From))).
+
 process_iq(From, To,
-	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} = IQ) ->
+	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} = IQ,
+	   Source) ->
     case Type of
 	set ->
 	    UTag = xml:get_subtag(SubEl, "username"),
@@ -151,7 +166,8 @@ process_iq(From, To,
 			    ejabberd_auth:set_password(User, Server, Password),
 			    IQ#iq{type = result, sub_el = [SubEl]};
 			_ ->
-			    case try_register(User, Server, Password) of
+			    case try_register(User, Server, Password,
+					      Source) of
 				ok ->
 				    IQ#iq{type = result, sub_el = [SubEl]};
 				{error, Error} ->
@@ -179,7 +195,7 @@ process_iq(From, To,
     end.
 
 
-try_register(User, Server, Password) ->
+try_register(User, Server, Password, Source) ->
     case jlib:is_nodename(User) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
@@ -190,21 +206,30 @@ try_register(User, Server, Password) ->
 		deny ->
 		    {error, ?ERR_CONFLICT};
 		allow ->
-		    case ejabberd_auth:try_register(User, Server, Password) of
-			{atomic, ok} ->
-			    ejabberd_hooks:run(user_registered, Server,
-					       [User, Server]),
-			    send_welcome_message(JID),
-			    send_registration_notifications(JID),
-			    ok;
-			{atomic, exists} ->
-			    {error, ?ERR_CONFLICT};
-			{error, invalid_jid} ->
-			    {error, ?ERR_JID_MALFORMED};
-			{error, not_allowed} ->
-			    {error, ?ERR_NOT_ALLOWED};
-			{error, _Reason} ->
-			    {error, ?ERR_INTERNAL_SERVER_ERROR}
+		    case check_timeout(Source) of
+			true ->
+			    case ejabberd_auth:try_register(User, Server, Password) of
+				{atomic, ok} ->
+				    ejabberd_hooks:run(user_registered, Server,
+						       [User, Server]),
+				    send_welcome_message(JID),
+				    send_registration_notifications(JID),
+				    ok;
+				Error ->
+				    remove_timeout(Source),
+				    case Error of
+					{atomic, exists} ->
+					    {error, ?ERR_CONFLICT};
+					{error, invalid_jid} ->
+					    {error, ?ERR_JID_MALFORMED};
+					{error, not_allowed} ->
+					    {error, ?ERR_NOT_ALLOWED};
+					{error, _Reason} ->
+					    {error, ?ERR_INTERNAL_SERVER_ERROR}
+				    end
+			    end;
+			false ->
+			    {error, ?ERR_RESOURCE_CONSTRAINT}
 		    end
 	    end
     end.
@@ -251,3 +276,94 @@ send_registration_notifications(UJID) ->
 	_ ->
 	    ok
     end.
+
+
+check_timeout(undefined) ->
+    true;
+check_timeout(Source) ->
+    Timeout = case ejabberd_config:get_local_option(registration_timeout) of
+		  undefined -> 600;
+		  TO -> TO
+	      end,
+    if
+	is_integer(Timeout) ->
+	    {MSec, Sec, _USec} = now(),
+	    Priority = -(MSec * 1000000 + Sec),
+	    CleanPriority = Priority + Timeout,
+	    F = fun() ->
+			Treap = case mnesia:read(mod_register_ip, treap,
+						 write) of
+				    [] ->
+					treap:empty();
+				    [{mod_register_ip, treap, T}] -> T
+				end,
+			Treap1 = clean_treap(Treap, CleanPriority),
+			case treap:lookup(Source, Treap1) of
+			    error ->
+				Treap2 = treap:insert(Source, Priority, [],
+						      Treap1),
+				mnesia:write({mod_register_ip, treap, Treap2}),
+				true;
+			    {ok, _, _} ->
+				mnesia:write({mod_register_ip, treap, Treap1}),
+				false
+			end
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, Res} ->
+		    Res;
+		{aborted, Reason} ->
+		    ?ERROR_MSG("mod_register: timeout check error: ~p~n",
+			       [Reason]),
+		    true
+	    end;
+	true ->
+	    true
+    end.
+
+clean_treap(Treap, CleanPriority) ->
+    case treap:is_empty(Treap) of
+	true ->
+	    Treap;
+	false ->
+	    {_Key, Priority, _Value} = treap:get_root(Treap),
+	    if
+		Priority > CleanPriority ->
+		    clean_treap(treap:delete_root(Treap), CleanPriority);
+		true ->
+		    Treap
+	    end
+    end.
+
+remove_timeout(undefined) ->
+    true;
+remove_timeout(Source) ->
+    Timeout = case ejabberd_config:get_local_option(registration_timeout) of
+		  undefined -> 600;
+		  TO -> TO
+	      end,
+    if
+	is_integer(Timeout) ->
+	    F = fun() ->
+			Treap = case mnesia:read(mod_register_ip, treap,
+						 write) of
+				    [] ->
+					treap:empty();
+				    [{mod_register_ip, treap, T}] -> T
+				end,
+			Treap1 = treap:delete(Source, Treap),
+			mnesia:write({mod_register_ip, treap, Treap1}),
+			ok
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, ok} ->
+		    ok;
+		{aborted, Reason} ->
+		    ?ERROR_MSG("mod_register: timeout remove error: ~p~n",
+			       [Reason]),
+		    ok
+	    end;
+	true ->
+	    ok
+    end.
+
