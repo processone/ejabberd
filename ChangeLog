@@ -1,3 +1,7 @@
+2008-04-28  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document the option max_s2s_connections
+
 2008-04-28  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: remove unused served_hosts option
