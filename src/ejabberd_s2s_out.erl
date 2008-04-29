@@ -375,6 +375,14 @@ wait_for_validation({xmlstreamerror, _}, StateData) ->
 	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
 
+wait_for_validation(timeout, #state{verify = {VPid, VKey, SID}} = StateData)
+  when is_pid(VPid) and is_list(VKey) and is_list(SID) ->
+    %% This is an auxiliary s2s connection for dialback.
+    %% This timeout is normal and doesn't represent a problem.
+    ?DEBUG("wait_for_validation: ~s -> ~s (timeout in verify connection)",
+	   [StateData#state.myname, StateData#state.server]),
+    {stop, normal, StateData};
+
 wait_for_validation(timeout, StateData) ->
     ?INFO_MSG("wait_for_validation: ~s -> ~s (connect timeout)",
 	      [StateData#state.myname, StateData#state.server]),
