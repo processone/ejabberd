@@ -2370,7 +2370,7 @@ themselves are not clustered nor fault-tolerant: if the node managing a
 set of rooms goes down, the rooms disappear and they will be recreated
 on an available node on first connection attempt.
 
-Options:
+Module options:
 \begin{description}
 \hostitem{conference}
 \titem{access} \ind{options!access}You can specify who is allowed to use
@@ -2387,8 +2387,7 @@ Options:
   administer his room). By sending a message to the service JID,
   administrators can send service messages that will be displayed in every
   active room.
-
-  \titem{history\_size} \ind{options!history\_size}A small history of
+\titem{history\_size} \ind{options!history\_size}A small history of
   the current discussion is sent to users when they enter the
   room. With this option you can define the number of history messages
   to keep and send to users joining the room. The value is an
@@ -2396,27 +2395,23 @@ Options:
   and, as a result, nothing is kept in memory. The default value is
   \term{20}. This value is global and thus affects all rooms on the
   server.
-
-  \titem{max\_users} \ind{options!max\_users} This option defines at
+\titem{max\_users} \ind{options!max\_users} This option defines at
   the server level, the maximum number of users allowed per MUC
   room. It can be lowered in each room configuration but cannot be
   increased in individual MUC room configuration. The default value is
   200.
-
-  \titem{max\_users\_admin\_threshold}
+\titem{max\_users\_admin\_threshold}
   \ind{options!max\_users\_admin\_threshold} This option defines the
   number of MUC admins or owners to allow to enter the room even if
   the maximum number of allowed users is reached. The default limits
   is 5. In most cases this default value is the best setting.
-
-  \titem{max\_user\_conferences}
+\titem{max\_user\_conferences}
   \ind{options!max\_user\_conferences} This option define the maximum
   number of chat room any given user will be able to join. The default
   is 10. This option is used to prevent possible abuses. Note that
   this is a soft limits: Some users can sometime join more conferences
   in cluster configurations.
- 
-  \titem{min\_message\_interval} \ind{options!min\_message\_interval}
+\titem{min\_message\_interval} \ind{options!min\_message\_interval}
   This option defines the minimum interval between two messages send
   by a user in seconds. This option is global and valid for all chat
   rooms. A decimal value can be used. When this option is not defined,
@@ -2426,8 +2421,7 @@ Options:
   interval is 0.4 second. If a user tries to send messages faster, an
   error is send back explaining that the message have been discarded
   and describing the reason why the message is not acceptable.
-  
-  \titem{min\_presence\_interval}
+\titem{min\_presence\_interval}
   \ind{options!min\_presence\_interval} This option defines the
   minimum of time between presence changes coming from a given user in
   seconds. This option is global and valid for all chat rooms. A
@@ -2440,19 +2434,32 @@ Options:
   broadcasted to all users in the room after expiration of the
   interval delay. Intermediate presence packets are silently
   discarded. A good value for this option is 4 seconds.
-
-  \titem{default\_room\_options} \ind{options!default\_room\_options}This
-  option allow to define the desired default room options.  Obviously,
-  the room creator can modify the room options at any time.  The
-  available room options are: \option{allow\_change\_subj},
-  \option{allow\_private\_messages}, \option{allow\_query\_users},
-  \option{allow\_user\_invites}, \option{anonymous}, \option{logging},
-  \option{members\_by\_default}, \option{members\_only},
-  \option{moderated}, \option{password}, \option{password\_protected},
-  \option{persistent}, \option{public}, \option{public\_list},
-  \option{title}.  All of them can be set to \option{true} or
-  \option{false}, except \option{password} and \option{title} which
-  are strings.
+\titem{default\_room\_options} \ind{options!default\_room\_options}
+  This module option allows to define the desired default room options.
+  Note that the creator of a room can modify the options of his room 
+  at any time using a Jabber client with MUC capability.
+  The available room options and the default values are:
+  \begin{description}
+  \titem{\{allow\_change\_subj, true\}} Allow occupants to change the subject.
+  \titem{\{allow\_private\_messages, true\}} Occupants can send private messages to other occupants.
+  \titem{\{allow\_query\_users, true\}} Occupants can send IQ queries to other occupants.
+  \titem{\{allow\_user\_invites, false\}} Allow occupants to send invitations.
+  \titem{\{anonymous, true\}} Occupants are allowed to see the real JIDs of other occupants.
+  \titem{\{logging, false\}} The public messages are logged using \term{mod\_muc\_log}.
+  \titem{\{max\_users, 200\}} Maximum number of occupants in the room.
+  \titem{\{members\_by\_default, true\}} The occupants that enter the room are participants by default, so they have 'voice'.
+  \titem{\{members\_only, false\}} Only members of the room can	enter.
+  \titem{\{moderated, true\}} Only occupants with 'voice' can send public messages.
+  \titem{\{password, ""\}} Password of the room. You may want to enable the next option too.
+  \titem{\{password\_protected, false\}} The password is required to enter the room.
+  \titem{\{persistent, false\}} The room persists even if the last participant leaves.
+  \titem{\{public, true\}} The room is public in the list of the MUC service, so it can be discovered.
+  \titem{\{public\_list, true\}} The list of participants is public, without requiring to enter the room.
+  \titem{\{title, ""\}} A human-readable title of the room.
+  \end{description}
+  All of those room options can be set to \term{true} or \term{false},
+  except \term{password} and \term{title} which are strings,
+  and \term{max\_users} that is integer.
 \end{description}
 
 Examples:

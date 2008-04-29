@@ -1,3 +1,9 @@
+2008-04-29  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd.cfg.example: Small improvements in explanations
+
+	* doc/guide.tex: Document MUC room options (EJAB-619)
+
 2008-04-28  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Document the option max_s2s_connections
