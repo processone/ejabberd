@@ -1,5 +1,8 @@
 2008-04-29  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_s2s_out.erl: Improve confusing log message in s2s
+	connection: wait_for_validation connect timeout (EJAB-617)
+
 	* src/ejabberd.cfg.example: Small improvements in explanations
 
 	* doc/guide.tex: Document MUC room options (EJAB-619)
