@@ -1,3 +1,8 @@
+2008-05-04  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_receiver.erl: Don't activate a socket untill its
+	receiver process is controlling it
+
 2008-04-30  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_caps.erl: XEP-0115 patch (EJAB-618)
