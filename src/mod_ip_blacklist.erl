@@ -70,7 +70,7 @@ init(State)->
     %% Register hooks for blacklist
     ejabberd_hooks:add(check_bl_c2s, ?MODULE, is_ip_in_c2s_blacklist, 50),
     %% Set timer: Download the blacklist file every 6 hours
-    timer:apply_interval(timer:minutes(?UPDATE_INTERVAL), ?MODULE, update_bl_c2s, []),
+    timer:apply_interval(timer:hours(?UPDATE_INTERVAL), ?MODULE, update_bl_c2s, []),
     loop(State).
 
 %% Remove timer when stop is received.
