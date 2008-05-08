@@ -105,8 +105,9 @@ is_ip_in_c2s_blacklist(_Val, IP) ->
 	    false;
 	[_] -> %% Blacklisted!
 	    {stop, true}
-    end.
-
+    end;
+is_ip_in_c2s_blacklist(_Val, _IP) ->
+    false.
 
 %% TODO:
 %% - For now, we do not kick user already logged on a given IP after
