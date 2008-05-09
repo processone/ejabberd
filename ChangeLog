@@ -1,3 +1,7 @@
+2008-05-09  Mickael Remond <mremond@process-one.net>
+
+	* src/mod_ip_blacklist.erl: Better error handling (EJAB-625).
+
 2008-05-05  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_c2s.erl: Added C2S blacklist support (EJAB-625).

@@ -85,20 +85,25 @@ loop(_State) ->
 %% TODO: Support comment lines starting by %
 update_bl_c2s() ->
     ?INFO_MSG("Updating C2S Blacklist", []),
-    {ok, {{_Version, 200, _Reason}, _Headers, Body}} = http:request(?BLC2S),
-    IPs = string:tokens(Body,"\n"),
-    ets:delete_all_objects(bl_c2s),
-    lists:foreach(
-      fun(IP) ->
-	      ets:insert(bl_c2s, #bl_c2s{ip=list_to_binary(IP)})
-      end, IPs).
+    case http:request(?BLC2S) of
+	{ok, {{_Version, 200, _Reason}, _Headers, Body}} ->
+	    IPs = string:tokens(Body,"\n"),
+	    ets:delete_all_objects(bl_c2s),
+	    lists:foreach(
+	      fun(IP) ->
+		      ets:insert(bl_c2s, #bl_c2s{ip=list_to_binary(IP)})
+	      end, IPs);
+	{error, Reason} ->
+	    ?ERROR_MSG("Cannot download C2S blacklist file. Reason: ~p",
+		       [Reason])
+    end.
 
 %% Hook is run with:
 %% ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]),
 %% Return: false: IP not blacklisted
 %%         true: IP is blacklisted
 %% IPV4 IP tuple:
-is_ip_in_c2s_blacklist(_Val, IP) ->
+is_ip_in_c2s_blacklist(_Val, IP) when is_tuple(IP) ->
     BinaryIP = list_to_binary(jlib:ip_to_list(IP)),
     case ets:lookup(bl_c2s, BinaryIP) of
 	[] -> %% Not in blacklist
