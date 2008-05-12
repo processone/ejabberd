@@ -478,9 +478,9 @@ normal_state({route, From, ToNick,
 	forget_message ->
 	    {next_state, normal_state, StateData};
 	continue_delivery ->
-	    case (StateData#state.config)#config.allow_private_messages
-		andalso is_user_online(From, StateData) of
-		true ->
+	    case {(StateData#state.config)#config.allow_private_messages,
+		is_user_online(From, StateData)} of
+		{true, true} ->
 		    case Type of
 			"groupchat" ->
 			    ErrText = "It is not allowed to send private "
@@ -514,10 +514,19 @@ normal_state({route, From, ToNick,
 				      ToJID, Packet)
 			    end
 		    end;
-		_ ->
+		{true, false} ->
 		    ErrText = "Only occupants are allowed to send messages to the conference",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+		    ejabberd_router:route(
+		      jlib:jid_replace_resource(
+			StateData#state.jid,
+			ToNick),
+		      From, Err);
+		{false, _} ->
+		    ErrText = "It is not allowed to send private messages",
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
 		    ejabberd_router:route(
 		      jlib:jid_replace_resource(
 			StateData#state.jid,

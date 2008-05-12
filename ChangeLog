@@ -1,7 +1,11 @@
 2008-05-12  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Return Forbidden error message
+	when user sends private message in a room that disallows
+	it (EJAB-595)
+
 	* src/web/ejabberd_http.erl (parse_auth): Allow password that
-	include colon character (EJAB-522)
+	include colon character (EJAB-622)
 
 2008-04-30  Christophe Romain <christophe.romain@process-one.net>
 
