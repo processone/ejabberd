@@ -635,11 +635,14 @@ parse_auth(_Orig = "Basic " ++ Auth64) ->
 	{error, _Err} ->
 	    undefined;
 	Auth ->
-	    case string:tokens(Auth, ":") of
-		[User, Pass] ->
-		    {User, Pass};
-		_ ->
-		    undefined
+	    %% Auth should be a string with the format: user@server:password
+	    %% Note that password can contain additional characters '@' and ':'
+	    case string:chr(Auth, $:) of
+		0 ->
+		    undefined;
+		SplitIndex ->
+		    {User, [$: | Pass]} = lists:split(SplitIndex-1, Auth),
+		    {User, Pass}
 	    end
     end;
 parse_auth(_) ->
