@@ -1,3 +1,8 @@
+2008-05-12  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_http.erl (parse_auth): Allow password that
+	include colon character (EJAB-522)
+
 2008-04-30  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_caps.erl: XEP-0115 patch (EJAB-618)
