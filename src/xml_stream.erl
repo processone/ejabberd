@@ -59,15 +59,6 @@ process_data(CallbackPid, Stack, Data) ->
 	    case Stack of
 		[El] ->
 		    [El];
-		%% Merge CDATA nodes if they are contiguous
-		%% This does not change the semantic: the split in
-		%% several CDATA nodes depends on the TCP/IP packet
-		%% fragmentation
-		[{xmlelement, Name, Attrs,
-		  [{xmlcdata, PreviousCData}|Els]} | Tail] ->
-		    [{xmlelement, Name, Attrs,
-		      [{xmlcdata, concat_binary([PreviousCData, CData])} | Els]} | Tail];
-		%% No previous CDATA
 		[{xmlelement, Name, Attrs, Els} | Tail] ->
 		    [{xmlelement, Name, Attrs, [{xmlcdata, CData} | Els]} |
 		     Tail];
