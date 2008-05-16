@@ -689,6 +689,8 @@ handle_sync_event(get_state, _From, StateName, StateData) ->
 handle_sync_event({change_config, Config}, _From, StateName, StateData) ->
     {result, [], NSD} = change_config(Config, StateData),
     {reply, {ok, NSD#state.config}, StateName, NSD};
+handle_sync_event({change_state, NewStateData}, _From, StateName, _StateData) ->
+    {reply, {ok, NewStateData}, StateName, NewStateData};
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
