@@ -11,6 +11,8 @@
 	* src/ejabberd_receiver.erl: Don't activate a socket untill its
 	receiver process is controlling it (Thanks to Aleksey)
 
+	* src/ejabberd_s2s_out.erl: Change FSMTIMEOUT to 30s
+
 2008-05-12  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Return Forbidden error message
