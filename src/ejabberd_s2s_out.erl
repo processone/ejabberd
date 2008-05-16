@@ -92,7 +92,7 @@
 %% Only change this value if you now what your are doing:
 -define(FSMLIMITS,[]).
 %% -define(FSMLIMITS, [{max_queue, 2000}]).
--define(FSMTIMEOUT, 5000).
+-define(FSMTIMEOUT, 30000).
 
 %% Maximum delay to wait before retrying to connect after a failed attempt.
 %% Specified in miliseconds. Default value is 5 minutes.
