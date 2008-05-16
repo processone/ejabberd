@@ -65,27 +65,19 @@ start(Module, SockMod, Socket, Opts) ->
 	    SocketData = #socket_state{sockmod = SockMod,
 				       socket = Socket,
 				       receiver = Receiver},
-	    case Module:start({?MODULE, SocketData}, Opts) of
-		{ok, Pid} ->
-		    case SockMod:controlling_process(Socket, Receiver) of
-			ok ->
-			    ok;
-			{error, _Reason} ->
-			    SockMod:close(Socket)
-		    end,
-		    ejabberd_receiver:become_controller(Receiver, Pid);
+	    {ok, Pid} = Module:start({?MODULE, SocketData}, Opts),
+	    case SockMod:controlling_process(Socket, Receiver) of
+		ok ->
+		    ok;
 		{error, _Reason} ->
 		    SockMod:close(Socket)
-	    end;
+	    end,
+	    ejabberd_receiver:become_controller(Receiver, Pid);
 	raw ->
-	    case Module:start({SockMod, Socket}, Opts) of
-		{ok, Pid} ->
-		    case SockMod:controlling_process(Socket, Pid) of
-			ok ->
-			    ok;
-			{error, _Reason} ->
-			    SockMod:close(Socket)
-		    end;
+	    {ok, Pid} = Module:start({SockMod, Socket}, Opts),
+	    case SockMod:controlling_process(Socket, Pid) of
+		ok ->
+		    ok;
 		{error, _Reason} ->
 		    SockMod:close(Socket)
 	    end
