@@ -1,3 +1,11 @@
+2008-05-16  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: Added C2S blacklist support (EJAB-625).
+	* src/mod_ip_blacklist.erl: Likewise.
+	* src/jlib.erl: Added IP format tuple to string function.
+	* src/ejabberd_socket.erl: Properly handled c2s start failure (happen
+	for blacklisted IP).
+
 2008-05-16  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_receiver.erl: Don't activate a socket untill its
