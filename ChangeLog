@@ -1,3 +1,8 @@
+2008-05-16  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_receiver.erl: Don't activate a socket untill its
+	receiver process is controlling it (Thanks to Aleksey)
+
 2008-05-12  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Return Forbidden error message
