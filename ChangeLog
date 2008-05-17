@@ -1,3 +1,12 @@
+2008-05-17  Badlop  <badlop@process-one.net>
+
+	* src/extauth.erl: Log strange responses from extauth script. Use
+	timeout (EJAB-627)
+
+2008-05-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Allow change_state of a room
+
 2008-05-16  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_s2s_out.erl: Change FSMTIMEOUT to 30s

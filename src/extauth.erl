@@ -32,6 +32,8 @@
 
 -include("ejabberd.hrl").
 
+-define(CALL_TIMEOUT, 30000). % Timeout is in milliseconds: 30 seconds == 30000
+
 start(Host, ExtPrg) ->
     spawn(?MODULE, init, [Host, ExtPrg]).
 
@@ -67,7 +69,13 @@ loop(Port) ->
 	    Port ! {self(), {command, encode(Msg)}},
 	    receive
 		{Port, {data, Data}} ->
-		    Caller ! {eauth, decode(Data)}
+                    ?DEBUG("extauth call '~p' received data response:~n~p", [Msg, Data]),
+		    Caller ! {eauth, decode(Data)};
+                {Port, Other} ->
+                    ?ERROR_MSG("extauth call '~p' received strange response:~n~p", [Msg, Other])
+            after
+                ?CALL_TIMEOUT ->
+                    ?ERROR_MSG("extauth call '~p' didn't receive response~n", [Msg])
 	    end,
 	    loop(Port);
 	stop ->
