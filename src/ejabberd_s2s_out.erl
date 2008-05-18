@@ -947,7 +947,7 @@ is_verify_res(_) ->
 
 get_addr_port(Server) ->
     Res = case inet_res:getbyname("_xmpp-server._tcp." ++ Server, srv) of
-	      {error, _Reason} ->
+	      {error, _Reason1} ->
 		  inet_res:getbyname("_jabber._tcp." ++ Server, srv);
 	      {ok, _HEnt} = R -> R
 	  end,
