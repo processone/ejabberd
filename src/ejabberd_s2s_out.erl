@@ -297,6 +297,11 @@ wait_for_stream({xmlstreamerror, _}, StateData) ->
 	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
 
+wait_for_stream({xmlstreamend,_Name}, StateData) ->
+    ?INFO_MSG("Closing s2s connection: ~s -> ~s (xmlstreamend)",
+	      [StateData#state.myname, StateData#state.server]),
+    {stop, normal, StateData};
+
 wait_for_stream(timeout, StateData) ->
     ?INFO_MSG("Closing s2s connection: ~s -> ~s (timeout in wait_for_stream)",
 	      [StateData#state.myname, StateData#state.server]),
@@ -680,7 +685,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
     {next_state, stream_established, StateData};
 
 stream_established({xmlstreamend, _Name}, StateData) ->
-    ?INFO_MSG("stream established: ~s -> ~s (xmlstreamend)",
+    ?INFO_MSG("Connection closed in stream established: ~s -> ~s (xmlstreamend)",
 	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
 
@@ -969,7 +974,7 @@ get_addr_port(Server) ->
 					      end,
 					  {Priority * 65536 - N, Host, Port}
 				  end, AddrList)) of
-			{'EXIT', _Reasn} ->
+			{'EXIT', _Reason} ->
 			    [{Server, outgoing_s2s_port()}];
 			SortedList ->
 			    List = lists:map(

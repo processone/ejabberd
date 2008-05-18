@@ -1,3 +1,8 @@
+2008-05-19  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_s2s_out.erl: Avoid an harmless error (function clause in
+	logs) 
+
 2008-05-17  Badlop  <badlop@process-one.net>
 
 	* src/extauth.erl: Log strange responses from extauth script. Use
