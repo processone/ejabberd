@@ -6,14 +6,17 @@
  
  
 
- ejabberd 2.0.0 
+ ejabberd 2.0.x 
  
  Installation and Operation Guide
  
  
 
 
-   
+  
+
+
+
  
  
  
@@ -83,14 +86,17 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 <HR SIZE=2><BR>
 <BR>
 
-<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.0.0 </B></FONT></TD></TR>
+<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.0.x </B></FONT></TD></TR>
 <TR><TD ALIGN=right NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=right NOWRAP> <FONT SIZE=6>Installation and Operation Guide</FONT></TD></TR>
 </TABLE><BR>
 <BR>
 
 <HR SIZE=2>
-<BR><BR><BR>
+<BR><BR>
+<DIV CLASS="center">
+
+</DIV>
 <BR>
 <BR>
 <BR>
@@ -342,7 +348,7 @@ as long as your system have all the dependencies.</P><!--TOC subsection Requirem
 GNU Make
 </LI><LI CLASS="li-itemize">GCC
 </LI><LI CLASS="li-itemize">Libexpat 1.95 or higher
-</LI><LI CLASS="li-itemize">Erlang/OTP R10B-9 up to R11B-5. Erlang R12 releases are not yet officially supported, and are not recommended for production servers.
+</LI><LI CLASS="li-itemize">Erlang/OTP R10B-9 or newer.
 </LI><LI CLASS="li-itemize">OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 </LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
 </LI><LI CLASS="li-itemize">GNU Iconv 1.8 or higher, for the IRC Transport (mod_irc). Optional. Not needed on systems with GNU Libc.
@@ -723,6 +729,9 @@ The default value is <TT>allow</TT>.
 Defines if incoming and outgoing s2s connections with a specific remote host are allowed or denied.
 This allows to restrict ejabberd to only stablish s2s connections 
 with a small list of trusted servers, or to block some specific servers.
+</DD><DT CLASS="dt-description"><B><TT>{s2s_max_retry_delay, Seconds}</TT></B></DT><DD CLASS="dd-description"> 
+The maximum allowed delay for retry to connect after a failed connection attempt.
+Specified in seconds. The default value is 300 seconds (5 minutes).
 </DD></DL><P>For example, the following simple configuration defines:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 There are three domains. The default certificate file is <TT>server.pem</TT>.
@@ -1067,6 +1076,20 @@ can be either a number, or <TT>infinity</TT>. The default value is
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 To limit the number of sessions per user to 10 for all users:
 <PRE CLASS="verbatim">  {access, max_user_sessions, [{10, all}]}.
+</PRE></LI></UL><!--TOC subsubsection Several connections to a remote Jabber server with ACL-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR -->Several connections to a remote Jabber server with ACL</H4><!--SEC END --><P>
+<A NAME="configmaxs2sconns"></A>
+</P><P>The special access <TT>max_s2s_connections</TT> specifies how many
+simultaneus S2S connections can be stablished to a specific remote Jabber server.
+The default value is <TT>1</TT>.
+There&#X2019;s also available the access <TT>max_s2s_connections_per_node</TT>.</P><P>The syntax is:
+</P><PRE CLASS="verbatim">  {access, max_s2s_connections, [{&lt;maxnumber&gt;, &lt;aclname&gt;},
+                                 ...
+                                ]}.
+</PRE><P>Examples:
+</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+Allow up to 3 connections with each remote server:
+<PRE CLASS="verbatim">  {access, max_s2s_connections, [{3, all}]}.
 </PRE></LI></UL><!--TOC subsection Shapers-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc25">3.1.6</A>&#XA0;&#XA0;Shapers</H3><!--SEC END --><P>
 <A NAME="shapers"></A>
@@ -1608,6 +1631,9 @@ recommended if the processing of a query can take a relatively long time.
 of IQ queries of a namespace with this discipline. In addition, the processing
 of this queue is done in parallel with that of other packets. This discipline
 is most recommended.
+</DD><DT CLASS="dt-description"><B><TT>{queues, N}</TT></B></DT><DD CLASS="dd-description">: N separate queues are created to process the
+queries. The queries are thus process in parallel, but in a
+controlled way.
 </DD><DT CLASS="dt-description"><B><TT>parallel</TT></B></DT><DD CLASS="dd-description"> For every packet with this discipline a separate Erlang process
 is spawned. Consequently, all these packets are processed in parallel.
 Although spawning of Erlang process has a relatively low cost, this can break
@@ -1943,7 +1969,7 @@ distributed at creation time on all available MUC module
 instances. The multi-user chat module is clustered but the room
 themselves are not clustered nor fault-tolerant: if the node managing a
 set of rooms goes down, the rooms disappear and they will be recreated
-on an available node on first connection attempt.</P><P>Options:
+on an available node on first connection attempt.</P><P>Module options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 
 <B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
@@ -1964,27 +1990,32 @@ who is allowed to administrate the Multi-User Chat service (the default
 value is <TT>none</TT>, which means that only the room creator can
 administer his room). By sending a message to the service JID,
 administrators can send service messages that will be displayed in every
-active room.</DD><DT CLASS="dt-description"><B><TT>history_size</TT></B></DT><DD CLASS="dd-description"> A small history of
+active room.
+</DD><DT CLASS="dt-description"><B><TT>history_size</TT></B></DT><DD CLASS="dd-description"> A small history of
 the current discussion is sent to users when they enter the
 room. With this option you can define the number of history messages
 to keep and send to users joining the room. The value is an
 integer. Setting the value to <TT>0</TT> disables the history feature
 and, as a result, nothing is kept in memory. The default value is
 <TT>20</TT>. This value is global and thus affects all rooms on the
-server.</DD><DT CLASS="dt-description"><B><TT>max_users</TT></B></DT><DD CLASS="dd-description">  This option defines at
+server.
+</DD><DT CLASS="dt-description"><B><TT>max_users</TT></B></DT><DD CLASS="dd-description">  This option defines at
 the server level, the maximum number of users allowed per MUC
 room. It can be lowered in each room configuration but cannot be
 increased in individual MUC room configuration. The default value is
-200.</DD><DT CLASS="dt-description"><B><TT>max_users_admin_threshold</TT></B></DT><DD CLASS="dd-description">
+200.
+</DD><DT CLASS="dt-description"><B><TT>max_users_admin_threshold</TT></B></DT><DD CLASS="dd-description">
  This option defines the
 number of MUC admins or owners to allow to enter the room even if
 the maximum number of allowed users is reached. The default limits
-is 5. In most cases this default value is the best setting.</DD><DT CLASS="dt-description"><B><TT>max_user_conferences</TT></B></DT><DD CLASS="dd-description">
+is 5. In most cases this default value is the best setting.
+</DD><DT CLASS="dt-description"><B><TT>max_user_conferences</TT></B></DT><DD CLASS="dd-description">
  This option define the maximum
 number of chat room any given user will be able to join. The default
 is 10. This option is used to prevent possible abuses. Note that
 this is a soft limits: Some users can sometime join more conferences
-in cluster configurations.</DD><DT CLASS="dt-description"><B><TT>min_message_interval</TT></B></DT><DD CLASS="dd-description"> 
+in cluster configurations.
+</DD><DT CLASS="dt-description"><B><TT>min_message_interval</TT></B></DT><DD CLASS="dd-description"> 
 This option defines the minimum interval between two messages send
 by a user in seconds. This option is global and valid for all chat
 rooms. A decimal value can be used. When this option is not defined,
@@ -1993,7 +2024,8 @@ MUC service from users abuses and limit number of messages that will
 be broadcasted by the service. A good value for this minimum message
 interval is 0.4 second. If a user tries to send messages faster, an
 error is send back explaining that the message have been discarded
-and describing the reason why the message is not acceptable.</DD><DT CLASS="dt-description"><B><TT>min_presence_interval</TT></B></DT><DD CLASS="dd-description">
+and describing the reason why the message is not acceptable.
+</DD><DT CLASS="dt-description"><B><TT>min_presence_interval</TT></B></DT><DD CLASS="dd-description">
  This option defines the
 minimum of time between presence changes coming from a given user in
 seconds. This option is global and valid for all chat rooms. A
@@ -2005,18 +2037,33 @@ to change its presence more often than the specified interval, the
 presence is cached by <TT>ejabberd</TT> and only the last presence is
 broadcasted to all users in the room after expiration of the
 interval delay. Intermediate presence packets are silently
-discarded. A good value for this option is 4 seconds.</DD><DT CLASS="dt-description"><B><TT>default_room_options</TT></B></DT><DD CLASS="dd-description"> This
-option allow to define the desired default room options. Obviously,
-the room creator can modify the room options at any time. The
-available room options are: <TT>allow_change_subj</TT>,
-<TT>allow_private_messages</TT>, <TT>allow_query_users</TT>,
-<TT>allow_user_invites</TT>, <TT>anonymous</TT>, <TT>logging</TT>,
-<TT>members_by_default</TT>, <TT>members_only</TT>,
-<TT>moderated</TT>, <TT>password</TT>, <TT>password_protected</TT>,
-<TT>persistent</TT>, <TT>public</TT>, <TT>public_list</TT>,
-<TT>title</TT>. All of them can be set to <TT>true</TT> or
-<TT>false</TT>, except <TT>password</TT> and <TT>title</TT> which
-are strings.
+discarded. A good value for this option is 4 seconds.
+</DD><DT CLASS="dt-description"><B><TT>default_room_options</TT></B></DT><DD CLASS="dd-description"> 
+This module option allows to define the desired default room options.
+Note that the creator of a room can modify the options of his room 
+at any time using a Jabber client with MUC capability.
+The available room options and the default values are:
+<DL CLASS="description"><DT CLASS="dt-description">
+<B><TT>{allow_change_subj, true}</TT></B></DT><DD CLASS="dd-description"> Allow occupants to change the subject.
+</DD><DT CLASS="dt-description"><B><TT>{allow_private_messages, true}</TT></B></DT><DD CLASS="dd-description"> Occupants can send private messages to other occupants.
+</DD><DT CLASS="dt-description"><B><TT>{allow_query_users, true}</TT></B></DT><DD CLASS="dd-description"> Occupants can send IQ queries to other occupants.
+</DD><DT CLASS="dt-description"><B><TT>{allow_user_invites, false}</TT></B></DT><DD CLASS="dd-description"> Allow occupants to send invitations.
+</DD><DT CLASS="dt-description"><B><TT>{anonymous, true}</TT></B></DT><DD CLASS="dd-description"> Occupants are allowed to see the real JIDs of other occupants.
+</DD><DT CLASS="dt-description"><B><TT>{logging, false}</TT></B></DT><DD CLASS="dd-description"> The public messages are logged using <TT>mod_muc_log</TT>.
+</DD><DT CLASS="dt-description"><B><TT>{max_users, 200}</TT></B></DT><DD CLASS="dd-description"> Maximum number of occupants in the room.
+</DD><DT CLASS="dt-description"><B><TT>{members_by_default, true}</TT></B></DT><DD CLASS="dd-description"> The occupants that enter the room are participants by default, so they have &#X2019;voice&#X2019;.
+</DD><DT CLASS="dt-description"><B><TT>{members_only, false}</TT></B></DT><DD CLASS="dd-description"> Only members of the room can	enter.
+</DD><DT CLASS="dt-description"><B><TT>{moderated, true}</TT></B></DT><DD CLASS="dd-description"> Only occupants with &#X2019;voice&#X2019; can send public messages.
+</DD><DT CLASS="dt-description"><B><TT>{password, ""}</TT></B></DT><DD CLASS="dd-description"> Password of the room. You may want to enable the next option too.
+</DD><DT CLASS="dt-description"><B><TT>{password_protected, false}</TT></B></DT><DD CLASS="dd-description"> The password is required to enter the room.
+</DD><DT CLASS="dt-description"><B><TT>{persistent, false}</TT></B></DT><DD CLASS="dd-description"> The room persists even if the last participant leaves.
+</DD><DT CLASS="dt-description"><B><TT>{public, true}</TT></B></DT><DD CLASS="dd-description"> The room is public in the list of the MUC service, so it can be discovered.
+</DD><DT CLASS="dt-description"><B><TT>{public_list, true}</TT></B></DT><DD CLASS="dd-description"> The list of participants is public, without requiring to enter the room.
+</DD><DT CLASS="dt-description"><B><TT>{title, ""}</TT></B></DT><DD CLASS="dd-description"> A human-readable title of the room.
+</DD></DL>
+All of those room options can be set to <TT>true</TT> or <TT>false</TT>,
+except <TT>password</TT> and <TT>title</TT> which are strings,
+and <TT>max_users</TT> that is integer.
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 In the first example everyone is allowed to use the Multi-User Chat
@@ -2323,7 +2370,8 @@ The simpliest configuration of the module:
 </P><P>This module offers a Publish-Subscribe Service (<A HREF="http://www.xmpp.org/extensions/xep-0060.html">XEP-0060</A>).
 The functionality in <TT>mod_pubsub</TT> can be extended using plugins.
 The plugin that implements PEP (Personal Eventing via Pubsub) (<A HREF="http://www.xmpp.org/extensions/xep-0163.html">XEP-0163</A>)
-is enabled by default, and requires <TT>mod_caps</TT>.</P><P>Options:
+is enabled in the default ejabberd configuration file,
+and it requires <TT>mod_caps</TT>.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 
 <B><TT>host</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
@@ -2370,7 +2418,15 @@ the second string is the message body.
 list of JIDs which will be notified each time a new account is registered.
 </DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies 
 the processing discipline for In-Band Registration (<TT>jabber:iq:register</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
-</DD></DL><P>Examples:
+</DD></DL><P>This module reads also another option defined globably for the server:
+<TT>{registration_timeout, Timeout}</TT>. 
+This option limits the frequency of registration from a given IP or username.
+So, a user can&#X2019;t register a new account from the same IP address or JID during
+this number of seconds after previous registration.
+Timeout is expressed in seconds, and must be an integer.
+To disable this limitation,
+instead of an integer put a word like: <TT>infinity</TT>.
+Default value: 600 seconds.</P><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Next example prohibits the registration of too short account names:
 <PRE CLASS="verbatim">  {acl, shortname, {user_glob, "?"}}.
@@ -2400,8 +2456,10 @@ example all In-Band Registration functionality is disabled:
 %    {mod_register, [{access, register}]},
     ...
    ]}.
-</PRE></LI><LI CLASS="li-itemize">Define the welcome message and three registration watchers:
-<PRE CLASS="verbatim">  {modules,
+</PRE></LI><LI CLASS="li-itemize">Define the welcome message and three registration watchers.
+Also define a registration timeout of one hour:
+<PRE CLASS="verbatim">  {registration_timeout, 3600}.
+  {modules,
    [
     ...
      {mod_register, [

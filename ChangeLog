@@ -1,5 +1,12 @@
 2008-05-19  Badlop  <badlop@process-one.net>
 
+	* doc/guide.html: Updated
+	* doc/dev.html: Likewise
+	* doc/features.html: Likewise
+	* doc/version.tex: Likewise
+
+	* src/ejabberd.hrl: Version is 2.0.x
+
 	* src/configure.ac: R12 support: remove compilation
 	warning (EJAB-630)
 	* src/configure: Likewise
