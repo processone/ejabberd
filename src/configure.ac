@@ -120,12 +120,3 @@ fi
 AC_CHECK_HEADER(krb5.h,,)
 
 AC_OUTPUT
-
-if test -n "$ERLANG_SSL39" ; then
-	echo
-	echo "**************** WARNING ! ********************"
-	echo "ejabberd will be compiled with Erlang R12."
-	echo "This version of Erlang is not supported"
-	echo "and not recommended for production servers"
-	echo "***********************************************"
-fi
