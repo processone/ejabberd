@@ -1,3 +1,8 @@
+2008-05-19  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Describe how to disable registration
+	limitation (EJAB-614)
+
 2008-05-16  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_c2s.erl: Added C2S blacklist support (EJAB-625).
