@@ -1,3 +1,8 @@
+2008-05-19  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Describe how to disable registration
+	limitation (EJAB-614)
+
 2008-04-30  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_caps.erl: XEP-0115 patch (EJAB-618)
