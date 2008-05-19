@@ -1,3 +1,8 @@
+2008-05-19  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Describe how to disable registration
+	limitation (EJAB-614)
+
 2008-05-19  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_s2s_out.erl: Avoid an harmless error (function clause in
