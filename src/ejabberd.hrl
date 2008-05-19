@@ -19,7 +19,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--define(VERSION, "2.0.0").
+-define(VERSION, "2.0.1").
 
 -define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
 -define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).
