@@ -1,5 +1,10 @@
 2008-05-19  Badlop  <badlop@process-one.net>
 
+	* src/configure.ac: R12 support: remove compilation
+	warning (EJAB-630)
+	* src/configure: Likewise
+	* doc/guide.tex: Likewise
+
 	* doc/guide.tex: Describe how to disable registration
 	limitation (EJAB-614)
 
