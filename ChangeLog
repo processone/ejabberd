@@ -1,5 +1,7 @@
 2008-05-19  Badlop  <badlop@process-one.net>
 
+	* doc/guide.html: Update
+
 	* src/configure.ac: R12 support: remove compilation
 	warning (EJAB-630)
 	* src/configure: Likewise
