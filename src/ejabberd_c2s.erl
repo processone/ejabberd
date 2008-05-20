@@ -56,6 +56,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("mod_privacy.hrl").
 
 -define(SETS, gb_sets).
 -define(DICT, dict).
@@ -84,8 +85,9 @@
 		pres_last, pres_pri,
 		pres_timestamp,
 		pres_invis = false,
-		privacy_list = none,
+		privacy_list = #userlist{},
 		conn = unknown,
+		auth_module = unknown,
 		ip,
 		lang}).
 
@@ -174,35 +176,26 @@ init([{SockMod, Socket}, Opts]) ->
 			      (_) -> false
 			   end, Opts),
     IP = peerip(SockMod, Socket),
-    %% Check if IP is blacklisted:
-    case is_ip_blacklisted(IP) of
-	true ->
-	    ?INFO_MSG("Connection attempt from blacklisted IP: ~s",
-		      [jlib:ip_to_list(IP)]),
-	    {stop, normal};
-	false ->
-	    Socket1 =
-		if
-		    TLSEnabled ->
-			SockMod:starttls(Socket, TLSOpts);
-		    true ->
-			Socket
-		end,
-	    SocketMonitor = SockMod:monitor(Socket1),
-	    {ok, wait_for_stream, #state{socket         = Socket1,
-					 sockmod        = SockMod,
-					 socket_monitor = SocketMonitor,
-					 zlib           = Zlib,
-					 tls            = TLS,
-					 tls_required   = StartTLSRequired,
-					 tls_enabled    = TLSEnabled,
-					 tls_options    = TLSOpts,
-					 streamid       = new_id(),
-					 access         = Access,
-					 shaper         = Shaper,
-					 ip             = IP},
-	     ?C2S_OPEN_TIMEOUT}
-    end.
+    Socket1 =
+	if
+	    TLSEnabled ->
+		SockMod:starttls(Socket, TLSOpts);
+	    true ->
+		Socket
+	end,
+    SocketMonitor = SockMod:monitor(Socket1),
+    {ok, wait_for_stream, #state{socket         = Socket1,
+				 sockmod        = SockMod,
+				 socket_monitor = SocketMonitor,
+				 zlib           = Zlib,
+				 tls            = TLS,
+				 tls_required   = StartTLSRequired,
+				 tls_enabled    = TLSEnabled,
+				 tls_options    = TLSOpts,
+				 streamid       = new_id(),
+				 access         = Access,
+				 shaper         = Shaper,
+				 ip             = IP}, ?C2S_OPEN_TIMEOUT}.
 
 %% Return list of all available resources of contacts,
 %% in form [{JID, Caps}].
@@ -246,11 +239,11 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					cyrsasl:server_new(
 					  "jabber", Server, "", [],
 					  fun(U) ->
-						  ejabberd_auth:get_password(
+						  ejabberd_auth:get_password_with_authmodule(
 						    U, Server)
 					  end,
 					  fun(U, P) ->
-						  ejabberd_auth:check_password(
+						  ejabberd_auth:check_password_with_authmodule(
 						    U, Server, P)
 					  end),
 				    Mechs = lists:map(
@@ -351,9 +344,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				true ->
 				    send_text(StateData, Header),
 				    fsm_next_state(wait_for_auth,
-					       StateData#state{
-						 server = Server,
-						 lang = Lang})
+						   StateData#state{
+						     server = Server,
+						     lang = Lang})
 			    end
 		    end;
 		_ ->
@@ -438,17 +431,18 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		(acl:match_rule(StateData#state.server,
 				StateData#state.access, JID) == allow) of
 		true ->
-		    case ejabberd_auth:check_password(
+		    case ejabberd_auth:check_password_with_authmodule(
 			   U, StateData#state.server, P,
 			   StateData#state.streamid, D) of
-			true ->
+			{true, AuthModule} ->
 			    ?INFO_MSG(
 			       "(~w) Accepted legacy authentication for ~s",
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID)]),
 			    SID = {now(), self()},
 			    Conn = get_conn_type(StateData),
-			    Info = [{ip, StateData#state.ip}, {conn, Conn}],
+			    Info = [{ip, StateData#state.ip}, {conn, Conn},
+				    {auth_module, AuthModule}],
 			    ejabberd_sm:open_session(
 			      SID, U, StateData#state.server, R, Info),
 			    Res1 = jlib:make_result_iq_reply(El),
@@ -467,7 +461,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    PrivList =
 				ejabberd_hooks:run_fold(
 				  privacy_get_user_list, StateData#state.server,
-				  none,
+				  #userlist{},
 				  [U, StateData#state.server]),
 			    fsm_next_state(session_established,
 					   StateData#state{
@@ -476,6 +470,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     jid = JID,
 					     sid = SID,
 					     conn = Conn,
+					     auth_module = AuthModule,
 					     pres_f = ?SETS:from_list(Fs1),
 					     pres_t = ?SETS:from_list(Ts1),
 					     privacy_list = PrivList});
@@ -682,12 +677,14 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
+		    AuthModule = xml:get_attr_s(auth_module, Props),
 		    ?INFO_MSG("(~w) Accepted authentication for ~s",
 			      [StateData#state.socket, U]),
 		    fsm_next_state(wait_for_stream,
 				   StateData#state{
 				     streamid = new_id(),
 				     authenticated = true,
+				     auth_module = AuthModule,
 				     user = U});
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
@@ -798,7 +795,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			       jlib:jid_to_string(JID)]),
 		    SID = {now(), self()},
 		    Conn = get_conn_type(StateData),
-		    Info = [{ip, StateData#state.ip}, {conn, Conn}],
+		    Info = [{ip, StateData#state.ip}, {conn, Conn},
+			    {auth_module, StateData#state.auth_module}],
 		    ejabberd_sm:open_session(
 		      SID, U, StateData#state.server, R, Info),
 		    Res = jlib:make_result_iq_reply(El),
@@ -815,7 +813,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    PrivList =
 			ejabberd_hooks:run_fold(
 			  privacy_get_user_list, StateData#state.server,
-			  none,
+			  #userlist{},
 			  [U, StateData#state.server]),
 		    fsm_next_state(session_established,
 				   StateData#state{
@@ -849,6 +847,8 @@ wait_for_session({xmlstreamerror, _}, StateData) ->
 
 wait_for_session(closed, StateData) ->
     {stop, normal, StateData}.
+
+
 
 
 session_established({xmlstreamelement, El}, StateData) ->
@@ -907,24 +907,18 @@ session_established({xmlstreamelement, El}, StateData) ->
 					       StateData)
 			end;
 		    "iq" ->
-			case StateData#state.privacy_list of
-			    none ->
-				ejabberd_router:route(FromJID, ToJID, NewEl),
-				StateData;
-			    _PrivList ->
-				case jlib:iq_query_info(NewEl) of
-				    #iq{xmlns = ?NS_PRIVACY} = IQ ->
-					process_privacy_iq(
-					  FromJID, ToJID, IQ, StateData);
-				    _ ->
-					ejabberd_hooks:run(
-					  user_send_packet,
-					  Server,
-					  [FromJID, ToJID, NewEl]),
-					ejabberd_router:route(
-					  FromJID, ToJID, NewEl),
-					StateData
-				end
+			case jlib:iq_query_info(NewEl) of
+			    #iq{xmlns = ?NS_PRIVACY} = IQ ->
+				process_privacy_iq(
+				  FromJID, ToJID, IQ, StateData);
+			    _ ->
+				ejabberd_hooks:run(
+				  user_send_packet,
+				  Server,
+				  [FromJID, ToJID, NewEl]),
+				ejabberd_router:route(
+				  FromJID, ToJID, NewEl),
+				StateData
 			end;
 		    "message" ->
 			ejabberd_hooks:run(user_send_packet,
@@ -1426,7 +1420,13 @@ process_presence_probe(From, To, StateData) ->
 			allow ->
 			    Pid=element(2, StateData#state.sid),
 			    ejabberd_hooks:run(presence_probe_hook, StateData#state.server, [From, To, Pid]),
-			    ejabberd_router:route(To, From, Packet)
+			    %% Don't route a presence probe to oneself
+			    case From == To of
+				false ->
+				    ejabberd_router:route(To, From, Packet);
+			    	true ->
+				    ok
+			    end
 		    end;
 		Cond2 ->
 		    ejabberd_router:route(To, From,
@@ -1908,7 +1908,8 @@ process_unauthenticated_stanza(StateData, El) ->
 	    Res = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
 					  StateData#state.server,
 					  empty,
-					  [StateData#state.server, IQ]),
+					  [StateData#state.server, IQ,
+					   StateData#state.ip]),
 	    case Res of
 		empty ->
 		    % The only reasonable IQ's here are auth and register IQ's
@@ -1951,7 +1952,3 @@ fsm_reply(Reply, session_established, StateData) ->
     {reply, Reply, session_established, StateData, ?C2S_HIBERNATE_TIMEOUT};
 fsm_reply(Reply, StateName, StateData) ->
     {reply, Reply, StateName, StateData, ?C2S_OPEN_TIMEOUT}.
-
-%% Used by c2s blacklist plugins
-is_ip_blacklisted({IP,_Port}) ->
-    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).	
