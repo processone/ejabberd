@@ -412,6 +412,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				    if ((Name == "iq") or
 					(Name == "message") or
 					(Name == "presence")) ->
+					    ejabberd_hooks:run(
+					      s2s_receive_packet,
+					      LFrom,
+					      [From, To, NewEl]),
 					    ejabberd_router:route(
 					      From, To, NewEl);
 				       true ->
@@ -427,6 +431,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				    if ((Name == "iq") or
 					(Name == "message") or
 					(Name == "presence")) ->
+					    ejabberd_hooks:run(
+					      s2s_receive_packet,
+					      LFrom,
+					      [From, To, NewEl]),
 					    ejabberd_router:route(
 					      From, To, NewEl);
 				       true ->

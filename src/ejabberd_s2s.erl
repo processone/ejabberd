@@ -256,6 +256,11 @@ do_route(From, To, Packet) ->
 	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						  jlib:jid_to_string(To),
 						  Attrs),
+	    #jid{lserver = MyServer} = From,
+	    ejabberd_hooks:run(
+	      s2s_send_packet,
+	      MyServer,
+	      [From, To, Packet]),
 	    send_element(Pid, {xmlelement, Name, NewAttrs, Els}),
 	    ok;
 	{aborted, _Reason} ->

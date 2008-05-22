@@ -1,5 +1,9 @@
 2008-05-22  Mickael Remond  <mremond@process-one.net>
 
+	* src/ejabberd_s2s.erl: Added s2s_send_packet and s2s_receive_packet
+	hooks (EJAB-635).
+	* src/ejabberd_s2s_in.erl: Likewise.
+
 	* src/ejabberd_c2s.erl: user_send_packet hook now called on all packets
 	including presence packets (EJAB-634)
 
