@@ -1,3 +1,8 @@
+2008-05-22  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: user_send_packet hook now called on all packets
+	including presence packets (EJAB-634)
+
 2008-05-22  Badlop  <badlop@process-one.net>
 
 	* README: R12 support: remove compilation warning (EJAB-630)

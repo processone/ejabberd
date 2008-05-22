@@ -903,6 +903,10 @@ session_established({xmlstreamelement, El}, StateData) ->
 				       Server,
 				       NewEl,
 				       [User, Server]),
+			ejabberd_hooks:run(
+			  user_send_packet,
+			  Server,
+			  [FromJID, ToJID, PresenceEl]),
 			case ToJID of
 			    #jid{user = User,
 				 server = Server,
