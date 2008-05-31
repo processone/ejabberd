@@ -1,5 +1,8 @@
 2008-05-31  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web.erl (make_xhtml/2): Allow to include
+	elements in the HTTP header
+
 	* src/odbc/odbc_queries.erl (del_user_return_password): Return
 	password (thanks to Oleg Palij)
 
