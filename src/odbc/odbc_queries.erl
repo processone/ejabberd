@@ -129,12 +129,13 @@ del_user(LServer, Username) ->
       ["delete from users where username='", Username ,"';"]).
 
 del_user_return_password(_LServer, Username, Pass) ->
-    ejabberd_odbc:sql_query_t(
-      ["select password from users where username='",
-       Username, "';"]),
+    P = ejabberd_odbc:sql_query_t(
+	  ["select password from users where username='",
+	   Username, "';"]),
     ejabberd_odbc:sql_query_t(["delete from users "
 			       "where username='", Username,
-			       "' and password='", Pass, "';"]).
+			       "' and password='", Pass, "';"]),
+    P.
 
 list_users(LServer) ->
     ejabberd_odbc:sql_query(

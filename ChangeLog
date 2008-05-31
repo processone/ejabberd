@@ -1,3 +1,8 @@
+2008-05-31  Badlop  <badlop@process-one.net>
+
+	* src/odbc/odbc_queries.erl (del_user_return_password): Return
+	password (thanks to Oleg Palij)
+
 2008-05-22  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_s2s.erl: Added s2s_send_packet and s2s_receive_packet
