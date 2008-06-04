@@ -1,3 +1,8 @@
+2008-06-04  Badlop  <badlop@process-one.net>
+
+	* src/msgs/pl.msg: Bugfix in arguments of translated string that
+	could crash the room (thanks to Anastasia Gornostaeva)
+
 2008-05-31  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_web.erl (make_xhtml/2): Allow to include

@@ -119,7 +119,7 @@
 {"Traffic rate limit is exceeded", "Limit transferu przekroczony"}.
 {"Maximum Number of Occupants", "Maksymalna liczba uczestników"}.
 {"No limit", "Bez limitu"}.
-{"~s invites you to the room ~s", "~ zaprasza Cię do pokoju ~s"}.
+{"~s invites you to the room ~s", "~s zaprasza Cię do pokoju ~s"}.
 {"the password is", "hasło to"}.
 {" has set the subject to: ", "zmieł(a) temat na: "}.
 {"You need an x:data capable client to configure room", "Potrzebujesz klienta kompatybilnego z x:data aby skonfigurować pokój"}.
