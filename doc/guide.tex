@@ -3450,7 +3450,7 @@ Options:
 \subsection{Commands}
 \label{commands}
 
-The \term{ejabberdctl} command line script allows to start, stop and perform 
+The \term{ejabberdctl} command line administration script allows to start, stop and perform 
 many other administrative tasks in a local or remote \ejabberd{} server.
 
 When \term{ejabberdctl} is executed without any parameter,
@@ -3485,8 +3485,16 @@ The more interesting ones are:
 The \term{ejabberdctl} script also allows the argument \term{--node NODENAME}.
 This allows to administer a remote node.
 
-The \term{ejabberdctl} administration script can be configured in the file ejabberdctl.cfg.
-This file provides detailed information about each configurable option.
+The \term{ejabberdctl} script can be configured in the file \term{ejabberdctl.cfg}.
+This file includes detailed information about each configurable option.
+
+The \term{ejabberdctl} script returns a numerical status code.
+Success is represented by \term{0},
+error is represented by \term{1},
+and other codes may be used for specifical results.
+This can be used by other scripts to determine automatically
+if a command succedded or failed,
+for example using: \term{echo \$?}
 
 
 \subsection{Erlang runtime system}
