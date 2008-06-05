@@ -2869,7 +2869,7 @@ the processing discipline for Software Version (<TT>jabber:iq:version</TT>) IQ q
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc60">4.1</A>&#XA0;&#XA0;<TT>ejabberdctl</TT></H2><!--SEC END --><P>
 <A NAME="ejabberdctl"></A></P><!--TOC subsection Commands-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc61">4.1.1</A>&#XA0;&#XA0;Commands</H3><!--SEC END --><P>
-<A NAME="commands"></A></P><P>The <TT>ejabberdctl</TT> command line script allows to start, stop and perform 
+<A NAME="commands"></A></P><P>The <TT>ejabberdctl</TT> command line administration script allows to start, stop and perform 
 many other administrative tasks in a local or remote <TT>ejabberd</TT> server.</P><P>When <TT>ejabberdctl</TT> is executed without any parameter,
 it displays the available options. If there isn&#X2019;t an <TT>ejabberd</TT> server running, 
 the available parameters are:
@@ -2894,8 +2894,14 @@ exist tutorials to <A HREF="http://www.ejabberd.im/migrate-to-ejabberd">migrate 
 in offline storage. This might be useful when the number of offline messages
 is very high.
 </DD></DL><P>The <TT>ejabberdctl</TT> script also allows the argument <TT>--node NODENAME</TT>.
-This allows to administer a remote node.</P><P>The <TT>ejabberdctl</TT> administration script can be configured in the file ejabberdctl.cfg.
-This file provides detailed information about each configurable option.</P><!--TOC subsection Erlang runtime system-->
+This allows to administer a remote node.</P><P>The <TT>ejabberdctl</TT> script can be configured in the file <TT>ejabberdctl.cfg</TT>.
+This file includes detailed information about each configurable option.</P><P>The <TT>ejabberdctl</TT> script returns a numerical status code.
+Success is represented by <TT>0</TT>,
+error is represented by <TT>1</TT>,
+and other codes may be used for specifical results.
+This can be used by other scripts to determine automatically
+if a command succedded or failed,
+for example using: <TT>echo $?</TT></P><!--TOC subsection Erlang runtime system-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc62">4.1.2</A>&#XA0;&#XA0;Erlang runtime system</H3><!--SEC END --><P>
 <A NAME="erlangconfiguration"></A></P><P><TT>ejabberd</TT> is an Erlang/OTP application that runs inside an Erlang runtime system.
 This system is configured using environment variables and command line parameters.
