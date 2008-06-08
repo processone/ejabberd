@@ -1,3 +1,9 @@
+2008-06-08  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Small fixes (thanks to Christoph Anton Mitterer)
+	* doc/introduction.tex: Likewise
+	* doc/guide.html: Likewise
+
 2008-06-05  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Document ejabberdctl status code (EJAB-633)
