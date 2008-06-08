@@ -292,7 +292,7 @@ Support for virtual hosting.
 </LI><LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
 </LI><LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
 </LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with support for clustering and HTML logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-00163.html">Personal Eventing via Pubsub</A>.
+</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</A>.
 </LI><LI CLASS="li-itemize">Support for web clients: <A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</A> services.
 </LI><LI CLASS="li-itemize">IRC transport.
 </LI><LI CLASS="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
@@ -637,7 +637,7 @@ connections.</TD></TR>
 access to the port. The default value is <TT>all</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{certfile, Path}</TT></B></DT><DD CLASS="dd-description"> Full path to a file containing the default SSL certificate.
 To define a certificate file specific for a given domain, use the global option <TT>domain_certfile</TT>.
-</DD><DT CLASS="dt-description"><B><TT>component_check_from</TT></B></DT><DD CLASS="dd-description"> 
+</DD><DT CLASS="dt-description"><B><TT>service_check_from</TT></B></DT><DD CLASS="dd-description"> 
 This option can be used with <TT>ejabberd_service</TT> only. It is
 used to disable control on the from field on packets send by an
 external components. The option can be either <TT>true</TT> or
@@ -652,9 +652,10 @@ do not allow outgoing sockets on port 5222.<P>Remember that you must also instal
 <CODE>http://server:port/http-bind/</CODE>. Be aware that support for HTTP Bind
 is also needed in the Jabber client. Remark also that HTTP Bind can be
 interesting to host a web-based Jabber client such as
-<A HREF="http://jwchat.sourceforge.net/">JWChat</A> (there is a tutorial to
-<A HREF="http://www.ejabberd.im/jwchat">install JWChat</A> with
-instructions for <TT>ejabberd</TT>).
+<A HREF="http://jwchat.sourceforge.net/">JWChat</A> 
+(check the tutorials to install JWChat with ejabberd and an
+<A HREF="http://www.ejabberd.im/jwchat-localserver">embedded local web server</A>
+or <A HREF="http://www.ejabberd.im/jwchat-apache">Apache</A>).
 </P></DD><DT CLASS="dt-description"><B><TT>http_poll</TT></B></DT><DD CLASS="dd-description"> 
 This option enables HTTP Polling (<A HREF="http://www.xmpp.org/extensions/xep-0025.html">XEP-0025</A>) support. HTTP Polling
 enables access via HTTP requests to <TT>ejabberd</TT> from behind firewalls which
@@ -662,9 +663,7 @@ do not allow outgoing sockets on port 5222.<P>If HTTP Polling is enabled, it wil
 <CODE>http://server:port/http-poll/</CODE>. Be aware that support for HTTP Polling
 is also needed in the Jabber client. Remark also that HTTP Polling can be
 interesting to host a web-based Jabber client such as
-<A HREF="http://jwchat.sourceforge.net/">JWChat</A> (there is a tutorial to
-<A HREF="http://www.ejabberd.im/jwchat">install JWChat</A> with
-instructions for <TT>ejabberd</TT>).
+<A HREF="http://jwchat.sourceforge.net/">JWChat</A>.
 </P></DD><DT CLASS="dt-description"><B><TT>inet6</TT></B></DT><DD CLASS="dd-description"> Set up the socket for IPv6.
 </DD><DT CLASS="dt-description"><B><TT>{ip, IPAddress}</TT></B></DT><DD CLASS="dd-description"> This option specifies which network
 interface to listen for. For example <CODE>{ip, {192, 168, 1, 1}}</CODE>.
@@ -727,7 +726,7 @@ The default policy for incoming and outgoing s2s connections to other Jabber ser
 The default value is <TT>allow</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{{s2s_host, Host}, allow|deny}</TT></B></DT><DD CLASS="dd-description">
 Defines if incoming and outgoing s2s connections with a specific remote host are allowed or denied.
-This allows to restrict ejabberd to only stablish s2s connections 
+This allows to restrict ejabberd to only establish s2s connections 
 with a small list of trusted servers, or to block some specific servers.
 </DD><DT CLASS="dt-description"><B><TT>{s2s_max_retry_delay, Seconds}</TT></B></DT><DD CLASS="dd-description"> 
 The maximum allowed delay for retry to connect after a failed connection attempt.
@@ -1080,7 +1079,7 @@ To limit the number of sessions per user to 10 for all users:
 <H4 CLASS="subsubsection"><!--SEC ANCHOR -->Several connections to a remote Jabber server with ACL</H4><!--SEC END --><P>
 <A NAME="configmaxs2sconns"></A>
 </P><P>The special access <TT>max_s2s_connections</TT> specifies how many
-simultaneus S2S connections can be stablished to a specific remote Jabber server.
+simultaneus S2S connections can be established to a specific remote Jabber server.
 The default value is <TT>1</TT>.
 There&#X2019;s also available the access <TT>max_s2s_connections_per_node</TT>.</P><P>The syntax is:
 </P><PRE CLASS="verbatim">  {access, max_s2s_connections, [{&lt;maxnumber&gt;, &lt;aclname&gt;},

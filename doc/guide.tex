@@ -686,7 +686,7 @@ This is a detailed description of each option allowed by the listening modules:
     access to the port. The default value is \term{all}.
   \titem{\{certfile, Path\}} Full path to a file containing the default SSL certificate.
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
-  \titem{component\_check\_from} \ind{options!service\_check\_from}
+  \titem{service\_check\_from} \ind{options!service\_check\_from}
     This option can be used with \term{ejabberd\_service} only. It is
     used to disable control on the from field on packets send by an
     external components. The option can be either \term{true} or
@@ -705,9 +705,10 @@ This is a detailed description of each option allowed by the listening modules:
     \verb|http://server:port/http-bind/|. Be aware that support for HTTP Bind
     is also needed in the \Jabber{} client. Remark also that HTTP Bind can be
     interesting to host a web-based \Jabber{} client such as
-    \footahref{http://jwchat.sourceforge.net/}{JWChat} (there is a tutorial to
-    \footahref{http://www.ejabberd.im/jwchat}{install JWChat} with
-    instructions for \ejabberd{}).
+    \footahref{http://jwchat.sourceforge.net/}{JWChat} 
+    (check the tutorials to install JWChat with ejabberd and an
+    \footahref{http://www.ejabberd.im/jwchat-localserver}{embedded local web server}
+    or \footahref{http://www.ejabberd.im/jwchat-apache}{Apache}).
   \titem{http\_poll} \ind{options!http\_poll}\ind{protocols!XEP-0025: HTTP Polling}\ind{JWChat}\ind{web-based Jabber client}
     This option enables HTTP Polling (\xepref{0025}) support. HTTP Polling
     enables access via HTTP requests to \ejabberd{} from behind firewalls which
@@ -717,9 +718,7 @@ This is a detailed description of each option allowed by the listening modules:
     \verb|http://server:port/http-poll/|. Be aware that support for HTTP Polling
     is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
     interesting to host a web-based \Jabber{} client such as
-    \footahref{http://jwchat.sourceforge.net/}{JWChat} (there is a tutorial to
-    \footahref{http://www.ejabberd.im/jwchat}{install JWChat} with
-    instructions for \ejabberd{}).
+    \footahref{http://jwchat.sourceforge.net/}{JWChat}.
   \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6.
   \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
     interface to listen for. For example \verb|{ip, {192, 168, 1, 1}}|.
@@ -784,7 +783,7 @@ There are some additional global options:
   The default value is \term{allow}.
   \titem{\{\{s2s\_host, Host\}, allow|deny\}}
   Defines if incoming and outgoing s2s connections with a specific remote host are allowed or denied.
-  This allows to restrict ejabberd to only stablish s2s connections 
+  This allows to restrict ejabberd to only establish s2s connections 
   with a small list of trusted servers, or to block some specific servers.
   \titem{\{s2s\_max\_retry\_delay, Seconds\}} \ind{options!s2s\_max\_retry\_delay}
   The maximum allowed delay for retry to connect after a failed connection attempt.
@@ -1249,7 +1248,7 @@ Examples:
 \ind{options!max\_s2s\_connections}
 
 The special access \term{max\_s2s\_connections} specifies how many
-simultaneus S2S connections can be stablished to a specific remote Jabber server.
+simultaneus S2S connections can be established to a specific remote Jabber server.
 The default value is \term{1}.
 There's also available the access \term{max\_s2s\_connections\_per\_node}.
 
