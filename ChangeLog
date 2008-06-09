@@ -1,3 +1,8 @@
+2008-06-10  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bugfix: deliver messages when first
+	presence is Invisible (thanks to Dariusz Markowicz)(EJAB-262)
+
 2008-06-08  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Small fixes (thanks to Christoph Anton Mitterer)

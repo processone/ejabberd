@@ -1475,6 +1475,8 @@ presence_update(From, Packet, StateData) ->
 			    pres_i = ?SETS:new(),
 			    pres_invis = false};
 	"invisible" ->
+	    NewPriority = get_priority_from_presence(Packet),
+	    update_priority(NewPriority, Packet, StateData),
 	    NewState =
 		if
 		    not StateData#state.pres_invis ->
