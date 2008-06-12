@@ -142,8 +142,16 @@ ejabberd Development Team
 %\newcommand{\new}{\marginpar{\textsc{new}}} % Highlight new features
 %\newcommand{\improved}{\marginpar{\textsc{improved}}} % Highlight improved features
 
-%% To by-pass errors in the HTML version.
-\newstyle{SPAN}{width:20\%; float:right; text-align:left; margin-left:auto;}
+%% To by-pass errors in the HTML version:
+\newstyle{.SPAN}{width:20\%; float:right; text-align:left; margin-left:auto;}
+\newstyle{H1 A, H2 A, H3 A, H4 A}{color:\#000000; text-decoration:none;}
+\newstyle{pre.verbatim}{margin:1ex 2ex;border:1px dashed lightgrey;background-color:\#f9f9f9;padding:0.5ex;}
+\newstyle{.dt-description}{margin:0ex 2ex;}
+\newstyle{table[border="1"]}{border-collapse:collapse;margin-bottom:1em;}
+\newstyle{table[border="1"] td}{border:1px solid \#aaa;padding:2px}
+% Don't display <hr> before and after tables or images:
+\newstyle{BLOCKQUOTE.table DIV.center DIV.center HR}{display:none;} 
+\newstyle{BLOCKQUOTE.figure DIV.center DIV.center HR}{display:none;} 
 
 %% Footnotes
 \begin{latexonly}
