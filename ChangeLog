@@ -1,3 +1,7 @@
+2008-06-12  Badlop  <badlop@process-one.net>
+	
+	* doc/guide.tex: Permanent reference URL for sections (EJAB-651)
+
 2008-06-08  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Small fixes (thanks to Christoph Anton Mitterer)
