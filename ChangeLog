@@ -1,3 +1,7 @@
+2008-06-12  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Permanent reference URL for sections (EJAB-651)
+
 2008-06-10  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_c2s.erl: Bugfix: deliver messages when first
