@@ -209,8 +209,8 @@ server and does not require any extra dependencies.
 
 In *nix systems, remember to set executable the binary installer before starting it. For example:
 \begin{verbatim}
-  chmod +x ejabberd-2.0.0_1-linux-x86-installer.bin
-  ./ejabberd-2.0.0_1-linux-x86-installer.bin
+chmod +x ejabberd-2.0.0_1-linux-x86-installer.bin
+./ejabberd-2.0.0_1-linux-x86-installer.bin
 \end{verbatim}
 
 \ejabberd{} can be started manually at any time,
@@ -291,7 +291,7 @@ Released versions of \ejabberd{} are available in the Process-one \ejabberd{} do
 \ind{Subversion repository}
 Alternatively, the latest development version can be retrieved from the Subversion repository using this command:
 \begin{verbatim}
-  svn co http://svn.process-one.net/ejabberd/trunk ejabberd
+svn co http://svn.process-one.net/ejabberd/trunk ejabberd
 \end{verbatim}
 
 
@@ -300,14 +300,14 @@ Alternatively, the latest development version can be retrieved from the Subversi
 
 To compile \ejabberd{} execute the commands:
 \begin{verbatim}
-  ./configure
-  make
+./configure
+make
 \end{verbatim}
 
 The build configuration script provides several parameters.
 To get the full list run the command:
 \begin{verbatim}
-  ./configure --help
+./configure --help
 \end{verbatim}
 
 Some options that you may be interested in modifying:
@@ -337,7 +337,7 @@ Some options that you may be interested in modifying:
 
 To install \ejabberd{} in the destination directories, run the command:
 \begin{verbatim}
-  make install
+make install
 \end{verbatim}
 Note that you may need to have administrative privileges in the system.
 
@@ -376,13 +376,13 @@ You can use the \term{ejabberdctl} command line administration script to start a
 
 Usage example:
 \begin{verbatim}
-$ ejabberdctl start
+ejabberdctl start
 
-$ ejabberdctl status
+ejabberdctl status
 Node ejabberd@localhost is started. Status: started
 ejabberd is running
 
-$ ejabberdctl stop
+ejabberdctl stop
 \end{verbatim}
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
@@ -392,7 +392,7 @@ and configurable options to fine tune the Erlang runtime system.
 
 The command to compile \ejabberd{} in BSD systems is:
 \begin{verbatim}
-  gmake
+gmake
 \end{verbatim}
 
 
@@ -467,15 +467,15 @@ to enter the \ejabberd{} Web Admin:
   There are two ways to register a Jabber account:
   \begin{enumerate}
   \item Using \term{ejabberdctl}\ind{ejabberdctl} (see section~\ref{ejabberdctl}):
-    \begin{verbatim}
-% ejabberdctl register admin1 example.org FgT5bk3
+\begin{verbatim}
+ejabberdctl register admin1 example.org FgT5bk3
 \end{verbatim} 
   \item Using a Jabber client and In-Band Registration (see section~\ref{modregister}).
   \end{enumerate}
 \item Edit the \ejabberd{} configuration file to give administration rights to the Jabber account you created:
-  \begin{verbatim}
-  {acl, admins, {user, "admin1", "example.org"}}.
-  {access, configure, [{allow, admins}]}.
+\begin{verbatim}
+{acl, admins, {user, "admin1", "example.org"}}.
+{access, configure, [{allow, admins}]}.
 \end{verbatim} 
   You can grant administrative privileges to many Jabber accounts,
   and also to accounts in other Jabber servers.
@@ -525,9 +525,9 @@ host name(s) stored in the database will be used.
 You can override the old values stored in the database by adding next lines to
 the configuration file:
 \begin{verbatim}
-  override_global.
-  override_local.
-  override_acls.
+override_global.
+override_local.
+override_acls.
 \end{verbatim}
 With these lines the old global options (shared between all \ejabberd{} nodes in a
 cluster), local options (which are specific for this particular \ejabberd{} node)
@@ -542,17 +542,17 @@ The option \option{hosts} defines a list containing one or more domains that
 Examples:
 \begin{itemize}
 \item Serving one domain:
-  \begin{verbatim}
-  {hosts, ["example.org"]}.
+\begin{verbatim}
+{hosts, ["example.org"]}.
 \end{verbatim}
 \item Serving one domain, and backwards compatible with older \ejabberd{}
   versions:
-  \begin{verbatim}
-  {host, "example.org"}.
+\begin{verbatim}
+{host, "example.org"}.
 \end{verbatim}
 \item Serving two domains:
 \begin{verbatim}
-  {hosts, ["example.net", "example.com"]}.
+{hosts, ["example.net", "example.com"]}.
 \end{verbatim}
 \end{itemize}
 
@@ -563,7 +563,7 @@ Options can be defined separately for every virtual host using the
 \term{host\_config} option.\ind{options!host\_config} It has the following
 syntax:
 \begin{verbatim}
-  {host_config, <hostname>, [<option>, <option>, ...]}.
+{host_config, <hostname>, [<option>, <option>, ...]}.
 \end{verbatim}
 
 Examples:
@@ -572,13 +572,13 @@ Examples:
   domain \jid{example.com} is using the \ind{LDAP}LDAP server running on the
   domain \jid{localhost} to perform authentication:
 \begin{verbatim}
-{host_config, "example.net", [{auth_method, internal}]}.
+{host_config, "example.net", [{auth_method,   internal}]}.
 
-{host_config, "example.com", [{auth_method, ldap},
-                              {ldap_servers, ["localhost"]},
-                              {ldap_uids, [{"uid"}]},
-                              {ldap_rootdn, "dc=localdomain"},
-                              {ldap_rootdn, "dc=example,dc=com"},
+{host_config, "example.com", [{auth_method,   ldap},
+                              {ldap_servers,  ["localhost"]},
+                              {ldap_uids,     [{"uid"}]},
+                              {ldap_rootdn,   "dc=localdomain"},
+                              {ldap_rootdn,   "dc=example,dc=com"},
                               {ldap_password, ""}]}.
 \end{verbatim}
 \item Domain \jid{example.net} is using \ind{ODBC}ODBC to perform authentication
@@ -588,11 +588,11 @@ Examples:
 {host_config, "example.net", [{auth_method, odbc},
                               {odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}]}.
 
-{host_config, "example.com", [{auth_method, ldap},
-                              {ldap_servers, ["localhost", "otherhost"]},
-                              {ldap_uids, [{"uid"}]},
-                              {ldap_rootdn, "dc=localdomain"},
-                              {ldap_rootdn, "dc=example,dc=com"},
+{host_config, "example.com", [{auth_method,   ldap},
+                              {ldap_servers,  ["localhost", "otherhost"]},
+                              {ldap_uids,     [{"uid"}]},
+                              {ldap_rootdn,   "dc=localdomain"},
+                              {ldap_rootdn,   "dc=example,dc=com"},
                               {ldap_password, ""}]}.
 \end{verbatim}
 \end{itemize}
@@ -602,20 +602,20 @@ you can define the global \term{modules} option with the common modules,
 and later add specific modules to certain virtual hosts.
 To accomplish that, instead of defining each option in \term{host\_config} with the syntax
 \begin{verbatim}
-  {<option-name>, <option-value>}
+{<option-name>, <option-value>}
 \end{verbatim}
 use this syntax:
 \begin{verbatim}
-  {{add, <option-name>}, <option-value>}
+{{add, <option-name>}, <option-value>}
 \end{verbatim}
 
 In this example three virtual hosts have some similar modules, but there are also
 other different modules for some specific virtual hosts:
 \begin{verbatim}
-% This ejabberd server has three vhosts:
+%% This ejabberd server has three vhosts:
 {hosts, ["one.example.org", "two.example.org", "three.example.org"]}.
 
-% Configuration of modules that are common to all vhosts
+%% Configuration of modules that are common to all vhosts
 {modules,
  [
   {mod_roster,     []},
@@ -627,17 +627,23 @@ other different modules for some specific virtual hosts:
   {mod_version,    []}
  ]}.
 
-% Add some modules to vhost one:
-{host_config, "one.example.org", [{{add, modules}, [
-  {mod_echo,       [{host, "echo-service.one.example.org"}]}
-  {mod_http_bind,  []},
-  {mod_logxml,     []}
-]}]}.
+%% Add some modules to vhost one:
+{host_config, "one.example.org",
+ [{{add, modules}, [
+                    {mod_echo,       [{host, "echo-service.one.example.org"}]}
+                    {mod_http_bind,  []},
+                    {mod_logxml,     []}
+                   ]
+  }
+ ]}.
 
-% Add a module just to vhost two:
-{host_config, "two.example.org", [{{add, modules}, [
-  {mod_echo,       [{host, "mirror.two.example.org"}]}
-]}]}.
+%% Add a module just to vhost two:
+{host_config, "two.example.org",
+ [{{add, modules}, [
+                    {mod_echo,       [{host, "mirror.two.example.org"}]}
+                   ]
+  }
+ ]}.
 \end{verbatim}
 
 \makesubsection{listened}{Listening Ports}
@@ -873,40 +879,40 @@ In this example, the following configuration defines that:
 \item The service custom has enabled the special option to avoiding checking the \term{from} attribute in the packets send by this component. The component can send packets in behalf of any users from the server, or even on behalf of any server.
 \end{itemize}
 \begin{verbatim}
-  {acl, blocked, {user, "bad"}}.
-  {access, c2s, [{deny, blocked},
-                 {allow, all}]}.
-  {shaper, normal, {maxrate, 1000}}.
-  {access, c2s_shaper, [{none, admin},
-                        {normal, all}]}.
-  {listen,
-   [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
-    {5223, ejabberd_c2s,     [{access, c2s},
-                              ssl, {certfile, "/path/to/ssl.pem"}]},
-    {5269, ejabberd_s2s_in,  []},
-    {5280, ejabberd_http,    [http_poll, web_admin]},
-    {5233, ejabberd_service, [{host, "aim.example.org",
-                               [{password, "aimsecret"}]}]},
-    {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
-                               [{password, "jitsecret"}]}]},
-    {5235, ejabberd_service, [{host, "msn.example.org",
-                               [{password, "msnsecret"}]}]},
-    {5236, ejabberd_service, [{host, "yahoo.example.org",
-                               [{password, "yahoosecret"}]}]},
-    {5237, ejabberd_service, [{host, "gg.example.org",
-                               [{password, "ggsecret"}]}]},
-    {5238, ejabberd_service, [{host, "jmc.example.org",
-                               [{password, "jmcsecret"}]}]},
-    {5239, ejabberd_service, [{host, "custom.example.org",
-                               [{password, "customsecret"}]},
-                              {service_check_from, false}]}
-   ]
-  }.
-  {s2s_use_starttls, true}.
-  {s2s_certfile, "/path/to/ssl.pem"}.
-  {s2s_default_policy, deny}.
-  {{s2s_host,"jabber.example.org"}, allow}.
-  {{s2s_host,"example.com"}, allow}.
+{acl, blocked, {user, "bad"}}.
+{access, c2s, [{deny, blocked},
+               {allow, all}]}.
+{shaper, normal, {maxrate, 1000}}.
+{access, c2s_shaper, [{none, admin},
+                      {normal, all}]}.
+{listen,
+ [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
+  {5223, ejabberd_c2s,     [{access, c2s},
+                            ssl, {certfile, "/path/to/ssl.pem"}]},
+  {5269, ejabberd_s2s_in,  []},
+  {5280, ejabberd_http,    [http_poll, web_admin]},
+  {5233, ejabberd_service, [{host, "aim.example.org",
+                             [{password, "aimsecret"}]}]},
+  {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
+                             [{password, "jitsecret"}]}]},
+  {5235, ejabberd_service, [{host, "msn.example.org",
+                             [{password, "msnsecret"}]}]},
+  {5236, ejabberd_service, [{host, "yahoo.example.org",
+                             [{password, "yahoosecret"}]}]},
+  {5237, ejabberd_service, [{host, "gg.example.org",
+                             [{password, "ggsecret"}]}]},
+  {5238, ejabberd_service, [{host, "jmc.example.org",
+                             [{password, "jmcsecret"}]}]},
+  {5239, ejabberd_service, [{host, "custom.example.org",
+                             [{password, "customsecret"}]},
+                            {service_check_from, false}]}
+ ]
+}.
+{s2s_use_starttls, true}.
+{s2s_certfile, "/path/to/ssl.pem"}.
+{s2s_default_policy, deny}.
+{{s2s_host,"jabber.example.org"}, allow}.
+{{s2s_host,"example.com"}, allow}.
 \end{verbatim}
 Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based
 services you have to make the transports log and do \ind{XDB}XDB by themselves:
@@ -947,7 +953,7 @@ services you have to make the transports log and do \ind{XDB}XDB by themselves:
 The option \option{auth\_method} defines the authentication method that is used
 for user authentication:
 \begin{verbatim}
-  {auth_method, [<method>]}.
+{auth_method, [<method>]}.
 \end{verbatim}
 
 The following authentication methods are supported by \ejabberd{}:
@@ -976,12 +982,12 @@ Examples:
 \begin{itemize}
 \item To use internal authentication on \jid{example.org} and LDAP
   authentication on \jid{example.net}:
-  \begin{verbatim}
+\begin{verbatim}
 {host_config, "example.org", [{auth_method, [internal]}]}.
 {host_config, "example.net", [{auth_method, [ldap]}]}.
 \end{verbatim}
 \item To use internal authentication on all virtual hosts:
-  \begin{verbatim}
+\begin{verbatim}
 {auth_method, internal}.
 \end{verbatim}
 \end{itemize}
@@ -1018,33 +1024,33 @@ parameter (see section~\ref{virtualhost}).
 Examples:
 \begin{itemize}
 \item To enable anonymous login on all virtual hosts:
-  \begin{verbatim}
+\begin{verbatim}
 {auth_method, [anonymous]}.
 {anonymous_protocol, login_anon}.
-  \end{verbatim}
+\end{verbatim}
 \item Similar as previous example, but limited to \jid{public.example.org}:
-  \begin{verbatim}
+\begin{verbatim}
 {host_config, "public.example.org", [{auth_method, [anonymous]},
                                      {anonymous_protocol, login_anon}]}.
 \end{verbatim}
 \item To enable anonymous login and internal authentication on a virtual host:
-  \begin{verbatim}
+\begin{verbatim}
 {host_config, "public.example.org", [{auth_method, [internal,anonymous]},
                                      {anonymous_protocol, login_anon}]}.
 \end{verbatim}
 \item To enable SASL Anonymous on a virtual host:
-  \begin{verbatim}
+\begin{verbatim}
 {host_config, "public.example.org", [{auth_method, [anonymous]},
                                      {anonymous_protocol, sasl_anon}]}.
 \end{verbatim}
 \item To enable SASL Anonymous and anonymous login on a virtual host:
-  \begin{verbatim}
+\begin{verbatim}
 {host_config, "public.example.org", [{auth_method, [anonymous]},
                                      {anonymous_protocol, both}]}.
 \end{verbatim}
 \item To enable SASL Anonymous, anonymous login, and internal authentication on
 a virtual host:
-  \begin{verbatim}
+\begin{verbatim}
 {host_config, "public.example.org", [{auth_method, [internal,anonymous]},
                                      {anonymous_protocol, both}]}.
 \end{verbatim}
@@ -1070,8 +1076,8 @@ for more information.
 
 Example:
 \begin{verbatim}
-  {auth_method, [pam]}.
-  {pam_service, "ejabberd"}.
+{auth_method, [pam]}.
+{pam_service, "ejabberd"}.
 \end{verbatim}
 
 Though it is quite easy to set up PAM support in \ejabberd{}, PAM itself introduces some
@@ -1082,10 +1088,11 @@ security issues:
 \term{epam}. By default, it is located in \verb|/var/lib/ejabberd/priv/lib/|
 directory. You have to set it root on execution in the case when your PAM module
 requires root privileges (\term{pam\_unix.so} for example). Also you have to grant access
-for \ejabberd{} to this file and remove all other permissions from it:
+for \ejabberd{} to this file and remove all other permissions from it.
+Execute with root privileges:
 \begin{verbatim}
-# chown root:ejabberd /var/lib/ejabberd/priv/bin/epam
-# chmod 4750 /var/lib/ejabberd/priv/bin/epam
+chown root:ejabberd /var/lib/ejabberd/priv/bin/epam
+chmod 4750 /var/lib/ejabberd/priv/bin/epam
 \end{verbatim}
 \item Make sure you have the latest version of PAM installed on your system.
 Some old versions of PAM modules cause memory leaks. If you are not able to use the latest
@@ -1112,7 +1119,7 @@ module provides such functionality.
 Access control in \ejabberd{} is performed via Access Control Lists (ACLs). The
 declarations of ACLs in the configuration file have the following syntax:
 \begin{verbatim}
-  {acl, <aclname>, {<acltype>, ...}}.
+{acl, <aclname>, {<acltype>, ...}}.
 \end{verbatim}
 \term{<acltype>} can be one of the following:
 \begin{description}
@@ -1185,10 +1192,10 @@ The following ACLs are pre-defined:
 An entry allowing or denying access to different services looks similar to
 this:
 \begin{verbatim}
-  {access, <accessname>, [{allow, <aclname>},
-                          {deny, <aclname>},
-                          ...
-                         ]}.
+{access, <accessname>, [{allow, <aclname>},
+                        {deny, <aclname>},
+                        ...
+                       ]}.
 \end{verbatim}
 When a JID is checked to have access to \term{<accessname>}, the server
 sequentially checks if that JID matches any of the ACLs that are named in the
@@ -1198,9 +1205,9 @@ returned.
 
 Example:
 \begin{verbatim}
-  {access, configure, [{allow, admin}]}.
-  {access, something, [{deny, badmans},
-                       {allow, all}]}.
+{access, configure, [{allow, admin}]}.
+{access, something, [{deny, badmans},
+                     {allow, all}]}.
 \end{verbatim}
 
 The following access rules are pre-defined:
@@ -1222,16 +1229,16 @@ can be either a number, or \term{infinity}.  The default value is
 
 The syntax is:
 \begin{verbatim}
-  {access, max_user_sessions, [{<maxnumber>, <aclname>},
-                               ...
-                              ]}.
+{access, max_user_sessions, [{<maxnumber>, <aclname>},
+                             ...
+                            ]}.
 \end{verbatim}
 
 Examples:
 \begin{itemize}
 \item To limit the number of sessions per user to 10 for all users:
 \begin{verbatim}
-  {access, max_user_sessions, [{10, all}]}.
+{access, max_user_sessions, [{10, all}]}.
 \end{verbatim}
 \end{itemize}
 
@@ -1245,16 +1252,16 @@ There's also available the access \term{max\_s2s\_connections\_per\_node}.
 
 The syntax is:
 \begin{verbatim}
-  {access, max_s2s_connections, [{<maxnumber>, <aclname>},
-                                 ...
-                                ]}.
+{access, max_s2s_connections, [{<maxnumber>, <aclname>},
+                               ...
+                              ]}.
 \end{verbatim}
 
 Examples:
 \begin{itemize}
 \item Allow up to 3 connections with each remote server:
 \begin{verbatim}
-  {access, max_s2s_connections, [{3, all}]}.
+{access, max_s2s_connections, [{3, all}]}.
 \end{verbatim}
 \end{itemize}
 
@@ -1264,12 +1271,12 @@ Examples:
 Shapers enable you to limit connection traffic. The syntax of
 shapers is like this:
 \begin{verbatim}
-  {shaper, <shapername>, <kind>}.
+{shaper, <shapername>, <kind>}.
 \end{verbatim}
 Currently only one kind of shaper called \term{maxrate} is available. It has the
 following syntax:
 \begin{verbatim}
-  {maxrate, <rate>}
+{maxrate, <rate>}
 \end{verbatim}
 where \term{<rate>} stands for the maximum allowed incoming rate in bytes per
 second.
@@ -1281,12 +1288,12 @@ Examples:
 \item To define a shaper named `\term{normal}' with traffic speed limited to
 1,000\,bytes/second:
 \begin{verbatim}
-  {shaper, normal, {maxrate, 1000}}.
+{shaper, normal, {maxrate, 1000}}.
 \end{verbatim}
 \item To define a shaper named `\term{fast}' with traffic speed limited to
 50,000\,bytes/second:
 \begin{verbatim}
-  {shaper, fast, {maxrate, 50000}}.
+{shaper, fast, {maxrate, 50000}}.
 \end{verbatim}
 \end{itemize}
 
@@ -1303,11 +1310,11 @@ Examples:
 \begin{itemize}
 \item To set Russian as default language:
 \begin{verbatim}
-  {language, "ru"}.
+{language, "ru"}.
 \end{verbatim}
 \item To set Spanish as default language:
 \begin{verbatim}
-  {language, "es"}.
+{language, "es"}.
 \end{verbatim}
 \end{itemize}
 
@@ -1380,7 +1387,7 @@ if the binary packages of \ejabberd{} you are using include support for MySQL.
 \item Then, configure and install \ejabberd{} with ODBC support enabled (this is
   also needed for native MySQL support!). This can be done, by using next
   commands:
-  \begin{verbatim}
+\begin{verbatim}
 ./configure --enable-odbc && make install
 \end{verbatim}
 \end{enumerate}
@@ -1540,7 +1547,7 @@ PostgreSQL.
 \item Then, configure, compile and install \ejabberd{} with ODBC support enabled
   (this is also needed for native PostgreSQL support!). This can be done, by
   using next commands:
-  \begin{verbatim}
+\begin{verbatim}
 ./configure --enable-odbc && make install
 \end{verbatim}
 \end{enumerate}
@@ -1630,7 +1637,7 @@ ODBC.
   put them for example in the same directory as your \ejabberd{} .beam files.
 \item Then, configure, compile and install \ejabberd{} with ODBC support
   enabled. This can be done, by using next commands:
-  \begin{verbatim}
+\begin{verbatim}
 ./configure --enable-odbc && make install
 \end{verbatim}
 \end{enumerate}
@@ -1693,11 +1700,11 @@ the value previously stored in the database will be used instead of the default 
 
 Example:
 \begin{verbatim}
-  {auth_method, ldap}.
-  {ldap_servers, ["ldap.example.org"]}.
-  {ldap_port, 389}.
-  {ldap_rootdn, "cn=Manager,dc=domain,dc=org"}.
-  {ldap_password, "secret"}.
+{auth_method, ldap}.
+{ldap_servers, ["ldap.example.org"]}.
+{ldap_port, 389}.
+{ldap_rootdn, "cn=Manager,dc=domain,dc=org"}.
+{ldap_password, "secret"}.
 \end{verbatim}
 
 Note that current LDAP implementation does not support SSL secured communication
@@ -1748,17 +1755,17 @@ infos in \term{"ou=AddressBook,dc=example,dc=org"} directory.  Corresponding
 authentication section should looks like this:
 
 \begin{verbatim}
-  %% authentication method
-  {auth_method, ldap}.
-  %% DNS name of our LDAP server
-  {ldap_servers, ["ldap.example.org"]}.
-  %% Bind to LDAP server as "cn=Manager,dc=example,dc=org" with password "secret"
-  {ldap_rootdn, "cn=Manager,dc=example,dc=org"}.
-  {ldap_password, "secret"}.
-  %% define the user's base
-  {ldap_base, "ou=Users,dc=example,dc=org"}.
-  %% We want to authorize users from 'shadowAccount' object class only
-  {ldap_filter, "(objectClass=shadowAccount)"}.
+%% Authentication method
+{auth_method, ldap}.
+%% DNS name of our LDAP server
+{ldap_servers, ["ldap.example.org"]}.
+%% Bind to LDAP server as "cn=Manager,dc=example,dc=org" with password "secret"
+{ldap_rootdn, "cn=Manager,dc=example,dc=org"}.
+{ldap_password, "secret"}.
+%% Define the user's base
+{ldap_base, "ou=Users,dc=example,dc=org"}.
+%% We want to authorize users from 'shadowAccount' object class only
+{ldap_filter, "(objectClass=shadowAccount)"}.
 \end{verbatim}
 
 Now we want to use users LDAP-info as their vCards.  We have four attributes
@@ -1767,47 +1774,48 @@ defined in our LDAP schema: \term{"mail"} --- email address, \term{"givenName"}
 Also we want users to search each other.  Let's see how we can set it up:
 
 \begin{verbatim}
-  {modules,
-    ...
-    {mod_vcard_ldap,
-     [
-      %% We use the same server and port, but want to bind anonymously because
-      %% our LDAP server accepts anonymous requests to
-      %% "ou=AddressBook,dc=example,dc=org" subtree.
-      {ldap_rootdn, ""},
-      {ldap_password, ""},
-      %% define the addressbook's base
-      {ldap_base, "ou=AddressBook,dc=example,dc=org"},
-      %% uidattr: user's part of JID is located in the "mail" attribute
-      %% uidattr_format: common format for our emails
-      {ldap_uids, [{"mail", "%u@mail.example.org"}]},
-      %% We have to define empty filter here, because entries in addressbook does not
-      %% belong to shadowAccount object class
-      {ldap_filter, ""},
-      %% Now we want to define vCard pattern
-      {ldap_vcard_map,
-       [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
-        {"GIVEN", "%s", ["givenName"]},
-        {"FAMILY", "%s", ["sn"]},
-        {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
-        {"EMAIL", "%s", ["mail"]},
-        {"BDAY", "%s", ["birthDay"]}]},
-      %% Search form
-      {ldap_search_fields,
-       [{"User", "%u"},
-        {"Name", "givenName"},
-        {"Family Name", "sn"},
-        {"Email", "mail"},
-        {"Birthday", "birthDay"}]},
-      %% vCard fields to be reported
-      %% Note that JID is always returned with search results
-      {ldap_search_reported,
-       [{"Full Name", "FN"},
-        {"Nickname", "NICKNAME"},
-        {"Birthday", "BDAY"}]}
-    ]},
-    ...
-  }.
+{modules,
+ [
+  ...
+  {mod_vcard_ldap,
+   [
+    %% We use the same server and port, but want to bind anonymously because
+    %% our LDAP server accepts anonymous requests to
+    %% "ou=AddressBook,dc=example,dc=org" subtree.
+    {ldap_rootdn, ""},
+    {ldap_password, ""},
+    %% define the addressbook's base
+    {ldap_base, "ou=AddressBook,dc=example,dc=org"},
+    %% uidattr: user's part of JID is located in the "mail" attribute
+    %% uidattr_format: common format for our emails
+    {ldap_uids, [{"mail", "%u@mail.example.org"}]},
+    %% We have to define empty filter here, because entries in addressbook does not
+    %% belong to shadowAccount object class
+    {ldap_filter, ""},
+    %% Now we want to define vCard pattern
+    {ldap_vcard_map,
+     [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
+      {"GIVEN", "%s", ["givenName"]},
+      {"FAMILY", "%s", ["sn"]},
+      {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
+      {"EMAIL", "%s", ["mail"]},
+      {"BDAY", "%s", ["birthDay"]}]},
+    %% Search form
+    {ldap_search_fields,
+     [{"User", "%u"},
+      {"Name", "givenName"},
+      {"Family Name", "sn"},
+      {"Email", "mail"},
+      {"Birthday", "birthDay"}]},
+    %% vCard fields to be reported
+    %% Note that JID is always returned with search results
+    {ldap_search_reported,
+     [{"Full Name", "FN"},
+      {"Nickname", "NICKNAME"},
+      {"Birthday", "BDAY"}]}
+  ]},
+  ...
+ ]}.
 \end{verbatim}
 
 Note that \modvcardldap{} module checks for the existence of the user before
@@ -1821,52 +1829,53 @@ Active Directory is just an LDAP-server with predefined attributes. A sample
 configuration is shown below:
 
 \begin{verbatim}
-  {auth_method, ldap}.
-  {ldap_servers, ["office.org"]}.    % List of LDAP servers
-  {ldap_base, "DC=office,DC=org"}. % Search base of LDAP directory
-  {ldap_rootdn, "CN=Administrator,CN=Users,DC=office,DC=org"}. % LDAP manager
-  {ldap_password, "*******"}. % Password to LDAP manager
-  {ldap_uids, [{"sAMAccountName"}]}.
-  {ldap_filter, "(memberOf=*)"}.
+{auth_method, ldap}.
+{ldap_servers, ["office.org"]}.    % List of LDAP servers
+{ldap_base, "DC=office,DC=org"}. % Search base of LDAP directory
+{ldap_rootdn, "CN=Administrator,CN=Users,DC=office,DC=org"}. % LDAP manager
+{ldap_password, "*******"}. % Password to LDAP manager
+{ldap_uids, [{"sAMAccountName"}]}.
+{ldap_filter, "(memberOf=*)"}.
 
-  {modules,
-    ...
-    {mod_vcard_ldap,
-     [{ldap_vcard_map,
-       [{"NICKNAME", "%u", []},
-        {"GIVEN", "%s", ["givenName"]},
-        {"MIDDLE", "%s", ["initials"]},
-        {"FAMILY", "%s", ["sn"]},
-        {"FN", "%s", ["displayName"]},
-        {"EMAIL", "%s", ["mail"]},
-        {"ORGNAME", "%s", ["company"]},
-        {"ORGUNIT", "%s", ["department"]},
-        {"CTRY", "%s", ["c"]},
-        {"LOCALITY", "%s", ["l"]},
-        {"STREET", "%s", ["streetAddress"]},
-        {"REGION", "%s", ["st"]},
-        {"PCODE", "%s", ["postalCode"]},
-        {"TITLE", "%s", ["title"]},
-        {"URL", "%s", ["wWWHomePage"]},
-        {"DESC", "%s", ["description"]},
-        {"TEL", "%s", ["telephoneNumber"]}]},
-      {ldap_search_fields,
-       [{"User", "%u"},
-        {"Name", "givenName"},
-        {"Family Name", "sn"},
-        {"Email", "mail"},
-        {"Company", "company"},
-        {"Department", "department"},
-        {"Role", "title"},
-        {"Description", "description"},
-        {"Phone", "telephoneNumber"}]},
-      {ldap_search_reported,
-       [{"Full Name", "FN"},
-        {"Nickname", "NICKNAME"},
-        {"Email", "EMAIL"}]}
-    ]},
-    ...
-  }.
+{modules,
+ [
+  ...
+  {mod_vcard_ldap,
+   [{ldap_vcard_map,
+     [{"NICKNAME", "%u", []},
+      {"GIVEN", "%s", ["givenName"]},
+      {"MIDDLE", "%s", ["initials"]},
+      {"FAMILY", "%s", ["sn"]},
+      {"FN", "%s", ["displayName"]},
+      {"EMAIL", "%s", ["mail"]},
+      {"ORGNAME", "%s", ["company"]},
+      {"ORGUNIT", "%s", ["department"]},
+      {"CTRY", "%s", ["c"]},
+      {"LOCALITY", "%s", ["l"]},
+      {"STREET", "%s", ["streetAddress"]},
+      {"REGION", "%s", ["st"]},
+      {"PCODE", "%s", ["postalCode"]},
+      {"TITLE", "%s", ["title"]},
+      {"URL", "%s", ["wWWHomePage"]},
+      {"DESC", "%s", ["description"]},
+      {"TEL", "%s", ["telephoneNumber"]}]},
+    {ldap_search_fields,
+     [{"User", "%u"},
+      {"Name", "givenName"},
+      {"Family Name", "sn"},
+      {"Email", "mail"},
+      {"Company", "company"},
+      {"Department", "department"},
+      {"Role", "title"},
+      {"Description", "description"},
+      {"Phone", "telephoneNumber"}]},
+    {ldap_search_reported,
+     [{"Full Name", "FN"},
+      {"Nickname", "NICKNAME"},
+      {"Email", "EMAIL"}]}
+  ]},
+  ...
+ ]}.
 \end{verbatim}
 
 
@@ -1882,20 +1891,22 @@ Examples:
 \begin{itemize}
 \item In this example only the module \modecho{} is loaded and no module
   options are specified between the square brackets:
-  \begin{verbatim}
-  {modules,
-   [{mod_echo,      []}
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  {mod_echo,      []}
+ ]}.
 \end{verbatim}
 \item In the second example the modules \modecho{}, \modtime{}, and
   \modversion{} are loaded without options. Remark that, besides the last entry,
   all entries end with a comma:
-  \begin{verbatim}
-  {modules,
-   [{mod_echo,      []},
-    {mod_time,      []},
-    {mod_version,   []}
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  {mod_echo,      []},
+  {mod_time,      []},
+  {mod_version,   []}
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -2003,7 +2014,7 @@ these queries. Possible values are:
   of IQ queries of a namespace with this discipline. In addition, the processing
   of this queue is done in parallel with that of other packets. This discipline
   is most recommended.
-  \titem{\{queues, N\}}: N separate queues are created to process the
+  \titem{\{queues, N\}} N separate queues are created to process the
   queries. The queries are thus process in parallel, but in a
   controlled way.
 \titem{parallel} For every packet with this discipline a separate Erlang process
@@ -2015,12 +2026,12 @@ these queries. Possible values are:
 
 Example:
 \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_time, [{iqdisc, no_queue}]},
-    ...
-   ]}.
+{modules,
+ [
+  ...
+  {mod_time, [{iqdisc, no_queue}]},
+  ...
+ ]}.
 \end{verbatim}
 
 \makesubsubsection{modhostoption}{\option{host}}
@@ -2032,24 +2043,24 @@ The keyword "@HOST@" is replaced at start time with the real virtual host string
 This example configures
 the \ind{modules!\modecho{}}echo module to provide its echoing service 
 in the Jabber ID \jid{mirror.example.org}:
-    \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_echo, [{host, "mirror.example.org"}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_echo, [{host, "mirror.example.org"}]},
+  ...
+ ]}.
 \end{verbatim}
 
 However, if there are several virtual hosts and this module is enabled in all of them,
 the "@HOST@" keyword must be used:
-    \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_echo, [{host, "mirror.@HOST@"}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_echo, [{host, "mirror.@HOST@"}]},
+  ...
+ ]}.
 \end{verbatim}
 
 \makesubsection{modannounce}{\modannounce{}}
@@ -2099,33 +2110,33 @@ Options:
 Examples:
 \begin{itemize}
 \item Only administrators can send announcements:
-  \begin{verbatim}
-  {access, announce, [{allow, admins}]}.
+\begin{verbatim}
+{access, announce, [{allow, admins}]}.
 
-  {modules,
-   [
-    ...
-    {mod_adhoc, []},
-    {mod_announce, [{access, announce}]},
-    ...
-   ]}.
+{modules,
+ [
+  ...
+  {mod_adhoc, []},
+  {mod_announce, [{access, announce}]},
+  ...
+ ]}.
 \end{verbatim}
 \item Administrators as well as the direction can send announcements:
 \begin{verbatim}
-  {acl, direction, {user, "big_boss", "example.org"}}.
-  {acl, direction, {user, "assistant", "example.org"}}.
-  {acl, admins, {user, "admin", "example.org"}}.
+{acl, direction, {user, "big_boss", "example.org"}}.
+{acl, direction, {user, "assistant", "example.org"}}.
+{acl, admins, {user, "admin", "example.org"}}.
+
+{access, announce, [{allow, admins},
+                    {allow, direction}]}.
+
+{modules,
+ [
   ...
-  {access, announce, [{allow, admins},
-                      {allow, direction}]}.
+  {mod_adhoc, []},
+  {mod_announce, [{access, announce}]},
   ...
-  {modules,
-   [
-    ...
-    {mod_adhoc, []},
-    {mod_announce, [{access, announce}]},
-    ...
-   ]}.
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -2158,33 +2169,33 @@ Options:
 Examples:
 \begin{itemize}
 \item To serve a link to the Jabber User Directory on \jid{jabber.org}:
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_disco, [{extra_domains, ["users.jabber.org"]}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_disco, [{extra_domains, ["users.jabber.org"]}]},
+  ...
+ ]}.
 \end{verbatim}
 \item To serve a link to the transports on another server:
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_disco, [{extra_domains, ["icq.example.com",
-                                  "msn.example.com"]}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_disco, [{extra_domains, ["icq.example.com",
+                                "msn.example.com"]}]},
+  ...
+ ]}.
 \end{verbatim}
 \item To serve a link to a few friendly servers:
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_disco, [{extra_domains, ["example.org",
-                                  "example.com"]}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_disco, [{extra_domains, ["example.org",
+                                "example.com"]}]},
+  ...
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -2203,13 +2214,13 @@ Options:
 
 Example: Mirror, mirror, on the wall, who is the most beautiful
   of them all?
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_echo, [{host, "mirror.example.org"}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_echo, [{host, "mirror.example.org"}]},
+  ...
+ ]}.
 \end{verbatim}
 
 \ifthenelse{\boolean{modhttpbind}}{\input{mod_http_bind.tex}}{}
@@ -2254,32 +2265,32 @@ Examples:
 \item In the first example, the IRC transport is available on (all) your
   virtual host(s) with the prefix `\jid{irc.}'. Furthermore, anyone is
   able to use the transport. The default encoding is set to "iso8859-15".
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_irc, [{access, all}, {default_encoding, "iso8859-15"}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_irc, [{access, all}, {default_encoding, "iso8859-15"}]},
+  ...
+ ]}.
 \end{verbatim}
 \item In next example the IRC transport is available with JIDs with prefix \jid{irc-t.net}.
   Moreover, the transport is only accessible by paying customers registered on
   our domains and on other servers.
-  \begin{verbatim}
-  {acl, paying_customers, {user, "customer1", "example.net"}}.
-  {acl, paying_customers, {user, "customer2", "example.com"}}.
-  {acl, paying_customers, {user, "customer3", "example.org"}}.
-  ...
-  {access, paying_customers, [{allow, paying_customers},
+\begin{verbatim}
+{acl, paying_customers, {user, "customer1", "example.net"}}.
+{acl, paying_customers, {user, "customer2", "example.com"}}.
+{acl, paying_customers, {user, "customer3", "example.org"}}.
+
+{access, paying_customers, [{allow, paying_customers},
                               {deny, all}]}.
+
+{modules,
+ [
   ...
-  {modules,
-   [
-    ...
-    {mod_irc, [{access, paying_customers},
-               {host, "irc.example.net"}]},
-    ...
-   ]}.
+  {mod_irc, [{access, paying_customers},
+             {host, "irc.example.net"}]},
+  ...
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -2406,7 +2417,7 @@ Module options:
   \titem{\{logging, false\}} The public messages are logged using \term{mod\_muc\_log}.
   \titem{\{max\_users, 200\}} Maximum number of occupants in the room.
   \titem{\{members\_by\_default, true\}} The occupants that enter the room are participants by default, so they have 'voice'.
-  \titem{\{members\_only, false\}} Only members of the room can	enter.
+  \titem{\{members\_only, false\}} Only members of the room can enter.
   \titem{\{moderated, true\}} Only occupants with 'voice' can send public messages.
   \titem{\{password, ""\}} Password of the room. You may want to enable the next option too.
   \titem{\{password\_protected, false\}} The password is required to enter the room.
@@ -2431,20 +2442,20 @@ Examples:
   We apologise for this inconvenience.' to \jid{conference.example.org},
   it will be displayed in all active rooms. In this example the history
   feature is disabled.
-  \begin{verbatim}
-  {acl, admins, {user, "admin", "example.org"}}.
+\begin{verbatim}
+{acl, admins, {user, "admin", "example.org"}}.
+
+{access, muc_admins, [{allow, admins}]}.
+
+{modules,
+ [
   ...
-  {access, muc_admins, [{allow, admins}]}.
+  {mod_muc, [{access, all},
+             {access_create, all},
+             {access_admin, muc_admins},
+             {history_size, 0}]},
   ...
-  {modules,
-   [
-    ...
-    {mod_muc, [{access, all},
-               {access_create, all},
-               {access_admin, muc_admins},
-               {history_size, 0}]},
-    ...
-   ]}.
+ ]}.
 \end{verbatim}
 \item In the second example the Multi-User Chat service is only accessible by
   paying customers registered on our domains and on other servers. Of course
@@ -2456,26 +2467,26 @@ Examples:
   \jid{conference.example.org}, it will be displayed in all active rooms. No
   \term{history\_size} option is used, this means that the feature is enabled
   and the default value of 20 history messages will be send to the users.
-  \begin{verbatim}
-  {acl, paying_customers, {user, "customer1", "example.net"}}.
-  {acl, paying_customers, {user, "customer2", "example.com"}}.
-  {acl, paying_customers, {user, "customer3", "example.org"}}.
-  {acl, admins, {user, "admin", "example.org"}}.
+\begin{verbatim}
+{acl, paying_customers, {user, "customer1", "example.net"}}.
+{acl, paying_customers, {user, "customer2", "example.com"}}.
+{acl, paying_customers, {user, "customer3", "example.org"}}.
+{acl, admins, {user, "admin", "example.org"}}.
+
+{access, muc_admins, [{allow, admins},
+                      {deny, all}]}.
+{access, muc_access, [{allow, paying_customers},
+                      {allow, admins},
+                      {deny, all}]}.
+
+{modules,
+ [
   ...
-  {access, muc_admins, [{allow, admins},
-                        {deny, all}]}.
-  {access, muc_access, [{allow, paying_customers},
-                        {allow, admins},
-                        {deny, all}]}.
+  {mod_muc, [{access, muc_access},
+             {access_create, muc_admins},
+             {access_admin, muc_admins}]},
   ...
-  {modules,
-   [
-    ...
-    {mod_muc, [{access, muc_access},
-               {access_create, muc_admins},
-               {access_admin, muc_admins}]},
-    ...
-   ]}.
+ ]}.
 \end{verbatim}
 
 \item In the following example, MUC anti abuse options are used. A
@@ -2483,36 +2494,36 @@ user cannot send more than one message every 0.4 seconds and cannot
 change its presence more than once every 4 seconds. No ACLs are
 defined, but some user restriction could be added as well:
 
-  \begin{verbatim}
+\begin{verbatim}
+{modules,
+ [
   ...
-  {modules,
-   [
-    ...
-    {mod_muc, [{min_message_interval, 0.4},
-               {min_presence_interval, 4}]},
-    ...
-   ]}.
+  {mod_muc, [{min_message_interval, 0.4},
+             {min_presence_interval, 4}]},
+  ...
+ ]}.
 \end{verbatim}
 
 \item This example shows how to use \option{default\_room\_options} to make sure
   newly created chatrooms have by default those options.
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_muc, [{access, muc_access},
-               {access_create, muc_admins},
-               {default_room_options, [
-                 {allow_change_subj, false},
-                 {allow_query_users, true},
-                 {allow_private_messages, true},
-                 {members_by_default, false},
-                 {title, "New chatroom"},
-                 {anonymous, false}
-               ]},
-               {access_admin, muc_admins}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_muc, [{access, muc_access},
+             {access_create, muc_admins},
+             {default_room_options,
+              [
+               {allow_change_subj, false},
+               {allow_query_users, true},
+               {allow_private_messages, true},
+               {members_by_default, false},
+               {title, "New chatroom"},
+               {anonymous, false}
+              ]},
+             {access_admin, muc_admins}]},
+  ...
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -2590,23 +2601,23 @@ Examples:
   subdirectories. The log files will be stored in /var/www/muclogs, and the
   time zone will be GMT/UTC. Finally, the top link will be
   \verb|<a href="http://www.jabber.ru">Jabber.ru</a>|.
-  \begin{verbatim}
-  {access, muc, [{allow, all}]}.
+\begin{verbatim}
+{access, muc, [{allow, all}]}.
+
+{modules,
+ [
   ...
-  {modules,
-   [
-    ...
-    {mod_muc_log, [
-               {access_log, muc},
-               {cssfile, "http://example.com/my.css"},
-               {dirtype, plain},
-               {outdir, "/var/www/muclogs"},
-               {timezone, universal},
-               {spam_prevention, true},
-               {top_link, {"http://www.jabber.ru", "Jabber.ru"}}
-    ]},
-    ...
-   ]}.
+  {mod_muc_log, [
+                 {access_log, muc},
+                 {cssfile, "http://example.com/my.css"},
+                 {dirtype, plain},
+                 {outdir, "/var/www/muclogs"},
+                 {timezone, universal},
+                 {spam_prevention, true},
+                 {top_link, {"http://www.jabber.ru", "Jabber.ru"}}
+                ]},
+  ...
+ ]}.
 \end{verbatim}
   \item In the second example only \jid{admin1@example.org} and
   \jid{admin2@example.net} can enable logging, and the embedded CSS file will be
@@ -2614,25 +2625,25 @@ Examples:
   and there will be subdirectories for each year and month. The log files will
   be stored in /var/www/muclogs, and the local time will be used. Finally, the
   top link will be the default \verb|<a href="/">Home</a>|.
-  \begin{verbatim}
-  {acl, admins, {user, "admin1", "example.org"}}.
-  {acl, admins, {user, "admin2", "example.net"}}.
+\begin{verbatim}
+{acl, admins, {user, "admin1", "example.org"}}.
+{acl, admins, {user, "admin2", "example.net"}}.
+
+{access, muc_log, [{allow, admins},
+                   {deny, all}]}.
+
+{modules,
+ [
   ...
-  {access, muc_log, [{allow, admins},
-                     {deny, all}]}.
+  {mod_muc_log, [
+                 {access_log, muc_log},
+                 {cssfile, false},
+                 {dirtype, subdirs},
+                 {outdir, "/var/www/muclogs"},
+                 {timezone, local}
+                ]},
   ...
-  {modules,
-   [
-    ...
-    {mod_muc_log, [
-               {access_log, muc_log},
-               {cssfile, false},
-               {dirtype, subdirs},
-               {outdir, "/var/www/muclogs"},
-               {timezone, local}
-    ]},
-    ...
-   ]}.
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -2735,35 +2746,35 @@ Default is \term{none}.
 Examples:
 \begin{itemize}
 \item The simpliest configuration of the module:
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_proxy65, []},
-    ...
-  ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_proxy65, []},
+  ...
+ ]}.
 \end{verbatim}
 \item More complicated configuration.
-  \begin{verbatim}
-  {acl, proxy_users, {server, "example.org"}}.
-  {access, proxy65_access, [{allow, proxy_users}, {deny, all}]}.
+\begin{verbatim}
+{acl, proxy_users, {server, "example.org"}}.
+{access, proxy65_access, [{allow, proxy_users}, {deny, all}]}.
+
+{acl, admin, {user, "admin", "example.org"}}.
+{shaper, normal, {maxrate, 10240}}. %% 10 Kbytes/sec
+{access, proxy65_shaper, [{none, admin}, {normal, all}]}.
+
+{modules,
+ [
   ...
-  {acl, admin, {user, "admin", "example.org"}}.
-  {shaper, normal, {maxrate, 10240}}. %% 10 Kbytes/sec
-  {access, proxy65_shaper, [{none, admin}, {normal, all}]}.
+  {mod_proxy65, [{host, "proxy1.example.org"},
+                 {name, "File Transfer Proxy"},
+                 {ip, {200,150,100,1}},
+                 {port, 7778},
+                 {max_connections, 5},
+                 {access, proxy65_access},
+                 {shaper, proxy65_shaper}]},
   ...
-  {modules,
-   [
-    ...
-    {mod_proxy65, [{host, "proxy1.example.org"},
-                   {name, "File Transfer Proxy"},
-                   {ip, {200,150,100,1}},
-                   {port, 7778},
-                   {max_connections, 5},
-                   {access, proxy65_access},
-                   {shaper, proxy65_shaper}]},
-    ...
-  ]}.
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -2793,15 +2804,15 @@ Options:
 
 Example:
 \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_pubsub, [
-                  {access_createnode, pubsub_createnode},
-                  {plugins, ["default", "pep"]}
-                 ]}
-    ...
-   ]}.
+{modules,
+ [
+  ...
+  {mod_pubsub, [
+                {access_createnode, pubsub_createnode},
+                {plugins, ["default", "pep"]}
+               ]}
+  ...
+ ]}.
 \end{verbatim}
 %                  {served_hosts, ["example.com", "example.org"]}
 
@@ -2845,49 +2856,50 @@ Examples:
 \begin{itemize}
 \item Next example prohibits the registration of too short account names:
 \begin{verbatim}
-  {acl, shortname, {user_glob, "?"}}.
-  {acl, shortname, {user_glob, "??"}}.
-  % The same using regexp:
-  %{acl, shortname, {user_regexp, "^..?$"}}.
+{acl, shortname, {user_glob, "?"}}.
+{acl, shortname, {user_glob, "??"}}.
+%% The same using regexp:
+%%{acl, shortname, {user_regexp, "^..?$"}}.
+
+{access, register, [{deny, shortname},
+                    {allow, all}]}.
+
+{modules,
+ [
   ...
-  {access, register, [{deny, shortname},
-                      {allow, all}]}.
+  {mod_register, [{access, register}]},
   ...
-  {modules,
-   [
-    ...
-    {mod_register, [{access, register}]},
-    ...
-   ]}.
+ ]}.
 \end{verbatim}
 \item The in-band registration of new accounts can be prohibited by changing the
   \option{access} option. If you really want to disable all In-Band Registration
   functionality, that is changing passwords in-band and deleting accounts
   in-band, you have to remove \modregister{} from the modules list. In this
   example all In-Band Registration functionality is disabled:
-  \begin{verbatim}
-  {access, register, [{deny, all}]}.
+\begin{verbatim}
+{access, register, [{deny, all}]}.
 
-  {modules,
-   [
-    ...
-%    {mod_register, [{access, register}]},
-    ...
-   ]}.
+{modules,
+ [
+  ...
+  %% {mod_register, [{access, register}]},
+  ...
+ ]}.
 \end{verbatim}
-\item Define the welcome message and three registration watchers.
+\item Define the welcome message and two registration watchers.
 Also define a registration timeout of one hour:
-  \begin{verbatim}
-  {registration_timeout, 3600}.
-  {modules,
+\begin{verbatim}
+{registration_timeout, 3600}.
+{modules,
+ [
+  ...
+  {mod_register,
    [
-    ...
-     {mod_register, [
-        {welcome_message, {"Welcome!", "Welcome to this Jabber server. For information about Jabber visit http://www.jabber.org"}},
-        {registration_watchers, ["admin1@example.org", "admin2@example.org", "boss@example.net"]}
-     ]},
-    ...
-   ]}.
+    {welcome_message, {"Welcome!", "Welcome to this Jabber server. Check http://www.jabber.org"}},
+    {registration_watchers, ["admin1@example.org", "boss@example.net"]}
+   ]},
+  ...
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -2920,25 +2932,25 @@ Examples:
 \begin{itemize}
 \item To log all end user packets to the Bandersnatch service running on
   \jid{bandersnatch.example.com}:
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_service_log, [{loggers, ["bandersnatch.example.com"]}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_service_log, [{loggers, ["bandersnatch.example.com"]}]},
+  ...
+ ]}.
 \end{verbatim}
 \item To log all end user packets to the Bandersnatch service running on
   \jid{bandersnatch.example.com} and the backup service on 
   \jid{bandersnatch.example.org}:
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_service_log, [{loggers, ["bandersnatch.example.com",
-                                  "bandersnatch.example.org"]}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_service_log, [{loggers, ["bandersnatch.example.com",
+                                "bandersnatch.example.org"]}]},
+  ...
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -3074,7 +3086,7 @@ in order to get the statistics. Here they are:
 \begin{itemize}
 \item You can request the number of online users on the current virtual host
   (\jid{example.org}) by sending:
-  \begin{verbatim}
+\begin{verbatim}
 <iq to='example.org' type='get'>
   <query xmlns='http://jabber.org/protocol/stats'>
     <stat name='users/online'/>
@@ -3083,7 +3095,7 @@ in order to get the statistics. Here they are:
 \end{verbatim}
 \item You can request the total number of registered users on all virtual hosts
   by sending:
-  \begin{verbatim}
+\begin{verbatim}
 <iq to='example.org' type='get'>
   <query xmlns='http://jabber.org/protocol/stats'>
     <stat name='users/all-hosts/total'/>
@@ -3138,28 +3150,28 @@ Examples:
 \item In this first situation, search results are limited to twenty items,
   every user who added information to their vCard will be listed when people
   do an empty search, and only users from the current host will be returned:
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_vcard, [{search, true},
-                 {matches, 20},
-                 {allow_return_all, true},
-                 {search_all_hosts, false}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_vcard, [{search, true},
+               {matches, 20},
+               {allow_return_all, true},
+               {search_all_hosts, false}]},
+  ...
+ ]}.
 \end{verbatim}
 \item The second situation differs in a way that search results are not limited,
   and that all virtual hosts will be searched instead of only the current one:
-  \begin{verbatim}
-  {modules,
-   [
-    ...
-    {mod_vcard, [{search, true},
-                 {matches, infinity},
-                 {allow_return_all, true}]},
-    ...
-   ]}.
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_vcard, [{search, true},
+               {matches, infinity},
+               {allow_return_all, true}]},
+  ...
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -3206,27 +3218,27 @@ consists of the following \modvcardldap{}-specific options:
   with the values of LDAP attributes from \term{List\_of\_LDAP\_attributes},
   \term{"\%u"} will be replaced with the user part of a JID, and \term{"\%d"}
   will be replaced with the domain part of a JID. The default is:
-  \begin{verbatim}
-  [{"NICKNAME", "%u", []},
-   {"FN", "%s", ["displayName"]},
-   {"LAST", "%s", ["sn"]},
-   {"FIRST", "%s", ["givenName"]},
-   {"MIDDLE", "%s", ["initials"]},
-   {"ORGNAME", "%s", ["o"]},
-   {"ORGUNIT", "%s", ["ou"]},
-   {"CTRY", "%s", ["c"]},
-   {"LOCALITY", "%s", ["l"]},
-   {"STREET", "%s", ["street"]},
-   {"REGION", "%s", ["st"]},
-   {"PCODE", "%s", ["postalCode"]},
-   {"TITLE", "%s", ["title"]},
-   {"URL", "%s", ["labeleduri"]},
-   {"DESC", "%s", ["description"]},
-   {"TEL", "%s", ["telephoneNumber"]},
-   {"EMAIL", "%s", ["mail"]},
-   {"BDAY", "%s", ["birthDay"]},
-   {"ROLE", "%s", ["employeeType"]},
-   {"PHOTO", "%s", ["jpegPhoto"]}]
+\begin{verbatim}
+[{"NICKNAME", "%u", []},
+ {"FN", "%s", ["displayName"]},
+ {"LAST", "%s", ["sn"]},
+ {"FIRST", "%s", ["givenName"]},
+ {"MIDDLE", "%s", ["initials"]},
+ {"ORGNAME", "%s", ["o"]},
+ {"ORGUNIT", "%s", ["ou"]},
+ {"CTRY", "%s", ["c"]},
+ {"LOCALITY", "%s", ["l"]},
+ {"STREET", "%s", ["street"]},
+ {"REGION", "%s", ["st"]},
+ {"PCODE", "%s", ["postalCode"]},
+ {"TITLE", "%s", ["title"]},
+ {"URL", "%s", ["labeleduri"]},
+ {"DESC", "%s", ["description"]},
+ {"TEL", "%s", ["telephoneNumber"]},
+ {"EMAIL", "%s", ["mail"]},
+ {"BDAY", "%s", ["birthDay"]},
+ {"ROLE", "%s", ["employeeType"]},
+ {"PHOTO", "%s", ["jpegPhoto"]}]
 \end{verbatim}
 \titem{ldap\_search\_fields}\ind{options!ldap\_search\_fields}This option
   defines the search form and the LDAP attributes to search within. The format
@@ -3234,19 +3246,19 @@ consists of the following \modvcardldap{}-specific options:
   field which will be automatically translated by using the translation
   files (see \term{msgs/*.msg} for available words). \term{Attribute} is the
   LDAP attribute or the pattern \term{"\%u"}. The default is:
-  \begin{verbatim}
-  [{"User", "%u"},
-   {"Full Name", "displayName"},
-   {"Given Name", "givenName"},
-   {"Middle Name", "initials"},
-   {"Family Name", "sn"},
-   {"Nickname", "%u"},
-   {"Birthday", "birthDay"},
-   {"Country", "c"},
-   {"City", "l"},
-   {"Email", "mail"},
-   {"Organization Name", "o"},
-   {"Organization Unit", "ou"}]
+\begin{verbatim}
+[{"User", "%u"},
+ {"Full Name", "displayName"},
+ {"Given Name", "givenName"},
+ {"Middle Name", "initials"},
+ {"Family Name", "sn"},
+ {"Nickname", "%u"},
+ {"Birthday", "birthDay"},
+ {"Country", "c"},
+ {"City", "l"},
+ {"Email", "mail"},
+ {"Organization Name", "o"},
+ {"Organization Unit", "ou"}]
 \end{verbatim}
 \titem{ldap\_search\_reported}\ind{options!ldap\_search\_reported}This option
   defines which search fields should be reported. The format is:
@@ -3256,17 +3268,17 @@ consists of the following \modvcardldap{}-specific options:
   vCard field name defined in the \option{ldap\_vcard\_map} option. The default
   is:
 \begin{verbatim}
-  [{"Full Name", "FN"},
-   {"Given Name", "FIRST"},
-   {"Middle Name", "MIDDLE"},
-   {"Family Name", "LAST"},
-   {"Nickname", "NICKNAME"},
-   {"Birthday", "BDAY"},
-   {"Country", "CTRY"},
-   {"City", "LOCALITY"},
-   {"Email", "EMAIL"},
-   {"Organization Name", "ORGNAME"},
-   {"Organization Unit", "ORGUNIT"}]
+[{"Full Name", "FN"},
+ {"Given Name", "FIRST"},
+ {"Middle Name", "MIDDLE"},
+ {"Family Name", "LAST"},
+ {"Nickname", "NICKNAME"},
+ {"Birthday", "BDAY"},
+ {"Country", "CTRY"},
+ {"City", "LOCALITY"},
+ {"Email", "EMAIL"},
+ {"Organization Name", "ORGNAME"},
+ {"Organization Unit", "ORGUNIT"}]
 \end{verbatim}
 \end{description}
 
@@ -3282,12 +3294,12 @@ infos in \term{"ou=AddressBook,dc=example,dc=org"} directory.  Corresponding
 authentication section should looks like this:
 
 \begin{verbatim}
-  %% authentication method
-  {auth_method, ldap}.
-  %% DNS name of our LDAP server
-  {ldap_servers, ["ldap.example.org"]}.
-  %% We want to authorize users from 'shadowAccount' object class only
-  {ldap_filter, "(objectClass=shadowAccount)"}.
+%% authentication method
+{auth_method, ldap}.
+%% DNS name of our LDAP server
+{ldap_servers, ["ldap.example.org"]}.
+%% We want to authorize users from 'shadowAccount' object class only
+{ldap_filter, "(objectClass=shadowAccount)"}.
 \end{verbatim}
 
 Now we want to use users LDAP-info as their vCards. We have four attributes
@@ -3296,47 +3308,47 @@ defined in our LDAP schema: \term{"mail"} --- email address, \term{"givenName"}
 Also we want users to search each other. Let's see how we can set it up:
 
 \begin{verbatim}
-  {modules,
-    ...
-    {mod_vcard_ldap,
-     [
-      %% We use the same server and port, but want to bind anonymously because
-      %% our LDAP server accepts anonymous requests to
-      %% "ou=AddressBook,dc=example,dc=org" subtree.
-      {ldap_rootdn, ""},
-      {ldap_password, ""},
-      %% define the addressbook's base
-      {ldap_base, "ou=AddressBook,dc=example,dc=org"},
-      %% uidattr: user's part of JID is located in the "mail" attribute
-      %% uidattr_format: common format for our emails
-      {ldap_uids, [{"mail","%u@mail.example.org"}]},
-      %% We have to define empty filter here, because entries in addressbook does not
-      %% belong to shadowAccount object class
-      {ldap_filter, ""},
-      %% Now we want to define vCard pattern
-      {ldap_vcard_map,
-       [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
-        {"FIRST", "%s", ["givenName"]},
-        {"LAST", "%s", ["sn"]},
-        {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
-        {"EMAIL", "%s", ["mail"]},
-        {"BDAY", "%s", ["birthDay"]}]},
-      %% Search form
-      {ldap_search_fields,
-       [{"User", "%u"},
-        {"Name", "givenName"},
-        {"Family Name", "sn"},
-        {"Email", "mail"},
-        {"Birthday", "birthDay"}]},
-      %% vCard fields to be reported
-      %% Note that JID is always returned with search results
-      {ldap_search_reported,
-       [{"Full Name", "FN"},
-        {"Nickname", "NICKNAME"},
-        {"Birthday", "BDAY"}]}
-    ]}
-    ...
-  }.
+{modules,
+  ...
+  {mod_vcard_ldap,
+   [
+    %% We use the same server and port, but want to bind anonymously because
+    %% our LDAP server accepts anonymous requests to
+    %% "ou=AddressBook,dc=example,dc=org" subtree.
+    {ldap_rootdn, ""},
+    {ldap_password, ""},
+    %% define the addressbook's base
+    {ldap_base, "ou=AddressBook,dc=example,dc=org"},
+    %% uidattr: user's part of JID is located in the "mail" attribute
+    %% uidattr_format: common format for our emails
+    {ldap_uids, [{"mail","%u@mail.example.org"}]},
+    %% We have to define empty filter here, because entries in addressbook does not
+    %% belong to shadowAccount object class
+    {ldap_filter, ""},
+    %% Now we want to define vCard pattern
+    {ldap_vcard_map,
+     [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
+      {"FIRST", "%s", ["givenName"]},
+      {"LAST", "%s", ["sn"]},
+      {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
+      {"EMAIL", "%s", ["mail"]},
+      {"BDAY", "%s", ["birthDay"]}]},
+    %% Search form
+    {ldap_search_fields,
+     [{"User", "%u"},
+      {"Name", "givenName"},
+      {"Family Name", "sn"},
+      {"Email", "mail"},
+      {"Birthday", "birthDay"}]},
+    %% vCard fields to be reported
+    %% Note that JID is always returned with search results
+    {ldap_search_reported,
+     [{"Full Name", "FN"},
+      {"Nickname", "NICKNAME"},
+      {"Birthday", "BDAY"}]}
+  ]}
+  ...
+}.
 \end{verbatim}
 
 Note that \modvcardldap{} module checks an existence of the user before
@@ -3344,30 +3356,30 @@ searching his info in LDAP.
 
 \item \term{ldap\_vcard\_map} example:
 \begin{verbatim}
-  {ldap_vcard_map,
-   [{"NICKNAME", "%u", []},
-    {"FN", "%s", ["displayName"]},
-    {"CTRY", "Russia", []},
-    {"EMAIL", "%u@%d", []},
-    {"DESC", "%s\n%s", ["title", "description"]}
-   ]},
+{ldap_vcard_map,
+ [{"NICKNAME", "%u", []},
+  {"FN", "%s", ["displayName"]},
+  {"CTRY", "Russia", []},
+  {"EMAIL", "%u@%d", []},
+  {"DESC", "%s\n%s", ["title", "description"]}
+ ]},
 \end{verbatim}
 \item \term{ldap\_search\_fields} example:
 \begin{verbatim}
-  {ldap_search_fields,
-   [{"User", "uid"},
-    {"Full Name", "displayName"},
-    {"Email", "mail"}
-   ]},
+{ldap_search_fields,
+ [{"User", "uid"},
+  {"Full Name", "displayName"},
+  {"Email", "mail"}
+ ]},
 \end{verbatim}
 \item \term{ldap\_search\_reported} example:
 \begin{verbatim}
-  {ldap_search_reported,
-   [{"Full Name", "FN"},
-    {"Email", "EMAIL"},
-    {"Birthday", "BDAY"},
-    {"Nickname", "NICKNAME"}
-   ]},
+{ldap_search_reported,
+ [{"Full Name", "FN"},
+  {"Email", "EMAIL"},
+  {"Birthday", "BDAY"},
+  {"Nickname", "NICKNAME"}
+ ]},
 \end{verbatim}
 \end{itemize}
 
@@ -3546,37 +3558,36 @@ Examples:
   URL). If you log in with `\jid{admin@example.com}' on \\
   \verb|http://example.org:5280/admin/server/example.com/| you can only
   administer the virtual host \jid{example.com}.
-  \begin{verbatim}
+\begin{verbatim}
+{acl, admins, {user, "admin", "example.net"}}.
+{host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
+{access, configure, [{allow, admins}]}.
+
+{hosts, ["example.org"]}.
+
+{listen,
+ [
   ...
-  {acl, admins, {user, "admin", "example.net"}}.
-  {host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
-  {access, configure, [{allow, admins}]}.
+  {5280, ejabberd_http, [http_poll, web_admin]},
   ...
-  {hosts, ["example.org"]}.
-  ...
-  {listen,
-   [...
-    {5280, ejabberd_http, [http_poll, web_admin]},
-    ...
-   ]
-  }.
+ ]}.
 \end{verbatim}
 \item For security reasons, you can serve the Web Admin on a secured
   connection, on a port differing from the HTTP Polling interface, and bind it
   to the internal LAN IP. The Web Admin will be accessible by pointing your
   web browser to \verb|https://192.168.1.1:5280/admin/|:
-  \begin{verbatim}
+\begin{verbatim}
+
+{hosts, ["example.org"]}.
+
+{listen,
+ [
   ...
-  {hosts, ["example.org"]}.
+  {5270, ejabberd_http,    [http_poll]},
+  {5280, ejabberd_http,    [web_admin, {ip, {192, 168, 1, 1}},
+                            tls, {certfile, "/usr/local/etc/server.pem"}]},
   ...
-  {listen,
-   [...
-    {5270, ejabberd_http,    [http_poll]},
-    {5280, ejabberd_http,    [web_admin, {ip, {192, 168, 1, 1}},
-                              tls, {certfile, "/usr/local/etc/server.pem"}]},
-    ...
-   ]
-  }.
+ ]}.
 \end{verbatim}
 \end{itemize}
 
@@ -3859,7 +3870,7 @@ The default distribution algorithm try to deliver to a local instance of a compo
 If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain\_balancing}. The syntax of the option is the following:
 
 \begin{verbatim}
-	{domain_balancing, "component.example.com", <balancing_criterium>}.                                   
+{domain_balancing, "component.example.com", <balancing_criterium>}.                                   
 \end{verbatim}
 
 Several balancing criteria are available:
@@ -3881,7 +3892,7 @@ In this case, it is best to limit the problem to the sessions handled by the fai
 
 The syntax is the following:
 \begin{verbatim}
-    {domain_balancing_component_number, "component.example.com", N}
+{domain_balancing_component_number, "component.example.com", N}
 \end{verbatim}
 
 
@@ -3906,6 +3917,12 @@ a message is sent to the Jabber accounts defined with the option
 Example configuration:
 \begin{verbatim}
 {watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
+\end{verbatim}
+
+To remove watchdog admins, remove them in the option.
+To remove all watchdog admins, set the option with an empty list:
+\begin{verbatim}
+{watchdog_admins, []}.
 \end{verbatim}
 
 
@@ -3954,12 +3971,12 @@ To exit the shell, close the window or press the keys: control+c control+c.
 All built-in modules support the \texttt{xml:lang} attribute inside IQ queries.
 Figure~\ref{fig:discorus}, for example, shows the reply to the following query:
 \begin{verbatim}
-  <iq id='5'
-      to='example.org'
-      type='get'
-      xml:lang='ru'>
-    <query xmlns='http://jabber.org/protocol/disco#items'/>
-  </iq>
+<iq id='5'
+    to='example.org'
+    type='get'
+    xml:lang='ru'>
+  <query xmlns='http://jabber.org/protocol/disco#items'/>
+</iq>
 \end{verbatim}
 
 \begin{figure}[htbp]
