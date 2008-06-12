@@ -660,31 +660,26 @@ tuple with the following elements:
 
 \ind{modules!ejabberd\_c2s}\ind{modules!ejabberd\_s2s\_in}\ind{modules!ejabberd\_service}\ind{modules!ejabberd\_http}\ind{protocols!XEP-0114: Jabber Component Protocol}
 The available modules, their purpose and the options allowed by each one are:
-\begin{table}[H]
-  \centering
-  \def\arraystretch{1.4}
-  \begin{tabular}{|l|l|p{87mm}|}
-  \hline \texttt{ejabberd\_c2s}& Description& Handles c2s connections.\\
-    \cline{2-3} & Options& \texttt{access}, \texttt{certfile}, \texttt{inet6},
+\begin{description}
+  \titem{\texttt{ejabberd\_c2s}} 
+    Handles c2s connections.\\
+    Options: \texttt{access}, \texttt{certfile}, \texttt{inet6},
     \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper},
     \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
-    \texttt{zlib}\\
-  \hline \texttt{ejabberd\_s2s\_in}& Description& Handles incoming s2s
-  connections.\\
-    \cline{2-3} & Options& \texttt{inet6}, \texttt{ip},
-    \texttt{max\_stanza\_size}\\
-  \hline \texttt{ejabberd\_service}& Description& Interacts with 
-    \footahref{http://www.ejabberd.im/tutorials-transports}{external components} 
+    \texttt{zlib}
+  \titem{\texttt{ejabberd\_s2s\_in}}
+    Handles incoming s2s connections.\\
+    Options: \texttt{inet6}, \texttt{ip}, \texttt{max\_stanza\_size}
+  \titem{\texttt{ejabberd\_service}}
+    Interacts with \footahref{http://www.ejabberd.im/tutorials-transports}{external components} 
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
-    \cline{2-3} & Options& \texttt{access}, \texttt{hosts}, \texttt{inet6},
-    \texttt{ip}, \texttt{shaper}, \texttt{service\_check\_from}\\
-  \hline \texttt{ejabberd\_http}& Description& Handles incoming HTTP
-  connections.\\
-    \cline{2-3} & Options& \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
+    Options: \texttt{access}, \texttt{hosts}, \texttt{inet6},
+    \texttt{ip}, \texttt{shaper}, \texttt{service\_check\_from}
+  \titem{\texttt{ejabberd\_http}}
+    Handles incoming HTTP connections.\\
+    Options: \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
     \texttt{inet6}, \texttt{ip}, \texttt{request\_handlers}, \texttt{tls}, \texttt{web\_admin}\\
-  \hline
-  \end{tabular}
-\end{table}
+\end{description}
 
 This is a detailed description of each option allowed by the listening modules:
 \begin{description}
@@ -1910,54 +1905,53 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-\makesubsection{modoverview}{Overview}
+\makesubsection{modoverview}{Modules Overview}
 \ind{modules!overview}\ind{XMPP compliancy}
 
 The following table lists all modules included in \ejabberd{}.
 
 \begin{table}[H]
   \centering
-  \begin{tabular}{|l|l|l|l|}
-    \hline Module & Feature & Dependencies & Needed for XMPP? \\ 
-    \hline \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  & No \\ 
-    \hline \modannounce{} & Manage announcements & recommends \modadhoc{} & No \\ 
-    \hline \modcaps{} &  Request and cache Entity Capabilities (\xepref{0115}) & & No \\ 
-    \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} & No \\ 
-    \hline \moddisco{} & Service Discovery (\xepref{0030}) &  & No \\ 
-    \hline \modecho{} & Echoes Jabber packets &  & No \\ 
-    \hline \modirc{} & IRC transport &  & No \\ 
-    \hline \modlast{} & Last Activity (\xepref{0012}) &  & No \\ 
-    \hline \modlastodbc{} & Last Activity (\xepref{0012}) & supported database (*) & No \\ 
-    \hline \modmuc{} & Multi-User Chat (\xepref{0045}) &  & No \\ 
-    \hline \modmuclog{} & Multi-User Chat room logging & \modmuc{} & No \\ 
-    \hline \modoffline{} & Offline message storage &  & No \\ 
-    \hline \modofflineodbc{} & Offline message storage & supported database (*) & No \\ 
-    \hline \modprivacy{} & Blocking Communications &  & Yes \\ 
-    \hline \modprivacyodbc{} & Blocking Communications & supported database (*) & Yes \\ 
-    \hline \modprivate{} & Private XML Storage (\xepref{0049}) &  & No \\ 
-    \hline \modprivateodbc{} & Private XML Storage (\xepref{0049}) & supported database (*) & No \\ 
-    \hline \modproxy{} & SOCKS5 Bytestreams (\xepref{0065}) &  & No\\
-    \hline \modpubsub{} & Publish-Subscribe (\xepref{0060}) and PEP (\xepref{0163}) & \modcaps{} & No \\ 
-    \hline \modregister{} & In-Band Registration (\xepref{0077}) &  & No \\ 
-    \hline \modroster{} & Roster management &  & Yes (**) \\ 
-    \hline \modrosterodbc{} & Roster management & supported database (*) & Yes (**) \\ 
-    \hline \modservicelog{} & Copy user messages to logger service &  & No \\ 
-    \hline \modsharedroster{} & Shared roster management & \modroster{} or & No \\ 
-    & & \modrosterodbc{} & \\ 
-    \hline \modstats{} & Statistics Gathering (\xepref{0039}) &  & No \\ 
-    \hline \modtime{} & Entity Time (\xepref{0090}) &  & No \\ 
-    \hline \modvcard{} & vcard-temp (\xepref{0054}) &  & No \\ 
-    \hline \modvcardldap{} & vcard-temp (\xepref{0054}) & LDAP server & No \\ 
-    \hline \modvcardodbc{} & vcard-temp (\xepref{0054}) & supported database (*) & No \\ 
-    \hline \modversion{} & Software Version (\xepref{0092}) &  & No\\
+  \begin{tabular}{|l|l|l|}
+    \hline {\bf Module} & {\bf Feature} & {\bf Dependencies} \\ 
+    \hline
+    \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  \\ 
+    \hline \ahrefloc{modannounce}{\modannounce{}} & Manage announcements & recommends \modadhoc{} \\ 
+    \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & \\ 
+    \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\ 
+    \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\ 
+    \hline \ahrefloc{modecho}{\modecho{}} & Echoes Jabber packets &  \\ 
+    \hline \ahrefloc{modirc}{\modirc{}} & IRC transport &  \\ 
+    \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\ 
+    \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\ 
+    \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\ 
+    \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} \\ 
+    \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\ 
+    \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\ 
+    \hline \ahrefloc{modprivacy}{\modprivacy{}} & Blocking Communication (XMPP IM) &  \\ 
+    \hline \ahrefloc{modprivacy}{\modprivacyodbc{}} & Blocking Communication (XMPP IM) & supported DB (*) \\ 
+    \hline \ahrefloc{modprivate}{\modprivate{}} & Private XML Storage (\xepref{0049}) &  \\ 
+    \hline \ahrefloc{modprivate}{\modprivateodbc{}} & Private XML Storage (\xepref{0049}) & supported DB (*) \\ 
+    \hline \ahrefloc{modproxy}{\modproxy{}} & SOCKS5 Bytestreams (\xepref{0065}) &  \\
+    \hline \ahrefloc{modpubsub}{\modpubsub{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & \modcaps{} \\ 
+    \hline \ahrefloc{modregister}{\modregister{}} & In-Band Registration (\xepref{0077}) &  \\ 
+    \hline \ahrefloc{modroster}{\modroster{}} & Roster management (XMPP IM) &  \\ 
+    \hline \ahrefloc{modroster}{\modrosterodbc{}} & Roster management (XMPP IM) & supported DB (*) \\ 
+    \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service &  \\ 
+    \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} or \\ 
+    & & \modrosterodbc\\ 
+    \hline \ahrefloc{modstats}{\modstats{}} & Statistics Gathering (\xepref{0039}) &  \\ 
+    \hline \ahrefloc{modtime}{\modtime{}} & Entity Time (\xepref{0090}) &  \\ 
+    \hline \ahrefloc{modvcard}{\modvcard{}} & vcard-temp (\xepref{0054}) &  \\ 
+    \hline \ahrefloc{modvcardldap}{\modvcardldap{}} & vcard-temp (\xepref{0054}) & LDAP server \\ 
+    \hline \ahrefloc{modvcard}{\modvcardodbc{}} & vcard-temp (\xepref{0054}) & supported DB (*) \\ 
+    \hline \ahrefloc{modversion}{\modversion{}} & Software Version (\xepref{0092}) &  \\
     \hline
   \end{tabular}
 \end{table}
 
 \begin{itemize}
-\item (*) For a list of supported databases, see section~\ref{database}.
-\item (**) This module or a similar one with another database backend is needed for
-XMPP compliancy.
+\item (*) This module requires a supported database. For a list of supported databases, see section~\ref{database}.
 \end{itemize}
 
 You can see which database backend each module needs by looking at the suffix:
@@ -3637,7 +3631,7 @@ You need to take the following TCP ports in mind when configuring your firewall:
 \begin{table}[H]
   \centering
   \begin{tabular}{|l|l|}
-    \hline Port& Description\\
+    \hline {\bf Port} & {\bf Description} \\
     \hline \hline 5222& Standard port for Jabber/XMPP client connections, plain or STARTTLS.\\
     \hline 5223& Standard port for Jabber client connections using the old SSL method.\\
     \hline 5269& Standard port for Jabber/XMPP server connections.\\
