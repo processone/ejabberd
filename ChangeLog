@@ -1,6 +1,8 @@
 2008-06-12  Badlop  <badlop@process-one.net>
 	
-	* doc/guide.tex: Permanent reference URL for sections (EJAB-651)
+	* doc/guide.tex: Permanent reference URL for sections (EJAB-651).
+	Changes in CSS: verbatim text is indented and has grey background;
+	descriptions are indented; table borders are softer.
 
 2008-06-08  Badlop  <badlop@process-one.net>
 
