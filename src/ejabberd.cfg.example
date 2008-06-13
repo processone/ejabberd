@@ -383,12 +383,16 @@
 %% All users are allowed to use MUC service:
 {access, muc, [{allow, all}]}.
 
+%% Everybody can create pubsub nodes
+{access, pubsub_createnode, [{allow, all}]}.
+
 %% In-band registration allows registration of any possible username.
 %% To disable in-band registration, replace 'allow' with 'deny'.
 {access, register, [{allow, all}]}.
 
-%% Everybody can create pubsub nodes
-{access, pubsub_createnode, [{allow, all}]}.
+%% By default frequency of account registrations from a the same IP
+%% is limited to 1 account every 10 minutes. To disable put: infinity
+%%{registration_timeout, 600}.
 
 %%
 %% Define specific Access rules in a virtual host.
