@@ -1,5 +1,7 @@
 2008-06-13  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.cfg.example: Add registration_timeout (EJAB-653)
+
 	* doc/guide.tex: Table of listener modules converted to
 	description. Table of modules overview simplified, and module
 	names link to their sections. Document
