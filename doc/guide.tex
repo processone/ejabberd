@@ -144,7 +144,8 @@ ejabberd Development Team
 
 %% To by-pass errors in the HTML version:
 \newstyle{.SPAN}{width:20\%; float:right; text-align:left; margin-left:auto;}
-\newstyle{H1 A, H2 A, H3 A, H4 A}{color:\#000000; text-decoration:none;}
+\newstyle{H1.chapter A, H2.section A, H3.subsection A, H4.subsubsection A, H5.paragraph A}
+  {color:\#000000; text-decoration:none;}
 \newstyle{pre.verbatim}{margin:1ex 2ex;border:1px dashed lightgrey;background-color:\#f9f9f9;padding:0.5ex;}
 \newstyle{.dt-description}{margin:0ex 2ex;}
 \newstyle{table[border="1"]}{border-collapse:collapse;margin-bottom:1em;}
@@ -1737,6 +1738,21 @@ You can authenticate users against an LDAP directory. Available options are:
   not forget to close brackets and do not use superfluous whitespaces. Also you
   \emph{must not} use \option{ldap\_uidattr} attribute in filter because this
   attribute will be substituted in LDAP filter automatically.
+
+  \titem{ldap\_local\_filter}\ind{options!ldap\_local\_filter}
+  If you can't use \term{ldap\_filter} due to performance reasons
+  (the LDAP server has many users registered),
+  you can use this local filter.
+  The local filter checks an attribute in ejabberd,
+  not in LDAP, so this limits the load on the LDAP directory.
+  The default filter is: \term{undefined}.
+  Example values:
+\begin{verbatim}
+{ldap_local_filter, {notequal, {"accountStatus",["disabled"]}}}.
+{ldap_local_filter, {equal, {"accountStatus",["enabled"]}}}.
+{ldap_local_filter, undefined}.
+\end{verbatim}
+
 \end{description}
 
 \makesubsubsection{ldapexamples}{Examples}
