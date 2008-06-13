@@ -3,7 +3,8 @@
 	* doc/guide.tex: Table of listener modules converted to
 	description. Table of modules overview simplified, and module
 	names link to their sections. Document
-	ldap_local_filter (EJAB-179)
+	ldap_local_filter (EJAB-179). Title in HTML is shorter.
+	Update several external URIs.
 
 	* doc/guide.html: Regenerated with all the latest changes
 
