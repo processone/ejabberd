@@ -13,26 +13,6 @@
  
 
 
-  
-
-
-
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
 
 
 </TITLE>
@@ -76,7 +56,10 @@ TD P{margin:0px;}
 .theorem{text-align:left;margin:1ex auto 1ex 0ex;}
 .part{margin:2ex auto;text-align:center}
 .SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
-H1 A, H2 A, H3 A, H4 A{color:#000000; text-decoration:none;}
+H1.titlemain HR{display:none;}
+TABLE.title{border-top:1px solid grey;border-bottom:1px solid grey; background: #efefef}
+H1.chapter A, H2.section A, H3.subsection A, H4.subsubsection A, H5.paragraph A{color:#000000; text-decoration:none;}
+H1.chapter, H2.section, H3.subsection, H4.subsubsection, H5.paragraph{border-top: 1px solid grey; background: #efefef; padding: 0.5ex}
 pre.verbatim{margin:1ex 2ex;border:1px dashed lightgrey;background-color:#f9f9f9;padding:0.5ex;}
 .dt-description{margin:0ex 2ex;}
 table[border="1"]{border-collapse:collapse;margin-bottom:1em;}
@@ -100,29 +83,8 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 <BR>
 
 <HR SIZE=2>
-<BR><BR>
-<DIV CLASS="center">
 
-</DIV>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-<BR>
-
-</H1><H3 CLASS="titlerest"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD VALIGN=top ALIGN=left>ejabberd Development Team</TD></TR>
-</TABLE></H3></TD></TR>
+</H1></TD></TR>
 </TABLE><P><A NAME="toc"></A>
 </P><!--TOC chapter Contents-->
 <H1 CLASS="chapter"><!--SEC ANCHOR -->Contents</H1><!--SEC END --><UL CLASS="toc"><LI CLASS="li-toc">
@@ -433,7 +395,7 @@ and configurable options to fine tune the Erlang runtime system.</P><P> <A NAME=
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#windowsreq">Requirements</A></H4><!--SEC END --><P> <A NAME="windowsreq"></A> </P><P>To compile <TT>ejabberd</TT> on a Microsoft Windows system, you need:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 MS Visual C++ 6.0 Compiler
-</LI><LI CLASS="li-itemize"><A HREF="http://erlang.org/download.html">Erlang/OTP R11B-5</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://www.erlang.org/download.html">Erlang/OTP R11B-5</A>
 </LI><LI CLASS="li-itemize"><A HREF="http://sourceforge.net/project/showfiles.php?group_id=10127&package_id=11277">Expat 2.0.0 or higher</A>
 </LI><LI CLASS="li-itemize"><A HREF="http://www.gnu.org/software/libiconv/">GNU Iconv 1.9.2</A>
 (optional)
@@ -1120,8 +1082,8 @@ authentication mechanisms for the same virtual host (fallback), you can set
 different storage systems for modules, and so forth.</P><P>The following databases are supported by <TT>ejabberd</TT>:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 <A HREF="http://www.microsoft.com/sql/">Microsoft SQL Server</A>
-</LI><LI CLASS="li-itemize"><A HREF="http://www.erlang.org/doc/doc-5.5.1/lib/mnesia-4.3.2/doc/">Mnesia</A>
-</LI><LI CLASS="li-itemize"><A HREF="http://mysql.com/">MySQL</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://www.erlang.org/doc/apps/mnesia/index.html">Mnesia</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://www.mysql.com/">MySQL</A>
 </LI><LI CLASS="li-itemize"><A HREF="http://en.wikipedia.org/wiki/Open_Database_Connectivity">Any ODBC compatible database</A>
 </LI><LI CLASS="li-itemize"><A HREF="http://www.postgresql.org/">PostgreSQL</A>
 </LI></UL><P>The following LDAP servers are tested with <TT>ejabberd</TT>:
@@ -1378,8 +1340,18 @@ default is <TT>none</TT>. Example:
 <TT>"(&amp;(objectClass=shadowAccount)(memberOf=Jabber Users))"</TT>. Please, do
 not forget to close brackets and do not use superfluous whitespaces. Also you
 <EM>must not</EM> use <TT>ldap_uidattr</TT> attribute in filter because this
-attribute will be substituted in LDAP filter automatically.
-</DD></DL><P> <A NAME="ldapexamples"></A> </P><!--TOC subsubsection Examples-->
+attribute will be substituted in LDAP filter automatically.</DD><DT CLASS="dt-description"><B><TT>ldap_local_filter</TT></B></DT><DD CLASS="dd-description">
+If you can&#X2019;t use <TT>ldap_filter</TT> due to performance reasons
+(the LDAP server has many users registered),
+you can use this local filter.
+The local filter checks an attribute in ejabberd,
+not in LDAP, so this limits the load on the LDAP directory.
+The default filter is: <TT>undefined</TT>.
+Example values:
+<PRE CLASS="verbatim">{ldap_local_filter, {notequal, {"accountStatus",["disabled"]}}}.
+{ldap_local_filter, {equal, {"accountStatus",["enabled"]}}}.
+{ldap_local_filter, undefined}.
+</PRE></DD></DL><P> <A NAME="ldapexamples"></A> </P><!--TOC subsubsection Examples-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#ldapexamples">Examples</A></H4><!--SEC END --><P> <A NAME="ldapexamples"></A> </P><P> <A NAME="ldapcommonexample"></A> </P><!--TOC paragraph Common example-->
 <H5 CLASS="paragraph"><!--SEC ANCHOR --><A HREF="#ldapcommonexample">Common example</A></H5><!--SEC END --><P> <A NAME="ldapcommonexample"></A> </P><P>Let&#X2019;s say <TT>ldap.example.org</TT> is the name of our LDAP server. We have
 users with their passwords in <TT>"ou=Users,dc=example,dc=org"</TT> directory.
@@ -2170,7 +2142,7 @@ custom CSS file will be used (http://example.com/my.css). Further, the names
 of the log files will contain the full date, and there will be no
 subdirectories. The log files will be stored in /var/www/muclogs, and the
 time zone will be GMT/UTC. Finally, the top link will be
-<CODE>&lt;a href="http://www.jabber.ru"&gt;Jabber.ru&lt;/a&gt;</CODE>.
+<CODE>&lt;a href="http://www.jabber.ru/"&gt;Jabber.ru&lt;/a&gt;</CODE>.
 <PRE CLASS="verbatim">{access, muc, [{allow, all}]}.
 
 {modules,
@@ -2183,7 +2155,7 @@ time zone will be GMT/UTC. Finally, the top link will be
                  {outdir, "/var/www/muclogs"},
                  {timezone, universal},
                  {spam_prevention, true},
-                 {top_link, {"http://www.jabber.ru", "Jabber.ru"}}
+                 {top_link, {"http://www.jabber.ru/", "Jabber.ru"}}
                 ]},
   ...
  ]}.
@@ -2430,7 +2402,7 @@ the processing discipline for Roster Management (<TT>jabber:iq:roster</TT>) IQ q
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc52">3.3.19</A>&#XA0;&#XA0;<A HREF="#modservicelog"><TT>mod_service_log</TT></A></H3><!--SEC END --><P> <A NAME="modservicelog"></A> 
 </P><P>This module adds support for logging end user packets via a Jabber message
 auditing service such as
-<A HREF="http://www.funkypenguin.co.za/bandersnatch/">Bandersnatch</A>. All user
+<A HREF="http://www.funkypenguin.info/project/bandersnatch/">Bandersnatch</A>. All user
 packets are encapsulated in a <CODE>&lt;route/&gt;</CODE> element and sent to the specified
 service(s).</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
@@ -3109,7 +3081,7 @@ can be replaced with &#X2018;<CODE>ram_copies</CODE>&#X2019; or
 some hints from the command &#X2018;<CODE>mnesia:info().</CODE>&#X2019;, by looking at the
 size of tables and the default storage type for each table on &#X2019;first&#X2019;.</P><P>Replicating a table makes lookups in this table faster on this node.
 Writing, on the other hand, will be slower. And of course if machine with one
-of the replicas is down, other replicas will be used.</P><P>Also <A HREF="http://www.erlang.se/doc/doc-5.4.9/lib/mnesia-4.2.2/doc/html/Mnesia_chap5.html#5.3">section 5.3 (Table Fragmentation) of Mnesia User&#X2019;s Guide</A> can be helpful.
+of the replicas is down, other replicas will be used.</P><P>Also <A HREF="http://www.erlang.org/doc/apps/mnesia/Mnesia_chap5.html#5.3">section 5.3 (Table Fragmentation) of Mnesia User&#X2019;s Guide</A> can be helpful.
 </P><P>(alt) Same as in previous item, but for other tables.</P></LI><LI CLASS="li-enumerate">Run &#X2018;<CODE>init:stop().</CODE>&#X2019; or just &#X2018;<CODE>q().</CODE>&#X2019; to exit from
 the Erlang shell. This probably can take some time if Mnesia has not yet
 transfered and processed all data it needed from <TT>first</TT>.</LI><LI CLASS="li-enumerate">Now run <TT>ejabberd</TT> on <TT>second</TT> with almost the same config as

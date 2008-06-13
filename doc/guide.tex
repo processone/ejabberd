@@ -124,16 +124,20 @@ the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).
 \end{tabular}\\
 \vspace{2mm}
 {\rule{\larg}{1mm}}
+\begin{latexonly}
 \vspace{2mm} \\
 \begin{center}
     {\large  \bf \today}
 \end{center}
 \vspace{5.5cm}
+\end{latexonly}
 }
+\begin{latexonly}
 \author{\begin{tabular}{p{13.7cm}}
 ejabberd Development Team
 \end{tabular}}
 \date{}
+\end{latexonly}
 
 
 %% Options
@@ -144,8 +148,12 @@ ejabberd Development Team
 
 %% To by-pass errors in the HTML version:
 \newstyle{.SPAN}{width:20\%; float:right; text-align:left; margin-left:auto;}
+\newstyle{H1.titlemain HR}{display:none;}
+\newstyle{TABLE.title}{border-top:1px solid grey;border-bottom:1px solid grey; background: \#efefef}
 \newstyle{H1.chapter A, H2.section A, H3.subsection A, H4.subsubsection A, H5.paragraph A}
   {color:\#000000; text-decoration:none;}
+\newstyle{H1.chapter, H2.section, H3.subsection, H4.subsubsection, H5.paragraph}
+  {border-top: 1px solid grey; background: \#efefef; padding: 0.5ex}
 \newstyle{pre.verbatim}{margin:1ex 2ex;border:1px dashed lightgrey;background-color:\#f9f9f9;padding:0.5ex;}
 \newstyle{.dt-description}{margin:0ex 2ex;}
 \newstyle{table[border="1"]}{border-collapse:collapse;margin-bottom:1em;}
@@ -405,7 +413,7 @@ gmake
 To compile \ejabberd{} on a Microsoft Windows system, you need:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
-\item \footahref{http://erlang.org/download.html}{Erlang/OTP R11B-5}
+\item \footahref{http://www.erlang.org/download.html}{Erlang/OTP R11B-5}
 \item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 2.0.0 or higher}
 \item
 \footahref{http://www.gnu.org/software/libiconv/}{GNU Iconv 1.9.2}
@@ -1328,8 +1336,8 @@ different storage systems for modules, and so forth.
 The following databases are supported by \ejabberd{}:
 \begin{itemize}
 \item \footahref{http://www.microsoft.com/sql/}{Microsoft SQL Server}
-\item \footahref{http://www.erlang.org/doc/doc-5.5.1/lib/mnesia-4.3.2/doc/}{Mnesia}
-\item \footahref{http://mysql.com/}{MySQL}
+\item \footahref{http://www.erlang.org/doc/apps/mnesia/index.html}{Mnesia}
+\item \footahref{http://www.mysql.com/}{MySQL}
 \item \footahref{http://en.wikipedia.org/wiki/Open\_Database\_Connectivity}{Any ODBC compatible database}
 \item \footahref{http://www.postgresql.org/}{PostgreSQL}
 \end{itemize}
@@ -2610,7 +2618,7 @@ Examples:
   of the log files will contain the full date, and there will be no
   subdirectories. The log files will be stored in /var/www/muclogs, and the
   time zone will be GMT/UTC. Finally, the top link will be
-  \verb|<a href="http://www.jabber.ru">Jabber.ru</a>|.
+  \verb|<a href="http://www.jabber.ru/">Jabber.ru</a>|.
 \begin{verbatim}
 {access, muc, [{allow, all}]}.
 
@@ -2624,7 +2632,7 @@ Examples:
                  {outdir, "/var/www/muclogs"},
                  {timezone, universal},
                  {spam_prevention, true},
-                 {top_link, {"http://www.jabber.ru", "Jabber.ru"}}
+                 {top_link, {"http://www.jabber.ru/", "Jabber.ru"}}
                 ]},
   ...
  ]}.
@@ -2928,7 +2936,7 @@ Options:
 
 This module adds support for logging end user packets via a \Jabber{} message
 auditing service such as
-\footahref{http://www.funkypenguin.co.za/bandersnatch/}{Bandersnatch}. All user
+\footahref{http://www.funkypenguin.info/project/bandersnatch/}{Bandersnatch}. All user
 packets are encapsulated in a \verb|<route/>| element and sent to the specified
 service(s).
 
@@ -3843,7 +3851,7 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
   Writing, on the other hand, will be slower. And of course if machine with one
   of the replicas is down, other replicas will be used.
 
-  Also \footahref{http://www.erlang.se/doc/doc-5.4.9/lib/mnesia-4.2.2/doc/html/Mnesia\_chap5.html\#5.3}
+  Also \footahref{http://www.erlang.org/doc/apps/mnesia/Mnesia\_chap5.html\#5.3}
   {section 5.3 (Table Fragmentation) of Mnesia User's Guide} can be helpful.
   % The above URL needs update every Erlang release!
 
