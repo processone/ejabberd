@@ -204,7 +204,8 @@ normal_state({route, From, "",
 	      {xmlelement, "message", Attrs, Els} = Packet},
 	     StateData) ->
     Lang = xml:get_attr_s("xml:lang", Attrs),
-    case is_user_online(From, StateData) of
+    case is_user_online(From, StateData) orelse
+	is_user_allowed_message_nonparticipant(From, StateData) of
 	true ->
 	    case xml:get_attr_s("type", Attrs) of
 		"groupchat" ->
@@ -784,11 +785,10 @@ route(Pid, From, ToNick, Packet) ->
 process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 			  StateData) ->
     Lang = xml:get_attr_s("xml:lang", Attrs),
-    case is_user_online(From, StateData) of
+    case is_user_online(From, StateData) orelse
+	is_user_allowed_message_nonparticipant(From, StateData) of
 	true ->
-	    {ok, #user{nick = FromNick, role = Role}} =
-		?DICT:find(jlib:jid_tolower(From),
-			   StateData#state.users),
+	    {FromNick, Role} = get_participant_data(From, StateData),
 	    if
 		(Role == moderator) or (Role == participant) 
 		or ((StateData#state.config)#config.moderated == false) ->
@@ -872,6 +872,36 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 	    ejabberd_router:route(StateData#state.jid, From, Err),
 	    {next_state, normal_state, StateData}
     end.
+
+
+%% @doc Check if this non participant can send message to room.
+%%
+%% XEP-0045 v1.23:
+%% 7.9 Sending a Message to All Occupants
+%% an implementation MAY allow users with certain privileges
+%% (e.g., a room owner, room admin, or service-level admin)
+%% to send messages to the room even if those users are not occupants.
+%%
+%% Check the mod_muc option access_message_nonparticipant and wether this JID
+%% is allowed or denied
+is_user_allowed_message_nonparticipant(JID, StateData) ->
+    {_AccessRoute, _AccessCreate, AccessAdmin, _AccessPersistent} = StateData#state.access,
+    case acl:match_rule(StateData#state.server_host, AccessAdmin, JID) of
+	allow ->
+	    true;
+	_ -> false
+    end.
+
+%% @doc Get information of this participant, or default values.
+%% If the JID is not a participant, return values for a service message.
+get_participant_data(From, StateData) ->
+    case ?DICT:find(jlib:jid_tolower(From), StateData#state.users) of
+	{ok, #user{nick = FromNick, role = Role}} ->
+	    {FromNick, Role};
+	error ->
+	    {"", moderator}
+    end.
+
 
 process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 		 StateData) ->

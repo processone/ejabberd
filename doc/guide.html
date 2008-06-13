@@ -1922,9 +1922,11 @@ allowed to modify the &#X2019;persistent&#X2019; chatroom option
 </DD><DT CLASS="dt-description"><B><TT>access_admin</TT></B></DT><DD CLASS="dd-description"> This option specifies
 who is allowed to administrate the Multi-User Chat service (the default
 value is <TT>none</TT>, which means that only the room creator can
-administer his room). By sending a message to the service JID,
-administrators can send service messages that will be displayed in every
-active room.
+administer his room).
+The administrators can send a normal message to the service JID,
+and it will be shown in every active room as a service message.
+The administrators can send a groupchat message to the JID of an active room,
+and the message will be shown in the room as a service message.
 </DD><DT CLASS="dt-description"><B><TT>history_size</TT></B></DT><DD CLASS="dd-description"> A small history of
 the current discussion is sent to users when they enter the
 room. With this option you can define the number of history messages
