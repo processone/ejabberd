@@ -1,3 +1,7 @@
+2008-06-18  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: get_default bugfix (EJAB-656)
+
 2008-06-13  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd.cfg.example: Add registration_timeout (EJAB-653)

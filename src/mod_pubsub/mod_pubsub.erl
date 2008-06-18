@@ -2341,22 +2341,14 @@ get_configure(Host, Node, From, Lang) ->
 	end,
     transaction(Host, Node, Action, sync_dirty).
 
-get_default(Host, Node, From, Lang) ->
-    Action =
-	fun(#pubsub_node{owners = Owners, type = Type}) ->
-		case node_call(Type, get_affiliation, [Host, Node, From]) of
-		    {result, owner} ->
-			Options = node_options(Type),
-			{result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
-				   [{xmlelement, "default", [],
-				     [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-				       get_configure_xfields(Type, Options, Lang, Owners)
-				      }]}]}]};
-		    _ ->
-			{error, ?ERR_FORBIDDEN}
-		end
-	end,
-    transaction(Host, Node, Action, sync_dirty).
+get_default(Host, _Node, _From, Lang) ->
+    Type = hd(plugins(Host)),  % first configured plugin is default
+    Options = node_options(Type),
+    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
+		[{xmlelement, "default", [],
+		    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+			get_configure_xfields(Type, Options, Lang, [])
+		}]}]}]}.
 
 %% Get node option
 %% The result depend of the node type plugin system.
@@ -2425,7 +2417,7 @@ max_items(Options) ->
 		    atom_to_list(get_option(Options, Var)),
 		    [atom_to_list(O) || O <- Opts])).
 
-get_configure_xfields(_Type, Options, _Owners, Lang) ->
+get_configure_xfields(_Type, Options, Lang, _Owners) ->
     [?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NODE_CONFIG),
      ?BOOL_CONFIG_FIELD("Deliver payloads with event notifications", deliver_payloads),
      ?BOOL_CONFIG_FIELD("Deliver event notifications", deliver_notifications),
