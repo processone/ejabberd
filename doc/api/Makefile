@@ -1,5 +1,5 @@
 APPNAME = ejabberd
-VSN = SVN
+VSN = $(shell sed '/vsn/!d;s/\(.*\)"\(.*\)"\(.*\)/\2/' ../../src/ejabberd.app)
 
 DOCDIR=.
 SRCDIR=../../src

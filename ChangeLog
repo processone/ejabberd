@@ -1,3 +1,13 @@
+2008-06-18  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd.app: The ejabberd version number is defined in the
+	OTP application resource file, in the key 'vsn' (EJAB-657)
+	* src/ejabberd.hrl: The macro VERSION now consults the ejabberd
+	application key vsn
+	* src/configure.erl: Load the ejabberd application description
+	* doc/Makefile: Read ejabberd version from ejabberd.app vsn
+	* doc/api/Makefile: Likewise
+
 2008-06-18  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: get_default bugfix (EJAB-656)

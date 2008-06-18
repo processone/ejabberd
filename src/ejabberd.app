@@ -2,7 +2,7 @@
 
 {application, ejabberd,
  [{description, "ejabberd"},
-  {vsn, "2.0.0"},
+  {vsn, "2.0.x"},
   {modules, [acl,
 	     adhoc,
 	     configure,
