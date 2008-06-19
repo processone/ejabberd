@@ -2342,7 +2342,10 @@ get_configure(Host, Node, From, Lang) ->
     transaction(Host, Node, Action, sync_dirty).
 
 get_default(Host, _Node, _From, Lang) ->
-    Type = hd(plugins(Host)),  % first configured plugin is default
+    Type = case Host of
+    {_, _, _} -> ?PEPNODE;
+    _ -> hd(plugins(Host))
+    end,
     Options = node_options(Type),
     {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
 		[{xmlelement, "default", [],
