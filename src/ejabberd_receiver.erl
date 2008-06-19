@@ -131,11 +131,8 @@ init([Socket, SockMod, Shaper, MaxStanzaSize]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({starttls, TLSSocket}, _From,
-	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid,
-		   max_stanza_size = MaxStanzaSize} = State) ->
-    close_stream(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
+	    #state{xml_stream_state = XMLStreamState} = State) ->
+    NewXMLStreamState = exmpp_xmlstream:reset(XMLStreamState),
     NewState = State#state{socket = TLSSocket,
 			   sock_mod = tls,
 			   xml_stream_state = NewXMLStreamState},
@@ -146,11 +143,8 @@ handle_call({starttls, TLSSocket}, _From,
 	    {stop, normal, ok, NewState}
     end;
 handle_call({compress, ZlibSocket}, _From,
-	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid,
-		   max_stanza_size = MaxStanzaSize} = State) ->
-    close_stream(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
+	    #state{xml_stream_state = XMLStreamState} = State) ->
+    NewXMLStreamState = exmpp_xmlstream:reset(XMLStreamState),
     NewState = State#state{socket = ZlibSocket,
 			   sock_mod = ejabberd_zlib,
 			   xml_stream_state = NewXMLStreamState},
@@ -161,15 +155,21 @@ handle_call({compress, ZlibSocket}, _From,
 	    {stop, normal, ok, NewState}
     end;
 handle_call(reset_stream, _From,
-	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid,
-		   max_stanza_size = MaxStanzaSize} = State) ->
-    close_stream(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
+	    #state{xml_stream_state = XMLStreamState} = State) ->
+    NewXMLStreamState = exmpp_xmlstream:reset(XMLStreamState),
     Reply = ok,
     {reply, Reply, State#state{xml_stream_state = NewXMLStreamState}};
 handle_call({become_controller, C2SPid}, _From, State) ->
-    XMLStreamState = xml_stream:new(C2SPid, State#state.max_stanza_size),
+    % XXX OLD FORMAT
+    Parser = exmpp_xml:start_parser([
+      {namespace, false},
+      {name_as_atom, false},
+      {maxsize, State#state.max_stanza_size}
+    ]),
+    XMLStreamState = exmpp_xmlstream:start(
+      {gen_fsm, C2SPid}, Parser,
+      [{xmlstreamstart, old}]
+    ),
     NewState = State#state{c2s_pid = C2SPid,
 			   xml_stream_state = XMLStreamState},
     activate_socket(NewState),
@@ -291,7 +291,7 @@ process_data(Data,
 		    shaper_state = ShaperState,
 		    c2s_pid = C2SPid} = State) ->
     ?DEBUG("Received XML on stream = ~p", [binary_to_list(Data)]),
-    XMLStreamState1 = xml_stream:parse(XMLStreamState, Data),
+    {ok, XMLStreamState1} = exmpp_xmlstream:parse(XMLStreamState, Data),
     {NewShaperState, Pause} = shaper:update(ShaperState, size(Data)),
     if
 	C2SPid == undefined ->
@@ -307,4 +307,5 @@ process_data(Data,
 close_stream(undefined) ->
     ok;
 close_stream(XMLStreamState) ->
-    xml_stream:close(XMLStreamState).
+    exmpp_xml:stop_parser(exmpp_xmlstream:get_parser(XMLStreamState)),
+    exmpp_xmlstream:stop(XMLStreamState).

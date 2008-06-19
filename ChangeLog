@@ -1,3 +1,15 @@
+2008-06-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_receiver.erl: Replace the use of xml_stream by
+	exmpp_xmlstream. exmpp_xml is configured to produce old #xmlelement
+	records. exmpp_xmlstream is configured to send old xmlstreamstart
+	tuple. Users are able to connect to ejabberd. Next step:
+	ejabberd_c2s.
+
+2008-06-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Start the transition to exmpp.
+
 2008-06-18  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd.app: The ejabberd version number is defined in the
