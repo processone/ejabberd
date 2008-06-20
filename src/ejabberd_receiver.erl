@@ -160,15 +160,14 @@ handle_call(reset_stream, _From,
     Reply = ok,
     {reply, Reply, State#state{xml_stream_state = NewXMLStreamState}};
 handle_call({become_controller, C2SPid}, _From, State) ->
-    % XXX OLD FORMAT
     Parser = exmpp_xml:start_parser([
-      {namespace, false},
-      {name_as_atom, false},
+      {namespace, true},
+      {name_as_atom, true},
       {maxsize, State#state.max_stanza_size}
     ]),
     XMLStreamState = exmpp_xmlstream:start(
       {gen_fsm, C2SPid}, Parser,
-      [{xmlstreamstart, old}]
+      [{xmlstreamstart, new}]
     ),
     NewState = State#state{c2s_pid = C2SPid,
 			   xml_stream_state = XMLStreamState},
