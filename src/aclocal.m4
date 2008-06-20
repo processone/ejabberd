@@ -123,8 +123,14 @@ AC_DEFUN(AM_WITH_ERLANG,
 start() ->
     EIDirS = code:lib_dir("erl_interface") ++ "\n",
     EILibS =  libpath("erl_interface") ++ "\n",
+    EXMPPDir = code:lib_dir("exmpp"),
+    case EXMPPDir of
+        {error, bad_name} -> exit("exmpp not found");
+        _                 -> ok
+    end,
+    EXMPPDirS = EXMPPDir ++ "\n",
     RootDirS = code:root_dir() ++ "\n",
-    file:write_file("conftest.out", list_to_binary(EIDirS ++ EILibS ++ ssldef() ++ RootDirS)),
+    file:write_file("conftest.out", list_to_binary(EIDirS ++ EILibS ++ ssldef() ++ EXMPPDirS ++ RootDirS)),
     halt().
 
 -[ifdef]('id-pkix').
@@ -182,6 +188,8 @@ _EOF
    ERLANG_EI_LIB=`cat conftest.out | head -n 2 | tail -n 1`
    # Third line
    ERLANG_SSL39=`cat conftest.out | head -n 3 | tail -n 1`
+   # Fourth line
+   ERLANG_EXMPP=`cat conftest.out | head -n 4 | tail -n 1`
    # End line
    ERLANG_DIR=`cat conftest.out | tail -n 1`
 
@@ -191,6 +199,7 @@ _EOF
    AC_SUBST(ERLANG_CFLAGS)
    AC_SUBST(ERLANG_LIBS)
    AC_SUBST(ERLANG_SSL39)
+   AC_SUBST(ERLANG_EXMPP)
    AC_SUBST(ERLC)
    AC_SUBST(ERL)
 ])
