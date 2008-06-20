@@ -54,8 +54,9 @@
 	 handle_info/3,
 	 terminate/3]).
 
+-include("exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("mod_privacy.hrl").
 
 -define(SETS, gb_sets).
@@ -93,11 +94,11 @@
 
 %-define(DBGFSM, true).
 
--ifdef(DBGFSM).
+%-ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
--else.
--define(FSMOPTS, []).
--endif.
+%-else.
+%-define(FSMOPTS, []).
+%-endif.
 
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
@@ -112,6 +113,11 @@
 %% session:
 -define(C2S_OPEN_TIMEOUT, 60000).
 -define(C2S_HIBERNATE_TIMEOUT, 90000).
+
+% These are the namespace already declared by the stream opening. This is
+% used at serialization time.
+-define(DEFAULT_NS, ['jabber:client']).
+-define(PREFIXED_NS, [{?NS_XMPP, "stream"}]).
 
 -define(STREAM_HEADER,
 	"<?xml version='1.0'?>"
@@ -130,6 +136,50 @@
 	xml:element_to_string(?SERR_HOST_UNKNOWN)).
 -define(POLICY_VIOLATION_ERR(Lang, Text),
 	xml:element_to_string(?SERRT_POLICY_VIOLATION(Lang, Text))).
+
+% XXX OLD FORMAT
+-define(NS_STREAM, "http://etherx.jabber.org/streams").
+-define(NS_AUTH, "jabber:iq:auth").
+-define(NS_FEATURE_COMPRESS, "http://jabber.org/features/compress").
+-define(NS_PRIVACY, "jabber:iq:privacy").
+-define(NS_VCARD, "vcard-temp").
+
+-define(STREAM_ERROR(Condition),
+  exmpp_xml:xmlel_to_xmlelement(exmpp_stream:error(Condition),
+    [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
+-define(SERR_XML_NOT_WELL_FORMED, ?STREAM_ERROR('xml-not-well-formed')).
+-define(SERR_HOST_UNKNOWN, ?STREAM_ERROR('host-unknown')).
+-define(SERR_INVALID_NAMESPACE, ?STREAM_ERROR('invalid-namespace')).
+
+-define(STREAM_ERRORT(Condition, Lang, Text),
+  exmpp_xml:xmlel_to_xmlelement(exmpp_stream:error(Condition, {Lang, Text}),
+    [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
+-define(SERRT_POLICY_VIOLATION(Lang, Text),
+  ?STREAM_ERRORT('policy-violation', Lang, Text)).
+-define(SERRT_CONFLICT(Lang, Text),
+  ?STREAM_ERRORT('conflict', Lang, Text)).
+
+-define(STANZA_ERROR(Condition),
+  exmpp_xml:xmlel_to_xmlelement(exmpp_stanza:error(Condition),
+    [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
+-define(ERR_BAD_REQUEST, ?STANZA_ERROR('bad-request')).
+-define(ERR_NOT_ALLOWED, ?STANZA_ERROR('not-allowed')).
+-define(ERR_JID_MALFORMED, ?STANZA_ERROR('jid-malformed')).
+-define(ERR_NOT_AUTHORIZED, ?STANZA_ERROR('not-authorized')).
+-define(ERR_FEATURE_NOT_IMPLEMENTED, ?STANZA_ERROR('feature-not-implemented')).
+-define(ERR_SERVICE_UNAVAILABLE, ?STANZA_ERROR('service-unavialable')).
+
+-define(STANZA_ERRORT(Condition, Lang, Text),
+  exmpp_xml:xmlel_to_xmlelement(exmpp_stanza:error(Condition, {Lang, Text}),
+    [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
+-define(ERR_AUTH_NO_RESOURCE_PROVIDED(Lang),
+  ?STANZA_ERRORT('not-acceptable', Lang, "No resource provided")).
+
+-record(iq, {id = "",
+             type,
+             xmlns = "",
+             lang = "",
+             sub_el}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -220,28 +270,28 @@ get_subscribed_and_online(FsmRef) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
+wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
     DefaultLang = case ?MYLANG of
 		      undefined ->
 			  " xml:lang='en'";
 		      DL ->
 			  " xml:lang='" ++ DL ++ "'"
 		  end,
-    case xml:get_attr_s("xmlns:stream", Attrs) of
-	?NS_STREAM ->
-	    Server = jlib:nameprep(xml:get_attr_s("to", Attrs)),
+    Header = exmpp_stream:opening_reply(Opening,
+      StateData#state.streamid),
+    Header1 = exmpp_stream:set_lang(Header, DefaultLang),
+    case NS of
+	?NS_XMPP ->
+	    Server = exmpp_stringprep:nameprep(
+	      exmpp_stream:get_receiving_entity(Opening)),
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
-		    Lang = xml:get_attr_s("xml:lang", Attrs),
-		    change_shaper(StateData, jlib:make_jid("", Server, "")),
-		    case xml:get_attr_s("version", Attrs) of
-			"1.0" ->
-			    Header = io_lib:format(?STREAM_HEADER,
-						   [StateData#state.streamid,
-						    Server,
-						    " version='1.0'",
-						    DefaultLang]),
-			    send_text(StateData, Header),
+		    Lang = exmpp_stream:get_lang(Opening),
+		    change_shaper(StateData,
+		      exmpp_jid:make_jid("", Server, "")),
+		    case exmpp_stream:get_version(Opening) of
+			{1, 0} ->
+			    send_element(StateData, Header1),
 			    case StateData#state.authenticated of
 				false ->
 				    SASLState =
@@ -255,11 +305,8 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						  ejabberd_auth:check_password_with_authmodule(
 						    U, Server, P)
 					  end),
-				    Mechs = lists:map(
-					      fun(S) ->
-						      {xmlelement, "mechanism", [],
-						       [{xmlcdata, S}]}
-					      end, cyrsasl:listmech(Server)),
+				    SASL_Mechs = [exmpp_server_sasl:feature(
+					cyrsasl:listmech(Server))],
 				    SockMod =
 					(StateData#state.sockmod):get_sockmod(
 					  StateData#state.socket),
@@ -268,10 +315,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					case Zlib andalso
 					    (SockMod == gen_tcp) of
 					    true ->
-						[{xmlelement, "compression",
-						  [{"xmlns", ?NS_FEATURE_COMPRESS}],
-						  [{xmlelement, "method",
-						    [], [{xmlcdata, "zlib"}]}]}];
+						[exmpp_server_compression:feature(["zlib"])];
 					    _ ->
 						[]
 					end,
@@ -283,29 +327,19 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					    (TLSEnabled == false) andalso
 					    (SockMod == gen_tcp) of
 					    true ->
-						case TLSRequired of
-						    true ->
-							[{xmlelement, "starttls",
-							  [{"xmlns", ?NS_TLS}],
-							  [{xmlelement, "required",
-							    [], []}]}];
-						    _ ->
-							[{xmlelement, "starttls",
-							  [{"xmlns", ?NS_TLS}], []}]
-						end;
+						[exmpp_server_tls:feature(TLSRequired)];
 					    false ->
 						[]
 					end,
 				    send_element(StateData,
-						 {xmlelement, "stream:features", [],
-						  TLSFeature ++ CompressFeature ++
-						  [{xmlelement, "mechanisms",
-						    [{"xmlns", ?NS_SASL}],
-						    Mechs}] ++
-						   ejabberd_hooks:run_fold(
-						     c2s_stream_features,
-						     Server,
-						     [], [])}),
+				      exmpp_stream:features(
+					TLSFeature ++
+					CompressFeature ++
+					SASL_Mechs ++
+					ejabberd_hooks:run_fold(
+					  c2s_stream_features,
+					  Server,
+					  [], []))),
 				    fsm_next_state(wait_for_feature_request,
 					       StateData#state{
 						 server = Server,
@@ -316,11 +350,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					"" ->
 					    send_element(
 					      StateData,
-					      {xmlelement, "stream:features", [],
-					       [{xmlelement, "bind",
-						 [{"xmlns", ?NS_BIND}], []},
-						{xmlelement, "session",
-						 [{"xmlns", ?NS_SESSION}], []}]}),
+					      exmpp_stream:features([
+						  exmpp_server_binding:feature(),
+						  exmpp_server_session:feature()
+						])),
 					    fsm_next_state(wait_for_bind,
 						       StateData#state{
 							 server = Server,
@@ -328,7 +361,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					_ ->
 					    send_element(
 					      StateData,
-					      {xmlelement, "stream:features", [], []}),
+					      exmpp_stream:features([])),
 					    fsm_next_state(wait_for_session,
 						       StateData#state{
 							 server = Server,
@@ -336,22 +369,16 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				    end
 			    end;
 			_ ->
-			    Header = io_lib:format(
-				       ?STREAM_HEADER,
-				       [StateData#state.streamid, Server, "",
-					DefaultLang]),
 			    if
 				(not StateData#state.tls_enabled) and
 				StateData#state.tls_required ->
-				    send_text(StateData,
-					      Header ++
-					      ?POLICY_VIOLATION_ERR(
-						 Lang,
-						 "Use of STARTTLS required") ++
-					      ?STREAM_TRAILER),
+				    send_element(StateData,
+				      exmpp_xml:append_child(Header1,
+					exmpp_stream:error('policy-violation',
+					  Lang, "Use of STARTTLS required"))),
 				    {stop, normal, StateData};
 				true ->
-				    send_text(StateData, Header),
+				    send_element(StateData, Header1),
 				    fsm_next_state(wait_for_auth,
 						   StateData#state{
 						     server = Server,
@@ -359,20 +386,16 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			    end
 		    end;
 		_ ->
-		    Header = io_lib:format(
-			       ?STREAM_HEADER,
-			       [StateData#state.streamid, ?MYNAME, "",
-				DefaultLang]),
-		    send_text(StateData,
-			      Header ++ ?HOST_UNKNOWN_ERR ++ ?STREAM_TRAILER),
+		    Header2 = exmpp_stream:set_initiating_entity(Header1,
+		      ?MYNAME),
+		    send_element(StateData, exmpp_xml:append_child(Header2,
+			exmpp_stream:error('host-unknown'))),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
-	    Header = io_lib:format(
-		       ?STREAM_HEADER,
-		       [StateData#state.streamid, ?MYNAME, "", DefaultLang]),
-	    send_text(StateData,
-		      Header ++ ?INVALID_NS_ERR ++ ?STREAM_TRAILER),
+	    Header2 = exmpp_stream:set_initiating_entity(Header1, ?MYNAME),
+	    send_element(StateData, exmpp_xml:append_child(Header2,
+		exmpp_stream:error('invalid-namespace'))),
 	    {stop, normal, StateData}
     end;
 
@@ -380,18 +403,21 @@ wait_for_stream(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_stream({xmlstreamelement, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_stream({xmlstreamend, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
-    Header = io_lib:format(?STREAM_HEADER,
-			   ["none", ?MYNAME, " version='1.0'", ""]),
-    send_text(StateData,
-	      Header ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    Header = exmpp_stream:opening_reply(?MYNAME, 'jabber:client', "1.0",
+      "none"),
+    Header1 = exmpp_xml:append_child(Header,
+      exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, Header1),
     {stop, normal, StateData};
 
 wait_for_stream(closed, StateData) ->
@@ -400,118 +426,96 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
-	{auth, _ID, get, {U, _, _, _}} ->
-	    {xmlelement, Name, Attrs, _Els} = jlib:make_result_iq_reply(El),
-	    case U of
-		"" ->
-		    UCdata = [];
-		_ ->
-		    UCdata = [{xmlcdata, U}]
+	{auth, _ID, get, {_U, _, _, _}} ->
+	    Fields = case ejabberd_auth:plain_password_required(
+	      StateData#state.server) of
+		false -> both;
+		true  -> plain
 	    end,
-	    Res = case ejabberd_auth:plain_password_required(
-			 StateData#state.server) of
-		      false ->
-			  {xmlelement, Name, Attrs,
-			   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
-			     [{xmlelement, "username", [], UCdata},
-			      {xmlelement, "password", [], []},
-			      {xmlelement, "digest", [], []},
-			      {xmlelement, "resource", [], []}
-			     ]}]};
-		      true ->
-			  {xmlelement, Name, Attrs,
-			   [{xmlelement, "query", [{"xmlns", ?NS_AUTH}],
-			     [{xmlelement, "username", [], UCdata},
-			      {xmlelement, "password", [], []},
-			      {xmlelement, "resource", [], []}
-			     ]}]}
-		  end,
-	    send_element(StateData, Res),
+	    send_element(StateData,
+	      exmpp_server_legacy_auth:fields(El, Fields)),
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {_U, _P, _D, ""}} ->
-	    Err = jlib:make_error_reply(
-		    El,
-		    ?ERR_AUTH_NO_RESOURCE_PROVIDED(StateData#state.lang)),
-	    send_element(StateData, Err),
+	    Err = exmpp_stanza:error('not-acceptable',
+	      {StateData#state.lang, "No resource provided"}),
+	    send_element(StateData, exmpp_iq:error(El, Err)),
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {U, P, D, R}} ->
-	    JID = jlib:make_jid(U, StateData#state.server, R),
-	    case (JID /= error) andalso
-		(acl:match_rule(StateData#state.server,
-				StateData#state.access, JID) == allow) of
-		true ->
-		    case ejabberd_auth:check_password_with_authmodule(
-			   U, StateData#state.server, P,
-			   StateData#state.streamid, D) of
-			{true, AuthModule} ->
-			    ?INFO_MSG(
-			       "(~w) Accepted legacy authentication for ~s",
-			       [StateData#state.socket,
-				jlib:jid_to_string(JID)]),
-			    SID = {now(), self()},
-			    Conn = get_conn_type(StateData),
-			    Info = [{ip, StateData#state.ip}, {conn, Conn},
-				    {auth_module, AuthModule}],
-			    ejabberd_sm:open_session(
-			      SID, U, StateData#state.server, R, Info),
-			    Res1 = jlib:make_result_iq_reply(El),
-			    Res = setelement(4, Res1, []),
-			    send_element(StateData, Res),
-			    change_shaper(StateData, JID),
-			    {Fs, Ts} = ejabberd_hooks:run_fold(
-					 roster_get_subscription_lists,
-					 StateData#state.server,
-					 {[], []},
-					 [U, StateData#state.server]),
-			    LJID = jlib:jid_tolower(
-				     jlib:jid_remove_resource(JID)),
-			    Fs1 = [LJID | Fs],
-			    Ts1 = [LJID | Ts],
-			    PrivList =
-				ejabberd_hooks:run_fold(
+	    try
+		JID = exmpp_jid:make_jid(U, StateData#state.server, R),
+		case acl:match_rule(StateData#state.server,
+		  StateData#state.access, JID) of
+		    allow ->
+			case ejabberd_auth:check_password_with_authmodule(
+			  U, StateData#state.server, P,
+			  StateData#state.streamid, D) of
+			    {true, AuthModule} ->
+				?INFO_MSG(
+				  "(~w) Accepted legacy authentication for ~s",
+				  [StateData#state.socket,
+				    exmpp_jid:jid_to_string(JID)]),
+				SID = {now(), self()},
+				Conn = get_conn_type(StateData),
+				Info = [{ip, StateData#state.ip}, {conn, Conn},
+				  {auth_module, AuthModule}],
+				ejabberd_sm:open_session(
+				  SID, U, StateData#state.server, R, Info),
+				Res = exmpp_server_legacy_auth:success(El),
+				send_element(StateData, Res),
+				change_shaper(StateData, JID),
+				{Fs, Ts} = ejabberd_hooks:run_fold(
+				  roster_get_subscription_lists,
+				  StateData#state.server,
+				  {[], []},
+				  [U, StateData#state.server]),
+				LJID = {JID#jid.lnode, JID#jid.ldomain, ""},
+				Fs1 = [LJID | Fs],
+				Ts1 = [LJID | Ts],
+				PrivList = ejabberd_hooks:run_fold(
 				  privacy_get_user_list, StateData#state.server,
 				  #userlist{},
 				  [U, StateData#state.server]),
-			    fsm_next_state(session_established,
-					   StateData#state{
-					     user = U,
-					     resource = R,
-					     jid = JID,
-					     sid = SID,
-					     conn = Conn,
-					     auth_module = AuthModule,
-					     pres_f = ?SETS:from_list(Fs1),
-					     pres_t = ?SETS:from_list(Ts1),
-					     privacy_list = PrivList});
-			_ ->
-			    ?INFO_MSG(
-			       "(~w) Failed legacy authentication for ~s",
-			       [StateData#state.socket,
-				jlib:jid_to_string(JID)]),
-			    Err = jlib:make_error_reply(
-				    El, ?ERR_NOT_AUTHORIZED),
-			    send_element(StateData, Err),
-			    fsm_next_state(wait_for_auth, StateData)
-		    end;
-		_ ->
-		    if
-			JID == error ->
-			    ?INFO_MSG(
-			       "(~w) Forbidden legacy authentication for "
-			       "username '~s' with resource '~s'",
-			       [StateData#state.socket, U, R]),
-			    Err = jlib:make_error_reply(El, ?ERR_JID_MALFORMED),
-			    send_element(StateData, Err),
-			    fsm_next_state(wait_for_auth, StateData);
-			true ->
-			    ?INFO_MSG(
-			       "(~w) Forbidden legacy authentication for ~s",
-			       [StateData#state.socket,
-				jlib:jid_to_string(JID)]),
-			    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
-			    send_element(StateData, Err),
-			    fsm_next_state(wait_for_auth, StateData)
-		    end
+				fsm_next_state(session_established,
+				  StateData#state{
+				    user = U,
+				    resource = R,
+				    jid = JID,
+				    sid = SID,
+				    conn = Conn,
+				    auth_module = AuthModule,
+				    pres_f = ?SETS:from_list(Fs1),
+				    pres_t = ?SETS:from_list(Ts1),
+				    privacy_list = PrivList});
+			    _ ->
+				?INFO_MSG(
+				  "(~w) Failed legacy authentication for ~s",
+				  [StateData#state.socket,
+				    exmpp_jid:jid_to_string(JID)]),
+				Err = exmpp_stanza:error('not-authorized'),
+				Res = exmpp_iq:error_without_original(El, Err),
+				send_element(StateData, Res),
+				fsm_next_state(wait_for_auth, StateData)
+			end;
+		    _ ->
+			?INFO_MSG(
+			  "(~w) Forbidden legacy authentication for ~s",
+			  [StateData#state.socket,
+			    exmpp_jid:jid_to_string(JID)]),
+			Err = exmpp_stanza:error('not-allowed'),
+			Res = exmpp_iq:error_without_original(El, Err),
+			send_element(StateData, Res),
+			fsm_next_state(wait_for_auth, StateData)
+		end
+	    catch
+		throw:_Exception ->
+		    ?INFO_MSG(
+		      "(~w) Forbidden legacy authentication for "
+		      "username '~s' with resource '~s'",
+		      [StateData#state.socket, U, R]),
+		    Err1 = exmpp_stanza:error('jid-malformed'),
+		    Res1 = exmpp_iq:error_without_original(El, Err1),
+		    send_element(StateData, Res1),
+		    fsm_next_state(wait_for_auth, StateData)
 	    end;
 	_ ->
 	    process_unauthenticated_stanza(StateData, El),
@@ -522,38 +526,36 @@ wait_for_auth(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_auth({xmlstreamend, _Name}, StateData) ->
-    send_text(StateData, ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_auth({xmlstreamerror, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_auth(closed, StateData) ->
     {stop, normal, StateData}.
 
 
-wait_for_feature_request({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
+wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
+  StateData) ->
     Zlib = StateData#state.zlib,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
     TLSRequired = StateData#state.tls_required,
     SockMod = (StateData#state.sockmod):get_sockmod(StateData#state.socket),
-    case {xml:get_attr_s("xmlns", Attrs), Name} of
-	{?NS_SASL, "auth"} when not ((SockMod == gen_tcp) and TLSRequired) ->
-	    Mech = xml:get_attr_s("mechanism", Attrs),
-	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
+    case {NS, Name} of
+	{?NS_SASL, 'auth'} when not ((SockMod == gen_tcp) and TLSRequired) ->
+	    {auth, Mech, ClientIn} = exmpp_server_sasl:next_step(El),
 	    case cyrsasl:server_start(StateData#state.sasl_state,
 				      Mech,
 				      ClientIn) of
 		{ok, Props} ->
 		    (StateData#state.sockmod):reset_stream(
 		      StateData#state.socket),
-		    send_element(StateData,
-				 {xmlelement, "success",
-				  [{"xmlns", ?NS_SASL}], []}),
-		    U = xml:get_attr_s(username, Props),
+		    send_element(StateData, exmpp_server_sasl:success()),
+		    U = proplists:get_value(username, Props),
 		    ?INFO_MSG("(~w) Accepted authentication for ~s",
 			      [StateData#state.socket, U]),
 		    fsm_next_state(wait_for_stream,
@@ -563,10 +565,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				     user = U });
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
-				 {xmlelement, "challenge",
-				  [{"xmlns", ?NS_SASL}],
-				  [{xmlcdata,
-				    jlib:encode_base64(ServerOut)}]}),
+		      exmpp_server_sasl:challenge(ServerOut)),
 		    fsm_next_state(wait_for_sasl_response,
 				   StateData#state{
 				     sasl_state = NewSASLState});
@@ -575,20 +574,18 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		       "(~w) Failed authentication for ~s@~s",
 		       [StateData#state.socket,
 			Username, StateData#state.server]),
+		    % XXX OLD FORMAT: list_to_atom(Error).
 		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_SASL}],
-				  [{xmlelement, Error, [], []}]}),
+		      exmpp_server_sasl:failure(list_to_atom(Error))),
 		    {next_state, wait_for_feature_request, StateData,
 		     ?C2S_OPEN_TIMEOUT};
 		{error, Error} ->
+		    % XXX OLD FORMAT: list_to_atom(Error).
 		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_SASL}],
-				  [{xmlelement, Error, [], []}]}),
+		      exmpp_server_sasl:failure(list_to_atom(Error))),
 		    fsm_next_state(wait_for_feature_request, StateData)
 	    end;
-	{?NS_TLS, "starttls"} when TLS == true,
+	{?NS_TLS, 'starttls'} when TLS == true,
 				   TLSEnabled == false,
 				   SockMod == gen_tcp ->
 	    TLSOpts = case ejabberd_config:get_local_option(
@@ -601,55 +598,45 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				 certfile, 1, StateData#state.tls_options)]
 		      end,
 	    Socket = StateData#state.socket,
+	    Proceed = exmpp_xml:document_fragment_to_list(
+	      exmpp_server_tls:proceed(), ?DEFAULT_NS, ?PREFIXED_NS),
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
-			  xml:element_to_string(
-			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
+			  Proceed),
 	    fsm_next_state(wait_for_stream,
 			   StateData#state{socket = TLSSocket,
 					   streamid = new_id(),
 					   tls_enabled = true
 					  });
-	{?NS_COMPRESS, "compress"} when Zlib == true,
+	{?NS_COMPRESS, 'compress'} when Zlib == true,
 					SockMod == gen_tcp ->
-	    case xml:get_subtag(El, "method") of
-		false ->
+	    case exmpp_server_compression:selected_method(El) of
+		undefined ->
 		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_COMPRESS}],
-				  [{xmlelement, "setup-failed", [], []}]}),
+		      exmpp_server_compression:failure('steup-failed')),
 		    fsm_next_state(wait_for_feature_request, StateData);
-		Method ->
-		    case xml:get_tag_cdata(Method) of
-			"zlib" ->
-			    Socket = StateData#state.socket,
-			    ZlibSocket = (StateData#state.sockmod):compress(
-					   Socket,
-					   xml:element_to_string(
-					     {xmlelement, "compressed",
-					      [{"xmlns", ?NS_COMPRESS}], []})),
-			    fsm_next_state(wait_for_stream,
-			     StateData#state{socket = ZlibSocket,
-					     streamid = new_id()
-					    });
-			_ ->
-			    send_element(StateData,
-					 {xmlelement, "failure",
-					  [{"xmlns", ?NS_COMPRESS}],
-					  [{xmlelement, "unsupported-method",
-					    [], []}]}),
-			    fsm_next_state(wait_for_feature_request,
-					   StateData)
-		    end
+		"zlib" ->
+		    Socket = StateData#state.socket,
+		    ZlibSocket = (StateData#state.sockmod):compress(
+				   Socket,
+				   exmpp_server_compression:compressed()),
+		    fsm_next_state(wait_for_stream,
+		     StateData#state{socket = ZlibSocket,
+				     streamid = new_id()
+				    });
+		_ ->
+		    send_element(StateData,
+		      exmpp_server_compression:failure('unsupported-method')),
+		    fsm_next_state(wait_for_feature_request,
+				   StateData)
 	    end;
 	_ ->
 	    if
 		(SockMod == gen_tcp) and TLSRequired ->
 		    Lang = StateData#state.lang,
-		    send_text(StateData, ?POLICY_VIOLATION_ERR(
-					    Lang,
-					    "Use of STARTTLS required") ++
-					 ?STREAM_TRAILER),
+		    send_element(StateData, exmpp_stream:error(
+			'policy-violation', Lang, "Use of STARTTLS required")),
+		    send_element(StateData, exmpp_stream:closing()),
 		    {stop, normal, StateData};
 		true ->
 		    process_unauthenticated_stanza(StateData, El),
@@ -661,32 +648,31 @@ wait_for_feature_request(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_feature_request({xmlstreamend, _Name}, StateData) ->
-    send_text(StateData, ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_feature_request({xmlstreamerror, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_feature_request(closed, StateData) ->
     {stop, normal, StateData}.
 
 
-wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
-    case {xml:get_attr_s("xmlns", Attrs), Name} of
-	{?NS_SASL, "response"} ->
-	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
+wait_for_sasl_response({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
+  StateData) ->
+    case {NS, Name} of
+	{?NS_SASL, 'response'} ->
+	    {response, ClientIn} = exmpp_server_sasl:next_step(El),
 	    case cyrsasl:server_step(StateData#state.sasl_state,
 				     ClientIn) of
 		{ok, Props} ->
 		    (StateData#state.sockmod):reset_stream(
 		      StateData#state.socket),
-		    send_element(StateData,
-				 {xmlelement, "success",
-				  [{"xmlns", ?NS_SASL}], []}),
-		    U = xml:get_attr_s(username, Props),
-		    AuthModule = xml:get_attr_s(auth_module, Props),
+		    send_element(StateData, exmpp_server_sasl:success()),
+		    U = proplists:get_value(username, Props),
+		    AuthModule = proplists:get_value(auth_module, Props),
 		    ?INFO_MSG("(~w) Accepted authentication for ~s",
 			      [StateData#state.socket, U]),
 		    fsm_next_state(wait_for_stream,
@@ -697,10 +683,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				     user = U});
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
-				 {xmlelement, "challenge",
-				  [{"xmlns", ?NS_SASL}],
-				  [{xmlcdata,
-				    jlib:encode_base64(ServerOut)}]}),
+		      exmpp_server_sasl:challenge(ServerOut)),
 		    fsm_next_state(wait_for_sasl_response,
 		     StateData#state{sasl_state = NewSASLState});
 		{error, Error, Username} ->
@@ -708,16 +691,14 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		       "(~w) Failed authentication for ~s@~s",
 		       [StateData#state.socket,
 			Username, StateData#state.server]),
+		    % XXX OLD FORMAT: list_to_atom(Error).
 		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_SASL}],
-				  [{xmlelement, Error, [], []}]}),
+		      exmpp_server_sasl:failure(list_to_atom(Error))),
 		    fsm_next_state(wait_for_feature_request, StateData);
 		{error, Error} ->
+		    % XXX OLD FORMAT: list_to_atom(Error).
 		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_SASL}],
-				  [{xmlelement, Error, [], []}]}),
+		      exmpp_server_sasl:failure(list_to_atom(Error))),
 		    fsm_next_state(wait_for_feature_request, StateData)
 	    end;
 	_ ->
@@ -729,11 +710,12 @@ wait_for_sasl_response(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_sasl_response({xmlstreamend, _Name}, StateData) ->
-    send_text(StateData, ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_sasl_response({xmlstreamerror, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_sasl_response(closed, StateData) ->
@@ -742,35 +724,25 @@ wait_for_sasl_response(closed, StateData) ->
 
 
 wait_for_bind({xmlstreamelement, El}, StateData) ->
-    case jlib:iq_query_info(El) of
-	#iq{type = set, xmlns = ?NS_BIND, sub_el = SubEl} = IQ ->
-	    U = StateData#state.user,
-	    R1 = xml:get_path_s(SubEl, [{elem, "resource"}, cdata]),
-	    R = case jlib:resourceprep(R1) of
-		    error -> error;
-		    "" ->
-			lists:concat(
-			  [randoms:get_string() | tuple_to_list(now())]);
-		    Resource -> Resource
-		end,
-	    case R of
-		error ->
-		    Err = jlib:make_error_reply(El, ?ERR_BAD_REQUEST),
-		    send_element(StateData, Err),
-		    fsm_next_state(wait_for_bind, StateData);
-		_ ->
-		    JID = jlib:make_jid(U, StateData#state.server, R),
-		    Res = IQ#iq{type = result,
-				sub_el = [{xmlelement, "bind",
-					   [{"xmlns", ?NS_BIND}],
-					   [{xmlelement, "jid", [],
-					     [{xmlcdata,
-					       jlib:jid_to_string(JID)}]}]}]},
-		    send_element(StateData, jlib:iq_to_xml(Res)),
-		    fsm_next_state(wait_for_session,
-				   StateData#state{resource = R, jid = JID})
-	    end;
-	_ ->
+    try
+	U = StateData#state.user,
+	R = case exmpp_server_binding:wished_resource(El) of
+	    undefined ->
+		lists:concat([randoms:get_string() | tuple_to_list(now())]);
+	    Resource ->
+		Resource
+	end,
+	JID = exmpp_jid:make_jid(U, StateData#state.server, R),
+	Res = exmpp_server_binding:bind(El, JID),
+	send_element(StateData, Res),
+	fsm_next_state(wait_for_session,
+		       StateData#state{resource = R, jid = JID})
+    catch
+	throw:{stringprep, resourceprep, _, _} ->
+	    Err = exmpp_server_binding:error(El, 'bad-request'),
+	    send_element(StateData, Err),
+	    fsm_next_state(wait_for_bind, StateData);
+	throw:Exception ->
 	    fsm_next_state(wait_for_bind, StateData)
     end;
 
@@ -778,11 +750,12 @@ wait_for_bind(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_bind({xmlstreamend, _Name}, StateData) ->
-    send_text(StateData, ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_bind({xmlstreamerror, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_bind(closed, StateData) ->
@@ -791,57 +764,58 @@ wait_for_bind(closed, StateData) ->
 
 
 wait_for_session({xmlstreamelement, El}, StateData) ->
-    case jlib:iq_query_info(El) of
-	#iq{type = set, xmlns = ?NS_SESSION} ->
-	    U = StateData#state.user,
-	    R = StateData#state.resource,
-	    JID = StateData#state.jid,
-	    case acl:match_rule(StateData#state.server,
-				StateData#state.access, JID) of
-		allow ->
-		    ?INFO_MSG("(~w) Opened session for ~s",
-			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
-		    SID = {now(), self()},
-		    Conn = get_conn_type(StateData),
-		    Info = [{ip, StateData#state.ip}, {conn, Conn},
-			    {auth_module, StateData#state.auth_module}],
-		    ejabberd_sm:open_session(
-		      SID, U, StateData#state.server, R, Info),
-		    Res = jlib:make_result_iq_reply(El),
-		    send_element(StateData, Res),
-		    change_shaper(StateData, JID),
-		    {Fs, Ts} = ejabberd_hooks:run_fold(
-				 roster_get_subscription_lists,
-				 StateData#state.server,
-				 {[], []},
-				 [U, StateData#state.server]),
-		    LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
-		    Fs1 = [LJID | Fs],
-		    Ts1 = [LJID | Ts],
-		    PrivList =
-			ejabberd_hooks:run_fold(
-			  privacy_get_user_list, StateData#state.server,
-			  #userlist{},
-			  [U, StateData#state.server]),
-		    fsm_next_state(session_established,
-				   StateData#state{
-				     sid = SID,
-				     conn = Conn,
-				     pres_f = ?SETS:from_list(Fs1),
-				     pres_t = ?SETS:from_list(Ts1),
-				     privacy_list = PrivList});
-		_ ->
-		    ejabberd_hooks:run(forbidden_session_hook, 
-				       StateData#state.server, [JID]),
-		    ?INFO_MSG("(~w) Forbidden session for ~s",
-			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
-		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
-		    send_element(StateData, Err),
-		    fsm_next_state(wait_for_session, StateData)
-	    end;
-	_ ->
+    try
+	U = StateData#state.user,
+	R = StateData#state.resource,
+	JID = StateData#state.jid,
+	exmpp_server_session:want_establishment(El),
+	case acl:match_rule(StateData#state.server,
+			    StateData#state.access, JID) of
+	    allow ->
+		?INFO_MSG("(~w) Opened session for ~s",
+			  [StateData#state.socket,
+			   exmpp_jid:jid_to_string(JID)]),
+		SID = {now(), self()},
+		Conn = get_conn_type(StateData),
+		Info = [{ip, StateData#state.ip}, {conn, Conn},
+			{auth_module, StateData#state.auth_module}],
+		ejabberd_sm:open_session(
+		  SID, U, StateData#state.server, R, Info),
+		Res = exmpp_server_session:establish(El),
+		send_element(StateData, Res),
+		change_shaper(StateData, JID),
+		{Fs, Ts} = ejabberd_hooks:run_fold(
+			     roster_get_subscription_lists,
+			     StateData#state.server,
+			     {[], []},
+			     [U, StateData#state.server]),
+		LJID = {JID#jid.lnode, JID#jid.ldomain, ""},
+		Fs1 = [LJID | Fs],
+		Ts1 = [LJID | Ts],
+		PrivList =
+		    ejabberd_hooks:run_fold(
+		      privacy_get_user_list, StateData#state.server,
+		      #userlist{},
+		      [U, StateData#state.server]),
+		fsm_next_state(session_established,
+			       StateData#state{
+				 sid = SID,
+				 conn = Conn,
+				 pres_f = ?SETS:from_list(Fs1),
+				 pres_t = ?SETS:from_list(Ts1),
+				 privacy_list = PrivList});
+	    _ ->
+		ejabberd_hooks:run(forbidden_session_hook, 
+				   StateData#state.server, [JID]),
+		?INFO_MSG("(~w) Forbidden session for ~s",
+			  [StateData#state.socket,
+			   exmpp_jid:jid_to_string(JID)]),
+		Err = exmpp_server_session:error(El, 'not-allowed'),
+		send_element(StateData, Err),
+		fsm_next_state(wait_for_session, StateData)
+	end
+    catch
+	throw:_Exception ->
 	    fsm_next_state(wait_for_session, StateData)
     end;
 
@@ -849,11 +823,12 @@ wait_for_session(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_session({xmlstreamend, _Name}, StateData) ->
-    send_text(StateData, ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_session({xmlstreamerror, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_session(closed, StateData) ->
@@ -861,90 +836,121 @@ wait_for_session(closed, StateData) ->
 
 
 session_established({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, _Els} = El,
-    User = StateData#state.user,
-    Server = StateData#state.server,
-    % TODO: check 'from' attribute in stanza
-    FromJID = StateData#state.jid,
-    To = xml:get_attr_s("to", Attrs),
-    ToJID = case To of
-		"" ->
-		    jlib:make_jid(User, Server, "");
-		_ ->
-		    jlib:string_to_jid(To)
-	    end,
-    NewEl1 = jlib:remove_attr("xmlns", El),
-    NewEl = case xml:get_attr_s("xml:lang", Attrs) of
-		"" ->
-		    case StateData#state.lang of
-			"" -> NewEl1;
-			Lang ->
-			    xml:replace_tag_attr("xml:lang", Lang, NewEl1)
-		    end;
-		_ ->
-		    NewEl1
-	    end,
-    NewState =
-	case ToJID of
-	    error ->
-		case xml:get_attr_s("type", Attrs) of
-		    "error" -> StateData;
-		    "result" -> StateData;
+    try
+	User = StateData#state.user,
+	Server = StateData#state.server,
+	% TODO: check 'from' attribute in stanza
+	FromJID = StateData#state.jid,
+	To = exmpp_stanza:get_recipient(El),
+	ToJID = case To of
+		    "" ->
+			exmpp_jid:make_jid(User, Server, "");
 		    _ ->
-			Err = jlib:make_error_reply(NewEl, ?ERR_JID_MALFORMED),
-			send_element(StateData, Err),
-			StateData
+			exmpp_jid:string_to_jid(To)
+		end,
+	NewEl = case exmpp_stanza:get_lang(El) of
+		    "" ->
+			case StateData#state.lang of
+			    "" -> El;
+			    Lang ->
+				exmpp_stanza:set_lang(El, Lang)
+			end;
+		    _ ->
+			El
+		end,
+	NewState = case El of
+	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence'} ->
+		% XXX OLD FORMAT: NewEl.
+		PresenceElOld = ejabberd_hooks:run_fold(
+			       c2s_update_presence,
+			       Server,
+			       exmpp_xml:xmlel_to_xmlelement(NewEl,
+				 ?DEFAULT_NS, ?PREFIXED_NS),
+			       [User, Server]),
+		PresenceEl = exmpp_xml:xmlelement_to_xmlel(PresenceElOld,
+		  ?DEFAULT_NS, ?PREFIXED_NS),
+		% XXX OLD FORMAT: PresenceElOld.
+		ejabberd_hooks:run(
+		  user_send_packet,
+		  Server,
+		  [FromJID, ToJID, PresenceElOld]),
+		case ToJID of
+		    #jid{node = User,
+			 domain = Server,
+			 resource = ""} ->
+			?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
+			       [FromJID, PresenceEl, StateData]),
+			% XXX OLD FORMAT: PresenceElOld.
+			presence_update(FromJID, PresenceElOld,
+					StateData);
+		    _ ->
+			% XXX OLD FORMAT: PresenceElOld.
+			presence_track(FromJID, ToJID, PresenceElOld,
+				       StateData)
 		end;
-	    _ ->
-		case Name of
-		    "presence" ->
-			PresenceEl = ejabberd_hooks:run_fold(
-				       c2s_update_presence,
-				       Server,
-				       NewEl,
-				       [User, Server]),
+	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'iq'} ->
+		IQ_Content = case exmpp_iq:get_type(El) of
+		    'get' -> exmpp_iq:get_request(El);
+		    'set' -> exmpp_iq:get_request(El);
+		    'result' -> exmpp_iq:get_result(El);
+		    'error'  -> exmpp_stanza:get_error(El)
+		end,
+		case IQ_Content of
+		    #xmlel{ns = ?NS_PRIVACY} = IQ ->
+			% XXX OLD FORMAT: IQ was #iq.
+			process_privacy_iq(
+			  FromJID, ToJID, IQ, StateData);
+		    _ ->
+			% XXX OLD FORMAT: NewElOld.
+			NewElOld = exmpp_xml:xmlel_to_xmlelement(NewEl,
+			  ?DEFAULT_NS, ?PREFIXED_NS),
 			ejabberd_hooks:run(
 			  user_send_packet,
 			  Server,
-			  [FromJID, ToJID, PresenceEl]),
-			case ToJID of
-			    #jid{user = User,
-				 server = Server,
-				 resource = ""} ->
-				?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
-				       [FromJID, PresenceEl, StateData]),
-				presence_update(FromJID, PresenceEl,
-						StateData);
-			    _ ->
-				presence_track(FromJID, ToJID, PresenceEl,
-					       StateData)
-			end;
-		    "iq" ->
-			case jlib:iq_query_info(NewEl) of
-			    #iq{xmlns = ?NS_PRIVACY} = IQ ->
-				process_privacy_iq(
-				  FromJID, ToJID, IQ, StateData);
-			    _ ->
-				ejabberd_hooks:run(
-				  user_send_packet,
-				  Server,
-				  [FromJID, ToJID, NewEl]),
-				ejabberd_router:route(
-				  FromJID, ToJID, NewEl),
-				StateData
-			end;
-		    "message" ->
-			ejabberd_hooks:run(user_send_packet,
-					   Server,
-					   [FromJID, ToJID, NewEl]),
-			ejabberd_router:route(FromJID, ToJID, NewEl),
-			StateData;
-		    _ ->
+			  [FromJID, ToJID, NewElOld]),
+			% XXX OLD FORMAT: NewElOld.
+			ejabberd_router:route(
+			  FromJID, ToJID, NewElOld),
 			StateData
-		end
+		end;
+	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message'} ->
+		% XXX OLD FORMAT: NewElOld.
+		NewElOld = exmpp_xml:xmlel_to_xmlelement(NewEl,
+		  ?DEFAULT_NS, ?PREFIXED_NS),
+		ejabberd_hooks:run(user_send_packet,
+				   Server,
+				   [FromJID, ToJID, NewElOld]),
+		% XXX OLD FORMAT: NewElOld.
+		ejabberd_router:route(FromJID, ToJID, NewElOld),
+		StateData;
+	    _ ->
+		StateData
 	end,
-    ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, El}]),
-    fsm_next_state(session_established, NewState);
+	% XXX OLD FORMAT: El.
+	ElOld = exmpp_xml:xmlel_to_xmlelement(El,
+	  ?DEFAULT_NS, ?PREFIXED_NS),
+	ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, ElOld}]),
+	fsm_next_state(session_established, NewState)
+    catch
+	throw:{stringprep, _, _, _} ->
+	    case exmpp_stanza:get_type(El) of
+		"error" ->
+		    ok;
+		"result" ->
+		    ok;
+		_ ->
+		    Err = exmpp_stanza:reply_with_error(El, 'jid-malformed'),
+		    send_element(StateData, Err)
+	    end,
+	    % XXX OLD FORMAT: ElOld1.
+	    ElOld1 = exmpp_xml:xmlel_to_xmlelement(El,
+	      ?DEFAULT_NS, ?PREFIXED_NS),
+	    ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, ElOld1}]),
+	    fsm_next_state(session_established, StateData);
+	throw:Exception ->
+	    io:format("SESSION ESTABLISHED: Exception=~p~n", [Exception]),
+	    fsm_next_state(session_established, StateData)
+    end;
 
 %% We hibernate the process to reduce memory consumption after a
 %% configurable activity timeout
@@ -956,11 +962,12 @@ session_established(timeout, StateData) ->
     fsm_next_state(session_established, StateData);
 
 session_established({xmlstreamend, _Name}, StateData) ->
-    send_text(StateData, ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 session_established({xmlstreamerror, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 session_established(closed, StateData) ->

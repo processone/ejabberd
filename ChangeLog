@@ -4,6 +4,10 @@
 
 	* src/ejabberd_receiver.erl: Enable the new #xmlel record.
 
+	* src/ejabberd_c2s.erl: First bunch of modifications to use exmpp. All
+	FSM state function are updated. But other functions are not for now.
+	Users are able to connect to ejabberd but some features may not work.
+
 2008-06-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_receiver.erl: Replace the use of xml_stream by
