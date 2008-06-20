@@ -142,7 +142,6 @@
 -define(NS_AUTH, "jabber:iq:auth").
 -define(NS_FEATURE_COMPRESS, "http://jabber.org/features/compress").
 -define(NS_PRIVACY, "jabber:iq:privacy").
--define(NS_VCARD, "vcard-temp").
 
 -define(STREAM_ERROR(Condition),
   exmpp_xml:xmlel_to_xmlelement(exmpp_stream:error(Condition),
@@ -273,9 +272,9 @@ get_subscribed_and_online(FsmRef) ->
 wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
     DefaultLang = case ?MYLANG of
 		      undefined ->
-			  " xml:lang='en'";
+			  "en";
 		      DL ->
-			  " xml:lang='" ++ DL ++ "'"
+			  DL
 		  end,
     Header = exmpp_stream:opening_reply(Opening,
       StateData#state.streamid),
@@ -287,8 +286,9 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
 		    Lang = exmpp_stream:get_lang(Opening),
+		    % OLD FORMAT: JID with empty strings.
 		    change_shaper(StateData,
-		      exmpp_jid:make_jid("", Server, "")),
+		      exmpp_jid:make_bare_jid(undefined, Server)),
 		    case exmpp_stream:get_version(Opening) of
 			{1, 0} ->
 			    send_element(StateData, Header1),
@@ -375,7 +375,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				    send_element(StateData,
 				      exmpp_xml:append_child(Header1,
 					exmpp_stream:error('policy-violation',
-					  Lang, "Use of STARTTLS required"))),
+					  "en", "Use of STARTTLS required"))),
 				    {stop, normal, StateData};
 				true ->
 				    send_element(StateData, Header1),
@@ -437,7 +437,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {_U, _P, _D, ""}} ->
 	    Err = exmpp_stanza:error('not-acceptable',
-	      {StateData#state.lang, "No resource provided"}),
+	      {"en", "No resource provided"}),
 	    send_element(StateData, exmpp_iq:error(El, Err)),
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {U, P, D, R}} ->
@@ -468,7 +468,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				  StateData#state.server,
 				  {[], []},
 				  [U, StateData#state.server]),
-				LJID = {JID#jid.lnode, JID#jid.ldomain, ""},
+				LJID = {JID#jid.lnode, JID#jid.ldomain,
+				  undefined},
 				Fs1 = [LJID | Fs],
 				Ts1 = [LJID | Ts],
 				PrivList = ejabberd_hooks:run_fold(
@@ -633,9 +634,8 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 	_ ->
 	    if
 		(SockMod == gen_tcp) and TLSRequired ->
-		    Lang = StateData#state.lang,
 		    send_element(StateData, exmpp_stream:error(
-			'policy-violation', Lang, "Use of STARTTLS required")),
+			'policy-violation', "en", "Use of STARTTLS required")),
 		    send_element(StateData, exmpp_stream:closing()),
 		    {stop, normal, StateData};
 		true ->
@@ -742,7 +742,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	    Err = exmpp_server_binding:error(El, 'bad-request'),
 	    send_element(StateData, Err),
 	    fsm_next_state(wait_for_bind, StateData);
-	throw:Exception ->
+	throw:_Exception ->
 	    fsm_next_state(wait_for_bind, StateData)
     end;
 
@@ -789,7 +789,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			     StateData#state.server,
 			     {[], []},
 			     [U, StateData#state.server]),
-		LJID = {JID#jid.lnode, JID#jid.ldomain, ""},
+		LJID = {JID#jid.lnode, JID#jid.ldomain, undefined},
 		Fs1 = [LJID | Fs],
 		Ts1 = [LJID | Ts],
 		PrivList =
@@ -805,6 +805,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				 pres_t = ?SETS:from_list(Ts1),
 				 privacy_list = PrivList});
 	    _ ->
+		% OLD FORMAT: Jid may use 'undefined' instead of empty
+		% strings.
 		ejabberd_hooks:run(forbidden_session_hook, 
 				   StateData#state.server, [JID]),
 		?INFO_MSG("(~w) Forbidden session for ~s",
@@ -843,15 +845,15 @@ session_established({xmlstreamelement, El}, StateData) ->
 	FromJID = StateData#state.jid,
 	To = exmpp_stanza:get_recipient(El),
 	ToJID = case To of
-		    "" ->
-			exmpp_jid:make_jid(User, Server, "");
+		    undefined ->
+			exmpp_jid:make_bare_jid(User, Server);
 		    _ ->
 			exmpp_jid:string_to_jid(To)
 		end,
 	NewEl = case exmpp_stanza:get_lang(El) of
-		    "" ->
+		    undefined ->
 			case StateData#state.lang of
-			    "" -> El;
+			    undefined -> El;
 			    Lang ->
 				exmpp_stanza:set_lang(El, Lang)
 			end;
@@ -889,17 +891,12 @@ session_established({xmlstreamelement, El}, StateData) ->
 				       StateData)
 		end;
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'iq'} ->
-		IQ_Content = case exmpp_iq:get_type(El) of
-		    'get' -> exmpp_iq:get_request(El);
-		    'set' -> exmpp_iq:get_request(El);
-		    'result' -> exmpp_iq:get_result(El);
-		    'error'  -> exmpp_stanza:get_error(El)
-		end,
-		case IQ_Content of
-		    #xmlel{ns = ?NS_PRIVACY} = IQ ->
+		case exmpp_iq:get_payload(El) of
+		    #xmlel{ns = ?NS_PRIVACY} ->
 			% XXX OLD FORMAT: IQ was #iq.
+			IQ_Record = exmpp_iq:make_iq_record(El),
 			process_privacy_iq(
-			  FromJID, ToJID, IQ, StateData);
+			  FromJID, ToJID, IQ_Record, StateData);
 		    _ ->
 			% XXX OLD FORMAT: NewElOld.
 			NewElOld = exmpp_xml:xmlel_to_xmlelement(NewEl,
@@ -1018,6 +1015,7 @@ handle_sync_event({get_presence}, _From, StateName, StateData) ->
     fsm_reply(Reply, StateName, StateData);
 
 handle_sync_event(get_subscribed_and_online, _From, StateName, StateData) ->
+    % XXX OLD FORMAT: This function needs update. User has the form {N, D, R}.
     Subscribed = StateData#state.pres_f,
     Online = StateData#state.pres_available,
     Pred = fun(User, _Caps) ->
@@ -1042,15 +1040,13 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
+    % XXX OLD FORMAT: This clause should be removed.
     send_text(StateData, Text),
     ejabberd_hooks:run(c2s_loop_debug, [Text]),
     fsm_next_state(StateName, StateData);
 handle_info(replaced, _StateName, StateData) ->
-    Lang = StateData#state.lang,
-    send_text(StateData,
-	      xml:element_to_string(
-		?SERRT_CONFLICT(Lang, "Replaced by new connection"))
-	      ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('conflict')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData#state{authenticated = replaced}};
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,

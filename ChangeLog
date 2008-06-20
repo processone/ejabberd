@@ -8,6 +8,10 @@
 	FSM state function are updated. But other functions are not for now.
 	Users are able to connect to ejabberd but some features may not work.
 
+	* src/ejabberd_c2s.erl: Change the usage of #state.lang somewhat.
+	Fix value of DefaultLang: it doesn't contain the whole serialized
+	attribute. Use exmpp_jid:make_bare_jid/2 more.
+
 2008-06-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_receiver.erl: Replace the use of xml_stream by
