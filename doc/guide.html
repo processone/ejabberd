@@ -623,7 +623,10 @@ do not allow outgoing sockets on port 5222.<P>If HTTP Polling is enabled, it wil
 is also needed in the Jabber client. Remark also that HTTP Polling can be
 interesting to host a web-based Jabber client such as
 <A HREF="http://jwchat.sourceforge.net/">JWChat</A>.
-</P></DD><DT CLASS="dt-description"><B><TT>inet6</TT></B></DT><DD CLASS="dd-description"> Set up the socket for IPv6.
+</P></DD><DT CLASS="dt-description"><B><TT>inet6</TT></B></DT><DD CLASS="dd-description"> Set up the socket for IPv6 instead of IPv4.
+Note: this option is not required for S2S outgoing connections,
+because when ejabberd attempts to establish a S2S outgoing connection 
+it first tries IPv4, and if that fails it attempts with IPv6.
 </DD><DT CLASS="dt-description"><B><TT>{ip, IPAddress}</TT></B></DT><DD CLASS="dd-description"> This option specifies which network
 interface to listen for. For example <CODE>{ip, {192, 168, 1, 1}}</CODE>.
 </DD><DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B></DT><DD CLASS="dd-description">

@@ -729,7 +729,10 @@ This is a detailed description of each option allowed by the listening modules:
     is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
     interesting to host a web-based \Jabber{} client such as
     \footahref{http://jwchat.sourceforge.net/}{JWChat}.
-  \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6.
+  \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6 instead of IPv4.
+    Note: this option is not required for S2S outgoing connections,
+    because when ejabberd attempts to establish a S2S outgoing connection 
+    it first tries IPv4, and if that fails it attempts with IPv6.
   \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
     interface to listen for. For example \verb|{ip, {192, 168, 1, 1}}|.
     \titem{\{max\_stanza\_size, Size\}}
