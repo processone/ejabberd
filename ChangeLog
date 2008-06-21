@@ -1,6 +1,6 @@
 2008-06-21  Badlop  <badlop@process-one.net>
 
-	* doc/guide.tex: Explain that S2S outgoing first tries IPV4 and if
+	* doc/guide.tex: Explain that S2S outgoing first tries IPv4 and if
 	that fails then tries IPv6
 	* doc/guide.html: Likewise
 
