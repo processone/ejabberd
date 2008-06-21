@@ -271,13 +271,14 @@ process(Handlers, Request) ->
 	    process(HandlersLeft, Request)
     end.
 
-process_request(#state{request_method = 'GET',
+process_request(#state{request_method = Method,
 		       request_path = {abs_path, Path},
 		       request_auth = Auth,
 		       request_lang = Lang,
 		       request_handlers = RequestHandlers,
 		       sockmod = SockMod,
-		       socket = Socket} = State) ->
+		       socket = Socket} = State)
+  when Method=:='GET' orelse Method=:='HEAD' orelse Method=:='DELETE' ->
     case (catch url_decode_q_split(Path)) of
 	{'EXIT', _} ->
 	    process_request(false);
@@ -296,7 +297,7 @@ process_request(#state{request_method = 'GET',
 		    _ ->
 			SockMod:peername(Socket)
 		end,
-	    Request = #request{method = 'GET',
+	    Request = #request{method = Method,
 			       path = LPath,
 			       q = LQuery,
 			       auth = Auth,
@@ -319,7 +320,7 @@ process_request(#state{request_method = 'GET',
 	    end
     end;
 
-process_request(#state{request_method = 'POST',
+process_request(#state{request_method = Method,
 		       request_path = {abs_path, Path},
 		       request_auth = Auth,
 		       request_content_length = Len,
@@ -327,7 +328,7 @@ process_request(#state{request_method = 'POST',
 		       sockmod = SockMod,
 		       socket = Socket,
 		       request_handlers = RequestHandlers} = State)
-  when is_integer(Len) ->
+  when (Method=:='POST' orelse Method=:='PUT') andalso is_integer(Len) ->
     case SockMod of
 	gen_tcp ->
 	    inet:setopts(Socket, [{packet, 0}]);
@@ -347,7 +348,7 @@ process_request(#state{request_method = 'POST',
 			 LQ ->
 			     LQ
 		     end,
-	    Request = #request{method = 'POST',
+	    Request = #request{method = Method,
 			       path = LPath,
 			       q = LQuery,
 			       auth = Auth,
