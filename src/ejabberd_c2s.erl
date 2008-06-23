@@ -871,32 +871,37 @@ session_established({xmlstreamelement, El}, StateData) ->
 			       [User, Server]),
 		PresenceEl = exmpp_xml:xmlelement_to_xmlel(PresenceElOld,
 		  ?DEFAULT_NS, ?PREFIXED_NS),
-		% XXX OLD FORMAT: PresenceElOld.
+		% XXX OLD FORMAT: PresenceElOld, *JID.
+                FromJIDOld = exmpp_jid:to_ejabberd_jid(FromJID),
+                ToJIDOld = exmpp_jid:to_ejabberd_jid(ToJID),
 		ejabberd_hooks:run(
 		  user_send_packet,
 		  Server,
-		  [FromJID, ToJID, PresenceElOld]),
+		  [FromJIDOld, ToJIDOld, PresenceElOld]),
 		case ToJID of
 		    #jid{node = User,
 			 domain = Server,
-			 resource = ""} ->
+			 resource = undefined} ->
 			?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
 			       [FromJID, PresenceEl, StateData]),
 			% XXX OLD FORMAT: PresenceElOld.
-			presence_update(FromJID, PresenceElOld,
+			presence_update(FromJIDOld, PresenceElOld,
 					StateData);
 		    _ ->
 			% XXX OLD FORMAT: PresenceElOld.
-			presence_track(FromJID, ToJID, PresenceElOld,
+			presence_track(FromJIDOld, ToJIDOld, PresenceElOld,
 				       StateData)
 		end;
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'iq'} ->
+                % XXX OLD FORMAT: JIDs.
+                FromJIDOld = exmpp_jid:to_ejabberd_jid(FromJID),
+                ToJIDOld = exmpp_jid:to_ejabberd_jid(ToJID),
 		case exmpp_iq:get_payload(El) of
 		    #xmlel{ns = ?NS_PRIVACY} ->
 			% XXX OLD FORMAT: IQ was #iq.
-			IQ_Record = exmpp_iq:make_iq_record(El),
+			IQ_Record = exmpp_iq:to_ejabberd_iq(El),
 			process_privacy_iq(
-			  FromJID, ToJID, IQ_Record, StateData);
+			  FromJIDOld, ToJIDOld, IQ_Record, StateData);
 		    _ ->
 			% XXX OLD FORMAT: NewElOld.
 			NewElOld = exmpp_xml:xmlel_to_xmlelement(NewEl,
@@ -904,21 +909,23 @@ session_established({xmlstreamelement, El}, StateData) ->
 			ejabberd_hooks:run(
 			  user_send_packet,
 			  Server,
-			  [FromJID, ToJID, NewElOld]),
+			  [FromJIDOld, ToJIDOld, NewElOld]),
 			% XXX OLD FORMAT: NewElOld.
 			ejabberd_router:route(
-			  FromJID, ToJID, NewElOld),
+			  FromJIDOld, ToJIDOld, NewElOld),
 			StateData
 		end;
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message'} ->
-		% XXX OLD FORMAT: NewElOld.
+		% XXX OLD FORMAT: NewElOld, JIDs.
 		NewElOld = exmpp_xml:xmlel_to_xmlelement(NewEl,
 		  ?DEFAULT_NS, ?PREFIXED_NS),
+                FromJIDOld = exmpp_jid:to_ejabberd_jid(FromJID),
+                ToJIDOld = exmpp_jid:to_ejabberd_jid(ToJID),
 		ejabberd_hooks:run(user_send_packet,
 				   Server,
-				   [FromJID, ToJID, NewElOld]),
+				   [FromJIDOld, ToJIDOld, NewElOld]),
 		% XXX OLD FORMAT: NewElOld.
-		ejabberd_router:route(FromJID, ToJID, NewElOld),
+		ejabberd_router:route(FromJIDOld, ToJIDOld, NewElOld),
 		StateData;
 	    _ ->
 		StateData

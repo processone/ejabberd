@@ -1,3 +1,9 @@
+2008-06-23  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_c2s.erl (session_established): Convert JID to the
+	expected form outside of the C2S (empty fields must be set to the
+	empty string). This fixes the broken routing.
+
 2008-06-20  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/configure, src/aclocal.m4, src/Makefile.in: Add exmpp detection.
