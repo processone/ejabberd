@@ -277,8 +277,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 			  DL
 		  end,
     Header = exmpp_stream:opening_reply(Opening,
-      StateData#state.streamid),
-    Header1 = exmpp_stream:set_lang(Header, DefaultLang),
+      StateData#state.streamid, DefaultLang),
     case NS of
 	?NS_XMPP ->
 	    Server = exmpp_stringprep:nameprep(
@@ -291,7 +290,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		      exmpp_jid:make_bare_jid(undefined, Server)),
 		    case exmpp_stream:get_version(Opening) of
 			{1, 0} ->
-			    send_element(StateData, Header1),
+			    send_element(StateData, Header),
 			    case StateData#state.authenticated of
 				false ->
 				    SASLState =
@@ -373,12 +372,12 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				(not StateData#state.tls_enabled) and
 				StateData#state.tls_required ->
 				    send_element(StateData,
-				      exmpp_xml:append_child(Header1,
+				      exmpp_xml:append_child(Header,
 					exmpp_stream:error('policy-violation',
 					  "en", "Use of STARTTLS required"))),
 				    {stop, normal, StateData};
 				true ->
-				    send_element(StateData, Header1),
+				    send_element(StateData, Header),
 				    fsm_next_state(wait_for_auth,
 						   StateData#state{
 						     server = Server,
@@ -386,14 +385,14 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 			    end
 		    end;
 		_ ->
-		    Header2 = exmpp_stream:set_initiating_entity(Header1,
+		    Header2 = exmpp_stream:set_initiating_entity(Header,
 		      ?MYNAME),
 		    send_element(StateData, exmpp_xml:append_child(Header2,
 			exmpp_stream:error('host-unknown'))),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
-	    Header2 = exmpp_stream:set_initiating_entity(Header1, ?MYNAME),
+	    Header2 = exmpp_stream:set_initiating_entity(Header, ?MYNAME),
 	    send_element(StateData, exmpp_xml:append_child(Header2,
 		exmpp_stream:error('invalid-namespace'))),
 	    {stop, normal, StateData}
@@ -1328,26 +1327,29 @@ terminate(_Reason, StateName, StateData) ->
 		replaced ->
 		    ?INFO_MSG("(~w) Replaced session for ~s",
 			      [StateData#state.socket,
-			       jlib:jid_to_string(StateData#state.jid)]),
+			       exmpp_jid:jid_to_string(StateData#state.jid)]),
 		    From = StateData#state.jid,
-		    Packet = {xmlelement, "presence",
-			      [{"type", "unavailable"}],
-			      [{xmlelement, "status", [],
-				[{xmlcdata, "Replaced by new connection"}]}]},
+		    Packet = exmpp_presence:unavailable(),
+		    Packet1 = exmpp_presence:set_status(Packet,
+		      "Replaced by new connection"),
 		    ejabberd_sm:close_session_unset_presence(
 		      StateData#state.sid,
 		      StateData#state.user,
 		      StateData#state.server,
 		      StateData#state.resource,
 		      "Replaced by new connection"),
+		    % XXX OLD FORMAT: From, Packet1
+		    FromOld = exmpp_jid:to_ejabberd_jid(From),
+		    Packet1Old = exmpp_xml:xmlel_to_xmlelement(Packet1,
+		      ?DEFAULT_NS, ?PREFIXED_NS),
 		    presence_broadcast(
-		      StateData, From, StateData#state.pres_a, Packet),
+		      StateData, FromOld, StateData#state.pres_a, Packet1Old),
 		    presence_broadcast(
-		      StateData, From, StateData#state.pres_i, Packet);
+		      StateData, FromOld, StateData#state.pres_i, Packet1Old);
 		_ ->
 		    ?INFO_MSG("(~w) Close session for ~s",
 			      [StateData#state.socket,
-			       jlib:jid_to_string(StateData#state.jid)]),
+			       exmpp_jid:jid_to_string(StateData#state.jid)]),
 
 		    EmptySet = ?SETS:new(),
 		    case StateData of
@@ -1361,8 +1363,11 @@ terminate(_Reason, StateName, StateData) ->
 						      StateData#state.resource);
 			_ ->
 			    From = StateData#state.jid,
-			    Packet = {xmlelement, "presence",
-				      [{"type", "unavailable"}], []},
+			    Packet = exmpp_presence:unavailable(),
+			    % XXX OLD FORMAT: From, Packet.
+			    FromOld = exmpp_jid:to_ejabberd_jid(From),
+			    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
+			      ?DEFAULT_NS, ?PREFIXED_NS),
 			    ejabberd_sm:close_session_unset_presence(
 			      StateData#state.sid,
 			      StateData#state.user,
@@ -1370,9 +1375,9 @@ terminate(_Reason, StateName, StateData) ->
 			      StateData#state.resource,
 			      ""),
 			    presence_broadcast(
-			      StateData, From, StateData#state.pres_a, Packet),
+			      StateData, FromOld, StateData#state.pres_a, PacketOld),
 			    presence_broadcast(
-			      StateData, From, StateData#state.pres_i, Packet)
+			      StateData, FromOld, StateData#state.pres_i, PacketOld)
 		    end
 	    end;
 	_ ->
@@ -2018,5 +2023,4 @@ is_ip_blacklisted({IP,_Port}) ->
     ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).	
 
 short_jid(JID) ->
-    JID1 = exmpp_jid:to_ejabberd_jid(JID),
-    {JID1#jid.lnode, JID1#jid.ldomain, JID1#jid.lresource}.
+    {JID#jid.lnode, JID#jid.ldomain, JID#jid.lresource}.

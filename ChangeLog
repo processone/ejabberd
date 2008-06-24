@@ -5,6 +5,10 @@
 	JID form with empty strings for unspecified fields. Users are able to
 	connect to ejabberd but some features don't seem to work proprerly.
 
+	* src/ejabberd_c2s.erl: Use the new exmpp_stream:opening_reply/3
+	function in wait_for_stream/2. The function terminate/3 is converted
+	to exmpp.
+
 2008-06-23  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl (session_established): Convert JID to the
