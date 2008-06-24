@@ -1,3 +1,10 @@
+2008-06-24  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_c2s.erl: The handle_info clause that treats routing
+	order is now converted. In-memory sets and dict still use the short
+	JID form with empty strings for unspecified fields. Users are able to
+	connect to ejabberd but some features don't seem to work proprerly.
+
 2008-06-23  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl (session_established): Convert JID to the
