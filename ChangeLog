@@ -9,6 +9,8 @@
 	function in wait_for_stream/2. The function terminate/3 is converted
 	to exmpp.
 
+	* src/ejabberd_c2s.erl: Convert all presence-related functions.
+
 2008-06-23  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl (session_established): Convert JID to the
