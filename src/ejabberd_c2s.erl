@@ -981,16 +981,13 @@ handle_sync_event({get_presence}, _From, StateName, StateData) ->
 handle_sync_event(get_subscribed_and_online, _From, StateName, StateData) ->
     Subscribed = StateData#state.pres_f,
     Online = StateData#state.pres_available,
+    % XXX OLF FORMAT: short JID with empty string(s).
     Pred = fun({U, S, _R} = User, _Caps) ->
-		   ?SETS:is_element({U, S, undefined},
+		   ?SETS:is_element({U, S, ""},
 				    Subscribed) orelse
 		       ?SETS:is_element(User, Subscribed)
 	   end,
-    % XXX OLD FORMAT: Resource is "".
-    Old = fun({U, S, undefined}, _Caps) -> {U, S, ""};
-	     (User, _Caps)              -> User
-          end,
-    SubscribedAndOnline = ?DICT:map(Old, ?DICT:filter(Pred, Online)),
+    SubscribedAndOnline = ?DICT:filter(Pred, Online),
     io:format("===== SubscribedAndOnline = ~p~n", [SubscribedAndOnline]),
     {reply, ?DICT:to_list(SubscribedAndOnline), StateName, StateData};
 

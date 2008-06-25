@@ -3,6 +3,9 @@
 	* src/ejabberd_c2s.erl: Finish ejabberd_c2s conversion with the
 	functions related to offline stanzas.
 
+	* src/ejabberd_c2s.erl (get_subscribed_and_online): Fix short JID
+	comparison; it was using 'undefined' instead of empty strings.
+
 2008-06-24  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: The handle_info clause that treats routing
