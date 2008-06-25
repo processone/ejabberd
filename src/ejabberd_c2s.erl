@@ -851,12 +851,8 @@ session_established({xmlstreamelement, El}, StateData) ->
 		ToJIDOld = exmpp_jid:to_ejabberd_jid(ToJID),
 		case exmpp_iq:get_payload(El) of
 		    #xmlel{ns = ?NS_JABBER_PRIVACY} ->
-			% XXX OLD FORMAT: IQ was #iq.
-			ElOld2 = exmpp_xml:xmlel_to_xmlelement(El,
-			  ?DEFAULT_NS, ?PREFIXED_NS),
-			IQ = jlib:iq_query_info(ElOld2),
 			process_privacy_iq(
-			  FromJIDOld, ToJIDOld, IQ, StateData);
+			  FromJID, ToJID, El, StateData);
 		    _ ->
 			% XXX OLD FORMAT: NewElOld.
 			NewElOld = exmpp_xml:xmlel_to_xmlelement(NewEl,
@@ -1894,21 +1890,28 @@ update_priority(Priority, Packet, StateData) ->
 			     Info).
 
 process_privacy_iq(From, To,
-		   #iq{type = Type, sub_el = SubEl} = IQ,
+		   El,
 		   StateData) ->
+    % XXX OLD FORMAT: IQ is #iq.
+    ElOld = exmpp_xml:xmlel_to_xmlelement(El,
+      ?DEFAULT_NS, ?PREFIXED_NS),
+    IQOld = jlib:iq_query_info(ElOld),
+    % XXX OLD FORMAT: JIDs.
+    FromOld = exmpp_jid:to_ejabberd_jid(From),
+    ToOld = exmpp_jid:to_ejabberd_jid(To),
     {Res, NewStateData} =
-	case Type of
+	case exmpp_iq:get_type(El) of
 	    get ->
 		R = ejabberd_hooks:run_fold(
 		      privacy_iq_get, StateData#state.server,
 		      {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
-		      [From, To, IQ, StateData#state.privacy_list]),
+		      [FromOld, ToOld, IQOld, StateData#state.privacy_list]),
 		{R, StateData};
 	    set ->
 		case ejabberd_hooks:run_fold(
 		       privacy_iq_set, StateData#state.server,
 		       {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
-		       [From, To, IQ]) of
+		       [FromOld, ToOld, IQOld]) of
 		    {result, R, NewPrivList} ->
 			{{result, R},
 			 StateData#state{privacy_list = NewPrivList}};
@@ -1917,13 +1920,20 @@ process_privacy_iq(From, To,
 	end,
     IQRes =
 	case Res of
-	    {result, Result} ->
-		IQ#iq{type = result, sub_el = Result};
-	    {error, Error} ->
-		IQ#iq{type = error, sub_el = [SubEl, Error]}
+	    {result, ResultOld} ->
+		Result = exmpp_xml:xmlelement_to_xmlel(ResultOld,
+		  ?DEFAULT_NS, ?PREFIXED_NS),
+		exmpp_iq:result(El, Result);
+	    {error, ErrorOld} ->
+		Error = exmpp_xml:xmlelement_to_xmlel(ErrorOld,
+		  ?DEFAULT_NS, ?PREFIXED_NS),
+		exmpp_iq:error(El, Error)
 	end,
+    % XXX OLD FORMAT: To, From, IQRes.
+    IQResOld = exmpp_xml:xmlel_to_xmlelement(IQRes,
+      ?DEFAULT_NS, ?PREFIXED_NS),
     ejabberd_router:route(
-      To, From, jlib:iq_to_xml(IQRes)),
+      ToOld, FromOld, IQResOld),
     NewStateData.
 
 
@@ -1935,16 +1945,18 @@ resend_offline_messages(#state{user = User,
 				 [],
 				 [User, Server]) of
 	Rs when list(Rs) ->
+	    % XXX OLD FORMAT: From, To, Packet.
+	    % XXX OLD FORMAT ON DISK!
 	    lists:foreach(
 	      fun({route,
-		   From, To, {xmlelement, Name, Attrs, Els} = Packet}) ->
+		   FromOld, ToOld, PacketOld}) ->
 		      Pass = case ejabberd_hooks:run_fold(
 				    privacy_check_packet, Server,
 				    allow,
 				    [User,
 				     Server,
 				     PrivList,
-				     {From, To, Packet},
+				     {FromOld, ToOld, PacketOld},
 				     in]) of
 				 allow ->
 				     true;
@@ -1953,12 +1965,17 @@ resend_offline_messages(#state{user = User,
 			     end,
 		      if
 			  Pass ->
-			      Attrs2 = jlib:replace_from_to_attrs(
-					 jlib:jid_to_string(From),
-					 jlib:jid_to_string(To),
-					 Attrs),
+			      % XXX OLD FORMAT: From, To, Packet.
+			      From = exmpp_jid:from_ejabberd_jid(FromOld),
+			      To = exmpp_jid:from_ejabberd_jid(ToOld),
+			      Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
+				?DEFAULT_NS, ?PREFIXED_NS),
+			      Attrs1 = exmpp_stanza:set_sender_in_attrs(
+				Packet#xmlel.attrs, From),
+			      Attrs2 = exmpp_stanza:set_recipient_in_attrs(
+				Attrs1, To),
 			      send_element(StateData,
-					   {xmlelement, Name, Attrs2, Els});
+					   Packet#xmlel{attrs = Attrs2});
 			  true ->
 			      ok
 		      end
@@ -1972,32 +1989,39 @@ resend_subscription_requests(#state{user = User,
 			     Server,
 			     [],
 			     [User, Server]),
-    lists:foreach(fun(XMLPacket) ->
+    % XXX OLD FORMAT: XMLPacket.
+    % XXX OLD FORMAT ON DISK!
+    lists:foreach(fun(XMLPacketOld) ->
+			  XMLPacket = exmpp_xml:xmlelement_to_xmlel(
+			    XMLPacketOld, ?DEFAULT_NS, ?PREFIXED_NS),
 			  send_element(StateData,
 				       XMLPacket)
 		  end,
 		  PendingSubscriptions).
 
 process_unauthenticated_stanza(StateData, El) ->
-    case jlib:iq_query_info(El) of
+    ElOld = exmpp_xml:xmlel_to_xmlelement(El, ?DEFAULT_NS, ?PREFIXED_NS),
+    case jlib:iq_query_info(ElOld) of
 	#iq{} = IQ ->
-	    Res = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
+	    ResOld = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
 					  StateData#state.server,
 					  empty,
 					  [StateData#state.server, IQ,
 					   StateData#state.ip]),
-	    case Res of
+	    case ResOld of
 		empty ->
 		    % The only reasonable IQ's here are auth and register IQ's
 		    % They contain secrets, so don't include subelements to response
-		    ResIQ = IQ#iq{type = error,
-				  sub_el = [?ERR_SERVICE_UNAVAILABLE]},
-		    Res1 = jlib:replace_from_to(
-			     jlib:make_jid("", StateData#state.server, ""),
-			     jlib:make_jid("", "", ""),
-			     jlib:iq_to_xml(ResIQ)),
-		    send_element(StateData, jlib:remove_attr("to", Res1));
+		    ResIQ = exmpp_iq:error_without_original(El,
+		      exmpp_stanza:error(El#xmlel.ns, 'service-unavailable')),
+		    Res1 = exmpp_stanza:set_sender(ResIQ,
+		      exmpp_jid:make_bare_jid(undefined,
+			StateData#state.server)),
+		    Res2 = exmpp_stanza:remove_recipient(Res1),
+		    send_element(StateData, Res2);
 		_ ->
+		    Res = exmpp_xml:xmlelement_to_xmlel(ResOld,
+		      ?DEFAULT_NS, ?PREFIXED_NS),
 		    send_element(StateData, Res)
 	    end;
 	_ ->
