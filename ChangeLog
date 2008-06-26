@@ -13,6 +13,8 @@
 	(send_element): For stanzas under the NS_JABBER_SERVER namespace, lie
 	to exmpp_xml by telling it that this namespace is the default one.
 
+	* src/ejabberd_s2s_in.erl, src/ejabberd_s2s_out.erl: Convert to exmpp.
+
 2008-06-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Finish ejabberd_c2s conversion with the
