@@ -94,11 +94,11 @@
 
 %-define(DBGFSM, true).
 
-%-ifdef(DBGFSM).
+-ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
-%-else.
-%-define(FSMOPTS, []).
-%-endif.
+-else.
+-define(FSMOPTS, []).
+-endif.
 
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
@@ -116,7 +116,7 @@
 
 % These are the namespace already declared by the stream opening. This is
 % used at serialization time.
--define(DEFAULT_NS, ['jabber:client']).
+-define(DEFAULT_NS, [?NS_JABBER_CLIENT]).
 -define(PREFIXED_NS, [{?NS_XMPP, "stream"}]).
 
 % XXX OLD FORMAT
@@ -126,7 +126,6 @@
   exmpp_xml:xmlel_to_xmlelement(exmpp_stanza:error(Condition),
     [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
 -define(ERR_FEATURE_NOT_IMPLEMENTED, ?STANZA_ERROR('feature-not-implemented')).
--define(ERR_SERVICE_UNAVAILABLE, ?STANZA_ERROR('service-unavialable')).
 
 -record(iq, {id = "",
              type,
@@ -387,7 +386,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    send_element(StateData,
 	      exmpp_server_legacy_auth:fields(El, Fields)),
 	    fsm_next_state(wait_for_auth, StateData);
-	{auth, _ID, set, {_U, _P, _D, ""}} ->
+	{auth, _ID, set, {_U, _P, _D, undefined}} ->
 	    Err = exmpp_stanza:error('not-acceptable',
 	      {"en", "No resource provided"}),
 	    send_element(StateData, exmpp_iq:error(El, Err)),
@@ -988,7 +987,6 @@ handle_sync_event(get_subscribed_and_online, _From, StateName, StateData) ->
 		       ?SETS:is_element(User, Subscribed)
 	   end,
     SubscribedAndOnline = ?DICT:filter(Pred, Online),
-    io:format("===== SubscribedAndOnline = ~p~n", [SubscribedAndOnline]),
     {reply, ?DICT:to_list(SubscribedAndOnline), StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
@@ -1021,7 +1019,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
     To = exmpp_jid:from_ejabberd_jid(ToOld),
     {Pass, NewAttrs, NewState} =
 	case Packet of
-	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = Attrs} ->
+	    #xmlel{attrs = Attrs} when ?IS_PRESENCE(Packet) ->
 		case exmpp_presence:get_type(Packet) of
 		    'probe' ->
 			% XXX OLD FORMAT: LFrom and LBFrom.
@@ -1172,7 +1170,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 		    _ ->
 			{false, Attrs, StateData}
 		end;
-	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'iq', attrs = Attrs} ->
+	    #xmlel{attrs = Attrs} when ?IS_IQ(Packet) ->
 		case exmpp_iq:is_request(Packet) of
 		    true ->
 			case exmpp_iq:get_request(Packet) of
@@ -1224,7 +1222,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 		    false ->
 			{true, Attrs, StateData}
 		end;
-	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', attrs = Attrs} ->
+	    #xmlel{attrs = Attrs} when ?IS_MESSAGE(Packet) ->
 		% XXX OLD FORMAT: From, To and Packet.
 		case ejabberd_hooks:run_fold(
 		       privacy_check_packet, StateData#state.server,
@@ -1350,8 +1348,14 @@ send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
+send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->
+    send_text(StateData, exmpp_xml:document_to_list(El));
+send_element(StateData, #xmlel{ns = ?NS_JABBER_SERVER} = El) ->
+    send_text(StateData, exmpp_xml:document_fragment_to_list(El,
+      [?NS_JABBER_SERVER], ?PREFIXED_NS));
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, exmpp_xml:document_fragment_to_list(El,
+      ?DEFAULT_NS, ?PREFIXED_NS)).
 
 
 new_id() ->
@@ -1366,7 +1370,7 @@ is_auth_packet(El) ->
 	#iq{id = ID, type = Type, xmlns = ?NS_AUTH, sub_el = SubEl} ->
 	    {xmlelement, _, _, Els} = SubEl,
 	    {auth, ID, Type,
-	     get_auth_tags(Els, "", "", "", "")};
+	     get_auth_tags(Els, "", "", "", undefined)};
 	_ ->
 	    false
     end.

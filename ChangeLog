@@ -1,3 +1,18 @@
+2008-06-26  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_c2s.erl: Use a macro in ?DEFAULT_NS instead of the
+	namespace atom directly. Comment DBGFSM our again. Remove macro
+	ERR_SERVICE_UNAVAILABLE.
+	(wait_for_auth, is_auth_packet): An empty resource is returned as
+	'undefined', not the empty string in the {auth, ...} tuple.
+	(handle_sync_event): Remove a debugging printf.
+	(handle_info/{route, ...}): Use macro IS_PRESENCE & friends instead of
+	direct matching with NS_JABBER_CLIENT and name. This way, the S2S
+	doesn't have to change the namespace of all its incoming stanzas to
+	NS_JABBER_CLIENT.
+	(send_element): For stanzas under the NS_JABBER_SERVER namespace, lie
+	to exmpp_xml by telling it that this namespace is the default one.
+
 2008-06-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Finish ejabberd_c2s conversion with the
