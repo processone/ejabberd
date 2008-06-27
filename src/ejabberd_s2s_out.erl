@@ -101,8 +101,11 @@
 
 % These are the namespace already declared by the stream opening. This is
 % used at serialization time.
--define(DEFAULT_NS, [?NS_JABBER_SERVER]).
--define(PREFIXED_NS, [{?NS_XMPP, "stream"}, {?NS_JABBER_DIALBACK, "db"}]).
+-define(DEFAULT_NS, ?NS_JABBER_SERVER).
+-define(PREFIXED_NS, [
+  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
+]).
+
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -263,7 +266,7 @@ open_socket1(Addr, Port) ->
 
 wait_for_stream({xmlstreamstart, Opening}, StateData) ->
     case {exmpp_stream:get_default_ns(Opening),
-	  exmpp_xml:is_ns_declared_here(Opening, ?NS_JABBER_DIALBACK),
+	  exmpp_xml:is_ns_declared_here(Opening, ?NS_DIALBACK),
 	  exmpp_stream:get_version(Opening) == {1, 0}} of
 	{?NS_JABBER_SERVER, true, false} ->
 	    send_db_request(StateData);
@@ -786,13 +789,13 @@ send_text(StateData, Text) ->
     ejabberd_socket:send(StateData#state.socket, Text).
 
 send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->
-    send_text(StateData, exmpp_xml:document_to_list(El));
+    send_text(StateData, exmpp_stream:to_list(El));
 send_element(StateData, #xmlel{ns = ?NS_JABBER_CLIENT} = El) ->
-    send_text(StateData, exmpp_xml:document_fragment_to_list(El,
-      [?NS_JABBER_CLIENT], ?PREFIXED_NS));
+    send_text(StateData, exmpp_stanza:to_list(El,
+	?NS_JABBER_CLIENT, ?PREFIXED_NS));
 send_element(StateData, El) ->
-    send_text(StateData, exmpp_xml:document_fragment_to_list(El,
-      ?DEFAULT_NS, ?PREFIXED_NS)).
+    send_text(StateData, exmpp_stanza:to_list(El,
+	?DEFAULT_NS, ?PREFIXED_NS)).
 
 send_queue(StateData, Q) ->
     case queue:out(Q) of
@@ -888,14 +891,14 @@ send_db_request(StateData) ->
     {next_state, wait_for_validation, StateData#state{new = New}, ?FSMTIMEOUT*6}.
 
 
-is_verify_res(#xmlel{ns = ?NS_JABBER_DIALBACK, name = 'result',
+is_verify_res(#xmlel{ns = ?NS_DIALBACK, name = 'result',
   attrs = Attrs}) ->
     {result,
      exmpp_stanza:get_recipient_from_attrs(Attrs),
      exmpp_stanza:get_sender_from_attrs(Attrs),
      exmpp_stanza:get_id_from_attrs(Attrs),
      exmpp_stanza:get_type_from_attrs(Attrs)};
-is_verify_res(#xmlel{ns = ?NS_JABBER_DIALBACK, name = 'verify',
+is_verify_res(#xmlel{ns = ?NS_DIALBACK, name = 'verify',
   attrs = Attrs}) ->
     {verify,
      exmpp_stanza:get_recipient_from_attrs(Attrs),

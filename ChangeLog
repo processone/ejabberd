@@ -1,3 +1,9 @@
+2008-06-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_c2s.erl, src/ejabberd_s2s_out.erl,
+	src/ejabberd_s2s_in.erl: Use the new exmpp namespace macro names.
+	Update send_element/2 to use exmpp new to_list functions.
+
 2008-06-26  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Use a macro in ?DEFAULT_NS instead of the
