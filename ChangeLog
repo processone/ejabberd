@@ -1,3 +1,8 @@
+2008-06-28  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Allow to store room
+	description (thanks to Christopher Dupont)(EJAB-670)
+
 2008-06-21  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_http.erl: Support PUT and DELETE methods in

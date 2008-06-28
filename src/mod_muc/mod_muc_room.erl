@@ -59,6 +59,7 @@
 -record(lqueue, {queue, len, max}).
 
 -record(config, {title = "",
+		 description = "",
 		 allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
@@ -2614,7 +2615,10 @@ get_config(Lang, StateData, From) ->
 	    [{xmlcdata, "http://jabber.org/protocol/muc#roomconfig"}]}]},
 	 ?STRINGXFIELD("Room title",
 		       "muc#roomconfig_roomname",
-		       Config#config.title)
+		       Config#config.title),
+	 ?STRINGXFIELD("Room description",
+		       "muc#roomconfig_roomdesc",
+		       Config#config.description)
 	] ++
 	 case acl:match_rule(StateData#state.server_host, AccessPersistent, From) of
 		allow ->
@@ -2761,6 +2765,8 @@ set_xoption([], Config) ->
     Config;
 set_xoption([{"muc#roomconfig_roomname", [Val]} | Opts], Config) ->
     ?SET_STRING_XOPT(title, Val);
+set_xoption([{"muc#roomconfig_roomdesc", [Val]} | Opts], Config) ->
+    ?SET_STRING_XOPT(description, Val);
 set_xoption([{"muc#roomconfig_changesubject", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_change_subj, Val);
 set_xoption([{"allow_query_users", [Val]} | Opts], Config) ->
@@ -2856,6 +2862,7 @@ set_opts([], StateData) ->
 set_opts([{Opt, Val} | Opts], StateData) ->
     NSD = case Opt of
 	      title -> StateData#state{config = (StateData#state.config)#config{title = Val}};
+	      description -> StateData#state{config = (StateData#state.config)#config{description = Val}};
 	      allow_change_subj -> StateData#state{config = (StateData#state.config)#config{allow_change_subj = Val}};
 	      allow_query_users -> StateData#state{config = (StateData#state.config)#config{allow_query_users = Val}};
 	      allow_private_messages -> StateData#state{config = (StateData#state.config)#config{allow_private_messages = Val}};
@@ -2895,6 +2902,7 @@ make_opts(StateData) ->
     Config = StateData#state.config,
     [
      ?MAKE_CONFIG_OPT(title),
+     ?MAKE_CONFIG_OPT(description),
      ?MAKE_CONFIG_OPT(allow_change_subj),
      ?MAKE_CONFIG_OPT(allow_query_users),
      ?MAKE_CONFIG_OPT(allow_private_messages),
@@ -2991,9 +2999,12 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
 
 iq_disco_info_extras(Lang, StateData) ->
     Len = length(?DICT:to_list(StateData#state.users)),
+    RoomDescription = (StateData#state.config)#config.description,
     [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "result"}],
       [?RFIELDT("hidden", "FORM_TYPE",
 		"http://jabber.org/protocol/muc#roominfo"),
+       ?RFIELD("Room description", "muc#roominfo_description",
+	       RoomDescription),
        ?RFIELD("Number of occupants", "muc#roominfo_occupants",
 	       integer_to_list(Len))
       ]}].
