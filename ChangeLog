@@ -1,3 +1,8 @@
+2008-06-29  Badlop  <badlop@process-one.net>
+
+	* src/mod_pubsub/node_pep.erl: Complain if mod_caps disabled and
+	mod_pubsub has PEP plugin enabled (EJAB-677)
+
 2008-06-28  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Allow to store room
