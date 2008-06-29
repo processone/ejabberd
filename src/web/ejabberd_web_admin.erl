@@ -2022,7 +2022,7 @@ node_backup_parse_query(Node, Query) ->
 					  rpc:call(Node, mnesia,
 						   install_fallback, [Path]);
 				      "dump" ->
-					  rpc:call(Node, mnesia,
+					  rpc:call(Node, ejabberd_ctl,
 						   dump_to_textfile, [Path]);
 				      "load" ->
 					  rpc:call(Node, mnesia,
