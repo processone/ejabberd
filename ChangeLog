@@ -1,5 +1,8 @@
 2008-06-29  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_ctl.erl: Web Admin and Ad-hoc admin: dump only
+	persistent tables (EJAB-678)
+
 	* src/mod_pubsub/node_pep.erl: Complain if mod_caps disabled and
 	mod_pubsub has PEP plugin enabled (EJAB-677)
 

@@ -1416,7 +1416,7 @@ set_form(_From, _Host, ["running nodes", ENode, "backup", "textfile"], _Lang, XD
 		false ->
 		    {error, ?ERR_BAD_REQUEST};
 		{value, {_, [String]}} ->
-		    case rpc:call(Node, mnesia, dump_to_textfile, [String]) of
+		    case rpc:call(Node, ejabberd_ctl, dump_to_textfile, [String]) of
 			{badrpc, _Reason} ->
 			    {error, ?ERR_INTERNAL_SERVER_ERROR};
 			{error, _Reason} ->

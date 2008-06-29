@@ -30,6 +30,7 @@
 -export([start/0,
 	 init/0,
 	 process/1,
+	 dump_to_textfile/1,
 	 register_commands/3,
 	 register_commands/4,
 	 unregister_commands/3,
