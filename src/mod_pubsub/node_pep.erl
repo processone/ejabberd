@@ -29,6 +29,7 @@
 -module(node_pep).
 -author('christophe.romain@process-one.net').
 
+-include("ejabberd.hrl").
 -include("pubsub.hrl").
 -include("jlib.hrl").
 
@@ -64,6 +65,7 @@
 
 init(Host, ServerHost, Opts) ->
     node_default:init(Host, ServerHost, Opts),
+    complain_if_modcaps_disabled(ServerHost),
     ok.
 
 terminate(Host, ServerHost) ->
@@ -204,3 +206,24 @@ get_item(Host, Node, ItemId) ->
 
 set_item(Item) ->
     node_default:set_item(Item).
+ 
+
+%%%
+%%% Internal
+%%%
+
+%% @doc Check mod_caps is enabled, otherwise show warning.
+%% The PEP plugin for mod_pubsub requires mod_caps to be enabled in the host.
+%% Check that the mod_caps module is enabled in that Jabber Host
+%% If not, show a warning message in the ejabberd log file.
+complain_if_modcaps_disabled(ServerHost) ->
+    Modules = ejabberd_config:get_local_option({modules, ServerHost}),
+    ModCaps = [mod_caps_enabled || {mod_caps, _Opts} <- Modules],
+    case ModCaps of
+	[] ->
+	    ?WARNING_MSG("The PEP plugin is enabled in mod_pubsub of host ~p. "
+			 "This plugin requires mod_caps to be enabled, "
+			 "but it isn't.", [ServerHost]);
+	_ ->
+	    ok
+    end.
