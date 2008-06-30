@@ -9,6 +9,9 @@
 
 	* src/ejabberd_s2s.erl: Convert to exmpp.
 
+	* src/jlib.erl: Add function to convert to and from old ejabberd #jid
+	record. Move function short_jid/1 from ejabberd_c2s.
+
 2008-06-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl, src/ejabberd_s2s_out.erl,
