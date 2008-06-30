@@ -7,6 +7,8 @@
 	src/ejabberd_s2s_out.erl: Use -include_lib instead of -include to
 	include exmpp.hrl.
 
+	* src/ejabberd_s2s.erl: Convert to exmpp.
+
 2008-06-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl, src/ejabberd_s2s_out.erl,
