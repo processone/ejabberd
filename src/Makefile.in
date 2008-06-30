@@ -12,7 +12,7 @@ ERLANG_CFLAGS= @ERLANG_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
-ERLC_FLAGS += @ERLANG_SSL39@ -I@ERLANG_EXMPP@/include
+ERLC_FLAGS += @ERLANG_SSL39@
 
 ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 # make debug=true to compile Erlang module with debug informations.

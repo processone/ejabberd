@@ -1,3 +1,12 @@
+2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/Makefile.in: Remove the -I flag for exmpp includes; the
+	-include_lib pragma is a better solution.
+
+	* src/ejabberd_c2s.erl, src/ejabberd_s2s_in.erl,
+	src/ejabberd_s2s_out.erl: Use -include_lib instead of -include to
+	include exmpp.hrl.
+
 2008-06-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl, src/ejabberd_s2s_out.erl,

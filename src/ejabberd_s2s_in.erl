@@ -46,7 +46,7 @@
 	 handle_info/3,
 	 terminate/3]).
 
- -include("exmpp.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
 -ifdef(SSL39).

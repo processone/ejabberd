@@ -54,7 +54,7 @@
 	 code_change/4,
 	 test_get_addr_port/1]).
 
--include("exmpp.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
 
