@@ -241,7 +241,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				   SockMod == gen_tcp ->
 	    ?DEBUG("starttls", []),
 	    Socket = StateData#state.socket,
-	    Proceed = exmpp_xml:document_fragment_to_list(
+	    Proceed = exmpp_xml:node_to_list(
 	      exmpp_server_tls:proceed(), [?DEFAULT_NS], ?PREFIXED_NS),
 	    TLSOpts = StateData#state.tls_options,
 	    TLSSocket = (StateData#state.sockmod):starttls(
@@ -408,8 +408,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					(Name == 'message') or
 					(Name == 'presence')) ->
 					    % XXX OLD FORMAT: From, To.
-					    FromOld = exmpp_jid:to_ejabberd_jid(From),
-					    ToOld = exmpp_jid:to_ejabberd_jid(To),
+					    FromOld = jlib:to_old_jid(From),
+					    ToOld = jlib:to_old_jid(To),
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
 					      LFrom,
@@ -431,8 +431,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					(Name == 'message') or
 					(Name == 'presence')) ->
 					    % XXX OLD FORMAT: From, To.
-					    FromOld = exmpp_jid:to_ejabberd_jid(From),
-					    ToOld = exmpp_jid:to_ejabberd_jid(To),
+					    FromOld = jlib:to_old_jid(From),
+					    ToOld = jlib:to_old_jid(To),
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
 					      LFrom,
@@ -574,7 +574,7 @@ send_element(StateData, El) ->
 
 change_shaper(StateData, Host, JID) ->
     % XXX OLD FORMAT: JIDOld is an old #jid.
-    JIDOld = exmpp_jid:to_ejabberd_jid(JID),
+    JIDOld = jlib:to_old_jid(JID),
     Shaper = acl:match_rule(Host, StateData#state.shaper, JIDOld),
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 

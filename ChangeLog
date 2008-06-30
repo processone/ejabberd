@@ -12,6 +12,10 @@
 	* src/jlib.erl: Add function to convert to and from old ejabberd #jid
 	record. Move function short_jid/1 from ejabberd_c2s.
 
+	* src/ejabberd_c2s.erl, src/ejabberd_s2s.erl, src/ejabberd_s2s_in.erl,
+	src/ejabberd_s2s_out.erl: Use the new functions from jlib. Use the new
+	exmpp_xml:node_to_list/3.
+
 2008-06-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl, src/ejabberd_s2s_out.erl,

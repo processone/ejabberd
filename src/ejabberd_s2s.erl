@@ -76,8 +76,8 @@ start_link() ->
 
 route(FromOld, ToOld, PacketOld) ->
     % XXX OLD FORMAT: From, To, Packet.
-    From = exmpp_jid:from_ejabberd_jid(FromOld),
-    To = exmpp_jid:from_ejabberd_jid(ToOld),
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
     Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
       [?DEFAULT_NS], ?PREFIXED_NS),
     case catch do_route(From, To, Packet) of
@@ -216,8 +216,8 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     {noreply, State};
 handle_info({route, FromOld, ToOld, PacketOld}, State) ->
     % XXX OLD FORMAT: From, To, Packet
-    From = exmpp_jid:from_ejabberd_jid(FromOld),
-    To = exmpp_jid:from_ejabberd_jid(ToOld),
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
     Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
       [?NS_JABBER_CLIENT], [{?NS_XMPP, ?NS_XMPP_pfx}]),
     case catch do_route(From, To, Packet) of
@@ -268,8 +268,8 @@ do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
            [From, To, Packet, 8]),
     % XXX OLD FORMAT: From, To.
-    FromOld = exmpp_jid:to_ejabberd_jid(From),
-    ToOld = exmpp_jid:to_ejabberd_jid(To),
+    FromOld = jlib:to_old_jid(From),
+    ToOld = jlib:to_old_jid(To),
     case find_connection(From, To) of
 	{atomic, Pid} when pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
