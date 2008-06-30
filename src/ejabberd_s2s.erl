@@ -292,10 +292,7 @@ do_route(From, To, Packet) ->
 		_ ->
                     Err = exmpp_stanza:reply_with_error(Packet,
                       exmpp_stanza:error('service-unavailable')),
-                    % XXX OLD FORMAT: Err.
-                    ErrOld = exmpp_xml:xmlel_to_xmlelement(Err,
-                      [?DEFAULT_NS], ?PREFIXED_NS),
-		    ejabberd_router:route(ToOld, FromOld, ErrOld)
+		    ejabberd_router:route(To, From, Err)
 	    end,
 	    false
     end.

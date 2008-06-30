@@ -16,6 +16,16 @@
 	src/ejabberd_s2s_out.erl: Use the new functions from jlib. Use the new
 	exmpp_xml:node_to_list/3.
 
+	* src/ejabberd_router.erl: Before doing any routing, the router print
+	a warning if old structures are used. Then it converts the structures
+	to the old format and route them. The router doesn't care about the
+	structures format but the conversion is necesary for code called from
+	this module.
+
+	* src/ejabberd_c2s.erl, src/ejabberd_s2s.erl, src/ejabberd_s2s_in.erl,
+	src/ejabberd_s2s_out.erl: No conversion is done before calling
+	ejabberd_router:route/3.
+
 2008-06-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl, src/ejabberd_s2s_out.erl,

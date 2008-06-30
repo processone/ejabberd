@@ -415,7 +415,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					      LFrom,
 					      [FromOld, ToOld, ElOld]),
 					    ejabberd_router:route(
-					      FromOld, ToOld, ElOld);
+					      From, To, El);
 				       true ->
 					    error
 				    end;
@@ -438,7 +438,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					      LFrom,
 					      [FromOld, ToOld, ElOld]),
 					    ejabberd_router:route(
-					      FromOld, ToOld, ElOld);
+					      From, To, El);
 				       true ->
 					    error
 				    end;

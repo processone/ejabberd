@@ -46,8 +46,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -record(route, {domain, pid, local_hint}).
 -record(state, {}).
@@ -64,7 +65,27 @@ start_link() ->
 
 
 route(From, To, Packet) ->
-    case catch do_route(From, To, Packet) of
+    % XXX OLD FORMAT: This code helps to detect old format routing.
+    {FromOld, ToOld, PacketOld} = case Packet of
+        #xmlelement{} ->
+            catch throw(for_stacktrace), % To have a stacktrace.
+            io:format("~nROUTE: old #xmlelement:~n~p~n~p~n~n",
+              [Packet, erlang:get_stacktrace()]),
+            {From, To, Packet};
+        _ ->
+            F = jlib:to_old_jid(From),
+            T = jlib:to_old_jid(To),
+            Default_NS = case lists:member({Packet#xmlel.ns, none},
+              Packet#xmlel.declared_ns) of
+                true  -> [];
+                false -> [Packet#xmlel.ns]
+            end,
+            P = exmpp_xml:xmlel_to_xmlelement(Packet,
+              Default_NS,
+              [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
+            {F, T, P}
+    end,
+    case catch do_route(FromOld, ToOld, PacketOld) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
@@ -237,7 +258,27 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
-    case catch do_route(From, To, Packet) of
+    % XXX OLD FORMAT: This code helps to detect old format routing.
+    {FromOld, ToOld, PacketOld} = case Packet of
+        #xmlelement{} ->
+            catch throw(for_stacktrace), % To have a stacktrace.
+            io:format("~nROUTE: old #xmlelement:~n~p~n~p~n~n",
+              [Packet, erlang:get_stacktrace()]),
+            {From, To, Packet};
+        _ ->
+            F = jlib:to_old_jid(From),
+            T = jlib:to_old_jid(To),
+            Default_NS = case lists:member({Packet#xmlel.ns, none},
+              Packet#xmlel.declared_ns) of
+                true  -> [];
+                false -> [Packet#xmlel.ns]
+            end,
+            P = exmpp_xml:xmlel_to_xmlelement(Packet,
+              Default_NS,
+              [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
+            {F, T, P}
+    end,
+    case catch do_route(FromOld, ToOld, PacketOld) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
@@ -303,7 +344,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     case ejabberd_hooks:run_fold(filter_packet,
 				 {OrigFrom, OrigTo, OrigPacket}, []) of
 	{From, To, Packet} ->
-	    LDstDomain = To#jid.lserver,
+	    LDstDomain = To#jid.ldomain,
 	    case mnesia:dirty_read(route, LDstDomain) of
 		[] ->
 		    ejabberd_s2s:route(From, To, Packet);
@@ -327,14 +368,14 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 				   {domain_balancing, LDstDomain}) of
 				undefined -> now();
 				random -> now();
-				source -> jlib:jid_tolower(From);
-				destination -> jlib:jid_tolower(To);
+				source -> jlib:short_jid(From);
+				destination -> jlib:short_jid(To);
 				bare_source ->
-				    jlib:jid_remove_resource(
-				      jlib:jid_tolower(From));
+				    jlib:short_jid(
+				      exmpp_jid:jid_to_bare_jid(From));
 				bare_destination ->
-				    jlib:jid_remove_resource(
-				      jlib:jid_tolower(To))
+				    jlib:short_jid(
+				      exmpp_jid:jid_tl_bare_jid(To))
 			    end,
 		    case get_component_number(LDstDomain) of
 			undefined ->

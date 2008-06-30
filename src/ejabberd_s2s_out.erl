@@ -816,14 +816,9 @@ bounce_element(El, Condition) ->
 	    Err = exmpp_stanza:reply_with_error(El, Error),
 	    From = exmpp_jid:string_to_jid(exmpp_stanza:get_sender(El)),
 	    To = exmpp_jid:string_to_jid(exmpp_stanza:get_recipient(El)),
-	    % XXX OLD FORMAT: From, To, Err.
-	    % XXX No namespace conversion (:server <-> :client) is done.
+	    % No namespace conversion (:server <-> :client) is done.
 	    % This is handled by C2S and S2S send_element functions.
-	    ErrOld = exmpp_xml:xmlel_to_xmlelement(Err,
-	      [?NS_JABBER_CLIENT], ?PREFIXED_NS),
-	    FromOld = jlib:to_old_jid(From),
-	    ToOld = jlib:to_old_jid(To),
-	    ejabberd_router:route(ToOld, FromOld, ErrOld)
+	    ejabberd_router:route(To, From, Err)
     end.
 
 bounce_queue(Q, Condition) ->

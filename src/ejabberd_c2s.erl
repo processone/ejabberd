@@ -857,9 +857,8 @@ session_established({xmlstreamelement, El}, StateData) ->
 			  user_send_packet,
 			  Server,
 			  [FromJIDOld, ToJIDOld, NewElOld]),
-			% XXX OLD FORMAT: NewElOld.
 			ejabberd_router:route(
-			  FromJIDOld, ToJIDOld, NewElOld),
+			  FromJID, ToJID, NewEl),
 			StateData
 		end;
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message'} ->
@@ -871,8 +870,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 		ejabberd_hooks:run(user_send_packet,
 				   Server,
 				   [FromJIDOld, ToJIDOld, NewElOld]),
-		% XXX OLD FORMAT: NewElOld.
-		ejabberd_router:route(FromJIDOld, ToJIDOld, NewElOld),
+		ejabberd_router:route(FromJID, ToJID, NewEl),
 		StateData;
 	    _ ->
 		StateData
@@ -1186,10 +1184,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 				    [] ->
 					Err = exmpp_stanza:error('feature-not-implemented'),
 					Res = exmpp_iq:error(Packet, Err),
-					% XXX OLD FORMAT: To, From, Res.
-					ResOld = exmpp_xml:xmlel_to_xmlelement(
-					  Res, [?DEFAULT_NS], ?PREFIXED_NS),
-					ejabberd_router:route(ToOld, FromOld, ResOld)
+					ejabberd_router:route(To, From, Res)
 				end,
 				{false, Attrs, StateData};
 			    _ ->
@@ -1208,11 +1203,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 					Err = exmpp_stanza:error(
 					  'feature-not-implemented'),
 					Res = exmpp_iq:error(Packet, Err),
-					% XXX OLD FORMAT: To, From, Res.
-					ResOld = exmpp_xml:xmlel_to_xmlelement(
-					  Res,
-					  [?DEFAULT_NS], ?PREFIXED_NS),
-					ejabberd_router:route(ToOld, FromOld, ResOld),
+					ejabberd_router:route(To, From, Res),
 					{false, Attrs, StateData}
 				end
 			end;
@@ -1446,20 +1437,14 @@ process_presence_probe(From, To, StateData) ->
 			    %% Don't route a presence probe to oneself
 			    case From == To of
 				false ->
-				    % XXX OLD FORMAT: From, To, Packet.
-				    ejabberd_router:route(ToOld, FromOld, PacketOld);
+				    ejabberd_router:route(To, From, Packet);
 			    	true ->
 				    ok
 			    end
 		    end;
 		Cond2 ->
 		    Packet = exmpp_presence:available(),
-		    % XXX OLD FORMAT: From, To, Packet.
-		    FromOld = jlib:to_old_jid(From),
-		    ToOld = jlib:to_old_jid(To),
-		    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-		      [?DEFAULT_NS], ?PREFIXED_NS),
-		    ejabberd_router:route(ToOld, FromOld, PacketOld);
+		    ejabberd_router:route(To, From, Packet);
 		true ->
 		    ok
 	    end
@@ -1584,21 +1569,19 @@ presence_track(From, To, Packet, StateData) ->
     Server = StateData#state.server,
     % XXX OLD FORMAT: From, To, Packet.
     FromOld = jlib:to_old_jid(From),
-    BFromOld = jlib:to_old_jid(exmpp_jid:jid_to_bare_jid(From)),
+    BFrom = exmpp_jid:jid_to_bare_jid(From),
     ToOld = jlib:to_old_jid(To),
     PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
       [?DEFAULT_NS], ?PREFIXED_NS),
     case exmpp_presence:get_type(Packet) of
 	'unavailable' ->
-	    % XXX OLD FORMAT: From, To, Packet.
-	    ejabberd_router:route(FromOld, ToOld, PacketOld),
+	    ejabberd_router:route(From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	'invisible' ->
-	    % XXX OLD FORMAT: From, To, Packet.
-	    ejabberd_router:route(FromOld, ToOld, PacketOld),
+	    ejabberd_router:route(From, To, Packet),
 	    I = ?SETS:add_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
@@ -1608,40 +1591,34 @@ presence_track(From, To, Packet, StateData) ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, ToOld, subscribe]),
-	    % XXX OLD FORMAT: From, To, Packet.
-	    ejabberd_router:route(BFromOld, ToOld, PacketOld),
+	    ejabberd_router:route(BFrom, To, Packet),
 	    StateData;
 	'subscribed' ->
 	    % XXX OLD FORMAT: To.
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, ToOld, subscribed]),
-	    % XXX OLD FORMAT: From, To, Packet.
-	    ejabberd_router:route(BFromOld, ToOld, PacketOld),
+	    ejabberd_router:route(BFrom, To, Packet),
 	    StateData;
 	'unsubscribe' ->
 	    % XXX OLD FORMAT: To.
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, ToOld, unsubscribe]),
-	    % XXX OLD FORMAT: From, To, Packet.
-	    ejabberd_router:route(BFromOld, ToOld, PacketOld),
+	    ejabberd_router:route(BFrom, To, Packet),
 	    StateData;
 	'unsubscribed' ->
 	    % XXX OLD FORMAT: To.
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, ToOld, unsubscribed]),
-	    % XXX OLD FORMAT: From, To, Packet.
-	    ejabberd_router:route(BFromOld, ToOld, PacketOld),
+	    ejabberd_router:route(BFrom, To, Packet),
 	    StateData;
 	'error' ->
-	    % XXX OLD FORMAT: From, To, Packet.
-	    ejabberd_router:route(FromOld, ToOld, PacketOld),
+	    ejabberd_router:route(From, To, Packet),
 	    StateData;
 	'probe' ->
-	    % XXX OLD FORMAT: From, To, Packet.
-	    ejabberd_router:route(FromOld, ToOld, PacketOld),
+	    ejabberd_router:route(From, To, Packet),
 	    StateData;
 	_ ->
 	    % XXX OLD FORMAT: From, To, Packet.
@@ -1656,8 +1633,7 @@ presence_track(From, To, Packet, StateData) ->
 		deny ->
 		    ok;
 		allow ->
-		    % XXX OLD FORMAT: From, To, Packet.
-		    ejabberd_router:route(FromOld, ToOld, PacketOld)
+		    ejabberd_router:route(From, To, Packet)
 	    end,
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = ?SETS:add_element(LTo, StateData#state.pres_a),
@@ -1684,8 +1660,7 @@ presence_broadcast(StateData, From, JIDSet, Packet) ->
 			      deny ->
 				  ok;
 			      allow ->
-				  % XXX OLD FORMAT: From, FJID, Packet.
-				  ejabberd_router:route(FromOld, FJIDOld, PacketOld)
+				  ejabberd_router:route(From, FJID, Packet)
 			  end
 		  end, ?SETS:to_list(JIDSet)).
 
@@ -1712,8 +1687,7 @@ presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
 			  deny ->
 			      ok;
 			  allow ->
-			      % XXX OLD FORMAT: From, FJID, Packet.
-			      ejabberd_router:route(FromOld, FJIDOld, PacketOld)
+			      ejabberd_router:route(From, FJID, Packet)
 		      end;
 		  _ ->
 		      ok
@@ -1727,16 +1701,12 @@ presence_broadcast_first(From, StateData, Packet) ->
     FromOld = jlib:to_old_jid(From),
     PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
       [?DEFAULT_NS], ?PREFIXED_NS),
-    ProbeOld = exmpp_xml:xmlel_to_xmlelement(Probe,
-      [?DEFAULT_NS], ?PREFIXED_NS),
     ?SETS:fold(fun({U, S, R}, X) ->
 		       FJID = exmpp_jid:make_jid(U, S, R),
-		       % XXX OLD FORMAT: FJID.
-		       FJIDOld = jlib:to_old_jid(FJID),
 		       ejabberd_router:route(
-			 FromOld,
-			 FJIDOld,
-			 ProbeOld),
+			 From,
+			 FJID,
+			 Probe),
 		       X
 	       end,
 	       [],
@@ -1761,7 +1731,7 @@ presence_broadcast_first(From, StateData, Packet) ->
 				deny ->
 				    ok;
 				allow ->
-				    ejabberd_router:route(FromOld, FJIDOld, PacketOld)
+				    ejabberd_router:route(From, FJID, Packet)
 			    end,
 			    ?SETS:add_element(JID, A)
 		    end,
@@ -1830,8 +1800,7 @@ roster_change(IJID, ISubscription, StateData) ->
 			deny ->
 			    ok;
 			allow ->
-			    % XXX OLD FORMAT: From, To, P.
-			    ejabberd_router:route(FromOld, ToOld, POld)
+			    ejabberd_router:route(From, To, P)
 		    end,
 		    A = ?SETS:add_element(LIJID,
 					  StateData#state.pres_a),
@@ -1856,8 +1825,7 @@ roster_change(IJID, ISubscription, StateData) ->
 			deny ->
 			    ok;
 			allow ->
-			    % XXX OLD FORMAT: From, To, PU.
-			    ejabberd_router:route(FromOld, ToOld, PUOld)
+			    ejabberd_router:route(From, To, PU)
 		    end,
 		    I = remove_element(LIJID,
 				       StateData#state.pres_i),
@@ -1926,11 +1894,8 @@ process_privacy_iq(From, To,
 		  [?DEFAULT_NS], ?PREFIXED_NS),
 		exmpp_iq:error(El, Error)
 	end,
-    % XXX OLD FORMAT: To, From, IQRes.
-    IQResOld = exmpp_xml:xmlel_to_xmlelement(IQRes,
-      [?DEFAULT_NS], ?PREFIXED_NS),
     ejabberd_router:route(
-      ToOld, FromOld, IQResOld),
+      To, From, IQRes),
     NewStateData.
 
 
