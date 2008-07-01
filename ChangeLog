@@ -26,6 +26,11 @@
 	* src/ejabberd_router.erl: Use a function to convert to old
 	structures instead of duplicating code inside the module.
 
+	* src/gen_iq_handler.erl: Convert to exmpp.
+
+	* src/ejabberd_sm.erl, src/ejabberd_c2s.erl: Don't convert <iq/>
+	before calling gen_iq_handler:handle/7.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the

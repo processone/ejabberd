@@ -1158,11 +1158,8 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 				% for namespaces.
 				case ets:lookup(sm_iqtable, {atom_to_list(?NS_VCARD), Host}) of
 				    [{_, Module, Function, Opts}] ->
-					% XXX OLD FORMAT: IQ is an old #iq,
-					% From, To.
-					IQ = jlib:iq_query_info(PacketOld),
 					gen_iq_handler:handle(Host, Module, Function, Opts,
-							      FromOld, ToOld, IQ);
+							      From, To, Packet);
 				    [] ->
 					Res = exmpp_iq:error(Packet, 'feature-not-implemented'),
 					ejabberd_router:route(To, From, Res)
@@ -1935,7 +1932,7 @@ resend_subscription_requests(#state{user = User,
 process_unauthenticated_stanza(StateData, El) ->
     ElOld = exmpp_xml:xmlel_to_xmlelement(El, [?DEFAULT_NS], ?PREFIXED_NS),
     case jlib:iq_query_info(ElOld) of
-	#iq{} = IQ ->
+	IQ when is_record(IQ, iq) ->
 	    ResOld = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
 					  StateData#state.server,
 					  empty,

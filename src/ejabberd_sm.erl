@@ -688,7 +688,7 @@ process_iq(From, To, Packet) ->
 		[{_, Module, Function, Opts}] ->
 		    % XXX OLD FORMAT: From, To, IQ.
 		    gen_iq_handler:handle(Host, Module, Function, Opts,
-					  FromOld, ToOld, IQ);
+					  From, To, Packet);
 		[] ->
 		    Err = exmpp_iq:error(Packet, 'service-unavailable'),
 		    ejabberd_router:route(To, From, Err)
