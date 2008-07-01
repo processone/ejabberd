@@ -419,8 +419,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				  StateData#state.server,
 				  {[], []},
 				  [U, StateData#state.server]),
-				LJID = jlib:short_jid(
-				  exmpp_jid:jid_to_bare_jid(JID)),
+				LJID = jlib:short_bare_jid(JID),
 				Fs1 = [LJID | Fs],
 				Ts1 = [LJID | Ts],
 				PrivList = ejabberd_hooks:run_fold(
@@ -741,7 +740,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			     StateData#state.server,
 			     {[], []},
 			     [U, StateData#state.server]),
-		LJID = jlib:short_jid(exmpp_jid:jid_to_bare_jid(JID)),
+		LJID = jlib:short_bare_jid(JID),
 		Fs1 = [LJID | Fs],
 		Ts1 = [LJID | Ts],
 		PrivList =
@@ -1017,9 +1016,8 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 	    #xmlel{attrs = Attrs} when ?IS_PRESENCE(Packet) ->
 		case exmpp_presence:get_type(Packet) of
 		    'probe' ->
-			% XXX OLD FORMAT: LFrom and LBFrom.
 			LFrom = jlib:short_jid(From),
-			LBFrom = jlib:short_jid(exmpp_jid:jid_to_bare_jid(From)),
+			LBFrom = jlib:short_bare_jid(From),
 			NewStateData =
 			    case ?SETS:is_element(
 				    LFrom, StateData#state.pres_a) orelse
@@ -1031,8 +1029,6 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 				    case ?SETS:is_element(
 					    LFrom, StateData#state.pres_f) of
 					true ->
-					    % XXX OLD FORMAT: Stores short
-					    % JIDs.
 					    A = ?SETS:add_element(
 						   LFrom,
 						   StateData#state.pres_a),
@@ -1041,8 +1037,6 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 					    case ?SETS:is_element(
 						    LBFrom, StateData#state.pres_f) of
 						true ->
-						    % XXX OLD FORMAT: Stores
-						    % short JIDs.
 						    A = ?SETS:add_element(
 							   LBFrom,
 							   StateData#state.pres_a),
@@ -1055,15 +1049,13 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 			process_presence_probe(From, To, NewStateData),
 			{false, Attrs, NewStateData};
 		    'error' ->
-			% XXX OLD FORMAT: LFrom.
 			LFrom = jlib:short_jid(From),
 			NewA = remove_element(LFrom,
 					      StateData#state.pres_a),
 			{true, Attrs, StateData#state{pres_a = NewA}};
 		    'invisible' ->
-			% XXX OLD FORMAT: Create a function to change 'type'.
 			Attrs1 = exmpp_stanza:set_type_in_attrs(Attrs,
-			  "unavailable"),
+			  'unavailable'),
 			{true, Attrs1, StateData};
 		    'subscribe' ->
 			{true, Attrs, StateData};
@@ -1084,10 +1076,8 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 				{FromOld, ToOld, PacketOld},
 				in]) of
 			    allow ->
-				% XXX OLD FORMAT: LFrom and LBFrom.
 				LFrom = jlib:short_jid(From),
-				LBFrom = jlib:short_jid(
-				  exmpp_jid:jid_to_bare_jid(From)),
+				LBFrom = jlib:short_bare_jid(From),
 				%% Note contact availability
 				% XXX OLD FORMAT: Els are #xmlelement.
 				Els = PacketOld#xmlelement.children,
@@ -1135,12 +1125,9 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 			end
 		end;
 	    #xmlel{name = 'broadcast', attrs = Attrs} ->
-		% XXX OLD FORMAT: Els are #xmlelement.
-		Els = PacketOld#xmlelement.children,
-		?DEBUG("broadcast~n~p~n", [Els]),
-		case Els of
+		?DEBUG("broadcast~n~p~n", [Packet#xmlel.children]),
+		case Packet#xmlel.children of
 		    [{item, {U, S, R} = _IJIDShort, ISubscription}] ->
-			% XXX OLD FORMAT: IJID is of the form {U, S, R}.
 			IJID = exmpp_jid:make_jid(U, S, R),
 			{false, Attrs,
 			 roster_change(IJID, ISubscription,
@@ -1177,7 +1164,6 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 					% XXX OLD FORMAT: IQ is an old #iq,
 					% From, To.
 					IQ = jlib:iq_query_info(PacketOld),
-					io:format("IQ = ~p~n", [IQ]),
 					gen_iq_handler:handle(Host, Module, Function, Opts,
 							      FromOld, ToOld, IQ);
 				    [] ->
@@ -1233,12 +1219,13 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 	    Attrs3 = exmpp_stanza:set_recipient_in_attrs(Attrs2, To),
 	    FixedPacket = Packet#xmlel{attrs = Attrs3},
 	    send_element(StateData, FixedPacket),
-	    % XXX OLD FORMAT: From, To, FixedPacket.
+	    % XXX OLD FORMAT: JID, From, To, FixedPacket.
+            JIDOld = jlib:to_old_jid(StateData#state.jid),
 	    FixedPacketOld = exmpp_xml:xmlel_to_xmlelement(FixedPacket,
               [?DEFAULT_NS], ?PREFIXED_NS),
 	    ejabberd_hooks:run(user_receive_packet,
 			       StateData#state.server,
-			       [StateData#state.jid, FromOld, ToOld, FixedPacketOld]),
+			       [JIDOld, FromOld, ToOld, FixedPacketOld]),
 	    % XXX OLD FORMAT: From, To, FixedPacket.
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, FromOld, ToOld, PacketOld}]),
 	    fsm_next_state(StateName, NewState);
@@ -1345,30 +1332,27 @@ new_id() ->
 
 
 is_auth_packet(El) ->
-    % XXX OLD FORMAT: El.
-    ElOld = exmpp_xml:xmlel_to_xmlelement(El,
-      [?DEFAULT_NS], ?PREFIXED_NS),
-    NS_Auth = atom_to_list(?NS_LEGACY_AUTH),
-    case jlib:iq_query_info(ElOld) of
-	#iq{id = ID, type = Type, xmlns = NS_Auth, sub_el = SubEl} ->
-	    {xmlelement, _, _, Els} = SubEl,
-	    {auth, ID, Type,
-	     get_auth_tags(Els, "", "", "", undefined)};
-	_ ->
+    case exmpp_iq:is_request(El) of
+	true ->
+	    {auth, exmpp_stanza:get_id(El), exmpp_iq:get_type(El),
+	     get_auth_tags(El#xmlel.children,
+               undefined, undefined, undefined, undefined)};
+	false ->
 	    false
     end.
 
 
-get_auth_tags([{xmlelement, Name, _Attrs, Els}| L], U, P, D, R) ->
-    CData = xml:get_cdata(Els),
+get_auth_tags([#xmlel{ns = ?NS_LEGACY_AUTH, name = Name, children = Els} | L],
+  U, P, D, R) ->
+    CData = exmpp_xml:get_cdata_from_list_as_list(Els),
     case Name of
-	"username" ->
+	'username' ->
 	    get_auth_tags(L, CData, P, D, R);
-	"password" ->
+	'password' ->
 	    get_auth_tags(L, U, CData, D, R);
-	"digest" ->
+	'digest' ->
 	    get_auth_tags(L, U, P, CData, R);
-	"resource" ->
+	'resource' ->
 	    get_auth_tags(L, U, P, D, CData);
 	_ ->
 	    get_auth_tags(L, U, P, D, R)
@@ -1390,7 +1374,7 @@ get_conn_type(StateData) ->
 
 process_presence_probe(From, To, StateData) ->
     LFrom = jlib:short_jid(From),
-    LBFrom = jlib:short_jid(exmpp_jid:jid_to_bare_jid(From)),
+    LBFrom = jlib:short_bare_jid(From),
     case StateData#state.pres_last of
 	undefined ->
 	    ok;
@@ -1563,9 +1547,9 @@ presence_track(From, To, Packet, StateData) ->
     LTo = jlib:short_jid(To),
     User = StateData#state.user,
     Server = StateData#state.server,
+    BFrom = exmpp_jid:jid_to_bare_jid(From),
     % XXX OLD FORMAT: From, To, Packet.
     FromOld = jlib:to_old_jid(From),
-    BFrom = exmpp_jid:jid_to_bare_jid(From),
     ToOld = jlib:to_old_jid(To),
     PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
       [?DEFAULT_NS], ?PREFIXED_NS),
@@ -1839,15 +1823,12 @@ roster_change(IJID, ISubscription, StateData) ->
 
 update_priority(Priority, Packet, StateData) ->
     Info = [{ip, StateData#state.ip},{conn, StateData#state.conn}],
-    % XXX OLD FORMAT: Packet.
-    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-      [?DEFAULT_NS], ?PREFIXED_NS),
     ejabberd_sm:set_presence(StateData#state.sid,
 			     StateData#state.user,
 			     StateData#state.server,
 			     StateData#state.resource,
 			     Priority,
-			     PacketOld,
+			     Packet,
 			     Info).
 
 process_privacy_iq(From, To,
