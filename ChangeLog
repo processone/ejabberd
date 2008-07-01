@@ -23,6 +23,9 @@
 	* src/ejabberd_c2s.erl, src/ejabberd_s2s_in.erl: acl doesn't require
 	conversion anymore.
 
+	* src/ejabberd_router.erl: Use a function to convert to old
+	structures instead of duplicating code inside the module.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the

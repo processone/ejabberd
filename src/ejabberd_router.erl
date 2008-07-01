@@ -66,25 +66,7 @@ start_link() ->
 
 route(From, To, Packet) ->
     % XXX OLD FORMAT: This code helps to detect old format routing.
-    {FromOld, ToOld, PacketOld} = case Packet of
-        #xmlelement{} ->
-            catch throw(for_stacktrace), % To have a stacktrace.
-            io:format("~nROUTE: old #xmlelement:~n~p~n~p~n~n",
-              [Packet, erlang:get_stacktrace()]),
-            {From, To, Packet};
-        _ ->
-            F = jlib:to_old_jid(From),
-            T = jlib:to_old_jid(To),
-            Default_NS = case lists:member({Packet#xmlel.ns, none},
-              Packet#xmlel.declared_ns) of
-                true  -> [];
-                false -> [Packet#xmlel.ns]
-            end,
-            P = exmpp_xml:xmlel_to_xmlelement(Packet,
-              Default_NS,
-              [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
-            {F, T, P}
-    end,
+    {FromOld, ToOld, PacketOld} = convert_to_old_structs(From, To, Packet),
     case catch do_route(FromOld, ToOld, PacketOld) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
@@ -258,26 +240,7 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
-    % XXX OLD FORMAT: This code helps to detect old format routing.
-    {FromOld, ToOld, PacketOld} = case Packet of
-        #xmlelement{} ->
-            catch throw(for_stacktrace), % To have a stacktrace.
-            io:format("~nROUTE: old #xmlelement:~n~p~n~p~n~n",
-              [Packet, erlang:get_stacktrace()]),
-            {From, To, Packet};
-        _ ->
-            F = jlib:to_old_jid(From),
-            T = jlib:to_old_jid(To),
-            Default_NS = case lists:member({Packet#xmlel.ns, none},
-              Packet#xmlel.declared_ns) of
-                true  -> [];
-                false -> [Packet#xmlel.ns]
-            end,
-            P = exmpp_xml:xmlel_to_xmlelement(Packet,
-              Default_NS,
-              [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
-            {F, T, P}
-    end,
+    {FromOld, ToOld, PacketOld} = convert_to_old_structs(From, To, Packet),
     case catch do_route(FromOld, ToOld, PacketOld) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
@@ -443,3 +406,24 @@ update_tables() ->
 	    ok
     end.
 
+convert_to_old_structs(From, To, Packet) ->
+    % XXX OLD FORMAT: This code helps to detect old format routing.
+    if
+        is_record(Packet, xmlelement) ->
+            catch throw(for_stacktrace), % To have a stacktrace.
+            io:format("~nROUTE: old #xmlelement:~n~p~n~p~n~n",
+              [Packet, erlang:get_stacktrace()]),
+            {From, To, Packet};
+        true ->
+            F = jlib:to_old_jid(From),
+            T = jlib:to_old_jid(To),
+            Default_NS = case lists:member({Packet#xmlel.ns, none},
+              Packet#xmlel.declared_ns) of
+                true  -> [];
+                false -> [Packet#xmlel.ns]
+            end,
+            P = exmpp_xml:xmlel_to_xmlelement(Packet,
+              Default_NS,
+              [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
+            {F, T, P}
+    end.
