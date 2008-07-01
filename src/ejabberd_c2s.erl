@@ -392,10 +392,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	{auth, _ID, set, {U, P, D, R}} ->
 	    try
 		JID = exmpp_jid:make_jid(U, StateData#state.server, R),
-		% XXX OLD FORMAT: JID.
-		JIDOld = jlib:to_old_jid(JID),
 		case acl:match_rule(StateData#state.server,
-		  StateData#state.access, JIDOld) of
+		  StateData#state.access, JID) of
 		    allow ->
 			case ejabberd_auth:check_password_with_authmodule(
 			  U, StateData#state.server, P,
@@ -717,11 +715,9 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 	U = StateData#state.user,
 	R = StateData#state.resource,
 	JID = StateData#state.jid,
-	% XXX OLD FORMAT: JID.
-	JIDOld = jlib:to_old_jid(JID),
 	true = exmpp_server_session:want_establishment(El),
 	case acl:match_rule(StateData#state.server,
-			    StateData#state.access, JIDOld) of
+			    StateData#state.access, JID) of
 	    allow ->
 		?INFO_MSG("(~w) Opened session for ~s",
 			  [StateData#state.socket,
@@ -757,6 +753,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				 privacy_list = PrivList});
 	    _ ->
 		% XXX OLD FORMAT: Jid.
+                JIDOld = jlib:to_old_jid(JID),
 		ejabberd_hooks:run(forbidden_session_hook, 
 				   StateData#state.server, [JIDOld]),
 		?INFO_MSG("(~w) Forbidden session for ~s",

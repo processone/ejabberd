@@ -87,7 +87,7 @@ add_list(Host, ACLs, Clear) ->
     end.
 
 normalize(A) ->
-    jlib:nodeprep(A).
+    exmpp_stringprep:nodeprep(A).
 normalize_spec({A, B}) ->
     {A, normalize(B)};
 normalize_spec({A, B, C}) ->
@@ -158,7 +158,7 @@ match_acl(ACL, JID, Host) ->
 	all -> true;
 	none -> false;
 	_ ->
-	    {User, Server, Resource} = jlib:jid_tolower(JID),
+	    {User, Server, Resource} = jlib:short_jid(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->
 			      case Spec of
 				  all ->

@@ -573,9 +573,7 @@ send_element(StateData, El) ->
 
 
 change_shaper(StateData, Host, JID) ->
-    % XXX OLD FORMAT: JIDOld is an old #jid.
-    JIDOld = jlib:to_old_jid(JID),
-    Shaper = acl:match_rule(Host, StateData#state.shaper, JIDOld),
+    Shaper = acl:match_rule(Host, StateData#state.shaper, JID),
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 

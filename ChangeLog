@@ -18,6 +18,11 @@
 	calling ejabberd_sm:set_presence/7. Don't convert broadcast children,
 	because it's an internal special element.
 
+	* src/acl.erl: Convert to exmpp.
+
+	* src/ejabberd_c2s.erl, src/ejabberd_s2s_in.erl: acl doesn't require
+	conversion anymore.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the
