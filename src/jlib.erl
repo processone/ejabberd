@@ -360,7 +360,17 @@ iq_query_info(El) ->
 iq_query_or_response_info(El) ->
     iq_info_internal(El, any).
 
-iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
+iq_info_internal({xmlel, NS, _, _, _, _} = El, Filter) ->
+    ElOld = exmpp_xml:xmlel_to_xmlelement(El, [NS],
+      [{'http://etherx.jabber.org/streams', "stream"}]),
+    iq_info_internal2(ElOld, Filter);
+iq_info_internal(El, Filter) ->
+    catch throw(for_stacktrace),
+    io:format("~nJLIB: old #xmlelement:~n~p~n~p~n~n",
+      [El, erlang:get_stacktrace()]),
+    iq_info_internal2(El, Filter).
+
+iq_info_internal2({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
     %% Filter is either request or any.  If it is request, any replies
     %% are converted to the atom reply.
     ID = xml:get_attr_s("id", Attrs),
@@ -413,7 +423,7 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
 	Class == reply, Filter /= any ->
 	    reply
     end;
-iq_info_internal(_, _) ->
+iq_info_internal2(_, _) ->
     not_iq.
 
 is_iq_request_type(set) -> true;
