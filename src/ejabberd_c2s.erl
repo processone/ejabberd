@@ -124,6 +124,7 @@
     [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
 -define(ERR_FEATURE_NOT_IMPLEMENTED, ?STANZA_ERROR('feature-not-implemented')).
 
+% XXX OLD FORMAT: Re-include jlib.hrl (after clean-up).
 -record(iq, {id = "",
              type,
              xmlns = "",
@@ -236,7 +237,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		true ->
 		    Lang = exmpp_stream:get_lang(Opening),
 		    change_shaper(StateData,
-		      exmpp_jid:make_bare_jid(undefined, Server)),
+		      exmpp_jid:make_bare_jid(Server)),
 		    case exmpp_stream:get_version(Opening) of
 			{1, 0} ->
 			    send_element(StateData, Header),
@@ -442,8 +443,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				  "(~w) Failed legacy authentication for ~s",
 				  [StateData#state.socket,
 				    exmpp_jid:jid_to_string(JID)]),
-				Err = exmpp_stanza:error('not-authorized'),
-				Res = exmpp_iq:error_without_original(El, Err),
+				Res = exmpp_iq:error_without_original(El,
+                                  'not-authorized'),
 				send_element(StateData, Res),
 				fsm_next_state(wait_for_auth, StateData)
 			end;
@@ -452,8 +453,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			  "(~w) Forbidden legacy authentication for ~s",
 			  [StateData#state.socket,
 			    exmpp_jid:jid_to_string(JID)]),
-			Err = exmpp_stanza:error('not-allowed'),
-			Res = exmpp_iq:error_without_original(El, Err),
+			Res = exmpp_iq:error_without_original(El,
+                          'not-allowed'),
 			send_element(StateData, Res),
 			fsm_next_state(wait_for_auth, StateData)
 		end
@@ -463,8 +464,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		      "(~w) Forbidden legacy authentication for "
 		      "username '~s' with resource '~s'",
 		      [StateData#state.socket, U, R]),
-		    Err1 = exmpp_stanza:error('jid-malformed'),
-		    Res1 = exmpp_iq:error_without_original(El, Err1),
+		    Res1 = exmpp_iq:error_without_original(El, 'jid-malformed'),
 		    send_element(StateData, Res1),
 		    fsm_next_state(wait_for_auth, StateData)
 	    end;
@@ -1134,8 +1134,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 				{false, Attrs, StateData}
 			end
 		end;
-	    % XXX OLD FORMAT: broadcast?
-	    #xmlel{ns = _NS, name = 'broadcast', attrs = Attrs} ->
+	    #xmlel{name = 'broadcast', attrs = Attrs} ->
 		% XXX OLD FORMAT: Els are #xmlelement.
 		Els = PacketOld#xmlelement.children,
 		?DEBUG("broadcast~n~p~n", [Els]),
@@ -1182,8 +1181,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 					gen_iq_handler:handle(Host, Module, Function, Opts,
 							      FromOld, ToOld, IQ);
 				    [] ->
-					Err = exmpp_stanza:error('feature-not-implemented'),
-					Res = exmpp_iq:error(Packet, Err),
+					Res = exmpp_iq:error(Packet, 'feature-not-implemented'),
 					ejabberd_router:route(To, From, Res)
 				end,
 				{false, Attrs, StateData};
@@ -1200,9 +1198,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 				    allow ->
 					{true, Attrs, StateData};
 				    deny ->
-					Err = exmpp_stanza:error(
-					  'feature-not-implemented'),
-					Res = exmpp_iq:error(Packet, Err),
+					Res = exmpp_iq:error(Packet, 'feature-not-implemented'),
 					ejabberd_router:route(To, From, Res),
 					{false, Attrs, StateData}
 				end
@@ -1975,10 +1971,9 @@ process_unauthenticated_stanza(StateData, El) ->
 		    % The only reasonable IQ's here are auth and register IQ's
 		    % They contain secrets, so don't include subelements to response
 		    ResIQ = exmpp_iq:error_without_original(El,
-		      exmpp_stanza:error(El#xmlel.ns, 'service-unavailable')),
+                      'service-unavailable'),
 		    Res1 = exmpp_stanza:set_sender(ResIQ,
-		      exmpp_jid:make_bare_jid(undefined,
-			StateData#state.server)),
+		      exmpp_jid:make_bare_jid(StateData#state.server)),
 		    Res2 = exmpp_stanza:remove_recipient(Res1),
 		    send_element(StateData, Res2);
 		_ ->

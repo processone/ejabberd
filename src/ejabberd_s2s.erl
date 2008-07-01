@@ -291,7 +291,7 @@ do_route(From, To, Packet) ->
 		"result" -> ok;
 		_ ->
                     Err = exmpp_stanza:reply_with_error(Packet,
-                      exmpp_stanza:error('service-unavailable')),
+                      'service-unavailable'),
 		    ejabberd_router:route(To, From, Err)
 	    end,
 	    false

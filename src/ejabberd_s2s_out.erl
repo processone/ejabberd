@@ -812,8 +812,7 @@ bounce_element(El, Condition) ->
 	"error" -> ok;
 	"result" -> ok;
 	_ ->
-	    Error = exmpp_stanza:error(El#xmlel.ns, Condition),
-	    Err = exmpp_stanza:reply_with_error(El, Error),
+	    Err = exmpp_stanza:reply_with_error(El, Condition),
 	    From = exmpp_jid:string_to_jid(exmpp_stanza:get_sender(El)),
 	    To = exmpp_jid:string_to_jid(exmpp_stanza:get_recipient(El)),
 	    % No namespace conversion (:server <-> :client) is done.

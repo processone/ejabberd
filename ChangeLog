@@ -2,6 +2,12 @@
 
 	* src/ejabberd_sm.erl: Convert to exmpp.
 
+	* src/ejabberd_c2s.erl, src/ejabberd_s2s.erl, src/ejabberd_s2s_in.erl,
+	src/ejabberd_s2s_out.erl: Use the new clause of
+	exmpp_stanza:reply_with_error/2, exmpp_iq:error/2,
+	exmpp_iq:error_without_original/2 and the new
+	exmpp_jid:make_bare_jid/1.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the
