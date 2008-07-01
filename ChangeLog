@@ -31,6 +31,8 @@
 	* src/ejabberd_sm.erl, src/ejabberd_c2s.erl: Don't convert <iq/>
 	before calling gen_iq_handler:handle/7.
 
+	* src/ejabberd_local.erl: Convert to exmpp.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the

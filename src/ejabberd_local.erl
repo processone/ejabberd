@@ -45,14 +45,22 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -record(state, {}).
 
 -record(iq_response, {id, module, function}).
 
 -define(IQTABLE, local_iqtable).
+
+% These are the namespace already declared by the stream opening. This is
+% used at serialization time.
+-define(DEFAULT_NS, ?NS_JABBER_CLIENT).
+-define(PREFIXED_NS, [
+  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
+]).
 
 %%====================================================================
 %% API
@@ -65,39 +73,51 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 process_iq(From, To, Packet) ->
-    IQ = jlib:iq_query_info(Packet),
-    case IQ of
-	#iq{xmlns = XMLNS} ->
-	    Host = To#jid.lserver,
+    case exmpp_iq:get_kind(Packet) of
+	request ->
+	    Host = To#jid.ldomain,
+            Request = exmpp_iq:get_request(Packet),
+            XMLNS = case Request#xmlel.ns of
+                NS when is_atom(NS) -> atom_to_list(NS);
+                NS                  -> NS
+            end,
 	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
-		    ResIQ = Module:Function(From, To, IQ),
+                    % XXX OLD FORMAT: From, To, Packet.
+                    FromOld = jlib:to_old_jid(From),
+                    ToOld = jlib:to_old_jid(To),
+                    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
+                      [?DEFAULT_NS], ?PREFIXED_NS),
+                    IQ_Rec = jlib:iq_query_info(PacketOld),
+		    ResIQ = Module:Function(FromOld, ToOld, IQ_Rec),
 		    if
 			ResIQ /= ignore ->
+			    % XXX OLD FORMAT: ResIQ.
+			    ReplyOld = jlib:iq_to_xml(ResIQ),
+			    Reply = exmpp_xml:xmlelement_to_xmlel(ReplyOld,
+			      [?DEFAULT_NS], ?PREFIXED_NS),
 			    ejabberd_router:route(
-			      To, From, jlib:iq_to_xml(ResIQ));
+			      To, From, Reply);
 			true ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
 		    gen_iq_handler:handle(Host, Module, Function, Opts,
-					  From, To, IQ);
+					  From, To, Packet);
 		[] ->
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+                    Err = exmpp_iq:error(Packet, 'feature-not-implemented'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
-	reply ->
+	response ->
 	    process_iq_reply(From, To, Packet);
 	_ ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
+            Err = exmpp_iq:error(Packet, 'bad-request'),
 	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
 
 process_iq_reply(From, To, Packet) ->
-    IQ = jlib:iq_query_or_response_info(Packet),
-    #iq{id = ID} = IQ,
+    ID = exmpp_stanza:get_id(Packet),
     case catch mnesia:dirty_read(iq_response, ID) of
 	[] ->
 	    ok;
@@ -114,13 +134,24 @@ process_iq_reply(From, To, Packet) ->
 		end,
 	    case mnesia:transaction(F) of
 		{atomic, {Module, Function}} ->
-		    Module:Function(From, To, IQ);
+                    % XXX OLD FORMAT: From, To, Packet.
+                    FromOld = jlib:to_old_jid(From),
+                    ToOld = jlib:to_old_jid(To),
+                    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
+                      [?DEFAULT_NS], ?PREFIXED_NS),
+                    IQ_Rec = jlib:iq_query_or_response_info(PacketOld),
+		    Module:Function(FromOld, ToOld, IQ_Rec);
 		_ ->
 		    ok
 	    end
     end.
 
-route(From, To, Packet) ->
+route(FromOld, ToOld, PacketOld) ->
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
+      [?DEFAULT_NS], ?PREFIXED_NS),
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
@@ -145,7 +176,7 @@ refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.
 
 bounce_resource_packet(From, To, Packet) ->
-    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
+    Err = exmpp_stanza:error(Packet, 'item-not-found'),
     ejabberd_router:route(To, From, Err),
     stop.
 
@@ -202,7 +233,12 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, From, To, Packet}, State) ->
+handle_info({route, FromOld, ToOld, PacketOld}, State) ->
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
+      [?DEFAULT_NS], ?PREFIXED_NS),
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
@@ -272,29 +308,32 @@ do_route(From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
     if
-	To#jid.luser /= "" ->
+	To#jid.lnode /= undefined ->
 	    ejabberd_sm:route(From, To, Packet);
-	To#jid.lresource == "" ->
-	    {xmlelement, Name, _Attrs, _Els} = Packet,
-	    case Name of
-		"iq" ->
+	To#jid.lresource == undefined ->
+	    case Packet of
+		_ when ?IS_IQ(Packet) ->
 		    process_iq(From, To, Packet);
-		"message" ->
+		_ when ?IS_MESSAGE(Packet) ->
 		    ok;
-		"presence" ->
+		_ when ?IS_PRESENCE(Packet) ->
 		    ok;
 		_ ->
 		    ok
 	    end;
 	true ->
-	    {xmlelement, _Name, Attrs, _Els} = Packet,
-	    case xml:get_attr_s("type", Attrs) of
+            case exmpp_stanza:get_type(Packet) of
 		"error" -> ok;
 		"result" -> ok;
 		_ ->
+                    % XXX OLD FORMAT: From, To, Packet.
+                    FromOld = jlib:to_old_jid(From),
+                    ToOld = jlib:to_old_jid(To),
+                    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
+                      [?DEFAULT_NS], ?PREFIXED_NS),
 		    ejabberd_hooks:run(local_send_to_resource_hook,
-				       To#jid.lserver,
-				       [From, To, Packet])
+				       To#jid.ldomain,
+				       [FromOld, ToOld, PacketOld])
 	    end
 	end.
 
