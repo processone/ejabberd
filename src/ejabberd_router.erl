@@ -64,10 +64,18 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 
+route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nROUTER: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    route(From, To, Packet);
 route(From, To, Packet) ->
-    % XXX OLD FORMAT: This code helps to detect old format routing.
-    {FromOld, ToOld, PacketOld} = convert_to_old_structs(From, To, Packet),
-    case catch do_route(FromOld, ToOld, PacketOld) of
+    case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
@@ -239,9 +247,18 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
+handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nROUTER: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    handle_info({route, From, To, Packet}, State);
 handle_info({route, From, To, Packet}, State) ->
-    {FromOld, ToOld, PacketOld} = convert_to_old_structs(From, To, Packet),
-    case catch do_route(FromOld, ToOld, PacketOld) of
+    case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
@@ -304,9 +321,19 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(OrigFrom, OrigTo, OrigPacket) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n",
 	   [OrigFrom, OrigTo, OrigPacket]),
+    % XXX OLD FORMAT: OrigFrom, OrigTo, OrigPacket.
+    OrigFromOld = jlib:to_old_jid(OrigFrom),
+    OrigToOld = jlib:to_old_jid(OrigTo),
+    OrigPacketOld = exmpp_xml:xmlel_to_xmlelement(OrigPacket,
+      [?NS_JABBER_CLIENT], [{?NS_XMPP, ?NS_XMPP_pfx}]),
     case ejabberd_hooks:run_fold(filter_packet,
-				 {OrigFrom, OrigTo, OrigPacket}, []) of
-	{From, To, Packet} ->
+				 {OrigFromOld, OrigToOld, OrigPacketOld}, []) of
+	{FromOld, ToOld, PacketOld} ->
+            % XXX OLD FORMAT: From, To, Packet.
+            From = jlib:from_old_jid(FromOld),
+            To = jlib:from_old_jid(ToOld),
+            Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
+              [?NS_JABBER_CLIENT], [{?NS_XMPP, ?NS_XMPP_pfx}]),
 	    LDstDomain = To#jid.ldomain,
 	    case mnesia:dirty_read(route, LDstDomain) of
 		[] ->
@@ -334,11 +361,9 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 				source -> jlib:short_jid(From);
 				destination -> jlib:short_jid(To);
 				bare_source ->
-				    jlib:short_jid(
-				      exmpp_jid:jid_to_bare_jid(From));
+				    jlib:short_bare_jid(From);
 				bare_destination ->
-				    jlib:short_jid(
-				      exmpp_jid:jid_tl_bare_jid(To))
+				    jlib:short_bare_jid(To)
 			    end,
 		    case get_component_number(LDstDomain) of
 			undefined ->
@@ -404,26 +429,4 @@ update_tables() ->
 	    mnesia:delete_table(local_route);
 	false ->
 	    ok
-    end.
-
-convert_to_old_structs(From, To, Packet) ->
-    % XXX OLD FORMAT: This code helps to detect old format routing.
-    if
-        is_record(Packet, xmlelement) ->
-            catch throw(for_stacktrace), % To have a stacktrace.
-            io:format("~nROUTER: old #xmlelement:~n~p~n~p~n~n",
-              [Packet, erlang:get_stacktrace()]),
-            {From, To, Packet};
-        true ->
-            F = jlib:to_old_jid(From),
-            T = jlib:to_old_jid(To),
-            Default_NS = case lists:member({Packet#xmlel.ns, none},
-              Packet#xmlel.declared_ns) of
-                true  -> [];
-                false -> [Packet#xmlel.ns]
-            end,
-            P = exmpp_xml:xmlel_to_xmlelement(Packet,
-              Default_NS,
-              [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
-            {F, T, P}
     end.

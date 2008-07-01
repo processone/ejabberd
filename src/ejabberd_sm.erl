@@ -84,12 +84,17 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-route(FromOld, ToOld, PacketOld) ->
+route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nSM: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
     % XXX OLD FORMAT: From, To, Packet.
     From = jlib:from_old_jid(FromOld),
     To = jlib:from_old_jid(ToOld),
-    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
-      [?DEFAULT_NS], ?PREFIXED_NS),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    route(From, To, Packet);
+route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
@@ -307,12 +312,17 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, FromOld, ToOld, PacketOld}, State) ->
+handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nSM: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
     % XXX OLD FORMAT: From, To, Packet.
     From = jlib:from_old_jid(FromOld),
     To = jlib:from_old_jid(ToOld),
-    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
-      [?DEFAULT_NS], ?PREFIXED_NS),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    handle_info({route, From, To, Packet}, State);
+handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",

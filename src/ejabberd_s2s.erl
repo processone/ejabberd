@@ -74,12 +74,17 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-route(FromOld, ToOld, PacketOld) ->
+route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nS2S: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
     % XXX OLD FORMAT: From, To, Packet.
     From = jlib:from_old_jid(FromOld),
     To = jlib:from_old_jid(ToOld),
-    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
-      [?DEFAULT_NS], ?PREFIXED_NS),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    route(From, To, Packet);
+route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
         {'EXIT', Reason} ->
             ?ERROR_MSG("~p~nwhen processing: ~p",
@@ -214,12 +219,17 @@ handle_cast(_Msg, State) ->
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
-handle_info({route, FromOld, ToOld, PacketOld}, State) ->
-    % XXX OLD FORMAT: From, To, Packet
+handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nS2S: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
     From = jlib:from_old_jid(FromOld),
     To = jlib:from_old_jid(ToOld),
-    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
-      [?NS_JABBER_CLIENT], [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    handle_info({route, From, To, Packet}, State);
+handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
         {'EXIT', Reason} ->
             ?ERROR_MSG("~p~nwhen processing: ~p",
@@ -267,16 +277,15 @@ clean_table_from_bad_node(Node) ->
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
            [From, To, Packet, 8]),
-    % XXX OLD FORMAT: From, To.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
     case find_connection(From, To) of
 	{atomic, Pid} when pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
             NewPacket1 = exmpp_stanza:set_sender(Packet, From),
             NewPacket = exmpp_stanza:set_recipient(NewPacket1, To),
 	    #jid{ldomain = MyServer} = From,
-            % XXX OLD FORMAT: NewPacket.
+            % XXX OLD FORMAT: From, To, NewPacket.
+            FromOld = jlib:to_old_jid(From),
+            ToOld = jlib:to_old_jid(To),
             NewPacketOld = exmpp_xml:xmlel_to_xmlelement(NewPacket,
               [?DEFAULT_NS], ?PREFIXED_NS),
 	    ejabberd_hooks:run(

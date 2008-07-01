@@ -43,6 +43,11 @@
 	src/gen_iq_handler.erl: Do not use the #iq record anymore internally.
 	However it's still created and passed to other modules.
 
+	* src/ejabberd_router.erl, src/ejabberd_sm.erl,
+	src/ejabberd_local.erl, src/ejabberd_s2s.erl: Routing is now done with
+	#xmlel. A warning is printed if those modules have to route an old
+	#xmlelement.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the
