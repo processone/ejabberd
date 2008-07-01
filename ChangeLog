@@ -37,6 +37,8 @@
 	warning is printed when these functions are called with an old
 	#xmlelement.
 
+	* src/ejabberd_router.erl: Change warning message.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the

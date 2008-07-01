@@ -411,7 +411,7 @@ convert_to_old_structs(From, To, Packet) ->
     if
         is_record(Packet, xmlelement) ->
             catch throw(for_stacktrace), % To have a stacktrace.
-            io:format("~nROUTE: old #xmlelement:~n~p~n~p~n~n",
+            io:format("~nROUTER: old #xmlelement:~n~p~n~p~n~n",
               [Packet, erlang:get_stacktrace()]),
             {From, To, Packet};
         true ->
