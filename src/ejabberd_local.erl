@@ -77,18 +77,14 @@ process_iq(From, To, Packet) ->
 	request ->
 	    Host = To#jid.ldomain,
             Request = exmpp_iq:get_request(Packet),
-            XMLNS = case Request#xmlel.ns of
-                NS when is_atom(NS) -> atom_to_list(NS);
-                NS                  -> NS
-            end,
+            XMLNS = exmpp_xml:get_ns_as_list(Request),
 	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
-                    % XXX OLD FORMAT: From, To, Packet.
+                    % XXX OLD FORMAT: From, To.
                     FromOld = jlib:to_old_jid(From),
                     ToOld = jlib:to_old_jid(To),
-                    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-                      [?DEFAULT_NS], ?PREFIXED_NS),
-                    IQ_Rec = jlib:iq_query_info(PacketOld),
+                    % XXX OLD FORMAT: IQ_Rec is an #iq.
+                    IQ_Rec = jlib:iq_query_info(Packet),
 		    ResIQ = Module:Function(FromOld, ToOld, IQ_Rec),
 		    if
 			ResIQ /= ignore ->

@@ -227,14 +227,6 @@ convert_to_old_structs(From, To, IQ) ->
         true ->
             F = jlib:to_old_jid(From),
             T = jlib:to_old_jid(To),
-            Default_NS = case lists:member({IQ#xmlel.ns, none},
-              IQ#xmlel.declared_ns) of
-                true  -> [];
-                false -> [IQ#xmlel.ns]
-            end,
-            IQOld = exmpp_xml:xmlel_to_xmlelement(IQ,
-              Default_NS,
-              [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
-            I = jlib:iq_query_info(IQOld),
-            {F, T, I}
+            I_Rec = jlib:iq_query_info(IQ),
+            {F, T, I_Rec}
     end.

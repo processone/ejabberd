@@ -74,13 +74,6 @@
   {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
 ]).
 
-% XXX OLD FORMAT: Re-include jlib.hrl (after clean-up).
--record(iq, {id = "",
-             type,
-             xmlns = "",
-             lang = "",
-             sub_el}).
-
 %%====================================================================
 %% API
 %%====================================================================
@@ -662,19 +655,19 @@ get_max_user_sessions(LUser, Host) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 process_iq(From, To, Packet) ->
-    % XXX OLD FORMAT: From, To, Packet.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
-    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-      [?DEFAULT_NS], ?PREFIXED_NS),
-    IQ = jlib:iq_query_info(PacketOld),
-    case IQ of
-	#iq{xmlns = XMLNS} ->
+    case exmpp_iq:get_kind(Packet) of
+	request ->
 	    Host = To#jid.ldomain,
+            Request = exmpp_iq:get_request(Packet),
+            XMLNS = exmpp_xml:get_ns_as_list(Request),
 	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
-		    % XXX OLD FORMAT: From, To, IQ.
-		    ResIQ = Module:Function(FromOld, ToOld, IQ),
+		    % XXX OLD FORMAT: From, To.
+                    FromOld = jlib:to_old_jid(From),
+                    ToOld = jlib:to_old_jid(To),
+                    % XXX OLD FORMAT: IQ_Rec is an #iq.
+                    IQ_Rec = jlib:iq_query_info(Packet),
+		    ResIQ = Module:Function(FromOld, ToOld, IQ_Rec),
 		    if
 			ResIQ /= ignore ->
 			    % XXX OLD FORMAT: ResIQ.
@@ -686,14 +679,13 @@ process_iq(From, To, Packet) ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
-		    % XXX OLD FORMAT: From, To, IQ.
 		    gen_iq_handler:handle(Host, Module, Function, Opts,
 					  From, To, Packet);
 		[] ->
 		    Err = exmpp_iq:error(Packet, 'service-unavailable'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
-	reply ->
+	response ->
 	    ok;
 	_ ->
 	    Err = exmpp_iq:error(Packet, 'bad-request'),

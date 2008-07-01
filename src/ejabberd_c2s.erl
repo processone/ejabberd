@@ -124,13 +124,6 @@
     [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
 -define(ERR_FEATURE_NOT_IMPLEMENTED, ?STANZA_ERROR('feature-not-implemented')).
 
-% XXX OLD FORMAT: Re-include jlib.hrl (after clean-up).
--record(iq, {id = "",
-             type,
-             xmlns = "",
-             lang = "",
-             sub_el}).
-
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -546,7 +539,7 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 				 certfile, 1, StateData#state.tls_options)]
 		      end,
 	    Socket = StateData#state.socket,
-	    Proceed = exmpp_xml:document_fragment_to_list(
+	    Proceed = exmpp_xml:node_to_list(
 	      exmpp_server_tls:proceed(), [?DEFAULT_NS], ?PREFIXED_NS),
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
@@ -1825,10 +1818,8 @@ update_priority(Priority, Packet, StateData) ->
 process_privacy_iq(From, To,
 		   El,
 		   StateData) ->
-    % XXX OLD FORMAT: IQ is #iq.
-    ElOld = exmpp_xml:xmlel_to_xmlelement(El,
-      [?DEFAULT_NS], ?PREFIXED_NS),
-    IQOld = jlib:iq_query_info(ElOld),
+    % XXX OLD FORMAT: IQ_Rec is an #iq.
+    IQ_Rec = jlib:iq_query_info(El),
     % XXX OLD FORMAT: JIDs.
     FromOld = jlib:to_old_jid(From),
     ToOld = jlib:to_old_jid(To),
@@ -1838,13 +1829,13 @@ process_privacy_iq(From, To,
 		R = ejabberd_hooks:run_fold(
 		      privacy_iq_get, StateData#state.server,
 		      {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
-		      [FromOld, ToOld, IQOld, StateData#state.privacy_list]),
+		      [FromOld, ToOld, IQ_Rec, StateData#state.privacy_list]),
 		{R, StateData};
 	    set ->
 		case ejabberd_hooks:run_fold(
 		       privacy_iq_set, StateData#state.server,
 		       {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
-		       [FromOld, ToOld, IQOld]) of
+		       [FromOld, ToOld, IQ_Rec]) of
 		    {result, R, NewPrivList} ->
 			{{result, R},
 			 StateData#state{privacy_list = NewPrivList}};
@@ -1930,13 +1921,14 @@ resend_subscription_requests(#state{user = User,
 		  PendingSubscriptions).
 
 process_unauthenticated_stanza(StateData, El) ->
-    ElOld = exmpp_xml:xmlel_to_xmlelement(El, [?DEFAULT_NS], ?PREFIXED_NS),
-    case jlib:iq_query_info(ElOld) of
-	IQ when is_record(IQ, iq) ->
+    case exmpp_iq:get_kind(El) of
+	request ->
+            % XXX OLD FORMAT: IQ_Rec is an #iq.
+            IQ_Rec = jlib:iq_query_info(El),
 	    ResOld = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
 					  StateData#state.server,
 					  empty,
-					  [StateData#state.server, IQ,
+					  [StateData#state.server, IQ_Rec,
 					   StateData#state.ip]),
 	    case ResOld of
 		empty ->

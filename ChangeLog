@@ -39,6 +39,10 @@
 
 	* src/ejabberd_router.erl: Change warning message.
 
+	* src/ejabberd_sm.erl, src/ejabberd_c2s.erl, src/ejabberd_local.erl,
+	src/gen_iq_handler.erl: Do not use the #iq record anymore internally.
+	However it's still created and passed to other modules.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the
