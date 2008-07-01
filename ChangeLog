@@ -1,3 +1,7 @@
+2008-07-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_sm.erl: Convert to exmpp.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the
