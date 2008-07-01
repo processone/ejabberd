@@ -8,6 +8,8 @@
 	exmpp_iq:error_without_original/2 and the new
 	exmpp_jid:make_bare_jid/1.
 
+	* src/jlib.erl: Add function short_bare_jid/1.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the

@@ -63,7 +63,8 @@
 	 ip_to_list/1,
 	 from_old_jid/1,
 	 to_old_jid/1,
-	 short_jid/1]).
+	 short_jid/1,
+	 short_bare_jid/1]).
 
 -include("jlib.hrl").
 
@@ -699,14 +700,14 @@ ip_to_list({A,B,C,D}) ->
 %% Empty fields are set to `undefined', not the empty string.
 
 from_old_jid(#jid{user = Node, resource = Resource,
-  luser = LNode, lresource = LResource} = JID) ->
+    luser = LNode, lresource = LResource} = JID) ->
     {Node1, LNode1} = case Node of
-        "" -> {undefined, undefined};
-        _  -> {Node, LNode}
+	"" -> {undefined, undefined};
+	_  -> {Node, LNode}
     end,
     {Resource1, LResource1} = case Resource of
-        "" -> {undefined, undefined};
-        _  -> {Resource, LResource}
+	"" -> {undefined, undefined};
+	_  -> {Resource, LResource}
     end,
     JID#jid{user = Node1, resource = Resource1,
       luser = LNode1, lresource = LResource1}.
@@ -719,18 +720,22 @@ from_old_jid(#jid{user = Node, resource = Resource,
 %% Empty fields are set to the empty string, not `undefined'.
 
 to_old_jid(#jid{user = Node, resource = Resource,
-  luser = LNode, lresource = LResource} = JID) ->
+    luser = LNode, lresource = LResource} = JID) ->
     {Node1, LNode1} = case Node of
-        undefined -> {"", ""};
-        _         -> {Node, LNode}
+	undefined -> {"", ""};
+	_         -> {Node, LNode}
     end,
     {Resource1, LResource1} = case Resource of
-        undefined -> {"", ""};
-        _         -> {Resource, LResource}
+	undefined -> {"", ""};
+	_         -> {Resource, LResource}
     end,
     JID#jid{user = Node1, resource = Resource1,
       luser = LNode1, lresource = LResource1}.
 
-short_jid(JID0) ->
-    JID = to_old_jid(JID0),
-    {JID#jid.luser, JID#jid.lserver, JID#jid.lresource}.
+short_jid(JID) ->
+    JID1 = to_old_jid(JID),
+    {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource}.
+
+short_bare_jid(JID) ->
+    JID1 = to_old_jid(exmpp_jid:jid_to_bare_jid(JID)),
+    {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource}.
