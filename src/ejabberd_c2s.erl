@@ -1306,10 +1306,8 @@ terminate(_Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 change_shaper(StateData, JID) ->
-    % XXX OLD FORMAT: JIDOld is an old #jid.
-    JIDOld = jlib:to_old_jid(JID),
     Shaper = acl:match_rule(StateData#state.server,
-			    StateData#state.shaper, JIDOld),
+			    StateData#state.shaper, JID),
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 send_text(StateData, Text) ->
@@ -1674,10 +1672,6 @@ presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
 
 presence_broadcast_first(From, StateData, Packet) ->
     Probe = exmpp_presence:probe(),
-    % XXX OLD FORMAT: From, Packet, Probe.
-    FromOld = jlib:to_old_jid(From),
-    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-      [?DEFAULT_NS], ?PREFIXED_NS),
     ?SETS:fold(fun({U, S, R}, X) ->
 		       FJID = exmpp_jid:make_jid(U, S, R),
 		       ejabberd_router:route(
@@ -1695,8 +1689,11 @@ presence_broadcast_first(From, StateData, Packet) ->
 	    As = ?SETS:fold(
 		    fun({U, S, R} = JID, A) ->
 			    FJID = exmpp_jid:make_jid(U, S, R),
-			    % XXX OLD FORMAT: FJID.
+			    % XXX OLD FORMAT: From, FJID, Packet.
+                            FromOld = jlib:to_old_jid(From),
 			    FJIDOld = jlib:to_old_jid(FJID),
+                            PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
+                              [?DEFAULT_NS], ?PREFIXED_NS),
 			    case ejabberd_hooks:run_fold(
 				   privacy_check_packet, StateData#state.server,
 				   allow,
