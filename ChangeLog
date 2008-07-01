@@ -10,6 +10,9 @@
 
 	* src/jlib.erl: Add function short_bare_jid/1.
 
+	* src/ejabberd_sm.erl: Forgot to convert a <presence/> from the new to
+	the old record.
+
 2008-06-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/Makefile.in: Remove the -I flag for exmpp includes; the

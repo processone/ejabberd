@@ -190,8 +190,11 @@ get_user_info(User, Server, Resource) ->
 
 set_presence(SID, User, Server, Resource, Priority, Presence, Info) ->
     set_session(SID, User, Server, Resource, Priority, Info),
+    % XXX OLD FORMAT: Presence.
+    PresenceOld = exmpp_xml:xmlel_to_xmlelement(Presence,
+      [?DEFAULT_NS], ?PREFIXED_NS),
     ejabberd_hooks:run(set_presence_hook, exmpp_stringprep:nameprep(Server),
-		       [User, Server, Resource, Presence]).
+		       [User, Server, Resource, PresenceOld]).
 
 unset_presence(SID, User, Server, Resource, Status, Info) ->
     set_session(SID, User, Server, Resource, undefined, Info),
