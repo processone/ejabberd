@@ -1,3 +1,8 @@
+2008-07-03  Jérôme Sautret  <jerome.sautret@process-one.net>
+
+        * src/mod_privacy_odbc.erl: Support for privacy lists in MySQL
+	        (thanks to Igor Goryachev)(EJAB-538)
+
 2008-07-03  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix permission control on item
@@ -17,7 +22,7 @@
 	to Kevin Crosbie); Fix forbidden result on setting
 	affiliation/subscription
 
-	* src/ejabberd_local.erl: prevent iq_response table overload 
+	* src/ejabberd_local.erl: prevent iq_response table overload
 	(EJAB-608)
 	* src/mod_caps.erl: Likewise
 
@@ -27,7 +32,7 @@
 	* src/ejabberd_sm.erl: Likewise
 	* src/ejabberd_c2s.erl: Likewise
 
-	* src/web/ejabberd_http_poll.erl: Fixed HTTP headers when a 
+	* src/web/ejabberd_http_poll.erl: Fixed HTTP headers when a
 	requested session doesn't exist (backport from trunk r1223)
 
 2008-06-29  Badlop  <badlop@process-one.net>
@@ -71,7 +76,7 @@
 	* doc/guide.html: Regenerated with all the latest changes
 
 2008-06-12  Badlop  <badlop@process-one.net>
-	
+
 	* doc/guide.tex: Permanent reference URL for sections (EJAB-651).
 	Changes in CSS: verbatim text is indented and has grey background;
 	descriptions are indented; table borders are softer. Fix
@@ -272,7 +277,7 @@
 	* doc/webadmmainru.png: Likewise
 
 	* doc/disco.png: Removed because not used
-	
+
 	* doc/guide.tex: Fix Latex reference to webadmin section. Update
 	explanation of screenshots. Update xmpp addresses of Mickael
 	Remond and Sander Devrieze.
@@ -367,7 +372,7 @@
 
 	* src/eldap.erl: Faster LDAP reconnection (Thanks to Christophe
 	Romain) (EJAB-581)
-					 
+
 2008-03-17  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_s2s.erl: Only trigger s2s_connect_hook on
@@ -453,7 +458,7 @@
 	configuration sanity checks (EJAB-533)
 	* src/src/ejabberd_app.erl: Likewise
 	* src/ejabberd_app.erl: Likewise
-	
+
 2008-02-26  Badlop  <badlop@process-one.net>
 
 	* src/msgs/it.msg: Updated (thanks to Smart2128)
@@ -494,7 +499,7 @@
 	* src/msgs/no.msg: Updated (thanks to Stian B. Barmen)
 	* src/msgs/pt-br.msg: Updated (thanks to Otavio Fernandes)
 	* src/msgs/uk.msg: Updated (thanks to Stoune and Ruslan Rakhmanin)
-	
+
 2008-02-19  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: add pgsql driver monitoring
@@ -641,7 +646,7 @@
 	* src/ejabberd.hrl: Likewise
 
 	* doc/introduction.tex: Updated to 22 languages
-	
+
 	* doc/Makefile: Ensure that Bash is used
 
 	* doc/guide.tex: Updated copyright dates to 2008.
