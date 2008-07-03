@@ -69,7 +69,9 @@
 	 get_states/2,
 	 get_state/3,
 	 set_state/1,
+	 get_items/7,
 	 get_items/2,
+	 get_item/8,
 	 get_item/3,
 	 set_item/1
 	]).
@@ -156,7 +158,6 @@ features() ->
      "auto-create",
      "delete-nodes",
      "instant-nodes",
-     "item-ids",
      "manage-subscriptions",
      "modify-affiliations",
      "outcast-affiliation",
@@ -189,18 +190,14 @@ features() ->
 %% module by implementing this function like this:
 %% ```check_create_user_permission(Host, Node, Owner, Access) ->
 %%	   node_default:check_create_user_permission(Host, Node, Owner, Access).'''</p>
-create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
+create_node_permission(_Host, ServerHost, Node, _ParentNode, Owner, Access) ->
     LOwner = jlib:jid_tolower(Owner),
     {User, Server, _Resource} = LOwner,
     Allowed = case acl:match_rule(ServerHost, Access, LOwner) of
 		allow ->
-		    if Server == Host ->  %% Server == ServerHost ??
-			true;
-		    true ->
-			case Node of
-			    ["home", Server, User | _] -> true;
-			    _ -> false
-			end
+		    case Node of
+			["home", Server, User | _] -> true;
+			_ -> false
 		    end;
 		_ ->
 		    case Owner of
@@ -208,8 +205,7 @@ create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
 			_ -> false
 		    end
 	    end,
-    ChildOK = true, %% TODO test with ParentNode
-    {result, Allowed and ChildOK}.
+    {result, Allowed}.
 
 %% @spec (Host, Node, Owner) ->
 %%		  {result, Result} | exit
@@ -294,12 +290,12 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	not Authorized ->
 	    %% JIDs do not match
 	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "invalid-jid")};
-	Subscription == pending ->
-	    %% Requesting entity has pending subscription
-	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "pending-subscription")};
 	Affiliation == outcast ->
 	    %% Requesting entity is blocked
 	    {error, ?ERR_FORBIDDEN};
+	Subscription == pending ->
+	    %% Requesting entity has pending subscription
+	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "pending-subscription")};
 	(AccessModel == presence) and (not PresenceSubscription) ->
 	    %% Entity is not authorized to create a subscription (presence subscription required)
 	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "presence-subscription-required")};
@@ -443,6 +439,7 @@ publish_item(Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 	    {error, ?ERR_FORBIDDEN};
 	true ->
 	    PubId = {PublisherKey, now()},
+	    %% TODO: check creation, presence, roster (EJAB-663)
 	    Item = case get_item(Host, Node, ItemId) of
 		       {error, ?ERR_ITEM_NOT_FOUND} ->
 			   #pubsub_item{itemid = {ItemId, {Host, Node}},
@@ -498,7 +495,7 @@ remove_extra_items(Host, Node, MaxItems, ItemIds) ->
 %%	 ItemId = string()
 %% @doc <p>Triggers item deletion.</p>
 %% <p>Default plugin: The user performing the deletion must be the node owner
-%% or a node publisher e item publisher.</p>
+%% or a publisher.</p>
 delete_item(Host, Node, Publisher, ItemId) ->
     PublisherKey = jlib:jid_tolower(jlib:jid_remove_resource(Publisher)),
     State = case get_state(Host, Node, PublisherKey) of
@@ -530,21 +527,27 @@ delete_item(Host, Node, Publisher, ItemId) ->
 	    end
     end.
 
-%% @spec (TODO)
+%% @spec (Host, Node, Owner) ->
+%%		  {error, Reason::stanzaError()} |
+%%		  {result, []}
+%%	 Host = mod_pubsub:host()
+%%	 Node = mod_pubsub:pubsubNode()
+%%	 Owner = mod_pubsub:jid()
+%% @doc <p>Purge all node items.</p>
+%% <p>Default plugin: The user performing the deletion must be the node owner.</p>
 purge_node(Host, Node, Owner) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     case get_state(Host, Node, OwnerKey) of
-	{error, ?ERR_ITEM_NOT_FOUND} ->
-	    %% This should not append (case node does not exists)
-	    {error, ?ERR_ITEM_NOT_FOUND};
 	{result, #pubsub_state{items = Items, affiliation = owner}} ->
 	    lists:foreach(fun(ItemId) ->
 				  mnesia:delete({pubsub_item, {ItemId, {Host, Node}}})
 			  end, Items),
 	    {result, {default, broadcast}};
+	{result, _} ->
+	    %% Entity is not owner
+	    {error, ?ERR_FORBIDDEN};
 	_ ->
-	    %% Entity is not an owner
-	    {error, ?ERR_FORBIDDEN}
+	    {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
 %% @spec (Host, JID) -> [{Node,Affiliation}]
@@ -580,7 +583,7 @@ get_affiliation(Host, Node, Owner) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     Affiliation = case get_state(Host, Node, OwnerKey) of
 		      {result, #pubsub_state{affiliation = A}} -> A;
-		      _ -> unknown
+		      _ -> none
 		  end,
     {result, Affiliation}.
 
@@ -629,7 +632,7 @@ get_subscription(Host, Node, Owner) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     Subscription = case get_state(Host, Node, OwnerKey) of
 		       {result, #pubsub_state{subscription = S}} -> S;
-		       _ -> unknown
+		       _ -> none
 		   end,
     {result, Subscription}.
 
@@ -704,6 +707,44 @@ get_items(Host, Node) ->
     Items = mnesia:match_object(
 	      #pubsub_item{itemid = {'_', {Host, Node}}, _ = '_'}),
     {result, Items}.
+get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
+    {Affiliation, Subscription} = 
+	case get_state(Host, Node, jlib:jid_tolower(jlib:jid_remove_resource(JID))) of
+	{result, #pubsub_state{affiliation = A, subscription = S}} -> {A, S}; 
+	_ -> {none, none}
+	end, 
+    Subscribed = not ((Subscription == none) or (Subscription == pending)),
+    if
+	%%SubID == "", ?? ->
+	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
+	    %{error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+	%%InvalidSubID ->
+	    %% Entity is subscribed but specifies an invalid subscription ID
+	    %{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+	Affiliation == outcast ->
+	    %% Requesting entity is blocked
+	    {error, ?ERR_FORBIDDEN};
+	(AccessModel == open) and (not Subscribed) ->
+	    %% Entity is not subscribed
+	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "not-subscribed")};
+	(AccessModel == presence) and (not PresenceSubscription) ->
+	    %% Entity is not authorized to create a subscription (presence subscription required)
+	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "presence-subscription-required")};
+	(AccessModel == roster) and (not RosterGroup) ->
+	    %% Entity is not authorized to create a subscription (not in roster group)
+	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "not-in-roster-group")};
+	(AccessModel == whitelist) ->  % TODO: to be done
+	    %% Node has whitelist access model
+	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
+	(AccessModel == authorize) -> % TODO: to be done
+	    %% Node has authorize access model
+	    {error, ?ERR_FORBIDDEN};
+	%%MustPay ->
+	%%	% Payment is required for a subscription
+	%%	{error, ?ERR_PAYMENT_REQUIRED};
+	true ->
+	    get_items(Host, Node)
+    end.
 
 %% @spec (Host, Node, ItemId) -> [Item] | []
 %%	 Host = mod_pubsub:host()
@@ -717,6 +758,44 @@ get_item(Host, Node, ItemId) ->
 	    {result, Item};
 	_ ->
 	    {error, ?ERR_ITEM_NOT_FOUND}
+    end.
+get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
+    {Affiliation, Subscription} = 
+	case get_state(Host, Node, jlib:jid_tolower(jlib:jid_remove_resource(JID))) of
+	{result, #pubsub_state{affiliation = A, subscription = S}} -> {A, S}; 
+	_ -> {none, none}
+	end, 
+    Subscribed = not ((Subscription == none) or (Subscription == pending)),
+    if
+	%%SubID == "", ?? ->
+	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
+	    %{error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+	%%InvalidSubID ->
+	    %% Entity is subscribed but specifies an invalid subscription ID
+	    %{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+	Affiliation == outcast ->
+	    %% Requesting entity is blocked
+	    {error, ?ERR_FORBIDDEN};
+	(AccessModel == open) and (not Subscribed) ->
+	    %% Entity is not subscribed
+	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "not-subscribed")};
+	(AccessModel == presence) and (not PresenceSubscription) ->
+	    %% Entity is not authorized to create a subscription (presence subscription required)
+	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "presence-subscription-required")};
+	(AccessModel == roster) and (not RosterGroup) ->
+	    %% Entity is not authorized to create a subscription (not in roster group)
+	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "not-in-roster-group")};
+	(AccessModel == whitelist) ->  % TODO: to be done
+	    %% Node has whitelist access model
+	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
+	(AccessModel == authorize) -> % TODO: to be done
+	    %% Node has authorize access model
+	    {error, ?ERR_FORBIDDEN};
+	%%MustPay ->
+	%%	% Payment is required for a subscription
+	%%	{error, ?ERR_PAYMENT_REQUIRED};
+	true ->
+	    get_item(Host, Node, ItemId)
     end.
 
 %% @spec (Item) -> ok | {error, ?ERR_INTERNAL_SERVER_ERROR}

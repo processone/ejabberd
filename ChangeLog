@@ -1,3 +1,35 @@
+2008-07-03  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix permission control on item
+	retrieve (EJAB-453)
+	* src/mod_pubsub/node_dispatch.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+	* src/mod_pubsub/gen_pubsub_node.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: Allow subscriber to request specific
+	items by ItemID; Allow to retrieve pubsub#title configuration (thanks
+	to Kevin Crosbie); Fix forbidden result on setting
+	affiliation/subscription
+
+	* src/ejabberd_local.erl: prevent iq_response table overload 
+	(EJAB-608)
+	* src/mod_caps.erl: Likewise
+
+	* src/web/ejabberd_http.erl: Retrieve correct IP from http connection
+	* src/web/ejabberd_http_poll.erl: Likewise
+	* src/ejabberd_receiver.erl: Likewise
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/web/ejabberd_http_poll.erl: Fixed HTTP headers when a 
+	requested session doesn't exist (backport from trunk r1223)
+
 2008-06-29  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_ctl.erl: Web Admin and Ad-hoc admin: dump only

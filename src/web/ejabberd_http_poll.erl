@@ -50,13 +50,16 @@
 
 -record(http_poll, {id, pid}).
 
+-define(NULL_PEER, {{0, 0, 0, 0}, 0}).
+
 -record(state, {id,
 		key,
 		output = "",
 		input = "",
 		waiting_input = false, %% {ReceiverPid, Tag}
 		last_receiver,
-		timer}).
+		timer,
+		ip = ?NULL_PEER }).
 
 %-define(DBGFSM, true).
 
@@ -94,11 +97,18 @@ setopts({http_poll, FsmRef}, Opts) ->
 	    ok
     end.
 
-sockname(_Socket) ->
-    {ok, {{0, 0, 0, 0}, 0}}.
+sockname(_) ->
+    {ok, ?NULL_PEER}.
 
-peername(_Socket) ->
-    {ok, {{0, 0, 0, 0}, 0}}.
+peername({http_poll, FsmRef}) ->
+    gen_fsm:send_all_state_event(FsmRef, {peername, self()}),
+    %% XXX should improve that, but sync call seems not possible
+    receive
+	{peername, PeerName} -> {ok, PeerName}
+	after 1000 -> {ok, ?NULL_PEER}
+    end;
+peername(_) ->
+    {ok, ?NULL_PEER}.
 
 controlling_process(_Socket, _Pid) ->
     ok.
@@ -107,7 +117,7 @@ close({http_poll, FsmRef}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
 
-process([], #request{data = Data} = _Request) ->
+process([], #request{data = Data, ip = IP} = _Request) ->
     case catch parse_request(Data) of
 	{ok, ID1, Key, NewKey, Packet} ->
 	    ID = if
@@ -123,7 +133,7 @@ process([], #request{data = Data} = _Request) ->
 		     true ->
 			 ID1
 		 end,
-	    case http_put(ID, Key, NewKey, Packet) of
+	    case http_put(ID, Key, NewKey, Packet, IP) of
 		{error, not_exists} ->
 		    {200, ?BAD_REQUEST, ""};
 		{error, bad_key} ->
@@ -134,7 +144,7 @@ process([], #request{data = Data} = _Request) ->
 		    end,
 		    case http_get(ID) of
 			{error, not_exists} ->
-			    {200, [?BAD_REQUEST], ""};
+			    {200, ?BAD_REQUEST, ""};
 			{ok, OutPacket} ->
 			    if
 				ID == ID1 ->
@@ -228,6 +238,10 @@ handle_event({activate, From}, StateName, StateData) ->
 						   }}
     end;
 
+handle_event({peername, From}, StateName, StateData) ->
+    From ! {peername, StateData#state.ip},
+    {next_state, StateName, StateData};
+
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -249,7 +263,7 @@ handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 
-handle_sync_event({http_put, Key, NewKey, Packet},
+handle_sync_event({http_put, Key, NewKey, Packet, IP},
 		  _From, StateName, StateData) ->
     Allow = case StateData#state.key of
 		"" ->
@@ -271,7 +285,8 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 		    Input = [StateData#state.input|Packet],
 		    Reply = ok,
 		    {reply, Reply, StateName, StateData#state{input = Input,
-							      key = NewKey}};
+							      key = NewKey,
+							      ip = IP}};
 		{Receiver, _Tag} ->
 		    Receiver ! {tcp, {http_poll, self()},
 				list_to_binary(Packet)},
@@ -282,7 +297,8 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 		     StateData#state{waiting_input = false,
 				     last_receiver = Receiver,
 				     key = NewKey,
-				     timer = Timer}}
+				     timer = Timer,
+				     ip = IP}}
 	    end;
 	true ->
 	    Reply = {error, bad_key},
@@ -343,13 +359,13 @@ terminate(_Reason, _StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-http_put(ID, Key, NewKey, Packet) ->
+http_put(ID, Key, NewKey, Packet, IP) ->
     case mnesia:dirty_read({http_poll, ID}) of
 	[] ->
 	    {error, not_exists};
 	[#http_poll{pid = FsmRef}] ->
 	    gen_fsm:sync_send_all_state_event(
-	      FsmRef, {http_put, Key, NewKey, Packet})
+	      FsmRef, {http_put, Key, NewKey, Packet, IP})
     end.
 
 http_get(ID) ->
