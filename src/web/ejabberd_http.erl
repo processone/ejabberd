@@ -290,7 +290,7 @@ process_request(#state{request_method = Method,
 			     LQ
 		     end,
 	    LPath = string:tokens(NPath, "/"),
-	    {ok, {IP, _Port}} =
+	    {ok, IP} =
 		case SockMod of
 		    gen_tcp ->
 			inet:peername(Socket);
@@ -302,7 +302,7 @@ process_request(#state{request_method = Method,
 			       q = LQuery,
 			       auth = Auth,
 			       lang = Lang,
-			       ip=IP},
+			       ip = IP},
 	    %% XXX bard: This previously passed control to
 	    %% ejabberd_web:process_get, now passes it to a local
 	    %% procedure (process) that handles dispatching based on
@@ -348,12 +348,20 @@ process_request(#state{request_method = Method,
 			 LQ ->
 			     LQ
 		     end,
+	    {ok, IP} =
+		case SockMod of
+		    gen_tcp ->
+			inet:peername(Socket);
+		    _ ->
+			SockMod:peername(Socket)
+		end,
 	    Request = #request{method = Method,
 			       path = LPath,
 			       q = LQuery,
 			       auth = Auth,
 			       data = Data,
-			       lang = Lang},
+			       lang = Lang,
+			       ip = IP},
 	    case process(RequestHandlers, Request) of
 		El when element(1, El) == xmlelement ->
 		    make_xhtml_output(State, 200, [], El);

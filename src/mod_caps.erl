@@ -53,6 +53,7 @@
 
 -define(PROCNAME, ejabberd_mod_caps).
 -define(DICT, dict).
+-define(CAPS_QUERY_TIMEOUT, 60000). % 1mn without answer, consider client never answer
 
 -record(caps, {node, version, exts}).
 -record(caps_features, {node_pair, features}).
@@ -220,6 +221,7 @@ handle_cast({note_caps, From,
 			  ejabberd_local:register_iq_response_handler
 			    (Host, ID, ?MODULE, handle_disco_response),
 			  ejabberd_router:route(jlib:make_jid("", Host, ""), From, Stanza),
+			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID}),
 			  ?DICT:store(ID, {Node, SubNode}, Dict)
 		  end, Requests, Missing),
 	    {noreply, State#state{disco_requests = NewRequests}};
@@ -273,6 +275,16 @@ handle_cast({disco_response, From, _To,
 	    ok
     end,
     NewRequests = ?DICT:erase(ID, Requests),
+    {noreply, State#state{disco_requests = NewRequests}};
+handle_cast({disco_timeout, ID}, #state{host = Host, disco_requests = Requests} = State) ->
+    %% do not wait a response anymore for this IQ, client certainly will never answer
+    NewRequests = case ?DICT:is_key(ID, Requests) of
+    true ->
+	ejabberd_local:unregister_iq_response_handler(Host, ID),
+	?DICT:erase(ID, Requests);
+    false ->
+	Requests
+    end,
     {noreply, State#state{disco_requests = NewRequests}};
 handle_cast(visit_feature_queries, #state{feature_queries = FeatureQueries} = State) ->
     Timestamp = timestamp(),
