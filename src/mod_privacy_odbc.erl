@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -698,11 +698,11 @@ raw_to_item({SType, SValue, SAction, SOrder, SMatchAll, SMatchIQ,
 	    "d" -> deny
 	end,
     Order = list_to_integer(SOrder),
-    MatchAll = SMatchAll == "t",
-    MatchIQ = SMatchIQ == "t",
-    MatchMessage = SMatchMessage == "t",
-    MatchPresenceIn = SMatchPresenceIn == "t",
-    MatchPresenceOut = SMatchPresenceOut == "t",
+    MatchAll = SMatchAll == "1" orelse SMatchAll == "t",
+    MatchIQ = SMatchIQ == "1" orelse SMatchIQ == "t" ,
+    MatchMessage =  SMatchMessage == "1" orelse SMatchMessage == "t",
+    MatchPresenceIn =  SMatchPresenceIn == "1" orelse SMatchPresenceIn == "t",
+    MatchPresenceOut =  SMatchPresenceOut == "1" orelse SMatchPresenceOut == "t",
     #listitem{type = Type,
 	      value = Value,
 	      action = Action,
@@ -750,11 +750,11 @@ item_to_raw(#listitem{type = Type,
 	    deny -> "d"
 	end,
     SOrder = integer_to_list(Order),
-    SMatchAll = if MatchAll -> "t"; true -> "f" end,
-    SMatchIQ = if MatchIQ -> "t"; true -> "f" end,
-    SMatchMessage = if MatchMessage -> "t"; true -> "f" end,
-    SMatchPresenceIn = if MatchPresenceIn -> "t"; true -> "f" end,
-    SMatchPresenceOut = if MatchPresenceOut -> "t"; true -> "f" end,
+    SMatchAll = if MatchAll -> "1"; true -> "0" end,
+    SMatchIQ = if MatchIQ -> "1"; true -> "0" end,
+    SMatchMessage = if MatchMessage -> "1"; true -> "0" end,
+    SMatchPresenceIn = if MatchPresenceIn -> "1"; true -> "0" end,
+    SMatchPresenceOut = if MatchPresenceOut -> "1"; true -> "0" end,
     ["'", SType, "', "
      "'", SValue, "', "
      "'", SAction, "', "
@@ -871,6 +871,3 @@ sql_set_privacy_list(ID, RItems) ->
 			     ") "
 			     "values ('", ID, "', ", Items, ");"])
 		  end, RItems).
-
-
-

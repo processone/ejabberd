@@ -1,3 +1,8 @@
+2008-07-03  Jérôme Sautret  <jerome.sautret@process-one.net>
+
+	* src/mod_privacy_odbc.erl: Support for privacy lists in MySQL
+	(thanks to Igor Goryachev)(EJAB-538)
+
 2008-07-03  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix permission control on item
@@ -20,7 +25,7 @@
 	* src/mod_pubsub/node_zoo.erl: Add node type without
 	home/<host>/<user> constraint
 
-	* src/ejabberd_local.erl: prevent iq_response table overload 
+	* src/ejabberd_local.erl: prevent iq_response table overload
 	(EJAB-608)
 	* src/mod_caps.erl: Likewise
 
@@ -147,7 +152,7 @@
 2008-05-19  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_s2s_out.erl: Avoid an harmless error (function clause in
-	logs) 
+	logs)
 
 2008-05-17  Badlop  <badlop@process-one.net>
 
@@ -220,11 +225,11 @@
 	being immediately shown in an 'all' special shared roster
 	group (thanks to Alexey Shchepin) (EJAB-71)
 	* src/mod_register.erl: New vhost event user_registered
-	
+
 	* doc/guide.tex: Document option registration_timeout (EJAB-614)
 
 2008-04-25  Badlop  <badlop@process-one.net>
-	
+
 	* src/ejabberd_c2s.erl: Added forbidden_session_hook
 
 	* src/acl.erl: New access types: resource, resource_regexp and
@@ -382,7 +387,7 @@
 	* doc/webadmmainru.png: Likewise
 
 	* doc/disco.png: Removed because not used
-	
+
 	* doc/guide.tex: Fix Latex reference to webadmin section. Update
 	explanation of screenshots. Update xmpp addresses of Mickael
 	Remond and Sander Devrieze.
@@ -495,7 +500,7 @@
 
 	* src/eldap.erl: Faster LDAP reconnection (Thanks to Christophe
 	Romain) (EJAB-581)
-					 
+
 2008-03-17  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_s2s.erl: Only trigger s2s_connect_hook on
@@ -506,7 +511,7 @@
 
 	* src/ejabberd_ctl.erl: API improvement: Added
 	reopen_log_hook (EJAB-565)
-	
+
 	* src/ejabberd_s2s.erl: API improvement: Added s2s_connect_hook
 	(EJAB-566).
 
@@ -598,7 +603,7 @@
 	configuration sanity checks (EJAB-533)
 	* src/src/ejabberd_app.erl: Likewise
 	* src/ejabberd_app.erl: Likewise
-	
+
 2008-02-26  Badlop  <badlop@process-one.net>
 
 	* src/msgs/it.msg: Updated (thanks to Smart2128)
@@ -734,7 +739,7 @@
 	* src/mod_pubsub/node_pep.erl: Likewise
 	* src/mod_pubsub/node_private.erl: Likewise
 	* src/mod_pubsub/node.template: Likewise
-	
+
 	* src/mod_pubsub/gen_pubsub_node.erl: API improvement: Added a way
 	to generate custom item name
 	* src/mod_pubsub/node_dispatch.erl: Likewise
@@ -771,7 +776,7 @@
 	* src/mod_pubsub/gen_pubsub_nodetree.erl: Likewise
 	* src/mod_pubsub/nodetree_default.erl: Likewise
 	* src/mod_pubsub/nodetree_virtual.erl: Likewise
-	
+
 2008-01-30  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Removed the option served_hosts in mod_pubsub
@@ -836,7 +841,7 @@
 	* src/ejabberd.hrl: Likewise
 
 	* doc/introduction.tex: Updated to 22 languages
-	
+
 	* doc/Makefile: Ensure that Bash is used
 
 	* doc/guide.tex: Updated copyright dates to 2008.
