@@ -1,7 +1,7 @@
-2008-07-03  Jérôme Sautret  <jerome.sautret@process-one.net>
+2008-07-03  Jerome Sautret  <jerome.sautret@process-one.net>
 
-        * src/mod_privacy_odbc.erl: Support for privacy lists in MySQL
-	        (thanks to Igor Goryachev)(EJAB-538)
+	* src/mod_privacy_odbc.erl: Support for privacy lists in MySQL
+	(thanks to Igor Goryachev)(EJAB-538)
 
 2008-07-03  Christophe Romain  <christophe.romain@process-one.net>
 
