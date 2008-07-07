@@ -1,5 +1,10 @@
 2008-07-07  Badlop  <badlop@process-one.net>
 
+	* src/Makefile.in: Spool, config and log dirs: writtable by owner,
+	readable by group, nothing by others (EJAB-686)
+	* doc/guide.tex: New section Securing sensible files
+	* doc/guide.html: Likewise
+
 	* doc/guide.tex: Solaris Makefile install: use ginstall (thanks to
 	Jonathan Auer)(EJAB-649)
 	* doc/guide.html: Likewise

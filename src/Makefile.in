@@ -60,6 +60,7 @@ DESTDIR =
 
 EJABBERDDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
 BEAMDIR = $(EJABBERDDIR)/ebin
+SPOOLDIR = $(EJABBERDDIR)/db
 PRIVDIR = $(EJABBERDDIR)/priv
 SODIR = $(PRIVDIR)/lib
 PBINDIR = $(PRIVDIR)/bin
@@ -116,20 +117,21 @@ install: all
 	install -m 644 *.beam $(BEAMDIR)
 	rm -f $(BEAMDIR)/configure.beam
 	install -m 644 *.app $(BEAMDIR)
+	install -d -m 750 $(SPOOLDIR)
 	install -d $(SODIR)
 	install -d $(PBINDIR)
 	install -m 644 *.so $(SODIR)
 	$(INSTALL_EPAM)
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
-	install -d $(ETCDIR)
+	install -d -m 750 $(ETCDIR)
 	[ -f $(ETCDIR)/ejabberd.cfg ] && install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new || install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
 	sed -e "s*@rootdir@*@prefix@*" ejabberdctl.template > ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] && install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new || install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
 	install -b -m 644 inetrc $(ETCDIR)/inetrc
 	install -d $(SBINDIR)
 	install -m 755 ejabberdctl.example $(SBINDIR)/ejabberdctl
-	install -d $(LOGDIR)
+	install -d -m 750 $(LOGDIR)
 
 uninstall: uninstall-binary
 
