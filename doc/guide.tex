@@ -405,6 +405,31 @@ gmake
 \end{verbatim}
 
 
+\makesubsection{solaris}{Specific Notes for Sun Solaris}
+\ind{install!solaris}
+
+You need to have \term{GNU install},
+but it isn't included in Solaris.
+It can be easily installed if your Solaris system
+is set up for \footahref{http://www.blastwave.org/}{blastwave.org} 
+package repository. 
+Make sure \term{/opt/csw/bin} is in your \term{PATH} and run:
+\begin{verbatim}
+pkg-get -i fileutils
+\end{verbatim}
+
+If that program is called \term{ginstall},
+modify the \ejabberd{} \term{Makefile} script to suit your system,
+for example:
+\begin{verbatim}
+cat Makefile | sed s/install/ginstall/ > Makefile.gi
+\end{verbatim}
+And finally install \ejabberd{} with:
+\begin{verbatim}
+gmake -f Makefile.gi ginstall
+\end{verbatim}
+
+
 \makesubsection{windows}{Specific Notes for Microsoft Windows}
 \ind{install!windows}
 
