@@ -1,3 +1,9 @@
+2008-07-07  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Solaris Makefile install: use ginstall (thanks to
+	Jonathan Auer)(EJAB-649)
+	* doc/guide.html: Likewise
+
 2008-07-03  Jerome Sautret  <jerome.sautret@process-one.net>
 
 	* src/mod_privacy_odbc.erl: Support for privacy lists in MySQL
