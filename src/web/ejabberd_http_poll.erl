@@ -304,7 +304,7 @@ handle_sync_event(http_get, _From, StateName, StateData) ->
     {reply, Reply, StateName, StateData#state{output = ""}};
 
 handle_sync_event(peername, _From, StateName, StateData) ->
-    Reply = {ok, {peername, StateData#state.ip}},
+    Reply = {ok, StateData#state.ip},
     {reply, Reply, StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
