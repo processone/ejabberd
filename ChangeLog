@@ -1,3 +1,9 @@
+2008-07-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/cyrsasl.erl, src/cyrsasl_anonymous.erl, src/cyrsasl_digest.erl,
+	src/cyrsasl_plain.erl, src/ejabberd_c2s.erl: Errors are now atoms, not
+	strings anymore.
+
 2008-07-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_sm.erl: Convert to exmpp.

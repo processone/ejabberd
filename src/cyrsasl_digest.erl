@@ -39,13 +39,13 @@ mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
 mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
     case parse(ClientIn) of
 	bad ->
-	    {error, "bad-protocol"};
+	    {error, 'bad-protocol'};
 	KeyVals ->
 	    UserName = xml:get_attr_s("username", KeyVals),
 	    AuthzId = xml:get_attr_s("authzid", KeyVals),
 	    case (State#state.get_password)(UserName) of
 		{false, _} ->
-		    {error, "not-authorized", UserName};
+		    {error, 'not-authorized', UserName};
 		{Passwd, AuthModule} ->
 		    Response = response(KeyVals, UserName, Passwd,
 					Nonce, AuthzId, "AUTHENTICATE"),
@@ -61,7 +61,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 					 username = UserName,
 					 authzid = AuthzId}};
 			_ ->
-			    {error, "not-authorized", UserName}
+			    {error, 'not-authorized', UserName}
 		    end
 	    end
     end;
@@ -73,7 +73,7 @@ mech_step(#state{step = 5,
 	  {auth_module, AuthModule}]};
 mech_step(A, B) ->
     ?DEBUG("SASL DIGEST: A ~p B ~p", [A,B]),
-    {error, "bad-protocol"}.
+    {error, 'bad-protocol'}.
 
 
 parse(S) ->

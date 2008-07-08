@@ -515,15 +515,13 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		       "(~w) Failed authentication for ~s@~s",
 		       [StateData#state.socket,
 			Username, StateData#state.server]),
-		    % XXX OLD FORMAT: list_to_atom(Error).
 		    send_element(StateData,
-		      exmpp_server_sasl:failure(list_to_atom(Error))),
+		      exmpp_server_sasl:failure(Error)),
 		    {next_state, wait_for_feature_request, StateData,
 		     ?C2S_OPEN_TIMEOUT};
 		{error, Error} ->
-		    % XXX OLD FORMAT: list_to_atom(Error).
 		    send_element(StateData,
-		      exmpp_server_sasl:failure(list_to_atom(Error))),
+		      exmpp_server_sasl:failure(Error)),
 		    fsm_next_state(wait_for_feature_request, StateData)
 	    end;
 	{?NS_TLS, 'starttls'} when TLS == true,
@@ -631,14 +629,12 @@ wait_for_sasl_response({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		       "(~w) Failed authentication for ~s@~s",
 		       [StateData#state.socket,
 			Username, StateData#state.server]),
-		    % XXX OLD FORMAT: list_to_atom(Error).
 		    send_element(StateData,
-		      exmpp_server_sasl:failure(list_to_atom(Error))),
+		      exmpp_server_sasl:failure(Error)),
 		    fsm_next_state(wait_for_feature_request, StateData);
 		{error, Error} ->
-		    % XXX OLD FORMAT: list_to_atom(Error).
 		    send_element(StateData,
-		      exmpp_server_sasl:failure(list_to_atom(Error))),
+		      exmpp_server_sasl:failure(Error)),
 		    fsm_next_state(wait_for_feature_request, StateData)
 	    end;
 	_ ->

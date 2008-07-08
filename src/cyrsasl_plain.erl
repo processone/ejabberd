@@ -51,10 +51,10 @@ mech_step(State, ClientIn) ->
 		    {ok, [{username, User}, {authzid, AuthzId},
 			  {auth_module, AuthModule}]};
 		_ ->
-		    {error, "not-authorized", User}
+		    {error, 'not-authorized', User}
 	    end;
 	_ ->
-	    {error, "bad-protocol"}
+	    {error, 'bad-protocol'}
     end.
 
 

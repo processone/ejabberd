@@ -86,14 +86,14 @@ register_mechanism(Mechanism, Module, RequirePlainPassword) ->
 %%    end.
 
 check_credentials(_State, Props) ->
-    User = xml:get_attr_s(username, Props),
-    case jlib:nodeprep(User) of
-	error ->
-	    {error, "not-authorized"};
-	"" ->
-	    {error, "not-authorized"};
-	_LUser ->
-	    ok
+    case proplists:get_value(username, Props) of
+	undefined ->
+	    {error, 'not-authorized'};
+	User ->
+	    case exmpp_stringprep:is_node(User) of
+		false -> {error, 'not-authorized'};
+		true  -> ok
+	    end
     end.
 
 listmech(Host) ->
@@ -133,10 +133,10 @@ server_start(State, Mech, ClientIn) ->
 						 mech_state = MechState},
 				ClientIn);
 		_ ->
-		    {error, "no-mechanism"}
+		    {error, 'no-mechanism'}
 	    end;
 	false ->
-	    {error, "no-mechanism"}
+	    {error, 'no-mechanism'}
     end.
 
 server_step(State, ClientIn) ->
