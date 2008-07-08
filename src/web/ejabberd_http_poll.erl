@@ -101,11 +101,9 @@ sockname(_) ->
     {ok, ?NULL_PEER}.
 
 peername({http_poll, FsmRef}) ->
-    gen_fsm:send_all_state_event(FsmRef, {peername, self()}),
-    %% XXX should improve that, but sync call seems not possible
-    receive
-	{peername, PeerName} -> {ok, PeerName}
-	after 1000 -> {ok, ?NULL_PEER}
+    case catch gen_fsm:sync_send_all_state_event(FsmRef, peername, 1000) of
+	{ok, IP} -> {ok, IP};
+	_ -> {ok, ?NULL_PEER}
     end;
 peername(_) ->
     {ok, ?NULL_PEER}.
@@ -238,10 +236,6 @@ handle_event({activate, From}, StateName, StateData) ->
 						   }}
     end;
 
-handle_event({peername, From}, StateName, StateData) ->
-    From ! {peername, StateData#state.ip},
-    {next_state, StateName, StateData};
-
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -308,6 +302,10 @@ handle_sync_event({http_put, Key, NewKey, Packet, IP},
 handle_sync_event(http_get, _From, StateName, StateData) ->
     Reply = {ok, StateData#state.output},
     {reply, Reply, StateName, StateData#state{output = ""}};
+
+handle_sync_event(peername, _From, StateName, StateData) ->
+    Reply = {ok, {peername, StateData#state.ip}},
+    {reply, Reply, StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,

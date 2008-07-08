@@ -1,3 +1,7 @@
+2008-07-03  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: improve ip fetching patch
+
 2008-07-07  Badlop  <badlop@process-one.net>
 
 	* src/Makefile.in: Spool, config and log dirs: writtable by owner,
