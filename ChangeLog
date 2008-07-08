@@ -1,3 +1,7 @@
+2008-07-08  Badlop  <badlop@process-one.net>
+
+	* tools/ejabberdctl: Work also when 'which' is unavailable
+
 2008-07-08  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: improve ip fetching patch
