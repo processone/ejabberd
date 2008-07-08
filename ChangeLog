@@ -1,4 +1,4 @@
-2008-07-03  Christophe Romain  <christophe.romain@process-one.net>
+2008-07-08  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: improve ip fetching patch
 
