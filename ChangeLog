@@ -1,5 +1,9 @@
 2008-07-09  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_log.erl: Fix XHTML compliance: ensure some
+	language is set, include ID attribute in each message, add
+	microseconds to ensure unique value (EJAB-497)
+
 	* src/ejabberd_config.erl (load_file): error message on sasl.log
 	is not flattened (EJAB-616)
 
