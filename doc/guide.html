@@ -2113,7 +2113,7 @@ Chatroom details are added on top of each page: room title, JID,
 author, subject and configuration.
 </LI><LI CLASS="li-itemize">
 The room JID in the generated HTML is a link to join the chatroom (using
-<A HREF="http://www.xmpp.org/rfc/rfc5122.html">XMPP URI</A>).
+<A HREF="http://www.xmpp.org/rfcs/rfc5122.html">XMPP URI</A>).
 </LI><LI CLASS="li-itemize">Subject and chatroom configuration changes are tracked and displayed.
 </LI><LI CLASS="li-itemize">Joins, leaves, nick changes, kicks, bans and &#X2018;/me&#X2019; are tracked and
 displayed, including the reason if available.
@@ -2363,6 +2363,7 @@ restrictions by default).
 </DD><DT CLASS="dt-description"><B><TT>welcome_message</TT></B></DT><DD CLASS="dd-description"> Set a welcome message that
 is sent to each newly registered account. The first string is the subject, and 
 the second string is the message body.
+In the body you can set a newline with the characters: <TT>~n</TT>.
 </DD><DT CLASS="dt-description"><B><TT>registration_watchers</TT></B></DT><DD CLASS="dd-description"> This option defines a 
 list of JIDs which will be notified each time a new account is registered.
 </DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies 
@@ -2413,7 +2414,7 @@ Also define a registration timeout of one hour:
   ...
   {mod_register,
    [
-    {welcome_message, {"Welcome!", "Welcome to this Jabber server. Check http://www.jabber.org"}},
+    {welcome_message, {"Welcome!", "Hi.~nWelcome to this Jabber server.~n Check http://www.jabber.org~n~nBye"}},
     {registration_watchers, ["admin1@example.org", "boss@example.net"]}
    ]},
   ...

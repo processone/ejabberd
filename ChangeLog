@@ -1,5 +1,10 @@
 2008-07-09  Badlop  <badlop@process-one.net>
 
+	* src/mod_register.erl: Support for io_lib newline character in
+	the body of welcome_message (EJAB-501)
+	* doc/guide.tex: Document the newline character
+	* src/ejabberd.cfg.example: Example usage of newline character
+
 	* src/ejabberd_config.erl (load_file): error message on sasl.log
 	is not flattened (EJAB-616)
 

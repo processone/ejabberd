@@ -459,7 +459,7 @@
 		  %% a message with this subject and body.
 		  %%
 		  {welcome_message, {"Welcome!", 
-				     "Welcome to this Jabber server."}},
+				     "Hi.~nWelcome to this Jabber server."}},
 
 		  %%
 		  %% When a user registers, send a notification to 
