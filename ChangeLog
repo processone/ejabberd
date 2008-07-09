@@ -1,5 +1,8 @@
 2008-07-09  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_config.erl (load_file): error message on sasl.log
+	is not flattened (EJAB-616)
+
 	* doc/guide.tex: mod_muc_log XMPP URI supports the updated version
 	RFC 5122 (EJAB-631)
 	* doc/guide.html: Likewise

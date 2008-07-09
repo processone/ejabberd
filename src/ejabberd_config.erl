@@ -96,8 +96,10 @@ get_plain_terms_file(File1) ->
 	{ok, Terms} ->
 	    include_config_files(Terms);
 	{error, Reason} ->
-	    ?ERROR_MSG("Can't load config file ~p: ~p", [File, Reason]),
-	    exit(File ++ ": " ++ file:format_error(Reason))
+	    ExitText = lists:flatten(File ++ ": around line "
+				     ++ file:format_error(Reason)),
+	    ?ERROR_MSG("Problem loading ejabberd config file:~n~s", [ExitText]),
+	    exit(ExitText)
     end.
 
 %% @doc Convert configuration filename to absolute path.
