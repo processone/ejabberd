@@ -2593,7 +2593,7 @@ set_xoption([], NewOpts) ->
     NewOpts;
 set_xoption([{"FORM_TYPE", _} | Opts], NewOpts) ->
     set_xoption(Opts, NewOpts);
-set_xoption([{"pubsub#roster_groups_allowed", Value} | Opts], NewOpts) ->
+set_xoption([{"pubsub#roster_groups_allowed", _Value} | Opts], NewOpts) ->
     ?SET_LIST_XOPT(roster_groups_allowed, []);  % XXX: waiting for EJAB-659 to be solved
 set_xoption([{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(deliver_payloads, Val);
