@@ -65,8 +65,10 @@ load_file(File) ->
 	    Res = lists:foldl(fun process_term/2, State, Terms),
 	    set_opts(Res);
 	{error, Reason} ->
-	    ?ERROR_MSG("Can't load config file ~p: ~p", [File, Reason]),
-	    exit(File ++ ": " ++ file:format_error(Reason))
+	    ExitText = lists:flatten(File ++ ": around line "
+				     ++ file:format_error(Reason)),
+	    ?ERROR_MSG("Problem loading ejabberd config file:~n~s", [ExitText]),
+	    exit(ExitText)
     end.
 
 search_hosts(Term, State) ->
