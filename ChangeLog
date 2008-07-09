@@ -1,5 +1,11 @@
 2008-07-09  Badlop  <badlop@process-one.net>
 
+	* src/mod_shared_roster.erl: Allow to get subscribed to a contact
+	that is already in the roster by means of a shared roster group:
+	add it to another roster group and it gets subscribed
+	automatically (EJAB-407)
+	* src/mod_roster.erl: Likewise
+	
 	* src/mod_muc/mod_muc_log.erl: Fix XHTML compliance: ensure some
 	language is set, include ID attribute in each message, add
 	microseconds to ensure unique value (EJAB-497)
