@@ -1,5 +1,8 @@
 2008-07-09  Badlop  <badlop@process-one.net>
 
+	* src/configure.ac: Check for erlang header files (EJAB-232)
+	* src/configure: Likewise
+
 	* src/mod_pubsub/mod_pubsub.erl: Fix compilator warnings
 
 	* src/mod_muc/mod_muc_log.erl: Fix XHTML compliance: ensure some
