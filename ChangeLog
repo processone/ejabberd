@@ -1,5 +1,8 @@
 2008-07-09  Badlop  <badlop@process-one.net>
 
+	* src/configure.ac: Check for erlang header files (EJAB-232)
+	* src/configure: Likewise
+
 	* src/mod_pubsub/mod_pubsub.erl: Fix compilation warnings
 	* src/mod_pubsub/node_zoo.erl: Likewise
 
