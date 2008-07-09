@@ -146,7 +146,7 @@ try_register(User, Server, Password) ->
 	true ->
 	    {atomic, exists};
 	false ->
-	    case lists:member(jlib:nameprep(Server), ?MYHOSTS) of
+	    case lists:member(exmpp_stringprep:nameprep(Server), ?MYHOSTS) of
 		true ->
 		    lists:foldl(
 		      fun(_M, {atomic, ok} = Res) ->
@@ -286,7 +286,7 @@ auth_modules() ->
 
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     Method = ejabberd_config:get_local_option({auth_method, LServer}),
     Methods = if
 		  Method == undefined -> [];

@@ -238,9 +238,11 @@ get_vh_registered_users_ldap(Server) ->
 						  {User, UIDFormat} ->
 						      case eldap_utils:get_user_part(User, UIDFormat) of
 							  {ok, U} ->
-							      case jlib:nodeprep(U) of
-								  error -> [];
-								  LU -> [{LU, jlib:nameprep(Server)}]
+							      try
+								  [{exmpp_stringprep:nodeprep(U), exmpp_stringprep:nameprep(Server)}]
+							      catch
+								  _ ->
+								      []
 							      end;
 							  _ -> []
 						      end

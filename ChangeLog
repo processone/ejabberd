@@ -3,6 +3,10 @@
 	* src/ejabberd_c2s.erl: Convert #xmlelement returned by the
 	'c2s_stream_features' hook to #xmlel.
 
+	* src/ejabberd_auth.erl, src/ejabberd_auth_internal.erl,
+	src/ejabberd_auth_odbc.erl, src/ejabberd_auth_ldap.erl,
+	src/ejabberd_auth_anonymous.erl: Convert to exmpp.
+
 2008-07-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/cyrsasl.erl, src/cyrsasl_anonymous.erl, src/cyrsasl_digest.erl,

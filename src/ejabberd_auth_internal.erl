@@ -67,8 +67,8 @@ plain_password_required() ->
     false.
 
 check_password(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
 	[#passwd{password = Password}] ->
@@ -78,8 +78,8 @@ check_password(User, Server, Password) ->
     end.
 
 check_password(User, Server, Password, StreamID, Digest) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
 	[#passwd{password = Passwd}] ->
@@ -99,8 +99,8 @@ check_password(User, Server, Password, StreamID, Digest) ->
     end.
 
 set_password(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     if
 	(LUser == error) or (LServer == error) ->
@@ -114,8 +114,8 @@ set_password(User, Server, Password) ->
     end.
 
 try_register(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     if
 	(LUser == error) or (LServer == error) ->
@@ -139,7 +139,7 @@ dirty_get_registered_users() ->
     mnesia:dirty_all_keys(passwd).
 
 get_vh_registered_users(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     mnesia:dirty_select(
       passwd,
       [{#passwd{us = '$1', _ = '_'}, 

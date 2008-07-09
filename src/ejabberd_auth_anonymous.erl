@@ -122,8 +122,8 @@ allow_multiple_connections(Host) ->
 
 %% Check if user exist in the anonymus database
 anonymous_user_exist(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({anonymous, US}) of
 	[] ->
@@ -142,15 +142,16 @@ remove_connection(SID, LUser, LServer) ->
 
 %% Register connection
 register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
-    AuthModule = xml:get_attr_s(auth_module, Info),
-    case AuthModule == ?MODULE of
-	true ->
+    case proplists:get_value(auth_module, Info) of
+        undefined ->
+            ok;
+        ?MODULE ->
 	    US = {LUser, LServer},
 	    mnesia:sync_dirty(
 	      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
 	      end);
-	false ->
-	    ok
+        _ ->
+            ok
     end.
 
 %% Remove an anonymous user from the anonymous users table

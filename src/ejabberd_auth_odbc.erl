@@ -62,71 +62,75 @@ plain_password_required() ->
     false.
 
 check_password(User, Server, Password) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    false;
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:get_password(LServer, Username) of
-		{selected, ["password"], [{Password}]} ->
-		    Password /= "";
-		_ ->
-		    false
-	    end
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	LServer = exmpp_stringprep:nameprep(Server),
+	case catch odbc_queries:get_password(LServer, Username) of
+	    {selected, ["password"], [{Password}]} ->
+		Password /= "";
+	    _ ->
+		false
+	end
+    catch
+	_ ->
+	    false
     end.
 
 check_password(User, Server, Password, StreamID, Digest) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    false;
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:get_password(LServer, Username) of
-		{selected, ["password"], [{Passwd}]} ->
-		    DigRes = if
-				 Digest /= "" ->
-				     Digest == sha:sha(StreamID ++ Passwd);
-				 true ->
-				     false
-			     end,
-		    if DigRes ->
-			    true;
-		       true ->
-			    (Passwd == Password) and (Password /= "")
-		    end;
-		_ ->
-		    false
-	    end
+    try
+	LUser = exmpp_stringpre:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	LServer = exmpp_stringprep:nameprep(Server),
+	case catch odbc_queries:get_password(LServer, Username) of
+	    {selected, ["password"], [{Passwd}]} ->
+		DigRes = if
+		    Digest /= "" ->
+			Digest == sha:sha(StreamID ++ Passwd);
+		    true ->
+			false
+		end,
+		if DigRes ->
+			true;
+		    true ->
+			(Passwd == Password) and (Password /= "")
+		end;
+	    _ ->
+		false
+	end
+    catch
+	_ ->
+	    false
     end.
 
 set_password(User, Server, Password) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    {error, invalid_jid};
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    Pass = ejabberd_odbc:escape(Password),
-	    LServer = jlib:nameprep(Server),
-	    catch odbc_queries:set_password_t(LServer, Username, Pass)
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	Pass = ejabberd_odbc:escape(Password),
+	LServer = exmpp_stringprep:nameprep(Server),
+	catch odbc_queries:set_password_t(LServer, Username, Pass)
+    catch
+	_ ->
+	    {error, invalid_jid}
     end.
 
 
 try_register(User, Server, Password) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    {error, invalid_jid};
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    Pass = ejabberd_odbc:escape(Password),
-	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:add_user(LServer, Username, Pass) of
-		{updated, 1} ->
-		    {atomic, ok};
-		_ ->
-		    {atomic, exists}
-	    end
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	Pass = ejabberd_odbc:escape(Password),
+	LServer = exmpp_stringprep:nameprep(Server),
+	case catch odbc_queries:add_user(LServer, Username, Pass) of
+	    {updated, 1} ->
+		{atomic, ok};
+	    _ ->
+		{atomic, exists}
+	end
+    catch
+	_ ->
+	    {error, invalid_jid}
     end.
 
 dirty_get_registered_users() ->
@@ -137,7 +141,7 @@ dirty_get_registered_users() ->
       end, Servers).
 
 get_vh_registered_users(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     case catch odbc_queries:list_users(LServer) of
 	{selected, ["username"], Res} ->
 	    [{U, LServer} || {U} <- Res];
@@ -146,7 +150,7 @@ get_vh_registered_users(Server) ->
     end.
 
 get_vh_registered_users(Server, Opts) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     case catch odbc_queries:list_users(LServer, Opts) of
 	{selected, ["username"], Res} ->
 	    [{U, LServer} || {U} <- Res];
@@ -155,7 +159,7 @@ get_vh_registered_users(Server, Opts) ->
     end.
 
 get_vh_registered_users_number(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     case catch odbc_queries:users_number(LServer) of
 	{selected, [_], [{Res}]} ->
 	    list_to_integer(Res);
@@ -164,7 +168,7 @@ get_vh_registered_users_number(Server) ->
     end.
 
 get_vh_registered_users_number(Server, Opts) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     case catch odbc_queries:users_number(LServer, Opts) of
 	{selected, [_], [{Res}]} ->
 	    list_to_integer(Res);
@@ -173,84 +177,89 @@ get_vh_registered_users_number(Server, Opts) ->
     end.
 
 get_password(User, Server) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    false;
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:get_password(LServer, Username) of
-		{selected, ["password"], [{Password}]} ->
-		    Password;
-		_ ->
-		    false
-	    end
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	LServer = exmpp_stringprep:nameprep(Server),
+	case catch odbc_queries:get_password(LServer, Username) of
+	    {selected, ["password"], [{Password}]} ->
+		Password;
+	    _ ->
+		false
+	end
+    catch
+	_ ->
+	    false
     end.
 
 get_password_s(User, Server) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    "";
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:get_password(LServer, Username) of
-		{selected, ["password"], [{Password}]} ->
-		    Password;
-		_ ->
-		    ""
-	    end
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	LServer = exmpp_stringprep:nameprep(Server),
+	case catch odbc_queries:get_password(LServer, Username) of
+	    {selected, ["password"], [{Password}]} ->
+		Password;
+	    _ ->
+		""
+	end
+    catch
+	_ ->
+	    ""
     end.
 
 is_user_exists(User, Server) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    false;
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:get_password(LServer, Username) of
-		{selected, ["password"], [{_Password}]} ->
-		    true;
-		_ ->
-		    false
-	    end
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	LServer = exmpp_stringprep:nameprep(Server),
+	case catch odbc_queries:get_password(LServer, Username) of
+	    {selected, ["password"], [{_Password}]} ->
+		true;
+	    _ ->
+		false
+	end
+    catch
+	_ ->
+	    false
     end.
 
 remove_user(User, Server) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    error;
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    LServer = jlib:nameprep(Server),
-	    catch odbc_queries:del_user(LServer, Username),
-	    ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
-			       [User, Server])
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	LServer = exmpp_stringprep:nameprep(Server),
+	catch odbc_queries:del_user(LServer, Username),
+	ejabberd_hooks:run(remove_user, exmpp_stringprep:nameprep(Server),
+			   [User, Server])
+    catch
+	_ ->
+	    error
     end.
 
 remove_user(User, Server, Password) ->
-    case jlib:nodeprep(User) of
-	error ->
-	    error;
-	LUser ->
-	    Username = ejabberd_odbc:escape(LUser),
-	    Pass = ejabberd_odbc:escape(Password),
-	    LServer = jlib:nameprep(Server),
-	    F = fun() ->
-			Result = odbc_queries:del_user_return_password(
-				   LServer, Username, Pass),
-			case Result of
-			    {selected, ["password"], [{Password}]} ->
-				ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
-						   [User, Server]),
-				ok;
-			    {selected, ["password"], []} ->
-				not_exists;
-			    _ ->
-				not_allowed
-			end
-		end,
-	    {atomic, Result} = odbc_queries:sql_transaction(LServer, F),
-	    Result
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	Username = ejabberd_odbc:escape(LUser),
+	Pass = ejabberd_odbc:escape(Password),
+	LServer = exmpp_stringprep:nameprep(Server),
+	F = fun() ->
+		    Result = odbc_queries:del_user_return_password(
+			       LServer, Username, Pass),
+		    case Result of
+			{selected, ["password"], [{Password}]} ->
+			    ejabberd_hooks:run(remove_user, exmpp_stringprep:nameprep(Server),
+					       [User, Server]),
+			    ok;
+			{selected, ["password"], []} ->
+			    not_exists;
+			_ ->
+			    not_allowed
+		    end
+	    end,
+	{atomic, Result} = odbc_queries:sql_transaction(LServer, F),
+	Result
+    catch
+	_ ->
+	    error
     end.
