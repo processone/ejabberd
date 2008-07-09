@@ -273,15 +273,18 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 					    false ->
 						[]
 					end,
+				    % XXX OLD FORMAT: Other_Feats.
+                                    Other_FeatsOld = ejabberd_hooks:run_fold(
+				      c2s_stream_features,
+				      Server,
+				      [], []),
+				    Other_Feats = [exmpp_xml:xmlelement_to_xmlel(F, [?DEFAULT_NS], ?PREFIXED_NS) || F <- Other_FeatsOld],
 				    send_element(StateData,
 				      exmpp_stream:features(
 					TLSFeature ++
 					CompressFeature ++
 					SASL_Mechs ++
-					ejabberd_hooks:run_fold(
-					  c2s_stream_features,
-					  Server,
-					  [], []))),
+					Other_Feats)),
 				    fsm_next_state(wait_for_feature_request,
 					       StateData#state{
 						 server = Server,

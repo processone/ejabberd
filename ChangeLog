@@ -1,3 +1,8 @@
+2008-07-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_c2s.erl: Convert #xmlelement returned by the
+	'c2s_stream_features' hook to #xmlel.
+
 2008-07-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/cyrsasl.erl, src/cyrsasl_anonymous.erl, src/cyrsasl_digest.erl,
