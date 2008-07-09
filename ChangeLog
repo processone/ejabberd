@@ -1,3 +1,9 @@
+2008-07-09  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: mod_muc_log XMPP URI supports the updated version
+	RFC 5122 (EJAB-631)
+	* doc/guide.html: Likewise
+
 2008-07-08  Badlop  <badlop@process-one.net>
 
 	* tools/ejabberdctl: Work also when 'which' is unavailable
