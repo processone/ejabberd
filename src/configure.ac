@@ -27,7 +27,7 @@ AM_WITH_PAM
 AC_C_CONST
 
 # Check Erlang headers are installed
-AC_CHECK_HEADER(erl_driver.h,,[AC_MSG_ERROR([cannot find Erlang header files])])
+#AC_CHECK_HEADER(erl_driver.h,,[AC_MSG_ERROR([cannot find Erlang header files])])
 
 # Change default prefix
 AC_PREFIX_DEFAULT(/)
