@@ -1,3 +1,8 @@
+2008-07-10  Badlop  <badlop@process-one.net>
+
+	* src/configure.ac: Don't check for erlang header file (EJAB-232)
+	* src/configure: Likewise
+
 2008-07-09  Badlop  <badlop@process-one.net>
 
 	* src/configure.ac: Check for erlang header files (EJAB-232)
