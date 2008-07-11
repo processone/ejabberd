@@ -564,12 +564,8 @@ send_text(StateData, Text) ->
 
 send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->
     send_text(StateData, exmpp_stream:to_list(El));
-send_element(StateData, #xmlel{ns = ?NS_JABBER_CLIENT} = El) ->
-    send_text(StateData, exmpp_stanza:to_list(El,
-	?NS_JABBER_CLIENT, ?PREFIXED_NS));
 send_element(StateData, El) ->
-    send_text(StateData, exmpp_stanza:to_list(El,
-	?DEFAULT_NS, ?PREFIXED_NS)).
+    send_text(StateData, exmpp_stanza:to_list(El)).
 
 
 change_shaper(StateData, Host, JID) ->

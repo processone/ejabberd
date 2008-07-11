@@ -1,3 +1,9 @@
+2008-07-11  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_s2s_in.erl, src/ejabberd_s2s_out.erl,
+	src/ejabberd_c2s.erl: Exmpp now takes care of stanza serialization and
+	compatible namespaces.
+
 2008-07-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Convert #xmlelement returned by the
