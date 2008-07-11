@@ -176,26 +176,34 @@ init([{SockMod, Socket}, Opts]) ->
 			      (_) -> false
 			   end, Opts),
     IP = peerip(SockMod, Socket),
-    Socket1 =
-	if
-	    TLSEnabled ->
-		SockMod:starttls(Socket, TLSOpts);
-	    true ->
-		Socket
-	end,
-    SocketMonitor = SockMod:monitor(Socket1),
-    {ok, wait_for_stream, #state{socket         = Socket1,
-				 sockmod        = SockMod,
-				 socket_monitor = SocketMonitor,
-				 zlib           = Zlib,
-				 tls            = TLS,
-				 tls_required   = StartTLSRequired,
-				 tls_enabled    = TLSEnabled,
-				 tls_options    = TLSOpts,
-				 streamid       = new_id(),
-				 access         = Access,
-				 shaper         = Shaper,
-				 ip             = IP}, ?C2S_OPEN_TIMEOUT}.
+    %% Check if IP is blacklisted:
+    case is_ip_blacklisted(IP) of
+	true ->
+	    ?INFO_MSG("Connection attempt from blacklisted IP: ~s",
+	              [jlib:ip_to_list(IP)]),
+	    {stop, normal};
+	false ->
+	    Socket1 =
+		if
+		    TLSEnabled ->
+			SockMod:starttls(Socket, TLSOpts);
+		    true ->
+			Socket
+		end,
+	    SocketMonitor = SockMod:monitor(Socket1),
+	    {ok, wait_for_stream, #state{socket         = Socket1,
+					sockmod        = SockMod,
+					socket_monitor = SocketMonitor,
+					zlib           = Zlib,
+					tls            = TLS,
+					tls_required   = StartTLSRequired,
+					tls_enabled    = TLSEnabled,
+					tls_options    = TLSOpts,
+					streamid       = new_id(),
+					access         = Access,
+					shaper         = Shaper,
+					ip             = IP}, ?C2S_OPEN_TIMEOUT}
+    end.
 
 %% Return list of all available resources of contacts,
 %% in form [{JID, Caps}].
@@ -1955,3 +1963,7 @@ fsm_reply(Reply, session_established, StateData) ->
     {reply, Reply, session_established, StateData, ?C2S_HIBERNATE_TIMEOUT};
 fsm_reply(Reply, StateName, StateData) ->
     {reply, Reply, StateName, StateData, ?C2S_OPEN_TIMEOUT}.
+
+%% Used by c2s blacklist plugins
+is_ip_blacklisted({IP,_Port}) ->
+    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).
