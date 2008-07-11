@@ -2363,7 +2363,7 @@ restrictions by default).
 </DD><DT CLASS="dt-description"><B><TT>welcome_message</TT></B></DT><DD CLASS="dd-description"> Set a welcome message that
 is sent to each newly registered account. The first string is the subject, and 
 the second string is the message body.
-In the body you can set a newline with the characters: <TT>~n</TT>.
+In the body you can set a newline with the characters: <CODE>\n</CODE>
 </DD><DT CLASS="dt-description"><B><TT>registration_watchers</TT></B></DT><DD CLASS="dd-description"> This option defines a 
 list of JIDs which will be notified each time a new account is registered.
 </DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies 
@@ -2414,7 +2414,7 @@ Also define a registration timeout of one hour:
   ...
   {mod_register,
    [
-    {welcome_message, {"Welcome!", "Hi.~nWelcome to this Jabber server.~n Check http://www.jabber.org~n~nBye"}},
+    {welcome_message, {"Welcome!", "Hi.\nWelcome to this Jabber server.\n Check http://www.jabber.org\n\nBye"}},
     {registration_watchers, ["admin1@example.org", "boss@example.net"]}
    ]},
   ...

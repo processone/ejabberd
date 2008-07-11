@@ -1,3 +1,11 @@
+2008-07-11  Badlop  <badlop@process-one.net>
+
+	* src/mod_register.erl: Revert support for io_lib newline, since
+	there is a standard character that representes newline (EJAB-501)
+	* doc/guide.tex: Update documentation to explain newline character
+	* doc/guide.html: Likewise
+	* src/ejabberd.cfg.example: Likewise
+
 2008-07-10  Badlop  <badlop@process-one.net>
 
 	* src/configure.ac: Don't check for erlang header file (EJAB-232)
