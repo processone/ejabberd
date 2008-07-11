@@ -4,6 +4,9 @@
 	src/ejabberd_c2s.erl: Exmpp now takes care of stanza serialization and
 	compatible namespaces.
 
+	* src/ejabberd_service.erl: Convert to exmpp. Note that this module
+	hasn't been tested yet!
+
 2008-07-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Convert #xmlelement returned by the
