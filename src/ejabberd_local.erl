@@ -37,6 +37,7 @@
 	 register_iq_handler/5,
 	 register_iq_response_handler/4,
 	 unregister_iq_handler/2,
+	 unregister_iq_response_handler/2,
 	 refresh_iq_handlers/0,
 	 bounce_resource_packet/3
 	]).
@@ -168,6 +169,9 @@ register_iq_handler(Host, XMLNS, Module, Fun) ->
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
 
+unregister_iq_response_handler(Host, ID) ->
+    ejabberd_local ! {unregister_iq_response_handler, Host, ID}.
+
 unregister_iq_handler(Host, XMLNS) ->
     ejabberd_local ! {unregister_iq_handler, Host, XMLNS}.
 
@@ -253,6 +257,9 @@ handle_info({route, From, To, Packet}, State) ->
     {noreply, State};
 handle_info({register_iq_response_handler, _Host, ID, Module, Function}, State) ->
     mnesia:dirty_write(#iq_response{id = ID, module = Module, function = Function}),
+    {noreply, State};
+handle_info({unregister_iq_response_handler, _Host, ID}, State) ->
+    mnesia:dirty_delete({iq_response, ID}),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
     ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),

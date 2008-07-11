@@ -15,7 +15,6 @@
 %%% All Rights Reserved.''
 %%% This software is copyright 2006-2008, Process-one.
 %%%
-%%%
 %%% @copyright 2006-2008 Process-one
 %%% @author Christophe romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
@@ -23,21 +22,13 @@
 %%% @end
 %%% ====================================================================
 
--module(node_private).
+-module(node_zoo).
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
 -include("jlib.hrl").
 
 -behaviour(gen_pubsub_node).
-
-%% Note on function definition
-%%   included is all defined plugin function
-%%   it's possible not to define some function at all
-%%   in that case, warning will be generated at compilation
-%%   and function call will fail,
-%%   then mod_pubsub will call function from node_default
-%%   (this makes code cleaner, but execution a little bit longer)
 
 %% API definition
 -export([init/3, terminate/2,
@@ -78,7 +69,7 @@ terminate(Host, ServerHost) ->
     node_default:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, private},
+    [{node_type, zoo},
      {deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
@@ -86,33 +77,33 @@ options() ->
      {persist_items, true},
      {max_items, ?MAXITEMS div 2},
      {subscribe, true},
-     {access_model, whitelist},
+     {access_model, open},
      {roster_groups_allowed, []},
      {publish_model, publishers},
      {max_payload_size, ?MAX_PAYLOAD_SIZE},
      {send_last_published_item, never},
-     {deliver_notifications, false},
+     {deliver_notifications, true},
      {presence_based_delivery, false}].
 
 features() ->
-    ["create-nodes",
-     "delete-nodes",
-     "instant-nodes",
-     "outcast-affiliation",
-     "persistent-items",
-     "publish",
-     "purge-nodes",
-     "retract-items",
-     "retrieve-affiliations",
-     "retrieve-items",
-     "retrieve-subscriptions",
-     "subscribe",
-     "subscription-notifications"
-    ].
+    node_default:features().
 
-create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
-    node_default:create_node_permission(Host, ServerHost, Node, ParentNode,
-					Owner, Access).
+%% use same code as node_default, but do not limite node to
+%% the home/localhost/user/... hierarchy
+%% any node is allowed
+create_node_permission(_Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
+    LOwner = jlib:jid_tolower(Owner),
+    %%{_User, _Server, _Resource} = LOwner, 
+    Allowed = case acl:match_rule(ServerHost, Access, LOwner) of
+		allow ->
+		    true;
+		_ ->    
+		    case Owner of
+		    {jid, "", _, "", "", _, ""} -> true;
+		    _ -> false
+		    end     
+		end,    
+    {result, Allowed}.
 
 create_node(Host, Node, Owner) ->
     node_default:create_node(Host, Node, Owner).
@@ -120,10 +111,8 @@ create_node(Host, Node, Owner) ->
 delete_node(Host, Removed) ->
     node_default:delete_node(Host, Removed).
 
-subscribe_node(Host, Node, Sender, Subscriber, AccessModel, SendLast,
-	       PresenceSubscription, RosterGroup) ->
-    node_default:subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
-				SendLast, PresenceSubscription, RosterGroup).
+subscribe_node(Host, Node, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
+    node_default:subscribe_node(Host, Node, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup).
 
 unsubscribe_node(Host, Node, Sender, Subscriber, SubID) ->
     node_default:unsubscribe_node(Host, Node, Sender, Subscriber, SubID).
@@ -178,13 +167,13 @@ get_items(Host, Node) ->
 
 get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
     node_default:get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
-    
+
 get_item(Host, Node, ItemId) ->
     node_default:get_item(Host, Node, ItemId).
-
+       
 get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
     node_default:get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
-    
+
 set_item(Item) ->
     node_default:set_item(Item).
 

@@ -62,7 +62,9 @@
 	 get_states/2,
 	 get_state/3,
 	 set_state/1,
+	 get_items/7,
 	 get_items/2,
+	 get_item/8,
 	 get_item/3,
 	 set_item/1,
 	 get_item_name/3
@@ -172,8 +174,14 @@ set_state(State) ->
 get_items(Host, Node) ->
     node_default:get_items(Host, Node).
 
+get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
+    node_default:get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
+    
 get_item(Host, Node, ItemId) ->
     node_default:get_item(Host, Node, ItemId).
+
+get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
+    node_default:get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 
 set_item(Item) ->
     node_default:set_item(Item).

@@ -1,11 +1,20 @@
 2008-07-11  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	Merge revisions from 1362 to revision 1434 from trunk.
+
+2008-07-11  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	* src/ejabberd_s2s_in.erl, src/ejabberd_s2s_out.erl,
 	src/ejabberd_c2s.erl: Exmpp now takes care of stanza serialization and
 	compatible namespaces.
 
 	* src/ejabberd_service.erl: Convert to exmpp. Note that this module
 	hasn't been tested yet!
+
+2008-07-10  Badlop  <badlop@process-one.net>
+
+	* src/configure.ac: Don't check for erlang header file (EJAB-232)
+	* src/configure: Likewise
 
 2008-07-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -16,11 +25,98 @@
 	src/ejabberd_auth_odbc.erl, src/ejabberd_auth_ldap.erl,
 	src/ejabberd_auth_anonymous.erl: Convert to exmpp.
 
+2008-07-09  Badlop  <badlop@process-one.net>
+
+	* src/configure.ac: Check for erlang header files (EJAB-232)
+	* src/configure: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix compilation warnings
+	* src/mod_pubsub/node_zoo.erl: Likewise
+
+	* src/mod_shared_roster.erl: Allow to get subscribed to a contact
+	that is already in the roster by means of a shared roster group:
+	add it to another roster group and it gets subscribed
+	automatically (EJAB-407)
+
+	* src/mod_roster.erl: Likewise
+	
+	* src/mod_muc/mod_muc_log.erl: Fix XHTML compliance: ensure some
+	language is set, include ID attribute in each message, add
+	microseconds to ensure unique value (EJAB-497)
+
+	* src/mod_register.erl: Support for io_lib newline character in
+	the body of welcome_message (EJAB-501)
+	* doc/guide.tex: Document the newline character
+	* src/ejabberd.cfg.example: Example usage of newline character
+
+	* src/ejabberd_config.erl (load_file): error message on sasl.log
+	is not flattened (EJAB-616)
+
+	* doc/guide.tex: mod_muc_log XMPP URI supports the updated version
+	RFC 5122 (EJAB-631)
+	* doc/guide.html: Likewise
+
 2008-07-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/cyrsasl.erl, src/cyrsasl_anonymous.erl, src/cyrsasl_digest.erl,
 	src/cyrsasl_plain.erl, src/ejabberd_c2s.erl: Errors are now atoms, not
 	strings anymore.
+
+2008-07-08  Badlop  <badlop@process-one.net>
+
+	* tools/ejabberdctl: Work also when 'which' is unavailable
+
+2008-07-08  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: improve ip fetching patch
+
+2008-07-07  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in: Spool, config and log dirs: writtable by owner,
+	readable by group, nothing by others (EJAB-686)
+	* doc/guide.tex: New section Securing sensible files
+	* doc/guide.html: Likewise
+
+	* doc/guide.tex: Solaris Makefile install: use ginstall (thanks to
+	Jonathan Auer)(EJAB-649)
+	* doc/guide.html: Likewise
+
+2008-07-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/mod_privacy_odbc.erl: Support for privacy lists in MySQL
+	(thanks to Igor Goryachev)(EJAB-538)
+
+2008-07-03  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix permission control on item
+	retrieve (EJAB-453)
+	* src/mod_pubsub/node_dispatch.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+	* src/mod_pubsub/gen_pubsub_node.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: Allow subscriber to request specific
+	items by ItemID; Allow to retrieve pubsub#title configuration (thanks
+	to Kevin Crosbie); Fix forbidden result on setting
+	affiliation/subscription
+
+	* src/mod_pubsub/node_zoo.erl: Add node type without
+	home/<host>/<user> constraint
+
+	* src/ejabberd_local.erl: prevent iq_response table overload
+	(EJAB-608)
+	* src/mod_caps.erl: Likewise
+
+	* src/web/ejabberd_http.erl: Retrieve correct IP from http connection
+	* src/web/ejabberd_http_poll.erl: Likewise
+	* src/ejabberd_receiver.erl: Likewise
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
 
 2008-07-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -100,6 +196,19 @@
 	src/ejabberd_s2s_out.erl: No conversion is done before calling
 	ejabberd_router:route/3.
 
+2008-06-29  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_ctl.erl: Web Admin and Ad-hoc admin: dump only
+	persistent tables (EJAB-678)
+
+	* src/mod_pubsub/node_pep.erl: Complain if mod_caps disabled and
+	mod_pubsub has PEP plugin enabled (EJAB-677)
+
+2008-06-28  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Allow to store room
+	description (thanks to Christopher Dupont)(EJAB-670)
+
 2008-06-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl, src/ejabberd_s2s_out.erl,
@@ -149,6 +258,15 @@
 	* src/ejabberd_c2s.erl (session_established): Convert JID to the
 	expected form outside of the C2S (empty fields must be set to the
 	empty string). This fixes the broken routing.
+
+2008-06-21  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_http.erl: Support PUT and DELETE methods in
+	ejabberd_http (thanks to Eric Cestari)(EJAB-662)
+
+	* doc/guide.tex: Explain that S2S outgoing first tries IPv4 and if
+	that fails then tries IPv6
+	* doc/guide.html: Likewise
 
 2008-06-20  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -271,7 +389,7 @@
 2008-05-19  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_s2s_out.erl: Avoid an harmless error (function clause in
-	logs) 
+	logs)
 
 2008-05-17  Badlop  <badlop@process-one.net>
 
@@ -344,11 +462,11 @@
 	being immediately shown in an 'all' special shared roster
 	group (thanks to Alexey Shchepin) (EJAB-71)
 	* src/mod_register.erl: New vhost event user_registered
-	
+
 	* doc/guide.tex: Document option registration_timeout (EJAB-614)
 
 2008-04-25  Badlop  <badlop@process-one.net>
-	
+
 	* src/ejabberd_c2s.erl: Added forbidden_session_hook
 
 	* src/acl.erl: New access types: resource, resource_regexp and
@@ -506,7 +624,7 @@
 	* doc/webadmmainru.png: Likewise
 
 	* doc/disco.png: Removed because not used
-	
+
 	* doc/guide.tex: Fix Latex reference to webadmin section. Update
 	explanation of screenshots. Update xmpp addresses of Mickael
 	Remond and Sander Devrieze.
@@ -619,7 +737,7 @@
 
 	* src/eldap.erl: Faster LDAP reconnection (Thanks to Christophe
 	Romain) (EJAB-581)
-					 
+
 2008-03-17  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_s2s.erl: Only trigger s2s_connect_hook on
@@ -630,7 +748,7 @@
 
 	* src/ejabberd_ctl.erl: API improvement: Added
 	reopen_log_hook (EJAB-565)
-	
+
 	* src/ejabberd_s2s.erl: API improvement: Added s2s_connect_hook
 	(EJAB-566).
 
@@ -722,7 +840,7 @@
 	configuration sanity checks (EJAB-533)
 	* src/src/ejabberd_app.erl: Likewise
 	* src/ejabberd_app.erl: Likewise
-	
+
 2008-02-26  Badlop  <badlop@process-one.net>
 
 	* src/msgs/it.msg: Updated (thanks to Smart2128)
@@ -858,7 +976,7 @@
 	* src/mod_pubsub/node_pep.erl: Likewise
 	* src/mod_pubsub/node_private.erl: Likewise
 	* src/mod_pubsub/node.template: Likewise
-	
+
 	* src/mod_pubsub/gen_pubsub_node.erl: API improvement: Added a way
 	to generate custom item name
 	* src/mod_pubsub/node_dispatch.erl: Likewise
@@ -895,7 +1013,7 @@
 	* src/mod_pubsub/gen_pubsub_nodetree.erl: Likewise
 	* src/mod_pubsub/nodetree_default.erl: Likewise
 	* src/mod_pubsub/nodetree_virtual.erl: Likewise
-	
+
 2008-01-30  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Removed the option served_hosts in mod_pubsub
@@ -960,7 +1078,7 @@
 	* src/ejabberd.hrl: Likewise
 
 	* doc/introduction.tex: Updated to 22 languages
-	
+
 	* doc/Makefile: Ensure that Bash is used
 
 	* doc/guide.tex: Updated copyright dates to 2008.

@@ -40,6 +40,7 @@
 	 set_items/3,
 	 remove_user/2,
 	 get_jid_info/4,
+	 item_to_xml/1,
 	 webadmin_page/3,
 	 webadmin_user/4]).
 

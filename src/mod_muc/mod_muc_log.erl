@@ -120,9 +120,11 @@ init([Host, Opts]) ->
     NoFollow = gen_mod:get_opt(spam_prevention, Opts, true),
     Lang = case ejabberd_config:get_local_option({language, Host}) of
 	       undefined ->
-		   "";
-	       L ->
-		   L
+		   case ejabberd_config:get_global_option(language) of
+		       undefined -> "en";
+		       L -> L
+		   end;
+	       L -> L
 	   end,
     {ok, #state{host = Host,
 		out_dir = OutDir,
@@ -286,9 +288,10 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	   top_link = TopLink} = State,
     Room = get_room_info(RoomJID, Opts),
 
+    Now = now(),
     TimeStamp = case Timezone of
-		    local -> calendar:now_to_local_time(now());
-		    universal -> calendar:now_to_universal_time(now())
+		    local -> calendar:now_to_local_time(Now);
+		    universal -> calendar:now_to_universal_time(Now)
 		end,
     {Fd, Fn, _Dir} = build_filename_string(TimeStamp, OutDir, Room#room.jid, DirType),
     {Date, Time} = TimeStamp,
@@ -382,10 +385,12 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
     {Hour, Minute, Second} = Time,
     STime = lists:flatten(
 	      io_lib:format("~2..0w:~2..0w:~2..0w", [Hour, Minute, Second])),
+    {_, _, Microsecs} = Now,
+    STimeUnique = io_lib:format("~s.~w", [STime, Microsecs]),
 
     % Write message
-    file:write(F, io_lib:format("<a name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ~s~n", 
-				[STime, STime, STime, Text])),
+    file:write(F, io_lib:format("<a id=\"~s\" name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ~s~n",
+				[STimeUnique, STimeUnique, STimeUnique, STime, Text])),
 
     % Close file
     file:close(F),

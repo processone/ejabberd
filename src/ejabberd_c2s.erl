@@ -1223,6 +1223,9 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 handle_info({'DOWN', Monitor, _Type, _Object, _Info}, _StateName, StateData)
   when Monitor == StateData#state.socket_monitor ->
     {stop, normal, StateData};
+handle_info({peername, IP}, StateName, StateData) ->
+    ejabberd_sm:set_session_ip(StateData#state.sid, IP),
+    fsm_next_state(StateName, StateData#state{ip = IP});
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).

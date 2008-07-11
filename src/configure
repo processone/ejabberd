@@ -4765,6 +4765,9 @@ _ACEOF
 fi
 
 
+# Check Erlang headers are installed
+#AC_CHECK_HEADER(erl_driver.h,,[AC_MSG_ERROR([cannot find Erlang header files])])
+
 # Change default prefix
 
 

@@ -361,7 +361,7 @@ The files and directories created are, by default:
 	\titem{/sbin/ejabberdctl} Administration script
 	\titem{/var/lib/ejabberd/}
 		\begin{description}
-			\titem{.erlang.cookie} Erlang cookie file
+			\titem{.erlang.cookie} Erlang cookie file (see section \ref{cookie})
 			\titem{db} Mnesia database spool files
 			\titem{ebin} Binary Erlang files (*.beam)
 			\titem{priv}
@@ -402,6 +402,31 @@ and configurable options to fine tune the Erlang runtime system.
 The command to compile \ejabberd{} in BSD systems is:
 \begin{verbatim}
 gmake
+\end{verbatim}
+
+
+\makesubsection{solaris}{Specific Notes for Sun Solaris}
+\ind{install!solaris}
+
+You need to have \term{GNU install},
+but it isn't included in Solaris.
+It can be easily installed if your Solaris system
+is set up for \footahref{http://www.blastwave.org/}{blastwave.org} 
+package repository. 
+Make sure \term{/opt/csw/bin} is in your \term{PATH} and run:
+\begin{verbatim}
+pkg-get -i fileutils
+\end{verbatim}
+
+If that program is called \term{ginstall},
+modify the \ejabberd{} \term{Makefile} script to suit your system,
+for example:
+\begin{verbatim}
+cat Makefile | sed s/install/ginstall/ > Makefile.gi
+\end{verbatim}
+And finally install \ejabberd{} with:
+\begin{verbatim}
+gmake -f Makefile.gi ginstall
 \end{verbatim}
 
 
@@ -729,7 +754,10 @@ This is a detailed description of each option allowed by the listening modules:
     is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
     interesting to host a web-based \Jabber{} client such as
     \footahref{http://jwchat.sourceforge.net/}{JWChat}.
-  \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6.
+  \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6 instead of IPv4.
+    Note: this option is not required for S2S outgoing connections,
+    because when ejabberd attempts to establish a S2S outgoing connection 
+    it first tries IPv4, and if that fails it attempts with IPv6.
   \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
     interface to listen for. For example \verb|{ip, {192, 168, 1, 1}}|.
     \titem{\{max\_stanza\_size, Size\}}
@@ -2710,9 +2738,9 @@ Features:
 \begin{itemize}
 \item Chatroom details are added on top of each page: room title, JID,
   author, subject and configuration.
-\item \ind{protocols!RFC 4622: Internationalized Resource Identifiers (IRIs) and Uniform Resource Identifiers (URIs) for the Extensible Messaging and Presence Protocol (XMPP)}
-  Room title and JID are links to join the chatroom (using
-  \footahref{http://www.ietf.org/rfc/rfc4622.txt}{XMPP URIs}).
+\item \ind{protocols!RFC 5122: Internationalized Resource Identifiers (IRIs) and Uniform Resource Identifiers (URIs) for the Extensible Messaging and Presence Protocol (XMPP)}
+  The room JID in the generated HTML is a link to join the chatroom (using
+  \footahref{http://www.xmpp.org/rfcs/rfc5122.html}{XMPP URI}).
 \item Subject and chatroom configuration changes are tracked and displayed.
 \item Joins, leaves, nick changes, kicks, bans and `/me' are tracked and
   displayed, including the reason if available.
@@ -3008,6 +3036,7 @@ Options:
 \titem{welcome\_message} \ind{options!welcomem}Set a welcome message that
   is sent to each newly registered account. The first string is the subject, and 
   the second string is the message body.
+  In the body you can set a newline with the characters: \term{\~\ n}.
 \titem{registration\_watchers} \ind{options!rwatchers}This option defines a 
   list of JIDs which will be notified each time a new account is registered.
 \iqdiscitem{In-Band Registration (\ns{jabber:iq:register})}
@@ -3066,7 +3095,7 @@ Also define a registration timeout of one hour:
   ...
   {mod_register,
    [
-    {welcome_message, {"Welcome!", "Welcome to this Jabber server. Check http://www.jabber.org"}},
+    {welcome_message, {"Welcome!", "Hi.~nWelcome to this Jabber server.~n Check http://www.jabber.org~n~nBye"}},
     {registration_watchers, ["admin1@example.org", "boss@example.net"]}
    ]},
   ...
@@ -3781,7 +3810,7 @@ an account with proper privileges.
 
 \ejabberd{} uses the distributed Mnesia database. 
 Being distributed, Mnesia enforces consistency of its file,
-so it stores the name of the Erlang node in it.
+so it stores the name of the Erlang node in it (see section \ref{nodename}).
 The name of an Erlang node includes the hostname of the computer.
 So, the name of the Erlang node changes
 if you change the name of the machine in which \ejabberd{} runs,
@@ -3861,8 +3890,9 @@ erl ... -kernel inet_dist_listen_min 4370 inet_dist_listen_max 4375
 \makesection{cookie}{Erlang Cookie}
 
 The Erlang cookie is a string with numbers and letters. 
-An Erlang node reads the cookie at startup from the command-line parameter \term{-setcookie}
-or from a cookie file.
+An Erlang node reads the cookie at startup from the command-line parameter \term{-setcookie}.
+If not indicated, the cookie is read from the cookie file \term{\$HOME/.erlang.cookie}.
+If this file does not exist, it is created immediately with a random cookie.
 Two Erlang nodes communicate only if they have the same cookie.
 Setting a cookie on the Erlang node allows you to structure your Erlang network 
 and define which nodes are allowed to connect to which.
@@ -3892,6 +3922,32 @@ However, it is not ultimately effective  to prevent access to the Erlang node,
 because it may be possible to fake the fact that you are on another network 
 using a modified version of Erlang \term{epmd}.
 The recommended way to secure the Erlang node is to block the port 4369.
+
+
+\makesection{secure-files}{Securing sensible files}
+
+\ejabberd{} stores sensible data in the file system either in plain text or binary files.
+The file system permissions should be set to only allow the proper user to read,
+write and execute those files and directories.
+
+\begin{description}
+  \titem{ejabberd configuration file: /etc/ejabberd/ejabberd.cfg}
+  Contains the JID of administrators
+  and passwords of external components.
+  The backup files probably contain also this information,
+  so it is preferable to secure the whole \term{/etc/ejabberd/} directory.
+  \titem{ejabberd service log: /var/log/ejabberd/ejabberd.log}
+  Contains IP addresses of clients.
+  If the loglevel is set to 5, it contains whole conversations and passwords.
+  If a logrotate system is used, there may be several log files with similar information,
+  so it is preferable to secure the whole \term{/var/log/ejabberd/} directory.
+  \titem{Mnesia database spool files: /var/lib/ejabberd/db/*}
+  The files store binary data, but some parts are still readable.
+  The files are generated by Mnesia and their permissions cannot be set directly,
+  so it is preferable to secure the whole \term{/var/lib/ejabberd/db/} directory.
+  \titem{Erlang cookie file: /var/lib/ejabberd/.erlang.cookie}
+  See section \ref{cookie}.
+\end{description}
 
 
 \makechapter{clustering}{Clustering}

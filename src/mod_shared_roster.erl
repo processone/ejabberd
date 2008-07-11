@@ -155,12 +155,12 @@ get_user_roster(Items, US) ->
 		  {{U1, S1}, GroupNames} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
 
-%% This function in use to rewrite the roster entries when moving or renaming
+%% This function rewrites the roster entries when moving or renaming
 %% them in the user contact list.
 process_item(RosterItem, Host) ->
-    USFrom = RosterItem#roster.us,
-    {User,Server,_Resource} = RosterItem#roster.jid,
-    USTo = {User,Server},
+    USFrom = {UserFrom, ServerFrom} = RosterItem#roster.us,
+    {UserTo, ServerTo, ResourceTo} = RosterItem#roster.jid,
+    USTo = {UserTo, ServerTo},
     DisplayedGroups = get_user_displayed_groups(USFrom),
     CommonGroups = lists:filter(fun(Group) ->
 					is_user_in_group(USTo, Group, Host)
@@ -174,8 +174,82 @@ process_item(RosterItem, Host) ->
 				   end, CommonGroups),
 	    RosterItem#roster{subscription = both, ask = none,
 			      groups=[GroupNames]};
-	_ -> RosterItem#roster{subscription = both, ask = none}
+	%% Both users have at least a common shared group,
+	%% So each user can see the other
+	_ ->
+	    %% Check if the list of groups of the new roster item
+	    %% include at least a new one
+	    case lists:subtract(RosterItem#roster.groups, CommonGroups) of
+		[] ->
+		    RosterItem#roster{subscription = both, ask = none};
+		%% If so, it means the user wants to add that contact
+		%% to his personal roster
+		PersonalGroups ->
+		    %% Store roster items in From and To rosters
+		    set_new_rosteritems(UserFrom, ServerFrom,
+					UserTo, ServerTo, ResourceTo,
+					PersonalGroups)
+	    end
     end.
+
+build_roster_record(User1, Server1, User2, Server2, Groups) ->
+    USR2 = {User2, Server2, ""},
+    #roster{usj = {User1, Server1, USR2},
+	    us = {User1, Server1},
+	    jid = USR2,
+	    name = User2,
+	    subscription = both,
+	    ask = none,
+	    groups = Groups
+	   }.
+
+set_new_rosteritems(UserFrom, ServerFrom,
+		    UserTo, ServerTo, ResourceTo, GroupsFrom) ->
+    Mod = case lists:member(mod_roster_odbc,
+			    gen_mod:loaded_modules(ServerFrom)) of
+	      true -> mod_roster_odbc;
+	      false -> mod_roster
+	  end,
+
+    RIFrom = build_roster_record(UserFrom, ServerFrom,
+				 UserTo, ServerTo, GroupsFrom),
+    set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
+    JIDTo = jlib:make_jid(UserTo, ServerTo, ""),
+
+    JIDFrom = jlib:make_jid(UserFrom, ServerFrom, ""),
+    RITo = build_roster_record(UserTo, ServerTo,
+			       UserFrom, ServerFrom, []),
+    set_item(UserTo, ServerTo, "", RITo),
+
+    %% From requests
+    Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribe),
+    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribe, ""),
+
+    %% To accepts
+    Mod:out_subscription(UserTo, ServerTo, JIDFrom, subscribed),
+    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribed, ""),
+
+    %% To requests
+    Mod:out_subscription(UserTo, ServerTo, JIDFrom, subscribe),
+    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribe, ""),
+
+    %% From accepts
+    Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribed),
+    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribed, ""),
+
+    RIFrom.
+
+set_item(User, Server, Resource, Item) ->
+    ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
+		id = "push",
+		sub_el = [{xmlelement, "query",
+			   [{"xmlns", ?NS_ROSTER}],
+			   [mod_roster:item_to_xml(Item)]}]},
+    ejabberd_router:route(
+      jlib:make_jid(User, Server, Resource),
+      jlib:make_jid("", Server, ""),
+      jlib:iq_to_xml(ResIQ)).
+
 
 get_subscription_lists({F, T}, User, Server) ->
     LUser = jlib:nodeprep(User),
@@ -414,10 +488,10 @@ get_user_displayed_groups(US) ->
 	    end, get_user_groups(US))),
     [Group || Group <- DisplayedGroups1, is_group_enabled(Host, Group)].
 
-is_user_in_group(US, Group, Host) ->
+is_user_in_group({_U, S} = US, Group, Host) ->
     case catch mnesia:dirty_match_object(
 		 #sr_user{us=US, group_host={Group, Host}}) of
-	[] -> false;
+        [] -> lists:member(US, get_group_users(S, Group));
 	_  -> true
     end.
 

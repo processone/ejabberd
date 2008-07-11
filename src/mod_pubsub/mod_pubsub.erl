@@ -30,16 +30,17 @@
 %%%
 %%% @reference See <a href="http://www.xmpp.org/extensions/xep-0060.html">XEP-0060: Pubsub</a> for
 %%% the latest version of the PubSub specification.
-%%% This module uses version 1.10 of the specification as a base.
+%%% This module uses version 1.11 of the specification as a base.
 %%% Most of the specification is implemented.
-%%% Code is derivated from the original pubsub v1.7, functions concerning config may be rewritten.
-%%% Code also inspired from the original PEP patch by Magnus Henoch (mangeATfreemail.hu)
+%%% Functions concerning configuration should be rewritten.
+%%% Code is derivated from the original pubsub v1.7, by Alexey Shchepin <alexey@process-one.net>
 
 %%% TODO
 %%% plugin: generate Reply (do not use broadcast atom anymore)
 
 -module(mod_pubsub).
--version('1.10-01').
+-author('christophe.romain@process-one.net').
+-version('1.11-01').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -912,7 +913,17 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 		    unsubscribe_node(Host, Node, From, JID, SubId);
 		{get, "items"} ->
 		    MaxItems = xml:get_attr_s("max_items", Attrs),
-		    get_items(Host, Node, From, MaxItems);
+		    SubId = xml:get_attr_s("subid", Attrs),
+		    ItemIDs = lists:foldl(fun
+			({xmlelement, "item", ItemAttrs, _}, Acc) ->
+			    case xml:get_attr_s("id", ItemAttrs) of
+			    "" -> Acc;
+			    ItemID -> ItemID
+			    end;
+			(_, Acc) ->
+			    Acc
+			end, [], xml:remove_cdata(Els)),
+		    get_items(Host, Node, From, SubId, MaxItems, ItemIDs);
 		{get, "subscriptions"} ->
 		    get_subscriptions(Host, From, Plugins);
 		{get, "affiliations"} ->
@@ -1436,7 +1447,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
     Action = fun(#pubsub_node{options = Options, type = Type}) ->
 		     Features = features(Type),
 		     PublishFeature = lists:member("publish", Features),
-		     Model = get_option(Options, publish_model),
+		     PublishModel = get_option(Options, publish_model),
 		     MaxItems = max_items(Options),
 		     PayloadSize = size(term_to_binary(Payload)),
 		     PayloadMaxSize = get_option(Options, max_payload_size),
@@ -1459,7 +1470,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			 %%	% Publisher attempts to publish to transient notification node with item
 			 %%	{error, extended_error(?ERR_BAD_REQUEST, "item-forbidden")};
 			 true ->
-			     node_call(Type, publish_item, [Host, Node, Publisher, Model, MaxItems, ItemId, Payload])
+			     node_call(Type, publish_item, [Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload])
 		     end
 	     end,
     %%ejabberd_hooks:run(pubsub_publish_item, Host, [Host, Node, JID, service_jid(Host), ItemId, Payload]),
@@ -1622,7 +1633,7 @@ purge_node(Host, Node, Owner) ->
 %% <p>The permission are not checked in this function.</p>
 %% @todo We probably need to check that the user doing the query has the right
 %% to read the items.
-get_items(Host, Node, _JID, SMaxItems) ->
+get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
     MaxItems =
 	if
 	    SMaxItems == "" -> ?MAXITEMS;
@@ -1636,24 +1647,60 @@ get_items(Host, Node, _JID, SMaxItems) ->
 	{error, Error} ->
 	    {error, Error};
 	_ ->
-	    case get_items(Host, Node) of
-		[] ->
-		    {error, ?ERR_ITEM_NOT_FOUND};
-		Items ->
+	    Action = fun(#pubsub_node{options = Options, type = Type}) ->
+		     Features = features(Type),
+		     RetreiveFeature = lists:member("retrieve-items", Features),
+		     PersistentFeature = lists:member("persistent-items", Features),
+		     AccessModel = get_option(Options, access_model),
+		     AllowedGroups = get_option(Options, roster_groups_allowed),
+		     {PresenceSubscription, RosterGroup} =
+			 case Host of
+			     {OUser, OServer, _} ->
+				 get_roster_info(OUser, OServer,
+						 jlib:jid_tolower(From), AllowedGroups);
+			     _ ->
+				 {true, true}
+			 end,
+		     if
+			 not RetreiveFeature ->
+			     %% Item Retrieval Not Supported
+			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "retrieve-items")};
+			 not PersistentFeature ->
+			     %% Persistent Items Not Supported
+			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "persistent-items")};
+			 true ->
+			     node_call(Type, get_items,
+				       [Host, Node, From,
+					AccessModel, PresenceSubscription, RosterGroup,
+					SubId])
+		     end
+	     end,
+	     case transaction(Host, Node, Action, sync_dirty) of
+		{error, Reason} ->
+		    {error, Reason};
+		{result, Items} ->
+		    SendItems = case ItemIDs of
+			[] -> 
+			    Items;
+			_ ->
+			    lists:filter(fun(Item) ->
+				lists:member(Item, ItemIDs)
+			    end, Items) 
+			end,
 		    %% Generate the XML response (Item list), limiting the
 		    %% number of items sent to MaxItems:
 		    ItemsEls = lists:map(
-				 fun(#pubsub_item{itemid = {ItemId, _},
-						  payload = Payload}) ->
-					 ItemAttrs = case ItemId of
-							 "" -> [];
-							 _ -> [{"id", ItemId}]
-						     end,
-					 {xmlelement, "item", ItemAttrs, Payload}
-				 end, lists:sublist(Items, MaxItems)),
+				    fun(#pubsub_item{itemid = {ItemId, _},
+						    payload = Payload}) ->
+					    ItemAttrs = case ItemId of
+							    "" -> [];
+							    _ -> [{"id", ItemId}]
+							end,
+					    {xmlelement, "item", ItemAttrs, Payload}
+				    end, lists:sublist(SendItems, MaxItems)),
 		    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
-			       [{xmlelement, "items", [{"node", node_to_string(Node)}],
-				 ItemsEls}]}]}
+				[{xmlelement, "items", [{"node", node_to_string(Node)}],
+				    ItemsEls}]}]}
 	    end
     end.
 
@@ -1809,7 +1856,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 				       end, Entities),
 				     {result, []};
 				 _ ->
-				     {error, ?ERR_NOT_ALLOWED}
+				     {error, ?ERR_FORBIDDEN}
 			     end
 		     end,
 	    transaction(Host, Node, Action, sync_dirty)
@@ -1870,7 +1917,7 @@ get_subscriptions(Host, Node, JID) ->
 			     %% Service does not support manage subscriptions
 			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "manage-affiliations")};
 			 Affiliation /= {result, owner} ->
-						% Entity is not an owner
+			     %% Entity is not an owner
 			     {error, ?ERR_FORBIDDEN};
 			 true ->
 			     node_call(Type, get_node_subscriptions, [Host, Node])
@@ -1938,7 +1985,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 						   end, Entities),
 				     {result, []};
 				 _ ->
-				     {error, ?ERR_NOT_ALLOWED}
+				     {error, ?ERR_FORBIDDEN}
 			     end
 		     end,
 	    transaction(Host, Node, Action, sync_dirty)
@@ -2352,7 +2399,10 @@ get_configure(Host, Node, From, Lang) ->
     transaction(Host, Node, Action, sync_dirty).
 
 get_default(Host, _Node, _From, Lang) ->
-    Type = hd(plugins(Host)),  % first configured plugin is default
+    Type = case Host of 
+    {_, _, _} -> ?PEPNODE;
+    _ -> hd(plugins(Host))
+    end,
     Options = node_options(Type),
     {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
 		[{xmlelement, "default", [],
@@ -2435,6 +2485,7 @@ get_configure_xfields(_Type, Options, Lang, _Owners) ->
      ?BOOL_CONFIG_FIELD("Notify subscribers when the node is deleted", notify_delete),
      ?BOOL_CONFIG_FIELD("Notify subscribers when items are removed from the node", notify_retract),
      ?BOOL_CONFIG_FIELD("Persist items to storage", persist_items),
+     ?STRING_CONFIG_FIELD("A friendly name for the node", title),
      ?INTEGER_CONFIG_FIELD("Max # of items to persist", max_items),
      ?BOOL_CONFIG_FIELD("Whether to allow subscriptions", subscribe),
      ?ALIST_CONFIG_FIELD("Specify the access model", access_model,
@@ -2551,7 +2602,7 @@ set_xoption([], NewOpts) ->
     NewOpts;
 set_xoption([{"FORM_TYPE", _} | Opts], NewOpts) ->
     set_xoption(Opts, NewOpts);
-set_xoption([{"pubsub#roster_groups_allowed", Value} | Opts], NewOpts) ->
+set_xoption([{"pubsub#roster_groups_allowed", _Value} | Opts], NewOpts) ->
     ?SET_LIST_XOPT(roster_groups_allowed, []);  % XXX: waiting for EJAB-659 to be solved
 set_xoption([{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(deliver_payloads, Val);
@@ -2602,7 +2653,7 @@ features() ->
 	[
 	 %"access-authorize",   % OPTIONAL
 	 "access-open",   % OPTIONAL this relates to access_model option in node_default
-	 %"access-presence",   % OPTIONAL
+	 "access-presence",   % OPTIONAL this relates to access_model option in node_pep
 	 %"access-roster",   % OPTIONAL
 	 %"access-whitelist",   % OPTIONAL
 	 % see plugin "auto-create",   % OPTIONAL
@@ -2616,7 +2667,7 @@ features() ->
 	 % see plugin "filtered-notifications",   % RECOMMENDED
 	 %TODO "get-pending",   % OPTIONAL
 	 % see plugin "instant-nodes",   % RECOMMENDED
-	 %TODO "item-ids",   % RECOMMENDED
+	 "item-ids",   % RECOMMENDED
 	 "last-published",   % RECOMMENDED
 	 %TODO "cache-last-item",
 	 %TODO "leased-subscription",   % OPTIONAL
