@@ -2,7 +2,10 @@
 
 	* src/ejabberd_c2s.erl: Backport C2S blacklist support from trunk
 	was (EJAB-625).
-	* src/mod_ip_blacklist.erl: Likewise.
+	* src/mod_ip_blacklist.erl: Likewise
+	* src/jlib.erl: Added IP format tuple to string function
+	* src/ejabberd_socket.erl: Properly handled c2s start failure (happen
+	for blacklisted IP).
 
 2008-07-10  Badlop  <badlop@process-one.net>
 
