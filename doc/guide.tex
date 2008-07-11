@@ -2883,6 +2883,7 @@ Options:
 \titem{welcome\_message} \ind{options!welcomem}Set a welcome message that
   is sent to each newly registered account. The first string is the subject, and 
   the second string is the message body.
+  In the body you can set a newline with the characters: \verb|\n|
 \titem{registration\_watchers} \ind{options!rwatchers}This option defines a 
   list of JIDs which will be notified each time a new account is registered.
 \iqdiscitem{In-Band Registration (\ns{jabber:iq:register})}
@@ -2941,7 +2942,7 @@ Also define a registration timeout of one hour:
   ...
   {mod_register,
    [
-    {welcome_message, {"Welcome!", "Welcome to this Jabber server. Check http://www.jabber.org"}},
+    {welcome_message, {"Welcome!", "Hi.\nWelcome to this Jabber server.\n Check http://www.jabber.org\n\nBye"}},
     {registration_watchers, ["admin1@example.org", "boss@example.net"]}
    ]},
   ...
