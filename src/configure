@@ -1281,31 +1281,39 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-mod_pubsub        enable mod_pubsub (default: yes)
+  --enable-mod_pubsub     enable mod_pubsub (default: yes)
   --enable-mod_irc        enable mod_irc (default: yes)
   --enable-mod_muc        enable mod_muc (default: yes)
-  --enable-mod_proxy65        enable mod_proxy65 (default: yes)
-  --enable-eldap        enable eldap (default: yes)
-  --enable-pam        enable pam (default: no)
-  --enable-web        enable web (default: yes)
-  --enable-tls        enable tls (default: yes)
-  --enable-odbc        enable odbc (default: no)
-  --enable-ejabberd_zlib        enable ejabberd_zlib (default: yes)
-  --enable-hipe        Compile natively with HiPE, not recommended (default: no)
-  --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions (default: no)
-  --enable-mssql    Use Microsoft SQL Server database (default: no, requires --enable-odbc)
-  --enable-transient_supervisors    Use Erlang supervision for transient process (default: yes)
-  --enable-full-xml    Use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)
+  --enable-mod_proxy65    enable mod_proxy65 (default: yes)
+  --enable-eldap          enable eldap (default: yes)
+  --enable-pam            enable pam (default: no)
+  --enable-web            enable web (default: yes)
+  --enable-tls            enable tls (default: yes)
+  --enable-odbc           enable odbc (default: no)
+  --enable-ejabberd_zlib  enable ejabberd_zlib (default: yes)
+  --enable-hipe           compile natively with HiPE, not recommended
+                          (default: no)
+  --enable-roster-gateway-workaround
+                          turn on workaround for processing gateway
+                          subscriptions (default: no)
+  --enable-mssql          use Microsoft SQL Server database (default: no,
+                          requires --enable-odbc)
+  --enable-transient_supervisors
+                          use Erlang supervision for transient process
+                          (default: yes)
+  --enable-full-xml       use XML features in XMPP stream (ex: CDATA)
+                          (default: no, requires XML compliant clients)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-erlang=PREFIX    path to erlc and erl
-  --with-libiconv-prefix=PREFIX	prefix where libiconv is installed
-  --with-expat=PREFIX	prefix where EXPAT is installed
-  --with-zlib=PREFIX	prefix where zlib is installed
-  --with-pam=PREFIX	prefix where PAM is installed
-  --with-openssl=PREFIX    prefix where OPENSSL is installed
+  --with-libiconv-prefix=PREFIX
+                          prefix where libiconv is installed
+  --with-expat=PREFIX     prefix where EXPAT is installed
+  --with-zlib=PREFIX      prefix where zlib is installed
+  --with-pam=PREFIX       prefix where PAM is installed
+  --with-openssl=PREFIX   prefix where OPENSSL is installed
 
 Some influential environment variables:
   CC          C compiler command

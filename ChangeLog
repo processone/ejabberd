@@ -1,3 +1,15 @@
+2008-07-12  Badlop  <badlop@process-one.net>
+
+	* src/configure.ac: Improve legibility
+	* src/aclocal.m4: Likewise
+	* src/configure: Likewise
+
+	* src/ejabberdctl.template: Remove garbage variable. Document node
+	option
+
+	* doc/guide.tex: Add references to sections.
+	* doc/guide.html: Likewise
+
 2008-07-11  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Document how to insert a newline character in

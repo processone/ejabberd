@@ -129,7 +129,6 @@ live ()
     echo ""
     erl \
       $NAME $ERLANG_NODE \
-      $ERLANG_OPTS \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
       -s ejabberd \
@@ -159,6 +158,7 @@ ctl ()
         echo "  --ctl-config file  Config file of ejabberdctl: $CONFIG"
         echo "  --logs dir         Directory for logs:         $LOGS_DIR"
         echo "  --spool dir        Database spool dir:         $EJABBERD_DB"
+        echo "  --node nodename    ejabberd node name:         $ERLANG_NODE"
         echo "";;
     esac
     return $result
