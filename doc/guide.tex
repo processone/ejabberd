@@ -324,6 +324,13 @@ Some options that you may be interested in modifying:
 	\titem{--prefix=/} 
 	Specify the path prefix where the files will be copied when running the make install command.
 
+	\titem{--enable-user[=USER]}
+	Allow this normal system user to execute the ejabberdctl script 
+	(see section~\ref{ejabberdctl}),
+	modify the configuration files and read log files.
+	The account must exist in the machine. It doesn't need a HOME directory.
+	If the option is not set, then only root can perform those actions.
+
 	\titem{--enable-pam} 
 	Enable the PAM authentication method (see section \ref{pam}).
 
@@ -359,7 +366,7 @@ The files and directories created are, by default:
 			\titem{ejabberdctl.cfg} Configuration file of the administration script
 			\titem{inetrc} Network DNS configuration
 		\end{description}
-	\titem{/sbin/ejabberdctl} Administration script (see section~\ref{ejabberdctl})
+	\titem{/bin/ejabberdctl} Administration script (see section~\ref{ejabberdctl})
 	\titem{/var/lib/ejabberd/}
 		\begin{description}
 			\titem{.erlang.cookie} Erlang cookie file (see section \ref{cookie})
@@ -384,6 +391,8 @@ The files and directories created are, by default:
 \ind{install!start}
 
 You can use the \term{ejabberdctl} command line administration script to start and stop \ejabberd{}.
+If you provided the configure option \term{--enable-user=USER} (see \ref{compile}),
+you can execute \term{ejabberdctl} with either that system account or root.
 
 Usage example:
 \begin{verbatim}

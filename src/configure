@@ -702,6 +702,7 @@ transient_supervisors
 full_xml
 SSL_LIBS
 SSL_CFLAGS
+INSTALLUSER
 LTLIBOBJS'
 ac_subst_files=''
       ac_precious_vars='build_alias
@@ -1303,6 +1304,8 @@ Optional Features:
                           (default: yes)
   --enable-full-xml       use XML features in XMPP stream (ex: CDATA)
                           (default: no, requires XML compliant clients)
+  --enable-user[=USER]    allow this system user to start ejabberd (default:
+                          no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5864,6 +5867,19 @@ fi
 
 
 
+ENABLEUSER=root
+# Check whether --enable-user was given.
+if test "${enable_user+set}" = set; then
+  enableval=$enable_user; case "${enableval}" in
+     yes) ENABLEUSER=`whoami` ;;
+     *) ENABLEUSER=$enableval
+   esac
+   echo "allow this system user to start ejabberd: $ENABLEUSER"
+fi
+
+INSTALLUSER=$ENABLEUSER
+
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -6591,10 +6607,11 @@ transient_supervisors!$transient_supervisors$ac_delim
 full_xml!$full_xml$ac_delim
 SSL_LIBS!$SSL_LIBS$ac_delim
 SSL_CFLAGS!$SSL_CFLAGS$ac_delim
+INSTALLUSER!$INSTALLUSER$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 89; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 90; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

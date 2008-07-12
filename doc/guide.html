@@ -339,7 +339,12 @@ To get the full list run the command:
 </PRE><P>Some options that you may be interested in modifying:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>--prefix=/</TT></B></DT><DD CLASS="dd-description"> 
-	Specify the path prefix where the files will be copied when running the make install command.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-pam</TT></B></DT><DD CLASS="dd-description"> 
+	Specify the path prefix where the files will be copied when running the make install command.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-user[=USER]</TT></B></DT><DD CLASS="dd-description">
+	Allow this normal system user to execute the ejabberdctl script 
+	(see section&#XA0;<A HREF="#ejabberdctl">4.1</A>),
+	modify the configuration files and read log files.
+	The account must exist in the machine. It doesn&#X2019;t need a HOME directory.
+	If the option is not set, then only root can perform those actions.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-pam</TT></B></DT><DD CLASS="dd-description"> 
 	Enable the PAM authentication method (see section <A HREF="#pam">3.1.4</A>).<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-odbc or --enable-mssql</TT></B></DT><DD CLASS="dd-description">
 	Required if you want to use an external database.
 	See section&#XA0;<A HREF="#database">3.2</A> for more information.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-full-xml</TT></B></DT><DD CLASS="dd-description"> 
@@ -360,7 +365,7 @@ to install <TT>ejabberd</TT>.</P><P>The files and directories created are, by de
 			</DD><DT CLASS="dt-description"><B><TT>ejabberdctl.cfg</TT></B></DT><DD CLASS="dd-description"> Configuration file of the administration script
 			</DD><DT CLASS="dt-description"><B><TT>inetrc</TT></B></DT><DD CLASS="dd-description"> Network DNS configuration
 		</DD></DL>
-	</DD><DT CLASS="dt-description"><B><TT>/sbin/ejabberdctl</TT></B></DT><DD CLASS="dd-description"> Administration script (see section&#XA0;<A HREF="#ejabberdctl">4.1</A>)
+	</DD><DT CLASS="dt-description"><B><TT>/bin/ejabberdctl</TT></B></DT><DD CLASS="dd-description"> Administration script (see section&#XA0;<A HREF="#ejabberdctl">4.1</A>)
 	</DD><DT CLASS="dt-description"><B><TT>/var/lib/ejabberd/</TT></B></DT><DD CLASS="dd-description">
 		<DL CLASS="description"><DT CLASS="dt-description">
 			<B><TT>.erlang.cookie</TT></B></DT><DD CLASS="dd-description"> Erlang cookie file (see section <A HREF="#cookie">5.3</A>)
@@ -380,7 +385,9 @@ to install <TT>ejabberd</TT>.</P><P>The files and directories created are, by de
 		</DD></DL>
 </DD></DL><P> <A NAME="start"></A> </P><!--TOC subsection Start-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc13">2.4.5</A>&#XA0;&#XA0;<A HREF="#start">Start</A></H3><!--SEC END --><P> <A NAME="start"></A> 
-</P><P>You can use the <TT>ejabberdctl</TT> command line administration script to start and stop <TT>ejabberd</TT>.</P><P>Usage example:
+</P><P>You can use the <TT>ejabberdctl</TT> command line administration script to start and stop <TT>ejabberd</TT>.
+If you provided the configure option <TT>--enable-user=USER</TT> (see <A HREF="#compile">2.4.3</A>),
+you can execute <TT>ejabberdctl</TT> with either that system account or root.</P><P>Usage example:
 </P><PRE CLASS="verbatim">ejabberdctl start
 
 ejabberdctl status

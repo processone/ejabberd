@@ -42,7 +42,7 @@ endif
 
 INSTALL_EPAM=
 ifeq (@pam@, pam)
-  INSTALL_EPAM=install -m 750 epam $(PBINDIR)
+  INSTALL_EPAM=install -m 750 -o @INSTALLUSER@ epam $(PBINDIR)
 endif
 
 prefix = @prefix@
@@ -62,12 +62,13 @@ EJABBERDDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
 BEAMDIR = $(EJABBERDDIR)/ebin
 SPOOLDIR = $(EJABBERDDIR)/db
 PRIVDIR = $(EJABBERDDIR)/priv
+COOKIEFILE = $(EJABBERDDIR)/.erlang.cookie
 SODIR = $(PRIVDIR)/lib
 PBINDIR = $(PRIVDIR)/bin
 MSGSDIR = $(PRIVDIR)/msgs
 LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
 ETCDIR = $(DESTDIR)@sysconfdir@/ejabberd
-SBINDIR = $(DESTDIR)@sbindir@
+BINDIR = $(DESTDIR)@bindir@
 
 ifeq ($(shell uname),Darwin)
 DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
@@ -117,21 +118,23 @@ install: all
 	install -m 644 *.beam $(BEAMDIR)
 	rm -f $(BEAMDIR)/configure.beam
 	install -m 644 *.app $(BEAMDIR)
-	install -d -m 750 $(SPOOLDIR)
+	install -d -m 750 -o @INSTALLUSER@ $(SPOOLDIR)
+	chown -R @INSTALLUSER@ $(SPOOLDIR)/*
+	chmod -R 750 $(SPOOLDIR)/*
 	install -d $(SODIR)
 	install -d $(PBINDIR)
 	install -m 644 *.so $(SODIR)
 	$(INSTALL_EPAM)
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
-	install -d -m 750 $(ETCDIR)
-	[ -f $(ETCDIR)/ejabberd.cfg ] && install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new || install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
-	sed -e "s*@rootdir@*@prefix@*" ejabberdctl.template > ejabberdctl.example
-	[ -f $(ETCDIR)/ejabberdctl.cfg ] && install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new || install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
+	install -d -m 750 -o @INSTALLUSER@ $(ETCDIR)
+	[ -f $(ETCDIR)/ejabberd.cfg ] && install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new || install -b -m 644 -o @INSTALLUSER@ ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
+	sed -e "s*@rootdir@*@prefix@*" -e "s*@installuser@*@INSTALLUSER@*" -e "s*@erl@*@ERL@*" ejabberdctl.template > ejabberdctl.example
+	[ -f $(ETCDIR)/ejabberdctl.cfg ] && install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new || install -b -m 644 -o @INSTALLUSER@ ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
 	install -b -m 644 inetrc $(ETCDIR)/inetrc
-	install -d $(SBINDIR)
-	install -m 755 ejabberdctl.example $(SBINDIR)/ejabberdctl
-	install -d -m 750 $(LOGDIR)
+	install -m 550 -o @INSTALLUSER@ ejabberdctl.example $(BINDIR)/ejabberdctl
+	install -d -m 750 -o @INSTALLUSER@ $(LOGDIR)
+	chown @INSTALLUSER@ $(COOKIEFILE)
 
 uninstall: uninstall-binary
 
@@ -140,7 +143,7 @@ uninstall-binary:
 	rm -rf $(SODIR)
 	rm -rf $(MSGSDIR)
 	rm -rf $(PRIVDIR)
-	rm -rf $(SBINDIR)/ejabberdctl
+	rm -rf $(BINDIR)/ejabberdctl
 
 uninstall-all: uninstall-binary
 	rm -rf $(ETCDIR)

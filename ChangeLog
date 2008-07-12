@@ -1,3 +1,13 @@
+2008-07-13  Badlop  <badlop@process-one.net>
+
+	* src/configure.ac: Allow to execute ejabberd with a normal
+	system user (thanks to Viq)(EJAB-402)
+	* src/configure: Likewise
+	* src/ejabberdctl.template: Likewise
+	* src/Makefile.in: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
 2008-07-12  Badlop  <badlop@process-one.net>
 
 	* src/configure.ac: Improve legibility
