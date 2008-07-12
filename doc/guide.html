@@ -333,14 +333,14 @@ Alternatively, the latest development version can be retrieved from the Subversi
 </P><P>To compile <TT>ejabberd</TT> execute the commands:
 </P><PRE CLASS="verbatim">./configure
 make
-</PRE><P>The build configuration script provides several parameters.
+</PRE><P>The build configuration script allows several options.
 To get the full list run the command:
 </P><PRE CLASS="verbatim">./configure --help
 </PRE><P>Some options that you may be interested in modifying:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>--prefix=/</TT></B></DT><DD CLASS="dd-description"> 
 	Specify the path prefix where the files will be copied when running the make install command.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-pam</TT></B></DT><DD CLASS="dd-description"> 
-	Enable the PAM authentication method.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-odbc or --enable-mssql</TT></B></DT><DD CLASS="dd-description">
+	Enable the PAM authentication method (see section <A HREF="#pam">3.1.4</A>).<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-odbc or --enable-mssql</TT></B></DT><DD CLASS="dd-description">
 	Required if you want to use an external database.
 	See section&#XA0;<A HREF="#database">3.2</A> for more information.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-full-xml</TT></B></DT><DD CLASS="dd-description"> 
 	Enable the use of XML based optimisations.
@@ -351,7 +351,8 @@ To get the full list run the command:
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc12">2.4.4</A>&#XA0;&#XA0;<A HREF="#install">Install</A></H3><!--SEC END --><P> <A NAME="install"></A> 
 </P><P>To install <TT>ejabberd</TT> in the destination directories, run the command:
 </P><PRE CLASS="verbatim">make install
-</PRE><P>Note that you may need to have administrative privileges in the system.</P><P>The files and directories created are, by default:
+</PRE><P>Note that you probably need administrative privileges in the system
+to install <TT>ejabberd</TT>.</P><P>The files and directories created are, by default:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>/etc/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Configuration files:
 		<DL CLASS="description"><DT CLASS="dt-description">
@@ -359,7 +360,7 @@ To get the full list run the command:
 			</DD><DT CLASS="dt-description"><B><TT>ejabberdctl.cfg</TT></B></DT><DD CLASS="dd-description"> Configuration file of the administration script
 			</DD><DT CLASS="dt-description"><B><TT>inetrc</TT></B></DT><DD CLASS="dd-description"> Network DNS configuration
 		</DD></DL>
-	</DD><DT CLASS="dt-description"><B><TT>/sbin/ejabberdctl</TT></B></DT><DD CLASS="dd-description"> Administration script
+	</DD><DT CLASS="dt-description"><B><TT>/sbin/ejabberdctl</TT></B></DT><DD CLASS="dd-description"> Administration script (see section&#XA0;<A HREF="#ejabberdctl">4.1</A>)
 	</DD><DT CLASS="dt-description"><B><TT>/var/lib/ejabberd/</TT></B></DT><DD CLASS="dd-description">
 		<DL CLASS="description"><DT CLASS="dt-description">
 			<B><TT>.erlang.cookie</TT></B></DT><DD CLASS="dd-description"> Erlang cookie file (see section <A HREF="#cookie">5.3</A>)
@@ -367,7 +368,8 @@ To get the full list run the command:
 			</DD><DT CLASS="dt-description"><B><TT>ebin</TT></B></DT><DD CLASS="dd-description"> Binary Erlang files (*.beam)
 			</DD><DT CLASS="dt-description"><B><TT>priv</TT></B></DT><DD CLASS="dd-description">
 				<DL CLASS="description"><DT CLASS="dt-description">
-					<B><TT>lib</TT></B></DT><DD CLASS="dd-description"> Binary system libraries (*.so)
+					<B><TT>bin</TT></B></DT><DD CLASS="dd-description"> Binary C programs
+					</DD><DT CLASS="dt-description"><B><TT>lib</TT></B></DT><DD CLASS="dd-description"> Binary system libraries (*.so)
 					</DD><DT CLASS="dt-description"><B><TT>msgs</TT></B></DT><DD CLASS="dd-description"> Translated strings (*.msgs)
 				</DD></DL>
 		</DD></DL>
@@ -939,7 +941,7 @@ for more information.
 </PRE><P>Though it is quite easy to set up PAM support in <TT>ejabberd</TT>, PAM itself introduces some
 security issues:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
 To perform PAM authentication <TT>ejabberd</TT> uses external C-program called
-<TT>epam</TT>. By default, it is located in <CODE>/var/lib/ejabberd/priv/lib/</CODE>
+<TT>epam</TT>. By default, it is located in <CODE>/var/lib/ejabberd/priv/bin/</CODE>
 directory. You have to set it root on execution in the case when your PAM module
 requires root privileges (<TT>pam_unix.so</TT> for example). Also you have to grant access
 for <TT>ejabberd</TT> to this file and remove all other permissions from it.
