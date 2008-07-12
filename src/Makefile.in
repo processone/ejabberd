@@ -68,7 +68,7 @@ PBINDIR = $(PRIVDIR)/bin
 MSGSDIR = $(PRIVDIR)/msgs
 LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
 ETCDIR = $(DESTDIR)@sysconfdir@/ejabberd
-BINDIR = $(DESTDIR)@bindir@
+SBINDIR = $(DESTDIR)@sbindir@
 
 ifeq ($(shell uname),Darwin)
 DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
@@ -132,7 +132,7 @@ install: all
 	sed -e "s*@rootdir@*@prefix@*" -e "s*@installuser@*@INSTALLUSER@*" -e "s*@erl@*@ERL@*" ejabberdctl.template > ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] && install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new || install -b -m 644 -o @INSTALLUSER@ ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
 	install -b -m 644 inetrc $(ETCDIR)/inetrc
-	install -m 550 -o @INSTALLUSER@ ejabberdctl.example $(BINDIR)/ejabberdctl
+	install -m 550 -o @INSTALLUSER@ ejabberdctl.example $(SBINDIR)/ejabberdctl
 	install -d -m 750 -o @INSTALLUSER@ $(LOGDIR)
 	chown @INSTALLUSER@ $(COOKIEFILE)
 
@@ -143,7 +143,7 @@ uninstall-binary:
 	rm -rf $(SODIR)
 	rm -rf $(MSGSDIR)
 	rm -rf $(PRIVDIR)
-	rm -rf $(BINDIR)/ejabberdctl
+	rm -rf $(SBINDIR)/ejabberdctl
 
 uninstall-all: uninstall-binary
 	rm -rf $(ETCDIR)
