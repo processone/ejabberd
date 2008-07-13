@@ -1,5 +1,18 @@
 2008-07-13  Badlop  <badlop@process-one.net>
 
+	* src/configure.ac: Update installation permissions (EJAB-402)
+	* src/configure: Likewise
+
+	* src/Makefile.in: The mnesia, ebin and priv dirs are now
+	installed in different locations. Install header files and
+	documentation (EJAB-696)
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
+	* include/*.hrl: Place for all ejabberd header files (EJAB-696)
+	* src/*/*.erl: Update references to header files
+	* src/*/Makefile.in: Include the include/ dir
+
 	* src/configure.ac: Allow to execute ejabberd with a normal
 	system user (thanks to Viq)(EJAB-402)
 	* src/configure: Likewise

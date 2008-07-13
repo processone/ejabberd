@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT(ejabberd.erl,, ejabberd@process-one.net)
+AC_INIT(ejabberd.erl, version, [ejabberd@process-one.net], [ejabberd])
 
 # Checks for programs.
 AC_PROG_CC

@@ -52,8 +52,8 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_roster.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -record(sr_group, {group_host, opts}).
 -record(sr_user, {us, group_host}).

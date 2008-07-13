@@ -41,8 +41,8 @@
 %% API.
 -export([start_link/2]).
 
--include("../ejabberd.hrl").
--include("../jlib.hrl").
+-include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -define(PROCNAME, ejabberd_mod_proxy65_service).
 
