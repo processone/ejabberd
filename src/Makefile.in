@@ -71,7 +71,7 @@ EJABBERDDIR = $(DESTDIR)@libdir@/ejabberd
 
 # /share/doc/ejabberd
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
-DATAROOTDIR = @datarootdir@
+datarootdir = @datarootdir@
 DOCDIR = @docdir@
 
 # /usr/lib/ejabberd/ebin/
@@ -164,6 +164,7 @@ install: all
 	install -b -m 644 -g @INSTALLUSER@ inetrc $(ETCDIR)/inetrc
 	#
 	# Administration script
+	[ -d $(SBINDIR) ] || install -d 750 $(SBINDIR)
 	install -m 550 -g @INSTALLUSER@ ejabberdctl.example $(SBINDIR)/ejabberdctl
 	#
 	# Binary Erlang files
@@ -192,7 +193,7 @@ install: all
 	install -d -m 750 -o @INSTALLUSER@ $(SPOOLDIR)
 	chown -R @INSTALLUSER@ $(SPOOLDIR)
 	chmod -R 750 $(SPOOLDIR)
-	[ ! -f $(COOKIEFILE) ] || chown -o @INSTALLUSER@ $(COOKIEFILE) ; chmod 400 $(COOKIEFILE)
+	[ ! -f $(COOKIEFILE) ] || { chown @INSTALLUSER@ $(COOKIEFILE) ; chmod 400 $(COOKIEFILE) ; }
 	#
 	# Log directory
 	install -d -m 750 -o @INSTALLUSER@ $(LOGDIR)
