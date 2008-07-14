@@ -14,6 +14,20 @@ ERLANG_LIBS = @ERLANG_LIBS@
 
 ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
 
+INSTALLUSER=@INSTALLUSER@
+# if no user was enabled, don't set privileges or ownership
+ifeq ($(INSTALLUSER),)
+  O_USER=
+  G_USER=
+  CHOWN_COMMAND=echo
+  CHOWN_OUTPUT=/dev/null
+else
+  O_USER=-o $(INSTALLUSER)
+  G_USER=-g $(INSTALLUSER)
+  CHOWN_COMMAND=chown
+  CHOWN_OUTPUT=&1
+endif
+
 EFLAGS += @ERLANG_SSL39@
 EFLAGS += -I ../include
 
@@ -44,7 +58,7 @@ endif
 
 INSTALL_EPAM=
 ifeq (@pam@, pam)
-  INSTALL_EPAM=install -m 750 -o @INSTALLUSER@ epam $(PBINDIR)
+  INSTALL_EPAM=install -m 750 $(O_USER) epam $(PBINDIR)
 endif
 
 prefix = @prefix@
@@ -145,12 +159,13 @@ $(ERLSHLIBS):	%.so:	%.c
 		$(DYNAMIC_LIB_CFLAGS)
 
 install: all
+	echo "AA: '$(AA)'"
 	#
 	# Configuration files
-	install -d -m 750 -g @INSTALLUSER@ $(ETCDIR)
+	install -d -m 750 $(G_USER) $(ETCDIR)
 	[ -f $(ETCDIR)/ejabberd.cfg ] \
-		&& install -b -m 640 -g @INSTALLUSER@ ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new \
-		|| install -b -m 640 -g @INSTALLUSER@ ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
+		&& install -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new \
+		|| install -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
 	sed -e "s*@rootdir@*@prefix@*" \
 		-e "s*@installuser@*@INSTALLUSER@*" \
 		-e "s*@LIBDIR@*@libdir@*" \
@@ -159,13 +174,13 @@ install: all
 		-e "s*@erl@*@ERL@*" ejabberdctl.template \
 		> ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
-		&& install -b -m 640 -g @INSTALLUSER@ ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
-		|| install -b -m 640 -g @INSTALLUSER@ ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
-	install -b -m 644 -g @INSTALLUSER@ inetrc $(ETCDIR)/inetrc
+		&& install -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
+		|| install -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
+	install -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc
 	#
 	# Administration script
 	[ -d $(SBINDIR) ] || install -d 750 $(SBINDIR)
-	install -m 550 -g @INSTALLUSER@ ejabberdctl.example $(SBINDIR)/ejabberdctl
+	install -m 550 $(G_USER) ejabberdctl.example $(SBINDIR)/ejabberdctl
 	#
 	# Binary Erlang files
 	install -d $(BEAMDIR)
@@ -190,14 +205,14 @@ install: all
 	install -m 644 msgs/*.msg $(MSGSDIR)
 	#
 	# Spool directory
-	install -d -m 750 -o @INSTALLUSER@ $(SPOOLDIR)
-	chown -R @INSTALLUSER@ $(SPOOLDIR)
+	install -d -m 750 $(O_USER) $(SPOOLDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(SPOOLDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(SPOOLDIR)
-	[ ! -f $(COOKIEFILE) ] || { chown @INSTALLUSER@ $(COOKIEFILE) ; chmod 400 $(COOKIEFILE) ; }
+	[ ! -f $(COOKIEFILE) ] || { $(CHOWN_COMMAND) @INSTALLUSER@ $(COOKIEFILE) >$(CHOWN_OUTPUT) ; chmod 400 $(COOKIEFILE) ; }
 	#
 	# Log directory
-	install -d -m 750 -o @INSTALLUSER@ $(LOGDIR)
-	chown -R @INSTALLUSER@ $(LOGDIR)
+	install -d -m 750 $(O_USER) $(LOGDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(LOGDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(LOGDIR)
 	#
 	# Documentation

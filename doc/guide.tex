@@ -322,14 +322,19 @@ To get the full list run the command:
 Some options that you may be interested in modifying:
 \begin{description}
 	\titem{--prefix=/} 
-	Specify the path prefix where the files will be copied when running the make install command.
+	Specify the path prefix where the files will be copied when running
+	the \term{make install} command.
 
 	\titem{--enable-user[=USER]}
 	Allow this normal system user to execute the ejabberdctl script 
 	(see section~\ref{ejabberdctl}),
-	modify the configuration files and read log files.
-	The account must exist in the machine. It doesn't need a HOME directory.
-	If the option is not set, then only root can perform those actions.
+	read the configuration files,
+	read and write in the spool directory,
+	read and write in the log directory.
+	The account user and group must exist in the machine
+	before running \term{make install}.
+	This account doesn't need an explicit HOME directory, because
+	\term{/var/lib/ejabberd/} will be used by default.
 
 	\titem{--enable-pam} 
 	Enable the PAM authentication method (see section \ref{pam}).

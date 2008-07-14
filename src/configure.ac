@@ -122,15 +122,18 @@ else
 fi
 AC_CHECK_HEADER(krb5.h,,)
 
-ENABLEUSER=root
+ENABLEUSER=""
 AC_ARG_ENABLE(user,
   [AS_HELP_STRING([--enable-user[[[[=USER]]]]], [allow this system user to start ejabberd (default: no)])],
   [case "${enableval}" in
      yes) ENABLEUSER=`whoami` ;;
+     no) ENABLEUSER="" ;;
      *) ENABLEUSER=$enableval
-   esac
-   echo "allow this system user to start ejabberd: $ENABLEUSER"],
+   esac],
   [])
-AC_SUBST([INSTALLUSER], [$ENABLEUSER])
+if test "$ENABLEUSER" != ""; then
+  echo "allow this system user to start ejabberd: $ENABLEUSER"
+  AC_SUBST([INSTALLUSER], [$ENABLEUSER])
+fi
 
 AC_OUTPUT

@@ -5909,18 +5909,21 @@ fi
 
 
 
-ENABLEUSER=root
+ENABLEUSER=""
 # Check whether --enable-user was given.
 if test "${enable_user+set}" = set; then
   enableval=$enable_user; case "${enableval}" in
      yes) ENABLEUSER=`whoami` ;;
+     no) ENABLEUSER="" ;;
      *) ENABLEUSER=$enableval
    esac
-   echo "allow this system user to start ejabberd: $ENABLEUSER"
 fi
 
-INSTALLUSER=$ENABLEUSER
+if test "$ENABLEUSER" != ""; then
+  echo "allow this system user to start ejabberd: $ENABLEUSER"
+  INSTALLUSER=$ENABLEUSER
 
+fi
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

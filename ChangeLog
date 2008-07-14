@@ -1,5 +1,13 @@
 2008-07-14  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Update what permissions does enable-user grant
+	* doc/guide.html: Likewise
+
+	* src/configure.ac: Don't explicitely put root privileges when a
+	user is not explicitely enabled
+	* src/configure: Likewise
+	* src/Makefile.in: Likewise
+
 	* src/Makefile.in: Fix docdir so it recognizes prefix. If sbin dir
 	does not exist, create it. Fix cookiefile permission
 	check. (EJAB-696)
