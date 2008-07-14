@@ -159,7 +159,6 @@ $(ERLSHLIBS):	%.so:	%.c
 		$(DYNAMIC_LIB_CFLAGS)
 
 install: all
-	echo "AA: '$(AA)'"
 	#
 	# Configuration files
 	install -d -m 750 $(G_USER) $(ETCDIR)
