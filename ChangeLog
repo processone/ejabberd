@@ -1,3 +1,9 @@
+2008-07-15  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Improve explanation of option 'hosts' in
+	ejabberd_service
+	* doc/guide.html: Likewise
+
 2008-07-14  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Update what permissions does enable-user grant
