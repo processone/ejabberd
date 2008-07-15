@@ -313,7 +313,7 @@ To compile \ejabberd{} execute the commands:
 make
 \end{verbatim}
 
-The build configuration script provides several parameters.
+The build configuration script allows several options.
 To get the full list run the command:
 \begin{verbatim}
 ./configure --help
@@ -322,10 +322,22 @@ To get the full list run the command:
 Some options that you may be interested in modifying:
 \begin{description}
 	\titem{--prefix=/} 
-	Specify the path prefix where the files will be copied when running the make install command.
+	Specify the path prefix where the files will be copied when running
+	the \term{make install} command.
+
+	\titem{--enable-user[=USER]}
+	Allow this normal system user to execute the ejabberdctl script 
+	(see section~\ref{ejabberdctl}),
+	read the configuration files,
+	read and write in the spool directory,
+	read and write in the log directory.
+	The account user and group must exist in the machine
+	before running \term{make install}.
+	This account doesn't need an explicit HOME directory, because
+	\term{/var/lib/ejabberd/} will be used by default.
 
 	\titem{--enable-pam} 
-	Enable the PAM authentication method.
+	Enable the PAM authentication method (see section \ref{pam}).
 
 	\titem{--enable-odbc or --enable-mssql}
 	Required if you want to use an external database.
@@ -348,29 +360,36 @@ To install \ejabberd{} in the destination directories, run the command:
 \begin{verbatim}
 make install
 \end{verbatim}
-Note that you may need to have administrative privileges in the system.
+Note that you probably need administrative privileges in the system
+to install \term{ejabberd}.
 
 The files and directories created are, by default:
 \begin{description}
-	\titem{/etc/ejabberd/} Configuration files:
+	\titem{/etc/ejabberd/} Configuration directory:
 		\begin{description}
 			\titem{ejabberd.cfg} ejabberd configuration file
 			\titem{ejabberdctl.cfg} Configuration file of the administration script
-			\titem{inetrc} Network DNS configuration
+			\titem{inetrc} Network DNS configuration file
 		\end{description}
-	\titem{/sbin/ejabberdctl} Administration script
-	\titem{/var/lib/ejabberd/}
+	\titem{/lib/ejabberd/}
 		\begin{description}
-			\titem{.erlang.cookie} Erlang cookie file (see section \ref{cookie})
-			\titem{db} Mnesia database spool files
-			\titem{ebin} Binary Erlang files (*.beam)
-			\titem{priv}
+			\titem{ebin/} Erlang binary files (*.beam)
+			\titem{include/} Erlang header files (*.hrl)
+			\titem{priv/} Additional files required at runtime
 				\begin{description}
-					\titem{lib} Binary system libraries (*.so)
-					\titem{msgs} Translated strings (*.msgs)
+					\titem{bin/} Binary C programs
+					\titem{lib/} Binary system libraries (*.so)
+					\titem{msgs/} Translation files (*.msgs)
 				\end{description}
 		\end{description}
-	\titem{/var/log/ejabberd/} Log files (see section~\ref{logfiles}):
+	\titem{/sbin/ejabberdctl} Administration script (see section~\ref{ejabberdctl})
+	\titem{/share/doc/ejabberd/} Documentation of ejabberd
+	\titem{/var/lib/ejabberd/} Spool directory:
+		\begin{description}
+			\titem{.erlang.cookie} Erlang cookie file (see section \ref{cookie})
+			\titem{acl.DCD, ...} Mnesia database spool files (*.DCD, *.DCL, *.DAT)
+		\end{description}
+	\titem{/var/log/ejabberd/} Log directory (see section~\ref{logfiles}):
 		\begin{description}
 			\titem{ejabberd.log} ejabberd service log
 			\titem{sasl.log} Erlang/OTP system log
@@ -382,6 +401,8 @@ The files and directories created are, by default:
 \ind{install!start}
 
 You can use the \term{ejabberdctl} command line administration script to start and stop \ejabberd{}.
+If you provided the configure option \term{--enable-user=USER} (see \ref{compile}),
+you can execute \term{ejabberdctl} with either that system account or root.
 
 Usage example:
 \begin{verbatim}
@@ -393,6 +414,7 @@ ejabberd is running
 
 ejabberdctl stop
 \end{verbatim}
+
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
 
@@ -1117,7 +1139,7 @@ security issues:
 
 \begin{itemize}
 \item To perform PAM authentication \ejabberd{} uses external C-program called
-\term{epam}. By default, it is located in \verb|/var/lib/ejabberd/priv/lib/|
+\term{epam}. By default, it is located in \verb|/var/lib/ejabberd/priv/bin/|
 directory. You have to set it root on execution in the case when your PAM module
 requires root privileges (\term{pam\_unix.so} for example). Also you have to grant access
 for \ejabberd{} to this file and remove all other permissions from it.
@@ -3036,7 +3058,7 @@ Options:
 \titem{welcome\_message} \ind{options!welcomem}Set a welcome message that
   is sent to each newly registered account. The first string is the subject, and 
   the second string is the message body.
-  In the body you can set a newline with the characters: \term{\~\ n}.
+  In the body you can set a newline with the characters: \verb|\n|
 \titem{registration\_watchers} \ind{options!rwatchers}This option defines a 
   list of JIDs which will be notified each time a new account is registered.
 \iqdiscitem{In-Band Registration (\ns{jabber:iq:register})}
@@ -3095,7 +3117,7 @@ Also define a registration timeout of one hour:
   ...
   {mod_register,
    [
-    {welcome_message, {"Welcome!", "Hi.~nWelcome to this Jabber server.~n Check http://www.jabber.org~n~nBye"}},
+    {welcome_message, {"Welcome!", "Hi.\nWelcome to this Jabber server.\n Check http://www.jabber.org\n\nBye"}},
     {registration_watchers, ["admin1@example.org", "boss@example.net"]}
    ]},
   ...
@@ -3708,7 +3730,7 @@ The command line parameters:
 	Specify the directory where Erlang binary files (*.beam) are located.
   \titem{-s ejabberd} 
 	Tell Erlang runtime system to start the \ejabberd{} application.
-  \titem{-mnesia dir "/var/lib/ejabberd/db/nodename"}
+  \titem{-mnesia dir "/var/lib/ejabberd/"}
 	Specify the Mnesia database directory.
   \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/sasl.log"\}}
 	Path to the Erlang/OTP system log file.
@@ -3941,10 +3963,10 @@ write and execute those files and directories.
   If the loglevel is set to 5, it contains whole conversations and passwords.
   If a logrotate system is used, there may be several log files with similar information,
   so it is preferable to secure the whole \term{/var/log/ejabberd/} directory.
-  \titem{Mnesia database spool files: /var/lib/ejabberd/db/*}
+  \titem{Mnesia database spool files in /var/lib/ejabberd/}
   The files store binary data, but some parts are still readable.
   The files are generated by Mnesia and their permissions cannot be set directly,
-  so it is preferable to secure the whole \term{/var/lib/ejabberd/db/} directory.
+  so it is preferable to secure the whole \term{/var/lib/ejabberd/} directory.
   \titem{Erlang cookie file: /var/lib/ejabberd/.erlang.cookie}
   See section \ref{cookie}.
 \end{description}

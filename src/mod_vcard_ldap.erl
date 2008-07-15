@@ -50,7 +50,7 @@
 	]).
 
 -include("ejabberd.hrl").
--include("eldap/eldap.hrl").
+-include("eldap.hrl").
 -include("jlib.hrl").
 
 -define(PROCNAME, ejabberd_mod_vcard_ldap).

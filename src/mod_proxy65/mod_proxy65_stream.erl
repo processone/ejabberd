@@ -58,7 +58,7 @@
 	]).
 
 -include("mod_proxy65.hrl").
--include("../ejabberd.hrl").
+-include("ejabberd.hrl").
 
 -define(WAIT_TIMEOUT, 60000). %% 1 minute (is it enough?)
 

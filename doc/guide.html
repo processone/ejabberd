@@ -333,14 +333,24 @@ Alternatively, the latest development version can be retrieved from the Subversi
 </P><P>To compile <TT>ejabberd</TT> execute the commands:
 </P><PRE CLASS="verbatim">./configure
 make
-</PRE><P>The build configuration script provides several parameters.
+</PRE><P>The build configuration script allows several options.
 To get the full list run the command:
 </P><PRE CLASS="verbatim">./configure --help
 </PRE><P>Some options that you may be interested in modifying:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>--prefix=/</TT></B></DT><DD CLASS="dd-description"> 
-	Specify the path prefix where the files will be copied when running the make install command.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-pam</TT></B></DT><DD CLASS="dd-description"> 
-	Enable the PAM authentication method.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-odbc or --enable-mssql</TT></B></DT><DD CLASS="dd-description">
+	Specify the path prefix where the files will be copied when running
+	the <TT>make install</TT> command.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-user[=USER]</TT></B></DT><DD CLASS="dd-description">
+	Allow this normal system user to execute the ejabberdctl script 
+	(see section&#XA0;<A HREF="#ejabberdctl">4.1</A>),
+	read the configuration files,
+	read and write in the spool directory,
+	read and write in the log directory.
+	The account user and group must exist in the machine
+	before running <TT>make install</TT>.
+	This account doesn&#X2019;t need an explicit HOME directory, because
+	<TT>/var/lib/ejabberd/</TT> will be used by default.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-pam</TT></B></DT><DD CLASS="dd-description"> 
+	Enable the PAM authentication method (see section <A HREF="#pam">3.1.4</A>).<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-odbc or --enable-mssql</TT></B></DT><DD CLASS="dd-description">
 	Required if you want to use an external database.
 	See section&#XA0;<A HREF="#database">3.2</A> for more information.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-full-xml</TT></B></DT><DD CLASS="dd-description"> 
 	Enable the use of XML based optimisations.
@@ -351,34 +361,43 @@ To get the full list run the command:
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc12">2.4.4</A>&#XA0;&#XA0;<A HREF="#install">Install</A></H3><!--SEC END --><P> <A NAME="install"></A> 
 </P><P>To install <TT>ejabberd</TT> in the destination directories, run the command:
 </P><PRE CLASS="verbatim">make install
-</PRE><P>Note that you may need to have administrative privileges in the system.</P><P>The files and directories created are, by default:
+</PRE><P>Note that you probably need administrative privileges in the system
+to install <TT>ejabberd</TT>.</P><P>The files and directories created are, by default:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-	<B><TT>/etc/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Configuration files:
+	<B><TT>/etc/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Configuration directory:
 		<DL CLASS="description"><DT CLASS="dt-description">
 			<B><TT>ejabberd.cfg</TT></B></DT><DD CLASS="dd-description"> ejabberd configuration file
 			</DD><DT CLASS="dt-description"><B><TT>ejabberdctl.cfg</TT></B></DT><DD CLASS="dd-description"> Configuration file of the administration script
-			</DD><DT CLASS="dt-description"><B><TT>inetrc</TT></B></DT><DD CLASS="dd-description"> Network DNS configuration
+			</DD><DT CLASS="dt-description"><B><TT>inetrc</TT></B></DT><DD CLASS="dd-description"> Network DNS configuration file
 		</DD></DL>
-	</DD><DT CLASS="dt-description"><B><TT>/sbin/ejabberdctl</TT></B></DT><DD CLASS="dd-description"> Administration script
-	</DD><DT CLASS="dt-description"><B><TT>/var/lib/ejabberd/</TT></B></DT><DD CLASS="dd-description">
+	</DD><DT CLASS="dt-description"><B><TT>/lib/ejabberd/</TT></B></DT><DD CLASS="dd-description">
 		<DL CLASS="description"><DT CLASS="dt-description">
-			<B><TT>.erlang.cookie</TT></B></DT><DD CLASS="dd-description"> Erlang cookie file (see section <A HREF="#cookie">5.3</A>)
-			</DD><DT CLASS="dt-description"><B><TT>db</TT></B></DT><DD CLASS="dd-description"> Mnesia database spool files
-			</DD><DT CLASS="dt-description"><B><TT>ebin</TT></B></DT><DD CLASS="dd-description"> Binary Erlang files (*.beam)
-			</DD><DT CLASS="dt-description"><B><TT>priv</TT></B></DT><DD CLASS="dd-description">
+			<B><TT>ebin/</TT></B></DT><DD CLASS="dd-description"> Erlang binary files (*.beam)
+			</DD><DT CLASS="dt-description"><B><TT>include/</TT></B></DT><DD CLASS="dd-description"> Erlang header files (*.hrl)
+			</DD><DT CLASS="dt-description"><B><TT>priv/</TT></B></DT><DD CLASS="dd-description"> Additional files required at runtime
 				<DL CLASS="description"><DT CLASS="dt-description">
-					<B><TT>lib</TT></B></DT><DD CLASS="dd-description"> Binary system libraries (*.so)
-					</DD><DT CLASS="dt-description"><B><TT>msgs</TT></B></DT><DD CLASS="dd-description"> Translated strings (*.msgs)
+					<B><TT>bin/</TT></B></DT><DD CLASS="dd-description"> Binary C programs
+					</DD><DT CLASS="dt-description"><B><TT>lib/</TT></B></DT><DD CLASS="dd-description"> Binary system libraries (*.so)
+					</DD><DT CLASS="dt-description"><B><TT>msgs/</TT></B></DT><DD CLASS="dd-description"> Translation files (*.msgs)
 				</DD></DL>
 		</DD></DL>
-	</DD><DT CLASS="dt-description"><B><TT>/var/log/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Log files (see section&#XA0;<A HREF="#logfiles">7.2</A>):
+	</DD><DT CLASS="dt-description"><B><TT>/sbin/ejabberdctl</TT></B></DT><DD CLASS="dd-description"> Administration script (see section&#XA0;<A HREF="#ejabberdctl">4.1</A>)
+	</DD><DT CLASS="dt-description"><B><TT>/share/doc/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Documentation of ejabberd
+	</DD><DT CLASS="dt-description"><B><TT>/var/lib/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Spool directory:
+		<DL CLASS="description"><DT CLASS="dt-description">
+			<B><TT>.erlang.cookie</TT></B></DT><DD CLASS="dd-description"> Erlang cookie file (see section <A HREF="#cookie">5.3</A>)
+			</DD><DT CLASS="dt-description"><B><TT>acl.DCD, ...</TT></B></DT><DD CLASS="dd-description"> Mnesia database spool files (*.DCD, *.DCL, *.DAT)
+		</DD></DL>
+	</DD><DT CLASS="dt-description"><B><TT>/var/log/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Log directory (see section&#XA0;<A HREF="#logfiles">7.2</A>):
 		<DL CLASS="description"><DT CLASS="dt-description">
 			<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> ejabberd service log
 			</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> Erlang/OTP system log
 		</DD></DL>
 </DD></DL><P> <A NAME="start"></A> </P><!--TOC subsection Start-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc13">2.4.5</A>&#XA0;&#XA0;<A HREF="#start">Start</A></H3><!--SEC END --><P> <A NAME="start"></A> 
-</P><P>You can use the <TT>ejabberdctl</TT> command line administration script to start and stop <TT>ejabberd</TT>.</P><P>Usage example:
+</P><P>You can use the <TT>ejabberdctl</TT> command line administration script to start and stop <TT>ejabberd</TT>.
+If you provided the configure option <TT>--enable-user=USER</TT> (see <A HREF="#compile">2.4.3</A>),
+you can execute <TT>ejabberdctl</TT> with either that system account or root.</P><P>Usage example:
 </P><PRE CLASS="verbatim">ejabberdctl start
 
 ejabberdctl status
@@ -939,7 +958,7 @@ for more information.
 </PRE><P>Though it is quite easy to set up PAM support in <TT>ejabberd</TT>, PAM itself introduces some
 security issues:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
 To perform PAM authentication <TT>ejabberd</TT> uses external C-program called
-<TT>epam</TT>. By default, it is located in <CODE>/var/lib/ejabberd/priv/lib/</CODE>
+<TT>epam</TT>. By default, it is located in <CODE>/var/lib/ejabberd/priv/bin/</CODE>
 directory. You have to set it root on execution in the case when your PAM module
 requires root privileges (<TT>pam_unix.so</TT> for example). Also you have to grant access
 for <TT>ejabberd</TT> to this file and remove all other permissions from it.
@@ -2363,7 +2382,7 @@ restrictions by default).
 </DD><DT CLASS="dt-description"><B><TT>welcome_message</TT></B></DT><DD CLASS="dd-description"> Set a welcome message that
 is sent to each newly registered account. The first string is the subject, and 
 the second string is the message body.
-In the body you can set a newline with the characters: <TT>~n</TT>.
+In the body you can set a newline with the characters: <CODE>\n</CODE>
 </DD><DT CLASS="dt-description"><B><TT>registration_watchers</TT></B></DT><DD CLASS="dd-description"> This option defines a 
 list of JIDs which will be notified each time a new account is registered.
 </DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies 
@@ -2414,7 +2433,7 @@ Also define a registration timeout of one hour:
   ...
   {mod_register,
    [
-    {welcome_message, {"Welcome!", "Hi.~nWelcome to this Jabber server.~n Check http://www.jabber.org~n~nBye"}},
+    {welcome_message, {"Welcome!", "Hi.\nWelcome to this Jabber server.\n Check http://www.jabber.org\n\nBye"}},
     {registration_watchers, ["admin1@example.org", "boss@example.net"]}
    ]},
   ...
@@ -2895,7 +2914,7 @@ Starts the Erlang system detached from the system console.
 	Specify the directory where Erlang binary files (*.beam) are located.
 </DD><DT CLASS="dt-description"><B><TT>-s ejabberd</TT></B></DT><DD CLASS="dd-description"> 
 	Tell Erlang runtime system to start the <TT>ejabberd</TT> application.
-</DD><DT CLASS="dt-description"><B><TT>-mnesia dir "/var/lib/ejabberd/db/nodename"</TT></B></DT><DD CLASS="dd-description">
+</DD><DT CLASS="dt-description"><B><TT>-mnesia dir "/var/lib/ejabberd/"</TT></B></DT><DD CLASS="dd-description">
 	Specify the Mnesia database directory.
 </DD><DT CLASS="dt-description"><B><TT>-sasl sasl_error_logger {file, "/var/log/ejabberd/sasl.log"}</TT></B></DT><DD CLASS="dd-description">
 	Path to the Erlang/OTP system log file.
@@ -3065,10 +3084,10 @@ Contains IP addresses of clients.
 If the loglevel is set to 5, it contains whole conversations and passwords.
 If a logrotate system is used, there may be several log files with similar information,
 so it is preferable to secure the whole <TT>/var/log/ejabberd/</TT> directory.
-</DD><DT CLASS="dt-description"><B><TT>Mnesia database spool files: /var/lib/ejabberd/db/*</TT></B></DT><DD CLASS="dd-description">
+</DD><DT CLASS="dt-description"><B><TT>Mnesia database spool files in /var/lib/ejabberd/</TT></B></DT><DD CLASS="dd-description">
 The files store binary data, but some parts are still readable.
 The files are generated by Mnesia and their permissions cannot be set directly,
-so it is preferable to secure the whole <TT>/var/lib/ejabberd/db/</TT> directory.
+so it is preferable to secure the whole <TT>/var/lib/ejabberd/</TT> directory.
 </DD><DT CLASS="dt-description"><B><TT>Erlang cookie file: /var/lib/ejabberd/.erlang.cookie</TT></B></DT><DD CLASS="dd-description">
 See section <A HREF="#cookie">5.3</A>.
 </DD></DL><P> <A NAME="clustering"></A> </P><!--TOC chapter Clustering-->

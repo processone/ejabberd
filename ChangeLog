@@ -1,3 +1,66 @@
+2008-07-15  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Merge revisions from 1434 to revision 1444 from trunk.
+
+	* configure: Recreated with autoconf(1) after merge.
+
+2008-07-14  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Update what permissions does enable-user grant
+	* doc/guide.html: Likewise
+
+	* src/configure.ac: Don't explicitely put root privileges when a
+	user is not explicitely enabled
+	* src/configure: Likewise
+	* src/Makefile.in: Likewise
+
+	* src/Makefile.in: Fix docdir so it recognizes prefix. If sbin dir
+	does not exist, create it. Fix cookiefile permission
+	check. (EJAB-696)
+
+2008-07-13  Badlop  <badlop@process-one.net>
+
+	* src/configure.ac: Update installation permissions (EJAB-402)
+	* src/configure: Likewise
+
+	* src/Makefile.in: The mnesia, ebin and priv dirs are now
+	installed in different locations. Install header files and
+	documentation (EJAB-696)
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
+	* include/*.hrl: Place for all ejabberd header files (EJAB-696)
+	* src/*/*.erl: Update references to header files
+	* src/*/Makefile.in: Include the include/ dir
+
+	* src/configure.ac: Allow to execute ejabberd with a normal
+	system user (thanks to Viq)(EJAB-402)
+	* src/configure: Likewise
+	* src/ejabberdctl.template: Likewise
+	* src/Makefile.in: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
+2008-07-12  Badlop  <badlop@process-one.net>
+
+	* src/configure.ac: Improve legibility
+	* src/aclocal.m4: Likewise
+	* src/configure: Likewise
+
+	* src/ejabberdctl.template: Remove garbage variable. Document node
+	option
+
+	* doc/guide.tex: Add references to sections.
+	* doc/guide.html: Likewise
+
+2008-07-11  Badlop  <badlop@process-one.net>
+
+	* src/mod_register.erl: Revert support for io_lib newline, since
+	there is a standard character that representes newline (EJAB-501)
+	* doc/guide.tex: Update documentation to explain newline character
+	* doc/guide.html: Likewise
+	* src/ejabberd.cfg.example: Likewise
+
 2008-07-11  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge revisions from 1362 to revision 1434 from trunk.

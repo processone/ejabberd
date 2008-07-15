@@ -241,13 +241,12 @@ send_welcome_message(JID) ->
 	{"", ""} ->
 	    ok;
 	{Subj, Body} ->
-	    BodyFormatted = io_lib:format(Body, []),
 	    ejabberd_router:route(
 	      jlib:make_jid("", Host, ""),
 	      JID,
 	      {xmlelement, "message", [{"type", "normal"}],
 	       [{xmlelement, "subject", [], [{xmlcdata, Subj}]},
-		{xmlelement, "body", [], [{xmlcdata, BodyFormatted}]}]});
+		{xmlelement, "body", [], [{xmlcdata, Body}]}]});
 	_ ->
 	    ok
     end.

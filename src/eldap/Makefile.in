@@ -9,7 +9,8 @@ LIBS = @LIBS@
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
-EFLAGS = -I .. -pz ..
+EFLAGS += -I ../../include
+EFLAGS += -pz ..
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
 	EFLAGS+=+debug_info

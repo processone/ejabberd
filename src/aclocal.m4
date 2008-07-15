@@ -1,6 +1,6 @@
 AC_DEFUN(AM_WITH_EXPAT,
 [ AC_ARG_WITH(expat,
-	      [  --with-expat=PREFIX	prefix where EXPAT is installed])
+	      [AC_HELP_STRING([--with-expat=PREFIX], [prefix where EXPAT is installed])])
 
   EXPAT_CFLAGS=
   EXPAT_LIBS=
@@ -34,7 +34,7 @@ AC_DEFUN(AM_WITH_EXPAT,
 
 AC_DEFUN(AM_WITH_ZLIB,
 [ AC_ARG_WITH(zlib,
-	      [  --with-zlib=PREFIX	prefix where zlib is installed])
+	      [AC_HELP_STRING([--with-zlib=PREFIX], [prefix where zlib is installed])])
 
   ZLIB_CFLAGS=
   ZLIB_LIBS=
@@ -68,7 +68,7 @@ AC_DEFUN(AM_WITH_ZLIB,
 
 AC_DEFUN(AM_WITH_PAM,
 [ AC_ARG_WITH(pam,
-	      [  --with-pam=PREFIX	prefix where PAM is installed])
+	      [AC_HELP_STRING([--with-pam=PREFIX], [prefix where PAM is installed])])
 
   PAM_CFLAGS=
   PAM_LIBS=
@@ -102,7 +102,7 @@ AC_DEFUN(AM_WITH_PAM,
 
 AC_DEFUN(AM_WITH_ERLANG,
 [ AC_ARG_WITH(erlang,
-	      [  --with-erlang=PREFIX    path to erlc and erl ])
+	      [AC_HELP_STRING([--with-erlang=PREFIX], [path to erlc and erl])])
 
    AC_PATH_TOOL(ERLC, erlc, , $with_erlang:$with_erlang/bin:$PATH)
    AC_PATH_TOOL(ERL, erl, , $with_erlang:$with_erlang/bin:$PATH)
@@ -204,14 +204,13 @@ _EOF
    AC_SUBST(ERL)
 ])
 
-
 AC_DEFUN(AC_MOD_ENABLE,
 [
 $1=
 make_$1=
 AC_MSG_CHECKING([whether build $1])
 AC_ARG_ENABLE($1,
-  [  --enable-$1        enable $1 (default: $2)],
+  [AC_HELP_STRING([--enable-$1], [enable $1 (default: $2)])],
     [mr_enable_$1="$enableval"],
      [mr_enable_$1=$2])
 if test "$mr_enable_$1" = "yes"; then
@@ -232,7 +231,7 @@ AC_DEFUN([AM_ICONV],
   dnl Some systems have iconv in libc, some have it in libiconv (OSF/1 and
   dnl those with the standalone portable GNU libiconv installed).
   AC_ARG_WITH([libiconv-prefix],
-[  --with-libiconv-prefix=PREFIX	prefix where libiconv is installed], [
+   [AC_HELP_STRING([--with-libiconv-prefix=PREFIX], [prefix where libiconv is installed])], [
     for dir in `echo "$withval" | tr : ' '`; do
       if test -d $dir/include; then CPPFLAGS="$CPPFLAGS -I$dir/include"; fi
       if test -d $dir/include; then CFLAGS="$CFLAGS -I$dir/include"; fi
@@ -317,7 +316,7 @@ size_t iconv();
 dnl <openssl>
 AC_DEFUN(AM_WITH_OPENSSL,
 [ AC_ARG_WITH(openssl,
-          [  --with-openssl=PREFIX    prefix where OPENSSL is installed ])
+      [AC_HELP_STRING([--with-openssl=PREFIX], [prefix where OPENSSL is installed])])
 unset SSL_LIBS;
 unset SSL_CFLAGS;
 have_openssl=no

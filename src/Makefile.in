@@ -12,37 +12,53 @@ ERLANG_CFLAGS= @ERLANG_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
-ERLC_FLAGS += @ERLANG_SSL39@
-
 ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
+
+INSTALLUSER=@INSTALLUSER@
+# if no user was enabled, don't set privileges or ownership
+ifeq ($(INSTALLUSER),)
+  O_USER=
+  G_USER=
+  CHOWN_COMMAND=echo
+  CHOWN_OUTPUT=/dev/null
+else
+  O_USER=-o $(INSTALLUSER)
+  G_USER=-g $(INSTALLUSER)
+  CHOWN_COMMAND=chown
+  CHOWN_OUTPUT=&1
+endif
+
+EFLAGS += @ERLANG_SSL39@
+EFLAGS += -I ../include
+
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-  ERLC_FLAGS+=+debug_info
+  EFLAGS+=+debug_info
 endif
 
 ifdef ejabberd_debug
-  ERLC_FLAGS+=-Dejabberd_debug
+  EFLAGS+=-Dejabberd_debug
 endif
 
 ifeq (@hipe@, true)
-  ERLC_FLAGS+=+native
+  EFLAGS+=+native
 endif
 
 ifeq (@roster_gateway_workaround@, true)
-  ERLC_FLAGS+=-DROSTER_GATEWAY_WORKAROUND
+  EFLAGS+=-DROSTER_GATEWAY_WORKAROUND
 endif
 
 ifeq (@full_xml@, true)
-  ERLC_FLAGS+=-DFULL_XML_SUPPORT
+  EFLAGS+=-DFULL_XML_SUPPORT
 endif
 
 ifeq (@transient_supervisors@, false)
-  ERLC_FLAGS+=-DNO_TRANSIENT_SUPERVISORS
+  EFLAGS+=-DNO_TRANSIENT_SUPERVISORS
 endif
 
 INSTALL_EPAM=
 ifeq (@pam@, pam)
-  INSTALL_EPAM=install -m 750 epam $(PBINDIR)
+  INSTALL_EPAM=install -m 750 $(O_USER) epam $(PBINDIR)
 endif
 
 prefix = @prefix@
@@ -58,16 +74,46 @@ BEAMS = $(SOURCES:.erl=.beam)
 
 DESTDIR =
 
-EJABBERDDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
-BEAMDIR = $(EJABBERDDIR)/ebin
-SPOOLDIR = $(EJABBERDDIR)/db
-PRIVDIR = $(EJABBERDDIR)/priv
-SODIR = $(PRIVDIR)/lib
-PBINDIR = $(PRIVDIR)/bin
-MSGSDIR = $(PRIVDIR)/msgs
-LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
+# /etc/ejabberd/
 ETCDIR = $(DESTDIR)@sysconfdir@/ejabberd
+
+# /sbin/
 SBINDIR = $(DESTDIR)@sbindir@
+
+# /lib/ejabberd/
+EJABBERDDIR = $(DESTDIR)@libdir@/ejabberd
+
+# /share/doc/ejabberd
+PACKAGE_TARNAME = @PACKAGE_TARNAME@
+datarootdir = @datarootdir@
+DOCDIR = @docdir@
+
+# /usr/lib/ejabberd/ebin/
+BEAMDIR = $(EJABBERDDIR)/ebin
+
+# /usr/lib/ejabberd/include/
+INCLUDEDIR = $(EJABBERDDIR)/include
+
+# /usr/lib/ejabberd/priv/
+PRIVDIR = $(EJABBERDDIR)/priv
+
+# /usr/lib/ejabberd/priv/bin
+PBINDIR = $(PRIVDIR)/bin
+
+# /usr/lib/ejabberd/priv/lib
+SODIR = $(PRIVDIR)/lib
+
+# /usr/lib/ejabberd/priv/msgs
+MSGSDIR = $(PRIVDIR)/msgs
+
+# /var/lib/ejabberd/
+SPOOLDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
+
+# /var/lib/ejabberd/.erlang.cookie
+COOKIEFILE = $(SPOOLDIR)/.erlang.cookie
+
+# /var/log/ejabberd/
+LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
 
 ifeq ($(shell uname),Darwin)
 DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
@@ -85,7 +131,7 @@ $(BEAMS): $(ERLBEHAVBEAMS)
 all-recursive: $(ERLBEHAVBEAMS)
 
 %.beam:       %.erl
-	@ERLC@ -W $(ERLC_FLAGS) $<
+	@ERLC@ -W $(EFLAGS) $<
 
 
 all-recursive install-recursive uninstall-recursive \
@@ -100,7 +146,7 @@ mostlyclean-recursive maintainer-clean-recursive:
 
 %.hrl: %.asn1
 	@ERLC@ $(ASN_FLAGS) $<
-	@ERLC@ -W $(ERLC_FLAGS) $*.erl
+	@ERLC@ -W $(EFLAGS) $*.erl
 
 $(ERLSHLIBS):	%.so:	%.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) \
@@ -113,39 +159,90 @@ $(ERLSHLIBS):	%.so:	%.c
 		$(DYNAMIC_LIB_CFLAGS)
 
 install: all
+	#
+	# Configuration files
+	install -d -m 750 $(G_USER) $(ETCDIR)
+	[ -f $(ETCDIR)/ejabberd.cfg ] \
+		&& install -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new \
+		|| install -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
+	sed -e "s*@rootdir@*@prefix@*" \
+		-e "s*@installuser@*@INSTALLUSER@*" \
+		-e "s*@LIBDIR@*@libdir@*" \
+		-e "s*@SYSCONFDIR@*@sysconfdir@*" \
+		-e "s*@LOCALSTATEDIR@*@localstatedir@*" \
+		-e "s*@erl@*@ERL@*" ejabberdctl.template \
+		> ejabberdctl.example
+	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
+		&& install -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
+		|| install -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
+	install -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc
+	#
+	# Administration script
+	[ -d $(SBINDIR) ] || install -d 750 $(SBINDIR)
+	install -m 550 $(G_USER) ejabberdctl.example $(SBINDIR)/ejabberdctl
+	#
+	# Binary Erlang files
 	install -d $(BEAMDIR)
+	install -m 644 *.app $(BEAMDIR)
 	install -m 644 *.beam $(BEAMDIR)
 	rm -f $(BEAMDIR)/configure.beam
-	install -m 644 *.app $(BEAMDIR)
-	install -d -m 750 $(SPOOLDIR)
-	install -d $(SODIR)
+	#
+	# ejabberd header files
+	install -d $(INCLUDEDIR)
+	install -m 644 ../include/*.hrl $(INCLUDEDIR)
+	#
+	# Binary C programs
 	install -d $(PBINDIR)
-	install -m 644 *.so $(SODIR)
 	$(INSTALL_EPAM)
+	#
+	# Binary system libraries
+	install -d $(SODIR)
+	install -m 644 *.so $(SODIR)
+	#
+	# Translated strings
 	install -d $(MSGSDIR)
 	install -m 644 msgs/*.msg $(MSGSDIR)
-	install -d -m 750 $(ETCDIR)
-	[ -f $(ETCDIR)/ejabberd.cfg ] && install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new || install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
-	sed -e "s*@rootdir@*@prefix@*" ejabberdctl.template > ejabberdctl.example
-	[ -f $(ETCDIR)/ejabberdctl.cfg ] && install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new || install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
-	install -b -m 644 inetrc $(ETCDIR)/inetrc
-	install -d $(SBINDIR)
-	install -m 755 ejabberdctl.example $(SBINDIR)/ejabberdctl
-	install -d -m 750 $(LOGDIR)
+	#
+	# Spool directory
+	install -d -m 750 $(O_USER) $(SPOOLDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(SPOOLDIR) >$(CHOWN_OUTPUT)
+	chmod -R 750 $(SPOOLDIR)
+	[ ! -f $(COOKIEFILE) ] || { $(CHOWN_COMMAND) @INSTALLUSER@ $(COOKIEFILE) >$(CHOWN_OUTPUT) ; chmod 400 $(COOKIEFILE) ; }
+	#
+	# Log directory
+	install -d -m 750 $(O_USER) $(LOGDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(LOGDIR) >$(CHOWN_OUTPUT)
+	chmod -R 750 $(LOGDIR)
+	#
+	# Documentation
+	install -d $(DOCDIR)
+	install ../doc/guide.html $(DOCDIR)
+	install ../doc/*.png $(DOCDIR)
+	install ../doc/*.txt $(DOCDIR)
 
 uninstall: uninstall-binary
 
 uninstall-binary:
-	rm -rf $(BEAMDIR)
-	rm -rf $(SODIR)
-	rm -rf $(MSGSDIR)
-	rm -rf $(PRIVDIR)
-	rm -rf $(SBINDIR)/ejabberdctl
+	rm -f  $(SBINDIR)/ejabberdctl
+	rm -fr $(DOCDIR)
+	rm -f  $(BEAMDIR)/*.beam
+	rm -f  $(BEAMDIR)/*.app
+	rm -fr $(BEAMDIR)
+	rm -f  $(INCLUDEDIR)/*.hrl
+	rm -fr $(INCLUDEDIR)
+	rm -fr $(PBINDIR)
+	rm -f  $(SODIR)/*.so
+	rm -fr $(SODIR)
+	rm -f  $(MSGSDIR)/*.msgs
+	rm -fr $(MSGSDIR)
+	rm -fr $(PRIVDIR)
+	rm -fr $(EJABBERDDIR)
 
 uninstall-all: uninstall-binary
 	rm -rf $(ETCDIR)
-	rm -rf $(LOGDIR)
 	rm -rf $(EJABBERDDIR)
+	rm -rf $(SPOOLDIR)
+	rm -rf $(LOGDIR)
 
 clean: clean-recursive clean-local
 
