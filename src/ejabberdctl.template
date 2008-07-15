@@ -166,11 +166,12 @@ live ()
 # common control function
 ctl ()
 {
+    COMMAND=$@
     $EXEC_CMD "$ERL \
       $NAME ejabberdctl \
       -noinput \
       -pa $BEAMDIR \
-      -s ejabberd_ctl -extra $ERLANG_NODE $@"
+      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
     result=$?
     case $result in
     0) :;;

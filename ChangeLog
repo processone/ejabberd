@@ -1,5 +1,8 @@
 2008-07-15  Badlop  <badlop@process-one.net>
 
+	* src/ejabberdctl.template: Small fix so arguments of the command
+	are also passed to erl
+
 	* doc/guide.tex: Improve explanation of option 'hosts' in
 	ejabberd_service
 	* doc/guide.html: Likewise
