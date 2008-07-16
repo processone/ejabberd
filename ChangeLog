@@ -1,3 +1,7 @@
+2008-07-16  Badlop  <badlop@process-one.net>
+
+	* src/ejabberdctl.template: Update environment variable names
+
 2008-07-15  Badlop  <badlop@process-one.net>
 
 	* src/ejabberdctl.template: Small fix so arguments of the command
