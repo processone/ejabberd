@@ -1,5 +1,7 @@
 2008-07-16  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_c2s.erl: Put auth_module in Info always (EJAB-549)
+
 	* src/*.hrl: Get back all ejabberd header files to their original
 	placement in src/ subdirectories (EJAB-696)
 	* src/*/*.erl: Likewise
