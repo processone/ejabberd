@@ -1456,7 +1456,8 @@ presence_update(From, Packet, StateData) ->
 			 StatusTag ->
 			    xml:get_tag_cdata(StatusTag)
 		     end,
-	    Info = [{ip, StateData#state.ip},{conn, StateData#state.conn}],
+	    Info = [{ip, StateData#state.ip}, {conn, StateData#state.conn},
+		    {auth_module, StateData#state.auth_module}],
 	    ejabberd_sm:unset_presence(StateData#state.sid,
 				       StateData#state.user,
 				       StateData#state.server,
@@ -1788,7 +1789,8 @@ roster_change(IJID, ISubscription, StateData) ->
 
 
 update_priority(Priority, Packet, StateData) ->
-    Info = [{ip, StateData#state.ip},{conn, StateData#state.conn}],
+    Info = [{ip, StateData#state.ip}, {conn, StateData#state.conn},
+	    {auth_module, StateData#state.auth_module}],
     ejabberd_sm:set_presence(StateData#state.sid,
 			     StateData#state.user,
 			     StateData#state.server,

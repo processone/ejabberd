@@ -1,3 +1,7 @@
+2008-07-16  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_c2s.erl: Put auth_module in Info always (EJAB-549)
+
 2008-07-16  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/web/ejabberd_http_poll.erl: Report connection's IP address 
