@@ -1,3 +1,7 @@
+2008-07-17  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/web/Makefile.in: use -DSSL39 if compiling with R12 
+
 2008-07-16  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_c2s.erl: Put auth_module in Info always (EJAB-549)
