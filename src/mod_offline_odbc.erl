@@ -42,8 +42,8 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include("ejabberd_http.hrl").
--include("ejabberd_web_admin.hrl").
+-include("web/ejabberd_http.hrl").
+-include("web/ejabberd_web_admin.hrl").
 
 -record(offline_msg, {user, timestamp, expire, from, to, packet}).
 

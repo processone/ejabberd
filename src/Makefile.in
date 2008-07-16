@@ -29,7 +29,6 @@ else
 endif
 
 EFLAGS += @ERLANG_SSL39@
-EFLAGS += -I ../include
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
@@ -189,7 +188,15 @@ install: all
 	#
 	# ejabberd header files
 	install -d $(INCLUDEDIR)
-	install -m 644 ../include/*.hrl $(INCLUDEDIR)
+	install -m 644 *.hrl $(INCLUDEDIR)
+	install -d $(INCLUDEDIR)/eldap/
+	install -m 644 eldap/*.hrl $(INCLUDEDIR)/eldap/
+	install -d $(INCLUDEDIR)/mod_proxy65/
+	install -m 644 mod_proxy65/*.hrl $(INCLUDEDIR)/mod_proxy65/
+	install -d $(INCLUDEDIR)/mod_pubsub/
+	install -m 644 mod_pubsub/*.hrl $(INCLUDEDIR)/mod_pubsub/
+	install -d $(INCLUDEDIR)/web/
+	install -m 644 web/*.hrl $(INCLUDEDIR)/web/
 	#
 	# Binary C programs
 	install -d $(PBINDIR)
