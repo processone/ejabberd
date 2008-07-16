@@ -11,6 +11,15 @@
 	ejabberd_service
 	* doc/guide.html: Likewise
 
+2008-07-15  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Report connection's IP address
+
+	* src/ejabberd_c2s.erl: Rolled back the previous IP getting patch
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_receiver.erl: Likewise
+	* src/web/ejabberd_http_poll.erl: Likewise
+
 2008-07-14  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Update what permissions does enable-user grant
