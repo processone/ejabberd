@@ -1,5 +1,8 @@
 2008-07-17  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Fix to allow a server admin to add
+	himself as owner of a room (EJAB-687)
+
 	* src/Makefile.in: ejabberctl doesn't use the erl found by the
 	configure script (EJAB-676)
 	* src/ejabberdctl.template: Likewise

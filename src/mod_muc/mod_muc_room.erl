@@ -2157,11 +2157,13 @@ find_changed_items(UJID, UAffiliation, URole,
 					    [StrAffiliation]),
 				    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText1)};
 				SAffiliation ->
+				    ServiceAf = get_service_affiliation(JID, StateData),
 				    CanChangeRA =
 					case can_change_ra(
 					       UAffiliation, URole,
 					       TAffiliation, TRole,
-					       affiliation, SAffiliation) of
+					       affiliation, SAffiliation,
+						   ServiceAf) of
 					    nothing ->
 						nothing;
 					    true ->
@@ -2212,11 +2214,13 @@ find_changed_items(UJID, UAffiliation, URole,
 				  [StrRole]),
 			    {error, ?ERRT_BAD_REQUEST(Lang, ErrText1)};
 			SRole ->
+			    ServiceAf = get_service_affiliation(JID, StateData),
 			    CanChangeRA =
 				case can_change_ra(
 				       UAffiliation, URole,
 				       TAffiliation, TRole,
-				       role, SRole) of
+				       role, SRole,
+					   ServiceAf) of
 				    nothing ->
 					nothing;
 				    true ->
@@ -2263,142 +2267,148 @@ find_changed_items(_UJID, _UAffiliation, _URole, _Items,
 
 
 can_change_ra(_FAffiliation, _FRole,
+	      owner, _TRole,
+	      affiliation, owner, owner) ->
+    %% A room owner tries to add as persistent owner a
+    %% participant that is already owner because he is MUC admin
+    true;
+can_change_ra(_FAffiliation, _FRole,
 	      TAffiliation, _TRole,
-	      affiliation, Value)
+	      affiliation, Value, _ServiceAf)
   when (TAffiliation == Value) ->
     nothing;
 can_change_ra(_FAffiliation, _FRole,
 	      _TAffiliation, TRole,
-	      role, Value)
+	      role, Value, _ServiceAf)
   when (TRole == Value) ->
     nothing;
 can_change_ra(FAffiliation, _FRole,
 	      outcast, _TRole,
-	      affiliation, none)
+	      affiliation, none, _ServiceAf)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(FAffiliation, _FRole,
 	      outcast, _TRole,
-	      affiliation, member)
+	      affiliation, member, _ServiceAf)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(owner, _FRole,
 	      outcast, _TRole,
-	      affiliation, admin) ->
+	      affiliation, admin, _ServiceAf) ->
     true;
 can_change_ra(owner, _FRole,
 	      outcast, _TRole,
-	      affiliation, owner) ->
+	      affiliation, owner, _ServiceAf) ->
     true;
 can_change_ra(FAffiliation, _FRole,
 	      none, _TRole,
-	      affiliation, outcast)
+	      affiliation, outcast, _ServiceAf)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(FAffiliation, _FRole,
 	      none, _TRole,
-	      affiliation, member)
+	      affiliation, member, _ServiceAf)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(owner, _FRole,
 	      none, _TRole,
-	      affiliation, admin) ->
+	      affiliation, admin, _ServiceAf) ->
     true;
 can_change_ra(owner, _FRole,
 	      none, _TRole,
-	      affiliation, owner) ->
+	      affiliation, owner, _ServiceAf) ->
     true;
 can_change_ra(FAffiliation, _FRole,
 	      member, _TRole,
-	      affiliation, outcast)
+	      affiliation, outcast, _ServiceAf)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(FAffiliation, _FRole,
 	      member, _TRole,
-	      affiliation, none)
+	      affiliation, none, _ServiceAf)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(owner, _FRole,
 	      member, _TRole,
-	      affiliation, admin) ->
+	      affiliation, admin, _ServiceAf) ->
     true;
 can_change_ra(owner, _FRole,
 	      member, _TRole,
-	      affiliation, owner) ->
+	      affiliation, owner, _ServiceAf) ->
     true;
 can_change_ra(owner, _FRole,
 	      admin, _TRole,
-	      affiliation, _Affiliation) ->
+	      affiliation, _Affiliation, _ServiceAf) ->
     true;
 can_change_ra(owner, _FRole,
 	      owner, _TRole,
-	      affiliation, _Affiliation) ->
+	      affiliation, _Affiliation, _ServiceAf) ->
     check_owner;
 can_change_ra(_FAffiliation, _FRole,
 	      _TAffiliation, _TRole,
-	      affiliation, _Value) ->
+	      affiliation, _Value, _ServiceAf) ->
     false;
 can_change_ra(_FAffiliation, moderator,
 	      _TAffiliation, visitor,
-	      role, none) ->
+	      role, none, _ServiceAf) ->
     true;
 can_change_ra(_FAffiliation, moderator,
 	      _TAffiliation, visitor,
-	      role, participant) ->
+	      role, participant, _ServiceAf) ->
     true;
 can_change_ra(FAffiliation, _FRole,
 	      _TAffiliation, visitor,
-	      role, moderator)
+	      role, moderator, _ServiceAf)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(_FAffiliation, moderator,
 	      _TAffiliation, participant,
-	      role, none) ->
+	      role, none, _ServiceAf) ->
     true;
 can_change_ra(_FAffiliation, moderator,
 	      _TAffiliation, participant,
-	      role, visitor) ->
+	      role, visitor, _ServiceAf) ->
     true;
 can_change_ra(FAffiliation, _FRole,
 	      _TAffiliation, participant,
-	      role, moderator)
+	      role, moderator, _ServiceAf)
   when (FAffiliation == owner) or (FAffiliation == admin) ->
     true;
 can_change_ra(_FAffiliation, _FRole,
 	      owner, moderator,
-	      role, visitor) ->
+	      role, visitor, _ServiceAf) ->
     false;
 can_change_ra(owner, _FRole,
 	      _TAffiliation, moderator,
-	      role, visitor) ->
+	      role, visitor, _ServiceAf) ->
     true;
 can_change_ra(_FAffiliation, _FRole,
 	      admin, moderator,
-	      role, visitor) ->
+	      role, visitor, _ServiceAf) ->
     false;
 can_change_ra(admin, _FRole,
 	      _TAffiliation, moderator,
-	      role, visitor) ->
+	      role, visitor, _ServiceAf) ->
     true;
 can_change_ra(_FAffiliation, _FRole,
 	      owner, moderator,
-	      role, participant) ->
+	      role, participant, _ServiceAf) ->
     false;
 can_change_ra(owner, _FRole,
 	      _TAffiliation, moderator,
-	      role, participant) ->
+	      role, participant, _ServiceAf) ->
     true;
 can_change_ra(_FAffiliation, _FRole,
 	      admin, moderator,
-	      role, participant) ->
+	      role, participant, _ServiceAf) ->
     false;
 can_change_ra(admin, _FRole,
 	      _TAffiliation, moderator,
-	      role, participant) ->
+	      role, participant, _ServiceAf) ->
     true;
 can_change_ra(_FAffiliation, _FRole,
 	      _TAffiliation, _TRole,
-	      role, _Value) ->
+	      role, _Value, _ServiceAf) ->
     false.
 
 
