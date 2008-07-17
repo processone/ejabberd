@@ -1,3 +1,9 @@
+2008-07-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_caps.erl, src/ejabberd_c2s.erl: Start conversion to exmpp.
+	For now, only direct calls from ejabberd_c2s are done. Calls through
+	gen_iq_handler aren't.
+
 2008-07-15  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge revisions from 1434 to revision 1444 from trunk.

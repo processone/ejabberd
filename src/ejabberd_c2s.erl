@@ -1068,11 +1068,9 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 				LFrom = jlib:short_jid(From),
 				LBFrom = jlib:short_bare_jid(From),
 				%% Note contact availability
-				% XXX OLD FORMAT: Els are #xmlelement.
-				Els = PacketOld#xmlelement.children,
+				Els = Packet#xmlel.children,
 				Caps = mod_caps:read_caps(Els),
-				% XXX OLD FORMAT: From.
-				mod_caps:note_caps(StateData#state.server, FromOld, Caps),
+				mod_caps:note_caps(StateData#state.server, From, Caps),
 				NewAvailable = case exmpp_presence:get_type(Packet) of
 						   'unavailable' ->
 						       ?DICT:erase(LFrom, StateData#state.pres_available);

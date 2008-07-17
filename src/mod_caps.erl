@@ -48,8 +48,9 @@
 	 code_change/3
 	]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -define(PROCNAME, ejabberd_mod_caps).
 -define(DICT, dict).
@@ -61,29 +62,26 @@
 		disco_requests = ?DICT:new(),
 		feature_queries = []}).
 
+% XXX OLD FORMAT: Re-include jlib.hrl (after clean-up).
+-record(iq, {id = "",
+             type,
+             xmlns = "",
+             lang = "",
+             sub_el}).
+
 %% read_caps takes a list of XML elements (the child elements of a
 %% <presence/> stanza) and returns an opaque value representing the
 %% Entity Capabilities contained therein, or the atom nothing if no
 %% capabilities are advertised.
 read_caps(Els) ->
     read_caps(Els, nothing).
-read_caps([{xmlelement, "c", Attrs, _Els} | Tail], Result) ->
-    case xml:get_attr_s("xmlns", Attrs) of
-	?NS_CAPS ->
-	    Node = xml:get_attr_s("node", Attrs),
-	    Version = xml:get_attr_s("ver", Attrs),
-	    Exts = string:tokens(xml:get_attr_s("ext", Attrs), " "),
-	    read_caps(Tail, #caps{node = Node, version = Version, exts = Exts});
-	_ ->
-	    read_caps(Tail, Result)
-    end;
-read_caps([{xmlelement, "x", Attrs, _Els} | Tail], Result) ->
-    case xml:get_attr_s("xmlns", Attrs) of
-	?NS_MUC_USER ->
-	    nothing;
-	_ ->
-	    read_caps(Tail, Result)
-    end;
+read_caps([#xmlel{ns = ?NS_CAPS, name = 'c'} = El | Tail], _Result) ->
+    Node = exmpp_xml:get_attribute(El, 'node'),
+    Version = exmpp_xml:get_attribute(El, 'ver'),
+    Exts = string:tokens(exmpp_xml:get_attribute(El, 'ext'), " "),
+    read_caps(Tail, #caps{node = Node, version = Version, exts = Exts});
+read_caps([#xmlel{ns = ?NS_MUC_USER, name = 'x'} | _Tail], _Result) ->
+    nothing;
 read_caps([_ | Tail], Result) ->
     read_caps(Tail, Result);
 read_caps([], Result) ->
@@ -210,17 +208,14 @@ handle_cast({note_caps, From,
 		lists:foldl(
 		  fun(SubNode, Dict) ->
 			  ID = randoms:get_string(),
-			  Stanza =
-			      {xmlelement, "iq",
-			       [{"type", "get"},
-				{"id", ID}],
-			       [{xmlelement, "query",
-				 [{"xmlns", ?NS_DISCO_INFO},
-				  {"node", lists:concat([Node, "#", SubNode])}],
-				 []}]},
+			  Query = exmpp_xml:set_attribute(
+			    #xmlel{ns = ?NS_DISCO_INFO, name = 'query'},
+			    'node', lists:concat([Node, "#", SubNode])),
+			  Stanza = exmpp_iq:get(?NS_JABBER_CLIENT, Query, ID),
 			  ejabberd_local:register_iq_response_handler
 			    (Host, ID, ?MODULE, handle_disco_response),
-			  ejabberd_router:route(jlib:make_jid("", Host, ""), From, Stanza),
+			  ejabberd_router:route(exmpp_jid:make_bare_jid(Host),
+			    From, Stanza),
 			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID}),
 			  ?DICT:store(ID, {Node, SubNode}, Dict)
 		  end, Requests, Missing),
@@ -301,7 +296,7 @@ handle_cast(visit_feature_queries, #state{feature_queries = FeatureQueries} = St
     {noreply, State#state{feature_queries = NewFeatureQueries}}.
 
 handle_disco_response(From, To, IQ) ->
-    #jid{lserver = Host} = To,
+    #jid{ldomain = Host} = To,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {disco_response, From, To, IQ}).
 
