@@ -1,3 +1,8 @@
+2008-07-17  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fix to allow a server admin to add
+	himself as owner of a room (EJAB-687)
+
 2008-07-17  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/web/Makefile.in: use -DSSL39 if compiling with R12
