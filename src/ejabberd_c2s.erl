@@ -1221,9 +1221,6 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 handle_info({'DOWN', Monitor, _Type, _Object, _Info}, _StateName, StateData)
   when Monitor == StateData#state.socket_monitor ->
     {stop, normal, StateData};
-handle_info({peername, IP}, StateName, StateData) ->
-    ejabberd_sm:set_session_ip(StateData#state.sid, IP),
-    fsm_next_state(StateName, StateData#state{ip = IP});
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).
@@ -1420,7 +1417,8 @@ presence_update(From, Packet, StateData) ->
 		undefined -> "";
 		S         -> S
 	    end,
-	    Info = [{ip, StateData#state.ip},{conn, StateData#state.conn}],
+	    Info = [{ip, StateData#state.ip}, {conn, StateData#state.conn},
+		    {auth_module, StateData#state.auth_module}],
 	    ejabberd_sm:unset_presence(StateData#state.sid,
 				       StateData#state.user,
 				       StateData#state.server,
@@ -1804,7 +1802,8 @@ roster_change(IJID, ISubscription, StateData) ->
 
 
 update_priority(Priority, Packet, StateData) ->
-    Info = [{ip, StateData#state.ip},{conn, StateData#state.conn}],
+    Info = [{ip, StateData#state.ip}, {conn, StateData#state.conn},
+	    {auth_module, StateData#state.auth_module}],
     ejabberd_sm:set_presence(StateData#state.sid,
 			     StateData#state.user,
 			     StateData#state.server,

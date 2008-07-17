@@ -1,8 +1,47 @@
 2008-07-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	Merge revisions from 1444 to revision 1457 from trunk.
+
+2008-07-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	* src/mod_caps.erl, src/ejabberd_c2s.erl: Start conversion to exmpp.
 	For now, only direct calls from ejabberd_c2s are done. Calls through
 	gen_iq_handler aren't.
+
+2008-07-17  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/web/Makefile.in: use -DSSL39 if compiling with R12
+
+2008-07-16  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_c2s.erl: Put auth_module in Info always (EJAB-549)
+
+	* src/*.hrl: Get back all ejabberd header files to their original
+	placement in src/ subdirectories (EJAB-696)
+	* src/*/*.erl: Likewise
+	* src/*/Makefile.in: Likewise
+	* src/Makefile.in: Install header files in system include/ dir,
+	reproducing the subdirectory structure of src/
+
+	* src/ejabberdctl.template: Update environment variable names
+
+2008-07-15  Badlop  <badlop@process-one.net>
+
+	* src/ejabberdctl.template: Small fix so arguments of the command
+	are also passed to erl
+
+	* doc/guide.tex: Improve explanation of option 'hosts' in
+	ejabberd_service
+	* doc/guide.html: Likewise
+
+2008-07-15  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/web/ejabberd_http_poll.erl: Report connection's IP address
+
+	* src/ejabberd_c2s.erl: Rolled back the previous IP getting patch
+	* src/ejabberd_sm.erl: Likewise
+	* src/ejabberd_receiver.erl: Likewise
+	* src/web/ejabberd_http_poll.erl: Likewise
 
 2008-07-15  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 

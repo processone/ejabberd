@@ -58,7 +58,7 @@
 	]).
 
 -include("ejabberd.hrl").
--include("eldap.hrl").
+-include("eldap/eldap.hrl").
 
 -record(state, {host,
 		eldap_id,

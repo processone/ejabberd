@@ -49,8 +49,7 @@
 	 ctl_process/2,
 	 get_session_pid/3,
 	 get_user_info/3,
-	 get_user_ip/3,
-	 set_session_ip/2
+	 get_user_ip/3
 	]).
 
 %% gen_server callbacks
@@ -185,18 +184,6 @@ get_user_info(User, Server, Resource) ->
 	    Conn = proplists:get_value(conn, Session#session.info),
 	    IP = proplists:get_value(ip, Session#session.info),
 	    [{node, Node}, {conn, Conn}, {ip, IP}]
-    end.
-
-set_session_ip(SID, IP) ->
-    case mnesia:dirty_read(session, SID) of
-    [#session{info = Info} = Session] ->
-	NewInfo = case lists:keymember(ip, 1, Info) of
-	true -> lists:keyreplace(ip, 1, Info, {ip, IP});
-	false -> [{ip, IP}|Info]
-	end,
-	mnesia:dirty_write(Session#session{info = NewInfo});
-    _ ->
-	ok
     end.
 
 set_presence(SID, User, Server, Resource, Priority, Presence, Info) ->

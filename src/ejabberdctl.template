@@ -15,12 +15,12 @@ ERL=@erl@
 INSTALLUSER=@installuser@
 ETCDIR=@SYSCONFDIR@/ejabberd
 EJABBERD_CONFIG_PATH=$ETCDIR/ejabberd.cfg
-LOGDIR=@LOCALSTATEDIR@/log/ejabberd
+LOGS_DIR=@LOCALSTATEDIR@/log/ejabberd
 SPOOLDIR=@LOCALSTATEDIR@/lib/ejabberd
 
 # read custom configuration
-CONFIG=$ETCDIR/ejabberdctl.cfg
-[ -f "$CONFIG" ] && . "$CONFIG"
+EJABBERDCTL_CONFIG_PATH=$ETCDIR/ejabberdctl.cfg
+[ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
 
 # parse command line parameters
 ARGS=
@@ -31,8 +31,8 @@ while [ $# -ne 0 ] ; do
         --) break ;;
         --node) ERLANG_NODE=$1; shift ;;
         --config) EJABBERD_CONFIG_PATH=$1 ; shift ;;
-        --ctl-config) CONFIG=$1 ; shift ;;
-        --logs) LOGDIR=$1 ; shift ;;
+        --ctl-config) EJABBERDCTL_CONFIG_PATH=$1 ; shift ;;
+        --logs) LOGS_DIR=$1 ; shift ;;
         --spool) SPOOLDIR=$1 ; shift ;;
         *) ARGS="$ARGS $PARAM" ;;
     esac
@@ -66,16 +66,16 @@ ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $KERNEL_OPTS"
 
 # define additional environment variables
 EJABBERDDIR=@LIBDIR@/ejabberd
-BEAMDIR=$EJABBERDDIR/ebin
-PRIVDIR=$EJABBERDDIR/priv
-PBINDIR=$PRIVDIR/bin
-SODIR=$PRIVDIR/lib
-MSGSDIR=$PRIVDIR/msgs
+EJABBERD_EBIN_PATH=$EJABBERDDIR/ebin
+EJABBERD_PRIV_PATH=$EJABBERDDIR/priv
+EJABBERD_BIN_PATH=$EJABBERD_PRIV_PATH/bin
+EJABBERD_SO_PATH=$EJABBERD_PRIV_PATH/lib
+EJABBERD_MSGS_PATH=$EJABBERD_PRIV_PATH/msgs
 
-EJABBERD_LOG_PATH=$LOGDIR/ejabberd.log
-SASL_LOG_PATH=$LOGDIR/sasl.log
+EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
+SASL_LOG_PATH=$LOGS_DIR/sasl.log
 DATETIME=`date "+%Y%m%d-%H%M%S"`
-ERL_CRASH_DUMP=$LOGDIR/erl_crash_$DATETIME.dump
+ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
 ERL_INETRC=$ETCDIR/inetrc
 HOME=$SPOOLDIR
 
@@ -84,10 +84,10 @@ HOME=$SPOOLDIR
 
 # export global variables
 export EJABBERD_CONFIG_PATH
-export MSGSDIR
+export EJABBERD_MSGS_PATH
 export EJABBERD_LOG_PATH
-export SODIR
-export PBINDIR
+export EJABBERD_SO_PATH
+export EJABBERD_BIN_PATH
 export ERL_CRASH_DUMP
 export ERL_INETRC
 export ERL_MAX_PORTS
@@ -105,7 +105,7 @@ start ()
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -noinput -detached \
-      -pa $BEAMDIR \
+      -pa $EJABBERD_EBIN_PATH \
       -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
       -s ejabberd \
       -sasl sasl_error_logger \\{file,\\\"$SASL_LOG_PATH\\\"\\} \
@@ -157,7 +157,7 @@ live ()
     echo ""
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
-      -pa $BEAMDIR \
+      -pa $EJABBERD_EBIN_PATH \
       -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
       -s ejabberd \
       $ERLANG_OPTS $ARGS \"$@\""
@@ -166,11 +166,12 @@ live ()
 # common control function
 ctl ()
 {
+    COMMAND=$@
     $EXEC_CMD "$ERL \
       $NAME ejabberdctl \
       -noinput \
-      -pa $BEAMDIR \
-      -s ejabberd_ctl -extra $ERLANG_NODE $@"
+      -pa $EJABBERD_EBIN_PATH \
+      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
     result=$?
     case $result in
     0) :;;
@@ -183,8 +184,8 @@ ctl ()
         echo ""
         echo "Optional parameters when starting an ejabberd node:"
         echo "  --config file      Config file of ejabberd:    $EJABBERD_CONFIG_PATH"
-        echo "  --ctl-config file  Config file of ejabberdctl: $CONFIG"
-        echo "  --logs dir         Directory for logs:         $LOGDIR"
+        echo "  --ctl-config file  Config file of ejabberdctl: $EJABBERDCTL_CONFIG_PATH"
+        echo "  --logs dir         Directory for logs:         $LOGS_DIR"
         echo "  --spool dir        Database spool dir:         $SPOOLDIR"
         echo "  --node nodename    ejabberd node name:         $ERLANG_NODE"
         echo "";;

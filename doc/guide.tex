@@ -748,9 +748,14 @@ This is a detailed description of each option allowed by the listening modules:
     used to disable control on the from field on packets send by an
     external components. The option can be either \term{true} or
     \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
-  \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}This option
-    defines one or more hostnames of connected services and enables you to
-    specify additional options including \poption{\{password, Secret\}}.
+  \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}
+    This option of \term{ejabberd\_service} allows to define one or more hostnames 
+    of external Jabber components that provide a service.
+    In \term{HostOptions} it is possible to define the password required to those components
+    when attempt to connect to ejabberd: \poption{\{password, Secret\}}.
+    Note that you cannot define in a single \term{ejabberd\_service} components of
+    different services: add an \term{ejabberd\_service} for each service,
+    as seen in an example below.
   \titem{http\_bind} \ind{options!http\_bind}\ind{protocols!XEP-0206: HTTP Binding}\ind{JWChat}\ind{web-based Jabber client}
     This option enables HTTP Binding (\xepref{0124} and \xepref{0206}) support. HTTP Bind
     enables access via HTTP requests to \ejabberd{} from behind firewalls which
@@ -945,19 +950,19 @@ In this example, the following configuration defines that:
                             ssl, {certfile, "/path/to/ssl.pem"}]},
   {5269, ejabberd_s2s_in,  []},
   {5280, ejabberd_http,    [http_poll, web_admin]},
-  {5233, ejabberd_service, [{host, "aim.example.org",
+  {5233, ejabberd_service, [{hosts, ["aim.example.org"],
                              [{password, "aimsecret"}]}]},
   {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
                              [{password, "jitsecret"}]}]},
-  {5235, ejabberd_service, [{host, "msn.example.org",
+  {5235, ejabberd_service, [{hosts, ["msn.example.org"],
                              [{password, "msnsecret"}]}]},
-  {5236, ejabberd_service, [{host, "yahoo.example.org",
+  {5236, ejabberd_service, [{hosts, ["yahoo.example.org"],
                              [{password, "yahoosecret"}]}]},
-  {5237, ejabberd_service, [{host, "gg.example.org",
+  {5237, ejabberd_service, [{hosts, ["gg.example.org"],
                              [{password, "ggsecret"}]}]},
-  {5238, ejabberd_service, [{host, "jmc.example.org",
+  {5238, ejabberd_service, [{hosts, ["jmc.example.org"],
                              [{password, "jmcsecret"}]}]},
-  {5239, ejabberd_service, [{host, "custom.example.org",
+  {5239, ejabberd_service, [{hosts, ["custom.example.org"],
                              [{password, "customsecret"}]},
                             {service_check_from, false}]}
  ]

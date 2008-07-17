@@ -30,7 +30,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/2,
+-export([start_link/3,
 	 init/1,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -50,16 +50,14 @@
 
 -record(http_poll, {id, pid}).
 
--define(NULL_PEER, {{0, 0, 0, 0}, 0}).
-
 -record(state, {id,
 		key,
+		socket,
 		output = "",
 		input = "",
 		waiting_input = false, %% {ReceiverPid, Tag}
 		last_receiver,
-		timer,
-		ip = ?NULL_PEER }).
+		timer}).
 
 %-define(DBGFSM, true).
 
@@ -77,19 +75,19 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(ID, Key) ->
+start(ID, Key, IP) ->
     mnesia:create_table(http_poll,
         		[{ram_copies, [node()]},
         		 {attributes, record_info(fields, http_poll)}]),
-    supervisor:start_child(ejabberd_http_poll_sup, [ID, Key]).
+    supervisor:start_child(ejabberd_http_poll_sup, [ID, Key, IP]).
 
-start_link(ID, Key) ->
-    gen_fsm:start_link(?MODULE, [ID, Key], ?FSMOPTS).
+start_link(ID, Key, IP) ->
+    gen_fsm:start_link(?MODULE, [ID, Key, IP], ?FSMOPTS).
 
-send({http_poll, FsmRef}, Packet) ->
+send({http_poll, FsmRef, _IP}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
 
-setopts({http_poll, FsmRef}, Opts) ->
+setopts({http_poll, FsmRef, _IP}, Opts) ->
     case lists:member({active, once}, Opts) of
 	true ->
 	    gen_fsm:send_all_state_event(FsmRef, {activate, self()});
@@ -97,31 +95,27 @@ setopts({http_poll, FsmRef}, Opts) ->
 	    ok
     end.
 
-sockname(_) ->
-    {ok, ?NULL_PEER}.
+sockname(_Socket) ->
+    {ok, {{0, 0, 0, 0}, 0}}.
 
-peername({http_poll, FsmRef}) ->
-    case catch gen_fsm:sync_send_all_state_event(FsmRef, peername, 1000) of
-	{ok, IP} -> {ok, IP};
-	_ -> {ok, ?NULL_PEER}
-    end;
-peername(_) ->
-    {ok, ?NULL_PEER}.
+peername({http_poll, _FsmRef, IP}) ->
+    {ok, IP}.
 
 controlling_process(_Socket, _Pid) ->
     ok.
 
-close({http_poll, FsmRef}) ->
+close({http_poll, FsmRef, _IP}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
 
-process([], #request{data = Data, ip = IP} = _Request) ->
+process([], #request{data = Data,
+		     ip = IP} = _Request) ->
     case catch parse_request(Data) of
 	{ok, ID1, Key, NewKey, Packet} ->
 	    ID = if
 		     (ID1 == "0") or (ID1 == "mobile") ->
 			 NewID = sha:sha(term_to_binary({now(), make_ref()})),
-			 {ok, Pid} = start(NewID, ""),
+			 {ok, Pid} = start(NewID, "", IP),
 			 mnesia:transaction(
 			   fun() ->
 				   mnesia:write(#http_poll{id = NewID,
@@ -131,7 +125,7 @@ process([], #request{data = Data, ip = IP} = _Request) ->
 		     true ->
 			 ID1
 		 end,
-	    case http_put(ID, Key, NewKey, Packet, IP) of
+	    case http_put(ID, Key, NewKey, Packet) of
 		{error, not_exists} ->
 		    {200, ?BAD_REQUEST, ""};
 		{error, bad_key} ->
@@ -176,8 +170,8 @@ process(_, _Request) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([ID, Key]) ->
-    ?INFO_MSG("started: ~p", [{ID, Key}]),
+init([ID, Key, IP]) ->
+    ?INFO_MSG("started: ~p", [{ID, Key, IP}]),
 
     %% Read c2s options from the first ejabberd_c2s configuration in
     %% the config file listen section
@@ -187,12 +181,12 @@ init([ID, Key]) ->
     %% connector.
     Opts = ejabberd_c2s_config:get_c2s_limits(),
 
-    ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_poll, self()}, Opts),
-    %{ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
-    %ejabberd_c2s:become_controller(C2SPid),
+    Socket = {http_poll, self(), IP},
+    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
     Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
     {ok, loop, #state{id = ID,
 		      key = Key,
+		      socket = Socket,
 		      timer = Timer}}.
 
 %%----------------------------------------------------------------------
@@ -229,7 +223,7 @@ handle_event({activate, From}, StateName, StateData) ->
 	     StateData#state{waiting_input = {From, ok}}};
 	Input ->
             Receiver = From,
-	    Receiver ! {tcp, {http_poll, self()}, list_to_binary(Input)},
+	    Receiver ! {tcp, StateData#state.socket, list_to_binary(Input)},
 	    {next_state, StateName, StateData#state{input = "",
 						    waiting_input = false,
 						    last_receiver = Receiver
@@ -257,7 +251,7 @@ handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 
-handle_sync_event({http_put, Key, NewKey, Packet, IP},
+handle_sync_event({http_put, Key, NewKey, Packet},
 		  _From, StateName, StateData) ->
     Allow = case StateData#state.key of
 		"" ->
@@ -279,10 +273,9 @@ handle_sync_event({http_put, Key, NewKey, Packet, IP},
 		    Input = [StateData#state.input|Packet],
 		    Reply = ok,
 		    {reply, Reply, StateName, StateData#state{input = Input,
-							      key = NewKey,
-							      ip = IP}};
+							      key = NewKey}};
 		{Receiver, _Tag} ->
-		    Receiver ! {tcp, {http_poll, self()},
+		    Receiver ! {tcp, StateData#state.socket,
 				list_to_binary(Packet)},
 		    cancel_timer(StateData#state.timer),
 		    Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
@@ -291,8 +284,7 @@ handle_sync_event({http_put, Key, NewKey, Packet, IP},
 		     StateData#state{waiting_input = false,
 				     last_receiver = Receiver,
 				     key = NewKey,
-				     timer = Timer,
-				     ip = IP}}
+				     timer = Timer}}
 	    end;
 	true ->
 	    Reply = {error, bad_key},
@@ -302,10 +294,6 @@ handle_sync_event({http_put, Key, NewKey, Packet, IP},
 handle_sync_event(http_get, _From, StateName, StateData) ->
     Reply = {ok, StateData#state.output},
     {reply, Reply, StateName, StateData#state{output = ""}};
-
-handle_sync_event(peername, _From, StateName, StateData) ->
-    Reply = {ok, StateData#state.ip},
-    {reply, Reply, StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
@@ -345,10 +333,10 @@ terminate(_Reason, _StateName, StateData) ->
 	    case StateData#state.last_receiver of
 		undefined -> ok;
 		Receiver  ->
-		    Receiver ! {tcp_closed, {http_poll, self()}}
+		    Receiver ! {tcp_closed, StateData#state.socket}
 	    end;
 	{Receiver, _Tag} ->
-	    Receiver ! {tcp_closed, {http_poll, self()}}
+	    Receiver ! {tcp_closed, StateData#state.socket}
     end,
     catch resend_messages(StateData#state.output),
     ok.
@@ -357,13 +345,13 @@ terminate(_Reason, _StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-http_put(ID, Key, NewKey, Packet, IP) ->
+http_put(ID, Key, NewKey, Packet) ->
     case mnesia:dirty_read({http_poll, ID}) of
 	[] ->
 	    {error, not_exists};
 	[#http_poll{pid = FsmRef}] ->
 	    gen_fsm:sync_send_all_state_event(
-	      FsmRef, {http_put, Key, NewKey, Packet, IP})
+	      FsmRef, {http_put, Key, NewKey, Packet})
     end.
 
 http_get(ID) ->

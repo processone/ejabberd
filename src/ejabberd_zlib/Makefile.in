@@ -19,8 +19,9 @@ else
 	DYNAMIC_LIB_CFLAGS = -fpic -shared
 endif
 
-EFLAGS += -I ../../include
+EFLAGS += -I ..
 EFLAGS += -pz ..
+
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
 	EFLAGS+=+debug_info

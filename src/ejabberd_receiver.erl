@@ -268,8 +268,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 
 activate_socket(#state{socket = Socket,
-		       sock_mod = SockMod,
-		       c2s_pid = C2SPid}) ->
+		       sock_mod = SockMod}) ->
     PeerName =
 	case SockMod of
 	    gen_tcp ->
@@ -282,8 +281,7 @@ activate_socket(#state{socket = Socket,
     case PeerName of
 	{error, _Reason} ->
 	    self() ! {tcp_closed, Socket};
-	{ok, IP} ->
-	    C2SPid ! {peername, IP},
+	{ok, _} ->
 	    ok
     end.
 
