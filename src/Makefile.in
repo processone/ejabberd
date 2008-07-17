@@ -117,7 +117,7 @@ install: all
 	install -m 644 msgs/*.msg $(MSGSDIR)
 	install -d -m 750 $(ETCDIR)
 	[ -f $(ETCDIR)/ejabberd.cfg ] && install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new || install -b -m 644 ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
-	sed -e "s*@rootdir@*@prefix@*" ejabberdctl.template > ejabberdctl.example
+	sed -e "s*@rootdir@*@prefix@*" -e "s*@erl@*@ERL@*" ejabberdctl.template > ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] && install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new || install -b -m 644 ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
 	install -b -m 644 inetrc $(ETCDIR)/inetrc
 	install -d $(SBINDIR)

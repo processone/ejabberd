@@ -11,6 +11,7 @@ ERL_MAX_ETS_TABLES=1400
 NODE=ejabberd
 HOST=localhost
 ERLANG_NODE=$NODE@$HOST
+ERL=@erl@
 ROOTDIR=@rootdir@
 EJABBERD_CONFIG_PATH=$ROOTDIR/etc/ejabberd/ejabberd.cfg
 LOGS_DIR=$ROOTDIR/var/log/ejabberd/
@@ -74,7 +75,7 @@ export HOME
 # start server
 start ()
 {
-    erl \
+    $ERL \
       $NAME $ERLANG_NODE \
       -noinput -detached \
       -pa $EJABBERD_EBIN \
@@ -103,7 +104,7 @@ debug ()
     echo "Press any key to continue"
     read foo
     echo ""
-    erl \
+    $ERL \
       $NAME ${NODE}debug \
       -remsh $ERLANG_NODE \
       $ERLANG_OPTS $ARGS "$@"
@@ -127,7 +128,7 @@ live ()
     echo "Press any key to continue"
     read foo
     echo ""
-    erl \
+    $ERL \
       $NAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
@@ -138,7 +139,7 @@ live ()
 # common control function
 ctl ()
 {
-    erl \
+    $ERL \
       $NAME ejabberdctl \
       -noinput \
       -pa $EJABBERD_EBIN \

@@ -1,3 +1,9 @@
+2008-07-17  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in: ejabberctl doesn't use the erl found by the
+	configure script (EJAB-676)
+	* src/ejabberdctl.template: Likewise
+
 2008-07-17  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/web/Makefile.in: use -DSSL39 if compiling with R12 
