@@ -1,3 +1,7 @@
+2008-07-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/ejabberd_ctl.erl: Call reopen_log_hook for each virtual host.
+
 2008-07-17  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Fix to allow a server admin to add
@@ -114,7 +118,7 @@
 	automatically (EJAB-407)
 
 	* src/mod_roster.erl: Likewise
-	
+
 	* src/mod_muc/mod_muc_log.erl: Fix XHTML compliance: ensure some
 	language is set, include ID attribute in each message, add
 	microseconds to ensure unique value (EJAB-497)
