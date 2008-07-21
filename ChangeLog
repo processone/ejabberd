@@ -7,6 +7,8 @@
 	* src/mod_roster.erl, src/mod_vcard.erl, src/gen_iq_handler.erl:
 	Convert to exmpp.
 
+	* src/mod_vcard.erl: One call to jlib:jid_to_string/1 was remaining.
+
 2008-07-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge revisions from 1444 to revision 1457 from trunk.

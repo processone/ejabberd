@@ -303,7 +303,7 @@ set_vcard(User, LServer, VCARD) ->
 	 #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
 	   [#xmlattr{name = 'type', value = "form"}], children =
 	   [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
-	       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search users in ") ++ jlib:jid_to_string(JID))}]},
+	       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search users in ") ++ exmpp_jid:jid_to_string(JID))}]},
 	    #xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
 	       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang,
 		       "Fill in the form to search "
