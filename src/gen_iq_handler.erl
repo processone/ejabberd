@@ -59,7 +59,8 @@
 % XXX OLD FORMAT: modules not in the following list will receive
 % old format strudctures.
 -define(CONVERTED_MODULES, [
-  mod_roster
+  mod_roster,
+  mod_vcard
 ]).
 
 %%====================================================================
