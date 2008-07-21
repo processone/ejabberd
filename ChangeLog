@@ -1,3 +1,9 @@
+2008-07-21  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/gen_iq_handler.erl: Prepare gen_iq_handler to pass arguments in
+	the new format to a built-in list of modules known to support them.
+	Other modules will still receive arguments in the old format.
+
 2008-07-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge revisions from 1444 to revision 1457 from trunk.

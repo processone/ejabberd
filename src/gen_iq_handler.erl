@@ -56,6 +56,11 @@
              lang = "",
              sub_el}).
 
+% XXX OLD FORMAT: modules not in the following list will receive
+% old format strudctures.
+-define(CONVERTED_MODULES, [
+]).
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -110,37 +115,55 @@ handle(Host, Module, Function, Opts, From, To, IQ) ->
 	no_queue ->
 	    process_iq(Host, Module, Function, From, To, IQ);
 	{one_queue, Pid} ->
-            {FromOld, ToOld, IQ_Rec} = convert_to_old_structs(From, To, IQ),
-	    Pid ! {process_iq, FromOld, ToOld, IQ_Rec};
+	    Pid ! {process_iq, From, To, IQ};
 	{queues, Pids} ->
 	    Pid = lists:nth(erlang:phash(now(), length(Pids)), Pids),
-            {FromOld, ToOld, IQ_Rec} = convert_to_old_structs(From, To, IQ),
-	    Pid ! {process_iq, FromOld, ToOld, IQ_Rec};
+	    Pid ! {process_iq, From, To, IQ};
 	parallel ->
-	    spawn(?MODULE, process_iq, [Host, Module, Function, From, To, IQ]);
+	    spawn(?MODULE, process_iq,
+	      [Host, Module, Function, From, To, IQ]);
 	_ ->
 	    todo
     end.
 
 
+process_iq(Host, Module, Function, FromOld, ToOld, IQ_Rec)
+  when is_record(IQ_Rec, iq) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nIQ HANDLER: old #iq for ~s:~s:~n~p~n~p~n~n",
+      [Module, Function, IQ_Rec, erlang:get_stacktrace()]),
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    IQOld = jlib:iq_to_xml(IQ_Rec),
+    IQOld1 = IQOld#xmlelement{children = [IQOld#xmlelement.children]},
+    IQ = exmpp_xml:xmlelement_to_xmlel(IQOld1,
+      [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx},
+	{?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
+    process_iq(Host, Module, Function, From, To, IQ);
 process_iq(_Host, Module, Function, From, To, IQ) ->
-    {FromOld, ToOld, IQ_Rec} = convert_to_old_structs(From, To, IQ),
-    case catch Module:Function(FromOld, ToOld, IQ_Rec) of
+    Ret = case lists:member(Module, ?CONVERTED_MODULES) of
+	true ->
+	    catch Module:Function(From, To, IQ);
+	false ->
+	    {FromOld, ToOld, IQ_Rec} = convert_to_old_structs(
+	      Module, Function, From, To, IQ),
+	    catch Module:Function(FromOld, ToOld, IQ_Rec)
+    end,
+    case Ret of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
-	ResIQ ->
-	    if
-		ResIQ /= ignore ->
-                    ReplyOld = jlib:iq_to_xml(ResIQ),
-                    Reply = exmpp_xml:xmlelement_to_xmlel(ReplyOld,
-                      [?NS_JABBER_CLIENT],
-                      [{?NS_XMPP, ?NS_XMPP_pfx},
-                        {?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
-		    ejabberd_router:route(To, From,
-					  Reply);
-		true ->
-		    ok
-	    end
+	ignore ->
+	    ok;
+	ResIQ when is_record(ResIQ, iq) ->
+	    ReplyOld = jlib:iq_to_xml(ResIQ),
+	    Reply = exmpp_xml:xmlelement_to_xmlel(ReplyOld,
+	      [?NS_JABBER_CLIENT],
+	      [{?NS_XMPP, ?NS_XMPP_pfx},
+		{?NS_DIALBACK, ?NS_DIALBACK_pfx}]),
+	    ejabberd_router:route(To, From, Reply);
+	Reply ->
+	    ejabberd_router:route(To, From, Reply)
     end.
 
 %%====================================================================
@@ -217,16 +240,16 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-convert_to_old_structs(From, To, IQ) ->
+convert_to_old_structs(Mod, Fun, From, To, IQ) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nIQ HANDLER: ~s:~s expects old #iq:~n~p~n~p~n~n",
+      [Mod, Fun, IQ, erlang:get_stacktrace()]),
     if
-        is_record(IQ, iq) ->
-            catch throw(for_stacktrace), % To have a stacktrace.
-            io:format("~nIQ HANDLER: old #iq:~n~p~n~p~n~n",
-              [IQ, erlang:get_stacktrace()]),
-            {From, To, IQ};
-        true ->
-            F = jlib:to_old_jid(From),
-            T = jlib:to_old_jid(To),
-            I_Rec = jlib:iq_query_info(IQ),
-            {F, T, I_Rec}
+	is_record(IQ, iq) ->
+	    {From, To, IQ};
+	true ->
+	    F = jlib:to_old_jid(From),
+	    T = jlib:to_old_jid(To),
+	    I_Rec = jlib:iq_query_info(IQ),
+	    {F, T, I_Rec}
     end.
