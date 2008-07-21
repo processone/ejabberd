@@ -448,6 +448,13 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
     end.
 
 
+parse_xdata_submit({xmlel, _, _, _, Attrs, Els}) ->
+    case exmpp_xml:get_attribute_from_list(Attrs, 'type') of
+	"submit" ->
+	    lists:reverse(parse_xdata_fields(Els, []));
+	_ ->
+	    invalid
+    end;
 parse_xdata_submit(El) ->
     {xmlelement, _Name, Attrs, Els} = El,
     case xml:get_attr_s("type", Attrs) of
@@ -459,6 +466,15 @@ parse_xdata_submit(El) ->
 
 parse_xdata_fields([], Res) ->
     Res;
+parse_xdata_fields([{xmlel, _, _, 'field', Attrs, SubEls} | Els],
+  Res) ->
+    case exmpp_xml:get_attribute_from_list(Attrs, 'var') of
+	"" ->
+	    parse_xdata_fields(Els, Res);
+	Var ->
+	    Field = {Var, lists:reverse(parse_xdata_values(SubEls, []))},
+	    parse_xdata_fields(Els, [Field | Res])
+    end;
 parse_xdata_fields([{xmlelement, Name, Attrs, SubEls} | Els], Res) ->
     case Name of
 	"field" ->
@@ -478,6 +494,9 @@ parse_xdata_fields([_ | Els], Res) ->
 
 parse_xdata_values([], Res) ->
     Res;
+parse_xdata_values([{xmlel, _, _, 'value', _, SubEls} | Els], Res) ->
+    Val = exmpp_xml:get_cdata_from_list_as_list(SubEls),
+    parse_xdata_values(Els, [Val | Res]);
 parse_xdata_values([{xmlelement, Name, _Attrs, SubEls} | Els], Res) ->
     case Name of
 	"value" ->
