@@ -44,8 +44,9 @@
 	 webadmin_page/3,
 	 webadmin_user/4]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("mod_roster.hrl").
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
@@ -77,7 +78,8 @@ start(Host, Opts) ->
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, Host,
 		       ?MODULE, webadmin_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
+    % XXX OLD FORMAT: NS as string.
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, atom_to_list(?NS_ROSTER),
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
@@ -101,21 +103,22 @@ stop(Host) ->
 			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, Host,
 			  ?MODULE, webadmin_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
+    % XXX OLD FORMAT: NS as string.
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
+				     atom_to_list(?NS_ROSTER)).
 
 
 process_iq(From, To, IQ) ->
-    #iq{sub_el = SubEl} = IQ,
-    #jid{lserver = LServer} = From,
+    #jid{ldomain = LServer} = From,
     case lists:member(LServer, ?MYHOSTS) of
 	true ->
 	    process_local_iq(From, To, IQ);
 	_ ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
+	    exmpp_iq:error(IQ, 'item-not-found')
     end.
 
-process_local_iq(From, To, #iq{type = Type} = IQ) ->
-    case Type of
+process_local_iq(From, To, IQ) ->
+    case exmpp_iq:get_type(IQ) of
 	set ->
 	    process_iq_set(From, To, IQ);
 	get ->
@@ -124,19 +127,17 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
 
 
 
-process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
-    LUser = From#jid.luser,
-    LServer = From#jid.lserver,
+process_iq_get(From, To, IQ) ->
+    LUser = From#jid.lnode,
+    LServer = From#jid.ldomain,
     US = {LUser, LServer},
-    case catch ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US]) of
+    case catch ejabberd_hooks:run_fold(roster_get, To#jid.ldomain, [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement, "query",
-			     [{"xmlns", ?NS_ROSTER}],
-			     XItems}]};
+	    exmpp_iq:result(IQ, #xmlel{ns = ?NS_ROSTER, name = 'query',
+		children = XItems});
 	_ ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+	    exmpp_iq:error(IQ, 'internal-server-error')
     end.
 
 get_user_roster(Acc, US) ->
@@ -153,139 +154,138 @@ get_user_roster(Acc, US) ->
 
 
 item_to_xml(Item) ->
-    Attrs1 = [{"jid", jlib:jid_to_string(Item#roster.jid)}],
+    {U, S, R} = Item#roster.jid,
+    Attrs1 = exmpp_xml:set_attribute_in_list([],
+      'jid', exmpp_jid:jid_to_string(U, S, R)),
     Attrs2 = case Item#roster.name of
 		 "" ->
 		     Attrs1;
 		 Name ->
-		     [{"name", Name} | Attrs1]
+		     exmpp_xml:set_attribute_in_list(Attrs1, 'name', Name)
 	     end,
-    Attrs3 = case Item#roster.subscription of
-		 none ->
-		     [{"subscription", "none"} | Attrs2];
-		 from ->
-		     [{"subscription", "from"} | Attrs2];
-		 to ->
-		     [{"subscription", "to"} | Attrs2];
-		 both ->
-		     [{"subscription", "both"} | Attrs2];
-		 remove ->
-		     [{"subscription", "remove"} | Attrs2]
-	     end,
+    Attrs3 = exmpp_xml:set_attribute_in_list(Attrs2,
+      'subscription', Item#roster.subscription),
     Attrs4 = case ask_to_pending(Item#roster.ask) of
 		 out ->
-		     [{"ask", "subscribe"} | Attrs3];
+		     exmpp_xml:set_attribute_in_list(Attrs3,
+		       'ask', "subscribe");
 		 both ->
-		     [{"ask", "subscribe"} | Attrs3];
+		     exmpp_xml:set_attribute_in_list(Attrs3,
+		       'ask', "subscribe");
 		 _ ->
 		     Attrs3
 	     end,
     SubEls1 = lists:map(fun(G) ->
-				{xmlelement, "group", [], [{xmlcdata, G}]}
+				exmpp_xml:set_cdata(
+				  #xmlel{ns = ?NS_ROSTER, name = 'group'}, G)
 			end, Item#roster.groups),
     SubEls = SubEls1 ++ Item#roster.xs,
-    {xmlelement, "item", Attrs4, SubEls}.
+    #xmlel{ns = ?NS_ROSTER, name = 'item', attrs = Attrs4, children = SubEls}.
 
 
-process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
-    {xmlelement, _Name, _Attrs, Els} = SubEl,
-    lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els),
-    IQ#iq{type = result, sub_el = []}.
-
-process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
-    JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
-    #jid{user = User, luser = LUser, lserver = LServer} = From,
-    case JID1 of
-	error ->
-	    ok;
+process_iq_set(From, To, IQ) ->
+    case exmpp_iq:get_request(IQ) of
+	#xmlel{children = Els} ->
+	    lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els);
 	_ ->
-	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
-	    LJID = jlib:jid_tolower(JID1),
-	    F = fun() ->
-			Res = mnesia:read({roster, {LUser, LServer, LJID}}),
-			Item = case Res of
-				   [] ->
-				       #roster{usj = {LUser, LServer, LJID},
-					       us = {LUser, LServer},
-					       jid = JID};
-				   [I] ->
-				       I#roster{jid = JID,
-						name = "",
-						groups = [],
-						xs = []}
-			       end,
-			Item1 = process_item_attrs(Item, Attrs),
-			Item2 = process_item_els(Item1, Els),
-			case Item2#roster.subscription of
-			    remove ->
-				mnesia:delete({roster, {LUser, LServer, LJID}});
-			    _ ->
-				mnesia:write(Item2)
-			end,
-			%% If the item exist in shared roster, take the
-			%% subscription information from there:
-			Item3 = ejabberd_hooks:run_fold(roster_process_item,
-							LServer, Item2, [LServer]),
-			{Item, Item3}
-		end,
-	    case mnesia:transaction(F) of
-		{atomic, {OldItem, Item}} ->
-		    push_item(User, LServer, To, Item),
-		    case Item#roster.subscription of
+	    ok
+    end,
+    exmpp_iq:result(IQ).
+
+process_item_set(From, To, #xmlel{} = Item) ->
+    try
+	JID1 = exmpp_jid:string_to_jid(exmpp_xml:get_attribute(Item, 'jid')),
+	% XXX OLD FORMAT: old JID (with empty strings).
+	#jid{node = User, lnode = LUser, ldomain = LServer} =
+	  jlib:to_old_jid(From),
+	JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
+	LJID = jlib:short_jid(JID1),
+	F = fun() ->
+		    Res = mnesia:read({roster, {LUser, LServer, LJID}}),
+		    Item = case Res of
+			       [] ->
+				   #roster{usj = {LUser, LServer, LJID},
+					   us = {LUser, LServer},
+					   jid = JID};
+			       [I] ->
+				   I#roster{jid = JID,
+					    name = "",
+					    groups = [],
+					    xs = []}
+			   end,
+		    Item1 = process_item_attrs(Item, Item#xmlel.attrs),
+		    Item2 = process_item_els(Item1, Item#xmlel.children),
+		    case Item2#roster.subscription of
 			remove ->
-			    IsTo = case OldItem#roster.subscription of
-				       both -> true;
-				       to -> true;
-				       _ -> false
-				   end,
-			    IsFrom = case OldItem#roster.subscription of
-					 both -> true;
-					 from -> true;
-					 _ -> false
-				     end,
-			    if IsTo ->
-				    ejabberd_router:route(
-				      jlib:jid_remove_resource(From),
-				      jlib:make_jid(OldItem#roster.jid),
-				      {xmlelement, "presence",
-				       [{"type", "unsubscribe"}],
-				       []});
-			       true -> ok
-			    end,
-			    if IsFrom ->
-				    ejabberd_router:route(
-				      jlib:jid_remove_resource(From),
-				      jlib:make_jid(OldItem#roster.jid),
-				      {xmlelement, "presence",
-				       [{"type", "unsubscribed"}],
-				       []});
-			       true -> ok
-			    end,
-			    ok;
+			    mnesia:delete({roster, {LUser, LServer, LJID}});
 			_ ->
-			    ok
-		    end;
-		E ->
-		    ?DEBUG("ROSTER: roster item set error: ~p~n", [E]),
-		    ok
-	    end
+			    mnesia:write(Item2)
+		    end,
+		    %% If the item exist in shared roster, take the
+		    %% subscription information from there:
+		    Item3 = ejabberd_hooks:run_fold(roster_process_item,
+						    LServer, Item2, [LServer]),
+		    {Item, Item3}
+	    end,
+	case mnesia:transaction(F) of
+	    {atomic, {OldItem, Item}} ->
+		push_item(User, LServer, To, Item),
+		case Item#roster.subscription of
+		    remove ->
+			IsTo = case OldItem#roster.subscription of
+				   both -> true;
+				   to -> true;
+				   _ -> false
+			       end,
+			IsFrom = case OldItem#roster.subscription of
+				     both -> true;
+				     from -> true;
+				     _ -> false
+				 end,
+			{U, S, R} = OldItem#roster.jid,
+			if IsTo ->
+				ejabberd_router:route(
+				  exmpp_jid:jid_to_bare_jid(From),
+				  exmpp_jid:make_jid(U, S, R),
+				  exmpp_presence:unsubscribe());
+			   true -> ok
+			end,
+			if IsFrom ->
+				ejabberd_router:route(
+				  exmpp_jid:jid_to_bare_jid(From),
+				  exmpp_jid:make_jid(U, S, R),
+				  exmpp_presence:unsubscribed());
+			   true -> ok
+			end,
+			ok;
+		    _ ->
+			ok
+		end;
+	    E ->
+		?DEBUG("ROSTER: roster item set error: ~p~n", [E]),
+		ok
+	end
+    catch
+	_ ->
+	    ok
     end;
 process_item_set(_From, _To, _) ->
     ok.
 
-process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
+process_item_attrs(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
-	"jid" ->
-	    case jlib:string_to_jid(Val) of
-		error ->
-		    process_item_attrs(Item, Attrs);
-		JID1 ->
-		    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
-		    process_item_attrs(Item#roster{jid = JID}, Attrs)
+	'jid' ->
+	    try
+		JID1 = exmpp_jid:string_to_jid(Val),
+		JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
+		process_item_attrs(Item#roster{jid = JID}, Attrs)
+	    catch
+		_ ->
+		    process_item_attrs(Item, Attrs)
 	    end;
-	"name" ->
+	'name' ->
 	    process_item_attrs(Item#roster{name = Val}, Attrs);
-	"subscription" ->
+	'subscription' ->
 	    case Val of
 		"remove" ->
 		    process_item_attrs(Item#roster{subscription = remove},
@@ -293,7 +293,7 @@ process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
 		_ ->
 		    process_item_attrs(Item, Attrs)
 	    end;
-	"ask" ->
+	'ask' ->
 	    process_item_attrs(Item, Attrs);
 	_ ->
 	    process_item_attrs(Item, Attrs)
@@ -302,30 +302,30 @@ process_item_attrs(Item, []) ->
     Item.
 
 
-process_item_els(Item, [{xmlelement, Name, Attrs, SEls} | Els]) ->
+process_item_els(Item, [#xmlel{ns = NS, name = Name} = El | Els]) ->
     case Name of
-	"group" ->
-	    Groups = [xml:get_cdata(SEls) | Item#roster.groups],
+	'group' ->
+	    Groups = [exmpp_xml:get_cdata(El) | Item#roster.groups],
 	    process_item_els(Item#roster{groups = Groups}, Els);
 	_ ->
-	    case xml:get_attr_s("xmlns", Attrs) of
-		"" ->
+	    if
+		NS == ?NS_JABBER_CLIENT; NS == ?NS_JABBER_SERVER ->
 		    process_item_els(Item, Els);
-		_ ->
-		    XEls = [{xmlelement, Name, Attrs, SEls} | Item#roster.xs],
+		true ->
+		    XEls = [El | Item#roster.xs],
 		    process_item_els(Item#roster{xs = XEls}, Els)
 	    end
     end;
-process_item_els(Item, [{xmlcdata, _} | Els]) ->
+process_item_els(Item, [_ | Els]) ->
     process_item_els(Item, Els);
 process_item_els(Item, []) ->
     Item.
 
 
 push_item(User, Server, From, Item) ->
-    ejabberd_sm:route(jlib:make_jid("", "", ""),
-		      jlib:make_jid(User, Server, ""),
-		      {xmlelement, "broadcast", [],
+    ejabberd_sm:route(exmpp_jid:make_bare_jid(""),
+		      exmpp_jid:make_bare_jid(User, Server),
+		      #xmlel{name = 'broadcast', children =
 		       [{item,
 			 Item#roster.jid,
 			 Item#roster.subscription}]}),
@@ -335,19 +335,17 @@ push_item(User, Server, From, Item) ->
 
 % TODO: don't push to those who didn't load roster
 push_item(User, Server, Resource, From, Item) ->
-    ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
-		id = "push",
-		sub_el = [{xmlelement, "query",
-			   [{"xmlns", ?NS_ROSTER}],
-			   [item_to_xml(Item)]}]},
+    Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
+      children = item_to_xml(Item)},
+    ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request, "push"),
     ejabberd_router:route(
       From,
-      jlib:make_jid(User, Server, Resource),
-      jlib:iq_to_xml(ResIQ)).
+      exmpp_jid:make_jid(User, Server, Resource),
+      ResIQ).
 
 get_subscription_lists(_, User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Items when is_list(Items) ->
@@ -384,15 +382,15 @@ out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, []).
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
-    LJID = jlib:jid_tolower(JID1),
+    LJID = jlib:short_jid(JID1),
     F = fun() ->
 		Item = case mnesia:read({roster, {LUser, LServer, LJID}}) of
 			   [] ->
-			       JID = {JID1#jid.user,
-				      JID1#jid.server,
+			       JID = {JID1#jid.node,
+				      JID1#jid.domain,
 				      JID1#jid.resource},
 			       #roster{usj = {LUser, LServer, LJID},
 				       us = US,
@@ -444,13 +442,9 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 		none ->
 		    ok;
 		_ ->
-		    T = case AutoReply of
-			    subscribed -> "subscribed";
-			    unsubscribed -> "unsubscribed"
-			end,
 		    ejabberd_router:route(
-		      jlib:make_jid(User, Server, ""), JID1,
-		      {xmlelement, "presence", [{"type", T}], []})
+		      exmpp_jid:make_bare_jid(User, Server), JID1,
+		      exmpp_presence:AutoReply())
 	    end,
 	    case Push of
 		{push, Item} ->
@@ -460,7 +454,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			    ok;
 			true ->
 			    push_item(User, Server,
-				      jlib:make_jid(User, Server, ""), Item)
+				      exmpp_jid:make_bare_jid(User, Server), Item)
 		    end,
 		    true;
 		none ->
@@ -567,8 +561,8 @@ in_auto_reply(_,    _,    _)  ->           none.
 
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringpre:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     F = fun() ->
 		lists:foreach(fun(R) ->
@@ -582,8 +576,8 @@ remove_user(User, Server) ->
 
 set_items(User, Server, SubEl) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     F = fun() ->
 		lists:foreach(fun(El) ->
 				      process_item_set_t(LUser, LServer, El)
@@ -591,42 +585,43 @@ set_items(User, Server, SubEl) ->
 	end,
     mnesia:transaction(F).
 
-process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
-    JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
-    case JID1 of
-	error ->
-	    ok;
+process_item_set_t(LUser, LServer, #xmlel{} = El) ->
+    try
+	JID1 = exmpp_jid:string_to_jid(exmpp_xml:get_attribute(El, 'jid')),
+	JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
+	LJID = {JID1#jid.lnode, JID1#jid.ldomain, JID1#jid.lresource},
+	Item = #roster{usj = {LUser, LServer, LJID},
+		       us = {LUser, LServer},
+		       jid = JID},
+	Item1 = process_item_attrs_ws(Item, El#xmlel.attrs),
+	Item2 = process_item_els(Item1, El#xmlel.children),
+	case Item2#roster.subscription of
+	    remove ->
+		mnesia:delete({roster, {LUser, LServer, LJID}});
+	    _ ->
+		mnesia:write(Item2)
+	end
+    catch
 	_ ->
-	    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
-	    LJID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
-	    Item = #roster{usj = {LUser, LServer, LJID},
-			   us = {LUser, LServer},
-			   jid = JID},
-	    Item1 = process_item_attrs_ws(Item, Attrs),
-	    Item2 = process_item_els(Item1, Els),
-	    case Item2#roster.subscription of
-		remove ->
-		    mnesia:delete({roster, {LUser, LServer, LJID}});
-		_ ->
-		    mnesia:write(Item2)
-	    end
+	    ok
     end;
 process_item_set_t(_LUser, _LServer, _) ->
     ok.
 
-process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
+process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
-	"jid" ->
-	    case jlib:string_to_jid(Val) of
-		error ->
-		    process_item_attrs_ws(Item, Attrs);
-		JID1 ->
-		    JID = {JID1#jid.user, JID1#jid.server, JID1#jid.resource},
-		    process_item_attrs_ws(Item#roster{jid = JID}, Attrs)
+	'jid' ->
+	    try
+		JID1 = exmpp_jid:string_to_jid(Val),
+		JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
+		process_item_attrs_ws(Item#roster{jid = JID}, Attrs)
+	    catch
+		_ ->
+		    process_item_attrs_ws(Item, Attrs)
 	    end;
-	"name" ->
+	'name' ->
 	    process_item_attrs_ws(Item#roster{name = Val}, Attrs);
-	"subscription" ->
+	'subscription' ->
 	    case Val of
 		"remove" ->
 		    process_item_attrs_ws(Item#roster{subscription = remove},
@@ -646,7 +641,7 @@ process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
 		_ ->
 		    process_item_attrs_ws(Item, Attrs)
 	    end;
-	"ask" ->
+	'ask' ->
 	    process_item_attrs_ws(Item, Attrs);
 	_ ->
 	    process_item_attrs_ws(Item, Attrs)
@@ -655,8 +650,8 @@ process_item_attrs_ws(Item, []) ->
     Item.
 
 get_in_pending_subscriptions(Ls, User, Server) ->
-    JID = jlib:make_jid(User, Server, ""),
-    US = {JID#jid.luser, JID#jid.lserver},
+    JID = exmpp_jid:make_bare_jid(User, Server),
+    US = {JID#jid.lnode, JID#jid.ldomain},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Result when list(Result) ->
     	    Ls ++ lists:map(
@@ -667,12 +662,14 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 					 true ->
 					      ""
 				      end,
-			    {xmlelement, "presence",
-			     [{"from", jlib:jid_to_string(R#roster.jid)},
-			      {"to", jlib:jid_to_string(JID)},
-			      {"type", "subscribe"}],
-			     [{xmlelement, "status", [],
-			       [{xmlcdata, Status}]}]}
+			    {U, S, R} = R#roster.jid,
+			    Attrs1 = exmpp_stanza:set_sender_in_list([],
+			      exmpp_jid:jid_to_string(U, S, R)),
+			    Attrs2 = exmpp_stanza:set_recipient_in_list(Attrs1,
+			      exmpp_jid:jid_to_string(JID)),
+			    Pres1 = exmpp_presence:subscribe(),
+			    Pres2 = Pres1#xmlel{attrs = Attrs2},
+			    exmpp_presence:set_status(Pres2, Status)
 		    end,
 		    lists:filter(
 		      fun(R) ->
@@ -691,14 +688,14 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_jid_info(_, User, Server, JID) ->
-    LUser = jlib:nodeprep(User),
-    LJID = jlib:jid_tolower(JID),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LJID = jlib:short_jid(JID),
+    LServer = exmpp_stringprep:nameprep(Server),
     case catch mnesia:dirty_read(roster, {LUser, LServer, LJID}) of
 	[#roster{subscription = Subscription, groups = Groups}] ->
 	    {Subscription, Groups};
 	_ ->
-	    LRJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+	    LRJID = jlib:short_jid(exmpp_jid:jid_to_bare_jid(JID)),
 	    if
 		LRJID == LJID ->
 		    {none, []};
@@ -787,7 +784,7 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_roster(User, Server, Query, Lang) ->
-    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
+    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
     Items1 = mnesia:dirty_index_read(roster, US, #roster.us),
     Res = user_roster_parse_query(User, Server, Items1, Query),
     Items = mnesia:dirty_index_read(roster, US, #roster.us),
@@ -815,9 +812,10 @@ user_roster(User, Server, Query, Lang) ->
 						  [?C(Group), ?BR]
 					  end, R#roster.groups),
 				    Pending = ask_to_pending(R#roster.ask),
+				    {U, S, R} = R#roster.jid,
 				    ?XE("tr",
 					[?XAC("td", [{"class", "valign"}],
-					      jlib:jid_to_string(R#roster.jid)),
+					      catch exmpp_jid:jid_to_string(U, S, R)),
 					 ?XAC("td", [{"class", "valign"}],
 					      R#roster.name),
 					 ?XAC("td", [{"class", "valign"}],
@@ -862,11 +860,12 @@ user_roster_parse_query(User, Server, Items, Query) ->
 		{value, {_, undefined}} ->
 		    error;
 		{value, {_, SJID}} ->
-		    case jlib:string_to_jid(SJID) of
-			JID when is_record(JID, jid) ->
-			    user_roster_subscribe_jid(User, Server, JID),
-			    ok;
-			error ->
+		    try
+			JID = exmpp_jid:string_to_jid(SJID),
+			user_roster_subscribe_jid(User, Server, JID),
+			ok
+		    catch
+			_ ->
 			    error
 		    end;
 		false ->
@@ -887,9 +886,9 @@ user_roster_parse_query(User, Server, Items, Query) ->
 
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
-    UJID = jlib:make_jid(User, Server, ""),
+    UJID = exmpp_jid:make_bare_jid(User, Server),
     ejabberd_router:route(
-      UJID, JID, {xmlelement, "presence", [{"type", "subscribe"}], []}).
+      UJID, JID, exmpp_presence:subscribe()).
 
 user_roster_item_parse_query(User, Server, Items, Query) ->
     lists:foreach(
@@ -898,28 +897,32 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 	      case lists:keysearch(
 		     "validate" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 		  {value, _} ->
-		      JID1 = jlib:make_jid(JID),
+		      {U, S, R} = JID,
+		      JID1 = exmpp_jid:make_jid(U, S, R),
 		      out_subscription(
 			User, Server, JID1, subscribed),
-		      UJID = jlib:make_jid(User, Server, ""),
+		      UJID = exmpp_jid:make_bare_jid(User, Server),
 		      ejabberd_router:route(
-			UJID, JID1, {xmlelement, "presence",
-				     [{"type", "subscribed"}], []}),
+			UJID, JID1, exmpp_presence:subscribed()),
 		      throw(submitted);
 		  false ->
 		      case lists:keysearch(
 			     "remove" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 			  {value, _} ->
-			      UJID = jlib:make_jid(User, Server, ""),
+			      UJID = exmpp_jid:make_bare_jid(User, Server),
+			      Attrs1 = exmpp_xml:set_attribute_in_list([],
+				'jid', exmpp_jid:jid_to_string(JID)),
+			      Attrs2 = exmpp_xml:set_attribute_in_list(Attrs1,
+				'subscription', "remove"),
+			      Item = #xmlel{ns = ?NS_ROSTER, name = 'item',
+				attrs = Attrs2},
+			      Request = #xmlel{
+				ns = ?NS_ROSTER,
+				name = 'query',
+				children = [Item]},
 			      process_iq(
 				UJID, UJID,
-				#iq{type = set,
-				    sub_el = {xmlelement, "query",
-					      [{"xmlns", ?NS_ROSTER}],
-					      [{xmlelement, "item",
-						[{"jid", jlib:jid_to_string(JID)},
-						 {"subscription", "remove"}],
-						[]}]}}),
+				exmpp_iq:set(?NS_JABBER_CLIENT, Request)),
 			      throw(submitted);
 			  false ->
 			      ok
@@ -930,7 +933,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
     nothing.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    exmpp_jid:bare_jid_to_string(User, Server).
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].

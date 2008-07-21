@@ -4,6 +4,8 @@
 	the new format to a built-in list of modules known to support them.
 	Other modules will still receive arguments in the old format.
 
+	* src/mod_roster.erl, src/gen_iq_handler.erl: Convert to exmpp.
+
 2008-07-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge revisions from 1444 to revision 1457 from trunk.
