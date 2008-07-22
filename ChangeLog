@@ -1,3 +1,8 @@
+2008-07-22  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_config.erl: If syntax mistake in config file, show
+	specific error message (EJAB-616)
+
 2008-07-22  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/odbc/odbc_queries.erl: Fixed a typo
