@@ -2,6 +2,12 @@
 
 	* src/mod_disco.erl, src/gen_iq_handler.erl: Convert to exmpp.
 
+	* src/mod_caps.erl, src/gen_iq_handler.erl: Finish conversion to
+	exmpp.
+
+	* src/ejabberd_local.erl (process_iq_reply): IQ handler are now always
+	called with arguments in the new format.
+
 2008-07-21  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/gen_iq_handler.erl: Prepare gen_iq_handler to pass arguments in

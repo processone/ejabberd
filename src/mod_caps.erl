@@ -62,13 +62,6 @@
 		disco_requests = ?DICT:new(),
 		feature_queries = []}).
 
-% XXX OLD FORMAT: Re-include jlib.hrl (after clean-up).
--record(iq, {id = "",
-             type,
-             xmlns = "",
-             lang = "",
-             sub_el}).
-
 %% read_caps takes a list of XML elements (the child elements of a
 %% <presence/> stanza) and returns an opaque value representing the
 %% Entity Capabilities contained therein, or the atom nothing if no
@@ -224,17 +217,16 @@ handle_cast({note_caps, From,
 	    ?ERROR_MSG("Transaction failed: ~p", [Error]),
 	    {noreply, State}
     end;
-handle_cast({disco_response, From, _To, 
-	     #iq{type = Type, id = ID,
-		 sub_el = SubEls}},
+handle_cast({disco_response, From, _To, IQ},
 	    #state{disco_requests = Requests} = State) ->
-    case {Type, SubEls} of
-	{result, [{xmlelement, "query", _Attrs, Els}]} ->
+    ID = exmpp_stanza:get_id(IQ),
+    case {exmpp_iq:get_type(IQ), exmpp_iq:get_payload(IQ)} of
+	{result, #xmlel{name = 'query', children = Els}} ->
 	    case ?DICT:find(ID, Requests) of
 		{ok, {Node, SubNode}} ->
 		    Features =
-			lists:flatmap(fun({xmlelement, "feature", FAttrs, _}) ->
-					      [xml:get_attr_s("var", FAttrs)];
+			lists:flatmap(fun(#xmlel{name = 'feature'} = F) ->
+					      [exmpp_xml:get_attribute(F, 'var')];
 					 (_) ->
 					      []
 				      end, Els),
@@ -262,9 +254,9 @@ handle_cast({disco_response, From, _To,
 		    ?ERROR_MSG("ID '~s' matches no query", [ID])
 	    end;
 	    %gen_server:cast(self(), visit_feature_queries),
-	    %?DEBUG("Error IQ reponse from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
+	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:jid_to_string(From), SubEls]);
 	{result, _} ->
-	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
+	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:jid_to_string(From), IQ#xmlel.children]);
 	_ ->
 	    %% Can't do anything about errors
 	    ok

@@ -131,11 +131,7 @@ process_iq_reply(From, To, Packet) ->
 		end,
 	    case mnesia:transaction(F) of
 		{atomic, {Module, Function}} ->
-                    % XXX OLD FORMAT: From, To, Packet.
-                    FromOld = jlib:to_old_jid(From),
-                    ToOld = jlib:to_old_jid(To),
-                    IQ_Rec = jlib:iq_query_or_response_info(Packet),
-		    Module:Function(FromOld, ToOld, IQ_Rec);
+		    Module:Function(From, To, Packet);
 		_ ->
 		    ok
 	    end
