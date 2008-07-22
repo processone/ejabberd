@@ -1,3 +1,7 @@
+2008-07-22  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/odbc/odbc_queries.erl: Fixed a typo
+
 2008-07-03  Jerome Sautret  <jerome.sautret@process-one.net>
 
 	* src/ejabberd_ctl.erl: Call reopen_log_hook for each virtual host.

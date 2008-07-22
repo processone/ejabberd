@@ -322,7 +322,7 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
       "        and jid='", SJID, "';"],
      ["insert into rosterusers("
       "              username, jid, nick, "
-      "              subscription, ask, askmessage"
+      "              subscription, ask, askmessage, "
       "              server, subscribe, type) "
       " values (", ItemVals, ");"],
      ["delete from rostergroups "
