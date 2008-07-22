@@ -109,9 +109,24 @@ features() ->
      "subscribe" %*
     ].
 
-create_node_permission(_Host, _ServerHost, _Node, _ParentNode, _Owner, _Access) ->
-    %% TODO may we check bare JID match ?
-    {result, true}.
+create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
+    LOwner = jlib:jid_tolower(Owner),
+    {User, Server, _Resource} = LOwner, 
+    Allowed = case LOwner of
+	{"", Host, ""} ->
+	    true; % pubsub service always allowed
+	_ ->
+	    case acl:match_rule(ServerHost, Access, LOwner) of
+		allow ->
+		    case Host of 
+			{User, Server, _} -> true;
+			_ -> false
+		    end;    
+		_ ->
+		    false
+	    end
+    end,    
+    {result, Allowed}.
 
 create_node(Host, Node, Owner) ->
     case node_default:create_node(Host, Node, Owner) of

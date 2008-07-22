@@ -1,3 +1,13 @@
+2008-07-23  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: remove_user hook removes
+	subscriptions (EJAB-684), send the last published and not the
+	first published item (EJAB-675), remove the pubsub/nodes tree.
+	* src/mod_pubsub/node_pep.erl: added acl and jid match on node
+	creation permission (EJAB-663)
+	* src/mod_pubsub/node_default.erl: fix node creation permission 
+	issue for service
+
 2008-07-22  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_config.erl: If syntax mistake in config file, show
