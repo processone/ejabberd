@@ -91,18 +91,19 @@ features() ->
 %% use same code as node_default, but do not limite node to
 %% the home/localhost/user/... hierarchy
 %% any node is allowed
-create_node_permission(_Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
+create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
     LOwner = jlib:jid_tolower(Owner),
-    %%{_User, _Server, _Resource} = LOwner, 
-    Allowed = case acl:match_rule(ServerHost, Access, LOwner) of
+    Allowed = case LOwner of
+	{"", Host, ""} ->
+	    true; % pubsub service always allowed
+	_ ->
+	    case acl:match_rule(ServerHost, Access, LOwner) of
 		allow ->
 		    true;
-		_ ->    
-		    case Owner of
-		    {jid, "", _, "", "", _, ""} -> true;
-		    _ -> false
-		    end     
-		end,    
+		_ ->
+		    false
+	    end
+    end,
     {result, Allowed}.
 
 create_node(Host, Node, Owner) ->
