@@ -1,3 +1,8 @@
+2008-07-22  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_config.erl: If syntax mistake in config file, show
+	specific error message (EJAB-616)
+
 2008-07-17  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Fix to allow a server admin to add

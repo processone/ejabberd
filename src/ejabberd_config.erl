@@ -64,10 +64,14 @@ load_file(File) ->
 	    State = lists:foldl(fun search_hosts/2, #state{}, Terms),
 	    Res = lists:foldl(fun process_term/2, State, Terms),
 	    set_opts(Res);
-	{error, Reason} ->
-	    ExitText = lists:flatten(File ++ ": around line "
+	{error, {_LineNumber, erl_parse, _ParseMessage} = Reason} ->
+	    ExitText = lists:flatten(File ++ " approximately in the line "
 				     ++ file:format_error(Reason)),
-	    ?ERROR_MSG("Problem loading ejabberd config file:~n~s", [ExitText]),
+	    ?ERROR_MSG("Problem loading ejabberd config file ~n~s", [ExitText]),
+	    exit(ExitText);
+	{error, Reason} ->
+	    ExitText = lists:flatten(File ++ ": " ++ file:format_error(Reason)),
+	    ?ERROR_MSG("Problem loading ejabberd config file ~n~s", [ExitText]),
 	    exit(ExitText)
     end.
 
