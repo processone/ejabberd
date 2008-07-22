@@ -1,3 +1,7 @@
+2008-07-22  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_disco.erl, src/gen_iq_handler.erl: Convert to exmpp.
+
 2008-07-21  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/gen_iq_handler.erl: Prepare gen_iq_handler to pass arguments in
