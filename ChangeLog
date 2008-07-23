@@ -4,6 +4,10 @@
 	allow_visitor_presence and allow_visitor_nickchange to
 	block/enable visitors to broadcast presence updates to the room
 	(EJAB-624).
+	* src/mod_muc/mod_muc_room.erl: renaming allow_visitor_presence to
+	allow_visitor_status and altering effect (when false) to remove
+	custom status tags in presence broadcasts to muc rooms by
+	visitors.
 
 2008-07-23  Christophe Romain  <christophe.romain@process-one.net>
 

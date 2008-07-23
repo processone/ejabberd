@@ -985,25 +985,16 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					change_nick(From, Nick, StateData)
 				end;
 			    _NotNickChange ->
-                                case {(StateData#state.config)#config.allow_visitor_presence,
-                                      is_visitor(From, StateData)} of
-                                    {false, true} ->
-                                        ErrText = "Visitors are not allowed to update their presence in this room",
-					Err = jlib:make_error_reply(
-						Packet,
-						?ERRT_NOT_ALLOWED(Lang, ErrText)),
-					ejabberd_router:route(
-                                          % TODO: s/Nick/""/
-					  jlib:jid_replace_resource(
-					    StateData#state.jid,
-					    Nick),
-					  From, Err),
-					StateData;
-                                    _Allowed ->
-                                        NewState = add_user_presence(From, Packet, StateData),
-                                        send_new_presence(From, NewState),
-                                        NewState
-                                end
+                                Stanza = case {(StateData#state.config)#config.allow_visitor_presence,
+                                               is_visitor(From, StateData)} of
+                                             {false, true} ->
+                                                 strip_status(Packet);
+                                             _Allowed ->
+                                                 Packet
+                                         end,
+                                NewState = add_user_presence(From, Stanza, StateData),
+                                send_new_presence(From, NewState),
+                                NewState
 			end;
 		    _ ->
 			add_new_user(From, Nick, Packet, StateData)
@@ -1388,6 +1379,13 @@ filter_presence({xmlelement, "presence", Attrs, Els}) ->
 	     end, Els),
     {xmlelement, "presence", Attrs, FEls}.
 
+strip_status({xmlelement, "presence", Attrs, Els}) ->
+    FEls = lists:filter(
+	     fun({xmlelement, "status", _Attrs1, _Els1}) ->
+                     false;
+                (_) -> true
+	     end, Els),
+    {xmlelement, "presence", Attrs, FEls}.
 
 add_user_presence(JID, Presence, StateData) ->
     LJID = jlib:jid_tolower(JID),
