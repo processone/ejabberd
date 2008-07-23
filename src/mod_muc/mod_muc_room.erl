@@ -2718,7 +2718,7 @@ get_config(Lang, StateData, From) ->
 	 ?BOOLXFIELD("Allow users to send invites",
 		     "muc#roomconfig_allowinvites",
 		     Config#config.allow_user_invites),
-	 ?BOOLXFIELD("Allow visitors to set custom status messages in the room",
+	 ?BOOLXFIELD("Allow visitors to send status text in presence updates",
 		     "muc#roomconfig_allowvisitorstatus",
 		     Config#config.allow_visitor_status),
 	 ?BOOLXFIELD("Allow visitors to change nickname",
