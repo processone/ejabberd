@@ -2,7 +2,8 @@
 
 	* src/mod_pubsub/mod_pubsub.erl: remove_user hook removes
 	subscriptions (EJAB-684), send the last published and not the
-	first published item (EJAB-675), remove the pubsub/nodes tree.
+	first published item (EJAB-675), remove the pubsub/nodes tree,
+	subscribing to a node sends only last items (EJAB-700)
 	* src/mod_pubsub/node_pep.erl: added acl and jid match on node
 	creation permission (EJAB-663)
 	* src/mod_pubsub/node_default.erl: fix node creation permission 

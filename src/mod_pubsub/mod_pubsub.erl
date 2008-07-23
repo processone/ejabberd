@@ -1386,7 +1386,7 @@ subscribe_node(Host, Node, From, JID) ->
 	{error, Error} ->
 	    {error, Error};
 	{result, {Result, subscribed, send_last}} ->
-	    send_all_items(Host, Node, Subscriber),
+	    send_last_item(Host, Node, Subscriber),
 	    case Result of
 		default -> {result, Reply(subscribed)};
 		_ -> {result, Result}
@@ -1733,21 +1733,25 @@ send_last_item(Host, Node, LJID) ->
 
 %% TODO use cache-last-item feature
 send_items(Host, Node, LJID, Number) ->
-    Items = get_items(Host, Node),
-    ToSend = case Number of
-		 last -> hd(lists:reverse(Items));
-		 all -> Items;
-		 N when N > 0 -> lists:nthtail(length(Items)-N, Items);
-		 _ -> Items
-	     end,
+    ToSend = case get_items(Host, Node) of
+	[] -> 
+	    [];
+	Items ->
+	    case Number of
+		last -> lists:sublist(lists:reverse(Items), 1);
+		all -> Items;
+		N when N > 0 -> lists:nthtail(length(Items)-N, Items);
+		_ -> Items
+	    end
+    end,
     ItemsEls = lists:map(
-		 fun(#pubsub_item{itemid = {ItemId, _}, payload = Payload}) ->
-			 ItemAttrs = case ItemId of
-					 "" -> [];
-					 _ -> [{"id", ItemId}]
-				     end,
-			 {xmlelement, "item", ItemAttrs, Payload}
-		 end, ToSend),
+		fun(#pubsub_item{itemid = {ItemId, _}, payload = Payload}) ->
+		    ItemAttrs = case ItemId of
+			"" -> [];
+			_ -> [{"id", ItemId}]
+		    end,
+		    {xmlelement, "item", ItemAttrs, Payload}
+		end, ToSend),
     Stanza = {xmlelement, "message", [],
 	      [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
 		[{xmlelement, "items", [{"node", node_to_string(Node)}],
