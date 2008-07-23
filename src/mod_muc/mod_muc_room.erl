@@ -63,6 +63,8 @@
 		 allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
+                 allow_visitor_presence = true,
+                 allow_visitor_nickchange = true,
 		 public = true,
 		 public_list = true,
 		 persistent = false,
@@ -940,8 +942,22 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 			    true ->
 				case {is_nick_exists(Nick, StateData),
 				      mod_muc:can_use_nick(
-					StateData#state.host, From, Nick)} of
-				    {true, _} ->
+					StateData#state.host, From, Nick),
+                                      {(StateData#state.config)#config.allow_visitor_nickchange,
+                                       is_visitor(From, StateData)}} of
+                                    {_, _, {false, true}} ->
+					ErrText = "Visitors are not allowed to change their nicknames in this room",
+					Err = jlib:make_error_reply(
+						Packet,
+						?ERRT_NOT_ALLOWED(Lang, ErrText)),
+					ejabberd_router:route(
+					  % TODO: s/Nick/""/
+					  jlib:jid_replace_resource(
+					    StateData#state.jid,
+					    Nick),
+					  From, Err),
+					StateData;
+				    {true, _, _} ->
 					Lang = xml:get_attr_s("xml:lang", Attrs),
 					ErrText = "Nickname is already in use by another occupant",
 					Err = jlib:make_error_reply(
@@ -953,7 +969,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					    Nick), % TODO: s/Nick/""/
 					  From, Err),
 					StateData;
-				    {_, false} ->
+				    {_, false, _} ->
 					ErrText = "Nickname is registered by another person",
 					Err = jlib:make_error_reply(
 						Packet,
@@ -968,11 +984,26 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 				    _ ->
 					change_nick(From, Nick, StateData)
 				end;
-			    _ ->
-				NewState =
-				    add_user_presence(From, Packet, StateData),
-				send_new_presence(From, NewState),
-				NewState
+			    _NotNickChange ->
+                                case {(StateData#state.config)#config.allow_visitor_presence,
+                                      is_visitor(From, StateData)} of
+                                    {false, true} ->
+                                        ErrText = "Visitors are not allowed to update their presence in this room",
+					Err = jlib:make_error_reply(
+						Packet,
+						?ERRT_NOT_ALLOWED(Lang, ErrText)),
+					ejabberd_router:route(
+                                          % TODO: s/Nick/""/
+					  jlib:jid_replace_resource(
+					    StateData#state.jid,
+					    Nick),
+					  From, Err),
+					StateData;
+                                    _Allowed ->
+                                        NewState = add_user_presence(From, Packet, StateData),
+                                        send_new_presence(From, NewState),
+                                        NewState
+                                end
 			end;
 		    _ ->
 			add_new_user(From, Nick, Packet, StateData)
@@ -1240,6 +1271,17 @@ get_default_role(Affiliation, StateData) ->
 			    visitor
 		    end
 	    end
+    end.
+
+is_visitor(Jid, StateData) ->
+    case get_affiliation(Jid, StateData) of
+        none ->
+            case get_default_role(none, StateData) of
+                visitor -> true;
+                _ -> false
+            end;
+        visitor -> true;
+        _ -> false
     end.
 
 get_max_users(StateData) ->
@@ -2709,7 +2751,13 @@ get_config(Lang, StateData, From) ->
 		     Config#config.allow_query_users),
 	 ?BOOLXFIELD("Allow users to send invites",
 		     "muc#roomconfig_allowinvites",
-		     Config#config.allow_user_invites)
+		     Config#config.allow_user_invites),
+	 ?BOOLXFIELD("Allow visitors to send presence messages to the room",
+		     "muc#roomconfig_allowvisitorpresence",
+		     Config#config.allow_visitor_presence),
+	 ?BOOLXFIELD("Allow visitors to change nickname",
+		     "muc#roomconfig_allowvisitornickchange",
+		     Config#config.allow_visitor_nickchange)
 	] ++
 	case mod_muc_log:check_access_log(
 	       StateData#state.server_host, From) of
@@ -2782,6 +2830,10 @@ set_xoption([{"allow_query_users", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_query_users, Val);
 set_xoption([{"allow_private_messages", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_private_messages, Val);
+set_xoption([{"muc#roomconfig_allowvisitorpresence", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(allow_visitor_presence, Val);
+set_xoption([{"muc#roomconfig_allowvisitornickchange", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(allow_visitor_nickchange, Val);
 set_xoption([{"muc#roomconfig_publicroom", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(public, Val);
 set_xoption([{"public_list", [Val]} | Opts], Config) ->
@@ -2875,6 +2927,8 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      allow_change_subj -> StateData#state{config = (StateData#state.config)#config{allow_change_subj = Val}};
 	      allow_query_users -> StateData#state{config = (StateData#state.config)#config{allow_query_users = Val}};
 	      allow_private_messages -> StateData#state{config = (StateData#state.config)#config{allow_private_messages = Val}};
+	      allow_visitor_nickchange -> StateData#state{config = (StateData#state.config)#config{allow_visitor_nickchange = Val}};
+	      allow_visitor_presence -> StateData#state{config = (StateData#state.config)#config{allow_visitor_presence = Val}};
 	      public -> StateData#state{config = (StateData#state.config)#config{public = Val}};
 	      public_list -> StateData#state{config = (StateData#state.config)#config{public_list = Val}};
 	      persistent -> StateData#state{config = (StateData#state.config)#config{persistent = Val}};
@@ -2915,6 +2969,8 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(allow_change_subj),
      ?MAKE_CONFIG_OPT(allow_query_users),
      ?MAKE_CONFIG_OPT(allow_private_messages),
+     ?MAKE_CONFIG_OPT(allow_visitor_presence),
+     ?MAKE_CONFIG_OPT(allow_visitor_nickchange),
      ?MAKE_CONFIG_OPT(public),
      ?MAKE_CONFIG_OPT(public_list),
      ?MAKE_CONFIG_OPT(persistent),
