@@ -63,7 +63,7 @@
 		 allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
-                 allow_visitor_presence = true,
+                 allow_visitor_status = true,
                  allow_visitor_nickchange = true,
 		 public = true,
 		 public_list = true,
@@ -985,7 +985,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					change_nick(From, Nick, StateData)
 				end;
 			    _NotNickChange ->
-                                Stanza = case {(StateData#state.config)#config.allow_visitor_presence,
+                                Stanza = case {(StateData#state.config)#config.allow_visitor_status,
                                                is_visitor(From, StateData)} of
                                              {false, true} ->
                                                  strip_status(Packet);
@@ -2750,9 +2750,9 @@ get_config(Lang, StateData, From) ->
 	 ?BOOLXFIELD("Allow users to send invites",
 		     "muc#roomconfig_allowinvites",
 		     Config#config.allow_user_invites),
-	 ?BOOLXFIELD("Allow visitors to send presence messages to the room",
-		     "muc#roomconfig_allowvisitorpresence",
-		     Config#config.allow_visitor_presence),
+	 ?BOOLXFIELD("Allow visitors to set custom status messages in the room",
+		     "muc#roomconfig_allowvisitorstatus",
+		     Config#config.allow_visitor_status),
 	 ?BOOLXFIELD("Allow visitors to change nickname",
 		     "muc#roomconfig_allowvisitornickchange",
 		     Config#config.allow_visitor_nickchange)
@@ -2828,8 +2828,8 @@ set_xoption([{"allow_query_users", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_query_users, Val);
 set_xoption([{"allow_private_messages", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_private_messages, Val);
-set_xoption([{"muc#roomconfig_allowvisitorpresence", [Val]} | Opts], Config) ->
-    ?SET_BOOL_XOPT(allow_visitor_presence, Val);
+set_xoption([{"muc#roomconfig_allowvisitorstatus", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(allow_visitor_status, Val);
 set_xoption([{"muc#roomconfig_allowvisitornickchange", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_visitor_nickchange, Val);
 set_xoption([{"muc#roomconfig_publicroom", [Val]} | Opts], Config) ->
@@ -2926,7 +2926,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      allow_query_users -> StateData#state{config = (StateData#state.config)#config{allow_query_users = Val}};
 	      allow_private_messages -> StateData#state{config = (StateData#state.config)#config{allow_private_messages = Val}};
 	      allow_visitor_nickchange -> StateData#state{config = (StateData#state.config)#config{allow_visitor_nickchange = Val}};
-	      allow_visitor_presence -> StateData#state{config = (StateData#state.config)#config{allow_visitor_presence = Val}};
+	      allow_visitor_status -> StateData#state{config = (StateData#state.config)#config{allow_visitor_status = Val}};
 	      public -> StateData#state{config = (StateData#state.config)#config{public = Val}};
 	      public_list -> StateData#state{config = (StateData#state.config)#config{public_list = Val}};
 	      persistent -> StateData#state{config = (StateData#state.config)#config{persistent = Val}};
@@ -2967,7 +2967,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(allow_change_subj),
      ?MAKE_CONFIG_OPT(allow_query_users),
      ?MAKE_CONFIG_OPT(allow_private_messages),
-     ?MAKE_CONFIG_OPT(allow_visitor_presence),
+     ?MAKE_CONFIG_OPT(allow_visitor_status),
      ?MAKE_CONFIG_OPT(allow_visitor_nickchange),
      ?MAKE_CONFIG_OPT(public),
      ?MAKE_CONFIG_OPT(public_list),
