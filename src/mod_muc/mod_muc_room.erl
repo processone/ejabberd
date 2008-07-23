@@ -62,7 +62,7 @@
 		 allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
-                 allow_visitor_presence = true,
+                 allow_visitor_status = true,
                  allow_visitor_nickchange = true,
 		 public = true,
 		 public_list = true,
@@ -956,25 +956,16 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					change_nick(From, Nick, StateData)
 				end;
 			    _NotNickChange ->
-                                case {(StateData#state.config)#config.allow_visitor_presence,
-                                      is_visitor(From, StateData)} of
-                                    {false, true} ->
-                                        ErrText = "Visitors are not allowed to update their presence in this room",
-					Err = jlib:make_error_reply(
-						Packet,
-						?ERRT_NOT_ALLOWED(Lang, ErrText)),
-					ejabberd_router:route(
-                                          % TODO: s/Nick/""/
-					  jlib:jid_replace_resource(
-					    StateData#state.jid,
-					    Nick),
-					  From, Err),
-					StateData;
-                                    _Allowed ->
-                                        NewState = add_user_presence(From, Packet, StateData),
-                                        send_new_presence(From, NewState),
-                                        NewState
-                                end
+                                Stanza = case {(StateData#state.config)#config.allow_visitor_status,
+                                               is_visitor(From, StateData)} of
+                                             {false, true} ->
+                                                 strip_status(Packet);
+                                             _Allowed ->
+                                                 Packet
+                                         end,
+                                NewState = add_user_presence(From, Stanza, StateData),
+                                send_new_presence(From, NewState),
+                                NewState
 			end;
 		    _ ->
 			add_new_user(From, Nick, Packet, StateData)
@@ -1359,6 +1350,13 @@ filter_presence({xmlelement, "presence", Attrs, Els}) ->
 	     end, Els),
     {xmlelement, "presence", Attrs, FEls}.
 
+strip_status({xmlelement, "presence", Attrs, Els}) ->
+    FEls = lists:filter(
+	     fun({xmlelement, "status", _Attrs1, _Els1}) ->
+                     false;
+                (_) -> true
+	     end, Els),
+    {xmlelement, "presence", Attrs, FEls}.
 
 add_user_presence(JID, Presence, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -2720,9 +2718,9 @@ get_config(Lang, StateData, From) ->
 	 ?BOOLXFIELD("Allow users to send invites",
 		     "muc#roomconfig_allowinvites",
 		     Config#config.allow_user_invites),
-	 ?BOOLXFIELD("Allow visitors to send presence messages to the room",
-		     "muc#roomconfig_allowvisitorpresence",
-		     Config#config.allow_visitor_presence),
+	 ?BOOLXFIELD("Allow visitors to set custom status messages in the room",
+		     "muc#roomconfig_allowvisitorstatus",
+		     Config#config.allow_visitor_status),
 	 ?BOOLXFIELD("Allow visitors to change nickname",
 		     "muc#roomconfig_allowvisitornickchange",
 		     Config#config.allow_visitor_nickchange)
@@ -2796,8 +2794,8 @@ set_xoption([{"allow_query_users", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_query_users, Val);
 set_xoption([{"allow_private_messages", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_private_messages, Val);
-set_xoption([{"muc#roomconfig_allowvisitorpresence", [Val]} | Opts], Config) ->
-    ?SET_BOOL_XOPT(allow_visitor_presence, Val);
+set_xoption([{"muc#roomconfig_allowvisitorstatus", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(allow_visitor_status, Val);
 set_xoption([{"muc#roomconfig_allowvisitornickchange", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_visitor_nickchange, Val);
 set_xoption([{"muc#roomconfig_publicroom", [Val]} | Opts], Config) ->
@@ -2892,7 +2890,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      ?CASE_CONFIG_OPT(allow_change_subj);
 	      ?CASE_CONFIG_OPT(allow_query_users);
 	      ?CASE_CONFIG_OPT(allow_private_messages);
-	      ?CASE_CONFIG_OPT(allow_visitor_presence);
+	      ?CASE_CONFIG_OPT(allow_visitor_status);
 	      ?CASE_CONFIG_OPT(allow_visitor_nickchange);
 	      ?CASE_CONFIG_OPT(public);
 	      ?CASE_CONFIG_OPT(public_list);
@@ -2933,7 +2931,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(allow_change_subj),
      ?MAKE_CONFIG_OPT(allow_query_users),
      ?MAKE_CONFIG_OPT(allow_private_messages),
-     ?MAKE_CONFIG_OPT(allow_visitor_presence),
+     ?MAKE_CONFIG_OPT(allow_visitor_status),
      ?MAKE_CONFIG_OPT(allow_visitor_nickchange),
      ?MAKE_CONFIG_OPT(public),
      ?MAKE_CONFIG_OPT(public_list),
