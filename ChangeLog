@@ -1,3 +1,10 @@
+2008-07-23  Geoff Cant  <geoff.cant@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: new room options,
+	allow_visitor_presence and allow_visitor_nickchange to
+	block/enable visitors to broadcast presence updates to the room
+	(EJAB-624).
+
 2008-07-23  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: remove_user hook removes
