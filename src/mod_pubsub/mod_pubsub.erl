@@ -2013,7 +2013,8 @@ get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, A
 	  roster_get_jid_info, OwnerServer,
 	  {none, []},
 	  [OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, ""}]),
-    PresenceSubscription = (Subscription == both) orelse (Subscription == from),
+    PresenceSubscription = (Subscription == both) orelse (Subscription == from)
+			    orelse ({OwnerUser, OwnerServer} == {SubscriberUser, SubscriberServer}),
     RosterGroup = lists:any(fun(Group) ->
 				    lists:member(Group, AllowedGroups)
 			    end, Groups),
