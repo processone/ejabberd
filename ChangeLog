@@ -1,3 +1,9 @@
+2008-07-24  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document room options allow_visitor_nickchange
+	and allow_visitor_status (EJAB-624)
+	* doc/guide.html: Likewise
+
 2008-07-23  Geoff Cant  <geoff.cant@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: new room options,
