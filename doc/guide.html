@@ -2005,6 +2005,12 @@ The available room options and the default values are:
 </DD><DT CLASS="dt-description"><B><TT>{allow_private_messages, true}</TT></B></DT><DD CLASS="dd-description"> Occupants can send private messages to other occupants.
 </DD><DT CLASS="dt-description"><B><TT>{allow_query_users, true}</TT></B></DT><DD CLASS="dd-description"> Occupants can send IQ queries to other occupants.
 </DD><DT CLASS="dt-description"><B><TT>{allow_user_invites, false}</TT></B></DT><DD CLASS="dd-description"> Allow occupants to send invitations.
+</DD><DT CLASS="dt-description"><B><TT>{allow_visitor_nickchange, true}</TT></B></DT><DD CLASS="dd-description"> Allow visitors to
+change nickname.
+</DD><DT CLASS="dt-description"><B><TT>{allow_visitor_status, true}</TT></B></DT><DD CLASS="dd-description"> Allow visitors to send
+status text in presence updates. If disallowed, the <TT>status</TT>
+text is stripped before broadcasting the presence update to all
+the room occupants.
 </DD><DT CLASS="dt-description"><B><TT>{anonymous, true}</TT></B></DT><DD CLASS="dd-description"> Occupants are allowed to see the real JIDs of other occupants.
 </DD><DT CLASS="dt-description"><B><TT>{logging, false}</TT></B></DT><DD CLASS="dd-description"> The public messages are logged using <TT>mod_muc_log</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{max_users, 200}</TT></B></DT><DD CLASS="dd-description"> Maximum number of occupants in the room.

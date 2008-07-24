@@ -2467,6 +2467,12 @@ Module options:
   \titem{\{allow\_private\_messages, true\}} Occupants can send private messages to other occupants.
   \titem{\{allow\_query\_users, true\}} Occupants can send IQ queries to other occupants.
   \titem{\{allow\_user\_invites, false\}} Allow occupants to send invitations.
+  \titem{\{allow\_visitor\_nickchange, true\}} Allow visitors to
+  change nickname.
+  \titem{\{allow\_visitor\_status, true\}} Allow visitors to send
+  status text in presence updates.  If disallowed, the \term{status}
+  text is stripped before broadcasting the presence update to all
+  the room occupants.
   \titem{\{anonymous, true\}} Occupants are allowed to see the real JIDs of other occupants.
   \titem{\{logging, false\}} The public messages are logged using \term{mod\_muc\_log}.
   \titem{\{max\_users, 200\}} Maximum number of occupants in the room.
