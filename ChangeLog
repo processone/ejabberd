@@ -1,3 +1,8 @@
+2008-07-23  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Allow owner to subscribe/get its own
+	node (EJAB-705)
+
 2008-07-24  Badlop  <badlop@process-one.net>
 
 	* src/Makefile.in: Support for parallel compilation with 'make -j'
