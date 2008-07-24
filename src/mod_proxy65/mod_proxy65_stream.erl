@@ -172,7 +172,7 @@ wait_for_request(Packet, #state{socket=Socket} = StateData) ->
 	    case catch mod_proxy65_sm:register_stream(SHA1) of
 		{atomic, ok} ->
 		    inet:setopts(Socket, [{active, false}]),
-		    gen_tcp:send(Socket, mod_proxy65_lib:make_reply()),
+		    gen_tcp:send(Socket, mod_proxy65_lib:make_reply(Request)),
 		    {next_state, wait_for_activation, StateData#state{sha1=SHA1}};
 		_ ->
 		    Err = mod_proxy65_lib:make_error_reply(Request),

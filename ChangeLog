@@ -1,5 +1,10 @@
 2008-07-24  Badlop  <badlop@process-one.net>
 
+	* src/mod_proxy65/mod_proxy65_lib.erl: Send protocol compliant
+	SOCKS5 reply; this breaks support of uncompliant Psi<0.10 (thanks
+	to Felix Geyer)(EJAB-632)
+	* src/mod_proxy65/mod_proxy65_stream.erl: Likewise
+
 	* src/mod_register.erl: When a registration is blocked due to IP
 	limitation, return description in error stanza (EJAB-692)
 	
