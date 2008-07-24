@@ -1140,8 +1140,14 @@ version, you can \term{kill(1)} \term{epam} process periodically to reduce its m
 consumption: \ejabberd{} will restart this process immediately.
 \item \term{epam} program tries to turn off delays on authentication failures.
 However, some PAM modules ignore this behavior and rely on their own configuration options.
-The example configuration file \term{ejabberd.pam} shows how to turn off delays in
-\term{pam\_unix.so} module. It is not a ready to use configuration file: you must use it
+You can create a configuration file \term{ejabberd.pam}.
+This example shows how to turn off delays in \term{pam\_unix.so} module:
+\begin{verbatim}
+#%PAM-1.0
+auth        sufficient  pam_unix.so likeauth nullok nodelay
+account     sufficient  pam_unix.so
+\end{verbatim}
+That is not a ready to use configuration file: you must use it
 as a hint when building your own PAM configuration instead. Note that if you want to disable
 delays on authentication failures in the PAM configuration file, you have to restrict access
 to this file, so a malicious user can't use your configuration to perform brute-force

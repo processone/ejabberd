@@ -1,5 +1,9 @@
 2008-07-24  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Include example PAM configuration file
+	ejabberd.pam (thanks to Evgeniy Khramtsov)(EJAB-704)
+	* doc/guide.html: Likewise
+
 	* src/mod_proxy65/mod_proxy65_lib.erl: Send protocol compliant
 	SOCKS5 reply; this breaks support of uncompliant Psi<0.10 (thanks
 	to Felix Geyer)(EJAB-632)

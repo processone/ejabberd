@@ -959,8 +959,12 @@ version, you can <TT>kill(1)</TT> <TT>epam</TT> process periodically to reduce i
 consumption: <TT>ejabberd</TT> will restart this process immediately.
 </LI><LI CLASS="li-itemize"><TT>epam</TT> program tries to turn off delays on authentication failures.
 However, some PAM modules ignore this behavior and rely on their own configuration options.
-The example configuration file <TT>ejabberd.pam</TT> shows how to turn off delays in
-<TT>pam_unix.so</TT> module. It is not a ready to use configuration file: you must use it
+You can create a configuration file <TT>ejabberd.pam</TT>.
+This example shows how to turn off delays in <TT>pam_unix.so</TT> module:
+<PRE CLASS="verbatim">#%PAM-1.0
+auth        sufficient  pam_unix.so likeauth nullok nodelay
+account     sufficient  pam_unix.so
+</PRE>That is not a ready to use configuration file: you must use it
 as a hint when building your own PAM configuration instead. Note that if you want to disable
 delays on authentication failures in the PAM configuration file, you have to restrict access
 to this file, so a malicious user can&#X2019;t use your configuration to perform brute-force
