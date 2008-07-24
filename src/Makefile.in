@@ -51,7 +51,9 @@ exec_prefix = @exec_prefix@
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @pam@ @web@ stringprep @tls@ @odbc@ @ejabberd_zlib@
 ERLSHLIBS = expat_erl.so
 ERLBEHAVS = cyrsasl.erl gen_mod.erl p1_fsm.erl
-SOURCES = $(ERLBEHAVS) $(wildcard *.erl)
+SOURCES_ALL = $(wildcard *.erl)
+SOURCES = $(filter-out $(ERLBEHAVS),$(SOURCES_ALL))
+ERLBEHAVBEAMS = $(ERLBEHAVS:.erl=.beam)
 BEAMS = $(SOURCES:.erl=.beam)
 
 DESTDIR =
@@ -76,7 +78,11 @@ endif
 
 all: $(ERLSHLIBS) compile-beam all-recursive
 
-compile-beam: XmppAddr.hrl $(BEAMS)
+compile-beam: XmppAddr.hrl $(ERLBEHAVBEAMS) $(BEAMS)
+
+$(BEAMS): $(ERLBEHAVBEAMS)
+
+all-recursive: $(ERLBEHAVBEAMS)
 
 %.beam:       %.erl
 	@ERLC@ -W $(ERLC_FLAGS) $<

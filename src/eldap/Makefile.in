@@ -22,6 +22,8 @@ BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
 all:    $(BEAMS) ELDAPv3.beam
 
+ELDAPv3.beam: ELDAPv3.erl
+
 ELDAPv3.erl:       ELDAPv3.asn
 	@ERLC@ -bber_bin -W $(EFLAGS) $<
 

@@ -1,5 +1,12 @@
 2008-07-24  Badlop  <badlop@process-one.net>
 
+	* src/Makefile.in: Support for parallel compilation with 'make -j'
+	in multi core CPUs: fix compilation dependencies; compile
+	behaviors before other source code (EJAB-697)(thanks to Jonathan
+	Schleifer)
+	* src/mod_pubsub/Makefile.in: Likewise
+	* src/eldap/Makefile.in: Likewise
+
 	* doc/guide.tex: Document room options allow_visitor_nickchange
 	and allow_visitor_status (EJAB-624)
 	* doc/guide.html: Likewise
