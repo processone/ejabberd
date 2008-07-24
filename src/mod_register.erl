@@ -167,7 +167,7 @@ process_iq(From, To,
 			    IQ#iq{type = result, sub_el = [SubEl]};
 			_ ->
 			    case try_register(User, Server, Password,
-					      Source) of
+					      Source, Lang) of
 				ok ->
 				    IQ#iq{type = result, sub_el = [SubEl]};
 				{error, Error} ->
@@ -195,7 +195,7 @@ process_iq(From, To,
     end.
 
 
-try_register(User, Server, Password, Source) ->
+try_register(User, Server, Password, Source, Lang) ->
     case jlib:is_nodename(User) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
@@ -229,7 +229,9 @@ try_register(User, Server, Password, Source) ->
 				    end
 			    end;
 			false ->
-			    {error, ?ERR_RESOURCE_CONSTRAINT}
+			    ErrText = "Users are not allowed to register "
+				"accounts so fast",
+			    {error, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)}
 		    end
 	    end
     end.
