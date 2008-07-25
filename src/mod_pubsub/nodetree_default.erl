@@ -70,8 +70,7 @@
 init(_Host, _ServerHost, _Opts) ->
     mnesia:create_table(pubsub_node,
 			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, pubsub_node)},
-			 {index, [type,parentid]}]),
+			 {attributes, record_info(fields, pubsub_node)}]),
     NodesFields = record_info(fields, pubsub_node),
     case mnesia:table_info(pubsub_node, attributes) of
 	[host_node, host_parent, info] -> ok;  % old schema, updated later by pubsub
@@ -114,7 +113,7 @@ get_nodes(Key) ->
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 get_subnodes(Host, Node) ->
-    mnesia:index_read(pubsub_node, {Host, Node}, #pubsub_node.parentid).
+    mnesia:match_object(#pubsub_node{parentid = {Host, Node}, _ = '_'}).
 
 %% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host()

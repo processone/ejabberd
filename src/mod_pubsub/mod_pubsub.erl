@@ -286,8 +286,7 @@ update_database(Host) ->
 			mnesia:delete_table(pubsub_node),
 			mnesia:create_table(pubsub_node,
 					    [{disc_copies, [node()]},
-					     {attributes, record_info(fields, pubsub_node)},
-					     {index, [type, parentid]}]),
+					     {attributes, record_info(fields, pubsub_node)}]),
 			lists:foreach(fun(Record) ->
 					      mnesia:write(Record)
 				      end, NewRecords)
