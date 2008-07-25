@@ -1,3 +1,9 @@
+2008-07-25  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Speedup startup with many pubsub
+	nodes (EJAB-669)
+	* src/mod_pubsub/nodetree_default.erl: Likewise
+
 2008-07-24  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Include example PAM configuration file
