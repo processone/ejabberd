@@ -1,3 +1,8 @@
+2008-07-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/adhoc.erl, src/mod_configure.erl, src/mod_announce.erl,
+	src/mod_adhoc.erl, src/gen_iq_handler.erl: Convert to exmpp.
+
 2008-07-22  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_disco.erl, src/gen_iq_handler.erl: Convert to exmpp.

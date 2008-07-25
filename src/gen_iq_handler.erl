@@ -59,7 +59,10 @@
 % XXX OLD FORMAT: modules not in the following list will receive
 % old format strudctures.
 -define(CONVERTED_MODULES, [
+  mod_adhoc,
+  mod_annouce,
   mod_caps,
+  mod_configure,
   mod_disco,
   mod_roster,
   mod_vcard

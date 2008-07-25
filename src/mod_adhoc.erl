@@ -42,16 +42,17 @@
 	 ping_item/4,
 	 ping_command/4]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("adhoc.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
 
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ADHOC_s,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_COMMANDS,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ADHOC_s,
 				  ?MODULE, process_sm_iq, IQDisc),
     
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, get_local_identity, 99),
@@ -73,12 +74,12 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 99),
     ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 99),
 
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_COMMANDS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ADHOC_s),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ADHOC_s).
 
 %-------------------------------------------------------------------------
 
-get_local_commands(Acc, _From, #jid{server = Server, lserver = LServer} = _To, "", Lang) ->
+get_local_commands(Acc, _From, #jid{domain = Server, ldomain = LServer} = _To, "", Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE, report_commands_node, false),
     case Display of
 	false ->
@@ -88,17 +89,20 @@ get_local_commands(Acc, _From, #jid{server = Server, lserver = LServer} = _To, "
 			{result, I} -> I;
 			_ -> []
 		    end,
-	    Nodes = [{xmlelement,
-		      "item",
-		      [{"jid", Server},
-		       {"node", ?NS_COMMANDS},
-		       {"name", translate:translate(Lang, "Commands")}],
-		      []}],
+	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS,
+		      name = 'item', attrs =
+		      [#xmlattr{name = 'jid', value = Server},
+		       #xmlattr{name = 'node', value = ?NS_ADHOC_s},
+                       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]
+		      }],
 	    {result, Items ++ Nodes}
     end;
 
-get_local_commands(_Acc, From, #jid{lserver = LServer} = To, ?NS_COMMANDS, Lang) ->
-    ejabberd_hooks:run_fold(adhoc_local_items, LServer, {result, []}, [From, To, Lang]);
+get_local_commands(_Acc, From, #jid{ldomain = LServer} = To, ?NS_ADHOC_s, Lang) ->
+    % XXX OLD FORMAT: From, To.
+    FromOld = jlib:to_old_jid(From),
+    ToOld = jlib:to_old_jid(To),
+    ejabberd_hooks:run_fold(adhoc_local_items, LServer, {result, []}, [FromOld, ToOld, Lang]);
 
 get_local_commands(_Acc, _From, _To, "ping", _Lang) ->
     {result, []};
@@ -108,7 +112,7 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
 
 %-------------------------------------------------------------------------
 
-get_sm_commands(Acc, _From, #jid{lserver = LServer} = To, "", Lang) ->
+get_sm_commands(Acc, _From, #jid{ldomain = LServer} = To, "", Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE, report_commands_node, false),
     case Display of
 	false ->
@@ -118,17 +122,20 @@ get_sm_commands(Acc, _From, #jid{lserver = LServer} = To, "", Lang) ->
 			{result, I} -> I;
 			_ -> []
 		    end,
-	    Nodes = [{xmlelement,
-		      "item",
-		      [{"jid", jlib:jid_to_string(To)},
-		       {"node", ?NS_COMMANDS},
-		       {"name", translate:translate(Lang, "Commands")}],
-		      []}],
+	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS,
+		      name = 'item', attrs =
+		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_string(To)},
+		       #xmlattr{name = 'node', value = ?NS_ADHOC_s},
+		       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]
+		      }],
 	    {result, Items ++ Nodes}
     end;
 
-get_sm_commands(_Acc, From, #jid{lserver = LServer} = To, ?NS_COMMANDS, Lang) ->
-    ejabberd_hooks:run_fold(adhoc_sm_items, LServer, {result, []}, [From, To, Lang]);
+get_sm_commands(_Acc, From, #jid{ldomain = LServer} = To, ?NS_ADHOC_s, Lang) ->
+    % XXX OLD FORMAT: From, To.
+    FromOld = jlib:to_old_jid(From),
+    ToOld = jlib:to_old_jid(To),
+    ejabberd_hooks:run_fold(adhoc_sm_items, LServer, {result, []}, [FromOld, ToOld, Lang]);
 
 get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -136,17 +143,17 @@ get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
 %-------------------------------------------------------------------------
 
 %% On disco info request to the ad-hoc node, return automation/command-list.
-get_local_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
-    [{xmlelement, "identity",
-      [{"category", "automation"},
-       {"type", "command-list"},
-       {"name", translate:translate(Lang, "Commands")}], []} | Acc];
+get_local_identity(Acc, _From, _To, ?NS_ADHOC_s, Lang) ->
+    [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
+      [#xmlattr{name = 'category', value = "automation"},
+       #xmlattr{name = 'type', value = "command-list"},
+       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]} | Acc];
 
 get_local_identity(Acc, _From, _To, "ping", Lang) ->
-    [{xmlelement, "identity",
-      [{"category", "automation"},
-       {"type", "command-node"},
-       {"name", translate:translate(Lang, "Ping")}], []} | Acc];
+    [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
+      [#xmlattr{name = 'category', value = "automation"},
+       #xmlattr{name = 'type', value = "command-node"},
+       #xmlattr{name = 'name', value = translate:translate(Lang, "Ping")}]} | Acc];
 
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -154,11 +161,11 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 %-------------------------------------------------------------------------
 
 %% On disco info request to the ad-hoc node, return automation/command-list.
-get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
-    [{xmlelement, "identity",
-      [{"category", "automation"},
-       {"type", "command-list"},
-       {"name", translate:translate(Lang, "Commands")}], []} | Acc];
+get_sm_identity(Acc, _From, _To, ?NS_ADHOC_s, Lang) ->
+    [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
+      [#xmlattr{name = 'category', value = "automation"},
+       #xmlattr{name = 'type', value = "command-list"},
+       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]} | Acc];
 
 get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -170,15 +177,15 @@ get_local_features(Acc, _From, _To, "", _Lang) ->
 		{result, I} -> I;
 		_ -> []
 	    end,
-    {result, Feats ++ [?NS_COMMANDS]};
+    {result, Feats ++ [?NS_ADHOC_s]};
 
-get_local_features(_Acc, _From, _To, ?NS_COMMANDS, _Lang) ->
+get_local_features(_Acc, _From, _To, ?NS_ADHOC_s, _Lang) ->
     %% override all lesser features...
     {result, []};
 
 get_local_features(_Acc, _From, _To, "ping", _Lang) ->
     %% override all lesser features...
-    {result, [?NS_COMMANDS]};
+    {result, [?NS_ADHOC_s]};
 
 get_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -190,9 +197,9 @@ get_sm_features(Acc, _From, _To, "", _Lang) ->
 		{result, I} -> I;
 		_ -> []
 	    end,
-    {result, Feats ++ [?NS_COMMANDS]};
+    {result, Feats ++ [?NS_ADHOC_s]};
 
-get_sm_features(_Acc, _From, _To, ?NS_COMMANDS, _Lang) ->
+get_sm_features(_Acc, _From, _To, ?NS_ADHOC_s, _Lang) ->
     %% override all lesser features...
     {result, []};
 
@@ -209,39 +216,41 @@ process_sm_iq(From, To, IQ) ->
     process_adhoc_request(From, To, IQ, adhoc_sm_commands).
 
 
-process_adhoc_request(From, To, #iq{sub_el = SubEl} = IQ, Hook) ->
+process_adhoc_request(From, To, IQ, Hook) ->
     ?DEBUG("About to parse ~p...", [IQ]),
     case adhoc:parse_request(IQ) of
 	{error, Error} ->
-	    IQ#iq{type = error, sub_el = [SubEl, Error]};
+            exmpp_iq:error(IQ, Error);
 	#adhoc_request{} = AdhocRequest ->
-	    Host = To#jid.lserver,
+	    Host = To#jid.ldomain,
+            % XXX OLD FORMAT: From, To.
+            FromOld = jlib:to_old_jid(From),
+            ToOld = jlib:to_old_jid(To),
 	    case ejabberd_hooks:run_fold(Hook, Host, empty,
-					 [From, To, AdhocRequest]) of
+					 [FromOld, ToOld, AdhocRequest]) of
 		ignore ->
 		    ignore;
 		empty ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
+                    exmpp_iq:error(IQ, 'item-not-found');
 		{error, Error} ->
-		    IQ#iq{type = error, sub_el = [SubEl, Error]};
+                    exmpp_iq:error(IQ, Error);
 		Command ->
-		    IQ#iq{type = result, sub_el = [Command]}
+                    exmpp_iq:result(IQ, Command)
 	    end
     end.
 
 
-ping_item(Acc, _From, #jid{server = Server} = _To, Lang) ->
+ping_item(Acc, _From, #jid{domain = Server} = _To, Lang) ->
     Items = case Acc of
 		{result, I} ->
 		    I;
 		_ ->
 		    []
 	    end,
-    Nodes = [{xmlelement, "item",
-	      [{"jid", Server},
-	       {"node", "ping"},
-	       {"name", translate:translate(Lang, "Ping")}],
-	      []}],
+    Nodes = [#xmlel{ns = ?NS_DISCO_INFO, name = 'item', attrs =
+	      [#xmlattr{name = 'jid', value = Server},
+	       #xmlattr{name = 'node', value = "ping"},
+	       #xmlattr{name = 'name', value = translate:translate(Lang, "Ping")}]}],
     {result, Items ++ Nodes}.
 
 
@@ -259,7 +268,7 @@ ping_command(_Acc, _From, _To,
 						  Lang,
 						  "Pong")}]});
 	true ->
-	    {error, ?ERR_BAD_REQUEST}
+	    {error, 'bad-request'}
     end;
 
 ping_command(Acc, _From, _To, _Request) ->
