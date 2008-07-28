@@ -1,3 +1,9 @@
+2008-07-28  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Add 'description' to the
+	mod_muc_room config record; it will be used in ejabberd 2.1.x
+	branch (EJAB-670)
+
 2008-07-25  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Speedup startup with many pubsub

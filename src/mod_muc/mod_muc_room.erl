@@ -59,6 +59,7 @@
 -record(lqueue, {queue, len, max}).
 
 -record(config, {title = "",
+		 description = "",
 		 allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
