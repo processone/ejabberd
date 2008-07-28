@@ -1,3 +1,9 @@
+2008-07-28  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document how to get error message when ejabberd
+	crash dumps at start (EJAB-660)
+	* doc/guide.html: Likewise
+
 2008-07-25  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Speedup startup with many pubsub
