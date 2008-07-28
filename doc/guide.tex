@@ -241,6 +241,14 @@ On a *nix system, if you want ejabberd to be started as daemon at boot time,
 copy \term{ejabberd.init} from the 'bin' directory to something like \term{/etc/init.d/ejabberd}
 (depending on your distribution) and call \term{/etc/inid.d/ejabberd start} to start it.
 
+If \term{ejabberd} doesn't start correctly and a crash dump is generated,
+there was a severe problem.
+You can try starting \term{ejabberd} with
+the script \term{bin/live.bat} in Windows,
+or with the command \term{bin/ejabberdctl live} in other Operating Systems.
+This way you see the error message provided by Erlang
+and can identify what is exactly the problem.
+
 The \term{ejabberdctl} administration script is included in the \term{bin} directory.
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
@@ -395,6 +403,13 @@ ejabberd is running
 
 ejabberdctl stop
 \end{verbatim}
+
+If \term{ejabberd} doesn't start correctly and a crash dump is generated,
+there was a severe problem.
+You can try starting \term{ejabberd} with
+the command \term{ejabberdctl live}
+to see the error message provided by Erlang
+and can identify what is exactly the problem.
 
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.

@@ -1,5 +1,9 @@
 2008-07-28  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Document how to get error message when ejabberd
+	crash dumps at start (EJAB-660)
+	* doc/guide.html: Likewise
+
 	* src/mod_muc/mod_muc_room.erl: Add 'description' to the
 	mod_muc_room config record; it will be used in ejabberd 2.1.x
 	branch (EJAB-670)
