@@ -79,6 +79,7 @@
 {"Import Directory", "Importar directorio"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Los usuarios no tienen permitido crear cuentas con tanta rapidez"}.
 {"Choose a username and password to register with this server", "Escoge un nombre de usuario y contraseña para registrarte en este servidor"}.
 
 % mod_vcard.erl
@@ -106,8 +107,9 @@
 {"Organization Unit", "Unidad de la organización"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Un nombre sencillo para el nodo"}.
 {"Roster groups allowed to subscribe", "Grupos de contactos que pueden suscribirse"}.
-{"Deliver payloads with event notifications", "Enviar payloads junto con las notificaciones de eventos"}.
+{"Deliver payloads with event notifications", "Enviar contenidos junto con las notificaciones de eventos"}.
 {"Notify subscribers when the node configuration changes", "Notificar subscriptores cuando cambia la configuración del nodo"}.
 {"Notify subscribers when the node is deleted", "Notificar subscriptores cuando el nodo se borra"}.
 {"Notify subscribers when items are removed from the node", "Notificar subscriptores cuando los elementos se borran del nodo"}.
@@ -115,7 +117,7 @@
 {"Max # of items to persist", "Máximo # de elementos que persisten"}.
 {"Whether to allow subscriptions", "Permitir subscripciones"}.
 {"Specify the publisher model", "Especificar el modelo del publicante"}.
-{"Max payload size in bytes", "Máximo tamaño del payload en bytes"}.
+{"Max payload size in bytes", "Máximo tamaño del contenido en bytes"}.
 {"Only deliver notifications to available users", "Solo enviar notificaciones a los usuarios disponibles"}.
 {"Publish-Subscribe", "Servicio de Publicar-Subscribir"}.
 {"ejabberd Publish-Subscribe module", "Módulo de Publicar-Subscribir de ejabberd"}.
@@ -142,6 +144,10 @@
 {"Chatrooms", "Salas de charla"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "No está permitido enviar mensajes privados"}.
+{"Visitors are not allowed to change their nicknames in this room", "Los visitantes no tienen permitido cambiar sus apodos en esta sala"}.
+{"Allow visitors to send status text in presence updates", "Permitir a los visitantes enviar texto de estado en las actualizaciones de presencia"}.
+{"Allow visitors to change nickname", "Permitir a los visitantes cambiarse el apodo"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Este participante ha sido expulsado de la sala porque envió un mensaje de error a otro participante"}.
 {"This participant is kicked from the room because he sent an error message", "Este participante ha sido expulsado de la sala porque envió un mensaje de error"}.
 {"This participant is kicked from the room because he sent an error presence", "Este participante ha sido expulsado de la sala porque envió una presencia de error"}.

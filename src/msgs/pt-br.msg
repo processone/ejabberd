@@ -78,6 +78,7 @@
 {"To ~s", "Para ~s"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Usuários ainda não podem registrar novas contas"}.
 {"Choose a username and password to register with this server", "Escolha um nome de usuário e senha para registrar-se neste servidor"}.
 
 % mod_vcard.erl
@@ -100,6 +101,7 @@
 {"You need an x:data capable client to search", "Necessitas um cliente com suporte de x:data para poder buscar"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Um nome familiar para o nó"}.
 {"Publish-Subscribe", "Publicação de Tópico"}.
 {"ejabberd Publish-Subscribe module", "Módulo para Publicar Tópicos do ejabberd"}.
 {"PubSub subscriber request", "PubSub requisição de assinante"}.
@@ -140,6 +142,10 @@
 {"You need an x:data capable client to register nickname", "Necessitas um cliente com suporte de x:data para poder registrar o nick"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "Não é permitido enviar mensagens privadas"}.
+{"Visitors are not allowed to change their nicknames in this room", "Nesta sala, os visitantes não pode mudar seus apelidos"}.
+{"Allow visitors to send status text in presence updates", "Permitir atualizações de status aos visitantes"}.
+{"Allow visitors to change nickname", "Permitir mudança de apelido aos visitantes"}.
 {"Traffic rate limit is exceeded", "Limite de banda excedido"}.
 {"This participant is kicked from the room because he sent an error message", "Este participante foi desconectado da sala de chat por ter enviado uma mensagem de erro."}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Este participante foi desconectado da sala de chat por ter enviado uma mensagem de erro para outro usuário."}.

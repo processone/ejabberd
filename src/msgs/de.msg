@@ -1,7 +1,7 @@
 % $Id$
 % Language: German (deutsch)
-% Author: Cord Beermann
 % Author: Nikolaus Polak
+% Author: Cord Beermann
 % Author: Marvin Preuss
 % Author: Patrick Dreker
 % Author: Torsten Werner
@@ -19,6 +19,7 @@
 {"Offline Messages:", "Offline Nachrichten:"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Benutzer dürfen Konten nicht so schnell registrieren"}.
 {"Choose a username and password to register with this server", "Wählen Sie zum Registrieren einen Benutzernamen und ein Passwort"}.
 
 % mod_roster_odbc.erl
@@ -86,6 +87,7 @@
 {"Replaced by new connection", "Durch neue Verbindung ersetzt"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Ein passender Name für den Knoten"}.
 {"Roster groups allowed to subscribe", "Kontaktlisten-Gruppen die abonnieren dürfen"}.
 {"Publish-Subscribe", "Publish-Subscribe"}.
 {"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe Modul"}.
@@ -317,7 +319,7 @@
 {"Only service administrators are allowed to send service messages", "Nur Service Administratoren sind berechtigt, Servicenachrichten zu senden"}.
 {"Room creation is denied by service policy", "Anlegen des Raumes aufgrund der Dienstrichtlinien verweigert"}.
 {"Conference room does not exist", "Konferenzraum existiert nicht"}.
-{"Chatrooms", "Raum"}.
+{"Chatrooms", "Chaträume"}.
 {"You need an x:data capable client to register nickname", "Sie benötigen einen Client, der x:data unterstützt, um Ihren Spitznamen zu registrieren"}.
 {"Nickname Registration at ", "Registrieren des Spitznamens "}.
 {"Enter nickname you want to register", "Geben Sie den zu registrierenden Spitznamen ein"}.
@@ -326,6 +328,10 @@
 {"ejabberd MUC module", "ejabberd MUC Modul"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "Es ist nicht erlaubt private Nachrichten zu senden"}.
+{"Visitors are not allowed to change their nicknames in this room", "Besucher dürfen in diesem Raum ihren Spitznamen nicht ändern"}.
+{"Allow visitors to send status text in presence updates", "Erlaube Besuchern einen Text bei Statusänderung zu setzen"}.
+{"Allow visitors to change nickname", "Erlaube Besuchern ihren Spitznamen zu ändern"}.
 {"This participant is kicked from the room because he sent an error message", "Dieser Teilnehmer wurde aus dem Raum gekickt, da er eine Fehlernachricht gesendet hat"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Dieser Teilnehmer wurde aus dem Raum gekickt, da er eine Fehlernachricht an einen anderen Teilnehmer gesendet hat"}.
 {"This participant is kicked from the room because he sent an error presence", "Dieser Teilnehmer wurde aus dem Raum gekickt, da er einen fehlerhaften Status gesendet hat"}.

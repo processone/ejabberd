@@ -40,7 +40,6 @@
 {"Import Users From jabberd 1.4 Spool Files", "Sititchî des uzeus Jabberd 1.4"}.
 {"Database Tables Configuration at ", "Apontiaedje des tåves del båze di dnêyes so "}.
 {"Change User Password", "Candjî l' sicret d' l' uzeu"}.
-% mod_configure.erl
 {"Get User Last Login Time", "Riçure li date/eure do dierin elodjaedje di l' uzeu"}.
 {"Get User Statistics", "Riçure les statistikes di l' uzeu"}.
 {"Get Number of Registered Users", "Riçure li nombe d' uzeus edjîstrés"}.
@@ -80,6 +79,7 @@
 {"Import Directory", "Sititchî d' on ridant"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Les noveas uzeus n' si polèt nén edjîstrer si raddimint"}.
 {"Choose a username and password to register with this server", "Tchoezixhoz on no d' uzeu eyet on scret po vs edjîstrer so ç' sierveu ci"}.
 
 % mod_vcard_ldap.erl
@@ -134,24 +134,37 @@
 {"Delete message of the day on all hosts", "Disfacer l' messaedje do djoû so tos les lodjoes"}.
 
 % mod_pubsub/mod_pubsub.erl
-{"ejabberd pub/sub module", "Module pub/sub ejabberd"}.
-{"Publish-Subscribe", "Eplaiaedje-abounmint"}.
-{"Node Creator", "Ahiveu do nuk"}.
+{"ejabberd Publish-Subscribe module", "Module d' eplaidaedje-abounmint po ejabberd"}.
+{"PubSub subscriber request", "Dimande d' eplaidaedje-abounmint d' èn abouné"}.
+{"Choose whether to approve this entity's subscription.", "Tchoezi s' i fåt aprover ou nén l' abounmint di ciste intité."}.
+{"Node ID", "ID d' nuk"}.
+{"Subscriber Address", "Adresse di l' abouné"}.
+{"Allow this JID to subscribe to this pubsub node?", "Permete ki ci JID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"}.
+{"Deliver payloads with event notifications", "Evoyî l' contnou avou les notifiaedjes d' evenmints"}.
+{"Deliver event notifications", "Evoyî des notifiaedjes d' evenmints"}.
+{"Persist items to storage", "Cayets permanints a wårder"}.
+{"A friendly name for the node", "On no uzeu-ahessåve pol nuk"}.
+{"Max # of items to persist", "Nombe macsimoms di cayets permanints"}.
+{"Specify the access model", "Sipecifyî l' modele d' accès"}.
+{"Roster groups allowed to subscribe", "Pårtaedjîs groupes di soçons k' on s' î pout abouner"}.
+{"Max payload size in bytes", "Contnou macsimom en octets"}.
+{"When to send the last published item", "Cwand evoyî l' dierin cayet eplaidî"}.
+{"Publish-Subscribe", "Eplaidaedje-abounmint"}.
 {"Notify subscribers when the node configuration changes", "Notifyî åzès abounés cwand l' apontiaedje do nuk candje"}.
 {"Notify subscribers when the node is deleted", "Notifyî åzès abounés cwand l' nuk est disfacé"}.
 {"Notify subscribers when items are removed from the node", "Notifyî åzès abounés cwand des cayets sont oisté foû do nuk"}.
 {"Whether to allow subscriptions", "Si on permete les abounmints"}.
-{"Specify the subscriber model", "Dinez l' modele d' abouné"}.
 {"Specify the publisher model", "Dinez l' modele d' eplaideu"}.
-{"Send items to new subscribers", "Evoyî des cayets åzès noveas abounés"}.
 {"Only deliver notifications to available users", "Seulmint evoyî des notifiaedje åzès uzeus disponibes"}.
-{"Specify the current subscription approver", "Diner l' asproveu d' abounmints pol moumint"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "a stî pité evoye cåze d' on candjmint d' afiyaedje"}.
+{"has been kicked because the room has been changed to members-only", "a stî pité evoye cåze ki l' såle a stî ristrindowe åzès mimbes seulmint"}.
+{"has been kicked because of a system shutdown", "a stî pité evoye cåze d' èn arestaedje do sistinme"}.
 {"Chatroom configuration modified", "L' apontiaedje del såle di berdelaedje a candjî"}.
 {"joins the room", "arive sol såle"}.
 {"leaves the room", "cwite li såle"}.
-{"has been kicked", "a stpi pité evoye"}.
+{"has been kicked", "a stî pité evoye"}.
 {"has been banned", "a stî bani"}.
 {"is now known as", "est asteure kinoxhou come"}.
 {"Monday", "londi"}.
@@ -189,6 +202,16 @@
 {"You must fill in field \"Nickname\" in the form", "Vos dvoz rimpli l' tchamp «Metou no» dins l' formiulaire"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî on messaedje d' aroke"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî on messaedje d' aroke a èn ôte pårticipant"}.
+{"It is not allowed to send private messages", "Ci n' est nén permetou d' evoyî des messaedjes privés"}.
+{"This participant is kicked from the room because he sent an error presence", "Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî ene aroke di prezince"}.
+{"Visitors are not allowed to change their nicknames in this room", "Les viziteus èn polèt nén candjî leus metous no po ç' såle ci"}.
+{"Invalid affiliation: ~s", "Afiyaedje nén valide: ~s"}.
+{"Make room persistent", "Rinde li såle permaninte"}.
+{"Allow visitors to send status text in presence updates", "Permete ki les viziteus evoyexhe des tecse d' estat dins leus messaedjes di prezince"}.
+{"Allow visitors to change nickname", "Permete ki les viziteus candjexhe leus metous nos"}.
+{"~s invites you to the room ~s", "~s vos preye sol såle ~s"}.
 {" has set the subject to: ", " a candjî l' tite a: "}.
 {"You need an x:data capable client to configure room", "I vs fåt on cliyint ki sopoite x:data por vos poleur apontyî l' såle"}.
 {"Configuration for ", "Apontiaedje po "}.
@@ -229,7 +252,6 @@ di conferince"}.
 {"Allow users to query other users", "Les uzeus polèt cweri ls ôtes uzeus"}.
 {"Allow users to send invites", "Les uzeus polèt evoyî priyaedjes"}.
 {"Enable logging", "Mete en alaedje li djournå"}.
-{"Description", "Discrijhaedje"}.
 {"Number of occupants", "Nombe di prezints"}.
 {"Present real JIDs to", "Mostrer les vraiys JIDs a"}.
 {"moderators only", "les moderateus seulmint"}.
@@ -238,7 +260,6 @@ di conferince"}.
 {"Improper message type", "Sôre di messaedje nén valide"}.
 {"Maximum Number of Occupants", "Nombe macsimom di prezints"}.
 {"No limit", "Pont d' limite"}.
-{"You have been invited to ~s by ~s", "Vos avoz stî proyî a ~s pa ~s"}.
 {"the password is", "li scret est"}.
 
 
@@ -254,11 +275,11 @@ di conferince"}.
 {"Encodings", "Ecôdaedjes"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "Manaedjeu waibe ejabberd"}.
 {"Administration", "Manaedjaedje"}.
 {"Users", "Uzeus"}.
 {"Nodes", "Nuks"}.
 {"Statistics", "Sitatistikes"}.
-{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd © 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"(Raw)", "(Dinêyes brutes)"}.
 {"Submitted", "Candjmints evoyîs"}.
 {"Bad format", "Mwais fôrmat"}.
@@ -339,7 +360,6 @@ di conferince"}.
 {"ejabberd virtual hosts", "Forveyous sierveus da ejabberd"}.
 {"Host", "Sierveu"}.
 {"No Data", "Nole dinêye disponibe"}.
-{"ejabberd Web Interface", "Ejabberd - Eterface waibe"}.
 {"Online Users:", "Uzeus raloyîs:"}.
 {"Outgoing s2s Connections:", "Raloyaedjes s2s e rexhowe:"}.
 {"Outgoing s2s Servers:", "Sierveus s2s e rexhowe:"}.

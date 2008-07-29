@@ -1,7 +1,7 @@
 % $Id$
 % Language: Italian (italiano)
-% Author: Smart2128
 % Author: Luca Brivio
+% Author: Smart2128
 
 % jlib.hrl
 {"No resource provided", "Nessuna risorsa fornita"}.
@@ -85,6 +85,7 @@
 {"Import Directory", "Importare una directory"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Non è consentito agli utenti registrare account così rapidamente"}.
 {"Choose a username and password to register with this server", "Scegliere un nome utente e una password per la registrazione con questo server"}.
 
 % src/mod_vcard_ldap.erl
@@ -134,6 +135,7 @@
 {"Delete message of the day", "Eliminare il messaggio del giorno (MOTD)"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Un nome comodo per il nodo"}.
 {"Roster groups allowed to subscribe", "Gruppi roster abilitati alla registrazione"}.
 {"Publish-Subscribe", "Pubblicazione-Iscrizione"}.
 {"ejabberd Publish-Subscribe module", "Modulo Pubblicazione/Iscrizione (PubSub) per ejabberd"}.
@@ -201,6 +203,10 @@
 {"You must fill in field \"Nickname\" in the form", "Si deve riempire il campo \"Nickname\" nel modulo"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "Non è consentito l'invio di messaggi privati"}.
+{"Visitors are not allowed to change their nicknames in this room", "Non è consentito ai visitatori cambiare il nickname in questa stanza"}.
+{"Allow visitors to send status text in presence updates", "Consentire ai visitatori l'invio di testo sullo stato in aggiornamenti sulla presenza"}.
+{"Allow visitors to change nickname", "Consentire ai visitatori di cambiare il nickname"}.
 {"This participant is kicked from the room because he sent an error message", "Partecipante espulso dalla stanza perché ha inviato un messaggio non valido"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Partecipante espulso dalla stanza perché ha inviato un messaggio non valido a un altro partecipante"}.
 {"This participant is kicked from the room because he sent an error presence", "Partecipante espulso dalla stanza perché ha inviato una presenza non valido"}.

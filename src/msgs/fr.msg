@@ -87,6 +87,7 @@
 {"Import Directory", "Importer une répertoire"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Les utilisateurs ne sont pas autorisés à enregistrer des comptes si rapidement"}.
 {"Choose a username and password to register with this server", "Choisissez un nom d'utilisateur et un mot de passe pour s'enregistrer sur ce serveur"}.
 
 % src/mod_vcard_ldap.erl
@@ -138,6 +139,7 @@
 
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Un nom convivial pour le noeud"}.
 {"Choose whether to approve this entity's subscription.", "Accepter cet abonnement ?"}.
 {"Roster groups allowed to subscribe", "Groupes de liste de contact autorisés à s'abonner"}.
 {"Deliver payloads with event notifications", "Inclure le contenu du message avec la notification"}.
@@ -206,6 +208,10 @@
 {"Chatrooms", "Salons de discussion"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "L'envoi de messages privés n'est pas autorisé"}.
+{"Visitors are not allowed to change their nicknames in this room", "Les visiteurs ne sont pas autorisés à changer de pseudo dans ce salon"}.
+{"Allow visitors to send status text in presence updates", "Autoriser les visiteurs à envoyer un message d'état avec leur présence"}.
+{"Allow visitors to change nickname", "Autoriser les visiteurs à changer de pseudo"}.
 {"This participant is kicked from the room because he sent an error message", "Ce participant est expulsé du salon pour avoir envoyé un message erroné"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Ce participant est expulsé du salon pour avoir envoyé un message erroné à un autre participant"}.
 {"This participant is kicked from the room because he sent an error presence", "Ce participant est expulsé du salon pour avoir envoyé une présence erroné"}.

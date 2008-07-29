@@ -84,6 +84,7 @@
 {"Import Directory", "Importer Katalog"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Brukere får ikke lov til å registrere kontoer så fort"}.
 {"Choose a username and password to register with this server", "Velg et brukernavn og passord for å registrere på denne serveren"}.
 
 % mod_vcard.erl
@@ -114,6 +115,7 @@
 {"Jabber ID", "Jabber ID"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Et vennlig navn for noden"}.
 {"Roster groups allowed to subscribe", "Kontaktliste grupper som tillates å abonnere"}.
 {"Publish-Subscribe", "Publish-Subscribe"}.
 {"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe modul"}.
@@ -151,6 +153,10 @@
 {"Specified nickname is already registered", "Dette kallenavnet er allerede registrert"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "Det er ikke tillatt å sende private meldinger"}.
+{"Visitors are not allowed to change their nicknames in this room", "Besøkende får ikke lov å endre kallenavn i dette rommet"}.
+{"Allow visitors to send status text in presence updates", "Tillat besøkende å sende status tekst i tilgjengelighets oppdateringer"}.
+{"Allow visitors to change nickname", "Tillat besøkende å endre kallenavn"}.
 {"This participant is kicked from the room because he sent an error message", "Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding til en annen deltaker"}.
 {"This participant is kicked from the room because he sent an error presence", "Denne deltakeren er kastet ut av rommet fordi han sendte feil tilstederværelse"}.

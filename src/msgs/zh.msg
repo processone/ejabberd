@@ -1,8 +1,8 @@
 % $Id$
 % Language: Chinese (中文)
+% Author: Shelley Shyan - skylarkbj AT 163 DOT com
 % Author: Mike Wang
 % Author: Zhan Caibao - zhancaibao AT gmail DOT com
-% Author: Shelley Shyan - skylarkbj AT 163 DOT com
 
 % jlib.hrl
 {"No resource provided", "无资源提供"}.
@@ -89,6 +89,7 @@
 {"Import Directory", "导入目录"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "不允许用户注册帐户太快"}.
 {"Choose a username and password to register with this server", "请选择在此服务器上注册所需的用户名和密码"}.
 
 % src/mod_vcard_ldap.erl
@@ -140,6 +141,7 @@
 {"Delete message of the day on all hosts", "删除当日所有主机上 的消息"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "该节点的友好名称"}.
 {"Roster groups allowed to subscribe", "允许订阅的花名册组"}.
 {"Publish-Subscribe", "发布-订阅"}.
 {"Deliver payloads with event notifications", "用事件通告传输有效负载"}.
@@ -207,6 +209,10 @@
 {"Chatrooms", "聊天室"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "不允许发送隐私消息"}.
+{"Visitors are not allowed to change their nicknames in this room", "此房间不允许用户更改其昵称"}.
+{"Allow visitors to send status text in presence updates", "更新在线状态时允许用户发送状态文本"}.
+{"Allow visitors to change nickname", "允许用户更改昵称"}.
 {"Make room moderated", "使房间处于监管状态"}.
 {"This participant is kicked from the room because he sent an error message", "该用户由于发生了错误而被踢出了聊天室"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "该用户由于给其他人发送了出错信息而被踢出了聊天室"}.

@@ -77,6 +77,7 @@
 {"Import Directory", "Import adresáře"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Je zakázáno registrovat účty v tak rychlém sledu"}.
 {"Choose a username and password to register with this server", "Zadejte jméno uživatele a heslo pro registraci na tomto serveru"}.
 
 % mod_vcard.erl
@@ -106,6 +107,10 @@
 {"Specified nickname is already registered", "Zadaná přezdívka je již zaregistrována"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "Je zakázáno posílat soukromé zprávy"}.
+{"Visitors are not allowed to change their nicknames in this room", "Návštěvníkům této místnosti je zakázáno měnit přezdívku"}.
+{"Allow visitors to send status text in presence updates", "Povolit návštěvníkům posílat stavové zprávy ve statusu"}.
+{"Allow visitors to change nickname", "Povolit návštěvníkům měnit přezdívku"}.
 {"This participant is kicked from the room because he sent an error message", "Tento účastník byl vyhozen, protože odeslal chybovou zprávu"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Tento účastník byl vyhozen, protože odeslal chybovou zprávu jinému účastníkovi"}.
 {"This participant is kicked from the room because he sent an error presence", "Tento účastník byl vyhozen, protože odeslal chybový status"}.
@@ -229,6 +234,7 @@
 {"Replaced by new connection", "Nahrazeno novým spojením"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Přívětivé jméno pro uzel"}.
 {"Roster groups allowed to subscribe", "Skupiny kontaktů, které mohou odebírat"}.
 {"Deliver payloads with event notifications", "Doručovat náklad s upozorněním na událost"}.
 {"Notify subscribers when the node configuration changes", "Upozornit odběratele na změnu nastavení uzlu"}.

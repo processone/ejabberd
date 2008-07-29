@@ -1,7 +1,7 @@
 % $Id$
 % Language: Ukrainian (українська)
-% Author: Stoune
 % Author: Ruslan Rakhmanin
+% Author: Stoune
 % Author: Sergei Golovan
 
 % ejabberd_c2s.erl
@@ -113,6 +113,7 @@
 {"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams модуль"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Користувачам не дозволено так часто реєструвати облікові записи"}.
 {"Choose a username and password to register with this server", "Виберіть назву користувача та пароль для реєстрації на цьому сервері"}.
 
 % mod_vcard.erl
@@ -140,6 +141,7 @@
 {"Fill in fields to search for any matching Jabber User", "Заповніть поля для пошуку користувача Jabber"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Псевдонім для вузла"}.
 {"Roster groups allowed to subscribe", "Дозволені для абонування групи ростера"}.
 {"Publish-Subscribe", "Опублікувати-Абонувати"}.
 {"ejabberd Publish-Subscribe module", "Модуль ejabberd Публікації-Абонування"}.
@@ -207,6 +209,10 @@
 {"Room Configuration", "Конфігурація кімнати"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "Приватні повідомлення не дозволені"}.
+{"Visitors are not allowed to change their nicknames in this room", "Відвідувачам не дозволяється змінювати псевдонім в цій кімнаті"}.
+{"Allow visitors to send status text in presence updates", "Дозволити відвідувачам відсилати текст статусу в оновленнях присутності"}.
+{"Allow visitors to change nickname", "Дозволити відвідувачам змінювати псевдонім"}.
 {"This participant is kicked from the room because he sent an error message", "Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення іншому учаснику"}.
 {"This participant is kicked from the room because he sent an error presence", "Цього учасника було відключено від кімнати через те, що він надіслав помилковий статус присутності"}.

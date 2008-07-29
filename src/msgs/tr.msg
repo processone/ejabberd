@@ -46,15 +46,10 @@
 {"Import Users from Dir at ", "Dizinden Kullanıcıları İçe Aktar : "}.
 {"Enter path to jabberd1.4 spool dir", "jabberd1.4 spool dosyası için yol giriniz"}.
 {"Path to Dir", "Dizinin Yolu"}.
-{"Hostname Configuration", "Makina İsmi Ayarı"}.
-{"Choose host name", "Makina ismi seçiniz"}.
-{"Host name", "Makina ismi"}.
 {"Access Control List Configuration", "Erişim Kontrol Listelerinin Ayarlanması (ACL)"}.
 {"Access control lists", "Erişim kontrol listeleri (ACL)"}.
 {"Access Configuration", "Erişim Ayarları"}.
 {"Access rules", "Erişim kuralları"}.
-{"Remove Users", "Kullanıcıları Kaldır"}.
-{"Choose users to remove", "Kaldırılacak kullanıcıları seçin"}.
 {"Administration of ", "Yönetim : "}.
 {"Action on user", "Kullanıcıya uygulanacak eylem"}.
 {"Edit Properties", "Özellikleri Düzenle"}.
@@ -76,10 +71,8 @@
 {"From ~s", "Kimden ~s"}.
 {"Running Nodes", "Çalışan Düğümler"}.
 {"Stopped Nodes", "Durdurulmuş Düğümler"}.
-{"Host Name", "Sunucu Adı"}.
 {"Access Control Lists", "Erişim Kontrol Listeleri (ACL)"}.
 {"Access Rules", "Erişim Kuralları"}.
-{"Remove Users", "Kullanıcıları Kaldır"}.
 {"Modules", "Modüller"}.
 {"Start Modules", "Modülleri Başlat"}.
 {"Stop Modules", "Modülleri Durdur"}.
@@ -91,6 +84,7 @@
 {"Import Directory", "Dizini İçe Aktar"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Kullanıcıların bu kadar hızlı hesap açmalarına izin verilmiyor"}.
 {"Choose a username and password to register with this server", "Bu sunucuya kayıt olmak için bir kullanıcı ismi ve parola seçiniz"}.
 
 % src/mod_vcard_ldap.erl
@@ -142,6 +136,11 @@
 {"Delete message of the day", "Günün mesajını sil"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Deliver payloads with event notifications", "Yükleri (payload) olay uyarıları ile beraber gönder"}.
+{"Persist items to storage", "Öğeleri depoda kalıcı hale getir"}.
+{"A friendly name for the node", "Düğüm için dostane bir isim"}.
+{"Max # of items to persist", "Kalıcı hale getirilecek en fazla öğe sayısı"}.
+{"Roster groups allowed to subscribe", "Üye olunmasına izin verilen kontak listesi grupları"}.
 {"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe modülü"}.
 {"PubSub subscriber request", "PubSub üye isteği"}.
 {"Choose whether to approve this entity's subscription.", "Bu varlığın üyeliğini onaylayıp onaylamamayı seçiniz."}.
@@ -150,23 +149,20 @@
 {"Allow this JID to subscribe to this pubsub node?", "Bu JID bu pubsub düğümüne üye olmasına izin verilsin mi?"}.
 {"Deliver event notifications", "Olay uyarıları gönderilsin"}.
 {"Specify the access model", "Erişim modelini belirtiniz"}.
-{"Roster groups that may subscribe (if access model is roster)", "Üye olabilecek kontak listesi grupları (eğer erişim modeli 'kontak listesi' ise)"}.
 {"When to send the last published item", "Son yayınlanan öğe ne zaman gönderilsin"}.
-{"ejabberd pub/sub module", "pub/sub ejabberd modülü"}.
-{"Node Creator", "Düğüm Oluşturucu"}.
 {"Notify subscribers when the node configuration changes", "Düğüm ayarları değiştiğinde üyeleri uyar"}.
 {"Notify subscribers when the node is deleted", "Bir düğüm silindiğinde üyeleri uyar"}.
 {"Notify subscribers when items are removed from the node", "Düğümden öğeler kaldırıldığında üyeleri uyar"}.
 {"Whether to allow subscriptions", "Üyeliklere izin verilsin mi"}.
-{"Specify the subscriber model", "Üye olma modelini belirtiniz"}.
 {"Specify the publisher model", "Yayıncı modelini belirtiniz"}.
 {"Max payload size in bytes", "En fazla yük (payload) boyutu (bayt olarak)"}.
-{"Send items to new subscribers", "Yeni üyelere öğeleri yolla"}.
 {"Only deliver notifications to available users", "Uyarıları sadece durumu uygun kullanıcılara ulaştır"}.
-{"Specify the current subscription approver", "Mevcut üyelik onaylayıcısını belirtiniz"}.
 {"Publish-Subscribe", "Yayınla-Üye Ol"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "ilişki değişikliğinden dolayı atıldı"}.
+{"has been kicked because the room has been changed to members-only", "oda üyelere-özel hale getirildiğinden dolayı atıldı"}.
+{"has been kicked because of a system shutdown", "sistem kapandığından dolayı atıldı"}.
 {"Chatroom configuration modified", "Sohbet odası ayarı değiştirildi"}.
 {"joins the room", "odaya katıldı"}.
 {"leaves the room", "odadan ayrıldı"}.
@@ -208,6 +204,13 @@
 {"Chatrooms", "Sohbet Odaları"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Bu katılımcı bir hata mesajı gönderdiği için odadan atıldı"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Bu katılımcı başka bir katılımcıya bir hata mesajı gönderdiği için odadan atıldı"}.
+{"It is not allowed to send private messages", "Özel mesaj gönderilmesine izin verilmiyor"}.
+{"This participant is kicked from the room because he sent an error presence", "Bu katılımcı bir hata varlığı (presence) gönderdiği için odadan atıldı"}.
+{"Visitors are not allowed to change their nicknames in this room", "Bu odada ziyaretçilerin takma isimlerini değiştirmesine izin verilmiyor"}.
+{"Allow visitors to send status text in presence updates", "Ziyaretçilerin varlık (presence) güncellemelerinde durum metni göndermelerine izin ver"}.
+{"Allow visitors to change nickname", "Ziyaretçilerin takma isim değiştirmelerine izin ver"}.
 {"Traffic rate limit is exceeded", "Trafik oran sınırı aşıldı"}.
 {"Maximum Number of Occupants", "Odada En Fazla Bulunabilecek Kişi Sayısı"}.
 {"No limit", "Sınırsız"}.
@@ -222,7 +225,6 @@
 {"Only moderators are allowed to change subject in this room", "Sadece moderatörlerin bu odanın konusunu değiştirmesine izin veriliyor"}.
 {"Visitors are not allowed to send messages to all occupants", "Ziyaretçilerin odadaki tüm sakinlere mesaj göndermesine izin verilmiyor"}.
 {"Only occupants are allowed to send messages to the conference", "Sadece oda sakinlerinin konferansa mesaj göndermesine izin veriliyor"}.
-{"It is not allowed to send normal messages to the conference", "Konferansa normal mesajlar gönderilmesine izin verilmiyor"}.
 {"It is not allowed to send private messages to the conference", "Konferansa özel mesajlar gönderilmesine izin verilmiyor"}.
 {"Improper message type", "Uygunsuz mesaj tipi"}.
 {"Nickname is already in use by another occupant", "Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"}.
@@ -256,7 +258,6 @@
 {"Allow users to query other users", "Kullanıcıların diğer kullanıcıları sorgulamalarına izin ver"}.
 {"Allow users to send invites", "Kullanıcıların davetiye göndermelerine izin ver"}.
 {"Enable logging", "Kayıt tutma özelliğini aç"}.
-{"Description", "Tanım"}.
 {"Number of occupants", "Oda sakini sayısı"}.
 {"Present real JIDs to", "Gerçek JID'lerini göster :"}.
 {"moderators only", "sadece moderatörler"}.
@@ -274,12 +275,12 @@
 {"IRC Transport", "IRC Nakli (Transport)"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "ejabberd Web Yöneticisi"}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "Bu seçeneklerin sadece gömülü Mnesia veritabanını yedekleyeceğine dikkat edin. Eğer ODBC modülünü kullanıyorsanız, SQL veritabanınızı da ayrıca yedeklemeniz gerekiyor."}.
 {"Administration", "Yönetim"}.
 {"Users", "Kullanıcılar"}.
 {"Nodes", "Düğümler"}.
-{"Shared Roster", "Paylaşılmış Kontak Listesi"}.
 {"Statistics", "İstatistikler"}.
-{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"(Raw)", "(Ham)"}.
 {"Submitted", "Gönderilenler"}.
 {"Bad format", "Kötü biçem"}.
@@ -354,15 +355,12 @@
 {"Virtual Hosts", "Sanal Sunucular"}.
 {"ejabberd virtual hosts", "ejabberd sanal sunucuları"}.
 {"Host", "Sunucu"}.
-{"Authenticated Users:", "Doğrulanmış Kullanıcılar:"}.
 {"No Data", "Veri Yok"}.
-{"ejabberd Web Interface", "ejabberd Web Arayüzü"}.
 {"Online Users:", "Bağlı Kullanıcılar:"}.
 {"Outgoing s2s Connections:", "Giden s2s Bağlantıları:"}.
 {"Outgoing s2s Servers:", "Giden s2s Sunucuları"}.
 {"Database Tables at ", "Veritabanı Tabloları : "}.
 {"Backup of ", "Yedek : "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database seperately.", "Bu seçeneklerin sadece gömülü Mnesia veritabanını yedekleyeceğine dikkat edin. Eğer ODBC modülünü kullanıyorsanız, SQL veritabanınızı ayrıca yedeklemelisiniz."}.
 {"Store binary backup:", "İkili yedeği sakla:"}.
 {"Restore binary backup immediately:", "Hemen ikili yedekten geri al:"}.
 {"Restore binary backup after next ejabberd restart (requires less memory):", "ejabberd'nin bir sonraki tekrar başlatılışında ikili yedekten geri al (daha az bellek gerektirir)"}.
@@ -375,7 +373,6 @@
 {"Update script", "Betiği Güncelle"}.
 {"Low level update script", "Düşük seviye güncelleme betiği"}.
 {"Script check", "Betik kontrolü"}.
-{"Not Found", "Bulunamadı"}.
 {"Shared Roster Groups", "Paylaşımlı Kontak Listesi Grupları"}.
 {"Last Activity", "Son Aktivite"}.
 

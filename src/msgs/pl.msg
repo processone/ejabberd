@@ -1,8 +1,8 @@
 % $Id$
 % Language: Polish (polski)
+% Author: Zbyszek Żółkiewski
 % Author: Andrzej Smyk
 % Author: Mateusz Gajewski
-% Author: Zbyszek Zolkiewski
 
 % jlib.hrl
 {"No resource provided", "Brak dostarczonych zasobów"}.
@@ -48,15 +48,10 @@
 {"Import Users from Dir at ", "Importuj użytkowników z katalogu na "}.
 {"Enter path to jabberd1.4 spool dir", "Wprowadź ścieżkę do katalogu spool serwera jabberd1.4"}.
 {"Path to Dir", "Ścieżka do katalogu"}.
-{"Hostname Configuration", "Konfiguracja hosta"}.
-{"Choose host name", "Wybierz nazwę hosta"}.
-{"Host name", "Nazwa hosta"}.
 {"Access Control List Configuration", "Konfiguracja listy dostępowej"}.
 {"Access control lists", "Lista dostępu"}.
 {"Access Configuration", "Konfiguracja dostępu"}.
 {"Access rules", "Zasady dostępu"}.
-{"Remove Users", "Usuń użytkowników"}.
-{"Choose users to remove", "Wybierz użytkowników do usunięcia"}.
 {"Administration of ", "Administracja "}.
 {"Action on user", "Akcja dla użytkownika"}.
 {"Edit Properties", "Edytuj właściwości"}.
@@ -70,10 +65,8 @@
 {"From ~s", "Z  ~s"}.
 {"Running Nodes", "Uruchomione gałęzie"}.
 {"Stopped Nodes", "Zatrzymane gałęzie"}.
-{"Host Name", "Nazwa hosta"}.
 {"Access Control Lists", "Lista dostępowa"}.
 {"Access Rules", "Zasady dostępu"}.
-{"Remove Users", "Usuń użytkowników"}.
 {"Modules", "Moduły"}.
 {"Start Modules", "Uruchom moduły"}.
 {"Stop Modules", "Zatrzymaj moduły"}.
@@ -85,6 +78,7 @@
 {"Import Directory", "Importuj katalog"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Nie możesz tak szybko rejestrować nowych kont"}.
 {"Choose a username and password to register with this server", "Wybierz nazwę użytkownika i hasło aby zarejestrować się na tym serwerze"}.
 
 % mod_vcard.erl
@@ -115,6 +109,13 @@
 {"Specified nickname is already registered", "Podany nick jest już zarejestrowany"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "Ten uczestnik został wyrzucony z pokoju ponieważ wysłał błędną wiadomość"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "Ten uczestnik został wyrzucony z pokoju ponieważ wysłał błędą wiadomość do innego uczestnika"}.
+{"It is not allowed to send private messages", "Wysyłanie prywatnych wiadomości jest zabronione"}.
+{"This participant is kicked from the room because he sent an error presence", "Ten uczestnik został wyrzucony z pokoju ponieważ informacja o statusie zawierała błędy"}.
+{"Visitors are not allowed to change their nicknames in this room", "Uczestnicy tego pokoju nie mogą zmieniać swoich ników"}.
+{"Allow visitors to send status text in presence updates", "Pozwól uczestnikom na wysyłanie statusów opisowych"}.
+{"Allow visitors to change nickname", "Pozwól uczestnikom na zmianę nika"}.
 {"Make room moderated", "Moderuj pokój"}.
 {"Traffic rate limit is exceeded", "Limit transferu przekroczony"}.
 {"Maximum Number of Occupants", "Maksymalna liczba uczestników"}.
@@ -130,7 +131,6 @@
 {"Only moderators are allowed to change subject in this room", "Tylko moderatorzy mogą zmienić temat tego pokoju"}.
 {"Visitors are not allowed to send messages to all occupants", "Odwiedzający nie mogą wysyłać wiadomości do wszystkich obecnych"}.
 {"Only occupants are allowed to send messages to the conference", "Tylko obecni mogą wysyłać wiadomości na konferencje"}.
-{"It is not allowed to send normal messages to the conference", "Nie można wysyłać normalnych wiadomości na konferencje"}.
 {"It is not allowed to send private messages to the conference", "Nie wolno wysyłac prywatnych wiadomości na konferencje"}.
 {"Improper message type", "Nieprawidłowy typ wiadomości"}.
 {"Nickname is already in use by another occupant", "Nick jest używany przez innego użytkownika"}.
@@ -167,6 +167,9 @@
 {"Encodings", "Kodowania"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "ejabberd: Panel Administracyjny"}.
+{"(Raw)", "(Raw)"}.
+{"Raw", "Raw"}.
 {"Low level update script", "Skrypt update-u niskiego poziomu"}.
 {"Users", "Użytkownicy"}.
 {"Nodes", "Gałęzie"}.
@@ -209,7 +212,6 @@
 {"Remove", "Usuń "}.
 {"User ", "Użytkownik "}.
 {"Roster of ", "Roster "}.
-{"Shared Roster", "Roster współdzielony"}.
 {"Online", "Dostępny"}.
 {"Validate", "Zatwierdź"}.
 {"Name:", "Nazwa:"}.
@@ -238,6 +240,9 @@
 {"Use of STARTTLS required", "Wymagane użycie STARTTLS"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"Publish-Subscribe", "PubSub"}.
+{"A friendly name for the node", "Przyjazna nazwa węzła"}.
+{"Roster groups allowed to subscribe", "Grupy kontaktów które mogą się zapisać"}.
 {"ejabberd Publish-Subscribe module", "Moduł Publish-Subscribe"}.
 {"PubSub subscriber request", "Rządzanie subskrybenta PubSub"}.
 {"Choose whether to approve this entity's subscription.", "Wybierz, czy akceptować subskrypcję tej jednostki"}.
@@ -246,9 +251,7 @@
 {"Allow this JID to subscribe to this pubsub node?", "Pozwól temu JID na zapisanie się do tego noda pubsub"}.
 {"Deliver event notifications", "Dostarczaj powiadomienia o zdarzeniach"}.
 {"Specify the access model", "Oznacz model dostępu"}.
-{"Roster groups that may subscribe (if access model is roster)", "Grupy rostera jakie mogą subskrybować (jeśli model dostępu to roster"}.
 {"When to send the last published item", "Kiedy wysłać ostatnio opublikowaną rzecz"}.
-{"Node Creator", "Tworzenie gałęzi"}.
 {"Deliver payloads with event notifications", "Dołącz zawartość publikowanego przedmiotu podczas wysyłania powiadomienia o publikacji"}.
 {"Notify subscribers when the node configuration changes", "Informuj subskrybentów gdy konfiguracja gałęzi się zmieni"}.
 {"Notify subscribers when the node is deleted", "Informuj subskrybentów gdy gałąż zostanie wykasowana"}.
@@ -256,12 +259,9 @@
 {"Persist items to storage", "Przechowuj przedmioty pub/sub w pamięci"}.
 {"Max # of items to persist", "Maksymalna ilość przechowywanych przedmiotów"}.
 {"Whether to allow subscriptions", "Czy pozwolić na subskrypcje"}.
-{"Specify the subscriber model", "Oznacz model subskrybenta"}.
 {"Specify the publisher model", "Oznacz model publikującego"}.
 {"Max payload size in bytes", "Maksymalna wielkość powiadomienia w bajtach"}.
-{"Send items to new subscribers", "Wysyłaj rzeczy do nowych subskrybentów"}.
 {"Only deliver notifications to available users", "Dostarczaj notyfikacje tylko do osiągalnych użytkowników"}.
-{"Specify the current subscription approver", "Wyznacz aprobującego obecne subskrypcje "}.
 
 % mod_irc/mod_irc.erl
 {"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.", "Jeśli chcesz ustawić inne kodowanie dla serwerów IRC, wypełnij tą listę wartościami w formacie '{\"irc server\",\"encoding\"}'. Jako domyślne ten serwis używa kodowania \"~s\"."}.
@@ -307,7 +307,6 @@
 {"Database Tables Configuration at ", "Konfiguracja tabel bazy na "}.
 
 % web/ejabberd_web_admin.erl
-{"ejabberd Web Interface", "Interfejs WWW serwera ejabberd"}.
 {"Administration", "Administracja"}.
 {"Submitted", "Wprowadzone"}.
 {"Bad format", "Zły format"}.
@@ -315,7 +314,6 @@
 {"Registered Users", "Użytkownicy zarejestrowani"}.
 {"Offline Messages", "Wiadomości offline"}.
 {"Registered Users:", "Użytkownicy zarejestrowani:"}.
-{"Authenticated Users:", "Użytkownicy autoryzowani:"}.
 {"Online Users:", "Użytkownicy online:"}.
 {"Outgoing s2s Connections:", "Wychodzące połączenia s2s:"}.
 {"Outgoing s2s Servers:", "Serwery zewnętrzne s2s:"}.
@@ -345,10 +343,12 @@
 {"Updated modules", "Uaktualnione moduły"}.
 {"Update script", "Uaktualnij skrypt"}.
 {"Script check", "Sprawdź skrypt"}.
-{"Not Found", "Nie znaleziono"}.
 {"Shared Roster Groups", "Grupy współdzielone"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "został wyrzucony z powodu zmiany przynależności"}.
+{"has been kicked because the room has been changed to members-only", "został wyrzucony z powodu zmiany parametrów pokoju: Tylko dla Członków"}.
+{"has been kicked because of a system shutdown", "został wyrzucony z powodu wyłączenia systemu"}.
 {"Chatroom configuration modified", "Konfiguracja pokoju zmodyfikowana"}.
 {"joins the room", "dołączył(a) się do pokoju"}.
 {"leaves the room", "opóścił(a) pokój"}.
@@ -393,21 +393,14 @@
 {"Allow users to query other users", "Pozwól użytkownikom pobierać informacje o innych użytkownikach"}.
 {"Allow users to send invites", "Pozwól użytkownikom wysyłać zaproszenia"}.
 {"Enable logging", "Włącz logowanie"}.
-{"Description", "Opis"}.
 {"Number of occupants", "Liczba uczestników"}.
 
 % mod_vcard_ldap.erl
 {"Jabber ID", "Jabber ID"}.
 
 % mod_presence.erl
-{"You need an x:data capable client to register presence", "Potrzebujesz klinta kompatybilnego z x:data aby zarejestrować widoczność "}.
-{"Presence registration at ", "Rejestracja widoczności na "}.
-{"What presence features do you want to register?", "Jakie usługi widoczności chcesz zarejestrować?"}.
-{"Specified presence is already registered", "Określona widoczność już jest zarejestrowana"}.
 {"You must fill in field \"Xml\" in the form", "Musisz wypełnić w formularzu pole \"XML\""}.
 {"You must fill in field \"Icon\" in the form", "Musisz wypełnić w formularzu pole \"Icon\""}.
-{"Raw XML export", "Eksport XML do raw"}.
-{"Allow icon export", "Pozwól na eksport ikon"}.
 
 % mod_proxy65/mod_proxy65_service.erl
 {"ejabberd SOCKS5 Bytestreams module", "Mudł SOCKS5 Bytestreams"}.

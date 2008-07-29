@@ -132,6 +132,7 @@
 {"To", "宛先"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "早すぎるユーザーアカウント登録は許可されませんでした"}.
 {"Choose a username and password to register with this server", "サーバーに登録するユーザー名とパスワードを選択して下さい"}.
 
 % ejabberd_c2s.erl
@@ -140,6 +141,9 @@
 {"No resource provided", "リソースが提供されませんでした"}.
 
 % mod_muc/mod_muc_log.erl
+{"has been kicked because of an affiliation change", "は提携が変更されたためキックされました"}.
+{"has been kicked because the room has been changed to members-only", "はチャットルームのメンバー制限によりキックされました"}.
+{"has been kicked because of a system shutdown", "はシステムシャットダウンのためキックされました"}.
 {"Chatroom configuration modified", "チャットルームの設定を変更しました"}.
 {"joins the room", "チャットルームに参加"}.
 {"leaves the room", "チャットルームから退出"}.
@@ -183,6 +187,14 @@
 {"ejabberd MUC module", "ejabberd MUC module"}.
 
 % mod_muc/mod_muc_room.erl
+{"This participant is kicked from the room because he sent an error message", "エラーメッセージを送信したため、この参加者はキックされました"}.
+{"This participant is kicked from the room because he sent an error message to another participant", "他の参加者にエラーメッセージを送信したため、この参加者はキックされました"}.
+{"It is not allowed to send private messages", "プライベートメッセージを送信することは許可されませんでした"}.
+{"This participant is kicked from the room because he sent an error presence", "エラープレゼンスを送信したため、この参加者はキックされました"}.
+{"Visitors are not allowed to change their nicknames in this room", "ビジターはこのチャットルームでニックネームを変更することは許可されていません"}.
+{"Make room moderated", "チャットルームをモデレートする"}.
+{"Allow visitors to send status text in presence updates", "ビジターがプレゼンス更新のステータス文を送信する事を許可する"}.
+{"Allow visitors to change nickname", "ビジターがニックネームを変更する事を許可します"}.
 {"It is not allowed to send private messages of type \"groupchat\"", "種別が\"groupchat\" であるプライベートメッセージは許可されていません"}.
 {"Invalid affiliation: ~s", "無効な提携です: ~s"}.
 {"Invalid role: ~s", "無効なロールです: ~s"}.
@@ -275,6 +287,8 @@
 {"ejabberd SOCKS5 Bytestreams module", "ejabberd SOCKS5 Bytestreams module"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "ノードの為のフレンドリネーム"}.
+{"Roster groups allowed to subscribe", "名簿グループは購読を許可しました"}.
 {"Publish-Subscribe", "Publish-Subscribe"}.
 {"ejabberd Publish-Subscribe module", "ejabberd Publish-Subscribe module"}.
 {"PubSub subscriber request", "PubSub 購読リクエスト"}.
@@ -291,22 +305,20 @@
 {"Max # of items to persist", "アイテムの最大保存数 #"}.
 {"Whether to allow subscriptions", "購読を許可するかどうか"}.
 {"Specify the access model", "アクセスモデルを設定する"}.
-{"Roster groups that may subscribe (if access model is roster)", "購読可能な名簿グループ(アクセスモデルが名簿であれば)"}.
 {"Specify the publisher model", "公開モデルを指定する"}.
 {"Max payload size in bytes", "最大ぺイロードサイズ(byte)"}.
 {"When to send the last published item", "最後の公開アイテムを送信するタイミングで"}.
 {"Only deliver notifications to available users", "有効なユーザーにのみ告知を送信する"}.
 
 % web/ejabberd_web_admin.erl
+{"ejabberd Web Admin", "ejabberd Web 管理"}.
 {"All activity", "全て"}.
 {"Show Ordinary Table", "Ordinaryテーブルを表示"}.
 {"Show Integral Table", "Integralテーブルを表示"}.
-{"ejabberd Web Interface", "ejabberd WEBインターフェイス"}.
 {"Administration", "管理"}.
 {"Virtual Hosts", "ヴァーチャルホスト"}.
 {"Nodes", "ノード"}.
 {"Statistics", "統計"}.
-{"ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One", "ejabberd (c) 2002-2008 Alexey Shchepin, 2004-2008 Process One"}.
 {"Users", "ユーザー"}.
 {"Last Activity", "活動履歴"}.
 {"(Raw)", "(Raw)"}.

@@ -80,6 +80,7 @@
 {"Import Directory", "Importar directori"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Els usuarios no tenen permis per a crear comptes tan apresa"}.
 {"Choose a username and password to register with this server", "Tria nom d'usuari i password per a registrar-te en aquest servidor"}.
 
 % mod_vcard.erl
@@ -100,13 +101,14 @@
 {"Organization Unit", "Unitat de la organizació"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Un nom per al node"}.
 {"Roster groups allowed to subscribe", "Llista de grups que tenen permés subscriures"}.
 {"ejabberd Publish-Subscribe module", "Mòdul ejannerd Publicar-Subscriure"}.
 {"PubSub subscriber request", "Petició de PubSub subscriure"}.
 {"Choose whether to approve this entity's subscription.", "Tria si aprova aquesta entitat de subscripció"}.
 {"Node ID", "ID del Node"}.
 {"Subscriber Address", "Adreça del Subscriptor"}.
-{"Allow this JID to subscribe to this pubsub node?", "Deixar que aquesta JID es puga subscriure a aquest node pubsub"}.
+{"Allow this JID to subscribe to this pubsub node?", "Permetre que aquesta JID es puga subscriure a aquest node pubsub"}.
 {"Deliver event notifications", "Entrega de notificacions d'events"}.
 {"Specify the access model", "Especificar el model d'accés"}.
 {"When to send the last published item", "Quan s'ha enviat l'última publicació"}.
@@ -136,6 +138,10 @@
 {"ejabberd MUC module", "mòdul ejabberd MUC"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "No està permés enviar missatges privats"}.
+{"Visitors are not allowed to change their nicknames in this room", "Els visitants no tenen permés canviar el seus Nicknames en esta sala"}.
+{"Allow visitors to send status text in presence updates", "Permetre als visitants enviar text d'estat en les actualitzacions de presència"}.
+{"Allow visitors to change nickname", "Permetre als visitants canviar el Nickname"}.
 {"This participant is kicked from the room because he sent an error message", "Aquest participant ha sigut expulsat de la sala perque ha enviat un missatge d'error"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Aquest participant ha sigut expulsat de la sala perque ha enviat un missatge erroni a un altre participant"}.
 {"This participant is kicked from the room because he sent an error presence", "Aquest participant ha sigut expulsat de la sala perque ha enviat un error de presencia"}.
