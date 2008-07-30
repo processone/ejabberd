@@ -153,7 +153,7 @@ stop_modules() ->
 		  Modules ->
 		      lists:foreach(
 			fun({Module, _Args}) ->
-				gen_mod:stop_module(Host, Module)
+				gen_mod:stop_module_keep_config(Host, Module)
 			end, Modules)
 	      end
       end, ?MYHOSTS).

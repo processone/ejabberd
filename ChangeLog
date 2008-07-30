@@ -1,5 +1,9 @@
 2008-07-30  Badlop  <badlop@process-one.net>
 
+	* src/gen_mod.erl: When ejabberd is kindly stopped, don't forget
+	modules configuration (EJAB-706)
+	* src/ejabberd_app.erl: Likewise
+
 	* src/msgs/uk.msg: Fix: each string in a single line
 	* src/msgs/wa.msg: Likewise
 
