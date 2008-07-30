@@ -1673,6 +1673,9 @@ extract_history([_ | Els], Type) ->
 
 
 send_update_presence(JID, StateData) ->
+    send_update_presence(JID, "", StateData).
+
+send_update_presence(JID, Reason, StateData) ->
     LJID = jlib:jid_tolower(JID),
     LJIDs = case LJID of
 		{U, S, ""} ->
@@ -1694,10 +1697,13 @@ send_update_presence(JID, StateData) ->
 		    end
 	    end,
     lists:foreach(fun(J) ->
-			  send_new_presence(J, StateData)
+			  send_new_presence(J, Reason, StateData)
 		  end, LJIDs).
 
 send_new_presence(NJID, StateData) ->
+    send_new_presence(NJID, "", StateData).
+
+send_new_presence(NJID, Reason, StateData) ->
     {ok, #user{jid = RealJID,
 	       nick = Nick,
 	       role = Role,
@@ -1719,6 +1725,13 @@ send_new_presence(NJID, StateData) ->
 			  [{"affiliation", SAffiliation},
 			   {"role", SRole}]
 		  end,
+	      ItemEls = case Reason of
+			    "" ->
+				[];
+			    _ ->
+				[{xmlelement, "reason", [],
+				  [{xmlcdata, Reason}]}]
+			end,
 	      Status = case StateData#state.just_created of
 			   true ->
 			       [{xmlelement, "status", [{"code", "201"}], []}];
@@ -1728,7 +1741,7 @@ send_new_presence(NJID, StateData) ->
 	      Packet = append_subtags(
 			 Presence,
 			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			   [{xmlelement, "item", ItemAttrs, []} | Status]}]),
+			   [{xmlelement, "item", ItemAttrs, ItemEls} | Status]}]),
 	      ejabberd_router:route(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
@@ -2096,21 +2109,21 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 					 set_affiliation_and_reason(
 					   JID, outcast, Reason,
 					   set_role(JID, none, SD));
-				     {JID, affiliation, A, _Reason} when
+				     {JID, affiliation, A, Reason} when
 					   (A == admin) or (A == owner) ->
-					 SD1 = set_affiliation(JID, A, SD),
+					 SD1 = set_affiliation_and_reason(JID, A, Reason, SD),
 					 SD2 = set_role(JID, moderator, SD1),
-					 send_update_presence(JID, SD2),
+					 send_update_presence(JID, Reason, SD2),
 					 SD2;
-				     {JID, affiliation, member, _Reason} ->
-					 SD1 = set_affiliation(
-						 JID, member, SD),
+				     {JID, affiliation, member, Reason} ->
+					 SD1 = set_affiliation_and_reason(
+						 JID, member, Reason, SD),
 					 SD2 = set_role(JID, participant, SD1),
-					 send_update_presence(JID, SD2),
+					 send_update_presence(JID, Reason, SD2),
 					 SD2;
-				     {JID, role, R, _Reason} ->
-					 SD1 = set_role(JID, R, SD),
-					 catch send_new_presence(JID, SD1),
+				     {JID, role, Role, Reason} ->
+					 SD1 = set_role(JID, Role, SD),
+					 catch send_new_presence(JID, Reason, SD1),
 					 SD1;
 				     {JID, affiliation, A, _Reason} ->
 					 SD1 = set_affiliation(JID, A, SD),
