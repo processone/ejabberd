@@ -72,22 +72,34 @@ start_module(Host, Module, Opts) ->
 	    ok
     end.
 
+%% @doc Stop the module in a host, and forget its configuration.
 stop_module(Host, Module) ->
+    case stop_module_keep_config(Host, Module) of
+	error ->
+	    error;
+	ok ->
+	    del_module_mnesia(Host, Module)
+    end.
+
+%% @doc Stop the module in a host, but keep its configuration.
+%% As the module configuration is kept in the Mnesia local_config table,
+%% when ejabberd is restarted the module will be started again.
+%% This function is useful when ejabberd is being stopped
+%% and it stops all modules.
+stop_module_keep_config(Host, Module) ->
     case catch Module:stop(Host) of
 	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p", [Reason]);
+	    ?ERROR_MSG("~p", [Reason]),
+	    error;
 	{wait, ProcList} when is_list(ProcList) ->
 	    lists:foreach(fun wait_for_process/1, ProcList),
-	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok;
 	{wait, Process} ->
 	    wait_for_process(Process),
-	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok;
 	_ ->
-	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok
     end.
