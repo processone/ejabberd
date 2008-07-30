@@ -1,3 +1,14 @@
+2008-07-30  Badlop  <badlop@process-one.net>
+
+	* src/msgs/uk.msg: Fix: each string in a single line
+	* src/msgs/wa.msg: Likewise
+
+	* src/msgs/es.msg: Fix typo
+	* src/msgs/gl.msg: Likewise
+	* src/msgs/pt-br.msg: Likewise
+
+	* src/msgs/zh.msg: Fix some translations (thanks to Zhan Caibao)
+
 2008-07-29  Badlop  <badlop@process-one.net>
 
 	* src/msgs/ca.msg: Updated (thanks to Badlop)

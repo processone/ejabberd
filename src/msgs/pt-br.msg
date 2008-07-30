@@ -128,7 +128,7 @@
 {"Chatrooms", "Salas de Chat"}.
 {"Access denied by service policy", "Aceso denegado por la política do serviço"}.
 {"Conference room does not exist", "La sala de conferencias não existe"}.
-{"ejabberd MUC module", "Módulo de MUC para ejabbed"}.
+{"ejabberd MUC module", "Módulo de MUC para ejabberd"}.
 {"Enter nickname you want to register", "Introduza o apelido que quer registrar"}.
 {"Incorrect password", "Senha incorreta"}.
 {"Nickname is already in use by another occupant", "O apelido já está em uso por outro ocupante"}.

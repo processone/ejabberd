@@ -1,27 +1,27 @@
 % $Id$
 % Language: Chinese (中文)
 % Author: Shelley Shyan - skylarkbj AT 163 DOT com
-% Author: Mike Wang
 % Author: Zhan Caibao - zhancaibao AT gmail DOT com
+% Author: Mike Wang
 
 % jlib.hrl
 {"No resource provided", "无资源提供"}.
 
 % mod_offline_odbc.erl
-{"Your contact offline message queue is full. The message has been discarded.", "您联系人的离线消息队列已满. 消息已被丢弃"}.
+{"Your contact offline message queue is full. The message has been discarded.", "您的离线消息队列已满. 消息已被丢弃"}.
 
 % mod_configure.erl
 {"Choose storage type of tables", "请选择表格的存储类型"}.
 {"RAM copy", "内存(RAM)复制"}.
 {"RAM and disc copy", "内存与磁盘复制"}.
-{"Disc only copy", "仅复制磁盘"}.
+{"Disc only copy", "仅磁盘复制"}.
 {"Remote copy", "远程复制"}.
 {"Stop Modules at ", "要停止的模块位于 "}.
 {"Choose modules to stop", "请选择要停止的模块"}.
 {"Start Modules at ", "要启动的模块位于 "}.
 {"Enter list of {Module, [Options]}", "请输入{模块, [选项]}列表"}.
 {"List of modules to start", "要启动的模块列表"}.
-{"Backup to File at ", "将文件备份到"}.
+{"Backup to File at ", "备份到文件位于"}.
 {"Enter path to backup file", "请输入备份文件的路径"}.
 {"Path to File", "文件路径"}.
 {"Restore Backup from File at ", "要恢复的备份文件位于"}.
@@ -124,21 +124,21 @@
 {"Pong", "Pong"}.
 
 % mod_announce.erl
-{"Really delete message of the day?", "确实要删除当日的消息吗?"}.
+{"Really delete message of the day?", "确实要删除每日消息吗?"}.
 {"Subject", "标题"}.
 {"Message body", "消息主体"}.
-{"No body provided for announce message", "没有人提供通知消息"}.
+{"No body provided for announce message", "通知消息无正文内容"}.
 {"Announcements", "通知"}.
 {"Send announcement to all users", "将通知发送给所有用户"}.
 {"Send announcement to all online users", "将通知发送给所有在线用户"}.
 {"Send announcement to all online users on all hosts", "将通知发送给所有主机的所有用户"}.
-{"Set message of the day and send to online users", "设定当日消息并发送给所有在线用户"}.
-{"Update message of the day (don't send)", "更新当日的消息(不发送)"}.
-{"Delete message of the day", "删除当日的消息"}.
+{"Set message of the day and send to online users", "设定每日消息并发送给所有在线用户"}.
+{"Update message of the day (don't send)", "更新每日消息(不发送)"}.
+{"Delete message of the day", "删除每日消息"}.
 {"Send announcement to all users on all hosts", "给所有主机上的所有用户发送通知"}.
-{"Set message of the day on all hosts and send to online users", "设置当日所有主机上 的消息并发送给在线用户"}.
-{"Update message of the day on all hosts (don't send)", "更新当日所有主机上 的消息(不发送)"}.
-{"Delete message of the day on all hosts", "删除当日所有主机上 的消息"}.
+{"Set message of the day on all hosts and send to online users", "设置所有主机上的每日消息并发送给在线用户"}.
+{"Update message of the day on all hosts (don't send)", "更新所有主机上的每日消息(不发送)"}.
+{"Delete message of the day on all hosts", "删除所有主机上的每日消息"}.
 
 % mod_pubsub/mod_pubsub.erl
 {"A friendly name for the node", "该节点的友好名称"}.
@@ -147,27 +147,27 @@
 {"Deliver payloads with event notifications", "用事件通告传输有效负载"}.
 {"Notify subscribers when the node configuration changes", "当节点设置改变时通知订阅人"}.
 {"Notify subscribers when the node is deleted", "当节点被删除时通知订阅人"}.
-{"Notify subscribers when items are removed from the node", "当从节点删除条款时通知订阅人"}.
-{"Persist items to storage", "要存储的持续条款"}.
-{"Max # of items to persist", "最多持有条款数"}.
+{"Notify subscribers when items are removed from the node", "当从节点删除内容条目时通知订阅人"}.
+{"Persist items to storage", "持久化内容条目"}.
+{"Max # of items to persist", "允许持久化的最大内容条目数"}.
 {"Whether to allow subscriptions", "是否允许订阅"}.
 {"Specify the publisher model", "指定发布人样式"}.
 {"Max payload size in bytes", "最大有效负载比特数"}.
 {"Only deliver notifications to available users", "仅将通知发送给可发送的用户"}.
 {"ejabberd Publish-Subscribe module", "ejabberd发行-订阅模块"}.
 {"PubSub subscriber request", "PubSub订阅人请求"}.
-{"Choose whether to approve this entity's subscription.", "选择是否赞成该实体的订阅"}.
+{"Choose whether to approve this entity's subscription.", "选择是否允许该实体的订阅"}.
 {"Node ID", "节点ID"}.
 {"Subscriber Address", "订阅人地址"}.
 {"Allow this JID to subscribe to this pubsub node?", "允许该JID订阅该pubsub节点?"}.
 {"Deliver event notifications", "传递事件通知"}.
 {"Specify the access model", "指定访问模式"}.
-{"When to send the last published item", "何时发送最新公布的条款"}.
+{"When to send the last published item", "何时发送最新发布的内容条目"}.
 
 % mod_muc/mod_muc_log.erl
-{"has been kicked because of an affiliation change", "已经因联属关系改变而被踢出"}.
-{"has been kicked because the room has been changed to members-only", "已经因该房间已被改为只对会员开放而被踢出"}.
-{"has been kicked because of a system shutdown", "已经因系统关机而被踢出"}.
+{"has been kicked because of an affiliation change", "因联属关系改变而被踢出"}.
+{"has been kicked because the room has been changed to members-only", "因该房间改为只对会员开放而被踢出"}.
+{"has been kicked because of a system shutdown", "因系统关机而被踢出"}.
 {"Chatroom configuration modified", "聊天室配置已修改"}.
 {"joins the room", "加入房间"}.
 {"leaves the room", "离开房间"}.
@@ -201,16 +201,16 @@
 {"Enter nickname you want to register", "请输入您想要注册的昵称"}.
 {"ejabberd MUC module", "ejabberd MUC模块"}.
 {"Only service administrators are allowed to send service messages", "只有服务管理员可以发送服务消息"}.
-{"Room creation is denied by service policy", "创建房间被服务政策拒绝"}.
+{"Room creation is denied by service policy", "创建房间被服务策略拒绝"}.
 {"Conference room does not exist", "会议室不存在"}.
-{"Access denied by service policy", "访问被服务政策拒绝"}.
+{"Access denied by service policy", "访问被服务策略拒绝"}.
 {"Specified nickname is already registered", "指定的名称已被注册"}.
 {"You must fill in field \"Nickname\" in the form", "您必须填充表单中\"昵称\"项"}.
 {"Chatrooms", "聊天室"}.
 
 % mod_muc/mod_muc_room.erl
-{"It is not allowed to send private messages", "不允许发送隐私消息"}.
-{"Visitors are not allowed to change their nicknames in this room", "此房间不允许用户更改其昵称"}.
+{"It is not allowed to send private messages", "不允许发送私聊消息"}.
+{"Visitors are not allowed to change their nicknames in this room", "此房间不允许用户更改昵称"}.
 {"Allow visitors to send status text in presence updates", "更新在线状态时允许用户发送状态文本"}.
 {"Allow visitors to change nickname", "允许用户更改昵称"}.
 {"Make room moderated", "使房间处于监管状态"}.
@@ -227,18 +227,18 @@
 {"Configuration for ", "配置 "}.
 {"Room title", "房间标题"}.
 {"Password", "密码"}.
-{"Only moderators and participants are allowed to change subject in this room", "只允许调解人和参与人更改此房间的主题"}.
-{"Only moderators are allowed to change subject in this room", "只允许调解人更改此房间的主题"}.
+{"Only moderators and participants are allowed to change subject in this room", "只允许监管人和参与人更改此房间的主题"}.
+{"Only moderators are allowed to change subject in this room", "只允许监管人更改此房间的主题"}.
 {"Visitors are not allowed to send messages to all occupants", "不允许访客给所有占有者发送消息"}.
 {"Only occupants are allowed to send messages to the conference", "只允许占有者向会议发送消息"}.
-{"It is not allowed to send private messages to the conference", "不允许向会议发送隐私消息"}.
+{"It is not allowed to send private messages to the conference", "不允许向会议发送私聊消息"}.
 {"Improper message type", "消息类型不恰当"}.
 {"Nickname is already in use by another occupant", "昵称已被另一用户占用"}.
 {"Nickname is registered by another person", "昵称已被另一人注册"}.
-{"It is not allowed to send private messages of type \"groupchat\"", "\"群组聊天\"类型是不允许发送隐私消息的"}.
+{"It is not allowed to send private messages of type \"groupchat\"", "\"群组聊天\"类型不允许发送私聊消息"}.
 {"Recipient is not in the conference room", "接收人不在会议室"}.
-{"Only occupants are allowed to send queries to the conference", "只允许占有者向大会询问"}.
-{"Queries to the conference members are not allowed in this room", "本房间不允许向大会成员询问"}.
+{"Only occupants are allowed to send queries to the conference", "只允许占有者发出查询请求"}.
+{"Queries to the conference members are not allowed in this room", "本房间不允许发出成员查询请求"}.
 {"You have been banned from this room", "您已被禁止进入该房间"}.
 {"Membership required to enter this room", "进入此房间需要会员身份"}.
 {"Password required to enter this room", "进入此房间需要密码"}.
@@ -252,17 +252,17 @@
 {"Owner privileges required", "需要持有人权限"}.
 {"private, ", "保密"}.
 {"This room is not anonymous", "此房间不是匿名房间"}.
-{"Make room persistent", "持续开放房间"}.
+{"Make room persistent", "在服务器端保存该房间"}.
 {"Make room public searchable", "使房间可被公开搜索"}.
 {"Make participants list public", "公开参与人列表"}.
 {"Make room password protected", "保护房间密码"}.
 {"Make room members-only", "设置房间只接收会员"}.
 {"Default users as participants", "将默认用户视为参与人"}.
 {"Allow users to change subject", "允许用户更改主题"}.
-{"Allow users to send private messages", "允许用户发送隐私消息"}.
+{"Allow users to send private messages", "允许用户发送私聊消息"}.
 {"Allow users to query other users", "允许用户查询其它用户"}.
 {"Allow users to send invites", "允许用户发送邀请"}.
-{"Enable logging", "允许使用日志"}.
+{"Enable logging", "启用服务器端聊天记录"}.
 {"Number of occupants", "占用人数"}.
 {"Present real JIDs to", "将真实JID显示给"}.
 {"moderators only", "仅一般人"}.
@@ -313,10 +313,10 @@
 {"Listened Ports at ", "监听的端口位于 "}.
 {"Uptime:", "正常运行时间:"}.
 {"CPU Time:", "CPU时间："}.
-{"Transactions Commited:", "要提交的事务:"}.
-{"Transactions Aborted:", "要取消的事务:"}.
-{"Transactions Restarted:", "要重启的事务:"}.
-{"Transactions Logged:", "要记入日志的事务:"}.
+{"Transactions Commited:", "提交的事务:"}.
+{"Transactions Aborted:", "取消的事务:"}.
+{"Transactions Restarted:", "重启的事务:"}.
+{"Transactions Logged:", "记入日志的事务:"}.
 {"Port",    "端口"}.
 {"Module",  "模块"}.
 {"Options", "选项"}.
@@ -335,7 +335,7 @@
 {"Roster", "花名册"}.
 {"Nickname", "昵称"}.
 {"Subscription", "订阅"}.
-{"Pending", "待审"}.
+{"Pending", "挂起"}.
 {"Groups", "组"}.
 {"Remove", "移除"}.
 {"Add Jabber ID", "添加Jabber ID"}.

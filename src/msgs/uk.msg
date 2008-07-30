@@ -233,8 +233,6 @@
 {"Make room public searchable", "Зробити кімнату видимою всім"}.
 {"Make participants list public", "Зробити список учасників видимим всім"}.
 {"Make room persistent", "Зробити кімнату постійною"}.
-{"Make
- room moderated", "Зробити кімнату модерованою"}.
 {"Default users as participants", "Зробити користувачів учасниками за замовчуванням"}.
 {"Make room members-only", "Кімната тільки для зареєтрованых учасників"}.
 {"Allow users to send invites", "Дозволити користувачам надсилати запрошення"}.

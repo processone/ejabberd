@@ -140,7 +140,7 @@
 {"You must fill in field \"Nickname\" in the form", "Debes rellenar el campo \"Apodo\" en el formulario"}.
 {"Specified nickname is already registered", "El apodo especificado ya está registrado, tendrás que buscar otro"}.
 {"Room creation is denied by service policy", "Se te ha denegado crear la sala por política del servicio"}.
-{"ejabberd MUC module", "Módulo de MUC para ejabbed"}.
+{"ejabberd MUC module", "Módulo de MUC para ejabberd"}.
 {"Chatrooms", "Salas de charla"}.
 
 % mod_muc/mod_muc_room.erl

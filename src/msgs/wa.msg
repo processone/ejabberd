@@ -225,8 +225,7 @@
 {"Nickname is already in use by another occupant", "Li metou no est ddja eployî pa ene ôte sakî sol såle"}.
 {"Nickname is registered by another person", "Li metou no est ddja edjîstré pa ene ôte sakî"}.
 {"It is not allowed to send private messages of type \"groupchat\"", "C' est nén possibe d' evoyî des messaedjes privés del sôre «groupchat»"}.
-{"Recipient is not in the conference room", "Li riçuveu n' est nén dins l' såle
-di conferince"}.
+{"Recipient is not in the conference room", "Li riçuveu n' est nén dins l' såle di conferince"}.
 {"Only occupants are allowed to send queries to the conference", "Seulmint les prezints polèt evoyî des cweraedjes sol conferince"}.
 {"Queries to the conference members are not allowed in this room", "Les cweraedjes des mimbes del conferince ni sont nén permetous dins cisse såle ci"}.
 {"You have been banned from this room", "Vos avoz stî bani di cisse såle ci"}.
