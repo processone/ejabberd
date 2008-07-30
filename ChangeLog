@@ -1,5 +1,8 @@
 2008-07-30  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Support Reasons for all
+	affiliation and role changes (EJAB-306)
+
 	* src/gen_mod.erl: When ejabberd is kindly stopped, don't forget
 	modules configuration (EJAB-706)
 	* src/ejabberd_app.erl: Likewise
