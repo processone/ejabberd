@@ -1,3 +1,13 @@
+2008-07-31  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Update Process-one name to ProcessOne (EJAB-708)
+	* doc/guide.html: Likewise
+	* doc/api/overview.edoc: Likewise
+	* src/*/*.erl: Likewise
+	* src/*/*.hrl: Likewise
+	* src/*/*.c: Likewise
+	* src/odbc/*.sql: Likewise
+
 2008-07-30  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Support Reasons for all
