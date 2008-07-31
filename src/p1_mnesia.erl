@@ -9,8 +9,8 @@
 %% the License for the specific language governing rights and limitations
 %% under the License.
 %% 
-%% The Initial Developer of the Original Code is Process-one.
-%% Portions created by Process-one are Copyright 2006-2008, Process-one
+%% The Initial Developer of the Original Code is ProcessOne.
+%% Portions created by ProcessOne are Copyright 2006-2008, ProcessOne
 %% All Rights Reserved.''
 
 -module(p1_mnesia).
