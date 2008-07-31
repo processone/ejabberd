@@ -30,9 +30,11 @@ To install ejabberd, run this command with system administrator rights
   sudo make install
 
 These commands will:
- - Install a startup script: /sbin/ejabberdctl
- - Install ejabberd in /var/lib/ejabberd/
  - Install the configuration files in /etc/ejabberd/
+ - Install ejabberd binary, header and runtime files in /lib/ejabberd/
+ - Install the administration script: /sbin/ejabberdctl
+ - Install ejabberd documentation in /share/doc/ejabberd/
+ - Create a spool directory: /var/lib/ejabberd/
  - Create a directory for log files: /var/log/ejabberd/
 
 
