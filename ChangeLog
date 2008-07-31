@@ -1,5 +1,30 @@
 2008-07-31  Badlop  <badlop@process-one.net>
 
+	* src/msgs/uk.msg: Fix: each string in a single line
+	* src/msgs/wa.msg: Likewise
+
+	* src/msgs/es.msg: Fix typo
+	* src/msgs/gl.msg: Likewise
+	* src/msgs/pt-br.msg: Likewise
+
+	* src/msgs/zh.msg: Fix some translations (thanks to Zhan Caibao)
+
+	* src/msgs/ca.msg: Updated (thanks to Badlop)
+	* src/msgs/cs.msg: Updated (thanks to Lukas Poliuvk)
+	* src/msgs/de.msg: Updated (thanks to Nikolaus Polak)
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+	* src/msgs/fr.msg: Updated (thanks to Christophe Romain)
+	* src/msgs/it.msg: Updated (thanks to Luca Brivio)
+	* src/msgs/ja.msg: Updated (thanks to Tsukasa Hamano)
+	* src/msgs/no.msg: Updated (thanks to Stian B. Barmen)
+	* src/msgs/pl.msg: Updated (thanks to Zbyszek Zolkiewski)
+	* src/msgs/pt-br.msg: Updated (thanks to Otavio Fernandes)
+	* src/msgs/ru.msg: Updated (thanks to Evgeniy Khramtsov)
+	* src/msgs/tr.msg: Updated (thanks to Doruk Fisek)
+	* src/msgs/uk.msg: Updated (thanks to Ruslan Rakhmanin)
+	* src/msgs/wa.msg: Updated (thanks to Pablo Saratxaga)
+	* src/msgs/zh.msg: Updated (thanks to Shelley Shyan)
+
 	* README: Update location where mnesia, ebin and priv directories
 	are installed; install headers and doc (EJAB-696)
 
