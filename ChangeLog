@@ -1,5 +1,7 @@
 2008-08-01  Badlop  <badlop@process-one.net>
 
+	* doc/release_notes_2.0.2.txt: Added for ejabberd 2.0.2-beta1
+
 	* src/web/ejabberd_http.erl: Temporary solution for check of
 	packet size when HTTPS (EJAB-611)(EJAB-507)(EJAB-574)
 
