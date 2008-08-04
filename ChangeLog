@@ -1,8 +1,8 @@
 2008-08-04  Jerome Sautret  <jerome.sautret@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: Restart the database connection when
-	it's lost or it reaches timeout. Set transaction isolation level
-	to SERIALIZABLE when establishing connection.
+	it's lost or it reaches timeout with MySQL. Set transaction isolation level
+	to SERIALIZABLE when establishing connection to MySQL.
 
 2008-08-01  Badlop  <badlop@process-one.net>
 
