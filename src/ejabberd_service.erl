@@ -223,7 +223,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		  %% when accept packets from any address.
 		  %% In this case, the component can send packet of
 		  %% behalf of the server users.
-		  false -> exmpp_jid:string_to_jid(From);
+		  false -> exmpp_jid:list_to_jid(From);
 		  %% The default is the standard behaviour in XEP-0114
 		  _ ->
 		      FromJID1 = exmpp_jib:string_to_jid(From),

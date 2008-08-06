@@ -98,7 +98,7 @@ stop(Host) ->
 
 -define(NODEJID(To, Name, Node),
 	#xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-	 [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_string(To)},
+	 [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(To)},
 	  #xmlattr{name = 'name', value = ?T(Lang, Name)},
 	  #xmlattr{name = 'node', value = Node}]}).
 
@@ -258,7 +258,7 @@ adhoc_sm_items(Acc, From, #jid{ldomain = LServer} = To, Lang) ->
 			empty -> []
 		    end,
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_string(To)},
+		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(To)},
 		       #xmlattr{name = 'name', value = ?T(Lang, "Configuration")},
 		       #xmlattr{name = 'node', value = "config"}]}],
 	    {result, Items ++ Nodes};
@@ -297,7 +297,7 @@ get_user_resources(User, Server) ->
     Rs = ejabberd_sm:get_user_resources(User, Server),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_string(User, Server, R)},
+		       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(User, Server, R)},
 			#xmlattr{name = 'name', value = User}]}
 	      end, lists:sort(Rs)).
 
@@ -365,7 +365,7 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
 		Fallback;
 	    allow ->
 		case get_local_items(LServer, LNode,
-				     exmpp_jid:jid_to_string(To), Lang) of
+				     exmpp_jid:jid_to_list(To), Lang) of
 		    {result, Res} ->
 			{result, Res};
 		    {error, Error} ->
@@ -388,7 +388,7 @@ get_local_items(Acc, From, #jid{ldomain = LServer} = To, "", Lang) ->
 		    {result, Items};
 		allow ->
 		    case get_local_items(LServer, [],
-					 exmpp_jid:jid_to_string(To), Lang) of
+					 exmpp_jid:jid_to_list(To), Lang) of
 			{result, Res} ->
 			    {result, Items ++ Res};
 			{error, _Error} ->
@@ -507,8 +507,8 @@ get_local_items(Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
 			   Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
 			   lists:map(fun({S, U}) ->
 					     #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-					      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_string(U, S)},
-					       #xmlattr{name = 'name', value = exmpp_jid:jid_to_string(U, S)}]}
+					      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(U, S)},
+					       #xmlattr{name = 'name', value = exmpp_jid:jid_to_list(U, S)}]}
 				     end, Sub)
 		       end of
 			       {'EXIT', _Reason} ->
@@ -591,8 +591,8 @@ get_online_vh_users(Host) ->
 	    SURs = lists:sort([{S, U, R} || {U, S, R} <- USRs]),
 	    lists:map(fun({S, U, R}) ->
 			      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-			       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_string(U, S, R)},
-				#xmlattr{name = 'name', value = exmpp_jid:jid_to_string(U, S)}]}
+			       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(U, S, R)},
+				#xmlattr{name = 'name', value = exmpp_jid:jid_to_list(U, S)}]}
 		      end, SURs)
     end.
 
@@ -606,8 +606,8 @@ get_all_vh_users(Host) ->
 		N when N =< 100 ->
 		    lists:map(fun({S, U}) ->
 				      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_string(U, S)},
-					#xmlattr{name = 'name', value = exmpp_jid:jid_to_string(U, S)}]}
+				       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(U, S)},
+					#xmlattr{name = 'name', value = exmpp_jid:jid_to_list(U, S)}]}
 			      end, SUsers);
 		N ->
 		    NParts = trunc(math:sqrt(N * 0.618)) + 1,
@@ -1534,7 +1534,7 @@ set_form(_From, _Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
     Password = get_value("password-verify", XData),
-    AccountJID = exmpp_jid:string_to_jid(AccountString),
+    AccountJID = exmpp_jid:list_to_jid(AccountString),
     User = AccountJID#jid.lnode,
     Server = AccountJID#jid.ldomain,
     true = lists:member(Server, ?MYHOSTS),
@@ -1546,7 +1546,7 @@ set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
     [_|_] = AccountStringList,
     ASL2 = lists:map(
 	     fun(AccountString) ->
-		     JID = exmpp_jid:string_to_jid(AccountString),
+		     JID = exmpp_jid:list_to_jid(AccountString),
 		     [_|_] = JID#jid.lnode,
 		     User = JID#jid.lnode, 
 		     Server = JID#jid.ldomain, 
@@ -1559,7 +1559,7 @@ set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
 
 set_form(_From, _Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
-    JID = exmpp_jid:string_to_jid(AccountString),
+    JID = exmpp_jid:list_to_jid(AccountString),
     [_|_] = JID#jid.lnode,
     LUser = JID#jid.lnode, 
     LServer = JID#jid.ldomain, 
@@ -1578,7 +1578,7 @@ set_form(_From, _Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
 
 set_form(_From, _Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
-    JID = exmpp_jid:string_to_jid(AccountString),
+    JID = exmpp_jid:list_to_jid(AccountString),
     [_|_] = JID#jid.lnode,
     User = JID#jid.lnode, 
     Server = JID#jid.ldomain, 
@@ -1593,7 +1593,7 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
 set_form(_From, _Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
-    JID = exmpp_jid:string_to_jid(AccountString),
+    JID = exmpp_jid:list_to_jid(AccountString),
     [_|_] = JID#jid.lnode,
     User = JID#jid.lnode, 
     Server = JID#jid.ldomain, 
@@ -1603,7 +1603,7 @@ set_form(_From, _Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
 
 set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
-    JID = exmpp_jid:string_to_jid(AccountString),
+    JID = exmpp_jid:list_to_jid(AccountString),
     [_|_] = JID#jid.lnode,
     User = JID#jid.lnode, 
     Server = JID#jid.ldomain, 
@@ -1640,7 +1640,7 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
 
 set_form(_From, _Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
-    JID = exmpp_jid:string_to_jid(AccountString),
+    JID = exmpp_jid:list_to_jid(AccountString),
     [_|_] = JID#jid.lnode,
     User = JID#jid.lnode, 
     Server = JID#jid.ldomain, 

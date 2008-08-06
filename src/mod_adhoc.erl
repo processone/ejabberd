@@ -124,7 +124,7 @@ get_sm_commands(Acc, _From, #jid{ldomain = LServer} = To, "", Lang) ->
 		    end,
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS,
 		      name = 'item', attrs =
-		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_string(To)},
+		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(To)},
 		       #xmlattr{name = 'node', value = ?NS_ADHOC_s},
 		       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]
 		      }],

@@ -497,8 +497,8 @@ user_queue(User, Server, Query, Lang) ->
 			   io_lib:format(
 			     "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 			     [Year, Month, Day, Hour, Minute, Second])),
-		  SFrom = exmpp_jid:jid_to_string(jlib:from_old_jid(From)),
-		  STo = exmpp_jid:jid_to_string(jlib:from_old_jid(To)),
+		  SFrom = exmpp_jid:jid_to_list(jlib:from_old_jid(From)),
+		  STo = exmpp_jid:jid_to_list(jlib:from_old_jid(To)),
 		  Packet0 = exmpp_xml:xmlelement_to_xmlel(Packet,
 		    [?DEFAULT_NS], ?PREFIXED_NS),
 		  Packet1 = exmpp_stanza:set_jids(Packet0, SFrom, STo),
@@ -568,7 +568,7 @@ user_queue_parse_query(US, Query) ->
     end.
 
 us_to_list({User, Server}) ->
-    exmpp_jid:jid_to_string(User, Server).
+    exmpp_jid:jid_to_list(User, Server).
 
 webadmin_user(Acc, User, Server, Lang) ->
     US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},

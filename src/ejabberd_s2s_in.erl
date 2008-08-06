@@ -371,7 +371,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error;
 		F ->
 		    try
-			exmpp_jid:string_to_jid(F)
+			exmpp_jid:list_to_jid(F)
 		    catch
 			_Exception1 -> error
 		    end
@@ -381,7 +381,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error;
 		T ->
 		    try
-			exmpp_jid:string_to_jid(T)
+			exmpp_jid:list_to_jid(T)
 		    catch
 			_Exception2 -> error
 		    end
@@ -621,7 +621,7 @@ get_cert_domains(Cert) ->
 			  end,
 		      if
 			  D /= error ->
-			      case exmpp_jid:string_to_jid(D) of
+			      case exmpp_jid:list_to_jid(D) of
 				  #jid{lnode = undefined,
 				       ldomain = LD,
 				       lresource = undefined} ->
@@ -674,7 +674,7 @@ get_cert_domains(Cert) ->
 					    []
 				    end;
 			       ({dNSName, D}) when is_list(D) ->
-				    case exmpp_jid:string_to_jid(D) of
+				    case exmpp_jid:list_to_jid(D) of
 					#jid{lnode = undefined,
 					     ldomain = LD,
 					     lresource = undefined} ->

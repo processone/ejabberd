@@ -418,7 +418,7 @@ get_user_resources(User, Server) ->
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
 			  #xmlattr{name = 'jid', value =
-			    exmpp_jid:jid_to_string(User, Server, R)},
+			    exmpp_jid:jid_to_list(User, Server, R)},
 			  #xmlattr{name = 'name', value = User}
 			]}
 	      end, lists:sort(Rs)).

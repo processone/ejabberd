@@ -8,6 +8,12 @@
 	src/mod_disco.erl, src/mod_caps.erl: Update to use the new
 	exmpp_xml:get_attribute/{3,4} API.
 
+	* src/ejabberd_c2s.erl, src/ejabberd_s2s_in.erl,
+	src/ejabberd_s2s_out.erl, src/ejabberd_service.erl, src/mod_adhoc.erl,
+	src/mod_caps.erl, src/mod_configure.erl, src/mod_disco.erl,
+	src/mod_echo.erl, src/mod_offline.erl, src/mod_roster.erl,
+	src/mod_vcard.erl: Update to use the new names used in exmpp_jid.
+
 2008-07-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/adhoc.erl, src/mod_configure.erl, src/mod_announce.erl,

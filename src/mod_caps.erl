@@ -254,9 +254,9 @@ handle_cast({disco_response, From, _To, IQ},
 		    ?ERROR_MSG("ID '~s' matches no query", [ID])
 	    end;
 	    %gen_server:cast(self(), visit_feature_queries),
-	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:jid_to_string(From), SubEls]);
+	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:jid_to_list(From), SubEls]);
 	{result, _} ->
-	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:jid_to_string(From), IQ#xmlel.children]);
+	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:jid_to_list(From), IQ#xmlel.children]);
 	_ ->
 	    %% Can't do anything about errors
 	    ok

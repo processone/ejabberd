@@ -156,7 +156,7 @@ get_user_roster(Acc, US) ->
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,
     Attrs1 = exmpp_xml:set_attribute_in_list([],
-      'jid', exmpp_jid:jid_to_string(U, S, R)),
+      'jid', exmpp_jid:jid_to_list(U, S, R)),
     Attrs2 = case Item#roster.name of
 		 "" ->
 		     Attrs1;
@@ -194,7 +194,7 @@ process_iq_set(From, To, IQ) ->
 
 process_item_set(From, To, #xmlel{} = Item) ->
     try
-	JID1 = exmpp_jid:string_to_jid(exmpp_xml:get_attribute(Item, 'jid', "")),
+	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(Item, 'jid', "")),
 	% XXX OLD FORMAT: old JID (with empty strings).
 	#jid{node = User, lnode = LUser, ldomain = LServer} =
 	  jlib:to_old_jid(From),
@@ -276,7 +276,7 @@ process_item_attrs(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
 	'jid' ->
 	    try
-		JID1 = exmpp_jid:string_to_jid(Val),
+		JID1 = exmpp_jid:list_to_jid(Val),
 		JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
 		process_item_attrs(Item#roster{jid = JID}, Attrs)
 	    catch
@@ -587,7 +587,7 @@ set_items(User, Server, SubEl) ->
 
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:string_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
+	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
 	JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
 	LJID = {JID1#jid.lnode, JID1#jid.ldomain, JID1#jid.lresource},
 	Item = #roster{usj = {LUser, LServer, LJID},
@@ -612,7 +612,7 @@ process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
 	'jid' ->
 	    try
-		JID1 = exmpp_jid:string_to_jid(Val),
+		JID1 = exmpp_jid:list_to_jid(Val),
 		JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
 		process_item_attrs_ws(Item#roster{jid = JID}, Attrs)
 	    catch
@@ -664,9 +664,9 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 				      end,
 			    {U, S, R} = R#roster.jid,
 			    Attrs1 = exmpp_stanza:set_sender_in_list([],
-			      exmpp_jid:jid_to_string(U, S, R)),
+			      exmpp_jid:jid_to_list(U, S, R)),
 			    Attrs2 = exmpp_stanza:set_recipient_in_list(Attrs1,
-			      exmpp_jid:jid_to_string(JID)),
+			      exmpp_jid:jid_to_list(JID)),
 			    Pres1 = exmpp_presence:subscribe(),
 			    Pres2 = Pres1#xmlel{attrs = Attrs2},
 			    exmpp_presence:set_status(Pres2, Status)
@@ -815,7 +815,7 @@ user_roster(User, Server, Query, Lang) ->
 				    {U, S, R} = R#roster.jid,
 				    ?XE("tr",
 					[?XAC("td", [{"class", "valign"}],
-					      catch exmpp_jid:jid_to_string(U, S, R)),
+					      catch exmpp_jid:jid_to_list(U, S, R)),
 					 ?XAC("td", [{"class", "valign"}],
 					      R#roster.name),
 					 ?XAC("td", [{"class", "valign"}],
@@ -861,7 +861,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 		    error;
 		{value, {_, SJID}} ->
 		    try
-			JID = exmpp_jid:string_to_jid(SJID),
+			JID = exmpp_jid:list_to_jid(SJID),
 			user_roster_subscribe_jid(User, Server, JID),
 			ok
 		    catch
@@ -911,7 +911,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 			  {value, _} ->
 			      UJID = exmpp_jid:make_bare_jid(User, Server),
 			      Attrs1 = exmpp_xml:set_attribute_in_list([],
-				'jid', exmpp_jid:jid_to_string(JID)),
+				'jid', exmpp_jid:jid_to_list(JID)),
 			      Attrs2 = exmpp_xml:set_attribute_in_list(Attrs1,
 				'subscription', "remove"),
 			      Item = #xmlel{ns = ?NS_ROSTER, name = 'item',
@@ -933,7 +933,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
     nothing.
 
 us_to_list({User, Server}) ->
-    exmpp_jid:bare_jid_to_string(User, Server).
+    exmpp_jid:bare_jid_to_list(User, Server).
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].
