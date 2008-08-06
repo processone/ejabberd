@@ -63,7 +63,11 @@
   mod_annouce,
   mod_caps,
   mod_configure,
+  mod_configure2,
   mod_disco,
+  mod_echo,
+  mod_offline,
+  mod_offline_odbc,
   mod_roster,
   mod_vcard
 ]).

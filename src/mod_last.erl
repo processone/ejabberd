@@ -38,8 +38,9 @@
 	 get_last_info/2,
 	 remove_user/2]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("mod_privacy.hrl").
 
 -record(last_activity, {us, timestamp, status}).
@@ -51,9 +52,9 @@ start(Host, Opts) ->
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, last_activity)}]),
     update_table(),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY_s,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY_s,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
@@ -65,30 +66,28 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(unset_presence_hook, Host,
 			  ?MODULE, on_presence_update, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_LAST),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_LAST).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY_s),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY_s).
 
-process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    case Type of
+process_local_iq(_From, _To, IQ) ->
+    case exmpp_iq:get_type(IQ) of
 	set ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	    exmpp_iq:error(IQ, 'not-allowed');
 	get ->
 	    Sec = trunc(element(1, erlang:statistics(wall_clock))/1000),
-	    IQ#iq{type = result,
-		  sub_el =  [{xmlelement, "query",
-			      [{"xmlns", ?NS_LAST},
-			       {"seconds", integer_to_list(Sec)}],
-			      []}]}
+	    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query', attrs =
+	      [#xmlattr{name = 'seconds', value = integer_to_list(Sec)}]},
+	    exmpp_iq:result(IQ, Response)
     end.
 
 
-process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    case Type of
+process_sm_iq(From, To, IQ) ->
+    case exmpp_iq:get_type(IQ) of
 	set ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	    exmpp_iq:error(IQ, 'not-allowed');
 	get ->
-	    User = To#jid.luser,
-	    Server = To#jid.lserver,
+	    User = To#jid.lnode,
+	    Server = To#jid.ldomain,
 	    {Subscription, _Groups} =
 		ejabberd_hooks:run_fold(
 		  roster_get_jid_info, Server,
@@ -104,36 +103,33 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			   allow,
 			   [User, Server, UserListRecord,
 			    {From, To,
-			     {xmlelement, "presence", [], []}},
+			     exmpp_presence:available()},
 			    out]) of
 			allow ->
-			    get_last(IQ, SubEl, User, Server);
+			    get_last(IQ, User, Server);
 			deny ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+			    exmpp_iq:error(IQ, 'not-allowed')
 		    end;
 		true ->
-		    IQ#iq{type = error,
-			  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+		    exmpp_iq:error(IQ, 'not-allowed')
 	    end
     end.
 
 %% TODO: This function could use get_last_info/2
-get_last(IQ, SubEl, LUser, LServer) ->
+get_last(IQ, LUser, LServer) ->
     case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+	    exmpp_iq:error(IQ, 'internal-server-error');
 	[] ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
+	    exmpp_iq:error(IQ, 'service-unavailable');
 	[#last_activity{timestamp = TimeStamp, status = Status}] ->
 	    {MegaSecs, Secs, _MicroSecs} = now(),
 	    TimeStamp2 = MegaSecs * 1000000 + Secs,
 	    Sec = TimeStamp2 - TimeStamp,
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement, "query",
-			     [{"xmlns", ?NS_LAST},
-			      {"seconds", integer_to_list(Sec)}],
-			     [{xmlcdata, Status}]}]}
+	    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
+	      attrs = [#xmlattr{name = 'seconds', value = integer_to_list(Sec)}],
+	      children = [#xmlcdata{cdata = list_to_binary(Status)}]},
+	    exmpp_iq:result(IQ, Response)
     end.
 
 
@@ -144,8 +140,8 @@ on_presence_update(User, Server, _Resource, Status) ->
     store_last_info(User, Server, TimeStamp, Status).
 
 store_last_info(User, Server, TimeStamp, Status) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:write(#last_activity{us = US,
@@ -166,8 +162,8 @@ get_last_info(LUser, LServer) ->
     end.
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:delete({last_activity, US})

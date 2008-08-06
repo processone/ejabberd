@@ -1,3 +1,9 @@
+2008-08-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_offline.erl, src/mod_offline_odbc.erl, src/mod_echo.erl,
+	src/mod_last.erl, src/mod_configure2.erl, src/mod_last_odbc.erl,
+	src/gen_iq_handler.erl: Convert to exmpp.
+
 2008-07-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/adhoc.erl, src/mod_configure.erl, src/mod_announce.erl,

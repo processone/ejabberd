@@ -33,30 +33,36 @@
 	 stop/1,
 	 process_local_iq/3]).
 
--include("ejabberd.hrl").
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
--define(NS_ECONFIGURE, "http://ejabberd.jabberstudio.org/protocol/configure").
+-include("ejabberd.hrl").
+
+% XXX The namespace used in this module isn't known by Exmpp: if the
+% known list isn't updated by Ejabberd, some element names will be
+% represented with strings.
+% XXX This module currently supposed that they'll be atoms.
+
+-define(NS_ECONFIGURE, 'http://ejabberd.jabberstudio.org/protocol/configure').
+-define(NS_ECONFIGURE_s, "http://ejabberd.jabberstudio.org/protocol/configure").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE_s,
 				  ?MODULE, process_local_iq, IQDisc),
     ok.
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE_s).
 
 
-process_local_iq(From, To, #iq{type = Type, lang = _Lang, sub_el = SubEl} = IQ) ->
-    case acl:match_rule(To#jid.lserver, configure, From) of
+process_local_iq(From, To, IQ) ->
+    case acl:match_rule(To#jid.ldomain, configure, From) of
 	deny ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	    exmpp_iq:error(IQ, 'not-allowed');
 	allow ->
-	    case Type of
+	    case exmpp_iq:get_type(IQ) of
 		set ->
-		    IQ#iq{type = error,
-			  sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
+		    exmpp_iq:error(IQ, 'feature-not-implemented');
 		    %%case xml:get_tag_attr_s("type", SubEl) of
 		    %%    "cancel" ->
 		    %%        IQ#iq{type = result,
@@ -90,56 +96,57 @@ process_local_iq(From, To, #iq{type = Type, lang = _Lang, sub_el = SubEl} = IQ) 
 		    %%		   sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 		    %%end;
 		get ->
-		    case process_get(SubEl) of
+		    case process_get(IQ#xmlel.children) of
 			{result, Res} ->
-			    IQ#iq{type = result, sub_el = [Res]};
+			    exmpp_iq:result(IQ, Res);
 			{error, Error} ->
-			    IQ#iq{type = error, sub_el = [SubEl, Error]}
+			    exmpp_iq:error(IQ, Error)
 		    end
 	    end
     end.
 
 
-process_get({xmlelement, "info", _Attrs, _SubEls}) ->
+process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'info'}) ->
     S2SConns = ejabberd_s2s:dirty_get_connections(),
     TConns = lists:usort([element(2, C) || C <- S2SConns]),
-    Attrs = [{"registered-users",
+    Attrs = [#xmlattr{name = 'registered-users', value =
 	      integer_to_list(mnesia:table_info(passwd, size))},
-	     {"online-users",
+	     #xmlattr{name = 'online-users', value =
 	      integer_to_list(mnesia:table_info(presence, size))},
-	     {"running-nodes",
+	     #xmlattr{name = 'running-nodes', value =
 	      integer_to_list(length(mnesia:system_info(running_db_nodes)))},
-	     {"stopped-nodes",
+	     #xmlattr{name = 'stopped-nodes', value =
 	      integer_to_list(
 		length(lists:usort(mnesia:system_info(db_nodes) ++
 				   mnesia:system_info(extra_db_nodes)) --
 		       mnesia:system_info(running_db_nodes)))},
-	     {"outgoing-s2s-servers", integer_to_list(length(TConns))}],
-    {result, {xmlelement, "info",
-	      [{"xmlns", ?NS_ECONFIGURE} | Attrs], []}};
-process_get({xmlelement, "welcome-message", Attrs, _SubEls}) ->
+	     #xmlattr{name = 'outgoing-s2s-servers', value =
+	      integer_to_list(length(TConns))}],
+    {result, #xmlel{ns = ?NS_ECONFIGURE, name = 'info', attrs = Attrs}};
+process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'welcome-message', attrs = Attrs}) ->
     {Subj, Body} = case ejabberd_config:get_local_option(welcome_message) of
 		       {_Subj, _Body} = SB -> SB;
 		       _ -> {"", ""}
 		   end,
-    {result, {xmlelement, "welcome-message", Attrs,
-	      [{xmlelement, "subject", [], [{xmlcdata, Subj}]},
-	       {xmlelement, "body", [], [{xmlcdata, Body}]}]}};
-process_get({xmlelement, "registration-watchers", Attrs, _SubEls}) ->
+    {result, #xmlel{ns = ?NS_ECONFIGURE, name = 'welcome-message',
+	      attrs = Attrs, children =
+	      [#xmlel{ns = ?NS_ECONFIGURE, name = 'subject', children = [#xmlcdata{cdata = list_to_binary(Subj)}]},
+	       #xmlel{ns = ?NS_ECONFIGURE, name = 'body', children = [#xmlcdata{cdata = list_to_binary(Body)}]}]}};
+process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'registration-watchers', attrs = Attrs}) ->
     SubEls =
 	case ejabberd_config:get_local_option(registration_watchers) of
 	    JIDs when is_list(JIDs) ->
 		lists:map(fun(JID) ->
-				  {xmlelement, "jid", [], [{xmlcdata, JID}]}
+				  #xmlel{ns = ?NS_ECONFIGURE, name = 'jid', children = [#xmlcdata{cdata = list_to_binary(JID)}]}
 			  end, JIDs);
 	    _ ->
 		[]
 	end,
-    {result, {xmlelement, "registration_watchers", Attrs, SubEls}};
-process_get({xmlelement, "acls", Attrs, _SubEls}) ->
+    {result, #xmlel{ns = ?NS_ECONFIGURE, name = 'registration_watchers', attrs = Attrs, children = SubEls}};
+process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'acls', attrs = Attrs}) ->
     Str = lists:flatten(io_lib:format("~p.", [ets:tab2list(acl)])),
-    {result, {xmlelement, "acls", Attrs, [{xmlcdata, Str}]}};
-process_get({xmlelement, "access", Attrs, _SubEls}) ->
+    {result, #xmlel{ns = ?NS_ECONFIGURE, name = 'acls', attrs = Attrs, children = [#xmlcdata{cdata = list_to_binary(Str)}]}};
+process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'access', attrs = Attrs}) ->
     Str =
 	lists:flatten(
 	  io_lib:format(
@@ -149,22 +156,22 @@ process_get({xmlelement, "access", Attrs, _SubEls}) ->
 			  [],
 			  [{{access, '$1', '$2'}}]}])
 	    ])),
-    {result, {xmlelement, "access", Attrs, [{xmlcdata, Str}]}};
-process_get({xmlelement, "last", Attrs, _SubEls}) ->
+    {result, #xmlel{ns = ?NS_ECONFIGURE, name = 'access', attrs = Attrs, children = [#xmlcdata{cdata = list_to_binary(Str)}]}};
+process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'last', attrs = Attrs}) ->
     case catch mnesia:dirty_select(
 		 last_activity, [{{last_activity, '_', '$1', '_'}, [], ['$1']}]) of
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    {error, 'internal-server-error'};
 	Vals ->
 	    {MegaSecs, Secs, _MicroSecs} = now(),
 	    TimeStamp = MegaSecs * 1000000 + Secs,
 	    Str = lists:flatten(
 		    lists:append(
 		      [[integer_to_list(TimeStamp - V), " "] || V <- Vals])),
-	    {result, {xmlelement, "last", Attrs, [{xmlcdata, Str}]}}
+	    {result, #xmlel{ns = ?NS_ECONFIGURE, name = 'last', attrs = Attrs, children = [#xmlcdata{cdata = list_to_binary(Str)}]}}
     end;
 %%process_get({xmlelement, Name, Attrs, SubEls}) ->
 %%    {result, };
 process_get(_) ->
-    {error, ?ERR_BAD_REQUEST}.
+    {error, 'bad-request'}.
 
