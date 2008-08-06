@@ -315,7 +315,7 @@ adhoc_local_items(Acc, From, #jid{ldomain = LServer, domain = Server} = To,
 	    Nodes = recursively_get_local_items(LServer, "", Server, Lang),
 	    Nodes1 = lists:filter(
 		       fun(N) ->
-			       Nd = exmpp_xml:get_attribute(N, 'node'),
+			       Nd = exmpp_xml:get_attribute(N, 'node', ""),
 			       F = get_local_features([], From, To, Nd, Lang),
 			       case F of
 				   {result, [?NS_ADHOC_s]} ->
@@ -346,8 +346,8 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
     Nodes = lists:flatten(
 	      lists:map(
 		fun(N) ->
-			S = exmpp_xml:get_attribute(N, 'jid'),
-			Nd = exmpp_xml:get_attribute(N, 'node'),
+			S = exmpp_xml:get_attribute(N, 'jid', ""),
+			Nd = exmpp_xml:get_attribute(N, 'node', ""),
 			if (S /= Server) or (Nd == "") ->
 				[];
 			   true ->

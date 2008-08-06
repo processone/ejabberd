@@ -45,9 +45,9 @@ parse_request(IQ) ->
 	    {set, ?NS_ADHOC} ->
 		?DEBUG("entering parse_request...", []),
 		Lang = exmpp_stanza:get_lang(IQ),
-		Node = exmpp_xml:get_attribute(SubEl, 'node'),
-		SessionID = exmpp_xml:get_attribute(SubEl, 'sessionid'),
-		Action = exmpp_xml:get_attribute(SubEl, 'action'),
+		Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+		SessionID = exmpp_xml:get_attribute(SubEl, 'sessionid', ""),
+		Action = exmpp_xml:get_attribute(SubEl, 'action', ""),
 		XData = find_xdata_el(SubEl),
 		AllEls = SubEl#xmlel.ns,
 		if XData ->

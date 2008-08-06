@@ -194,7 +194,7 @@ process_iq_set(From, To, IQ) ->
 
 process_item_set(From, To, #xmlel{} = Item) ->
     try
-	JID1 = exmpp_jid:string_to_jid(exmpp_xml:get_attribute(Item, 'jid')),
+	JID1 = exmpp_jid:string_to_jid(exmpp_xml:get_attribute(Item, 'jid', "")),
 	% XXX OLD FORMAT: old JID (with empty strings).
 	#jid{node = User, lnode = LUser, ldomain = LServer} =
 	  jlib:to_old_jid(From),
@@ -587,7 +587,7 @@ set_items(User, Server, SubEl) ->
 
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:string_to_jid(exmpp_xml:get_attribute(El, 'jid')),
+	JID1 = exmpp_jid:string_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
 	JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
 	LJID = {JID1#jid.lnode, JID1#jid.ldomain, JID1#jid.lresource},
 	Item = #roster{usj = {LUser, LServer, LJID},

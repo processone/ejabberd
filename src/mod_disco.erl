@@ -132,7 +132,7 @@ process_local_iq_items(From, To, IQ) ->
 	    exmpp_iq:error(IQ, 'not-allowed');
 	get ->
 	    SubEl = exmpp_iq:get_request(IQ),
-	    Node = exmpp_xml:get_attribute(SubEl, 'node'),
+	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 	    Host = To#jid.ldomain,
 	    Lang = exmpp_stanza:get_lang(IQ),
 
@@ -166,7 +166,7 @@ process_local_iq_info(From, To, IQ) ->
 	get ->
 	    Host = To#jid.ldomain,
 	    SubEl = exmpp_iq:get_request(IQ),
-	    Node = exmpp_xml:get_attribute(SubEl, 'node'),
+	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 	    Lang = exmpp_stanza:get_lang(IQ),
 	    % XXX OLD FORMAT: From, To.
 	    FromOld = jlib:to_old_jid(From),
@@ -290,7 +290,7 @@ process_sm_iq_items(From, To, IQ) ->
 	    #jid{lnode = LTo, ldomain = ToServer} = To,
 	    #jid{lnode = LFrom, ldomain = LServer} = From,
 	    Self = (LTo == LFrom) andalso (ToServer == LServer),
-	    Node = exmpp_xml:get_attribute(SubEl, 'node'),
+	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 	    if
 		Self, Node /= [] ->
 		    %% Here, we treat disco publish attempts to your own JID.
@@ -307,7 +307,7 @@ process_sm_iq_items(From, To, IQ) ->
 	    end;
 	get ->
 	    Host = To#jid.ldomain,
-	    Node = exmpp_xml:get_attribute(SubEl, 'node'),
+	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 	    Lang = exmpp_stanza:get_lang(IQ),
 	    % XXX OLD FORMAT: From, To.
 	    FromOld = jlib:to_old_jid(From),
@@ -366,7 +366,7 @@ process_sm_iq_info(From, To, IQ) ->
 	get ->
 	    Host = To#jid.ldomain,
 	    SubEl = exmpp_iq:get_request(IQ),
-	    Node = exmpp_xml:get_attribute(SubEl, 'node'),
+	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 	    Lang = exmpp_stanza:get_lang(IQ),
 	    % XXX OLD FORMAT: From, To.
 	    FromOld = jlib:to_old_jid(From),
@@ -441,10 +441,10 @@ process_disco_publish(User, Node, Items) ->
     F = fun() ->
 		lists:foreach(
 		  fun(#xmlel{} = Item) ->
-			  Action = exmpp_xml:get_attribute(Item, 'action'),
-			  Jid = exmpp_xml:get_attribute(Item, 'jid'),
-			  PNode = exmpp_xml:get_attribute(Item, 'node'),
-			  Name = exmpp_xml:get_attribute(Item, 'name'),
+			  Action = exmpp_xml:get_attribute(Item, 'action', ""),
+			  Jid = exmpp_xml:get_attribute(Item, 'jid', ""),
+			  PNode = exmpp_xml:get_attribute(Item, 'node', ""),
+			  Name = exmpp_xml:get_attribute(Item, 'name', ""),
 			  ?INFO_MSG("Disco publish: ~p ~p ~p ~p ~p ~p~n",
 				    [User, Action, Node, Jid, PNode, Name]),
 

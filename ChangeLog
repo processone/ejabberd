@@ -4,6 +4,10 @@
 	src/mod_last.erl, src/mod_configure2.erl, src/mod_last_odbc.erl,
 	src/gen_iq_handler.erl: Convert to exmpp.
 
+	* src/adhoc.erl, src/mod_configure.erl, src/mod_roster.erl,
+	src/mod_disco.erl, src/mod_caps.erl: Update to use the new
+	exmpp_xml:get_attribute/{3,4} API.
+
 2008-07-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/adhoc.erl, src/mod_configure.erl, src/mod_announce.erl,
