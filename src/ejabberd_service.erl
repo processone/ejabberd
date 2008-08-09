@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_service.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : External component management
+%%% Purpose : External component management (XEP-0114)
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -73,8 +73,16 @@
 -define(STREAM_TRAILER, "</stream:stream>").
 
 -define(INVALID_HEADER_ERR,
-	"<stream:stream>"
+	"<stream:stream "
+	"xmlns:stream='http://etherx.jabber.org/streams'>"
 	"<stream:error>Invalid Stream Header</stream:error>"
+	"</stream:stream>"
+       ).
+
+-define(HOST_UNKNOWN_ERR,
+	"<stream:stream "
+	"xmlns:stream='http://etherx.jabber.org/streams'>"
+	"<stream:error>Host Unknown</stream:error>"
 	"</stream:stream>"
        ).
 
@@ -168,13 +176,21 @@ init([{SockMod, Socket}, Opts]) ->
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
-    % TODO
     case xml:get_attr_s("xmlns", Attrs) of
 	"jabber:component:accept" ->
-	    Header = io_lib:format(?STREAM_HEADER,
-				   [StateData#state.streamid, ?MYNAME]),
-	    send_text(StateData, Header),
-	    {next_state, wait_for_handshake, StateData};
+	    %% Check that destination is a served component
+	    To = xml:get_attr_s("to", Attrs),
+	    case lists:member(To, StateData#state.hosts) of
+		true ->
+		    Header = io_lib:format(?STREAM_HEADER,
+					   [StateData#state.streamid,
+					    xml:crypt(To)]),
+		    send_text(StateData, Header),
+		    {next_state, wait_for_handshake, StateData};
+		_ ->
+		    send_text(StateData, ?HOST_UNKNOWN_ERR),
+		    {stop, normal, StateData}
+	    end;
 	_ ->
 	    send_text(StateData, ?INVALID_HEADER_ERR),
 	    {stop, normal, StateData}
