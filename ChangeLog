@@ -1,9 +1,8 @@
 2008-08-09  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_service.erl: Fix XEP-0114 compliance: define xmlns
-	in header of error response; check the connection is attempted to
-	a served component; include in response the JID of served
-	component not server (thanks to Sergei Golovan)
+	in header of error response; include in response the JID of served
+	component not server (thanks to Sergei Golovan)(EJAB-717)
 
 2008-08-01  Badlop  <badlop@process-one.net>
 

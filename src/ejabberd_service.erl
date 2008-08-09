@@ -79,13 +79,6 @@
 	"</stream:stream>"
        ).
 
--define(HOST_UNKNOWN_ERR,
-	"<stream:stream "
-	"xmlns:stream='http://etherx.jabber.org/streams'>"
-	"<stream:error>Host Unknown</stream:error>"
-	"</stream:stream>"
-       ).
-
 -define(INVALID_HANDSHAKE_ERR,
 	"<stream:error>Invalid Handshake</stream:error>"
 	"</stream:stream>"
@@ -178,19 +171,15 @@ init([{SockMod, Socket}, Opts]) ->
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case xml:get_attr_s("xmlns", Attrs) of
 	"jabber:component:accept" ->
-	    %% Check that destination is a served component
+	    %% Note: XEP-0114 requires to check that destination is a Jabber
+	    %% component served by this Jabber server.
+	    %% However several transports don't respect that,
+	    %% so ejabberd doesn't check 'to' attribute (EJAB-717)
 	    To = xml:get_attr_s("to", Attrs),
-	    case lists:member(To, StateData#state.hosts) of
-		true ->
-		    Header = io_lib:format(?STREAM_HEADER,
-					   [StateData#state.streamid,
-					    xml:crypt(To)]),
-		    send_text(StateData, Header),
-		    {next_state, wait_for_handshake, StateData};
-		_ ->
-		    send_text(StateData, ?HOST_UNKNOWN_ERR),
-		    {stop, normal, StateData}
-	    end;
+	    Header = io_lib:format(?STREAM_HEADER,
+				   [StateData#state.streamid, xml:crypt(To)]),
+	    send_text(StateData, Header),
+	    {next_state, wait_for_handshake, StateData};
 	_ ->
 	    send_text(StateData, ?INVALID_HEADER_ERR),
 	    {stop, normal, StateData}
