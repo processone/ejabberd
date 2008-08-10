@@ -102,6 +102,7 @@
 {"Resources", "Bronnen"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Het is gebruikers niet toegestaan zo snel achter elkaar te registreren"}.
 {"Choose a username and password to register with this server", "Kies een gebruikersnaam en een wachtwoord om u te registreren op deze server"}.
 
 % ejabberd_c2s.erl
@@ -156,6 +157,10 @@
 {"Chatrooms", "Groepsgesprekken"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "Het is niet toegestaan priveberichten te sturen"}.
+{"Visitors are not allowed to change their nicknames in this room", "Het is bezoekers niet toegestaan hun naam te veranderen in dit kanaal"}.
+{"Allow visitors to send status text in presence updates", "Sta bezoekers toe hun statusbericht in te stellen"}.
+{"Allow visitors to change nickname", "Sta bezoekers toe hun naam te veranderen"}.
 {"This participant is kicked from the room because he sent an error message", "Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht aan een andere deelnemer"}.
 {"This participant is kicked from the room because he sent an error presence", "Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmelding-aanwezigheid"}.
@@ -242,6 +247,7 @@
 {"Delete message of the day on all hosts", "Verwijder bericht-van-de-dag op alle hosts"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Bijnaam voor deze knoop"}.
 {"Roster groups allowed to subscribe", "Contactlijst-groepen die mogen abonneren"}.
 {"Deliver payloads with event notifications", "Berichten bezorgen samen met gebeurtenisnotificaties"}.
 {"Notify subscribers when the node configuration changes", "Abonnees informeren wanneer de instellingen van de node veranderen"}.

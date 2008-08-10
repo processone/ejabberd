@@ -84,6 +84,7 @@
 {"Import Directory", "Importu dosierujo"}.
 
 % mod_register.erl
+{"Users are not allowed to register accounts so fast", "Ne estas permesata al uzantoj registri tiel rapide"}.
 {"Choose a username and password to register with this server", "Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"}.
 
 % mod_vcard.erl
@@ -114,6 +115,7 @@
 {"Jabber ID", "Jabber ID"}.
 
 % mod_pubsub/mod_pubsub.erl
+{"A friendly name for the node", "Kromnomo por ĉi tiu nodo"}.
 {"Roster groups allowed to subscribe", "Kontaktlist-grupoj kiuj rajtas aboni"}.
 {"Publish-Subscribe", "Public-Abonado"}.
 {"ejabberd Publish-Subscribe module", "ejabberd Public-Abonada modulo"}.
@@ -151,6 +153,10 @@
 {"Specified nickname is already registered", "Donita kaŝnomo jam estas registrita"}.
 
 % mod_muc/mod_muc_room.erl
+{"It is not allowed to send private messages", "Ne estas permesata sendi privatajn mesaĝojn"}.
+{"Visitors are not allowed to change their nicknames in this room", "Ne estas permesata al vizitantoj ŝanĝi siajn kaŝnomojn en ĉi tiu ĉambro"}.
+{"Allow visitors to send status text in presence updates", "Permesu al vizitantoj sendi statmesaĝon en ĉeest-sciigoj"}.
+{"Allow visitors to change nickname", "Permesu al vizitantoj ŝanĝi siajn kaŝnomojn"}.
 {"This participant is kicked from the room because he sent an error message", "Ĉi tiu partoprenanta estas forpelata de la babilejo pro sendado de erar-mesaĝo"}.
 {"This participant is kicked from the room because he sent an error message to another participant", "Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-mesaĝo al alia partoprenanto"}.
 {"This participant is kicked from the room because he sent an error presence", "Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-ĉeesto"}.  %FIXME: a less literal translation anyone?
