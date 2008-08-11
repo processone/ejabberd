@@ -2,6 +2,7 @@
 
 	* src/msgs/eo.msg: Updated (thanks to Andreas van Cranenburgh)
 	* src/msgs/nl.msg: Updated (thanks to Andreas van Cranenburgh)
+	* src/msgs/sk.msg: Updated (thanks to Marek Becka)
 	* src/msgs/sv.msg: Updated (thanks to Thore Alstromer and Heysan)
 
 2008-08-09  Badlop  <badlop@process-one.net>
