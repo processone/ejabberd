@@ -1741,6 +1741,11 @@ module loaded!
 server and use LDAP directory as vCard storage. Shared rosters are not supported
 yet.
 
+Note that \ejabberd{} treats LDAP as a read-only storage:
+it is possible to consult data, but not possible to 
+create accounts, change password or edit vCard that is stored in LDAP.
+
+
 \makesubsubsection{ldapconnection}{Connection}
 
 Parameters:
@@ -3265,6 +3270,10 @@ Examples:
 \ejabberd{} can map LDAP attributes to vCard fields. This behaviour is
 implemented in the \modvcardldap{} module. This module does not depend on the
 authentication method (see~\ref{ldapauth}).
+
+Note that \ejabberd{} treats LDAP as a read-only storage:
+it is possible to consult data, but not possible to 
+create accounts, change password or edit vCard that is stored in LDAP.
 
 The \modvcardldap{} module has
 its own optional parameters. The first group of parameters has the same
