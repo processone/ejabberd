@@ -1437,7 +1437,9 @@ module loaded!</P><P> <A NAME="ldap"></A> </P><!--TOC subsection LDAP-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc35">3.2.5</A>&#XA0;&#XA0;<A HREF="#ldap">LDAP</A></H3><!--SEC END --><P> <A NAME="ldap"></A> 
 </P><P><TT>ejabberd</TT> has built-in LDAP support. You can authenticate users against LDAP
 server and use LDAP directory as vCard storage. Shared rosters are not supported
-yet.</P><P> <A NAME="ldapconnection"></A> </P><!--TOC subsubsection Connection-->
+yet.</P><P>Note that <TT>ejabberd</TT> treats LDAP as a read-only storage:
+it is possible to consult data, but not possible to 
+create accounts, change password or edit vCard that is stored in LDAP.</P><P> <A NAME="ldapconnection"></A> </P><!--TOC subsubsection Connection-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#ldapconnection">Connection</A></H4><!--SEC END --><P> <A NAME="ldapconnection"></A> </P><P>Parameters:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>ldap_servers</TT></B></DT><DD CLASS="dd-description"> List of IP addresses or DNS names of your
@@ -2673,7 +2675,9 @@ and that all virtual hosts will be searched instead of only the current one:
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc58">3.3.22</A>&#XA0;&#XA0;<A HREF="#modvcardldap"><TT>mod_vcard_ldap</TT></A></H3><!--SEC END --><P> <A NAME="modvcardldap"></A> 
 </P><P><TT>ejabberd</TT> can map LDAP attributes to vCard fields. This behaviour is
 implemented in the <TT>mod_vcard_ldap</TT> module. This module does not depend on the
-authentication method (see&#XA0;<A HREF="#ldapauth">3.2.5</A>).</P><P>The <TT>mod_vcard_ldap</TT> module has
+authentication method (see&#XA0;<A HREF="#ldapauth">3.2.5</A>).</P><P>Note that <TT>ejabberd</TT> treats LDAP as a read-only storage:
+it is possible to consult data, but not possible to 
+create accounts, change password or edit vCard that is stored in LDAP.</P><P>The <TT>mod_vcard_ldap</TT> module has
 its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 <TT>ldap_servers</TT>, <TT>ldap_port</TT>, <TT>ldap_rootdn</TT>,

@@ -1,3 +1,9 @@
+2008-08-13  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Explain that LDAP is read-only storage (thanks to
+	Evgeniy Khramtsov)
+	* doc/guide.html: Likewise
+
 2008-08-10  Badlop  <badlop@process-one.net>
 
 	* src/msgs/eo.msg: Updated (thanks to Andreas van Cranenburgh)
