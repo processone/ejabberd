@@ -7,6 +7,11 @@
 	Remove the compatibility layer and always call modules with the new
 	#iq record from Exmpp.
 
+	* src/mod_roster.erl, src/mod_vcard.erl, src/adhoc.erl,
+	src/mod_adhoc.erl, src/mod_configure.erl, src/mod_configure2.erl,
+	src/mod_disco.erl, src/mod_last.erl: Convert to the new #iq record
+	from Exmpp.
+
 2008-08-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_offline.erl, src/mod_offline_odbc.erl, src/mod_echo.erl,

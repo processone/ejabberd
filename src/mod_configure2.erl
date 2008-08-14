@@ -47,22 +47,22 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE_s,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE,
 				  ?MODULE, process_local_iq, IQDisc),
     ok.
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE_s).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE).
 
 
-process_local_iq(From, To, IQ) ->
+process_local_iq(From, To, #iq{type = Type, payload = Request} = IQ_Rec) ->
     case acl:match_rule(To#jid.ldomain, configure, From) of
 	deny ->
-	    exmpp_iq:error(IQ, 'not-allowed');
+	    exmpp_iq:error(IQ_Rec, 'not-allowed');
 	allow ->
-	    case exmpp_iq:get_type(IQ) of
+	    case Type of
 		set ->
-		    exmpp_iq:error(IQ, 'feature-not-implemented');
+		    exmpp_iq:error(IQ_Rec, 'feature-not-implemented');
 		    %%case xml:get_tag_attr_s("type", SubEl) of
 		    %%    "cancel" ->
 		    %%        IQ#iq{type = result,
@@ -96,11 +96,11 @@ process_local_iq(From, To, IQ) ->
 		    %%		   sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 		    %%end;
 		get ->
-		    case process_get(IQ#xmlel.children) of
+		    case process_get(Request) of
 			{result, Res} ->
-			    exmpp_iq:result(IQ, Res);
+			    exmpp_iq:result(IQ_Rec, Res);
 			{error, Error} ->
-			    exmpp_iq:error(IQ, Error)
+			    exmpp_iq:error(IQ_Rec, Error)
 		    end
 	    end
     end.

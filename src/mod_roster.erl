@@ -78,8 +78,7 @@ start(Host, Opts) ->
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, Host,
 		       ?MODULE, webadmin_user, 50),
-    % XXX OLD FORMAT: NS as string.
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, atom_to_list(?NS_ROSTER),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
@@ -103,41 +102,38 @@ stop(Host) ->
 			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, Host,
 			  ?MODULE, webadmin_user, 50),
-    % XXX OLD FORMAT: NS as string.
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
-				     atom_to_list(?NS_ROSTER)).
+				     ?NS_ROSTER).
 
 
-process_iq(From, To, IQ) ->
+process_iq(From, To, IQ_Rec) ->
     #jid{ldomain = LServer} = From,
     case lists:member(LServer, ?MYHOSTS) of
 	true ->
-	    process_local_iq(From, To, IQ);
+	    process_local_iq(From, To, IQ_Rec);
 	_ ->
-	    exmpp_iq:error(IQ, 'item-not-found')
+	    exmpp_iq:error(IQ_Rec, 'item-not-found')
     end.
 
-process_local_iq(From, To, IQ) ->
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    process_iq_set(From, To, IQ);
-	get ->
-	    process_iq_get(From, To, IQ)
-    end.
+process_local_iq(From, To, #iq{type = get} = IQ_Rec) ->
+    process_iq_get(From, To, IQ_Rec);
+process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
+    process_iq_set(From, To, IQ_Rec).
 
 
 
-process_iq_get(From, To, IQ) ->
+process_iq_get(From, To, IQ_Rec) ->
     LUser = From#jid.lnode,
     LServer = From#jid.ldomain,
     US = {LUser, LServer},
     case catch ejabberd_hooks:run_fold(roster_get, To#jid.ldomain, [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
-	    exmpp_iq:result(IQ, #xmlel{ns = ?NS_ROSTER, name = 'query',
-		children = XItems});
+	    Result = #xmlel{ns = ?NS_ROSTER, name = 'query',
+	      children = XItems},
+	    exmpp_iq:result(IQ_Rec, Result);
 	_ ->
-	    exmpp_iq:error(IQ, 'internal-server-error')
+	    exmpp_iq:error(IQ_Rec, 'internal-server-error')
     end.
 
 get_user_roster(Acc, US) ->
@@ -183,14 +179,14 @@ item_to_xml(Item) ->
     #xmlel{ns = ?NS_ROSTER, name = 'item', attrs = Attrs4, children = SubEls}.
 
 
-process_iq_set(From, To, IQ) ->
-    case exmpp_iq:get_request(IQ) of
+process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
+    case Request of
 	#xmlel{children = Els} ->
 	    lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els);
 	_ ->
 	    ok
     end,
-    exmpp_iq:result(IQ).
+    exmpp_iq:result(IQ_Rec).
 
 process_item_set(From, To, #xmlel{} = Item) ->
     try

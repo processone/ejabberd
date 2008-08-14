@@ -50,9 +50,9 @@
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
 
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ADHOC_s,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ADHOC,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ADHOC_s,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ADHOC,
 				  ?MODULE, process_sm_iq, IQDisc),
     
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, get_local_identity, 99),
@@ -74,8 +74,8 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 99),
     ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 99),
 
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ADHOC_s),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ADHOC_s).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ADHOC),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ADHOC).
 
 %-------------------------------------------------------------------------
 
@@ -208,19 +208,19 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
 
 %-------------------------------------------------------------------------
 
-process_local_iq(From, To, IQ) ->
-    process_adhoc_request(From, To, IQ, adhoc_local_commands).
+process_local_iq(From, To, IQ_Rec) ->
+    process_adhoc_request(From, To, IQ_Rec, adhoc_local_commands).
 
 
-process_sm_iq(From, To, IQ) ->
-    process_adhoc_request(From, To, IQ, adhoc_sm_commands).
+process_sm_iq(From, To, IQ_Rec) ->
+    process_adhoc_request(From, To, IQ_Rec, adhoc_sm_commands).
 
 
-process_adhoc_request(From, To, IQ, Hook) ->
-    ?DEBUG("About to parse ~p...", [IQ]),
-    case adhoc:parse_request(IQ) of
+process_adhoc_request(From, To, IQ_Rec, Hook) ->
+    ?DEBUG("About to parse ~p...", [IQ_Rec]),
+    case adhoc:parse_request(IQ_Rec) of
 	{error, Error} ->
-            exmpp_iq:error(IQ, Error);
+            exmpp_iq:error(IQ_Rec, Error);
 	#adhoc_request{} = AdhocRequest ->
 	    Host = To#jid.ldomain,
             % XXX OLD FORMAT: From, To.
@@ -231,11 +231,11 @@ process_adhoc_request(From, To, IQ, Hook) ->
 		ignore ->
 		    ignore;
 		empty ->
-                    exmpp_iq:error(IQ, 'item-not-found');
+                    exmpp_iq:error(IQ_Rec, 'item-not-found');
 		{error, Error} ->
-                    exmpp_iq:error(IQ, Error);
+                    exmpp_iq:error(IQ_Rec, Error);
 		Command ->
-                    exmpp_iq:result(IQ, Command)
+                    exmpp_iq:result(IQ_Rec, Command)
 	    end
     end.
 

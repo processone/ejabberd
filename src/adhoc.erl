@@ -38,18 +38,16 @@
 
 %% Parse an ad-hoc request.  Return either an adhoc_request record or
 %% an {error, ErrorType} tuple.
-parse_request(IQ) ->
+parse_request(#iq{type = Type, ns = NS, payload = SubEl, lang = Lang}) ->
     try
-	SubEl = exmpp_iq:get_request(IQ),
-	case {exmpp_iq:get_type(IQ), SubEl#xmlel.ns} of
+	case {Type, NS} of
 	    {set, ?NS_ADHOC} ->
 		?DEBUG("entering parse_request...", []),
-		Lang = exmpp_stanza:get_lang(IQ),
 		Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 		SessionID = exmpp_xml:get_attribute(SubEl, 'sessionid', ""),
 		Action = exmpp_xml:get_attribute(SubEl, 'action', ""),
 		XData = find_xdata_el(SubEl),
-		AllEls = SubEl#xmlel.ns,
+		AllEls = exmpp_xml:get_child_elements(SubEl),
 		if XData ->
 			Others = lists:delete(XData, AllEls);
 		   true ->

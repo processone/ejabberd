@@ -84,11 +84,9 @@ start(Host, Opts) ->
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    % XXX OLD FORMAT: NS as string.
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, atom_to_list(?NS_VCARD),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
-    % XXX OLD FORMAT: NS as string.
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, atom_to_list(?NS_VCARD),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     MyHost = gen_mod:get_opt_host(Host, Opts, "vjud.@HOST@"),
@@ -126,12 +124,10 @@ loop(Host, ServerHost) ->
 stop(Host) ->
     ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50),
-    % XXX OLD FORMAT: NS as string.
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-      atom_to_list(?NS_VCARD)),
-    % XXX OLD FORMAT: NS as string.
+      ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
-      atom_to_list(?NS_VCARD)),
+      ?NS_VCARD),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,
@@ -155,63 +151,53 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 	    Acc
      end.
 
-process_local_iq(_From, _To, IQ) ->
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    exmpp_iq:error(IQ, 'not-allowed');
-	get ->
-	    Lang = case exmpp_stanza:get_lang(IQ) of
-		undefined -> "";
-		L         -> L
-	    end,
-	    Result = #xmlel{ns = ?NS_VCARD, name = 'vCard', children = [
-		exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'FN'},
-		  "ejabberd"),
-		exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'URL'},
-		  ?EJABBERD_URI),
-		exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'DESC'},
-		  translate:translate(Lang, "Erlang Jabber Server") ++
-		  "\nCopyright (c) 2002-2008 ProcessOne"),
-		exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'BDAY'},
-		  "2002-11-16")
-	      ]},
-	    exmpp_iq:result(IQ, Result)
-    end.
+process_local_iq(_From, _To, #iq{type = get, lang = Lang} = IQ_Rec) ->
+    Result = #xmlel{ns = ?NS_VCARD, name = 'vCard', children = [
+	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'FN'},
+	  "ejabberd"),
+	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'URL'},
+	  ?EJABBERD_URI),
+	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'DESC'},
+	  translate:translate(Lang, "Erlang Jabber Server") ++
+	  "\nCopyright (c) 2002-2008 ProcessOne"),
+	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'BDAY'},
+	  "2002-11-16")
+      ]},
+    exmpp_iq:result(IQ_Rec, Result);
+process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 
-process_sm_iq(From, To, IQ) ->
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    #jid{node = User, ldomain = LServer} = From,
-	    case lists:member(LServer, ?MYHOSTS) of
-		true ->
-		    set_vcard(User, LServer, exmpp_iq:get_request(IQ)),
-		    exmpp_iq:result(IQ);
-		false ->
-		    exmpp_iq:error(IQ, 'not-allowed')
-	    end;
-	get ->
-	    #jid{lnode = LUser, ldomain = LServer} = To,
-	    US = {LUser, LServer},
-	    F = fun() ->
-			mnesia:read({vcard, US})
-		end,
-	    Els = case mnesia:transaction(F) of
-		      {atomic, Rs} ->
-			  lists:map(fun(R) ->
-					    case R#vcard.vcard of
-						#xmlel{} = E ->
-						    E;
-						#xmlelement{} = E ->
-						    % XXX OLD FORMAT: Base contains old elements.
-						    io:format("VCARD: Old element in base: ~p~n", [E]),
-						    exmpp_xml:xmlelement_to_xmlel(E, [?NS_VCARD], [])
-					    end
-				    end, Rs);
-		      {aborted, _Reason} ->
-			  []
-		  end,
-	    exmpp_iq:result(IQ, Els)
+process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
+    #jid{lnode = LUser, ldomain = LServer} = To,
+    US = {LUser, LServer},
+    F = fun() ->
+		mnesia:read({vcard, US})
+	end,
+    [VCard | _] = case mnesia:transaction(F) of
+	      {atomic, Rs} ->
+		  lists:map(fun(R) ->
+				    case R#vcard.vcard of
+					#xmlel{} = E ->
+					    E;
+					#xmlelement{} = E ->
+					    % XXX OLD FORMAT: Base contains old elements.
+					    io:format("VCARD: Old element in base: ~p~n", [E]),
+					    exmpp_xml:xmlelement_to_xmlel(E, [?NS_VCARD], [])
+				    end
+			    end, Rs);
+	      {aborted, _Reason} ->
+		  []
+	  end,
+    exmpp_iq:result(IQ_Rec, VCard);
+process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
+    #jid{node = User, ldomain = LServer} = From,
+    case lists:member(LServer, ?MYHOSTS) of
+	true ->
+	    set_vcard(User, LServer, Request),
+	    exmpp_iq:result(IQ_Rec);
+	false ->
+	    exmpp_iq:error(IQ_Rec, 'not-allowed')
     end.
 
 set_vcard(User, LServer, VCARD) ->

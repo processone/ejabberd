@@ -52,9 +52,9 @@ start(Host, Opts) ->
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, last_activity)}]),
     update_table(),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY_s,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY_s,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
@@ -66,62 +66,56 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(unset_presence_hook, Host,
 			  ?MODULE, on_presence_update, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY_s),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY_s).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY).
 
-process_local_iq(_From, _To, IQ) ->
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    exmpp_iq:error(IQ, 'not-allowed');
-	get ->
-	    Sec = trunc(element(1, erlang:statistics(wall_clock))/1000),
-	    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query', attrs =
-	      [#xmlattr{name = 'seconds', value = integer_to_list(Sec)}]},
-	    exmpp_iq:result(IQ, Response)
-    end.
+process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
+    Sec = trunc(element(1, erlang:statistics(wall_clock))/1000),
+    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query', attrs =
+      [#xmlattr{name = 'seconds', value = integer_to_list(Sec)}]},
+    exmpp_iq:result(IQ_Rec, Response);
+process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 
-process_sm_iq(From, To, IQ) ->
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    exmpp_iq:error(IQ, 'not-allowed');
-	get ->
-	    User = To#jid.lnode,
-	    Server = To#jid.ldomain,
-	    {Subscription, _Groups} =
-		ejabberd_hooks:run_fold(
-		  roster_get_jid_info, Server,
-		  {none, []}, [User, Server, From]),
-	    if
-		(Subscription == both) or (Subscription == from) ->
-		    UserListRecord = ejabberd_hooks:run_fold(
-				       privacy_get_user_list, Server,
-				       #userlist{},
-				       [User, Server]),
-		    case ejabberd_hooks:run_fold(
-			   privacy_check_packet, Server,
-			   allow,
-			   [User, Server, UserListRecord,
-			    {From, To,
-			     exmpp_presence:available()},
-			    out]) of
-			allow ->
-			    get_last(IQ, User, Server);
-			deny ->
-			    exmpp_iq:error(IQ, 'not-allowed')
-		    end;
-		true ->
-		    exmpp_iq:error(IQ, 'not-allowed')
-	    end
-    end.
+process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
+    User = To#jid.lnode,
+    Server = To#jid.ldomain,
+    {Subscription, _Groups} =
+	ejabberd_hooks:run_fold(
+	  roster_get_jid_info, Server,
+	  {none, []}, [User, Server, From]),
+    if
+	(Subscription == both) or (Subscription == from) ->
+	    UserListRecord = ejabberd_hooks:run_fold(
+			       privacy_get_user_list, Server,
+			       #userlist{},
+			       [User, Server]),
+	    case ejabberd_hooks:run_fold(
+		   privacy_check_packet, Server,
+		   allow,
+		   [User, Server, UserListRecord,
+		    {From, To,
+		     exmpp_presence:available()},
+		    out]) of
+		allow ->
+		    get_last(IQ_Rec, User, Server);
+		deny ->
+		    exmpp_iq:error(IQ_Rec, 'not-allowed')
+	    end;
+	true ->
+	    exmpp_iq:error(IQ_Rec, 'not-allowed')
+    end;
+process_sm_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 %% TODO: This function could use get_last_info/2
-get_last(IQ, LUser, LServer) ->
+get_last(IQ_Rec, LUser, LServer) ->
     case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
-	    exmpp_iq:error(IQ, 'internal-server-error');
+	    exmpp_iq:error(IQ_Rec, 'internal-server-error');
 	[] ->
-	    exmpp_iq:error(IQ, 'service-unavailable');
+	    exmpp_iq:error(IQ_Rec, 'service-unavailable');
 	[#last_activity{timestamp = TimeStamp, status = Status}] ->
 	    {MegaSecs, Secs, _MicroSecs} = now(),
 	    TimeStamp2 = MegaSecs * 1000000 + Secs,
@@ -129,7 +123,7 @@ get_last(IQ, LUser, LServer) ->
 	    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
 	      attrs = [#xmlattr{name = 'seconds', value = integer_to_list(Sec)}],
 	      children = [#xmlcdata{cdata = list_to_binary(Status)}]},
-	    exmpp_iq:result(IQ, Response)
+	    exmpp_iq:result(IQ_Rec, Response)
     end.
 
 

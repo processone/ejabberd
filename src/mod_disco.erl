@@ -63,13 +63,13 @@ start(Host, Opts) ->
     ejabberd_local:refresh_iq_handlers(),
 
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, atom_to_list(?NS_DISCO_ITEMS),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
 				  ?MODULE, process_local_iq_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, atom_to_list(?NS_DISCO_INFO),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_local_iq_info, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, atom_to_list(?NS_DISCO_ITEMS),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS,
 				  ?MODULE, process_sm_iq_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, atom_to_list(?NS_DISCO_INFO),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_sm_iq_info, IQDisc),
 
     catch ets:new(disco_features, [named_table, ordered_set, public]),
@@ -101,10 +101,10 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 100),
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 100),
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, get_local_services, 100),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, atom_to_list(?NS_DISCO_ITEMS)),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, atom_to_list(?NS_DISCO_INFO)),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, atom_to_list(?NS_DISCO_ITEMS)),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, atom_to_list(?NS_DISCO_INFO)),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
     catch ets:match_delete(disco_features, {{'_', Host}}),
     catch ets:match_delete(disco_extra_domains, {{'_', Host}}),
     ok.
@@ -126,75 +126,67 @@ unregister_extra_domain(Host, Domain) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ets:delete(disco_extra_domains, {Domain, Host}).
 
-process_local_iq_items(From, To, IQ) ->
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    exmpp_iq:error(IQ, 'not-allowed');
-	get ->
-	    SubEl = exmpp_iq:get_request(IQ),
-	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
-	    Host = To#jid.ldomain,
-	    Lang = exmpp_stanza:get_lang(IQ),
+process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
+  lang = Lang} = IQ_Rec) ->
+    Host = To#jid.ldomain,
+    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 
-	    % XXX OLD FORMAT: From, To.
-	    FromOld = jlib:to_old_jid(From),
-	    ToOld = jlib:to_old_jid(To),
-	    case ejabberd_hooks:run_fold(disco_local_items,
-					 Host,
-					 empty,
-					 [FromOld, ToOld, Node, Lang]) of
-		{result, Items} ->
-		    % XXX OLD FORMAT: Items might be an #xmlelement.
-		    ANode = case Node of
-				"" -> [];
-				_ -> [#xmlattr{name = 'node', value = Node}]
+    % XXX OLD FORMAT: From, To.
+    FromOld = jlib:to_old_jid(From),
+    ToOld = jlib:to_old_jid(To),
+    case ejabberd_hooks:run_fold(disco_local_items,
+				 Host,
+				 empty,
+				 [FromOld, ToOld, Node, Lang]) of
+	{result, Items} ->
+	    % XXX OLD FORMAT: Items might be an #xmlelement.
+	    ANode = case Node of
+			"" -> [];
+			_ -> [#xmlattr{name = 'node', value = Node}]
+	    end,
+	    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
+	      attrs = ANode, children = Items},
+	    exmpp_iq:result(IQ_Rec, Result);
+	{error, Error} ->
+	    % XXX OLD FORMAT: Error.
+	    exmpp_iq:error(IQ_Rec, Error)
+    end;
+process_local_iq_items(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
+
+
+process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
+  lang = Lang} = IQ_Rec) ->
+    Host = To#jid.ldomain,
+    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    % XXX OLD FORMAT: From, To.
+    FromOld = jlib:to_old_jid(From),
+    ToOld = jlib:to_old_jid(To),
+    % XXX OLD FORMAT: Identity might be an #xmlelement.
+    Identity = ejabberd_hooks:run_fold(disco_local_identity,
+				       Host,
+				       [],
+				       [FromOld, ToOld, Node, Lang]),
+    % XXX OLD FORMAT: From, To.
+    case ejabberd_hooks:run_fold(disco_local_features,
+				 Host,
+				 empty,
+				 [FromOld, ToOld, Node, Lang]) of
+	{result, Features} ->
+	    ANode = case Node of
+			"" -> [];
+			_ -> [#xmlattr{name = 'node', value = Node}]
 		    end,
-		    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
-		      attrs = ANode, children = Items},
-		    exmpp_iq:result(IQ, Result);
-		{error, Error} ->
-		    % XXX OLD FORMAT: Error.
-		    exmpp_iq:error(IQ, Error)
-	    end
-    end.
-
-
-process_local_iq_info(From, To, IQ) ->
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    exmpp_iq:error(IQ, 'not-allowed');
-	get ->
-	    Host = To#jid.ldomain,
-	    SubEl = exmpp_iq:get_request(IQ),
-	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
-	    Lang = exmpp_stanza:get_lang(IQ),
-	    % XXX OLD FORMAT: From, To.
-	    FromOld = jlib:to_old_jid(From),
-	    ToOld = jlib:to_old_jid(To),
-	    % XXX OLD FORMAT: Identity might be an #xmlelement.
-	    Identity = ejabberd_hooks:run_fold(disco_local_identity,
-					       Host,
-					       [],
-					       [FromOld, ToOld, Node, Lang]),
-	    % XXX OLD FORMAT: From, To.
-	    case ejabberd_hooks:run_fold(disco_local_features,
-					 Host,
-					 empty,
-					 [FromOld, ToOld, Node, Lang]) of
-		{result, Features} ->
-		    ANode = case Node of
-				"" -> [];
-				_ -> [#xmlattr{name = 'node', value = Node}]
-			    end,
-		    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-		      attrs = ANode,
-		      children = Identity ++ lists:map(fun feature_to_xml/1,
-			Features)},
-		    exmpp_iq:result(IQ, Result);
-		{error, Error} ->
-		    exmpp_iq:error(IQ, Error)
-	    end
-    end.
+	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
+	      attrs = ANode,
+	      children = Identity ++ lists:map(fun feature_to_xml/1,
+		Features)},
+	    exmpp_iq:result(IQ_Rec, Result);
+	{error, Error} ->
+	    exmpp_iq:error(IQ_Rec, Error)
+    end;
+process_local_iq_info(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 get_local_identity(Acc, _From, _To, [], _Lang) ->
     Acc ++ [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = [
@@ -232,6 +224,10 @@ feature_to_xml({{Feature, _Host}}) ->
 feature_to_xml(Feature) when is_list(Feature) ->
     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [
 	#xmlattr{name = 'var', value = Feature}
+      ]};
+feature_to_xml(Feature) when is_atom(Feature) ->
+    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [
+	#xmlattr{name = 'var', value = atom_to_list(Feature)}
       ]}.
 
 domain_to_xml({Domain}) ->
@@ -283,50 +279,46 @@ get_vh_services(Host) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_sm_iq_items(From, To, IQ) ->
-    SubEl = exmpp_iq:get_request(IQ),
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    #jid{lnode = LTo, ldomain = ToServer} = To,
-	    #jid{lnode = LFrom, ldomain = LServer} = From,
-	    Self = (LTo == LFrom) andalso (ToServer == LServer),
-	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
-	    if
-		Self, Node /= [] ->
-		    %% Here, we treat disco publish attempts to your own JID.
-		    Items = SubEl#xmlel.children,
-		    case process_disco_publish({LFrom, LServer}, Node, Items) of
-			ok ->
-			    exmpp_iq:result(IQ);
-			{error, Err} ->
-			    exmpp_iq:error(IQ, Err)
-		    end;
-
-		true ->
-		    exmpp_iq:error(IQ, 'not-allowed')
+process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
+  lang = Lang} = IQ_Rec) ->
+    Host = To#jid.ldomain,
+    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    % XXX OLD FORMAT: From, To.
+    FromOld = jlib:to_old_jid(From),
+    ToOld = jlib:to_old_jid(To),
+    case ejabberd_hooks:run_fold(disco_sm_items,
+				 Host,
+				 empty,
+				 [FromOld, ToOld, Node, Lang]) of
+	{result, Items} ->
+	    ANode = case Node of
+			"" -> [];
+			_ -> [#xmlattr{name = 'node', value = Node}]
+		    end,
+	    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
+	      attrs = ANode, children = Items},
+	    exmpp_iq:result(IQ_Rec, Result);
+	{error, Error} ->
+	    exmpp_iq:error(IQ_Rec, Error)
+    end;
+process_sm_iq_items(From, To, #iq{type = set, payload = SubEl} = IQ_Rec) ->
+    #jid{lnode = LTo, ldomain = ToServer} = To,
+    #jid{lnode = LFrom, ldomain = LServer} = From,
+    Self = (LTo == LFrom) andalso (ToServer == LServer),
+    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    if
+	Self, Node /= [] ->
+	    %% Here, we treat disco publish attempts to your own JID.
+	    Items = SubEl#xmlel.children,
+	    case process_disco_publish({LFrom, LServer}, Node, Items) of
+		ok ->
+		    exmpp_iq:result(IQ_Rec);
+		{error, Err} ->
+		    exmpp_iq:error(IQ_Rec, Err)
 	    end;
-	get ->
-	    Host = To#jid.ldomain,
-	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
-	    Lang = exmpp_stanza:get_lang(IQ),
-	    % XXX OLD FORMAT: From, To.
-	    FromOld = jlib:to_old_jid(From),
-	    ToOld = jlib:to_old_jid(To),
-	    case ejabberd_hooks:run_fold(disco_sm_items,
-					 Host,
-					 empty,
-					 [FromOld, ToOld, Node, Lang]) of
-		{result, Items} ->
-		    ANode = case Node of
-				"" -> [];
-				_ -> [#xmlattr{name = 'node', value = Node}]
-			    end,
-		    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
-		      attrs = ANode, children = Items},
-		    exmpp_iq:result(IQ, Result);
-		{error, Error} ->
-		    exmpp_iq:error(IQ, Error)
-	    end
+
+	true ->
+	    exmpp_iq:error(IQ_Rec, 'not-allowed')
     end.
 
 get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
@@ -359,41 +351,37 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
 	    {error, 'not-allowed'}
     end.
 
-process_sm_iq_info(From, To, IQ) ->
-    case exmpp_iq:get_type(IQ) of
-	set ->
-	    exmpp_iq:error(IQ, 'not-allowed');
-	get ->
-	    Host = To#jid.ldomain,
-	    SubEl = exmpp_iq:get_request(IQ),
-	    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
-	    Lang = exmpp_stanza:get_lang(IQ),
-	    % XXX OLD FORMAT: From, To.
-	    FromOld = jlib:to_old_jid(From),
-	    ToOld = jlib:to_old_jid(To),
-	    % XXX OLD FORMAT: Identity might be an #xmlelement.
-	    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
-					       Host,
-					       [],
-					       [FromOld, ToOld, Node, Lang]),
-	    case ejabberd_hooks:run_fold(disco_sm_features,
-					 Host,
-					 empty,
-					 [FromOld, ToOld, Node, Lang]) of
-		{result, Features} ->
-		    ANode = case Node of
-				"" -> [];
-				_ -> [#xmlattr{name = 'node', value = Node}]
-			    end,
-		    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-		      attrs = ANode,
-		      children = Identity ++ lists:map(fun feature_to_xml/1,
-			Features)},
-		    exmpp_iq:result(IQ, Result);
-		{error, Error} ->
-		    exmpp_iq:error(IQ, Error)
-	    end
-    end.
+process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
+  lang = Lang} = IQ_Rec) ->
+    Host = To#jid.ldomain,
+    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    % XXX OLD FORMAT: From, To.
+    FromOld = jlib:to_old_jid(From),
+    ToOld = jlib:to_old_jid(To),
+    % XXX OLD FORMAT: Identity might be an #xmlelement.
+    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
+				       Host,
+				       [],
+				       [FromOld, ToOld, Node, Lang]),
+    case ejabberd_hooks:run_fold(disco_sm_features,
+				 Host,
+				 empty,
+				 [FromOld, ToOld, Node, Lang]) of
+	{result, Features} ->
+	    ANode = case Node of
+			"" -> [];
+			_ -> [#xmlattr{name = 'node', value = Node}]
+		    end,
+	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
+	      attrs = ANode,
+	      children = Identity ++ lists:map(fun feature_to_xml/1,
+		Features)},
+	    exmpp_iq:result(IQ_Rec, Result);
+	{error, Error} ->
+	    exmpp_iq:error(IQ_Rec, Error)
+    end;
+process_sm_iq_info(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
