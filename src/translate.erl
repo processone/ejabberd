@@ -159,5 +159,6 @@ ascii_tolower([C | Cs]) when C >= $A, C =< $Z ->
 ascii_tolower([C | Cs]) ->
     [C | ascii_tolower(Cs)];
 ascii_tolower([]) ->
+    [];
+ascii_tolower(undefined) ->
     [].
-

@@ -1,3 +1,8 @@
+2008-08-14  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* translate.erl (ascii_tolower): Accept 'undefined' as a language and
+	treat it as the empty string.
+
 2008-08-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_offline.erl, src/mod_offline_odbc.erl, src/mod_echo.erl,
