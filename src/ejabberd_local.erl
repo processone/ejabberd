@@ -74,47 +74,35 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 process_iq(From, To, Packet) ->
-    case exmpp_iq:get_kind(Packet) of
-	request ->
+    case exmpp_iq:xmlel_to_iq(Packet) of
+	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
 	    Host = To#jid.ldomain,
-            Request = exmpp_iq:get_request(Packet),
-            XMLNS = exmpp_xml:get_ns_as_list(Request),
 	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
-                    % XXX OLD FORMAT: From, To.
-                    FromOld = jlib:to_old_jid(From),
-                    ToOld = jlib:to_old_jid(To),
-                    % XXX OLD FORMAT: IQ_Rec is an #iq.
-                    IQ_Rec = jlib:iq_query_info(Packet),
-		    ResIQ = Module:Function(FromOld, ToOld, IQ_Rec),
+		    ResIQ = Module:Function(From, To, IQ_Rec),
 		    if
 			ResIQ /= ignore ->
-			    % XXX OLD FORMAT: ResIQ.
-			    ReplyOld = jlib:iq_to_xml(ResIQ),
-			    Reply = exmpp_xml:xmlelement_to_xmlel(ReplyOld,
-			      [?DEFAULT_NS], ?PREFIXED_NS),
-			    ejabberd_router:route(
-			      To, From, Reply);
+			    Reply = exmpp_iq:iq_to_xmlel(ResIQ, To, From),
+			    ejabberd_router:route(To, From, Reply);
 			true ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
 		    gen_iq_handler:handle(Host, Module, Function, Opts,
-					  From, To, Packet);
+					  From, To, IQ_Rec);
 		[] ->
-                    Err = exmpp_iq:error(Packet, 'feature-not-implemented'),
+		    Err = exmpp_iq:error(Packet, 'feature-not-implemented'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
-	response ->
-	    process_iq_reply(From, To, Packet);
+        #iq{kind = response} = IQ_Rec ->
+	    process_iq_reply(From, To, IQ_Rec);
 	_ ->
-            Err = exmpp_iq:error(Packet, 'bad-request'),
+	    Err = exmpp_iq:error(Packet, 'bad-request'),
 	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
 
-process_iq_reply(From, To, Packet) ->
-    ID = exmpp_stanza:get_id(Packet),
+process_iq_reply(From, To, #iq{id = ID} = IQ_Rec) ->
     case catch mnesia:dirty_read(iq_response, ID) of
 	[] ->
 	    ok;
@@ -131,7 +119,7 @@ process_iq_reply(From, To, Packet) ->
 		end,
 	    case mnesia:transaction(F) of
 		{atomic, {Module, Function}} ->
-		    Module:Function(From, To, Packet);
+		    Module:Function(From, To, IQ_Rec);
 		_ ->
 		    ok
 	    end

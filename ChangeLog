@@ -3,6 +3,10 @@
 	* translate.erl (ascii_tolower): Accept 'undefined' as a language and
 	treat it as the empty string.
 
+	* src/gen_iq_handler.erl, src/ejabberd_local.erl, src/ejabberd_sm.erl:
+	Remove the compatibility layer and always call modules with the new
+	#iq record from Exmpp.
+
 2008-08-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_offline.erl, src/mod_offline_odbc.erl, src/mod_echo.erl,

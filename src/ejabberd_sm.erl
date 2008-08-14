@@ -665,37 +665,27 @@ get_max_user_sessions(LUser, Host) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 process_iq(From, To, Packet) ->
-    case exmpp_iq:get_kind(Packet) of
-	request ->
+    case exmpp_iq:xmlel_to_iq(Packet) of
+	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
 	    Host = To#jid.ldomain,
-            Request = exmpp_iq:get_request(Packet),
-            XMLNS = exmpp_xml:get_ns_as_list(Request),
 	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
-		    % XXX OLD FORMAT: From, To.
-                    FromOld = jlib:to_old_jid(From),
-                    ToOld = jlib:to_old_jid(To),
-                    % XXX OLD FORMAT: IQ_Rec is an #iq.
-                    IQ_Rec = jlib:iq_query_info(Packet),
-		    ResIQ = Module:Function(FromOld, ToOld, IQ_Rec),
+		    ResIQ = Module:Function(From, To, IQ_Rec),
 		    if
 			ResIQ /= ignore ->
-			    % XXX OLD FORMAT: ResIQ.
-			    ReplyOld = jlib:iq_to_xml(ResIQ),
-			    Reply = exmpp_xml:xmlelement_to_xmlel(ReplyOld,
-			      [?DEFAULT_NS], ?PREFIXED_NS),
+			    Reply = exmpp_iq:iq_to_xmlel(ResIQ, To, From),
 			    ejabberd_router:route(To, From, Reply);
 			true ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
 		    gen_iq_handler:handle(Host, Module, Function, Opts,
-					  From, To, Packet);
+					  From, To, IQ_Rec);
 		[] ->
 		    Err = exmpp_iq:error(Packet, 'service-unavailable'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
-	response ->
+	#iq{type = response} ->
 	    ok;
 	_ ->
 	    Err = exmpp_iq:error(Packet, 'bad-request'),
