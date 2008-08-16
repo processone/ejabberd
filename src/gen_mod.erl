@@ -30,6 +30,7 @@
 -export([start/0,
 	 start_module/3,
 	 stop_module/2,
+	 stop_module_keep_config/2,
 	 get_opt/2,
 	 get_opt/3,
 	 get_opt_host/3,
