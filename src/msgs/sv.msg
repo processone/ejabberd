@@ -181,7 +181,7 @@
 {"Allow visitors to change nickname", "Tillåt gäster att kunna ändra smeknamn"}.
 {"Enable logging", "Möjliggör login"}.
 {"Number of occupants", "Antal besökare"}.
-{"~s invites you to the room ~s", "'s bjöd in dig till rummet"}.
+{"~s invites you to the room ~s", "~s bjöd in dig till rummet ~s"}.
 {"the password is", "Lösenordet är"}.
 {"Make room moderated", "Gör rummet modererat"}.
 {" has set the subject to: ", " har satt ämnet till: "}.
@@ -248,7 +248,7 @@
 {"Restore binary backup after next ejabberd restart (requires less memory):", "återställ den binära backupen efter nästa ejabberd omstart"}.
 {"Store plain text backup:", "Lagra textbackup"}.
 {"Restore plain text backup immediately:", "återställ textbackup omedelbart"}.
-{"Statistics of ~p", "Statistik på p"}.
+{"Statistics of ~p", "Statistik på ~p"}.
 {"Uptime:", "Tid upp"}.
 {"CPU Time:", "CPU tid"}.
 {"Transactions Commited:", "Transaktioner kommittade"}.
@@ -349,8 +349,8 @@
 
 % mod_offline.erl
 {"Your contact offline message queue is full. The message has been discarded.", "Din kontaktkö for offlinekontakter ar full"}.
-{"~s's Offline Messages Queue", "'s offline meddelandekö "}.
-{"Offline Messages:", "Offline meddelanden"}.
+{"~s's Offline Messages Queue", "~s's offline meddelandekö"}.
+{"Offline Messages:", "Offline meddelanden:"}.
 
 % mod_adhoc.erl
 {"Commands", "Kommandon"}.

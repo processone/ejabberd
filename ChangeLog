@@ -1,5 +1,7 @@
 2008-08-16  Badlop  <badlop@process-one.net>
 
+	* src/msgs/sv.msg: Fixed formatting typos
+
 	* src/gen_mod.erl: Export stop_module_keep_config/2 (EJAB-706)
 
 2008-08-13  Badlop  <badlop@process-one.net>
