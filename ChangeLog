@@ -1,3 +1,15 @@
+2008-08-17  Badlop  <badlop@process-one.net>
+
+	* contrib/extract_translations/extract_translations.erl: Use
+	Gettext PO for translators, export to ejabberd MSG (EJAB-468)
+	* contrib/extract_translations/prepare-translation.sh: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+	* src/Makefile.in: New option 'make translations'
+	* src/msgs/ejabberd.pot: Template translation file
+	* src/msgs/*.po: Generated from old MSG files
+	* src/msgs/*.msg: Automatic exported from PO files
+
 2008-08-16  Badlop  <badlop@process-one.net>
 
 	* src/msgs/sv.msg: Fixed formatting typos

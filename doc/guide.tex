@@ -1409,6 +1409,9 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+Translators and developers can check details in Appendix \ref{i18ni10n}.
+
+
 \makesubsection{includeconfigfile}{Include Additional Configuration Files}
 \ind{options!includeconfigfile}\ind{includeconfigfile}
 
@@ -4262,6 +4265,16 @@ To exit the shell, close the window or press the keys: control+c control+c.
 
 \makechapter{i18ni10n}{Internationalization and Localization}
 \ind{xml:lang}\ind{internationalization}\ind{localization}\ind{i18n}\ind{l10n}
+
+The source code of \ejabberd{} supports localization.
+The translators can edit the Gettext PO files using any capable program (KBabel, Lokalizer, Poedit...) or a simple text editor.
+
+Then \footahref{http://www.gnu.org/software/gettext/}{Gettext}
+is used to extract, update and export the language files to the MSG format read by \ejabberd{}.
+To perform those management tasks, in the \term{src/} directory execute \term{make translations}.
+The translatable strings are extracted from source code to generate the file \term{ejabberd.pot}.
+This file is merged with each \term{*.po} language file to produce updated language files.
+Finally those \term{*.po} files are exported to \term{*.msg} files, that have a format easily readable by \ejabberd{}.
 
 All built-in modules support the \texttt{xml:lang} attribute inside IQ queries.
 Figure~\ref{fig:discorus}, for example, shows the reply to the following query:

@@ -1,0 +1,1510 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: 2.1.0-alpha\n"
+"Last-Translator: EQHO Communications (Thailand) Ltd. - http://www.eqho.com\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Language: Vietnamese (tiếng việt)\n"
+
+#: ejabberd_c2s.erl:350 ejabberd_c2s.erl:651
+msgid "Use of STARTTLS required"
+msgstr "Yêu cầu sử dụng STARTTLS"
+
+#: ejabberd_c2s.erl:434
+msgid "No resource provided"
+msgstr "Không có nguồn lực cung cấp"
+
+#: ejabberd_c2s.erl:1045
+msgid "Replaced by new connection"
+msgstr "Được thay thế bởi kết nối mới"
+
+#: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
+msgid "Commands"
+msgstr "Lệnh"
+
+#: mod_adhoc.erl:149 mod_adhoc.erl:243
+msgid "Ping"
+msgstr "Ping"
+
+#: mod_adhoc.erl:260
+msgid "Pong"
+msgstr "Pong"
+
+#: mod_announce.erl:505
+msgid "Really delete message of the day?"
+msgstr "Có thực sự xóa thư trong ngày này không?"
+
+#: mod_announce.erl:513 mod_configure.erl:1034 mod_configure.erl:1079
+msgid "Subject"
+msgstr "Tiêu đề"
+
+#: mod_announce.erl:518 mod_configure.erl:1039 mod_configure.erl:1084
+msgid "Message body"
+msgstr "Thân thư"
+
+#: mod_announce.erl:598
+msgid "No body provided for announce message"
+msgstr "Không có nội dung trong thư thông báo"
+
+#: mod_announce.erl:633
+msgid "Announcements"
+msgstr "Thông báo"
+
+#: mod_announce.erl:635
+msgid "Send announcement to all users"
+msgstr "Gửi thông báo đến tất cả người sử dụng"
+
+#: mod_announce.erl:637
+msgid "Send announcement to all users on all hosts"
+msgstr "Gửi thông báo đến tất cả người sử dụng trên tất cả các máy chủ"
+
+#: mod_announce.erl:639
+msgid "Send announcement to all online users"
+msgstr "Gửi thông báo đến tất cả người sử dụng trực tuyến"
+
+#: mod_announce.erl:641 mod_configure.erl:1029 mod_configure.erl:1074
+msgid "Send announcement to all online users on all hosts"
+msgstr ""
+"Gửi thông báo đến tất cả người sử dụng trực tuyến trên tất cả các máy chủ"
+
+#: mod_announce.erl:643
+msgid "Set message of the day and send to online users"
+msgstr "Tạo lập thư trong ngày và gửi đến những người sử dụng trực tuyến"
+
+#: mod_announce.erl:645
+msgid "Set message of the day on all hosts and send to online users"
+msgstr ""
+"Tạo lập thư trong ngày trên tất cả các máy chủ và gửi đến những người sử "
+"dụng trực tuyến"
+
+#: mod_announce.erl:647
+msgid "Update message of the day (don't send)"
+msgstr "Cập nhật thư trong ngày (không gửi)"
+
+#: mod_announce.erl:649
+msgid "Update message of the day on all hosts (don't send)"
+msgstr "Cập nhật thư trong ngày trên tất cả các máy chủ (không gửi)"
+
+#: mod_announce.erl:651
+msgid "Delete message of the day"
+msgstr "Xóa thư trong ngày"
+
+#: mod_announce.erl:653
+msgid "Delete message of the day on all hosts"
+msgstr "Xóa thư trong ngày trên tất cả các máy chủ"
+
+#: mod_configure.erl:114 mod_configure.erl:258 mod_configure.erl:280
+#: mod_configure.erl:453
+msgid "Configuration"
+msgstr "Cấu hình"
+
+#: mod_configure.erl:125 mod_configure.erl:531 web/ejabberd_web_admin.erl:1673
+msgid "Database"
+msgstr "Cơ sở dữ liệu"
+
+#: mod_configure.erl:127 mod_configure.erl:545
+msgid "Start Modules"
+msgstr "Môđun Khởi Động"
+
+#: mod_configure.erl:129 mod_configure.erl:546
+msgid "Stop Modules"
+msgstr "Môđun Dừng"
+
+#: mod_configure.erl:131 mod_configure.erl:554 web/ejabberd_web_admin.erl:1674
+msgid "Backup"
+msgstr "Sao lưu dự phòng"
+
+#: mod_configure.erl:133 mod_configure.erl:555
+msgid "Restore"
+msgstr "Khôi phục"
+
+#: mod_configure.erl:135 mod_configure.erl:556
+msgid "Dump to Text File"
+msgstr "Kết xuất ra Tập Tin Văn Bản"
+
+#: mod_configure.erl:137 mod_configure.erl:565
+msgid "Import File"
+msgstr "Nhập Tập Tin"
+
+#: mod_configure.erl:139 mod_configure.erl:566
+msgid "Import Directory"
+msgstr "Nhập Thư Mục"
+
+#: mod_configure.erl:141 mod_configure.erl:536 mod_configure.erl:1008
+msgid "Restart Service"
+msgstr "Khởi Động Lại Dịch Vụ"
+
+#: mod_configure.erl:143 mod_configure.erl:537 mod_configure.erl:1053
+msgid "Shut Down Service"
+msgstr "Tắt Dịch Vụ"
+
+#: mod_configure.erl:145 mod_configure.erl:473 mod_configure.erl:1148
+#: web/ejabberd_web_admin.erl:1338
+msgid "Add User"
+msgstr "Thêm Người Sử Dụng"
+
+#: mod_configure.erl:147 mod_configure.erl:474 mod_configure.erl:1170
+msgid "Delete User"
+msgstr "Xóa Người Sử Dụng"
+
+#: mod_configure.erl:149 mod_configure.erl:475 mod_configure.erl:1182
+msgid "End User Session"
+msgstr "Kết Thúc Phiên Giao Dịch Người Sử Dụng"
+
+#: mod_configure.erl:151 mod_configure.erl:476 mod_configure.erl:1194
+#: mod_configure.erl:1206
+msgid "Get User Password"
+msgstr "Nhận Mật Khẩu Người Sử Dụng"
+
+#: mod_configure.erl:153 mod_configure.erl:477
+msgid "Change User Password"
+msgstr "Thay Đổi Mật Khẩu Người Sử Dụng"
+
+#: mod_configure.erl:155 mod_configure.erl:478 mod_configure.erl:1223
+msgid "Get User Last Login Time"
+msgstr "Nhận Thời Gian Đăng Nhập Cuối Cùng Của Người Sử Dụng"
+
+#: mod_configure.erl:157 mod_configure.erl:479 mod_configure.erl:1235
+msgid "Get User Statistics"
+msgstr "Nhận Thông Tin Thống Kê Người Sử Dụng"
+
+#: mod_configure.erl:159 mod_configure.erl:480
+msgid "Get Number of Registered Users"
+msgstr "Nhận Số Người Sử Dụng Đã Đăng Ký"
+
+#: mod_configure.erl:161 mod_configure.erl:481
+msgid "Get Number of Online Users"
+msgstr "Nhận Số Người Sử Dụng Trực Tuyến"
+
+#: mod_configure.erl:163 mod_configure.erl:464 web/ejabberd_web_admin.erl:135
+#: web/ejabberd_web_admin.erl:190 web/ejabberd_web_admin.erl:605
+#: web/ejabberd_web_admin.erl:624 web/ejabberd_web_admin.erl:679
+#: web/ejabberd_web_admin.erl:722
+msgid "Access Control Lists"
+msgstr "Danh Sách Kiểm Soát Truy Cập"
+
+#: mod_configure.erl:165 mod_configure.erl:465 web/ejabberd_web_admin.erl:136
+#: web/ejabberd_web_admin.erl:191 web/ejabberd_web_admin.erl:607
+#: web/ejabberd_web_admin.erl:626 web/ejabberd_web_admin.erl:790
+#: web/ejabberd_web_admin.erl:828
+msgid "Access Rules"
+msgstr "Quy Tắc Truy Cập"
+
+#: mod_configure.erl:281 mod_configure.erl:454
+msgid "User Management"
+msgstr "Quản Lý Người Sử Dụng"
+
+#: mod_configure.erl:455 web/ejabberd_web_admin.erl:193
+#: web/ejabberd_web_admin.erl:629 web/ejabberd_web_admin.erl:905
+#: web/ejabberd_web_admin.erl:1275
+msgid "Online Users"
+msgstr "Người Sử Dụng Trực Tuyến"
+
+#: mod_configure.erl:456
+msgid "All Users"
+msgstr "Tất Cả Người Sử Dụng"
+
+#: mod_configure.erl:457
+msgid "Outgoing s2s Connections"
+msgstr "Kết Nối Bên Ngoài s2s"
+
+#: mod_configure.erl:458 web/ejabberd_web_admin.erl:1644
+msgid "Running Nodes"
+msgstr "Nút Hoạt Động"
+
+#: mod_configure.erl:459 web/ejabberd_web_admin.erl:1646
+msgid "Stopped Nodes"
+msgstr "Nút Dừng"
+
+#: mod_configure.erl:532 web/ejabberd_web_admin.erl:1690
+msgid "Modules"
+msgstr "Môđun"
+
+#: mod_configure.erl:533
+msgid "Backup Management"
+msgstr "Quản lý Sao Lưu Dự Phòng"
+
+#: mod_configure.erl:534
+msgid "Import Users From jabberd 1.4 Spool Files"
+msgstr "Nhập Người Sử Dụng Từ Các Tập Tin Spool jabberd 1,4"
+
+#: mod_configure.erl:649
+msgid "To ~s"
+msgstr "Gửi đến ~s"
+
+#: mod_configure.erl:667
+msgid "From ~s"
+msgstr "Nhận từ ~s"
+
+#: mod_configure.erl:864
+msgid "Database Tables Configuration at "
+msgstr "Cấu Hình Bảng Cơ Sở Dữ Liệu tại"
+
+#: mod_configure.erl:869
+msgid "Choose storage type of tables"
+msgstr "Chọn loại bảng lưu trữ"
+
+#: mod_configure.erl:877 mod_configure.erl:879
+msgid "Disc only copy"
+msgstr "Chỉ sao chép vào đĩa"
+
+#: mod_configure.erl:877 mod_configure.erl:879
+msgid "RAM and disc copy"
+msgstr "Sao chép vào RAM và đĩa"
+
+#: mod_configure.erl:877 mod_configure.erl:879
+msgid "RAM copy"
+msgstr "Sao chép vào RAM"
+
+#: mod_configure.erl:877 mod_configure.erl:879
+msgid "Remote copy"
+msgstr "Sao chép từ xa"
+
+#: mod_configure.erl:901
+msgid "Stop Modules at "
+msgstr "Môđun Dừng tại"
+
+#: mod_configure.erl:905
+msgid "Choose modules to stop"
+msgstr "Chọn môđun để dừng"
+
+#: mod_configure.erl:920
+msgid "Start Modules at "
+msgstr "Môđun Khởi Động tại "
+
+#: mod_configure.erl:924
+msgid "Enter list of {Module, [Options]}"
+msgstr "Nhập danh sách {Môđun, [Các Tùy Chọn]}"
+
+#: mod_configure.erl:925
+msgid "List of modules to start"
+msgstr "Danh sách các môđun khởi động"
+
+#: mod_configure.erl:934
+msgid "Backup to File at "
+msgstr "Sao lưu dự phòng ra Tập Tin tại"
+
+#: mod_configure.erl:938 mod_configure.erl:952
+msgid "Enter path to backup file"
+msgstr "Nhập đường dẫn đến tập tin sao lưu dự phòng"
+
+#: mod_configure.erl:939 mod_configure.erl:953 mod_configure.erl:967
+#: mod_configure.erl:981
+msgid "Path to File"
+msgstr "Đường dẫn đến Tập Tin"
+
+#: mod_configure.erl:948
+msgid "Restore Backup from File at "
+msgstr "Phục hồi Sao Lưu từ Tập Tin tại "
+
+#: mod_configure.erl:962
+msgid "Dump Backup to Text File at "
+msgstr "Kết Xuất Sao Lưu ra Tập Tin Văn Bản tại"
+
+#: mod_configure.erl:966
+msgid "Enter path to text file"
+msgstr "Nhập đường dẫn đến tập tin văn bản"
+
+#: mod_configure.erl:976
+msgid "Import User from File at "
+msgstr "Nhập Người Sử Dụng từ Tập Tin tại"
+
+#: mod_configure.erl:980
+msgid "Enter path to jabberd1.4 spool file"
+msgstr "Nhập đường dẫn đến tập tin spool jabberd1,4"
+
+#: mod_configure.erl:990
+msgid "Import Users from Dir at "
+msgstr "Nhập Người Sử Dụng từ Thư Mục tại"
+
+#: mod_configure.erl:994
+msgid "Enter path to jabberd1.4 spool dir"
+msgstr "Nhập đường dẫn đến thư mục spool jabberd1,4"
+
+#: mod_configure.erl:995
+msgid "Path to Dir"
+msgstr "Đường Dẫn đến Thư Mục"
+
+#: mod_configure.erl:1011 mod_configure.erl:1056
+msgid "Time delay"
+msgstr "Thời gian trì hoãn"
+
+#: mod_configure.erl:1094
+msgid "Access Control List Configuration"
+msgstr "Cấu Hình Danh Sách Kiểm Soát Truy Cập"
+
+#: mod_configure.erl:1098
+msgid "Access control lists"
+msgstr "Danh sách kiểm soát truy cập"
+
+#: mod_configure.erl:1122
+msgid "Access Configuration"
+msgstr "Cấu Hình Truy Cập"
+
+#: mod_configure.erl:1126
+msgid "Access rules"
+msgstr "Quy tắc Truy Cập"
+
+#: mod_configure.erl:1151 mod_configure.erl:1173 mod_configure.erl:1185
+#: mod_configure.erl:1197 mod_configure.erl:1209 mod_configure.erl:1226
+#: mod_configure.erl:1238 mod_configure.erl:1599 mod_configure.erl:1647
+#: mod_configure.erl:1667 mod_roster.erl:803 mod_roster_odbc.erl:910
+#: mod_vcard.erl:460 mod_vcard_ldap.erl:544 mod_vcard_odbc.erl:457
+msgid "Jabber ID"
+msgstr "Jabber ID"
+
+#: mod_configure.erl:1156 mod_configure.erl:1214 mod_configure.erl:1600
+#: mod_configure.erl:1809 mod_muc/mod_muc_room.erl:2702
+#: web/ejabberd_web_admin.erl:1331
+msgid "Password"
+msgstr "Mật Khẩu"
+
+#: mod_configure.erl:1161
+msgid "Password Verification"
+msgstr "Kiểm Tra Mật Khẩu"
+
+#: mod_configure.erl:1252
+msgid "Number of registered users"
+msgstr "Số người sử dụng đã đăng ký"
+
+#: mod_configure.erl:1266
+msgid "Number of online users"
+msgstr "Số người sử dụng trực tuyến"
+
+#: mod_configure.erl:1629 web/ejabberd_web_admin.erl:1397
+msgid "Never"
+msgstr "Không bao giờ"
+
+#: mod_configure.erl:1643 web/ejabberd_web_admin.erl:1411
+msgid "Online"
+msgstr "Trực tuyến"
+
+#: mod_configure.erl:1648
+msgid "Last login"
+msgstr "Đăng nhập lần cuối"
+
+#: mod_configure.erl:1668
+msgid "Roster size"
+msgstr "Kích thước bảng phân công"
+
+#: mod_configure.erl:1669
+msgid "IP addresses"
+msgstr "Địa chỉ IP"
+
+#: mod_configure.erl:1670
+msgid "Resources"
+msgstr "Nguồn tài nguyên"
+
+#: mod_configure.erl:1796
+msgid "Administration of "
+msgstr "Quản trị về "
+
+#: mod_configure.erl:1799
+msgid "Action on user"
+msgstr "Hành động đối với người sử dụng"
+
+#: mod_configure.erl:1803
+msgid "Edit Properties"
+msgstr "Chỉnh Sửa Thuộc Tính"
+
+#: mod_configure.erl:1806 web/ejabberd_web_admin.erl:1514
+msgid "Remove User"
+msgstr "Gỡ Bỏ Người Sử Dụng"
+
+#: mod_irc/mod_irc.erl:198 mod_muc/mod_muc.erl:305
+msgid "Access denied by service policy"
+msgstr "Sự truy cập bị chặn theo chính sách phục vụ"
+
+#: mod_irc/mod_irc.erl:311
+msgid "IRC Transport"
+msgstr "Truyền tải IRC"
+
+#: mod_irc/mod_irc.erl:325
+msgid "ejabberd IRC module"
+msgstr "Môdun ejabberd IRC Bản quyền"
+
+#: mod_irc/mod_irc.erl:443
+msgid "You need an x:data capable client to configure mod_irc settings"
+msgstr ""
+"Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để xác định "
+"các thiết lập mod_irc"
+
+#: mod_irc/mod_irc.erl:450
+msgid "Registration in mod_irc for "
+msgstr "Đăng ký trong mod_irc cho "
+
+#: mod_irc/mod_irc.erl:455
+msgid ""
+"Enter username and encodings you wish to use for connecting to IRC servers"
+msgstr ""
+"Nhập tên truy cập và mã hóa mà bạn muốn sử dụng khi kết nối với các máy chủ "
+"IRC"
+
+#: mod_irc/mod_irc.erl:460
+msgid "IRC Username"
+msgstr "Tên truy cập IRC"
+
+#: mod_irc/mod_irc.erl:470
+msgid ""
+"If you want to specify different encodings for IRC servers, fill this list "
+"with values in format '{\"irc server\", \"encoding\"}'.  By default this "
+"service use \"~s\" encoding."
+msgstr ""
+"Nếu bạn muốn xác định các cách thức mã hóa khác nhau cho các máy chủ IRC, "
+"hãy điền vào danh sách này những giá trị theo định dạng '{\"máy chủ irc\", "
+"\"mã hóa\"}'. Dịch vụ này mặc định sử dụng định dạng mã hóa \"~s\"."
+
+#: mod_irc/mod_irc.erl:480
+msgid ""
+"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
+"\"}]."
+msgstr ""
+"Ví dụ: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
+"\"}]"
+
+#: mod_irc/mod_irc.erl:485
+msgid "Encodings"
+msgstr "Mã hóa"
+
+#: mod_muc/mod_muc.erl:403
+msgid "Only service administrators are allowed to send service messages"
+msgstr "Chỉ có người quản trị dịch vụ mới được phép gửi những thư dịch vụ"
+
+#: mod_muc/mod_muc.erl:446
+msgid "Room creation is denied by service policy"
+msgstr "Việc tạo phòng bị ngăn lại theo chính sách dịch vụ"
+
+#: mod_muc/mod_muc.erl:453
+msgid "Conference room does not exist"
+msgstr "Phòng họp không tồn tại"
+
+#: mod_muc/mod_muc.erl:510
+msgid "Chatrooms"
+msgstr "Phòng trò chuyện"
+
+#: mod_muc/mod_muc.erl:561
+msgid "You need an x:data capable client to register nickname"
+msgstr ""
+"Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để đăng ký "
+"bí danh"
+
+#: mod_muc/mod_muc.erl:567
+msgid "Nickname Registration at "
+msgstr "Đăng Ký Bí Danh tại"
+
+#: mod_muc/mod_muc.erl:571
+msgid "Enter nickname you want to register"
+msgstr "Nhập bí danh bạn muốn đăng ký"
+
+#: mod_muc/mod_muc.erl:572 mod_roster.erl:804 mod_roster_odbc.erl:911
+#: mod_vcard.erl:357 mod_vcard.erl:465 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:462
+msgid "Nickname"
+msgstr "Bí danh"
+
+#: mod_muc/mod_muc.erl:611
+msgid "Specified nickname is already registered"
+msgstr "Bí danh xác định đã đăng ký rồi"
+
+#: mod_muc/mod_muc.erl:635
+msgid "You must fill in field \"Nickname\" in the form"
+msgstr "Bạn phải điền thông tin vào ô \"Nickname\" trong biểu mẫu này"
+
+#: mod_muc/mod_muc.erl:657
+msgid "ejabberd MUC module"
+msgstr "Môdun ejabberd MUC Bản quyền"
+
+#: mod_muc/mod_muc_log.erl:338
+msgid "Chatroom configuration modified"
+msgstr "Cấu hình phòng trò chuyện được chỉnh sửa"
+
+#: mod_muc/mod_muc_log.erl:341
+msgid "joins the room"
+msgstr "tham gia phòng này"
+
+#: mod_muc/mod_muc_log.erl:344 mod_muc/mod_muc_log.erl:347
+msgid "leaves the room"
+msgstr "rời khỏi phòng này"
+
+#: mod_muc/mod_muc_log.erl:350 mod_muc/mod_muc_log.erl:353
+msgid "has been banned"
+msgstr "đã bị cấm"
+
+#: mod_muc/mod_muc_log.erl:356 mod_muc/mod_muc_log.erl:359
+msgid "has been kicked"
+msgstr "đã bị đẩy ra khỏi"
+
+#: mod_muc/mod_muc_log.erl:362
+msgid "has been kicked because of an affiliation change"
+msgstr ""
+
+#: mod_muc/mod_muc_log.erl:365
+msgid "has been kicked because the room has been changed to members-only"
+msgstr ""
+
+#: mod_muc/mod_muc_log.erl:368
+msgid "has been kicked because of a system shutdown"
+msgstr ""
+
+#: mod_muc/mod_muc_log.erl:371
+msgid "is now known as"
+msgstr "bây giờ được biết như"
+
+#: mod_muc/mod_muc_log.erl:374 mod_muc/mod_muc_log.erl:619
+#: mod_muc/mod_muc_room.erl:1973
+msgid " has set the subject to: "
+msgstr " đã đặt chủ đề thành: "
+
+#: mod_muc/mod_muc_log.erl:405
+msgid "Monday"
+msgstr "Thứ Hai"
+
+#: mod_muc/mod_muc_log.erl:406
+msgid "Tuesday"
+msgstr "Thứ Ba"
+
+#: mod_muc/mod_muc_log.erl:407
+msgid "Wednesday"
+msgstr "Thứ Tư"
+
+#: mod_muc/mod_muc_log.erl:408
+msgid "Thursday"
+msgstr "Thứ Năm"
+
+#: mod_muc/mod_muc_log.erl:409
+msgid "Friday"
+msgstr "Thứ Sáu"
+
+#: mod_muc/mod_muc_log.erl:410
+msgid "Saturday"
+msgstr "Thứ Bảy"
+
+#: mod_muc/mod_muc_log.erl:411
+msgid "Sunday"
+msgstr "Chủ Nhật"
+
+#: mod_muc/mod_muc_log.erl:415
+msgid "January"
+msgstr "Tháng Một"
+
+#: mod_muc/mod_muc_log.erl:416
+msgid "February"
+msgstr "Tháng Hai"
+
+#: mod_muc/mod_muc_log.erl:417
+msgid "March"
+msgstr "Tháng Ba"
+
+#: mod_muc/mod_muc_log.erl:418
+msgid "April"
+msgstr "Tháng Tư"
+
+#: mod_muc/mod_muc_log.erl:419
+msgid "May"
+msgstr "Tháng Năm"
+
+#: mod_muc/mod_muc_log.erl:420
+msgid "June"
+msgstr "Tháng Sáu"
+
+#: mod_muc/mod_muc_log.erl:421
+msgid "July"
+msgstr "Tháng Bảy"
+
+#: mod_muc/mod_muc_log.erl:422
+msgid "August"
+msgstr "Tháng Tám"
+
+#: mod_muc/mod_muc_log.erl:423
+msgid "September"
+msgstr "Tháng Chín"
+
+#: mod_muc/mod_muc_log.erl:424
+msgid "October"
+msgstr "Tháng Mười"
+
+#: mod_muc/mod_muc_log.erl:425
+msgid "November"
+msgstr "Tháng Mười Một"
+
+#: mod_muc/mod_muc_log.erl:426
+msgid "December"
+msgstr "Tháng Mười Hai"
+
+#: mod_muc/mod_muc_log.erl:675
+msgid "Room Configuration"
+msgstr "Cấu Hình Phòng"
+
+#: mod_muc/mod_muc_log.erl:768 mod_muc/mod_muc_room.erl:2678
+msgid "Room title"
+msgstr "Tên phòng"
+
+#: mod_muc/mod_muc_room.erl:226
+msgid "Traffic rate limit is exceeded"
+msgstr "Quá giới hạn tỷ lệ lưu lượng truyền tải"
+
+#: mod_muc/mod_muc_room.erl:303
+msgid ""
+"This participant is kicked from the room because he sent an error message"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:312
+msgid "It is not allowed to send private messages to the conference"
+msgstr "Không được phép gửi những thư riêng đến phòng họp"
+
+#: mod_muc/mod_muc_room.erl:357
+msgid "Improper message type"
+msgstr "Loại thư không phù hợp"
+
+#: mod_muc/mod_muc_room.erl:474
+msgid ""
+"This participant is kicked from the room because he sent an error message to "
+"another participant"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:487
+msgid "It is not allowed to send private messages of type \"groupchat\""
+msgstr "Không được phép gửi những thư riêng loại \"groupchat\""
+
+#: mod_muc/mod_muc_room.erl:499 mod_muc/mod_muc_room.erl:553
+msgid "Recipient is not in the conference room"
+msgstr "Người nhận không có trong phòng họp"
+
+#: mod_muc/mod_muc_room.erl:519 mod_muc/mod_muc_room.erl:872
+#: mod_muc/mod_muc_room.erl:3272
+msgid "Only occupants are allowed to send messages to the conference"
+msgstr "Chỉ có những đối tượng tham gia mới được phép gửi thư đến phòng họp"
+
+#: mod_muc/mod_muc_room.erl:528
+#, fuzzy
+msgid "It is not allowed to send private messages"
+msgstr "Không được phép gửi những thư riêng đến phòng họp"
+
+#: mod_muc/mod_muc_room.erl:574
+msgid "Only occupants are allowed to send queries to the conference"
+msgstr ""
+"Chỉ có những đối tượng tham gia mới được phép gửi yêu cầu đến phòng họp"
+
+#: mod_muc/mod_muc_room.erl:586
+msgid "Queries to the conference members are not allowed in this room"
+msgstr ""
+"Không được phép gửi các yêu cầu gửi đến các thành viên trong phòng họp này"
+
+#: mod_muc/mod_muc_room.erl:671
+msgid "private, "
+msgstr "riêng,"
+
+#: mod_muc/mod_muc_room.erl:848
+msgid ""
+"Only moderators and participants are allowed to change subject in this room"
+msgstr ""
+"Chỉ có những người điều phối và những người tham gia được phép thay đổi chủ "
+"đề trong phòng này"
+
+#: mod_muc/mod_muc_room.erl:853
+msgid "Only moderators are allowed to change subject in this room"
+msgstr "Chỉ có những người điều phối được phép thay đổi chủ đề trong phòng này"
+
+#: mod_muc/mod_muc_room.erl:863
+msgid "Visitors are not allowed to send messages to all occupants"
+msgstr "Người ghé thăm không được phép gửi thư đến tất cả các người tham dự"
+
+#: mod_muc/mod_muc_room.erl:931
+msgid ""
+"This participant is kicked from the room because he sent an error presence"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:949
+#, fuzzy
+msgid "Visitors are not allowed to change their nicknames in this room"
+msgstr "Chỉ có những người điều phối được phép thay đổi chủ đề trong phòng này"
+
+#: mod_muc/mod_muc_room.erl:962 mod_muc/mod_muc_room.erl:1484
+msgid "Nickname is already in use by another occupant"
+msgstr "Bí danh đang do một người tham dự khác sử dụng"
+
+#: mod_muc/mod_muc_room.erl:973 mod_muc/mod_muc_room.erl:1492
+msgid "Nickname is registered by another person"
+msgstr "Một người khác đã đăng ký bí danh này rồi"
+
+#: mod_muc/mod_muc_room.erl:1473
+msgid "You have been banned from this room"
+msgstr "Bạn bị cấm tham gia phòng này"
+
+#: mod_muc/mod_muc_room.erl:1476
+msgid "Membership required to enter this room"
+msgstr "Yêu cầu tư cách thành viên khi tham gia vào phòng này"
+
+#: mod_muc/mod_muc_room.erl:1511
+msgid "This room is not anonymous"
+msgstr "Phòng này không nặc danh"
+
+#: mod_muc/mod_muc_room.erl:1536
+msgid "Password required to enter this room"
+msgstr "Yêu cầu nhập mật khẩu để vào phòng này"
+
+#: mod_muc/mod_muc_room.erl:1545
+msgid "Incorrect password"
+msgstr "Mật khẩu sai"
+
+#: mod_muc/mod_muc_room.erl:2028
+msgid "Administrator privileges required"
+msgstr "Yêu cầu đặc quyền của nhà quản trị"
+
+#: mod_muc/mod_muc_room.erl:2043
+msgid "Moderator privileges required"
+msgstr "Yêu cầu đặc quyền của nhà điều phối"
+
+#: mod_muc/mod_muc_room.erl:2198
+msgid "JID ~s is invalid"
+msgstr "JID ~s không hợp lệ"
+
+#: mod_muc/mod_muc_room.erl:2212
+msgid "Nickname ~s does not exist in the room"
+msgstr "Bí danh ~s không tồn tại trong phòng này"
+
+#: mod_muc/mod_muc_room.erl:2238 mod_muc/mod_muc_room.erl:2609
+msgid "Invalid affiliation: ~s"
+msgstr "Tư cách không hợp lệ: ~s"
+
+#: mod_muc/mod_muc_room.erl:2295
+msgid "Invalid role: ~s"
+msgstr "Vai trò không hợp lệ: ~s"
+
+#: mod_muc/mod_muc_room.erl:2586 mod_muc/mod_muc_room.erl:2622
+msgid "Owner privileges required"
+msgstr "Yêu cầu đặc quyền của người sở hữu"
+
+#: mod_muc/mod_muc_room.erl:2672
+msgid "Configuration for "
+msgstr "Cấu hình cho "
+
+#: mod_muc/mod_muc_room.erl:2681 mod_muc/mod_muc_room.erl:3082
+#, fuzzy
+msgid "Room description"
+msgstr "Miêu tả:"
+
+#: mod_muc/mod_muc_room.erl:2688
+msgid "Make room persistent"
+msgstr "Tạo phòng bền vững"
+
+#: mod_muc/mod_muc_room.erl:2693
+msgid "Make room public searchable"
+msgstr "Tạo phòng có thể tìm kiếm công khai"
+
+#: mod_muc/mod_muc_room.erl:2696
+msgid "Make participants list public"
+msgstr "Tạo danh sách người tham dự công khai"
+
+#: mod_muc/mod_muc_room.erl:2699
+msgid "Make room password protected"
+msgstr "Tạo phòng được bảo vệ bằng mật khẩu"
+
+#: mod_muc/mod_muc_room.erl:2710
+msgid "Maximum Number of Occupants"
+msgstr "Số Lượng Người Tham Dự Tối Đa"
+
+#: mod_muc/mod_muc_room.erl:2723
+msgid "No limit"
+msgstr "Không giới hạn"
+
+#: mod_muc/mod_muc_room.erl:2733
+msgid "Present real JIDs to"
+msgstr "JID thực tế hiện hành đến"
+
+#: mod_muc/mod_muc_room.erl:2741
+msgid "moderators only"
+msgstr "nhà điều phối duy nhất"
+
+#: mod_muc/mod_muc_room.erl:2743
+msgid "anyone"
+msgstr "bất kỳ ai"
+
+#: mod_muc/mod_muc_room.erl:2745
+msgid "Make room members-only"
+msgstr "Tạo phòng chỉ cho phép tư cách thành viên tham gia"
+
+#: mod_muc/mod_muc_room.erl:2748
+#, fuzzy
+msgid "Make room moderated"
+msgstr "Tạo phòng bền vững"
+
+#: mod_muc/mod_muc_room.erl:2751
+msgid "Default users as participants"
+msgstr "Người sử dụng mặc định là người tham dự"
+
+#: mod_muc/mod_muc_room.erl:2754
+msgid "Allow users to change subject"
+msgstr "Cho phép người sử dụng thay đổi chủ đề"
+
+#: mod_muc/mod_muc_room.erl:2757
+msgid "Allow users to send private messages"
+msgstr "Cho phép người sử dụng gửi thư riêng"
+
+#: mod_muc/mod_muc_room.erl:2760
+msgid "Allow users to query other users"
+msgstr "Cho phép người sử dụng hỏi người sử dụng khác"
+
+#: mod_muc/mod_muc_room.erl:2763
+msgid "Allow users to send invites"
+msgstr "Cho phép người sử dụng gửi lời mời"
+
+#: mod_muc/mod_muc_room.erl:2766
+#, fuzzy
+msgid "Allow visitors to send status text in presence updates"
+msgstr "Cho phép người sử dụng gửi thư riêng"
+
+#: mod_muc/mod_muc_room.erl:2769
+#, fuzzy
+msgid "Allow visitors to change nickname"
+msgstr "Cho phép người sử dụng thay đổi chủ đề"
+
+#: mod_muc/mod_muc_room.erl:2777
+msgid "Enable logging"
+msgstr "Cho phép ghi nhật ký"
+
+#: mod_muc/mod_muc_room.erl:2785
+msgid "You need an x:data capable client to configure room"
+msgstr ""
+"Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để xác định "
+"cấu hình phòng họp"
+
+#: mod_muc/mod_muc_room.erl:3084
+msgid "Number of occupants"
+msgstr "Số người tham dự"
+
+#: mod_muc/mod_muc_room.erl:3192
+msgid "~s invites you to the room ~s"
+msgstr "~s mời bạn vào phòng ~s"
+
+#: mod_muc/mod_muc_room.erl:3201
+msgid "the password is"
+msgstr "mật khẩu là"
+
+#: mod_offline.erl:446 mod_offline_odbc.erl:296
+msgid ""
+"Your contact offline message queue is full. The message has been discarded."
+msgstr ""
+"Danh sách chờ thư liên lạc ngoại tuyến của bạn đã đầy. Thư này đã bị loại bỏ."
+
+#: mod_offline.erl:495 mod_offline_odbc.erl:351
+msgid "~s's Offline Messages Queue"
+msgstr "~s's Danh Sách Chờ Thư Ngoại Tuyến"
+
+#: mod_offline.erl:498 mod_offline_odbc.erl:354 mod_roster.erl:847
+#: mod_roster_odbc.erl:954 mod_shared_roster.erl:648 mod_shared_roster.erl:748
+#: web/ejabberd_web_admin.erl:681 web/ejabberd_web_admin.erl:724
+#: web/ejabberd_web_admin.erl:792 web/ejabberd_web_admin.erl:830
+#: web/ejabberd_web_admin.erl:870 web/ejabberd_web_admin.erl:1319
+#: web/ejabberd_web_admin.erl:1506 web/ejabberd_web_admin.erl:1668
+#: web/ejabberd_web_admin.erl:1735 web/ejabberd_web_admin.erl:1816
+#: web/ejabberd_web_admin.erl:1839 web/ejabberd_web_admin.erl:1908
+msgid "Submitted"
+msgstr "Đã gửi"
+
+#: mod_offline.erl:506
+msgid "Time"
+msgstr "Thời Gian"
+
+#: mod_offline.erl:507
+msgid "From"
+msgstr "Từ"
+
+#: mod_offline.erl:508
+msgid "To"
+msgstr "Đến"
+
+#: mod_offline.erl:509 mod_offline_odbc.erl:362
+msgid "Packet"
+msgstr "Gói thông tin"
+
+#: mod_offline.erl:522 mod_offline_odbc.erl:375 mod_shared_roster.erl:655
+#: web/ejabberd_web_admin.erl:732 web/ejabberd_web_admin.erl:838
+msgid "Delete Selected"
+msgstr "Tùy chọn Xóa được Chọn"
+
+#: mod_offline.erl:557 mod_offline_odbc.erl:440
+msgid "Offline Messages:"
+msgstr "Thư Ngoại Tuyến:"
+
+#: mod_proxy65/mod_proxy65_service.erl:192
+msgid "ejabberd SOCKS5 Bytestreams module"
+msgstr "Môdun SOCKS5 Bytestreams Bản quyền"
+
+#: mod_pubsub/mod_pubsub.erl:753
+msgid "Publish-Subscribe"
+msgstr "Xuất Bản-Đăng Ký"
+
+#: mod_pubsub/mod_pubsub.erl:846
+msgid "ejabberd Publish-Subscribe module"
+msgstr "Môdun ejabberd Xuất Bản-Đăng Ký Bản quyền"
+
+#: mod_pubsub/mod_pubsub.erl:997
+msgid "PubSub subscriber request"
+msgstr "Yêu cầu người đăng ký môđun Xuất Bản Đăng Ký"
+
+#: mod_pubsub/mod_pubsub.erl:999
+msgid "Choose whether to approve this entity's subscription."
+msgstr "Chọn có nên chấp nhận sự đăng ký của đối tượng này không"
+
+#: mod_pubsub/mod_pubsub.erl:1005
+msgid "Node ID"
+msgstr "ID Nút"
+
+#: mod_pubsub/mod_pubsub.erl:1010
+msgid "Subscriber Address"
+msgstr "Địa Chỉ Người Đăng Ký"
+
+#: mod_pubsub/mod_pubsub.erl:1016
+msgid "Allow this JID to subscribe to this pubsub node?"
+msgstr "Cho phép JID đăng ký nút môđun xuất bản đăng ký này không?"
+
+#: mod_pubsub/mod_pubsub.erl:2497
+msgid "Deliver payloads with event notifications"
+msgstr "Đưa ra thông tin dung lượng với các thông báo sự kiện"
+
+#: mod_pubsub/mod_pubsub.erl:2498
+msgid "Deliver event notifications"
+msgstr "Đưa ra các thông báo sự kiện"
+
+#: mod_pubsub/mod_pubsub.erl:2499
+msgid "Notify subscribers when the node configuration changes"
+msgstr "Thông báo cho người đăng ký khi nào cấu hình nút thay đổi"
+
+#: mod_pubsub/mod_pubsub.erl:2500
+msgid "Notify subscribers when the node is deleted"
+msgstr "Thông báo cho người đăng ký khi nào nút bị xóa bỏ"
+
+#: mod_pubsub/mod_pubsub.erl:2501
+msgid "Notify subscribers when items are removed from the node"
+msgstr "Thông báo cho người đăng ký khi nào các mục chọn bị gỡ bỏ khỏi nút"
+
+#: mod_pubsub/mod_pubsub.erl:2502
+msgid "Persist items to storage"
+msgstr "Những mục cần để lưu trữ"
+
+#: mod_pubsub/mod_pubsub.erl:2503
+msgid "A friendly name for the node"
+msgstr ""
+
+#: mod_pubsub/mod_pubsub.erl:2504
+msgid "Max # of items to persist"
+msgstr "Số mục tối đa để lưu trữ"
+
+#: mod_pubsub/mod_pubsub.erl:2505
+msgid "Whether to allow subscriptions"
+msgstr "Xác định nên cho phép đăng ký không"
+
+#: mod_pubsub/mod_pubsub.erl:2506
+msgid "Specify the access model"
+msgstr "Xác định mô hình truy cập"
+
+#: mod_pubsub/mod_pubsub.erl:2510
+msgid "Roster groups allowed to subscribe"
+msgstr ""
+
+#: mod_pubsub/mod_pubsub.erl:2514
+msgid "Specify the publisher model"
+msgstr "Xác định mô hình nhà xuất bản"
+
+#: mod_pubsub/mod_pubsub.erl:2516
+msgid "Max payload size in bytes"
+msgstr "Kích thước dung lượng byte tối đa"
+
+#: mod_pubsub/mod_pubsub.erl:2517
+msgid "When to send the last published item"
+msgstr "Khi cần gửi mục được xuất bản cuối cùng"
+
+#: mod_pubsub/mod_pubsub.erl:2519
+msgid "Only deliver notifications to available users"
+msgstr "Chỉ gửi thông báo đến những người sử dụng hiện có"
+
+#: mod_register.erl:191
+msgid "Choose a username and password to register with this server"
+msgstr "Chọn một tên truy cập và mật khẩu để đăng ký với máy chủ này"
+
+#: mod_register.erl:232
+#, fuzzy
+msgid "Users are not allowed to register accounts so fast"
+msgstr "Người ghé thăm không được phép gửi thư đến tất cả các người tham dự"
+
+#: mod_roster.erl:798 mod_roster_odbc.erl:905 web/ejabberd_web_admin.erl:1481
+#: web/ejabberd_web_admin.erl:1623 web/ejabberd_web_admin.erl:1634
+#: web/ejabberd_web_admin.erl:1898
+msgid "None"
+msgstr "Không có"
+
+#: mod_roster.erl:805 mod_roster_odbc.erl:912
+msgid "Subscription"
+msgstr "Đăng ký"
+
+#: mod_roster.erl:806 mod_roster_odbc.erl:913
+msgid "Pending"
+msgstr "Chờ"
+
+#: mod_roster.erl:807 mod_roster_odbc.erl:914
+msgid "Groups"
+msgstr "Nhóm"
+
+#: mod_roster.erl:834 mod_roster_odbc.erl:941
+msgid "Validate"
+msgstr "Xác nhận hợp lệ"
+
+#: mod_roster.erl:842 mod_roster_odbc.erl:949
+msgid "Remove"
+msgstr "Gỡ bỏ"
+
+#: mod_roster.erl:845 mod_roster_odbc.erl:952
+msgid "Roster of "
+msgstr "Bảng phân công của "
+
+#: mod_roster.erl:848 mod_roster_odbc.erl:955 mod_shared_roster.erl:649
+#: mod_shared_roster.erl:749 web/ejabberd_web_admin.erl:682
+#: web/ejabberd_web_admin.erl:725 web/ejabberd_web_admin.erl:793
+#: web/ejabberd_web_admin.erl:831 web/ejabberd_web_admin.erl:871
+#: web/ejabberd_web_admin.erl:1320 web/ejabberd_web_admin.erl:1507
+#: web/ejabberd_web_admin.erl:1669 web/ejabberd_web_admin.erl:1817
+#: web/ejabberd_web_admin.erl:1840 web/ejabberd_web_admin.erl:1909
+msgid "Bad format"
+msgstr "Định dạng hỏng"
+
+#: mod_roster.erl:855 mod_roster_odbc.erl:962
+msgid "Add Jabber ID"
+msgstr "Thêm Jabber ID"
+
+#: mod_roster.erl:936 mod_roster_odbc.erl:1043
+msgid "Roster"
+msgstr "Bảng phân công"
+
+#: mod_shared_roster.erl:604 mod_shared_roster.erl:646
+#: mod_shared_roster.erl:745
+msgid "Shared Roster Groups"
+msgstr "Nhóm Phân Công Chia Sẻ"
+
+#: mod_shared_roster.erl:642 web/ejabberd_web_admin.erl:1189
+#: web/ejabberd_web_admin.erl:2082
+msgid "Add New"
+msgstr "Thêm Mới"
+
+#: mod_shared_roster.erl:716
+msgid "Name:"
+msgstr "Tên:"
+
+#: mod_shared_roster.erl:721
+msgid "Description:"
+msgstr "Miêu tả:"
+
+#: mod_shared_roster.erl:729
+msgid "Members:"
+msgstr "Thành viên:"
+
+#: mod_shared_roster.erl:737
+msgid "Displayed Groups:"
+msgstr "Nhóm được hiển thị:"
+
+#: mod_shared_roster.erl:746
+msgid "Group "
+msgstr "Nhóm "
+
+#: mod_shared_roster.erl:755 web/ejabberd_web_admin.erl:691
+#: web/ejabberd_web_admin.erl:734 web/ejabberd_web_admin.erl:802
+#: web/ejabberd_web_admin.erl:877 web/ejabberd_web_admin.erl:1751
+msgid "Submit"
+msgstr "Gửi"
+
+#: mod_vcard.erl:165 mod_vcard_ldap.erl:235 mod_vcard_odbc.erl:129
+msgid "Erlang Jabber Server"
+msgstr "Erlang Jabber Server Bản quyền"
+
+#: mod_vcard.erl:357 mod_vcard.erl:466 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:463
+msgid "Birthday"
+msgstr "Ngày sinh"
+
+#: mod_vcard.erl:357 mod_vcard.erl:468 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:465
+msgid "City"
+msgstr "Thành phố"
+
+#: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:464
+msgid "Country"
+msgstr "Quốc gia"
+
+#: mod_vcard.erl:357 mod_vcard.erl:469 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:466
+msgid "Email"
+msgstr "Email"
+
+#: mod_vcard.erl:357 mod_vcard.erl:464 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:461
+msgid "Family Name"
+msgstr "Họ"
+
+#: mod_vcard.erl:357 mod_vcard_odbc.erl:354
+msgid ""
+"Fill in the form to search for any matching Jabber User (Add * to the end of "
+"field to match substring)"
+msgstr ""
+"Điền vào mẫu này để tìm kiếm bất kỳ thông tin nào khớp với Người sử dụng "
+"Jabber (Thêm dấu * vào cuối ô để thông tin khớp với chuỗi bên trong)"
+
+#: mod_vcard.erl:357 mod_vcard.erl:461 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:458
+msgid "Full Name"
+msgstr "Tên Đầy Đủ"
+
+#: mod_vcard.erl:357 mod_vcard.erl:463 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:460
+msgid "Middle Name"
+msgstr "Họ Đệm"
+
+#: mod_vcard.erl:357 mod_vcard.erl:462 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:459 web/ejabberd_web_admin.erl:1740
+msgid "Name"
+msgstr "Tên"
+
+#: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:467
+msgid "Organization Name"
+msgstr "Tên Tổ Chức"
+
+#: mod_vcard.erl:357 mod_vcard.erl:471 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:468
+msgid "Organization Unit"
+msgstr "Bộ Phận"
+
+#: mod_vcard.erl:357 mod_vcard_ldap.erl:455 mod_vcard_odbc.erl:354
+msgid "Search users in "
+msgstr "Tìm kiếm người sử dụng trong"
+
+#: mod_vcard.erl:357 mod_vcard_odbc.erl:354 web/ejabberd_web_admin.erl:1326
+#: web/ejabberd_web_admin.erl:1381
+msgid "User"
+msgstr "Người sử dụng"
+
+#: mod_vcard.erl:357 mod_vcard_ldap.erl:455 mod_vcard_odbc.erl:354
+msgid "You need an x:data capable client to search"
+msgstr ""
+"Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để tìm kiếm"
+
+#: mod_vcard.erl:379 mod_vcard_ldap.erl:477 mod_vcard_odbc.erl:376
+msgid "vCard User Search"
+msgstr "Tìm Kiếm Người Sử Dụng vCard"
+
+#: mod_vcard.erl:433 mod_vcard_ldap.erl:531 mod_vcard_odbc.erl:430
+msgid "ejabberd vCard module"
+msgstr "Môdun ejabberd vCard Bản quyền"
+
+#: mod_vcard.erl:457 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:454
+msgid "Search Results for "
+msgstr "Kết Quả Tìm Kiếm cho "
+
+#: mod_vcard_ldap.erl:455
+msgid "Fill in fields to search for any matching Jabber User"
+msgstr ""
+"Điền vào các ô để tìm kiếm bất kỳ các thông tin nào khớp với Người sử dụng "
+"Jabber"
+
+#: web/ejabberd_web_admin.erl:115 web/ejabberd_web_admin.erl:166
+#, fuzzy
+msgid "ejabberd Web Admin"
+msgstr "Giao diện Web ejabberd"
+
+#: web/ejabberd_web_admin.erl:130 web/ejabberd_web_admin.erl:181
+#: web/ejabberd_web_admin.erl:603 web/ejabberd_web_admin.erl:622
+msgid "Administration"
+msgstr "Quản trị"
+
+#: web/ejabberd_web_admin.erl:137 web/ejabberd_web_admin.erl:609
+msgid "Virtual Hosts"
+msgstr "Máy Chủ Ảo"
+
+#: web/ejabberd_web_admin.erl:138 web/ejabberd_web_admin.erl:195
+#: web/ejabberd_web_admin.erl:610 web/ejabberd_web_admin.erl:631
+#: web/ejabberd_web_admin.erl:1643
+msgid "Nodes"
+msgstr "Nút"
+
+#: web/ejabberd_web_admin.erl:139 web/ejabberd_web_admin.erl:196
+#: web/ejabberd_web_admin.erl:611 web/ejabberd_web_admin.erl:632
+#: web/ejabberd_web_admin.erl:950 web/ejabberd_web_admin.erl:1676
+msgid "Statistics"
+msgstr "Số liệu thống kê"
+
+#: web/ejabberd_web_admin.erl:192 web/ejabberd_web_admin.erl:628
+#: web/ejabberd_web_admin.erl:892 web/ejabberd_web_admin.erl:898
+msgid "Users"
+msgstr "Người sử dụng"
+
+#: web/ejabberd_web_admin.erl:194 web/ejabberd_web_admin.erl:630
+#: web/ejabberd_web_admin.erl:1383
+msgid "Last Activity"
+msgstr "Hoạt Động Cuối Cùng"
+
+#: web/ejabberd_web_admin.erl:606 web/ejabberd_web_admin.erl:608
+#: web/ejabberd_web_admin.erl:625 web/ejabberd_web_admin.erl:627
+msgid "(Raw)"
+msgstr "(Thô)"
+
+#: web/ejabberd_web_admin.erl:728 web/ejabberd_web_admin.erl:834
+msgid "Raw"
+msgstr "Thô"
+
+#: web/ejabberd_web_admin.erl:868
+msgid "~s access rule configuration"
+msgstr "~s cấu hình quy tắc truy cập"
+
+#: web/ejabberd_web_admin.erl:885
+msgid "ejabberd virtual hosts"
+msgstr "Máy chủ ảo ejabberd"
+
+#: web/ejabberd_web_admin.erl:924
+msgid "Users Last Activity"
+msgstr "Hoạt Động Cuối Cùng Của Người Sử Dụng"
+
+#: web/ejabberd_web_admin.erl:926
+msgid "Period: "
+msgstr "Giai đoạn: "
+
+#: web/ejabberd_web_admin.erl:936
+msgid "Last month"
+msgstr "Tháng trước"
+
+#: web/ejabberd_web_admin.erl:937
+msgid "Last year"
+msgstr "Năm trước"
+
+#: web/ejabberd_web_admin.erl:938
+msgid "All activity"
+msgstr "Tất cả hoạt động"
+
+#: web/ejabberd_web_admin.erl:940
+msgid "Show Ordinary Table"
+msgstr "Hiển Thị Bảng Thường"
+
+#: web/ejabberd_web_admin.erl:942
+msgid "Show Integral Table"
+msgstr "Hiển Thị Bảng Đầy Đủ"
+
+#: web/ejabberd_web_admin.erl:971
+msgid "Node not found"
+msgstr "Nút không tìm thấy"
+
+#: web/ejabberd_web_admin.erl:1273
+msgid "Host"
+msgstr "Máy chủ"
+
+#: web/ejabberd_web_admin.erl:1274
+msgid "Registered Users"
+msgstr "Người Sử Dụng Đã Đăng Ký"
+
+#: web/ejabberd_web_admin.erl:1382
+msgid "Offline Messages"
+msgstr "Thư Ngoại Tuyến"
+
+#: web/ejabberd_web_admin.erl:1439 web/ejabberd_web_admin.erl:1455
+msgid "Registered Users:"
+msgstr "Người Sử Dụng Đã Đăng Ký:"
+
+#: web/ejabberd_web_admin.erl:1441 web/ejabberd_web_admin.erl:1457
+#: web/ejabberd_web_admin.erl:1871
+msgid "Online Users:"
+msgstr "Người Sử Dụng Trực Tuyến:"
+
+#: web/ejabberd_web_admin.erl:1443
+msgid "Outgoing s2s Connections:"
+msgstr "Kết Nối Bên Ngoài s2s:"
+
+#: web/ejabberd_web_admin.erl:1445
+msgid "Outgoing s2s Servers:"
+msgstr "Máy chủ Bên Ngoài s2s:"
+
+#: web/ejabberd_web_admin.erl:1501
+msgid "Change Password"
+msgstr "Thay Đổi Mật Khẩu"
+
+#: web/ejabberd_web_admin.erl:1504
+msgid "User "
+msgstr "Người sử dụng "
+
+#: web/ejabberd_web_admin.erl:1511
+msgid "Connected Resources:"
+msgstr "Tài Nguyên Được Kết Nối:"
+
+#: web/ejabberd_web_admin.erl:1512
+msgid "Password:"
+msgstr "Mật Khẩu:"
+
+#: web/ejabberd_web_admin.erl:1567
+msgid "No Data"
+msgstr "Không Dữ Liệu"
+
+#: web/ejabberd_web_admin.erl:1666 web/ejabberd_web_admin.erl:1688
+msgid "Node "
+msgstr "Nút "
+
+#: web/ejabberd_web_admin.erl:1675
+msgid "Listened Ports"
+msgstr "Cổng Kết Nối"
+
+#: web/ejabberd_web_admin.erl:1677 web/ejabberd_web_admin.erl:1913
+#: web/ejabberd_web_admin.erl:2071
+msgid "Update"
+msgstr "Cập Nhật"
+
+#: web/ejabberd_web_admin.erl:1680 web/ejabberd_web_admin.erl:2148
+msgid "Restart"
+msgstr "Khởi động lại"
+
+#: web/ejabberd_web_admin.erl:1682 web/ejabberd_web_admin.erl:2150
+msgid "Stop"
+msgstr "Dừng"
+
+#: web/ejabberd_web_admin.erl:1696
+msgid "RPC Call Error"
+msgstr "Lỗi Gọi RPC"
+
+#: web/ejabberd_web_admin.erl:1734
+msgid "Database Tables at "
+msgstr "Bảng Cơ Sở Dữ Liệu tại"
+
+#: web/ejabberd_web_admin.erl:1741
+msgid "Storage Type"
+msgstr "Loại Lưu Trữ"
+
+#: web/ejabberd_web_admin.erl:1742
+msgid "Size"
+msgstr "Kích thước"
+
+#: web/ejabberd_web_admin.erl:1743
+msgid "Memory"
+msgstr "Bộ Nhớ"
+
+#: web/ejabberd_web_admin.erl:1758
+msgid "Backup of "
+msgstr "Sao lưu dự phòng về"
+
+#: web/ejabberd_web_admin.erl:1759
+msgid ""
+"Remark that these options will only backup the builtin Mnesia database. If "
+"you are using the ODBC module, you also need to backup your SQL database "
+"separately."
+msgstr ""
+"Lưu ý rằng những tùy chọn này sẽ chỉ được sao lưu cơ sở dữ liệu bên trong "
+"Mnesia. Nếu bạn đang sử dụng môđun ODBC, bạn cũng cần sao lưu cơ sở dữ liệu "
+"SQL của bạn riêng biệt."
+
+#: web/ejabberd_web_admin.erl:1764
+msgid "Store binary backup:"
+msgstr "Lưu dữ liệu sao lưu dạng nhị phân:"
+
+#: web/ejabberd_web_admin.erl:1768 web/ejabberd_web_admin.erl:1775
+#: web/ejabberd_web_admin.erl:1783 web/ejabberd_web_admin.erl:1790
+#: web/ejabberd_web_admin.erl:1797
+msgid "OK"
+msgstr "OK"
+
+#: web/ejabberd_web_admin.erl:1771
+msgid "Restore binary backup immediately:"
+msgstr "Khôi phục bản sao lưu dự phòng dạng nhị phận ngay lập tức:"
+
+#: web/ejabberd_web_admin.erl:1779
+msgid ""
+"Restore binary backup after next ejabberd restart (requires less memory):"
+msgstr ""
+"Khôi phục bản sao lưu dự phòng dạng nhị phân sau lần khởi động ejabberd kế "
+"tiếp (yêu cầu ít bộ nhớ hơn):"
+
+#: web/ejabberd_web_admin.erl:1786
+msgid "Store plain text backup:"
+msgstr "Khôi phục bản sao lưu dự phòng thuần văn bản"
+
+#: web/ejabberd_web_admin.erl:1793
+msgid "Restore plain text backup immediately:"
+msgstr "Khôi phục bản sao lưu dự phòng thuần văn bản ngay lập tức:"
+
+#: web/ejabberd_web_admin.erl:1814
+msgid "Listened Ports at "
+msgstr "Cổng Liên Lạc tại"
+
+#: web/ejabberd_web_admin.erl:1837
+msgid "Modules at "
+msgstr "Môđun tại "
+
+#: web/ejabberd_web_admin.erl:1862
+msgid "Statistics of ~p"
+msgstr "Thống kê về ~p"
+
+#: web/ejabberd_web_admin.erl:1865
+msgid "Uptime:"
+msgstr "Thời gian tải lên:"
+
+#: web/ejabberd_web_admin.erl:1868
+msgid "CPU Time:"
+msgstr "Thời Gian CPU:"
+
+#: web/ejabberd_web_admin.erl:1874
+msgid "Transactions Commited:"
+msgstr "Giao Dịch Được Cam Kết:"
+
+#: web/ejabberd_web_admin.erl:1877
+msgid "Transactions Aborted:"
+msgstr "Giao Dịch Hủy Bỏ:"
+
+#: web/ejabberd_web_admin.erl:1880
+msgid "Transactions Restarted:"
+msgstr "Giao Dịch Khởi Động Lại:"
+
+#: web/ejabberd_web_admin.erl:1883
+msgid "Transactions Logged:"
+msgstr "Giao Dịch Được Ghi Nhận:"
+
+#: web/ejabberd_web_admin.erl:1906
+msgid "Update "
+msgstr "Cập Nhật "
+
+#: web/ejabberd_web_admin.erl:1914
+msgid "Update plan"
+msgstr "Kế hoạch cập nhật"
+
+#: web/ejabberd_web_admin.erl:1915
+msgid "Updated modules"
+msgstr "Môđun cập nhật"
+
+#: web/ejabberd_web_admin.erl:1916
+msgid "Update script"
+msgstr "Cập nhận lệnh"
+
+#: web/ejabberd_web_admin.erl:1917
+msgid "Low level update script"
+msgstr "Lệnh cập nhật mức độ thấp"
+
+#: web/ejabberd_web_admin.erl:1918
+msgid "Script check"
+msgstr "Lệnh kiểm tra"
+
+#: web/ejabberd_web_admin.erl:2054
+msgid "Port"
+msgstr "Cổng"
+
+#: web/ejabberd_web_admin.erl:2055 web/ejabberd_web_admin.erl:2135
+msgid "Module"
+msgstr "Môđun"
+
+#: web/ejabberd_web_admin.erl:2056 web/ejabberd_web_admin.erl:2136
+msgid "Options"
+msgstr "Tùy chọn"
+
+#: web/ejabberd_web_admin.erl:2073
+msgid "Delete"
+msgstr "Xóa"
+
+#: web/ejabberd_web_admin.erl:2158
+msgid "Start"
+msgstr "Khởi động"
+
+#~ msgid "Roster groups that may subscribe (if access model is roster)"
+#~ msgstr ""
+#~ "Các nhóm phân công có thể đăng ký (nếu mô hình truy cập là dạng phân công)"
