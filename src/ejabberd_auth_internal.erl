@@ -98,6 +98,8 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	    false
     end.
 
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%       ok | {error, invalid_jid}
 set_password(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -110,7 +112,8 @@ set_password(User, Server, Password) ->
 			mnesia:write(#passwd{us = US,
 					     password = Password})
 		end,
-	    mnesia:transaction(F)
+	    {atomic, ok} = mnesia:transaction(F),
+	    ok
     end.
 
 

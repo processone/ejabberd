@@ -101,6 +101,8 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	    end
     end.
 
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%       ok | {error, invalid_jid}
 set_password(User, Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
@@ -109,7 +111,10 @@ set_password(User, Server, Password) ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    Pass = ejabberd_odbc:escape(Password),
 	    LServer = jlib:nameprep(Server),
-	    catch odbc_queries:set_password_t(LServer, Username, Pass)
+	    case catch odbc_queries:set_password_t(LServer, Username, Pass) of
+	        {atomic, ok} -> ok;
+	        Other -> {error, Other}
+	    end
     end.
 
 

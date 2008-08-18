@@ -61,7 +61,10 @@ check_password(User, Server, Password, _StreamID, _Digest) ->
     check_password(User, Server, Password).
 
 set_password(User, Server, Password) ->
-    extauth:set_password(User, Server, Password).
+    case extauth:set_password(User, Server, Password) of
+	true -> ok;
+	_ -> {error, unknown_problem}
+    end.
 
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.

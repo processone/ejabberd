@@ -1,3 +1,12 @@
+2008-08-18  Badlop  <badlop@process-one.net>
+
+	* src/mod_register.erl: Change password using mod_register always
+	returns success regardless of real result (EJAB-723)
+	* src/ejabberd_auth.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+
 2008-08-16  Badlop  <badlop@process-one.net>
 
 	* src/msgs/sv.msg: Fixed formatting typos

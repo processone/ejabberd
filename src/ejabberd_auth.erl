@@ -127,6 +127,12 @@ check_password_with_authmodule(User, Server, Password, StreamID, Digest) ->
 	[AuthMod | _] -> {true, AuthMod}
     end.
 
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%       ok | {error, ErrorType}
+%% where ErrorType = empty_password | not_allowed | invalid_jid
+set_password(_User, _Server, "") ->
+    %% We do not allow empty password
+    {error, empty_password};
 set_password(User, Server, Password) ->
     lists:foldl(
       fun(M, {error, _}) ->
@@ -135,6 +141,9 @@ set_password(User, Server, Password) ->
 	      Res
       end, {error, not_allowed}, auth_modules(Server)).
 
+try_register(_User, _Server, "") ->
+    %% We do not allow empty password
+    {error, not_allowed};    
 try_register(User, Server, Password) ->
     case is_user_exists(User,Server) of
 	true ->
