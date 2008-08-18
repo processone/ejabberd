@@ -1,5 +1,10 @@
 2008-08-18  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_log.erl: MUC log files options: plaintext
+	format; filename with only room name (EJAB-596)
+	* doc/guide.tex: Document both options
+	* doc/guide.html: Likewise
+
 	* src/mod_register.erl: Change password using mod_register always
 	returns success regardless of real result (EJAB-723)
 	* src/ejabberd_auth.erl: Likewise

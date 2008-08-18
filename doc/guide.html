@@ -2184,26 +2184,38 @@ file or if they need to use the embedded CSS file. Allowed values are
 include the embedded CSS code. With the latter, you can specify the URL of the
 custom CSS file (for example: &#X2018;http://example.com/my.css&#X2019;). The default value
 is <TT>false</TT>.
+</DD><DT CLASS="dt-description"><B><TT>dirname</TT></B></DT><DD CLASS="dd-description">
+Allows to configure the name of the room directory.
+Allowed values are <TT>room_jid</TT> and <TT>room_name</TT>.
+With the first value, the room directory name will be the full room JID.
+With the latter, the room directory name will be only the room name,
+not including the MUC service name.
+The default value is <TT>room_jid</TT>.
 </DD><DT CLASS="dt-description"><B><TT>dirtype</TT></B></DT><DD CLASS="dd-description">
 The type of the created directories can be specified with this option. Allowed
 values are <TT>subdirs</TT> and <TT>plain</TT>. With the first value,
 subdirectories are created for each year and month. With the latter, the
 names of the log files contain the full date, and there are no subdirectories.
 The default value is <TT>subdirs</TT>.
+</DD><DT CLASS="dt-description"><B><TT>file_format</TT></B></DT><DD CLASS="dd-description">
+Define the format of the log files:
+<TT>html</TT> stores in HTML format,
+<TT>plaintext</TT> stores in plain text.
+The default value is <TT>html</TT>.
 </DD><DT CLASS="dt-description"><B><TT>outdir</TT></B></DT><DD CLASS="dd-description">
 This option sets the full path to the directory in which the HTML files should
 be stored. Make sure the <TT>ejabberd</TT> daemon user has write access on that
 directory. The default value is <TT>"www/muc"</TT>.
-</DD><DT CLASS="dt-description"><B><TT>timezone</TT></B></DT><DD CLASS="dd-description">
-The time zone for the logs is configurable with this option. Allowed values
-are <TT>local</TT> and <TT>universal</TT>. With the first value, the local time,
-as reported to Erlang by the operating system, will be used. With the latter,
-GMT/UTC time will be used. The default value is <TT>local</TT>.
 </DD><DT CLASS="dt-description"><B><TT>spam_prevention</TT></B></DT><DD CLASS="dd-description">
 To prevent spam, the <TT>spam_prevention</TT> option adds a special attribute
 to links that prevent their indexation by search engines. The default value
 is <TT>true</TT>, which mean that nofollow attributes will be added to user
 submitted links. 
+</DD><DT CLASS="dt-description"><B><TT>timezone</TT></B></DT><DD CLASS="dd-description">
+The time zone for the logs is configurable with this option. Allowed values
+are <TT>local</TT> and <TT>universal</TT>. With the first value, the local time,
+as reported to Erlang by the operating system, will be used. With the latter,
+GMT/UTC time will be used. The default value is <TT>local</TT>.
 </DD><DT CLASS="dt-description"><B><TT>top_link</TT></B></DT><DD CLASS="dd-description">
 With this option you can customize the link on the top right corner of each
 log file. The syntax of this option is <TT>{"URL", "Text"}</TT>. The default
@@ -2225,6 +2237,7 @@ time zone will be GMT/UTC. Finally, the top link will be
                  {access_log, muc},
                  {cssfile, "http://example.com/my.css"},
                  {dirtype, plain},
+                 {dirname, room_jid},
                  {outdir, "/var/www/muclogs"},
                  {timezone, universal},
                  {spam_prevention, true},
