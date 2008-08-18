@@ -1,3 +1,12 @@
+2008-08-18  Badlop  <badlop@process-one.net>
+
+	* src/mod_register.erl: Change password using mod_register always
+	returns success regardless of real result (EJAB-723)
+	* src/ejabberd_auth.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+
 2008-08-18  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/node_dispatch.erl: Fix call to unexported function
@@ -6,7 +15,7 @@
 2008-08-17  Badlop  <badlop@process-one.net>
 
 	* contrib/extract_translations/extract_translations.erl: Use
-	Gettext PO for translators, export to ejabberd MSG (EJAB-468)
+	Gettext PO for translators, export to ejabberd MSG (EJAB-648)
 	* contrib/extract_translations/prepare-translation.sh: Likewise
 	* doc/guide.tex: Likewise
 	* doc/guide.html: Likewise
