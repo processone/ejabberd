@@ -1,3 +1,8 @@
+2008-08-18  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/node_dispatch.erl: Fix call to unexported function
+	nodetree_default:get_subnodes/2
+
 2008-08-17  Badlop  <badlop@process-one.net>
 
 	* contrib/extract_translations/extract_translations.erl: Use

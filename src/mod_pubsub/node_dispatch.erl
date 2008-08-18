@@ -129,7 +129,7 @@ publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload) ->
 			  node_default:publish_item(
 			    Host, SubNode, Publisher, Model,
 			    MaxItems, ItemId, Payload)
-		  end, nodetree_default:get_subnodes(Host, Node)).
+		  end, nodetree_default:get_subnodes(Host, Node, Publisher)).
 
 remove_extra_items(_Host, _Node, _MaxItems, ItemIds) ->
     {result, {ItemIds, []}}.
