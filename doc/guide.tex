@@ -1392,7 +1392,7 @@ Examples:
 \ind{options!language}\ind{language}
 
 The option \option{language} defines the default language of server strings that
-can be seen by \Jabber{} clients. If a \Jabber{} client do not support
+can be seen by \Jabber{} clients. If a \Jabber{} client does not support
 \option{xml:lang}, the specified language is used. The default value is
 \term{en}. In order to take effect there must be a translation file
 \term{<language>.msg} in \ejabberd{}'s \term{msgs} directory.
@@ -1409,7 +1409,7 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-Translators and developers can check details in Appendix \ref{i18ni10n}.
+Appendix \ref{i18ni10n} provides more details about internationalization and localization.
 
 
 \makesubsection{includeconfigfile}{Include Additional Configuration Files}
@@ -4267,14 +4267,16 @@ To exit the shell, close the window or press the keys: control+c control+c.
 \ind{xml:lang}\ind{internationalization}\ind{localization}\ind{i18n}\ind{l10n}
 
 The source code of \ejabberd{} supports localization.
-The translators can edit the Gettext PO files using any capable program (KBabel, Lokalizer, Poedit...) or a simple text editor.
+The translators can edit the 
+\footahref{http://www.gnu.org/software/gettext/}{gettext} .po files 
+using any capable program (KBabel, Lokalize, Poedit...) or a simple text editor.
 
-Then \footahref{http://www.gnu.org/software/gettext/}{Gettext}
-is used to extract, update and export the language files to the MSG format read by \ejabberd{}.
+Then gettext
+is used to extract, update and export those .po files to the .msg format read by \ejabberd{}.
 To perform those management tasks, in the \term{src/} directory execute \term{make translations}.
 The translatable strings are extracted from source code to generate the file \term{ejabberd.pot}.
-This file is merged with each \term{*.po} language file to produce updated language files.
-Finally those \term{*.po} files are exported to \term{*.msg} files, that have a format easily readable by \ejabberd{}.
+This file is merged with each .po file to produce updated .po files.
+Finally those .po files are exported to .msg files, that have a format easily readable by \ejabberd{}.
 
 All built-in modules support the \texttt{xml:lang} attribute inside IQ queries.
 Figure~\ref{fig:discorus}, for example, shows the reply to the following query:
