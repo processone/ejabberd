@@ -1839,23 +1839,22 @@ connected user was last active on the server, or to query the uptime of the
 the processing discipline for Last activity (<TT>jabber:iq:last</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><P> <A NAME="modmuc"></A> </P><!--TOC subsection <TT>mod_muc</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc42">3.3.8</A>&#XA0;&#XA0;<A HREF="#modmuc"><TT>mod_muc</TT></A></H3><!--SEC END --><P> <A NAME="modmuc"></A> 
-</P><P>With this module enabled, your server will support Multi-User Chat
-(<A HREF="http://www.xmpp.org/extensions/xep-0045.html">XEP-0045</A>). End users will be able to join text conferences.</P><P>Some of the features of Multi-User Chat:
+</P><P>This module provides a Multi-User Chat (<A HREF="http://www.xmpp.org/extensions/xep-0045.html">XEP-0045</A>) service.
+Users can discover existing rooms, join or create them.
+Occupants of a room can chat in public or have private chats.</P><P>Some of the features of Multi-User Chat:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Sending private messages to room participants.
-</LI><LI CLASS="li-itemize">Inviting users.
-</LI><LI CLASS="li-itemize">Setting a conference topic.
+Sending public and private messages to room occupants.
+</LI><LI CLASS="li-itemize">Inviting other users to a room.
+</LI><LI CLASS="li-itemize">Setting a room subject.
 </LI><LI CLASS="li-itemize">Creating password protected rooms.
-</LI><LI CLASS="li-itemize">Kicking and banning participants.
+</LI><LI CLASS="li-itemize">Kicking and banning occupants.
 </LI></UL><P>The MUC service allows any Jabber ID to register a nickname,
 so nobody else can use that nickname in any room in the MUC service.
 To register a nickname, open the Service Discovery in your 
-Jabber client and Register in the MUC service.</P><P>The MUC service allows the service administrator to send a message
-to all existing chatrooms. 
-To do so, send the message to the Jabber ID of the MUC service.</P><P>This module supports clustering and load
+Jabber client and register in the MUC service.</P><P>This module supports clustering and load
 balancing. One module can be started per cluster node. Rooms are
 distributed at creation time on all available MUC module
-instances. The multi-user chat module is clustered but the room
+instances. The multi-user chat module is clustered but the rooms
 themselves are not clustered nor fault-tolerant: if the node managing a
 set of rooms goes down, the rooms disappear and they will be recreated
 on an available node on first connection attempt.</P><P>Module options:
@@ -1867,19 +1866,21 @@ hostname of the virtual host with the prefix &#X2018;<TT>conference.</TT>&#X2019
 is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>access</TT></B></DT><DD CLASS="dd-description"> You can specify who is allowed to use
-the Multi-User Chat service (by default, everyone is allowed to use it).
+the Multi-User Chat service. By default everyone is allowed to use it.
 </DD><DT CLASS="dt-description"><B><TT>access_create</TT></B></DT><DD CLASS="dd-description"> To configure who is
 allowed to create new rooms at the Multi-User Chat service, this option
-can be used (by default, everybody is allowed to create rooms).
+can be used. By default everybody is allowed to create rooms.
 </DD><DT CLASS="dt-description"><B><TT>access_persistent</TT></B></DT><DD CLASS="dd-description"> To configure who is
-allowed to modify the &#X2019;persistent&#X2019; chatroom option
-(by default, everybody is allowed to modify that option).
+allowed to modify the &#X2019;persistent&#X2019; room option.
+By default everybody is allowed to modify that option.
 </DD><DT CLASS="dt-description"><B><TT>access_admin</TT></B></DT><DD CLASS="dd-description"> This option specifies
-who is allowed to administrate the Multi-User Chat service (the default
+who is allowed to administrate the Multi-User Chat service. The default
 value is <TT>none</TT>, which means that only the room creator can
-administer his room). By sending a message to the service JID,
-administrators can send service messages that will be displayed in every
-active room.
+administer his room.
+The administrators can send a normal message to the service JID,
+and it will be shown in all active rooms as a service message.
+The administrators can send a groupchat message to the JID of an active room,
+and the message will be shown in the room as a service message.
 </DD><DT CLASS="dt-description"><B><TT>history_size</TT></B></DT><DD CLASS="dd-description"> A small history of
 the current discussion is sent to users when they enter the
 room. With this option you can define the number of history messages
@@ -1887,44 +1888,43 @@ to keep and send to users joining the room. The value is an
 integer. Setting the value to <TT>0</TT> disables the history feature
 and, as a result, nothing is kept in memory. The default value is
 <TT>20</TT>. This value is global and thus affects all rooms on the
-server.
+service.
 </DD><DT CLASS="dt-description"><B><TT>max_users</TT></B></DT><DD CLASS="dd-description">  This option defines at
-the server level, the maximum number of users allowed per MUC
+the service level, the maximum number of users allowed per
 room. It can be lowered in each room configuration but cannot be
-increased in individual MUC room configuration. The default value is
+increased in individual room configuration. The default value is
 200.
 </DD><DT CLASS="dt-description"><B><TT>max_users_admin_threshold</TT></B></DT><DD CLASS="dd-description">
  This option defines the
-number of MUC admins or owners to allow to enter the room even if
-the maximum number of allowed users is reached. The default limits
-is 5. In most cases this default value is the best setting.
+number of service admins or room owners allowed to enter the room when
+the maximum number of allowed occupants was reached. The default limit
+is 5.
 </DD><DT CLASS="dt-description"><B><TT>max_user_conferences</TT></B></DT><DD CLASS="dd-description">
- This option define the maximum
-number of chat room any given user will be able to join. The default
+ This option defines the maximum
+number of rooms that any given user can join. The default value
 is 10. This option is used to prevent possible abuses. Note that
-this is a soft limits: Some users can sometime join more conferences
+this is a soft limit: some users can sometimes join more conferences
 in cluster configurations.
 </DD><DT CLASS="dt-description"><B><TT>min_message_interval</TT></B></DT><DD CLASS="dd-description"> 
 This option defines the minimum interval between two messages send
-by a user in seconds. This option is global and valid for all chat
+by an occupant in seconds. This option is global and valid for all
 rooms. A decimal value can be used. When this option is not defined,
 message rate is not limited. This feature can be used to protect a
-MUC service from users abuses and limit number of messages that will
+MUC service from occupant abuses and limit number of messages that will
 be broadcasted by the service. A good value for this minimum message
-interval is 0.4 second. If a user tries to send messages faster, an
-error is send back explaining that the message have been discarded
+interval is 0.4 second. If an occupant tries to send messages faster, an
+error is send back explaining that the message has been discarded
 and describing the reason why the message is not acceptable.
 </DD><DT CLASS="dt-description"><B><TT>min_presence_interval</TT></B></DT><DD CLASS="dd-description">
  This option defines the
-minimum of time between presence changes coming from a given user in
-seconds. This option is global and valid for all chat rooms. A
+minimum of time between presence changes coming from a given occupant in
+seconds. This option is global and valid for all rooms. A
 decimal value can be used. When this option is not defined, no
 restriction is applied. This option can be used to protect a MUC
-service for users abuses, as fastly changing a user presence will
-result in possible large presence packet broadcast. If a user tries
+service for occupants abuses. If an occupant tries
 to change its presence more often than the specified interval, the
 presence is cached by <TT>ejabberd</TT> and only the last presence is
-broadcasted to all users in the room after expiration of the
+broadcasted to all occupants in the room after expiration of the
 interval delay. Intermediate presence packets are silently
 discarded. A good value for this option is 4 seconds.
 </DD><DT CLASS="dt-description"><B><TT>default_room_options</TT></B></DT><DD CLASS="dd-description"> 
@@ -2012,8 +2012,8 @@ and the default value of 20 history messages will be send to the users.
              {access_admin, muc_admins}]},
   ...
  ]}.
-</PRE></LI><LI CLASS="li-itemize">In the following example, MUC anti abuse options are used. A
-user cannot send more than one message every 0.4 seconds and cannot
+</PRE></LI><LI CLASS="li-itemize">In the following example, MUC anti abuse options are used. An
+occupant cannot send more than one message every 0.4 seconds and cannot
 change its presence more than once every 4 seconds. No ACLs are
 defined, but some user restriction could be added as well:<PRE CLASS="verbatim">{modules,
  [
@@ -2023,7 +2023,7 @@ defined, but some user restriction could be added as well:<PRE CLASS="verbatim">
   ...
  ]}.
 </PRE></LI><LI CLASS="li-itemize">This example shows how to use <TT>default_room_options</TT> to make sure
-newly created chatrooms have by default those options.
+the newly created rooms have by default those options.
 <PRE CLASS="verbatim">{modules,
  [
   ...
@@ -2043,17 +2043,17 @@ newly created chatrooms have by default those options.
  ]}.
 </PRE></LI></UL><P> <A NAME="modmuclog"></A> </P><!--TOC subsection <TT>mod_muc_log</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc43">3.3.9</A>&#XA0;&#XA0;<A HREF="#modmuclog"><TT>mod_muc_log</TT></A></H3><!--SEC END --><P> <A NAME="modmuclog"></A> 
-</P><P>This module enables optional logging of Multi-User Chat (MUC) conversations to
-HTML. Once you enable this module, users can join a chatroom using a MUC capable
+</P><P>This module enables optional logging of Multi-User Chat (MUC) public conversations to
+HTML. Once you enable this module, users can join a room using a MUC capable
 Jabber client, and if they have enough privileges, they can request the
-configuration form in which they can set the option to enable chatroom logging.</P><P>Features:
+configuration form in which they can set the option to enable room logging.</P><P>Features:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Chatroom details are added on top of each page: room title, JID,
+Room details are added on top of each page: room title, JID,
 author, subject and configuration.
 </LI><LI CLASS="li-itemize">
-The room JID in the generated HTML is a link to join the chatroom (using
+The room JID in the generated HTML is a link to join the room (using
 <A HREF="http://www.xmpp.org/rfcs/rfc5122.html">XMPP URI</A>).
-</LI><LI CLASS="li-itemize">Subject and chatroom configuration changes are tracked and displayed.
+</LI><LI CLASS="li-itemize">Subject and room configuration changes are tracked and displayed.
 </LI><LI CLASS="li-itemize">Joins, leaves, nick changes, kicks, bans and &#X2018;/me&#X2019; are tracked and
 displayed, including the reason if available.
 </LI><LI CLASS="li-itemize">Generated HTML files are XHTML 1.0 Transitional and CSS compliant.
@@ -2066,7 +2066,7 @@ displayed, including the reason if available.
 </LI></UL><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>access_log</TT></B></DT><DD CLASS="dd-description">
-This option restricts which users are allowed to enable or disable chatroom
+This option restricts which occupants are allowed to enable or disable room
 logging. The default value is <TT>muc_admin</TT>. Note for this default setting
 you need to have an access rule for <TT>muc_admin</TT> in order to take effect.
 </DD><DT CLASS="dt-description"><B><TT>cssfile</TT></B></DT><DD CLASS="dd-description">
@@ -2102,8 +2102,8 @@ log file. The syntax of this option is <TT>{"URL", "Text"}</TT>. The default
 value is <TT>{"/", "Home"}</TT>.
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-In the first example any chatroom owner can enable logging, and a
-custom CSS file will be used (http://example.com/my.css). Further, the names
+In the first example any room owner can enable logging, and a
+custom CSS file will be used (http://example.com/my.css). The names
 of the log files will contain the full date, and there will be no
 subdirectories. The log files will be stored in /var/www/muclogs, and the
 time zone will be GMT/UTC. Finally, the top link will be
@@ -2126,7 +2126,7 @@ time zone will be GMT/UTC. Finally, the top link will be
  ]}.
 </PRE></LI><LI CLASS="li-itemize">In the second example only <TT>admin1@example.org</TT> and
 <TT>admin2@example.net</TT> can enable logging, and the embedded CSS file will be
-used. Further, the names of the log files will only contain the day (number),
+used. The names of the log files will only contain the day (number),
 and there will be subdirectories for each year and month. The log files will
 be stored in /var/www/muclogs, and the local time will be used. Finally, the
 top link will be the default <CODE>&lt;a href="/"&gt;Home&lt;/a&gt;</CODE>.

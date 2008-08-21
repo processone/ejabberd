@@ -2390,31 +2390,28 @@ Options:
 \makesubsection{modmuc}{\modmuc{}}
 \ind{modules!\modmuc{}}\ind{protocols!XEP-0045: Multi-User Chat}\ind{conferencing}
 
-With this module enabled, your server will support Multi-User Chat
-(\xepref{0045}). End users will be able to join text conferences.
+This module provides a Multi-User Chat (\xepref{0045}) service.
+Users can discover existing rooms, join or create them.
+Occupants of a room can chat in public or have private chats.
 
 Some of the features of Multi-User Chat:
 \begin{itemize}
-\item Sending private messages to room participants.
-\item Inviting users.
-\item Setting a conference topic.
+\item Sending public and private messages to room occupants.
+\item Inviting other users to a room.
+\item Setting a room subject.
 \item Creating password protected rooms.
-\item Kicking and banning participants.
+\item Kicking and banning occupants.
 \end{itemize}
 
 The MUC service allows any Jabber ID to register a nickname,
 so nobody else can use that nickname in any room in the MUC service.
 To register a nickname, open the Service Discovery in your 
-Jabber client and Register in the MUC service.
-
-The MUC service allows the service administrator to send a message
-to all existing chatrooms. 
-To do so, send the message to the Jabber ID of the MUC service.
+Jabber client and register in the MUC service.
 
 This module supports clustering and load
 balancing. One module can be started per cluster node. Rooms are
 distributed at creation time on all available MUC module
-instances. The multi-user chat module is clustered but the room
+instances. The multi-user chat module is clustered but the rooms
 themselves are not clustered nor fault-tolerant: if the node managing a
 set of rooms goes down, the rooms disappear and they will be recreated
 on an available node on first connection attempt.
@@ -2423,19 +2420,21 @@ Module options:
 \begin{description}
 \hostitem{conference}
 \titem{access} \ind{options!access}You can specify who is allowed to use
-  the Multi-User Chat service (by default, everyone is allowed to use it).
+  the Multi-User Chat service. By default everyone is allowed to use it.
 \titem{access\_create} \ind{options!access\_create}To configure who is
   allowed to create new rooms at the Multi-User Chat service, this option
-  can be used (by default, everybody is allowed to create rooms).
+  can be used. By default everybody is allowed to create rooms.
 \titem{access\_persistent} \ind{options!access\_persistent}To configure who is
-  allowed to modify the 'persistent' chatroom option
-  (by default, everybody is allowed to modify that option).
+  allowed to modify the 'persistent' room option.
+  By default everybody is allowed to modify that option.
 \titem{access\_admin} \ind{options!access\_admin}This option specifies
-  who is allowed to administrate the Multi-User Chat service (the default
+  who is allowed to administrate the Multi-User Chat service. The default
   value is \term{none}, which means that only the room creator can
-  administer his room). By sending a message to the service JID,
-  administrators can send service messages that will be displayed in every
-  active room.
+  administer his room.
+  The administrators can send a normal message to the service JID,
+  and it will be shown in all active rooms as a service message.
+  The administrators can send a groupchat message to the JID of an active room,
+  and the message will be shown in the room as a service message.
 \titem{history\_size} \ind{options!history\_size}A small history of
   the current discussion is sent to users when they enter the
   room. With this option you can define the number of history messages
@@ -2443,44 +2442,43 @@ Module options:
   integer. Setting the value to \term{0} disables the history feature
   and, as a result, nothing is kept in memory. The default value is
   \term{20}. This value is global and thus affects all rooms on the
-  server.
+  service.
 \titem{max\_users} \ind{options!max\_users} This option defines at
-  the server level, the maximum number of users allowed per MUC
+  the service level, the maximum number of users allowed per
   room. It can be lowered in each room configuration but cannot be
-  increased in individual MUC room configuration. The default value is
+  increased in individual room configuration. The default value is
   200.
 \titem{max\_users\_admin\_threshold}
   \ind{options!max\_users\_admin\_threshold} This option defines the
-  number of MUC admins or owners to allow to enter the room even if
-  the maximum number of allowed users is reached. The default limits
-  is 5. In most cases this default value is the best setting.
+  number of service admins or room owners allowed to enter the room when
+  the maximum number of allowed occupants was reached. The default limit
+  is 5.
 \titem{max\_user\_conferences}
-  \ind{options!max\_user\_conferences} This option define the maximum
-  number of chat room any given user will be able to join. The default
+  \ind{options!max\_user\_conferences} This option defines the maximum
+  number of rooms that any given user can join. The default value
   is 10. This option is used to prevent possible abuses. Note that
-  this is a soft limits: Some users can sometime join more conferences
+  this is a soft limit: some users can sometimes join more conferences
   in cluster configurations.
 \titem{min\_message\_interval} \ind{options!min\_message\_interval}
   This option defines the minimum interval between two messages send
-  by a user in seconds. This option is global and valid for all chat
+  by an occupant in seconds. This option is global and valid for all
   rooms. A decimal value can be used. When this option is not defined,
   message rate is not limited. This feature can be used to protect a
-  MUC service from users abuses and limit number of messages that will
+  MUC service from occupant abuses and limit number of messages that will
   be broadcasted by the service. A good value for this minimum message
-  interval is 0.4 second. If a user tries to send messages faster, an
-  error is send back explaining that the message have been discarded
+  interval is 0.4 second. If an occupant tries to send messages faster, an
+  error is send back explaining that the message has been discarded
   and describing the reason why the message is not acceptable.
 \titem{min\_presence\_interval}
   \ind{options!min\_presence\_interval} This option defines the
-  minimum of time between presence changes coming from a given user in
-  seconds. This option is global and valid for all chat rooms. A
+  minimum of time between presence changes coming from a given occupant in
+  seconds. This option is global and valid for all rooms. A
   decimal value can be used. When this option is not defined, no
   restriction is applied. This option can be used to protect a MUC
-  service for users abuses, as fastly changing a user presence will
-  result in possible large presence packet broadcast. If a user tries
+  service for occupants abuses. If an occupant tries
   to change its presence more often than the specified interval, the
   presence is cached by \ejabberd{} and only the last presence is
-  broadcasted to all users in the room after expiration of the
+  broadcasted to all occupants in the room after expiration of the
   interval delay. Intermediate presence packets are silently
   discarded. A good value for this option is 4 seconds.
 \titem{default\_room\_options} \ind{options!default\_room\_options}
@@ -2575,8 +2573,8 @@ Examples:
  ]}.
 \end{verbatim}
 
-\item In the following example, MUC anti abuse options are used. A
-user cannot send more than one message every 0.4 seconds and cannot
+\item In the following example, MUC anti abuse options are used. An
+occupant cannot send more than one message every 0.4 seconds and cannot
 change its presence more than once every 4 seconds. No ACLs are
 defined, but some user restriction could be added as well:
 
@@ -2591,7 +2589,7 @@ defined, but some user restriction could be added as well:
 \end{verbatim}
 
 \item This example shows how to use \option{default\_room\_options} to make sure
-  newly created chatrooms have by default those options.
+  the newly created rooms have by default those options.
 \begin{verbatim}
 {modules,
  [
@@ -2616,19 +2614,19 @@ defined, but some user restriction could be added as well:
 \makesubsection{modmuclog}{\modmuclog{}}
 \ind{modules!\modmuclog{}}
 
-This module enables optional logging of Multi-User Chat (MUC) conversations to
-HTML. Once you enable this module, users can join a chatroom using a MUC capable
+This module enables optional logging of Multi-User Chat (MUC) public conversations to
+HTML. Once you enable this module, users can join a room using a MUC capable
 Jabber client, and if they have enough privileges, they can request the
-configuration form in which they can set the option to enable chatroom logging.
+configuration form in which they can set the option to enable room logging.
 
 Features:
 \begin{itemize}
-\item Chatroom details are added on top of each page: room title, JID,
+\item Room details are added on top of each page: room title, JID,
   author, subject and configuration.
 \item \ind{protocols!RFC 5122: Internationalized Resource Identifiers (IRIs) and Uniform Resource Identifiers (URIs) for the Extensible Messaging and Presence Protocol (XMPP)}
-  The room JID in the generated HTML is a link to join the chatroom (using
+  The room JID in the generated HTML is a link to join the room (using
   \footahref{http://www.xmpp.org/rfcs/rfc5122.html}{XMPP URI}).
-\item Subject and chatroom configuration changes are tracked and displayed.
+\item Subject and room configuration changes are tracked and displayed.
 \item Joins, leaves, nick changes, kicks, bans and `/me' are tracked and
   displayed, including the reason if available.
 \item Generated HTML files are XHTML 1.0 Transitional and CSS compliant.
@@ -2643,7 +2641,7 @@ Features:
 Options:
 \begin{description}
 \titem{access\_log}\ind{options!access\_log}
-  This option restricts which users are allowed to enable or disable chatroom
+  This option restricts which occupants are allowed to enable or disable room
   logging. The default value is \term{muc\_admin}. Note for this default setting
   you need to have an access rule for \term{muc\_admin} in order to take effect.
 \titem{cssfile}\ind{options!cssfile}
@@ -2681,8 +2679,8 @@ Options:
 
 Examples:
 \begin{itemize}
-\item In the first example any chatroom owner can enable logging, and a
-  custom CSS file will be used (http://example.com/my.css). Further, the names
+\item In the first example any room owner can enable logging, and a
+  custom CSS file will be used (http://example.com/my.css). The names
   of the log files will contain the full date, and there will be no
   subdirectories. The log files will be stored in /var/www/muclogs, and the
   time zone will be GMT/UTC. Finally, the top link will be
@@ -2707,7 +2705,7 @@ Examples:
 \end{verbatim}
   \item In the second example only \jid{admin1@example.org} and
   \jid{admin2@example.net} can enable logging, and the embedded CSS file will be
-  used. Further, the names of the log files will only contain the day (number),
+  used. The names of the log files will only contain the day (number),
   and there will be subdirectories for each year and month. The log files will
   be stored in /var/www/muclogs, and the local time will be used. Finally, the
   top link will be the default \verb|<a href="/">Home</a>|.

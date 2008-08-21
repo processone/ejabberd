@@ -1,3 +1,8 @@
+2008-08-21  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Fix names of chatroom to room, user to occupant
+	* doc/guide.html: Likewise
+
 2008-08-18  Badlop  <badlop@process-one.net>
 
 	* src/mod_register.erl: Change password using mod_register always
