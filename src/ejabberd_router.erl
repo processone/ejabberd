@@ -150,9 +150,9 @@ unregister_route(Domain) ->
 		    mnesia:transaction(F);
 		_ ->
 		    F = fun() ->
-				case mnesia:match(#route{domain = LDomain,
-							 pid = Pid,
-							 _ = '_'}) of
+				case mnesia:match_object(#route{domain=LDomain,
+								pid = Pid,
+								_ = '_'}) of
 				    [R] ->
 					I = R#route.local_hint,
 					mnesia:write(
