@@ -1237,15 +1237,7 @@ get_default_role(Affiliation, StateData) ->
     end.
 
 is_visitor(Jid, StateData) ->
-    case get_affiliation(Jid, StateData) of
-        none ->
-            case get_default_role(none, StateData) of
-                visitor -> true;
-                _ -> false
-            end;
-        visitor -> true;
-        _ -> false
-    end.
+    get_role(Jid, StateData) =:= visitor.
 
 get_max_users(StateData) ->
     MaxUsers = (StateData#state.config)#config.max_users,
