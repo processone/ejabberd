@@ -1,3 +1,8 @@
+2008-08-24  Geoff Cant  <gcant@process-one.net>
+
+	* src/mod_mud/mod_muc_room.erl: is_visitor/2 fix - use get_role
+	not get_affiliation
+
 2008-08-22  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_router.erl: Fix call to mnesia match_object
