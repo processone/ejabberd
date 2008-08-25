@@ -116,6 +116,8 @@ loop(Host, MaxOfflineMsgs) ->
 		    case catch odbc_queries:add_spool(Host, Query) of
 			{'EXIT', Reason} ->
 			    ?ERROR_MSG("~p~n", [Reason]);
+			{error, Reason} ->
+			    ?ERROR_MSG("~p~n", [Reason]);
 			_ ->
 			    ok
 		    end
