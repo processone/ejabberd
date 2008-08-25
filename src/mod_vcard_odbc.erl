@@ -162,7 +162,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 		    end;
 		{selected, ["vcard"], []} ->
 		    IQ#iq{type = result, sub_el = []};
-		{'EXIT', _Reason} ->
+		_ ->
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
 	    end
