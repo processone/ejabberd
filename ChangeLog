@@ -3,6 +3,8 @@
 	* src/mod_privacy_odbc.erl: Prevent case_clause error when
 	ejabber_odbc:sql_query returns {error, Reason}
 	* src/mod_vcard_odbc.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
 
 2008-08-25  Badlop  <badlop@process-one.net>
 

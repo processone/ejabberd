@@ -114,8 +114,6 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 get_last(IQ, SubEl, LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of
-	{'EXIT', _Reason} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
 	{selected, ["seconds","state"], []} ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
 	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
@@ -132,7 +130,9 @@ get_last(IQ, SubEl, LUser, LServer) ->
 		_ ->
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
-	    end
+	    end;
+	_ ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
     end.
 
 on_presence_update(User, Server, _Resource, Status) ->
@@ -152,8 +152,6 @@ store_last_info(User, Server, TimeStamp, Status) ->
 get_last_info(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of
-	{'EXIT', _Reason} ->
-	    not_found;
 	{selected, ["seconds","state"], []} ->
 	    not_found;
 	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
@@ -162,7 +160,9 @@ get_last_info(LUser, LServer) ->
 		    {ok, TimeStamp, Status};
 		_ ->
 		    not_found
-	    end
+	    end;
+	_ ->
+	    not_found
     end.
 
 remove_user(User, Server) ->
