@@ -1,3 +1,7 @@
+2008-08-26  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: get_items bugfix (EJAB-716)
+
 2008-08-25  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_privacy_odbc.erl: Prevent case_clause error when

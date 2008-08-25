@@ -933,7 +933,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 			({xmlelement, "item", ItemAttrs, _}, Acc) ->
 			    case xml:get_attr_s("id", ItemAttrs) of
 			    "" -> Acc;
-			    ItemID -> ItemID
+			    ItemID -> [ItemID|Acc]
 			    end;
 			(_, Acc) ->
 			    Acc
@@ -1692,8 +1692,8 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 			[] -> 
 			    Items;
 			_ ->
-			    lists:filter(fun(Item) ->
-				lists:member(Item, ItemIDs)
+			    lists:filter(fun(#pubsub_item{itemid = {ItemId, _}}) ->
+				lists:member(ItemId, ItemIDs)
 			    end, Items) 
 			end,
 		    %% Generate the XML response (Item list), limiting the
