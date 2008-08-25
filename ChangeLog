@@ -1,3 +1,9 @@
+2008-08-25  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_privacy_odbc.erl: Prevent case_clause error when
+	ejabber_odbc:sql_query returns {error, Reason}
+	* src/mod_vcard_odbc.erl: Likewise
+
 2008-08-25  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_check.erl: Detect correctly MSSQL and ODBC
