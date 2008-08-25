@@ -1,3 +1,8 @@
+2008-08-25  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_check.erl: Detect correctly MSSQL and ODBC
+	configuration (EJAB-710)
+
 2008-08-24  Geoff Cant  <gcant@process-one.net>
 
 	* src/mod_mud/mod_muc_room.erl: is_visitor/2 fix - use get_role
