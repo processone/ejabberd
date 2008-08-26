@@ -107,10 +107,8 @@ open_session(SID, User, Server, Resource, Info) ->
     set_session(SID, User, Server, Resource, undefined, Info),
     check_for_sessions_to_replace(User, Server, Resource),
     JID = exmpp_jid:make_jid(User, Server, Resource),
-    % XXX OLD FORMAT: JID.
-    JIDOld = jlib:to_old_jid(JID),
     ejabberd_hooks:run(sm_register_connection_hook, JID#jid.ldomain,
-		       [SID, JIDOld, Info]).
+		       [SID, JID, Info]).
 
 close_session(SID, User, Server, Resource) ->
     Info = case mnesia:dirty_read({session, SID}) of
@@ -122,10 +120,8 @@ close_session(SID, User, Server, Resource) ->
 	end,
     mnesia:sync_dirty(F),
     JID = exmpp_jid:make_jid(User, Server, Resource),
-    % XXX OLD FORMAT: JID.
-    JIDOld = jlib:to_old_jid(JID),
     ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.ldomain,
-		       [SID, JIDOld, Info]).
+		       [SID, JID, Info]).
 
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
     case ejabberd_auth:is_user_exists(User, Server) of
@@ -188,11 +184,8 @@ get_user_info(User, Server, Resource) ->
 
 set_presence(SID, User, Server, Resource, Priority, Presence, Info) ->
     set_session(SID, User, Server, Resource, Priority, Info),
-    % XXX OLD FORMAT: Presence.
-    PresenceOld = exmpp_xml:xmlel_to_xmlelement(Presence,
-      [?DEFAULT_NS], ?PREFIXED_NS),
     ejabberd_hooks:run(set_presence_hook, exmpp_stringprep:nameprep(Server),
-		       [User, Server, Resource, PresenceOld]).
+		       [User, Server, Resource, Presence]).
 
 unset_presence(SID, User, Server, Resource, Status, Info) ->
     set_session(SID, User, Server, Resource, undefined, Info),
@@ -408,9 +401,6 @@ do_route(From, To, Packet) ->
 	   [From, To, Packet, 8]),
     #jid{node = User, domain = Server,
 	 lnode = LUser, ldomain = LServer, lresource = LResource} = To,
-    % XXX OLD FORMAT: From, To.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
     case LResource of
 	undefined ->
 	    case Packet of
@@ -419,36 +409,32 @@ do_route(From, To, Packet) ->
 			case exmpp_presence:get_type(Packet) of
 			    'subscribe' ->
 				Reason = exmpp_presence:get_status(Packet),
-				% XXX OLD FORMAT: From.
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, FromOld, subscribe, Reason]),
+				   [User, Server, From, subscribe, Reason]),
 				 true};
 			    'subscribed' ->
-				% XXX OLD FORMAT: From.
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, FromOld, subscribed, ""]),
+				   [User, Server, From, subscribed, ""]),
 				 true};
 			    'unsubscribe' ->
-				% XXX OLD FORMAT: From.
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, FromOld, unsubscribe, ""]),
+				   [User, Server, From, unsubscribe, ""]),
 				 true};
 			    'unsubscribed' ->
-				% XXX OLD FORMAT: From.
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, FromOld, unsubscribed, ""]),
+				   [User, Server, From, unsubscribed, ""]),
 				 true};
 			    _ ->
 				{true, false}
@@ -504,10 +490,7 @@ do_route(From, To, Packet) ->
 		    Session = lists:max(Ss),
 		    Pid = element(2, Session#session.sid),
 		    ?DEBUG("sending to process ~p~n", [Pid]),
-		    % XXX OLD FORMAT: From, To, Packet.
-		    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-		      [?DEFAULT_NS], ?PREFIXED_NS),
-		    Pid ! {route, FromOld, ToOld, PacketOld}
+		    Pid ! {route, From, To, Packet}
 	    end
     end.
 
@@ -515,11 +498,6 @@ route_message(From, To, Packet) ->
     LUser = To#jid.lnode,
     LServer = To#jid.ldomain,
     PrioRes = get_user_present_resources(LUser, LServer),
-    % XXX OLD FORMAT: From, To, Packet.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
-    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-      [?DEFAULT_NS], ?PREFIXED_NS),
     case catch lists:max(PrioRes) of
 	{Priority, _R} when is_integer(Priority), Priority >= 0 ->
 	    lists:foreach(
@@ -535,8 +513,7 @@ route_message(From, To, Packet) ->
 			      Session = lists:max(Ss),
 			      Pid = element(2, Session#session.sid),
 			      ?DEBUG("sending to process ~p~n", [Pid]),
-			      % XXX OLD FORMAT: From, To, Packet.
-			      Pid ! {route, FromOld, ToOld, PacketOld}
+			      Pid ! {route, From, To, Packet}
 		      end;
 		 %% Ignore other priority:
 		 ({_Prio, _Res}) ->
@@ -554,10 +531,9 @@ route_message(From, To, Packet) ->
 		_ ->
 		    case ejabberd_auth:is_user_exists(LUser, LServer) of
 			true ->
-			    % XXX OLD FORMAT: From, To, Packet.
 			    ejabberd_hooks:run(offline_message_hook,
 					       LServer,
-					       [FromOld, ToOld, PacketOld]);
+					       [From, To, Packet]);
 			_ ->
 			    Err = exmpp_stanza:reply_with_error(
 				    Packet, 'service-unaivailable'),

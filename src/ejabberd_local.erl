@@ -321,14 +321,9 @@ do_route(From, To, Packet) ->
 		"error" -> ok;
 		"result" -> ok;
 		_ ->
-                    % XXX OLD FORMAT: From, To, Packet.
-                    FromOld = jlib:to_old_jid(From),
-                    ToOld = jlib:to_old_jid(To),
-                    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-                      [?DEFAULT_NS], ?PREFIXED_NS),
 		    ejabberd_hooks:run(local_send_to_resource_hook,
 				       To#jid.ldomain,
-				       [FromOld, ToOld, PacketOld])
+				       [From, To, Packet])
 	    end
 	end.
 

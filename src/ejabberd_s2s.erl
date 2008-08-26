@@ -283,15 +283,10 @@ do_route(From, To, Packet) ->
             NewPacket1 = exmpp_stanza:set_sender(Packet, From),
             NewPacket = exmpp_stanza:set_recipient(NewPacket1, To),
 	    #jid{ldomain = MyServer} = From,
-            % XXX OLD FORMAT: From, To, NewPacket.
-            FromOld = jlib:to_old_jid(From),
-            ToOld = jlib:to_old_jid(To),
-            NewPacketOld = exmpp_xml:xmlel_to_xmlelement(NewPacket,
-              [?DEFAULT_NS], ?PREFIXED_NS),
 	    ejabberd_hooks:run(
 	      s2s_send_packet,
 	      MyServer,
-	      [FromOld, ToOld, NewPacketOld]),
+	      [From, To, NewPacket]),
 	    send_element(Pid, NewPacket),
 	    ok;
 	{aborted, _Reason} ->

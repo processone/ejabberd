@@ -716,10 +716,7 @@ handle_info({send_text, Text}, StateName, StateData) ->
     {next_state, StateName, StateData#state{timer = Timer},
      get_timeout_interval(StateName)};
 
-handle_info({send_element, ElOld}, StateName, StateData) ->
-    % XXX OLD FORMAT: El.
-    El = exmpp_xml:xmlelement_to_xmlel(ElOld,
-      [?NS_JABBER_CLIENT], ?PREFIXED_NS),
+handle_info({send_element, El}, StateName, StateData) ->
     case StateName of
 	stream_established ->
 	    cancel_timer(StateData#state.timer),
@@ -839,10 +836,7 @@ cancel_timer(Timer) ->
 
 bounce_messages(Condition) ->
     receive
-	{send_element, ElOld} ->
-	    % XXX OLD FORMAT: El.
-	    El = exmpp_xml:xmlelement_to_xmlel(ElOld,
-	      [?NS_JABBER_CLIENT], ?PREFIXED_NS),
+	{send_element, El} ->
 	    bounce_element(El, Condition),
 	    bounce_messages(Condition)
     after 0 ->

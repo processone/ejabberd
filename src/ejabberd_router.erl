@@ -321,19 +321,9 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(OrigFrom, OrigTo, OrigPacket) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n",
 	   [OrigFrom, OrigTo, OrigPacket]),
-    % XXX OLD FORMAT: OrigFrom, OrigTo, OrigPacket.
-    OrigFromOld = jlib:to_old_jid(OrigFrom),
-    OrigToOld = jlib:to_old_jid(OrigTo),
-    OrigPacketOld = exmpp_xml:xmlel_to_xmlelement(OrigPacket,
-      [?NS_JABBER_CLIENT], [{?NS_XMPP, ?NS_XMPP_pfx}]),
     case ejabberd_hooks:run_fold(filter_packet,
-				 {OrigFromOld, OrigToOld, OrigPacketOld}, []) of
-	{FromOld, ToOld, PacketOld} ->
-            % XXX OLD FORMAT: From, To, Packet.
-            From = jlib:from_old_jid(FromOld),
-            To = jlib:from_old_jid(ToOld),
-            Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
-              [?NS_JABBER_CLIENT], [{?NS_XMPP, ?NS_XMPP_pfx}]),
+				 {OrigFrom, OrigTo, OrigPacket}, []) of
+	{From, To, Packet} ->
 	    LDstDomain = To#jid.ldomain,
 	    case mnesia:dirty_read(route, LDstDomain) of
 		[] ->
@@ -358,12 +348,12 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 				   {domain_balancing, LDstDomain}) of
 				undefined -> now();
 				random -> now();
-				source -> jlib:short_jid(From);
-				destination -> jlib:short_jid(To);
+				source -> jlib:short_prepd_jid(From);
+				destination -> jlib:short_prepd_jid(To);
 				bare_source ->
-				    jlib:short_bare_jid(From);
+				    jlib:short_prepd_bare_jid(From);
 				bare_destination ->
-				    jlib:short_bare_jid(To)
+				    jlib:short_prepd_bare_jid(To)
 			    end,
 		    case get_component_number(LDstDomain) of
 			undefined ->

@@ -386,11 +386,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 			_Exception2 -> error
 		    end
 	    end,
-	    % XXX OLD FORMAT: El.
-	    % XXX No namespace conversion (:server <-> :client) is done.
+	    % No namespace conversion (:server <-> :client) is done.
 	    % This is handled by C2S and S2S send_element functions.
-	    ElOld = exmpp_xml:xmlel_to_xmlelement(El,
-	      [?DEFAULT_NS], ?PREFIXED_NS),
 	    if
 		(To /= error) and (From /= error) ->
 		    LFrom = From#jid.ldomain,
@@ -407,13 +404,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				    if ((Name == 'iq') or
 					(Name == 'message') or
 					(Name == 'presence')) ->
-					    % XXX OLD FORMAT: From, To.
-					    FromOld = jlib:to_old_jid(From),
-					    ToOld = jlib:to_old_jid(To),
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
 					      LFrom,
-					      [FromOld, ToOld, ElOld]),
+					      [From, To, El]),
 					    ejabberd_router:route(
 					      From, To, El);
 				       true ->
@@ -430,13 +424,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				    if ((Name == 'iq') or
 					(Name == 'message') or
 					(Name == 'presence')) ->
-					    % XXX OLD FORMAT: From, To.
-					    FromOld = jlib:to_old_jid(From),
-					    ToOld = jlib:to_old_jid(To),
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
 					      LFrom,
-					      [FromOld, ToOld, ElOld]),
+					      [From, To, El]),
 					    ejabberd_router:route(
 					      From, To, El);
 				       true ->
@@ -449,7 +440,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		true ->
 		    error
 	    end,
-	    ejabberd_hooks:run(s2s_loop_debug, [{xmlstreamelement, ElOld}]),
+	    ejabberd_hooks:run(s2s_loop_debug, [{xmlstreamelement, El}]),
 	    {next_state, stream_established, StateData#state{timer = Timer}}
     end;
 
@@ -656,11 +647,11 @@ get_cert_domains(Cert) ->
 				    case 'XmppAddr':decode(
 					   'XmppAddr', XmppAddr) of
 					{ok, D} when is_binary(D) ->
-					    case jlib:string_to_jid(
+					    case exmpp_jid:list_to_jid(
 						   binary_to_list(D)) of
-						#jid{lnode = "",
+						#jid{lnode = undefined,
 						     ldomain = LD,
-						     lresource = ""} ->
+						     lresource = undefined} ->
 						    case idna:domain_utf8_to_ascii(LD) of
 							false ->
 							    [];

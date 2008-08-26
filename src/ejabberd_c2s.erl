@@ -76,7 +76,7 @@
 		tls_options = [],
 		authenticated = false,
 		jid,
-		user = "", server = ?MYNAME, resource = "",
+		user = undefined, server = ?MYNAME, resource = undefined,
 		sid,
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
@@ -273,12 +273,10 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 					    false ->
 						[]
 					end,
-				    % XXX OLD FORMAT: Other_Feats.
-                                    Other_FeatsOld = ejabberd_hooks:run_fold(
+                                    Other_Feats = ejabberd_hooks:run_fold(
 				      c2s_stream_features,
 				      Server,
 				      [], []),
-				    Other_Feats = [exmpp_xml:xmlelement_to_xmlel(F, [?DEFAULT_NS], ?PREFIXED_NS) || F <- Other_FeatsOld],
 				    send_element(StateData,
 				      exmpp_stream:features(
 					TLSFeature ++
@@ -292,7 +290,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 						 lang = Lang});
 				_ ->
 				    case StateData#state.resource of
-					"" ->
+					undefined ->
 					    send_element(
 					      StateData,
 					      exmpp_stream:features([
@@ -413,7 +411,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				  StateData#state.server,
 				  {[], []},
 				  [U, StateData#state.server]),
-				LJID = jlib:short_bare_jid(JID),
+				LJID = jlib:short_prepd_bare_jid(JID),
 				Fs1 = [LJID | Fs],
 				Ts1 = [LJID | Ts],
 				PrivList = ejabberd_hooks:run_fold(
@@ -728,7 +726,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			     StateData#state.server,
 			     {[], []},
 			     [U, StateData#state.server]),
-		LJID = jlib:short_bare_jid(JID),
+		LJID = jlib:short_prepd_bare_jid(JID),
 		Fs1 = [LJID | Fs],
 		Ts1 = [LJID | Ts],
 		PrivList =
@@ -744,10 +742,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				 pres_t = ?SETS:from_list(Ts1),
 				 privacy_list = PrivList});
 	    _ ->
-		% XXX OLD FORMAT: Jid.
-                JIDOld = jlib:to_old_jid(JID),
 		ejabberd_hooks:run(forbidden_session_hook, 
-				   StateData#state.server, [JIDOld]),
+				   StateData#state.server, [JID]),
 		?INFO_MSG("(~w) Forbidden session for ~s",
 			  [StateData#state.socket,
 			   exmpp_jid:jid_to_list(JID)]),
@@ -801,22 +797,15 @@ session_established({xmlstreamelement, El}, StateData) ->
 		end,
 	NewState = case El of
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence'} ->
-		% XXX OLD FORMAT: NewEl.
-		PresenceElOld = ejabberd_hooks:run_fold(
+		PresenceEl = ejabberd_hooks:run_fold(
 			       c2s_update_presence,
 			       Server,
-			       exmpp_xml:xmlel_to_xmlelement(NewEl,
-				 [?DEFAULT_NS], ?PREFIXED_NS),
+			       NewEl,
 			       [User, Server]),
-		PresenceEl = exmpp_xml:xmlelement_to_xmlel(PresenceElOld,
-		  [?DEFAULT_NS], ?PREFIXED_NS),
-		% XXX OLD FORMAT: PresenceElOld, *JID.
-		FromJIDOld = jlib:to_old_jid(FromJID),
-		ToJIDOld = jlib:to_old_jid(ToJID),
 		ejabberd_hooks:run(
 		  user_send_packet,
 		  Server,
-		  [FromJIDOld, ToJIDOld, PresenceElOld]),
+		  [FromJID, ToJID, PresenceEl]),
 		case ToJID of
 		    #jid{node = User,
 			 domain = Server,
@@ -830,43 +819,29 @@ session_established({xmlstreamelement, El}, StateData) ->
 				       StateData)
 		end;
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'iq'} ->
-		% XXX OLD FORMAT: JIDs.
-		FromJIDOld = jlib:to_old_jid(FromJID),
-		ToJIDOld = jlib:to_old_jid(ToJID),
-		case exmpp_iq:get_payload(El) of
-		    #xmlel{ns = ?NS_PRIVACY} ->
+		case exmpp_iq:xmlel_to_iq(El) of
+		    #iq{kind = request, ns = ?NS_PRIVACY} = IQ_Rec ->
 			process_privacy_iq(
-			  FromJID, ToJID, El, StateData);
+			  FromJID, ToJID, IQ_Rec, StateData);
 		    _ ->
-			% XXX OLD FORMAT: NewElOld.
-			NewElOld = exmpp_xml:xmlel_to_xmlelement(NewEl,
-			  [?DEFAULT_NS], ?PREFIXED_NS),
 			ejabberd_hooks:run(
 			  user_send_packet,
 			  Server,
-			  [FromJIDOld, ToJIDOld, NewElOld]),
+			  [FromJID, ToJID, NewEl]),
 			ejabberd_router:route(
 			  FromJID, ToJID, NewEl),
 			StateData
 		end;
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message'} ->
-		% XXX OLD FORMAT: NewElOld, JIDs.
-		NewElOld = exmpp_xml:xmlel_to_xmlelement(NewEl,
-		  [?DEFAULT_NS], ?PREFIXED_NS),
-		FromJIDOld = jlib:to_old_jid(FromJID),
-		ToJIDOld = jlib:to_old_jid(ToJID),
 		ejabberd_hooks:run(user_send_packet,
 				   Server,
-				   [FromJIDOld, ToJIDOld, NewElOld]),
+				   [FromJID, ToJID, NewEl]),
 		ejabberd_router:route(FromJID, ToJID, NewEl),
 		StateData;
 	    _ ->
 		StateData
 	end,
-	% XXX OLD FORMAT: El.
-	ElOld = exmpp_xml:xmlel_to_xmlelement(El,
-	  [?DEFAULT_NS], ?PREFIXED_NS),
-	ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, ElOld}]),
+	ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, El}]),
 	fsm_next_state(session_established, NewState)
     catch
 	throw:{stringprep, _, _, _} ->
@@ -879,10 +854,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 		    Err = exmpp_stanza:reply_with_error(El, 'jid-malformed'),
 		    send_element(StateData, Err)
 	    end,
-	    % XXX OLD FORMAT: ElOld1.
-	    ElOld1 = exmpp_xml:xmlel_to_xmlelement(El,
-	      [?DEFAULT_NS], ?PREFIXED_NS),
-	    ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, ElOld1}]),
+	    ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, El}]),
 	    fsm_next_state(session_established, StateData);
 	throw:Exception ->
 	    io:format("SESSION ESTABLISHED: Exception=~p~n", [Exception]),
@@ -963,9 +935,8 @@ handle_sync_event({get_presence}, _From, StateName, StateData) ->
 handle_sync_event(get_subscribed_and_online, _From, StateName, StateData) ->
     Subscribed = StateData#state.pres_f,
     Online = StateData#state.pres_available,
-    % XXX OLF FORMAT: short JID with empty string(s).
     Pred = fun({U, S, _R} = User, _Caps) ->
-		   ?SETS:is_element({U, S, ""},
+		   ?SETS:is_element({U, S, undefined},
 				    Subscribed) orelse
 		       ?SETS:is_element(User, Subscribed)
 	   end,
@@ -994,19 +965,14 @@ handle_info(replaced, _StateName, StateData) ->
     send_element(StateData, exmpp_stream:error('conflict')),
     send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData#state{authenticated = replaced}};
-handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
-    %% XXX OLD FORMAT: From, To and Packet are in the old format.
-    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
-      [?DEFAULT_NS], ?PREFIXED_NS),
-    From = jlib:from_old_jid(FromOld),
-    To = jlib:from_old_jid(ToOld),
+handle_info({route, From, To, Packet}, StateName, StateData) ->
     {Pass, NewAttrs, NewState} =
 	case Packet of
 	    #xmlel{attrs = Attrs} when ?IS_PRESENCE(Packet) ->
 		case exmpp_presence:get_type(Packet) of
 		    'probe' ->
-			LFrom = jlib:short_jid(From),
-			LBFrom = jlib:short_bare_jid(From),
+			LFrom = jlib:short_prepd_jid(From),
+			LBFrom = jlib:short_prepd_bare_jid(From),
 			NewStateData =
 			    case ?SETS:is_element(
 				    LFrom, StateData#state.pres_a) orelse
@@ -1038,7 +1004,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 			process_presence_probe(From, To, NewStateData),
 			{false, Attrs, NewStateData};
 		    'error' ->
-			LFrom = jlib:short_jid(From),
+			LFrom = jlib:short_prepd_jid(From),
 			NewA = remove_element(LFrom,
 					      StateData#state.pres_a),
 			{true, Attrs, StateData#state{pres_a = NewA}};
@@ -1055,18 +1021,17 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 		    'unsubscribed' ->
 			{true, Attrs, StateData};
 		    _ ->
-			% XXX OLD FORMAT: From, To, Packet.
 			case ejabberd_hooks:run_fold(
 			       privacy_check_packet, StateData#state.server,
 			       allow,
 			       [StateData#state.user,
 				StateData#state.server,
 				StateData#state.privacy_list,
-				{FromOld, ToOld, PacketOld},
+				{From, To, Packet},
 				in]) of
 			    allow ->
-				LFrom = jlib:short_jid(From),
-				LBFrom = jlib:short_bare_jid(From),
+				LFrom = jlib:short_prepd_jid(From),
+				LBFrom = jlib:short_prepd_bare_jid(From),
 				%% Note contact availability
 				Els = Packet#xmlel.children,
 				Caps = mod_caps:read_caps(Els),
@@ -1144,9 +1109,7 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 			case exmpp_iq:get_request(Packet) of
 			    #xmlel{ns = ?NS_VCARD} ->
 				Host = StateData#state.server,
-				% XXX OLD FORMAT: sm_iqtable contains strings
-				% for namespaces.
-				case ets:lookup(sm_iqtable, {atom_to_list(?NS_VCARD), Host}) of
+				case ets:lookup(sm_iqtable, {?NS_VCARD, Host}) of
 				    [{_, Module, Function, Opts}] ->
 					gen_iq_handler:handle(Host, Module, Function, Opts,
 							      From, To, Packet);
@@ -1156,14 +1119,13 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 				end,
 				{false, Attrs, StateData};
 			    _ ->
-				% XXX OLD FORMAT: From, To and Packet.
 				case ejabberd_hooks:run_fold(
 				       privacy_check_packet, StateData#state.server,
 				       allow,
 				       [StateData#state.user,
 					StateData#state.server,
 					StateData#state.privacy_list,
-					{FromOld, ToOld, PacketOld},
+					{From, To, Packet},
 					in]) of
 				    allow ->
 					{true, Attrs, StateData};
@@ -1177,14 +1139,13 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 			{true, Attrs, StateData}
 		end;
 	    #xmlel{attrs = Attrs} when ?IS_MESSAGE(Packet) ->
-		% XXX OLD FORMAT: From, To and Packet.
 		case ejabberd_hooks:run_fold(
 		       privacy_check_packet, StateData#state.server,
 		       allow,
 		       [StateData#state.user,
 			StateData#state.server,
 			StateData#state.privacy_list,
-			{FromOld, ToOld, PacketOld},
+			{From, To, Packet},
 			in]) of
 		    allow ->
 			{true, Attrs, StateData};
@@ -1203,19 +1164,13 @@ handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
 	    Attrs3 = exmpp_stanza:set_recipient_in_attrs(Attrs2, To),
 	    FixedPacket = Packet#xmlel{attrs = Attrs3},
 	    send_element(StateData, FixedPacket),
-	    % XXX OLD FORMAT: JID, From, To, FixedPacket.
-            JIDOld = jlib:to_old_jid(StateData#state.jid),
-	    FixedPacketOld = exmpp_xml:xmlel_to_xmlelement(FixedPacket,
-              [?DEFAULT_NS], ?PREFIXED_NS),
 	    ejabberd_hooks:run(user_receive_packet,
 			       StateData#state.server,
-			       [JIDOld, FromOld, ToOld, FixedPacketOld]),
-	    % XXX OLD FORMAT: From, To, FixedPacket.
-	    ejabberd_hooks:run(c2s_loop_debug, [{route, FromOld, ToOld, PacketOld}]),
+			       [StateData#state.jid, From, To, FixedPacket]),
+	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, NewState);
 	true ->
-	    % XXX OLD FORMAT: From, To, FixedPacket.
-	    ejabberd_hooks:run(c2s_loop_debug, [{route, FromOld, ToOld, PacketOld}]),
+	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, NewState)
     end;
 handle_info({'DOWN', Monitor, _Type, _Object, _Info}, _StateName, StateData)
@@ -1353,8 +1308,8 @@ get_conn_type(StateData) ->
     end.
 
 process_presence_probe(From, To, StateData) ->
-    LFrom = jlib:short_jid(From),
-    LBFrom = jlib:short_bare_jid(From),
+    LFrom = jlib:short_prepd_jid(From),
+    LBFrom = jlib:short_prepd_bare_jid(From),
     case StateData#state.pres_last of
 	undefined ->
 	    ok;
@@ -1375,25 +1330,19 @@ process_presence_probe(From, To, StateData) ->
 	    if
 		Cond1 ->
 		    Packet = StateData#state.pres_last,
-		    % XXX OLD FORMAT: From, To, Packet.
-		    FromOld = jlib:to_old_jid(From),
-		    ToOld = jlib:to_old_jid(To),
-		    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-		      [?DEFAULT_NS], ?PREFIXED_NS),
 		    case ejabberd_hooks:run_fold(
 			   privacy_check_packet, StateData#state.server,
 			   allow,
 			   [StateData#state.user,
 			    StateData#state.server,
 			    StateData#state.privacy_list,
-			    {ToOld, FromOld, PacketOld},
+			    {To, From, Packet},
 			    out]) of
 			deny ->
 			    ok;
 			allow ->
 			    Pid=element(2, StateData#state.sid),
-			    % XXX OLD FORMAT: From, To.
-			    ejabberd_hooks:run(presence_probe_hook, StateData#state.server, [FromOld, ToOld, Pid]),
+			    ejabberd_hooks:run(presence_probe_hook, StateData#state.server, [From, To, Pid]),
 			    %% Don't route a presence probe to oneself
 			    case From == To of
 				false ->
@@ -1491,11 +1440,9 @@ presence_update(From, Packet, StateData) ->
 	    NewState =
 		if
 		    FromUnavail ->
-			% XXX OLD FORMAT: JID.
-			JIDOld = jlib:to_old_jid(StateData#state.jid),
 			ejabberd_hooks:run(user_available_hook,
 					   StateData#state.server,
-					   [JIDOld]),
+					   [StateData#state.jid]),
 			if NewPriority >= 0 ->
 				resend_offline_messages(StateData),
 				resend_subscription_requests(StateData);
@@ -1525,15 +1472,10 @@ presence_update(From, Packet, StateData) ->
     end.
 
 presence_track(From, To, Packet, StateData) ->
-    LTo = jlib:short_jid(To),
+    LTo = jlib:short_prepd_jid(To),
     User = StateData#state.user,
     Server = StateData#state.server,
     BFrom = exmpp_jid:jid_to_bare_jid(From),
-    % XXX OLD FORMAT: From, To, Packet.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
-    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-      [?DEFAULT_NS], ?PREFIXED_NS),
     case exmpp_presence:get_type(Packet) of
 	'unavailable' ->
 	    ejabberd_router:route(From, To, Packet),
@@ -1548,31 +1490,27 @@ presence_track(From, To, Packet, StateData) ->
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	'subscribe' ->
-	    % XXX OLD FORMAT: To.
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
-			       [User, Server, ToOld, subscribe]),
+			       [User, Server, To, subscribe]),
 	    ejabberd_router:route(BFrom, To, Packet),
 	    StateData;
 	'subscribed' ->
-	    % XXX OLD FORMAT: To.
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
-			       [User, Server, ToOld, subscribed]),
+			       [User, Server, To, subscribed]),
 	    ejabberd_router:route(BFrom, To, Packet),
 	    StateData;
 	'unsubscribe' ->
-	    % XXX OLD FORMAT: To.
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
-			       [User, Server, ToOld, unsubscribe]),
+			       [User, Server, To, unsubscribe]),
 	    ejabberd_router:route(BFrom, To, Packet),
 	    StateData;
 	'unsubscribed' ->
-	    % XXX OLD FORMAT: To.
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
-			       [User, Server, ToOld, unsubscribed]),
+			       [User, Server, To, unsubscribed]),
 	    ejabberd_router:route(BFrom, To, Packet),
 	    StateData;
 	'error' ->
@@ -1582,14 +1520,13 @@ presence_track(From, To, Packet, StateData) ->
 	    ejabberd_router:route(From, To, Packet),
 	    StateData;
 	_ ->
-	    % XXX OLD FORMAT: From, To, Packet.
 	    case ejabberd_hooks:run_fold(
 		   privacy_check_packet, StateData#state.server,
 		   allow,
 		   [StateData#state.user,
 		    StateData#state.server,
 		    StateData#state.privacy_list,
-		    {FromOld, ToOld, PacketOld},
+		    {From, To, Packet},
 		    out]) of
 		deny ->
 		    ok;
@@ -1605,18 +1542,13 @@ presence_track(From, To, Packet, StateData) ->
 presence_broadcast(StateData, From, JIDSet, Packet) ->
     lists:foreach(fun({U, S, R}) ->
 			  FJID = exmpp_jid:make_jid(U, S, R),
-			  % XXX OLD FORMAT: From, FJID, Packet.
-			  FJIDOld = jlib:to_old_jid(FJID),
-			  FromOld = jlib:to_old_jid(From),
-			  PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-			    [?DEFAULT_NS], ?PREFIXED_NS),
 			  case ejabberd_hooks:run_fold(
 				 privacy_check_packet, StateData#state.server,
 				 allow,
 				 [StateData#state.user,
 				  StateData#state.server,
 				  StateData#state.privacy_list,
-				  {FromOld, FJIDOld, PacketOld},
+				  {From, FJID, Packet},
 				  out]) of
 			      deny ->
 				  ok;
@@ -1626,24 +1558,18 @@ presence_broadcast(StateData, From, JIDSet, Packet) ->
 		  end, ?SETS:to_list(JIDSet)).
 
 presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
-    % XXX OLD FORMAT: From, Packet.
-    FromOld = jlib:to_old_jid(From),
-    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-      [?DEFAULT_NS], ?PREFIXED_NS),
     lists:foreach(
       fun({U, S, R} = JID) ->
 	      case ?SETS:is_element(JID, T) of
 		  true ->
 		      FJID = exmpp_jid:make_jid(U, S, R),
-		      % XXX OLD FORMAT: FJID.
-		      FJIDOld = jlib:to_old_jid(FJID),
 		      case ejabberd_hooks:run_fold(
 			     privacy_check_packet, StateData#state.server,
 			     allow,
 			     [StateData#state.user,
 			      StateData#state.server,
 			      StateData#state.privacy_list,
-			      {FromOld, FJIDOld, PacketOld},
+			      {From, FJID, Packet},
 			      out]) of
 			  deny ->
 			      ok;
@@ -1675,18 +1601,13 @@ presence_broadcast_first(From, StateData, Packet) ->
 	    As = ?SETS:fold(
 		    fun({U, S, R} = JID, A) ->
 			    FJID = exmpp_jid:make_jid(U, S, R),
-			    % XXX OLD FORMAT: From, FJID, Packet.
-                            FromOld = jlib:to_old_jid(From),
-			    FJIDOld = jlib:to_old_jid(FJID),
-                            PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-                              [?DEFAULT_NS], ?PREFIXED_NS),
 			    case ejabberd_hooks:run_fold(
 				   privacy_check_packet, StateData#state.server,
 				   allow,
 				   [StateData#state.user,
 				    StateData#state.server,
 				    StateData#state.privacy_list,
-				    {FromOld, FJIDOld, PacketOld},
+				    {From, FJID, Packet},
 				    out]) of
 				deny ->
 				    ok;
@@ -1711,7 +1632,7 @@ remove_element(E, Set) ->
 
 
 roster_change(IJID, ISubscription, StateData) ->
-    LIJID = jlib:short_jid(IJID),
+    LIJID = jlib:short_prepd_jid(IJID),
     IsFrom = (ISubscription == both) or (ISubscription == from),
     IsTo   = (ISubscription == both) or (ISubscription == to),
     OldIsFrom = ?SETS:is_element(LIJID, StateData#state.pres_f),
@@ -1734,9 +1655,6 @@ roster_change(IJID, ISubscription, StateData) ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
 	    From = StateData#state.jid,
 	    To = IJID,
-	    % XXX OLD FORMAT: From, To.
-	    FromOld = jlib:to_old_jid(From),
-	    ToOld = jlib:to_old_jid(To),
 	    Cond1 = (not StateData#state.pres_invis) and IsFrom
 		and (not OldIsFrom),
 	    Cond2 = (not IsFrom) and OldIsFrom
@@ -1745,17 +1663,13 @@ roster_change(IJID, ISubscription, StateData) ->
 	    if
 		Cond1 ->
 		    ?DEBUG("C1: ~p~n", [LIJID]),
-		    % XXX OLD FORMAT: P.
-		    POld = exmpp_xml:xmlelement_to_xmlel(P,
-		      [?DEFAULT_NS], ?PREFIXED_NS),
-		    % XXX OLD FORMAT: From, To, P.
 		    case ejabberd_hooks:run_fold(
 			   privacy_check_packet, StateData#state.server,
 			   allow,
 			   [StateData#state.user,
 			    StateData#state.server,
 			    StateData#state.privacy_list,
-			    {FromOld, ToOld, POld},
+			    {From, To, P},
 			    out]) of
 			deny ->
 			    ok;
@@ -1770,17 +1684,13 @@ roster_change(IJID, ISubscription, StateData) ->
 		Cond2 ->
 		    ?DEBUG("C2: ~p~n", [LIJID]),
 		    PU = exmpp_presence:unavailable(),
-		    % XXX OLD FORMAT: PU.
-		    PUOld = exmpp_xml:xmlelement_to_xmlel(PU,
-		      [?DEFAULT_NS], ?PREFIXED_NS),
-		    % XXX OLD FORMAT: From, To, PU.
 		    case ejabberd_hooks:run_fold(
 			   privacy_check_packet, StateData#state.server,
 			   allow,
 			   [StateData#state.user,
 			    StateData#state.server,
 			    StateData#state.privacy_list,
-			    {FromOld, ToOld, PUOld},
+			    {From, To, PU},
 			    out]) of
 			deny ->
 			    ok;
@@ -1813,26 +1723,21 @@ update_priority(Priority, Packet, StateData) ->
 			     Info).
 
 process_privacy_iq(From, To,
-		   El,
+		   #iq{type = Type} = IQ_Rec,
 		   StateData) ->
-    % XXX OLD FORMAT: IQ_Rec is an #iq.
-    IQ_Rec = jlib:iq_query_info(El),
-    % XXX OLD FORMAT: JIDs.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
     {Res, NewStateData} =
-	case exmpp_iq:get_type(El) of
+	case Type of
 	    get ->
 		R = ejabberd_hooks:run_fold(
 		      privacy_iq_get, StateData#state.server,
 		      {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
-		      [FromOld, ToOld, IQ_Rec, StateData#state.privacy_list]),
+		      [From, To, IQ_Rec, StateData#state.privacy_list]),
 		{R, StateData};
 	    set ->
 		case ejabberd_hooks:run_fold(
 		       privacy_iq_set, StateData#state.server,
 		       {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
-		       [FromOld, ToOld, IQ_Rec]) of
+		       [From, To, IQ_Rec]) of
 		    {result, R, NewPrivList} ->
 			{{result, R},
 			 StateData#state{privacy_list = NewPrivList}};
@@ -1841,14 +1746,10 @@ process_privacy_iq(From, To,
 	end,
     IQRes =
 	case Res of
-	    {result, ResultOld} ->
-		Result = exmpp_xml:xmlelement_to_xmlel(ResultOld,
-		  [?DEFAULT_NS], ?PREFIXED_NS),
-		exmpp_iq:result(El, Result);
-	    {error, ErrorOld} ->
-		Error = exmpp_xml:xmlelement_to_xmlel(ErrorOld,
-		  [?DEFAULT_NS], ?PREFIXED_NS),
-		exmpp_iq:error(El, Error)
+	    {result, Result} ->
+		exmpp_iq:result(IQ_Rec, Result);
+	    {error, Error} ->
+		exmpp_iq:error(IQ_Rec, Error)
 	end,
     ejabberd_router:route(
       To, From, IQRes),
@@ -1863,18 +1764,16 @@ resend_offline_messages(#state{user = User,
 				 [],
 				 [User, Server]) of
 	Rs when list(Rs) ->
-	    % XXX OLD FORMAT: From, To, Packet.
-	    % XXX OLD FORMAT ON DISK!
 	    lists:foreach(
 	      fun({route,
-		   FromOld, ToOld, PacketOld}) ->
+		   From, To, Packet}) ->
 		      Pass = case ejabberd_hooks:run_fold(
 				    privacy_check_packet, Server,
 				    allow,
 				    [User,
 				     Server,
 				     PrivList,
-				     {FromOld, ToOld, PacketOld},
+				     {From, To, Packet},
 				     in]) of
 				 allow ->
 				     true;
@@ -1883,11 +1782,6 @@ resend_offline_messages(#state{user = User,
 			     end,
 		      if
 			  Pass ->
-			      % XXX OLD FORMAT: From, To, Packet.
-			      From = jlib:from_old_jid(FromOld),
-			      To = jlib:from_old_jid(ToOld),
-			      Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
-				[?DEFAULT_NS], ?PREFIXED_NS),
 			      Attrs1 = exmpp_stanza:set_sender_in_attrs(
 				Packet#xmlel.attrs, From),
 			      Attrs2 = exmpp_stanza:set_recipient_in_attrs(
@@ -1907,11 +1801,7 @@ resend_subscription_requests(#state{user = User,
 			     Server,
 			     [],
 			     [User, Server]),
-    % XXX OLD FORMAT: XMLPacket.
-    % XXX OLD FORMAT ON DISK!
-    lists:foreach(fun(XMLPacketOld) ->
-			  XMLPacket = exmpp_xml:xmlelement_to_xmlel(
-			    XMLPacketOld, [?DEFAULT_NS], ?PREFIXED_NS),
+    lists:foreach(fun(XMLPacket) ->
 			  send_element(StateData,
 				       XMLPacket)
 		  end,
@@ -1920,14 +1810,13 @@ resend_subscription_requests(#state{user = User,
 process_unauthenticated_stanza(StateData, El) ->
     case exmpp_iq:get_kind(El) of
 	request ->
-            % XXX OLD FORMAT: IQ_Rec is an #iq.
-            IQ_Rec = jlib:iq_query_info(El),
-	    ResOld = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
+            IQ_Rec = exmpp_iq:xmlel_to_iq(El),
+	    Res = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
 					  StateData#state.server,
 					  empty,
 					  [StateData#state.server, IQ_Rec,
 					   StateData#state.ip]),
-	    case ResOld of
+	    case Res of
 		empty ->
 		    % The only reasonable IQ's here are auth and register IQ's
 		    % They contain secrets, so don't include subelements to response
@@ -1938,8 +1827,6 @@ process_unauthenticated_stanza(StateData, El) ->
 		    Res2 = exmpp_stanza:remove_recipient(Res1),
 		    send_element(StateData, Res2);
 		_ ->
-		    Res = exmpp_xml:xmlelement_to_xmlel(ResOld,
-		      [?DEFAULT_NS], ?PREFIXED_NS),
 		    send_element(StateData, Res)
 	    end;
 	_ ->

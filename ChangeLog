@@ -4,9 +4,18 @@
 	JID from the user-provided JID parts. To obtain a short JID from the
 	STRINGPREP'd parts, use the new short_prepd_jid/1 and
 	short_prepd_bare_jid/1 functions. Remove commented-out code and use
-	proper variable names.
+	proper variable names. Those functions use the atom 'undefined' and
+	NOT the empty string anymore!
 
-	* src/acl.erl: Use the new short_prepd_jid/1 function from jlib.
+	* src/acl.erl, src/ejabberd_router.erl: Use the new functions from
+	jlib.
+
+	* src/ejabberd_router.erl, src/ejabberd_local.erl,
+	src/ejabberd_sm.erl, src/ejabberd_s2s.erl, src/ejabberd_s2s_in.erl,
+	src/ejabberd_s2s_out.erl, src/ejabberd_c2s.erl: Remove the
+	compatibility code. It's becoming confusing to handle every case every
+	where. Also, in JIDs (normal and short), the atom "undefined' is
+	expected, not the empty string anymore!
 
 2008-08-14  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
