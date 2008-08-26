@@ -1,3 +1,10 @@
+2008-08-26  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/jlib.erl: short_jid/1 and short_bare_jid/1 now produce a short
+	JID from the user-provided JID parts. To obtain a short JID from the
+	STRINGPREP'd parts, use the new short_prepd_jid/1 and
+	short_prepd_bare_jid/1 functions.
+
 2008-08-14  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* translate.erl (ascii_tolower): Accept 'undefined' as a language and

@@ -64,7 +64,9 @@
 	 from_old_jid/1,
 	 to_old_jid/1,
 	 short_jid/1,
-	 short_bare_jid/1]).
+	 short_bare_jid/1,
+	 short_prepd_jid/1,
+	 short_prepd_bare_jid/1]).
 
 -include("jlib.hrl").
 
@@ -761,10 +763,20 @@ to_old_jid(#jid{user = Node, resource = Resource,
     JID#jid{user = Node1, resource = Resource1,
       luser = LNode1, lresource = LResource1}.
 
-short_jid(JID) ->
-    JID1 = to_old_jid(JID),
-    {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource}.
+short_jid(JID1) ->
+    %JID1 = to_old_jid(JID),
+    {JID1#jid.user, JID1#jid.server, JID1#jid.resource}.
 
 short_bare_jid(JID) ->
-    JID1 = to_old_jid(exmpp_jid:jid_to_bare_jid(JID)),
+    %JID1 = to_old_jid(exmpp_jid:jid_to_bare_jid(JID)),
+    JID1 = exmpp_jid:jid_to_bare_jid(JID),
+    {JID1#jid.user, JID1#jid.server, JID1#jid.resource}.
+
+short_prepd_jid(JID1) ->
+    %JID1 = to_old_jid(JID),
+    {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource}.
+
+short_prepd_bare_jid(JID) ->
+    %JID1 = to_old_jid(exmpp_jid:jid_to_bare_jid(JID)),
+    JID1 = exmpp_jid:jid_to_bare_jid(JID),
     {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource}.
