@@ -5,6 +5,8 @@
 	STRINGPREP'd parts, use the new short_prepd_jid/1 and
 	short_prepd_bare_jid/1 functions.
 
+	* src/acl.erl: Use the new short_prepd_jid/1 function from jlib.
+
 2008-08-14  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* translate.erl (ascii_tolower): Accept 'undefined' as a language and

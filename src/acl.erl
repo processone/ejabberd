@@ -158,7 +158,7 @@ match_acl(ACL, JID, Host) ->
 	all -> true;
 	none -> false;
 	_ ->
-	    {User, Server, Resource} = jlib:short_jid(JID),
+	    {User, Server, Resource} = jlib:short_prepd_jid(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->
 			      case Spec of
 				  all ->
