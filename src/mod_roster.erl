@@ -123,9 +123,7 @@ process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
 
 
 process_iq_get(From, To, IQ_Rec) ->
-    LUser = From#jid.lnode,
-    LServer = From#jid.ldomain,
-    US = {LUser, LServer},
+    US = {From#jid.lnode, From#jid.ldomain},
     case catch ejabberd_hooks:run_fold(roster_get, To#jid.ldomain, [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
@@ -188,14 +186,12 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
     end,
     exmpp_iq:result(IQ_Rec).
 
-process_item_set(From, To, #xmlel{} = Item) ->
+process_item_set(From, To, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(Item, 'jid', "")),
-	% XXX OLD FORMAT: old JID (with empty strings).
-	#jid{node = User, lnode = LUser, ldomain = LServer} =
-	  jlib:to_old_jid(From),
-	JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
-	LJID = jlib:short_jid(JID1),
+	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
+	#jid{node = User, lnode = LUser, ldomain = LServer} = From,
+	JID = jlib:short_jid(JID1),
+	LJID = jlib:short_prepd_jid(JID1),
 	F = fun() ->
 		    Res = mnesia:read({roster, {LUser, LServer, LJID}}),
 		    Item = case Res of
@@ -209,8 +205,8 @@ process_item_set(From, To, #xmlel{} = Item) ->
 					    groups = [],
 					    xs = []}
 			   end,
-		    Item1 = process_item_attrs(Item, Item#xmlel.attrs),
-		    Item2 = process_item_els(Item1, Item#xmlel.children),
+		    Item1 = process_item_attrs(Item, El#xmlel.attrs),
+		    Item2 = process_item_els(Item1, El#xmlel.children),
 		    case Item2#roster.subscription of
 			remove ->
 			    mnesia:delete({roster, {LUser, LServer, LJID}});
@@ -270,15 +266,6 @@ process_item_set(_From, _To, _) ->
 
 process_item_attrs(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
-	'jid' ->
-	    try
-		JID1 = exmpp_jid:list_to_jid(Val),
-		JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
-		process_item_attrs(Item#roster{jid = JID}, Attrs)
-	    catch
-		_ ->
-		    process_item_attrs(Item, Attrs)
-	    end;
 	'name' ->
 	    process_item_attrs(Item#roster{name = Val}, Attrs);
 	'subscription' ->
@@ -319,7 +306,7 @@ process_item_els(Item, []) ->
 
 
 push_item(User, Server, From, Item) ->
-    ejabberd_sm:route(exmpp_jid:make_bare_jid(""),
+    ejabberd_sm:route(#jid{},
 		      exmpp_jid:make_bare_jid(User, Server),
 		      #xmlel{name = 'broadcast', children =
 		       [{item,
@@ -340,12 +327,17 @@ push_item(User, Server, Resource, From, Item) ->
       ResIQ).
 
 get_subscription_lists(_, User, Server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    case mnesia:dirty_index_read(roster, US, #roster.us) of
-	Items when is_list(Items) ->
-	    fill_subscription_lists(Items, [], []);
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	case mnesia:dirty_index_read(roster, US, #roster.us) of
+	    Items when is_list(Items) ->
+		fill_subscription_lists(Items, [], []);
+	    _ ->
+		{[], []}
+	end
+    catch
 	_ ->
 	    {[], []}
     end.
@@ -378,84 +370,87 @@ out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, []).
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    LJID = jlib:short_jid(JID1),
-    F = fun() ->
-		Item = case mnesia:read({roster, {LUser, LServer, LJID}}) of
-			   [] ->
-			       JID = {JID1#jid.node,
-				      JID1#jid.domain,
-				      JID1#jid.resource},
-			       #roster{usj = {LUser, LServer, LJID},
-				       us = US,
-				       jid = JID};
-			   [I] ->
-			       I
-		       end,
-		NewState = case Direction of
-			       out ->
-				   out_state_change(Item#roster.subscription,
-						    Item#roster.ask,
-						    Type);
-			       in ->
-				   in_state_change(Item#roster.subscription,
-						   Item#roster.ask,
-						   Type)
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	LJID = jlib:short_prepd_jid(JID1),
+	F = fun() ->
+		    Item = case mnesia:read({roster, {LUser, LServer, LJID}}) of
+			       [] ->
+				   JID = jlib:short_jid(JID1),
+				   #roster{usj = {LUser, LServer, LJID},
+					   us = US,
+					   jid = JID};
+			       [I] ->
+				   I
 			   end,
-		AutoReply = case Direction of
-				out ->
-				    none;
-				in ->
-				    in_auto_reply(Item#roster.subscription,
-						  Item#roster.ask,
-						  Type)
-			    end,
-		AskMessage = case NewState of
-				 {_, both} -> Reason;
-				 {_, in}   -> Reason;
-				 _         -> ""
-			     end,
-		case NewState of
-		    none ->
-			{none, AutoReply};
-		    {none, none} when Item#roster.subscription == none,
-		                      Item#roster.ask == in ->
-			mnesia:delete({roster, {LUser, LServer, LJID}}),
-			{none, AutoReply};
-		    {Subscription, Pending} ->
-			NewItem = Item#roster{subscription = Subscription,
-					      ask = Pending,
-					      askmessage = list_to_binary(AskMessage)},
-			mnesia:write(NewItem),
-			{{push, NewItem}, AutoReply}
-		end
-	end,
-    case mnesia:transaction(F) of
-	{atomic, {Push, AutoReply}} ->
-	    case AutoReply of
-		none ->
-		    ok;
-		_ ->
-		    ejabberd_router:route(
-		      exmpp_jid:make_bare_jid(User, Server), JID1,
-		      exmpp_presence:AutoReply())
+		    NewState = case Direction of
+				   out ->
+				       out_state_change(Item#roster.subscription,
+							Item#roster.ask,
+							Type);
+				   in ->
+				       in_state_change(Item#roster.subscription,
+						       Item#roster.ask,
+						       Type)
+			       end,
+		    AutoReply = case Direction of
+				    out ->
+					none;
+				    in ->
+					in_auto_reply(Item#roster.subscription,
+						      Item#roster.ask,
+						      Type)
+				end,
+		    AskMessage = case NewState of
+				     {_, both} -> Reason;
+				     {_, in}   -> Reason;
+				     _         -> ""
+				 end,
+		    case NewState of
+			none ->
+			    {none, AutoReply};
+			{none, none} when Item#roster.subscription == none,
+					  Item#roster.ask == in ->
+			    mnesia:delete({roster, {LUser, LServer, LJID}}),
+			    {none, AutoReply};
+			{Subscription, Pending} ->
+			    NewItem = Item#roster{subscription = Subscription,
+						  ask = Pending,
+						  askmessage = list_to_binary(AskMessage)},
+			    mnesia:write(NewItem),
+			    {{push, NewItem}, AutoReply}
+		    end
 	    end,
-	    case Push of
-		{push, Item} ->
-		    if
-			Item#roster.subscription == none,
-			Item#roster.ask == in ->
-			    ok;
-			true ->
-			    push_item(User, Server,
-				      exmpp_jid:make_bare_jid(User, Server), Item)
-		    end,
-		    true;
-		none ->
-		    false
-	    end;
+	case mnesia:transaction(F) of
+	    {atomic, {Push, AutoReply}} ->
+		case AutoReply of
+		    none ->
+			ok;
+		    _ ->
+			ejabberd_router:route(
+			  exmpp_jid:make_bare_jid(User, Server), JID1,
+			  exmpp_presence:AutoReply())
+		end,
+		case Push of
+		    {push, Item} ->
+			if
+			    Item#roster.subscription == none,
+			    Item#roster.ask == in ->
+				ok;
+			    true ->
+				push_item(User, Server,
+					  exmpp_jid:make_bare_jid(User, Server), Item)
+			end,
+			true;
+		    none ->
+			false
+		end;
+	    _ ->
+		false
+	end
+    catch
 	_ ->
 	    false
     end.
@@ -557,35 +552,44 @@ in_auto_reply(_,    _,    _)  ->           none.
 
 
 remove_user(User, Server) ->
-    LUser = exmpp_stringpre:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		lists:foreach(fun(R) ->
-				      mnesia:delete_object(R)
-			      end,
-			      mnesia:index_read(roster, US, #roster.us))
-        end,
-    mnesia:transaction(F).
+    try
+	LUser = exmpp_stringpre:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    lists:foreach(fun(R) ->
+					  mnesia:delete_object(R)
+				  end,
+				  mnesia:index_read(roster, US, #roster.us))
+	    end,
+	mnesia:transaction(F)
+    catch
+	_ ->
+	    ok
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-set_items(User, Server, SubEl) ->
-    {xmlelement, _Name, _Attrs, Els} = SubEl,
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    F = fun() ->
-		lists:foreach(fun(El) ->
-				      process_item_set_t(LUser, LServer, El)
-			      end, Els)
-	end,
-    mnesia:transaction(F).
+set_items(User, Server, #xmlel{children = Els}) ->
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	F = fun() ->
+		    lists:foreach(fun(El) ->
+					  process_item_set_t(LUser, LServer, El)
+				  end, Els)
+	    end,
+	mnesia:transaction(F)
+    catch
+	_ ->
+	    ok
+    end.
 
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
 	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
-	JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
-	LJID = {JID1#jid.lnode, JID1#jid.ldomain, JID1#jid.lresource},
+	JID = jlib:short_jid(JID1),
+	LJID = jlib:short_prepd_jid(JID1),
 	Item = #roster{usj = {LUser, LServer, LJID},
 		       us = {LUser, LServer},
 		       jid = JID},
@@ -606,15 +610,6 @@ process_item_set_t(_LUser, _LServer, _) ->
 
 process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
-	'jid' ->
-	    try
-		JID1 = exmpp_jid:list_to_jid(Val),
-		JID = {JID1#jid.node, JID1#jid.domain, JID1#jid.resource},
-		process_item_attrs_ws(Item#roster{jid = JID}, Attrs)
-	    catch
-		_ ->
-		    process_item_attrs_ws(Item, Attrs)
-	    end;
 	'name' ->
 	    process_item_attrs_ws(Item#roster{name = Val}, Attrs);
 	'subscription' ->
@@ -650,14 +645,9 @@ get_in_pending_subscriptions(Ls, User, Server) ->
     US = {JID#jid.lnode, JID#jid.ldomain},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Result when list(Result) ->
-    	    Ls ++ lists:map(
+	    Ls ++ lists:map(
 		    fun(R) ->
 			    Message = R#roster.askmessage,
-			    Status  = if is_binary(Message) ->
-					      binary_to_list(Message);
-					 true ->
-					      ""
-				      end,
 			    {U, S, R} = R#roster.jid,
 			    Attrs1 = exmpp_stanza:set_sender_in_list([],
 			      exmpp_jid:jid_to_list(U, S, R)),
@@ -665,7 +655,7 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 			      exmpp_jid:jid_to_list(JID)),
 			    Pres1 = exmpp_presence:subscribe(),
 			    Pres2 = Pres1#xmlel{attrs = Attrs2},
-			    exmpp_presence:set_status(Pres2, Status)
+			    exmpp_presence:set_status(Pres2, Message)
 		    end,
 		    lists:filter(
 		      fun(R) ->
@@ -684,27 +674,32 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_jid_info(_, User, Server, JID) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LJID = jlib:short_jid(JID),
-    LServer = exmpp_stringprep:nameprep(Server),
-    case catch mnesia:dirty_read(roster, {LUser, LServer, LJID}) of
-	[#roster{subscription = Subscription, groups = Groups}] ->
-	    {Subscription, Groups};
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	LJID = jlib:short_prepd_jid(JID),
+	case catch mnesia:dirty_read(roster, {LUser, LServer, LJID}) of
+	    [#roster{subscription = Subscription, groups = Groups}] ->
+		{Subscription, Groups};
+	    _ ->
+		LRJID = jlib:short_prepd_bare_jid(JID),
+		if
+		    LRJID == LJID ->
+			{none, []};
+		    true ->
+			case catch mnesia:dirty_read(
+				     roster, {LUser, LServer, LRJID}) of
+			    [#roster{subscription = Subscription,
+				     groups = Groups}] ->
+				{Subscription, Groups};
+			    _ ->
+				{none, []}
+			end
+		end
+	end
+    catch
 	_ ->
-	    LRJID = jlib:short_jid(exmpp_jid:jid_to_bare_jid(JID)),
-	    if
-		LRJID == LJID ->
-		    {none, []};
-		true ->
-		    case catch mnesia:dirty_read(
-				 roster, {LUser, LServer, LRJID}) of
-			[#roster{subscription = Subscription,
-				 groups = Groups}] ->
-			    {Subscription, Groups};
-			_ ->
-			    {none, []}
-		    end
-	    end
+	    {none, []}
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -714,7 +709,7 @@ update_table() ->
     Fields = record_info(fields, roster),
     case mnesia:table_info(roster, attributes) of
 	Fields ->
-	    ok;
+	    convert_to_exmpp();
 	[uj, user, jid, name, subscription, ask, groups, xattrs, xs] ->
 	    convert_table1(Fields);
 	[usj, us, jid, name, subscription, ask, groups, xattrs, xs] ->
@@ -742,11 +737,18 @@ convert_table1(Fields) ->
     F1 = fun() ->
 		 mnesia:write_lock_table(mod_roster_tmp_table),
 		 mnesia:foldl(
-		   fun(#roster{usj = {U, JID}, us = U} = R, _) ->
+		   fun(#roster{usj = {U, {JID_U, JID_S, JID_R}}, us = U, xs = XS, askmessage = AM} = R, _) ->
+			   U1 = convert_jid_to_exmpp(U),
+			   JID_U1 = convert_jid_to_exmpp(JID_U),
+			   JID_R1 = convert_jid_to_exmpp(JID_R),
+			   JID1 = {JID_U1, JID_S, JID_R1},
+			   XS1 = convert_xs_to_exmpp(XS),
+                           AM1 = convert_askmessage_to_exmpp(AM),
 			   mnesia:dirty_write(
 			     mod_roster_tmp_table,
-			     R#roster{usj = {U, Host, JID},
-				      us = {U, Host}})
+			     R#roster{usj = {U1, Host, JID1},
+				      us = {U1, Host}, xs = XS1,
+				      askmessage = AM1})
 		   end, ok, roster)
 	 end,
     mnesia:transaction(F1),
@@ -766,8 +768,73 @@ convert_table1(Fields) ->
 convert_table2(Fields) ->
     ?INFO_MSG("Converting roster table from "
 	      "{usj, us, jid, name, subscription, ask, groups, xattrs, xs} format", []),
-    mnesia:transform_table(roster, ignore, Fields).
+    mnesia:transform_table(roster, ignore, Fields),
+    convert_to_exmpp().
 
+
+convert_to_exmpp() ->
+    Fun = fun() ->
+	case mnesia:first(roster) of
+	    '$end_of_table' ->
+		none;
+	    Key ->
+		case mnesia:read({roster, Key}) of
+		    [#roster{jid = {_, _, undefined}}] ->
+			none;
+		    [#roster{jid = {_, _, ""}}] ->
+			mnesia:foldl(fun convert_to_exmpp2/2,
+			  done, roster, write)
+		end
+	end
+    end,
+    Ret = mnesia:transaction(Fun),
+    io:format("Conversion return value: ~p~n", [Ret]).
+
+convert_to_exmpp2(#roster{
+  usj = {USJ_U, USJ_S, {USJ_JU, USJ_JS, USJ_JR}} = Key,
+  us = {US_U, US_S},
+  jid = {JID_U, JID_S, JID_R},
+  xs = XS, askmessage = AM} = R, Acc) ->
+    % Remove old entry.
+    mnesia:delete({roster, Key}),
+    % Convert "" to undefined in JIDs.
+    USJ_U1  = convert_jid_to_exmpp(USJ_U),
+    USJ_JU1 = convert_jid_to_exmpp(USJ_JU),
+    USJ_JR1 = convert_jid_to_exmpp(USJ_JR),
+    US_U1   = convert_jid_to_exmpp(US_U),
+    JID_U1  = convert_jid_to_exmpp(JID_U),
+    JID_R1  = convert_jid_to_exmpp(JID_R),
+    % Convert xs.
+    XS1 = convert_xs_to_exmpp(XS),
+    % Convert askmessage.
+    AM1 = convert_askmessage_to_exmpp(AM),
+    % Prepare the new record.
+    New_R = R#roster{
+      usj = {USJ_U1, USJ_S, {USJ_JU1, USJ_JS, USJ_JR1}},
+      us  = {US_U1, US_S},
+      jid = {JID_U1, JID_S, JID_R1},
+      xs = XS1, askmessage = AM1},
+    % Write the new record.
+    mnesia:write(New_R),
+    Acc.
+
+convert_jid_to_exmpp("") -> undefined;
+convert_jid_to_exmpp(V)  -> V.
+
+convert_xs_to_exmpp(Els) ->
+    convert_xs_to_exmpp(Els, []).
+
+convert_xs_to_exmpp([El | Rest], Result) ->
+    New_El = exmpp_xml:xmlelement_to_xmlel(El,
+      [?NS_JABBER_CLIENT], [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    convert_xs_to_exmpp(Rest, [New_El | Result]);
+convert_xs_to_exmpp([], Result) ->
+    lists:reverse(Result).
+
+convert_askmessage_to_exmpp(AM) when is_binary(AM) ->
+    AM;
+convert_askmessage_to_exmpp(AM) ->
+    list_to_binary(AM).
 
 webadmin_page(_, Host,
 	      #request{us = _US,
@@ -780,74 +847,85 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_roster(User, Server, Query, Lang) ->
-    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
-    Items1 = mnesia:dirty_index_read(roster, US, #roster.us),
-    Res = user_roster_parse_query(User, Server, Items1, Query),
-    Items = mnesia:dirty_index_read(roster, US, #roster.us),
-    SItems = lists:sort(Items),
-    FItems =
-	case SItems of
-	    [] ->
-		[?CT("None")];
-	    _ ->
-		[?XE("table",
-		     [?XE("thead",
-			  [?XE("tr",
-			       [?XCT("td", "Jabber ID"),
-				?XCT("td", "Nickname"),
-				?XCT("td", "Subscription"),
-				?XCT("td", "Pending"),
-				?XCT("td", "Groups")
-			       ])]),
-		      ?XE("tbody",
-			  lists:map(
-			    fun(R) ->
-				    Groups =
-					lists:flatmap(
-					  fun(Group) ->
-						  [?C(Group), ?BR]
-					  end, R#roster.groups),
-				    Pending = ask_to_pending(R#roster.ask),
-				    {U, S, R} = R#roster.jid,
-				    ?XE("tr",
-					[?XAC("td", [{"class", "valign"}],
-					      catch exmpp_jid:jid_to_list(U, S, R)),
-					 ?XAC("td", [{"class", "valign"}],
-					      R#roster.name),
-					 ?XAC("td", [{"class", "valign"}],
-					      atom_to_list(R#roster.subscription)),
-					 ?XAC("td", [{"class", "valign"}],
-					      atom_to_list(Pending)),
-					 ?XAE("td", [{"class", "valign"}], Groups),
-					 if
-					     Pending == in ->
-						 ?XAE("td", [{"class", "valign"}],
-						      [?INPUTT("submit",
-							       "validate" ++
-							       ejabberd_web_admin:term_to_id(R#roster.jid),
-							       "Validate")]);
-					     true ->
-						 ?X("td")
-					 end,
-					 ?XAE("td", [{"class", "valign"}],
-					      [?INPUTT("submit",
-						       "remove" ++
-						       ejabberd_web_admin:term_to_id(R#roster.jid),
-						       "Remove")])])
-			    end, SItems))])]
-	end,
-    [?XC("h1", ?T("Roster of ") ++ us_to_list(US))] ++
-	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
-	    nothing -> []
-	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
-	      FItems ++
-	      [?P,
-	       ?INPUT("text", "newjid", ""), ?C(" "),
-	       ?INPUTT("submit", "addjid", "Add Jabber ID")
-	      ])].
+    try
+	US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
+	Items1 = mnesia:dirty_index_read(roster, US, #roster.us),
+	Res = user_roster_parse_query(User, Server, Items1, Query),
+	Items = mnesia:dirty_index_read(roster, US, #roster.us),
+	SItems = lists:sort(Items),
+	FItems =
+	    case SItems of
+		[] ->
+		    [?CT("None")];
+		_ ->
+		    [?XE("table",
+			 [?XE("thead",
+			      [?XE("tr",
+				   [?XCT("td", "Jabber ID"),
+				    ?XCT("td", "Nickname"),
+				    ?XCT("td", "Subscription"),
+				    ?XCT("td", "Pending"),
+				    ?XCT("td", "Groups")
+				   ])]),
+			  ?XE("tbody",
+			      lists:map(
+				fun(R) ->
+					Groups =
+					    lists:flatmap(
+					      fun(Group) ->
+						      [?C(Group), ?BR]
+					      end, R#roster.groups),
+					Pending = ask_to_pending(R#roster.ask),
+					{U, S, R} = R#roster.jid,
+					?XE("tr",
+					    [?XAC("td", [{"class", "valign"}],
+						  catch exmpp_jid:jid_to_list(U, S, R)),
+					     ?XAC("td", [{"class", "valign"}],
+						  R#roster.name),
+					     ?XAC("td", [{"class", "valign"}],
+						  atom_to_list(R#roster.subscription)),
+					     ?XAC("td", [{"class", "valign"}],
+						  atom_to_list(Pending)),
+					     ?XAE("td", [{"class", "valign"}], Groups),
+					     if
+						 Pending == in ->
+						     ?XAE("td", [{"class", "valign"}],
+							  [?INPUTT("submit",
+								   "validate" ++
+								   ejabberd_web_admin:term_to_id(R#roster.jid),
+								   "Validate")]);
+						 true ->
+						     ?X("td")
+					     end,
+					     ?XAE("td", [{"class", "valign"}],
+						  [?INPUTT("submit",
+							   "remove" ++
+							   ejabberd_web_admin:term_to_id(R#roster.jid),
+							   "Remove")])])
+				end, SItems))])]
+	    end,
+	[?XC("h1", ?T("Roster of ") ++ us_to_list(US))] ++
+	    case Res of
+		ok -> [?CT("Submitted"), ?P];
+		error -> [?CT("Bad format"), ?P];
+		nothing -> []
+	    end ++
+	    [?XAE("form", [{"action", ""}, {"method", "post"}],
+		  FItems ++
+		  [?P,
+		   ?INPUT("text", "newjid", ""), ?C(" "),
+		   ?INPUTT("submit", "addjid", "Add Jabber ID")
+		  ])]
+      catch
+	  _ ->
+	      [?XC("h1", ?T("Roster of ") ++ us_to_list({User, Server}))] ++
+	      [?CT("Bad format"), ?P] ++
+	      [?XAE("form", [{"action", ""}, {"method", "post"}],
+		    [?P,
+		     ?INPUT("text", "newjid", ""), ?C(" "),
+		     ?INPUTT("submit", "addjid", "Add Jabber ID")
+		    ])]
+      end.
 
 user_roster_parse_query(User, Server, Items, Query) ->
     case lists:keysearch("addjid", 1, Query) of

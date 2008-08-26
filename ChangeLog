@@ -17,6 +17,14 @@
 	where. Also, in JIDs (normal and short), the atom "undefined' is
 	expected, not the empty string anymore!
 
+	* src/mod_roster.hrl, src/mod_roster.erl: Remove compatibility code.
+	Use the atom 'undefined' in JIDs (normal and short). Add try/catch
+	blocks where Exmpp can raise exceptions. Remove some unused code.
+	Convert on-disk Mnesia database: JIDs, extra XML elements and
+	askmessage are concerned. By default, 'askmessage' is now an empty
+	binary instead of an empty string, for consistency's sake. Fix some
+	bugs.
+
 2008-08-14  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* translate.erl (ascii_tolower): Accept 'undefined' as a language and

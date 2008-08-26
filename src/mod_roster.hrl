@@ -26,6 +26,6 @@
 		 subscription = none,
 		 ask = none,
 		 groups = [],
-		 askmessage = [],
+		 askmessage = <<>>,
 		 xs = []}).
 
