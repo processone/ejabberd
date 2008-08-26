@@ -290,7 +290,13 @@ go to the Windows service settings and set ejabberd to be automatically started.
 Note that the Windows service is a feature still in development, 
 and for example it doesn&#X2019;t read the file ejabberdctl.cfg.</P><P>On a *nix system, if you want ejabberd to be started as daemon at boot time, 
 copy <TT>ejabberd.init</TT> from the &#X2019;bin&#X2019; directory to something like <TT>/etc/init.d/ejabberd</TT>
-(depending on your distribution) and call <TT>/etc/inid.d/ejabberd start</TT> to start it.</P><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly and a crash dump is generated,
+(depending on your distribution) and call <TT>/etc/inid.d/ejabberd start</TT> to start it.</P><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly in Windows,
+try to start it using the shortcut in desktop or start menu.
+If the window shows error 14001, the solution is to install:
+"Microsoft Visual C++ 2005 SP1 Redistributable Package".
+You can download it from
+<A HREF="http://www.microsoft.com/">www.microsoft.com</A>.
+Then uninstall <TT>ejabberd</TT> and install it again.</P><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly and a crash dump is generated,
 there was a severe problem.
 You can try starting <TT>ejabberd</TT> with
 the script <TT>bin/live.bat</TT> in Windows,
