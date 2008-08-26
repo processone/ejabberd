@@ -241,6 +241,14 @@ On a *nix system, if you want ejabberd to be started as daemon at boot time,
 copy \term{ejabberd.init} from the 'bin' directory to something like \term{/etc/init.d/ejabberd}
 (depending on your distribution) and call \term{/etc/inid.d/ejabberd start} to start it.
 
+If \term{ejabberd} doesn't start correctly in Windows,
+try to start it using the shortcut in desktop or start menu.
+If the window shows error 14001, the solution is to install:
+"Microsoft Visual C++ 2005 SP1 Redistributable Package".
+You can download it from
+\footahref{http://www.microsoft.com/}{www.microsoft.com}.
+Then uninstall \ejabberd{} and install it again.
+
 If \term{ejabberd} doesn't start correctly and a crash dump is generated,
 there was a severe problem.
 You can try starting \term{ejabberd} with
