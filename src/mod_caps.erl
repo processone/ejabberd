@@ -217,10 +217,9 @@ handle_cast({note_caps, From,
 	    ?ERROR_MSG("Transaction failed: ~p", [Error]),
 	    {noreply, State}
     end;
-handle_cast({disco_response, From, _To, IQ},
+handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payload}},
 	    #state{disco_requests = Requests} = State) ->
-    ID = exmpp_stanza:get_id(IQ),
-    case {exmpp_iq:get_type(IQ), exmpp_iq:get_payload(IQ)} of
+    case {Type, Payload} of
 	{result, #xmlel{name = 'query', children = Els}} ->
 	    case ?DICT:find(ID, Requests) of
 		{ok, {Node, SubNode}} ->
@@ -255,8 +254,8 @@ handle_cast({disco_response, From, _To, IQ},
 	    end;
 	    %gen_server:cast(self(), visit_feature_queries),
 	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:jid_to_list(From), SubEls]);
-	{result, _} ->
-	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:jid_to_list(From), IQ#xmlel.children]);
+	{result, Payload} ->
+	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:jid_to_list(From), Payload]);
 	_ ->
 	    %% Can't do anything about errors
 	    ok
@@ -287,10 +286,10 @@ handle_cast(visit_feature_queries, #state{feature_queries = FeatureQueries} = St
 		    end, [], FeatureQueries),
     {noreply, State#state{feature_queries = NewFeatureQueries}}.
 
-handle_disco_response(From, To, IQ) ->
+handle_disco_response(From, To, IQ_Rec) ->
     #jid{ldomain = Host} = To,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:cast(Proc, {disco_response, From, To, IQ}).
+    gen_server:cast(Proc, {disco_response, From, To, IQ_Rec}).
 
 handle_info(_Info, State) ->
     {noreply, State}.
