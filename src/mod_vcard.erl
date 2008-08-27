@@ -142,10 +142,10 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 	    case Acc of
 		{result, Features} ->
 		    % XXX OLD FORMAT: NS as string.
-		    {result, [atom_to_list(?NS_VCARD) | Features]};
+		    {result, [?NS_VCARD_s | Features]};
 		empty ->
 		    % XXX OLD FORMAT: NS as string.
-		    {result, [atom_to_list(?NS_VCARD)]}
+		    {result, [?NS_VCARD_s]}
 	    end;
  	_ ->
 	    Acc
@@ -177,14 +177,7 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
     [VCard | _] = case mnesia:transaction(F) of
 	      {atomic, Rs} ->
 		  lists:map(fun(R) ->
-				    case R#vcard.vcard of
-					#xmlel{} = E ->
-					    E;
-					#xmlelement{} = E ->
-					    % XXX OLD FORMAT: Base contains old elements.
-					    io:format("VCARD: Old element in base: ~p~n", [E]),
-					    exmpp_xml:xmlelement_to_xmlel(E, [?NS_VCARD], [])
-				    end
+				    R#vcard.vcard
 			    end, Rs);
 	      {aborted, _Reason} ->
 		  []
@@ -249,10 +242,7 @@ set_vcard(User, LServer, VCARD) ->
 	US = {LUser, LServer},
 
 	F = fun() ->
-	    % XXX OLD FORMAT: We keep persistent data in the old format
-	    % for now.
-	    VCARDOld = exmpp_xml:xmlel_to_xmlelement(VCARD, [?NS_VCARD], []),
-	    mnesia:write(#vcard{us = US, vcard = VCARDOld}),
+	    mnesia:write(#vcard{us = US, vcard = VCARD}),
 	    mnesia:write(
 	      #vcard_search{us        = US,
 			    user      = {User, LServer},
@@ -673,7 +663,7 @@ update_vcard_table() ->
     Fields = record_info(fields, vcard),
     case mnesia:table_info(vcard, attributes) of
 	Fields ->
-	    ok;
+	    convert_to_exmpp();
 	[user, vcard] ->
 	    ?INFO_MSG("Converting vcard table from "
 		      "{user, vcard} format", []),
@@ -711,6 +701,29 @@ update_vcard_table() ->
 	    mnesia:transform_table(vcard, ignore, Fields)
     end.
 
+
+convert_to_exmpp() ->
+    Fun = fun() ->
+	case mnesia:first(vcard) of
+	    '$end_of_table' ->
+		none;
+	    Key ->
+		case mnesia:read({vcard, Key}) of
+		    [#vcard{vcard = #xmlel{}}] ->
+			none;
+		    [#vcard{vcard = #xmlelement{}}] ->
+			mnesia:foldl(fun convert_to_exmpp2/2,
+			  done, vcard, write)
+		end
+	end
+    end,
+    mnesia:transaction(Fun).
+
+convert_to_exmpp2(#vcard{vcard = ElOld} = VCard, Acc) ->
+    El0 = exmpp_xml:xmlelement_to_xmlel(ElOld, [?NS_VCARD], []),
+    El = exmpp_xml:remove_whitespaces_deeply(El0),
+    mnesia:write(VCard#vcard{vcard = El}),
+    Acc.
 
 update_vcard_search_table() ->
     Fields = record_info(fields, vcard_search),

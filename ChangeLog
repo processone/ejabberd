@@ -5,6 +5,9 @@
 	* src/mod_caps.erl: handle_cast({disco_response, ...}, ...) now
 	receives an #iq record: update the code to handle this.
 
+	* src/mod_vcard.erl: VCard are now stored as #xmlel. Mnesia tables are
+	converted during startup.
+
 2008-08-26  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl: short_jid/1 and short_bare_jid/1 now produce a short
