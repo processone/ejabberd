@@ -472,7 +472,7 @@ handle_cast({presence, JID, Pid}, State) ->
 	    end, Subscriptions)
     end, State#state.plugins),
     %% and send to From last PEP events published by its contacts
-    case catch ejabberd_c2s:get_subscribed_and_online(Pid) of
+    case catch ejabberd_c2s:get_subscribed(Pid) of
 	ContactsWithCaps when is_list(ContactsWithCaps) ->
 	    Caps = proplists:get_value(LJID, ContactsWithCaps),
 	    ContactsUsers = lists:usort(lists:map(
