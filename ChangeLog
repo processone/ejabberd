@@ -1,3 +1,7 @@
+2008-08-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_roster.erl: Remove a debugging io:format/2.
+
 2008-08-26  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl: short_jid/1 and short_bare_jid/1 now produce a short

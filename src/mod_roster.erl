@@ -787,8 +787,7 @@ convert_to_exmpp() ->
 		end
 	end
     end,
-    Ret = mnesia:transaction(Fun),
-    io:format("Conversion return value: ~p~n", [Ret]).
+    mnesia:transaction(Fun).
 
 convert_to_exmpp2(#roster{
   usj = {USJ_U, USJ_S, {USJ_JU, USJ_JS, USJ_JR}} = Key,
