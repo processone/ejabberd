@@ -1,3 +1,7 @@
+2008-08-30  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd.app: Fix version number to 2.0.2
+
 2008-08-27  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: send last published events now supports
