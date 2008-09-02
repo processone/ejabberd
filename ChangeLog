@@ -1,3 +1,8 @@
+2008-09-02  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Fix mod_proxy configuration example
+	* doc/guide.html: Likewise
+
 2008-09-02  Mickael Remond  <mremond@process-one.net>
 
 	* src/odbc/mssql2000.sql: Script for MSSQL 2000
