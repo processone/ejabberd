@@ -1,3 +1,9 @@
+2008-09-02  Mickael Remond  <mremond@process-one.net>
+
+	* src/odbc/mssql2000.sql: Script for MSSQL 2000
+	* src/odbc/mssql2005.sql: Script for MSSQL 2005 (EJAB-535)
+	* src/odbc/mssql.sql: removed
+
 2008-08-27  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: send last published events now
