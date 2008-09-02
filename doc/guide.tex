@@ -2852,8 +2852,8 @@ Examples:
 {access, proxy65_access, [{allow, proxy_users}, {deny, all}]}.
 
 {acl, admin, {user, "admin", "example.org"}}.
-{shaper, normal, {maxrate, 10240}}. %% 10 Kbytes/sec
-{access, proxy65_shaper, [{none, admin}, {normal, all}]}.
+{shaper, proxyrate, {maxrate, 10240}}. %% 10 Kbytes/sec
+{access, proxy65_shaper, [{none, admin}, {proxyrate, proxy_users}]}.
 
 {modules,
  [
