@@ -276,11 +276,11 @@ get_transfer_protocol(SockMod, HostPort) ->
 	{gen_tcp, []} ->
 	    {Host, 80, http};
 	{gen_tcp, [Port]} ->
-	    {Host, Port, http};
+	    {Host, list_to_integer(Port), http};
 	{tls, []} ->
 	    {Host, 443, https};
 	{tls, [Port]} ->
-	    {Host, Port, https}
+	    {Host, list_to_integer(Port), https}
     end.
 
 %% XXX bard: search through request handlers looking for one that
