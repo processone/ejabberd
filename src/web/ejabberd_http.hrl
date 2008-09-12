@@ -26,5 +26,9 @@
 		  auth,
 		  lang = "",
 		  data = "",
-		  ip
+		  ip,
+		  host, % string()
+		  port, % integer()
+		  tp, % transfer protocol = http | https
+		  headers
 		 }).

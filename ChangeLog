@@ -1,3 +1,9 @@
+2008-09-12  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_http.hrl: Provide Host, Port, Headers and
+	Transfer Protocol in request (thanks to Eric Cestari)(EJAB-560)
+	* src/web/ejabberd_http.erl: Likewise
+
 2008-09-02  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Fix mod_proxy configuration example
