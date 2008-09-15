@@ -1,3 +1,10 @@
+2008-09-15  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Fix explanation of mod_muc's anonymous
+	option. Make clear that an ejabberd_service can only serve a
+	single external component. Provide Mnesia directory when setting
+	clustering (thanks to Matthew Reilly)
+
 2008-09-02  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Fix mod_proxy configuration example

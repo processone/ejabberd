@@ -731,7 +731,7 @@ The available modules, their purpose and the options allowed by each one are:
     Handles incoming s2s connections.\\
     Options: \texttt{inet6}, \texttt{ip}, \texttt{max\_stanza\_size}
   \titem{\texttt{ejabberd\_service}}
-    Interacts with \footahref{http://www.ejabberd.im/tutorials-transports}{external components} 
+    Interacts with an \footahref{http://www.ejabberd.im/tutorials-transports}{external component} 
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     Options: \texttt{access}, \texttt{hosts}, \texttt{inet6},
     \texttt{ip}, \texttt{shaper}, \texttt{service\_check\_from}
@@ -753,9 +753,10 @@ This is a detailed description of each option allowed by the listening modules:
     external components. The option can be either \term{true} or
     \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
   \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}
-    This option of \term{ejabberd\_service} allows to define one or more hostnames 
-    of external Jabber components that provide a service.
-    In \term{HostOptions} it is possible to define the password required to those components
+    The external Jabber component that connects to this \term{ejabberd\_service}
+    can serve one or more hostnames.
+    In \term{HostOptions} you can define options for the component;
+    currently the only allowed option is the password required to the component
     when attempt to connect to ejabberd: \poption{\{password, Secret\}}.
     Note that you cannot define in a single \term{ejabberd\_service} components of
     different services: add an \term{ejabberd\_service} for each service,
@@ -2505,7 +2506,9 @@ Module options:
   status text in presence updates.  If disallowed, the \term{status}
   text is stripped before broadcasting the presence update to all
   the room occupants.
-  \titem{\{anonymous, true\}} Occupants are allowed to see the real JIDs of other occupants.
+  \titem{\{anonymous, true\}} The room is anonymous:
+  occupants don't see the real JIDs of other occupants.
+  Note that the room moderators can always see the real JIDs of the occupants.
   \titem{\{logging, false\}} The public messages are logged using \term{mod\_muc\_log}.
   \titem{\{max\_users, 200\}} Maximum number of occupants in the room.
   \titem{\{members\_by\_default, true\}} The occupants that enter the room are participants by default, so they have 'voice'.
@@ -3917,6 +3920,7 @@ following steps:
 
 \begin{verbatim}
 erl -sname ejabberd \
+    -mnesia dir "/var/lib/ejabberd/" \
     -mnesia extra_db_nodes "['ejabberd@first']" \
     -s mnesia
 \end{verbatim}
@@ -3924,6 +3928,11 @@ erl -sname ejabberd \
   This will start Mnesia serving the same database as \node{ejabberd@first}.
   You can check this by running the command `\verb|mnesia:info().|'. You
   should see a lot of remote tables and a line like the following:
+
+  Note: the Mnesia directory may be different in your system.
+  To know where does ejabberd expect Mnesia to be installed by default,
+  call \ref{ejabberdctl} without options and it will show some help,
+  including the Mnesia database spool dir.
 
 \begin{verbatim}
 running db nodes   = [ejabberd@first, ejabberd@second]
