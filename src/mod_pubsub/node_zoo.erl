@@ -10,12 +10,12 @@
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
 %%% 
-%%% The Initial Developer of the Original Code is Process-one.
-%%% Portions created by Process-one are Copyright 2006-2008, Process-one
+%%% The Initial Developer of the Original Code is ProcessOne.
+%%% Portions created by ProcessOne are Copyright 2006-2008, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2008, Process-one.
+%%% This software is copyright 2006-2008, ProcessOne.
 %%%
-%%% @copyright 2006-2008 Process-one
+%%% @copyright 2006-2008 ProcessOne
 %%% @author Christophe romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -91,18 +91,19 @@ features() ->
 %% use same code as node_default, but do not limite node to
 %% the home/localhost/user/... hierarchy
 %% any node is allowed
-create_node_permission(_Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
+create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
     LOwner = jlib:jid_tolower(Owner),
-    %%{_User, _Server, _Resource} = LOwner, 
-    Allowed = case acl:match_rule(ServerHost, Access, LOwner) of
+    Allowed = case LOwner of
+	{"", Host, ""} ->
+	    true; % pubsub service always allowed
+	_ ->
+	    case acl:match_rule(ServerHost, Access, LOwner) of
 		allow ->
 		    true;
-		_ ->    
-		    case Owner of
-		    {jid, "", _, "", "", _, ""} -> true;
-		    _ -> false
-		    end     
-		end,    
+		_ ->
+		    false
+	    end
+    end,
     {result, Allowed}.
 
 create_node(Host, Node, Owner) ->

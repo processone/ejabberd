@@ -5,7 +5,7 @@
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -152,7 +152,7 @@ stop_modules() ->
 		  Modules ->
 		      lists:foreach(
 			fun({Module, _Args}) ->
-				gen_mod:stop_module(Host, Module)
+				gen_mod:stop_module_keep_config(Host, Module)
 			end, Modules)
 	      end
       end, ?MYHOSTS).

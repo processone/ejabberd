@@ -5,7 +5,7 @@
 %%% Created : 14 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -95,10 +95,14 @@ get_plain_terms_file(File1) ->
     case file:consult(File) of
 	{ok, Terms} ->
 	    include_config_files(Terms);
-	{error, Reason} ->
-	    ExitText = lists:flatten(File ++ ": around line "
+	{error, {_LineNumber, erl_parse, _ParseMessage} = Reason} ->
+	    ExitText = lists:flatten(File ++ " approximately in the line "
 				     ++ file:format_error(Reason)),
-	    ?ERROR_MSG("Problem loading ejabberd config file:~n~s", [ExitText]),
+	    ?ERROR_MSG("Problem loading ejabberd config file ~n~s", [ExitText]),
+	    exit(ExitText);
+	{error, Reason} ->
+	    ExitText = lists:flatten(File ++ ": " ++ file:format_error(Reason)),
+	    ?ERROR_MSG("Problem loading ejabberd config file ~n~s", [ExitText]),
 	    exit(ExitText)
     end.
 

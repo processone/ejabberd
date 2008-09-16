@@ -5,7 +5,7 @@
 %%% Created : 23 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -127,9 +127,12 @@ check_password_with_authmodule(User, Server, Password, StreamID, Digest) ->
 	[AuthMod | _] -> {true, AuthMod}
     end.
 
-%% We do not allow empty password:
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%       ok | {error, ErrorType}
+%% where ErrorType = empty_password | not_allowed | invalid_jid
 set_password(_User, _Server, "") ->
-    {error, not_allowed};
+    %% We do not allow empty password
+    {error, empty_password};
 set_password(User, Server, Password) ->
     lists:foldl(
       fun(M, {error, _}) ->
@@ -138,8 +141,8 @@ set_password(User, Server, Password) ->
 	      Res
       end, {error, not_allowed}, auth_modules(Server)).
 
-%% We do not allow empty password:
 try_register(_User, _Server, "") ->
+    %% We do not allow empty password
     {error, not_allowed};    
 try_register(User, Server, Password) ->
     case is_user_exists(User,Server) of

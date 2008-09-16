@@ -5,7 +5,7 @@
 %%% Created :  8 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -166,13 +166,27 @@ init([Host]) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
 handle_call({sql_query, Query}, _From, State) ->
-    Reply = sql_query_internal(State, Query),
-    {reply, Reply, State};
-
+    case sql_query_internal(State, Query) of
+	% error returned by MySQL driver
+	{error, "query timed out"} = Reply ->
+	    {stop, timeout, Reply, State};
+	% error returned by MySQL driver
+	{error, "Failed sending data on socket"++_} = Reply ->
+	    {stop, closed, Reply, State};
+	Reply ->
+	    {reply, Reply, State}
+    end;
 handle_call({sql_transaction, F}, _From, State) ->
-    Reply = execute_transaction(State, F, ?MAX_TRANSACTION_RESTARTS),
-    {reply, Reply, State};
-
+    case execute_transaction(State, F, ?MAX_TRANSACTION_RESTARTS) of
+	% error returned by MySQL driver
+	{error, "query timed out"} ->
+	    {stop, timeout, State};
+	% error returned by MySQL driver
+	{error, "Failed sending data on socket"++_} = Reply ->
+	    {stop, closed, Reply, State};
+	Reply ->
+	    {reply, Reply, State}
+    end;
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -308,7 +322,12 @@ mysql_connect(Server, Port, DB, Username, Password) ->
     case mysql_conn:start(Server, Port, Username, Password, DB, NoLogFun) of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
-            mysql_conn:fetch(Ref, ["set names 'utf8';"], self()), 
+            mysql_conn:fetch(Ref, ["set names 'utf8';"], self()),
+	    % needed to ensure the order of queries, specifically at
+	    % roster subscription time (this can also be set-up in the
+	    % MySQL configuration, but not at the database level):
+            mysql_conn:fetch(Ref, ["SET SESSION TRANSACTION ISOLATION LEVEL "
+				   "SERIALIZABLE;"], self()),
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("MySQL connection failed: ~p~n", [Reason]),

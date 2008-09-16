@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -26,5 +26,9 @@
 		  auth,
 		  lang = "",
 		  data = "",
-		  ip
+		  ip,
+		  host, % string()
+		  port, % integer()
+		  tp, % transfer protocol = http | https
+		  headers
 		 }).

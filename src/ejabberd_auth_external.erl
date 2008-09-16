@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -61,7 +61,10 @@ check_password(User, Server, Password, _StreamID, _Digest) ->
     check_password(User, Server, Password).
 
 set_password(User, Server, Password) ->
-    extauth:set_password(User, Server, Password).
+    case extauth:set_password(User, Server, Password) of
+	true -> ok;
+	_ -> {error, unknown_problem}
+    end.
 
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.

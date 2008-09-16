@@ -272,9 +272,9 @@ Support for virtual hosting.
 </LI></UL><P> <A NAME="installing"></A> </P><!--TOC chapter Installing <TT>ejabberd</TT>-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc4">Chapter&#XA0;2</A>&#XA0;&#XA0;<A HREF="#installing">Installing <TT>ejabberd</TT></A></H1><!--SEC END --><P> <A NAME="installing"></A> </P><P> <A NAME="install.binary"></A> </P><!--TOC section Installing <TT>ejabberd</TT> with Binary Installer-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc5">2.1</A>&#XA0;&#XA0;<A HREF="#install.binary">Installing <TT>ejabberd</TT> with Binary Installer</A></H2><!--SEC END --><P> <A NAME="install.binary"></A> </P><P>Probably the easiest way to install an <TT>ejabberd</TT> instant messaging server
-is using the binary installer published by Process-one. 
+is using the binary installer published by ProcessOne. 
 The binary installers of released <TT>ejabberd</TT> versions 
-are available in the Process-one <TT>ejabberd</TT> downloads page:
+are available in the ProcessOne <TT>ejabberd</TT> downloads page:
 <A HREF="http://www.process-one.net/en/ejabberd/downloads"><TT>http://www.process-one.net/en/ejabberd/downloads</TT></A></P><P>The installer will deploy and configure a full featured <TT>ejabberd</TT>
 server and does not require any extra dependencies.</P><P>In *nix systems, remember to set executable the binary installer before starting it. For example:
 </P><PRE CLASS="verbatim">chmod +x ejabberd-2.0.0_1-linux-x86-installer.bin
@@ -290,7 +290,19 @@ go to the Windows service settings and set ejabberd to be automatically started.
 Note that the Windows service is a feature still in development, 
 and for example it doesn&#X2019;t read the file ejabberdctl.cfg.</P><P>On a *nix system, if you want ejabberd to be started as daemon at boot time, 
 copy <TT>ejabberd.init</TT> from the &#X2019;bin&#X2019; directory to something like <TT>/etc/init.d/ejabberd</TT>
-(depending on your distribution) and call <TT>/etc/inid.d/ejabberd start</TT> to start it.</P><P>The <TT>ejabberdctl</TT> administration script is included in the <TT>bin</TT> directory.
+(depending on your distribution) and call <TT>/etc/inid.d/ejabberd start</TT> to start it.</P><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly in Windows,
+try to start it using the shortcut in desktop or start menu.
+If the window shows error 14001, the solution is to install:
+"Microsoft Visual C++ 2005 SP1 Redistributable Package".
+You can download it from
+<A HREF="http://www.microsoft.com/">www.microsoft.com</A>.
+Then uninstall <TT>ejabberd</TT> and install it again.</P><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly and a crash dump is generated,
+there was a severe problem.
+You can try starting <TT>ejabberd</TT> with
+the script <TT>bin/live.bat</TT> in Windows,
+or with the command <TT>bin/ejabberdctl live</TT> in other Operating Systems.
+This way you see the error message provided by Erlang
+and can identify what is exactly the problem.</P><P>The <TT>ejabberdctl</TT> administration script is included in the <TT>bin</TT> directory.
 Please refer to the section&#XA0;<A HREF="#ejabberdctl">4.1</A> for details about <TT>ejabberdctl</TT>,
 and configurable options to fine tune the Erlang runtime system.</P><P> <A NAME="install.os"></A> </P><!--TOC section Installing <TT>ejabberd</TT> with Operating System specific packages-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc6">2.2</A>&#XA0;&#XA0;<A HREF="#install.os">Installing <TT>ejabberd</TT> with Operating System specific packages</A></H2><!--SEC END --><P> <A NAME="install.os"></A> </P><P>Some Operating Systems provide a specific <TT>ejabberd</TT> package adapted to 
@@ -324,7 +336,7 @@ GNU Make
 </LI><LI CLASS="li-itemize">GNU Iconv 1.8 or higher, for the IRC Transport (mod_irc). Optional. Not needed on systems with GNU Libc.
 </LI></UL><P> <A NAME="download"></A> </P><!--TOC subsection Download Source Code-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc10">2.4.2</A>&#XA0;&#XA0;<A HREF="#download">Download Source Code</A></H3><!--SEC END --><P> <A NAME="download"></A> 
-</P><P>Released versions of <TT>ejabberd</TT> are available in the Process-one <TT>ejabberd</TT> downloads page:
+</P><P>Released versions of <TT>ejabberd</TT> are available in the ProcessOne <TT>ejabberd</TT> downloads page:
 <A HREF="http://www.process-one.net/en/ejabberd/downloads"><TT>http://www.process-one.net/en/ejabberd/downloads</TT></A></P><P>
 Alternatively, the latest development version can be retrieved from the Subversion repository using this command:
 </P><PRE CLASS="verbatim">svn co http://svn.process-one.net/ejabberd/trunk ejabberd
@@ -405,7 +417,12 @@ Node ejabberd@localhost is started. Status: started
 ejabberd is running
 
 ejabberdctl stop
-</PRE><P>Please refer to the section&#XA0;<A HREF="#ejabberdctl">4.1</A> for details about <TT>ejabberdctl</TT>,
+</PRE><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly and a crash dump is generated,
+there was a severe problem.
+You can try starting <TT>ejabberd</TT> with
+the command <TT>ejabberdctl live</TT>
+to see the error message provided by Erlang
+and can identify what is exactly the problem.</P><P>Please refer to the section&#XA0;<A HREF="#ejabberdctl">4.1</A> for details about <TT>ejabberdctl</TT>,
 and configurable options to fine tune the Erlang runtime system.</P><P> <A NAME="bsd"></A> </P><!--TOC subsection Specific Notes for BSD-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc14">2.4.6</A>&#XA0;&#XA0;<A HREF="#bsd">Specific Notes for BSD</A></H3><!--SEC END --><P> <A NAME="bsd"></A> 
 </P><P>The command to compile <TT>ejabberd</TT> in BSD systems is:
@@ -976,8 +993,12 @@ version, you can <TT>kill(1)</TT> <TT>epam</TT> process periodically to reduce i
 consumption: <TT>ejabberd</TT> will restart this process immediately.
 </LI><LI CLASS="li-itemize"><TT>epam</TT> program tries to turn off delays on authentication failures.
 However, some PAM modules ignore this behavior and rely on their own configuration options.
-The example configuration file <TT>ejabberd.pam</TT> shows how to turn off delays in
-<TT>pam_unix.so</TT> module. It is not a ready to use configuration file: you must use it
+You can create a configuration file <TT>ejabberd.pam</TT>.
+This example shows how to turn off delays in <TT>pam_unix.so</TT> module:
+<PRE CLASS="verbatim">#%PAM-1.0
+auth        sufficient  pam_unix.so likeauth nullok nodelay
+account     sufficient  pam_unix.so
+</PRE>That is not a ready to use configuration file: you must use it
 as a hint when building your own PAM configuration instead. Note that if you want to disable
 delays on authentication failures in the PAM configuration file, you have to restrict access
 to this file, so a malicious user can&#X2019;t use your configuration to perform brute-force
@@ -1113,7 +1134,7 @@ To define a shaper named &#X2018;<TT>normal</TT>&#X2019; with traffic speed limi
 </PRE></LI></UL><P> <A NAME="language"></A> </P><!--TOC subsection Default Language-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc27">3.1.7</A>&#XA0;&#XA0;<A HREF="#language">Default Language</A></H3><!--SEC END --><P> <A NAME="language"></A> 
 </P><P>The option <TT>language</TT> defines the default language of server strings that
-can be seen by Jabber clients. If a Jabber client do not support
+can be seen by Jabber clients. If a Jabber client does not support
 <TT>xml:lang</TT>, the specified language is used. The default value is
 <TT>en</TT>. In order to take effect there must be a translation file
 <TT>&lt;language&gt;.msg</TT> in <TT>ejabberd</TT>&#X2019;s <TT>msgs</TT> directory.</P><P>Examples:
@@ -1122,7 +1143,7 @@ To set Russian as default language:
 <PRE CLASS="verbatim">{language, "ru"}.
 </PRE></LI><LI CLASS="li-itemize">To set Spanish as default language:
 <PRE CLASS="verbatim">{language, "es"}.
-</PRE></LI></UL><P> <A NAME="includeconfigfile"></A> </P><!--TOC subsection Include Additional Configuration Files-->
+</PRE></LI></UL><P>Appendix <A HREF="#i18ni10n">A</A> provides more details about internationalization and localization.</P><P> <A NAME="includeconfigfile"></A> </P><!--TOC subsection Include Additional Configuration Files-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc28">3.1.8</A>&#XA0;&#XA0;<A HREF="#includeconfigfile">Include Additional Configuration Files</A></H3><!--SEC END --><P> <A NAME="includeconfigfile"></A> 
 </P><P>The option <TT>include_config_file</TT> in a configuration file instructs <TT>ejabberd</TT> to include other configuration files immediately.</P><P>The basic usage is:
 </P><PRE CLASS="verbatim">{include_config_file, &lt;filename&gt;}.
@@ -1422,7 +1443,9 @@ module loaded!</P><P> <A NAME="ldap"></A> </P><!--TOC subsection LDAP-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc35">3.2.5</A>&#XA0;&#XA0;<A HREF="#ldap">LDAP</A></H3><!--SEC END --><P> <A NAME="ldap"></A> 
 </P><P><TT>ejabberd</TT> has built-in LDAP support. You can authenticate users against LDAP
 server and use LDAP directory as vCard storage. Shared rosters are not supported
-yet.</P><P> <A NAME="ldapconnection"></A> </P><!--TOC subsubsection Connection-->
+yet.</P><P>Note that <TT>ejabberd</TT> treats LDAP as a read-only storage:
+it is possible to consult data, but not possible to 
+create accounts, change password or edit vCard that is stored in LDAP.</P><P> <A NAME="ldapconnection"></A> </P><!--TOC subsubsection Connection-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#ldapconnection">Connection</A></H4><!--SEC END --><P> <A NAME="ldapconnection"></A> </P><P>Parameters:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>ldap_servers</TT></B></DT><DD CLASS="dd-description"> List of IP addresses or DNS names of your
@@ -1928,23 +1951,22 @@ connected user was last active on the server, or to query the uptime of the
 the processing discipline for Last activity (<TT>jabber:iq:last</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><P> <A NAME="modmuc"></A> </P><!--TOC subsection <TT>mod_muc</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc44">3.3.8</A>&#XA0;&#XA0;<A HREF="#modmuc"><TT>mod_muc</TT></A></H3><!--SEC END --><P> <A NAME="modmuc"></A> 
-</P><P>With this module enabled, your server will support Multi-User Chat
-(<A HREF="http://www.xmpp.org/extensions/xep-0045.html">XEP-0045</A>). End users will be able to join text conferences.</P><P>Some of the features of Multi-User Chat:
+</P><P>This module provides a Multi-User Chat (<A HREF="http://www.xmpp.org/extensions/xep-0045.html">XEP-0045</A>) service.
+Users can discover existing rooms, join or create them.
+Occupants of a room can chat in public or have private chats.</P><P>Some of the features of Multi-User Chat:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Sending private messages to room participants.
-</LI><LI CLASS="li-itemize">Inviting users.
-</LI><LI CLASS="li-itemize">Setting a conference topic.
+Sending public and private messages to room occupants.
+</LI><LI CLASS="li-itemize">Inviting other users to a room.
+</LI><LI CLASS="li-itemize">Setting a room subject.
 </LI><LI CLASS="li-itemize">Creating password protected rooms.
-</LI><LI CLASS="li-itemize">Kicking and banning participants.
+</LI><LI CLASS="li-itemize">Kicking and banning occupants.
 </LI></UL><P>The MUC service allows any Jabber ID to register a nickname,
 so nobody else can use that nickname in any room in the MUC service.
 To register a nickname, open the Service Discovery in your 
-Jabber client and Register in the MUC service.</P><P>The MUC service allows the service administrator to send a message
-to all existing chatrooms. 
-To do so, send the message to the Jabber ID of the MUC service.</P><P>This module supports clustering and load
+Jabber client and register in the MUC service.</P><P>This module supports clustering and load
 balancing. One module can be started per cluster node. Rooms are
 distributed at creation time on all available MUC module
-instances. The multi-user chat module is clustered but the room
+instances. The multi-user chat module is clustered but the rooms
 themselves are not clustered nor fault-tolerant: if the node managing a
 set of rooms goes down, the rooms disappear and they will be recreated
 on an available node on first connection attempt.</P><P>Module options:
@@ -1956,19 +1978,19 @@ hostname of the virtual host with the prefix &#X2018;<TT>conference.</TT>&#X2019
 is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>access</TT></B></DT><DD CLASS="dd-description"> You can specify who is allowed to use
-the Multi-User Chat service (by default, everyone is allowed to use it).
+the Multi-User Chat service. By default everyone is allowed to use it.
 </DD><DT CLASS="dt-description"><B><TT>access_create</TT></B></DT><DD CLASS="dd-description"> To configure who is
 allowed to create new rooms at the Multi-User Chat service, this option
-can be used (by default, everybody is allowed to create rooms).
+can be used. By default everybody is allowed to create rooms.
 </DD><DT CLASS="dt-description"><B><TT>access_persistent</TT></B></DT><DD CLASS="dd-description"> To configure who is
-allowed to modify the &#X2019;persistent&#X2019; chatroom option
-(by default, everybody is allowed to modify that option).
+allowed to modify the &#X2019;persistent&#X2019; room option.
+By default everybody is allowed to modify that option.
 </DD><DT CLASS="dt-description"><B><TT>access_admin</TT></B></DT><DD CLASS="dd-description"> This option specifies
-who is allowed to administrate the Multi-User Chat service (the default
+who is allowed to administrate the Multi-User Chat service. The default
 value is <TT>none</TT>, which means that only the room creator can
-administer his room).
+administer his room.
 The administrators can send a normal message to the service JID,
-and it will be shown in every active room as a service message.
+and it will be shown in all active rooms as a service message.
 The administrators can send a groupchat message to the JID of an active room,
 and the message will be shown in the room as a service message.
 </DD><DT CLASS="dt-description"><B><TT>history_size</TT></B></DT><DD CLASS="dd-description"> A small history of
@@ -1978,44 +2000,43 @@ to keep and send to users joining the room. The value is an
 integer. Setting the value to <TT>0</TT> disables the history feature
 and, as a result, nothing is kept in memory. The default value is
 <TT>20</TT>. This value is global and thus affects all rooms on the
-server.
+service.
 </DD><DT CLASS="dt-description"><B><TT>max_users</TT></B></DT><DD CLASS="dd-description">  This option defines at
-the server level, the maximum number of users allowed per MUC
+the service level, the maximum number of users allowed per
 room. It can be lowered in each room configuration but cannot be
-increased in individual MUC room configuration. The default value is
+increased in individual room configuration. The default value is
 200.
 </DD><DT CLASS="dt-description"><B><TT>max_users_admin_threshold</TT></B></DT><DD CLASS="dd-description">
  This option defines the
-number of MUC admins or owners to allow to enter the room even if
-the maximum number of allowed users is reached. The default limits
-is 5. In most cases this default value is the best setting.
+number of service admins or room owners allowed to enter the room when
+the maximum number of allowed occupants was reached. The default limit
+is 5.
 </DD><DT CLASS="dt-description"><B><TT>max_user_conferences</TT></B></DT><DD CLASS="dd-description">
- This option define the maximum
-number of chat room any given user will be able to join. The default
+ This option defines the maximum
+number of rooms that any given user can join. The default value
 is 10. This option is used to prevent possible abuses. Note that
-this is a soft limits: Some users can sometime join more conferences
+this is a soft limit: some users can sometimes join more conferences
 in cluster configurations.
 </DD><DT CLASS="dt-description"><B><TT>min_message_interval</TT></B></DT><DD CLASS="dd-description"> 
 This option defines the minimum interval between two messages send
-by a user in seconds. This option is global and valid for all chat
+by an occupant in seconds. This option is global and valid for all
 rooms. A decimal value can be used. When this option is not defined,
 message rate is not limited. This feature can be used to protect a
-MUC service from users abuses and limit number of messages that will
+MUC service from occupant abuses and limit number of messages that will
 be broadcasted by the service. A good value for this minimum message
-interval is 0.4 second. If a user tries to send messages faster, an
-error is send back explaining that the message have been discarded
+interval is 0.4 second. If an occupant tries to send messages faster, an
+error is send back explaining that the message has been discarded
 and describing the reason why the message is not acceptable.
 </DD><DT CLASS="dt-description"><B><TT>min_presence_interval</TT></B></DT><DD CLASS="dd-description">
  This option defines the
-minimum of time between presence changes coming from a given user in
-seconds. This option is global and valid for all chat rooms. A
+minimum of time between presence changes coming from a given occupant in
+seconds. This option is global and valid for all rooms. A
 decimal value can be used. When this option is not defined, no
 restriction is applied. This option can be used to protect a MUC
-service for users abuses, as fastly changing a user presence will
-result in possible large presence packet broadcast. If a user tries
+service for occupants abuses. If an occupant tries
 to change its presence more often than the specified interval, the
 presence is cached by <TT>ejabberd</TT> and only the last presence is
-broadcasted to all users in the room after expiration of the
+broadcasted to all occupants in the room after expiration of the
 interval delay. Intermediate presence packets are silently
 discarded. A good value for this option is 4 seconds.
 </DD><DT CLASS="dt-description"><B><TT>default_room_options</TT></B></DT><DD CLASS="dd-description"> 
@@ -2028,6 +2049,12 @@ The available room options and the default values are:
 </DD><DT CLASS="dt-description"><B><TT>{allow_private_messages, true}</TT></B></DT><DD CLASS="dd-description"> Occupants can send private messages to other occupants.
 </DD><DT CLASS="dt-description"><B><TT>{allow_query_users, true}</TT></B></DT><DD CLASS="dd-description"> Occupants can send IQ queries to other occupants.
 </DD><DT CLASS="dt-description"><B><TT>{allow_user_invites, false}</TT></B></DT><DD CLASS="dd-description"> Allow occupants to send invitations.
+</DD><DT CLASS="dt-description"><B><TT>{allow_visitor_nickchange, true}</TT></B></DT><DD CLASS="dd-description"> Allow visitors to
+change nickname.
+</DD><DT CLASS="dt-description"><B><TT>{allow_visitor_status, true}</TT></B></DT><DD CLASS="dd-description"> Allow visitors to send
+status text in presence updates. If disallowed, the <TT>status</TT>
+text is stripped before broadcasting the presence update to all
+the room occupants.
 </DD><DT CLASS="dt-description"><B><TT>{anonymous, true}</TT></B></DT><DD CLASS="dd-description"> Occupants are allowed to see the real JIDs of other occupants.
 </DD><DT CLASS="dt-description"><B><TT>{logging, false}</TT></B></DT><DD CLASS="dd-description"> The public messages are logged using <TT>mod_muc_log</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{max_users, 200}</TT></B></DT><DD CLASS="dd-description"> Maximum number of occupants in the room.
@@ -2097,8 +2124,8 @@ and the default value of 20 history messages will be send to the users.
              {access_admin, muc_admins}]},
   ...
  ]}.
-</PRE></LI><LI CLASS="li-itemize">In the following example, MUC anti abuse options are used. A
-user cannot send more than one message every 0.4 seconds and cannot
+</PRE></LI><LI CLASS="li-itemize">In the following example, MUC anti abuse options are used. An
+occupant cannot send more than one message every 0.4 seconds and cannot
 change its presence more than once every 4 seconds. No ACLs are
 defined, but some user restriction could be added as well:<PRE CLASS="verbatim">{modules,
  [
@@ -2108,7 +2135,7 @@ defined, but some user restriction could be added as well:<PRE CLASS="verbatim">
   ...
  ]}.
 </PRE></LI><LI CLASS="li-itemize">This example shows how to use <TT>default_room_options</TT> to make sure
-newly created chatrooms have by default those options.
+the newly created rooms have by default those options.
 <PRE CLASS="verbatim">{modules,
  [
   ...
@@ -2128,17 +2155,17 @@ newly created chatrooms have by default those options.
  ]}.
 </PRE></LI></UL><P> <A NAME="modmuclog"></A> </P><!--TOC subsection <TT>mod_muc_log</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc45">3.3.9</A>&#XA0;&#XA0;<A HREF="#modmuclog"><TT>mod_muc_log</TT></A></H3><!--SEC END --><P> <A NAME="modmuclog"></A> 
-</P><P>This module enables optional logging of Multi-User Chat (MUC) conversations to
-HTML. Once you enable this module, users can join a chatroom using a MUC capable
+</P><P>This module enables optional logging of Multi-User Chat (MUC) public conversations to
+HTML. Once you enable this module, users can join a room using a MUC capable
 Jabber client, and if they have enough privileges, they can request the
-configuration form in which they can set the option to enable chatroom logging.</P><P>Features:
+configuration form in which they can set the option to enable room logging.</P><P>Features:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Chatroom details are added on top of each page: room title, JID,
+Room details are added on top of each page: room title, JID,
 author, subject and configuration.
 </LI><LI CLASS="li-itemize">
-The room JID in the generated HTML is a link to join the chatroom (using
+The room JID in the generated HTML is a link to join the room (using
 <A HREF="http://www.xmpp.org/rfcs/rfc5122.html">XMPP URI</A>).
-</LI><LI CLASS="li-itemize">Subject and chatroom configuration changes are tracked and displayed.
+</LI><LI CLASS="li-itemize">Subject and room configuration changes are tracked and displayed.
 </LI><LI CLASS="li-itemize">Joins, leaves, nick changes, kicks, bans and &#X2018;/me&#X2019; are tracked and
 displayed, including the reason if available.
 </LI><LI CLASS="li-itemize">Generated HTML files are XHTML 1.0 Transitional and CSS compliant.
@@ -2151,7 +2178,7 @@ displayed, including the reason if available.
 </LI></UL><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>access_log</TT></B></DT><DD CLASS="dd-description">
-This option restricts which users are allowed to enable or disable chatroom
+This option restricts which occupants are allowed to enable or disable room
 logging. The default value is <TT>muc_admin</TT>. Note for this default setting
 you need to have an access rule for <TT>muc_admin</TT> in order to take effect.
 </DD><DT CLASS="dt-description"><B><TT>cssfile</TT></B></DT><DD CLASS="dd-description">
@@ -2161,34 +2188,46 @@ file or if they need to use the embedded CSS file. Allowed values are
 include the embedded CSS code. With the latter, you can specify the URL of the
 custom CSS file (for example: &#X2018;http://example.com/my.css&#X2019;). The default value
 is <TT>false</TT>.
+</DD><DT CLASS="dt-description"><B><TT>dirname</TT></B></DT><DD CLASS="dd-description">
+Allows to configure the name of the room directory.
+Allowed values are <TT>room_jid</TT> and <TT>room_name</TT>.
+With the first value, the room directory name will be the full room JID.
+With the latter, the room directory name will be only the room name,
+not including the MUC service name.
+The default value is <TT>room_jid</TT>.
 </DD><DT CLASS="dt-description"><B><TT>dirtype</TT></B></DT><DD CLASS="dd-description">
 The type of the created directories can be specified with this option. Allowed
 values are <TT>subdirs</TT> and <TT>plain</TT>. With the first value,
 subdirectories are created for each year and month. With the latter, the
 names of the log files contain the full date, and there are no subdirectories.
 The default value is <TT>subdirs</TT>.
+</DD><DT CLASS="dt-description"><B><TT>file_format</TT></B></DT><DD CLASS="dd-description">
+Define the format of the log files:
+<TT>html</TT> stores in HTML format,
+<TT>plaintext</TT> stores in plain text.
+The default value is <TT>html</TT>.
 </DD><DT CLASS="dt-description"><B><TT>outdir</TT></B></DT><DD CLASS="dd-description">
 This option sets the full path to the directory in which the HTML files should
 be stored. Make sure the <TT>ejabberd</TT> daemon user has write access on that
 directory. The default value is <TT>"www/muc"</TT>.
-</DD><DT CLASS="dt-description"><B><TT>timezone</TT></B></DT><DD CLASS="dd-description">
-The time zone for the logs is configurable with this option. Allowed values
-are <TT>local</TT> and <TT>universal</TT>. With the first value, the local time,
-as reported to Erlang by the operating system, will be used. With the latter,
-GMT/UTC time will be used. The default value is <TT>local</TT>.
 </DD><DT CLASS="dt-description"><B><TT>spam_prevention</TT></B></DT><DD CLASS="dd-description">
 To prevent spam, the <TT>spam_prevention</TT> option adds a special attribute
 to links that prevent their indexation by search engines. The default value
 is <TT>true</TT>, which mean that nofollow attributes will be added to user
 submitted links. 
+</DD><DT CLASS="dt-description"><B><TT>timezone</TT></B></DT><DD CLASS="dd-description">
+The time zone for the logs is configurable with this option. Allowed values
+are <TT>local</TT> and <TT>universal</TT>. With the first value, the local time,
+as reported to Erlang by the operating system, will be used. With the latter,
+GMT/UTC time will be used. The default value is <TT>local</TT>.
 </DD><DT CLASS="dt-description"><B><TT>top_link</TT></B></DT><DD CLASS="dd-description">
 With this option you can customize the link on the top right corner of each
 log file. The syntax of this option is <TT>{"URL", "Text"}</TT>. The default
 value is <TT>{"/", "Home"}</TT>.
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-In the first example any chatroom owner can enable logging, and a
-custom CSS file will be used (http://example.com/my.css). Further, the names
+In the first example any room owner can enable logging, and a
+custom CSS file will be used (http://example.com/my.css). The names
 of the log files will contain the full date, and there will be no
 subdirectories. The log files will be stored in /var/www/muclogs, and the
 time zone will be GMT/UTC. Finally, the top link will be
@@ -2202,6 +2241,7 @@ time zone will be GMT/UTC. Finally, the top link will be
                  {access_log, muc},
                  {cssfile, "http://example.com/my.css"},
                  {dirtype, plain},
+                 {dirname, room_jid},
                  {outdir, "/var/www/muclogs"},
                  {timezone, universal},
                  {spam_prevention, true},
@@ -2211,7 +2251,7 @@ time zone will be GMT/UTC. Finally, the top link will be
  ]}.
 </PRE></LI><LI CLASS="li-itemize">In the second example only <TT>admin1@example.org</TT> and
 <TT>admin2@example.net</TT> can enable logging, and the embedded CSS file will be
-used. Further, the names of the log files will only contain the day (number),
+used. The names of the log files will only contain the day (number),
 and there will be subdirectories for each year and month. The log files will
 be stored in /var/www/muclogs, and the local time will be used. Finally, the
 top link will be the default <CODE>&lt;a href="/"&gt;Home&lt;/a&gt;</CODE>.
@@ -2324,8 +2364,8 @@ The simpliest configuration of the module:
 {access, proxy65_access, [{allow, proxy_users}, {deny, all}]}.
 
 {acl, admin, {user, "admin", "example.org"}}.
-{shaper, normal, {maxrate, 10240}}. %% 10 Kbytes/sec
-{access, proxy65_shaper, [{none, admin}, {normal, all}]}.
+{shaper, proxyrate, {maxrate, 10240}}. %% 10 Kbytes/sec
+{access, proxy65_shaper, [{none, admin}, {proxyrate, proxy_users}]}.
 
 {modules,
  [
@@ -2652,7 +2692,9 @@ and that all virtual hosts will be searched instead of only the current one:
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc58">3.3.22</A>&#XA0;&#XA0;<A HREF="#modvcardldap"><TT>mod_vcard_ldap</TT></A></H3><!--SEC END --><P> <A NAME="modvcardldap"></A> 
 </P><P><TT>ejabberd</TT> can map LDAP attributes to vCard fields. This behaviour is
 implemented in the <TT>mod_vcard_ldap</TT> module. This module does not depend on the
-authentication method (see&#XA0;<A HREF="#ldapauth">3.2.5</A>).</P><P>The <TT>mod_vcard_ldap</TT> module has
+authentication method (see&#XA0;<A HREF="#ldapauth">3.2.5</A>).</P><P>Note that <TT>ejabberd</TT> treats LDAP as a read-only storage:
+it is possible to consult data, but not possible to 
+create accounts, change password or edit vCard that is stored in LDAP.</P><P>The <TT>mod_vcard_ldap</TT> module has
 its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 <TT>ldap_servers</TT>, <TT>ldap_port</TT>, <TT>ldap_rootdn</TT>,
@@ -3221,7 +3263,15 @@ so it is important to use it with extremely care.
 There are some simple and safe examples in the article 
 <A HREF="http://www.ejabberd.im/interconnect-erl-nodes">Interconnecting Erlang Nodes</A></P><P>To exit the shell, close the window or press the keys: control+c control+c.</P><P> <A NAME="i18ni10n"></A> </P><!--TOC chapter Internationalization and Localization-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc88">Appendix&#XA0;A</A>&#XA0;&#XA0;<A HREF="#i18ni10n">Internationalization and Localization</A></H1><!--SEC END --><P> <A NAME="i18ni10n"></A> 
-</P><P>All built-in modules support the <TT>xml:lang</TT> attribute inside IQ queries.
+</P><P>The source code of <TT>ejabberd</TT> supports localization.
+The translators can edit the 
+<A HREF="http://www.gnu.org/software/gettext/">gettext</A> .po files 
+using any capable program (KBabel, Lokalize, Poedit...) or a simple text editor.</P><P>Then gettext
+is used to extract, update and export those .po files to the .msg format read by <TT>ejabberd</TT>.
+To perform those management tasks, in the <TT>src/</TT> directory execute <TT>make translations</TT>.
+The translatable strings are extracted from source code to generate the file <TT>ejabberd.pot</TT>.
+This file is merged with each .po file to produce updated .po files.
+Finally those .po files are exported to .msg files, that have a format easily readable by <TT>ejabberd</TT>.</P><P>All built-in modules support the <TT>xml:lang</TT> attribute inside IQ queries.
 Figure&#XA0;<A HREF="#fig:discorus">A.1</A>, for example, shows the reply to the following query:
 </P><PRE CLASS="verbatim">&lt;iq id='5'
     to='example.org'
@@ -3262,7 +3312,7 @@ Alexey Shchepin (<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT
 </LI><LI CLASS="li-itemize">Vsevolod Pelipas (<A HREF="xmpp:vsevoload@jabber.ru"><TT>xmpp:vsevoload@jabber.ru</TT></A>)
 </LI></UL><P> <A NAME="copyright"></A> </P><!--TOC chapter Copyright Information-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc91">Appendix&#XA0;D</A>&#XA0;&#XA0;<A HREF="#copyright">Copyright Information</A></H1><!--SEC END --><P> <A NAME="copyright"></A> </P><P>Ejabberd Installation and Operation Guide.<BR>
-Copyright &#XA9; 2003 &#X2014; 2008 Process-one</P><P>This document is free software; you can redistribute it and/or
+Copyright &#XA9; 2003 &#X2014; 2008 ProcessOne</P><P>This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.</P><P>This document is distributed in the hope that it will be useful,

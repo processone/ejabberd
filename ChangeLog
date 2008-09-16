@@ -1,3 +1,31 @@
+2008-09-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Merge from trunk (r1457 to r1563).
+
+2008-09-15  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Fix explanation of mod_muc's anonymous
+	option. Make clear that an ejabberd_service can only serve a
+	single external component. Provide Mnesia directory when setting
+	clustering (thanks to Matthew Reilly)
+
+2008-09-12  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_http.hrl: Provide Host, Port, Headers and
+	Transfer Protocol in request (thanks to Eric Cestari)(EJAB-560)
+	* src/web/ejabberd_http.erl: Likewise
+
+2008-09-02  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Fix mod_proxy configuration example
+	* doc/guide.html: Likewise
+
+2008-09-02  Mickael Remond  <mremond@process-one.net>
+
+	* src/odbc/mssql2000.sql: Script for MSSQL 2000
+	* src/odbc/mssql2005.sql: Script for MSSQL 2005 (EJAB-535)
+	* src/odbc/mssql.sql: removed
+
 2008-08-27  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_roster.erl: Remove a debugging io:format/2.
@@ -5,8 +33,14 @@
 	* src/mod_caps.erl: handle_cast({disco_response, ...}, ...) now
 	receives an #iq record: update the code to handle this.
 
-	* src/mod_vcard.erl: VCard are now stored as #xmlel. Mnesia tables are
-	converted during startup.
+	* src/mod_vcard.erl: VCards are now stored as #xmlel. Mnesia tables
+	are converted during startup.
+
+2008-08-27  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: send last published events now
+	supports PEP events from unavailable users nodes (EJAB-698)
+	* src/ejabberd_c2s.erl: Likewise
 
 2008-08-26  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -35,6 +69,81 @@
 	binary instead of an empty string, for consistency's sake. Fix some
 	bugs.
 
+2008-08-26  Badlop  <badlop@process-one.net>
+
+	* doc/release_notes_2.0.2.txt: Update for final release
+
+	* doc/guide.tex: Windows binary installer requires MSVC++ 5
+	* doc/guide.html: Likewise
+
+2008-08-26  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: get_items bugfix (EJAB-716)
+
+2008-08-25  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_privacy_odbc.erl: Prevent case_clause error when
+	ejabber_odbc:sql_query returns {error, Reason}
+	* src/mod_vcard_odbc.erl: Likewise
+	* src/mod_last_odbc.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+
+2008-08-25  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_check.erl: Detect correctly MSSQL and ODBC
+	configuration (EJAB-710)
+
+2008-08-24  Geoff Cant  <gcant@process-one.net>
+
+	* src/mod_mud/mod_muc_room.erl: is_visitor/2 fix - use get_role
+	not get_affiliation
+
+2008-08-22  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_router.erl: Fix call to mnesia match_object
+
+2008-08-21  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Fix names of chatroom to room, user to occupant
+	* doc/guide.html: Likewise
+
+2008-08-18  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_log.erl: MUC log files options: plaintext
+	format; filename with only room name (EJAB-596)
+	* doc/guide.tex: Document both options
+	* doc/guide.html: Likewise
+
+	* src/mod_register.erl: Change password using mod_register always
+	returns success regardless of real result (EJAB-723)
+	* src/ejabberd_auth.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+
+2008-08-18  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/node_dispatch.erl: Fix call to unexported function
+	nodetree_default:get_subnodes/2
+
+2008-08-17  Badlop  <badlop@process-one.net>
+
+	* contrib/extract_translations/extract_translations.erl: Use
+	Gettext PO for translators, export to ejabberd MSG (EJAB-648)
+	* contrib/extract_translations/prepare-translation.sh: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+	* src/Makefile.in: New option 'make translations'
+	* src/msgs/ejabberd.pot: Template translation file
+	* src/msgs/*.po: Generated from old MSG files
+	* src/msgs/*.msg: Automatic exported from PO files
+
+2008-08-16  Badlop  <badlop@process-one.net>
+
+	* src/msgs/sv.msg: Fixed formatting typos
+
+	* src/gen_mod.erl: Export stop_module_keep_config/2 (EJAB-706)
+
 2008-08-14  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* translate.erl (ascii_tolower): Accept 'undefined' as a language and
@@ -48,6 +157,25 @@
 	src/mod_adhoc.erl, src/mod_configure.erl, src/mod_configure2.erl,
 	src/mod_disco.erl, src/mod_last.erl: Convert to the new #iq record
 	from Exmpp.
+
+2008-08-13  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Explain that LDAP is read-only storage (thanks to
+	Evgeniy Khramtsov)
+	* doc/guide.html: Likewise
+
+2008-08-10  Badlop  <badlop@process-one.net>
+
+	* src/msgs/eo.msg: Updated (thanks to Andreas van Cranenburgh)
+	* src/msgs/nl.msg: Updated (thanks to Andreas van Cranenburgh)
+	* src/msgs/sk.msg: Updated (thanks to Marek Becka)
+	* src/msgs/sv.msg: Updated (thanks to Thore Alstromer and Heysan)
+
+2008-08-09  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_service.erl: Fix XEP-0114 compliance: define xmlns
+	in header of error response; include in response the JID of served
+	component not server (thanks to Sergei Golovan)(EJAB-717)
 
 2008-08-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -65,10 +193,130 @@
 	src/mod_echo.erl, src/mod_offline.erl, src/mod_roster.erl,
 	src/mod_vcard.erl: Update to use the new names used in exmpp_jid.
 
+2008-08-04  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: Restart the database connection when
+	it's lost or it reaches timeout with MySQL. Set transaction isolation level
+	to SERIALIZABLE when establishing connection to MySQL.
+
+2008-08-01  Badlop  <badlop@process-one.net>
+
+	* doc/release_notes_2.0.2.txt: Added for ejabberd 2.0.2-beta1
+
+	* src/web/ejabberd_http.erl: Temporary solution for check of
+	packet size when HTTPS (EJAB-611)(EJAB-507)(EJAB-574)
+
+2008-07-31  Badlop  <badlop@process-one.net>
+
+	* src/msgs/uk.msg: Fix: each string in a single line
+	* src/msgs/wa.msg: Likewise
+
+	* src/msgs/es.msg: Fix typo
+	* src/msgs/gl.msg: Likewise
+	* src/msgs/pt-br.msg: Likewise
+
+	* src/msgs/zh.msg: Fix some translations (thanks to Zhan Caibao)
+
+	* src/msgs/ca.msg: Updated (thanks to Badlop)
+	* src/msgs/cs.msg: Updated (thanks to Lukas Poliuvk)
+	* src/msgs/de.msg: Updated (thanks to Nikolaus Polak)
+	* src/msgs/es.msg: Updated (thanks to Badlop)
+	* src/msgs/fr.msg: Updated (thanks to Christophe Romain)
+	* src/msgs/it.msg: Updated (thanks to Luca Brivio)
+	* src/msgs/ja.msg: Updated (thanks to Tsukasa Hamano)
+	* src/msgs/no.msg: Updated (thanks to Stian B. Barmen)
+	* src/msgs/pl.msg: Updated (thanks to Zbyszek Zolkiewski)
+	* src/msgs/pt-br.msg: Updated (thanks to Otavio Fernandes)
+	* src/msgs/ru.msg: Updated (thanks to Evgeniy Khramtsov)
+	* src/msgs/tr.msg: Updated (thanks to Doruk Fisek)
+	* src/msgs/uk.msg: Updated (thanks to Ruslan Rakhmanin)
+	* src/msgs/wa.msg: Updated (thanks to Pablo Saratxaga)
+	* src/msgs/zh.msg: Updated (thanks to Shelley Shyan)
+
+	* README: Update location where mnesia, ebin and priv directories
+	are installed; install headers and doc (EJAB-696)
+
+	* doc/guide.tex: Update Process-one name to ProcessOne (EJAB-708)
+	* doc/guide.html: Likewise
+	* doc/api/overview.edoc: Likewise
+	* src/*/*.erl: Likewise
+	* src/*/*.hrl: Likewise
+	* src/*/*.c: Likewise
+	* src/odbc/*.sql: Likewise
+
+2008-07-30  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Support Reasons for all
+	affiliation and role changes (EJAB-306)
+
+	* src/gen_mod.erl: When ejabberd is kindly stopped, don't forget
+	modules configuration (EJAB-706)
+	* src/ejabberd_app.erl: Likewise
+
+2008-07-28  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document how to get error message when ejabberd
+	crash dumps at start (EJAB-660)
+	* doc/guide.html: Likewise
+
 2008-07-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/adhoc.erl, src/mod_configure.erl, src/mod_announce.erl,
 	src/mod_adhoc.erl, src/gen_iq_handler.erl: Convert to exmpp.
+
+2008-07-25  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Speedup startup with many pubsub
+	nodes (EJAB-669)
+	* src/mod_pubsub/nodetree_default.erl: Likewise
+
+2008-07-24  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Include example PAM configuration file
+	ejabberd.pam (thanks to Evgeniy Khramtsov)(EJAB-704)
+	* doc/guide.html: Likewise
+
+	* src/mod_proxy65/mod_proxy65_lib.erl: Send protocol compliant
+	SOCKS5 reply; this breaks support of uncompliant Psi<0.10 (thanks
+	to Felix Geyer)(EJAB-632)
+	* src/mod_proxy65/mod_proxy65_stream.erl: Likewise
+
+	* src/mod_register.erl: When a registration is blocked due to IP
+	limitation, return description in error stanza (EJAB-692)
+
+2008-07-24  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Allow owner to subscribe/get its own
+	node (EJAB-705)
+
+2008-07-24  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Document room options allow_visitor_nickchange
+	and allow_visitor_status (EJAB-624)
+	* doc/guide.html: Likewise
+
+2008-07-23  Geoff Cant  <geoff.cant@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: new room options,
+	allow_visitor_presence and allow_visitor_nickchange to
+	block/enable visitors to broadcast presence updates to the room
+	(EJAB-624).
+	* src/mod_muc/mod_muc_room.erl: renaming allow_visitor_presence to
+	allow_visitor_status and altering effect (when false) to remove
+	custom status tags in presence broadcasts to muc rooms by
+	visitors.
+
+2008-07-23  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: remove_user hook removes
+	subscriptions (EJAB-684), send the last published and not the
+	first published item (EJAB-675), remove the pubsub/nodes tree,
+	subscribing to a node sends only last items (EJAB-700)
+	* src/mod_pubsub/node_pep.erl: added acl and jid match on node
+	creation permission (EJAB-663)
+	* src/mod_pubsub/node_default.erl: fix node creation permission
+	issue for service
+	* src/mod_pubsub/node_zoo.erl: Likewise
 
 2008-07-22  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -79,6 +327,15 @@
 
 	* src/ejabberd_local.erl (process_iq_reply): IQ handler are now always
 	called with arguments in the new format.
+
+2008-07-22  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_config.erl: If syntax mistake in config file, show
+	specific error message (EJAB-616)
+
+2008-07-22  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/odbc/odbc_queries.erl: Fixed a typo
 
 2008-07-21  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -93,6 +350,15 @@
 
 	* src/jlib.erl: Add support for #xmlel to parse_xdata_submit/1 and
 	friends. This fixes the user search in mod_vcard.
+
+2008-07-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/ejabberd_ctl.erl: Call reopen_log_hook for each virtual host.
+
+2008-07-17  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fix to allow a server admin to add
+	himself as owner of a room (EJAB-687)
 
 2008-07-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -243,7 +509,7 @@
 	automatically (EJAB-407)
 
 	* src/mod_roster.erl: Likewise
-	
+
 	* src/mod_muc/mod_muc_log.erl: Fix XHTML compliance: ensure some
 	language is set, include ID attribute in each message, add
 	microseconds to ensure unique value (EJAB-497)

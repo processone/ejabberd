@@ -157,6 +157,9 @@ $(ERLSHLIBS):	%.so:	%.c
 		-o $@ \
 		$(DYNAMIC_LIB_CFLAGS)
 
+translations:
+	../contrib/extract_translations/prepare-translation.sh -updateall
+
 install: all
 	#
 	# Configuration files

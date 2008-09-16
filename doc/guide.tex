@@ -5,7 +5,7 @@
 \usepackage{graphics}
 \usepackage{hevea}
 \usepackage[pdftex,colorlinks,unicode,urlcolor=blue,linkcolor=blue,
-        pdftitle=Ejabberd\ Installation\ and\ Operation\ Guide,pdfauthor=Process-one,pdfsubject=ejabberd,pdfkeywords=ejabberd,
+        pdftitle=Ejabberd\ Installation\ and\ Operation\ Guide,pdfauthor=ProcessOne,pdfsubject=ejabberd,pdfkeywords=ejabberd,
         pdfpagelabels=false]{hyperref}
 \usepackage{makeidx}
 %\usepackage{showidx} % Only for verifying the index entries.
@@ -208,9 +208,9 @@ ejabberd Development Team
 \makesection{install.binary}{Installing \ejabberd{} with Binary Installer}
 
 Probably the easiest way to install an \ejabberd{} instant messaging server
-is using the binary installer published by Process-one. 
+is using the binary installer published by ProcessOne. 
 The binary installers of released \ejabberd{} versions 
-are available in the Process-one \ejabberd{} downloads page:
+are available in the ProcessOne \ejabberd{} downloads page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 The installer will deploy and configure a full featured \ejabberd{}
@@ -240,6 +240,22 @@ and for example it doesn't read the file ejabberdctl.cfg.
 On a *nix system, if you want ejabberd to be started as daemon at boot time, 
 copy \term{ejabberd.init} from the 'bin' directory to something like \term{/etc/init.d/ejabberd}
 (depending on your distribution) and call \term{/etc/inid.d/ejabberd start} to start it.
+
+If \term{ejabberd} doesn't start correctly in Windows,
+try to start it using the shortcut in desktop or start menu.
+If the window shows error 14001, the solution is to install:
+"Microsoft Visual C++ 2005 SP1 Redistributable Package".
+You can download it from
+\footahref{http://www.microsoft.com/}{www.microsoft.com}.
+Then uninstall \ejabberd{} and install it again.
+
+If \term{ejabberd} doesn't start correctly and a crash dump is generated,
+there was a severe problem.
+You can try starting \term{ejabberd} with
+the script \term{bin/live.bat} in Windows,
+or with the command \term{bin/ejabberdctl live} in other Operating Systems.
+This way you see the error message provided by Erlang
+and can identify what is exactly the problem.
 
 The \term{ejabberdctl} administration script is included in the \term{bin} directory.
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
@@ -294,7 +310,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \makesubsection{download}{Download Source Code}
 \ind{install!download}
 
-Released versions of \ejabberd{} are available in the Process-one \ejabberd{} downloads page:
+Released versions of \ejabberd{} are available in the ProcessOne \ejabberd{} downloads page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 \ind{Subversion repository}
@@ -414,6 +430,13 @@ ejabberd is running
 
 ejabberdctl stop
 \end{verbatim}
+
+If \term{ejabberd} doesn't start correctly and a crash dump is generated,
+there was a severe problem.
+You can try starting \term{ejabberd} with
+the command \term{ejabberdctl live}
+to see the error message provided by Erlang
+and can identify what is exactly the problem.
 
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
@@ -727,7 +750,7 @@ The available modules, their purpose and the options allowed by each one are:
     Handles incoming s2s connections.\\
     Options: \texttt{inet6}, \texttt{ip}, \texttt{max\_stanza\_size}
   \titem{\texttt{ejabberd\_service}}
-    Interacts with \footahref{http://www.ejabberd.im/tutorials-transports}{external components} 
+    Interacts with an \footahref{http://www.ejabberd.im/tutorials-transports}{external component} 
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     Options: \texttt{access}, \texttt{hosts}, \texttt{inet6},
     \texttt{ip}, \texttt{shaper}, \texttt{service\_check\_from}
@@ -749,9 +772,10 @@ This is a detailed description of each option allowed by the listening modules:
     external components. The option can be either \term{true} or
     \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
   \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}
-    This option of \term{ejabberd\_service} allows to define one or more hostnames 
-    of external Jabber components that provide a service.
-    In \term{HostOptions} it is possible to define the password required to those components
+    The external Jabber component that connects to this \term{ejabberd\_service}
+    can serve one or more hostnames.
+    In \term{HostOptions} you can define options for the component;
+    currently the only allowed option is the password required to the component
     when attempt to connect to ejabberd: \poption{\{password, Secret\}}.
     Note that you cannot define in a single \term{ejabberd\_service} components of
     different services: add an \term{ejabberd\_service} for each service,
@@ -1159,8 +1183,14 @@ version, you can \term{kill(1)} \term{epam} process periodically to reduce its m
 consumption: \ejabberd{} will restart this process immediately.
 \item \term{epam} program tries to turn off delays on authentication failures.
 However, some PAM modules ignore this behavior and rely on their own configuration options.
-The example configuration file \term{ejabberd.pam} shows how to turn off delays in
-\term{pam\_unix.so} module. It is not a ready to use configuration file: you must use it
+You can create a configuration file \term{ejabberd.pam}.
+This example shows how to turn off delays in \term{pam\_unix.so} module:
+\begin{verbatim}
+#%PAM-1.0
+auth        sufficient  pam_unix.so likeauth nullok nodelay
+account     sufficient  pam_unix.so
+\end{verbatim}
+That is not a ready to use configuration file: you must use it
 as a hint when building your own PAM configuration instead. Note that if you want to disable
 delays on authentication failures in the PAM configuration file, you have to restrict access
 to this file, so a malicious user can't use your configuration to perform brute-force
@@ -1371,7 +1401,7 @@ Examples:
 \ind{options!language}\ind{language}
 
 The option \option{language} defines the default language of server strings that
-can be seen by \Jabber{} clients. If a \Jabber{} client do not support
+can be seen by \Jabber{} clients. If a \Jabber{} client does not support
 \option{xml:lang}, the specified language is used. The default value is
 \term{en}. In order to take effect there must be a translation file
 \term{<language>.msg} in \ejabberd{}'s \term{msgs} directory.
@@ -1387,6 +1417,9 @@ Examples:
 {language, "es"}.
 \end{verbatim}
 \end{itemize}
+
+Appendix \ref{i18ni10n} provides more details about internationalization and localization.
+
 
 \makesubsection{includeconfigfile}{Include Additional Configuration Files}
 \ind{options!includeconfigfile}\ind{includeconfigfile}
@@ -1889,6 +1922,11 @@ module loaded!
 \ejabberd{} has built-in LDAP support. You can authenticate users against LDAP
 server and use LDAP directory as vCard storage. Shared rosters are not supported
 yet.
+
+Note that \ejabberd{} treats LDAP as a read-only storage:
+it is possible to consult data, but not possible to 
+create accounts, change password or edit vCard that is stored in LDAP.
+
 
 \makesubsubsection{ldapconnection}{Connection}
 
@@ -2534,31 +2572,28 @@ Options:
 \makesubsection{modmuc}{\modmuc{}}
 \ind{modules!\modmuc{}}\ind{protocols!XEP-0045: Multi-User Chat}\ind{conferencing}
 
-With this module enabled, your server will support Multi-User Chat
-(\xepref{0045}). End users will be able to join text conferences.
+This module provides a Multi-User Chat (\xepref{0045}) service.
+Users can discover existing rooms, join or create them.
+Occupants of a room can chat in public or have private chats.
 
 Some of the features of Multi-User Chat:
 \begin{itemize}
-\item Sending private messages to room participants.
-\item Inviting users.
-\item Setting a conference topic.
+\item Sending public and private messages to room occupants.
+\item Inviting other users to a room.
+\item Setting a room subject.
 \item Creating password protected rooms.
-\item Kicking and banning participants.
+\item Kicking and banning occupants.
 \end{itemize}
 
 The MUC service allows any Jabber ID to register a nickname,
 so nobody else can use that nickname in any room in the MUC service.
 To register a nickname, open the Service Discovery in your 
-Jabber client and Register in the MUC service.
-
-The MUC service allows the service administrator to send a message
-to all existing chatrooms. 
-To do so, send the message to the Jabber ID of the MUC service.
+Jabber client and register in the MUC service.
 
 This module supports clustering and load
 balancing. One module can be started per cluster node. Rooms are
 distributed at creation time on all available MUC module
-instances. The multi-user chat module is clustered but the room
+instances. The multi-user chat module is clustered but the rooms
 themselves are not clustered nor fault-tolerant: if the node managing a
 set of rooms goes down, the rooms disappear and they will be recreated
 on an available node on first connection attempt.
@@ -2567,19 +2602,19 @@ Module options:
 \begin{description}
 \hostitem{conference}
 \titem{access} \ind{options!access}You can specify who is allowed to use
-  the Multi-User Chat service (by default, everyone is allowed to use it).
+  the Multi-User Chat service. By default everyone is allowed to use it.
 \titem{access\_create} \ind{options!access\_create}To configure who is
   allowed to create new rooms at the Multi-User Chat service, this option
-  can be used (by default, everybody is allowed to create rooms).
+  can be used. By default everybody is allowed to create rooms.
 \titem{access\_persistent} \ind{options!access\_persistent}To configure who is
-  allowed to modify the 'persistent' chatroom option
-  (by default, everybody is allowed to modify that option).
+  allowed to modify the 'persistent' room option.
+  By default everybody is allowed to modify that option.
 \titem{access\_admin} \ind{options!access\_admin}This option specifies
-  who is allowed to administrate the Multi-User Chat service (the default
+  who is allowed to administrate the Multi-User Chat service. The default
   value is \term{none}, which means that only the room creator can
-  administer his room).
+  administer his room.
   The administrators can send a normal message to the service JID,
-  and it will be shown in every active room as a service message.
+  and it will be shown in all active rooms as a service message.
   The administrators can send a groupchat message to the JID of an active room,
   and the message will be shown in the room as a service message.
 \titem{history\_size} \ind{options!history\_size}A small history of
@@ -2589,44 +2624,43 @@ Module options:
   integer. Setting the value to \term{0} disables the history feature
   and, as a result, nothing is kept in memory. The default value is
   \term{20}. This value is global and thus affects all rooms on the
-  server.
+  service.
 \titem{max\_users} \ind{options!max\_users} This option defines at
-  the server level, the maximum number of users allowed per MUC
+  the service level, the maximum number of users allowed per
   room. It can be lowered in each room configuration but cannot be
-  increased in individual MUC room configuration. The default value is
+  increased in individual room configuration. The default value is
   200.
 \titem{max\_users\_admin\_threshold}
   \ind{options!max\_users\_admin\_threshold} This option defines the
-  number of MUC admins or owners to allow to enter the room even if
-  the maximum number of allowed users is reached. The default limits
-  is 5. In most cases this default value is the best setting.
+  number of service admins or room owners allowed to enter the room when
+  the maximum number of allowed occupants was reached. The default limit
+  is 5.
 \titem{max\_user\_conferences}
-  \ind{options!max\_user\_conferences} This option define the maximum
-  number of chat room any given user will be able to join. The default
+  \ind{options!max\_user\_conferences} This option defines the maximum
+  number of rooms that any given user can join. The default value
   is 10. This option is used to prevent possible abuses. Note that
-  this is a soft limits: Some users can sometime join more conferences
+  this is a soft limit: some users can sometimes join more conferences
   in cluster configurations.
 \titem{min\_message\_interval} \ind{options!min\_message\_interval}
   This option defines the minimum interval between two messages send
-  by a user in seconds. This option is global and valid for all chat
+  by an occupant in seconds. This option is global and valid for all
   rooms. A decimal value can be used. When this option is not defined,
   message rate is not limited. This feature can be used to protect a
-  MUC service from users abuses and limit number of messages that will
+  MUC service from occupant abuses and limit number of messages that will
   be broadcasted by the service. A good value for this minimum message
-  interval is 0.4 second. If a user tries to send messages faster, an
-  error is send back explaining that the message have been discarded
+  interval is 0.4 second. If an occupant tries to send messages faster, an
+  error is send back explaining that the message has been discarded
   and describing the reason why the message is not acceptable.
 \titem{min\_presence\_interval}
   \ind{options!min\_presence\_interval} This option defines the
-  minimum of time between presence changes coming from a given user in
-  seconds. This option is global and valid for all chat rooms. A
+  minimum of time between presence changes coming from a given occupant in
+  seconds. This option is global and valid for all rooms. A
   decimal value can be used. When this option is not defined, no
   restriction is applied. This option can be used to protect a MUC
-  service for users abuses, as fastly changing a user presence will
-  result in possible large presence packet broadcast. If a user tries
+  service for occupants abuses. If an occupant tries
   to change its presence more often than the specified interval, the
   presence is cached by \ejabberd{} and only the last presence is
-  broadcasted to all users in the room after expiration of the
+  broadcasted to all occupants in the room after expiration of the
   interval delay. Intermediate presence packets are silently
   discarded. A good value for this option is 4 seconds.
 \titem{default\_room\_options} \ind{options!default\_room\_options}
@@ -2639,7 +2673,15 @@ Module options:
   \titem{\{allow\_private\_messages, true\}} Occupants can send private messages to other occupants.
   \titem{\{allow\_query\_users, true\}} Occupants can send IQ queries to other occupants.
   \titem{\{allow\_user\_invites, false\}} Allow occupants to send invitations.
-  \titem{\{anonymous, true\}} Occupants are allowed to see the real JIDs of other occupants.
+  \titem{\{allow\_visitor\_nickchange, true\}} Allow visitors to
+  change nickname.
+  \titem{\{allow\_visitor\_status, true\}} Allow visitors to send
+  status text in presence updates.  If disallowed, the \term{status}
+  text is stripped before broadcasting the presence update to all
+  the room occupants.
+  \titem{\{anonymous, true\}} The room is anonymous:
+  occupants don't see the real JIDs of other occupants.
+  Note that the room moderators can always see the real JIDs of the occupants.
   \titem{\{logging, false\}} The public messages are logged using \term{mod\_muc\_log}.
   \titem{\{max\_users, 200\}} Maximum number of occupants in the room.
   \titem{\{members\_by\_default, true\}} The occupants that enter the room are participants by default, so they have 'voice'.
@@ -2715,8 +2757,8 @@ Examples:
  ]}.
 \end{verbatim}
 
-\item In the following example, MUC anti abuse options are used. A
-user cannot send more than one message every 0.4 seconds and cannot
+\item In the following example, MUC anti abuse options are used. An
+occupant cannot send more than one message every 0.4 seconds and cannot
 change its presence more than once every 4 seconds. No ACLs are
 defined, but some user restriction could be added as well:
 
@@ -2731,7 +2773,7 @@ defined, but some user restriction could be added as well:
 \end{verbatim}
 
 \item This example shows how to use \option{default\_room\_options} to make sure
-  newly created chatrooms have by default those options.
+  the newly created rooms have by default those options.
 \begin{verbatim}
 {modules,
  [
@@ -2756,19 +2798,19 @@ defined, but some user restriction could be added as well:
 \makesubsection{modmuclog}{\modmuclog{}}
 \ind{modules!\modmuclog{}}
 
-This module enables optional logging of Multi-User Chat (MUC) conversations to
-HTML. Once you enable this module, users can join a chatroom using a MUC capable
+This module enables optional logging of Multi-User Chat (MUC) public conversations to
+HTML. Once you enable this module, users can join a room using a MUC capable
 Jabber client, and if they have enough privileges, they can request the
-configuration form in which they can set the option to enable chatroom logging.
+configuration form in which they can set the option to enable room logging.
 
 Features:
 \begin{itemize}
-\item Chatroom details are added on top of each page: room title, JID,
+\item Room details are added on top of each page: room title, JID,
   author, subject and configuration.
 \item \ind{protocols!RFC 5122: Internationalized Resource Identifiers (IRIs) and Uniform Resource Identifiers (URIs) for the Extensible Messaging and Presence Protocol (XMPP)}
-  The room JID in the generated HTML is a link to join the chatroom (using
+  The room JID in the generated HTML is a link to join the room (using
   \footahref{http://www.xmpp.org/rfcs/rfc5122.html}{XMPP URI}).
-\item Subject and chatroom configuration changes are tracked and displayed.
+\item Subject and room configuration changes are tracked and displayed.
 \item Joins, leaves, nick changes, kicks, bans and `/me' are tracked and
   displayed, including the reason if available.
 \item Generated HTML files are XHTML 1.0 Transitional and CSS compliant.
@@ -2783,7 +2825,7 @@ Features:
 Options:
 \begin{description}
 \titem{access\_log}\ind{options!access\_log}
-  This option restricts which users are allowed to enable or disable chatroom
+  This option restricts which occupants are allowed to enable or disable room
   logging. The default value is \term{muc\_admin}. Note for this default setting
   you need to have an access rule for \term{muc\_admin} in order to take effect.
 \titem{cssfile}\ind{options!cssfile}
@@ -2793,26 +2835,38 @@ Options:
   include the embedded CSS code. With the latter, you can specify the URL of the
   custom CSS file (for example: `http://example.com/my.css'). The default value
   is \term{false}.
+\titem{dirname}\ind{options!dirname}
+  Allows to configure the name of the room directory.
+  Allowed values are \term{room\_jid} and \term{room\_name}.
+  With the first value, the room directory name will be the full room JID.
+  With the latter, the room directory name will be only the room name,
+  not including the MUC service name.
+  The default value is \term{room\_jid}.
 \titem{dirtype}\ind{options!dirtype}
   The type of the created directories can be specified with this option. Allowed
   values are \term{subdirs} and \term{plain}. With the first value,
   subdirectories are created for each year and month. With the latter, the
   names of the log files contain the full date, and there are no subdirectories.
   The default value is \term{subdirs}.
+\titem{file\_format}\ind{options!file\_format}
+  Define the format of the log files:
+  \term{html} stores in HTML format,
+  \term{plaintext} stores in plain text.
+  The default value is \term{html}.
 \titem{outdir}\ind{options!outdir}
   This option sets the full path to the directory in which the HTML files should
   be stored. Make sure the \ejabberd{} daemon user has write access on that
   directory. The default value is \term{"www/muc"}.
-\titem{timezone}\ind{options!timezone}
-  The time zone for the logs is configurable with this option. Allowed values
-  are \term{local} and \term{universal}. With the first value, the local time,
-  as reported to Erlang by the operating system, will be used. With the latter,
-  GMT/UTC time will be used. The default value is \term{local}.
 \titem{spam\_prevention}\ind{options!spam\_prevention}
   To prevent spam, the \term{spam\_prevention} option adds a special attribute
   to links that prevent their indexation by search engines. The default value
   is \term{true}, which mean that nofollow attributes will be added to user
   submitted links. 
+\titem{timezone}\ind{options!timezone}
+  The time zone for the logs is configurable with this option. Allowed values
+  are \term{local} and \term{universal}. With the first value, the local time,
+  as reported to Erlang by the operating system, will be used. With the latter,
+  GMT/UTC time will be used. The default value is \term{local}.
 \titem{top\_link}\ind{options!top\_link}
   With this option you can customize the link on the top right corner of each
   log file. The syntax of this option is \term{\{"URL", "Text"\}}. The default
@@ -2821,8 +2875,8 @@ Options:
 
 Examples:
 \begin{itemize}
-\item In the first example any chatroom owner can enable logging, and a
-  custom CSS file will be used (http://example.com/my.css). Further, the names
+\item In the first example any room owner can enable logging, and a
+  custom CSS file will be used (http://example.com/my.css). The names
   of the log files will contain the full date, and there will be no
   subdirectories. The log files will be stored in /var/www/muclogs, and the
   time zone will be GMT/UTC. Finally, the top link will be
@@ -2837,6 +2891,7 @@ Examples:
                  {access_log, muc},
                  {cssfile, "http://example.com/my.css"},
                  {dirtype, plain},
+                 {dirname, room_jid},
                  {outdir, "/var/www/muclogs"},
                  {timezone, universal},
                  {spam_prevention, true},
@@ -2847,7 +2902,7 @@ Examples:
 \end{verbatim}
   \item In the second example only \jid{admin1@example.org} and
   \jid{admin2@example.net} can enable logging, and the embedded CSS file will be
-  used. Further, the names of the log files will only contain the day (number),
+  used. The names of the log files will only contain the day (number),
   and there will be subdirectories for each year and month. The log files will
   be stored in /var/www/muclogs, and the local time will be used. Finally, the
   top link will be the default \verb|<a href="/">Home</a>|.
@@ -2986,8 +3041,8 @@ Examples:
 {access, proxy65_access, [{allow, proxy_users}, {deny, all}]}.
 
 {acl, admin, {user, "admin", "example.org"}}.
-{shaper, normal, {maxrate, 10240}}. %% 10 Kbytes/sec
-{access, proxy65_shaper, [{none, admin}, {normal, all}]}.
+{shaper, proxyrate, {maxrate, 10240}}. %% 10 Kbytes/sec
+{access, proxy65_shaper, [{none, admin}, {proxyrate, proxy_users}]}.
 
 {modules,
  [
@@ -3410,6 +3465,10 @@ Examples:
 \ejabberd{} can map LDAP attributes to vCard fields. This behaviour is
 implemented in the \modvcardldap{} module. This module does not depend on the
 authentication method (see~\ref{ldapauth}).
+
+Note that \ejabberd{} treats LDAP as a read-only storage:
+it is possible to consult data, but not possible to 
+create accounts, change password or edit vCard that is stored in LDAP.
 
 The \modvcardldap{} module has
 its own optional parameters. The first group of parameters has the same
@@ -4052,6 +4111,7 @@ following steps:
 
 \begin{verbatim}
 erl -sname ejabberd \
+    -mnesia dir "/var/lib/ejabberd/" \
     -mnesia extra_db_nodes "['ejabberd@first']" \
     -s mnesia
 \end{verbatim}
@@ -4059,6 +4119,11 @@ erl -sname ejabberd \
   This will start Mnesia serving the same database as \node{ejabberd@first}.
   You can check this by running the command `\verb|mnesia:info().|'. You
   should see a lot of remote tables and a line like the following:
+
+  Note: the Mnesia directory may be different in your system.
+  To know where does ejabberd expect Mnesia to be installed by default,
+  call \ref{ejabberdctl} without options and it will show some help,
+  including the Mnesia database spool dir.
 
 \begin{verbatim}
 running db nodes   = [ejabberd@first, ejabberd@second]
@@ -4227,6 +4292,18 @@ To exit the shell, close the window or press the keys: control+c control+c.
 \makechapter{i18ni10n}{Internationalization and Localization}
 \ind{xml:lang}\ind{internationalization}\ind{localization}\ind{i18n}\ind{l10n}
 
+The source code of \ejabberd{} supports localization.
+The translators can edit the 
+\footahref{http://www.gnu.org/software/gettext/}{gettext} .po files 
+using any capable program (KBabel, Lokalize, Poedit...) or a simple text editor.
+
+Then gettext
+is used to extract, update and export those .po files to the .msg format read by \ejabberd{}.
+To perform those management tasks, in the \term{src/} directory execute \term{make translations}.
+The translatable strings are extracted from source code to generate the file \term{ejabberd.pot}.
+This file is merged with each .po file to produce updated .po files.
+Finally those .po files are exported to .msg files, that have a format easily readable by \ejabberd{}.
+
 All built-in modules support the \texttt{xml:lang} attribute inside IQ queries.
 Figure~\ref{fig:discorus}, for example, shows the reply to the following query:
 \begin{verbatim}
@@ -4284,7 +4361,7 @@ Thanks to all people who contributed to this guide:
 \makechapter{copyright}{Copyright Information}
 
 Ejabberd Installation and Operation Guide.\\
-Copyright \copyright{} 2003 --- 2008 Process-one
+Copyright \copyright{} 2003 --- 2008 ProcessOne
 
 This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

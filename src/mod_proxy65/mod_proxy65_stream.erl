@@ -4,7 +4,7 @@
 %%% Purpose : Bytestream process.
 %%% Created : 12 Oct 2006 by Evgeniy Khramtsov <xram@jabber.ru>
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -172,7 +172,7 @@ wait_for_request(Packet, #state{socket=Socket} = StateData) ->
 	    case catch mod_proxy65_sm:register_stream(SHA1) of
 		{atomic, ok} ->
 		    inet:setopts(Socket, [{active, false}]),
-		    gen_tcp:send(Socket, mod_proxy65_lib:make_reply()),
+		    gen_tcp:send(Socket, mod_proxy65_lib:make_reply(Request)),
 		    {next_state, wait_for_activation, StateData#state{sha1=SHA1}};
 		_ ->
 		    Err = mod_proxy65_lib:make_error_reply(Request),

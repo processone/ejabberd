@@ -5,7 +5,7 @@
 %%% Created : 12 Oct 2006 by Evgeniy Khramtsov <xram@jabber.ru>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
 	 unpack_request/1,
 	 make_init_reply/1,
 	 make_auth_reply/1,
-	 make_reply/0,
+	 make_reply/1,
 	 make_error_reply/1,
 	 make_error_reply/2
 	]).
@@ -73,12 +73,8 @@ make_init_reply(Method) ->
 make_auth_reply(true) -> [1, ?SUCCESS];
 make_auth_reply(false) -> [1, ?ERR_NOT_ALLOWED].
 
-%% WARNING: According to SOCKS5 RFC, this reply is _incorrect_, but
-%% Psi writes junk to the beginning of the file on correct reply.
-%% I'm not sure, but there may be an issue with other clients.
-%% Needs more testing.
-make_reply() ->
-    [?VERSION_5, ?SUCCESS, 0, 0, 0, 0].
+make_reply(#s5_request{rsv = RSV, sha1 = SHA1}) ->
+    [?VERSION_5, ?SUCCESS, RSV, ?ATYP_DOMAINNAME, length(SHA1), SHA1, 0,0].
 
 make_error_reply(Request) ->
     make_error_reply(Request, ?ERR_NOT_ALLOWED).

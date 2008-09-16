@@ -5,7 +5,7 @@
 %%% Created : 27 Feb 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -57,6 +57,10 @@
 		%%			       {request_handlers, [{["test", "module"], mod_test_web}]}]}
 		%%
 		request_handlers = [],
+		request_host,
+		request_port,
+		request_tp,
+		request_headers = [],
 		end_of_request = false,
 		trail = ""
 	       }).
@@ -218,16 +222,24 @@ process_header(State, Data) ->
 	    end;
 	{ok, {http_header, _, 'Accept-Language', _, Langs}} ->
 	    State#state{request_lang = parse_lang(Langs)};
-	{ok, {http_header, _, _, _, _}} ->
-	    State;
+	{ok, {http_header, _, 'Host', _, Host}} ->
+		State#state{request_host = Host};
+	{ok, {http_header, _, Name, _, Value}} ->
+		Headers = [{Name, Value} | State#state.request_headers],
+		State#state{request_headers=Headers};
 	{ok, http_eoh} ->
 	    ?DEBUG("(~w) http query: ~w ~s~n",
-		      [State#state.socket,
-		       State#state.request_method,
-		       element(2, State#state.request_path)]),
-	    Out = process_request(State),
-	    send_text(State, Out),
-	    case State#state.request_keepalive of
+		   [State#state.socket,
+		    State#state.request_method,
+		    element(2, State#state.request_path)]),
+	    {Host, Port, TP} = get_transfer_protocol(SockMod,
+						     State#state.request_host),
+	    State2 = State#state{request_host = Host,
+				 request_port = Port,
+				 request_tp = TP},
+	    Out = process_request(State2),
+	    send_text(State2, Out),
+	    case State2#state.request_keepalive of
 		true ->
 		    case SockMod of
 			gen_tcp ->
@@ -248,6 +260,27 @@ process_header(State, Data) ->
 	_ ->
 	    #state{end_of_request = true,
 		   request_handlers = State#state.request_handlers}
+    end.
+
+%% @spec (SockMod, HostPort) -> {Host::string(), Port::integer(), TP}
+%% where
+%%       SockMod = gen_tcp | tls
+%%       HostPort = string()
+%%       TP = http | https
+%% @doc Given a socket and hostport header, return data of transfer protocol.
+%% Note that HostPort can be a string of a host like "example.org",
+%% or a string of a host and port like "example.org:5280".
+get_transfer_protocol(SockMod, HostPort) ->
+    [Host | PortList] = string:tokens(HostPort, ":"),
+    case {SockMod, PortList} of
+	{gen_tcp, []} ->
+	    {Host, 80, http};
+	{gen_tcp, [Port]} ->
+	    {Host, list_to_integer(Port), http};
+	{tls, []} ->
+	    {Host, 443, https};
+	{tls, [Port]} ->
+	    {Host, list_to_integer(Port), https}
     end.
 
 %% XXX bard: search through request handlers looking for one that
@@ -276,6 +309,10 @@ process_request(#state{request_method = Method,
 		       request_auth = Auth,
 		       request_lang = Lang,
 		       request_handlers = RequestHandlers,
+		       request_host = Host,
+		       request_port = Port,
+		       request_tp = TP,
+		       request_headers = RequestHeaders,
 		       sockmod = SockMod,
 		       socket = Socket} = State)
   when Method=:='GET' orelse Method=:='HEAD' orelse Method=:='DELETE' ->
@@ -302,6 +339,10 @@ process_request(#state{request_method = Method,
 			       q = LQuery,
 			       auth = Auth,
 			       lang = Lang,
+			       host = Host,
+			       port = Port,
+			       tp = TP,
+			       headers = RequestHeaders,
 			       ip = IP},
 	    %% XXX bard: This previously passed control to
 	    %% ejabberd_web:process_get, now passes it to a local
@@ -327,6 +368,10 @@ process_request(#state{request_method = Method,
 		       request_lang = Lang,
 		       sockmod = SockMod,
 		       socket = Socket,
+		       request_host = Host,
+		       request_port = Port,
+		       request_tp = TP,
+		       request_headers = RequestHeaders,
 		       request_handlers = RequestHandlers} = State)
   when (Method=:='POST' orelse Method=:='PUT') andalso is_integer(Len) ->
     case SockMod of
@@ -361,6 +406,10 @@ process_request(#state{request_method = Method,
 			       auth = Auth,
 			       data = Data,
 			       lang = Lang,
+			       host = Host,
+			       port = Port,
+			       tp = TP,
+			       headers = RequestHeaders,
 			       ip = IP},
 	    case process(RequestHandlers, Request) of
 		El when element(1, El) == xmlelement ->
@@ -391,7 +440,10 @@ recv_data(_State, 0, Acc) ->
 recv_data(State, Len, Acc) ->
     case State#state.trail of
 	[] ->
-	    case (State#state.sockmod):recv(State#state.socket, Len, 300000) of
+	    %% TODO: Fix the problem in tls C driver and revert this workaround
+	    %% https://support.process-one.net/browse/EJAB-611
+	    %%case (State#state.sockmod):recv(State#state.socket, Len, 300000) of
+	    case (State#state.sockmod):recv(State#state.socket,   0, 300000) of
 		{ok, Data} ->
 		    recv_data(State, Len - size(Data), [Acc | Data]);
 		_ ->

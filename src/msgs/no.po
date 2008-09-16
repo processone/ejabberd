@@ -1,0 +1,1493 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: 2.1.0-alpha\n"
+"Last-Translator: Stian B. Barmen\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Language: Norwegian (bokmål)\n"
+
+#: ejabberd_c2s.erl:350 ejabberd_c2s.erl:651
+msgid "Use of STARTTLS required"
+msgstr "Bruk av STARTTLS kreves"
+
+#: ejabberd_c2s.erl:434
+msgid "No resource provided"
+msgstr "Ingen ressurs angitt"
+
+#: ejabberd_c2s.erl:1045
+msgid "Replaced by new connection"
+msgstr "Erstattet av en ny tilkobling"
+
+#: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
+msgid "Commands"
+msgstr "Kommandoer"
+
+#: mod_adhoc.erl:149 mod_adhoc.erl:243
+msgid "Ping"
+msgstr "Ping"
+
+#: mod_adhoc.erl:260
+msgid "Pong"
+msgstr "Pong"
+
+#: mod_announce.erl:505
+msgid "Really delete message of the day?"
+msgstr "Virkelig slette melding for dagen?"
+
+#: mod_announce.erl:513 mod_configure.erl:1034 mod_configure.erl:1079
+msgid "Subject"
+msgstr "Tittel"
+
+#: mod_announce.erl:518 mod_configure.erl:1039 mod_configure.erl:1084
+msgid "Message body"
+msgstr "Meldingskropp"
+
+#: mod_announce.erl:598
+msgid "No body provided for announce message"
+msgstr "Ingen meldingskropp gitt for kunngjørings melding"
+
+#: mod_announce.erl:633
+msgid "Announcements"
+msgstr "Kunngjøringer"
+
+#: mod_announce.erl:635
+msgid "Send announcement to all users"
+msgstr "Send kunngjøring til alle brukere"
+
+#: mod_announce.erl:637
+msgid "Send announcement to all users on all hosts"
+msgstr "Send kunngjøring til alle brukere på alle maskiner"
+
+#: mod_announce.erl:639
+msgid "Send announcement to all online users"
+msgstr "Send kunngjøring alle tilkoblede brukere"
+
+#: mod_announce.erl:641 mod_configure.erl:1029 mod_configure.erl:1074
+msgid "Send announcement to all online users on all hosts"
+msgstr "Send kunngjøring til alle tilkoblede brukere på alle maskiner"
+
+#: mod_announce.erl:643
+msgid "Set message of the day and send to online users"
+msgstr "Angi melding for dagen og send til tilkoblede brukere"
+
+#: mod_announce.erl:645
+msgid "Set message of the day on all hosts and send to online users"
+msgstr "Angi melding for dagen på alle maskiner og send til tilkoblede brukere"
+
+#: mod_announce.erl:647
+msgid "Update message of the day (don't send)"
+msgstr "Oppdater melding for dagen (ikke send)"
+
+#: mod_announce.erl:649
+msgid "Update message of the day on all hosts (don't send)"
+msgstr "Oppdater melding for dagen på alle maskiner (ikke send)"
+
+#: mod_announce.erl:651
+msgid "Delete message of the day"
+msgstr "Slett melding for dagen"
+
+#: mod_announce.erl:653
+msgid "Delete message of the day on all hosts"
+msgstr "Slett melding for dagen på alle maskiner"
+
+#: mod_configure.erl:114 mod_configure.erl:258 mod_configure.erl:280
+#: mod_configure.erl:453
+msgid "Configuration"
+msgstr "Konfigurasjon"
+
+#: mod_configure.erl:125 mod_configure.erl:531 web/ejabberd_web_admin.erl:1673
+msgid "Database"
+msgstr "Database"
+
+#: mod_configure.erl:127 mod_configure.erl:545
+msgid "Start Modules"
+msgstr "Start Moduler"
+
+#: mod_configure.erl:129 mod_configure.erl:546
+msgid "Stop Modules"
+msgstr "Stop Moduler"
+
+#: mod_configure.erl:131 mod_configure.erl:554 web/ejabberd_web_admin.erl:1674
+msgid "Backup"
+msgstr "Sikkerhetskopier"
+
+#: mod_configure.erl:133 mod_configure.erl:555
+msgid "Restore"
+msgstr "Gjenopprett"
+
+#: mod_configure.erl:135 mod_configure.erl:556
+msgid "Dump to Text File"
+msgstr "Dump til Tekstfil"
+
+#: mod_configure.erl:137 mod_configure.erl:565
+msgid "Import File"
+msgstr "Importer File"
+
+#: mod_configure.erl:139 mod_configure.erl:566
+msgid "Import Directory"
+msgstr "Importer Katalog"
+
+#: mod_configure.erl:141 mod_configure.erl:536 mod_configure.erl:1008
+msgid "Restart Service"
+msgstr "Start Tjeneste på Nytt"
+
+#: mod_configure.erl:143 mod_configure.erl:537 mod_configure.erl:1053
+msgid "Shut Down Service"
+msgstr "Avslutt Tjeneste"
+
+#: mod_configure.erl:145 mod_configure.erl:473 mod_configure.erl:1148
+#: web/ejabberd_web_admin.erl:1338
+msgid "Add User"
+msgstr "Legg til Bruker"
+
+#: mod_configure.erl:147 mod_configure.erl:474 mod_configure.erl:1170
+msgid "Delete User"
+msgstr "Slett Bruker"
+
+#: mod_configure.erl:149 mod_configure.erl:475 mod_configure.erl:1182
+msgid "End User Session"
+msgstr "Avslutt Bruker Sesjon"
+
+#: mod_configure.erl:151 mod_configure.erl:476 mod_configure.erl:1194
+#: mod_configure.erl:1206
+msgid "Get User Password"
+msgstr "Hent Brukers Passord"
+
+#: mod_configure.erl:153 mod_configure.erl:477
+msgid "Change User Password"
+msgstr "Endre Brukers Passord"
+
+#: mod_configure.erl:155 mod_configure.erl:478 mod_configure.erl:1223
+msgid "Get User Last Login Time"
+msgstr "Vis Brukers Siste Påloggings Tidspunkt"
+
+#: mod_configure.erl:157 mod_configure.erl:479 mod_configure.erl:1235
+msgid "Get User Statistics"
+msgstr "Vis Bruker Statistikk"
+
+#: mod_configure.erl:159 mod_configure.erl:480
+msgid "Get Number of Registered Users"
+msgstr "Vis Antall Registrerte Brukere"
+
+#: mod_configure.erl:161 mod_configure.erl:481
+msgid "Get Number of Online Users"
+msgstr "Vis Antall Tilkoblede Brukere"
+
+#: mod_configure.erl:163 mod_configure.erl:464 web/ejabberd_web_admin.erl:135
+#: web/ejabberd_web_admin.erl:190 web/ejabberd_web_admin.erl:605
+#: web/ejabberd_web_admin.erl:624 web/ejabberd_web_admin.erl:679
+#: web/ejabberd_web_admin.erl:722
+msgid "Access Control Lists"
+msgstr "Tilgangskontrollister"
+
+#: mod_configure.erl:165 mod_configure.erl:465 web/ejabberd_web_admin.erl:136
+#: web/ejabberd_web_admin.erl:191 web/ejabberd_web_admin.erl:607
+#: web/ejabberd_web_admin.erl:626 web/ejabberd_web_admin.erl:790
+#: web/ejabberd_web_admin.erl:828
+msgid "Access Rules"
+msgstr "Tilgangsregler"
+
+#: mod_configure.erl:281 mod_configure.erl:454
+msgid "User Management"
+msgstr "Bruker Behandling"
+
+#: mod_configure.erl:455 web/ejabberd_web_admin.erl:193
+#: web/ejabberd_web_admin.erl:629 web/ejabberd_web_admin.erl:905
+#: web/ejabberd_web_admin.erl:1275
+msgid "Online Users"
+msgstr "Tilkoblede Brukere"
+
+#: mod_configure.erl:456
+msgid "All Users"
+msgstr "Alle Brukere"
+
+#: mod_configure.erl:457
+msgid "Outgoing s2s Connections"
+msgstr "Utgående s2s Koblinger"
+
+#: mod_configure.erl:458 web/ejabberd_web_admin.erl:1644
+msgid "Running Nodes"
+msgstr "Kjørende Noder"
+
+#: mod_configure.erl:459 web/ejabberd_web_admin.erl:1646
+msgid "Stopped Nodes"
+msgstr "Stoppede Noder"
+
+#: mod_configure.erl:532 web/ejabberd_web_admin.erl:1690
+msgid "Modules"
+msgstr "Moduler"
+
+#: mod_configure.erl:533
+msgid "Backup Management"
+msgstr "Håndtere Sikkerehetskopiering"
+
+#: mod_configure.erl:534
+msgid "Import Users From jabberd 1.4 Spool Files"
+msgstr "Importer Brukere Fra jabberd 1.4 Spoolfiler"
+
+#: mod_configure.erl:649
+msgid "To ~s"
+msgstr "Til ~s"
+
+#: mod_configure.erl:667
+msgid "From ~s"
+msgstr "Fra ~s"
+
+#: mod_configure.erl:864
+msgid "Database Tables Configuration at "
+msgstr "Database Tabell Konfigurasjon på "
+
+#: mod_configure.erl:869
+msgid "Choose storage type of tables"
+msgstr "Velg lagringstype for tabeller"
+
+#: mod_configure.erl:877 mod_configure.erl:879
+msgid "Disc only copy"
+msgstr "Kun diskkopi"
+
+#: mod_configure.erl:877 mod_configure.erl:879
+msgid "RAM and disc copy"
+msgstr "RAM og diskkopi"
+
+#: mod_configure.erl:877 mod_configure.erl:879
+msgid "RAM copy"
+msgstr "RAM kopi"
+
+#: mod_configure.erl:877 mod_configure.erl:879
+msgid "Remote copy"
+msgstr "Lagres ikke lokalt"
+
+#: mod_configure.erl:901
+msgid "Stop Modules at "
+msgstr "Stopp Moduler på "
+
+#: mod_configure.erl:905
+msgid "Choose modules to stop"
+msgstr "Velg hvilke moduler som skal stoppes"
+
+#: mod_configure.erl:920
+msgid "Start Modules at "
+msgstr "Start Moduler på "
+
+#: mod_configure.erl:924
+msgid "Enter list of {Module, [Options]}"
+msgstr "Skriv inn en liste av {Module, [Options]}"
+
+#: mod_configure.erl:925
+msgid "List of modules to start"
+msgstr "Liste over moduler som skal startes"
+
+#: mod_configure.erl:934
+msgid "Backup to File at "
+msgstr "Sikkerhetskopiere til Fil på "
+
+#: mod_configure.erl:938 mod_configure.erl:952
+msgid "Enter path to backup file"
+msgstr "Skriv inn sti til sikkerhetskopi filen"
+
+#: mod_configure.erl:939 mod_configure.erl:953 mod_configure.erl:967
+#: mod_configure.erl:981
+msgid "Path to File"
+msgstr "Sti til Fil"
+
+#: mod_configure.erl:948
+msgid "Restore Backup from File at "
+msgstr "Gjenopprett fra Sikkerhetsopifil på "
+
+#: mod_configure.erl:962
+msgid "Dump Backup to Text File at "
+msgstr "Dump Sikkerhetskopi til Tekstfil på "
+
+#: mod_configure.erl:966
+msgid "Enter path to text file"
+msgstr "Skriv inn sti til tekstfil"
+
+#: mod_configure.erl:976
+msgid "Import User from File at "
+msgstr "Importer Bruker fra Fil på "
+
+#: mod_configure.erl:980
+msgid "Enter path to jabberd1.4 spool file"
+msgstr "Skriv inn sti til jabberd1.4 spoolfil"
+
+#: mod_configure.erl:990
+msgid "Import Users from Dir at "
+msgstr "Importer Brukere fra Katalog på "
+
+#: mod_configure.erl:994
+msgid "Enter path to jabberd1.4 spool dir"
+msgstr "Skriv inn sti til jabberd1.4 spoolkatalog"
+
+#: mod_configure.erl:995
+msgid "Path to Dir"
+msgstr "Sti til Katalog"
+
+#: mod_configure.erl:1011 mod_configure.erl:1056
+msgid "Time delay"
+msgstr "Tids forsinkelse"
+
+#: mod_configure.erl:1094
+msgid "Access Control List Configuration"
+msgstr "Konfigurasjon for Tilgangskontroll lister"
+
+#: mod_configure.erl:1098
+msgid "Access control lists"
+msgstr "Tilgangskontroll lister"
+
+#: mod_configure.erl:1122
+msgid "Access Configuration"
+msgstr "Tilgangskonfigurasjon"
+
+#: mod_configure.erl:1126
+msgid "Access rules"
+msgstr "Tilgangsregler"
+
+#: mod_configure.erl:1151 mod_configure.erl:1173 mod_configure.erl:1185
+#: mod_configure.erl:1197 mod_configure.erl:1209 mod_configure.erl:1226
+#: mod_configure.erl:1238 mod_configure.erl:1599 mod_configure.erl:1647
+#: mod_configure.erl:1667 mod_roster.erl:803 mod_roster_odbc.erl:910
+#: mod_vcard.erl:460 mod_vcard_ldap.erl:544 mod_vcard_odbc.erl:457
+msgid "Jabber ID"
+msgstr "Jabber ID"
+
+#: mod_configure.erl:1156 mod_configure.erl:1214 mod_configure.erl:1600
+#: mod_configure.erl:1809 mod_muc/mod_muc_room.erl:2702
+#: web/ejabberd_web_admin.erl:1331
+msgid "Password"
+msgstr "Passord"
+
+#: mod_configure.erl:1161
+msgid "Password Verification"
+msgstr "Passord Bekreftelse"
+
+#: mod_configure.erl:1252
+msgid "Number of registered users"
+msgstr "Antall registrerte brukere"
+
+#: mod_configure.erl:1266
+msgid "Number of online users"
+msgstr "Antall tilkoblede brukere"
+
+#: mod_configure.erl:1629 web/ejabberd_web_admin.erl:1397
+msgid "Never"
+msgstr "Aldri"
+
+#: mod_configure.erl:1643 web/ejabberd_web_admin.erl:1411
+msgid "Online"
+msgstr "Tilkoblet"
+
+#: mod_configure.erl:1648
+msgid "Last login"
+msgstr "Siste pålogging"
+
+#: mod_configure.erl:1668
+msgid "Roster size"
+msgstr "Kontaktliste størrelse"
+
+#: mod_configure.erl:1669
+msgid "IP addresses"
+msgstr "IP adresser"
+
+#: mod_configure.erl:1670
+msgid "Resources"
+msgstr "Ressurser"
+
+#: mod_configure.erl:1796
+msgid "Administration of "
+msgstr "Administrasjon av "
+
+#: mod_configure.erl:1799
+msgid "Action on user"
+msgstr "Handling på bruker"
+
+#: mod_configure.erl:1803
+msgid "Edit Properties"
+msgstr "Redigere Egenskaper"
+
+#: mod_configure.erl:1806 web/ejabberd_web_admin.erl:1514
+msgid "Remove User"
+msgstr "Fjern Bruker"
+
+#: mod_irc/mod_irc.erl:198 mod_muc/mod_muc.erl:305
+msgid "Access denied by service policy"
+msgstr "Tilgang nektes på grunn av en tjeneste regel"
+
+#: mod_irc/mod_irc.erl:311
+msgid "IRC Transport"
+msgstr "IRC Transport"
+
+#: mod_irc/mod_irc.erl:325
+msgid "ejabberd IRC module"
+msgstr "ejabberd IRC modul"
+
+#: mod_irc/mod_irc.erl:443
+msgid "You need an x:data capable client to configure mod_irc settings"
+msgstr ""
+"Du trenger en klient som støtter x:data for å konfigurere mod_irc "
+"instillinger"
+
+#: mod_irc/mod_irc.erl:450
+msgid "Registration in mod_irc for "
+msgstr "Registrering i mod_irc for "
+
+#: mod_irc/mod_irc.erl:455
+msgid ""
+"Enter username and encodings you wish to use for connecting to IRC servers"
+msgstr ""
+"Skriv inn brukernavn og tekstkoding du ønsker å bruke for å koble til IRC "
+"tjenere"
+
+#: mod_irc/mod_irc.erl:460
+msgid "IRC Username"
+msgstr "IRC Brukernavn"
+
+#: mod_irc/mod_irc.erl:470
+msgid ""
+"If you want to specify different encodings for IRC servers, fill this list "
+"with values in format '{\"irc server\", \"encoding\"}'.  By default this "
+"service use \"~s\" encoding."
+msgstr ""
+"Om du ønsker å spesifisere tekstkoding for IRC tjenere, fyller du ut en "
+"liste med verdier i formatet '{\"irc server\", \"encoding\"}'. Denne "
+"tjenesten bruker \"~s\" som standard."
+
+#: mod_irc/mod_irc.erl:480
+msgid ""
+"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
+"\"}]."
+msgstr ""
+"Eksempel: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-"
+"1\"}]."
+
+#: mod_irc/mod_irc.erl:485
+msgid "Encodings"
+msgstr "Tekstkodinger"
+
+#: mod_muc/mod_muc.erl:403
+msgid "Only service administrators are allowed to send service messages"
+msgstr "Bare tjeneste administratorer er tilatt å sende tjeneste meldinger"
+
+#: mod_muc/mod_muc.erl:446
+msgid "Room creation is denied by service policy"
+msgstr "Oppretting av rom nektes av en tjenste regel"
+
+#: mod_muc/mod_muc.erl:453
+msgid "Conference room does not exist"
+msgstr "Konferanserommet finnes ikke"
+
+#: mod_muc/mod_muc.erl:510
+msgid "Chatrooms"
+msgstr "Samtalerom"
+
+#: mod_muc/mod_muc.erl:561
+msgid "You need an x:data capable client to register nickname"
+msgstr "Du trenger en klient som søtter x:data for å registrere kallenavn"
+
+#: mod_muc/mod_muc.erl:567
+msgid "Nickname Registration at "
+msgstr "Registrer Kallenavn på "
+
+#: mod_muc/mod_muc.erl:571
+msgid "Enter nickname you want to register"
+msgstr "Skriv inn kallenavnet du ønsker å registrere"
+
+#: mod_muc/mod_muc.erl:572 mod_roster.erl:804 mod_roster_odbc.erl:911
+#: mod_vcard.erl:357 mod_vcard.erl:465 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:462
+msgid "Nickname"
+msgstr "Kallenavn"
+
+#: mod_muc/mod_muc.erl:611
+msgid "Specified nickname is already registered"
+msgstr "Dette kallenavnet er allerede registrert"
+
+#: mod_muc/mod_muc.erl:635
+msgid "You must fill in field \"Nickname\" in the form"
+msgstr "Du må fylle inn feltet \"Nickname\" i skjemaet"
+
+#: mod_muc/mod_muc.erl:657
+msgid "ejabberd MUC module"
+msgstr "ejabberd MUC modul"
+
+#: mod_muc/mod_muc_log.erl:338
+msgid "Chatroom configuration modified"
+msgstr "Samtalerommets konfigurasjon er endret"
+
+#: mod_muc/mod_muc_log.erl:341
+msgid "joins the room"
+msgstr "kommer inn i rommet"
+
+#: mod_muc/mod_muc_log.erl:344 mod_muc/mod_muc_log.erl:347
+msgid "leaves the room"
+msgstr "forlater rommet"
+
+#: mod_muc/mod_muc_log.erl:350 mod_muc/mod_muc_log.erl:353
+msgid "has been banned"
+msgstr "har blitt bannlyst"
+
+#: mod_muc/mod_muc_log.erl:356 mod_muc/mod_muc_log.erl:359
+msgid "has been kicked"
+msgstr "har blitt kastet ut"
+
+#: mod_muc/mod_muc_log.erl:362
+msgid "has been kicked because of an affiliation change"
+msgstr "har blitt kastet ut på grunn av en tilknytnings endring"
+
+#: mod_muc/mod_muc_log.erl:365
+msgid "has been kicked because the room has been changed to members-only"
+msgstr ""
+"har blitt kastet ut på grunn av at rommet er endret til kun-for-medlemmer"
+
+#: mod_muc/mod_muc_log.erl:368
+msgid "has been kicked because of a system shutdown"
+msgstr "har blitt kastet ut på grunn av at systemet avslutter"
+
+#: mod_muc/mod_muc_log.erl:371
+msgid "is now known as"
+msgstr "er nå kjent som"
+
+#: mod_muc/mod_muc_log.erl:374 mod_muc/mod_muc_log.erl:619
+#: mod_muc/mod_muc_room.erl:1973
+msgid " has set the subject to: "
+msgstr " har satt emnet til: "
+
+#: mod_muc/mod_muc_log.erl:405
+msgid "Monday"
+msgstr "mandag"
+
+#: mod_muc/mod_muc_log.erl:406
+msgid "Tuesday"
+msgstr "tirsdag"
+
+#: mod_muc/mod_muc_log.erl:407
+msgid "Wednesday"
+msgstr "onsdag"
+
+#: mod_muc/mod_muc_log.erl:408
+msgid "Thursday"
+msgstr "torsdag"
+
+#: mod_muc/mod_muc_log.erl:409
+msgid "Friday"
+msgstr "fredag"
+
+#: mod_muc/mod_muc_log.erl:410
+msgid "Saturday"
+msgstr "lørdag"
+
+#: mod_muc/mod_muc_log.erl:411
+msgid "Sunday"
+msgstr "søndag"
+
+#: mod_muc/mod_muc_log.erl:415
+msgid "January"
+msgstr "januar"
+
+#: mod_muc/mod_muc_log.erl:416
+msgid "February"
+msgstr "februar"
+
+#: mod_muc/mod_muc_log.erl:417
+msgid "March"
+msgstr "mars"
+
+#: mod_muc/mod_muc_log.erl:418
+msgid "April"
+msgstr "april"
+
+#: mod_muc/mod_muc_log.erl:419
+msgid "May"
+msgstr "mai"
+
+#: mod_muc/mod_muc_log.erl:420
+msgid "June"
+msgstr "juni"
+
+#: mod_muc/mod_muc_log.erl:421
+msgid "July"
+msgstr "juli"
+
+#: mod_muc/mod_muc_log.erl:422
+msgid "August"
+msgstr "august"
+
+#: mod_muc/mod_muc_log.erl:423
+msgid "September"
+msgstr "september"
+
+#: mod_muc/mod_muc_log.erl:424
+msgid "October"
+msgstr "oktober"
+
+#: mod_muc/mod_muc_log.erl:425
+msgid "November"
+msgstr "november"
+
+#: mod_muc/mod_muc_log.erl:426
+msgid "December"
+msgstr "desember"
+
+#: mod_muc/mod_muc_log.erl:675
+msgid "Room Configuration"
+msgstr "Rom Konfigurasjon"
+
+#: mod_muc/mod_muc_log.erl:768 mod_muc/mod_muc_room.erl:2678
+msgid "Room title"
+msgstr "Romtittel"
+
+#: mod_muc/mod_muc_room.erl:226
+msgid "Traffic rate limit is exceeded"
+msgstr "Trafikkmengde grense overskredet"
+
+#: mod_muc/mod_muc_room.erl:303
+msgid ""
+"This participant is kicked from the room because he sent an error message"
+msgstr ""
+"Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding"
+
+#: mod_muc/mod_muc_room.erl:312
+msgid "It is not allowed to send private messages to the conference"
+msgstr "Det er ikke tillatt å sende private meldinger til konferansen"
+
+#: mod_muc/mod_muc_room.erl:357
+msgid "Improper message type"
+msgstr "Feilaktig meldingstype"
+
+#: mod_muc/mod_muc_room.erl:474
+msgid ""
+"This participant is kicked from the room because he sent an error message to "
+"another participant"
+msgstr ""
+"Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding til "
+"en annen deltaker"
+
+#: mod_muc/mod_muc_room.erl:487
+msgid "It is not allowed to send private messages of type \"groupchat\""
+msgstr "Det er ikke tillatt å sende private meldinger med typen \"groupchat\""
+
+#: mod_muc/mod_muc_room.erl:499 mod_muc/mod_muc_room.erl:553
+msgid "Recipient is not in the conference room"
+msgstr "Mottakeren er ikke i konferanserommet"
+
+#: mod_muc/mod_muc_room.erl:519 mod_muc/mod_muc_room.erl:872
+#: mod_muc/mod_muc_room.erl:3272
+msgid "Only occupants are allowed to send messages to the conference"
+msgstr "Bare deltakere får sende normale meldinger til konferansen"
+
+#: mod_muc/mod_muc_room.erl:528
+msgid "It is not allowed to send private messages"
+msgstr "Det er ikke tillatt å sende private meldinger"
+
+#: mod_muc/mod_muc_room.erl:574
+msgid "Only occupants are allowed to send queries to the conference"
+msgstr "Bare deltakere er tillatt å sende forespørsler til konferansen"
+
+#: mod_muc/mod_muc_room.erl:586
+msgid "Queries to the conference members are not allowed in this room"
+msgstr ""
+"Det er ikke tillatt å sende forespørsler til deltakerene i dette rommet"
+
+#: mod_muc/mod_muc_room.erl:671
+msgid "private, "
+msgstr "privat, "
+
+#: mod_muc/mod_muc_room.erl:848
+msgid ""
+"Only moderators and participants are allowed to change subject in this room"
+msgstr "Bare redaktører og deltakere kan endre emnet i dette rommet"
+
+#: mod_muc/mod_muc_room.erl:853
+msgid "Only moderators are allowed to change subject in this room"
+msgstr "Bare redaktører kan endre emnet i dette rommet"
+
+#: mod_muc/mod_muc_room.erl:863
+msgid "Visitors are not allowed to send messages to all occupants"
+msgstr "Besøkende får ikke sende meldinger til alle deltakere"
+
+#: mod_muc/mod_muc_room.erl:931
+msgid ""
+"This participant is kicked from the room because he sent an error presence"
+msgstr ""
+"Denne deltakeren er kastet ut av rommet fordi han sendte feil "
+"tilstederværelse"
+
+#: mod_muc/mod_muc_room.erl:949
+msgid "Visitors are not allowed to change their nicknames in this room"
+msgstr "Besøkende får ikke lov å endre kallenavn i dette rommet"
+
+#: mod_muc/mod_muc_room.erl:962 mod_muc/mod_muc_room.erl:1484
+msgid "Nickname is already in use by another occupant"
+msgstr "Kallenavnet er allerede i bruk av en annen bruker"
+
+#: mod_muc/mod_muc_room.erl:973 mod_muc/mod_muc_room.erl:1492
+msgid "Nickname is registered by another person"
+msgstr "Kallenavnet er reservert av en annen person"
+
+#: mod_muc/mod_muc_room.erl:1473
+msgid "You have been banned from this room"
+msgstr "Du har blitt bannlyst i dette rommet."
+
+#: mod_muc/mod_muc_room.erl:1476
+msgid "Membership required to enter this room"
+msgstr "Du må være medlem for å gå inn i dette rommet"
+
+#: mod_muc/mod_muc_room.erl:1511
+msgid "This room is not anonymous"
+msgstr "Dette rommet er ikke anonymt"
+
+#: mod_muc/mod_muc_room.erl:1536
+msgid "Password required to enter this room"
+msgstr "Passord kreves for å komme inn i dette rommet"
+
+#: mod_muc/mod_muc_room.erl:1545
+msgid "Incorrect password"
+msgstr "Feil passord"
+
+#: mod_muc/mod_muc_room.erl:2028
+msgid "Administrator privileges required"
+msgstr "Administratorprivilegier kreves"
+
+#: mod_muc/mod_muc_room.erl:2043
+msgid "Moderator privileges required"
+msgstr "Redaktørprivilegier kreves"
+
+#: mod_muc/mod_muc_room.erl:2198
+msgid "JID ~s is invalid"
+msgstr "Ugyldig JID ~s"
+
+#: mod_muc/mod_muc_room.erl:2212
+msgid "Nickname ~s does not exist in the room"
+msgstr "Kallenavn ~s eksisterer ikke i dette rommet"
+
+#: mod_muc/mod_muc_room.erl:2238 mod_muc/mod_muc_room.erl:2609
+msgid "Invalid affiliation: ~s"
+msgstr "Ugyldig rang: ~s"
+
+#: mod_muc/mod_muc_room.erl:2295
+msgid "Invalid role: ~s"
+msgstr "Ugyldig rolle: ~s"
+
+#: mod_muc/mod_muc_room.erl:2586 mod_muc/mod_muc_room.erl:2622
+msgid "Owner privileges required"
+msgstr "Eierprivilegier kreves"
+
+#: mod_muc/mod_muc_room.erl:2672
+msgid "Configuration for "
+msgstr "Konfigurasjon for "
+
+#: mod_muc/mod_muc_room.erl:2681 mod_muc/mod_muc_room.erl:3082
+#, fuzzy
+msgid "Room description"
+msgstr "Beskrivelse:"
+
+#: mod_muc/mod_muc_room.erl:2688
+msgid "Make room persistent"
+msgstr "Gjør rommet permanent"
+
+#: mod_muc/mod_muc_room.erl:2693
+msgid "Make room public searchable"
+msgstr "Gjør rommet offentlig søkbart"
+
+#: mod_muc/mod_muc_room.erl:2696
+msgid "Make participants list public"
+msgstr "Gjør deltakerlisten offentlig"
+
+#: mod_muc/mod_muc_room.erl:2699
+msgid "Make room password protected"
+msgstr "Passordbeskytt rommet"
+
+#: mod_muc/mod_muc_room.erl:2710
+msgid "Maximum Number of Occupants"
+msgstr "Maksimum Antall Deltakere"
+
+#: mod_muc/mod_muc_room.erl:2723
+msgid "No limit"
+msgstr "Ingen grense"
+
+#: mod_muc/mod_muc_room.erl:2733
+msgid "Present real JIDs to"
+msgstr "Presenter ekte JIDer til"
+
+#: mod_muc/mod_muc_room.erl:2741
+msgid "moderators only"
+msgstr "kun for redaktører"
+
+#: mod_muc/mod_muc_room.erl:2743
+msgid "anyone"
+msgstr "hvem som helst"
+
+#: mod_muc/mod_muc_room.erl:2745
+msgid "Make room members-only"
+msgstr "Gjør rommet tilgjengelig kun for medlemmer"
+
+#: mod_muc/mod_muc_room.erl:2748
+msgid "Make room moderated"
+msgstr "Gjør rommet redaktørstyrt"
+
+#: mod_muc/mod_muc_room.erl:2751
+msgid "Default users as participants"
+msgstr "Standard brukere som deltakere"
+
+#: mod_muc/mod_muc_room.erl:2754
+msgid "Allow users to change subject"
+msgstr "Tillat brukere å endre emne"
+
+#: mod_muc/mod_muc_room.erl:2757
+msgid "Allow users to send private messages"
+msgstr "Tillat brukere å sende private meldinger"
+
+#: mod_muc/mod_muc_room.erl:2760
+msgid "Allow users to query other users"
+msgstr "Tillat brukere å sende forespørsel til andre brukere"
+
+#: mod_muc/mod_muc_room.erl:2763
+msgid "Allow users to send invites"
+msgstr "Tillat brukere å sende invitasjoner"
+
+#: mod_muc/mod_muc_room.erl:2766
+msgid "Allow visitors to send status text in presence updates"
+msgstr "Tillat besøkende å sende status tekst i tilgjengelighets oppdateringer"
+
+#: mod_muc/mod_muc_room.erl:2769
+msgid "Allow visitors to change nickname"
+msgstr "Tillat besøkende å endre kallenavn"
+
+#: mod_muc/mod_muc_room.erl:2777
+msgid "Enable logging"
+msgstr "Slå på logging"
+
+#: mod_muc/mod_muc_room.erl:2785
+msgid "You need an x:data capable client to configure room"
+msgstr "Du trenger en klient som støtter x:data for å konfigurere rommet"
+
+#: mod_muc/mod_muc_room.erl:3084
+msgid "Number of occupants"
+msgstr "Antall deltakere"
+
+#: mod_muc/mod_muc_room.erl:3192
+msgid "~s invites you to the room ~s"
+msgstr "~s inviterer deg til rommet ~s"
+
+#: mod_muc/mod_muc_room.erl:3201
+msgid "the password is"
+msgstr "passordet er"
+
+#: mod_offline.erl:446 mod_offline_odbc.erl:296
+msgid ""
+"Your contact offline message queue is full. The message has been discarded."
+msgstr "Kontaktens frakoblede meldingskø er full. Meldingen har blitt kassert."
+
+#: mod_offline.erl:495 mod_offline_odbc.erl:351
+msgid "~s's Offline Messages Queue"
+msgstr "~ss kø for Frakoblede Meldinger"
+
+#: mod_offline.erl:498 mod_offline_odbc.erl:354 mod_roster.erl:847
+#: mod_roster_odbc.erl:954 mod_shared_roster.erl:648 mod_shared_roster.erl:748
+#: web/ejabberd_web_admin.erl:681 web/ejabberd_web_admin.erl:724
+#: web/ejabberd_web_admin.erl:792 web/ejabberd_web_admin.erl:830
+#: web/ejabberd_web_admin.erl:870 web/ejabberd_web_admin.erl:1319
+#: web/ejabberd_web_admin.erl:1506 web/ejabberd_web_admin.erl:1668
+#: web/ejabberd_web_admin.erl:1735 web/ejabberd_web_admin.erl:1816
+#: web/ejabberd_web_admin.erl:1839 web/ejabberd_web_admin.erl:1908
+msgid "Submitted"
+msgstr "Innsendt"
+
+#: mod_offline.erl:506
+msgid "Time"
+msgstr "Tid"
+
+#: mod_offline.erl:507
+msgid "From"
+msgstr "Fra"
+
+#: mod_offline.erl:508
+msgid "To"
+msgstr "Til"
+
+#: mod_offline.erl:509 mod_offline_odbc.erl:362
+msgid "Packet"
+msgstr "Pakke"
+
+#: mod_offline.erl:522 mod_offline_odbc.erl:375 mod_shared_roster.erl:655
+#: web/ejabberd_web_admin.erl:732 web/ejabberd_web_admin.erl:838
+msgid "Delete Selected"
+msgstr "Slett valgte"
+
+#: mod_offline.erl:557 mod_offline_odbc.erl:440
+msgid "Offline Messages:"
+msgstr "Frakoblede Meldinger:"
+
+#: mod_proxy65/mod_proxy65_service.erl:192
+msgid "ejabberd SOCKS5 Bytestreams module"
+msgstr "ejabberd SOCKS5 Bytestreams modul"
+
+#: mod_pubsub/mod_pubsub.erl:753
+msgid "Publish-Subscribe"
+msgstr "Publish-Subscribe"
+
+#: mod_pubsub/mod_pubsub.erl:846
+msgid "ejabberd Publish-Subscribe module"
+msgstr "ejabberd Publish-Subscribe modul"
+
+#: mod_pubsub/mod_pubsub.erl:997
+msgid "PubSub subscriber request"
+msgstr "PubSub abonements forespørsel"
+
+#: mod_pubsub/mod_pubsub.erl:999
+msgid "Choose whether to approve this entity's subscription."
+msgstr "Velg om du vil godkjenne denne eksistensens abonement"
+
+#: mod_pubsub/mod_pubsub.erl:1005
+msgid "Node ID"
+msgstr "Node ID"
+
+#: mod_pubsub/mod_pubsub.erl:1010
+msgid "Subscriber Address"
+msgstr "Abonnements Adresse"
+
+#: mod_pubsub/mod_pubsub.erl:1016
+msgid "Allow this JID to subscribe to this pubsub node?"
+msgstr "Tillat denne JID å abonnere på denne pubsub noden?"
+
+#: mod_pubsub/mod_pubsub.erl:2497
+msgid "Deliver payloads with event notifications"
+msgstr "Send innhold sammen med kunngjøringer"
+
+#: mod_pubsub/mod_pubsub.erl:2498
+msgid "Deliver event notifications"
+msgstr "Lever begivenhets kunngjøringer"
+
+#: mod_pubsub/mod_pubsub.erl:2499
+msgid "Notify subscribers when the node configuration changes"
+msgstr "Informer abonnenter når node konfigurasjonen endres"
+
+#: mod_pubsub/mod_pubsub.erl:2500
+msgid "Notify subscribers when the node is deleted"
+msgstr "Informer abonnenter når noden slettes"
+
+#: mod_pubsub/mod_pubsub.erl:2501
+msgid "Notify subscribers when items are removed from the node"
+msgstr "Informer abonnenter når elementer fjernes fra noden"
+
+#: mod_pubsub/mod_pubsub.erl:2502
+msgid "Persist items to storage"
+msgstr "Vedvarende elementer til lagring"
+
+#: mod_pubsub/mod_pubsub.erl:2503
+msgid "A friendly name for the node"
+msgstr "Et vennlig navn for noden"
+
+#: mod_pubsub/mod_pubsub.erl:2504
+msgid "Max # of items to persist"
+msgstr "Høyeste # elementer som skal lagres"
+
+#: mod_pubsub/mod_pubsub.erl:2505
+msgid "Whether to allow subscriptions"
+msgstr "Om man skal tillate abonnenter"
+
+#: mod_pubsub/mod_pubsub.erl:2506
+msgid "Specify the access model"
+msgstr "Spesifiser aksess modellen"
+
+#: mod_pubsub/mod_pubsub.erl:2510
+msgid "Roster groups allowed to subscribe"
+msgstr "Kontaktliste grupper som tillates å abonnere"
+
+#: mod_pubsub/mod_pubsub.erl:2514
+msgid "Specify the publisher model"
+msgstr "Angi publiserings modell"
+
+#: mod_pubsub/mod_pubsub.erl:2516
+msgid "Max payload size in bytes"
+msgstr "Største innholdsstørrelse i byte"
+
+#: mod_pubsub/mod_pubsub.erl:2517
+msgid "When to send the last published item"
+msgstr "Når skal siste publiserte artikkel sendes"
+
+#: mod_pubsub/mod_pubsub.erl:2519
+msgid "Only deliver notifications to available users"
+msgstr "Send kunngjøringer bare til tilgjengelige brukere"
+
+#: mod_register.erl:191
+msgid "Choose a username and password to register with this server"
+msgstr "Velg et brukernavn og passord for å registrere på denne serveren"
+
+#: mod_register.erl:232
+msgid "Users are not allowed to register accounts so fast"
+msgstr "Brukere får ikke lov til å registrere kontoer så fort"
+
+#: mod_roster.erl:798 mod_roster_odbc.erl:905 web/ejabberd_web_admin.erl:1481
+#: web/ejabberd_web_admin.erl:1623 web/ejabberd_web_admin.erl:1634
+#: web/ejabberd_web_admin.erl:1898
+msgid "None"
+msgstr "Ingen"
+
+#: mod_roster.erl:805 mod_roster_odbc.erl:912
+msgid "Subscription"
+msgstr "Abonnement"
+
+#: mod_roster.erl:806 mod_roster_odbc.erl:913
+msgid "Pending"
+msgstr "Ventende"
+
+#: mod_roster.erl:807 mod_roster_odbc.erl:914
+msgid "Groups"
+msgstr "Grupper"
+
+#: mod_roster.erl:834 mod_roster_odbc.erl:941
+msgid "Validate"
+msgstr "Bekrefte gyldighet"
+
+#: mod_roster.erl:842 mod_roster_odbc.erl:949
+msgid "Remove"
+msgstr "Fjern"
+
+#: mod_roster.erl:845 mod_roster_odbc.erl:952
+msgid "Roster of "
+msgstr "Kontaktliste for "
+
+#: mod_roster.erl:848 mod_roster_odbc.erl:955 mod_shared_roster.erl:649
+#: mod_shared_roster.erl:749 web/ejabberd_web_admin.erl:682
+#: web/ejabberd_web_admin.erl:725 web/ejabberd_web_admin.erl:793
+#: web/ejabberd_web_admin.erl:831 web/ejabberd_web_admin.erl:871
+#: web/ejabberd_web_admin.erl:1320 web/ejabberd_web_admin.erl:1507
+#: web/ejabberd_web_admin.erl:1669 web/ejabberd_web_admin.erl:1817
+#: web/ejabberd_web_admin.erl:1840 web/ejabberd_web_admin.erl:1909
+msgid "Bad format"
+msgstr "Feil format"
+
+#: mod_roster.erl:855 mod_roster_odbc.erl:962
+msgid "Add Jabber ID"
+msgstr "Legg til Jabber ID"
+
+#: mod_roster.erl:936 mod_roster_odbc.erl:1043
+msgid "Roster"
+msgstr "Kontaktliste"
+
+#: mod_shared_roster.erl:604 mod_shared_roster.erl:646
+#: mod_shared_roster.erl:745
+msgid "Shared Roster Groups"
+msgstr "Delte Kontaktgrupper"
+
+#: mod_shared_roster.erl:642 web/ejabberd_web_admin.erl:1189
+#: web/ejabberd_web_admin.erl:2082
+msgid "Add New"
+msgstr "Legg til ny"
+
+#: mod_shared_roster.erl:716
+msgid "Name:"
+msgstr "Navn:"
+
+#: mod_shared_roster.erl:721
+msgid "Description:"
+msgstr "Beskrivelse:"
+
+#: mod_shared_roster.erl:729
+msgid "Members:"
+msgstr "Medlemmer:"
+
+#: mod_shared_roster.erl:737
+msgid "Displayed Groups:"
+msgstr "Viste grupper:"
+
+#: mod_shared_roster.erl:746
+msgid "Group "
+msgstr "Gruppe "
+
+#: mod_shared_roster.erl:755 web/ejabberd_web_admin.erl:691
+#: web/ejabberd_web_admin.erl:734 web/ejabberd_web_admin.erl:802
+#: web/ejabberd_web_admin.erl:877 web/ejabberd_web_admin.erl:1751
+msgid "Submit"
+msgstr "Send"
+
+#: mod_vcard.erl:165 mod_vcard_ldap.erl:235 mod_vcard_odbc.erl:129
+msgid "Erlang Jabber Server"
+msgstr "Erlang Jabber Server"
+
+#: mod_vcard.erl:357 mod_vcard.erl:466 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:463
+msgid "Birthday"
+msgstr "Fødselsdag"
+
+#: mod_vcard.erl:357 mod_vcard.erl:468 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:465
+msgid "City"
+msgstr "By"
+
+#: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:464
+msgid "Country"
+msgstr "Land"
+
+#: mod_vcard.erl:357 mod_vcard.erl:469 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:466
+msgid "Email"
+msgstr "Epost"
+
+#: mod_vcard.erl:357 mod_vcard.erl:464 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:461
+msgid "Family Name"
+msgstr "Etternavn"
+
+#: mod_vcard.erl:357 mod_vcard_odbc.erl:354
+msgid ""
+"Fill in the form to search for any matching Jabber User (Add * to the end of "
+"field to match substring)"
+msgstr ""
+"Fyll inn skjemaet for å søke etter Jabber bruker (Legg til * på slutten av "
+"feltet for å treffe alle som starter slik)"
+
+#: mod_vcard.erl:357 mod_vcard.erl:461 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:458
+msgid "Full Name"
+msgstr "Fullstendig Navn"
+
+#: mod_vcard.erl:357 mod_vcard.erl:463 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:460
+msgid "Middle Name"
+msgstr "Mellomnavn"
+
+#: mod_vcard.erl:357 mod_vcard.erl:462 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:459 web/ejabberd_web_admin.erl:1740
+msgid "Name"
+msgstr "Navn"
+
+#: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:467
+msgid "Organization Name"
+msgstr "Organisasjonsnavn"
+
+#: mod_vcard.erl:357 mod_vcard.erl:471 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:468
+msgid "Organization Unit"
+msgstr "Organisasjonsenhet"
+
+#: mod_vcard.erl:357 mod_vcard_ldap.erl:455 mod_vcard_odbc.erl:354
+msgid "Search users in "
+msgstr "Søk etter brukere i "
+
+#: mod_vcard.erl:357 mod_vcard_odbc.erl:354 web/ejabberd_web_admin.erl:1326
+#: web/ejabberd_web_admin.erl:1381
+msgid "User"
+msgstr "Bruker"
+
+#: mod_vcard.erl:357 mod_vcard_ldap.erl:455 mod_vcard_odbc.erl:354
+msgid "You need an x:data capable client to search"
+msgstr "Du tregner en klient som støtter x:data for å kunne søke"
+
+#: mod_vcard.erl:379 mod_vcard_ldap.erl:477 mod_vcard_odbc.erl:376
+msgid "vCard User Search"
+msgstr "vCard Bruker Søk"
+
+#: mod_vcard.erl:433 mod_vcard_ldap.erl:531 mod_vcard_odbc.erl:430
+msgid "ejabberd vCard module"
+msgstr "ejabberd vCard modul"
+
+#: mod_vcard.erl:457 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:454
+msgid "Search Results for "
+msgstr "Søke Resultater for "
+
+#: mod_vcard_ldap.erl:455
+msgid "Fill in fields to search for any matching Jabber User"
+msgstr "Fyll inn felt for å søke etter Jabber brukere"
+
+#: web/ejabberd_web_admin.erl:115 web/ejabberd_web_admin.erl:166
+msgid "ejabberd Web Admin"
+msgstr "ejabberd Web Admin"
+
+#: web/ejabberd_web_admin.erl:130 web/ejabberd_web_admin.erl:181
+#: web/ejabberd_web_admin.erl:603 web/ejabberd_web_admin.erl:622
+msgid "Administration"
+msgstr "Administrasjon"
+
+#: web/ejabberd_web_admin.erl:137 web/ejabberd_web_admin.erl:609
+msgid "Virtual Hosts"
+msgstr "Virtuelle Maskiner"
+
+#: web/ejabberd_web_admin.erl:138 web/ejabberd_web_admin.erl:195
+#: web/ejabberd_web_admin.erl:610 web/ejabberd_web_admin.erl:631
+#: web/ejabberd_web_admin.erl:1643
+msgid "Nodes"
+msgstr "Noder"
+
+#: web/ejabberd_web_admin.erl:139 web/ejabberd_web_admin.erl:196
+#: web/ejabberd_web_admin.erl:611 web/ejabberd_web_admin.erl:632
+#: web/ejabberd_web_admin.erl:950 web/ejabberd_web_admin.erl:1676
+msgid "Statistics"
+msgstr "Statistikk"
+
+#: web/ejabberd_web_admin.erl:192 web/ejabberd_web_admin.erl:628
+#: web/ejabberd_web_admin.erl:892 web/ejabberd_web_admin.erl:898
+msgid "Users"
+msgstr "Brukere"
+
+#: web/ejabberd_web_admin.erl:194 web/ejabberd_web_admin.erl:630
+#: web/ejabberd_web_admin.erl:1383
+msgid "Last Activity"
+msgstr "Siste Aktivitet"
+
+#: web/ejabberd_web_admin.erl:606 web/ejabberd_web_admin.erl:608
+#: web/ejabberd_web_admin.erl:625 web/ejabberd_web_admin.erl:627
+msgid "(Raw)"
+msgstr "(Rå)"
+
+#: web/ejabberd_web_admin.erl:728 web/ejabberd_web_admin.erl:834
+msgid "Raw"
+msgstr "Rå"
+
+#: web/ejabberd_web_admin.erl:868
+msgid "~s access rule configuration"
+msgstr "tilgangsregel konfigurasjon for ~s"
+
+#: web/ejabberd_web_admin.erl:885
+msgid "ejabberd virtual hosts"
+msgstr "virtuella ejabberd maskiner"
+
+#: web/ejabberd_web_admin.erl:924
+msgid "Users Last Activity"
+msgstr "Brukers Siste Aktivitet"
+
+#: web/ejabberd_web_admin.erl:926
+msgid "Period: "
+msgstr "Periode: "
+
+#: web/ejabberd_web_admin.erl:936
+msgid "Last month"
+msgstr "Siste måned"
+
+#: web/ejabberd_web_admin.erl:937
+msgid "Last year"
+msgstr "Siste året"
+
+#: web/ejabberd_web_admin.erl:938
+msgid "All activity"
+msgstr "All aktivitet"
+
+#: web/ejabberd_web_admin.erl:940
+msgid "Show Ordinary Table"
+msgstr "Vis Ordinær Tabell"
+
+#: web/ejabberd_web_admin.erl:942
+msgid "Show Integral Table"
+msgstr "Vis Integral Tabell"
+
+#: web/ejabberd_web_admin.erl:971
+msgid "Node not found"
+msgstr "Noden finnes ikke"
+
+#: web/ejabberd_web_admin.erl:1273
+msgid "Host"
+msgstr "Maskin"
+
+#: web/ejabberd_web_admin.erl:1274
+msgid "Registered Users"
+msgstr "Registrerte Brukere"
+
+#: web/ejabberd_web_admin.erl:1382
+msgid "Offline Messages"
+msgstr "Frakoblede Meldinger"
+
+#: web/ejabberd_web_admin.erl:1439 web/ejabberd_web_admin.erl:1455
+msgid "Registered Users:"
+msgstr "Registrerte Brukere:"
+
+#: web/ejabberd_web_admin.erl:1441 web/ejabberd_web_admin.erl:1457
+#: web/ejabberd_web_admin.erl:1871
+msgid "Online Users:"
+msgstr "Tilkoblede Brukere:"
+
+#: web/ejabberd_web_admin.erl:1443
+msgid "Outgoing s2s Connections:"
+msgstr "Utgående s2s Koblinger"
+
+#: web/ejabberd_web_admin.erl:1445
+msgid "Outgoing s2s Servers:"
+msgstr "Utgående s2s Tjenere"
+
+#: web/ejabberd_web_admin.erl:1501
+msgid "Change Password"
+msgstr "Endre Passord"
+
+#: web/ejabberd_web_admin.erl:1504
+msgid "User "
+msgstr "Bruker "
+
+#: web/ejabberd_web_admin.erl:1511
+msgid "Connected Resources:"
+msgstr "Tilkoblede Ressurser:"
+
+#: web/ejabberd_web_admin.erl:1512
+msgid "Password:"
+msgstr "Passord:"
+
+#: web/ejabberd_web_admin.erl:1567
+msgid "No Data"
+msgstr "Ingen Data"
+
+#: web/ejabberd_web_admin.erl:1666 web/ejabberd_web_admin.erl:1688
+msgid "Node "
+msgstr "Node "
+
+#: web/ejabberd_web_admin.erl:1675
+msgid "Listened Ports"
+msgstr "Lyttende Porter"
+
+#: web/ejabberd_web_admin.erl:1677 web/ejabberd_web_admin.erl:1913
+#: web/ejabberd_web_admin.erl:2071
+msgid "Update"
+msgstr "Oppdatere"
+
+#: web/ejabberd_web_admin.erl:1680 web/ejabberd_web_admin.erl:2148
+msgid "Restart"
+msgstr "Starte på nytt"
+
+#: web/ejabberd_web_admin.erl:1682 web/ejabberd_web_admin.erl:2150
+msgid "Stop"
+msgstr "Stoppe"
+
+#: web/ejabberd_web_admin.erl:1696
+msgid "RPC Call Error"
+msgstr "RPC Kall Feil"
+
+#: web/ejabberd_web_admin.erl:1734
+msgid "Database Tables at "
+msgstr "Database Tabeller på "
+
+#: web/ejabberd_web_admin.erl:1741
+msgid "Storage Type"
+msgstr "Lagringstype"
+
+#: web/ejabberd_web_admin.erl:1742
+msgid "Size"
+msgstr "Størrelse"
+
+#: web/ejabberd_web_admin.erl:1743
+msgid "Memory"
+msgstr "Minne"
+
+#: web/ejabberd_web_admin.erl:1758
+msgid "Backup of "
+msgstr "Sikkerhetskopi av "
+
+#: web/ejabberd_web_admin.erl:1759
+msgid ""
+"Remark that these options will only backup the builtin Mnesia database. If "
+"you are using the ODBC module, you also need to backup your SQL database "
+"separately."
+msgstr ""
+"Merk at disse valgene vil bare sikkerhetskopiere den innebygde Mnesia "
+"databasen. Dersom du bruker ODBC modulen må du også ta backup av din SQL "
+"database."
+
+#: web/ejabberd_web_admin.erl:1764
+msgid "Store binary backup:"
+msgstr "Lagre binær sikkerhetskopi:"
+
+#: web/ejabberd_web_admin.erl:1768 web/ejabberd_web_admin.erl:1775
+#: web/ejabberd_web_admin.erl:1783 web/ejabberd_web_admin.erl:1790
+#: web/ejabberd_web_admin.erl:1797
+msgid "OK"
+msgstr "OK"
+
+#: web/ejabberd_web_admin.erl:1771
+msgid "Restore binary backup immediately:"
+msgstr "Gjenopprette binær backup umiddelbart:"
+
+#: web/ejabberd_web_admin.erl:1779
+msgid ""
+"Restore binary backup after next ejabberd restart (requires less memory):"
+msgstr ""
+"Gjenopprette binær backup etter neste ejabberd omstart (krever mindre minne):"
+
+#: web/ejabberd_web_admin.erl:1786
+msgid "Store plain text backup:"
+msgstr "Lagre rentekst sikkerhetskopi:"
+
+#: web/ejabberd_web_admin.erl:1793
+msgid "Restore plain text backup immediately:"
+msgstr "Gjenopprette rentekst sikkerhetskopi umiddelbart:"
+
+#: web/ejabberd_web_admin.erl:1814
+msgid "Listened Ports at "
+msgstr "Lyttende Porter på "
+
+#: web/ejabberd_web_admin.erl:1837
+msgid "Modules at "
+msgstr "Moduler på "
+
+#: web/ejabberd_web_admin.erl:1862
+msgid "Statistics of ~p"
+msgstr "Statistikk for ~p"
+
+#: web/ejabberd_web_admin.erl:1865
+msgid "Uptime:"
+msgstr "Oppetid:"
+
+#: web/ejabberd_web_admin.erl:1868
+msgid "CPU Time:"
+msgstr "CPU Tid:"
+
+#: web/ejabberd_web_admin.erl:1874
+msgid "Transactions Commited:"
+msgstr "Sendte Transaksjoner:"
+
+#: web/ejabberd_web_admin.erl:1877
+msgid "Transactions Aborted:"
+msgstr "Avbrutte Transasksjoner:"
+
+#: web/ejabberd_web_admin.erl:1880
+msgid "Transactions Restarted:"
+msgstr "Omstartede Transasksjoner:"
+
+#: web/ejabberd_web_admin.erl:1883
+msgid "Transactions Logged:"
+msgstr "Loggede Transasksjoner:"
+
+#: web/ejabberd_web_admin.erl:1906
+msgid "Update "
+msgstr "Oppdater "
+
+#: web/ejabberd_web_admin.erl:1914
+msgid "Update plan"
+msgstr "Oppdaterings plan"
+
+#: web/ejabberd_web_admin.erl:1915
+msgid "Updated modules"
+msgstr "Oppdater moduler"
+
+#: web/ejabberd_web_admin.erl:1916
+msgid "Update script"
+msgstr "Oppdaterings skript"
+
+#: web/ejabberd_web_admin.erl:1917
+msgid "Low level update script"
+msgstr "Lavnivå oppdaterings skript"
+
+#: web/ejabberd_web_admin.erl:1918
+msgid "Script check"
+msgstr "Skript sjekk"
+
+#: web/ejabberd_web_admin.erl:2054
+msgid "Port"
+msgstr "Port"
+
+#: web/ejabberd_web_admin.erl:2055 web/ejabberd_web_admin.erl:2135
+msgid "Module"
+msgstr "Modul"
+
+#: web/ejabberd_web_admin.erl:2056 web/ejabberd_web_admin.erl:2136
+msgid "Options"
+msgstr "Alternativer"
+
+#: web/ejabberd_web_admin.erl:2073
+msgid "Delete"
+msgstr "Slett"
+
+#: web/ejabberd_web_admin.erl:2158
+msgid "Start"
+msgstr "Start"
+
+#~ msgid "You must fill in field \"nick\" in the form"
+#~ msgstr "Du må fylle inn feltet \"nick\" i skjemaet"

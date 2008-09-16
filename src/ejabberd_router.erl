@@ -5,7 +5,7 @@
 %%% Created : 27 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -161,9 +161,9 @@ unregister_route(Domain) ->
 		    mnesia:transaction(F);
 		_ ->
 		    F = fun() ->
-				case mnesia:match(#route{domain = LDomain,
-							 pid = Pid,
-							 _ = '_'}) of
+				case mnesia:match_object(#route{domain=LDomain,
+								pid = Pid,
+								_ = '_'}) of
 				    [R] ->
 					I = R#route.local_hint,
 					mnesia:write(

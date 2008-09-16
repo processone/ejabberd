@@ -5,7 +5,7 @@
 %%% Created : 11 Jan 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -99,6 +99,9 @@ process(["restart"]) ->
 
 process(["reopen-log"]) ->
     ejabberd_hooks:run(reopen_log_hook, []),
+    lists:foreach(fun(Host) ->
+			  ejabberd_hooks:run(reopen_log_hook, Host, [Host])
+		  end, ?MYHOSTS),
     %% TODO: Use the Reopen log API for logger_h ?
     ejabberd_logger_h:reopen_log(),
     ?STATUS_SUCCESS;
@@ -158,7 +161,7 @@ process(["load", Path]) ->
     end;
 
 process(["restore", Path]) ->
-    case ejabberd_admin:restore(Path) of 
+    case ejabberd_admin:restore(Path) of
 	{atomic, _} ->
 	    ?STATUS_SUCCESS;
 	{error, Reason} ->
@@ -384,7 +387,7 @@ dump_to_textfile(yes, {ok, F}) ->
 	     end, Tabs1),
     Defs = lists:map(
 	     fun(T) -> {T, [{record_name, mnesia:table_info(T, record_name)},
-			    {attributes, mnesia:table_info(T, attributes)}]} 
+			    {attributes, mnesia:table_info(T, attributes)}]}
 	     end,
 	     Tabs),
     io:format(F, "~p.~n", [{tables, Defs}]),

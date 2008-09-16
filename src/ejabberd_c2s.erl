@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -37,6 +37,7 @@
 	 send_element/2,
 	 socket_type/0,
 	 get_presence/1,
+	 get_subscribed/1,
 	 get_subscribed_and_online/1]).
 
 %% gen_fsm callbacks
@@ -201,6 +202,9 @@ init([{SockMod, Socket}, Opts]) ->
 
 %% Return list of all available resources of contacts,
 %% in form [{JID, Caps}].
+get_subscribed(FsmRef) ->
+    gen_fsm:sync_send_all_state_event(
+      FsmRef, get_subscribed, 1000).
 get_subscribed_and_online(FsmRef) ->
     gen_fsm:sync_send_all_state_event(
       FsmRef, get_subscribed_and_online, 1000).
@@ -931,6 +935,20 @@ handle_sync_event({get_presence}, _From, StateName, StateData) ->
 
     Reply = {User, Resource, atom_to_list(Show), Status},
     fsm_reply(Reply, StateName, StateData);
+
+handle_sync_event(get_subscribed, _From, StateName, StateData) ->
+    Subscribed = StateData#state.pres_f,
+    Online = StateData#state.pres_available,
+    Pred = fun(User, _Caps) ->
+		   ?SETS:is_element(jlib:jid_remove_resource(User),
+				    Subscribed) orelse
+		       ?SETS:is_element(User, Subscribed)
+	   end,
+    SubscribedAndOnline = ?DICT:filter(Pred, Online),
+    SubscribedWithCaps  = ?SETS:fold(fun(User, Acc) ->
+	    [{User, undefined}|Acc]
+	end, ?DICT:to_list(SubscribedAndOnline), Subscribed),
+    {reply, SubscribedWithCaps, StateName, StateData};
 
 handle_sync_event(get_subscribed_and_online, _From, StateName, StateData) ->
     Subscribed = StateData#state.pres_f,

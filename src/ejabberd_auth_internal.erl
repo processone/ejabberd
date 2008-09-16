@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -98,6 +98,8 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	    false
     end.
 
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%       ok | {error, invalid_jid}
 set_password(User, Server, Password) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
@@ -110,7 +112,8 @@ set_password(User, Server, Password) ->
 			mnesia:write(#passwd{us = US,
 					     password = Password})
 		end,
-	    mnesia:transaction(F)
+	    {atomic, ok} = mnesia:transaction(F),
+	    ok
     end.
 
 try_register(User, Server, Password) ->

@@ -10,13 +10,13 @@
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
 %%% 
-%%% The Initial Developer of the Original Code is Process-one.
-%%% Portions created by Process-one are Copyright 2006-2008, Process-one
+%%% The Initial Developer of the Original Code is ProcessOne.
+%%% Portions created by ProcessOne are Copyright 2006-2008, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2008, Process-one.
+%%% This software is copyright 2006-2008, ProcessOne.
 %%%
 %%%
-%%% @copyright 2006-2008 Process-one
+%%% @copyright 2006-2008 ProcessOne
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -193,21 +193,23 @@ features() ->
 %% module by implementing this function like this:
 %% ```check_create_user_permission(Host, Node, Owner, Access) ->
 %%	   node_default:check_create_user_permission(Host, Node, Owner, Access).'''</p>
-create_node_permission(_Host, ServerHost, Node, _ParentNode, Owner, Access) ->
+create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
     LOwner = jlib:jid_tolower(Owner),
     {User, Server, _Resource} = LOwner,
-    Allowed = case acl:match_rule(ServerHost, Access, LOwner) of
+    Allowed = case LOwner of
+	{"", Host, ""} ->
+	    true; % pubsub service always allowed
+	_ ->
+	    case acl:match_rule(ServerHost, Access, LOwner) of
 		allow ->
 		    case Node of
 			["home", Server, User | _] -> true;
 			_ -> false
 		    end;
 		_ ->
-		    case Owner of
-			{jid, "", _, "", "", _, ""} -> true;
-			_ -> false
-		    end
-	    end,
+		    false
+	    end
+    end,
     {result, Allowed}.
 
 %% @spec (Host, Node, Owner) ->

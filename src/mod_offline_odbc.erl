@@ -5,7 +5,7 @@
 %%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -117,6 +117,8 @@ loop(Host, MaxOfflineMsgs) ->
 			      end, Msgs),
 		    case catch odbc_queries:add_spool(Host, Query) of
 			{'EXIT', Reason} ->
+			    ?ERROR_MSG("~p~n", [Reason]);
+			{error, Reason} ->
 			    ?ERROR_MSG("~p~n", [Reason]);
 			_ ->
 			    ok

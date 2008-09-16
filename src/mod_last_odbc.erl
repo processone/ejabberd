@@ -5,7 +5,7 @@
 %%% Created : 24 Oct 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -111,8 +111,6 @@ process_sm_iq(From, To, IQ) ->
 get_last(IQ, LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of
-	{'EXIT', _Reason} ->
-	    exmpp_iq:error(IQ, 'internal-server-error');
 	{selected, ["seconds","state"], []} ->
 	    exmpp_iq:error(IQ, 'service-unavailable');
 	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
@@ -127,7 +125,9 @@ get_last(IQ, LUser, LServer) ->
 		    exmpp_iq:result(IQ, Response);
 		_ ->
 		    exmpp_iq:error(IQ, 'internal-server-error')
-	    end
+	    end;
+	_ ->
+	    exmpp_iq:error(IQ, 'internal-server-error')
     end.
 
 on_presence_update(User, Server, _Resource, Status) ->
@@ -147,8 +147,6 @@ store_last_info(User, Server, TimeStamp, Status) ->
 get_last_info(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of
-	{'EXIT', _Reason} ->
-	    not_found;
 	{selected, ["seconds","state"], []} ->
 	    not_found;
 	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
@@ -157,7 +155,9 @@ get_last_info(LUser, LServer) ->
 		    {ok, TimeStamp, Status};
 		_ ->
 		    not_found
-	    end
+	    end;
+	_ ->
+	    not_found
     end.
 
 remove_user(User, Server) ->

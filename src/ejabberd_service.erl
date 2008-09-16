@@ -1,11 +1,11 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_service.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : External component management
+%%% Purpose : External component management (XEP-0114)
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -147,11 +147,15 @@ init([{SockMod, Socket}, Opts]) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, #xmlel{ns = NS}}, StateData) ->
-    % TODO
+wait_for_stream({xmlstreamstart, #xmlel{ns = NS, attrs = Attrs}}, StateData) ->
     case NS of
 	?NS_COMPONENT_ACCEPT ->
-	    Opening_Reply = exmpp_stream:opening_reply(?MYNAME,
+	    %% Note: XEP-0114 requires to check that destination is a Jabber
+	    %% component served by this Jabber server.
+	    %% However several transports don't respect that,
+	    %% so ejabberd doesn't check 'to' attribute (EJAB-717)
+	    To = exmpp_stanza:get_recipient_from_attrs(Attrs),
+	    Opening_Reply = exmpp_stream:opening_reply(xml:crypt(To),
 	      ?NS_COMPONENT_ACCEPT,
 	      {0, 0}, StateData#state.streamid),
 	    send_element(StateData, Opening_Reply),

@@ -10,13 +10,13 @@
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
 %%% 
-%%% The Initial Developer of the Original Code is Process-one.
-%%% Portions created by Process-one are Copyright 2006-2008, Process-one
+%%% The Initial Developer of the Original Code is ProcessOne.
+%%% Portions created by ProcessOne are Copyright 2006-2008, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2008, Process-one.
+%%% This software is copyright 2006-2008, ProcessOne.
 %%%
 %%%
-%%% @copyright 2006-2008 Process-one
+%%% @copyright 2006-2008 ProcessOne
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -70,8 +70,7 @@
 init(_Host, _ServerHost, _Opts) ->
     mnesia:create_table(pubsub_node,
 			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, pubsub_node)},
-			 {index, [type,parentid]}]),
+			 {attributes, record_info(fields, pubsub_node)}]),
     NodesFields = record_info(fields, pubsub_node),
     case mnesia:table_info(pubsub_node, attributes) of
 	[host_node, host_parent, info] -> ok;  % old schema, updated later by pubsub
@@ -115,7 +114,7 @@ get_nodes(Key) ->
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
 get_subnodes(Host, Node, _From) ->
-    mnesia:index_read(pubsub_node, {Host, Node}, #pubsub_node.parentid).
+    mnesia:match_object(#pubsub_node{parentid = {Host, Node}, _ = '_'}).
 
 %% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host()

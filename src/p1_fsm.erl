@@ -13,8 +13,8 @@
 %% Portions created by Ericsson are Copyright 1999, Ericsson Utvecklings
 %% AB. All Rights Reserved.''
 %% 
-%% The code has been modified and improved by Process-one.
-%% Copyright 2007-2008, Process-one
+%% The code has been modified and improved by ProcessOne.
+%% Copyright 2007-2008, ProcessOne
 %%
 %%  The change adds the following features:
 %%   - You can send exit(priority_shutdown) to the p1_fsm process to

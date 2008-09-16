@@ -5,7 +5,7 @@
 %%% Created :  8 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -163,11 +163,10 @@ process_iq(From, To,
 		    Password = xml:get_tag_cdata(PTag),
 		    case From of
 			#jid{user = User, lserver = Server} ->
-			    ejabberd_auth:set_password(User, Server, Password),
-			    IQ#iq{type = result, sub_el = [SubEl]};
+			    try_set_password(User, Server, Password, IQ, SubEl);
 			_ ->
 			    case try_register(User, Server, Password,
-					      Source) of
+					      Source, Lang) of
 				ok ->
 				    IQ#iq{type = result, sub_el = [SubEl]};
 				{error, Error} ->
@@ -194,8 +193,22 @@ process_iq(From, To,
 			      {xmlelement, "password", [], []}]}]}
     end.
 
+%% @doc Try to change password and return IQ response
+try_set_password(User, Server, Password, IQ, SubEl) ->
+    case ejabberd_auth:set_password(User, Server, Password) of
+	ok ->
+            IQ#iq{type = result, sub_el = [SubEl]};
+	{error, empty_password} ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+	{error, not_allowed} ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	{error, invalid_jid} ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
+	_ ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+    end.
 
-try_register(User, Server, Password, Source) ->
+try_register(User, Server, Password, Source, Lang) ->
     case jlib:is_nodename(User) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
@@ -229,7 +242,9 @@ try_register(User, Server, Password, Source) ->
 				    end
 			    end;
 			false ->
-			    {error, ?ERR_RESOURCE_CONSTRAINT}
+			    ErrText = "Users are not allowed to register "
+				"accounts so fast",
+			    {error, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)}
 		    end
 	    end
     end.

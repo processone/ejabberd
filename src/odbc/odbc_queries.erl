@@ -5,7 +5,7 @@
 %%% Created : by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -322,7 +322,7 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
       "        and jid='", SJID, "';"],
      ["insert into rosterusers("
       "              username, jid, nick, "
-      "              subscription, ask, askmessage"
+      "              subscription, ask, askmessage, "
       "              server, subscribe, type) "
       " values (", ItemVals, ");"],
      ["delete from rostergroups "
