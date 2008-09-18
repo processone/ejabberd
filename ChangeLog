@@ -2,6 +2,10 @@
 
 	* src/mod_roster_odbc.erl: Convert to exmpp.
 
+	* src/mod_roster.erl (get_in_pending_subscriptions): Fix a bug where
+	the type of the presence stanza was lost.
+	(user_roster): Reorganize a few lines to match mod_roster_odbc.
+
 2008-09-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1457 to r1563).

@@ -649,12 +649,10 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 		    fun(R) ->
 			    Message = R#roster.askmessage,
 			    {U, S, R} = R#roster.jid,
-			    Attrs1 = exmpp_stanza:set_sender_in_list([],
-			      exmpp_jid:jid_to_list(U, S, R)),
-			    Attrs2 = exmpp_stanza:set_recipient_in_list(Attrs1,
-			      exmpp_jid:jid_to_list(JID)),
 			    Pres1 = exmpp_presence:subscribe(),
-			    Pres2 = Pres1#xmlel{attrs = Attrs2},
+			    Pres2 = exmpp_stanza:set_jids(Pres1,
+			      exmpp_jid:jid_to_list(U, S, R),
+			      exmpp_jid:jid_to_list(JID)),
 			    exmpp_presence:set_status(Pres2, Message)
 		    end,
 		    lists:filter(
@@ -847,7 +845,9 @@ webadmin_page(Acc, _, _) -> Acc.
 
 user_roster(User, Server, Query, Lang) ->
     try
-	US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
 	Items1 = mnesia:dirty_index_read(roster, US, #roster.us),
 	Res = user_roster_parse_query(User, Server, Items1, Query),
 	Items = mnesia:dirty_index_read(roster, US, #roster.us),
