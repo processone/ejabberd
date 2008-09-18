@@ -1,3 +1,7 @@
+2008-09-18  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_roster_odbc.erl: Convert to exmpp.
+
 2008-09-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1457 to r1563).
