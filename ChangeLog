@@ -6,6 +6,8 @@
 	atom_to_list/1.
 	(filter_fields): A call to the stringprep module was left.
 
+	* src/mod_vcard_ldap.erl, src/mod_vcard_odbc.erl: Convert to exmpp.
+
 2008-09-18  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_roster_odbc.erl: Convert to exmpp.
