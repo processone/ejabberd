@@ -141,10 +141,8 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 	[] ->
 	    case Acc of
 		{result, Features} ->
-		    % XXX OLD FORMAT: NS as string.
 		    {result, [?NS_VCARD_s | Features]};
 		empty ->
-		    % XXX OLD FORMAT: NS as string.
 		    {result, [?NS_VCARD_s]}
 	    end;
  	_ ->
@@ -372,11 +370,11 @@ do_route(ServerHost, From, To, Packet) ->
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
 				#xmlattr{name = 'var',
-				  value = atom_to_list(?NS_SEARCH)}]},
+				  value = ?NS_SEARCH_s}]},
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
 				#xmlattr{name = 'var',
-				  value = atom_to_list(?NS_VCARD)}]}
+				  value = ?NS_VCARD_s}]}
 			  ]},
 			ResIQ = exmpp_iq:result(Packet, Result),
 			ejabberd_router:route(To,
@@ -516,7 +514,7 @@ filter_fields([], Match, _LServer) ->
     Match;
 filter_fields([{SVar, [Val]} | Ds], Match, LServer)
   when is_list(Val) and (Val /= "") ->
-    LVal = stringprep:tolower(Val),
+    LVal = exmpp_stringprep:to_lower(Val),
     NewMatch = case SVar of
                    "user" ->
 		       case gen_mod:get_module_opt(LServer, ?MODULE,

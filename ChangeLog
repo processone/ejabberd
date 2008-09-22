@@ -1,3 +1,11 @@
+2008-09-22  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_vcard.erl (get_sm_features): Remove unappropriate
+	comments.
+	(do_route): Use the '_s' variants of NS_* macros instead of a call to
+	atom_to_list/1.
+	(filter_fields): A call to the stringprep module was left.
+
 2008-09-18  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_roster_odbc.erl: Convert to exmpp.
