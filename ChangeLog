@@ -1,3 +1,8 @@
+2008-09-22  Mickael Remond  <mremond@process-one.net>
+
+	* src/mod_configure.erl: Fix adhoc commands reply types for
+	"get-online-users-num" and "get-registered-users-num" (EJAB-756).
+
 2008-09-15  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Fix explanation of mod_muc's anonymous

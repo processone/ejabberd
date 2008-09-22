@@ -1248,7 +1248,7 @@ get_form(Host, ?NS_ADMINL("get-registered-users-num"), Lang) ->
        [?HFIELD(),
 	{xmlelement, 
 	 "field", 
-	 [{"type", "jid-single"},
+	 [{"type", "text-single"},
 	  {"label", ?T(Lang, "Number of registered users")},
 	  {"var", "registeredusersnum"}],
 	 [{xmlelement, "value", [], [{xmlcdata, Num}]}]
@@ -1262,7 +1262,7 @@ get_form(Host, ?NS_ADMINL("get-online-users-num"), Lang) ->
        [?HFIELD(),
 	{xmlelement, 
 	 "field", 
-	 [{"type", "jid-single"},
+	 [{"type", "text-single"},
 	  {"label", ?T(Lang, "Number of online users")},
 	  {"var", "onlineusersnum"}],
 	 [{xmlelement, "value", [], [{xmlcdata, Num}]}]
