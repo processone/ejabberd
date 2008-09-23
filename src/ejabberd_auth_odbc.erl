@@ -79,7 +79,7 @@ check_password(User, Server, Password) ->
 
 check_password(User, Server, Password, StreamID, Digest) ->
     try
-	LUser = exmpp_stringpre:nodeprep(User),
+	LUser = exmpp_stringprep:nodeprep(User),
 	Username = ejabberd_odbc:escape(LUser),
 	LServer = exmpp_stringprep:nameprep(Server),
 	case catch odbc_queries:get_password(LServer, Username) of
