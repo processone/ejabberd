@@ -35,14 +35,15 @@
 	 unauthenticated_iq_register/4,
 	 process_iq/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_INBAND_REGISTER,
 				  ?MODULE, process_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_REGISTER,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_INBAND_REGISTER,
 				  ?MODULE, process_iq, IQDisc),
     ejabberd_hooks:add(c2s_stream_features, Host,
  		       ?MODULE, stream_feature_register, 50),
@@ -60,61 +61,56 @@ stop(Host) ->
  			  ?MODULE, stream_feature_register, 50),
     ejabberd_hooks:delete(c2s_unauthenticated_iq, Host,
 			  ?MODULE, unauthenticated_iq_register, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_REGISTER),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_REGISTER).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_INBAND_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_INBAND_REGISTER).
 
 
 stream_feature_register(Acc) ->
-    [{xmlelement, "register",
-      [{"xmlns", ?NS_FEATURE_IQREGISTER}], []} | Acc].
+    [#xmlel{ns = ?NS_INBAND_REGISTER_FEAT, name = 'register'} | Acc].
 
 unauthenticated_iq_register(_Acc,
-			    Server, #iq{xmlns = ?NS_REGISTER} = IQ, IP) ->
+			    Server, #iq{ns = ?NS_INBAND_REGISTER} = IQ_Rec, IP) ->
     Address = case IP of
 		 {A, _Port} -> A;
 		  _ -> undefined
 	      end,
-    ResIQ = process_iq(jlib:make_jid("", "", ""),
- 		       jlib:make_jid("", Server, ""),
- 		       IQ,
+    ResIQ = process_iq(#jid{},
+ 		       exmpp_jid:make_bare_jid(Server),
+ 		       IQ_Rec,
 		       Address),
-    Res1 = jlib:replace_from_to(jlib:make_jid("", Server, ""),
- 				jlib:make_jid("", "", ""),
- 				jlib:iq_to_xml(ResIQ)),
-    jlib:remove_attr("to", Res1);
+    exmpp_iq:iq_to_xmlel(ResIQ, exmpp_jid:make_bare_jid(Server), undefined);
 
 unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
     Acc.
 
 process_iq(From, To, IQ) ->
-    process_iq(From, To, IQ, jlib:jid_tolower(jlib:jid_remove_resource(From))).
+    process_iq(From, To, IQ, jlib:short_prepd_bare_jid(From)).
 
 process_iq(From, To,
-	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} = IQ,
+	   #iq{type = Type, lang = Lang, payload = SubEl} = IQ_Rec,
 	   Source) ->
     case Type of
 	set ->
-	    UTag = xml:get_subtag(SubEl, "username"),
-	    PTag = xml:get_subtag(SubEl, "password"),
-	    RTag = xml:get_subtag(SubEl, "remove"),
-	    Server = To#jid.lserver,
+	    UTag = exmpp_xml:get_element(SubEl, 'username'),
+	    PTag = exmpp_xml:get_element(SubEl, 'password'),
+	    RTag = exmpp_xml:get_element(SubEl, 'remove'),
+	    Server = To#jid.ldomain,
 	    if
-		(UTag /= false) and (RTag /= false) ->
-		    User = xml:get_tag_cdata(UTag),
+		(UTag /= undefined) and (RTag /= undefined) ->
+		    User = exmpp_xml:get_cdata_as_list(UTag),
 		    case From of
-			#jid{user = User, lserver = Server} ->
+			#jid{node = User, ldomain = Server} ->
 			    ejabberd_auth:remove_user(User, Server),
-			    IQ#iq{type = result, sub_el = [SubEl]};
+                            exmpp_iq:result(IQ_Rec, SubEl);
 			_ ->
 			    if
-				PTag /= false ->
-				    Password = xml:get_tag_cdata(PTag),
+				PTag /= undefined ->
+				    Password = exmpp_xml:get_cdata_as_list(PTag),
 				    case ejabberd_auth:remove_user(User,
 								   Server,
 								   Password) of
 					ok ->
-					    IQ#iq{type = result,
-						  sub_el = [SubEl]};
+                                            exmpp_iq:result(IQ_Rec, SubEl);
 					%% TODO FIXME: This piece of
 					%% code does not work since
 					%% the code have been changed
@@ -122,102 +118,88 @@ process_iq(From, To,
 					%% modules.  lists:foreach can
 					%% only return ok:
 					not_allowed ->
-					    IQ#iq{type = error,
-						  sub_el =
-						  [SubEl, ?ERR_NOT_ALLOWED]};
+                                            exmpp_iq:error(IQ_Rec,
+                                              'not-allowed');
 					not_exists ->
-					    IQ#iq{type = error,
-						  sub_el =
-						  [SubEl, ?ERR_ITEM_NOT_FOUND]};
+                                            exmpp_iq:error(IQ_Rec,
+                                              'item-not-found');
 					_ ->
-					    IQ#iq{type = error,
-						  sub_el =
-						  [SubEl,
-						   ?ERR_INTERNAL_SERVER_ERROR]}
+                                            exmpp_iq:error(IQ_Rec,
+                                              'internal-server-error')
 				    end;
 				true ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+                                    exmpp_iq:error(IQ_Rec, 'bad-request')
 			    end
 		    end;
-		(UTag == false) and (RTag /= false) ->
+		(UTag == undefined) and (RTag /= undefined) ->
 		    case From of
-			#jid{user = User,
-			     lserver = Server,
+			#jid{node = User,
+			     ldomain = Server,
 			     resource = Resource} ->
-			    ResIQ = #iq{type = result, xmlns = ?NS_REGISTER,
-					id = ID,
-					sub_el = [SubEl]},
+			    ResIQ = exmpp_iq:result(IQ_Rec, SubEl),
 			    ejabberd_router:route(
-			      jlib:make_jid(User, Server, Resource),
-			      jlib:make_jid(User, Server, Resource),
-			      jlib:iq_to_xml(ResIQ)),
+			      exmpp_jid:make_jid(User, Server, Resource),
+			      exmpp_jid:make_jid(User, Server, Resource),
+			      exmpp_iq:iq_to_xmlel(ResIQ)),
 			    ejabberd_auth:remove_user(User, Server),
 			    ignore;
 			_ ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+                            exmpp_iq:error(IQ_Rec, 'not-allowed')
 		    end;
-		(UTag /= false) and (PTag /= false) ->
-		    User = xml:get_tag_cdata(UTag),
-		    Password = xml:get_tag_cdata(PTag),
+		(UTag /= undefined) and (PTag /= undefined) ->
+		    User = exmpp_xml:get_cdata_as_list(UTag),
+		    Password = exmpp_xml:get_cdata_as_list(PTag),
 		    case From of
-			#jid{user = User, lserver = Server} ->
-			    try_set_password(User, Server, Password, IQ, SubEl);
+			#jid{node = User, ldomain = Server} ->
+			    try_set_password(User, Server, Password, IQ_Rec, SubEl);
 			_ ->
 			    case try_register(User, Server, Password,
 					      Source, Lang) of
 				ok ->
-				    IQ#iq{type = result, sub_el = [SubEl]};
+                                    exmpp_iq:result(IQ_Rec, SubEl);
 				{error, Error} ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, Error]}
+                                    exmpp_iq:error(IQ_Rec, Error)
 			    end
 		    end;
 		true ->
-		    IQ#iq{type = error,
-			  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+                    exmpp_iq:error(IQ_Rec, 'bad-request')
 	    end;
 	get ->
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement,
-			     "query",
-			     [{"xmlns", "jabber:iq:register"}],
-			     [{xmlelement, "instructions", [],
-			       [{xmlcdata,
-				 translate:translate(
-				   Lang,
-				   "Choose a username and password "
-				   "to register with this server")}]},
-			      {xmlelement, "username", [], []},
-			      {xmlelement, "password", [], []}]}]}
+            Result = #xmlel{ns = ?NS_INBAND_REGISTER, name = 'query', children =
+              [#xmlel{ns = ?NS_INBAND_REGISTER, name = 'instructions', children =
+                  [#xmlcdata{cdata = list_to_binary(translate:translate(Lang,
+                          "Choose a username and password "
+                          "to register with this server"))}]},
+                #xmlel{ns = ?NS_INBAND_REGISTER, name = 'username'},
+                #xmlel{ns = ?NS_INBAND_REGISTER, name = 'password'}]},
+            exmpp_iq:result(IQ_Rec, Result)
     end.
 
 %% @doc Try to change password and return IQ response
-try_set_password(User, Server, Password, IQ, SubEl) ->
+try_set_password(User, Server, Password, IQ_Rec, SubEl) ->
     case ejabberd_auth:set_password(User, Server, Password) of
 	ok ->
-            IQ#iq{type = result, sub_el = [SubEl]};
+            exmpp_iq:result(IQ_Rec, SubEl);
 	{error, empty_password} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+            exmpp_iq:error(IQ_Rec, 'bad-request');
 	{error, not_allowed} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+            exmpp_iq:error(IQ_Rec, 'not-allowed');
 	{error, invalid_jid} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
+            exmpp_iq:error(IQ_Rec, 'item-not-found');
 	_ ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+            exmpp_iq:error(IQ_Rec, 'internal-server-error')
     end.
 
 try_register(User, Server, Password, Source, Lang) ->
-    case jlib:is_nodename(User) of
+    case exmpp_stringprep:is_node(User) of
 	false ->
-	    {error, ?ERR_BAD_REQUEST};
+	    {error, 'bad-request'};
 	_ ->
-	    JID = jlib:make_jid(User, Server, ""),
+	    JID = exmpp_jid:make_bare_jid(User, Server),
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
 	    case acl:match_rule(Server, Access, JID) of
 		deny ->
-		    {error, ?ERR_CONFLICT};
+		    {error, 'conflict'};
 		allow ->
 		    case check_timeout(Source) of
 			true ->
@@ -232,60 +214,58 @@ try_register(User, Server, Password, Source, Lang) ->
 				    remove_timeout(Source),
 				    case Error of
 					{atomic, exists} ->
-					    {error, ?ERR_CONFLICT};
+					    {error, 'conflict'};
 					{error, invalid_jid} ->
-					    {error, ?ERR_JID_MALFORMED};
+					    {error, 'jid-malformed'};
 					{error, not_allowed} ->
-					    {error, ?ERR_NOT_ALLOWED};
+					    {error, 'not-allowed'};
 					{error, _Reason} ->
-					    {error, ?ERR_INTERNAL_SERVER_ERROR}
+					    {error, 'internal-server-error'}
 				    end
 			    end;
 			false ->
 			    ErrText = "Users are not allowed to register "
 				"accounts so fast",
-			    {error, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)}
+                            {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'resource-constraint', {Lang, ErrText})}
 		    end
 	    end
     end.
 
 
 send_welcome_message(JID) ->
-    Host = JID#jid.lserver,
+    Host = JID#jid.ldomain,
     case gen_mod:get_module_opt(Host, ?MODULE, welcome_message, {"", ""}) of
 	{"", ""} ->
 	    ok;
 	{Subj, Body} ->
 	    ejabberd_router:route(
-	      jlib:make_jid("", Host, ""),
+	      exmpp_jid:make_bare_jid(Host),
 	      JID,
-	      {xmlelement, "message", [{"type", "normal"}],
-	       [{xmlelement, "subject", [], [{xmlcdata, Subj}]},
-		{xmlelement, "body", [], [{xmlcdata, Body}]}]});
+              exmpp_message:normal(Subj, Body));
 	_ ->
 	    ok
     end.
 
 send_registration_notifications(UJID) ->
-    Host = UJID#jid.lserver,
+    Host = UJID#jid.ldomain,
     case gen_mod:get_module_opt(Host, ?MODULE, registration_watchers, []) of
 	[] -> ok;
 	JIDs when is_list(JIDs) ->
 	    Body = lists:flatten(
 		     io_lib:format(
 		       "The user '~s' was just created on node ~w.",
-		       [jlib:jid_to_string(UJID), node()])),
+		       [exmpp_jid:jid_to_list(UJID), node()])),
 	    lists:foreach(
 	      fun(S) ->
-		      case jlib:string_to_jid(S) of
-			  error -> ok;
-			  JID ->
-			      ejabberd_router:route(
-				jlib:make_jid("", Host, ""),
-				JID,
-				{xmlelement, "message", [{"type", "chat"}],
-				 [{xmlelement, "body", [],
-				   [{xmlcdata, Body}]}]})
+                      try
+                          JID = exmpp_jid:list_to_jid(S),
+                          ejabberd_router:route(
+                            exmpp_jid:make_bare_jid(Host),
+                            JID,
+                            exmpp_message:chat(Body))
+                      catch
+                          _ ->
+                              ok
 		      end
 	      end, JIDs);
 	_ ->

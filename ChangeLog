@@ -13,6 +13,8 @@
 	(process_privacy_iq): Fix a bug where the #iq record was not converted
 	back to an #xmlel before calling ejabberd_router:route/3.
 
+	* src/mod_register.erl: Convert to exmpp.
+
 2008-09-22  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_vcard.erl (get_sm_features): Remove unappropriate
