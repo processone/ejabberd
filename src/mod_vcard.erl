@@ -172,7 +172,7 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
     F = fun() ->
 		mnesia:read({vcard, US})
 	end,
-    [VCard | _] = case mnesia:transaction(F) of
+    Els = case mnesia:transaction(F) of
 	      {atomic, Rs} ->
 		  lists:map(fun(R) ->
 				    R#vcard.vcard
@@ -180,7 +180,12 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
 	      {aborted, _Reason} ->
 		  []
 	  end,
-    exmpp_iq:result(IQ_Rec, VCard);
+    case Els of
+	[VCard | _] ->
+	    exmpp_iq:result(IQ_Rec, VCard);
+	_ ->
+	    exmpp_iq:result(IQ_Rec)
+    end;
 process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
     #jid{node = User, ldomain = LServer} = From,
     case lists:member(LServer, ?MYHOSTS) of
@@ -643,8 +648,8 @@ reindex_vcards() ->
 
 
 remove_user(User, Server) ->
-    LUser = exmpp_jid:nodeprep(User),
-    LServer = exmpp_jid:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:delete({vcard, US}),

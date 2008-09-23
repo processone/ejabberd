@@ -1,3 +1,10 @@
+2008-09-23  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_vcard.erl (process_sm_iq): Fix a bug where a badmatch
+	exception was raised when the user didn't have a vCard.
+	(remove_user): Fix a bug where the exmpp_jid module was use instead of
+	exmpp_stringprep.
+
 2008-09-22  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_vcard.erl (get_sm_features): Remove unappropriate
