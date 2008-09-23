@@ -120,10 +120,11 @@
 -define(DEFAULT_NS, ?NS_JABBER_CLIENT).
 -define(PREFIXED_NS, [{?NS_XMPP, ?NS_XMPP_pfx}]).
 
--define(STANZA_ERROR(Condition),
-  exmpp_xml:xmlel_to_xmlelement(exmpp_stanza:error(Condition),
+-define(STANZA_ERROR(NS, Condition),
+  exmpp_xml:xmlel_to_xmlelement(exmpp_stanza:error(NS, Condition),
     [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
--define(ERR_FEATURE_NOT_IMPLEMENTED, ?STANZA_ERROR('feature-not-implemented')).
+-define(ERR_FEATURE_NOT_IMPLEMENTED(NS),
+  ?STANZA_ERROR(NS, 'feature-not-implemented')).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -383,7 +384,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	      exmpp_server_legacy_auth:fields(El, Fields)),
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {_U, _P, _D, undefined}} ->
-	    Err = exmpp_stanza:error('not-acceptable',
+	    Err = exmpp_stanza:error(El#xmlel.ns, 'not-acceptable',
 	      {"en", "No resource provided"}),
 	    send_element(StateData, exmpp_iq:error(El, Err)),
 	    fsm_next_state(wait_for_auth, StateData);
@@ -1741,20 +1742,20 @@ update_priority(Priority, Packet, StateData) ->
 			     Info).
 
 process_privacy_iq(From, To,
-		   #iq{type = Type} = IQ_Rec,
+		   #iq{type = Type, iq_ns = IQ_NS} = IQ_Rec,
 		   StateData) ->
     {Res, NewStateData} =
 	case Type of
 	    get ->
 		R = ejabberd_hooks:run_fold(
 		      privacy_iq_get, StateData#state.server,
-		      {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
+		      {error, ?ERR_FEATURE_NOT_IMPLEMENTED(IQ_NS)},
 		      [From, To, IQ_Rec, StateData#state.privacy_list]),
 		{R, StateData};
 	    set ->
 		case ejabberd_hooks:run_fold(
 		       privacy_iq_set, StateData#state.server,
-		       {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
+		       {error, ?ERR_FEATURE_NOT_IMPLEMENTED(IQ_NS)},
 		       [From, To, IQ_Rec]) of
 		    {result, R, NewPrivList} ->
 			{{result, R},
@@ -1770,7 +1771,7 @@ process_privacy_iq(From, To,
 		exmpp_iq:error(IQ_Rec, Error)
 	end,
     ejabberd_router:route(
-      To, From, IQRes),
+      To, From, exmpp_iq:iq_to_xmlel(IQRes)),
     NewStateData.
 
 

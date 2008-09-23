@@ -8,6 +8,11 @@
 	* src/ejabberd_auth_odbc.erl (check_password): Fix a typo in the
 	exmpp_stringprep module name.
 
+	* src/ejabberd_c2s.erl: Fix a misuse of exmpp_stanza:error/2: the
+	namespace argument (the first one) was missing.
+	(process_privacy_iq): Fix a bug where the #iq record was not converted
+	back to an #xmlel before calling ejabberd_router:route/3.
+
 2008-09-22  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_vcard.erl (get_sm_features): Remove unappropriate
