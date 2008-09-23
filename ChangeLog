@@ -5,8 +5,8 @@
 	(remove_user): Fix a bug where the exmpp_jid module was use instead of
 	exmpp_stringprep.
 
-	* src/ejabberd_auth_odbc.erl (check_password): Fix a typo in the
-	exmpp_stringprep module name.
+	* src/ejabberd_auth_odbc.erl (check_password), src/mod_roster.erl
+	(remove_user): Fix a typo in the exmpp_stringprep module name.
 
 	* src/ejabberd_c2s.erl: Fix a misuse of exmpp_stanza:error/2: the
 	namespace argument (the first one) was missing.

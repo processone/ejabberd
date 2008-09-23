@@ -553,7 +553,7 @@ in_auto_reply(_,    _,    _)  ->           none.
 
 remove_user(User, Server) ->
     try
-	LUser = exmpp_stringpre:nodeprep(User),
+	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
 	F = fun() ->
