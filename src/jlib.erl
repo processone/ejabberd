@@ -68,6 +68,8 @@
 	 short_prepd_jid/1,
 	 short_prepd_bare_jid/1]).
 
+-include_lib("exmpp/include/exmpp_xml.hrl").
+
 -include("jlib.hrl").
 
 %send_iq(From, To, ID, SubTags) ->
@@ -517,12 +519,11 @@ timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 		    [Year, Month, Day, Hour, Minute, Second])).
 
 timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
-    {xmlelement, "x",
-     [{"xmlns", ?NS_DELAY},
-      {"stamp", lists:flatten(
-		  io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
-				[Year, Month, Day, Hour, Minute, Second]))}],
-     []}.
+    Timestamp = lists:flatten(
+      io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
+	[Year, Month, Day, Hour, Minute, Second])),
+    exmpp_xml:set_attribute(#xmlel{ns = ?NS_DELAY, name = 'x'},
+      'stamp', Timestamp).
 
 now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =

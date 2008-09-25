@@ -157,16 +157,13 @@ store_packet(From, To, Packet) ->
 		    #jid{lnode = LUser, ldomain = LServer} = To,
 		    TimeStamp = now(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
-		    % XXX OLD FORMAT: Packet is stored in the old format.
-		    PacketOld = exmpp_xml:xmlel_to_xmlelement(Packet,
-		      [?DEFAULT_NS], ?PREFIXED_NS),
 		    gen_mod:get_module_proc(To#jid.ldomain, ?PROCNAME) !
 			#offline_msg{us = {LUser, LServer},
 				     timestamp = TimeStamp,
 				     expire = Expire,
 				     from = From,
 				     to = To,
-				     packet = PacketOld},
+				     packet = Packet},
 		    stop;
 		_ ->
 		    ok
@@ -233,80 +230,76 @@ find_x_expire(TimeStamp, [_ | Els]) ->
 
 
 resend_offline_messages(User, Server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		Rs = mnesia:wread({offline_msg, US}),
-		mnesia:delete({offline_msg, US}),
-		Rs
-	end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    lists:foreach(
-	      fun(R) ->
-		      Packet = case R#offline_msg.packet of
-			  #xmlelement{} = P ->
-			      exmpp_xml:xmlelement_to_xmlel(P,
-				[?DEFAULT_NS], ?PREFIXED_NS);
-			  #xmlel{} = P ->
-			      P
-		      end,
-		      % XXX OLD FORMAT: Convert From & To.
-		      ejabberd_sm !
-			  {route,
-			   jlib:from_old_jid(R#offline_msg.from),
-			   jlib:from_old_jid(R#offline_msg.to),
-			   exmpp_xml:append_child(Packet,
-			     jlib:timestamp_to_xml(
-			       calendar:now_to_universal_time(
-				 R#offline_msg.timestamp)))}
-	      end,
-	      lists:keysort(#offline_msg.timestamp, Rs));
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    Rs = mnesia:wread({offline_msg, US}),
+		    mnesia:delete({offline_msg, US}),
+		    Rs
+	    end,
+	case mnesia:transaction(F) of
+	    {atomic, Rs} ->
+		lists:foreach(
+		  fun(R) ->
+			  Packet = R#offline_msg.packet,
+			  ejabberd_sm !
+			      {route,
+			       R#offline_msg.from,
+			       R#offline_msg.to,
+			       exmpp_xml:append_child(Packet,
+				 jlib:timestamp_to_xml(
+				   calendar:now_to_universal_time(
+				     R#offline_msg.timestamp)))}
+		  end,
+		  lists:keysort(#offline_msg.timestamp, Rs));
+	    _ ->
+		ok
+	end
+    catch
 	_ ->
 	    ok
     end.
 
 pop_offline_messages(Ls, User, Server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		Rs = mnesia:wread({offline_msg, US}),
-		mnesia:delete({offline_msg, US}),
-		Rs
-	end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    TS = now(),
-	    Ls ++ lists:map(
-		    fun(R) ->
-			    Packet = case R#offline_msg.packet of
-				#xmlelement{} = P ->
-				    exmpp_xml:xmlelement_to_xmlel(P,
-				      [?DEFAULT_NS], ?PREFIXED_NS);
-				#xmlel{} = P ->
-				    P
-			    end,
-			    % XXX OLD FORMAT: Convert From & To.
-			    {route,
-			     jlib:from_old_jid(R#offline_msg.from),
-			     jlib:from_old_jid(R#offline_msg.to),
-			     exmpp_xml:append_child(Packet,
-			       jlib:timestamp_to_xml(
-				 calendar:now_to_universal_time(
-				   R#offline_msg.timestamp)))}
-		    end,
-		    lists:filter(
-		      fun(R) ->
-			    case R#offline_msg.expire of
-				never ->
-				    true;
-				TimeStamp ->
-				    TS < TimeStamp
-			    end
-		      end,
-		      lists:keysort(#offline_msg.timestamp, Rs)));
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    Rs = mnesia:wread({offline_msg, US}),
+		    mnesia:delete({offline_msg, US}),
+		    Rs
+	    end,
+	case mnesia:transaction(F) of
+	    {atomic, Rs} ->
+		TS = now(),
+		Ls ++ lists:map(
+			fun(R) ->
+				Packet = R#offline_msg.packet,
+				{route,
+				 R#offline_msg.from,
+				 R#offline_msg.to,
+				 exmpp_xml:append_child(Packet,
+				   jlib:timestamp_to_xml(
+				     calendar:now_to_universal_time(
+				       R#offline_msg.timestamp)))}
+			end,
+			lists:filter(
+			  fun(R) ->
+				case R#offline_msg.expire of
+				    never ->
+					true;
+				    TimeStamp ->
+					TS < TimeStamp
+				end
+			  end,
+			  lists:keysort(#offline_msg.timestamp, Rs)));
+	    _ ->
+		Ls
+	end
+    catch
 	_ ->
 	    Ls
     end.
@@ -350,19 +343,24 @@ remove_old_messages(Days) ->
     mnesia:transaction(F).
 
 remove_user(User, Server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		mnesia:delete({offline_msg, US})
-	end,
-    mnesia:transaction(F).
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    mnesia:delete({offline_msg, US})
+	    end,
+	mnesia:transaction(F)
+    catch
+	_ ->
+	    ok
+    end.
 
 update_table() ->
     Fields = record_info(fields, offline_msg),
     case mnesia:table_info(offline_msg, attributes) of
 	Fields ->
-	    ok;
+	    convert_to_exmpp();
 	[user, timestamp, expire, from, to, packet] ->
 	    ?INFO_MSG("Converting offline_msg table from "
 		      "{user, timestamp, expire, from, to, packet} format", []),
@@ -378,11 +376,19 @@ update_table() ->
 	    F1 = fun() ->
 			 mnesia:write_lock_table(mod_offline_tmp_table),
 			 mnesia:foldl(
-			   fun(#offline_msg{us = U, packet = P} = R, _) ->
+			   fun(#offline_msg{us = U, from = F, to = T, packet = P} = R, _) ->
+				   U1 = convert_jid_to_exmpp(U),
+				   F1 = jlib:from_old_jid(F),
+				   T1 = jlib:from_old_jid(T),
+				   P1 = exmpp_xml:xmlelement_to_xmlel(
+				     P,
+				     [?DEFAULT_NS],
+				     ?PREFIXED_NS),
 				   New_R = R#offline_msg{
-				     us = {U, Host},
-				     packet = exmpp_xml:xmlelement_to_xmlel(P,
-				       [?DEFAULT_NS], ?PREFIXED_NS)
+				     us = {U1, Host},
+				     from = F1,
+				     to = T1,
+				     packet = P1
 				   },
 				   mnesia:dirty_write(
 				     mod_offline_tmp_table,
@@ -415,12 +421,19 @@ update_table() ->
 	      offline_msg,
 	      fun({_, U, TS, F, T, P}) ->
 		      Expire = find_x_expire(TS, P#xmlelement.children),
-		      #offline_msg{us = U,
+		      U1 = convert_jid_to_exmpp(U),
+		      F1 = jlib:from_old_jid(F),
+		      T1 = jlib:from_old_jid(T),
+		      P1 = exmpp_xml:xmlelement_to_xmlel(
+			P,
+			[?DEFAULT_NS],
+			?PREFIXED_NS),
+		      #offline_msg{us = U1,
 				   timestamp = TS,
 				   expire = Expire,
-				   from = F,
-				   to = T,
-				   packet = P}
+				   from = F1,
+				   to = T1,
+				   packet = P1}
 	      end, Fields),
 	    F1 = fun() ->
 			 mnesia:write_lock_table(mod_offline_tmp_table),
@@ -447,27 +460,64 @@ update_table() ->
 	    mnesia:transform_table(offline_msg, ignore, Fields)
     end.
 
+convert_to_exmpp() ->
+    Fun = fun() ->
+	case mnesia:first(offline_msg) of
+	    '$end_of_table' ->
+		none;
+	    Key ->
+		case mnesia:read({offline_msg, Key}) of
+		    [#offline_msg{packet = #xmlel{}} | _] ->
+			none;
+		    [#offline_msg{packet = #xmlelement{}} | _] ->
+			mnesia:foldl(fun convert_to_exmpp2/2,
+			  done, offline_msg, write)
+		end
+	end
+    end,
+    mnesia:transaction(Fun).
+
+convert_to_exmpp2(#offline_msg{
+  us = {US_U, US_S},
+  from = From,
+  to = To,
+  packet = Packet} = R, Acc) ->
+    % Remove old entry.
+    mnesia:delete_object(R),
+    % Convert "" to undefined in JIDs.
+    US_U1 = convert_jid_to_exmpp(US_U),
+    US_S1 = convert_jid_to_exmpp(US_S),
+    From1 = jlib:from_old_jid(From),
+    To1 = jlib:from_old_jid(To),
+    % Convert stanza.
+    Packet1 = exmpp_xml:xmlelement_to_xmlel(Packet,
+      [?DEFAULT_NS], ?PREFIXED_NS),
+    % Prepare the new record.
+    New_R = R#offline_msg{
+      us = {US_U1, US_S1},
+      from = From1,
+      to = To1,
+      packet = Packet1},
+    % Write the new record.
+    mnesia:write(New_R),
+    Acc.
+
+convert_jid_to_exmpp("") -> undefined;
+convert_jid_to_exmpp(V)  -> V.
 
 %% Helper functions:
 
 %% Warn senders that their messages have been discarded:
 discard_warn_sender(Msgs) ->
     lists:foreach(
-      fun(#offline_msg{from=From, to=To, packet=Packet0}) ->
-	      Packet = case Packet0 of
-		  #xmlelement{} = P ->
-		      exmpp_xml:xmlelement_to_xmlel(P,
-			[?DEFAULT_NS], ?PREFIXED_NS);
-		  #xmlel{} = P ->
-		      P
-	      end,
+      fun(#offline_msg{from=From, to=To, packet=Packet}) ->
 	      ErrText = "Your contact offline message queue is full. The message has been discarded.",
 	      Error = exmpp_stanza:error('resource-constraint',
 		{"en", ErrText}),
 	      Err = exmpp_stanza:reply_with_error(Packet, Error),
 	      ejabberd_router:route(
-		jlib:from_old_jid(To),
-		jlib:from_old_jid(From), Err)
+		To,
+		From, Err)
       end, Msgs).
 
 
@@ -482,10 +532,21 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_queue(User, Server, Query, Lang) ->
-    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
-    Res = user_queue_parse_query(US, Query),
-    Msgs = lists:keysort(#offline_msg.timestamp,
-			 mnesia:dirty_read({offline_msg, US})),
+    {US, Msgs, Res} = try
+	US0 = {
+	  exmpp_stringprep:nodeprep(User),
+	  exmpp_stringprep:nameprep(Server)
+	},
+	{
+	  US0,
+	  lists:keysort(#offline_msg.timestamp,
+			mnesia:dirty_read({offline_msg, US0})),
+	  user_queue_parse_query(US0, Query)
+	}
+    catch
+	_ ->
+	    {{"invalid", "invalid"}, [], nothing}
+    end,
     FMsgs =
 	lists:map(
 	  fun(#offline_msg{timestamp = TimeStamp, from = From, to = To,
@@ -497,11 +558,9 @@ user_queue(User, Server, Query, Lang) ->
 			   io_lib:format(
 			     "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 			     [Year, Month, Day, Hour, Minute, Second])),
-		  SFrom = exmpp_jid:jid_to_list(jlib:from_old_jid(From)),
-		  STo = exmpp_jid:jid_to_list(jlib:from_old_jid(To)),
-		  Packet0 = exmpp_xml:xmlelement_to_xmlel(Packet,
-		    [?DEFAULT_NS], ?PREFIXED_NS),
-		  Packet1 = exmpp_stanza:set_jids(Packet0, SFrom, STo),
+		  SFrom = exmpp_jid:jid_to_list(From),
+		  STo = exmpp_jid:jid_to_list(To),
+		  Packet1 = exmpp_stanza:set_jids(Packet, SFrom, STo),
 		  FPacket = exmpp_xml:node_to_list(
 		    exmpp_xml:indent_document(Packet1, <<"  ">>),
 		    [?DEFAULT_NS], ?PREFIXED_NS),
@@ -571,8 +630,16 @@ us_to_list({User, Server}) ->
     exmpp_jid:jid_to_list(User, Server).
 
 webadmin_user(Acc, User, Server, Lang) ->
-    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
-    QueueLen = length(mnesia:dirty_read({offline_msg, US})),
-    FQueueLen = [?AC("queue/",
-		     integer_to_list(QueueLen))],
+    FQueueLen = try
+	US = {
+	  exmpp_stringprep:nodeprep(User),
+	  exmpp_stringprep:nameprep(Server)
+	},
+	QueueLen = length(mnesia:dirty_read({offline_msg, US})),
+	[?AC("queue/",
+	     integer_to_list(QueueLen))]
+    catch
+	_ ->
+	    [?C("?")]
+    end,
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen.
