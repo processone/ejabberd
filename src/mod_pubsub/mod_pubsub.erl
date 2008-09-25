@@ -77,7 +77,8 @@
 	 delete_item/4,
 	 get_configure/4,
 	 set_configure/5,
-	 get_items/2,
+	 get_items/3,
+	 tree_action/3,
 	 node_action/3,
 	 node_action/4
 	]).
@@ -114,6 +115,7 @@
 -record(state, {server_host,
 		host,
 		access,
+		pep_mapping = [],
 		nodetree = ?STDTREE,
 		plugins = [?STDNODE]}).
 
@@ -175,7 +177,7 @@ init([ServerHost, Opts]) ->
        {?NS_PUBSUB, ejabberd_sm, iq_sm},
        {?NS_PUBSUB_OWNER, ejabberd_sm, iq_sm}]),
     ejabberd_router:register_route(Host),
-    {Plugins, NodeTree} = init_plugins(Host, ServerHost, Opts),
+    {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     update_database(Host),
     ets:new(gen_mod:get_module_proc(Host, pubsub_state), [set, named_table]),
     ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {nodetree, NodeTree}),
@@ -183,10 +185,12 @@ init([ServerHost, Opts]) ->
     ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {plugins, Plugins}),
+	ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
     init_nodes(Host, ServerHost),
     {ok, #state{host = Host,
 		server_host = ServerHost,
 		access = Access,
+		pep_mapping = PepMapping,
 		nodetree = NodeTree,
 		plugins = Plugins}}.
 
@@ -209,12 +213,14 @@ init_plugins(Host, ServerHost, Opts) ->
     ?DEBUG("** tree plugin is ~p",[TreePlugin]),
     TreePlugin:init(Host, ServerHost, Opts),
     Plugins = lists:usort(gen_mod:get_opt(plugins, Opts, []) ++ [?STDNODE]),
+	PepMapping = lists:usort(gen_mod:get_opt(pep_mapping, Opts, [])), 
+	?DEBUG("** PEP Mapping : ~p~n",[PepMapping]),
     lists:foreach(fun(Name) ->
 			  ?DEBUG("** init ~s plugin",[Name]),
 			  Plugin = list_to_atom(?PLUGIN_PREFIX ++ Name),
 			  Plugin:init(Host, ServerHost, Opts)
 		  end, Plugins),
-    {Plugins, TreePlugin}.
+    {Plugins, TreePlugin, PepMapping}.
 
 terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     lists:foreach(fun(Name) ->
@@ -371,11 +377,11 @@ disco_sm_items(Acc, _From, To, [], _Lang) ->
 	    {result, NodeItems ++ Items}
     end;
 
-disco_sm_items(Acc, _From, To, Node, _Lang) ->
+disco_sm_items(Acc, From, To, Node, _Lang) ->
     %% TODO, use iq_disco_items(Host, Node, From)
     Host = To#jid.lserver,
     LJID = jlib:jid_tolower(jlib:jid_remove_resource(To)),
-    case get_items(Host, Node) of
+    case get_items(Host, Node, From) of
 	[] ->
 	    Acc;
 	AllItems ->
@@ -430,6 +436,8 @@ handle_call(server_host, _From, State) ->
     {reply, State#state.server_host, State};
 handle_call(plugins, _From, State) ->
     {reply, State#state.plugins, State};
+handle_call(pep_mapping, _From, State) ->
+    {reply, State#state.pep_mapping, State};
 handle_call(nodetree, _From, State) ->
     {reply, State#state.nodetree, State};
 handle_call(stop, _From, State) ->
@@ -717,7 +725,7 @@ node_disco_info(Host, Node, From, Identity, Features) ->
 				    [] ->
 					["leaf"]; %% No sub-nodes: it's a leaf node
 				    _ ->
-					case node_call(Type, get_items, [Host, Node]) of
+					case node_call(Type, get_items, [Host, Node, From]) of
 					    {result, []} -> ["collection"];
 					    {result, _} -> ["leaf", "collection"];
 					    _ -> []
@@ -782,7 +790,7 @@ iq_disco_items(Host, Item, From) ->
 	    %% TODO That is, remove name attribute
 	    Action =
 		fun(#pubsub_node{type = Type}) ->
-			NodeItems = case node_call(Type, get_items, [Host, Node]) of
+			NodeItems = case node_call(Type, get_items, [Host, Node, From]) of
 					{result, I} -> I;
 					_ -> []
 				    end,
@@ -1183,10 +1191,7 @@ create_node(Host, ServerHost, [], Owner, Type, Access, Configuration) ->
 	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "nodeid-required")}
     end;
 create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
-    Type = case Host of
-	       {_User, _Server, _Resource} -> ?PEPNODE;
-	       _ -> GivenType
-	   end,
+    Type = select_type(ServerHost, Host, Node, GivenType),
     Parent = lists:sublist(Node, length(Node) - 1),
     %% TODO, check/set node_type = Type
     ParseOptions = case xml:remove_cdata(Configuration) of
@@ -1488,12 +1493,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    %% handles auto-create feature
 	    %% for automatic node creation. we'll take the default node type:
 	    %% first listed into the plugins configuration option, or pep
-	    Type = case Host of
-		{_User, _Server, _Resource} -> 
-		    ?PEPNODE;
-		_ -> 
-		    hd(plugins(ServerHost))
-	    end,
+	    Type = select_type(ServerHost, Host, Node),
 	    case lists:member("auto-create", features(Type)) of
 		true ->
 		    case create_node(Host, ServerHost, Node, Publisher, Type) of
@@ -1712,8 +1712,8 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 	    end
     end.
 
-get_items(Host, Node) ->
-    case node_action(Host, Node, get_items, [Host, Node]) of
+get_items(Host, Node, From) ->
+    case node_action(Host, Node, get_items, [Host, Node, From]) of
 	{result, Items} -> Items;
 	_ -> []
     end.
@@ -1723,15 +1723,15 @@ get_items(Host, Node) ->
 %%	 Node = pubsubNode()
 %%	 LJID = {U, S, []}
 %% @doc <p>Resend the items of a node to the user.</p>
-send_all_items(Host, Node, LJID) ->
-    send_items(Host, Node, LJID, all).
+%send_all_items(Host, Node, LJID) ->
+%    send_items(Host, Node, LJID, all).
 
 send_last_item(Host, Node, LJID) ->
     send_items(Host, Node, LJID, last).
 
 %% TODO use cache-last-item feature
 send_items(Host, Node, LJID, Number) ->
-    ToSend = case get_items(Host, Node) of
+    ToSend = case get_items(Host, Node, LJID) of
 	[] -> 
 	    [];
 	Items ->
@@ -2411,11 +2411,8 @@ get_configure(Host, Node, From, Lang) ->
 	end,
     transaction(Host, Node, Action, sync_dirty).
 
-get_default(Host, _Node, _From, Lang) ->
-    Type = case Host of 
-    {_, _, _} -> ?PEPNODE;
-    _ -> hd(plugins(Host))
-    end,
+get_default(Host, Node, _From, Lang) ->
+    Type=select_type(Host, Host, Node),
     Options = node_options(Type),
     {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
 		[{xmlelement, "default", [],
@@ -2663,6 +2660,19 @@ plugins(Host) ->
     [{plugins, PL}] -> PL;
     _ -> [?STDNODE]
     end.
+select_type(ServerHost, Host, Node, Type)->
+	?DEBUG("SELECT_TYPE : ~p~n", [Node]),
+	case Host of
+	{_User, _Server, _Resource} -> 
+   		case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), pep_mapping) of
+   	 		[{pep_mapping, PM}] -> ?DEBUG("SELECT_TYPE : ~p~n", [PM]), proplists:get_value(Node, PM,?PEPNODE);
+   	 		R -> ?DEBUG("SELECT_TYPE why ?: ~p~n", [R]), ?PEPNODE
+   	 	end;
+	_ -> 
+	   Type
+    end.
+select_type(ServerHost, Host, Node) -> 
+ 	select_type(ServerHost, Host, Node,hd(plugins(ServerHost))).
 
 features() ->
 	[
@@ -2811,3 +2821,4 @@ uniqid() ->
 get_item_name(Host, Node, Id) ->
     {result, Name} = node_action(Host, Node, get_item_name, [Host, Node, Id]),
     Name.
+

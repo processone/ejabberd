@@ -1,3 +1,22 @@
+2008-09-24  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Allow PEP node type to be mapped with
+	namespace (EJAB-739). Change get_items to use From (EJAB-751). (Thanks
+	to Eric Cestari)
+	* src/mod_pubsub/gen_pubsub_node.erl: Likewise
+	* src/mod_pubsub/node_dispatch.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_zoo.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+
+	* src/mod_pubsub/node_mb.erl: Added PEP microglobing node (Thanks to
+	Eric Cestari)
+
 2008-09-22  Mickael Remond  <mremond@process-one.net>
 
 	* src/mod_configure.erl: Fix adhoc commands reply types for

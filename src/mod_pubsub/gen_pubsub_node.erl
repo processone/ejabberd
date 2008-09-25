@@ -63,7 +63,7 @@ behaviour_info(callbacks) ->
      {get_state, 3},
      {set_state, 1},
      {get_items, 7},
-     {get_items, 2},
+     {get_items, 3},
      {get_item, 8},
      {get_item, 3},
      {set_item, 1},
