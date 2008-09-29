@@ -11,6 +11,10 @@
 	stanza, default to an empty binary, not an empty string; this is what
 	mod_last expects.
 
+	* src/mod_last.erl: Add try/catch block around
+	exmpp_stringprep:*prep/1 uses. Add table conversion.
+	(get_last): Do not convert status to binary because it's already one.
+
 2008-09-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (timestamp_to_xml): Create an #xmlel element, not an

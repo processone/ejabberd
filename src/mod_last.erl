@@ -122,7 +122,7 @@ get_last(IQ_Rec, LUser, LServer) ->
 	    Sec = TimeStamp2 - TimeStamp,
 	    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
 	      attrs = [#xmlattr{name = 'seconds', value = integer_to_list(Sec)}],
-	      children = [#xmlcdata{cdata = list_to_binary(Status)}]},
+	      children = [#xmlcdata{cdata = Status}]},
 	    exmpp_iq:result(IQ_Rec, Response)
     end.
 
@@ -134,15 +134,20 @@ on_presence_update(User, Server, _Resource, Status) ->
     store_last_info(User, Server, TimeStamp, Status).
 
 store_last_info(User, Server, TimeStamp, Status) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		mnesia:write(#last_activity{us = US,
-					    timestamp = TimeStamp,
-					    status = Status})
-	end,
-    mnesia:transaction(F).
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    mnesia:write(#last_activity{us = US,
+						timestamp = TimeStamp,
+						status = Status})
+	    end,
+	mnesia:transaction(F)
+    catch
+	_ ->
+	    ok
+    end.
     
 %% Returns: {ok, Timestamp, Status} | not_found
 get_last_info(LUser, LServer) ->
@@ -156,20 +161,25 @@ get_last_info(LUser, LServer) ->
     end.
 
 remove_user(User, Server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		mnesia:delete({last_activity, US})
-	end,
-    mnesia:transaction(F).
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    mnesia:delete({last_activity, US})
+	    end,
+	mnesia:transaction(F)
+    catch
+	_ ->
+	    ok
+    end.
 
 
 update_table() ->
     Fields = record_info(fields, last_activity),
     case mnesia:table_info(last_activity, attributes) of
 	Fields ->
-	    ok;
+            convert_to_exmpp();
 	[user, timestamp, status] ->
 	    ?INFO_MSG("Converting last_activity table from {user, timestamp, status} format", []),
 	    Host = ?MYNAME,
@@ -178,11 +188,12 @@ update_table() ->
 			mnesia:write_lock_table(last_activity),
 			mnesia:foldl(
 			  fun({_, U, T, S} = R, _) ->
+				  U1 = convert_jid_to_exmpp(U),
 				  mnesia:delete_object(R),
 				  mnesia:write(
-				    #last_activity{us = {U, Host},
+				    #last_activity{us = {U1, Host},
 						   timestamp = T,
-						   status = S})
+						   status = list_to_binary(S)})
 			  end, ok, last_activity)
 		end,
 	    mnesia:transaction(F);
@@ -194,7 +205,7 @@ update_table() ->
 	      fun({_, U, T}) ->
 		      #last_activity{us = U,
 				     timestamp = T,
-				     status = ""}
+				     status = <<>>}
 	      end, Fields),
 	    F = fun() ->
 			mnesia:write_lock_table(last_activity),
@@ -213,3 +224,36 @@ update_table() ->
 	    mnesia:transform_table(last_activity, ignore, Fields)
     end.
 
+convert_to_exmpp() ->
+    Fun = fun() ->
+	case mnesia:first(last_activity) of
+	    '$end_of_table' ->
+		none;
+	    Key ->
+		case mnesia:read({last_activity, Key}) of
+		    [#last_activity{status = Status}] when is_binary(Status) ->
+			none;
+		    [#last_activity{}] ->
+			mnesia:foldl(fun convert_to_exmpp2/2,
+			  done, last_activity, write)
+		end
+	end
+    end,
+    mnesia:transaction(Fun).
+
+convert_to_exmpp2(#last_activity{us = {U, S} = Key, status = Status} = LA,
+  Acc) ->
+    % Remove old entry.
+    mnesia:delete({last_activity, Key}),
+    % Convert "" to undefined in JIDs.
+    U1 = convert_jid_to_exmpp(U),
+    % Convert status.
+    Status1 = list_to_binary(Status),
+    % Prepare the new record.
+    New_LA = LA#last_activity{us = {U1, S}, status = Status1},
+    % Write the new record.
+    mnesia:write(New_LA),
+    Acc.
+
+convert_jid_to_exmpp("") -> undefined;
+convert_jid_to_exmpp(V)  -> V.
