@@ -19,6 +19,9 @@
 
 	* src/mod_shared_roster.erl: Convert to exmpp (not tested yet).
 
+	* src/mod_roster.erl (push_item), src/mod_roster_odbc.erl (push_item):
+	Fix a bug in #xmlel construction: children must be a list.
+
 2008-09-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (timestamp_to_xml): Create an #xmlel element, not an

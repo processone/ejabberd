@@ -354,7 +354,7 @@ push_item(User, Server, From, Item) ->
 % TODO: don't push to those who not load roster
 push_item(User, Server, Resource, From, Item) ->
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
-      children = item_to_xml(Item)},
+      children = [item_to_xml(Item)]},
     ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request, "push"),
     ejabberd_router:route(
       From,
