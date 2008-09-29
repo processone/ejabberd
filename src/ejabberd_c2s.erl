@@ -1382,7 +1382,7 @@ presence_update(From, Packet, StateData) ->
     case exmpp_presence:get_type(Packet) of
 	'unavailable' ->
 	    Status = case exmpp_presence:get_status(Packet) of
-		undefined -> "";
+		undefined -> <<>>;
 		S         -> S
 	    end,
 	    Info = [{ip, StateData#state.ip}, {conn, StateData#state.conn},

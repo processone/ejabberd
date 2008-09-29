@@ -7,6 +7,10 @@
 
 	* src/mod_disco.erl: Remove compatilibity code.
 
+	* src/ejabberd_c2s.erl: When the status is not specified in a presence
+	stanza, default to an empty binary, not an empty string; this is what
+	mod_last expects.
+
 2008-09-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (timestamp_to_xml): Create an #xmlel element, not an
