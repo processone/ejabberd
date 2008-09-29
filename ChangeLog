@@ -22,6 +22,10 @@
 	* src/mod_roster.erl (push_item), src/mod_roster_odbc.erl (push_item):
 	Fix a bug in #xmlel construction: children must be a list.
 
+	* src/ejabberd_receiver.erl: Add the {autoload_known, true} flag to
+	the XML parser options. This allows modules to extend the known
+	nss/names/attrs with their own data.
+
 2008-09-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (timestamp_to_xml): Create an #xmlel element, not an
