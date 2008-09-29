@@ -17,6 +17,8 @@
 
 	* src/mod_adhoc.erl: Remove compatibility code (not tested yet).
 
+	* src/mod_shared_roster.erl: Convert to exmpp (not tested yet).
+
 2008-09-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (timestamp_to_xml): Create an #xmlel element, not an
