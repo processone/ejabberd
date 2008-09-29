@@ -1,3 +1,10 @@
+2008-09-29  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/jlib.erl (parse_xdata_submit, parse_xdata_fields): Fix a bug
+	where exmpp_xml:get_attribute_from_list/3 was called with only 2
+	arguments; this code has not been updated when exmpp_xml's API
+	changed...
+
 2008-09-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (timestamp_to_xml): Create an #xmlel element, not an

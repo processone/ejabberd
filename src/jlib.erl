@@ -453,7 +453,7 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
 
 
 parse_xdata_submit({xmlel, _, _, _, Attrs, Els}) ->
-    case exmpp_xml:get_attribute_from_list(Attrs, 'type') of
+    case exmpp_xml:get_attribute_from_list(Attrs, 'type', "") of
 	"submit" ->
 	    lists:reverse(parse_xdata_fields(Els, []));
 	_ ->
@@ -472,7 +472,7 @@ parse_xdata_fields([], Res) ->
     Res;
 parse_xdata_fields([{xmlel, _, _, 'field', Attrs, SubEls} | Els],
   Res) ->
-    case exmpp_xml:get_attribute_from_list(Attrs, 'var') of
+    case exmpp_xml:get_attribute_from_list(Attrs, 'var', "") of
 	"" ->
 	    parse_xdata_fields(Els, Res);
 	Var ->
