@@ -1,3 +1,7 @@
+2008-09-29  Badlop  <badlop@process-one.net>
+
+	* contrib/ejabberd-modules.repo: Include 2.0.x branches
+
 2008-09-22  Mickael Remond  <mremond@process-one.net>
 
 	* src/mod_configure.erl: Fix adhoc commands reply types for
