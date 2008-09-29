@@ -5,6 +5,8 @@
 	arguments; this code has not been updated when exmpp_xml's API
 	changed...
 
+	* src/mod_disco.erl: Remove compatilibity code.
+
 2008-09-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (timestamp_to_xml): Create an #xmlel element, not an

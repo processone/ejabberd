@@ -131,15 +131,11 @@ process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
     Host = To#jid.ldomain,
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 
-    % XXX OLD FORMAT: From, To.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
     case ejabberd_hooks:run_fold(disco_local_items,
 				 Host,
 				 empty,
-				 [FromOld, ToOld, Node, Lang]) of
+				 [From, To, Node, Lang]) of
 	{result, Items} ->
-	    % XXX OLD FORMAT: Items might be an #xmlelement.
 	    ANode = case Node of
 			"" -> [];
 			_ -> [#xmlattr{name = 'node', value = Node}]
@@ -148,7 +144,6 @@ process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
 	      attrs = ANode, children = Items},
 	    exmpp_iq:result(IQ_Rec, Result);
 	{error, Error} ->
-	    % XXX OLD FORMAT: Error.
 	    exmpp_iq:error(IQ_Rec, Error)
     end;
 process_local_iq_items(_From, _To, #iq{type = set} = IQ_Rec) ->
@@ -159,19 +154,14 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Host = To#jid.ldomain,
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
-    % XXX OLD FORMAT: From, To.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
-    % XXX OLD FORMAT: Identity might be an #xmlelement.
     Identity = ejabberd_hooks:run_fold(disco_local_identity,
 				       Host,
 				       [],
-				       [FromOld, ToOld, Node, Lang]),
-    % XXX OLD FORMAT: From, To.
+				       [From, To, Node, Lang]),
     case ejabberd_hooks:run_fold(disco_local_features,
 				 Host,
 				 empty,
-				 [FromOld, ToOld, Node, Lang]) of
+				 [From, To, Node, Lang]) of
 	{result, Features} ->
 	    ANode = case Node of
 			"" -> [];
@@ -243,7 +233,6 @@ get_local_services({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
 get_local_services(Acc, _From, To, [], _Lang) ->
-    % XXX OLD FORMAT: Items might be an #xmlelement.
     Items = case Acc of
 		{result, Its} -> Its;
 		empty -> []
@@ -283,13 +272,10 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Host = To#jid.ldomain,
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
-    % XXX OLD FORMAT: From, To.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
     case ejabberd_hooks:run_fold(disco_sm_items,
 				 Host,
 				 empty,
-				 [FromOld, ToOld, Node, Lang]) of
+				 [From, To, Node, Lang]) of
 	{result, Items} ->
 	    ANode = case Node of
 			"" -> [];
@@ -355,18 +341,14 @@ process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Host = To#jid.ldomain,
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
-    % XXX OLD FORMAT: From, To.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
-    % XXX OLD FORMAT: Identity might be an #xmlelement.
     Identity = ejabberd_hooks:run_fold(disco_sm_identity,
 				       Host,
 				       [],
-				       [FromOld, ToOld, Node, Lang]),
+				       [From, To, Node, Lang]),
     case ejabberd_hooks:run_fold(disco_sm_features,
 				 Host,
 				 empty,
-				 [FromOld, ToOld, Node, Lang]) of
+				 [From, To, Node, Lang]) of
 	{result, Features} ->
 	    ANode = case Node of
 			"" -> [];
