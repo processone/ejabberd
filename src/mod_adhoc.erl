@@ -99,10 +99,7 @@ get_local_commands(Acc, _From, #jid{domain = Server, ldomain = LServer} = _To, "
     end;
 
 get_local_commands(_Acc, From, #jid{ldomain = LServer} = To, ?NS_ADHOC_s, Lang) ->
-    % XXX OLD FORMAT: From, To.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
-    ejabberd_hooks:run_fold(adhoc_local_items, LServer, {result, []}, [FromOld, ToOld, Lang]);
+    ejabberd_hooks:run_fold(adhoc_local_items, LServer, {result, []}, [From, To, Lang]);
 
 get_local_commands(_Acc, _From, _To, "ping", _Lang) ->
     {result, []};
@@ -132,10 +129,7 @@ get_sm_commands(Acc, _From, #jid{ldomain = LServer} = To, "", Lang) ->
     end;
 
 get_sm_commands(_Acc, From, #jid{ldomain = LServer} = To, ?NS_ADHOC_s, Lang) ->
-    % XXX OLD FORMAT: From, To.
-    FromOld = jlib:to_old_jid(From),
-    ToOld = jlib:to_old_jid(To),
-    ejabberd_hooks:run_fold(adhoc_sm_items, LServer, {result, []}, [FromOld, ToOld, Lang]);
+    ejabberd_hooks:run_fold(adhoc_sm_items, LServer, {result, []}, [From, To, Lang]);
 
 get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -223,11 +217,8 @@ process_adhoc_request(From, To, IQ_Rec, Hook) ->
             exmpp_iq:error(IQ_Rec, Error);
 	#adhoc_request{} = AdhocRequest ->
 	    Host = To#jid.ldomain,
-            % XXX OLD FORMAT: From, To.
-            FromOld = jlib:to_old_jid(From),
-            ToOld = jlib:to_old_jid(To),
 	    case ejabberd_hooks:run_fold(Hook, Host, empty,
-					 [FromOld, ToOld, AdhocRequest]) of
+					 [From, To, AdhocRequest]) of
 		ignore ->
 		    ignore;
 		empty ->
