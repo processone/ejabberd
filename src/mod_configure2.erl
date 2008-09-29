@@ -37,11 +37,6 @@
 
 -include("ejabberd.hrl").
 
-% XXX The namespace used in this module isn't known by Exmpp: if the
-% known list isn't updated by Ejabberd, some element names will be
-% represented with strings.
-% XXX This module currently supposed that they'll be atoms.
-
 -define(NS_ECONFIGURE, 'http://ejabberd.jabberstudio.org/protocol/configure').
 -define(NS_ECONFIGURE_s, "http://ejabberd.jabberstudio.org/protocol/configure").
 
@@ -49,6 +44,26 @@ start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE,
 				  ?MODULE, process_local_iq, IQDisc),
+    % Add nss/names/attrs used by this module to the known lists of Exmpp.
+    exmpp_xml:add_autoload_known_nss([?NS_ECONFIGURE]),
+    exmpp_xml:add_autoload_known_names([
+	'access',
+	'acls',
+	'body',
+	'info',
+	'jid',
+	'last',
+	'registration-watchers',
+	'subject',
+	'welcome-message'
+      ]),
+    exmpp_xml:add_autoload_known_attrs([
+	'online-users',
+	'outgoing-s2s-servers',
+	'registered-users',
+	'running-nodes',
+	'stopped-nodes'
+      ]),
     ok.
 
 stop(Host) ->

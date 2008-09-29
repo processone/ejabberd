@@ -26,6 +26,9 @@
 	the XML parser options. This allows modules to extend the known
 	nss/names/attrs with their own data.
 
+	* src/mod_configure2.erl: Fill exmpp_xml known list with the
+	nss/names/attrs used by this module.
+
 2008-09-25  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (timestamp_to_xml): Create an #xmlel element, not an
