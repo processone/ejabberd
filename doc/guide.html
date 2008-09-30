@@ -635,7 +635,7 @@ Handles c2s connections.<BR>
 Handles incoming s2s connections.<BR>
  Options: <TT>inet6</TT>, <TT>ip</TT>, <TT>max_stanza_size</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_service</TT></B></DT><DD CLASS="dd-description">
-Interacts with <A HREF="http://www.ejabberd.im/tutorials-transports">external components</A> 
+Interacts with an <A HREF="http://www.ejabberd.im/tutorials-transports">external component</A> 
 (as defined in the Jabber Component Protocol (<A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A>).<BR>
  Options: <TT>access</TT>, <TT>hosts</TT>, <TT>inet6</TT>,
 <TT>ip</TT>, <TT>shaper</TT>, <TT>service_check_from</TT>
@@ -655,9 +655,10 @@ used to disable control on the from field on packets send by an
 external components. The option can be either <TT>true</TT> or
 <TT>false</TT>. The default value is <TT>true</TT> which conforms to <A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A>.
 </DD><DT CLASS="dt-description"><B><TT>{hosts, [Hostnames], [HostOptions]}</TT></B></DT><DD CLASS="dd-description"> 
-This option of <TT>ejabberd_service</TT> allows to define one or more hostnames 
-of external Jabber components that provide a service.
-In <TT>HostOptions</TT> it is possible to define the password required to those components
+The external Jabber component that connects to this <TT>ejabberd_service</TT>
+can serve one or more hostnames.
+In <TT>HostOptions</TT> you can define options for the component;
+currently the only allowed option is the password required to the component
 when attempt to connect to ejabberd: <TT>{password, Secret}</TT>.
 Note that you cannot define in a single <TT>ejabberd_service</TT> components of
 different services: add an <TT>ejabberd_service</TT> for each service,
@@ -2055,7 +2056,9 @@ change nickname.
 status text in presence updates. If disallowed, the <TT>status</TT>
 text is stripped before broadcasting the presence update to all
 the room occupants.
-</DD><DT CLASS="dt-description"><B><TT>{anonymous, true}</TT></B></DT><DD CLASS="dd-description"> Occupants are allowed to see the real JIDs of other occupants.
+</DD><DT CLASS="dt-description"><B><TT>{anonymous, true}</TT></B></DT><DD CLASS="dd-description"> The room is anonymous:
+occupants don&#X2019;t see the real JIDs of other occupants.
+Note that the room moderators can always see the real JIDs of the occupants.
 </DD><DT CLASS="dt-description"><B><TT>{logging, false}</TT></B></DT><DD CLASS="dd-description"> The public messages are logged using <TT>mod_muc_log</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{max_users, 200}</TT></B></DT><DD CLASS="dd-description"> Maximum number of occupants in the room.
 </DD><DT CLASS="dt-description"><B><TT>{members_by_default, true}</TT></B></DT><DD CLASS="dd-description"> The occupants that enter the room are participants by default, so they have &#X2019;voice&#X2019;.
@@ -3184,11 +3187,15 @@ Copy <CODE>~ejabberd/.erlang.cookie</CODE> file from <TT>first</TT> to
 <TT>second</TT>.<P>(alt) You can also add &#X2018;<CODE>-cookie content_of_.erlang.cookie</CODE>&#X2019;
 option to all &#X2018;<TT>erl</TT>&#X2019; commands below.</P></LI><LI CLASS="li-enumerate">On <TT>second</TT> run the following command as the <TT>ejabberd</TT> daemon user,
 in the working directory of <TT>ejabberd</TT>:<PRE CLASS="verbatim">erl -sname ejabberd \
+    -mnesia dir "/var/lib/ejabberd/" \
     -mnesia extra_db_nodes "['ejabberd@first']" \
     -s mnesia
 </PRE><P>This will start Mnesia serving the same database as <TT>ejabberd@first</TT>.
 You can check this by running the command &#X2018;<CODE>mnesia:info().</CODE>&#X2019;. You
-should see a lot of remote tables and a line like the following:</P><PRE CLASS="verbatim">running db nodes   = [ejabberd@first, ejabberd@second]
+should see a lot of remote tables and a line like the following:</P><P>Note: the Mnesia directory may be different in your system.
+To know where does ejabberd expect Mnesia to be installed by default,
+call <A HREF="#ejabberdctl">4.1</A> without options and it will show some help,
+including the Mnesia database spool dir.</P><PRE CLASS="verbatim">running db nodes   = [ejabberd@first, ejabberd@second]
 </PRE></LI><LI CLASS="li-enumerate">Now run the following in the same &#X2018;<TT>erl</TT>&#X2019; session:<PRE CLASS="verbatim">mnesia:change_table_copy_type(schema, node(), disc_copies).
 </PRE><P>This will create local disc storage for the database.</P><P>(alt) Change storage type of the <TT>scheme</TT> table to &#X2018;RAM and disc
 copy&#X2019; on the second node via the Web Admin.</P></LI><LI CLASS="li-enumerate">Now you can add replicas of various tables to this node with

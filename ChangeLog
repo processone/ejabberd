@@ -1,3 +1,9 @@
+2008-09-30  Badlop  <badlop@process-one.net>
+
+	* src/*/Makefile.win32: Provide explicit beam filenames because
+	nmake does not accept wildcards (thanks to Attila
+	Vangel)(EJAB-543)
+	
 2008-09-24  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Allow PEP node type to be mapped with
