@@ -1,3 +1,9 @@
+2008-09-30  Badlop  <badlop@process-one.net>
+
+	* src/*/Makefile.win32: Provide explicit beam filenames because
+	nmake does not accept wildcards (thanks to Attila
+	Vangel)(EJAB-543)
+	
 2008-09-29  Badlop  <badlop@process-one.net>
 
 	* contrib/ejabberd-modules.repo: Include 2.0.x branches
