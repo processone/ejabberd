@@ -835,7 +835,7 @@ record_to_string(#roster{us = {User, _Server},
 			 ask = Ask,
 			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
-    {U, S, R} = jlib:short_prepd_jid(JID),
+    {U, S, R} = JID,
     SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(U, S, R)),
     Nick = ejabberd_odbc:escape(Name),
     SSubscription = case Subscription of
@@ -865,7 +865,7 @@ groups_to_string(#roster{us = {User, _Server},
 			 jid = JID,
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
-    {U, S, R} = jlib:short_prepd_jid(JID),
+    {U, S, R} = JID,
     SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(U, S, R)),
 
     %% Empty groups do not need to be converted to string to be inserted in

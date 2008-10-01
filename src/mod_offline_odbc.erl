@@ -103,16 +103,16 @@ loop(Host, MaxOfflineMsgs) ->
 				      From = M#offline_msg.from,
 				      To = M#offline_msg.to,
 				      Packet0 = exmpp_stanza:set_jids(
+						 M#offline_msg.packet,
 						 From,
-						 To,
-						 M#offline_msg.packet),
+						 To),
 				      Packet1 = exmpp_xml:append_child(Packet0,
 						jlib:timestamp_to_xml(
 						   calendar:now_to_universal_time(
 						     M#offline_msg.timestamp))),
 				      XML =
 					  ejabberd_odbc:escape(
-					    exmpp_xml:document_to_string(Packet1)),
+					    exmpp_xml:document_to_list(Packet1)),
 				      odbc_queries:add_spool_sql(Username, XML)
 			      end, Msgs),
 		    case catch odbc_queries:add_spool(Host, Query) of
@@ -156,7 +156,7 @@ stop(Host) ->
     ok.
 
 store_packet(From, To, Packet) ->
-    Type = exmpp_stanza_:get_type(Packet, 'type'),
+    Type = exmpp_stanza:get_type(Packet),
     if
 	(Type /= "error") and (Type /= "groupchat") and
 	(Type /= "headline") ->
@@ -237,35 +237,45 @@ find_x_expire(TimeStamp, [_ | Els]) ->
 
 
 pop_offline_messages(Ls, User, Server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    EUser = ejabberd_odbc:escape(LUser),
-    case odbc_queries:get_and_del_spool_msg_t(LServer, EUser) of
-	{atomic, {selected, ["username","xml"], Rs}} ->
-	    Ls ++ lists:flatmap(
-		    fun({_, XML}) ->
-			    try
-				[El] = exmpp_xml:parse_document(XML, [namespace, name_as_atom]),
-				To = exmpp_jid:list_to_jid(
-				  exmpp_stanza:get_recipient(El)),
-				From = exmpp_jid:list_to_jid(
-				  exmpp_stanza:get_sender(El)),
-				[{route, From, To, El}]
-			    catch
-				_ ->
-				    []
-			    end
-		    end, Rs);
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	EUser = ejabberd_odbc:escape(LUser),
+	case odbc_queries:get_and_del_spool_msg_t(LServer, EUser) of
+	    {atomic, {selected, ["username","xml"], Rs}} ->
+		Ls ++ lists:flatmap(
+			fun({_, XML}) ->
+				try
+				    [El] = exmpp_xml:parse_document(XML, [namespace, name_as_atom, autoload_known]),
+				    To = exmpp_jid:list_to_jid(
+				      exmpp_stanza:get_recipient(El)),
+				    From = exmpp_jid:list_to_jid(
+				      exmpp_stanza:get_sender(El)),
+				    [{route, From, To, El}]
+				catch
+				    _ ->
+					[]
+				end
+			end, Rs);
+	    _ ->
+		Ls
+	end
+    catch
 	_ ->
-	    Ls
+	    []
     end.
 
 
 remove_user(User, Server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:del_spool_msg(LServer, Username).
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	Username = ejabberd_odbc:escape(LUser),
+	odbc_queries:del_spool_msg(LServer, Username)
+    catch
+	_ ->
+	    ok
+    end.
 
 
 %% Helper functions:
@@ -298,30 +308,36 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_queue(User, Server, Query, Lang) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    Username = ejabberd_odbc:escape(LUser),
-    US = {LUser, LServer},
-    Res = user_queue_parse_query(Username, LServer, Query),
-    Msgs = case catch ejabberd_odbc:sql_query(
-			LServer,
-			["select username, xml from spool"
-			 "  where username='", Username, "'"
-			 "  order by seq;"]) of
-	       {selected, ["username", "xml"], Rs} ->
-		   lists:flatmap(
-		     fun({_, XML}) ->
-			     try exmpp_xml:parse_document(XML, [namespace, name_as_atom]) of
-				 [El] ->
-				     [El]
-			     catch
-				 _ ->
-				     []
-			     end
-		     end, Rs);
-	       _ ->
-		   []
-	   end,
+    {US, Msgs, Res} = try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	Username = ejabberd_odbc:escape(LUser),
+	US0 = {LUser, LServer},
+	R = user_queue_parse_query(Username, LServer, Query),
+	M = case catch ejabberd_odbc:sql_query(
+			    LServer,
+			    ["select username, xml from spool"
+			     "  where username='", Username, "'"
+			     "  order by seq;"]) of
+		   {selected, ["username", "xml"], Rs} ->
+		       lists:flatmap(
+			 fun({_, XML}) ->
+				 try exmpp_xml:parse_document(XML, [namespace, name_as_atom, autoload_known]) of
+				     [El] ->
+					 [El]
+				 catch
+				     _ ->
+					 []
+				 end
+			 end, Rs);
+		   _ ->
+		       []
+	       end,
+	{US0, M, R}
+    catch
+	_ ->
+	    {{"invalid", "invalid"}, [], nothing}
+    end,
     FMsgs =
 	lists:map(
 	  fun(#xmlel{} = Msg) ->
@@ -373,7 +389,7 @@ user_queue_parse_query(Username, LServer, Query) ->
 		       {selected, ["xml", "seq"], Rs} ->
 			   lists:flatmap(
 			     fun({XML, Seq}) ->
-				     try exmpp_xml:parse_document(XML, [namespace, name_as_atom]) of
+				     try exmpp_xml:parse_document(XML, [namespace, name_as_atom, autoload_known]) of
 					 [El] ->
 					     [{El, Seq}]
 				     catch
@@ -412,19 +428,24 @@ us_to_list({User, Server}) ->
     exmpp_jid:jid_to_list(User, Server).
 
 webadmin_user(Acc, User, Server, Lang) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    Username = ejabberd_odbc:escape(LUser),
-    QueueLen = case catch ejabberd_odbc:sql_query(
-			    LServer,
-			    ["select count(*) from spool"
-			     "  where username='", Username, "';"]) of
-		   {selected, [_], [{SCount}]} ->
-		       SCount;
-		   _ ->
-		       0
-	       end,
-    FQueueLen = [?AC("queue/", QueueLen)],
+    FQueueLen = try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	Username = ejabberd_odbc:escape(LUser),
+	QueueLen = case catch ejabberd_odbc:sql_query(
+				LServer,
+				["select count(*) from spool"
+				 "  where username='", Username, "';"]) of
+		       {selected, [_], [{SCount}]} ->
+			   SCount;
+		       _ ->
+			   0
+		   end,
+	[?AC("queue/", QueueLen)]
+    catch
+	_ ->
+	    [?C("?")]
+    end,
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen.
 
 %% ------------------------------------------------

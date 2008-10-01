@@ -136,11 +136,14 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
                  ["select vcard from vcard "
                   "where username='", Username, "';"]) of
         {selected, ["vcard"], [{SVCARD}]} ->
-            case exmpp_xml:parse_document(SVCARD) of
-                {error, _Reason} ->
-                    exmpp_iq:error(IQ_Rec, 'service-unavailable');
-                VCARD ->
+            try exmpp_xml:parse_document(SVCARD,
+              [namespace, name_as_atom, autoload_known]) of
+                [VCARD] ->
                     exmpp_iq:result(IQ_Rec, VCARD)
+            catch
+                _Type:_Error ->
+                    ?ERROR_MSG("Error parsing vCard: ~s", [SVCARD]),
+                    exmpp_iq:error(IQ_Rec, 'service-unavailable')
             end;
         {selected, ["vcard"], []} ->
             exmpp_iq:result(IQ_Rec);

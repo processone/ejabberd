@@ -1,3 +1,9 @@
+2008-10-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_offline_odbc.erl, src/mod_vcard_odbc.erl,
+	src/mod_roster_odbc.erl: Fix multiple bugs in ODBC mods, thanks to
+	Pablo Polvorin!
+
 2008-09-29  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/jlib.erl (parse_xdata_submit, parse_xdata_fields): Fix a bug
