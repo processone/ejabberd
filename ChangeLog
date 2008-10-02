@@ -8,6 +8,10 @@
 	exmpp_xml:get_element_by_name/2 is deprecated; use
 	exmpp_xml:get_element/2 instead.
 
+	* src/mod_echo.erl: In #jid, when the node isn't specified, it
+	defaults to the atom "undefined", not an empty binary. Fix a bug where
+	we expected an #xmlelement to have only one #xmlcdata child.
+
 2008-10-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_offline_odbc.erl, src/mod_vcard_odbc.erl,

@@ -119,7 +119,7 @@ handle_cast(_Msg, State) ->
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
 	Packet2 = case From#jid.node of
-		<<>> -> exmpp_stanza:reply_with_error(Packet, 'bad-request');
+		undefined -> exmpp_stanza:reply_with_error(Packet, 'bad-request');
 		_ -> Packet
 	end,
     do_client_version(disabled, To, From), % Put 'enabled' to enable it
@@ -195,7 +195,7 @@ do_client_version(enabled, From, To) ->
 	  after 5000 -> % Timeout in miliseconds: 5 seconds
 		  []
 	  end,
-    Values = [{Name, binary_to_list(Value)} || #xmlel{name = Name, children = [#xmlcdata{cdata = Value}]} <- Els],
+    Values = [{Name, exmpp_xml:get_cdata_as_list(Children)} || #xmlel{name = Name, children = Children} <- Els],
     
     %% Print in log
     Values_string1 = [io_lib:format("~n~s: ~p", [N, V]) || {N, V} <- Values],
