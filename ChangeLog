@@ -12,6 +12,13 @@
 	defaults to the atom "undefined", not an empty binary. Fix a bug where
 	we expected an #xmlelement to have only one #xmlcdata child.
 
+	* src/mod_last_odbc.erl (start/2, stop/1): The IQ registration must
+	use a namespace as atom, not list.
+	(process_local_iq/3, process_sm_iq/3, get_last/3): These functions
+	receive an #iq, not an #xmlel.
+	(store_last_info/4, remove_user/2): Add try/catch block around
+	exmpp_stringprep:*prep/1 uses.
+
 2008-10-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_offline_odbc.erl, src/mod_vcard_odbc.erl,
