@@ -1,3 +1,9 @@
+2008-10-02  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_roster_odbc.erl: Fix a bug where a JID represented as a
+	tuple was used in a function expecting a #jid; thanks to Pablo
+	Polvorin again!
+
 2008-10-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_offline_odbc.erl, src/mod_vcard_odbc.erl,

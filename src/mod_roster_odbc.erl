@@ -215,9 +215,9 @@ process_item_set(From, To, #xmlel{} = El) ->
     try
 	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
 	#jid{node = User, lnode = LUser, ldomain = LServer} = From,
-	LJID = jlib:short_prepd_jid(JID1),
+	{U0, S0, R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(LUser),
-	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(LJID)),
+	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(U0, S0, R0)),
 	F = fun() ->
 		    {selected,
 		     ["username", "jid", "nick", "subscription",
@@ -645,9 +645,9 @@ set_items(User, Server, #xmlel{children = Els}) ->
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
 	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
-	LJID = jlib:short_prepd_jid(JID1),
+	{U0, S0, R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(LUser),
-	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(LJID)),
+	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(U0, S0, R0)),
 	Item = #roster{usj = {LUser, LServer, LJID},
 		       us = {LUser, LServer},
 		       jid = LJID},
