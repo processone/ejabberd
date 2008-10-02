@@ -4,6 +4,10 @@
 	tuple was used in a function expecting a #jid; thanks to Pablo
 	Polvorin again!
 
+	* src/mod_announce.erl (get_stored_motd):
+	exmpp_xml:get_element_by_name/2 is deprecated; use
+	exmpp_xml:get_element/2 instead.
+
 2008-10-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_offline_odbc.erl, src/mod_vcard_odbc.erl,

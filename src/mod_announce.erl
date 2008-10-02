@@ -839,8 +839,8 @@ send_motd(#jid{lnode = LUser, ldomain = LServer} = JID) ->
 get_stored_motd(LServer) ->
     case catch mnesia:dirty_read({motd, LServer}) of
 	[#motd{packet = Packet}] ->
-	    {exmpp_xml:get_cdata_as_list(exmpp_xml:get_element_by_name(Packet, 'subject')),
-	     exmpp_xml:get_cdata_as_list(exmpp_xml:get_element_by_name(Packet, 'body'))};
+	    {exmpp_xml:get_cdata_as_list(exmpp_xml:get_element(Packet, 'subject')),
+	     exmpp_xml:get_cdata_as_list(exmpp_xml:get_element(Packet, 'body'))};
 	_ ->
 	    {"", ""}
     end.
