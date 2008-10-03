@@ -1,5 +1,9 @@
 2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
 
+	* src/odbc/odbc_queries.erl: Fix empty query that fail on MySQL.
+
+2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
 	* src/mod_vcard_odbc: added vCard support for MS SQL Server 2005.
 	* src/odbc/odbc_queries.erl: likewise.
 	* src/odbc/mssql2005.sql: likewise.
