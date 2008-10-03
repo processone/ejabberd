@@ -1,3 +1,9 @@
+2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/mod_vcard_odbc: added vCard support for MS SQL Server 2005.
+	* src/odbc/odbc_queries.erl: likewise.
+	* src/odbc/mssql2005.sql: likewise.
+
 2008-10-01  Mickael Remond  <mremond@process-one.net>
 
 	* src/mod_shared_roster.erl: Correct roster push when changing
@@ -8,7 +14,7 @@
 	* src/*/Makefile.win32: Provide explicit beam filenames because
 	nmake does not accept wildcards (thanks to Attila
 	Vangel)(EJAB-543)
-	
+
 2008-09-24  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Allow PEP node type to be mapped with
