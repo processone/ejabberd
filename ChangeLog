@@ -1,5 +1,9 @@
 2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
 
+	* src/odbc/odbc_queries.erl: Fix syntax error on update_roster_sql query.
+
+2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
 	* src/odbc/odbc_queries.erl: Fix empty query that fails on MySQL (merged from trunk).
 
 2008-10-01  Mickael Remond  <mremond@process-one.net>
