@@ -327,11 +327,11 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
       " values (", ItemVals, ");"],
      ["delete from rostergroups "
       "      where username='", Username, "' "
-      "        and jid='", SJID, "';"],
+      "        and jid='", SJID, "';"]] ++
      [["insert into rostergroups("
        "              username, jid, grp) "
        " values (", ItemGroup, ");"] ||
-	 ItemGroup <- ItemGroups]].
+	 ItemGroup <- ItemGroups].
 
 roster_subscribe(_LServer, Username, SJID, ItemVals) ->
     ejabberd_odbc:sql_query_t(

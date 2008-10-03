@@ -1,3 +1,7 @@
+2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/odbc/odbc_queries.erl: Fix empty query that fails on MySQL (merged from trunk).
+
 2008-10-01  Mickael Remond  <mremond@process-one.net>
 
 	* src/mod_shared_roster.erl: Correct roster push when changing
@@ -8,7 +12,7 @@
 	* src/*/Makefile.win32: Provide explicit beam filenames because
 	nmake does not accept wildcards (thanks to Attila
 	Vangel)(EJAB-543)
-	
+
 2008-09-29  Badlop  <badlop@process-one.net>
 
 	* contrib/ejabberd-modules.repo: Include 2.0.x branches
@@ -190,7 +194,7 @@
 
 	* src/mod_register.erl: When a registration is blocked due to IP
 	limitation, return description in error stanza (EJAB-692)
-	
+
 2008-07-24  Christophe Romain  <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Allow owner to subscribe/get its own
@@ -228,7 +232,7 @@
 	subscribing to a node sends only last items (EJAB-700)
 	* src/mod_pubsub/node_pep.erl: added acl and jid match on node
 	creation permission (EJAB-663)
-	* src/mod_pubsub/node_default.erl: fix node creation permission 
+	* src/mod_pubsub/node_default.erl: fix node creation permission
 	issue for service
 
 2008-07-22  Badlop  <badlop@process-one.net>
@@ -247,7 +251,7 @@
 
 2008-07-17  Christophe Romain  <christophe.romain@process-one.net>
 
-	* src/web/Makefile.in: use -DSSL39 if compiling with R12 
+	* src/web/Makefile.in: use -DSSL39 if compiling with R12
 
 2008-07-16  Badlop  <badlop@process-one.net>
 
@@ -255,7 +259,7 @@
 
 2008-07-16  Alexey Shchepin  <alexey@process-one.net>
 
-	* src/web/ejabberd_http_poll.erl: Report connection's IP address 
+	* src/web/ejabberd_http_poll.erl: Report connection's IP address
 
 	* src/ejabberd_c2s.erl: Rolled back the previous IP getting patch
 	* src/ejabberd_sm.erl: Likewise
