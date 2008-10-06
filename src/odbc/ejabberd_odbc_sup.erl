@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -37,32 +37,44 @@
 -include("ejabberd.hrl").
 
 -define(DEFAULT_POOL_SIZE, 10).
+-define(DEFAULT_ODBC_START_INTERVAL, 30). % 30 seconds
 
 start_link(Host) ->
     supervisor:start_link({local, gen_mod:get_module_proc(Host, ?MODULE)},
 			  ?MODULE, [Host]).
 
 init([Host]) ->
-    N = case ejabberd_config:get_local_option({odbc_pool_size, Host}) of
-	    I when is_integer(I) ->
-		I;
+    PoolSize = case ejabberd_config:get_local_option({odbc_pool_size, Host}) of
+		   I when is_integer(I) ->
+		       I;
 	    undefined ->
-		?DEFAULT_POOL_SIZE;
-	    Other ->
-		?ERROR_MSG("Wrong odbc_pool_size definition '~p' for host ~p, default to ~p~n",
-			   [Other, Host, ?DEFAULT_POOL_SIZE]),
-		?DEFAULT_POOL_SIZE
-	end,
-    {ok, {{one_for_one, 10, 6},
+		       ?DEFAULT_POOL_SIZE;
+		   Other ->
+		       ?ERROR_MSG("Wrong odbc_pool_size definition '~p' for host ~p, default to ~p~n",
+				  [Other, Host, ?DEFAULT_POOL_SIZE]),
+		       ?DEFAULT_POOL_SIZE
+	       end,
+    StartInterval = case ejabberd_config:get_local_option({odbc_start_interval, Host}) of
+			Interval when is_integer(Interval) ->
+			    Interval;
+			undefined ->
+			    ?DEFAULT_ODBC_START_INTERVAL;
+			_Other2 ->
+			    ?ERROR_MSG("Wrong odbc_start_interval definition '~p' for host ~p"
+				       ", defaulting to ~p~n",
+				       [_Other2, Host, ?DEFAULT_ODBC_START_INTERVAL]),
+			    ?DEFAULT_ODBC_START_INTERVAL
+		    end,
+    {ok, {{one_for_one, PoolSize+1, StartInterval},
 	  lists:map(
 	    fun(I) ->
 		    {I,
-		     {ejabberd_odbc, start_link, [Host]},
+		     {ejabberd_odbc, start_link, [Host, StartInterval*1000]},
 		     transient,
 		     brutal_kill,
 		     worker,
 		     [?MODULE]}
-	    end, lists:seq(1, N))}}.
+	    end, lists:seq(1, PoolSize))}}.
 
 get_pids(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
