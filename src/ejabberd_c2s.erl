@@ -1765,6 +1765,8 @@ process_privacy_iq(From, To,
 	end,
     IQRes =
 	case Res of
+	    {result, []} ->
+		exmpp_iq:result(IQ_Rec);
 	    {result, Result} ->
 		exmpp_iq:result(IQ_Rec, Result);
 	    {error, Error} ->
