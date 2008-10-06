@@ -7,6 +7,9 @@
 	* src/ejabberd_c2s.erl (process_privacy_iq/4): mod_privacy & friends
 	may return an empty list. Thanks to Pablo Polvorin!
 
+	* src/mod_roster_odbc.erl (get_jid_info/4): Fix a confusion between
+	#jid and tuples. Thanks to Pablo Polvorin!
+
 2008-10-02  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_roster_odbc.erl: Fix a bug where a JID represented as a

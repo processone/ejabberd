@@ -740,14 +740,15 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%% JID is  #jid record, because it's used latter on for both short_prepd_jid 
+%% and short_prepd_bare_jid
 get_jid_info(_, User, Server, JID) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
-	LJID = jlib:short_prepd_jid(JID),
+	LJID = {N, D, R} = jlib:short_prepd_jid(JID),
 	Username = ejabberd_odbc:escape(LUser),
-	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(LJID)),
+	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(N, D, R)),
 	case catch odbc_queries:get_subscription(LServer, Username, SJID) of
 	    {selected, ["subscription"], [{SSubscription}]} ->
 		Subscription = case SSubscription of
@@ -769,7 +770,8 @@ get_jid_info(_, User, Server, JID) ->
 		    LRJID == LJID ->
 			{none, []};
 		    true ->
-			SRJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(LRJID)),
+			{LR_N, LR_D, LR_R} = LRJID,
+			SRJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(LR_N, LR_D, LR_R)),
 			case catch odbc_queries:get_subscription(LServer, Username, SRJID) of
 			    {selected, ["subscription"], [{SSubscription}]} ->
 				Subscription = case SSubscription of
