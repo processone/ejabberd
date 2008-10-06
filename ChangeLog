@@ -1,3 +1,9 @@
+2008-10-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_sm.erl (process_iq/3): Fix a bug where we were matching
+	on #iq.type instead of #iq.kind, resulting in bad-request sent to the
+	client.
+
 2008-10-02  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_roster_odbc.erl: Fix a bug where a JID represented as a

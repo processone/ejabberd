@@ -661,7 +661,7 @@ process_iq(From, To, Packet) ->
 		    Err = exmpp_iq:error(Packet, 'service-unavailable'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
-	#iq{type = response} ->
+	#iq{kind = response} ->
 	    ok;
 	_ ->
 	    Err = exmpp_iq:error(Packet, 'bad-request'),
