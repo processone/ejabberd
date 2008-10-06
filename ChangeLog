@@ -1,3 +1,12 @@
+2008-10-06  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/ejabberd_rdbms.erl: fix SQL database reconnection
+	issues (EJAB-764) and add odbc_start_interval configuration
+	directive (default to 30 seconds).
+	* src/odbc/ejabberd_odbc.erl: likewise.
+	* src/odbc/ejabberd_odbc_sup.erl: likewise.
+	* doc/guide.tex: likewise.
+
 2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
 
 	* src/odbc/odbc_queries.erl: Fix syntax error on update_roster_sql query.
