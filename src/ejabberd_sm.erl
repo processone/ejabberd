@@ -420,21 +420,21 @@ do_route(From, To, Packet) ->
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, subscribed, ""]),
+				   [User, Server, From, subscribed, <<>>]),
 				 true};
 			    'unsubscribe' ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, unsubscribe, ""]),
+				   [User, Server, From, unsubscribe, <<>>]),
 				 true};
 			    'unsubscribed' ->
 				{ejabberd_hooks:run_fold(
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, unsubscribed, ""]),
+				   [User, Server, From, unsubscribed, <<>>]),
 				 true};
 			    _ ->
 				{true, false}

@@ -16,6 +16,10 @@
 	* src/mod_privacy.erl: The Mnesia table wasn't updated when converting
 	from an old schema.
 
+	* src/ejabberd_sm.erl, src/mod_roster.erl, src/mod_roster_odbc.erl:
+	Fix status handling by always using binaries: until now, we were
+	mixing lists and binaries in a non-working way.
+
 2008-10-02  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_roster_odbc.erl: Fix a bug where a JID represented as a

@@ -367,7 +367,7 @@ in_subscription(_, User, Server, JID, Type, Reason) ->
     process_subscription(in, User, Server, JID, Type, Reason).
 
 out_subscription(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type, []).
+    process_subscription(out, User, Server, JID, Type, <<>>).
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     try
@@ -406,7 +406,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 		    AskMessage = case NewState of
 				     {_, both} -> Reason;
 				     {_, in}   -> Reason;
-				     _         -> ""
+				     _         -> <<>>
 				 end,
 		    case NewState of
 			none ->
@@ -416,9 +416,13 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			    mnesia:delete({roster, {LUser, LServer, LJID}}),
 			    {none, AutoReply};
 			{Subscription, Pending} ->
+			    AskBinary = case AskMessage of
+					    undefined -> <<>>;
+					    B  -> B
+					end,
 			    NewItem = Item#roster{subscription = Subscription,
 						  ask = Pending,
-						  askmessage = list_to_binary(AskMessage)},
+						  askmessage = AskBinary},
 			    mnesia:write(NewItem),
 			    {{push, NewItem}, AutoReply}
 		    end
@@ -648,10 +652,10 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 	    Ls ++ lists:map(
 		    fun(R) ->
 			    Message = R#roster.askmessage,
-			    {U, S, R} = R#roster.jid,
+			    {U0, S0, R0} = R#roster.jid,
 			    Pres1 = exmpp_presence:subscribe(),
 			    Pres2 = exmpp_stanza:set_jids(Pres1,
-			      exmpp_jid:jid_to_list(U, S, R),
+			      exmpp_jid:jid_to_list(U0, S0, R0),
 			      exmpp_jid:jid_to_list(JID)),
 			    exmpp_presence:set_status(Pres2, Message)
 		    end,

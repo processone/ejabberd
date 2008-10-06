@@ -411,15 +411,15 @@ in_subscription(_, User, Server, JID, Type, Reason) ->
     process_subscription(in, User, Server, JID, Type, Reason).
 
 out_subscription(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type, []).
+    process_subscription(out, User, Server, JID, Type, <<>>).
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
-	LJID = exmpp_jid:jid_to_bare_jid(JID1),
+	{N0,D0,R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(LUser),
-	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(LJID)),
+	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(N0,D0,R0)),
 	F = fun() ->
 		    Item =
 			case odbc_queries:get_roster_by_jid(LServer, Username, SJID) of
@@ -467,7 +467,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 		    AskMessage = case NewState of
 				     {_, both} -> Reason;
 				     {_, in}   -> Reason;
-				     _         -> ""
+				     _         -> <<>>
 				 end,
 		    case NewState of
 			none ->
@@ -477,9 +477,13 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			    odbc_queries:del_roster(LServer, Username, SJID),
 			    {none, AutoReply};
 			{Subscription, Pending} ->
+			    AskBinary = case AskMessage of
+					    undefined -> <<>>;
+					    B  -> B
+					end,
 			    NewItem = Item#roster{subscription = Subscription,
 						  ask = Pending,
-						  askmessage = list_to_binary(AskMessage)},
+						  askmessage = AskBinary},
 			    ItemVals = record_to_string(NewItem),
 			    odbc_queries:roster_subscribe(LServer, Username, SJID, ItemVals),
 			    {{push, NewItem}, AutoReply}
@@ -712,10 +716,10 @@ get_in_pending_subscriptions(Ls, User, Server) ->
     	    Ls ++ lists:map(
 		    fun(R) ->
 			    Message = R#roster.askmessage,
-			    {U, S, R} = R#roster.jid,
+			    {U0, S0, R0} = R#roster.jid,
 			    Pres1 = exmpp_presence:subscribe(),
 			    Pres2 = exmpp_stanza:set_jids(Pres1,
-			      exmpp_jid:jid_to_list(U, S, R),
+			      exmpp_jid:jid_to_list(U0, S0, R0),
 			      exmpp_jid:jid_to_list(JID)),
 			    exmpp_presence:set_status(Pres2, Message)
 		    end,
@@ -876,7 +880,7 @@ groups_to_string(#roster{us = {User, _Server},
 		   (Group, Acc) -> 
 			String = ["'", Username, "',"
 				  "'", SJID, "',"
-				  "'", ejabberd_odbc:escape(Group), "'"],
+				  "'", ejabberd_odbc:escape(binary_to_list(Group)), "'"],
 			[String|Acc] end, [], Groups).
 
 webadmin_page(_, Host,
