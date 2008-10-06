@@ -1,3 +1,9 @@
+2008-10-06  Badlop  <badlop@process-one.net>
+
+	* doc/guide.html: Regenerated
+
+	* doc/guide.tex: Fix a problem in SVN merge from trunk
+
 2008-10-06  Jerome Sautret  <jerome.sautret@process-one.net>
 
 	* src/ejabberd_rdbms.erl: fix SQL database reconnection

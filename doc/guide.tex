@@ -1388,152 +1388,6 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
-<<<<<<< .courant
-=======
-Appendix \ref{i18ni10n} provides more details about internationalization and localization.
-
-
-\makesubsection{includeconfigfile}{Include Additional Configuration Files}
-\ind{options!includeconfigfile}\ind{includeconfigfile}
-
-The option \option{include\_config\_file} in a configuration file instructs \ejabberd{} to include other configuration files immediately.
-
-The basic usage is:
-\begin{verbatim}
-{include_config_file, <filename>}.
-\end{verbatim}
-It is also possible to specify suboptions:
-\begin{verbatim}
-{include_config_file, <filename>, [<suboption>, <suboption>, ...]}.
-\end{verbatim}
-
-The filename can be indicated either as an absolute path,
-or relative to the main \ejabberd{} configuration file.
-It isn't possible to use wildcards.
-The file must exist and be readable.
-
-The allowed suboptions are:
-\begin{description}
-  \titem{\{disallow, [<option>, <option>, ...]\}} Disallows the usage of those options in the included configuration file.
-  The options that match this criteria are not accepted.
-  The default value is an empty list: \term{[]}
-  \titem{\{allow\_only, [<option>, <option>, ...]\}} Allows only the usage of those options in the included configuration file.
-  The options that do not match this criteria are not accepted.
-  The default value is: \term{all}
-\end{description}
-
-This is a basic example:
-\begin{verbatim}
-{include_config_file, "/etc/ejabberd/additional.cfg"}.
-\end{verbatim}
-
-In this example, the included file is not allowed to contain a \term{listen} option.
-If such an option is present, the option will not be accepted.
-The file is in a subdirectory from where the main configuration file is.
-\begin{verbatim}
-{include_config_file, "./example.org/additional_not_listen.cfg", [{disallow, [listen]}]}.
-\end{verbatim}
-
-In this example, \term{ejabberd.cfg} defines some ACL and Access rules,
-and later includes another file with additional rules:
-\begin{verbatim}
-{acl, admin, {user, "admin", "localhost"}}.
-{access, announce, [{allow, admin}]}.
-{include_config_file, "/etc/ejabberd/acl_and_access.cfg", [{allow_only, [acl, access]}]}.
-\end{verbatim}
-and content of the file \term{acl\_and\_access.cfg} can be, for example:
-\begin{verbatim}
-{acl, admin, {user, "bob", "localhost"}}.
-{acl, admin, {user, "jan", "localhost"}}.
-\end{verbatim}
-
-
-\makesubsection{optionmacros}{Option Macros in Configuration File}
-\ind{options!optionmacros}\ind{optionmacros}
-
-In the \ejabberd{} configuration file,
-it is possible to define a macro for a value
-and later use this macro when defining an option.
-
-A macro is defined with this syntax:
-\begin{verbatim}
-{define_macro, '<MACRO>', <value>}.
-\end{verbatim}
-The \term{MACRO} must be surrounded by single quotation marks,
-and all letters in uppercase; check the examples bellow.
-The \term{value} can be any valid arbitrary Erlang term.
-
-The first definition of a macro is preserved,
-and additional definitions of the same macro are forgotten.
-
-Macros are processed after
-additional configuration files have been included,
-so it is possible to use macros that
-are defined in configuration files included before the usage.
-
-It isn't possible to use a macro in the definition
-of another macro.
-
-There are two ways to use a macro:
-\begin{description}
-
-  \titem{'<MACRO>'}
-  You can put this instead of a value in an \ejabberd{} option,
-  and will be replaced with the \term{value} previously defined.
-  If the macro is not defined previously,
-  the program will crash and report an error.
-
-  \titem{\{use\_macro, '<MACRO>', <defaultvalue>\}}
-  Use a macro even if it may not be defined.
-  If the macro is not defined previously,
-  the provided \term{defaultvalue} is used.
-  This usage behaves as if it were defined and used this way:
-\begin{verbatim}
-{define_macro, '<MACRO>', <defaultvalue>}.
-'<MACRO>'
-\end{verbatim}
-
-\end{description}
-
-This example shows the basic usage of a macro:
-\begin{verbatim}
-{define_macro, 'LOG_LEVEL_NUMBER', 5}.
-{loglevel, 'LOG_LEVEL_NUMBER'}.
-\end{verbatim}
-The resulting option interpreted by \ejabberd{} is: \term{\{loglevel, 5\}}.
-
-This example shows that values can be any arbitrary Erlang term:
-\begin{verbatim}
-{define_macro, 'USERBOB', {user, "bob", "localhost"}}.
-{acl, admin, 'USERBOB'}.
-\end{verbatim}
-The resulting option interpreted by \ejabberd{} is: \term{\{acl, admin, \{user, "bob", "localhost"\}\}}.
-
-This complex example:
-\begin{verbatim}
-{define_macro, 'NUMBER_PORT_C2S', 5222}.
-{define_macro, 'PORT_S2S_IN', {5269, ejabberd_s2s_in, []}}.
-{listen,
- [
-  {'NUMBER_PORT_C2S', ejabberd_c2s, []},
-  'PORT_S2S_IN',
-  {{use_macro, 'NUMBER_PORT_HTTP', 5280}, ejabberd_http, []}
- ]
-}.
-\end{verbatim}
-produces this result after being interpreted:
-\begin{verbatim}
-{listen,
- [
-  {5222, ejabberd_c2s, []},
-  {5269, ejabberd_s2s_in, []},
-  {5280, ejabberd_http, []}
- ]
-}.
-\end{verbatim}
-
-
->>>>>>> .fusion-droit.r1600
 \makesection{database}{Database and LDAP Configuration}
 \ind{database}
 %TODO: this whole section is not yet 100% optimized
@@ -2825,14 +2679,6 @@ Options:
   This option sets the full path to the directory in which the HTML files should
   be stored. Make sure the \ejabberd{} daemon user has write access on that
   directory. The default value is \term{"www/muc"}.
-<<<<<<< .courant
-=======
-\titem{spam\_prevention}\ind{options!spam\_prevention}
-  To prevent spam, the \term{spam\_prevention} option adds a special attribute
-  to links that prevent their indexation by search engines. The default value
-  is \term{true}, which mean that nofollow attributes will be added to user
-  submitted links.
->>>>>>> .fusion-droit.r1600
 \titem{timezone}\ind{options!timezone}
   The time zone for the logs is configurable with this option. Allowed values
   are \term{local} and \term{universal}. With the first value, the local time,
@@ -3753,16 +3599,8 @@ The command line parameters:
   \titem{-name ejabberd}
 	The Erlang node will be fully identified.
     This is only useful if you plan to setup an \ejabberd{} cluster with nodes in different networks.
-<<<<<<< .courant
   \titem{-kernel inetrc "/etc/ejabberd/inetrc"}
 	Indicates which IP name resolution to use. It is required if using \term{-sname}.
-=======
-  \titem{-kernel inetrc "/etc/ejabberd/inetrc"}
-	Indicates which IP name resolution to use.
-	If using \term{-sname}, specify either this option or \term{ERL\_INETRC}.
-  \titem{-kernel inet\_dist\_listen\_min 4200 inet\_dist\_listen\_min 4210}
-	Define the first and last ports that \term{epmd} (section \ref{epmd}) can listen to.
->>>>>>> .fusion-droit.r1600
   \titem{-detached}
         Starts the Erlang system detached from the system console.
 	Useful for running daemons and backgrounds processes.
@@ -3944,14 +3782,8 @@ Remember to block the port so Internet doesn't have access to it.
 
 Once an Erlang node solved the node name of another Erlang node using EPMD and port 4369,
 the nodes communicate directly.
-<<<<<<< .courant
 The ports used in this case are random.
 You can limit the range of ports when starting Erlang with a command-line parameter, for example:
-=======
-The ports used in this case by default are random,
-but can be configured in the file \term{ejabberdctl.cfg}.
-The Erlang command-line parameter used internally is, for example:
->>>>>>> .fusion-droit.r1600
 \begin{verbatim}
 erl ... -kernel inet_dist_listen_min 4370 inet_dist_listen_max 4375
 \end{verbatim}
@@ -4276,21 +4108,6 @@ To exit the shell, close the window or press the keys: control+c control+c.
 \makechapter{i18ni10n}{Internationalization and Localization}
 \ind{xml:lang}\ind{internationalization}\ind{localization}\ind{i18n}\ind{l10n}
 
-<<<<<<< .courant
-=======
-The source code of \ejabberd{} supports localization.
-The translators can edit the
-\footahref{http://www.gnu.org/software/gettext/}{gettext} .po files
-using any capable program (KBabel, Lokalize, Poedit...) or a simple text editor.
-
-Then gettext
-is used to extract, update and export those .po files to the .msg format read by \ejabberd{}.
-To perform those management tasks, in the \term{src/} directory execute \term{make translations}.
-The translatable strings are extracted from source code to generate the file \term{ejabberd.pot}.
-This file is merged with each .po file to produce updated .po files.
-Finally those .po files are exported to .msg files, that have a format easily readable by \ejabberd{}.
-
->>>>>>> .fusion-droit.r1600
 All built-in modules support the \texttt{xml:lang} attribute inside IQ queries.
 Figure~\ref{fig:discorus}, for example, shows the reply to the following query:
 \begin{verbatim}
