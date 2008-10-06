@@ -13,6 +13,9 @@
 	* src/mod_privacy.erl, src/mod_privacy_odbc.erl: Convert to exmpp.
 	Thanks to Pablo Polvorin!
 
+	* src/mod_privacy.erl: The Mnesia table wasn't updated when converting
+	from an old schema.
+
 2008-10-02  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_roster_odbc.erl: Fix a bug where a JID represented as a

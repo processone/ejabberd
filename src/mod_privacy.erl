@@ -689,10 +689,12 @@ update_table() ->
 	    F1 = fun() ->
 			 mnesia:write_lock_table(mod_privacy_tmp_table),
 			 mnesia:foldl(
-			   fun(#privacy{us = U} = R, _) ->
+			   fun(#privacy{us = U, lists = L} = R, _) ->
+				   U1 = convert_jid_to_exmpp(U),
+				   L1 = convert_lists_to_exmpp(L),
 				   mnesia:dirty_write(
 				     mod_privacy_tmp_table,
-				     R#privacy{us = {U, Host}})
+				     R#privacy{us = {U1, Host}, lists = L1})
 			   end, ok, privacy)
 		 end,
 	    mnesia:transaction(F1),
