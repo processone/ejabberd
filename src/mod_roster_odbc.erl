@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -680,7 +680,7 @@ set_items(User, Server, SubEl) ->
     LServer = jlib:nameprep(Server),
     catch odbc_queries:sql_transaction(
 	    LServer,
-	     lists:map(fun(El) ->
+	     lists:flatmap(fun(El) ->
 			       process_item_set_t(LUser, LServer, El)
 		       end, Els)).
 
@@ -913,7 +913,7 @@ groups_to_string(#roster{us = {User, _Server},
     %% Empty groups do not need to be converted to string to be inserted in
     %% the database
     lists:foldl(fun([], Acc) -> Acc;
-		   (Group, Acc) -> 
+		   (Group, Acc) ->
 			String = ["'", Username, "',"
 				  "'", SJID, "',"
 				  "'", ejabberd_odbc:escape(Group), "'"],
@@ -1079,4 +1079,3 @@ us_to_list({User, Server}) ->
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].
-

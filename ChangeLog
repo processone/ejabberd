@@ -1,3 +1,7 @@
+2008-10-07  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/mod_roster_odbc.erl: fix MySQL multiple requests issue.
+
 2008-10-06  Badlop  <badlop@process-one.net>
 
 	* doc/guide.html: Regenerated
