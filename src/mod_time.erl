@@ -33,8 +33,9 @@
 	 stop/1,
 	 process_local_iq/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 
 start(Host, Opts) ->
@@ -45,17 +46,15 @@ start(Host, Opts) ->
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_TIME).
 
-process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    case Type of
-	set ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-	get ->
-	    UTC = jlib:timestamp_to_iso(calendar:universal_time()),
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement, "query",
-			     [{"xmlns", ?NS_TIME}],
-			     [{xmlelement, "utc", [],
-			       [{xmlcdata, UTC}]}]}]}
-    end.
+process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
+    UTC = jlib:timestamp_to_iso(calendar:universal_time()),
+    Result = #xmlel{ns = ?NS_TIME, name = 'query', children = [
+	#xmlel{ns = ?NS_TIME, name = 'utc', children = [
+	    #xmlcdata{cdata = list_to_binary(UTC)}
+	  ]}
+      ]},
+    exmpp_iq:result(IQ_Rec, Result);
+process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 

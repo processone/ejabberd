@@ -3,6 +3,9 @@
 	* src/ejabberd_local.erl: Fix a bug where an error stanza was not
 	created correctly, leading to ejabberd_c2s crash.
 
+	* src/mod_stats.erl, src/mod_service_log.erl, src/mod_time.erl:
+	Convert to exmpp.
+
 2008-10-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_sm.erl (process_iq/3): Fix a bug where we were matching

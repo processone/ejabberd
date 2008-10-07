@@ -33,7 +33,7 @@
 	 stop/1,
 	 process_local_iq/3]).
 
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -44,33 +44,26 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_STATS).
 
 
-process_local_iq(_From, To, #iq{id = _ID, type = Type,
-				xmlns = XMLNS, sub_el = SubEl} = IQ) ->
-    %%Lang = xml:get_tag_attr_s("xml:lang", SubEl),
-    case Type of
-	set ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-	get ->
-	    {xmlelement, _, _Attrs, Els} = SubEl,
-	    Node = string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-	    Names = get_names(Els, []),
+process_local_iq(_From, To, #iq{type = get,
+				ns = XMLNS, payload = SubEl} = IQ_Rec) ->
+    Node = string:tokens(exmpp_xml:get_attribute(SubEl, 'node', ""), "/"),
+    Names = get_names(exmpp_xml:get_child_elements(SubEl), []),
 
-	    case get_local_stats(To#jid.server, Node, Names) of
-		{result, Res} ->
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query",
-				     [{"xmlns", XMLNS}],
-				     Res}]};
-		{error, Error} ->
-		    IQ#iq{type = error, sub_el =  [SubEl, Error]}
-	    end
-    end.
+    case get_local_stats(To#jid.domain, Node, Names) of
+	{result, Res} ->
+	    Result = #xmlel{ns = XMLNS, name = 'query', children = Res},
+	    exmpp_iq:result(IQ_Rec, Result);
+	{error, Error} ->
+	    exmpp_iq:error(IQ_Rec, Error)
+    end;
+process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 
 get_names([], Res) ->
     Res;
-get_names([{xmlelement, "stat", Attrs, _} | Els], Res) ->
-    Name = xml:get_attr_s("name", Attrs),
+get_names([#xmlel{name = 'stat', attrs = Attrs} | Els], Res) ->
+    Name = exmpp_xml:get_attribute_from_list(Attrs, 'name', ""),
     case Name of
 	"" ->
 	    get_names(Els, Res);
@@ -81,7 +74,7 @@ get_names([_ | Els], Res) ->
     get_names(Els, Res).
 
 
--define(STAT(Name), {xmlelement, "stat", [{"name", Name}], []}).
+-define(STAT(Name), #xmlel{ns = ?NS_STATS, name = 'stat', attrs = [#xmlattr{name = 'name', value = Name}]}).
 
 get_local_stats(_Server, [], []) ->
     {result,
@@ -110,30 +103,30 @@ get_local_stats(_Server, ["running nodes", _], []) ->
 get_local_stats(_Server, ["running nodes", ENode], Names) ->
     case search_running_node(ENode) of
 	false ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
+	    {error, 'item-not-found'};
 	Node ->
 	    {result,
 	     lists:map(fun(Name) -> get_node_stat(Node, Name) end, Names)}
     end;
 
 get_local_stats(_Server, _, _) ->
-    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
+    {error, 'feature-not-implemented'}.
 
 
 
 -define(STATVAL(Val, Unit),
-	{xmlelement, "stat",
-	 [{"name", Name},
-	  {"units", Unit},
-	  {"value", Val}
-	 ], []}).
+	#xmlel{ns = ?NS_STATS, name = 'stat', attrs =
+	 [#xmlattr{name = 'name', value = Name},
+	  #xmlattr{name = 'units', value = Unit},
+	  #xmlattr{name = 'value', value = Val}
+	 ]}).
 
 -define(STATERR(Code, Desc),
-	{xmlelement, "stat",
-	 [{"name", Name}],
-	 [{xmlelement, "error",
-	   [{"code", Code}],
-	   [{xmlcdata, Desc}]}]}).
+	#xmlel{ns = ?NS_STATS, name = 'stat', attrs=
+	 [#xmlattr{name = 'name', value = Name}], children =
+	 [#xmlel{ns = ?NS_STATS, name = 'error', attrs =
+	   [#xmlattr{name = 'code', value = Code}], children =
+	   [#xmlcdata{cdata = list_to_binary(Desc)}]}]}).
 
 
 get_local_stat(Server, [], Name) when Name == "users/online" ->
