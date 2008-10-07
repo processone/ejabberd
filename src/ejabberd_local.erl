@@ -163,7 +163,7 @@ refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.
 
 bounce_resource_packet(From, To, Packet) ->
-    Err = exmpp_stanza:error(Packet, 'item-not-found'),
+    Err = exmpp_stanza:reply_with_error(Packet, 'item-not-found'),
     ejabberd_router:route(To, From, Err),
     stop.
 
