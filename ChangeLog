@@ -6,6 +6,9 @@
 	* src/mod_stats.erl, src/mod_service_log.erl, src/mod_time.erl:
 	Convert to exmpp.
 
+	* src/mod_private.erl, src/mod_private_odbc.erl, src/mod_version.erl:
+	Convert to exmpp. Thanks to Pablo Polvorin!
+
 2008-10-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_sm.erl (process_iq/3): Fix a bug where we were matching

@@ -33,40 +33,39 @@
 	 stop/1,
 	 process_local_iq/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VERSION,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_SOFT_VERSION,
 				  ?MODULE, process_local_iq, IQDisc).
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VERSION).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_SOFT_VERSION).
 
 
-process_local_iq(_From, To, #iq{id = _ID, type = Type,
-			       xmlns = _XMLNS, sub_el = SubEl} = IQ) ->
+process_local_iq(_From, To, #iq{type = Type} = IQ_Rec) ->
     case Type of
 	set ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	    exmpp_iq:error(IQ_Rec, 'not-allowed');
 	get ->
-	    Host = To#jid.server,
+	    Host = To#jid.domain,
 	    OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os, true) of
 		     true -> [get_os()];
 		     false -> []
 		 end,
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement, "query",
-			     [{"xmlns", ?NS_VERSION}],
-			     [{xmlelement, "name", [],
-			       [{xmlcdata, "ejabberd"}]},
-			      {xmlelement, "version", [],
-			       [{xmlcdata, ?VERSION}]}
-			     ] ++ OS
-			    }]}
+	    R = #xmlel{ns = ?NS_SOFT_VERSION, name = 'query',
+		       children = [ exmpp_xml:set_cdata(#xmlel{ns = ?NS_SOFT_VERSION,
+							       name = 'name'},
+							<<"ejabberd">>),
+				    exmpp_xml:set_cdata(#xmlel{ns = ?NS_SOFT_VERSION,
+							       name = 'version'},
+							?VERSION) | OS]},
+	    exmpp_iq:result(IQ_Rec, R)
     end.
 
 
@@ -87,4 +86,4 @@ get_os() ->
 			VersionString
 		end,
     OS = OSType ++ " " ++ OSVersion,
-    {xmlelement, "os", [], [{xmlcdata, OS}]}.
+    exmpp_xml:set_cdata(#xmlel{ns = ?NS_SOFT_VERSION, name = 'os'}, OS).
