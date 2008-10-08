@@ -4,8 +4,7 @@ include ..\Makefile.inc
 EFLAGS = -I .. -pz ..
 
 OUTDIR = ..
-SOURCES = $(wildcard *.erl)
-BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
+BEAMS = ..\gen_pubsub_node.beam ..\gen_pubsub_nodetree.beam ..\mod_pubsub.beam ..\nodetree_default.beam ..\nodetree_virtual.beam ..\node_buddy.beam ..\node_club.beam ..\node_default.beam ..\node_dispatch.beam ..\node_pep.beam ..\node_private.beam ..\node_public.beam
 
 ALL : $(BEAMS)
 
@@ -27,9 +26,23 @@ $(OUTDIR)\nodetree_default.beam : nodetree_default.erl
 $(OUTDIR)\nodetree_virtual.beam : nodetree_virtual.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) nodetree_virtual.erl
 
+$(OUTDIR)\node_buddy.beam : node_buddy.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) node_buddy.erl
+
+$(OUTDIR)\node_club.beam : node_club.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) node_club.erl
+
 $(OUTDIR)\node_default.beam : node_default.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) node_default.erl
+
+$(OUTDIR)\node_dispatch.beam : node_dispatch.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) node_dispatch.erl
 
 $(OUTDIR)\node_pep.beam : node_pep.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) node_pep.erl
 
+$(OUTDIR)\node_private.beam : node_private.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) node_private.erl
+
+$(OUTDIR)\node_public.beam : node_public.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) node_public.erl

@@ -70,7 +70,7 @@
 	 get_state/3,
 	 set_state/1,
 	 get_items/7,
-	 get_items/2,
+	 get_items/3,
 	 get_item/8,
 	 get_item/3,
 	 set_item/1,
@@ -705,9 +705,9 @@ set_state(_) ->
 %% relational database), or they can even decide not to persist any items.</p>
 %% <p>If a PubSub plugin wants to delegate the item storage to the default node,
 %% they can implement this function like this:
-%% ```get_items(Host, Node) ->
-%%	   node_default:get_items(Host, Node).'''</p>
-get_items(Host, Node) ->
+%% ```get_items(Host, Node, From) ->
+%%	   node_default:get_items(Host, Node, From).'''</p>
+get_items(Host, Node, _From) ->
     Items = mnesia:match_object(
 	      #pubsub_item{itemid = {'_', {Host, Node}}, _ = '_'}),
     {result, Items}.
@@ -747,7 +747,7 @@ get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, _SubI
 	%%	% Payment is required for a subscription
 	%%	{error, ?ERR_PAYMENT_REQUIRED};
 	true ->
-	    get_items(Host, Node)
+	    get_items(Host, Node, JID)
     end.
 
 %% @spec (Host, Node, ItemId) -> [Item] | []

@@ -59,7 +59,7 @@
 	 get_state/3,
 	 set_state/1,
 	 get_items/7,
-	 get_items/2,
+	 get_items/3,
 	 get_item/8,
 	 get_item/3,
 	 set_item/1,
@@ -123,7 +123,8 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
 			{User, Server, _} -> true;
 			_ -> false
 		    end;
-		_ ->
+		E ->
+			?DEBUG("Create not allowed : ~p~n", [E]),
 		    false   
 	    end
     end,
@@ -215,8 +216,8 @@ get_state(Host, Node, JID) ->
 set_state(State) ->
     node_default:set_state(State).
 
-get_items(Host, Node) ->
-    node_default:get_items(Host, Node).
+get_items(Host, Node, From) ->
+    node_default:get_items(Host, Node, From).
 
 get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
     node_default:get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).

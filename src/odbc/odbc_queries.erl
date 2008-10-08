@@ -61,6 +61,8 @@
 	 set_private_data_sql/3,
 	 get_private_data/3,
 	 del_user_private_storage/2,
+	 set_vcard/26,
+	 get_vcard/2,
 	 escape/1,
 	 count_records_where/3]).
 
@@ -327,11 +329,11 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
       " values (", ItemVals, ");"],
      ["delete from rostergroups "
       "      where username='", Username, "' "
-      "        and jid='", SJID, "';"],
+      "        and jid='", SJID, "';"]] ++
      [["insert into rostergroups("
        "              username, jid, grp) "
        " values (", ItemGroup, ");"] ||
-	 ItemGroup <- ItemGroups]].
+	 ItemGroup <- ItemGroups].
 
 roster_subscribe(_LServer, Username, SJID, ItemVals) ->
     ejabberd_odbc:sql_query_t(
@@ -377,6 +379,42 @@ del_user_private_storage(LServer, Username) ->
     ejabberd_odbc:sql_transaction(
       LServer,
       ["delete from private_storage where username='", Username, "';"]).
+
+
+set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN, SFamily, SGiven,
+	  SLBDay, SLCTRY, SLEMail, SLFN, SLFamily, SLGiven, SLLocality,
+	  SLMiddle, SLNickname, SLOrgName, SLOrgUnit, SLocality, SMiddle,
+	  SNickname, SOrgName, SOrgUnit, SVCARD, Username) ->
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      [["delete from vcard where username='", LUsername, "';"],
+       ["insert into vcard(username, vcard) "
+	"values ('", LUsername, "', '", SVCARD, "');"],
+       ["delete from vcard_search where lusername='", LUsername, "';"],
+       ["insert into vcard_search("
+	"        username, lusername, fn, lfn, family, lfamily,"
+	"        given, lgiven, middle, lmiddle, nickname, lnickname,"
+	"        bday, lbday, ctry, lctry, locality, llocality,"
+	"        email, lemail, orgname, lorgname, orgunit, lorgunit)"
+	"values (",
+	"        '", Username,  "', '", LUsername,  "',"
+	"        '", SFN,       "', '", SLFN,       "',"
+	"        '", SFamily,   "', '", SLFamily,   "',"
+	"        '", SGiven,    "', '", SLGiven,    "',"
+	"        '", SMiddle,   "', '", SLMiddle,   "',"
+	"        '", SNickname, "', '", SLNickname, "',"
+	"        '", SBDay,     "', '", SLBDay,	   "',"
+	"        '", SCTRY,     "', '", SLCTRY,	   "',"
+	"        '", SLocality, "', '", SLLocality, "',"
+	"        '", SEMail,    "', '", SLEMail,	   "',"
+	"        '", SOrgName,  "', '", SLOrgName,  "',"
+	"        '", SOrgUnit,  "', '", SLOrgUnit,  "');"]]).
+
+get_vcard(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select vcard from vcard "
+       "where username='", Username, "';"]).
 
 %% Characters to escape
 escape($\0) -> "\\0";
@@ -596,6 +634,25 @@ del_user_private_storage(LServer, Username) ->
     ejabberd_odbc:sql_query(
         LServer,
         ["EXECUTE dbo.del_user_storage '", Username, "'"]).
+
+set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN, SFamily, SGiven,
+	  SLBDay, SLCTRY, SLEMail, SLFN, SLFamily, SLGiven, SLLocality,
+	  SLMiddle, SLNickname, SLOrgName, SLOrgUnit, SLocality, SMiddle,
+	  SNickname, SOrgName, SOrgUnit, SVCARD, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.set_vcard '", SVCARD, "' , '", Username, "' , '", LUsername, "' , '",
+       SFN, "' , '", SLFN, "' , '", SFamily, "' , '", SLFamily, "' , '",
+       SGiven, "' , '", SLGiven, "' , '", SMiddle, "' , '", SLMiddle, "' , '",
+       SNickname, "' , '", SLNickname, "' , '", SBDay, "' , '", SLBDay, "' , '",
+       SCTRY, "' , '", SLCTRY, "' , '", SLocality, "' , '", SLLocality, "' , '",
+       SEMail, "' , '", SLEMail, "' , '", SOrgName, "' , '", SLOrgName, "' , '",
+       SOrgUnit, "' , '", SLOrgUnit, "'"]).
+
+get_vcard(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.get_vcard '", Username, "'"]).
 
 %% Characters to escape
 escape($\0) -> "\\0";

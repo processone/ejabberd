@@ -30,7 +30,7 @@
 -behaviour(gen_server).
 
 %% External exports
--export([start/1, start_link/1,
+-export([start/1, start_link/2,
 	 sql_query/2,
 	 sql_query_t/1,
 	 sql_transaction/2,
@@ -63,8 +63,8 @@
 start(Host) ->
     gen_server:start(ejabberd_odbc, [Host], []).
 
-start_link(Host) ->
-    gen_server:start_link(ejabberd_odbc, [Host], []).
+start_link(Host, StartInterval) ->
+    gen_server:start_link(ejabberd_odbc, [Host, StartInterval], []).
 
 sql_query(Host, Query) ->
     gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
@@ -131,10 +131,10 @@ escape_like(C)  -> odbc_queries:escape(C).
 %%          ignore               |
 %%          {stop, Reason}
 %%----------------------------------------------------------------------
-init([Host]) ->
+init([Host, StartInterval]) ->
     case ejabberd_config:get_local_option({odbc_keepalive_interval, Host}) of
-	Interval when is_integer(Interval) ->
-	    timer:apply_interval(Interval*1000, ?MODULE, keep_alive, [self()]);
+	KeepaliveInterval when is_integer(KeepaliveInterval) ->
+	    timer:apply_interval(KeepaliveInterval*1000, ?MODULE, keep_alive, [self()]);
 	undefined ->
 	    ok;
 	_Other ->
@@ -144,16 +144,16 @@ init([Host]) ->
     case SQLServer of
 	%% Default pgsql port
 	{pgsql, Server, DB, Username, Password} ->
-	    pgsql_connect(Server, ?PGSQL_PORT, DB, Username, Password);
+	    pgsql_connect(Server, ?PGSQL_PORT, DB, Username, Password, StartInterval);
 	{pgsql, Server, Port, DB, Username, Password} when is_integer(Port) ->
-	    pgsql_connect(Server, Port, DB, Username, Password);
+	    pgsql_connect(Server, Port, DB, Username, Password, StartInterval);
 	%% Default mysql port
 	{mysql, Server, DB, Username, Password} ->
-	    mysql_connect(Server, ?MYSQL_PORT, DB, Username, Password);
+	    mysql_connect(Server, ?MYSQL_PORT, DB, Username, Password, StartInterval);
 	{mysql, Server, Port, DB, Username, Password} when is_integer(Port) ->
-	    mysql_connect(Server, Port, DB, Username, Password);
+	    mysql_connect(Server, Port, DB, Username, Password, StartInterval);
 	_ when is_list(SQLServer) ->
-	    odbc_connect(SQLServer)
+	    odbc_connect(SQLServer, StartInterval)
     end.
 
 %%----------------------------------------------------------------------
@@ -259,7 +259,7 @@ execute_transaction(State, F, NRestarts) ->
 
 %% part of init/1
 %% Open an ODBC database connection
-odbc_connect(SQLServer) ->
+odbc_connect(SQLServer, StartInterval) ->
     application:start(odbc),
     case odbc:connect(SQLServer,[{scrollable_cursors, off}]) of
 	{ok, Ref} ->
@@ -268,8 +268,8 @@ odbc_connect(SQLServer) ->
 	{error, Reason} ->
 	    ?ERROR_MSG("ODBC connection (~s) failed: ~p~n",
 		       [SQLServer, Reason]),
-	    %% If we can't connect we wait for 30 seconds before retrying
-	    timer:sleep(30000),
+	    %% If we can't connect we wait before retrying
+	    timer:sleep(StartInterval),
 	    {stop, odbc_connection_failed}
     end.
 
@@ -278,15 +278,15 @@ odbc_connect(SQLServer) ->
 
 %% part of init/1
 %% Open a database connection to PostgreSQL
-pgsql_connect(Server, Port, DB, Username, Password) ->
+pgsql_connect(Server, Port, DB, Username, Password, StartInterval) ->
     case pgsql:connect(Server, DB, Username, Password, Port) of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
 	    {ok, #state{db_ref = Ref, db_type = pgsql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("PostgreSQL connection failed: ~p~n", [Reason]),
-	    %% If we can't connect we wait for 30 seconds before retrying
-	    timer:sleep(30000),
+	    %% If we can't connect we wait before retrying
+	    timer:sleep(StartInterval),
 	    {stop, pgsql_connection_failed}
     end.
 
@@ -317,7 +317,7 @@ pgsql_item_to_odbc(_) ->
 
 %% part of init/1
 %% Open a database connection to MySQL
-mysql_connect(Server, Port, DB, Username, Password) ->
+mysql_connect(Server, Port, DB, Username, Password, StartInterval) ->
     NoLogFun = fun(_Level,_Format,_Argument) -> ok end,
     case mysql_conn:start(Server, Port, Username, Password, DB, NoLogFun) of
 	{ok, Ref} ->
@@ -330,9 +330,10 @@ mysql_connect(Server, Port, DB, Username, Password) ->
 				   "SERIALIZABLE;"], self()),
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
 	{error, Reason} ->
-	    ?ERROR_MSG("MySQL connection failed: ~p~n", [Reason]),
-	    %% If we can't connect we wait for 30 seconds before retrying
-	    timer:sleep(30000),
+	    ?ERROR_MSG("MySQL connection failed: ~p~nWaiting ~p seconds before retrying...~n",
+		       [Reason, StartInterval div 1000]),
+	    %% If we can't connect we wait before retrying
+	    timer:sleep(StartInterval),
 	    {stop, mysql_connection_failed}
     end.
 

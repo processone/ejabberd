@@ -161,6 +161,7 @@ get_user_roster(Items, US) ->
 process_item(RosterItem, Host) ->
     USFrom = {UserFrom, ServerFrom} = RosterItem#roster.us,
     {UserTo, ServerTo, ResourceTo} = RosterItem#roster.jid,
+    NameTo = RosterItem#roster.name,
     USTo = {UserTo, ServerTo},
     DisplayedGroups = get_user_displayed_groups(USFrom),
     CommonGroups = lists:filter(fun(Group) ->
@@ -188,24 +189,24 @@ process_item(RosterItem, Host) ->
 		PersonalGroups ->
 		    %% Store roster items in From and To rosters
 		    set_new_rosteritems(UserFrom, ServerFrom,
-					UserTo, ServerTo, ResourceTo,
+					UserTo, ServerTo, ResourceTo, NameTo,
 					PersonalGroups)
 	    end
     end.
 
-build_roster_record(User1, Server1, User2, Server2, Groups) ->
+build_roster_record(User1, Server1, User2, Server2, Name2, Groups) ->
     USR2 = {User2, Server2, undefined},
     #roster{usj = {User1, Server1, USR2},
 	    us = {User1, Server1},
 	    jid = USR2,
-	    name = User2,
+	    name = Name2,
 	    subscription = both,
 	    ask = none,
 	    groups = Groups
 	   }.
 
 set_new_rosteritems(UserFrom, ServerFrom,
-		    UserTo, ServerTo, ResourceTo, GroupsFrom) ->
+		    UserTo, ServerTo, ResourceTo, NameTo, GroupsFrom) ->
     Mod = case lists:member(mod_roster_odbc,
 			    gen_mod:loaded_modules(ServerFrom)) of
 	      true -> mod_roster_odbc;
@@ -213,13 +214,13 @@ set_new_rosteritems(UserFrom, ServerFrom,
 	  end,
 
     RIFrom = build_roster_record(UserFrom, ServerFrom,
-				 UserTo, ServerTo, GroupsFrom),
+				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
     JIDTo = exmpp_jid:make_bare_jid(UserTo, ServerTo),
 
     JIDFrom = exmpp_jid:make_bare_jid(UserFrom, ServerFrom),
     RITo = build_roster_record(UserTo, ServerTo,
-			       UserFrom, ServerFrom, []),
+			       UserFrom, ServerFrom, UserFrom,[]),
     set_item(UserTo, ServerTo, undefined, RITo),
 
     %% From requests

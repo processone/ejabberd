@@ -1,3 +1,7 @@
+2008-10-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Merge from trunk (r1563 to r1613).
+
 2008-10-07  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_local.erl: Fix a bug where an error stanza was not
@@ -8,6 +12,10 @@
 
 	* src/mod_private.erl, src/mod_private_odbc.erl, src/mod_version.erl:
 	Convert to exmpp. Thanks to Pablo Polvorin!
+
+2008-10-07  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/mod_roster_odbc.erl: fix MySQL multiple requests issue.
 
 2008-10-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -31,6 +39,29 @@
 	Fix status handling by always using binaries: until now, we were
 	mixing lists and binaries in a non-working way. Thanks to Pablo
 	Polvorin!
+
+2008-10-06  Badlop  <badlop@process-one.net>
+
+	* doc/guide.html: Regenerated
+
+2008-10-06  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/ejabberd_rdbms.erl: fix SQL database reconnection
+	issues (EJAB-764) and add odbc_start_interval configuration
+	directive (default to 30 seconds).
+	* src/odbc/ejabberd_odbc.erl: likewise.
+	* src/odbc/ejabberd_odbc_sup.erl: likewise.
+	* doc/guide.tex: likewise.
+
+2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/odbc/odbc_queries.erl: Fix empty query that fail on MySQL.
+
+2008-10-03  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/mod_vcard_odbc: added vCard support for MS SQL Server 2005.
+	* src/odbc/odbc_queries.erl: likewise.
+	* src/odbc/mssql2005.sql: likewise.
 
 2008-10-02  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -58,6 +89,17 @@
 	* src/mod_offline_odbc.erl, src/mod_vcard_odbc.erl,
 	src/mod_roster_odbc.erl: Fix multiple bugs in ODBC mods, thanks to
 	Pablo Polvorin!
+
+2008-10-01  Mickael Remond  <mremond@process-one.net>
+
+	* src/mod_shared_roster.erl: Correct roster push when changing
+	a shared roster entry name (EJAB-738).
+
+2008-09-30  Badlop  <badlop@process-one.net>
+
+	* src/*/Makefile.win32: Provide explicit beam filenames because
+	nmake does not accept wildcards (thanks to Attila
+	Vangel)(EJAB-543)
 
 2008-09-29  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -99,6 +141,25 @@
 	Ejabberd expects new structures. Add table conversion. Add try/catch
 	block around exmpp_stringprep:*prep/1 uses.
 
+2008-09-24  Christophe Romain  <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Allow PEP node type to be mapped with
+	namespace (EJAB-739). Change get_items to use From (EJAB-751). (Thanks
+	to Eric Cestari)
+	* src/mod_pubsub/gen_pubsub_node.erl: Likewise
+	* src/mod_pubsub/node_dispatch.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_zoo.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+
+	* src/mod_pubsub/node_mb.erl: Added PEP microglobing node (Thanks to
+	Eric Cestari)
+
 2008-09-23  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_vcard.erl (process_sm_iq): Fix a bug where a badmatch
@@ -125,6 +186,11 @@
 	(filter_fields): A call to the stringprep module was left.
 
 	* src/mod_vcard_ldap.erl, src/mod_vcard_odbc.erl: Convert to exmpp.
+
+2008-09-22  Mickael Remond  <mremond@process-one.net>
+
+	* src/mod_configure.erl: Fix adhoc commands reply types for
+	"get-online-users-num" and "get-registered-users-num" (EJAB-756).
 
 2008-09-18  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 

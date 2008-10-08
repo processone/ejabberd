@@ -15,16 +15,27 @@
 %%% All Rights Reserved.''
 %%% This software is copyright 2006-2008, ProcessOne.
 %%%
+%%%
 %%% @copyright 2006-2008 ProcessOne
-%%% @author Christophe romain <christophe.romain@process-one.net>
-%%%   [http://www.process-one.net/]
+%%% @author Eric Cestari <eric@ohmforce.com>
 %%% @version {@vsn}, {@date} {@time}
 %%% @end
 %%% ====================================================================
 
--module(node_zoo).
--author('christophe.romain@process-one.net').
 
+%%% @doc The module <strong>{@module}</strong> is the pep microblog PubSub plugin.
+%%% <p> To be used, mod_pubsub must be configured :
+%%% {mod_pubsub,   [ % requires mod_caps
+%%%   	  {access_createnode, pubsub_createnode},
+%%%   	  {plugins, ["default", "pep","mb"]},
+%%%	  {pep_mapping, [{"urn:xmpp:microblog", "mb"}]}
+%%%   	 ]},
+%%% <p>PubSub plugin nodes are using the {@link gen_pubsub_node} behaviour.</p>
+
+-module(node_mb).
+-author('eric@ohmforce.com').
+
+-include("ejabberd.hrl").
 -include("pubsub.hrl").
 -include("jlib.hrl").
 
@@ -61,122 +72,126 @@
 	 get_item_name/3
 	]).
 
-
 init(Host, ServerHost, Opts) ->
-    node_default:init(Host, ServerHost, Opts).
+    node_pep:init(Host, ServerHost, Opts).
 
 terminate(Host, ServerHost) ->
-    node_default:terminate(Host, ServerHost).
+    node_pep:terminate(Host, ServerHost),
+    ok.
 
 options() ->
-    [{node_type, zoo},
+    [{node_type, pep},
      {deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
-     {notify_retract, true},
+     {notify_retract, false},
      {persist_items, true},
-     {max_items, ?MAXITEMS div 2},
+     {max_items, ?MAXITEMS},
      {subscribe, true},
-     {access_model, open},
+     {access_model, presence},
      {roster_groups_allowed, []},
      {publish_model, publishers},
      {max_payload_size, ?MAX_PAYLOAD_SIZE},
-     {send_last_published_item, never},
+     {send_last_published_item, on_sub_and_presence},
      {deliver_notifications, true},
-     {presence_based_delivery, false}].
+     {presence_based_delivery, true}].
 
 features() ->
-    node_default:features().
+    ["create-nodes", %*
+     "auto-create", %*
+     "auto-subscribe", %*
+     "delete-nodes", %*
+     "filtered-notifications", %*
+     "modify-affiliations",
+     "outcast-affiliation",
+     "persistent-items",
+     "publish", %*
+     "purge-nodes",
+     "retract-items",
+     "retrieve-affiliations",
+     "retrieve-items", %*
+     "retrieve-subscriptions",
+     "subscribe" %*
+    ].
 
-%% use same code as node_default, but do not limite node to
-%% the home/localhost/user/... hierarchy
-%% any node is allowed
-create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
-    LOwner = jlib:jid_tolower(Owner),
-    Allowed = case LOwner of
-	{"", Host, ""} ->
-	    true; % pubsub service always allowed
-	_ ->
-	    case acl:match_rule(ServerHost, Access, LOwner) of
-		allow ->
-		    true;
-		_ ->
-		    false
-	    end
-    end,
-    {result, Allowed}.
-
+create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
+    node_pep:create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access).
+    
 create_node(Host, Node, Owner) ->
-    node_default:create_node(Host, Node, Owner).
-
+	 node_pep:create_node(Host, Node, Owner).
+	
 delete_node(Host, Removed) ->
-    node_default:delete_node(Host, Removed).
+    node_pep:delete_node(Host, Removed).
 
-subscribe_node(Host, Node, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
-    node_default:subscribe_node(Host, Node, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup).
+subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
+	       SendLast, PresenceSubscription, RosterGroup) ->
+    node_pep:subscribe_node(
+      Host, Node, Sender, Subscriber, AccessModel, SendLast,
+      PresenceSubscription, RosterGroup).
 
 unsubscribe_node(Host, Node, Sender, Subscriber, SubID) ->
-    node_default:unsubscribe_node(Host, Node, Sender, Subscriber, SubID).
+    node_pep:unsubscribe_node(Host, Node, Sender, Subscriber, SubID).
 
 publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload) ->
-    node_default:publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload).
+    node_pep:publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload).
 
 remove_extra_items(Host, Node, MaxItems, ItemIds) ->
-    node_default:remove_extra_items(Host, Node, MaxItems, ItemIds).
+    node_pep:remove_extra_items(Host, Node, MaxItems, ItemIds).
 
 delete_item(Host, Node, JID, ItemId) ->
-    node_default:delete_item(Host, Node, JID, ItemId).
+    node_pep:delete_item(Host, Node, JID, ItemId).
 
 purge_node(Host, Node, Owner) ->
-    node_default:purge_node(Host, Node, Owner).
+    node_pep:purge_node(Host, Node, Owner).
 
 get_entity_affiliations(Host, Owner) ->
-    node_default:get_entity_affiliations(Host, Owner).
+    node_pep:get_entity_affiliations(Host, Owner).
 
 get_node_affiliations(Host, Node) ->
-    node_default:get_node_affiliations(Host, Node).
+	node_pep:get_node_affiliations(Host, Node).
 
 get_affiliation(Host, Node, Owner) ->
-    node_default:get_affiliation(Host, Node, Owner).
+    node_pep:get_affiliation(Host, Node, Owner).
 
 set_affiliation(Host, Node, Owner, Affiliation) ->
-    node_default:set_affiliation(Host, Node, Owner, Affiliation).
+	node_pep:set_affiliation(Host, Node, Owner, Affiliation).
 
-get_entity_subscriptions(Host, Owner) ->
-    node_default:get_entity_subscriptions(Host, Owner).
+get_entity_subscriptions(Host,Owner) ->
+    node_pep:get_entity_subscriptions(Host, Owner).
 
 get_node_subscriptions(Host, Node) ->
-    node_default:get_node_subscriptions(Host, Node).
+    node_pep:get_node_subscriptions(Host, Node).
 
-get_subscription(Host, Node, Owner) ->
-    node_default:get_subscription(Host, Node, Owner).
+get_subscription(Host,Node,Owner) ->
+    node_pep:get_subscription(Host,Node,Owner).
 
 set_subscription(Host, Node, Owner, Subscription) ->
-    node_default:set_subscription(Host, Node, Owner, Subscription).
+    node_pep:set_subscription(Host, Node, Owner, Subscription).
 
 get_states(Host, Node) ->
-    node_default:get_states(Host, Node).
+    node_pep:get_states(Host, Node).
 
 get_state(Host, Node, JID) ->
-    node_default:get_state(Host, Node, JID).
+    node_pep:get_state(Host, Node, JID).
 
 set_state(State) ->
-    node_default:set_state(State).
+    node_pep:set_state(State).
 
 get_items(Host, Node, From) ->
-    node_default:get_items(Host, Node, From).
+    node_pep:get_items(Host, Node, From).
 
 get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    node_default:get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
+    node_pep:get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 
 get_item(Host, Node, ItemId) ->
-    node_default:get_item(Host, Node, ItemId).
-       
+    node_pep:get_item(Host, Node, ItemId).
+
 get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    node_default:get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
+    node_pep:get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 
 set_item(Item) ->
-    node_default:set_item(Item).
+    node_pep:set_item(Item).
 
 get_item_name(Host, Node, Id) ->
-    node_default:get_item_name(Host, Node, Id).
+    node_pep:get_item_name(Host, Node, Id).
+

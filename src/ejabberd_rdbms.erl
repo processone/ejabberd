@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -52,14 +52,21 @@ start_hosts() ->
 
 %% Start the ODBC module on the given host
 start_odbc(Host) ->
+    Supervisor_name = gen_mod:get_module_proc(Host, ejabberd_odbc_sup),
     ChildSpec =
-	{gen_mod:get_module_proc(Host, ejabberd_odbc_sup),
+	{Supervisor_name,
 	 {ejabberd_odbc_sup, start_link, [Host]},
-	 temporary,
+	 transient,
 	 infinity,
 	 supervisor,
 	 [ejabberd_odbc_sup]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    case supervisor:start_child(ejabberd_sup, ChildSpec) of
+	{ok, _PID} ->
+	    ok;
+	_Error ->
+	    ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying...~n", [Supervisor_name, _Error]),
+	    start_odbc(Host)
+    end.
 
 %% Returns true if we have configured odbc_server for the given host
 needs_odbc(Host) ->

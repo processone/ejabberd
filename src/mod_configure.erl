@@ -1240,7 +1240,7 @@ get_form(Host, ?NS_ADMINL("get-registered-users-num"), Lang) ->
      [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
        [?HFIELD(),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	 [#xmlattr{name = 'type', value = "jid-single"},
+	 [#xmlattr{name = 'type', value = "text-single"},
 	  #xmlattr{name = 'label', value = ?T(Lang, "Number of registered users")},
 	  #xmlattr{name = 'var', value = "registeredusersnum"}], children =
 	 [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Num)}]}]
@@ -1252,7 +1252,7 @@ get_form(Host, ?NS_ADMINL("get-online-users-num"), Lang) ->
      [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
        [?HFIELD(),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	 [#xmlattr{name = 'type', value = "jid-single"},
+	 [#xmlattr{name = 'type', value = "text-single"},
 	  #xmlattr{name = 'label', value = ?T(Lang, "Number of online users")},
 	  #xmlattr{name = 'var', value = "onlineusersnum"}], children =
 	 [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Num)}]}]

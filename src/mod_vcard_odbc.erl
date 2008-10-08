@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -97,7 +97,7 @@ stop(Host) ->
 
 get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
- 
+
 get_sm_features(Acc, _From, _To, Node, _Lang) ->
     case Node of
 	[] ->
@@ -131,10 +131,7 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
     #jid{lnode = LUser, ldomain = LServer} = To,
     Username = ejabberd_odbc:escape(LUser),
-    case catch ejabberd_odbc:sql_query(
-                 LServer,
-                 ["select vcard from vcard "
-                  "where username='", Username, "';"]) of
+    case catch odbc_queries:get_vcard(LServer, Username) of
         {selected, ["vcard"], [{SVCARD}]} ->
             try exmpp_xml:parse_document(SVCARD,
               [namespace, name_as_atom, autoload_known]) of
@@ -233,30 +230,13 @@ set_vcard(User, LServer, VCARD) ->
         SOrgUnit = ejabberd_odbc:escape(OrgUnit),
         SLOrgUnit = ejabberd_odbc:escape(LOrgUnit),
 
-        ejabberd_odbc:sql_transaction(
-          LServer,
-          [["delete from vcard where username='", LUsername, "';"],
-           ["insert into vcard(username, vcard) "
-           "values ('", LUsername, "', '", SVCARD, "');"],
-           ["delete from vcard_search where lusername='", LUsername, "';"],
-           ["insert into vcard_search("
-            "        username, lusername, fn, lfn, family, lfamily,"
-            "        given, lgiven, middle, lmiddle, nickname, lnickname,"
-            "        bday, lbday, ctry, lctry, locality, llocality,"
-            "        email, lemail, orgname, lorgname, orgunit, lorgunit)"
-            "values (",
-            "        '", Username,  "', '", LUsername,  "'," 
-            "        '", SFN,       "', '", SLFN,       "'," 
-            "        '", SFamily,   "', '", SLFamily,   "',"
-            "        '", SGiven,    "', '", SLGiven,    "',"
-            "        '", SMiddle,   "', '", SLMiddle,   "',"
-            "        '", SNickname, "', '", SLNickname, "',"
-            "        '", SBDay,     "', '", SLBDay,	   "',"
-            "        '", SCTRY,     "', '", SLCTRY,	   "',"
-            "        '", SLocality, "', '", SLLocality, "',"
-            "        '", SEMail,    "', '", SLEMail,	   "',"
-            "        '", SOrgName,  "', '", SLOrgName,  "',"
-            "        '", SOrgUnit,  "', '", SLOrgUnit,  "');"]])
+        odbc_queries:set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail,
+                               SFN, SFamily, SGiven, SLBDay, SLCTRY,
+                               SLEMail, SLFN, SLFamily, SLGiven,
+                               SLLocality, SLMiddle, SLNickname,
+                               SLOrgName, SLOrgUnit, SLocality,
+                               SMiddle, SNickname, SOrgName,
+                               SOrgUnit, SVCARD, Username)
     catch
 	_ ->
 	    {error, badarg}
@@ -612,18 +592,18 @@ make_val(Match, Field, Val) ->
 %	true ->
 %	    mnesia:write(
 %	      #vcard_search{us        = US,
-%			    user      = User,     luser      = LUser,     
-%			    fn        = FN,       lfn        = LFN,       
-%			    family    = Family,   lfamily    = LFamily,   
-%			    given     = Given,    lgiven     = LGiven,    
-%			    middle    = Middle,   lmiddle    = LMiddle,   
-%			    nickname  = Nickname, lnickname  = LNickname, 
-%			    bday      = BDay,     lbday      = LBDay,     
-%			    ctry      = CTRY,     lctry      = LCTRY,     
-%			    locality  = Locality, llocality  = LLocality, 
-%			    email     = EMail,    lemail     = LEMail,    
-%			    orgname   = OrgName,  lorgname   = LOrgName,  
-%			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
+%			    user      = User,     luser      = LUser,
+%			    fn        = FN,       lfn        = LFN,
+%			    family    = Family,   lfamily    = LFamily,
+%			    given     = Given,    lgiven     = LGiven,
+%			    middle    = Middle,   lmiddle    = LMiddle,
+%			    nickname  = Nickname, lnickname  = LNickname,
+%			    bday      = BDay,     lbday      = LBDay,
+%			    ctry      = CTRY,     lctry      = LCTRY,
+%			    locality  = Locality, llocality  = LLocality,
+%			    email     = EMail,    lemail     = LEMail,
+%			    orgname   = OrgName,  lorgname   = LOrgName,
+%			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit
 %			   })
 %    end.
 %
@@ -643,5 +623,3 @@ remove_user(User, Server) ->
       LServer,
       [["delete from vcard where username='", Username, "';"],
        ["delete from vcard_search where lusername='", Username, "';"]]).
-
-
