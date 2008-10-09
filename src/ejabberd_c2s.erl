@@ -1285,7 +1285,7 @@ new_id() ->
     randoms:get_string().
 
 
-is_auth_packet(El) ->
+is_auth_packet(El) when ?IS_IQ(El) ->
     case exmpp_iq:is_request(El) of
 	true ->
 	    {auth, exmpp_stanza:get_id(El), exmpp_iq:get_type(El),
@@ -1293,7 +1293,9 @@ is_auth_packet(El) ->
                undefined, undefined, undefined, undefined)};
 	false ->
 	    false
-    end.
+    end;
+is_auth_packet(_El) ->
+    false.
 
 
 get_auth_tags([#xmlel{ns = ?NS_LEGACY_AUTH, name = Name, children = Els} | L],
@@ -1828,7 +1830,7 @@ resend_subscription_requests(#state{user = User,
 		  end,
 		  PendingSubscriptions).
 
-process_unauthenticated_stanza(StateData, El) ->
+process_unauthenticated_stanza(StateData, El) when ?IS_IQ(El) ->
     case exmpp_iq:get_kind(El) of
 	request ->
             IQ_Rec = exmpp_iq:xmlel_to_iq(El),
@@ -1851,9 +1853,12 @@ process_unauthenticated_stanza(StateData, El) ->
 		    send_element(StateData, Res)
 	    end;
 	_ ->
-	    % Drop any stanza, which isn't IQ stanza
+	    % Drop any stanza, which isn't an IQ request stanza
 	    ok
-    end.
+    end;
+process_unauthenticated_stanza(_StateData,_El) ->
+    ok.
+
 
 peerip(SockMod, Socket) ->
     IP = case SockMod of

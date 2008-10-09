@@ -1,3 +1,8 @@
+2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which
+	are not request IQ. Thanks to Pablo Polvorin!
+
 2008-10-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1563 to r1613).
