@@ -12,6 +12,9 @@
 	jlib:nameprep/1 by exmpp_stringprep:nameprep/1 and change the error
 	handling.
 
+	* src/ejabberd_config.erl (normalize_hosts/2): Replace jlib:nodeprep/1
+	by exmpp_stringprep:nodeprep/1 and change the error handling.
+
 2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which

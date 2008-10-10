@@ -154,13 +154,14 @@ normalize_hosts(Hosts) ->
 normalize_hosts([], PrepHosts) ->
     lists:reverse(PrepHosts);
 normalize_hosts([Host|Hosts], PrepHosts) ->
-    case jlib:nodeprep(Host) of
-	error ->
+    try
+	PrepHost = exmpp_stringprep:nodeprep(Host),
+	normalize_hosts(Hosts, [PrepHost|PrepHosts])
+    catch
+	_ ->
 	    ?ERROR_MSG("Can't load config file: "
 		       "invalid host name [~p]", [Host]),
-	    exit("invalid hostname");
-	PrepHost ->
-	    normalize_hosts(Hosts, [PrepHost|PrepHosts])
+	    exit("invalid hostname")
     end.
 
 
