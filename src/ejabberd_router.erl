@@ -87,51 +87,52 @@ register_route(Domain) ->
     register_route(Domain, undefined).
 
 register_route(Domain, LocalHint) ->
-    case jlib:nameprep(Domain) of
-	error ->
-	    erlang:error({invalid_domain, Domain});
-	LDomain ->
-	    Pid = self(),
-	    case get_component_number(LDomain) of
-		undefined ->
-		    F = fun() ->
-				mnesia:write(#route{domain = LDomain,
-						    pid = Pid,
-						    local_hint = LocalHint})
-			end,
-		    mnesia:transaction(F);
-		N ->
-		    F = fun() ->
-				case mnesia:read({route, LDomain}) of
-				    [] ->
-					mnesia:write(
-					  #route{domain = LDomain,
-						 pid = Pid,
-						 local_hint = 1}),
-					lists:foreach(
-					  fun(I) ->
-						  mnesia:write(
-						    #route{domain = LDomain,
-							   pid = undefined,
-							   local_hint = I})
-					  end, lists:seq(2, N));
-				    Rs ->
-					lists:any(
-					  fun(#route{pid = undefined,
-						     local_hint = I} = R) ->
-						  mnesia:write(
-						    #route{domain = LDomain,
-							   pid = Pid,
-							   local_hint = I}),
-						  mnesia:delete_object(R),
-						  true;
-					     (_) ->
-						  false
-					  end, Rs)
-				end
-			end,
-		    mnesia:transaction(F)
-	    end
+    try
+        LDomain = exmpp_stringprep:nameprep(Domain),
+        Pid = self(),
+        case get_component_number(LDomain) of
+            undefined ->
+                F = fun() ->
+                            mnesia:write(#route{domain = LDomain,
+                                                pid = Pid,
+                                                local_hint = LocalHint})
+                    end,
+                mnesia:transaction(F);
+            N ->
+                F = fun() ->
+                            case mnesia:read({route, LDomain}) of
+                                [] ->
+                                    mnesia:write(
+                                      #route{domain = LDomain,
+                                             pid = Pid,
+                                             local_hint = 1}),
+                                    lists:foreach(
+                                      fun(I) ->
+                                              mnesia:write(
+                                                #route{domain = LDomain,
+                                                       pid = undefined,
+                                                       local_hint = I})
+                                      end, lists:seq(2, N));
+                                Rs ->
+                                    lists:any(
+                                      fun(#route{pid = undefined,
+                                                 local_hint = I} = R) ->
+                                              mnesia:write(
+                                                #route{domain = LDomain,
+                                                       pid = Pid,
+                                                       local_hint = I}),
+                                              mnesia:delete_object(R),
+                                              true;
+                                         (_) ->
+                                              false
+                                      end, Rs)
+                            end
+                    end,
+                mnesia:transaction(F)
+        end
+    catch
+        _ ->
+	    erlang:error({invalid_domain, Domain})
     end.
 
 register_routes(Domains) ->
@@ -140,43 +141,44 @@ register_routes(Domains) ->
 		  end, Domains).
 
 unregister_route(Domain) ->
-    case jlib:nameprep(Domain) of
-	error ->
-	    erlang:error({invalid_domain, Domain});
-	LDomain ->
-	    Pid = self(),
-	    case get_component_number(LDomain) of
-		undefined ->
-		    F = fun() ->
-				case mnesia:match_object(
-				       #route{domain = LDomain,
-					      pid = Pid,
-					      _ = '_'}) of
-				    [R] ->
-					mnesia:delete_object(R);
-				    _ ->
-					ok
-				end
-			end,
-		    mnesia:transaction(F);
-		_ ->
-		    F = fun() ->
-				case mnesia:match_object(#route{domain=LDomain,
-								pid = Pid,
-								_ = '_'}) of
-				    [R] ->
-					I = R#route.local_hint,
-					mnesia:write(
-					  #route{domain = LDomain,
-						 pid = undefined,
-						 local_hint = I}),
-					mnesia:delete_object(R);
-				    _ ->
-					ok
-				end
-			end,
-		    mnesia:transaction(F)
-	    end
+    try
+	LDomain = exmpp_stringprep:nameprep(Domain),
+	Pid = self(),
+	case get_component_number(LDomain) of
+	    undefined ->
+		F = fun() ->
+			    case mnesia:match_object(
+				   #route{domain = LDomain,
+					  pid = Pid,
+					  _ = '_'}) of
+				[R] ->
+				    mnesia:delete_object(R);
+				_ ->
+				    ok
+			    end
+		    end,
+		mnesia:transaction(F);
+	    _ ->
+		F = fun() ->
+			    case mnesia:match_object(#route{domain=LDomain,
+							    pid = Pid,
+							    _ = '_'}) of
+				[R] ->
+				    I = R#route.local_hint,
+				    mnesia:write(
+				      #route{domain = LDomain,
+					     pid = undefined,
+					     local_hint = I}),
+				    mnesia:delete_object(R);
+				_ ->
+				    ok
+			    end
+		    end,
+		mnesia:transaction(F)
+	end
+    catch
+	_ ->
+	    erlang:error({invalid_domain, Domain})
     end.
 
 unregister_routes(Domains) ->
