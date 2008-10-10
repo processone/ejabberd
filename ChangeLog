@@ -10,8 +10,9 @@
 
 	* src/ejabberd_s2s_in.erl (wait_for_feature_request/2),
 	src/ejabberd_router.erl (register_route/2, unregister_route/1),
-	src/ejabberd_ctl.erl (process/1): Replace jlib:nameprep/1 by
-	exmpp_stringprep:nameprep/1 and change the error handling.
+	src/ejabberd_ctl.erl (process/1), src/ejabberd_rdbms.erl
+	(needs_odbc/1): Replace jlib:nameprep/1 by exmpp_stringprep:nameprep/1
+	and change the error handling.
 
 	* src/ejabberd_config.erl (normalize_hosts/2): Replace jlib:nodeprep/1
 	by exmpp_stringprep:nodeprep/1 and change the error handling.
