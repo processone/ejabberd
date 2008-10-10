@@ -1286,13 +1286,14 @@ new_id() ->
 
 
 is_auth_packet(El) when ?IS_IQ(El) ->
-    case exmpp_iq:is_request(El) of
-	true ->
-	    {auth, exmpp_stanza:get_id(El), exmpp_iq:get_type(El),
-	     get_auth_tags(El#xmlel.children,
-               undefined, undefined, undefined, undefined)};
-	false ->
-	    false
+    case exmpp_iq:xmlel_to_iq(El) of
+	#iq{ns = ?NS_LEGACY_AUTH, kind = 'request'} = IQ_Rec ->
+	    Children = exmpp_xml:get_child_elements(IQ_Rec#iq.payload),
+	    {auth, IQ_Rec#iq.id, IQ_Rec#iq.type,
+	     get_auth_tags(Children , undefined, undefined, 
+			   undefined, undefined)};
+	 _ ->
+	   false
     end;
 is_auth_packet(_El) ->
     false.

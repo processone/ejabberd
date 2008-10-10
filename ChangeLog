@@ -1,3 +1,9 @@
+2008-10-10  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_c2s.erl (is_auth_packet/1): Fix a bug where
+	legacy authentication informations were not search among the query
+	children but among the IQ children. Thanks to Pablo Polvorin!
+
 2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which
