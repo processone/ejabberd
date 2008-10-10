@@ -8,6 +8,10 @@
 	was passed to exmpp_jid:jid_to_list/1 instead of a #jid. Now we use
 	exmpp_jid:jid_to_list/3. Thanks to Pablo Polvorin!
 
+	* src/ejabberd_s2s_in.erl (wait_for_feature_request/2): Replace
+	jlib:nameprep/1 by exmpp_stringprep:nameprep/1 and change the error
+	handling.
+
 2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which

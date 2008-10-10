@@ -255,35 +255,35 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	#xmlel{ns = ?NS_SASL, name = 'auth'} when TLSEnabled ->
 	    case exmpp_server_sasl:next_step(El) of
 		{auth, "EXTERNAL", Auth} ->
-		    AuthDomain = jlib:nameprep(Auth),
-		    AuthRes =
-			case (StateData#state.sockmod):get_peer_certificate(
+		    {AuthDomain, AuthRes} = try
+			AuthDomain0 = exmpp_stringprep:nameprep(Auth),
+			AuthRes0 = case (StateData#state.sockmod):get_peer_certificate(
 			       StateData#state.socket) of
 			    {ok, Cert} ->
 				case (StateData#state.sockmod):get_verify_result(
 				       StateData#state.socket) of
 				    0 ->
-					case AuthDomain of
-					    error ->
+					case idna:domain_utf8_to_ascii(AuthDomain0) of
+					    false ->
 						false;
-					    _ ->
-						case idna:domain_utf8_to_ascii(AuthDomain) of
-						    false ->
-							false;
-						    PCAuthDomain ->
-							lists:any(
-							  fun(D) ->
-								  match_domain(
-								    PCAuthDomain, D)
-							  end, get_cert_domains(Cert))
-						end
+					    PCAuthDomain ->
+						lists:any(
+						  fun(D) ->
+							  match_domain(
+							    PCAuthDomain, D)
+						  end, get_cert_domains(Cert))
 					end;
 				    _ ->
 					false
 				end;
 			    error ->
-				false
+                                {undefined, false}
 			end,
+			{AuthDomain0, AuthRes0}
+		    catch
+			_ ->
+			    false
+		    end,
 		    if
 			AuthRes ->
 			    (StateData#state.sockmod):reset_stream(
