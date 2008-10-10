@@ -38,8 +38,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -record(state, {}).
 
@@ -55,15 +56,14 @@ start_link() ->
 
 process_command(From, To, Packet) ->
     case To of
-	#jid{luser = "", lresource = "watchdog"} ->
-	    {xmlelement, Name, _Attrs, _Els} = Packet,
-	    case Name of
-		"message" ->
-		    LFrom = jlib:jid_tolower(jlib:jid_remove_resource(From)),
+	#jid{lnode = undefined, lresource = "watchdog"} ->
+	    case Packet#xmlel.name of
+		'message' ->
+		    LFrom = jlib:short_prepd_bare_jid(From),
 		    case lists:member(LFrom, get_admin_jids()) of
 			true ->
-			    Body = xml:get_path_s(
-				     Packet, [{elem, "body"}, cdata]),
+			    Body = exmpp_xml:get_path(
+				     Packet, [{element, 'body'}, cdata_as_list]),
 			    spawn(fun() ->
 					  process_flag(priority, high),
 					  process_command1(From, To, Body)
@@ -168,13 +168,15 @@ process_large_heap(Pid, Info) ->
 		     "(~w) The process ~w is consuming too much memory: ~w.~n"
 		     "~s",
 		     [node(), Pid, Info, DetailedInfo]),
-	    From = jlib:make_jid("", Host, "watchdog"),
+	    From = exmpp_jid:make_jid(undefined, Host, "watchdog"),
 	    lists:foreach(
 	      fun(S) ->
-		      case jlib:string_to_jid(S) of
-			  error -> ok;
-			  JID ->
-			      send_message(From, JID, Body)
+		      try
+			  JID = exmpp_jid:list_to_jid(S),
+			  send_message(From, JID, Body)
+		      catch
+			  _ ->
+			      ok
 		      end
 	      end, JIDs);
 	_ ->
@@ -184,18 +186,19 @@ process_large_heap(Pid, Info) ->
 send_message(From, To, Body) ->
     ejabberd_router:route(
       From, To,
-      {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [],
-	 [{xmlcdata, lists:flatten(Body)}]}]}).
+      exmpp_message:chat(lists:flatten(Body))).
 
 get_admin_jids() ->
     case ejabberd_config:get_local_option(watchdog_admins) of
 	JIDs when is_list(JIDs) ->
 	    lists:flatmap(
 	      fun(S) ->
-		      case jlib:string_to_jid(S) of
-			  error -> [];
-			  JID -> [jlib:jid_tolower(JID)]
+		      try
+			  JID = exmpp_jid:list_to_jid(S),
+			  [jlib:short_prepd_jid(JID)]
+		      catch
+			  _ ->
+			      []
 		      end
 	      end, JIDs);
 	_ ->

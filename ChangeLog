@@ -30,6 +30,8 @@
 
 	* src/ejabberd_app.erl (start/2): Don't start stringprep_sup.
 
+	* src/ejabberd_system_monitor.erl: Convert to exmpp.
+
 2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which
