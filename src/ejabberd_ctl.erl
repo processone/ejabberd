@@ -243,19 +243,20 @@ process(["delete-old-messages", Days]) ->
     end;
 
 process(["vhost", H | Args]) ->
-    case jlib:nameprep(H) of
-	false ->
+    try
+	Host = exmpp_stringprep:nameprep(H),
+	case ejabberd_hooks:run_fold(
+	       ejabberd_ctl_process, Host, false, [Host, Args]) of
+	    false ->
+		print_vhost_usage(Host),
+		?STATUS_USAGE;
+	    Status ->
+		Status
+	end
+    catch
+	_ ->
 	    ?PRINT("Bad hostname: ~p~n", [H]),
-	    ?STATUS_ERROR;
-	Host ->
-	    case ejabberd_hooks:run_fold(
-		   ejabberd_ctl_process, Host, false, [Host, Args]) of
-		false ->
-		    print_vhost_usage(Host),
-		    ?STATUS_USAGE;
-		Status ->
-		    Status
-	    end
+	    ?STATUS_ERROR
     end;
 
 process(Args) ->
