@@ -28,7 +28,8 @@
 	* src/mod_roster_odbc.erl (user_roster_subscribe_jid/3): Fix a bug
 	where the wrong module was called (jlib instead of exmpp_jid).
 
-	* src/ejabberd_ctl.erl (process/1): 
+	* src/ejabberd_app.erl (start/2): Don't start stringprep_sup.
+
 2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which

@@ -44,7 +44,6 @@ start(normal, _Args) ->
     randoms:start(),
     db_init(),
     sha:start(),
-    stringprep_sup:start_link(),
     translate:start(),
     acl:start(),
     ejabberd_ctl:init(),
