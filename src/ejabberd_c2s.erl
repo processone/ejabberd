@@ -940,10 +940,10 @@ handle_sync_event({get_presence}, _From, StateName, StateData) ->
 handle_sync_event(get_subscribed, _From, StateName, StateData) ->
     Subscribed = StateData#state.pres_f,
     Online = StateData#state.pres_available,
-    Pred = fun(User, _Caps) ->
-		   ?SETS:is_element(jlib:jid_remove_resource(User),
+    Pred = fun({U, S, _} = User, _Caps) ->
+		   ?SETS:is_element({U, S, undefined},
 				    Subscribed) orelse
-		       ?SETS:is_element(User, Subscribed)
+		   ?SETS:is_element(User, Subscribed)
 	   end,
     SubscribedAndOnline = ?DICT:filter(Pred, Online),
     SubscribedWithCaps  = ?SETS:fold(fun(User, Acc) ->
@@ -957,7 +957,7 @@ handle_sync_event(get_subscribed_and_online, _From, StateName, StateData) ->
     Pred = fun({U, S, _R} = User, _Caps) ->
 		   ?SETS:is_element({U, S, undefined},
 				    Subscribed) orelse
-		       ?SETS:is_element(User, Subscribed)
+		   ?SETS:is_element(User, Subscribed)
 	   end,
     SubscribedAndOnline = ?DICT:filter(Pred, Online),
     {reply, ?DICT:to_list(SubscribedAndOnline), StateName, StateData};
