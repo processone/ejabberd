@@ -25,6 +25,9 @@
 	* src/mod_vcard_odbc.erl (do_route/4): Replace jlib:iq_to_xml/1 by
 	exmpp_iq:iq_to_xmlel/1.
 
+	* src/mod_roster_odbc.erl (user_roster_subscribe_jid/3): Fix a bug
+	where the wrong module was called (jlib instead of exmpp_jid).
+
 2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which

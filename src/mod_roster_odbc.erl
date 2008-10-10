@@ -1009,7 +1009,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
-    UJID = jlib:make_bare_jid(User, Server),
+    UJID = exmpp_jid:make_bare_jid(User, Server),
     ejabberd_router:route(
       UJID, JID, exmpp_presence:subscribe()).
 
@@ -1032,7 +1032,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 		      case lists:keysearch(
 			     "remove" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 			  {value, _} ->
-			      UJID = jlib:make_bare_jid(User, Server),
+			      UJID = exmpp_jid:make_bare_jid(User, Server),
 			      Attrs1 = exmpp_xml:set_attribute_in_list([],
 				'jid', exmpp_jid:jid_to_list(JID)),
 			      Attrs2 = exmpp_xml:set_attribute_in_list(Attrs1,
