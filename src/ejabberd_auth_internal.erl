@@ -207,71 +207,96 @@ get_vh_registered_users_number(Server, _) ->
     get_vh_registered_users_number(Server).
 
 get_password(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read(passwd, US) of
-	[#passwd{password = Password}] ->
-	    Password;
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	case catch mnesia:dirty_read(passwd, US) of
+	    [#passwd{password = Password}] ->
+		Password;
+	    _ ->
+		false
+	end
+    catch
 	_ ->
 	    false
     end.
 
 get_password_s(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read(passwd, US) of
-	[#passwd{password = Password}] ->
-	    Password;
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	case catch mnesia:dirty_read(passwd, US) of
+	    [#passwd{password = Password}] ->
+		Password;
+	    _ ->
+		[]
+	end
+    catch
 	_ ->
 	    []
     end.
 
 is_user_exists(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read({passwd, US}) of
-	[] ->
-	    false;
-	[_] ->
-	    true;
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	case catch mnesia:dirty_read({passwd, US}) of
+	    [] ->
+		false;
+	    [_] ->
+		true;
+	    _ ->
+		false
+	end
+    catch
 	_ ->
 	    false
     end.
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		mnesia:delete({passwd, US})
-        end,
-    mnesia:transaction(F),
-    ejabberd_hooks:run(remove_user, LServer, [User, Server]).
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    mnesia:delete({passwd, US})
+	    end,
+	mnesia:transaction(F),
+	ejabberd_hooks:run(remove_user, LServer, [User, Server])
+    catch
+	_ ->
+	    ok
+    end.
 
 remove_user(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		case mnesia:read({passwd, US}) of
-		    [#passwd{password = Password}] ->
-			mnesia:delete({passwd, US}),
-			ok;
-		    [_] ->
-			not_allowed;
-		    _ ->
-			not_exists
-		end
-        end,
-    case mnesia:transaction(F) of
-	{atomic, ok} ->
-	    ejabberd_hooks:run(remove_user, LServer, [User, Server]),
-	    ok;
-	{atomic, Res} ->
-	    Res;
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    case mnesia:read({passwd, US}) of
+			[#passwd{password = Password}] ->
+			    mnesia:delete({passwd, US}),
+			    ok;
+			[_] ->
+			    not_allowed;
+			_ ->
+			    not_exists
+		    end
+	    end,
+	case mnesia:transaction(F) of
+	    {atomic, ok} ->
+		ejabberd_hooks:run(remove_user, LServer, [User, Server]),
+		ok;
+	    {atomic, Res} ->
+		Res;
+	    _ ->
+		bad_request
+	end
+    catch
 	_ ->
 	    bad_request
     end.

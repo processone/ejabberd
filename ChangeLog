@@ -18,6 +18,9 @@
 	*  src/ejabberd_c2s.erl (handle_sync_event/4): Remove a remaining
 	jlib:jid_remove_resource/1 call.
 
+	* src/ejabberd_auth_internal.erl: Replace jlib:*prep/1 by
+	exmpp_stringprep:*prep/1 and change the error handling.
+
 2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which
