@@ -21,6 +21,9 @@
 	* src/ejabberd_auth_internal.erl: Replace jlib:*prep/1 by
 	exmpp_stringprep:*prep/1 and change the error handling.
 
+	* src/mod_vcard_odbc.erl (do_route/4): Replace jlib:iq_to_xml/1 by
+	exmpp_iq:iq_to_xmlel/1.
+
 2008-10-09  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl: Fix handling of unauthenticated stanzas which

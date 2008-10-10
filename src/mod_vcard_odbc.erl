@@ -317,7 +317,7 @@ do_route(ServerHost, From, To, Packet) ->
 					ResIQ = exmpp_iq:result(Packet,
 					  Result),
                                         ejabberd_router:route(
-                                          To, From, jlib:iq_to_xml(ResIQ))
+                                          To, From, exmpp_iq:iq_to_xmlel(ResIQ))
                                 end
                         end;
 		    {get, ?NS_SEARCH} ->
