@@ -1,5 +1,8 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/ejabberdctl.template: Move help print to a separate
+	function (EJAB-694)
+
 	* src/ejabberd_ctl.erl: Add frontend support for
 	commands (EJAB-694). Categorization and sorting of commands in
 	ejabberd_ctl help (EJAB-313). Lines in command line help of length

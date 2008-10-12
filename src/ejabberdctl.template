@@ -163,6 +163,23 @@ live ()
       $ERLANG_OPTS $ARGS \"$@\""
 }
 
+help ()
+{
+    echo ""
+    echo "Commands to start an ejabberd node:"
+    echo "  start  Start an ejabberd node in server mode"
+    echo "  debug  Attach an interactive Erlang shell to a running ejabberd node"
+    echo "  live   Start an ejabberd node in live (interactive) mode"
+    echo ""
+    echo "Optional parameters when starting an ejabberd node:"
+    echo "  --config file      Config ejabberd:    $EJABBERD_CONFIG_PATH"
+    echo "  --ctl-config file  Config ejabberdctl: $EJABBERDCTL_CONFIG_PATH"
+    echo "  --logs dir         Directory for logs: $LOGS_DIR"
+    echo "  --spool dir        Database spool dir: $SPOOLDIR"
+    echo "  --node nodename    ejabberd node name: $ERLANG_NODE"
+    echo ""
+}
+
 # common control function
 ctl ()
 {
@@ -175,20 +192,9 @@ ctl ()
     result=$?
     case $result in
     0) :;;
-    *)
-        echo ""
-        echo "Commands to start an ejabberd node:"
-        echo "  start  Start an ejabberd node in server mode"
-        echo "  debug  Attach an interactive Erlang shell to a running ejabberd node"
-        echo "  live   Start an ejabberd node in live (interactive) mode"
-        echo ""
-        echo "Optional parameters when starting an ejabberd node:"
-        echo "  --config file      Config file of ejabberd:    $EJABBERD_CONFIG_PATH"
-        echo "  --ctl-config file  Config file of ejabberdctl: $EJABBERDCTL_CONFIG_PATH"
-        echo "  --logs dir         Directory for logs:         $LOGS_DIR"
-        echo "  --spool dir        Database spool dir:         $SPOOLDIR"
-        echo "  --node nodename    ejabberd node name:         $ERLANG_NODE"
-        echo "";;
+    1) :;;
+    2) help;;
+    3) help;;
     esac
     return $result
 }
