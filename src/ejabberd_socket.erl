@@ -77,6 +77,8 @@ start(Module, SockMod, Socket, Opts) ->
 		{error, _Reason} ->
 		    SockMod:close(Socket)
 	    end;
+	independent ->
+	    ok;
 	raw ->
 	    case Module:start({SockMod, Socket}, Opts) of
 		{ok, Pid} ->

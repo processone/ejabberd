@@ -62,6 +62,7 @@ start(normal, _Args) ->
     %eprof:profile([self()]),
     %fprof:trace(start, "/tmp/fprof"),
     start_modules(),
+    ejabberd_listener:start_listeners(),
     Sup;
 start(_, _) ->
     {error, badarg}.
