@@ -2022,7 +2022,7 @@ node_backup_parse_query(Node, Query) ->
 					  rpc:call(Node, mnesia,
 						   install_fallback, [Path]);
 				      "dump" ->
-					  rpc:call(Node, ejabberd_ctl,
+					  rpc:call(Node, ejabberd_admin,
 						   dump_to_textfile, [Path]);
 				      "load" ->
 					  rpc:call(Node, mnesia,
@@ -2087,7 +2087,7 @@ node_ports_to_xhtml(Ports, Lang) ->
 
 node_ports_parse_query(Node, Ports, Query) ->
     lists:foreach(
-      fun({Port, _Module1, _Opts1}) ->
+      fun({Port, Module1, _Opts1}) ->
 	      SPort = integer_to_list(Port),
 	      case lists:keysearch("add" ++ SPort, 1, Query) of
 		  {value, _} ->
@@ -2097,13 +2097,13 @@ node_ports_parse_query(Node, Ports, Query) ->
 		      Module = list_to_atom(SModule),
 		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 		      {ok, Opts} = erl_parse:parse_term(Tokens),
-		      rpc:call(Node, ejabberd_listener, delete_listener, [Port]),
+		      rpc:call(Node, ejabberd_listener, delete_listener, [Port, Module]),
 		      rpc:call(Node, ejabberd_listener, add_listener, [Port, Module, Opts]),
 		      throw(submitted);
 		  _ ->
 		      case lists:keysearch("delete" ++ SPort, 1, Query) of
 			  {value, _} ->
-			      rpc:call(Node, ejabberd_listener, delete_listener, [Port]),
+			      rpc:call(Node, ejabberd_listener, delete_listener, [Port, Module1]),
 			      throw(submitted);
 			  _ ->
 			      ok
