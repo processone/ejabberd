@@ -51,11 +51,7 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Host) ->
-    ejabberd_ctl:register_commands(
-      Host,
-      [{"registered-users", "list all registered users"}],
-      ejabberd_auth, ctl_process_get_registered),
+start(_Host) ->
     ok.
 
 plain_password_required() ->
