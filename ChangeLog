@@ -1,5 +1,12 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Run new hook
+	webadmin_user_parse_query when POST in web admin user
+	page (thanks to Oleg Palij)(EJAB-747)
+	* src/mod_offline.erl: Add button "Remove All Offline Messages" in
+	a user page (thanks to Oleg Palij)(EJAB-747)
+	* src/mod_offline_odbc.erl: Likewise
+
 	* src/web/ejabberd_web_admin.erl: Improve Web Admin navigation
 	menu for vhosts and nodes (EJAB-734)
 

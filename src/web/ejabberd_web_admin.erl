@@ -1470,25 +1470,31 @@ user_info(User, Server, Query, Lang) ->
 
 
 user_parse_query(User, Server, Query) ->
-    case lists:keysearch("chpassword", 1, Query) of
-	{value, _} ->
-	    case lists:keysearch("password", 1, Query) of
-		{value, {_, undefined}} ->
-		    error;
-		{value, {_, Password}} ->
-		    ejabberd_auth:set_password(User, Server, Password),
-		    ok;
-		_ ->
-		    error
-	    end;
-	_ ->
-	    case lists:keysearch("removeuser", 1, Query) of
-		{value, _} ->
-		    ejabberd_auth:remove_user(User, Server),
-		    ok;
-		false ->
-		    nothing
-	    end
+    lists:foldl(fun({Action, _Value}, Acc) when Acc == nothing ->
+                      user_parse_query1(Action, User, Server, Query);
+                   ({_Action, _Value}, Acc) ->
+                      Acc
+                end, nothing, Query).
+
+user_parse_query1("password", _User, _Server, _Query) ->
+    nothing;
+user_parse_query1("chpassword", User, Server, Query) ->
+    case lists:keysearch("password", 1, Query) of
+        {value, {_, undefined}} ->
+            error;
+        {value, {_, Password}} ->
+            ejabberd_auth:set_password(User, Server, Password),
+            ok;
+        _ ->
+            error
+    end;
+user_parse_query1("removeuser", User, Server, _Query) ->
+    ejabberd_auth:remove_user(User, Server),
+    ok;
+user_parse_query1(Action, User, Server, Query) ->
+    case ejabberd_hooks:run_fold(webadmin_user_parse_query, Server, [], [Action, User, Server, Query]) of
+         [] -> nothing;
+         Res -> Res
     end.
 
 
