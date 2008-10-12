@@ -1,5 +1,8 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_sm.erl: Update from ctl to commands (EJAB-694)
+	* src/ejabberd_s2s.erl: Likewise
+
 	* src/ejabberd_auth.erl: Update from ctl to commands (EJAB-694)
 	* src/ejabberd_auth_internal.erl: Likewise
 	* src/ejabberd_auth_ldap.erl: Likewise
