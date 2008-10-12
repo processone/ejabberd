@@ -29,7 +29,7 @@
 
 -behaviour(application).
 
--export([start/2, prep_stop/1, stop/1, init/0]).
+-export([start_modules/0,start/2, prep_stop/1, stop/1, init/0]).
 
 -include("ejabberd.hrl").
 
@@ -48,6 +48,8 @@ start(normal, _Args) ->
     translate:start(),
     acl:start(),
     ejabberd_ctl:init(),
+    ejabberd_commands:init(),
+    ejabberd_admin:start(),
     gen_mod:start(),
     ejabberd_config:start(),
     ejabberd_check:config(),
@@ -72,6 +74,7 @@ start(_, _) ->
 %% before shutting down the processes of the application.
 prep_stop(State) ->
     stop_modules(),
+    ejabberd_admin:stop(),
     State.
 
 %% All the processes were killed when this function is called

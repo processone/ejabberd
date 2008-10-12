@@ -1,5 +1,8 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_app.erl: Initialize ejabberd_commands and start
+	ejabbed_admin (EJAB-694)
+
 	* src/ejabberd_admin.erl: Implement commands from old
 	ejabberd_ctl (EJAB-694)
 
