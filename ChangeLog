@@ -1,5 +1,10 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_ctl.erl: Add frontend support for
+	commands (EJAB-694). Categorization and sorting of commands in
+	ejabberd_ctl help (EJAB-313). Lines in command line help of length
+	80, and text formatting (EJAB-473)
+
 	* src/ejabberd_app.erl: Initialize ejabberd_commands and start
 	ejabbed_admin (EJAB-694)
 
