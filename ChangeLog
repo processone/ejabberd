@@ -1,5 +1,8 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Improve Web Admin navigation
+	menu for vhosts and nodes (EJAB-734)
+
 	* doc/guide.tex: Explain the new ejabberdctl command 'help'
 	* doc/guide.html: Likewise
 
