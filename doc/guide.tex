@@ -425,8 +425,8 @@ Usage example:
 ejabberdctl start
 
 ejabberdctl status
-Node ejabberd@localhost is started. Status: started
-ejabberd is running
+The node ejabberd@localhost is started with status: started
+ejabberd is running in that node
 
 ejabberdctl stop
 \end{verbatim}
@@ -3712,6 +3712,7 @@ If there is an \ejabberd{} server running in the system,
 \term{ejabberdctl} shows all the available commands in that server.
 The more interesting ones are:
 \begin{description}
+\titem{help} Get help about ejabberdctl or any available command. Try \term{ejabberdctl help help}.
 \titem{status} Check the status of the \ejabberd{} server.
 \titem{stop} Stop the \ejabberd{} server which is running in the machine.
 \titem{reopen-log} If you use a tool to rotate logs, you have to configure it

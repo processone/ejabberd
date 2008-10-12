@@ -1,5 +1,8 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Explain the new ejabberdctl command 'help'
+	* doc/guide.html: Likewise
+
 	* src/mod_configure.erl: Update calls from ctl to
 	commands (EJAB-694)
 	* src/web/ejabberd_web_admin.erl: Likewise
