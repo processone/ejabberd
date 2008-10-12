@@ -1,5 +1,8 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_admin.erl: Implement commands from old
+	ejabberd_ctl (EJAB-694)
+
 	* src/ejabberd_commands.erl: New 'ejabberd commands': separate
 	command definition and calling interface (EJAB-694)
 	* src/ejabberd_commands.hrl: Likewise
