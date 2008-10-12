@@ -1,5 +1,9 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_commands.erl: New 'ejabberd commands': separate
+	command definition and calling interface (EJAB-694)
+	* src/ejabberd_commands.hrl: Likewise
+
 	* src/mod_proxy65/mod_proxy65.erl: Update so the listener starts
 	correctly (EJAB-303)
 	* src/mod_proxy65/mod_proxy65_service.erl: Likewise
