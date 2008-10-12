@@ -1,5 +1,9 @@
 2008-10-12  Badlop  <badlop@process-one.net>
 
+	* src/mod_proxy65/mod_proxy65.erl: Update so the listener starts
+	correctly (EJAB-303)
+	* src/mod_proxy65/mod_proxy65_service.erl: Likewise
+
 	* src/ejabberd_app.erl: Start listeners explicitely at server
 	start after everything else (EJAB-303). Implement support in
 	ejabberd for 'independent listeners', which handle their
