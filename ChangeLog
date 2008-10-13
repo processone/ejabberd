@@ -6,7 +6,7 @@
 	* src/gen_iq_handler.erl: Remove the deprecated list of converted
 	modules.
 
-	* src/jd2ejd.erl: Convert to exmpp.
+	* src/ejd2odbc.erl, src/jd2ejd.erl: Convert to exmpp.
 
 2008-10-10  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
