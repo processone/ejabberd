@@ -49,22 +49,6 @@
 		module,
 		function}).
 
-% XXX OLD FORMAT: modules not in the following list will receive
-% old format strudctures.
--define(CONVERTED_MODULES, [
-  mod_adhoc,
-  mod_annouce,
-  mod_caps,
-  mod_configure,
-  mod_configure2,
-  mod_disco,
-  mod_echo,
-  mod_offline,
-  mod_offline_odbc,
-  mod_roster,
-  mod_vcard
-]).
-
 %%====================================================================
 %% API
 %%====================================================================

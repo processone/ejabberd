@@ -3,6 +3,9 @@
 	* src/extauth.erl (call_port/2): Replace jlib:nameprep/1 by
 	exmpp_stringprep:nameprep/1.
 
+	* src/gen_iq_handler.erl: Remove the deprecated list of converted
+	modules.
+
 2008-10-10  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_c2s.erl (is_auth_packet/1): Fix a bug where
