@@ -2,6 +2,8 @@
 
 	Merge from trunk (r1613 to 1649).
 
+	* src/jlib.erl: Remove all deprecated functions.
+
 2008-10-13  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/extauth.erl (call_port/2): Replace jlib:nameprep/1 by
