@@ -39,7 +39,8 @@
 	 remove_connection/3,
 	 dirty_get_connections/0,
 	 allow_host/2,
-	 ctl_process/2
+	 incoming_s2s_number/0,
+	 outgoing_s2s_number/0
 	]).
 
 %% gen_server callbacks
@@ -49,7 +50,7 @@
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
--include("ejabberd_ctl.hrl").
+-include("ejabberd_commands.hrl").
 
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER, 1).
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE, 1).
@@ -182,10 +183,7 @@ init([]) ->
 			      {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
-    ejabberd_ctl:register_commands(
-      [{"incoming-s2s-number", "print number of incoming s2s connections on the node"},
-       {"outgoing-s2s-number", "print number of outgoing s2s connections on the node"}],
-      ?MODULE, ctl_process),
+    ejabberd_commands:register_commands(commands()),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -249,6 +247,7 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
+    ejabberd_commands:unregister_commands(commands()),
     ok.
 
 %%--------------------------------------------------------------------
@@ -453,16 +452,35 @@ is_subdomain(Domain1, Domain2) ->
 send_element(Pid, El) ->
     Pid ! {send_element, El}.
 
-ctl_process(_Val, ["incoming-s2s-number"]) ->
-    N = length(supervisor:which_children(ejabberd_s2s_in_sup)),
-    ?PRINT("~p~n", [N]),
-    {stop, ?STATUS_SUCCESS};
-ctl_process(_Val, ["outgoing-s2s-number"]) ->
-    N = length(supervisor:which_children(ejabberd_s2s_out_sup)),
-    ?PRINT("~p~n", [N]),
-    {stop, ?STATUS_SUCCESS};
-ctl_process(Val, _Args) ->
-    Val.
+
+%%%----------------------------------------------------------------------
+%%% ejabberd commands
+
+commands() ->
+    [
+     #ejabberd_commands{name = incoming_s2s_number,
+		       tags = [stats, s2s],
+		       desc = "Number of incoming s2s connections on the node",
+		       module = ?MODULE, function = incoming_s2s_number,
+		       args = [],
+		       result = {s2s_incoming, integer}},
+     #ejabberd_commands{name = outgoing_s2s_number,
+		       tags = [stats, s2s],
+		       desc = "Number of outgoing s2s connections on the node",
+		       module = ?MODULE, function = outgoing_s2s_number,
+		       args = [],
+		       result = {s2s_outgoing, integer}}
+    ].
+
+incoming_s2s_number() ->
+    length(supervisor:which_children(ejabberd_s2s_in_sup)).
+
+outgoing_s2s_number() ->
+    length(supervisor:which_children(ejabberd_s2s_out_sup)).
+
+
+%%%----------------------------------------------------------------------
+%%% Update Mnesia tables
 
 update_tables() ->
     case catch mnesia:table_info(s2s, type) of

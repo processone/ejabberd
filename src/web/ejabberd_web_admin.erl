@@ -104,60 +104,15 @@ get_auth(Auth) ->
             unauthorized
     end.
 
-make_xhtml(Els, global, Lang) ->
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_main, [], [Lang]),
-    MenuItems2 = [?LI([?AC("/admin/"++MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
-    {200, [html],
-     {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
-			   {"xml:lang", Lang},
-			   {"lang", Lang}],
-      [{xmlelement, "head", [],
-	[?XCT("title", "ejabberd Web Admin"),
-	 {xmlelement, "meta", [{"http-equiv", "Content-Type"},
-			       {"content", "text/html; charset=utf-8"}], []},
-	 {xmlelement, "link", [{"href", "/admin/favicon.ico"},
-			       {"type", "image/x-icon"},
-			       {"rel", "shortcut icon"}], []},
-	 {xmlelement, "link", [{"href", "/admin/style.css"},
-			       {"type", "text/css"},
-			       {"rel", "stylesheet"}], []}]},
-       ?XE("body",
-           [?XAE("div",
-		 [{"id", "container"}],
-		 [?XAE("div",
-		       [{"id", "header"}],
-		       [?XE("h1",
-			    [?ACT("/admin/", "Administration")]
-			   )]),
-		  ?XAE("div",
-		       [{"id", "navigation"}],
-		       [?XE("ul",
-			    [?LI([?ACT("/admin/acls/", "Access Control Lists")]),
-			     ?LI([?ACT("/admin/access/", "Access Rules")]),
-			     ?LI([?ACT("/admin/vhosts/", "Virtual Hosts")]),
-			     ?LI([?ACT("/admin/nodes/", "Nodes")]),
-			     ?LI([?ACT("/admin/stats/", "Statistics")])
-			    ] ++ MenuItems2
-			   )]),
-		  ?XAE("div",
-		       [{"id", "content"}],
-		       Els),
-		  ?XAE("div",
-		       [{"id", "clearcopyright"}],
-		       [{xmlcdata, ""}])]),
-	    ?XAE("div",
-		 [{"id", "copyrightouter"}],
-		 [?XAE("div",
-		       [{"id", "copyright"}],
-		       [?XC("p",
-			     "ejabberd (c) 2002-2008 ProcessOne")
-		       ])])])
-      ]}};
-
 make_xhtml(Els, Host, Lang) ->
-    Base = "/admin/server/" ++ Host ++ "/",
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host, Lang]),
-    MenuItems2 = [?LI([?AC(Base ++ MI_uri ++ "/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    make_xhtml(Els, Host, cluster, Lang).
+
+%% @spec (Els, Host, Node, Lang)
+%% where Host = global | string()
+%%       Node = cluster | atom()
+make_xhtml(Els, Host, Node, Lang) ->
+    Base = get_base_path(Host, cluster), %% Enforcing 'cluster' on purpose here
+    MenuItems = make_navigation(Host, Node, Lang),
     {200, [html],
      {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
 			   {"xml:lang", Lang},
@@ -166,7 +121,7 @@ make_xhtml(Els, Host, Lang) ->
 	[?XCT("title", "ejabberd Web Admin"),
 	 {xmlelement, "meta", [{"http-equiv", "Content-Type"},
 			       {"content", "text/html; charset=utf-8"}], []},
-	 {xmlelement, "link", [{"href", "/admin/favicon.ico"},
+	 {xmlelement, "link", [{"href", Base ++ "favicon.ico"},
 			       {"type", "image/x-icon"},
 			       {"rel", "shortcut icon"}], []},
 	 {xmlelement, "link", [{"href", Base ++ "style.css"},
@@ -183,18 +138,7 @@ make_xhtml(Els, Host, Lang) ->
 		  ?XAE("div",
 		       [{"id", "navigation"}],
 		       [?XE("ul",
-			    [?LI([?XAE("div",
-			        [{"id", "navheadhost"}],
-			        [?AC(Base, Host)]
-			     )]),
-			     ?LI([?ACT(Base ++ "acls/", "Access Control Lists")]),
-			     ?LI([?ACT(Base ++ "access/", "Access Rules")]),
-			     ?LI([?ACT(Base ++ "users/", "Users")]),
-			     ?LI([?ACT(Base ++ "online-users/", "Online Users")]),
-			     ?LI([?ACT(Base ++ "last-activity/", "Last Activity")]),
-			     ?LI([?ACT(Base ++ "nodes/", "Nodes")]),
-			     ?LI([?ACT(Base ++ "stats/", "Statistics")])
-			    ] ++ MenuItems2
+			    MenuItems
 			   )]),
 		  ?XAE("div",
 		       [{"id", "content"}],
@@ -211,13 +155,13 @@ make_xhtml(Els, Host, Lang) ->
 		       ])])])
       ]}}.
 
+get_base_path(global, cluster) -> "/admin/";
+get_base_path(Host, cluster) -> "/admin/server/" ++ Host ++ "/";
+get_base_path(global, Node) -> "/admin/node/" ++ atom_to_list(Node) ++ "/";
+get_base_path(Host, Node) -> "/admin/server/" ++ Host ++ "/node/" ++ atom_to_list(Node) ++ "/".
+
 css(Host) ->
-    Base = case Host of
-	       global ->
-		   "/admin/";
-	       _ ->
-		   "/admin/server/" ++ Host ++ "/"
-	   end,
+    Base = get_base_path(Host, cluster),
     "
 html,body {
   background: white;
@@ -298,7 +242,7 @@ html>body #container {
 
 #navigation ul {
   position: absolute;
-  top: 54px;
+  top: 65px;
   left: 0;
   padding: 0 1px 1px 1px;
   margin: 0;
@@ -306,7 +250,7 @@ html>body #container {
   font-size: 8pt;
   font-weight: bold;
   background: #d47911;
-  width: 13em;
+  width: 17em;
 }
 
 #navigation ul li {
@@ -340,9 +284,20 @@ html>body #container {
   background: #332;
 }
 
-#navheadhost {
-  text-align: left;
-  border-bottom: 2px solid #d47911;
+ul li #navhead a, ul li #navheadsub a, ul li #navheadsubsub a {
+  text-align: center;
+  border-top: 2px solid #d47911;
+  border-bottom: 1px solid #d47911;
+}
+
+#navheadsub, #navitemsub {
+  border-left: 7px solid white;
+  margin-left: 2px solid #d47911;
+}
+
+#navheadsubsub, #navitemsubsub {
+  border-left: 14px solid white;
+  margin-left: 4px solid #d47911;
 }
 
 #lastactivity li {
@@ -550,7 +505,7 @@ h3 {
 #content {
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 10pt;
-  padding-left: 13em;
+  padding-left: 17em;
   padding-top: 5px;
 }
 
@@ -595,11 +550,12 @@ logo_fill() ->
       "1c5dvhSU2BpKqBXl6R0ljYGS50R5zVC+tVD+vfE6YyUexE9x7g4AAAAASUVO"
       "RK5CYII=").
 
+
 process_admin(global,
 	      #request{path = [],
 		       lang = Lang}) ->
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_main, [], [Lang]),
-    MenuItems2 = [?LI([?AC("/admin/"++MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    Base = get_base_path(global, cluster),
+    MenuItems2 = make_menu_items(global, cluster, Base, Lang),
     make_xhtml([?XCT("h1", "Administration"),
 		?XE("ul",
 		    [?LI([?ACT("/admin/acls/", "Access Control Lists"), ?C(" "),
@@ -616,9 +572,8 @@ process_admin(global,
 process_admin(Host,
 	      #request{path = [],
 		       lang = Lang}) ->
-    Base = "/admin/server/" ++ Host ++ "/",
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host, Lang]),
-    MenuItems2 = [?LI([?AC(Base ++ MI_uri ++ "/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    Base = get_base_path(Host, cluster),
+    MenuItems2 = make_menu_items(Host, cluster, Base, Lang),
     make_xhtml([?XCT("h1", "Administration"),
 		?XE("ul",
 		    [?LI([?ACT(Base ++ "acls/", "Access Control Lists"), ?C(" "),
@@ -953,8 +908,13 @@ process_admin(Host,
 	      #request{path = ["user", U],
 		       q = Query,
 		       lang = Lang}) ->
-    Res = user_info(U, Host, Query, Lang),
-    make_xhtml(Res, Host, Lang);
+    case ejabberd_auth:is_user_exists(U, Host) of
+	true ->
+	    Res = user_info(U, Host, Query, Lang),
+	    make_xhtml(Res, Host, Lang);
+	false ->
+	    make_xhtml([?XCT("h1", "Not Found")], Host, Lang)
+    end;
 
 process_admin(Host,
 	      #request{path = ["nodes"],
@@ -971,7 +931,7 @@ process_admin(Host,
 	    make_xhtml([?XCT("h1", "Node not found")], Host, Lang);
 	Node ->
 	    Res = get_node(Host, Node, NPath, Query, Lang),
-	    make_xhtml(Res, Host, Lang)
+	    make_xhtml(Res, Host, Node, Lang)
     end;
 
 process_admin(Host, #request{lang = Lang} = Request) ->
@@ -1515,25 +1475,31 @@ user_info(User, Server, Query, Lang) ->
 
 
 user_parse_query(User, Server, Query) ->
-    case lists:keysearch("chpassword", 1, Query) of
-	{value, _} ->
-	    case lists:keysearch("password", 1, Query) of
-		{value, {_, undefined}} ->
-		    error;
-		{value, {_, Password}} ->
-		    ejabberd_auth:set_password(User, Server, Password),
-		    ok;
-		_ ->
-		    error
-	    end;
-	_ ->
-	    case lists:keysearch("removeuser", 1, Query) of
-		{value, _} ->
-		    ejabberd_auth:remove_user(User, Server),
-		    ok;
-		false ->
-		    nothing
-	    end
+    lists:foldl(fun({Action, _Value}, Acc) when Acc == nothing ->
+                      user_parse_query1(Action, User, Server, Query);
+                   ({_Action, _Value}, Acc) ->
+                      Acc
+                end, nothing, Query).
+
+user_parse_query1("password", _User, _Server, _Query) ->
+    nothing;
+user_parse_query1("chpassword", User, Server, Query) ->
+    case lists:keysearch("password", 1, Query) of
+        {value, {_, undefined}} ->
+            error;
+        {value, {_, Password}} ->
+            ejabberd_auth:set_password(User, Server, Password),
+            ok;
+        _ ->
+            error
+    end;
+user_parse_query1("removeuser", User, Server, _Query) ->
+    ejabberd_auth:remove_user(User, Server),
+    ok;
+user_parse_query1(Action, User, Server, Query) ->
+    case ejabberd_hooks:run_fold(webadmin_user_parse_query, Server, [], [Action, User, Server, Query]) of
+         [] -> nothing;
+         Res -> Res
     end.
 
 
@@ -1661,8 +1627,8 @@ search_running_node(SNode, [Node | Nodes]) ->
 
 get_node(global, Node, [], Query, Lang) ->
     Res = node_parse_query(Node, Query),
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_node, [], [Node, Lang]),
-    MenuItems2 = [?LI([?AC(MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    Base = get_base_path(global, Node),
+    MenuItems2 = make_menu_items(global, Node, Base, Lang),
     [?XC("h1", ?T("Node ") ++ atom_to_list(Node))] ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
@@ -1670,11 +1636,11 @@ get_node(global, Node, [], Query, Lang) ->
 	    nothing -> []
 	end ++
 	[?XE("ul",
-	     [?LI([?ACT("db/", "Database")]),
-	      ?LI([?ACT("backup/", "Backup")]),
-	      ?LI([?ACT("ports/", "Listened Ports")]),
-	      ?LI([?ACT("stats/", "Statistics")]),
-	      ?LI([?ACT("update/", "Update")])
+	     [?LI([?ACT(Base ++ "db/", "Database")]),
+	      ?LI([?ACT(Base ++ "backup/", "Backup")]),
+	      ?LI([?ACT(Base ++ "ports/", "Listened Ports")]),
+	      ?LI([?ACT(Base ++ "stats/", "Statistics")]),
+	      ?LI([?ACT(Base ++ "update/", "Update")])
 	     ] ++ MenuItems2),
 	 ?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?INPUTT("submit", "restart", "Restart"),
@@ -1683,11 +1649,11 @@ get_node(global, Node, [], Query, Lang) ->
 	];
 
 get_node(Host, Node, [], _Query, Lang) ->
-    MenuItems1 = ejabberd_hooks:run_fold(webadmin_menu_hostnode, Host, [], [Host, Node, Lang]),
-    MenuItems2 = [?LI([?AC(MI_uri++"/", MI_name)]) || {MI_uri, MI_name} <- MenuItems1],
+    Base = get_base_path(Host, Node),
+    MenuItems2 = make_menu_items(global, Node, Base, Lang),
     [?XC("h1", ?T("Node ") ++ atom_to_list(Node)),
      ?XE("ul",
-	 [?LI([?ACT("modules/", "Modules")])] ++ MenuItems2)
+	 [?LI([?ACT(Base ++ "modules/", "Modules")])] ++ MenuItems2)
     ];
 
 get_node(global, Node, ["db"], Query, Lang) ->
@@ -2022,7 +1988,7 @@ node_backup_parse_query(Node, Query) ->
 					  rpc:call(Node, mnesia,
 						   install_fallback, [Path]);
 				      "dump" ->
-					  rpc:call(Node, ejabberd_ctl,
+					  rpc:call(Node, ejabberd_admin,
 						   dump_to_textfile, [Path]);
 				      "load" ->
 					  rpc:call(Node, mnesia,
@@ -2087,7 +2053,7 @@ node_ports_to_xhtml(Ports, Lang) ->
 
 node_ports_parse_query(Node, Ports, Query) ->
     lists:foreach(
-      fun({Port, _Module1, _Opts1}) ->
+      fun({Port, Module1, _Opts1}) ->
 	      SPort = integer_to_list(Port),
 	      case lists:keysearch("add" ++ SPort, 1, Query) of
 		  {value, _} ->
@@ -2097,13 +2063,13 @@ node_ports_parse_query(Node, Ports, Query) ->
 		      Module = list_to_atom(SModule),
 		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 		      {ok, Opts} = erl_parse:parse_term(Tokens),
-		      rpc:call(Node, ejabberd_listener, delete_listener, [Port]),
+		      rpc:call(Node, ejabberd_listener, delete_listener, [Port, Module]),
 		      rpc:call(Node, ejabberd_listener, add_listener, [Port, Module, Opts]),
 		      throw(submitted);
 		  _ ->
 		      case lists:keysearch("delete" ++ SPort, 1, Query) of
 			  {value, _} ->
-			      rpc:call(Node, ejabberd_listener, delete_listener, [Port]),
+			      rpc:call(Node, ejabberd_listener, delete_listener, [Port, Module1]),
 			      throw(submitted);
 			  _ ->
 			      ok
@@ -2276,3 +2242,134 @@ last_modified() ->
     {"Last-Modified", "Mon, 25 Feb 2008 13:23:30 GMT"}.
 cache_control_public() ->
     {"Cache-Control", "public"}.
+
+
+%%%
+%%% Navigation Menu
+%%%
+
+%% @spec (Host, Node, Lang) -> [LI]
+make_navigation(Host, Node, Lang) ->
+    HostNodeMenu = make_host_node_menu(Host, Node, Lang),
+    HostMenu = make_host_menu(Host, HostNodeMenu, Lang),
+    NodeMenu = make_node_menu(Host, Node, Lang),
+    Menu = make_server_menu(HostMenu, NodeMenu, Lang),
+    make_menu_items(Lang, Menu).
+
+%% @spec (Host, Node, Base, Lang) -> [LI]
+make_menu_items(global, cluster, Base, Lang) ->
+    HookItems = get_menu_items_hook(server, Lang),
+    make_menu_items(Lang, {Base, "", HookItems});
+
+make_menu_items(global, _Node, Base, Lang) ->
+    HookItems = get_menu_items_hook(node, Lang),
+    make_menu_items(Lang, {Base, "", HookItems});
+
+make_menu_items(Host, cluster, Base, Lang) ->
+    HookItems = get_menu_items_hook({host, Host}, Lang),
+    make_menu_items(Lang, {Base, "", HookItems});
+
+make_menu_items(Host, _Node, Base, Lang) ->
+    HookItems = get_menu_items_hook({hostnode, Host}, Lang),
+    make_menu_items(Lang, {Base, "", HookItems}).
+
+
+make_host_node_menu(global, _, _Lang) ->
+    {"", "", []};
+make_host_node_menu(_, cluster, _Lang) ->
+    {"", "", []};
+make_host_node_menu(Host, Node, Lang) ->
+    HostNodeBase = get_base_path(Host, Node),
+    HostNodeFixed = [{"modules/", "Modules"}],
+    HostNodeHook = get_menu_items_hook({hostnode, Host}, Lang),
+    {HostNodeBase, atom_to_list(Node), HostNodeFixed ++ HostNodeHook}.
+
+make_host_menu(global, _HostNodeMenu, _Lang) ->
+    {"", "", []};
+make_host_menu(Host, HostNodeMenu, Lang) ->
+    HostBase = get_base_path(Host, cluster),
+    HostFixed = [{"acls", "Access Control Lists"},
+		 {"access", "Access Rules"},
+		 {"users", "Users"},
+		 {"online-users", "Online Users"},
+		 {"last-activity", "Last Activity"},
+		 {"nodes", "Nodes", HostNodeMenu},
+		 {"stats", "Statistics"}],
+    HostHook = get_menu_items_hook({host, Host}, Lang),
+    {HostBase, Host, HostFixed ++ HostHook}.
+
+make_node_menu(_Host, cluster, _Lang) ->
+    {"", "", []};
+make_node_menu(global, Node, Lang) ->
+    NodeBase = get_base_path(global, Node),
+    NodeFixed = [{"db/", "Database"},
+		 {"backup/", "Backup"},
+		 {"ports/", "Listened Ports"},
+		 {"stats/", "Statistics"},
+		 {"update/", "Update"}],
+    NodeHook = get_menu_items_hook(node, Lang),
+    {NodeBase, atom_to_list(Node), NodeFixed ++ NodeHook};
+make_node_menu(_Host, _Node, _Lang) ->
+    {"", "", []}.
+
+make_server_menu(HostMenu, NodeMenu, Lang) ->
+    Base = get_base_path(global, cluster),
+    Fixed = [{"acls", "Access Control Lists"},
+	     {"access", "Access Rules"},
+	     {"vhosts", "Virtual Hosts", HostMenu},
+	     {"nodes", "Nodes", NodeMenu},
+	     {"stats", "Statistics"}],
+    Hook = get_menu_items_hook(server, Lang),
+    {Base, "ejabberd", Fixed ++ Hook}.
+
+
+get_menu_items_hook({hostnode, Host}, Lang) ->
+    ejabberd_hooks:run_fold(webadmin_menu_hostnode, Host, [], [Host, Lang]);
+get_menu_items_hook({host, Host}, Lang) ->
+    ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host, Lang]);
+get_menu_items_hook(node, Lang) ->
+    ejabberd_hooks:run_fold(webadmin_menu_node, [], [Lang]);
+get_menu_items_hook(server, Lang) ->
+    ejabberd_hooks:run_fold(webadmin_menu_main, [], [Lang]).
+
+
+%% @spec (Lang::string(), Menu) -> [LI]
+%% where Menu = {MURI::string(), MName::string(), Items::[Item]}
+%%       Item = {IURI::string(), IName::string()} | {IURI::string(), IName::string(), Menu}
+make_menu_items(Lang, Menu) ->
+    lists:reverse(make_menu_items2(Lang, 1, Menu)).
+
+make_menu_items2(Lang, Deep, {MURI, MName, _} = Menu) ->
+    Res = case MName of
+	      "" -> [];
+	      _ -> [make_menu_item(header, Deep, MURI, MName, Lang) ]
+	  end,
+    make_menu_items2(Lang, Deep, Menu, Res).
+
+make_menu_items2(_, _Deep, {_, _, []}, Res) ->
+    Res;
+
+make_menu_items2(Lang, Deep, {MURI, MName, [Item | Items]}, Res) ->
+    Res2 = case Item of
+	       {IURI, IName} ->
+		   [make_menu_item(item, Deep, MURI++IURI++"/", IName, Lang) | Res];
+	       {IURI, IName, SubMenu} ->
+		   %%ResTemp = [?LI([?ACT(MURI ++ IURI ++ "/", IName)]) | Res],
+		   ResTemp = [make_menu_item(item, Deep, MURI++IURI++"/", IName, Lang) | Res],
+		   ResSubMenu = make_menu_items2(Lang, Deep+1, SubMenu),
+		   ResSubMenu ++ ResTemp
+	   end,
+    make_menu_items2(Lang, Deep, {MURI, MName, Items}, Res2).
+
+make_menu_item(header, 1, URI, Name, _Lang) ->
+    ?LI([?XAE("div", [{"id", "navhead"}], [?AC(URI, "~ "++Name++" ~")] )]);
+make_menu_item(header, 2, URI, Name, _Lang) ->
+    ?LI([?XAE("div", [{"id", "navheadsub"}], [?AC(URI, "~ "++Name++" ~")] )]);
+make_menu_item(header, 3, URI, Name, _Lang) ->
+    ?LI([?XAE("div", [{"id", "navheadsubsub"}], [?AC(URI, "~ "++Name++" ~")] )]);
+make_menu_item(item, 1, URI, Name, Lang) ->
+    ?LI([?XAE("div", [{"id", "navitem"}], [?ACT(URI, Name)] )]);
+make_menu_item(item, 2, URI, Name, Lang) ->
+    ?LI([?XAE("div", [{"id", "navitemsub"}], [?ACT(URI, Name)] )]);
+make_menu_item(item, 3, URI, Name, Lang) ->
+    ?LI([?XAE("div", [{"id", "navitemsubsub"}], [?ACT(URI, Name)] )]).

@@ -29,10 +29,11 @@
 
 -export([start_link/0, init/1, start/3,
 	 init/3,
+	 start_listeners/0,
 	 start_listener/3,
-	 stop_listener/1,
+	 stop_listener/2,
 	 add_listener/3,
-	 delete_listener/1
+	 delete_listener/2
 	]).
 
 -include("ejabberd.hrl").
@@ -42,24 +43,27 @@ start_link() ->
 
 
 init(_) ->
+    {ok, {{one_for_one, 10, 1}, []}}.
+
+start_listeners() ->
     case ejabberd_config:get_local_option(listen) of
 	undefined ->
 	    ignore;
 	Ls ->
-	    {ok, {{one_for_one, 10, 1},
-		  lists:map(
-		    fun({Port, Module, Opts}) ->
-			    {Port,
-			     {?MODULE, start, [Port, Module, Opts]},
-			     transient,
-			     brutal_kill,
-			     worker,
-			     [?MODULE]}
-		    end, Ls)}}
+	    lists:map(
+	      fun({Port, Module, Opts}) ->
+		      start_listener(Port, Module, Opts)
+	      end, Ls)
     end.
 
-
 start(Port, Module, Opts) ->
+    %% Check if the module is an ejabberd listener or an independent listener
+    case Module:socket_type() of
+	independent -> Module:start_listener(Port, Opts);
+	_ -> start_dependent(Port, Module, Opts)
+    end.
+
+start_dependent(Port, Module, Opts) ->
     case includes_deprecated_ssl_option(Opts) of
 	false ->
 	    {ok, proc_lib:spawn_link(?MODULE, init,
@@ -130,6 +134,21 @@ accept(ListenSocket, Module, Opts) ->
     end.
 
 start_listener(Port, Module, Opts) ->
+    start_module_sup(Port, Module),
+    start_listener_sup(Port, Module, Opts).
+
+start_module_sup(_Port, Module) ->
+    Proc1 = gen_mod:get_module_proc("sup", Module),
+    ChildSpec1 =
+	{Proc1,
+	 {ejabberd_tmp_sup, start_link, [Proc1, Module]},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [ejabberd_tmp_sup]},
+    catch supervisor:start_child(ejabberd_sup, ChildSpec1).
+
+start_listener_sup(Port, Module, Opts) ->
     ChildSpec = {Port,
 		 {?MODULE, start, [Port, Module, Opts]},
 		 transient,
@@ -138,9 +157,13 @@ start_listener(Port, Module, Opts) ->
 		 [?MODULE]},
     supervisor:start_child(ejabberd_listeners, ChildSpec).
 
-stop_listener(Port) ->
+stop_listener(Port, Module) ->
     supervisor:terminate_child(ejabberd_listeners, Port),
-    supervisor:delete_child(ejabberd_listeners, Port).
+    supervisor:delete_child(ejabberd_listeners, Port),
+
+    Proc1 = gen_mod:get_module_proc("sup", Module),
+    supervisor:terminate_child(ejabberd_sup, Proc1),
+    supervisor:delete_child(ejabberd_sup, Proc1).
 
 add_listener(Port, Module, Opts) ->
     Ports = case ejabberd_config:get_local_option(listen) of
@@ -154,7 +177,7 @@ add_listener(Port, Module, Opts) ->
     ejabberd_config:add_local_option(listen, Ports2),
     start_listener(Port, Module, Opts).
 
-delete_listener(Port) ->
+delete_listener(Port, Module) ->
     Ports = case ejabberd_config:get_local_option(listen) of
 		undefined ->
 		    [];
@@ -163,5 +186,5 @@ delete_listener(Port) ->
 	    end,
     Ports1 = lists:keydelete(Port, 1, Ports),
     ejabberd_config:add_local_option(listen, Ports1),
-    stop_listener(Port).
+    stop_listener(Port, Module).
 

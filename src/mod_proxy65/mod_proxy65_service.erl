@@ -39,7 +39,7 @@
 	]).
 
 %% API.
--export([start_link/2]).
+-export([start_link/2, add_listener/2, delete_listener/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -55,28 +55,21 @@
 	  acl
 	 }).
 
-%% Unused callbacks.
-handle_cast(_Request, State) ->
-    {noreply, State}.
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
-handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
-%%----------------
+
+%%%------------------------
+%%% gen_server callbacks
+%%%------------------------
 
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
 init([Host, Opts]) ->
-    {IP, State} = parse_options(Host, Opts),
-    NewOpts = [Host, {ip, IP} | Opts],
-    ejabberd_listener:add_listener(State#state.port, mod_proxy65_stream, NewOpts),
+    {_IP, State} = parse_options(Host, Opts),
     ejabberd_router:register_route(State#state.myhost),
     {ok, State}.
 
-terminate(_Reason, #state{myhost=MyHost, port=Port}) ->
-    catch ejabberd_listener:delete_listener(Port),
+terminate(_Reason, #state{myhost=MyHost}) ->
     ejabberd_router:unregister_route(MyHost),
     ok.
 
@@ -93,9 +86,33 @@ handle_info({route, From, To, {xmlelement, "iq", _, _} = Packet}, State) ->
 	    ok
     end,
     {noreply, State};
-
 handle_info(_Info, State) ->
     {noreply, State}.
+
+handle_call(get_port, _From, State) ->
+    {reply, {port, State#state.port}, State};
+handle_call(_Request, _From, State) ->
+    {reply, ok, State}.
+
+handle_cast(_Request, State) ->
+    {noreply, State}.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%%------------------------
+%%% Listener management
+%%%------------------------
+
+add_listener(Host, Opts) ->
+    {IP, State} = parse_options(Host, Opts),
+    NewOpts = [Host, {ip, IP} | Opts],
+    ejabberd_listener:add_listener(State#state.port,mod_proxy65_stream,NewOpts).
+
+delete_listener(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    {port, Port} = gen_server:call(Proc, get_port),
+    catch ejabberd_listener:delete_listener(Port, mod_proxy65_stream).
 
 %%%------------------------
 %%% IQ Processing

@@ -1486,7 +1486,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			     node_call(Type, publish_item, [Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload])
 		     end
 	     end,
-    %%ejabberd_hooks:run(pubsub_publish_item, Host, [Host, Node, JID, service_jid(Host), ItemId, Payload]),
+    ejabberd_hooks:run(pubsub_publish_item, Host, [Host, Node, Publisher, service_jid(Host), ItemId, Payload]),
     Reply = [],
     case transaction(Host, Node, Action, sync_dirty) of
 	{error, ?ERR_ITEM_NOT_FOUND} ->

@@ -1406,7 +1406,7 @@ set_form(_From, _Host, ["running nodes", ENode, "backup", "textfile"], _Lang, XD
 		false ->
 		    {error, 'bad-request'};
 		{value, {_, [String]}} ->
-		    case rpc:call(Node, ejabberd_ctl, dump_to_textfile, [String]) of
+		    case rpc:call(Node, ejabberd_admin, dump_to_textfile, [String]) of
 			{badrpc, _Reason} ->
 			    {error, 'internal-server-error'};
 			{error, _Reason} ->

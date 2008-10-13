@@ -1,5 +1,9 @@
 2008-10-13  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	Merge from trunk (r1613 to 1649).
+
+2008-10-13  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	* src/extauth.erl (call_port/2): Replace jlib:nameprep/1 by
 	exmpp_stringprep:nameprep/1.
 
@@ -7,6 +11,68 @@
 	modules.
 
 	* src/ejd2odbc.erl, src/jd2ejd.erl: Convert to exmpp.
+
+2008-10-13  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: When requesting page of
+	nonexistent user, show 'Not Found' page (EJAB-771)
+
+2008-10-12  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: Run new hook
+	webadmin_user_parse_query when POST in web admin user
+	page (thanks to Oleg Palij)(EJAB-747)
+	* src/mod_offline.erl: Add button "Remove All Offline Messages" in
+	a user page (thanks to Oleg Palij)(EJAB-747)
+	* src/mod_offline_odbc.erl: Likewise
+
+	* src/web/ejabberd_web_admin.erl: Improve Web Admin navigation
+	menu for vhosts and nodes (EJAB-734)
+
+	* doc/guide.tex: Explain the new ejabberdctl command 'help'
+	* doc/guide.html: Likewise
+
+	* src/mod_configure.erl: Update calls from ctl to
+	commands (EJAB-694)
+	* src/web/ejabberd_web_admin.erl: Likewise
+
+	* src/ejabberd_sm.erl: Update from ctl to commands (EJAB-694)
+	* src/ejabberd_s2s.erl: Likewise
+
+	* src/ejabberd_auth.erl: Update from ctl to commands (EJAB-694)
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+
+	* src/ejabberdctl.template: Move help print to a separate
+	function (EJAB-694)
+
+	* src/ejabberd_ctl.erl: Add frontend support for
+	commands (EJAB-694). Categorization and sorting of commands in
+	ejabberd_ctl help (EJAB-313). Lines in command line help of length
+	80, and text formatting (EJAB-473)
+
+	* src/ejabberd_app.erl: Initialize ejabberd_commands and start
+	ejabbed_admin (EJAB-694)
+
+	* src/ejabberd_admin.erl: Implement commands from old
+	ejabberd_ctl (EJAB-694)
+
+	* src/ejabberd_commands.erl: New 'ejabberd commands': separate
+	command definition and calling interface (EJAB-694)
+	* src/ejabberd_commands.hrl: Likewise
+
+	* src/mod_proxy65/mod_proxy65.erl: Update so the listener starts
+	correctly (EJAB-303)
+	* src/mod_proxy65/mod_proxy65_service.erl: Likewise
+
+	* src/ejabberd_app.erl: Start listeners explicitely at server
+	start after everything else (EJAB-303). Implement support in
+	ejabberd for 'independent listeners', which handle their
+	connections themselves: gen_tcp:listen, etc.
+	* src/ejabberd_listener.erl: Likewise
+	* src/ejabberd_socket.erl: Likewise
+	* src/ejabberd_sup.erl: Likewise
 
 2008-10-10  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -62,6 +128,11 @@
 
 	* src/mod_private.erl, src/mod_private_odbc.erl, src/mod_version.erl:
 	Convert to exmpp. Thanks to Pablo Polvorin!
+
+2008-10-07  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: uncomment pubsub_publish_item hook
+	call (EJAB-765)
 
 2008-10-07  Jerome Sautret  <jerome.sautret@process-one.net>
 

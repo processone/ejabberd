@@ -413,8 +413,8 @@ you can execute <TT>ejabberdctl</TT> with either that system account or root.</P
 </P><PRE CLASS="verbatim">ejabberdctl start
 
 ejabberdctl status
-Node ejabberd@localhost is started. Status: started
-ejabberd is running
+The node ejabberd@localhost is started with status: started
+ejabberd is running in that node
 
 ejabberdctl stop
 </PRE><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly and a crash dump is generated,
@@ -2894,7 +2894,8 @@ the available parameters are:
 <TT>ejabberdctl</TT> shows all the available commands in that server.
 The more interesting ones are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>status</TT></B></DT><DD CLASS="dd-description"> Check the status of the <TT>ejabberd</TT> server.
+<B><TT>help</TT></B></DT><DD CLASS="dd-description"> Get help about ejabberdctl or any available command. Try <TT>ejabberdctl help help</TT>.
+</DD><DT CLASS="dt-description"><B><TT>status</TT></B></DT><DD CLASS="dd-description"> Check the status of the <TT>ejabberd</TT> server.
 </DD><DT CLASS="dt-description"><B><TT>stop</TT></B></DT><DD CLASS="dd-description"> Stop the <TT>ejabberd</TT> server which is running in the machine.
 </DD><DT CLASS="dt-description"><B><TT>reopen-log</TT></B></DT><DD CLASS="dd-description"> If you use a tool to rotate logs, you have to configure it
 so that this command is executed after each rotation.

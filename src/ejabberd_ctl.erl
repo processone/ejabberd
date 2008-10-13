@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_ctl.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Ejabberd admin tool
+%%% Purpose : ejabberd command line admin tool
 %%% Created : 11 Jan 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -24,43 +24,68 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%% @headerfile "ejabberd_ctl.hrl"
+
+%%% @doc Management of ejabberdctl commands and frontend to ejabberd commands.
+%%%
+%%% An ejabberdctl command is an abstract function identified by a
+%%% name, with a defined number of calling arguments, that can be
+%%% defined in any Erlang module and executed using ejabberdctl
+%%% administration script.
+%%%
+%%% Note: strings cannot have blankspaces
+%%%
+%%% Does not support commands that have arguments with ctypes: list, tuple
+%%%
+%%% TODO: Update the guide
+%%% TODO: Mention this in the release notes
+%%% Note: the commands with several words use now the underline: _
+%%% It is still possible to call the commands with dash: -
+%%% but this is deprecated, and may be removed in a future version.
+
+
 -module(ejabberd_ctl).
 -author('alexey@process-one.net').
 
 -export([start/0,
 	 init/0,
 	 process/1,
-	 dump_to_textfile/1,
+	 process2/1,
 	 register_commands/3,
-	 register_commands/4,
-	 unregister_commands/3,
-	 unregister_commands/4]).
+	 unregister_commands/3]).
 
 -include("ejabberd_ctl.hrl").
+-include("ejabberd_commands.hrl").
 -include("ejabberd.hrl").
+
+
+%%-----------------------------
+%% Module
+%%-----------------------------
 
 start() ->
     case init:get_plain_arguments() of
 	[SNode | Args] ->
 	    SNode1 = case string:tokens(SNode, "@") of
-		[_Node, _Server] ->
-		    SNode;
-		_ ->
-		    case net_kernel:longnames() of
-			 true ->
-			     SNode ++ "@" ++ inet_db:gethostname() ++
-				      "." ++ inet_db:res_option(domain);
-			 false ->
-			     SNode ++ "@" ++ inet_db:gethostname();
+			 [_Node, _Server] ->
+			     SNode;
 			 _ ->
-			     SNode
-		     end
-	    end,
+			     case net_kernel:longnames() of
+				 true ->
+				     SNode ++ "@" ++ inet_db:gethostname() ++
+					 "." ++ inet_db:res_option(domain);
+				 false ->
+				     SNode ++ "@" ++ inet_db:gethostname();
+				 _ ->
+				     SNode
+			     end
+		     end,
 	    Node = list_to_atom(SNode1),
 	    Status = case rpc:call(Node, ?MODULE, process, [Args]) of
 			 {badrpc, Reason} ->
-			     ?PRINT("RPC failed on the node ~p: ~p~n",
-				       [Node, Reason]),
+			     ?PRINT("Failed RPC connection to the node ~p: ~p~n",
+				    [Node, Reason]),
+			     %% TODO: show minimal start help
 			     ?STATUS_BADRPC;
 			 S ->
 			     S
@@ -76,16 +101,41 @@ init() ->
     ets:new(ejabberd_ctl_host_cmds, [named_table, set, public]).
 
 
+%%-----------------------------
+%% ejabberdctl Command managment
+%%-----------------------------
+
+register_commands(CmdDescs, Module, Function) ->
+    ets:insert(ejabberd_ctl_cmds, CmdDescs),
+    ejabberd_hooks:add(ejabberd_ctl_process,
+		       Module, Function, 50),
+    ok.
+
+unregister_commands(CmdDescs, Module, Function) ->
+    lists:foreach(fun(CmdDesc) ->
+			  ets:delete_object(ejabberd_ctl_cmds, CmdDesc)
+		  end, CmdDescs),
+    ejabberd_hooks:delete(ejabberd_ctl_process,
+			  Module, Function, 50),
+    ok.
+
+
+%%-----------------------------
+%% Process
+%%-----------------------------
+
+%% The commands status, stop and restart are defined here to ensure
+%% they are usable even if ejabberd is completely stopped.
 process(["status"]) ->
     {InternalStatus, ProvidedStatus} = init:get_status(),
-    ?PRINT("Node ~p is ~p. Status: ~p~n",
-              [node(), InternalStatus, ProvidedStatus]),
+    ?PRINT("The node ~p is ~p with status: ~p~n",
+	   [node(), InternalStatus, ProvidedStatus]),
     case lists:keysearch(ejabberd, 1, application:which_applications()) of
         false ->
-            ?PRINT("ejabberd is not running~n", []),
+            ?PRINT("ejabberd is not running in that node~n", []),
             ?STATUS_ERROR;
-        {value,_Version} ->
-            ?PRINT("ejabberd is running~n", []),
+        {value, {_, _, Version}} ->
+            ?PRINT("ejabberd ~s is running in that node~n", [Version]),
             ?STATUS_SUCCESS
     end;
 
@@ -95,121 +145,6 @@ process(["stop"]) ->
 
 process(["restart"]) ->
     init:restart(),
-    ?STATUS_SUCCESS;
-
-process(["reopen-log"]) ->
-    ejabberd_hooks:run(reopen_log_hook, []),
-    lists:foreach(fun(Host) ->
-			  ejabberd_hooks:run(reopen_log_hook, Host, [Host])
-		  end, ?MYHOSTS),
-    %% TODO: Use the Reopen log API for logger_h ?
-    ejabberd_logger_h:reopen_log(),
-    ?STATUS_SUCCESS;
-
-process(["register", User, Server, Password]) ->
-    case ejabberd_auth:try_register(User, Server, Password) of
-	{atomic, ok} ->
-	    ?STATUS_SUCCESS;
-	{atomic, exists} ->
-	    ?PRINT("User ~p already registered at node ~p~n",
-		      [User ++ "@" ++ Server, node()]),
-	    ?STATUS_ERROR;
-	{error, Reason} ->
-	    ?PRINT("Can't register user ~p at node ~p: ~p~n",
-		      [User ++ "@" ++ Server, node(), Reason]),
-	    ?STATUS_ERROR
-    end;
-
-process(["unregister", User, Server]) ->
-    case ejabberd_auth:remove_user(User, Server) of
-	{error, Reason} ->
-	    ?PRINT("Can't unregister user ~p at node ~p: ~p~n",
-		      [User ++ "@" ++ Server, node(), Reason]),
-	    ?STATUS_ERROR;
-	_ ->
-	    ?STATUS_SUCCESS
-    end;
-
-process(["backup", Path]) ->
-    case mnesia:backup(Path) of
-        ok ->
-	    ?STATUS_SUCCESS;
-	{error, Reason} ->
-	    ?PRINT("Can't store backup in ~p at node ~p: ~p~n",
-		      [filename:absname(Path), node(), Reason]),
-	    ?STATUS_ERROR
-    end;
-
-process(["dump", Path]) ->
-    case dump_to_textfile(Path) of
-	ok ->
-	    ?STATUS_SUCCESS;
-	{error, Reason} ->
-            ?PRINT("Can't store dump in ~p at node ~p: ~p~n",
-                      [filename:absname(Path), node(), Reason]),
-	    ?STATUS_ERROR
-    end;
-
-process(["load", Path]) ->
-    case mnesia:load_textfile(Path) of
-        {atomic, ok} ->
-            ?STATUS_SUCCESS;
-        {error, Reason} ->
-            ?PRINT("Can't load dump in ~p at node ~p: ~p~n",
-                      [filename:absname(Path), node(), Reason]),
-	    ?STATUS_ERROR
-    end;
-
-process(["restore", Path]) ->
-    case ejabberd_admin:restore(Path) of
-	{atomic, _} ->
-	    ?STATUS_SUCCESS;
-	{error, Reason} ->
-	    ?PRINT("Can't restore backup from ~p at node ~p: ~p~n",
-		      [filename:absname(Path), node(), Reason]),
-	    ?STATUS_ERROR;
-	{aborted,{no_exists,Table}} ->
-	    ?PRINT("Can't restore backup from ~p at node ~p: Table ~p does not exist.~n",
-		      [filename:absname(Path), node(), Table]),
-	    ?STATUS_ERROR;
-	{aborted,enoent} ->
-	    ?PRINT("Can't restore backup from ~p at node ~p: File not found.~n",
-		      [filename:absname(Path), node()]),
-	    ?STATUS_ERROR
-    end;
-
-process(["install-fallback", Path]) ->
-    case mnesia:install_fallback(Path) of
-	ok ->
-	    ?STATUS_SUCCESS;
-	{error, Reason} ->
-	    ?PRINT("Can't install fallback from ~p at node ~p: ~p~n",
-		      [filename:absname(Path), node(), Reason]),
-	    ?STATUS_ERROR
-    end;
-
-process(["import-file", Path]) ->
-    case jd2ejd:import_file(Path) of
-        ok ->
-            ?STATUS_SUCCESS;
-        {error, Reason} ->
-            ?PRINT("Can't import jabberd 1.4 spool file ~p at node ~p: ~p~n",
-                      [filename:absname(Path), node(), Reason]),
-	    ?STATUS_ERROR
-    end;
-
-process(["import-dir", Path]) ->
-    case jd2ejd:import_dir(Path) of
-        ok ->
-            ?STATUS_SUCCESS;
-        {error, Reason} ->
-            ?PRINT("Can't import jabberd 1.4 spool dir ~p at node ~p: ~p~n",
-                      [filename:absname(Path), node(), Reason]),
-	    ?STATUS_ERROR
-    end;
-
-process(["delete-expired-messages"]) ->
-    mod_offline:remove_expired_messages(),
     ?STATUS_SUCCESS;
 
 process(["mnesia"]) ->
@@ -227,183 +162,589 @@ process(["mnesia", Arg]) when is_list(Arg) ->
     end,
     ?STATUS_SUCCESS;
 
-process(["delete-old-messages", Days]) ->
-    case catch list_to_integer(Days) of
-	{'EXIT',{Reason, _Stack}} ->
-            ?PRINT("Can't delete old messages (~p). Please pass an integer as parameter.~n",
-                      [Reason]),
-	    ?STATUS_ERROR;
-	Integer when Integer >= 0 ->
-	    {atomic, _} = mod_offline:remove_old_messages(Integer),
-	    ?PRINT("Removed messages older than ~s days~n", [Days]),
+%% The arguments --long and --dual are not documented because they are
+%% automatically selected depending in the number of columns of the shell
+process(["help" | Mode]) ->
+    {MaxC, ShCode} = get_shell_info(),
+    case Mode of
+	[] ->
+	    print_usage(dual, MaxC, ShCode),
+	    ?STATUS_USAGE;
+	["--dual"] ->
+	    print_usage(dual, MaxC, ShCode),
+	    ?STATUS_USAGE;
+	["--long"] ->
+	    print_usage(long, MaxC, ShCode),
+	    ?STATUS_USAGE;
+	["--tags"] ->
+	    print_usage_tags(MaxC, ShCode),
 	    ?STATUS_SUCCESS;
-	_Integer ->
-	    ?PRINT("Can't delete old messages. Please pass a positive integer as parameter.~n", []),
-	    ?STATUS_ERROR
-    end;
-
-process(["vhost", H | Args]) ->
-    try
-	Host = exmpp_stringprep:nameprep(H),
-	case ejabberd_hooks:run_fold(
-	       ejabberd_ctl_process, Host, false, [Host, Args]) of
-	    false ->
-		print_vhost_usage(Host),
-		?STATUS_USAGE;
-	    Status ->
-		Status
-	end
-    catch
-	_ ->
-	    ?PRINT("Bad hostname: ~p~n", [H]),
-	    ?STATUS_ERROR
+	["--tags", Tag] ->
+	    print_usage_tags(Tag, MaxC, ShCode),
+	    ?STATUS_SUCCESS;
+	["help"] ->
+	    print_usage_help(MaxC, ShCode),
+	    ?STATUS_SUCCESS;
+	[CommandString | _] ->
+	    print_usage_commands(CommandString, MaxC, ShCode),
+	    ?STATUS_SUCCESS
     end;
 
 process(Args) ->
-    case ejabberd_hooks:run_fold(ejabberd_ctl_process, false, [Args]) of
-	false ->
-	    print_usage(),
-	    ?STATUS_USAGE;
-	Status ->
-	    Status
+    {String, Code} = process2(Args),
+    io:format(String),
+    io:format("\n"),
+    Code.
+
+%% @spec (Args::[string()]) -> {String::string(), Code::integer()}
+process2(Args) ->
+    case try_run_ctp(Args) of
+	{String, wrong_command_arguments}
+	when is_list(String) ->
+	    io:format(lists:flatten(["\n" | String]++["\n"])),
+	    [CommandString | _] = Args,
+            process(["help" | [CommandString]]),
+	    {lists:flatten(String), ?STATUS_ERROR};
+	{String, Code}
+	when is_list(String) and is_integer(Code) ->
+	    {lists:flatten(String), Code};
+	String
+	when is_list(String) ->
+	    {lists:flatten(String), ?STATUS_SUCCESS};
+	Code
+	when is_integer(Code) ->
+	    {"", Code};
+	Other ->
+	    {"Erroneous result: " ++ io_lib:format("~p", [Other]), ?STATUS_ERROR}
     end.
 
 
+%%-----------------------------
+%% Command calling
+%%-----------------------------
+
+%% @spec (Args::[string()]) ->
+%%       String::string() | Code::integer() | {String::string(), Code::integer()}
+try_run_ctp(Args) ->
+    try ejabberd_hooks:run_fold(ejabberd_ctl_process, false, [Args]) of
+	false when Args /= [] ->
+	    try_call_command(Args);
+	false ->
+	    print_usage(),
+	    {"", ?STATUS_USAGE};
+	Status ->
+	    {"", Status}
+    catch
+	exit:Why ->
+	    print_usage(),
+	    {io_lib:format("Error in ejabberd ctl process: ~p", [Why]), ?STATUS_USAGE}
+    end.
+
+%% @spec (Args::[string()]) ->
+%%       String::string() | Code::integer() | {String::string(), Code::integer()}
+try_call_command(Args) ->
+    try call_command(Args) of
+	{error, command_unknown} ->
+	    {io_lib:format("Error: command ~p not known.", [hd(Args)]), ?STATUS_ERROR};
+	{error, wrong_number_parameters} ->
+	    {"Error: wrong number of parameters", ?STATUS_ERROR};
+	Res ->
+	    Res
+    catch
+	A:Why ->
+	    Stack = erlang:get_stacktrace(),
+	    {io_lib:format("Problem '~p ~p' occurred executing the command.~nStacktrace: ~p", [A, Why, Stack]), ?STATUS_ERROR}
+    end.
+
+%% @spec (Args::[string()]) ->
+%%       String::string() | Code::integer() | {String::string(), Code::integer()} | {error, ErrorType}
+call_command([CmdString | Args]) ->
+    {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
+    Command = list_to_atom(CmdStringU),
+    case ejabberd_commands:get_command_format(Command) of
+	{error, command_unknown} ->
+	    {error, command_unknown};
+	{ArgsFormat, ResultFormat} ->
+	    case (catch format_args(Args, ArgsFormat)) of
+		ArgsFormatted when is_list(ArgsFormatted) ->
+		    Result = ejabberd_commands:execute_command(Command,
+							       ArgsFormatted),
+		    format_result(Result, ResultFormat);
+		{'EXIT', {function_clause,[{lists,zip,[A1, A2]} | _]}} ->
+		    {NumCompa, TextCompa} =
+			case {length(A1), length(A2)} of
+			    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
+			    {L1, L2} when L1 > L2 -> {L1-L2, "more argument"}
+			end,
+		    {io_lib:format("Error: the command ~p requires ~p ~s.",
+				   [CmdString, NumCompa, TextCompa]),
+		     wrong_command_arguments}
+	    end
+    end.
+
+
+%%-----------------------------
+%% Format arguments
+%%-----------------------------
+
+format_args(Args, ArgsFormat) ->
+    lists:foldl(
+      fun({{_ArgName, ArgFormat}, Arg}, Res) ->
+	      Formatted = format_arg(Arg, ArgFormat),
+	      Res ++ [Formatted]
+      end,
+      [],
+      lists:zip(ArgsFormat, Args)).
+
+format_arg(Arg, Format) ->
+    Parse = case Format of
+		integer ->
+		    "~d";
+		string ->
+		    NumChars = integer_to_list(string:len(Arg)),
+		    "~" ++ NumChars ++ "c"
+	    end,
+    {ok, [Arg2], _RemainingArguments} = io_lib:fread(Parse, Arg),
+    Arg2.
+
+
+%%-----------------------------
+%% Format result
+%%-----------------------------
+
+format_result(Atom, {_Name, atom}) ->
+    io_lib:format("~p", [Atom]);
+
+format_result(Int, {_Name, integer}) ->
+    io_lib:format("~p", [Int]);
+
+format_result(String, {_Name, string}) ->
+    io_lib:format("~s", [String]);
+
+format_result(Code, {_Name, rescode}) ->
+    make_status(Code);
+
+format_result({Code, Text}, {_Name, restuple}) ->
+    {io_lib:format("~s", [Text]), make_status(Code)};
+
+%% The result is a list of something: [something()]
+format_result([], {_Name, {list, _ElementsDef}}) ->
+    "";
+format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
+    %% Start formatting the first element
+    [format_result(FirstElement, ElementsDef) |
+     %% If there are more elements, put always first a newline character
+     lists:map(
+       fun(Element) ->
+	       ["\n" | format_result(Element, ElementsDef)]
+       end,
+       Elements)];
+
+%% The result is a tuple with several elements: {something1(), something2(),...}
+%% NOTE: the elements in the tuple are separated with tabular characters,
+%% if a string is empty, it will be difficult to notice in the shell,
+%% maybe a different separation character should be used, like ;;?
+format_result(ElementsTuple, {_Name, {tuple, ElementsDef}}) ->
+    ElementsList = tuple_to_list(ElementsTuple),
+    [{FirstE, FirstD} | ElementsAndDef] = lists:zip(ElementsList, ElementsDef),
+    [format_result(FirstE, FirstD) |
+     lists:map(
+       fun({Element, ElementDef}) ->
+	       ["\t" | format_result(Element, ElementDef)]
+       end,
+       ElementsAndDef)].
+
+make_status(ok) -> ?STATUS_SUCCESS;
+make_status(true) -> ?STATUS_SUCCESS;
+make_status(_Error) -> ?STATUS_ERROR.
+
+get_list_commands() ->
+    try ejabberd_commands:list_commands() of
+	Commands ->
+	    [tuple_command_help(Command)
+	     || {N,_,_}=Command <- Commands,
+		%% Don't show again those commands, because they are already
+		%% announced by ejabberd_ctl itself
+		N /= status, N /= stop, N /= restart]
+    catch
+	exit:_ ->
+	    []
+    end.
+
+%% Return: {string(), [string()], string()}
+tuple_command_help({Name, Args, Desc}) ->
+    Arguments = [atom_to_list(ArgN) || {ArgN, _ArgF} <- Args],
+    Prepend = case is_supported_args(Args) of
+		  true -> "";
+		  false -> "*"
+	      end,
+    CallString = atom_to_list(Name),
+    {CallString, Arguments, Prepend ++ Desc}.
+
+is_supported_args(Args) ->
+    lists:all(
+      fun({_Name, Format}) ->
+	      (Format == integer)
+		  or (Format == string)
+      end,
+      Args).
+
+get_list_ctls() ->
+    case catch ets:tab2list(ejabberd_ctl_cmds) of
+	{'EXIT', _} -> [];
+	Cs -> [{NameArgs, [], Desc} || {NameArgs, Desc} <- Cs]
+    end.
+
+
+%%-----------------------------
+%% Print help
+%%-----------------------------
+
+%% Bold
+-define(B1, "\e[1m").
+-define(B2, "\e[22m").
+-define(B(S), case ShCode of true -> [?B1, S, ?B2]; false -> S end).
+
+%% Underline
+-define(U1, "\e[4m").
+-define(U2, "\e[24m").
+-define(U(S), case ShCode of true -> [?U1, S, ?U2]; false -> S end).
+
 print_usage() ->
-    CmdDescs =
-	[{"status", "get ejabberd status"},
-	 {"stop", "stop ejabberd"},
-	 {"restart", "restart ejabberd"},
-	 {"reopen-log", "reopen log file"},
-	 {"register user server password", "register a user"},
-	 {"unregister user server", "unregister a user"},
-	 {"backup file", "store a database backup to file"},
-	 {"restore file", "restore a database backup from file"},
-	 {"install-fallback file", "install a database fallback from file"},
-	 {"dump file", "dump a database to a text file"},
-	 {"load file", "restore a database from a text file"},
-	 {"import-file file", "import user data from jabberd 1.4 spool file"},
-	 {"import-dir dir", "import user data from jabberd 1.4 spool directory"},
-	 {"delete-expired-messages", "delete expired offline messages from database"},
-	 {"delete-old-messages n", "delete offline messages older than n days from database"},
-	 {"mnesia [info]", "show information of Mnesia system"},
-	 {"vhost host ...", "execute host-specific commands"}] ++
-	ets:tab2list(ejabberd_ctl_cmds),
-    MaxCmdLen =
-	lists:max(lists:map(
-		    fun({Cmd, _Desc}) ->
-			    length(Cmd)
-		    end, CmdDescs)),
-    NewLine = io_lib:format("~n", []),
-    FmtCmdDescs =
-	lists:map(
-	  fun({Cmd, Desc}) ->
-		  ["  ", Cmd, string:chars($\s, MaxCmdLen - length(Cmd) + 2),
-		   Desc, NewLine]
-	  end, CmdDescs),
+    {MaxC, ShCode} = get_shell_info(),
+    print_usage(dual, MaxC, ShCode).
+print_usage(HelpMode, MaxC, ShCode) ->
+    AllCommands =
+	[
+	 {"status", [], "Get ejabberd status"},
+	 {"stop", [], "Stop ejabberd"},
+	 {"restart", [], "Restart ejabberd"},
+	 {"help", ["[--tags [tag] | com?*]"], "Show help (try: ejabberdctl help help)"},
+	 {"mnesia", ["[info]"], "show information of Mnesia system"}] ++
+	get_list_commands() ++
+	get_list_ctls(),
+
     ?PRINT(
-      "Usage: ejabberdctl [--node nodename] command [options]~n"
-      "~n"
-      "Available commands in this ejabberd node:~n"
-      ++ FmtCmdDescs ++
-      "~n"
-      "Examples:~n"
-      "  ejabberdctl restart~n"
-      "  ejabberdctl --node ejabberd@host restart~n"
-      "  ejabberdctl vhost jabber.example.org ...~n",
-     []).
-
-print_vhost_usage(Host) ->
-    CmdDescs =
-	ets:select(ejabberd_ctl_host_cmds,
-		   [{{{Host, '$1'}, '$2'}, [], [{{'$1', '$2'}}]}]),
-    MaxCmdLen =
-	if
-	    CmdDescs == [] ->
-		0;
-	    true ->
-		lists:max(lists:map(
-			    fun({Cmd, _Desc}) ->
-				    length(Cmd)
-			    end, CmdDescs))
-	end,
-    NewLine = io_lib:format("~n", []),
-    FmtCmdDescs =
-	lists:map(
-	  fun({Cmd, Desc}) ->
-		  ["  ", Cmd, string:chars($\s, MaxCmdLen - length(Cmd) + 2),
-		   Desc, NewLine]
-	  end, CmdDescs),
+       ["Usage: ", ?B("ejabberdctl"), " [--node ", ?U("nodename"), "] ", ?U("command"), " [options]\n"
+	"\n"
+	"Available commands in this ejabberd node:\n"], []),
+    print_usage_commands(HelpMode, MaxC, ShCode, AllCommands),
     ?PRINT(
-      "Usage: ejabberdctl [--node nodename] vhost hostname command [options]~n"
-      "~n"
-      "Available commands in this ejabberd node and this vhost:~n"
-      ++ FmtCmdDescs ++
-      "~n"
-      "Examples:~n"
-      "  ejabberdctl vhost "++Host++" registered-users~n",
-     []).
+       ["\n"
+	"Examples:\n"
+	"  ejabberdctl restart\n"
+	"  ejabberdctl --node ejabberd@host restart\n"],
+       []).
 
-register_commands(CmdDescs, Module, Function) ->
-    ets:insert(ejabberd_ctl_cmds, CmdDescs),
-    ejabberd_hooks:add(ejabberd_ctl_process,
-		       Module, Function, 50),
-    ok.
+print_usage_commands(HelpMode, MaxC, ShCode, Commands) ->
+    CmdDescsSorted = lists:keysort(1, Commands),
 
-register_commands(Host, CmdDescs, Module, Function) ->
-    ets:insert(ejabberd_ctl_host_cmds,
-	       [{{Host, Cmd}, Desc} || {Cmd, Desc} <- CmdDescs]),
-    ejabberd_hooks:add(ejabberd_ctl_process, Host,
-		       Module, Function, 50),
-    ok.
+    %% What is the length of the largest command?
+    {CmdArgsLenDescsSorted, Lens} =
+	lists:mapfoldl(
+	  fun({Cmd, Args, Desc}, Lengths) ->
+		  Len =
+		      length(Cmd) +
+		      lists:foldl(fun(Arg, R) ->
+					  R + 1 + length(Arg)
+				  end,
+				  0,
+				  Args),
+		  {{Cmd, Args, Len, Desc}, [Len | Lengths]}
+	  end,
+	  [],
+	  CmdDescsSorted),
+    MaxCmdLen = case Lens of
+		    [] -> 80;
+		    _ -> lists:max(Lens)
+		end,
 
-unregister_commands(CmdDescs, Module, Function) ->
-    lists:foreach(fun(CmdDesc) ->
-			  ets:delete_object(ejabberd_ctl_cmds, CmdDesc)
-		  end, CmdDescs),
-    ejabberd_hooks:delete(ejabberd_ctl_process,
-			  Module, Function, 50),
-    ok.
+    %% For each command in the list of commands
+    %% Convert its definition to a line
+    FmtCmdDescs = format_command_lines(CmdArgsLenDescsSorted, MaxCmdLen, MaxC, ShCode, HelpMode),
 
-unregister_commands(Host, CmdDescs, Module, Function) ->
-    lists:foreach(fun({Cmd, Desc}) ->
-			  ets:delete_object(ejabberd_ctl_host_cmds,
-					    {{Host, Cmd}, Desc})
-		  end, CmdDescs),
-    ejabberd_hooks:delete(ejabberd_ctl_process,
-			  Module, Function, 50),
-    ok.
-
-dump_to_textfile(File) ->
-    dump_to_textfile(mnesia:system_info(is_running), file:open(File, write)).
-dump_to_textfile(yes, {ok, F}) ->
-    Tabs1 = lists:delete(schema, mnesia:system_info(local_tables)),
-    Tabs = lists:filter(
-	     fun(T) ->
-		     case mnesia:table_info(T, storage_type) of
-			 disc_copies -> true;
-			 disc_only_copies -> true;
-			 _ -> false
-		     end
-	     end, Tabs1),
-    Defs = lists:map(
-	     fun(T) -> {T, [{record_name, mnesia:table_info(T, record_name)},
-			    {attributes, mnesia:table_info(T, attributes)}]}
-	     end,
-	     Tabs),
-    io:format(F, "~p.~n", [{tables, Defs}]),
-    lists:foreach(fun(T) -> dump_tab(F, T) end, Tabs),
-    file:close(F);
-dump_to_textfile(_, {ok, F}) ->
-    file:close(F),
-    {error, mnesia_not_running};
-dump_to_textfile(_, {error, Reason}) ->
-    {error, Reason}.
+    ?PRINT([FmtCmdDescs], []).
 
 
-dump_tab(F, T) ->
-    W = mnesia:table_info(T, wild_pattern),
-    {atomic,All} = mnesia:transaction(
-		     fun() -> mnesia:match_object(T, W, read) end),
+%% Get some info about the shell:
+%% how many columns of width
+%% and guess if it supports text formatting codes.
+get_shell_info() ->
+    %% This function was introduced in OTP R12B-0
+    try io:columns() of
+	{ok, C} -> {C-2, true};
+	{error, enotsup} -> {78, false}
+    catch
+	_:_ -> {78, false}
+    end.
+
+%% Split this command description in several lines of proper length
+prepare_description(DescInit, MaxC, Desc) ->
+    Words = string:tokens(Desc, " "),
+    prepare_long_line(DescInit, MaxC, Words).
+
+prepare_long_line(DescInit, MaxC, Words) ->
+    MaxSegmentLen = MaxC - DescInit,
+    MarginString = lists:duplicate(DescInit, $\s), % Put spaces
+    [FirstSegment | MoreSegments] = split_desc_segments(MaxSegmentLen, Words),
+    MoreSegmentsMixed = mix_desc_segments(MarginString, MoreSegments),
+    [FirstSegment | MoreSegmentsMixed].
+
+mix_desc_segments(MarginString, Segments) ->
+    [["\n", MarginString, Segment] || Segment <- Segments].
+
+split_desc_segments(MaxL, Words) ->
+    join(MaxL, Words).
+
+%% Join words in a segment,
+%% but stop adding to a segment if adding this word would pass L
+join(L, Words) ->
+    join(L, Words, 0, [], []).
+
+join(_L, [], _LenLastSeg, LastSeg, ResSeg) ->
+    ResSeg2 = [lists:reverse(LastSeg) | ResSeg],
+    lists:reverse(ResSeg2);
+join(L, [Word | Words], LenLastSeg, LastSeg, ResSeg) ->
+    LWord = length(Word),
+    case LWord + LenLastSeg < L of
+	true ->
+	    %% This word fits in the last segment
+	    %% If this word ends with "\n", reset column counter
+	    case string:str(Word, "\n") of
+		0 ->
+		    join(L, Words, LenLastSeg+LWord+1, [" ", Word | LastSeg], ResSeg);
+		_ ->
+		    join(L, Words, LWord+1, [" ", Word | LastSeg], ResSeg)
+	    end;
+	false ->
+	    join(L, Words, LWord, [" ", Word], [lists:reverse(LastSeg) | ResSeg])
+    end.
+
+format_command_lines(CALD, MaxCmdLen, MaxC, ShCode, dual)
+  when MaxC - MaxCmdLen < 40 ->
+    %% If the space available for descriptions is too narrow, enforce long help mode
+    format_command_lines(CALD, MaxCmdLen, MaxC, ShCode, long);
+
+format_command_lines(CALD, MaxCmdLen, MaxC, ShCode, dual) ->
+    lists:map(
+      fun({Cmd, Args, CmdArgsL, Desc}) ->
+	      DescFmt = prepare_description(MaxCmdLen+4, MaxC, Desc),
+	      ["  ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args], string:chars($\s, MaxCmdLen - CmdArgsL + 1),
+	       DescFmt, "\n"]
+      end, CALD);
+
+format_command_lines(CALD, _MaxCmdLen, MaxC, ShCode, long) ->
+    lists:map(
+      fun({Cmd, Args, _CmdArgsL, Desc}) ->
+	      DescFmt = prepare_description(8, MaxC, Desc),
+	      ["\n  ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args], "\n", "        ",
+	       DescFmt, "\n"]
+      end, CALD).
+
+
+%%-----------------------------
+%% Print Tags
+%%-----------------------------
+
+print_usage_tags(MaxC, ShCode) ->
+    ?PRINT("Available tags and commands:", []),
+    TagsCommands = ejabberd_commands:get_tags_commands(),
     lists:foreach(
-      fun(Term) -> io:format(F,"~p.~n", [setelement(1, Term, T)]) end, All).
+      fun({Tag, Commands} = _TagCommands) ->
+	      ?PRINT(["\n\n  ", ?B(Tag), "\n     "], []),
+	      Words = lists:sort(Commands),
+	      Desc = prepare_long_line(5, MaxC, Words),
+	      ?PRINT(Desc, [])
+      end,
+      TagsCommands),
+    ?PRINT("\n\n", []).
+
+print_usage_tags(Tag, MaxC, ShCode) ->
+    ?PRINT(["Available commands with tag ", ?B(Tag), ":", "\n"], []),
+    HelpMode = long,
+    TagsCommands = ejabberd_commands:get_tags_commands(),
+    CommandsNames = case lists:keysearch(Tag, 1, TagsCommands) of
+			{value, {Tag, CNs}} -> CNs;
+			false -> []
+		    end,
+    CommandsList = lists:map(
+		     fun(NameString) ->
+			     C = ejabberd_commands:get_command_definition(list_to_atom(NameString)),
+			     #ejabberd_commands{name = Name,
+						args = Args,
+						desc = Desc} = C,
+			     tuple_command_help({Name, Args, Desc})
+		     end,
+		     CommandsNames),
+    print_usage_commands(HelpMode, MaxC, ShCode, CommandsList),
+    ?PRINT("\n", []).
+
+
+%%-----------------------------
+%% Print usage of 'help' command
+%%-----------------------------
+
+print_usage_help(MaxC, ShCode) ->
+    LongDesc =
+	["The special 'help' ejabberdctl command provides help of ejabberd commands.\n\n"
+	 "The format is:\n  ", ?B("ejabberdctl"), " ", ?B("help"), " [", ?B("--tags"), " ", ?U("[tag]"), " | ", ?U("com?*"), "]\n\n"
+	 "The optional arguments:\n"
+	 "  ",?B("--tags"),"      Show all tags and the names of commands in each tag\n"
+	 "  ",?B("--tags"), " ", ?U("tag"),"  Show description of commands in this tag\n"
+	 "  ",?U("command"),"     Show detailed description of the command\n"
+	 "  ",?U("com?*"),"       Show detailed description of commands that match this glob.\n"
+	 "              You can use ? to match a simple character,\n"
+	 "              and * to match several characters.\n"
+	 "\n",
+	 "Some example usages:\n",
+	 "  ejabberdctl help\n",
+	 "  ejabberdctl help --tags\n",
+	 "  ejabberdctl help --tags accounts\n",
+	 "  ejabberdctl help register\n",
+	 "  ejabberdctl help regist*\n",
+	 "\n",
+	 "Please note that 'ejabberdctl help' shows all ejabberd commands,\n",
+	 "even those that cannot be used in the shell with ejabberdctl.\n",
+	 "Those commands can be identified because the description starts with: *"],
+    ArgsDef = [],
+    C = #ejabberd_commands{
+      desc = "Show help of ejabberd commands",
+      longdesc = LongDesc,
+      args = ArgsDef,
+      result = {help, string}},
+    print_usage_command("help", C, MaxC, ShCode).
+
+
+%%-----------------------------
+%% Print usage command
+%%-----------------------------
+
+%% @spec (CmdSubString::string(), MaxC::integer(), ShCode::boolean()) -> ok
+print_usage_commands(CmdSubString, MaxC, ShCode) ->
+    %% Get which command names match this substring
+    AllCommandsNames = [atom_to_list(Name) || {Name, _, _} <- ejabberd_commands:list_commands()],
+    Cmds = filter_commands(AllCommandsNames, CmdSubString),
+    case Cmds of
+    	[] -> io:format("Error: not command found that match: ~p~n", [CmdSubString]);
+	_ -> print_usage_commands2(lists:sort(Cmds), MaxC, ShCode)
+    end.
+
+print_usage_commands2(Cmds, MaxC, ShCode) ->
+    %% Then for each one print it
+    lists:mapfoldl(
+      fun(Cmd, Remaining) ->
+	      print_usage_command(Cmd, MaxC, ShCode),
+	      case Remaining > 1 of
+		  true -> ?PRINT([" ", lists:duplicate(MaxC, 126), " \n"], []);
+		  false -> ok
+	      end,
+	      {ok, Remaining-1}
+      end,
+      length(Cmds),
+      Cmds).
+
+filter_commands(All, SubString) ->
+    case lists:member(SubString, All) of
+	true -> [SubString];
+	false -> filter_commands_regexp(All, SubString)
+    end.
+
+filter_commands_regexp(All, Glob) ->
+    RegExp = regexp:sh_to_awk(Glob),
+    lists:filter(
+      fun(Command) ->
+	      case regexp:first_match(Command, RegExp) of
+		  {match, _, _} ->
+		      true;
+		  _ ->
+		      false
+	      end
+      end,
+      All).
+
+%% @spec (Cmd::string(), MaxC::integer(), ShCode::boolean()) -> ok
+print_usage_command(Cmd, MaxC, ShCode) ->
+    Name = list_to_atom(Cmd),
+    case ejabberd_commands:get_command_definition(Name) of
+	command_not_found ->
+	    io:format("Error: command ~p not known.~n", [Cmd]);
+	C ->
+	    print_usage_command(Cmd, C, MaxC, ShCode)
+    end.
+
+print_usage_command(Cmd, C, MaxC, ShCode) ->
+    #ejabberd_commands{
+		     tags = TagsAtoms,
+		     desc = Desc,
+		     longdesc = LongDesc,
+		     args = ArgsDef,
+		     result = ResultDef} = C,
+
+    NameFmt = ["  ", ?B("Command Name"), ": ", Cmd, "\n"],
+
+    %% Initial indentation of result is 13 = length("  Arguments: ")
+    Args = [format_usage_ctype(ArgDef, 13) || ArgDef <- ArgsDef],
+    ArgsMargin = lists:duplicate(13, $\s),
+    ArgsListFmt = case Args of
+		      [] -> "\n";
+		      _ -> [ [Arg, "\n", ArgsMargin] || Arg <- Args]
+		  end,
+    ArgsFmt = ["  ", ?B("Arguments"), ": ", ArgsListFmt],
+
+    %% Initial indentation of result is 11 = length("  Returns: ")
+    ResultFmt = format_usage_ctype(ResultDef, 11),
+    ReturnsFmt = ["  ",?B("Returns"),": ", ResultFmt],
+
+    XmlrpcFmt = "", %%+++ ["  ",?B("XML-RPC"),": ", format_usage_xmlrpc(ArgsDef, ResultDef), "\n\n"],
+
+    TagsFmt = ["  ",?B("Tags"),": ", prepare_long_line(8, MaxC, [atom_to_list(TagA) || TagA <- TagsAtoms])],
+
+    DescFmt = ["  ",?B("Description"),": ", prepare_description(15, MaxC, Desc)],
+
+    LongDescFmt = case LongDesc of
+		      "" -> "";
+		      _ -> ["", prepare_description(0, MaxC, LongDesc), "\n\n"]
+		  end,
+
+    NoteEjabberdctl = case is_supported_args(ArgsDef) of
+			  true -> "";
+			  false -> ["  ", ?B("Note:"), " This command cannot be executed using ejabberdctl. Try ejabberd_xmlrpc.\n\n"]
+		      end,
+
+    ?PRINT(["\n", NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt, "\n\n", XmlrpcFmt, TagsFmt, "\n\n", DescFmt, "\n\n", LongDescFmt, NoteEjabberdctl], []).
+
+format_usage_ctype({Name, Type}, _Indentation)
+  when (Type==atom) or (Type==integer) or (Type==string) or (Type==rescode) or (Type==restuple)->
+    io_lib:format("~p::~p", [Name, Type]);
+
+format_usage_ctype({Name, {list, ElementDef}}, Indentation) ->
+    NameFmt = atom_to_list(Name),
+    Indentation2 = Indentation + length(NameFmt) + 4,
+    ElementFmt = format_usage_ctype(ElementDef, Indentation2),
+    [NameFmt, "::[ ", ElementFmt, " ]"];
+
+format_usage_ctype({Name, {tuple, ElementsDef}}, Indentation) ->
+    NameFmt = atom_to_list(Name),
+    Indentation2 = Indentation + length(NameFmt) + 4,
+    ElementsFmt = format_usage_tuple(ElementsDef, Indentation2),
+    [NameFmt, "::{ " | ElementsFmt].
+
+format_usage_tuple([], _Indentation) ->
+    [];
+format_usage_tuple([ElementDef], Indentation) ->
+    [format_usage_ctype(ElementDef, Indentation) , " }"];
+format_usage_tuple([ElementDef | ElementsDef], Indentation) ->
+    ElementFmt = format_usage_ctype(ElementDef, Indentation),
+    MarginString = lists:duplicate(Indentation, $\s), % Put spaces
+    [ElementFmt, ",\n", MarginString, format_usage_tuple(ElementsDef, Indentation)].
+
+
+%%-----------------------------
+%% Command managment
+%%-----------------------------
+
+%%+++
+%% Struct(Integer res) create_account(Struct(String user, String server, String password))
+%%format_usage_xmlrpc(ArgsDef, ResultDef) ->
+%%    ["aaaa bbb ccc"].
+

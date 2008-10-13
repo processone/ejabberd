@@ -112,11 +112,8 @@ start_link(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:start_link({local, Proc}, ?MODULE, Host, []).
 
-terminate(_Reason, State) ->
-    ejabberd_ctl:unregister_commands(
-      State#state.host,
-      [{"registered-users", "list all registered users"}],
-      ejabberd_auth, ctl_process_get_registered).
+terminate(_Reason, _State) ->
+    ok.
 
 init(Host) ->
     State = parse_options(Host),
@@ -132,10 +129,6 @@ init(Host) ->
 		     State#state.port,
 		     State#state.dn,
 		     State#state.password),
-    ejabberd_ctl:register_commands(
-      Host,
-      [{"registered-users", "list all registered users"}],
-      ejabberd_auth, ctl_process_get_registered),
     {ok, State}.
 
 plain_password_required() ->

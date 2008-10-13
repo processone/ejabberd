@@ -42,6 +42,7 @@
 -define(PROCNAME, ejabberd_mod_proxy65).
 
 start(Host, Opts) ->
+    mod_proxy65_service:add_listener(Host, Opts),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {
       Proc, {?MODULE, start_link, [Host, Opts]},
@@ -50,6 +51,7 @@ start(Host, Opts) ->
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
+    mod_proxy65_service:delete_listener(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).

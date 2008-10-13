@@ -38,7 +38,8 @@
 	 pop_offline_messages/3,
 	 remove_user/2,
 	 webadmin_page/3,
-	 webadmin_user/4]).
+	 webadmin_user/4,
+	 webadmin_user_parse_query/5]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
@@ -69,6 +70,8 @@ start(Host, Opts) ->
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, Host,
 		       ?MODULE, webadmin_user, 50),
+    ejabberd_hooks:add(webadmin_user_parse_query, Host,
+                       ?MODULE, webadmin_user_parse_query, 50),
     MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, init, [Host, MaxOfflineMsgs])).
@@ -151,6 +154,8 @@ stop(Host) ->
 			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, Host,
 			  ?MODULE, webadmin_user, 50),
+    ejabberd_hooks:delete(webadmin_user_parse_query, Host,
+                          ?MODULE, webadmin_user_parse_query, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
     ok.
@@ -446,7 +451,22 @@ webadmin_user(Acc, User, Server, Lang) ->
 	_ ->
 	    [?C("?")]
     end,
-    Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen.
+    Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].
+
+webadmin_user_parse_query(_, "removealloffline", User, Server, _Query) ->
+    case catch odbc_queries:del_spool_msg(Server, User) of
+         {'EXIT', Reason} ->
+            ?ERROR_MSG("Failed to remove offline messages: ~p", [Reason]),
+            {stop, error};
+         {error, Reason} ->
+            ?ERROR_MSG("Failed to remove offline messages: ~p", [Reason]),
+            {stop, error};
+         _ ->
+            ?INFO_MSG("Removed all offline messages for ~s@~s", [User, Server]),
+            {stop, ok}
+    end;
+webadmin_user_parse_query(Acc, _Action, _User, _Server, _Query) ->
+    Acc.
 
 %% ------------------------------------------------
 %% mod_offline: number of messages quota management
