@@ -1,3 +1,8 @@
+2008-10-13  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: When requesting page of
+	nonexistent user, show 'Not Found' page (EJAB-771)
+
 2008-10-12  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: Run new hook

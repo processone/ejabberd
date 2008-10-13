@@ -908,8 +908,13 @@ process_admin(Host,
 	      #request{path = ["user", U],
 		       q = Query,
 		       lang = Lang}) ->
-    Res = user_info(U, Host, Query, Lang),
-    make_xhtml(Res, Host, Lang);
+    case ejabberd_auth:is_user_exists(U, Host) of
+	true ->
+	    Res = user_info(U, Host, Query, Lang),
+	    make_xhtml(Res, Host, Lang);
+	false ->
+	    make_xhtml([?XCT("h1", "Not Found")], Host, Lang)
+    end;
 
 process_admin(Host,
 	      #request{path = ["nodes"],
