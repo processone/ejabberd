@@ -56,7 +56,7 @@ set_password(User, Server, Password) ->
     call_port(Server, ["setpass", User, Server, Password]).
 
 call_port(Server, Msg) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     gen_mod:get_module_proc(LServer, eauth) ! {call, self(), Msg},
     receive
 	{eauth,Result} ->
