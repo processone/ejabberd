@@ -708,7 +708,7 @@ print_usage_command(Cmd, C, MaxC, ShCode) ->
 
     NoteEjabberdctl = case is_supported_args(ArgsDef) of
 			  true -> "";
-			  false -> ["  ", ?B("Note:"), " This command cannot be executed using ejabberdctl. Try mod_xmlrpc.\n\n"]
+			  false -> ["  ", ?B("Note:"), " This command cannot be executed using ejabberdctl. Try ejabberd_xmlrpc.\n\n"]
 		      end,
 
     ?PRINT(["\n", NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt, "\n\n", XmlrpcFmt, TagsFmt, "\n\n", DescFmt, "\n\n", LongDescFmt, NoteEjabberdctl], []).

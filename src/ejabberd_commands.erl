@@ -167,7 +167,7 @@
 %%%
 %%% Currently there are two frontends to ejabberd commands: the shell
 %%% script {@link ejabberd_ctl. ejabberdctl}, and the XML-RPC server
-%%% mod_xmlrpc.
+%%% ejabberd_xmlrpc.
 %%%
 %%%
 %%% === ejabberdctl as a frontend to ejabberd commands ===
@@ -196,7 +196,7 @@
 %%% make sure the XML-RPC call provides the required arguments, with
 %%% the specified format. The order of the arguments in an XML-RPC
 %%% call is not important, because all the data is tagged and will be
-%%% correctly prepared by mod_xmlrpc before executing the ejabberd
+%%% correctly prepared by ejabberd_xmlrpc before executing the ejabberd
 %%% command.
 
 %%% TODO: consider this feature:
