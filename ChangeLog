@@ -1,3 +1,7 @@
+2008-10-13  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: log MySQL driver messages.
+
 2008-10-07  Jerome Sautret  <jerome.sautret@process-one.net>
 
 	* src/mod_roster_odbc.erl: fix MySQL multiple requests issue.
