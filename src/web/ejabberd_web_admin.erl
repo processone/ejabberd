@@ -31,25 +31,25 @@
 -export([process/2,
 	 list_users/4,
 	 list_users_in_diapason/4,
-	 pretty_print_xml/1,
 	 term_to_id/1]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 
 
 process(["server", SHost | RPath], #request{auth = Auth} = Request) ->
-    Host = jlib:nameprep(SHost),
+    Host = exmpp_stringprep:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
 	true ->
 	    case get_auth(Auth) of
 		{User, Server} ->
 		    case acl:match_rule(
-			   Host, configure, jlib:make_jid(User, Server, "")) of
+			   Host, configure, exmpp_jid:make_bare_jid(User, Server)) of
 			deny ->
-                            ejabberd_web:error(not_allowed);
+			    ejabberd_web:error(not_allowed);
 			allow ->
 			    process_admin(
 			      Host, Request#request{path = RPath,
@@ -58,50 +58,51 @@ process(["server", SHost | RPath], #request{auth = Auth} = Request) ->
 		unauthorized ->
 		    {401,
 		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-		     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
-                                               [{xmlcdata, "401 Unauthorized"}]}])}
+		     ejabberd_web:make_xhtml([#xmlel{ns = ?NS_XHTML, name = 'h1', children =
+					       [#xmlcdata{cdata = <<"401 Unauthorized">>}]}])}
 	    end;
 	false ->
-            ejabberd_web:error(not_found)
+	    ejabberd_web:error(not_found)
     end;
 
 process(RPath, #request{auth = Auth} = Request) ->
     case get_auth(Auth) of
 	{User, Server} ->
 	    case acl:match_rule(
-		   global, configure, jlib:make_jid(User, Server, "")) of
+		   global, configure, exmpp_jid:make_bare_jid(User, Server)) of
 		deny ->
-                    ejabberd_web:error(not_allowed);
+		    ejabberd_web:error(not_allowed);
 		allow ->
 		    process_admin(
 		      global, Request#request{path = RPath,
 					      us = {User, Server}})
 	    end;
 	unauthorized ->
-            %% XXX bard: any reason to send this data now and not
-            %% always in case of an 401? ought to check http specs...
+	    %% XXX bard: any reason to send this data now and not
+	    %% always in case of an 401? ought to check http specs...
 	    {401, 
 	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-	     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
-				       [{xmlcdata, "401 Unauthorized"}]}])}
+	     ejabberd_web:make_xhtml([#xmlel{ns = ?NS_XHTML, name = 'h1', children =
+				       [#xmlcdata{cdata = <<"401 Unauthorized">>}]}])}
     end.
 
 get_auth(Auth) ->
     case Auth of
-        {SJID, P} ->
-            case jlib:string_to_jid(SJID) of
-                error ->
-                    unauthorized;
-                #jid{user = U, server = S} ->
-                    case ejabberd_auth:check_password(U, S, P) of
-                        true ->
-                            {U, S};
-                        false ->
-                            unauthorized
-                    end
-            end;
-         _ ->
-            unauthorized
+	{SJID, P} ->
+	    try
+		#jid{node = U, domain = S} = exmpp_jid:list_to_jid(SJID),
+		case ejabberd_auth:check_password(U, S, P) of
+		    true ->
+			{U, S};
+		    false ->
+			unauthorized
+		end
+	    catch
+		_ ->
+		    unauthorized
+	    end;
+	_ ->
+	    unauthorized
     end.
 
 make_xhtml(Els, Host, Lang) ->
@@ -114,43 +115,46 @@ make_xhtml(Els, Host, Node, Lang) ->
     Base = get_base_path(Host, cluster), %% Enforcing 'cluster' on purpose here
     MenuItems = make_navigation(Host, Node, Lang),
     {200, [html],
-     {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
-			   {"xml:lang", Lang},
-			   {"lang", Lang}],
-      [{xmlelement, "head", [],
-	[?XCT("title", "ejabberd Web Admin"),
-	 {xmlelement, "meta", [{"http-equiv", "Content-Type"},
-			       {"content", "text/html; charset=utf-8"}], []},
-	 {xmlelement, "link", [{"href", Base ++ "favicon.ico"},
-			       {"type", "image/x-icon"},
-			       {"rel", "shortcut icon"}], []},
-	 {xmlelement, "link", [{"href", Base ++ "style.css"},
-			       {"type", "text/css"},
-			       {"rel", "stylesheet"}], []}]},
-       ?XE("body",
-           [?XAE("div",
-		 [{"id", "container"}],
-		 [?XAE("div",
-		       [{"id", "header"}],
-		       [?XE("h1",
+     #xmlel{ns = ?NS_XHTML, name = 'html', attrs = [
+			   #xmlattr{ns = ?NS_XML, name = 'lang', value = Lang},
+			   #xmlattr{name = 'lang', value = Lang}], children =
+      [#xmlel{ns = ?NS_XHTML, name = 'head', children =
+	[?XCT('title', "ejabberd Web Admin"),
+	 #xmlel{ns = ?NS_XHTML, name = 'meta', attrs = [
+	     #xmlattr{name = 'http-equiv', value = "Content-Type"},
+	     #xmlattr{name = 'content', value = "text/html; charset=utf-8"}]},
+	 #xmlel{ns = ?NS_XHTML, name = 'link', attrs = [
+	     #xmlattr{name = 'href', value = Base ++ "favicon.ico"},
+	     #xmlattr{name = 'type', value = "image/x-icon"},
+	     #xmlattr{name = 'rel', value = "shortcut icon"}]},
+	 #xmlel{ns = ?NS_XHTML, name = 'link', attrs = [
+	     #xmlattr{name = 'href', value = Base ++ "style.css"},
+	     #xmlattr{name = 'type', value = "text/css"},
+	     #xmlattr{name = 'rel', value = "stylesheet"}]}]},
+       ?XE('body',
+	   [?XAE('div',
+		 [#xmlattr{name = 'id', value = "container"}],
+		 [?XAE('div',
+		       [#xmlattr{name = 'id', value = "header"}],
+		       [?XE('h1',
 			    [?ACT("/admin/", "Administration")]
 			   )]),
-		  ?XAE("div",
-		       [{"id", "navigation"}],
-		       [?XE("ul",
+		  ?XAE('div',
+		       [#xmlattr{name = 'id', value = "navigation"}],
+		       [?XE('ul',
 			    MenuItems
 			   )]),
-		  ?XAE("div",
-		       [{"id", "content"}],
+		  ?XAE('div',
+		       [#xmlattr{name = 'id', value = "content"}],
 		       Els),
-		  ?XAE("div",
-		       [{"id", "clearcopyright"}],
-		       [{xmlcdata, ""}])]),
-	    ?XAE("div",
-		 [{"id", "copyrightouter"}],
-		 [?XAE("div",
-		       [{"id", "copyright"}],
-		       [?XC("p",
+		  ?XAE('div',
+		       [#xmlattr{name = 'id', value = "clearcopyright"}],
+		       [#xmlcdata{cdata = <<>>}])]),
+	    ?XAE('div',
+		 [#xmlattr{name = 'id', value = "copyrightouter"}],
+		 [?XAE('div',
+		       [#xmlattr{name = 'id', value = "copyright"}],
+		       [?XC('p',
 			     "ejabberd (c) 2002-2008 ProcessOne")
 		       ])])])
       ]}}.
@@ -556,8 +560,8 @@ process_admin(global,
 		       lang = Lang}) ->
     Base = get_base_path(global, cluster),
     MenuItems2 = make_menu_items(global, cluster, Base, Lang),
-    make_xhtml([?XCT("h1", "Administration"),
-		?XE("ul",
+    make_xhtml([?XCT('h1', "Administration"),
+		?XE('ul',
 		    [?LI([?ACT("/admin/acls/", "Access Control Lists"), ?C(" "),
 			  ?ACT("/admin/acls-raw/", "(Raw)")]),
 		     ?LI([?ACT("/admin/access/", "Access Rules"), ?C(" "),
@@ -574,8 +578,8 @@ process_admin(Host,
 		       lang = Lang}) ->
     Base = get_base_path(Host, cluster),
     MenuItems2 = make_menu_items(Host, cluster, Base, Lang),
-    make_xhtml([?XCT("h1", "Administration"),
-		?XE("ul",
+    make_xhtml([?XCT('h1', "Administration"),
+		?XE('ul',
 		    [?LI([?ACT(Base ++ "acls/", "Access Control Lists"), ?C(" "),
 			  ?ACT(Base ++ "acls-raw/", "(Raw)")]),
 		     ?LI([?ACT(Base ++ "access/", "Access Rules"), ?C(" "),
@@ -631,16 +635,16 @@ process_admin(Host,
 	       "~p.", [lists:keysort(
 			 2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
 					      [], [{{acl, '$1', '$2'}}]}]))])),
-    make_xhtml([?XCT("h1", "Access Control Lists")] ++
+    make_xhtml([?XCT('h1', "Access Control Lists")] ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XAE("form", [{"action", ""}, {"method", "post"}],
-		     [?XAC("textarea", [{"name", "acls"},
-					{"rows", "16"},
-					{"cols", "80"}],
+	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
+		     [?XAC('textarea', [#xmlattr{name = 'name', value = "acls"},
+					#xmlattr{name = 'rows', value = "16"},
+					#xmlattr{name = 'cols', value = "80"}],
 			   ACLs),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
@@ -674,14 +678,14 @@ process_admin(Host,
     ACLs = lists:keysort(
 	     2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
 				  [], [{{acl, '$1', '$2'}}]}])),
-    make_xhtml([?XCT("h1", "Access Control Lists")] ++
+    make_xhtml([?XCT('h1', "Access Control Lists")] ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XE("p", [?ACT("../acls-raw/", "Raw")])] ++
-	       [?XAE("form", [{"action", ""}, {"method", "post"}],
+	       [?XE('p', [?ACT("../acls-raw/", "Raw")])] ++
+	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
 		     [acls_to_xhtml(ACLs),
 		      ?BR,
 		      ?INPUTT("submit", "delete", "Delete Selected"),
@@ -742,16 +746,16 @@ process_admin(Host,
 			       [{{config, {access, '$1', Host}, '$2'},
 				 [],
 				 [{{access, '$1', '$2'}}]}])])),
-    make_xhtml([?XCT("h1", "Access Rules")] ++
+    make_xhtml([?XCT('h1', "Access Rules")] ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XAE("form", [{"action", ""}, {"method", "post"}],
-		     [?XAC("textarea", [{"name", "access"},
-					{"rows", "16"},
-					{"cols", "80"}],
+	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
+		     [?XAC('textarea', [#xmlattr{name = 'name', value = "access"},
+					#xmlattr{name = 'rows', value = "16"},
+					#xmlattr{name = 'cols', value = "80"}],
 			   Access),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
@@ -780,14 +784,14 @@ process_admin(Host,
 		   [{{config, {access, '$1', Host}, '$2'},
 		     [],
 		     [{{access, '$1', '$2'}}]}]),
-    make_xhtml([?XCT("h1", "Access Rules")] ++
+    make_xhtml([?XCT('h1', "Access Rules")] ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XE("p", [?ACT("../access-raw/", "Raw")])] ++
-	       [?XAE("form", [{"action", ""}, {"method", "post"}],
+	       [?XE('p', [?ACT("../access-raw/", "Raw")])] ++
+	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
 		     [access_rules_to_xhtml(AccessRules, Lang),
 		      ?BR,
 		      ?INPUTT("submit", "delete", "Delete Selected")
@@ -819,14 +823,14 @@ process_admin(Host,
 		Rs1 ->
 		    Rs1
 	    end,
-    make_xhtml([?XC("h1",
+    make_xhtml([?XC('h1',
 		    io_lib:format(?T("~s access rule configuration"), [SName]))] ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
 		   nothing -> []
 	       end ++
-	       [?XAE("form", [{"action", ""}, {"method", "post"}],
+	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
 		     [access_rule_to_xhtml(Rules),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
@@ -837,27 +841,27 @@ process_admin(global,
 	      #request{path = ["vhosts"],
 		       lang = Lang}) ->
     Res = list_vhosts(Lang),
-    make_xhtml([?XCT("h1", "ejabberd virtual hosts")] ++ Res, global, Lang);
+    make_xhtml([?XCT('h1', "ejabberd virtual hosts")] ++ Res, global, Lang);
 
 process_admin(Host,
 	      #request{path = ["users"],
 		       q = Query,
 		       lang = Lang}) when is_list(Host) ->
     Res = list_users(Host, Query, Lang, fun url_func/1),
-    make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT('h1', "Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
 	      #request{path = ["users", Diap],
 		       lang = Lang}) when is_list(Host) ->
     Res = list_users_in_diapason(Host, Diap, Lang, fun url_func/1),
-    make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT('h1', "Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
 	      #request{
 		       path = ["online-users"],
 		       lang = Lang}) when is_list(Host) ->
     Res = list_online_users(Host, Lang),
-    make_xhtml([?XCT("h1", "Online Users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT('h1', "Online Users")] ++ Res, Host, Lang);
 
 process_admin(Host,
 	      #request{path = ["last-activity"],
@@ -876,18 +880,18 @@ process_admin(Host,
 	      _ ->
 		  list_last_activity(Host, Lang, true, Month)
 	  end,
-    make_xhtml([?XCT("h1", "Users Last Activity")] ++
-	       [?XAE("form", [{"action", ""}, {"method", "post"}],
+    make_xhtml([?XCT('h1', "Users Last Activity")] ++
+	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
 		     [?CT("Period: "),
-		      ?XAE("select", [{"name", "period"}],
+		      ?XAE('select', [#xmlattr{name = 'name', value = "period"}],
 			   lists:map(
 			     fun({O, V}) ->
 				    Sel = if
-					      O == Month -> [{"selected", "selected"}];
+					      O == Month -> [#xmlattr{name = 'selected', value = "selected"}];
 					      true -> []
 					  end,
-				    ?XAC("option",
-					 Sel ++ [{"value", O}], V)
+				    ?XAC('option',
+					 Sel ++ [#xmlattr{name = 'value', value = O}], V)
 			     end, [{"month", ?T("Last month")},
 				   {"year", ?T("Last year")},
 				   {"all", ?T("All activity")}])),
@@ -902,7 +906,7 @@ process_admin(Host,
 	      #request{path = ["stats"],
 		       lang = Lang}) ->
     Res = get_stats(Host, Lang),
-    make_xhtml([?XCT("h1", "Statistics")] ++ Res, Host, Lang);
+    make_xhtml([?XCT('h1', "Statistics")] ++ Res, Host, Lang);
 
 process_admin(Host,
 	      #request{path = ["user", U],
@@ -913,7 +917,7 @@ process_admin(Host,
 	    Res = user_info(U, Host, Query, Lang),
 	    make_xhtml(Res, Host, Lang);
 	false ->
-	    make_xhtml([?XCT("h1", "Not Found")], Host, Lang)
+	    make_xhtml([?XCT('h1', "Not Found")], Host, Lang)
     end;
 
 process_admin(Host,
@@ -928,7 +932,7 @@ process_admin(Host,
 		       lang = Lang}) ->
     case search_running_node(SNode) of
 	false ->
-	    make_xhtml([?XCT("h1", "Node not found")], Host, Lang);
+	    make_xhtml([?XCT('h1', "Node not found")], Host, Lang);
 	Node ->
 	    Res = get_node(Host, Node, NPath, Query, Lang),
 	    make_xhtml(Res, Host, Node, Lang)
@@ -940,28 +944,28 @@ process_admin(Host, #request{lang = Lang} = Request) ->
 		       Host -> {webadmin_page_host, [Host, Request]}
 		   end,
     case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
-	[] -> setelement(1, make_xhtml([?XC("h1", "Not Found")], Host, Lang), 404);
+	[] -> setelement(1, make_xhtml([?XC('h1', "Not Found")], Host, Lang), 404);
 	Res -> make_xhtml(Res, Host, Lang)
     end.
 
 
 
 acls_to_xhtml(ACLs) ->
-    ?XAE("table", [],
-	 [?XE("tbody",
+    ?XAE('table', [],
+	 [?XE('tbody',
 	      lists:map(
 		fun({acl, Name, Spec} = ACL) ->
 			SName = atom_to_list(Name),
 			ID = term_to_id(ACL),
-			?XE("tr",
-			    [?XE("td", [?INPUT("checkbox", "selected", ID)]),
-			     ?XC("td", SName)] ++
+			?XE('tr',
+			    [?XE('td', [?INPUT("checkbox", "selected", ID)]),
+			     ?XC('td', SName)] ++
 			    acl_spec_to_xhtml(ID, Spec)
 			   )
 		end, ACLs) ++
-	      [?XE("tr",
-		   [?X("td"),
-		    ?XE("td", [?INPUT("text", "namenew", "")])
+	      [?XE('tr',
+		   [?X('td'),
+		    ?XE('td', [?INPUT("text", "namenew", "")])
 		   ] ++
 		   acl_spec_to_xhtml("new", {user, ""})
 		  )]
@@ -1011,16 +1015,16 @@ acl_spec_to_xhtml(ID, Spec) ->
     [acl_spec_select(ID, Type), ?ACLINPUT(Str)].
 
 acl_spec_select(ID, Opt) ->
-    ?XE("td",
-	[?XAE("select", [{"name", "type" ++ ID}],
+    ?XE('td',
+	[?XAE('select', [#xmlattr{name = 'name', value = "type" ++ ID}],
 	      lists:map(
 		fun(O) ->
 			Sel = if
-				  O == Opt -> [{"selected", "selected"}];
+				  O == Opt -> [#xmlattr{name = 'selected', value = "selected"}];
 				  true -> []
 			      end,
-			?XAC("option",
-			     Sel ++ [{"value", atom_to_list(O)}],
+			?XAC('option',
+			     Sel ++ [#xmlattr{name = 'value', value = atom_to_list(O)}],
 			     atom_to_list(O))
 		end, [user, server, user_regexp, server_regexp, 
 		      node_regexp, user_glob, server_glob, node_glob, all, raw]))]).
@@ -1093,14 +1097,14 @@ string_to_spec("user_regexp", Val) ->
 string_to_spec("server_regexp", Val) ->
     {server_regexp, Val};
 string_to_spec("node_regexp", Val) ->
-    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    #jid{lnode = U, ldomain = S, resource = undefined} = exmpp_jid:list_to_jid(Val),
     {node_regexp, U, S};
 string_to_spec("user_glob", Val) ->
     string_to_spec2(user_glob, Val);
 string_to_spec("server_glob", Val) ->
     {server_glob, Val};
 string_to_spec("node_glob", Val) ->
-    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    #jid{lnode = U, ldomain = S, resource = undefined} = exmpp_jid:list_to_jid(Val),
     {node_glob, U, S};
 string_to_spec("all", _) ->
     all;
@@ -1110,7 +1114,7 @@ string_to_spec("raw", Val) ->
     NewSpec.
 
 string_to_spec2(ACLName, Val) ->
-    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    #jid{lnode = U, ldomain = S, resource = undefined} = exmpp_jid:list_to_jid(Val),
     case U of
 	"" -> 
 	    {ACLName, S};
@@ -1130,23 +1134,23 @@ acl_parse_delete(ACLs, Query) ->
 
 
 access_rules_to_xhtml(AccessRules, Lang) ->
-    ?XAE("table", [],
-	 [?XE("tbody",
+    ?XAE('table', [],
+	 [?XE('tbody',
 	      lists:map(
 		fun({access, Name, Rules} = Access) ->
 			SName = atom_to_list(Name),
 			ID = term_to_id(Access),
-			?XE("tr",
-			    [?XE("td", [?INPUT("checkbox", "selected", ID)]),
-			     ?XE("td", [?AC(SName ++ "/", SName)]),
-			     ?XC("td", term_to_string(Rules))
+			?XE('trr',
+			    [?XE('td', [?INPUT("checkbox", "selected", ID)]),
+			     ?XE('td', [?AC(SName ++ "/", SName)]),
+			     ?XC('td', term_to_string(Rules))
 			    ]
 			   )
 		end, AccessRules) ++
-	      [?XE("tr",
-		   [?X("td"),
-		    ?XE("td", [?INPUT("text", "namenew", "")]),
-		    ?XE("td", [?INPUTT("submit", "addnew", "Add New")])
+	      [?XE('tr',
+		   [?X('td'),
+		    ?XE('td', [?INPUT("text", "namenew", "")]),
+		    ?XE('td', [?INPUTT("submit", "addnew", "Add New")])
 		   ]
 		  )]
 	     )]).
@@ -1201,7 +1205,7 @@ access_rule_to_xhtml(Rules) ->
 		     SACL = atom_to_list(ACL),
 		     SAccess ++ "\t" ++ SACL ++ "\n"
 	     end, Rules),
-    ?XAC("textarea", [{"name", "rules"},
+    ?XAC('textarea', [{"name", "rules"},
 		      {"rows", "16"},
 		      {"cols", "80"}],
 	 Text).
@@ -1227,24 +1231,24 @@ parse_access_rule(Text) ->
 list_vhosts(Lang) ->
     Hosts = ?MYHOSTS,
     SHosts = lists:sort(Hosts),
-    [?XE("table",
-	 [?XE("thead",
-	      [?XE("tr",
-		   [?XCT("td", "Host"),
-		    ?XCT("td", "Registered Users"),
-		    ?XCT("td", "Online Users")
+    [?XE('table',
+	 [?XE('thead',
+	      [?XE('tr',
+		   [?XCT('td', "Host"),
+		    ?XCT('td', "Registered Users"),
+		    ?XCT('td', "Online Users")
 		   ])]),
-	  ?XE("tbody",
+	  ?XE('tbody',
 	      lists:map(
 		fun(Host) ->
 			OnlineUsers =
 			    length(ejabberd_sm:get_vh_session_list(Host)),
 			RegisteredUsers =
 			    ejabberd_auth:get_vh_registered_users_number(Host),
-			?XE("tr",
-			    [?XE("td", [?AC("../server/" ++ Host ++ "/", Host)]),
-			     ?XC("td", integer_to_list(RegisteredUsers)),
-			     ?XC("td", integer_to_list(OnlineUsers))
+			?XE('tr',
+			    [?XE('td', [?AC("../server/" ++ Host ++ "/", Host)]),
+			     ?XC('td', integer_to_list(RegisteredUsers)),
+			     ?XC('td', integer_to_list(OnlineUsers))
 			    ])
 		end, SHosts)
 	     )])].
@@ -1280,23 +1284,23 @@ list_users(Host, Query, Lang, URLFunc) ->
 	error -> [?CT("Bad format"), ?P];
 	nothing -> []
     end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
-	      [?XE("table",
-		   [?XE("tr",
-			[?XC("td", ?T("User") ++ ":"),
-			 ?XE("td", [?INPUT("text", "newusername", "")]),
-			 ?XE("td", [?C([" @ ", Host])])
+	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
+	      [?XE('table',
+		   [?XE('tr',
+			[?XC('td', ?T("User") ++ ":"),
+			 ?XE('td', [?INPUT("text", "newusername", "")]),
+			 ?XE('td', [?C([" @ ", Host])])
 			]),
-		    ?XE("tr",
-			[?XC("td", ?T("Password") ++ ":"),
-			 ?XE("td", [?INPUT("password", "newuserpassword", "")]),
-			 ?X("td")
+		    ?XE('tr',
+			[?XC('td', ?T("Password") ++ ":"),
+			 ?XE('td', [?INPUT("password", "newuserpassword", "")]),
+			 ?X('td')
 			]),
-		    ?XE("tr",
-			[?X("td"),
-			 ?XAE("td", [{"class", "alignright"}],
+		    ?XE('tr',
+			[?X('td'),
+			 ?XAE('td', [#xmlattr{name = 'class', value = "alignright"}],
 			      [?INPUTT("submit", "addnewuser", "Add User")]),
-			 ?X("td")
+			 ?X('td')
 			])]),
 	       ?P] ++
 	      FUsers)].
@@ -1309,16 +1313,17 @@ list_users_parse_query(Query, Host) ->
 		lists:keysearch("newusername", 1, Query),
 	    {value, {_, Password}} =
 		lists:keysearch("newuserpassword", 1, Query),
-	    case jlib:string_to_jid(Username++"@"++Host) of
-		error ->
-		    error;
-		#jid{user = User, server = Server} ->
-		    case ejabberd_auth:try_register(User, Server, Password) of
-			{error, _Reason} ->
-			    error;
-			_ ->
-			    ok
-		    end
+	    try
+		#jid{node = User, domain = Server} = exmpp_jid:list_to_jid(Username++"@"++Host),
+		case ejabberd_auth:try_register(User, Server, Password) of
+		    {error, _Reason} ->
+			error;
+		    _ ->
+			ok
+		end
+	    catch
+		_ ->
+		    error
 	    end;
 	false ->
 	    nothing
@@ -1335,13 +1340,13 @@ list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     [list_given_users(Sub, "../../", Lang, URLFunc)].
 
 list_given_users(Users, Prefix, Lang, URLFunc) ->
-    ?XE("table",
-	[?XE("thead",
-	     [?XE("tr",
-		  [?XCT("td", "User"),
-		   ?XCT("td", "Offline Messages"),
-		   ?XCT("td", "Last Activity")])]),
-	 ?XE("tbody",
+    ?XE('table',
+	[?XE('thead',
+	     [?XE('tr',
+		  [?XCT('td', "User"),
+		   ?XCT('td', "Offline Messages"),
+		   ?XCT('td', "Last Activity")])]),
+	 ?XE('tbody',
 	     lists:map(
 	       fun(_SU = {Server, User}) ->
 		       US = {User, Server},
@@ -1370,22 +1375,22 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 			       _ ->
 				   ?T("Online")
 			   end,
-		       ?XE("tr",
-			   [?XE("td",
+		       ?XE('tr',
+			   [?XE('td',
 				[?AC(URLFunc({user, Prefix,
 					      ejabberd_http:url_encode(User),
 					      Server}),
 				     us_to_list(US))]),
-			    ?XE("td", FQueueLen),
-			    ?XC("td", FLast)])
+			    ?XE('td', FQueueLen),
+			    ?XC('td', FLast)])
 	       end, Users)
 	    )]).
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    exmpp_jid:jid_to_list(User, Server, undefined).
 
 su_to_list({Server, User}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    exmpp_jid:jid_to_list(User, Server, undefined).
 
 
 get_stats(global, Lang) ->
@@ -1394,28 +1399,28 @@ get_stats(global, Lang) ->
     S2SConns = ejabberd_s2s:dirty_get_connections(),
     S2SConnections = length(S2SConns),
     S2SServers = length(lists:usort([element(2, C) || C <- S2SConns])),
-    [?XAE("table", [],
-	  [?XE("tbody",
-	       [?XE("tr", [?XCT("td", "Registered Users:"),
-			   ?XC("td", integer_to_list(RegisteredUsers))]),
-		?XE("tr", [?XCT("td", "Online Users:"),
-			   ?XC("td", integer_to_list(OnlineUsers))]),
-		?XE("tr", [?XCT("td", "Outgoing s2s Connections:"),
-			   ?XC("td", integer_to_list(S2SConnections))]),
-		?XE("tr", [?XCT("td", "Outgoing s2s Servers:"),
-			   ?XC("td", integer_to_list(S2SServers))])
+    [?XAE('table', [],
+	  [?XE('tbody',
+	       [?XE('tr', [?XCT('td', "Registered Users:"),
+			   ?XC('td', integer_to_list(RegisteredUsers))]),
+		?XE('tr', [?XCT('td', "Online Users:"),
+			   ?XC('td', integer_to_list(OnlineUsers))]),
+		?XE('tr', [?XCT('td', "Outgoing s2s Connections:"),
+			   ?XC('td', integer_to_list(S2SConnections))]),
+		?XE('tr', [?XCT('td', "Outgoing s2s Servers:"),
+			   ?XC('td', integer_to_list(S2SServers))])
 	       ])
 	  ])];
 
 get_stats(Host, Lang) ->
     OnlineUsers = length(ejabberd_sm:get_vh_session_list(Host)),
     RegisteredUsers = ejabberd_auth:get_vh_registered_users_number(Host),
-    [?XAE("table", [],
-	  [?XE("tbody",
-	       [?XE("tr", [?XCT("td", "Registered Users:"),
-			   ?XC("td", integer_to_list(RegisteredUsers))]),
-		?XE("tr", [?XCT("td", "Online Users:"),
-			   ?XC("td", integer_to_list(OnlineUsers))])
+    [?XAE('table', [],
+	  [?XE('tbody',
+	       [?XE('tr', [?XCT('td', "Registered Users:"),
+			   ?XC('td', integer_to_list(RegisteredUsers))]),
+		?XE('tr', [?XCT('td', "Online Users:"),
+			   ?XC('td', integer_to_list(OnlineUsers))])
 	       ])
 	  ])].
 
@@ -1431,8 +1436,8 @@ list_online_users(Host, _Lang) ->
       end, SUsers).
 
 user_info(User, Server, Query, Lang) ->
-    LServer = jlib:nameprep(Server),
-    US = {jlib:nodeprep(User), LServer},
+    LServer = exmpp_stringprep:nameprep(Server),
+    US = {exmpp_stringprep:nodeprep(User), LServer},
     Res = user_parse_query(User, Server, Query),
     Resources = ejabberd_sm:get_user_resources(User, Server),
     FResources =
@@ -1440,7 +1445,7 @@ user_info(User, Server, Query, Lang) ->
 	    [] ->
 		[?CT("None")];
 	    _ ->
-		[?XE("ul",
+		[?XE('ul',
 		     lists:map(fun(R) ->
 				       FIP = case ejabberd_sm:get_user_ip(
 						    User, Server, R) of
@@ -1461,15 +1466,15 @@ user_info(User, Server, Query, Lang) ->
 		 ?INPUTT("submit", "chpassword", "Change Password")],
     UserItems = ejabberd_hooks:run_fold(webadmin_user, LServer, [],
 					[User, Server, Lang]),
-    [?XC("h1", ?T("User ") ++ us_to_list(US))] ++
+    [?XC('h1', ?T("User ") ++ us_to_list(US))] ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
 	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
-	      [?XCT("h3", "Connected Resources:")] ++ FResources ++
-	      [?XCT("h3", "Password:")] ++ FPassword ++
+	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
+	      [?XCT('h3', "Connected Resources:")] ++ FResources ++
+	      [?XCT('h3', "Password:")] ++ FPassword ++
 	      UserItems ++
 	      [?P, ?INPUTT("submit", "removeuser", "Remove User")])].
 
@@ -1545,13 +1550,13 @@ list_last_activity(Host, Lang, Integral, Period) ->
 				   lists:duplicate(Left, 0)
 			   end,
 		    Max = lists:max(Hist),
-		    [?XAE("ol",
-			  [{"id", "lastactivity"}, {"start", "0"}],
-			  [?XAE("li",
-				[{"style",
+		    [?XAE('ol',
+			  [#xmlattr{name = 'id', value = "lastactivity"}, #xmlattr{name = 'start', value = "0"}],
+			  [?XAE('li',
+				[#xmlattr{name = 'style', value =
 				  "width:" ++ integer_to_list(
 						trunc(90 * V / Max)) ++ "%;"}],
-				[{xmlcdata, integer_to_list(V)}])
+				[#xmlcdata{cdata = list_to_binary(integer_to_list(V))}])
 			   || V <- Hist ++ Tail])]
 	    end
     end.
@@ -1588,7 +1593,7 @@ get_nodes(Lang) ->
 	      RunningNodes == [] ->
 		  ?CT("None");
 	      true ->
-		  ?XE("ul",
+		  ?XE('ul',
 		      lists:map(
 			fun(N) ->
 				S = atom_to_list(N),
@@ -1599,17 +1604,17 @@ get_nodes(Lang) ->
 	      StoppedNodes == [] ->
 		  ?CT("None");
 	      true ->
-		  ?XE("ul",
+		  ?XE('ul',
 		      lists:map(
 			fun(N) ->
 				S = atom_to_list(N),
 				?LI([?C(S)])
 			end, lists:sort(StoppedNodes)))
 	  end,
-    [?XCT("h1", "Nodes"),
-     ?XCT("h3", "Running Nodes"),
+    [?XCT('h1', "Nodes"),
+     ?XCT('h3', "Running Nodes"),
      FRN,
-     ?XCT("h3", "Stopped Nodes"),
+     ?XCT('h3', "Stopped Nodes"),
      FSN].
 
 search_running_node(SNode) ->
@@ -1629,37 +1634,37 @@ get_node(global, Node, [], Query, Lang) ->
     Res = node_parse_query(Node, Query),
     Base = get_base_path(global, Node),
     MenuItems2 = make_menu_items(global, Node, Base, Lang),
-    [?XC("h1", ?T("Node ") ++ atom_to_list(Node))] ++
+    [?XC('h1', ?T("Node ") ++ atom_to_list(Node))] ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
 	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XE("ul",
+	[?XE('ul',
 	     [?LI([?ACT(Base ++ "db/", "Database")]),
 	      ?LI([?ACT(Base ++ "backup/", "Backup")]),
 	      ?LI([?ACT(Base ++ "ports/", "Listened Ports")]),
 	      ?LI([?ACT(Base ++ "stats/", "Statistics")]),
 	      ?LI([?ACT(Base ++ "update/", "Update")])
 	     ] ++ MenuItems2),
-	 ?XAE("form", [{"action", ""}, {"method", "post"}],
-	      [?INPUTT("submit", "restart", "Restart"),
+	 ?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
+	      [?INPUTT('submit', "restart", "Restart"),
 	       ?C(" "),
-	       ?INPUTT("submit", "stop", "Stop")])
+	       ?INPUTT('submit', "stop", "Stop")])
 	];
 
 get_node(Host, Node, [], _Query, Lang) ->
     Base = get_base_path(Host, Node),
     MenuItems2 = make_menu_items(global, Node, Base, Lang),
-    [?XC("h1", ?T("Node ") ++ atom_to_list(Node)),
-     ?XE("ul",
+    [?XC('h1', ?T("Node ") ++ atom_to_list(Node)),
+     ?XE('ul',
 	 [?LI([?ACT(Base ++ "modules/", "Modules")])] ++ MenuItems2)
     ];
 
 get_node(global, Node, ["db"], Query, Lang) ->
     case rpc:call(Node, mnesia, system_info, [tables]) of
 	{badrpc, _Reason} ->
-	    [?XCT("h1", "RPC Call Error")];
+	    [?XCT('h1', "RPC Call Error")];
 	Tables ->
 	    node_db_parse_query(Node, Tables, Query),
 	    STables = lists:sort(Tables),
@@ -1687,32 +1692,32 @@ get_node(global, Node, ["db"], Query, Lang) ->
 				     _ ->
 					 {unknown, 0, 0}
 				 end,
-			     ?XE("tr",
-				 [?XC("td", STable),
-				  ?XE("td", [db_storage_select(
+			     ?XE('tr',
+				 [?XC('td', STable),
+				  ?XE('td', [db_storage_select(
 					       STable, Type, Lang)]),
-				  ?XAC("td", [{"class", "alignright"}],
+				  ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				       integer_to_list(Size)),
-				  ?XAC("td", [{"class", "alignright"}],
+				  ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				       integer_to_list(Memory))
 				 ])
 		     end, STables),
-	    [?XC("h1", ?T("Database Tables at ") ++ atom_to_list(Node))] ++
+	    [?XC('h1', ?T("Database Tables at ") ++ atom_to_list(Node))] ++
 		[?CT("Submitted"), ?P] ++
-		[?XAE("form", [{"action", ""}, {"method", "post"}],
-		      [?XAE("table", [],
-			    [?XE("thead",
-				 [?XE("tr",
-				      [?XCT("td", "Name"),
-				       ?XCT("td", "Storage Type"),
-				       ?XCT("td", "Size"),
-				       ?XCT("td", "Memory")
+		[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
+		      [?XAE('table', [],
+			    [?XE('thead',
+				 [?XE('tr',
+				      [?XCT('td', "Name"),
+				       ?XCT('td', "Storage Type"),
+				       ?XCT('td', "Size"),
+				       ?XCT('td', "Memory")
 				      ])]),
-			     ?XE("tbody",
+			     ?XE('tbody',
 				 Rows ++
-				 [?XE("tr",
-				      [?XAE("td", [{"colspan", "4"},
-						   {"class", "alignright"}],
+				 [?XE('tr',
+				      [?XAE('td', [#xmlattr{name = 'colspan', value = "4"},
+						   #xmlattr{name = 'class', value = "alignright"}],
 					    [?INPUTT("submit", "submit",
 						     "Submit")])
 				      ])]
@@ -1721,45 +1726,45 @@ get_node(global, Node, ["db"], Query, Lang) ->
 
 get_node(global, Node, ["backup"], Query, Lang) ->
     _Res = node_backup_parse_query(Node, Query),
-    [?XC("h1", ?T("Backup of ") ++ atom_to_list(Node)),
-     ?XCT("p", "Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
-     ?XAE("form", [{"action", ""}, {"method", "post"}],
-	  [?XAE("table", [],
-		[?XE("tbody",
-		     [?XE("tr",
- 			  [?XCT("td", "Store binary backup:"),
-			   ?XE("td", [?INPUT("text", "storepath",
+    [?XC('h1', ?T("Backup of ") ++ atom_to_list(Node)),
+     ?XCT('p', "Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
+     ?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
+	  [?XAE('table', [],
+		[?XE('tbody',
+		     [?XE('tr',
+ 			  [?XCT('td', "Store binary backup:"),
+			   ?XE('td', [?INPUT("text", "storepath",
 					     "ejabberd.backup")]),
-			   ?XE("td", [?INPUTT("submit", "store",
+			   ?XE('td', [?INPUTT("submit", "store",
 					      "OK")])
 			  ]),
-		      ?XE("tr",
- 			  [?XCT("td", "Restore binary backup immediately:"),
-			   ?XE("td", [?INPUT("text", "restorepath",
+		      ?XE('tr',
+ 			  [?XCT('td', "Restore binary backup immediately:"),
+			   ?XE('td', [?INPUT("text", "restorepath",
 					     "ejabberd.backup")]),
-			   ?XE("td", [?INPUTT("submit", "restore",
+			   ?XE('td', [?INPUTT("submit", "restore",
 					      "OK")])
 			  ]),
-		      ?XE("tr",
-			  [?XCT("td",
+		      ?XE('tr',
+			  [?XCT('td',
 				"Restore binary backup after next ejabberd restart (requires less memory):"),
-			   ?XE("td", [?INPUT("text", "fallbackpath",
+			   ?XE('td', [?INPUT("text", "fallbackpath",
 					     "ejabberd.backup")]),
-			   ?XE("td", [?INPUTT("submit", "fallback",
+			   ?XE('td', [?INPUTT("submit", "fallback",
 					      "OK")])
 			  ]),
-		      ?XE("tr",
-			  [?XCT("td", "Store plain text backup:"),
-			   ?XE("td", [?INPUT("text", "dumppath",
+		      ?XE('tr',
+			  [?XCT('td', "Store plain text backup:"),
+			   ?XE('td', [?INPUT("text", "dumppath",
 					     "ejabberd.dump")]),
-			   ?XE("td", [?INPUTT("submit", "dump",
+			   ?XE('td', [?INPUTT("submit", "dump",
 					      "OK")])
 			  ]),
-		      ?XE("tr",
-			  [?XCT("td", "Restore plain text backup immediately:"),
-			   ?XE("td", [?INPUT("text", "loadpath",
+		      ?XE('tr',
+			  [?XCT('td', "Restore plain text backup immediately:"),
+			   ?XE('td', [?INPUT("text", "loadpath",
 					     "ejabberd.dump")]),
-			   ?XE("td", [?INPUTT("submit", "load",
+			   ?XE('td', [?INPUTT("submit", "load",
 					      "OK")])
 			  ])
 		     ])
@@ -1777,13 +1782,13 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 	  end,
     NewPorts = lists:sort(
 		 rpc:call(Node, ejabberd_config, get_local_option, [listen])),
-    [?XC("h1", ?T("Listened Ports at ") ++ atom_to_list(Node))] ++
+    [?XC('h1', ?T("Listened Ports at ") ++ atom_to_list(Node))] ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
 	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
 	      [node_ports_to_xhtml(NewPorts, Lang)])
 	];
 
@@ -1800,13 +1805,13 @@ get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
 	  end,
     NewModules = lists:sort(
 		   rpc:call(Node, gen_mod, loaded_modules_with_opts, [Host])),
-    [?XC("h1", ?T("Modules at ") ++ atom_to_list(Node))] ++
+    [?XC('h1', ?T("Modules at ") ++ atom_to_list(Node))] ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
 	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
 	      [node_modules_to_xhtml(NewModules, Lang)])
 	];
 
@@ -1825,29 +1830,29 @@ get_node(global, Node, ["stats"], _Query, Lang) ->
     TransactionsLogged =
 	rpc:call(Node, mnesia, system_info, [transaction_log_writes]),
     
-    [?XC("h1", io_lib:format(?T("Statistics of ~p"), [Node])),
-     ?XAE("table", [],
-	  [?XE("tbody",
-	       [?XE("tr", [?XCT("td", "Uptime:"),
-			   ?XAC("td", [{"class", "alignright"}],
+    [?XC('h1', io_lib:format(?T("Statistics of ~p"), [Node])),
+     ?XAE('table', [],
+	  [?XE('tbody',
+	       [?XE('tr', [?XCT('td', "Uptime:"),
+			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				UpTimeS)]),
-		?XE("tr", [?XCT("td", "CPU Time:"),
-			   ?XAC("td", [{"class", "alignright"}],
+		?XE('tr', [?XCT('td', "CPU Time:"),
+			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				CPUTimeS)]),
-		?XE("tr", [?XCT("td", "Online Users:"),
-			   ?XAC("td", [{"class", "alignright"}],
+		?XE('tr', [?XCT('td', "Online Users:"),
+			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				integer_to_list(OnlineUsers))]),
-		?XE("tr", [?XCT("td", "Transactions Commited:"),
-			   ?XAC("td", [{"class", "alignright"}],
+		?XE('tr', [?XCT('td', "Transactions Commited:"),
+			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				integer_to_list(TransactionsCommited))]),
-		?XE("tr", [?XCT("td", "Transactions Aborted:"),
-			   ?XAC("td", [{"class", "alignright"}],
+		?XE('tr', [?XCT('td', "Transactions Aborted:"),
+			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				integer_to_list(TransactionsAborted))]),
-		?XE("tr", [?XCT("td", "Transactions Restarted:"),
-			   ?XAC("td", [{"class", "alignright"}],
+		?XE('tr', [?XCT('td', "Transactions Restarted:"),
+			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				integer_to_list(TransactionsRestarted))]),
-		?XE("tr", [?XCT("td", "Transactions Logged:"),
-			   ?XAC("td", [{"class", "alignright"}],
+		?XE('tr', [?XCT('td', "Transactions Logged:"),
+			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				integer_to_list(TransactionsLogged))])
 	       ])
 	  ])];
@@ -1863,25 +1868,25 @@ get_node(global, Node, ["update"], Query, Lang) ->
 	    [] ->
 		?CT("None");
 	    _ ->
-		?XE("ul",
+		?XE('ul',
 		    [?LI([?C(atom_to_list(Beam))]) ||
 			Beam <- UpdatedBeams])
 	end,
-    FmtScript = ?XC("pre", io_lib:format("~p", [Script])),
-    FmtLowLevelScript = ?XC("pre", io_lib:format("~p", [LowLevelScript])),
-    [?XC("h1", ?T("Update ") ++ atom_to_list(Node))] ++
+    FmtScript = ?XC('pre', io_lib:format("~p", [Script])),
+    FmtLowLevelScript = ?XC('pre', io_lib:format("~p", [LowLevelScript])),
+    [?XC('h1', ?T("Update ") ++ atom_to_list(Node))] ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
 	    error -> [?CT("Bad format"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
 	      [?INPUTT("submit", "update", "Update"),
-	       ?XCT("h2", "Update plan"),
-	       ?XCT("h3", "Updated modules"), Mods,
-	       ?XCT("h3", "Update script"), FmtScript,
-	       ?XCT("h3", "Low level update script"), FmtLowLevelScript,
-	       ?XCT("h3", "Script check"), ?C(atom_to_list(Check))])
+	       ?XCT('h2', "Update plan"),
+	       ?XCT('h3', "Updated modules"), Mods,
+	       ?XCT('h3', "Update script"), FmtScript,
+	       ?XCT('h3', "Low level update script"), FmtLowLevelScript,
+	       ?XCT('h3', "Script check"), ?C(atom_to_list(Check))])
 	];
 
 get_node(Host, Node, NPath, Query, Lang) ->
@@ -1890,7 +1895,7 @@ get_node(Host, Node, NPath, Query, Lang) ->
 		       Host -> {webadmin_page_hostnode, [Host, Node, NPath, Query, Lang]}
 		   end,
     case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
-	[] -> [?XC("h1", "Not Found")];
+	[] -> [?XC('h1', "Not Found")];
 	Res -> Res
     end.
 
@@ -1921,15 +1926,15 @@ node_parse_query(Node, Query) ->
 
 
 db_storage_select(ID, Opt, Lang) ->
-    ?XAE("select", [{"name", "table" ++ ID}],
+    ?XAE('select', [#xmlattr{name = 'name', value = "table" ++ ID}],
 	 lists:map(
 	   fun({O, Desc}) ->
 		   Sel = if
-			     O == Opt -> [{"selected", "selected"}];
+			     O == Opt -> [#xmlattr{name = 'selected', value = "selected"}];
 			     true -> []
 			 end,
-		   ?XACT("option",
-			 Sel ++ [{"value", atom_to_list(O)}],
+		   ?XACT('option',
+			 Sel ++ [#xmlattr{name = 'value', value = atom_to_list(O)}],
 			 Desc)
 	   end, [{ram_copies, "RAM copy"},
 		 {disc_copies, "RAM and disc copy"},
@@ -2014,37 +2019,37 @@ node_backup_parse_query(Node, Query) ->
 
 
 node_ports_to_xhtml(Ports, Lang) ->
-    ?XAE("table", [],
-	 [?XE("thead",
-	      [?XE("tr",
-		   [?XCT("td", "Port"),
-		    ?XCT("td", "Module"),
-		    ?XCT("td", "Options")
+    ?XAE('table', [],
+	 [?XE('thead',
+	      [?XE('tr',
+		   [?XCT('td', "Port"),
+		    ?XCT('td', "Module"),
+		    ?XCT('td', "Options")
 		   ])]),
-	  ?XE("tbody",
+	  ?XE('tbody',
 	      lists:map(
 		fun({Port, Module, Opts} = _E) ->
 			SPort = integer_to_list(Port),
 			SModule = atom_to_list(Module),
 			%%ID = term_to_id(E),
-			?XE("tr",
-			    [?XC("td", SPort),
-			     ?XE("td", [?INPUT("text", "module" ++ SPort,
+			?XE('tr',
+			    [?XC('td', SPort),
+			     ?XE('td', [?INPUT("text", "module" ++ SPort,
 					       SModule)]),
-			     ?XE("td", [?INPUTS("text", "opts" ++ SPort,
+			     ?XE('td', [?INPUTS("text", "opts" ++ SPort,
 						term_to_string(Opts), "40")]),
-			     ?XE("td", [?INPUTT("submit", "add" ++ SPort,
+			     ?XE('td', [?INPUTT("submit", "add" ++ SPort,
 						"Update")]),
-			     ?XE("td", [?INPUTT("submit", "delete" ++ SPort,
+			     ?XE('td', [?INPUTT("submit", "delete" ++ SPort,
 						"Delete")])
 			    ]
 			   )
 		end, Ports) ++
-	      [?XE("tr",
-		   [?XE("td", [?INPUTS("text", "portnew", "", "6")]),
-		    ?XE("td", [?INPUT("text", "modulenew", "")]),
-		    ?XE("td", [?INPUTS("text", "optsnew", "", "40")]),
-		    ?XAE("td", [{"colspan", "2"}],
+	      [?XE('tr',
+		   [?XE('td', [?INPUTS("text", "portnew", "", "6")]),
+		    ?XE('td', [?INPUT("text", "modulenew", "")]),
+		    ?XE('td', [?INPUTS("text", "optsnew", "", "40")]),
+		    ?XAE('td', [#xmlattr{name = 'colspan', value = "2"}],
 			 [?INPUTT("submit", "addnew", "Add New")])
 		   ]
 		  )]
@@ -2095,32 +2100,32 @@ node_ports_parse_query(Node, Ports, Query) ->
     end.
 
 node_modules_to_xhtml(Modules, Lang) ->
-    ?XAE("table", [],
-	 [?XE("thead",
-	      [?XE("tr",
-		   [?XCT("td", "Module"),
-		    ?XCT("td", "Options")
+    ?XAE('table', [],
+	 [?XE('thead',
+	      [?XE('tr',
+		   [?XCT('td', "Module"),
+		    ?XCT('td', "Options")
 		   ])]),
-	  ?XE("tbody",
+	  ?XE('tbody',
 	      lists:map(
 		fun({Module, Opts} = _E) ->
 			SModule = atom_to_list(Module),
 			%%ID = term_to_id(E),
-			?XE("tr",
-			    [?XC("td", SModule),
-			     ?XE("td", [?INPUTS("text", "opts" ++ SModule,
+			?XE('tr',
+			    [?XC('td', SModule),
+			     ?XE('td', [?INPUTS("text", "opts" ++ SModule,
 						term_to_string(Opts), "40")]),
-			     ?XE("td", [?INPUTT("submit", "restart" ++ SModule,
+			     ?XE('td', [?INPUTT("submit", "restart" ++ SModule,
 						"Restart")]),
-			     ?XE("td", [?INPUTT("submit", "stop" ++ SModule,
+			     ?XE('td', [?INPUTT("submit", "stop" ++ SModule,
 						"Stop")])
 			    ]
 			   )
 		end, Modules) ++
-	      [?XE("tr",
-		   [?XE("td", [?INPUT("text", "modulenew", "")]),
-		    ?XE("td", [?INPUTS("text", "optsnew", "", "40")]),
-		    ?XAE("td", [{"colspan", "2"}],
+	      [?XE('tr',
+		   [?XE('td', [?INPUT("text", "modulenew", "")]),
+		    ?XE('td', [?INPUTS("text", "optsnew", "", "40")]),
+		    ?XAE('td', [#xmlattr{name = 'colspan', value = "2"}],
 			 [?INPUTT("submit", "start", "Start")])
 		   ]
 		  )]
@@ -2180,48 +2185,6 @@ node_update_parse_query(Node, Query) ->
 	    nothing
     end.
 
-
-pretty_print_xml(El) ->
-    lists:flatten(pretty_print_xml(El, "")).
-
-pretty_print_xml({xmlcdata, CData}, Prefix) ->
-    [Prefix, CData, $\n];
-pretty_print_xml({xmlelement, Name, Attrs, Els}, Prefix) ->
-    [Prefix, $<, Name,
-     case Attrs of
-	 [] ->
-	     [];
-	 [{Attr, Val} | RestAttrs] ->
-	     AttrPrefix = [Prefix,
-			   string:copies(" ", length(Name) + 2)],
-	     [$\s, Attr, $=, $', xml:crypt(Val), $' |
-	      lists:map(fun({Attr1, Val1}) ->
-				[$\n, AttrPrefix,
-				 Attr1, $=, $', xml:crypt(Val1), $']
-			end, RestAttrs)]
-     end,
-     if
-	 Els == [] ->
-	     "/>\n";
-	 true ->
-	     OnlyCData = lists:all(fun({xmlcdata, _}) -> true;
-				      ({xmlelement, _, _, _}) -> false
-				   end, Els),
-	     if
-		 OnlyCData ->
-		     [$>,
-		      xml:get_cdata(Els),
-		      $<, $/, Name, $>, $\n
-		     ];
-		 true ->
-		     [$>, $\n,
-		      lists:map(fun(E) ->
-					pretty_print_xml(E, [Prefix, "  "])
-				end, Els),
-		      Prefix, $<, $/, Name, $>, $\n
-		     ]
-	     end
-     end].
 
 element_to_list(X) when is_atom(X) -> atom_to_list(X);
 element_to_list(X) when is_integer(X) -> integer_to_list(X).
@@ -2362,14 +2325,14 @@ make_menu_items2(Lang, Deep, {MURI, MName, [Item | Items]}, Res) ->
     make_menu_items2(Lang, Deep, {MURI, MName, Items}, Res2).
 
 make_menu_item(header, 1, URI, Name, _Lang) ->
-    ?LI([?XAE("div", [{"id", "navhead"}], [?AC(URI, "~ "++Name++" ~")] )]);
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navhead"}], [?AC(URI, "~ "++Name++" ~")] )]);
 make_menu_item(header, 2, URI, Name, _Lang) ->
-    ?LI([?XAE("div", [{"id", "navheadsub"}], [?AC(URI, "~ "++Name++" ~")] )]);
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navheadsub"}], [?AC(URI, "~ "++Name++" ~")] )]);
 make_menu_item(header, 3, URI, Name, _Lang) ->
-    ?LI([?XAE("div", [{"id", "navheadsubsub"}], [?AC(URI, "~ "++Name++" ~")] )]);
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navheadsubsub"}], [?AC(URI, "~ "++Name++" ~")] )]);
 make_menu_item(item, 1, URI, Name, Lang) ->
-    ?LI([?XAE("div", [{"id", "navitem"}], [?ACT(URI, Name)] )]);
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navitem"}], [?ACT(URI, Name)] )]);
 make_menu_item(item, 2, URI, Name, Lang) ->
-    ?LI([?XAE("div", [{"id", "navitemsub"}], [?ACT(URI, Name)] )]);
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navitemsub"}], [?ACT(URI, Name)] )]);
 make_menu_item(item, 3, URI, Name, Lang) ->
-    ?LI([?XAE("div", [{"id", "navitemsubsub"}], [?ACT(URI, Name)] )]).
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navitemsubsub"}], [?ACT(URI, Name)] )]).

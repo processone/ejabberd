@@ -35,8 +35,9 @@
 	 receive_headers/1,
 	 url_encode/1]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("ejabberd_http.hrl").
 
 -record(state, {sockmod,
@@ -202,7 +203,7 @@ process_header(State, Data) ->
 			request_path = Path,
 			request_keepalive = KeepAlive};
 	{ok, {http_header, _, 'Connection', _, Conn}} ->
-	    KeepAlive1 = case jlib:tolower(Conn) of
+	    KeepAlive1 = case exmpp_stringprep:to_lower(Conn) of
 			     "keep-alive" ->
 				 true;
 			     "close" ->
@@ -349,10 +350,9 @@ process_request(#state{request_method = Method,
 	    %% procedure (process) that handles dispatching based on
 	    %% URL path prefix.
 	    case process(RequestHandlers, Request) of
-		El when element(1, El) == xmlelement ->
+		El when is_record(El, xmlel) ->
 		    make_xhtml_output(State, 200, [], El);
-		{Status, Headers, El} when
-		element(1, El) == xmlelement ->
+		{Status, Headers, El} when is_record(El, xmlel) ->
 		    make_xhtml_output(State, Status, Headers, El);
 		Output when is_list(Output) or is_binary(Output) ->
 		    make_text_output(State, 200, [], Output);
@@ -412,10 +412,9 @@ process_request(#state{request_method = Method,
 			       headers = RequestHeaders,
 			       ip = IP},
 	    case process(RequestHandlers, Request) of
-		El when element(1, El) == xmlelement ->
+		El when is_record(El, xmlel) ->
 		    make_xhtml_output(State, 200, [], El);
-		{Status, Headers, El} when
-		element(1, El) == xmlelement ->
+		{Status, Headers, El} when is_record(El, xmlel) ->
 		    make_xhtml_output(State, Status, Headers, El);
 		Output when is_list(Output) or is_binary(Output) ->
 		    make_text_output(State, 200, [], Output);
@@ -428,8 +427,8 @@ process_request(State) ->
     make_xhtml_output(State,
       400,
       [],
-      ejabberd_web:make_xhtml([{xmlelement, "h1", [],
-				[{xmlcdata, "400 Bad Request"}]}])).
+      ejabberd_web:make_xhtml([#xmlel{ns = ?NS_XHTML, name = 'h1', children =
+				[#xmlcdata{cdata = <<"400 Bad Request">>}]}])).
 
 
 recv_data(State, Len) ->
@@ -459,10 +458,10 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
     Data = case lists:member(html, Headers) of
 	       true ->
 		   list_to_binary([?HTML_DOCTYPE,
-				   element_to_string(XHTML)]);
+				   exmpp_xml:document_to_list(exmpp_xml:indent_document(XHTML, <<>>))]);
 	       _ ->
 		   list_to_binary([?XHTML_DOCTYPE,
-				   element_to_string(XHTML)])
+				   exmpp_xml:document_to_list(exmpp_xml:indent_document(XHTML, <<>>))])
 	   end,
     Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
 		   {value, _} ->
@@ -543,40 +542,6 @@ parse_lang(Langs) ->
 	[] ->
 	    "en"
     end.
-
-element_to_string(El) ->
-    case El of
-	{xmlelement, Name, Attrs, Els} ->
-	    if
-		Els /= [] ->
-		    [$<, Name, attrs_to_list(Attrs), $>,
-		     [element_to_string(E) || E <- Els],
-		     $<, $/, Name, $>];
-	       true ->
-		    [$<, Name, attrs_to_list(Attrs), $/, $>]
-	       end;
-	{xmlcdata, CData} ->
-	    crypt(CData)
-    end.
-
-attrs_to_list(Attrs) ->
-    [attr_to_list(A) || A <- Attrs].
-
-attr_to_list({Name, Value}) ->
-    [$\s, crypt(Name), $=, $", crypt(Value), $"].
-
-crypt(S) when is_list(S) ->
-    [case C of
-	 $& -> "&amp;";
-	 $< -> "&lt;";
-	 $> -> "&gt;";
-	 $" -> "&quot;";
-	 $' -> "&#39;";
-	 _ -> C
-     end || C <- S];
-crypt(S) when is_binary(S) ->
-    crypt(binary_to_list(S)).
-
 
 % Code below is taken (with some modifications) from the yaws webserver, which
 % is distributed under the folowing license:

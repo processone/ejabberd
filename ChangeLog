@@ -1,5 +1,12 @@
 2008-10-13  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	* src/web/ejabberd_http.erl, src/web/ejabberd_http_poll.erl,
+	src/web/ejabberd_web.erl, src/web/ejabberd_web_admin.erl,
+	src/web/ejabberd_web_admin.hrl: Convert to exmpp. The admin web
+	interface is working but HTTP polling seems broken in the trunk.
+
+2008-10-13  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	Merge from trunk (r1613 to 1649).
 
 	* src/jlib.erl: Remove all deprecated functions.
