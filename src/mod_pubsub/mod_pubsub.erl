@@ -491,7 +491,7 @@ handle_cast({presence, JID, Pid}, State) ->
 					    whitelist -> false; % subscribers are added manually
 					    authorize -> false; % likewise
 					    roster ->
-						Grps = get_option(Options, roster_groups_allowed),
+						Grps = get_option(Options, roster_groups_allowed, []),
 						element(2, get_roster_info(User, Server, LJID, Grps))
 					end,
 					if Subscribed ->
@@ -1345,7 +1345,7 @@ subscribe_node(Host, Node, From, JID) ->
 		     SubscribeConfig = get_option(Options, subscribe),
 		     AccessModel = get_option(Options, access_model),
 		     SendLast = get_option(Options, send_last_published_item),
-		     AllowedGroups = get_option(Options, roster_groups_allowed),
+		     AllowedGroups = get_option(Options, roster_groups_allowed, []),
 		     {PresenceSubscription, RosterGroup} =
 			 case Host of
 			     {OUser, OServer, _} ->
@@ -1661,7 +1661,7 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 		     RetreiveFeature = lists:member("retrieve-items", Features),
 		     PersistentFeature = lists:member("persistent-items", Features),
 		     AccessModel = get_option(Options, access_model),
-		     AllowedGroups = get_option(Options, roster_groups_allowed),
+		     AllowedGroups = get_option(Options, roster_groups_allowed, []),
 		     {PresenceSubscription, RosterGroup} =
 			 case Host of
 			     {OUser, OServer, _} ->
@@ -2501,7 +2501,7 @@ get_configure_xfields(_Type, Options, Lang, _Owners) ->
 			    {"label", translate:translate(Lang, "Roster groups allowed to subscribe")},
 			    {"var", "pubsub#roster_groups_allowed"}],
       [{xmlelement, "value", [], [{xmlcdata, Value}]} ||
-	  Value <- get_option(Options, roster_groups_allowed)]},
+	  Value <- get_option(Options, roster_groups_allowed, [])]},
      ?ALIST_CONFIG_FIELD("Specify the publisher model", publish_model,
 			 [publishers, subscribers, open]),
      ?INTEGER_CONFIG_FIELD("Max payload size in bytes", max_payload_size),
