@@ -3,6 +3,9 @@
 	* src/mod_pubsub/mod_pubsub.erl: fix badarg issue on get_roster_info
 	when allowed roster groups is not defined
 
+	* src/mod_pubsub/mod_pubsub.erl: fix remove_user not unsubscribing
+	user (EJAB-684)
+
 2008-10-13  Jerome Sautret  <jerome.sautret@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: log MySQL driver messages.

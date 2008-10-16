@@ -513,8 +513,9 @@ handle_cast({presence, JID, Pid}, State) ->
     end,
     {noreply, State};
 
-handle_cast({remove_user, User, Host}, State) ->
-    Owner = jlib:make_jid(User, Host, ""),
+handle_cast({remove_user, LUser, LServer}, State) ->
+    Host = State#state.host,
+    Owner = jlib:make_jid(LUser, LServer, ""),
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     %% remove user's subscriptions
     lists:foreach(fun(Type) ->
@@ -532,7 +533,7 @@ handle_cast({remove_user, User, Host}, State) ->
 	delete_node(NodeKey, NodeName, Owner)
     end, tree_action(Host, get_nodes, [OwnerKey])),
     %% remove user's nodes
-    delete_node(Host, ["home", Host, User], Owner),
+    delete_node(Host, ["home", LServer, LUser], Owner),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
