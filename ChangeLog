@@ -3,6 +3,9 @@
 	* src/mod_pubsub/mod_pubsub.erl: fix badarg issue on get_roster_info
 	when allowed roster groups is not defined
 
+	* src/mod_pubsub/mod_pubsub.erl: fix remove_user not unsubscribing
+	user (EJAB-684)
+
 2008-10-14  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix pubsub_publish_item hook
