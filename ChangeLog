@@ -6,6 +6,9 @@
 	* src/mod_pubsub/mod_pubsub.erl: fix remove_user not unsubscribing
 	user (EJAB-684)
 
+	* src/mod_pubsub/node_default.erl: does not write item when max_items
+	set to 0 (solves EJAB-768)
+
 2008-10-14  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix pubsub_publish_item hook

@@ -455,10 +455,12 @@ publish_item(Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 			   OldItem#pubsub_item{modification = PubId,
 					       payload = Payload}
 		   end,
-	    Items = [ItemId | State#pubsub_state.items],
+	    Items = [ItemId | State#pubsub_state.items--[ItemId]],
 	    {result, {NI, OI}} = remove_extra_items(
 				   Host, Node, MaxItems, Items),
-	    set_item(Item),
+	    if MaxItems > 0 -> set_item(Item);
+	       true -> ok
+	    end,
 	    set_state(State#pubsub_state{items = NI}),
 	    {result, {default, broadcast, OI}}
     end.
