@@ -1,3 +1,8 @@
+2008-10-17  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in: docdir should be prefixed with DESTDIR (thanks
+	to Jack Moffitt)(EJAB-775)
+
 2008-10-17  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix badarg issue on get_roster_info
