@@ -43,8 +43,9 @@
 	 terminate/3,
 	 code_change/4]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -define(SETS, gb_sets).
 
@@ -122,8 +123,8 @@ open_socket(init, StateData) ->
 	{error, Reason} ->
 	    ?DEBUG("connect return ~p~n", [Reason]),
 	    Text = case Reason of
-		       timeout -> "Server Connect Timeout";
-		       _ -> "Server Connect Failed"
+		       timeout -> <<"Server Connect Timeout">>;
+		       _ -> <<"Server Connect Failed">>
 		   end,
 	    bounce_messages(Text),
 	    {stop, normal, StateData}
@@ -197,22 +198,22 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 handle_info({route_chan, Channel, Resource,
-	     {xmlelement, "presence", Attrs, _Els}},
-	    StateName, StateData) ->
+	     El},
+	    StateName, StateData) when ?IS_PRESENCE(El) ->
     NewStateData =
-	case xml:get_attr_s("type", Attrs) of
-	    "unavailable" ->
+	case exmpp_presence:get_type(El) of
+	    'unavailable' ->
 		S1 = ?SEND(io_lib:format("PART #~s\r\n", [Channel])),
 		S1#state{channels =
 			 dict:erase(Channel, S1#state.channels)};
-	    "subscribe" -> StateData;
-	    "subscribed" -> StateData;
-	    "unsubscribe" -> StateData;
-	    "unsubscribed" -> StateData;
-	    "error" -> stop;
+	    'subscribe' -> StateData;
+	    'subscribed' -> StateData;
+	    'unsubscribe' -> StateData;
+	    'unsubscribed' -> StateData;
+	    'error' -> stop;
 	    _ ->
 		Nick = case Resource of
-			   "" ->
+			   undefined ->
 			       StateData#state.nick;
 			   _ ->
 			       Resource
@@ -243,20 +244,20 @@ handle_info({route_chan, Channel, Resource,
     end;
 
 handle_info({route_chan, Channel, Resource,
-	     {xmlelement, "message", Attrs, _Els} = El},
-	    StateName, StateData) ->
+	     El},
+	    StateName, StateData) when ?IS_MESSAGE(El) ->
     NewStateData =
-	case xml:get_attr_s("type", Attrs) of
-	    "groupchat" ->
-		case xml:get_path_s(El, [{elem, "subject"}, cdata]) of
-		    "" ->
+	case exmpp_message:get_type(El) of
+	    'groupchat' ->
+		case exmpp_message:get_subject(El) of
+		    undefined ->
 			ejabberd_router:route(
-			  jlib:make_jid(
+			  exmpp_jid:make_jid(
 			    lists:concat(
 			      [Channel, "%", StateData#state.server]),
 			    StateData#state.host, StateData#state.nick),
 			  StateData#state.user, El),
-			Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
+			Body = binary_to_list(exmpp_message:get_body(El)),
 			case Body of
 			    "/quote " ++ Rest ->
 				?SEND(Rest ++ "\r\n");
@@ -309,8 +310,8 @@ handle_info({route_chan, Channel, Resource,
 				  end, Strings)),
 			?SEND(Res)
 		end;
-	    Type when Type == "chat"; Type == ""; Type == "normal" ->
-		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
+	    Type when Type == 'chat'; Type == 'normal' ->
+		Body = binary_to_list(exmpp_message:get_body(El)),
 		case Body of
 		    "/quote " ++ Rest ->
 			?SEND(Rest ++ "\r\n");
@@ -351,7 +352,7 @@ handle_info({route_chan, Channel, Resource,
 				  end, Strings)),
 			?SEND(Res)
 		end;
-	    "error" ->
+	    'error' ->
 		stop;
 	    _ ->
 		StateData
@@ -365,38 +366,34 @@ handle_info({route_chan, Channel, Resource,
 
 
 handle_info({route_chan, Channel, Resource,
-	     {xmlelement, "iq", _Attrs, _Els} = El},
-	    StateName, StateData) ->
+	     El},
+	    StateName, StateData) when ?IS_IQ(El) ->
     From = StateData#state.user,
-    To = jlib:make_jid(lists:concat([Channel, "%", StateData#state.server]),
+    To = exmpp_jid:make_jid(lists:concat([Channel, "%", StateData#state.server]),
 		       StateData#state.host, StateData#state.nick),
-    case jlib:iq_query_info(El) of
-	#iq{xmlns = ?NS_MUC_ADMIN} = IQ ->
-	    iq_admin(StateData, Channel, From, To, IQ);
-	#iq{xmlns = ?NS_VERSION} ->
+    case exmpp_iq:xmlel_to_iq(El) of
+	#iq{kind = request, ns = ?NS_MUC_ADMIN} = IQ_Rec ->
+	    iq_admin(StateData, Channel, From, To, IQ_Rec);
+	#iq{kind = request, ns = ?NS_SOFT_VERSION} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001VERSION\001\r\n",
 				[Resource]),
 	    ?SEND(Res),
-	    Err = jlib:make_error_reply(
-		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    Err = exmpp_iq:error(El, 'feature-not-implemented'),
 	    ejabberd_router:route(To, From, Err);
-	#iq{xmlns = ?NS_TIME} ->
+	#iq{kind = request, ns = ?NS_TIME_OLD} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001TIME\001\r\n",
 				[Resource]),
 	    ?SEND(Res),
-	    Err = jlib:make_error_reply(
-		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    Err = exmpp_iq:error(El, 'feature-not-implemented'),
 	    ejabberd_router:route(To, From, Err);
-	#iq{xmlns = ?NS_VCARD} ->
+	#iq{kind = request, ns = ?NS_VCARD} ->
 	    Res = io_lib:format("WHOIS ~s \r\n",
 				[Resource]),
 	    ?SEND(Res),
-	    Err = jlib:make_error_reply(
-		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    Err = exmpp_iq:error(El, 'feature-not-implemented'),
 	    ejabberd_router:route(To, From, Err);
 	#iq{} ->
-	    Err = jlib:make_error_reply(
-		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    Err = exmpp_iq:error(El, 'feature-not-implemented'),
 	    ejabberd_router:route(To, From, Err);
 	_ ->
 	    ok
@@ -408,12 +405,12 @@ handle_info({route_chan, _Channel, _Resource, _Packet}, StateName, StateData) ->
 
 
 handle_info({route_nick, Nick,
-	     {xmlelement, "message", Attrs, _Els} = El},
-	    StateName, StateData) ->
+	     El},
+	    StateName, StateData) when ?IS_MESSAGE(El) ->
     NewStateData =
-	case xml:get_attr_s("type", Attrs) of
-	    "chat" ->
-		Body = xml:get_path_s(El, [{elem, "body"}, cdata]),
+	case exmpp_message:get_type(El) of
+	    'chat' ->
+		Body = binary_to_list(exmpp_message:get_body(El)),
 		case Body of
 		    "/quote " ++ Rest ->
 			?SEND(Rest ++ "\r\n");
@@ -451,7 +448,7 @@ handle_info({route_nick, Nick,
 				  end, Strings)),
 			?SEND(Res)
 		end;
-	    "error" ->
+	    'error' ->
 		stop;
 	    _ ->
 		StateData
@@ -585,17 +582,17 @@ terminate(_Reason, _StateName, StateData) ->
     mod_irc:closed_connection(StateData#state.host,
 			      StateData#state.user,
 			      StateData#state.server),
-    bounce_messages("Server Connect Failed"),
+    bounce_messages(<<"Server Connect Failed">>),
     lists:foreach(
       fun(Chan) ->
 	      ejabberd_router:route(
-		jlib:make_jid(
+		exmpp_jid:make_jid(
 		  lists:concat([Chan, "%", StateData#state.server]),
 		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
-		{xmlelement, "presence", [{"type", "error"}],
-		 [{xmlelement, "error", [{"code", "502"}],
-		   [{xmlcdata, "Server Connect Failed"}]}]})
+		#xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = "error"}], children =
+		 [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'error', attrs = [#xmlattr{name = 'code', value = "502"}], children =
+		   [#xmlcdata{cdata =  <<"Server Connect Failed">>}]}]})
       end, dict:fetch_keys(StateData#state.channels)),
     case StateData#state.socket of
 	undefined ->
@@ -627,15 +624,16 @@ send_text(#state{socket = Socket, encoding = Encoding}, Text) ->
 bounce_messages(Reason) ->
     receive
 	{send_element, El} ->
-	    {xmlelement, _Name, Attrs, _SubTags} = El,
-	    case xml:get_attr_s("type", Attrs) of
+	    case exmpp_stanza:get_type(El) of
 	        "error" ->
 	            ok;
 	        _ ->
-	            Err = jlib:make_error_reply(El,
-	        				"502", Reason),
-		    From = jlib:string_to_jid(xml:get_attr_s("from", Attrs)),
-		    To = jlib:string_to_jid(xml:get_attr_s("to", Attrs)),
+                    Error = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'error',
+                      attrs = [#xmlattr{name = 'code', value = "502"}],
+                      children = [#xmlcdata{cdata = Reason}]},
+	            Err = exmpp_stanza:reply_with_error(El, Error),
+		    From = exmpp_jid:list_to_jid(exmpp_stanza:get_sender(El)),
+		    To = exmpp_jid:list_to_jid(exmpp_stanza:get_recipient(El)),
 		    ejabberd_router:route(To, From, Err)
 	    end,
 	    bounce_messages(Reason)
@@ -688,15 +686,14 @@ process_channel_list_user(StateData, Chan, User) ->
 	    _ -> {User1, "member", "participant"}
 	end,
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, User2),
       StateData#state.user,
-      {xmlelement, "presence", [],
-       [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-	 [{xmlelement, "item",
-	   [{"affiliation", Affiliation},
-	    {"role", Role}],
-	   []}]}]}),
+      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
+       [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
+	   [#xmlattr{name = 'affiliation', value = Affiliation},
+	    #xmlattr{name = 'role', value = Role}]}]}]}),
     case catch dict:update(Chan,
 			   fun(Ps) ->
 				   ?SETS:add_element(User2, Ps)
@@ -712,14 +709,11 @@ process_channel_topic(StateData, Chan, String) ->
     {ok, Msg, _} = regexp:sub(String, ".*332[^:]*:", ""),
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
-      jlib:make_jid(
+      exmpp_jid:make_jid(
 	lists:concat([Chan, "%", StateData#state.server]),
 	StateData#state.host, ""),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "subject", [], [{xmlcdata, Msg1}]},
-	{xmlelement, "body", [], [{xmlcdata, "Topic for #" ++ Chan ++ ": " ++ Msg1}]}
-       ]}).
+      exmpp_message:groupchat(Msg1, "Topic for #" ++ Chan ++ ": " ++ Msg1)).
 
 process_channel_topic_who(StateData, Chan, String) ->
     Words = string:tokens(String, " "),
@@ -740,55 +734,47 @@ process_channel_topic_who(StateData, Chan, String) ->
     Msg2 = filter_message(Msg1),
 
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+      exmpp_message:groupchat(Msg2)).
 
 
 
 process_endofwhois(StateData, _String, Nick) ->
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Nick, "!", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [], [{xmlcdata, "End of WHOIS"}]}]}).
+      exmpp_message:chat("End of WHOIS")).
 
 process_whois311(StateData, String, Nick, Ident, Irchost) ->
     {ok, Fullname, _} = regexp:sub(String, ".*311[^:]*:", ""),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Nick, "!", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [],
-	 [{xmlcdata, lists:concat(
+      exmpp_message:chat(lists:concat(
 		       ["WHOIS: ", Nick, " is ",
-			Ident, "@" , Irchost, " : " , Fullname])}]}]}).
+			Ident, "@" , Irchost, " : " , Fullname]))).
 
 process_whois312(StateData, String, Nick, Ircserver) ->
     {ok, Ircserverdesc, _} = regexp:sub(String, ".*312[^:]*:", ""),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Nick, "!", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [],
-	 [{xmlcdata, lists:concat(["WHOIS: ", Nick, " use ",
-				   Ircserver, " : ", Ircserverdesc])}]}]}).
+      exmpp_message:chat(lists:concat(["WHOIS: ", Nick, " use ",
+				   Ircserver, " : ", Ircserverdesc]))).
 
 process_whois319(StateData, String, Nick) ->
     {ok, Chanlist, _} = regexp:sub(String, ".*319[^:]*:", ""),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Nick, "!", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [],
-	 [{xmlcdata, lists:concat(["WHOIS: ", Nick, " is on ",
-				   Chanlist])}]}]}).
+      exmpp_message:chat(lists:concat(["WHOIS: ", Nick, " is on ",
+				   Chanlist]))).
 
 
 
@@ -803,11 +789,10 @@ process_chanprivmsg(StateData, Chan, From, String) ->
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+      exmpp_message:groupchat(Msg2)).
 
 
 
@@ -822,11 +807,10 @@ process_channotice(StateData, Chan, From, String) ->
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+      exmpp_message:groupchat(Msg2)).
 
 
 
@@ -842,11 +826,10 @@ process_privmsg(StateData, _Nick, From, String) ->
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
-		    StateData#state.host, ""),
+      exmpp_jid:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
+		    StateData#state.host, undefined),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+      exmpp_message:chat(Msg2)).
 
 
 process_notice(StateData, _Nick, From, String) ->
@@ -860,11 +843,10 @@ process_notice(StateData, _Nick, From, String) ->
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
-		    StateData#state.host, ""),
+      exmpp_jid:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
+		    StateData#state.host, undefined),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
+      exmpp_message:chat(Msg2)).
 
 
 process_version(StateData, _Nick, From) ->
@@ -889,7 +871,7 @@ process_userinfo(StateData, _Nick, From) ->
 		    "xmpp:~s"
 		    "\001\r\n",
 		    [FromUser,
-		     jlib:jid_to_string(StateData#state.user)])).
+		     exmpp_jid:jid_to_list(StateData#state.user)])).
 
 
 process_topic(StateData, Chan, From, String) ->
@@ -897,31 +879,27 @@ process_topic(StateData, Chan, From, String) ->
     {ok, Msg, _} = regexp:sub(String, ".*TOPIC[^:]*:", ""),
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "subject", [], [{xmlcdata, Msg1}]},
-	{xmlelement, "body", [],
-	 [{xmlcdata, "/me has changed the subject to: " ++
-	   Msg1}]}]}).
+      exmpp_message:groupchat(Msg1,
+        "/me has changed the subject to: " ++ Msg1)).
 
 process_part(StateData, Chan, From, String) ->
     [FromUser | FromIdent] = string:tokens(From, "!"),
     {ok, Msg, _} = regexp:sub(String, ".*PART[^:]*:", ""),    
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
-      {xmlelement, "presence", [{"type", "unavailable"}],
-       [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-	 [{xmlelement, "item",
-	   [{"affiliation", "member"},
-	    {"role", "none"}],
-	   []}]},
-	{xmlelement, "status", [],
-	 [{xmlcdata, Msg1 ++ " ("  ++ FromIdent ++ ")"}]}]
+      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = "unavailable"}], children =
+       [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
+	   [#xmlattr{name = 'affiliation', value = "member"},
+	    #xmlattr{name = 'role', value = "none"}]}]},
+	#xmlel{ns = ?NS_MUC_USER, name = 'status', children =
+	 [#xmlcdata{cdata = list_to_binary(Msg1 ++ " ("  ++ FromIdent ++ ")")}]}]
       }),
     case catch dict:update(Chan,
 			   fun(Ps) ->
@@ -945,18 +923,17 @@ process_quit(StateData, From, String) ->
 		  case ?SETS:is_member(FromUser, Ps) of
 		      true ->
 			  ejabberd_router:route(
-			    jlib:make_jid(
+			    exmpp_jid:make_jid(
 			      lists:concat([Chan, "%", StateData#state.server]),
 			      StateData#state.host, FromUser),
 			    StateData#state.user,
-			    {xmlelement, "presence", [{"type", "unavailable"}],
-			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			       [{xmlelement, "item",
-				 [{"affiliation", "member"},
-				  {"role", "none"}],
-				 []}]},
-			      {xmlelement, "status", [],
-			       [{xmlcdata, Msg1 ++ " ("  ++ FromIdent ++ ")"}]}
+			    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = "unavailable"}], children =
+			     [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+			       [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
+				 [#xmlattr{name = 'affiliation', value = "member"},
+				  #xmlattr{name = 'role', value = "none"}]}]},
+			      #xmlel{ns = ?NS_MUC_USER, name = 'status', children =
+			       [#xmlcdata{cdata = list_to_binary(Msg1 ++ " ("  ++ FromIdent ++ ")")}]}
 			     ]}),
 			  remove_element(FromUser, Ps);
 		      _ ->
@@ -970,17 +947,16 @@ process_join(StateData, Channel, From, _String) ->
     [FromUser | FromIdent] = string:tokens(From, "!"),
     Chan = lists:subtract(Channel, ":#"),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
-      {xmlelement, "presence", [],
-       [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-	 [{xmlelement, "item",
-	   [{"affiliation", "member"},
-	    {"role", "participant"}],
-	   []}]},
-	{xmlelement, "status", [],
-	 [{xmlcdata, FromIdent}]}]}),
+      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
+       [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
+	   [#xmlattr{name = 'affiliation', value = "member"},
+	    #xmlattr{name = 'role', value = "participant"}]}]},
+	#xmlel{ns = ?NS_MUC_USER, name = 'status', children =
+	 [#xmlcdata{cdata = list_to_binary(FromIdent)}]}]}),
 
     case catch dict:update(Chan,
 			   fun(Ps) ->
@@ -997,36 +973,33 @@ process_join(StateData, Channel, From, _String) ->
 process_mode_o(StateData, Chan, _From, Nick, Affiliation, Role) ->
     %Msg = lists:last(string:tokens(String, ":")),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, Nick),
       StateData#state.user,
-      {xmlelement, "presence", [],
-       [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-	 [{xmlelement, "item",
-	   [{"affiliation", Affiliation},
-	    {"role", Role}],
-	   []}]}]}).
+      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
+       [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
+	   [#xmlattr{name = 'affiliation', value = Affiliation},
+	    #xmlattr{name = 'role', value = Role}]}]}]}).
 
 process_kick(StateData, Chan, From, Nick, String) ->
     Msg = lists:last(string:tokens(String, ":")),
     Msg2 = Nick ++ " kicked by " ++ From ++ " (" ++ filter_message(Msg) ++ ")",
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
-		    StateData#state.host, ""),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+		    StateData#state.host, undefined),
       StateData#state.user,
-      {xmlelement, "message", [{"type", "groupchat"}],
-       [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}),
+      exmpp_message:groupchat(Msg2)),
     ejabberd_router:route(
-      jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, Nick),
       StateData#state.user,
-      {xmlelement, "presence", [{"type", "unavailable"}],
-       [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-	 [{xmlelement, "item",
-	   [{"affiliation", "none"},
-	    {"role", "none"}],
-	   []},
-	  {xmlelement, "status", [{"code", "307"}], []}
+      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = "unavailable"}], children =
+       [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
+	   [#xmlattr{name = 'affiliation', value = "none"},
+	    #xmlattr{name = 'role', value = "none"}]},
+	  #xmlel{ns = ?NS_MUC_USER, name = 'status', attrs = [#xmlattr{name = 'code', value = "307"}]}
 	 ]}]}).
 
 process_nick(StateData, From, NewNick) ->
@@ -1038,30 +1011,28 @@ process_nick(StateData, From, NewNick) ->
 		  case ?SETS:is_member(FromUser, Ps) of
 		      true ->
 			  ejabberd_router:route(
-			    jlib:make_jid(
+			    exmpp_jid:make_jid(
 			      lists:concat([Chan, "%", StateData#state.server]),
 			      StateData#state.host, FromUser),
 			    StateData#state.user,
-			    {xmlelement, "presence", [{"type", "unavailable"}],
-			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			       [{xmlelement, "item",
-				 [{"affiliation", "member"},
-				  {"role", "participant"},
-				  {"nick", Nick}],
-				 []},
-				{xmlelement, "status", [{"code", "303"}], []}
+			    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = "unavailable"}], children =
+			     [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+			       [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
+				 [#xmlattr{name = 'affiliation', value = "member"},
+				  #xmlattr{name = 'role', value = "participant"},
+				  #xmlattr{name = 'nick', value = Nick}]},
+				#xmlel{ns = ?NS_MUC_USER, name = 'status', attrs = [#xmlattr{name = 'code', value = "303"}]}
 			       ]}]}),
 			  ejabberd_router:route(
-			    jlib:make_jid(
+			    exmpp_jid:make_jid(
 			      lists:concat([Chan, "%", StateData#state.server]),
 			      StateData#state.host, Nick),
 			    StateData#state.user,
-			    {xmlelement, "presence", [],
-			     [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			       [{xmlelement, "item",
-				 [{"affiliation", "member"},
-				  {"role", "participant"}],
-				 []}
+			    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
+			     [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+			       [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
+				 [#xmlattr{name = 'affiliation', value = "member"},
+				  #xmlattr{name = 'role', value = "participant"}]}
 			       ]}]}),
 			  ?SETS:add_element(Nick,
 					    remove_element(FromUser, Ps));
@@ -1076,13 +1047,13 @@ process_error(StateData, String) ->
     lists:foreach(
       fun(Chan) ->
 	      ejabberd_router:route(
-		jlib:make_jid(
+		exmpp_jid:make_jid(
 		  lists:concat([Chan, "%", StateData#state.server]),
 		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
-		{xmlelement, "presence", [{"type", "error"}],
-		 [{xmlelement, "error", [{"code", "502"}],
-		   [{xmlcdata, String}]}]})
+		#xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = "error"}], children =
+		 [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'error', attrs = [#xmlattr{name = 'code', value = "502"}], children =
+		   [#xmlcdata{cdata = list_to_binary(String)}]}]})
       end, dict:fetch_keys(StateData#state.channels)).
 
 
@@ -1099,7 +1070,7 @@ remove_element(E, Set) ->
 
 
 iq_admin(StateData, Channel, From, To,
-	 #iq{type = Type, xmlns = XMLNS, sub_el = SubEl} = IQ) ->
+	 #iq{type = Type, ns = XMLNS, payload = SubEl} = IQ_Rec) ->
     case catch process_iq_admin(StateData, Channel, Type, SubEl) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
@@ -1108,17 +1079,14 @@ iq_admin(StateData, Channel, From, To,
 		Res /= ignore ->
 		    ResIQ = case Res of
 				{result, ResEls} ->
-				    IQ#iq{type = result,
-					  sub_el = [{xmlelement, "query",
-						     [{"xmlns", XMLNS}],
-						     ResEls
-						    }]};
+                                    Result = #xmlel{ns = XMLNS, name = 'query',
+                                      children = ResEls},
+                                    exmpp_iq:result(IQ_Rec, Result);
 				{error, Error} ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, Error]}
+                                    exmpp_iq:error(IQ_Rec, Error)
 			    end,
 		    ejabberd_router:route(To, From,
-					  jlib:iq_to_xml(ResIQ));
+					  exmpp_iq:iq_to_xmlel(ResIQ));
 		true ->
 		    ok
 	    end
@@ -1126,23 +1094,23 @@ iq_admin(StateData, Channel, From, To,
 
 
 process_iq_admin(StateData, Channel, set, SubEl) ->
-    case xml:get_subtag(SubEl, "item") of
+    case exmpp_xml:get_element(SubEl, 'item') of
 	false ->
-	    {error, ?ERR_BAD_REQUEST};
+	    {error, 'bad-request'};
 	ItemEl ->
-	    Nick = xml:get_tag_attr_s("nick", ItemEl),
-	    Affiliation = xml:get_tag_attr_s("affiliation", ItemEl),
-	    Role = xml:get_tag_attr_s("role", ItemEl),
-	    Reason = xml:get_path_s(ItemEl, [{elem, "reason"}, cdata]),
+	    Nick = exmpp_xml:get_attribute(ItemEl, 'nick', ""),
+	    Affiliation = exmpp_xml:get_attribute(ItemEl, 'affiliation', ""),
+	    Role = exmpp_xml:get_attribute(ItemEl, 'role', ""),
+	    Reason = exmpp_xml:get_path(ItemEl, [{element, 'reason'}, cdata_as_list]),
 	    process_admin(StateData, Channel, Nick, Affiliation, Role, Reason)
     end;
 process_iq_admin(_StateData, _Channel, get, _SubEl) ->
-    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
+    {error, 'feature-not-implemented'}.
 
 
 
 process_admin(_StateData, _Channel, "", _Affiliation, _Role, _Reason) ->
-    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+    {error, 'feature-not-implemented'};
 
 process_admin(StateData, Channel, Nick, _Affiliation, "none", Reason) ->
     case Reason of
@@ -1160,7 +1128,7 @@ process_admin(StateData, Channel, Nick, _Affiliation, "none", Reason) ->
 
 
 process_admin(_StateData, _Channel, _Nick, _Affiliation, _Role, _Reason) ->
-    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
+    {error, 'feature-not-implemented'}.
 
 
 

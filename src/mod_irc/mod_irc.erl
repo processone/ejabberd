@@ -40,8 +40,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -record(irc_connection, {jid_server_host, pid}).
 -record(irc_custom, {us_host, data}).
@@ -193,60 +194,55 @@ do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) ->
 	allow ->
 	    do_route1(Host, ServerHost, From, To, Packet, DefEnc);
 	_ ->
-	    {xmlelement, _Name, Attrs, _Els} = Packet,
-	    Lang = xml:get_attr_s("xml:lang", Attrs),
-	    ErrText = "Access denied by service policy",
-	    Err = jlib:make_error_reply(Packet,
-					?ERRT_FORBIDDEN(Lang, ErrText)),
+	    Lang = exmpp_stanza:get_lang(Packet),
+	    ErrText = translate:translate(Lang,
+	      "Access denied by service policy"),
+	    Err = exmpp_stanza:reply_with_error(Packet,
+	      exmpp_stanza:error(Packet#xmlel.ns,
+		'forbidden', {Lang, ErrText})),
 	    ejabberd_router:route(To, From, Err)
     end.
 
 do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
-    #jid{user = ChanServ, resource = Resource} = To,
-    {xmlelement, _Name, _Attrs, _Els} = Packet,
+    #jid{node = ChanServ, resource = Resource} = To,
     case ChanServ of
-	"" ->
+	undefined ->
 	    case Resource of
-		"" ->
-		    case jlib:iq_query_info(Packet) of
-			#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
-			    sub_el = _SubEl, lang = Lang} = IQ ->
-			    Res = IQ#iq{type = result,
-					sub_el = [{xmlelement, "query",
-						   [{"xmlns", XMLNS}],
-						   iq_disco(Lang)}]},
+		undefined ->
+		    case exmpp_iq:xmlel_to_iq(Packet) of
+			#iq{type = get, ns = ?NS_DISCO_INFO = XMLNS,
+			    lang = Lang} = IQ_Rec ->
+			    Result = #xmlel{ns = XMLNS, name = 'query',
+			      children = iq_disco(Lang)},
+			    Res = exmpp_iq:result(IQ_Rec, Result),
 			    ejabberd_router:route(To,
 						  From,
-						  jlib:iq_to_xml(Res));
-			#iq{type = get, xmlns = ?NS_DISCO_ITEMS = XMLNS} = IQ ->
-			    Res = IQ#iq{type = result,
-					sub_el = [{xmlelement, "query",
-						   [{"xmlns", XMLNS}],
-						   []}]},
+						  exmpp_iq:iq_to_xmlel(Res));
+			#iq{type = get, ns = ?NS_DISCO_ITEMS = XMLNS} = IQ_Rec ->
+			    Result = #xmlel{ns = XMLNS, name = 'query'},
+			    Res = exmpp_iq:result(IQ_Rec, Result),
 			    ejabberd_router:route(To,
 						  From,
-						  jlib:iq_to_xml(Res));
-			#iq{xmlns = ?NS_REGISTER} = IQ ->
-			    process_register(Host, From, To, DefEnc, IQ);
-			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
-			    lang = Lang} = IQ ->
-			    Res = IQ#iq{type = result,
-					sub_el =
-                                            [{xmlelement, "vCard",
-                                              [{"xmlns", XMLNS}],
-                                              iq_get_vcard(Lang)}]},
+						  exmpp_iq:iq_to_xmlel(Res));
+			#iq{kind = request, ns = ?NS_INBAND_REGISTER} = IQ_Rec ->
+			    process_register(Host, From, To, DefEnc, IQ_Rec);
+			#iq{type = get, ns = ?NS_VCARD = XMLNS,
+			    lang = Lang} = IQ_Rec ->
+			    Result = #xmlel{ns = XMLNS, name = 'vCard',
+			      children = iq_get_vcard(Lang)},
+			    Res = exmpp_iq:result(IQ_Rec, Result),
                             ejabberd_router:route(To,
                                                   From,
-                                                  jlib:iq_to_xml(Res));
-			#iq{} = _IQ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+                                                  exmpp_iq:iq_to_xmlel(Res));
+			#iq{} = _IQ_Rec ->
+			    Err = exmpp_iq:error(
+				    Packet, 'feature-not-implemented'),
 			    ejabberd_router:route(To, From, Err);
 			_ ->
 			    ok
 		    end;
 		_ ->
-		    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
+		    Err = exmpp_stanza:reply_with_error(Packet, 'bad-request'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
 	_ ->
@@ -280,8 +276,8 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
 			[[_ | _] = Nick, [_ | _] = Server] ->
 			    case ets:lookup(irc_connection, {From, Server, Host}) of
 				[] ->
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERR_SERVICE_UNAVAILABLE),
+				    Err = exmpp_stanza:reply_with_error(
+					    Packet, 'service-unavailable'),
 				    ejabberd_router:route(To, From, Err);
 				[R] ->
 				    Pid = R#irc_connection.pid,
@@ -292,8 +288,8 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
 				    ok
 			    end;
 			_ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_BAD_REQUEST),
+			    Err = exmpp_stanza:reply_with_error(
+				    Packet, 'bad-request'),
 			    ejabberd_router:route(To, From, Err)
 		    end
 	    end
@@ -305,164 +301,148 @@ closed_connection(Host, From, Server) ->
 
 
 iq_disco(Lang) ->
-    [{xmlelement, "identity",
-      [{"category", "conference"},
-       {"type", "irc"},
-       {"name", translate:translate(Lang, "IRC Transport")}], []},
-     {xmlelement, "feature",
-      [{"var", ?NS_MUC}], []},
-     {xmlelement, "feature",
-      [{"var", ?NS_REGISTER}], []},
-     {xmlelement, "feature",
-      [{"var", ?NS_VCARD}], []}].
+    [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
+      [#xmlattr{name = 'category', value = "conference"},
+       #xmlattr{name = 'type', value = "irc"},
+       #xmlattr{name = 'name', value = translate:translate(Lang, "IRC Transport")}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
+      [#xmlattr{name = 'var', value = ?NS_MUC_s}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
+      [#xmlattr{name = 'var', value = ?NS_INBAND_REGISTER_s}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
+      [#xmlattr{name = 'var', value = ?NS_VCARD_s}]}].
 
 iq_get_vcard(Lang) ->
-    [{xmlelement, "FN", [],
-      [{xmlcdata, "ejabberd/mod_irc"}]},                  
-     {xmlelement, "URL", [],
-      [{xmlcdata, ?EJABBERD_URI}]},
-     {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(Lang, "ejabberd IRC module") ++
-        "\nCopyright (c) 2003-2008 Alexey Shchepin"}]}].
+    [#xmlel{ns = ?NS_VCARD, name = 'FN', children =
+      [#xmlcdata{cdata = <<"ejabberd/mod_irc">>}]},
+     #xmlel{ns = ?NS_VCARD, name = 'URL', children =
+      [#xmlcdata{cdata = list_to_binary(?EJABBERD_URI)}]},
+     #xmlel{ns = ?NS_VCARD, name = 'DESC', children =
+      [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "ejabberd IRC module") ++
+        "\nCopyright (c) 2003-2008 Alexey Shchepin")}]}].
 
-process_register(Host, From, To, DefEnc, #iq{} = IQ) ->
-    case catch process_irc_register(Host, From, To, DefEnc, IQ) of
+process_register(Host, From, To, DefEnc, #iq{} = IQ_Rec) ->
+    case catch process_irc_register(Host, From, To, DefEnc, IQ_Rec) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	ResIQ ->
 	    if
 		ResIQ /= ignore ->
 		    ejabberd_router:route(To, From,
-					  jlib:iq_to_xml(ResIQ));
+					  exmpp_iq:iq_to_xmlel(ResIQ));
 		true ->
 		    ok
 	    end
     end.
 
-find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
+find_xdata_el(#xmlel{children = SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->
     false;
 
-find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
-    case xml:get_attr_s("xmlns", Attrs) of
-	?NS_XDATA ->
-	    {xmlelement, Name, Attrs, SubEls};
-	_ ->
-	    find_xdata_el1(Els)
-    end;
+find_xdata_el1([#xmlel{ns = ?NS_DATA_FORMS} = El | _Els]) ->
+    El;
 
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
 process_irc_register(Host, From, _To, DefEnc,
-		     #iq{type = Type, xmlns = XMLNS,
-			 lang = Lang, sub_el = SubEl} = IQ) ->
-    case Type of
-	set ->
-	    XDataEl = find_xdata_el(SubEl),
-	    case XDataEl of
-		false ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
-		{xmlelement, _Name, Attrs, _SubEls} ->
-		    case xml:get_attr_s("type", Attrs) of
-			"cancel" ->
-			    IQ#iq{type = result,
-				sub_el = [{xmlelement, "query",
-					   [{"xmlns", XMLNS}], []}]};
-			"submit" ->
-			    XData = jlib:parse_xdata_submit(XDataEl),
-			    case XData of
-				invalid ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-				_ ->
-				    Node = string:tokens(
-					     xml:get_tag_attr_s("node", SubEl),
-					     "/"),
-				    case set_form(
-					   Host, From, Node, Lang, XData) of
-					{result, Res} ->
-					    IQ#iq{type = result,
-						  sub_el = [{xmlelement, "query",
-							     [{"xmlns", XMLNS}],
-							     Res
-							    }]};
-					{error, Error} ->
-					    IQ#iq{type = error,
-						  sub_el = [SubEl, Error]}
-				    end
-			    end;
+		     #iq{type = get, ns = XMLNS,
+			 lang = Lang, payload = SubEl} = IQ_Rec) ->
+    Node =
+	string:tokens(exmpp_xml:get_attribute(SubEl, 'node', ""), "/"),
+    case get_form(Host, From, Node, Lang ,DefEnc) of
+	{result, Res} ->
+	    Result = #xmlel{ns = XMLNS, name = 'query', children = Res},
+	    exmpp_iq:result(IQ_Rec, Result);
+	{error, Error} ->
+	    exmpp_iq:error(IQ_Rec, Error)
+    end;
+process_irc_register(Host, From, _To, _DefEnc,
+		     #iq{type = set, ns = XMLNS,
+			 lang = Lang, payload = SubEl} = IQ_Rec) ->
+    XDataEl = find_xdata_el(SubEl),
+    case XDataEl of
+	false ->
+	    exmpp_iq:error(IQ_Rec, 'not-acceptable');
+	_ ->
+	    case exmpp_stanza:get_type(XDataEl) of
+		"cancel" ->
+		    Result = #xmlel{ns = XMLNS, name = 'query'},
+		    exmpp_iq:result(IQ_Rec, Result);
+		"submit" ->
+		    XData = jlib:parse_xdata_submit(XDataEl),
+		    case XData of
+			invalid ->
+			    exmpp_iq:error(IQ_Rec, 'bad-request');
 			_ ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
-		    end
-	    end;
-	get ->
-	    Node =
-		string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-	    case get_form(Host, From, Node, Lang ,DefEnc) of
-		{result, Res} ->
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query",
-				     [{"xmlns", XMLNS}],
-				     Res
-				    }]};
-		{error, Error} ->
-		    IQ#iq{type = error,
-			  sub_el = [SubEl, Error]}
+			    Node = string:tokens(
+				     exmpp_xml:get_attribute(SubEl, "node", ""),
+				     "/"),
+			    case set_form(
+				   Host, From, Node, Lang, XData) of
+				{result, Res} ->
+				    Result = #xmlel{ns = XMLNS, name = 'query',
+				      children = Res},
+				    exmpp_iq:result(IQ_Rec, Result);
+				{error, Error} ->
+				    exmpp_iq:error(IQ_Rec, Error)
+			    end
+		    end;
+		_ ->
+		    exmpp_iq:error(IQ_Rec, 'bad-request')
 	    end
     end.
 
 
 
 get_form(Host, From, [], Lang, DefEnc) ->
-    #jid{user = User, server = Server,
-	 luser = LUser, lserver = LServer} = From,
+    #jid{node = User, domain = Server,
+	 lnode = LUser, ldomain = LServer} = From,
     US = {LUser, LServer},
     Customs =
 	case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	    {'EXIT', _Reason} ->
-		{error, ?ERR_INTERNAL_SERVER_ERROR};
+		{error, 'internal-server-error'};
 	    [] ->
 		{User, []};
 	    [#irc_custom{data = Data}] ->
-		{xml:get_attr_s(username, Data),
-		 xml:get_attr_s(encodings, Data)}
+		{proplists:get_value(username, Data, ""),
+		 proplists:get_value(encodings, Data, "")}
 	end,
     case Customs of
 	{error, _Error} ->
 	    Customs;
 	{Username, Encodings} ->
 	    {result,
-	     [{xmlelement, "instructions", [],
-	       [{xmlcdata,
+	     [#xmlel{ns = ?NS_INBAND_REGISTER, name = 'instructions', children =
+	       [#xmlcdata{cdata = list_to_binary(
 	         translate:translate(
 		   Lang,
 		   "You need an x:data capable client "
-		   "to configure mod_irc settings")}]},
-	      {xmlelement, "x", [{"xmlns", ?NS_XDATA}],
-	       [{xmlelement, "title", [],
-	         [{xmlcdata,
+		   "to configure mod_irc settings"))}]},
+	      #xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
+	       [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
+	         [#xmlcdata{cdata = list_to_binary(
 		   translate:translate(
 		     Lang,
-		     "Registration in mod_irc for ") ++ User ++ "@" ++ Server}]},
-	              {xmlelement, "instructions", [],
-	               [{xmlcdata,
+		     "Registration in mod_irc for ") ++ User ++ "@" ++ Server)}]},
+	              #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions', children =
+	               [#xmlcdata{cdata = list_to_binary(
 	                 translate:translate(
 	                   Lang,
 			   "Enter username and encodings you wish to use for "
-			   "connecting to IRC servers")}]},
-	        {xmlelement, "field", [{"type", "text-single"},
-				       {"label",
+			   "connecting to IRC servers"))}]},
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "text-single"},
+				       #xmlattr{name = 'label', value =
 				        translate:translate(
 					  Lang, "IRC Username")},
-				       {"var", "username"}],
-	         [{xmlelement, "value", [], [{xmlcdata, Username}]}]},
-	        {xmlelement, "field", [{"type", "fixed"}],
-	         [{xmlelement, "value", [],
-		   [{xmlcdata,
+				       #xmlattr{name = 'var', value = "username"}], children =
+	         [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Username)}]}]},
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "fixed"}], children =
+	         [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
+		   [#xmlcdata{cdata = list_to_binary(
 		     lists:flatten(
 		       io_lib:format(
 		         translate:translate(
@@ -471,22 +451,22 @@ get_form(Host, From, [], Lang, DefEnc) ->
 			   "for IRC servers, fill this list with values "
 			   "in format '{\"irc server\", \"encoding\"}'.  "
 			   "By default this service use \"~s\" encoding."),
-		         [DefEnc]))}]}]},
-	        {xmlelement, "field", [{"type", "fixed"}],
-	         [{xmlelement, "value", [],
-		   [{xmlcdata,
+		         [DefEnc])))}]}]},
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "fixed"}], children =
+	         [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
+		   [#xmlcdata{cdata = list_to_binary(
 		     translate:translate(
 		       Lang,
 		       "Example: [{\"irc.lucky.net\", \"koi8-r\"}, "
 		       "{\"vendetta.fef.net\", \"iso8859-1\"}]."
-		    )}]}]},
-	        {xmlelement, "field", [{"type", "text-multi"},
-				       {"label",
+		    ))}]}]},
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "text-multi"},
+				       #xmlattr{name = 'label', value =
 				        translate:translate(Lang, "Encodings")},
-				       {"var", "encodings"}],
+				       #xmlattr{name = 'var', value = "encodings"}], children =
 		         lists:map(
 			   fun(S) ->
-				   {xmlelement, "value", [], [{xmlcdata, S}]}
+				   #xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(S)}]}
 			   end,
 			   string:tokens(
 			     lists:flatten(
@@ -497,13 +477,13 @@ get_form(Host, From, [], Lang, DefEnc) ->
     end;
 
 get_form(_Host, _, _, _Lang, _) ->
-    {error, ?ERR_SERVICE_UNAVAILABLE}.
+    {error, 'service-unavailable'}.
 
 
 
 
 set_form(Host, From, [], _Lang, XData) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jlib:short_prepd_jid(From),
     US = {LUser, LServer},
     case {lists:keysearch("username", 1, XData),
 	  lists:keysearch("encodings", 1, XData)} of
@@ -529,26 +509,26 @@ set_form(Host, From, [], _Lang, XData) ->
 				{atomic, _} ->
 				    {result, []};
 				_ ->
-				    {error, ?ERR_NOT_ACCEPTABLE}
+				    {error, 'not-acceptable'}
 			    end;
 			_ ->
-			    {error, ?ERR_NOT_ACCEPTABLE}
+			    {error, 'not-acceptable'}
 		    end;
 		_ ->
-		    {error, ?ERR_NOT_ACCEPTABLE}
+		    {error, 'not-acceptable'}
 	    end;
 	_ ->
-	    {error, ?ERR_NOT_ACCEPTABLE}
+	    {error, 'not-acceptable'}
     end;
 
 
 set_form(_Host, _, _, _Lang, _XData) ->
-    {error, ?ERR_SERVICE_UNAVAILABLE}.
+    {error, 'service-unavailable'}.
 
 
 get_user_and_encoding(Host, From, IRCServer, DefEnc) ->
-    #jid{user = User, server = _Server,
-	 luser = LUser, lserver = LServer} = From,
+    #jid{node = User, domain = _Server,
+	 lnode = LUser, ldomain = LServer} = From,
     US = {LUser, LServer},
     case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	{'EXIT', _Reason} ->
@@ -556,8 +536,8 @@ get_user_and_encoding(Host, From, IRCServer, DefEnc) ->
 	[] ->
 	    {User, DefEnc};
 	[#irc_custom{data = Data}] ->
-	    {xml:get_attr_s(username, Data),
-	     case xml:get_attr_s(IRCServer, xml:get_attr_s(encodings, Data)) of
+	    {proplists:get_value(username, Data, ""),
+	     case proplists:get_value(IRCServer, proplists:get_value(encodings, Data, ""), "") of
 		"" -> DefEnc;
 		E -> E
 	     end}

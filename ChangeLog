@@ -1,3 +1,8 @@
+2008-10-20  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_irc/mod_irc.erl, src/mod_irc/mod_irc_connection.erl: Convert
+	to exmpp.
+
 2008-10-13  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/web/ejabberd_http.erl, src/web/ejabberd_http_poll.erl,
