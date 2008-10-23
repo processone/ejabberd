@@ -93,7 +93,7 @@ start(Module, SockMod, Socket, Opts) ->
     end.
 
 starttls(FsmRef, TLSOpts) ->
-    gen_server:call(FsmRef, {starttls, TLSOpts}),
+    %gen_server:call(FsmRef, {starttls, TLSOpts}),
     FsmRef.
 
 starttls(FsmRef, TLSOpts, Data) ->
@@ -136,7 +136,8 @@ sockname(FsmRef) ->
     gen_server:call(FsmRef, sockname).
 
 peername(FsmRef) ->
-    gen_server:call(FsmRef, peername).
+    %gen_server:call(FsmRef, peername).
+    {ok, {{0, 0, 0, 0}, 0}}.
 
 
 %%====================================================================
@@ -153,11 +154,12 @@ peername(FsmRef) ->
 init([Module, SockMod, Socket, Opts, Receiver]) ->
     %% TODO: monitor the receiver
     Node = ejabberd_node_groups:get_closest_node(backend),
+    {SockMod2, Socket2} = check_starttls(SockMod, Socket, Receiver, Opts),
     {ok, Pid} =
 	rpc:call(Node, Module, start, [{?MODULE, self()}, Opts]),
     ejabberd_receiver:become_controller(Receiver, Pid),
-    {ok, #state{sockmod = SockMod,
-		socket = Socket,
+    {ok, #state{sockmod = SockMod2,
+		socket = Socket2,
 		receiver = Receiver}}.
 
 %%--------------------------------------------------------------------
@@ -298,3 +300,17 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+check_starttls(SockMod, Socket, Receiver, Opts) ->
+    TLSEnabled = lists:member(tls, Opts),
+    TLSOpts = lists:filter(fun({certfile, _}) -> true;
+			      (_) -> false
+			   end, Opts),
+    if
+	TLSEnabled ->
+	    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
+	    ejabberd_receiver:starttls(Receiver, TLSSocket),
+	    {tls, TLSSocket};
+	true ->
+	    {SockMod, Socket}
+    end.
+
