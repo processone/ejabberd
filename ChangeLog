@@ -1,5 +1,9 @@
 2008-10-25  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_ctl.erl: If ejabberd didn't start correctly:
+	'ejabberdctl status' suggests to look in log files; any other
+	ejabberdctl command shows 'status'.
+
 	* src/ejabberd_app.erl: Open ejabberd.log sooner, so errors during
 	ejabberd initialization are logged in that file (EJAB-777). Write
 	a log message when ejabberd finishes the start or stop.
@@ -11,7 +15,7 @@
 	* src/mod_roster_odbc.erl: Likewise
 	* src/mod_shared_roster.erl: Likewise
 
-	* src/ejabberd_lstener.erl: Fix listeners
+	* src/ejabberd_listener.erl: Fix listeners
 	* src/ejabberd_sup.erl: Likewise
 	* src/gen_mod.erl: Likewise
 
