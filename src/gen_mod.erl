@@ -224,6 +224,8 @@ get_hosts(Opts, Prefix) ->
 	    Hosts
     end.
 
+get_module_proc(Host, {frontend, Base}) ->
+    get_module_proc("frontend_" ++ Host, Base);
 get_module_proc(Host, Base) ->
     list_to_atom(atom_to_list(Base) ++ "_" ++ Host).
 
