@@ -371,7 +371,7 @@ push_item(User, Server, From, Item) ->
 % TODO: don't push to those who not load roster
 push_item(User, Server, Resource, From, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
-		id = "push",
+		id = "push" ++ randoms:get_string(),
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_ROSTER}],
 			   [item_to_xml(Item)]}]},
