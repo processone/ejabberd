@@ -1,3 +1,9 @@
+2008-10-25  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_app.erl: Open ejabberd.log sooner, so errors during
+	ejabberd initialization are logged in that file (EJAB-777). Write
+	a log message when ejabberd finishes the start or stop.
+
 2008-10-24  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_c2s.erl: Ensure unique ID in roster push (EJAB-721)
