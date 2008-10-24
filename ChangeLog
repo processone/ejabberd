@@ -1,5 +1,8 @@
 2008-10-25  Badlop  <badlop@process-one.net>
 
+	* src/translate.erl: When a translation file can't be loaded, show
+	detailed error message
+
 	* src/ejabberd_ctl.erl: If ejabberd didn't start correctly:
 	'ejabberdctl status' suggests to look in log files; any other
 	ejabberdctl command shows 'status'.

@@ -89,8 +89,16 @@ load_file(Lang, File) ->
 			      ets:insert(translations,
 					     {{Lang, Orig}, Trans1})
 			  end, Terms);
+        %% Code copied from ejabberd_config.erl
+	{error, {_LineNumber, erl_parse, _ParseMessage} = Reason} ->
+	    ExitText = lists:flatten(File ++ " approximately in the line "
+				     ++ file:format_error(Reason)),
+	    ?ERROR_MSG("Problem loading translation file ~n~s", [ExitText]),
+	    exit(ExitText);
 	{error, Reason} ->
-	    exit(file:format_error(Reason))
+	    ExitText = lists:flatten(File ++ ": " ++ file:format_error(Reason)),
+	    ?ERROR_MSG("Problem loading translation file ~n~s", [ExitText]),
+	    exit(ExitText)
     end.
 
 translate(Lang, Msg) ->
