@@ -1,3 +1,8 @@
+2008-10-27  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_app.erl: Open ejabberd.log before parsing
+	ejabberd.cfg and translation files (EJAB-777)
+
 2008-10-17  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix badarg issue on get_roster_info
