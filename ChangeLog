@@ -1,3 +1,7 @@
+2008-10-27  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in (clean-local): Delete also ejabberdctl.example
+
 2008-10-25  Badlop  <badlop@process-one.net>
 
 	* src/translate.erl: When a translation file can't be loaded, show
