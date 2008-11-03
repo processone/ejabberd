@@ -1,3 +1,7 @@
+2008-11-03  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_c2s.erl: Disable zlib when STARTTLS is required
+
 2008-10-27  Badlop  <badlop@process-one.net>
 
 	* src/Makefile.in (clean-local): Delete also ejabberdctl.example
