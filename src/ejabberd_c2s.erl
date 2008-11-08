@@ -62,6 +62,8 @@
 -define(SETS, gb_sets).
 -define(DICT, dict).
 
+%% pres_a contains all the presence available send (either through roster mechanism or directed).
+%% Directed presence unavailable remove user from pres_a.
 -record(state, {socket,
 		sockmod,
 		socket_monitor,
