@@ -1,3 +1,8 @@
+2008-11-08  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_s2s_out.erl: exports the DNS resolution
+	function.
+
 2008-10-27  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_app.erl: Open ejabberd.log before parsing
