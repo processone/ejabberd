@@ -1,7 +1,8 @@
 2008-11-12  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_http.erl: Include recognized headers in
-	request_headers as atoms, and others as strings (EJAB-778)
+	request_headers as atoms, and others as strings (EJAB-778).
+	URL path should be tokenized by / and then decoded (EJAB-786).
 
 	* doc/guide.tex: Improve legibility of mod_irc example config
 

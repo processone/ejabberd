@@ -327,13 +327,13 @@ process_request(#state{request_method = Method,
 	{'EXIT', _} ->
 	    process_request(false);
 	{NPath, Query} ->
+	    LPath = [path_decode(NPE) || NPE <- string:tokens(NPath, "/")],
 	    LQuery = case (catch parse_urlencoded(Query)) of
 			 {'EXIT', _Reason} ->
 			     [];
 			 LQ ->
 			     LQ
 		     end,
-	    LPath = string:tokens(NPath, "/"),
 	    {ok, IP} =
 		case SockMod of
 		    gen_tcp ->
@@ -393,7 +393,7 @@ process_request(#state{request_method = Method,
 	{'EXIT', _} ->
 	    process_request(false);
 	{NPath, _Query} ->
-	    LPath = string:tokens(NPath, "/"),
+	    LPath = [path_decode(NPE) || NPE <- string:tokens(NPath, "/")],
 	    LQuery = case (catch parse_urlencoded(Data)) of
 			 {'EXIT', _Reason} ->
 			     [];
@@ -599,24 +599,30 @@ crypt(S) when is_binary(S) ->
 %    notice as well as this list of conditions.
 
 
-%% url decode the path and return {Path, QueryPart}
-
+%% @doc Split the URL and return {Path, QueryPart}
 url_decode_q_split(Path) ->
     url_decode_q_split(Path, []).
+url_decode_q_split([$?|T], Ack) ->
+    %% Don't decode the query string here, that is parsed separately.
+    {path_norm_reverse(Ack), T};
+url_decode_q_split([H|T], Ack) when H /= 0 ->
+    url_decode_q_split(T, [H|Ack]);
+url_decode_q_split([], Ack) ->
+    {path_norm_reverse(Ack), []}.
 
-url_decode_q_split([$%, Hi, Lo | Tail], Ack) ->
+%% @doc Decode a part of the URL and return string()
+path_decode(Path) ->
+    path_decode(Path, []).
+path_decode([$%, Hi, Lo | Tail], Ack) ->
     Hex = hex_to_integer([Hi, Lo]),
     if Hex  == 0 -> exit(badurl);
        true -> ok
     end,
-    url_decode_q_split(Tail, [Hex|Ack]);
-url_decode_q_split([$?|T], Ack) ->
-    %% Don't decode the query string here, that is parsed separately.
-    {path_norm_reverse(Ack), T};
-url_decode_q_split([H|T], Ack) when H /= 0 -> 
-    url_decode_q_split(T, [H|Ack]);
-url_decode_q_split([], Ack) ->
-    {path_norm_reverse(Ack), []}.
+    path_decode(Tail, [Hex|Ack]);
+path_decode([H|T], Ack) when H /= 0 ->
+    path_decode(T, [H|Ack]);
+path_decode([], Ack) ->
+    lists:reverse(Ack).
 
 path_norm_reverse("/" ++ T) -> start_dir(0, "/", T);
 path_norm_reverse(       T) -> start_dir(0,  "", T).
