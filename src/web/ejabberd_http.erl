@@ -201,7 +201,7 @@ process_header(State, Data) ->
 			request_version = Version,
 			request_path = Path,
 			request_keepalive = KeepAlive};
-	{ok, {http_header, _, 'Connection', _, Conn}} ->
+	{ok, {http_header, _, 'Connection'=Name, _, Conn}} ->
 	    KeepAlive1 = case jlib:tolower(Conn) of
 			     "keep-alive" ->
 				 true;
@@ -210,23 +210,27 @@ process_header(State, Data) ->
 			     _ ->
 				 State#state.request_keepalive
 			 end,
-	    State#state{request_keepalive = KeepAlive1};
-	{ok, {http_header, _, 'Authorization', _, Auth}} ->
-	    State#state{request_auth = parse_auth(Auth)};
-	{ok, {http_header, _, 'Content-Length', _, SLen}} ->
+	    State#state{request_keepalive = KeepAlive1,
+			request_headers=add_header(Name, Conn, State)};
+	{ok, {http_header, _, 'Authorization'=Name, _, Auth}} ->
+	    State#state{request_auth = parse_auth(Auth),
+			request_headers=add_header(Name, Auth, State)};
+	{ok, {http_header, _, 'Content-Length'=Name, _, SLen}} ->
 	    case catch list_to_integer(SLen) of
 		Len when is_integer(Len) ->
-		    State#state{request_content_length = Len};
+		    State#state{request_content_length = Len,
+				request_headers=add_header(Name, SLen, State)};
 		_ ->
 		    State
 	    end;
-	{ok, {http_header, _, 'Accept-Language', _, Langs}} ->
-	    State#state{request_lang = parse_lang(Langs)};
-	{ok, {http_header, _, 'Host', _, Host}} ->
-		State#state{request_host = Host};
+	{ok, {http_header, _, 'Accept-Language'=Name, _, Langs}} ->
+	    State#state{request_lang = parse_lang(Langs),
+			request_headers=add_header(Name, Langs, State)};
+	{ok, {http_header, _, 'Host'=Name, _, Host}} ->
+	    State#state{request_host = Host,
+			request_headers=add_header(Name, Host, State)};
 	{ok, {http_header, _, Name, _, Value}} ->
-		Headers = [{Name, Value} | State#state.request_headers],
-		State#state{request_headers=Headers};
+	    State#state{request_headers=add_header(Name, Value, State)};
 	{ok, http_eoh} ->
 	    ?DEBUG("(~w) http query: ~w ~s~n",
 		   [State#state.socket,
@@ -261,6 +265,9 @@ process_header(State, Data) ->
 	    #state{end_of_request = true,
 		   request_handlers = State#state.request_handlers}
     end.
+
+add_header(Name, Value, State) ->
+    [{Name, Value} | State#state.request_headers].
 
 %% @spec (SockMod, HostPort) -> {Host::string(), Port::integer(), TP}
 %% where
