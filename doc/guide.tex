@@ -2543,20 +2543,19 @@ Examples:
  ]}.
 \end{verbatim}
 \item In next example the IRC transport is available with JIDs with prefix \jid{irc-t.net}.
-  Moreover, the transport is only accessible by paying customers registered on
-  our domains and on other servers.
+  Moreover, the transport is only accessible to two users 
+  of \term{example.org}, and any user of \term{example.com}:
 \begin{verbatim}
-{acl, paying_customers, {user, "customer1", "example.net"}}.
-{acl, paying_customers, {user, "customer2", "example.com"}}.
-{acl, paying_customers, {user, "customer3", "example.org"}}.
+{acl, paying_customers, {user, "customer1", "example.org"}}.
+{acl, paying_customers, {user, "customer2", "example.org"}}.
+{acl, paying_customers, {server, "example.com"}}.
 
-{access, paying_customers, [{allow, paying_customers},
-                              {deny, all}]}.
+{access, irc_users, [{allow, paying_customers}, {deny, all}]}.
 
 {modules,
  [
   ...
-  {mod_irc, [{access, paying_customers},
+  {mod_irc, [{access, irc_users},
              {host, "irc.example.net"}]},
   ...
  ]}.
