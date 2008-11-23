@@ -1,3 +1,8 @@
+2008-11-23  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_receiver.erl: Hibernate after timeout
+	* src/ejabberd_frontend_socket.erl: Likewise
+
 2008-11-12  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_http.erl: Include recognized headers in
