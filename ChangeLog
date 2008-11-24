@@ -1,3 +1,9 @@
+2008-11-24  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/eldap/Makefile.in: added +optimize and +driver
+	compilation options
+	* src/eldap/Makefile.win32: Likewise
+
 2008-11-23  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/ejabberd_receiver.erl: Hibernate after timeout

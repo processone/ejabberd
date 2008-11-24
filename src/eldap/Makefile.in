@@ -6,6 +6,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
+ASN_FLAGS = -bber_bin +optimize +driver
+
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
@@ -27,7 +29,7 @@ all:    $(BEAMS) ELDAPv3.beam
 ELDAPv3.beam: ELDAPv3.erl
 
 ELDAPv3.erl:       ELDAPv3.asn
-	@ERLC@ -bber_bin -W $(EFLAGS) $<
+	@ERLC@ $(ASN_FLAGS) -W $(EFLAGS) $<
 
 $(OUTDIR)/%.beam:	%.erl ELDAPv3.erl
 	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
