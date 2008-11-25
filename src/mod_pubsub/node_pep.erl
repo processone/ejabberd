@@ -170,14 +170,9 @@ get_entity_affiliations(_Host, Owner) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     node_default:get_entity_affiliations(OwnerKey, Owner).
 
-get_node_affiliations(_Host, Node) ->
-    States = mnesia:match_object(
-	#pubsub_state{stateid = {'_', {'_', Node}},
-	_ = '_'}),
-    Tr = fun(#pubsub_state{stateid = {J, {_, _}}, affiliation = A}) ->
-	{J, A}
-	end,
-    {result, lists:map(Tr, States)}.
+get_node_affiliations(Host, Node) ->
+    OwnerKey = jlib:jid_remove_resource(Host),
+    node_default:get_node_affiliations(OwnerKey, Node).
 
 get_affiliation(_Host, Node, Owner) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
