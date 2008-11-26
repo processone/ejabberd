@@ -1,5 +1,7 @@
 2008-11-26  Badlop  <badlop@process-one.net>
 
+	* src/ejabberdctl.template: Fix detection of ejabberdctl.cfg path
+
 	* src/mod_irc/mod_irc.erl: Announce disco#info (thanks to Spike)
 	* src/mod_muc/mod_muc.erl: Announce disco#info disco#items
 	* src/mod_proxy65/mod_proxy65_service.erl: No announce disco#items

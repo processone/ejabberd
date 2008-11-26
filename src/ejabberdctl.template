@@ -14,10 +14,6 @@ ERLANG_NODE=$NODE@$HOST
 ERL=@erl@
 INSTALLUSER=@installuser@
 
-# read custom configuration
-EJABBERDCTL_CONFIG_PATH=$ETCDIR/ejabberdctl.cfg
-[ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
-
 # parse command line parameters
 ARGS=
 while [ $# -ne 0 ] ; do
@@ -42,6 +38,10 @@ fi
 if [ "$EJABBERD_CONFIG_PATH" = "" ] ; then
     EJABBERD_CONFIG_PATH=$ETCDIR/ejabberd.cfg
 fi
+if [ "$EJABBERDCTL_CONFIG_PATH" = "" ] ; then
+    EJABBERDCTL_CONFIG_PATH=$ETCDIR/ejabberdctl.cfg
+fi
+[ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
 if [ "$LOGS_DIR" = "" ] ; then
     LOGS_DIR=@LOCALSTATEDIR@/log/ejabberd
 fi
