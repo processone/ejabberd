@@ -755,6 +755,8 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	       [{"category", "pubsub"},
 		{"type", "service"},
 		{"name", translate:translate(Lang, "Publish-Subscribe")}], []},
+	      {xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
+	      {xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
 	      {xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
 	      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}] ++
 	     lists:map(fun(Feature) ->
