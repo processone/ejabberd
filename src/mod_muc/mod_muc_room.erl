@@ -2626,11 +2626,25 @@ check_allowed_persistent_change(XEl, StateData, From) ->
 -define(PRIVATEXFIELD(Label, Var, Val),
 	?XFIELD("text-private", Label, Var, Val)).
 
+get_default_room_maxusers(RoomState) ->
+    DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, ?MAX_USERS_DEFAULT),
+    RoomState2 = set_opts(DefRoomOpts, RoomState),
+    (RoomState2#state.config)#config.max_users.
 
 get_config(Lang, StateData, From) ->
     {_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = StateData#state.access,
     ServiceMaxUsers = get_service_max_users(StateData),
+
+    DefaultRoomMaxUsers = get_default_room_maxusers(StateData), %+++
+    ?INFO_MSG("DefaultMaxUsers: ~p", [DefaultRoomMaxUsers]),
+
     Config = StateData#state.config,
+    {MaxUsersRoomInteger, MaxUsersRoomString} =
+	case get_max_users(StateData) of
+	    N when is_integer(N) ->
+		{N, erlang:integer_to_list(N)};
+	    _ -> {0, "none"}
+	end,
     Res =
 	[{xmlelement, "title", [],
 	  [{xmlcdata, translate:translate(Lang, "Configuration for ") ++
@@ -2670,13 +2684,7 @@ get_config(Lang, StateData, From) ->
 	  [{"type", "list-single"},
 	   {"label", translate:translate(Lang, "Maximum Number of Occupants")},
 	   {"var", "muc#roomconfig_maxusers"}],
-	  [{xmlelement, "value", [], [{xmlcdata,
-				       case get_max_users(StateData) of
-					   N when is_integer(N) ->
-					       erlang:integer_to_list(N);
-					   _ -> "none"
-				       end
-				      }]}] ++
+	  [{xmlelement, "value", [], [{xmlcdata, MaxUsersRoomString}]}] ++
 	  if
 	      is_integer(ServiceMaxUsers) -> [];
 	      true ->
@@ -2687,7 +2695,8 @@ get_config(Lang, StateData, From) ->
 	  [{xmlelement, "option", [{"label", erlang:integer_to_list(N)}],
 	    [{xmlelement, "value", [],
 	      [{xmlcdata, erlang:integer_to_list(N)}]}]} ||
-	      N <- ?MAX_USERS_DEFAULT_LIST, N =< ServiceMaxUsers]
+	      N <- lists:usort([ServiceMaxUsers, DefaultRoomMaxUsers, MaxUsersRoomInteger |
+			       ?MAX_USERS_DEFAULT_LIST]), N =< ServiceMaxUsers]
 	 },
 	 {xmlelement, "field",
 	  [{"type", "list-single"},
