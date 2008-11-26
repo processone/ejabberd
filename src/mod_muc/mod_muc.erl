@@ -508,6 +508,8 @@ iq_disco_info(Lang) ->
       [{"category", "conference"},
        {"type", "text"},
        {"name", translate:translate(Lang, "Chatrooms")}], []},
+     {xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
+     {xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
      {xmlelement, "feature", [{"var", ?NS_MUC}], []},
      {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].

@@ -1,5 +1,11 @@
 2008-11-26  Badlop  <badlop@process-one.net>
 
+	* src/mod_irc/mod_irc.erl: Announce disco#info (thanks to Spike)
+	* src/mod_muc/mod_muc.erl: Announce disco#info disco#items
+	* src/mod_proxy65/mod_proxy65_service.erl: No announce disco#items
+	* src/mod_pubsub/mod_pubsub.erl: Announce disco#info disco#items
+	* src/mod_vcard.erl: Announce disco#info
+
 	* src/gen_mod.erl: First store module options in ETS and Mnesia,
 	then start the module. In case of failure, remove options from
 	ETS. Until now the module was started before the options were

@@ -138,9 +138,9 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 	[] ->
 	    case Acc of
 		{result, Features} ->
-		    {result, [?NS_VCARD | Features]};
+		    {result, [?NS_DISCO_INFO, ?NS_VCARD | Features]};
 		empty ->
-		    {result, [?NS_VCARD]}
+		    {result, [?NS_DISCO_INFO, ?NS_VCARD]}
 	    end;
  	_ ->
 	    Acc
@@ -378,6 +378,8 @@ do_route(ServerHost, From, To, Packet) ->
 						    {"name",
 						     translate:translate(Lang, "vCard User Search")}],
 						   []},
+						  {xmlelement, "feature",
+						   [{"var", ?NS_DISCO_INFO}], []},
 						  {xmlelement, "feature",
 						   [{"var", ?NS_SEARCH}], []},
 						  {xmlelement, "feature",
