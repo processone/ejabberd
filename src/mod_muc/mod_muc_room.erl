@@ -2634,10 +2634,7 @@ get_default_room_maxusers(RoomState) ->
 get_config(Lang, StateData, From) ->
     {_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = StateData#state.access,
     ServiceMaxUsers = get_service_max_users(StateData),
-
-    DefaultRoomMaxUsers = get_default_room_maxusers(StateData), %+++
-    ?INFO_MSG("DefaultMaxUsers: ~p", [DefaultRoomMaxUsers]),
-
+    DefaultRoomMaxUsers = get_default_room_maxusers(StateData),
     Config = StateData#state.config,
     {MaxUsersRoomInteger, MaxUsersRoomString} =
 	case get_max_users(StateData) of
