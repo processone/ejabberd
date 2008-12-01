@@ -1,9 +1,13 @@
-2008-10-17  Christophe Romain <christophe.romain@process-one.net>
+2008-12-01  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_frontend_socket.erl: Hibernate ejabberd_receiver and
 	ejabberd_frontend_socket processes after timeout. Backported from
 	Aleksey's patch (r1680)
 	* src/ejabberd_frontend_socket.erl: Likewise
+
+	* src/tls/tls_drv.c: Don't create a SSL context on every connection
+	and disable SSLv2 on outgoing connections (EJAB-781). Backported from
+	Aleksey's patch (r1675)
 
 2008-11-26  Badlop  <badlop@process-one.net>
 
