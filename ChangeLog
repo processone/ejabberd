@@ -1,3 +1,8 @@
+2008-12-01  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: New subsection Database Connection
+	* doc/guide.html: Likewise
+
 2008-12-01  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_frontend_socket.erl: Hibernate ejabberd_receiver and
