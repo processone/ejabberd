@@ -244,7 +244,8 @@ set_new_rosteritems(UserFrom, ServerFrom,
 set_item(User, Server, Resource, Item) ->
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
       children = [mod_roster:item_to_xml(Item)]},
-    ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request, "push"),
+    ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
+      "push" ++ randoms:get_string()),
     ejabberd_router:route(
       exmpp_jid:make_jid(User, Server, Resource),
       exmpp_jid:make_bare_jid(Server),
@@ -567,7 +568,8 @@ push_item(User, Server, From, Item) ->
 			 Item#roster.subscription}]}),
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
       children = [item_to_xml(Item)]},
-    Stanza = exmpp_iq:set(?NS_JABBER_CLIENT, Request, "push"),
+    Stanza = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
+      "push" ++ randoms:get_string()),
     lists:foreach(
       fun(Resource) ->
 	      JID = exmpp_jid:make_jid(User, Server, Resource),

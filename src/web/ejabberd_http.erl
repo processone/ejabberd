@@ -202,7 +202,7 @@ process_header(State, Data) ->
 			request_version = Version,
 			request_path = Path,
 			request_keepalive = KeepAlive};
-	{ok, {http_header, _, 'Connection', _, Conn}} ->
+	{ok, {http_header, _, 'Connection'=Name, _, Conn}} ->
 	    KeepAlive1 = case exmpp_stringprep:to_lower(Conn) of
 			     "keep-alive" ->
 				 true;
@@ -211,23 +211,27 @@ process_header(State, Data) ->
 			     _ ->
 				 State#state.request_keepalive
 			 end,
-	    State#state{request_keepalive = KeepAlive1};
-	{ok, {http_header, _, 'Authorization', _, Auth}} ->
-	    State#state{request_auth = parse_auth(Auth)};
-	{ok, {http_header, _, 'Content-Length', _, SLen}} ->
+	    State#state{request_keepalive = KeepAlive1,
+			request_headers=add_header(Name, Conn, State)};
+	{ok, {http_header, _, 'Authorization'=Name, _, Auth}} ->
+	    State#state{request_auth = parse_auth(Auth),
+			request_headers=add_header(Name, Auth, State)};
+	{ok, {http_header, _, 'Content-Length'=Name, _, SLen}} ->
 	    case catch list_to_integer(SLen) of
 		Len when is_integer(Len) ->
-		    State#state{request_content_length = Len};
+		    State#state{request_content_length = Len,
+				request_headers=add_header(Name, SLen, State)};
 		_ ->
 		    State
 	    end;
-	{ok, {http_header, _, 'Accept-Language', _, Langs}} ->
-	    State#state{request_lang = parse_lang(Langs)};
-	{ok, {http_header, _, 'Host', _, Host}} ->
-		State#state{request_host = Host};
+	{ok, {http_header, _, 'Accept-Language'=Name, _, Langs}} ->
+	    State#state{request_lang = parse_lang(Langs),
+			request_headers=add_header(Name, Langs, State)};
+	{ok, {http_header, _, 'Host'=Name, _, Host}} ->
+	    State#state{request_host = Host,
+			request_headers=add_header(Name, Host, State)};
 	{ok, {http_header, _, Name, _, Value}} ->
-		Headers = [{Name, Value} | State#state.request_headers],
-		State#state{request_headers=Headers};
+	    State#state{request_headers=add_header(Name, Value, State)};
 	{ok, http_eoh} ->
 	    ?DEBUG("(~w) http query: ~w ~s~n",
 		   [State#state.socket,
@@ -262,6 +266,9 @@ process_header(State, Data) ->
 	    #state{end_of_request = true,
 		   request_handlers = State#state.request_handlers}
     end.
+
+add_header(Name, Value, State) ->
+    [{Name, Value} | State#state.request_headers].
 
 %% @spec (SockMod, HostPort) -> {Host::string(), Port::integer(), TP}
 %% where
@@ -321,13 +328,13 @@ process_request(#state{request_method = Method,
 	{'EXIT', _} ->
 	    process_request(false);
 	{NPath, Query} ->
+	    LPath = [path_decode(NPE) || NPE <- string:tokens(NPath, "/")],
 	    LQuery = case (catch parse_urlencoded(Query)) of
 			 {'EXIT', _Reason} ->
 			     [];
 			 LQ ->
 			     LQ
 		     end,
-	    LPath = string:tokens(NPath, "/"),
 	    {ok, IP} =
 		case SockMod of
 		    gen_tcp ->
@@ -386,7 +393,7 @@ process_request(#state{request_method = Method,
 	{'EXIT', _} ->
 	    process_request(false);
 	{NPath, _Query} ->
-	    LPath = string:tokens(NPath, "/"),
+	    LPath = [path_decode(NPE) || NPE <- string:tokens(NPath, "/")],
 	    LQuery = case (catch parse_urlencoded(Data)) of
 			 {'EXIT', _Reason} ->
 			     [];
@@ -557,24 +564,30 @@ parse_lang(Langs) ->
 %    notice as well as this list of conditions.
 
 
-%% url decode the path and return {Path, QueryPart}
-
+%% @doc Split the URL and return {Path, QueryPart}
 url_decode_q_split(Path) ->
     url_decode_q_split(Path, []).
+url_decode_q_split([$?|T], Ack) ->
+    %% Don't decode the query string here, that is parsed separately.
+    {path_norm_reverse(Ack), T};
+url_decode_q_split([H|T], Ack) when H /= 0 ->
+    url_decode_q_split(T, [H|Ack]);
+url_decode_q_split([], Ack) ->
+    {path_norm_reverse(Ack), []}.
 
-url_decode_q_split([$%, Hi, Lo | Tail], Ack) ->
+%% @doc Decode a part of the URL and return string()
+path_decode(Path) ->
+    path_decode(Path, []).
+path_decode([$%, Hi, Lo | Tail], Ack) ->
     Hex = hex_to_integer([Hi, Lo]),
     if Hex  == 0 -> exit(badurl);
        true -> ok
     end,
-    url_decode_q_split(Tail, [Hex|Ack]);
-url_decode_q_split([$?|T], Ack) ->
-    %% Don't decode the query string here, that is parsed separately.
-    {path_norm_reverse(Ack), T};
-url_decode_q_split([H|T], Ack) when H /= 0 -> 
-    url_decode_q_split(T, [H|Ack]);
-url_decode_q_split([], Ack) ->
-    {path_norm_reverse(Ack), []}.
+    path_decode(Tail, [Hex|Ack]);
+path_decode([H|T], Ack) when H /= 0 ->
+    path_decode(T, [H|Ack]);
+path_decode([], Ack) ->
+    lists:reverse(Ack).
 
 path_norm_reverse("/" ++ T) -> start_dir(0, "/", T);
 path_norm_reverse(       T) -> start_dir(0,  "", T).

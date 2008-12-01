@@ -54,6 +54,8 @@
 		xml_stream_state,
 		timeout}).
 
+-define(HIBERNATE_TIMEOUT, 90000).
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -138,7 +140,7 @@ handle_call({starttls, TLSSocket}, _From,
 			   xml_stream_state = NewXMLStreamState},
     case tls:recv_data(TLSSocket, "") of
 	{ok, TLSData} ->
-	    {reply, ok, process_data(TLSData, NewState)};
+	    {reply, ok, process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
@@ -150,7 +152,7 @@ handle_call({compress, ZlibSocket}, _From,
 			   xml_stream_state = NewXMLStreamState},
     case ejabberd_zlib:recv_data(ZlibSocket, "") of
 	{ok, ZlibData} ->
-	    {reply, ok, process_data(ZlibData, NewState)};
+	    {reply, ok, process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
@@ -158,7 +160,8 @@ handle_call(reset_stream, _From,
 	    #state{xml_stream_state = XMLStreamState} = State) ->
     NewXMLStreamState = exmpp_xmlstream:reset(XMLStreamState),
     Reply = ok,
-    {reply, Reply, State#state{xml_stream_state = NewXMLStreamState}};
+    {reply, Reply, State#state{xml_stream_state = NewXMLStreamState},
+     ?HIBERNATE_TIMEOUT};
 handle_call({become_controller, C2SPid}, _From, State) ->
     Parser = exmpp_xml:start_parser([
       {namespace, true},
@@ -174,10 +177,10 @@ handle_call({become_controller, C2SPid}, _From, State) ->
 			   xml_stream_state = XMLStreamState},
     activate_socket(NewState),
     Reply = ok,
-    {reply, Reply, NewState};
+    {reply, Reply, NewState, ?HIBERNATE_TIMEOUT};
 handle_call(_Request, _From, State) ->
     Reply = ok,
-    {reply, Reply, State}.
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -187,11 +190,11 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({change_shaper, Shaper}, State) ->
     NewShaperState = shaper:new(Shaper),
-    {noreply, State#state{shaper_state = NewShaperState}};
+    {noreply, State#state{shaper_state = NewShaperState}, ?HIBERNATE_TIMEOUT};
 handle_cast(close, State) ->
     {stop, normal, State};
 handle_cast(_Msg, State) ->
-    {noreply, State}.
+    {noreply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -207,19 +210,21 @@ handle_info({Tag, _TCPSocket, Data},
 	tls ->
 	    case tls:recv_data(Socket, Data) of
 		{ok, TLSData} ->
-		    {noreply, process_data(TLSData, State)};
+		    {noreply, process_data(TLSData, State),
+		     ?HIBERNATE_TIMEOUT};
 		{error, _Reason} ->
 		    {stop, normal, State}
 	    end;
 	ejabberd_zlib ->
 	    case ejabberd_zlib:recv_data(Socket, Data) of
 		{ok, ZlibData} ->
-		    {noreply, process_data(ZlibData, State)};
+		    {noreply, process_data(ZlibData, State),
+		     ?HIBERNATE_TIMEOUT};
 		{error, _Reason} ->
 		    {stop, normal, State}
 	    end;
 	_ ->
-	    {noreply, process_data(Data, State)}
+	    {noreply, process_data(Data, State), ?HIBERNATE_TIMEOUT}
     end;
 handle_info({Tag, _TCPSocket}, State)
   when (Tag == tcp_closed) or (Tag == ssl_closed) ->
@@ -228,15 +233,18 @@ handle_info({Tag, _TCPSocket, Reason}, State)
   when (Tag == tcp_error) or (Tag == ssl_error) ->
     case Reason of
 	timeout ->
-	    {noreply, State};
+	    {noreply, State, ?HIBERNATE_TIMEOUT};
 	_ ->
 	    {stop, normal, State}
     end;
 handle_info({timeout, _Ref, activate}, State) ->
     activate_socket(State),
-    {noreply, State};
+    {noreply, State, ?HIBERNATE_TIMEOUT};
+handle_info(timeout, State) ->
+    proc_lib:hibernate(gen_server, enter_loop, [?MODULE, [], State]),
+    {noreply, State, ?HIBERNATE_TIMEOUT};
 handle_info(_Info, State) ->
-    {noreply, State}.
+    {noreply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: terminate(Reason, State) -> void()

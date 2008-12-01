@@ -1,3 +1,74 @@
+2008-12-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Merge from trunk (r1649 to r1692).
+
+2008-11-28  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Clean user activity after timeout
+	(EJAB-804)
+
+2008-11-26  Badlop  <badlop@process-one.net>
+
+	* src/ejabberdctl.template: Fix detection of ejabberdctl.cfg path
+
+	* src/mod_irc/mod_irc.erl: Announce disco#info (thanks to Spike)
+	* src/mod_muc/mod_muc.erl: Announce disco#info disco#items
+	* src/mod_proxy65/mod_proxy65_service.erl: No announce disco#items
+	* src/mod_pubsub/mod_pubsub.erl: Announce disco#info disco#items
+	* src/mod_vcard.erl: Announce disco#info
+
+	* src/gen_mod.erl: First store module options in ETS and Mnesia,
+	then start the module. In case of failure, remove options from
+	ETS. Until now the module was started before the options were
+	stored in database, and some modules started incorrectly because
+	they couldn't access the options from database; for instance
+	mod_muc_room required this for reading max_users option.
+
+	* src/mod_muc/mod_muc_room.erl: Include the value of max_users
+	service option and the current max_users room option in the list
+	of allowed room limit values.
+
+2008-10-17  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/node_pep.erl: Fix get_node_affiliations resultset to
+	owner (Thanks to Michal Schmidt)
+
+2008-11-24  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/eldap/Makefile.in: added +optimize and +driver
+	compilation options
+	* src/eldap/Makefile.win32: Likewise
+
+2008-11-23  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_receiver.erl: Hibernate after timeout
+	* src/ejabberd_frontend_socket.erl: Likewise
+
+2008-11-12  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_http.erl: Include recognized headers in
+	request_headers as atoms, and others as strings (EJAB-778).
+	URL path should be tokenized by / and then decoded (EJAB-786).
+
+	* doc/guide.tex: Improve legibility of mod_irc example config
+
+2008-11-10  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/tls/tls_drv.c: Don't create a SSL context on every
+	connection and disable SSLv2 on outgoing connections (EJAB-781)
+
+2008-11-08  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_s2s_out.erl: exports the DNS resolution
+	function.
+
+2008-11-06  Badlop  <badlop@process-one.net>
+
+	* src/extauth.erl: When the extauth call fails or timeouts, deny
+	authorization. Use two timeouts: 60s for script initialization and
+	10s for regular calls. (thanks to Kevin Crosbie from
+	Ravenpack) (EJAB-627)
+
 2008-11-04  Pablo Polvorin <pablo.polvorin@process-one.net>
 
 	* src/mod_muc/mod_muc_log.erl: Convert to exmpp, fix recursive
@@ -13,6 +84,10 @@
 	* src/mod_muc/mod_muc.erl, src/mod_muc/mod_muc_room.erl: Convert to 
 	exmpp.
 
+2008-11-03  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_c2s.erl: Disable zlib when STARTTLS is required
+
 2008-10-31  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_last_odbc.erl (store_last_info/4): Fix a bug where the
@@ -21,10 +96,63 @@
 	(get_last_info/2): Fix a bug where the status was returned as a list
 	instead of a binary.
 
+2008-10-27  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in (clean-local): Delete also ejabberdctl.example
+
+2008-10-25  Badlop  <badlop@process-one.net>
+
+	* src/translate.erl: When a translation file can't be loaded, show
+	detailed error message
+
+	* src/ejabberd_ctl.erl: If ejabberd didn't start correctly:
+	'ejabberdctl status' suggests to look in log files; any other
+	ejabberdctl command shows 'status'.
+
+	* src/ejabberd_app.erl: Open ejabberd.log sooner, so errors during
+	ejabberd initialization are logged in that file (EJAB-777). Write
+	a log message when ejabberd finishes the start or stop.
+
+2008-10-24  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_c2s.erl: Ensure unique ID in roster push (EJAB-721)
+	* src/mod_roster.erl: Likewise
+	* src/mod_roster_odbc.erl: Likewise
+	* src/mod_shared_roster.erl: Likewise
+
+	* src/ejabberd_listener.erl: Fix listeners
+	* src/ejabberd_sup.erl: Likewise
+	* src/gen_mod.erl: Likewise
+
+2008-10-23  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_frontend_socket.erl: Fixed SSL sockets
+
 2008-10-20  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_irc/mod_irc.erl, src/mod_irc/mod_irc_connection.erl: Convert
 	to exmpp.
+
+2008-10-17  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in: docdir should be prefixed with DESTDIR (thanks
+	to Jack Moffitt)(EJAB-775)
+
+2008-10-17  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: fix badarg issue on get_roster_info
+	when allowed roster groups is not defined
+
+	* src/mod_pubsub/mod_pubsub.erl: fix remove_user not unsubscribing
+	user (EJAB-684)
+
+	* src/mod_pubsub/node_default.erl: does not write item when max_items
+	set to 0 (solves EJAB-768)
+
+2008-10-14  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: fix pubsub_publish_item hook
+	ServerHost parameter (EJAB-772)
 
 2008-10-13  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -48,6 +176,10 @@
 	modules.
 
 	* src/ejd2odbc.erl, src/jd2ejd.erl: Convert to exmpp.
+
+2008-10-13  Jerome Sautret  <jerome.sautret@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: log MySQL driver messages.
 
 2008-10-13  Badlop  <badlop@process-one.net>
 

@@ -29,7 +29,7 @@
 
 -behaviour(application).
 
--export([start_modules/0,start/2, prep_stop/1, stop/1, init/0]).
+-export([start_modules/0,start/2, get_log_path/0, prep_stop/1, stop/1, init/0]).
 
 -include("ejabberd.hrl").
 
@@ -45,6 +45,7 @@ start(normal, _Args) ->
     randoms:start(),
     db_init(),
     sha:start(),
+    start(),
     translate:start(),
     acl:start(),
     ejabberd_ctl:init(),
@@ -53,7 +54,6 @@ start(normal, _Args) ->
     gen_mod:start(),
     ejabberd_config:start(),
     ejabberd_check:config(),
-    start(),
     connect_nodes(),
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
@@ -65,12 +65,13 @@ start(normal, _Args) ->
     %fprof:trace(start, "/tmp/fprof"),
     start_modules(),
     ejabberd_listener:start_listeners(),
+    ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
 start(_, _) ->
     {error, badarg}.
 
 %% Prepare the application for termination.
-%% This function is called when an application is about to be stopped, 
+%% This function is called when an application is about to be stopped,
 %% before shutting down the processes of the application.
 prep_stop(State) ->
     stop_modules(),
@@ -79,6 +80,7 @@ prep_stop(State) ->
 
 %% All the processes were killed when this function is called
 stop(_State) ->
+    ?INFO_MSG("ejabberd ~s is stopped in the node ~p", [?VERSION, node()]),
     ok.
 
 
@@ -93,18 +95,7 @@ init() ->
     register(ejabberd, self()),
     %erlang:system_flag(fullsweep_after, 0),
     %error_logger:logfile({open, ?LOG_PATH}),
-    LogPath =
-	case application:get_env(log_path) of
-            {ok, Path} ->
-		Path;
-	    undefined ->
-		case os:getenv("EJABBERD_LOG_PATH") of
-		    false ->
-			?LOG_PATH;
-		    Path ->
-			Path
-		end
-	end,
+    LogPath = get_log_path(),
     error_logger:add_report_handler(ejabberd_logger_h, LogPath),
     erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
     case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
@@ -171,3 +162,21 @@ connect_nodes() ->
 			  end, Nodes)
     end.
 
+%% @spec () -> string()
+%% Returns the full path to the ejabberd log file.
+%% It first checks for application configuration parameter 'log_path'.
+%% If not defined it checks the environment variable EJABBERD_LOG_PATH.
+%% And if that one is neither defined, returns the default value:
+%% "ejabberd.log" in current directory.
+get_log_path() ->
+    case application:get_env(log_path) of
+	{ok, Path} ->
+	    Path;
+	undefined ->
+	    case os:getenv("EJABBERD_LOG_PATH") of
+		false ->
+		    ?LOG_PATH;
+		Path ->
+		    Path
+	    end
+    end.

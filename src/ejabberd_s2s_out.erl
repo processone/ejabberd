@@ -52,7 +52,8 @@
 	 handle_info/3,
 	 terminate/3,
 	 code_change/4,
-	 test_get_addr_port/1]).
+	 test_get_addr_port/1,
+	 get_addr_port/1]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 

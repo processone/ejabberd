@@ -53,6 +53,8 @@
 
 -record(state, {sockmod, socket, receiver}).
 
+-define(HIBERNATE_TIMEOUT, 90000).
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -93,7 +95,7 @@ start(Module, SockMod, Socket, Opts) ->
     end.
 
 starttls(FsmRef, TLSOpts) ->
-    gen_server:call(FsmRef, {starttls, TLSOpts}),
+    %gen_server:call(FsmRef, {starttls, TLSOpts}),
     FsmRef.
 
 starttls(FsmRef, TLSOpts, Data) ->
@@ -136,7 +138,8 @@ sockname(FsmRef) ->
     gen_server:call(FsmRef, sockname).
 
 peername(FsmRef) ->
-    gen_server:call(FsmRef, peername).
+    %gen_server:call(FsmRef, peername).
+    {ok, {{0, 0, 0, 0}, 0}}.
 
 
 %%====================================================================
@@ -153,11 +156,12 @@ peername(FsmRef) ->
 init([Module, SockMod, Socket, Opts, Receiver]) ->
     %% TODO: monitor the receiver
     Node = ejabberd_node_groups:get_closest_node(backend),
+    {SockMod2, Socket2} = check_starttls(SockMod, Socket, Receiver, Opts),
     {ok, Pid} =
 	rpc:call(Node, Module, start, [{?MODULE, self()}, Opts]),
     ejabberd_receiver:become_controller(Receiver, Pid),
-    {ok, #state{sockmod = SockMod,
-		socket = Socket,
+    {ok, #state{sockmod = SockMod2,
+		socket = Socket2,
 		receiver = Receiver}}.
 
 %%--------------------------------------------------------------------
@@ -173,7 +177,8 @@ handle_call({starttls, TLSOpts}, _From, State) ->
     {ok, TLSSocket} = tls:tcp_to_tls(State#state.socket, TLSOpts),
     ejabberd_receiver:starttls(State#state.receiver, TLSSocket),
     Reply = ok,
-    {reply, Reply, State#state{socket = TLSSocket, sockmod = tls}};
+    {reply, Reply, State#state{socket = TLSSocket, sockmod = tls},
+     ?HIBERNATE_TIMEOUT};
 
 handle_call({starttls, TLSOpts, Data}, _From, State) ->
     {ok, TLSSocket} = tls:tcp_to_tls(State#state.socket, TLSOpts),
@@ -181,7 +186,8 @@ handle_call({starttls, TLSOpts, Data}, _From, State) ->
     catch (State#state.sockmod):send(
 	    State#state.socket, Data),
     Reply = ok,
-    {reply, Reply, State#state{socket = TLSSocket, sockmod = tls}};
+    {reply, Reply, State#state{socket = TLSSocket, sockmod = tls},
+     ?HIBERNATE_TIMEOUT};
 
 handle_call(compress, _From, State) ->
     {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
@@ -189,7 +195,8 @@ handle_call(compress, _From, State) ->
 			 State#state.socket),
     ejabberd_receiver:compress(State#state.receiver, ZlibSocket),
     Reply = ok,
-    {reply, Reply, State#state{socket = ZlibSocket, sockmod = ejabberd_zlib}};
+    {reply, Reply, State#state{socket = ZlibSocket, sockmod = ejabberd_zlib},
+     ?HIBERNATE_TIMEOUT};
 
 handle_call({compress, Data}, _From, State) ->
     {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
@@ -199,35 +206,36 @@ handle_call({compress, Data}, _From, State) ->
     catch (State#state.sockmod):send(
 	    State#state.socket, Data),
     Reply = ok,
-    {reply, Reply, State#state{socket = ZlibSocket, sockmod = ejabberd_zlib}};
+    {reply, Reply, State#state{socket = ZlibSocket, sockmod = ejabberd_zlib},
+     ?HIBERNATE_TIMEOUT};
 
 handle_call(reset_stream, _From, State) ->
     ejabberd_receiver:reset_stream(State#state.receiver),
     Reply = ok,
-    {reply, Reply, State};
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 
 handle_call({send, Data}, _From, State) ->
     catch (State#state.sockmod):send(
 	    State#state.socket, Data),
     Reply = ok,
-    {reply, Reply, State};
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 
 handle_call({change_shaper, Shaper}, _From, State) ->
     ejabberd_receiver:change_shaper(State#state.receiver, Shaper),
     Reply = ok,
-    {reply, Reply, State};
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 
 handle_call(get_sockmod, _From, State) ->
     Reply = State#state.sockmod,
-    {reply, Reply, State};
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 
 handle_call(get_peer_certificate, _From, State) ->
     Reply = tls:get_peer_certificate(State#state.socket),
-    {reply, Reply, State};
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 
 handle_call(get_verify_result, _From, State) ->
     Reply = tls:get_verify_result(State#state.socket),
-    {reply, Reply, State};
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 
 handle_call(close, _From, State) ->
     ejabberd_receiver:close(State#state.receiver),
@@ -243,7 +251,7 @@ handle_call(sockname, _From, State) ->
 	    _ ->
 		SockMod:sockname(Socket)
 	end,
-    {reply, Reply, State};
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 
 handle_call(peername, _From, State) ->
     #state{sockmod = SockMod, socket = Socket} = State,
@@ -254,11 +262,11 @@ handle_call(peername, _From, State) ->
 	    _ ->
 		SockMod:peername(Socket)
 	end,
-    {reply, Reply, State};
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
-    {reply, Reply, State}.
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -267,7 +275,7 @@ handle_call(_Request, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast(_Msg, State) ->
-    {noreply, State}.
+    {noreply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -275,8 +283,11 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
+handle_info(timeout, State) ->
+    proc_lib:hibernate(gen_server, enter_loop, [?MODULE, [], State]),
+    {noreply, State, ?HIBERNATE_TIMEOUT};
 handle_info(_Info, State) ->
-    {noreply, State}.
+    {noreply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: terminate(Reason, State) -> void()
@@ -298,3 +309,17 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+check_starttls(SockMod, Socket, Receiver, Opts) ->
+    TLSEnabled = lists:member(tls, Opts),
+    TLSOpts = lists:filter(fun({certfile, _}) -> true;
+			      (_) -> false
+			   end, Opts),
+    if
+	TLSEnabled ->
+	    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
+	    ejabberd_receiver:starttls(Receiver, TLSSocket),
+	    {tls, TLSSocket};
+	true ->
+	    {SockMod, Socket}
+    end.
+

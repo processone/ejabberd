@@ -58,8 +58,9 @@ start_listeners() ->
 
 start(Port, Module, Opts) ->
     %% Check if the module is an ejabberd listener or an independent listener
-    case Module:socket_type() of
-	independent -> Module:start_listener(Port, Opts);
+    ModuleRaw = strip_frontend(Module),
+    case ModuleRaw:socket_type() of
+	independent -> ModuleRaw:start_listener(Port, Opts);
 	_ -> start_dependent(Port, Module, Opts)
     end.
 
@@ -120,12 +121,11 @@ accept(ListenSocket, Module, Opts) ->
 		_ ->
 		    ok
 	    end,
-	    case Module of
-		{frontend, Mod} ->
-		    ejabberd_frontend_socket:start(Mod, gen_tcp, Socket, Opts);
-		_ ->
-		    ejabberd_socket:start(Module, gen_tcp, Socket, Opts)
-	    end,
+	    CallMod = case is_frontend(Module) of
+			  true -> ejabberd_frontend_socket;
+			  false -> ejabberd_socket
+		      end,
+	    CallMod:start(strip_frontend(Module), gen_tcp, Socket, Opts),
 	    accept(ListenSocket, Module, Opts);
 	{error, Reason} ->
 	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
@@ -137,11 +137,12 @@ start_listener(Port, Module, Opts) ->
     start_module_sup(Port, Module),
     start_listener_sup(Port, Module, Opts).
 
+%% Only required for some listeners, but doing for all doesn't hurt
 start_module_sup(_Port, Module) ->
     Proc1 = gen_mod:get_module_proc("sup", Module),
     ChildSpec1 =
 	{Proc1,
-	 {ejabberd_tmp_sup, start_link, [Proc1, Module]},
+	 {ejabberd_tmp_sup, start_link, [Proc1, strip_frontend(Module)]},
 	 permanent,
 	 infinity,
 	 supervisor,
@@ -188,3 +189,10 @@ delete_listener(Port, Module) ->
     ejabberd_config:add_local_option(listen, Ports1),
     stop_listener(Port, Module).
 
+is_frontend({frontend, _Module}) -> true;
+is_frontend(_) -> false.
+
+%% @doc(FrontMod) -> atom()
+%% where FrontMod = atom() | {frontend, atom()}
+strip_frontend({frontend, Module}) -> Module;
+strip_frontend(Module) when is_atom(Module) -> Module.

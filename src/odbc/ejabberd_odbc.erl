@@ -318,8 +318,7 @@ pgsql_item_to_odbc(_) ->
 %% part of init/1
 %% Open a database connection to MySQL
 mysql_connect(Server, Port, DB, Username, Password, StartInterval) ->
-    NoLogFun = fun(_Level,_Format,_Argument) -> ok end,
-    case mysql_conn:start(Server, Port, Username, Password, DB, NoLogFun) of
+    case mysql_conn:start(Server, Port, Username, Password, DB, fun log/3) of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
             mysql_conn:fetch(Ref, ["set names 'utf8';"], self()),
@@ -359,3 +358,14 @@ mysql_item_to_odbc(Columns, Recs) ->
 % perform a harmless query on all opened connexions to avoid connexion close.
 keep_alive(PID) ->
     gen_server:call(PID, {sql_query, ?KEEPALIVE_QUERY}, 60000).
+
+% log function used by MySQL driver
+log(Level, Format, Args) ->
+    case Level of
+	debug ->
+	    ?DEBUG(Format, Args);
+	normal ->
+	    ?INFO_MSG(Format, Args);
+	error ->
+	    ?ERROR_MSG(Format, Args)
+    end.

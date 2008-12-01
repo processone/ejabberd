@@ -62,14 +62,16 @@ start() ->
 
 
 start_module(Host, Module, Opts) ->
+    set_module_opts_mnesia(Host, Module, Opts),
+    ets:insert(ejabberd_modules,
+	       #ejabberd_module{module_host = {Module, Host},
+				opts = Opts}),
     case catch Module:start(Host, Opts) of
 	{'EXIT', Reason} ->
+	    del_module_mnesia(Host, Module),
+	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
-	    set_module_opts_mnesia(Host, Module, Opts),
-	    ets:insert(ejabberd_modules,
-		       #ejabberd_module{module_host = {Module, Host},
-					opts = Opts}),
 	    ok
     end.
 
@@ -224,6 +226,8 @@ get_hosts(Opts, Prefix) ->
 	    Hosts
     end.
 
+get_module_proc(Host, {frontend, Base}) ->
+    get_module_proc("frontend_" ++ Host, Base);
 get_module_proc(Host, Base) ->
     list_to_atom(atom_to_list(Base) ++ "_" ++ Host).
 

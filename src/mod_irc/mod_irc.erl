@@ -306,6 +306,8 @@ iq_disco(Lang) ->
        #xmlattr{name = 'type', value = "irc"},
        #xmlattr{name = 'name', value = translate:translate(Lang, "IRC Transport")}]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
+      [#xmlattr{name = 'var', value = ?NS_DISCO_INFO_s}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
       [#xmlattr{name = 'var', value = ?NS_MUC_s}]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
       [#xmlattr{name = 'var', value = ?NS_INBAND_REGISTER_s}]},

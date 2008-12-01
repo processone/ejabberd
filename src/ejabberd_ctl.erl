@@ -132,7 +132,10 @@ process(["status"]) ->
 	   [node(), InternalStatus, ProvidedStatus]),
     case lists:keysearch(ejabberd, 1, application:which_applications()) of
         false ->
-            ?PRINT("ejabberd is not running in that node~n", []),
+            EjabberdLogPath = ejabberd_app:get_log_path(),
+            ?PRINT("ejabberd is not running in that node~n"
+		   "Check for error messages: ~s~n"
+		   "or other files in that directory.~n", [EjabberdLogPath]),
             ?STATUS_ERROR;
         {value, {_, _, Version}} ->
             ?PRINT("ejabberd ~s is running in that node~n", [Version]),
@@ -237,7 +240,12 @@ try_run_ctp(Args) ->
     catch
 	exit:Why ->
 	    print_usage(),
-	    {io_lib:format("Error in ejabberd ctl process: ~p", [Why]), ?STATUS_USAGE}
+	    {io_lib:format("Error in ejabberd ctl process: ~p", [Why]), ?STATUS_USAGE};
+	Error:Why ->
+            %% In this case probably ejabberd is not started, so let's show Status
+            process(["status"]),
+            ?PRINT("~n", []),
+	    {io_lib:format("Error in ejabberd ctl process: '~p' ~p", [Error, Why]), ?STATUS_USAGE}
     end.
 
 %% @spec (Args::[string()]) ->

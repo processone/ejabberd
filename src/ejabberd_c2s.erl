@@ -63,6 +63,8 @@
 -define(SETS, gb_sets).
 -define(DICT, dict).
 
+%% pres_a contains all the presence available send (either through roster mechanism or directed).
+%% Directed presence unavailable remove user from pres_a.
 -record(state, {socket,
 		sockmod,
 		socket_monitor,
@@ -170,6 +172,7 @@ init([{SockMod, Socket}, Opts]) ->
     TLSOpts = lists:filter(fun({certfile, _}) -> true;
 			      (_) -> false
 			   end, Opts),
+    Zlib = lists:member(zlib, Opts) andalso (not StartTLSRequired),
     IP = peerip(SockMod, Socket),
     %% Check if IP is blacklisted:
     case is_ip_blacklisted(IP) of

@@ -355,7 +355,8 @@ push_item(User, Server, From, Item) ->
 push_item(User, Server, Resource, From, Item) ->
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
       children = [item_to_xml(Item)]},
-    ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request, "push"),
+    ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
+      "push" ++ randoms:get_string()),
     ejabberd_router:route(
       From,
       exmpp_jid:make_jid(User, Server, Resource),

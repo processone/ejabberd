@@ -104,7 +104,7 @@
 		subject = "",
 		subject_author = "",
 		just_created = false,
-		activity = ?DICT:new(),
+		activity = treap:empty(),
 		room_shaper,
 		room_queue = queue:new()}).
 
@@ -251,13 +251,12 @@ normal_state({route, From, undefined,
 						    message_time = Now,
 						    message_shaper = MessageShaper},
 				    StateData1 =
-					StateData#state{
-					  activity = ?DICT:store(
-							jlib:short_prepd_jid(From),
-							NewActivity,
-							StateData#state.activity),
+					store_user_activity(
+					  From, NewActivity, StateData),
+				    StateData2 =
+					StateData1#state{
 					  room_shaper = RoomShaper},
-				    process_groupchat_message(From, Packet, StateData1);
+				    process_groupchat_message(From, Packet, StateData2);
 				true ->
 				    StateData1 =
 					if
@@ -278,13 +277,12 @@ normal_state({route, From, undefined,
 						  {message, From},
 						  StateData#state.room_queue),
 				    StateData2 =
-					StateData1#state{
-					  activity = ?DICT:store(
-							jlib:short_prepd_jid(From),
-							NewActivity,
-							StateData#state.activity),
+					store_user_activity(
+					  From, NewActivity, StateData1),
+				    StateData3 =
+					StateData2#state{
 					  room_queue = RoomQueue},
-				    {next_state, normal_state, StateData2}
+				    {next_state, normal_state, StateData3}
 			    end;
 			true ->
 			    MessageInterval =
@@ -298,11 +296,8 @@ normal_state({route, From, undefined,
 					    message = Packet,
 					    message_shaper = MessageShaper},
 			    StateData1 =
-				StateData#state{
-				  activity = ?DICT:store(
-						jlib:short_prepd_jid(From),
-						NewActivity,
-						StateData#state.activity)},
+				store_user_activity(
+				  From, NewActivity, StateData),
 			    {next_state, normal_state, StateData1}
 		    end;
 		error ->
@@ -444,12 +439,7 @@ normal_state({route, From, Nick,
 	(Now >= Activity#activity.presence_time + MinPresenceInterval) and
 	(Activity#activity.presence == undefined) ->
 	    NewActivity = Activity#activity{presence_time = Now},
-	    StateData1 =
-		StateData#state{
-		  activity = ?DICT:store(
-				jlib:short_prepd_jid(From),
-				NewActivity,
-				StateData#state.activity)},
+	    StateData1 = store_user_activity(From, NewActivity, StateData),
 	    process_presence(From, Nick, Packet, StateData1);
 	true ->
 	    if
@@ -462,12 +452,7 @@ normal_state({route, From, Nick,
 		    ok
 	    end,
 	    NewActivity = Activity#activity{presence = {Nick, Packet}},
-	    StateData1 =
-		StateData#state{
-		  activity = ?DICT:store(
-				jlib:short_prepd_jid(From),
-				NewActivity,
-				StateData#state.activity)},
+	    StateData1 = store_user_activity(From, NewActivity, StateData),
 	    {next_state, normal_state, StateData1}
     end;
 
@@ -758,27 +743,25 @@ handle_info(process_room_queue, normal_state = StateName, StateData) ->
 	    Packet = Activity#activity.message,
 	    NewActivity = Activity#activity{message = undefined},
 	    StateData1 =
-		StateData#state{
-		  activity = ?DICT:store(
-				jlib:short_prepd_jid(From),
-				NewActivity,
-				StateData#state.activity),
+		store_user_activity(
+		  From, NewActivity, StateData),
+	    StateData2 =
+		StateData1#state{
 		  room_queue = RoomQueue},
-	    StateData2 = prepare_room_queue(StateData1),
-	    process_groupchat_message(From, Packet, StateData2);
+	    StateData3 = prepare_room_queue(StateData2),
+	    process_groupchat_message(From, Packet, StateData3);
 	{{value, {presence, From}}, RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    {Nick, Packet} = Activity#activity.presence,
 	    NewActivity = Activity#activity{presence = undefined},
 	    StateData1 =
-		StateData#state{
-		  activity = ?DICT:store(
-				jlib:short_prepd_jid(From),
-				NewActivity,
-				StateData#state.activity),
+		store_user_activity(
+		  From, NewActivity, StateData),
+	    StateData2 =
+		StateData1#state{
 		  room_queue = RoomQueue},
-	    StateData2 = prepare_room_queue(StateData1),
-	    process_presence(From, Nick, Packet, StateData2);
+	    StateData3 = prepare_room_queue(StateData2),
+	    process_presence(From, Nick, Packet, StateData3);
 	{empty, _} ->
 	    {next_state, StateName, StateData}
     end;
@@ -1301,9 +1284,9 @@ get_max_users_admin_threshold(StateData) ->
 			   mod_muc, max_users_admin_threshold, 5).
 
 get_user_activity(JID, StateData) ->
-    case ?DICT:find(jlib:short_prepd_jid(JID),
-		    StateData#state.activity) of
-	{ok, A} -> A;
+    case treap:lookup(jlib:short_prepd_jid(JID),
+		      StateData#state.activity) of
+	{ok, _P, A} -> A;
 	error ->
 	    MessageShaper =
 		shaper:new(gen_mod:get_module_opt(
@@ -1316,6 +1299,82 @@ get_user_activity(JID, StateData) ->
 	    #activity{message_shaper = MessageShaper,
 		      presence_shaper = PresenceShaper}
     end.
+
+store_user_activity(JID, UserActivity, StateData) ->
+    MinMessageInterval =
+	gen_mod:get_module_opt(
+	  StateData#state.server_host,
+	  mod_muc, min_message_interval, 0),
+    MinPresenceInterval =
+	gen_mod:get_module_opt(
+	  StateData#state.server_host,
+	  mod_muc, min_presence_interval, 0),
+    Key = jlib:short_prepd_jid(JID),
+    Now = now_to_usec(now()),
+    Activity1 = clean_treap(StateData#state.activity, {1, -Now}),
+    Activity =
+	case treap:lookup(Key, Activity1) of
+	    {ok, _P, _A} ->
+		treap:delete(Key, Activity1);
+	    error ->
+		Activity1
+	end,
+    StateData1 =
+	case (MinMessageInterval == 0) andalso
+	    (MinPresenceInterval == 0) andalso
+	    (UserActivity#activity.message_shaper == none) andalso
+	    (UserActivity#activity.presence_shaper == none) andalso
+	    (UserActivity#activity.message == undefined) andalso
+	    (UserActivity#activity.presence == undefined) of
+	    true ->
+		StateData#state{activity = Activity};
+	    false ->
+		case (UserActivity#activity.message == undefined) andalso
+		    (UserActivity#activity.presence == undefined) of
+		    true ->
+			{_, MessageShaperInterval} =
+			    shaper:update(UserActivity#activity.message_shaper,
+					  100000),
+			{_, PresenceShaperInterval} =
+			    shaper:update(UserActivity#activity.presence_shaper,
+					  100000),
+			Delay = lists:max([MessageShaperInterval,
+					   PresenceShaperInterval,
+					   MinMessageInterval * 1000,
+					   MinPresenceInterval * 1000]) * 1000,
+			Priority = {1, -(Now + Delay)},
+			StateData#state{
+			  activity = treap:insert(
+				       Key,
+				       Priority,
+				       UserActivity,
+				       Activity)};
+		    false ->
+			Priority = {0, 0},
+			StateData#state{
+			  activity = treap:insert(
+				       Key,
+				       Priority,
+				       UserActivity,
+				       Activity)}
+		end
+	end,
+    StateData1.
+
+clean_treap(Treap, CleanPriority) ->
+    case treap:is_empty(Treap) of
+	true ->
+	    Treap;
+	false ->
+	    {_Key, Priority, _Value} = treap:get_root(Treap),
+	    if
+		Priority > CleanPriority ->
+		    clean_treap(treap:delete_root(Treap), CleanPriority);
+		true ->
+		    Treap
+	    end
+    end.
+
 
 prepare_room_queue(StateData) ->
     case queue:out(StateData#state.room_queue) of
@@ -2700,10 +2759,23 @@ check_allowed_persistent_change(XEl, StateData, From) ->
 -define(PRIVATEXFIELD(Label, Var, Val),
 	?XFIELD("text-private", Label, Var, Val)).
 
+
+get_default_room_maxusers(RoomState) ->
+    DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, ?MAX_USERS_DEFAULT),
+    RoomState2 = set_opts(DefRoomOpts, RoomState),
+    (RoomState2#state.config)#config.max_users.
+
 get_config(Lang, StateData, From) ->
     {_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = StateData#state.access,
     ServiceMaxUsers = get_service_max_users(StateData),
+    DefaultRoomMaxUsers = get_default_room_maxusers(StateData),
     Config = StateData#state.config,
+    {MaxUsersRoomInteger, MaxUsersRoomString} =
+	case get_max_users(StateData) of
+	    N when is_integer(N) ->
+		{N, erlang:integer_to_list(N)};
+	    _ -> {0, "none"}
+	end,
     Res =
 	[#xmlel{name = 'title', children = [ #xmlcdata{cdata =
                 translate:translate(Lang, "Configuration for ") ++
@@ -2750,11 +2822,7 @@ get_config(Lang, StateData, From) ->
                 #xmlattr{name = 'var', value = "muc#roomconfig_maxusers"}],
             children = [#xmlel{name = 'value',
                                children = [#xmlcdata{cdata = 
-                                case get_max_users(StateData) of
-                                    N when is_integer(N) ->
-                                        erlang:integer_to_list(N);
-                                    _ -> "none"
-                                end}]}] ++
+                                MaxUsersRoomString}]}] ++
 	  if
 	      is_integer(ServiceMaxUsers) -> [];
 	      true ->
@@ -2767,7 +2835,8 @@ get_config(Lang, StateData, From) ->
                                     value = erlang:integer_to_list(N)}],
               children = [#xmlel{name = 'value', children = [
                 #xmlcdata{cdata = erlang:integer_to_list(N)}]}]} ||
-              N <- ?MAX_USERS_DEFAULT_LIST, N =< ServiceMaxUsers]}, 
+              N <- lists:usort([ServiceMaxUsers, DefaultRoomMaxUsers, MaxUsersRoomInteger |
+                               ?MAX_USERS_DEFAULT_LIST]), N =< ServiceMaxUsers]}, 
     #xmlel{name = 'field', attrs = [
                 #xmlattr{name = 'type', value = "list-single"},
                 #xmlattr{name = 'label', 

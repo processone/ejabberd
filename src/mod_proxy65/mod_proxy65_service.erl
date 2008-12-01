@@ -196,7 +196,6 @@ iq_disco_info(Lang, Name) ->
        {"type", "bytestreams"},
        {"name", translate:translate(Lang, Name)}], []},
      ?FEATURE(?NS_DISCO_INFO),
-     ?FEATURE(?NS_DISCO_ITEMS),
      ?FEATURE(?NS_VCARD),
      ?FEATURE(?NS_BYTESTREAMS)].
 

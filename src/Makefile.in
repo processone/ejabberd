@@ -85,7 +85,7 @@ EJABBERDDIR = $(DESTDIR)@libdir@/ejabberd
 # /share/doc/ejabberd
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 datarootdir = @datarootdir@
-DOCDIR = @docdir@
+DOCDIR = $(DESTDIR)@docdir@
 
 # /usr/lib/ejabberd/ebin/
 BEAMDIR = $(EJABBERDDIR)/ebin
@@ -257,7 +257,7 @@ uninstall-all: uninstall-binary
 clean: clean-recursive clean-local
 
 clean-local:
-	rm -f *.beam $(ERLSHLIBS) epam
+	rm -f *.beam $(ERLSHLIBS) epam ejabberdctl.example
 	rm -f XmppAddr.asn1db XmppAddr.erl XmppAddr.hrl
 
 distclean: distclean-recursive clean-local

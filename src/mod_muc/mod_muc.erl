@@ -501,6 +501,12 @@ iq_disco_info(Lang) ->
                              value = translate:translate(Lang, "Chatrooms")}]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
                               [#xmlattr{name = 'var', 
+                                       value = ?NS_DISCO_INFO_s}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
+                              [#xmlattr{name = 'var', 
+                                       value = ?NS_DISCO_ITEMS_s}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
+                              [#xmlattr{name = 'var', 
                                        value = ?NS_MUC_s}]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
                               [#xmlattr{name = 'var', 
