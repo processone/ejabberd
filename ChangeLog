@@ -1,6 +1,17 @@
+2008-11-04  Pablo Polvorin <pablo.polvorin@process-one.net>
+
+	* src/mod_muc/mod_muc_log.erl: Convert to exmpp, fix recursive
+	directory creation.
+
+	* src/mod_muc/mod_muc_room.erl: Default values as binary() instead of
+	list().
+
 2008-11-03  Pablo Polvorin <pablo.polvorin@process-one.net>
 
 	* src/ejabberd_app.erl:  Start the exmpp application.
+
+	* src/mod_muc/mod_muc.erl, src/mod_muc/mod_muc_room.erl: Convert to 
+	exmpp.
 
 2008-10-31  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 

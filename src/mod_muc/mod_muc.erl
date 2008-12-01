@@ -45,8 +45,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 
 -record(muc_room, {name_host, opts}).
@@ -123,20 +124,19 @@ forget_room(Host, Name) ->
 	end,
     mnesia:transaction(F).
 
-process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
-    Res = IQ#iq{type = result,
-		sub_el = [{xmlelement, "query",
-			   [{"xmlns", ?NS_DISCO_ITEMS}],
-			   iq_disco_items(Host, From, Lang)}]},
+process_iq_disco_items(Host, From, To, #iq{} = IQ) ->
+    Lang = exmpp_stanza:get_lang(IQ),
+    Res = exmpp_iq:result(IQ, #xmlel{ns = ?NS_DISCO_ITEMS, 
+                               name = 'query',
+                               children = iq_disco_items(Host, From, Lang)}),
     ejabberd_router:route(To,
 			  From,
-			  jlib:iq_to_xml(Res)).
+			  exmpp_iq:iq_to_xmlel(Res)).
 
 can_use_nick(_Host, _JID, "") ->
     false;
 can_use_nick(Host, JID, Nick) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
-    LUS = {LUser, LServer},
+    LUS = {JID#jid.lnode, JID#jid.ldomain},
     case catch mnesia:dirty_select(
 		 muc_registered,
 		 [{#muc_registered{us_host = '$1',
@@ -300,11 +300,11 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		      From, To, Packet, DefRoomOpts);
 	_ ->
-	    {xmlelement, _Name, Attrs, _Els} = Packet,
-	    Lang = xml:get_attr_s("xml:lang", Attrs),
-	    ErrText = "Access denied by service policy",
-	    Err = jlib:make_error_reply(Packet,
-					?ERRT_FORBIDDEN(Lang, ErrText)),
+        Lang = exmpp_stanza:get_lang(Packet),
+        ErrText = "Access denied by service policy",
+        Err = exmpp_iq:error(Packet,exmpp_stanza:error(Packet#xmlel.ns,
+                                                       'forbidden',
+                                                       {Lang,ErrText})),
 	    ejabberd_router:route(To, From, Err)
     end.
 
@@ -312,124 +312,109 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
-    {Room, _, Nick} = jlib:jid_tolower(To),
-    {xmlelement, Name, Attrs, _Els} = Packet,
+    Room = To#jid.lnode,
+    Nick = To#jid.lresource,
+    #xmlel{name = Name} = Packet,
     case Room of
-	"" ->
+	'undefined' ->
 	    case Nick of
-		"" ->
+		'undefined' ->
 		    case Name of
-			"iq" ->
-			    case jlib:iq_query_info(Packet) of
-				#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
- 				    sub_el = _SubEl, lang = Lang} = IQ ->
-				    Res = IQ#iq{type = result,
-						sub_el = [{xmlelement, "query",
-							   [{"xmlns", XMLNS}],
-							   iq_disco_info(Lang)}]},
+			'iq' ->
+			    case exmpp_iq:xmlel_to_iq(Packet) of
+				#iq{type = get, ns = ?NS_DISCO_INFO = XMLNS,
+ 				    payload = _SubEl, lang = Lang} = IQ ->
+                    
+                    ResPayload = #xmlel{ns = XMLNS, name = 'query',
+                                        children = iq_disco_info(Lang)},
+                    Res = exmpp_iq:result(IQ, ResPayload),
 				    ejabberd_router:route(To,
 							  From,
-							  jlib:iq_to_xml(Res));
+							  exmpp_iq:iq_to_xmlel(Res));
 				#iq{type = get,
-				    xmlns = ?NS_DISCO_ITEMS} = IQ ->
+				    ns = ?NS_DISCO_ITEMS} = IQ ->
 				    spawn(?MODULE,
 					  process_iq_disco_items,
 					  [Host, From, To, IQ]);
 				#iq{type = get,
-				    xmlns = ?NS_REGISTER = XMLNS,
-				    lang = Lang,
-				    sub_el = _SubEl} = IQ ->
-				    Res = IQ#iq{type = result,
-						sub_el =
-						[{xmlelement, "query",
-						  [{"xmlns", XMLNS}],
-						  iq_get_register_info(
-						    Host, From, Lang)}]},
+				    ns = ?NS_INBAND_REGISTER = XMLNS,
+				    lang = Lang} = IQ ->
+                    ResPayload = #xmlel{ns = XMLNS, name = 'query',
+                                        children = iq_get_register_info(Host, 
+                                                                    From,
+                                                                    Lang)},
+                    Res = exmpp_iq:result(IQ,ResPayload),
 				    ejabberd_router:route(To,
 							  From,
-							  jlib:iq_to_xml(Res));
+							  exmpp_iq:iq_to_xmlel(Res));
 				#iq{type = set,
-				    xmlns = ?NS_REGISTER = XMLNS,
+				    ns = ?NS_INBAND_REGISTER ,
 				    lang = Lang,
-				    sub_el = SubEl} = IQ ->
+				    payload = SubEl} = IQ ->
 				    case process_iq_register_set(Host, From, SubEl, Lang) of
-					{result, IQRes} ->
-					    Res = IQ#iq{type = result,
-							sub_el =
-							[{xmlelement, "query",
-							  [{"xmlns", XMLNS}],
-							  IQRes}]},
+					ok ->
+                        Res = exmpp_iq:result(IQ),
 					    ejabberd_router:route(
-					      To, From, jlib:iq_to_xml(Res));
+					      To, From, exmpp_iq:iq_to_xmlel(Res));
 					{error, Error} ->
-					    Err = jlib:make_error_reply(
-						    Packet, Error),
+					    Err = exmpp_iq:error(IQ,Error),
 					    ejabberd_router:route(
-					      To, From, Err)
+					      To, From, exmpp_iq:iq_to_xmlel(Err))
 				    end;
 				#iq{type = get,
-				    xmlns = ?NS_VCARD = XMLNS,
-				    lang = Lang,
-				    sub_el = _SubEl} = IQ ->
-				    Res = IQ#iq{type = result,
-						sub_el =
-						[{xmlelement, "vCard",
-						  [{"xmlns", XMLNS}],
-						  iq_get_vcard(Lang)}]},
+				    ns = ?NS_VCARD,
+				    lang = Lang} = IQ ->
+                    Res = exmpp_iq:result(IQ,iq_get_vcard(Lang)),
 				    ejabberd_router:route(To,
 							  From,
-							  jlib:iq_to_xml(Res));
-				#iq{} ->
-				    Err = jlib:make_error_reply(
-					    Packet,
-					    ?ERR_FEATURE_NOT_IMPLEMENTED),
+							  exmpp_iq:iq_to_xmlel(Res));
+				#iq{} = IQ ->
+                    Err = exmpp_iq:error(IQ,'feature-not-implemented'),
 				    ejabberd_router:route(To, From, Err);
 				_ ->
 				    ok
 			    end;
-			"message" ->
-			    case xml:get_attr_s("type", Attrs) of
+			'message' ->
+			    case exmpp_xml:get_attribute(Packet,type, "chat") of
 				"error" ->
 				    ok;
 				_ ->
 				    case acl:match_rule(ServerHost, AccessAdmin, From) of
 					allow ->
-					    Msg = xml:get_path_s(
-						    Packet,
-						    [{elem, "body"}, cdata]),
+					    Msg = exmpp_xml:get_path(Packet, 
+                                                 [{element,'body'},cdata]),
 					    broadcast_service_message(Host, Msg);
 					_ ->
-					    Lang = xml:get_attr_s("xml:lang", Attrs),
+					    Lang = exmpp_stanza:get_lang(Packet),
 					    ErrText = "Only service administrators "
 						      "are allowed to send service messages",
-					    Err = jlib:make_error_reply(
-						    Packet,
-						    ?ERRT_FORBIDDEN(Lang, ErrText)),
+                        Err = exmpp_iq:error(Packet,exmpp_stanza:error(Packet#xmlel.ns,
+                                                       'forbidden',
+                                                       {Lang,ErrText})),
 					    ejabberd_router:route(
 					      To, From, Err)
 				    end
 			    end;
-			"presence" ->
+			'presence' ->
 			    ok
 		    end;
 		_ ->
-		    case xml:get_attr_s("type", Attrs) of
+		    case exmpp_stanza:get_type(Packet) of
 			"error" ->
 			    ok;
 			"result" ->
 			    ok;
 			_ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_ITEM_NOT_FOUND),
+			    Err = exmpp_iq:error(Packet,'item-not-found'),
 			    ejabberd_router:route(To, From, Err)
 		    end
 	    end;
 	_ ->
 	    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 		[] ->
-		    Type = xml:get_attr_s("type", Attrs),
+		    Type = exmpp_stanza:get_type(Packet),
 		    case {Name, Type} of
-			{"presence", ""} ->
+			{'presence', 'undefined'} ->
 			    case acl:match_rule(ServerHost, AccessCreate, From) of
 				allow ->
 				    ?DEBUG("MUC: open new room '~s'~n", [Room]),
@@ -442,17 +427,20 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    mod_muc_room:route(Pid, From, Nick, Packet),
 				    ok;
 				_ ->
-				    Lang = xml:get_attr_s("xml:lang", Attrs),
+                    Lang = exmpp_stanza:get_lang(Packet),
 				    ErrText = "Room creation is denied by service policy",
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+                    Err = exmpp_stanza:reply_with_error(Packet,exmpp_stanza:error(Packet#xmlel.ns,
+                                                       'forbidden',
+                                                       {Lang,ErrText})),
 				    ejabberd_router:route(To, From, Err)
 			    end;
 			_ ->
-			    Lang = xml:get_attr_s("xml:lang", Attrs),
+                Lang = exmpp_stanza:get_lang(Packet),
 			    ErrText = "Conference room does not exist",
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+                Err = exmpp_stanza:reply_with_error(Packet,
+                                        exmpp_stanza:error(Packet#xmlel.ns,
+                                                          'item-not-found',
+                                                           {Lang,ErrText})),
 			    ejabberd_router:route(To, From, Err)
 		    end;
 		[R] ->
@@ -504,13 +492,23 @@ register_room(Host, Room, Pid) ->
 
 
 iq_disco_info(Lang) ->
-    [{xmlelement, "identity",
-      [{"category", "conference"},
-       {"type", "text"},
-       {"name", translate:translate(Lang, "Chatrooms")}], []},
-     {xmlelement, "feature", [{"var", ?NS_MUC}], []},
-     {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
-     {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
+    [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
+           attrs = [#xmlattr{name = 'category', 
+                             value = "conference"},
+                    #xmlattr{name = 'type', 
+                             value = "text"},
+                    #xmlattr{name = 'name', 
+                             value = translate:translate(Lang, "Chatrooms")}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
+                              [#xmlattr{name = 'var', 
+                                       value = ?NS_MUC_s}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
+                              [#xmlattr{name = 'var', 
+                                        value = ?NS_INBAND_REGISTER_s}]},
+     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
+                              [#xmlattr{name = 'var', 
+                                        value = ?NS_VCARD_s}]}].
+
 
 
 iq_disco_items(Host, From, Lang) ->
@@ -520,9 +518,13 @@ iq_disco_items(Host, From, Lang) ->
 			 {item, Desc} ->
 			     flush(),
 			     {true,
-			      {xmlelement, "item",
-			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
-				{"name", Desc}], []}};
+                  #xmlel{name = 'item',
+                         attrs = [#xmlattr{name = 'jid', 
+                                          value = exmpp_jid:jid_to_list(Name,
+                                                                        Host,
+                                                                        "")},
+                                 #xmlattr{name = 'name',
+                                          value = Desc}]}};
 			 _ ->
 			     false
 		     end
@@ -537,13 +539,17 @@ flush() ->
     end.
 
 -define(XFIELD(Type, Label, Var, Val),
-	{xmlelement, "field", [{"type", Type},
-			       {"label", translate:translate(Lang, Label)},
-			       {"var", Var}],
-	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+	#xmlel{name = "field",
+          attrs = [#xmlattr{name = 'type', value = Type},
+			       #xmlattr{name = 'label', 
+                            value = translate:translate(Lang, Label)},
+			       #xmlattr{name = 'var', value = Var}],
+          children = [#xmlel{name = 'value',
+                             children = [#xmlcdata{cdata = Val}]}]}).
 
 iq_get_register_info(Host, From, Lang) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    LUser = From#jid.lnode,
+    LServer = From#jid.ldomain,
     LUS = {LUser, LServer},
     {Nick, Registered} =
 	case catch mnesia:dirty_read(muc_registered, {LUS, Host}) of
@@ -552,27 +558,28 @@ iq_get_register_info(Host, From, Lang) ->
 	    [] ->
 		{"", []};
 	    [#muc_registered{nick = N}] ->
-		{N, [{xmlelement, "registered", [], []}]}
+		{N, [#xmlel{name = 'registered'}]}
 	end,
     Registered ++
-	[{xmlelement, "instructions", [],
-	  [{xmlcdata,
-	    translate:translate(
-	      Lang, "You need an x:data capable client to register nickname")}]},
-	 {xmlelement, "x",
-	  [{"xmlns", ?NS_XDATA}],
-	  [{xmlelement, "title", [],
-	    [{xmlcdata,
-	      translate:translate(
-		Lang, "Nickname Registration at ") ++ Host}]},
-	   {xmlelement, "instructions", [],
-	    [{xmlcdata,
-	      translate:translate(
-		Lang, "Enter nickname you want to register")}]},
+    [#xmlel{name = 'instructions' ,
+        children = [#xmlcdata{cdata = 
+              	    translate:translate(Lang,
+	            "You need an x:data capable client to register nickname")}]},
+    #xmlel{ns = ?NS_DATA_FORMS, name = 'x',
+        children = [
+            #xmlel{ns = ?NS_DATA_FORMS, name = 'title',
+                        children = [#xmlcdata{cdata = 
+	       translate:translate(Lang, "Nickname Registration at ") ++ Host}]},
+           #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions',
+                 children = [#xmlcdata{cdata = 
+	       translate:translate(Lang, "Enter nickname you want to register")}]},
 	   ?XFIELD("text-single", "Nickname", "nick", Nick)]}].
 
+
+
 iq_set_register_info(Host, From, Nick, Lang) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    LUser = From#jid.lnode,
+    LServer = From#jid.ldomain,
     LUS = {LUser, LServer},
     F = fun() ->
 		case Nick of
@@ -606,56 +613,64 @@ iq_set_register_info(Host, From, Nick, Lang) ->
 	end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    {result, []};
+	    ok;
 	{atomic, false} ->
 	    ErrText = "Specified nickname is already registered",
-	    {error, ?ERRT_CONFLICT(Lang, ErrText)};
+        %%TODO: Always in the jabber:client namespace?
+	    {error,exmpp_stanza:error(?NS_JABBER_CLIENT, 
+                                  'conflict', 
+                                  {Lang, ErrText})};
 	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    {error, 'internal-server-error'}
     end.
 
 process_iq_register_set(Host, From, SubEl, Lang) ->
-    {xmlelement, _Name, _Attrs, Els} = SubEl,
-    case xml:get_subtag(SubEl, "remove") of
-	false ->
-	    case xml:remove_cdata(Els) of
-		[{xmlelement, "x", _Attrs1, _Els1} = XEl] ->
-		    case {xml:get_tag_attr_s("xmlns", XEl),
-			  xml:get_tag_attr_s("type", XEl)} of
-			{?NS_XDATA, "cancel"} ->
-			    {result, []};
-			{?NS_XDATA, "submit"} ->
+%    {xmlelement, _Name, _Attrs, Els} = SubEl,
+    case exmpp_xml:get_element(SubEl,'remove') of
+	undefined ->
+	    case exmpp_xml:get_child_elements(SubEl) of
+		[#xmlel{ns= NS, name = 'x'} = XEl] ->
+		    case {NS, exmpp_stanza:get_type(XEl)} of
+            {?NS_DATA_FORMS, "cancel"} ->
+			    ok;
+			{?NS_DATA_FORMS, "submit"} ->
 			    XData = jlib:parse_xdata_submit(XEl),
 			    case XData of
 				invalid ->
-				    {error, ?ERR_BAD_REQUEST};
+				    {error, 'bad-request'};
 				_ ->
 				    case lists:keysearch("nick", 1, XData) of
 					false ->
 					    ErrText = "You must fill in field \"Nickname\" in the form",
-					    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
+                        Err = exmpp_stanza:error(SubEl#xmlel.ns, 
+                                   'not-acceptable', 
+                                   {Lang, translate:translate(Lang,ErrText)}),
+					    {error, Err};
 					{value, {_, [Nick]}} ->
 					    iq_set_register_info(Host, From, Nick, Lang)
 				    end
 			    end;
 			_ ->
-			    {error, ?ERR_BAD_REQUEST}
+			    {error, 'bad-request'}
 		    end;
 		_ ->
-		    {error, ?ERR_BAD_REQUEST}
+		    {error, 'bad-request'}
 	    end;
 	_ ->
 	    iq_set_register_info(Host, From, "", Lang)
     end.
 
 iq_get_vcard(Lang) ->
-    [{xmlelement, "FN", [],
-      [{xmlcdata, "ejabberd/mod_muc"}]},
-     {xmlelement, "URL", [],
-      [{xmlcdata, ?EJABBERD_URI}]},
-     {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(Lang, "ejabberd MUC module") ++
-	  "\nCopyright (c) 2003-2008 Alexey Shchepin"}]}].
+    #xmlel{ns = ?NS_VCARD, name = 'vCard',
+           children =
+        [#xmlel{ns = ?NS_VCARD, name = 'FN',
+            children = [#xmlcdata{cdata = <<"ejabberd/mod_muc">>}]},
+         #xmlel{ns = ?NS_VCARD, name = 'URL',
+            children = [#xmlcdata{cdata = ?EJABBERD_URI}]},
+         #xmlel{ns = ?NS_VCARD, name = 'DESC',
+            children = [#xmlcdata{cdata = 
+                    translate:translate(Lang, "ejabberd MUC module") ++
+                	  "\nCopyright (c) 2003-2008 Alexey Shchepin"}]}]}.
 
 
 broadcast_service_message(Host, Msg) ->

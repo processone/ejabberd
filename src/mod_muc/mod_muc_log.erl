@@ -41,8 +41,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -define(T(Text), translate:translate(Lang, Text)).
 -define(PROCNAME, ejabberd_mod_muc_log).
@@ -204,14 +205,15 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
-    case {xml:get_subtag(Packet, "subject"), xml:get_subtag(Packet, "body")} of
-	{false, false} ->
+    case {exmpp_xml:get_element(Packet, 'subject'), 
+          exmpp_xml:get_element(Packet, 'body')} of
+	{'undefined', 'undefined'} ->
 	    ok;
-	{false, SubEl} ->
-	    Message = {body, xml:get_tag_cdata(SubEl)},
+	{'undefined', SubEl} ->
+	    Message = {body, exmpp_xml:get_cdata_as_list(SubEl)},
 	    add_message_to_log(Nick, Message, Room, Opts, State);
 	{SubEl, _} ->
-	    Message = {subject, xml:get_tag_cdata(SubEl)},
+	    Message = {subject, exmpp_xml:get_cdata_as_list(SubEl)},
 	    add_message_to_log(Nick, Message, Room, Opts, State)
     end;
 
@@ -225,13 +227,13 @@ add_to_log2(join, Nick, Room, Opts, State) ->
     add_message_to_log(Nick, join, Room, Opts, State);
 
 add_to_log2(leave, {Nick, Reason}, Room, Opts, State) ->
-    case Reason of
+    case binary_to_list(Reason) of
 	"" -> add_message_to_log(Nick, leave, Room, Opts, State);
-	_ -> add_message_to_log(Nick, {leave, Reason}, Room, Opts, State)
+	R -> add_message_to_log(Nick, {leave, R}, Room, Opts, State)
     end;
 
 add_to_log2(kickban, {Nick, Reason, Code}, Room, Opts, State) ->
-    add_message_to_log(Nick, {kickban, Code, Reason}, Room, Opts, State).
+    add_message_to_log(Nick, {kickban, Code, binary_to_list(Reason)}, Room, Opts, State).
 
 
 %%----------------------------------------------------------------------
@@ -269,8 +271,8 @@ build_filename_string(TimeStamp, OutDir, RoomJID, DirType, DirName, FileFormat) 
     {Fd, Fn, Fnrel}.
 
 get_room_name(RoomJID) ->
-    JID = jlib:string_to_jid(RoomJID),
-    JID#jid.user.
+    JID = exmpp_jid:list_to_jid(RoomJID),
+    JID#jid.node.
 
 %% calculate day before
 get_timestamp_daydiff(TimeStamp, Daydiff) ->
@@ -458,15 +460,26 @@ get_dateweek(Date, Lang) ->
     end.
 
 make_dir_rec(Dir) ->
+    Path = filename:split(Dir),
+    inc_foreach(Path,fun make_dir_if_not_exists/1).
+
+
+make_dir_if_not_exists(DirPath) ->
+    Dir = filename:join(DirPath),
     case file:read_file_info(Dir) of
 	{ok, _} ->
 	    ok;
 	{error, enoent} ->
-	    DirS = filename:split(Dir),
-	    DirR = lists:sublist(DirS, length(DirS)-1),
-	    make_dir_rec(filename:join(DirR)),
 	    file:make_dir(Dir)
     end.
+
+inc_foreach(Lists, F) ->
+    lists:foldl(fun(Item, Accum) ->
+                        New = Accum ++ [Item],
+                        F(New),
+                        New
+                end,[],Lists).
+
 
 
 %% {ok, F1}=file:open("valid-xhtml10.png", [read]).
@@ -723,6 +736,8 @@ put_room_config(F, RoomConfig, Lang, _FileFormat) ->
 %% htmlize
 %% The default behaviour is to ignore the nofollow spam prevention on links
 %% (NoFollow=false)
+
+
 htmlize(S1) ->
     htmlize(S1, html).
 
@@ -779,7 +794,7 @@ get_room_info(RoomJID, Opts) ->
 	    {value, {_, SA}} -> SA;
 	    false -> ""
 	end,
-    #room{jid = jlib:jid_to_string(RoomJID),
+    #room{jid = exmpp_jid:jid_to_list(RoomJID),
 	  title = Title,
 	  subject = Subject,
 	  subject_author = SubjectAuthor,
