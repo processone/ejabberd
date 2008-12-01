@@ -94,7 +94,7 @@ start(Module, SockMod, Socket, Opts) ->
 	    todo
     end.
 
-starttls(FsmRef, TLSOpts) ->
+starttls(FsmRef, _TLSOpts) ->
     %gen_server:call(FsmRef, {starttls, TLSOpts}),
     FsmRef.
 
@@ -137,7 +137,7 @@ close(FsmRef) ->
 sockname(FsmRef) ->
     gen_server:call(FsmRef, sockname).
 
-peername(FsmRef) ->
+peername(_FsmRef) ->
     %gen_server:call(FsmRef, peername).
     {ok, {{0, 0, 0, 0}, 0}}.
 

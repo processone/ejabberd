@@ -2,6 +2,9 @@
 
 	Merge from trunk (r1649 to r1692).
 
+	* src/ejabberd_frontend_socket.erl: Fix two warnings about unused
+	variables.
+
 2008-11-28  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Clean user activity after timeout
@@ -163,7 +166,7 @@
 
 2008-10-13  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
-	Merge from trunk (r1613 to 1649).
+	Merge from trunk (r1613 to r1649).
 
 	* src/jlib.erl: Remove all deprecated functions.
 
