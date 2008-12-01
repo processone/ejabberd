@@ -1,3 +1,7 @@
+2008-11-03  Pablo Polvorin <pablo.polvorin@process-one.net>
+
+	* src/ejabberd_app.erl:  Start the exmpp application.
+
 2008-10-31  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_last_odbc.erl (store_last_info/4): Fix a bug where the

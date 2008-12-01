@@ -41,6 +41,7 @@
 start(normal, _Args) ->
     ejabberd_loglevel:set(4),
     application:start(sasl),
+    application:start(exmpp),
     randoms:start(),
     db_init(),
     sha:start(),
