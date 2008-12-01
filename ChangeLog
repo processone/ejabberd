@@ -1,3 +1,8 @@
+2008-12-01  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: New subsection Database Connection
+	* doc/guide.html: Likewise
+
 2008-11-28  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Clean user activity after timeout

@@ -1246,7 +1246,18 @@ different storage systems for modules, and so forth.</P><P>The following databas
 </LI><LI CLASS="li-itemize"><A HREF="http://www.openldap.org/">OpenLDAP</A>
 </LI><LI CLASS="li-itemize">Normally any LDAP compatible server should work; inform us about your
 success with a not-listed server so that we can list it here.
-</LI></UL><P> <A NAME="mysql"></A> </P><!--TOC subsection MySQL-->
+</LI></UL><P>Important note about virtual hosting:
+if you define several domains in ejabberd.cfg (see section <A HREF="#hostnames">3.1.1</A>),
+you probably want that each virtual host uses a different configuration of database, authentication and storage,
+so that usernames do not conflict and mix between different virtual hosts.
+For that purpose, the options described in the next sections
+must be set inside a <TT>host_cofig</TT> for each vhost (see section <A HREF="#virtualhost">3.1.2</A>).
+For example:
+</P><PRE CLASS="verbatim">{host_config, "public.example.org", [
+  {odbc_server, {pgsql, "localhost", "database", "ejabberd", "password"}},
+  {auth_method, [odbc]}
+]}.
+</PRE><P> <A NAME="mysql"></A> </P><!--TOC subsection MySQL-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc31">3.2.1</A>&#XA0;&#XA0;<A HREF="#mysql">MySQL</A></H3><!--SEC END --><P> <A NAME="mysql"></A> 
 </P><P>Although this section will describe <TT>ejabberd</TT>&#X2019;s configuration when you want to
 use the native MySQL driver, it does not describe MySQL&#X2019;s installation and
@@ -1254,18 +1265,7 @@ database creation. Check the MySQL documentation and the tutorial <A HREF="http:
 Note that the tutorial contains information about <TT>ejabberd</TT>&#X2019;s configuration
 which is duplicate to this section.</P><P>Moreover, the file mysql.sql in the directory src/odbc might be interesting for
 you. This file contains the <TT>ejabberd</TT> schema for MySQL. At the end of the file
-you can find information to update your database schema.</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
-</PRE><P>You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
-</PRE><P>If the connection to the database fails, <TT>ejabberd</TT> waits 30 seconds before retrying.
-You can modify this interval with this option:
-</P><PRE CLASS="verbatim">{odbc_start_interval, 30}.
-</PRE><P> <A NAME="compilemysql"></A> </P><!--TOC subsubsection Driver Compilation-->
+you can find information to update your database schema.</P><P> <A NAME="compilemysql"></A> </P><!--TOC subsubsection Driver Compilation-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#compilemysql">Driver Compilation</A></H4><!--SEC END --><P> <A NAME="compilemysql"></A> 
 </P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
 if the binary packages of <TT>ejabberd</TT> you are using include support for MySQL.</P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
@@ -1276,14 +1276,9 @@ put them for example in the same directory as your <TT>ejabberd</TT> .beam files
 also needed for native MySQL support!). This can be done, by using next
 commands:
 <PRE CLASS="verbatim">./configure --enable-odbc &amp;&amp; make install
-</PRE></LI></OL><P> <A NAME="mysqlauth"></A> </P><!--TOC subsubsection Authentication-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mysqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="mysqlauth"></A> 
-</P><P>The option value name may be misleading, as the <TT>auth_method</TT> name is used
-for access to a relational database through ODBC, as well as through the native
-MySQL interface. Anyway, the first configuration step is to define the odbc
-<TT>auth_method</TT>. For example:
-</P><PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [odbc]}]}.
-</PRE><P>The actual database access is defined in the option <TT>odbc_server</TT>. Its
+</PRE></LI></OL><P> <A NAME="configuremysql"></A> </P><!--TOC subsubsection Database Connection-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configuremysql">Database Connection</A></H4><!--SEC END --><P> <A NAME="configuremysql"></A> 
+</P><P>The actual database access is defined in the option <TT>odbc_server</TT>. Its
 value is used to define if we want to use ODBC, or one of the two native
 interface available, PostgreSQL or MySQL.</P><P>To use the native MySQL interface, you can pass a tuple of the following form as
 parameter:
@@ -1297,6 +1292,24 @@ can thus take the following form:
 </P><PRE CLASS="verbatim">{mysql, "Server", Port, "Database", "Username", "Password"}
 </PRE><P>The <TT>Port</TT> value should be an integer, without quotes. For example:
 </P><PRE CLASS="verbatim">{odbc_server, {mysql, "localhost", Port, "test", "root", "password"}}.
+</PRE><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
+</PRE><P>You can configure an interval to make a dummy SQL request
+to keep alive the connections to the database.
+The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made.
+Specify in seconds: for example 28800 means 8 hours.
+</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
+</PRE><P>If the connection to the database fails, <TT>ejabberd</TT> waits 30 seconds before retrying.
+You can modify this interval with this option:
+</P><PRE CLASS="verbatim">{odbc_start_interval, 30}.
+</PRE><P> <A NAME="mysqlauth"></A> </P><!--TOC subsubsection Authentication-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mysqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="mysqlauth"></A> 
+</P><P>The option value name may be misleading, as the <TT>auth_method</TT> name is used
+for access to a relational database through ODBC, as well as through the native
+MySQL interface. Anyway, the first configuration step is to define the odbc
+<TT>auth_method</TT>. For example:
+</P><PRE CLASS="verbatim">{auth_method, [odbc]}.
 </PRE><P> <A NAME="mysqlstorage"></A> </P><!--TOC subsubsection Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mysqlstorage">Storage</A></H4><!--SEC END --><P> <A NAME="mysqlstorage"></A> 
 </P><P>MySQL also can be used to store information into from several <TT>ejabberd</TT>
@@ -1314,7 +1327,16 @@ tutorial <A HREF="http://support.process-one.net/doc/display/MESSENGER/Using+eja
 Note that the tutorial contains information about <TT>ejabberd</TT>&#X2019;s configuration
 which is duplicate to this section.</P><P>Moreover, the file mssql.sql in the directory src/odbc might be interesting for
 you. This file contains the <TT>ejabberd</TT> schema for Microsoft SQL Server. At the end
-of the file you can find information to update your database schema.</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
+of the file you can find information to update your database schema.</P><P> <A NAME="compilemssql"></A> </P><!--TOC subsubsection Driver Compilation-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#compilemssql">Driver Compilation</A></H4><!--SEC END --><P> <A NAME="compilemssql"></A> 
+</P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
+if the binary packages of <TT>ejabberd</TT> you are using include support for ODBC.</P><P>If you want to use Microsoft SQL Server with ODBC, you need to configure,
+compile and install <TT>ejabberd</TT> with support for ODBC and Microsoft SQL Server
+enabled. This can be done, by using next commands:
+</P><PRE CLASS="verbatim">./configure --enable-odbc --enable-mssql &amp;&amp; make install
+</PRE><P> <A NAME="configuremssql"></A> </P><!--TOC subsubsection Database Connection-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configuremssql">Database Connection</A></H4><!--SEC END --><P> <A NAME="configuremssql"></A> 
+</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
 Use this option to modify the value:
 </P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
 </PRE><P>You can configure an interval to make a dummy SQL request
@@ -1322,13 +1344,6 @@ to keep alive the connections to the database.
 The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made.
 Specify in seconds: for example 28800 means 8 hours.
 </P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
-</PRE><P> <A NAME="compilemssql"></A> </P><!--TOC subsubsection Driver Compilation-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#compilemssql">Driver Compilation</A></H4><!--SEC END --><P> <A NAME="compilemssql"></A> 
-</P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
-if the binary packages of <TT>ejabberd</TT> you are using include support for ODBC.</P><P>If you want to use Microsoft SQL Server with ODBC, you need to configure,
-compile and install <TT>ejabberd</TT> with support for ODBC and Microsoft SQL Server
-enabled. This can be done, by using next commands:
-</P><PRE CLASS="verbatim">./configure --enable-odbc --enable-mssql &amp;&amp; make install
 </PRE><P> <A NAME="mssqlauth"></A> </P><!--TOC subsubsection Authentication-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mssqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="mssqlauth"></A> 
 </P><P>The configuration of Microsoft SQL Server is the same as the configuration of
@@ -1349,15 +1364,7 @@ and database creation. Check the PostgreSQL documentation and the tutorial <A HR
 Note that the tutorial contains information about <TT>ejabberd</TT>&#X2019;s configuration
 which is duplicate to this section.</P><P>Also the file pg.sql in the directory src/odbc might be interesting for you.
 This file contains the <TT>ejabberd</TT> schema for PostgreSQL. At the end of the file
-you can find information to update your database schema.</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
-</PRE><P>You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
-</PRE><P> <A NAME="compilepgsql"></A> </P><!--TOC subsubsection Driver Compilation-->
+you can find information to update your database schema.</P><P> <A NAME="compilepgsql"></A> </P><!--TOC subsubsection Driver Compilation-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#compilepgsql">Driver Compilation</A></H4><!--SEC END --><P> <A NAME="compilepgsql"></A> 
 </P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
 if the binary packages of <TT>ejabberd</TT> you are using include support for
@@ -1371,14 +1378,9 @@ directory as your <TT>ejabberd</TT> .beam files.
 (this is also needed for native PostgreSQL support!). This can be done, by
 using next commands:
 <PRE CLASS="verbatim">./configure --enable-odbc &amp;&amp; make install
-</PRE></LI></OL><P> <A NAME="pgsqlauth"></A> </P><!--TOC subsubsection Authentication-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#pgsqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="pgsqlauth"></A> 
-</P><P>The option value name may be misleading, as the <TT>auth_method</TT> name is used
-for access to a relational database through ODBC, as well as through the native
-PostgreSQL interface. Anyway, the first configuration step is to define the odbc
-<TT>auth_method</TT>. For example:
-</P><PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [odbc]}]}.
-</PRE><P>The actual database access is defined in the option <TT>odbc_server</TT>. Its
+</PRE></LI></OL><P> <A NAME="configurepgsql"></A> </P><!--TOC subsubsection Database Connection-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configurepgsql">Database Connection</A></H4><!--SEC END --><P> <A NAME="configurepgsql"></A> 
+</P><P>The actual database access is defined in the option <TT>odbc_server</TT>. Its
 value is used to define if we want to use ODBC, or one of the two native
 interface available, PostgreSQL or MySQL.</P><P>To use the native PostgreSQL interface, you can pass a tuple of the following
 form as parameter:
@@ -1392,6 +1394,21 @@ can thus take the following form:
 </P><PRE CLASS="verbatim">{pgsql, "Server", Port, "Database", "Username", "Password"}
 </PRE><P>The <TT>Port</TT> value should be an integer, without quotes. For example:
 </P><PRE CLASS="verbatim">{odbc_server, {pgsql, "localhost", 5432, "database", "ejabberd", "password"}}.
+</PRE><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
+</PRE><P>You can configure an interval to make a dummy SQL request
+to keep alive the connections to the database.
+The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made.
+Specify in seconds: for example 28800 means 8 hours.
+</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
+</PRE><P> <A NAME="pgsqlauth"></A> </P><!--TOC subsubsection Authentication-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#pgsqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="pgsqlauth"></A> 
+</P><P>The option value name may be misleading, as the <TT>auth_method</TT> name is used
+for access to a relational database through ODBC, as well as through the native
+PostgreSQL interface. Anyway, the first configuration step is to define the odbc
+<TT>auth_method</TT>. For example:
+</P><PRE CLASS="verbatim">{auth_method, [odbc]}.
 </PRE><P> <A NAME="pgsqlstorage"></A> </P><!--TOC subsubsection Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#pgsqlstorage">Storage</A></H4><!--SEC END --><P> <A NAME="pgsqlstorage"></A> 
 </P><P>PostgreSQL also can be used to store information into from several <TT>ejabberd</TT>
@@ -1406,15 +1423,7 @@ Keep in mind that you cannot have several variants of the same module loaded!</P
 use the ODBC driver, it does not describe the installation and database creation
 of your database. Check the documentation of your database. The tutorial <A HREF="http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver">Using ejabberd with MySQL native driver</A> also can help you. Note that the tutorial
 contains information about <TT>ejabberd</TT>&#X2019;s configuration which is duplicate to
-this section.</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
-</PRE><P>You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
-</PRE><P> <A NAME="compileodbc"></A> </P><!--TOC subsubsection Driver Compilation-->
+this section.</P><P> <A NAME="compileodbc"></A> </P><!--TOC subsubsection Driver Compilation-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#compileodbc">Driver Compilation</A></H4><!--SEC END --><P> <A NAME="compileodbc"></A> </P><P>You can skip this step if you installed <TT>ejabberd</TT> using a binary installer or
 if the binary packages of <TT>ejabberd</TT> you are using include support for
 ODBC.</P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
@@ -1424,16 +1433,26 @@ put them for example in the same directory as your <TT>ejabberd</TT> .beam files
 </LI><LI CLASS="li-enumerate">Then, configure, compile and install <TT>ejabberd</TT> with ODBC support
 enabled. This can be done, by using next commands:
 <PRE CLASS="verbatim">./configure --enable-odbc &amp;&amp; make install
-</PRE></LI></OL><P> <A NAME="odbcauth"></A> </P><!--TOC subsubsection Authentication-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#odbcauth">Authentication</A></H4><!--SEC END --><P> <A NAME="odbcauth"></A> 
-</P><P>The first configuration step is to define the odbc <TT>auth_method</TT>. For
-example:
-</P><PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [odbc]}]}.
-</PRE><P>The actual database access is defined in the option <TT>odbc_server</TT>. Its
+</PRE></LI></OL><P> <A NAME="configureodbc"></A> </P><!--TOC subsubsection Database Connection-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configureodbc">Database Connection</A></H4><!--SEC END --><P> <A NAME="configureodbc"></A> 
+</P><P>The actual database access is defined in the option <TT>odbc_server</TT>. Its
 value is used to defined if we want to use ODBC, or one of the two native
 interface available, PostgreSQL or MySQL.</P><P>To use a relational database through ODBC, you can pass the ODBC connection
 string as <TT>odbc_server</TT> parameter. For example:
 </P><PRE CLASS="verbatim">{odbc_server, "DSN=database;UID=ejabberd;PWD=password"}.
+</PRE><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
+</PRE><P>You can configure an interval to make a dummy SQL request
+to keep alive the connections to the database.
+The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made.
+Specify in seconds: for example 28800 means 8 hours.
+</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
+</PRE><P> <A NAME="odbcauth"></A> </P><!--TOC subsubsection Authentication-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#odbcauth">Authentication</A></H4><!--SEC END --><P> <A NAME="odbcauth"></A> 
+</P><P>The first configuration step is to define the odbc <TT>auth_method</TT>. For
+example:
+</P><PRE CLASS="verbatim">{auth_method, [odbc]}.
 </PRE><P> <A NAME="odbcstorage"></A> </P><!--TOC subsubsection Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#odbcstorage">Storage</A></H4><!--SEC END --><P> <A NAME="odbcstorage"></A> 
 </P><P>An ODBC compatible database also can be used to store information into from

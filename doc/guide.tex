@@ -1590,6 +1590,21 @@ The following LDAP servers are tested with \ejabberd{}:
   success with a not-listed server so that we can list it here.
 \end{itemize}
 
+Important note about virtual hosting:
+if you define several domains in ejabberd.cfg (see section \ref{hostnames}),
+you probably want that each virtual host uses a different configuration of database, authentication and storage,
+so that usernames do not conflict and mix between different virtual hosts.
+For that purpose, the options described in the next sections
+must be set inside a \term{host\_cofig} for each vhost (see section \ref{virtualhost}).
+For example:
+\begin{verbatim}
+{host_config, "public.example.org", [
+  {odbc_server, {pgsql, "localhost", "database-public-example-org", "ejabberd", "password"}},
+  {auth_method, [odbc]}
+]}.
+\end{verbatim}
+
+
 \makesubsection{mysql}{MySQL}
 \ind{MySQL}\ind{MySQL!schema}
 
@@ -1602,26 +1617,6 @@ which is duplicate to this section.
 Moreover, the file mysql.sql in the directory src/odbc might be interesting for
 you. This file contains the \ejabberd{} schema for MySQL. At the end of the file
 you can find information to update your database schema.
-
-By default \ejabberd{} opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-\begin{verbatim}
-{odbc_pool_size, 10}.
-\end{verbatim}
-
-You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is 'undefined', so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-\begin{verbatim}
-{odbc_keepalive_interval, undefined}.
-\end{verbatim}
-
-If the connection to the database fails, \ejabberd{} waits 30 seconds before retrying.
-You can modify this interval with this option:
-\begin{verbatim}
-{odbc_start_interval, 30}.
-\end{verbatim}
 
 
 \makesubsubsection{compilemysql}{Driver Compilation}
@@ -1642,16 +1637,9 @@ if the binary packages of \ejabberd{} you are using include support for MySQL.
 \end{verbatim}
 \end{enumerate}
 
-\makesubsubsection{mysqlauth}{Authentication}
-\ind{MySQL!authentication}
 
-The option value name may be misleading, as the \term{auth\_method} name is used
-for access to a relational database through ODBC, as well as through the native
-MySQL interface. Anyway, the first configuration step is to define the odbc
-\term{auth\_method}. For example:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [odbc]}]}.
-\end{verbatim}
+\makesubsubsection{configuremysql}{Database Connection}
+\ind{MySQL!Database Connection}
 
 The actual database access is defined in the option \term{odbc\_server}. Its
 value is used to define if we want to use ODBC, or one of the two native
@@ -1681,6 +1669,38 @@ The \term{Port} value should be an integer, without quotes. For example:
 {odbc_server, {mysql, "localhost", Port, "test", "root", "password"}}.
 \end{verbatim}
 
+By default \ejabberd{} opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+\begin{verbatim}
+{odbc_pool_size, 10}.
+\end{verbatim}
+
+You can configure an interval to make a dummy SQL request
+to keep alive the connections to the database.
+The default value is 'undefined', so no keepalive requests are made.
+Specify in seconds: for example 28800 means 8 hours.
+\begin{verbatim}
+{odbc_keepalive_interval, undefined}.
+\end{verbatim}
+
+If the connection to the database fails, \ejabberd{} waits 30 seconds before retrying.
+You can modify this interval with this option:
+\begin{verbatim}
+{odbc_start_interval, 30}.
+\end{verbatim}
+
+
+\makesubsubsection{mysqlauth}{Authentication}
+\ind{MySQL!authentication}
+
+The option value name may be misleading, as the \term{auth\_method} name is used
+for access to a relational database through ODBC, as well as through the native
+MySQL interface. Anyway, the first configuration step is to define the odbc
+\term{auth\_method}. For example:
+\begin{verbatim}
+{auth_method, [odbc]}.
+\end{verbatim}
+
 
 \makesubsubsection{mysqlstorage}{Storage}
 \ind{MySQL!storage}
@@ -1707,6 +1727,24 @@ Moreover, the file mssql.sql in the directory src/odbc might be interesting for
 you. This file contains the \ejabberd{} schema for Microsoft SQL Server. At the end
 of the file you can find information to update your database schema.
 
+
+\makesubsubsection{compilemssql}{Driver Compilation}
+\ind{Microsoft SQL Server!Driver Compilation}
+
+You can skip this step if you installed \ejabberd{} using a binary installer or
+if the binary packages of \ejabberd{} you are using include support for ODBC.
+
+If you want to use Microsoft SQL Server with ODBC, you need to configure,
+compile and install \ejabberd{} with support for ODBC and Microsoft SQL Server
+enabled. This can be done, by using next commands:
+\begin{verbatim}
+./configure --enable-odbc --enable-mssql && make install
+\end{verbatim}
+
+
+\makesubsubsection{configuremssql}{Database Connection}
+\ind{Microsoft SQL Server!Database Connection}
+
 By default \ejabberd{} opens 10 connections to the database for each virtual host.
 Use this option to modify the value:
 \begin{verbatim}
@@ -1721,18 +1759,6 @@ Specify in seconds: for example 28800 means 8 hours.
 {odbc_keepalive_interval, undefined}.
 \end{verbatim}
 
-\makesubsubsection{compilemssql}{Driver Compilation}
-\ind{Microsoft SQL Server!Driver Compilation}
-
-You can skip this step if you installed \ejabberd{} using a binary installer or
-if the binary packages of \ejabberd{} you are using include support for ODBC.
-
-If you want to use Microsoft SQL Server with ODBC, you need to configure,
-compile and install \ejabberd{} with support for ODBC and Microsoft SQL Server
-enabled. This can be done, by using next commands:
-\begin{verbatim}
-./configure --enable-odbc --enable-mssql && make install
-\end{verbatim}
 
 \makesubsubsection{mssqlauth}{Authentication}
 \ind{Microsoft SQL Server!authentication}
@@ -1767,19 +1793,6 @@ Also the file pg.sql in the directory src/odbc might be interesting for you.
 This file contains the \ejabberd{} schema for PostgreSQL. At the end of the file
 you can find information to update your database schema.
 
-By default \ejabberd{} opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-\begin{verbatim}
-{odbc_pool_size, 10}.
-\end{verbatim}
-
-You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is 'undefined', so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-\begin{verbatim}
-{odbc_keepalive_interval, undefined}.
-\end{verbatim}
 
 \makesubsubsection{compilepgsql}{Driver Compilation}
 \ind{PostgreSQL!Driver Compilation}
@@ -1802,16 +1815,9 @@ PostgreSQL.
 \end{verbatim}
 \end{enumerate}
 
-\makesubsubsection{pgsqlauth}{Authentication}
-\ind{PostgreSQL!authentication}
 
-The option value name may be misleading, as the \term{auth\_method} name is used
-for access to a relational database through ODBC, as well as through the native
-PostgreSQL interface. Anyway, the first configuration step is to define the odbc
-\term{auth\_method}. For example:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [odbc]}]}.
-\end{verbatim}
+\makesubsubsection{configurepgsql}{Database Connection}
+\ind{PostgreSQL!Database Connection}
 
 The actual database access is defined in the option \term{odbc\_server}. Its
 value is used to define if we want to use ODBC, or one of the two native
@@ -1840,6 +1846,32 @@ The \term{Port} value should be an integer, without quotes. For example:
 \begin{verbatim}
 {odbc_server, {pgsql, "localhost", 5432, "database", "ejabberd", "password"}}.
 \end{verbatim}
+By default \ejabberd{} opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+\begin{verbatim}
+{odbc_pool_size, 10}.
+\end{verbatim}
+
+You can configure an interval to make a dummy SQL request
+to keep alive the connections to the database.
+The default value is 'undefined', so no keepalive requests are made.
+Specify in seconds: for example 28800 means 8 hours.
+\begin{verbatim}
+{odbc_keepalive_interval, undefined}.
+\end{verbatim}
+
+
+\makesubsubsection{pgsqlauth}{Authentication}
+\ind{PostgreSQL!authentication}
+
+The option value name may be misleading, as the \term{auth\_method} name is used
+for access to a relational database through ODBC, as well as through the native
+PostgreSQL interface. Anyway, the first configuration step is to define the odbc
+\term{auth\_method}. For example:
+\begin{verbatim}
+{auth_method, [odbc]}.
+\end{verbatim}
+
 
 \makesubsubsection{pgsqlstorage}{Storage}
 \ind{PostgreSQL!storage}
@@ -1861,19 +1893,6 @@ of your database. Check the documentation of your database. The tutorial \footah
 contains information about \ejabberd{}'s configuration which is duplicate to
 this section.
 
-By default \ejabberd{} opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-\begin{verbatim}
-{odbc_pool_size, 10}.
-\end{verbatim}
-
-You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is 'undefined', so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-\begin{verbatim}
-{odbc_keepalive_interval, undefined}.
-\end{verbatim}
 
 \makesubsubsection{compileodbc}{Driver Compilation}
 
@@ -1892,14 +1911,9 @@ ODBC.
 \end{verbatim}
 \end{enumerate}
 
-\makesubsubsection{odbcauth}{Authentication}
-\ind{ODBC!authentication}
 
-The first configuration step is to define the odbc \term{auth\_method}. For
-example:
-\begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [odbc]}]}.
-\end{verbatim}
+\makesubsubsection{configureodbc}{Database Connection}
+\ind{ODBC!Database Connection}
 
 The actual database access is defined in the option \term{odbc\_server}. Its
 value is used to defined if we want to use ODBC, or one of the two native
@@ -1910,6 +1924,31 @@ string as \term{odbc\_server} parameter. For example:
 \begin{verbatim}
 {odbc_server, "DSN=database;UID=ejabberd;PWD=password"}.
 \end{verbatim}
+
+By default \ejabberd{} opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+\begin{verbatim}
+{odbc_pool_size, 10}.
+\end{verbatim}
+
+You can configure an interval to make a dummy SQL request
+to keep alive the connections to the database.
+The default value is 'undefined', so no keepalive requests are made.
+Specify in seconds: for example 28800 means 8 hours.
+\begin{verbatim}
+{odbc_keepalive_interval, undefined}.
+\end{verbatim}
+
+
+\makesubsubsection{odbcauth}{Authentication}
+\ind{ODBC!authentication}
+
+The first configuration step is to define the odbc \term{auth\_method}. For
+example:
+\begin{verbatim}
+{auth_method, [odbc]}.
+\end{verbatim}
+
 
 \makesubsubsection{odbcstorage}{Storage}
 \ind{ODBC!storage}
