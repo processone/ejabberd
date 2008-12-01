@@ -1,3 +1,10 @@
+2008-10-17  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_frontend_socket.erl: Hibernate ejabberd_receiver and
+	ejabberd_frontend_socket processes after timeout. Backported from
+	Aleksey's patch (r1680)
+	* src/ejabberd_frontend_socket.erl: Likewise
+
 2008-11-26  Badlop  <badlop@process-one.net>
 
 	* src/mod_irc/mod_irc.erl: Announce disco#info (thanks to Spike)
