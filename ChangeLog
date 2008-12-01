@@ -1,3 +1,11 @@
+2008-10-31  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_last_odbc.erl (store_last_info/4): Fix a bug where the
+	status was not converted to list before calling
+	ejabberd_odbc:escape/1.
+	(get_last_info/2): Fix a bug where the status was returned as a list
+	instead of a binary.
+
 2008-10-20  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_irc/mod_irc.erl, src/mod_irc/mod_irc_connection.erl: Convert

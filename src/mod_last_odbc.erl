@@ -135,7 +135,7 @@ store_last_info(User, Server, TimeStamp, Status) ->
         LServer = exmpp_stringprep:nameprep(Server),
         Username = ejabberd_odbc:escape(LUser),
         Seconds = ejabberd_odbc:escape(integer_to_list(TimeStamp)),
-        State = ejabberd_odbc:escape(Status),
+        State = ejabberd_odbc:escape(binary_to_list(Status)),
         odbc_queries:set_last_t(LServer, Username, Seconds, State)
     catch
         _ ->
@@ -151,7 +151,7 @@ get_last_info(LUser, LServer) ->
 	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
 	    case catch list_to_integer(STimeStamp) of
 		TimeStamp when is_integer(TimeStamp) ->
-		    {ok, TimeStamp, Status};
+		    {ok, TimeStamp, list_to_binary(Status)};
 		_ ->
 		    not_found
 	    end;
