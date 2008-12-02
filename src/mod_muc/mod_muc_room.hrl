@@ -67,7 +67,7 @@
 		config = #config{},
 		users = ?DICT:new(),
 		affiliations = ?DICT:new(),
-		history = lqueue_new(20),
+		history,
 		subject = "",
 		subject_author = "",
 		just_created = false,
