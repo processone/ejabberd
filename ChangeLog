@@ -1,3 +1,8 @@
+2008-12-03  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_proxy65/mod_proxy65_stream.erl,
+	src/mod_proxy65/mod_proxy65_service.erl: Convert mod_proxy65 to exmpp.
+
 2008-12-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1649 to r1692).
