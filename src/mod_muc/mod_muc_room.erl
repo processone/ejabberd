@@ -2627,7 +2627,7 @@ check_allowed_persistent_change(XEl, StateData, From) ->
 	?XFIELD("text-private", Label, Var, Val)).
 
 get_default_room_maxusers(RoomState) ->
-    DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, ?MAX_USERS_DEFAULT),
+    DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, []),
     RoomState2 = set_opts(DefRoomOpts, RoomState),
     (RoomState2#state.config)#config.max_users.
 
