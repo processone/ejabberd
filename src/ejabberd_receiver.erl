@@ -164,10 +164,8 @@ handle_call(reset_stream, _From,
      ?HIBERNATE_TIMEOUT};
 handle_call({become_controller, C2SPid}, _From, State) ->
     Parser = exmpp_xml:start_parser([
-      {namespace, true},
-      {name_as_atom, true},
-      {autoload_known, true},
-      {maxsize, State#state.max_stanza_size}
+      names_as_atom,
+      {max_size, State#state.max_stanza_size}
     ]),
     XMLStreamState = exmpp_xmlstream:start(
       {gen_fsm, C2SPid}, Parser,

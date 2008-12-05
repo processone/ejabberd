@@ -251,7 +251,7 @@ pop_offline_messages(Ls, User, Server) ->
 		Ls ++ lists:flatmap(
 			fun({_, XML}) ->
 				try
-				    [El] = exmpp_xml:parse_document(XML, [namespace, name_as_atom, autoload_known]),
+				    [El] = exmpp_xml:parse_document(XML, [names_as_atom]),
 				    To = exmpp_jid:list_to_jid(
 				      exmpp_stanza:get_recipient(El)),
 				    From = exmpp_jid:list_to_jid(
@@ -327,7 +327,7 @@ user_queue(User, Server, Query, Lang) ->
 		   {selected, ["username", "xml"], Rs} ->
 		       lists:flatmap(
 			 fun({_, XML}) ->
-				 try exmpp_xml:parse_document(XML, [namespace, name_as_atom, autoload_known]) of
+				 try exmpp_xml:parse_document(XML, [names_as_atom]) of
 				     [El] ->
 					 [El]
 				 catch
@@ -394,7 +394,7 @@ user_queue_parse_query(Username, LServer, Query) ->
 		       {selected, ["xml", "seq"], Rs} ->
 			   lists:flatmap(
 			     fun({XML, Seq}) ->
-				     try exmpp_xml:parse_document(XML, [namespace, name_as_atom, autoload_known]) of
+				     try exmpp_xml:parse_document(XML, [names_as_atom]) of
 					 [El] ->
 					     [{El, Seq}]
 				     catch

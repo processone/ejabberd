@@ -134,7 +134,7 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
     case catch odbc_queries:get_vcard(LServer, Username) of
         {selected, ["vcard"], [{SVCARD}]} ->
             try exmpp_xml:parse_document(SVCARD,
-              [namespace, name_as_atom, autoload_known]) of
+              [names_as_atom]) of
                 [VCARD] ->
                     exmpp_iq:result(IQ_Rec, VCARD)
             catch

@@ -51,7 +51,7 @@ import_file(File) ->
 		{ok, Text} ->
 		    try
 			[El] = exmpp_xml:parse_document(Text,
-			  [namespace, name_as_atom]),
+			  [names_as_atom]),
 			case catch process_xdb(User, Server, El) of
 			    {'EXIT', Reason} ->
 				?ERROR_MSG(

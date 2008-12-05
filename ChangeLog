@@ -1,3 +1,9 @@
+2008-12-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_receiver.erl, src/mod_offline_odbc.erl,
+	src/mod_vcard_odbc.erl, src/mod_private_odbc.erl, src/jd2ejd.erl:
+	Update Exmpp XML parser options.
+
 2008-12-03  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_proxy65/mod_proxy65_stream.erl,
