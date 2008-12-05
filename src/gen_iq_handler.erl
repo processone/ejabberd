@@ -124,7 +124,8 @@ process_iq(_Host, Module, Function, From, To, IQ_Rec) ->
 	    ejabberd_router:route(To, From, Reply)
     catch
 	_Class:Reason ->
-	    ?ERROR_MSG("~p~n~p~n", [Reason, erlang:get_stacktrace()])
+	    ?ERROR_MSG("~s:~s/3 crashed: ~p~n~p~n",
+              [Module, Function, Reason, erlang:get_stacktrace()])
     end.
 
 %%====================================================================

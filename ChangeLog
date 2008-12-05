@@ -4,6 +4,9 @@
 	src/mod_vcard_odbc.erl, src/mod_private_odbc.erl, src/jd2ejd.erl:
 	Update Exmpp XML parser options.
 
+	* src/gen_iq_handler.erl: Add the module and function names to the
+	error message, when a module crash.
+
 2008-12-03  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_proxy65/mod_proxy65_stream.erl,
