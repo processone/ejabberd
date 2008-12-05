@@ -29,9 +29,10 @@
 -module(node_pep).
 -author('christophe.romain@process-one.net').
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -111,10 +112,10 @@ features() ->
     ].
 
 create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
-    LOwner = jlib:jid_tolower(Owner),
+    LOwner = jlib:short_prepd_jid(Owner),
     {User, Server, _Resource} = LOwner, 
     Allowed = case LOwner of
-	{"", Host, ""} ->
+	{undefined, Host, undefined} ->
 	    true; % pubsub service always allowed
 	_ ->
 	    case acl:match_rule(ServerHost, Access, LOwner) of
@@ -167,21 +168,21 @@ purge_node(Host, Node, Owner) ->
     node_default:purge_node(Host, Node, Owner).
 
 get_entity_affiliations(_Host, Owner) ->
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerKey = jlib:short_prepd_bare_jid(Owner),
     node_default:get_entity_affiliations(OwnerKey, Owner).
 
 get_node_affiliations(Host, Node) ->
-    OwnerKey = jlib:jid_remove_resource(Host),
+    OwnerKey = jlib:short_bare_jid(Host),
     node_default:get_node_affiliations(OwnerKey, Node).
 
 get_affiliation(_Host, Node, Owner) ->
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerKey = jlib:short_prepd_bare_jid(Owner),
     node_default:get_affiliation(OwnerKey, Node, Owner).
 
 set_affiliation(_Host, Node, Owner, Affiliation) ->
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerKey = jlib:short_prepd_bare_jid(Owner),
     Record = case get_state(OwnerKey, Node, OwnerKey) of
-	    {error, ?ERR_ITEM_NOT_FOUND} ->
+	    {error, 'item-not-found'} ->
 		#pubsub_state{stateid = {OwnerKey, {OwnerKey, Node}},
 			      affiliation = Affiliation};
 	    {result, State} ->

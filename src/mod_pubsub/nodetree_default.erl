@@ -92,7 +92,7 @@ options() ->
 set_node(Record) when is_record(Record, pubsub_node) ->
     mnesia:write(Record);
 set_node(_) ->
-    {error, ?ERR_INTERNAL_SERVER_ERROR}.
+    {error, 'internal-server-error'}.
 
 %% @spec (Host, Node) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
@@ -100,7 +100,7 @@ set_node(_) ->
 get_node(Host, Node) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	[] -> {error, ?ERR_ITEM_NOT_FOUND};
+	[] -> {error, 'item-not-found'};
 	Error -> Error
     end.
 
@@ -134,7 +134,7 @@ get_subnodes_tree(Host, Node) ->
 %%     Owner = mod_pubsub:jid()
 %%     Options = list()
 create_node(Key, Node, Type, Owner, Options) ->
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerKey = jlib:short_prepd_bare_jid(Owner),
     case mnesia:read({pubsub_node, {Key, Node}}) of
 	[] ->
 	    {ParentNode, ParentExists} =
@@ -166,11 +166,11 @@ create_node(Key, Node, Type, Owner, Options) ->
 					      options = Options});
 		false ->
 		    %% Requesting entity is prohibited from creating nodes
-		    {error, ?ERR_FORBIDDEN}
+		    {error, 'forbidden'}
 	    end;
 	_ ->
 	    %% NodeID already exists
-	    {error, ?ERR_CONFLICT}
+	    {error, 'conflict'}
     end.
 
 %% @spec (Key, Node) -> [mod_pubsub:node()]

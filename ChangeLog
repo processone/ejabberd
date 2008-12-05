@@ -7,6 +7,13 @@
 	* src/gen_iq_handler.erl: Add the module and function names to the
 	error message, when a module crash.
 
+	* src/mod_pubsub/mod_pubsub.erl, src/mod_pubsub/nodetree_default.erl,
+	src/mod_pubsub/node_default.erl, src/mod_pubsub/node_pep.erl: First
+	pass of Exmpp conversion for mod_pubsub. Several modules aren't
+	converted yet. Existent Mnesia tables written to disc are not
+	updated. There must be bugs, mostly because of the mix between #jid
+	record and short JIDs.
+
 2008-12-03  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_proxy65/mod_proxy65_stream.erl,
