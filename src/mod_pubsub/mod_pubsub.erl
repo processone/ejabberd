@@ -949,6 +949,10 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 		    get_subscriptions(Host, From, Plugins);
 		{get, "affiliations"} ->
 		    get_affiliations(Host, From, Plugins);
+		{get, "options"} ->
+		    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "subscription-options")};
+		{set, "options"} ->
+		    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "subscription-options")};
 		_ ->
 		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
 	    end;

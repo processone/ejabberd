@@ -23,6 +23,8 @@
 
 	* src/mod_pubsub/node_flat.erl: renamed from node_zoo
 
+	* src/mod_pubsub/mod_pubsub.erl: reply to suscriptions options queries
+	with unsupported feature error (EJAB-713)
 
 2008-12-08  Mickael Remond  <mremond@process-one.net>
 
