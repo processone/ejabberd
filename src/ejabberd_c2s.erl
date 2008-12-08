@@ -62,6 +62,8 @@
 -define(SETS, gb_sets).
 -define(DICT, dict).
 
+%% pres_a contains all the presence available send (either through roster mechanism or directed).
+%% Directed presence unavailable remove user from pres_a.
 -record(state, {socket,
 		sockmod,
 		socket_monitor,
@@ -131,6 +133,9 @@
 	xml:element_to_string(?SERR_HOST_UNKNOWN)).
 -define(POLICY_VIOLATION_ERR(Lang, Text),
 	xml:element_to_string(?SERRT_POLICY_VIOLATION(Lang, Text))).
+-define(INVALID_FROM,
+	xml:element_to_string(?SERR_INVALID_FROM)).
+
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -861,13 +866,41 @@ wait_for_session(closed, StateData) ->
     {stop, normal, StateData}.
 
 
-
-
 session_established({xmlstreamelement, El}, StateData) ->
+    FromJID = StateData#state.jid,
+    % Check 'from' attribute in stanza RFC 3920 Section 9.1.2
+    case check_from(El, FromJID) of
+	'invalid-from' ->
+	    send_text(StateData, ?INVALID_FROM ++ ?STREAM_TRAILER),
+	    {stop, normal, StateData};
+	_NewEl ->
+	    session_established2(El, StateData)
+    end;
+
+%% We hibernate the process to reduce memory consumption after a
+%% configurable activity timeout
+session_established(timeout, StateData) ->
+    %% TODO: Options must be stored in state:
+    Options = [],
+    proc_lib:hibernate(gen_fsm, enter_loop,
+		       [?MODULE, Options, session_established, StateData]),
+    fsm_next_state(session_established, StateData);
+
+session_established({xmlstreamend, _Name}, StateData) ->
+    send_text(StateData, ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+session_established({xmlstreamerror, _}, StateData) ->
+    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    {stop, normal, StateData};
+
+session_established(closed, StateData) ->
+    {stop, normal, StateData}.
+
+session_established2(El, StateData) ->
     {xmlelement, Name, Attrs, _Els} = El,
     User = StateData#state.user,
     Server = StateData#state.server,
-    % TODO: check 'from' attribute in stanza
     FromJID = StateData#state.jid,
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of
@@ -943,27 +976,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 		end
 	end,
     ejabberd_hooks:run(c2s_loop_debug, [{xmlstreamelement, El}]),
-    fsm_next_state(session_established, NewState);
-
-%% We hibernate the process to reduce memory consumption after a
-%% configurable activity timeout
-session_established(timeout, StateData) ->
-    %% TODO: Options must be stored in state:
-    Options = [],
-    proc_lib:hibernate(gen_fsm, enter_loop,
-		       [?MODULE, Options, session_established, StateData]),
-    fsm_next_state(session_established, StateData);
-
-session_established({xmlstreamend, _Name}, StateData) ->
-    send_text(StateData, ?STREAM_TRAILER),
-    {stop, normal, StateData};
-
-session_established({xmlstreamerror, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
-    {stop, normal, StateData};
-
-session_established(closed, StateData) ->
-    {stop, normal, StateData}.
+    fsm_next_state(session_established, NewState).
 
 
 
@@ -1984,3 +1997,32 @@ fsm_reply(Reply, StateName, StateData) ->
 %% Used by c2s blacklist plugins
 is_ip_blacklisted({IP,_Port}) ->
     ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).
+
+%% Check from attributes
+%% returns invalid-from|NewElement
+check_from(El, FromJID) ->
+    case xml:get_tag_attr("from", El) of
+	false ->
+	    jlib:replace_from(FromJID, El);
+	{value, JIDElString} ->
+	    JIDEl = jlib:string_to_jid(JIDElString),
+	    case JIDEl#jid.lresource of 
+		"" ->
+		    %% Matching JID: The stanza is ok
+		    if JIDEl#jid.luser == FromJID#jid.luser andalso
+		       JIDEl#jid.lserver == FromJID#jid.lserver ->
+			    El;
+		       true ->
+			    'invalid-from'
+		    end;
+		_ ->
+		    %% Matching JID: The stanza is ok
+		    if JIDEl#jid.luser == FromJID#jid.luser andalso
+		       JIDEl#jid.lserver == FromJID#jid.lserver andalso 
+		       JIDEl#jid.lresource == FromJID#jid.lresource ->
+			    El;
+		       true ->
+			   'invalid-from'
+		    end
+	    end
+    end.

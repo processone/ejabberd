@@ -1,7 +1,13 @@
+2008-12-08  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: Enforce client stanza from attribute
+	(EJAB-812).
+	* src/jlib.erl: Likewise.
+
 2008-12-01  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: New subsection Database Connection
-	* doc/guide.html: Likewise
+	* doc/guide.html: Like	wise
 
 2008-12-01  Christophe Romain <christophe.romain@process-one.net>
 
