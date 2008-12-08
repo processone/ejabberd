@@ -119,13 +119,3 @@
 		      payload = []
 		     }).
 
-
-%% @type pubsubPresence() = #pubsub_presence{
-%%     key = {Host::host(), User::string(), Server::string()},
-%%     presence = list()}.
-%%% <p>This is the format of the <tt>published presence</tt> table. The type of the
-%%% table is: <tt>set</tt>,<tt>ram</tt>.</p>
--record(pubsub_presence, {key,
-			  resource
-			 }).
-

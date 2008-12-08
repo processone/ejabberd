@@ -355,11 +355,11 @@ disco_sm_features(Acc, From, To, Node, _Lang) ->
 	    Acc
     end.
 
-disco_sm_items(Acc, _From, To, [], _Lang) ->
+disco_sm_items(Acc, From, To, [], _Lang) ->
     %% TODO, use iq_disco_items(Host, [], From)
     Host = To#jid.lserver,
     LJID = jlib:jid_tolower(jlib:jid_remove_resource(To)),
-    case tree_action(Host, get_nodes, [Host]) of
+    case tree_action(Host, get_nodes, [Host, From]) of
 	[] ->
 	    Acc;
 	Nodes ->
@@ -461,7 +461,7 @@ handle_cast({presence, JID, Pid}, State) ->
 	{result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, JID]),
 	lists:foreach(
 	    fun({Node, subscribed}) -> 
-		case tree_action(Host, get_node, [Host, Node]) of
+		case tree_action(Host, get_node, [Host, Node, JID]) of
 		    #pubsub_node{options = Options} ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
@@ -507,7 +507,7 @@ handle_cast({presence, JID, Pid}, State) ->
 			    _ ->
 				ok
 			end
-		    end, tree_action(Host, get_nodes, [Owner]))
+		    end, tree_action(Host, get_nodes, [Owner, JID]))
 		end, Contacts);
 	_ ->
 	    ok
@@ -785,7 +785,7 @@ iq_disco_items(Host, Item, From) ->
 	    Node = string_to_node(SNode),
 	    %% Note: Multiple Node Discovery not supported (mask on pubsub#type)
 	    %% TODO this code is also back-compatible with pubsub v1.8 (for client issue)
-	    %% TODO make it pubsub v1.10 compliant (this breaks client compatibility)
+	    %% TODO make it pubsub v1.12 compliant (breaks client compatibility ?)
 	    %% TODO That is, remove name attribute
 	    Action =
 		fun(#pubsub_node{type = Type}) ->
@@ -1022,7 +1022,7 @@ send_authorization_request(Host, Node, Subscriber) ->
 		   {"type", "boolean"},
 		   {"label", translate:translate(Lang, "Allow this JID to subscribe to this pubsub node?")}],
 		  [{xmlelement, "value", [], [{xmlcdata, "false"}]}]}]}]},
-    case tree_action(Host, get_node, [Host, Node]) of
+    case tree_action(Host, get_node, [Host, Node, Subscriber]) of
 	#pubsub_node{owners = Owners} ->
 	    lists:foreach(
 	      fun(Owner) ->
@@ -1055,20 +1055,39 @@ find_authorization_response(Packet) ->
 	[invalid] -> invalid;
 	[] -> none;
 	[XFields] when is_list(XFields) ->
+            ?DEBUG("XFields: ~p", [XFields]),
 	    case lists:keysearch("FORM_TYPE", 1, XFields) of
-		{value, {_, ?NS_PUBSUB_SUB_AUTH}} ->
+		{value, {_, [?NS_PUBSUB_SUB_AUTH]}} ->
 		    XFields;
 		_ ->
 		    invalid
 	    end
     end.
 
+%% @spec (Host, JID, Node, Subscription) -> void
+%%	 Host = mod_pubsub:host()
+%%	 JID = jlib:jid()
+%%	 Node = string()
+%%	 Subscription = atom()
+%%	 Plugins = [Plugin::string()]
+%% @doc Send a message to JID with the supplied Subscription
+send_authorization_approval(Host, JID, Node, Subscription) ->
+    Stanza = {xmlelement, "message",
+	      [],
+	      [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
+		[{xmlelement, "subscription",
+		  [{"node", Node},
+		   {"jid", jlib:jid_to_string(JID)},
+		   {"subscription", subscription_to_string(Subscription)}],
+		  []}]}]},
+    ejabberd_router ! {route, service_jid(Host), JID, Stanza}.
+
 handle_authorization_response(Host, From, To, Packet, XFields) ->
     case {lists:keysearch("pubsub#node", 1, XFields),
 	  lists:keysearch("pubsub#subscriber_jid", 1, XFields),
 	  lists:keysearch("pubsub#allow", 1, XFields)} of
-	{{value, {_, SNode}}, {value, {_, SSubscriber}},
-	 {value, {_, SAllow}}} ->
+	{{value, {_, [SNode]}}, {value, {_, [SSubscriber]}},
+	 {value, {_, [SAllow]}}} ->
 	    Node = case Host of
 		       {_, _, _} -> [SNode];
 		       _ -> string:tokens(SNode, "/")
@@ -1083,7 +1102,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 				      %%options = Options,
 				      owners = Owners}) ->
 			     IsApprover = lists:member(jlib:jid_tolower(jlib:jid_remove_resource(From)), Owners),
-			     Subscription = node_call(Type, get_subscription, [Host, Node, Subscriber]),
+			     {result, Subscription} = node_call(Type, get_subscription, [Host, Node, Subscriber]),
 			     if
 				 not IsApprover ->
 				     {error, ?ERR_FORBIDDEN};
@@ -1094,6 +1113,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 							   true -> subscribed;
 							   false -> none
 						       end,
+				     send_authorization_approval(Host, Subscriber, SNode, NewSubscription),
 				     node_call(Type, set_subscription, [Host, Node, Subscriber, NewSubscription])
 			     end
 		     end,
@@ -1457,34 +1477,38 @@ publish_item(Host, ServerHost, Node, Publisher, "", Payload) ->
     publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload);
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
     Action = fun(#pubsub_node{options = Options, type = Type}) ->
-		     Features = features(Type),
-		     PublishFeature = lists:member("publish", Features),
-		     PublishModel = get_option(Options, publish_model),
-		     MaxItems = max_items(Options),
-		     PayloadSize = size(term_to_binary(Payload)),
-		     PayloadMaxSize = get_option(Options, max_payload_size),
-		     if
-			 not PublishFeature ->
-			     %% Node does not support item publication
-			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "publish")};
-			 PayloadSize > PayloadMaxSize ->
-			     %% Entity attempts to publish very large payload
-			     {error, extended_error(?ERR_NOT_ACCEPTABLE, "payload-too-big")};
-			 %%?? ->   iq_pubsub just does that matchs
-			 %%	% Entity attempts to publish item with multiple payload elements or namespace does not match
-			 %%	{error, extended_error(?ERR_BAD_REQUEST, "invalid-payload")};
-			 %%	% Publisher attempts to publish to persistent node with no item
-			 %%	{error, extended_error(?ERR_BAD_REQUEST, "item-required")};
-			 Payload == "" ->
-			     %% Publisher attempts to publish to payload node with no payload
-			     {error, extended_error(?ERR_BAD_REQUEST, "payload-required")};
-			 %%?? ->
-			 %%	% Publisher attempts to publish to transient notification node with item
-			 %%	{error, extended_error(?ERR_BAD_REQUEST, "item-forbidden")};
-			 true ->
-			     node_call(Type, publish_item, [Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload])
-		     end
-	     end,
+		    Features = features(Type),
+		    PublishFeature = lists:member("publish", Features),
+		    PublishModel = get_option(Options, publish_model),
+		    MaxItems = max_items(Options),
+		    PayloadCount = payload_elements(xmlelement, Payload),
+		    PayloadSize = size(term_to_binary(Payload)),
+		    PayloadMaxSize = get_option(Options, max_payload_size),
+		    % pubsub#deliver_payloads true 
+		    % pubsub#persist_items true -> 1 item; false -> 0 item
+		    if
+			not PublishFeature ->
+			    %% Node does not support item publication
+			    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "publish")};
+			PayloadSize > PayloadMaxSize ->
+			    %% Entity attempts to publish very large payload
+			    {error, extended_error(?ERR_NOT_ACCEPTABLE, "payload-too-big")};
+			PayloadCount > 1 ->
+			    %% Entity attempts to publish item with multiple payload elements
+			    {error, extended_error(?ERR_BAD_REQUEST, "invalid-payload")};
+			Payload == "" ->
+			    %% Publisher attempts to publish to payload node with no payload
+			    {error, extended_error(?ERR_BAD_REQUEST, "payload-required")};
+			(MaxItems == 0) and (PayloadSize > 0) ->
+			    % Publisher attempts to publish to transient notification node with item
+			    {error, extended_error(?ERR_BAD_REQUEST, "item-forbidden")};
+			(MaxItems > 0) and (PayloadSize == 0) ->
+			    % Publisher attempts to publish to persistent node with no item
+			    {error, extended_error(?ERR_BAD_REQUEST, "item-required")};
+			true ->
+			    node_call(Type, publish_item, [Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload])
+		    end
+	    end,
     ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
     Reply = [],
     case transaction(Host, Node, Action, sync_dirty) of
@@ -1556,7 +1580,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 		     PersistentFeature = lists:member("persistent-items", Features),
 		     DeleteFeature = lists:member("delete-nodes", Features),
 		     if
-			 %%?? ->   iq_pubsub just does that matchs
+			 %%->   iq_pubsub just does that matchs
 			 %%	%% Request does not specify an item
 			 %%	{error, extended_error(?ERR_BAD_REQUEST, "item-required")};
 			 not PersistentFeature ->
@@ -1735,7 +1759,7 @@ send_items(Host, Node, LJID, Number) ->
 	    [];
 	Items ->
 	    case Number of
-		last -> lists:sublist(lists:reverse(Items), 1);
+		last -> lists:last(Items);
 		all -> Items;
 		N when N > 0 -> lists:nthtail(length(Items)-N, Items);
 		_ -> Items
@@ -2094,6 +2118,15 @@ is_to_delivered({User, Server, _}, _, true) ->
 	               ({session, _, _, _, _Priority, _}, _Acc) -> true
 	end, false, Ss)
     end.
+
+%% @spec (Elem, Payload) -> int()
+%%	Elem = atom()
+%%	Payload = term()
+%% @doc <p>Count occurence of given element in payload.</p>
+payload_elements(Elem, Payload) -> payload_elements(Elem, Payload, 0).
+payload_elements(_, [], Count) -> Count;
+payload_elements(Elem, [Elem|Tail], Count) -> payload_elements(Elem, Tail, Count+1);
+payload_elements(Elem, [_|Tail], Count) -> payload_elements(Elem, Tail, Count).
 
 %%%%%% broadcast functions
 
@@ -2643,8 +2676,9 @@ set_xoption([{"pubsub#type", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(type, Value);
 set_xoption([{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(body_xslt, Value);
-set_xoption([_ | _Opts], _NewOpts) ->
-    {error, ?ERR_NOT_ACCEPTABLE}.
+set_xoption([_ | Opts], NewOpts) ->
+    % skip unknown field
+    set_xoption(Opts, NewOpts).
 
 %%%% plugin handling
 

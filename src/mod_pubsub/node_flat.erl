@@ -22,7 +22,7 @@
 %%% @end
 %%% ====================================================================
 
--module(node_zoo).
+-module(node_flat).
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
@@ -69,7 +69,7 @@ terminate(Host, ServerHost) ->
     node_default:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, zoo},
+    [{node_type, flat},
      {deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
@@ -97,12 +97,7 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
 	{"", Host, ""} ->
 	    true; % pubsub service always allowed
 	_ ->
-	    case acl:match_rule(ServerHost, Access, LOwner) of
-		allow ->
-		    true;
-		_ ->
-		    false
-	    end
+	    acl:match_rule(ServerHost, Access, LOwner) =:= allow
     end,
     {result, Allowed}.
 
