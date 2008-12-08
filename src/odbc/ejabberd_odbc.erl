@@ -223,7 +223,15 @@ handle_info(_Info, State) ->
 %% Purpose: Shutdown the server
 %% Returns: any (ignored by gen_server)
 %%----------------------------------------------------------------------
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    case State#state.db_type of
+	mysql ->
+	    % old versions of mysql driver don't have the stop function
+	    % so the catch
+	    catch mysql_conn:stop(State#state.db_ref);
+	_ ->
+	    ok
+    end,
     ok.
 
 %%%----------------------------------------------------------------------

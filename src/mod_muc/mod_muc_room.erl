@@ -49,69 +49,10 @@
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
+-include("mod_muc_room.hrl").
 
--define(MAX_USERS_DEFAULT, 200).
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
-
--define(SETS, gb_sets).
--define(DICT, dict).
-
--record(lqueue, {queue, len, max}).
-
--record(config, {title = "",
-		 description = "",
-		 allow_change_subj = true,
-		 allow_query_users = true,
-		 allow_private_messages = true,
-                 allow_visitor_status = true,
-                 allow_visitor_nickchange = true,
-		 public = true,
-		 public_list = true,
-		 persistent = false,
-		 moderated = true,
-		 members_by_default = true,
-		 members_only = false,
-		 allow_user_invites = false,
-		 password_protected = false,
-		 password = "",
-		 anonymous = true,
-		 max_users = ?MAX_USERS_DEFAULT,
-		 logging = false
-		}).
-
--record(user, {jid,
-	       nick,
-	       role,
-	       last_presence}).
-
--record(activity, {message_time = 0,
-		   presence_time = 0,
-		   message_shaper,
-		   presence_shaper,
-		   message,
-		   presence}).
-
--record(state, {room,
-		host,
-		server_host,
-		access,
-		jid,
-		config = #config{},
-		users = ?DICT:new(),
-		affiliations = ?DICT:new(),
-		history = lqueue_new(20),
-		subject = "",
-		subject_author = "",
-		just_created = false,
-		activity = treap:empty(),
-		room_shaper,
-		room_queue = queue:new()}).
-
--record(muc_online_users, {us,
-			   room,
-			   host}).
-
 
 %-define(DBGFSM, true).
 
@@ -2761,7 +2702,7 @@ check_allowed_persistent_change(XEl, StateData, From) ->
 
 
 get_default_room_maxusers(RoomState) ->
-    DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, ?MAX_USERS_DEFAULT),
+    DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, []),
     RoomState2 = set_opts(DefRoomOpts, RoomState),
     (RoomState2#state.config)#config.max_users.
 

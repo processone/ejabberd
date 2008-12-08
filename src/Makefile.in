@@ -194,6 +194,8 @@ install: all
 	install -m 644 *.hrl $(INCLUDEDIR)
 	install -d $(INCLUDEDIR)/eldap/
 	install -m 644 eldap/*.hrl $(INCLUDEDIR)/eldap/
+	install -d $(INCLUDEDIR)/mod_muc/
+	install -m 644 mod_muc/*.hrl $(INCLUDEDIR)/mod_muc/
 	install -d $(INCLUDEDIR)/mod_proxy65/
 	install -m 644 mod_proxy65/*.hrl $(INCLUDEDIR)/mod_proxy65/
 	install -d $(INCLUDEDIR)/mod_pubsub/

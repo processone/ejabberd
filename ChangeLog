@@ -1,4 +1,8 @@
-2008-12-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+2008-12-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Merge from trunk (r1692 to r1709).
+
+2008-12-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/mod_pubsub/node_default.erl, src/mod_pubsub/node_pep.erl: Fix
 	acl:match_rule/3 call. It takes a #jid record, not a short JID.
@@ -9,6 +13,12 @@
 	src/mod_pubsub/node_zoo.erl, src/mod_pubsub/nodetree_default.erl,
 	src/mod_pubsub/nodetree_virtual.erl: Finish the conversion of
 	mod_pubsub to Exmpp.
+
+2008-12-08  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: Enforce client stanza from attribute
+	(EJAB-812).
+	* src/jlib.erl: Likewise.
 
 2008-12-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -31,12 +41,23 @@
 	* src/mod_proxy65/mod_proxy65_stream.erl,
 	src/mod_proxy65/mod_proxy65_service.erl: Convert mod_proxy65 to exmpp.
 
+2008-12-02  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Move definitions to header file
+	* src/mod_muc/mod_muc_room.hrl: New header file
+	* src/Makefile.in: Likewise
+
 2008-12-01  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1649 to r1692).
 
 	* src/ejabberd_frontend_socket.erl: Fix two warnings about unused
 	variables.
+
+2008-12-01  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: New subsection Database Connection
+	* doc/guide.html: Likewise
 
 2008-11-28  Alexey Shchepin  <alexey@process-one.net>
 

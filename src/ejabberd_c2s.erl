@@ -781,10 +781,43 @@ wait_for_session(closed, StateData) ->
 
 
 session_established({xmlstreamelement, El}, StateData) ->
+    FromJID = StateData#state.jid,
+    % Check 'from' attribute in stanza RFC 3920 Section 9.1.2
+    case check_from(El, FromJID) of
+	'invalid-from' ->
+	    send_element(StateData, exmpp_stream:error('invalid-from')),
+	    send_element(StateData, exmpp_stream:closing()),
+	    {stop, normal, StateData};
+	_NewEl ->
+	    session_established2(El, StateData)
+    end;
+
+%% We hibernate the process to reduce memory consumption after a
+%% configurable activity timeout
+session_established(timeout, StateData) ->
+    %% TODO: Options must be stored in state:
+    Options = [],
+    proc_lib:hibernate(gen_fsm, enter_loop,
+		       [?MODULE, Options, session_established, StateData]),
+    fsm_next_state(session_established, StateData);
+
+session_established({xmlstreamend, _Name}, StateData) ->
+    send_element(StateData, exmpp_stream:closing()),
+    {stop, normal, StateData};
+
+session_established({xmlstreamerror, _}, StateData) ->
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
+    {stop, normal, StateData};
+
+session_established(closed, StateData) ->
+    {stop, normal, StateData}.
+
+
+session_established2(El, StateData) ->
     try
 	User = StateData#state.user,
 	Server = StateData#state.server,
-	% TODO: check 'from' attribute in stanza
 	FromJID = StateData#state.jid,
 	To = exmpp_stanza:get_recipient(El),
 	ToJID = case To of
@@ -867,30 +900,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 	throw:Exception ->
 	    io:format("SESSION ESTABLISHED: Exception=~p~n", [Exception]),
 	    fsm_next_state(session_established, StateData)
-    end;
-
-%% We hibernate the process to reduce memory consumption after a
-%% configurable activity timeout
-session_established(timeout, StateData) ->
-    %% TODO: Options must be stored in state:
-    Options = [],
-    proc_lib:hibernate(gen_fsm, enter_loop,
-		       [?MODULE, Options, session_established, StateData]),
-    fsm_next_state(session_established, StateData);
-
-session_established({xmlstreamend, _Name}, StateData) ->
-    send_element(StateData, exmpp_stream:closing()),
-    {stop, normal, StateData};
-
-session_established({xmlstreamerror, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
-    {stop, normal, StateData};
-
-session_established(closed, StateData) ->
-    {stop, normal, StateData}.
-
-
+    end.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/3
@@ -1891,3 +1901,37 @@ fsm_reply(Reply, StateName, StateData) ->
 %% Used by c2s blacklist plugins
 is_ip_blacklisted({IP,_Port}) ->
     ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).	
+
+%% Check from attributes
+%% returns invalid-from|NewElement
+check_from(El, FromJID) ->
+    case exmpp_stanza:get_sender(El) of
+	undefined ->
+	    exmpp_stanza:set_sender(El, FromJID);
+	JIDElString ->
+	    try
+		JIDEl = exmpp_jid:list_to_jid(JIDElString),
+		case JIDEl#jid.lresource of 
+		    undefined ->
+			%% Matching JID: The stanza is ok
+			if JIDEl#jid.lnode == FromJID#jid.lnode andalso
+			   JIDEl#jid.ldomain == FromJID#jid.ldomain ->
+				El;
+			   true ->
+				'invalid-from'
+			end;
+		    _ ->
+			%% Matching JID: The stanza is ok
+			if JIDEl#jid.lnode == FromJID#jid.lnode andalso
+			   JIDEl#jid.ldomain == FromJID#jid.ldomain andalso 
+			   JIDEl#jid.lresource == FromJID#jid.lresource ->
+				El;
+			   true ->
+			       'invalid-from'
+			end
+		end
+	    catch
+		_:_ ->
+		    'invalid-from'
+	    end
+    end.
