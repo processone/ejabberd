@@ -35,9 +35,10 @@
 -module(node_mb).
 -author('eric@ohmforce.com').
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_node).
 

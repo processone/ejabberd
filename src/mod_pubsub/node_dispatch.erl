@@ -26,8 +26,9 @@
 -module(node_dispatch).
 -author('christophe.romain@process-one.net').
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -119,10 +120,10 @@ delete_node(Host, Removed) ->
 
 subscribe_node(_Host, _Node, _Sender, _Subscriber, _AccessModel,
 	       _SendLast, _PresenceSubscription, _RosterGroup) ->
-    {error, ?ERR_FORBIDDEN}.
+    {error, 'forbidden'}.
 
 unsubscribe_node(_Host, _Node, _Sender, _Subscriber, _SubID) ->
-    {error, ?ERR_FORBIDDEN}.
+    {error, 'forbidden'}.
 
 publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload) ->
     lists:foreach(fun(SubNode) ->
@@ -135,10 +136,10 @@ remove_extra_items(_Host, _Node, _MaxItems, ItemIds) ->
     {result, {ItemIds, []}}.
 
 delete_item(_Host, _Node, _JID, _ItemId) ->
-    {error, ?ERR_ITEM_NOT_FOUND}.
+    {error, 'item-not-found'}.
 
 purge_node(_Host, _Node, _Owner) ->
-    {error, ?ERR_FORBIDDEN}.
+    {error, 'forbidden'}.
 
 get_entity_affiliations(_Host, _Owner) ->
     {result, []}.

@@ -26,8 +26,9 @@
 -module(node_club).
 -author('christophe.romain@process-one.net').
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_node).
 

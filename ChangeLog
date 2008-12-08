@@ -3,6 +3,13 @@
 	* src/mod_pubsub/node_default.erl, src/mod_pubsub/node_pep.erl: Fix
 	acl:match_rule/3 call. It takes a #jid record, not a short JID.
 
+	* src/mod_pubsub/node_buddy.erl, src/mod_pubsub/node_club.erl,
+	src/mod_pubsub/node_dispatch.erl, src/mod_pubsub/node_mb.erl,
+	src/mod_pubsub/node_private.erl, src/mod_pubsub/node_public.erl,
+	src/mod_pubsub/node_zoo.erl, src/mod_pubsub/nodetree_default.erl,
+	src/mod_pubsub/nodetree_virtual.erl: Finish the conversion of
+	mod_pubsub to Exmpp.
+
 2008-12-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_receiver.erl, src/mod_offline_odbc.erl,

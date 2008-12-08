@@ -34,8 +34,9 @@
 -module(nodetree_virtual).
 -author('christophe.romain@process-one.net').
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_nodetree).
 
@@ -121,11 +122,11 @@ get_subnodes_tree(_Host, _Node) ->
 %% is considered as already created.</p>
 %% <p>default allowed nodes: /home/host/user/any/node/name</p>
 create_node(_Host, Node, _Type, Owner, _Options) ->
-    UserName = Owner#jid.luser,
-    UserHost = Owner#jid.lserver,
+    UserName = Owner#jid.lnode,
+    UserHost = Owner#jid.ldomain,
     case Node of
-	["home", UserHost, UserName | _] -> {error, ?ERR_CONFLICT};
-	_ -> {error, ?ERR_NOT_ALLOWED}
+	["home", UserHost, UserName | _] -> {error, 'conflict'};
+	_ -> {error, 'not-allowed'}
     end.
 
 %% @spec (Host, Node) -> [mod_pubsub:node()]
