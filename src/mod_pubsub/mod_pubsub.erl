@@ -1049,7 +1049,7 @@ find_authorization_response(Packet) ->
 	[] -> none;
 	[XFields] when is_list(XFields) ->
 	    case lists:keysearch("FORM_TYPE", 1, XFields) of
-		{value, {_, ?NS_PUBSUB_SUB_AUTH}} ->
+		{value, {_, [?NS_PUBSUB_SUB_AUTH]}} ->
 		    XFields;
 		_ ->
 		    invalid
@@ -1060,8 +1060,8 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
     case {lists:keysearch("pubsub#node", 1, XFields),
 	  lists:keysearch("pubsub#subscriber_jid", 1, XFields),
 	  lists:keysearch("pubsub#allow", 1, XFields)} of
-	{{value, {_, SNode}}, {value, {_, SSubscriber}},
-	 {value, {_, SAllow}}} ->
+	{{value, {_, [SNode]}}, {value, {_, [SSubscriber]}},
+	 {value, {_, [SAllow]}}} ->
 	    Node = case Host of
 		       {_, _, _} -> [SNode];
 		       _ -> string:tokens(SNode, "/")
@@ -1076,7 +1076,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 				      %%options = Options,
 				      owners = Owners}) ->
 			     IsApprover = lists:member(jlib:jid_tolower(jlib:jid_remove_resource(From)), Owners),
-			     Subscription = node_call(Type, get_subscription, [Host, Node, Subscriber]),
+			     {result, Subscription} = node_call(Type, get_subscription, [Host, Node, Subscriber]),
 			     if
 				 not IsApprover ->
 				     {error, ?ERR_FORBIDDEN};
@@ -2637,8 +2637,9 @@ set_xoption([{"pubsub#type", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(type, Value);
 set_xoption([{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(body_xslt, Value);
-set_xoption([_ | _Opts], _NewOpts) ->
-    {error, ?ERR_NOT_ACCEPTABLE}.
+set_xoption([_ | Opts], NewOpts) ->
+    % skip unknown field
+    set_xoption(Opts, NewOpts).
 
 %%%% plugin handling
 

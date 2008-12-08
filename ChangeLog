@@ -4,6 +4,11 @@
 	* src/mod_pubsub/mod_pubsub.erl: Likewise
 	* src/mod_caps.erl: Likewise
 
+	* src/mod_pubsub.erl: ignore unknown configuration fields (EJAB-762);
+	fix node authorization bug (EJAB-798)
+
+	* src/pubsub.hrl: remove unused pubsub_presence record
+
 2008-12-08  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_c2s.erl: Enforce client stanza from attribute
