@@ -1,5 +1,10 @@
 2008-12-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	* src/mod_pubsub/node_default.erl, src/mod_pubsub/node_pep.erl: Fix
+	acl:match_rule/3 call. It takes a #jid record, not a short JID.
+
+2008-12-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	* src/ejabberd_receiver.erl, src/mod_offline_odbc.erl,
 	src/mod_vcard_odbc.erl, src/mod_private_odbc.erl, src/jd2ejd.erl:
 	Update Exmpp XML parser options.
