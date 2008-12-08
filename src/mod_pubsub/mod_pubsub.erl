@@ -2442,7 +2442,7 @@ get_configure(Host, Node, From, Lang) ->
     transaction(Host, Node, Action, sync_dirty).
 
 get_default(Host, Node, _From, Lang) ->
-    Type=select_type(Host, Host, Node),
+    Type = select_type(Host, Host, Node),
     Options = node_options(Type),
     {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
 		[{xmlelement, "default", [],
@@ -2692,18 +2692,18 @@ plugins(Host) ->
     _ -> [?STDNODE]
     end.
 select_type(ServerHost, Host, Node, Type)->
-	?DEBUG("SELECT_TYPE : ~p~n", [Node]),
-	case Host of
-	{_User, _Server, _Resource} -> 
-   		case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), pep_mapping) of
-   	 		[{pep_mapping, PM}] -> ?DEBUG("SELECT_TYPE : ~p~n", [PM]), proplists:get_value(Node, PM,?PEPNODE);
-   	 		R -> ?DEBUG("SELECT_TYPE why ?: ~p~n", [R]), ?PEPNODE
-   	 	end;
-	_ -> 
-	   Type
+    ?DEBUG("SELECT_TYPE : ~p~n", [[ServerHost, Host, Node, Type]]),
+    case Host of
+    {_User, _Server, _Resource} -> 
+	case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), pep_mapping) of
+	[{pep_mapping, PM}] -> ?DEBUG("SELECT_TYPE : ~p~n", [PM]), proplists:get_value(Node, PM, ?PEPNODE);
+	R -> ?DEBUG("SELECT_TYPE why ?: ~p~n", [R]), ?PEPNODE
+	end;
+    _ -> 
+	Type
     end.
 select_type(ServerHost, Host, Node) -> 
- 	select_type(ServerHost, Host, Node,hd(plugins(ServerHost))).
+    select_type(ServerHost, Host, Node, hd(plugins(ServerHost))).
 
 features() ->
 	[
