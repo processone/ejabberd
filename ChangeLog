@@ -4,10 +4,13 @@
 	* src/mod_pubsub/mod_pubsub.erl: Likewise
 	* src/mod_caps.erl: Likewise
 
-	* src/mod_pubsub.erl: ignore unknown configuration fields (EJAB-762);
-	fix node authorization bug (EJAB-798)
+	* src/mod_pubsub/mod_pubsub.erl: ignore unknown configuration fields
+	(EJAB-762) (thanks to Jack Moffitt)
 
-	* src/pubsub.hrl: remove unused pubsub_presence record
+	* src/mod_pubsub/mod_pubsub.erl: fix node authorization bug (EJAB-798)
+	(thanks to Brian Cully)
+
+	* src/mod_pubsub/pubsub.hrl: remove unused pubsub_presence record
 
 2008-12-08  Mickael Remond  <mremond@process-one.net>
 
