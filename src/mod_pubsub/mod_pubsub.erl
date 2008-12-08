@@ -473,17 +473,14 @@ handle_cast({presence, JID, Pid}, State) ->
     end, State#state.plugins),
     %% and send to From last PEP events published by its contacts
     case catch ejabberd_c2s:get_subscribed(Pid) of
-	ContactsWithCaps when is_list(ContactsWithCaps) ->
-	    Caps = proplists:get_value(LJID, ContactsWithCaps),
-	    ContactsUsers = lists:usort(lists:map(
-				fun({{User, Server, _}, _}) -> {User, Server} end, ContactsWithCaps)),
+	Contacts when is_list(Contacts) ->
 	    lists:foreach(
-		fun({User, Server}) ->
-		    PepKey = {User, Server, ""},
+		fun({User, Server, _}) ->
+		    Owner = {User, Server, ""},
 		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
-				case is_caps_notify(ServerHost, Node, Caps) of
+				case is_caps_notify(ServerHost, Node, LJID) of
 				    true ->
 					Subscribed = case get_option(Options, access_model) of
 					    open -> true;
@@ -495,8 +492,7 @@ handle_cast({presence, JID, Pid}, State) ->
 						element(2, get_roster_info(User, Server, LJID, Grps))
 					end,
 					if Subscribed ->
-					    ?DEBUG("send ~s's ~s event to ~s",[jlib:jid_to_string(PepKey),Node,jlib:jid_to_string(LJID)]),
-					    send_last_item(PepKey, Node, LJID);
+					    send_last_item(Owner, Node, LJID);
 					true ->
 					    ok
 					end;
@@ -506,8 +502,8 @@ handle_cast({presence, JID, Pid}, State) ->
 			    _ ->
 				ok
 			end
-		    end, tree_action(Host, get_nodes, [PepKey]))
-		end, ContactsUsers);
+		    end, tree_action(Host, get_nodes, [Owner]))
+		end, Contacts);
 	_ ->
 	    ok
     end,
@@ -2321,58 +2317,52 @@ broadcast_config_notification(Host, Node, Lang) ->
 %% broadcast Stanza to all contacts of the user that are advertising
 %% interest in this kind of Node.
 broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
-    ?DEBUG("looking for pid of ~p@~p/~p", [LUser, LServer, LResource]),
-    %% We need to know the resource, so we can ask for presence data.
-    SenderResource = case LResource of
-			 "" ->
-			     %% If we don't know the resource, just pick one.
-			     case ejabberd_sm:get_user_resources(LUser, LServer) of
-				 [R|_] ->
-				     R;
-				 [] ->
-				     ""
-			     end;
-			 _ ->
-			     LResource
-		     end,
-    case SenderResource of
-    "" ->
-	?DEBUG("~p@~p is offline; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
-	ok;
-    _ ->
-	case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
-	    C2SPid when is_pid(C2SPid) ->
-		%% set the from address on the notification to the bare JID of the account owner
-		%% Also, add "replyto" if entity has presence subscription to the account owner
-		%% See XEP-0163 1.1 section 4.3.1
-		Sender = jlib:make_jid(LUser, LServer, ""),
-		%%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
-		case catch ejabberd_c2s:get_subscribed_and_online(C2SPid) of
-		    ContactsWithCaps when is_list(ContactsWithCaps) ->
-			?DEBUG("found contacts with caps: ~p", [ContactsWithCaps]),
-			lists:foreach(
-			fun({JID, Caps}) ->
-				case is_caps_notify(LServer, Node, Caps) of
-				    true ->
-					To = jlib:make_jid(JID),
-					ejabberd_router ! {route, Sender, To, Stanza};
-				    false ->
-					ok
+    SenderResource = user_resource(LUser, LServer, LResource),
+    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
+	C2SPid when is_pid(C2SPid) ->
+	    %% set the from address on the notification to the bare JID of the account owner
+	    %% Also, add "replyto" if entity has presence subscription to the account owner
+	    %% See XEP-0163 1.1 section 4.3.1
+	    Sender = jlib:make_jid(LUser, LServer, ""),
+	    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
+	    case catch ejabberd_c2s:get_subscribed(C2SPid) of
+		Contacts when is_list(Contacts) ->
+		    Online = lists:foldl(fun({U, S, R}, Acc) ->
+				case user_resource(U, S, R) of
+				    [] -> Acc;
+				    OR -> [{U, S, OR}|Acc]
 				end
-			end, ContactsWithCaps);
-		    _ ->
-			ok
-		end,
-		ok;
-	    _ ->
-		?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
-		ok
-	end
+			    end, [], Contacts),
+		    lists:foreach(fun(LJID) ->
+			case is_caps_notify(LServer, Node, LJID) of
+			    true ->
+				ejabberd_router ! {route, Sender, jlib:make_jid(LJID), Stanza};
+			    false ->
+				ok
+			end
+		    end, Online);
+		_ ->
+		    ok
+	    end,
+	    ok;
+	_ ->
+	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
+	    ok
     end;
 broadcast_by_caps(_, _, _, _) ->
     ok.
 
-is_caps_notify(Host, Node, Caps) ->
+user_resource(LUser, LServer, []) ->
+    %% If we don't know the resource, just pick first if any
+    case ejabberd_sm:get_user_resources(LUser, LServer) of
+	[R|_] -> R;
+	[] -> []
+    end;
+user_resource(_, _, LResource) ->
+    LResource.
+
+is_caps_notify(Host, Node, LJID) ->
+    Caps = mod_caps:get_caps(LJID),
     case catch mod_caps:get_features(Host, Caps) of
 	Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
 	_ -> false
