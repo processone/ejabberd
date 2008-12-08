@@ -1,3 +1,9 @@
+2008-12-08  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: Enforce client stanza from attribute
+	(EJAB-812).
+	* src/jlib.erl: Likewise.
+
 2008-12-02  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Move definitions to header file
