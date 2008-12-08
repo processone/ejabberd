@@ -12,6 +12,9 @@
 
 	* src/mod_pubsub/pubsub.hrl: remove unused pubsub_presence record
 
+	* src/mod_pubsub/node_default.erl: remove pubsub_state record when
+	unsubscribing node without affiliation (EJAB-776)
+
 2008-12-08  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_c2s.erl: Enforce client stanza from attribute

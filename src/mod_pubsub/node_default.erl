@@ -378,6 +378,10 @@ unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
 		%% Requesting entity is prohibited from unsubscribing entity
 		not Authorized ->
 		    {error, ?ERR_FORBIDDEN};
+		%% Was just subscriber, remove the record
+		State#pubsub_state.affiliation == none ->
+		    mnesia:delete({pubsub_state, State#pubsub_state.stateid}),
+		    {result, default};
 		true ->
 		    set_state(State#pubsub_state{subscription = none}),
 		    {result, default}
