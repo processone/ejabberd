@@ -1,6 +1,10 @@
+2008-12-09  Christophe Romain <cromain@process-one.net>
+
+	* src/mod_pubsub: Mergr from lattest trunk (r1716).
+
 2008-12-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
-	Merge from trunk (r1692 to r1709).
+	* src/mod_pubsub: Merge from trunk (r1692 to r1709).
 
 2008-12-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
