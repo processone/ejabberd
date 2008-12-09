@@ -1480,7 +1480,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    PublishFeature = lists:member("publish", Features),
 		    PublishModel = get_option(Options, publish_model),
 		    MaxItems = max_items(Options),
-		    PayloadCount = payload_elements(xmlelement, Payload),
+		    PayloadCount = payload_xmlelements(Payload),
 		    PayloadSize = size(term_to_binary(Payload)),
 		    PayloadMaxSize = get_option(Options, max_payload_size),
 		    % pubsub#deliver_payloads true 
@@ -2125,10 +2125,10 @@ is_to_delivered({User, Server, _}, _, true) ->
 %%	Elem = atom()
 %%	Payload = term()
 %% @doc <p>Count occurence of given element in payload.</p>
-payload_elements(Elem, Payload) -> payload_elements(Elem, Payload, 0).
-payload_elements(_, [], Count) -> Count;
-payload_elements(Elem, [Elem|Tail], Count) -> payload_elements(Elem, Tail, Count+1);
-payload_elements(Elem, [_|Tail], Count) -> payload_elements(Elem, Tail, Count).
+payload_xmlelements(Payload) -> payload_xmlelements(Payload, 0).
+payload_xmlelements([], Count) -> Count;
+payload_xmlelements([{xmlelement, _, _, _}|Tail], Count) -> payload_xmlelements(Tail, Count+1);
+payload_xmlelements([_|Tail], Count) -> payload_xmlelements(Tail, Count).
 
 %%%%%% broadcast functions
 
