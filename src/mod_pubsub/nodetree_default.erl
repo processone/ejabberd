@@ -46,7 +46,9 @@
 	 terminate/2,
 	 options/0,
 	 set_node/1,
+	 get_node/3,
 	 get_node/2,
+	 get_nodes/2,
 	 get_nodes/1,
 	 get_subnodes/3,
 	 get_subnodes_tree/2,
@@ -98,6 +100,9 @@ set_node(_) ->
 %% @spec (Host, Node) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
+
 get_node(Host, Node) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
@@ -107,6 +112,9 @@ get_node(Host, Node) ->
 
 %% @spec (Key) -> [pubsubNode()] | {error, Reason}
 %%     Key = mod_pubsub:host() | mod_pubsub:jid()
+get_nodes(Key, _From) ->
+    get_nodes(Key).
+
 get_nodes(Key) ->
     mnesia:match_object(#pubsub_node{nodeid = {Key, '_'}, _ = '_'}).
 

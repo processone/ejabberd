@@ -356,11 +356,11 @@ disco_sm_features(Acc, From, To, Node, _Lang) ->
 	    Acc
     end.
 
-disco_sm_items(Acc, _From, To, [], _Lang) ->
+disco_sm_items(Acc, From, To, [], _Lang) ->
     %% TODO, use iq_disco_items(Host, [], From)
     Host = To#jid.ldomain,
     LJID = jlib:short_prepd_bare_jid(To),
-    case tree_action(Host, get_nodes, [Host]) of
+    case tree_action(Host, get_nodes, [Host, From]) of
 	[] ->
 	    Acc;
 	Nodes ->
@@ -460,7 +460,7 @@ handle_cast({presence, JID, Pid}, State) ->
 	{result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, JID]),
 	lists:foreach(
 	    fun({Node, subscribed}) -> 
-		case tree_action(Host, get_node, [Host, Node]) of
+		case tree_action(Host, get_node, [Host, Node, JID]) of
 		    #pubsub_node{options = Options} ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
@@ -477,17 +477,14 @@ handle_cast({presence, JID, Pid}, State) ->
     end, State#state.plugins),
     %% and send to From last PEP events published by its contacts
     case catch ejabberd_c2s:get_subscribed(Pid) of
-	ContactsWithCaps when is_list(ContactsWithCaps) ->
-	    Caps = proplists:get_value(LJID, ContactsWithCaps),
-	    ContactsUsers = lists:usort(lists:map(
-				fun({{User, Server, _}, _}) -> {User, Server} end, ContactsWithCaps)),
+	Contacts when is_list(Contacts) ->
 	    lists:foreach(
-		fun({User, Server}) ->
-		    PepKey = {User, Server, undefined},
+		fun({User, Server, _}) ->
+		    Owner = {User, Server, undefined},
 		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
-				case is_caps_notify(ServerHost, Node, Caps) of
+				case is_caps_notify(ServerHost, Node, LJID) of
 				    true ->
 					Subscribed = case get_option(Options, access_model) of
 					    open -> true;
@@ -499,8 +496,7 @@ handle_cast({presence, JID, Pid}, State) ->
 						element(2, get_roster_info(User, Server, LJID, Grps))
 					end,
 					if Subscribed ->
-					    ?DEBUG("send ~s's ~s event to ~s",[exmpp_jid:jid_to_list(User, Server),Node,exmpp_jid:jid_to_list(JID)]),
-					    send_last_item(PepKey, Node, LJID);
+					    send_last_item(Owner, Node, LJID);
 					true ->
 					    ok
 					end;
@@ -510,8 +506,8 @@ handle_cast({presence, JID, Pid}, State) ->
 			    _ ->
 				ok
 			end
-		    end, tree_action(Host, get_nodes, [PepKey]))
-		end, ContactsUsers);
+		    end, tree_action(Host, get_nodes, [Owner, JID]))
+		end, Contacts);
 	_ ->
 	    ok
     end,
@@ -786,7 +782,7 @@ iq_disco_items(Host, Item, From) ->
 	    Node = string_to_node(SNode),
 	    %% Note: Multiple Node Discovery not supported (mask on pubsub#type)
 	    %% TODO this code is also back-compatible with pubsub v1.8 (for client issue)
-	    %% TODO make it pubsub v1.10 compliant (this breaks client compatibility)
+	    %% TODO make it pubsub v1.12 compliant (breaks client compatibility ?)
 	    %% TODO That is, remove name attribute
 	    Action =
 		fun(#pubsub_node{type = Type}) ->
@@ -951,6 +947,10 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 		    get_subscriptions(Host, From, Plugins);
 		{get, 'affiliations'} ->
 		    get_affiliations(Host, From, Plugins);
+		{get, "options"} ->
+		    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "subscription-options")};
+		{set, "options"} ->
+		    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "subscription-options")};
 		_ ->
 		    {error, 'feature-not-implemented'}
 	    end;
@@ -1024,7 +1024,7 @@ send_authorization_request(Host, Node, Subscriber) ->
 		   #xmlattr{name = 'type', value = "boolean"},
 		   #xmlattr{name = 'label', value = translate:translate(Lang, "Allow this JID to subscribe to this pubsub node?")}], children =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = <<"false">>}]}]}]}]},
-    case tree_action(Host, get_node, [Host, Node]) of
+    case tree_action(Host, get_node, [Host, Node, Subscriber]) of
 	#pubsub_node{owners = Owners} ->
 	    lists:foreach(
 	      fun({U1, S1, R1}) ->
@@ -1053,19 +1053,37 @@ find_authorization_response(Packet) ->
 	[] -> none;
 	[XFields] when is_list(XFields) ->
 	    case lists:keysearch("FORM_TYPE", 1, XFields) of
-		{value, {_, ?NS_PUBSUB_SUBSCRIBE_AUTH_s}} ->
+		{value, {_, [?NS_PUBSUB_SUBSCRIBE_AUTH_s]}} ->
 		    XFields;
 		_ ->
 		    invalid
 	    end
     end.
 
+%% @spec (Host, JID, Node, Subscription) -> void
+%%     Host = mod_pubsub:host()
+%%     JID = jlib:jid()
+%%     Node = string()
+%%     Subscription = atom()
+%%     Plugins = [Plugin::string()]
+%% @doc Send a message to JID with the supplied Subscription
+send_authorization_approval(Host, JID, Node, Subscription) ->
+    Stanza = {xmlelement, "message",
+	    [],
+	    [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
+		[{xmlelement, "subscription",
+		    [{"node", Node},
+		     {"jid", jlib:jid_to_string(JID)},
+		     {"subscription", subscription_to_string(Subscription)}],
+                []}]}]},
+    ejabberd_router ! {route, service_jid(Host), JID, Stanza}.
+ 
 handle_authorization_response(Host, From, To, Packet, XFields) ->
     case {lists:keysearch("pubsub#node", 1, XFields),
 	  lists:keysearch("pubsub#subscriber_jid", 1, XFields),
 	  lists:keysearch("pubsub#allow", 1, XFields)} of
-	{{value, {_, SNode}}, {value, {_, SSubscriber}},
-	 {value, {_, SAllow}}} ->
+	{{value, {_, [SNode]}}, {value, {_, [SSubscriber]}},
+	 {value, {_, [SAllow]}}} ->
 	    Node = case Host of
 		       {_, _, _} -> [SNode];
 		       _ -> string:tokens(SNode, "/")
@@ -1080,7 +1098,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 				      %%options = Options,
 				      owners = Owners}) ->
 			     IsApprover = lists:member(jlib:short_prepd_bare_jid(From), Owners),
-			     Subscription = node_call(Type, get_subscription, [Host, Node, Subscriber]),
+			     {result, Subscription} = node_call(Type, get_subscription, [Host, Node, Subscriber]),
 			     if
 				 not IsApprover ->
 				     {error, 'forbidden'};
@@ -1091,6 +1109,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 							   true -> subscribed;
 							   false -> none
 						       end,
+				     send_authorization_approval(Host, Subscriber, SNode, NewSubscription),
 				     node_call(Type, set_subscription, [Host, Node, Subscriber, NewSubscription])
 			     end
 		     end,
@@ -1457,34 +1476,38 @@ publish_item(Host, ServerHost, Node, Publisher, "", Payload) ->
     publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload);
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
     Action = fun(#pubsub_node{options = Options, type = Type}) ->
-		     Features = features(Type),
-		     PublishFeature = lists:member("publish", Features),
-		     PublishModel = get_option(Options, publish_model),
-		     MaxItems = max_items(Options),
-		     PayloadSize = size(term_to_binary(Payload)),
-		     PayloadMaxSize = get_option(Options, max_payload_size),
-		     if
-			 not PublishFeature ->
-			     %% Node does not support item publication
-			     {error, extended_error('feature-not-implemented', unsupported, "publish")};
-			 PayloadSize > PayloadMaxSize ->
-			     %% Entity attempts to publish very large payload
-			     {error, extended_error('not-acceptable', "payload-too-big")};
-			 %%?? ->   iq_pubsub just does that matchs
-			 %%	% Entity attempts to publish item with multiple payload elements or namespace does not match
-			 %%	{error, extended_error('bad-request', "invalid-payload")};
-			 %%	% Publisher attempts to publish to persistent node with no item
-			 %%	{error, extended_error('bad-request', "item-required")};
-			 Payload == "" ->
-			     %% Publisher attempts to publish to payload node with no payload
-			     {error, extended_error('bad-request', "payload-required")};
-			 %%?? ->
-			 %%	% Publisher attempts to publish to transient notification node with item
-			 %%	{error, extended_error('bad-request', "item-forbidden")};
-			 true ->
-			     node_call(Type, publish_item, [Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload])
-		     end
-	     end,
+		    Features = features(Type),
+		    PublishFeature = lists:member("publish", Features),
+		    PublishModel = get_option(Options, publish_model),
+		    MaxItems = max_items(Options),
+		    PayloadCount = payload_elements(xmlelement, Payload),
+		    PayloadSize = size(term_to_binary(Payload)),
+		    PayloadMaxSize = get_option(Options, max_payload_size),
+		    % pubsub#deliver_payloads true 
+		    % pubsub#persist_items true -> 1 item; false -> 0 item
+		    if
+			not PublishFeature ->
+			    %% Node does not support item publication
+			    {error, extended_error('feature-not-implemented', unsupported, "publish")};
+			PayloadSize > PayloadMaxSize ->
+			    %% Entity attempts to publish very large payload
+			    {error, extended_error('not-acceptable', "payload-too-big")};
+			PayloadCount > 1 ->
+			    %% Entity attempts to publish item with multiple payload elements
+			    {error, extended_error('bad-request', "invalid-payload")};
+			Payload == "" ->
+			    %% Publisher attempts to publish to payload node with no payload
+			    {error, extended_error('bad-request', "payload-required")};
+			(MaxItems == 0) and (PayloadSize > 0) ->
+			    % Publisher attempts to publish to transient notification node with item
+			    {error, extended_error('bad-request', "item-forbidden")};
+			(MaxItems > 0) and (PayloadSize == 0) ->
+			    % Publisher attempts to publish to persistent node with no item
+			    {error, extended_error('bad-request', "item-required")};
+			true ->
+			    node_call(Type, publish_item, [Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload])
+		    end
+	    end,
     ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
     Reply = [],
     case transaction(Host, Node, Action, sync_dirty) of
@@ -1556,7 +1579,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 		     PersistentFeature = lists:member("persistent-items", Features),
 		     DeleteFeature = lists:member("delete-nodes", Features),
 		     if
-			 %%?? ->   iq_pubsub just does that matchs
+			 %%->   iq_pubsub just does that matchs
 			 %%	%% Request does not specify an item
 			 %%	{error, extended_error('bad-request', "item-required")};
 			 not PersistentFeature ->
@@ -1735,7 +1758,7 @@ send_items(Host, Node, {LU, LS, LR} = LJID, Number) ->
 	    [];
 	Items ->
 	    case Number of
-		last -> lists:sublist(lists:reverse(Items), 1);
+		last -> lists:last(Items);
 		all -> Items;
 		N when N > 0 -> lists:nthtail(length(Items)-N, Items);
 		_ -> Items
@@ -2098,6 +2121,15 @@ is_to_delivered({User, Server, _}, _, true) ->
 	end, false, Ss)
     end.
 
+%% @spec (Elem, Payload) -> int()
+%%	Elem = atom()
+%%	Payload = term()
+%% @doc <p>Count occurence of given element in payload.</p>
+payload_elements(Elem, Payload) -> payload_elements(Elem, Payload, 0).
+payload_elements(_, [], Count) -> Count;
+payload_elements(Elem, [Elem|Tail], Count) -> payload_elements(Elem, Tail, Count+1);
+payload_elements(Elem, [_|Tail], Count) -> payload_elements(Elem, Tail, Count).
+
 %%%%%% broadcast functions
 
 broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
@@ -2324,58 +2356,52 @@ broadcast_config_notification(Host, Node, Lang) ->
 %% broadcast Stanza to all contacts of the user that are advertising
 %% interest in this kind of Node.
 broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
-    ?DEBUG("looking for pid of ~p@~p/~p", [LUser, LServer, LResource]),
-    %% We need to know the resource, so we can ask for presence data.
-    SenderResource = case LResource of
-			 undefined ->
-			     %% If we don't know the resource, just pick one.
-			     case ejabberd_sm:get_user_resources(LUser, LServer) of
-				 [R|_] ->
-				     R;
-				 [] ->
-				     undefined
-			     end;
-			 _ ->
-			     LResource
-		     end,
-    case SenderResource of
-    undefined ->
-	?DEBUG("~p@~p is offline; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
-	ok;
-    _ ->
-	case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
-	    C2SPid when is_pid(C2SPid) ->
-		%% set the from address on the notification to the bare JID of the account owner
-		%% Also, add "replyto" if entity has presence subscription to the account owner
-		%% See XEP-0163 1.1 section 4.3.1
-		Sender = exmpp_jid:make_jid(LUser, LServer),
-		%%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
-		case catch ejabberd_c2s:get_subscribed_and_online(C2SPid) of
-		    ContactsWithCaps when is_list(ContactsWithCaps) ->
-			?DEBUG("found contacts with caps: ~p", [ContactsWithCaps]),
-			lists:foreach(
-			fun({{U1, S1, R1}, Caps}) ->
-				case is_caps_notify(LServer, Node, Caps) of
-				    true ->
-					To = exmpp_jid:make_jid(U1, S1, R1),
-					ejabberd_router ! {route, Sender, To, Stanza};
-				    false ->
-					ok
+    SenderResource = user_resource(LUser, LServer, LResource),
+    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
+	C2SPid when is_pid(C2SPid) ->
+	    %% set the from address on the notification to the bare JID of the account owner
+	    %% Also, add "replyto" if entity has presence subscription to the account owner
+	    %% See XEP-0163 1.1 section 4.3.1
+	    Sender = exmpp_jid:make_jid(LUser, LServer),
+	    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
+	    case catch ejabberd_c2s:get_subscribed(C2SPid) of
+		Contacts when is_list(Contacts) ->
+		    Online = lists:foldl(fun({U, S, R}, Acc) ->
+				case user_resource(U, S, R) of
+				    [] -> Acc;
+				    OR -> [{U, S, OR}|Acc]
 				end
-			end, ContactsWithCaps);
-		    _ ->
-			ok
-		end,
-		ok;
-	    _ ->
-		?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
-		ok
-	end
+			    end, [], Contacts),
+		    lists:foreach(fun({U, S, R}) ->
+			case is_caps_notify(LServer, Node, {U, S, R}) of
+			    true ->
+				ejabberd_router ! {route, Sender, exmpp_jlib:make_jid(U, S, R), Stanza};
+			    false ->
+				ok
+			end
+		    end, Online);
+		_ ->
+		    ok
+	    end,
+	    ok;
+	_ ->
+	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
+	    ok
     end;
 broadcast_by_caps(_, _, _, _) ->
     ok.
+  
+user_resource(LUser, LServer, []) ->
+    %% If we don't know the resource, just pick first if any
+    case ejabberd_sm:get_user_resources(LUser, LServer) of
+	[R|_] -> R;
+	[] -> []
+    end;
+user_resource(_, _, LResource) ->
+    LResource.
 
-is_caps_notify(Host, Node, Caps) ->
+is_caps_notify(Host, Node, LJID) ->
+    Caps = mod_caps:get_caps(LJID),
     case catch mod_caps:get_features(Host, Caps) of
 	Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
 	_ -> false
@@ -2408,7 +2434,7 @@ get_configure(Host, Node, From, Lang) ->
     transaction(Host, Node, Action, sync_dirty).
 
 get_default(Host, Node, _From, Lang) ->
-    Type=select_type(Host, Host, Node),
+    Type = select_type(Host, Host, Node),
     Options = node_options(Type),
     {result, [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
 		[#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'default', children =
@@ -2647,7 +2673,8 @@ set_xoption([{"pubsub#type", Value} | Opts], NewOpts) ->
 set_xoption([{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(body_xslt, Value);
 set_xoption([_ | _Opts], _NewOpts) ->
-    {error, 'not-acceptable'}.
+    % skip unknown field
+    set_xoption(Opts, NewOpts).
 
 %%%% plugin handling
 
@@ -2657,18 +2684,18 @@ plugins(Host) ->
     _ -> [?STDNODE]
     end.
 select_type(ServerHost, Host, Node, Type)->
-	?DEBUG("SELECT_TYPE : ~p~n", [Node]),
-	case Host of
-	{_User, _Server, _Resource} -> 
-   		case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), pep_mapping) of
-   	 		[{pep_mapping, PM}] -> ?DEBUG("SELECT_TYPE : ~p~n", [PM]), proplists:get_value(Node, PM,?PEPNODE);
-   	 		R -> ?DEBUG("SELECT_TYPE why ?: ~p~n", [R]), ?PEPNODE
-   	 	end;
-	_ -> 
-	   Type
+    ?DEBUG("SELECT_TYPE : ~p~n", [[ServerHost, Host, Node, Type]]),
+    case Host of
+    {_User, _Server, _Resource} -> 
+	case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), pep_mapping) of
+	[{pep_mapping, PM}] -> ?DEBUG("SELECT_TYPE : ~p~n", [PM]), proplists:get_value(Node, PM, ?PEPNODE);
+	R -> ?DEBUG("SELECT_TYPE why ?: ~p~n", [R]), ?PEPNODE
+	end;
+    _ -> 
+	Type
     end.
 select_type(ServerHost, Host, Node) -> 
- 	select_type(ServerHost, Host, Node,hd(plugins(ServerHost))).
+    select_type(ServerHost, Host, Node, hd(plugins(ServerHost))).
 
 features() ->
 	[

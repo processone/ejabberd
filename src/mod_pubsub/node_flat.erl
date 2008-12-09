@@ -22,7 +22,7 @@
 %%% @end
 %%% ====================================================================
 
--module(node_zoo).
+-module(node_flat).
 -author('christophe.romain@process-one.net').
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -70,7 +70,7 @@ terminate(Host, ServerHost) ->
     node_default:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, zoo},
+    [{node_type, flat},
      {deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
@@ -99,12 +99,7 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
 	    true; % pubsub service always allowed
 	_ ->
 	    {LU, LS, LR} = LOwner,
-	    case acl:match_rule(ServerHost, Access, exmpp_jid:make_jid(LU, LS, LR)) of
-		allow ->
-		    true;
-		_ ->
-		    false
-	    end
+	    acl:match_rule(ServerHost, Access, exmpp_jid:make_jid(LU, LS, LR)) =:= allow
     end,
     {result, Allowed}.
 
