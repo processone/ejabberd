@@ -1,3 +1,8 @@
+2008-12-09  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: prevent publish items with invalid
+	XML schema bugfix (EJAB-699) (previous commit was uncomplete)
+
 2008-12-08  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_c2s.erl: Reduce memory consumption due to caps handling
