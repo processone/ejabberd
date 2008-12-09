@@ -1763,7 +1763,7 @@ send_items(Host, Node, LJID, Number) ->
 	    [];
 	Items ->
 	    case Number of
-		last -> lists:last(Items);
+		last -> [lists:last(Items)];
 		all -> Items;
 		N when N > 0 -> lists:nthtail(length(Items)-N, Items);
 		_ -> Items
