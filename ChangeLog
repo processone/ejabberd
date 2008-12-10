@@ -1,6 +1,11 @@
+2008-12-10  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/eldap/eldap_utils.erl (case_insensitive_match/2): Replace
+	stringprep by exmpp_stringprep.
+
 2008-12-09  Christophe Romain <cromain@process-one.net>
 
-	* src/mod_pubsub: Mergr from lattest trunk (r1716).
+	* src/mod_pubsub: Merge from latest trunk (r1716).
 
 2008-12-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
