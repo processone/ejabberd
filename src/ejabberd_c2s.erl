@@ -1983,26 +1983,20 @@ is_ip_blacklisted({IP,_Port}) ->
 check_from(El, FromJID) ->
     case xml:get_tag_attr("from", El) of
 	false ->
-	    jlib:replace_from(FromJID, El);
-	{value, JIDElString} ->
-	    JIDEl = jlib:string_to_jid(JIDElString),
-	    case JIDEl#jid.lresource of 
-		"" ->
-		    %% Matching JID: The stanza is ok
-		    if JIDEl#jid.luser == FromJID#jid.luser andalso
-		       JIDEl#jid.lserver == FromJID#jid.lserver ->
+	    El;
+	{value, SJID} ->
+	    JID = jlib:string_to_jid(SJID),
+	    case JID of
+		error ->
+		    'invalid-from';
+		#jid{} ->
+		    if
+			(JID#jid.luser == FromJID#jid.luser) and
+			(JID#jid.lserver == FromJID#jid.lserver) and
+			(JID#jid.lresource == FromJID#jid.lresource) ->
 			    El;
-		       true ->
+			true ->
 			    'invalid-from'
-		    end;
-		_ ->
-		    %% Matching JID: The stanza is ok
-		    if JIDEl#jid.luser == FromJID#jid.luser andalso
-		       JIDEl#jid.lserver == FromJID#jid.lserver andalso 
-		       JIDEl#jid.lresource == FromJID#jid.lresource ->
-			    El;
-		       true ->
-			   'invalid-from'
 		    end
 	    end
     end.

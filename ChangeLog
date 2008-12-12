@@ -1,3 +1,7 @@
+2008-12-12  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bugfix in "from" attribute checking
+
 2008-12-09  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: prevent publish items with invalid
