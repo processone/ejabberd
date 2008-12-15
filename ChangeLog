@@ -1,3 +1,8 @@
+2008-12-15  Christophe Romain <cromain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: fix get_item_name deadlock on
+	transaction
+
 2008-12-10  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/eldap/eldap_utils.erl (case_insensitive_match/2): Replace

@@ -393,9 +393,10 @@ disco_sm_items(Acc, From, To, Node, _Lang) ->
 			  fun(#pubsub_item{itemid = Id}) ->
 				  %% "jid" is required by XEP-0030, and
 				  %% "node" is forbidden by XEP-0060.
+				  {result, Name} = node_action(Host, Node, get_item_name, [Host, Node, Id]),
 				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
 				   [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(LJID)},
-				    #xmlattr{name = 'name', value = get_item_name(Host, Node, Id)}]}
+				    #xmlattr{name = 'name', value = Name}]}
 			  end, AllItems),
 	    {result, NodeItems ++ Items}
     end.
@@ -800,8 +801,9 @@ iq_disco_items(Host, Item, From) ->
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
 					  SN = node_to_string(Node) ++ "!" ++ RN,
+					  {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
 					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [#xmlattr{name = 'jid', value = Host}, #xmlattr{name = 'node', value = SN},
-								#xmlattr{name = 'name', value = get_item_name(Host, Node, RN)}]}
+								#xmlattr{name = 'name', value = Name}]}
 				  end, NodeItems),
 			{result, Nodes ++ Items}
 		end,
@@ -2839,9 +2841,4 @@ extended_error(Error, Ext, ExtAttrs) ->
 uniqid() ->
     {T1, T2, T3} = now(),
     lists:flatten(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
-
-%% @doc Return the name of a given node if available.
-get_item_name(Host, Node, Id) ->
-    {result, Name} = node_action(Host, Node, get_item_name, [Host, Node, Id]),
-    Name.
 
