@@ -393,9 +393,10 @@ disco_sm_items(Acc, From, To, Node, _Lang) ->
 			  fun(#pubsub_item{itemid = Id}) ->
 				  %% "jid" is required by XEP-0030, and
 				  %% "node" is forbidden by XEP-0060.
+				  {result, Name} = node_action(Host, Node, get_item_name, [Host, Node, Id]),
 				  {xmlelement, "item",
 				   [{"jid", jlib:jid_to_string(LJID)},
-				    {"name", get_item_name(Host, Node, Id)}],
+				    {"name", Name}],
 				   []}
 			  end, AllItems),
 	    {result, NodeItems ++ Items}
@@ -803,8 +804,9 @@ iq_disco_items(Host, Item, From) ->
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
 					  SN = node_to_string(Node) ++ "!" ++ RN,
+					  {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
 					  {xmlelement, "item", [{"jid", Host}, {"node", SN},
-								{"name", get_item_name(Host, Node, RN)}], []}
+								{"name", Name}], []}
 				  end, NodeItems),
 			{result, Nodes ++ Items}
 		end,
@@ -2847,9 +2849,4 @@ extended_error({xmlelement, Error, Attrs, SubEls}, Ext, ExtAttrs) ->
 uniqid() ->
     {T1, T2, T3} = now(),
     lists:flatten(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
-
-%% @doc Return the name of a given node if available.
-get_item_name(Host, Node, Id) ->
-    {result, Name} = node_action(Host, Node, get_item_name, [Host, Node, Id]),
-    Name.
 
