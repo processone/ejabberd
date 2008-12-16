@@ -480,9 +480,9 @@ handle_cast({presence, JID, Pid}, State) ->
     case catch ejabberd_c2s:get_subscribed(Pid) of
 	Contacts when is_list(Contacts) ->
 	    lists:foreach(
-		fun({User, Server, _}) ->
+		fun({{User, Server, _}, _}) ->
 		    Owner = {User, Server, undefined},
-		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
+		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options} = PN) ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
 				case is_caps_notify(ServerHost, Node, LJID) of
@@ -950,9 +950,9 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 		{get, 'affiliations'} ->
 		    get_affiliations(Host, From, Plugins);
 		{get, "options"} ->
-		    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "subscription-options")};
+		    {error, extended_error('feature-not-implemented', unsupported, "subscription-options")};
 		{set, "options"} ->
-		    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "subscription-options")};
+		    {error, extended_error('feature-not-implemented', unsupported, "subscription-options")};
 		_ ->
 		    {error, 'feature-not-implemented'}
 	    end;
@@ -1070,14 +1070,12 @@ find_authorization_response(Packet) ->
 %%     Plugins = [Plugin::string()]
 %% @doc Send a message to JID with the supplied Subscription
 send_authorization_approval(Host, JID, Node, Subscription) ->
-    Stanza = {xmlelement, "message",
-	    [],
-	    [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
-		[{xmlelement, "subscription",
-		    [{"node", Node},
-		     {"jid", jlib:jid_to_string(JID)},
-		     {"subscription", subscription_to_string(Subscription)}],
-                []}]}]},
+    Stanza = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', children =
+	    [#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'event', children =
+		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'subscription', attrs =
+		    [#xmlattr{name = 'node', value = Node},
+		     #xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(JID)},
+		     #xmlattr{name = 'subscription', value = subscription_to_string(Subscription)}]}]}]},
     ejabberd_router ! {route, service_jid(Host), JID, Stanza}.
  
 handle_authorization_response(Host, From, To, Packet, XFields) ->
@@ -2129,7 +2127,7 @@ is_to_delivered({User, Server, _}, _, true) ->
 %% @doc <p>Count occurence of given element in payload.</p>
 payload_xmlelements(Payload) -> payload_xmlelements(Payload, 0).
 payload_xmlelements([], Count) -> Count;
-payload_xmlelements([{xmlelement, _, _, _}|Tail], Count) -> payload_xmlelements(Tail, Count+1);
+payload_xmlelements([#xmlel{}|Tail], Count) -> payload_xmlelements(Tail, Count+1);
 payload_xmlelements([_|Tail], Count) -> payload_xmlelements(Tail, Count).
 
 %%%%%% broadcast functions
@@ -2377,7 +2375,7 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
 		    lists:foreach(fun({U, S, R}) ->
 			case is_caps_notify(LServer, Node, {U, S, R}) of
 			    true ->
-				ejabberd_router ! {route, Sender, exmpp_jlib:make_jid(U, S, R), Stanza};
+				ejabberd_router ! {route, Sender, exmpp_jid:make_jid(U, S, R), Stanza};
 			    false ->
 				ok
 			end
@@ -2674,7 +2672,7 @@ set_xoption([{"pubsub#type", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(type, Value);
 set_xoption([{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(body_xslt, Value);
-set_xoption([_ | _Opts], _NewOpts) ->
+set_xoption([_ | Opts], NewOpts) ->
     % skip unknown field
     set_xoption(Opts, NewOpts).
 

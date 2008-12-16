@@ -1,6 +1,12 @@
+2008-12-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/mod_pubsub/mod_pubsub.erl: Convert to exmpp the parts recently
+	merged from trunk. Warning: Ejabberd is unusable because the rest of
+	trunk hasn't been merged yet!
+
 2008-12-15  Christophe Romain <cromain@process-one.net>
 
-	* src/mod_pubsub/mod_pubsub.erl: fix get_item_name deadlock on
+	* src/mod_pubsub/mod_pubsub.erl: Fix get_item_name deadlock on
 	transaction
 
 2008-12-10  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
