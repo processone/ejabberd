@@ -72,8 +72,9 @@
 {loglevel, 4}.
 
 %%
-%% watchdog_admins: If an ejabberd process consumes too much memory, 
-%% send live notifications to those Jabber accounts.
+%% watchdog_admins: Only useful for developers: if an ejabberd process
+%% consumes a lot of memory, send live notifications to these Jabber
+%% accounts.
 %%
 %%{watchdog_admins, ["bob@example.com"]}.
 
