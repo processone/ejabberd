@@ -1,5 +1,8 @@
 2008-12-16  Badlop  <badlop@process-one.net>
 
+	* src/mod_pubsub/mod_pubsub.erl: Fix update pubsub tables from
+	ejabberd 1.x to 2.x (EJAB-817)
+
 	* doc/guide.tex: Fix capitalization of some section titles
 
 	* doc/guide.tex: Mention as optional Requirements: mysql, pgsql
