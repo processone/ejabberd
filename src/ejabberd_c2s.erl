@@ -37,8 +37,7 @@
 	 send_element/2,
 	 socket_type/0,
 	 get_presence/1,
-	 get_subscribed/1,
-	 get_subscribed_and_online/1]).
+	 get_subscribed/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -85,7 +84,6 @@
 		pres_f = ?SETS:new(),
 		pres_a = ?SETS:new(),
 		pres_i = ?SETS:new(),
-		pres_available = ?DICT:new(),
 		pres_last, pres_pri,
 		pres_timestamp,
 		pres_invis = false,
@@ -205,14 +203,8 @@ init([{SockMod, Socket}, Opts]) ->
     end.
 
 %% Return list of all available resources of contacts,
-%% in form [{JID, Caps}].
 get_subscribed(FsmRef) ->
-    gen_fsm:sync_send_all_state_event(
-      FsmRef, get_subscribed, 1000).
-get_subscribed_and_online(FsmRef) ->
-    gen_fsm:sync_send_all_state_event(
-      FsmRef, get_subscribed_and_online, 1000).
-
+    gen_fsm:sync_send_all_state_event(FsmRef, get_subscribed, 1000).
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -951,29 +943,8 @@ handle_sync_event({get_presence}, _From, StateName, StateData) ->
     fsm_reply(Reply, StateName, StateData);
 
 handle_sync_event(get_subscribed, _From, StateName, StateData) ->
-    Subscribed = StateData#state.pres_f,
-    Online = StateData#state.pres_available,
-    Pred = fun({U, S, _} = User, _Caps) ->
-		   ?SETS:is_element({U, S, undefined},
-				    Subscribed) orelse
-		   ?SETS:is_element(User, Subscribed)
-	   end,
-    SubscribedAndOnline = ?DICT:filter(Pred, Online),
-    SubscribedWithCaps  = ?SETS:fold(fun(User, Acc) ->
-	    [{User, undefined}|Acc]
-	end, ?DICT:to_list(SubscribedAndOnline), Subscribed),
-    {reply, SubscribedWithCaps, StateName, StateData};
-
-handle_sync_event(get_subscribed_and_online, _From, StateName, StateData) ->
-    Subscribed = StateData#state.pres_f,
-    Online = StateData#state.pres_available,
-    Pred = fun({U, S, _R} = User, _Caps) ->
-		   ?SETS:is_element({U, S, undefined},
-				    Subscribed) orelse
-		   ?SETS:is_element(User, Subscribed)
-	   end,
-    SubscribedAndOnline = ?DICT:filter(Pred, Online),
-    {reply, ?DICT:to_list(SubscribedAndOnline), StateName, StateData};
+    Subscribed = ?SETS:to_list(StateData#state.pres_f),
+    {reply, Subscribed, StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
@@ -1065,42 +1036,39 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				LFrom = jlib:short_prepd_jid(From),
 				LBFrom = jlib:short_prepd_bare_jid(From),
 				%% Note contact availability
-				Els = Packet#xmlel.children,
-				Caps = mod_caps:read_caps(Els),
-				mod_caps:note_caps(StateData#state.server, From, Caps),
-				NewAvailable = case exmpp_presence:get_type(Packet) of
-						   'unavailable' ->
-						       ?DICT:erase(LFrom, StateData#state.pres_available);
-						   _ ->
-						       ?DICT:store(LFrom, Caps, StateData#state.pres_available)
-					       end,
-				NewStateData = StateData#state{pres_available = NewAvailable},
+				case exmpp_presence:get_type(Packet) of
+				    'unavailable' -> 
+					mod_caps:clear_caps(From);
+				    _ -> 
+					Caps = mod_caps:read_caps(Packet#xmlel.children),
+					mod_caps:note_caps(StateData#state.server, From, Caps)
+				end,
 				case ?SETS:is_element(
-					LFrom, NewStateData#state.pres_a) orelse
+					LFrom, StateData#state.pres_a) orelse
 				    ?SETS:is_element(
-				       LBFrom, NewStateData#state.pres_a) of
+				       LBFrom, StateData#state.pres_a) of
 				    true ->
-					{true, Attrs, NewStateData};
+					{true, Attrs, StateData};
 				    false ->
 					case ?SETS:is_element(
-						LFrom, NewStateData#state.pres_f) of
+						LFrom, StateData#state.pres_f) of
 					    true ->
 						A = ?SETS:add_element(
 						       LFrom,
-						       NewStateData#state.pres_a),
+						       StateData#state.pres_a),
 						{true, Attrs,
-						 NewStateData#state{pres_a = A}};
+						 StateData#state{pres_a = A}};
 					    false ->
 						case ?SETS:is_element(
-							LBFrom, NewStateData#state.pres_f) of
+							LBFrom, StateData#state.pres_f) of
 						    true ->
 							A = ?SETS:add_element(
 							       LBFrom,
-							       NewStateData#state.pres_a),
+							       StateData#state.pres_a),
 							{true, Attrs,
-							 NewStateData#state{pres_a = A}};
+							 StateData#state{pres_a = A}};
 						    false ->
-							{true, Attrs, NewStateData}
+							{true, Attrs, StateData}
 						end
 					end
 				end;
@@ -1907,28 +1875,15 @@ is_ip_blacklisted({IP,_Port}) ->
 check_from(El, FromJID) ->
     case exmpp_stanza:get_sender(El) of
 	undefined ->
-	    exmpp_stanza:set_sender(El, FromJID);
-	JIDElString ->
+	    El;
+	SJID ->
 	    try
-		JIDEl = exmpp_jid:list_to_jid(JIDElString),
-		case JIDEl#jid.lresource of 
-		    undefined ->
-			%% Matching JID: The stanza is ok
-			if JIDEl#jid.lnode == FromJID#jid.lnode andalso
-			   JIDEl#jid.ldomain == FromJID#jid.ldomain ->
-				El;
-			   true ->
-				'invalid-from'
-			end;
-		    _ ->
-			%% Matching JID: The stanza is ok
-			if JIDEl#jid.lnode == FromJID#jid.lnode andalso
-			   JIDEl#jid.ldomain == FromJID#jid.ldomain andalso 
-			   JIDEl#jid.lresource == FromJID#jid.lresource ->
-				El;
-			   true ->
-			       'invalid-from'
-			end
+		JID = exmpp_jid:list_to_jid(SJID),
+		case exmpp_jid:compare_jids(JID, FromJID) of
+		    true ->
+			El;
+		    false ->
+			'invalid-from'
 		end
 	    catch
 		_:_ ->

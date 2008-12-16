@@ -31,7 +31,9 @@
 -behaviour(gen_mod).
 
 -export([read_caps/1,
+	 get_caps/1,
 	 note_caps/3,
+	 clear_caps/1,
 	 get_features/2,
 	 handle_disco_response/3]).
 
@@ -58,6 +60,7 @@
 
 -record(caps, {node, version, exts}).
 -record(caps_features, {node_pair, features}).
+-record(user_caps, {jid, caps}).
 -record(state, {host,
 		disco_requests = ?DICT:new(),
 		feature_queries = []}).
@@ -80,12 +83,26 @@ read_caps([_ | Tail], Result) ->
 read_caps([], Result) ->
     Result.
 
+%% get_caps reads user caps from database
+get_caps(JID) ->
+    case catch mnesia:dirty_read({user_caps, list_to_binary(exmpp_jid:jid_to_list(JID))}) of
+	[#user_caps{caps=Caps}] -> 
+	    Caps;
+	_ -> 
+	    nothing
+    end.
+
+%% clear_caps removes user caps from database
+clear_caps(JID) ->
+    catch mnesia:dirty_delete({user_caps, list_to_binary(exmpp_jid:jid_to_list(JID))}).
+
 %% note_caps should be called to make the module request disco
 %% information.  Host is the host that asks, From is the full JID that
 %% sent the caps packet, and Caps is what read_caps returned.
 note_caps(Host, From, Caps) ->
     case Caps of
-	nothing -> ok;
+	nothing -> 
+	    ok;
 	_ ->
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
 	    gen_server:cast(Proc, {note_caps, From, Caps})
@@ -129,7 +146,9 @@ init([Host, _Opts]) ->
     mnesia:create_table(caps_features,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, caps_features)}]),
-    mnesia:add_table_copy(caps_features, node(), ram_copies),
+    mnesia:create_table(user_caps,
+			[{disc_copies, [node()]},
+			 {attributes, record_info(fields, user_caps)}]),
     {ok, #state{host = Host}}.
 
 maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
@@ -177,10 +196,12 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
 handle_cast({note_caps, From, 
-	     #caps{node = Node, version = Version, exts = Exts}}, 
+	     #caps{node = Node, version = Version, exts = Exts} = Caps}, 
 	    #state{host = Host, disco_requests = Requests} = State) ->
     %% XXX: this leads to race conditions where ejabberd will send
     %% lots of caps disco requests.
+    mnesia:dirty_write(#user_caps{jid = list_to_binary(exmpp_jid:jid_to_list(From)),
+				  caps = Caps}),
     SubNodes = [Version | Exts],
     %% Now, find which of these are not already in the database.
     Fun = fun() ->
@@ -195,11 +216,9 @@ handle_cast({note_caps, From,
 	  end,
     case mnesia:transaction(Fun) of
 	{atomic, Missing} ->
-	    %% For each unknown caps "subnode", we send a disco
-	    %% request.
-	    NewRequests =
-		lists:foldl(
-		  fun(SubNode, Dict) ->
+	    %% For each unknown caps "subnode", we send a disco request.
+	    NewRequests = lists:foldl(
+		fun(SubNode, Dict) ->
 			  ID = randoms:get_string(),
 			  Query = exmpp_xml:set_attribute(
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'query'},

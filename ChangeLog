@@ -1,5 +1,11 @@
 2008-12-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	Merge from trunk (r1709 to r1730).
+
+	Ejabberd should be usable again.
+
+2008-12-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	* src/mod_pubsub/mod_pubsub.erl: Convert to exmpp the parts recently
 	merged from trunk. Warning: Ejabberd is unusable because the rest of
 	trunk hasn't been merged yet!
@@ -8,6 +14,10 @@
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix get_item_name deadlock on
 	transaction
+
+2008-12-12  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bugfix in "from" attribute checking
 
 2008-12-10  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -18,9 +28,46 @@
 
 	* src/mod_pubsub: Merge from latest trunk (r1716).
 
+2008-12-09  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: prevent publish items with invalid
+	XML schema bugfix (EJAB-699) (previous commit was uncomplete)
+	and fix bug injected in previous commit
+
+2008-12-08  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_c2s.erl: Reduce memory consumption due to caps handling
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+	* src/mod_caps.erl: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: ignore unknown configuration fields
+	(EJAB-762) (thanks to Jack Moffitt)
+
+	* src/mod_pubsub/mod_pubsub.erl: fix node authorization bug (EJAB-798)
+	send authorization update event (EJAB-799) (thanks to Brian Cully)
+
+	* src/mod_pubsub/mod_pubsub.erl: add nodetree filtering and
+	authorization (EJAB-813) (thanks to Brian Cully)
+	* src/mod_pubsub/nodetree_default.erl: Likewise
+	* src/mod_pubsub/nodetree_virtual.erl: Likewise
+	* src/mod_pubsub/gen_pubsub_nodetree.erl: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: prevent publish items with invalid
+	XML schema (EJAB-699)
+
+	* src/mod_pubsub/pubsub.hrl: remove unused pubsub_presence record
+
+	* src/mod_pubsub/node_flat.erl: renamed from node_zoo
+
+	* src/mod_pubsub/mod_pubsub.erl: reply to suscriptions options queries
+	with unsupported feature error (EJAB-713)
+
+	* src/mod_pubsub/node_default.erl: remove pubsub_state record when
+	unsubscribing node without affiliation (EJAB-776)
+
 2008-12-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
-	* src/mod_pubsub: Merge from trunk (r1692 to r1709).
+	Merge from trunk (r1692 to r1709).
 
 2008-12-08  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 

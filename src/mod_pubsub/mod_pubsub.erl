@@ -480,9 +480,9 @@ handle_cast({presence, JID, Pid}, State) ->
     case catch ejabberd_c2s:get_subscribed(Pid) of
 	Contacts when is_list(Contacts) ->
 	    lists:foreach(
-		fun({{User, Server, _}, _}) ->
+		fun({User, Server, _}) ->
 		    Owner = {User, Server, undefined},
-		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options} = PN) ->
+		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
 				case is_caps_notify(ServerHost, Node, LJID) of
