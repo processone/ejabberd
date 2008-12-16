@@ -31,7 +31,7 @@
 
 %% gen_event callbacks
 -export([init/1, handle_event/2, handle_call/2, handle_info/2, terminate/2,
-	 code_change/3, reopen_log/0]).
+	 code_change/3, reopen_log/0, rotate_log/1]).
 
 -record(state, {fd, file}).
 
@@ -206,10 +206,11 @@ write_time({{Y,Mo,D},{H,Mi,S}}, Type) ->
     io_lib:format("~n=~s==== ~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w ===~n",
 		  [Type, Y, Mo, D, H, Mi, S]).
 
-%% Rename the log file if it the filename exists
+%% @doc Rename the log file if exists, to "*-old.log".
 %% This is needed in systems when the file must be closed before rotation (Windows).
 %% On most Unix-like system, the file can be renamed from the command line and
-%%the log can directly be reopened.
+%% the log can directly be reopened.
+%% @spec (Filename::string()) -> ok
 rotate_log(Filename) ->
     case file:read_file_info(Filename) of
 	{ok, _FileInfo} ->
