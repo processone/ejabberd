@@ -96,7 +96,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 </LI><LI CLASS="li-toc"><A HREF="#htoc4">Chapter&#XA0;2&#XA0;&#XA0;Installing <TT>ejabberd</TT></A>
 <UL CLASS="toc"><LI CLASS="li-toc">
 <A HREF="#htoc5">2.1&#XA0;&#XA0;Installing <TT>ejabberd</TT> with Binary Installer</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc6">2.2&#XA0;&#XA0;Installing <TT>ejabberd</TT> with Operating System specific packages</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc6">2.2&#XA0;&#XA0;Installing <TT>ejabberd</TT> with Operating System Specific Packages</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc7">2.3&#XA0;&#XA0;Installing <TT>ejabberd</TT> with CEAN</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc8">2.4&#XA0;&#XA0;Installing <TT>ejabberd</TT> from Source Code</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
@@ -161,12 +161,12 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 </LI><LI CLASS="li-toc"><A HREF="#htoc59">3.3.23&#XA0;&#XA0;<TT>mod_version</TT></A>
 </LI></UL>
 </LI></UL>
-</LI><LI CLASS="li-toc"><A HREF="#htoc60">Chapter&#XA0;4&#XA0;&#XA0;Managing an <TT>ejabberd</TT> server</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc60">Chapter&#XA0;4&#XA0;&#XA0;Managing an <TT>ejabberd</TT> Server</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
 <A HREF="#htoc61">4.1&#XA0;&#XA0;<TT>ejabberdctl</TT></A>
 <UL CLASS="toc"><LI CLASS="li-toc">
 <A HREF="#htoc62">4.1.1&#XA0;&#XA0;Commands</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc63">4.1.2&#XA0;&#XA0;Erlang runtime system</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc63">4.1.2&#XA0;&#XA0;Erlang Runtime System</A>
 </LI></UL>
 </LI><LI CLASS="li-toc"><A HREF="#htoc64">4.2&#XA0;&#XA0;Web Admin</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc65">4.3&#XA0;&#XA0;Ad-hoc Commands</A>
@@ -177,8 +177,8 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 <A HREF="#htoc68">5.1&#XA0;&#XA0;Firewall Settings</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc69">5.2&#XA0;&#XA0;epmd</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc70">5.3&#XA0;&#XA0;Erlang Cookie</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc71">5.4&#XA0;&#XA0;Erlang node name</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc72">5.5&#XA0;&#XA0;Securing sensible files</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc71">5.4&#XA0;&#XA0;Erlang Node Name</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc72">5.5&#XA0;&#XA0;Securing Sensible Files</A>
 </LI></UL>
 </LI><LI CLASS="li-toc"><A HREF="#htoc73">Chapter&#XA0;6&#XA0;&#XA0;Clustering</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
@@ -199,9 +199,9 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 </LI></UL>
 </LI><LI CLASS="li-toc"><A HREF="#htoc84">Chapter&#XA0;7&#XA0;&#XA0;Debugging</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc85">7.1&#XA0;&#XA0;Watchdog Alerts</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc86">7.2&#XA0;&#XA0;Log Files</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc87">7.3&#XA0;&#XA0;Debug Console</A>
+<A HREF="#htoc85">7.1&#XA0;&#XA0;Log Files</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc86">7.2&#XA0;&#XA0;Debug Console</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc87">7.3&#XA0;&#XA0;Watchdog Alerts</A>
 </LI></UL>
 </LI><LI CLASS="li-toc"><A HREF="#htoc88">Appendix&#XA0;A&#XA0;&#XA0;Internationalization and Localization</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc89">Appendix&#XA0;B&#XA0;&#XA0;Release Notes</A>
@@ -304,8 +304,8 @@ or with the command <TT>bin/ejabberdctl live</TT> in other Operating Systems.
 This way you see the error message provided by Erlang
 and can identify what is exactly the problem.</P><P>The <TT>ejabberdctl</TT> administration script is included in the <TT>bin</TT> directory.
 Please refer to the section&#XA0;<A HREF="#ejabberdctl">4.1</A> for details about <TT>ejabberdctl</TT>,
-and configurable options to fine tune the Erlang runtime system.</P><P> <A NAME="install.os"></A> </P><!--TOC section Installing <TT>ejabberd</TT> with Operating System specific packages-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc6">2.2</A>&#XA0;&#XA0;<A HREF="#install.os">Installing <TT>ejabberd</TT> with Operating System specific packages</A></H2><!--SEC END --><P> <A NAME="install.os"></A> </P><P>Some Operating Systems provide a specific <TT>ejabberd</TT> package adapted to
+and configurable options to fine tune the Erlang runtime system.</P><P> <A NAME="install.os"></A> </P><!--TOC section Installing <TT>ejabberd</TT> with Operating System Specific Packages-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc6">2.2</A>&#XA0;&#XA0;<A HREF="#install.os">Installing <TT>ejabberd</TT> with Operating System Specific Packages</A></H2><!--SEC END --><P> <A NAME="install.os"></A> </P><P>Some Operating Systems provide a specific <TT>ejabberd</TT> package adapted to
 the system architecture and libraries.
 It usually also checks dependencies
 and performs basic configuration tasks like creating the initial
@@ -330,10 +330,13 @@ as long as your system have all the dependencies.</P><P> <A NAME="installreq"></
 GNU Make
 </LI><LI CLASS="li-itemize">GCC
 </LI><LI CLASS="li-itemize">Libexpat 1.95 or higher
-</LI><LI CLASS="li-itemize">Erlang/OTP R10B-9 or newer.
+</LI><LI CLASS="li-itemize">Erlang/OTP R10B-9 or higher.
 </LI><LI CLASS="li-itemize">OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 </LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
-</LI><LI CLASS="li-itemize">GNU Iconv 1.8 or higher, for the IRC Transport (mod_irc). Optional. Not needed on systems with GNU Libc.
+</LI><LI CLASS="li-itemize">Erlang mysql library. Optional. For MySQL authentication or storage. See section <A HREF="#compilemysql">3.2.1</A>.
+</LI><LI CLASS="li-itemize">Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section <A HREF="#compilepgsql">3.2.3</A>.
+</LI><LI CLASS="li-itemize">PAM library. Optional. For Pluggable Authentication Modules (PAM). See section <A HREF="#pam">3.1.4</A>.
+</LI><LI CLASS="li-itemize">GNU Iconv 1.8 or higher, for the IRC Transport (mod_irc). Optional. Not needed on systems with GNU Libc. See section <A HREF="#modirc">3.3.6</A>.
 </LI></UL><P> <A NAME="download"></A> </P><!--TOC subsection Download Source Code-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc10">2.4.2</A>&#XA0;&#XA0;<A HREF="#download">Download Source Code</A></H3><!--SEC END --><P> <A NAME="download"></A> 
 </P><P>Released versions of <TT>ejabberd</TT> are available in the ProcessOne <TT>ejabberd</TT> downloads page:
@@ -400,7 +403,7 @@ to install <TT>ejabberd</TT>.</P><P>The files and directories created are, by de
 			<B><TT>.erlang.cookie</TT></B></DT><DD CLASS="dd-description"> Erlang cookie file (see section <A HREF="#cookie">5.3</A>)
 			</DD><DT CLASS="dt-description"><B><TT>acl.DCD, ...</TT></B></DT><DD CLASS="dd-description"> Mnesia database spool files (*.DCD, *.DCL, *.DAT)
 		</DD></DL>
-	</DD><DT CLASS="dt-description"><B><TT>/var/log/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Log directory (see section&#XA0;<A HREF="#logfiles">7.2</A>):
+	</DD><DT CLASS="dt-description"><B><TT>/var/log/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Log directory (see section&#XA0;<A HREF="#logfiles">7.1</A>):
 		<DL CLASS="description"><DT CLASS="dt-description">
 			<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> ejabberd service log
 			</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> Erlang/OTP system log
@@ -1254,7 +1257,7 @@ For that purpose, the options described in the next sections
 must be set inside a <TT>host_cofig</TT> for each vhost (see section <A HREF="#virtualhost">3.1.2</A>).
 For example:
 </P><PRE CLASS="verbatim">{host_config, "public.example.org", [
-  {odbc_server, {pgsql, "localhost", "database", "ejabberd", "password"}},
+  {odbc_server, {pgsql, "localhost", "database-public-example-org", "ejabberd", "password"}},
   {auth_method, [odbc]}
 ]}.
 </PRE><P> <A NAME="mysql"></A> </P><!--TOC subsection MySQL-->
@@ -2106,16 +2109,16 @@ to new hardware. This will involve service breakdowns around 23:00 UMT.
 We apologise for this inconvenience.&#X2019; to <TT>conference.example.org</TT>,
 it will be displayed in all active rooms. In this example the history
 feature is disabled.
-<PRE CLASS="verbatim">{acl, admins, {user, "admin", "example.org"}}.
+<PRE CLASS="verbatim">{acl, admin, {user, "admin", "example.org"}}.
 
-{access, muc_admins, [{allow, admins}]}.
+{access, muc_admin, [{allow, admin}]}.
 
 {modules,
  [
   ...
   {mod_muc, [{access, all},
              {access_create, all},
-             {access_admin, muc_admins},
+             {access_admin, muc_admin},
              {history_size, 0}]},
   ...
  ]}.
@@ -2132,20 +2135,20 @@ and the default value of 20 history messages will be send to the users.
 <PRE CLASS="verbatim">{acl, paying_customers, {user, "customer1", "example.net"}}.
 {acl, paying_customers, {user, "customer2", "example.com"}}.
 {acl, paying_customers, {user, "customer3", "example.org"}}.
-{acl, admins, {user, "admin", "example.org"}}.
+{acl, admin, {user, "admin", "example.org"}}.
 
-{access, muc_admins, [{allow, admins},
+{access, muc_admin, [{allow, admin},
                       {deny, all}]}.
 {access, muc_access, [{allow, paying_customers},
-                      {allow, admins},
+                      {allow, admin},
                       {deny, all}]}.
 
 {modules,
  [
   ...
   {mod_muc, [{access, muc_access},
-             {access_create, muc_admins},
-             {access_admin, muc_admins}]},
+             {access_create, muc_admin},
+             {access_admin, muc_admin}]},
   ...
  ]}.
 </PRE></LI><LI CLASS="li-itemize">In the following example, MUC anti abuse options are used. An
@@ -2164,7 +2167,7 @@ the newly created rooms have by default those options.
  [
   ...
   {mod_muc, [{access, muc_access},
-             {access_create, muc_admins},
+             {access_create, muc_admin},
              {default_room_options,
               [
                {allow_change_subj, false},
@@ -2174,7 +2177,7 @@ the newly created rooms have by default those options.
                {title, "New chatroom"},
                {anonymous, false}
               ]},
-             {access_admin, muc_admins}]},
+             {access_admin, muc_admin}]},
   ...
  ]}.
 </PRE></LI></UL><P> <A NAME="modmuclog"></A> </P><!--TOC subsection <TT>mod_muc_log</TT>-->
@@ -2897,8 +2900,8 @@ answers <TT>ejabberd</TT>&#X2019;s version when queried.</P><P>Options:
 The default value is <TT>true</TT>.
 </DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Software Version (<TT>jabber:iq:version</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
-</DD></DL><P> <A NAME="manage"></A> </P><!--TOC chapter Managing an <TT>ejabberd</TT> server-->
-<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc60">Chapter&#XA0;4</A>&#XA0;&#XA0;<A HREF="#manage">Managing an <TT>ejabberd</TT> server</A></H1><!--SEC END --><P> <A NAME="manage"></A> </P><P> <A NAME="ejabberdctl"></A> </P><!--TOC section <TT>ejabberdctl</TT>-->
+</DD></DL><P> <A NAME="manage"></A> </P><!--TOC chapter Managing an <TT>ejabberd</TT> Server-->
+<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc60">Chapter&#XA0;4</A>&#XA0;&#XA0;<A HREF="#manage">Managing an <TT>ejabberd</TT> Server</A></H1><!--SEC END --><P> <A NAME="manage"></A> </P><P> <A NAME="ejabberdctl"></A> </P><!--TOC section <TT>ejabberdctl</TT>-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc61">4.1</A>&#XA0;&#XA0;<A HREF="#ejabberdctl"><TT>ejabberdctl</TT></A></H2><!--SEC END --><P> <A NAME="ejabberdctl"></A> </P><P> <A NAME="commands"></A> </P><!--TOC subsection Commands-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc62">4.1.1</A>&#XA0;&#XA0;<A HREF="#commands">Commands</A></H3><!--SEC END --><P> <A NAME="commands"></A> </P><P>The <TT>ejabberdctl</TT> command line administration script allows to start, stop and perform
 many other administrative tasks in a local or remote <TT>ejabberd</TT> server.</P><P>When <TT>ejabberdctl</TT> is executed without any parameter,
@@ -2915,8 +2918,9 @@ The more interesting ones are:
 <B><TT>help</TT></B></DT><DD CLASS="dd-description"> Get help about ejabberdctl or any available command. Try <TT>ejabberdctl help help</TT>.
 </DD><DT CLASS="dt-description"><B><TT>status</TT></B></DT><DD CLASS="dd-description"> Check the status of the <TT>ejabberd</TT> server.
 </DD><DT CLASS="dt-description"><B><TT>stop</TT></B></DT><DD CLASS="dd-description"> Stop the <TT>ejabberd</TT> server which is running in the machine.
-</DD><DT CLASS="dt-description"><B><TT>reopen-log</TT></B></DT><DD CLASS="dd-description"> If you use a tool to rotate logs, you have to configure it
-so that this command is executed after each rotation.
+</DD><DT CLASS="dt-description"><B><TT>reopen-log</TT></B></DT><DD CLASS="dd-description"> Reopen the log files after they were renamed.
+If the old files were not renamed before calling this command,
+they are automatically renamed to <TT>"*-old.log"</TT>. See section <A HREF="#logfiles">7.1</A>.
 </DD><DT CLASS="dt-description"><B><TT>backup, restore, install-fallback, dump, load</TT></B></DT><DD CLASS="dd-description"> You can use these
 commands to create and restore backups.
 </DD><DT CLASS="dt-description"><B><TT>import-file, import-dir</TT></B></DT><DD CLASS="dd-description"> 
@@ -2933,8 +2937,8 @@ error is represented by <TT>1</TT>,
 and other codes may be used for specifical results.
 This can be used by other scripts to determine automatically
 if a command succedded or failed,
-for example using: <TT>echo $?</TT></P><P> <A NAME="erlangconfiguration"></A> </P><!--TOC subsection Erlang runtime system-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc63">4.1.2</A>&#XA0;&#XA0;<A HREF="#erlangconfiguration">Erlang runtime system</A></H3><!--SEC END --><P> <A NAME="erlangconfiguration"></A> </P><P><TT>ejabberd</TT> is an Erlang/OTP application that runs inside an Erlang runtime system.
+for example using: <TT>echo $?</TT></P><P> <A NAME="erlangconfiguration"></A> </P><!--TOC subsection Erlang Runtime System-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc63">4.1.2</A>&#XA0;&#XA0;<A HREF="#erlangconfiguration">Erlang Runtime System</A></H3><!--SEC END --><P> <A NAME="erlangconfiguration"></A> </P><P><TT>ejabberd</TT> is an Erlang/OTP application that runs inside an Erlang runtime system.
 This system is configured using environment variables and command line parameters.
 The <TT>ejabberdctl</TT> administration script uses many of those possibilities.
 You can configure some of them with the file <TT>ejabberdctl.cfg</TT>,
@@ -3133,8 +3137,8 @@ However, the cookie system is not ultimately effective
 to prevent unauthorized access or intrusion to an Erlang node.
 The communication between Erlang nodes are not encrypted,
 so the cookie could be read sniffing the traffic on the network.
-The recommended way to secure the Erlang node is to block the port 4369.</P><P> <A NAME="nodename"></A> </P><!--TOC section Erlang node name-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc71">5.4</A>&#XA0;&#XA0;<A HREF="#nodename">Erlang node name</A></H2><!--SEC END --><P> <A NAME="nodename"></A> </P><P>An Erlang node may have a node name.
+The recommended way to secure the Erlang node is to block the port 4369.</P><P> <A NAME="nodename"></A> </P><!--TOC section Erlang Node Name-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc71">5.4</A>&#XA0;&#XA0;<A HREF="#nodename">Erlang Node Name</A></H2><!--SEC END --><P> <A NAME="nodename"></A> </P><P>An Erlang node may have a node name.
 The name can be short (if indicated with the command-line parameter <TT>-sname</TT>)
 or long (if indicated with the parameter <TT>-name</TT>).
 Starting an Erlang node with -sname limits the communication between Erlang nodes to the LAN.</P><P>Using the option <TT>-sname</TT> instead of <TT>-name</TT> is a simple method
@@ -3142,8 +3146,8 @@ to difficult unauthorized access to your Erlang node.
 However, it is not ultimately effective to prevent access to the Erlang node,
 because it may be possible to fake the fact that you are on another network
 using a modified version of Erlang <TT>epmd</TT>.
-The recommended way to secure the Erlang node is to block the port 4369.</P><P> <A NAME="secure-files"></A> </P><!--TOC section Securing sensible files-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc72">5.5</A>&#XA0;&#XA0;<A HREF="#secure-files">Securing sensible files</A></H2><!--SEC END --><P> <A NAME="secure-files"></A> </P><P><TT>ejabberd</TT> stores sensible data in the file system either in plain text or binary files.
+The recommended way to secure the Erlang node is to block the port 4369.</P><P> <A NAME="secure-files"></A> </P><!--TOC section Securing Sensible Files-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc72">5.5</A>&#XA0;&#XA0;<A HREF="#secure-files">Securing Sensible Files</A></H2><!--SEC END --><P> <A NAME="secure-files"></A> </P><P><TT>ejabberd</TT> stores sensible data in the file system either in plain text or binary files.
 The file system permissions should be set to only allow the proper user to read,
 write and execute those files and directories.</P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>ejabberd configuration file: /etc/ejabberd/ejabberd.cfg</TT></B></DT><DD CLASS="dd-description">
@@ -3256,20 +3260,8 @@ domain.</P><P> <A NAME="servicelb"></A> </P><!--TOC section Service Load-Balanci
 </P><PRE CLASS="verbatim">{domain_balancing_component_number, "component.example.com", N}
 </PRE><P> <A NAME="debugging"></A> </P><!--TOC chapter Debugging-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc84">Chapter&#XA0;7</A>&#XA0;&#XA0;<A HREF="#debugging">Debugging</A></H1><!--SEC END --><P> <A NAME="debugging"></A> 
-</P><P> <A NAME="watchdog"></A> </P><!--TOC section Watchdog Alerts-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc85">7.1</A>&#XA0;&#XA0;<A HREF="#watchdog">Watchdog Alerts</A></H2><!--SEC END --><P> <A NAME="watchdog"></A> 
-</P><P><TT>ejabberd</TT> includes a watchdog mechanism.
-If a process in the <TT>ejabberd</TT> server consumes too much memory,
-a message is sent to the Jabber accounts defined with the option
-<TT>watchdog_admins</TT>
- in the <TT>ejabberd</TT> configuration file.
-Example configuration:
-</P><PRE CLASS="verbatim">{watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
-</PRE><P>To remove watchdog admins, remove them in the option.
-To remove all watchdog admins, set the option with an empty list:
-</P><PRE CLASS="verbatim">{watchdog_admins, []}.
-</PRE><P> <A NAME="logfiles"></A> </P><!--TOC section Log Files-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc86">7.2</A>&#XA0;&#XA0;<A HREF="#logfiles">Log Files</A></H2><!--SEC END --><P> <A NAME="logfiles"></A> </P><P>An <TT>ejabberd</TT> node writes two log files:
+</P><P> <A NAME="logfiles"></A> </P><!--TOC section Log Files-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc85">7.1</A>&#XA0;&#XA0;<A HREF="#logfiles">Log Files</A></H2><!--SEC END --><P> <A NAME="logfiles"></A> </P><P>An <TT>ejabberd</TT> node writes two log files:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> is the ejabberd service log, with the messages reported by <TT>ejabberd</TT> code
 	</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
@@ -3285,12 +3277,32 @@ The possible levels are:
 </DD></DL><P>
 For example, the default configuration is:
 </P><PRE CLASS="verbatim">{loglevel, 4}.
-</PRE><P> <A NAME="debugconsole"></A> </P><!--TOC section Debug Console-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc87">7.3</A>&#XA0;&#XA0;<A HREF="#debugconsole">Debug Console</A></H2><!--SEC END --><P> <A NAME="debugconsole"></A> </P><P>The Debug Console is an Erlang shell attached to an already running <TT>ejabberd</TT> server.
+</PRE><P>The log files grow continually, so it is recommended to rotate them periodically.
+To rotate the log files, rename the files and then reopen them.
+The ejabberd command <TT>reopen-log</TT> 
+(please refer to section <A HREF="#commands">4.1.1</A>)
+reopens the log files,
+and also renames the old ones if you didn&#X2019;t rename them.</P><P> <A NAME="debugconsole"></A> </P><!--TOC section Debug Console-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc86">7.2</A>&#XA0;&#XA0;<A HREF="#debugconsole">Debug Console</A></H2><!--SEC END --><P> <A NAME="debugconsole"></A> </P><P>The Debug Console is an Erlang shell attached to an already running <TT>ejabberd</TT> server.
 With this Erlang shell, an experienced administrator can perform complex tasks.</P><P>This shell gives complete control over the <TT>ejabberd</TT> server,
 so it is important to use it with extremely care.
 There are some simple and safe examples in the article
-<A HREF="http://www.ejabberd.im/interconnect-erl-nodes">Interconnecting Erlang Nodes</A></P><P>To exit the shell, close the window or press the keys: control+c control+c.</P><P> <A NAME="i18ni10n"></A> </P><!--TOC chapter Internationalization and Localization-->
+<A HREF="http://www.ejabberd.im/interconnect-erl-nodes">Interconnecting Erlang Nodes</A></P><P>To exit the shell, close the window or press the keys: control+c control+c.</P><P> <A NAME="watchdog"></A> </P><!--TOC section Watchdog Alerts-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc87">7.3</A>&#XA0;&#XA0;<A HREF="#watchdog">Watchdog Alerts</A></H2><!--SEC END --><P> <A NAME="watchdog"></A> 
+</P><P><TT>ejabberd</TT> includes a watchdog mechanism that may be useful to developers
+when troubleshooting a problem related to memory usage.
+If a process in the <TT>ejabberd</TT> server consumes a lot of memory,
+a message is sent to the Jabber accounts defined with the option
+<TT>watchdog_admins</TT>
+ in the <TT>ejabberd</TT> configuration file.
+Note that the threshold to define what is too much memory usage 
+is only configurable editing the source code.
+Example configuration:
+</P><PRE CLASS="verbatim">{watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
+</PRE><P>To remove watchdog admins, remove them in the option.
+To remove all watchdog admins, set the option with an empty list:
+</P><PRE CLASS="verbatim">{watchdog_admins, []}.
+</PRE><P> <A NAME="i18ni10n"></A> </P><!--TOC chapter Internationalization and Localization-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc88">Appendix&#XA0;A</A>&#XA0;&#XA0;<A HREF="#i18ni10n">Internationalization and Localization</A></H1><!--SEC END --><P> <A NAME="i18ni10n"></A> 
 </P><P>The source code of <TT>ejabberd</TT> supports localization.
 The translators can edit the

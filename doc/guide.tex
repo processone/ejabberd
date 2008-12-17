@@ -261,7 +261,7 @@ The \term{ejabberdctl} administration script is included in the \term{bin} direc
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
 
-\makesection{install.os}{Installing \ejabberd{} with Operating System specific packages}
+\makesection{install.os}{Installing \ejabberd{} with Operating System Specific Packages}
 
 Some Operating Systems provide a specific \ejabberd{} package adapted to
 the system architecture and libraries.
@@ -301,10 +301,13 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GNU Make
 \item GCC
 \item Libexpat 1.95 or higher
-\item Erlang/OTP R10B-9 or newer.
+\item Erlang/OTP R10B-9 or higher.
 \item OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 \item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
-\item GNU Iconv 1.8 or higher, for the IRC Transport (mod\_irc). Optional. Not needed on systems with GNU Libc.
+\item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
+\item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
+\item PAM library. Optional. For Pluggable Authentication Modules (PAM). See section \ref{pam}.
+\item GNU Iconv 1.8 or higher, for the IRC Transport (mod\_irc). Optional. Not needed on systems with GNU Libc. See section \ref{modirc}.
 \end{itemize}
 
 \makesubsection{download}{Download Source Code}
@@ -2756,16 +2759,16 @@ Examples:
   it will be displayed in all active rooms. In this example the history
   feature is disabled.
 \begin{verbatim}
-{acl, admins, {user, "admin", "example.org"}}.
+{acl, admin, {user, "admin", "example.org"}}.
 
-{access, muc_admins, [{allow, admins}]}.
+{access, muc_admin, [{allow, admin}]}.
 
 {modules,
  [
   ...
   {mod_muc, [{access, all},
              {access_create, all},
-             {access_admin, muc_admins},
+             {access_admin, muc_admin},
              {history_size, 0}]},
   ...
  ]}.
@@ -2784,20 +2787,20 @@ Examples:
 {acl, paying_customers, {user, "customer1", "example.net"}}.
 {acl, paying_customers, {user, "customer2", "example.com"}}.
 {acl, paying_customers, {user, "customer3", "example.org"}}.
-{acl, admins, {user, "admin", "example.org"}}.
+{acl, admin, {user, "admin", "example.org"}}.
 
-{access, muc_admins, [{allow, admins},
+{access, muc_admin, [{allow, admin},
                       {deny, all}]}.
 {access, muc_access, [{allow, paying_customers},
-                      {allow, admins},
+                      {allow, admin},
                       {deny, all}]}.
 
 {modules,
  [
   ...
   {mod_muc, [{access, muc_access},
-             {access_create, muc_admins},
-             {access_admin, muc_admins}]},
+             {access_create, muc_admin},
+             {access_admin, muc_admin}]},
   ...
  ]}.
 \end{verbatim}
@@ -2824,7 +2827,7 @@ defined, but some user restriction could be added as well:
  [
   ...
   {mod_muc, [{access, muc_access},
-             {access_create, muc_admins},
+             {access_create, muc_admin},
              {default_room_options,
               [
                {allow_change_subj, false},
@@ -2834,7 +2837,7 @@ defined, but some user restriction could be added as well:
                {title, "New chatroom"},
                {anonymous, false}
               ]},
-             {access_admin, muc_admins}]},
+             {access_admin, muc_admin}]},
   ...
  ]}.
 \end{verbatim}
@@ -3727,7 +3730,7 @@ Options:
 \iqdiscitem{Software Version (\ns{jabber:iq:version})}
 \end{description}
 
-\makechapter{manage}{Managing an \ejabberd{} server}
+\makechapter{manage}{Managing an \ejabberd{} Server}
 
 
 \makesection{ejabberdctl}{\term{ejabberdctl}}
@@ -3753,8 +3756,9 @@ The more interesting ones are:
 \titem{help} Get help about ejabberdctl or any available command. Try \term{ejabberdctl help help}.
 \titem{status} Check the status of the \ejabberd{} server.
 \titem{stop} Stop the \ejabberd{} server which is running in the machine.
-\titem{reopen-log} If you use a tool to rotate logs, you have to configure it
-  so that this command is executed after each rotation.
+\titem{reopen-log} Reopen the log files after they were renamed.
+  If the old files were not renamed before calling this command,
+  they are automatically renamed to \term{"*-old.log"}. See section \ref{logfiles}.
 \titem {backup, restore, install-fallback, dump, load} You can use these
   commands to create and restore backups.
 %%More information about backuping can
@@ -3782,7 +3786,7 @@ if a command succedded or failed,
 for example using: \term{echo \$?}
 
 
-\makesubsection{erlangconfiguration}{Erlang runtime system}
+\makesubsection{erlangconfiguration}{Erlang Runtime System}
 
 \ejabberd{} is an Erlang/OTP application that runs inside an Erlang runtime system.
 This system is configured using environment variables and command line parameters.
@@ -4041,7 +4045,7 @@ so the cookie could be read sniffing the traffic on the network.
 The recommended way to secure the Erlang node is to block the port 4369.
 
 
-\makesection{nodename}{Erlang node name}
+\makesection{nodename}{Erlang Node Name}
 
 An Erlang node may have a node name.
 The name can be short (if indicated with the command-line parameter \term{-sname})
@@ -4056,7 +4060,7 @@ using a modified version of Erlang \term{epmd}.
 The recommended way to secure the Erlang node is to block the port 4369.
 
 
-\makesection{secure-files}{Securing sensible files}
+\makesection{secure-files}{Securing Sensible Files}
 
 \ejabberd{} stores sensible data in the file system either in plain text or binary files.
 The file system permissions should be set to only allow the proper user to read,
@@ -4276,26 +4280,6 @@ The syntax is the following:
 \makechapter{debugging}{Debugging}
 \ind{debugging}
 
-\makesection{watchdog}{Watchdog Alerts}
-\ind{debugging!watchdog}
-
-\ejabberd{} includes a watchdog mechanism.
-If a process in the \ejabberd{} server consumes too much memory,
-a message is sent to the Jabber accounts defined with the option
-\term{watchdog\_admins}
-\ind{options!watchdog\_admins} in the \ejabberd{} configuration file.
-Example configuration:
-\begin{verbatim}
-{watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
-\end{verbatim}
-
-To remove watchdog admins, remove them in the option.
-To remove all watchdog admins, set the option with an empty list:
-\begin{verbatim}
-{watchdog_admins, []}.
-\end{verbatim}
-
-
 \makesection{logfiles}{Log Files}
 
 An \ejabberd{} node writes two log files:
@@ -4319,6 +4303,13 @@ For example, the default configuration is:
 {loglevel, 4}.
 \end{verbatim}
 
+The log files grow continually, so it is recommended to rotate them periodically.
+To rotate the log files, rename the files and then reopen them.
+The ejabberd command \term{reopen-log} 
+(please refer to section \ref{commands})
+reopens the log files,
+and also renames the old ones if you didn't rename them.
+
 
 \makesection{debugconsole}{Debug Console}
 
@@ -4331,6 +4322,29 @@ There are some simple and safe examples in the article
 \footahref{http://www.ejabberd.im/interconnect-erl-nodes}{Interconnecting Erlang Nodes}
 
 To exit the shell, close the window or press the keys: control+c control+c.
+
+
+\makesection{watchdog}{Watchdog Alerts}
+\ind{debugging!watchdog}
+
+\ejabberd{} includes a watchdog mechanism that may be useful to developers
+when troubleshooting a problem related to memory usage.
+If a process in the \ejabberd{} server consumes a lot of memory,
+a message is sent to the Jabber accounts defined with the option
+\term{watchdog\_admins}
+\ind{options!watchdog\_admins} in the \ejabberd{} configuration file.
+Note that the threshold to define what is too much memory usage 
+is only configurable editing the source code.
+Example configuration:
+\begin{verbatim}
+{watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
+\end{verbatim}
+
+To remove watchdog admins, remove them in the option.
+To remove all watchdog admins, set the option with an empty list:
+\begin{verbatim}
+{watchdog_admins, []}.
+\end{verbatim}
 
 
 \appendix{}

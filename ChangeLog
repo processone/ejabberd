@@ -1,3 +1,31 @@
+2008-12-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Merge from trunk (r1730 to r1734).
+
+2008-12-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix update pubsub tables from
+	ejabberd 1.x to 2.x (EJAB-817)
+
+	* doc/guide.tex: Fix capitalization of some section titles
+
+	* doc/guide.tex: Mention as optional Requirements: mysql, pgsql
+	and pam
+
+	* src/ejabberd_admin.erl: Command reopen-log must also rotate
+	sasl.log (thanks to Alexander Tsvyashchenko)(EJAB-711)
+	* src/ejabberd_logger_h.erl: Export the function rotate_log/1
+	* doc/guide.tex: Improve explanation of log files rotation
+
+	* doc/guide.tex: Improve explanation of watchdog admins
+	option: only useful for developers (EJAB-816)
+	* src/ejabberd.cfg.example: Likewise
+
+	* doc/guide.tex: Say 'higher' instead of 'newer' in requirements
+	* README: Likewise
+
+	* doc/guide.tex: Simplify example mod_muc configuration
+
 2008-12-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1709 to r1730).

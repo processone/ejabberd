@@ -242,60 +242,66 @@ update_database(Host) ->
 	[host_node, host_parent, info] ->
 	    ?INFO_MSG("upgrade pubsub tables",[]),
 	    F = fun() ->
-			NewRecords =
-			    lists:foldl(
-			      fun({pubsub_node, NodeId, ParentId, {nodeinfo, Items, Options, Entities}}, RecList) ->
-				      ItemsList =
-					  lists:foldl(
-					    fun({item, IID, Publisher, Payload}, Acc) ->
-						    C = {Publisher, unknown},
-						    M = {Publisher, now()},
-						    mnesia:write(
-						      #pubsub_item{itemid = {IID, NodeId},
-								   creation = C,
-								   modification = M,
-								   payload = Payload}),
-						    [{Publisher, IID} | Acc]
-					    end, [], Items),
-				      Owners =
-					  dict:fold(
-					    fun(JID, {entity, Aff, Sub}, Acc) ->
-						    UsrItems =
-							lists:foldl(
-							  fun({P, I}, IAcc) ->
-								  case P of
-								      JID -> [I | IAcc];
-								      _ -> IAcc
-								  end
-							  end, [], ItemsList),
-						    mnesia:write(
-						      #pubsub_state{stateid = {JID, NodeId},
-								    items = UsrItems,
-								    affiliation = Aff,
-								    subscription = Sub}),
-						    case Aff of
-							owner -> [JID | Acc];
-							_ -> Acc
-						    end
-					    end, [], Entities),
-				      mnesia:delete({pubsub_node, NodeId}),
-				      [#pubsub_node{nodeid = NodeId,
-						    parentid = ParentId,
-						    owners = Owners,
-						    options = Options} |
-				       RecList]
-			      end, [],
-			      mnesia:match_object(
-				{pubsub_node, {Host, '_'}, '_', '_'})),
-			mnesia:delete_table(pubsub_node),
-			mnesia:create_table(pubsub_node,
-					    [{disc_copies, [node()]},
-					     {attributes, record_info(fields, pubsub_node)}]),
-			lists:foreach(fun(Record) ->
-					      mnesia:write(Record)
-				      end, NewRecords)
+			lists:foldl(
+			  fun({pubsub_node, NodeId, ParentId, {nodeinfo, Items, Options, Entities}}, RecList) ->
+				  ItemsList =
+				      lists:foldl(
+					fun({item, IID, Publisher, Payload}, Acc) ->
+						C = {Publisher, unknown},
+						M = {Publisher, now()},
+						mnesia:write(
+						  #pubsub_item{itemid = {IID, NodeId},
+							       creation = C,
+							       modification = M,
+							       payload = Payload}),
+						[{Publisher, IID} | Acc]
+					end, [], Items),
+				  Owners =
+				      dict:fold(
+					fun(JID, {entity, Aff, Sub}, Acc) ->
+						UsrItems =
+						    lists:foldl(
+						      fun({P, I}, IAcc) ->
+							      case P of
+								  JID -> [I | IAcc];
+								  _ -> IAcc
+							      end
+						      end, [], ItemsList),
+						mnesia:write(
+						  #pubsub_state{stateid = {JID, NodeId},
+								items = UsrItems,
+								affiliation = Aff,
+								subscription = Sub}),
+						case Aff of
+						    owner -> [JID | Acc];
+						    _ -> Acc
+						end
+					end, [], Entities),
+				  mnesia:delete({pubsub_node, NodeId}),
+				  [#pubsub_node{nodeid = NodeId,
+						parentid = ParentId,
+						owners = Owners,
+						options = Options} |
+				   RecList]
+			  end, [],
+			  mnesia:match_object(
+			    {pubsub_node, {Host, '_'}, '_', '_'}))
 		end,
-	    mnesia:transaction(F);
+	    {atomic, NewRecords} = mnesia:transaction(F),
+	    {atomic, ok} = mnesia:delete_table(pubsub_node),
+	    {atomic, ok} = mnesia:create_table(pubsub_node,
+					       [{disc_copies, [node()]},
+						{attributes, record_info(fields, pubsub_node)}]),
+	    FNew = fun() -> lists:foreach(fun(Record) ->
+						  mnesia:write(Record)
+					  end, NewRecords)
+		   end,
+	    case mnesia:transaction(FNew) of
+		{atomic, Result} ->
+		    ?INFO_MSG("Pubsub tables updated correctly: ~p", [Result]);
+		{aborted, Reason} ->
+		    ?ERROR_MSG("Problem updating Pubsub tables:~n~p", [Reason])
+	    end;
 	_ ->
 	    ok
     end.
