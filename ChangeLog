@@ -1,3 +1,7 @@
+2008-12-17  Pablo Polvorin	<pablo.polvorin@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fix bug in MUC invite.
+
 2008-12-17  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1730 to r1734).

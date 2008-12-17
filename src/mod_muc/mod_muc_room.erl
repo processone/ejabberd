@@ -261,7 +261,7 @@ normal_state({route, From, undefined,
 		      StateData#state.jid,
 		      From, exmpp_stanza:reply_with_error(Packet, Err)),
 		    {next_state, normal_state, StateData};
-		normal ->
+		Type when (Type == 'normal') orelse (Type == 'undefined') ->
 		    case catch check_invitation(From, 
 			  exmpp_xml:get_child_elements(Packet), 
 			  Lang, 
@@ -884,7 +884,7 @@ process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 		    _ ->
 			StateData
 		end;
-	    available ->
+	    'available' ->
 		case is_user_online(From, StateData) of
 		    true ->
 			case is_nick_change(From, Nick, StateData) of
@@ -3236,23 +3236,24 @@ check_invitation(From, Els, Lang, StateData) ->
 		  InviteEl,
 		  [{element, 'reason'}, cdata]),
 	    ContinueEl =
-		case xml:get_path(
+		case exmpp_xml:get_path(
 		       InviteEl,
 		       [{element, 'continue'}]) of
-		    [] -> [];
+		    'undefined' -> [];
 		    Continue1 -> [Continue1]
 		end,
 	    IEl =
-	    [#xmlel{name = 'invite', 
-		attrs = [#xmlattr{name = 'from', 
-		    value = exmpp_jid:jid_to_list(From)}],
-		children = [#xmlel{name = 'reason', 
-		    children = [#xmlcdata{cdata = Reason} ]}] 
-		++ ContinueEl}],
+	    [#xmlel{ns = ?NS_MUC_USER,
+                name = 'invite', 
+		        attrs = [#xmlattr{name = 'from', 
+		                          value = exmpp_jid:jid_to_list(From)}],
+ 		        children = [#xmlel{ns =?NS_MUC_USER, name = 'reason', 
+		                            children = [#xmlcdata{cdata = Reason} ]}] 
+  		                    ++ ContinueEl}],
 	    PasswdEl =
 		case (StateData#state.config)#config.password_protected of
 		    true ->
-			[#xmlel{name = 'password',
+			[#xmlel{ns = ?NS_MUC_USER, name = 'password',
 			    children = [#xmlcdata{cdata = 
 				(StateData#state.config)#config.password}]}];
 		    _ ->
@@ -3261,7 +3262,7 @@ check_invitation(From, Els, Lang, StateData) ->
 	    Body =
 	    #xmlel{name = 'body',
 	      children = [#xmlcdata{cdata =
-		  lists:flatten(
+		  list_to_binary([
 		    io_lib:format(
 		      translate:translate(Lang,
 			"~s invites you to the room ~s"),
@@ -3269,7 +3270,7 @@ check_invitation(From, Els, Lang, StateData) ->
 			exmpp_jid:jid_to_list(StateData#state.room,
 			  StateData#state.host,
 			  "")
-		      ])) ++ 
+		      ]), 
 		   case (StateData#state.config)#config.password_protected of
 		       true ->
 			   ", " ++
@@ -3278,14 +3279,15 @@ check_invitation(From, Els, Lang, StateData) ->
 			       (StateData#state.config)#config.password ++ "'";
 		       _ ->
 			   ""
-		   end ++
+		   end,
 		   case Reason of
-		       "" -> "";
-		       _ -> " (" ++ Reason ++ ") "
+		       <<>> -> "";
+		       _ -> [" (",  Reason, ") "]
 		   end
-		  }]},
+          ])}]},
+        %%TODO: always NS_JABER_CLIENT?
 	    Msg =
-	    #xmlel{name = 'message', 
+	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', 
 	      attrs = [#xmlattr{name = 'type', value = "normal"}], 
 	      children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
 		  children = IEl ++ PasswdEl},
