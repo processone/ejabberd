@@ -1,3 +1,8 @@
+2008-12-18  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Check option of the nodetree instead
+	of checking configuration (thanks to Eric Cestari)(EJAB-737)
+
 2008-12-16  Badlop  <badlop@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix update pubsub tables from
