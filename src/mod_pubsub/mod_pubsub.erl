@@ -1244,8 +1244,8 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 				    ok ->
 					node_call(Type, create_node, [Host, Node, Owner]);
 				    {error, 'conflict'} ->
-					case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), nodetree) of
-					    [{nodetree, nodetree_virtual}] -> node_call(Type, create_node, [Host, Node, Owner]);
+					case proplists:get_value(virtual_tree, tree_call(Host, options, [])) of
+					    true -> node_call(Type, create_node, [Host, Node, Owner]);
 					    _ -> {error, 'conflict'}
 					end;
 				    Error ->
