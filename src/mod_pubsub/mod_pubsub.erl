@@ -1750,24 +1750,41 @@ get_items(Host, Node, From) ->
 %%	 Host = host()
 %%	 Node = pubsubNode()
 %%	 LJID = {U, S, []}
-%% @doc <p>Resend the items of a node to the user.</p>
-%send_all_items(Host, Node, LJID) ->
-%    send_items(Host, Node, LJID, all).
-
+%% @doc <p>Resend the last item of a node to the user.</p>
 send_last_item(Host, Node, LJID) ->
     send_items(Host, Node, LJID, last).
 
-%% TODO use cache-last-item feature
+%% @spec (Host, Node, LJID) -> any()
+%%	 Host = host()
+%%	 Node = pubsubNode()
+%%	 LJID = {U, S, []}
+%% @doc <p>Resend the items of a node to the user.</p>
+%% @todo use cache-last-item feature
 send_items(Host, Node, {LU, LS, LR} = LJID, Number) ->
     ToSend = case get_items(Host, Node, LJID) of
 	[] -> 
 	    [];
 	Items ->
 	    case Number of
-		last -> [lists:last(Items)];
-		all -> Items;
-		N when N > 0 -> lists:nthtail(length(Items)-N, Items);
-		_ -> Items
+		last ->
+		    %%% [lists:last(Items)]  does not work on clustered table
+		    [First|Tail] = Items,
+		    [lists:foldl(
+			fun(CurItem, LastItem) ->
+			    {_, {LMS, LS, LmS}} = LastItem#pubsub_item.creation,
+			    {_, {CMS, CS, CmS}} = CurItem#pubsub_item.creation,
+			    LTimestamp = LMS * 1000000 + LS * 1000 + LmS,
+			    CTimestamp = CMS * 1000000 + CS * 1000 + CmS,
+			    if
+				CTimestamp > LTimestamp -> CurItem;
+				true -> LastItem
+			    end
+			end, First, Tail)];
+		N when N > 0 ->
+		    %%% This case is buggy on clustered table due to lake of order
+		    lists:nthtail(length(Items)-N, Items);
+		_ -> 
+		    Items
 	    end
     end,
     ItemsEls = lists:map(
