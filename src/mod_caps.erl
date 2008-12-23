@@ -234,11 +234,17 @@ handle_cast({note_caps, From,
 	    #state{host = Host, disco_requests = Requests} = State) ->
     %% XXX: this leads to race conditions where ejabberd will send
     %% lots of caps disco requests.
-    {_, _, R} = jlib:jid_tolower(From),
+    {U, S, R} = jlib:jid_tolower(From),
     BJID = list_to_binary(jlib:jid_to_string(From)),
-    BUID = list_to_binary(jlib:jid_to_string(jlib:jid_remove_resource(From))),
     mnesia:dirty_write(#user_caps{jid = BJID, caps = Caps}),
-    mnesia:dirty_write(#user_caps_default{uid = BUID, resource = R}),
+    case ejabberd_sm:get_user_resources(U, S) of
+	[] ->
+	    ok;
+	_ -> 
+	    % only store default resource of external contacts
+	    BUID = list_to_binary(jlib:jid_to_string(jlib:jid_remove_resource(From))),
+	    mnesia:dirty_write(#user_caps_default{uid = BUID, resource = R})
+    end,
     SubNodes = [Version | Exts],
     %% Now, find which of these are not already in the database.
     Fun = fun() ->
