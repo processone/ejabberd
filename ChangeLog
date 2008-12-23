@@ -1,3 +1,9 @@
+2008-12-23  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Improve handling of PEP sent to
+	external contacts (EJAB-825)
+	* src/mod_caps.erl: Likewise
+
 2008-12-23  Badlop  <badlop@process-one.net>
 
 	* src/cyrsasl_digest.erl: Check digest-uri in SASL digest
