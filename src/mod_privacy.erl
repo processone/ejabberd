@@ -35,6 +35,7 @@
 	 process_iq_get/5,
 	 get_user_list/3,
 	 check_packet/6,
+	 remove_user/2,
 	 updated_list/3]).
 
 -include("ejabberd.hrl").
@@ -57,6 +58,8 @@ start(Host, Opts) ->
 		       ?MODULE, check_packet, 50),
     ejabberd_hooks:add(privacy_updated_list, Host,
 		       ?MODULE, updated_list, 50),
+    ejabberd_hooks:add(remove_user, Host,
+		       ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
@@ -71,6 +74,8 @@ stop(Host) ->
 			  ?MODULE, check_packet, 50),
     ejabberd_hooks:delete(privacy_updated_list, Host,
 			  ?MODULE, updated_list, 50),
+    ejabberd_hooks:delete(remove_user, Host,
+			  ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY).
 
 process_iq(_From, _To, IQ) ->
@@ -659,6 +664,16 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
     end.
 
 
+remove_user(User, Server) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    F = fun() ->
+		mnesia:delete({privacy,
+			       {LUser, LServer}})
+        end,
+    mnesia:transaction(F).
+
+
 updated_list(_,
 	     #userlist{name = OldName} = Old,
 	     #userlist{name = NewName} = New) ->
@@ -668,7 +683,6 @@ updated_list(_,
 	true ->
 	    Old
     end.
-
 
 
 update_table() ->

@@ -1,3 +1,12 @@
+2008-12-23  Badlop  <badlop@process-one.net>
+
+	* src/odbc/odbc_queries.erl: Fix removal of private_storage of an
+	account when the account is removed
+
+	* src/mod_privacy.erl: Remove privacy lists of an account when the
+	account is removed (EJAB-720)
+	* src/mod_privacy_odbc.erl: Likewise
+
 2008-12-19  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix send_last_published_item issue
