@@ -55,7 +55,10 @@ start() ->
 			 {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
     Config = get_ejabberd_config_path(),
-    load_file(Config).
+    load_file(Config),
+    %% This start time is used by mod_last:
+    add_local_option(node_start, now()),
+    ok.
 
 %% @doc Get the filename of the ejabberd configuration file.
 %% The filename can be specified with: erl -config "/path/to/ejabberd.cfg".
@@ -76,7 +79,7 @@ get_ejabberd_config_path() ->
 
 %% @doc Load the ejabberd configuration file.
 %% It also includes additional configuration files and replaces macros.
-%% @spec (File::string()) -> [term()]
+%% @spec (File::string()) -> ok
 load_file(File) ->
     Terms = get_plain_terms_file(File),
     State = lists:foldl(fun search_hosts/2, #state{}, Terms),

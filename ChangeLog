@@ -1,5 +1,11 @@
 2008-12-23  Badlop  <badlop@process-one.net>
 
+	* src/mod_last.erl: Implement workaround for uptime statistic in
+	32 bit machines, so it can show uptime greater than 50
+	days (EJAB-610)
+	* src/mod_last_odbc.erl: Likewise
+	* src/ejabberd_config.erl: Store start time in local_config table
+
 	* src/cyrsasl_digest.erl: Check digest-uri in SASL digest
 	authentication (thanks to Paul Guyot)(EJAB-569)
 
