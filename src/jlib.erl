@@ -62,7 +62,10 @@
 	 datetime_string_to_timestamp/1,
 	 decode_base64/1,
 	 encode_base64/1,
-	 ip_to_list/1]).
+	 ip_to_list/1,
+	 rsm_encode/1,
+	 rsm_encode/2,
+	 rsm_decode/1]).
 
 -include("jlib.hrl").
 
@@ -484,6 +487,71 @@ parse_xdata_values([{xmlelement, Name, _Attrs, SubEls} | Els], Res) ->
 parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
 
+rsm_decode(#iq{sub_el=SubEl})->
+	rsm_decode(SubEl);
+rsm_decode({xmlelement, _,_,_}=SubEl)->
+	case xml:get_subtag(SubEl,"set") of
+		false ->
+			none;
+		{xmlelement, "set", _Attrs, SubEls}->
+			lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
+	end.
+
+rsm_parse_element({xmlelement, "max",[], _}=Elem, RsmIn)->
+    CountStr = xml:get_tag_cdata(Elem),
+    {Count, _} = string:to_integer(CountStr),
+    RsmIn#rsm_in{max=Count};
+
+rsm_parse_element({xmlelement, "before", [], _}=Elem, RsmIn)->
+    UID = xml:get_tag_cdata(Elem),
+    RsmIn#rsm_in{direction=before, id=UID};
+
+rsm_parse_element({xmlelement, "after", [], _}=Elem, RsmIn)->
+    UID = xml:get_tag_cdata(Elem),
+    RsmIn#rsm_in{direction=aft, id=UID};
+
+rsm_parse_element({xmlelement, "index",[], _}=Elem, RsmIn)->
+    IndexStr = xml:get_tag_cdata(Elem),
+    {Index, _} = string:to_integer(IndexStr),
+    RsmIn#rsm_in{index=Index};
+
+
+rsm_parse_element(_, RsmIn)->
+    RsmIn.
+
+rsm_encode(#iq{sub_el=SubEl}=IQ,RsmOut)->
+    Set = {xmlelement, "set", [{"xmlns", ?NS_RSM}],
+	   lists:reverse(rsm_encode_out(RsmOut))},
+    {xmlelement, Name, Attrs, SubEls} = SubEl,
+    New = {xmlelement, Name, Attrs, [Set | SubEls]},
+    IQ#iq{sub_el=New}.
+
+rsm_encode(none)->
+    [];
+rsm_encode(RsmOut)->
+    [{xmlelement, "set", [{"xmlns", ?NS_RSM}], lists:reverse(rsm_encode_out(RsmOut))}].
+rsm_encode_out(#rsm_out{count=Count, index=Index, first=First, last=Last})->
+    El = rsm_encode_first(First, Index, []),
+    El2 = rsm_encode_last(Last,El),
+    rsm_encode_count(Count, El2).
+
+rsm_encode_first(undefined, undefined, Arr) ->
+    Arr;
+rsm_encode_first(First, undefined, Arr) ->
+    [{xmlelement, "first",[], [{xmlcdata, First}]}|Arr];
+rsm_encode_first(First, Index, Arr) ->
+    [{xmlelement, "first",[{"index", i2l(Index)}], [{xmlcdata, First}]}|Arr].
+
+rsm_encode_last(undefined, Arr) -> Arr;
+rsm_encode_last(Last, Arr) ->
+    [{xmlelement, "last",[], [{xmlcdata, Last}]}|Arr].
+
+rsm_encode_count(undefined, Arr)-> Arr;
+rsm_encode_count(Count, Arr)->
+    [{xmlelement, "count",[], [{xmlcdata, i2l(Count)}]} | Arr].
+
+i2l(I) when is_integer(I) -> integer_to_list(I);
+i2l(L) when is_list(L)    -> L.
 
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     lists:flatten(

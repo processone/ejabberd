@@ -54,6 +54,7 @@
 -define(NS_BYTESTREAMS,  "http://jabber.org/protocol/bytestreams").
 -define(NS_ADMIN,        "http://jabber.org/protocol/admin").
 
+-define(NS_RSM,          "http://jabber.org/protocol/rsm").
 -define(NS_EJABBERD_CONFIG, "ejabberd:config").
 
 -define(NS_STREAM,       "http://etherx.jabber.org/streams").
@@ -306,3 +307,5 @@
 	     lang = "",
 	     sub_el}).
 
+-record(rsm_in, {max, direction, id, index}).
+-record(rsm_out, {count, index, first, last}).

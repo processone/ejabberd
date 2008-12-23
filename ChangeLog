@@ -1,3 +1,10 @@
+2008-12-23  Badlop  <badlop@process-one.net>
+
+	* src/jlib.erl: Implementation of XEP-0059 Result Set
+	Management (thanks to Eric Cestari)(EJAB-807)
+	* src/jlib.hrl: Likewise
+	* src/mod_muc/mod_muc.erl: Likewise
+
 2008-12-23  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Improve handling of PEP sent to

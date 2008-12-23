@@ -124,10 +124,11 @@ forget_room(Host, Name) ->
     mnesia:transaction(F).
 
 process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
+    Rsm = jlib:rsm_decode(IQ),
     Res = IQ#iq{type = result,
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_DISCO_ITEMS}],
-			   iq_disco_items(Host, From, Lang)}]},
+			   iq_disco_items(Host, From, Lang, Rsm)}]},
     ejabberd_router:route(To,
 			  From,
 			  jlib:iq_to_xml(Res)).
@@ -512,10 +513,11 @@ iq_disco_info(Lang) ->
      {xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
      {xmlelement, "feature", [{"var", ?NS_MUC}], []},
      {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
+     {xmlelement, "feature", [{"var", ?NS_RSM}], []},
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
 
 
-iq_disco_items(Host, From, Lang) ->
+iq_disco_items(Host, From, Lang, none) ->
     lists:zf(fun(#muc_online_room{name_host = {Name, _Host}, pid = Pid}) ->
 		     case catch gen_fsm:sync_send_all_state_event(
 				  Pid, {get_disco_item, From, Lang}, 100) of
@@ -528,7 +530,72 @@ iq_disco_items(Host, From, Lang) ->
 			 _ ->
 			     false
 		     end
-	     end, get_vh_rooms(Host)).
+	     end, get_vh_rooms(Host));
+
+iq_disco_items(Host, From, Lang, Rsm) ->
+    {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
+    RsmOut = jlib:rsm_encode(RsmO),
+    lists:zf(fun(#muc_online_room{name_host = {Name, _Host}, pid = Pid}) ->
+		     case catch gen_fsm:sync_send_all_state_event(
+				  Pid, {get_disco_item, From, Lang}, 100) of
+			 {item, Desc} ->
+			     flush(),
+			     {true,
+			      {xmlelement, "item",
+			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
+				{"name", Desc}], []}};
+			 _ ->
+			     false
+		     end
+	     end, Rooms) ++ RsmOut.
+
+get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
+    AllRooms = lists:sort(get_vh_rooms(Host)),
+    Count = erlang:length(AllRooms),
+    Guard = case Direction of
+		_ when Index =/= undefined -> [{'==', {element, 2, '$1'}, Host}];
+		aft -> [{'==', {element, 2, '$1'}, Host}, {'>=',{element, 1, '$1'} ,I}];
+		before when I =/= []-> [{'==', {element, 2, '$1'}, Host}, {'=<',{element, 1, '$1'} ,I}];
+		_ -> [{'==', {element, 2, '$1'}, Host}]
+	    end,
+    L = lists:sort(
+	  mnesia:dirty_select(muc_online_room,
+			      [{#muc_online_room{name_host = '$1', _ = '_'},
+				Guard,
+				['$_']}])),
+    L2 = if
+	     Index == undefined andalso Direction == before ->
+		 lists:reverse(lists:sublist(lists:reverse(L), 1, M));
+	     Index == undefined ->
+		 lists:sublist(L, 1, M);
+	     Index > Count  orelse Index < 0 ->
+		 [];
+	     true ->
+		 lists:sublist(L, Index+1, M)
+	 end,
+    if
+	L2 == [] ->
+	    {L2, #rsm_out{count=Count}};
+	true ->
+	    H = hd(L2),
+	    NewIndex = get_room_pos(H, AllRooms),
+	    T=lists:last(L2),
+	    {F, _}=H#muc_online_room.name_host,
+	    {Last, _}=T#muc_online_room.name_host,
+	    {L2, #rsm_out{first=F, last=Last, count=Count, index=NewIndex}}
+    end.
+
+%% @doc Return the position of desired room in the list of rooms.
+%% The room must exist in the list. The count starts in 0.
+%% @spec (Desired::muc_online_room(), Rooms::[muc_online_room()]) -> integer()
+get_room_pos(Desired, Rooms) ->
+    get_room_pos(Desired, Rooms, 0).
+get_room_pos(Desired, [HeadRoom | _], HeadPosition)
+  when (Desired#muc_online_room.name_host ==
+	HeadRoom#muc_online_room.name_host) ->
+    HeadPosition;
+get_room_pos(Desired, [_ | Rooms], HeadPosition) ->
+    get_room_pos(Desired, Rooms, HeadPosition + 1).
 
 flush() ->
     receive
