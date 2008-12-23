@@ -35,6 +35,7 @@
 	 note_caps/3,
 	 clear_caps/1,
 	 get_features/2,
+	 get_user_resource/2,
 	 handle_disco_response/3]).
 
 %% gen_mod callbacks
@@ -61,6 +62,7 @@
 -record(caps, {node, version, exts}).
 -record(caps_features, {node_pair, features}).
 -record(user_caps, {jid, caps}).
+-record(user_caps_default, {uid, resource}).
 -record(state, {host,
 		disco_requests = ?DICT:new(),
 		feature_queries = []}).
@@ -84,8 +86,9 @@ read_caps([], Result) ->
     Result.
 
 %% get_caps reads user caps from database
-get_caps(JID) ->
-    case catch mnesia:dirty_read({user_caps, list_to_binary(exmpp_jid:jid_to_list(JID))}) of
+get_caps({U, S, R}) ->
+    BJID = exmpp_jlib:jid_to_binary(U, S, R),
+    case catch mnesia:dirty_read({user_caps, BJID}) of
 	[#user_caps{caps=Caps}] -> 
 	    Caps;
 	_ -> 
@@ -93,8 +96,26 @@ get_caps(JID) ->
     end.
 
 %% clear_caps removes user caps from database
-clear_caps(JID) ->
-    catch mnesia:dirty_delete({user_caps, list_to_binary(exmpp_jid:jid_to_list(JID))}).
+clear_caps({U, S, R}) ->
+    BJID = exmpp_jlib:jid_to_binary(U, S, R),
+    BUID = exmpp_jlib:jid_to_binary(U, S),
+    catch mnesia:dirty_delete({user_caps, BJID}),
+    case catch mnesia:dirty_read({user_caps_default, BUID}) of
+	[#user_caps_default{resource=R}] ->
+	    catch mnesia:dirty_delete({user_caps_default, BUID});
+	_ ->
+	    ok
+    end.
+  
+%% give default user resource
+get_user_resource(U, S) ->
+    BUID = exmpp_jlib:bare_jid_to_binary(U, S),
+    case catch mnesia:dirty_read({user_caps_default, BUID}) of
+	[#user_caps_default{resource=R}] ->
+	    R;
+	_ ->
+	    []
+    end.
 
 %% note_caps should be called to make the module request disco
 %% information.  Host is the host that asks, From is the full JID that
@@ -113,7 +134,8 @@ note_caps(Host, From, Caps) ->
 %% timeout error.
 get_features(Host, Caps) ->
     case Caps of
-	nothing -> [];
+	nothing -> 
+	    [];
 	#caps{} ->
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
 	    gen_server:call(Proc, {get_features, Caps})
@@ -149,6 +171,9 @@ init([Host, _Opts]) ->
     mnesia:create_table(user_caps,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, user_caps)}]),
+    mnesia:create_table(user_caps_default,
+			[{disc_copies, [node()]},
+			 {attributes, record_info(fields, user_caps_default)}]),
     {ok, #state{host = Host}}.
 
 maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
@@ -200,8 +225,17 @@ handle_cast({note_caps, From,
 	    #state{host = Host, disco_requests = Requests} = State) ->
     %% XXX: this leads to race conditions where ejabberd will send
     %% lots of caps disco requests.
-    mnesia:dirty_write(#user_caps{jid = list_to_binary(exmpp_jid:jid_to_list(From)),
-				  caps = Caps}),
+    #jid{node = U, domain = S, resource = R} = From,
+    BJID = exmpp_jlib:jid_to_binary(From),
+    mnesia:dirty_write(#user_caps{jid = BJID, caps = Caps}),
+    case ejabberd_sm:get_user_resources(U, S) of
+	[] ->
+	    ok;
+	_ -> 
+	    % only store default resource of external contacts
+	    BUID = exmpp_jlib:bare_jid_to_binary(From),
+	    mnesia:dirty_write(#user_caps_default{uid = BUID, resource = R})
+    end,
     SubNodes = [Version | Exts],
     %% Now, find which of these are not already in the database.
     Fun = fun() ->

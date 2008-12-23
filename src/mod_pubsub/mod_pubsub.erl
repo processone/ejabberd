@@ -2389,20 +2389,15 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
 	    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
 	    case catch ejabberd_c2s:get_subscribed(C2SPid) of
 		Contacts when is_list(Contacts) ->
-		    Online = lists:foldl(fun({U, S, R}, Acc) ->
-				case user_resource(U, S, R) of
-				    [] -> Acc;
-				    OR -> [{U, S, OR}|Acc]
-				end
-			    end, [], Contacts),
 		    lists:foreach(fun({U, S, R}) ->
-			case is_caps_notify(LServer, Node, {U, S, R}) of
+			OR = user_resource(U, S, R), 
+			case is_caps_notify(LServer, Node, {U, S, OR}) of
 			    true ->
-				ejabberd_router ! {route, Sender, exmpp_jid:make_jid(U, S, R), Stanza};
+				ejabberd_router ! {route, Sender, exmpp_jid:make_jid(U, S, OR), Stanza};
 			    false ->
 				ok
 			end
-		    end, Online);
+		    end, Contacts);
 		_ ->
 		    ok
 	    end,
@@ -2414,20 +2409,27 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
 broadcast_by_caps(_, _, _, _) ->
     ok.
   
+%% If we don't know the resource, just pick first if any
+%% If no resource available, check if caps anyway (remote online)
 user_resource(LUser, LServer, []) ->
-    %% If we don't know the resource, just pick first if any
     case ejabberd_sm:get_user_resources(LUser, LServer) of
-	[R|_] -> R;
-	[] -> []
+	[R|_] -> 
+	    R;
+	[] -> 
+	    mod_caps:get_user_resource(LUser, LServer)
     end;
 user_resource(_, _, LResource) ->
     LResource.
 
 is_caps_notify(Host, Node, LJID) ->
-    Caps = mod_caps:get_caps(LJID),
-    case catch mod_caps:get_features(Host, Caps) of
-	Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
-	_ -> false
+    case mod_caps:get_caps(LJID) of
+	nothing -> 
+	    false;
+	Caps ->
+	    case catch mod_caps:get_features(Host, Caps) of
+		Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
+		_ -> false
+	    end
     end.
 
 %%%%%%% Configuration handling
