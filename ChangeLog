@@ -1,5 +1,8 @@
 2008-12-23  Badlop  <badlop@process-one.net>
 
+	* src/cyrsasl_digest.erl: Check digest-uri in SASL digest
+	authentication (thanks to Paul Guyot)(EJAB-569)
+
 	* src/odbc/odbc_queries.erl: Fix removal of private_storage of an
 	account when the account is removed
 
