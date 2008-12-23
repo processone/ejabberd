@@ -1,3 +1,29 @@
+2008-12-23  Badlop  <badlop@process-one.net>
+
+	* src/acl.erl: New ACL: shared_group (thanks to Maxim Ryazanov)
+	* doc/guide.tex: Likewise
+
+	* src/mod_shared_roster.erl: Push new group members when
+	registered or manually added to group: EJAB-730 EJAB-731 EJAB-732
+	EJAB-767 EJAB-794. When user is added to group, push it to other
+	members, and other members to it. When user is removed from group,
+	push deletion to other members, and other members to it. When user
+	is registered, push him to members of group @all@. When user is
+	deleted, push deletion to members of group @all@. Document several
+	functions in mod_shared_roster.
+
+	* src/ejabberd_auth.erl: Rename hook user_registered to
+	register_user, for name consistency with the widely used hook
+	remove_user. Run hook register_user in ejabberd_auth, so it's run
+	when account is created with any method. Run hook remove_user in
+	ejabberd_auth, so it's run when account is deleted with any
+	method.
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_auth_pam.erl: Likewise
+	* src/mod_register.erl: Likewise
+
 2008-12-23  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Improve handling of PEP sent to

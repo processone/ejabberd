@@ -91,7 +91,7 @@ remove_user(_User, _Server) ->
     {error, not_allowed}.
 
 remove_user(_User, _Server, _Password) ->
-    {error, not_allowed}.
+    not_allowed.
 
 plain_password_required() ->
     true.

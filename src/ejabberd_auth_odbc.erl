@@ -118,6 +118,7 @@ set_password(User, Server, Password) ->
     end.
 
 
+%% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid}
 try_register(User, Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
@@ -222,6 +223,9 @@ is_user_exists(User, Server) ->
 	    end
     end.
 
+%% @spec (User, Server) -> ok | error
+%% Remove user.
+%% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
     case jlib:nodeprep(User) of
 	error ->
@@ -230,10 +234,11 @@ remove_user(User, Server) ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    LServer = jlib:nameprep(Server),
 	    catch odbc_queries:del_user(LServer, Username),
-	    ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
-			       [User, Server])
+		ok
     end.
 
+%% @spec (User, Server, Password) -> ok | error | not_exists | not_allowed
+%% Remove user if the provided password is correct.
 remove_user(User, Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
@@ -247,8 +252,6 @@ remove_user(User, Server, Password) ->
 				   LServer, Username, Pass),
 			case Result of
 			    {selected, ["password"], [{Password}]} ->
-				ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
-						   [User, Server]),
 				ok;
 			    {selected, ["password"], []} ->
 				not_exists;
