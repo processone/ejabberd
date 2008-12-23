@@ -112,6 +112,7 @@ set_password(User, Server, Password) ->
 	    ok
     end.
 
+%% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid} | {aborted, Reason}
 try_register(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -237,6 +238,9 @@ is_user_exists(User, Server) ->
 	    false
     end.
 
+%% @spec (User, Server) -> ok
+%% Remove user.
+%% Note: it returns ok even if there was some problem removing the user.
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -245,8 +249,10 @@ remove_user(User, Server) ->
 		mnesia:delete({passwd, US})
         end,
     mnesia:transaction(F),
-    ejabberd_hooks:run(remove_user, LServer, [User, Server]).
+	ok.
 
+%% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request
+%% Remove user if the provided password is correct.
 remove_user(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -264,7 +270,6 @@ remove_user(User, Server, Password) ->
         end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    ejabberd_hooks:run(remove_user, LServer, [User, Server]),
 	    ok;
 	{atomic, Res} ->
 	    Res;

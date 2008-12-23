@@ -180,6 +180,10 @@ match_acl(ACL, JID, Host) ->
 				       ((Host == global) andalso
 					lists:member(Server, ?MYHOSTS)))
 					  andalso is_regexp_match(User, UR);
+				  {shared_group, G} ->
+				      mod_shared_roster:is_user_in_group({User, Server}, G, Host);
+				  {shared_group, G, H} ->
+				      mod_shared_roster:is_user_in_group({User, Server}, G, H);
 				  {user_regexp, UR, S} ->
 				      (S == Server) andalso
 					  is_regexp_match(User, UR);
