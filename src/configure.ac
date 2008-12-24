@@ -18,10 +18,6 @@ AM_WITH_ERLANG
 AM_ICONV
 #locating libexpat
 AM_WITH_EXPAT
-#locating zlib
-AM_WITH_ZLIB
-#locating PAM
-AM_WITH_PAM
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -36,16 +32,22 @@ AC_PREFIX_DEFAULT(/)
 AC_FUNC_MALLOC
 AC_HEADER_STDC
 
-AC_MOD_ENABLE(mod_pubsub, yes)
 AC_MOD_ENABLE(mod_irc, yes)
 AC_MOD_ENABLE(mod_muc, yes)
 AC_MOD_ENABLE(mod_proxy65, yes)
+AC_MOD_ENABLE(mod_pubsub, yes)
 AC_MOD_ENABLE(eldap, yes)
-AC_MOD_ENABLE(pam, no)
-AC_MOD_ENABLE(web, yes)
-AC_MOD_ENABLE(tls, yes)
 AC_MOD_ENABLE(odbc, no)
+AC_MOD_ENABLE(tls, yes)
+AC_MOD_ENABLE(web, yes)
+
 AC_MOD_ENABLE(ejabberd_zlib, yes)
+#locating zlib
+AM_WITH_ZLIB
+
+AC_MOD_ENABLE(pam, no)
+#locating PAM
+AM_WITH_PAM
 
 AC_ARG_ENABLE(hipe,
 [AC_HELP_STRING([--enable-hipe], [compile natively with HiPE, not recommended (default: no)])],

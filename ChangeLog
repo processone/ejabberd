@@ -1,3 +1,11 @@
+2008-12-24  Badlop  <badlop@process-one.net>
+
+	* src/aclocal.m4: Fixes in configure script: fix
+	disable-disable_zlib and disable-pam; in case of problems, PAM
+	verification aborts with error instead of warning. (EJAB-787)
+	* src/configure.ac: Likewise
+	* src/configure: Likewise
+
 2008-12-23  Badlop  <badlop@process-one.net>
 
 	* src/acl.erl: New ACL: shared_group (thanks to Maxim Ryazanov)
