@@ -1,5 +1,9 @@
 2008-12-26  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Show in ejabberd Web Admin the
+	connection method and connected node of Jabber clients (thanks to
+	Oleg Palij)(EJAB-319)
+
 	* src/ejabberd_config.erl: Option outgoing_s2s_options to define
 	s2s outgoing behaviour: IPv4, IPv6 and timeout (thanks to Stephan
 	Maka)(EJAB-665)
