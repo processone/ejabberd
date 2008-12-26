@@ -1010,12 +1010,12 @@ test_get_addr_port(Server) ->
 
 get_addrs(Host, Family) ->
     Type = case Family of
-	       inet4 -> a;
-	       ipv4 -> a;
-	       inet6 -> aaaa;
-	       ipv6 -> aaaa
+	       inet4 -> inet;
+	       ipv4 -> inet;
+	       inet6 -> inet6;
+	       ipv6 -> inet6
 	   end,
-    case inet_res:getbyname(Host, Type) of
+    case inet:gethostbyname(Host, Type) of
 	{ok, #hostent{h_addr_list = Addrs}} ->
 	    ?DEBUG("~s of ~s resolved to: ~p~n", [Type, Host, Addrs]),
 	    Addrs;
