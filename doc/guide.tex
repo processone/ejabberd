@@ -870,6 +870,10 @@ There are some additional global options:
   file containing a SSL certificate.
   \titem{\{domain\_certfile, Domain, Path\}} \ind{options!domain\_certfile}
   Full path to the file containing the SSL certificate for a specific domain.
+  \titem{\{outgoing\_s2s\_options, Methods, Timeout\}} \ind{options!outgoing\_s2s\_options}
+  Specify which address families to try, in what order, and connect timeout in milliseconds.
+  By default it first tries connecting with IPv4, if that fails it tries using IPv6,
+  with a timeout of 10000 milliseconds.
   \titem{\{s2s\_default\_policy, allow|deny\}}
   The default policy for incoming and outgoing s2s connections to other Jabber servers.
   The default value is \term{allow}.

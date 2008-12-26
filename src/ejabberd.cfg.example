@@ -186,6 +186,13 @@
 %%{{s2s_host, "goodhost.org"}, allow}.
 %%{{s2s_host, "badhost.org"}, deny}.
 
+%%
+%% Outgoing S2S options
+%%
+%% Preferred address families (which to try first) and connect timeout
+%% in milliseconds.
+%%
+%%{outgoing_s2s_options, [ipv4, ipv6], 10000}.
 
 %%%   ==============
 %%%   AUTHENTICATION
