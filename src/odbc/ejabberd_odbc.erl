@@ -93,12 +93,12 @@ sql_query_t(Query) ->
 	{error, "No SQL-driver information available."} ->
 	    % workaround for odbc bug
 	    {updated, 0};
-	{error, _} ->
-	    throw(aborted);
+	{error, _} = Err ->
+	    exit(Err);
 	Rs when is_list(Rs) ->
-	    case lists:keymember(error, 1, Rs) of
-		true ->
-		    throw(aborted);
+	    case lists:keysearch(error, 1, Rs) of
+		{value, Err} ->
+		    exit(Err);
 		_ ->
 		    QRes
 	    end;
@@ -330,11 +330,6 @@ mysql_connect(Server, Port, DB, Username, Password, StartInterval) ->
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
             mysql_conn:fetch(Ref, ["set names 'utf8';"], self()),
-	    % needed to ensure the order of queries, specifically at
-	    % roster subscription time (this can also be set-up in the
-	    % MySQL configuration, but not at the database level):
-            mysql_conn:fetch(Ref, ["SET SESSION TRANSACTION ISOLATION LEVEL "
-				   "SERIALIZABLE;"], self()),
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("MySQL connection failed: ~p~nWaiting ~p seconds before retrying...~n",

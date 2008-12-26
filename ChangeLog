@@ -1,3 +1,12 @@
+2008-12-26  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: get rid of SERIALIZABLE isolation
+	level on MySQL connections.
+	* src/odbc/odbc_queries.erl: replaces all delete->insert chains
+	with update->insert.
+	* src/mod_privacy_odbc.erl: moved sql queries to odbc_queries.erl.
+	* src/mod_roster_odbc.erl: changed interface for odbc_queries.erl.
+
 2008-12-24  Badlop  <badlop@process-one.net>
 
 	* src/aclocal.m4: Fixes in configure script: fix

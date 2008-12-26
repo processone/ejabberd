@@ -642,9 +642,9 @@ set_items(User, Server, SubEl) ->
     LServer = jlib:nameprep(Server),
     catch odbc_queries:sql_transaction(
 	    LServer,
-	     lists:flatmap(fun(El) ->
-			       process_item_set_t(LUser, LServer, El)
-		       end, Els)).
+	    lists:flatmap(fun(El) ->
+				  process_item_set_t(LUser, LServer, El)
+			  end, Els)).
 
 process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
@@ -858,13 +858,7 @@ record_to_string(#roster{us = {User, _Server},
 	       none	   -> "N"
 	   end,
     SAskMessage = ejabberd_odbc:escape(AskMessage),
-    ["'", Username, "',"
-     "'", SJID, "',"
-     "'", Nick, "',"
-     "'", SSubscription, "',"
-     "'", SAsk, "',"
-     "'", SAskMessage, "',"
-     "'N', '', 'item'"].
+    [Username, SJID, Nick, SSubscription, SAsk, SAskMessage, "N", "", "item"].
 
 groups_to_string(#roster{us = {User, _Server},
 			 jid = JID,
@@ -874,12 +868,11 @@ groups_to_string(#roster{us = {User, _Server},
 
     %% Empty groups do not need to be converted to string to be inserted in
     %% the database
-    lists:foldl(fun([], Acc) -> Acc;
-		   (Group, Acc) ->
-			String = ["'", Username, "',"
-				  "'", SJID, "',"
-				  "'", ejabberd_odbc:escape(Group), "'"],
-			[String|Acc] end, [], Groups).
+    lists:foldl(
+      fun([], Acc) -> Acc;
+	 (Group, Acc) ->
+ 	      G = ejabberd_odbc:escape(Group),
+	      [[Username, SJID, G]|Acc] end, [], Groups).
 
 webadmin_page(_, Host,
 	      #request{us = _US,
