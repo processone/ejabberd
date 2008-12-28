@@ -1980,7 +1980,14 @@ check_from(El, FromJID) ->
 		    %% Matching JID: The stanza is ok
 		    if JIDEl#jid.luser == FromJID#jid.luser andalso
 		       JIDEl#jid.lserver == FromJID#jid.lserver ->
-			    El;
+			    %% We force the resource on the from attribute in the packet.
+			    %% This is strictly needed only for IQ (to
+			    %% reply to the client), but I do not see
+			    %% any good reason for now not to do it on
+			    %% all packets.
+			    %% Need to be changed to support multiple
+			    %% resource binding per connection.
+			    jlib:replace_from(FromJID, El);
 		       true ->
 			    'invalid-from'
 		    end;

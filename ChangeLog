@@ -1,3 +1,8 @@
+2008-12-28  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: Add resource to the from packet attribute
+	if missing (EJAB-812).
+
 2008-12-24  Badlop  <badlop@process-one.net>
 
 	* src/aclocal.m4: Fixes in configure script: fix
