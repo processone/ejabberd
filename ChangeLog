@@ -1,3 +1,8 @@
+2008-12-28  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: We should allow use of bare resource in from by
+	the client (partially revert r1727) (EJAB-812).
+
 2008-12-26  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: Show in ejabberd Web Admin the
