@@ -1998,13 +1998,6 @@ check_from(El, FromJID) ->
 			(JID#jid.luser == FromJID#jid.luser) and
 			(JID#jid.lserver == FromJID#jid.lserver) and
 			(JID#jid.lresource == "") ->
-			    %% We force the resource on the from attribute in the packet.
-			    %% This is strictly needed only for IQ (to
-			    %% reply to the client), but I do not see
-			    %% any good reason for now not to do it on
-			    %% all packets.
-			    %% Need to be changed to support multiple
-			    %% resource binding per connection.
 			    El;
 			true ->
 			    'invalid-from'
