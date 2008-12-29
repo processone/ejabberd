@@ -1,3 +1,7 @@
+2008-12-29  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bugfix in "from" attribute checking
+
 2008-12-29  Evgeniy Khramtsov <ekhramtsov@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: Print meaningful error message when
