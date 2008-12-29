@@ -4,6 +4,11 @@
 	an SQL transaction exceeds number of restarts. Also rollbacks
 	this transaction to prevent deadlocks.
 
+	* src/odbc/odbc_queries.erl: replaced string:join/2 function.
+	Removed ugly "catch" statement from update_t/4.
+	WARNING: this change requires last version of mysql driver.
+	You can update it from ejabberd-modules repository.
+
 2008-12-28  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_c2s.erl: We should allow use of bare resource in from by
