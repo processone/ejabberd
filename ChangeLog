@@ -1,3 +1,9 @@
+2008-12-29  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: Print meaningful error message when
+	an SQL transaction exceeds number of restarts. Also rollbacks
+	this transaction to prevent deadlocks.
+
 2008-12-28  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_c2s.erl: We should allow use of bare resource in from by
