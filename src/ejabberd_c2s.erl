@@ -1972,33 +1972,24 @@ is_ip_blacklisted({IP,_Port}) ->
 check_from(El, FromJID) ->
     case xml:get_tag_attr("from", El) of
 	false ->
-	    jlib:replace_from(FromJID, El);
-	{value, JIDElString} ->
-	    JIDEl = jlib:string_to_jid(JIDElString),
-	    case JIDEl#jid.lresource of 
-		"" ->
-		    %% Matching JID: The stanza is ok
-		    if JIDEl#jid.luser == FromJID#jid.luser andalso
-		       JIDEl#jid.lserver == FromJID#jid.lserver ->
-			    %% We force the resource on the from attribute in the packet.
-			    %% This is strictly needed only for IQ (to
-			    %% reply to the client), but I do not see
-			    %% any good reason for now not to do it on
-			    %% all packets.
-			    %% Need to be changed to support multiple
-			    %% resource binding per connection.
-			    jlib:replace_from(FromJID, El);
-		       true ->
-			    'invalid-from'
-		    end;
-		_ ->
-		    %% Matching JID: The stanza is ok
-		    if JIDEl#jid.luser == FromJID#jid.luser andalso
-		       JIDEl#jid.lserver == FromJID#jid.lserver andalso 
-		       JIDEl#jid.lresource == FromJID#jid.lresource ->
+	    El;
+	{value, SJID} ->
+	    JID = jlib:string_to_jid(SJID),
+	    case JID of
+		error ->
+		    'invalid-from';
+		#jid{} ->
+		    if
+			(JID#jid.luser == FromJID#jid.luser) and
+			(JID#jid.lserver == FromJID#jid.lserver) and
+			(JID#jid.lresource == FromJID#jid.lresource) ->
 			    El;
-		       true ->
-			   'invalid-from'
+			(JID#jid.luser == FromJID#jid.luser) and
+			(JID#jid.lserver == FromJID#jid.lserver) and
+			(JID#jid.lresource == "") ->
+			    El;
+			true ->
+			    'invalid-from'
 		    end
 	    end
     end.

@@ -1,3 +1,7 @@
+2008-12-29  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bugfix in "from" attribute checking
+
 2008-12-28  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_c2s.erl: Add resource to the from packet attribute
