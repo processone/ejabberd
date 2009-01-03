@@ -1,3 +1,21 @@
+2009-01-03  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: deliver notification depending on
+	presence-based-delivery configuration (EJAB-827). notification code
+	rewrite.
+
+	* src/mod_pubsub/mod_pubsub.erl: code cleanning, minor bugfixes
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/pubsub.hrl: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: prevent subscribing with full jid,
+	waiting for full jid support (EJAB-701)
+
+	* src/mod_pubsub/mod_pubsub.erl: use of delete-any feature instead of
+	delete-nodes for delete item use case (fix from erroneous definition
+	in XEP-0060)
+
 2008-12-23  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Improve handling of PEP sent to

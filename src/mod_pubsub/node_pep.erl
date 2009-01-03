@@ -182,15 +182,9 @@ get_affiliation(_Host, Node, Owner) ->
 
 set_affiliation(_Host, Node, Owner, Affiliation) ->
     OwnerKey = jlib:short_prepd_bare_jid(Owner),
-    Record = case get_state(OwnerKey, Node, OwnerKey) of
-	    {error, 'item-not-found'} ->
-		#pubsub_state{stateid = {OwnerKey, {OwnerKey, Node}},
-			      affiliation = Affiliation};
-	    {result, State} ->
-		State#pubsub_state{affiliation = Affiliation}
-    end,    
-    set_state(Record),
-    ok.
+    State = get_state(OwnerKey, Node, OwnerKey),
+    set_state(State#pubsub_state{affiliation = Affiliation}),
+    ok. 
 
 get_entity_subscriptions(_Host, _Owner) ->
     {result, []}.
