@@ -645,7 +645,7 @@ set_state(_) ->
 del_state(StateId) ->
     mnesia:delete({pubsub_state, StateId}).
 
-%% @spec (Host, Node) -> [Items] | []
+%% @spec (Host, Node, From) -> [Items] | []
 %%	 Host = mod_pubsub:host()
 %%	 Node = mod_pubsub:pubsubNode()
 %%	 Items = mod_pubsub:pubsubItems()
@@ -760,7 +760,7 @@ set_item(Item) when is_record(Item, pubsub_item) ->
 set_item(_) ->
     {error, ?ERR_INTERNAL_SERVER_ERROR}.
 
-%% @spec (ItemId) -> ok | {error, Reason::stanzaError()}
+%% @spec (Host, Node, ItemId) -> ok | {error, Reason::stanzaError()}
 %%	 Host = mod_pubsub:host()
 %%	 Node = mod_pubsub:pubsubNode()
 %%	 ItemId = string()

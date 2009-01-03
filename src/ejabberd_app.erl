@@ -163,7 +163,7 @@ connect_nodes() ->
     end.
 
 %% @spec () -> string()
-%% Returns the full path to the ejabberd log file.
+%% @doc Returns the full path to the ejabberd log file.
 %% It first checks for application configuration parameter 'log_path'.
 %% If not defined it checks the environment variable EJABBERD_LOG_PATH.
 %% And if that one is neither defined, returns the default value:

@@ -107,7 +107,7 @@ get_auth(Auth) ->
 make_xhtml(Els, Host, Lang) ->
     make_xhtml(Els, Host, cluster, Lang).
 
-%% @spec (Els, Host, Node, Lang)
+%% @spec (Els, Host, Node, Lang) -> {200, [html], xmlelement()}
 %% where Host = global | string()
 %%       Node = cluster | atom()
 make_xhtml(Els, Host, Node, Lang) ->

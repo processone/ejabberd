@@ -260,7 +260,7 @@ is_user_exists_in_other_modules(Module, User, Server) ->
       end, auth_modules(Server)--[Module]).
 
 %% @spec (User, Server) -> ok | error | {error, not_allowed}
-%% Remove user.
+%% @doc Remove user.
 %% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
     R = lists:foreach(
@@ -274,7 +274,7 @@ remove_user(User, Server) ->
     R.
 
 %% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request | error
-%% Try to remove user if the provided password is correct.
+%% @doc Try to remove user if the provided password is correct.
 %% The removal is attempted in each auth method provided:
 %% when one returns 'ok' the loop stops;
 %% if no method returns 'ok' then it returns the error message indicated by the last method attempted.
