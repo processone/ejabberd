@@ -44,20 +44,22 @@
 -include("mod_privacy.hrl").
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_sm_iq, IQDisc),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(unset_presence_hook, Host,
+    ejabberd_hooks:add(unset_presence_hook, HostB,
 		       ?MODULE, on_presence_update, 50).
 
 stop(Host) ->
-    ejabberd_hooks:delete(remove_user, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(unset_presence_hook, Host,
+    ejabberd_hooks:delete(unset_presence_hook, HostB,
 			  ?MODULE, on_presence_update, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY).
@@ -71,22 +73,22 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
-    User = To#jid.lnode,
-    Server = To#jid.ldomain,
+    User = exmpp_jid:lnode_as_list(To),
+    Server = exmpp_jid:ldomain_as_list(To),
     {Subscription, _Groups} =
         ejabberd_hooks:run_fold(
-          roster_get_jid_info, Server,
-          {none, []}, [User, Server, From]),
+          roster_get_jid_info, exmpp_jid:ldomain(To),
+          {none, []}, [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From]),
     if
         (Subscription == both) or (Subscription == from) ->
             UserListRecord = ejabberd_hooks:run_fold(
-                               privacy_get_user_list, Server,
+                               privacy_get_user_list, exmpp_jid:ldomain(To),
                                #userlist{},
-                               [User, Server]),
+                               [exmpp_jid:lnode(To), exmpp_jid:ldomain(To)]),
             case ejabberd_hooks:run_fold(
-                   privacy_check_packet, Server,
+                   privacy_check_packet, exmpp_jid:ldomain(To),
                                     allow,
-                   [User, Server, UserListRecord,
+                   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), UserListRecord,
                     {From, To,
                      exmpp_presence:available()},
                     out]) of
@@ -129,13 +131,17 @@ on_presence_update(User, Server, _Resource, Status) ->
     TimeStamp = MegaSecs * 1000000 + Secs,
     store_last_info(User, Server, TimeStamp, Status).
 
-store_last_info(User, Server, TimeStamp, Status) ->
+store_last_info(User, Server, TimeStamp, Status)
+        when is_binary(User), is_binary(Server) ->
     try
-        LUser = exmpp_stringprep:nodeprep(User),
-        LServer = exmpp_stringprep:nameprep(Server),
+        %LUser = exmpp_stringprep:nodeprep(User),
+        %LServer = exmpp_stringprep:nameprep(Server),
+        LUser = binary_to_list(User),
+        LServer = binary_to_list(Server),
+
         Username = ejabberd_odbc:escape(LUser),
         Seconds = ejabberd_odbc:escape(integer_to_list(TimeStamp)),
-        State = ejabberd_odbc:escape(binary_to_list(Status)),
+        State = ejabberd_odbc:escape(Status),
         odbc_queries:set_last_t(LServer, Username, Seconds, State)
     catch
         _ ->
@@ -151,7 +157,7 @@ get_last_info(LUser, LServer) ->
 	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
 	    case catch list_to_integer(STimeStamp) of
 		TimeStamp when is_integer(TimeStamp) ->
-		    {ok, TimeStamp, list_to_binary(Status)};
+		    {ok, TimeStamp, Status};
 		_ ->
 		    not_found
 	    end;

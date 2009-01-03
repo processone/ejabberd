@@ -118,7 +118,7 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
-	Packet2 = case From#jid.node of
+	Packet2 = case exmpp_jid:node(From) of
 		undefined -> exmpp_stanza:reply_with_error(Packet, 'bad-request');
 		_ -> Packet
 	end,
@@ -174,8 +174,7 @@ do_client_version(disabled, _From, _To) ->
 do_client_version(enabled, From, To) ->
     %% It is important to identify this process and packet
     Random_resource = integer_to_list(random:uniform(100000)),
-    From2 = From#jid{resource = Random_resource,
-		     lresource = Random_resource},
+    From2 = exmpp_jid:bare_jid_to_jid(From,Random_resource),
     
     %% Build an iq:query request
     Request = #xmlel{ns = ?NS_SOFT_VERSION, name = 'query'},

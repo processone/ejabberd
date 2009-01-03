@@ -59,19 +59,20 @@
 tokenize(Node) -> string:tokens(Node, "/#").
 
 start(Host, _Opts) ->
+    HostB = list_to_binary(Host),
     mnesia:create_table(motd, [{disc_copies, [node()]},
 			       {attributes, record_info(fields, motd)}]),
     mnesia:create_table(motd_users, [{disc_copies, [node()]},
 				     {attributes, record_info(fields, motd_users)}]),
     update_tables(),
-    ejabberd_hooks:add(local_send_to_resource_hook, Host,
+    ejabberd_hooks:add(local_send_to_resource_hook, HostB,
 		       ?MODULE, announce, 50),
-    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, disco_identity, 50),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
-    ejabberd_hooks:add(disco_local_items, Host, ?MODULE, disco_items, 50),
-    ejabberd_hooks:add(adhoc_local_items, Host, ?MODULE, announce_items, 50),
-    ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE, announce_commands, 50),
-    ejabberd_hooks:add(user_available_hook, Host,
+    ejabberd_hooks:add(disco_local_identity, HostB, ?MODULE, disco_identity, 50),
+    ejabberd_hooks:add(disco_local_features, HostB, ?MODULE, disco_features, 50),
+    ejabberd_hooks:add(disco_local_items, HostB, ?MODULE, disco_items, 50),
+    ejabberd_hooks:add(adhoc_local_items, HostB, ?MODULE, announce_items, 50),
+    ejabberd_hooks:add(adhoc_local_commands, HostB, ?MODULE, announce_commands, 50),
+    ejabberd_hooks:add(user_available_hook, HostB,
 		       ?MODULE, send_motd, 50),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     proc_lib:spawn(?MODULE, init, [])).
@@ -116,14 +117,15 @@ loop() ->
     end.
 
 stop(Host) ->
-    ejabberd_hooks:delete(adhoc_local_commands, Host, ?MODULE, announce_commands, 50),
-    ejabberd_hooks:delete(adhoc_local_items, Host, ?MODULE, announce_items, 50),
-    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 50),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
-    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 50),
-    ejabberd_hooks:delete(local_send_to_resource_hook, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(adhoc_local_commands, HostB, ?MODULE, announce_commands, 50),
+    ejabberd_hooks:delete(adhoc_local_items, HostB, ?MODULE, announce_items, 50),
+    ejabberd_hooks:delete(disco_local_identity, HostB, ?MODULE, disco_identity, 50),
+    ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, disco_features, 50),
+    ejabberd_hooks:delete(disco_local_items, HostB, ?MODULE, disco_items, 50),
+    ejabberd_hooks:delete(local_send_to_resource_hook, HostB,
 			  ?MODULE, announce, 50),
-    ejabberd_hooks:delete(user_available_hook, Host,
+    ejabberd_hooks:delete(user_available_hook, HostB,
 			  ?MODULE, send_motd, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
@@ -131,39 +133,39 @@ stop(Host) ->
 
 %% Announcing via messages to a custom resource
 announce(From, To, Packet) ->
-    case To of
-	#jid{lnode = undefined, lresource = Res} ->
+    case {exmpp_jid:lnode(To), exmpp_jid:lresource(To)} of
+	    {undefined, Res} ->
 	    Name = Packet#xmlel.name,
-	    Proc = gen_mod:get_module_proc(To#jid.ldomain, ?PROCNAME),
+	    Proc = gen_mod:get_module_proc(exmpp_jid:ldomain_as_list(To), ?PROCNAME),
 	    case {Res, Name} of
-		{"announce/all", 'message'} ->
+		{<<"announce/all">>, 'message'} ->
 		    Proc ! {announce_all, From, To, Packet},
 		    stop;
-		{"announce/all-hosts/all", 'message'} ->
+		{<<"announce/all-hosts/all">>, 'message'} ->
 		    Proc ! {announce_all_hosts_all, From, To, Packet},
 		    stop;
-		{"announce/online", 'message'} ->
+		{<<"announce/online">>, 'message'} ->
 		    Proc ! {announce_online, From, To, Packet},
 		    stop;
-		{"announce/all-hosts/online", 'message'} ->
+		{<<"announce/all-hosts/online">>, 'message'} ->
 		    Proc ! {announce_all_hosts_online, From, To, Packet},
 		    stop;
-		{"announce/motd", 'message'} ->
+		{<<"announce/motd">>, 'message'} ->
 		    Proc ! {announce_motd, From, To, Packet},
 		    stop;
-		{"announce/all-hosts/motd", 'message'} ->
+		{<<"announce/all-hosts/motd">>, 'message'} ->
 		    Proc ! {announce_all_hosts_motd, From, To, Packet},
 		    stop;
-		{"announce/motd/update", 'message'} ->
+		{<<"announce/motd/update">>, 'message'} ->
 		    Proc ! {announce_motd_update, From, To, Packet},
 		    stop;
-		{"announce/all-hosts/motd/update", 'message'} ->
+		{<<"announce/all-hosts/motd/update">>, 'message'} ->
 		    Proc ! {announce_all_hosts_motd_update, From, To, Packet},
 		    stop;
-		{"announce/motd/delete", 'message'} ->
+		{<<"announce/motd/delete">>, 'message'} ->
 		    Proc ! {announce_motd_delete, From, To, Packet},
 		    stop;
-		{"announce/all-hosts/motd/delete", 'message'} ->
+		{<<"announce/all-hosts/motd/delete">>, 'message'} ->
 		    Proc ! {announce_all_hosts_motd_delete, From, To, Packet},
 		    stop;
 		_ ->
@@ -218,8 +220,8 @@ disco_identity(Acc, _From, _To, Node, Lang) ->
 		{result, Feats}
 	end).
 
-disco_features(Acc, From, #jid{ldomain = LServer} = _To,
-	       "announce", _Lang) ->
+disco_features(Acc, From, To, "announce", _Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -235,8 +237,8 @@ disco_features(Acc, From, #jid{ldomain = LServer} = _To,
 	    end
     end;
 
-disco_features(Acc, From, #jid{ldomain = LServer} = _To,
-	       Node, _Lang) ->
+disco_features(Acc, From, To, Node, _Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -287,8 +289,10 @@ disco_features(Acc, From, #jid{ldomain = LServer} = _To,
 		{result, Items}
 	end).
 
-disco_items(Acc, From, #jid{ldomain = LServer, domain = Server} = _To,
-	    "", Lang) ->
+disco_items(Acc, From, To, "", Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
+    Server = exmpp_jid:domain_as_list(To),
+
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -309,7 +313,8 @@ disco_items(Acc, From, #jid{ldomain = LServer, domain = Server} = _To,
 	    end
     end;
 
-disco_items(Acc, From, #jid{ldomain = LServer} = To, "announce", Lang) ->
+disco_items(Acc, From, To, "announce", Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -317,7 +322,8 @@ disco_items(Acc, From, #jid{ldomain = LServer} = To, "announce", Lang) ->
 	    announce_items(Acc, From, To, Lang)
     end;
 
-disco_items(Acc, From, #jid{ldomain = LServer} = _To, Node, _Lang) ->
+disco_items(Acc, From, To, Node, _Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -354,7 +360,9 @@ disco_items(Acc, From, #jid{ldomain = LServer} = _To, Node, _Lang) ->
 
 %%-------------------------------------------------------------------------
 
-announce_items(Acc, From, #jid{ldomain = LServer, domain = Server} = _To, Lang) ->
+announce_items(Acc, From, To, Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
+    Server = exmpp_jid:domain_as_list(To),
     Access1 = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
     Nodes1 = case acl:match_rule(LServer, Access1, From) of
 		 allow ->
@@ -399,8 +407,8 @@ commands_result(Allow, From, To, Request) ->
     end.
 
 
-announce_commands(Acc, From, #jid{ldomain = LServer} = To,
-		  #adhoc_request{ node = Node} = Request) ->
+announce_commands(Acc, From, To, #adhoc_request{ node = Node} = Request) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     LNode = tokenize(Node),
     F = fun() ->
 		Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
@@ -455,7 +463,7 @@ announce_commands(From, To,
 				   #adhoc_response{status = canceled});
        XData == false, ActionIsExecute ->
 	    %% User requests form
-	    Elements = generate_adhoc_form(Lang, Node, To#jid.ldomain),
+	    Elements = generate_adhoc_form(Lang, Node, exmpp_jid:ldomain_as_list(To)),
 	    adhoc:produce_response(
 	      Request,
 	      #adhoc_response{status = executing,
@@ -529,11 +537,12 @@ join_lines([], Acc) ->
     %% Remove last newline
     lists:flatten(lists:reverse(tl(Acc))).
 
-handle_adhoc_form(From, #jid{ldomain = LServer} = To,
+handle_adhoc_form(From, To,
 		  #adhoc_request{lang = Lang,
 				 node = Node,
 				 sessionid = SessionID},
 		  Fields) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     Confirm = case lists:keysearch("confirm", 1, Fields) of
 		  {value, {"confirm", ["true"]}} ->
 		      true;
@@ -654,14 +663,14 @@ get_title(Lang, ?NS_ADMIN_s ++ "#delete-motd-allhosts") ->
 %%-------------------------------------------------------------------------
 
 announce_all(From, To, Packet) ->
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'forbidden'),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    Local = exmpp_jid:make_jid(To#jid.domain),
+	    Local = exmpp_jid:make_jid(exmpp_jid:domain(To)),
 	    lists:foreach(
 	      fun({User, Server}) ->
 		      Dest = exmpp_jid:make_jid(User, Server),
@@ -676,7 +685,7 @@ announce_all_hosts_all(From, To, Packet) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'forbidden'),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    Local = exmpp_jid:make_jid(To#jid.domain),
+	    Local = exmpp_jid:make_jid(exmpp_jid:domain(To)),
 	    lists:foreach(
 	      fun({User, Server}) ->
 		      Dest = exmpp_jid:make_jid(User, Server),
@@ -685,15 +694,15 @@ announce_all_hosts_all(From, To, Packet) ->
     end.
 
 announce_online(From, To, Packet) ->
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'forbidden'),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    announce_online1(ejabberd_sm:get_vh_session_list(Host),
-			     To#jid.domain,
+	    announce_online1(ejabberd_sm:get_vh_session_list(exmpp_jid:ldomain(To)),
+			     exmpp_jid:domain_as_list(To),
 			     Packet)
     end.
 
@@ -705,7 +714,7 @@ announce_all_hosts_online(From, To, Packet) ->
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_online1(ejabberd_sm:dirty_get_sessions_list(),
-			     To#jid.domain,
+			     exmpp_jid:domain_as_list(To),
 			     Packet)
     end.
 
@@ -718,7 +727,7 @@ announce_online1(Sessions, Server, Packet) ->
       end, Sessions).
 
 announce_motd(From, To, Packet) ->
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
@@ -741,7 +750,7 @@ announce_all_hosts_motd(From, To, Packet) ->
 
 announce_motd(Host, Packet) ->
     announce_motd_update(Host, Packet),
-    Sessions = ejabberd_sm:get_vh_session_list(Host),
+    Sessions = ejabberd_sm:get_vh_session_list(list_to_binary(Host)),
     announce_online1(Sessions, Host, Packet),
     F = fun() ->
 		lists:foreach(
@@ -752,7 +761,7 @@ announce_motd(Host, Packet) ->
     mnesia:transaction(F).
 
 announce_motd_update(From, To, Packet) ->
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
@@ -781,7 +790,7 @@ announce_motd_update(LServer, Packet) ->
     mnesia:transaction(F).
 
 announce_motd_delete(From, To, Packet) ->
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
@@ -817,7 +826,9 @@ announce_motd_delete(LServer) ->
 	end,
     mnesia:transaction(F).
 
-send_motd(#jid{lnode = LUser, ldomain = LServer} = JID) ->
+send_motd(JID) ->
+    LServer = exmpp_jid:ldomain_as_list(JID), 
+    LUser = exmpp_jid:lnode_as_list(JID), 
     case catch mnesia:dirty_read({motd, LServer}) of
 	[#motd{packet = Packet}] ->
 	    US = {LUser, LServer},
@@ -825,7 +836,7 @@ send_motd(#jid{lnode = LUser, ldomain = LServer} = JID) ->
 		[#motd_users{}] ->
 		    ok;
 		_ ->
-		    Local = exmpp_jid:make_jid(LServer),
+		    Local = exmpp_jid:make_jid(exmpp_jid:ldomain(JID)),
 		    ejabberd_router:route(Local, JID, Packet),
 		    F = fun() ->
 				mnesia:write(#motd_users{us = US})

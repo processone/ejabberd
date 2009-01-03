@@ -261,6 +261,7 @@ normal_state({route, From, undefined,
 		      StateData#state.jid,
 		      From, exmpp_stanza:reply_with_error(Packet, Err)),
 		    {next_state, normal_state, StateData};
+        %%TODO: currently exmpp_message:get_type/1 never returns 'undefined'
 		Type when (Type == 'normal') orelse (Type == 'undefined') ->
 		    case catch check_invitation(From, 
 			  exmpp_xml:get_child_elements(Packet), 
@@ -2139,11 +2140,16 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 		  fun(E, SD) ->
 			  case catch (
 				 case E of
-				     {JID, affiliation, owner, _} 
-				     when (JID#jid.lnode == "") ->
+				     {JID, affiliation, owner, _} ->
+                        case exmpp_jid:lnode(JID) of
+                            <<>> ->
+					            SD;
+                     %% TODO: <<>> or 'undefined' ?
+                     %% TODO: double case on the E var, because 
+                     %%       exmpp_jid:lnode/1 can't be used in guards
 					 %% If the provided JID does not have username,
 					 %% forget the affiliation completely
-					 SD;
+                            _ -> case E of 
 				     {JID, role, none, Reason} ->
 					 catch send_kickban_presence(
 						 JID, Reason, "307", SD),
@@ -2187,6 +2193,8 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 					 send_update_presence(JID, SD1),
 					 SD1
 				       end
+                  end
+                end
 				) of
 			      {'EXIT', ErrReason} ->
 				  ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n",
@@ -3285,7 +3293,7 @@ check_invitation(From, Els, Lang, StateData) ->
 		       _ -> [" (",  Reason, ") "]
 		   end
           ])}]},
-        %%TODO: always NS_JABER_CLIENT?
+        %%TODO: always NS_JABBER_CLIENT?
 	    Msg =
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', 
 	      attrs = [#xmlattr{name = 'type', value = "normal"}], 
@@ -3370,8 +3378,8 @@ add_to_log(Type, Data, StateData) ->
 %% Users number checking
 
 tab_add_online_user(JID, StateData) ->
-    LUser = JID#jid.lnode,
-    LServer = JID#jid.ldomain,
+    LUser = exmpp_jid:lnode(JID),
+    LServer = exmpp_jid:ldomain(JID),
     US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
@@ -3381,7 +3389,9 @@ tab_add_online_user(JID, StateData) ->
 
 
 
-tab_remove_online_user(#jid{lnode = LUser, ldomain = LServer}, StateData) ->
+tab_remove_online_user(JID, StateData) when ?IS_JID(JID) ->
+ LUser = exmpp_jid:lnode(JID),
+ LServer = exmpp_jid:ldomain(JID),
     tab_remove_online_user({LUser, LServer, none},StateData);
 
 tab_remove_online_user({LUser, LServer,_}, StateData) ->
@@ -3393,8 +3403,8 @@ tab_remove_online_user({LUser, LServer,_}, StateData) ->
 	    #muc_online_users{us = US, room = Room, host = Host}).
 
 tab_count_user(JID) ->
-    LUser = JID#jid.lnode,
-    LServer = JID#jid.ldomain,
+    LUser = exmpp_jid:lnode(JID),
+    LServer = exmpp_jid:ldomain(JID),
     US = {LUser, LServer},
     case catch ets:select(
 		 muc_online_users,
@@ -3407,11 +3417,7 @@ tab_count_user(JID) ->
     
     
 jid_replace_resource(JID, Resource) ->
-    case exmpp_stringprep:resourceprep(Resource) of
-	error -> error;
-	LResource ->
-	    JID#jid{resource = Resource, lresource = LResource}
-    end.
+    exmpp_jid:bare_jid_to_jid(JID, Resource).
 
 
 

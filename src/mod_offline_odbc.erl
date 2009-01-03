@@ -58,19 +58,20 @@
 -define(PREFIXED_NS, [{?NS_XMPP, ?NS_XMPP_pfx}]).
 
 start(Host, Opts) ->
-    ejabberd_hooks:add(offline_message_hook, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:add(offline_message_hook, HostB,
 		       ?MODULE, store_packet, 50),
-    ejabberd_hooks:add(resend_offline_messages_hook, Host,
+    ejabberd_hooks:add(resend_offline_messages_hook, HostB,
 		       ?MODULE, pop_offline_messages, 50),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, Host,
+    ejabberd_hooks:add(anonymous_purge_hook, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(webadmin_page_host, Host,
+    ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:add(webadmin_user, Host,
+    ejabberd_hooks:add(webadmin_user, HostB,
 		       ?MODULE, webadmin_user, 50),
-    ejabberd_hooks:add(webadmin_user_parse_query, Host,
+    ejabberd_hooks:add(webadmin_user_parse_query, HostB,
                        ?MODULE, webadmin_user_parse_query, 50),
     MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -102,7 +103,7 @@ loop(Host, MaxOfflineMsgs) ->
 			      fun(M) ->
 				      Username =
 					  ejabberd_odbc:escape(
-					    (M#offline_msg.to)#jid.lnode),
+					    exmpp_jid:lnode_as_list(M#offline_msg.to)),
 				      From = M#offline_msg.from,
 				      To = M#offline_msg.to,
 				      Packet0 = exmpp_stanza:set_jids(
@@ -142,19 +143,20 @@ receive_all(Username, Msgs) ->
 
 
 stop(Host) ->
-    ejabberd_hooks:delete(offline_message_hook, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(offline_message_hook, HostB,
 			  ?MODULE, store_packet, 50),
-    ejabberd_hooks:delete(resend_offline_messages_hook, Host,
+    ejabberd_hooks:delete(resend_offline_messages_hook, HostB,
 			  ?MODULE, pop_offline_messages, 50),
-    ejabberd_hooks:delete(remove_user, Host,
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, Host,
+    ejabberd_hooks:delete(anonymous_purge_hook, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(webadmin_page_host, Host,
+    ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:delete(webadmin_user, Host,
+    ejabberd_hooks:delete(webadmin_user, HostB,
 			  ?MODULE, webadmin_user, 50),
-    ejabberd_hooks:delete(webadmin_user_parse_query, Host,
+    ejabberd_hooks:delete(webadmin_user_parse_query, HostB,
                           ?MODULE, webadmin_user_parse_query, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
@@ -167,10 +169,10 @@ store_packet(From, To, Packet) ->
 	(Type /= "headline") ->
 	    case check_event(From, To, Packet) of
 		true ->
-		    #jid{lnode = LUser} = To,
+            LUser = exmpp_jid:lnode_as_list(To),
 		    TimeStamp = now(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
-		    gen_mod:get_module_proc(To#jid.ldomain, ?PROCNAME) !
+		    gen_mod:get_module_proc(exmpp_jid:ldomain_as_list(To), ?PROCNAME) !
 			#offline_msg{user = LUser,
 				     timestamp = TimeStamp,
 				     expire = Expire,
@@ -241,17 +243,20 @@ find_x_expire(TimeStamp, [_ | Els]) ->
     find_x_expire(TimeStamp, Els).
 
 
-pop_offline_messages(Ls, User, Server) ->
+pop_offline_messages(Ls, User, Server) 
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
 	EUser = ejabberd_odbc:escape(LUser),
 	case odbc_queries:get_and_del_spool_msg_t(LServer, EUser) of
 	    {atomic, {selected, ["username","xml"], Rs}} ->
 		Ls ++ lists:flatmap(
 			fun({_, XML}) ->
 				try
-				    [El] = exmpp_xml:parse_document(XML, [names_as_atom]),
+				    [El] = exmpp_xml:parse_document(XML, 
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]),
 				    To = exmpp_jid:list_to_jid(
 				      exmpp_stanza:get_recipient(El)),
 				    From = exmpp_jid:list_to_jid(
@@ -271,7 +276,8 @@ pop_offline_messages(Ls, User, Server) ->
     end.
 
 
-remove_user(User, Server) ->
+remove_user(User, Server) 
+        when is_binary(User), is_binary(Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
@@ -327,7 +333,9 @@ user_queue(User, Server, Query, Lang) ->
 		   {selected, ["username", "xml"], Rs} ->
 		       lists:flatmap(
 			 fun({_, XML}) ->
-				 try exmpp_xml:parse_document(XML, [names_as_atom]) of
+				 try exmpp_xml:parse_document(XML, 
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]) of
 				     [El] ->
 					 [El]
 				 catch
@@ -394,7 +402,9 @@ user_queue_parse_query(Username, LServer, Query) ->
 		       {selected, ["xml", "seq"], Rs} ->
 			   lists:flatmap(
 			     fun({XML, Seq}) ->
-				     try exmpp_xml:parse_document(XML, [names_as_atom]) of
+				     try exmpp_xml:parse_document(XML, 
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]) of
 					 [El] ->
 					     [{El, Seq}]
 				     catch

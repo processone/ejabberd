@@ -55,12 +55,13 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 process_command(From, To, Packet) ->
-    case To of
-	#jid{lnode = undefined, lresource = "watchdog"} ->
+    case {exmpp_jid:lnode(To), exmpp_jid:lresource(To) } of
+	  {undefined, <<"watchdog">>} ->
 	    case Packet#xmlel.name of
 		'message' ->
-		    LFrom = jlib:short_prepd_bare_jid(From),
-		    case lists:member(LFrom, get_admin_jids()) of
+		    case lists:any(fun(J) -> 
+                            exmpp_jid:compare_jids(J,From) 
+                           end, get_admin_jids()) of
 			true ->
 			    Body = exmpp_xml:get_path(
 				     Packet, [{element, 'body'}, cdata_as_list]),
@@ -95,7 +96,8 @@ init([]) ->
     erlang:system_monitor(self(), [{large_heap, 1000000}]),
     lists:foreach(
       fun(Host) ->
-	      ejabberd_hooks:add(local_send_to_resource_hook, Host,
+	      ejabberd_hooks:add(local_send_to_resource_hook, 
+                  list_to_binary(Host),
 				 ?MODULE, process_command, 50)
       end, ?MYHOSTS),
     {ok, #state{}}.
@@ -168,7 +170,7 @@ process_large_heap(Pid, Info) ->
 		     "(~w) The process ~w is consuming too much memory: ~w.~n"
 		     "~s",
 		     [node(), Pid, Info, DetailedInfo]),
-	    From = exmpp_jid:make_jid(undefined, Host, "watchdog"),
+	    From = exmpp_jid:make_jid(undefined, Host, <<"watchdog">>),
 	    lists:foreach(
 	      fun(S) ->
 		      try
@@ -195,7 +197,9 @@ get_admin_jids() ->
 	      fun(S) ->
 		      try
 			  JID = exmpp_jid:list_to_jid(S),
-			  [jlib:short_prepd_jid(JID)]
+			  [{exmpp_jid:lnode(JID), 
+                exmpp_jid:ldomain(JID), 
+                exmpp_jid:lresource(JID)}]
 		      catch
 			  _ ->
 			      []

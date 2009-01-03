@@ -89,27 +89,28 @@ register_route(Domain) ->
 register_route(Domain, LocalHint) ->
     try
         LDomain = exmpp_stringprep:nameprep(Domain),
+        LDomainB = list_to_binary(LDomain),
         Pid = self(),
         case get_component_number(LDomain) of
             undefined ->
                 F = fun() ->
-                            mnesia:write(#route{domain = LDomain,
+                            mnesia:write(#route{domain = LDomainB,
                                                 pid = Pid,
                                                 local_hint = LocalHint})
                     end,
                 mnesia:transaction(F);
             N ->
                 F = fun() ->
-                            case mnesia:read({route, LDomain}) of
+                            case mnesia:read({route, LDomainB}) of
                                 [] ->
                                     mnesia:write(
-                                      #route{domain = LDomain,
+                                      #route{domain = LDomainB,
                                              pid = Pid,
                                              local_hint = 1}),
                                     lists:foreach(
                                       fun(I) ->
                                               mnesia:write(
-                                                #route{domain = LDomain,
+                                                #route{domain = LDomainB,
                                                        pid = undefined,
                                                        local_hint = I})
                                       end, lists:seq(2, N));
@@ -118,7 +119,7 @@ register_route(Domain, LocalHint) ->
                                       fun(#route{pid = undefined,
                                                  local_hint = I} = R) ->
                                               mnesia:write(
-                                                #route{domain = LDomain,
+                                                #route{domain = LDomainB,
                                                        pid = Pid,
                                                        local_hint = I}),
                                               mnesia:delete_object(R),
@@ -143,12 +144,13 @@ register_routes(Domains) ->
 unregister_route(Domain) ->
     try
 	LDomain = exmpp_stringprep:nameprep(Domain),
+	LDomainB = list_to_binary(LDomain),
 	Pid = self(),
 	case get_component_number(LDomain) of
 	    undefined ->
 		F = fun() ->
 			    case mnesia:match_object(
-				   #route{domain = LDomain,
+				   #route{domain = LDomainB,
 					  pid = Pid,
 					  _ = '_'}) of
 				[R] ->
@@ -160,13 +162,13 @@ unregister_route(Domain) ->
 		mnesia:transaction(F);
 	    _ ->
 		F = fun() ->
-			    case mnesia:match_object(#route{domain=LDomain,
+			    case mnesia:match_object(#route{domain=LDomainB,
 							    pid = Pid,
 							    _ = '_'}) of
 				[R] ->
 				    I = R#route.local_hint,
 				    mnesia:write(
-				      #route{domain = LDomain,
+				      #route{domain = LDomainB,
 					     pid = undefined,
 					     local_hint = I}),
 				    mnesia:delete_object(R);
@@ -188,10 +190,14 @@ unregister_routes(Domains) ->
 
 
 dirty_get_all_routes() ->
-    lists:usort(mnesia:dirty_all_keys(route)) -- ?MYHOSTS.
+    lists:usort(
+        lists:map(fun erlang:binary_to_list/1, 
+                  mnesia:dirty_all_keys(route))) -- ?MYHOSTS.
 
 dirty_get_all_domains() ->
-    lists:usort(mnesia:dirty_all_keys(route)).
+    lists:usort(
+        lists:map(fun erlang:binary_to_list/1, 
+                  mnesia:dirty_all_keys(route))).
 
 
 %%====================================================================
@@ -326,8 +332,8 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     case ejabberd_hooks:run_fold(filter_packet,
 				 {OrigFrom, OrigTo, OrigPacket}, []) of
 	{From, To, Packet} ->
-	    LDstDomain = To#jid.ldomain,
-	    case mnesia:dirty_read(route, LDstDomain) of
+	    LDomain = exmpp_jid:ldomain(To),
+	    case mnesia:dirty_read(route, LDomain) of
 		[] ->
 		    ejabberd_s2s:route(From, To, Packet);
 		[R] ->
@@ -346,6 +352,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 			    drop
 		    end;
 		Rs ->
+            LDstDomain = exmpp_jid:ldomain_as_list(To),
 		    Value = case ejabberd_config:get_local_option(
 				   {domain_balancing, LDstDomain}) of
 				undefined -> now();

@@ -52,56 +52,58 @@
 
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    ejabberd_hooks:add(roster_get, Host,
+    ejabberd_hooks:add(roster_get, HostB,
 		       ?MODULE, get_user_roster, 50),
-    ejabberd_hooks:add(roster_in_subscription, Host,
+    ejabberd_hooks:add(roster_in_subscription, HostB,
 		       ?MODULE, in_subscription, 50),
-    ejabberd_hooks:add(roster_out_subscription, Host,
+    ejabberd_hooks:add(roster_out_subscription, HostB,
 		       ?MODULE, out_subscription, 50),
-    ejabberd_hooks:add(roster_get_subscription_lists, Host,
+    ejabberd_hooks:add(roster_get_subscription_lists, HostB,
 		       ?MODULE, get_subscription_lists, 50),
-    ejabberd_hooks:add(roster_get_jid_info, Host,
+    ejabberd_hooks:add(roster_get_jid_info, HostB,
 		       ?MODULE, get_jid_info, 50),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, Host,
+    ejabberd_hooks:add(anonymous_purge_hook, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(resend_subscription_requests_hook, Host,
+    ejabberd_hooks:add(resend_subscription_requests_hook, HostB,
 		       ?MODULE, get_in_pending_subscriptions, 50),
-    ejabberd_hooks:add(webadmin_page_host, Host,
+    ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:add(webadmin_user, Host,
+    ejabberd_hooks:add(webadmin_user, HostB,
 		       ?MODULE, webadmin_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
-    ejabberd_hooks:delete(roster_get, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(roster_get, HostB,
 			  ?MODULE, get_user_roster, 50),
-    ejabberd_hooks:delete(roster_in_subscription, Host,
+    ejabberd_hooks:delete(roster_in_subscription, HostB,
 			  ?MODULE, in_subscription, 50),
-    ejabberd_hooks:delete(roster_out_subscription, Host,
+    ejabberd_hooks:delete(roster_out_subscription, HostB,
 			  ?MODULE, out_subscription, 50),
-    ejabberd_hooks:delete(roster_get_subscription_lists, Host,
+    ejabberd_hooks:delete(roster_get_subscription_lists, HostB,
 			  ?MODULE, get_subscription_lists, 50),
-    ejabberd_hooks:delete(roster_get_jid_info, Host,
+    ejabberd_hooks:delete(roster_get_jid_info, HostB,
 			  ?MODULE, get_jid_info, 50),
-    ejabberd_hooks:delete(remove_user, Host,
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, Host,
+    ejabberd_hooks:delete(anonymous_purge_hook, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(resend_subscription_requests_hook, Host,
+    ejabberd_hooks:delete(resend_subscription_requests_hook, HostB,
 		       ?MODULE, get_in_pending_subscriptions, 50),
-    ejabberd_hooks:delete(webadmin_page_host, Host,
+    ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:delete(webadmin_user, Host,
+    ejabberd_hooks:delete(webadmin_user, HostB,
 			  ?MODULE, webadmin_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 
 process_iq(From, To, IQ_Rec) ->
-    #jid{ldomain = LServer} = From,
+    LServer = exmpp_jid:ldomain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
 	true ->
 	    process_local_iq(From, To, IQ_Rec);
@@ -117,8 +119,8 @@ process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
 
 
 process_iq_get(From, To, IQ_Rec) ->
-    US = {From#jid.lnode, From#jid.ldomain},
-    case catch ejabberd_hooks:run_fold(roster_get, To#jid.ldomain, [], [US]) of
+    US = {exmpp_jid:lnode(From), exmpp_jid:ldomain(From)},
+    case catch ejabberd_hooks:run_fold(roster_get, exmpp_jid:ldomain(To), [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
 	    Result = #xmlel{ns = ?NS_ROSTER, name = 'query',
@@ -136,13 +138,14 @@ get_user_roster(Acc, {LUser, LServer}) ->
 			 true
 		 end, Items) ++ Acc.
 
-get_roster(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch odbc_queries:get_roster(LServer, Username) of
+get_roster(LUser, LServer) when is_binary(LUser), is_binary(LServer)->
+    Username = ejabberd_odbc:escape(binary_to_list(LUser)),
+    DomainString = binary_to_list(LServer),
+    case catch odbc_queries:get_roster(DomainString, Username) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",
 		    "askmessage", "server", "subscribe", "type"],
 	 Items} when is_list(Items) ->
-	    JIDGroups = case catch odbc_queries:get_roster_jid_groups(LServer, Username) of
+	    JIDGroups = case catch odbc_queries:get_roster_jid_groups(DomainString, Username) of
 			    {selected, ["jid","grp"], JGrps}
 			    when is_list(JGrps) ->
 				JGrps;
@@ -214,7 +217,8 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
 process_item_set(From, To, #xmlel{} = El) ->
     try
 	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
-	#jid{node = User, lnode = LUser, ldomain = LServer} = From,
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
 	{U0, S0, R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(LUser),
 	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(U0, S0, R0)),
@@ -229,7 +233,7 @@ process_item_set(From, To, #xmlel{} = El) ->
 					   us = {LUser, LServer},
 					   jid = LJID};
 			       [I] ->
-				   R = raw_to_record(LServer, I),
+				   R = raw_to_record(exmpp_jid:ldomain(From), I),
 				   case R of
 				       %% Bad JID in database:
 				       error ->
@@ -257,12 +261,12 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    %% If the item exist in shared roster, take the
 		    %% subscription information from there:
 		    Item3 = ejabberd_hooks:run_fold(roster_process_item,
-						    LServer, Item2, [LServer]),
+						    exmpp_jid:ldomain(From), Item2, [exmpp_jid:ldomain(From)]),
 		    {Item, Item3}
 	    end,
 	case odbc_queries:sql_transaction(LServer, F) of
 	    {atomic, {OldItem, Item}} ->
-		push_item(User, LServer, To, Item),
+		push_item(exmpp_jid:node(From), exmpp_jid:ldomain(From), To, Item),
 		case Item#roster.subscription of
 		    remove ->
 			IsTo = case OldItem#roster.subscription of
@@ -340,8 +344,8 @@ process_item_els(Item, []) ->
     Item.
 
 
-push_item(User, Server, From, Item) ->
-    ejabberd_sm:route(#jid{},
+push_item(User, Server, From, Item) when is_binary(User), is_binary(Server) ->
+    ejabberd_sm:route(exmpp_jid:make_jid(),
 		      exmpp_jid:make_bare_jid(User, Server),
 		      #xmlel{name = 'broadcast', children =
 		       [{item,
@@ -362,16 +366,17 @@ push_item(User, Server, Resource, From, Item) ->
       exmpp_jid:make_jid(User, Server, Resource),
       ResIQ).
 
-get_subscription_lists(_, User, Server) ->
+get_subscription_lists(_, User, Server) 
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
 	Username = ejabberd_odbc:escape(LUser),
 	case catch odbc_queries:get_roster(LServer, Username) of
 	    {selected, ["username", "jid", "nick", "subscription", "ask",
 			"askmessage", "server", "subscribe", "type"],
 	     Items} when is_list(Items) ->
-		fill_subscription_lists(LServer, Items, [], []);
+		fill_subscription_lists(Server, Items, [], []);
 	    _ ->
 		{[], []}
 	end
@@ -414,10 +419,11 @@ in_subscription(_, User, Server, JID, Type, Reason) ->
 out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, <<>>).
 
-process_subscription(Direction, User, Server, JID1, Type, Reason) ->
+process_subscription(Direction, User, Server, JID1, Type, Reason)
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
 	{N0,D0,R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(LUser),
 	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(N0,D0,R0)),
@@ -430,7 +436,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			     [I]} ->
 				%% raw_to_record can return error, but
 				%% jlib_to_string would fail before this point
-				R = raw_to_record(LServer, I),
+				R = raw_to_record(list_to_binary(LServer), I),
 				Groups =
 				    case odbc_queries:get_roster_groups(LServer, Username, SJID) of
 					{selected, ["grp"], JGrps} when is_list(JGrps) ->
@@ -443,8 +449,8 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			     ["username", "jid", "nick", "subscription", "ask",
 			      "askmessage", "server", "subscribe", "type"],
 			     []} ->
-				#roster{usj = {LUser, LServer, LJID},
-					us = {LUser, LServer},
+				#roster{usj = {list_to_binary(LUser), list_to_binary(LServer), LJID},
+					us = {list_to_binary(LUser), list_to_binary(LServer)},
 					jid = LJID}
 			end,
 		    NewState = case Direction of
@@ -619,7 +625,7 @@ in_auto_reply(both, none, unsubscribe)  -> unsubscribed;
 in_auto_reply(_,    _,    _)  ->           none.
 
 
-remove_user(User, Server) ->
+remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
@@ -705,10 +711,11 @@ process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
 process_item_attrs_ws(Item, []) ->
     Item.
 
-get_in_pending_subscriptions(Ls, User, Server) ->
+get_in_pending_subscriptions(Ls, User, Server) 
+        when is_binary(User), is_binary(Server) ->
     JID = exmpp_jid:make_bare_jid(User, Server),
-    LUser = JID#jid.lnode,
-    LServer = JID#jid.ldomain,
+    LUser = exmpp_jid:lnode_as_list(JID),
+    LServer = exmpp_jid:ldomain_as_list(JID),
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",
@@ -726,7 +733,7 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 		    end,
 		    lists:flatmap(
 		      fun(I) ->
-			      case raw_to_record(LServer, I) of
+			      case raw_to_record(exmpp_jid:ldomain(JID), I) of
 				  %% Bad JID in database:
 				  error ->
 				      [];
@@ -745,12 +752,12 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% JID is  #jid record, because it's used latter on for both short_prepd_jid 
+%% JID is  jid() record, because it's used latter on for both short_prepd_jid 
 %% and short_prepd_bare_jid
-get_jid_info(_, User, Server, JID) ->
+get_jid_info(_, User, Server, JID) when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
 	LJID = {N, D, R} = jlib:short_prepd_jid(JID),
 	Username = ejabberd_odbc:escape(LUser),
 	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(N, D, R)),
@@ -805,7 +812,7 @@ get_jid_info(_, User, Server, JID) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
-			_SServer, _SSubscribe, _SType}) ->
+			_SServer, _SSubscribe, _SType}) when is_binary(LServer) ->
     try
 	JID = exmpp_jid:list_to_jid(SJID),
 	LJID = jlib:short_prepd_jid(JID),
@@ -823,8 +830,9 @@ raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 		  "I" -> in;
 		  _ -> none
 	      end,
-	#roster{usj = {User, LServer, LJID},
-		us = {User, LServer},
+    UserB = list_to_binary(User),
+	#roster{usj = {UserB, LServer, LJID},
+		us = {UserB, LServer},
 		jid = LJID,
 		name = Nick,
 		subscription = Subscription,
@@ -841,7 +849,7 @@ record_to_string(#roster{us = {User, _Server},
 			 subscription = Subscription,
 			 ask = Ask,
 			 askmessage = AskMessage}) ->
-    Username = ejabberd_odbc:escape(User),
+    Username = ejabberd_odbc:escape(binary_to_list(User)),
     {U, S, R} = JID,
     SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(U, S, R)),
     Nick = ejabberd_odbc:escape(Name),

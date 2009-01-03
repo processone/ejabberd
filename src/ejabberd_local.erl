@@ -76,7 +76,7 @@ start_link() ->
 process_iq(From, To, Packet) ->
     case exmpp_iq:xmlel_to_iq(Packet) of
 	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
-	    Host = To#jid.ldomain,
+	    Host = exmpp_jid:ldomain_as_list(To),
 	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ_Rec),
@@ -182,7 +182,7 @@ init([]) ->
     lists:foreach(
       fun(Host) ->
 	      ejabberd_router:register_route(Host, {apply, ?MODULE, route}),
-	      ejabberd_hooks:add(local_send_to_resource_hook, Host,
+	      ejabberd_hooks:add(local_send_to_resource_hook, list_to_binary(Host),
 				 ?MODULE, bounce_resource_packet, 100)
       end, ?MYHOSTS),
     catch ets:new(?IQTABLE, [named_table, public]),
@@ -302,10 +302,13 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
+    
+    LNode = exmpp_jid:lnode(To),
+    LResource = exmpp_jid:lresource(To),
     if
-	To#jid.lnode /= undefined ->
+	LNode /= undefined ->
 	    ejabberd_sm:route(From, To, Packet);
-	To#jid.lresource == undefined ->
+	LResource == undefined ->
 	    case Packet of
 		_ when ?IS_IQ(Packet) ->
 		    process_iq(From, To, Packet);
@@ -322,7 +325,7 @@ do_route(From, To, Packet) ->
 		"result" -> ok;
 		_ ->
 		    ejabberd_hooks:run(local_send_to_resource_hook,
-				       To#jid.ldomain,
+				       exmpp_jid:ldomain(To),
 				       [From, To, Packet])
 	    end
 	end.

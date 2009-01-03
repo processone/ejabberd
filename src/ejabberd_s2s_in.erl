@@ -390,8 +390,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    % This is handled by C2S and S2S send_element functions.
 	    if
 		(To /= error) and (From /= error) ->
-		    LFrom = From#jid.ldomain,
-		    LTo = To#jid.ldomain,
+		    LFrom = exmpp_jid:ldomain_as_list(From),
+		    LTo = exmpp_jid:ldomain_as_list(To),
 		    if
 			StateData#state.authenticated ->
 			    case (LFrom == StateData#state.auth_domain)
@@ -406,7 +406,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					(Name == 'presence')) ->
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
-					      LFrom,
+					      exmpp_jid:ldomain(From),
 					      [From, To, El]),
 					    ejabberd_router:route(
 					      From, To, El);
@@ -426,7 +426,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					(Name == 'presence')) ->
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
-					      LFrom,
+					      exmpp_jid:ldomain(From),
 					      [From, To, El]),
 					    ejabberd_router:route(
 					      From, To, El);
@@ -612,10 +612,11 @@ get_cert_domains(Cert) ->
 			  end,
 		      if
 			  D /= error ->
-			      case exmpp_jid:list_to_jid(D) of
-				  #jid{lnode = undefined,
-				       ldomain = LD,
-				       lresource = undefined} ->
+                  JID  = exmpp_jid:list_to_jid(D),
+			      case {exmpp_jid:lnode_as_list(JID),
+                        exmpp_jid:ldomain_as_list(JID),
+                        exmpp_jid:lresource_as_list(JID)} of
+				      {undefined, LD, undefined} ->
 				      [LD];
 				  _ ->
 				      []
@@ -647,11 +648,11 @@ get_cert_domains(Cert) ->
 				    case 'XmppAddr':decode(
 					   'XmppAddr', XmppAddr) of
 					{ok, D} when is_binary(D) ->
-					    case exmpp_jid:list_to_jid(
-						   binary_to_list(D)) of
-						#jid{lnode = undefined,
-						     ldomain = LD,
-						     lresource = undefined} ->
+                        JID2 = exmpp_jid:list_to_jid(binary_to_list(D)),  
+					    case {exmpp_jid:lnode_as_list(JID2),
+                              exmpp_jid:ldomain_as_list(JID2),
+                              exmpp_jid:lresource_as_list(JID2)} of
+						    { undefined, LD, undefined} ->
 						    case idna:domain_utf8_to_ascii(LD) of
 							false ->
 							    [];
@@ -665,10 +666,11 @@ get_cert_domains(Cert) ->
 					    []
 				    end;
 			       ({dNSName, D}) when is_list(D) ->
-				    case exmpp_jid:list_to_jid(D) of
-					#jid{lnode = undefined,
-					     ldomain = LD,
-					     lresource = undefined} ->
+                    JID3 = exmpp_jid:list_to_jid(D),
+				    case {exmpp_jid:lnode_as_list(JID3),
+                          exmpp_jid:ldomain_as_list(JID3),
+                          exmpp_jid:lresource_as_list(JID3)} of
+					{undefined, LD, undefined} ->
 					    [LD];
 					_ ->
 					    []

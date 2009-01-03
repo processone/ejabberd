@@ -53,7 +53,7 @@ process_local_iq(_From, To, #iq{type = Type} = IQ_Rec) ->
 	set ->
 	    exmpp_iq:error(IQ_Rec, 'not-allowed');
 	get ->
-	    Host = To#jid.domain,
+	    Host = exmpp_jid:domain_as_list(To),
 	    OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os, true) of
 		     true -> [get_os()];
 		     false -> []

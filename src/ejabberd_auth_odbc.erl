@@ -231,8 +231,8 @@ remove_user(User, Server) ->
 	Username = ejabberd_odbc:escape(LUser),
 	LServer = exmpp_stringprep:nameprep(Server),
 	catch odbc_queries:del_user(LServer, Username),
-	ejabberd_hooks:run(remove_user, exmpp_stringprep:nameprep(Server),
-			   [User, Server])
+	ejabberd_hooks:run(remove_user, list_to_binary(LServer),
+			   [list_to_binary(User), list_to_binary(Server)])
     catch
 	_ ->
 	    error
@@ -249,8 +249,8 @@ remove_user(User, Server, Password) ->
 			       LServer, Username, Pass),
 		    case Result of
 			{selected, ["password"], [{Password}]} ->
-			    ejabberd_hooks:run(remove_user, exmpp_stringprep:nameprep(Server),
-					       [User, Server]),
+			    ejabberd_hooks:run(remove_user, list_to_binary(LServer),
+					       [list_to_binary(User), list_to_binary(Server)]),
 			    ok;
 			{selected, ["password"], []} ->
 			    not_exists;

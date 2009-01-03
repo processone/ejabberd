@@ -48,6 +48,7 @@
 -include("adhoc.hrl").
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
 
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ADHOC,
@@ -55,31 +56,34 @@ start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ADHOC,
 				  ?MODULE, process_sm_iq, IQDisc),
     
-    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, get_local_identity, 99),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 99),
-    ejabberd_hooks:add(disco_local_items, Host, ?MODULE, get_local_commands, 99),
-    ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, get_sm_identity, 99),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 99),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_sm_commands, 99),
-    ejabberd_hooks:add(adhoc_local_items, Host, ?MODULE, ping_item, 100),
-    ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE, ping_command, 100).
+    ejabberd_hooks:add(disco_local_identity, HostB, ?MODULE, get_local_identity, 99),
+    ejabberd_hooks:add(disco_local_features, HostB, ?MODULE, get_local_features, 99),
+    ejabberd_hooks:add(disco_local_items, HostB, ?MODULE, get_local_commands, 99),
+    ejabberd_hooks:add(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 99),
+    ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 99),
+    ejabberd_hooks:add(disco_sm_items, HostB, ?MODULE, get_sm_commands, 99),
+    ejabberd_hooks:add(adhoc_local_items, HostB, ?MODULE, ping_item, 100),
+    ejabberd_hooks:add(adhoc_local_commands, HostB, ?MODULE, ping_command, 100).
 
 stop(Host) ->
-    ejabberd_hooks:delete(adhoc_local_commands, Host, ?MODULE, ping_command, 100),
-    ejabberd_hooks:delete(adhoc_local_items, Host, ?MODULE, ping_item, 100),
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_sm_commands, 99),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 99),
-    ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, get_sm_identity, 99),
-    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, get_local_commands, 99),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 99),
-    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 99),
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(adhoc_local_commands, HostB, ?MODULE, ping_command, 100),
+    ejabberd_hooks:delete(adhoc_local_items, HostB, ?MODULE, ping_item, 100),
+    ejabberd_hooks:delete(disco_sm_items, HostB, ?MODULE, get_sm_commands, 99),
+    ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 99),
+    ejabberd_hooks:delete(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 99),
+    ejabberd_hooks:delete(disco_local_items, HostB, ?MODULE, get_local_commands, 99),
+    ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, get_local_features, 99),
+    ejabberd_hooks:delete(disco_local_identity, HostB, ?MODULE, get_local_identity, 99),
 
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ADHOC),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ADHOC).
 
 %-------------------------------------------------------------------------
 
-get_local_commands(Acc, _From, #jid{domain = Server, ldomain = LServer} = _To, "", Lang) ->
+get_local_commands(Acc, _From, To, "", Lang) ->
+    Server = exmpp_jid:domain_as_list(To),
+    LServer = exmpp_jid:ldomain_as_list(To),
     Display = gen_mod:get_module_opt(LServer, ?MODULE, report_commands_node, false),
     case Display of
 	false ->
@@ -98,8 +102,8 @@ get_local_commands(Acc, _From, #jid{domain = Server, ldomain = LServer} = _To, "
 	    {result, Items ++ Nodes}
     end;
 
-get_local_commands(_Acc, From, #jid{ldomain = LServer} = To, ?NS_ADHOC_s, Lang) ->
-    ejabberd_hooks:run_fold(adhoc_local_items, LServer, {result, []}, [From, To, Lang]);
+get_local_commands(_Acc, From, To, ?NS_ADHOC_s, Lang) ->
+    ejabberd_hooks:run_fold(adhoc_local_items, exmpp_jid:ldomain(To), {result, []}, [From, To, Lang]);
 
 get_local_commands(_Acc, _From, _To, "ping", _Lang) ->
     {result, []};
@@ -109,7 +113,8 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
 
 %-------------------------------------------------------------------------
 
-get_sm_commands(Acc, _From, #jid{ldomain = LServer} = To, "", Lang) ->
+get_sm_commands(Acc, _From, To, "", Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     Display = gen_mod:get_module_opt(LServer, ?MODULE, report_commands_node, false),
     case Display of
 	false ->
@@ -128,8 +133,8 @@ get_sm_commands(Acc, _From, #jid{ldomain = LServer} = To, "", Lang) ->
 	    {result, Items ++ Nodes}
     end;
 
-get_sm_commands(_Acc, From, #jid{ldomain = LServer} = To, ?NS_ADHOC_s, Lang) ->
-    ejabberd_hooks:run_fold(adhoc_sm_items, LServer, {result, []}, [From, To, Lang]);
+get_sm_commands(_Acc, From, To, ?NS_ADHOC_s, Lang) ->
+    ejabberd_hooks:run_fold(adhoc_sm_items, exmpp_jid:ldomain(To), {result, []}, [From, To, Lang]);
 
 get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -216,8 +221,7 @@ process_adhoc_request(From, To, IQ_Rec, Hook) ->
 	{error, Error} ->
             exmpp_iq:error(IQ_Rec, Error);
 	#adhoc_request{} = AdhocRequest ->
-	    Host = To#jid.ldomain,
-	    case ejabberd_hooks:run_fold(Hook, Host, empty,
+	    case ejabberd_hooks:run_fold(Hook, exmpp_jid:ldomain(To), empty,
 					 [From, To, AdhocRequest]) of
 		ignore ->
 		    ignore;
@@ -231,7 +235,8 @@ process_adhoc_request(From, To, IQ_Rec, Hook) ->
     end.
 
 
-ping_item(Acc, _From, #jid{domain = Server} = _To, Lang) ->
+ping_item(Acc, _From, To, Lang) ->
+    Server = exmpp_jid:domain_as_list(To),
     Items = case Acc of
 		{result, I} ->
 		    I;

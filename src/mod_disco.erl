@@ -54,6 +54,7 @@
 -record(disco_publish, {owner_node, jid, name, node}).
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     mnesia:create_table(disco_publish,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, disco_publish)},
@@ -84,23 +85,24 @@ start(Host, Opts) ->
 		  ExtraDomains),
     catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
     catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
-    ejabberd_hooks:add(disco_local_items, Host, ?MODULE, get_local_services, 100),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 100),
-    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, get_local_identity, 100),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_sm_items, 100),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 100),
-    ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, get_sm_identity, 100),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_publish_items, 75),
+    ejabberd_hooks:add(disco_local_items, HostB, ?MODULE, get_local_services, 100),
+    ejabberd_hooks:add(disco_local_features, HostB, ?MODULE, get_local_features, 100),
+    ejabberd_hooks:add(disco_local_identity, HostB, ?MODULE, get_local_identity, 100),
+    ejabberd_hooks:add(disco_sm_items, HostB, ?MODULE, get_sm_items, 100),
+    ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 100),
+    ejabberd_hooks:add(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 100),
+    ejabberd_hooks:add(disco_sm_items, HostB, ?MODULE, get_publish_items, 75),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_publish_items, 75),
-    ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, get_sm_identity, 100),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 100),
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_sm_items, 100),
-    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 100),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 100),
-    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, get_local_services, 100),
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(disco_sm_items, HostB, ?MODULE, get_publish_items, 75),
+    ejabberd_hooks:delete(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 100),
+    ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 100),
+    ejabberd_hooks:delete(disco_sm_items, HostB, ?MODULE, get_sm_items, 100),
+    ejabberd_hooks:delete(disco_local_identity, HostB, ?MODULE, get_local_identity, 100),
+    ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, get_local_features, 100),
+    ejabberd_hooks:delete(disco_local_items, HostB, ?MODULE, get_local_services, 100),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
@@ -128,11 +130,10 @@ unregister_extra_domain(Host, Domain) ->
 
 process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Host = To#jid.ldomain,
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
 
     case ejabberd_hooks:run_fold(disco_local_items,
-				 Host,
+				 exmpp_jid:ldomain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Items} ->
@@ -152,14 +153,13 @@ process_local_iq_items(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Host = To#jid.ldomain,
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
     Identity = ejabberd_hooks:run_fold(disco_local_identity,
-				       Host,
+				       exmpp_jid:ldomain(To),
 				       [],
 				       [From, To, Node, Lang]),
     case ejabberd_hooks:run_fold(disco_local_features,
-				 Host,
+				 exmpp_jid:ldomain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Features} ->
@@ -196,7 +196,7 @@ get_local_features(Acc, _From, To, [], _Lang) ->
 		{result, Features} -> Features;
 		empty -> []
 	    end,
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     {result,
      ets:select(disco_features, [{{{'_', Host}}, [], ['$_']}]) ++ Feats};
 
@@ -237,7 +237,7 @@ get_local_services(Acc, _From, To, [], _Lang) ->
 		{result, Its} -> Its;
 		empty -> []
 	    end,
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     {result,
      lists:usort(
        lists:map(fun domain_to_xml/1,
@@ -270,10 +270,9 @@ get_vh_services(Host) ->
 
 process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Host = To#jid.ldomain,
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
     case ejabberd_hooks:run_fold(disco_sm_items,
-				 Host,
+				 exmpp_jid:ldomain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Items} ->
@@ -288,8 +287,10 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
 	    exmpp_iq:error(IQ_Rec, Error)
     end;
 process_sm_iq_items(From, To, #iq{type = set, payload = SubEl} = IQ_Rec) ->
-    #jid{lnode = LTo, ldomain = ToServer} = To,
-    #jid{lnode = LFrom, ldomain = LServer} = From,
+    LTo = exmpp_jid:lnode_as_list(To),
+    ToServer = exmpp_jid:ldomain_as_list(To),
+    LFrom = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     Self = (LTo == LFrom) andalso (ToServer == LServer),
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
     if
@@ -310,16 +311,18 @@ process_sm_iq_items(From, To, #iq{type = set, payload = SubEl} = IQ_Rec) ->
 get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_sm_items(Acc,
-	    #jid{lnode = LFrom, ldomain = LSFrom},
-	    #jid{node = User, domain = Server, lnode = LTo, ldomain = LSTo} = _To,
-	    [], _Lang) ->
+get_sm_items(Acc, From, To, [], _Lang) ->
+    LFrom = exmpp_jid:lnode_as_list(From),
+    LSFrom = exmpp_jid:ldomain_as_list(From),
+    LTo = exmpp_jid:lnode_as_list(To),
+    LSTo = exmpp_jid:ldomain_as_list(To),
+
     Items = case Acc of
 		{result, Its} -> Its;
 		empty -> []
 	    end,
     Items1 = case {LFrom, LSFrom} of
-		 {LTo, LSTo} -> get_user_resources(User, Server);
+		 {LTo, LSTo} -> get_user_resources(To);
 		 _ -> []
 	     end,
     {result, Items ++ Items1};
@@ -328,8 +331,10 @@ get_sm_items({result, _} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
 get_sm_items(empty, From, To, _Node, _Lang) ->
-    #jid{lnode = LFrom, ldomain = LSFrom} = From,
-    #jid{lnode = LTo, ldomain = LSTo} = To,
+    LFrom = exmpp_jid:lnode_as_list(From),
+    LSFrom = exmpp_jid:ldomain_as_list(From),
+    LTo = exmpp_jid:lnode_as_list(To),
+    LSTo = exmpp_jid:ldomain_as_list(To),
     case {LFrom, LSFrom} of
 	{LTo, LSTo} ->
 	    {error, 'item-not-found'};
@@ -339,14 +344,13 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
 
 process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Host = To#jid.ldomain,
     Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
     Identity = ejabberd_hooks:run_fold(disco_sm_identity,
-				       Host,
+				       exmpp_jid:ldomain(To),
 				       [],
 				       [From, To, Node, Lang]),
     case ejabberd_hooks:run_fold(disco_sm_features,
-				 Host,
+				 exmpp_jid:ldomain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Features} ->
@@ -369,8 +373,10 @@ get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 get_sm_features(empty, From, To, _Node, _Lang) ->
-    #jid{lnode = LFrom, ldomain = LSFrom} = From,
-    #jid{lnode = LTo, ldomain = LSTo} = To,
+    LFrom = exmpp_jid:lnode_as_list(From),
+    LSFrom = exmpp_jid:ldomain_as_list(From),
+    LTo = exmpp_jid:lnode_as_list(To),
+    LSTo = exmpp_jid:ldomain_as_list(To),
     case {LFrom, LSFrom} of
 	{LTo, LSTo} ->
 	    {error, 'item-not-found'};
@@ -383,21 +389,23 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
 
 
 
-get_user_resources(User, Server) ->
-    Rs = ejabberd_sm:get_user_resources(User, Server),
+get_user_resources(JID) ->
+    Rs = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID),
+                                        exmpp_jid:ldomain(JID)),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
 			  #xmlattr{name = 'jid', value =
-			    exmpp_jid:jid_to_list(User, Server, R)},
-			  #xmlattr{name = 'name', value = User}
+			    exmpp_jid:jid_to_list(exmpp_jid:bare_jid_to_jid(JID, R))},
+			  #xmlattr{name = 'name', value = exmpp_jid:lnode_as_list(JID)}
 			]}
 	      end, lists:sort(Rs)).
 
 
-get_publish_items(empty,
-		  #jid{lnode = LFrom, ldomain = LSFrom},
-		  #jid{lnode = LTo, ldomain = LSTo} = _To,
-		  Node, _Lang) ->
+get_publish_items(empty, From, To, Node, _Lang) ->
+    LFrom = exmpp_jid:lnode_as_list(From),
+    LSFrom = exmpp_jid:ldomain_as_list(From),
+    LTo = exmpp_jid:lnode_as_list(To),
+    LSTo = exmpp_jid:ldomain_as_list(To),
     if
 	(LFrom == LTo) and (LSFrom == LSTo) ->
 	    retrieve_disco_publish({LTo, LSTo}, Node);

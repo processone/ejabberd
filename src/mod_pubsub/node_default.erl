@@ -631,7 +631,7 @@ get_states(Host, Node) ->
 get_state(Host, Node, JID) ->
     StateId = {JID, {Host, Node}},
     case mnesia:read({pubsub_state, StateId}) of
-	[State] when is_record(State, pubsub_state) -> State
+	[State] when is_record(State, pubsub_state) -> State;
 	_ -> #pubsub_state{stateid=StateId}
     end.
 

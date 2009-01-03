@@ -155,7 +155,7 @@ terminate(_Reason, State) ->
     Host = State#state.serverhost,
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(disco_sm_features, list_to_binary(Host), ?MODULE, get_sm_features, 50),
     case State#state.search of
 	true ->
 	    ejabberd_router:unregister_route(State#state.myhost);
@@ -174,7 +174,8 @@ init([Host, Opts]) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:add(disco_sm_features, 
+            list_to_binary(Host), ?MODULE, get_sm_features, 50),
     eldap_pool:start_link(State#state.eldap_id,
 		     State#state.servers,
 		     State#state.backups,
@@ -234,7 +235,8 @@ process_local_iq(_From, _To, #iq{type = get, lang = Lang} = IQ_Rec) ->
 process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
-process_sm_iq(_From, #jid{ldomain=LServer} = To, #iq{} = IQ_Rec) ->
+process_sm_iq(_From, To, #iq{} = IQ_Rec) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case catch process_vcard_ldap(To, IQ_Rec, LServer) of
 	{'EXIT', _} ->
             exmpp_iq:error(IQ_Rec, 'internal-server-error');
@@ -248,7 +250,7 @@ process_vcard_ldap(To, IQ_Rec, Server) ->
 	set ->
             exmpp_iq:error(IQ_Rec, 'not-allowed');
 	get ->
-	    #jid{lnode = LUser} = To,
+        LUser = exmpp_jid:lnode_as_list(To),
 	    LServer = State#state.serverhost,
 	    case ejabberd_auth:is_user_exists(LUser, LServer) of
 		true ->
@@ -402,7 +404,8 @@ do_route(State, From, To, Packet) ->
     spawn(?MODULE, route, [State, From, To, Packet]).
 
 route(State, From, To, Packet) ->
-    #jid{node = User, resource = Resource} = To,
+    User = exmpp_jid:node(To),
+    Resource = exmpp_jid:resource(To),
     if
 	(User /= undefined) or (Resource /= undefined) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'service-unavailable'),

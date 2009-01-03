@@ -39,14 +39,16 @@
 -include("ejabberd.hrl").
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE,
 				  ?MODULE, process_sm_iq, IQDisc).
 
 stop(Host) ->
-    ejabberd_hooks:delete(remove_user, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE).
 
@@ -65,7 +67,8 @@ process_sm_iq(From, To, #iq{type = Type} = IQ_Rec) ->
     end.
 
 process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
-    #jid{lnode = LUser, ldomain = LServer} = From,
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     case catch get_data(LUser,
 			LServer,
 			exmpp_xml:get_child_elements(SubEl)) of
@@ -79,7 +82,8 @@ process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
 
 
 process_iq_set(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
-    #jid{lnode = LUser, ldomain = LServer} = From,
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     F = fun() ->
         lists:foreach(
           fun(El) ->
@@ -102,7 +106,8 @@ check_packet(From, To, IQ_Rec, [F | R]) ->
 	ok -> check_packet(From, To, IQ_Rec, R)
     end.
 
-check_domain(#jid{ldomain = LServer}, _To, _IQ_Rec) ->
+check_domain(From, _To, _IQ_Rec) ->
+    LServer = exmpp_jid:ldomain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
 	true -> ok;
 	false -> {error, 'not-allowed'}
@@ -151,7 +156,9 @@ get_data(LUser, LServer, [El | Els], Res) ->
     LXMLNS = ejabberd_odbc:escape(XMLNS),
     case catch odbc_queries:get_private_data(LServer, Username, LXMLNS) of
     {selected, ["data"], [{SData}]} ->
-	[Data] = exmpp_xml:parse_document(SData,[names_as_atom]),
+	[Data] = exmpp_xml:parse_document(SData,
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]),
 	get_data(LUser, LServer, Els, [Data | Res]);
     %% MREMOND: I wonder when the query could return a vcard ?
     {selected, ["vcard"], []} ->
@@ -162,7 +169,7 @@ get_data(LUser, LServer, [El | Els], Res) ->
 end.
 
 
-remove_user(User, Server) ->
+remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),

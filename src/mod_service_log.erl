@@ -39,35 +39,37 @@
 -include("ejabberd.hrl").
 
 start(Host, _Opts) ->
-    ejabberd_hooks:add(user_send_packet, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:add(user_send_packet, HostB,
 		       ?MODULE, log_user_send, 50),
-    ejabberd_hooks:add(user_receive_packet, Host,
+    ejabberd_hooks:add(user_receive_packet, HostB,
 		       ?MODULE, log_user_receive, 50),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(user_send_packet, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(user_send_packet, HostB,
 			  ?MODULE, log_user_send, 50),
-    ejabberd_hooks:delete(user_receive_packet, Host,
+    ejabberd_hooks:delete(user_receive_packet, HostB,
 			  ?MODULE, log_user_receive, 50),
     ok.
 
 log_user_send(From, To, Packet) ->
-    log_packet(From, To, Packet, From#jid.ldomain).
+    log_packet(From, To, Packet, exmpp_jid:ldomain_as_list(From)).
 
 log_user_receive(_JID, From, To, Packet) ->
-    log_packet(From, To, Packet, To#jid.ldomain).
+    log_packet(From, To, Packet, exmpp_jid:ldomain_as_list(To)).
 
 
 log_packet(From, To, Packet, Host) ->
     Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
-    ServerJID = #jid{domain = Host, ldomain = Host},
+    ServerJID = exmpp_jid:make_bare_jid(Host),
     FixedPacket = exmpp_stanza:set_jids(Packet, From, To),
     lists:foreach(
       fun(Logger) ->
 	      ejabberd_router:route(
 		ServerJID,
-		#jid{domain = Logger, ldomain = Logger},
+		exmpp_jid:make_bare_jid(Logger),
 		#xmlel{name = 'route', children = [FixedPacket]})
       end, Loggers).
     

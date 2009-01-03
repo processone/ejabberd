@@ -44,33 +44,35 @@
 
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(privacy, [{disc_copies, [node()]},
 				  {attributes, record_info(fields, privacy)}]),
     update_table(),
-    ejabberd_hooks:add(privacy_iq_get, Host,
+    ejabberd_hooks:add(privacy_iq_get, HostB,
 		       ?MODULE, process_iq_get, 50),
-    ejabberd_hooks:add(privacy_iq_set, Host,
+    ejabberd_hooks:add(privacy_iq_set, HostB,
 		       ?MODULE, process_iq_set, 50),
-    ejabberd_hooks:add(privacy_get_user_list, Host,
+    ejabberd_hooks:add(privacy_get_user_list, HostB,
 		       ?MODULE, get_user_list, 50),
-    ejabberd_hooks:add(privacy_check_packet, Host,
+    ejabberd_hooks:add(privacy_check_packet, HostB,
 		       ?MODULE, check_packet, 50),
-    ejabberd_hooks:add(privacy_updated_list, Host,
+    ejabberd_hooks:add(privacy_updated_list, HostB,
 		       ?MODULE, updated_list, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
-    ejabberd_hooks:delete(privacy_iq_get, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(privacy_iq_get, HostB,
 			  ?MODULE, process_iq_get, 50),
-    ejabberd_hooks:delete(privacy_iq_set, Host,
+    ejabberd_hooks:delete(privacy_iq_set, HostB,
 			  ?MODULE, process_iq_set, 50),
-    ejabberd_hooks:delete(privacy_get_user_list, Host,
+    ejabberd_hooks:delete(privacy_get_user_list, HostB,
 			  ?MODULE, get_user_list, 50),
-    ejabberd_hooks:delete(privacy_check_packet, Host,
+    ejabberd_hooks:delete(privacy_check_packet, HostB,
 			  ?MODULE, check_packet, 50),
-    ejabberd_hooks:delete(privacy_updated_list, Host,
+    ejabberd_hooks:delete(privacy_updated_list, HostB,
 			  ?MODULE, updated_list, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY).
 
@@ -80,7 +82,8 @@ process_iq(_From, _To, IQ_Rec) ->
 
 process_iq_get(_, From, _To, #iq{payload = SubEl},
 	       #userlist{name = Active}) ->
-    #jid{lnode = LUser, ldomain = LServer} = From,
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     case exmpp_xml:get_child_elements(SubEl) of
 	[] ->
 	    process_lists_get(LUser, LServer, Active);
@@ -238,7 +241,8 @@ list_to_action(S) ->
 
 
 process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
-    #jid{lnode = LUser, ldomain = LServer} = From,
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     case exmpp_xml:get_child_elements(SubEl) of
 	[#xmlel{name = Name} = Child] ->
 	    ListName = exmpp_xml:get_attribute(Child, 'name', false),
@@ -510,10 +514,11 @@ parse_matches1(_Item, [#xmlel{} | _Els]) ->
 
 
 
-get_user_list(_, User, Server) ->
+get_user_list(_, User, Server) 
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
 	case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	    [] ->
 		#userlist{};
@@ -542,7 +547,8 @@ get_user_list(_, User, Server) ->
 check_packet(_, User, Server,
 	     #userlist{list = List},
 	     {From, To, #xmlel{name = PName}},
-	     Dir) when PName =:= message ; 
+	     Dir) when 
+               PName =:= message ; 
 		       PName =:= iq ;
 		       PName =:= presence ->
     case List of
@@ -554,7 +560,8 @@ check_packet(_, User, Server,
 		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, exmpp_stringprep:nameprep(Server),
+			  roster_get_jid_info, 
+              Server, 
 			  {none, []}, [User, Server, From]),
 		    check_packet_aux(List, message,
 				     LJID, Subscription, Groups);
@@ -562,7 +569,8 @@ check_packet(_, User, Server,
 		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, exmpp_stringprep:nameprep(Server),
+			  roster_get_jid_info, 
+               Server,
 			  {none, []}, [User, Server, From]),
 		    check_packet_aux(List, iq,
 				     LJID, Subscription, Groups);
@@ -570,7 +578,8 @@ check_packet(_, User, Server,
 		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, exmpp_stringprep:nameprep(Server),
+			  roster_get_jid_info, 
+                Server,
 			  {none, []}, [User, Server, From]),
 		    check_packet_aux(List, presence_in,
 				     LJID, Subscription, Groups);
@@ -578,7 +587,8 @@ check_packet(_, User, Server,
 		    LJID = jlib:short_prepd_jid(To),
 		    {Subscription, Groups} =
 			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, exmpp_stringprep:nameprep(Server),
+			  roster_get_jid_info, 
+              Server,
 			  {none, []}, [User, Server, To]),
 		    check_packet_aux(List, presence_out,
 				     LJID, Subscription, Groups);

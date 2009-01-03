@@ -87,7 +87,7 @@ read_caps([], Result) ->
 
 %% get_caps reads user caps from database
 get_caps({U, S, R}) ->
-    BJID = exmpp_jlib:jid_to_binary(U, S, R),
+    BJID = exmpp_jid:jid_to_binary(U, S, R),
     case catch mnesia:dirty_read({user_caps, BJID}) of
 	[#user_caps{caps=Caps}] -> 
 	    Caps;
@@ -97,8 +97,8 @@ get_caps({U, S, R}) ->
 
 %% clear_caps removes user caps from database
 clear_caps({U, S, R}) ->
-    BJID = exmpp_jlib:jid_to_binary(U, S, R),
-    BUID = exmpp_jlib:jid_to_binary(U, S),
+    BJID = exmpp_jid:jid_to_binary(U, S, R),
+    BUID = exmpp_jid:jid_to_binary(U, S),
     catch mnesia:dirty_delete({user_caps, BJID}),
     case catch mnesia:dirty_read({user_caps_default, BUID}) of
 	[#user_caps_default{resource=R}] ->
@@ -109,7 +109,7 @@ clear_caps({U, S, R}) ->
   
 %% give default user resource
 get_user_resource(U, S) ->
-    BUID = exmpp_jlib:bare_jid_to_binary(U, S),
+    BUID = exmpp_jid:bare_jid_to_binary(U, S),
     case catch mnesia:dirty_read({user_caps_default, BUID}) of
 	[#user_caps_default{resource=R}] ->
 	    R;
@@ -225,15 +225,18 @@ handle_cast({note_caps, From,
 	    #state{host = Host, disco_requests = Requests} = State) ->
     %% XXX: this leads to race conditions where ejabberd will send
     %% lots of caps disco requests.
-    #jid{node = U, domain = S, resource = R} = From,
-    BJID = exmpp_jlib:jid_to_binary(From),
+    %#jid{node = U, domain = S, resource = R} = From,
+    U = exmpp_jid:lnode(From),
+    S = exmpp_jid:ldomain(From),
+    R = exmpp_jid:resource(From),
+    BJID = exmpp_jid:jid_to_binary(From),
     mnesia:dirty_write(#user_caps{jid = BJID, caps = Caps}),
     case ejabberd_sm:get_user_resources(U, S) of
 	[] ->
 	    ok;
 	_ -> 
 	    % only store default resource of external contacts
-	    BUID = exmpp_jlib:bare_jid_to_binary(From),
+	    BUID = exmpp_jid:bare_jid_to_binary(From),
 	    mnesia:dirty_write(#user_caps_default{uid = BUID, resource = R})
     end,
     SubNodes = [Version | Exts],
@@ -340,7 +343,7 @@ handle_cast(visit_feature_queries, #state{feature_queries = FeatureQueries} = St
     {noreply, State#state{feature_queries = NewFeatureQueries}}.
 
 handle_disco_response(From, To, IQ_Rec) ->
-    #jid{ldomain = Host} = To,
+    Host = exmpp_jid:ldomain_as_list(To),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {disco_response, From, To, IQ_Rec}).
 

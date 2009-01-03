@@ -37,7 +37,6 @@
 	 encode_base64/1,
 	 ip_to_list/1,
 	 from_old_jid/1,
-	 to_old_jid/1,
 	 short_jid/1,
 	 short_bare_jid/1,
 	 short_prepd_jid/1,
@@ -295,49 +294,26 @@ ip_to_list({A,B,C,D}) ->
 %%
 %% Empty fields are set to `undefined', not the empty string.
 
-from_old_jid(#jid{node = Node, resource = Resource,
-    lnode = LNode, lresource = LResource} = JID) ->
-    {Node1, LNode1} = case Node of
-	"" -> {undefined, undefined};
-	_  -> {Node, LNode}
-    end,
-    {Resource1, LResource1} = case Resource of
-	"" -> {undefined, undefined};
-	_  -> {Resource, LResource}
-    end,
-    JID#jid{node = Node1, resource = Resource1,
-      lnode = LNode1, lresource = LResource1}.
+%%TODO: this doesn't make sence!, it is still used?.
+from_old_jid(JID) ->
+ Node = exmpp_jid:node(JID),
+    Resource = exmpp_jid:resource(JID),
+    Domain = exmpp_jid:domain(JID),
+    exmpp_jid:make_jid(Node,Domain,Resource).
 
-%% @spec (JID) -> New_JID
-%%     JID = jid()
-%%     New_JID = jid()
-%% @doc Convert a JID from its exmpp form to its ejabberd form.
-%%
-%% Empty fields are set to the empty string, not `undefined'.
-
-to_old_jid(#jid{node = Node, resource = Resource,
-    lnode = LNode, lresource = LResource} = JID) ->
-    {Node1, LNode1} = case Node of
-	undefined -> {"", ""};
-	_         -> {Node, LNode}
-    end,
-    {Resource1, LResource1} = case Resource of
-	undefined -> {"", ""};
-	_         -> {Resource, LResource}
-    end,
-    JID#jid{node = Node1, resource = Resource1,
-      lnode = LNode1, lresource = LResource1}.
 
 short_jid(JID) ->
-    {JID#jid.node, JID#jid.domain, JID#jid.resource}.
+    {exmpp_jid:node(JID), exmpp_jid:domain(JID), exmpp_jid:resource(JID)}.
 
 short_bare_jid(JID) ->
-    Bare_JID = exmpp_jid:jid_to_bare_jid(JID),
-    {Bare_JID#jid.node, Bare_JID#jid.domain, Bare_JID#jid.resource}.
+    short_jid(exmpp_jid:jid_to_bare_jid(JID)).
 
 short_prepd_jid(JID) ->
-    {JID#jid.lnode, JID#jid.ldomain, JID#jid.lresource}.
+    {exmpp_jid:lnode(JID), 
+     exmpp_jid:ldomain(JID), 
+     exmpp_jid:lresource(JID)}.
 
 short_prepd_bare_jid(JID) ->
-    Bare_JID = exmpp_jid:jid_to_bare_jid(JID),
-    {Bare_JID#jid.lnode, Bare_JID#jid.ldomain, Bare_JID#jid.lresource}.
+    short_prepd_jid(exmpp_jid:jid_to_bare_jid(JID)).
+
+

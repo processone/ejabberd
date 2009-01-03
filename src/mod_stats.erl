@@ -49,7 +49,7 @@ process_local_iq(_From, To, #iq{type = get,
     Node = string:tokens(exmpp_xml:get_attribute(SubEl, 'node', ""), "/"),
     Names = get_names(exmpp_xml:get_child_elements(SubEl), []),
 
-    case get_local_stats(To#jid.domain, Node, Names) of
+    case get_local_stats(exmpp_jid:domain_as_list(To), Node, Names) of
 	{result, Res} ->
 	    Result = #xmlel{ns = XMLNS, name = 'query', children = Res},
 	    exmpp_iq:result(IQ_Rec, Result);
@@ -130,7 +130,7 @@ get_local_stats(_Server, _, _) ->
 
 
 get_local_stat(Server, [], Name) when Name == "users/online" ->
-    case catch ejabberd_sm:get_vh_session_list(Server) of
+    case catch ejabberd_sm:get_vh_session_list(list_to_binary(Server)) of
 	{'EXIT', _Reason} ->
 	    ?STATERR("500", "Internal Server Error");
 	Users ->

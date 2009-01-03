@@ -71,7 +71,7 @@ stop(Host) ->
 
 
 process_local_iq(From, To, #iq{type = Type, payload = Request} = IQ_Rec) ->
-    case acl:match_rule(To#jid.ldomain, configure, From) of
+    case acl:match_rule(exmpp_jid:ldomain_as_list(To), configure, From) of
 	deny ->
 	    exmpp_iq:error(IQ_Rec, 'not-allowed');
 	allow ->

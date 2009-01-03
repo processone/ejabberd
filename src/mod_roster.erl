@@ -53,61 +53,63 @@
 
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
     update_table(),
     mnesia:add_table_index(roster, us),
-    ejabberd_hooks:add(roster_get, Host,
+    ejabberd_hooks:add(roster_get, HostB,
 		       ?MODULE, get_user_roster, 50),
-    ejabberd_hooks:add(roster_in_subscription, Host,
+    ejabberd_hooks:add(roster_in_subscription, HostB,
 		       ?MODULE, in_subscription, 50),
-    ejabberd_hooks:add(roster_out_subscription, Host,
+    ejabberd_hooks:add(roster_out_subscription, HostB,
 		       ?MODULE, out_subscription, 50),
-    ejabberd_hooks:add(roster_get_subscription_lists, Host,
+    ejabberd_hooks:add(roster_get_subscription_lists, HostB,
 		       ?MODULE, get_subscription_lists, 50),
-    ejabberd_hooks:add(roster_get_jid_info, Host,
+    ejabberd_hooks:add(roster_get_jid_info, HostB,
 		       ?MODULE, get_jid_info, 50),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, Host,
+    ejabberd_hooks:add(anonymous_purge_hook, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(resend_subscription_requests_hook, Host,
+    ejabberd_hooks:add(resend_subscription_requests_hook, HostB,
 		       ?MODULE, get_in_pending_subscriptions, 50),
-    ejabberd_hooks:add(webadmin_page_host, Host,
+    ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:add(webadmin_user, Host,
+    ejabberd_hooks:add(webadmin_user, HostB,
 		       ?MODULE, webadmin_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
-    ejabberd_hooks:delete(roster_get, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(roster_get, HostB,
 			  ?MODULE, get_user_roster, 50),
-    ejabberd_hooks:delete(roster_in_subscription, Host,
+    ejabberd_hooks:delete(roster_in_subscription, HostB,
 			  ?MODULE, in_subscription, 50),
-    ejabberd_hooks:delete(roster_out_subscription, Host,
+    ejabberd_hooks:delete(roster_out_subscription, HostB,
 			  ?MODULE, out_subscription, 50),
-    ejabberd_hooks:delete(roster_get_subscription_lists, Host,
+    ejabberd_hooks:delete(roster_get_subscription_lists, HostB,
 			  ?MODULE, get_subscription_lists, 50),
-    ejabberd_hooks:delete(roster_get_jid_info, Host,
+    ejabberd_hooks:delete(roster_get_jid_info, HostB,
 			  ?MODULE, get_jid_info, 50),
-    ejabberd_hooks:delete(remove_user, Host,
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, Host,
+    ejabberd_hooks:delete(anonymous_purge_hook, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(resend_subscription_requests_hook, Host,
+    ejabberd_hooks:delete(resend_subscription_requests_hook, HostB,
 			  ?MODULE, get_in_pending_subscriptions, 50),
-    ejabberd_hooks:delete(webadmin_page_host, Host,
+    ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:delete(webadmin_user, Host,
+    ejabberd_hooks:delete(webadmin_user, HostB,
 			  ?MODULE, webadmin_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_ROSTER).
 
 
 process_iq(From, To, IQ_Rec) ->
-    #jid{ldomain = LServer} = From,
+    LServer = exmpp_jid:ldomain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
 	true ->
 	    process_local_iq(From, To, IQ_Rec);
@@ -123,8 +125,8 @@ process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
 
 
 process_iq_get(From, To, IQ_Rec) ->
-    US = {From#jid.lnode, From#jid.ldomain},
-    case catch ejabberd_hooks:run_fold(roster_get, To#jid.ldomain, [], [US]) of
+    US = {exmpp_jid:lnode(From), exmpp_jid:ldomain_(From)},
+    case catch ejabberd_hooks:run_fold(roster_get, exmpp_jid:ldomain(To), [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
 	    Result = #xmlel{ns = ?NS_ROSTER, name = 'query',
@@ -189,7 +191,9 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
 process_item_set(From, To, #xmlel{} = El) ->
     try
 	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
-	#jid{node = User, lnode = LUser, ldomain = LServer} = From,
+    User = exmpp_jid:node(From),
+    LUser = exmpp_jid:lnode(From),
+    LServer = exmpp_jid:ldomain(From),
 	JID = jlib:short_jid(JID1),
 	LJID = jlib:short_prepd_jid(JID1),
 	F = fun() ->
@@ -216,7 +220,7 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    %% If the item exist in shared roster, take the
 		    %% subscription information from there:
 		    Item3 = ejabberd_hooks:run_fold(roster_process_item,
-						    LServer, Item2, [LServer]),
+						    exmpp_jid:ldomain(From), Item2, [exmpp_jid:ldomain(From)]),
 		    {Item, Item3}
 	    end,
 	case mnesia:transaction(F) of
@@ -305,8 +309,8 @@ process_item_els(Item, []) ->
     Item.
 
 
-push_item(User, Server, From, Item) ->
-    ejabberd_sm:route(#jid{},
+push_item(User, Server, From, Item) when is_binary(User), is_binary(Server) ->
+    ejabberd_sm:route(exmpp_jid:make_jid(),
 		      exmpp_jid:make_bare_jid(User, Server),
 		      #xmlel{name = 'broadcast', children =
 		       [{item,
@@ -317,7 +321,8 @@ push_item(User, Server, From, Item) ->
 		  end, ejabberd_sm:get_user_resources(User, Server)).
 
 % TODO: don't push to those who didn't load roster
-push_item(User, Server, Resource, From, Item) ->
+push_item(User, Server, Resource, From, Item) when is_binary(User), 
+                                                   is_binary(Server) ->
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
       children = [item_to_xml(Item)]},
     ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
@@ -327,11 +332,10 @@ push_item(User, Server, Resource, From, Item) ->
       exmpp_jid:make_jid(User, Server, Resource),
       ResIQ).
 
-get_subscription_lists(_, User, Server) ->
+get_subscription_lists(_, User, Server) 
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
-	US = {LUser, LServer},
+	US = {User,Server},
 	case mnesia:dirty_index_read(roster, US, #roster.us) of
 	    Items when is_list(Items) ->
 		fill_subscription_lists(Items, [], []);
@@ -370,17 +374,16 @@ in_subscription(_, User, Server, JID, Type, Reason) ->
 out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, <<>>).
 
-process_subscription(Direction, User, Server, JID1, Type, Reason) ->
+process_subscription(Direction, User, Server, JID1, Type, Reason) 
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
-	US = {LUser, LServer},
+	US = {User, Server},
 	LJID = jlib:short_prepd_jid(JID1),
 	F = fun() ->
-		    Item = case mnesia:read({roster, {LUser, LServer, LJID}}) of
+		    Item = case mnesia:read({roster, {User, Server, LJID}}) of
 			       [] ->
 				   JID = jlib:short_jid(JID1),
-				   #roster{usj = {LUser, LServer, LJID},
+				   #roster{usj = {User, Server, LJID},
 					   us = US,
 					   jid = JID};
 			       [I] ->
@@ -414,7 +417,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			    {none, AutoReply};
 			{none, none} when Item#roster.subscription == none,
 					  Item#roster.ask == in ->
-			    mnesia:delete({roster, {LUser, LServer, LJID}}),
+			    mnesia:delete({roster, {User, Server, LJID}}),
 			    {none, AutoReply};
 			{Subscription, Pending} ->
 			    AskBinary = case AskMessage of
@@ -556,10 +559,11 @@ in_auto_reply(both, none, unsubscribe)  -> unsubscribed;
 in_auto_reply(_,    _,    _)  ->           none.
 
 
-remove_user(User, Server) ->
+remove_user(User, Server) 
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = list_to_binary(exmpp_stringprep:nodeprep(User)),
+	LServer = list_to_binary(exmpp_stringprep:nameprep(Server)),
 	US = {LUser, LServer},
 	F = fun() ->
 		    lists:foreach(fun(R) ->
@@ -645,9 +649,10 @@ process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
 process_item_attrs_ws(Item, []) ->
     Item.
 
-get_in_pending_subscriptions(Ls, User, Server) ->
+get_in_pending_subscriptions(Ls, User, Server)
+        when is_binary(User), is_binary(Server) ->
     JID = exmpp_jid:make_bare_jid(User, Server),
-    US = {JID#jid.lnode, JID#jid.ldomain},
+    US = {exmpp_jid:lnode(JID), exmpp_jid:ldomain(JID)},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Result when list(Result) ->
 	    Ls ++ lists:map(
@@ -676,12 +681,10 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_jid_info(_, User, Server, JID) ->
+get_jid_info(_, User, Server, JID) when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
 	LJID = jlib:short_prepd_jid(JID),
-	case catch mnesia:dirty_read(roster, {LUser, LServer, LJID}) of
+	case catch mnesia:dirty_read(roster, {User, Server, LJID}) of
 	    [#roster{subscription = Subscription, groups = Groups}] ->
 		{Subscription, Groups};
 	    _ ->
@@ -691,7 +694,7 @@ get_jid_info(_, User, Server, JID) ->
 			{none, []};
 		    true ->
 			case catch mnesia:dirty_read(
-				     roster, {LUser, LServer, LRJID}) of
+				     roster, {User, Server, LRJID}) of
 			    [#roster{subscription = Subscription,
 				     groups = Groups}] ->
 				{Subscription, Groups};

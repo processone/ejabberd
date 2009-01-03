@@ -1,3 +1,29 @@
+2009-01-03	Pablo Polvorin	<pablo.polvorin@process-one.net>
+	* src/mod_pubsub_node_default.erl: Fix typo
+
+	* src/mod_vcard.erl, src/mod_vcard_ldap.erl,src/ ejabberd_hooks.erl,
+	mod_muc/mod_muc_room.erl, src/mod_muc/mod_muc.erl, 
+	src/mod_muc/mod_muc_log.erl, src/mod_shared_roster.erl,
+	src/ejabberd_auth_odbc.erl, src/mod_offline_odbc.erl,
+	src/ejabberd_system_monitor.erl, src/ejabberd_s2s_in.erl, 
+	src/mod_configure.erl, src/ejabberd_receiver.erl, src/mod_irc/mod_irc.erl,
+	src/ejabberd_sm.erl, src/mod_privacy_odbc.erl, src/ejabberd_c2s.erl,
+	src/mod_announce.erl, src/ejabberd_local.erl, src/mod_privacy.erl,
+	src/ejabberd_auth_internal.erl, src/mod_adhoc.erl, src/mod_echo.erl,
+	src/jlib.erl, src/mod_vcard_odbc.erl, src/ejabberd_s2s.erl,
+	src/mod_stats.erl, src/ejabberd_router.erl, src/mod_last.erl,
+	src/mod_private.erl, src/mod_roster.erl, src/ejabberd_service.erl,
+	src/mod_disco.erl, src/mod_private_odbc.erl, src/mod_service_log.erl,
+	src/mod_configure2.erl, src/mod_roster_odbc.erl, src/mod_offline.erl,
+	src/mod_register.erl, src/mod_version.erl, src/mod_caps.erl,
+	src/mod_last_odbc.erl: Use exmpp API to access JID fields. Keep 
+	#jid fields in binary format when possible. Change all 'user' and
+	'server' arguments in all hooks to binary. Change internal tables of
+	ejabberd_sm, ejabberd_router, ejabberd_hooks, mod_last, mod_roster 
+	to use binary() storage.
+
+
+
 2009-01-03  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: deliver notification depending on

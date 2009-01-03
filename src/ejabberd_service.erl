@@ -231,14 +231,11 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		  %% The default is the standard behaviour in XEP-0114
 		  _ ->
 		      FromJID1 = exmpp_jib:string_to_jid(From),
-		      case FromJID1 of
-			  #jid{ldomain = Server} ->
-			      case lists:member(Server, StateData#state.hosts) of
+		      Server =  exmpp_jid:ldomain_as_list(FromJID1),
+			  case lists:member(Server, StateData#state.hosts) of
 				  true -> FromJID1;
 				  false -> error
-			      end;
-			  _ -> error
-		      end
+			  end
 	      end,
     To = exmpp_stanza:get_recipient(El),
     ToJID = case To of

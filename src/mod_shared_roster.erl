@@ -60,6 +60,7 @@
 -record(sr_user, {us, group_host}).
 
 start(Host, _Opts) ->
+    HostB = list_to_binary(Host),
     mnesia:create_table(sr_group,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, sr_group)}]),
@@ -68,47 +69,48 @@ start(Host, _Opts) ->
 			 {type, bag},
 			 {attributes, record_info(fields, sr_user)}]),
     mnesia:add_table_index(sr_user, group_host),
-    ejabberd_hooks:add(webadmin_menu_host, Host,
+    ejabberd_hooks:add(webadmin_menu_host, HostB,
 		       ?MODULE, webadmin_menu, 70),
-    ejabberd_hooks:add(webadmin_page_host, Host,
+    ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:add(roster_get, Host,
+    ejabberd_hooks:add(roster_get, HostB,
 		       ?MODULE, get_user_roster, 70),
-    ejabberd_hooks:add(roster_in_subscription, Host,
+    ejabberd_hooks:add(roster_in_subscription, HostB,
         	       ?MODULE, in_subscription, 30),
-    ejabberd_hooks:add(roster_out_subscription, Host,
+    ejabberd_hooks:add(roster_out_subscription, HostB,
         	       ?MODULE, out_subscription, 30),
-    ejabberd_hooks:add(roster_get_subscription_lists, Host,
+    ejabberd_hooks:add(roster_get_subscription_lists, HostB,
 		       ?MODULE, get_subscription_lists, 70),
-    ejabberd_hooks:add(roster_get_jid_info, Host,
+    ejabberd_hooks:add(roster_get_jid_info, HostB,
         	       ?MODULE, get_jid_info, 70),
-    ejabberd_hooks:add(roster_process_item, Host,
+    ejabberd_hooks:add(roster_process_item, HostB,
 		       ?MODULE, process_item, 50),
-    ejabberd_hooks:add(user_registered, Host,
+    ejabberd_hooks:add(user_registered, HostB,
 		       ?MODULE, user_registered, 50).
-%%ejabberd_hooks:add(remove_user, Host,
+%%ejabberd_hooks:add(remove_user, HostB,
 %%    	       ?MODULE, remove_user, 50),
 
 stop(Host) ->
-    ejabberd_hooks:delete(webadmin_menu_host, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(webadmin_menu_host, HostB,
 			  ?MODULE, webadmin_menu, 70),
-    ejabberd_hooks:delete(webadmin_page_host, Host,
+    ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:delete(roster_get, Host,
+    ejabberd_hooks:delete(roster_get, HostB,
 			  ?MODULE, get_user_roster, 70),
-    ejabberd_hooks:delete(roster_in_subscription, Host,
+    ejabberd_hooks:delete(roster_in_subscription, HostB,
         		  ?MODULE, in_subscription, 30),
-    ejabberd_hooks:delete(roster_out_subscription, Host,
+    ejabberd_hooks:delete(roster_out_subscription, HostB,
         		  ?MODULE, out_subscription, 30),
-    ejabberd_hooks:delete(roster_get_subscription_lists, Host,
+    ejabberd_hooks:delete(roster_get_subscription_lists, HostB,
         		  ?MODULE, get_subscription_lists, 70),
-    ejabberd_hooks:delete(roster_get_jid_info, Host,
+    ejabberd_hooks:delete(roster_get_jid_info, HostB,
         		  ?MODULE, get_jid_info, 70),
-    ejabberd_hooks:delete(roster_process_item, Host,
+    ejabberd_hooks:delete(roster_process_item, HostB,
 			  ?MODULE, process_item, 50),
-    ejabberd_hooks:delete(user_registered, Host,
+    ejabberd_hooks:delete(user_registered, HostB,
 			  ?MODULE, user_registered, 50).
-%%ejabberd_hooks:delete(remove_user, Host,
+%%ejabberd_hooks:delete(remove_user, HostB,
 %%    		  ?MODULE, remove_user, 50),
 
 
@@ -252,10 +254,11 @@ set_item(User, Server, Resource, Item) ->
       ResIQ).
 
 
-get_subscription_lists({F, T}, User, Server) ->
+get_subscription_lists({F, T}, User, Server)
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
 	US = {LUser, LServer},
 	DisplayedGroups = get_user_displayed_groups(US),
 	SRUsers =
@@ -271,10 +274,11 @@ get_subscription_lists({F, T}, User, Server) ->
 	    {[], []}
     end.
 
-get_jid_info({Subscription, Groups}, User, Server, JID) ->
+get_jid_info({Subscription, Groups}, User, Server, JID)
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
 	US = {LUser, LServer},
 	{U1, S1, _} = jlib:short_prepd_jid(JID),
 	US1 = {U1, S1},
@@ -574,7 +578,7 @@ push_item(User, Server, From, Item) ->
       fun(Resource) ->
 	      JID = exmpp_jid:make_jid(User, Server, Resource),
 	      ejabberd_router:route(JID, JID, Stanza)
-      end, ejabberd_sm:get_user_resources(User, Server)).
+      end, ejabberd_sm:get_user_resources(list_to_binary(User), list_to_binary(Server))).
 
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,
@@ -807,7 +811,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 			      _ ->
 				  try
 				      JID = exmpp_jid:list_to_jid(SJID),
-				      [{JID#jid.lnode, JID#jid.ldomain} | USs]
+				      [{exmpp_jid:lnode_as_list(JID), exmpp_jid:ldomain_as_list(JID)} | USs]
 				  catch
 				      _ ->
 					  error

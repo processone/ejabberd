@@ -59,29 +59,31 @@
 -define(NS_ADMIN_s,        "http://jabber.org/protocol/admin").
 
 start(Host, _Opts) ->
-    ejabberd_hooks:add(disco_local_items, Host, ?MODULE, get_local_items, 50),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
-    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, get_local_identity, 50),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_sm_items, 50),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, get_sm_identity, 50),
-    ejabberd_hooks:add(adhoc_local_items, Host, ?MODULE, adhoc_local_items, 50),
-    ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE, adhoc_local_commands, 50),
-    ejabberd_hooks:add(adhoc_sm_items, Host, ?MODULE, adhoc_sm_items, 50),
-    ejabberd_hooks:add(adhoc_sm_commands, Host, ?MODULE, adhoc_sm_commands, 50),
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:add(disco_local_items, HostB, ?MODULE, get_local_items, 50),
+    ejabberd_hooks:add(disco_local_features, HostB, ?MODULE, get_local_features, 50),
+    ejabberd_hooks:add(disco_local_identity, HostB, ?MODULE, get_local_identity, 50),
+    ejabberd_hooks:add(disco_sm_items, HostB, ?MODULE, get_sm_items, 50),
+    ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:add(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 50),
+    ejabberd_hooks:add(adhoc_local_items, HostB, ?MODULE, adhoc_local_items, 50),
+    ejabberd_hooks:add(adhoc_local_commands, HostB, ?MODULE, adhoc_local_commands, 50),
+    ejabberd_hooks:add(adhoc_sm_items, HostB, ?MODULE, adhoc_sm_items, 50),
+    ejabberd_hooks:add(adhoc_sm_commands, HostB, ?MODULE, adhoc_sm_commands, 50),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(adhoc_sm_commands, Host, ?MODULE, adhoc_sm_commands, 50),
-    ejabberd_hooks:delete(adhoc_sm_items, Host, ?MODULE, adhoc_sm_items, 50),
-    ejabberd_hooks:delete(adhoc_local_commands, Host, ?MODULE, adhoc_local_commands, 50),
-    ejabberd_hooks:delete(adhoc_local_items, Host, ?MODULE, adhoc_local_items, 50),
-    ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, get_sm_identity, 50),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_sm_items, 50),
-    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 50),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 50),
-    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, get_local_items, 50),
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(adhoc_sm_commands, HostB, ?MODULE, adhoc_sm_commands, 50),
+    ejabberd_hooks:delete(adhoc_sm_items, HostB, ?MODULE, adhoc_sm_items, 50),
+    ejabberd_hooks:delete(adhoc_local_commands, HostB, ?MODULE, adhoc_local_commands, 50),
+    ejabberd_hooks:delete(adhoc_local_items, HostB, ?MODULE, adhoc_local_items, 50),
+    ejabberd_hooks:delete(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 50),
+    ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(disco_sm_items, HostB, ?MODULE, get_sm_items, 50),
+    ejabberd_hooks:delete(disco_local_identity, HostB, ?MODULE, get_local_identity, 50),
+    ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, get_local_features, 50),
+    ejabberd_hooks:delete(disco_local_items, HostB, ?MODULE, get_local_items, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ADHOC),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ADHOC).
 
@@ -181,7 +183,8 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 		{result, Feats}
 	end).
 
-get_sm_features(Acc, From, #jid{ldomain = LServer} = _To, Node, _Lang) ->
+get_sm_features(Acc, From, To, Node, _Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -195,7 +198,8 @@ get_sm_features(Acc, From, #jid{ldomain = LServer} = _To, Node, _Lang) ->
 	    end
     end.
 
-get_local_features(Acc, From, #jid{ldomain = LServer} = _To, Node, _Lang) ->
+get_local_features(Acc, From, To, Node, _Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -250,7 +254,8 @@ get_local_features(Acc, From, #jid{ldomain = LServer} = _To, Node, _Lang) ->
 
 %%%-----------------------------------------------------------------------
 
-adhoc_sm_items(Acc, From, #jid{ldomain = LServer} = To, Lang) ->
+adhoc_sm_items(Acc, From, To, Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case acl:match_rule(LServer, configure, From) of
 	allow ->
 	    Items = case Acc of
@@ -268,9 +273,8 @@ adhoc_sm_items(Acc, From, #jid{ldomain = LServer} = To, Lang) ->
 
 %%%-----------------------------------------------------------------------
 
-get_sm_items(Acc, From,
-	     #jid{node = User, domain = Server, ldomain = LServer} = To,
-	     Node, Lang) ->
+get_sm_items(Acc, From, To, Node, Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -283,7 +287,7 @@ get_sm_items(Acc, From,
 		{allow, ""} ->
 		    Nodes = [?NODEJID(To, "Configuration", "config"),
 			     ?NODEJID(To, "User Management", "user")],
-		    {result, Items ++ Nodes ++ get_user_resources(User, Server)};
+		    {result, Items ++ Nodes ++ get_user_resources(To)};
 		{allow, "config"} ->
 		    {result, []};
 		{_, "config"} ->
@@ -293,18 +297,23 @@ get_sm_items(Acc, From,
 	    end
     end.
 
-get_user_resources(User, Server) ->
-    Rs = ejabberd_sm:get_user_resources(User, Server),
+get_user_resources(BareJID) ->
+    Rs = ejabberd_sm:get_user_resources(exmpp_jid:lnode(BareJID), 
+                                        exmpp_jid:ldomain(BareJID)),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(User, Server, R)},
-			#xmlattr{name = 'name', value = User}]}
+		       [#xmlattr{name = 'jid', 
+                         value = exmpp_jid:jid_to_list(
+                                  exmpp_jid:bare_jid_to_jid(BareJID, R))},
+			    #xmlattr{name = 'name', 
+                         value = exmpp_jid:lnode_as_list(BareJID)}]}
 	      end, lists:sort(Rs)).
 
 %%%-----------------------------------------------------------------------
 
-adhoc_local_items(Acc, From, #jid{ldomain = LServer, domain = Server} = To,
-		  Lang) ->
+adhoc_local_items(Acc, From, To, Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
+    Server = exmpp_jid:domain_as_list(To),
     case acl:match_rule(LServer, configure, From) of
 	allow ->
 	    Items = case Acc of
@@ -373,7 +382,8 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
 		end
 	end).
 
-get_local_items(Acc, From, #jid{ldomain = LServer} = To, "", Lang) ->
+get_local_items(Acc, From, To, "", Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -397,7 +407,8 @@ get_local_items(Acc, From, #jid{ldomain = LServer} = To, "", Lang) ->
 	    end
     end;
 
-get_local_items(Acc, From, #jid{ldomain = LServer} = To, Node, Lang) ->
+get_local_items(Acc, From, To, Node, Lang) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -584,7 +595,7 @@ get_local_items(_Host, _, _Server, _Lang) ->
 
 
 get_online_vh_users(Host) ->
-    case catch ejabberd_sm:get_vh_session_list(Host) of
+    case catch ejabberd_sm:get_vh_session_list(list_to_binary(Host)) of
 	{'EXIT', _Reason} ->
 	    [];
 	USRs ->
@@ -716,8 +727,8 @@ get_stopped_nodes(_Lang) ->
 		adhoc_local_commands(From, To, Request)
 	end).
 
-adhoc_local_commands(Acc, From, #jid{ldomain = LServer} = To,
-		     #adhoc_request{node = Node} = Request) ->
+adhoc_local_commands(Acc, From, To, #adhoc_request{node = Node} = Request) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     LNode = tokenize(Node),
     Allow = acl:match_rule(LServer, configure, From),
     case LNode of
@@ -741,12 +752,13 @@ adhoc_local_commands(Acc, From, #jid{ldomain = LServer} = To,
 	    Acc
     end.
 
-adhoc_local_commands(From, #jid{ldomain = LServer} = _To,
+adhoc_local_commands(From, To,
 		     #adhoc_request{lang = Lang,
 				    node = Node,
 				    sessionid = SessionID,
 				    action = Action,
 				    xdata = XData} = Request) ->
+    LServer = exmpp_jid:ldomain_as_list(To),
     LNode = tokenize(Node),
     %% If the "action" attribute is not present, it is
     %% understood as "execute".  If there was no <actions/>
@@ -1247,7 +1259,7 @@ get_form(Host, ?NS_ADMINL("get-registered-users-num"), Lang) ->
 	}]}]};
 
 get_form(Host, ?NS_ADMINL("get-online-users-num"), Lang) ->
-    Num = io_lib:format("~p", [length(ejabberd_sm:get_vh_session_list(Host))]),
+    Num = io_lib:format("~p", [length(ejabberd_sm:get_vh_session_list(list_to_binary(Host)))]),
     {result, completed,
      [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
        [?HFIELD(),
@@ -1535,8 +1547,8 @@ set_form(_From, _Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     Password = get_value("password", XData),
     Password = get_value("password-verify", XData),
     AccountJID = exmpp_jid:list_to_jid(AccountString),
-    User = AccountJID#jid.lnode,
-    Server = AccountJID#jid.ldomain,
+    User = exmpp_jid:lnode_as_list(AccountJID),
+    Server = exmpp_jid:ldomain_as_list(AccountJID),
     true = lists:member(Server, ?MYHOSTS),
     ejabberd_auth:try_register(User, Server, Password),
     {result, []};
@@ -1547,9 +1559,8 @@ set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
     ASL2 = lists:map(
 	     fun(AccountString) ->
 		     JID = exmpp_jid:list_to_jid(AccountString),
-		     [_|_] = JID#jid.lnode,
-		     User = JID#jid.lnode, 
-		     Server = JID#jid.ldomain, 
+		     User = [_|_] = exmpp_jid:lnode_as_list(JID),
+		     Server = exmpp_jid:ldomain_as_list(JID), 
 		     true = ejabberd_auth:is_user_exists(User, Server),
 		     {User, Server}
 	     end,
@@ -1560,11 +1571,10 @@ set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
 set_form(_From, _Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
-    [_|_] = JID#jid.lnode,
-    LUser = JID#jid.lnode, 
-    LServer = JID#jid.ldomain, 
+    LUser = [_|_] = exmpp_jid:lnode_as_list(JID),
+    LServer = exmpp_jid:ldomain_as_list(JID), 
     %% Code copied from ejabberd_sm.erl
-    case JID#jid.lresource of
+    case exmpp_jid:lresource_as_list(JID) of
 	undefined -> 
 	    SIDs = mnesia:dirty_select(session,
 				       [{#session{sid = '$1', usr = {LUser, LServer, '_'}, _ = '_'}, [], ['$1']}]),
@@ -1579,9 +1589,8 @@ set_form(_From, _Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
 set_form(_From, _Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
-    [_|_] = JID#jid.lnode,
-    User = JID#jid.lnode, 
-    Server = JID#jid.ldomain, 
+    User = [_|_] = exmpp_jid:lnode_as_list(JID),
+    Server = exmpp_jid:ldomain_as_list(JID), 
     Password = ejabberd_auth:get_password(User, Server),
     true = is_list(Password),
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
@@ -1594,9 +1603,8 @@ set_form(_From, _Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
-    [_|_] = JID#jid.lnode,
-    User = JID#jid.lnode, 
-    Server = JID#jid.ldomain, 
+    User = [_|_] = exmpp_jid:lnode_as_list(JID),
+    Server = exmpp_jid:ldomain_as_list(JID), 
     true = ejabberd_auth:is_user_exists(User, Server),
     ejabberd_auth:set_password(User, Server, Password),
     {result, []};
@@ -1604,14 +1612,14 @@ set_form(_From, _Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
 set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
-    [_|_] = JID#jid.lnode,
-    User = JID#jid.lnode, 
-    Server = JID#jid.ldomain, 
+    User = [_|_] = exmpp_jid:lnode_as_list(JID),
+    Server = exmpp_jid:ldomain_as_list(JID), 
 
     %% Code copied from web/ejabberd_web_admin.erl
     %% TODO: Update time format to XEP-0202: Entity Time
     FLast =
-	case ejabberd_sm:get_user_resources(User, Server) of
+	case ejabberd_sm:get_user_resources(exmpp_jid:lnode(User), 
+                                       exmpp_jid:ldomain(Server)) of
 	    [] ->
 		_US = {User, Server},
 		case get_last_info(User, Server) of
@@ -1641,15 +1649,19 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
 set_form(_From, _Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
-    [_|_] = JID#jid.lnode,
-    User = JID#jid.lnode, 
-    Server = JID#jid.ldomain, 
+    User = [_|_] = exmpp_jid:lnode_as_list(JID),
+    Server = exmpp_jid:ldomain_as_list(JID), 
 
-    Resources = ejabberd_sm:get_user_resources(User, Server),
-    IPs1 = [ejabberd_sm:get_user_ip(User, Server, Resource) || Resource <- Resources],
+    Resources = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID), 
+                                               exmpp_jid:ldomain(JID)),
+    IPs1 = [ejabberd_sm:get_user_ip(exmpp_jid:bare_jid_to_jid(JID,Resource)) 
+                || Resource <- Resources],
     IPs = [inet_parse:ntoa(IP)++":"++integer_to_list(Port) || {IP, Port} <- IPs1],
 
-    Items = ejabberd_hooks:run_fold(roster_get, Server, [], [{User, Server}]),
+    Items = ejabberd_hooks:run_fold(roster_get, 
+                                    exmpp_jid:ldomain(JID), 
+                                    [], 
+                                    [{list_to_binary(User), list_to_binary(Server)}]),
     Rostersize = integer_to_list(erlang:length(Items)),
 
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
@@ -1729,12 +1741,14 @@ get_last_info(User, Server) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-adhoc_sm_commands(_Acc, From,
-		  #jid{node = User, domain = Server, ldomain = LServer} = _To,
+adhoc_sm_commands(_Acc, From, To,
 		  #adhoc_request{lang = Lang,
 				 node = "config",
 				 action = Action,
 				 xdata = XData} = Request) ->
+    User = exmpp_jid:node_as_list(To),
+    Server = exmpp_jid:domain_as_list(To),
+    LServer = exmpp_jid:ldomain_as_list(To),
     case acl:match_rule(LServer, configure, From) of
 	deny ->
 	    {error, 'forbidden'};

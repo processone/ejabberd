@@ -281,7 +281,7 @@ do_route(From, To, Packet) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
             NewPacket1 = exmpp_stanza:set_sender(Packet, From),
             NewPacket = exmpp_stanza:set_recipient(NewPacket1, To),
-	    #jid{ldomain = MyServer} = From,
+	    MyServer = exmpp_jid:ldomain(From),
 	    ejabberd_hooks:run(
 	      s2s_send_packet,
 	      MyServer,
@@ -301,8 +301,8 @@ do_route(From, To, Packet) ->
     end.
 
 find_connection(From, To) ->
-    #jid{ldomain = MyServer} = From,
-    #jid{ldomain = Server} = To,
+    MyServer = exmpp_jid:ldomain_as_list(From),
+    Server = exmpp_jid:ldomain_as_list(To),
     FromTo = {MyServer, Server},
     MaxS2SConnectionsNumber = max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
@@ -430,12 +430,12 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 %% service.
 %% --------------------------------------------------------------------
 is_service(From, To) ->
-    LFromDomain = From#jid.ldomain,
+    LFromDomain = exmpp_jid:ldomain_as_list(From),
     case ejabberd_config:get_local_option({route_subdomains, LFromDomain}) of
         s2s -> % bypass RFC 3920 10.3
             false;
         _ ->
-            LDstDomain = To#jid.ldomain,
+            LDstDomain = exmpp_jid:ldomain_as_list(To),
             P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
             lists:any(P, ?MYHOSTS)
     end.

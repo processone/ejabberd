@@ -204,7 +204,8 @@ do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) ->
     end.
 
 do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
-    #jid{node = ChanServ, resource = Resource} = To,
+    ChanServ = exmpp_jid:node_as_list(To),
+    Resource = exmpp_jid:resource_as_list(To),
     case ChanServ of
 	undefined ->
 	    case Resource of
@@ -400,8 +401,10 @@ process_irc_register(Host, From, _To, _DefEnc,
 
 
 get_form(Host, From, [], Lang, DefEnc) ->
-    #jid{node = User, domain = Server,
-	 lnode = LUser, ldomain = LServer} = From,
+    User = exmpp_jid:node_as_list(From),
+    Server = exmpp_jid:domain_as_list(From),
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     US = {LUser, LServer},
     Customs =
 	case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
@@ -485,7 +488,8 @@ get_form(_Host, _, _, _Lang, _) ->
 
 
 set_form(Host, From, [], _Lang, XData) ->
-    {LUser, LServer, _} = jlib:short_prepd_jid(From),
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     US = {LUser, LServer},
     case {lists:keysearch("username", 1, XData),
 	  lists:keysearch("encodings", 1, XData)} of
@@ -529,8 +533,9 @@ set_form(_Host, _, _, _Lang, _XData) ->
 
 
 get_user_and_encoding(Host, From, IRCServer, DefEnc) ->
-    #jid{node = User, domain = _Server,
-	 lnode = LUser, ldomain = LServer} = From,
+    User = exmpp_jid:node_as_list(From),
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	{'EXIT', _Reason} ->

@@ -45,14 +45,15 @@
 -define(PROCNAME, ejabberd_mod_vcard).
 
 start(Host, Opts) ->
-    ejabberd_hooks:add(remove_user, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
     MyHost = gen_mod:get_opt_host(Host, Opts, "vjud.@HOST@"),
     Search = gen_mod:get_opt(search, Opts, true),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -86,11 +87,12 @@ loop(Host, ServerHost) ->
     end.
 
 stop(Host) ->
-    ejabberd_hooks:delete(remove_user, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,
     {wait, Proc}.
@@ -129,12 +131,14 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 
 process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
-    #jid{lnode = LUser, ldomain = LServer} = To,
+    LUser = exmpp_jid:lnode_as_list(To),
+    LServer = exmpp_jid:ldomain_as_list(To),
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_vcard(LServer, Username) of
         {selected, ["vcard"], [{SVCARD}]} ->
             try exmpp_xml:parse_document(SVCARD,
-              [names_as_atom]) of
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]) of
                 [VCARD] ->
                     exmpp_iq:result(IQ_Rec, VCARD)
             catch
@@ -148,7 +152,8 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
             exmpp_iq:error(IQ_Rec, 'internal-server-error')
     end;
 process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
-    #jid{node = User, ldomain = LServer} = From,
+    User = exmpp_jid:node_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
         true ->
             set_vcard(User, LServer, Request),
@@ -277,7 +282,8 @@ set_vcard(User, LServer, VCARD) ->
 	  ]}]).
 
 do_route(ServerHost, From, To, Packet) ->
-    #jid{node = User, resource = Resource} = To,
+    User = exmpp_jid:node(To),
+    Resource = exmpp_jid:resource(To),
     if
 	(User /= undefined) or (Resource /= undefined) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'service-unavailable'),
@@ -615,7 +621,7 @@ make_val(Match, Field, Val) ->
 %    mnesia:transaction(F).
 
 
-remove_user(User, Server) ->
+remove_user(User, Server) when is_binary(User), is_binary(server) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
     Username = ejabberd_odbc:escape(LUser),

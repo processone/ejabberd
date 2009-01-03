@@ -59,24 +59,25 @@
 -define(PREFIXED_NS, [{?NS_XMPP, ?NS_XMPP_pfx}]).
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     mnesia:create_table(offline_msg,
 			[{disc_only_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, offline_msg)}]),
     update_table(),
-    ejabberd_hooks:add(offline_message_hook, Host,
+    ejabberd_hooks:add(offline_message_hook, HostB,
 		       ?MODULE, store_packet, 50),
-    ejabberd_hooks:add(resend_offline_messages_hook, Host,
+    ejabberd_hooks:add(resend_offline_messages_hook, HostB,
 		       ?MODULE, pop_offline_messages, 50),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, Host,
+    ejabberd_hooks:add(anonymous_purge_hook, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(webadmin_page_host, Host,
+    ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:add(webadmin_user, Host,
+    ejabberd_hooks:add(webadmin_user, HostB,
 		       ?MODULE, webadmin_user, 50),
-    ejabberd_hooks:add(webadmin_user_parse_query, Host,
+    ejabberd_hooks:add(webadmin_user_parse_query, HostB,
                        ?MODULE, webadmin_user_parse_query, 50),
     MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -134,19 +135,20 @@ receive_all(US, Msgs) ->
 
 
 stop(Host) ->
-    ejabberd_hooks:delete(offline_message_hook, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(offline_message_hook, HostB,
 			  ?MODULE, store_packet, 50),
-    ejabberd_hooks:delete(resend_offline_messages_hook, Host,
+    ejabberd_hooks:delete(resend_offline_messages_hook, HostB,
 			  ?MODULE, pop_offline_messages, 50),
-    ejabberd_hooks:delete(remove_user, Host,
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, Host,
+    ejabberd_hooks:delete(anonymous_purge_hook, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(webadmin_page_host, Host,
+    ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:delete(webadmin_user, Host,
+    ejabberd_hooks:delete(webadmin_user, HostB,
 			  ?MODULE, webadmin_user, 50),
-    ejabberd_hooks:delete(webadmin_user_parse_query, Host,
+    ejabberd_hooks:delete(webadmin_user_parse_query, HostB,
                           ?MODULE, webadmin_user_parse_query, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
@@ -159,10 +161,11 @@ store_packet(From, To, Packet) ->
 	(Type /= "headline") ->
 	    case check_event(From, To, Packet) of
 		true ->
-		    #jid{lnode = LUser, ldomain = LServer} = To,
+            LUser = exmpp_jid:lnode_as_list(To),
+            LServer = exmpp_jid:ldomain_as_list(To),
 		    TimeStamp = now(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
-		    gen_mod:get_module_proc(To#jid.ldomain, ?PROCNAME) !
+		    gen_mod:get_module_proc(LServer, ?PROCNAME) !
 			#offline_msg{us = {LUser, LServer},
 				     timestamp = TimeStamp,
 				     expire = Expire,
@@ -267,10 +270,11 @@ resend_offline_messages(User, Server) ->
 	    ok
     end.
 
-pop_offline_messages(Ls, User, Server) ->
+pop_offline_messages(Ls, User, Server)
+        when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
 	US = {LUser, LServer},
 	F = fun() ->
 		    Rs = mnesia:wread({offline_msg, US}),
@@ -347,7 +351,7 @@ remove_old_messages(Days) ->
 	end,
     mnesia:transaction(F).
 
-remove_user(User, Server) ->
+remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),

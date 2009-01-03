@@ -136,7 +136,7 @@ process_iq_disco_items(Host, From, To, #iq{} = IQ) ->
 can_use_nick(_Host, _JID, "") ->
     false;
 can_use_nick(Host, JID, Nick) ->
-    LUS = {JID#jid.lnode, JID#jid.ldomain},
+    LUS = {exmpp_jid:lnode_as_list(JID), exmpp_jid:ldomain_as_list(JID)},
     case catch mnesia:dirty_select(
 		 muc_registered,
 		 [{#muc_registered{us_host = '$1',
@@ -312,8 +312,8 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
-    Room = To#jid.lnode,
-    Nick = To#jid.lresource,
+    Room = exmpp_jid:lnode_as_list(To),
+    Nick = exmpp_jid:lresource_as_list(To),
     #xmlel{name = Name} = Packet,
     case Room of
 	'undefined' ->
@@ -554,8 +554,8 @@ flush() ->
                              children = [#xmlcdata{cdata = Val}]}]}).
 
 iq_get_register_info(Host, From, Lang) ->
-    LUser = From#jid.lnode,
-    LServer = From#jid.ldomain,
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     LUS = {LUser, LServer},
     {Nick, Registered} =
 	case catch mnesia:dirty_read(muc_registered, {LUS, Host}) of
@@ -584,8 +584,8 @@ iq_get_register_info(Host, From, Lang) ->
 
 
 iq_set_register_info(Host, From, Nick, Lang) ->
-    LUser = From#jid.lnode,
-    LServer = From#jid.ldomain,
+    LUser = exmpp_jid:lnode_as_list(From),
+    LServer = exmpp_jid:ldomain_as_list(From),
     LUS = {LUser, LServer},
     F = fun() ->
 		case Nick of

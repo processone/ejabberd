@@ -261,7 +261,9 @@ remove_user(User, Server) ->
 		    mnesia:delete({passwd, US})
 	    end,
 	mnesia:transaction(F),
-	ejabberd_hooks:run(remove_user, LServer, [User, Server])
+	ejabberd_hooks:run(remove_user, 
+                       list_to_binary(LServer), 
+                       [list_to_binary(User), list_to_binary(Server)])
     catch
 	_ ->
 	    ok
@@ -285,7 +287,9 @@ remove_user(User, Server, Password) ->
 	    end,
 	case mnesia:transaction(F) of
 	    {atomic, ok} ->
-		ejabberd_hooks:run(remove_user, LServer, [User, Server]),
+		ejabberd_hooks:run(remove_user, 
+                           list_to_binary(LServer), 
+                           [list_to_binary(User), list_to_binary(Server)]),
 		ok;
 	    {atomic, Res} ->
 		Res;
