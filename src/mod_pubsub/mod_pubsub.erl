@@ -30,7 +30,7 @@
 %%%
 %%% @reference See <a href="http://www.xmpp.org/extensions/xep-0060.html">XEP-0060: Pubsub</a> for
 %%% the latest version of the PubSub specification.
-%%% This module uses version 1.11 of the specification as a base.
+%%% This module uses version 1.12 of the specification as a base.
 %%% Most of the specification is implemented.
 %%% Functions concerning configuration should be rewritten.
 %%% Code is derivated from the original pubsub v1.7, by Alexey Shchepin <alexey@process-one.net>
@@ -41,7 +41,7 @@
 
 -module(mod_pubsub).
 -author('christophe.romain@process-one.net').
--version('1.11-01').
+-version('1.12-01').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -786,7 +786,7 @@ iq_disco_items(Host, Item, _From) ->
 	    Node = string_to_node(SNode),
 	    %% Note: Multiple Node Discovery not supported (mask on pubsub#type)
 	    %% TODO this code is also back-compatible with pubsub v1.8 (for client issue)
-	    %% TODO make it pubsub v1.10 compliant (this breaks client compatibility)
+	    %% TODO make it pubsub v1.12 compliant (this breaks client compatibility)
 	    %% TODO That is, remove name attribute
 	    Action =
 		fun(#pubsub_node{type = Type}) ->
@@ -1252,7 +1252,6 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 		    %%	[{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "result"}],
 		    %%		[?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NMI),
 		    %%		?XFIELD("jid-single", "Node Creator", "creator", jlib:jid_to_string(OwnerKey))]}]),
-		    %% todo publish_item(Host, ServerHost, ["pubsub", "nodes"], node_to_string(Node)),
 		    case Result of
 			default -> {result, Reply};
 			_ -> {result, Result}
@@ -1298,14 +1297,17 @@ delete_node(Host, Node, Owner) ->
 	{error, Error} ->
 	    {error, Error};
 	{result, {Result, broadcast, Removed}} ->
-	    broadcast_removed_node(Host, Removed),
-	    %%broadcast_retract_item(Host, ["pubsub", "nodes"], node_to_string(Node)),
+	    lists:foreach(fun(RNode) ->
+		broadcast_removed_node(Host, RNode)
+	    end, Removed),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
 	    end;
 	{result, {Result, Removed}} ->
-	    broadcast_removed_node(Host, Removed),
+	    lists:foreach(fun(RNode) ->
+		broadcast_removed_node(Host, RNode)
+	    end, Removed),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -1514,23 +1516,17 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	{error, Reason} ->
 	    {error, Reason};
 	{result, {Result, broadcast, Removed}} ->
-	    lists:foreach(fun(OldItem) ->
-				  broadcast_retract_item(Host, Node, OldItem)
-			  end, Removed),
+	    broadcast_retract_items(Host, Node, Removed),
 	    broadcast_publish_item(Host, Node, ItemId, jlib:jid_tolower(Publisher), Payload),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
 	    end;
 	{result, default, Removed} ->
-	    lists:foreach(fun(OldItem) ->
-				  broadcast_retract_item(Host, Node, OldItem)
-			  end, Removed),
+	    broadcast_retract_items(Host, Node, Removed),
 	    {result, Reply};
 	{result, Result, Removed} ->
-	    lists:foreach(fun(OldItem) ->
-				  broadcast_retract_item(Host, Node, OldItem)
-			  end, Removed),
+	    broadcast_retract_items(Host, Node, Removed),
 	    {result, Result};
 	{result, default} ->
 	    {result, Reply};
@@ -1581,7 +1577,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 	{error, Reason} ->
 	    {error, Reason};
 	{result, {Result, broadcast}} ->
-	    broadcast_retract_item(Host, Node, ItemId, ForceNotify),
+	    broadcast_retract_items(Host, Node, [ItemId], ForceNotify),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -1749,12 +1745,10 @@ send_items(Host, Node, LJID, Number) ->
 		    [First|Tail] = Items,
 		    [lists:foldl(
 			fun(CurItem, LastItem) ->
-			    {_, {LMS, LS, LmS}} = LastItem#pubsub_item.creation,
-			    {_, {CMS, CS, CmS}} = CurItem#pubsub_item.creation,
-			    LTimestamp = LMS * 1000000 + LS * 1000 + LmS,
-			    CTimestamp = CMS * 1000000 + CS * 1000 + CmS,
+			    {_, LTimeStamp} = LastItem#pubsub_item.creation,
+			    {_, CTimeStamp} = CurItem#pubsub_item.creation,
 			    if
-				CTimestamp > LTimestamp -> CurItem;
+				CTimeStamp > LTimeStamp -> CurItem;
 				true -> LastItem
 			    end
 			end, First, Tail)];
@@ -1773,10 +1767,9 @@ send_items(Host, Node, LJID, Number) ->
 		    end,
 		    {xmlelement, "item", ItemAttrs, Payload}
 		end, ToSend),
-    Stanza = {xmlelement, "message", [],
-	      [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
-		[{xmlelement, "items", [{"node", node_to_string(Node)}],
-		  ItemsEls}]}]},
+    Stanza = event_stanza(
+	[{xmlelement, "items", [{"node", node_to_string(Node)}],
+	 ItemsEls}]),
     ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza}.
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
@@ -2106,10 +2099,10 @@ service_jid(Host) ->
 %%	Subscription = atom()
 %%	PresenceDelivery = boolean()
 %% @doc <p>Check if a notification must be delivered or not
-is_to_delivered(_, none, _) -> false;
-is_to_delivered(_, pending, _) -> false;
-is_to_delivered(_, _, false) -> true;
-is_to_delivered({User, Server, _}, _, true) ->
+is_to_deliver(_, none, _) -> false;
+is_to_deliver(_, pending, _) -> false;
+is_to_deliver(_, _, false) -> true;
+is_to_deliver({User, Server, _}, _, true) ->
     case mnesia:dirty_match_object({session, '_', '_', {User, Server}, '_', '_'}) of
     [] -> false;
     Ss ->
@@ -2118,224 +2111,172 @@ is_to_delivered({User, Server, _}, _, true) ->
 	end, false, Ss)
     end.
 
+%% @spec (Els) -> stanza()
+%%  Els = [xmlelement()]
+%% @doc <p>Build pubsub event stanza
+event_stanza(Els) ->
+    {xmlelement, "message", [],
+     [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}], Els}]}.
+
 %%%%%% broadcast functions
 
 broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
     Action =
 	fun(#pubsub_node{options = Options, type = Type}) ->
-		case node_call(Type, get_states, [Host, Node]) of
-		    {error, _} -> {result, false};
-		    {result, []} -> {result, false};
-		    {result, States} ->
-			PresenceDelivery = get_option(Options, presence_based_delivery),
-			BroadcastAll = get_option(Options, broadcast_all_resources),
-			Content = case get_option(Options, deliver_payloads) of
-			    true -> Payload;
-			    false -> []
-			end,
-			ItemAttrs = case ItemId of
-			    "" -> [];
-			    _ -> [{"id", ItemId}]
-			end,
-			Stanza = {xmlelement, "message", [],
-				   [{xmlelement, "event",
-				     [{"xmlns", ?NS_PUBSUB_EVENT}],
-				       [{xmlelement, "items", [{"node", node_to_string(Node)}],
-				         [{xmlelement, "item", ItemAttrs, Content}]}]}]},
-			lists:foreach(
-			  fun(#pubsub_state{stateid = {LJID, _},
-					    subscription = Subscription}) ->
-				case is_to_delivered(LJID, Subscription, PresenceDelivery) of
-				    true ->
-					DestJIDs = case BroadcastAll of
-					    true -> ejabberd_sm:get_user_resources(element(1, LJID), element(2, LJID));
-					    false -> [LJID]
-					end,
-					lists:foreach(
-					    fun(DestJID) ->
-						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(DestJID), Stanza}
-					    end, DestJIDs);
-				    false ->
-					ok
-				end
-			  end, States),
-			broadcast_by_caps(Host, Node, Type, Stanza),
-			{result, true}
-		end
+	    case node_call(Type, get_states, [Host, Node]) of
+		{result, []} -> 
+		    {result, false};
+		{result, States} ->
+		    Content = case get_option(Options, deliver_payloads) of
+			true -> Payload;
+			false -> []
+		    end,
+		    ItemAttrs = case ItemId of
+			"" -> [];
+			_ -> [{"id", ItemId}]
+		    end,
+		    Stanza = event_stanza(
+			[{xmlelement, "items", [{"node", node_to_string(Node)}],
+			 [{xmlelement, "item", ItemAttrs, Content}]}]),
+		    broadcast_stanza(Host, Options, States, Stanza),
+		    broadcast_by_caps(Host, Node, Type, Stanza),
+		    {result, true};
+		_ ->
+		    {result, false}
+	    end
 	end,
     transaction(Host, Node, Action, sync_dirty).
 
-broadcast_retract_item(Host, Node, ItemId) ->
-    broadcast_retract_item(Host, Node, ItemId, false).
-broadcast_retract_item(Host, Node, ItemId, ForceNotify) ->
+broadcast_retract_items(Host, Node, ItemIds) ->
+    broadcast_retract_items(Host, Node, ItemIds, false).
+broadcast_retract_items(Host, Node, ItemIds, ForceNotify) ->
     Action =
 	fun(#pubsub_node{options = Options, type = Type}) ->
-		case node_call(Type, get_states, [Host, Node]) of
-		    {error, _} -> {result, false};
-		    {result, []} -> {result, false};
-		    {result, States} ->
-			Notify = case ForceNotify of
-				     true -> true;
-				     _ -> get_option(Options, notify_retract)
-				 end,
-			ItemAttrs = case ItemId of
-			    "" -> [];
-			    _ -> [{"id", ItemId}]
-			end,
-			Stanza = {xmlelement, "message", [],
-				   [{xmlelement, "event",
-				     [{"xmlns", ?NS_PUBSUB_EVENT}],
-				       [{xmlelement, "items", [{"node", node_to_string(Node)}],
-				         [{xmlelement, "retract", ItemAttrs, []}]}]}]},
-			case Notify of
-			    true ->
-				lists:foreach(
-				  fun(#pubsub_state{stateid = {JID, _},
-						    subscription = Subscription}) ->
-					if (Subscription /= none) and
-					   (Subscription /= pending) ->
-					    ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza};
-					   true ->
-					    ok
-					end
-				  end, States),
-				broadcast_by_caps(Host, Node, Type, Stanza),
-				{result, true};
-			    false ->
-				{result, false}
-			end
-		end
+	    case (get_option(Options, notify_retract) or ForceNotify) of
+		true ->
+		    case node_call(Type, get_states, [Host, Node]) of
+			{result, []} -> 
+			    {result, false};
+			{result, States} ->
+			    RetractEls = lists:map(
+				fun(ItemId) ->
+				    ItemAttrs = case ItemId of
+					"" -> [];
+					_ -> [{"id", ItemId}]
+				    end,
+				    {xmlelement, "retract", ItemAttrs, []}
+				end, ItemIds),
+			    Stanza = event_stanza(
+				[{xmlelement, "items", [{"node", node_to_string(Node)}],
+				 RetractEls}]),
+			    broadcast_stanza(Host, Options, States, Stanza),
+			    broadcast_by_caps(Host, Node, Type, Stanza),
+			    {result, true};
+			_ ->
+			    {result, false}
+		    end;
+		_ ->
+		    {result, false}
+	    end
 	end,
     transaction(Host, Node, Action, sync_dirty).
 
 broadcast_purge_node(Host, Node) ->
     Action =
 	fun(#pubsub_node{options = Options, type = Type}) ->
-		case node_call(Type, get_states, [Host, Node]) of
-		    {error, _} -> {result, false};
-		    {result, []} -> {result, false};
-		    {result, States} ->
-			Stanza = {xmlelement, "message", [],
-				   [{xmlelement, "event",
-				     [{"xmlns", ?NS_PUBSUB_EVENT}],
-				       [{xmlelement, "purge", [{"node", node_to_string(Node)}],
-				         []}]}]},
-			case get_option(Options, notify_retract) of
-			    true ->
-				lists:foreach(
-				  fun(#pubsub_state{stateid = {JID,_},
-						    subscription = Subscription}) ->
-					if (Subscription /= none) and
-					   (Subscription /= pending) ->
-						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza};
-					   true ->
-					    ok
-					end
-				  end, States),
-				broadcast_by_caps(Host, Node, Type, Stanza),
-				{result, true};
-			    false ->
-				{result, false}
-			end
-		end
+	    case get_option(Options, notify_retract) of
+		true ->
+		    case node_call(Type, get_states, [Host, Node]) of
+			{result, []} -> 
+			    {result, false};
+			{result, States} ->
+			    Stanza = event_stanza(
+				[{xmlelement, "purge", [{"node", node_to_string(Node)}], []}]),
+			    broadcast_stanza(Host, Options, States, Stanza),
+			    broadcast_by_caps(Host, Node, Type, Stanza),
+			    {result, true};
+			_ -> 
+			    {result, false}
+		    end;
+		_ ->
+		    {result, false}
+	    end
 	end,
     transaction(Host, Node, Action, sync_dirty).
 
-broadcast_removed_node(Host, Removed) ->
-    lists:foreach(
-      fun(Node) ->
-	      Action =
-		  fun(#pubsub_node{options = Options, type = Type}) ->
-			Stanza = {xmlelement, "message", [],
-				 [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
-				   [{xmlelement, "delete", [{"node", node_to_string(Node)}],
-				     []}]}]},
-			case get_option(Options, notify_delete) of
-			    true ->
-				case node_call(Type, get_states, [Host, Node]) of
-				    {result, States} ->
-					lists:foreach(
-					    fun(#pubsub_state{stateid = {JID, _},
-						subscription = Subscription}) ->
-					    if (Subscription /= none) and
-					       (Subscription /= pending) ->
-						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza};
-					       true ->
-						ok
-					    end
-					end, States),
-					broadcast_by_caps(Host, Node, Type, Stanza),
-					{result, true};
-				    _ ->
-					{result, false}
-				end;
-			    _ ->
-				{result, false}
-			end
-		  end,
-	      transaction(Host, Node, Action, sync_dirty)
-      end, Removed).
+broadcast_removed_node(Host, Node) ->
+    Action =
+	fun(#pubsub_node{options = Options, type = Type}) ->
+	    case get_option(Options, notify_delete) of
+		true ->
+		    case node_call(Type, get_states, [Host, Node]) of
+			{result, []} -> 
+			    {result, false};
+			{result, States} ->
+			    Stanza = event_stanza(
+				[{xmlelement, "delete", [{"node", node_to_string(Node)}], []}]),
+			    broadcast_stanza(Host, Options, States, Stanza),
+			    broadcast_by_caps(Host, Node, Type, Stanza),
+			    {result, true};
+			_ ->
+			    {result, false}
+		    end;
+		_ ->
+		    {result, false}
+	    end
+	end,
+    transaction(Host, Node, Action, sync_dirty).
 
 broadcast_config_notification(Host, Node, Lang) ->
     Action =
 	fun(#pubsub_node{options = Options, owners = Owners, type = Type}) ->
-		case node_call(Type, get_states, [Host, Node]) of
-		    {error, _} -> {result, false};
-		    {result, []} -> {result, false};
-		    {result, States} ->
-			case get_option(Options, notify_config) of
-			    true ->
-				PresenceDelivery = get_option(Options, presence_based_delivery),
-				Content = case get_option(Options, deliver_payloads) of
-				    true ->
-					[{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-					get_configure_xfields(Type, Options, Lang, Owners)}];
-				    false ->
-					[]
-				end,
-				Stanza = {xmlelement, "message", [],
-					   [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}],
-					     [{xmlelement, "items", [{"node", node_to_string(Node)}],
-					       [{xmlelement, "item", [{"id", "configuration"}],
-					         Content}]}]}]},
-				lists:foreach(
-				  fun(#pubsub_state{stateid = {LJID, _},
-						    subscription = Subscription}) ->
-					case is_to_delivered(LJID, Subscription, PresenceDelivery) of
-					    true ->
-						ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza};
-					    false ->
-						ok
-					end
-				  end, States),
-				broadcast_by_caps(Host, Node, Type, Stanza),
-				{result, true};
-			    _ ->
-				{result, false}
-			end
-		end
+	    case get_option(Options, notify_config) of
+		true ->
+		    case node_call(Type, get_states, [Host, Node]) of
+			{result, []} -> 
+			    {result, false};
+			{result, States} ->
+			    Content = case get_option(Options, deliver_payloads) of
+				true ->
+				    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+				    get_configure_xfields(Type, Options, Lang, Owners)}];
+				false ->
+				    []
+			    end,
+			    Stanza = event_stanza(
+				[{xmlelement, "items", [{"node", node_to_string(Node)}],
+				 [{xmlelement, "item", [{"id", "configuration"}],
+				  Content}]}]),
+			    broadcast_stanza(Host, Options, States, Stanza),
+			    broadcast_by_caps(Host, Node, Type, Stanza),
+			    {result, true};
+			_ -> 
+			    {result, false}
+		    end;
+		_ ->
+		    {result, false}
+	    end
 	end,
     transaction(Host, Node, Action, sync_dirty).
 
-%TODO: simplify broadcast_* using a generic function like that:
-%broadcast(Host, Node, Fun) ->
-%	transaction(fun() ->
-%		case tree_call(Host, get_node, [Host, Node]) of
-%		#pubsub_node{options = Options, owners = Owners, type = Type} ->
-%			case node_call(Type, get_states, [Host, Node]) of
-%			{error, _} -> {result, false};
-%			{result, []} -> {result, false};
-%			{result, States} ->
-%				lists:foreach(fun(#pubsub_state{stateid = {JID,_}, subscription = Subscription}) ->
-%					Fun(Host, Node, Options, Owners, JID, Subscription)
-%				end, States),
-%				{result, true}
-%			end;
-%		Other ->
-%			Other
-%		end
-%	end, sync_dirty).
-
+broadcast_stanza(Host, NodeOpts, States, Stanza) ->
+    PresenceDelivery = get_option(NodeOpts, presence_based_delivery),
+    BroadcastAll = get_option(NodeOpts, broadcast_all_resources),
+    From = service_jid(Host),
+    lists:foreach(fun(#pubsub_state{stateid = {LJID, _}, subscription = Subs}) ->
+	case is_to_deliver(LJID, Subs, PresenceDelivery) of
+	    true ->
+		JIDs = case BroadcastAll of
+		    true -> ejabberd_sm:get_user_resources(element(1, LJID), element(2, LJID));
+		    false -> [LJID]
+		end,
+		lists:foreach(fun(JID) ->
+		    ejabberd_router ! {route, From, jlib:make_jid(JID), Stanza}
+		end, JIDs);
+	    false ->
+		ok
+	end
+    end, States).
 
 %% broadcast Stanza to all contacts of the user that are advertising
 %% interest in this kind of Node.
@@ -2676,18 +2617,18 @@ plugins(Host) ->
 
 features() ->
 	[
-	 %"access-authorize",   % OPTIONAL
+	 %TODO "access-authorize",   % OPTIONAL
 	 "access-open",   % OPTIONAL this relates to access_model option in node_default
 	 "access-presence",   % OPTIONAL this relates to access_model option in node_pep
-	 %"access-roster",   % OPTIONAL
-	 %"access-whitelist",   % OPTIONAL
+	 %TODO "access-roster",   % OPTIONAL
+	 %TODO "access-whitelist",   % OPTIONAL
 	 % see plugin "auto-create",   % OPTIONAL
 	 % see plugin "auto-subscribe",   % RECOMMENDED
 	 "collections",   % RECOMMENDED
 	 "config-node",   % RECOMMENDED
 	 "create-and-configure",   % RECOMMENDED
 	 % see plugin "create-nodes",   % RECOMMENDED
-	 %TODO "delete-any",   % OPTIONAL
+	 % see plugin "delete-any",   % RECOMMENDED
 	 % see plugin "delete-nodes",   % RECOMMENDED
 	 % see plugin "filtered-notifications",   % RECOMMENDED
 	 %TODO "get-pending",   % OPTIONAL
