@@ -16,6 +16,9 @@
 	delete-nodes for delete item use case (fix from erroneous definition
 	in XEP-0060)
 
+	* src/mod_pubsub/mod_pubsub.erl: Added "access-whitelist" and
+	"member-affiliation" features (thanks to Andy Skelton)(EJAB-780)
+
 2008-12-23  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Improve handling of PEP sent to

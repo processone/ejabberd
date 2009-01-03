@@ -284,6 +284,7 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
     State = get_state(Host, Node, SubscriberKey),
     #pubsub_state{affiliation = Affiliation,
 		  subscription = Subscription} = State,
+    Whitelisted = lists:member(Affiliation, [member, publisher, owner]),
     if
 	not Authorized ->
 	    %% JIDs do not match
@@ -300,8 +301,8 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	(AccessModel == roster) and (not RosterGroup) ->
 	    %% Entity is not authorized to create a subscription (not in roster group)
 	    {error, ?ERR_EXTENDED('not-authorized', "not-in-roster-group")};
-	(AccessModel == whitelist) ->  % TODO: to be done
-	    %% Node has whitelist access model
+	(AccessModel == whitelist) and (not Whitelisted) ->
+	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED('not-allowed', "closed-node")};
 	(AccessModel == authorize) -> % TODO: to be done
 	    %% Node has authorize access model
@@ -671,6 +672,7 @@ get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, _SubI
     #pubsub_state{affiliation = Affiliation,
 		  subscription = Subscription} = State,
     Subscribed = not ((Subscription == none) or (Subscription == pending)),
+    Whitelisted = lists:member(Affiliation, [member, publisher, owner]),
     if
 	%%SubID == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
@@ -690,8 +692,8 @@ get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, _SubI
 	(AccessModel == roster) and (not RosterGroup) ->
 	    %% Entity is not authorized to create a subscription (not in roster group)
 	    {error, ?ERR_EXTENDED('not-authorized', "not-in-roster-group")};
-	(AccessModel == whitelist) ->  % TODO: to be done
-	    %% Node has whitelist access model
+	(AccessModel == whitelist) and (not Whitelisted) ->
+	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED('not-allowed', "closed-node")};
 	(AccessModel == authorize) -> % TODO: to be done
 	    %% Node has authorize access model
@@ -721,6 +723,7 @@ get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup
     #pubsub_state{affiliation = Affiliation,
 		  subscription = Subscription} = State,
     Subscribed = not ((Subscription == none) or (Subscription == pending)),
+    Whitelisted = lists:member(Affiliation, [member, publisher, owner]),
     if
 	%%SubID == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
@@ -740,8 +743,8 @@ get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup
 	(AccessModel == roster) and (not RosterGroup) ->
 	    %% Entity is not authorized to create a subscription (not in roster group)
 	    {error, ?ERR_EXTENDED('not-authorized', "not-in-roster-group")};
-	(AccessModel == whitelist) ->  % TODO: to be done
-	    %% Node has whitelist access model
+	(AccessModel == whitelist) and (not Whitelisted) ->
+	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED('not-allowed', "closed-node")};
 	(AccessModel == authorize) -> % TODO: to be done
 	    %% Node has authorize access model

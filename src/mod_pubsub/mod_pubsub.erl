@@ -2063,6 +2063,7 @@ get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, A
 %% @doc <p>Convert an affiliation type from string to atom.</p>
 string_to_affiliation("owner") -> owner;
 string_to_affiliation("publisher") -> publisher;
+string_to_affiliation("member") -> member;
 string_to_affiliation("outcast") -> outcast;
 string_to_affiliation("none") -> none;
 string_to_affiliation(_) -> false.
@@ -2083,6 +2084,7 @@ string_to_subscription(_) -> false.
 %% @doc <p>Convert an affiliation type from atom to string.</p>
 affiliation_to_string(owner) -> "owner";
 affiliation_to_string(publisher) -> "publisher";
+affiliation_to_string(member) -> "member";
 affiliation_to_string(outcast) -> "outcast";
 affiliation_to_string(_) -> "none".
 
@@ -2662,7 +2664,7 @@ features() ->
 	 "access-open",   % OPTIONAL this relates to access_model option in node_default
 	 "access-presence",   % OPTIONAL this relates to access_model option in node_pep
 	 %TODO "access-roster",   % OPTIONAL
-	 %TODO "access-whitelist",   % OPTIONAL
+	 "access-whitelist",   % OPTIONAL
 	 % see plugin "auto-create",   % OPTIONAL
 	 % see plugin "auto-subscribe",   % RECOMMENDED
 	 "collections",   % RECOMMENDED
@@ -2679,7 +2681,7 @@ features() ->
 	 %TODO "cache-last-item",
 	 %TODO "leased-subscription",   % OPTIONAL
 	 % see plugin "manage-subscriptions",   % OPTIONAL
-	 %TODO "member-affiliation",   % RECOMMENDED
+	 "member-affiliation",   % RECOMMENDED
 	 %TODO "meta-data",   % RECOMMENDED
 	 % see plugin "modify-affiliations",   % OPTIONAL
 	 %TODO "multi-collection",   % OPTIONAL
