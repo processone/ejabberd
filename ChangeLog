@@ -1,3 +1,7 @@
+2009-01-03  Badlop  <badlop@process-one.net>
+
+	* src/*.erl: Fix EDoc comments
+
 2009-01-03  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: deliver notification depending on
@@ -24,7 +28,7 @@
 2008-12-24  Badlop  <badlop@process-one.net>
 
 	* src/aclocal.m4: Fixes in configure script: fix
-	disable-disable_zlib and disable-pam; in case of problems, PAM
+	disable-ejabberd_zlib and disable-pam; in case of problems, PAM
 	verification aborts with error instead of warning. (EJAB-787)
 	* src/configure.ac: Likewise
 	* src/configure: Likewise

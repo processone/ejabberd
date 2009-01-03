@@ -55,7 +55,7 @@
 %% API definition
 %% ================
 
-%% @spec (Host) -> any()
+%% @spec (Host, ServerHost, Opts) -> any()
 %%     Host = mod_pubsub:host()
 %%     ServerHost = host()
 %%     Opts = list()

@@ -80,7 +80,7 @@
 %% API definition
 %% ================
 
-%% @spec (Host) -> any()
+%% @spec (Host, ServerHost, Opts) -> any()
 %%	 Host = mod_pubsub:host()
 %%	 ServerHost = host()
 %%	 Opts = list()
@@ -110,7 +110,7 @@ init(_Host, _ServerHost, _Opts) ->
     end,
     ok.
 
-%% @spec (Host) -> any()
+%% @spec (Host, ServerHost) -> any()
 %%	 Host = mod_pubsub:host()
 %% @doc <p>Called during pubsub modules termination. Any pubsub plugin must
 %% implement this function. It can return anything.</p>
@@ -173,7 +173,7 @@ features() ->
      "subscription-notifications"
     ].
 
-%% @spec (Host, Node, Owner, Access) -> bool()
+%% @spec (Host, ServerHost, Node, ParentNode, Owner, Access) -> bool()
 %%	 Host = mod_pubsub:host()
 %%	 ServerHost = mod_pubsub:host()
 %%	 Node = mod_pubsub:pubsubNode()
@@ -239,7 +239,7 @@ delete_node(Host, Removed) ->
       end, Removed),
     {result, {default, broadcast, Removed}}.
 
-%% @spec (Host, Node, Sender, Subscriber, AccessModel, SendLast) ->
+%% @spec (Host, Node, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
 %%		 {error, Reason} | {result, Result}
 %% @doc <p>Accepts or rejects subcription requests on a PubSub node.</p>
 %% <p>The mechanism works as follow:
@@ -557,9 +557,9 @@ set_affiliation(Host, Node, Owner, Affiliation) ->
     set_state(State#pubsub_state{affiliation = Affiliation}),
     ok.
 
-%% @spec (Host) -> [{Node,Subscription}]
+%% @spec (Host, Ownner) -> [{Node,Subscription}]
 %%	 Host = host()
-%%	 JID = mod_pubsub:jid()
+%%	 Owner = mod_pubsub:jid()
 %% @doc <p>Return the current subscriptions for the given user</p>
 %% <p>The default module reads subscriptions in the main Mnesia
 %% <tt>pubsub_state</tt> table. If a plugin stores its data in the same
@@ -627,7 +627,7 @@ get_state(Host, Node, JID) ->
 	_ -> #pubsub_state{stateid=StateId}
     end.
 
-%% @spec (State) -> ok | {error, ?ERR_INTERNAL_SERVER_ERROR}
+%% @spec (State) -> ok | {error, ErrorCode}
 %%	 State = mod_pubsub:pubsubStates()
 %% @doc <p>Write a state into database.</p>
 set_state(State) when is_record(State, pubsub_state) ->
@@ -746,7 +746,7 @@ get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup
 	    get_item(Host, Node, ItemId)
     end.
 
-%% @spec (Item) -> ok | {error, ?ERR_INTERNAL_SERVER_ERROR}
+%% @spec (Item) -> ok | {error, ErrorCode}
 %%	 Item = mod_pubsub:pubsubItems()
 %% @doc <p>Write a state into database.</p>
 set_item(Item) when is_record(Item, pubsub_item) ->
@@ -754,7 +754,7 @@ set_item(Item) when is_record(Item, pubsub_item) ->
 set_item(_) ->
     {error, ?ERR_INTERNAL_SERVER_ERROR}.
 
-%% @spec (ItemId) -> ok | {error, Reason::stanzaError()}
+%% @spec (Host, Node, ItemId) -> ok | {error, Reason::stanzaError()}
 %%	 Host = mod_pubsub:host()
 %%	 Node = mod_pubsub:pubsubNode()
 %%	 ItemId = string()

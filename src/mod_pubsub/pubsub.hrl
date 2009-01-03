@@ -16,7 +16,7 @@
 %%% This software is copyright 2006-2008, ProcessOne.
 %%%
 %%%
-%%% @copyright 2006-2008 ProcessOne
+%%% Copyright 2006-2008 ProcessOne
 %%%
 %%% This file contains pubsub types definition.
 %%% ====================================================================

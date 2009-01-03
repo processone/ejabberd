@@ -33,8 +33,8 @@
 %%% This module uses version 1.12 of the specification as a base.
 %%% Most of the specification is implemented.
 %%% Functions concerning configuration should be rewritten.
-%%% Code is derivated from the original pubsub v1.7, by Alexey Shchepin <alexey@process-one.net>
-%%% Code also inspired from the original PEP patch by Magnus Henoch <mange@freemail.hu>
+%%% Code is derivated from the original pubsub v1.7, by Alexey Shchepin (alexey at process-one.net)
+%%% Code also inspired from the original PEP patch by Magnus Henoch (mange at freemail.hu)
 
 %%% TODO
 %%% plugin: generate Reply (do not use broadcast atom anymore)
@@ -190,8 +190,9 @@ init([ServerHost, Opts]) ->
 		nodetree = NodeTree,
 		plugins = Plugins}}.
 
-%% @spec (Host, Opts) -> Plugins
-%%	 Host = mod_pubsub:host()   Opts = [{Key,Value}]
+%% @spec (Host, ServerHost, Opts) -> Plugins
+%%	 Host = mod_pubsub:host()
+%%	 Opts = [{Key,Value}]
 %%	 ServerHost = host()
 %%	 Key = atom()
 %%	 Value = term()
@@ -1151,19 +1152,19 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 %% @doc <p>Create new pubsub nodes</p>
 %%<p>In addition to method-specific error conditions, there are several general reasons why the node creation request might fail:</p>
 %%<ul>
-%%<li>The service does not support node creation.
-%%<li>Only entities that are registered with the service are allowed to create nodes but the requesting entity is not registered.
-%%<li>The requesting entity does not have sufficient privileges to create nodes.
-%%<li>The requested NodeID already exists.
-%%<li>The request did not include a NodeID and "instant nodes" are not supported.
+%%<li>The service does not support node creation.</li>
+%%<li>Only entities that are registered with the service are allowed to create nodes but the requesting entity is not registered.</li>
+%%<li>The requesting entity does not have sufficient privileges to create nodes.</li>
+%%<li>The requested NodeID already exists.</li>
+%%<li>The request did not include a NodeID and "instant nodes" are not supported.</li>
 %%</ul>
 %%<p>ote: node creation is a particular case, error return code is evaluated at many places:</p>
 %%<ul>
-%%<li>iq_pubsub checks if service supports node creation (type exists)
-%%<li>create_node checks if instant nodes are supported
-%%<li>create_node asks node plugin if entity have sufficient privilege
-%%<li>nodetree create_node checks if nodeid already exists
-%%<li>node plugin create_node just sets default affiliation/subscription
+%%<li>iq_pubsub checks if service supports node creation (type exists)</li>
+%%<li>create_node checks if instant nodes are supported</li>
+%%<li>create_node asks node plugin if entity have sufficient privilege</li>
+%%<li>nodetree create_node checks if nodeid already exists</li>
+%%<li>node plugin create_node just sets default affiliation/subscription</li>
 %%</ul>
 create_node(Host, ServerHost, Node, Owner, Type) ->
     create_node(Host, ServerHost, Node, Owner, Type, all, []).
@@ -1274,9 +1275,9 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 %% @doc <p>Delete specified node and all childs.</p>
 %%<p>There are several reasons why the node deletion request might fail:</p>
 %%<ul>
-%%<li>The requesting entity does not have sufficient privileges to delete the node.
-%%<li>The node is the root collection node, which cannot be deleted.
-%%<li>The specified node does not exist.
+%%<li>The requesting entity does not have sufficient privileges to delete the node.</li>
+%%<li>The node is the root collection node, which cannot be deleted.</li>
+%%<li>The specified node does not exist.</li>
 %%</ul>
 delete_node(_Host, [], _Owner) ->
     %% Node is the root
@@ -1326,20 +1327,20 @@ delete_node(Host, Node, Owner) ->
 %%	 From = jid()
 %%	 JID = jid()
 %% @doc <p>Accepts or rejects subcription requests on a PubSub node.</p>
-%% @see node_default:subscribe_node/5
 %%<p>There are several reasons why the subscription request might fail:</p>
 %%<ul>
-%%<li>The bare JID portions of the JIDs do not match.
-%%<li>The node has an access model of "presence" and the requesting entity is not subscribed to the owner's presence.
-%%<li>The node has an access model of "roster" and the requesting entity is not in one of the authorized roster groups.
-%%<li>The node has an access model of "whitelist" and the requesting entity is not on the whitelist.
-%%<li>The service requires payment for subscriptions to the node.
-%%<li>The requesting entity is anonymous and the service does not allow anonymous entities to subscribe.
-%%<li>The requesting entity has a pending subscription.
-%%<li>The requesting entity is blocked from subscribing (e.g., because having an affiliation of outcast).
-%%<li>The node does not support subscriptions.
-%%<li>The node does not exist.
+%%<li>The bare JID portions of the JIDs do not match.</li>
+%%<li>The node has an access model of "presence" and the requesting entity is not subscribed to the owner's presence.</li>
+%%<li>The node has an access model of "roster" and the requesting entity is not in one of the authorized roster groups.</li>
+%%<li>The node has an access model of "whitelist" and the requesting entity is not on the whitelist.</li>
+%%<li>The service requires payment for subscriptions to the node.</li>
+%%<li>The requesting entity is anonymous and the service does not allow anonymous entities to subscribe.</li>
+%%<li>The requesting entity has a pending subscription.</li>
+%%<li>The requesting entity is blocked from subscribing (e.g., because having an affiliation of outcast).</li>
+%%<li>The node does not support subscriptions.</li>
+%%<li>The node does not exist.</li>
 %%</ul>
+%% @see node_default:subscribe_node/5
 subscribe_node(Host, Node, From, JID) ->
     Subscriber = case jlib:string_to_jid(JID) of
 		     error -> {"", "", ""};
@@ -1411,7 +1412,7 @@ subscribe_node(Host, Node, From, JID) ->
 	    {result, Result}
     end.
 
-%% @spec (Host, Noce, From, JID) -> {error, Reason} | {result, []}
+%% @spec (Host, Noce, From, JID, SubId) -> {error, Reason} | {result, []}
 %%	 Host = host()
 %%	 Node = pubsubNode()
 %%	 From = jid()
@@ -1421,12 +1422,12 @@ subscribe_node(Host, Node, From, JID) ->
 %% @doc <p>Unsubscribe <tt>JID</tt> from the <tt>Node</tt>.</p>
 %%<p>There are several reasons why the unsubscribe request might fail:</p>
 %%<ul>
-%%<li>The requesting entity has multiple subscriptions to the node but does not specify a subscription ID.
-%%<li>The request does not specify an existing subscriber.
-%%<li>The requesting entity does not have sufficient privileges to unsubscribe the specified JID.
-%%<li>The node does not exist.
-%%<li>The request specifies a subscription ID that is not valid or current.
-%%</il>
+%%<li>The requesting entity has multiple subscriptions to the node but does not specify a subscription ID.</li>
+%%<li>The request does not specify an existing subscriber.</li>
+%%<li>The requesting entity does not have sufficient privileges to unsubscribe the specified JID.</li>
+%%<li>The node does not exist.</li>
+%%<li>The request specifies a subscription ID that is not valid or current.</li>
+%%</ul>
 unsubscribe_node(Host, Node, From, JID, SubId) ->
     Subscriber = case jlib:string_to_jid(JID) of
 		     error -> {"", "", ""};
@@ -1449,12 +1450,12 @@ unsubscribe_node(Host, Node, From, JID, SubId) ->
 %% <p>The permission to publish an item must be verified by the plugin implementation.</p>
 %%<p>There are several reasons why the publish request might fail:</p>
 %%<ul>
-%%<li>The requesting entity does not have sufficient privileges to publish.
-%%<li>The node does not support item publication.
-%%<li>The node does not exist.
-%%<li>The payload size exceeds a service-defined limit.
-%%<li>The item contains more than one payload element or the namespace of the root payload element does not match the configured namespace for the node.
-%%<li>The request does not match the node configuration.
+%%<li>The requesting entity does not have sufficient privileges to publish.</li>
+%%<li>The node does not support item publication.</li>
+%%<li>The node does not exist.</li>
+%%<li>The payload size exceeds a service-defined limit.</li>
+%%<li>The item contains more than one payload element or the namespace of the root payload element does not match the configured namespace for the node.</li>
+%%<li>The request does not match the node configuration.</li>
 %%</ul>
 publish_item(Host, ServerHost, Node, Publisher, "", Payload) ->
     %% if publisher does not specify an ItemId, the service MUST generate the ItemId
@@ -1541,12 +1542,12 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 %% <p>The permission to delete an item must be verified by the plugin implementation.</p>
 %%<p>There are several reasons why the item retraction request might fail:</p>
 %%<ul>
-%%<li>The publisher does not have sufficient privileges to delete the requested item.
-%%<li>The node or item does not exist.
-%%<li>The request does not specify a node.
-%%<li>The request does not include an <item/> element or the <item/> element does not specify an ItemId.
-%%<li>The node does not support persistent items.
-%%<li>The service does not support the deletion of items.
+%%<li>The publisher does not have sufficient privileges to delete the requested item.</li>
+%%<li>The node or item does not exist.</li>
+%%<li>The request does not specify a node.</li>
+%%<li>The request does not include an <item/> element or the <item/> element does not specify an ItemId.</li>
+%%<li>The node does not support persistent items.</li>
+%%<li>The service does not support the deletion of items.</li>
 %%</ul>
 delete_item(Host, Node, Publisher, ItemId) ->
     delete_item(Host, Node, Publisher, ItemId, false).
@@ -1597,10 +1598,10 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 %% @doc <p>Delete all items of specified node owned by JID.</p>
 %%<p>There are several reasons why the node purge request might fail:</p>
 %%<ul>
-%%<li>The node or service does not support node purging.
-%%<li>The requesting entity does not have sufficient privileges to purge the node.
-%%<li>The node is not configured to persist items.
-%%<li>The specified node does not exist.
+%%<li>The node or service does not support node purging.</li>
+%%<li>The requesting entity does not have sufficient privileges to purge the node.</li>
+%%<li>The node is not configured to persist items.</li>
+%%<li>The specified node does not exist.</li>
 %%</ul>
 purge_node(Host, Node, Owner) ->
     Action = fun(#pubsub_node{type = Type, options = Options}) ->
@@ -1723,15 +1724,16 @@ get_items(Host, Node) ->
 %% @spec (Host, Node, LJID) -> any()
 %%	 Host = host()
 %%	 Node = pubsubNode()
-%%	 LJID = {U,S,""}
+%%	 LJID = {U,S,[]}
 %% @doc <p>Resend the last item of a node to the user.</p>
 send_last_item(Host, Node, LJID) ->
     send_items(Host, Node, LJID, last).
 
-%% @spec (Host, Node, LJID) -> any()
+%% @spec (Host, Node, LJID, Number) -> any()
 %%	 Host = host()
 %%	 Node = pubsubNode()
 %%	 LJID = {U, S, []}
+%%	 Number = last | integer()
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
 send_items(Host, Node, LJID, Number) ->
@@ -2020,7 +2022,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
     end.
 
 
-% @spec (OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, AllowedGroups)
+%% @spec (OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, any()}, AllowedGroups) -> {PresenceSubscription, RosterGroup}
 get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, AllowedGroups) ->
     {Subscription, Groups} =
 	ejabberd_hooks:run_fold(
@@ -2094,11 +2096,11 @@ service_jid(Host) ->
     _ -> {jid, "", Host, "", "", Host, ""}
     end.
 
-%% @spec (LJID, PresenceDelivery) -> boolean()
+%% @spec (LJID, Subscription, PresenceDelivery) -> boolean()
 %%	LJID = jid()
 %%	Subscription = atom()
 %%	PresenceDelivery = boolean()
-%% @doc <p>Check if a notification must be delivered or not
+%% @doc <p>Check if a notification must be delivered or not</p>
 is_to_deliver(_, none, _) -> false;
 is_to_deliver(_, pending, _) -> false;
 is_to_deliver(_, _, false) -> true;
@@ -2113,7 +2115,7 @@ is_to_deliver({User, Server, _}, _, true) ->
 
 %% @spec (Els) -> stanza()
 %%  Els = [xmlelement()]
-%% @doc <p>Build pubsub event stanza
+%% @doc <p>Build pubsub event stanza</p>
 event_stanza(Els) ->
     {xmlelement, "message", [],
      [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}], Els}]}.
