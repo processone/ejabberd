@@ -272,6 +272,7 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 #define GET_DECRYPTED_INPUT  6
 #define GET_PEER_CERTIFICATE 7
 #define GET_VERIFY_RESULT    8
+#define VERIFY_NONE 0x10000
 
 
 #define die_unless(cond, errstr)				\
@@ -312,6 +313,9 @@ static int tls_drv_control(ErlDrvData handle,
    int size;
    ErlDrvBinary *b;
    X509 *cert;
+   unsigned int flags = command;
+
+   command &= 0xffff;
 
    ERR_clear_error();
    switch (command)
@@ -353,6 +357,9 @@ static int tls_drv_control(ErlDrvData handle,
 
 	 d->ssl = SSL_new(ssl_ctx);
 	 die_unless(d->ssl, "SSL_new failed");
+
+	 if (flags & VERIFY_NONE)
+	    SSL_set_verify(d->ssl, SSL_VERIFY_NONE, verify_callback);
 
 	 d->bio_read = BIO_new(BIO_s_mem());
 	 d->bio_write = BIO_new(BIO_s_mem());
