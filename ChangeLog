@@ -1,3 +1,6 @@
+2009-01-05  Pablo Polvorin  <pablo.polvorin@process-one.net>
+	* src/mod_roster.erl: Fix typo.
+
 2009-01-03	Pablo Polvorin	<pablo.polvorin@process-one.net>
 	* src/mod_pubsub_node_default.erl: Fix typo
 

@@ -125,7 +125,7 @@ process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
 
 
 process_iq_get(From, To, IQ_Rec) ->
-    US = {exmpp_jid:lnode(From), exmpp_jid:ldomain_(From)},
+    US = {exmpp_jid:lnode(From), exmpp_jid:ldomain(From)},
     case catch ejabberd_hooks:run_fold(roster_get, exmpp_jid:ldomain(To), [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
