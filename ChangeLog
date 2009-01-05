@@ -1,3 +1,9 @@
+2009-01-05  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/tls/tls_drv.c: Added a flag to avoid certificate validation
+	* src/tls/tls.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+
 2009-01-03  Badlop  <badlop@process-one.net>
 
 	* src/*.erl: Fix EDoc comments

@@ -176,9 +176,11 @@ init([{SockMod, Socket}, Opts]) ->
     StartTLSRequired = lists:member(starttls_required, Opts),
     TLSEnabled = lists:member(tls, Opts),
     TLS = StartTLS orelse StartTLSRequired orelse TLSEnabled,
-    TLSOpts = lists:filter(fun({certfile, _}) -> true;
-			      (_) -> false
-			   end, Opts),
+    TLSOpts1 =
+	lists:filter(fun({certfile, _}) -> true;
+			(_) -> false
+		     end, Opts),
+    TLSOpts = [verify_none | TLSOpts1],
     Zlib = lists:member(zlib, Opts) andalso (not StartTLSRequired),
     IP = peerip(SockMod, Socket),
     %% Check if IP is blacklisted:
