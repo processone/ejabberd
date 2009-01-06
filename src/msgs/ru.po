@@ -723,7 +723,7 @@ msgstr "Псевдоним занят кем-то из присутствующ�
 
 #: mod_muc/mod_muc_room.erl:973 mod_muc/mod_muc_room.erl:1492
 msgid "Nickname is registered by another person"
-msgstr "Псевдоним зарегистирован кем-то другим"
+msgstr "Псевдоним зарегистрирован кем-то другим"
 
 #: mod_muc/mod_muc_room.erl:1473
 msgid "You have been banned from this room"

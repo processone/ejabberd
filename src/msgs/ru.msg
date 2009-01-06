@@ -166,7 +166,7 @@
 {"Name","Название"}.
 {"Never","Никогда"}.
 {"Nickname is already in use by another occupant","Псевдоним занят кем-то из присутствующих"}.
-{"Nickname is registered by another person","Псевдоним зарегистирован кем-то другим"}.
+{"Nickname is registered by another person","Псевдоним зарегистрирован кем-то другим"}.
 {"Nickname Registration at ","Регистрация псевдонима на "}.
 {"Nickname ~s does not exist in the room","Псевдоним ~s в комнате отсутствует"}.
 {"Nickname","Псевдоним"}.
