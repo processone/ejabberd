@@ -244,7 +244,7 @@
 {"It is not allowed to send private messages to the conference", "Не разрешается посылать частные сообщения прямо в конференцию"}.
 {"Improper message type", "Неправильный тип сообщения"}.
 {"Nickname is already in use by another occupant", "Псевдоним занят кем-то из присутствующих"}.
-{"Nickname is registered by another person", "Псевдоним зарегистирован кем-то другим"}.
+{"Nickname is registered by another person", "Псевдоним зарегистрирован кем-то другим"}.
 {"It is not allowed to send private messages of type \"groupchat\"", "Нельзя посылать частные сообщения типа \"groupchat\""}.
 {"Recipient is not in the conference room", "Адресата нет в конференции"}.
 {"Only occupants are allowed to send queries to the conference", "Только присутствующим разрешается посылать запросы в конференцию"}.
