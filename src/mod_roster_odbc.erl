@@ -915,9 +915,9 @@ user_roster(User, Server, Query, Lang) ->
 						  [?C(Group), ?BR]
 					  end, R#roster.groups),
 				    Pending = ask_to_pending(R#roster.ask),
+				    TDJID = build_contact_jid_td(R#roster.jid),
 				    ?XE("tr",
-					[?XAC("td", [{"class", "valign"}],
-					      jlib:jid_to_string(R#roster.jid)),
+					[TDJID,
 					 ?XAC("td", [{"class", "valign"}],
 					      R#roster.name),
 					 ?XAC("td", [{"class", "valign"}],
@@ -954,6 +954,24 @@ user_roster(User, Server, Query, Lang) ->
 	       ?INPUT("text", "newjid", ""), ?C(" "),
 	       ?INPUTT("submit", "addjid", "Add Jabber ID")
 	      ])].
+
+build_contact_jid_td(RosterJID) ->
+    %% Convert {U, S, R} into {jid, U, S, R, U, S, R}:
+    ContactJID = jlib:make_jid(RosterJID),
+    JIDURI = case {ContactJID#jid.luser, ContactJID#jid.lserver} of
+		 {"", _} -> "";
+		 {CUser, CServer} ->
+		     case lists:member(CServer, ?MYHOSTS) of
+			 false -> "";
+			 true -> "/admin/server/" ++ CServer ++ "/user/" ++ CUser ++ "/"
+		     end
+	     end,
+    case JIDURI of
+	[] ->
+	    ?XAC("td", [{"class", "valign"}], jlib:jid_to_string(RosterJID));
+	URI when is_list(URI) ->
+	    ?XAE("td", [{"class", "valign"}], [?AC(JIDURI, jlib:jid_to_string(RosterJID))])
+    end.
 
 user_roster_parse_query(User, Server, Items, Query) ->
     case lists:keysearch("addjid", 1, Query) of

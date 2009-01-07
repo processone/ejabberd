@@ -1,5 +1,9 @@
 2009-01-07  Badlop  <badlop@process-one.net>
 
+	* src/mod_roster.erl: Show hyperlinks to local contacts when
+	browsing roster of account in Web Admin (EJAB-480)
+	* src/mod_roster_odbc.erl: Likewise
+
 	* src/web/ejabberd_web_admin.erl: WebAdmin serves Guide and links
 	to related sections; the path to guide.html can be configured with
 	option doc_path (EJAB-837)
