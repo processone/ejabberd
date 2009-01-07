@@ -50,3 +50,17 @@
 		      {"size", Size}])).
 -define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
 -define(ACLINPUT(Text), ?XE("td", [?INPUT("text", "value" ++ ID, Text)])).
+
+%% Guide Link
+-define(GL(Ref, Title),
+	?XAE("div",
+	     [{"class", "guidelink"}],
+	     [?XAE("a",
+		   [{"href", "/admin/doc/guide.html#"++ Ref},
+		    {"target", "_blank"}],
+		   [?C("[Guide: " ++ Title ++ "]")])
+	     ])).
+
+
+%% h1 with a Guide Link
+-define(H1GL(Name, Ref, Title), [?XC("h1", Name), ?GL(Ref, Title)]).

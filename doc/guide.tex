@@ -3943,6 +3943,18 @@ Examples:
 \end{verbatim}
 \end{itemize}
 
+Certain pages in the ejabberd Web Admin contain a link to a related
+section in the ejabberd Installation and Operation Guide.
+In order to view such links, a copy in HTML format of the Guide must
+be installed in the system.
+The file is searched by default in
+\term{"/share/doc/ejabberd/guide.html"}.
+The directory of the documentation can be specified in
+\term{ejabberd.cfg} with the option \term{doc\_path}.
+For example:
+\begin{verbatim}
+{doc_path, "/usr/local/share/doc/ejabberd/"}.
+\end{verbatim}
 
 \makesection{adhoccommands}{Ad-hoc Commands}
 

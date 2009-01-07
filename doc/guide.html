@@ -3072,7 +3072,17 @@ web browser to <CODE>https://192.168.1.1:5280/admin/</CODE>:
                             tls, {certfile, "/usr/local/etc/server.pem"}]},
   ...
  ]}.
-</PRE></LI></UL><P> <A NAME="adhoccommands"></A> </P><!--TOC section Ad-hoc Commands-->
+</PRE></LI></UL><P>Certain pages in the ejabberd Web Admin contain a link to a related
+section in the ejabberd Installation and Operation Guide.
+In order to view such links, a copy in HTML format of the Guide must
+be installed in the system.
+The file is searched by default in
+<TT>"/share/doc/ejabberd/guide.html"</TT>.
+The directory of the documentation can be specified in
+<TT>ejabberd.cfg</TT> with the option <TT>doc_path</TT>.
+For example:
+</P><PRE CLASS="verbatim">{doc_path, "/usr/local/share/doc/ejabberd/"}.
+</PRE><P> <A NAME="adhoccommands"></A> </P><!--TOC section Ad-hoc Commands-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc65">4.3</A>&#XA0;&#XA0;<A HREF="#adhoccommands">Ad-hoc Commands</A></H2><!--SEC END --><P> <A NAME="adhoccommands"></A> </P><P>If you enable <TT>mod_configure</TT> and <TT>mod_adhoc</TT>,
 you can perform several administrative tasks in <TT>ejabberd</TT>
 with a Jabber client.

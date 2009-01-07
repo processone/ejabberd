@@ -40,6 +40,30 @@
 -include("ejabberd_web_admin.hrl").
 
 
+process(["doc", LocalFile], _Request) ->
+    DocPath = case ejabberd_config:get_global_option(doc_path) of
+		  P when is_list(P) -> P;
+		  _ -> "/share/doc/ejabberd/"
+	      end,
+    %% Code based in mod_http_fileserver
+    FileName = filename:join(DocPath, LocalFile),
+    case file:read_file(FileName) of
+        {ok, FileContents} ->
+            ?DEBUG("Delivering content.", []),
+            {200,
+             [{"Server", "ejabberd"}],
+             FileContents};
+        {error, Error} ->
+            ?DEBUG("Delivering error: ~p", [Error]),
+	    Help = " " ++ FileName ++ " - Try to specify the path to ejabberd guide.html "
+		"with the option doc_path. Check the ejabberd Guide for more information",
+            case Error of
+                eacces -> {403, [], "Forbidden"++Help};
+                enoent -> {404, [], "Not found"++Help};
+                _Else -> {404, [], atom_to_list(Error)++Help}
+            end
+    end;
+
 process(["server", SHost | RPath], #request{auth = Auth} = Request) ->
     Host = jlib:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
@@ -509,8 +533,13 @@ h3 {
   padding-top: 5px;
 }
 
-*.alignright {
+div.guidelink {
   text-align: right;
+  padding-right: 1em;
+}
+
+*.alignright {
+  font-size: 10pt;
 }
 
 ".
@@ -556,8 +585,8 @@ process_admin(global,
 		       lang = Lang}) ->
     Base = get_base_path(global, cluster),
     MenuItems2 = make_menu_items(global, cluster, Base, Lang),
-    make_xhtml([?XCT("h1", "Administration"),
-		?XE("ul",
+    make_xhtml(?H1GL(?T("Administration"), "toc", "Contents") ++
+		[?XE("ul",
 		    [?LI([?ACT("/admin/acls/", "Access Control Lists"), ?C(" "),
 			  ?ACT("/admin/acls-raw/", "(Raw)")]),
 		     ?LI([?ACT("/admin/access/", "Access Rules"), ?C(" "),
@@ -631,7 +660,7 @@ process_admin(Host,
 	       "~p.", [lists:keysort(
 			 2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
 					      [], [{{acl, '$1', '$2'}}]}]))])),
-    make_xhtml([?XCT("h1", "Access Control Lists")] ++
+    make_xhtml(?H1GL(?T("Access Control Lists"), "ACLDefinition", "ACL Definition") ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
@@ -674,7 +703,7 @@ process_admin(Host,
     ACLs = lists:keysort(
 	     2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
 				  [], [{{acl, '$1', '$2'}}]}])),
-    make_xhtml([?XCT("h1", "Access Control Lists")] ++
+    make_xhtml(?H1GL(?T("Access Control Lists"), "ACLDefinition", "ACL Definition") ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
@@ -742,7 +771,7 @@ process_admin(Host,
 			       [{{config, {access, '$1', Host}, '$2'},
 				 [],
 				 [{{access, '$1', '$2'}}]}])])),
-    make_xhtml([?XCT("h1", "Access Rules")] ++
+    make_xhtml(?H1GL(?T("Access Rules"), "AccessRights", "Access Rights") ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
@@ -780,7 +809,7 @@ process_admin(Host,
 		   [{{config, {access, '$1', Host}, '$2'},
 		     [],
 		     [{{access, '$1', '$2'}}]}]),
-    make_xhtml([?XCT("h1", "Access Rules")] ++
+    make_xhtml(?H1GL(?T("Access Rules"), "AccessRights", "Access Rights") ++
 	       case Res of
 		   ok -> [?CT("Submitted"), ?P];
 		   error -> [?CT("Bad format"), ?P];
@@ -837,7 +866,7 @@ process_admin(global,
 	      #request{path = ["vhosts"],
 		       lang = Lang}) ->
     Res = list_vhosts(Lang),
-    make_xhtml([?XCT("h1", "ejabberd virtual hosts")] ++ Res, global, Lang);
+    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "virtualhost", "Virtual Hosting") ++ Res, global, Lang);
 
 process_admin(Host,
 	      #request{path = ["users"],
@@ -1786,7 +1815,8 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 	  end,
     NewPorts = lists:sort(
 		 rpc:call(Node, ejabberd_config, get_local_option, [listen])),
-    [?XC("h1", ?T("Listened Ports at ") ++ atom_to_list(Node))] ++
+    H1String = ?T("Listened Ports at ") ++ atom_to_list(Node),
+    ?H1GL(H1String, "listened", "Listening Ports") ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
 	    error -> [?CT("Bad format"), ?P];
@@ -1809,7 +1839,8 @@ get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
 	  end,
     NewModules = lists:sort(
 		   rpc:call(Node, gen_mod, loaded_modules_with_opts, [Host])),
-    [?XC("h1", ?T("Modules at ") ++ atom_to_list(Node))] ++
+    H1String = ?T("Modules at ") ++ atom_to_list(Node),
+    ?H1GL(H1String, "modoverview", "Modules Overview") ++
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
 	    error -> [?CT("Bad format"), ?P];
