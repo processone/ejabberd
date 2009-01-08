@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -94,6 +94,9 @@
 -define(FSMLIMITS,[]).
 %% -define(FSMLIMITS, [{max_queue, 2000}]).
 -define(FSMTIMEOUT, 30000).
+
+%% We do not block on send anymore.
+-define(TCP_SEND_TIMEOUT, 15000).
 
 %% Maximum delay to wait before retrying to connect after a failed attempt.
 %% Specified in miliseconds. Default value is 5 minutes.
@@ -251,6 +254,7 @@ open_socket1(Addr, Port) ->
 		  catch ejabberd_socket:connect(
 			  Addr, Port,
 			  [binary, {packet, 0},
+			   {send_timeout, ?TCP_SEND_TIMEOUT},
 			   {active, false}, inet6]);
 	      {'EXIT', Reason1} ->
 		  ?DEBUG("s2s_out: connect crashed ~p~n", [Reason1]),

@@ -1,3 +1,9 @@
+2009-01-08  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_listener.erl: Define send timeout option to avoid
+	blocking on socket send (EJAB-746).
+	* src/ejabberd_s2s_out.erl: Likewise.
+
 2009-01-06  Badlop  <badlop@process-one.net>
 
 	* src/msgs/ru.msg: Fix typo (thanks to Dominges)
