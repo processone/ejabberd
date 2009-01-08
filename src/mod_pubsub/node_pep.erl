@@ -97,6 +97,7 @@ features() ->
      "auto-create", %*
      "auto-subscribe", %*
      "delete-nodes", %*
+     "delete-any", %*
      "filtered-notifications", %*
      "modify-affiliations",
      "outcast-affiliation",
