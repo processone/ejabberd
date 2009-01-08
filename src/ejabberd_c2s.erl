@@ -837,7 +837,7 @@ session_established2(El, StateData) ->
 		    undefined ->
             exmpp_jid:jid_to_bare_jid(StateData#state.jid);
 		    _ ->
-			exmpp_jid:list_to_jid(To)
+			exmpp_jid:binary_to_jid(To)
 		end,
 	NewEl = case exmpp_stanza:get_lang(El) of
 		    undefined ->
@@ -1923,7 +1923,7 @@ check_from(El, FromJID) ->
 	    El;
 	SJID ->
 	    try
-		JID = exmpp_jid:list_to_jid(SJID),
+		JID = exmpp_jid:binary_to_jid(SJID),
 		case exmpp_jid:compare_jids(JID, FromJID) of
 		    true ->
 			El;

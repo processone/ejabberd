@@ -130,7 +130,7 @@ unregister_extra_domain(Host, Domain) ->
 
 process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
 
     case ejabberd_hooks:run_fold(disco_local_items,
 				 exmpp_jid:ldomain(To),
@@ -138,7 +138,7 @@ process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
 				 [From, To, Node, Lang]) of
 	{result, Items} ->
 	    ANode = case Node of
-			"" -> [];
+			<<>> -> [];
 			_ -> [#xmlattr{name = 'node', value = Node}]
 	    end,
 	    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
@@ -153,7 +153,7 @@ process_local_iq_items(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
     Identity = ejabberd_hooks:run_fold(disco_local_identity,
 				       exmpp_jid:ldomain(To),
 				       [],
@@ -164,7 +164,7 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
 				 [From, To, Node, Lang]) of
 	{result, Features} ->
 	    ANode = case Node of
-			"" -> [];
+			<<>> -> [];
 			_ -> [#xmlattr{name = 'node', value = Node}]
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
@@ -178,11 +178,11 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
 process_local_iq_info(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
-get_local_identity(Acc, _From, _To, [], _Lang) ->
+get_local_identity(Acc, _From, _To, <<>>, _Lang) ->
     Acc ++ [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = [
-	  #xmlattr{name = 'category', value = "server"},
-	  #xmlattr{name = 'type', value = "im"},
-	  #xmlattr{name = 'name', value = "ejabberd"}
+	  #xmlattr{name = 'category', value = <<"server">>},
+	  #xmlattr{name = 'type', value = <<"im">>},
+	  #xmlattr{name = 'name', value = <<"ejabberd">>}
 	]}];
 
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
@@ -191,7 +191,7 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 get_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_local_features(Acc, _From, To, [], _Lang) ->
+get_local_features(Acc, _From, To, <<>>, _Lang) ->
     Feats = case Acc of
 		{result, Features} -> Features;
 		empty -> []
@@ -211,28 +211,30 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
 
 feature_to_xml({{Feature, _Host}}) ->
     feature_to_xml(Feature);
-feature_to_xml(Feature) when is_list(Feature) ->
+
+feature_to_xml(Feature) when is_binary(Feature) ->
     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [
 	#xmlattr{name = 'var', value = Feature}
       ]};
+
+feature_to_xml(Feature) when is_list(Feature) ->
+    feature_to_xml(list_to_binary(Feature));
 feature_to_xml(Feature) when is_atom(Feature) ->
-    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [
-	#xmlattr{name = 'var', value = atom_to_list(Feature)}
-      ]}.
+    feature_to_xml(atom_to_list(Feature)).
 
 domain_to_xml({Domain}) ->
+    domain_to_xml(Domain);
+domain_to_xml(Domain) when is_binary(Domain)->
     #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
 	#xmlattr{name = 'jid', value = Domain}
       ]};
-domain_to_xml(Domain) ->
-    #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
-	#xmlattr{name = 'jid', value = Domain}
-      ]}.
+domain_to_xml(Domain) when is_list(Domain) ->
+    domain_to_xml(list_to_binary(Domain)).
 
 get_local_services({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_local_services(Acc, _From, To, [], _Lang) ->
+get_local_services(Acc, _From, To, <<>>, _Lang) ->
     Items = case Acc of
 		{result, Its} -> Its;
 		empty -> []
@@ -270,14 +272,14 @@ get_vh_services(Host) ->
 
 process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
     case ejabberd_hooks:run_fold(disco_sm_items,
 				 exmpp_jid:ldomain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Items} ->
 	    ANode = case Node of
-			"" -> [];
+			<<>> -> [];
 			_ -> [#xmlattr{name = 'node', value = Node}]
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
@@ -311,7 +313,7 @@ process_sm_iq_items(From, To, #iq{type = set, payload = SubEl} = IQ_Rec) ->
 get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_sm_items(Acc, From, To, [], _Lang) ->
+get_sm_items(Acc, From, To, <<>>, _Lang) ->
     LFrom = exmpp_jid:lnode_as_list(From),
     LSFrom = exmpp_jid:ldomain_as_list(From),
     LTo = exmpp_jid:lnode_as_list(To),
@@ -344,7 +346,7 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
 
 process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
     Identity = ejabberd_hooks:run_fold(disco_sm_identity,
 				       exmpp_jid:ldomain(To),
 				       [],
@@ -355,7 +357,7 @@ process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
 				 [From, To, Node, Lang]) of
 	{result, Features} ->
 	    ANode = case Node of
-			"" -> [];
+			<<>> -> [];
 			_ -> [#xmlattr{name = 'node', value = Node}]
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
@@ -395,8 +397,8 @@ get_user_resources(JID) ->
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
 			  #xmlattr{name = 'jid', value =
-			    exmpp_jid:jid_to_list(exmpp_jid:bare_jid_to_jid(JID, R))},
-			  #xmlattr{name = 'name', value = exmpp_jid:lnode_as_list(JID)}
+			    exmpp_jid:jid_to_binary(exmpp_jid:bare_jid_to_jid(JID, R))},
+			  #xmlattr{name = 'name', value = exmpp_jid:lnode(JID)}
 			]}
 	      end, lists:sort(Rs)).
 
@@ -408,7 +410,7 @@ get_publish_items(empty, From, To, Node, _Lang) ->
     LSTo = exmpp_jid:ldomain_as_list(To),
     if
 	(LFrom == LTo) and (LSFrom == LSTo) ->
-	    retrieve_disco_publish({LTo, LSTo}, Node);
+	    retrieve_disco_publish({LTo, LSTo}, binary_to_list(Node));
 	true ->
 	    empty
     end;
@@ -486,18 +488,18 @@ retrieve_disco_publish(User, Node) ->
 				  name = Name,
 				  node = PNode}) ->
 		       #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-			lists:append([[#xmlattr{name = 'jid', value = Jid}],
+			lists:append([[#xmlattr{name = 'jid', value = list_to_binary(Jid)}],
 				      case Name of
 					  "" ->
 					      [];
 					  _ ->
-					      [#xmlattr{name = 'name', value = Name}]
+					      [#xmlattr{name = 'name', value = list_to_binary(Name)}]
 				      end,
 				      case PNode of
 					  "" ->
 					      [];
 					  _ ->
-					      [#xmlattr{name = 'node', value = PNode}]
+					      [#xmlattr{name = 'node', value = list_to_binary(PNode)}]
 				      end])}
 	       end, Items)}
     end.

@@ -179,12 +179,12 @@ announce(From, To, Packet) ->
 %% Announcing via ad-hoc commands
 -define(INFO_COMMAND(Lang, Node),
         [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-	  [#xmlattr{name = 'category', value = "automation"},
-	   #xmlattr{name = 'type', value = "command-node"},
-	   #xmlattr{name = 'name', value = get_title(Lang, Node)}]}]).
+	  [#xmlattr{name = 'category', value = <<"automation">>},
+	   #xmlattr{name = 'type', value = <<"command-node">>},
+	   #xmlattr{name = 'name', value = list_to_binary(get_title(Lang, Node))}]}]).
 
 disco_identity(Acc, _From, _To, Node, Lang) ->
-    LNode = tokenize(Node),
+    LNode = tokenize(binary_to_list(Node)),
     case LNode of
 	?NS_ADMINL("announce") ->
 	    ?INFO_COMMAND(Lang, Node);
@@ -220,7 +220,7 @@ disco_identity(Acc, _From, _To, Node, Lang) ->
 		{result, Feats}
 	end).
 
-disco_features(Acc, From, To, "announce", _Lang) ->
+disco_features(Acc, From, To, <<"announce">>, _Lang) ->
     LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
@@ -248,25 +248,25 @@ disco_features(Acc, From, To, Node, _Lang) ->
 	    AccessGlobal = gen_mod:get_module_opt(global, ?MODULE, access, none),
 	    AllowGlobal = acl:match_rule(global, AccessGlobal, From),
 	    case Node of
-		?NS_ADMIN_s ++ "#announce" ->
+		<<?NS_ADMIN_s,  "#announce">> ->
 		    ?INFO_RESULT(Allow, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#announce-all" ->
+		<<?NS_ADMIN_s,  "#announce-all">> ->
 		    ?INFO_RESULT(Allow, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#set-motd" ->
+		<<?NS_ADMIN_s,  "#set-motd">> ->
 		    ?INFO_RESULT(Allow, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#edit-motd" ->
+		<<?NS_ADMIN_s,  "#edit-motd">> ->
 		    ?INFO_RESULT(Allow, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#delete-motd" ->
+		<<?NS_ADMIN_s,  "#delete-motd">> ->
 		    ?INFO_RESULT(Allow, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#announce-allhosts" ->
+		<<?NS_ADMIN_s,  "#announce-allhosts">> ->
 		    ?INFO_RESULT(AllowGlobal, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#announce-all-allhosts" ->
+		<<?NS_ADMIN_s,  "#announce-all-allhosts">> ->
 		    ?INFO_RESULT(AllowGlobal, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#set-motd-allhosts" ->
+		<<?NS_ADMIN_s,  "#set-motd-allhosts">> ->
 		    ?INFO_RESULT(AllowGlobal, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#edit-motd-allhosts" ->
+		<<?NS_ADMIN_s,  "#edit-motd-allhosts">> ->
 		    ?INFO_RESULT(AllowGlobal, [?NS_ADHOC_s]);
-		?NS_ADMIN_s ++ "#delete-motd-allhosts" ->
+		<<?NS_ADMIN_s,  "#delete-motd-allhosts">> ->
 		    ?INFO_RESULT(AllowGlobal, [?NS_ADHOC_s]);
 		_ ->
 		    Acc
@@ -279,7 +279,7 @@ disco_features(Acc, From, To, Node, _Lang) ->
 	#xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
 	 [#xmlattr{name = 'jid',  value = Server},
 	  #xmlattr{name = 'node', value = Node},
-	  #xmlattr{name = 'name', value = get_title(Lang, Node)}]}).
+	  #xmlattr{name = 'name', value = list_to_binary(get_title(Lang, Node))}]}).
 
 -define(ITEMS_RESULT(Allow, Items),
 	case Allow of
@@ -289,9 +289,9 @@ disco_features(Acc, From, To, Node, _Lang) ->
 		{result, Items}
 	end).
 
-disco_items(Acc, From, To, "", Lang) ->
+disco_items(Acc, From, To, <<>>, Lang) ->
     LServer = exmpp_jid:ldomain_as_list(To),
-    Server = exmpp_jid:domain_as_list(To),
+    Server = exmpp_jid:domain(To),
 
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
@@ -308,12 +308,12 @@ disco_items(Acc, From, To, "", Lang) ->
 				{result, I} -> I;
 				_ -> []
 			    end,
-		    Nodes = [?NODE_TO_ITEM(Lang, Server, "announce")],
+		    Nodes = [?NODE_TO_ITEM(Lang, Server, <<"announce">>)],
 		    {result, Items ++ Nodes}
 	    end
     end;
 
-disco_items(Acc, From, To, "announce", Lang) ->
+disco_items(Acc, From, To, <<"announce">>, Lang) ->
     LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
@@ -333,25 +333,25 @@ disco_items(Acc, From, To, Node, _Lang) ->
 	    AccessGlobal = gen_mod:get_module_opt(global, ?MODULE, access, none),
 	    AllowGlobal = acl:match_rule(global, AccessGlobal, From),
 	    case Node of
-		?NS_ADMIN_s ++ "#announce" ->
+		<<?NS_ADMIN_s, "#announce">> ->
 		    ?ITEMS_RESULT(Allow, []);
-		?NS_ADMIN_s ++ "#announce-all" ->
+		<<?NS_ADMIN_s, "#announce-all">> ->
 		    ?ITEMS_RESULT(Allow, []);
-		?NS_ADMIN_s ++ "#set-motd" ->
+		<<?NS_ADMIN_s, "#set-motd">> ->
 		    ?ITEMS_RESULT(Allow, []);
-		?NS_ADMIN_s ++ "#edit-motd" ->
+		<<?NS_ADMIN_s, "#edit-motd">> ->
 		    ?ITEMS_RESULT(Allow, []);
-		?NS_ADMIN_s ++ "#delete-motd" ->
+		<<?NS_ADMIN_s, "#delete-motd">> ->
 		    ?ITEMS_RESULT(Allow, []);
-		?NS_ADMIN_s ++ "#announce-allhosts" ->
+		<<?NS_ADMIN_s, "#announce-allhosts">> ->
 		    ?ITEMS_RESULT(AllowGlobal, []);
-		?NS_ADMIN_s ++ "#announce-all-allhosts" ->
+		<<?NS_ADMIN_s, "#announce-all-allhosts">> ->
 		    ?ITEMS_RESULT(AllowGlobal, []);
-		?NS_ADMIN_s ++ "#set-motd-allhosts" ->
+		<<?NS_ADMIN_s, "#set-motd-allhosts">> ->
 		    ?ITEMS_RESULT(AllowGlobal, []);
-		?NS_ADMIN_s ++ "#edit-motd-allhosts" ->
+		<<?NS_ADMIN_s, "#edit-motd-allhosts">> ->
 		    ?ITEMS_RESULT(AllowGlobal, []);
-		?NS_ADMIN_s ++ "#delete-motd-allhosts" ->
+		<<?NS_ADMIN_s, "#delete-motd-allhosts">> ->
 		    ?ITEMS_RESULT(AllowGlobal, []);
 		_ ->
 		    Acc
@@ -362,26 +362,26 @@ disco_items(Acc, From, To, Node, _Lang) ->
 
 announce_items(Acc, From, To, Lang) ->
     LServer = exmpp_jid:ldomain_as_list(To),
-    Server = exmpp_jid:domain_as_list(To),
+    Server = exmpp_jid:domain(To),
     Access1 = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
     Nodes1 = case acl:match_rule(LServer, Access1, From) of
 		 allow ->
-		     [?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#announce"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#announce-all"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#set-motd"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#edit-motd"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#delete-motd")];
+		     [?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#announce">>),
+		      ?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#announce-all">>),
+		      ?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#set-motd">>),
+		      ?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#edit-motd">>),
+		      ?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#delete-motd">>)];
 		 deny ->
 		     []
 	     end,
     Access2 = gen_mod:get_module_opt(global, ?MODULE, access, none),
     Nodes2 = case acl:match_rule(global, Access2, From) of
 		 allow ->
-		     [?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#announce-allhosts"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#announce-all-allhosts"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#set-motd-allhosts"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#edit-motd-allhosts"),
-		      ?NODE_TO_ITEM(Lang, Server, ?NS_ADMIN_s ++ "#delete-motd-allhosts")];
+		     [?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#announce-allhosts">>),
+		      ?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#announce-all-allhosts">>),
+		      ?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#set-motd-allhosts">>),
+		      ?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#edit-motd-allhosts">>),
+		      ?NODE_TO_ITEM(Lang, Server, <<?NS_ADMIN_s, "#delete-motd-allhosts">>)];
 		 deny ->
 		     []
 	     end,
@@ -481,17 +481,17 @@ announce_commands(From, To,
     end.
 
 -define(VVALUE(Val),
-	#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Val)}]}).
+	#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = Val}]}).
 -define(VVALUEL(Val),
 	case Val of
-	    "" -> [];
+	    <<>> -> [];
 	    _ -> [?VVALUE(Val)]
 	end).
 -define(TVFIELD(Type, Var, Val),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
 			       #xmlattr{name = 'var', value = Var}], children =
 	 ?VVALUEL(Val)}).
--define(HFIELD(), ?TVFIELD("hidden", "FORM_TYPE", ?NS_ADMIN_s)).
+-define(HFIELD(), ?TVFIELD(<<"hidden">>, <<"FORM_TYPE">>, list_to_binary(?NS_ADMIN_s))).
 
 generate_adhoc_form(Lang, Node, ServerHost) ->
     LNode = tokenize(Node),
@@ -502,29 +502,29 @@ generate_adhoc_form(Lang, Node, ServerHost) ->
 				    {[], []}
 			    end,
     #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
-     [#xmlattr{name = 'type', value = "form"}], children =
+     [#xmlattr{name = 'type', value = <<"form">>}], children =
      [?HFIELD(),
       #xmlel{ns = ?NS_DATA_FORMS, name = 'title', children = [#xmlcdata{cdata = list_to_binary(get_title(Lang, Node))}]}]
      ++
      if (LNode == ?NS_ADMINL("delete-motd"))
 	or (LNode == ?NS_ADMINL("delete-motd-allhosts")) ->
 	     [#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	       [#xmlattr{name = 'var', value = "confirm"},
-		#xmlattr{name = 'type', value = "boolean"},
-		#xmlattr{name = 'label', value = translate:translate(Lang, "Really delete message of the day?")}], children =
+	       [#xmlattr{name = 'var', value = <<"confirm">>},
+		#xmlattr{name = 'type', value = <<"boolean">>},
+		#xmlattr{name = 'label', value = list_to_binary(translate:translate(Lang, "Really delete message of the day?"))}], children =
 	       [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
 		 [#xmlcdata{cdata = <<"true">>}]}]}];
 	true ->
 	     [#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	       [#xmlattr{name = 'var', value = "subject"},
-		#xmlattr{name = 'type', value = "text-single"},
-		#xmlattr{name = 'label', value = translate:translate(Lang, "Subject")}], children =
-	       ?VVALUEL(OldSubject)},
+	       [#xmlattr{name = 'var', value = <<"subject">>},
+		#xmlattr{name = 'type', value = <<"text-single">>},
+		#xmlattr{name = 'label', value = list_to_binary(translate:translate(Lang, "Subject"))}], children =
+	       ?VVALUEL(list_to_binary(OldSubject))},
 	      #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	       [#xmlattr{name = 'var', value = "body"},
-		#xmlattr{name = 'type', value = "text-multi"},
-		#xmlattr{name = 'label', value = translate:translate(Lang, "Message body")}], children =
-	       ?VVALUEL(OldBody)}]
+	       [#xmlattr{name = 'var', value = <<"body">>},
+		#xmlattr{name = 'type', value = <<"text-multi">>},
+		#xmlattr{name = 'label', value = list_to_binary(translate:translate(Lang, "Message body"))}], children =
+	       ?VVALUEL(list_to_binary(OldBody))}]
      end}.
 
 join_lines([]) ->
@@ -569,7 +569,7 @@ handle_adhoc_form(From, To,
 			       node = Node,
 			       sessionid = SessionID,
 			       status = completed},
-    Packet = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', attrs = [#xmlattr{name = 'type', value = "normal"}], children =
+    Packet = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', attrs = [#xmlattr{name = 'type', value = <<"normal">>}], children =
 	      if Subject /= [] ->
 		      [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'subject', children =
 			[#xmlcdata{cdata = list_to_binary(Subject)}]}];

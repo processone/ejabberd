@@ -154,7 +154,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS, attrs = Attrs}}, StateData) ->
 	    %% component served by this Jabber server.
 	    %% However several transports don't respect that,
 	    %% so ejabberd doesn't check 'to' attribute (EJAB-717)
-	    To = exmpp_stanza:get_recipient_from_attrs(Attrs),
+	    To = binary_to_list(exmpp_stanza:get_recipient_from_attrs(Attrs)),
 	    Opening_Reply = exmpp_stream:opening_reply(xml:crypt(To),
 	      ?NS_COMPONENT_ACCEPT,
 	      {0, 0}, StateData#state.streamid),
@@ -227,10 +227,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		  %% when accept packets from any address.
 		  %% In this case, the component can send packet of
 		  %% behalf of the server users.
-		  false -> exmpp_jid:list_to_jid(From);
+		  false -> exmpp_jid:binary_to_jid(From);
 		  %% The default is the standard behaviour in XEP-0114
 		  _ ->
-		      FromJID1 = exmpp_jib:string_to_jid(From),
+		      FromJID1 = exmpp_jid:binary_to_jid(From),
 		      Server =  exmpp_jid:ldomain_as_list(FromJID1),
 			  case lists:member(Server, StateData#state.hosts) of
 				  true -> FromJID1;
@@ -240,7 +240,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
     To = exmpp_stanza:get_recipient(El),
     ToJID = case To of
 		undefined -> error;
-		_ -> exmpp_jib:string_to_jid(To)
+		_ -> exmpp_jib:binary_to_jid(To)
 	    end,
     if ((El#xmlel.name == 'iq') or
 	(El#xmlel.name == 'message') or

@@ -81,8 +81,8 @@ stop(Host) ->
 
 %-------------------------------------------------------------------------
 
-get_local_commands(Acc, _From, To, "", Lang) ->
-    Server = exmpp_jid:domain_as_list(To),
+get_local_commands(Acc, _From, To, <<>>, Lang) ->
+    Server = exmpp_jid:domain(To),
     LServer = exmpp_jid:ldomain_as_list(To),
     Display = gen_mod:get_module_opt(LServer, ?MODULE, report_commands_node, false),
     case Display of
@@ -96,16 +96,17 @@ get_local_commands(Acc, _From, To, "", Lang) ->
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS,
 		      name = 'item', attrs =
 		      [#xmlattr{name = 'jid', value = Server},
-		       #xmlattr{name = 'node', value = ?NS_ADHOC_s},
-                       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]
+		       #xmlattr{name = 'node', value = list_to_binary(?NS_ADHOC_s)},
+                       #xmlattr{name = 'name', 
+                                value = list_to_binary(translate:translate(Lang, "Commands"))}]
 		      }],
 	    {result, Items ++ Nodes}
     end;
 
-get_local_commands(_Acc, From, To, ?NS_ADHOC_s, Lang) ->
+get_local_commands(_Acc, From, To, ?NS_ADHOC_b, Lang) ->
     ejabberd_hooks:run_fold(adhoc_local_items, exmpp_jid:ldomain(To), {result, []}, [From, To, Lang]);
 
-get_local_commands(_Acc, _From, _To, "ping", _Lang) ->
+get_local_commands(_Acc, _From, _To, <<"ping">>, _Lang) ->
     {result, []};
 
 get_local_commands(Acc, _From, _To, _Node, _Lang) ->
@@ -113,7 +114,7 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
 
 %-------------------------------------------------------------------------
 
-get_sm_commands(Acc, _From, To, "", Lang) ->
+get_sm_commands(Acc, _From, To, <<>>, Lang) ->
     LServer = exmpp_jid:ldomain_as_list(To),
     Display = gen_mod:get_module_opt(LServer, ?MODULE, report_commands_node, false),
     case Display of
@@ -126,14 +127,14 @@ get_sm_commands(Acc, _From, To, "", Lang) ->
 		    end,
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS,
 		      name = 'item', attrs =
-		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(To)},
-		       #xmlattr{name = 'node', value = ?NS_ADHOC_s},
-		       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]
+		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(To)},
+		       #xmlattr{name = 'node', value = list_to_binary(?NS_ADHOC_s)},
+		       #xmlattr{name = 'name', value = list_to_binary(translate:translate(Lang, "Commands"))}]
 		      }],
 	    {result, Items ++ Nodes}
     end;
 
-get_sm_commands(_Acc, From, To, ?NS_ADHOC_s, Lang) ->
+get_sm_commands(_Acc, From, To, ?NS_ADHOC_b, Lang) ->
     ejabberd_hooks:run_fold(adhoc_sm_items, exmpp_jid:ldomain(To), {result, []}, [From, To, Lang]);
 
 get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
@@ -142,17 +143,17 @@ get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
 %-------------------------------------------------------------------------
 
 %% On disco info request to the ad-hoc node, return automation/command-list.
-get_local_identity(Acc, _From, _To, ?NS_ADHOC_s, Lang) ->
+get_local_identity(Acc, _From, _To, ?NS_ADHOC_b, Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-      [#xmlattr{name = 'category', value = "automation"},
-       #xmlattr{name = 'type', value = "command-list"},
-       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]} | Acc];
+      [#xmlattr{name = 'category', value = <<"automation">>},
+       #xmlattr{name = 'type', value = <<"command-list">>},
+       #xmlattr{name = 'name', value = list_to_binary(translate:translate(Lang, "Commands"))}]} | Acc];
 
-get_local_identity(Acc, _From, _To, "ping", Lang) ->
+get_local_identity(Acc, _From, _To, <<"ping">>, Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-      [#xmlattr{name = 'category', value = "automation"},
-       #xmlattr{name = 'type', value = "command-node"},
-       #xmlattr{name = 'name', value = translate:translate(Lang, "Ping")}]} | Acc];
+      [#xmlattr{name = 'category', value = <<"automation">>},
+       #xmlattr{name = 'type', value = <<"command-node">>},
+       #xmlattr{name = 'name', value = list_to_binary(translate:translate(Lang, "Ping"))}]} | Acc];
 
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -162,27 +163,27 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_sm_identity(Acc, _From, _To, ?NS_ADHOC_s, Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-      [#xmlattr{name = 'category', value = "automation"},
-       #xmlattr{name = 'type', value = "command-list"},
-       #xmlattr{name = 'name', value = translate:translate(Lang, "Commands")}]} | Acc];
+      [#xmlattr{name = 'category', value = <<"automation">>},
+       #xmlattr{name = 'type', value = <<"command-list">>},
+       #xmlattr{name = 'name', value = list_to_binary(translate:translate(Lang, "Commands"))}]} | Acc];
 
 get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 %-------------------------------------------------------------------------
 
-get_local_features(Acc, _From, _To, "", _Lang) ->
+get_local_features(Acc, _From, _To, <<>>, _Lang) ->
     Feats = case Acc of
 		{result, I} -> I;
 		_ -> []
 	    end,
     {result, Feats ++ [?NS_ADHOC_s]};
 
-get_local_features(_Acc, _From, _To, ?NS_ADHOC_s, _Lang) ->
+get_local_features(_Acc, _From, _To, ?NS_ADHOC_b, _Lang) ->
     %% override all lesser features...
     {result, []};
 
-get_local_features(_Acc, _From, _To, "ping", _Lang) ->
+get_local_features(_Acc, _From, _To, <<"ping">>, _Lang) ->
     %% override all lesser features...
     {result, [?NS_ADHOC_s]};
 
@@ -236,7 +237,7 @@ process_adhoc_request(From, To, IQ_Rec, Hook) ->
 
 
 ping_item(Acc, _From, To, Lang) ->
-    Server = exmpp_jid:domain_as_list(To),
+    Server = exmpp_jid:domain(To),
     Items = case Acc of
 		{result, I} ->
 		    I;
@@ -245,8 +246,8 @@ ping_item(Acc, _From, To, Lang) ->
 	    end,
     Nodes = [#xmlel{ns = ?NS_DISCO_INFO, name = 'item', attrs =
 	      [#xmlattr{name = 'jid', value = Server},
-	       #xmlattr{name = 'node', value = "ping"},
-	       #xmlattr{name = 'name', value = translate:translate(Lang, "Ping")}]}],
+	       #xmlattr{name = 'node', value = <<"ping">>},
+	       #xmlattr{name = 'name', value = list_to_binary(translate:translate(Lang, "Ping"))}]}],
     {result, Items ++ Nodes}.
 
 

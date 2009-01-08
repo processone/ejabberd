@@ -284,7 +284,7 @@ set_vcard(User, LServer, VCARD) ->
 	[#xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
 	   [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "You need an x:data capable client to search"))}]},
 	 #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
-	   [#xmlattr{name = 'type', value = "form"}], children =
+	   [#xmlattr{name = 'type', value = <<"form">>}], children =
 	   [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 	       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search users in ") ++ exmpp_jid:jid_to_list(JID))}]},
 	    #xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
@@ -293,18 +293,18 @@ set_vcard(User, LServer, VCARD) ->
 		       "for any matching Jabber User "
 		       "(Add * to the end of field to "
 		       "match substring)"))}]},
-	   ?TLFIELD("text-single", "User", "user"),
-	   ?TLFIELD("text-single", "Full Name", "fn"),
-	   ?TLFIELD("text-single", "Name", "first"),
-	   ?TLFIELD("text-single", "Middle Name", "middle"),
-	   ?TLFIELD("text-single", "Family Name", "last"),
-	   ?TLFIELD("text-single", "Nickname", "nick"),
-	   ?TLFIELD("text-single", "Birthday", "bday"),
-	   ?TLFIELD("text-single", "Country", "ctry"),
-	   ?TLFIELD("text-single", "City", "locality"),
-	   ?TLFIELD("text-single", "Email", "email"),
-	   ?TLFIELD("text-single", "Organization Name", "orgname"),
-	   ?TLFIELD("text-single", "Organization Unit", "orgunit")
+	   ?TLFIELD(<<"text-single">>, "User", <<"user">>),
+	   ?TLFIELD(<<"text-single">>, "Full Name", <<"fn">>),
+	   ?TLFIELD(<<"text-single">>, "Name", <<"first">>),
+	   ?TLFIELD(<<"text-single">>, "Middle Name", <<"middle">>),
+	   ?TLFIELD(<<"text-single">>, "Family Name", <<"last">>),
+	   ?TLFIELD(<<"text-single">>, "Nickname", <<"nick">>),
+	   ?TLFIELD(<<"text-single">>, "Birthday", <<"bday">>),
+	   ?TLFIELD(<<"text-single">>, "Country", <<"ctry">>),
+	   ?TLFIELD(<<"text-single">>, "City", <<"locality">>),
+	   ?TLFIELD(<<"text-single">>, "Email", <<"email">>),
+	   ?TLFIELD(<<"text-single">>, "Organization Name", <<"orgname">>),
+	   ?TLFIELD(<<"text-single">>, "Organization Unit", <<"orgunit">>)
 	  ]}]).
 
 
@@ -346,7 +346,7 @@ do_route(ServerHost, From, To, Packet) ->
 					      ns = ?NS_DATA_FORMS,
 					      name = 'x',
 					      attrs = [#xmlattr{name = 'type',
-						  value = "result"}],
+						  value = <<"result">>}],
 					      children = search_result(Lang,
 						To, ServerHost, XData)}]},
 					ResIQ = exmpp_iq:result(Packet,
@@ -371,24 +371,24 @@ do_route(ServerHost, From, To, Packet) ->
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
 			      attrs = [
 				#xmlattr{name = 'category',
-				  value = "directory"},
+				  value = <<"directory">>},
 				#xmlattr{name = 'type',
-				  value = "user"},
+				  value = <<"user">>},
 				#xmlattr{name = 'name',
-				  value = translate:translate(Lang,
-				    "vCard User Search")}]},
+				  value = list_to_binary(translate:translate(Lang,
+				    "vCard User Search"))}]},
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
 				#xmlattr{name = 'var',
-				  value = ?NS_DISCO_INFO_s}]},
+				  value = list_to_binary(?NS_DISCO_INFO_s)}]},
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
 				#xmlattr{name = 'var',
-				  value = ?NS_SEARCH_s}]},
+				  value = list_to_binary(?NS_SEARCH_s)}]},
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
 				#xmlattr{name = 'var',
-				  value = ?NS_VCARD_s}]}
+				  value = list_to_binary(?NS_VCARD_s)}]}
 			  ]},
 			ResIQ = exmpp_iq:result(Packet, Result),
 			ejabberd_router:route(To,
@@ -449,42 +449,42 @@ search_result(Lang, JID, ServerHost, Data) ->
 	      translate:translate(Lang, "Search Results for ") ++
 	      exmpp_jid:jid_to_list(JID))}]},
      #xmlel{ns = ?NS_DATA_FORMS, name = 'reported', children =
-      [?TLFIELD("text-single", "Jabber ID", "jid"),
-       ?TLFIELD("text-single", "Full Name", "fn"),
-       ?TLFIELD("text-single", "Name", "first"),
-       ?TLFIELD("text-single", "Middle Name", "middle"),
-       ?TLFIELD("text-single", "Family Name", "last"),
-       ?TLFIELD("text-single", "Nickname", "nick"),
-       ?TLFIELD("text-single", "Birthday", "bday"),
-       ?TLFIELD("text-single", "Country", "ctry"),
-       ?TLFIELD("text-single", "City", "locality"),
-       ?TLFIELD("text-single", "Email", "email"),
-       ?TLFIELD("text-single", "Organization Name", "orgname"),
-       ?TLFIELD("text-single", "Organization Unit", "orgunit")
+      [?TLFIELD(<<"text-single">>, "Jabber ID", <<"jid">>),
+       ?TLFIELD(<<"text-single">>, "Full Name", <<"fn">>),
+       ?TLFIELD(<<"text-single">>, "Name", <<"first">>),
+       ?TLFIELD(<<"text-single">>, "Middle Name", <<"middle">>),
+       ?TLFIELD(<<"text-single">>, "Family Name", <<"last">>),
+       ?TLFIELD(<<"text-single">>, "Nickname", <<"nick">>),
+       ?TLFIELD(<<"text-single">>, "Birthday", <<"bday">>),
+       ?TLFIELD(<<"text-single">>, "Country", <<"ctry">>),
+       ?TLFIELD(<<"text-single">>, "City", <<"locality">>),
+       ?TLFIELD(<<"text-single">>, "Email", <<"email">>),
+       ?TLFIELD(<<"text-single">>, "Organization Name", <<"orgname">>),
+       ?TLFIELD(<<"text-single">>, "Organization Unit", <<"orgunit">>)
       ]}] ++ lists:map(fun record_to_item/1, search(ServerHost, Data)).
 
 -define(FIELD(Var, Val),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
 	  [#xmlattr{name = 'var', value = Var}], children =
 	  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
-	      [#xmlcdata{cdata = list_to_binary(Val)}]}]}).
+	      [#xmlcdata{cdata = Val}]}]}).
 
 record_to_item(R) ->
     {User, Server} = R#vcard_search.user,
     #xmlel{ns = ?NS_DATA_FORMS, name = 'item', children =
      [
-       ?FIELD("jid",      User ++ "@" ++ Server),
-       ?FIELD("fn",       R#vcard_search.fn),
-       ?FIELD("last",     R#vcard_search.family),
-       ?FIELD("first",    R#vcard_search.given),
-       ?FIELD("middle",   R#vcard_search.middle),
-       ?FIELD("nick",     R#vcard_search.nickname),
-       ?FIELD("bday",     R#vcard_search.bday),
-       ?FIELD("ctry",     R#vcard_search.ctry),
-       ?FIELD("locality", R#vcard_search.locality),
-       ?FIELD("email",    R#vcard_search.email),
-       ?FIELD("orgname",  R#vcard_search.orgname),
-       ?FIELD("orgunit",  R#vcard_search.orgunit)
+       ?FIELD(<<"jid">>,      list_to_binary(User ++ "@" ++ Server)),
+       ?FIELD(<<"fn">>,       list_to_binary(R#vcard_search.fn)),
+       ?FIELD(<<"last">>,     list_to_binary(R#vcard_search.family)),
+       ?FIELD(<<"first">>,    list_to_binary(R#vcard_search.given)),
+       ?FIELD(<<"middle">>,   list_to_binary(R#vcard_search.middle)),
+       ?FIELD(<<"nick">>,     list_to_binary(R#vcard_search.nickname)),
+       ?FIELD(<<"bday">>,     list_to_binary(R#vcard_search.bday)),
+       ?FIELD(<<"ctry">>,     list_to_binary(R#vcard_search.ctry)),
+       ?FIELD(<<"locality">>, list_to_binary(R#vcard_search.locality)),
+       ?FIELD(<<"email">>,    list_to_binary(R#vcard_search.email)),
+       ?FIELD(<<"orgname">>,  list_to_binary(R#vcard_search.orgname)),
+       ?FIELD(<<"orgunit">>,  list_to_binary(R#vcard_search.orgunit))
       ]
      }.
 

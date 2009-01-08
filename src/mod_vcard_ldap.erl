@@ -391,14 +391,14 @@ ldap_attribute_to_vcard(_, _) ->
 	[#xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
 	  [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "You need an x:data capable client to search"))}]},
 	 #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
-           [#xmlattr{name = 'type', value = "form"}], children =
+           [#xmlattr{name = 'type', value = <<"form">>}], children =
 	  [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 	    [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search users in ") ++
 	      exmpp_jid:jid_to_list(JID))}]},
 	   #xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
 	    [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Fill in fields to search "
 					    "for any matching Jabber User"))}]}
-	  ] ++ lists:map(fun({X,Y}) -> ?TLFIELD("text-single", X, Y) end, SearchFields)}]).
+	  ] ++ lists:map(fun({X,Y}) -> ?TLFIELD(<<"text-single">>, X, list_to_binary(Y)) end, SearchFields)}]).
 
 do_route(State, From, To, Packet) ->
     spawn(?MODULE, route, [State, From, To, Packet]).
@@ -439,7 +439,7 @@ route(State, From, To, Packet) ->
 					      ns = ?NS_DATA_FORMS,
 					      name = 'x',
 					      attrs = [#xmlattr{name = 'type',
-						  value = "result"}],
+						  value = <<"result">>}],
 					      children = search_result(Lang, To, State, XData)}]},
 					ResIQ = exmpp_iq:result(Packet,
 					  Result),
@@ -464,20 +464,20 @@ route(State, From, To, Packet) ->
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
 			      attrs = [
 				#xmlattr{name = 'category',
-				  value = "directory"},
+				  value = <<"directory">>},
 				#xmlattr{name = 'type',
-				  value = "user"},
+				  value = <<"user">>},
 				#xmlattr{name = 'name',
-				  value = translate:translate(Lang,
-				    "vCard User Search")}]},
+				  value = list_to_binary(translate:translate(Lang,
+				    "vCard User Search"))}]},
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
 				#xmlattr{name = 'var',
-				  value = ?NS_SEARCH_s}]},
+				  value = list_to_binary(?NS_SEARCH_s)}]},
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
 				#xmlattr{name = 'var',
-				  value = ?NS_VCARD_s}]}
+				  value = list_to_binary(?NS_VCARD_s)}]}
 			  ]},
 			ResIQ = exmpp_iq:result(Packet, Result),
                         ejabberd_router:route(To,
@@ -528,9 +528,9 @@ search_result(Lang, JID, State, Data) ->
 	       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search Results for ") ++
 		 exmpp_jid:jid_to_list(JID))}]},
 	      #xmlel{ns = ?NS_DATA_FORMS, name = 'reported', children =
-	       [?TLFIELD("text-single", "Jabber ID", "jid")] ++
+	       [?TLFIELD(<<"text-single">>, "Jabber ID", <<"jid">>)] ++
 	       lists:map(
-		 fun({Name, Value}) -> ?TLFIELD("text-single", Name, Value) end,
+		 fun({Name, Value}) -> ?TLFIELD(<<"text-single">>, Name, list_to_binary(Value)) end,
 		 SearchReported)
 	      }],
     case search(State, Data) of
@@ -544,7 +544,7 @@ search_result(Lang, JID, State, Data) ->
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
 	  [#xmlattr{name = 'var', value = Var}], children =
 	  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
-	      [#xmlcdata{cdata = list_to_binary(Val)}]}]}).
+	      [#xmlcdata{cdata = Val}]}]}).
 
 search(State, Data) ->
     Base = State#state.base,
@@ -591,8 +591,8 @@ search_items(Entries, State) ->
 						     VCardMap,
 						     {Username, ?MYNAME})}
 					  end, SearchReported),
-			        Result = [?FIELD("jid", Username ++ "@" ++ LServer)] ++
-				    [?FIELD(Name, Value) || {Name, Value} <- RFields],
+			        Result = [?FIELD(<<"jid">>, list_to_binary(Username ++ "@" ++ LServer))] ++
+				    [?FIELD(list_to_binary(Name), list_to_binary(Value)) || {Name, Value} <- RFields],
 			        [#xmlel{ns = ?NS_DATA_FORMS, name = 'item', children = Result}];
 			      _ ->
 			          []

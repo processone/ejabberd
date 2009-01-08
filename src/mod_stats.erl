@@ -63,9 +63,9 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 get_names([], Res) ->
     Res;
 get_names([#xmlel{name = 'stat', attrs = Attrs} | Els], Res) ->
-    Name = exmpp_xml:get_attribute_from_list(Attrs, 'name', ""),
+    Name = exmpp_xml:get_attribute_from_list_as_binary(Attrs, 'name', <<>>),
     case Name of
-	"" ->
+	<<>> ->
 	    get_names(Els, Res);
 	_ ->
 	    get_names(Els, [Name | Res])
@@ -78,10 +78,10 @@ get_names([_ | Els], Res) ->
 
 get_local_stats(_Server, [], []) ->
     {result,
-     [?STAT("users/online"),
-      ?STAT("users/total"),
-      ?STAT("users/all-hosts/online"),
-      ?STAT("users/all-hosts/total")
+     [?STAT(<<"users/online">>),
+      ?STAT(<<"users/total">>),
+      ?STAT(<<"users/all-hosts/online">>),
+      ?STAT(<<"users/all-hosts/total">>)
      ]};
 
 get_local_stats(Server, [], Names) ->
@@ -91,13 +91,13 @@ get_local_stats(Server, [], Names) ->
 
 get_local_stats(_Server, ["running nodes", _], []) ->
     {result,
-     [?STAT("time/uptime"),
-      ?STAT("time/cputime"),
-      ?STAT("users/online"),
-      ?STAT("transactions/commited"),
-      ?STAT("transactions/aborted"),
-      ?STAT("transactions/restarted"),
-      ?STAT("transactions/logged")
+     [?STAT(<<"time/uptime">>),
+      ?STAT(<<"time/cputime">>),
+      ?STAT(<<"users/online">>),
+      ?STAT(<<"transactions/commited">>),
+      ?STAT(<<"transactions/aborted">>),
+      ?STAT(<<"transactions/restarted">>),
+      ?STAT(<<"transactions/logged">>)
      ]};
 
 get_local_stats(_Server, ["running nodes", ENode], Names) ->
@@ -126,107 +126,107 @@ get_local_stats(_Server, _, _) ->
 	 [#xmlattr{name = 'name', value = Name}], children =
 	 [#xmlel{ns = ?NS_STATS, name = 'error', attrs =
 	   [#xmlattr{name = 'code', value = Code}], children =
-	   [#xmlcdata{cdata = list_to_binary(Desc)}]}]}).
+	   [#xmlcdata{cdata = Desc}]}]}).
 
 
-get_local_stat(Server, [], Name) when Name == "users/online" ->
+get_local_stat(Server, [], Name) when Name == <<"users/online">> ->
     case catch ejabberd_sm:get_vh_session_list(list_to_binary(Server)) of
 	{'EXIT', _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Users ->
-	    ?STATVAL(integer_to_list(length(Users)), "users")
+	    ?STATVAL(list_to_binary(integer_to_list(length(Users))), <<"users">>)
     end;
 
-get_local_stat(Server, [], Name) when Name == "users/total" ->
+get_local_stat(Server, [], Name) when Name == <<"users/total">> ->
     %%LServer = jlib:nameprep(Server),
     case catch ejabberd_auth:get_vh_registered_users_number(Server) of
 	{'EXIT', _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	NUsers ->
-	    ?STATVAL(integer_to_list(NUsers), "users")
+	    ?STATVAL(list_to_binary(integer_to_list(NUsers)), <<"users">>)
     end;
 
-get_local_stat(_Server, [], Name) when Name == "users/all-hosts/online" ->
+get_local_stat(_Server, [], Name) when Name == <<"users/all-hosts/online">> ->
     case catch mnesia:table_info(session, size) of
 	{'EXIT', _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Users ->
-	    ?STATVAL(integer_to_list(Users), "users")
+	    ?STATVAL(list_to_binary(integer_to_list(Users)), <<"users">>)
     end;
 
-get_local_stat(_Server, [], Name) when Name == "users/all-hosts/total" ->
+get_local_stat(_Server, [], Name) when Name == <<"users/all-hosts/total">> ->
     case catch mnesia:table_info(passwd, size) of
 	{'EXIT', _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Users ->
-	    ?STATVAL(integer_to_list(Users), "users")
+	    ?STATVAL(list_to_binary(integer_to_list(Users)), <<"users">>)
     end;
 
 get_local_stat(_Server, _, Name) ->
-    ?STATERR("404", "Not Found").
+    ?STATERR(<<"404">>, <<"Not Found">>).
 
 
 
-get_node_stat(Node, Name) when Name == "time/uptime" ->
+get_node_stat(Node, Name) when Name == <<"time/uptime">> ->
     case catch rpc:call(Node, erlang, statistics, [wall_clock]) of
 	{badrpc, _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	CPUTime ->
-	    ?STATVAL(
-	       io_lib:format("~.3f", [element(1, CPUTime)/1000]), "seconds")
+	    ?STATVAL(list_to_binary(
+	       io_lib:format("~.3f", [element(1, CPUTime)/1000])), "seconds")
     end;
 
-get_node_stat(Node, Name) when Name == "time/cputime" ->
+get_node_stat(Node, Name) when Name == <<"time/cputime">> ->
     case catch rpc:call(Node, erlang, statistics, [runtime]) of
 	{badrpc, _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	RunTime ->
-	    ?STATVAL(
-	       io_lib:format("~.3f", [element(1, RunTime)/1000]), "seconds")
+	    ?STATVAL(list_to_binary(
+	       io_lib:format("~.3f", [element(1, RunTime)/1000])), "seconds")
     end;
 
-get_node_stat(Node, Name) when Name == "users/online" ->
+get_node_stat(Node, Name) when Name == <<"users/online">> ->
     case catch rpc:call(Node, ejabberd_sm, dirty_get_my_sessions_list, []) of
 	{badrpc, _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Users ->
-	    ?STATVAL(integer_to_list(length(Users)), "users")
+	    ?STATVAL(list_to_binary(integer_to_list(length(Users))), <<"users">>)
     end;
 
-get_node_stat(Node, Name) when Name == "transactions/commited" ->
+get_node_stat(Node, Name) when Name == <<"transactions/commited">> ->
     case catch rpc:call(Node, mnesia, system_info, [transaction_commits]) of
 	{badrpc, _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Transactions ->
-	    ?STATVAL(integer_to_list(Transactions), "transactions")
+	    ?STATVAL(list_to_binary(integer_to_list(Transactions)), <<"transactions">>)
     end;
 
-get_node_stat(Node, Name) when Name == "transactions/aborted" ->
+get_node_stat(Node, Name) when Name == <<"transactions/aborted">> ->
     case catch rpc:call(Node, mnesia, system_info, [transaction_failures]) of
 	{badrpc, _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Transactions ->
-	    ?STATVAL(integer_to_list(Transactions), "transactions")
+	    ?STATVAL(list_to_binary(integer_to_list(Transactions)), <<"transactions">>)
     end;
 
-get_node_stat(Node, Name) when Name == "transactions/restarted" ->
+get_node_stat(Node, Name) when Name == <<"transactions/restarted">> ->
     case catch rpc:call(Node, mnesia, system_info, [transaction_restarts]) of
 	{badrpc, _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Transactions ->
-	    ?STATVAL(integer_to_list(Transactions), "transactions")
+	    ?STATVAL(list_to_binary(integer_to_list(Transactions)), <<"transactions">>)
     end;
 
-get_node_stat(Node, Name) when Name == "transactions/logged" ->
+get_node_stat(Node, Name) when Name == <<"transactions/logged">> ->
     case catch rpc:call(Node, mnesia, system_info, [transaction_log_writes]) of
 	{badrpc, _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
+	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Transactions ->
-	    ?STATVAL(integer_to_list(Transactions), "transactions")
+	    ?STATVAL(list_to_binary(integer_to_list(Transactions)), <<"transactions">>)
     end;
 
 get_node_stat(_, Name) ->
-    ?STATERR("404", "Not Found").
+    ?STATERR(<<"404">>, <<"Not Found">>).
 
 
 search_running_node(SNode) ->

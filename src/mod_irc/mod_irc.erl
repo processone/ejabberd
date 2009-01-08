@@ -303,17 +303,17 @@ closed_connection(Host, From, Server) ->
 
 iq_disco(Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-      [#xmlattr{name = 'category', value = "conference"},
-       #xmlattr{name = 'type', value = "irc"},
-       #xmlattr{name = 'name', value = translate:translate(Lang, "IRC Transport")}]},
+      [#xmlattr{name = 'category', value = <<"conference">>},
+       #xmlattr{name = 'type', value = <<"irc">>},
+       #xmlattr{name = 'name', value = list_to_binary(translate:translate(Lang, "IRC Transport"))}]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
-      [#xmlattr{name = 'var', value = ?NS_DISCO_INFO_s}]},
+      [#xmlattr{name = 'var', value = list_to_binary(?NS_DISCO_INFO_s)}]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
-      [#xmlattr{name = 'var', value = ?NS_MUC_s}]},
+      [#xmlattr{name = 'var', value = list_to_binary(?NS_MUC_s)}]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
-      [#xmlattr{name = 'var', value = ?NS_INBAND_REGISTER_s}]},
+      [#xmlattr{name = 'var', value = list_to_binary(?NS_INBAND_REGISTER_s)}]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs =
-      [#xmlattr{name = 'var', value = ?NS_VCARD_s}]}].
+      [#xmlattr{name = 'var', value = list_to_binary(?NS_VCARD_s)}]}].
 
 iq_get_vcard(Lang) ->
     [#xmlel{ns = ?NS_VCARD, name = 'FN', children =
@@ -439,13 +439,13 @@ get_form(Host, From, [], Lang, DefEnc) ->
 	                   Lang,
 			   "Enter username and encodings you wish to use for "
 			   "connecting to IRC servers"))}]},
-	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "text-single"},
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = <<"text-single">>},
 				       #xmlattr{name = 'label', value =
-				        translate:translate(
-					  Lang, "IRC Username")},
-				       #xmlattr{name = 'var', value = "username"}], children =
+				        list_to_binary(translate:translate(
+					  Lang, "IRC Username"))},
+				       #xmlattr{name = 'var', value = <<"username">>}], children =
 	         [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Username)}]}]},
-	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "fixed"}], children =
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = <<"fixed">>}], children =
 	         [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
 		   [#xmlcdata{cdata = list_to_binary(
 		     lists:flatten(
@@ -457,7 +457,7 @@ get_form(Host, From, [], Lang, DefEnc) ->
 			   "in format '{\"irc server\", \"encoding\"}'.  "
 			   "By default this service use \"~s\" encoding."),
 		         [DefEnc])))}]}]},
-	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "fixed"}], children =
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = <<"fixed">>}], children =
 	         [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
 		   [#xmlcdata{cdata = list_to_binary(
 		     translate:translate(
@@ -465,10 +465,10 @@ get_form(Host, From, [], Lang, DefEnc) ->
 		       "Example: [{\"irc.lucky.net\", \"koi8-r\"}, "
 		       "{\"vendetta.fef.net\", \"iso8859-1\"}]."
 		    ))}]}]},
-	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "text-multi"},
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = <<"text-multi">>},
 				       #xmlattr{name = 'label', value =
-				        translate:translate(Lang, "Encodings")},
-				       #xmlattr{name = 'var', value = "encodings"}], children =
+				        list_to_binary(translate:translate(Lang, "Encodings"))},
+				       #xmlattr{name = 'var', value = <<"encodings">>}], children =
 		         lists:map(
 			   fun(S) ->
 				   #xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(S)}]}

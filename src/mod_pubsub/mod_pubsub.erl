@@ -315,12 +315,12 @@ identity(Host) ->
     end,
     #xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = Identity}.
 
-disco_local_identity(Acc, _From, To, [], _Lang) ->
+disco_local_identity(Acc, _From, To, <<>>, _Lang) ->
     Acc ++ [identity(To#jid.ldomain)];
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-disco_local_features(Acc, _From, To, [], _Lang) ->
+disco_local_features(Acc, _From, To, <<>>, _Lang) ->
     Host = To#jid.ldomain,
     Feats = case Acc of
 	{result, I} -> I;
@@ -332,12 +332,12 @@ disco_local_features(Acc, _From, To, [], _Lang) ->
 disco_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-disco_local_items(Acc, _From, _To, [], _Lang) ->
+disco_local_items(Acc, _From, _To, <<>>, _Lang) ->
     Acc;
 disco_local_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-disco_sm_identity(Acc, _From, To, [], _Lang) ->
+disco_sm_identity(Acc, _From, To, <<>>, _Lang) ->
     Acc ++ [identity(To#jid.ldomain)];
 disco_sm_identity(Acc, From, To, Node, _Lang) ->
     LOwner = jlib:short_prepd_bare_jid(To),
@@ -360,7 +360,7 @@ disco_sm_features(Acc, From, To, Node, _Lang) ->
 	    Acc
     end.
 
-disco_sm_items(Acc, From, To, [], _Lang) ->
+disco_sm_items(Acc, From, To, <<>>, _Lang) ->
     %% TODO, use iq_disco_items(Host, [], From)
     Host = To#jid.ldomain,
     LJID = jlib:short_prepd_bare_jid(To),
@@ -381,7 +381,8 @@ disco_sm_items(Acc, From, To, [], _Lang) ->
 	    {result, NodeItems ++ Items}
     end;
 
-disco_sm_items(Acc, From, To, Node, _Lang) ->
+disco_sm_items(Acc, From, To, NodeB, _Lang) ->
+    Node = binary_to_list(NodeB),
     %% TODO, use iq_disco_items(Host, Node, From)
     Host = To#jid.ldomain,
     LJID = jlib:short_prepd_bare_jid(To),

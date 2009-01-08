@@ -1,3 +1,18 @@
+2009-01-08	Pablo Polvorin	<pablo.polvorin@process-one.net>
+	* src/mod_vcard_ldap.erl, src/mod_muc/mod_muc.erl, src/mod_roster.hrl,
+	src/mod_offline_odbc.erl, src/ejabberd_s2s_in.erl, src/adhoc.erl,
+	src/mod_configure.erl, src/mod_irc/mod_irc_connection.erl,
+	src/mod_irc/mod_irc.erl, src/web/ejabberd_http_poll.erl, 
+	src/mod_privacy_odbc.erl, src/ejabberd_c2s.erl, src/mod_announce.erl,
+	src/mod_privacy.erl, src/mod_adhoc.erl, src/mod_pubsub/mod_pubsub.erl,
+	src/mod_vcard_odbc.erl, src/mod_stats.erl, src/mod_last.erl,
+	src/mod_roster.erl, src/ejabberd_service.erl, src/mod_disco.erl,
+	src/mod_configure2.erl, src/mod_roster_odbc.erl, src/ejabberd_s2s_out.erl,
+	src/mod_last_odbc.erl: XML attributes as binary(). Change Node argument
+	to binary in the following hooks: disco_local_items, disco_local_features,
+	disco_local_identity, disco_sm_items and disco_sm_identity.
+
+
 2009-01-05  Pablo Polvorin  <pablo.polvorin@process-one.net>
 	* src/mod_roster.erl: Fix typo.
 

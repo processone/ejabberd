@@ -162,14 +162,14 @@ process_list_get(LUser, LServer, Name) ->
 
 
 item_to_xml(Item) ->
-    Attrs1 = [#xmlattr{name = 'action', value = action_to_list(Item#listitem.action)},
-	      #xmlattr{name = 'order', value = order_to_list(Item#listitem.order)}],
+    Attrs1 = [#xmlattr{name = 'action', value = action_to_binary(Item#listitem.action)},
+	      #xmlattr{name = 'order', value = order_to_binary(Item#listitem.order)}],
     Attrs2 = case Item#listitem.type of
 		 none ->
 		     Attrs1;
 		 Type ->
-		     [#xmlattr{name = 'type', value = type_to_list(Item#listitem.type)},
-		      #xmlattr{name = 'value', value = value_to_list(Type, Item#listitem.value)} |
+		     [#xmlattr{name = 'type', value = type_to_binary(Item#listitem.type)},
+		      #xmlattr{name = 'value', value = value_to_binary(Type, Item#listitem.value)} |
 		      Attrs1]
 	     end,
     SubEls = case Item#listitem.match_all of
@@ -205,34 +205,34 @@ item_to_xml(Item) ->
     exmpp_xml:set_attributes(#xmlel{ns = ?NS_PRIVACY, name = item, children = SubEls}, Attrs2).
 
 
-action_to_list(Action) ->
+action_to_binary(Action) ->
     case Action of
-	allow -> "allow";
-	deny -> "deny"
+	allow -> <<"allow">>;
+	deny -> <<"deny">>
     end.
 
-order_to_list(Order) ->
-    integer_to_list(Order).
+order_to_binary(Order) ->
+    list_to_binary(integer_to_list(Order)).
 
-type_to_list(Type) ->
+type_to_binary(Type) ->
     case Type of
-	jid -> "jid";
-	group -> "group";
-	subscription -> "subscription"
+	jid -> <<"jid">>;
+	group -> <<"group">>;
+	subscription -> <<"subscription">>
     end.
 
-value_to_list(Type, Val) ->
+value_to_binary(Type, Val) ->
     case Type of
 	jid ->
 	    {N, D, R} = Val,
-	    exmpp_jid:jid_to_list(N, D, R);
+	    exmpp_jid:jid_to_binary(N, D, R);
 	group -> Val;
 	subscription ->
 	    case Val of
-		both -> "both";
-		to -> "to";
-		from -> "from";
-		none -> "none"
+		both -> <<"both">>;
+		to -> <<"to">>;
+		from -> <<"from">>;
+		none -> <<"none">>
 	    end
     end.
 

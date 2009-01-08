@@ -154,7 +154,7 @@ item_to_xml(Item) ->
     Attrs1 = exmpp_xml:set_attribute_in_list([],
       'jid', exmpp_jid:jid_to_list(U, S, R)),
     Attrs2 = case Item#roster.name of
-		 "" ->
+		 <<>> ->
 		     Attrs1;
 		 Name ->
 		     exmpp_xml:set_attribute_in_list(Attrs1, 'name', Name)
@@ -205,7 +205,7 @@ process_item_set(From, To, #xmlel{} = El) ->
 					   jid = JID};
 			       [I] ->
 				   I#roster{jid = JID,
-					    name = "",
+					    name = <<>>,
 					    groups = [],
 					    xs = []}
 			   end,
@@ -274,7 +274,7 @@ process_item_attrs(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
 	    process_item_attrs(Item#roster{name = Val}, Attrs);
 	'subscription' ->
 	    case Val of
-		"remove" ->
+		<<"remove">> ->
 		    process_item_attrs(Item#roster{subscription = remove},
 				       Attrs);
 		_ ->
@@ -623,19 +623,19 @@ process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
 	    process_item_attrs_ws(Item#roster{name = Val}, Attrs);
 	'subscription' ->
 	    case Val of
-		"remove" ->
+		<<"remove">> ->
 		    process_item_attrs_ws(Item#roster{subscription = remove},
 					  Attrs);
-		"none" ->
+		<<"none">> ->
 		    process_item_attrs_ws(Item#roster{subscription = none},
 					  Attrs);
-		"both" ->
+		<<"both">> ->
 		    process_item_attrs_ws(Item#roster{subscription = both},
 					  Attrs);
-		"from" ->
+		<<"from">> ->
 		    process_item_attrs_ws(Item#roster{subscription = from},
 					  Attrs);
-		"to" ->
+		<<"to">> ->
 		    process_item_attrs_ws(Item#roster{subscription = to},
 					  Attrs);
 		_ ->
@@ -888,7 +888,7 @@ user_roster(User, Server, Query, Lang) ->
 					    [?XAC("td", [{"class", "valign"}],
 						  catch exmpp_jid:jid_to_list(U, S, R)),
 					     ?XAC("td", [{"class", "valign"}],
-						  R#roster.name),
+						  binary_to_list(R#roster.name)),
 					     ?XAC("td", [{"class", "valign"}],
 						  atom_to_list(R#roster.subscription)),
 					     ?XAC("td", [{"class", "valign"}],

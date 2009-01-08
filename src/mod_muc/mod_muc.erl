@@ -98,19 +98,20 @@ stop(Host) ->
 %% C) mod_muc:stop was called, and each room is being terminated
 %%    In this case, the mod_muc process died before the room processes
 %%    So the message sending must be catched
-room_destroyed(Host, Room, Pid, ServerHost) ->
+room_destroyed(Host, Room, Pid, ServerHost) when is_binary(Host), 
+                                                 is_binary(Room) ->
     catch gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
 	{room_destroyed, {Room, Host}, Pid},
     ok.
 
-store_room(Host, Name, Opts) ->
+store_room(Host, Name, Opts) when is_binary(Host), is_binary(Name) ->
     F = fun() ->
 		mnesia:write(#muc_room{name_host = {Name, Host},
 				       opts = Opts})
 	end,
     mnesia:transaction(F).
 
-restore_room(Host, Name) ->
+restore_room(Host, Name) when is_binary(Host), is_binary(Name) ->
     case catch mnesia:dirty_read(muc_room, {Name, Host}) of
 	[#muc_room{opts = Opts}] ->
 	    Opts;
@@ -118,7 +119,7 @@ restore_room(Host, Name) ->
 	    error
     end.
 
-forget_room(Host, Name) ->
+forget_room(Host, Name) when is_binary(Host), is_binary(Name) ->
     F = fun() ->
 		mnesia:delete({muc_room, {Name, Host}})
 	end,

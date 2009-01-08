@@ -371,7 +371,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error;
 		F ->
 		    try
-			exmpp_jid:list_to_jid(F)
+			exmpp_jid:binary_to_jid(F)
 		    catch
 			_Exception1 -> error
 		    end
@@ -381,7 +381,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error;
 		T ->
 		    try
-			exmpp_jid:list_to_jid(T)
+			exmpp_jid:binary_to_jid(T)
 		    catch
 			_Exception2 -> error
 		    end

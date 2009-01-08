@@ -807,8 +807,8 @@ bounce_element(El, Condition) ->
 	"result" -> ok;
 	_ ->
 	    Err = exmpp_stanza:reply_with_error(El, Condition),
-	    From = exmpp_jid:list_to_jid(exmpp_stanza:get_sender(El)),
-	    To = exmpp_jid:list_to_jid(exmpp_stanza:get_recipient(El)),
+	    From = exmpp_jid:binary_to_jid(exmpp_stanza:get_sender(El)),
+	    To = exmpp_jid:binary_to_jid(exmpp_stanza:get_recipient(El)),
 	    % No namespace conversion (:server <-> :client) is done.
 	    % This is handled by C2S and S2S send_element functions.
 	    ejabberd_router:route(To, From, Err)

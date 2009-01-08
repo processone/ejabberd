@@ -125,18 +125,18 @@ process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'info'}) ->
     S2SConns = ejabberd_s2s:dirty_get_connections(),
     TConns = lists:usort([element(2, C) || C <- S2SConns]),
     Attrs = [#xmlattr{name = 'registered-users', value =
-	      integer_to_list(mnesia:table_info(passwd, size))},
+	      list_to_binary(integer_to_list(mnesia:table_info(passwd, size)))},
 	     #xmlattr{name = 'online-users', value =
-	      integer_to_list(mnesia:table_info(presence, size))},
+	      list_to_binary(integer_to_list(mnesia:table_info(presence, size)))},
 	     #xmlattr{name = 'running-nodes', value =
-	      integer_to_list(length(mnesia:system_info(running_db_nodes)))},
+	      list_to_binary(integer_to_list(length(mnesia:system_info(running_db_nodes))))},
 	     #xmlattr{name = 'stopped-nodes', value =
-	      integer_to_list(
+	      list_to_binary(integer_to_list(
 		length(lists:usort(mnesia:system_info(db_nodes) ++
 				   mnesia:system_info(extra_db_nodes)) --
-		       mnesia:system_info(running_db_nodes)))},
+		       mnesia:system_info(running_db_nodes))))},
 	     #xmlattr{name = 'outgoing-s2s-servers', value =
-	      integer_to_list(length(TConns))}],
+	      list_to_binary(integer_to_list(length(TConns)))}],
     {result, #xmlel{ns = ?NS_ECONFIGURE, name = 'info', attrs = Attrs}};
 process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'welcome-message', attrs = Attrs}) ->
     {Subj, Body} = case ejabberd_config:get_local_option(welcome_message) of

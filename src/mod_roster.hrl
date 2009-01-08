@@ -22,7 +22,7 @@
 -record(roster, {usj,
 		 us,
 		 jid,
-		 name = "",
+		 name = <<>>,
 		 subscription = none,
 		 ask = none,
 		 groups = [],

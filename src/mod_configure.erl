@@ -51,7 +51,7 @@
 -include("ejabberd.hrl").
 -include("adhoc.hrl").
 
--define(T(Lang, Text), translate:translate(Lang, Text)).
+-define(T(Lang, Text), list_to_binary(translate:translate(Lang, Text))).
 
 %% Copied from ejabberd_sm.erl
 -record(session, {sid, usr, us, priority, info}).
@@ -96,11 +96,11 @@ stop(Host) ->
 	   #xmlattr{name = 'name', value = ?T(Lang, Name)}]}]).
 
 -define(INFO_COMMAND(Name, Lang),
-	?INFO_IDENTITY("automation", "command-node", Name, Lang)).
+	?INFO_IDENTITY(<<"automation">>, <<"command-node">>, Name, Lang)).
 
 -define(NODEJID(To, Name, Node),
 	#xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-	 [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(To)},
+	 [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(To)},
 	  #xmlattr{name = 'name', value = ?T(Lang, Name)},
 	  #xmlattr{name = 'node', value = Node}]}).
 
@@ -110,7 +110,7 @@ stop(Host) ->
 	  #xmlattr{name = 'name', value = ?T(Lang, Name)},
 	  #xmlattr{name = 'node', value = Node}]}).
 
--define(NS_ADMINX(Sub), ?NS_ADMIN_s++"#"++Sub).
+-define(NS_ADMINX(Sub), <<?NS_ADMIN_s,"#", Sub/binary>>).
 -define(NS_ADMINL(Sub), ["http:","jabber.org","protocol","admin", Sub]).
 tokenize(Node) -> string:tokens(Node, "/#").
 
@@ -123,10 +123,10 @@ get_sm_identity(Acc, _From, _To, Node, Lang) ->
     end.
 
 get_local_identity(Acc, _From, _To, Node, Lang) ->
-    LNode = tokenize(Node),
+    LNode = tokenize(binary_to_list(Node)),
     case LNode of
 	["running nodes", ENode] ->
-	    ?INFO_IDENTITY("ejabberd", "node", ENode, Lang);
+	    ?INFO_IDENTITY(<<"ejabberd">>, <<"node">>, ENode, Lang);
 	["running nodes", _ENode, "DB"] ->
 	    ?INFO_COMMAND("Database", Lang);
 	["running nodes", _ENode, "modules", "start"] ->
@@ -204,7 +204,7 @@ get_local_features(Acc, From, To, Node, _Lang) ->
 	false ->
 	    Acc;
 	_ ->
-	    LNode = tokenize(Node),
+	    LNode = tokenize(binary_to_list(Node)),
 	    Allow = acl:match_rule(LServer, configure, From),
 	    case LNode of
 		["config"] ->
@@ -263,9 +263,9 @@ adhoc_sm_items(Acc, From, To, Lang) ->
 			empty -> []
 		    end,
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(To)},
+		      [#xmlattr{name = 'jid', value = exmpp_jid:jid_binary(To)},
 		       #xmlattr{name = 'name', value = ?T(Lang, "Configuration")},
-		       #xmlattr{name = 'node', value = "config"}]}],
+		       #xmlattr{name = 'node', value = <<"config">>}]}],
 	    {result, Items ++ Nodes};
 	_ ->
 	    Acc
@@ -283,10 +283,10 @@ get_sm_items(Acc, From, To, Node, Lang) ->
 			{result, Its} -> Its;
 			empty -> []
 		    end,
-	    case {acl:match_rule(LServer, configure, From), Node} of
+	    case {acl:match_rule(LServer, configure, From), binary_to_list(Node)} of
 		{allow, ""} ->
-		    Nodes = [?NODEJID(To, "Configuration", "config"),
-			     ?NODEJID(To, "User Management", "user")],
+		    Nodes = [?NODEJID(To, "Configuration", <<"config">>),
+			     ?NODEJID(To, "User Management", <<"user">>)],
 		    {result, Items ++ Nodes ++ get_user_resources(To)};
 		{allow, "config"} ->
 		    {result, []};
@@ -303,17 +303,16 @@ get_user_resources(BareJID) ->
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
 		       [#xmlattr{name = 'jid', 
-                         value = exmpp_jid:jid_to_list(
+                         value = exmpp_jid:jid_to_binary(
                                   exmpp_jid:bare_jid_to_jid(BareJID, R))},
 			    #xmlattr{name = 'name', 
-                         value = exmpp_jid:lnode_as_list(BareJID)}]}
+                         value = exmpp_jid:lnode(BareJID)}]}
 	      end, lists:sort(Rs)).
 
 %%%-----------------------------------------------------------------------
 
 adhoc_local_items(Acc, From, To, Lang) ->
     LServer = exmpp_jid:ldomain_as_list(To),
-    Server = exmpp_jid:domain_as_list(To),
     case acl:match_rule(LServer, configure, From) of
 	allow ->
 	    Items = case Acc of
@@ -321,7 +320,7 @@ adhoc_local_items(Acc, From, To, Lang) ->
 			empty -> []
 		    end,
 	    %% Recursively get all configure commands
-	    Nodes = recursively_get_local_items(LServer, "", Server, Lang),
+	    Nodes = recursively_get_local_items(LServer, "", exmpp_jid:domain(To), Lang),
 	    Nodes1 = lists:filter(
 		       fun(N) ->
 			       Nd = exmpp_xml:get_attribute(N, 'node', ""),
@@ -374,7 +373,7 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
 		Fallback;
 	    allow ->
 		case get_local_items(LServer, LNode,
-				     exmpp_jid:jid_to_list(To), Lang) of
+				     exmpp_jid:jid_to_binary(To), Lang) of
 		    {result, Res} ->
 			{result, Res};
 		    {error, Error} ->
@@ -382,7 +381,7 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
 		end
 	end).
 
-get_local_items(Acc, From, To, "", Lang) ->
+get_local_items(Acc, From, To, <<>>, Lang) ->
     LServer = exmpp_jid:ldomain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
@@ -398,7 +397,7 @@ get_local_items(Acc, From, To, "", Lang) ->
 		    {result, Items};
 		allow ->
 		    case get_local_items(LServer, [],
-					 exmpp_jid:jid_to_list(To), Lang) of
+					 exmpp_jid:jid_to_binary(To), Lang) of
 			{result, Res} ->
 			    {result, Items ++ Res};
 			{error, _Error} ->
@@ -413,7 +412,7 @@ get_local_items(Acc, From, To, Node, Lang) ->
 	false ->
 	    Acc;
 	_ ->
-	    LNode = tokenize(Node),
+	    LNode = tokenize(binary_to_list(Node)),
 	    Allow = acl:match_rule(LServer, configure, From),
 	    case LNode of
 		["config"] ->
@@ -465,19 +464,19 @@ get_local_items(Acc, From, To, Node, Lang) ->
 
 get_local_items(_Host, [], Server, Lang) ->
     {result,
-     [?NODE("Configuration",            "config"),
-      ?NODE("User Management",          "user"),
-      ?NODE("Online Users",             "online users"),
-      ?NODE("All Users",                "all users"),
-      ?NODE("Outgoing s2s Connections", "outgoing s2s"),
-      ?NODE("Running Nodes",            "running nodes"),
-      ?NODE("Stopped Nodes",            "stopped nodes")
+     [?NODE("Configuration",            <<"config">>),
+      ?NODE("User Management",          <<"user">>),
+      ?NODE("Online Users",             <<"online users">>),
+      ?NODE("All Users",                <<"all users">>),
+      ?NODE("Outgoing s2s Connections", <<"outgoing s2s">>),
+      ?NODE("Running Nodes",            <<"running nodes">>),
+      ?NODE("Stopped Nodes",            <<"stopped nodes">>)
      ]};
 
 get_local_items(_Host, ["config"], Server, Lang) ->
     {result,
-     [?NODE("Access Control Lists", "config/acls"),
-      ?NODE("Access Rules",         "config/access")
+     [?NODE("Access Control Lists", <<"config/acls">>),
+      ?NODE("Access Rules",         <<"config/access">>)
      ]};
 
 get_local_items(_Host, ["config", _], _Server, _Lang) ->
@@ -485,15 +484,15 @@ get_local_items(_Host, ["config", _], _Server, _Lang) ->
 
 get_local_items(_Host, ["user"], Server, Lang) ->
     {result,
-     [?NODE("Add User",            ?NS_ADMINX("add-user")),
-      ?NODE("Delete User",         ?NS_ADMINX("delete-user")),
-      ?NODE("End User Session",    ?NS_ADMINX("end-user-session")),
-      ?NODE("Get User Password",   ?NS_ADMINX("get-user-password")),
-      ?NODE("Change User Password",?NS_ADMINX("change-user-password")),
-      ?NODE("Get User Last Login Time",   ?NS_ADMINX("get-user-lastlogin")),
-      ?NODE("Get User Statistics",   ?NS_ADMINX("user-stats")),
-      ?NODE("Get Number of Registered Users",?NS_ADMINX("get-registered-users-num")),
-      ?NODE("Get Number of Online Users",?NS_ADMINX("get-online-users-num"))
+     [?NODE("Add User",            ?NS_ADMINX(<<"add-user">>)),
+      ?NODE("Delete User",         ?NS_ADMINX(<<"delete-user">>)),
+      ?NODE("End User Session",    ?NS_ADMINX(<<"end-user-session">>)),
+      ?NODE("Get User Password",   ?NS_ADMINX(<<"get-user-password">>)),
+      ?NODE("Change User Password",?NS_ADMINX(<<"change-user-password">>)),
+      ?NODE("Get User Last Login Time",   ?NS_ADMINX(<<"get-user-lastlogin">>)),
+      ?NODE("Get User Statistics",   ?NS_ADMINX(<<"user-stats">>)),
+      ?NODE("Get Number of Registered Users",?NS_ADMINX(<<"get-registered-users-num">>)),
+      ?NODE("Get Number of Online Users",?NS_ADMINX(<<"get-online-users-num">>))
      ]};
 
 get_local_items(_Host, ["http:" | _], _Server, _Lang) ->
@@ -518,8 +517,8 @@ get_local_items(Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
 			   Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
 			   lists:map(fun({S, U}) ->
 					     #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-					      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(U, S)},
-					       #xmlattr{name = 'name', value = exmpp_jid:jid_to_list(U, S)}]}
+					      [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(U, S)},
+					       #xmlattr{name = 'name', value = exmpp_jid:jid_to_binary(U, S)}]}
 				     end, Sub)
 		       end of
 			       {'EXIT', _Reason} ->
@@ -542,43 +541,47 @@ get_local_items(_Host, ["stopped nodes"], _Server, Lang) ->
     {result, get_stopped_nodes(Lang)};
 
 get_local_items(_Host, ["running nodes", ENode], Server, Lang) ->
+    ENodeB = list_to_binary(ENode),
     {result,
-     [?NODE("Database", "running nodes/" ++ ENode ++ "/DB"),
-      ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules"),
-      ?NODE("Backup Management", "running nodes/" ++ ENode ++ "/backup"),
+     [?NODE("Database", <<"running nodes/", ENodeB/binary,  "/DB">>),
+      ?NODE("Modules", <<"running nodes/", ENodeB/binary, "/modules">>),
+      ?NODE("Backup Management", <<"running nodes/", ENodeB/binary, "/backup">>),
       ?NODE("Import Users From jabberd 1.4 Spool Files",
-	    "running nodes/" ++ ENode ++ "/import"),
-      ?NODE("Restart Service", "running nodes/" ++ ENode ++ "/restart"),
-      ?NODE("Shut Down Service", "running nodes/" ++ ENode ++ "/shutdown")
+	    <<"running nodes/",  ENodeB/binary, "/import">>),
+      ?NODE("Restart Service", <<"running nodes/", ENodeB/binary, "/restart">>),
+      ?NODE("Shut Down Service", <<"running nodes/", ENodeB/binary, "/shutdown">>)
      ]};
 
 get_local_items(_Host, ["running nodes", _ENode, "DB"], _Server, _Lang) ->
     {result, []};
 
 get_local_items(_Host, ["running nodes", ENode, "modules"], Server, Lang) ->
+    ENodeB = list_to_binary(ENode),
     {result,
-     [?NODE("Start Modules", "running nodes/" ++ ENode ++ "/modules/start"),
-      ?NODE("Stop Modules",  "running nodes/" ++ ENode ++ "/modules/stop")
+     [?NODE("Start Modules", <<"running nodes/", ENodeB/binary, "/modules/start">>),
+      ?NODE("Stop Modules",  <<"running nodes/", ENodeB/binary, "/modules/stop">>)
      ]};
 
 get_local_items(_Host, ["running nodes", _ENode, "modules", _], _Server, _Lang) ->
     {result, []};
 
 get_local_items(_Host, ["running nodes", ENode, "backup"], Server, Lang) ->
+    ENodeB = list_to_binary(ENode),
     {result,
-     [?NODE("Backup", "running nodes/" ++ ENode ++ "/backup/backup"),
-      ?NODE("Restore", "running nodes/" ++ ENode ++ "/backup/restore"),
+     [?NODE("Backup", <<"running nodes/", ENodeB/binary, "/backup/backup">>),
+      ?NODE("Restore", <<"running nodes/", ENodeB/binary, "/backup/restore">>),
       ?NODE("Dump to Text File",
-	    "running nodes/" ++ ENode ++ "/backup/textfile")
+	    <<"running nodes/", ENodeB/binary, "/backup/textfile">>)
      ]};
 
 get_local_items(_Host, ["running nodes", _ENode, "backup", _], _Server, _Lang) ->
     {result, []};
 
 get_local_items(_Host, ["running nodes", ENode, "import"], Server, Lang) ->
+    ENodeB = list_to_binary(ENode),
     {result,
-     [?NODE("Import File", "running nodes/" ++ ENode ++ "/import/file"),
-      ?NODE("Import Directory",  "running nodes/" ++ ENode ++ "/import/dir")
+     [?NODE("Import File", <<"running nodes/", ENodeB/binary, "/import/file">>),
+      ?NODE("Import Directory",  <<"running nodes/", ENodeB/binary, "/import/dir">>)
      ]};
 
 get_local_items(_Host, ["running nodes", _ENode, "import", _], _Server, _Lang) ->
@@ -602,8 +605,8 @@ get_online_vh_users(Host) ->
 	    SURs = lists:sort([{S, U, R} || {U, S, R} <- USRs]),
 	    lists:map(fun({S, U, R}) ->
 			      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-			       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(U, S, R)},
-				#xmlattr{name = 'name', value = exmpp_jid:jid_to_list(U, S)}]}
+			       [#xmlattr{name = 'jid', value = exmpp_jid:jid_binary(U, S, R)},
+				#xmlattr{name = 'name', value = exmpp_jid:jid_to_binary(U, S)}]}
 		      end, SURs)
     end.
 
@@ -617,8 +620,8 @@ get_all_vh_users(Host) ->
 		N when N =< 100 ->
 		    lists:map(fun({S, U}) ->
 				      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(U, S)},
-					#xmlattr{name = 'name', value = exmpp_jid:jid_to_list(U, S)}]}
+				       [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(U, S)},
+					#xmlattr{name = 'name', value = exmpp_jid:jid_to_binary(U, S)}]}
 			      end, SUsers);
 		N ->
 		    NParts = trunc(math:sqrt(N * 0.618)) + 1,
@@ -626,20 +629,19 @@ get_all_vh_users(Host) ->
 		    lists:map(fun(K) ->
 				      L = K + M - 1,
 				      Node =
-					  "@" ++ integer_to_list(K) ++
-					  "-" ++ integer_to_list(L),
+					  <<"@", (list_to_binary(integer_to_list(K)))/binary,
+  					    "-", (list_to_binary(integer_to_list(L)))/binary>>,
 				      {FS, FU} = lists:nth(K, SUsers),
 				      {LS, LU} =
 					  if L < N -> lists:nth(L, SUsers);
 					     true -> lists:last(SUsers)
 					  end,
 				      Name = 
-					  FU ++ "@" ++ FS ++
-					  " -- " ++
-					  LU ++ "@" ++ LS,
+					  <<(list_to_binary(FU))/binary, "@", (list_to_binary(FS))/binary,
+					  " -- ", (list_to_binary(LU))/binary, "@", (list_to_binary(LS))/binary>>,
 				      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				       [#xmlattr{name = 'jid', value = Host},
-					#xmlattr{name = 'node', value = "all users/" ++ Node},
+				       [#xmlattr{name = 'jid', value = list_to_binary(Host)},
+					#xmlattr{name = 'node', value = <<"all users/", Node/binary>>},
 					#xmlattr{name = 'name', value = Name}]}
 			      end, lists:seq(1, N, M))
 	    end
@@ -656,10 +658,10 @@ get_outgoing_s2s(Host, Lang) ->
 	    lists:map(
 	      fun(T) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		       [#xmlattr{name = 'jid', value = Host},
-			#xmlattr{name = 'node', value = "outgoing s2s/" ++ T},
+		       [#xmlattr{name = 'jid', value = list_to_binary(Host)},
+			#xmlattr{name = 'node', value = <<"outgoing s2s/", (list_to_binary(T))/binary>>},
 			#xmlattr{name = 'name', value =
-			 lists:flatten(
+			 list_to_binary(
 			   io_lib:format(
 			     ?T(Lang, "To ~s"), [T]))}]}
 	      end, lists:usort(TConns))
@@ -673,10 +675,10 @@ get_outgoing_s2s(Host, Lang, To) ->
 	    lists:map(
 	      fun({F, _T}) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		       [#xmlattr{name = 'jid', value = Host},
-			#xmlattr{name = 'node', value = "outgoing s2s/" ++ To ++ "/" ++ F},
+		       [#xmlattr{name = 'jid', value = list_to_binary(Host)},
+			#xmlattr{name = 'node', value = <<"outgoing s2s/", (list_to_binary(To))/binary, "/", (list_to_binary(F))/binary>>},
 			#xmlattr{name = 'name', value =
-			 lists:flatten(
+			 list_to_binary(
 			   io_lib:format(
 			     ?T(Lang, "From ~s"), [F]))}]}
 	      end, lists:keysort(1, lists:filter(fun(E) ->
@@ -692,10 +694,10 @@ get_running_nodes(Server, _Lang) ->
 	DBNodes ->
 	    lists:map(
 	      fun(N) ->
-		      S = atom_to_list(N),
+		      S = list_to_binary(atom_to_list(N)),
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		       [#xmlattr{name = 'jid', value = Server},
-			#xmlattr{name = 'node', value = "running nodes/" ++ S},
+		       [#xmlattr{name = 'jid', value = list_to_binary(Server)},
+			#xmlattr{name = 'node', value = <<"running nodes/", (list_to_binary(S))/binary>>},
 			#xmlattr{name = 'name', value = S}]}
 	      end, lists:sort(DBNodes))
     end.
@@ -709,10 +711,10 @@ get_stopped_nodes(_Lang) ->
 	DBNodes ->
 	    lists:map(
 	      fun(N) ->
-		      S = atom_to_list(N),
+		      S = list_to_binary(atom_to_list(N)),
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		       [#xmlattr{name = 'jid', value = ?MYNAME},
-			#xmlattr{name = 'node', value = "stopped nodes/" ++ S},
+		       [#xmlattr{name = 'jid', value = list_to_binary(?MYNAME)},
+			#xmlattr{name = 'node', value = <<"stopped nodes/", S/binary>>},
 			#xmlattr{name = 'name', value = S}]}
 	      end, lists:sort(DBNodes))
     end.
@@ -815,8 +817,8 @@ adhoc_local_commands(From, To,
 -define(TVFIELD(Type, Var, Val),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
 			       #xmlattr{name = 'var', value = Var}],
-	 children = [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Val)}]}]}).
--define(HFIELD(), ?TVFIELD("hidden", "FORM_TYPE", ?NS_ADMIN_s)).
+	 children = [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = Val}]}]}).
+-define(HFIELD(), ?TVFIELD(<<"hidden">>, <<"FORM_TYPE">>, list_to_binary(?NS_ADMIN_s))).
 
 -define(TLFIELD(Type, Label, Var),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
@@ -827,7 +829,7 @@ adhoc_local_commands(From, To,
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
 			       #xmlattr{name = 'label', value = ?T(Lang, Label)},
 			       #xmlattr{name = 'var', value = Var}],
-	 children = [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Val)}]}]}).
+	 children = [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = Val}]}]}).
 
 -define(XMFIELD(Type, Label, Var, Vals),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
@@ -836,9 +838,9 @@ adhoc_local_commands(From, To,
 	 children = [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Val)}]} || Val <- Vals]}).
 
 -define(TABLEFIELD(Table, Val),
-	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "list-single"},
-			       #xmlattr{name = 'label', value = atom_to_list(Table)},
-			       #xmlattr{name = 'var', value = atom_to_list(Table)}],
+	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = <<"list-single">>},
+			       #xmlattr{name = 'label', value = list_to_binary(atom_to_list(Table))},
+			       #xmlattr{name = 'var', value = list_to_binary(atom_to_list(Table))}],
 	 children = [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(atom_to_list(Val))}]},
 	  #xmlel{ns = ?NS_DATA_FORMS, name = 'option', attrs = [#xmlattr{name = 'label', value =
 				   ?T(Lang, "RAM copy")}],
@@ -917,7 +919,7 @@ get_form(Host, ["running nodes", ENode, "modules", "stop"], Lang) ->
 				      Lang, "Choose modules to stop"))}]} |
 			        lists:map(fun(M) ->
 						  S = atom_to_list(M),
-						  ?XFIELD("boolean", S, S, "0")
+						  ?XFIELD(<<"boolean">>, S, list_to_binary(S), <<"0">>)
 					  end, SModules)
 			       ]}]}
 	    end
@@ -934,21 +936,22 @@ get_form(_Host, ["running nodes", ENode, "modules", "start"], Lang) ->
 	         [#xmlcdata{cdata =
 	           list_to_binary(?T(
 		      Lang, "Enter list of {Module, [Options]}"))}]},
-		?XFIELD("text-multi", "List of modules to start", "modules", "[].")
+		?XFIELD(<<"text-multi">>, "List of modules to start", <<"modules">>, <<"[].">>)
 	       ]}]};
 
 get_form(_Host, ["running nodes", ENode, "backup", "backup"], Lang) ->
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
-	       [?HFIELD(),
+	       [
+           ?HFIELD(),
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 	         [#xmlcdata{cdata =
 		   list_to_binary(?T(
 		      Lang, "Backup to File at ") ++ ENode)}]},
-	        #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions', children =
+        #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions', children =
 	         [#xmlcdata{cdata =
 	           list_to_binary(?T(
-		      Lang, "Enter path to backup file"))}]},
-		?XFIELD("text-single", "Path to File", "path", "")
+	      Lang, "Enter path to backup file"))}]},
+        ?XFIELD(<<"text-single">>, "Path to File", <<"path">>, <<"">>)
 	       ]}]};
 
 get_form(_Host, ["running nodes", ENode, "backup", "restore"], Lang) ->
@@ -962,7 +965,7 @@ get_form(_Host, ["running nodes", ENode, "backup", "restore"], Lang) ->
 	         [#xmlcdata{cdata =
 	           list_to_binary(?T(
 		      Lang, "Enter path to backup file"))}]},
-		?XFIELD("text-single", "Path to File", "path", "")
+		?XFIELD(<<"text-single">>, "Path to File", <<"path">>, <<"">>)
 	       ]}]};
 
 get_form(_Host, ["running nodes", ENode, "backup", "textfile"], Lang) ->
@@ -976,7 +979,7 @@ get_form(_Host, ["running nodes", ENode, "backup", "textfile"], Lang) ->
 	         [#xmlcdata{cdata =
 	           list_to_binary(?T(
 		      Lang, "Enter path to text file"))}]},
-		?XFIELD("text-single", "Path to File", "path", "")
+		?XFIELD(<<"text-single">>, "Path to File", <<"path">>, <<"">>)
 	       ]}]};
 
 get_form(_Host, ["running nodes", ENode, "import", "file"], Lang) ->
@@ -990,7 +993,7 @@ get_form(_Host, ["running nodes", ENode, "import", "file"], Lang) ->
 	         [#xmlcdata{cdata =
 	           list_to_binary(?T(
 		      Lang, "Enter path to jabberd1.4 spool file"))}]},
-		?XFIELD("text-single", "Path to File", "path", "")
+		?XFIELD(<<"text-single">>, "Path to File", <<"path">>, <<"">>)
 	       ]}]};
 
 get_form(_Host, ["running nodes", ENode, "import", "dir"], Lang) ->
@@ -1004,14 +1007,14 @@ get_form(_Host, ["running nodes", ENode, "import", "dir"], Lang) ->
 	         [#xmlcdata{cdata =
 	           list_to_binary(?T(
 		      Lang, "Enter path to jabberd1.4 spool dir"))}]},
-		?XFIELD("text-single", "Path to Dir", "path", "")
+		?XFIELD(<<"text-single">>, "Path to Dir", <<"path">>, <<"">>)
 	       ]}]};
 
 get_form(_Host, ["running nodes", _ENode, "restart"], Lang) ->
     Make_option = 
 	fun(LabelNum, LabelUnit, Value)->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'option', attrs =
-		 [#xmlattr{name = 'label', value = LabelNum ++ ?T(Lang, LabelUnit)}], children =
+		 [#xmlattr{name = 'label', value = <<(list_to_binary(LabelNum))/binary, (?T(Lang, LabelUnit))/binary>>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Value)}]}]}
 	end,
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
@@ -1019,9 +1022,9 @@ get_form(_Host, ["running nodes", _ENode, "restart"], Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "Restart Service"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "list-single"},
+		 [#xmlattr{name = 'type', value = <<"list-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Time delay")},
-		  #xmlattr{name = 'var', value = "delay"}], children =
+		  #xmlattr{name = 'var', value = <<"delay">>}], children =
 		 [Make_option("", "immediately", "1"),
 		  Make_option("15 ", "seconds", "15"),
 		  Make_option("30 ", "seconds", "30"),
@@ -1037,15 +1040,15 @@ get_form(_Host, ["running nodes", _ENode, "restart"], Lang) ->
 		  #xmlel{ns = ?NS_DATA_FORMS, name = 'required'}
 		 ]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "fixed"},
+		 [#xmlattr{name = 'type', value = <<"fixed">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Send announcement to all online users on all hosts")}]},
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'var', value = "subject"},
-		  #xmlattr{name = 'type', value = "text-single"},
+		 [#xmlattr{name = 'var', value = <<"subject">>},
+		  #xmlattr{name = 'type', value = <<"text-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Subject")}]},
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'var', value = "announcement"},
-		  #xmlattr{name = 'type', value = "text-multi"},
+		 [#xmlattr{name = 'var', value = <<"announcement">>},
+		  #xmlattr{name = 'type', value = <<"text-multi">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Message body")}]}
 	       ]}]};
 
@@ -1053,7 +1056,7 @@ get_form(_Host, ["running nodes", _ENode, "shutdown"], Lang) ->
     Make_option = 
 	fun(LabelNum, LabelUnit, Value)->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'option', attrs =
-		 [#xmlattr{name = 'label', value = LabelNum ++ ?T(Lang, LabelUnit)}], children =
+		 [#xmlattr{name = 'label', value = <<(list_to_binary(LabelNum))/binary, (?T(Lang, LabelUnit))/binary>>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Value)}]}]}
 	end,
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
@@ -1061,9 +1064,9 @@ get_form(_Host, ["running nodes", _ENode, "shutdown"], Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "Shut Down Service"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "list-single"},
+		 [#xmlattr{name = 'type', value = <<"list-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Time delay")},
-		  #xmlattr{name = 'var', value = "delay"}], children =
+		  #xmlattr{name = 'var', value = <<"delay">>}], children =
 		 [Make_option("", "immediately", "1"),
 		  Make_option("15 ", "seconds", "15"),
 		  Make_option("30 ", "seconds", "30"),
@@ -1079,15 +1082,15 @@ get_form(_Host, ["running nodes", _ENode, "shutdown"], Lang) ->
 		  #xmlel{ns = ?NS_DATA_FORMS, name = 'required'}
 		 ]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "fixed"},
+		 [#xmlattr{name = 'type', value = <<"fixed">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Send announcement to all online users on all hosts")}]},
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'var', value = "subject"},
-		  #xmlattr{name = 'type', value = "text-single"},
+		 [#xmlattr{name = 'var', value = <<"subject">>},
+		  #xmlattr{name = 'type', value = <<"text-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Subject")}]},
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'var', value = "announcement"},
-		  #xmlattr{name = 'type', value = "text-multi"},
+		 [#xmlattr{name = 'var', value = <<"announcement">>},
+		  #xmlattr{name = 'type', value = <<"text-multi">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Message body")}]}
 	       ]}]};
 
@@ -1098,11 +1101,11 @@ get_form(Host, ["config", "acls"], Lang) ->
 	         [#xmlcdata{cdata =
 		   list_to_binary(?T(
 		      Lang, "Access Control List Configuration"))}]},
-	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "text-multi"},
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = <<"text-multi">>},
 				       #xmlattr{name = 'label', value =
 				        ?T(
 					   Lang, "Access control lists")},
-				       #xmlattr{name = 'var', value = "acls"}],
+				       #xmlattr{name = 'var', value = <<"acls">>}],
 	         children = lists:map(fun(S) ->
 				   #xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(S)}]}
 			   end,
@@ -1126,11 +1129,11 @@ get_form(Host, ["config", "access"], Lang) ->
 	         [#xmlcdata{cdata =
 		   list_to_binary(?T(
 		      Lang, "Access Configuration"))}]},
-	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =[#xmlattr{name = 'type', value = "text-multi"},
+	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =[#xmlattr{name = 'type', value = <<"text-multi">>},
 				       #xmlattr{name = 'label', value =
 				        ?T(
 					   Lang, "Access rules")},
-				       #xmlattr{name = 'var', value = "access"}],
+				       #xmlattr{name = 'var', value = <<"access">>}],
 	         children = lists:map(fun(S) ->
 				   #xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =[#xmlcdata{cdata = list_to_binary(S)}]}
 			   end,
@@ -1153,19 +1156,19 @@ get_form(_Host, ?NS_ADMINL("add-user"), Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "Add User"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "jid-single"},
+		 [#xmlattr{name = 'type', value = <<"jid-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Jabber ID")},
-		  #xmlattr{name = 'var', value = "accountjid"}], children =
+		  #xmlattr{name = 'var', value = <<"accountjid">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "text-private"},
+		 [#xmlattr{name = 'type', value = <<"text-private">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Password")},
-		  #xmlattr{name = 'var', value = "password"}], children =
+		  #xmlattr{name = 'var', value = <<"password">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "text-private"},
+		 [#xmlattr{name = 'type', value = <<"text-private">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Password Verification")},
-		  #xmlattr{name = 'var', value = "password-verify"}], children =
+		  #xmlattr{name = 'var', value = <<"password-verify">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]}
 	       ]}]};
 
@@ -1175,9 +1178,9 @@ get_form(_Host, ?NS_ADMINL("delete-user"), Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "Delete User"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "jid-multi"},
+		 [#xmlattr{name = 'type', value = <<"jid-multi">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Jabber ID")},
-		  #xmlattr{name = 'var', value = "accountjids"}], children =
+		  #xmlattr{name = 'var', value = <<"accountjids">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]}
 	       ]}]};
 
@@ -1187,9 +1190,9 @@ get_form(_Host, ?NS_ADMINL("end-user-session"), Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "End User Session"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "jid-single"},
+		 [#xmlattr{name = 'type', value = <<"jid-single">>},
 		  #xmlattr{name = 'label', value = list_to_binary(?T(Lang, "Jabber ID"))},
-		  #xmlattr{name = 'var', value = "accountjid"}], children =
+		  #xmlattr{name = 'var', value = <<"accountjid">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]}
 	       ]}]};
 
@@ -1199,9 +1202,9 @@ get_form(_Host, ?NS_ADMINL("get-user-password"), Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "Get User Password"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "jid-single"},
+		 [#xmlattr{name = 'type', value = <<"jid-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Jabber ID")},
-		  #xmlattr{name = 'var', value = "accountjid"}], children =
+		  #xmlattr{name = 'var', value = <<"accountjid">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]}
 	       ]}]};
 
@@ -1211,14 +1214,14 @@ get_form(_Host, ?NS_ADMINL("change-user-password"), Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "Get User Password"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "jid-single"},
+		 [#xmlattr{name = 'type', value = <<"jid-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Jabber ID")},
-		  #xmlattr{name = 'var', value = "accountjid"}], children =
+		  #xmlattr{name = 'var', value = <<"accountjid">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "text-private"},
+		 [#xmlattr{name = 'type', value = <<"text-private">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Password")},
-		  #xmlattr{name = 'var', value = "password"}], children =
+		  #xmlattr{name = 'var', value = <<"password">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]}
 	       ]}]};
 
@@ -1228,9 +1231,9 @@ get_form(_Host, ?NS_ADMINL("get-user-lastlogin"), Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "Get User Last Login Time"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name =  'field', attrs =
-		 [#xmlattr{name = 'type', value = "jid-single"},
+		 [#xmlattr{name = 'type', value = <<"jid-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Jabber ID")},
-		  #xmlattr{name = 'var', value = "accountjid"}], children =
+		  #xmlattr{name = 'var', value = <<"accountjid">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]}
 	       ]}]};
 
@@ -1240,9 +1243,9 @@ get_form(_Host, ?NS_ADMINL("user-stats"), Lang) ->
 		#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		 [#xmlcdata{cdata = list_to_binary(?T(Lang, "Get User Statistics"))}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		 [#xmlattr{name = 'type', value = "jid-single"},
+		 [#xmlattr{name = 'type', value = <<"jid-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Jabber ID")},
-		  #xmlattr{name = 'var', value = "accountjid"}], children =
+		  #xmlattr{name = 'var', value = <<"accountjid">>}], children =
 		 [#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]}
 	       ]}]};
 
@@ -1252,9 +1255,9 @@ get_form(Host, ?NS_ADMINL("get-registered-users-num"), Lang) ->
      [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
        [?HFIELD(),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	 [#xmlattr{name = 'type', value = "text-single"},
+	 [#xmlattr{name = 'type', value = <<"text-single">>},
 	  #xmlattr{name = 'label', value = ?T(Lang, "Number of registered users")},
-	  #xmlattr{name = 'var', value = "registeredusersnum"}], children =
+	  #xmlattr{name = 'var', value = <<"registeredusersnum">>}], children =
 	 [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Num)}]}]
 	}]}]};
 
@@ -1264,9 +1267,9 @@ get_form(Host, ?NS_ADMINL("get-online-users-num"), Lang) ->
      [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
        [?HFIELD(),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	 [#xmlattr{name = 'type', value = "text-single"},
+	 [#xmlattr{name = 'type', value = <<"text-single">>},
 	  #xmlattr{name = 'label', value = ?T(Lang, "Number of online users")},
-	  #xmlattr{name = 'var', value = "onlineusersnum"}], children =
+	  #xmlattr{name = 'var', value = <<"onlineusersnum">>}], children =
 	 [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Num)}]}]
 	}]}]};
 
@@ -1595,8 +1598,8 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     true = is_list(Password),
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
 	       [?HFIELD(),
-		?XFIELD("jid-single", "Jabber ID", "accountjid", AccountString),
-	        ?XFIELD("text-single", "Password", "password", Password)
+		?XFIELD(<<"jid-single">>, "Jabber ID", <<"accountjid">>, list_to_binary(AccountString)),
+	        ?XFIELD(<<"text-single">>, "Password", <<"password">>, list_to_binary(Password))
 	       ]}]};
 
 set_form(_From, _Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
@@ -1640,10 +1643,10 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
 	    _ ->
 		?T(Lang, "Online")
 	end,
-    {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [#xmlattr{name = 'type', value = "result"}], children =
+    {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [#xmlattr{name = 'type', value = <<"result">>}], children =
 	       [?HFIELD(),
-		?XFIELD("jid-single", "Jabber ID", "accountjid", AccountString),
-	        ?XFIELD("text-single", "Last login", "lastlogin", FLast)
+		?XFIELD(<<"jid-single">>, "Jabber ID", <<"accountjid">>, list_to_binary(AccountString)),
+	        ?XFIELD(<<"text-single">>, "Last login", <<"lastlogin">>, list_to_binary(FLast))
 	       ]}]};
 
 set_form(_From, _Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
@@ -1666,10 +1669,10 @@ set_form(_From, _Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
 
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
 	       [?HFIELD(),
-		?XFIELD("jid-single", "Jabber ID", "accountjid", AccountString),
-	        ?XFIELD("text-single", "Roster size", "rostersize", Rostersize),
-	        ?XMFIELD("text-multi", "IP addresses", "ipaddresses", IPs),
-	        ?XMFIELD("text-multi", "Resources", "onlineresources", Resources)
+		?XFIELD(<<"jid-single">>, "Jabber ID", <<"accountjid">>, AccountString),
+	        ?XFIELD(<<"text-single">>, "Roster size", <<"rostersize">>, Rostersize),
+	        ?XMFIELD(<<"text-multi">>, "IP addresses", <<"ipaddresses">>, IPs),
+	        ?XMFIELD(<<"text-multi">>, "Resources", <<"onlineresources">>, Resources)
 	       ]}]};
 
 set_form(_From, _Host, _, _Lang, _XData) ->
@@ -1699,25 +1702,25 @@ stop_node(From, Host, ENode, Action, XData) ->
     Delay = list_to_integer(get_value("delay", XData)),
     Subject = case get_value("subject", XData) of
 		  [] -> [];
-		  S -> [#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'var', value = "subject"}], children =
+		  S -> [#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'var', value = <<"subject">>}], children =
 			 [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(S)}]}]}]
 	      end,
     Announcement = case get_values("announcement", XData) of
 		       [] -> [];
-		       As -> [#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'var', value = "body"}], children =
+		       As -> [#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'var', value = <<"body">>}], children =
 			       [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Line)}]} || Line <- As] }]
 		   end,
     case Subject ++ Announcement of
 	[] -> ok;
 	SubEls ->
 	    Request = #adhoc_request{
-	      node = ?NS_ADMINX("announce-allhosts"),
+	      node = binary_to_list(?NS_ADMINX(<<"announce-allhosts">>)),
 	      action = "complete",
 	      xdata = #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
-		       [#xmlattr{name = 'type', value = "submit"}], children =
+		       [#xmlattr{name = 'type', value = <<"submit">>}], children =
 		       SubEls},
 	      others= [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
-			[#xmlattr{name = 'type', value = "submit"}], children =
+			[#xmlattr{name = 'type', value = <<"submit">>}], children =
 			SubEls}]
 	     },
 	    To = exmpp_jid:make_jid(Host),
@@ -1799,9 +1802,9 @@ get_sm_form(User, Server, "config", Lang) ->
 		   list_to_binary(?T(
 		      Lang, "Administration of ") ++ User)}]},
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	         [#xmlattr{name = 'type', value = "list-single"},
+	         [#xmlattr{name = 'type', value = <<"list-single">>},
 		  #xmlattr{name = 'label', value = ?T(Lang, "Action on user")},
-		  #xmlattr{name = 'var', value = "action"}], children =
+		  #xmlattr{name = 'var', value = <<"action">>}], children =
 	         [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = <<"edit">>}]},
 		  #xmlel{ns = ?NS_DATA_FORMS, name = 'option', attrs =
 		   [#xmlattr{name = 'label', value = ?T(Lang, "Edit Properties")}], children =
@@ -1810,8 +1813,8 @@ get_sm_form(User, Server, "config", Lang) ->
 		   [#xmlattr{name = 'label', value = ?T(Lang, "Remove User")}], children =
 		   [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = <<"remove">>}]}]}
 	         ]},
-	        ?XFIELD("text-private", "Password", "password",
-		        ejabberd_auth:get_password_s(User, Server))
+	        ?XFIELD(<<"text-private">>, "Password", <<"password">>,
+		        list_to_binary(ejabberd_auth:get_password_s(User, Server)))
 	       ]}]};
 
 get_sm_form(_User, _Server, _Node, _Lang) ->

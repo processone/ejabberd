@@ -257,9 +257,9 @@ pop_offline_messages(Ls, User, Server)
 				    [El] = exmpp_xml:parse_document(XML, 
                          [names_as_atom, {check_elems, xmpp}, 
                           {check_nss,xmpp}, {check_attrs,xmpp}]),
-				    To = exmpp_jid:list_to_jid(
+				    To = exmpp_jid:binary_to_jid(
 				      exmpp_stanza:get_recipient(El)),
-				    From = exmpp_jid:list_to_jid(
+				    From = exmpp_jid:binary_to_jid(
 				      exmpp_stanza:get_sender(El)),
 				    [{route, From, To, El}]
 				catch

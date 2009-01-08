@@ -74,7 +74,7 @@ stop(Host) ->
 process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
     Sec = trunc(element(1, erlang:statistics(wall_clock))/1000),
     Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query', attrs =
-      [#xmlattr{name = 'seconds', value = integer_to_list(Sec)}]},
+      [#xmlattr{name = 'seconds', value = list_to_binary(integer_to_list(Sec))}]},
     exmpp_iq:result(IQ_Rec, Response);
 process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
@@ -121,7 +121,7 @@ get_last(IQ_Rec, LUser, LServer) ->
 	    TimeStamp2 = MegaSecs * 1000000 + Secs,
 	    Sec = TimeStamp2 - TimeStamp,
 	    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
-	      attrs = [#xmlattr{name = 'seconds', value = integer_to_list(Sec)}],
+	      attrs = [#xmlattr{name = 'seconds', value = list_to_binary(integer_to_list(Sec))}],
 	      children = [#xmlcdata{cdata = Status}]},
 	    exmpp_iq:result(IQ_Rec, Response)
     end.

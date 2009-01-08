@@ -113,7 +113,7 @@ produce_response(#adhoc_response{lang = _Lang,
 		"" ->
 		    ActionsElAttrs = [];
 		_ ->
-		    ActionsElAttrs = [#xmlattr{name = 'execute', value = DefaultAction}]
+		    ActionsElAttrs = [#xmlattr{name = 'execute', value = list_to_binary(DefaultAction)}]
 	    end,
 	    ActionsEls = [#xmlel{ns = ?NS_ADHOC, name = 'actions', attrs =
 			   ActionsElAttrs, children =
@@ -121,11 +121,11 @@ produce_response(#adhoc_response{lang = _Lang,
     end,
     NotesEls = lists:map(fun({Type, Text}) ->
 				 #xmlel{ns = ?NS_ADHOC, name = 'note', attrs =
-				  [#xmlattr{name = 'type', value = Type}],
+				  [#xmlattr{name = 'type', value = list_to_binary(Type)}],
 				  children = [#xmlcdata{cdata = list_to_binary(Text)}]}
 			 end, Notes),
     #xmlel{ns = ?NS_ADHOC, name = 'command', attrs =
-     [#xmlattr{name = 'sessionid', value = SessionID},
-      #xmlattr{name = 'node', value = Node},
-      #xmlattr{name = 'status', value = atom_to_list(Status)}], children =
+     [#xmlattr{name = 'sessionid', value = list_to_binary(SessionID)},
+      #xmlattr{name = 'node', value = list_to_binary(Node)},
+      #xmlattr{name = 'status', value = list_to_binary(atom_to_list(Status))}], children =
      ActionsEls ++ NotesEls ++ Elements}.
