@@ -7,6 +7,17 @@
 	* src/mod_pubsub/node_default.erl: any entity can retrieve item when
 	node access model is "open" (thanks to Myers Carpenter)(EJAB-836)
 
+	* src/mod_pubsub/node_default.erl: use of del_items
+
+	* src/mod_pubsub/node.template: apply delete-any feature
+	* src/mod_pubsub/node_mb.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+
 2009-01-08	Pablo Polvorin	<pablo.polvorin@process-one.net>
 	* src/mod_vcard_ldap.erl, src/mod_muc/mod_muc.erl, src/mod_roster.hrl,
 	src/mod_offline_odbc.erl, src/ejabberd_s2s_in.erl, src/adhoc.erl,

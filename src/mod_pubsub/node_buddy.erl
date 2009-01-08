@@ -98,6 +98,7 @@ options() ->
 features() ->
     ["create-nodes",
      "delete-nodes",
+     "delete-any",
      "instant-nodes",
      "item-ids",
      "outcast-affiliation",

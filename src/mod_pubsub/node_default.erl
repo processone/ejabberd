@@ -535,9 +535,7 @@ purge_node(Host, Node, Owner) ->
     GenState = get_state(Host, Node, GenKey),
     case GenState of
 	#pubsub_state{items = Items, affiliation = owner} ->
-	    lists:foreach(fun(ItemId) ->
-				  mnesia:delete({pubsub_item, {ItemId, {Host, Node}}})
-			  end, Items),
+	    del_items(Host, Node, Items),
 	    {result, {default, broadcast}};
 	_ ->
 	    %% Entity is not owner
