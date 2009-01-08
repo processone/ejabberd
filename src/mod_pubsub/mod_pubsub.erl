@@ -465,12 +465,12 @@ handle_cast({presence, JID, Pid}, State) ->
     lists:foreach(fun(Type) ->
 	{result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, JID]),
 	lists:foreach(
-	    fun({Node, subscribed}) -> 
+	    fun({Node, subscribed, SubJID}) -> 
 		case tree_action(Host, get_node, [Host, Node, JID]) of
 		    #pubsub_node{options = Options} ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
-				send_last_item(Host, Node, LJID);
+				send_last_item(Host, Node, SubJID);
 			    _ ->
 				ok
 			end;
@@ -522,13 +522,11 @@ handle_cast({presence, JID, Pid}, State) ->
 handle_cast({remove_user, LUser, LServer}, State) ->
     Host = State#state.host,
     Owner = exmpp_jid:make_bare_jid(LUser, LServer),
-    OwnerKey = jlib:short_prepd_bare_jid(Owner),
     %% remove user's subscriptions
     lists:foreach(fun(Type) ->
 	{result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, Owner]),
 	lists:foreach(fun
-	    ({Node, subscribed}) ->
-		JID = exmpp_jid:jid_to_list(LUser, LServer),
+	    ({Node, subscribed, JID}) ->
 		unsubscribe_node(Host, Node, Owner, JID, all);
 	    (_) ->  
 		ok
@@ -537,7 +535,7 @@ handle_cast({remove_user, LUser, LServer}, State) ->
     %% remove user's PEP nodes 
     lists:foreach(fun(#pubsub_node{nodeid={NodeKey, NodeName}}) ->
 	delete_node(NodeKey, NodeName, Owner)
-    end, tree_action(Host, get_nodes, [OwnerKey])),
+    end, tree_action(Host, get_nodes, [jlib:short_prepd_bare_jid(Owner)])),
     %% remove user's nodes
     delete_node(Host, ["home", LServer, LUser], Owner),
     {noreply, State}; 
@@ -1446,13 +1444,14 @@ subscribe_node(Host, Node, From, JID) ->
 %%<li>The node does not exist.</li>
 %%<li>The request specifies a subscription ID that is not valid or current.</li>
 %%</ul>
-unsubscribe_node(Host, Node, From, JID, SubId) ->
-    Subscriber = try
-	jlib:short_prepd_jid(exmpp_jid:list_to_jid(JID))
+unsubscribe_node(Host, Node, From, JID, SubId) when is_list(JID) ->
+    Subscriber = try jlib:short_prepd_jid(exmpp_jid:list_to_jid(JID))
     catch
 	_:_ ->
 	    {undefined, undefined, undefined}
     end,
+    unsubscribe_node(Host, Node, From, Subscriber, SubId);
+unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
     case node_action(Host, Node, unsubscribe_node,
 		     [Host, Node, From, Subscriber, SubId]) of
 	{error, Error} ->
@@ -1930,7 +1929,8 @@ get_subscriptions(Host, JID, Plugins) when is_list(Plugins) ->
 			       %% Service does not support retreive subscriptions
 			       {{error, extended_error('feature-not-implemented', unsupported, "retrieve-subscriptions")}, Acc};
 			   true ->
-			       {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, JID]),
+			       Subscriber = jlib:jid_remove_resource(JID),
+			       {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, Subscriber]),
 			       {Status, [Subscriptions|Acc]}
 		       end
 	       end, {ok, []}, Plugins),
@@ -2296,7 +2296,7 @@ broadcast_config_notification(Host, Node, Lang) ->
 
 broadcast_stanza(Host, NodeOpts, States, Stanza) ->
     PresenceDelivery = get_option(NodeOpts, presence_based_delivery),
-    BroadcastAll = get_option(NodeOpts, broadcast_all_resources),
+    BroadcastAll = get_option(NodeOpts, broadcast_all_resources), %% XXX this is not standard
     From = service_jid(Host),
     lists:foreach(fun(#pubsub_state{stateid = {LJID, _}, subscription = Subs}) ->
 	case is_to_deliver(LJID, Subs, PresenceDelivery) of
