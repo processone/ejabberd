@@ -1,3 +1,12 @@
+2009-01-08  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: completely support subscription using
+	full JID (EJAB-701)
+	* src/mod_pubsub/node_default.erl: Likewise
+
+	* src/mod_pubsub/node_default.erl: any entity can retrieve item when
+	node access model is "open" (thanks to Myers Carpenter)(EJAB-836)
+
 2009-01-08  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_listener.erl: Define send timeout option to avoid

@@ -462,12 +462,12 @@ handle_cast({presence, JID, Pid}, State) ->
     lists:foreach(fun(Type) ->
 	{result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, JID]),
 	lists:foreach(
-	    fun({Node, subscribed}) -> 
+	    fun({Node, subscribed, SubJID}) ->
 		case tree_action(Host, get_node, [Host, Node]) of
 		    #pubsub_node{options = Options} ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
-				send_last_item(Host, Node, LJID);
+				send_last_item(Host, Node, SubJID);
 			    _ ->
 				ok
 			end;
@@ -519,13 +519,11 @@ handle_cast({presence, JID, Pid}, State) ->
 handle_cast({remove_user, LUser, LServer}, State) ->
     Host = State#state.host,
     Owner = jlib:make_jid(LUser, LServer, ""),
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     %% remove user's subscriptions
     lists:foreach(fun(Type) ->
 	{result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, Owner]),
 	lists:foreach(fun
-	    ({Node, subscribed}) ->
-		JID = jlib:jid_to_string(Owner),
+	    ({Node, subscribed, JID}) ->
 		unsubscribe_node(Host, Node, Owner, JID, all);
 	    (_) ->
 		ok
@@ -534,7 +532,7 @@ handle_cast({remove_user, LUser, LServer}, State) ->
     %% remove user's PEP nodes 
     lists:foreach(fun(#pubsub_node{nodeid={NodeKey, NodeName}}) ->
 	delete_node(NodeKey, NodeName, Owner)
-    end, tree_action(Host, get_nodes, [OwnerKey])),
+    end, tree_action(Host, get_nodes, [jlib:jid_tolower(Owner)])),
     %% remove user's nodes
     delete_node(Host, ["home", LServer, LUser], Owner),
     {noreply, State};
@@ -1428,11 +1426,13 @@ subscribe_node(Host, Node, From, JID) ->
 %%<li>The node does not exist.</li>
 %%<li>The request specifies a subscription ID that is not valid or current.</li>
 %%</ul>
-unsubscribe_node(Host, Node, From, JID, SubId) ->
+unsubscribe_node(Host, Node, From, JID, SubId) when is_list(JID) ->
     Subscriber = case jlib:string_to_jid(JID) of
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
 		 end,
+    unsubscribe_node(Host, Node, From, Subscriber, SubId);
+unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
     case node_action(Host, Node, unsubscribe_node,
 		     [Host, Node, From, Subscriber, SubId]) of
 	{error, Error} ->
@@ -1910,7 +1910,8 @@ get_subscriptions(Host, JID, Plugins) when is_list(Plugins) ->
 			       %% Service does not support retreive subscriptions
 			       {{error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "retrieve-subscriptions")}, Acc};
 			   true ->
-			       {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, JID]),
+			       Subscriber = jlib:jid_remove_resource(JID),
+			       {result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, Subscriber]),
 			       {Status, [Subscriptions|Acc]}
 		       end
 	       end, {ok, []}, Plugins),
@@ -2263,7 +2264,7 @@ broadcast_config_notification(Host, Node, Lang) ->
 
 broadcast_stanza(Host, NodeOpts, States, Stanza) ->
     PresenceDelivery = get_option(NodeOpts, presence_based_delivery),
-    BroadcastAll = get_option(NodeOpts, broadcast_all_resources),
+    BroadcastAll = get_option(NodeOpts, broadcast_all_resources), %% XXX this is not standard
     From = service_jid(Host),
     lists:foreach(fun(#pubsub_state{stateid = {LJID, _}, subscription = Subs}) ->
 	case is_to_deliver(LJID, Subs, PresenceDelivery) of
