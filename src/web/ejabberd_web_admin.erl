@@ -573,27 +573,26 @@ favicon() ->
 
 logo() ->
     jlib:decode_base64(
-      "iVBORw0KGgoAAAANSUhEUgAAAVcAAAA3CAMAAACPbPnEAAAAYFBMVEX///8C"
-      "AgJyMgL+vm7Wdg7+igL+/v7+slb+qkb+4sr+ojP+nir+lhr+1qb+khL+wnb+"
-      "wn7+zpb+jgb+yoz+xo7+tmL+pj7+mib+jg7+5sb+rlL+rkr+mh7+tl7+2q7+"
-      "umpJ0uikAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxIA"
-      "AAsSAdLdfvwAAAAHdElNRQfUBAUJBhWzc9qJAAABQ0lEQVR42u2bXU/CQBBF"
-      "UUZFURAU5Ev4//+S3Ow+tFl3s6adtE3Oebghzc4DJ/Nw04WZgQczexJkz4lX"
-      "vOKVxKuXV6APTCFXAq94xSte8ermFYbrA6+ilemZRxGz+fxBxMydL0/Vz5an"
-      "vkUrPfb1IPCKV7ziFa9uXsG/DzyLPz7ndjS3tc3tSbcwPdl9tmYq3dHmk9x3"
-      "r8mtiM11KfCKV7ziFa9uXmEc7wf+u6+5TtlXf62fKu9rl3wX9ibsLPCKV7zi"
-      "Fa9uXmF87wf67aBT6a+hp4bOehFxU0/CbgKveMUrXvHq5hXG+vuBcpss75zH"
-      "/VZ5X7vcb4W7q5A/wvbCXoTNhX0JvOIVr3jFq5tX4P8Fw2V6g7UQ9itsLeKm"
-      "fgi84hWveMWrm1egDwyX6Q3WTtinsI2wq7CjwCte8YpXvLp5BQ/utIiGbwh9"
-      "RAEAAAAASUVORK5CYII=").
+      "iVBORw0KGgoAAAANSUhEUgAAAVcAAAA3CAMAAACPbPnEAAAAAXNSR0IArs4c"
+      "6QAAAEtQTFRFcTIA1XcE/YsA/40E/pIH/JYc/5kg/54i/KIu/6U6/apE/61H"
+      "/61P/bFX/7Vh/bda/rpq/L5s/8J2/cJ8/8qI/86Y/9aj/9mt/+bJ7EGiPwAA"
+      "AZRJREFUeNrt28lug0AQhGHajrPv+/s/aVwpDlgE0gQ3tqO/DhxihMg33VJ7"
+      "JmmCVKSJlVJ4bZQ93Jl/zjJv+8tzcMUVV1xxLXIlRfPAZptYrbf5YeW618PW"
+      "yvG8w/g9ZwquuJ6Y6+bbdY0rrifhSmrmgUulVXbVDq3H39Zy6Cf9+8c7JNM/"
+      "mXeY8+SMRmuIK6644oprkSupmQdulLhQdup1qJKmrmWmVpb5NN9LUyddu7nn"
+      "LYkrrrjiimuVK6mZB+6VuFbiXJk8v/bnv0PVa+Yd5tdr/x7vCfqbgPsfV1xx"
+      "xRXXKldSMw+8KPGgxJWyU7WZE538p0vOr/lOm/q7dPf+bOVKvVXiUcEVV1xx"
+      "xbXMldTMA29KPCtxp7T6XpvxE6/9nm/l987mnG9l5u/8jO4Ot9uTEq8Krrji"
+      "iiuuZa6kZh74UFpli3sO61btMfyHyWGv/RMs7wB67ne32/BdwRVXXHHFtcyV"
+      "1MwDn0qrbHHvyPT/Dsarla/R/1GpQydYPhf0bqC/A7jz7YkrrrjiimuVK6nI"
+      "F5dWoNvcLcs/AAAAAElFTkSuQmCC").
 
 logo_fill() ->
     jlib:decode_base64(
-      "iVBORw0KGgoAAAANSUhEUgAAAAYAAAA3BAMAAADdxCZzAAAAHlBMVEXWdg7+"
-      "igL+jg7+khL+nir+rkr+umr+yoz+1qb+5sbOf9L8AAAACXBIWXMAAA9hAAAP"
-      "YQGoP6dpAAAAQUlEQVQI12XDSxHAIBAFQT6BJEcsYAELWMACFtYCFnAL7zxd"
-      "1c5dvhSU2BpKqBXl6R0ljYGS50R5zVC+tVD+vfE6YyUexE9x7g4AAAAASUVO"
-      "RK5CYII=").
+      "iVBORw0KGgoAAAANSUhEUgAAAAYAAAA3BAMAAADdxCZzAAAAAXNSR0IArs4c"
+      "6QAAAB5QTFRF1nYO/ooC/o4O/pIS/p4q/q5K/rpq/sqM/tam/ubGzn/S/AAA"
+      "AEFJREFUCNdlw0sRwCAQBUE+gSRHLGABC1jAAhbWAhZwC+88XdXOXb4UlFAr"
+      "SmwN5ekdJY2BkudEec1QvrVQ/r3xOlK9HsTvertmAAAAAElFTkSuQmCC").
 
 process_admin(global,
 	      #request{path = [],

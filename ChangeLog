@@ -1,5 +1,8 @@
 2009-01-09  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: New appearance of WebAdmin logo,
+	fixed logo-fill.
+
 	* src/mod_configure.erl: Fix access check for vhost configuration
 
 2009-01-08  Christophe Romain <christophe.romain@process-one.net>
