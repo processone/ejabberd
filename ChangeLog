@@ -1,5 +1,11 @@
 2009-01-09  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Improve explanation of backup commands (EJAB-832)
+	* doc/guide.html: Likewise
+
+	* src/web/ejabberd_web_admin.erl: New appearance of WebAdmin logo,
+	fixed logo-fill.
+
 	* src/mod_configure.erl: Fix access check for vhost configuration
 
 2009-01-08  Mickael Remond  <mremond@process-one.net>
