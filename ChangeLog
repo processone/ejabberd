@@ -1,3 +1,7 @@
+2009-01-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_configure.erl: Fix access check for vhost configuration
+
 2009-01-08  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_listener.erl: Define send timeout option to avoid
