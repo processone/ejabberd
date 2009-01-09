@@ -157,8 +157,8 @@ stop(Host) ->
 store_packet(From, To, Packet) ->
     Type = exmpp_stanza:get_type(Packet),
     if
-	(Type /= "error") and (Type /= "groupchat") and
-	(Type /= "headline") ->
+	(Type /= <<"error">>) and (Type /= <<"groupchat">>) and
+	(Type /= <<"headline">>) ->
 	    case check_event(From, To, Packet) of
 		true ->
             LUser = exmpp_jid:lnode_as_list(To),
@@ -197,7 +197,7 @@ check_event(From, To, Packet) ->
 				     S ->
 					 #xmlel{ns = ?NS_MESSAGE_EVENT, name = 'id',
 					   children = [#xmlcdata{cdata =
-					       list_to_binary(S)}]}
+					       S}]}
 				 end,
 			    X = #xmlel{ns = ?NS_MESSAGE_EVENT, name = 'x', children =
 			      [ID, #xmlel{ns = ?NS_MESSAGE_EVENT, name = 'offline'}]},

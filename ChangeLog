@@ -1,3 +1,20 @@
+2009-01-09	Pablo Polvorin	<pablo.polvorin@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl, src/mod_muc/mod_muc.erl
+	src/mod_offline_odbc.erl, src/mod_irc/mod_irc_connection.erl,
+	src/mod_irc/mod_irc.erl, src/ejabberd_c2s.erl, src/ejabberd_local.erl,
+	src/mod_pubsub/mod_pubsub.erl, src/ejabberd_s2s.erl, src/mod_roster.erl,
+	src/mod_roster_odbc.erl, src/ejabberd_s2s_out.erl, src/mod_offline.erl, 
+	src/translate.erl: Adapt to new exmpp API where get_id/1, get_lang/1, 
+	get_initiating_entity/1, get_receiving_entity/1 and get_type/1  
+	returns binary().
+
+	* src/mod_pubsub/node_default.erl: Fix typo in variable name. 
+
+	* src/ejabberd_c2s.erl: Fix bug in handle_info/3 when dealing with
+	VCARD requests: convert to IQ struct before invoking gen_iq_handler.
+
+
 2009-01-08  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: completely support subscription using

@@ -239,9 +239,9 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
       StateData#state.streamid, DefaultLang),
     case NS of
 	?NS_XMPP ->
-	    Server = exmpp_stringprep:nameprep(
+	    ServerB = exmpp_stringprep:nameprep(
 	      exmpp_stream:get_receiving_entity(Opening)),
-        ServerB = list_to_binary(Server),
+        Server = binary_to_list(ServerB),
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
 		    Lang = exmpp_stream:get_lang(Opening),
@@ -900,9 +900,9 @@ session_established2(El, StateData) ->
     catch
 	throw:{stringprep, _, _, _} ->
 	    case exmpp_stanza:get_type(El) of
-		"error" ->
+		<<"error">> ->
 		    ok;
-		"result" ->
+		<<"result">> ->
 		    ok;
 		_ ->
 		    Err = exmpp_stanza:reply_with_error(El, 'jid-malformed'),
@@ -1166,7 +1166,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				case ets:lookup(sm_iqtable, {?NS_VCARD, Host}) of
 				    [{_, Module, Function, Opts}] ->
 					gen_iq_handler:handle(Host, Module, Function, Opts,
-							      From, To, Packet);
+							      From, To, exmpp_iq:xmlel_to_iq(Packet));
 				    [] ->
 					Res = exmpp_iq:error(Packet, 'feature-not-implemented'),
 					ejabberd_router:route(To, From, Res)
@@ -1857,7 +1857,6 @@ resend_subscription_requests(#state{user = UserB,
 		  PendingSubscriptions).
 
 process_unauthenticated_stanza(StateData, El) when ?IS_IQ(El) ->
-    ServerString = binary_to_list(StateData#state.server),
     case exmpp_iq:get_kind(El) of
 	request ->
             IQ_Rec = exmpp_iq:xmlel_to_iq(El),
@@ -1873,7 +1872,7 @@ process_unauthenticated_stanza(StateData, El) when ?IS_IQ(El) ->
 		    ResIQ = exmpp_iq:error_without_original(El,
                       'service-unavailable'),
 		    Res1 = exmpp_stanza:set_sender(ResIQ,
-		      exmpp_jid:make_bare_jid(ServerString)),
+		      exmpp_jid:make_bare_jid(StateData#state.server)),
 		    Res2 = exmpp_stanza:remove_recipient(Res1),
 		    send_element(StateData, Res2);
 		_ ->

@@ -803,8 +803,8 @@ send_queue(StateData, Q) ->
 %% Bounce a single message (xmlel)
 bounce_element(El, Condition) ->
     case exmpp_stanza:get_type(El) of
-	"error" -> ok;
-	"result" -> ok;
+	<<"error">> -> ok;
+	<<"result">> -> ok;
 	_ ->
 	    Err = exmpp_stanza:reply_with_error(El, Condition),
 	    From = exmpp_jid:binary_to_jid(exmpp_stanza:get_sender(El)),
@@ -882,14 +882,14 @@ is_verify_res(#xmlel{ns = ?NS_DIALBACK, name = 'result',
      exmpp_stanza:get_recipient_from_attrs(Attrs),
      exmpp_stanza:get_sender_from_attrs(Attrs),
      exmpp_stanza:get_id_from_attrs(Attrs),
-     exmpp_stanza:get_type_from_attrs(Attrs)};
+     binary_to_list(exmpp_stanza:get_type_from_attrs(Attrs))};
 is_verify_res(#xmlel{ns = ?NS_DIALBACK, name = 'verify',
   attrs = Attrs}) ->
     {verify,
      exmpp_stanza:get_recipient_from_attrs(Attrs),
      exmpp_stanza:get_sender_from_attrs(Attrs),
      exmpp_stanza:get_id_from_attrs(Attrs),
-     exmpp_stanza:get_type_from_attrs(Attrs)};
+     binary_to_list(exmpp_stanza:get_type_from_attrs(Attrs))};
 is_verify_res(_) ->
     false.
 

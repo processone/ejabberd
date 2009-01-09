@@ -694,9 +694,9 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 	    end;
 	_ ->
 	    case exmpp_stanza:get_type(Packet) of
-		"error" ->
+		<<"error">> ->
 		    ok;
-		"result" ->
+		<<"result">> ->
 		    ok;
 		_ ->
 		    Err = exmpp_stanza:reply_with_error(Packet,

@@ -190,7 +190,7 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
 
 process_item_set(From, To, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
+	JID1 = exmpp_jid:binary_to_jid(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
     User = exmpp_jid:node(From),
     LUser = exmpp_jid:lnode(From),
     LServer = exmpp_jid:ldomain(From),
@@ -596,7 +596,7 @@ set_items(User, Server, #xmlel{children = Els}) ->
 
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:list_to_jid(exmpp_xml:get_attribute(El, 'jid', "")),
+	JID1 = exmpp_jid:binary_to_jid(exmpp_xml:get_attribute(El, 'jid', <<>>)),
 	JID = jlib:short_jid(JID1),
 	LJID = jlib:short_prepd_jid(JID1),
 	Item = #roster{usj = {LUser, LServer, LJID},

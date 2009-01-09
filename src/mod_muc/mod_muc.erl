@@ -401,9 +401,9 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		    end;
 		_ ->
 		    case exmpp_stanza:get_type(Packet) of
-			"error" ->
+			<<"error">> ->
 			    ok;
-			"result" ->
+			<<"result">> ->
 			    ok;
 			_ ->
 			    Err = exmpp_iq:error(Packet,'item-not-found'),
@@ -638,9 +638,9 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
 	    case exmpp_xml:get_child_elements(SubEl) of
 		[#xmlel{ns= NS, name = 'x'} = XEl] ->
 		    case {NS, exmpp_stanza:get_type(XEl)} of
-            {?NS_DATA_FORMS, "cancel"} ->
+            {?NS_DATA_FORMS, <<"cancel">>} ->
 			    ok;
-			{?NS_DATA_FORMS, "submit"} ->
+			{?NS_DATA_FORMS, <<"submit">>} ->
 			    XData = jlib:parse_xdata_submit(XEl),
 			    case XData of
 				invalid ->

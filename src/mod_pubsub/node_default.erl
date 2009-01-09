@@ -279,7 +279,7 @@ delete_node(Host, Removed) ->
 %% <p>In the default plugin module, the record is unchanged.</p>
 subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	       SendLast, PresenceSubscription, RosterGroup) ->
-    SubKey = jlib:short_prepd_jid(Owner),
+    SubKey = jlib:short_prepd_jid(Subscriber),
     GenKey = jlib:short_prepd_bare_jid(SubKey),
     Authorized = (jlib:short_prepd_bare_jid(Sender) == GenKey),
     GenState = get_state(Host, Node, GenKey),

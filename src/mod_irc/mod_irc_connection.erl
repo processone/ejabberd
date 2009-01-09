@@ -625,7 +625,7 @@ bounce_messages(Reason) ->
     receive
 	{send_element, El} ->
 	    case exmpp_stanza:get_type(El) of
-	        "error" ->
+	        <<"error">> ->
 	            ok;
 	        _ ->
                     Error = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'error',

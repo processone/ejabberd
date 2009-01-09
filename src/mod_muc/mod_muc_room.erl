@@ -966,38 +966,38 @@ is_user_online(JID, StateData) ->
     LJID = jlib:short_prepd_jid(JID),
     ?DICT:is_key(LJID, StateData#state.users).
 
-role_to_list(Role) ->
+role_to_binary(Role) ->
     case Role of
-	moderator ->   "moderator";
-	participant -> "participant";
-	visitor ->     "visitor";
-	none ->        "none"
+	moderator ->   <<"moderator">>;
+	participant -> <<"participant">>;
+	visitor ->     <<"visitor">>;
+	none ->        <<"none">>
     end.
 
-affiliation_to_list(Affiliation) ->
+affiliation_to_binary(Affiliation) ->
     case Affiliation of
-	owner ->   "owner";
-	admin ->   "admin";
-	member ->  "member";
-	outcast -> "outcast";
-	none ->    "none"
+	owner ->   <<"owner">>;
+	admin ->   <<"admin">>;
+	member ->  <<"member">>;
+	outcast -> <<"outcast">>;
+	none ->    <<"none">>
     end.
 
-list_to_role(Role) ->
+binary_to_role(Role) ->
     case Role of
-	"moderator" ->   moderator;
-	"participant" -> participant;
-	"visitor" ->     visitor;
-	"none" ->        none
+	<<"moderator">> ->   moderator;
+	<<"participant">> -> participant;
+	<<"visitor">> ->     visitor;
+	<<"none">> ->        none
     end.
 
-list_to_affiliation(Affiliation) ->
+binary_to_affiliation(Affiliation) ->
     case Affiliation of
-	"owner" ->   owner;
-	"admin" ->   admin;
-	"member" ->  member;
-	"outcast" -> outcast;
-	"none" ->    none
+	<<"owner">> ->   owner;
+	<<"admin">> ->   admin;
+	<<"member">> ->  member;
+	<<"outcast">> -> outcast;
+	<<"none">> ->    none
     end.
 
 %% Decide the fate of the message and its sender
@@ -1758,8 +1758,8 @@ send_new_presence(NJID, Reason, StateData) ->
 	       last_presence = Presence}} =
 	?DICT:find(jlib:short_prepd_jid(NJID), StateData#state.users),
     Affiliation = get_affiliation(NJID, StateData),
-    SAffiliation = affiliation_to_list(Affiliation),
-    SRole = role_to_list(Role),
+    SAffiliation = affiliation_to_binary(Affiliation),
+    SRole = role_to_binary(Role),
     lists:foreach(
       fun({_LJID, Info}) ->
 	      ItemAttrs =
@@ -1824,12 +1824,12 @@ send_existing_presences(ToJID, StateData) ->
 			      true ->
 				  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(FromJID)},
 				   #xmlattr{name = 'affiliation', 
-                           value = affiliation_to_list(FromAffiliation)},
-				   #xmlattr{name = 'role', value = role_to_list(FromRole)}];
+                           value = affiliation_to_binary(FromAffiliation)},
+				   #xmlattr{name = 'role', value = role_to_binary(FromRole)}];
 			      _ ->
 				  [#xmlattr{name = 'affiliation', 
-                           value = affiliation_to_list(FromAffiliation)},
-				   #xmlattr{name = 'role', value = role_to_list(FromRole)}]
+                           value = affiliation_to_binary(FromAffiliation)},
+				   #xmlattr{name = 'role', value = role_to_binary(FromRole)}]
 			  end,
 		      Packet = exmpp_xml:append_child(Presence,
 				 #xmlel{ns = ?NS_MUC_USER, name = 'x',
@@ -1871,8 +1871,8 @@ send_nick_changing(JID, OldNick, StateData) ->
 	       last_presence = Presence}} =
 	?DICT:find(jlib:short_prepd_jid(JID), StateData#state.users),
     Affiliation = get_affiliation(JID, StateData),
-    SAffiliation = affiliation_to_list(Affiliation),
-    SRole = role_to_list(Role),
+    SAffiliation = affiliation_to_binary(Affiliation),
+    SRole = role_to_binary(Role),
     lists:foreach(
       fun({_LJID, Info}) ->
 	      ItemAttrs1 =
@@ -2030,13 +2030,13 @@ process_iq_admin(From, get, Lang, SubEl, StateData) ->
 	Item ->
 	    FAffiliation = get_affiliation(From, StateData),
 	    FRole = get_role(From, StateData),
-	    case exmpp_xml:get_attribute(Item, 'role', false) of
+	    case exmpp_xml:get_attribute_as_binary(Item, 'role', false) of
 		false ->
-		    case exmpp_xml:get_attribute(Item, 'affiliation', false) of
+		    case exmpp_xml:get_attribute_as_binary(Item, 'affiliation', false) of
 			false ->
 			    {error, 'bad-request'};
 			StrAffiliation ->
-			    case catch list_to_affiliation(StrAffiliation) of
+			    case catch binary_to_affiliation(StrAffiliation) of
 				{'EXIT', _} ->
 				    {error, 'bad-request'};
 				SAffiliation ->
@@ -2053,7 +2053,7 @@ process_iq_admin(From, get, Lang, SubEl, StateData) ->
 			    end
 		    end;
 		StrRole ->
-		    case catch list_to_role(StrRole) of
+		    case catch binary_to_role(StrRole) of
 			{'EXIT', _} ->
 			    {error, 'bad-request'};
 			SRole ->
@@ -2082,9 +2082,9 @@ items_with_affiliation(SAffiliation, StateData) ->
         {N, D, R} = JID,
         #xmlel{name = 'item', 
                attrs = [#xmlattr{name = 'affiliation', 
-                                 value = affiliation_to_list(Affiliation)},
+                                 value = affiliation_to_binary(Affiliation)},
                         #xmlattr{name = 'jid',
-                                 value = exmpp_jid:jid_to_list(N, D, R)}],
+                                 value = exmpp_jid:jid_to_binary(N, D, R)}],
                children = [ #xmlel{name = 'reason',
                                    children = [#xmlcdata{cdata = Reason}]}]};
 
@@ -2092,9 +2092,9 @@ items_with_affiliation(SAffiliation, StateData) ->
         {N, D, R} = JID,
         #xmlel{name = 'item', 
                attrs = [#xmlattr{name = 'affiliation', 
-                                 value = affiliation_to_list(Affiliation)},
+                                 value = affiliation_to_binary(Affiliation)},
                         #xmlattr{name = 'jid',
-                                 value = exmpp_jid:jid_to_list(N, D, R)}]}
+                                 value = exmpp_jid:jid_to_binary(N, D, R)}]}
       end, search_affiliation(SAffiliation, StateData)).
 
 user_to_item(#user{role = Role,
@@ -2104,10 +2104,10 @@ user_to_item(#user{role = Role,
     Affiliation = get_affiliation(JID, StateData),
     #xmlel{name = 'item',
            attrs = [
-      #xmlattr{name = 'role', value = role_to_list(Role)},
-      #xmlattr{name = 'affiliation', value = affiliation_to_list(Affiliation)},
+      #xmlattr{name = 'role', value = role_to_binary(Role)},
+      #xmlattr{name = 'affiliation', value = affiliation_to_binary(Affiliation)},
       #xmlattr{name = 'nick', value = Nick},
-      #xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(JID)}]
+      #xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(JID)}]
      }.
 
 search_role(Role, StateData) ->
@@ -2225,9 +2225,9 @@ find_changed_items(UJID, UAffiliation, URole, [#xmlcdata{} | Items],
 find_changed_items(UJID, UAffiliation, URole,
 		   [#xmlel{name = 'item'} = Item | Items],
 		   Lang, StateData, Res) ->
-    TJID = case exmpp_xml:get_attribute(Item, 'jid',false) of
+    TJID = case exmpp_xml:get_attribute_as_binary(Item, 'jid',false) of
 	       S when S =/= false ->
-		   try exmpp_jid:list_to_jid(S) of
+		   try exmpp_jid:binary_to_jid(S) of
 		       J ->
 			   {value, J}
             catch
@@ -2261,13 +2261,13 @@ find_changed_items(UJID, UAffiliation, URole,
 	{value, JID} ->
 	    TAffiliation = get_affiliation(JID, StateData),
 	    TRole = get_role(JID, StateData),
-	    case exmpp_xml:get_attribute(Item, 'role',false) of
+	    case exmpp_xml:get_attribute_as_binary(Item, 'role',false) of
 		false ->
-		    case exmpp_xml:get_attribute(Item, 'affiliation', false) of
+		    case exmpp_xml:get_attribute_as_binary(Item, 'affiliation', false) of
 			false ->
 			    {error, 'bad-request'};
 			StrAffiliation ->
-			    case catch list_to_affiliation(StrAffiliation) of
+			    case catch binary_to_affiliation(StrAffiliation) of
 				{'EXIT', _} ->
 				    ErrText1 =
 					io_lib:format(
@@ -2324,7 +2324,7 @@ find_changed_items(UJID, UAffiliation, URole,
 			    end
 		    end;
 		StrRole ->
-		    case catch list_to_role(StrRole) of
+		    case catch binary_to_role(StrRole) of
 			{'EXIT', _} ->
 			    ErrText1 =
 				io_lib:format(
@@ -2566,7 +2566,7 @@ send_kickban_presence1(UJID, Reason, Code, StateData) ->
 	       nick = Nick}} = ?DICT:find(UJID, StateData#state.users),
     {N,D,R} = UJID,
     Affiliation = get_affiliation(exmpp_jid:make_jid(N,D,R), StateData),
-    SAffiliation = affiliation_to_list(Affiliation),
+    SAffiliation = affiliation_to_binary(Affiliation),
     lists:foreach(
       fun({_LJID, Info}) ->
 	      ItemAttrs = [#xmlattr{name = 'affiliation', value = SAffiliation},
@@ -2607,10 +2607,10 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 	owner ->
 	    case exmpp_xml:get_child_elements(SubEl) of
 		[#xmlel{ns = XMLNS, name = 'x'} = XEl] ->
-		    case {XMLNS, exmpp_xml:get_attribute(XEl, 'type',false)} of
-			{?NS_DATA_FORMS, "cancel"} ->
+		    case {XMLNS, exmpp_xml:get_attribute_as_binary(XEl, 'type',false)} of
+			{?NS_DATA_FORMS, <<"cancel">>} ->
 			    {result, [], StateData};
-			{?NS_DATA_FORMS, "submit"} ->
+			{?NS_DATA_FORMS, <<"submit">>} ->
 			    case {check_allowed_log_change(XEl, StateData, From),
 					check_allowed_persistent_change(XEl, StateData, From)} of
 					{allow, allow} -> set_config(XEl, StateData);
@@ -2639,11 +2639,11 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 		[] ->
 		    get_config(Lang, StateData, From);
 		[Item] ->
-		    case exmpp_xml:get_attribute(Item, 'affiliation',false) of
+		    case exmpp_xml:get_attribute_as_binary(Item, 'affiliation',false) of
 			false ->
 			    {error, 'bad-request'};
 			StrAffiliation ->
-			    case catch list_to_affiliation(StrAffiliation) of
+			    case catch binary_to_affiliation(StrAffiliation) of
 				{'EXIT', _} ->
 				    ErrText =
 					io_lib:format(
@@ -3227,7 +3227,7 @@ check_invitation(From, Els, Lang, StateData) ->
             _ -> 
                 throw({error, 'bad-request'})
             end,
-    JID = try exmpp_jid:list_to_jid(exmpp_xml:get_attribute(InviteEl,
+    JID = try exmpp_jid:binary_to_jid(exmpp_xml:get_attribute_as_binary(InviteEl,
                                                             'to',
                                                             false)) of
 	        JID1 -> JID1
@@ -3330,8 +3330,8 @@ check_decline_invitation(Packet) ->
     #xmlel{name = 'message'} = Packet,
     #xmlel{ns = ?NS_MUC_USER} = XEl = exmpp_xml:get_element(Packet, 'x'),
     DEl = exmpp_xml:get_element(XEl, 'decline'),
-    ToString = exmpp_xml:get_attribute(DEl, 'to', false),
-    ToJID = exmpp_jid:list_to_jid(ToString),
+    ToString = exmpp_xml:get_attribute_as_binary(DEl, 'to', false),
+    ToJID = exmpp_jid:binary_to_jid(ToString),
     {true, {Packet, XEl, DEl, ToJID}}.
 
 %% Send the decline to the inviter user.

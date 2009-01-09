@@ -321,8 +321,8 @@ do_route(From, To, Packet) ->
 	    end;
 	true ->
             case exmpp_stanza:get_type(Packet) of
-		"error" -> ok;
-		"result" -> ok;
+		<<"error">> -> ok;
+		<<"result">> -> ok;
 		_ ->
 		    ejabberd_hooks:run(local_send_to_resource_hook,
 				       exmpp_jid:ldomain(To),

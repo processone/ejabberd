@@ -290,8 +290,8 @@ do_route(From, To, Packet) ->
 	    ok;
 	{aborted, _Reason} ->
             case exmpp_stanza:get_type(Packet) of
-		"error" -> ok;
-		"result" -> ok;
+		<<"error">> -> ok;
+		<<"result">> -> ok;
 		_ ->
                     Err = exmpp_stanza:reply_with_error(Packet,
                       'service-unavailable'),

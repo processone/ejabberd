@@ -32,6 +32,8 @@
 	 load_file/2,
 	 translate/2]).
 
+-export([tokens/2, ascii_tolower/1]).
+
 -include("ejabberd.hrl").
 
 start() ->
@@ -68,7 +70,8 @@ load_dir(Dir) ->
 	    lists:foreach(
 	      fun(FN) ->
 		      L = ascii_tolower(
-			    string:substr(FN, 1, string:len(FN) - 4)),
+                    list_to_binary(
+			          string:substr(FN, 1, string:len(FN) - 4))),
 		      load_file(L, Dir ++ "/" ++ FN)
 	      end, MsgFiles),
 	    ok;
@@ -107,14 +110,14 @@ translate(Lang, Msg) ->
 	[{_, Trans}] ->
 	    Trans;
 	_ ->
-	    ShortLang = case string:tokens(LLang, "-") of
+	    ShortLang = case tokens(LLang, $-) of
 			    [] ->
 				LLang;
 			    [SL | _] ->
 				SL
 			end,
 	    case ShortLang of
-		"en" ->
+		<<"en">> ->
 		    Msg;
 		LLang ->
 		    translate(Msg);
@@ -132,7 +135,7 @@ translate(Msg) ->
     case ?MYLANG of
 	undefined ->
 	    Msg;
-	"en" ->
+	<<"en">> ->
 	    Msg;
 	Lang ->
 	    LLang = ascii_tolower(Lang),
@@ -140,14 +143,14 @@ translate(Msg) ->
 		[{_, Trans}] ->
 		    Trans;
 		_ ->
-		    ShortLang = case string:tokens(LLang, "-") of
+		    ShortLang = case tokens(LLang, $-) of
 				    [] ->
 					LLang;
 				    [SL | _] ->
 					SL
 				end,
 		    case ShortLang of
-			"en" ->
+			<<"en">> ->
 			    Msg;
 			Lang ->
 			    Msg;
@@ -162,11 +165,25 @@ translate(Msg) ->
 	    end
     end.
 
-ascii_tolower([C | Cs]) when C >= $A, C =< $Z ->
-    [C + ($a - $A) | ascii_tolower(Cs)];
-ascii_tolower([C | Cs]) ->
-    [C | ascii_tolower(Cs)];
-ascii_tolower([]) ->
-    [];
+
 ascii_tolower(undefined) ->
-    [].
+    <<>>;
+ascii_tolower(Bin) ->
+    << <<(char_tolower(X))>> || <<X>> <= Bin >>.
+
+char_tolower(C) when C >= $A, C =< $Z ->
+    C + ($a -$A);
+char_tolower(C) ->
+    C.
+
+tokens(<<>>,_Sep) ->
+    [];
+tokens(Bin, Sep) ->
+    tokens(Bin, Sep, <<>>, []).
+
+tokens(<<>>, _Sep, T, Tokens) ->
+    lists:reverse([T|Tokens]);
+tokens(<<Sep, R/binary>>, Sep, T, Tokens) ->
+    tokens(R, Sep, <<>>, [T | Tokens]);
+tokens(<<C, R/binary>>, Sep, T, Tokens) ->
+    tokens(R, Sep, <<T/binary, C>>, Tokens).

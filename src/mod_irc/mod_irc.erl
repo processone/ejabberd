@@ -371,10 +371,10 @@ process_irc_register(Host, From, _To, _DefEnc,
 	    exmpp_iq:error(IQ_Rec, 'not-acceptable');
 	_ ->
 	    case exmpp_stanza:get_type(XDataEl) of
-		"cancel" ->
+		<<"cancel">> ->
 		    Result = #xmlel{ns = XMLNS, name = 'query'},
 		    exmpp_iq:result(IQ_Rec, Result);
-		"submit" ->
+		<<"submit">> ->
 		    XData = jlib:parse_xdata_submit(XDataEl),
 		    case XData of
 			invalid ->
