@@ -1,3 +1,7 @@
+2009-01-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_configure.erl: Fix access check for vhost configuration
+
 2009-01-08  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: completely support subscription using

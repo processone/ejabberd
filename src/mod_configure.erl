@@ -307,8 +307,10 @@ adhoc_local_items(Acc, From, #jid{lserver = LServer, server = Server} = To,
 			{result, Its} -> Its;
 			empty -> []
 		    end,
+	    PermLev = get_permission_level(From),
 	    %% Recursively get all configure commands
-	    Nodes = recursively_get_local_items(LServer, "", Server, Lang),
+	    Nodes = recursively_get_local_items(PermLev, LServer, "", Server,
+						Lang),
 	    Nodes1 = lists:filter(
 		       fun(N) ->
 			       Nd = xml:get_tag_attr_s("node", N),
@@ -325,15 +327,15 @@ adhoc_local_items(Acc, From, #jid{lserver = LServer, server = Server} = To,
 	    Acc
     end.
 
-recursively_get_local_items(_LServer, "online users", _Server, _Lang) ->
+recursively_get_local_items(_PermLev, _LServer, "online users", _Server, _Lang) ->
     [];
 
-recursively_get_local_items(_LServer, "all users", _Server, _Lang) ->
+recursively_get_local_items(_PermLev, _LServer, "all users", _Server, _Lang) ->
     [];
 
-recursively_get_local_items(LServer, Node, Server, Lang) ->
+recursively_get_local_items(PermLev, LServer, Node, Server, Lang) ->
     LNode = tokenize(Node),
-    Items = case get_local_items(LServer, LNode, Server, Lang) of
+    Items = case get_local_items({PermLev, LServer}, LNode, Server, Lang) of
 		{result, Res} ->
 		    Res;
 		{error, _Error} ->
@@ -348,10 +350,16 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
 				[];
 			   true ->
 				[N, recursively_get_local_items(
-				      LServer, Nd, Server, Lang)]
+				      PermLev, LServer, Nd, Server, Lang)]
 			end
 		end, Items)),
     Nodes.
+
+get_permission_level(JID) ->
+    case acl:match_rule(global, configure, JID) of
+	allow -> global;
+	deny -> vhost
+    end.
 
 %%%-----------------------------------------------------------------------
 
@@ -360,7 +368,8 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
 	    deny ->
 		Fallback;
 	    allow ->
-		case get_local_items(LServer, LNode,
+		PermLev = get_permission_level(From),
+		case get_local_items({PermLev, LServer}, LNode,
 				     jlib:jid_to_string(To), Lang) of
 		    {result, Res} ->
 			{result, Res};
@@ -383,7 +392,8 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To, "", Lang) ->
 		deny ->
 		    {result, Items};
 		allow ->
-		    case get_local_items(LServer, [],
+		    PermLev = get_permission_level(From),
+		    case get_local_items({PermLev, LServer}, [],
 					 jlib:jid_to_string(To), Lang) of
 			{result, Res} ->
 			    {result, Items ++ Res};
@@ -448,6 +458,9 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To, Node, Lang) ->
 
 %%%-----------------------------------------------------------------------
 
+%% @spec ({PermissionLevel, Host}, [string()], Server::string(), Lang)
+%%              -> {result, [xmlelement()]}
+%%       PermissionLevel = global | vhost
 get_local_items(_Host, [], Server, Lang) ->
     {result,
      [?NODE("Configuration",            "config"),
@@ -484,13 +497,13 @@ get_local_items(_Host, ["user"], Server, Lang) ->
 get_local_items(_Host, ["http:" | _], _Server, _Lang) ->
     {result, []};
 
-get_local_items(Host, ["online users"], _Server, _Lang) ->
+get_local_items({_, Host}, ["online users"], _Server, _Lang) ->
     {result, get_online_vh_users(Host)};
 
-get_local_items(Host, ["all users"], _Server, _Lang) ->
+get_local_items({_, Host}, ["all users"], _Server, _Lang) ->
     {result, get_all_vh_users(Host)};
 
-get_local_items(Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
+get_local_items({_, Host}, ["all users", [$@ | Diap]], _Server, _Lang) ->
     case catch ejabberd_auth:get_vh_registered_users(Host) of
 	{'EXIT', _Reason} ->
 	    ?ERR_INTERNAL_SERVER_ERROR;
@@ -514,10 +527,10 @@ get_local_items(Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
 		 end
     end;
 
-get_local_items(Host, ["outgoing s2s"], _Server, Lang) ->
+get_local_items({_, Host}, ["outgoing s2s"], _Server, Lang) ->
     {result, get_outgoing_s2s(Host, Lang)};
 
-get_local_items(Host, ["outgoing s2s", To], _Server, Lang) ->
+get_local_items({_, Host}, ["outgoing s2s", To], _Server, Lang) ->
     {result, get_outgoing_s2s(Host, Lang, To)};
 
 get_local_items(_Host, ["running nodes"], Server, Lang) ->
@@ -526,7 +539,7 @@ get_local_items(_Host, ["running nodes"], Server, Lang) ->
 get_local_items(_Host, ["stopped nodes"], _Server, Lang) ->
     {result, get_stopped_nodes(Lang)};
 
-get_local_items(_Host, ["running nodes", ENode], Server, Lang) ->
+get_local_items({global, _Host}, ["running nodes", ENode], Server, Lang) ->
     {result,
      [?NODE("Database", "running nodes/" ++ ENode ++ "/DB"),
       ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules"),
@@ -535,6 +548,11 @@ get_local_items(_Host, ["running nodes", ENode], Server, Lang) ->
 	    "running nodes/" ++ ENode ++ "/import"),
       ?NODE("Restart Service", "running nodes/" ++ ENode ++ "/restart"),
       ?NODE("Shut Down Service", "running nodes/" ++ ENode ++ "/shutdown")
+     ]};
+
+get_local_items({vhost, _Host}, ["running nodes", ENode], Server, Lang) ->
+    {result,
+     [?NODE("Modules", "running nodes/" ++ ENode ++ "/modules")
      ]};
 
 get_local_items(_Host, ["running nodes", _ENode, "DB"], _Server, _Lang) ->
@@ -708,8 +726,8 @@ get_stopped_nodes(_Lang) ->
 
 %%-------------------------------------------------------------------------
 
--define(COMMANDS_RESULT(Allow, From, To, Request),
-	case Allow of
+-define(COMMANDS_RESULT(LServerOrGlobal, From, To, Request),
+	case acl:match_rule(LServerOrGlobal, configure, From) of
 	    deny ->
 		{error, ?ERR_FORBIDDEN};
 	    allow ->
@@ -719,24 +737,23 @@ get_stopped_nodes(_Lang) ->
 adhoc_local_commands(Acc, From, #jid{lserver = LServer} = To,
 		     #adhoc_request{node = Node} = Request) ->
     LNode = tokenize(Node),
-    Allow = acl:match_rule(LServer, configure, From),
     case LNode of
 	["running nodes", _ENode, "DB"] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["running nodes", _ENode, "modules", _] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(LServer, From, To, Request);
 	["running nodes", _ENode, "backup", _] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["running nodes", _ENode, "import", _] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["running nodes", _ENode, "restart"] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["running nodes", _ENode, "shutdown"] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["config", _] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(LServer, From, To, Request);
 	?NS_ADMINL(_) ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(LServer, From, To, Request);
 	_ ->
 	    Acc
     end.
@@ -1540,7 +1557,7 @@ set_form(_From, Host, ["config", "access"], _Lang, XData) ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
 
-set_form(_From, _Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
     Password = get_value("password-verify", XData),
@@ -1548,10 +1565,11 @@ set_form(_From, _Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     User = AccountJID#jid.luser,
     Server = AccountJID#jid.lserver,
     true = lists:member(Server, ?MYHOSTS),
+    true = (Server == Host) orelse (get_permission_level(From) == global),
     ejabberd_auth:try_register(User, Server, Password),
     {result, []};
 
-set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
     AccountStringList = get_values("accountjids", XData),
     [_|_] = AccountStringList,
     ASL2 = lists:map(
@@ -1559,7 +1577,8 @@ set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
 		     JID = jlib:string_to_jid(AccountString),
 		     [_|_] = JID#jid.luser,
 		     User = JID#jid.luser, 
-		     Server = JID#jid.lserver, 
+		     Server = JID#jid.lserver,
+		     true = (Server == Host) orelse (get_permission_level(From) == global),
 		     true = ejabberd_auth:is_user_exists(User, Server),
 		     {User, Server}
 	     end,
@@ -1567,12 +1586,13 @@ set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
     [ejabberd_auth:remove_user(User, Server) || {User, Server} <- ASL2],
     {result, []};
 
-set_form(_From, _Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     LUser = JID#jid.luser, 
     LServer = JID#jid.lserver, 
+    true = (LServer == Host) orelse (get_permission_level(From) == global),
     %% Code copied from ejabberd_sm.erl
     case JID#jid.lresource of
 	[] -> 
@@ -1586,12 +1606,13 @@ set_form(_From, _Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     end, 
     {result, []};
 
-set_form(_From, _Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     User = JID#jid.luser, 
     Server = JID#jid.lserver, 
+    true = (Server == Host) orelse (get_permission_level(From) == global),
     Password = ejabberd_auth:get_password(User, Server),
     true = is_list(Password),
     {result, [{xmlelement, "x", [{"xmlns", ?NS_XDATA}],
@@ -1600,23 +1621,25 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
 	        ?XFIELD("text-single", "Password", "password", Password)
 	       ]}]};
 
-set_form(_From, _Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     User = JID#jid.luser, 
     Server = JID#jid.lserver, 
+    true = (Server == Host) orelse (get_permission_level(From) == global),
     true = ejabberd_auth:is_user_exists(User, Server),
     ejabberd_auth:set_password(User, Server, Password),
     {result, []};
 
-set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     User = JID#jid.luser, 
     Server = JID#jid.lserver, 
+    true = (Server == Host) orelse (get_permission_level(From) == global),
 
     %% Code copied from web/ejabberd_web_admin.erl
     %% TODO: Update time format to XEP-0202: Entity Time
@@ -1648,12 +1671,13 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
 	        ?XFIELD("text-single", "Last login", "lastlogin", FLast)
 	       ]}]};
 
-set_form(_From, _Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     User = JID#jid.luser, 
     Server = JID#jid.lserver, 
+    true = (Server == Host) orelse (get_permission_level(From) == global),
 
     Resources = ejabberd_sm:get_user_resources(User, Server),
     IPs1 = [ejabberd_sm:get_user_ip(User, Server, Resource) || Resource <- Resources],
