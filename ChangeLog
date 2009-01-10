@@ -1,3 +1,8 @@
+2009-01-10  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/node_default.erl: fix unsubscription of full jid
+	subscribed node (thanks to Andy Skelton)(EJAB-839)
+
 2009-01-09	Pablo Polvorin	<pablo.polvorin@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl, src/mod_muc/mod_muc.erl

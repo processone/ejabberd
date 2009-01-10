@@ -374,7 +374,7 @@ unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
 	(not Authorized) and (Affiliation =/= owner) ->
 	    {error, 'forbidden'};
 	%% Was just subscriber, remove the record
-	Affiliation == none ->
+	SubState#pubsub_state.affiliation == none ->
 	    del_state(SubState#pubsub_state.stateid),
 	    {result, default};
 	true ->
