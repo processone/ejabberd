@@ -153,9 +153,10 @@ stop(Host) ->
 
 terminate(_Reason, State) ->
     Host = State#state.serverhost,
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
-    ejabberd_hooks:delete(disco_sm_features, list_to_binary(Host), ?MODULE, get_sm_features, 50),
+    HostB = list_to_binary(Host),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_VCARD),
+    ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
     case State#state.search of
 	true ->
 	    ejabberd_router:unregister_route(State#state.myhost);
@@ -168,11 +169,12 @@ start_link(Host, Opts) ->
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
 init([Host, Opts]) ->
+    HostB = list_to_binary(Host),
     State = parse_options(Host, Opts),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, parallel),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, 
             list_to_binary(Host), ?MODULE, get_sm_features, 50),

@@ -41,11 +41,11 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_SOFT_VERSION,
+    gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_SOFT_VERSION,
 				  ?MODULE, process_local_iq, IQDisc).
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_SOFT_VERSION).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_SOFT_VERSION).
 
 
 process_local_iq(_From, To, #iq{type = Type} = IQ_Rec) ->

@@ -46,9 +46,9 @@
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
@@ -61,8 +61,8 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(unset_presence_hook, HostB,
 			  ?MODULE, on_presence_update, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_LAST_ACTIVITY),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_LAST_ACTIVITY).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_LAST_ACTIVITY),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_LAST_ACTIVITY).
 
 process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
     Sec = trunc(element(1, erlang:statistics(wall_clock))/1000),

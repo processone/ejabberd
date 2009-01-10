@@ -74,7 +74,7 @@ start(Host, Opts) ->
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, HostB,
 		       ?MODULE, webadmin_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
@@ -99,7 +99,7 @@ stop(Host) ->
 			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, HostB,
 			  ?MODULE, webadmin_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_ROSTER).
 
 
 process_iq(From, To, IQ_Rec) ->

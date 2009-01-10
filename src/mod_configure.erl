@@ -84,8 +84,8 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_identity, HostB, ?MODULE, get_local_identity, 50),
     ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, get_local_features, 50),
     ejabberd_hooks:delete(disco_local_items, HostB, ?MODULE, get_local_items, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ADHOC),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ADHOC).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_ADHOC),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_ADHOC).
 
 %%%-----------------------------------------------------------------------
 

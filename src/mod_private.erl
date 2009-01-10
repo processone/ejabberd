@@ -49,14 +49,14 @@ start(Host, Opts) ->
     update_table(),
     ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PRIVATE,
 				  ?MODULE, process_sm_iq, IQDisc).
 
 stop(Host) ->
     HostB = list_to_binary(Host),
     ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_PRIVATE).
 
 
 process_sm_iq(From, To, #iq{type = Type} = IQ_Rec) ->

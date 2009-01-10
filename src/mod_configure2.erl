@@ -42,7 +42,7 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE,
+    gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_ECONFIGURE,
 				  ?MODULE, process_local_iq, IQDisc),
     % Add nss/names/attrs used by this module to the known lists of Exmpp.
     exmpp_xml:add_autoload_known_nss([?NS_ECONFIGURE]),
@@ -67,7 +67,7 @@ start(Host, Opts) ->
     ok.
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ECONFIGURE).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_ECONFIGURE).
 
 
 process_local_iq(From, To, #iq{type = Type, payload = Request} = IQ_Rec) ->

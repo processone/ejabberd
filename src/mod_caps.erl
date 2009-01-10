@@ -262,7 +262,7 @@ handle_cast({note_caps, From,
 			    'node', lists:concat([Node, "#", SubNode])),
 			  Stanza = exmpp_iq:get(?NS_JABBER_CLIENT, Query, ID),
 			  ejabberd_local:register_iq_response_handler
-			    (Host, ID, ?MODULE, handle_disco_response),
+			    (list_to_binary(Host), ID, ?MODULE, handle_disco_response),
 			  ejabberd_router:route(exmpp_jid:make_bare_jid(Host),
 			    From, Stanza),
 			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID}),
@@ -322,7 +322,7 @@ handle_cast({disco_timeout, ID}, #state{host = Host, disco_requests = Requests} 
     %% do not wait a response anymore for this IQ, client certainly will never answer
     NewRequests = case ?DICT:is_key(ID, Requests) of
     true ->
-	ejabberd_local:unregister_iq_response_handler(Host, ID),
+	ejabberd_local:unregister_iq_response_handler(list_to_binary(Host), ID),
 	?DICT:erase(ID, Requests);
     false ->
 	Requests

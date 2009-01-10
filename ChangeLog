@@ -1,3 +1,17 @@
+2009-01-10	Pablo Polvorin	<pablo.polvorin@process-one.net>
+
+	* src/mod_vcard_odbc.erl: Fix bug in user search.
+
+	* src/mod_vcard_ldap.erl, src/mod_vcard.erl, src/mod_configure.erl,
+	src/ejabberd_sm.erl, src/mod_privacy_odbc.erl, src/ejabberd_c2s.erl,
+	src/ejabberd_local.erl, src/mod_privacy.erl, src/mod_adhoc.erl,
+	src/mod_pubsub/mod_pubsub.erl, src/mod_vcard_odbc.erl, src/mod_stats.erl,
+	src/mod_last.erl, src/mod_private.erl, src/mod_roster.erl, 
+	src/mod_disco.erl, src/mod_private_odbc.erl, src/mod_configure2.erl,
+	src/mod_roster_odbc.erl, src/mod_register.erl, src/mod_version.erl,
+	src/mod_caps.erl, src/mod_last_odbc.erl, src/mod_time.erl: Update 
+	gen_iq_handler API, require the 'Host' argument to be in binary() format.
+
 2009-01-10  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/node_default.erl: fix unsubscription of full jid

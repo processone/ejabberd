@@ -42,9 +42,9 @@
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_INBAND_REGISTER,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_INBAND_REGISTER,
 				  ?MODULE, process_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_INBAND_REGISTER,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_INBAND_REGISTER,
 				  ?MODULE, process_iq, IQDisc),
     ejabberd_hooks:add(c2s_stream_features, HostB,
  		       ?MODULE, stream_feature_register, 50),
@@ -63,8 +63,8 @@ stop(Host) ->
  			  ?MODULE, stream_feature_register, 50),
     ejabberd_hooks:delete(c2s_unauthenticated_iq, HostB,
 			  ?MODULE, unauthenticated_iq_register, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_INBAND_REGISTER),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_INBAND_REGISTER).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_INBAND_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_INBAND_REGISTER).
 
 
 stream_feature_register(Acc) ->

@@ -76,7 +76,7 @@ start_link() ->
 process_iq(From, To, Packet) ->
     case exmpp_iq:xmlel_to_iq(Packet) of
 	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
-	    Host = exmpp_jid:ldomain_as_list(To),
+	    Host = exmpp_jid:ldomain(To),
 	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ_Rec),

@@ -166,10 +166,11 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    ServerB = list_to_binary(ServerHost),
     lists:foreach(
       fun({NS,Mod,Fun}) ->
 	      gen_iq_handler:add_iq_handler(
-		Mod, ServerHost, NS, ?MODULE, Fun, IQDisc)
+		Mod, ServerB, NS, ?MODULE, Fun, IQDisc)
       end,
       [{?NS_PUBSUB, ejabberd_local, iq_local},
        {?NS_PUBSUB_OWNER, ejabberd_local, iq_local},
@@ -584,8 +585,9 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
+    ServerB = list_to_binary(ServerHost),
     lists:foreach(fun({NS,Mod}) ->
-			  gen_iq_handler:remove_iq_handler(Mod, ServerHost, NS)
+			  gen_iq_handler:remove_iq_handler(Mod, ServerB, NS)
 		  end, [{?NS_PUBSUB, ejabberd_local},
 			{?NS_PUBSUB_OWNER, ejabberd_local},
 			{?NS_PUBSUB, ejabberd_sm},

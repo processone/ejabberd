@@ -661,7 +661,7 @@ get_max_user_sessions(JID) ->
 process_iq(From, To, Packet) ->
     case exmpp_iq:xmlel_to_iq(Packet) of
 	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
-        LServer = exmpp_jid:ldomain_as_list(To),
+        LServer = exmpp_jid:ldomain(To),
 	    case ets:lookup(sm_iqtable, {XMLNS, LServer}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ_Rec),

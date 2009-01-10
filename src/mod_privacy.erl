@@ -59,7 +59,7 @@ start(Host, Opts) ->
 		       ?MODULE, check_packet, 50),
     ejabberd_hooks:add(privacy_updated_list, HostB,
 		       ?MODULE, updated_list, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
@@ -74,7 +74,7 @@ stop(Host) ->
 			  ?MODULE, check_packet, 50),
     ejabberd_hooks:delete(privacy_updated_list, HostB,
 			  ?MODULE, updated_list, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_PRIVACY).
 
 process_iq(_From, _To, IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').

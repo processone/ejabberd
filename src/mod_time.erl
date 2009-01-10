@@ -40,11 +40,11 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_TIME,
+    gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_TIME,
 				  ?MODULE, process_local_iq, IQDisc).
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_TIME).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_TIME).
 
 process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
     UTC = jlib:timestamp_to_iso(calendar:universal_time()),

@@ -49,9 +49,9 @@ start(Host, Opts) ->
     ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
     MyHost = gen_mod:get_opt_host(Host, Opts, "vjud.@HOST@"),
@@ -90,8 +90,8 @@ stop(Host) ->
     HostB = list_to_binary(Host),
     ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_VCARD),
     ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,
@@ -295,35 +295,31 @@ do_route(ServerHost, From, To, Packet) ->
 		Lang = exmpp_stanza:get_lang(Packet),
 		case {Type, Request#xmlel.ns} of
 		    {set, ?NS_SEARCH} ->
-                        XDataEl = find_xdata_el(Request),
-                        case XDataEl of
-                            false ->
-				Err = exmpp_iq:error(Packet, 'bad-request'),
-                                ejabberd_router:route(To, From, Err);
-                            _ ->
-                                XData = jlib:parse_xdata_submit(XDataEl),
-                                case XData of
-                                    invalid ->
-					Err = exmpp_iq:error(Packet,
-					  'bad-request'),
-                                        ejabberd_router:route(To, From,
-                                                              Err);
-                                    _ ->
-					Result = #xmlel{
-					  ns = ?NS_SEARCH,
-					  name = 'query',
-					  children = [
-					    #xmlel{
-					      ns = ?NS_DATA_FORMS,
-					      name = 'x',
-					      attrs = [#xmlattr{name = 'type',
-						  value = <<"result">>}],
-					      children = search_result(Lang,
-						To, ServerHost, XData)}]},
-					ResIQ = exmpp_iq:result(Packet,
-					  Result),
-                                        ejabberd_router:route(
-                                          To, From, exmpp_iq:iq_to_xmlel(ResIQ))
+                    XDataEl = find_xdata_el(Request),
+                    case XDataEl of
+                        false ->
+                           Err = exmpp_iq:error(Packet, 'bad-request'),
+                           ejabberd_router:route(To, From, Err);
+                        _ ->
+                           XData = jlib:parse_xdata_submit(XDataEl),
+                           case XData of
+                              invalid ->
+                                  Err = exmpp_iq:error(Packet, 'bad-request'),
+                                  ejabberd_router:route(To, From, Err);
+                              _ ->
+					           Result = #xmlel{ns = ?NS_SEARCH,
+                        			     name = 'query',
+                         			     children = [
+                            		      #xmlel{ns = ?NS_DATA_FORMS,
+					                         name = 'x',
+                                             attrs = [
+                                               #xmlattr{name = 'type',
+                                       	 	     value = <<"result">>}],
+					                         children = search_result(Lang,
+                                					To, ServerHost, XData)}]},
+					            ResIQ = exmpp_iq:result(Packet, Result),
+                                ejabberd_router:route(
+                                          To, From, ResIQ)
                                 end
                         end;
 		    {get, ?NS_SEARCH} ->

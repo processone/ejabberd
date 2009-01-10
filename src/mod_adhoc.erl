@@ -51,9 +51,9 @@ start(Host, Opts) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
 
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ADHOC,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_ADHOC,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ADHOC,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_ADHOC,
 				  ?MODULE, process_sm_iq, IQDisc),
     
     ejabberd_hooks:add(disco_local_identity, HostB, ?MODULE, get_local_identity, 99),
@@ -76,8 +76,8 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, get_local_features, 99),
     ejabberd_hooks:delete(disco_local_identity, HostB, ?MODULE, get_local_identity, 99),
 
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ADHOC),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ADHOC).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_ADHOC),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_ADHOC).
 
 %-------------------------------------------------------------------------
 

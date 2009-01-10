@@ -1162,7 +1162,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    true ->
 			case exmpp_iq:get_request(Packet) of
 			    #xmlel{ns = ?NS_VCARD} ->
-				Host = binary_to_list(StateData#state.server),
+				Host = StateData#state.server,
 				case ets:lookup(sm_iqtable, {?NS_VCARD, Host}) of
 				    [{_, Module, Function, Opts}] ->
 					gen_iq_handler:handle(Host, Module, Function, Opts,
