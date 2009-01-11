@@ -1875,19 +1875,34 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 	error ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
-	    Action = fun(#pubsub_node{type = Type, owners = Owners}) ->
-			     case lists:member(Owner, Owners) of
-				 true ->
-				     lists:foreach(
-				       fun({JID, Affiliation}) ->
-					       node_call(
-						 Type, set_affiliation,
-						 [Host, Node, JID, Affiliation])
-				       end, Entities),
-				     {result, []};
-				 _ ->
-				     {error, ?ERR_FORBIDDEN}
-			     end
+	    Action = fun(#pubsub_node{type = Type, owners = Owners}=N) ->
+			case lists:member(Owner, Owners) of
+			    true ->
+				lists:foreach(
+				    fun({JID, Affiliation}) ->
+					node_call(Type, set_affiliation, [Host, Node, JID, Affiliation]),
+					case Affiliation of
+					    owner ->
+						NewOwner = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+						NewOwners = [NewOwner|Owners],
+						tree_call(Host, set_node, [N#pubsub_node{owners = NewOwners}]);
+					    none ->
+						OldOwner = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+						case lists:member(OldOwner, Owners) of
+						    true ->
+							NewOwners = Owners--[OldOwner],
+							tree_call(Host, set_node, [N#pubsub_node{owners = NewOwners}]);
+						    _ ->
+							ok
+						end;
+					    _ ->
+						ok
+					end
+				    end, Entities),
+				{result, []};
+			    _ ->
+				{error, ?ERR_FORBIDDEN}
+			end
 		     end,
 	    transaction(Host, Node, Action, sync_dirty)
     end.

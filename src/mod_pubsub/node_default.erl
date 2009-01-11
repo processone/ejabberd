@@ -275,22 +275,27 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	       SendLast, PresenceSubscription, RosterGroup) ->
     SubKey = jlib:jid_tolower(Subscriber),
     GenKey = jlib:jid_remove_resource(SubKey),
-    Authorized = (jlib:jid_tolower(jlib:jid_remove_resource(Sender)) == GenKey),
+    SenderKey = jlib:jid_tolower(jlib:jid_remove_resource(Sender)),
     GenState = get_state(Host, Node, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
 	_ -> get_state(Host, Node, SubKey)
 	end,
-    Affiliation = GenState#pubsub_state.affiliation,
-    Subscription = SubState#pubsub_state.subscription,
+    Authorized = case SenderKey of
+	GenKey ->
+	    true;
+	_ ->
+	    SenderState = get_state(Host, Node, SenderKey),
+	    SenderState#pubsub_state.affiliation == owner
+	end,
     if
 	not Authorized ->
 	    %% JIDs do not match
 	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "invalid-jid")};
-	Affiliation == outcast ->
+	GenState#pubsub_state.affiliation == outcast ->
 	    %% Requesting entity is blocked
 	    {error, ?ERR_FORBIDDEN};
-	Subscription == pending ->
+	SubState#pubsub_state.subscription == pending ->
 	    %% Requesting entity has pending subscription
 	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "pending-subscription")};
 	(AccessModel == presence) and (not PresenceSubscription) ->
@@ -345,14 +350,19 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
     SubKey = jlib:jid_tolower(Subscriber),
     GenKey = jlib:jid_remove_resource(SubKey),
-    Authorized = (jlib:jid_tolower(jlib:jid_remove_resource(Sender)) == GenKey),
+    SenderKey = jlib:jid_tolower(jlib:jid_remove_resource(Sender)),
     GenState = get_state(Host, Node, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
 	_ -> get_state(Host, Node, SubKey)
 	end,
-    Affiliation = GenState#pubsub_state.affiliation,
-    Subscription = SubState#pubsub_state.subscription,
+    Authorized = case SenderKey of
+	GenKey ->
+	    true;
+	_ ->
+	    SenderState = get_state(Host, Node, SenderKey),
+	    SenderState#pubsub_state.affiliation == owner
+	end,
     if
 	%% Entity did not specify SubID
 	%%SubID == "", ?? ->
@@ -361,10 +371,10 @@ unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
 	%%InvalidSubID ->
 	%%	{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	%% Requesting entity is not a subscriber
-	Subscription == none ->
+	SubState#pubsub_state.subscription == none ->
 	    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST, "not-subscribed")};
 	%% Requesting entity is prohibited from unsubscribing entity
-	(not Authorized) and (Affiliation =/= owner) ->
+	not Authorized ->
 	    {error, ?ERR_FORBIDDEN};
 	%% Was just subscriber, remove the record
 	SubState#pubsub_state.affiliation == none ->
@@ -576,7 +586,12 @@ set_affiliation(Host, Node, Owner, Affiliation) ->
     SubKey = jlib:jid_tolower(Owner),
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(Host, Node, GenKey),
-    set_state(GenState#pubsub_state{affiliation = Affiliation}),
+    case {Affiliation, GenState#pubsub_state.subscription} of
+	{none, none} ->
+	    del_state(GenState#pubsub_state.stateid);
+	_ ->
+	    set_state(GenState#pubsub_state{affiliation = Affiliation})
+    end,
     ok.
 
 %% @spec (Host, Ownner) -> [{Node,Subscription}]
@@ -619,7 +634,12 @@ get_subscription(Host, Node, Owner) ->
 set_subscription(Host, Node, Owner, Subscription) ->
     SubKey = jlib:jid_tolower(Owner),
     SubState = get_state(Host, Node, SubKey),
-    set_state(SubState#pubsub_state{subscription = Subscription}),
+    case {Subscription, SubState#pubsub_state.affiliation} of
+	{none, none} ->
+	    del_state(SubState#pubsub_state.stateid);
+	_ ->
+	    set_state(SubState#pubsub_state{subscription = Subscription})
+    end,
     ok.
 
 %% @spec (Host, Node) -> [States] | []
@@ -690,7 +710,6 @@ get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, _SubI
     SubKey = jlib:jid_tolower(JID),
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(Host, Node, GenKey),
-    Affiliation = GenState#pubsub_state.affiliation,
     if
 	%%SubID == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
@@ -698,7 +717,7 @@ get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, _SubI
 	%%InvalidSubID ->
 	    %% Entity is subscribed but specifies an invalid subscription ID
 	    %{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-	Affiliation == outcast ->
+	GenState#pubsub_state.affiliation == outcast ->
 	    %% Requesting entity is blocked
 	    {error, ?ERR_FORBIDDEN};
 	(AccessModel == presence) and (not PresenceSubscription) ->
@@ -737,7 +756,6 @@ get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup
     SubKey = jlib:jid_tolower(JID),
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(Host, Node, GenKey),
-    Affiliation = GenState#pubsub_state.affiliation,
     if
 	%%SubID == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
@@ -745,7 +763,7 @@ get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup
 	%%InvalidSubID ->
 	    %% Entity is subscribed but specifies an invalid subscription ID
 	    %{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-	Affiliation == outcast ->
+	GenState#pubsub_state.affiliation == outcast ->
 	    %% Requesting entity is blocked
 	    {error, ?ERR_FORBIDDEN};
 	(AccessModel == presence) and (not PresenceSubscription) ->
