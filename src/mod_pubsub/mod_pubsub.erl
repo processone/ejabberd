@@ -2031,15 +2031,33 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    {error, 'bad-request'};
 	_ ->
 	    Action = fun(#pubsub_node{type = Type, owners = Owners}) ->
-			     case lists:member(Owner, Owners) of
-				 true ->
-				     lists:foreach(fun({JID, Subscription}) ->
-							   node_call(Type, set_subscription, [Host, Node, JID, Subscription])
-						   end, Entities),
-				     {result, []};
-				 _ ->
-				     {error, 'forbidden'}
-			     end
+			case lists:member(Owner, Owners) of
+			    true ->
+				lists:foreach(
+				    fun({JID, Affiliation}) ->
+					node_call(Type, set_affiliation, [Host, Node, JID, Affiliation]),
+					case Affiliation of
+					    owner ->
+						NewOwner = jlib:short_prepd_bare_jid(JID),
+						NewOwners = [NewOwner|Owners],
+						tree_call(Host, set_node, [N#pubsub_node{owners = NewOwners}]);
+					    none ->
+						NewOwner = jlib:short_prepd_bare_jid(JID),
+						case lists:member(OldOwner, Owners) of
+						    true ->
+							NewOwners = Owners--[OldOwner],
+							tree_call(Host, set_node, [N#pubsub_node{owners = NewOwners}]);
+						    _ ->
+							ok
+						end;
+					    _ ->
+						ok
+					end
+				    end, Entities),
+				    {result, []};
+				_ ->
+				    {error, 'forbidden'}
+			end
 		     end,
 	    transaction(Host, Node, Action, sync_dirty)
     end.

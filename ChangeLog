@@ -1,3 +1,9 @@
+2009-01-11  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: fix owners cache and fix unsubscribe
+	permissions (thanks to Andy Skelton)(EJAB-840)
+	* src/mod_pubsub/node_default.erl: Likewise
+
 2009-01-10	Pablo Polvorin	<pablo.polvorin@process-one.net>
 
 	* src/mod_vcard_odbc.erl: Fix bug in user search.

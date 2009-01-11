@@ -288,7 +288,6 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	_ -> get_state(Host, Node, SubKey)
 	end,
     Affiliation = GenState#pubsub_state.affiliation,
-    Subscription = SubState#pubsub_state.subscription,
     Whitelisted = lists:member(Affiliation, [member, publisher, owner]),
     if
 	not Authorized ->
@@ -297,7 +296,7 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	Affiliation == outcast ->
 	    %% Requesting entity is blocked
 	    {error, 'forbidden'};
-	Subscription == pending ->
+	SubState#pubsub_state.subscription == pending ->
 	    %% Requesting entity has pending subscription
 	    {error, ?ERR_EXTENDED('not-authorized', "pending-subscription")};
 	(AccessModel == presence) and (not PresenceSubscription) ->
@@ -358,8 +357,6 @@ unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
 	GenKey -> GenState;
 	_ -> get_state(Host, Node, SubKey)
 	end,
-    Affiliation = GenState#pubsub_state.affiliation,
-    Subscription = SubState#pubsub_state.subscription,
     if
 	%% Entity did not specify SubID
 	%%SubID == "", ?? ->
@@ -368,10 +365,10 @@ unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
 	%%InvalidSubID ->
 	%%	{error, ?ERR_EXTENDED('not-acceptable', "invalid-subid")};
 	%% Requesting entity is not a subscriber
-	Subscription == none ->
+	SubState#pubsub_state.subscription == none ->
 	    {error, ?ERR_EXTENDED('unexpected-request', "not-subscribed")};
 	%% Requesting entity is prohibited from unsubscribing entity
-	(not Authorized) and (Affiliation =/= owner) ->
+	not Authorized ->
 	    {error, 'forbidden'};
 	%% Was just subscriber, remove the record
 	SubState#pubsub_state.affiliation == none ->
@@ -577,7 +574,12 @@ get_affiliation(Host, Node, Owner) ->
 set_affiliation(Host, Node, Owner, Affiliation) ->
     GenKey = jlib:short_prepd_bare_jid(Owner),
     GenState = get_state(Host, Node, GenKey),
-    set_state(GenState#pubsub_state{affiliation = Affiliation}),
+    case {Affiliation, GenState#pubsub_state.subscription} of
+	{none, none} ->
+	    del_state(GenState#pubsub_state.stateid);
+	_ ->
+	    set_state(GenState#pubsub_state{affiliation = Affiliation})
+    end,
     ok.
 
 %% @spec (Host, Owner) -> [{Node,Subscription}]
@@ -614,14 +616,19 @@ get_node_subscriptions(Host, Node) ->
     {result, lists:map(Tr, States)}.
 
 get_subscription(Host, Node, Owner) ->
-    GenKey = jlib:short_prepd_bare_jid(Owner),
-    GenState = get_state(Host, Node, GenKey),
-    {result, GenState#pubsub_state.subscription}.
+    SubKey = jlib:short_prepd_jid(Owner),
+    SubState = get_state(Host, Node, SubKey),
+    {result, SubState#pubsub_state.subscription}.
 
 set_subscription(Host, Node, Owner, Subscription) ->
-    GenKey = jlib:short_prepd_bare_jid(Owner),
-    GenState = get_state(Host, Node, GenKey),
-    set_state(GenState#pubsub_state{subscription = Subscription}),
+    SubKey = jlib:short_prepd_jid(Owner),
+    SubState = get_state(Host, Node, SubKey),
+    case {Subscription, SubState#pubsub_state.affiliation} of
+	{none, none} ->
+	    del_state(SubState#pubsub_state.stateid);
+	_ ->
+	    set_state(SubState#pubsub_state{subscription = Subscription})
+    end,
     ok.
 
 %% @spec (Host, Node) -> [States] | []
