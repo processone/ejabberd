@@ -286,7 +286,6 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	_ -> get_state(Host, Node, SubKey)
 	end,
     Affiliation = GenState#pubsub_state.affiliation,
-    Subscription = SubState#pubsub_state.subscription,
     Whitelisted = lists:member(Affiliation, [member, publisher, owner]),
     if
 	not Authorized ->
@@ -295,7 +294,7 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	Affiliation == outcast ->
 	    %% Requesting entity is blocked
 	    {error, ?ERR_FORBIDDEN};
-	Subscription == pending ->
+	SubState#pubsub_state.subscription == pending ->
 	    %% Requesting entity has pending subscription
 	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "pending-subscription")};
 	(AccessModel == presence) and (not PresenceSubscription) ->
@@ -350,18 +349,11 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
     SubKey = jlib:jid_tolower(Subscriber),
     GenKey = jlib:jid_remove_resource(SubKey),
-    SenderKey = jlib:jid_tolower(jlib:jid_remove_resource(Sender)),
+    Authorized = (jlib:jid_tolower(jlib:jid_remove_resource(Sender)) == GenKey),
     GenState = get_state(Host, Node, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
 	_ -> get_state(Host, Node, SubKey)
-	end,
-    Authorized = case SenderKey of
-	GenKey ->
-	    true;
-	_ ->
-	    SenderState = get_state(Host, Node, SenderKey),
-	    SenderState#pubsub_state.affiliation == owner
 	end,
     if
 	%% Entity did not specify SubID
