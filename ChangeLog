@@ -4,6 +4,9 @@
 	permissions (thanks to Andy Skelton)(EJAB-840)
 	* src/mod_pubsub/node_default.erl: Likewise
 
+	* src/mod_pubsub/node_default.erl: prevent unauthorized entity to gain
+	none-affiliation for given entity (EJAB-840)
+
 2009-01-10  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/node_default.erl: fix unsubscription of full jid

@@ -356,6 +356,9 @@ unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
 	_ -> get_state(Host, Node, SubKey)
 	end,
     if
+	%% Requesting entity is prohibited from unsubscribing entity
+	not Authorized ->
+	    {error, ?ERR_FORBIDDEN};
 	%% Entity did not specify SubID
 	%%SubID == "", ?? ->
 	%%	{error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
@@ -365,9 +368,6 @@ unsubscribe_node(Host, Node, Sender, Subscriber, _SubId) ->
 	%% Requesting entity is not a subscriber
 	SubState#pubsub_state.subscription == none ->
 	    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST, "not-subscribed")};
-	%% Requesting entity is prohibited from unsubscribing entity
-	not Authorized ->
-	    {error, ?ERR_FORBIDDEN};
 	%% Was just subscriber, remove the record
 	SubState#pubsub_state.affiliation == none ->
 	    del_state(SubState#pubsub_state.stateid),
