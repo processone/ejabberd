@@ -1,5 +1,8 @@
 2009-01-12  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: New appearance of WebAdmin logo,
+	fixed logo-fill.
+
 	* doc/guide.tex: Fix some English strings: JID -> Jabber ID;
 	jabberd 1.4 -> jabberd14; commited -> committed
 	* src/*/*.erl: Likewise
