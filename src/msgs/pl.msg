@@ -351,7 +351,7 @@
 {"has been kicked because of a system shutdown", "został wyrzucony z powodu wyłączenia systemu"}.
 {"Chatroom configuration modified", "Konfiguracja pokoju zmodyfikowana"}.
 {"joins the room", "dołączył(a) się do pokoju"}.
-{"leaves the room", "opóścił(a) pokój"}.
+{"leaves the room", "opuścił(a) pokój"}.
 {"has been kicked", "został(a) kopnięty(a)"}.
 {"has been banned", "został(a) zabanowany(a)"}.
 {"is now known as", "jest teraz znany(a) jako"}.
