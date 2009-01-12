@@ -522,7 +522,7 @@ msgstr "dołączył(a) się do pokoju"
 
 #: mod_muc/mod_muc_log.erl:344 mod_muc/mod_muc_log.erl:347
 msgid "leaves the room"
-msgstr "opóścił(a) pokój"
+msgstr "opuścił(a) pokój"
 
 #: mod_muc/mod_muc_log.erl:350 mod_muc/mod_muc_log.erl:353
 msgid "has been banned"

@@ -1,3 +1,7 @@
+2009-01-13  Badlop  <badlop@process-one.net>
+
+	* src/msgs/pl.po: Fix typo (thanks to Apag0r)(EJAB-844)
+
 2009-01-12  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: Use textareas for large input

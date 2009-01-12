@@ -135,7 +135,7 @@
 {"Last login","Ostatnie logowanie"}.
 {"Last month","Ostatni miesiąc"}.
 {"Last year","Ostatni rok"}.
-{"leaves the room","opóścił(a) pokój"}.
+{"leaves the room","opuścił(a) pokój"}.
 {"Listened Ports at ","Porty nasłuchujące "}.
 {"Listened Ports","Porty nasłuchujące"}.
 {"List of modules to start","Lista modułów do uruchomienia"}.
