@@ -78,7 +78,8 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 %%-------------------------------
 
-start({gen_tcp, Socket}, [Host | Opts]) ->
+start({gen_tcp, Socket}, Opts1) ->
+    {[Host], Opts} = lists:partition(fun(O) -> is_list(O) end, Opts1),
     Supervisor = gen_mod:get_module_proc(Host, ejabberd_mod_proxy65_sup),
     supervisor:start_child(Supervisor, [Socket, Host, Opts]).
 

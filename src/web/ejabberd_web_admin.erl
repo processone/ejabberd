@@ -1809,9 +1809,14 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 		  ok;
 	      {'EXIT', _Reason} ->
 		  error;
+	      {is_added, ok} ->
+		  ok;
+	      {is_added, {error, Reason}} ->
+		  {error, io_lib:format("~p", [Reason])};
 	      _ ->
 		  nothing
 	  end,
+    %% TODO: This sorting does not work when [{{Port, IP}, Module, Opts}]
     NewPorts = lists:sort(
 		 rpc:call(Node, ejabberd_config, get_local_option, [listen])),
     H1String = ?T("Listened Ports at ") ++ atom_to_list(Node),
@@ -1819,6 +1824,7 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 	case Res of
 	    ok -> [?CT("Submitted"), ?P];
 	    error -> [?CT("Bad format"), ?P];
+	    {error, ReasonT} -> [?CT("Problem: "), ?C(ReasonT), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -2057,58 +2063,77 @@ node_ports_to_xhtml(Ports, Lang) ->
 	 [?XE("thead",
 	      [?XE("tr",
 		   [?XCT("td", "Port"),
+		    ?XCT("td", "IP"),
 		    ?XCT("td", "Module"),
 		    ?XCT("td", "Options")
 		   ])]),
 	  ?XE("tbody",
 	      lists:map(
-		fun({Port, Module, Opts} = _E) ->
-			SPort = integer_to_list(Port),
+		fun({PortIP, Module, Opts} = _E) ->
+			{_Port, SPort, _TIP, SIP, SSPort, OptsClean} =
+			    get_port_data(PortIP, Opts),
 			SModule = atom_to_list(Module),
 			%%ID = term_to_id(E),
 			?XE("tr",
-			    [?XC("td", SPort),
-			     ?XE("td", [?INPUT("text", "module" ++ SPort,
-					       SModule)]),
-			     ?XE("td", [?INPUTS("text", "opts" ++ SPort,
-						term_to_string(Opts), "40")]),
-			     ?XE("td", [?INPUTT("submit", "add" ++ SPort,
+			    [?XAE("td", [{"size", "6"}], [?C(SPort)]),
+			     ?XAE("td", [{"size", "15"}], [?C(SIP)]),
+			     ?XE("td", [?INPUTS("text", "module" ++ SSPort,
+						SModule, "15")]),
+			     ?XE("td", [?INPUTS("text", "opts" ++ SSPort,
+						term_to_string(OptsClean), "40")]),
+			     ?XE("td", [?INPUTT("submit", "add" ++ SSPort,
 						"Update")]),
-			     ?XE("td", [?INPUTT("submit", "delete" ++ SPort,
+			     ?XE("td", [?INPUTT("submit", "delete" ++ SSPort,
 						"Delete")])
 			    ]
 			   )
 		end, Ports) ++
 	      [?XE("tr",
 		   [?XE("td", [?INPUTS("text", "portnew", "", "6")]),
-		    ?XE("td", [?INPUT("text", "modulenew", "")]),
-		    ?XE("td", [?INPUTS("text", "optsnew", "", "40")]),
+		    ?XE("td", [?INPUTS("text", "ipnew", "0.0.0.0", "15")]),
+		    ?XE("td", [?INPUTS("text", "modulenew", "", "17")]),
+		    ?XE("td", [?INPUTS("text", "optsnew", "[]", "40")]),
 		    ?XAE("td", [{"colspan", "2"}],
 			 [?INPUTT("submit", "addnew", "Add New")])
 		   ]
 		  )]
 	     )]).
 
+get_port_data(PortIP, Opts) ->
+    {Port, IPT, IPS, _IPV, OptsClean} = ejabberd_listener:parse_listener_portip(PortIP, Opts),
+    SPort = io_lib:format("~p", [Port]),
+
+    SSPort = lists:flatten(
+	       lists:map(
+		 fun(N) -> io_lib:format("~.16b", [N]) end,
+		 binary_to_list(crypto:md5(SPort++IPS)))),
+    {Port, SPort, IPT, IPS, SSPort, OptsClean}.
+  
 
 node_ports_parse_query(Node, Ports, Query) ->
     lists:foreach(
-      fun({Port, Module1, _Opts1}) ->
-	      SPort = integer_to_list(Port),
-	      case lists:keysearch("add" ++ SPort, 1, Query) of
+      fun({PortIP, Module1, Opts1}) ->
+	      {Port, _SPort, TIP, _SIP, SSPort, _OptsClean} =
+		  get_port_data(PortIP, Opts1),
+	      case lists:keysearch("add" ++ SSPort, 1, Query) of
 		  {value, _} ->
+		      PortIP2 = {Port, TIP},
 		      {{value, {_, SModule}}, {value, {_, SOpts}}} =
-			  {lists:keysearch("module" ++ SPort, 1, Query),
-			   lists:keysearch("opts" ++ SPort, 1, Query)},
+			  {lists:keysearch("module" ++ SSPort, 1, Query),
+			   lists:keysearch("opts" ++ SSPort, 1, Query)},
 		      Module = list_to_atom(SModule),
 		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 		      {ok, Opts} = erl_parse:parse_term(Tokens),
-		      rpc:call(Node, ejabberd_listener, delete_listener, [Port, Module]),
-		      rpc:call(Node, ejabberd_listener, add_listener, [Port, Module, Opts]),
-		      throw(submitted);
+		      rpc:call(Node, ejabberd_listener, delete_listener,
+			       [PortIP2, Module1]),
+		      R=rpc:call(Node, ejabberd_listener, add_listener,
+				 [PortIP2, Module, Opts]),
+		      throw({is_added, R});
 		  _ ->
-		      case lists:keysearch("delete" ++ SPort, 1, Query) of
+		      case lists:keysearch("delete" ++ SSPort, 1, Query) of
 			  {value, _} ->
-			      rpc:call(Node, ejabberd_listener, delete_listener, [Port, Module1]),
+			      rpc:call(Node, ejabberd_listener, delete_listener,
+				       [PortIP, Module1]),
 			      throw(submitted);
 			  _ ->
 			      ok
@@ -2118,17 +2143,28 @@ node_ports_parse_query(Node, Ports, Query) ->
     case lists:keysearch("addnew", 1, Query) of
 	{value, _} ->
 	    {{value, {_, SPort}},
+	     {value, {_, STIP}}, %% It is a string that may represent a tuple
 	     {value, {_, SModule}},
 	     {value, {_, SOpts}}} =
 		{lists:keysearch("portnew", 1, Query),
+		 lists:keysearch("ipnew", 1, Query),
 		 lists:keysearch("modulenew", 1, Query),
 		 lists:keysearch("optsnew", 1, Query)},
-	    Port = list_to_integer(SPort),
+	    {ok, Toks, _} = erl_scan:string(SPort ++ "."),
+	    {ok, Port2} = erl_parse:parse_term(Toks),
+	    {ok, ToksIP, _} = erl_scan:string(STIP ++ "."),
+	    STIP2 = case erl_parse:parse_term(ToksIP) of
+			{ok, IPTParsed} -> IPTParsed;
+			{error, _} -> STIP
+		    end,
 	    Module = list_to_atom(SModule),
 	    {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 	    {ok, Opts} = erl_parse:parse_term(Tokens),
-	    rpc:call(Node, ejabberd_listener, add_listener, [Port, Module, Opts]),
-	    throw(submitted);
+	    {Port2, _SPort, IP2, _SIP, _SSPort, OptsClean} =
+		get_port_data({Port2, STIP2}, Opts),
+	    R=rpc:call(Node, ejabberd_listener, add_listener,
+		       [{Port2, IP2}, Module, OptsClean]),
+	    throw({is_added, R});
 	_ ->
 	    ok
     end.

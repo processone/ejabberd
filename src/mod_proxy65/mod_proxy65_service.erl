@@ -52,6 +52,7 @@
 	  name,
 	  stream_addr,
 	  port,
+	  ip,
 	  acl
 	 }).
 
@@ -65,7 +66,7 @@ start_link(Host, Opts) ->
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
 init([Host, Opts]) ->
-    {_IP, State} = parse_options(Host, Opts),
+    State = parse_options(Host, Opts),
     ejabberd_router:register_route(State#state.myhost),
     {ok, State}.
 
@@ -89,8 +90,8 @@ handle_info({route, From, To, {xmlelement, "iq", _, _} = Packet}, State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-handle_call(get_port, _From, State) ->
-    {reply, {port, State#state.port}, State};
+handle_call(get_port_ip, _From, State) ->
+    {reply, {port_ip, State#state.port, State#state.ip}, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
@@ -105,14 +106,14 @@ code_change(_OldVsn, State, _Extra) ->
 %%%------------------------
 
 add_listener(Host, Opts) ->
-    {IP, State} = parse_options(Host, Opts),
-    NewOpts = [Host, {ip, IP} | Opts],
-    ejabberd_listener:add_listener(State#state.port,mod_proxy65_stream,NewOpts).
+    State = parse_options(Host, Opts),
+    NewOpts = [Host | Opts],
+    ejabberd_listener:add_listener({State#state.port, State#state.ip}, mod_proxy65_stream, NewOpts).
 
 delete_listener(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    {port, Port} = gen_server:call(Proc, get_port),
-    catch ejabberd_listener:delete_listener(Port, mod_proxy65_stream).
+    {port_ip, Port, IP} = gen_server:call(Proc, get_port_ip),
+    catch ejabberd_listener:delete_listener({Port, IP}, mod_proxy65_stream).
 
 %%%------------------------
 %%% IQ Processing
@@ -219,12 +220,13 @@ parse_options(ServerHost, Opts) ->
 	     end,
     StrIP = inet_parse:ntoa(IP),
     StreamAddr = [{"jid", MyHost}, {"host", StrIP}, {"port", integer_to_list(Port)}],
-    {IP, #state{myhost      = MyHost,
+    #state{myhost      = MyHost,
 		serverhost  = ServerHost,
 		name        = Name,
 		port        = Port,
+		ip          = IP,
 		stream_addr = StreamAddr, 
-		acl         = ACL}}.
+		acl         = ACL}.
 
 %% Return the IP of the proxy host, or if not found, the ip of the xmpp domain
 get_proxy_or_domainip(ServerHost, MyHost) ->

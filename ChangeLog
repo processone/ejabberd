@@ -1,5 +1,22 @@
 2009-01-12  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_listener.erl: New way to configure IP address and
+	IP version of listener. Support for definition of IP address in
+	string format, and implicit definition of IP
+	version (EJAB-388). Support for defining several listeners: all
+	with same port number but different IP addresses (EJAB-389)(thanks
+	to Fabrice Colliot and Sergei Golovan). Better report in WebAdmin
+	of problem when starting a listener. The old configuration method
+	of ip tuple and inet6 is fully supported for backwards
+	compatibility, but is not documented in the Guide anymore.
+	* src/ejabberd_config.erl: Likewise
+	* src/mod_proxy65/mod_proxy65_stream.erl: Likewise
+	* src/mod_proxy65/mod_proxy65_service.erl: Likewise
+	* src/web/ejabberd_web_admin.erl: Likewise
+	* doc/guide.tex: Document the new way to configure IP address and
+	IP version of listener, undocument options ip and inet6
+	* doc/guide.html: Likewise
+
 	* src/web/ejabberd_web_admin.erl: New appearance of WebAdmin logo,
 	fixed logo-fill.
 
