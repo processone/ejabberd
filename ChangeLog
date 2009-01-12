@@ -1,5 +1,16 @@
 2009-01-12  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Use textareas for large input
+	like ejabberd module options and listening port options. Show
+	result of POST more clearly. Ensure access rules are shown with
+	some minimum separation. Improve menu headers. (EJAB-562)
+	* src/web/ejabberd_web_admin.hrl: Likewise
+	* src/mod_offline.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+	* src/mod_roster.erl: Likewise
+	* src/mod_roster_odbc.erl: Likewise
+	* src/mod_shared_roster.erl: Likewise
+
 	* src/ejabberd_listener.erl: New way to configure IP address and
 	IP version of listener. Support for definition of IP address in
 	string format, and implicit definition of IP
@@ -13,6 +24,7 @@
 	* src/mod_proxy65/mod_proxy65_stream.erl: Likewise
 	* src/mod_proxy65/mod_proxy65_service.erl: Likewise
 	* src/web/ejabberd_web_admin.erl: Likewise
+
 	* doc/guide.tex: Document the new way to configure IP address and
 	IP version of listener, undocument options ip and inet6
 	* doc/guide.html: Likewise

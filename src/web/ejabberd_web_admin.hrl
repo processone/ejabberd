@@ -51,6 +51,16 @@
 -define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
 -define(ACLINPUT(Text), ?XE("td", [?INPUT("text", "value" ++ ID, Text)])).
 
+-define(TEXTAREA(Name, Rows, Cols, Value),
+	?XAC("textarea", [{"name", Name},
+			  {"rows", Rows},
+			  {"cols", Cols}],
+	     Value)).
+
+%% Build an xmlelement for result
+-define(XRES(Text), ?XAC("p", [{"class", "result"}], Text)).
+-define(XREST(Text), ?XRES(?T(Text))).
+
 %% Guide Link
 -define(GL(Ref, Title),
 	?XAE("div",
