@@ -223,7 +223,7 @@ msgid "Backup Management"
 msgstr ""
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
+msgid "Import Users From jabberd14 Spool Files"
 msgstr ""
 
 #: mod_configure.erl:649
@@ -308,7 +308,7 @@ msgid "Import User from File at "
 msgstr ""
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
+msgid "Enter path to jabberd14 spool file"
 msgstr ""
 
 #: mod_configure.erl:990
@@ -316,7 +316,7 @@ msgid "Import Users from Dir at "
 msgstr ""
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
+msgid "Enter path to jabberd14 spool dir"
 msgstr ""
 
 #: mod_configure.erl:995
@@ -1407,7 +1407,7 @@ msgid "CPU Time:"
 msgstr ""
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr ""
 
 #: web/ejabberd_web_admin.erl:1877

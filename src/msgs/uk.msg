@@ -14,7 +14,7 @@
 {"Administrator privileges required","Необхідні права адміністратора"}.
 {"A friendly name for the node","Псевдонім для вузла"}.
 {"All activity","Вся статистика"}.
-{"Allow this JID to subscribe to this pubsub node?","Чи дозволити цьому JID абонувати новини наданого вузла"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Чи дозволити цьому JID абонувати новини наданого вузла"}.
 {"Allow users to change subject","Дозволити користувачам змінювати тему"}.
 {"Allow users to query other users","Дозволити iq-запити до користувачів"}.
 {"Allow users to send invites","Дозволити користувачам надсилати запрошення"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Введіть перелік такого виду {Module, [Options]}"}.
 {"Enter nickname you want to register","Введіть псевдонім, який ви хочете зареєструвати"}.
 {"Enter path to backup file","Введіть шлях до резервного файла"}.
-{"Enter path to jabberd1.4 spool dir","Введіть шлях до директорії спула jabberd1.4"}.
-{"Enter path to jabberd1.4 spool file","Введіть шлях до файла зі спула jabberd1.4"}.
+{"Enter path to jabberd14 spool dir","Введіть шлях до директорії спула jabberd14"}.
+{"Enter path to jabberd14 spool file","Введіть шлях до файла зі спула jabberd14"}.
 {"Enter path to text file","Введіть шлях до текстового файла"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Введіть ім'я користувача та кодування, які будуть використовуватися при підключенні до IRC-серверів"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -113,7 +113,7 @@
 {"Import File","Імпорт з файла"}.
 {"Import User from File at ","Імпортування користувача з файла на "}.
 {"Import Users from Dir at ","Імпортування користувача з директорії на "}.
-{"Import Users From jabberd 1.4 Spool Files","Імпорт користувачів зі спулу jabberd 1.4"}.
+{"Import Users From jabberd14 Spool Files","Імпорт користувачів зі спулу jabberd14"}.
 {"Improper message type","Неправильний тип повідомлення"}.
 {"Incorrect password","Неправильний пароль"}.
 {"Invalid affiliation: ~s","Недопустимий ранг: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages","Приватні повідомлення не дозволені"}.
 {"Jabber ID","Jabber ID"}.
 {"January","січня"}.
-{"JID ~s is invalid","JID ~s недопустимий"}.
+{"Jabber ID ~s is invalid","JID ~s недопустимий"}.
 {"joins the room","увійшов(ла) в кімнату"}.
 {"July","липня"}.
 {"June","червня"}.
@@ -219,7 +219,7 @@
 {"Ping","Пінг"}.
 {"Pong","Понг"}.
 {"Port","Порт"}.
-{"Present real JIDs to","Зробити реальні JID учасників видимими"}.
+{"Present real Jabber IDs to","Зробити реальні JID учасників видимими"}.
 {"private, ","приватна, "}.
 {"Publish-Subscribe","Опублікувати-Абонувати"}.
 {"PubSub subscriber request","Запит на абонування PubSub"}.
@@ -307,7 +307,7 @@
 {"To","Кому"}.
 {"Traffic rate limit is exceeded","Швидкість передачі інформації було перевищено"}.
 {"Transactions Aborted:","Транзакції відмінені:"}.
-{"Transactions Commited:","Транзакції завершені:"}.
+{"Transactions Committed:","Транзакції завершені:"}.
 {"Transactions Logged:","Транзакції запротокольовані:"}.
 {"Transactions Restarted:","Транзакції перезапущені:"}.
 {"Tuesday","Вівторок"}.

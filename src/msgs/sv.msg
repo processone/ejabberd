@@ -14,7 +14,7 @@
 {"Administrator privileges required","Administrationsprivilegier krävs"}.
 {"A friendly name for the node","Ett vänligt namn for noden"}.
 {"All activity","All aktivitet"}.
-{"Allow this JID to subscribe to this pubsub node?","Tillåt denna JID att prenumerera på denna pubsub node"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Tillåt denna JID att prenumerera på denna pubsub node"}.
 {"Allow users to change subject","Tillåt användare att byta ämne"}.
 {"Allow users to query other users","Tillåt användare att söka efter andra användare"}.
 {"Allow users to send invites","Tillåt användare att skicka inbjudningar"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Skriv in en lista av {Module, [Options]}"}.
 {"Enter nickname you want to register","Skriv in smeknamnet du vill registrera"}.
 {"Enter path to backup file","Skriv in sökväg till fil för säkerhetskopia"}.
-{"Enter path to jabberd1.4 spool dir","Skriv in sökväg till spoolkatalog från jabberd1.4"}.
-{"Enter path to jabberd1.4 spool file","Skriv in sökväg till spoolfil från jabberd1.4"}.
+{"Enter path to jabberd14 spool dir","Skriv in sökväg till spoolkatalog från jabberd14"}.
+{"Enter path to jabberd14 spool file","Skriv in sökväg till spoolfil från jabberd14"}.
 {"Enter path to text file","Skriv in sökväg till textfil"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Skriv in användarnamn och textkodning du vill använda för att ansluta till IRC-servrar"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -113,7 +113,7 @@
 {"Import File","Importera fil"}.
 {"Import User from File at ","Importera användare från fil på "}.
 {"Import Users from Dir at ","Importera användare från katalog på "}.
-{"Import Users From jabberd 1.4 Spool Files","Importera användare från jabberd 1.4 Spool filer"}.
+{"Import Users From jabberd14 Spool Files","Importera användare från jabberd14 Spool filer"}.
 {"Improper message type","Felaktig medelandetyp"}.
 {"Incorrect password","Fel lösenord"}.
 {"Invalid affiliation: ~s","Ogiltlig rang: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages to the conference","Det är inte tillåtet att skicka privata medelanden till den här konferensen"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januari"}.
-{"JID ~s is invalid","Otillåtet JID ~s"}.
+{"Jabber ID ~s is invalid","Otillåtet JID ~s"}.
 {"joins the room","joinar rummet"}.
 {"July","Juli"}.
 {"June","Juni"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real JIDs to","Nuvarande äkta JIDs till"}.
+{"Present real Jabber IDs to","Nuvarande äkta JIDs till"}.
 {"private, ","privat, "}.
 {"Publish-Subscribe","Publikprenumeration"}.
 {"PubSub subscriber request","Pubsub prenumerationsforfrågan"}.
@@ -307,7 +307,7 @@
 {"To","Till"}.
 {"Traffic rate limit is exceeded","Trafikgränsen har överstigits"}.
 {"Transactions Aborted:","Transaktioner borttagna"}.
-{"Transactions Commited:","Transaktioner kommittade"}.
+{"Transactions Committed:","Transaktioner kommittade"}.
 {"Transactions Logged:","Transaktioner loggade "}.
 {"Transactions Restarted:","Transaktioner omstartade"}.
 {"Tuesday","Tisdag"}.

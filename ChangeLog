@@ -1,3 +1,11 @@
+2009-01-12  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Fix some English strings: JID -> Jabber ID;
+	jabberd 1.4 -> jabberd14; commited -> committed
+	* src/*/*.erl: Likewise
+	* src/msgs/*.msg: Likewise
+	* src/msgs/*.po: Likewise
+
 2009-01-12  Alexey Shchepin  <alexey@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: Fixed processing of UPDATE results

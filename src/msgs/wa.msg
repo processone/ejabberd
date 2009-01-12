@@ -14,7 +14,7 @@
 {"Administrator privileges required","I fåt des priviledjes di manaedjeu"}.
 {"A friendly name for the node","On no uzeu-ahessåve pol nuk"}.
 {"All activity","Dispoy todi"}.
-{"Allow this JID to subscribe to this pubsub node?","Permete ki ci JID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Permete ki ci JID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"}.
 {"Allow users to change subject","Les uzeus polèt candjî l' tite"}.
 {"Allow users to query other users","Les uzeus polèt cweri ls ôtes uzeus"}.
 {"Allow users to send invites","Les uzeus polèt evoyî priyaedjes"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Dinez ene djivêye del cogne {Module, [Tchuzes]}"}.
 {"Enter nickname you want to register","Dinez l' metou no ki vos vloz edjîstrer"}.
 {"Enter path to backup file","Dinez l' tchimin viè l' fitchî copeye di såvrité"}.
-{"Enter path to jabberd1.4 spool dir","Dinez l' tchimin viè l' ridant di spool jabberd1.4"}.
-{"Enter path to jabberd1.4 spool file","Dinez l' tchimin viè l' fitchî di spool jabberd1.4"}.
+{"Enter path to jabberd14 spool dir","Dinez l' tchimin viè l' ridant di spool jabberd14"}.
+{"Enter path to jabberd14 spool file","Dinez l' tchimin viè l' fitchî di spool jabberd14"}.
 {"Enter path to text file","Dinez l' tchimin viè l' fitchî tecse"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Dinez les nos d' uzeu et ls ecôdaedjes ki vos vloz eployî po vs raloyî åzès sierveus IRC"}.
 {"Erlang Jabber Server","Sierveu Jabber Erlang"}.
@@ -113,7 +113,7 @@
 {"Import File","Sititchî d' on fitchî"}.
 {"Import User from File at ","Sititchî uzeu d' on fitchî so "}.
 {"Import Users from Dir at ","Sitichî des uzeus d' on ridant so "}.
-{"Import Users From jabberd 1.4 Spool Files","Sititchî des uzeus Jabberd 1.4"}.
+{"Import Users From jabberd14 Spool Files","Sititchî des uzeus Jabberd 1.4"}.
 {"Improper message type","Sôre di messaedje nén valide"}.
 {"Incorrect password","Sicret nén corek"}.
 {"Invalid affiliation: ~s","Afiyaedje nén valide: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages to the conference","On n' pout nén evoyî des messaedjes privés dins cisse conferince ci"}.
 {"Jabber ID","ID Jabber"}.
 {"January","djanvî"}.
-{"JID ~s is invalid","Li JID ~s n' est nén valide"}.
+{"Jabber ID ~s is invalid","Li JID ~s n' est nén valide"}.
 {"joins the room","arive sol såle"}.
 {"July","djulete"}.
 {"June","djun"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Pôrt"}.
-{"Present real JIDs to","Mostrer les vraiys JIDs a"}.
+{"Present real Jabber IDs to","Mostrer les vraiys JIDs a"}.
 {"private, ","privé, "}.
 {"Publish-Subscribe","Eplaidaedje-abounmint"}.
 {"PubSub subscriber request","Dimande d' eplaidaedje-abounmint d' èn abouné"}.
@@ -307,7 +307,7 @@
 {"To ~s","Viè ~s"}.
 {"Traffic rate limit is exceeded","Li limite pol volume di trafik a stî passêye"}.
 {"Transactions Aborted:","Transaccions arestêyes:"}.
-{"Transactions Commited:","Transaccions evoyeyes:"}.
+{"Transactions Committed:","Transaccions evoyeyes:"}.
 {"Transactions Logged:","Transaccions wårdêyes e djournå:"}.
 {"Transactions Restarted:","Transaccions renondêyes:"}.
 {"Tuesday","mårdi"}.

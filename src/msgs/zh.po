@@ -225,7 +225,7 @@ msgid "Backup Management"
 msgstr "备份管理"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
+msgid "Import Users From jabberd14 Spool Files"
 msgstr "从Jabberd 1.4 Spool文件导入用户"
 
 #: mod_configure.erl:649
@@ -310,16 +310,16 @@ msgid "Import User from File at "
 msgstr "导入用户的文件位于 "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "请输入jabberd1.4 spool文件的路径"
+msgid "Enter path to jabberd14 spool file"
+msgstr "请输入jabberd14 spool文件的路径"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "导入用户的目录位于 "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "请输入jabberd1.4 spool目录的路径"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "请输入jabberd14 spool目录的路径"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -743,8 +743,8 @@ msgid "Moderator privileges required"
 msgstr "需要调解人权限"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s无效"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s无效"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -796,8 +796,8 @@ msgid "No limit"
 msgstr "不限"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "将真实JID显示给"
+msgid "Present real Jabber IDs to"
+msgstr "将真实Jabber ID显示给"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -937,8 +937,8 @@ msgid "Subscriber Address"
 msgstr "订阅人地址"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "允许该JID订阅该pubsub节点?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "允许该Jabber ID订阅该pubsub节点?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1416,7 +1416,7 @@ msgid "CPU Time:"
 msgstr "CPU时间："
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "提交的事务:"
 
 #: web/ejabberd_web_admin.erl:1877

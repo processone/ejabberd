@@ -224,8 +224,8 @@ msgid "Backup Management"
 msgstr "Gestió de còpia de seguretat"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Importar usuaris de jabberd 1.4"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importar usuaris de jabberd14"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -309,16 +309,16 @@ msgid "Import User from File at "
 msgstr "Importa usuari des de fitxer en "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Introdueix ruta al fitxer jabberd1.4 spool"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Introdueix ruta al fitxer jabberd14 spool"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importar usuaris des del directori en "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Introdueix la ruta al directori de jabberd1.4 spools"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Introdueix la ruta al directori de jabberd14 spools"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -757,8 +757,8 @@ msgid "Moderator privileges required"
 msgstr "Es necessita tenir privilegis de moderador"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "El JID ~s no és vàlid"
+msgid "Jabber ID ~s is invalid"
+msgstr "El Jabber ID ~s no és vàlid"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -810,8 +810,8 @@ msgid "No limit"
 msgstr "Sense Llímit"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Presentar JID's reals a"
+msgid "Present real Jabber IDs to"
+msgstr "Presentar Jabber ID's reals a"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -953,8 +953,8 @@ msgid "Subscriber Address"
 msgstr "Adreça del Subscriptor"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Permetre que aquesta JID es puga subscriure a aquest node pubsub"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Permetre que aquesta Jabber ID es puga subscriure a aquest node pubsub"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1437,7 +1437,7 @@ msgid "CPU Time:"
 msgstr "Temps de CPU"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transaccions Realitzades:"
 
 #: web/ejabberd_web_admin.erl:1877

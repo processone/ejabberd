@@ -544,7 +544,7 @@ get_local_items({global, _Host}, ["running nodes", ENode], Server, Lang) ->
      [?NODE("Database", "running nodes/" ++ ENode ++ "/DB"),
       ?NODE("Modules", "running nodes/" ++ ENode ++ "/modules"),
       ?NODE("Backup Management", "running nodes/" ++ ENode ++ "/backup"),
-      ?NODE("Import Users From jabberd 1.4 Spool Files",
+      ?NODE("Import Users From jabberd14 Spool Files",
 	    "running nodes/" ++ ENode ++ "/import"),
       ?NODE("Restart Service", "running nodes/" ++ ENode ++ "/restart"),
       ?NODE("Shut Down Service", "running nodes/" ++ ENode ++ "/shutdown")
@@ -994,7 +994,7 @@ get_form(_Host, ["running nodes", ENode, "import", "file"], Lang) ->
 	        {xmlelement, "instructions", [],
 	         [{xmlcdata,
 	           ?T(
-		      Lang, "Enter path to jabberd1.4 spool file")}]},
+		      Lang, "Enter path to jabberd14 spool file")}]},
 		?XFIELD("text-single", "Path to File", "path", "")
 	       ]}]};
 
@@ -1008,7 +1008,7 @@ get_form(_Host, ["running nodes", ENode, "import", "dir"], Lang) ->
 	        {xmlelement, "instructions", [],
 	         [{xmlcdata,
 	           ?T(
-		      Lang, "Enter path to jabberd1.4 spool dir")}]},
+		      Lang, "Enter path to jabberd14 spool dir")}]},
 		?XFIELD("text-single", "Path to Dir", "path", "")
 	       ]}]};
 

@@ -101,7 +101,7 @@ get_local_stats(_Server, ["running nodes", _], []) ->
      [?STAT("time/uptime"),
       ?STAT("time/cputime"),
       ?STAT("users/online"),
-      ?STAT("transactions/commited"),
+      ?STAT("transactions/committed"),
       ?STAT("transactions/aborted"),
       ?STAT("transactions/restarted"),
       ?STAT("transactions/logged")
@@ -200,7 +200,7 @@ get_node_stat(Node, Name) when Name == "users/online" ->
 	    ?STATVAL(integer_to_list(length(Users)), "users")
     end;
 
-get_node_stat(Node, Name) when Name == "transactions/commited" ->
+get_node_stat(Node, Name) when Name == "transactions/committed" ->
     case catch rpc:call(Node, mnesia, system_info, [transaction_commits]) of
 	{badrpc, _Reason} ->
 	    ?STATERR("500", "Internal Server Error");

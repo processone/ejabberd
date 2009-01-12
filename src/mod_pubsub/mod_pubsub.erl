@@ -1028,7 +1028,7 @@ send_authorization_request(Host, Node, Subscriber) ->
 		 {xmlelement, "field",
 		  [{"var", "pubsub#allow"},
 		   {"type", "boolean"},
-		   {"label", translate:translate(Lang, "Allow this JID to subscribe to this pubsub node?")}],
+		   {"label", translate:translate(Lang, "Allow this Jabber ID to subscribe to this pubsub node?")}],
 		  [{xmlelement, "value", [], [{xmlcdata, "false"}]}]}]}]},
     case tree_action(Host, get_node, [Host, Node, Subscriber]) of
 	#pubsub_node{owners = Owners} ->

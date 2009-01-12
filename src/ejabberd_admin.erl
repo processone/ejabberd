@@ -96,11 +96,11 @@ commands() ->
 			result = {users, {list, {username, string}}}},
 
      #ejabberd_commands{name = import_file, tags = [mnesia],
-			desc = "Import user data from jabberd-1.4 spool file",
+			desc = "Import user data from jabberd14 spool file",
 			module = ?MODULE, function = import_file,
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = import_dir, tags = [mnesia],
-			desc = "Import user data from jabberd-1.4 spool dir",
+			desc = "Import user data from jabberd14 spool dir",
 			module = ?MODULE, function = import_dir,
 			args = [{file, string}],
 			result = {res, restuple}},
@@ -215,7 +215,7 @@ import_file(Path) ->
         ok ->
             {ok, ""};
         {error, Reason} ->
-            String = io_lib:format("Can't import jabberd 1.4 spool file ~p at node ~p: ~p",
+            String = io_lib:format("Can't import jabberd14 spool file ~p at node ~p: ~p",
 				   [filename:absname(Path), node(), Reason]),
 	    {cannot_import_file, String}
     end.
@@ -225,7 +225,7 @@ import_dir(Path) ->
         ok ->
             {ok, ""};
         {error, Reason} ->
-            String = io_lib:format("Can't import jabberd 1.4 spool dir ~p at node ~p: ~p",
+            String = io_lib:format("Can't import jabberd14 spool dir ~p at node ~p: ~p",
 				   [filename:absname(Path), node(), Reason]),
 	    {cannot_import_dir, String}
     end.

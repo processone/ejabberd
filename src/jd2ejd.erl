@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : jd2ejd.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Import of jabberd1.4 user spool file
+%%% Purpose : Import of jabberd14 user spool file
 %%% Created :  2 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

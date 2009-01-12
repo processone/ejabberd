@@ -228,8 +228,8 @@ msgid "Backup Management"
 msgstr "Gestione dei salvataggi"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Importare utenti da file di spool di jabberd 1.4"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importare utenti da file di spool di jabberd14"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -313,16 +313,16 @@ msgid "Import User from File at "
 msgstr "Importare un utente dal file "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Immettere il percorso del file di spool di jabberd1.4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Immettere il percorso del file di spool di jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importare utenti dalla directory "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Immettere il percorso della directory di spool di jabberd1.4"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Immettere il percorso della directory di spool di jabberd14"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -354,7 +354,7 @@ msgstr "Regole di accesso"
 #: mod_configure.erl:1667 mod_roster.erl:803 mod_roster_odbc.erl:910
 #: mod_vcard.erl:460 mod_vcard_ldap.erl:544 mod_vcard_odbc.erl:457
 msgid "Jabber ID"
-msgstr "Jabber ID (JID)"
+msgstr "Jabber ID (Jabber ID)"
 
 #: mod_configure.erl:1156 mod_configure.erl:1214 mod_configure.erl:1600
 #: mod_configure.erl:1809 mod_muc/mod_muc_room.erl:2702
@@ -760,8 +760,8 @@ msgid "Moderator privileges required"
 msgstr "Necessari i privilegi di moderatore"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "Il JID ~s non è valido"
+msgid "Jabber ID ~s is invalid"
+msgstr "Il Jabber ID ~s non è valido"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -813,8 +813,8 @@ msgid "No limit"
 msgstr "Nessun limite"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Rendere visibile il JID reale a"
+msgid "Present real Jabber IDs to"
+msgstr "Rendere visibile il Jabber ID reale a"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -959,8 +959,8 @@ msgid "Subscriber Address"
 msgstr "Indirizzo dell'iscritta/o"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Consentire a questo JID l'iscrizione a questo nodo pubsub?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Consentire a questo Jabber ID l'iscrizione a questo nodo pubsub?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1074,7 +1074,7 @@ msgstr "Formato non valido"
 
 #: mod_roster.erl:855 mod_roster_odbc.erl:962
 msgid "Add Jabber ID"
-msgstr "Aggiungere un Jabber ID (JID)"
+msgstr "Aggiungere un Jabber ID (Jabber ID)"
 
 #: mod_roster.erl:936 mod_roster_odbc.erl:1043
 msgid "Roster"
@@ -1446,7 +1446,7 @@ msgid "CPU Time:"
 msgstr "Tempo CPU:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transazioni avvenute:"
 
 #: web/ejabberd_web_admin.erl:1877

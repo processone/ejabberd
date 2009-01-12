@@ -224,7 +224,7 @@ msgid "Backup Management"
 msgstr "Xestión de copia de seguridade"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
+msgid "Import Users From jabberd14 Spool Files"
 msgstr "Importar usuarios de ficheiros spool de jabberd-1.4"
 
 #: mod_configure.erl:649
@@ -309,16 +309,16 @@ msgid "Import User from File at "
 msgstr "Importa usuario desde ficheiro en "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Introduce ruta ao ficheiro jabberd1.4 spool"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Introduce ruta ao ficheiro jabberd14 spool"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importar usuarios desde o directorio en "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Introduce a ruta ao directorio de jabberd1.4 spools"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Introduce a ruta ao directorio de jabberd14 spools"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -756,8 +756,8 @@ msgid "Moderator privileges required"
 msgstr "Necesítase privilexios de moderador"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "O JID ~s non é válido"
+msgid "Jabber ID ~s is invalid"
+msgstr "O Jabber ID ~s non é válido"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -809,8 +809,8 @@ msgid "No limit"
 msgstr "Sen límite"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Os JID reais poden velos"
+msgid "Present real Jabber IDs to"
+msgstr "Os Jabber ID reais poden velos"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -954,7 +954,7 @@ msgid "Subscriber Address"
 msgstr "Dirección do subscriptor"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Desexas permitir a este JabberID que se subscriba a este nodo PubSub?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
@@ -1440,7 +1440,7 @@ msgid "CPU Time:"
 msgstr "Tempo consumido de CPU:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transaccións finalizadas:"
 
 #: web/ejabberd_web_admin.erl:1877

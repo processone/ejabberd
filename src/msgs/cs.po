@@ -224,8 +224,8 @@ msgid "Backup Management"
 msgstr "Správa zálohování"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Importovat uživatele z jabberd 1.4 spool souborů"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importovat uživatele z jabberd14 spool souborů"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -309,16 +309,16 @@ msgid "Import User from File at "
 msgstr "Importovat uživatele ze souboru na "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Zadejte cestu k spool souboru jabberd1.4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Zadejte cestu k spool souboru jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importovat uživatele z adresáře na "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Zadejte cestu k jabberd1.4 spool adresáři"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Zadejte cestu k jabberd14 spool adresáři"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -749,8 +749,8 @@ msgid "Moderator privileges required"
 msgstr "Jsou potřebná práva moderátora"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s je neplatné"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s je neplatné"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -802,7 +802,7 @@ msgid "No limit"
 msgstr "Bez limitu"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
+msgid "Present real Jabber IDs to"
 msgstr "Odhalovat skutečná Jabber ID"
 
 #: mod_muc/mod_muc_room.erl:2741
@@ -943,8 +943,8 @@ msgid "Subscriber Address"
 msgstr "Adresa odběratele"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Povolit tomuto JID odebírat tento pubsub uzel?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Povolit tomuto Jabber ID odebírat tento pubsub uzel?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1056,7 +1056,7 @@ msgstr "Nesprávný formát"
 
 #: mod_roster.erl:855 mod_roster_odbc.erl:962
 msgid "Add Jabber ID"
-msgstr "Přidat JID"
+msgstr "Přidat Jabber ID"
 
 #: mod_roster.erl:936 mod_roster_odbc.erl:1043
 msgid "Roster"
@@ -1427,7 +1427,7 @@ msgid "CPU Time:"
 msgstr "Čas procesoru"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transakce potvrzena"
 
 #: web/ejabberd_web_admin.erl:1877

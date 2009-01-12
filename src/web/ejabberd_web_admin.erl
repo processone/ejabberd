@@ -1856,7 +1856,7 @@ get_node(global, Node, ["stats"], _Query, Lang) ->
     CPUTime = rpc:call(Node, erlang, statistics, [runtime]),
     CPUTimeS = io_lib:format("~.3f", [element(1, CPUTime)/1000]),
     OnlineUsers = mnesia:table_info(session, size),
-    TransactionsCommited =
+    TransactionsCommitted =
 	rpc:call(Node, mnesia, system_info, [transaction_commits]),
     TransactionsAborted =
 	rpc:call(Node, mnesia, system_info, [transaction_failures]),
@@ -1877,9 +1877,9 @@ get_node(global, Node, ["stats"], _Query, Lang) ->
 		?XE("tr", [?XCT("td", "Online Users:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				integer_to_list(OnlineUsers))]),
-		?XE("tr", [?XCT("td", "Transactions Commited:"),
+		?XE("tr", [?XCT("td", "Transactions Committed:"),
 			   ?XAC("td", [{"class", "alignright"}],
-				integer_to_list(TransactionsCommited))]),
+				integer_to_list(TransactionsCommitted))]),
 		?XE("tr", [?XCT("td", "Transactions Aborted:"),
 			   ?XAC("td", [{"class", "alignright"}],
 				integer_to_list(TransactionsAborted))]),

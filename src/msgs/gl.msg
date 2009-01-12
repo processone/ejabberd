@@ -13,7 +13,7 @@
 {"Administration of ","Administración de "}.
 {"Administrator privileges required","Necesítase privilexios de administrador"}.
 {"All activity","Toda a actividade"}.
-{"Allow this JID to subscribe to this pubsub node?","Desexas permitir a este JabberID que se subscriba a este nodo PubSub?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Desexas permitir a este JabberID que se subscriba a este nodo PubSub?"}.
 {"Allow users to change subject","Permitir aos usuarios cambiar o asunto"}.
 {"Allow users to query other users","Permitir aos usuarios consultar a outros usuarios"}.
 {"Allow users to send invites","Permitir aos usuarios enviar invitacións"}.
@@ -77,8 +77,8 @@
 {"Enter list of {Module, [Options]}","Introduce lista de {módulo, [opcións]}"}.
 {"Enter nickname you want to register","Introduce o alcume que queiras rexistrar"}.
 {"Enter path to backup file","Introduce ruta ao ficheiro de copia de seguridade"}.
-{"Enter path to jabberd1.4 spool dir","Introduce a ruta ao directorio de jabberd1.4 spools"}.
-{"Enter path to jabberd1.4 spool file","Introduce ruta ao ficheiro jabberd1.4 spool"}.
+{"Enter path to jabberd14 spool dir","Introduce a ruta ao directorio de jabberd14 spools"}.
+{"Enter path to jabberd14 spool file","Introduce ruta ao ficheiro jabberd14 spool"}.
 {"Enter path to text file","Introduce ruta ao ficheiro de texto"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Introduce o nome de usuario e codificaciones de carácteres que queiras usar ao conectar nos servidores de IRC"}.
 {"Erlang Jabber Server","Servidor Jabber en Erlang"}.
@@ -110,7 +110,7 @@
 {"Import File","Importar ficheiro"}.
 {"Import User from File at ","Importa usuario desde ficheiro en "}.
 {"Import Users from Dir at ","Importar usuarios desde o directorio en "}.
-{"Import Users From jabberd 1.4 Spool Files","Importar usuarios de ficheiros spool de jabberd-1.4"}.
+{"Import Users From jabberd14 Spool Files","Importar usuarios de ficheiros spool de jabberd-1.4"}.
 {"Improper message type","Tipo de mensaxe incorrecta"}.
 {"Incorrect password","Contraseña incorrecta"}.
 {"Invalid affiliation: ~s","Afiliación non válida: ~s"}.
@@ -123,7 +123,7 @@
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensaxes privadas á sala"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Xaneiro"}.
-{"JID ~s is invalid","O JID ~s non é válido"}.
+{"Jabber ID ~s is invalid","O JID ~s non é válido"}.
 {"joins the room","entra en la sala"}.
 {"July","Xullo"}.
 {"June","Xuño"}.
@@ -215,7 +215,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Porto"}.
-{"Present real JIDs to","Os JID reais poden velos"}.
+{"Present real Jabber IDs to","Os JID reais poden velos"}.
 {"private, ","privado"}.
 {"Publish-Subscribe","Publicar-Subscribir"}.
 {"PubSub subscriber request","Petición de subscriptor de PubSub"}.
@@ -303,7 +303,7 @@
 {"To ~s","A ~s"}.
 {"Traffic rate limit is exceeded","Hase exedido o límite de tráfico"}.
 {"Transactions Aborted:","Transaccións abortadas:"}.
-{"Transactions Commited:","Transaccións finalizadas:"}.
+{"Transactions Committed:","Transaccións finalizadas:"}.
 {"Transactions Logged:","Transaccións rexistradas:"}.
 {"Transactions Restarted:","Transaccións reiniciadas:"}.
 {"Tuesday","Martes"}.

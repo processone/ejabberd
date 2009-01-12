@@ -226,8 +226,8 @@ msgid "Backup Management"
 msgstr "Backup"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Importeer gebruikers via spool-bestanden van jabberd 1.4"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importeer gebruikers via spool-bestanden van jabberd14"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -311,16 +311,16 @@ msgid "Import User from File at "
 msgstr "Importeer gebruiker via bestand op "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Voer pad naar jabberd 1.4-spool-bestand in"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Voer pad naar jabberd14-spool-bestand in"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Gebruikers importeren vanaf directory op "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Voer pad naar jabberd 1.4-spool-directory in"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Voer pad naar jabberd14-spool-directory in"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -766,7 +766,7 @@ msgid "Moderator privileges required"
 msgstr "U hebt moderatorprivileges nodig"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
+msgid "Jabber ID ~s is invalid"
 msgstr "De Jabber ID ~s is ongeldig"
 
 #: mod_muc/mod_muc_room.erl:2212
@@ -819,7 +819,7 @@ msgid "No limit"
 msgstr "Geen limiet"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
+msgid "Present real Jabber IDs to"
 msgstr "Jabber ID's kunnen achterhaald worden door"
 
 #: mod_muc/mod_muc_room.erl:2741
@@ -964,7 +964,7 @@ msgid "Subscriber Address"
 msgstr "Abonnee Adres"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Deze gebruiker toestaan te abonneren op deze pubsub node?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
@@ -1448,7 +1448,7 @@ msgid "CPU Time:"
 msgstr "Processortijd:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Bevestigde transacties:"
 
 #: web/ejabberd_web_admin.erl:1877

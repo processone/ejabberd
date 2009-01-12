@@ -14,7 +14,7 @@
 {"Administrator privileges required","Administrantaj rajtoj bezonata"}.
 {"A friendly name for the node","Kromnomo por ĉi tiu nodo"}.
 {"All activity","Ĉiu aktiveco"}.
-{"Allow this JID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun JID aboni al la jena PubAbo-nodo"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun JID aboni al la jena PubAbo-nodo"}.
 {"Allow users to change subject","Permesu uzantojn ŝanĝi la temon"}.
 {"Allow users to query other users","Permesu uzantojn informpeti aliajn uzantojn"}.
 {"Allow users to send invites","Permesu uzantojn sendi invitojn"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Enmetu liston de {Modulo, [Elektebloj]}"}.
 {"Enter nickname you want to register","Enmetu kaŝnomon kiun vi volas registri"}.
 {"Enter path to backup file","Enmetu vojon por sekurkopio"}.
-{"Enter path to jabberd1.4 spool dir","Enmetu vojon al jabberd1.4-uzantdosierujo"}.
-{"Enter path to jabberd1.4 spool file","Enmetu vojon al jabberd1.4-uzantdosiero"}.
+{"Enter path to jabberd14 spool dir","Enmetu vojon al jabberd14-uzantdosierujo"}.
+{"Enter path to jabberd14 spool file","Enmetu vojon al jabberd14-uzantdosiero"}.
 {"Enter path to text file","Enmetu vojon al plata teksto"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Enmetu uzantnomon kaj enkodigoj kiujn vi volas uzi por konektoj al IRC-serviloj"}.
 {"Erlang Jabber Server","Erlang-a Jabber-Servilo"}.
@@ -113,7 +113,7 @@
 {"Import File","Importu dosieron"}.
 {"Import User from File at ","Importu uzanton de dosiero el "}.
 {"Import Users from Dir at ","Importu uzantojn de dosierujo ĉe "}.
-{"Import Users From jabberd 1.4 Spool Files","Importu uzantojn de jabberd1.4-uzantdosieroj"}.
+{"Import Users From jabberd14 Spool Files","Importu uzantojn de jabberd14-uzantdosieroj"}.
 {"Improper message type","Malĝusta mesaĝo-tipo"}.
 {"Incorrect password","Nekorekta pasvorto"}.
 {"Invalid affiliation: ~s","Nevalida aparteneco: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages to the conference","Nur partoprenantoj rajtas sendi privatajn mesaĝojn al la babilejo"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januaro"}.
-{"JID ~s is invalid","JID ~s estas nevalida"}.
+{"Jabber ID ~s is invalid","JID ~s estas nevalida"}.
 {"joins the room","eniras la babilejo"}.
 {"July","Julio"}.
 {"June","Junio"}.
@@ -219,7 +219,7 @@
 {"Ping","Sondaĵo"}.
 {"Pong","Resondaĵo"}.
 {"Port","Pordo"}.
-{"Present real JIDs to","Montru verajn JID-ojn al"}.
+{"Present real Jabber IDs to","Montru verajn JID-ojn al"}.
 {"private, ","privata, "}.
 {"Publish-Subscribe","Public-Abonado"}.
 {"PubSub subscriber request","PubAbo abonpeto"}.
@@ -307,7 +307,7 @@
 {"To ~s","Al ~s"}.
 {"Traffic rate limit is exceeded","Trafikrapida limigo superita"}.
 {"Transactions Aborted:","Transakcioj nuligitaj"}.
-{"Transactions Commited:","Transakcioj enmetitaj"}.
+{"Transactions Committed:","Transakcioj enmetitaj"}.
 {"Transactions Logged:","Transakcioj protokolitaj"}.
 {"Transactions Restarted:","Transakcioj restartitaj"}.
 {"Tuesday","Mardo"}.

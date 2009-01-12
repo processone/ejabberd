@@ -223,8 +223,8 @@ msgid "Backup Management"
 msgstr "การจัดการข้อมูลสำรอง"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "อิมพอร์ตผู้ใช้จากไฟล์เก็บพักข้อมูล jabberd 1.4"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "อิมพอร์ตผู้ใช้จากไฟล์เก็บพักข้อมูล jabberd14"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -308,16 +308,16 @@ msgid "Import User from File at "
 msgstr "อิมพอร์ตผู้ใช้จากไฟล์ที่"
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "ป้อนพาธไปยังไฟล์เก็บพักข้อมูล jabberd 1.4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "ป้อนพาธไปยังไฟล์เก็บพักข้อมูล jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "อิมพอร์ตผู้ใช้จาก Dir ที่"
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "ป้อนพาธไปยัง jabberd 1.4 spool dir"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "ป้อนพาธไปยัง jabberd14 spool dir"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -744,8 +744,8 @@ msgid "Moderator privileges required"
 msgstr "ต้องมีสิทธิพิเศษของผู้ดูแลการสนทนา"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s ไม่ถูกต้อง"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s ไม่ถูกต้อง"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -797,8 +797,8 @@ msgid "No limit"
 msgstr "ไม่จำกัด"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "แสดง JIDs ที่ถูกต้องแก่"
+msgid "Present real Jabber IDs to"
+msgstr "แสดง Jabber IDs ที่ถูกต้องแก่"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -941,8 +941,8 @@ msgid "Subscriber Address"
 msgstr "ที่อยู่ของผู้สมัคร"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "อนุญาตให้ JID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "อนุญาตให้ Jabber ID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1425,7 +1425,7 @@ msgid "CPU Time:"
 msgstr "เวลาการทำงานของ CPU:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "ทรานแซกชันที่ได้รับมอบหมาย:"
 
 #: web/ejabberd_web_admin.erl:1877

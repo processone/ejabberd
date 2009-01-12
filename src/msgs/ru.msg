@@ -14,7 +14,7 @@
 {"Administrator privileges required","Требуются права администратора"}.
 {"A friendly name for the node","Легко запоминаемое имя для узла"}.
 {"All activity","Вся статистика"}.
-{"Allow this JID to subscribe to this pubsub node?","Разрешить этому JID подписаться на данный узел?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Разрешить этому JID подписаться на данный узел?"}.
 {"Allow users to change subject","Разрешить пользователям изменять тему"}.
 {"Allow users to query other users","Разрешить iq-запросы к пользователям"}.
 {"Allow users to send invites","Разрешить пользователям посылать приглашения"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Введите список вида {Module, [Options]}"}.
 {"Enter nickname you want to register","Введите псевдоним, который Вы хотели бы зарегистрировать"}.
 {"Enter path to backup file","Введите путь к резервному файлу"}.
-{"Enter path to jabberd1.4 spool dir","Введите путь к директории спула jabberd1.4"}.
-{"Enter path to jabberd1.4 spool file","Введите путь к файлу из спула jabberd1.4"}.
+{"Enter path to jabberd14 spool dir","Введите путь к директории спула jabberd14"}.
+{"Enter path to jabberd14 spool file","Введите путь к файлу из спула jabberd14"}.
 {"Enter path to text file","Введите путь к текстовому файлу"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Введите имя пользователя и кодировки, которые будут использоваться при подключении к IRC-серверам"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -113,7 +113,7 @@
 {"Import File","Импорт из файла"}.
 {"Import User from File at ","Импорт пользователя из файла на "}.
 {"Import Users from Dir at ","Импорт пользователей из директории на "}.
-{"Import Users From jabberd 1.4 Spool Files","Импорт пользователей из спула jabberd 1.4"}.
+{"Import Users From jabberd14 Spool Files","Импорт пользователей из спула jabberd14"}.
 {"Improper message type","Неправильный тип сообщения"}.
 {"Incorrect password","Неправильный пароль"}.
 {"Invalid affiliation: ~s","Недопустимый ранг: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages","Запрещено посылать приватные сообщения"}.
 {"Jabber ID","Jabber ID"}.
 {"January","января"}.
-{"JID ~s is invalid","JID ~s недопустимый"}.
+{"Jabber ID ~s is invalid","JID ~s недопустимый"}.
 {"joins the room","вошёл(а) в комнату"}.
 {"July","июля"}.
 {"June","июня"}.
@@ -219,7 +219,7 @@
 {"Ping","Пинг"}.
 {"Pong","Понг"}.
 {"Port","Порт"}.
-{"Present real JIDs to","Сделать реальные JID участников видимыми"}.
+{"Present real Jabber IDs to","Сделать реальные JID участников видимыми"}.
 {"private, ","приватная, "}.
 {"Publish-Subscribe","Публикация-Подписка"}.
 {"PubSub subscriber request","Запрос подписчика PubSub"}.
@@ -307,7 +307,7 @@
 {"To","Кому"}.
 {"Traffic rate limit is exceeded","Превышен лимит скорости посылки информации"}.
 {"Transactions Aborted:","Транзакции отмененные:"}.
-{"Transactions Commited:","Транзакции завершенные:"}.
+{"Transactions Committed:","Транзакции завершенные:"}.
 {"Transactions Logged:","Транзакции запротоколированные:"}.
 {"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.

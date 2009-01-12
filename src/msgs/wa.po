@@ -224,7 +224,7 @@ msgid "Backup Management"
 msgstr "Manaedjaedje des copeyes di såvrité"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
+msgid "Import Users From jabberd14 Spool Files"
 msgstr "Sititchî des uzeus Jabberd 1.4"
 
 #: mod_configure.erl:649
@@ -309,16 +309,16 @@ msgid "Import User from File at "
 msgstr "Sititchî uzeu d' on fitchî so "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Dinez l' tchimin viè l' fitchî di spool jabberd1.4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Dinez l' tchimin viè l' fitchî di spool jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Sitichî des uzeus d' on ridant so "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Dinez l' tchimin viè l' ridant di spool jabberd1.4"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Dinez l' tchimin viè l' ridant di spool jabberd14"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -760,8 +760,8 @@ msgid "Moderator privileges required"
 msgstr "I fåt des priviledjes di moderateu"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "Li JID ~s n' est nén valide"
+msgid "Jabber ID ~s is invalid"
+msgstr "Li Jabber ID ~s n' est nén valide"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -813,8 +813,8 @@ msgid "No limit"
 msgstr "Pont d' limite"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Mostrer les vraiys JIDs a"
+msgid "Present real Jabber IDs to"
+msgstr "Mostrer les vraiys Jabber IDs a"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -958,9 +958,9 @@ msgid "Subscriber Address"
 msgstr "Adresse di l' abouné"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr ""
-"Permete ki ci JID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"
+"Permete ki ci Jabber ID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1445,7 +1445,7 @@ msgid "CPU Time:"
 msgstr "Tins CPU:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transaccions evoyeyes:"
 
 #: web/ejabberd_web_admin.erl:1877

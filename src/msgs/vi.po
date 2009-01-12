@@ -226,8 +226,8 @@ msgid "Backup Management"
 msgstr "Quản lý Sao Lưu Dự Phòng"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Nhập Người Sử Dụng Từ Các Tập Tin Spool jabberd 1,4"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Nhập Người Sử Dụng Từ Các Tập Tin Spool jabberd14"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -311,16 +311,16 @@ msgid "Import User from File at "
 msgstr "Nhập Người Sử Dụng từ Tập Tin tại"
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Nhập đường dẫn đến tập tin spool jabberd1,4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Nhập đường dẫn đến tập tin spool jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Nhập Người Sử Dụng từ Thư Mục tại"
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Nhập đường dẫn đến thư mục spool jabberd1,4"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Nhập đường dẫn đến thư mục spool jabberd14"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -757,8 +757,8 @@ msgid "Moderator privileges required"
 msgstr "Yêu cầu đặc quyền của nhà điều phối"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s không hợp lệ"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s không hợp lệ"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -810,8 +810,8 @@ msgid "No limit"
 msgstr "Không giới hạn"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "JID thực tế hiện hành đến"
+msgid "Present real Jabber IDs to"
+msgstr "Jabber ID thực tế hiện hành đến"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -957,8 +957,8 @@ msgid "Subscriber Address"
 msgstr "Địa Chỉ Người Đăng Ký"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Cho phép JID đăng ký nút môđun xuất bản đăng ký này không?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Cho phép Jabber ID đăng ký nút môđun xuất bản đăng ký này không?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1446,7 +1446,7 @@ msgid "CPU Time:"
 msgstr "Thời Gian CPU:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Giao Dịch Được Cam Kết:"
 
 #: web/ejabberd_web_admin.erl:1877

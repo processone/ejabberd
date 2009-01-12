@@ -1004,8 +1004,8 @@ In this example, the following configuration defines that:
 {{s2s_host,"jabber.example.org"}, allow}.
 {{s2s_host,"example.com"}, allow}.
 \end{verbatim}
-Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based
-services you have to make the transports log and do \ind{XDB}XDB by themselves:
+Note, that for services based in \ind{jabberd14}jabberd14 or \ind{WPJabber}WPJabber
+you have to make the transports log and do \ind{XDB}XDB by themselves:
 \begin{verbatim}
   <!--
      You have to add elogger and rlogger entries here when using ejabberd.
@@ -1028,7 +1028,7 @@ services you have to make the transports log and do \ind{XDB}XDB by themselves:
   <xdb id="xdb">
     <host/>
     <load>
-      <!-- this is a lib of wpjabber or jabberd -->
+      <!-- this is a lib of wpjabber or jabberd14 -->
       <xdb_file>/usr/lib/jabber/xdb_file.so</xdb_file>
       </load>
     <xdb_file xmlns="jabber:config:xdb_file">

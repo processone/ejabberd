@@ -6,7 +6,7 @@
 {"Access rules","Prístupové pravidlá"}.
 {"Access Rules","Prístupové pravidlá"}.
 {"Action on user","Operácia aplikovaná na užívateľa"}.
-{"Add Jabber ID","Pridať JID"}.
+{"Add Jabber ID","Pridať Jabber ID"}.
 {"Add New","Pridať nový"}.
 {"Add User","Pridať používateľa"}.
 {"Administration","Administrácia"}.
@@ -14,7 +14,7 @@
 {"Administrator privileges required","Sú potrebné práva administrátora"}.
 {"A friendly name for the node","Prístupný názov pre uzol"}.
 {"All activity","Všetky aktivity"}.
-{"Allow this JID to subscribe to this pubsub node?","Dovoliť tomuto JID odoberať PubSub uzol?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Dovoliť tomuto JID odoberať PubSub uzol?"}.
 {"Allow users to change subject","Povoliť užívateľom zmeniť tému tejto miestnosti"}.
 {"Allow users to query other users","Povoliť užívateľom dotazovať sa informácie o iných užívateľoch"}.
 {"Allow users to send invites","Povoliť používateľom posielanie pozvánok"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Vložte zoznam modulov {Modul, [Parametre]}"}.
 {"Enter nickname you want to register","Zadajte prezývku, ktorú chcete registrovať"}.
 {"Enter path to backup file","Zadajte cestu k súboru so zálohou"}.
-{"Enter path to jabberd1.4 spool dir","Zadajte cestu k jabberd1.4 spool adresáru"}.
-{"Enter path to jabberd1.4 spool file","Zadajte cestu k spool súboru jabberd1.4"}.
+{"Enter path to jabberd14 spool dir","Zadajte cestu k jabberd14 spool adresáru"}.
+{"Enter path to jabberd14 spool file","Zadajte cestu k spool súboru jabberd14"}.
 {"Enter path to text file","Zadajte cestu k textovému súboru"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na IRC server"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -113,7 +113,7 @@
 {"Import File","Import súboru"}.
 {"Import User from File at ","Importovať užívateľa zo súboru na "}.
 {"Import Users from Dir at ","Importovať užívateľov z adresára na "}.
-{"Import Users From jabberd 1.4 Spool Files","Importovať užívateľov z jabberd 1.4 spool súborov"}.
+{"Import Users From jabberd14 Spool Files","Importovať užívateľov z jabberd14 spool súborov"}.
 {"Improper message type","Nesprávny typ správy"}.
 {"Incorrect password","Nesprávne heslo"}.
 {"Invalid affiliation: ~s","Neplatné priradenie: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages to the conference","Nie je povolené odosielať súkromné správy do konferencie"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Január"}.
-{"JID ~s is invalid","JID ~s je neplatné"}.
+{"Jabber ID ~s is invalid","JID ~s je neplatné"}.
 {"joins the room","vstúpil(a) do miestnosti"}.
 {"July","Júl"}.
 {"June","Jún"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real JIDs to","Zobrazovať skutočné JID"}.
+{"Present real Jabber IDs to","Zobrazovať skutočné JID"}.
 {"private, ","súkromná, "}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","Žiadosť odberateľa PubSub"}.
@@ -307,7 +307,7 @@
 {"To ~s","Pre ~s"}.
 {"Traffic rate limit is exceeded","Bol prekročený prenosový limit"}.
 {"Transactions Aborted:","Transakcie zrušená"}.
-{"Transactions Commited:","Transakcie potvrdená"}.
+{"Transactions Committed:","Transakcie potvrdená"}.
 {"Transactions Logged:","Transakcie zaznamenaná"}.
 {"Transactions Restarted:","Transakcie reštartovaná"}.
 {"Tuesday","Utorok"}.
