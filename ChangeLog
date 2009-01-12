@@ -1,6 +1,8 @@
 2009-01-11	Pablo Polvorin	<pablo.polvorin@process-one.net>
 
-	* src/mod_pubsub/mod_pubsub.erl: Fix typo.
+	* src/mod_pubsub/mod_pubsub.erl: Fix typo, initial update
+	to new hooks API (using binaries). mod_pubsub is still
+	unusable with exmpp.
 
 	* src/mod_caps.erl, src/ejabberd_c2s.erl: Apply commit
 	1212 (caps handling fix), was incorrectly overwritten on 
