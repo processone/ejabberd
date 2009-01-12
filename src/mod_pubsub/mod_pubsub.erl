@@ -1896,7 +1896,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 	error ->
 	    {error, 'bad-request'};
 	_ ->
-	    Action = fun(#pubsub_node{type = Type, owners = Owners}) ->
+	    Action = fun(#pubsub_node{type = Type, owners = Owners}=N) ->
 			case lists:member(Owner, Owners) of
 			    true ->
 				lists:foreach(
@@ -1908,7 +1908,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 						NewOwners = [NewOwner|Owners],
 						tree_call(Host, set_node, [N#pubsub_node{owners = NewOwners}]);
 					    none ->
-						NewOwner = jlib:short_prepd_bare_jid(JID),
+						OldOwner = jlib:short_prepd_bare_jid(JID),
 						case lists:member(OldOwner, Owners) of
 						    true ->
 							NewOwners = Owners--[OldOwner],

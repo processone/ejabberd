@@ -1,3 +1,7 @@
+2009-01-11	Pablo Polvorin	<pablo.polvorin@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix typo.
+
 2009-01-11  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix owners cache and fix unsubscribe
