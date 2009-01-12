@@ -96,9 +96,9 @@ get_caps({U, S, R}) ->
     end.
 
 %% clear_caps removes user caps from database
-clear_caps({U, S, R}) ->
-    BJID = exmpp_jid:jid_to_binary(U, S, R),
-    BUID = exmpp_jid:jid_to_binary(U, S),
+clear_caps(JID) ->
+    BJID = exmpp_jid:jid_to_binary(JID),
+    BUID = exmpp_jid:bare_jid_to_binary(JID),
     catch mnesia:dirty_delete({user_caps, BJID}),
     case catch mnesia:dirty_read({user_caps_default, BUID}) of
 	[#user_caps_default{resource=R}] ->

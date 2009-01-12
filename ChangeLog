@@ -2,6 +2,10 @@
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix typo.
 
+	* src/mod_caps.erl, src/ejabberd_c2s.erl: Apply commit
+	1212 (caps handling fix), was incorrectly overwritten on 
+	1770.
+
 2009-01-11  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix owners cache and fix unsubscribe
