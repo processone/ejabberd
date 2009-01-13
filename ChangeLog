@@ -1,3 +1,7 @@
+2009-01-13  Badlop  <badlop@process-one.net>
+
+	* doc/release_notes_2.0.3.txt: Minor changes
+
 2009-01-13  Mickael Remond  <mremond@process-one.net>
 
 	* src/tls/Makefile.win32: Windows compilation support.
