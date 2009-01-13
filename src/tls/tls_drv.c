@@ -25,9 +25,7 @@
 #include <openssl/err.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <stdint.h>
-
 
 #define BUF_SIZE 1024
 
