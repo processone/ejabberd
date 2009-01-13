@@ -1,3 +1,12 @@
+2009-01-13  Mickael Remond  <mremond@process-one.net>
+
+	* src/tls/Makefile.win32: Windows compilation support.
+	* src/tls/tls_drv.c: Likewise.
+	* src/tls/stdint.h: Likewise.
+
+	* doc/guide.tex: Update Erlang version in Windows compilation
+	documentation.
+
 2009-01-13  Badlop  <badlop@process-one.net>
 
 	* src/msgs/pl.po: Fix typo (thanks to Apag0r)(EJAB-844)
