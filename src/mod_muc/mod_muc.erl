@@ -529,8 +529,7 @@ iq_disco_items(Host, From, Lang) when is_binary(Host) ->
                   #xmlel{name = 'item',
                          attrs = [#xmlattr{name = 'jid', 
                                           value = exmpp_jid:jid_to_binary(Name,
-                                                                        Host,
-                                                                        <<>>)},
+                                                                        Host)},
                                  #xmlattr{name = 'name',
                                           value = Desc}]}};
 			 _ ->
