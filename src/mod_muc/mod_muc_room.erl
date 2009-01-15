@@ -117,7 +117,9 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
+init([HostB, ServerHost, Access, RoomB, HistorySize, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
+    Host = binary_to_list(HostB),
+    Room = binary_to_list(RoomB),
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_affiliation(Creator, owner,
@@ -133,7 +135,9 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
 	      [Room, Host, exmpp_jid:jid_to_list(Creator)]),
     {ok, normal_state, State1};
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
+init([HostB, ServerHost, Access, RoomB, HistorySize, RoomShaper, Opts]) ->
+    Host = binary_to_list(HostB),
+    Room = binary_to_list(RoomB),
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_opts(Opts, #state{host = Host,
@@ -166,7 +170,7 @@ normal_state({route, From, undefined,
 			trunc(gen_mod:get_module_opt(
 				StateData#state.server_host,
 				mod_muc, min_message_interval, 0) * 1000000),
-		    Size = lists:flatlength(exmpp_xml:document_to_list(Packet)),
+		    Size = erlang:iolist_size(exmpp_xml:document_to_binary(Packet)),
 		    {MessageShaper, MessageShaperInterval} =
 			shaper:update(Activity#activity.message_shaper, Size),
 		    if
@@ -720,7 +724,7 @@ terminate(_Reason, _StateName, StateData) ->
        fun(J, _, _) ->
 	       tab_remove_online_user(J, StateData)
        end, [], StateData#state.users),
-    mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
+    mod_muc:room_destroyed(list_to_binary(StateData#state.host), list_to_binary(StateData#state.room), self(),
 			   StateData#state.server_host),
     ok.
 
@@ -892,7 +896,7 @@ process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 			    true ->
 				case {is_nick_exists(Nick, StateData),
 				      mod_muc:can_use_nick(
-					StateData#state.host, From, Nick),
+					list_to_binary(StateData#state.host), From, Nick),
 				      {(StateData#state.config)#config.allow_visitor_nickchange,
 					is_visitor(From, StateData)}} of
 				    {_, _, {false, true}} ->
@@ -1323,7 +1327,7 @@ prepare_room_queue(StateData) ->
 	{{value, {message, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    Packet = Activity#activity.message,
-	    Size = lists:flatlength(exmpp_xml:documenent_to_list(Packet)),
+	    Size = erlang:iolist_size(exmpp_xml:documenent_to_iolist(Packet)),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1334,7 +1338,7 @@ prepare_room_queue(StateData) ->
 	{{value, {presence, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    {_Nick, Packet} = Activity#activity.presence,
-	    Size = lists:flatlength(exmpp_xml:document_to_list(Packet)),
+	    Size = erlang:iolist_size(exmpp_xml:document_to_iolist(Packet)),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1461,7 +1465,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	   NUsers < MaxUsers) andalso
 	  NConferences < MaxConferences,
 	  is_nick_exists(Nick, StateData),
-	  mod_muc:can_use_nick(StateData#state.host, From, Nick),
+	  mod_muc:can_use_nick(list_to_binary(StateData#state.host), From, Nick),
 	  get_default_role(Affiliation, StateData)} of
 	{false, _, _, _} ->
 	    % max user reached and user is not admin or owner
@@ -1766,7 +1770,7 @@ send_new_presence(NJID, Reason, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(RealJID)},
+			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(RealJID)},
 			   #xmlattr{name = 'affiliation', value = SAffiliation},
 			   #xmlattr{name = 'role', value = SRole}];
 		      _ ->
@@ -1822,7 +1826,7 @@ send_existing_presences(ToJID, StateData) ->
 			      ((StateData#state.config)#config.anonymous ==
 			       false) of
 			      true ->
-				  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(FromJID)},
+				  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(FromJID)},
 				   #xmlattr{name = 'affiliation', 
                            value = affiliation_to_binary(FromAffiliation)},
 				   #xmlattr{name = 'role', value = role_to_binary(FromRole)}];
@@ -1879,7 +1883,7 @@ send_nick_changing(JID, OldNick, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(RealJID)},
+			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(RealJID)},
 			   #xmlattr{name = 'affiliation', value = SAffiliation},
 			   #xmlattr{name = 'role', value = SRole},
 			   #xmlattr{name = 'nick', value = Nick}];
@@ -1892,7 +1896,7 @@ send_nick_changing(JID, OldNick, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(RealJID)},
+			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(RealJID)},
 			   #xmlattr{name = 'affiliation', value = SAffiliation},
 			   #xmlattr{name = 'role', value = SRole}];
 		      _ ->
@@ -1902,7 +1906,7 @@ send_nick_changing(JID, OldNick, StateData) ->
 	      Packet1 =
                #xmlel{ns = ?NS_JABBER_CLIENT,
                     name = 'presence', 
-                    attrs = [#xmlattr{name = 'type', value = "unavailable"}],
+                    attrs = [#xmlattr{name = 'type', value = <<"unavailable">>}],
                     children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
                                  children = [
                                   #xmlel{ns = ?NS_MUC_USER, name = 'item',
@@ -1968,7 +1972,7 @@ add_message_to_history(FromNick, Packet, StateData) ->
 		                jid_replace_resource(StateData#state.jid, FromNick)),
 		            StateData#state.jid),
 
-    Size = lists:flatlength(exmpp_xml:document_to_list(SPacket)),
+    Size = erlang:iolist_size(exmpp_xml:document_to_iolist(SPacket)),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
 		   StateData#state.history),
     add_to_log(text, {FromNick, Packet}, StateData),
@@ -3183,9 +3187,9 @@ process_iq_disco_items(From, get, _Lang, StateData) ->
 		  fun({_LJID, Info}) ->
 			  Nick = Info#user.nick,
               #xmlel{name = 'item', attrs = [#xmlattr{name = 'jid', 
-                                            value = exmpp_jid:jid_to_list(
-                                                    StateData#state.room,
-                              				        StateData#state.host,
+                                            value = exmpp_jid:jid_to_binary(
+                                                    list_to_binary(StateData#state.room),
+                              				        list_to_binary(StateData#state.host),
                             				        Nick)},
                                             #xmlattr{name = 'name', 
                                                      value = Nick}]}
@@ -3254,7 +3258,7 @@ check_invitation(From, Els, Lang, StateData) ->
 	    [#xmlel{ns = ?NS_MUC_USER,
                 name = 'invite', 
 		        attrs = [#xmlattr{name = 'from', 
-		                          value = exmpp_jid:jid_to_list(From)}],
+		                          value = exmpp_jid:jid_to_binary(From)}],
  		        children = [#xmlel{ns =?NS_MUC_USER, name = 'reason', 
 		                            children = [#xmlcdata{cdata = Reason} ]}] 
   		                    ++ ContinueEl}],
@@ -3274,8 +3278,8 @@ check_invitation(From, Els, Lang, StateData) ->
 		    io_lib:format(
 		      translate:translate(Lang,
 			"~s invites you to the room ~s"),
-		      [exmpp_jid:jid_to_list(From),
-			exmpp_jid:jid_to_list(StateData#state.room,
+		      [exmpp_jid:jid_to_binary(From),
+			exmpp_jid:jid_to_binary(StateData#state.room,
 			  StateData#state.host,
 			  "")
 		      ]), 
@@ -3301,7 +3305,7 @@ check_invitation(From, Els, Lang, StateData) ->
 		  children = IEl ++ PasswdEl},
 		#xmlel{ns = 'jabber:x:conference', name = 'x',
 		  attrs = [#xmlattr{name = 'jid',
-		      value = exmpp_jid:jid_to_list(
+		      value = exmpp_jid:jid_to_binary(
 			StateData#state.room,
 			StateData#state.host,
 			"")}],
@@ -3338,7 +3342,7 @@ check_decline_invitation(Packet) ->
 %% The original stanza must be slightly modified.
 send_decline_invitation({Packet, XEl, DEl = #xmlel{name='decline'}, ToJID}, 
                             RoomJID, FromJID) ->
-    FromString = exmpp_jid:jid_to_list(FromJID),
+    FromString = exmpp_jid:jid_to_binary(FromJID),
 
     DEl1 = exmpp_xml:remove_attribute(DEl, 'to'),
     DEl2 = exmpp_xml:set_attribute(DEl1, 'from',FromString),

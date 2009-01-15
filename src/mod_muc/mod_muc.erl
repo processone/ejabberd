@@ -125,7 +125,7 @@ forget_room(Host, Name) when is_binary(Host), is_binary(Name) ->
 	end,
     mnesia:transaction(F).
 
-process_iq_disco_items(Host, From, To, #iq{} = IQ) ->
+process_iq_disco_items(Host, From, To, #iq{} = IQ) when is_binary(Host) ->
     Lang = exmpp_stanza:get_lang(IQ),
     Res = exmpp_iq:result(IQ, #xmlel{ns = ?NS_DISCO_ITEMS, 
                                name = 'query',
@@ -134,10 +134,10 @@ process_iq_disco_items(Host, From, To, #iq{} = IQ) ->
 			  From,
 			  exmpp_iq:iq_to_xmlel(Res)).
 
-can_use_nick(_Host, _JID, "") ->
+can_use_nick(_Host, _JID, <<>>)  ->
     false;
-can_use_nick(Host, JID, Nick) ->
-    LUS = {exmpp_jid:lnode_as_list(JID), exmpp_jid:ldomain_as_list(JID)},
+can_use_nick(Host, JID, Nick) when is_binary(Host), is_binary(Nick) ->
+    LUS = {exmpp_jid:lnode(JID), exmpp_jid:ldomain(JID)},
     case catch mnesia:dirty_select(
 		 muc_registered,
 		 [{#muc_registered{us_host = '$1',
@@ -176,7 +176,8 @@ init([Host, Opts]) ->
 			 {attributes, record_info(fields, muc_online_room)}]),
     mnesia:add_table_copy(muc_online_room, node(), ram_copies),
     catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
-    MyHost = gen_mod:get_opt_host(Host, Opts, "conference.@HOST@"),
+    MyHost_L = gen_mod:get_opt_host(Host, Opts, "conference.@HOST@"),
+    MyHost = list_to_binary(MyHost_L),
     update_tables(MyHost),
     clean_table_from_bad_node(node(), MyHost),
     mnesia:add_table_index(muc_registered, nick),
@@ -188,7 +189,7 @@ init([Host, Opts]) ->
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
     DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
-    ejabberd_router:register_route(MyHost),
+    ejabberd_router:register_route(MyHost_L),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
 			 HistorySize,
@@ -313,8 +314,8 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
-    Room = exmpp_jid:lnode_as_list(To),
-    Nick = exmpp_jid:lresource_as_list(To),
+    Room = exmpp_jid:lnode(To),
+    Nick = exmpp_jid:lresource(To),
     #xmlel{name = Name} = Packet,
     case Room of
 	'undefined' ->
@@ -484,7 +485,7 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 	      end, Rs)
     end.
 
-register_room(Host, Room, Pid) ->
+register_room(Host, Room, Pid) when is_binary(Host), is_binary(Room) ->
     F = fun() ->
 		mnesia:write(#muc_online_room{name_host = {Room, Host},
 					      pid = Pid})
@@ -518,7 +519,7 @@ iq_disco_info(Lang) ->
 
 
 
-iq_disco_items(Host, From, Lang) ->
+iq_disco_items(Host, From, Lang) when is_binary(Host) ->
     lists:zf(fun(#muc_online_room{name_host = {Name, _Host}, pid = Pid}) ->
 		     case catch gen_fsm:sync_send_all_state_event(
 				  Pid, {get_disco_item, From, Lang}, 100) of
@@ -527,9 +528,9 @@ iq_disco_items(Host, From, Lang) ->
 			     {true,
                   #xmlel{name = 'item',
                          attrs = [#xmlattr{name = 'jid', 
-                                          value = exmpp_jid:jid_to_list(Name,
+                                          value = exmpp_jid:jid_to_binary(Name,
                                                                         Host,
-                                                                        "")},
+                                                                        <<>>)},
                                  #xmlattr{name = 'name',
                                           value = Desc}]}};
 			 _ ->
@@ -554,9 +555,9 @@ flush() ->
           children = [#xmlel{name = 'value',
                              children = [#xmlcdata{cdata = Val}]}]}).
 
-iq_get_register_info(Host, From, Lang) ->
-    LUser = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+iq_get_register_info(Host, From, Lang)  ->
+    LUser = exmpp_jid:lnode(From),
+    LServer = exmpp_jid:ldomain(From),
     LUS = {LUser, LServer},
     {Nick, Registered} =
 	case catch mnesia:dirty_read(muc_registered, {LUS, Host}) of
@@ -576,21 +577,21 @@ iq_get_register_info(Host, From, Lang) ->
         children = [
             #xmlel{ns = ?NS_DATA_FORMS, name = 'title',
                         children = [#xmlcdata{cdata = 
-	       translate:translate(Lang, "Nickname Registration at ") ++ Host}]},
+	       [translate:translate(Lang, "Nickname Registration at "), Host]}]},
            #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions',
                  children = [#xmlcdata{cdata = 
 	       translate:translate(Lang, "Enter nickname you want to register")}]},
-	   ?XFIELD("text-single", "Nickname", "nick", Nick)]}].
+	   ?XFIELD(<<"text-single">>, "Nickname", <<"nick">>, Nick)]}].
 
 
 
-iq_set_register_info(Host, From, Nick, Lang) ->
-    LUser = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+iq_set_register_info(Host, From, Nick, Lang) when is_binary(Host), is_binary(Nick) ->
+    LUser = exmpp_jid:lnode(From),
+    LServer = exmpp_jid:ldomain(From),
     LUS = {LUser, LServer},
     F = fun() ->
 		case Nick of
-		    "" ->
+		    <<>> ->
 			mnesia:delete({muc_registered, {LUS, Host}}),
 			ok;
 		    _ ->
@@ -654,7 +655,7 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
                                    {Lang, translate:translate(Lang,ErrText)}),
 					    {error, Err};
 					{value, {_, [Nick]}} ->
-					    iq_set_register_info(Host, From, Nick, Lang)
+					    iq_set_register_info(Host, From, list_to_binary(Nick), Lang)
 				    end
 			    end;
 			_ ->
@@ -664,7 +665,7 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
 		    {error, 'bad-request'}
 	    end;
 	_ ->
-	    iq_set_register_info(Host, From, "", Lang)
+	    iq_set_register_info(Host, From, <<>>, Lang)
     end.
 
 iq_get_vcard(Lang) ->
@@ -687,7 +688,7 @@ broadcast_service_message(Host, Msg) ->
 		Pid, {service_message, Msg})
       end, get_vh_rooms(Host)).
 
-get_vh_rooms(Host) ->
+get_vh_rooms(Host) when is_binary(Host) ->
     mnesia:dirty_select(muc_online_room,
 			[{#muc_online_room{name_host = '$1', _ = '_'},
 			  [{'==', {element, 2, '$1'}, Host}],

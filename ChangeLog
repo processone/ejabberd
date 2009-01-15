@@ -1,3 +1,10 @@
+2009-01-15	Pablo Polvorin	<pablo.polvorin@process-one.net>
+
+	* src/mod_muc/mod_muc.erl, src/mod_muc/mod_muc_room.erl: 
+	Store registered nicknames, rooms and domains as binary().
+	Use document_to_iolist/1 and iolist_size/1 instead of 
+	document_to_list/1.
+
 2009-01-11	Pablo Polvorin	<pablo.polvorin@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix typo, initial update
