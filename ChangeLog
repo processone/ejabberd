@@ -1,3 +1,9 @@
+2009-01-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_privacy.erl: Privacy list items must be processed in the
+	specified order (EJAB-848)
+	* src/mod_privacy_odbc.erl: Likewise
+
 2009-01-13  Badlop  <badlop@process-one.net>
 
 	* doc/release_notes_2.0.3.txt: Add release notes
