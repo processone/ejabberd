@@ -836,7 +836,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				     pres_t = ?SETS:from_list(Ts1),
 				     privacy_list = PrivList});
 		_ ->
-		    ejabberd_hooks:run(forbidden_session_hook, 
+		    ejabberd_hooks:run(forbidden_session_hook,
 				       StateData#state.server, [JID]),
 		    ?INFO_MSG("(~w) Forbidden session for ~s",
 			      [StateData#state.socket,
@@ -895,7 +895,8 @@ session_established({xmlstreamerror, _}, StateData) ->
 session_established(closed, StateData) ->
     {stop, normal, StateData}.
 
-
+%% Process packets sent by user (coming from user on c2s XMPP
+%% connection)
 session_established2(El, StateData) ->
     {xmlelement, Name, Attrs, _Els} = El,
     User = StateData#state.user,
@@ -1053,6 +1054,7 @@ handle_info(replaced, _StateName, StateData) ->
 		?SERRT_CONFLICT(Lang, "Replaced by new connection"))
 	      ++ ?STREAM_TRAILER),
     {stop, normal, StateData#state{authenticated = replaced}};
+%% Process Packets that are to be send to the user
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
     {Pass, NewAttrs, NewState} =
@@ -1121,9 +1123,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				LBFrom = jlib:jid_remove_resource(LFrom),
 				%% Note contact availability
 				case xml:get_attr_s("type", Attrs) of
-				    "unavailable" -> 
+				    "unavailable" ->
 					mod_caps:clear_caps(From);
-				    _ -> 
+				    _ ->
 					Caps = mod_caps:read_caps(Els),
 					mod_caps:note_caps(StateData#state.server, From, Caps)
 				end,
@@ -1457,6 +1459,7 @@ process_presence_probe(From, To, StateData) ->
 	    end
     end.
 
+%% User updates his presence (non-directed presence packet)
 presence_update(From, Packet, StateData) ->
     {xmlelement, _Name, Attrs, _Els} = Packet,
     case xml:get_attr_s("type", Attrs) of
@@ -1560,6 +1563,7 @@ presence_update(From, Packet, StateData) ->
 	    NewState
     end.
 
+%% User sends a directed presence packet
 presence_track(From, To, Packet, StateData) ->
     {xmlelement, _Name, Attrs, _Els} = Packet,
     LTo = jlib:jid_tolower(To),
@@ -1978,7 +1982,7 @@ fsm_reply(Reply, StateName, StateData) ->
 
 %% Used by c2s blacklist plugins
 is_ip_blacklisted({IP,_Port}) ->
-    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).	
+    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).
 
 %% Check from attributes
 %% returns invalid-from|NewElement
