@@ -1,6 +1,6 @@
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
-	Merge from trunk (r1752 to r1764).
+	Merge from trunk (r1752 to r1787).
 
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -77,6 +77,16 @@
 	* src/ejabberd_c2s.erl: Fix bug in handle_info/3 when dealing with
 	VCARD requests: convert to IQ struct before invoking gen_iq_handler.
 
+2009-01-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_configure.erl: Fix access check for vhost configuration
+
+2009-01-08  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_listener.erl: Define send timeout option to avoid
+	blocking on socket send (EJAB-746).
+	* src/ejabberd_s2s_out.erl: Likewise.
+
 2009-01-08  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: completely support subscription using
@@ -142,6 +152,35 @@
 	arguments in all hooks to binary. Change internal tables of
 	ejabberd_sm, ejabberd_router, ejabberd_hooks, mod_last, mod_roster to
 	use binary() storage.
+
+2009-01-07  Badlop  <badlop@process-one.net>
+
+	* src/mod_roster.erl: Show hyperlinks to local contacts when
+	browsing roster of account in Web Admin (EJAB-480)
+	* src/mod_roster_odbc.erl: Likewise
+
+	* src/web/ejabberd_web_admin.erl: WebAdmin serves Guide and links
+	to related sections; the path to guide.html can be configured with
+	option doc_path (EJAB-837)
+	* src/web/ejabberd_web_admin.hrl: Likewise
+	* src/mod_shared_roster.erl: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
+2009-01-06  Badlop  <badlop@process-one.net>
+
+	* src/msgs/ru.po: Fix typo (thanks to Dominges)
+	* src/msgs/ru.msg: Likewise
+
+2009-01-05  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/tls/tls_drv.c: Added a flag to avoid certificate validation
+	* src/tls/tls.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+
+2009-01-03  Badlop  <badlop@process-one.net>
+
+	* src/*.erl: Fix EDoc comments
 
 2009-01-03  Christophe Romain <christophe.romain@process-one.net>
 

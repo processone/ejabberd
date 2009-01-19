@@ -226,8 +226,7 @@ process2(Args) ->
 %% Command calling
 %%-----------------------------
 
-%% @spec (Args::[string()]) ->
-%%       String::string() | Code::integer() | {String::string(), Code::integer()}
+%% @spec (Args::[string()]) -> string() | integer() | {string(), integer()}
 try_run_ctp(Args) ->
     try ejabberd_hooks:run_fold(ejabberd_ctl_process, false, [Args]) of
 	false when Args /= [] ->
@@ -248,8 +247,7 @@ try_run_ctp(Args) ->
 	    {io_lib:format("Error in ejabberd ctl process: '~p' ~p", [Error, Why]), ?STATUS_USAGE}
     end.
 
-%% @spec (Args::[string()]) ->
-%%       String::string() | Code::integer() | {String::string(), Code::integer()}
+%% @spec (Args::[string()]) -> string() | integer() | {string(), integer()}
 try_call_command(Args) ->
     try call_command(Args) of
 	{error, command_unknown} ->
@@ -264,8 +262,7 @@ try_call_command(Args) ->
 	    {io_lib:format("Problem '~p ~p' occurred executing the command.~nStacktrace: ~p", [A, Why, Stack]), ?STATUS_ERROR}
     end.
 
-%% @spec (Args::[string()]) ->
-%%       String::string() | Code::integer() | {String::string(), Code::integer()} | {error, ErrorType}
+%% @spec (Args::[string()]) -> string() | integer() | {string(), integer()} | {error, ErrorType}
 call_command([CmdString | Args]) ->
     {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
     Command = list_to_atom(CmdStringU),

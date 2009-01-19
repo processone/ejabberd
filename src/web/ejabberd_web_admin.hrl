@@ -52,3 +52,17 @@
 		      #xmlattr{name = 'size', value = Size}])).
 -define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
 -define(ACLINPUT(Text), ?XE('td', [?INPUT("text", "value" ++ ID, Text)])).
+
+%% Guide Link
+-define(GL(Ref, Title),
+	?XAE('div',
+	     [#xmlattr{name = 'class', value = <<"guidelink">>}],
+	     [?XAE('a',
+		   [#xmlattr{name = "href", value = list_to_binary("/admin/doc/guide.html#"++ Ref)},
+                     #xmlattr{name = "target", value = <<"_blank">>}],
+		   [?C("[Guide: " ++ Title ++ "]")])
+	     ])).
+
+
+%% h1 with a Guide Link
+-define(H1GL(Name, Ref, Title), [?XC('h1', Name), ?GL(Ref, Title)]).

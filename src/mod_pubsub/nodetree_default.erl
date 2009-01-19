@@ -97,12 +97,12 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 set_node(_) ->
     {error, 'internal-server-error'}.
 
-%% @spec (Host, Node) -> pubsubNode() | {error, Reason}
-%%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
 get_node(Host, Node, _From) ->
     get_node(Host, Node).
 
+%% @spec (Host, Node) -> pubsubNode() | {error, Reason}
+%%     Host = mod_pubsub:host()
+%%     Node = mod_pubsub:pubsubNode()
 get_node(Host, Node) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
@@ -110,11 +110,11 @@ get_node(Host, Node) ->
 	Error -> Error
     end.
 
-%% @spec (Key) -> [pubsubNode()] | {error, Reason}
-%%     Key = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Key, _From) ->
     get_nodes(Key).
 
+%% @spec (Key) -> [pubsubNode()] | {error, Reason}
+%%     Key = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Key) ->
     mnesia:match_object(#pubsub_node{nodeid = {Key, '_'}, _ = '_'}).
 

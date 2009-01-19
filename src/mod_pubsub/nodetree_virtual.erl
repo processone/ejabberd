@@ -84,24 +84,24 @@ options() ->
 set_node(_NodeRecord) ->
     ok.
 
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
+
 %% @spec (Host, Node) -> pubsubNode()
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Node record contains default values.</p>
-get_node(Host, Node, _From) ->
-    get_node(Host, Node).
-
 get_node(Host, Node) ->
     #pubsub_node{nodeid = {Host, Node}}.
+
+get_nodes(Key, _From) ->
+    get_nodes(Key).
 
 %% @spec (Key) -> [pubsubNode()]
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Nodes list can not be determined.</p>
-get_nodes(Key, _From) ->
-    get_nodes(Key).
-
 get_nodes(_Key) ->
     [].
 

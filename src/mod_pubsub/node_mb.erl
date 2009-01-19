@@ -30,6 +30,7 @@
 %%%   	  {plugins, ["default", "pep","mb"]},
 %%%	  {pep_mapping, [{"urn:xmpp:microblog", "mb"}]}
 %%%   	 ]},
+%%% </p>
 %%% <p>PubSub plugin nodes are using the {@link gen_pubsub_node} behaviour.</p>
 
 -module(node_mb).

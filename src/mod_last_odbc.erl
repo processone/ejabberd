@@ -168,7 +168,7 @@ store_last_info(User, Server, TimeStamp, Status)
             ok
     end.
 
-%% @spec (LUser::string(), LServer::string() ->
+%% @spec (LUser::string(), LServer::string()) ->
 %%      {ok, Timestamp::integer(), Status::string()} | not_found
 get_last_info(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),

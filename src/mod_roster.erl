@@ -883,10 +883,9 @@ user_roster(User, Server, Query, Lang) ->
 						      [?C(Group), ?BR]
 					      end, R#roster.groups),
 					Pending = ask_to_pending(R#roster.ask),
-					{U, S, R} = R#roster.jid,
+					TDJID = build_contact_jid_td(R#roster.jid),
 					?XE("tr",
-					    [?XAC("td", [{"class", "valign"}],
-						  catch exmpp_jid:jid_to_list(U, S, R)),
+					    [TDJID,
 					     ?XAC("td", [{"class", "valign"}],
 						  binary_to_list(R#roster.name)),
 					     ?XAC("td", [{"class", "valign"}],
@@ -933,6 +932,26 @@ user_roster(User, Server, Query, Lang) ->
 		     ?INPUTT("submit", "addjid", "Add Jabber ID")
 		    ])]
       end.
+
+build_contact_jid_td({U, S, R}) ->
+    %% Convert {U, S, R} into {jid, U, S, R, U, S, R}:
+    ContactJID = exmpp_jid:make_jid(U, S, R),
+    JIDURI = case {exmpp_jid:lnode(ContactJID), exmpp_jid:ldomain(ContactJID)} of
+		 {undefined, _} -> "";
+		 {CUser, CServer} ->
+		     CUser_S = binary_to_list(CUser),
+		     CServer_S = binary_to_list(CServer),
+		     case lists:member(CServer_S, ?MYHOSTS) of
+			 false -> "";
+			 true -> "/admin/server/" ++ CServer_S ++ "/user/" ++ CUser_S ++ "/"
+		     end
+	     end,
+    case JIDURI of
+	[] ->
+	    ?XAC('td', [#xmlattr{name = 'class', value = <<"valign">>}], exmpp_jid:jid_to_list(ContactJID));
+	URI when is_list(URI) ->
+	    ?XAE('td', [#xmlattr{name = 'class', value = <<"valign">>}], [?AC(JIDURI, exmpp_jid:jid_to_list(ContactJID))])
+    end.
 
 user_roster_parse_query(User, Server, Items, Query) ->
     case lists:keysearch("addjid", 1, Query) of

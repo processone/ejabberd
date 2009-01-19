@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -37,6 +37,9 @@
 	]).
 
 -include("ejabberd.hrl").
+
+%% We do not block on send anymore.
+-define(TCP_SEND_TIMEOUT, 15000).
 
 start_link() ->
     supervisor:start_link({local, ejabberd_listeners}, ?MODULE, []).
@@ -96,10 +99,11 @@ init(Port, Module, Opts) ->
 			    end, Opts),
 
     Res = gen_tcp:listen(Port, [binary,
-				{packet, 0}, 
+				{packet, 0},
 				{active, false},
 				{reuseaddr, true},
 				{nodelay, true},
+				{send_timeout, ?TCP_SEND_TIMEOUT},
 				{keepalive, true} |
 				SockOpts]),
     case Res of

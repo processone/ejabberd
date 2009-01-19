@@ -227,7 +227,7 @@ is_user_exists(User, Server) ->
     end.
 
 %% @spec (User, Server) -> ok | error
-%% Remove user.
+%% @doc Remove user.
 %% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
     try
@@ -242,7 +242,7 @@ remove_user(User, Server) ->
     end.
 
 %% @spec (User, Server, Password) -> ok | error | not_exists | not_allowed
-%% Remove user if the provided password is correct.
+%% @doc Remove user if the provided password is correct.
 remove_user(User, Server, Password) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),

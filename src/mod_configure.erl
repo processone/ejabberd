@@ -319,8 +319,10 @@ adhoc_local_items(Acc, From, To, Lang) ->
 			{result, Its} -> Its;
 			empty -> []
 		    end,
+	    PermLev = get_permission_level(From),
 	    %% Recursively get all configure commands
-	    Nodes = recursively_get_local_items(LServer, "", exmpp_jid:domain(To), Lang),
+	    Nodes = recursively_get_local_items(PermLev, LServer, "", exmpp_jid:domain_as_list(Server),
+						Lang),
 	    Nodes1 = lists:filter(
 		       fun(N) ->
 			       Nd = exmpp_xml:get_attribute(N, 'node', ""),
@@ -337,15 +339,15 @@ adhoc_local_items(Acc, From, To, Lang) ->
 	    Acc
     end.
 
-recursively_get_local_items(_LServer, "online users", _Server, _Lang) ->
+recursively_get_local_items(_PermLev, _LServer, "online users", _Server, _Lang) ->
     [];
 
-recursively_get_local_items(_LServer, "all users", _Server, _Lang) ->
+recursively_get_local_items(_PermLev, _LServer, "all users", _Server, _Lang) ->
     [];
 
-recursively_get_local_items(LServer, Node, Server, Lang) ->
+recursively_get_local_items(PermLev, LServer, Node, Server, Lang) ->
     LNode = tokenize(Node),
-    Items = case get_local_items(LServer, LNode, Server, Lang) of
+    Items = case get_local_items({PermLev, LServer}, LNode, Server, Lang) of
 		{result, Res} ->
 		    Res;
 		{error, _Error} ->
@@ -360,10 +362,16 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
 				[];
 			   true ->
 				[N, recursively_get_local_items(
-				      LServer, Nd, Server, Lang)]
+				      PermLev, LServer, Nd, Server, Lang)]
 			end
 		end, Items)),
     Nodes.
+
+get_permission_level(JID) ->
+    case acl:match_rule(global, configure, JID) of
+	allow -> global;
+	deny -> vhost
+    end.
 
 %%%-----------------------------------------------------------------------
 
@@ -372,7 +380,8 @@ recursively_get_local_items(LServer, Node, Server, Lang) ->
 	    deny ->
 		Fallback;
 	    allow ->
-		case get_local_items(LServer, LNode,
+		PermLev = get_permission_level(From),
+		case get_local_items({PermLev, LServer}, LNode,
 				     exmpp_jid:jid_to_binary(To), Lang) of
 		    {result, Res} ->
 			{result, Res};
@@ -396,7 +405,8 @@ get_local_items(Acc, From, To, <<>>, Lang) ->
 		deny ->
 		    {result, Items};
 		allow ->
-		    case get_local_items(LServer, [],
+		    PermLev = get_permission_level(From),
+		    case get_local_items({PermLev, LServer}, [],
 					 exmpp_jid:jid_to_binary(To), Lang) of
 			{result, Res} ->
 			    {result, Items ++ Res};
@@ -462,6 +472,9 @@ get_local_items(Acc, From, To, Node, Lang) ->
 
 %%%-----------------------------------------------------------------------
 
+%% @spec ({PermissionLevel, Host}, [string()], Server::string(), Lang)
+%%              -> {result, [xmlelement()]}
+%%       PermissionLevel = global | vhost
 get_local_items(_Host, [], Server, Lang) ->
     {result,
      [?NODE("Configuration",            <<"config">>),
@@ -498,13 +511,13 @@ get_local_items(_Host, ["user"], Server, Lang) ->
 get_local_items(_Host, ["http:" | _], _Server, _Lang) ->
     {result, []};
 
-get_local_items(Host, ["online users"], _Server, _Lang) ->
+get_local_items({_, Host}, ["online users"], _Server, _Lang) ->
     {result, get_online_vh_users(Host)};
 
-get_local_items(Host, ["all users"], _Server, _Lang) ->
+get_local_items({_, Host}, ["all users"], _Server, _Lang) ->
     {result, get_all_vh_users(Host)};
 
-get_local_items(Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
+get_local_items({_, Host}, ["all users", [$@ | Diap]], _Server, _Lang) ->
     case catch ejabberd_auth:get_vh_registered_users(Host) of
 	{'EXIT', _Reason} ->
             {error, 'internal-server-error'};
@@ -528,10 +541,10 @@ get_local_items(Host, ["all users", [$@ | Diap]], _Server, _Lang) ->
 		 end
     end;
 
-get_local_items(Host, ["outgoing s2s"], _Server, Lang) ->
+get_local_items({_, Host}, ["outgoing s2s"], _Server, Lang) ->
     {result, get_outgoing_s2s(Host, Lang)};
 
-get_local_items(Host, ["outgoing s2s", To], _Server, Lang) ->
+get_local_items({_, Host}, ["outgoing s2s", To], _Server, Lang) ->
     {result, get_outgoing_s2s(Host, Lang, To)};
 
 get_local_items(_Host, ["running nodes"], Server, Lang) ->
@@ -540,7 +553,7 @@ get_local_items(_Host, ["running nodes"], Server, Lang) ->
 get_local_items(_Host, ["stopped nodes"], _Server, Lang) ->
     {result, get_stopped_nodes(Lang)};
 
-get_local_items(_Host, ["running nodes", ENode], Server, Lang) ->
+get_local_items({global, _Host}, ["running nodes", ENode], Server, Lang) ->
     ENodeB = list_to_binary(ENode),
     {result,
      [?NODE("Database", <<"running nodes/", ENodeB/binary,  "/DB">>),
@@ -550,6 +563,11 @@ get_local_items(_Host, ["running nodes", ENode], Server, Lang) ->
 	    <<"running nodes/",  ENodeB/binary, "/import">>),
       ?NODE("Restart Service", <<"running nodes/", ENodeB/binary, "/restart">>),
       ?NODE("Shut Down Service", <<"running nodes/", ENodeB/binary, "/shutdown">>)
+     ]};
+
+get_local_items({vhost, _Host}, ["running nodes", ENode], Server, Lang) ->
+    {result,
+     [?NODE("Modules", "running nodes/" ++ ENode ++ "/modules")
      ]};
 
 get_local_items(_Host, ["running nodes", _ENode, "DB"], _Server, _Lang) ->
@@ -721,8 +739,8 @@ get_stopped_nodes(_Lang) ->
 
 %%-------------------------------------------------------------------------
 
--define(COMMANDS_RESULT(Allow, From, To, Request),
-	case Allow of
+-define(COMMANDS_RESULT(LServerOrGlobal, From, To, Request),
+	case acl:match_rule(LServerOrGlobal, configure, From) of
 	    deny ->
 		{error, 'forbidden'};
 	    allow ->
@@ -732,24 +750,23 @@ get_stopped_nodes(_Lang) ->
 adhoc_local_commands(Acc, From, To, #adhoc_request{node = Node} = Request) ->
     LServer = exmpp_jid:ldomain_as_list(To),
     LNode = tokenize(Node),
-    Allow = acl:match_rule(LServer, configure, From),
     case LNode of
 	["running nodes", _ENode, "DB"] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["running nodes", _ENode, "modules", _] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(LServer, From, To, Request);
 	["running nodes", _ENode, "backup", _] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["running nodes", _ENode, "import", _] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["running nodes", _ENode, "restart"] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["running nodes", _ENode, "shutdown"] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(global, From, To, Request);
 	["config", _] ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(LServer, From, To, Request);
 	?NS_ADMINL(_) ->
-	    ?COMMANDS_RESULT(Allow, From, To, Request);
+	    ?COMMANDS_RESULT(LServer, From, To, Request);
 	_ ->
 	    Acc
     end.
@@ -1545,7 +1562,7 @@ set_form(_From, Host, ["config", "access"], _Lang, XData) ->
 	    {error, 'bad-request'}
     end;
 
-set_form(_From, _Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
     Password = get_value("password-verify", XData),
@@ -1553,17 +1570,19 @@ set_form(_From, _Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     User = exmpp_jid:lnode_as_list(AccountJID),
     Server = exmpp_jid:ldomain_as_list(AccountJID),
     true = lists:member(Server, ?MYHOSTS),
+    true = (Server == Host) orelse (get_permission_level(From) == global),
     ejabberd_auth:try_register(User, Server, Password),
     {result, []};
 
-set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
     AccountStringList = get_values("accountjids", XData),
     [_|_] = AccountStringList,
     ASL2 = lists:map(
 	     fun(AccountString) ->
-		     JID = exmpp_jid:list_to_jid(AccountString),
+		     JID = exmpp_jid:parse_jid(AccountString),
 		     User = [_|_] = exmpp_jid:lnode_as_list(JID),
-		     Server = exmpp_jid:ldomain_as_list(JID), 
+		     Server = exmpp_jid:ldomain_as_list(JID),
+		     true = (Server == Host) orelse (get_permission_level(From) == global),
 		     true = ejabberd_auth:is_user_exists(User, Server),
 		     {User, Server}
 	     end,
@@ -1571,11 +1590,12 @@ set_form(_From, _Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
     [ejabberd_auth:remove_user(User, Server) || {User, Server} <- ASL2],
     {result, []};
 
-set_form(_From, _Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
     LUser = [_|_] = exmpp_jid:lnode_as_list(JID),
     LServer = exmpp_jid:ldomain_as_list(JID), 
+    true = (LServer == Host) orelse (get_permission_level(From) == global),
     %% Code copied from ejabberd_sm.erl
     case exmpp_jid:lresource_as_list(JID) of
 	undefined -> 
@@ -1589,11 +1609,12 @@ set_form(_From, _Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     end, 
     {result, []};
 
-set_form(_From, _Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
     User = [_|_] = exmpp_jid:lnode_as_list(JID),
     Server = exmpp_jid:ldomain_as_list(JID), 
+    true = (Server == Host) orelse (get_permission_level(From) == global),
     Password = ejabberd_auth:get_password(User, Server),
     true = is_list(Password),
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
@@ -1602,21 +1623,23 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
 	        ?XFIELD(<<"text-single">>, "Password", <<"password">>, list_to_binary(Password))
 	       ]}]};
 
-set_form(_From, _Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
     User = [_|_] = exmpp_jid:lnode_as_list(JID),
     Server = exmpp_jid:ldomain_as_list(JID), 
+    true = (Server == Host) orelse (get_permission_level(From) == global),
     true = ejabberd_auth:is_user_exists(User, Server),
     ejabberd_auth:set_password(User, Server, Password),
     {result, []};
 
-set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
     User = [_|_] = exmpp_jid:lnode_as_list(JID),
     Server = exmpp_jid:ldomain_as_list(JID), 
+    true = (Server == Host) orelse (get_permission_level(From) == global),
 
     %% Code copied from web/ejabberd_web_admin.erl
     %% TODO: Update time format to XEP-0202: Entity Time
@@ -1649,11 +1672,12 @@ set_form(_From, _Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
 	        ?XFIELD(<<"text-single">>, "Last login", <<"lastlogin">>, list_to_binary(FLast))
 	       ]}]};
 
-set_form(_From, _Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
+set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:list_to_jid(AccountString),
     User = [_|_] = exmpp_jid:lnode_as_list(JID),
     Server = exmpp_jid:ldomain_as_list(JID), 
+    true = (Server == Host) orelse (get_permission_level(From) == global),
 
     Resources = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID), 
                                                exmpp_jid:ldomain(JID)),

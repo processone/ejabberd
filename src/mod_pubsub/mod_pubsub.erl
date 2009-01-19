@@ -33,7 +33,7 @@
 %%% This module uses version 1.12 of the specification as a base.
 %%% Most of the specification is implemented.
 %%% Functions concerning configuration should be rewritten.
-%%% Code is derivated from the original pubsub v1.7, by Alexey Shchepin <alexey@process-one.net>
+%%% Code is derivated from the original pubsub v1.7, by Alexey Shchepin
 
 %%% TODO
 %%% plugin: generate Reply (do not use broadcast atom anymore)
@@ -1749,10 +1749,11 @@ get_items(Host, Node, From) ->
 send_last_item(Host, Node, LJID) ->
     send_items(Host, Node, LJID, last).
 
-%% @spec (Host, Node, LJID) -> any()
+%% @spec (Host, Node, LJID, Number) -> any()
 %%	 Host = host()
 %%	 Node = pubsubNode()
 %%	 LJID = {U, S, []}
+%%	 Number = last | integer()
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
 send_items(Host, Node, {LU, LS, LR} = LJID, Number) ->
@@ -2157,10 +2158,9 @@ is_to_deliver({User, Server, _}, _, true) ->
 	end, false, Ss)
     end.
 
-%% @spec (Elem, Payload) -> int()
-%%	Elem = atom()
+%% @spec (Payload) -> int()
 %%	Payload = term()
-%% @doc <p>Count occurence of given element in payload.</p>
+%% @doc <p>Count occurence of XML elements in payload.</p>
 payload_xmlelements(Payload) -> payload_xmlelements(Payload, 0).
 payload_xmlelements([], Count) -> Count;
 payload_xmlelements([#xmlel{}|Tail], Count) -> payload_xmlelements(Tail, Count+1);
@@ -2168,7 +2168,7 @@ payload_xmlelements([_|Tail], Count) -> payload_xmlelements(Tail, Count).
 
 %% @spec (Els) -> stanza()
 %%    Els = [xmlelement()]
-%% @doc <p>Build pubsub event stanza
+%% @doc <p>Build pubsub event stanza</p>
 event_stanza(Els) ->
     #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', children =
 	[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'event', children = Els}]}.
