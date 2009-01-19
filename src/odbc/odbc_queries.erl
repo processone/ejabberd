@@ -376,7 +376,7 @@ get_private_data(LServer, Username, LXMLNS) ->
 		  "namespace='", LXMLNS, "';"]).
 
 del_user_private_storage(LServer, Username) ->
-    ejabberd_odbc:sql_transaction(
+    ejabberd_odbc:sql_query(
       LServer,
       ["delete from private_storage where username='", Username, "';"]).
 

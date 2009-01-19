@@ -37,7 +37,8 @@
 	 process_item/2,
 	 in_subscription/6,
 	 out_subscription/4,
-	 user_registered/2,
+	 register_user/2,
+	 remove_user/2,
 	 list_groups/1,
 	 create_group/2,
 	 create_group/3,
@@ -46,6 +47,7 @@
 	 set_group_opts/3,
 	 get_group_users/2,
 	 get_group_explicit_users/2,
+	 is_user_in_group/3,
 	 add_user_to_group/3,
 	 remove_user_from_group/3]).
 
@@ -85,8 +87,10 @@ start(Host, _Opts) ->
         	       ?MODULE, get_jid_info, 70),
     ejabberd_hooks:add(roster_process_item, HostB,
 		       ?MODULE, process_item, 50),
-    ejabberd_hooks:add(user_registered, HostB,
-		       ?MODULE, user_registered, 50).
+    ejabberd_hooks:add(register_user, HostB,
+		       ?MODULE, register_user, 50),
+    ejabberd_hooks:add(remove_user, HostB,
+		       ?MODULE, remove_user, 50).
 %%ejabberd_hooks:add(remove_user, HostB,
 %%    	       ?MODULE, remove_user, 50),
 
@@ -108,8 +112,10 @@ stop(Host) ->
         		  ?MODULE, get_jid_info, 70),
     ejabberd_hooks:delete(roster_process_item, HostB,
 			  ?MODULE, process_item, 50),
-    ejabberd_hooks:delete(user_registered, HostB,
-			  ?MODULE, user_registered, 50).
+    ejabberd_hooks:delete(register_user, HostB,
+			  ?MODULE, register_user, 50),
+    ejabberd_hooks:delete(remove_user, HostB,
+			  ?MODULE, remove_user, 50).
 %%ejabberd_hooks:delete(remove_user, HostB,
 %%    		  ?MODULE, remove_user, 50),
 
@@ -443,6 +449,7 @@ get_group_users(_User, Host, Group, GroupOpts) ->
 	    []
     end ++ get_group_explicit_users(Host, Group).
 
+%% @spec (Host::string(), Group::string()) -> [{User::string(), Server::string()}]
 get_group_explicit_users(Host, Group) ->
     Read = (catch mnesia:dirty_index_read(
 		    sr_user,
@@ -458,6 +465,7 @@ get_group_explicit_users(Host, Group) ->
 get_group_name(Host, Group) ->
     get_group_opt(Host, Group, name, Group).
 
+%% Get list of names of groups that have @all@ in the memberlist
 get_special_users_groups(Host) ->
     lists:filter(
       fun(Group) ->
@@ -465,6 +473,8 @@ get_special_users_groups(Host) ->
       end,
       list_groups(Host)).
 
+%% Given two lists of groupnames and their options,
+%% return the list of displayed groups to the second list
 displayed_groups(GroupsOpts, SelectedGroupsOpts) ->
     DisplayedGroups =
 	lists:usort(
@@ -476,6 +486,9 @@ displayed_groups(GroupsOpts, SelectedGroupsOpts) ->
     [G || G <- DisplayedGroups,
 	  not lists:member(disabled, proplists:get_value(G, GroupsOpts, []))].
 
+%% Given a list of group names with options,
+%% for those that have @all@ in memberlist,
+%% get the list of groups displayed
 get_special_displayed_groups(GroupsOpts) ->
     Groups = lists:filter(
 	       fun({_Group, Opts}) ->
@@ -483,6 +496,9 @@ get_special_displayed_groups(GroupsOpts) ->
 	       end, GroupsOpts),
     displayed_groups(GroupsOpts, Groups).
 
+%% Given a username and server, and a list of group names with options,
+%% for the list of groups of that server that user is member
+%% get the list of groups displayed
 get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
     Groups = case catch mnesia:dirty_read(sr_user, {LUser, LServer}) of
 		 Rs when is_list(Rs) ->
@@ -493,6 +509,7 @@ get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
 	     end,
     displayed_groups(GroupsOpts, Groups).
 
+%% @doc Get the list of groups that are displayed to this user
 get_user_displayed_groups(US) ->
     Host = element(2, US),
     DisplayedGroups1 =
@@ -515,12 +532,25 @@ is_user_in_group({_U, S} = US, Group, Host) ->
 	_  -> true
     end.
 
+
+%% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
 add_user_to_group(Host, US, Group) ->
+    {LUser, LServer} = US,
+    %% Push this new user to members of groups where this group is displayed
+    push_user_to_displayed(LUser, LServer, Group, both),
+    %% Push members of groups that are displayed to this group
+    push_displayed_to_user(LUser, LServer, Group, Host, both),
     R = #sr_user{us = US, group_host = {Group, Host}},
     F = fun() ->
 		mnesia:write(R)
 	end,
     mnesia:transaction(F).
+
+push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
+    GroupsOpts = groups_with_opts(LServer),
+    GroupOpts = proplists:get_value(Group, GroupsOpts, []),
+    DisplayedGroups = proplists:get_value(displayed_groups, GroupOpts, []),
+    [push_members_to_user(LUser, LServer, DGroup, Host, Subscription) || DGroup <- DisplayedGroups].
 
 remove_user_from_group(Host, US, Group) ->
     GroupHost = {Group, Host},
@@ -528,9 +558,34 @@ remove_user_from_group(Host, US, Group) ->
     F = fun() ->
 		mnesia:delete_object(R)
 	end,
-    mnesia:transaction(F).
+    Result = mnesia:transaction(F),
+    {LUser, LServer} = US,
+    %% Push removal of the old user to members of groups where the group that this user was members was displayed
+    push_user_to_displayed(LUser, LServer, Group, remove),
+    %% Push removal of members of groups that where displayed to the group which this user has left
+    push_displayed_to_user(LUser, LServer, Group, Host, remove),
+    Result.
 
-user_registered(User, Server) ->
+push_members_to_user(LUser, LServer, Group, Host, Subscription) ->
+    GroupsOpts = groups_with_opts(LServer),
+    GroupOpts = proplists:get_value(Group, GroupsOpts, []),
+    GroupName = proplists:get_value(name, GroupOpts, Group),
+    Members = get_group_users(Host, Group),
+    lists:foreach(
+      fun({U, S}) ->
+	      push_roster_item(LUser, LServer, U, S, GroupName, Subscription)
+      end, Members).
+
+register_user(User, Server) ->
+    %% Get list of groups where this user is member
+    Groups = get_user_groups({User, Server}),
+    %% Push this user to members of groups where is displayed a group which this user is member
+    [push_user_to_displayed(User, Server, Group, both) || Group <- Groups].
+
+remove_user(User, Server) ->
+    push_user_to_members(User, Server, remove).
+
+push_user_to_members(User, Server, Subscription) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
@@ -543,20 +598,34 @@ user_registered(User, Server) ->
 		  GroupName = proplists:get_value(name, GroupOpts, Group),
 		  lists:foreach(
 		    fun({U, S}) ->
-			    Item = #roster{usj = {U, S, {LUser, LServer, undefined}},
-					   us = {U, S},
-					   jid = {LUser, LServer, undefined},
-					   name = "",
-					   subscription = both,
-					   ask = none,
-					   groups = [GroupName]},
-			    push_item(U, S, exmpp_jid:make_bare_jid(S), Item)
+                            push_roster_item(U, S, LUser, LServer, GroupName, Subscription)
 		    end, get_group_users(LUser, LServer, Group, GroupOpts))
 	  end, lists:usort(SpecialGroups++UserGroups))
     catch
 	_ ->
 	    ok
     end.
+
+push_user_to_displayed(LUser, LServer, Group, Subscription) ->
+    GroupsOpts = groups_with_opts(LServer),
+    GroupOpts = proplists:get_value(Group, GroupsOpts, []),
+    GroupName = proplists:get_value(name, GroupOpts, Group),
+    DisplayedToGroupsOpts = displayed_to_groups(Group, LServer),
+    [push_user_to_group(LUser, LServer, GroupD, GroupName, Subscription) || {GroupD, _Opts} <- DisplayedToGroupsOpts].
+
+push_user_to_group(LUser, LServer, Group, GroupName, Subscription) ->
+    lists:foreach(
+      fun({U, S}) ->
+	      push_roster_item(U, S, LUser, LServer, GroupName, Subscription)
+      end, get_group_users(LServer, Group)).
+
+%% Get list of groups to which this group is displayed
+displayed_to_groups(GroupName, LServer) ->
+    GroupsOpts = groups_with_opts(LServer),
+    lists:filter(
+      fun({_Group, Opts}) ->
+	      lists:member(GroupName, proplists:get_value(displayed_groups, Opts, []))
+      end, GroupsOpts).
 
 push_item(_User, _Server, _From, none) ->
     ok;
@@ -579,6 +648,16 @@ push_item(User, Server, From, Item) ->
 	      JID = exmpp_jid:make_jid(User, Server, Resource),
 	      ejabberd_router:route(JID, JID, Stanza)
       end, ejabberd_sm:get_user_resources(list_to_binary(User), list_to_binary(Server))).
+
+push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
+    Item = #roster{usj = {User, Server, {ContactU, ContactS, ""}},
+		   us = {User, Server},
+		   jid = {ContactU, ContactS, ""},
+		   name = "",
+		   subscription = Subscription,
+		   ask = none,
+		   groups = [GroupName]},
+    push_item(User, Server, jlib:make_jid("", Server, ""), Item).
 
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,

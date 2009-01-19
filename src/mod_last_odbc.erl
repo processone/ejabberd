@@ -64,14 +64,36 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_LAST_ACTIVITY),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_LAST_ACTIVITY).
 
+%%%
+%%% Uptime of ejabberd node
+%%%
+
 process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
-    Sec = trunc(element(1, erlang:statistics(wall_clock))/1000),
+    Sec = get_node_uptime(),
     Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query', attrs =
       [#xmlattr{name = 'seconds', value = list_to_binary(integer_to_list(Sec))}]},
     exmpp_iq:result(IQ_Rec, Response);
 process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
+%% @spec () -> integer()
+%% @doc Get the uptime of the ejabberd node, expressed in seconds.
+%% When ejabberd is starting, ejabberd_config:start/0 stores the datetime.
+get_node_uptime() ->
+    case ejabberd_config:get_local_option(node_start) of
+	{_, _, _} = StartNow ->
+	    now_to_seconds(now()) - now_to_seconds(StartNow);
+	_undefined ->
+	    trunc(element(1, erlang:statistics(wall_clock))/1000)
+    end.
+
+now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
+    MegaSecs * 1000000 + Secs.
+
+
+%%%
+%%% Serve queries about user last online
+%%%
 process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
     User = exmpp_jid:lnode_as_list(To),
     Server = exmpp_jid:ldomain_as_list(To),
@@ -112,8 +134,7 @@ get_last(IQ_Rec, LUser, LServer) ->
 	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
 	    case catch list_to_integer(STimeStamp) of
 		TimeStamp when is_integer(TimeStamp) ->
-		    {MegaSecs, Secs, _MicroSecs} = now(),
-		    TimeStamp2 = MegaSecs * 1000000 + Secs,
+		    TimeStamp2 = now_to_seconds(now()),
 		    Sec = TimeStamp2 - TimeStamp,
 		    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
 		      attrs = [#xmlattr{name = 'seconds', value = list_to_binary(integer_to_list(Sec))}],
@@ -127,8 +148,7 @@ get_last(IQ_Rec, LUser, LServer) ->
     end.
 
 on_presence_update(User, Server, _Resource, Status) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp = MegaSecs * 1000000 + Secs,
+    TimeStamp = now_to_seconds(now()),
     store_last_info(User, Server, TimeStamp, Status).
 
 store_last_info(User, Server, TimeStamp, Status)
@@ -148,7 +168,8 @@ store_last_info(User, Server, TimeStamp, Status)
             ok
     end.
 
-%% Returns: {ok, Timestamp, Status} | not_found
+%% @spec (LUser::string(), LServer::string() ->
+%%      {ok, Timestamp::integer(), Status::string()} | not_found
 get_last_info(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of

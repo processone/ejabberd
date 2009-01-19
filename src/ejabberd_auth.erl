@@ -139,6 +139,7 @@ set_password(User, Server, Password) ->
 	      Res
       end, {error, not_allowed}, auth_modules(Server)).
 
+%% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, not_allowed}
 try_register(_User, _Server, "") ->
     %% We do not allow empty password
     {error, not_allowed};    
@@ -149,12 +150,19 @@ try_register(User, Server, Password) ->
 	false ->
 	    case lists:member(exmpp_stringprep:nameprep(Server), ?MYHOSTS) of
 		true ->
-		    lists:foldl(
+		    Res = lists:foldl(
 		      fun(_M, {atomic, ok} = Res) ->
 			      Res;
 			 (M, _) ->
 			      M:try_register(User, Server, Password)
-		      end, {error, not_allowed}, auth_modules(Server));
+		      end, {error, not_allowed}, auth_modules(Server)),
+		    case Res of
+			{atomic, ok} ->
+			    ejabberd_hooks:run(register_user, Server,
+					       [User, Server]),
+			    {atomic, ok};
+			_ -> Res
+		    end;
 		false ->
 		    {error, not_allowed}
 	    end
@@ -251,17 +259,37 @@ is_user_exists_in_other_modules(Module, User, Server) ->
 	      M:is_user_exists(User, Server)
       end, auth_modules(Server)--[Module]).
 
+%% @spec (User, Server) -> ok | error | {error, not_allowed}
+%% Remove user.
+%% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
-    lists:foreach(
+    R = lists:foreach(
       fun(M) ->
 	      M:remove_user(User, Server)
-      end, auth_modules(Server)).
+      end, auth_modules(Server)),
+    case R of
+		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
+		_ -> none
+    end,
+    R.
 
+%% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request | error
+%% Try to remove user if the provided password is correct.
+%% The removal is attempted in each auth method provided:
+%% when one returns 'ok' the loop stops;
+%% if no method returns 'ok' then it returns the error message indicated by the last method attempted.
 remove_user(User, Server, Password) ->
-    lists:foreach(
-      fun(M) ->
+    R = lists:foldl(
+      fun(_M, ok = Res) ->
+	      Res;
+	 (M, _) ->
 	      M:remove_user(User, Server, Password)
-      end, auth_modules(Server)).
+      end, error, auth_modules(Server)),
+    case R of
+		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
+		_ -> none
+    end,
+    R.
 
 
 %%%----------------------------------------------------------------------

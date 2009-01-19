@@ -36,6 +36,9 @@
 	 decode_base64/1,
 	 encode_base64/1,
 	 ip_to_list/1,
+	 rsm_encode/1,
+	 rsm_encode/2,
+	 rsm_decode/1,
 	 from_old_jid/1,
 	 short_jid/1,
 	 short_bare_jid/1,
@@ -43,6 +46,8 @@
 	 short_prepd_bare_jid/1]).
 
 -include_lib("exmpp/include/exmpp.hrl").
+
+-include("jlib.hrl").
 
 
 parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
@@ -75,6 +80,70 @@ parse_xdata_values([#xmlel{name = 'value', children = SubEls} | Els], Res) ->
 parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
 
+rsm_decode(#iq{payload=SubEl})->
+	rsm_decode(SubEl);
+rsm_decode(#xmlel{}=SubEl)->
+	case exmpp_xml:get_element(SubEl, 'set') of
+		undefined ->
+			none;
+		#xmlelement{name = 'set', children = SubEls}->
+			lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
+	end.
+
+rsm_parse_element(#xmlel{name = 'max'}=Elem, RsmIn)->
+    CountStr = exmpp_xml:get_cdata_as_list(Elem),
+    {Count, _} = string:to_integer(CountStr),
+    RsmIn#rsm_in{max=Count};
+
+rsm_parse_element(#xmlel{name = 'before'}=Elem, RsmIn)->
+    UID = exmpp_xml:get_cdata_as_list(Elem),
+    RsmIn#rsm_in{direction=before, id=UID};
+
+rsm_parse_element(#xmlel{name = 'after'}=Elem, RsmIn)->
+    UID = exmpp_xml:get_cdata_as_list(Elem),
+    RsmIn#rsm_in{direction=aft, id=UID};
+
+rsm_parse_element(#xmlel{name = 'index'}=Elem, RsmIn)->
+    IndexStr = exmpp_xml:get_cdata_as_list(Elem),
+    {Index, _} = string:to_integer(IndexStr),
+    RsmIn#rsm_in{index=Index};
+
+
+rsm_parse_element(_, RsmIn)->
+    RsmIn.
+
+rsm_encode(#iq{payload=SubEl}=IQ_Rec,RsmOut)->
+    Set = #xmlel{ns = ?NS_RSM, name = 'set', children =
+	   lists:reverse(rsm_encode_out(RsmOut))},
+    New = exmpp_xml:prepend_child(SubEl, Set),
+    IQ_Rec#iq{payload=New}.
+
+rsm_encode(none)->
+    [];
+rsm_encode(RsmOut)->
+    [#xmlel{ns = ?NS_RSM, name = 'set', children = lists:reverse(rsm_encode_out(RsmOut))}].
+rsm_encode_out(#rsm_out{count=Count, index=Index, first=First, last=Last})->
+    El = rsm_encode_first(First, Index, []),
+    El2 = rsm_encode_last(Last,El),
+    rsm_encode_count(Count, El2).
+
+rsm_encode_first(undefined, undefined, Arr) ->
+    Arr;
+rsm_encode_first(First, undefined, Arr) ->
+    [#xmlel{ns = ?NS_RSM, name = 'first', children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr];
+rsm_encode_first(First, Index, Arr) ->
+    [#xmlel{ns = ?NS_RSM, name = 'first', attrs = [#xmlattr{name = 'index', value = i2b(Index)}], children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr].
+
+rsm_encode_last(undefined, Arr) -> Arr;
+rsm_encode_last(Last, Arr) ->
+    [#xmlel{ns = ?NS_RSM, name = 'last', children = [#xmlcdata{cdata = list_to_binary(Last)}]}|Arr].
+
+rsm_encode_count(undefined, Arr)-> Arr;
+rsm_encode_count(Count, Arr)->
+    [#xmlel{ns = ?NS_RSM, name = 'count', children = [#xmlcdata{cdata = i2b(Count)}]} | Arr].
+
+i2b(I) when is_integer(I) -> list_to_binary(integer_to_list(I));
+i2b(L) when is_list(L)    -> list_to_binary(L).
 
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     lists:flatten(

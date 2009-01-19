@@ -35,6 +35,7 @@
 	 process_iq_get/5,
 	 get_user_list/3,
 	 check_packet/6,
+	 remove_user/2,
 	 updated_list/3]).
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -55,6 +56,8 @@ start(Host, Opts) ->
 		       ?MODULE, check_packet, 50),
     ejabberd_hooks:add(privacy_updated_list, HostB,
 		       ?MODULE, updated_list, 50),
+    ejabberd_hooks:add(remove_user, HostB,
+		       ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
@@ -70,6 +73,8 @@ stop(Host) ->
 			  ?MODULE, check_packet, 50),
     ejabberd_hooks:delete(privacy_updated_list, HostB,
 			  ?MODULE, updated_list, 50),
+    ejabberd_hooks:delete(remove_user, HostB,
+			  ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_PRIVACY).
 
 process_iq(_From, _To, IQ_Rec) ->
@@ -666,6 +671,12 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
     end.
 
 
+remove_user(User, Server) ->
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
+    sql_del_privacy_lists(LUser, LServer).
+
+
 updated_list(_,
 	     #userlist{name = OldName} = Old,
 	     #userlist{name = NewName} = New) ->
@@ -880,3 +891,16 @@ sql_set_privacy_list(ID, RItems) ->
 			     ") "
 		 	     "values ('", ID, "', ", Items, ");"])
 		  end, RItems).
+
+sql_del_privacy_lists(LUser, LServer) ->
+    Username = ejabberd_odbc:escape(LUser),
+    Server = ejabberd_odbc:escape(LServer),
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["delete from privacy_list where username='", Username, "';"]),
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["delete from privacy_list_data where value='", Username++"@"++Server, "';"]),
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["delete from privacy_default_list where username='", Username, "';"]).

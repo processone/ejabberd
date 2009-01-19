@@ -215,8 +215,6 @@ try_register(User, Server, Password, Source, Lang) ->
 			true ->
 			    case ejabberd_auth:try_register(User, Server, Password) of
 				{atomic, ok} ->
-				    ejabberd_hooks:run(user_registered, exmpp_jid:domain(JID),
-						       [exmpp_jid:node(JID), exmpp_jid:domain(JID)]),
 				    send_welcome_message(JID),
 				    send_registration_notifications(JID),
 				    ok;

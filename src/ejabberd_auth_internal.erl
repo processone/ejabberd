@@ -112,6 +112,7 @@ set_password(User, Server, Password) ->
 	    ok
     end.
 
+%% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid} | {aborted, Reason}
 try_register(User, Server, Password) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
@@ -252,6 +253,9 @@ is_user_exists(User, Server) ->
 	    false
     end.
 
+%% @spec (User, Server) -> ok
+%% Remove user.
+%% Note: it returns ok even if there was some problem removing the user.
 remove_user(User, Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
@@ -261,14 +265,14 @@ remove_user(User, Server) ->
 		    mnesia:delete({passwd, US})
 	    end,
 	mnesia:transaction(F),
-	ejabberd_hooks:run(remove_user, 
-                       list_to_binary(LServer), 
-                       [list_to_binary(User), list_to_binary(Server)])
+	ok
     catch
 	_ ->
 	    ok
     end.
 
+%% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request
+%% Remove user if the provided password is correct.
 remove_user(User, Server, Password) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
@@ -287,9 +291,6 @@ remove_user(User, Server, Password) ->
 	    end,
 	case mnesia:transaction(F) of
 	    {atomic, ok} ->
-		ejabberd_hooks:run(remove_user, 
-                           list_to_binary(LServer), 
-                           [list_to_binary(User), list_to_binary(Server)]),
 		ok;
 	    {atomic, Res} ->
 		Res;

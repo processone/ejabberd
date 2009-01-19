@@ -153,6 +153,7 @@ check_password(User, Server, Password, _StreamID, _Digest) ->
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.
 
+%% @spec (User, Server, Password) -> {error, not_allowed}
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
 

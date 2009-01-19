@@ -1239,6 +1239,14 @@ declarations of ACLs in the configuration file have the following syntax:
 \begin{verbatim}
 {acl, mucklres, {resource, "muckl"}}.
 \end{verbatim}
+\titem{\{shared\_group, <groupname>\}} Matches any member of a Shared Roster Group with name \term{<groupname>} in the virtual host. Example:
+\begin{verbatim}
+{acl, techgroupmembers, {shared_group, "techteam"}}.
+\end{verbatim}
+\titem{\{shared\_group, <groupname>, <server>\}} Matches any member of a Shared Roster Group with name \term{<groupname>} in the virtual host \term{<server>}. Example:
+\begin{verbatim}
+{acl, techgroupmembers, {shared_group, "techteam", "example.org"}}.
+\end{verbatim}
 \titem{\{user\_regexp, <regexp>\}} Matches any local user with a name that
   matches \term{<regexp>} on local virtual hosts. Example:
 \begin{verbatim}

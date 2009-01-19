@@ -1,11 +1,22 @@
-2009-01-15	Pablo Polvorin	<pablo.polvorin@process-one.net>
+2009-01-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Merge from trunk (r1734 to r1752).
+
+	Note: this merge doesn't include the following revisions because it
+	was made by previous commits:
+	    r1737, r1740, r1745, r1747, r1748.
+
+	* src/jlib.hrl: Any deprecated content was removed from jlib.hrl. This
+	leaves only the new RSM records.
+
+2009-01-15  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/mod_muc/mod_muc.erl, src/mod_muc/mod_muc_room.erl: 
 	Store registered nicknames, rooms and domains as binary().
 	Use document_to_iolist/1 and iolist_size/1 instead of 
 	document_to_list/1.
 
-2009-01-11	Pablo Polvorin	<pablo.polvorin@process-one.net>
+2009-01-11  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix typo, initial update
 	to new hooks API (using binaries). mod_pubsub is still
@@ -21,41 +32,41 @@
 	permissions (thanks to Andy Skelton)(EJAB-840)
 	* src/mod_pubsub/node_default.erl: Likewise
 
-2009-01-10	Pablo Polvorin	<pablo.polvorin@process-one.net>
+2009-01-10  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/mod_vcard_odbc.erl: Fix bug in user search.
 
 	* src/mod_vcard_ldap.erl, src/mod_vcard.erl, src/mod_configure.erl,
 	src/ejabberd_sm.erl, src/mod_privacy_odbc.erl, src/ejabberd_c2s.erl,
 	src/ejabberd_local.erl, src/mod_privacy.erl, src/mod_adhoc.erl,
-	src/mod_pubsub/mod_pubsub.erl, src/mod_vcard_odbc.erl, src/mod_stats.erl,
-	src/mod_last.erl, src/mod_private.erl, src/mod_roster.erl, 
-	src/mod_disco.erl, src/mod_private_odbc.erl, src/mod_configure2.erl,
-	src/mod_roster_odbc.erl, src/mod_register.erl, src/mod_version.erl,
-	src/mod_caps.erl, src/mod_last_odbc.erl, src/mod_time.erl: Update 
-	gen_iq_handler API, require the 'Host' argument to be in binary() format.
+	src/mod_pubsub/mod_pubsub.erl, src/mod_vcard_odbc.erl,
+	src/mod_stats.erl, src/mod_last.erl, src/mod_private.erl,
+	src/mod_roster.erl, src/mod_disco.erl, src/mod_private_odbc.erl,
+	src/mod_configure2.erl, src/mod_roster_odbc.erl, src/mod_register.erl,
+	src/mod_version.erl, src/mod_caps.erl, src/mod_last_odbc.erl,
+	src/mod_time.erl: Update gen_iq_handler API, require the 'Host'
+	argument to be in binary() format.
 
 2009-01-10  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/node_default.erl: fix unsubscription of full jid
 	subscribed node (thanks to Andy Skelton)(EJAB-839)
 
-2009-01-09	Pablo Polvorin	<pablo.polvorin@process-one.net>
+2009-01-09  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl, src/mod_muc/mod_muc.erl
 	src/mod_offline_odbc.erl, src/mod_irc/mod_irc_connection.erl,
 	src/mod_irc/mod_irc.erl, src/ejabberd_c2s.erl, src/ejabberd_local.erl,
-	src/mod_pubsub/mod_pubsub.erl, src/ejabberd_s2s.erl, src/mod_roster.erl,
-	src/mod_roster_odbc.erl, src/ejabberd_s2s_out.erl, src/mod_offline.erl, 
-	src/translate.erl: Adapt to new exmpp API where get_id/1, get_lang/1, 
-	get_initiating_entity/1, get_receiving_entity/1 and get_type/1  
-	returns binary().
+	src/mod_pubsub/mod_pubsub.erl, src/ejabberd_s2s.erl,
+	src/mod_roster.erl, src/mod_roster_odbc.erl, src/ejabberd_s2s_out.erl,
+	src/mod_offline.erl, src/translate.erl: Adapt to new exmpp API where
+	get_id/1, get_lang/1, get_initiating_entity/1, get_receiving_entity/1
+	and get_type/1 return binary().
 
 	* src/mod_pubsub/node_default.erl: Fix typo in variable name. 
 
 	* src/ejabberd_c2s.erl: Fix bug in handle_info/3 when dealing with
 	VCARD requests: convert to IQ struct before invoking gen_iq_handler.
-
 
 2009-01-08  Christophe Romain <christophe.romain@process-one.net>
 
@@ -77,35 +88,39 @@
 	* src/mod_pubsub/node_default.erl: Likewise
 	* src/mod_pubsub/node_club.erl: Likewise
 
-2009-01-08	Pablo Polvorin	<pablo.polvorin@process-one.net>
+2009-01-08  Pablo Polvorin  <pablo.polvorin@process-one.net>
+
 	* src/mod_vcard_ldap.erl, src/mod_muc/mod_muc.erl, src/mod_roster.hrl,
 	src/mod_offline_odbc.erl, src/ejabberd_s2s_in.erl, src/adhoc.erl,
 	src/mod_configure.erl, src/mod_irc/mod_irc_connection.erl,
-	src/mod_irc/mod_irc.erl, src/web/ejabberd_http_poll.erl, 
+	src/mod_irc/mod_irc.erl, src/web/ejabberd_http_poll.erl,
 	src/mod_privacy_odbc.erl, src/ejabberd_c2s.erl, src/mod_announce.erl,
 	src/mod_privacy.erl, src/mod_adhoc.erl, src/mod_pubsub/mod_pubsub.erl,
 	src/mod_vcard_odbc.erl, src/mod_stats.erl, src/mod_last.erl,
 	src/mod_roster.erl, src/ejabberd_service.erl, src/mod_disco.erl,
-	src/mod_configure2.erl, src/mod_roster_odbc.erl, src/ejabberd_s2s_out.erl,
-	src/mod_last_odbc.erl: XML attributes as binary(). Change Node argument
-	to binary in the following hooks: disco_local_items, disco_local_features,
-	disco_local_identity, disco_sm_items and disco_sm_identity.
-
+	src/mod_configure2.erl, src/mod_roster_odbc.erl,
+	src/ejabberd_s2s_out.erl, src/mod_last_odbc.erl: XML attributes as
+	binary(). Change Node argument to binary in the following hooks:
+	disco_local_items, disco_local_features, disco_local_identity,
+	disco_sm_items and disco_sm_identity.
 
 2009-01-05  Pablo Polvorin  <pablo.polvorin@process-one.net>
+
 	* src/mod_roster.erl: Fix typo.
 
-2009-01-03	Pablo Polvorin	<pablo.polvorin@process-one.net>
-	* src/mod_pubsub_node_default.erl: Fix typo
+2009-01-03  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
-	* src/mod_vcard.erl, src/mod_vcard_ldap.erl,src/ ejabberd_hooks.erl,
-	mod_muc/mod_muc_room.erl, src/mod_muc/mod_muc.erl, 
+	* src/mod_pubsub_node_default.erl: Fix typo.
+
+	* src/mod_vcard.erl, src/mod_vcard_ldap.erl, src/ejabberd_hooks.erl,
+	src/mod_muc/mod_muc_room.erl, src/mod_muc/mod_muc.erl,
 	src/mod_muc/mod_muc_log.erl, src/mod_shared_roster.erl,
 	src/ejabberd_auth_odbc.erl, src/mod_offline_odbc.erl,
-	src/ejabberd_system_monitor.erl, src/ejabberd_s2s_in.erl, 
-	src/mod_configure.erl, src/ejabberd_receiver.erl, src/mod_irc/mod_irc.erl,
-	src/ejabberd_sm.erl, src/mod_privacy_odbc.erl, src/ejabberd_c2s.erl,
-	src/mod_announce.erl, src/ejabberd_local.erl, src/mod_privacy.erl,
+	src/ejabberd_system_monitor.erl, src/ejabberd_s2s_in.erl,
+	src/mod_configure.erl, src/ejabberd_receiver.erl,
+	src/mod_irc/mod_irc.erl, src/ejabberd_sm.erl,
+	src/mod_privacy_odbc.erl, src/ejabberd_c2s.erl, src/mod_announce.erl,
+	src/ejabberd_local.erl, src/mod_privacy.erl,
 	src/ejabberd_auth_internal.erl, src/mod_adhoc.erl, src/mod_echo.erl,
 	src/jlib.erl, src/mod_vcard_odbc.erl, src/ejabberd_s2s.erl,
 	src/mod_stats.erl, src/ejabberd_router.erl, src/mod_last.erl,
@@ -113,13 +128,11 @@
 	src/mod_disco.erl, src/mod_private_odbc.erl, src/mod_service_log.erl,
 	src/mod_configure2.erl, src/mod_roster_odbc.erl, src/mod_offline.erl,
 	src/mod_register.erl, src/mod_version.erl, src/mod_caps.erl,
-	src/mod_last_odbc.erl: Use exmpp API to access JID fields. Keep 
-	#jid fields in binary format when possible. Change all 'user' and
-	'server' arguments in all hooks to binary. Change internal tables of
-	ejabberd_sm, ejabberd_router, ejabberd_hooks, mod_last, mod_roster 
-	to use binary() storage.
-
-
+	src/mod_last_odbc.erl: Use exmpp API to access JID fields. Keep #jid
+	fields in binary format when possible. Change all 'user' and 'server'
+	arguments in all hooks to binary. Change internal tables of
+	ejabberd_sm, ejabberd_router, ejabberd_hooks, mod_last, mod_roster to
+	use binary() storage.
 
 2009-01-03  Christophe Romain <christophe.romain@process-one.net>
 
@@ -142,11 +155,60 @@
 	* src/mod_pubsub/mod_pubsub.erl: Added "access-whitelist" and
 	"member-affiliation" features (thanks to Andy Skelton)(EJAB-780)
 
+2008-12-23  Badlop  <badlop@process-one.net>
+
+	* src/acl.erl: New ACL: shared_group (thanks to Maxim Ryazanov)
+	* doc/guide.tex: Likewise
+
+	* src/mod_shared_roster.erl: Push new group members when
+	registered or manually added to group: EJAB-730 EJAB-731 EJAB-732
+	EJAB-767 EJAB-794. When user is added to group, push it to other
+	members, and other members to it. When user is removed from group,
+	push deletion to other members, and other members to it. When user
+	is registered, push him to members of group @all@. When user is
+	deleted, push deletion to members of group @all@. Document several
+	functions in mod_shared_roster.
+
+	* src/ejabberd_auth.erl: Rename hook user_registered to
+	register_user, for name consistency with the widely used hook
+	remove_user. Run hook register_user in ejabberd_auth, so it's run
+	when account is created with any method. Run hook remove_user in
+	ejabberd_auth, so it's run when account is deleted with any
+	method.
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_auth_pam.erl: Likewise
+	* src/mod_register.erl: Likewise
+
+	* src/jlib.erl: Implementation of XEP-0059 Result Set
+	Management (thanks to Eric Cestari)(EJAB-807)
+	* src/jlib.hrl: Likewise
+	* src/mod_muc/mod_muc.erl: Likewise
+
 2008-12-23  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Improve handling of PEP sent to
 	external contacts (EJAB-825)
 	* src/mod_caps.erl: Likewise
+
+2008-12-23  Badlop  <badlop@process-one.net>
+
+	* src/mod_last.erl: Implement workaround for uptime statistic in
+	32 bit machines, so it can show uptime greater than 50
+	days (EJAB-610)
+	* src/mod_last_odbc.erl: Likewise
+	* src/ejabberd_config.erl: Store start time in local_config table
+
+	* src/cyrsasl_digest.erl: Check digest-uri in SASL digest
+	authentication (thanks to Paul Guyot)(EJAB-569)
+
+	* src/odbc/odbc_queries.erl: Fix removal of private_storage of an
+	account when the account is removed
+
+	* src/mod_privacy.erl: Remove privacy lists of an account when the
+	account is removed (EJAB-720)
+	* src/mod_privacy_odbc.erl: Likewise
 
 2008-12-19  Christophe Romain <christophe.romain@process-one.net>
 
@@ -158,7 +220,7 @@
 	* src/mod_pubsub/mod_pubsub.erl: Check option of the nodetree instead
 	of checking configuration (thanks to Eric Cestari)(EJAB-737)
 
-2008-12-17  Pablo Polvorin	<pablo.polvorin@process-one.net>
+2008-12-17  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Fix bug in MUC invite.
 
