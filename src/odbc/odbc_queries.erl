@@ -61,6 +61,20 @@
 	 set_private_data_sql/3,
 	 get_private_data/3,
 	 del_user_private_storage/2,
+	 get_default_privacy_list/2,
+	 get_default_privacy_list_t/1,
+	 get_privacy_list_names/2,
+	 get_privacy_list_names_t/1,
+	 get_privacy_list_id/3,
+	 get_privacy_list_id_t/2,
+	 get_privacy_list_data/3,
+	 get_privacy_list_data_by_id/2,
+	 set_default_privacy_list/2,
+	 unset_default_privacy_list/2,
+	 remove_privacy_list/2,
+	 add_privacy_list/2,
+	 set_privacy_list/2,
+	 del_privacy_lists/3,
 	 set_vcard/26,
 	 get_vcard/2,
 	 escape/1,
@@ -74,6 +88,14 @@
 -define(generic, true).
 -endif.
 
+%% Almost a copy of string:join/2.
+%% We use this version because string:join/2 is relatively
+%% new function (introduced in R12B-0).
+join([], _Sep) ->
+    [];
+join([H|T], Sep) ->
+    [H, [[Sep, X] || X <- T]].
+
 %% -----------------
 %% Generic queries
 -ifdef(generic).
@@ -81,9 +103,25 @@
 get_db_type() ->
     generic.
 
+%% Safe atomic update.
+update_t(Table, Fields, Vals, Where) ->
+    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
+			   Fields, Vals),
+    case ejabberd_odbc:sql_query_t(
+	   ["update ", Table, " set ",
+	    join(UPairs, ", "),
+	    " where ", Where, ";"]) of
+	{updated, 1} ->
+	    ok;
+	_ ->
+	    ejabberd_odbc:sql_query_t(
+	      ["insert into ", Table, "(", join(Fields, ", "),
+	       ") values ('", join(Vals, "', '"), "');"])
+    end.
+
 %% F can be either a fun or a list of queries
-%% TODO: We should probably move the list of queries transaction wrapper from the ejabberd_odbc module
-%%       to this one (odbc_queries)
+%% TODO: We should probably move the list of queries transaction
+%% wrapper from the ejabberd_odbc module to this one (odbc_queries)
 sql_transaction(LServer, F) ->
     ejabberd_odbc:sql_transaction(LServer, F).
 
@@ -97,9 +135,11 @@ set_last_t(LServer, Username, Seconds, State) ->
     %% MREMOND: I think this should be turn into a non transactional behaviour
     ejabberd_odbc:sql_transaction(
       LServer,
-      [["delete from last where username='", Username, "';"],
-       ["insert into last(username, seconds, state) "
-	"values ('", Username, "', '", Seconds, "', '", State, "');"]]).
+      fun() ->
+	      update_t("last", ["username", "seconds", "state"],
+		       [Username, Seconds, State],
+		       ["username='", Username, "'"])
+      end).
 
 del_last(LServer, Username) ->
     ejabberd_odbc:sql_query(
@@ -115,9 +155,11 @@ get_password(LServer, Username) ->
 set_password_t(LServer, Username, Pass) ->
     ejabberd_odbc:sql_transaction(
       LServer,
-      [["delete from users where username='", Username ,"';"],
-       ["insert into users(username, password) "
-	"values ('", Username, "', '", Pass, "');"]]).
+      fun() ->
+	      update_t("users", ["username", "password"],
+		       [Username, Pass],
+		       ["username='", Username ,"'"])
+      end).
 
 add_user(LServer, Username, Pass) ->
     ejabberd_odbc:sql_query(
@@ -296,16 +338,11 @@ del_roster_sql(Username, SJID) ->
       "        and jid='", SJID, "';"]].
 
 update_roster(_LServer, Username, SJID, ItemVals, ItemGroups) ->
-    ejabberd_odbc:sql_query_t(
-      ["delete from rosterusers "
-       "      where username='", Username, "' "
-       "        and jid='", SJID, "';"]),
-    ejabberd_odbc:sql_query_t(
-      ["insert into rosterusers("
-       "              username, jid, nick, "
-       "              subscription, ask, askmessage, "
-       "              server, subscribe, type) "
-       " values (", ItemVals, ");"]),
+    update_t("rosterusers",
+	     ["username", "jid", "nick", "subscription", "ask",
+	      "askmessage", "server", "subscribe", "type"],
+	     ItemVals,
+	     ["username='", Username, "' and jid='", SJID, "'"]),
     ejabberd_odbc:sql_query_t(
       ["delete from rostergroups "
        "      where username='", Username, "' "
@@ -314,7 +351,7 @@ update_roster(_LServer, Username, SJID, ItemVals, ItemGroups) ->
 			  ejabberd_odbc:sql_query_t(
 			    ["insert into rostergroups("
 			     "              username, jid, grp) "
-			     " values (", ItemGroup, ");"])
+			     " values ('", join(ItemGroup, "', '"), "');"])
 		  end,
 		  ItemGroups).
 
@@ -326,26 +363,21 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
       "              username, jid, nick, "
       "              subscription, ask, askmessage, "
       "              server, subscribe, type) "
-      " values (", ItemVals, ");"],
+      " values ('", join(ItemVals, "', '"), "');"],
      ["delete from rostergroups "
       "      where username='", Username, "' "
       "        and jid='", SJID, "';"]] ++
      [["insert into rostergroups("
        "              username, jid, grp) "
-       " values (", ItemGroup, ");"] ||
+       " values ('", join(ItemGroup, "', '"), "');"] ||
 	 ItemGroup <- ItemGroups].
 
 roster_subscribe(_LServer, Username, SJID, ItemVals) ->
-    ejabberd_odbc:sql_query_t(
-      ["delete from rosterusers "
-       "      where username='", Username, "' "
-       "        and jid='", SJID, "';"]),
-    ejabberd_odbc:sql_query_t(
-      ["insert into rosterusers("
-       "              username, jid, nick, "
-       "              subscription, ask, askmessage, "
-       "              server, subscribe, type) "
-       " values (", ItemVals, ");"]).
+    update_t("rosterusers",
+	     ["username", "jid", "nick", "subscription", "ask",
+	      "askmessage", "server", "subscribe", "type"],
+	     ItemVals,
+	     ["username='", Username, "' and jid='", SJID, "'"]).
 
 get_subscription(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
@@ -355,10 +387,10 @@ get_subscription(LServer, Username, SJID) ->
        "and jid='", SJID, "'"]).
 
 set_private_data(_LServer, Username, LXMLNS, SData) ->
-    lists:foreach(fun(Query) ->
-            ejabberd_odbc:sql_query_t(Query)
-        end,
-        set_private_data_sql(Username, LXMLNS, SData)).
+    update_t("private_storage",
+	     ["username", "namespace", "data"],
+	     [Username, LXMLNS, SData], 
+	     ["username='", Username, "' and namespace='", LXMLNS, "'"]).
 
 set_private_data_sql(Username, LXMLNS, SData) ->
     [["delete from private_storage "
@@ -380,41 +412,132 @@ del_user_private_storage(LServer, Username) ->
       LServer,
       ["delete from private_storage where username='", Username, "';"]).
 
-
 set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN, SFamily, SGiven,
 	  SLBDay, SLCTRY, SLEMail, SLFN, SLFamily, SLGiven, SLLocality,
 	  SLMiddle, SLNickname, SLOrgName, SLOrgUnit, SLocality, SMiddle,
 	  SNickname, SOrgName, SOrgUnit, SVCARD, Username) ->
     ejabberd_odbc:sql_transaction(
       LServer,
-      [["delete from vcard where username='", LUsername, "';"],
-       ["insert into vcard(username, vcard) "
-	"values ('", LUsername, "', '", SVCARD, "');"],
-       ["delete from vcard_search where lusername='", LUsername, "';"],
-       ["insert into vcard_search("
-	"        username, lusername, fn, lfn, family, lfamily,"
-	"        given, lgiven, middle, lmiddle, nickname, lnickname,"
-	"        bday, lbday, ctry, lctry, locality, llocality,"
-	"        email, lemail, orgname, lorgname, orgunit, lorgunit)"
-	"values (",
-	"        '", Username,  "', '", LUsername,  "',"
-	"        '", SFN,       "', '", SLFN,       "',"
-	"        '", SFamily,   "', '", SLFamily,   "',"
-	"        '", SGiven,    "', '", SLGiven,    "',"
-	"        '", SMiddle,   "', '", SLMiddle,   "',"
-	"        '", SNickname, "', '", SLNickname, "',"
-	"        '", SBDay,     "', '", SLBDay,	   "',"
-	"        '", SCTRY,     "', '", SLCTRY,	   "',"
-	"        '", SLocality, "', '", SLLocality, "',"
-	"        '", SEMail,    "', '", SLEMail,	   "',"
-	"        '", SOrgName,  "', '", SLOrgName,  "',"
-	"        '", SOrgUnit,  "', '", SLOrgUnit,  "');"]]).
+      fun() ->
+	      update_t("vcard", ["username", "vcard"],
+		       [LUsername, SVCARD],
+		       ["username='", LUsername, "'"]),
+	      update_t("vcard_search",
+		       ["username", "lusername", "fn", "lfn", "family",
+			"lfamily", "given", "lgiven", "middle", "lmiddle",
+			"nickname", "lnickname", "bday", "lbday", "ctry",
+			"lctry", "locality", "llocality", "email", "lemail",
+			"orgname", "lorgname", "orgunit", "lorgunit"],
+		       [Username, LUsername, SFN, SLFN, SFamily, SLFamily,
+			SGiven, SLGiven, SMiddle, SLMiddle, SNickname,
+			SLNickname, SBDay, SLBDay, SCTRY, SLCTRY,
+			SLocality, SLLocality, SEMail, SLEMail, SOrgName,
+			SLOrgName, SOrgUnit, SLOrgUnit],
+		       ["lusername='", LUsername, "'"])
+      end).
 
 get_vcard(LServer, Username) ->
     ejabberd_odbc:sql_query(
       LServer,
       ["select vcard from vcard "
        "where username='", Username, "';"]).
+
+get_default_privacy_list(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select name from privacy_default_list "
+       "where username='", Username, "';"]).
+
+get_default_privacy_list_t(Username) ->
+    ejabberd_odbc:sql_query_t(
+      ["select name from privacy_default_list "
+       "where username='", Username, "';"]).
+
+get_privacy_list_names(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select name from privacy_list "
+       "where username='", Username, "';"]).
+
+get_privacy_list_names_t(Username) ->
+    ejabberd_odbc:sql_query_t(
+      ["select name from privacy_list "
+       "where username='", Username, "';"]).
+
+get_privacy_list_id(LServer, Username, SName) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select id from privacy_list "
+       "where username='", Username, "' and name='", SName, "';"]).
+
+get_privacy_list_id_t(Username, SName) ->
+    ejabberd_odbc:sql_query_t(
+      ["select id from privacy_list "
+       "where username='", Username, "' and name='", SName, "';"]).
+
+get_privacy_list_data(LServer, Username, SName) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select t, value, action, ord, match_all, match_iq, "
+       "match_message, match_presence_in, match_presence_out "
+       "from privacy_list_data "
+       "where id = (select id from privacy_list where "
+       "            username='", Username, "' and name='", SName, "') "
+       "order by ord;"]).
+
+get_privacy_list_data_by_id(LServer, ID) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select t, value, action, ord, match_all, match_iq, "
+       "match_message, match_presence_in, match_presence_out "
+       "from privacy_list_data "
+       "where id='", ID, "' order by ord;"]).
+
+set_default_privacy_list(Username, SName) ->
+    update_t("privacy_default_list", ["username", "name"],
+	     [Username, SName], ["username='", Username, "'"]).
+
+unset_default_privacy_list(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["delete from privacy_default_list "
+       "      where username='", Username, "';"]).
+
+remove_privacy_list(Username, SName) ->
+    ejabberd_odbc:sql_query_t(
+      ["delete from privacy_list "
+       "where username='", Username, "' and name='", SName, "';"]).
+
+add_privacy_list(Username, SName) ->
+    ejabberd_odbc:sql_query_t(
+      ["insert into privacy_list(username, name) "
+       "values ('", Username, "', '", SName, "');"]).
+
+set_privacy_list(ID, RItems) ->
+    ejabberd_odbc:sql_query_t(
+      ["delete from privacy_list_data "
+       "where id='", ID, "';"]),
+    lists:foreach(fun(Items) ->
+			  ejabberd_odbc:sql_query_t(
+			    ["insert into privacy_list_data("
+			     "id, t, value, action, ord, match_all, match_iq, "
+			     "match_message, match_presence_in, "
+			     "match_presence_out "
+			     ") "
+			     "values ('", ID, "', '",
+			     join(Items, "', '"), "');"])
+		  end, RItems).
+
+del_privacy_lists(LServer, Server, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["delete from privacy_list where username='", Username, "';"]),
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["delete from privacy_list_data where value='", Username++"@"++Server, "';"]),
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["delete from privacy_default_list where username='", Username, "';"]).
 
 %% Characters to escape
 escape($\0) -> "\\0";

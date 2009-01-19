@@ -331,6 +331,8 @@ process_term(Term, State) ->
 	    add_option(language, Val, State);
 	{outgoing_s2s_port, Port} ->
 	    add_option(outgoing_s2s_port, Port, State);
+	{outgoing_s2s_options, Methods, Timeout} ->
+	    add_option(outgoing_s2s_options, {Methods, Timeout}, State);
 	{s2s_use_starttls, Port} ->
 	    add_option(s2s_use_starttls, Port, State);
 	{s2s_certfile, CertFile} ->

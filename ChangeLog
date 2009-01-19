@@ -1,5 +1,9 @@
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	Merge from trunk (r1752 to r1764).
+
+2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	* src/ejabberd_auth_anonymous.erl: Fix accesses to the new #jid opaque
 	type.
 
@@ -159,6 +163,58 @@
 
 	* src/mod_pubsub/mod_pubsub.erl: Added "access-whitelist" and
 	"member-affiliation" features (thanks to Andy Skelton)(EJAB-780)
+
+2008-12-29  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/ejabberd_c2s.erl: Bugfix in "from" attribute checking
+
+2008-12-29  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: Print meaningful error message when
+	an SQL transaction exceeds number of restarts. Also rollbacks
+	this transaction to prevent deadlocks.
+
+	* src/odbc/odbc_queries.erl: replaced string:join/2 function.
+	Removed ugly "catch" statement from update_t/4.
+	WARNING: this change requires last version of mysql driver.
+	You can update it from ejabberd-modules repository.
+
+2008-12-28  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: We should allow use of bare resource in from by
+	the client (partially revert r1727) (EJAB-812).
+
+2008-12-26  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: Show in ejabberd Web Admin the
+	connection method and connected node of Jabber clients (thanks to
+	Oleg Palij)(EJAB-319)
+
+	* src/ejabberd_config.erl: Option outgoing_s2s_options to define
+	s2s outgoing behaviour: IPv4, IPv6 and timeout (thanks to Stephan
+	Maka)(EJAB-665)
+	* src/ejabberd_s2s_out.erl: Likewise
+	* src/ejabberd_socket.erl: Likewise
+	* src/ejabberd.cfg.example: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
+2008-12-26  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: get rid of SERIALIZABLE isolation
+	level on MySQL connections.
+	* src/odbc/odbc_queries.erl: replaces all delete->insert chains
+	with update->insert.
+	* src/mod_privacy_odbc.erl: moved sql queries to odbc_queries.erl.
+	* src/mod_roster_odbc.erl: changed interface for odbc_queries.erl.
+
+2008-12-24  Badlop  <badlop@process-one.net>
+
+	* src/aclocal.m4: Fixes in configure script: fix
+	disable-ejabberd_zlib and disable-pam; in case of problems, PAM
+	verification aborts with error instead of warning. (EJAB-787)
+	* src/configure.ac: Likewise
+	* src/configure: Likewise
 
 2008-12-23  Badlop  <badlop@process-one.net>
 

@@ -745,6 +745,10 @@ use STARTTLS for s2s connections.
 file containing a SSL certificate.
 </DD><DT CLASS="dt-description"><B><TT>{domain_certfile, Domain, Path}</TT></B></DT><DD CLASS="dd-description"> 
 Full path to the file containing the SSL certificate for a specific domain.
+</DD><DT CLASS="dt-description"><B><TT>{outgoing_s2s_options, Methods, Timeout}</TT></B></DT><DD CLASS="dd-description"> 
+Specify which address families to try, in what order, and connect timeout in milliseconds.
+By default it first tries connecting with IPv4, if that fails it tries using IPv6,
+with a timeout of 10000 milliseconds.
 </DD><DT CLASS="dt-description"><B><TT>{s2s_default_policy, allow|deny}</TT></B></DT><DD CLASS="dd-description">
 The default policy for incoming and outgoing s2s connections to other Jabber servers.
 The default value is <TT>allow</TT>.
@@ -1032,6 +1036,10 @@ declarations of ACLs in the configuration file have the following syntax:
 </PRE></DD><DT CLASS="dt-description"><B><TT>{resource, &lt;resource&gt;}</TT></B></DT><DD CLASS="dd-description"> Matches any JID with a resource
 <TT>&lt;resource&gt;</TT>. Example:
 <PRE CLASS="verbatim">{acl, mucklres, {resource, "muckl"}}.
+</PRE></DD><DT CLASS="dt-description"><B><TT>{shared_group, &lt;groupname&gt;}</TT></B></DT><DD CLASS="dd-description"> Matches any member of a Shared Roster Group with name <TT>&lt;groupname&gt;</TT> in the virtual host. Example:
+<PRE CLASS="verbatim">{acl, techgroupmembers, {shared_group, "techteam"}}.
+</PRE></DD><DT CLASS="dt-description"><B><TT>{shared_group, &lt;groupname&gt;, &lt;server&gt;}</TT></B></DT><DD CLASS="dd-description"> Matches any member of a Shared Roster Group with name <TT>&lt;groupname&gt;</TT> in the virtual host <TT>&lt;server&gt;</TT>. Example:
+<PRE CLASS="verbatim">{acl, techgroupmembers, {shared_group, "techteam", "example.org"}}.
 </PRE></DD><DT CLASS="dt-description"><B><TT>{user_regexp, &lt;regexp&gt;}</TT></B></DT><DD CLASS="dd-description"> Matches any local user with a name that
 matches <TT>&lt;regexp&gt;</TT> on local virtual hosts. Example:
 <PRE CLASS="verbatim">{acl, tests, {user_regexp, "^test[0-9]*$"}}.

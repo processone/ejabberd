@@ -108,6 +108,8 @@
 ]).
 
 
+-define(SOCKET_DEFAULT_RESULT, {error, badarg}).
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -195,7 +197,7 @@ open_socket(init, StateData) ->
 				 _ ->
 				     open_socket1(Addr, Port)
 			     end
-		     end, {error, badarg}, AddrList) of
+		     end, ?SOCKET_DEFAULT_RESULT, AddrList) of
 	{ok, Socket} ->
 	    Version = if
 			  StateData#state.use_v10 ->
@@ -231,34 +233,40 @@ open_socket(_, StateData) ->
     {next_state, open_socket, StateData}.
 
 %%----------------------------------------------------------------------
-open_socket1(Addr, Port) ->
-    ?DEBUG("s2s_out: connecting to ~s:~p~n", [Addr, Port]),
-    Res = case catch ejabberd_socket:connect(
-		       Addr, Port,
-		       [binary, {packet, 0},
-			{active, false}]) of
-	      {ok, _Socket} = R -> R;
-	      {error, Reason1} ->
-		  ?DEBUG("s2s_out: connect return ~p~n", [Reason1]),
-		  catch ejabberd_socket:connect(
-			  Addr, Port,
-			  [binary, {packet, 0},
-			   {active, false}, inet6]);
-	      {'EXIT', Reason1} ->
-		  ?DEBUG("s2s_out: connect crashed ~p~n", [Reason1]),
-		  catch ejabberd_socket:connect(
-			  Addr, Port,
-			  [binary, {packet, 0},
-			   {active, false}, inet6])
-	  end,
-    case Res of
-	{ok, Socket} ->
-	    {ok, Socket};
-	{error, Reason} ->
-	    ?DEBUG("s2s_out: inet6 connect return ~p~n", [Reason]),
-	    {error, Reason};
+%% IPv4
+open_socket1({_,_,_,_} = Addr, Port) ->
+    open_socket2(inet, Addr, Port);
+
+%% IPv6
+open_socket1({_,_,_,_,_,_,_,_} = Addr, Port) ->
+    open_socket2(inet6, Addr, Port);
+
+%% Hostname
+open_socket1(Host, Port) ->
+    lists:foldl(fun(_Family, {ok, _Socket} = R) ->
+			R;
+		   (Family, _) ->
+			Addrs = get_addrs(Host, Family),
+			lists:foldl(fun(_Addr, {ok, _Socket} = R) ->
+					    R;
+				       (Addr, _) ->
+					    open_socket1(Addr, Port)
+				    end, ?SOCKET_DEFAULT_RESULT, Addrs)
+		end, ?SOCKET_DEFAULT_RESULT, outgoing_s2s_families()).
+
+open_socket2(Type, Addr, Port) ->
+    ?DEBUG("s2s_out: connecting to ~p:~p~n", [Addr, Port]),
+    Timeout = outgoing_s2s_timeout(),
+    case (catch ejabberd_socket:connect(Addr, Port,
+					[binary, {packet, 0},
+					 {active, false}, Type],
+					Timeout)) of
+	{ok, _Socket} = R -> R;
+	{error, Reason} = R ->
+	    ?DEBUG("s2s_out: connect return ~p~n", [Reason]),
+	    R;
 	{'EXIT', Reason} ->
-	    ?DEBUG("s2s_out: inet6 connect crashed ~p~n", [Reason]),
+	    ?DEBUG("s2s_out: connect crashed ~p~n", [Reason]),
 	    {error, Reason}
     end.
 
@@ -953,12 +961,59 @@ test_get_addr_port(Server) ->
 	      end
       end, [], lists:seq(1, 100000)).
 
+get_addrs(Host, Family) ->
+    Type = case Family of
+	       inet4 -> inet;
+	       ipv4 -> inet;
+	       inet6 -> inet6;
+	       ipv6 -> inet6
+	   end,
+    case inet:gethostbyname(Host, Type) of
+	{ok, #hostent{h_addr_list = Addrs}} ->
+	    ?DEBUG("~s of ~s resolved to: ~p~n", [Type, Host, Addrs]),
+	    Addrs;
+	{error, Reason} ->
+	    ?DEBUG("~s lookup of '~s' failed: ~p~n", [Type, Host, Reason]),
+	    []
+    end.
+
+
 outgoing_s2s_port() ->
     case ejabberd_config:get_local_option(outgoing_s2s_port) of
 	Port when is_integer(Port) ->
 	    Port;
 	undefined ->
 	    5269
+    end.
+
+outgoing_s2s_families() ->
+    case ejabberd_config:get_local_option(outgoing_s2s_options) of
+	{Families, _} when is_list(Families) ->
+	    Families;
+	undefined ->
+	    %% DISCUSSION: Why prefer IPv4 first?
+	    %%
+	    %% IPv4 connectivity will be available for everyone for
+	    %% many years to come. So, there's absolutely no benefit
+	    %% in preferring IPv6 connections which are flaky at best
+	    %% nowadays.
+	    %%
+	    %% On the other hand content providers hesitate putting up
+	    %% AAAA records for their sites due to the mentioned
+	    %% quality of current IPv6 connectivity. Making IPv6 the a
+	    %% `fallback' may avoid these problems elegantly.
+	    [ipv4, ipv6]
+    end.
+
+outgoing_s2s_timeout() ->
+    case ejabberd_config:get_local_option(outgoing_s2s_options) of
+	{_, Timeout} when is_integer(Timeout) ->
+	    Timeout;
+	{_, infinity} ->
+	    infinity;
+	undefined ->
+	    %% 10 seconds
+	    10000
     end.
 
 %% Human readable S2S logging: Log only new outgoing connections as INFO

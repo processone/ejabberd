@@ -672,31 +672,31 @@ GREP
 EGREP
 EXPAT_CFLAGS
 EXPAT_LIBS
-ZLIB_CFLAGS
-ZLIB_LIBS
-PAM_CFLAGS
-PAM_LIBS
 LIBOBJS
-mod_pubsub
-make_mod_pubsub
 mod_irc
 make_mod_irc
 mod_muc
 make_mod_muc
 mod_proxy65
 make_mod_proxy65
+mod_pubsub
+make_mod_pubsub
 eldap
 make_eldap
-pam
-make_pam
-web
-make_web
-tls
-make_tls
 odbc
 make_odbc
+tls
+make_tls
+web
+make_web
 ejabberd_zlib
 make_ejabberd_zlib
+ZLIB_CFLAGS
+ZLIB_LIBS
+pam
+make_pam
+PAM_CFLAGS
+PAM_LIBS
 hipe
 roster_gateway_workaround
 db_type
@@ -1286,16 +1286,16 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-mod_pubsub     enable mod_pubsub (default: yes)
   --enable-mod_irc        enable mod_irc (default: yes)
   --enable-mod_muc        enable mod_muc (default: yes)
   --enable-mod_proxy65    enable mod_proxy65 (default: yes)
+  --enable-mod_pubsub     enable mod_pubsub (default: yes)
   --enable-eldap          enable eldap (default: yes)
-  --enable-pam            enable pam (default: no)
-  --enable-web            enable web (default: yes)
-  --enable-tls            enable tls (default: yes)
   --enable-odbc           enable odbc (default: no)
+  --enable-tls            enable tls (default: yes)
+  --enable-web            enable web (default: yes)
   --enable-ejabberd_zlib  enable ejabberd_zlib (default: yes)
+  --enable-pam            enable pam (default: no)
   --enable-hipe           compile natively with HiPE, not recommended
                           (default: no)
   --enable-roster-gateway-workaround
@@ -4030,8 +4030,8 @@ else
 fi
 
 	if test $expat_found = no; then
-		{ { echo "$as_me:$LINENO: error: Could not find the Expat library" >&5
-echo "$as_me: error: Could not find the Expat library" >&2;}
+		{ { echo "$as_me:$LINENO: error: Could not find development files of Expat library" >&5
+echo "$as_me: error: Could not find development files of Expat library" >&2;}
    { (exit 1); exit 1; }; }
 	fi
 	expat_save_CFLAGS="$CFLAGS"
@@ -4192,504 +4192,6 @@ echo "$as_me: error: Could not find expat.h" >&2;}
 	fi
 	CFLAGS="$expat_save_CFLAGS"
        CPPFLAGS="$expat_save_CPPFLAGS"
-
-
-
-
-#locating zlib
-
-# Check whether --with-zlib was given.
-if test "${with_zlib+set}" = set; then
-  withval=$with_zlib;
-fi
-
-
-  ZLIB_CFLAGS=
-  ZLIB_LIBS=
-	if test x"$with_zlib" != x; then
-		ZLIB_CFLAGS="-I$with_zlib/include"
-		ZLIB_LIBS="-L$with_zlib/lib"
-	fi
-
-	{ echo "$as_me:$LINENO: checking for gzgets in -lz" >&5
-echo $ECHO_N "checking for gzgets in -lz... $ECHO_C" >&6; }
-if test "${ac_cv_lib_z_gzgets+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz "$ZLIB_LIBS" $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char gzgets ();
-int
-main ()
-{
-return gzgets ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_z_gzgets=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_lib_z_gzgets=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_z_gzgets" >&5
-echo "${ECHO_T}$ac_cv_lib_z_gzgets" >&6; }
-if test $ac_cv_lib_z_gzgets = yes; then
-   ZLIB_LIBS="$ZLIB_LIBS -lz"
-		       zlib_found=yes
-else
-   zlib_found=no
-fi
-
-	if test $zlib_found = no; then
-		{ { echo "$as_me:$LINENO: error: Could not find the zlib library" >&5
-echo "$as_me: error: Could not find the zlib library" >&2;}
-   { (exit 1); exit 1; }; }
-	fi
-	zlib_save_CFLAGS="$CFLAGS"
-	CFLAGS="$CFLAGS $ZLIB_CFLAGS"
-       zlib_save_CPPFLAGS="$CFLAGS"
-       CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
-
-for ac_header in zlib.h
-do
-as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  { echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-fi
-ac_res=`eval echo '${'$as_ac_Header'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
-else
-  # Is the header compilable?
-{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
-echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <$ac_header>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_header_compiler=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_header_compiler=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-echo "${ECHO_T}$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
-echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <$ac_header>
-_ACEOF
-if { (ac_try="$ac_cpp conftest.$ac_ext"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null && {
-	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       }; then
-  ac_header_preproc=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
-fi
-
-rm -f conftest.err conftest.$ac_ext
-{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-echo "${ECHO_T}$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
-    ( cat <<\_ASBOX
-## --------------------------------------- ##
-## Report this to ejabberd@process-one.net ##
-## --------------------------------------- ##
-_ASBOX
-     ) | sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-{ echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  eval "$as_ac_Header=\$ac_header_preproc"
-fi
-ac_res=`eval echo '${'$as_ac_Header'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
-
-fi
-if test `eval echo '${'$as_ac_Header'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
-
-else
-  zlib_found=no
-fi
-
-done
-
-	if test $zlib_found = no; then
-		{ { echo "$as_me:$LINENO: error: Could not find zlib.h" >&5
-echo "$as_me: error: Could not find zlib.h" >&2;}
-   { (exit 1); exit 1; }; }
-	fi
-	CFLAGS="$zlib_save_CFLAGS"
-       CPPFLAGS="$zlib_save_CPPFLAGS"
-
-
-
-
-#locating PAM
-
-# Check whether --with-pam was given.
-if test "${with_pam+set}" = set; then
-  withval=$with_pam;
-fi
-
-
-  PAM_CFLAGS=
-  PAM_LIBS=
-	if test x"$with_pam" != x; then
-		PAM_CFLAGS="-I$with_pam/include"
-		PAM_LIBS="-L$with_pam/lib"
-	fi
-
-	{ echo "$as_me:$LINENO: checking for pam_start in -lpam" >&5
-echo $ECHO_N "checking for pam_start in -lpam... $ECHO_C" >&6; }
-if test "${ac_cv_lib_pam_pam_start+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpam "$PAM_LIBS" $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char pam_start ();
-int
-main ()
-{
-return pam_start ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_pam_pam_start=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_lib_pam_pam_start=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_pam_pam_start" >&5
-echo "${ECHO_T}$ac_cv_lib_pam_pam_start" >&6; }
-if test $ac_cv_lib_pam_pam_start = yes; then
-   PAM_LIBS="$PAM_LIBS -lpam"
-		       pam_found=yes
-else
-   pam_found=no
-fi
-
-	if test $pam_found = no; then
-		{ echo "$as_me:$LINENO: WARNING: Could not find the PAM library" >&5
-echo "$as_me: WARNING: Could not find the PAM library" >&2;}
-	fi
-	pam_save_CFLAGS="$CFLAGS"
-	CFLAGS="$CFLAGS $PAM_CFLAGS"
-       pam_save_CPPFLAGS="$CPPFLAGS"
-       CPPFLAGS="$CPPFLAGS $PAM_CFLAGS"
-
-for ac_header in security/pam_appl.h
-do
-as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  { echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-fi
-ac_res=`eval echo '${'$as_ac_Header'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
-else
-  # Is the header compilable?
-{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
-echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <$ac_header>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_header_compiler=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_header_compiler=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-echo "${ECHO_T}$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
-echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <$ac_header>
-_ACEOF
-if { (ac_try="$ac_cpp conftest.$ac_ext"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null && {
-	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       }; then
-  ac_header_preproc=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
-fi
-
-rm -f conftest.err conftest.$ac_ext
-{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-echo "${ECHO_T}$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
-    ( cat <<\_ASBOX
-## --------------------------------------- ##
-## Report this to ejabberd@process-one.net ##
-## --------------------------------------- ##
-_ASBOX
-     ) | sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-{ echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  eval "$as_ac_Header=\$ac_header_preproc"
-fi
-ac_res=`eval echo '${'$as_ac_Header'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
-
-fi
-if test `eval echo '${'$as_ac_Header'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
-
-else
-  pam_found=no
-fi
-
-done
-
-	if test $pam_found = no; then
-		{ echo "$as_me:$LINENO: WARNING: Could not find security/pam_appl.h" >&5
-echo "$as_me: WARNING: Could not find security/pam_appl.h" >&2;}
-	fi
-	CFLAGS="$pam_save_CFLAGS"
-       CPPFLAGS="$pam_save_CPPFLAGS"
 
 
 
@@ -5221,28 +4723,6 @@ fi
 
 
 
-mod_pubsub=
-make_mod_pubsub=
-{ echo "$as_me:$LINENO: checking whether build mod_pubsub" >&5
-echo $ECHO_N "checking whether build mod_pubsub... $ECHO_C" >&6; }
-# Check whether --enable-mod_pubsub was given.
-if test "${enable_mod_pubsub+set}" = set; then
-  enableval=$enable_mod_pubsub; mr_enable_mod_pubsub="$enableval"
-else
-  mr_enable_mod_pubsub=yes
-fi
-
-if test "$mr_enable_mod_pubsub" = "yes"; then
-mod_pubsub=mod_pubsub
-make_mod_pubsub=mod_pubsub/Makefile
-fi
-{ echo "$as_me:$LINENO: result: $mr_enable_mod_pubsub" >&5
-echo "${ECHO_T}$mr_enable_mod_pubsub" >&6; }
-
-
-
-
-
 mod_irc=
 make_mod_irc=
 { echo "$as_me:$LINENO: checking whether build mod_irc" >&5
@@ -5309,6 +4789,28 @@ echo "${ECHO_T}$mr_enable_mod_proxy65" >&6; }
 
 
 
+mod_pubsub=
+make_mod_pubsub=
+{ echo "$as_me:$LINENO: checking whether build mod_pubsub" >&5
+echo $ECHO_N "checking whether build mod_pubsub... $ECHO_C" >&6; }
+# Check whether --enable-mod_pubsub was given.
+if test "${enable_mod_pubsub+set}" = set; then
+  enableval=$enable_mod_pubsub; mr_enable_mod_pubsub="$enableval"
+else
+  mr_enable_mod_pubsub=yes
+fi
+
+if test "$mr_enable_mod_pubsub" = "yes"; then
+mod_pubsub=mod_pubsub
+make_mod_pubsub=mod_pubsub/Makefile
+fi
+{ echo "$as_me:$LINENO: result: $mr_enable_mod_pubsub" >&5
+echo "${ECHO_T}$mr_enable_mod_pubsub" >&6; }
+
+
+
+
+
 eldap=
 make_eldap=
 { echo "$as_me:$LINENO: checking whether build eldap" >&5
@@ -5326,72 +4828,6 @@ make_eldap=eldap/Makefile
 fi
 { echo "$as_me:$LINENO: result: $mr_enable_eldap" >&5
 echo "${ECHO_T}$mr_enable_eldap" >&6; }
-
-
-
-
-
-pam=
-make_pam=
-{ echo "$as_me:$LINENO: checking whether build pam" >&5
-echo $ECHO_N "checking whether build pam... $ECHO_C" >&6; }
-# Check whether --enable-pam was given.
-if test "${enable_pam+set}" = set; then
-  enableval=$enable_pam; mr_enable_pam="$enableval"
-else
-  mr_enable_pam=no
-fi
-
-if test "$mr_enable_pam" = "yes"; then
-pam=pam
-make_pam=pam/Makefile
-fi
-{ echo "$as_me:$LINENO: result: $mr_enable_pam" >&5
-echo "${ECHO_T}$mr_enable_pam" >&6; }
-
-
-
-
-
-web=
-make_web=
-{ echo "$as_me:$LINENO: checking whether build web" >&5
-echo $ECHO_N "checking whether build web... $ECHO_C" >&6; }
-# Check whether --enable-web was given.
-if test "${enable_web+set}" = set; then
-  enableval=$enable_web; mr_enable_web="$enableval"
-else
-  mr_enable_web=yes
-fi
-
-if test "$mr_enable_web" = "yes"; then
-web=web
-make_web=web/Makefile
-fi
-{ echo "$as_me:$LINENO: result: $mr_enable_web" >&5
-echo "${ECHO_T}$mr_enable_web" >&6; }
-
-
-
-
-
-tls=
-make_tls=
-{ echo "$as_me:$LINENO: checking whether build tls" >&5
-echo $ECHO_N "checking whether build tls... $ECHO_C" >&6; }
-# Check whether --enable-tls was given.
-if test "${enable_tls+set}" = set; then
-  enableval=$enable_tls; mr_enable_tls="$enableval"
-else
-  mr_enable_tls=yes
-fi
-
-if test "$mr_enable_tls" = "yes"; then
-tls=tls
-make_tls=tls/Makefile
-fi
-{ echo "$as_me:$LINENO: result: $mr_enable_tls" >&5
-echo "${ECHO_T}$mr_enable_tls" >&6; }
 
 
 
@@ -5419,6 +4855,51 @@ echo "${ECHO_T}$mr_enable_odbc" >&6; }
 
 
 
+tls=
+make_tls=
+{ echo "$as_me:$LINENO: checking whether build tls" >&5
+echo $ECHO_N "checking whether build tls... $ECHO_C" >&6; }
+# Check whether --enable-tls was given.
+if test "${enable_tls+set}" = set; then
+  enableval=$enable_tls; mr_enable_tls="$enableval"
+else
+  mr_enable_tls=yes
+fi
+
+if test "$mr_enable_tls" = "yes"; then
+tls=tls
+make_tls=tls/Makefile
+fi
+{ echo "$as_me:$LINENO: result: $mr_enable_tls" >&5
+echo "${ECHO_T}$mr_enable_tls" >&6; }
+
+
+
+
+
+web=
+make_web=
+{ echo "$as_me:$LINENO: checking whether build web" >&5
+echo $ECHO_N "checking whether build web... $ECHO_C" >&6; }
+# Check whether --enable-web was given.
+if test "${enable_web+set}" = set; then
+  enableval=$enable_web; mr_enable_web="$enableval"
+else
+  mr_enable_web=yes
+fi
+
+if test "$mr_enable_web" = "yes"; then
+web=web
+make_web=web/Makefile
+fi
+{ echo "$as_me:$LINENO: result: $mr_enable_web" >&5
+echo "${ECHO_T}$mr_enable_web" >&6; }
+
+
+
+
+
+
 ejabberd_zlib=
 make_ejabberd_zlib=
 { echo "$as_me:$LINENO: checking whether build ejabberd_zlib" >&5
@@ -5439,6 +4920,532 @@ echo "${ECHO_T}$mr_enable_ejabberd_zlib" >&6; }
 
 
 
+
+#locating zlib
+
+# Check whether --with-zlib was given.
+if test "${with_zlib+set}" = set; then
+  withval=$with_zlib;
+fi
+
+
+if test x"$ejabberd_zlib" != x; then
+  ZLIB_CFLAGS=
+  ZLIB_LIBS=
+	if test x"$with_zlib" != x; then
+		ZLIB_CFLAGS="-I$with_zlib/include"
+		ZLIB_LIBS="-L$with_zlib/lib"
+	fi
+
+	{ echo "$as_me:$LINENO: checking for gzgets in -lz" >&5
+echo $ECHO_N "checking for gzgets in -lz... $ECHO_C" >&6; }
+if test "${ac_cv_lib_z_gzgets+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz "$ZLIB_LIBS" $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gzgets ();
+int
+main ()
+{
+return gzgets ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_z_gzgets=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_z_gzgets=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_z_gzgets" >&5
+echo "${ECHO_T}$ac_cv_lib_z_gzgets" >&6; }
+if test $ac_cv_lib_z_gzgets = yes; then
+   ZLIB_LIBS="$ZLIB_LIBS -lz"
+		       zlib_found=yes
+else
+   zlib_found=no
+fi
+
+	if test $zlib_found = no; then
+		{ { echo "$as_me:$LINENO: error: Could not find development files of zlib library. Install them or disable \`ejabberd_zlib' with: --disable-ejabberd_zlib" >&5
+echo "$as_me: error: Could not find development files of zlib library. Install them or disable \`ejabberd_zlib' with: --disable-ejabberd_zlib" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	zlib_save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $ZLIB_CFLAGS"
+       zlib_save_CPPFLAGS="$CFLAGS"
+       CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+
+for ac_header in zlib.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## --------------------------------------- ##
+## Report this to ejabberd@process-one.net ##
+## --------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  zlib_found=no
+fi
+
+done
+
+	if test $zlib_found = no; then
+		{ { echo "$as_me:$LINENO: error: Could not find zlib.h. Install it or disable \`ejabberd_zlib' with: --disable-ejabberd_zlib" >&5
+echo "$as_me: error: Could not find zlib.h. Install it or disable \`ejabberd_zlib' with: --disable-ejabberd_zlib" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	CFLAGS="$zlib_save_CFLAGS"
+       CPPFLAGS="$zlib_save_CPPFLAGS"
+
+
+
+fi
+
+
+
+pam=
+make_pam=
+{ echo "$as_me:$LINENO: checking whether build pam" >&5
+echo $ECHO_N "checking whether build pam... $ECHO_C" >&6; }
+# Check whether --enable-pam was given.
+if test "${enable_pam+set}" = set; then
+  enableval=$enable_pam; mr_enable_pam="$enableval"
+else
+  mr_enable_pam=no
+fi
+
+if test "$mr_enable_pam" = "yes"; then
+pam=pam
+make_pam=pam/Makefile
+fi
+{ echo "$as_me:$LINENO: result: $mr_enable_pam" >&5
+echo "${ECHO_T}$mr_enable_pam" >&6; }
+
+
+
+
+#locating PAM
+
+# Check whether --with-pam was given.
+if test "${with_pam+set}" = set; then
+  withval=$with_pam;
+fi
+
+if test x"$pam" != x; then
+  PAM_CFLAGS=
+  PAM_LIBS=
+	if test x"$with_pam" != x; then
+		PAM_CFLAGS="-I$with_pam/include"
+		PAM_LIBS="-L$with_pam/lib"
+	fi
+
+	{ echo "$as_me:$LINENO: checking for pam_start in -lpam" >&5
+echo $ECHO_N "checking for pam_start in -lpam... $ECHO_C" >&6; }
+if test "${ac_cv_lib_pam_pam_start+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpam "$PAM_LIBS" $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char pam_start ();
+int
+main ()
+{
+return pam_start ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_pam_pam_start=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_pam_pam_start=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_pam_pam_start" >&5
+echo "${ECHO_T}$ac_cv_lib_pam_pam_start" >&6; }
+if test $ac_cv_lib_pam_pam_start = yes; then
+   PAM_LIBS="$PAM_LIBS -lpam"
+		       pam_found=yes
+else
+   pam_found=no
+fi
+
+	if test $pam_found = no; then
+		{ { echo "$as_me:$LINENO: error: Could not find development files of PAM library. Install them or disable \`pam' with: --disable-pam" >&5
+echo "$as_me: error: Could not find development files of PAM library. Install them or disable \`pam' with: --disable-pam" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	pam_save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $PAM_CFLAGS"
+       pam_save_CPPFLAGS="$CPPFLAGS"
+       CPPFLAGS="$CPPFLAGS $PAM_CFLAGS"
+
+for ac_header in security/pam_appl.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## --------------------------------------- ##
+## Report this to ejabberd@process-one.net ##
+## --------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  pam_found=no
+fi
+
+done
+
+	if test $pam_found = no; then
+		{ { echo "$as_me:$LINENO: error: Could not find security/pam_appl.h. Install it or disable \`pam' with: --disable-pam" >&5
+echo "$as_me: error: Could not find security/pam_appl.h. Install it or disable \`pam' with: --disable-pam" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	CFLAGS="$pam_save_CFLAGS"
+       CPPFLAGS="$pam_save_CPPFLAGS"
+
+
+
+fi
 
 
 # Check whether --enable-hipe was given.
@@ -5764,8 +5771,8 @@ done
         fi
     done
 if test x${have_openssl} != xyes; then
-    { { echo "$as_me:$LINENO: error: openssl library cannot be found. Install openssl or disable \`tls' module (--disable-tls)." >&5
-echo "$as_me: error: openssl library cannot be found. Install openssl or disable \`tls' module (--disable-tls)." >&2;}
+    { { echo "$as_me:$LINENO: error: Could not find development files of OpenSSL library. Install them or disable \`tls' with: --disable-tls" >&5
+echo "$as_me: error: Could not find development files of OpenSSL library. Install them or disable \`tls' with: --disable-tls" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -6631,31 +6638,31 @@ GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
 EXPAT_CFLAGS!$EXPAT_CFLAGS$ac_delim
 EXPAT_LIBS!$EXPAT_LIBS$ac_delim
-ZLIB_CFLAGS!$ZLIB_CFLAGS$ac_delim
-ZLIB_LIBS!$ZLIB_LIBS$ac_delim
-PAM_CFLAGS!$PAM_CFLAGS$ac_delim
-PAM_LIBS!$PAM_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
-mod_pubsub!$mod_pubsub$ac_delim
-make_mod_pubsub!$make_mod_pubsub$ac_delim
 mod_irc!$mod_irc$ac_delim
 make_mod_irc!$make_mod_irc$ac_delim
 mod_muc!$mod_muc$ac_delim
 make_mod_muc!$make_mod_muc$ac_delim
 mod_proxy65!$mod_proxy65$ac_delim
 make_mod_proxy65!$make_mod_proxy65$ac_delim
+mod_pubsub!$mod_pubsub$ac_delim
+make_mod_pubsub!$make_mod_pubsub$ac_delim
 eldap!$eldap$ac_delim
 make_eldap!$make_eldap$ac_delim
-pam!$pam$ac_delim
-make_pam!$make_pam$ac_delim
-web!$web$ac_delim
-make_web!$make_web$ac_delim
-tls!$tls$ac_delim
-make_tls!$make_tls$ac_delim
 odbc!$odbc$ac_delim
 make_odbc!$make_odbc$ac_delim
+tls!$tls$ac_delim
+make_tls!$make_tls$ac_delim
+web!$web$ac_delim
+make_web!$make_web$ac_delim
 ejabberd_zlib!$ejabberd_zlib$ac_delim
 make_ejabberd_zlib!$make_ejabberd_zlib$ac_delim
+ZLIB_CFLAGS!$ZLIB_CFLAGS$ac_delim
+ZLIB_LIBS!$ZLIB_LIBS$ac_delim
+pam!$pam$ac_delim
+make_pam!$make_pam$ac_delim
+PAM_CFLAGS!$PAM_CFLAGS$ac_delim
+PAM_LIBS!$PAM_LIBS$ac_delim
 hipe!$hipe$ac_delim
 roster_gateway_workaround!$roster_gateway_workaround$ac_delim
 db_type!$db_type$ac_delim

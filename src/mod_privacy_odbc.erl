@@ -775,132 +775,66 @@ item_to_raw(#listitem{type = Type,
     SMatchMessage = if MatchMessage -> "1"; true -> "0" end,
     SMatchPresenceIn = if MatchPresenceIn -> "1"; true -> "0" end,
     SMatchPresenceOut = if MatchPresenceOut -> "1"; true -> "0" end,
-    ["'", SType, "', "
-     "'", SValue, "', "
-     "'", SAction, "', "
-     "'", SOrder, "', "
-     "'", SMatchAll, "', "
-     "'", SMatchIQ, "', "
-     "'", SMatchMessage, "', "
-     "'", SMatchPresenceIn, "', "
-     "'", SMatchPresenceOut, "'"].
-
+    [SType, SValue, SAction, SOrder, SMatchAll, SMatchIQ,
+     SMatchMessage, SMatchPresenceIn, SMatchPresenceOut].
 
 sql_get_default_privacy_list(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["select name from privacy_default_list "
-       "where username='", Username, "';"]).
+    odbc_queries:get_default_privacy_list(LServer, Username).
 
 sql_get_default_privacy_list_t(LUser) ->
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query_t(
-      ["select name from privacy_default_list "
-       "where username='", Username, "';"]).
+    odbc_queries:get_default_privacy_list_t(Username).
 
 sql_get_privacy_list_names(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["select name from privacy_list "
-       "where username='", Username, "';"]).
+    odbc_queries:get_privacy_list_names(LServer, Username).
 
 sql_get_privacy_list_names_t(LUser) ->
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query_t(
-      ["select name from privacy_list "
-       "where username='", Username, "';"]).
+    odbc_queries:get_privacy_list_names_t(Username).
 
 sql_get_privacy_list_id(LUser, LServer, Name) ->
     Username = ejabberd_odbc:escape(LUser),
     SName = ejabberd_odbc:escape(Name),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["select id from privacy_list "
-       "where username='", Username, "' and name='", SName, "';"]).
+    odbc_queries:get_privacy_list_id(LServer, Username, SName).
 
 sql_get_privacy_list_id_t(LUser, Name) ->
     Username = ejabberd_odbc:escape(LUser),
     SName = ejabberd_odbc:escape(Name),
-    ejabberd_odbc:sql_query_t(
-      ["select id from privacy_list "
-       "where username='", Username, "' and name='", SName, "';"]).
+    odbc_queries:get_privacy_list_id_t(Username, SName).
 
 sql_get_privacy_list_data(LUser, LServer, Name) ->
     Username = ejabberd_odbc:escape(LUser),
     SName = ejabberd_odbc:escape(Name),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["select t, value, action, ord, match_all, match_iq, "
-       "match_message, match_presence_in, match_presence_out "
-       "from privacy_list_data "
-       "where id = (select id from privacy_list where "
-       "            username='", Username, "' and name='", SName, "') "
-       "order by ord;"]).
+    odbc_queries:get_privacy_list_data(LServer, Username, SName).
 
 sql_get_privacy_list_data_by_id(ID, LServer) ->
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["select t, value, action, ord, match_all, match_iq, "
-       "match_message, match_presence_in, match_presence_out "
-       "from privacy_list_data "
-       "where id='", ID, "' order by ord;"]).
+    odbc_queries:get_privacy_list_data_by_id(LServer, ID).
 
 sql_set_default_privacy_list(LUser, Name) ->
     Username = ejabberd_odbc:escape(LUser),
     SName = ejabberd_odbc:escape(Name),
-    ejabberd_odbc:sql_query_t(
-      ["delete from privacy_default_list "
-       "      where username='", Username, "';"]),
-    ejabberd_odbc:sql_query_t(
-      ["insert into privacy_default_list(username, name) "
-       "values ('", Username, "', '", SName, "');"]).
+    odbc_queries:set_default_privacy_list(Username, SName).
 
 sql_unset_default_privacy_list(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["delete from privacy_default_list "
-       "      where username='", Username, "';"]).
+    odbc_queries:unset_default_privacy_list(LServer, Username).
 
 sql_remove_privacy_list(LUser, Name) ->
     Username = ejabberd_odbc:escape(LUser),
     SName = ejabberd_odbc:escape(Name),
-    ejabberd_odbc:sql_query_t(
-      ["delete from privacy_list "
-       "where username='", Username, "' and name='", SName, "';"]).
+    odbc_queries:remove_privacy_list(Username, SName).
 
 sql_add_privacy_list(LUser, Name) ->
     Username = ejabberd_odbc:escape(LUser),
     SName = ejabberd_odbc:escape(Name),
-    ejabberd_odbc:sql_query_t(
-      ["insert into privacy_list(username, name) "
-       "values ('", Username, "', '", SName, "');"]).
+    odbc_queries:add_privacy_list(Username, SName).
 
 sql_set_privacy_list(ID, RItems) ->
-    ejabberd_odbc:sql_query_t(
-      ["delete from privacy_list_data "
-       "where id='", ID, "';"]),
-    lists:foreach(fun(Items) ->
-			  ejabberd_odbc:sql_query_t(
-			    ["insert into privacy_list_data("
-			     "id, t, value, action, ord, match_all, match_iq, "
-			     "match_message, match_presence_in, "
-			     "match_presence_out "
-			     ") "
-		 	     "values ('", ID, "', ", Items, ");"])
-		  end, RItems).
+    odbc_queries:set_privacy_list(ID, RItems).
 
 sql_del_privacy_lists(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     Server = ejabberd_odbc:escape(LServer),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["delete from privacy_list where username='", Username, "';"]),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["delete from privacy_list_data where value='", Username++"@"++Server, "';"]),
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["delete from privacy_default_list where username='", Username, "';"]).
+    odbc_queries:del_privacy_lists(LServer, Server, Username).

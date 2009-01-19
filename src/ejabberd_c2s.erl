@@ -1890,14 +1890,26 @@ check_from(El, FromJID) ->
     case exmpp_stanza:get_sender(El) of
 	undefined ->
 	    El;
-	SJID ->
+	{value, SJID} ->
 	    try
-		JID = exmpp_jid:binary_to_jid(SJID),
-		case exmpp_jid:compare_jids(JID, FromJID) of
-		    true ->
-			El;
-		    false ->
-			'invalid-from'
+		JIDEl = exmpp_jid:parse_jid(SJID),
+		case exmpp_jid:lresource(JIDEl) of 
+		    undefined ->
+			%% Matching JID: The stanza is ok
+			case exmpp_jid:compare_bare_jids(JIDEl, FromJID) of
+			    true ->
+				El;
+			   false ->
+				'invalid-from'
+			end;
+		    _ ->
+			%% Matching JID: The stanza is ok
+			case exmpp_jid:compare_jids(JIDEl, FromJID) of
+			    true ->
+				El;
+			    false ->
+			       'invalid-from'
+			end
 		end
 	    catch
 		_:_ ->

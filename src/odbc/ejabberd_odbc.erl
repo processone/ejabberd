@@ -55,6 +55,8 @@
 -define(PGSQL_PORT, 5432).
 -define(MYSQL_PORT, 3306).
 
+-define(TRANSACTION_TIMEOUT, 60000).
+-define(KEEPALIVE_TIMEOUT, 60000).
 -define(KEEPALIVE_QUERY, "SELECT 1;").
 
 %%%----------------------------------------------------------------------
@@ -68,7 +70,7 @@ start_link(Host, StartInterval) ->
 
 sql_query(Host, Query) ->
     gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
-		    {sql_query, Query}, 60000).
+		    {sql_query, Query}, ?TRANSACTION_TIMEOUT).
 
 %% SQL transaction based on a list of queries
 %% This function automatically
@@ -83,7 +85,7 @@ sql_transaction(Host, Queries) when is_list(Queries) ->
 %% SQL transaction, based on a erlang anonymous function (F = fun)
 sql_transaction(Host, F) ->
     gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
-		    {sql_transaction, F}, 60000).
+		    {sql_transaction, F}, ?TRANSACTION_TIMEOUT).
 
 %% This function is intended to be used from inside an sql_transaction:
 sql_query_t(Query) ->
@@ -93,12 +95,12 @@ sql_query_t(Query) ->
 	{error, "No SQL-driver information available."} ->
 	    % workaround for odbc bug
 	    {updated, 0};
-	{error, _} ->
-	    throw(aborted);
+	{error, Reason} ->
+	    throw({aborted, Reason});
 	Rs when is_list(Rs) ->
-	    case lists:keymember(error, 1, Rs) of
-		true ->
-		    throw(aborted);
+	    case lists:keysearch(error, 1, Rs) of
+		{value, {error, Reason}} ->
+		    throw({aborted, Reason});
 		_ ->
 		    QRes
 	    end;
@@ -177,7 +179,7 @@ handle_call({sql_query, Query}, _From, State) ->
 	    {reply, Reply, State}
     end;
 handle_call({sql_transaction, F}, _From, State) ->
-    case execute_transaction(State, F, ?MAX_TRANSACTION_RESTARTS) of
+    case execute_transaction(State, F, ?MAX_TRANSACTION_RESTARTS, "") of
 	% error returned by MySQL driver
 	{error, "query timed out"} ->
 	    {stop, timeout, State};
@@ -247,14 +249,22 @@ sql_query_internal(State, Query) ->
 	    mysql_to_odbc(mysql_conn:fetch(State#state.db_ref, Query, self()))
     end.
 
-execute_transaction(_State, _F, 0) ->
+execute_transaction(State, _F, 0, Reason) ->
+    ?ERROR_MSG("SQL transaction restarts exceeded~n"
+	       "** Restarts: ~p~n"
+	       "** Last abort reason: ~p~n"
+	       "** Stacktrace: ~p~n"
+	       "** When State == ~p",
+	       [?MAX_TRANSACTION_RESTARTS, Reason,
+		erlang:get_stacktrace(), State]),
+    sql_query_internal(State, "rollback;"),
     {aborted, restarts_exceeded};
-execute_transaction(State, F, NRestarts) ->
+execute_transaction(State, F, NRestarts, _Reason) ->
     put(?STATE_KEY, State),
     sql_query_internal(State, "begin;"),
     case catch F() of
-	aborted ->
-	    execute_transaction(State, F, NRestarts - 1);
+	{aborted, Reason} ->
+	    execute_transaction(State, F, NRestarts - 1, Reason);
 	{'EXIT', Reason} ->
 	    sql_query_internal(State, "rollback;"),
 	    {aborted, Reason};
@@ -330,11 +340,6 @@ mysql_connect(Server, Port, DB, Username, Password, StartInterval) ->
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
             mysql_conn:fetch(Ref, ["set names 'utf8';"], self()),
-	    % needed to ensure the order of queries, specifically at
-	    % roster subscription time (this can also be set-up in the
-	    % MySQL configuration, but not at the database level):
-            mysql_conn:fetch(Ref, ["SET SESSION TRANSACTION ISOLATION LEVEL "
-				   "SERIALIZABLE;"], self()),
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("MySQL connection failed: ~p~nWaiting ~p seconds before retrying...~n",
@@ -365,7 +370,7 @@ mysql_item_to_odbc(Columns, Recs) ->
 
 % perform a harmless query on all opened connexions to avoid connexion close.
 keep_alive(PID) ->
-    gen_server:call(PID, {sql_query, ?KEEPALIVE_QUERY}, 60000).
+    gen_server:call(PID, {sql_query, ?KEEPALIVE_QUERY}, ?KEEPALIVE_TIMEOUT).
 
 % log function used by MySQL driver
 log(Level, Format, Args) ->

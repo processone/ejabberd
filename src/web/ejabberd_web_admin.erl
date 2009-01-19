@@ -1447,15 +1447,24 @@ user_info(User, Server, Query, Lang) ->
 	    _ ->
 		[?XE('ul',
 		     lists:map(fun(R) ->
-				       FIP = case ejabberd_sm:get_user_ip(
+				       FIP = case ejabberd_sm:get_user_info(
 						    User, Server, R) of
-						 undefined ->
+						 offline ->
 						     "";
-						 {IP, Port} ->
+						 [{node, Node}, {conn, Conn}, {ip, {IP, Port}}] ->
+						     ConnS = case Conn of
+								 c2s -> "plain";
+								 c2s_tls -> "tls";
+								 c2s_compressed -> "zlib";
+								 http_bind -> "http-bind";
+								 http_poll -> "http-poll"
+							     end,
 						     " (" ++
+						         ConnS ++ "://" ++
 							 inet_parse:ntoa(IP) ++
 							 ":" ++
 							 integer_to_list(Port)
+						         ++ "#" ++ atom_to_list(Node)
 							 ++ ")"
 					     end,
 				       ?LI([?C(R ++ FIP)])

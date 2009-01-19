@@ -30,6 +30,7 @@
 %% API
 -export([start/4,
 	 connect/3,
+	 connect/4,
 	 starttls/2,
 	 starttls/3,
 	 compress/1,
@@ -94,7 +95,10 @@ start(Module, SockMod, Socket, Opts) ->
     end.
 
 connect(Addr, Port, Opts) ->
-    case gen_tcp:connect(Addr, Port, Opts) of
+    connect(Addr, Port, Opts, infinity).
+
+connect(Addr, Port, Opts, Timeout) ->
+    case gen_tcp:connect(Addr, Port, Opts, Timeout) of
 	{ok, Socket} ->
 	    Receiver = ejabberd_receiver:start(Socket, gen_tcp, none),
 	    SocketData = #socket_state{sockmod = gen_tcp,
