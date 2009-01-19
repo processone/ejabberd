@@ -161,7 +161,7 @@ make_xhtml(Els, Host, Node, Lang) ->
 		 [?XAE('div',
 		       [#xmlattr{name = 'id', value = "header"}],
 		       [?XE('h1',
-			    [?ACT("/admin/", "Administration")]
+			    [?ACT("/admin/", "ejabberd Web Admin")]
 			   )]),
 		  ?XAE('div',
 		       [#xmlattr{name = 'id', value = "navigation"}],
@@ -316,6 +316,7 @@ ul li #navhead a, ul li #navheadsub a, ul li #navheadsubsub a {
   text-align: center;
   border-top: 2px solid #d47911;
   border-bottom: 1px solid #d47911;
+  background: #FED6A6;
 }
 
 #navheadsub, #navitemsub {
@@ -371,10 +372,6 @@ textarea {
   border: 1px solid #d6760e;
   color: #723202;
   background-color: #fff2e8;
-  vertical-align: middle;
-  margin-top: 7px;
-  margin-bottom: 5px;
-  padding: 0.1em;
 }
 
 select {
@@ -542,6 +539,19 @@ div.guidelink {
   padding-right: 1em;
 }
 
+table.withtextareas>tbody>tr>td {
+  vertical-align: top;
+}
+
+p.result {
+  border: 1px;
+  border-style: dashed;
+  border-color: #FE8A02;
+  padding: 1em;
+  margin-right: 1em;
+  background: #FFE3C9;
+}
+
 *.alignright {
   font-size: 10pt;
 }
@@ -561,27 +571,26 @@ favicon() ->
 
 logo() ->
     jlib:decode_base64(
-      "iVBORw0KGgoAAAANSUhEUgAAAVcAAAA3CAMAAACPbPnEAAAAYFBMVEX///8C"
-      "AgJyMgL+vm7Wdg7+igL+/v7+slb+qkb+4sr+ojP+nir+lhr+1qb+khL+wnb+"
-      "wn7+zpb+jgb+yoz+xo7+tmL+pj7+mib+jg7+5sb+rlL+rkr+mh7+tl7+2q7+"
-      "umpJ0uikAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxIA"
-      "AAsSAdLdfvwAAAAHdElNRQfUBAUJBhWzc9qJAAABQ0lEQVR42u2bXU/CQBBF"
-      "UUZFURAU5Ev4//+S3Ow+tFl3s6adtE3Oebghzc4DJ/Nw04WZgQczexJkz4lX"
-      "vOKVxKuXV6APTCFXAq94xSte8ermFYbrA6+ilemZRxGz+fxBxMydL0/Vz5an"
-      "vkUrPfb1IPCKV7ziFa9uXsG/DzyLPz7ndjS3tc3tSbcwPdl9tmYq3dHmk9x3"
-      "r8mtiM11KfCKV7ziFa9uXmEc7wf+u6+5TtlXf62fKu9rl3wX9ibsLPCKV7zi"
-      "Fa9uXmF87wf67aBT6a+hp4bOehFxU0/CbgKveMUrXvHq5hXG+vuBcpss75zH"
-      "/VZ5X7vcb4W7q5A/wvbCXoTNhX0JvOIVr3jFq5tX4P8Fw2V6g7UQ9itsLeKm"
-      "fgi84hWveMWrm1egDwyX6Q3WTtinsI2wq7CjwCte8YpXvLp5BQ/utIiGbwh9"
-      "RAEAAAAASUVORK5CYII=").
+      "iVBORw0KGgoAAAANSUhEUgAAAVcAAAA3CAMAAACPbPnEAAAAAXNSR0IArs4c"
+      "6QAAAEtQTFRFcTIA1XcE/YsA/40E/pIH/JYc/5kg/54i/KIu/6U6/apE/61H"
+      "/61P/bFX/7Vh/bda/rpq/L5s/8J2/cJ8/8qI/86Y/9aj/9mt/+bJ7EGiPwAA"
+      "AZRJREFUeNrt28lug0AQhGHajrPv+/s/aVwpDlgE0gQ3tqO/DhxihMg33VJ7"
+      "JmmCVKSJlVJ4bZQ93Jl/zjJv+8tzcMUVV1xxLXIlRfPAZptYrbf5YeW618PW"
+      "yvG8w/g9ZwquuJ6Y6+bbdY0rrifhSmrmgUulVXbVDq3H39Zy6Cf9+8c7JNM/"
+      "mXeY8+SMRmuIK6644oprkSupmQdulLhQdup1qJKmrmWmVpb5NN9LUyddu7nn"
+      "LYkrrrjiimuVK6mZB+6VuFbiXJk8v/bnv0PVa+Yd5tdr/x7vCfqbgPsfV1xx"
+      "xRXXKldSMw+8KPGgxJWyU7WZE538p0vOr/lOm/q7dPf+bOVKvVXiUcEVV1xx"
+      "xbXMldTMA29KPCtxp7T6XpvxE6/9nm/l987mnG9l5u/8jO4Ot9uTEq8Krrji"
+      "iiuuZa6kZh74UFpli3sO61btMfyHyWGv/RMs7wB67ne32/BdwRVXXHHFtcyV"
+      "1MwDn0qrbHHvyPT/Dsarla/R/1GpQydYPhf0bqC/A7jz7YkrrrjiimuVK6nI"
+      "F5dWoNvcLcs/AAAAAElFTkSuQmCC").
 
 logo_fill() ->
     jlib:decode_base64(
-      "iVBORw0KGgoAAAANSUhEUgAAAAYAAAA3BAMAAADdxCZzAAAAHlBMVEXWdg7+"
-      "igL+jg7+khL+nir+rkr+umr+yoz+1qb+5sbOf9L8AAAACXBIWXMAAA9hAAAP"
-      "YQGoP6dpAAAAQUlEQVQI12XDSxHAIBAFQT6BJEcsYAELWMACFtYCFnAL7zxd"
-      "1c5dvhSU2BpKqBXl6R0ljYGS50R5zVC+tVD+vfE6YyUexE9x7g4AAAAASUVO"
-      "RK5CYII=").
+      "iVBORw0KGgoAAAANSUhEUgAAAAYAAAA3BAMAAADdxCZzAAAAAXNSR0IArs4c"
+      "6QAAAB5QTFRF1nYO/ooC/o4O/pIS/p4q/q5K/rpq/sqM/tam/ubGzn/S/AAA"
+      "AEFJREFUCNdlw0sRwCAQBUE+gSRHLGABC1jAAhbWAhZwC+88XdXOXb4UlFAr"
+      "SmwN5ekdJY2BkudEec1QvrVQ/r3xOlK9HsTvertmAAAAAElFTkSuQmCC").
 
 
 process_admin(global,
@@ -638,6 +647,7 @@ process_admin(Host,
 	      #request{path = ["acls-raw"],
 		       q = Query,
 		       lang = Lang}) ->
+
     Res = case lists:keysearch("acls", 1, Query) of
 	      {value, {_, String}} ->
 		  case erl_scan:string(String) of
@@ -659,22 +669,17 @@ process_admin(Host,
 	      _ ->
 		  nothing
 	  end,
-    ACLs = lists:flatten(
-	     io_lib:format(
-	       "~p.", [lists:keysort(
-			 2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
-					      [], [{{acl, '$1', '$2'}}]}]))])),
+    ACLs = lists:keysort(2, ets:select(acl, [{{acl, {'$1', Host}, '$2'},
+					      [], [{{acl, '$1', '$2'}}]}])),
+    {NumLines, ACLsP} = term_to_paragraph(ACLs, 80),
     make_xhtml(?H1GL(?T("Access Control Lists"), "ACLDefinition", "ACL Definition") ++
 	       case Res of
-		   ok -> [?CT("Submitted"), ?P];
-		   error -> [?CT("Bad format"), ?P];
+		   ok -> [?XREST("Submitted")];
+		   error -> [?XREST("Bad format")];
 		   nothing -> []
 	       end ++
 	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
-		     [?XAC('textarea', [#xmlattr{name = 'name', value = "acls"},
-					#xmlattr{name = 'rows', value = "16"},
-					#xmlattr{name = 'cols', value = "80"}],
-			   ACLs),
+		     [?TEXTAREA("acls", integer_to_list(lists:max([16, NumLines])), "80", ACLsP++"."),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
@@ -709,8 +714,8 @@ process_admin(Host,
 				  [], [{{acl, '$1', '$2'}}]}])),
     make_xhtml(?H1GL(?T("Access Control Lists"), "ACLDefinition", "ACL Definition") ++
 	       case Res of
-		   ok -> [?CT("Submitted"), ?P];
-		   error -> [?CT("Bad format"), ?P];
+		   ok -> [?XREST("Submitted")];
+		   error -> [?XREST("Bad format")];
 		   nothing -> []
 	       end ++
 	       [?XE('p', [?ACT("../acls-raw/", "Raw")])] ++
@@ -769,23 +774,19 @@ process_admin(Host,
 		  nothing
 	  end,
     Access =
-	lists:flatten(
-	  io_lib:format(
-	    "~p.", [ets:select(config,
+	    ets:select(config,
 			       [{{config, {access, '$1', Host}, '$2'},
 				 [],
-				 [{{access, '$1', '$2'}}]}])])),
+				 [{{access, '$1', '$2'}}]}]),
+    {NumLines, AccessP} = term_to_paragraph(Access, 80),
     make_xhtml(?H1GL(?T("Access Rules"), "AccessRights", "Access Rights") ++
 	       case Res of
-		   ok -> [?CT("Submitted"), ?P];
-		   error -> [?CT("Bad format"), ?P];
+		   ok -> [?XREST("Submitted")];
+		   error -> [?XREST("Bad format")];
 		   nothing -> []
 	       end ++
 	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
-		     [?XAC('textarea', [#xmlattr{name = 'name', value = "access"},
-					#xmlattr{name = 'rows', value = "16"},
-					#xmlattr{name = 'cols', value = "80"}],
-			   Access),
+		     [?TEXTAREA("access", integer_to_list(lists:max([16, NumLines])), "80", AccessP++"."),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
@@ -815,8 +816,8 @@ process_admin(Host,
 		     [{{access, '$1', '$2'}}]}]),
     make_xhtml(?H1GL(?T("Access Rules"), "AccessRights", "Access Rights") ++
 	       case Res of
-		   ok -> [?CT("Submitted"), ?P];
-		   error -> [?CT("Bad format"), ?P];
+		   ok -> [?XREST("Submitted")];
+		   error -> [?XREST("Bad format")];
 		   nothing -> []
 	       end ++
 	       [?XE('p', [?ACT("../access-raw/", "Raw")])] ++
@@ -855,8 +856,8 @@ process_admin(Host,
     make_xhtml([?XC('h1',
 		    io_lib:format(?T("~s access rule configuration"), [SName]))] ++
 	       case Res of
-		   ok -> [?CT("Submitted"), ?P];
-		   error -> [?CT("Bad format"), ?P];
+		   ok -> [?XREST("Submitted")];
+		   error -> [?XREST("Bad format")];
 		   nothing -> []
 	       end ++
 	       [?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
@@ -1059,11 +1060,19 @@ acl_spec_select(ID, Opt) ->
 		      node_regexp, user_glob, server_glob, node_glob, all, raw]))]).
 
 
+%% @spec (T::any()) -> StringLine::string()
 term_to_string(T) ->
     StringParagraph = lists:flatten(io_lib:format("~1000000p", [T])),
     %% Remove from the string all the carriage returns characters
     {ok, StringLine, _} = regexp:gsub(StringParagraph, "\\n ", ""),
     StringLine.
+
+%% @spec (T::any()) -> {NumLines::integer(), Paragraph::string()}
+term_to_paragraph(T, Cols) ->
+	Paragraph = erl_prettypr:format(erl_syntax:abstract(T), [{paper, Cols}]),
+	{ok, FieldList} = regexp:split(Paragraph, "\n"),
+	NumLines = length(FieldList),
+	{NumLines, Paragraph}.
 
 term_to_id(T) ->
     jlib:encode_base64(binary_to_list(term_to_binary(T))).
@@ -1232,7 +1241,7 @@ access_rule_to_xhtml(Rules) ->
 	     fun({Access, ACL} = _Rule) ->
 		     SAccess = element_to_list(Access),
 		     SACL = atom_to_list(ACL),
-		     SAccess ++ "\t" ++ SACL ++ "\n"
+		     SAccess ++ "\s\t" ++ SACL ++ "\n"
 	     end, Rules),
     ?XAC('textarea', [{"name", "rules"},
 		      {"rows", "16"},
@@ -1309,8 +1318,8 @@ list_users(Host, Query, Lang, URLFunc) ->
 		  end, lists:seq(1, N, M))
 	end,
     case Res of
-	ok -> [?CT("Submitted"), ?P];
-	error -> [?CT("Bad format"), ?P];
+	ok -> [?XREST("Submitted")];
+	error -> [?XREST("Bad format")];
 	nothing -> []
     end ++
 	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
@@ -1506,8 +1515,8 @@ user_info(User, Server, Query, Lang) ->
 					[User, Server, Lang]),
     [?XC('h1', ?T("User ") ++ us_to_list(US))] ++
 	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
 	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
@@ -1674,8 +1683,8 @@ get_node(global, Node, [], Query, Lang) ->
     MenuItems2 = make_menu_items(global, Node, Base, Lang),
     [?XC('h1', ?T("Node ") ++ atom_to_list(Node))] ++
 	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
 	[?XE('ul',
@@ -1704,7 +1713,10 @@ get_node(global, Node, ["db"], Query, Lang) ->
 	{badrpc, _Reason} ->
 	    [?XCT('h1', "RPC Call Error")];
 	Tables ->
-	    node_db_parse_query(Node, Tables, Query),
+	    ResS = case node_db_parse_query(Node, Tables, Query) of
+		       nothing -> [];
+		       ok -> [?XREST("Submitted")]
+		   end,
 	    STables = lists:sort(Tables),
 	    Rows = lists:map(
 		     fun(Table) ->
@@ -1741,7 +1753,7 @@ get_node(global, Node, ["db"], Query, Lang) ->
 				 ])
 		     end, STables),
 	    [?XC('h1', ?T("Database Tables at ") ++ atom_to_list(Node))] ++
-		[?CT("Submitted"), ?P] ++
+		ResS ++
 		[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
 		      [?XAE('table', [],
 			    [?XE('thead',
@@ -1763,10 +1775,15 @@ get_node(global, Node, ["db"], Query, Lang) ->
     end;
 
 get_node(global, Node, ["backup"], Query, Lang) ->
-    _Res = node_backup_parse_query(Node, Query),
-    [?XC('h1', ?T("Backup of ") ++ atom_to_list(Node)),
-     ?XCT('p', "Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
-     ?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
+    ResS = case node_backup_parse_query(Node, Query) of
+	       nothing -> [];
+	       ok -> [?XREST("Submitted")];
+	       {error, Error} -> [?XRES(?T("Error") ++": " ++ io_lib:format("~p", [Error]))]
+	   end,
+    [?XC('h1', ?T("Backup of ") ++ atom_to_list(Node))] ++
+	ResS ++
+	[?XCT('p', "Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
+     ?XAE('form', [#xmlattr{name = 'action', value = <<>>}, #xmlattr{name = 'method', value = <<"post">>}],
 	  [?XAE('table', [],
 		[?XE('tbody',
 		     [?XE('tr',
@@ -1815,16 +1832,22 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 		  ok;
 	      {'EXIT', _Reason} ->
 		  error;
+	      {is_added, ok} ->
+		  ok;
+	      {is_added, {error, Reason}} ->
+		  {error, io_lib:format("~p", [Reason])};
 	      _ ->
 		  nothing
 	  end,
+    %% TODO: This sorting does not work when [{{Port, IP}, Module, Opts}]
     NewPorts = lists:sort(
 		 rpc:call(Node, ejabberd_config, get_local_option, [listen])),
     H1String = ?T("Listened Ports at ") ++ atom_to_list(Node),
     ?H1GL(H1String, "listened", "Listening Ports") ++
 	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
+	    {error, ReasonT} -> [?XRES(?T("Error") ++ ": " ++ ReasonT)];
 	    nothing -> []
 	end ++
 	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
@@ -1847,8 +1870,8 @@ get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
     H1String = ?T("Modules at ") ++ atom_to_list(Node),
     ?H1GL(H1String, "modoverview", "Modules Overview") ++
 	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
 	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
@@ -1861,7 +1884,7 @@ get_node(global, Node, ["stats"], _Query, Lang) ->
     CPUTime = rpc:call(Node, erlang, statistics, [runtime]),
     CPUTimeS = io_lib:format("~.3f", [element(1, CPUTime)/1000]),
     OnlineUsers = mnesia:table_info(session, size),
-    TransactionsCommited =
+    TransactionsCommitted =
 	rpc:call(Node, mnesia, system_info, [transaction_commits]),
     TransactionsAborted =
 	rpc:call(Node, mnesia, system_info, [transaction_failures]),
@@ -1882,9 +1905,9 @@ get_node(global, Node, ["stats"], _Query, Lang) ->
 		?XE('tr', [?XCT('td', "Online Users:"),
 			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				integer_to_list(OnlineUsers))]),
-		?XE('tr', [?XCT('td', "Transactions Commited:"),
+		?XE('tr', [?XCT('td', "Transactions Committed:"),
 			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
-				integer_to_list(TransactionsCommited))]),
+				integer_to_list(TransactionsCommitted))]),
 		?XE('tr', [?XCT('td', "Transactions Aborted:"),
 			   ?XAC('td', [#xmlattr{name = 'class', value = "alignright"}],
 				integer_to_list(TransactionsAborted))]),
@@ -1916,17 +1939,19 @@ get_node(global, Node, ["update"], Query, Lang) ->
     FmtLowLevelScript = ?XC('pre', io_lib:format("~p", [LowLevelScript])),
     [?XC('h1', ?T("Update ") ++ atom_to_list(Node))] ++
 	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
 	[?XAE('form', [#xmlattr{name = 'action', value = ""}, #xmlattr{name = 'method', value = "post"}],
-	      [?INPUTT("submit", "update", "Update"),
+	      [
 	       ?XCT('h2', "Update plan"),
-	       ?XCT('h3', "Updated modules"), Mods,
+	       ?XCT('h3', "Modified modules"), Mods,
 	       ?XCT('h3', "Update script"), FmtScript,
 	       ?XCT('h3', "Low level update script"), FmtLowLevelScript,
-	       ?XCT('h3', "Script check"), ?C(atom_to_list(Check))])
+	       ?XCT('h3', "Script check"), ?XC("pre", atom_to_list(Check)),
+	       ?INPUTT("submit", "update", "Update")
+	      ])
 	];
 
 get_node(Host, Node, NPath, Query, Lang) ->
@@ -1981,6 +2006,8 @@ db_storage_select(ID, Opt, Lang) ->
 		 {disc_only_copies, "Disc only copy"},
 		 {unknown, "Remote copy"}])).
 
+node_db_parse_query(_Node, _Tables, [{nokey,[]}]) ->
+    nothing;
 node_db_parse_query(Node, Tables, Query) ->
     lists:foreach(
       fun(Table) ->
@@ -2014,6 +2041,8 @@ node_db_parse_query(Node, Tables, Query) ->
       end, Tables),
     ok.
 
+node_backup_parse_query(_Node, [{nokey,[]}]) ->
+    nothing;
 node_backup_parse_query(Node, Query) ->
     lists:foldl(
       fun(Action, nothing) ->
@@ -2040,15 +2069,15 @@ node_backup_parse_query(Node, Query) ->
 						   load_textfile, [Path])
 				  end,
 			      case Res of
-				  {error, _Reason} ->
-				      error;
-				  {badrpc, _Reason} ->
-				      error;
+				  {error, Reason} ->
+				      {error, Reason};
+				  {badrpc, Reason} ->
+				      {badrpc, Reason};
 				  _ ->
 				      ok
 			      end;
-			  _ ->
-			      error
+			  OtherError ->
+			      {error, OtherError}
 		      end;
 		  _ ->
 		      nothing
@@ -2059,62 +2088,81 @@ node_backup_parse_query(Node, Query) ->
 
 
 node_ports_to_xhtml(Ports, Lang) ->
-    ?XAE('table', [],
+    ?XAE('table', [#xmlattr{name = 'class', value = <<"withtextareas">>}],
 	 [?XE('thead',
 	      [?XE('tr',
 		   [?XCT('td', "Port"),
+		    ?XCT('td', "IP"),
 		    ?XCT('td', "Module"),
 		    ?XCT('td', "Options")
 		   ])]),
 	  ?XE('tbody',
 	      lists:map(
-		fun({Port, Module, Opts} = _E) ->
-			SPort = integer_to_list(Port),
+		fun({PortIP, Module, Opts} = _E) ->
+			{_Port, SPort, _TIP, SIP, SSPort, OptsClean} =
+			    get_port_data(PortIP, Opts),
 			SModule = atom_to_list(Module),
+			{NumLines, SOptsClean} = term_to_paragraph(OptsClean, 40),
 			%%ID = term_to_id(E),
 			?XE('tr',
-			    [?XC('td', SPort),
-			     ?XE('td', [?INPUT("text", "module" ++ SPort,
-					       SModule)]),
-			     ?XE('td', [?INPUTS("text", "opts" ++ SPort,
-						term_to_string(Opts), "40")]),
-			     ?XE('td', [?INPUTT("submit", "add" ++ SPort,
+			    [?XAE('td', [#xmlattr{name = 'size', value = <<"6">>}], [?C(SPort)]),
+			     ?XAE('td', [#xmlattr{name = 'size', value = <<"15">>}], [?C(SIP)]),
+			     ?XE('td', [?INPUTS("text", "module" ++ SSPort,
+						SModule, "15")]),
+			     ?XE('td', [?TEXTAREA("opts" ++ SSPort, integer_to_list(NumLines), "35", SOptsClean)]),
+			     ?XE('td', [?INPUTT("submit", "add" ++ SSPort,
 						"Update")]),
-			     ?XE('td', [?INPUTT("submit", "delete" ++ SPort,
+			     ?XE('td', [?INPUTT("submit", "delete" ++ SSPort,
 						"Delete")])
 			    ]
 			   )
 		end, Ports) ++
 	      [?XE('tr',
 		   [?XE('td', [?INPUTS("text", "portnew", "", "6")]),
-		    ?XE('td', [?INPUT("text", "modulenew", "")]),
-		    ?XE('td', [?INPUTS("text", "optsnew", "", "40")]),
-		    ?XAE('td', [#xmlattr{name = 'colspan', value = "2"}],
+		    ?XE('td', [?INPUTS("text", "ipnew", "0.0.0.0", "15")]),
+		    ?XE('td', [?INPUTS("text", "modulenew", "", "15")]),
+		    ?XE('td', [?TEXTAREA("optsnew", "2", "35", "[]")]),
+		    ?XAE('td', [{"colspan", "2"}],
 			 [?INPUTT("submit", "addnew", "Add New")])
 		   ]
 		  )]
 	     )]).
 
+get_port_data(PortIP, Opts) ->
+    {Port, IPT, IPS, _IPV, OptsClean} = ejabberd_listener:parse_listener_portip(PortIP, Opts),
+    SPort = io_lib:format("~p", [Port]),
+
+    SSPort = lists:flatten(
+	       lists:map(
+		 fun(N) -> io_lib:format("~.16b", [N]) end,
+		 binary_to_list(crypto:md5(SPort++IPS)))),
+    {Port, SPort, IPT, IPS, SSPort, OptsClean}.
+  
 
 node_ports_parse_query(Node, Ports, Query) ->
     lists:foreach(
-      fun({Port, Module1, _Opts1}) ->
-	      SPort = integer_to_list(Port),
-	      case lists:keysearch("add" ++ SPort, 1, Query) of
+      fun({PortIP, Module1, Opts1}) ->
+	      {Port, _SPort, TIP, _SIP, SSPort, _OptsClean} =
+		  get_port_data(PortIP, Opts1),
+	      case lists:keysearch("add" ++ SSPort, 1, Query) of
 		  {value, _} ->
+		      PortIP2 = {Port, TIP},
 		      {{value, {_, SModule}}, {value, {_, SOpts}}} =
-			  {lists:keysearch("module" ++ SPort, 1, Query),
-			   lists:keysearch("opts" ++ SPort, 1, Query)},
+			  {lists:keysearch("module" ++ SSPort, 1, Query),
+			   lists:keysearch("opts" ++ SSPort, 1, Query)},
 		      Module = list_to_atom(SModule),
 		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 		      {ok, Opts} = erl_parse:parse_term(Tokens),
-		      rpc:call(Node, ejabberd_listener, delete_listener, [Port, Module]),
-		      rpc:call(Node, ejabberd_listener, add_listener, [Port, Module, Opts]),
-		      throw(submitted);
+		      rpc:call(Node, ejabberd_listener, delete_listener,
+			       [PortIP2, Module1]),
+		      R=rpc:call(Node, ejabberd_listener, add_listener,
+				 [PortIP2, Module, Opts]),
+		      throw({is_added, R});
 		  _ ->
-		      case lists:keysearch("delete" ++ SPort, 1, Query) of
+		      case lists:keysearch("delete" ++ SSPort, 1, Query) of
 			  {value, _} ->
-			      rpc:call(Node, ejabberd_listener, delete_listener, [Port, Module1]),
+			      rpc:call(Node, ejabberd_listener, delete_listener,
+				       [PortIP, Module1]),
 			      throw(submitted);
 			  _ ->
 			      ok
@@ -2124,23 +2172,34 @@ node_ports_parse_query(Node, Ports, Query) ->
     case lists:keysearch("addnew", 1, Query) of
 	{value, _} ->
 	    {{value, {_, SPort}},
+	     {value, {_, STIP}}, %% It is a string that may represent a tuple
 	     {value, {_, SModule}},
 	     {value, {_, SOpts}}} =
 		{lists:keysearch("portnew", 1, Query),
+		 lists:keysearch("ipnew", 1, Query),
 		 lists:keysearch("modulenew", 1, Query),
 		 lists:keysearch("optsnew", 1, Query)},
-	    Port = list_to_integer(SPort),
+	    {ok, Toks, _} = erl_scan:string(SPort ++ "."),
+	    {ok, Port2} = erl_parse:parse_term(Toks),
+	    {ok, ToksIP, _} = erl_scan:string(STIP ++ "."),
+	    STIP2 = case erl_parse:parse_term(ToksIP) of
+			{ok, IPTParsed} -> IPTParsed;
+			{error, _} -> STIP
+		    end,
 	    Module = list_to_atom(SModule),
 	    {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 	    {ok, Opts} = erl_parse:parse_term(Tokens),
-	    rpc:call(Node, ejabberd_listener, add_listener, [Port, Module, Opts]),
-	    throw(submitted);
+	    {Port2, _SPort, IP2, _SIP, _SSPort, OptsClean} =
+		get_port_data({Port2, STIP2}, Opts),
+	    R=rpc:call(Node, ejabberd_listener, add_listener,
+		       [{Port2, IP2}, Module, OptsClean]),
+	    throw({is_added, R});
 	_ ->
 	    ok
     end.
 
 node_modules_to_xhtml(Modules, Lang) ->
-    ?XAE('table', [],
+    ?XAE('table', [#xmlattr{name = 'class', value = <<"withtextareas">>}],
 	 [?XE('thead',
 	      [?XE('tr',
 		   [?XCT('td', "Module"),
@@ -2150,11 +2209,11 @@ node_modules_to_xhtml(Modules, Lang) ->
 	      lists:map(
 		fun({Module, Opts} = _E) ->
 			SModule = atom_to_list(Module),
+			{NumLines, SOpts} = term_to_paragraph(Opts, 40),
 			%%ID = term_to_id(E),
 			?XE('tr',
 			    [?XC('td', SModule),
-			     ?XE('td', [?INPUTS("text", "opts" ++ SModule,
-						term_to_string(Opts), "40")]),
+			     ?XE('td', [?TEXTAREA("opts" ++ SModule, integer_to_list(NumLines), "40", SOpts)]),
 			     ?XE('td', [?INPUTT("submit", "restart" ++ SModule,
 						"Restart")]),
 			     ?XE('td', [?INPUTT("submit", "stop" ++ SModule,
@@ -2164,8 +2223,8 @@ node_modules_to_xhtml(Modules, Lang) ->
 		end, Modules) ++
 	      [?XE('tr',
 		   [?XE('td', [?INPUT("text", "modulenew", "")]),
-		    ?XE('td', [?INPUTS("text", "optsnew", "", "40")]),
-		    ?XAE('td', [#xmlattr{name = 'colspan', value = "2"}],
+		    ?XE('td', [?TEXTAREA("optsnew", "2", "40", "[]")]),
+		    ?XAE('td', [{"colspan", "2"}],
 			 [?INPUTT("submit", "start", "Start")])
 		   ]
 		  )]
@@ -2365,11 +2424,11 @@ make_menu_items2(Lang, Deep, {MURI, MName, [Item | Items]}, Res) ->
     make_menu_items2(Lang, Deep, {MURI, MName, Items}, Res2).
 
 make_menu_item(header, 1, URI, Name, _Lang) ->
-    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navhead"}], [?AC(URI, "~ "++Name++" ~")] )]);
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = <<"navhead">>}], [?AC(URI, Name)] )]);
 make_menu_item(header, 2, URI, Name, _Lang) ->
-    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navheadsub"}], [?AC(URI, "~ "++Name++" ~")] )]);
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = <<"navheadsub">>}], [?AC(URI, Name)] )]);
 make_menu_item(header, 3, URI, Name, _Lang) ->
-    ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navheadsubsub"}], [?AC(URI, "~ "++Name++" ~")] )]);
+    ?LI([?XAE('div', [#xmlattr{name = 'id', value = <<"navheadsubsub">>}], [?AC(URI, Name)] )]);
 make_menu_item(item, 1, URI, Name, Lang) ->
     ?LI([?XAE('div', [#xmlattr{name = 'id', value = "navitem"}], [?ACT(URI, Name)] )]);
 make_menu_item(item, 2, URI, Name, Lang) ->

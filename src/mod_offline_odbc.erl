@@ -367,7 +367,7 @@ user_queue(User, Server, Query, Lang) ->
     [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
 			     [us_to_list(US)]))] ++
 	case Res of
-	    ok -> [?CT("Submitted"), ?P];
+	    ok -> [?XREST("Submitted")];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],

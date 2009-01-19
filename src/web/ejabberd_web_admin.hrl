@@ -53,13 +53,23 @@
 -define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
 -define(ACLINPUT(Text), ?XE('td', [?INPUT("text", "value" ++ ID, Text)])).
 
+-define(TEXTAREA(Name, Rows, Cols, Value),
+	?XAC('textarea', [#xmlattr{name = 'name', value = list_to_binary(Name)},
+			  #xmlattr{name = 'rows', value = list_to_binary(Rows)},
+			  #xmlattr{name = 'cols', value = list_to_binary(Cols)}],
+	     Value)).
+
+%% Build an xmlelement for result
+-define(XRES(Text), ?XAC('p', [#xmlattr{name = 'class', value = <<"result">>}], Text)).
+-define(XREST(Text), ?XRES(?T(Text))).
+
 %% Guide Link
 -define(GL(Ref, Title),
 	?XAE('div',
 	     [#xmlattr{name = 'class', value = <<"guidelink">>}],
 	     [?XAE('a',
-		   [#xmlattr{name = "href", value = list_to_binary("/admin/doc/guide.html#"++ Ref)},
-                     #xmlattr{name = "target", value = <<"_blank">>}],
+		   [#xmlattr{name = 'href', value = list_to_binary("/admin/doc/guide.html#"++ Ref)},
+                     #xmlattr{name = 'target', value = <<"_blank">>}],
 		   [?C("[Guide: " ++ Title ++ "]")])
 	     ])).
 

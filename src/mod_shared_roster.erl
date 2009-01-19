@@ -742,8 +742,8 @@ list_shared_roster_groups(Host, Query, Lang) ->
 		 )]),
     ?H1GL(?T("Shared Roster Groups"), "modsharedroster", "mod_shared_roster") ++
 	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -806,8 +806,9 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		[]
 	end ++ [[us_to_list(Member), $\n] || Member <- Members],
     FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
+    DescNL = length(element(2, regexp:split(Description, "\n"))),
     FGroup =
-	?XAE("table", [],
+	?XAE("table", [{"class", "withtextareas"}],
 	     [?XE("tbody",
 		  [?XE("tr",
 		       [?XCT("td", "Name:"),
@@ -816,34 +817,34 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		      ),
 		   ?XE("tr",
 		       [?XCT("td", "Description:"),
-			?XE("td", [?XAC("textarea", [{"name", "description"},
-						     {"rows", "3"},
-						     {"cols", "20"}],
-					Description)])
+			?XE("td", [
+				   ?TEXTAREA("description", integer_to_list(lists:max([3, DescNL])), "20", Description)
+				  ]
+			   )
 		       ]
 		      ),
 		   ?XE("tr",
 		       [?XCT("td", "Members:"),
-			?XE("td", [?XAC("textarea", [{"name", "members"},
-						     {"rows", "3"},
-						     {"cols", "20"}],
-					FMembers)])
+			?XE("td", [
+				   ?TEXTAREA("members", integer_to_list(lists:max([3, length(FMembers)])), "20", FMembers)
+				  ]
+			   )
 		       ]
 		      ),
 		   ?XE("tr",
 		       [?XCT("td", "Displayed Groups:"),
-			?XE("td", [?XAC("textarea", [{"name", "dispgroups"},
-						     {"rows", "3"},
-						     {"cols", "20"}],
-					FDisplayedGroups)])
+			?XE("td", [
+				   ?TEXTAREA("dispgroups", integer_to_list(lists:max([3, length(FDisplayedGroups)])), "20", FDisplayedGroups)
+				  ]
+			   )
 		       ]
 		      )]
 		 )]),
     ?H1GL(?T("Shared Roster Groups"), "modsharedroster", "mod_shared_roster") ++
 	[?XC("h2", ?T("Group ") ++ Group)] ++
 	case Res of
-	    ok -> [?CT("Submitted"), ?P];
-	    error -> [?CT("Bad format"), ?P];
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],

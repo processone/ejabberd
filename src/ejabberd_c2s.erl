@@ -758,7 +758,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				 pres_t = ?SETS:from_list(Ts1),
 				 privacy_list = PrivList});
 	    _ ->
-		ejabberd_hooks:run(forbidden_session_hook, 
+		ejabberd_hooks:run(forbidden_session_hook,
 				   StateData#state.server, [JID]),
 		?INFO_MSG("(~w) Forbidden session for ~s",
 			  [StateData#state.socket,
@@ -819,7 +819,8 @@ session_established({xmlstreamerror, _}, StateData) ->
 session_established(closed, StateData) ->
     {stop, normal, StateData}.
 
-
+%% Process packets sent by user (coming from user on c2s XMPP
+%% connection)
 session_established2(El, StateData) ->
     try
 	User = StateData#state.user,
@@ -990,6 +991,7 @@ handle_info(replaced, _StateName, StateData) ->
     send_element(StateData, exmpp_stream:error('conflict')),
     send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData#state{authenticated = replaced}};
+%% Process Packets that are to be send to the user
 handle_info({route, From, To, Packet}, StateName, StateData) ->
     {Pass, NewAttrs, NewState} =
 	case Packet of
@@ -1061,12 +1063,12 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				Els = Packet#xmlel.children,
 				case exmpp_presence:get_type(Packet) of
 				   'unavailable' ->
-                         mod_caps:clear_caps(From);
+				       mod_caps:clear_caps(From);
 				     _ ->
-                         ServerString = binary_to_list(StateData#state.server),
-                         Caps = mod_caps:read_caps(Els),
-                         mod_caps:note_caps(ServerString, From, Caps)
-               end,
+					 ServerString = binary_to_list(StateData#state.server),
+					 Caps = mod_caps:read_caps(Els),
+					 mod_caps:note_caps(ServerString, From, Caps)
+				 end,
 				case ?SETS:is_element(
 					LFrom, StateData#state.pres_a) orelse
 				    ?SETS:is_element(
@@ -1383,6 +1385,7 @@ process_presence_probe(From, To, StateData) ->
 	    end
     end.
 
+%% User updates his presence (non-directed presence packet)
 presence_update(From, Packet, StateData) ->
     case exmpp_presence:get_type(Packet) of
 	'unavailable' ->
@@ -1493,6 +1496,7 @@ presence_update(From, Packet, StateData) ->
 	    NewState
     end.
 
+%% User sends a directed presence packet
 presence_track(From, To, Packet, StateData) ->
     LTo = jlib:short_prepd_jid(To),
     BFrom = exmpp_jid:jid_to_bare_jid(From),
@@ -1884,7 +1888,7 @@ fsm_reply(Reply, StateName, StateData) ->
 
 %% Used by c2s blacklist plugins
 is_ip_blacklisted({IP,_Port}) ->
-    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).	
+    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).
 
 %% Check from attributes
 %% returns invalid-from|NewElement

@@ -223,8 +223,8 @@ msgid "Backup Management"
 msgstr "Håndtere Sikkerehetskopiering"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Importer Brukere Fra jabberd 1.4 Spoolfiler"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importer Brukere Fra jabberd14 Spoolfiler"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -308,16 +308,16 @@ msgid "Import User from File at "
 msgstr "Importer Bruker fra Fil på "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Skriv inn sti til jabberd1.4 spoolfil"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Skriv inn sti til jabberd14 spoolfil"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importer Brukere fra Katalog på "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Skriv inn sti til jabberd1.4 spoolkatalog"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Skriv inn sti til jabberd14 spoolkatalog"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -753,8 +753,8 @@ msgid "Moderator privileges required"
 msgstr "Redaktørprivilegier kreves"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "Ugyldig JID ~s"
+msgid "Jabber ID ~s is invalid"
+msgstr "Ugyldig Jabber ID ~s"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -806,8 +806,8 @@ msgid "No limit"
 msgstr "Ingen grense"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Presenter ekte JIDer til"
+msgid "Present real Jabber IDs to"
+msgstr "Presenter ekte Jabber IDer til"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -947,8 +947,8 @@ msgid "Subscriber Address"
 msgstr "Abonnements Adresse"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Tillat denne JID å abonnere på denne pubsub noden?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Tillat denne Jabber ID å abonnere på denne pubsub noden?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1430,7 +1430,7 @@ msgid "CPU Time:"
 msgstr "CPU Tid:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Sendte Transaksjoner:"
 
 #: web/ejabberd_web_admin.erl:1877

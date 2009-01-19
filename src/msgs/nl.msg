@@ -14,7 +14,7 @@
 {"Administrator privileges required","U hebt beheerdersprivileges nodig"}.
 {"A friendly name for the node","Bijnaam voor deze knoop"}.
 {"All activity","Alle activiteit"}.
-{"Allow this JID to subscribe to this pubsub node?","Deze gebruiker toestaan te abonneren op deze pubsub node?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Deze gebruiker toestaan te abonneren op deze pubsub node?"}.
 {"Allow users to change subject","Gebruikers mogen het onderwerp veranderen"}.
 {"Allow users to query other users","Gebruikers mogen naar andere gebruikers verzoeken verzenden"}.
 {"Allow users to send invites","Gebruikers mogen uitnodigingen verzenden"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Voer lijst met op te starten modules als volgt in: {Module, [Opties]}"}.
 {"Enter nickname you want to register","Voer de bijnaam in die u wilt registreren"}.
 {"Enter path to backup file","Voer pad naar backupbestand in"}.
-{"Enter path to jabberd1.4 spool dir","Voer pad naar jabberd 1.4-spool-directory in"}.
-{"Enter path to jabberd1.4 spool file","Voer pad naar jabberd 1.4-spool-bestand in"}.
+{"Enter path to jabberd14 spool dir","Voer pad naar jabberd14-spool-directory in"}.
+{"Enter path to jabberd14 spool file","Voer pad naar jabberd14-spool-bestand in"}.
 {"Enter path to text file","Voer pad naar backupbestand in"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Voer de gebruikersnaam en de coderingen in die u wilt gebruiken voor verbindingen met IRC-servers"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -113,7 +113,7 @@
 {"Import File","Bestand importeren"}.
 {"Import User from File at ","Importeer gebruiker via bestand op "}.
 {"Import Users from Dir at ","Gebruikers importeren vanaf directory op "}.
-{"Import Users From jabberd 1.4 Spool Files","Importeer gebruikers via spool-bestanden van jabberd 1.4"}.
+{"Import Users From jabberd14 Spool Files","Importeer gebruikers via spool-bestanden van jabberd14"}.
 {"Improper message type","Onjuist berichttype"}.
 {"Incorrect password","Foutief wachtwoord"}.
 {"Invalid affiliation: ~s","Ongeldige affiliatie: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages to the conference","Er mogen geen privéberichten naar de chatruimte worden verzonden"}.
 {"Jabber ID","Jabber ID"}.
 {"January","januari"}.
-{"JID ~s is invalid","De Jabber ID ~s is ongeldig"}.
+{"Jabber ID ~s is invalid","De Jabber ID ~s is ongeldig"}.
 {"joins the room","betrad de chatruimte"}.
 {"July","juli"}.
 {"June","juni"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Poort"}.
-{"Present real JIDs to","Jabber ID's kunnen achterhaald worden door"}.
+{"Present real Jabber IDs to","Jabber ID's kunnen achterhaald worden door"}.
 {"private, ","privé, "}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub abonnee verzoek"}.
@@ -307,7 +307,7 @@
 {"To ~s","Naar ~s"}.
 {"Traffic rate limit is exceeded","Dataverkeerslimiet overschreden"}.
 {"Transactions Aborted:","Afgebroken transacties:"}.
-{"Transactions Commited:","Bevestigde transacties:"}.
+{"Transactions Committed:","Bevestigde transacties:"}.
 {"Transactions Logged:","Gelogde transacties:"}.
 {"Transactions Restarted:","Herstarte transacties:"}.
 {"Tuesday","dinsdag"}.

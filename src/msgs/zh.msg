@@ -14,7 +14,7 @@
 {"Administrator privileges required","需要管理员权限"}.
 {"A friendly name for the node","该节点的友好名称"}.
 {"All activity","所有活动"}.
-{"Allow this JID to subscribe to this pubsub node?","允许该JID订阅该pubsub节点?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","允许该JID订阅该pubsub节点?"}.
 {"Allow users to change subject","允许用户更改主题"}.
 {"Allow users to query other users","允许用户查询其它用户"}.
 {"Allow users to send invites","允许用户发送邀请"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","请输入{模块, [选项]}列表"}.
 {"Enter nickname you want to register","请输入您想要注册的昵称"}.
 {"Enter path to backup file","请输入备份文件的路径"}.
-{"Enter path to jabberd1.4 spool dir","请输入jabberd1.4 spool目录的路径"}.
-{"Enter path to jabberd1.4 spool file","请输入jabberd1.4 spool文件的路径"}.
+{"Enter path to jabberd14 spool dir","请输入jabberd14 spool目录的路径"}.
+{"Enter path to jabberd14 spool file","请输入jabberd14 spool文件的路径"}.
 {"Enter path to text file","请输入文本文件的路径"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","请输入您想使用的用来连接到IRC服务器的用户名和编码"}.
 {"Erlang Jabber Server","Erlang Jabber 服务器"}.
@@ -113,7 +113,7 @@
 {"Import File","导入文件"}.
 {"Import User from File at ","导入用户的文件位于 "}.
 {"Import Users from Dir at ","导入用户的目录位于 "}.
-{"Import Users From jabberd 1.4 Spool Files","从Jabberd 1.4 Spool文件导入用户"}.
+{"Import Users From jabberd14 Spool Files","从Jabberd 1.4 Spool文件导入用户"}.
 {"Improper message type","消息类型不恰当"}.
 {"Incorrect password","密码不正确"}.
 {"Invalid affiliation: ~s","无效加入: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages","不允许发送私聊消息"}.
 {"Jabber ID","Jabber ID"}.
 {"January","一月"}.
-{"JID ~s is invalid","JID ~s无效"}.
+{"Jabber ID ~s is invalid","JID ~s无效"}.
 {"joins the room","加入房间"}.
 {"July","七月"}.
 {"June","六月"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","端口"}.
-{"Present real JIDs to","将真实JID显示给"}.
+{"Present real Jabber IDs to","将真实JID显示给"}.
 {"private, ","保密"}.
 {"Publish-Subscribe","发布-订阅"}.
 {"PubSub subscriber request","PubSub订阅人请求"}.
@@ -307,7 +307,7 @@
 {"To","到"}.
 {"Traffic rate limit is exceeded","已经超过传输率限制"}.
 {"Transactions Aborted:","取消的事务:"}.
-{"Transactions Commited:","提交的事务:"}.
+{"Transactions Committed:","提交的事务:"}.
 {"Transactions Logged:","记入日志的事务:"}.
 {"Transactions Restarted:","重启的事务:"}.
 {"Tuesday","星期二"}.

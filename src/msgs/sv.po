@@ -227,8 +227,8 @@ msgid "Backup Management"
 msgstr "Hantera säkerhetskopior"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Importera användare från jabberd 1.4 Spool filer"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importera användare från jabberd14 Spool filer"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -312,16 +312,16 @@ msgid "Import User from File at "
 msgstr "Importera användare från fil på "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Skriv in sökväg till spoolfil från jabberd1.4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Skriv in sökväg till spoolfil från jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importera användare från katalog på "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Skriv in sökväg till spoolkatalog från jabberd1.4"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Skriv in sökväg till spoolkatalog från jabberd14"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -756,8 +756,8 @@ msgid "Moderator privileges required"
 msgstr "Moderatorprivilegier krävs"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "Otillåtet JID ~s"
+msgid "Jabber ID ~s is invalid"
+msgstr "Otillåtet Jabber ID ~s"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -809,8 +809,8 @@ msgid "No limit"
 msgstr "Ingen gräns"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Nuvarande äkta JIDs till"
+msgid "Present real Jabber IDs to"
+msgstr "Nuvarande äkta Jabber IDs till"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -950,8 +950,8 @@ msgid "Subscriber Address"
 msgstr "Prenumerationsadress"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Tillåt denna JID att prenumerera på denna pubsub node"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Tillåt denna Jabber ID att prenumerera på denna pubsub node"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1432,7 +1432,7 @@ msgid "CPU Time:"
 msgstr "CPU tid"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transaktioner kommittade"
 
 #: web/ejabberd_web_admin.erl:1877

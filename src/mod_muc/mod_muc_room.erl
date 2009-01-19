@@ -2235,7 +2235,7 @@ find_changed_items(UJID, UAffiliation, URole,
 			   ErrText = io_lib:format(
 				       translate:translate(
 					 Lang,
-					 "JID ~s is invalid"), [S]),
+					 "Jabber ID ~s is invalid"), [S]),
 			   {error, ?ERR(Item, 'not-acceptable', Lang, ErrText)}
 		   end;
 	       _ ->
@@ -2789,7 +2789,7 @@ get_config(Lang, StateData, From) ->
     #xmlel{name = 'field', attrs = [
                 #xmlattr{name = 'type', value = "list-single"},
                 #xmlattr{name = 'label', 
-                    value = translate:translate(Lang, "Present real JIDs to")},
+                    value = translate:translate(Lang, "Present real Jabber IDs to")},
                 #xmlattr{name = 'var', value = "muc#roomconfig_whois"}],
           children = [#xmlel{name = 'value',
                         children = [#xmlcdata{cdata = 

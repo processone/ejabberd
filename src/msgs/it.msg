@@ -6,7 +6,7 @@
 {"Access rules","Regole di accesso"}.
 {"Access Rules","Regole di accesso"}.
 {"Action on user","Azione sull'utente"}.
-{"Add Jabber ID","Aggiungere un Jabber ID (JID)"}.
+{"Add Jabber ID","Aggiungere un Jabber ID (Jabber ID)"}.
 {"Add New","Aggiungere nuovo"}.
 {"Add User","Aggiungere un utente"}.
 {"Administration","Amministrazione"}.
@@ -14,7 +14,7 @@
 {"Administrator privileges required","Necessari i privilegi di amministratore"}.
 {"A friendly name for the node","Un nome comodo per il nodo"}.
 {"All activity","Tutta l'attività"}.
-{"Allow this JID to subscribe to this pubsub node?","Consentire a questo JID l'iscrizione a questo nodo pubsub?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Consentire a questo JID l'iscrizione a questo nodo pubsub?"}.
 {"Allow users to change subject","Consentire agli utenti di cambiare l'oggetto"}.
 {"Allow users to query other users","Consentire agli utenti query verso altri utenti"}.
 {"Allow users to send invites","Consentire agli utenti l'invio di inviti"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Immettere un elenco di {Modulo, [Opzioni]}"}.
 {"Enter nickname you want to register","Immettere il nickname che si vuole registrare"}.
 {"Enter path to backup file","Immettere il percorso del file di salvataggio"}.
-{"Enter path to jabberd1.4 spool dir","Immettere il percorso della directory di spool di jabberd1.4"}.
-{"Enter path to jabberd1.4 spool file","Immettere il percorso del file di spool di jabberd1.4"}.
+{"Enter path to jabberd14 spool dir","Immettere il percorso della directory di spool di jabberd14"}.
+{"Enter path to jabberd14 spool file","Immettere il percorso del file di spool di jabberd14"}.
 {"Enter path to text file","Immettere il percorso del file di testo"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Immettere il nome utente e le codifiche che si desidera utilizzare per la connessione ai server IRC"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -113,7 +113,7 @@
 {"Import File","Importare un file"}.
 {"Import User from File at ","Importare un utente dal file "}.
 {"Import Users from Dir at ","Importare utenti dalla directory "}.
-{"Import Users From jabberd 1.4 Spool Files","Importare utenti da file di spool di jabberd 1.4"}.
+{"Import Users From jabberd14 Spool Files","Importare utenti da file di spool di jabberd14"}.
 {"Improper message type","Tipo di messaggio non corretto"}.
 {"Incorrect password","Password non esatta"}.
 {"Invalid affiliation: ~s","Affiliazione non valida: ~s"}.
@@ -125,9 +125,9 @@
 {"It is not allowed to send private messages","Non è consentito l'invio di messaggi privati"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Non è consentito l'invio di messaggi privati di tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Non è consentito l'invio di messaggi privati alla conferenza"}.
-{"Jabber ID","Jabber ID (JID)"}.
+{"Jabber ID","Jabber ID (Jabber ID)"}.
 {"January","Gennaio"}.
-{"JID ~s is invalid","Il JID ~s non è valido"}.
+{"Jabber ID ~s is invalid","Il JID ~s non è valido"}.
 {"joins the room","entra nella stanza"}.
 {"July","Luglio"}.
 {"June","Giugno"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Porta"}.
-{"Present real JIDs to","Rendere visibile il JID reale a"}.
+{"Present real Jabber IDs to","Rendere visibile il JID reale a"}.
 {"private, ","privato, "}.
 {"Publish-Subscribe","Pubblicazione-Iscrizione"}.
 {"PubSub subscriber request","Richiesta di iscrizione per PubSub"}.
@@ -307,7 +307,7 @@
 {"To ~s","A ~s"}.
 {"Traffic rate limit is exceeded","Limite di traffico superato"}.
 {"Transactions Aborted:","Transazioni abortite:"}.
-{"Transactions Commited:","Transazioni avvenute:"}.
+{"Transactions Committed:","Transazioni avvenute:"}.
 {"Transactions Logged:","Transazioni con log:"}.
 {"Transactions Restarted:","Transazioni riavviate:"}.
 {"Tuesday","Martedì"}.

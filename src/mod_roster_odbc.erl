@@ -951,8 +951,8 @@ user_roster(User, Server, Query, Lang) ->
 	    end,
 	[?XC("h1", ?T("Roster of ") ++ us_to_list(US))] ++
 	    case Res of
-		ok -> [?CT("Submitted"), ?P];
-		error -> [?CT("Bad format"), ?P];
+		ok -> [?XREST("Submitted")];
+		error -> [?XREST("Bad format")];
 		nothing -> []
 	    end ++
 	    [?XAE("form", [{"action", ""}, {"method", "post"}],

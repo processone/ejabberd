@@ -14,7 +14,7 @@
 {"Administrator privileges required","Yönetim yetkileri gerekli"}.
 {"A friendly name for the node","Düğüm için dostane bir isim"}.
 {"All activity","Tüm aktivite"}.
-{"Allow this JID to subscribe to this pubsub node?","Bu JID bu pubsub düğümüne üye olmasına izin verilsin mi?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Bu JID bu pubsub düğümüne üye olmasına izin verilsin mi?"}.
 {"Allow users to change subject","Kullanıcıların konu değiştirmesine izin ver"}.
 {"Allow users to query other users","Kullanıcıların diğer kullanıcıları sorgulamalarına izin ver"}.
 {"Allow users to send invites","Kullanıcıların davetiye göndermelerine izin ver"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","{Module, [Options]} listesi giriniz"}.
 {"Enter nickname you want to register","Kaydettirmek istediğiniz takma ismi giriniz"}.
 {"Enter path to backup file","Yedek dosyasının yolunu giriniz"}.
-{"Enter path to jabberd1.4 spool dir","jabberd1.4 spool dosyası için yol giriniz"}.
-{"Enter path to jabberd1.4 spool file","jabberd1.4 spool dosyası için yol giriniz"}.
+{"Enter path to jabberd14 spool dir","jabberd14 spool dosyası için yol giriniz"}.
+{"Enter path to jabberd14 spool file","jabberd14 spool dosyası için yol giriniz"}.
 {"Enter path to text file","Metin dosyasının yolunu giriniz"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","IRC sunuculara bağlanmak için kullanmak istediğiniz kullanıcı isimleri ve kodlamaları giriniz"}.
 {"Erlang Jabber Server","Erlang Jabber Sunucusu"}.
@@ -113,7 +113,7 @@
 {"Import File","Dosyayı İçe Aktar"}.
 {"Import User from File at ","Dosyadan Kullanıcıları İçe Aktar : "}.
 {"Import Users from Dir at ","Dizinden Kullanıcıları İçe Aktar : "}.
-{"Import Users From jabberd 1.4 Spool Files","Jabberd 1.4 Spool Dosyalarından Kullanıcıları İçeri Aktar"}.
+{"Import Users From jabberd14 Spool Files","Jabberd 1.4 Spool Dosyalarından Kullanıcıları İçeri Aktar"}.
 {"Improper message type","Uygunsuz mesaj tipi"}.
 {"Incorrect password","Yanlış parola"}.
 {"Invalid affiliation: ~s","Geçersiz ilişki: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages to the conference","Konferansa özel mesajlar gönderilmesine izin verilmiyor"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Ocak"}.
-{"JID ~s is invalid","JID ~s geçersiz"}.
+{"Jabber ID ~s is invalid","JID ~s geçersiz"}.
 {"joins the room","odaya katıldı"}.
 {"July","Temmuz"}.
 {"June","Haziran"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Kapı (Port)"}.
-{"Present real JIDs to","Gerçek JID'lerini göster :"}.
+{"Present real Jabber IDs to","Gerçek JID'lerini göster :"}.
 {"private, ","özel"}.
 {"Publish-Subscribe","Yayınla-Üye Ol"}.
 {"PubSub subscriber request","PubSub üye isteği"}.
@@ -307,7 +307,7 @@
 {"To ~s","Kime ~s"}.
 {"Traffic rate limit is exceeded","Trafik oran sınırı aşıldı"}.
 {"Transactions Aborted:","İptal Edilen Hareketler (Transactions):"}.
-{"Transactions Commited:","Tamamlanan Hareketler (Transactions Commited):"}.
+{"Transactions Committed:","Tamamlanan Hareketler (Transactions Committed):"}.
 {"Transactions Logged:","Kaydı Tutulan Hareketler (Transactions):"}.
 {"Transactions Restarted:","Tekrar Başlatılan Hareketler (Transactions):"}.
 {"Tuesday","Salı"}.

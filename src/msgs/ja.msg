@@ -14,7 +14,7 @@
 {"Administrator privileges required","管理者権限が必要です"}.
 {"A friendly name for the node","ノードの為のフレンドリネーム"}.
 {"All activity","全て"}.
-{"Allow this JID to subscribe to this pubsub node?","この JID をこの pubsubノードへ購読することを許可しますか？"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","この JID をこの pubsubノードへ購読することを許可しますか？"}.
 {"Allow users to change subject","ユーザーによる件名の変更を許可する"}.
 {"Allow users to query other users","ユーザーによる他のユーザーへの問い合わせを許可する"}.
 {"Allow users to send invites","ユーザーによる招待を許可する"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","{モジュール, [オプション]}のリストを入力して下さい"}.
 {"Enter nickname you want to register","登録するニックネームを入力して下さい"}.
 {"Enter path to backup file","バックアップファイルのパスを入力して下さい"}.
-{"Enter path to jabberd1.4 spool dir","jabberd1.4 spool ディレクトリのパスを入力して下さい"}.
-{"Enter path to jabberd1.4 spool file","jabberd1.4 spool ファイルのパスを入力して下さい"}.
+{"Enter path to jabberd14 spool dir","jabberd14 spool ディレクトリのパスを入力して下さい"}.
+{"Enter path to jabberd14 spool file","jabberd14 spool ファイルのパスを入力して下さい"}.
 {"Enter path to text file","テキストファイルのパスを入力して下さい"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","IRCサーバーに接続先する為のユーザー名と文字エンコーディングを入力して下さい"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -113,7 +113,7 @@
 {"Import File","ファイルかインポート"}.
 {"Import User from File at ","ファイルからユーザーをインポート"}.
 {"Import Users from Dir at ","ディレクトリからユーザーをインポート"}.
-{"Import Users From jabberd 1.4 Spool Files","jabberd 1.4 Spool ファイルからユーザーをインポート"}.
+{"Import Users From jabberd14 Spool Files","jabberd14 Spool ファイルからユーザーをインポート"}.
 {"Improper message type","誤ったメッセージタイプです"}.
 {"Incorrect password","パスワードが違います"}.
 {"Invalid affiliation: ~s","無効な提携です: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages","プライベートメッセージを送信することは許可されませんでした"}.
 {"Jabber ID","Jabber ID"}.
 {"January","1月"}.
-{"JID ~s is invalid","JID ~s は無効です"}.
+{"Jabber ID ~s is invalid","JID ~s は無効です"}.
 {"joins the room","チャットルームに参加"}.
 {"July","7月"}.
 {"June","6月"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","ポート"}.
-{"Present real JIDs to","本当の JID を公開する"}.
+{"Present real Jabber IDs to","本当の JID を公開する"}.
 {"private, ","プライベート"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub 購読リクエスト"}.
@@ -307,7 +307,7 @@
 {"To","宛先"}.
 {"Traffic rate limit is exceeded","トラフィックレートの制限を超えました"}.
 {"Transactions Aborted:","トランザクションの失敗:"}.
-{"Transactions Commited:","トランザクションのコミット:"}.
+{"Transactions Committed:","トランザクションのコミット:"}.
 {"Transactions Logged:","トランザクションのログ: "}.
 {"Transactions Restarted:","トランザクションの再起動:"}.
 {"Tuesday","火曜日"}.

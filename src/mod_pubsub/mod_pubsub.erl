@@ -1029,7 +1029,7 @@ send_authorization_request(Host, Node, Subscriber) ->
 		 #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
 		  [#xmlattr{name = 'var', value = "pubsub#allow"},
 		   #xmlattr{name = 'type', value = "boolean"},
-		   #xmlattr{name = 'label', value = translate:translate(Lang, "Allow this JID to subscribe to this pubsub node?")}], children =
+		   #xmlattr{name = 'label', value = translate:translate(Lang, "Allow this Jabber ID to subscribe to this pubsub node?")}], children =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = <<"false">>}]}]}]}]},
     case tree_action(Host, get_node, [Host, Node, Subscriber]) of
 	#pubsub_node{owners = Owners} ->

@@ -229,7 +229,7 @@ msgid "Backup Management"
 msgstr "Gestion des sauvegardes"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
+msgid "Import Users From jabberd14 Spool Files"
 msgstr "Importer des utilisateurs depuis un fichier spool Jabberd 1.4"
 
 #: mod_configure.erl:649
@@ -314,16 +314,16 @@ msgid "Import User from File at "
 msgstr "Importer un utilisateur depuis le fichier sur "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Entrez le chemin vers le fichier spool jabberd1.4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Entrez le chemin vers le fichier spool jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importer des utilisateurs depuis le répertoire sur "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Entrez le chemin vers le répertoire de spool jabberd1.4"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Entrez le chemin vers le répertoire de spool jabberd14"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -766,8 +766,8 @@ msgid "Moderator privileges required"
 msgstr "Les droits de modérateur sont nécessaires"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "Le JID ~s n'est pas valide"
+msgid "Jabber ID ~s is invalid"
+msgstr "Le Jabber ID ~s n'est pas valide"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -819,8 +819,8 @@ msgid "No limit"
 msgstr "Pas de limite"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Rendre le JID réel visible pour"
+msgid "Present real Jabber IDs to"
+msgstr "Rendre le Jabber ID réel visible pour"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -964,8 +964,8 @@ msgid "Subscriber Address"
 msgstr "Adresse de l'abonné"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Autoriser ce JID à s'abonner à ce noeud pubsub"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Autoriser ce Jabber ID à s'abonner à ce noeud pubsub"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1452,7 +1452,7 @@ msgid "CPU Time:"
 msgstr "Temps CPU:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transactions commitées:"
 
 #: web/ejabberd_web_admin.erl:1877

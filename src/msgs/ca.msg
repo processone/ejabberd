@@ -14,7 +14,7 @@
 {"Administrator privileges required","Es necessita tenir privilegis d'administrador"}.
 {"A friendly name for the node","Un nom per al node"}.
 {"All activity","Tota l'activitat"}.
-{"Allow this JID to subscribe to this pubsub node?","Permetre que aquesta JID es puga subscriure a aquest node pubsub"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Permetre que aquesta JID es puga subscriure a aquest node pubsub"}.
 {"Allow users to change subject","Permetre que els usuaris canvien el tema"}.
 {"Allow users to query other users","Permetre que els usuaris fagen peticions a altres usuaris"}.
 {"Allow users to send invites","Permetre que els usuaris envien invitacions"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Introdueix llista de {mòdul, [opcions]}"}.
 {"Enter nickname you want to register","Introdueix el nickname que vols registrar"}.
 {"Enter path to backup file","Introdueix ruta al fitxer de còpia de seguretat"}.
-{"Enter path to jabberd1.4 spool dir","Introdueix la ruta al directori de jabberd1.4 spools"}.
-{"Enter path to jabberd1.4 spool file","Introdueix ruta al fitxer jabberd1.4 spool"}.
+{"Enter path to jabberd14 spool dir","Introdueix la ruta al directori de jabberd14 spools"}.
+{"Enter path to jabberd14 spool file","Introdueix ruta al fitxer jabberd14 spool"}.
 {"Enter path to text file","Introdueix ruta al fitxer de text"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Introdueix el nom d'usuari i les codificacions de caràcters per a utilitzar als servidors de IRC"}.
 {"Erlang Jabber Server","Servidor Erlang Jabber"}.
@@ -113,7 +113,7 @@
 {"Import File","Importar fitxer"}.
 {"Import User from File at ","Importa usuari des de fitxer en "}.
 {"Import Users from Dir at ","Importar usuaris des del directori en "}.
-{"Import Users From jabberd 1.4 Spool Files","Importar usuaris de jabberd 1.4"}.
+{"Import Users From jabberd14 Spool Files","Importar usuaris de jabberd14"}.
 {"Improper message type","Tipus de missatge incorrecte"}.
 {"Incorrect password","Password incorrecte"}.
 {"Invalid affiliation: ~s","Afiliació invàlida: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages to the conference","No està permés l'enviament de missatges privats a la sala"}.
 {"Jabber ID","ID Jabber"}.
 {"January","Gener"}.
-{"JID ~s is invalid","El JID ~s no és vàlid"}.
+{"Jabber ID ~s is invalid","El JID ~s no és vàlid"}.
 {"joins the room","Entrar a la sala"}.
 {"July","Juliol"}.
 {"June","Juny"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real JIDs to","Presentar JID's reals a"}.
+{"Present real Jabber IDs to","Presentar JID's reals a"}.
 {"private, ","privat"}.
 {"Publish-Subscribe","Publicar-subscriure't"}.
 {"PubSub subscriber request","Petició de PubSub subscriure"}.
@@ -307,7 +307,7 @@
 {"To ~s","A ~s"}.
 {"Traffic rate limit is exceeded","El llímit de tràfic ha sigut sobrepassat"}.
 {"Transactions Aborted:","Transaccions Avortades"}.
-{"Transactions Commited:","Transaccions Realitzades:"}.
+{"Transactions Committed:","Transaccions Realitzades:"}.
 {"Transactions Logged:","Transaccions registrades"}.
 {"Transactions Restarted:","Transaccions reiniciades"}.
 {"Tuesday","Dimarts"}.

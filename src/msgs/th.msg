@@ -13,7 +13,7 @@
 {"Administration of ","การดูแล "}.
 {"Administrator privileges required","ต้องมีสิทธิพิเศษของผู้ดูแลระบบ"}.
 {"All activity","กิจกรรมทั้งหมด"}.
-{"Allow this JID to subscribe to this pubsub node?","อนุญาตให้ JID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","อนุญาตให้ JID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"}.
 {"Allow users to change subject","อนุญาตให้ผู้ใช้เปลี่ยนหัวข้อได้"}.
 {"Allow users to query other users","อนุญาตให้ผู้ใช้ถามคำถามกับผู้ใช้คนอื่นๆ ได้"}.
 {"Allow users to send invites","อนุญาตให้ผู้ใช้ส่งคำเชิญถึงกันได้"}.
@@ -76,8 +76,8 @@
 {"Enter list of {Module, [Options]}","ป้อนรายการของ {โมดูล, [ตัวเลือก]}"}.
 {"Enter nickname you want to register","ป้อนชื่อเล่นที่คุณต้องการลงทะเบียน"}.
 {"Enter path to backup file","ป้อนพาธเพื่อสำรองไฟล์ข้อมูล"}.
-{"Enter path to jabberd1.4 spool dir","ป้อนพาธไปยัง jabberd 1.4 spool dir"}.
-{"Enter path to jabberd1.4 spool file","ป้อนพาธไปยังไฟล์เก็บพักข้อมูล jabberd 1.4"}.
+{"Enter path to jabberd14 spool dir","ป้อนพาธไปยัง jabberd14 spool dir"}.
+{"Enter path to jabberd14 spool file","ป้อนพาธไปยังไฟล์เก็บพักข้อมูล jabberd14"}.
 {"Enter path to text file","ป้อนพาธของไฟล์ข้อความ"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","ป้อนชื่อผู้ใช้และการเข้ารหัสที่คุณต้องการใช้สำหรับเชื่อมต่อกับเซิร์ฟเวอร์ IRC"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -106,7 +106,7 @@
 {"Import File","อิมพอร์ตไฟล์"}.
 {"Import User from File at ","อิมพอร์ตผู้ใช้จากไฟล์ที่"}.
 {"Import Users from Dir at ","อิมพอร์ตผู้ใช้จาก Dir ที่"}.
-{"Import Users From jabberd 1.4 Spool Files","อิมพอร์ตผู้ใช้จากไฟล์เก็บพักข้อมูล jabberd 1.4"}.
+{"Import Users From jabberd14 Spool Files","อิมพอร์ตผู้ใช้จากไฟล์เก็บพักข้อมูล jabberd14"}.
 {"Improper message type","ประเภทข้อความไม่เหมาะสม"}.
 {"Incorrect password","รหัสผ่านไม่ถูกต้อง"}.
 {"Invalid affiliation: ~s","การเข้าร่วมที่ไม่ถูกต้อง: ~s"}.
@@ -119,7 +119,7 @@
 {"It is not allowed to send private messages to the conference","ไม่อนุญาตให้ส่งข้อความส่วนตัวไปยังห้องประชุม"}.
 {"Jabber ID","Jabber ID"}.
 {"January","มกราคม"}.
-{"JID ~s is invalid","JID ~s ไม่ถูกต้อง"}.
+{"Jabber ID ~s is invalid","JID ~s ไม่ถูกต้อง"}.
 {"joins the room","เข้าห้องสนทนานี้"}.
 {"July","กรกฎาคม"}.
 {"June","มิถุนายน"}.
@@ -210,7 +210,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","พอร์ท"}.
-{"Present real JIDs to","แสดง JIDs ที่ถูกต้องแก่"}.
+{"Present real Jabber IDs to","แสดง JIDs ที่ถูกต้องแก่"}.
 {"private, ","ส่วนตัว, "}.
 {"Publish-Subscribe","เผยแพร่-สมัครเข้าใช้งาน"}.
 {"PubSub subscriber request","คำร้องขอของผู้สมัครเข้าใช้งาน PubSub"}.
@@ -294,7 +294,7 @@
 {"To ~s","ถึง ~s"}.
 {"Traffic rate limit is exceeded","อัตราของปริมาณการเข้าใช้เกินขีดจำกัด"}.
 {"Transactions Aborted:","ทรานแซกชันที่ถูกยกเลิก:"}.
-{"Transactions Commited:","ทรานแซกชันที่ได้รับมอบหมาย:"}.
+{"Transactions Committed:","ทรานแซกชันที่ได้รับมอบหมาย:"}.
 {"Transactions Logged:","ทรานแซกชันที่บันทึก:"}.
 {"Transactions Restarted:","ทรานแซกชันที่เริ่มทำงานใหม่อีกครั้ง:"}.
 {"Tuesday","วันอังคาร"}.

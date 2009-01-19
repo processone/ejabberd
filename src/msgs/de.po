@@ -230,8 +230,8 @@ msgid "Backup Management"
 msgstr "Datensicherungsmanagement"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Importiere Benutzer von jabberd 1.4 Spool Dateien"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importiere Benutzer von jabberd14 Spool Dateien"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -315,16 +315,16 @@ msgid "Import User from File at "
 msgstr "Benutzer aus dieser Datei importieren "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Geben Sie den Pfad zur jabberd1.4 spool Datei ein"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Geben Sie den Pfad zur jabberd14 spool Datei ein"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Benutzer vom Verzeichnis importieren "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Geben Sie den Pfad zum jabberd1.4 spool Verzeichnis ein"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Geben Sie den Pfad zum jabberd14 spool Verzeichnis ein"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -762,8 +762,8 @@ msgid "Moderator privileges required"
 msgstr "Moderatorrechte benötigt"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s ist ungültig"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s ist ungültig"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -815,7 +815,7 @@ msgid "No limit"
 msgstr "keine Begrenzung"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
+msgid "Present real Jabber IDs to"
 msgstr "Echte Jabber IDs anzeigen für"
 
 #: mod_muc/mod_muc_room.erl:2741
@@ -959,8 +959,8 @@ msgid "Subscriber Address"
 msgstr "Abonnenten Adresse"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Erlauben Sie dieser JID das Abonnement dieses pubsub Knotens?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Erlauben Sie dieser Jabber ID das Abonnement dieses pubsub Knotens?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1444,7 +1444,7 @@ msgid "CPU Time:"
 msgstr "CPU Zeit:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Vorgänge durchgeführt:"
 
 #: web/ejabberd_web_admin.erl:1877

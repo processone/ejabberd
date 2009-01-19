@@ -559,7 +559,7 @@ get_local_items({global, _Host}, ["running nodes", ENode], Server, Lang) ->
      [?NODE("Database", <<"running nodes/", ENodeB/binary,  "/DB">>),
       ?NODE("Modules", <<"running nodes/", ENodeB/binary, "/modules">>),
       ?NODE("Backup Management", <<"running nodes/", ENodeB/binary, "/backup">>),
-      ?NODE("Import Users From jabberd 1.4 Spool Files",
+      ?NODE("Import Users From jabberd14 Spool Files",
 	    <<"running nodes/",  ENodeB/binary, "/import">>),
       ?NODE("Restart Service", <<"running nodes/", ENodeB/binary, "/restart">>),
       ?NODE("Shut Down Service", <<"running nodes/", ENodeB/binary, "/shutdown">>)
@@ -1009,7 +1009,7 @@ get_form(_Host, ["running nodes", ENode, "import", "file"], Lang) ->
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions', children =
 	         [#xmlcdata{cdata =
 	           list_to_binary(?T(
-		      Lang, "Enter path to jabberd1.4 spool file"))}]},
+		      Lang, "Enter path to jabberd14 spool file"))}]},
 		?XFIELD(<<"text-single">>, "Path to File", <<"path">>, <<"">>)
 	       ]}]};
 
@@ -1023,7 +1023,7 @@ get_form(_Host, ["running nodes", ENode, "import", "dir"], Lang) ->
 	        #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions', children =
 	         [#xmlcdata{cdata =
 	           list_to_binary(?T(
-		      Lang, "Enter path to jabberd1.4 spool dir"))}]},
+		      Lang, "Enter path to jabberd14 spool dir"))}]},
 		?XFIELD(<<"text-single">>, "Path to Dir", <<"path">>, <<"">>)
 	       ]}]};
 

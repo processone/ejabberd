@@ -622,31 +622,59 @@ other different modules for some specific virtual hosts:
 will listen and what services will be run on them. Each element of the list is a
 tuple with the following elements:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Port number.
-</LI><LI CLASS="li-itemize">Module that serves this port.
-</LI><LI CLASS="li-itemize">Options to this module.
-</LI></UL><P>
+Port number. Optionally also the IP address.
+</LI><LI CLASS="li-itemize">Listening module that serves this port.
+</LI><LI CLASS="li-itemize">Options for the TCP socket and for the listening module.
+</LI></UL><P>With the basic syntax the ports will listen on all IPv4 network addresses:
+</P><PRE CLASS="verbatim">{listen, [
+          {&lt;port-number&gt;, &lt;module&gt;, [&lt;options&gt;]},
+          {&lt;port-number&gt;, &lt;module&gt;, [&lt;options&gt;]},
+          ...
+          {&lt;port-number&gt;, &lt;module&gt;, [&lt;options&gt;]}
+         ]}.
+</PRE><P>It is possible to specify the IP address for a port using the full syntax:
+</P><PRE CLASS="verbatim">          {{&lt;port-number&gt;, &lt;ip-address&gt;}, &lt;module&gt;, [&lt;options&gt;]}
+</PRE><P> <A NAME="listened-port"></A> </P><!--TOC subsubsection Port Number and IP Address-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#listened-port">Port Number and IP Address</A></H4><!--SEC END --><P> <A NAME="listened-port"></A> </P><P>The port number defines which port to listen for incoming connections.
+It can be a Jabber/XMPP standard port 
+(see section <A HREF="#firewall">5.1</A>) or any other valid port number.</P><P>The IP address can be represented with a string
+or an Erlang tuple with decimal or hexadecimal numbers.
+The socket will listen only in that network interface.
+It is possible to specify a generic address,
+so <TT>ejabberd</TT> will listen in all addresses.
+Depending in the type of the IP address, IPv4 or IPv6 will be used.</P><P>Some example values for IP address:
+</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+<CODE>"0.0.0.0"</CODE> to listen in all IPv4 network interfaces. This is the default value when no IP is specified.
+</LI><LI CLASS="li-itemize"><CODE>"::"</CODE> to listen in all IPv6 network interfaces
+</LI><LI CLASS="li-itemize"><CODE>"10.11.12.13"</CODE> is the IPv4 address <CODE>10.11.12.13</CODE>
+</LI><LI CLASS="li-itemize"><CODE>"::FFFF:127.0.0.1"</CODE> is the IPv6 address <CODE>::FFFF:127.0.0.1/128</CODE>
+</LI><LI CLASS="li-itemize"><CODE>{10, 11, 12, 13}</CODE> is the IPv4 address <CODE>10.11.12.13</CODE>
+</LI><LI CLASS="li-itemize"><CODE>{0, 0, 0, 0, 0, 65535, 32512, 1}</CODE> is the IPv6 address <CODE>::FFFF:127.0.0.1/128</CODE>
+</LI><LI CLASS="li-itemize"><CODE>{16#fdca, 16#8ab6, 16#a243, 16#75ef, 0, 0, 0, 1}</CODE> is the IPv6 address <CODE>FDCA:8AB6:A243:75EF::1/128</CODE>
+</LI></UL><P> <A NAME="listened-module"></A> </P><!--TOC subsubsection Listening Module-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#listened-module">Listening Module</A></H4><!--SEC END --><P> <A NAME="listened-module"></A> </P><P>
 The available modules, their purpose and the options allowed by each one are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>ejabberd_c2s</TT></B></DT><DD CLASS="dd-description">
 Handles c2s connections.<BR>
- Options: <TT>access</TT>, <TT>certfile</TT>, <TT>inet6</TT>,
-<TT>ip</TT>, <TT>max_stanza_size</TT>, <TT>shaper</TT>,
+ Options: <TT>access</TT>, <TT>certfile</TT>,
+<TT>max_stanza_size</TT>, <TT>shaper</TT>,
 <TT>starttls</TT>, <TT>starttls_required</TT>, <TT>tls</TT>,
 <TT>zlib</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_s2s_in</TT></B></DT><DD CLASS="dd-description">
 Handles incoming s2s connections.<BR>
- Options: <TT>inet6</TT>, <TT>ip</TT>, <TT>max_stanza_size</TT>
+ Options: <TT>max_stanza_size</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_service</TT></B></DT><DD CLASS="dd-description">
 Interacts with an <A HREF="http://www.ejabberd.im/tutorials-transports">external component</A>
 (as defined in the Jabber Component Protocol (<A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A>).<BR>
- Options: <TT>access</TT>, <TT>hosts</TT>, <TT>inet6</TT>,
-<TT>ip</TT>, <TT>shaper</TT>, <TT>service_check_from</TT>
+ Options: <TT>access</TT>, <TT>hosts</TT>,
+<TT>shaper</TT>, <TT>service_check_from</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_http</TT></B></DT><DD CLASS="dd-description">
 Handles incoming HTTP connections.<BR>
  Options: <TT>certfile</TT>, <TT>http_bind</TT>, <TT>http_poll</TT>,
-<TT>inet6</TT>, <TT>ip</TT>, <TT>request_handlers</TT>, <TT>tls</TT>, <TT>web_admin</TT><BR>
-</DD></DL><P>This is a detailed description of each option allowed by the listening modules:
+<TT>request_handlers</TT>, <TT>tls</TT>, <TT>web_admin</TT><BR>
+</DD></DL><P> <A NAME="listened-options"></A> </P><!--TOC subsubsection Options-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#listened-options">Options</A></H4><!--SEC END --><P> <A NAME="listened-options"></A> </P><P>This is a detailed description of each option allowed by the listening modules:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{access, &lt;access rule&gt;}</TT></B></DT><DD CLASS="dd-description"> This option defines
 access to the port. The default value is <TT>all</TT>.
@@ -685,13 +713,7 @@ do not allow outgoing sockets on port 5222.<P>If HTTP Polling is enabled, it wil
 is also needed in the Jabber client. Remark also that HTTP Polling can be
 interesting to host a web-based Jabber client such as
 <A HREF="http://jwchat.sourceforge.net/">JWChat</A>.
-</P></DD><DT CLASS="dt-description"><B><TT>inet6</TT></B></DT><DD CLASS="dd-description"> Set up the socket for IPv6 instead of IPv4.
-Note: this option is not required for S2S outgoing connections,
-because when ejabberd attempts to establish a S2S outgoing connection
-it first tries IPv4, and if that fails it attempts with IPv6.
-</DD><DT CLASS="dt-description"><B><TT>{ip, IPAddress}</TT></B></DT><DD CLASS="dd-description"> This option specifies which network
-interface to listen for. For example <CODE>{ip, {192, 168, 1, 1}}</CODE>.
-</DD><DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B></DT><DD CLASS="dd-description">
+</P></DD><DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B></DT><DD CLASS="dd-description">
 This option specifies an
 approximate maximum size in bytes of XML stanzas. Approximate,
 because it is calculated with the precision of one block of readed
@@ -736,7 +758,7 @@ is available on connections to the port. Client connections cannot use
 stream compression and stream encryption simultaneously. Hence, if you
 specify both <TT>tls</TT> (or <TT>ssl</TT>) and <TT>zlib</TT>, the latter
 option will not affect connections (there will be no stream compression).
-</DD></DL><P>There are some additional global options:
+</DD></DL><P>There are some additional global options that can be specified in the ejabberd configuration file (outside <TT>listen</TT>):
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{s2s_use_starttls, true|false}</TT></B></DT><DD CLASS="dd-description">
 This option defines whether to
@@ -759,17 +781,18 @@ with a small list of trusted servers, or to block some specific servers.
 </DD><DT CLASS="dt-description"><B><TT>{s2s_max_retry_delay, Seconds}</TT></B></DT><DD CLASS="dd-description"> 
 The maximum allowed delay for retry to connect after a failed connection attempt.
 Specified in seconds. The default value is 300 seconds (5 minutes).
-</DD></DL><P>For example, the following simple configuration defines:
+</DD></DL><P> <A NAME="listened-examples"></A> </P><!--TOC subsubsection Examples-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#listened-examples">Examples</A></H4><!--SEC END --><P> <A NAME="listened-examples"></A> </P><P>For example, the following simple configuration defines:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 There are three domains. The default certificate file is <TT>server.pem</TT>.
 However, the c2s and s2s connections to the domain <TT>example.com</TT> use the file <TT>example_com.pem</TT>.
 </LI><LI CLASS="li-itemize">Port 5222 listens for c2s connections with STARTTLS,
 and also allows plain connections for old clients.
 </LI><LI CLASS="li-itemize">Port 5223 listens for c2s connections with the old SSL.
-</LI><LI CLASS="li-itemize">Port 5269 listens for s2s connections with STARTTLS.
+</LI><LI CLASS="li-itemize">Port 5269 listens for s2s connections with STARTTLS. The socket is set for IPv6 instead of IPv4.
 </LI><LI CLASS="li-itemize">Port 5280 listens for HTTP requests, and serves the HTTP Poll service.
 </LI><LI CLASS="li-itemize">Port 5281 listens for HTTP requests, and serves the Web Admin using HTTPS as explained in
-section&#XA0;<A HREF="#webadmin">4.2</A>.
+section&#XA0;<A HREF="#webadmin">4.2</A>. The socket only listens connections to the IP address 127.0.0.1.
 </LI></UL><PRE CLASS="verbatim">{hosts, ["example.com", "example.org", "example.net"]}.
 {listen,
  [
@@ -785,17 +808,17 @@ section&#XA0;<A HREF="#webadmin">4.2</A>.
                         tls, {certfile, "/etc/ejabberd/server.pem"},
                         {max_stanza_size, 65536}
                        ]},
-  {5269, ejabberd_s2s_in, [
-                           {shaper, s2s_shaper},
-                           {max_stanza_size, 131072}
-                          ]},
+  {{5269, "::"}, ejabberd_s2s_in, [
+                                   {shaper, s2s_shaper},
+                                   {max_stanza_size, 131072}
+                                  ]},
   {5280, ejabberd_http, [
                          http_poll
                         ]},
-  {5281, ejabberd_http, [
-                         web_admin,
-                         tls, {certfile, "/etc/ejabberd/server.pem"},
-                        ]}
+  {{5281, "127.0.0.1"}, ejabberd_http, [
+                                        web_admin,
+                                        tls, {certfile, "/etc/ejabberd/server.pem"},
+                                       ]}
  ]
 }.
 {s2s_use_starttls, true}.
@@ -803,21 +826,23 @@ section&#XA0;<A HREF="#webadmin">4.2</A>.
 {domain_certfile, "example.com", "/etc/ejabberd/example_com.pem"}.
 </PRE><P>In this example, the following configuration defines that:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-c2s connections are listened for on port 5222 and 5223 (SSL) and denied
+c2s connections are listened for on port 5222 (all IPv4 addresses) and
+on port 5223 (SSL, IP 192.168.0.1 and fdca:8ab6:a243:75ef::1) and denied
 for the user called &#X2018;<TT>bad</TT>&#X2019;.
-</LI><LI CLASS="li-itemize">s2s connections are listened for on port 5269 with STARTTLS for secured
-traffic enabled.
+</LI><LI CLASS="li-itemize">s2s connections are listened for on port 5269 (all IPv4 addresses) 
+with STARTTLS for secured traffic enabled. 
 Incoming and outgoing connections of remote Jabber servers are denied,
 only two servers can connect: "jabber.example.org" and "example.com".
-</LI><LI CLASS="li-itemize">Port 5280 is serving the Web Admin and the HTTP Polling service. Note
+</LI><LI CLASS="li-itemize">Port 5280 is serving the Web Admin and the HTTP Polling service
+in all the IPv4 addresses. Note
 that it is also possible to serve them on different ports. The second
 example in section&#XA0;<A HREF="#webadmin">4.2</A> shows how exactly this can be done.
-</LI><LI CLASS="li-itemize">All users except for the administrators have a traffic of limit
+</LI><LI CLASS="li-itemize">All users except for the administrators have a traffic of limit 
 1,000&#XA0;Bytes/second
 </LI><LI CLASS="li-itemize">The
 <A HREF="http://www.ejabberd.im/pyaimt">AIM transport</A>
-<TT>aim.example.org</TT> is connected to port 5233 with password
-&#X2018;<TT>aimsecret</TT>&#X2019;.
+<TT>aim.example.org</TT> is connected to port 5233 on localhost IP addresses
+(127.0.0.1 and ::1) with password &#X2018;<TT>aimsecret</TT>&#X2019;.
 </LI><LI CLASS="li-itemize">The ICQ transport JIT (<TT>icq.example.org</TT> and
 <TT>sms.example.org</TT>) is connected to port 5234 with password
 &#X2018;<TT>jitsecret</TT>&#X2019;.
@@ -843,13 +868,32 @@ connected to port 5237 with password &#X2018;<TT>ggsecret</TT>&#X2019;.
 {access, c2s_shaper, [{none, admin},
                       {normal, all}]}.
 {listen,
- [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
-  {5223, ejabberd_c2s,     [{access, c2s},
-                            ssl, {certfile, "/path/to/ssl.pem"}]},
-  {5269, ejabberd_s2s_in,  []},
-  {5280, ejabberd_http,    [http_poll, web_admin]},
-  {5233, ejabberd_service, [{hosts, ["aim.example.org"],
-                             [{password, "aimsecret"}]}]},
+ [{5222, ejabberd_c2s, [
+                        {access, c2s},
+                        {shaper, c2s_shaper}
+                       ]},
+  {{5223, {192, 168, 0, 1}}, ejabberd_c2s, [
+                                            {access, c2s},
+                                            ssl, {certfile, "/path/to/ssl.pem"}
+                                           ]},
+  {{5223, {16#fdca, 16#8ab6, 16#a243, 16#75ef, 0, 0, 0, 1}},
+   ejabberd_c2s, [
+                  {access, c2s},
+                  ssl, {certfile, "/path/to/ssl.pem"}
+                 ]},
+  {5269, ejabberd_s2s_in, []},
+  {{5280, {0, 0, 0, 0}}, ejabberd_http, [
+                                         http_poll,
+                                         web_admin
+                                        ]},
+  {{5233, {127, 0, 0, 1}}, ejabberd_service, [
+                                              {hosts, ["aim.example.org"],
+                                                 [{password, "aimsecret"}]}
+                                             ]},
+  {{5233, "::1"}, ejabberd_service, [
+                                     {hosts, ["aim.example.org"],
+                                        [{password, "aimsecret"}]}
+                                    ]},
   {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
                              [{password, "jitsecret"}]}]},
   {5235, ejabberd_service, [{hosts, ["msn.example.org"],
@@ -3073,16 +3117,20 @@ administer the virtual host <TT>example.com</TT>.
 </PRE></LI><LI CLASS="li-itemize">For security reasons, you can serve the Web Admin on a secured
 connection, on a port differing from the HTTP Polling interface, and bind it
 to the internal LAN IP. The Web Admin will be accessible by pointing your
-web browser to <CODE>https://192.168.1.1:5280/admin/</CODE>:
+web browser to <CODE>https://192.168.1.1:5282/admin/</CODE>:
 <PRE CLASS="verbatim">
 {hosts, ["example.org"]}.
 
 {listen,
  [
   ...
-  {5270, ejabberd_http,    [http_poll]},
-  {5280, ejabberd_http,    [web_admin, {ip, {192, 168, 1, 1}},
-                            tls, {certfile, "/usr/local/etc/server.pem"}]},
+  {5280, ejabberd_http, [
+                         http_poll
+                        ]},
+  {{5282, "192.168.1.1"}, ejabberd_http, [
+                                          web_admin,
+                                          tls, {certfile, "/usr/local/etc/server.pem"}
+                                         ]},
   ...
  ]}.
 </PRE></LI></UL><P>Certain pages in the ejabberd Web Admin contain a link to a related

@@ -224,8 +224,8 @@ msgid "Backup Management"
 msgstr "Mastrumado de sekurkopioj"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Importu uzantojn de jabberd1.4-uzantdosieroj"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importu uzantojn de jabberd14-uzantdosieroj"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -309,16 +309,16 @@ msgid "Import User from File at "
 msgstr "Importu uzanton de dosiero el "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Enmetu vojon al jabberd1.4-uzantdosiero"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Enmetu vojon al jabberd14-uzantdosiero"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importu uzantojn de dosierujo ĉe "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Enmetu vojon al jabberd1.4-uzantdosierujo"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Enmetu vojon al jabberd14-uzantdosierujo"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -752,8 +752,8 @@ msgid "Moderator privileges required"
 msgstr "Moderantaj rajtoj bezonata"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s estas nevalida"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s estas nevalida"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -805,8 +805,8 @@ msgid "No limit"
 msgstr "Neniu limigo"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Montru verajn JID-ojn al"
+msgid "Present real Jabber IDs to"
+msgstr "Montru verajn Jabber ID-ojn al"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -948,8 +948,8 @@ msgid "Subscriber Address"
 msgstr "Abonanta adreso"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Ĉu permesi ĉi tiun JID aboni al la jena PubAbo-nodo"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1430,7 +1430,7 @@ msgid "CPU Time:"
 msgstr "CPU-tempo"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transakcioj enmetitaj"
 
 #: web/ejabberd_web_admin.erl:1877

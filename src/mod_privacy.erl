@@ -413,7 +413,12 @@ parse_items(Els) ->
     parse_items(Els, []).
 
 parse_items([], Res) ->
-    lists:reverse(Res);
+    %% Sort the items by their 'order' attribute
+    %% 5 is the position of 'order' attribute in a #listitem tuple
+    %% This integer can be calculated at runtime with:
+    %% 2 + length(lists:takewhile(fun(E) -> E =/= order end,
+    %% 			       record_info(fields, listitem))),
+    lists:keysort(5, Res);
 parse_items([El = #xmlel{name = item} | Els], Res) ->
     Type   = exmpp_xml:get_attribute(El, type, false),
     Value  = exmpp_xml:get_attribute(El, value, false),

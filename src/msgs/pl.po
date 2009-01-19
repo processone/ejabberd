@@ -227,7 +227,7 @@ msgid "Backup Management"
 msgstr "Zarządzanie kopiami zapasowymi"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
+msgid "Import Users From jabberd14 Spool Files"
 msgstr "Importuj użytkowników z plików spool serwera jabber 1.4"
 
 #: mod_configure.erl:649
@@ -312,16 +312,16 @@ msgid "Import User from File at "
 msgstr "Importuj użytkownika z pliku na "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Wprowadź ścieżkę do pliku spool dla serwera jabberd1.4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Wprowadź ścieżkę do pliku spool dla serwera jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importuj użytkowników z katalogu na "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Wprowadź ścieżkę do katalogu spool serwera jabberd1.4"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Wprowadź ścieżkę do katalogu spool serwera jabberd14"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -522,7 +522,7 @@ msgstr "dołączył(a) się do pokoju"
 
 #: mod_muc/mod_muc_log.erl:344 mod_muc/mod_muc_log.erl:347
 msgid "leaves the room"
-msgstr "opóścił(a) pokój"
+msgstr "opuścił(a) pokój"
 
 #: mod_muc/mod_muc_log.erl:350 mod_muc/mod_muc_log.erl:353
 msgid "has been banned"
@@ -753,8 +753,8 @@ msgid "Moderator privileges required"
 msgstr "Wymagane prawa moderatora"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s jest niepoprawny"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s jest niepoprawny"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -806,8 +806,8 @@ msgid "No limit"
 msgstr "Bez limitu"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Kto może widzieć prawdziwe JID-y?"
+msgid "Present real Jabber IDs to"
+msgstr "Kto może widzieć prawdziwe Jabber ID-y?"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -948,8 +948,8 @@ msgid "Subscriber Address"
 msgstr "Adres subskrybenta"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Pozwól temu JID na zapisanie się do tego noda pubsub"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Pozwól temu Jabber ID na zapisanie się do tego noda pubsub"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1064,7 +1064,7 @@ msgstr "Zły format"
 
 #: mod_roster.erl:855 mod_roster_odbc.erl:962
 msgid "Add Jabber ID"
-msgstr "Dodaj JID"
+msgstr "Dodaj Jabber ID"
 
 #: mod_roster.erl:936 mod_roster_odbc.erl:1043
 msgid "Roster"
@@ -1434,7 +1434,7 @@ msgid "CPU Time:"
 msgstr "Czas CPU"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Transakcje zakończone"
 
 #: web/ejabberd_web_admin.erl:1877

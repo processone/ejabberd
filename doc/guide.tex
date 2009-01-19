@@ -524,7 +524,7 @@ We assume that we will try to put as much library as possible into \verb|C:\sdk\
 \item Install OpenSSL in \verb|C:\sdk\OpenSSL| and add \verb|C:\sdk\OpenSSL\lib\VC| to your path or copy the binaries to your system directory.
 \item Install ZLib in \verb|C:\sdk\gnuWin32|. Copy
   \verb|C:\sdk\GnuWin32\bin\zlib1.dll| to your system directory. If you change your path it should already be set after  libiconv install.
-\item Make sure the you can access Erlang binaries from your path. For example: \verb|set PATH=%PATH%;"C:\sdk\erl5.5.5\bin"|
+\item Make sure the you can access Erlang binaries from your path. For example: \verb|set PATH=%PATH%;"C:\sdk\erl5.6.5\bin"|
 \item Depending on how you end up actually installing the library you might need to check and tweak the paths in the file configure.erl.
 \item While in the directory \verb|ejabberd\src| run:
 \begin{verbatim}
@@ -735,33 +735,79 @@ The option \option{listen} defines for which addresses and ports \ejabberd{}
 will listen and what services will be run on them. Each element of the list is a
 tuple with the following elements:
 \begin{itemize}
-\item Port number.
-\item Module that serves this port.
-\item Options to this module.
+\item Port number. Optionally also the IP address.
+\item Listening module that serves this port.
+\item Options for the TCP socket and for the listening module.
 \end{itemize}
+
+With the basic syntax the ports will listen on all IPv4 network addresses:
+\begin{verbatim}
+{listen, [
+          {<port-number>, <module>, [<options>]},
+          {<port-number>, <module>, [<options>]},
+          ...
+          {<port-number>, <module>, [<options>]}
+         ]}.
+\end{verbatim}
+
+It is possible to specify the IP address for a port using the full syntax:
+\begin{verbatim}
+          {{<port-number>, <ip-address>}, <module>, [<options>]}
+\end{verbatim}
+
+
+\makesubsubsection{listened-port}{Port Number and IP Address}
+
+The port number defines which port to listen for incoming connections.
+It can be a Jabber/XMPP standard port 
+(see section \ref{firewall}) or any other valid port number.
+
+The IP address can be represented with a string
+or an Erlang tuple with decimal or hexadecimal numbers.
+The socket will listen only in that network interface.
+It is possible to specify a generic address,
+so \ejabberd{} will listen in all addresses.
+Depending in the type of the IP address, IPv4 or IPv6 will be used.
+
+Some example values for IP address:
+\begin{itemize}
+\item \verb|"0.0.0.0"| to listen in all IPv4 network interfaces. This is the default value when no IP is specified.
+\item \verb|"::"| to listen in all IPv6 network interfaces
+\item \verb|"10.11.12.13"| is the IPv4 address \verb|10.11.12.13|
+\item \verb|"::FFFF:127.0.0.1"| is the IPv6 address \verb|::FFFF:127.0.0.1/128|
+\item \verb|{10, 11, 12, 13}| is the IPv4 address \verb|10.11.12.13|
+\item \verb|{0, 0, 0, 0, 0, 65535, 32512, 1}| is the IPv6 address \verb|::FFFF:127.0.0.1/128|
+\item \verb|{16#fdca, 16#8ab6, 16#a243, 16#75ef, 0, 0, 0, 1}| is the IPv6 address \verb|FDCA:8AB6:A243:75EF::1/128|
+\end{itemize}
+
+
+\makesubsubsection{listened-module}{Listening Module}
 
 \ind{modules!ejabberd\_c2s}\ind{modules!ejabberd\_s2s\_in}\ind{modules!ejabberd\_service}\ind{modules!ejabberd\_http}\ind{protocols!XEP-0114: Jabber Component Protocol}
 The available modules, their purpose and the options allowed by each one are:
 \begin{description}
   \titem{\texttt{ejabberd\_c2s}}
     Handles c2s connections.\\
-    Options: \texttt{access}, \texttt{certfile}, \texttt{inet6},
-    \texttt{ip}, \texttt{max\_stanza\_size}, \texttt{shaper},
+    Options: \texttt{access}, \texttt{certfile},
+    \texttt{max\_stanza\_size}, \texttt{shaper},
     \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
     \texttt{zlib}
   \titem{\texttt{ejabberd\_s2s\_in}}
     Handles incoming s2s connections.\\
-    Options: \texttt{inet6}, \texttt{ip}, \texttt{max\_stanza\_size}
+    Options: \texttt{max\_stanza\_size}
   \titem{\texttt{ejabberd\_service}}
     Interacts with an \footahref{http://www.ejabberd.im/tutorials-transports}{external component}
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
-    Options: \texttt{access}, \texttt{hosts}, \texttt{inet6},
-    \texttt{ip}, \texttt{shaper}, \texttt{service\_check\_from}
+    Options: \texttt{access}, \texttt{hosts},
+    \texttt{shaper}, \texttt{service\_check\_from}
   \titem{\texttt{ejabberd\_http}}
     Handles incoming HTTP connections.\\
     Options: \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
-    \texttt{inet6}, \texttt{ip}, \texttt{request\_handlers}, \texttt{tls}, \texttt{web\_admin}\\
+    \texttt{request\_handlers}, \texttt{tls}, \texttt{web\_admin}\\
 \end{description}
+
+
+\makesubsubsection{listened-options}{Options}
 
 This is a detailed description of each option allowed by the listening modules:
 \begin{description}
@@ -808,13 +854,7 @@ This is a detailed description of each option allowed by the listening modules:
     is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
     interesting to host a web-based \Jabber{} client such as
     \footahref{http://jwchat.sourceforge.net/}{JWChat}.
-  \titem{inet6} \ind{options!inet6}\ind{IPv6}Set up the socket for IPv6 instead of IPv4.
-    Note: this option is not required for S2S outgoing connections,
-    because when ejabberd attempts to establish a S2S outgoing connection
-    it first tries IPv4, and if that fails it attempts with IPv6.
-  \titem{\{ip, IPAddress\}} \ind{options!ip}This option specifies which network
-    interface to listen for. For example \verb|{ip, {192, 168, 1, 1}}|.
-    \titem{\{max\_stanza\_size, Size\}}
+  \titem{\{max\_stanza\_size, Size\}}
     \ind{options!max\_stanza\_size}This option specifies an
     approximate maximum size in bytes of XML stanzas.  Approximate,
     because it is calculated with the precision of one block of readed
@@ -861,7 +901,7 @@ This is a detailed description of each option allowed by the listening modules:
     option will not affect connections (there will be no stream compression).
 \end{description}
 
-There are some additional global options:
+There are some additional global options that can be specified in the ejabberd configuration file (outside \term{listen}):
 \begin{description}
   \titem{\{s2s\_use\_starttls, true|false\}}
   \ind{options!s2s\_use\_starttls}\ind{STARTTLS}This option defines whether to
@@ -886,6 +926,8 @@ There are some additional global options:
   Specified in seconds. The default value is 300 seconds (5 minutes).
 \end{description}
 
+\makesubsubsection{listened-examples}{Examples}
+
 For example, the following simple configuration defines:
 \begin{itemize}
 \item There are three domains. The default certificate file is \term{server.pem}.
@@ -893,10 +935,10 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
 \item Port 5222 listens for c2s connections with STARTTLS,
   and also allows plain connections for old clients.
 \item Port 5223 listens for c2s connections with the old SSL.
-\item Port 5269 listens for s2s connections with STARTTLS.
+\item Port 5269 listens for s2s connections with STARTTLS. The socket is set for IPv6 instead of IPv4.
 \item Port 5280 listens for HTTP requests, and serves the HTTP Poll service.
 \item Port 5281 listens for HTTP requests, and serves the Web Admin using HTTPS as explained in
-  section~\ref{webadmin}.
+  section~\ref{webadmin}. The socket only listens connections to the IP address 127.0.0.1.
 \end{itemize}
 \begin{verbatim}
 {hosts, ["example.com", "example.org", "example.net"]}.
@@ -914,17 +956,17 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
                         tls, {certfile, "/etc/ejabberd/server.pem"},
                         {max_stanza_size, 65536}
                        ]},
-  {5269, ejabberd_s2s_in, [
-                           {shaper, s2s_shaper},
-                           {max_stanza_size, 131072}
-                          ]},
+  {{5269, "::"}, ejabberd_s2s_in, [
+                                   {shaper, s2s_shaper},
+                                   {max_stanza_size, 131072}
+                                  ]},
   {5280, ejabberd_http, [
                          http_poll
                         ]},
-  {5281, ejabberd_http, [
-                         web_admin,
-                         tls, {certfile, "/etc/ejabberd/server.pem"},
-                        ]}
+  {{5281, "127.0.0.1"}, ejabberd_http, [
+                                        web_admin,
+                                        tls, {certfile, "/etc/ejabberd/server.pem"},
+                                       ]}
  ]
 }.
 {s2s_use_starttls, true}.
@@ -934,21 +976,23 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
 
 In this example, the following configuration defines that:
 \begin{itemize}
-\item c2s connections are listened for on port 5222 and 5223 (SSL) and denied
+\item c2s connections are listened for on port 5222 (all IPv4 addresses) and
+  on port 5223 (SSL, IP 192.168.0.1 and fdca:8ab6:a243:75ef::1) and denied
   for the user called `\term{bad}'.
-\item s2s connections are listened for on port 5269 with STARTTLS for secured
-  traffic enabled.
+\item s2s connections are listened for on port 5269 (all IPv4 addresses) 
+  with STARTTLS for secured traffic enabled. 
   Incoming and outgoing connections of remote Jabber servers are denied,
   only two servers can connect: "jabber.example.org" and "example.com".
-\item Port 5280 is serving the Web Admin and the HTTP Polling service. Note
+\item Port 5280 is serving the Web Admin and the HTTP Polling service
+  in all the IPv4 addresses. Note
   that it is also possible to serve them on different ports. The second
   example in section~\ref{webadmin} shows how exactly this can be done.
-\item All users except for the administrators have a traffic of limit
+\item All users except for the administrators have a traffic of limit 
   1,000\,Bytes/second
 \item \ind{transports!AIM}The
   \footahref{http://www.ejabberd.im/pyaimt}{AIM transport}
-  \jid{aim.example.org} is connected to port 5233 with password
-  `\term{aimsecret}'.
+  \jid{aim.example.org} is connected to port 5233 on localhost IP addresses
+  (127.0.0.1 and ::1) with password `\term{aimsecret}'.
 \item \ind{transports!ICQ}The ICQ transport JIT (\jid{icq.example.org} and
   \jid{sms.example.org}) is connected to port 5234 with password
   `\term{jitsecret}'.
@@ -976,13 +1020,32 @@ In this example, the following configuration defines that:
 {access, c2s_shaper, [{none, admin},
                       {normal, all}]}.
 {listen,
- [{5222, ejabberd_c2s,     [{access, c2s}, {shaper, c2s_shaper}]},
-  {5223, ejabberd_c2s,     [{access, c2s},
-                            ssl, {certfile, "/path/to/ssl.pem"}]},
-  {5269, ejabberd_s2s_in,  []},
-  {5280, ejabberd_http,    [http_poll, web_admin]},
-  {5233, ejabberd_service, [{hosts, ["aim.example.org"],
-                             [{password, "aimsecret"}]}]},
+ [{5222, ejabberd_c2s, [
+                        {access, c2s},
+                        {shaper, c2s_shaper}
+                       ]},
+  {{5223, {192, 168, 0, 1}}, ejabberd_c2s, [
+                                            {access, c2s},
+                                            ssl, {certfile, "/path/to/ssl.pem"}
+                                           ]},
+  {{5223, {16#fdca, 16#8ab6, 16#a243, 16#75ef, 0, 0, 0, 1}},
+   ejabberd_c2s, [
+                  {access, c2s},
+                  ssl, {certfile, "/path/to/ssl.pem"}
+                 ]},
+  {5269, ejabberd_s2s_in, []},
+  {{5280, {0, 0, 0, 0}}, ejabberd_http, [
+                                         http_poll,
+                                         web_admin
+                                        ]},
+  {{5233, {127, 0, 0, 1}}, ejabberd_service, [
+                                              {hosts, ["aim.example.org"],
+                                                 [{password, "aimsecret"}]}
+                                             ]},
+  {{5233, "::1"}, ejabberd_service, [
+                                     {hosts, ["aim.example.org"],
+                                        [{password, "aimsecret"}]}
+                                    ]},
   {5234, ejabberd_service, [{hosts, ["icq.example.org", "sms.example.org"],
                              [{password, "jitsecret"}]}]},
   {5235, ejabberd_service, [{hosts, ["msn.example.org"],
@@ -1004,8 +1067,8 @@ In this example, the following configuration defines that:
 {{s2s_host,"jabber.example.org"}, allow}.
 {{s2s_host,"example.com"}, allow}.
 \end{verbatim}
-Note, that for \ind{jabberd 1.4}jabberd 1.4- or \ind{WPJabber}WPJabber-based
-services you have to make the transports log and do \ind{XDB}XDB by themselves:
+Note, that for services based in \ind{jabberd14}jabberd14 or \ind{WPJabber}WPJabber
+you have to make the transports log and do \ind{XDB}XDB by themselves:
 \begin{verbatim}
   <!--
      You have to add elogger and rlogger entries here when using ejabberd.
@@ -1028,7 +1091,7 @@ services you have to make the transports log and do \ind{XDB}XDB by themselves:
   <xdb id="xdb">
     <host/>
     <load>
-      <!-- this is a lib of wpjabber or jabberd -->
+      <!-- this is a lib of wpjabber or jabberd14 -->
       <xdb_file>/usr/lib/jabber/xdb_file.so</xdb_file>
       </load>
     <xdb_file xmlns="jabber:config:xdb_file">
@@ -3940,7 +4003,7 @@ Examples:
 \item For security reasons, you can serve the Web Admin on a secured
   connection, on a port differing from the HTTP Polling interface, and bind it
   to the internal LAN IP. The Web Admin will be accessible by pointing your
-  web browser to \verb|https://192.168.1.1:5280/admin/|:
+  web browser to \verb|https://192.168.1.1:5282/admin/|:
 \begin{verbatim}
 
 {hosts, ["example.org"]}.
@@ -3948,9 +4011,13 @@ Examples:
 {listen,
  [
   ...
-  {5270, ejabberd_http,    [http_poll]},
-  {5280, ejabberd_http,    [web_admin, {ip, {192, 168, 1, 1}},
-                            tls, {certfile, "/usr/local/etc/server.pem"}]},
+  {5280, ejabberd_http, [
+                         http_poll
+                        ]},
+  {{5282, "192.168.1.1"}, ejabberd_http, [
+                                          web_admin,
+                                          tls, {certfile, "/usr/local/etc/server.pem"}
+                                         ]},
   ...
  ]}.
 \end{verbatim}

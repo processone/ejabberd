@@ -13,7 +13,7 @@
 {"Administration","Quản trị"}.
 {"Administrator privileges required","Yêu cầu đặc quyền của nhà quản trị"}.
 {"All activity","Tất cả hoạt động"}.
-{"Allow this JID to subscribe to this pubsub node?","Cho phép JID đăng ký nút môđun xuất bản đăng ký này không?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Cho phép JID đăng ký nút môđun xuất bản đăng ký này không?"}.
 {"Allow users to change subject","Cho phép người sử dụng thay đổi chủ đề"}.
 {"Allow users to query other users","Cho phép người sử dụng hỏi người sử dụng khác"}.
 {"Allow users to send invites","Cho phép người sử dụng gửi lời mời"}.
@@ -76,8 +76,8 @@
 {"Enter list of {Module, [Options]}","Nhập danh sách {Môđun, [Các Tùy Chọn]}"}.
 {"Enter nickname you want to register","Nhập bí danh bạn muốn đăng ký"}.
 {"Enter path to backup file","Nhập đường dẫn đến tập tin sao lưu dự phòng"}.
-{"Enter path to jabberd1.4 spool dir","Nhập đường dẫn đến thư mục spool jabberd1,4"}.
-{"Enter path to jabberd1.4 spool file","Nhập đường dẫn đến tập tin spool jabberd1,4"}.
+{"Enter path to jabberd14 spool dir","Nhập đường dẫn đến thư mục spool jabberd14"}.
+{"Enter path to jabberd14 spool file","Nhập đường dẫn đến tập tin spool jabberd14"}.
 {"Enter path to text file","Nhập đường dẫn đến tập tin văn bản"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Nhập tên truy cập và mã hóa mà bạn muốn sử dụng khi kết nối với các máy chủ IRC"}.
 {"Erlang Jabber Server","Erlang Jabber Server Bản quyền"}.
@@ -106,7 +106,7 @@
 {"Import File","Nhập Tập Tin"}.
 {"Import User from File at ","Nhập Người Sử Dụng từ Tập Tin tại"}.
 {"Import Users from Dir at ","Nhập Người Sử Dụng từ Thư Mục tại"}.
-{"Import Users From jabberd 1.4 Spool Files","Nhập Người Sử Dụng Từ Các Tập Tin Spool jabberd 1,4"}.
+{"Import Users From jabberd14 Spool Files","Nhập Người Sử Dụng Từ Các Tập Tin Spool jabberd14"}.
 {"Improper message type","Loại thư không phù hợp"}.
 {"Incorrect password","Mật khẩu sai"}.
 {"Invalid affiliation: ~s","Tư cách không hợp lệ: ~s"}.
@@ -119,7 +119,7 @@
 {"It is not allowed to send private messages to the conference","Không được phép gửi những thư riêng đến phòng họp"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Tháng Một"}.
-{"JID ~s is invalid","JID ~s không hợp lệ"}.
+{"Jabber ID ~s is invalid","JID ~s không hợp lệ"}.
 {"joins the room","tham gia phòng này"}.
 {"July","Tháng Bảy"}.
 {"June","Tháng Sáu"}.
@@ -210,7 +210,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Cổng"}.
-{"Present real JIDs to","JID thực tế hiện hành đến"}.
+{"Present real Jabber IDs to","JID thực tế hiện hành đến"}.
 {"private, ","riêng,"}.
 {"Publish-Subscribe","Xuất Bản-Đăng Ký"}.
 {"PubSub subscriber request","Yêu cầu người đăng ký môđun Xuất Bản Đăng Ký"}.
@@ -294,7 +294,7 @@
 {"To ~s","Gửi đến ~s"}.
 {"Traffic rate limit is exceeded","Quá giới hạn tỷ lệ lưu lượng truyền tải"}.
 {"Transactions Aborted:","Giao Dịch Hủy Bỏ:"}.
-{"Transactions Commited:","Giao Dịch Được Cam Kết:"}.
+{"Transactions Committed:","Giao Dịch Được Cam Kết:"}.
 {"Transactions Logged:","Giao Dịch Được Ghi Nhận:"}.
 {"Transactions Restarted:","Giao Dịch Khởi Động Lại:"}.
 {"Tuesday","Thứ Ba"}.

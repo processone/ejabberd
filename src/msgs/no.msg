@@ -14,7 +14,7 @@
 {"Administrator privileges required","Administratorprivilegier kreves"}.
 {"A friendly name for the node","Et vennlig navn for noden"}.
 {"All activity","All aktivitet"}.
-{"Allow this JID to subscribe to this pubsub node?","Tillat denne JID å abonnere på denne pubsub noden?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Tillat denne JID å abonnere på denne pubsub noden?"}.
 {"Allow users to change subject","Tillat brukere å endre emne"}.
 {"Allow users to query other users","Tillat brukere å sende forespørsel til andre brukere"}.
 {"Allow users to send invites","Tillat brukere å sende invitasjoner"}.
@@ -80,8 +80,8 @@
 {"Enter list of {Module, [Options]}","Skriv inn en liste av {Module, [Options]}"}.
 {"Enter nickname you want to register","Skriv inn kallenavnet du ønsker å registrere"}.
 {"Enter path to backup file","Skriv inn sti til sikkerhetskopi filen"}.
-{"Enter path to jabberd1.4 spool dir","Skriv inn sti til jabberd1.4 spoolkatalog"}.
-{"Enter path to jabberd1.4 spool file","Skriv inn sti til jabberd1.4 spoolfil"}.
+{"Enter path to jabberd14 spool dir","Skriv inn sti til jabberd14 spoolkatalog"}.
+{"Enter path to jabberd14 spool file","Skriv inn sti til jabberd14 spoolfil"}.
 {"Enter path to text file","Skriv inn sti til tekstfil"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Skriv inn brukernavn og tekstkoding du ønsker å bruke for å koble til IRC tjenere"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
@@ -113,7 +113,7 @@
 {"Import File","Importer File"}.
 {"Import User from File at ","Importer Bruker fra Fil på "}.
 {"Import Users from Dir at ","Importer Brukere fra Katalog på "}.
-{"Import Users From jabberd 1.4 Spool Files","Importer Brukere Fra jabberd 1.4 Spoolfiler"}.
+{"Import Users From jabberd14 Spool Files","Importer Brukere Fra jabberd14 Spoolfiler"}.
 {"Improper message type","Feilaktig meldingstype"}.
 {"Incorrect password","Feil passord"}.
 {"Invalid affiliation: ~s","Ugyldig rang: ~s"}.
@@ -127,7 +127,7 @@
 {"It is not allowed to send private messages to the conference","Det er ikke tillatt å sende private meldinger til konferansen"}.
 {"Jabber ID","Jabber ID"}.
 {"January","januar"}.
-{"JID ~s is invalid","Ugyldig JID ~s"}.
+{"Jabber ID ~s is invalid","Ugyldig JID ~s"}.
 {"joins the room","kommer inn i rommet"}.
 {"July","juli"}.
 {"June","juni"}.
@@ -219,7 +219,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real JIDs to","Presenter ekte JIDer til"}.
+{"Present real Jabber IDs to","Presenter ekte JIDer til"}.
 {"private, ","privat, "}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub abonements forespørsel"}.
@@ -307,7 +307,7 @@
 {"To","Til"}.
 {"Traffic rate limit is exceeded","Trafikkmengde grense overskredet"}.
 {"Transactions Aborted:","Avbrutte Transasksjoner:"}.
-{"Transactions Commited:","Sendte Transaksjoner:"}.
+{"Transactions Committed:","Sendte Transaksjoner:"}.
 {"Transactions Logged:","Loggede Transasksjoner:"}.
 {"Transactions Restarted:","Omstartede Transasksjoner:"}.
 {"Tuesday","tirsdag"}.

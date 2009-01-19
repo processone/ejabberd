@@ -229,8 +229,8 @@ msgid "Backup Management"
 msgstr "Керування резервним копіюванням"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
-msgstr "Імпорт користувачів зі спулу jabberd 1.4"
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Імпорт користувачів зі спулу jabberd14"
 
 #: mod_configure.erl:649
 msgid "To ~s"
@@ -314,16 +314,16 @@ msgid "Import User from File at "
 msgstr "Імпортування користувача з файла на "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "Введіть шлях до файла зі спула jabberd1.4"
+msgid "Enter path to jabberd14 spool file"
+msgstr "Введіть шлях до файла зі спула jabberd14"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Імпортування користувача з директорії на "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "Введіть шлях до директорії спула jabberd1.4"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Введіть шлях до директорії спула jabberd14"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -756,8 +756,8 @@ msgid "Moderator privileges required"
 msgstr "Необхідні права модератора"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s недопустимий"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s недопустимий"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -809,8 +809,8 @@ msgid "No limit"
 msgstr "Без обмежень"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Зробити реальні JID учасників видимими"
+msgid "Present real Jabber IDs to"
+msgstr "Зробити реальні Jabber ID учасників видимими"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -953,8 +953,8 @@ msgid "Subscriber Address"
 msgstr "Адреса абонента"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Чи дозволити цьому JID абонувати новини наданого вузла"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Чи дозволити цьому Jabber ID абонувати новини наданого вузла"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1438,7 +1438,7 @@ msgid "CPU Time:"
 msgstr "Процесорний час:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
+msgid "Transactions Committed:"
 msgstr "Транзакції завершені:"
 
 #: web/ejabberd_web_admin.erl:1877

@@ -224,7 +224,7 @@ msgid "Backup Management"
 msgstr "Yedek Yönetimi"
 
 #: mod_configure.erl:534
-msgid "Import Users From jabberd 1.4 Spool Files"
+msgid "Import Users From jabberd14 Spool Files"
 msgstr "Jabberd 1.4 Spool Dosyalarından Kullanıcıları İçeri Aktar"
 
 #: mod_configure.erl:649
@@ -309,16 +309,16 @@ msgid "Import User from File at "
 msgstr "Dosyadan Kullanıcıları İçe Aktar : "
 
 #: mod_configure.erl:980
-msgid "Enter path to jabberd1.4 spool file"
-msgstr "jabberd1.4 spool dosyası için yol giriniz"
+msgid "Enter path to jabberd14 spool file"
+msgstr "jabberd14 spool dosyası için yol giriniz"
 
 #: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Dizinden Kullanıcıları İçe Aktar : "
 
 #: mod_configure.erl:994
-msgid "Enter path to jabberd1.4 spool dir"
-msgstr "jabberd1.4 spool dosyası için yol giriniz"
+msgid "Enter path to jabberd14 spool dir"
+msgstr "jabberd14 spool dosyası için yol giriniz"
 
 #: mod_configure.erl:995
 msgid "Path to Dir"
@@ -755,8 +755,8 @@ msgid "Moderator privileges required"
 msgstr "Moderatör yetkileri gerekli"
 
 #: mod_muc/mod_muc_room.erl:2198
-msgid "JID ~s is invalid"
-msgstr "JID ~s geçersiz"
+msgid "Jabber ID ~s is invalid"
+msgstr "Jabber ID ~s geçersiz"
 
 #: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
@@ -808,8 +808,8 @@ msgid "No limit"
 msgstr "Sınırsız"
 
 #: mod_muc/mod_muc_room.erl:2733
-msgid "Present real JIDs to"
-msgstr "Gerçek JID'lerini göster :"
+msgid "Present real Jabber IDs to"
+msgstr "Gerçek Jabber ID'lerini göster :"
 
 #: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
@@ -952,8 +952,8 @@ msgid "Subscriber Address"
 msgstr "Üye Olanın Adresi"
 
 #: mod_pubsub/mod_pubsub.erl:1016
-msgid "Allow this JID to subscribe to this pubsub node?"
-msgstr "Bu JID bu pubsub düğümüne üye olmasına izin verilsin mi?"
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr "Bu Jabber ID bu pubsub düğümüne üye olmasına izin verilsin mi?"
 
 #: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
@@ -1437,8 +1437,8 @@ msgid "CPU Time:"
 msgstr "İşlemci Zamanı:"
 
 #: web/ejabberd_web_admin.erl:1874
-msgid "Transactions Commited:"
-msgstr "Tamamlanan Hareketler (Transactions Commited):"
+msgid "Transactions Committed:"
+msgstr "Tamamlanan Hareketler (Transactions Committed):"
 
 #: web/ejabberd_web_admin.erl:1877
 msgid "Transactions Aborted:"

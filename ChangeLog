@@ -1,5 +1,9 @@
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	Merge from trunk (r1804 to r1829).
+
+2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	Merge from trunk (r1752 to r1804).
 
 	Note: this merge doesn't include the following revisions because it
@@ -15,6 +19,10 @@
 	* src/ejabberd_auth_anonymous.erl: Fix accesses to the new #jid opaque
 	type.
 
+2009-01-17  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_c2s.erl: Added comments.
+
 2009-01-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1734 to r1752).
@@ -26,12 +34,75 @@
 	* src/jlib.hrl: Any deprecated content was removed from jlib.hrl. This
 	leaves only the new RSM records.
 
+2009-01-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_privacy.erl: Privacy list items must be processed in the
+	specified order (EJAB-848)
+	* src/mod_privacy_odbc.erl: Likewise
+
 2009-01-15  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/mod_muc/mod_muc.erl, src/mod_muc/mod_muc_room.erl: 
 	Store registered nicknames, rooms and domains as binary().
 	Use document_to_iolist/1 and iolist_size/1 instead of 
 	document_to_list/1.
+
+2009-01-13  Badlop  <badlop@process-one.net>
+
+	* doc/release_notes_2.0.3.txt: Add release notes
+
+2009-01-13  Mickael Remond  <mremond@process-one.net>
+
+	* src/tls/Makefile.win32: Windows compilation support.
+	* src/tls/tls_drv.c: Likewise.
+	* src/tls/stdint.h: Likewise.
+
+	* doc/guide.tex: Update Erlang version in Windows compilation
+	documentation.
+
+2009-01-13  Badlop  <badlop@process-one.net>
+
+	* src/msgs/pl.po: Fix typo (thanks to Apag0r)(EJAB-844)
+
+2009-01-12  Badlop  <badlop@process-one.net>
+
+	* src/web/ejabberd_web_admin.erl: Use textareas for large input
+	like ejabberd module options and listening port options. Show
+	result of POST more clearly. Ensure access rules are shown with
+	some minimum separation. Improve menu headers. (EJAB-562)
+	* src/web/ejabberd_web_admin.hrl: Likewise
+	* src/mod_offline.erl: Likewise
+	* src/mod_offline_odbc.erl: Likewise
+	* src/mod_roster.erl: Likewise
+	* src/mod_roster_odbc.erl: Likewise
+	* src/mod_shared_roster.erl: Likewise
+
+	* src/ejabberd_listener.erl: New way to configure IP address and
+	IP version of listener. Support for definition of IP address in
+	string format, and implicit definition of IP
+	version (EJAB-388). Support for defining several listeners: all
+	with same port number but different IP addresses (EJAB-389)(thanks
+	to Fabrice Colliot and Sergei Golovan). Better report in WebAdmin
+	of problem when starting a listener. The old configuration method
+	of ip tuple and inet6 is fully supported for backwards
+	compatibility, but is not documented in the Guide anymore.
+	* src/ejabberd_config.erl: Likewise
+	* src/mod_proxy65/mod_proxy65_stream.erl: Likewise
+	* src/mod_proxy65/mod_proxy65_service.erl: Likewise
+	* src/web/ejabberd_web_admin.erl: Likewise
+
+	* doc/guide.tex: Document the new way to configure IP address and
+	IP version of listener, undocument options ip and inet6
+	* doc/guide.html: Likewise
+
+	* src/web/ejabberd_web_admin.erl: New appearance of WebAdmin logo,
+	fixed logo-fill.
+
+	* doc/guide.tex: Fix some English strings: JID -> Jabber ID;
+	jabberd 1.4 -> jabberd14; commited -> committed
+	* src/*/*.erl: Likewise
+	* src/msgs/*.msg: Likewise
+	* src/msgs/*.po: Likewise
 
 2009-01-12  Alexey Shchepin  <alexey@process-one.net>
 

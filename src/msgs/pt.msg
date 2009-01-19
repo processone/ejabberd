@@ -38,8 +38,8 @@
 {"Enter list of {Module, [Options]}","Introduza lista de {módulos, [opções]}"}.
 {"Enter nickname you want to register","Introduza a alcunha que quer registar"}.
 {"Enter path to backup file","Introduza o caminho do ficheiro de cópia de segurança"}.
-{"Enter path to jabberd1.4 spool dir","Introduza o caminho para o directório de spools do jabberd1.4"}.
-{"Enter path to jabberd1.4 spool file","Introduza o caminho para o ficheiro de spool do jabberd1.4"}.
+{"Enter path to jabberd14 spool dir","Introduza o caminho para o directório de spools do jabberd14"}.
+{"Enter path to jabberd14 spool file","Introduza o caminho para o ficheiro de spool do jabberd14"}.
 {"Enter path to text file","Introduza caminho para o ficheiro de texto"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Introduza o nome de utilizador e codificações de caracteres que quer usar ao conectar-se aos servidores de IRC"}.
 {"Erlang Jabber Server","Servidor Jabber em Erlang"}.
@@ -62,7 +62,7 @@
 {"IRC Username","Nome do utilizador de IRC"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privadas para a sala"}.
-{"JID ~s is invalid","O JID ~s não é válido"}.
+{"Jabber ID ~s is invalid","O JID ~s não é válido"}.
 {"Last Activity","Última actividade"}.
 {"Listened Ports at ","Portas em escuta em "}.
 {"List of modules to start","Lista de módulos a iniciar"}.
