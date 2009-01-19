@@ -43,7 +43,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	bad ->
 	    {error, 'bad-protocol'};
 	KeyVals ->
-	    DigestURI = prolists:get_value("digest-uri", KeyVals, ""),
+	    DigestURI = proplists:get_value("digest-uri", KeyVals, ""),
 	    UserName = proplists:get_value("username", KeyVals, ""),
 	    case is_digesturi_valid(DigestURI, State#state.host) of
 		false ->

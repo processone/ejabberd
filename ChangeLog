@@ -1,3 +1,7 @@
+2009-01-19  Pablo Polvorin  <pablo.polvorin@process-one.net>
+
+	* src/cyrsasl_digest.erl: Typo (prolists -> proplists).
+
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/cyrsasl_digest.erl: Replace hijacked usage of xml:get_attr_s/2
