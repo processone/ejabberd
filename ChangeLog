@@ -1,3 +1,7 @@
+2009-01-19  Pablo Polvorin  <pablo.polvorin@process-one.net>
+
+	* src/translate.erl: Bugfix, ?MYLANG macro returns a list().
+
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1752 to r1787).

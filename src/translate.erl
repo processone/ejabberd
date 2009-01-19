@@ -105,6 +105,7 @@ load_file(Lang, File) ->
     end.
 
 translate(Lang, Msg) ->
+    io:format("translate(~p, ~p) ~n",[Lang, Msg]),
     LLang = ascii_tolower(Lang),
     case ets:lookup(translations, {LLang, Msg}) of
 	[{_, Trans}] ->
@@ -132,13 +133,15 @@ translate(Lang, Msg) ->
     end.
 
 translate(Msg) ->
+    %%TODO: ?MYLANG macro returns lang as a list(). Lang should be a binary.
     case ?MYLANG of
 	undefined ->
 	    Msg;
-	<<"en">> ->
+	"en" ->
 	    Msg;
 	Lang ->
-	    LLang = ascii_tolower(Lang),
+        BLang = list_to_binary(Lang),
+	    LLang = ascii_tolower(BLang),
 	    case ets:lookup(translations, {LLang, Msg}) of
 		[{_, Trans}] ->
 		    Trans;
@@ -152,7 +155,7 @@ translate(Msg) ->
 		    case ShortLang of
 			<<"en">> ->
 			    Msg;
-			Lang ->
+			BLang ->
 			    Msg;
 			_ ->
 			    case ets:lookup(translations, {ShortLang, Msg}) of
