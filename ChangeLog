@@ -1,5 +1,14 @@
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
+	* src/cyrsasl_digest.erl: Replace hijacked usage of xml:get_attr_s/2
+	by proper calls to proplists:get_value/3. Replace a call to
+	stringprep:tolower/1 by exmpp_stringprep:to_lower/1.
+
+	* src/ejabberd_service.erl: Replace a call to xml:crypt/1 by
+	exmpp_xml:escape_using_entities/1.
+
+2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
 	Merge from trunk (r1804 to r1829).
 
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>

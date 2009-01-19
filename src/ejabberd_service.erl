@@ -155,7 +155,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS, attrs = Attrs}}, StateData) ->
 	    %% However several transports don't respect that,
 	    %% so ejabberd doesn't check 'to' attribute (EJAB-717)
 	    To = binary_to_list(exmpp_stanza:get_recipient_from_attrs(Attrs)),
-	    Opening_Reply = exmpp_stream:opening_reply(xml:crypt(To),
+	    Opening_Reply = exmpp_stream:opening_reply(exmpp_xml:escape_using_entities(To),
 	      ?NS_COMPONENT_ACCEPT,
 	      {0, 0}, StateData#state.streamid),
 	    send_element(StateData, Opening_Reply),

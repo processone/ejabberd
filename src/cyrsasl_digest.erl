@@ -43,22 +43,22 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	bad ->
 	    {error, 'bad-protocol'};
 	KeyVals ->
-	    DigestURI = xml:get_attr_s("digest-uri", KeyVals),
-	    UserName = xml:get_attr_s("username", KeyVals),
+	    DigestURI = prolists:get_value("digest-uri", KeyVals, ""),
+	    UserName = proplists:get_value("username", KeyVals, ""),
 	    case is_digesturi_valid(DigestURI, State#state.host) of
 		false ->
 		    ?DEBUG("User login not authorized because digest-uri "
 			   "seems invalid: ~p", [DigestURI]),
 		    {error, 'not-authorized', UserName};
 		true ->
-		    AuthzId = xml:get_attr_s("authzid", KeyVals),
+		    AuthzId = proplists:get_value("authzid", KeyVals, ""),
 		    case (State#state.get_password)(UserName) of
 			{false, _} ->
 			    {error, 'not-authorized', UserName};
 			{Passwd, AuthModule} ->
 			    Response = response(KeyVals, UserName, Passwd,
 						Nonce, AuthzId, "AUTHENTICATE"),
-			    case xml:get_attr_s("response", KeyVals) of
+			    case proplists:get_value("response", KeyVals, "") of
 				Response ->
 				    RspAuth = response(KeyVals,
 						       UserName, Passwd,
@@ -135,7 +135,7 @@ parse4([], Key, Val, Ts) ->
 %% then digest-uri can be like xmpp/server3.example.org/jabber.example.org
 %% In that case, ejabberd only checks the service name, not the host.
 is_digesturi_valid(DigestURICase, JabberHost) ->
-    DigestURI = stringprep:tolower(DigestURICase),
+    DigestURI = exmpp_stringprep:to_lower(DigestURICase),
     case catch string:tokens(DigestURI, "/") of
 	["xmpp", Host] when Host == JabberHost ->
 	    true;
@@ -164,11 +164,11 @@ hex([N | Ns], Res) ->
 
 
 response(KeyVals, User, Passwd, Nonce, AuthzId, A2Prefix) ->
-    Realm = xml:get_attr_s("realm", KeyVals),
-    CNonce = xml:get_attr_s("cnonce", KeyVals),
-    DigestURI = xml:get_attr_s("digest-uri", KeyVals),
-    NC = xml:get_attr_s("nc", KeyVals),
-    QOP = xml:get_attr_s("qop", KeyVals),
+    Realm = proplists:get_value("realm", KeyVals, ""),
+    CNonce = proplists:get_value("cnonce", KeyVals, ""),
+    DigestURI = proplists:get_value("digest-uri", KeyVals, ""),
+    NC = proplists:get_value("nc", KeyVals, ""),
+    QOP = proplists:get_value("qop", KeyVals, ""),
     A1 = case AuthzId of
 	     "" ->
 		 binary_to_list(
