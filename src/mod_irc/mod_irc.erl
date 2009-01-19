@@ -5,7 +5,7 @@
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -322,7 +322,7 @@ iq_get_vcard(Lang) ->
       [#xmlcdata{cdata = list_to_binary(?EJABBERD_URI)}]},
      #xmlel{ns = ?NS_VCARD, name = 'DESC', children =
       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "ejabberd IRC module") ++
-        "\nCopyright (c) 2003-2008 Alexey Shchepin")}]}].
+        "\nCopyright (c) 2003-2009 Alexey Shchepin")}]}].
 
 process_register(Host, From, To, DefEnc, #iq{} = IQ_Rec) ->
     case catch process_irc_register(Host, From, To, DefEnc, IQ_Rec) of

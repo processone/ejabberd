@@ -1,10 +1,14 @@
+2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	Merge from trunk (r1752 to r1804).
+
+	Note: this merge doesn't include the following revisions because it
+	was made by previous commits:
+	    r1766, r1768, r1781, r1783, r1794, r1797, r1799, r1802.
+
 2009-01-19  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/translate.erl: Bugfix, ?MYLANG macro returns a list().
-
-2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
-
-	Merge from trunk (r1752 to r1787).
 
 2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
@@ -28,6 +32,18 @@
 	Store registered nicknames, rooms and domains as binary().
 	Use document_to_iolist/1 and iolist_size/1 instead of 
 	document_to_list/1.
+
+2009-01-12  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: Fixed processing of UPDATE results
+	with pgsql
+
+2009-01-12  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Update copyright date 2008 to 2009 (EJAB-842)
+	* doc/guide.html: Likewise
+	* src/*/*.erl: Likewise
+	* src/*/*.erl: Remove unneeded blankspaces in license text
 
 2009-01-11  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
@@ -83,6 +99,12 @@
 
 2009-01-09  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Improve explanation of backup commands (EJAB-832)
+	* doc/guide.html: Likewise
+
+	* src/web/ejabberd_web_admin.erl: New appearance of WebAdmin logo,
+	fixed logo-fill.
+
 	* src/mod_configure.erl: Fix access check for vhost configuration
 
 2009-01-08  Mickael Remond  <mremond@process-one.net>
@@ -127,9 +149,34 @@
 	disco_local_items, disco_local_features, disco_local_identity,
 	disco_sm_items and disco_sm_identity.
 
+2009-01-07  Badlop  <badlop@process-one.net>
+
+	* src/mod_roster.erl: Show hyperlinks to local contacts when
+	browsing roster of account in Web Admin (EJAB-480)
+	* src/mod_roster_odbc.erl: Likewise
+
+	* src/web/ejabberd_web_admin.erl: WebAdmin serves Guide and links
+	to related sections; the path to guide.html can be configured with
+	option doc_path (EJAB-837)
+	* src/web/ejabberd_web_admin.hrl: Likewise
+	* src/mod_shared_roster.erl: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
+2009-01-06  Badlop  <badlop@process-one.net>
+
+	* src/msgs/ru.po: Fix typo (thanks to Dominges)
+	* src/msgs/ru.msg: Likewise
+
 2009-01-05  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/mod_roster.erl: Fix typo.
+
+2009-01-05  Alexey Shchepin  <alexey@process-one.net>
+
+	* src/tls/tls_drv.c: Added a flag to avoid certificate validation
+	* src/tls/tls.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
 
 2009-01-03  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
@@ -156,31 +203,6 @@
 	arguments in all hooks to binary. Change internal tables of
 	ejabberd_sm, ejabberd_router, ejabberd_hooks, mod_last, mod_roster to
 	use binary() storage.
-
-2009-01-07  Badlop  <badlop@process-one.net>
-
-	* src/mod_roster.erl: Show hyperlinks to local contacts when
-	browsing roster of account in Web Admin (EJAB-480)
-	* src/mod_roster_odbc.erl: Likewise
-
-	* src/web/ejabberd_web_admin.erl: WebAdmin serves Guide and links
-	to related sections; the path to guide.html can be configured with
-	option doc_path (EJAB-837)
-	* src/web/ejabberd_web_admin.hrl: Likewise
-	* src/mod_shared_roster.erl: Likewise
-	* doc/guide.tex: Likewise
-	* doc/guide.html: Likewise
-
-2009-01-06  Badlop  <badlop@process-one.net>
-
-	* src/msgs/ru.po: Fix typo (thanks to Dominges)
-	* src/msgs/ru.msg: Likewise
-
-2009-01-05  Alexey Shchepin  <alexey@process-one.net>
-
-	* src/tls/tls_drv.c: Added a flag to avoid certificate validation
-	* src/tls/tls.erl: Likewise
-	* src/ejabberd_c2s.erl: Likewise
 
 2009-01-03  Badlop  <badlop@process-one.net>
 

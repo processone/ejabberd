@@ -5,7 +5,7 @@
 %%% Created : 19 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -321,7 +321,7 @@ adhoc_local_items(Acc, From, To, Lang) ->
 		    end,
 	    PermLev = get_permission_level(From),
 	    %% Recursively get all configure commands
-	    Nodes = recursively_get_local_items(PermLev, LServer, "", exmpp_jid:domain_as_list(Server),
+	    Nodes = recursively_get_local_items(PermLev, LServer, "", exmpp_jid:domain_as_list(To),
 						Lang),
 	    Nodes1 = lists:filter(
 		       fun(N) ->

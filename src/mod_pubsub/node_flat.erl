@@ -11,11 +11,11 @@
 %%% under the License.
 %%% 
 %%% The Initial Developer of the Original Code is ProcessOne.
-%%% Portions created by ProcessOne are Copyright 2006-2008, ProcessOne
+%%% Portions created by ProcessOne are Copyright 2006-2009, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2008, ProcessOne.
+%%% This software is copyright 2006-2009, ProcessOne.
 %%%
-%%% @copyright 2006-2008 ProcessOne
+%%% @copyright 2006-2009 ProcessOne
 %%% @author Christophe romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}

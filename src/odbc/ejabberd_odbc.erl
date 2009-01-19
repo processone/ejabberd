@@ -5,7 +5,7 @@
 %%% Created :  8 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -325,6 +325,8 @@ pgsql_item_to_odbc("INSERT " ++ OIDN) ->
     [_OID, N] = string:tokens(OIDN, " "),
     {updated, list_to_integer(N)};
 pgsql_item_to_odbc("DELETE " ++ N) ->
+    {updated, list_to_integer(N)};
+pgsql_item_to_odbc("UPDATE " ++ N) ->
     {updated, list_to_integer(N)};
 pgsql_item_to_odbc({error, Error}) ->
     {error, Error};
