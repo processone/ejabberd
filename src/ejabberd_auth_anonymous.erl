@@ -54,7 +54,6 @@
 	 plain_password_required/0]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -record(anonymous, {us, sid}).
 
 %% Create the anonymous table if at least one virtual host has anonymous features enabled
@@ -141,7 +140,9 @@ remove_connection(SID, LUser, LServer) ->
     mnesia:transaction(F).
 
 %% Register connection
-register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
+register_connection(SID, JID, Info) ->
+    LUser = exmpp_jid:lnode(JID),
+    LServer = exmpp_jid:ldomain(JID),
     case proplists:get_value(auth_module, Info) of
         undefined ->
             ok;
@@ -155,7 +156,9 @@ register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
     end.
 
 %% Remove an anonymous user from the anonymous users table
-unregister_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
+unregister_connection(SID, JID, _) ->
+    LUser = exmpp_jid:lnode(JID),
+    LServer = exmpp_jid:ldomain(JID),
     purge_hook(anonymous_user_exist(LUser, LServer),
 	       LUser, LServer),
     remove_connection(SID, LUser, LServer).

@@ -1,3 +1,8 @@
+2009-01-19  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_auth_anonymous.erl: Fix accesses to the new #jid opaque
+	type.
+
 2009-01-16  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	Merge from trunk (r1734 to r1752).
