@@ -1,5 +1,9 @@
 2009-01-20  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Explain that account creation is only supported
+	by internal and odbc authentication methods
+	* doc/guide.html: Likewise
+
 	* src/Makefile.in: The path to the installed copy of ejabberd
 	Guide is set in the environment variable
 	EJABBERD_DOC_PATH (EJAB-837).
