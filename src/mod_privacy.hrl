@@ -34,4 +34,4 @@
 		   match_presence_out = false
 		  }).
 
--record(userlist, {name = none, list = []}).
+-record(userlist, {name = none, list = [], needdb = false }).

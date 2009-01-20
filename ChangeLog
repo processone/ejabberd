@@ -1,3 +1,11 @@
+2009-01-20  Badlop  <badlop@process-one.net>
+
+	* src/mod_privacy.erl: Only run roster_get_jid_info if privacy
+	list has subscription or group (thanks to George Hazan)(EJAB-851).
+	Sort items in privacy list by order before storing (EJAB-848)
+	* src/mod_privacy.hrl: Likewise
+	* src/mod_privacy_odbc.erl: Likewise
+
 2009-01-17  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_c2s.erl: Added comments.
