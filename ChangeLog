@@ -1,5 +1,13 @@
 2009-01-20  Badlop  <badlop@process-one.net>
 
+	* src/Makefile.in: The path to the installed copy of ejabberd
+	Guide is set in the environment variable
+	EJABBERD_DOC_PATH (EJAB-837).
+	* src/web/ejabberd_web_admin.erl: Likewise
+	* src/ejabberdctl.template: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
 	* src/mod_privacy.erl: Only run roster_get_jid_info if privacy
 	list has subscription or group (thanks to George Hazan)(EJAB-851).
 	Sort items in privacy list by order before storing (EJAB-848)

@@ -476,7 +476,7 @@ variable.
 </P></LI><LI CLASS="li-enumerate">Install OpenSSL in <CODE>C:\sdk\OpenSSL</CODE> and add <CODE>C:\sdk\OpenSSL\lib\VC</CODE> to your path or copy the binaries to your system directory.
 </LI><LI CLASS="li-enumerate">Install ZLib in <CODE>C:\sdk\gnuWin32</CODE>. Copy
 <CODE>C:\sdk\GnuWin32\bin\zlib1.dll</CODE> to your system directory. If you change your path it should already be set after libiconv install.
-</LI><LI CLASS="li-enumerate">Make sure the you can access Erlang binaries from your path. For example: <CODE>set PATH=%PATH%;"C:\sdk\erl5.5.5\bin"</CODE>
+</LI><LI CLASS="li-enumerate">Make sure the you can access Erlang binaries from your path. For example: <CODE>set PATH=%PATH%;"C:\sdk\erl5.6.5\bin"</CODE>
 </LI><LI CLASS="li-enumerate">Depending on how you end up actually installing the library you might need to check and tweak the paths in the file configure.erl.
 </LI><LI CLASS="li-enumerate">While in the directory <CODE>ejabberd\src</CODE> run:
 <PRE CLASS="verbatim">configure.bat
@@ -914,8 +914,8 @@ connected to port 5237 with password &#X2018;<TT>ggsecret</TT>&#X2019;.
 {s2s_default_policy, deny}.
 {{s2s_host,"jabber.example.org"}, allow}.
 {{s2s_host,"example.com"}, allow}.
-</PRE><P>Note, that for jabberd 1.4- or WPJabber-based
-services you have to make the transports log and do XDB by themselves:
+</PRE><P>Note, that for services based in jabberd14 or WPJabber
+you have to make the transports log and do XDB by themselves:
 </P><PRE CLASS="verbatim">  &lt;!--
      You have to add elogger and rlogger entries here when using ejabberd.
      In this case the transport will do the logging.
@@ -937,7 +937,7 @@ services you have to make the transports log and do XDB by themselves:
   &lt;xdb id="xdb"&gt;
     &lt;host/&gt;
     &lt;load&gt;
-      &lt;!-- this is a lib of wpjabber or jabberd --&gt;
+      &lt;!-- this is a lib of wpjabber or jabberd14 --&gt;
       &lt;xdb_file&gt;/usr/lib/jabber/xdb_file.so&lt;/xdb_file&gt;
       &lt;/load&gt;
     &lt;xdb_file xmlns="jabber:config:xdb_file"&gt;
@@ -3019,6 +3019,8 @@ all the environment variables and command line parameters.</P><P>The environment
 	Path to the ejabberd service log file.
 </DD><DT CLASS="dt-description"><B><TT>EJABBERD_SO_PATH</TT></B></DT><DD CLASS="dd-description">
 	Path to the directory with binary system libraries.
+</DD><DT CLASS="dt-description"><B><TT>EJABBERD_DOC_PATH</TT></B></DT><DD CLASS="dd-description">
+	Path to the directory with ejabberd documentation.
 </DD><DT CLASS="dt-description"><B><TT>HOME</TT></B></DT><DD CLASS="dd-description">
 	Path to the directory that is considered <TT>ejabberd</TT>&#X2019;s home.
 	This path is used to read the file <TT>.erlang.cookie</TT>.
@@ -3140,10 +3142,8 @@ be installed in the system.
 The file is searched by default in
 <TT>"/share/doc/ejabberd/guide.html"</TT>.
 The directory of the documentation can be specified in
-<TT>ejabberd.cfg</TT> with the option <TT>doc_path</TT>.
-For example:
-</P><PRE CLASS="verbatim">{doc_path, "/usr/local/share/doc/ejabberd/"}.
-</PRE><P> <A NAME="adhoccommands"></A> </P><!--TOC section Ad-hoc Commands-->
+the environment variable <TT>EJABBERD_DOC_PATH</TT>.
+See section <A HREF="#erlangconfiguration">4.1.2</A>.</P><P> <A NAME="adhoccommands"></A> </P><!--TOC section Ad-hoc Commands-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc65">4.3</A>&#XA0;&#XA0;<A HREF="#adhoccommands">Ad-hoc Commands</A></H2><!--SEC END --><P> <A NAME="adhoccommands"></A> </P><P>If you enable <TT>mod_configure</TT> and <TT>mod_adhoc</TT>,
 you can perform several administrative tasks in <TT>ejabberd</TT>
 with a Jabber client.

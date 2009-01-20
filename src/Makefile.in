@@ -172,6 +172,7 @@ install: all
 		-e "s*@LIBDIR@*@libdir@*" \
 		-e "s*@SYSCONFDIR@*@sysconfdir@*" \
 		-e "s*@LOCALSTATEDIR@*@localstatedir@*" \
+		-e "s*@DOCDIR@*@docdir@*" \
 		-e "s*@erl@*@ERL@*" ejabberdctl.template \
 		> ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] \

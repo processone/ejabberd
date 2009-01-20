@@ -48,6 +48,9 @@ fi
 if [ "$SPOOLDIR" = "" ] ; then
     SPOOLDIR=@LOCALSTATEDIR@/lib/ejabberd
 fi
+if [ "$EJABBERD_DOC_PATH" = "" ] ; then
+    EJABBERD_DOC_PATH=@DOCDIR@
+fi
 
 # check the proper system user is used
 ID=`id -g`
@@ -99,6 +102,7 @@ export EJABBERD_MSGS_PATH
 export EJABBERD_LOG_PATH
 export EJABBERD_SO_PATH
 export EJABBERD_BIN_PATH
+export EJABBERD_DOC_PATH
 export ERL_CRASH_DUMP
 export ERL_INETRC
 export ERL_MAX_PORTS

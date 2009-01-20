@@ -41,9 +41,9 @@
 
 
 process(["doc", LocalFile], _Request) ->
-    DocPath = case ejabberd_config:get_global_option(doc_path) of
+    DocPath = case os:getenv("EJABBERD_DOC_PATH") of
 		  P when is_list(P) -> P;
-		  _ -> "/share/doc/ejabberd/"
+		  false -> "/share/doc/ejabberd/"
 	      end,
     %% Code based in mod_http_fileserver
     FileName = filename:join(DocPath, LocalFile),
@@ -55,8 +55,8 @@ process(["doc", LocalFile], _Request) ->
              FileContents};
         {error, Error} ->
             ?DEBUG("Delivering error: ~p", [Error]),
-	    Help = " " ++ FileName ++ " - Try to specify the path to ejabberd guide.html "
-		"with the option doc_path. Check the ejabberd Guide for more information",
+	    Help = " " ++ FileName ++ " - Try to specify the path to ejabberd documentation "
+		"with the environment variable EJABBERD_DOC_PATH. Check the ejabberd Guide for more information.",
             case Error of
                 eacces -> {403, [], "Forbidden"++Help};
                 enoent -> {404, [], "Not found"++Help};
