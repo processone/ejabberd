@@ -6,6 +6,9 @@
 	* src/cyrsasl.erl: Return invalid-mechanism when a mechanism isn't
 	supported instead of no-mechanism, which wasn't standard-compliant.
 
+	* src/mod_pubsub/nodetree_virtual.erl (create_node/5): Use string()
+	version of UserName and UserHost.
+
 2009-01-19  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/cyrsasl_digest.erl: Typo (prolists -> proplists).
