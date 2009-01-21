@@ -1,3 +1,7 @@
+2009-01-21  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_hooks.erl: Explanation in EDoc of some functions
+
 2009-01-20  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Explain that account creation is only supported

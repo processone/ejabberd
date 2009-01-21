@@ -58,18 +58,27 @@
 start_link() ->
     gen_server:start_link({local, ejabberd_hooks}, ejabberd_hooks, [], []).
 
+%% @spec (Hook::atom(), Module::atom(), Function::atom(), Seq::integer()) -> ok
+%% @doc Add a module and function to this hook.
+%% The integer sequence is used to sort the calls: low number is called before high number.
 add(Hook, Module, Function, Seq) ->
     add(Hook, global, Module, Function, Seq).
 
 add(Hook, Host, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Module, Function, Seq}).
 
+%% @spec (Hook::atom(), Module::atom(), Function::atom(), Seq::integer()) -> ok
+%% @doc Delete a module and function from this hook.
+%% It is important to indicate exactly the same information than when the call was added.
 delete(Hook, Module, Function, Seq) ->
     delete(Hook, global, Module, Function, Seq).
 
 delete(Hook, Host, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {delete, Hook, Host, Module, Function, Seq}).
 
+%% @spec (Hook::atom(), Args) -> ok
+%% @doc Run the calls of this hook in order, don't care about function results.
+%% If a call returns stop, no more calls are performed.
 run(Hook, Args) ->
     run(Hook, global, Args).
 
@@ -81,6 +90,12 @@ run(Hook, Host, Args) ->
 	    ok
     end.
 
+%% @spec (Hook::atom(), Val, Args) -> Val | stopped | NewVal
+%% @doc Run the calls of this hook in order.
+%% The arguments passed to the function are: [Val | Args].
+%% The result of a call is used as Val for the next call.
+%% If a call returns 'stop', no more calls are performed and 'stopped' is returned.
+%% If a call returns {stopped, NewVal}, no more calls are performed and NewVal is returned.
 run_fold(Hook, Val, Args) ->
     run_fold(Hook, global, Val, Args).
 
@@ -212,6 +227,3 @@ run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
 	NewVal ->
 	    run_fold1(Ls, Hook, NewVal, Args)
     end.
-
-
-
