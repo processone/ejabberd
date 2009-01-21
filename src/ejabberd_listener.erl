@@ -287,12 +287,13 @@ add_listener(PortIP, Module, Opts) ->
 	    {error, Error}
     end.
   
-%% @spec (PortIP) -> ok
+%% @spec (PortIP, Module) -> ok
 %% where
 %%      PortIP = {Port, IPT | IPS}
 %%      Port = integer()
 %%      IPT = tuple()
 %%      IPS = string()
+%%      Module = atom()
 delete_listener(PortIP, Module) ->
     Ports = case ejabberd_config:get_local_option(listen) of
 		undefined ->

@@ -1063,12 +1063,12 @@ term_to_string(T) ->
     {ok, StringLine, _} = regexp:gsub(StringParagraph, "\\n ", ""),
     StringLine.
 
-%% @spec (T::any()) -> {NumLines::integer(), Paragraph::string()}
+%% @spec (T::any(), Cols::integer()) -> {NumLines::integer(), Paragraph::string()}
 term_to_paragraph(T, Cols) ->
-	Paragraph = erl_prettypr:format(erl_syntax:abstract(T), [{paper, Cols}]),
-	{ok, FieldList} = regexp:split(Paragraph, "\n"),
-	NumLines = length(FieldList),
-	{NumLines, Paragraph}.
+    Paragraph = erl_prettypr:format(erl_syntax:abstract(T), [{paper, Cols}]),
+    {ok, FieldList} = regexp:split(Paragraph, "\n"),
+    NumLines = length(FieldList),
+    {NumLines, Paragraph}.
 
 term_to_id(T) ->
     jlib:encode_base64(binary_to_list(term_to_binary(T))).

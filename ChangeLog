@@ -1,5 +1,10 @@
 2009-01-21  Badlop  <badlop@process-one.net>
 
+	* doc/api/process-one.css: Add some style to HTML elements
+
+	* src/ejabberd_listener.erl: Fix EDoc errors
+	* src/web/ejabberd_web_admin.erl: Likewise
+
 	* src/ejabberd_hooks.erl: Explanation in EDoc of some functions
 
 2009-01-20  Badlop  <badlop@process-one.net>
