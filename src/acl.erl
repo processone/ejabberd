@@ -158,7 +158,9 @@ match_acl(ACL, JID, Host) ->
 	all -> true;
 	none -> false;
 	_ ->
-	    {User, Server, Resource} = jlib:short_prepd_jid(JID),
+	    User = exmpp_jid:lnode_as_list(JID),
+	    Server = exmpp_jid:ldomain_as_list(JID),
+	    Resource = exmpp_jid:lresource_as_list(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->
 			      case Spec of
 				  all ->
