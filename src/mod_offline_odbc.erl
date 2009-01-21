@@ -198,7 +198,7 @@ check_event(From, To, Packet) ->
 			undefined ->
 			    true;
 			_ ->
-			    ID = case exmpp_xml:get_attribute(Packet, 'id', "") of
+			    ID = case exmpp_xml:get_attribute_as_list(Packet, 'id', "") of
 				     "" ->
 					 #xmlel{ns = ?NS_MESSAGE_EVENT, name = 'id'};
 				     S ->
@@ -226,7 +226,7 @@ find_x_event([_ | Els]) ->
 find_x_expire(_, []) ->
     never;
 find_x_expire(TimeStamp, [#xmlel{ns = ?NS_MESSAGE_EXPIRE} = El | _Els]) ->
-    Val = exmpp_xml:get_attribute(El, 'seconds', ""),
+    Val = exmpp_xml:get_attribute_as_list(El, 'seconds', ""),
     case catch list_to_integer(Val) of
 	{'EXIT', _} ->
 	    never;
@@ -257,9 +257,9 @@ pop_offline_messages(Ls, User, Server)
 				    [El] = exmpp_xml:parse_document(XML, 
                          [names_as_atom, {check_elems, xmpp}, 
                           {check_nss,xmpp}, {check_attrs,xmpp}]),
-				    To = exmpp_jid:binary_to_jid(
+				    To = exmpp_jid:parse_jid(
 				      exmpp_stanza:get_recipient(El)),
-				    From = exmpp_jid:binary_to_jid(
+				    From = exmpp_jid:parse_jid(
 				      exmpp_stanza:get_sender(El)),
 				    [{route, From, To, El}]
 				catch

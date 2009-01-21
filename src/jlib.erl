@@ -51,7 +51,7 @@
 
 
 parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
-    case exmpp_xml:get_attribute_from_list(Attrs, 'type', "") of
+    case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', "") of
 	"submit" ->
 	    lists:reverse(parse_xdata_fields(Els, []));
 	_ ->
@@ -62,7 +62,7 @@ parse_xdata_fields([], Res) ->
     Res;
 parse_xdata_fields([#xmlel{name = 'field', attrs = Attrs, children = SubEls} |
   Els], Res) ->
-    case exmpp_xml:get_attribute_from_list(Attrs, 'var', "") of
+    case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'var', "") of
 	"" ->
 	    parse_xdata_fields(Els, Res);
 	Var ->
@@ -132,7 +132,7 @@ rsm_encode_first(undefined, undefined, Arr) ->
 rsm_encode_first(First, undefined, Arr) ->
     [#xmlel{ns = ?NS_RSM, name = 'first', children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr];
 rsm_encode_first(First, Index, Arr) ->
-    [#xmlel{ns = ?NS_RSM, name = 'first', attrs = [#xmlattr{name = 'index', value = i2b(Index)}], children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr].
+    [#xmlel{ns = ?NS_RSM, name = 'first', attrs = [?XMLATTR('index', Index)], children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr].
 
 rsm_encode_last(undefined, Arr) -> Arr;
 rsm_encode_last(Last, Arr) ->

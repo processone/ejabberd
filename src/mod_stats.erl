@@ -46,7 +46,7 @@ stop(Host) ->
 
 process_local_iq(_From, To, #iq{type = get,
 				ns = XMLNS, payload = SubEl} = IQ_Rec) ->
-    Node = string:tokens(exmpp_xml:get_attribute(SubEl, 'node', ""), "/"),
+    Node = string:tokens(exmpp_xml:get_attribute_as_list(SubEl, 'node', ""), "/"),
     Names = get_names(exmpp_xml:get_child_elements(SubEl), []),
 
     case get_local_stats(exmpp_jid:domain_as_list(To), Node, Names) of
@@ -74,7 +74,7 @@ get_names([_ | Els], Res) ->
     get_names(Els, Res).
 
 
--define(STAT(Name), #xmlel{ns = ?NS_STATS, name = 'stat', attrs = [#xmlattr{name = 'name', value = Name}]}).
+-define(STAT(Name), #xmlel{ns = ?NS_STATS, name = 'stat', attrs = [?XMLATTR('name', Name)]}).
 
 get_local_stats(_Server, [], []) ->
     {result,
@@ -116,16 +116,16 @@ get_local_stats(_Server, _, _) ->
 
 -define(STATVAL(Val, Unit),
 	#xmlel{ns = ?NS_STATS, name = 'stat', attrs =
-	 [#xmlattr{name = 'name', value = Name},
-	  #xmlattr{name = 'units', value = Unit},
-	  #xmlattr{name = 'value', value = Val}
+	 [?XMLATTR('name', Name),
+	  ?XMLATTR('units', Unit),
+	  ?XMLATTR('value', Val)
 	 ]}).
 
 -define(STATERR(Code, Desc),
 	#xmlel{ns = ?NS_STATS, name = 'stat', attrs=
-	 [#xmlattr{name = 'name', value = Name}], children =
+	 [?XMLATTR('name', Name)], children =
 	 [#xmlel{ns = ?NS_STATS, name = 'error', attrs =
-	   [#xmlattr{name = 'code', value = Code}], children =
+	   [?XMLATTR('code', Code)], children =
 	   [#xmlcdata{cdata = Desc}]}]}).
 
 

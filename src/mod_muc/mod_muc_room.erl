@@ -554,7 +554,7 @@ normal_state(_Event, StateData) ->
 %%----------------------------------------------------------------------
 handle_event({service_message, Msg}, _StateName, StateData) ->
     MessagePkt = #xmlel{name = 'message',
-      attrs = [#xmlattr{name = 'type', value = "groupchat"}],
+      attrs = [?XMLATTR('type', <<"groupchat">>)],
       children = [#xmlel{name = 'body',
 	  children = [#xmlcdata{cdata = Msg}]}]},
     lists:foreach(
@@ -1523,7 +1523,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		    if not (NewState#state.config)#config.anonymous ->
 			    WPacket = 
 			    #xmlel{name = 'message',
-			      attrs = [#xmlattr{name = 'type', value = "groupchat"}],
+			      attrs = [?XMLATTR('type', <<"groupchat">>)],
 			      children = [
 				#xmlel{name = 'body',
 				  children = [#xmlcdata{cdata =
@@ -1766,12 +1766,12 @@ send_new_presence(NJID, Reason, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(RealJID)},
-			   #xmlattr{name = 'affiliation', value = SAffiliation},
-			   #xmlattr{name = 'role', value = SRole}];
+			  [?XMLATTR('jid', exmpp_jid:jid_to_binary(RealJID)),
+			   ?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole)];
 		      _ ->
-			  [#xmlattr{name = 'affiliation', value = SAffiliation},
-			   #xmlattr{name = 'role', value = SRole}]
+			  [?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole)]
 		  end,
 	      ItemEls = case Reason of
 			    <<>> ->
@@ -1783,7 +1783,7 @@ send_new_presence(NJID, Reason, StateData) ->
 	      Status = case StateData#state.just_created of
 			   true ->
 			       [#xmlel{name = 'status', 
-                           attrs = [#xmlattr{name = 'code', value = "201"}]}];
+                           attrs = [?XMLATTR('code', <<"201">>)]}];
 			   false ->
 			       []
 		       end,
@@ -1822,14 +1822,14 @@ send_existing_presences(ToJID, StateData) ->
 			      ((StateData#state.config)#config.anonymous ==
 			       false) of
 			      true ->
-				  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(FromJID)},
-				   #xmlattr{name = 'affiliation', 
-                           value = affiliation_to_binary(FromAffiliation)},
-				   #xmlattr{name = 'role', value = role_to_binary(FromRole)}];
+				  [?XMLATTR('jid', exmpp_jid:jid_to_binary(FromJID)),
+				   ?XMLATTR('affiliation', 
+                           affiliation_to_binary(FromAffiliation)),
+				   ?XMLATTR('role', role_to_binary(FromRole))];
 			      _ ->
-				  [#xmlattr{name = 'affiliation', 
-                           value = affiliation_to_binary(FromAffiliation)},
-				   #xmlattr{name = 'role', value = role_to_binary(FromRole)}]
+				  [?XMLATTR('affiliation', 
+                           affiliation_to_binary(FromAffiliation)),
+				   ?XMLATTR('role', role_to_binary(FromRole))]
 			  end,
 		      Packet = exmpp_xml:append_child(Presence,
 				 #xmlel{ns = ?NS_MUC_USER, name = 'x',
@@ -1879,37 +1879,37 @@ send_nick_changing(JID, OldNick, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(RealJID)},
-			   #xmlattr{name = 'affiliation', value = SAffiliation},
-			   #xmlattr{name = 'role', value = SRole},
-			   #xmlattr{name = 'nick', value = Nick}];
+			  [?XMLATTR('jid', exmpp_jid:jid_to_binary(RealJID)),
+			   ?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole),
+			   ?XMLATTR('nick', Nick)];
 		      _ ->
-			  [#xmlattr{name = 'affiliation', value = SAffiliation},
-			   #xmlattr{name = 'role', value = SRole},
-			   #xmlattr{name = 'nick', value = Nick}]
+			  [?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole),
+			   ?XMLATTR('nick', Nick)]
 		  end,
 	      ItemAttrs2 =
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(RealJID)},
-			   #xmlattr{name = 'affiliation', value = SAffiliation},
-			   #xmlattr{name = 'role', value = SRole}];
+			  [?XMLATTR('jid', exmpp_jid:jid_to_binary(RealJID)),
+			   ?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole)];
 		      _ ->
-			  [#xmlattr{name = 'affiliation', value = SAffiliation},
-			   #xmlattr{name = 'role', value = SRole}]
+			  [?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole)]
 		  end,
 	      Packet1 =
                #xmlel{ns = ?NS_JABBER_CLIENT,
                     name = 'presence', 
-                    attrs = [#xmlattr{name = 'type', value = <<"unavailable">>}],
+                    attrs = [?XMLATTR('type', <<"unavailable">>)],
                     children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
                                  children = [
                                   #xmlel{ns = ?NS_MUC_USER, name = 'item',
                                          attrs = ItemAttrs1},
                                   #xmlel{ns = ?NS_MUC_USER, name = 'status',
-                                         attrs = [#xmlattr{name = 'code', 
-                                                         value = "303"}]}]}]},
+                                         attrs = [?XMLATTR('code', 
+                                                         <<"303">>)]}]}]},
 
 	      Packet2 = exmpp_xml:append_child(
 			  Presence,
@@ -2081,20 +2081,20 @@ items_with_affiliation(SAffiliation, StateData) ->
       fun({JID, {Affiliation, Reason}}) ->
         {N, D, R} = JID,
         #xmlel{name = 'item', 
-               attrs = [#xmlattr{name = 'affiliation', 
-                                 value = affiliation_to_binary(Affiliation)},
-                        #xmlattr{name = 'jid',
-                                 value = exmpp_jid:jid_to_binary(N, D, R)}],
+               attrs = [?XMLATTR('affiliation', 
+                                 affiliation_to_binary(Affiliation)),
+                        ?XMLATTR('jid',
+                                 exmpp_jid:jid_to_binary(N, D, R))],
                children = [ #xmlel{name = 'reason',
                                    children = [#xmlcdata{cdata = Reason}]}]};
 
 	 ({JID, Affiliation}) ->
         {N, D, R} = JID,
         #xmlel{name = 'item', 
-               attrs = [#xmlattr{name = 'affiliation', 
-                                 value = affiliation_to_binary(Affiliation)},
-                        #xmlattr{name = 'jid',
-                                 value = exmpp_jid:jid_to_binary(N, D, R)}]}
+               attrs = [?XMLATTR('affiliation', 
+                                 affiliation_to_binary(Affiliation)),
+                        ?XMLATTR('jid',
+                                 exmpp_jid:jid_to_binary(N, D, R))]}
       end, search_affiliation(SAffiliation, StateData)).
 
 user_to_item(#user{role = Role,
@@ -2104,10 +2104,10 @@ user_to_item(#user{role = Role,
     Affiliation = get_affiliation(JID, StateData),
     #xmlel{name = 'item',
            attrs = [
-      #xmlattr{name = 'role', value = role_to_binary(Role)},
-      #xmlattr{name = 'affiliation', value = affiliation_to_binary(Affiliation)},
-      #xmlattr{name = 'nick', value = Nick},
-      #xmlattr{name = 'jid', value = exmpp_jid:jid_to_binary(JID)}]
+      ?XMLATTR('role', role_to_binary(Role)),
+      ?XMLATTR('affiliation', affiliation_to_binary(Affiliation)),
+      ?XMLATTR('nick', Nick),
+      ?XMLATTR('jid', exmpp_jid:jid_to_binary(JID))]
      }.
 
 search_role(Role, StateData) ->
@@ -2227,7 +2227,7 @@ find_changed_items(UJID, UAffiliation, URole,
 		   Lang, StateData, Res) ->
     TJID = case exmpp_xml:get_attribute_as_binary(Item, 'jid',false) of
 	       S when S =/= false ->
-		   try exmpp_jid:binary_to_jid(S) of
+		   try exmpp_jid:parse_jid(S) of
 		       J ->
 			   {value, J}
             catch
@@ -2239,7 +2239,7 @@ find_changed_items(UJID, UAffiliation, URole,
 			   {error, ?ERR(Item, 'not-acceptable', Lang, ErrText)}
 		   end;
 	       _ ->
-		   case exmpp_xml:get_attribute(Item, 'nick', false) of
+		   case exmpp_xml:get_attribute_as_list(Item, 'nick', false) of
 		       N when N =/= false ->
 			   case find_jid_by_nick(N, StateData) of
 			       false ->
@@ -2569,8 +2569,8 @@ send_kickban_presence1(UJID, Reason, Code, StateData) ->
     SAffiliation = affiliation_to_binary(Affiliation),
     lists:foreach(
       fun({_LJID, Info}) ->
-	      ItemAttrs = [#xmlattr{name = 'affiliation', value = SAffiliation},
-			           #xmlattr{name = 'role', value = "none"}],
+	      ItemAttrs = [?XMLATTR('affiliation', SAffiliation),
+			           ?XMLATTR('role', <<"none">>)],
 	      ItemEls = case Reason of
 			    <<>> ->
 				[];
@@ -2581,15 +2581,15 @@ send_kickban_presence1(UJID, Reason, Code, StateData) ->
           Packet = 
             #xmlel{ns = ?NS_JABBER_CLIENT,
                   name = 'presence',
-                  attrs = [#xmlattr{name = 'type', value = "unavailable"}],
+                  attrs = [?XMLATTR('type', <<"unavailable">>)],
                   children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
                                  children = [
                                  #xmlel{ns = ?NS_MUC_USER, name = 'item',
                                         attrs = ItemAttrs,
                                         children = ItemEls},
                                  #xmlel{ns = ?NS_MUC_USER, name = 'status',
-                                        attrs = [#xmlattr{name='code', 
-                                                          value = Code}]}]}]},
+                                        attrs = [?XMLATTR('code', 
+                                                          Code)]}]}]},
 	      ejabberd_router:route(
 		jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
@@ -2688,9 +2688,9 @@ check_allowed_persistent_change(XEl, StateData, From) ->
 
 -define(XFIELD(Type, Label, Var, Val),
     #xmlel{name = 'field', 
-           attrs = [#xmlattr{name = 'type', value = Type},
-                    #xmlattr{name = 'label', value = translate:translate(Lang, Label)},
-                    #xmlattr{name = 'var', value = Var}],
+           attrs = [?XMLATTR('type', Type),
+                    ?XMLATTR('label', translate:translate(Lang, Label)),
+                    ?XMLATTR('var', Var)],
            children = [#xmlel{name = 'value',
                               children = [#xmlcdata{cdata = Val} ]}]}).
 
@@ -2729,8 +2729,8 @@ get_config(Lang, StateData, From) ->
 	[#xmlel{name = 'title', children = [ #xmlcdata{cdata =
                 translate:translate(Lang, "Configuration for ") ++
                 exmpp_jid:jid_to_list(StateData#state.jid)}]},
-    #xmlel{name = 'field', attrs = [#xmlattr{name = 'type', value = "hidden"},
-                                  #xmlattr{name = 'var', value = "FORM_TYPE"}],
+    #xmlel{name = 'field', attrs = [?XMLATTR('type', <<"hidden">>),
+                                  ?XMLATTR('var', <<"FORM_TYPE">>)],
            children = [#xmlel{name = 'value', children = [#xmlcdata{cdata = 
                                <<"http://jabber.org/protocol/muc#roomconfig">>
                         }]}]},
@@ -2765,46 +2765,45 @@ get_config(Lang, StateData, From) ->
 			    false -> ""
 			end),
      #xmlel{name = 'field', attrs = [
-                #xmlattr{name = 'type', value = "list-single"},
-                #xmlattr{name = 'label', value = translate:translate(Lang,
-                                "Maximum Number of Occupants")},
-                #xmlattr{name = 'var', value = "muc#roomconfig_maxusers"}],
+                ?XMLATTR('type', <<"list-single">>),
+                ?XMLATTR('label', translate:translate(Lang,
+                                "Maximum Number of Occupants")),
+                ?XMLATTR('var', <<"muc#roomconfig_maxusers">>)],
             children = [#xmlel{name = 'value',
                                children = [#xmlcdata{cdata = 
                                 MaxUsersRoomString}]}] ++
 	  if
 	      is_integer(ServiceMaxUsers) -> [];
 	      true ->
-          [#xmlel{name = 'option', attrs = [#xmlattr{name = 'label', 
-                        value = translate:translate(Lang, "No limit")}],
+          [#xmlel{name = 'option', attrs = [?XMLATTR('label', 
+                        translate:translate(Lang, "No limit"))],
                   children = [#xmlel{name = 'value', children = [#xmlcdata{
                                 cdata = <<"none">>}]}]}]
 	  end ++
-      [#xmlel{name = 'option', attrs = [#xmlattr{name = 'label', 
-                                    value = erlang:integer_to_list(N)}],
+      [#xmlel{name = 'option', attrs = [?XMLATTR('label', N)],
               children = [#xmlel{name = 'value', children = [
                 #xmlcdata{cdata = erlang:integer_to_list(N)}]}]} ||
               N <- lists:usort([ServiceMaxUsers, DefaultRoomMaxUsers, MaxUsersRoomInteger |
                                ?MAX_USERS_DEFAULT_LIST]), N =< ServiceMaxUsers]}, 
     #xmlel{name = 'field', attrs = [
-                #xmlattr{name = 'type', value = "list-single"},
-                #xmlattr{name = 'label', 
-                    value = translate:translate(Lang, "Present real Jabber IDs to")},
-                #xmlattr{name = 'var', value = "muc#roomconfig_whois"}],
+                ?XMLATTR('type', <<"list-single">>),
+                ?XMLATTR('label', 
+                    translate:translate(Lang, "Present real Jabber IDs to")),
+                ?XMLATTR('var', <<"muc#roomconfig_whois">>)],
           children = [#xmlel{name = 'value',
                         children = [#xmlcdata{cdata = 
                                 if Config#config.anonymous -> <<"moderators">>;
                                    true -> <<"anyone">>
                                 end}]},
                      #xmlel{name = 'option', attrs = [
-                            #xmlattr{name = 'label', value = 
-                              translate:translate(Lang, "moderators only")}],
+                            ?XMLATTR('label',
+                              translate:translate(Lang, "moderators only"))],
                            children = [#xmlel{name = 'value', 
                                        children = [#xmlcdata{cdata = 
                                                         <<"moderators">>}]}]},
                      #xmlel{name = 'option', attrs = [
-                            #xmlattr{name = 'label', value = 
-                              translate:translate(Lang, "anyone")}],
+                            ?XMLATTR('label',
+                              translate:translate(Lang, "anyone"))],
                            children = [#xmlel{name = 'value', 
                                        children = [#xmlcdata{cdata = 
                                                         <<"anyone">>}]}]}]},
@@ -2851,7 +2850,7 @@ get_config(Lang, StateData, From) ->
                 #xmlcdata{cdata = translate:translate(Lang,
 		         "You need an x:data capable client to configure room")}]},
                  #xmlel{ns = ?NS_DATA_FORMS, name = 'x', 
-                attrs = [#xmlattr{name = 'type', value = "form"}],
+                attrs = [?XMLATTR('type', <<"form">>)],
                 children = Res}],
         StateData}.
 
@@ -3072,12 +3071,12 @@ destroy_room(DEl, StateData) ->
     lists:foreach(
       fun({_LJID, Info}) ->
 	      Nick = Info#user.nick,
-	      ItemAttrs = [#xmlattr{name = 'affiliation', value = "none"},
-			   #xmlattr{name = 'role', value = "none"}],
+	      ItemAttrs = [?XMLATTR('affiliation', <<"none">>),
+			   ?XMLATTR('role', <<"none">>)],
           Packet = #xmlel{ns = ?NS_JABBER_CLIENT,
                           name = 'presence', 
-                          attrs = [#xmlattr{name = 'type', 
-                                            value = "unavailable"}],
+                          attrs = [?XMLATTR('type', 
+                                            <<"unavailable">>)],
                           children = [
                             #xmlel{ns = ?NS_MUC_USER, name = 'x', children =
                                     [#xmlel{name = 'item', attrs = ItemAttrs},
@@ -3102,7 +3101,7 @@ destroy_room(DEl, StateData) ->
 % Disco
 
 -define(FEATURE(Var), #xmlel{name = 'feature', 
-                        attrs = [#xmlattr{name = 'var', value = Var}]}).
+                        attrs = [?XMLATTR('var', Var)]}).
 
 -define(CONFIG_OPT_TO_FEATURE(Opt, Fiftrue, Fiffalse),
     case Opt of
@@ -3118,13 +3117,13 @@ process_iq_disco_info(_From, set, _Lang, _StateData) ->
 process_iq_disco_info(_From, get, Lang, StateData) ->
     Config = StateData#state.config,
     {result, [ #xmlel{name = 'identity',
-                      attrs = [#xmlattr{name = 'category', 
-                                        value = "conference"},
-                               #xmlattr{name = 'type', value = "text"},
-                        	   #xmlattr{name = 'name', 
-                                        value = get_title(StateData)}]},
+                      attrs = [?XMLATTR('category', 
+                                        <<"conference">>),
+                               ?XMLATTR('type', <<"text">>),
+                        	   ?XMLATTR('name', 
+                                        get_title(StateData))]},
                #xmlel{name = 'feature', 
-                      attrs = [#xmlattr{name = 'var', value = ?NS_MUC_s}]},
+                      attrs = [?XMLATTR('var', ?NS_MUC_s)]},
     
 	      ?CONFIG_OPT_TO_FEATURE(Config#config.public,
 				     "muc_public", "muc_hidden"),
@@ -3141,15 +3140,15 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
 	     ] ++ iq_disco_info_extras(Lang, StateData), StateData}.
 
 -define(RFIELDT(Type, Var, Val),
-    #xmlel{name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
-                                    #xmlattr{name = 'var', value = Var}],
+    #xmlel{name = 'field', attrs = [?XMLATTR('type', Type),
+                                    ?XMLATTR('var', Var)],
            children = [#xmlel{name = 'value', 
                              children = [#xmlcdata{cdata = Val}]}]}).
 
 -define(RFIELD(Label, Var, Val),
-    #xmlel{name = 'field', attrs = [#xmlattr{name = 'label', value =    
-                                        translate:translate(Lang, Label)},
-                                    #xmlattr{name = 'var', value = Var}],
+    #xmlel{name = 'field', attrs = [?XMLATTR('label',
+                                        translate:translate(Lang, Label)),
+                                    ?XMLATTR('var', Var)],
             children = [#xmlel{name = 'value', children = [
                             #xmlcdata{cdata = Val}]}]}).
 
@@ -3157,7 +3156,7 @@ iq_disco_info_extras(Lang, StateData) ->
     Len = length(?DICT:to_list(StateData#state.users)),
     RoomDescription = (StateData#state.config)#config.description,
     [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', 
-             attrs = [#xmlattr{name = 'type', value = "result"}],
+             attrs = [?XMLATTR('type', <<"result">>)],
              children = 
       [?RFIELDT("hidden", "FORM_TYPE",
 		"http://jabber.org/protocol/muc#roominfo"),
@@ -3182,13 +3181,13 @@ process_iq_disco_items(From, get, _Lang, StateData) ->
 		lists:map(
 		  fun({_LJID, Info}) ->
 			  Nick = Info#user.nick,
-              #xmlel{name = 'item', attrs = [#xmlattr{name = 'jid', 
-                                            value = exmpp_jid:jid_to_binary(
+              #xmlel{name = 'item', attrs = [?XMLATTR('jid', 
+                                            exmpp_jid:jid_to_binary(
                                                     StateData#state.room,
                               				        StateData#state.host,
-                            				        Nick)},
-                                            #xmlattr{name = 'name', 
-                                                     value = Nick}]}
+                            				        Nick)),
+                                            ?XMLATTR('name', 
+                                                     Nick)]}
 		  end,
 		  ?DICT:to_list(StateData#state.users)),
 	    {result, UList, StateData};
@@ -3227,7 +3226,7 @@ check_invitation(From, Els, Lang, StateData) ->
             _ -> 
                 throw({error, 'bad-request'})
             end,
-    JID = try exmpp_jid:binary_to_jid(exmpp_xml:get_attribute_as_binary(InviteEl,
+    JID = try exmpp_jid:parse_jid(exmpp_xml:get_attribute_as_binary(InviteEl,
                                                             'to',
                                                             false)) of
 	        JID1 -> JID1
@@ -3253,8 +3252,8 @@ check_invitation(From, Els, Lang, StateData) ->
 	    IEl =
 	    [#xmlel{ns = ?NS_MUC_USER,
                 name = 'invite', 
-		        attrs = [#xmlattr{name = 'from', 
-		                          value = exmpp_jid:jid_to_binary(From)}],
+		        attrs = [?XMLATTR('from', 
+		                          exmpp_jid:jid_to_binary(From))],
  		        children = [#xmlel{ns =?NS_MUC_USER, name = 'reason', 
 		                            children = [#xmlcdata{cdata = Reason} ]}] 
   		                    ++ ContinueEl}],
@@ -3295,15 +3294,15 @@ check_invitation(From, Els, Lang, StateData) ->
         %%TODO: always NS_JABBER_CLIENT?
 	    Msg =
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', 
-	      attrs = [#xmlattr{name = 'type', value = "normal"}], 
+	      attrs = [?XMLATTR('type', <<"normal">>)], 
 	      children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
 		  children = IEl ++ PasswdEl},
 		#xmlel{ns = 'jabber:x:conference', name = 'x',
-		  attrs = [#xmlattr{name = 'jid',
-		      value = exmpp_jid:jid_to_binary(
+		  attrs = [?XMLATTR('jid',
+		      exmpp_jid:jid_to_binary(
 			StateData#state.room,
 			StateData#state.host)
-			}],
+			)],
 		  children = [#xmlcdata{cdata = Reason}]},
 		Body]},
 	    ejabberd_router:route(StateData#state.jid, JID, Msg),
@@ -3330,7 +3329,7 @@ check_decline_invitation(Packet) ->
     #xmlel{ns = ?NS_MUC_USER} = XEl = exmpp_xml:get_element(Packet, 'x'),
     DEl = exmpp_xml:get_element(XEl, 'decline'),
     ToString = exmpp_xml:get_attribute_as_binary(DEl, 'to', false),
-    ToJID = exmpp_jid:binary_to_jid(ToString),
+    ToJID = exmpp_jid:parse_jid(ToString),
     {true, {Packet, XEl, DEl, ToJID}}.
 
 %% Send the decline to the inviter user.

@@ -115,7 +115,7 @@ process_xdb(_User, _Server, _El) ->
 xdb_data(_User, _Server, #xmlcdata{}) ->
     ok;
 xdb_data(User, Server, #xmlel{ns = NS} = El) ->
-    From = exmpp_jid:make_bare_jid(User, Server),
+    From = exmpp_jid:make_jid(User, Server),
     LServer = exmpp_stringprep:nameprep(Server),
     case NS of
 	?NS_LEGACY_AUTH ->
@@ -132,7 +132,7 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 	    end,
 	    ok;
 	?NS_LAST_ACTIVITY ->
-	    TimeStamp = exmpp_xml:get_attribute(El, 'last', ""),
+	    TimeStamp = exmpp_xml:get_attribute_as_list(El, 'last', ""),
 	    Status = exmpp_xml:get_cdata(El),
 	    case lists:member(mod_last_odbc,
 			      gen_mod:loaded_modules(LServer)) of
@@ -156,12 +156,12 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 		true ->
 		    catch mod_vcard_odbc:process_sm_iq(
 			    From,
-			    exmpp_jid:make_bare_jid(Server),
+			    exmpp_jid:make_jid(Server),
 			    #iq{kind = request, type = set, ns = ?NS_VCARD, payload = El, iq_ns = ?NS_JABBER_CLIENT});
 		false ->
 		    catch mod_vcard:process_sm_iq(
 			    From,
-			    exmpp_jid:make_bare_jid(Server),
+			    exmpp_jid:make_jid(Server),
 			    #iq{kind = request, type = set, ns = ?NS_VCARD, payload = El, iq_ns = ?NS_JABBER_CLIENT})
 	    end,
 	    ok;
@@ -169,11 +169,11 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 	    process_offline(Server, From, El),
 	    ok;
 	XMLNS ->
-	    case exmpp_xml:get_attribute(El, "j_private_flag", "") of
+	    case exmpp_xml:get_attribute_as_list(El, "j_private_flag", "") of
 		"1" ->
 		    catch mod_private:process_sm_iq(
 			    From,
-			    exmpp_jid:make_bare_jid(Server),
+			    exmpp_jid:make_jid(Server),
 			    #iq{kind = request, type = set, ns = ?NS_PRIVATE,
 				iq_ns = ?NS_JABBER_CLIENT,
 				payload = #xmlel{name = 'query', children =
@@ -192,10 +192,10 @@ process_offline(Server, To, #xmlel{children = Els}) ->
 			  FromS = exmpp_stanza:get_sender(El),
 			  From = case FromS of
 				     undefined ->
-					 exmpp_jid:make_bare_jid(Server);
+					 exmpp_jid:make_jid(Server);
 				     _ ->
 					 try
-					     exmpp_jid:list_to_jid(FromS)
+					     exmpp_jid:parse_jid(FromS)
 					 catch
 					     _ ->
 						 error

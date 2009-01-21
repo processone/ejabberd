@@ -265,7 +265,7 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
-    ejabberd_router:unregister_route(State#state.host),
+    ejabberd_router:unregister_route(binary_to_list(State#state.host)),
     ok.
 
 %%--------------------------------------------------------------------
@@ -378,7 +378,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    ok
 			    end;
 			'message' ->
-			    case exmpp_xml:get_attribute(Packet,type, "chat") of
+			    case exmpp_xml:get_attribute_as_list(Packet,type, "chat") of
 				"error" ->
 				    ok;
 				_ ->
@@ -496,30 +496,30 @@ register_room(Host, Room, Pid) when is_binary(Host), is_binary(Room) ->
 
 iq_disco_info(Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
-           attrs = [#xmlattr{name = 'category', 
-                             value = "conference"},
-                    #xmlattr{name = 'type', 
-                             value = "text"},
-                    #xmlattr{name = 'name', 
-                             value = translate:translate(Lang, "Chatrooms")}]},
+           attrs = [?XMLATTR('category', 
+                             <<"conference">>),
+                    ?XMLATTR('type', 
+                             <<"text">>),
+                    ?XMLATTR('name', 
+                             translate:translate(Lang, "Chatrooms"))]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [#xmlattr{name = 'var', 
-                                       value = ?NS_DISCO_INFO_s}]},
+                              [?XMLATTR('var', 
+                                       ?NS_DISCO_INFO_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [#xmlattr{name = 'var', 
-                                       value = ?NS_DISCO_ITEMS_s}]},
+                              [?XMLATTR('var', 
+                                       ?NS_DISCO_ITEMS_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [#xmlattr{name = 'var', 
-                                       value = ?NS_MUC_s}]},
+                              [?XMLATTR('var', 
+                                       ?NS_MUC_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [#xmlattr{name = 'var', 
-                                        value = ?NS_INBAND_REGISTER_s}]},
+                              [?XMLATTR('var', 
+                                        ?NS_INBAND_REGISTER_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [#xmlattr{name = 'var', 
-                                        value = ?NS_RSM_s}]},
+                              [?XMLATTR('var', 
+                                        ?NS_RSM_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [#xmlattr{name = 'var', 
-                                        value = ?NS_VCARD_s}]}].
+                              [?XMLATTR('var', 
+                                        ?NS_VCARD_s)]}].
 
 
 iq_disco_items(Host, From, Lang, none) when is_binary(Host) ->
@@ -530,11 +530,11 @@ iq_disco_items(Host, From, Lang, none) when is_binary(Host) ->
 			     flush(),
 			     {true,
                   #xmlel{name = 'item',
-                         attrs = [#xmlattr{name = 'jid', 
-                                          value = exmpp_jid:jid_to_binary(Name,
-                                                                        Host)},
-                                 #xmlattr{name = 'name',
-                                          value = Desc}]}};
+                         attrs = [?XMLATTR('jid', 
+                                          exmpp_jid:jid_to_binary(Name,
+                                                                        Host)),
+                                 ?XMLATTR('name',
+                                          Desc)]}};
 			 _ ->
 			     false
 		     end
@@ -615,10 +615,10 @@ flush() ->
 
 -define(XFIELD(Type, Label, Var, Val),
 	#xmlel{name = "field",
-          attrs = [#xmlattr{name = 'type', value = Type},
-			       #xmlattr{name = 'label', 
-                            value = translate:translate(Lang, Label)},
-			       #xmlattr{name = 'var', value = Var}],
+          attrs = [?XMLATTR('type', Type),
+			       ?XMLATTR('label', 
+                            translate:translate(Lang, Label)),
+			       ?XMLATTR('var', Var)],
           children = [#xmlel{name = 'value',
                              children = [#xmlcdata{cdata = Val}]}]}).
 

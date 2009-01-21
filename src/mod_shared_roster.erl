@@ -224,9 +224,9 @@ set_new_rosteritems(UserFrom, ServerFrom,
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
-    JIDTo = exmpp_jid:make_bare_jid(UserTo, ServerTo),
+    JIDTo = exmpp_jid:make_jid(UserTo, ServerTo),
 
-    JIDFrom = exmpp_jid:make_bare_jid(UserFrom, ServerFrom),
+    JIDFrom = exmpp_jid:make_jid(UserFrom, ServerFrom),
     RITo = build_roster_record(UserTo, ServerTo,
 			       UserFrom, ServerFrom, UserFrom,[]),
     set_item(UserTo, ServerTo, undefined, RITo),
@@ -256,7 +256,7 @@ set_item(User, Server, Resource, Item) ->
       "push" ++ randoms:get_string()),
     ejabberd_router:route(
       exmpp_jid:make_jid(User, Server, Resource),
-      exmpp_jid:make_bare_jid(Server),
+      exmpp_jid:make_jid(Server),
       ResIQ).
 
 
@@ -634,7 +634,7 @@ push_item(User, Server, From, Item) ->
     %%  ejabberd_sm:route(jlib:make_jid("", "", ""),
     %%                    jlib:make_jid(User, Server, "")
     %% why?
-    ejabberd_sm:route(From, exmpp_jid:make_bare_jid(User, Server),
+    ejabberd_sm:route(From, exmpp_jid:make_jid(User, Server),
 		      #xmlel{name = 'broadcast', children =
                        [{item,
                          Item#roster.jid,
@@ -890,7 +890,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 				  USs;
 			      _ ->
 				  try
-				      JID = exmpp_jid:list_to_jid(SJID),
+				      JID = exmpp_jid:parse_jid(SJID),
 				      [{exmpp_jid:lnode_as_list(JID), exmpp_jid:ldomain_as_list(JID)} | USs]
 				  catch
 				      _ ->

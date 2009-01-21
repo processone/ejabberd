@@ -311,18 +311,18 @@ update_database(Host) ->
 
 identity(Host) ->
     Identity = case lists:member(?PEPNODE, plugins(Host)) of
-    true -> [#xmlattr{name = 'category', value = "pubsub"}, #xmlattr{name = 'type', value = "pep"}];
-    false -> [#xmlattr{name = 'category', value = "pubsub"}, #xmlattr{name = 'type', value = "service"}]
+    true -> [?XMLATTR('category', <<"pubsub">>), ?XMLATTR('type', <<"pep">>)];
+    false -> [?XMLATTR('category', <<"pubsub">>), ?XMLATTR('type', <<"service">>)]
     end,
     #xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = Identity}.
 
 disco_local_identity(Acc, _From, To, <<>>, _Lang) ->
-    Acc ++ [identity(To#jid.ldomain)];
+    Acc ++ [identity(exmpp_jid:ldomain_as_list(To))];
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 disco_local_features(Acc, _From, To, <<>>, _Lang) ->
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     Feats = case Acc of
 	{result, I} -> I;
 	_ -> []
@@ -339,7 +339,7 @@ disco_local_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 disco_sm_identity(Acc, _From, To, <<>>, _Lang) ->
-    Acc ++ [identity(To#jid.ldomain)];
+    Acc ++ [identity(exmpp_jid:ldomain_as_list(To))];
 disco_sm_identity(Acc, From, To, Node, _Lang) ->
     LOwner = jlib:short_prepd_bare_jid(To),
     Acc ++ case node_disco_identity(LOwner, From, Node) of
@@ -363,7 +363,7 @@ disco_sm_features(Acc, From, To, Node, _Lang) ->
 
 disco_sm_items(Acc, From, To, <<>>, _Lang) ->
     %% TODO, use iq_disco_items(Host, [], From)
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     LJID = jlib:short_prepd_bare_jid(To),
     case tree_action(Host, get_nodes, [Host, From]) of
 	[] ->
@@ -376,8 +376,8 @@ disco_sm_items(Acc, From, To, <<>>, _Lang) ->
 	    NodeItems = lists:map(
 			  fun(Node) ->
 				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				   [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(LJID)},
-				    #xmlattr{name = 'node', value = node_to_string(Node)}]}
+				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(LJID)),
+				    ?XMLATTR('node', node_to_string(Node))]}
 			  end, Nodes),
 	    {result, NodeItems ++ Items}
     end;
@@ -385,7 +385,7 @@ disco_sm_items(Acc, From, To, <<>>, _Lang) ->
 disco_sm_items(Acc, From, To, NodeB, _Lang) ->
     Node = binary_to_list(NodeB),
     %% TODO, use iq_disco_items(Host, Node, From)
-    Host = To#jid.ldomain,
+    Host = exmpp_jid:ldomain_as_list(To),
     LJID = jlib:short_prepd_bare_jid(To),
     case get_items(Host, Node, From) of
 	[] ->
@@ -401,8 +401,8 @@ disco_sm_items(Acc, From, To, NodeB, _Lang) ->
 				  %% "node" is forbidden by XEP-0060.
 				  {result, Name} = node_action(Host, Node, get_item_name, [Host, Node, Id]),
 				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				   [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(LJID)},
-				    #xmlattr{name = 'name', value = Name}]}
+				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(LJID)),
+				    ?XMLATTR('name', Name)]}
 			  end, AllItems),
 	    {result, NodeItems ++ Items}
     end.
@@ -522,7 +522,7 @@ handle_cast({presence, JID, Pid}, State) ->
 
 handle_cast({remove_user, LUser, LServer}, State) ->
     Host = State#state.host,
-    Owner = exmpp_jid:make_bare_jid(LUser, LServer),
+    Owner = exmpp_jid:make_jid(LUser, LServer),
     %% remove user's subscriptions
     lists:foreach(fun(Type) ->
 	{result, Subscriptions} = node_action(Type, get_entity_subscriptions, [Host, Owner]),
@@ -555,7 +555,7 @@ handle_info({route, From, To, Packet},
 	    #state{server_host = ServerHost,
 		   access = Access,
 		   plugins = Plugins} = State) ->
-    case catch do_route(ServerHost, Access, Plugins, To#jid.ldomain, From, To, Packet) of
+    case catch do_route(ServerHost, Access, Plugins, exmpp_jid:ldomain_as_list(To), From, To, Packet) of
 	{'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
 	_ -> ok
     end,
@@ -608,15 +608,17 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
     #xmlel{name = Name} = Packet,
-    case To of
-	#jid{lnode = undefined, lresource = undefined} ->
+    LNode = exmpp_jid:lnode(To),
+    LRes = exmpp_jid:lresource(To),
+    case {LNode, LRes} of
+	{undefined, undefined} ->
 	    case Name of
 		'iq' ->
 		    case exmpp_iq:xmlel_to_iq(Packet) of
 			#iq{type = get, ns = ?NS_DISCO_INFO,
 			    payload = SubEl, lang = Lang} ->
 			    QAttrs = SubEl#xmlel.attrs,
-			    Node = exmpp_xml:get_attribute_from_list(QAttrs,
+			    Node = exmpp_xml:get_attribute_from_list_as_list(QAttrs,
 			      'node', ""),
 			    Res = case iq_disco_info(Host, Node, From, Lang) of
 				      {result, IQRes} ->
@@ -631,7 +633,7 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			#iq{type = get, ns = ?NS_DISCO_ITEMS,
 			    payload = SubEl} ->
 			    QAttrs = SubEl#xmlel.attrs,
-			    Node = exmpp_xml:get_attribute_from_list(QAttrs,
+			    Node = exmpp_xml:get_attribute_from_list_as_list(QAttrs,
 			      'node', ""),
 			    Res = case iq_disco_items(Host, Node, From) of
 				      {result, IQRes} ->
@@ -732,17 +734,17 @@ node_disco_info(Host, Node, From, Identity, Features) ->
 					end
 				end,
 			    lists:map(fun(T) ->
-					      #xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = [#xmlattr{name = 'category', value = "pubsub"},
-									#xmlattr{name = 'type', value = T}]}
+					      #xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = [?XMLATTR('category', <<"pubsub">>),
+									?XMLATTR('type', T)]}
 				      end, Types)
 		    end,
 		F = case Features of
 			false ->
 			    [];
 			true ->
-			    [#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [#xmlattr{name = 'var', value = ?NS_PUBSUB_s}]} |
+			    [#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s)]} |
 			     lists:map(fun(T) ->
-					       #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [#xmlattr{name = 'var', value = ?NS_PUBSUB_s++"#"++T}]}
+					       #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s++"#"++T)]}
 				       end, features(Type))]
 		    end,
 		%% TODO: add meta-data info (spec section 5.4)
@@ -756,15 +758,15 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	[] ->
 	    {result,
 	     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-	       [#xmlattr{name = 'category', value = "pubsub"},
-		#xmlattr{name = 'type', value = "service"},
-		#xmlattr{name = 'name', value = translate:translate(Lang, "Publish-Subscribe")}]},
-	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [#xmlattr{name = 'var', value = ?NS_DISCO_INFO_s}]},
-	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [#xmlattr{name = 'var', value = ?NS_DISCO_ITEMS_s}]},
-	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [#xmlattr{name = 'var', value = ?NS_PUBSUB_s}]},
-	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [#xmlattr{name = 'var', value = ?NS_VCARD_s}]}] ++
+	       [?XMLATTR('category', "pubsub"),
+		?XMLATTR('type', "service"),
+		?XMLATTR('name', translate:translate(Lang, "Publish-Subscribe"))]},
+	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_INFO_s)]},
+	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_ITEMS_s)]},
+	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s)]},
+	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_VCARD_s)]}] ++
 	     lists:map(fun(Feature) ->
-		 #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [#xmlattr{name = 'var', value = ?NS_PUBSUB_s++"#"++Feature}]}
+		 #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s++"#"++Feature)]}
 	     end, features(Host, SNode))};
 	_ ->
 	    node_disco_info(Host, Node, From)
@@ -776,9 +778,9 @@ iq_disco_items(Host, [], From) ->
 		       SN = node_to_string(SubNode),
 		       RN = lists:last(SubNode),
 		       %% remove name attribute
-		       #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [#xmlattr{name = 'jid', value = Host},
-					     #xmlattr{name = 'node', value = SN},
-					     #xmlattr{name = 'name', value = RN}]}
+		       #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host),
+					     ?XMLATTR('node', SN),
+					     ?XMLATTR('name', RN)]}
 	       end, tree_action(Host, get_subnodes, [Host, [], From]))};
 iq_disco_items(Host, Item, From) ->
     case string:tokens(Item, "!") of
@@ -800,15 +802,15 @@ iq_disco_items(Host, Item, From) ->
 				  fun(#pubsub_node{nodeid = {_, SubNode}}) ->
 					  SN = node_to_string(SubNode),
 					  RN = lists:last(SubNode),
-					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [#xmlattr{name = 'jid', value = Host}, #xmlattr{name = 'node', value = SN}, 
-								#xmlattr{name = 'name', value = RN}]}
+					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('node', SN), 
+								?XMLATTR('name', RN)]}
 				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
 					  SN = node_to_string(Node) ++ "!" ++ RN,
 					  {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
-					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [#xmlattr{name = 'jid', value = Host}, #xmlattr{name = 'node', value = SN},
-								#xmlattr{name = 'name', value = Name}]}
+					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('node', SN),
+								?XMLATTR('name', Name)]}
 				  end, NodeItems),
 			{result, Nodes ++ Items}
 		end,
@@ -819,10 +821,11 @@ iq_local(From, To, #iq{type = Type,
 		       payload = SubEl,
 		       ns = XMLNS,
 		       lang = Lang} = IQ_Rec) ->
-    ServerHost = To#jid.ldomain,
+    ServerHost = exmpp_jid:ldomain_as_list(To),
+    FromHost = exmpp_jid:ldomain_as_list(To),
     %% Accept IQs to server only from our own users.
     if
-	From#jid.ldomain /= ServerHost ->
+	FromHost /= ServerHost ->
 	    exmpp_iq:error(IQ_Rec, 'forbidden');
 	true ->
 	    LOwner = jlib:short_prepd_bare_jid(From),
@@ -838,7 +841,7 @@ iq_local(From, To, #iq{type = Type,
     end.
 
 iq_sm(From, To, #iq{type = Type, payload = SubEl, ns = XMLNS, lang = Lang} = IQ_Rec) ->
-    ServerHost = To#jid.ldomain,
+    ServerHost = exmpp_jid:ldomain_as_list(To),
     LOwner = jlib:short_prepd_bare_jid(To),
     Res = case XMLNS of
 	      ?NS_PUBSUB -> iq_pubsub(LOwner, ServerHost, From, Type, SubEl, Lang);
@@ -871,15 +874,15 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
     case Action of
 	[#xmlel{name = Name, attrs = Attrs, children = Els}] ->
 	    Node = case Host of
-		       {_, _, _} -> exmpp_xml:get_attribute_from_list(Attrs, 'node', false);
-		       _ -> string_to_node(exmpp_xml:get_attribute_from_list(Attrs, 'node', false))
+		       {_, _, _} -> exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false);
+		       _ -> string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false))
 		   end,
 	    case {IQType, Name} of
 		{set, 'create'} ->
 		    case Configuration of
 			[#xmlel{name = 'configure', children = Config}] ->
 			    %% Get the type of the node
-			    Type = case exmpp_xml:get_attribute_from_list(Attrs, 'type', "") of
+			    Type = case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', "") of
 				       [] -> hd(Plugins);
 				       T -> T
 				   end,
@@ -904,7 +907,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 		{set, 'publish'} ->
 		    case exmpp_xml:remove_cdata_from_list(Els) of
 			[#xmlel{name = 'item', attrs = ItemAttrs, children = Payload}] ->
-			    ItemId = exmpp_xml:get_attribute_from_list(ItemAttrs, 'id', ""),
+			    ItemId = exmpp_xml:get_attribute_from_list_as_list(ItemAttrs, 'id', ""),
 			    publish_item(Host, ServerHost, Node, From, ItemId, Payload);
 			[] ->
 			    %% Publisher attempts to publish to persistent node with no item
@@ -916,14 +919,14 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 						   "invalid-payload")}
 		    end;
 		{set, 'retract'} ->
-		    ForceNotify = case exmpp_xml:get_attribute_from_list(Attrs, 'notify', "") of
+		    ForceNotify = case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'notify', "") of
 				      "1" -> true;
 				      "true" -> true;
 				      _ -> false
 				  end,
 		    case exmpp_xml:remove_cdata_from_list(Els) of
 			[#xmlel{name = 'item', attrs = ItemAttrs}] ->
-			    ItemId = exmpp_xml:get_attribute_from_list(ItemAttrs, 'id', ""),
+			    ItemId = exmpp_xml:get_attribute_from_list_as_list(ItemAttrs, 'id', ""),
 			    delete_item(Host, Node, From, ItemId, ForceNotify);
 			_ ->
 			    %% Request does not specify an item
@@ -931,18 +934,18 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 						   "item-required")}
 		    end;
 		{set, 'subscribe'} ->
-		    JID = exmpp_xml:get_attribute_from_list(Attrs, 'jid', ""),
+		    JID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""),
 		    subscribe_node(Host, Node, From, JID);
 		{set, 'unsubscribe'} ->
-		    JID = exmpp_xml:get_attribute_from_list(Attrs, 'jid', ""),
-		    SubId = exmpp_xml:get_attribute_from_list(Attrs, 'subid', ""),
+		    JID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""),
+		    SubId = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'subid', ""),
 		    unsubscribe_node(Host, Node, From, JID, SubId);
 		{get, 'items'} ->
-		    MaxItems = exmpp_xml:get_attribute_from_list(Attrs, 'max_items', ""),
-		    SubId = exmpp_xml:get_attribute_from_list(Attrs, 'subid', ""),
+		    MaxItems = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'max_items', ""),
+		    SubId = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'subid', ""),
 		    ItemIDs = lists:foldl(fun
 			(#xmlel{name = 'item', attrs = ItemAttrs}, Acc) ->
-			    case exmpp_xml:get_attribute_from_list(ItemAttrs, 'id', "") of
+			    case exmpp_xml:get_attribute_from_list_as_list(ItemAttrs, 'id', "") of
 			    "" -> Acc;
 			    ItemID -> [ItemID|Acc]
 			    end;
@@ -972,8 +975,8 @@ iq_pubsub_owner(Host, From, IQType, SubEl, Lang) ->
     case Action of
 	[#xmlel{name = Name, attrs = Attrs, children = Els}] ->
 	    Node = case Host of
-		       {_, _, _} -> exmpp_xml:get_attribute_from_list(Attrs, 'node', "");
-		       _ -> string_to_node(exmpp_xml:get_attribute_from_list(Attrs, 'node', ""))
+		       {_, _, _} -> exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', "");
+		       _ -> string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', ""))
 		   end,
 	    case {IQType, Name} of
 		{get, 'configure'} ->
@@ -1008,28 +1011,28 @@ send_authorization_request(Host, Node, Subscriber) ->
     Lang = "en", %% TODO fix
     {U, S, R} = Subscriber,
     Stanza = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', children =
-	      [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [#xmlattr{name = 'type', value = "form"}], children =
+	      [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
 		[#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 		  [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "PubSub subscriber request"))}]},
 		 #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions', children =
 		  [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Choose whether to approve this entity's subscription."))}]},
 		 #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		  [#xmlattr{name = 'var', value = "FORM_TYPE"}, #xmlattr{name = 'type', value = "hidden"}], children =
+		  [?XMLATTR('var', <<"FORM_TYPE">>), ?XMLATTR('type', <<"hidden">>)], children =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(?NS_PUBSUB_SUBSCRIBE_AUTH_s)}]}]},
 		 #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		  [#xmlattr{name = 'var', value = "pubsub#node"}, #xmlattr{name = 'type', value = "text-single"},
-		   #xmlattr{name = 'label', value = translate:translate(Lang, "Node ID")}], children =
+		  [?XMLATTR('var', <<"pubsub#node">>), ?XMLATTR('type', <<"text-single">>),
+		   ?XMLATTR('label', translate:translate(Lang, "Node ID"))], children =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
 		    [#xmlcdata{cdata = node_to_string(Node)}]}]},
-		 #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'var', value = "pubsub#subscriber_jid"},
-					#xmlattr{name = 'type', value = "jid-single"},
-					#xmlattr{name = 'label', value = translate:translate(Lang, "Subscriber Address")}], children =
+		 #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [?XMLATTR('var', <<"pubsub#subscriber_jid">>),
+					?XMLATTR('type', <<"jid-single">>),
+					?XMLATTR('label', translate:translate(Lang, "Subscriber Address"))], children =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
 		    [#xmlcdata{cdata = exmpp_jid:jid_to_binary(U, S, R)}]}]},
 		 #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-		  [#xmlattr{name = 'var', value = "pubsub#allow"},
-		   #xmlattr{name = 'type', value = "boolean"},
-		   #xmlattr{name = 'label', value = translate:translate(Lang, "Allow this Jabber ID to subscribe to this pubsub node?")}], children =
+		  [?XMLATTR('var', <<"pubsub#allow">>),
+		   ?XMLATTR('type', <<"boolean">>),
+		   ?XMLATTR('label', translate:translate(Lang, "Allow this Jabber ID to subscribe to this pubsub node?"))], children =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = <<"false">>}]}]}]}]},
     case tree_action(Host, get_node, [Host, Node, Subscriber]) of
 	#pubsub_node{owners = Owners} ->
@@ -1045,7 +1048,7 @@ send_authorization_request(Host, Node, Subscriber) ->
 find_authorization_response(Packet) ->
     Els = Packet#xmlel.children,
     XData1 = lists:map(fun(#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = XAttrs} = XEl) ->
-			       case exmpp_xml:get_attribute_from_list(XAttrs, 'type', "") of
+			       case exmpp_xml:get_attribute_from_list_as_list(XAttrs, 'type', "") of
 				   "cancel" ->
 				       none;
 				   _ ->
@@ -1077,9 +1080,9 @@ find_authorization_response(Packet) ->
 send_authorization_approval(Host, JID, Node, Subscription) ->
     Stanza = event_stanza(
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'subscription', attrs =
-		    [#xmlattr{name = 'node', value = Node},
-		     #xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(JID)},
-		     #xmlattr{name = 'subscription', value = subscription_to_string(Subscription)}]}]),
+		    [?XMLATTR('node', Node),
+		     ?XMLATTR('jid', exmpp_jid:jid_to_binary(JID)),
+		     ?XMLATTR('subscription', subscription_to_string(Subscription))]}]),
     ejabberd_router ! {route, service_jid(Host), JID, Stanza}.
  
 handle_authorization_response(Host, From, To, Packet, XFields) ->
@@ -1092,7 +1095,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 		       {_, _, _} -> [SNode];
 		       _ -> string:tokens(SNode, "/")
 		   end,
-	    Subscriber = exmpp_jid:list_to_jid(SSubscriber),
+	    Subscriber = exmpp_jid:parse_jid(SSubscriber),
 	    Allow = case SAllow of
 			"1" -> true;
 			"true" -> true;
@@ -1137,9 +1140,9 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
     end.
 
 -define(XFIELD(Type, Label, Var, Val),
-	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
-			       #xmlattr{name = 'label', value = translate:translate(Lang, Label)},
-			       #xmlattr{name = 'var', value = Var}], children =
+	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [?XMLATTR('type', Type),
+			       ?XMLATTR('label', translate:translate(Lang, Label)),
+			       ?XMLATTR('var', Var)], children =
 	 [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Val)}]}]}).
 
 -define(BOOLXFIELD(Label, Var, Val),
@@ -1153,9 +1156,9 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 	?XFIELD("text-single", Label, Var, Val)).
 
 -define(XFIELDOPT(Type, Label, Var, Val, Opts),
-	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
-			       #xmlattr{name = 'label', value = translate:translate(Lang, Label)},
-			       #xmlattr{name = 'var', value = Var}], children =
+	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [?XMLATTR('type', Type),
+			       ?XMLATTR('label', translate:translate(Lang, Label)),
+			       ?XMLATTR('var', Var)], children =
 	 lists:map(fun(Opt) ->
 			   #xmlel{ns = ?NS_DATA_FORMS, name = 'option', children =
 			    [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
@@ -1202,7 +1205,7 @@ create_node(Host, ServerHost, [], Owner, Type, Access, Configuration) ->
 		{result, []} ->
 		    {result,
 		     [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
-		       [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = [#xmlattr{name = 'node', value = node_to_string(NewNode)}]}]}]};
+		       [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = [?XMLATTR('node', node_to_string(NewNode))]}]}]};
 		Error -> Error
 	    end;
 	false ->
@@ -1254,7 +1257,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			end
 		end,
 	    Reply = [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
-		      [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}]}]}],
+		      [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = [?XMLATTR('node', node_to_string(Node))]}]}],
 	    case transaction(CreateNode, transaction) of
 		{error, Error} ->
 		    %% in case we change transaction to sync_dirty...
@@ -1359,7 +1362,7 @@ delete_node(Host, Node, Owner) ->
 %%</ul>
 subscribe_node(Host, Node, From, JID) ->
     Subscriber = try
-	jlib:short_prepd_jid(exmpp_jid:list_to_jid(JID))
+	jlib:short_prepd_jid(exmpp_jid:parse_jid(JID))
     catch
 	_:_ ->
 	    {undefined, undefined, undefined}
@@ -1397,13 +1400,13 @@ subscribe_node(Host, Node, From, JID) ->
     Reply = fun(Subscription) ->
 		    %% TODO, this is subscription-notification, should depends on node features
 		    Fields =
-			[#xmlattr{name = 'node', value = node_to_string(Node)},
-			 #xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(Subscriber)},
-			 #xmlattr{name = 'subscription', value = subscription_to_string(Subscription)}],
+			[?XMLATTR('node', node_to_string(Node)),
+			 ?XMLATTR('jid', exmpp_jid:jid_to_binary(Subscriber)),
+			 ?XMLATTR('subscription', subscription_to_string(Subscription))],
 		    [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 			[#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
 			    case Subscription of
-			    subscribed -> [#xmlattr{name = 'subid', value = SubId}|Fields];
+			    subscribed -> [?XMLATTR('subid', SubId)|Fields];
 			    _ -> Fields
 			    end}]}]
 	    end,
@@ -1447,7 +1450,7 @@ subscribe_node(Host, Node, From, JID) ->
 %%<li>The request specifies a subscription ID that is not valid or current.</li>
 %%</ul>
 unsubscribe_node(Host, Node, From, JID, SubId) when is_list(JID) ->
-    Subscriber = try jlib:short_prepd_jid(exmpp_jid:list_to_jid(JID))
+    Subscriber = try jlib:short_prepd_jid(exmpp_jid:parse_jid(JID))
     catch
 	_:_ ->
 	    {undefined, undefined, undefined}
@@ -1725,12 +1728,12 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 						    payload = Payload}) ->
 					    ItemAttrs = case ItemId of
 							    "" -> [];
-							    _ -> [#xmlattr{name = 'id', value = ItemId}]
+							    _ -> [?XMLATTR('id', ItemId)]
 							end,
 					    #xmlel{ns = ?NS_PUBSUB, name = 'item', attrs = ItemAttrs, children = Payload}
 				    end, lists:sublist(SendItems, MaxItems)),
 		    {result, [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
-				[#xmlel{ns = ?NS_PUBSUB, name = 'items', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}], children =
+				[#xmlel{ns = ?NS_PUBSUB, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children =
 				    ItemsEls}]}]}
 	    end
     end.
@@ -1785,12 +1788,12 @@ send_items(Host, Node, {LU, LS, LR} = LJID, Number) ->
 		fun(#pubsub_item{itemid = {ItemId, _}, payload = Payload}) ->
 		    ItemAttrs = case ItemId of
 			"" -> [];
-			_ -> [#xmlattr{name = 'id', value = ItemId}]
+			_ -> [?XMLATTR('id', ItemId)]
 		    end,
 		    #xmlel{ns = ?NS_PUBSUB_EVENT, name = 'item', attrs = ItemAttrs, children = Payload}
 		end, ToSend),
     Stanza = event_stanza(
-		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}], children =
+		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children =
 		  ItemsEls}]),
     ejabberd_router ! {route, service_jid(Host), exmpp_jid:make_jid(LU, LS, LR), Stanza}.
 
@@ -1821,8 +1824,8 @@ get_affiliations(Host, JID, Plugins) when is_list(Plugins) ->
 			 fun({_, none}) -> [];
 			    ({Node, Affiliation}) ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'affiliation', attrs =
-				   [#xmlattr{name = 'node', value = node_to_string(Node)},
-				    #xmlattr{name = 'affiliation', value = affiliation_to_string(Affiliation)}]}]
+				   [?XMLATTR('node', node_to_string(Node)),
+				    ?XMLATTR('affiliation', affiliation_to_string(Affiliation))]}]
 			 end, lists:usort(lists:flatten(Affiliations))),
 	    {result, [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 		       [#xmlel{ns = ?NS_PUBSUB, name = 'affiliations', children =
@@ -1856,11 +1859,11 @@ get_affiliations(Host, Node, JID) ->
 			 fun({_, none}) -> [];
 			    ({{AU, AS, AR}, Affiliation}) ->
 				 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'affiliation', attrs =
-				   [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(AU, AS, AR)},
-				    #xmlattr{name = 'affiliation', value = affiliation_to_string(Affiliation)}]}]
+				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(AU, AS, AR)),
+				    ?XMLATTR('affiliation', affiliation_to_string(Affiliation))]}]
 			 end, Affiliations),
 	    {result, [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
-		       [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'affiliations', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}], children =
+		       [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'affiliations', attrs = [?XMLATTR('node', node_to_string(Node))], children =
 			 Entities}]}]}
     end.
 
@@ -1876,13 +1879,13 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 			  case El of
 			      #xmlel{name = 'affiliation', attrs = Attrs} ->
 				  JID = try
-				      exmpp_jid:list_to_jid(
-					exmpp_xml:get_attribute_from_list(Attrs, 'jid', ""))
+				      exmpp_jid:parse_jid(
+					exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""))
 				  catch
 				      _:_ -> error
 				  end,
 				  Affiliation = string_to_affiliation(
-						  exmpp_xml:get_attribute_from_list(Attrs, 'affiliation', false)),
+						  exmpp_xml:get_attribute_from_list_as_list(Attrs, 'affiliation', false)),
 				  if
 				      (JID == error) or
 				      (Affiliation == false) ->
@@ -1958,14 +1961,14 @@ get_subscriptions(Host, JID, Plugins) when is_list(Plugins) ->
 			 fun({_, none}) -> [];
 			    ({Node, Subscription}) ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
-				   [#xmlattr{name = 'node', value = node_to_string(Node)},
-				    #xmlattr{name = 'subscription', value = subscription_to_string(Subscription)}]}];
+				   [?XMLATTR('node', node_to_string(Node)),
+				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
 			    ({_, none, _}) -> [];
 			    ({Node, Subscription, SubJID}) ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
-				   [#xmlattr{name = 'node', value = node_to_string(Node)},
-				    #xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(SubJID)},
-				    #xmlattr{name = 'subscription', value = subscription_to_string(Subscription)}]}]
+				   [?XMLATTR('node', node_to_string(Node)),
+				    ?XMLATTR('jid', exmpp_jid:jid_to_binary(SubJID)),
+				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}]
 			 end, lists:usort(lists:flatten(Subscriptions))),
 	    {result, [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 		       [#xmlel{ns = ?NS_PUBSUB, name = 'subscriptions', children =
@@ -1999,16 +2002,16 @@ get_subscriptions(Host, Node, JID) ->
 			 fun({_, none}) -> [];
 			    ({{AU, AS, AR}, Subscription}) ->
 				 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'subscription', attrs =
-				   [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(AU, AS, AR)},
-				    #xmlattr{name = 'subscription', value = subscription_to_string(Subscription)}]}];
+				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(AU, AS, AR)),
+				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
 			    ({{AU, AS, AR}, Subscription, SubId}) ->
 				 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'subscription', attrs =
-				   [#xmlattr{name = 'jid', value = exmpp_jid:jid_to_list(AU, AS, AR)},
-				    #xmlattr{name = 'subscription', value = subscription_to_string(Subscription)},
-				    #xmlattr{name = 'subid', value =SubId}]}]
+				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(AU, AS, AR)),
+				    ?XMLATTR('subscription', subscription_to_string(Subscription)),
+				    ?XMLATTR('subid', SubId)]}]
 			 end, Subscriptions),
 	    {result, [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
-		       [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'subscriptions', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}], children =
+		       [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'subscriptions', attrs = [?XMLATTR('node', node_to_string(Node))], children =
 			 Entities}]}]}
     end.
 
@@ -2024,14 +2027,14 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 			  case El of
 			      #xmlel{name = 'subscription', attrs = Attrs} ->
 				  JID = try
-				      exmpp_jid:list_to_jid(
-					exmpp_xml:get_attribute_from_list(Attrs, 'jid', ""))
+				      exmpp_jid:parse_jid(
+					exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""))
 				  catch
 				      _:_ ->
 					  error
 				  end,
 				  Subscription = string_to_subscription(
-						   exmpp_xml:get_attribute_from_list(Attrs, 'subscription', false)),
+						   exmpp_xml:get_attribute_from_list_as_list(Attrs, 'subscription', false)),
 				  if
 				      (JID == error) or
 				      (Subscription == false) ->
@@ -2137,8 +2140,8 @@ string_to_node(SNode) ->
 %% @doc <p>Generate pubsub service JID.</p>
 service_jid(Host) ->
     case Host of 
-    {U,S,_} -> #jid{node = U, domain = S, lnode = U, ldomain = S}; 
-    _ -> #jid{domain = Host, ldomain = Host}
+    {U,S,_} -> exmpp_jid:make_jid(U, S);
+    _ -> exmpp_jid:make_jid(Host)
     end.
 
 %% @spec (LJID, Subscription, PresenceDelivery) -> boolean()
@@ -2188,10 +2191,10 @@ broadcast_publish_item(Host, Node, ItemId, _From, Payload) ->
 		    end,
 		    ItemAttrs = case ItemId of
 			"" -> [];
-			_ -> [#xmlattr{name = 'id', value = ItemId}]
+			_ -> [?XMLATTR('id', ItemId)]
 		    end,
 		    Stanza = event_stanza(
-			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}], children =
+			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children =
 			 [#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'item', attrs = ItemAttrs, children = Content}]}]),
 		    broadcast_stanza(Host, Options, States, Stanza),
 		    broadcast_by_caps(Host, Node, Type, Stanza),
@@ -2217,12 +2220,12 @@ broadcast_retract_items(Host, Node, ItemIds, ForceNotify) ->
 				fun(ItemId) ->
 				    ItemAttrs = case ItemId of
 					"" -> [];
-					_ -> [#xmlattr{name = 'id', value = ItemId}]
+					_ -> [?XMLATTR('id', ItemId)]
 				    end,
 				    #xmlel{ns = ?NS_PUBSUB_EVENT, name = 'retract', attrs = ItemAttrs}
 				end, ItemIds),
 			    Stanza = event_stanza(
-				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}], 
+				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], 
 				 children = RetractEls}]),
 			    broadcast_stanza(Host, Options, States, Stanza),
 			    broadcast_by_caps(Host, Node, Type, Stanza),
@@ -2246,7 +2249,7 @@ broadcast_purge_node(Host, Node) ->
 			    {result, false};
 			{result, States} ->
 			    Stanza = event_stanza(
-				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'purge', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}]}]),
+				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'purge', attrs = [?XMLATTR('node', node_to_string(Node))]}]),
 			    broadcast_stanza(Host, Options, States, Stanza),
 			    broadcast_by_caps(Host, Node, Type, Stanza),
 			    {result, true};
@@ -2269,7 +2272,7 @@ broadcast_removed_node(Host, Node) ->
 			    {result, false};
 			{result, States} ->
 			    Stanza = event_stanza(
-				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'delete', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}]}]),
+				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'delete', attrs = [?XMLATTR('node', node_to_string(Node))]}]),
 			    broadcast_stanza(Host, Options, States, Stanza),
 			    broadcast_by_caps(Host, Node, Type, Stanza),
 			    {result, true};
@@ -2293,14 +2296,14 @@ broadcast_config_notification(Host, Node, Lang) ->
 			{result, States} ->
 			    Content = case get_option(Options, deliver_payloads) of
 				true ->
-				    [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [#xmlattr{name = 'type', value = "form"}], children =
+				    [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
 				     get_configure_xfields(Type, Options, Lang, Owners)}];
 				 false ->
 				     []
 			    end,
 			    Stanza = event_stanza(
-				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [#xmlattr{name = 'node', value = node_to_string(Node)}], children =
-				 [#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'item', attrs = [#xmlattr{name = 'id', value = "configuration"}], children =
+				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children =
+				 [#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'item', attrs = [?XMLATTR('id', <<"configuration">>)], children =
 				  Content}]}]),
 			    broadcast_stanza(Host, Options, States, Stanza),
 			    broadcast_by_caps(Host, Node, Type, Stanza),
@@ -2404,9 +2407,9 @@ get_configure(Host, Node, From, Lang) ->
 			{result,
 			 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
 			   [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'configure', attrs =
-			     [#xmlattr{name = 'node', value = node_to_string(Node)}], children =
+			     [?XMLATTR('node', node_to_string(Node))], children =
 			     [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
-			       [#xmlattr{name = 'type', value = "form"}], children =
+			       [?XMLATTR('type', <<"form">>)], children =
 			       get_configure_xfields(Type, Options, Lang, Owners)
 			      }]}]}]};
 		    _ ->
@@ -2420,7 +2423,7 @@ get_default(Host, Node, _From, Lang) ->
     Options = node_options(Type),
     {result, [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
 		[#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'default', children =
-		    [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [#xmlattr{name = 'type', value = "form"}], children =
+		    [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
 			get_configure_xfields(Type, Options, Lang, [])
 		}]}]}]}.
 
@@ -2507,9 +2510,9 @@ get_configure_xfields(_Type, Options, Lang, _Owners) ->
      ?ALIST_CONFIG_FIELD("Specify the access model", access_model,
 			 [open, authorize, presence, roster, whitelist]),
      %% XXX: change to list-multi, include current roster groups as options
-     #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = "text-multi"},
-			    #xmlattr{name = 'label', value = translate:translate(Lang, "Roster groups allowed to subscribe")},
-			    #xmlattr{name = 'var', value = "pubsub#roster_groups_allowed"}], children =
+     #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [?XMLATTR('type', <<"text-multi">>),
+			    ?XMLATTR('label', translate:translate(Lang, "Roster groups allowed to subscribe")),
+			    ?XMLATTR('var', <<"pubsub#roster_groups_allowed">>)], children =
       [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Value)}]} ||
 	  Value <- get_option(Options, roster_groups_allowed, [])]},
      ?ALIST_CONFIG_FIELD("Specify the publisher model", publish_model,
@@ -2531,7 +2534,7 @@ get_configure_xfields(_Type, Options, Lang, _Owners) ->
 set_configure(Host, Node, From, Els, Lang) ->
     case exmpp_xml:remove_cdata_from_list(Els) of
 	[#xmlel{ns = ?NS_DATA_FORMS, name = 'x'} = XEl] ->
-	    case exmpp_xml:get_attribute(XEl, 'type', undefined) of
+	    case exmpp_xml:get_attribute_as_list(XEl, 'type', undefined) of
 		"cancel" ->
 		    {result, []};
 		"submit" ->
@@ -2660,9 +2663,8 @@ set_xoption([_ | Opts], NewOpts) ->
 
 %%%% plugin handling
 
-plugins(Host) when is_binary(Host) ->
-    HostL = binary_to_list(Host),
-    case ets:lookup(gen_mod:get_module_proc(HostL, pubsub_state), plugins) of
+plugins(Host) ->
+    case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), plugins) of
     [{plugins, PL}] -> PL;
     _ -> [?STDNODE]
     end.
@@ -2812,7 +2814,7 @@ extended_error(Error, Ext) ->
     extended_error(Error, Ext, []).
 extended_error(Error, unsupported, Feature) ->
     extended_error(Error, unsupported,
-		   [#xmlattr{name = 'feature', value = Feature}]);
+		   [?XMLATTR('feature', Feature)]);
 extended_error(Error, Ext, ExtAttrs) ->
     Pubsub_Err = #xmlel{ns = ?NS_PUBSUB_ERRORS, name = Ext, attrs = ExtAttrs},
     exmpp_xml:append_child(exmpp_stanza:error(?NS_JABBER_CLIENT, Error),

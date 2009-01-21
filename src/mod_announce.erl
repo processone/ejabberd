@@ -179,9 +179,9 @@ announce(From, To, Packet) ->
 %% Announcing via ad-hoc commands
 -define(INFO_COMMAND(Lang, Node),
         [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-	  [#xmlattr{name = 'category', value = <<"automation">>},
-	   #xmlattr{name = 'type', value = <<"command-node">>},
-	   #xmlattr{name = 'name', value = list_to_binary(get_title(Lang, Node))}]}]).
+	  [?XMLATTR('category', <<"automation">>),
+	   ?XMLATTR('type', <<"command-node">>),
+	   ?XMLATTR('name', get_title(Lang, Node))]}]).
 
 disco_identity(Acc, _From, _To, Node, Lang) ->
     LNode = tokenize(binary_to_list(Node)),
@@ -277,9 +277,9 @@ disco_features(Acc, From, To, Node, _Lang) ->
 
 -define(NODE_TO_ITEM(Lang, Server, Node),
 	#xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-	 [#xmlattr{name = 'jid',  value = Server},
-	  #xmlattr{name = 'node', value = Node},
-	  #xmlattr{name = 'name', value = list_to_binary(get_title(Lang, Node))}]}).
+	 [?XMLATTR('jid',  Server),
+	  ?XMLATTR('node', Node),
+	  ?XMLATTR('name', get_title(Lang, Node))]}).
 
 -define(ITEMS_RESULT(Allow, Items),
 	case Allow of
@@ -488,8 +488,8 @@ announce_commands(From, To,
 	    _ -> [?VVALUE(Val)]
 	end).
 -define(TVFIELD(Type, Var, Val),
-	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [#xmlattr{name = 'type', value = Type},
-			       #xmlattr{name = 'var', value = Var}], children =
+	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [?XMLATTR('type', Type),
+			       ?XMLATTR('var', Var)], children =
 	 ?VVALUEL(Val)}).
 -define(HFIELD(), ?TVFIELD(<<"hidden">>, <<"FORM_TYPE">>, list_to_binary(?NS_ADMIN_s))).
 
@@ -502,28 +502,28 @@ generate_adhoc_form(Lang, Node, ServerHost) ->
 				    {[], []}
 			    end,
     #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
-     [#xmlattr{name = 'type', value = <<"form">>}], children =
+     [?XMLATTR('type', <<"form">>)], children =
      [?HFIELD(),
       #xmlel{ns = ?NS_DATA_FORMS, name = 'title', children = [#xmlcdata{cdata = list_to_binary(get_title(Lang, Node))}]}]
      ++
      if (LNode == ?NS_ADMINL("delete-motd"))
 	or (LNode == ?NS_ADMINL("delete-motd-allhosts")) ->
 	     [#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	       [#xmlattr{name = 'var', value = <<"confirm">>},
-		#xmlattr{name = 'type', value = <<"boolean">>},
-		#xmlattr{name = 'label', value = list_to_binary(translate:translate(Lang, "Really delete message of the day?"))}], children =
+	       [?XMLATTR('var', <<"confirm">>),
+		?XMLATTR('type', <<"boolean">>),
+		?XMLATTR('label', translate:translate(Lang, "Really delete message of the day?"))], children =
 	       [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
 		 [#xmlcdata{cdata = <<"true">>}]}]}];
 	true ->
 	     [#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	       [#xmlattr{name = 'var', value = <<"subject">>},
-		#xmlattr{name = 'type', value = <<"text-single">>},
-		#xmlattr{name = 'label', value = list_to_binary(translate:translate(Lang, "Subject"))}], children =
+	       [?XMLATTR('var', <<"subject">>),
+		?XMLATTR('type', <<"text-single">>),
+		?XMLATTR('label', translate:translate(Lang, "Subject"))], children =
 	       ?VVALUEL(list_to_binary(OldSubject))},
 	      #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	       [#xmlattr{name = 'var', value = <<"body">>},
-		#xmlattr{name = 'type', value = <<"text-multi">>},
-		#xmlattr{name = 'label', value = list_to_binary(translate:translate(Lang, "Message body"))}], children =
+	       [?XMLATTR('var', <<"body">>),
+		?XMLATTR('type', <<"text-multi">>),
+		?XMLATTR('label', translate:translate(Lang, "Message body"))], children =
 	       ?VVALUEL(list_to_binary(OldBody))}]
      end}.
 
@@ -569,7 +569,7 @@ handle_adhoc_form(From, To,
 			       node = Node,
 			       sessionid = SessionID,
 			       status = completed},
-    Packet = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', attrs = [#xmlattr{name = 'type', value = <<"normal">>}], children =
+    Packet = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', attrs = [?XMLATTR('type', <<"normal">>)], children =
 	      if Subject /= [] ->
 		      [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'subject', children =
 			[#xmlcdata{cdata = list_to_binary(Subject)}]}];

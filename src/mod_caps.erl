@@ -74,9 +74,9 @@
 read_caps(Els) ->
     read_caps(Els, nothing).
 read_caps([#xmlel{ns = ?NS_CAPS, name = 'c'} = El | Tail], _Result) ->
-    Node = exmpp_xml:get_attribute(El, 'node', ""),
-    Version = exmpp_xml:get_attribute(El, 'ver', ""),
-    Exts = string:tokens(exmpp_xml:get_attribute(El, 'ext', ""), " "),
+    Node = exmpp_xml:get_attribute_as_list(El, 'node', ""),
+    Version = exmpp_xml:get_attribute_as_list(El, 'ver', ""),
+    Exts = string:tokens(exmpp_xml:get_attribute_as_list(El, 'ext', ""), " "),
     read_caps(Tail, #caps{node = Node, version = Version, exts = Exts});
 read_caps([#xmlel{ns = ?NS_MUC_USER, name = 'x'} | _Tail], _Result) ->
     nothing;
@@ -263,7 +263,7 @@ handle_cast({note_caps, From,
 			  Stanza = exmpp_iq:get(?NS_JABBER_CLIENT, Query, ID),
 			  ejabberd_local:register_iq_response_handler
 			    (list_to_binary(Host), ID, ?MODULE, handle_disco_response),
-			  ejabberd_router:route(exmpp_jid:make_bare_jid(Host),
+			  ejabberd_router:route(exmpp_jid:make_jid(Host),
 			    From, Stanza),
 			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID}),
 			  ?DICT:store(ID, {Node, SubNode}, Dict)
@@ -281,7 +281,7 @@ handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payl
 		{ok, {Node, SubNode}} ->
 		    Features =
 			lists:flatmap(fun(#xmlel{name = 'feature'} = F) ->
-					      [exmpp_xml:get_attribute(F, 'var', "")];
+					      [exmpp_xml:get_attribute_as_list(F, 'var', "")];
 					 (_) ->
 					      []
 				      end, Els),

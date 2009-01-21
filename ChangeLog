@@ -13,6 +13,43 @@
 	binary() version of LUser and LServer.
 	(convert_to_exmpp2/2): User and server are stored as binary().
 
+	* src/adhoc.erl, src/ejabberd_c2s.erl, src/ejabberd_s2s.erl,
+	src/ejabberd_s2s_in.erl, src/ejabberd_s2s_out.erl,
+	src/ejabberd_service.erl, src/ejabberd_sm.erl,
+	src/ejabberd_system_monitor.erl, src/jd2ejd.erl, src/jlib.erl,
+	src/mod_adhoc.erl, src/mod_announce.erl, src/mod_caps.erl,
+	src/mod_configure.erl, src/mod_configure2.erl, src/mod_disco.erl,
+	src/mod_irc/mod_irc.erl, src/mod_irc/mod_irc_connection.erl,
+	src/mod_last.erl, src/mod_last_odbc.erl, src/mod_muc/mod_muc.erl,
+	src/mod_muc/mod_muc_log.erl, src/mod_muc/mod_muc_room.erl,
+	src/mod_offline.erl, src/mod_offline_odbc.erl, src/mod_privacy.erl,
+	src/mod_privacy_odbc.erl, src/mod_proxy65/mod_proxy65_service.erl,
+	src/mod_pubsub/mod_pubsub.erl, src/mod_register.erl,
+	src/mod_roster.erl, src/mod_roster_odbc.erl, src/mod_service_log.erl,
+	src/mod_shared_roster.erl, src/mod_stats.erl, src/mod_vcard.erl,
+	src/mod_vcard_ldap.erl, src/mod_vcard_odbc.erl,
+	src/web/ejabberd_http_poll.erl, src/web/ejabberd_web.erl,
+	src/web/ejabberd_web_admin.erl: Now that #jid{} isn't part of the API
+	of Exmppp anymore, replace remaining direct usages by calls to
+	exmpp_jid. Replace exmpp_jid:make_bare_jid() by exmpp_jid:make_jid().
+	Replace exmpp_jid:*_to_jid/1 by exmpp_jid:parse_jid/1. Instead
+	creating #xmlattr directly, use the new ?XMLATTR macro; it'll take
+	care of the anything-to-binary() conversion.
+
+	* src/adhoc.erl, src/mod_caps.erl (read_caps/2), src/mod_offline.erl
+	(find_x_expire/2), src/mod_offline_odbc.erl, src/jd2ejd.erl,
+	src/mod_muc/mod_muc.erl, src/mod_irc/mod_irc_connection.erl,
+	src/mod_privacy_odbc.erl, src/mod_privacy.erl, src/jlib.erl,
+	src/mod_pubsub/mod_pubsub.erl, src/mod_stats.erl: Fix some bugs by
+	getting attributes as list() instead of binary().
+
+	* src/mod_muc/mod_muc.erl (terminate/2): Fix a bug where
+	binary_to_list/1 was called on a list().
+
+	* src/ejabberd_s2s_in.erl (is_packet_key/1): Fix a bug where recipient
+	and sender were used as binary() instead of list(), which is required
+	by the rest of the S2S code.
+
 2009-01-19  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/cyrsasl_digest.erl: Typo (prolists -> proplists).

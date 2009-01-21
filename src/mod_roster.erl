@@ -190,7 +190,7 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
 
 process_item_set(From, To, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:binary_to_jid(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
+	JID1 = exmpp_jid:parse_jid(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
     User = exmpp_jid:node(From),
     LUser = exmpp_jid:lnode(From),
     LServer = exmpp_jid:ldomain(From),
@@ -311,7 +311,7 @@ process_item_els(Item, []) ->
 
 push_item(User, Server, From, Item) when is_binary(User), is_binary(Server) ->
     ejabberd_sm:route(exmpp_jid:make_jid(),
-		      exmpp_jid:make_bare_jid(User, Server),
+		      exmpp_jid:make_jid(User, Server),
 		      #xmlel{name = 'broadcast', children =
 		       [{item,
 			 Item#roster.jid,
@@ -438,7 +438,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 			ok;
 		    _ ->
 			ejabberd_router:route(
-			  exmpp_jid:make_bare_jid(User, Server), JID1,
+			  exmpp_jid:make_jid(User, Server), JID1,
 			  exmpp_presence:AutoReply())
 		end,
 		case Push of
@@ -449,7 +449,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 				ok;
 			    true ->
 				push_item(User, Server,
-					  exmpp_jid:make_bare_jid(User, Server), Item)
+					  exmpp_jid:make_jid(User, Server), Item)
 			end,
 			true;
 		    none ->
@@ -596,7 +596,7 @@ set_items(User, Server, #xmlel{children = Els}) ->
 
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:binary_to_jid(exmpp_xml:get_attribute(El, 'jid', <<>>)),
+	JID1 = exmpp_jid:parse_jid(exmpp_xml:get_attribute_as_list(El, 'jid', <<>>)),
 	JID = jlib:short_jid(JID1),
 	LJID = jlib:short_prepd_jid(JID1),
 	Item = #roster{usj = {LUser, LServer, LJID},
@@ -651,7 +651,7 @@ process_item_attrs_ws(Item, []) ->
 
 get_in_pending_subscriptions(Ls, User, Server)
         when is_binary(User), is_binary(Server) ->
-    JID = exmpp_jid:make_bare_jid(User, Server),
+    JID = exmpp_jid:make_jid(User, Server),
     US = {exmpp_jid:lnode(JID), exmpp_jid:ldomain(JID)},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Result when list(Result) ->
@@ -948,9 +948,9 @@ build_contact_jid_td({U, S, R}) ->
 	     end,
     case JIDURI of
 	[] ->
-	    ?XAC('td', [#xmlattr{name = 'class', value = <<"valign">>}], exmpp_jid:jid_to_list(ContactJID));
+	    ?XAC('td', [?XMLATTR('class', <<"valign">>)], exmpp_jid:jid_to_list(ContactJID));
 	URI when is_list(URI) ->
-	    ?XAE('td', [#xmlattr{name = 'class', value = <<"valign">>}], [?AC(JIDURI, exmpp_jid:jid_to_list(ContactJID))])
+	    ?XAE('td', [?XMLATTR('class', <<"valign">>)], [?AC(JIDURI, exmpp_jid:jid_to_list(ContactJID))])
     end.
 
 user_roster_parse_query(User, Server, Items, Query) ->
@@ -961,7 +961,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 		    error;
 		{value, {_, SJID}} ->
 		    try
-			JID = exmpp_jid:list_to_jid(SJID),
+			JID = exmpp_jid:parse_jid(SJID),
 			user_roster_subscribe_jid(User, Server, JID),
 			ok
 		    catch
@@ -986,7 +986,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
-    UJID = exmpp_jid:make_bare_jid(User, Server),
+    UJID = exmpp_jid:make_jid(User, Server),
     ejabberd_router:route(
       UJID, JID, exmpp_presence:subscribe()).
 
@@ -1001,7 +1001,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 		      JID1 = exmpp_jid:make_jid(U, S, R),
 		      out_subscription(
 			User, Server, JID1, subscribed),
-		      UJID = exmpp_jid:make_bare_jid(User, Server),
+		      UJID = exmpp_jid:make_jid(User, Server),
 		      ejabberd_router:route(
 			UJID, JID1, exmpp_presence:subscribed()),
 		      throw(submitted);
@@ -1009,7 +1009,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 		      case lists:keysearch(
 			     "remove" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 			  {value, _} ->
-			      UJID = exmpp_jid:make_bare_jid(User, Server),
+			      UJID = exmpp_jid:make_jid(User, Server),
 			      Attrs1 = exmpp_xml:set_attribute_in_list([],
 				'jid', exmpp_jid:jid_to_list(JID)),
 			      Attrs2 = exmpp_xml:set_attribute_in_list(Attrs1,

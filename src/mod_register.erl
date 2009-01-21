@@ -76,7 +76,7 @@ unauthenticated_iq_register(_Acc,
 		 {A, _Port} -> A;
 		  _ -> undefined
 	      end,
-    BareJID = exmpp_jid:make_bare_jid(Server),
+    BareJID = exmpp_jid:make_jid(Server),
     ResIQ = process_iq(exmpp_jid:make_jid(),
  		       BareJID,
  		       IQ_Rec,
@@ -204,7 +204,7 @@ try_register(User, Server, Password, Source, Lang) ->
 	false ->
 	    {error, 'bad-request'};
 	_ ->
-	    JID = exmpp_jid:make_bare_jid(User, 
+	    JID = exmpp_jid:make_jid(User, 
                                       Server),
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
 	    case acl:match_rule(Server, Access, JID) of
@@ -247,7 +247,7 @@ send_welcome_message(JID) ->
 	    ok;
 	{Subj, Body} ->
 	    ejabberd_router:route(
-	      exmpp_jid:make_bare_jid(Host),
+	      exmpp_jid:make_jid(Host),
 	      JID,
               exmpp_message:normal(Subj, Body));
 	_ ->
@@ -266,9 +266,9 @@ send_registration_notifications(UJID) ->
 	    lists:foreach(
 	      fun(S) ->
                       try
-                          JID = exmpp_jid:list_to_jid(S),
+                          JID = exmpp_jid:parse_jid(S),
                           ejabberd_router:route(
-                            exmpp_jid:make_bare_jid(Host),
+                            exmpp_jid:make_jid(Host),
                             JID,
                             exmpp_message:chat(Body))
                       catch

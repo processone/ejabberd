@@ -220,7 +220,7 @@ find_x_event([_ | Els]) ->
 find_x_expire(_, []) ->
     never;
 find_x_expire(TimeStamp, [#xmlel{ns = ?NS_MESSAGE_EXPIRE} = El | _Els]) ->
-    Val = exmpp_xml:get_attribute(El, 'seconds', ""),
+    Val = exmpp_xml:get_attribute_as_list(El, 'seconds', ""),
     case catch list_to_integer(Val) of
 	{'EXIT', _} ->
 	    never;

@@ -95,7 +95,7 @@ process_iq_get(_, From, _To, #iq{payload = SubEl},
 	[#xmlel{name = Name} = Child] ->
 	    case Name of
 		list ->
-		    ListName = exmpp_xml:get_attribute(Child, name, false),
+		    ListName = exmpp_xml:get_attribute_as_list(Child, name, false),
 		    process_list_get(LUser, LServer, ListName);
 		_ ->
 		    {error, 'bad-request'}
@@ -161,14 +161,14 @@ process_list_get(LUser, LServer, Name) ->
 
 
 item_to_xml(Item) ->
-    Attrs1 = [#xmlattr{name = 'action', value = action_to_binary(Item#listitem.action)},
-	      #xmlattr{name = 'order', value = order_to_binary(Item#listitem.order)}],
+    Attrs1 = [?XMLATTR('action', action_to_binary(Item#listitem.action)),
+	      ?XMLATTR('order', order_to_binary(Item#listitem.order))],
     Attrs2 = case Item#listitem.type of
 		 none ->
 		     Attrs1;
 		 Type ->
-		     [#xmlattr{name = 'type', value = type_to_binary(Item#listitem.type)},
-		      #xmlattr{name = 'value', value = value_to_binary(Type, Item#listitem.value)} |
+		     [?XMLATTR('type', type_to_binary(Item#listitem.type)),
+		      ?XMLATTR('value', value_to_binary(Type, Item#listitem.value)) |
 		      Attrs1]
 	     end,
     SubEls = case Item#listitem.match_all of
@@ -250,7 +250,7 @@ process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
     LServer = exmpp_jid:ldomain_as_list(From),
     case exmpp_xml:get_child_elements(SubEl) of
 	[#xmlel{name = Name} = Child] ->
-	    ListName = exmpp_xml:get_attribute(Child, 'name', false),
+	    ListName = exmpp_xml:get_attribute_as_list(Child, 'name', false),
 	    case Name of
 		list ->
 		    process_list_set(LUser, LServer, ListName,
@@ -362,8 +362,8 @@ process_list_set(LUser, LServer, Name, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      exmpp_jid:make_bare_jid(LUser, LServer),
-		      exmpp_jid:make_bare_jid(LUser, LServer),
+		      exmpp_jid:make_jid(LUser, LServer),
+		      exmpp_jid:make_jid(LUser, LServer),
 		      #xmlel{name = 'broadcast', 
 			children=[{privacy_list,
 				   #userlist{name = Name, list = []},
@@ -393,8 +393,8 @@ process_list_set(LUser, LServer, Name, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      exmpp_jid:make_bare_jid(LUser, LServer),
-		      exmpp_jid:make_bare_jid(LUser, LServer),
+		      exmpp_jid:make_jid(LUser, LServer),
+		      exmpp_jid:make_jid(LUser, LServer),
 		      #xmlel{name = 'broadcast', 
 			children=[{privacy_list,
 				   #userlist{name = Name, list = List},
@@ -420,10 +420,10 @@ parse_items([], Res) ->
     %% 			       record_info(fields, listitem))),
     lists:keysort(5, Res);
 parse_items([El = #xmlel{name = item} | Els], Res) ->
-    Type   = exmpp_xml:get_attribute(El, type, false),
-    Value  = exmpp_xml:get_attribute(El, value, false),
-    SAction =exmpp_xml:get_attribute(El, action, false),
-    SOrder = exmpp_xml:get_attribute(El, order, false),
+    Type   = exmpp_xml:get_attribute_as_list(El, type, false),
+    Value  = exmpp_xml:get_attribute_as_list(El, value, false),
+    SAction =exmpp_xml:get_attribute_as_list(El, action, false),
+    SOrder = exmpp_xml:get_attribute_as_list(El, order, false),
     Action = case catch list_to_action(SAction) of
 		 {'EXIT', _} -> false;
 		 Val -> Val
@@ -447,7 +447,7 @@ parse_items([El = #xmlel{name = item} | Els], Res) ->
 			 case T of
 			     "jid" ->
 				 try
-				     JID = exmpp_jid:list_to_jid(V),
+				     JID = exmpp_jid:parse_jid(V),
 				     I1#listitem{
 				       type = jid,
 				       value = jlib:short_prepd_jid(JID)}

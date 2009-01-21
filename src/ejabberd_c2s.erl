@@ -241,7 +241,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		true ->
 		    Lang = exmpp_stream:get_lang(Opening),
 		    change_shaper(StateData,
-		      exmpp_jid:make_bare_jid(Server)),
+		      exmpp_jid:make_jid(Server)),
 		    case exmpp_stream:get_version(Opening) of
 			{1, 0} ->
 			    send_element(StateData, Header),
@@ -398,7 +398,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	{auth, _ID, set, {U, P, D, R}} ->
 	    try
 		JID = exmpp_jid:make_jid(U, StateData#state.server, R),
-        UBinary = exmpp_jid:lnode(JID),
+		UBinary = exmpp_jid:lnode(JID),
 		case acl:match_rule(ServerString,
 		  StateData#state.access, JID) of
 		    allow ->
@@ -506,7 +506,7 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 	{?NS_SASL, 'auth'} when not ((SockMod == gen_tcp) and TLSRequired) ->
 	    {auth, Mech, ClientIn} = exmpp_server_sasl:next_step(El),
 	    case cyrsasl:server_start(StateData#state.sasl_state,
-				      Mech,
+				      binary_to_list(Mech),
 				      ClientIn) of
 		{ok, Props} ->
 		    (StateData#state.sockmod):reset_stream(
@@ -833,7 +833,7 @@ session_established2(El, StateData) ->
 		    undefined ->
             exmpp_jid:jid_to_bare_jid(StateData#state.jid);
 		    _ ->
-			exmpp_jid:binary_to_jid(To)
+			exmpp_jid:parse_jid(To)
 		end,
 	NewEl = case exmpp_stanza:get_lang(El) of
 		    undefined ->
@@ -1848,7 +1848,7 @@ process_unauthenticated_stanza(StateData, El) when ?IS_IQ(El) ->
 		    ResIQ = exmpp_iq:error_without_original(El,
                       'service-unavailable'),
 		    Res1 = exmpp_stanza:set_sender(ResIQ,
-		      exmpp_jid:make_bare_jid(StateData#state.server)),
+		      exmpp_jid:make_jid(StateData#state.server)),
 		    Res2 = exmpp_stanza:remove_recipient(Res1),
 		    send_element(StateData, Res2);
 		_ ->

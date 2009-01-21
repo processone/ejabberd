@@ -47,12 +47,12 @@ make_xhtml(Els) ->
 
 make_xhtml(HeadEls, Els) ->
     #xmlel{ns = ?NS_XHTML, name = 'html', attrs = [
-	#xmlattr{ns = ?NS_XML, name = 'lang', value = "en"},
-	#xmlattr{name = 'lang', value = "en"}], children = [
+	exmpp_xml:attribute(?NS_XML, 'lang', <<"en">>),
+        ?XMLATTR('lang', <<"en">>)], children = [
 	#xmlel{ns = ?NS_XHTML, name = 'head', children = [
 	    #xmlel{ns = ?NS_XHTML, name = 'meta', attrs = [
-		#xmlattr{name = 'http-equiv', value = "Content-Type"},
-		#xmlattr{name = 'content', value = "text/html; charset=utf-8"}
+		?XMLATTR('http-equiv', <<"Content-Type">>),
+		?XMLATTR('content', <<"text/html; charset=utf-8">>)
 	      ]}
 	    | HeadEls
 	  ]},
@@ -70,14 +70,14 @@ make_xhtml(HeadEls, Els) ->
 -define(XAC(Name, Attrs, Text), ?XAE(Name, Attrs, [?C(Text)])).
 
 -define(LI(Els), ?XE('li', Els)).
--define(A(URL, Els), ?XAE('a', [#xmlattr{name = 'href', value = URL}], Els)).
+-define(A(URL, Els), ?XAE('a', [?XMLATTR('href', URL)], Els)).
 -define(AC(URL, Text), ?A(URL, [?C(Text)])).
 -define(P, ?X('p')).
 -define(BR, ?X('br')).
 -define(INPUT(Type, Name, Value),
-	?XA('input', [#xmlattr{name = 'type', value = Type},
-		      #xmlattr{name = 'name', value = Name},
-		      #xmlattr{name = 'value', value = Value}])).
+	?XA('input', [?XMLATTR('type', Type),
+		      ?XMLATTR('name', Name),
+		      ?XMLATTR('value', Value)])).
 
 error(not_found) ->
     {404, [], make_xhtml([?XC('h1', "404 Not Found")])};

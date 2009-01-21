@@ -346,7 +346,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    Conns = ?DICT:store({LFrom, LTo}, wait_for_verification,
 					StateData#state.connections),
 		    change_shaper(StateData, LTo,
-		      exmpp_jid:make_bare_jid(LFrom)),
+		      exmpp_jid:make_jid(LFrom)),
 		    {next_state,
 		     stream_established,
 		     StateData#state{connections = Conns,
@@ -371,7 +371,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error;
 		F ->
 		    try
-			exmpp_jid:binary_to_jid(F)
+			exmpp_jid:parse_jid(F)
 		    catch
 			_Exception1 -> error
 		    end
@@ -381,7 +381,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error;
 		T ->
 		    try
-			exmpp_jid:binary_to_jid(T)
+			exmpp_jid:parse_jid(T)
 		    catch
 			_Exception2 -> error
 		    end
@@ -580,15 +580,15 @@ cancel_timer(Timer) ->
 is_key_packet(#xmlel{ns = ?NS_DIALBACK, name = 'result',
   attrs = Attrs} = El) ->
     {key,
-     exmpp_stanza:get_recipient_from_attrs(Attrs),
-     exmpp_stanza:get_sender_from_attrs(Attrs),
+     binary_to_list(exmpp_stanza:get_recipient_from_attrs(Attrs)),
+     binary_to_list(exmpp_stanza:get_sender_from_attrs(Attrs)),
      exmpp_stanza:get_id_from_attrs(Attrs),
      exmpp_xml:get_cdata_as_list(El)};
 is_key_packet(#xmlel{ns = ?NS_DIALBACK, name = 'verify',
   attrs = Attrs} = El) ->
     {verify,
-     exmpp_stanza:get_recipient_from_attrs(Attrs),
-     exmpp_stanza:get_sender_from_attrs(Attrs),
+     binary_to_list(exmpp_stanza:get_recipient_from_attrs(Attrs)),
+     binary_to_list(exmpp_stanza:get_sender_from_attrs(Attrs)),
      exmpp_stanza:get_id_from_attrs(Attrs),
      exmpp_xml:get_cdata_as_list(El)};
 is_key_packet(_) ->
@@ -612,7 +612,7 @@ get_cert_domains(Cert) ->
 			  end,
 		      if
 			  D /= error ->
-                  JID  = exmpp_jid:list_to_jid(D),
+                  JID  = exmpp_jid:parse_jid(D),
 			      case {exmpp_jid:lnode_as_list(JID),
                         exmpp_jid:ldomain_as_list(JID),
                         exmpp_jid:lresource_as_list(JID)} of
@@ -648,7 +648,7 @@ get_cert_domains(Cert) ->
 				    case 'XmppAddr':decode(
 					   'XmppAddr', XmppAddr) of
 					{ok, D} when is_binary(D) ->
-                        JID2 = exmpp_jid:list_to_jid(binary_to_list(D)),  
+                        JID2 = exmpp_jid:parse_jid(binary_to_list(D)),  
 					    case {exmpp_jid:lnode_as_list(JID2),
                               exmpp_jid:ldomain_as_list(JID2),
                               exmpp_jid:lresource_as_list(JID2)} of
@@ -666,7 +666,7 @@ get_cert_domains(Cert) ->
 					    []
 				    end;
 			       ({dNSName, D}) when is_list(D) ->
-                    JID3 = exmpp_jid:list_to_jid(D),
+                    JID3 = exmpp_jid:parse_jid(D),
 				    case {exmpp_jid:lnode_as_list(JID3),
                           exmpp_jid:ldomain_as_list(JID3),
                           exmpp_jid:lresource_as_list(JID3)} of

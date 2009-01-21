@@ -139,7 +139,7 @@ process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
 	{result, Items} ->
 	    ANode = case Node of
 			<<>> -> [];
-			_ -> [#xmlattr{name = 'node', value = Node}]
+			_ -> [?XMLATTR('node', Node)]
 	    end,
 	    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
 	      attrs = ANode, children = Items},
@@ -165,7 +165,7 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
 	{result, Features} ->
 	    ANode = case Node of
 			<<>> -> [];
-			_ -> [#xmlattr{name = 'node', value = Node}]
+			_ -> [?XMLATTR('node', Node)]
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
 	      attrs = ANode,
@@ -180,9 +180,9 @@ process_local_iq_info(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 get_local_identity(Acc, _From, _To, <<>>, _Lang) ->
     Acc ++ [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = [
-	  #xmlattr{name = 'category', value = <<"server">>},
-	  #xmlattr{name = 'type', value = <<"im">>},
-	  #xmlattr{name = 'name', value = <<"ejabberd">>}
+	  ?XMLATTR('category', <<"server">>),
+	  ?XMLATTR('type', <<"im">>),
+	  ?XMLATTR('name', <<"ejabberd">>)
 	]}];
 
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
@@ -214,7 +214,7 @@ feature_to_xml({{Feature, _Host}}) ->
 
 feature_to_xml(Feature) when is_binary(Feature) ->
     #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [
-	#xmlattr{name = 'var', value = Feature}
+	?XMLATTR('var', Feature)
       ]};
 
 feature_to_xml(Feature) when is_list(Feature) ->
@@ -226,7 +226,7 @@ domain_to_xml({Domain}) ->
     domain_to_xml(Domain);
 domain_to_xml(Domain) when is_binary(Domain)->
     #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
-	#xmlattr{name = 'jid', value = Domain}
+	?XMLATTR('jid', Domain)
       ]};
 domain_to_xml(Domain) when is_list(Domain) ->
     domain_to_xml(list_to_binary(Domain)).
@@ -280,7 +280,7 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
 	{result, Items} ->
 	    ANode = case Node of
 			<<>> -> [];
-			_ -> [#xmlattr{name = 'node', value = Node}]
+			_ -> [?XMLATTR('node', Node)]
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
 	      attrs = ANode, children = Items},
@@ -294,7 +294,7 @@ process_sm_iq_items(From, To, #iq{type = set, payload = SubEl} = IQ_Rec) ->
     LFrom = exmpp_jid:lnode_as_list(From),
     LServer = exmpp_jid:ldomain_as_list(From),
     Self = (LTo == LFrom) andalso (ToServer == LServer),
-    Node = exmpp_xml:get_attribute(SubEl, 'node', ""),
+    Node = exmpp_xml:get_attribute_as_list(SubEl, 'node', ""),
     if
 	Self, Node /= [] ->
 	    %% Here, we treat disco publish attempts to your own JID.
@@ -358,7 +358,7 @@ process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
 	{result, Features} ->
 	    ANode = case Node of
 			<<>> -> [];
-			_ -> [#xmlattr{name = 'node', value = Node}]
+			_ -> [?XMLATTR('node', Node)]
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
 	      attrs = ANode,
@@ -396,9 +396,9 @@ get_user_resources(JID) ->
                                         exmpp_jid:ldomain(JID)),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
-			  #xmlattr{name = 'jid', value =
-			    exmpp_jid:jid_to_binary(exmpp_jid:bare_jid_to_jid(JID, R))},
-			  #xmlattr{name = 'name', value = exmpp_jid:lnode(JID)}
+			  ?XMLATTR('jid',
+			    exmpp_jid:jid_to_binary(exmpp_jid:bare_jid_to_jid(JID, R))),
+			  ?XMLATTR('name', exmpp_jid:lnode(JID))
 			]}
 	      end, lists:sort(Rs)).
 
@@ -421,10 +421,10 @@ process_disco_publish(User, Node, Items) ->
     F = fun() ->
 		lists:foreach(
 		  fun(#xmlel{} = Item) ->
-			  Action = exmpp_xml:get_attribute(Item, 'action', ""),
-			  Jid = exmpp_xml:get_attribute(Item, 'jid', ""),
-			  PNode = exmpp_xml:get_attribute(Item, 'node', ""),
-			  Name = exmpp_xml:get_attribute(Item, 'name', ""),
+			  Action = exmpp_xml:get_attribute_as_list(Item, 'action', ""),
+			  Jid = exmpp_xml:get_attribute_as_list(Item, 'jid', ""),
+			  PNode = exmpp_xml:get_attribute_as_list(Item, 'node', ""),
+			  Name = exmpp_xml:get_attribute_as_list(Item, 'name', ""),
 			  ?INFO_MSG("Disco publish: ~p ~p ~p ~p ~p ~p~n",
 				    [User, Action, Node, Jid, PNode, Name]),
 
@@ -488,18 +488,18 @@ retrieve_disco_publish(User, Node) ->
 				  name = Name,
 				  node = PNode}) ->
 		       #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-			lists:append([[#xmlattr{name = 'jid', value = list_to_binary(Jid)}],
+			lists:append([[?XMLATTR('jid', Jid)],
 				      case Name of
 					  "" ->
 					      [];
 					  _ ->
-					      [#xmlattr{name = 'name', value = list_to_binary(Name)}]
+					      [?XMLATTR('name', Name)]
 				      end,
 				      case PNode of
 					  "" ->
 					      [];
 					  _ ->
-					      [#xmlattr{name = 'node', value = list_to_binary(PNode)}]
+					      [?XMLATTR('node', PNode)]
 				      end])}
 	       end, Items)}
     end.

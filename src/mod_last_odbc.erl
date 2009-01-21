@@ -71,7 +71,7 @@ stop(Host) ->
 process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
     Sec = get_node_uptime(),
     Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query', attrs =
-      [#xmlattr{name = 'seconds', value = list_to_binary(integer_to_list(Sec))}]},
+      [?XMLATTR('seconds', Sec)]},
     exmpp_iq:result(IQ_Rec, Response);
 process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
@@ -137,7 +137,7 @@ get_last(IQ_Rec, LUser, LServer) ->
 		    TimeStamp2 = now_to_seconds(now()),
 		    Sec = TimeStamp2 - TimeStamp,
 		    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
-		      attrs = [#xmlattr{name = 'seconds', value = list_to_binary(integer_to_list(Sec))}],
+		      attrs = [?XMLATTR('seconds', Sec)],
 		      children = [#xmlcdata{cdata = list_to_binary(Status)}]},
 		    exmpp_iq:result(IQ_Rec, Response);
 		_ ->

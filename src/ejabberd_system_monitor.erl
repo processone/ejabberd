@@ -174,7 +174,7 @@ process_large_heap(Pid, Info) ->
 	    lists:foreach(
 	      fun(S) ->
 		      try
-			  JID = exmpp_jid:list_to_jid(S),
+			  JID = exmpp_jid:parse_jid(S),
 			  send_message(From, JID, Body)
 		      catch
 			  _ ->
@@ -196,7 +196,7 @@ get_admin_jids() ->
 	    lists:flatmap(
 	      fun(S) ->
 		      try
-			  JID = exmpp_jid:list_to_jid(S),
+			  JID = exmpp_jid:parse_jid(S),
 			  [{exmpp_jid:lnode(JID), 
                 exmpp_jid:ldomain(JID), 
                 exmpp_jid:lresource(JID)}]

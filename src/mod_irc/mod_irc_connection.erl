@@ -590,8 +590,8 @@ terminate(_Reason, _StateName, StateData) ->
 		  lists:concat([Chan, "%", StateData#state.server]),
 		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
-		#xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = <<"error">>}], children =
-		 [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'error', attrs = [#xmlattr{name = 'code', value = <<"502">>}], children =
+		#xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [?XMLATTR('type', <<"error">>)], children =
+		 [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'error', attrs = [?XMLATTR('code', <<"502">>)], children =
 		   [#xmlcdata{cdata =  <<"Server Connect Failed">>}]}]})
       end, dict:fetch_keys(StateData#state.channels)),
     case StateData#state.socket of
@@ -629,11 +629,11 @@ bounce_messages(Reason) ->
 	            ok;
 	        _ ->
                     Error = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'error',
-                      attrs = [#xmlattr{name = 'code', value = <<"502">>}],
+                      attrs = [?XMLATTR('code', <<"502">>)],
                       children = [#xmlcdata{cdata = Reason}]},
 	            Err = exmpp_stanza:reply_with_error(El, Error),
-		    From = exmpp_jid:binary_to_jid(exmpp_stanza:get_sender(El)),
-		    To = exmpp_jid:binary_to_jid(exmpp_stanza:get_recipient(El)),
+		    From = exmpp_jid:parse_jid(exmpp_stanza:get_sender(El)),
+		    To = exmpp_jid:parse_jid(exmpp_stanza:get_recipient(El)),
 		    ejabberd_router:route(To, From, Err)
 	    end,
 	    bounce_messages(Reason)
@@ -692,8 +692,8 @@ process_channel_list_user(StateData, Chan, User) ->
       #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
        [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
 	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
-	   [#xmlattr{name = 'affiliation', value = Affiliation},
-	    #xmlattr{name = 'role', value = Role}]}]}]}),
+	   [?XMLATTR('affiliation', Affiliation),
+	    ?XMLATTR('role', Role)]}]}]}),
     case catch dict:update(Chan,
 			   fun(Ps) ->
 				   ?SETS:add_element(User2, Ps)
@@ -893,11 +893,11 @@ process_part(StateData, Chan, From, String) ->
       exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
-      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = <<"unavailable">>}], children =
+      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [?XMLATTR('type', <<"unavailable">>)], children =
        [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
 	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
-	   [#xmlattr{name = 'affiliation', value = <<"member">>},
-	    #xmlattr{name = 'role', value = <<"none">>}]}]},
+	   [?XMLATTR('affiliation', <<"member">>),
+	    ?XMLATTR('role', <<"none">>)]}]},
 	#xmlel{ns = ?NS_MUC_USER, name = 'status', children =
 	 [#xmlcdata{cdata = list_to_binary(Msg1 ++ " ("  ++ FromIdent ++ ")")}]}]
       }),
@@ -927,11 +927,11 @@ process_quit(StateData, From, String) ->
 			      lists:concat([Chan, "%", StateData#state.server]),
 			      StateData#state.host, FromUser),
 			    StateData#state.user,
-			    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = <<"unavailable">>}], children =
+			    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [?XMLATTR('type', <<"unavailable">>)], children =
 			     [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
 			       [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
-				 [#xmlattr{name = 'affiliation', value = <<"member">>},
-				  #xmlattr{name = 'role', value = <<"none">>}]}]},
+				 [?XMLATTR('affiliation', <<"member">>),
+				  ?XMLATTR('role', <<"none">>)]}]},
 			      #xmlel{ns = ?NS_MUC_USER, name = 'status', children =
 			       [#xmlcdata{cdata = list_to_binary(Msg1 ++ " ("  ++ FromIdent ++ ")")}]}
 			     ]}),
@@ -953,8 +953,8 @@ process_join(StateData, Channel, From, _String) ->
       #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
        [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
 	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
-	   [#xmlattr{name = 'affiliation', value = <<"member">>},
-	    #xmlattr{name = 'role', value = <<"participant">>}]}]},
+	   [?XMLATTR('affiliation', <<"member">>),
+	    ?XMLATTR('role', <<"participant">>)]}]},
 	#xmlel{ns = ?NS_MUC_USER, name = 'status', children =
 	 [#xmlcdata{cdata = list_to_binary(FromIdent)}]}]}),
 
@@ -979,8 +979,8 @@ process_mode_o(StateData, Chan, _From, Nick, Affiliation, Role) ->
       #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
        [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
 	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
-	   [#xmlattr{name = 'affiliation', value = list_to_binary(Affiliation)},
-	    #xmlattr{name = 'role', value = list_to_binary(Role)}]}]}]}).
+	   [?XMLATTR('affiliation', Affiliation),
+	    ?XMLATTR('role', Role)]}]}]}).
 
 process_kick(StateData, Chan, From, Nick, String) ->
     Msg = lists:last(string:tokens(String, ":")),
@@ -994,12 +994,12 @@ process_kick(StateData, Chan, From, Nick, String) ->
       exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, Nick),
       StateData#state.user,
-      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = <<"unavailable">>}], children =
+      #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [?XMLATTR('type', <<"unavailable">>)], children =
        [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
 	 [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
-	   [#xmlattr{name = 'affiliation', value = <<"none">>},
-	    #xmlattr{name = 'role', value = <<"none">>}]},
-	  #xmlel{ns = ?NS_MUC_USER, name = 'status', attrs = [#xmlattr{name = 'code', value = <<"307">>}]}
+	   [?XMLATTR('affiliation', <<"none">>),
+	    ?XMLATTR('role', <<"none">>)]},
+	  #xmlel{ns = ?NS_MUC_USER, name = 'status', attrs = [?XMLATTR('code', <<"307">>)]}
 	 ]}]}).
 
 process_nick(StateData, From, NewNick) ->
@@ -1015,13 +1015,13 @@ process_nick(StateData, From, NewNick) ->
 			      lists:concat([Chan, "%", StateData#state.server]),
 			      StateData#state.host, FromUser),
 			    StateData#state.user,
-			    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = <<"unavailable">>}], children =
+			    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [?XMLATTR('type', <<"unavailable">>)], children =
 			     [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
 			       [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
-				 [#xmlattr{name = 'affiliation', value = <<"member">>},
-				  #xmlattr{name = 'role', value = <<"participant">>},
-				  #xmlattr{name = 'nick', value = list_to_binary(Nick)}]},
-				#xmlel{ns = ?NS_MUC_USER, name = 'status', attrs = [#xmlattr{name = 'code', value = <<"303">>}]}
+				 [?XMLATTR('affiliation', <<"member">>),
+				  ?XMLATTR('role', <<"participant">>),
+				  ?XMLATTR('nick', Nick)]},
+				#xmlel{ns = ?NS_MUC_USER, name = 'status', attrs = [?XMLATTR('code', <<"303">>)]}
 			       ]}]}),
 			  ejabberd_router:route(
 			    exmpp_jid:make_jid(
@@ -1031,8 +1031,8 @@ process_nick(StateData, From, NewNick) ->
 			    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
 			     [#xmlel{ns = ?NS_MUC_USER, name = 'x', children =
 			       [#xmlel{ns = ?NS_MUC_USER, name = 'item', attrs =
-				 [#xmlattr{name = 'affiliation', value = <<"member">>},
-				  #xmlattr{name = 'role', value = <<"participant">>}]}
+				 [?XMLATTR('affiliation', <<"member">>),
+				  ?XMLATTR('role', <<"participant">>)]}
 			       ]}]}),
 			  ?SETS:add_element(Nick,
 					    remove_element(FromUser, Ps));
@@ -1051,8 +1051,8 @@ process_error(StateData, String) ->
 		  lists:concat([Chan, "%", StateData#state.server]),
 		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
-		#xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [#xmlattr{name = 'type', value = <<"error">>}], children =
-		 [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'error', attrs = [#xmlattr{name = 'code', value = <<"502">>}], children =
+		#xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [?XMLATTR('type', <<"error">>)], children =
+		 [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'error', attrs = [?XMLATTR('code', <<"502">>)], children =
 		   [#xmlcdata{cdata = list_to_binary(String)}]}]})
       end, dict:fetch_keys(StateData#state.channels)).
 
@@ -1098,9 +1098,9 @@ process_iq_admin(StateData, Channel, set, SubEl) ->
 	false ->
 	    {error, 'bad-request'};
 	ItemEl ->
-	    Nick = exmpp_xml:get_attribute(ItemEl, 'nick', ""),
-	    Affiliation = exmpp_xml:get_attribute(ItemEl, 'affiliation', ""),
-	    Role = exmpp_xml:get_attribute(ItemEl, 'role', ""),
+	    Nick = exmpp_xml:get_attribute_as_list(ItemEl, 'nick', ""),
+	    Affiliation = exmpp_xml:get_attribute_as_list(ItemEl, 'affiliation', ""),
+	    Role = exmpp_xml:get_attribute_as_list(ItemEl, 'role', ""),
 	    Reason = exmpp_xml:get_path(ItemEl, [{element, 'reason'}, cdata_as_list]),
 	    process_admin(StateData, Channel, Nick, Affiliation, Role, Reason)
     end;

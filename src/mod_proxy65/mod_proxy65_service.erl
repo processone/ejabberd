@@ -159,8 +159,8 @@ process_iq(InitiatorJID, #iq{type = set, payload = SubEl, ns = ?NS_BYTESTREAMS} 
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
 	allow ->
 	    ActivateEl = exmpp_xml:get_path(SubEl, [{element, 'activate'}]),
-	    SID = exmpp_xml:get_attribute(SubEl, 'sid', ""),
-	    case catch exmpp_jid:list_to_jid(exmpp_xml:get_cdata_as_string(ActivateEl)) of
+	    SID = exmpp_xml:get_attribute_as_list(SubEl, 'sid', ""),
+	    case catch exmpp_jid:parse_jid(exmpp_xml:get_cdata_as_string(ActivateEl)) of
 		TargetJID when ?IS_JID(TargetJID), SID /= "",
 		               length(SID) =< 128, TargetJID /= InitiatorJID ->
 		    Target = exmpp_jid:prepd_jid_to_list(TargetJID),
@@ -197,13 +197,13 @@ process_iq(_, _, _) ->
 %%% Auxiliary functions.
 %%%-------------------------
 -define(FEATURE(Feat), #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
-    attrs = [#xmlattr{name = 'var', value = Feat}]}).
+    attrs = [?XMLATTR('var', Feat)]}).
 
 iq_disco_info(Lang, Name) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-      [#xmlattr{name = 'category', value = "proxy"},
-       #xmlattr{name = 'type', value = "bytestreams"},
-       #xmlattr{name = 'name', value = translate:translate(Lang, Name)}]},
+      [?XMLATTR('category', <<"proxy">>),
+       ?XMLATTR('type', <<"bytestreams">>),
+       ?XMLATTR('name', translate:translate(Lang, Name))]},
      ?FEATURE(?NS_DISCO_INFO_s),
      ?FEATURE(?NS_VCARD_s),
      ?FEATURE(?NS_BYTESTREAMS_s)].
@@ -227,7 +227,7 @@ parse_options(ServerHost, Opts) ->
 	         Addr -> Addr
 	     end,
     StrIP = inet_parse:ntoa(IP),
-    StreamAddr = [#xmlattr{name = 'jid', value = MyHost}, #xmlattr{name = 'host', value = StrIP}, #xmlattr{name = 'port', value = integer_to_list(Port)}],
+    StreamAddr = [?XMLATTR('jid', MyHost), ?XMLATTR('host', StrIP), ?XMLATTR('port', Port)],
     #state{myhost      = MyHost,
 		serverhost  = ServerHost,
 		name        = Name,
