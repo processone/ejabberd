@@ -9,6 +9,10 @@
 	* src/mod_pubsub/nodetree_virtual.erl (create_node/5): Use string()
 	version of UserName and UserHost.
 
+	* src/mod_private.erl (process_iq_get/3, process_iq_set/3): Use
+	binary() version of LUser and LServer.
+	(convert_to_exmpp2/2): User and server are stored as binary().
+
 2009-01-19  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/cyrsasl_digest.erl: Typo (prolists -> proplists).

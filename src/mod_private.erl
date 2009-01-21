@@ -73,8 +73,8 @@ process_sm_iq(From, To, #iq{type = Type} = IQ_Rec) ->
     end.
 
 process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
-    LUser = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LUser = exmpp_jid:lnode(From),
+    LServer = exmpp_jid:ldomain(From),
     case catch get_data(LUser,
 			LServer,
 			exmpp_xml:get_child_elements(SubEl)) of
@@ -88,8 +88,8 @@ process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
 
 
 process_iq_set(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
-    LUser = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LUser = exmpp_jid:lnode(From),
+    LServer = exmpp_jid:ldomain(From),
     F = fun() ->
         lists:foreach(
           fun(El) ->
@@ -240,14 +240,11 @@ convert_to_exmpp() ->
 	    case mnesia:first(private_storage) of
 		'$end_of_table' ->
 		    none;
-		Key ->
-		    case mnesia:read({private_storage, Key}) of
-			[#private_storage{xml = #xmlel{}}] ->
-			    none;
-			[#private_storage{xml = #xmlelement{}}] ->
-			    mnesia:foldl(fun convert_to_exmpp2/2,
-			      done, private_storage, write)
-		    end
+                {U, _S, _NS} when is_binary(U) ->
+                    none;
+                {U, _S, _NS} when is_list(U) ->
+                    mnesia:foldl(fun convert_to_exmpp2/2,
+                      done, private_storage, write)
 	    end
     end,
     mnesia:transaction(Fun).
@@ -255,12 +252,13 @@ convert_to_exmpp() ->
 convert_to_exmpp2(#private_storage{usns = {U, S, NS} = Key, xml = El} = R,
   Acc) ->
     mnesia:delete({private_storage, Key}),
+    U1 = list_to_binary(U),
+    S1 = list_to_binary(S),
     NS1 = list_to_atom(NS),
-    El0 = exmpp_xml:xmlelement_to_xmlel(El,
+    El1 = exmpp_xml:xmlelement_to_xmlel(El,
       [?NS_PRIVATE], [{?NS_XMPP, ?NS_XMPP_pfx}]),
-    El1 = exmpp_xml:remove_whitespaces_deeply(El0),
     New_R = R#private_storage{
-      usns = {U, S, NS1},
+      usns = {U1, S1, NS1},
       xml = El1},
     mnesia:write(New_R),
     Acc.
