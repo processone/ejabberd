@@ -3,6 +3,9 @@
 	* src/acl.erl (match_acl/3): Use string() version of
 	User/Server/Resource to match an ACL.
 
+	* src/cyrsasl.erl: Return invalid-mechanism when a mechanism isn't
+	supported instead of no-mechanism, which wasn't standard-compliant.
+
 2009-01-19  Pablo Polvorin  <pablo.polvorin@process-one.net>
 
 	* src/cyrsasl_digest.erl: Typo (prolists -> proplists).

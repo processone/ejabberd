@@ -133,10 +133,10 @@ server_start(State, Mech, ClientIn) ->
 						 mech_state = MechState},
 				ClientIn);
 		_ ->
-		    {error, 'no-mechanism'}
+		    {error, 'invalid-mechanism'}
 	    end;
 	false ->
-	    {error, 'no-mechanism'}
+	    {error, 'invalid-mechanism'}
     end.
 
 server_step(State, ClientIn) ->
