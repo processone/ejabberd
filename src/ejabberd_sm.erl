@@ -241,8 +241,7 @@ dirty_get_my_sessions_list() ->
 	['$_']}]).
 
 get_vh_session_list(Server) when is_binary(Server) ->
-    LServer = list_to_binary(
-                   exmpp_stringprep:nameprep(Server)),
+    LServer = exmpp_stringprep:nameprep(Server),
     mnesia:dirty_select(
       session,
       [{#session{usr = '$1', _ = '_'},
