@@ -1069,7 +1069,7 @@ term_to_string(T) ->
     {ok, StringLine, _} = regexp:gsub(StringParagraph, "\\n ", ""),
     StringLine.
 
-%% @spec (T::any()) -> {NumLines::integer(), Paragraph::string()}
+%% @spec (T::any(), Cols::integer()) -> {NumLines::integer(), Paragraph::string()}
 term_to_paragraph(T, Cols) ->
 	Paragraph = erl_prettypr:format(erl_syntax:abstract(T), [{paper, Cols}]),
 	{ok, FieldList} = regexp:split(Paragraph, "\n"),

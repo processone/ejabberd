@@ -1,3 +1,8 @@
+2009-01-22  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/web/ejabberd_web_admin.erl, src/ejabberd_listener.erl: Fix some
+	eDoc @spec directives.
+
 2009-01-21  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/acl.erl (match_acl/3): Use string() version of
