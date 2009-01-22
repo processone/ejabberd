@@ -241,7 +241,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		true ->
 		    Lang = exmpp_stream:get_lang(Opening),
 		    change_shaper(StateData,
-		      exmpp_jid:make_jid(Server)),
+		      exmpp_jid:make_jid(ServerB)),
 		    case exmpp_stream:get_version(Opening) of
 			{1, 0} ->
 			    send_element(StateData, Header),

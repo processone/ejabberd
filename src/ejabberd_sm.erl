@@ -384,8 +384,8 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 
 set_session(SID, JID, Priority, Info) ->
-    US = {exmpp_jid:node(JID), exmpp_jid:ldomain(JID)},
-    USR = {exmpp_jid:node(JID), 
+    US = {exmpp_jid:lnode(JID), exmpp_jid:ldomain(JID)},
+    USR = {exmpp_jid:lnode(JID), 
            exmpp_jid:ldomain(JID), 
            exmpp_jid:lresource(JID)},
     F = fun() ->
