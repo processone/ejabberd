@@ -7,6 +7,9 @@
 	list_to_binary/1; now that exmpp_stringprep return the correct type,
 	it was used on a binary().
 
+	* src/acl.erl: Document every functions to clarify the types to
+	give and returned.
+
 2009-01-21  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/acl.erl (match_acl/3): Use string() version of
