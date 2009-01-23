@@ -31,17 +31,43 @@
 
 -behaviour(cyrsasl).
 
+%% @type mechstate() = {state, CheckPassword}
+%%     CheckPassword = function().
+
 -record(state, {check_password}).
+
+%% @spec (Opts) -> true
+%%     Opts = term()
 
 start(_Opts) ->
     cyrsasl:register_mechanism("PLAIN", ?MODULE, false),
     ok.
 
+%% @spec () -> ok
+
 stop() ->
     ok.
 
+%% @spec (Host, GetPassword, CheckPassword) -> {ok, State}
+%%     Host = string()
+%%     GetPassword = function()
+%%     CheckPassword = function()
+%%     State = mechstate()
+
 mech_new(_Host, _GetPassword, CheckPassword) ->
     {ok, #state{check_password = CheckPassword}}.
+
+%% @spec (State, ClientIn) -> Ok | Error
+%%     State = mechstate()
+%%     ClientIn = string()
+%%     Ok = {ok, Props}
+%%         Props = [Prop]
+%%         Prop = {username, Username} | {authzid, AuthzId} | {auth_module, AuthModule}
+%%         Username = string()
+%%         AuthzId = string()
+%%         AuthModule = atom()
+%%     Error = {error, Reason} | {error, Reason, Username}
+%%         Reason = term()
 
 mech_step(State, ClientIn) ->
     case parse(ClientIn) of
@@ -58,8 +84,12 @@ mech_step(State, ClientIn) ->
     end.
 
 
+%% @hidden
+
 parse(S) ->
     parse1(S, "", []).
+
+%% @hidden
 
 parse1([0 | Cs], S, T) ->
     parse1(Cs, "", [lists:reverse(S) | T]);

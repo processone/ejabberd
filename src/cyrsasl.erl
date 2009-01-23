@@ -34,17 +34,38 @@
 	 server_start/3,
 	 server_step/2]).
 
+%% @type saslmechanism() = {sasl_mechanism, Mechanism, Module, Require_Plain}
+%%     Mechanism = string()
+%%     Module = atom()
+%%     Require_Plain = bool().
+%% Registry entry of a supported SASL mechanism.
+
 -record(sasl_mechanism, {mechanism, module, require_plain_password}).
+
+%% @type saslstate() = {sasl_state, Service, Myname, Realm, GetPassword, CheckPassword, Mech_Mod, Mech_State}
+%%     Service = string()
+%%     Myname = string()
+%%     Realm = string()
+%%     GetPassword = function()
+%%     CheckPassword = function()
+%%     Mech_Mod = atom()
+%%     Mech_State = term().
+%% State of this process.
+
 -record(sasl_state, {service, myname, realm,
 		     get_password, check_password,
 		     mech_mod, mech_state}).
 
 -export([behaviour_info/1]).
 
+%% @hidden
+
 behaviour_info(callbacks) ->
     [{mech_new, 3}, {mech_step, 2}];
 behaviour_info(_Other) ->
     undefined.
+
+%% @spec () -> ok
 
 start() ->
     ets:new(sasl_mechanism, [named_table,
@@ -55,35 +76,46 @@ start() ->
     cyrsasl_anonymous:start([]),
     ok.
 
+%% @spec (Mechanism, Module, Require_Plain) -> true
+%%     Mechanism = string()
+%%     Module = atom()
+%%     Require_Plain = bool()
+
 register_mechanism(Mechanism, Module, RequirePlainPassword) ->
     ets:insert(sasl_mechanism,
 	       #sasl_mechanism{mechanism = Mechanism,
 			       module = Module,
 			       require_plain_password = RequirePlainPassword}).
 
-%%% TODO: use callbacks
-%%-include("ejabberd.hrl").
-%%-include("jlib.hrl").
-%%check_authzid(_State, Props) ->
-%%    AuthzId = xml:get_attr_s(authzid, Props),
-%%    case jlib:string_to_jid(AuthzId) of
-%%	error ->
-%%	    {error, "invalid-authzid"};
-%%	JID ->
-%%	    LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
-%%	    {U, S, R} = jlib:jid_tolower(JID),
-%%	    case R of
-%%		"" ->
-%%		    {error, "invalid-authzid"};
-%%		_ ->
-%%		    case {LUser, ?MYNAME} of
-%%			{U, S} ->
-%%			    ok;
-%%			_ ->
-%%			    {error, "invalid-authzid"}
-%%		    end
-%%	    end
-%%    end.
+% TODO use callbacks
+%-include("ejabberd.hrl").
+%-include("jlib.hrl").
+%check_authzid(_State, Props) ->
+%    AuthzId = xml:get_attr_s(authzid, Props),
+%    case jlib:string_to_jid(AuthzId) of
+%	error ->
+%	    {error, "invalid-authzid"};
+%	JID ->
+%	    LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
+%	    {U, S, R} = jlib:jid_tolower(JID),
+%	    case R of
+%		"" ->
+%		    {error, "invalid-authzid"};
+%		_ ->
+%		    case {LUser, ?MYNAME} of
+%			{U, S} ->
+%			    ok;
+%			_ ->
+%			    {error, "invalid-authzid"}
+%		    end
+%	    end
+%    end.
+
+%% @spec (State, Props) -> ok | {error, 'not-authorized'}
+%%     State = saslstate()
+%%     Props = [{Key, Value}]
+%%         Key = atom()
+%%         Value = string()
 
 check_credentials(_State, Props) ->
     case proplists:get_value(username, Props) of
@@ -95,6 +127,10 @@ check_credentials(_State, Props) ->
 		true  -> ok
 	    end
     end.
+
+%% @spec (Host) -> [Mechanism]
+%%     Host = string()
+%%     Mechanism = string()
 
 listmech(Host) ->
     RequirePlainPassword = ejabberd_auth:plain_password_required(Host),
@@ -112,6 +148,14 @@ listmech(Host) ->
 			 ['$1']}]),
     filter_anonymous(Host, Mechs).
 
+%% @spec (Service, ServerFQDN, UserRealm, SecFlags, GetPassword, CheckPassword) -> saslstate()
+%%     Service = string()
+%%     ServerFQDN = string()
+%%     UserRealm = string()
+%%     SecFlags = [term()]
+%%     GetPassword = function()
+%%     CheckPassword = function()
+
 server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 	   GetPassword, CheckPassword) ->
     #sasl_state{service = Service,
@@ -119,6 +163,22 @@ server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 		realm = UserRealm,
 		get_password = GetPassword,
 		check_password = CheckPassword}.
+
+%% @spec (State, Mech, ClientIn) -> Ok | Continue | Error
+%%     State = saslstate()
+%%     Mech = string()
+%%     ClientIn = string()
+%%     Ok = {ok, Props}
+%%         Props = [Prop]
+%%         Prop = [{Key, Value}]
+%%         Key = atom()
+%%         Value = string()
+%%     Continue = {continue, ServerOut, New_State}
+%%         ServerOut = string()
+%%         New_State = saslstate()
+%%     Error = {error, Reason} | {error, Username, Reason}
+%%         Reason = term()
+%%         Username = string()
 
 server_start(State, Mech, ClientIn) ->
     case lists:member(Mech, listmech(State#sasl_state.myname)) of
@@ -138,6 +198,21 @@ server_start(State, Mech, ClientIn) ->
 	false ->
 	    {error, 'invalid-mechanism'}
     end.
+
+%% @spec (State, ClientIn) -> Ok | Continue | Error
+%%     State = saslstate()
+%%     ClientIn = string()
+%%     Ok = {ok, Props}
+%%         Props = [Prop]
+%%         Prop = [{Key, Value}]
+%%         Key = atom()
+%%         Value = string()
+%%     Continue = {continue, ServerOut, New_State}
+%%         ServerOut = string()
+%%         New_State = saslstate()
+%%     Error = {error, Reason} | {error, Username, Reason}
+%%         Reason = term()
+%%         Username = string()
 
 server_step(State, ClientIn) ->
     Module = State#sasl_state.mech_mod,
@@ -159,8 +234,15 @@ server_step(State, ClientIn) ->
 	    {error, Error}
     end.
 
-%% Remove the anonymous mechanism from the list if not enabled for the given
-%% host
+%% @spec (Host, Mechs) -> [Filtered_Mechs]
+%%     Host = string()
+%%     Mechs = [Mech]
+%%         Mech = string()
+%%     Filtered_Mechs = [Mech]
+%%
+%% @doc Remove the anonymous mechanism from the list if not enabled for
+%% the given host.
+
 filter_anonymous(Host, Mechs) ->
     case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(Host) of
 	true  -> Mechs;

@@ -1,3 +1,9 @@
+2009-01-23  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/cyrsasl.erl, src/cyrsasl_plain.erl, src/cyrsasl_anonymous.erl,
+	src/cyrsasl_digest.erl:  Document every functions to clarify the types
+	to give and returned.
+
 2009-01-23  Badlop  <badlop@process-one.net>
 
 	* src/odbc/mysql.sql: Fix complain about comment syntax
