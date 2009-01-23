@@ -506,7 +506,7 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 	{?NS_SASL, 'auth'} when not ((SockMod == gen_tcp) and TLSRequired) ->
 	    {auth, Mech, ClientIn} = exmpp_server_sasl:next_step(El),
 	    case cyrsasl:server_start(StateData#state.sasl_state,
-				      binary_to_list(Mech),
+				      Mech,
 				      ClientIn) of
 		{ok, Props} ->
 		    (StateData#state.sockmod):reset_stream(

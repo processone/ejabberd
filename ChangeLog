@@ -4,6 +4,10 @@
 	src/cyrsasl_digest.erl:  Document every functions to clarify the types
 	to give and returned.
 
+	* src/ejabberd_c2s.erl: exmpp_server_sasl:next_step/1 returns the
+	mechanism as list() again, so the call to binary_to_list/1 isn't
+	necessary anymore.
+
 2009-01-23  Badlop  <badlop@process-one.net>
 
 	* src/odbc/mysql.sql: Fix complain about comment syntax
