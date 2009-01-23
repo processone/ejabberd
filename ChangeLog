@@ -1,3 +1,7 @@
+2009-01-23  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/eldap/eldap.erl: Close a connection on tcp_error.
+
 2009-01-23  Badlop  <badlop@process-one.net>
 
 	* src/odbc/mysql.sql: Fix complain about comment syntax
