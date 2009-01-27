@@ -1,3 +1,7 @@
+2009-01-27  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/eldap/eldap.erl: implemented queue for pending queries.
+
 2009-01-27  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: mod_muc can run in several nodes of cluster
