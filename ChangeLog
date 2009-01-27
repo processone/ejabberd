@@ -1,3 +1,8 @@
+2009-01-27  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: mod_muc can run in several nodes of cluster
+	* doc/guide.html: Likewise
+
 2009-01-23  Evgeniy Khramtsov <ekhramtsov@process-one.net>
 
 	* src/eldap/eldap.erl: Close a connection on tcp_error.
