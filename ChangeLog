@@ -1,3 +1,8 @@
+2009-01-30  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/eldap/eldap.erl: moves waiting for response queries to
+	pending queue on an LDAP connection failure.
+
 2009-01-27  Evgeniy Khramtsov <ekhramtsov@process-one.net>
 
 	* src/eldap/eldap.erl: implemented queue for pending queries.
