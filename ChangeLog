@@ -1,3 +1,8 @@
+2009-01-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* doc/api/Makefile: Disable "TODO:" interpretation in eDoc because
+	usually, the following text isn't in eDoc format.
+
 2009-01-23  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/cyrsasl.erl, src/cyrsasl_plain.erl, src/cyrsasl_anonymous.erl,

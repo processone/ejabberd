@@ -15,4 +15,4 @@ clean:
 
 docs:
 	erl -noshell -run edoc_run application \
-	"'$(APPNAME)'" '"$(SRCDIR)"' '[{dir,"$(DOCDIR)"},{packages, false},{todo,true},{private,true},{def,{vsn,"$(VSN)"}},{stylesheet,"process-one.css"},{overview,"$(DOCDIR)/overview.edoc"}]' -s init stop
+	"'$(APPNAME)'" '"$(SRCDIR)"' '[{dir,"$(DOCDIR)"},{packages, false},{todo,false},{private,true},{def,{vsn,"$(VSN)"}},{stylesheet,"process-one.css"},{overview,"$(DOCDIR)/overview.edoc"}]' -s init stop
