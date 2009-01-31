@@ -1193,13 +1193,9 @@ To define a shaper named &#X2018;<TT>normal</TT>&#X2019; with traffic speed limi
 can be seen by Jabber clients. If a Jabber client does not support
 <TT>xml:lang</TT>, the specified language is used. The default value is
 <TT>en</TT>. In order to take effect there must be a translation file
-<TT>&lt;language&gt;.msg</TT> in <TT>ejabberd</TT>&#X2019;s <TT>msgs</TT> directory.</P><P>Examples:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-To set Russian as default language:
-<PRE CLASS="verbatim">{language, "ru"}.
-</PRE></LI><LI CLASS="li-itemize">To set Spanish as default language:
-<PRE CLASS="verbatim">{language, "es"}.
-</PRE></LI></UL><P>Appendix <A HREF="#i18ni10n">A</A> provides more details about internationalization and localization.</P><P> <A NAME="includeconfigfile"></A> </P><!--TOC subsection Include Additional Configuration Files-->
+<TT>&lt;language&gt;.msg</TT> in <TT>ejabberd</TT>&#X2019;s <TT>msgs</TT> directory.</P><P>For example, to set Russian as default language:
+</P><PRE CLASS="verbatim">{language, "ru"}.
+</PRE><P>Appendix <A HREF="#i18ni10n">A</A> provides more details about internationalization and localization.</P><P> <A NAME="includeconfigfile"></A> </P><!--TOC subsection Include Additional Configuration Files-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc28">3.1.8</A>&#XA0;&#XA0;<A HREF="#includeconfigfile">Include Additional Configuration Files</A></H3><!--SEC END --><P> <A NAME="includeconfigfile"></A> 
 </P><P>The option <TT>include_config_file</TT> in a configuration file instructs <TT>ejabberd</TT> to include other configuration files immediately.</P><P>The basic usage is:
 </P><PRE CLASS="verbatim">{include_config_file, &lt;filename&gt;}.
