@@ -1,6 +1,7 @@
 2009-02-03  Badlop  <badlop@process-one.net>
 
-	* doc/Makefile: When cleaning, remove contributed_modules.tex
+	* doc/Makefile: When cleaning, remove contributed_modules.tex.
+	In Clean do not remove html. In new Distclean, remove also html.
 
 	* src/Makefile.in: Fix arguments to Install program
 
