@@ -1,3 +1,7 @@
+2009-02-03  Badlop  <badlop@process-one.net>
+
+	* src/Makefile.in: Fix arguments to Install program
+
 2009-02-02  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_web_admin.erl: Calls to the hook
