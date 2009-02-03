@@ -41,6 +41,7 @@ clean:
 	rm -f *.out
 	rm -f *.pdf
 	rm -f *.toc
+	rm contributed_modules.tex
 
 guide.html:	guide.tex
 		hevea -fix -pedantic guide.tex

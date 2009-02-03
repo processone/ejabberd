@@ -1,5 +1,7 @@
 2009-02-03  Badlop  <badlop@process-one.net>
 
+	* doc/Makefile: When cleaning, remove contributed_modules.tex
+
 	* src/Makefile.in: Fix arguments to Install program
 
 2009-02-02  Badlop  <badlop@process-one.net>
