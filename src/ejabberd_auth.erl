@@ -56,9 +56,16 @@
 
 -include("ejabberd.hrl").
 
+%% @type authmodule() = ejabberd_auth_anonymous | ejabberd_auth_external |
+%%                      ejabberd_auth_internal | ejabberd_auth_ldap |
+%%                      ejabberd_auth_odbc | ejabberd_auth_pam | atom().
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+
+%% @spec () -> term()
+
 start() ->
     lists:foreach(
       fun(Host) ->
@@ -68,42 +75,56 @@ start() ->
 		end, auth_modules(Host))
       end, ?MYHOSTS).
 
-plain_password_required(Server) ->
+%% @spec (Server) -> bool()
+%%     Server = string()
+
+plain_password_required(Server) when is_list(Server) ->
     lists:any(
       fun(M) ->
 	      M:plain_password_required()
       end, auth_modules(Server)).
 
+%% @spec (User, Server, Password) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 %% @doc Check if the user and password can login in server.
-%% @spec (User::string(), Server::string(), Password::string()) ->
-%%     true | false
-check_password(User, Server, Password) ->
+
+check_password(User, Server, Password)
+  when is_list(User), is_list(Server), is_list(Password) ->
     lists:any(
       fun(M) ->
 	      M:check_password(User, Server, Password)
       end, auth_modules(Server)).
 
+%% @spec (User, Server, Password, StreamID, Digest) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     StreamID = string()
+%%     Digest = string()
 %% @doc Check if the user and password can login in server.
-%% @spec (User::string(), Server::string(), Password::string(),
-%%        StreamID::string(), Digest::string()) ->
-%%     true | false
-check_password(User, Server, Password, StreamID, Digest) ->
+
+check_password(User, Server, Password, StreamID, Digest)
+  when is_list(User), is_list(Server), is_list(Password),
+  is_list(StreamID), is_list(Digest) ->
     lists:any(
       fun(M) ->
 	      M:check_password(User, Server, Password, StreamID, Digest)
       end, auth_modules(Server)).
 
+%% @spec (User, Server, Password) -> {true, AuthModule} | false
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     AuthModule = authmodule()
 %% @doc Check if the user and password can login in server.
 %% The user can login if at least an authentication method accepts the user
 %% and the password.
 %% The first authentication method that accepts the credentials is returned.
-%% @spec (User::string(), Server::string(), Password::string()) ->
-%%     {true, AuthModule} | false
-%% where
-%%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
-%%                 | ejabberd_auth_internal | ejabberd_auth_ldap
-%%                 | ejabberd_auth_odbc | ejabberd_auth_pam
-check_password_with_authmodule(User, Server, Password) ->
+
+check_password_with_authmodule(User, Server, Password)
+  when is_list(User), is_list(Server), is_list(Password) ->
     Res = lists:dropwhile(
 	    fun(M) ->
 		    not apply(M, check_password,
@@ -114,7 +135,17 @@ check_password_with_authmodule(User, Server, Password) ->
 	[AuthMod | _] -> {true, AuthMod}
     end.
 
-check_password_with_authmodule(User, Server, Password, StreamID, Digest) ->
+%% @spec (User, Server, Password, StreamID, Digest) -> {true, AuthModule} | false
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     StreamID = string()
+%%     Digest = string()
+%%     AuthModule = authmodule()
+
+check_password_with_authmodule(User, Server, Password, StreamID, Digest)
+  when is_list(User), is_list(Server), is_list(Password),
+  is_list(StreamID), is_list(Digest) ->
     Res = lists:dropwhile(
 	    fun(M) ->
 		    not apply(M, check_password,
@@ -125,13 +156,17 @@ check_password_with_authmodule(User, Server, Password, StreamID, Digest) ->
 	[AuthMod | _] -> {true, AuthMod}
     end.
 
-%% @spec (User::string(), Server::string(), Password::string()) ->
-%%       ok | {error, ErrorType}
-%% where ErrorType = empty_password | not_allowed | invalid_jid
+%% @spec (User, Server, Password) -> ok | {error, ErrorType}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     ErrorType = empty_password | not_allowed | invalid_jid
+
 set_password(_User, _Server, "") ->
     %% We do not allow empty password
     {error, empty_password};
-set_password(User, Server, Password) ->
+set_password(User, Server, Password)
+  when is_list(User), is_list(Server), is_list(Password) ->
     lists:foldl(
       fun(M, {error, _}) ->
 	      M:set_password(User, Server, Password);
@@ -140,10 +175,15 @@ set_password(User, Server, Password) ->
       end, {error, not_allowed}, auth_modules(Server)).
 
 %% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+%%     Password = string() | nil()
+
 try_register(_User, _Server, "") ->
     %% We do not allow empty password
     {error, not_allowed};    
-try_register(User, Server, Password) ->
+try_register(User, Server, Password)
+  when is_list(User), is_list(Server), is_list(Password) ->
     case is_user_exists(User,Server) of
 	true ->
 	    {atomic, exists};
@@ -168,27 +208,48 @@ try_register(User, Server, Password) ->
 	    end
     end.
 
-%% Registered users list do not include anonymous users logged
+%% @spec () -> [{LUser, LServer}]
+%%     LUser = string()
+%%     LServer = string()
+%% @doc Registered users list do not include anonymous users logged.
+
 dirty_get_registered_users() ->
     lists:flatmap(
       fun(M) ->
 	      M:dirty_get_registered_users()
       end, auth_modules()).
 
-%% Registered users list do not include anonymous users logged
-get_vh_registered_users(Server) ->
+%% @spec (Server) -> [{LUser, LServer}]
+%%     Server = string()
+%%     LUser = string()
+%%     LServer = string()
+%% @doc Registered users list do not include anonymous users logged.
+
+get_vh_registered_users(Server) when is_list(Server) ->
     lists:flatmap(
       fun(M) ->
 	      M:get_vh_registered_users(Server)
       end, auth_modules(Server)).
 
-get_vh_registered_users(Server, Opts) ->
+%% @spec (Server, Opts) -> [{LUser, LServer}]
+%%     Server = string()
+%%     Opts = [{Opt, Val}]
+%%         Opt = atom()
+%%         Val = term()
+%%     LUser = string()
+%%     LServer = string()
+
+get_vh_registered_users(Server, Opts) when is_list(Server) ->
     lists:flatmap(
       fun(M) ->
 	      M:get_vh_registered_users(Server, Opts)
       end, auth_modules(Server)).
 
-get_vh_registered_users_number(Server) ->
+%% @spec (Server) -> Users_Number
+%%     Server = string()
+%%     Users_Number = integer()
+
+get_vh_registered_users_number(Server) when is_list(Server) ->
     lists:sum(
       lists:map(
 	fun(M) ->
@@ -201,7 +262,14 @@ get_vh_registered_users_number(Server) ->
 		end
 	end, auth_modules(Server))).
 
-get_vh_registered_users_number(Server, Opts) ->
+%% @spec (Server, Opts) -> Users_Number
+%%     Server = string()
+%%     Opts = [{Opt, Val}]
+%%         Opt = atom()
+%%         Val = term()
+%%     Users_Number = integer()
+
+get_vh_registered_users_number(Server, Opts) when is_list(Server) ->
     lists:sum(
       lists:map(
 	fun(M) ->
@@ -214,9 +282,13 @@ get_vh_registered_users_number(Server, Opts) ->
 		end
 	end, auth_modules(Server))).
 
+%% @spec (User, Server) -> Password | false
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 %% @doc Get the password of the user.
-%% @spec (User::string(), Server::string()) -> Password::string()
-get_password(User, Server) ->
+
+get_password(User, Server) when is_list(User), is_list(Server) ->
     lists:foldl(
       fun(M, false) ->
 	      M:get_password(User, Server);
@@ -224,7 +296,13 @@ get_password(User, Server) ->
 	      Password
       end, false, auth_modules(Server)).
 
-get_password_s(User, Server) ->
+%% @spec (User, Server) -> Password | nil()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%% @doc Get the password of the user.
+
+get_password_s(User, Server) when is_list(User), is_list(Server) ->
     case get_password(User, Server) of
 	false ->
 	    "";
@@ -232,10 +310,15 @@ get_password_s(User, Server) ->
 	    Password
     end.
 
+%% @spec (User, Server) -> {Password, AuthModule} | {false, none}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     AuthModule = authmodule()
 %% @doc Get the password of the user and the auth module.
-%% @spec (User::string(), Server::string()) ->
-%%     {Password::string(), AuthModule::atom()} | {false, none}
-get_password_with_authmodule(User, Server) ->
+
+get_password_with_authmodule(User, Server)
+  when is_list(User), is_list(Server) ->
     lists:foldl(
       fun(M, {false, _}) ->
 	      {M:get_password(User, Server), M};
@@ -243,26 +326,39 @@ get_password_with_authmodule(User, Server) ->
 	      {Password, AuthModule}
       end, {false, none}, auth_modules(Server)).
 
-%% Returns true if the user exists in the DB or if an anonymous user is logged
-%% under the given name
-is_user_exists(User, Server) ->
+%% @spec (User, Server) -> bool()
+%%     User = string()
+%%     Server = string()
+%% @doc Returns true if the user exists in the DB or if an anonymous
+%% user is logged under the given name.
+
+is_user_exists(User, Server) when is_list(User), is_list(Server) ->
     lists:any(
       fun(M) ->
 	      M:is_user_exists(User, Server)
       end, auth_modules(Server)).
 
-%% Check if the user exists in all authentications module except the module
-%% passed as parameter
-is_user_exists_in_other_modules(Module, User, Server) ->
+%% @spec (Module, User, Server) -> bool
+%%     Module = authmodule()
+%%     User = string()
+%%     Server = string()
+%% @doc Check if the user exists in all authentications module except
+%% the module passed as parameter.
+
+is_user_exists_in_other_modules(Module, User, Server)
+  when is_list(User), is_list(Server) ->
     lists:any(
       fun(M) ->
 	      M:is_user_exists(User, Server)
       end, auth_modules(Server)--[Module]).
 
 %% @spec (User, Server) -> ok | error | {error, not_allowed}
+%%     User = string()
+%%     Server = string()
 %% @doc Remove user.
 %% Note: it may return ok even if there was some problem removing the user.
-remove_user(User, Server) ->
+
+remove_user(User, Server) when is_list(User), is_list(Server) ->
     R = lists:foreach(
       fun(M) ->
 	      M:remove_user(User, Server)
@@ -274,11 +370,16 @@ remove_user(User, Server) ->
     R.
 
 %% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request | error
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 %% @doc Try to remove user if the provided password is correct.
 %% The removal is attempted in each auth method provided:
 %% when one returns 'ok' the loop stops;
 %% if no method returns 'ok' then it returns the error message indicated by the last method attempted.
-remove_user(User, Server, Password) ->
+
+remove_user(User, Server, Password)
+  when is_list(User), is_list(Server), is_list(Password) ->
     R = lists:foldl(
       fun(_M, ok = Res) ->
 	      Res;
@@ -295,8 +396,11 @@ remove_user(User, Server, Password) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-%% Return the lists of all the auth modules actually used in the
-%% configuration
+
+%% @spec () -> [authmodule()]
+%% @doc Return the lists of all the auth modules actually used in the
+%% configuration.
+
 auth_modules() ->
     lists:usort(
       lists:flatmap(
@@ -304,8 +408,11 @@ auth_modules() ->
 		auth_modules(Server)
 	end, ?MYHOSTS)).
 
-%% Return the list of authenticated modules for a given host
-auth_modules(Server) ->
+%% @spec (Server) -> [authmodule()]
+%%     Server = string()
+%% @doc Return the list of authenticated modules for a given host.
+
+auth_modules(Server) when is_list(Server) ->
     LServer = exmpp_stringprep:nameprep(Server),
     Method = ejabberd_config:get_local_option({auth_method, LServer}),
     Methods = if

@@ -1,3 +1,17 @@
+2009-02-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
+
+	* src/ejabberd_auth.erl, src/ejabberd_auth_anonymous.erl,
+	src/ejabberd_auth_external.erl, src/ejabberd_auth_internal.erl,
+	src/ejabberd_auth_ldap.erl, src/ejabberd_auth_odbc.erl,
+	src/ejabberd_auth_pam.erl: Document the type of the argument(s) and
+	the returned type of every functions.
+
+	* src/ejabberd_auth.erl, src/ejabberd_auth_anonymous.erl: Add
+	guardians expression to many functions to ensure at an early stage
+	that we were given the right arguments. Other modules are not changed
+	because they are only used by ejabberd_auth which already does the
+	check.
+
 2009-01-30  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* doc/api/Makefile: Disable "TODO:" interpretation in eDoc because

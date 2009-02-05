@@ -51,11 +51,22 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+
+%% @spec (Host) -> ok
+%%     Host = string()
+
 start(_Host) ->
     ok.
 
+%% @spec () -> bool()
+
 plain_password_required() ->
     false.
+
+%% @spec (User, Server, Password) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 check_password(User, Server, Password) ->
     try
@@ -72,6 +83,13 @@ check_password(User, Server, Password) ->
 	_ ->
 	    false
     end.
+
+%% @spec (User, Server, Password, StreamID, Digest) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     StreamID = string()
+%%     Digest = string()
 
 check_password(User, Server, Password, StreamID, Digest) ->
     try
@@ -99,8 +117,11 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	    false
     end.
 
-%% @spec (User::string(), Server::string(), Password::string()) ->
-%%       ok | {error, invalid_jid}
+%% @spec (User, Server, Password) -> ok | {error, invalid_jid}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 set_password(User, Server, Password) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
@@ -118,6 +139,10 @@ set_password(User, Server, Password) ->
 
 
 %% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 try_register(User, Server, Password) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
@@ -135,12 +160,21 @@ try_register(User, Server, Password) ->
 	    {error, invalid_jid}
     end.
 
+%% @spec () -> [{LUser, LServer}]
+%%     LUser = string()
+%%     LServer = string()
+
 dirty_get_registered_users() ->
     Servers = ejabberd_config:get_vh_by_auth_method(odbc),
     lists:flatmap(
       fun(Server) ->
 	      get_vh_registered_users(Server)
       end, Servers).
+
+%% @spec (Server) -> [{LUser, LServer}]
+%%     Server = string()
+%%     LUser = string()
+%%     LServer = string()
 
 get_vh_registered_users(Server) ->
     LServer = exmpp_stringprep:nameprep(Server),
@@ -151,6 +185,14 @@ get_vh_registered_users(Server) ->
 	    []
     end.
 
+%% @spec (Server, Opts) -> [{LUser, LServer}]
+%%     Server = string()
+%%     Opts = [{Opt, Val}]
+%%         Opt = atom()
+%%         Val = term()
+%%     LUser = string()
+%%     LServer = string()
+
 get_vh_registered_users(Server, Opts) ->
     LServer = exmpp_stringprep:nameprep(Server),
     case catch odbc_queries:list_users(LServer, Opts) of
@@ -159,6 +201,10 @@ get_vh_registered_users(Server, Opts) ->
 	_ ->
 	    []
     end.
+
+%% @spec (Server) -> Users_Number
+%%     Server = string()
+%%     Users_Number = integer()
 
 get_vh_registered_users_number(Server) ->
     LServer = exmpp_stringprep:nameprep(Server),
@@ -169,6 +215,13 @@ get_vh_registered_users_number(Server) ->
 	    0
     end.
 
+%% @spec (Server, Opts) -> Users_Number
+%%     Server = string()
+%%     Opts = [{Opt, Val}]
+%%         Opt = atom()
+%%         Val = term()
+%%     Users_Number = integer()
+
 get_vh_registered_users_number(Server, Opts) ->
     LServer = exmpp_stringprep:nameprep(Server),
     case catch odbc_queries:users_number(LServer, Opts) of
@@ -177,6 +230,11 @@ get_vh_registered_users_number(Server, Opts) ->
 	_Other ->
 	    0
     end.
+
+%% @spec (User, Server) -> Password | false
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 get_password(User, Server) ->
     try
@@ -194,6 +252,11 @@ get_password(User, Server) ->
 	    false
     end.
 
+%% @spec (User, Server) -> Password | nil()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 get_password_s(User, Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
@@ -209,6 +272,10 @@ get_password_s(User, Server) ->
 	_ ->
 	    ""
     end.
+
+%% @spec (User, Server) -> bool()
+%%     User = string()
+%%     Server = string()
 
 is_user_exists(User, Server) ->
     try
@@ -227,8 +294,11 @@ is_user_exists(User, Server) ->
     end.
 
 %% @spec (User, Server) -> ok | error
+%%     User = string()
+%%     Server = string()
 %% @doc Remove user.
 %% Note: it may return ok even if there was some problem removing the user.
+
 remove_user(User, Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
@@ -242,7 +312,11 @@ remove_user(User, Server) ->
     end.
 
 %% @spec (User, Server, Password) -> ok | error | not_exists | not_allowed
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 %% @doc Remove user if the provided password is correct.
+
 remove_user(User, Server, Password) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),

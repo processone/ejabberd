@@ -46,19 +46,42 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+
+%% @spec (Host) -> ok
+%%     Host = string()
+
 start(Host) ->
     extauth:start(
       Host, ejabberd_config:get_local_option({extauth_program, Host})),
     ok.
 
+%% @spec () -> bool()
+
 plain_password_required() ->
     true.
+
+%% @spec (User, Server, Password) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 check_password(User, Server, Password) ->
     extauth:check_password(User, Server, Password) andalso Password /= "".
 
+%% @spec (User, Server, Password, StreamID, Digest) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     StreamID = string()
+%%     Digest = string()
+
 check_password(User, Server, Password, _StreamID, _Digest) ->
     check_password(User, Server, Password).
+
+%% @spec (User, Server, Password) -> ok | {error, unknown_problem}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 set_password(User, Server, Password) ->
     case extauth:set_password(User, Server, Password) of
@@ -66,28 +89,59 @@ set_password(User, Server, Password) ->
 	_ -> {error, unknown_problem}
     end.
 
+%% @spec (User, Server, Password) -> {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
 
-%% TODO
-%% Return the list of all users handled by external
+%% @spec () -> nil()
+%% @todo Write it.
+%% @doc Return the list of all users handled by external.
+
 dirty_get_registered_users() ->
     [].
+
+%% @spec (Server) -> nil()
+%%     Server = string()
 
 get_vh_registered_users(_Server) ->
     [].
 
+%% @spec (User, Server) -> bool()
+%%     User = string()
+%%     Server = string()
+
 get_password(_User, _Server) ->
     false.
+
+%% @spec (User, Server) -> nil()
+%%     User = string()
+%%     Server = string()
 
 get_password_s(_User, _Server) ->
     "".
 
+%% @spec (User, Server) -> bool()
+%%     User = string()
+%%     Server = string()
+
 is_user_exists(User, Server) ->
     extauth:is_user_exists(User, Server).
 
+%% @spec (User, Server) -> {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+
 remove_user(_User, _Server) ->
     {error, not_allowed}.
+
+%% @spec (User, Server, Password) -> not_allowed
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 remove_user(_User, _Server, _Password) ->
     not_allowed.
