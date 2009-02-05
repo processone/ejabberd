@@ -1,3 +1,10 @@
+2009-02-05  Badlop  <badlop@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: The table pubsub_node in ejabberd
+	older than 2.0.2 had indexes for parentid and type. This is not
+	required since ejabberd 2.0.2, so those indexes can be
+	deleted. (EJAB-669)
+
 2009-02-03  Badlop  <badlop@process-one.net>
 
 	* doc/Makefile: When cleaning, remove contributed_modules.tex.
