@@ -5,6 +5,15 @@
 
 	* src/jlib.erl: Document the short JID type.
 
+	* src/mod_roster.erl: Document the type of the argument(s) and the
+	returned type of every functions. Add guardians expression to exported
+	functions to ensure at an early stage that we were given the right
+	arguments. Fix table conversion to exmpp; many fields were left as
+	string(), preventing matching from working correctly.
+	(user_roster_item_parse_query/4): Fix a bug where the same variable
+	was used for two distinct purpose. Fix a bad usage of
+	exmpp_jid:jid_to_list/1.
+
 2009-02-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_auth.erl, src/ejabberd_auth_anonymous.erl,

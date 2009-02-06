@@ -51,8 +51,25 @@
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
 
+%% @type rosteritem() = {roster, USJ, US, Contact_JID, Name, Subscription, Ask, Groups, Askmessage, Xs}
+%%     USJ = {LUser, LServer, Prepd_Contact_JID}
+%%         LUser = binary()
+%%         LServer = binary()
+%%         Prepd_Contact_JID = jlib:shortjid()
+%%     US = {LUser, LServer}
+%%     Contact_JID = jlib:shortjid()
+%%     Name = binary()
+%%     Subscription = none | to | from | both
+%%     Ask = none | out | in | both
+%%     Groups = [binary()]
+%%     Askmessage = binary()
+%%     Xs = [exmpp_xml:xmlel()]
 
-start(Host, Opts) ->
+%% @spec (Host, Opts) -> term()
+%%     Host = string()
+%%     Opts = list()
+
+start(Host, Opts) when is_list(Host) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(roster,[{disc_copies, [node()]},
@@ -82,7 +99,10 @@ start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_ROSTER,
 				  ?MODULE, process_iq, IQDisc).
 
-stop(Host) ->
+%% @spec (Host) -> term()
+%%     Host = string()
+
+stop(Host) when is_list(Host) ->
     HostB = list_to_binary(Host),
     ejabberd_hooks:delete(roster_get, HostB,
 			  ?MODULE, get_user_roster, 50),
@@ -107,8 +127,14 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB,
 				     ?NS_ROSTER).
 
+%% @spec (From, To, IQ_Rec) -> IQ_Result
+%%     From = exmpp_jid:jid()
+%%     To = exmpp_jid:jid()
+%%     IQ_Rec = exmpp_iq:iq()
+%%     IQ_Result = exmpp_iq:iq()
 
-process_iq(From, To, IQ_Rec) ->
+process_iq(From, To, IQ_Rec)
+  when ?IS_JID(From), ?IS_JID(To), ?IS_IQ_RECORD(IQ_Rec) ->
     LServer = exmpp_jid:ldomain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
 	true ->
@@ -117,12 +143,24 @@ process_iq(From, To, IQ_Rec) ->
 	    exmpp_iq:error(IQ_Rec, 'item-not-found')
     end.
 
-process_local_iq(From, To, #iq{type = get} = IQ_Rec) ->
+%% @spec (From, To, IQ_Rec) -> IQ_Result
+%%     From = exmpp_jid:jid()
+%%     To = exmpp_jid:jid()
+%%     IQ_Rec = exmpp_iq:iq()
+%%     IQ_Result = exmpp_iq:iq()
+
+process_local_iq(From, To, #iq{type = get} = IQ_Rec)
+  when ?IS_JID(From), ?IS_JID(To), ?IS_IQ_RECORD(IQ_Rec) ->
     process_iq_get(From, To, IQ_Rec);
-process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
+process_local_iq(From, To, #iq{type = set} = IQ_Rec)
+  when ?IS_JID(From), ?IS_JID(To), ?IS_IQ_RECORD(IQ_Rec) ->
     process_iq_set(From, To, IQ_Rec).
 
-
+%% @spec (From, To, IQ_Rec) -> IQ_Result
+%%     From = exmpp_jid:jid()
+%%     To = exmpp_jid:jid()
+%%     IQ_Rec = exmpp_iq:iq()
+%%     IQ_Result = exmpp_iq:iq()
 
 process_iq_get(From, To, IQ_Rec) ->
     US = {exmpp_jid:lnode(From), exmpp_jid:ldomain(From)},
@@ -136,7 +174,14 @@ process_iq_get(From, To, IQ_Rec) ->
 	    exmpp_iq:error(IQ_Rec, 'internal-server-error')
     end.
 
-get_user_roster(Acc, US) ->
+%% @spec (Acc, US) -> New_Acc
+%%     Acc = [rosteritem()]
+%%     US = {User, Server}
+%%         User = binary()
+%%         Server = binary()
+%%     New_Acc = [rosteritem()]
+
+get_user_roster(Acc, {U, S} = US) when is_binary(U), is_binary(S) ->
     case catch mnesia:dirty_index_read(roster, US, #roster.us) of
 	Items when is_list(Items) ->
 	    lists:filter(fun(#roster{subscription = none, ask = in}) ->
@@ -148,6 +193,9 @@ get_user_roster(Acc, US) ->
 	    Acc
     end.
 
+%% @spec (Item) -> XML
+%%     Item = rosteritem()
+%%     XML = exmpp_xml:xmlel()
 
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,
@@ -178,6 +226,11 @@ item_to_xml(Item) ->
     SubEls = SubEls1 ++ Item#roster.xs,
     #xmlel{ns = ?NS_ROSTER, name = 'item', attrs = Attrs4, children = SubEls}.
 
+%% @spec (From, To, IQ_Rec) -> IQ_Result
+%%     From = exmpp_jid:jid()
+%%     To = exmpp_jid:jid()
+%%     IQ_Rec = exmpp_iq:iq()
+%%     IQ_Result = exmpp_iq:iq()
 
 process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
     case Request of
@@ -188,12 +241,17 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
     end,
     exmpp_iq:result(IQ_Rec).
 
+%% @spec (From, To, El) -> ok
+%%    From = exmpp_jid:jid()
+%%    To = exmpp_jid:jid()
+%%    El = exmpp_xml:xmlel()
+
 process_item_set(From, To, #xmlel{} = El) ->
     try
 	JID1 = exmpp_jid:parse_jid(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
-    User = exmpp_jid:node(From),
-    LUser = exmpp_jid:lnode(From),
-    LServer = exmpp_jid:ldomain(From),
+	User = exmpp_jid:node(From),
+	LUser = exmpp_jid:lnode(From),
+	LServer = exmpp_jid:ldomain(From),
 	JID = jlib:short_jid(JID1),
 	LJID = jlib:short_prepd_jid(JID1),
 	F = fun() ->
@@ -268,6 +326,11 @@ process_item_set(From, To, #xmlel{} = El) ->
 process_item_set(_From, _To, _) ->
     ok.
 
+%% @spec (Item, Attrs) -> New_Item
+%%     Item = rosteritem()
+%%     Attrs = [exmpp_xml:xmlnsattribute()]
+%%     New_Item = rosteritem()
+
 process_item_attrs(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
 	'name' ->
@@ -288,6 +351,10 @@ process_item_attrs(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
 process_item_attrs(Item, []) ->
     Item.
 
+%% @spec (Item, Els) -> New_Item
+%%     Item = rosteritem()
+%%     Els = [exmpp_xml:xmlel()]
+%%     New_Item = rosteritem()
 
 process_item_els(Item, [#xmlel{ns = NS, name = Name} = El | Els]) ->
     case Name of
@@ -308,8 +375,14 @@ process_item_els(Item, [_ | Els]) ->
 process_item_els(Item, []) ->
     Item.
 
+%% @spec (User, Server, From, Item) -> term()
+%%     User = binary()
+%%     Server = binary()
+%%     From = exmpp_jid:jid()
+%%     Item = rosteritem()
 
-push_item(User, Server, From, Item) when is_binary(User), is_binary(Server) ->
+push_item(User, Server, From, Item)
+  when is_binary(User), is_binary(Server), ?IS_JID(From) ->
     ejabberd_sm:route(exmpp_jid:make_jid(),
 		      exmpp_jid:make_jid(User, Server),
 		      #xmlel{name = 'broadcast', children =
@@ -320,9 +393,17 @@ push_item(User, Server, From, Item) when is_binary(User), is_binary(Server) ->
 			  push_item(User, Server, Resource, From, Item)
 		  end, ejabberd_sm:get_user_resources(User, Server)).
 
+%% @spec (User, Server, Resource, From, Item) -> term()
+%%     User = binary()
+%%     Server = binary()
+%%     Resource = binary()
+%%     From = exmpp_jid:jid()
+%%     Item = rosteritem()
+
 % TODO: don't push to those who didn't load roster
-push_item(User, Server, Resource, From, Item) when is_binary(User), 
-                                                   is_binary(Server) ->
+push_item(User, Server, Resource, From, Item)
+  when is_binary(User), is_binary(Server), is_binary(Resource),
+  ?IS_JID(From) ->
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
       children = [item_to_xml(Item)]},
     ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
@@ -332,8 +413,16 @@ push_item(User, Server, Resource, From, Item) when is_binary(User),
       exmpp_jid:make_jid(User, Server, Resource),
       ResIQ).
 
+%% @spec (Ignored, User, Server) -> Subscription_Lists
+%%     Ignored = term()
+%%     User = binary()
+%%     Server = binary()
+%%     Subscription_Lists = {F, T}
+%%         F = [jlib:shortjid()]
+%%         T = [jlib:shortjid()]
+
 get_subscription_lists(_, User, Server) 
-        when is_binary(User), is_binary(Server) ->
+  when is_binary(User), is_binary(Server) ->
     try
 	US = {User,Server},
 	case mnesia:dirty_index_read(roster, US, #roster.us) of
@@ -346,6 +435,13 @@ get_subscription_lists(_, User, Server)
 	_ ->
 	    {[], []}
     end.
+
+%% @spec (Items, F, T) -> {New_F, New_T}
+%%     Items = [rosteritem()]
+%%     F = [jlib:shortjid()]
+%%     T = [jlib:shortjid()]
+%%     New_F = [jlib:shortjid()]
+%%     New_T = [jlib:shortjid()]
 
 fill_subscription_lists([I | Is], F, T) ->
     J = element(3, I#roster.usj),
@@ -362,20 +458,44 @@ fill_subscription_lists([I | Is], F, T) ->
 fill_subscription_lists([], F, T) ->
     {F, T}.
 
+%% @hidden
+
 ask_to_pending(subscribe) -> out;
 ask_to_pending(unsubscribe) -> none;
 ask_to_pending(Ask) -> Ask.
 
+%% @spec (Ignored, User, Server, JID, Type, Reason) -> bool()
+%%     Ignored = term()
+%%     User = binary()
+%%     Server = binary()
+%%     JID = exmpp_jid:jid()
+%%     Type = subscribe | subscribed | unsubscribe | unsubscribed
+%%     Reason = binary() | undefined
 
-
-in_subscription(_, User, Server, JID, Type, Reason) ->
+in_subscription(_, User, Server, JID, Type, Reason)
+  when is_binary(User), is_binary(Server), ?IS_JID(JID) ->
     process_subscription(in, User, Server, JID, Type, Reason).
 
-out_subscription(User, Server, JID, Type) ->
+%% @spec (User, Server, JID, Type) -> bool()
+%%     User = binary()
+%%     Server = binary()
+%%     JID = exmpp_jid:jid()
+%%     Type = subscribe | subscribed | unsubscribe | unsubscribed
+
+out_subscription(User, Server, JID, Type)
+  when is_binary(User), is_binary(Server), ?IS_JID(JID) ->
     process_subscription(out, User, Server, JID, Type, <<>>).
 
+%% @spec (Direction, User, Server, JID1, Type, Reason) -> bool()
+%%     Direction = in | out
+%%     User = binary()
+%%     Server = binary()
+%%     JID1 = exmpp_jid:jid()
+%%     Type = subscribe | subscribed | unsubscribe | unsubscribed
+%%     Reason = binary() | undefined
+
 process_subscription(Direction, User, Server, JID1, Type, Reason) 
-        when is_binary(User), is_binary(Server) ->
+  when is_binary(User), is_binary(Server) ->
     try
 	US = {User, Server},
 	LJID = jlib:short_prepd_jid(JID1),
@@ -558,9 +678,12 @@ in_auto_reply(from, out,  unsubscribe)  -> unsubscribed;
 in_auto_reply(both, none, unsubscribe)  -> unsubscribed;
 in_auto_reply(_,    _,    _)  ->           none.
 
+%% @spec (User, Server) -> term()
+%%     User = binary()
+%%     Server = binary()
 
 remove_user(User, Server) 
-        when is_binary(User), is_binary(Server) ->
+  when is_binary(User), is_binary(Server) ->
     try
 	LUser = list_to_binary(exmpp_stringprep:nodeprep(User)),
 	LServer = list_to_binary(exmpp_stringprep:nameprep(Server)),
@@ -579,7 +702,13 @@ remove_user(User, Server)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-set_items(User, Server, #xmlel{children = Els}) ->
+%% @spec (User, Server, El) -> term()
+%%     User = binary()
+%%     Server = binary()
+%%     El = exmpp_xml:xmlel()
+
+set_items(User, Server, #xmlel{children = Els})
+  when is_binary(User), is_binary(Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
@@ -593,6 +722,11 @@ set_items(User, Server, #xmlel{children = Els}) ->
 	_ ->
 	    ok
     end.
+
+%% @spec (LUser, LServer, El) -> term()
+%%     LUser = binary()
+%%     LServer = binary()
+%%     El = exmpp_xml:xmlel()
 
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
@@ -616,6 +750,11 @@ process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     end;
 process_item_set_t(_LUser, _LServer, _) ->
     ok.
+
+%% @spec (Item, Attrs) -> New_Item
+%%     Item = rosteritem()
+%%     Attrs = [exmpp_xml:xmlnsattribute()]
+%%     New_Item = rosteritem()
 
 process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
@@ -649,8 +788,14 @@ process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
 process_item_attrs_ws(Item, []) ->
     Item.
 
+%% @spec (Ls, User, Server) -> New_Ls
+%%     Ls = [exmpp_xml:xmlel()]
+%%     User = binary()
+%%     Server = binary()
+%%     New_Ls = [exmpp_xml:xmlel()]
+
 get_in_pending_subscriptions(Ls, User, Server)
-        when is_binary(User), is_binary(Server) ->
+  when is_binary(User), is_binary(Server) ->
     JID = exmpp_jid:make_jid(User, Server),
     US = {exmpp_jid:lnode(JID), exmpp_jid:ldomain(JID)},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
@@ -681,7 +826,16 @@ get_in_pending_subscriptions(Ls, User, Server)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_jid_info(_, User, Server, JID) when is_binary(User), is_binary(Server) ->
+%% @spec (Ignored, User, Server, JID) -> {Subscription, Groups}
+%%     Ignored = term()
+%%     User = binary()
+%%     Server = binary()
+%%     JID = exmpp_jid:jid()
+%%     Subscription = none | to | from | both
+%%     Groups = [binary()]
+
+get_jid_info(_, User, Server, JID)
+  when is_binary(User), is_binary(Server), ?IS_JID(JID) ->
     try
 	LJID = jlib:short_prepd_jid(JID),
 	case catch mnesia:dirty_read(roster, {User, Server, LJID}) of
@@ -710,6 +864,7 @@ get_jid_info(_, User, Server, JID) when is_binary(User), is_binary(Server) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% @hidden
 
 update_table() ->
     Fields = record_info(fields, roster),
@@ -725,6 +880,7 @@ update_table() ->
 	    mnesia:transform_table(roster, ignore, Fields)
     end.
 
+%% @hidden
 
 %% Convert roster table to support virtual host
 convert_table1(Fields) ->
@@ -769,6 +925,7 @@ convert_table1(Fields) ->
     mnesia:transaction(F2),
     mnesia:delete_table(mod_roster_tmp_table).
 
+%% @hidden
 
 %% Convert roster table: xattrs fields become 
 convert_table2(Fields) ->
@@ -777,57 +934,82 @@ convert_table2(Fields) ->
     mnesia:transform_table(roster, ignore, Fields),
     convert_to_exmpp().
 
+%% @hidden
 
 convert_to_exmpp() ->
     Fun = fun() ->
 	case mnesia:first(roster) of
-	    '$end_of_table' ->
+	    {_User, Server, _JID} when is_binary(Server) ->
 		none;
-	    Key ->
-		case mnesia:read({roster, Key}) of
-		    [#roster{jid = {_, _, undefined}}] ->
-			none;
-		    [#roster{jid = {_, _, ""}}] ->
-			mnesia:foldl(fun convert_to_exmpp2/2,
-			  done, roster, write)
-		end
+	    {_User, Server, _JID} when is_list(Server) ->
+		mnesia:foldl(fun convert_to_exmpp2/2,
+		  done, roster, write);
+	    '$end_of_table' ->
+		none
 	end
     end,
     mnesia:transaction(Fun).
+
+%% @hidden
 
 convert_to_exmpp2(#roster{
   usj = {USJ_U, USJ_S, {USJ_JU, USJ_JS, USJ_JR}} = Key,
   us = {US_U, US_S},
   jid = {JID_U, JID_S, JID_R},
-  xs = XS, askmessage = AM} = R, Acc) ->
+  name = N, xs = XS, groups = G, askmessage = AM} = R, Acc) ->
     % Remove old entry.
     mnesia:delete({roster, Key}),
-    % Convert "" to undefined in JIDs.
+    % Convert "" to undefined in JIDs and string() to binary().
     USJ_U1  = convert_jid_to_exmpp(USJ_U),
+    USJ_S1  = convert_jid_to_exmpp(USJ_S),
     USJ_JU1 = convert_jid_to_exmpp(USJ_JU),
+    USJ_JS1 = convert_jid_to_exmpp(USJ_JS),
     USJ_JR1 = convert_jid_to_exmpp(USJ_JR),
     US_U1   = convert_jid_to_exmpp(US_U),
+    US_S1   = convert_jid_to_exmpp(US_S),
     JID_U1  = convert_jid_to_exmpp(JID_U),
+    JID_S1  = convert_jid_to_exmpp(JID_S),
     JID_R1  = convert_jid_to_exmpp(JID_R),
+    % Convert name.
+    N1 = convert_name_to_exmpp(N),
+    % Convert groups.
+    G1 = convert_groups_to_exmpp(G, []),
     % Convert xs.
     XS1 = convert_xs_to_exmpp(XS),
     % Convert askmessage.
     AM1 = convert_askmessage_to_exmpp(AM),
     % Prepare the new record.
     New_R = R#roster{
-      usj = {USJ_U1, USJ_S, {USJ_JU1, USJ_JS, USJ_JR1}},
-      us  = {US_U1, US_S},
-      jid = {JID_U1, JID_S, JID_R1},
-      xs = XS1, askmessage = AM1},
+      usj = {USJ_U1, USJ_S1, {USJ_JU1, USJ_JS1, USJ_JR1}},
+      us  = {US_U1, US_S1},
+      jid = {JID_U1, JID_S1, JID_R1},
+      name = N1, groups = G1, xs = XS1, askmessage = AM1},
     % Write the new record.
     mnesia:write(New_R),
     Acc.
 
-convert_jid_to_exmpp("") -> undefined;
-convert_jid_to_exmpp(V)  -> V.
+%% @hidden
+
+convert_jid_to_exmpp("")                  -> undefined;
+convert_jid_to_exmpp(V) when is_list(V)   -> list_to_binary(V).
+
+%% @hidden
+
+convert_name_to_exmpp(N) when is_list(N)  -> list_to_binary(N).
+
+%% @hidden
+
+convert_groups_to_exmpp([G | Rest], New_G) ->
+    convert_groups_to_exmpp(Rest, [list_to_binary(G) | New_G]);
+convert_groups_to_exmpp([], New_G) ->
+    lists:reverse(New_G).
+
+%% @hidden
 
 convert_xs_to_exmpp(Els) ->
     convert_xs_to_exmpp(Els, []).
+
+%% @hidden
 
 convert_xs_to_exmpp([El | Rest], Result) ->
     New_El = exmpp_xml:xmlelement_to_xmlel(El,
@@ -836,20 +1018,36 @@ convert_xs_to_exmpp([El | Rest], Result) ->
 convert_xs_to_exmpp([], Result) ->
     lists:reverse(Result).
 
+%% @hidden
+
 convert_askmessage_to_exmpp(AM) when is_binary(AM) ->
     AM;
 convert_askmessage_to_exmpp(AM) ->
     list_to_binary(AM).
 
+%% @spec (Acc, Host, Request) -> {stop, Result} | Acc
+%%     Acc = term()
+%%     Host = string()
+%%     Request = ejabberd_http:request()
+%%     Result = [ejabberd_web:html()]
+
 webadmin_page(_, Host,
 	      #request{us = _US,
 		       path = ["user", U, "roster"],
 		       q = Query,
-		       lang = Lang} = _Request) ->
-    Res = user_roster(U, Host, Query, Lang),
+		       lang = Lang} = _Request)
+  when is_list(Host), is_list(U) ->
+    Res = user_roster(list_to_binary(U), list_to_binary(Host), Query, Lang),
     {stop, Res};
 
 webadmin_page(Acc, _, _) -> Acc.
+
+%% @spec (User, Server, Query, Lang) -> Result
+%%     User = binary()
+%%     Server = binary()
+%%     Query = ejabberd_http:query()
+%%     Lang = string()
+%%     Result = [ejabberd_web:html()]
 
 user_roster(User, Server, Query, Lang) ->
     try
@@ -933,6 +1131,10 @@ user_roster(User, Server, Query, Lang) ->
 		    ])]
       end.
 
+%% @spec (JID) -> Result
+%%     JID = jlib:shortjid()
+%%     Result = ejabberd_web:html()
+
 build_contact_jid_td({U, S, R}) ->
     %% Convert {U, S, R} into {jid, U, S, R, U, S, R}:
     ContactJID = exmpp_jid:make_jid(U, S, R),
@@ -952,6 +1154,12 @@ build_contact_jid_td({U, S, R}) ->
 	URI when is_list(URI) ->
 	    ?XAE('td', [?XMLATTR('class', <<"valign">>)], [?AC(JIDURI, exmpp_jid:jid_to_list(ContactJID))])
     end.
+
+%% @spec (User, Server, Items, Query) -> ok | nothing | error
+%%     User = binary()
+%%     Server = binary()
+%%     Items = [rosteritem()]
+%%     Query = ejabberd_http:query()
 
 user_roster_parse_query(User, Server, Items, Query) ->
     case lists:keysearch("addjid", 1, Query) of
@@ -983,6 +1191,10 @@ user_roster_parse_query(User, Server, Items, Query) ->
 	    end
     end.
 
+%% @spec (User, Server, JID) -> term()
+%%     User = binary()
+%%     Server = binary()
+%%     JID = exmpp_jid:jid()
 
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
@@ -990,10 +1202,16 @@ user_roster_subscribe_jid(User, Server, JID) ->
     ejabberd_router:route(
       UJID, JID, exmpp_presence:subscribe()).
 
+%% @spec (User, Server, Items, Query) -> term()
+%%     User = binary()
+%%     Server = binary()
+%%     Items = [rosteritem()]
+%%     Query = ejabberd_http:query()
+
 user_roster_item_parse_query(User, Server, Items, Query) ->
     lists:foreach(
-      fun(R) ->
-	      JID = R#roster.jid,
+      fun(Roster) ->
+	      JID = Roster#roster.jid,
 	      case lists:keysearch(
 		     "validate" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 		  {value, _} ->
@@ -1009,9 +1227,10 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 		      case lists:keysearch(
 			     "remove" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 			  {value, _} ->
+			      {U, S, R} = JID,
 			      UJID = exmpp_jid:make_jid(User, Server),
 			      Attrs1 = exmpp_xml:set_attribute_in_list([],
-				'jid', exmpp_jid:jid_to_list(JID)),
+				'jid', exmpp_jid:jid_to_list(U, S, R)),
 			      Attrs2 = exmpp_xml:set_attribute_in_list(Attrs1,
 				'subscription', "remove"),
 			      Item = #xmlel{ns = ?NS_ROSTER, name = 'item',
@@ -1032,9 +1251,21 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
       end, Items),
     nothing.
 
+%% @spec ({User, Server}) -> string()
+%%     User = binary()
+%%     Server = binary()
+
 us_to_list({User, Server}) ->
     exmpp_jid:bare_jid_to_list(User, Server).
 
+%% @spec (Acc, User, Server, Lang) -> New_Acc
+%%     Acc = [ejabberd_web:html()]
+%%     User = string()
+%%     Server = string()
+%%     Lang = string()
+%%     New_Acc = [ejabberd_web:html()]
+
 webadmin_user(Acc, _User, _Server, Lang) ->
+    % `Lang' is used by the `T' macro, called from the `ACT' macro.
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].
 
