@@ -49,6 +49,10 @@
 
 -include("jlib.hrl").
 
+%% @type shortjid() = {U, S, R}
+%%     U = binary()
+%%     S = binary()
+%%     R = binary().
 
 parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
     case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', "") of

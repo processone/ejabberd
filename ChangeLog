@@ -3,6 +3,8 @@
 	* src/web/ejabberd_web.erl, src/web/ejabberd_http.erl: Add
 	documentation stub for some types. This will be filled later.
 
+	* src/jlib.erl: Document the short JID type.
+
 2009-02-05  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/ejabberd_auth.erl, src/ejabberd_auth_anonymous.erl,
