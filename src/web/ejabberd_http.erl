@@ -40,6 +40,9 @@
 -include("ejabberd.hrl").
 -include("ejabberd_http.hrl").
 
+%% @type request() = term()
+%% @type query() = list()
+
 -record(state, {sockmod,
 		socket,
 		request_method,

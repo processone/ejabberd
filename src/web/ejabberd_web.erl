@@ -36,6 +36,7 @@
 -include("ejabberd.hrl").
 -include("ejabberd_http.hrl").
 
+%% @type html() = term()
 
 %% XXX bard: there are variants of make_xhtml in ejabberd_http and
 %% ejabberd_web_admin.  It might be a good idea to centralize it here
