@@ -1584,7 +1584,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
     Action = fun(#pubsub_node{type = Type}) ->
 		     Features = features(Type),
 		     PersistentFeature = lists:member("persistent-items", Features),
-		     DeleteFeature = lists:member("delete-any", Features),
+		     DeleteFeature = lists:member("delete-items", Features),
 		     if
 			 %%->   iq_pubsub just does that matchs
 			 %%	%% Request does not specify an item
@@ -1594,7 +1594,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "persistent-items")};
 			 not DeleteFeature ->
 			     %% Service does not support item deletion
-			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "delete-any")};
+			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "delete-items")};
 			 true ->
 			     node_call(Type, delete_item, [Host, Node, Publisher, ItemId])
 		     end
@@ -1987,7 +1987,7 @@ get_subscriptions(Host, Node, JID) ->
 		     if
 			 not RetrieveFeature ->
 			     %% Service does not support manage subscriptions
-			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "manage-affiliations")};
+			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "manage-subscriptions")};
 			 Affiliation /= {result, owner} ->
 			     %% Entity is not an owner
 			     {error, ?ERR_FORBIDDEN};
@@ -2693,7 +2693,7 @@ features() ->
 	 "config-node",   % RECOMMENDED
 	 "create-and-configure",   % RECOMMENDED
 	 % see plugin "create-nodes",   % RECOMMENDED
-	 % see plugin "delete-any",   % RECOMMENDED
+	 % see plugin "delete-items",   % RECOMMENDED
 	 % see plugin "delete-nodes",   % RECOMMENDED
 	 % see plugin "filtered-notifications",   % RECOMMENDED
 	 %TODO "get-pending",   % OPTIONAL

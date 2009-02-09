@@ -159,7 +159,7 @@ features() ->
     ["create-nodes",
      "auto-create",
      "delete-nodes",
-     "delete-any",
+     "delete-items",
      "instant-nodes",
      "manage-subscriptions",
      "modify-affiliations",
