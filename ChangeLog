@@ -1,3 +1,12 @@
+2009-02-13  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_system_monitor.erl: Allow parametrizable watchdog
+	threshold: option watchdog_large_heap or chatting with the
+	watchdog bot (EJAB-545)
+	* src/ejabberd_config.erl: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
 2009-02-13  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_auth.erl: prevent from calling

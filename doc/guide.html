@@ -3366,14 +3366,16 @@ There are some simple and safe examples in the article
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc87">7.3</A>&#XA0;&#XA0;<A HREF="#watchdog">Watchdog Alerts</A></H2><!--SEC END --><P> <A NAME="watchdog"></A> 
 </P><P><TT>ejabberd</TT> includes a watchdog mechanism that may be useful to developers
 when troubleshooting a problem related to memory usage.
-If a process in the <TT>ejabberd</TT> server consumes a lot of memory,
+If a process in the <TT>ejabberd</TT> server consumes more memory than the configured threshold,
 a message is sent to the Jabber accounts defined with the option
 <TT>watchdog_admins</TT>
- in the <TT>ejabberd</TT> configuration file.
-Note that the threshold to define what is too much memory usage 
-is only configurable editing the source code.
-Example configuration:
+ in the <TT>ejabberd</TT> configuration file.</P><P>The memory consumed is measured in <TT>words</TT>:
+a word on 32-bit architecture is 4 bytes, and a word on 64-bit architecture 8 bytes.
+The threshold by default is 1000000 words.
+This value can be configured with the option <TT>watchdog_large_heap</TT>,
+or in a conversation with the watchdog alert bot.</P><P>Example configuration:
 </P><PRE CLASS="verbatim">{watchdog_admins, ["admin2@localhost", "admin2@example.org"]}.
+{watchdog_large_heap, 30000000}.
 </PRE><P>To remove watchdog admins, remove them in the option.
 To remove all watchdog admins, set the option with an empty list:
 </P><PRE CLASS="verbatim">{watchdog_admins, []}.
