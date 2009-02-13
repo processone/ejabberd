@@ -1,5 +1,10 @@
 2009-02-13  Badlop  <badlop@process-one.net>
 
+	* src/mod_shared_roster.erl: Fix bug: a pending subscription
+	request, and later the requester added to the roster due to a
+	shared roster group, that request could neither be accepted or
+	rejected (thanks to Brian Cully)(EJAB-869)
+
 	* src/web/ejabberd_web_admin.erl: Show big integers with comma
 	separators for easy reading
 
