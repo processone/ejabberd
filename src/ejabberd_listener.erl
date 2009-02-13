@@ -56,8 +56,13 @@ start_listeners() ->
 	Ls ->
 	    Ls2 = lists:map(
 	        fun({Port, Module, Opts}) ->
-		        start_listener(Port, Module, Opts)
-		    end, Ls),
+		        case start_listener(Port, Module, Opts) of
+			    {ok, _Pid} = R -> R;
+			    {error, Error} ->
+				?ERROR_MSG(Error, []),
+				throw(Error)
+			end
+		end, Ls),
 	    report_duplicated_portips(Ls),
 	    {ok, {{one_for_one, 10, 1}, Ls2}}
     end.
@@ -225,6 +230,20 @@ accept(ListenSocket, Module, Opts) ->
 
 %% @spec (Port, Module, Opts) -> {ok, Pid} | {error, Error}
 start_listener(Port, Module, Opts) ->
+    case start_listener2(Port, Module, Opts) of
+	{ok, _Pid} = R -> R;
+	{error, {{'EXIT', {undef, _}}, _} = Error} ->
+	    EStr = io_lib:format(
+		     "Error starting the ejabberd listener: ~p.~n"
+		     "It could not be loaded or is not an ejabberd listener.~n"
+		     "Error: ~p~n", [Module, Error]),
+	    {error, lists:flatten(EStr)};
+	{error, Error} ->
+	    {error, Error}
+    end.
+
+%% @spec (Port, Module, Opts) -> {ok, Pid} | {error, Error}
+start_listener2(Port, Module, Opts) ->
     %% It is only required to start the supervisor in some cases.
     %% But it doesn't hurt to attempt to start it for any listener.
     %% So, it's normal (and harmless) that in most cases this call returns: {error, {already_started, pid()}}

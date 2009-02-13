@@ -1,3 +1,8 @@
+2009-02-14  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_listener.erl: Report error at startup if a listener
+	module isn't available or is not an ejabberd listener (EJAB-868)
+
 2009-02-13  Badlop  <badlop@process-one.net>
 
 	* src/mod_shared_roster.erl: Fix bug: a pending subscription
