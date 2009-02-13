@@ -1,3 +1,8 @@
+2009-02-13  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_auth.erl: prevent from calling
+	get_vh_registered_users/2 when not available
+
 2009-02-05  Badlop  <badlop@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: The table pubsub_node in ejabberd
