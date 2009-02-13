@@ -1,3 +1,8 @@
+2009-02-13  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_auth.erl: prevent from calling
+	get_vh_registered_users/2 when not available
+
 2009-01-13  Badlop  <badlop@process-one.net>
 
 	* doc/release_notes_2.0.3.txt: Minor changes

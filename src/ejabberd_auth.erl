@@ -187,7 +187,13 @@ get_vh_registered_users(Server) ->
 get_vh_registered_users(Server, Opts) ->
     lists:flatmap(
       fun(M) ->
-	      M:get_vh_registered_users(Server, Opts)
+		case erlang:function_exported(
+		       M, get_vh_registered_users, 2) of
+		    true ->
+			M:get_vh_registered_users(Server, Opts);
+		    false ->
+			M:get_vh_registered_users(Server)
+		end
       end, auth_modules(Server)).
 
 get_vh_registered_users_number(Server) ->
