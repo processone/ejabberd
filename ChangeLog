@@ -1,5 +1,8 @@
 2009-02-13  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Show big integers with comma
+	separators for easy reading
+
 	* src/ejabberd_system_monitor.erl: Allow parametrizable watchdog
 	threshold: option watchdog_large_heap or chatting with the
 	watchdog bot (EJAB-545)

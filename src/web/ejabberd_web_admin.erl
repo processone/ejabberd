@@ -1282,8 +1282,8 @@ list_vhosts(Lang) ->
 			    ejabberd_auth:get_vh_registered_users_number(Host),
 			?XE("tr",
 			    [?XE("td", [?AC("../server/" ++ Host ++ "/", Host)]),
-			     ?XC("td", integer_to_list(RegisteredUsers)),
-			     ?XC("td", integer_to_list(OnlineUsers))
+			     ?XC("td", pretty_string_int(RegisteredUsers)),
+			     ?XC("td", pretty_string_int(OnlineUsers))
 			    ])
 		end, SHosts)
 	     )])].
@@ -1387,7 +1387,7 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 		       QueueLen = length(mnesia:dirty_read({offline_msg, US})),
 		       FQueueLen = [?AC(URLFunc({users_queue, Prefix,
 						 User, Server}),
-					integer_to_list(QueueLen))],
+					pretty_string_int(QueueLen))],
 		       FLast =
 			   case ejabberd_sm:get_user_resources(User, Server) of
 			       [] ->
@@ -1436,13 +1436,13 @@ get_stats(global, Lang) ->
     [?XAE("table", [],
 	  [?XE("tbody",
 	       [?XE("tr", [?XCT("td", "Registered Users:"),
-			   ?XC("td", integer_to_list(RegisteredUsers))]),
+			   ?XC("td", pretty_string_int(RegisteredUsers))]),
 		?XE("tr", [?XCT("td", "Online Users:"),
-			   ?XC("td", integer_to_list(OnlineUsers))]),
+			   ?XC("td", pretty_string_int(OnlineUsers))]),
 		?XE("tr", [?XCT("td", "Outgoing s2s Connections:"),
-			   ?XC("td", integer_to_list(S2SConnections))]),
+			   ?XC("td", pretty_string_int(S2SConnections))]),
 		?XE("tr", [?XCT("td", "Outgoing s2s Servers:"),
-			   ?XC("td", integer_to_list(S2SServers))])
+			   ?XC("td", pretty_string_int(S2SServers))])
 	       ])
 	  ])];
 
@@ -1452,9 +1452,9 @@ get_stats(Host, Lang) ->
     [?XAE("table", [],
 	  [?XE("tbody",
 	       [?XE("tr", [?XCT("td", "Registered Users:"),
-			   ?XC("td", integer_to_list(RegisteredUsers))]),
+			   ?XC("td", pretty_string_int(RegisteredUsers))]),
 		?XE("tr", [?XCT("td", "Online Users:"),
-			   ?XC("td", integer_to_list(OnlineUsers))])
+			   ?XC("td", pretty_string_int(OnlineUsers))])
 	       ])
 	  ])].
 
@@ -1599,7 +1599,7 @@ list_last_activity(Host, Lang, Integral, Period) ->
 				[{"style",
 				  "width:" ++ integer_to_list(
 						trunc(90 * V / Max)) ++ "%;"}],
-				[{xmlcdata, integer_to_list(V)}])
+				[{xmlcdata, pretty_string_int(V)}])
 			   || V <- Hist ++ Tail])]
 	    end
     end.
@@ -1743,9 +1743,9 @@ get_node(global, Node, ["db"], Query, Lang) ->
 				  ?XE("td", [db_storage_select(
 					       STable, Type, Lang)]),
 				  ?XAC("td", [{"class", "alignright"}],
-				       integer_to_list(Size)),
+					pretty_string_int(Size)),
 				  ?XAC("td", [{"class", "alignright"}],
-				       integer_to_list(Memory))
+					pretty_string_int(Memory))
 				 ])
 		     end, STables),
 	    [?XC("h1", ?T("Database Tables at ") ++ atom_to_list(Node))] ++
@@ -1756,8 +1756,8 @@ get_node(global, Node, ["db"], Query, Lang) ->
 				 [?XE("tr",
 				      [?XCT("td", "Name"),
 				       ?XCT("td", "Storage Type"),
-				       ?XCT("td", "Size"),
-				       ?XCT("td", "Memory")
+				       ?XCT("td", "Elements"), %% Elements/items/records inserted in the table
+				       ?XCT("td", "Memory") %% Words or Bytes allocated to the table on this node
 				      ])]),
 			     ?XE("tbody",
 				 Rows ++
@@ -1900,19 +1900,19 @@ get_node(global, Node, ["stats"], _Query, Lang) ->
 				CPUTimeS)]),
 		?XE("tr", [?XCT("td", "Online Users:"),
 			   ?XAC("td", [{"class", "alignright"}],
-				integer_to_list(OnlineUsers))]),
+				pretty_string_int(OnlineUsers))]),
 		?XE("tr", [?XCT("td", "Transactions Committed:"),
 			   ?XAC("td", [{"class", "alignright"}],
-				integer_to_list(TransactionsCommitted))]),
+				pretty_string_int(TransactionsCommitted))]),
 		?XE("tr", [?XCT("td", "Transactions Aborted:"),
 			   ?XAC("td", [{"class", "alignright"}],
-				integer_to_list(TransactionsAborted))]),
+				pretty_string_int(TransactionsAborted))]),
 		?XE("tr", [?XCT("td", "Transactions Restarted:"),
 			   ?XAC("td", [{"class", "alignright"}],
-				integer_to_list(TransactionsRestarted))]),
+				pretty_string_int(TransactionsRestarted))]),
 		?XE("tr", [?XCT("td", "Transactions Logged:"),
 			   ?XAC("td", [{"class", "alignright"}],
-				integer_to_list(TransactionsLogged))])
+				pretty_string_int(TransactionsLogged))])
 	       ])
 	  ])];
 
@@ -2342,6 +2342,20 @@ last_modified() ->
     {"Last-Modified", "Mon, 25 Feb 2008 13:23:30 GMT"}.
 cache_control_public() ->
     {"Cache-Control", "public"}.
+
+%% Transform 1234567890 into "1,234,567,890"
+pretty_string_int(Integer) when is_integer(Integer) ->
+    pretty_string_int(integer_to_list(Integer));
+pretty_string_int(String) when is_list(String) ->
+    {_, Result} = lists:foldl(
+		    fun(NewNumber, {3, Result}) ->
+			    {1, [NewNumber, $, | Result]};
+		       (NewNumber, {CountAcc, Result}) ->
+			    {CountAcc+1, [NewNumber | Result]}
+		    end,
+		    {0, ""},
+		    lists:reverse(String)),
+    Result.
 
 
 %%%
