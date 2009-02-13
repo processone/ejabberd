@@ -1,3 +1,8 @@
+2009-02-13 Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_auth.erl: prevent from calling 
+	get_vh_registered_users/2 when not available
+
 2009-02-06  Jean-Sébastien Pédron  <js.pedron@meetic-corp.com>
 
 	* src/web/ejabberd_web.erl, src/web/ejabberd_http.erl: Add
