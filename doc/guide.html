@@ -712,8 +712,11 @@ do not allow outgoing sockets on port 5222.<P>If HTTP Polling is enabled, it wil
 <CODE>http://server:port/http-poll/</CODE>. Be aware that support for HTTP Polling
 is also needed in the Jabber client. Remark also that HTTP Polling can be
 interesting to host a web-based Jabber client such as
-<A HREF="http://jwchat.sourceforge.net/">JWChat</A>.
-</P></DD><DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B></DT><DD CLASS="dd-description">
+<A HREF="http://jwchat.sourceforge.net/">JWChat</A>.</P><P>The maximum period of time to keep a client session active without
+an incoming POST request can be configured with the global option
+<TT>http_poll_timeout</TT>. The default value is five minutes.
+The option can be defined in <TT>ejabberd.cfg</TT>, expressing the time
+in seconds: <CODE>{http_poll_timeout, 300}.</CODE></P></DD><DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B></DT><DD CLASS="dd-description">
 This option specifies an
 approximate maximum size in bytes of XML stanzas. Approximate,
 because it is calculated with the precision of one block of readed
@@ -3370,7 +3373,8 @@ If a process in the <TT>ejabberd</TT> server consumes more memory than the confi
 a message is sent to the Jabber accounts defined with the option
 <TT>watchdog_admins</TT>
  in the <TT>ejabberd</TT> configuration file.</P><P>The memory consumed is measured in <TT>words</TT>:
-a word on 32-bit architecture is 4 bytes, and a word on 64-bit architecture 8 bytes.
+a word on 32-bit architecture is 4 bytes,
+and a word on 64-bit architecture is 8 bytes.
 The threshold by default is 1000000 words.
 This value can be configured with the option <TT>watchdog_large_heap</TT>,
 or in a conversation with the watchdog alert bot.</P><P>Example configuration:

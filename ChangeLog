@@ -1,5 +1,10 @@
 2009-02-14  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_http_poll.erl: Allow configuration of session
+	timeout, using new global option http_poll_timeout (EJAB-135)
+	* doc/guide.tex: Document new option
+	* doc/guide.html: Likewise
+
 	* src/ejabberd_listener.erl: Report error at startup if a listener
 	module isn't available or is not an ejabberd listener (EJAB-868)
 
