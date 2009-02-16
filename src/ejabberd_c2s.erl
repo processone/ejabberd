@@ -973,7 +973,8 @@ session_established2(El, StateData) ->
 			ejabberd_hooks:run(user_send_packet,
 					   Server,
 					   [FromJID, ToJID, NewEl]),
-			ejabberd_router:route(FromJID, ToJID, NewEl),
+			check_privacy_route(FromJID, StateData, FromJID,
+					    ToJID, NewEl),
 			StateData;
 		    _ ->
 			StateData
@@ -1571,13 +1572,13 @@ presence_track(From, To, Packet, StateData) ->
     Server = StateData#state.server,
     case xml:get_attr_s("type", Attrs) of
 	"unavailable" ->
-	    ejabberd_router:route(From, To, Packet),
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	"invisible" ->
-	    ejabberd_router:route(From, To, Packet),
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = ?SETS:add_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
@@ -1586,50 +1587,57 @@ presence_track(From, To, Packet, StateData) ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, subscribe]),
-	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
+	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
+				To, Packet),
 	    StateData;
 	"subscribed" ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, subscribed]),
-	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
+	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
+				To, Packet),
 	    StateData;
 	"unsubscribe" ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, unsubscribe]),
-	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
+	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
+				To, Packet),
 	    StateData;
 	"unsubscribed" ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, unsubscribed]),
-	    ejabberd_router:route(jlib:jid_remove_resource(From), To, Packet),
+	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
+				To, Packet),
 	    StateData;
 	"error" ->
-	    ejabberd_router:route(From, To, Packet),
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    StateData;
 	"probe" ->
-	    ejabberd_router:route(From, To, Packet),
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    StateData;
 	_ ->
-	    case ejabberd_hooks:run_fold(
-		   privacy_check_packet, StateData#state.server,
-		   allow,
-		   [StateData#state.user,
-		    StateData#state.server,
-		    StateData#state.privacy_list,
-		    {From, To, Packet},
-		    out]) of
-		deny ->
-		    ok;
-		allow ->
-		    ejabberd_router:route(From, To, Packet)
-	    end,
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = ?SETS:add_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A}
+    end.
+
+check_privacy_route(From, StateData, FromRoute, To, Packet) ->
+    case ejabberd_hooks:run_fold(
+	   privacy_check_packet, StateData#state.server,
+	   allow,
+	   [StateData#state.user,
+	    StateData#state.server,
+	    StateData#state.privacy_list,
+	    {From, To, Packet},
+	    out]) of
+	deny ->
+	    ok;
+	allow ->
+	    ejabberd_router:route(FromRoute, To, Packet)
     end.
 
 presence_broadcast(StateData, From, JIDSet, Packet) ->

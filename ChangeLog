@@ -1,5 +1,9 @@
 2009-02-16  Badlop  <badlop@process-one.net>
 
+	* src/mod_privacy.erl: Privacy List: deny presence-out all + send
+	presence to: presence is sent (EJAB-255)
+	* src/ejabberd_c2s.erl: Likewise
+
 	* src/mod_muc/mod_muc_room.erl: Owner of a password protected room
 	must provide the password, like other participants (EJAB-867)
 
