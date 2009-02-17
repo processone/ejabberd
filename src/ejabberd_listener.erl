@@ -124,6 +124,7 @@ init(PortIP, Module, Opts1) ->
 	{error, Reason} ->
 	    ReasonT = case Reason of
 			  eaddrnotavail -> "IP address not available: " ++ IPS;
+			  eaddrinuse -> "IP address and port number already used: "++IPS++" "++integer_to_list(Port);
 			  _ -> atom_to_list(Reason)
 		      end,
 	    ?ERROR_MSG("Failed to open socket:~n  ~p~nReason: ~s",
@@ -224,6 +225,12 @@ start_listener(Port, Module, Opts) ->
 		     "Error starting the ejabberd listener: ~p.~n"
 		     "It could not be loaded or is not an ejabberd listener.~n"
 		     "Error: ~p~n", [Module, Error]),
+	    {error, lists:flatten(EStr)};
+	{error, {already_started, _Pid} = Error} ->
+	    EStr = io_lib:format(
+		     "Error starting the ejabberd listener: ~p.~n"
+		     "A listener is already started in that port number and IP address:~n~p~n"
+		     "Error: ~p~n", [Module, Port, Error]),
 	    {error, lists:flatten(EStr)};
 	{error, Error} ->
 	    {error, Error}

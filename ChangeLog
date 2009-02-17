@@ -1,3 +1,7 @@
+2009-02-17  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_listener.erl: More error detections
+
 2009-02-16  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_config.erl: Check certfiles are readable on server
