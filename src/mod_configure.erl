@@ -287,7 +287,7 @@ get_sm_items(Acc, From, To, Node, Lang) ->
 		{allow, ""} ->
 		    Nodes = [?NODEJID(To, "Configuration", <<"config">>),
 			     ?NODEJID(To, "User Management", <<"user">>)],
-		    {result, Items ++ Nodes ++ get_user_resources(To)};
+		    {result, Items ++ Nodes ++ [binary_to_list(R) || R <- get_user_resources(To)]};
 		{allow, "config"} ->
 		    {result, []};
 		{_, "config"} ->

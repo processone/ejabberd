@@ -324,7 +324,7 @@ get_sm_items(Acc, From, To, <<>>, _Lang) ->
 		empty -> []
 	    end,
     Items1 = case {LFrom, LSFrom} of
-		 {LTo, LSTo} -> get_user_resources(To);
+		 {LTo, LSTo} -> [binary_to_list(R) || R <- get_user_resources(To)];
 		 _ -> []
 	     end,
     {result, Items ++ Items1};

@@ -154,7 +154,7 @@ get_user_resources(User, Server)
 	{'EXIT', _Reason} ->
 	    [];
 	Ss ->
-	    [binary_to_list(element(3, S#session.usr)) || S <- clean_session_list(Ss)]
+	    [element(3, S#session.usr) || S <- clean_session_list(Ss)]
     end.
 
 get_user_ip(JID) when ?IS_JID(JID) ->
@@ -176,9 +176,9 @@ get_user_info(User, Server, Resource)
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
     LResource = exmpp_stringprep:resourceprep(Resource),
-    USR = {list_to_binary(LUser), 
-           list_to_binary(LServer), 
-           list_to_binary(LResource)},
+    USR = {LUser, 
+           LServer, 
+           LResource},
     case mnesia:dirty_index_read(session, USR, #session.usr) of
 	[] ->
 	    offline;

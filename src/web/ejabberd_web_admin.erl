@@ -975,7 +975,7 @@ process_admin(Host, #request{lang = Lang} = Request) ->
 		       global -> {webadmin_page_main, [Request]};
 		       Host -> {webadmin_page_host, [Host, Request]}
 		   end,
-    case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
+    case ejabberd_hooks:run_fold(Hook, list_to_binary(Host), [], Opts) of
 	[] -> setelement(1, make_xhtml([?XC('h1', "Not Found")], Host, Lang), 404);
 	Res -> make_xhtml(Res, Host, Lang)
     end.
@@ -1291,7 +1291,7 @@ list_vhosts(Lang) ->
 	      lists:map(
 		fun(Host) ->
 			OnlineUsers =
-			    length(ejabberd_sm:get_vh_session_list(Host)),
+			    length(ejabberd_sm:get_vh_session_list(list_to_binary(Host))),
 			RegisteredUsers =
 			    ejabberd_auth:get_vh_registered_users_number(Host),
 			?XE('tr',
@@ -1400,13 +1400,20 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 	 ?XE('tbody',
 	     lists:map(
 	       fun(_SU = {Server, User}) ->
-		       US = {User, Server},
-		       QueueLen = length(mnesia:dirty_read({offline_msg, US})),
-		       FQueueLen = [?AC(URLFunc({users_queue, Prefix,
-						 User, Server}),
-					integer_to_list(QueueLen))],
+               ServerB = list_to_binary(Server),
+               UserB = list_to_binary(User),
+               US = {UserB, ServerB},
+               FQueueLen = try
+     		        QueueLen = length(mnesia:dirty_read({offline_msg, US})),
+		            [?AC(URLFunc({users_queue, Prefix,
+    				          		 User, Server}),
+				        	    integer_to_list(QueueLen))]
+               catch 
+                _:_ -> [#xmlcdata{cdata = <<"Can't access the offline messages storage.">>}]
+              end,
+
 		       FLast =
-			   case ejabberd_sm:get_user_resources(User, Server) of
+			   case ejabberd_sm:get_user_resources(UserB, ServerB) of
 			       [] ->
 				   case mnesia:dirty_read({last_activity, US}) of
 				       [] ->
@@ -1464,7 +1471,7 @@ get_stats(global, Lang) ->
 	  ])];
 
 get_stats(Host, Lang) ->
-    OnlineUsers = length(ejabberd_sm:get_vh_session_list(Host)),
+    OnlineUsers = length(ejabberd_sm:get_vh_session_list(list_to_binary(Host))),
     RegisteredUsers = ejabberd_auth:get_vh_registered_users_number(Host),
     [?XAE('table', [],
 	  [?XE('tbody',
@@ -1477,20 +1484,22 @@ get_stats(Host, Lang) ->
 
 
 list_online_users(Host, _Lang) ->
-    Users = [{S, U} || {U, S, _R} <- ejabberd_sm:get_vh_session_list(Host)],
+    Users = [{S, U} || {U, S, _R} <- ejabberd_sm:get_vh_session_list(list_to_binary(Host))],
     SUsers = lists:usort(Users),
     lists:flatmap(
       fun({_S, U} = SU) ->
-	      [?AC("../user/" ++ ejabberd_http:url_encode(U) ++ "/",
+	      [?AC("../user/" ++ ejabberd_http:url_encode(binary_to_list(U)) ++ "/",
 		   su_to_list(SU)),
 	       ?BR]
       end, SUsers).
 
 user_info(User, Server, Query, Lang) ->
+    UserB = list_to_binary(User),
+    ServerB = list_to_binary(Server),
     LServer = exmpp_stringprep:nameprep(Server),
     US = {exmpp_stringprep:nodeprep(User), LServer},
     Res = user_parse_query(User, Server, Query),
-    Resources = ejabberd_sm:get_user_resources(User, Server),
+    Resources = ejabberd_sm:get_user_resources(UserB, ServerB),
     FResources =
 	case Resources of
 	    [] ->
@@ -1499,7 +1508,7 @@ user_info(User, Server, Query, Lang) ->
 		[?XE('ul',
 		     lists:map(fun(R) ->
 				       FIP = case ejabberd_sm:get_user_info(
-						    User, Server, R) of
+						    UserB, ServerB, R) of
 						 offline ->
 						     "";
 						 [{node, Node}, {conn, Conn}, {ip, {IP, Port}}] ->
@@ -1518,13 +1527,13 @@ user_info(User, Server, Query, Lang) ->
 						         ++ "#" ++ atom_to_list(Node)
 							 ++ ")"
 					     end,
-				       ?LI([?C(R ++ FIP)])
+				       ?LI([?C(binary_to_list(R) ++ FIP)])
 			       end, lists:sort(Resources)))]
 	end,
     Password = ejabberd_auth:get_password_s(User, Server),
     FPassword = [?INPUT("password", "password", Password), ?C(" "),
 		 ?INPUTT("submit", "chpassword", "Change Password")],
-    UserItems = ejabberd_hooks:run_fold(webadmin_user, LServer, [],
+    UserItems = ejabberd_hooks:run_fold(webadmin_user, list_to_binary(LServer), [],
 					[User, Server, Lang]),
     [?XC('h1', ?T("User ") ++ us_to_list(US))] ++
 	case Res of
@@ -1562,7 +1571,7 @@ user_parse_query1("removeuser", User, Server, _Query) ->
     ejabberd_auth:remove_user(User, Server),
     ok;
 user_parse_query1(Action, User, Server, Query) ->
-    case ejabberd_hooks:run_fold(webadmin_user_parse_query, Server, [], [Action, User, Server, Query]) of
+    case ejabberd_hooks:run_fold(webadmin_user_parse_query, list_to_binary(Server), [], [Action, User, Server, Query]) of
          [] -> nothing;
          Res -> Res
     end.
@@ -1972,7 +1981,7 @@ get_node(Host, Node, NPath, Query, Lang) ->
 		       global -> {webadmin_page_node, [Node, NPath, Query, Lang]};
 		       Host -> {webadmin_page_hostnode, [Host, Node, NPath, Query, Lang]}
 		   end,
-    case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
+    case ejabberd_hooks:run_fold(Hook, list_to_binary(Host), [], Opts) of
 	[] -> [?XC('h1', "Not Found")];
 	Res -> Res
     end.
@@ -2135,7 +2144,7 @@ node_ports_to_xhtml(Ports, Lang) ->
 		    ?XE('td', [?INPUTS("text", "ipnew", "0.0.0.0", "15")]),
 		    ?XE('td', [?INPUTS("text", "modulenew", "", "15")]),
 		    ?XE('td', [?TEXTAREA("optsnew", "2", "35", "[]")]),
-		    ?XAE('td', [{"colspan", "2"}],
+		    ?XAE('td', [?XMLATTR("colspan", "2")],
 			 [?INPUTT("submit", "addnew", "Add New")])
 		   ]
 		  )]
@@ -2237,7 +2246,7 @@ node_modules_to_xhtml(Modules, Lang) ->
 	      [?XE('tr',
 		   [?XE('td', [?INPUT("text", "modulenew", "")]),
 		    ?XE('td', [?TEXTAREA("optsnew", "2", "40", "[]")]),
-		    ?XAE('td', [{"colspan", "2"}],
+		    ?XAE('td', [?XMLATTR("colspan", "2")],
 			 [?INPUTT("submit", "start", "Start")])
 		   ]
 		  )]
@@ -2399,9 +2408,9 @@ make_server_menu(HostMenu, NodeMenu, Lang) ->
 
 
 get_menu_items_hook({hostnode, Host}, Lang) ->
-    ejabberd_hooks:run_fold(webadmin_menu_hostnode, Host, [], [Host, Lang]);
+    ejabberd_hooks:run_fold(webadmin_menu_hostnode, list_to_binary(Host), [], [Host, Lang]);
 get_menu_items_hook({host, Host}, Lang) ->
-    ejabberd_hooks:run_fold(webadmin_menu_host, Host, [], [Host, Lang]);
+    ejabberd_hooks:run_fold(webadmin_menu_host, list_to_binary(Host), [], [Host, Lang]);
 get_menu_items_hook(node, Lang) ->
     ejabberd_hooks:run_fold(webadmin_menu_node, [], [Lang]);
 get_menu_items_hook(server, Lang) ->

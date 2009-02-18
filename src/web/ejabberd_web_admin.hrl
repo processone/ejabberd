@@ -34,42 +34,42 @@
 -define(XACT(Name, Attrs, Text), ?XAC(Name, Attrs, ?T(Text))).
 
 -define(LI(Els), ?XE('li', Els)).
--define(A(URL, Els), ?XAE('a', [#xmlattr{name = 'href', value = URL}], Els)).
+-define(A(URL, Els), ?XAE('a', [exmpp_xml:attribute('href', URL)], Els)).
 -define(AC(URL, Text), ?A(URL, [?C(Text)])).
 -define(ACT(URL, Text), ?AC(URL, ?T(Text))).
 -define(P, ?X('p')).
 -define(BR, ?X('br')).
 -define(INPUT(Type, Name, Value),
-	?XA('input', [#xmlattr{name = 'type', value = Type},
-		      #xmlattr{name = 'name', value = Name},
-		      #xmlattr{name = 'value', value = Value}])).
+	?XA('input', [exmpp_xml:attribute('type', Type),
+		      exmpp_xml:attribute('name', Name),
+		      exmpp_xml:attribute('value', Value)])).
 
 -define(INPUTT(Type, Name, Value), ?INPUT(Type, Name, ?T(Value))).
 -define(INPUTS(Type, Name, Value, Size),
-	?XA('input', [#xmlattr{name = 'type', value = Type},
-		      #xmlattr{name = 'name', value = Name},
-		      #xmlattr{name = 'value', value = Value},
-		      #xmlattr{name = 'size', value = Size}])).
+	?XA('input', [exmpp_xml:attribute('type', Type),
+		      exmpp_xml:attribute('name', Name),
+		      exmpp_xml:attribute('value', Value),
+		      exmpp_xml:attribute('size', Size)])).
 -define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
 -define(ACLINPUT(Text), ?XE('td', [?INPUT("text", "value" ++ ID, Text)])).
 
 -define(TEXTAREA(Name, Rows, Cols, Value),
-	?XAC('textarea', [#xmlattr{name = 'name', value = list_to_binary(Name)},
-			  #xmlattr{name = 'rows', value = list_to_binary(Rows)},
-			  #xmlattr{name = 'cols', value = list_to_binary(Cols)}],
+	?XAC('textarea', [exmpp_xml:attribute('name', list_to_binary(Name)),
+			  exmpp_xml:attribute('rows', list_to_binary(Rows)),
+			  exmpp_xml:attribute('cols', list_to_binary(Cols))],
 	     Value)).
 
 %% Build an xmlelement for result
--define(XRES(Text), ?XAC('p', [#xmlattr{name = 'class', value = <<"result">>}], Text)).
+-define(XRES(Text), ?XAC('p', [exmpp_xml:attribute('class', <<"result">>)], Text)).
 -define(XREST(Text), ?XRES(?T(Text))).
 
 %% Guide Link
 -define(GL(Ref, Title),
 	?XAE('div',
-	     [#xmlattr{name = 'class', value = <<"guidelink">>}],
+	     [exmpp_xml:attribute('class', <<"guidelink">>)],
 	     [?XAE('a',
-		   [#xmlattr{name = 'href', value = list_to_binary("/admin/doc/guide.html#"++ Ref)},
-                     #xmlattr{name = 'target', value = <<"_blank">>}],
+		   [exmpp_xml:attribute('href', list_to_binary("/admin/doc/guide.html#"++ Ref)),
+                     exmpp_xml:attribute('target', <<"_blank">>)],
 		   [?C("[Guide: " ++ Title ++ "]")])
 	     ])).
 

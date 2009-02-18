@@ -105,7 +105,6 @@ load_file(Lang, File) ->
     end.
 
 translate(Lang, Msg) ->
-    io:format("translate(~p, ~p) ~n",[Lang, Msg]),
     LLang = ascii_tolower(Lang),
     case ets:lookup(translations, {LLang, Msg}) of
 	[{_, Trans}] ->

@@ -7,6 +7,21 @@
 
 	* src/ejabberd_c2s.erl: Remove comment for an already done TODO.
 
+	* src/web/ejabberd_web_admin.erl, src/web/ejabberd_web_admin.hrl: 
+	Many exmpp related fixes. Fix a bug when displaying users lists, 
+	if we can't access the 'offline_msg' mnesia table (using mod_offline_odbc).
+	This fix should be temporal, we should find a better way to manage this
+	situation.  The webadmin is usable again.
+
+	* src/web/ejabberd_http.erl: Language must be in binary() format.
+
+	* src/translate.erl: Remove a debug call to io:format/2.
+
+	* src/ejabberd_sm.erl, src/mod_configure.erl, src/mod_disco.erl:
+	ejabberd_sm:get_user_resources/2 returns resources as binary().
+
+	* src/ejabberd_sm.erl: Bugfix in get_user_info/3.
+
 2009-02-13 Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_auth.erl: prevent from calling 

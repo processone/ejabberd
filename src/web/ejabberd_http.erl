@@ -51,7 +51,7 @@
 		request_auth,
 		request_keepalive,
 		request_content_length,
-		request_lang = "en",
+		request_lang = <<"en">>,
 		%% XXX bard: request handlers are configured in
 		%% ejabberd.cfg under the HTTP service.	 For example,
 		%% to have the module test_web handle requests with
@@ -548,9 +548,9 @@ make_text_output(State, Status, Headers, Data) when is_binary(Data) ->
 parse_lang(Langs) ->
     case string:tokens(Langs, ",; ") of
 	[First | _] ->
-	    First;
+	    list_to_binary(First);
 	[] ->
-	    "en"
+	    <<"en">>
     end.
 
 % Code below is taken (with some modifications) from the yaws webserver, which
