@@ -1323,7 +1323,7 @@ prepare_room_queue(StateData) ->
 	{{value, {message, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    Packet = Activity#activity.message,
-	    Size = erlang:iolist_size(exmpp_xml:documenent_to_iolist(Packet)),
+	    Size = erlang:iolist_size(exmpp_xml:document_to_iolist(Packet)),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(

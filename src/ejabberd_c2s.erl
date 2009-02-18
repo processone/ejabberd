@@ -826,7 +826,6 @@ session_established2(El, StateData) ->
 	User = StateData#state.user,
 	Server = StateData#state.server,
     
-	% TODO: check 'from' attribute in stanza
 	FromJID = StateData#state.jid,
 	To = exmpp_stanza:get_recipient(El),
 	ToJID = case To of

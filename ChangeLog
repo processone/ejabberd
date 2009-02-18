@@ -1,3 +1,12 @@
+2009-02-18 Pablo Polvorin <pablo.polvorin@process-one.net>
+
+	* src/ejabberd_auth.erl: Fix: for legacy authentication, the Digest
+	parameters could be 'undefined'.
+
+	* src/mod_muc/mod_muc_room.erl: Typo.
+
+	* src/ejabberd_c2s.erl: Remove comment for an already done TODO.
+
 2009-02-13 Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_auth.erl: prevent from calling 

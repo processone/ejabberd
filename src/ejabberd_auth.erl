@@ -145,7 +145,7 @@ check_password_with_authmodule(User, Server, Password)
 
 check_password_with_authmodule(User, Server, Password, StreamID, Digest)
   when is_list(User), is_list(Server), is_list(Password),
-  is_list(StreamID), is_list(Digest) ->
+  is_list(StreamID), (is_list(Digest) orelse Digest == 'undefined')->
     Res = lists:dropwhile(
 	    fun(M) ->
 		    not apply(M, check_password,
