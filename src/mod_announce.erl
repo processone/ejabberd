@@ -636,28 +636,29 @@ handle_adhoc_form(From, To,
 	    %% command nodes.
 	    {error, 'internal-server-error'}
     end.
-
-get_title(Lang, "announce") ->
+get_title(Lang, Node) when is_list(Node) ->
+    get_title(Lang, list_to_binary(Node));
+get_title(Lang, <<"announce">>) ->
     translate:translate(Lang, "Announcements");
-get_title(Lang, ?NS_ADMIN_s ++ "#announce-all") ->
+get_title(Lang, <<?NS_ADMIN_s, "#announce-all">>) ->
     translate:translate(Lang, "Send announcement to all users");
-get_title(Lang, ?NS_ADMIN_s ++ "#announce-all-allhosts") ->
+get_title(Lang, <<?NS_ADMIN_s , "#announce-all-allhosts">>) ->
     translate:translate(Lang, "Send announcement to all users on all hosts");
-get_title(Lang, ?NS_ADMIN_s ++ "#announce") ->
+get_title(Lang, <<?NS_ADMIN_s , "#announce">>) ->
     translate:translate(Lang, "Send announcement to all online users");
-get_title(Lang, ?NS_ADMIN_s ++ "#announce-allhosts") ->
+get_title(Lang, <<?NS_ADMIN_s , "#announce-allhosts">>) ->
     translate:translate(Lang, "Send announcement to all online users on all hosts");
-get_title(Lang, ?NS_ADMIN_s ++ "#set-motd") ->
+get_title(Lang, <<?NS_ADMIN_s , "#set-motd">>) ->
     translate:translate(Lang, "Set message of the day and send to online users");
-get_title(Lang, ?NS_ADMIN_s ++ "#set-motd-allhosts") ->
+get_title(Lang, <<?NS_ADMIN_s , "#set-motd-allhosts">>) ->
     translate:translate(Lang, "Set message of the day on all hosts and send to online users");
-get_title(Lang, ?NS_ADMIN_s ++ "#edit-motd") ->
+get_title(Lang, <<?NS_ADMIN_s , "#edit-motd">>) ->
     translate:translate(Lang, "Update message of the day (don't send)");
-get_title(Lang, ?NS_ADMIN_s ++ "#edit-motd-allhosts") ->
+get_title(Lang, <<?NS_ADMIN_s , "#edit-motd-allhosts">>) ->
     translate:translate(Lang, "Update message of the day on all hosts (don't send)");
-get_title(Lang, ?NS_ADMIN_s ++ "#delete-motd") ->
+get_title(Lang, <<?NS_ADMIN_s , "#delete-motd">>) ->
     translate:translate(Lang, "Delete message of the day");
-get_title(Lang, ?NS_ADMIN_s ++ "#delete-motd-allhosts") ->
+get_title(Lang, <<?NS_ADMIN_s , "#delete-motd-allhosts">>) ->
     translate:translate(Lang, "Delete message of the day on all hosts").
 
 %%-------------------------------------------------------------------------
