@@ -1,3 +1,16 @@
+2009-02-19 Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: fix nodetree plugin resolver
+
+	* src/mod_pubsub/mod_pubsub.erl: backport last changes from trunk
+	* src/mod_pubsub/node_mb.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+
 2009-02-18 Pablo Polvorin <pablo.polvorin@process-one.net>
 
 	* src/ejabberd_auth.erl: Fix: for legacy authentication, the Digest

@@ -33,14 +33,13 @@
 %%% This module uses version 1.12 of the specification as a base.
 %%% Most of the specification is implemented.
 %%% Functions concerning configuration should be rewritten.
-%%% Code is derivated from the original pubsub v1.7, by Alexey Shchepin
 
 %%% TODO
 %%% plugin: generate Reply (do not use broadcast atom anymore)
 
 -module(mod_pubsub).
 -author('christophe.romain@process-one.net').
--version('1.12-01').
+-version('1.12-02').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -185,7 +184,7 @@ init([ServerHost, Opts]) ->
     ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {plugins, Plugins}),
-	ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
     init_nodes(Host, ServerHost),
     {ok, #state{host = Host,
 		server_host = ServerHost,
@@ -237,6 +236,8 @@ init_nodes(Host, ServerHost) ->
     ok.
 
 update_database(Host) ->
+    mnesia:del_table_index(pubsub_node, type),
+    mnesia:del_table_index(pubsub_node, parentid),
     case catch mnesia:table_info(pubsub_node, attributes) of
 	[host_node, host_parent, info] ->
 	    ?INFO_MSG("upgrade pubsub tables",[]),
@@ -761,10 +762,10 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	       [?XMLATTR('category', "pubsub"),
 		?XMLATTR('type', "service"),
 		?XMLATTR('name', translate:translate(Lang, "Publish-Subscribe"))]},
-	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_INFO_s)]},
-	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_ITEMS_s)]},
-	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s)]},
-	      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_VCARD_s)]}] ++
+		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_INFO_s)]},
+		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_ITEMS_s)]},
+		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s)]},
+		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_VCARD_s)]}] ++
 	     lists:map(fun(Feature) ->
 		 #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s++"#"++Feature)]}
 	     end, features(Host, SNode))};
@@ -1581,7 +1582,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
     Action = fun(#pubsub_node{type = Type}) ->
 		     Features = features(Type),
 		     PersistentFeature = lists:member("persistent-items", Features),
-		     DeleteFeature = lists:member("delete-any", Features),
+		     DeleteFeature = lists:member("delete-items", Features),
 		     if
 			 %%->   iq_pubsub just does that matchs
 			 %%	%% Request does not specify an item
@@ -1591,7 +1592,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 			     {error, extended_error('feature-not-implemented', unsupported, "persistent-items")};
 			 not DeleteFeature ->
 			     %% Service does not support item deletion
-			     {error, extended_error('feature-not-implemented', unsupported, "delete-any")};
+			     {error, extended_error('feature-not-implemented', unsupported, "delete-items")};
 			 true ->
 			     node_call(Type, delete_item, [Host, Node, Publisher, ItemId])
 		     end
@@ -1984,7 +1985,7 @@ get_subscriptions(Host, Node, JID) ->
 		     if
 			 not RetrieveFeature ->
 			     %% Service does not support manage subscriptions
-			     {error, extended_error('feature-not-implemented', unsupported, "manage-affiliations")};
+			     {error, extended_error('feature-not-implemented', unsupported, "manage-subscriptions")};
 			 Affiliation /= {result, owner} ->
 			     %% Entity is not an owner
 			     {error, 'forbidden'};
@@ -2695,7 +2696,7 @@ features() ->
 	 "config-node",   % RECOMMENDED
 	 "create-and-configure",   % RECOMMENDED
 	 % see plugin "create-nodes",   % RECOMMENDED
-	 % see plugin "delete-any",   % RECOMMENDED
+	 % see plugin "delete-items",   % RECOMMENDED
 	 % see plugin "delete-nodes",   % RECOMMENDED
 	 % see plugin "filtered-notifications",   % RECOMMENDED
 	 %TODO "get-pending",   % OPTIONAL
@@ -2747,7 +2748,7 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
 tree_call(Host, Function, Args) ->
     Module = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
 	[{nodetree, N}] -> N;
-	_ -> list_to_atom(?TREE_PREFIX ++ ?STDNODE)
+	_ -> list_to_atom(?TREE_PREFIX ++ ?STDTREE)
     end,
     catch apply(Module, Function, Args).
 tree_action(Host, Function, Args) ->
