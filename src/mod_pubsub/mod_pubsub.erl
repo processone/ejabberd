@@ -33,14 +33,13 @@
 %%% This module uses version 1.12 of the specification as a base.
 %%% Most of the specification is implemented.
 %%% Functions concerning configuration should be rewritten.
-%%% Code is derivated from the original pubsub v1.7, by Alexey Shchepin
 
 %%% TODO
 %%% plugin: generate Reply (do not use broadcast atom anymore)
 
 -module(mod_pubsub).
 -author('christophe.romain@process-one.net').
--version('1.12-01').
+-version('1.12-02').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -183,7 +182,7 @@ init([ServerHost, Opts]) ->
     ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {plugins, Plugins}),
-	ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
     init_nodes(Host, ServerHost),
     {ok, #state{host = Host,
 		server_host = ServerHost,
@@ -761,10 +760,10 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	       [{"category", "pubsub"},
 		{"type", "service"},
 		{"name", translate:translate(Lang, "Publish-Subscribe")}], []},
-	      {xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
-	      {xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
-	      {xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
-	      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}] ++
+		{xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
+		{xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
+		{xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
+		{xmlelement, "feature", [{"var", ?NS_VCARD}], []}] ++
 	     lists:map(fun(Feature) ->
 		 {xmlelement, "feature", [{"var", ?NS_PUBSUB++"#"++Feature}], []}
 	     end, features(Host, SNode))};
@@ -2745,7 +2744,7 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
 tree_call(Host, Function, Args) ->
     Module = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
 	[{nodetree, N}] -> N;
-	_ -> list_to_atom(?TREE_PREFIX ++ ?STDNODE)
+	_ -> list_to_atom(?TREE_PREFIX ++ ?STDTREE)
     end,
     catch apply(Module, Function, Args).
 tree_action(Host, Function, Args) ->
