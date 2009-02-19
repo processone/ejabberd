@@ -2698,7 +2698,7 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
 tree_call(Host, Function, Args) ->
     Module = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
 	[{nodetree, N}] -> N;
-	_ -> list_to_atom(?TREE_PREFIX ++ ?STDNODE)
+	_ -> list_to_atom(?TREE_PREFIX ++ ?STDTREE)
     end,
     catch apply(Module, Function, Args).
 tree_action(Host, Function, Args) ->

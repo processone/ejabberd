@@ -1,3 +1,7 @@
+2009-02-19  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: fix nodetree plugin resolver
+
 2009-02-13  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_auth.erl: prevent from calling
