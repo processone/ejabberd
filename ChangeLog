@@ -1,3 +1,8 @@
+2009-02-20  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_listener.erl: When stopping a listener, don't stop
+	the listener supervisor (EJAB-874)
+
 2009-02-19  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix nodetree plugin resolver

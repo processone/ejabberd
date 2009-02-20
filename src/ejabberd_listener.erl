@@ -260,10 +260,7 @@ start_listener_sup(Port, Module, Opts) ->
 
 stop_listener(Port, Module) ->
     supervisor:terminate_child(ejabberd_listeners, Port),
-    supervisor:delete_child(ejabberd_listeners, Port),
-    Proc1 = gen_mod:get_module_proc("sup", Module),
-    supervisor:terminate_child(ejabberd_sup, Proc1),
-    supervisor:delete_child(ejabberd_sup, Proc1).
+    supervisor:delete_child(ejabberd_listeners, Port).
 
 %% @spec (PortIP, Module, Opts) -> {ok, Pid} | {error, Error}
 %% where
