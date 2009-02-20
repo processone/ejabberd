@@ -6,6 +6,8 @@
 	actualized to expect binary arguments. 
 
 	* src/web/ejabberd_web_admin.erl: Fix add / remove users.
+
+	* src/mod_configure.erl: Fix bug in form generation.
 	
 
 2009-02-19 Christophe Romain <christophe.romain@process-one.net>

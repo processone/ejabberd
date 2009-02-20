@@ -51,7 +51,7 @@
 -include("ejabberd.hrl").
 -include("adhoc.hrl").
 
--define(T(Lang, Text), list_to_binary(translate:translate(Lang, Text))).
+-define(T(Lang, Text), translate:translate(Lang, Text)).
 
 %% Copied from ejabberd_sm.erl
 -record(session, {sid, usr, us, priority, info}).
@@ -711,7 +711,7 @@ get_running_nodes(Server, _Lang) ->
 		      S = list_to_binary(atom_to_list(N)),
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
 		       [?XMLATTR('jid', Server),
-			?XMLATTR('node', <<"running nodes/", (list_to_binary(S))/binary>>),
+			?XMLATTR('node', <<"running nodes/", S/binary>>),
 			?XMLATTR('name', S)]}
 	      end, lists:sort(DBNodes))
     end.
