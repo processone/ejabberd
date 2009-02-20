@@ -627,8 +627,8 @@ in_auto_reply(_,    _,    _)  ->           none.
 
 remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = binary_to_list(exmpp_stringprep:nodeprep(User)),
+	LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
 	Username = ejabberd_odbc:escape(LUser),
 	odbc_queries:del_user_roster_t(LServer, Username),
 	ok

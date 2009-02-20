@@ -1364,8 +1364,8 @@ list_users_parse_query(Query, Host) ->
 		lists:keysearch("newuserpassword", 1, Query),
 	    try
 		JID = exmpp_jid:parse_jid(Username++"@"++Host),
-                User = exmpp_jid:node(JID),
-                Server = exmpp_jid:domain(JID),
+                User = exmpp_jid:node_as_list(JID),
+                Server = exmpp_jid:domain_as_list(JID),
 		case ejabberd_auth:try_register(User, Server, Password) of
 		    {error, _Reason} ->
 			error;

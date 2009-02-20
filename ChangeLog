@@ -1,3 +1,13 @@
+2009-02-20 Pablo Polvorin <pablo.polvorin@process-one.net>
+
+	* src/mod_offline_odbc.erl, src/mod_privacy_odbc.erl, 
+	src/ejabberd_auth.erl, src/mod_vcard_odbc.erl,
+	src/mod_private_odbc.erl, src/mod_roster_odbc.erl: remove_user hook
+	actualized to expect binary arguments. 
+
+	* src/web/ejabberd_web_admin.erl: Fix add / remove users.
+	
+
 2009-02-19 Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix nodetree plugin resolver

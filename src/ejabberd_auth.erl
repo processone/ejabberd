@@ -198,7 +198,7 @@ try_register(User, Server, Password)
 		      end, {error, not_allowed}, auth_modules(Server)),
 		    case Res of
 			{atomic, ok} ->
-			    ejabberd_hooks:run(register_user, Server,
+			    ejabberd_hooks:run(register_user, list_to_binary(Server),
 					       [User, Server]),
 			    {atomic, ok};
 			_ -> Res
@@ -370,7 +370,8 @@ remove_user(User, Server) when is_list(User), is_list(Server) ->
 	      M:remove_user(User, Server)
       end, auth_modules(Server)),
     case R of
-		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
+		ok -> ejabberd_hooks:run(remove_user, list_to_binary(exmpp_stringprep:nameprep(Server)), 
+                                    [list_to_binary(User), list_to_binary(Server)]);
 		_ -> none
     end,
     R.
@@ -393,7 +394,8 @@ remove_user(User, Server, Password)
 	      M:remove_user(User, Server, Password)
       end, error, auth_modules(Server)),
     case R of
-		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
+		ok -> ejabberd_hooks:run(remove_user, list_to_binary(exmpp_stringprep:nameprep(Server)), 
+                                    [list_to_binary(User), list_to_binary(Server)]);
 		_ -> none
     end,
     R.

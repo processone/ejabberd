@@ -679,7 +679,7 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
 remove_user(User, Server) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
-    sql_del_privacy_lists(LUser, LServer).
+    sql_del_privacy_lists(binary_to_list(LUser), binary_to_list(LServer)).
 
 
 updated_list(_,

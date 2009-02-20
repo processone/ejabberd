@@ -612,9 +612,9 @@ make_val(Match, Field, Val) ->
 %    mnesia:transaction(F).
 
 
-remove_user(User, Server) when is_binary(User), is_binary(server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
+remove_user(User, Server) when is_binary(User), is_binary(Server) ->
+    LUser = binary_to_list(exmpp_stringprep:nodeprep(User)),
+    LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
     Username = ejabberd_odbc:escape(LUser),
     ejabberd_odbc:sql_transaction(
       LServer,
