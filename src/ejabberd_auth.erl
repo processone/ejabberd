@@ -138,13 +138,16 @@ check_password_with_authmodule(User, Server, Password)
 %% @spec (User, Server, Password, StreamID, Digest) -> {true, AuthModule} | false
 %%     User = string()
 %%     Server = string()
-%%     Password = string()
+%%     Password = string() | undefined
 %%     StreamID = string()
-%%     Digest = string()
+%%     Digest = string() | undefined
 %%     AuthModule = authmodule()
+%% The password is 'undefined' if the client
+%% authenticates using the digest method as defined in 
+%% XEP-0078: Non-SASL Authentication
 
 check_password_with_authmodule(User, Server, Password, StreamID, Digest)
-  when is_list(User), is_list(Server), is_list(Password),
+  when is_list(User), is_list(Server), (is_list(Password) orelse Password == 'undefined'),
   is_list(StreamID), (is_list(Digest) orelse Digest == 'undefined')->
     Res = lists:dropwhile(
 	    fun(M) ->
