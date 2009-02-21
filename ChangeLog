@@ -1,5 +1,7 @@
 2009-02-21  Badlop  <badlop@process-one.net>
 
+ 	* doc/Makefile: When cleaning, remove contributed_modules.tex
+
  	* doc/guide.tex: Provide only an example of language option
  	* doc/guide.html: Likewise
 
