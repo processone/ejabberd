@@ -414,7 +414,8 @@ parse_items(Els) ->
     parse_items(Els, []).
 
 parse_items([], Res) ->
-    lists:reverse(Res);
+    %% Sort the items by their 'order' attribute
+    lists:keysort(#listitem.order, Res);
 parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
     Type   = xml:get_attr("type",   Attrs),
     Value  = xml:get_attr("value",  Attrs),

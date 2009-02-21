@@ -1,5 +1,9 @@
 2009-02-21  Badlop  <badlop@process-one.net>
 
+ 	* src/mod_privacy.erl: Privacy list items must be processed in the
+ 	specified order (EJAB-848)
+ 	* src/mod_privacy_odbc.erl: Likewise
+
  	* src/ejabberd_c2s.erl: Ensure unique ID in roster push (EJAB-721)
  	* src/mod_roster.erl: Likewise
  	* src/mod_roster_odbc.erl: Likewise
