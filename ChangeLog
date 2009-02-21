@@ -1,5 +1,10 @@
 2009-02-21  Badlop  <badlop@process-one.net>
 
+ 	* src/mod_pubsub/mod_pubsub.erl: The table pubsub_node in ejabberd
+ 	older than 2.0.2 had indexes for parentid and type. This is not
+ 	required since ejabberd 2.0.2, so those indexes can be
+ 	deleted. (EJAB-669)
+
  	* doc/Makefile: In Clean do not remove html. In new Distclean,
 	remove also html.
 

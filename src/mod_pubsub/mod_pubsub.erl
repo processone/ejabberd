@@ -235,6 +235,8 @@ init_nodes(Host, ServerHost, ServedHosts) ->
     ok.
 
 update_database(Host) ->
+    mnesia:del_table_index(pubsub_node, type),
+    mnesia:del_table_index(pubsub_node, parentid),
     case catch mnesia:table_info(pubsub_node, attributes) of
 	[host_node, host_parent, info] ->
 	    ?INFO_MSG("upgrade pubsub tables",[]),
