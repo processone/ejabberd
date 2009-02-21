@@ -248,7 +248,7 @@ set_new_rosteritems(UserFrom, ServerFrom,
 
 set_item(User, Server, Resource, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
-		id = "push",
+		id = "push" ++ randoms:get_string(),
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_ROSTER}],
 			   [mod_roster:item_to_xml(Item)]}]},
@@ -617,7 +617,7 @@ push_item(User, Server, From, Item) ->
 			 Item#roster.subscription}]}),
     Stanza = jlib:iq_to_xml(
 	       #iq{type = set, xmlns = ?NS_ROSTER,
-		   id = "push",
+		   id = "push" ++ randoms:get_string(),
 		   sub_el = [{xmlelement, "query",
 			      [{"xmlns", ?NS_ROSTER}],
 			      [item_to_xml(Item)]}]}),

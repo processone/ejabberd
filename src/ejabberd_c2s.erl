@@ -1171,7 +1171,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			    NewPL ->
 				PrivPushIQ =
 				    #iq{type = set, xmlns = ?NS_PRIVACY,
-					id = "push",
+					id = "push" ++ randoms:get_string(),
 					sub_el = [{xmlelement, "query",
 						   [{"xmlns", ?NS_PRIVACY}],
 						   [{xmlelement, "list",

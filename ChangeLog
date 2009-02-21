@@ -1,3 +1,10 @@
+2009-02-21  Badlop  <badlop@process-one.net>
+
+ 	* src/ejabberd_c2s.erl: Ensure unique ID in roster push (EJAB-721)
+ 	* src/mod_roster.erl: Likewise
+ 	* src/mod_roster_odbc.erl: Likewise
+ 	* src/mod_shared_roster.erl: Likewise
+
 2009-02-19  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: fix nodetree plugin resolver
