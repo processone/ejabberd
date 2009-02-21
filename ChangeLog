@@ -1,5 +1,10 @@
 2009-02-21  Badlop  <badlop@process-one.net>
 
+ 	* src/mod_shared_roster.erl: Fix bug: a pending subscription
+ 	request, and later the requester added to the roster due to a
+ 	shared roster group, that request could neither be accepted or
+ 	rejected (thanks to Brian Cully)(EJAB-869)
+
  	* src/mod_pubsub/mod_pubsub.erl: The table pubsub_node in ejabberd
  	older than 2.0.2 had indexes for parentid and type. This is not
  	required since ejabberd 2.0.2, so those indexes can be
