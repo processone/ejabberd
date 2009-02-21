@@ -1461,7 +1461,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	      From, Err),
 	    StateData;
 	{_, _, _, Role} ->
-	    case check_password(Affiliation, Els, StateData) of
+	    case check_password(ServiceAffiliation, Els, StateData) of
 		true ->
 		    NewState =
 			add_user_presence(
@@ -1518,8 +1518,9 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     end.
 
 check_password(owner, _Els, _StateData) ->
+    %% Don't check pass if user is owner in MUC service (access_admin option)
     true;
-check_password(_Affiliation, Els, StateData) ->
+check_password(_ServiceAffiliation, Els, StateData) ->
     case (StateData#state.config)#config.password_protected of
 	false ->
 	    true;
