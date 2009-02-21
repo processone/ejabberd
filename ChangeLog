@@ -1,5 +1,8 @@
 2009-02-21  Badlop  <badlop@process-one.net>
 
+ 	* doc/guide.tex: Provide only an example of language option
+ 	* doc/guide.html: Likewise
+
  	* doc/guide.tex: mod_muc can run in several nodes of cluster
  	* doc/guide.html: Likewise
 

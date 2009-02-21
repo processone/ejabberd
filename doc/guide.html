@@ -1119,6 +1119,7 @@ To define a shaper named &#X2018;<TT>normal</TT>&#X2019; with traffic speed limi
 can be seen by Jabber clients. If a Jabber client do not support
 <TT>xml:lang</TT>, the specified language is used. The default value is
 <TT>en</TT>. In order to take effect there must be a translation file
+<<<<<<< HEAD:doc/guide.html
 <TT>&lt;language&gt;.msg</TT> in <TT>ejabberd</TT>&#X2019;s <TT>msgs</TT> directory.</P><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 To set Russian as default language:
@@ -1127,6 +1128,92 @@ To set Russian as default language:
 <PRE CLASS="verbatim">{language, "es"}.
 </PRE></LI></UL><P> <A NAME="database"></A> </P><!--TOC section Database and LDAP Configuration-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc28">3.2</A>&#XA0;&#XA0;<A HREF="#database">Database and LDAP Configuration</A></H2><!--SEC END --><P> <A NAME="database"></A> 
+=======
+<TT>&lt;language&gt;.msg</TT> in <TT>ejabberd</TT>&#X2019;s <TT>msgs</TT> directory.</P><P>For example, to set Russian as default language:
+</P><PRE CLASS="verbatim">{language, "ru"}.
+</PRE><P>Appendix <A HREF="#i18ni10n">A</A> provides more details about internationalization and localization.</P><P> <A NAME="includeconfigfile"></A> </P><!--TOC subsection Include Additional Configuration Files-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc28">3.1.8</A>&#XA0;&#XA0;<A HREF="#includeconfigfile">Include Additional Configuration Files</A></H3><!--SEC END --><P> <A NAME="includeconfigfile"></A> 
+</P><P>The option <TT>include_config_file</TT> in a configuration file instructs <TT>ejabberd</TT> to include other configuration files immediately.</P><P>The basic usage is:
+</P><PRE CLASS="verbatim">{include_config_file, &lt;filename&gt;}.
+</PRE><P>It is also possible to specify suboptions:
+</P><PRE CLASS="verbatim">{include_config_file, &lt;filename&gt;, [&lt;suboption&gt;, &lt;suboption&gt;, ...]}.
+</PRE><P>The filename can be indicated either as an absolute path,
+or relative to the main <TT>ejabberd</TT> configuration file.
+It isn&#X2019;t possible to use wildcards.
+The file must exist and be readable.</P><P>The allowed suboptions are:
+</P><DL CLASS="description"><DT CLASS="dt-description">
+<B><TT>{disallow, [&lt;option&gt;, &lt;option&gt;, ...]}</TT></B></DT><DD CLASS="dd-description"> Disallows the usage of those options in the included configuration file.
+The options that match this criteria are not accepted.
+The default value is an empty list: <TT>[]</TT>
+</DD><DT CLASS="dt-description"><B><TT>{allow_only, [&lt;option&gt;, &lt;option&gt;, ...]}</TT></B></DT><DD CLASS="dd-description"> Allows only the usage of those options in the included configuration file.
+The options that do not match this criteria are not accepted.
+The default value is: <TT>all</TT>
+</DD></DL><P>This is a basic example:
+</P><PRE CLASS="verbatim">{include_config_file, "/etc/ejabberd/additional.cfg"}.
+</PRE><P>In this example, the included file is not allowed to contain a <TT>listen</TT> option.
+If such an option is present, the option will not be accepted.
+The file is in a subdirectory from where the main configuration file is.
+</P><PRE CLASS="verbatim">{include_config_file, "./example.org/additional_not_listen.cfg", [{disallow, [listen]}]}.
+</PRE><P>In this example, <TT>ejabberd.cfg</TT> defines some ACL and Access rules,
+and later includes another file with additional rules:
+</P><PRE CLASS="verbatim">{acl, admin, {user, "admin", "localhost"}}.
+{access, announce, [{allow, admin}]}.
+{include_config_file, "/etc/ejabberd/acl_and_access.cfg", [{allow_only, [acl, access]}]}.
+</PRE><P>and content of the file <TT>acl_and_access.cfg</TT> can be, for example:
+</P><PRE CLASS="verbatim">{acl, admin, {user, "bob", "localhost"}}.
+{acl, admin, {user, "jan", "localhost"}}.
+</PRE><P> <A NAME="optionmacros"></A> </P><!--TOC subsection Option Macros in Configuration File-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc29">3.1.9</A>&#XA0;&#XA0;<A HREF="#optionmacros">Option Macros in Configuration File</A></H3><!--SEC END --><P> <A NAME="optionmacros"></A> 
+</P><P>In the <TT>ejabberd</TT> configuration file,
+it is possible to define a macro for a value
+and later use this macro when defining an option.</P><P>A macro is defined with this syntax:
+</P><PRE CLASS="verbatim">{define_macro, '&lt;MACRO&gt;', &lt;value&gt;}.
+</PRE><P>The <TT>MACRO</TT> must be surrounded by single quotation marks,
+and all letters in uppercase; check the examples bellow.
+The <TT>value</TT> can be any valid arbitrary Erlang term.</P><P>The first definition of a macro is preserved,
+and additional definitions of the same macro are forgotten.</P><P>Macros are processed after
+additional configuration files have been included,
+so it is possible to use macros that
+are defined in configuration files included before the usage.</P><P>It isn&#X2019;t possible to use a macro in the definition
+of another macro.</P><P>There are two ways to use a macro:
+</P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>&#X2019;&lt;MACRO&gt;&#X2019;</TT></B></DT><DD CLASS="dd-description">
+You can put this instead of a value in an <TT>ejabberd</TT> option,
+and will be replaced with the <TT>value</TT> previously defined.
+If the macro is not defined previously,
+the program will crash and report an error.</DD><DT CLASS="dt-description"><B><TT>{use_macro, &#X2019;&lt;MACRO&gt;&#X2019;, &lt;defaultvalue&gt;}</TT></B></DT><DD CLASS="dd-description">
+Use a macro even if it may not be defined.
+If the macro is not defined previously,
+the provided <TT>defaultvalue</TT> is used.
+This usage behaves as if it were defined and used this way:
+<PRE CLASS="verbatim">{define_macro, '&lt;MACRO&gt;', &lt;defaultvalue&gt;}.
+'&lt;MACRO&gt;'
+</PRE></DD></DL><P>This example shows the basic usage of a macro:
+</P><PRE CLASS="verbatim">{define_macro, 'LOG_LEVEL_NUMBER', 5}.
+{loglevel, 'LOG_LEVEL_NUMBER'}.
+</PRE><P>The resulting option interpreted by <TT>ejabberd</TT> is: <TT>{loglevel, 5}</TT>.</P><P>This example shows that values can be any arbitrary Erlang term:
+</P><PRE CLASS="verbatim">{define_macro, 'USERBOB', {user, "bob", "localhost"}}.
+{acl, admin, 'USERBOB'}.
+</PRE><P>The resulting option interpreted by <TT>ejabberd</TT> is: <TT>{acl, admin, {user, "bob", "localhost"}}</TT>.</P><P>This complex example:
+</P><PRE CLASS="verbatim">{define_macro, 'NUMBER_PORT_C2S', 5222}.
+{define_macro, 'PORT_S2S_IN', {5269, ejabberd_s2s_in, []}}.
+{listen,
+ [
+  {'NUMBER_PORT_C2S', ejabberd_c2s, []},
+  'PORT_S2S_IN',
+  {{use_macro, 'NUMBER_PORT_HTTP', 5280}, ejabberd_http, []}
+ ]
+}.
+</PRE><P>produces this result after being interpreted:
+</P><PRE CLASS="verbatim">{listen,
+ [
+  {5222, ejabberd_c2s, []},
+  {5269, ejabberd_s2s_in, []},
+  {5280, ejabberd_http, []}
+ ]
+}.
+</PRE><P> <A NAME="database"></A> </P><!--TOC section Database and LDAP Configuration-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc30">3.2</A>&#XA0;&#XA0;<A HREF="#database">Database and LDAP Configuration</A></H2><!--SEC END --><P> <A NAME="database"></A> 
+>>>>>>> d106311... 	* doc/guide.tex: Provide only an example of language option:doc/guide.html
 
 </P><P><TT>ejabberd</TT> uses its internal Mnesia database by default. However, it is
 possible to use a relational database or an LDAP server to store persistent,
