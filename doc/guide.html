@@ -3128,11 +3128,11 @@ Writing, on the other hand, will be slower. And of course if machine with one
 of the replicas is down, other replicas will be used.</P><P>Also <A HREF="http://www.erlang.org/doc/apps/mnesia/Mnesia_chap5.html#5.3">section 5.3 (Table Fragmentation) of Mnesia User&#X2019;s Guide</A> can be helpful.
 </P><P>(alt) Same as in previous item, but for other tables.</P></LI><LI CLASS="li-enumerate">Run &#X2018;<CODE>init:stop().</CODE>&#X2019; or just &#X2018;<CODE>q().</CODE>&#X2019; to exit from
 the Erlang shell. This probably can take some time if Mnesia has not yet
-transfered and processed all data it needed from <TT>first</TT>.</LI><LI CLASS="li-enumerate">Now run <TT>ejabberd</TT> on <TT>second</TT> with almost the same config as
-on <TT>first</TT> (you probably do not need to duplicate &#X2018;<CODE>acl</CODE>&#X2019;
-and &#X2018;<CODE>access</CODE>&#X2019; options &#X2014; they will be taken from
-<TT>first</TT>, and <CODE>mod_muc</CODE> and <CODE>mod_irc</CODE> should be
-enabled only on one machine in the cluster).
+transfered and processed all data it needed from <TT>first</TT>.</LI><LI CLASS="li-enumerate">Now run <TT>ejabberd</TT> on <TT>second</TT> with a configuration similar as
+on <TT>first</TT>: you probably do not need to duplicate &#X2018;<CODE>acl</CODE>&#X2019;
+and &#X2018;<CODE>access</CODE>&#X2019; options because they will be taken from
+<TT>first</TT>; and <CODE>mod_irc</CODE> should be
+enabled only on one machine in the cluster.
 </LI></OL><P>You can repeat these steps for other machines supposed to serve this
 domain.</P><P> <A NAME="servicelb"></A> </P><!--TOC section Service Load-Balancing-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc78">6.3</A>&#XA0;&#XA0;<A HREF="#servicelb">Service Load-Balancing</A></H2><!--SEC END --><P> <A NAME="servicelb"></A> 

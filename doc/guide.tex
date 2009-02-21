@@ -4050,11 +4050,11 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
   transfered and processed all data it needed from \term{first}.
 
 
-\item Now run \ejabberd{} on \term{second} with almost the same config as
-  on \term{first} (you probably do not need to duplicate `\verb|acl|'
-  and `\verb|access|' options --- they will be taken from
-  \term{first}, and \verb|mod_muc| and \verb|mod_irc| should be
-  enabled only on one machine in the cluster).
+\item Now run \ejabberd{} on \term{second} with a configuration similar as
+  on \term{first}: you probably do not need to duplicate `\verb|acl|'
+  and `\verb|access|' options because they will be taken from
+  \term{first}; and \verb|mod_irc| should be
+  enabled only on one machine in the cluster.
 \end{enumerate}
 
 You can repeat these steps for other machines supposed to serve this
