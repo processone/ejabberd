@@ -1,5 +1,9 @@
 2009-02-21  Badlop  <badlop@process-one.net>
 
+ 	* doc/guide.tex: Explain that account creation is only supported
+ 	by internal and odbc authentication methods
+ 	* doc/guide.html: Likewise
+
  	* src/mod_privacy.erl: Privacy list items must be processed in the
  	specified order (EJAB-848)
  	* src/mod_privacy_odbc.erl: Likewise

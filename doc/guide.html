@@ -457,7 +457,7 @@ variable.
 </P></LI><LI CLASS="li-enumerate">Install OpenSSL in <CODE>C:\sdk\OpenSSL</CODE> and add <CODE>C:\sdk\OpenSSL\lib\VC</CODE> to your path or copy the binaries to your system directory.
 </LI><LI CLASS="li-enumerate">Install ZLib in <CODE>C:\sdk\gnuWin32</CODE>. Copy
 <CODE>C:\sdk\GnuWin32\bin\zlib1.dll</CODE> to your system directory. If you change your path it should already be set after libiconv install.
-</LI><LI CLASS="li-enumerate">Make sure the you can access Erlang binaries from your path. For example: <CODE>set PATH=%PATH%;"C:\sdk\erl5.5.5\bin"</CODE>
+</LI><LI CLASS="li-enumerate">Make sure the you can access Erlang binaries from your path. For example: <CODE>set PATH=%PATH%;"C:\sdk\erl5.6.5\bin"</CODE>
 </LI><LI CLASS="li-enumerate">Depending on how you end up actually installing the library you might need to check and tweak the paths in the file configure.erl.
 </LI><LI CLASS="li-enumerate">While in the directory <CODE>ejabberd\src</CODE> run:
 <PRE CLASS="verbatim">configure.bat
@@ -892,7 +892,7 @@ example authentication scripts</A>.
 <A HREF="#mssql">3.2.2</A> and <A HREF="#odbc">3.2.4</A>.
 </LI><LI CLASS="li-itemize">anonymous &#X2014; See section&#XA0;<A HREF="#saslanonymous">3.1.4</A>.
 </LI><LI CLASS="li-itemize">pam &#X2014; See section&#XA0;<A HREF="#pam">3.1.4</A>.
-</LI></UL><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
+</LI></UL><P>Account creation is only supported by internal and odbc methods.</P><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#internalauth">Internal</A></H4><!--SEC END --><P> <A NAME="internalauth"></A> 
 </P><P><TT>ejabberd</TT> uses its internal Mnesia database as the default authentication method.</P><UL CLASS="itemize"><LI CLASS="li-itemize">
 <TT>auth_method</TT>: The value <TT>internal</TT> will enable the internal
