@@ -1,5 +1,8 @@
 2009-02-21  Badlop  <badlop@process-one.net>
 
+ 	* doc/Makefile: In Clean do not remove html. In new Distclean,
+	remove also html.
+
  	* doc/Makefile: When cleaning, remove contributed_modules.tex
 
  	* doc/guide.tex: Provide only an example of language option
