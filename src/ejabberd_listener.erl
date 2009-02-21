@@ -258,9 +258,16 @@ start_listener_sup(Port, Module, Opts) ->
 		 [?MODULE]},
     supervisor:start_child(ejabberd_listeners, ChildSpec).
 
-stop_listener(Port, Module) ->
-    supervisor:terminate_child(ejabberd_listeners, Port),
-    supervisor:delete_child(ejabberd_listeners, Port).
+%% @spec (PortIP, Module) -> ok
+%% where
+%%      PortIP = {Port, IPT | IPS}
+%%      Port = integer()
+%%      IPT = tuple()
+%%      IPS = string()
+%%      Module = atom()
+stop_listener(PortIP, _Module) ->
+    supervisor:terminate_child(ejabberd_listeners, PortIP),
+    supervisor:delete_child(ejabberd_listeners, PortIP).
 
 %% @spec (PortIP, Module, Opts) -> {ok, Pid} | {error, Error}
 %% where
