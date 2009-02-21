@@ -1,5 +1,8 @@
 2009-02-21  Badlop  <badlop@process-one.net>
 
+ 	* src/odbc/mysql.sql: Fix complain about comment syntax
+ 	* src/odbc/pg.sql: Likewise
+
  	* doc/guide.tex: Explain that account creation is only supported
  	by internal and odbc authentication methods
  	* doc/guide.html: Likewise

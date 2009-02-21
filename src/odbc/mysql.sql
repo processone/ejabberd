@@ -148,7 +148,7 @@ CREATE TABLE private_storage (
 CREATE INDEX i_private_storage_username USING BTREE ON private_storage(username);
 CREATE UNIQUE INDEX i_private_storage_username_namespace USING BTREE ON private_storage(username(75), namespace(75));
 
---- To update from 1.x:
+-- To update from 1.x:
 -- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;
 -- UPDATE rosterusers SET askmessage = '';
 -- ALTER TABLE rosterusers ALTER COLUMN askmessage SET NOT NULL;

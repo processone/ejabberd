@@ -146,14 +146,14 @@ CREATE INDEX i_private_storage_username ON private_storage USING btree (username
 CREATE UNIQUE INDEX i_private_storage_username_namespace ON private_storage USING btree (username, namespace);
 
 
---- To update from 0.9.8:
+-- To update from 0.9.8:
 -- CREATE SEQUENCE spool_seq_seq;
 -- ALTER TABLE spool ADD COLUMN seq integer;
 -- ALTER TABLE spool ALTER COLUMN seq SET DEFAULT nextval('spool_seq_seq');
 -- UPDATE spool SET seq = DEFAULT;
 -- ALTER TABLE spool ALTER COLUMN seq SET NOT NULL;
 
---- To update from 1.x:
+-- To update from 1.x:
 -- ALTER TABLE rosterusers ADD COLUMN askmessage text;
 -- UPDATE rosterusers SET askmessage = '';
 -- ALTER TABLE rosterusers ALTER COLUMN askmessage SET NOT NULL;
