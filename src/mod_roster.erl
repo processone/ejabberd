@@ -685,8 +685,8 @@ in_auto_reply(_,    _,    _)  ->           none.
 remove_user(User, Server) 
   when is_binary(User), is_binary(Server) ->
     try
-	LUser = list_to_binary(exmpp_stringprep:nodeprep(User)),
-	LServer = list_to_binary(exmpp_stringprep:nameprep(Server)),
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
 	F = fun() ->
 		    lists:foreach(fun(R) ->

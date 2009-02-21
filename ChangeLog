@@ -1,3 +1,8 @@
+2009-02-21  Pablo Polvorin  <pablo.polvorin@process-one.net>
+
+	* src/mod_roster.erl: Bugfix in remove_user/2: values already
+	in binary() format.
+
 2009-02-21  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_auth.erl: Password is undefined when using digest
