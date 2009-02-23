@@ -409,7 +409,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				?INFO_MSG(
 				  "(~w) Accepted legacy authentication for ~s",
 				  [StateData#state.socket,
-				    exmpp_jid:jid_to_list(JID)]),
+				    exmpp_jid:jid_to_binary(JID)]),
 				SID = {now(), self()},
 				Conn = get_conn_type(StateData),
 				Info = [{ip, StateData#state.ip}, {conn, Conn},
@@ -448,7 +448,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				?INFO_MSG(
 				  "(~w) Failed legacy authentication for ~s",
 				  [StateData#state.socket,
-				    exmpp_jid:jid_to_list(JID)]),
+				    exmpp_jid:jid_to_binary(JID)]),
 				Res = exmpp_iq:error_without_original(El,
                                   'not-authorized'),
 				send_element(StateData, Res),
@@ -458,7 +458,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			?INFO_MSG(
 			  "(~w) Forbidden legacy authentication for ~s",
 			  [StateData#state.socket,
-			    exmpp_jid:jid_to_list(JID)]),
+			    exmpp_jid:jid_to_binary(JID)]),
 			Res = exmpp_iq:error_without_original(El,
                           'not-allowed'),
 			send_element(StateData, Res),
@@ -725,7 +725,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 	    allow ->
 		?INFO_MSG("(~w) Opened session for ~s",
 			  [StateData#state.socket,
-			   exmpp_jid:jid_to_list(JID)]),
+			   exmpp_jid:jid_to_binary(JID)]),
 		SID = {now(), self()},
 		Conn = get_conn_type(StateData),
 		Info = [{ip, StateData#state.ip}, {conn, Conn},
@@ -762,7 +762,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				   StateData#state.server, [JID]),
 		?INFO_MSG("(~w) Forbidden session for ~s",
 			  [StateData#state.socket,
-			   exmpp_jid:jid_to_list(JID)]),
+			   exmpp_jid:jid_to_binary(JID)]),
 		Err = exmpp_server_session:error(El, 'not-allowed'),
 		send_element(StateData, Err),
 		fsm_next_state(wait_for_session, StateData)
@@ -1222,7 +1222,7 @@ terminate(_Reason, StateName, StateData) ->
 		replaced ->
 		    ?INFO_MSG("(~w) Replaced session for ~s",
 			      [StateData#state.socket,
-			       exmpp_jid:jid_to_list(StateData#state.jid)]),
+			       exmpp_jid:jid_to_binary(StateData#state.jid)]),
 		    From = StateData#state.jid,
 		    Packet = exmpp_presence:unavailable(),
 		    Packet1 = exmpp_presence:set_status(Packet,
@@ -1238,7 +1238,7 @@ terminate(_Reason, StateName, StateData) ->
 		_ ->
 		    ?INFO_MSG("(~w) Close session for ~s",
 			      [StateData#state.socket,
-			       exmpp_jid:jid_to_list(StateData#state.jid)]),
+			       exmpp_jid:jid_to_binary(StateData#state.jid)]),
 
 		    EmptySet = ?SETS:new(),
 		    case StateData of

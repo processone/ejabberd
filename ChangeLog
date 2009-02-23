@@ -1,3 +1,13 @@
+2009-02-23  Pablo Polvorin <pablo.polvorin@process-one.net>
+	* src/ejabberd_c2s.erl, src/mod_echo.erl, src/mod_roster.erl,
+	src/mod_roster_odbc.erl: Use exmpp_jid:to_binary/1 when possible.
+
+	* src/mod_roster_odbc.erl, src/odbc/ejabberd_odbc.erl:
+	ejabberd_odbc:escape/1 now can escape binaries too. This 
+	avoid the need to convert a binary value to list() just to 
+	sql-escape it. The escaped value returned is allways a list() 
+	(ejabberd's odbc drivers only works on lists())
+
 2009-02-23  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_c2s.erl: Do not call mod_caps:clear_caps, this previous

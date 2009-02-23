@@ -199,5 +199,5 @@ do_client_version(enabled, From, To) ->
     %% Print in log
     Values_string1 = [io_lib:format("~n~s: ~p", [N, V]) || {N, V} <- Values],
     Values_string2 = lists:concat(Values_string1),
-    ?INFO_MSG("Information of the client: ~s~s", [exmpp_jid:jid_to_list(To), Values_string2]).
+    ?INFO_MSG("Information of the client: ~s~s", [exmpp_jid:jid_to_binary(To), Values_string2]).
 
