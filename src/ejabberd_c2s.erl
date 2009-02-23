@@ -1113,7 +1113,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				%% Note contact availability
 				case xml:get_attr_s("type", Attrs) of
 				    "unavailable" -> 
-					mod_caps:clear_caps(From);
+					%mod_caps:clear_caps(From);
+					% caps clear disabled cause it breaks things
+					ok;
 				    _ -> 
 					Caps = mod_caps:read_caps(Els),
 					mod_caps:note_caps(StateData#state.server, From, Caps)

@@ -1,3 +1,9 @@
+2009-02-23  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberd_c2s.erl: Do not call mod_caps:clear_caps, this previous
+	optimization is too agressive and breaks PubSub/PEP standard behavior
+	(EJAB-854)
+
 2009-02-21  Badlop  <badlop@process-one.net>
 
  	* src/mod_muc/mod_muc_room.erl: Owner of a password protected room
