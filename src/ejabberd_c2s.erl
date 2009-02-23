@@ -1062,11 +1062,13 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				Els = Packet#xmlel.children,
 				case exmpp_presence:get_type(Packet) of
 				   'unavailable' ->
-				       mod_caps:clear_caps(From);
+					%mod_caps:clear_caps(From);
+					% caps clear disabled cause it breaks things
+					ok;
 				     _ ->
-					 ServerString = binary_to_list(StateData#state.server),
-					 Caps = mod_caps:read_caps(Els),
-					 mod_caps:note_caps(ServerString, From, Caps)
+					ServerString = binary_to_list(StateData#state.server),
+					Caps = mod_caps:read_caps(Els),
+					mod_caps:note_caps(ServerString, From, Caps)
 				 end,
 				case ?SETS:is_element(
 					LFrom, StateData#state.pres_a) orelse
