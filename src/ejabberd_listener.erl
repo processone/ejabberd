@@ -219,11 +219,11 @@ accept(ListenSocket, Module, Opts) ->
 start_listener(Port, Module, Opts) ->
     case start_listener2(Port, Module, Opts) of
 	{ok, _Pid} = R -> R;
-	{error, {{'EXIT', {undef, _}}, _} = Error} ->
+	{error, {{'EXIT', {undef, [{M, _F, _A}|_]}}, _} = Error} ->
 	    ?ERROR_MSG("Error starting the ejabberd listener: ~p.~n"
 		       "It could not be loaded or is not an ejabberd listener.~n"
 		       "Error: ~p~n", [Module, Error]),
-	    {error, {module_not_available, Module}};
+	    {error, {module_not_available, M}};
 	{error, {already_started, Pid}} ->
 	    {ok, Pid};
 	{error, Error} ->

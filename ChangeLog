@@ -1,3 +1,7 @@
+2009-02-24  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_listener.erl: Fix report message of 'undef' error
+
 2009-02-23  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_c2s.erl: Do not call mod_caps:clear_caps, this previous
