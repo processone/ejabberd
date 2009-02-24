@@ -194,7 +194,7 @@ do_client_version(enabled, From, To) ->
 	  after 5000 -> % Timeout in miliseconds: 5 seconds
 		  []
 	  end,
-    Values = [{Name, exmpp_xml:get_cdata_as_list(Children)} || #xmlel{name = Name, children = Children} <- Els],
+    Values = [{Name, exmpp_xml:get_cdata_as_list(El)} || #xmlel{name = Name} = El <- Els],
     
     %% Print in log
     Values_string1 = [io_lib:format("~n~s: ~p", [N, V]) || {N, V} <- Values],

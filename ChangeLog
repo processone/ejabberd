@@ -3,6 +3,8 @@
 	* src/ejabberd_service.erl: Exmpp related fixed to the external
 	components service.
 
+	* src/mod_echo.erl: Fix call to exmpp_xml:get_cdata_as_list/1.
+
 2009-02-23  Pablo Polvorin <pablo.polvorin@process-one.net>
 	* src/ejabberd_c2s.erl, src/mod_echo.erl, src/mod_roster.erl,
 	src/mod_roster_odbc.erl: Use exmpp_jid:to_binary/1 when possible.
