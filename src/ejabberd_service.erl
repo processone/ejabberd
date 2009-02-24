@@ -147,7 +147,7 @@ init([{SockMod, Socket}, Opts]) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, El = #xmlel{ns = NS, attrs = Attrs}}, StateData) ->
+wait_for_stream({xmlstreamstart, El = #xmlel{ns = _NS, attrs = Attrs}}, StateData) ->
     case exmpp_xml:is_ns_declared_here(El, ?NS_COMPONENT_ACCEPT) of
 	true ->
 	    %% Note: XEP-0114 requires to check that destination is a Jabber
@@ -358,6 +358,7 @@ terminate(Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 send_text(StateData, Text) ->
+    io:format(">>~n ~s ~n", [Text]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->
