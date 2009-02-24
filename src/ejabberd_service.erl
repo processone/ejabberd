@@ -134,7 +134,7 @@ init([{SockMod, Socket}, Opts]) ->
     {ok, wait_for_stream, #state{socket = Socket,
 				 sockmod = SockMod,
 				 streamid = new_id(),
-				 hosts = Hosts,
+				 hosts = [list_to_binary(H) || H <- Hosts],
 				 password = Password,
 				 access = Access,
 				 check_from = CheckFrom
@@ -147,20 +147,20 @@ init([{SockMod, Socket}, Opts]) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, #xmlel{ns = NS, attrs = Attrs}}, StateData) ->
-    case NS of
-	?NS_COMPONENT_ACCEPT ->
+wait_for_stream({xmlstreamstart, El = #xmlel{ns = NS, attrs = Attrs}}, StateData) ->
+    case exmpp_xml:is_ns_declared_here(El, ?NS_COMPONENT_ACCEPT) of
+	true ->
 	    %% Note: XEP-0114 requires to check that destination is a Jabber
 	    %% component served by this Jabber server.
 	    %% However several transports don't respect that,
 	    %% so ejabberd doesn't check 'to' attribute (EJAB-717)
-	    To = binary_to_list(exmpp_stanza:get_recipient_from_attrs(Attrs)),
-	    Opening_Reply = exmpp_stream:opening_reply(exmpp_xml:escape_using_entities(To),
+	    To = exmpp_stanza:get_recipient_from_attrs(Attrs),
+	    Opening_Reply = exmpp_stream:opening_reply(To,
 	      ?NS_COMPONENT_ACCEPT,
 	      {0, 0}, StateData#state.streamid),
 	    send_element(StateData, Opening_Reply),
 	    {next_state, wait_for_handshake, StateData};
-	_ ->
+	false ->
 	    Error = #xmlel{ns = ?NS_XMPP, name = 'stream', children = [
 		#xmlel{ns = ?NS_XMPP, name = 'error', children = [
 		    #xmlcdata{cdata = <<"Invalid Stream Header">>}
@@ -184,7 +184,7 @@ wait_for_stream(closed, StateData) ->
 
 
 wait_for_handshake({xmlstreamelement, El}, StateData) ->
-    case {El#xmlel.name, exmpp_xml:get_cdata(El)} of
+    case {El#xmlel.name, exmpp_xml:get_cdata_as_list(El)} of
 	{'handshake', Digest} ->
 	    case sha:sha(StateData#state.streamid ++
 			 StateData#state.password) of
@@ -193,11 +193,11 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 		      #xmlel{ns = ?NS_COMPONENT_ACCEPT, name = 'handshake'}),
 		    lists:foreach(
 		      fun(H) ->
-			      ejabberd_router:register_route(H),
+			      ejabberd_router:register_route(binary_to_list(H)),
 			      ?INFO_MSG("Route registered for service ~p~n", [H])
 		      end, StateData#state.hosts),
 		    {next_state, stream_established, StateData};
-		_ ->
+		 _ ->
 		    send_element(StateData,
 		      #xmlel{ns = ?NS_XMPP, name = 'error', children = [
 			  #xmlcdata{cdata = <<"Invalid Handshake">>}]}),
@@ -231,7 +231,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		  %% The default is the standard behaviour in XEP-0114
 		  _ ->
 		      FromJID1 = exmpp_jid:parse_jid(From),
-		      Server =  exmpp_jid:ldomain_as_list(FromJID1),
+		      Server =  exmpp_jid:ldomain(FromJID1),
 			  case lists:member(Server, StateData#state.hosts) of
 				  true -> FromJID1;
 				  false -> error
@@ -240,7 +240,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
     To = exmpp_stanza:get_recipient(El),
     ToJID = case To of
 		undefined -> error;
-		_ -> exmpp_jib:binary_to_jid(To)
+		_ -> exmpp_jid:parse_jid(To)
 	    end,
     if ((El#xmlel.name == 'iq') or
 	(El#xmlel.name == 'message') or
@@ -318,14 +318,10 @@ handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     {next_state, StateName, StateData};
 handle_info({send_element, El}, StateName, StateData) ->
+    io:format("ejabberd_service send_element ~p~n",[ El]),
     send_element(StateData, El),
     {next_state, StateName, StateData};
-handle_info({route, FromOld, ToOld, PacketOld}, StateName, StateData) ->
-    %% XXX OLD FORMAT: From, To and Packet are in the old format.
-    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld,
-      [?NS_JABBER_CLIENT], ?PREFIXED_NS),
-    From = jlib:from_old_jid(FromOld),
-    To = jlib:from_old_jid(ToOld),
+handle_info({route, From, To, Packet}, StateName, StateData) ->
     case acl:match_rule(global, StateData#state.access, From) of
 	allow ->
 	    El1 = exmpp_stanza:set_sender(Packet, From),
@@ -349,7 +345,7 @@ terminate(Reason, StateName, StateData) ->
 	stream_established ->
 	    lists:foreach(
 	      fun(H) ->
-		      ejabberd_router:unregister_route(H)
+		      ejabberd_router:unregister_route(binary_to_list(H))
 	      end, StateData#state.hosts);
 	_ ->
 	    ok
@@ -365,9 +361,9 @@ send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->
-    send_text(StateData, exmpp_stream:to_list(El));
+    send_text(StateData, exmpp_stream:to_iolist(El));
 send_element(StateData, El) ->
-    send_text(StateData, exmpp_stanza:to_list(El)).
+    send_text(StateData, exmpp_stanza:to_iolist(El)).
 
 new_id() ->
     randoms:get_string().
