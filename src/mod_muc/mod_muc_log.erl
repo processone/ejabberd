@@ -138,7 +138,7 @@ init([Host, Opts]) ->
 		file_format = FileFormat,
 		css_file = CSSFile,
 		access = AccessLog,
-		lang = Lang,
+		lang = list_to_binary(Lang),
 		timezone = Timezone,
 		spam_prevention = NoFollow,
 		top_link = Top_link}}.
@@ -211,29 +211,29 @@ add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
 	    ok;
 	{'undefined', SubEl} ->
 	    Message = {body, exmpp_xml:get_cdata_as_list(SubEl)},
-	    add_message_to_log(Nick, Message, Room, Opts, State);
+	    add_message_to_log(binary_to_list(Nick), Message, Room, Opts, State);
 	{SubEl, _} ->
 	    Message = {subject, exmpp_xml:get_cdata_as_list(SubEl)},
-	    add_message_to_log(Nick, Message, Room, Opts, State)
+	    add_message_to_log(binary_to_list(Nick), Message, Room, Opts, State)
     end;
 
 add_to_log2(roomconfig_change, _, Room, Opts, State) ->
     add_message_to_log("", roomconfig_change, Room, Opts, State);
 
 add_to_log2(nickchange, {OldNick, NewNick}, Room, Opts, State) ->
-    add_message_to_log(NewNick, {nickchange, OldNick}, Room, Opts, State);
+    add_message_to_log(binary_to_list(NewNick), {nickchange, binary_to_list(OldNick)}, Room, Opts, State);
 
 add_to_log2(join, Nick, Room, Opts, State) ->
-    add_message_to_log(Nick, join, Room, Opts, State);
+    add_message_to_log(binary_to_list(Nick), join, Room, Opts, State);
 
 add_to_log2(leave, {Nick, Reason}, Room, Opts, State) ->
     case binary_to_list(Reason) of
-	"" -> add_message_to_log(Nick, leave, Room, Opts, State);
-	R -> add_message_to_log(Nick, {leave, R}, Room, Opts, State)
+	"" -> add_message_to_log(binary_to_list(Nick), leave, Room, Opts, State);
+	R -> add_message_to_log(binary_to_list(Nick), {leave, R}, Room, Opts, State)
     end;
 
 add_to_log2(kickban, {Nick, Reason, Code}, Room, Opts, State) ->
-    add_message_to_log(Nick, {kickban, Code, binary_to_list(Reason)}, Room, Opts, State).
+    add_message_to_log(binary_to_list(Nick), {kickban, Code, binary_to_list(Reason)}, Room, Opts, State).
 
 
 %%----------------------------------------------------------------------
