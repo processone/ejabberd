@@ -1277,7 +1277,7 @@ change_shaper(StateData, JID) ->
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 send_text(StateData, Text) ->
-    ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
+    ?DEBUG("Send XML on stream = ~s", [Text]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->

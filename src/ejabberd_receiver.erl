@@ -302,7 +302,7 @@ process_data(Data,
 	     #state{xml_stream_state = XMLStreamState,
 		    shaper_state = ShaperState,
 		    c2s_pid = C2SPid} = State) ->
-    ?DEBUG("Received XML on stream = ~p", [binary_to_list(Data)]),
+    ?DEBUG("Received XML on stream = ~p", [Data]),
     {ok, XMLStreamState1} = exmpp_xmlstream:parse(XMLStreamState, Data),
     {NewShaperState, Pause} = shaper:update(ShaperState, size(Data)),
     HibTimeout = 

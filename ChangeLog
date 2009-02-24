@@ -8,6 +8,14 @@
 	sql-escape it. The escaped value returned is allways a list() 
 	(ejabberd's odbc drivers only works on lists())
 
+	* src/ejabberd_c2s.erl, src/mod_caps.erl, src/ejabberd_receiver.erl:
+	Removed a couple of expensive function calls used as arguments for 
+	?DEBUG macros. All arguments used in the ?DEBUG macro are strictly 
+	evaluated (even if the loglevel is higher). The same is true for 
+	all log macros defined in ejabberd.hrl.  We might need to use lazy
+	evaluation for the arguments, when they are expensive to generate
+	(wrap the arguments lists in a fun).
+
 2009-02-23  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberd_c2s.erl: Do not call mod_caps:clear_caps, this previous
