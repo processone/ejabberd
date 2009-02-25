@@ -1,3 +1,8 @@
+2009-02-25  Badlop  <badlop@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix incorrect implementation of
+	Pubsub payload requirements (thanks to Andy Skelton)(EJAB-823)
+
 2009-02-24  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_listener.erl: Fix report message of 'undef' error
