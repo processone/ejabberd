@@ -1491,6 +1491,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    PublishFeature = lists:member("publish", Features),
 		    PublishModel = get_option(Options, publish_model),
 		    MaxItems = max_items(Options),
+		    DeliverPayloads = get_option(Options, deliver_payloads),
+		    PersistItems = get_option(Options, persist_items),
 		    PayloadCount = payload_xmlelements(Payload),
 		    PayloadSize = size(term_to_binary(Payload)),
 		    PayloadMaxSize = get_option(Options, max_payload_size),
@@ -1509,11 +1511,11 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			Payload == "" ->
 			    %% Publisher attempts to publish to payload node with no payload
 			    {error, extended_error('bad-request', "payload-required")};
-			(MaxItems == 0) and (PayloadSize > 0) ->
-			    % Publisher attempts to publish to transient notification node with item
+			(DeliverPayloads == 0) and (PersistItems == 0) and (PayloadSize > 0) ->
+			    %% Publisher attempts to publish to transient notification node with item
 			    {error, extended_error('bad-request', "item-forbidden")};
-			(MaxItems > 0) and (PayloadSize == 0) ->
-			    % Publisher attempts to publish to persistent node with no item
+			((DeliverPayloads == 1) or (PersistItems == 1)) and (PayloadSize == 0) ->
+			    %% Publisher attempts to publish to persistent node with no item
 			    {error, extended_error('bad-request', "item-required")};
 			true ->
 			    node_call(Type, publish_item, [Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload])

@@ -1,3 +1,8 @@
+2009-02-25  Badlop  <badlop@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix incorrect implementation of
+	Pubsub payload requirements (thanks to Andy Skelton)(EJAB-823)
+
 2009-02-24  Pablo Polvorin <pablo.polvorin@process-one.net>
 
 	* src/ejabberd_service.erl: Exmpp related fixed to the external
@@ -9,6 +14,7 @@
 	to be in list() format.
 
 2009-02-23  Pablo Polvorin <pablo.polvorin@process-one.net>
+
 	* src/ejabberd_c2s.erl, src/mod_echo.erl, src/mod_roster.erl,
 	src/mod_roster_odbc.erl: Use exmpp_jid:to_binary/1 when possible.
 
@@ -51,7 +57,6 @@
 	* src/web/ejabberd_web_admin.erl: Fix add / remove users.
 
 	* src/mod_configure.erl: Fix bug in form generation.
-	
 
 2009-02-19 Christophe Romain <christophe.romain@process-one.net>
 
