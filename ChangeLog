@@ -1,3 +1,9 @@
+2009-02-27  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: No mention to the release date in ejabberd Guide
+	or release notes. The date of an ejabberd release is determined by
+	the date of the corresponding release announcement.
+
 2009-02-25  Badlop  <badlop@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix incorrect implementation of
