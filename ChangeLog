@@ -1,5 +1,8 @@
 2009-02-27  Badlop  <badlop@process-one.net>
 
+	* src/tls/tls_drv.c: S2S connection with STARTTLS fails to Gtalk
+	and recent Openfire (thanks to Philipp Hancke)(EJAB-877)
+
 	* doc/guide.tex: No mention to the release date in ejabberd Guide
 	or release notes. The date of an ejabberd release is determined by
 	the date of the corresponding release announcement.
