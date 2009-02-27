@@ -1,5 +1,8 @@
 2009-02-27  Badlop  <badlop@process-one.net>
 
+	* src/cyrsasl_digest.erl: Unquote backslash in DIGEST-MD5 quoted
+	strings (EJAB-304)
+
 	* src/tls/tls_drv.c: S2S connection with STARTTLS fails to Gtalk
 	and recent Openfire (thanks to Philipp Hancke)(EJAB-877)
 

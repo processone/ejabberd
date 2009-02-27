@@ -101,15 +101,17 @@ parse1([], [], T) ->
 parse1([], _S, _T) ->
     bad.
 
-parse2([$" | Cs], Key, Val, Ts) ->
+parse2([$\" | Cs], Key, Val, Ts) ->
     parse3(Cs, Key, Val, Ts);
 parse2([C | Cs], Key, Val, Ts) ->
     parse4(Cs, Key, [C | Val], Ts);
 parse2([], _, _, _) ->
     bad.
 
-parse3([$" | Cs], Key, Val, Ts) ->
+parse3([$\" | Cs], Key, Val, Ts) ->
     parse4(Cs, Key, Val, Ts);
+parse3([$\\, C | Cs], Key, Val, Ts) ->
+    parse3(Cs, Key, [C | Val], Ts);
 parse3([C | Cs], Key, Val, Ts) ->
     parse3(Cs, Key, [C | Val], Ts);
 parse3([], _, _, _) ->
