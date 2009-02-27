@@ -113,7 +113,7 @@ features() ->
 
 create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
     LOwner = jlib:jid_tolower(Owner),
-    {User, Server, _Resource} = LOwner, 
+    {User, Server, _Resource} = LOwner,
     Allowed = case LOwner of
 	{"", Host, ""} ->
 	    true; % pubsub service always allowed
@@ -125,12 +125,12 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
 			_ -> false
 		    end;
 		E ->
-			?DEBUG("Create not allowed : ~p~n", [E]),
-		    false   
+		    ?DEBUG("Create not allowed : ~p~n", [E]),
+		    false
 	    end
     end,
     {result, Allowed}.
-    
+
 create_node(Host, Node, Owner) ->
     case node_default:create_node(Host, Node, Owner) of
 	{result, _} -> {result, []};

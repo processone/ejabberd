@@ -1064,7 +1064,7 @@ find_authorization_response(Packet) ->
 	[invalid] -> invalid;
 	[] -> none;
 	[XFields] when is_list(XFields) ->
-            ?DEBUG("XFields: ~p", [XFields]),
+	    ?DEBUG("XFields: ~p", [XFields]),
 	    case lists:keysearch("FORM_TYPE", 1, XFields) of
 		{value, {_, [?NS_PUBSUB_SUB_AUTH]}} ->
 		    XFields;
@@ -2810,7 +2810,8 @@ transaction(Fun, Trans) ->
 
 %% Add pubsub-specific error element
 extended_error(Error, Ext) ->
-    extended_error(Error, Ext, [{"xmlns", ?NS_PUBSUB_ERRORS}]).
+    extended_error(Error, Ext,
+		   [{"xmlns", ?NS_PUBSUB_ERRORS}]).
 extended_error(Error, unsupported, Feature) ->
     extended_error(Error, "unsupported",
 		   [{"xmlns", ?NS_PUBSUB_ERRORS},
