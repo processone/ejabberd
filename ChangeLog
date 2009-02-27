@@ -1,3 +1,8 @@
+2009-02-28  Badlop  <badlop@process-one.net>
+
+	* src/mod_pubsub/node_default.erl: Fix that non-subscriber could
+	fetch items from Authorize node (thanks to Brian Cully)(EJAB-873)
+
 2009-02-27  Badlop  <badlop@process-one.net>
 
 	* src/web/ejabberd_http.erl: Added a workaround for inet:peername
