@@ -1,5 +1,8 @@
 2009-02-27  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_http.erl: Added a workaround for inet:peername
+	returning 'ebadf'
+
 	* src/tls/tls_drv.c: S2S connection with STARTTLS fails to Gtalk
 	and recent Openfire (thanks to Philipp Hancke)(EJAB-877)
 
