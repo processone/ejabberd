@@ -1,3 +1,8 @@
+2009-02-27  Badlop  <badlop@process-one.net>
+
+	* src/tls/tls_drv.c: S2S connection with STARTTLS fails to Gtalk
+	and recent Openfire (thanks to Philipp Hancke)(EJAB-877)
+
 2009-02-27  Evgeniy Khramtsov <ekhramtsov@process-one.net>
 
 	* src/mod_proxy65/mod_proxy65_service.erl: if an 'ip' option

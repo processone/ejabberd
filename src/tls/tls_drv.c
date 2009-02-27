@@ -367,7 +367,7 @@ static int tls_drv_control(ErlDrvData handle,
 	 if (command == SET_CERTIFICATE_FILE_ACCEPT)
 	    SSL_set_accept_state(d->ssl);
 	 else {
-	    SSL_set_options(d->ssl, SSL_OP_NO_SSLv2);
+	    SSL_set_options(d->ssl, SSL_OP_NO_SSLv2|SSL_OP_NO_TICKET);
 	    SSL_set_connect_state(d->ssl);
 	 }
 	 break;
