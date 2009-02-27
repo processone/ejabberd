@@ -114,25 +114,25 @@ features() ->
 
 create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
     LOwner = jlib:short_prepd_jid(Owner),
-    {User, Server, _Resource} = LOwner, 
+    {User, Server, Resource} = LOwner,
     Allowed = case LOwner of
 	{undefined, Host, undefined} ->
 	    true; % pubsub service always allowed
 	_ ->
-	    {LU, LS, LR} = LOwner,
-            case acl:match_rule(ServerHost, Access, exmpp_jid:make_jid(LU, LS, LR)) of
+	    JID = exmpp_jid:make_jid(User, Server, Resource),
+	    case acl:match_rule(ServerHost, Access, JID) of
 		allow ->
 		    case Host of 
 			{User, Server, _} -> true;
 			_ -> false
 		    end;
 		E ->
-			?DEBUG("Create not allowed : ~p~n", [E]),
-		    false   
+		    ?DEBUG("Create not allowed : ~p~n", [E]),
+		    false
 	    end
     end,
     {result, Allowed}.
-    
+
 create_node(Host, Node, Owner) ->
     case node_default:create_node(Host, Node, Owner) of
 	{result, _} -> {result, []};

@@ -226,7 +226,6 @@ create_node(Host, Node, Owner) ->
     set_state(#pubsub_state{stateid = {OwnerKey, {Host, Node}}, affiliation = owner}),
     {result, {default, broadcast}}.
 
-
 %% @spec (Host, Removed) -> ok
 %%	 Host = mod_pubsub:host()
 %%	 Removed = [mod_pubsub:pubsubNode()]
@@ -559,8 +558,7 @@ get_entity_affiliations(Host, Owner) ->
     {result, lists:map(Tr, States)}.
 
 get_node_affiliations(Host, Node) ->
-    States = mnesia:match_object(
-	       #pubsub_state{stateid = {'_', {Host, Node}}, _ = '_'}),
+    {result, States} = get_states(Host, Node),
     Tr = fun(#pubsub_state{stateid = {J, {_, _}}, affiliation = A}) ->
 		 {J, A}
 	 end,
@@ -594,13 +592,15 @@ set_affiliation(Host, Node, Owner, Affiliation) ->
 %% that will be added to the affiliation stored in the main
 %% <tt>pubsub_state</tt> table.</p>
 get_entity_subscriptions(Host, Owner) ->
-    States = case jlib:short_prepd_bare_jid(Owner) of
-	{U, D, ""} -> mnesia:match_object(
-		    #pubsub_state{stateid = {{U, D, '_'}, {Host, '_'}}, _ = '_'});
-	{U, D, R} -> mnesia:match_object(
-		    #pubsub_state{stateid = {{U, D, ""}, {Host, '_'}}, _ = '_'})
-		  ++ mnesia:match_object(
-		    #pubsub_state{stateid = {{U, D, R}, {Host, '_'}}, _ = '_'})
+    SubKey = jlib:short_prepd_jid(Owner),
+    GenKey = jlib:short_prepd_bare_jid(SubKey),
+    States = case SubKey of
+	GenKey -> mnesia:match_object(
+	       #pubsub_state{stateid = {{U, D, '_'}, {Host, '_'}}, _ = '_'});
+	_ -> mnesia:match_object(
+	       #pubsub_state{stateid = {GenKey, {Host, '_'}}, _ = '_'})
+	    ++ mnesia:match_object(
+	       #pubsub_state{stateid = {SubKey, {Host, '_'}}, _ = '_'})
     end,
     Tr = fun(#pubsub_state{stateid = {J, {_, N}}, subscription = S}) ->
 	    {N, S, J}
@@ -608,8 +608,7 @@ get_entity_subscriptions(Host, Owner) ->
     {result, lists:map(Tr, States)}.
 
 get_node_subscriptions(Host, Node) ->
-    States = mnesia:match_object(
-	       #pubsub_state{stateid = {'_', {Host, Node}}, _ = '_'}),
+    {result, States} = get_states(Host, Node),
     Tr = fun(#pubsub_state{stateid = {J, {_, _}}, subscription = S}) ->
 		 {J, S}
 	 end,
@@ -778,7 +777,7 @@ get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup
 
 %% @spec (Item) -> ok | {error, Reason::stanzaError()}
 %%	 Item = mod_pubsub:pubsubItems()
-%% @doc <p>Write a state into database.</p>
+%% @doc <p>Write an item into database.</p>
 set_item(Item) when is_record(Item, pubsub_item) ->
     mnesia:write(Item);
 set_item(_) ->
