@@ -328,6 +328,13 @@ process_request(#state{request_method = 'POST',
 		       socket = Socket,
 		       request_handlers = RequestHandlers} = State)
   when is_integer(Len) ->
+    {ok, IP} =
+	case SockMod of
+	    gen_tcp ->
+		inet:peername(Socket);
+	    _ ->
+		SockMod:peername(Socket)
+	end,
     case SockMod of
 	gen_tcp ->
 	    inet:setopts(Socket, [{packet, 0}]);
@@ -347,13 +354,6 @@ process_request(#state{request_method = 'POST',
 			 LQ ->
 			     LQ
 		     end,
-	    {ok, IP} =
-		case SockMod of
-		    gen_tcp ->
-			inet:peername(Socket);
-		    _ ->
-			SockMod:peername(Socket)
-		end,
 	    Request = #request{method = 'POST',
 			       path = LPath,
 			       q = LQuery,

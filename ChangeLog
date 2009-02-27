@@ -1,5 +1,8 @@
 2009-02-27  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_http.erl: Added a workaround for inet:peername
+	returning 'ebadf'
+
 	* src/cyrsasl_digest.erl: Unquote backslash in DIGEST-MD5 quoted
 	strings (EJAB-304)
 
