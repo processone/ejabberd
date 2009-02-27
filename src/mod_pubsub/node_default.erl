@@ -305,7 +305,7 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
-	(AccessModel == authorize) -> % TODO: to be done
+	(AccessModel == authorize) and (not Whitelisted) ->
 	    %% Node has authorize access model
 	    {error, ?ERR_FORBIDDEN};
 	%%MustPay ->
@@ -702,7 +702,8 @@ get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, _SubI
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(Host, Node, GenKey),
     Affiliation = GenState#pubsub_state.affiliation,
-    Whitelisted = lists:member(Affiliation, [member, publisher, owner]),
+    Subscription = GenState#pubsub_state.subscription,
+    Whitelisted = can_fetch_item(Affiliation, Subscription),
     if
 	%%SubID == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
@@ -750,7 +751,8 @@ get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(Host, Node, GenKey),
     Affiliation = GenState#pubsub_state.affiliation,
-    Whitelisted = lists:member(Affiliation, [member, publisher, owner]),
+    Subscription = GenState#pubsub_state.subscription,
+    Whitelisted = can_fetch_item(Affiliation, Subscription),
     if
 	%%SubID == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
@@ -804,3 +806,16 @@ del_items(Host, Node, ItemIds) ->
 %% node id.</p>
 get_item_name(_Host, _Node, Id) ->
     Id.
+
+%% @spec (Affiliation, Subscription) -> true | false
+%%       Affiliation = owner | member | publisher | outcast | none
+%%       Subscription = subscribed | none
+%% @doc Determines if the combination of Affiliation and Subscribed
+%% are allowed to get items from a node.
+can_fetch_item(owner,        _)             -> true;
+can_fetch_item(member,       _)             -> true;
+can_fetch_item(publisher,    _)             -> true;
+can_fetch_item(outcast,      _)             -> false;
+can_fetch_item(none,         subscribed)    -> true;
+can_fetch_item(none,         none)          -> false;
+can_fetch_item(_Affiliation, _Subscription) -> false.
