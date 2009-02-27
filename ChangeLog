@@ -1,3 +1,8 @@
+2009-02-27  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/mod_proxy65/mod_proxy65_service.erl: if an 'ip' option
+	is not defined, the module takes an IP address of a local hostname.
+
 2009-02-26  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: No mention to the release date in ejabberd Guide
