@@ -595,7 +595,7 @@ set_affiliation(Host, Node, Owner, Affiliation) ->
 %% that will be added to the affiliation stored in the main
 %% <tt>pubsub_state</tt> table.</p>
 get_entity_subscriptions(Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
+    {U, D, _} = SubKey = jlib:jid_tolower(Owner),
     GenKey = jlib:jid_remove_resource(SubKey),
     States = case SubKey of
 	GenKey -> mnesia:match_object(
