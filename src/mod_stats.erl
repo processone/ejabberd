@@ -37,11 +37,11 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_STATS,
+    gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_STATS_s,
 				  ?MODULE, process_local_iq, IQDisc).
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_STATS).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_STATS_s).
 
 
 process_local_iq(_From, To, #iq{type = get,
@@ -49,7 +49,7 @@ process_local_iq(_From, To, #iq{type = get,
     Node = string:tokens(exmpp_xml:get_attribute_as_list(SubEl, 'node', ""), "/"),
     Names = get_names(exmpp_xml:get_child_elements(SubEl), []),
 
-    case get_local_stats(exmpp_jid:domain_as_list(To), Node, Names) of
+    case get_local_stats(exmpp_jid:domain(To), Node, Names) of
 	{result, Res} ->
 	    Result = #xmlel{ns = XMLNS, name = 'query', children = Res},
 	    exmpp_iq:result(IQ_Rec, Result);
@@ -62,7 +62,7 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 get_names([], Res) ->
     Res;
-get_names([#xmlel{name = 'stat', attrs = Attrs} | Els], Res) ->
+get_names([#xmlel{name = "stat", attrs = Attrs} | Els], Res) ->
     Name = exmpp_xml:get_attribute_from_list_as_binary(Attrs, 'name', <<>>),
     case Name of
 	<<>> ->
@@ -74,7 +74,7 @@ get_names([_ | Els], Res) ->
     get_names(Els, Res).
 
 
--define(STAT(Name), #xmlel{ns = ?NS_STATS, name = 'stat', attrs = [?XMLATTR('name', Name)]}).
+-define(STAT(Name), #xmlel{ns = ?NS_STATS_s, name = 'stat', attrs = [?XMLATTR('name', Name)]}).
 
 get_local_stats(_Server, [], []) ->
     {result,
@@ -115,22 +115,22 @@ get_local_stats(_Server, _, _) ->
 
 
 -define(STATVAL(Val, Unit),
-	#xmlel{ns = ?NS_STATS, name = 'stat', attrs =
+	#xmlel{ns = ?NS_STATS_s, name = 'stat', attrs =
 	 [?XMLATTR('name', Name),
 	  ?XMLATTR('units', Unit),
 	  ?XMLATTR('value', Val)
 	 ]}).
 
 -define(STATERR(Code, Desc),
-	#xmlel{ns = ?NS_STATS, name = 'stat', attrs=
+	#xmlel{ns = ?NS_STATS_s, name = 'stat', attrs=
 	 [?XMLATTR('name', Name)], children =
-	 [#xmlel{ns = ?NS_STATS, name = 'error', attrs =
+	 [#xmlel{ns = ?NS_STATS_s, name = 'error', attrs =
 	   [?XMLATTR('code', Code)], children =
 	   [#xmlcdata{cdata = Desc}]}]}).
 
 
 get_local_stat(Server, [], Name) when Name == <<"users/online">> ->
-    case catch ejabberd_sm:get_vh_session_list(list_to_binary(Server)) of
+    case catch ejabberd_sm:get_vh_session_list(Server) of
 	{'EXIT', _Reason} ->
 	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	Users ->
@@ -139,7 +139,7 @@ get_local_stat(Server, [], Name) when Name == <<"users/online">> ->
 
 get_local_stat(Server, [], Name) when Name == <<"users/total">> ->
     %%LServer = jlib:nameprep(Server),
-    case catch ejabberd_auth:get_vh_registered_users_number(Server) of
+    case catch ejabberd_auth:get_vh_registered_users_number(binary_to_list(Server)) of
 	{'EXIT', _Reason} ->
 	    ?STATERR(<<"500">>, <<"Internal Server Error">>);
 	NUsers ->

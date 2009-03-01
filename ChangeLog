@@ -7,6 +7,9 @@
 	 ssl  (ejabberd_receiver:process_data/2 was called before initializing 
 	 the xmlstream). 
 
+	* src/mod_stats.erl: Elements and namespace for (XEP-0039) aren't know
+	by exmpp ("http://jabber.org/protocol/stats" is represented as a list())
+
 2009-02-28  Badlop  <badlop@process-one.net>
 
 	* src/mod_pubsub/node_default.erl: Fix that non-subscriber could
