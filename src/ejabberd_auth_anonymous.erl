@@ -65,14 +65,15 @@
 %% Register to login / logout events.
 
 start(Host) when is_list(Host) ->
+    HostB = list_to_binary(Host),
     %% TODO: Check cluster mode
     mnesia:create_table(anonymous, [{ram_copies, [node()]},
 				    {type, bag},
 				    {attributes, record_info(fields, anonymous)}]),
     %% The hooks are needed to add / remove users from the anonymous tables
-    ejabberd_hooks:add(sm_register_connection_hook, Host,
+    ejabberd_hooks:add(sm_register_connection_hook, HostB,
 		       ?MODULE, register_connection, 100),
-    ejabberd_hooks:add(sm_remove_connection_hook, Host,
+    ejabberd_hooks:add(sm_remove_connection_hook, HostB,
 		       ?MODULE, unregister_connection, 100),
     ok.
 

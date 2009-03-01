@@ -1,3 +1,8 @@
+2009-03-01  Pablo Polvorin <pablo.polvorin@process-one.net>
+
+	* src/ejabberd_auth_anonymous.erl: Host argument for ejabberd_hooks's 
+	functions must be in binary() format.
+
 2009-02-28  Badlop  <badlop@process-one.net>
 
 	* src/mod_pubsub/node_default.erl: Fix that non-subscriber could
