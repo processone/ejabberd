@@ -3,6 +3,10 @@
 	* src/ejabberd_auth_anonymous.erl: Host argument for ejabberd_hooks's 
 	functions must be in binary() format.
 
+	* src/ejabberd_receiver.erl: Fix bug when clients connect using legacy 
+	 ssl  (ejabberd_receiver:process_data/2 was called before initializing 
+	 the xmlstream). 
+
 2009-02-28  Badlop  <badlop@process-one.net>
 
 	* src/mod_pubsub/node_default.erl: Fix that non-subscriber could

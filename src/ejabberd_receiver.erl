@@ -132,9 +132,8 @@ init([Socket, SockMod, Shaper, MaxStanzaSize]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({starttls, TLSSocket}, _From,
-	    #state{xml_stream_state = XMLStreamState} = State) ->
-    NewXMLStreamState = do_reset_stream(XMLStreamState),
+handle_call({starttls, TLSSocket}, _From,  State) ->
+    NewXMLStreamState = do_reset_stream(State),
     NewState = State#state{socket = TLSSocket,
 			   sock_mod = tls,
 			   xml_stream_state = NewXMLStreamState},
@@ -165,17 +164,8 @@ handle_call(reset_stream, _From,
     {reply, Reply, State#state{xml_stream_state = NewXMLStreamState},
      ?HIBERNATE_TIMEOUT};
 handle_call({become_controller, C2SPid}, _From, State) ->
-    Parser = exmpp_xml:start_parser([
-      {names_as_atom, true},
-      {check_nss, xmpp},
-      {check_elems, xmpp},
-      {check_attrs, xmpp},
-      {max_size, State#state.max_stanza_size}
-    ]),
-    XMLStreamState = exmpp_xmlstream:start(
-      {gen_fsm, C2SPid}, Parser,
-      [{xmlstreamstart, new}]
-    ),
+    close_stream(State#state.xml_stream_state),
+    XMLStreamState = new_xmlstream(C2SPid, State#state.max_stanza_size),
     NewState = State#state{c2s_pid = C2SPid,
 			   xml_stream_state = XMLStreamState},
     activate_socket(NewState),
@@ -327,8 +317,22 @@ close_stream(XMLStreamState) ->
     exmpp_xmlstream:stop(XMLStreamState).
     
 
-do_reset_stream(undefined) ->
-    undefined;
+do_reset_stream(#state{xml_stream_state = undefined, c2s_pid = C2SPid, max_stanza_size = MaxStanzaSize}) ->
+    new_xmlstream(C2SPid, MaxStanzaSize);
 
-do_reset_stream(XMLStreamState) ->
+do_reset_stream(#state{xml_stream_state = XMLStreamState}) ->
     exmpp_xmlstream:reset(XMLStreamState).
+
+
+new_xmlstream(C2SPid, MaxStanzaSize) ->
+    Parser = exmpp_xml:start_parser([
+      {names_as_atom, true},
+      {check_nss, xmpp},
+      {check_elems, xmpp},
+      {check_attrs, xmpp},
+      {max_size, MaxStanzaSize}
+    ]),
+    exmpp_xmlstream:start(
+      {gen_fsm, C2SPid}, Parser,
+      [{xmlstreamstart, new}]
+    ).
