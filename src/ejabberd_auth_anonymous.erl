@@ -53,7 +53,7 @@
 	 remove_user/3,
 	 plain_password_required/0]).
 
--include_lib("exmpp/include/exmpp_xmpp.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
 -record(anonymous, {us, sid}).
