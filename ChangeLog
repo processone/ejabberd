@@ -3,6 +3,9 @@
 	* src/ejabberd_auth_anonymous.erl: Correct include declaration (thanks 
 	to badlop). Bug was introduced in r1863.
 
+	* src/ejabberd_s2s_in.erl, src/ejabberd_s2s_out.erl: Serialize stanzas
+	to iolist().
+
 2009-03-01  Pablo Polvorin <pablo.polvorin@process-one.net>
 
 	* src/ejabberd_auth_anonymous.erl: Host argument for ejabberd_hooks's 
