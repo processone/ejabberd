@@ -1,5 +1,9 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/mod_roster.erl: When account is deleted, cancel presence
+	subscription for all roster items (EJAB-790)
+	* src/mod_roster_odbc.erl: Likewise
+
 	* src/mod_shared_roster.erl: Fix bug: a pending subscription
 	request, and later the requester added to the roster due to a
 	shared roster group, that request could neither be accepted or

@@ -253,7 +253,8 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    Item2 = process_item_els(Item1, El#xmlel.children),
 		    case Item2#roster.subscription of
 			remove ->
-			    odbc_queries:del_roster(LServer, Username, SJID);
+			    send_unsubscribing_presence(From, Item),
+			    ok;
 			_ ->
 			    ItemVals = record_to_string(Item2),
 			    ItemGroups = groups_to_string(Item2),
@@ -629,12 +630,58 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
 	Username = ejabberd_odbc:escape(LUser),
+        send_unsubscription_to_rosteritems(LUser, LServer),
 	odbc_queries:del_user_roster_t(LServer, Username),
 	ok
     catch
 	_ ->
 	    ok
     end.
+
+%% For each contact with Subscription:
+%% Both or From, send a "unsubscribed" presence stanza;
+%% Both or To, send a "unsubscribe" presence stanza.
+send_unsubscription_to_rosteritems(LUser, LServer) ->
+    RosterItems = get_user_roster([], {LUser, LServer}),
+    From = jlib:make_jid({LUser, LServer, ""}),
+    lists:foreach(fun(RosterItem) ->
+			  send_unsubscribing_presence(From, RosterItem)
+		  end,
+		  RosterItems).
+
+%% @spec (From::jid(), Item::roster()) -> ok
+send_unsubscribing_presence(From, Item) ->
+    IsTo = case Item#roster.subscription of
+	       both -> true;
+	       to -> true;
+	       _ -> false
+	   end,
+    IsFrom = case Item#roster.subscription of
+		 both -> true;
+		 from -> true;
+		 _ -> false
+	     end,
+    if IsTo ->
+	    send_presence_type(
+	      jlib:jid_remove_resource(From),
+	      jlib:make_jid(Item#roster.jid), "unsubscribe");
+       true -> ok
+    end,
+    if IsFrom ->
+	    send_presence_type(
+	      jlib:jid_remove_resource(From),
+	      jlib:make_jid(Item#roster.jid), "unsubscribed");
+       true -> ok
+    end,
+    ok.
+
+send_presence_type(From, To, Type) ->
+    ejabberd_router:route(
+      From, To,
+      {xmlelement, "presence",
+       [{"type", Type}],
+       []}).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
