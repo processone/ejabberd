@@ -1,5 +1,8 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Show big integers with comma
+	separators for easy reading
+
 	* src/web/ejabberd_web_admin.erl: Calls to the hook
 	webadmin_menu_node provide the node as first argument, and calls
 	to webadmin_menu_hostnode provide both the host and the node. Fix
