@@ -476,7 +476,7 @@ variable.
 </P></LI><LI CLASS="li-enumerate">Install OpenSSL in <CODE>C:\sdk\OpenSSL</CODE> and add <CODE>C:\sdk\OpenSSL\lib\VC</CODE> to your path or copy the binaries to your system directory.
 </LI><LI CLASS="li-enumerate">Install ZLib in <CODE>C:\sdk\gnuWin32</CODE>. Copy
 <CODE>C:\sdk\GnuWin32\bin\zlib1.dll</CODE> to your system directory. If you change your path it should already be set after libiconv install.
-</LI><LI CLASS="li-enumerate">Make sure the you can access Erlang binaries from your path. For example: <CODE>set PATH=%PATH%;"C:\sdk\erl5.5.5\bin"</CODE>
+</LI><LI CLASS="li-enumerate">Make sure the you can access Erlang binaries from your path. For example: <CODE>set PATH=%PATH%;"C:\sdk\erl5.6.5\bin"</CODE>
 </LI><LI CLASS="li-enumerate">Depending on how you end up actually installing the library you might need to check and tweak the paths in the file configure.erl.
 </LI><LI CLASS="li-enumerate">While in the directory <CODE>ejabberd\src</CODE> run:
 <PRE CLASS="verbatim">configure.bat
@@ -914,8 +914,8 @@ connected to port 5237 with password &#X2018;<TT>ggsecret</TT>&#X2019;.
 {s2s_default_policy, deny}.
 {{s2s_host,"jabber.example.org"}, allow}.
 {{s2s_host,"example.com"}, allow}.
-</PRE><P>Note, that for jabberd 1.4- or WPJabber-based
-services you have to make the transports log and do XDB by themselves:
+</PRE><P>Note, that for services based in jabberd14 or WPJabber
+you have to make the transports log and do XDB by themselves:
 </P><PRE CLASS="verbatim">  &lt;!--
      You have to add elogger and rlogger entries here when using ejabberd.
      In this case the transport will do the logging.
@@ -937,7 +937,7 @@ services you have to make the transports log and do XDB by themselves:
   &lt;xdb id="xdb"&gt;
     &lt;host/&gt;
     &lt;load&gt;
-      &lt;!-- this is a lib of wpjabber or jabberd --&gt;
+      &lt;!-- this is a lib of wpjabber or jabberd14 --&gt;
       &lt;xdb_file&gt;/usr/lib/jabber/xdb_file.so&lt;/xdb_file&gt;
       &lt;/load&gt;
     &lt;xdb_file xmlns="jabber:config:xdb_file"&gt;
@@ -959,7 +959,7 @@ example authentication scripts</A>.
 <A HREF="#mssql">3.2.2</A> and <A HREF="#odbc">3.2.4</A>.
 </LI><LI CLASS="li-itemize">anonymous &#X2014; See section&#XA0;<A HREF="#saslanonymous">3.1.4</A>.
 </LI><LI CLASS="li-itemize">pam &#X2014; See section&#XA0;<A HREF="#pam">3.1.4</A>.
-</LI></UL><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
+</LI></UL><P>Account creation is only supported by internal and odbc methods.</P><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#internalauth">Internal</A></H4><!--SEC END --><P> <A NAME="internalauth"></A> 
 </P><P><TT>ejabberd</TT> uses its internal Mnesia database as the default authentication method.</P><UL CLASS="itemize"><LI CLASS="li-itemize">
 <TT>auth_method</TT>: The value <TT>internal</TT> will enable the internal
@@ -1193,13 +1193,9 @@ To define a shaper named &#X2018;<TT>normal</TT>&#X2019; with traffic speed limi
 can be seen by Jabber clients. If a Jabber client does not support
 <TT>xml:lang</TT>, the specified language is used. The default value is
 <TT>en</TT>. In order to take effect there must be a translation file
-<TT>&lt;language&gt;.msg</TT> in <TT>ejabberd</TT>&#X2019;s <TT>msgs</TT> directory.</P><P>Examples:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-To set Russian as default language:
-<PRE CLASS="verbatim">{language, "ru"}.
-</PRE></LI><LI CLASS="li-itemize">To set Spanish as default language:
-<PRE CLASS="verbatim">{language, "es"}.
-</PRE></LI></UL><P>Appendix <A HREF="#i18ni10n">A</A> provides more details about internationalization and localization.</P><P> <A NAME="includeconfigfile"></A> </P><!--TOC subsection Include Additional Configuration Files-->
+<TT>&lt;language&gt;.msg</TT> in <TT>ejabberd</TT>&#X2019;s <TT>msgs</TT> directory.</P><P>For example, to set Russian as default language:
+</P><PRE CLASS="verbatim">{language, "ru"}.
+</PRE><P>Appendix <A HREF="#i18ni10n">A</A> provides more details about internationalization and localization.</P><P> <A NAME="includeconfigfile"></A> </P><!--TOC subsection Include Additional Configuration Files-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc28">3.1.8</A>&#XA0;&#XA0;<A HREF="#includeconfigfile">Include Additional Configuration Files</A></H3><!--SEC END --><P> <A NAME="includeconfigfile"></A> 
 </P><P>The option <TT>include_config_file</TT> in a configuration file instructs <TT>ejabberd</TT> to include other configuration files immediately.</P><P>The basic usage is:
 </P><PRE CLASS="verbatim">{include_config_file, &lt;filename&gt;}.
@@ -3019,6 +3015,8 @@ all the environment variables and command line parameters.</P><P>The environment
 	Path to the ejabberd service log file.
 </DD><DT CLASS="dt-description"><B><TT>EJABBERD_SO_PATH</TT></B></DT><DD CLASS="dd-description">
 	Path to the directory with binary system libraries.
+</DD><DT CLASS="dt-description"><B><TT>EJABBERD_DOC_PATH</TT></B></DT><DD CLASS="dd-description">
+	Path to the directory with ejabberd documentation.
 </DD><DT CLASS="dt-description"><B><TT>HOME</TT></B></DT><DD CLASS="dd-description">
 	Path to the directory that is considered <TT>ejabberd</TT>&#X2019;s home.
 	This path is used to read the file <TT>.erlang.cookie</TT>.
@@ -3140,10 +3138,8 @@ be installed in the system.
 The file is searched by default in
 <TT>"/share/doc/ejabberd/guide.html"</TT>.
 The directory of the documentation can be specified in
-<TT>ejabberd.cfg</TT> with the option <TT>doc_path</TT>.
-For example:
-</P><PRE CLASS="verbatim">{doc_path, "/usr/local/share/doc/ejabberd/"}.
-</PRE><P> <A NAME="adhoccommands"></A> </P><!--TOC section Ad-hoc Commands-->
+the environment variable <TT>EJABBERD_DOC_PATH</TT>.
+See section <A HREF="#erlangconfiguration">4.1.2</A>.</P><P> <A NAME="adhoccommands"></A> </P><!--TOC section Ad-hoc Commands-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc65">4.3</A>&#XA0;&#XA0;<A HREF="#adhoccommands">Ad-hoc Commands</A></H2><!--SEC END --><P> <A NAME="adhoccommands"></A> </P><P>If you enable <TT>mod_configure</TT> and <TT>mod_adhoc</TT>,
 you can perform several administrative tasks in <TT>ejabberd</TT>
 with a Jabber client.
@@ -3315,11 +3311,11 @@ Writing, on the other hand, will be slower. And of course if machine with one
 of the replicas is down, other replicas will be used.</P><P>Also <A HREF="http://www.erlang.org/doc/apps/mnesia/Mnesia_chap5.html#5.3">section 5.3 (Table Fragmentation) of Mnesia User&#X2019;s Guide</A> can be helpful.
 </P><P>(alt) Same as in previous item, but for other tables.</P></LI><LI CLASS="li-enumerate">Run &#X2018;<CODE>init:stop().</CODE>&#X2019; or just &#X2018;<CODE>q().</CODE>&#X2019; to exit from
 the Erlang shell. This probably can take some time if Mnesia has not yet
-transfered and processed all data it needed from <TT>first</TT>.</LI><LI CLASS="li-enumerate">Now run <TT>ejabberd</TT> on <TT>second</TT> with almost the same config as
-on <TT>first</TT> (you probably do not need to duplicate &#X2018;<CODE>acl</CODE>&#X2019;
-and &#X2018;<CODE>access</CODE>&#X2019; options &#X2014; they will be taken from
-<TT>first</TT>, and <CODE>mod_muc</CODE> and <CODE>mod_irc</CODE> should be
-enabled only on one machine in the cluster).
+transfered and processed all data it needed from <TT>first</TT>.</LI><LI CLASS="li-enumerate">Now run <TT>ejabberd</TT> on <TT>second</TT> with a configuration similar as
+on <TT>first</TT>: you probably do not need to duplicate &#X2018;<CODE>acl</CODE>&#X2019;
+and &#X2018;<CODE>access</CODE>&#X2019; options because they will be taken from
+<TT>first</TT>; and <CODE>mod_irc</CODE> should be
+enabled only on one machine in the cluster.
 </LI></OL><P>You can repeat these steps for other machines supposed to serve this
 domain.</P><P> <A NAME="servicelb"></A> </P><!--TOC section Service Load-Balancing-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc80">6.3</A>&#XA0;&#XA0;<A HREF="#servicelb">Service Load-Balancing</A></H2><!--SEC END --><P> <A NAME="servicelb"></A> 

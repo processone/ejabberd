@@ -32,7 +32,6 @@ pdf:	guide.pdf features.pdf
 clean:
 	rm -f *.aux
 	rm -f *.haux
-	rm -f *.html
 	rm -f *.htoc
 	rm -f *.idx
 	rm -f *.ilg
@@ -41,6 +40,10 @@ clean:
 	rm -f *.out
 	rm -f *.pdf
 	rm -f *.toc
+	[ ! -f contributed_modules.tex ] || rm contributed_modules.tex
+
+distclean: clean
+	rm -f *.html
 
 guide.html:	guide.tex
 		hevea -fix -pedantic guide.tex

@@ -1,7 +1,41 @@
+2009-03-03  Badlop  <badlop@process-one.net>
+
+	* doc/Makefile: In Clean do not remove html. In new Distclean,
+	remove also html.
+
+	* doc/Makefile: When cleaning, remove contributed_modules.tex
+
+	* src/Makefile.in: Fix arguments to Install program
+
+	* doc/guide.tex: Provide only an example of language option
+        * doc/guide.html: Likewise
+
+	* doc/guide.tex: mod_muc can run in several nodes of cluster
+        * doc/guide.html: Likewise
+
+	* doc/api/process-one.css: Add some style to HTML elements
+
+        * src/ejabberd_listener.erl: Fix EDoc errors
+        * src/web/ejabberd_web_admin.erl: Likewise
+
+	* src/ejabberd_hooks.erl: Explanation in EDoc of some functions
+
+	* doc/guide.tex: Explain that account creation is only supported
+        by internal and odbc authentication methods
+        * doc/guide.html: Likewise
+
+	* src/Makefile.in: The path to the installed copy of ejabberd
+	Guide is set in the environment variable
+	EJABBERD_DOC_PATH (EJAB-837).
+	* src/web/ejabberd_web_admin.erl: Likewise
+	* src/ejabberdctl.template: Likewise
+	* doc/guide.tex: Likewise
+	* doc/guide.html: Likewise
+
 2009-03-02  Pablo Polvorin <pablo.polvorin@process-one.net>
 
 	* src/ejabberd_auth_anonymous.erl: Correct include declaration (thanks 
-	to badlop). Bug was introduced in r1863.
+	to Badlop). Bug was introduced in r1863.
 
 	* src/ejabberd_s2s_in.erl, src/ejabberd_s2s_out.erl: Serialize stanzas
 	to iolist().

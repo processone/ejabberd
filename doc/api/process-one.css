@@ -71,10 +71,22 @@ pre, tt, code {
 }
 
 pre {
-  margin-left: 1em;
+  margin:1ex 2ex;
+  border:1px dashed lightgrey;
+  background-color:#f9f9f9;
+  padding:0.5ex;
 }
 
 pre em {
   font-style: normal;
   font-weight: bold;
+}
+
+dt {
+  margin:0ex 2ex;
+  font-weight:bold;
+}
+
+dd {
+  margin:0ex 0ex 1ex 4ex;
 }

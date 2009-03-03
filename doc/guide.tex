@@ -1118,6 +1118,8 @@ The following authentication methods are supported by \ejabberd{}:
 \item pam --- See section~\ref{pam}.
 \end{itemize}
 
+Account creation is only supported by internal and odbc methods.
+
 \makesubsubsection{internalauth}{Internal}
 \ind{internal authentication}\ind{Mnesia}
 
@@ -1481,17 +1483,10 @@ can be seen by \Jabber{} clients. If a \Jabber{} client does not support
 \term{en}. In order to take effect there must be a translation file
 \term{<language>.msg} in \ejabberd{}'s \term{msgs} directory.
 
-Examples:
-\begin{itemize}
-\item To set Russian as default language:
+For example, to set Russian as default language:
 \begin{verbatim}
 {language, "ru"}.
 \end{verbatim}
-\item To set Spanish as default language:
-\begin{verbatim}
-{language, "es"}.
-\end{verbatim}
-\end{itemize}
 
 Appendix \ref{i18ni10n} provides more details about internationalization and localization.
 
@@ -3891,6 +3886,8 @@ The environment variables:
 	Path to the ejabberd service log file.
   \titem{EJABBERD\_SO\_PATH}
 	Path to the directory with binary system libraries.
+  \titem{EJABBERD\_DOC\_PATH}
+	Path to the directory with ejabberd documentation.
   \titem{HOME}
 	Path to the directory that is considered \ejabberd{}'s home.
 	This path is used to read the file \term{.erlang.cookie}.
@@ -4027,11 +4024,9 @@ be installed in the system.
 The file is searched by default in
 \term{"/share/doc/ejabberd/guide.html"}.
 The directory of the documentation can be specified in
-\term{ejabberd.cfg} with the option \term{doc\_path}.
-For example:
-\begin{verbatim}
-{doc_path, "/usr/local/share/doc/ejabberd/"}.
-\end{verbatim}
+the environment variable \term{EJABBERD\_DOC\_PATH}.
+See section \ref{erlangconfiguration}.
+
 
 \makesection{adhoccommands}{Ad-hoc Commands}
 
@@ -4320,11 +4315,11 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
   transfered and processed all data it needed from \term{first}.
 
 
-\item Now run \ejabberd{} on \term{second} with almost the same config as
-  on \term{first} (you probably do not need to duplicate `\verb|acl|'
-  and `\verb|access|' options --- they will be taken from
-  \term{first}, and \verb|mod_muc| and \verb|mod_irc| should be
-  enabled only on one machine in the cluster).
+\item Now run \ejabberd{} on \term{second} with a configuration similar as
+  on \term{first}: you probably do not need to duplicate `\verb|acl|'
+  and `\verb|access|' options because they will be taken from
+  \term{first}; and \verb|mod_irc| should be
+  enabled only on one machine in the cluster.
 \end{enumerate}
 
 You can repeat these steps for other machines supposed to serve this
