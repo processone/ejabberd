@@ -1,5 +1,7 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_listener.erl: Fix report message of 'undef' error
+
 	* src/ejabberd_listener.erl: Fix a minor compilation warning and
 	add EDoc comment
 
