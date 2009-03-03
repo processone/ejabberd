@@ -1,5 +1,7 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_listener.erl: More error detections
+
 	* src/ejabberd_config.erl: Check certfiles are readable on server
 	start and listener start (EJAB-753)
 	* src/ejabberd_listener.erl: Likewise
