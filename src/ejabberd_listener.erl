@@ -59,7 +59,6 @@ start_listeners() ->
 		        case start_listener(Port, Module, Opts) of
 			    {ok, _Pid} = R -> R;
 			    {error, Error} ->
-				?ERROR_MSG(Error, []),
 				throw(Error)
 			end
 		end, Ls),
@@ -129,7 +128,7 @@ init(PortIP, Module, Opts1) ->
 		      end,
 	    ?ERROR_MSG("Failed to open socket:~n  ~p~nReason: ~s",
 		       [{Port, Module, SockOpts}, ReasonT]),
-	    throw(ReasonT)
+	    throw({Reason, PortIP})
     end.
 
 %% @spec (PortIP, Opts) -> {Port, IPT, IPS, IPV, OptsClean}
@@ -221,17 +220,12 @@ start_listener(Port, Module, Opts) ->
     case start_listener2(Port, Module, Opts) of
 	{ok, _Pid} = R -> R;
 	{error, {{'EXIT', {undef, _}}, _} = Error} ->
-	    EStr = io_lib:format(
-		     "Error starting the ejabberd listener: ~p.~n"
-		     "It could not be loaded or is not an ejabberd listener.~n"
-		     "Error: ~p~n", [Module, Error]),
-	    {error, lists:flatten(EStr)};
-	{error, {already_started, _Pid} = Error} ->
-	    EStr = io_lib:format(
-		     "Error starting the ejabberd listener: ~p.~n"
-		     "A listener is already started in that port number and IP address:~n~p~n"
-		     "Error: ~p~n", [Module, Port, Error]),
-	    {error, lists:flatten(EStr)};
+	    ?ERROR_MSG("Error starting the ejabberd listener: ~p.~n"
+		       "It could not be loaded or is not an ejabberd listener.~n"
+		       "Error: ~p~n", [Module, Error]),
+	    {error, {module_not_available, Module}};
+	{error, {already_started, Pid}} ->
+	    {ok, Pid};
 	{error, Error} ->
 	    {error, Error}
     end.
