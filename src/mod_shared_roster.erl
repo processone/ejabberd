@@ -190,7 +190,24 @@ process_item(RosterItem, Host) ->
 	    %% Check if the list of groups of the new roster item
 	    %% include at least a new one
 	    case lists:subtract(RosterItem#roster.groups, CommonGroups) of
+                %% If it doesn't, then remove this user from any
+                %% existing roster groups.
 		[] ->
+                    %% Remove pending subscription by setting it
+                    %% unsubscribed.
+                    Mod = get_roster_mod(ServerFrom),
+
+                    %% Remove pending out subscription
+                    Mod:out_subscription(UserTo, ServerTo,
+                                         jlib:make_jid(UserFrom, ServerFrom, ""),
+                                         unsubscribe),
+
+                    %% Remove pending in subscription
+                    Mod:in_subscription(aaaa, UserFrom, ServerFrom,
+                                        jlib:make_jid(UserTo, ServerTo, ""),
+                                        unsubscribe, ""),
+
+                    %% But we're still subscribed, so respond as such.
 		    RosterItem#roster{subscription = both, ask = none};
 		%% If so, it means the user wants to add that contact
 		%% to his personal roster
@@ -215,11 +232,7 @@ build_roster_record(User1, Server1, User2, Server2, Name2, Groups) ->
 
 set_new_rosteritems(UserFrom, ServerFrom,
 		    UserTo, ServerTo, ResourceTo, NameTo, GroupsFrom) ->
-    Mod = case lists:member(mod_roster_odbc,
-			    gen_mod:loaded_modules(ServerFrom)) of
-	      true -> mod_roster_odbc;
-	      false -> mod_roster
-	  end,
+    Mod = get_roster_mod(ServerFrom),
 
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
@@ -316,6 +329,18 @@ get_jid_info({Subscription, Groups}, User, Server, JID)
 in_subscription(Acc, User, Server, JID, Type, _Reason) ->
     process_subscription(in, User, Server, JID, Type, Acc).
 
+out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
+    Mod = get_roster_mod(ServerFrom),
+
+    %% Remove pending out subscription
+    {UserTo, ServerTo, _} = jlib:short_prepd_bare_jid(JIDTo),
+    JIDFrom = jlib:make_jid(UserFrom, UserTo, ""),
+    Mod:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
+
+    %% Remove pending in subscription
+    Mod:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, ""),
+
+    process_subscription(out, UserFrom, ServerFrom, JIDTo, unsubscribed, false);
 out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, false).
 
@@ -927,6 +952,14 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 	    end;
 	_ ->
 	    nothing
+    end.
+
+%% Get the roster module for Server.
+get_roster_mod(Server) ->
+    case lists:member(mod_roster_odbc,
+                      gen_mod:loaded_modules(Server)) of
+        true -> mod_roster_odbc;
+        false -> mod_roster
     end.
 
 get_opt(Opts, Opt, Default) ->

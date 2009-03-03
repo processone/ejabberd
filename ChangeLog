@@ -1,9 +1,14 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/mod_shared_roster.erl: Fix bug: a pending subscription
+	request, and later the requester added to the roster due to a
+	shared roster group, that request could neither be accepted or
+	rejected (thanks to Brian Cully)(EJAB-869)
+
 	* src/web/ejabberd_http_poll.erl: Allow configuration of session
-        timeout, using new global option http_poll_timeout (EJAB-135)
-        * doc/guide.tex: Document new option
-        * doc/guide.html: Likewise
+	timeout, using new global option http_poll_timeout (EJAB-135)
+	* doc/guide.tex: Document new option
+	* doc/guide.html: Likewise
 
 	* src/ejabberd_system_monitor.erl: Allow parametrizable watchdog
 	threshold: option watchdog_large_heap or chatting with the
