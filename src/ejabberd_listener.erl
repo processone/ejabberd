@@ -86,28 +86,15 @@ start(Port, Module, Opts) ->
 	_ -> start_dependent(Port, Module, Opts)
     end.
 
-%% -> {ok, Pid} | {error, ErrorMessage}
+%% @spec(Port, Module, Opts) -> {ok, Pid} | {error, ErrorMessage}
 start_dependent(Port, Module, Opts) ->
-    case includes_deprecated_ssl_option(Opts) of
-	false ->
-	    proc_lib:start_link(?MODULE, init, [Port, Module, Opts]);
-	true ->
-            SSLErr="There is a problem with your ejabberd configuration file: "
-		"the option 'ssl' for listening sockets is no longer available."
-		"To get SSL encryption use the option 'tls'.",
-	    ?ERROR_MSG(SSLErr, []),
-	    {error, SSLErr}
-    end.
-
-%% Parse the options of the socket,
-%% and return if the deprecated option 'ssl' is included
-%% @spec(Opts::[opt()]) -> true | false
-includes_deprecated_ssl_option(Opts) ->
-    case lists:keysearch(ssl, 1, Opts) of
-	{value, {ssl, _SSLOpts}} ->
-	    true;
-	_ ->
-	    lists:member(ssl, Opts)
+    try check_listener_options(Opts) of
+	ok ->
+	    proc_lib:start_link(?MODULE, init, [Port, Module, Opts])
+    catch
+	throw:{error, Error} ->
+	    ?ERROR_MSG(Error, []),
+	    {error, Error}
     end.
 
 init(PortIP, Module, Opts1) ->
@@ -331,3 +318,48 @@ is_frontend(_) -> false.
 %% where FrontMod = atom() | {frontend, atom()}
 strip_frontend({frontend, Module}) -> Module;
 strip_frontend(Module) when is_atom(Module) -> Module.
+
+
+%%%
+%%% Check options
+%%%
+
+check_listener_options(Opts) ->
+    case includes_deprecated_ssl_option(Opts) of
+	false -> ok;
+	true ->
+	    Error = "There is a problem with your ejabberd configuration file: "
+		"the option 'ssl' for listening sockets is no longer available."
+		" To get SSL encryption use the option 'tls'.",
+	    throw({error, Error})
+    end,
+    case certfile_readable(Opts) of
+	true -> ok;
+	{false, Path} ->
+            ErrorText = "There is a problem in the configuration: "
+		"the specified file is not readable: ",
+	    throw({error, ErrorText ++ Path})
+    end,
+    ok.
+
+%% Parse the options of the socket,
+%% and return if the deprecated option 'ssl' is included
+%% @spec (Opts) -> true | false
+includes_deprecated_ssl_option(Opts) ->
+    case lists:keysearch(ssl, 1, Opts) of
+	{value, {ssl, _SSLOpts}} ->
+	    true;
+	_ ->
+	    lists:member(ssl, Opts)
+    end.
+
+%% @spec (Opts) -> true | {false, Path::string()}
+certfile_readable(Opts) ->
+    case proplists:lookup(certfile, Opts) of
+	none -> true;
+	{certfile, Path} ->
+	    case ejabberd_config:is_file_readable(Path) of
+		true -> true;
+		false -> {false, Path}
+	    end
+    end.

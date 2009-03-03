@@ -1,7 +1,11 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_config.erl: Check certfiles are readable on server
+	start and listener start (EJAB-753)
+	* src/ejabberd_listener.erl: Likewise
+
 	* src/ejabberd_listener.erl: Report error at startup if a listener
-        module isn't available or is not an ejabberd listener (EJAB-868)
+	module isn't available or is not an ejabberd listener (EJAB-868)
 
 	* src/mod_privacy.erl: Privacy List: deny presence-out all + send
 	presence to: presence is sent (EJAB-255)

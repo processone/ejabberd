@@ -31,9 +31,11 @@
 	 add_global_option/2, add_local_option/2,
 	 get_global_option/1, get_local_option/1]).
 -export([get_vh_by_auth_method/1]).
+-export([is_file_readable/1]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_config.hrl").
+-include_lib("kernel/include/file.hrl").
 
 
 %% @type macro() = {macro_key(), macro_value()}
@@ -79,6 +81,7 @@ get_ejabberd_config_path() ->
 
 %% @doc Load the ejabberd configuration file.
 %% It also includes additional configuration files and replaces macros.
+%% This function will crash if finds some error in the configuration file.
 %% @spec (File::string()) -> ok
 load_file(File) ->
     Terms = get_plain_terms_file(File),
@@ -344,9 +347,21 @@ process_term(Term, State) ->
 	{s2s_use_starttls, Port} ->
 	    add_option(s2s_use_starttls, Port, State);
 	{s2s_certfile, CertFile} ->
-	    add_option(s2s_certfile, CertFile, State);
+	    case ejabberd_config:is_file_readable(CertFile) of
+		true -> add_option(s2s_certfile, CertFile, State);
+		false ->
+		    ErrorText = "There is a problem in the configuration: "
+			"the specified file is not readable: ",
+		    throw({error, ErrorText ++ CertFile})
+	    end;
 	{domain_certfile, Domain, CertFile} ->
-	    add_option({domain_certfile, Domain}, CertFile, State);
+	    case ejabberd_config:is_file_readable(CertFile) of
+		true -> add_option({domain_certfile, Domain}, CertFile, State);
+		false ->
+		    ErrorText = "There is a problem in the configuration: "
+			"the specified file is not readable: ",
+		    throw({error, ErrorText ++ CertFile})
+	    end;
 	{node_type, NodeType} ->
 	    add_option(node_type, NodeType, State);
 	{cluster_nodes, Nodes} ->
@@ -518,3 +533,16 @@ get_vh_by_auth_method(AuthMethod) ->
     mnesia:dirty_select(local_config,
 			[{#local_config{key = {auth_method, '$1'},
 					value=AuthMethod},[],['$1']}]).
+
+%% @spec (Path::string()) -> true | false
+is_file_readable(Path) ->
+    case file:read_file_info(Path) of
+	{ok, FileInfo} ->
+	    case {FileInfo#file_info.type, FileInfo#file_info.access} of
+		{regular, read} -> true;
+		{regular, read_write} -> true;
+		_ -> false
+	    end;
+	{error, _Reason} ->
+	    false
+    end.
