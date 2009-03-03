@@ -1,5 +1,11 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/mod_privacy.erl: Only run roster_get_jid_info if privacy
+	list has subscription or group (thanks to George Hazan)(EJAB-851).
+	Sort items in privacy list by order before storing (EJAB-848)
+	* src/mod_privacy.hrl: Likewise
+	* src/mod_privacy_odbc.erl: Likewise
+
 	* src/mod_muc/mod_muc_room.erl: Owner of a password protected room
 	must provide the password, like other participants (EJAB-867)
 

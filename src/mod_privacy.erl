@@ -322,7 +322,8 @@ process_active_set(LUser, LServer, Name) ->
 	[#privacy{lists = Lists}] ->
 	    case lists:keysearch(Name, 1, Lists) of
 		{value, {_, List}} ->
-		    {result, [], #userlist{name = Name, list = List}};
+		    NeedDb = is_list_needdb(List),
+		    {result, [], #userlist{name = Name, list = List, needdb = NeedDb}};
 		false ->
 		    {error, 'item-not-found'}
 	    end
@@ -414,11 +415,7 @@ parse_items(Els) ->
 
 parse_items([], Res) ->
     %% Sort the items by their 'order' attribute
-    %% 5 is the position of 'order' attribute in a #listitem tuple
-    %% This integer can be calculated at runtime with:
-    %% 2 + length(lists:takewhile(fun(E) -> E =/= order end,
-    %% 			       record_info(fields, listitem))),
-    lists:keysort(5, Res);
+    lists:keysort(#listitem.order, Res);
 parse_items([El = #xmlel{name = item} | Els], Res) ->
     Type   = exmpp_xml:get_attribute_as_list(El, type, false),
     Value  = exmpp_xml:get_attribute_as_list(El, value, false),
@@ -524,6 +521,16 @@ parse_matches1(_Item, [#xmlel{} | _Els]) ->
 
 
 
+is_list_needdb(Items) ->
+    lists:any(
+      fun(X) ->
+	      case X#listitem.type of
+		  subscription -> true;
+		  group -> true;
+		  _ -> false
+	      end
+      end, Items).
+
 get_user_list(_, User, Server) 
         when is_binary(User), is_binary(Server) ->
     try
@@ -555,7 +562,7 @@ get_user_list(_, User, Server)
 
 
 check_packet(_, User, Server,
-	     #userlist{list = List},
+	     #userlist{list = List, needdb = NeedDb},
 	     {From, To, #xmlel{name = PName}},
 	     Dir) when 
                PName =:= message ; 
@@ -569,37 +576,37 @@ check_packet(_, User, Server,
 		{message, in} ->
 		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
-			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, 
-              Server, 
-			  {none, []}, [User, Server, From]),
+			case NeedDb of
+			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, From]);
+			    false -> {[], []}
+			end,
 		    check_packet_aux(List, message,
 				     LJID, Subscription, Groups);
 		{iq, in} ->
 		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
-			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, 
-               Server,
-			  {none, []}, [User, Server, From]),
+			case NeedDb of
+			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, From]);
+			    false -> {[], []}
+			end,
 		    check_packet_aux(List, iq,
 				     LJID, Subscription, Groups);
 		{presence, in} ->
 		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
-			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, 
-                Server,
-			  {none, []}, [User, Server, From]),
+			case NeedDb of
+			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, From]);
+			    false -> {[], []}
+			end,
 		    check_packet_aux(List, presence_in,
 				     LJID, Subscription, Groups);
 		{presence, out} ->
 		    LJID = jlib:short_prepd_jid(To),
 		    {Subscription, Groups} =
-			ejabberd_hooks:run_fold(
-			  roster_get_jid_info, 
-              Server,
-			  {none, []}, [User, Server, To]),
+			case NeedDb of
+			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, From]);
+			    false -> {[], []}
+			end,
 		    check_packet_aux(List, presence_out,
 				     LJID, Subscription, Groups);
 		_ ->
