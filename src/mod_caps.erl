@@ -35,7 +35,7 @@
 	 note_caps/3,
 	 clear_caps/1,
 	 get_features/2,
-	 get_user_resource/2,
+	 get_user_resources/2,
 	 handle_disco_response/3]).
 
 %% gen_mod callbacks
@@ -61,7 +61,7 @@
 -record(caps, {node, version, exts}).
 -record(caps_features, {node_pair, features}).
 -record(user_caps, {jid, caps}).
--record(user_caps_default, {uid, resource}).
+-record(user_caps_resources, {uid, resource}).
 -record(state, {host,
 		disco_requests = ?DICT:new(),
 		feature_queries = []}).
@@ -109,21 +109,17 @@ clear_caps(JID) ->
     BJID = list_to_binary(jlib:jid_to_string(JID)),
     BUID = list_to_binary(jlib:jid_to_string({U, S, []})),
     catch mnesia:dirty_delete({user_caps, BJID}),
-    case catch mnesia:dirty_read({user_caps_default, BUID}) of
-	[#user_caps_default{resource=R}] ->
-	    catch mnesia:dirty_delete({user_caps_default, BUID});
-	_ ->
-	    ok
-    end.
+    catch mnesia:dirty_delete_object(#user_caps_resources{uid = BUID, resource = list_to_binary(R)}),
+    ok.
 
 %% give default user resource
-get_user_resource(LUser, LServer) ->
+get_user_resources(LUser, LServer) ->
     BUID = list_to_binary(jlib:jid_to_string({LUser, LServer, []})),
-    case catch mnesia:dirty_read({user_caps_default, BUID}) of
-	[#user_caps_default{resource=R}] ->
-	    R;
-	_ ->
-	    []
+    case catch mnesia:dirty_read({user_caps_resources, BUID}) of
+	{'EXIT', _} ->
+	    [];
+	Resources ->
+	    lists:map(fun(#user_caps_resources{resource=R}) -> binary_to_list(R) end, Resources)
     end.
 
 %% note_caps should be called to make the module request disco
@@ -180,9 +176,11 @@ init([Host, _Opts]) ->
     mnesia:create_table(user_caps,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, user_caps)}]),
-    mnesia:create_table(user_caps_default,
+    mnesia:create_table(user_caps_resources,
 			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, user_caps_default)}]),
+			 {type, bag},
+			 {attributes, record_info(fields, user_caps_resources)}]),
+    mnesia:delete_table(user_caps_default),
     {ok, #state{host = Host}}.
 
 maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
@@ -239,11 +237,11 @@ handle_cast({note_caps, From,
     mnesia:dirty_write(#user_caps{jid = BJID, caps = Caps}),
     case ejabberd_sm:get_user_resources(U, S) of
 	[] ->
-	    ok;
-	_ -> 
-	    % only store default resource of external contacts
+	    % only store resources of caps aware external contacts
 	    BUID = list_to_binary(jlib:jid_to_string(jlib:jid_remove_resource(From))),
-	    mnesia:dirty_write(#user_caps_default{uid = BUID, resource = R})
+	    mnesia:dirty_write(#user_caps_resources{uid = BUID, resource = list_to_binary(R)});
+	_ ->
+	    ok
     end,
     SubNodes = [Version | Exts],
     %% Now, find which of these are not already in the database.

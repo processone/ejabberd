@@ -41,7 +41,7 @@
 
 -module(mod_pubsub).
 -author('christophe.romain@process-one.net').
--version('1.12-01').
+-version('1.12-02').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -56,6 +56,7 @@
 
 %% exports for hooks
 -export([presence_probe/3,
+	 in_subscription/6,
 	 remove_user/2,
 	 disco_local_identity/5,
 	 disco_local_features/5,
@@ -163,6 +164,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
+    ejabberd_hooks:add(roster_in_subscription, ServerHost, ?MODULE, in_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     lists:foreach(
@@ -418,6 +420,16 @@ presence_probe(_, _, _) ->
     ok.
 
 %% -------
+%% subscription hooks handling functions
+%%
+in_subscription(Acc, User, Server, JID, subscribed, _) ->
+    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
+    gen_server:cast(Proc, {subscribed, User, Server, JID}),
+    Acc;
+in_subscription(Acc, _, _, _, _, _) ->
+    Acc.
+
+%% -------
 %% user remove hook handling function
 %%
 
@@ -518,6 +530,42 @@ handle_cast({presence, JID, Pid}, State) ->
     end,
     {noreply, State};
 
+handle_cast({subscribed, User, Server, JID}, State) ->
+    %% and send last PEP events published by JID
+    Owner = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+    Host = State#state.host,
+    ServerHost = State#state.server_host,
+    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
+	case get_option(Options, send_last_published_item) of
+	    on_sub_and_presence ->
+		lists:foreach(fun(Resource) ->
+		    LJID = jlib:jid_tolower(jlib:make_jid(User, Server, Resource)),
+		    case is_caps_notify(ServerHost, Node, LJID) of
+			true ->
+			    Subscribed = case get_option(Options, access_model) of
+				open -> true;
+				presence -> true;
+				whitelist -> false; % subscribers are added manually
+				authorize -> false; % likewise
+				roster ->
+				    Grps = get_option(Options, roster_groups_allowed, []),
+				    element(2, get_roster_info(User, Server, LJID, Grps))
+			    end,
+			    if Subscribed ->
+				send_last_item(Owner, Node, LJID);
+			    true ->
+				ok
+			    end;
+			false ->
+			    ok
+		    end
+		end, user_resources(User, Server));
+	    _ ->
+		ok
+	end
+    end, tree_action(Host, get_nodes, [Owner])),
+    {noreply, State};
+
 handle_cast({remove_user, LUser, LServer}, State) ->
     Host = State#state.host,
     Owner = jlib:make_jid(LUser, LServer, ""),
@@ -582,6 +630,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
+    ejabberd_hooks:delete(roster_in_subscription, ServerHost, ?MODULE, in_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
     lists:foreach(fun({NS,Mod}) ->
 			  gen_iq_handler:remove_iq_handler(Mod, ServerHost, NS)
@@ -2301,7 +2350,10 @@ broadcast_stanza(Host, NodeOpts, States, Stanza) ->
 %% broadcast Stanza to all contacts of the user that are advertising
 %% interest in this kind of Node.
 broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
-    SenderResource = user_resource(LUser, LServer, LResource),
+    SenderResource = case LResource of
+	[] -> hd(user_resources(LUser, LServer));
+	_ -> LResource
+    end,
     case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
 	C2SPid when is_pid(C2SPid) ->
 	    %% set the from address on the notification to the bare JID of the account owner
@@ -2311,14 +2363,17 @@ broadcast_by_caps({LUser, LServer, LResource}, Node, _Type, Stanza) ->
 	    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
 	    case catch ejabberd_c2s:get_subscribed(C2SPid) of
 		Contacts when is_list(Contacts) ->
-		    lists:foreach(fun({U, S, R}) ->
-			LJID = {U, S, user_resource(U, S, R)}, 
-			case is_caps_notify(LServer, Node, LJID) of
-			    true ->
-				ejabberd_router ! {route, Sender, jlib:make_jid(LJID), Stanza};
-			    false ->
-				ok
-			end
+		    lists:foreach(fun({U, S, _}) ->
+			JIDs = lists:foldl(fun(R, Acc) ->
+			    LJID = {U, S, R}, 
+			    case is_caps_notify(LServer, Node, LJID) of
+				true -> [LJID | Acc];
+				false -> Acc
+			    end
+			end, [], user_resources(U, S)),
+			lists:foreach(fun(JID) ->
+			    ejabberd_router ! {route, Sender, jlib:make_jid(JID), Stanza}
+			end, JIDs)
 		    end, Contacts);
 		_ ->
 		    ok
@@ -2333,15 +2388,11 @@ broadcast_by_caps(_, _, _, _) ->
 
 %% If we don't know the resource, just pick first if any
 %% If no resource available, check if caps anyway (remote online)
-user_resource(LUser, LServer, []) ->
-    case ejabberd_sm:get_user_resources(LUser, LServer) of
-	[R|_] -> 
-	    R;
-	[] -> 
-	    mod_caps:get_user_resource(LUser, LServer)
-    end;
-user_resource(_, _, LResource) ->
-    LResource.
+user_resources(User, Server) ->
+    case ejabberd_sm:get_user_resources(User, Server) of
+	[] -> mod_caps:get_user_resources(User, Server);
+	Rs -> Rs
+    end.
 
 is_caps_notify(Host, Node, LJID) ->
     case mod_caps:get_caps(LJID) of
