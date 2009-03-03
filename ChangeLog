@@ -1,5 +1,8 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_room.erl: Owner of a password protected room
+	must provide the password, like other participants (EJAB-867)
+
 	* src/mod_muc/mod_muc_log.erl: Prevent XSS in MUC logs by
 	linkifying only a few known protocols (EJAB-850)
 

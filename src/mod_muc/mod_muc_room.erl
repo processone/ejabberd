@@ -1512,7 +1512,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	      From, Err),
 	    StateData;
 	{_, _, _, Role} ->
-	    case check_password(Affiliation, 
+	    case check_password(ServiceAffiliation, 
 		  exmpp_xml:get_child_elements(Packet), 
 		  StateData) of
 		true ->
@@ -1574,8 +1574,9 @@ add_new_user(From, Nick, Packet, StateData) ->
     end.
 
 check_password(owner, _Els, _StateData) ->
+    %% Don't check pass if user is owner in MUC service (access_admin option)
     true;
-check_password(_Affiliation, Els, StateData) ->
+check_password(_ServiceAffiliation, Els, StateData) ->
     case (StateData#state.config)#config.password_protected of
 	false ->
 	    true;
