@@ -851,6 +851,13 @@ This is a detailed description of each option allowed by the listening modules:
     is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
     interesting to host a web-based \Jabber{} client such as
     \footahref{http://jwchat.sourceforge.net/}{JWChat}.
+
+    The maximum period of time to keep a client session active without
+    an incoming POST request can be configured with the global option
+    \term{http\_poll\_timeout}. The default value is five minutes.
+    The option can be defined in \term{ejabberd.cfg}, expressing the time
+    in seconds: \verb|{http_poll_timeout, 300}.|
+
   \titem{\{max\_stanza\_size, Size\}}
     \ind{options!max\_stanza\_size}This option specifies an
     approximate maximum size in bytes of XML stanzas.  Approximate,

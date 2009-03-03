@@ -58,6 +58,7 @@
 		input = "",
 		waiting_input = false, %% {ReceiverPid, Tag}
 		last_receiver,
+		http_poll_timeout,
 		timer}).
 
 %-define(DBGFSM, true).
@@ -187,12 +188,20 @@ init([ID, Key, IP]) ->
     %% connector.
     Opts = ejabberd_c2s_config:get_c2s_limits(),
 
+    HTTPPollTimeout = case ejabberd_config:get_local_option({http_poll_timeout,
+							     ?MYNAME}) of
+			  %% convert seconds of option into milliseconds
+			  Int when is_integer(Int) -> Int*1000;
+			  undefined -> ?HTTP_POLL_TIMEOUT
+		      end,
+    
     Socket = {http_poll, self(), IP},
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
-    Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
+    Timer = erlang:start_timer(HTTPPollTimeout, self(), []),
     {ok, loop, #state{id = ID,
 		      key = Key,
 		      socket = Socket,
+		      http_poll_timeout = HTTPPollTimeout,
 		      timer = Timer}}.
 
 %%----------------------------------------------------------------------
@@ -284,7 +293,7 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 		    Receiver ! {tcp, StateData#state.socket,
 				list_to_binary(Packet)},
 		    cancel_timer(StateData#state.timer),
-		    Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
+		    Timer = erlang:start_timer(StateData#state.http_poll_timeout, self(), []),
 		    Reply = ok,
 		    {reply, Reply, StateName,
 		     StateData#state{waiting_input = false,
