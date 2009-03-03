@@ -1,5 +1,12 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/web/ejabberd_web_admin.erl: Calls to the hook
+	webadmin_menu_node provide the node as first argument, and calls
+	to webadmin_menu_hostnode provide both the host and the node. Fix
+	call to make_menu_items, because webadmin_menu_node was called in
+	cases where webadmin_menu_hostnode should be called. Align to
+	right some table elements.
+
 	* doc/Makefile: In Clean do not remove html. In new Distclean,
 	remove also html.
 
@@ -8,21 +15,21 @@
 	* src/Makefile.in: Fix arguments to Install program
 
 	* doc/guide.tex: Provide only an example of language option
-        * doc/guide.html: Likewise
+	* doc/guide.html: Likewise
 
 	* doc/guide.tex: mod_muc can run in several nodes of cluster
-        * doc/guide.html: Likewise
+	* doc/guide.html: Likewise
 
 	* doc/api/process-one.css: Add some style to HTML elements
 
-        * src/ejabberd_listener.erl: Fix EDoc errors
-        * src/web/ejabberd_web_admin.erl: Likewise
+	* src/ejabberd_listener.erl: Fix EDoc errors
+	* src/web/ejabberd_web_admin.erl: Likewise
 
 	* src/ejabberd_hooks.erl: Explanation in EDoc of some functions
 
 	* doc/guide.tex: Explain that account creation is only supported
-        by internal and odbc authentication methods
-        * doc/guide.html: Likewise
+	by internal and odbc authentication methods
+	* doc/guide.html: Likewise
 
 	* src/Makefile.in: The path to the installed copy of ejabberd
 	Guide is set in the environment variable

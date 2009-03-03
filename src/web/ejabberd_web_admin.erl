@@ -556,6 +556,7 @@ p.result {
 
 *.alignright {
   font-size: 10pt;
+  text-align: right;
 }
 
 ".
@@ -1724,7 +1725,7 @@ get_node(global, Node, [], Query, Lang) ->
 
 get_node(Host, Node, [], _Query, Lang) ->
     Base = get_base_path(Host, Node),
-    MenuItems2 = make_menu_items(global, Node, Base, Lang),
+    MenuItems2 = make_menu_items(Host, Node, Base, Lang),
     [?XC('h1', ?T("Node ") ++ atom_to_list(Node)),
      ?XE('ul',
 	 [?LI([?ACT(Base ++ "modules/", "Modules")])] ++ MenuItems2)
@@ -2345,16 +2346,16 @@ make_menu_items(global, cluster, Base, Lang) ->
     HookItems = get_menu_items_hook(server, Lang),
     make_menu_items(Lang, {Base, "", HookItems});
 
-make_menu_items(global, _Node, Base, Lang) ->
-    HookItems = get_menu_items_hook(node, Lang),
+make_menu_items(global, Node, Base, Lang) ->
+    HookItems = get_menu_items_hook({node, Node}, Lang),
     make_menu_items(Lang, {Base, "", HookItems});
 
 make_menu_items(Host, cluster, Base, Lang) ->
     HookItems = get_menu_items_hook({host, Host}, Lang),
     make_menu_items(Lang, {Base, "", HookItems});
 
-make_menu_items(Host, _Node, Base, Lang) ->
-    HookItems = get_menu_items_hook({hostnode, Host}, Lang),
+make_menu_items(Host, Node, Base, Lang) ->
+    HookItems = get_menu_items_hook({hostnode, Host, Node}, Lang),
     make_menu_items(Lang, {Base, "", HookItems}).
 
 
@@ -2365,7 +2366,7 @@ make_host_node_menu(_, cluster, _Lang) ->
 make_host_node_menu(Host, Node, Lang) ->
     HostNodeBase = get_base_path(Host, Node),
     HostNodeFixed = [{"modules/", "Modules"}],
-    HostNodeHook = get_menu_items_hook({hostnode, Host}, Lang),
+    HostNodeHook = get_menu_items_hook({hostnode, Host, Node}, Lang),
     {HostNodeBase, atom_to_list(Node), HostNodeFixed ++ HostNodeHook}.
 
 make_host_menu(global, _HostNodeMenu, _Lang) ->
@@ -2391,7 +2392,7 @@ make_node_menu(global, Node, Lang) ->
 		 {"ports/", "Listened Ports"},
 		 {"stats/", "Statistics"},
 		 {"update/", "Update"}],
-    NodeHook = get_menu_items_hook(node, Lang),
+    NodeHook = get_menu_items_hook({node, Node}, Lang),
     {NodeBase, atom_to_list(Node), NodeFixed ++ NodeHook};
 make_node_menu(_Host, _Node, _Lang) ->
     {"", "", []}.
@@ -2407,12 +2408,12 @@ make_server_menu(HostMenu, NodeMenu, Lang) ->
     {Base, "ejabberd", Fixed ++ Hook}.
 
 
-get_menu_items_hook({hostnode, Host}, Lang) ->
-    ejabberd_hooks:run_fold(webadmin_menu_hostnode, list_to_binary(Host), [], [Host, Lang]);
+get_menu_items_hook({hostnode, Host, Node}, Lang) ->
+    ejabberd_hooks:run_fold(webadmin_menu_hostnode, list_to_binary(Host), [], [Host, Node, Lang]);
 get_menu_items_hook({host, Host}, Lang) ->
     ejabberd_hooks:run_fold(webadmin_menu_host, list_to_binary(Host), [], [Host, Lang]);
-get_menu_items_hook(node, Lang) ->
-    ejabberd_hooks:run_fold(webadmin_menu_node, [], [Lang]);
+get_menu_items_hook({node, Node}, Lang) ->
+    ejabberd_hooks:run_fold(webadmin_menu_node, [], [Node, Lang]);
 get_menu_items_hook(server, Lang) ->
     ejabberd_hooks:run_fold(webadmin_menu_main, [], [Lang]).
 
