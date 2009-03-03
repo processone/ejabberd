@@ -561,9 +561,12 @@ get_user_list(_, User, Server)
     end.
 
 
+%% From is the sender, To is the destination.
+%% If Dir = out, User@Server is the sender account (From).
+%% If Dir = in, User@Server is the destination account (To).
 check_packet(_, User, Server,
 	     #userlist{list = List, needdb = NeedDb},
-	     {From, To, #xmlel{name = PName}},
+	     {From, To, #xmlel{name = PName, attrs = Attrs}},
 	     Dir) when 
                PName =:= message ; 
 		       PName =:= iq ;
@@ -572,48 +575,42 @@ check_packet(_, User, Server,
 	[] ->
 	    allow;
 	_ ->
-	    case {PName, Dir} of
-		{message, in} ->
-		    LJID = jlib:short_prepd_jid(From),
-		    {Subscription, Groups} =
-			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, From]);
-			    false -> {[], []}
-			end,
-		    check_packet_aux(List, message,
-				     LJID, Subscription, Groups);
-		{iq, in} ->
-		    LJID = jlib:short_prepd_jid(From),
-		    {Subscription, Groups} =
-			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, From]);
-			    false -> {[], []}
-			end,
-		    check_packet_aux(List, iq,
-				     LJID, Subscription, Groups);
-		{presence, in} ->
-		    LJID = jlib:short_prepd_jid(From),
-		    {Subscription, Groups} =
-			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, From]);
-			    false -> {[], []}
-			end,
-		    check_packet_aux(List, presence_in,
-				     LJID, Subscription, Groups);
-		{presence, out} ->
-		    LJID = jlib:short_prepd_jid(To),
-		    {Subscription, Groups} =
-			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, From]);
-			    false -> {[], []}
-			end,
-		    check_packet_aux(List, presence_out,
-				     LJID, Subscription, Groups);
-		_ ->
-		    allow
-	    end
+	    PType = case PName of
+			'message' -> message;
+			'iq' -> iq;
+			'presence' ->
+			    case xml:get_attr_s("type", Attrs) of
+				%% notification
+				'' -> presence;
+				'unavailable' -> presence;
+				%% subscribe, subscribed, unsubscribe,
+				%% unsubscribed, error, probe, or other
+				_ -> other
+			    end
+		    end,
+	    PType2 = case {PType, Dir} of
+			 {message, in} -> message;
+			 {iq, in} -> iq;
+			 {presence, in} -> presence_in;
+			 {presence, out} -> presence_out;
+			 {_, _} -> other
+		     end,
+	    LJID = case Dir of
+		       in -> From;
+		       out -> To
+		   end,
+	    {Subscription, Groups} =
+		case NeedDb of
+		    true -> ejabberd_hooks:run_fold(roster_get_jid_info,
+						    exmpp_stringprep:nameprep(Server),
+						    {none, []},
+						    [User, Server, LJID]);
+		    false -> {[], []}
+		end,
+	    check_packet_aux(List, PType2, LJID, Subscription, Groups)
     end.
 
+%% Ptype = mesage | iq | presence_in | presence_out | other
 check_packet_aux([], _PType, _JID, _Subscription, _Groups) ->
     allow;
 check_packet_aux([Item | List], PType, JID, Subscription, Groups) ->
@@ -651,7 +648,9 @@ is_ptype_match(Item, PType) ->
 		presence_in ->
 		    Item#listitem.match_presence_in;
 		presence_out ->
-		    Item#listitem.match_presence_out
+		    Item#listitem.match_presence_out;
+		other ->
+		    false
 	    end
     end.
 

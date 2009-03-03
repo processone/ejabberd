@@ -877,8 +877,8 @@ session_established2(El, StateData) ->
 			  user_send_packet,
 			  Server,
 			  [FromJID, ToJID, NewEl]),
-			ejabberd_router:route(
-			  FromJID, ToJID, NewEl),
+			check_privacy_route(FromJID, StateData, FromJID,
+					    ToJID, NewEl),
 			StateData
 		end;
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message'} ->
@@ -1500,16 +1500,16 @@ presence_update(From, Packet, StateData) ->
 %% User sends a directed presence packet
 presence_track(From, To, Packet, StateData) ->
     LTo = jlib:short_prepd_jid(To),
-    BFrom = exmpp_jid:jid_to_bare_jid(From),
     case exmpp_presence:get_type(Packet) of
 	'unavailable' ->
-	    ejabberd_router:route(From, To, Packet),
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	'invisible' ->
 	    ejabberd_router:route(From, To, Packet),
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = ?SETS:add_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
@@ -1518,50 +1518,57 @@ presence_track(From, To, Packet, StateData) ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			     StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, subscribe]),
-	    ejabberd_router:route(BFrom, To, Packet),
+	    check_privacy_route(From, StateData, exmpp_jid:jid_to_bare_jid(From),
+				To, Packet),
 	    StateData;
 	'subscribed' ->
 	    ejabberd_hooks:run(roster_out_subscription,
 	             StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, subscribed]),
-	    ejabberd_router:route(BFrom, To, Packet),
+	    check_privacy_route(From, StateData, exmpp_jid:jid_to_bare_jid(From),
+				To, Packet),
 	    StateData;
 	'unsubscribe' ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			     StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, unsubscribe]),
-	    ejabberd_router:route(BFrom, To, Packet),
+	    check_privacy_route(From, StateData, exmpp_jid:jid_to_bare_jid(From),
+				To, Packet),
 	    StateData;
 	'unsubscribed' ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			     StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, unsubscribed]),
-	    ejabberd_router:route(BFrom, To, Packet),
+	    check_privacy_route(From, StateData, exmpp_jid:jid_to_bare_jid(From),
+				To, Packet),
 	    StateData;
 	'error' ->
-	    ejabberd_router:route(From, To, Packet),
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    StateData;
 	'probe' ->
-	    ejabberd_router:route(From, To, Packet),
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    StateData;
 	_ ->
-	    case ejabberd_hooks:run_fold(
-		   privacy_check_packet, StateData#state.server,
-		   allow,
-		   [StateData#state.user,
-		    StateData#state.server,
-		    StateData#state.privacy_list,
-		    {From, To, Packet},
-		    out]) of
-		deny ->
-		    ok;
-		allow ->
-		    ejabberd_router:route(From, To, Packet)
-	    end,
+	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = ?SETS:add_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A}
+    end.
+
+check_privacy_route(From, StateData, FromRoute, To, Packet) ->
+    case ejabberd_hooks:run_fold(
+	   privacy_check_packet, StateData#state.server,
+	   allow,
+	   [StateData#state.user,
+	    StateData#state.server,
+	    StateData#state.privacy_list,
+	    {From, To, Packet},
+	    out]) of
+	deny ->
+	    ok;
+	allow ->
+	    ejabberd_router:route(FromRoute, To, Packet)
     end.
 
 presence_broadcast(StateData, From, JIDSet, Packet) ->

@@ -1,5 +1,9 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/mod_privacy.erl: Privacy List: deny presence-out all + send
+	presence to: presence is sent (EJAB-255)
+	* src/ejabberd_c2s.erl: Likewise
+
 	* src/mod_privacy.erl: Only run roster_get_jid_info if privacy
 	list has subscription or group (thanks to George Hazan)(EJAB-851).
 	Sort items in privacy list by order before storing (EJAB-848)
