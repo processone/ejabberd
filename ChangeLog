@@ -1,5 +1,8 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_listener.erl: Fix a minor compilation warning and
+	add EDoc comment
+
 	* src/ejabberd_listener.erl: When stopping a listener, don't stop
 	the listener supervisor (EJAB-874)
 
