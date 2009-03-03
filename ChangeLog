@@ -1,5 +1,8 @@
 2009-03-03  Badlop  <badlop@process-one.net>
 
+	* src/mod_muc/mod_muc_log.erl: Prevent XSS in MUC logs by
+	linkifying only a few known protocols (EJAB-850)
+
 	* src/mod_muc/mod_muc.erl: Export function to create MUC
 	room (thanks to Eric Cestari) (EJAB-729)
 
