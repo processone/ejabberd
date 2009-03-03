@@ -52,7 +52,12 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+    LH = case ejabberd_config:get_local_option(watchdog_large_heap) of
+	I when is_integer(I) -> I;
+	_ -> 1000000
+end,
+    Opts = [{large_heap, LH}],
+    gen_server:start_link({local, ?MODULE}, ?MODULE, Opts, []).
 
 process_command(From, To, Packet) ->
     case {exmpp_jid:lnode(To), exmpp_jid:lresource(To) } of
@@ -91,9 +96,10 @@ process_command(From, To, Packet) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([]) ->
+init(Opts) ->
+    LH = proplists:get_value(large_heap, Opts),
     process_flag(priority, high),
-    erlang:system_monitor(self(), [{large_heap, 1000000}]),
+    erlang:system_monitor(self(), [{large_heap, LH}]),
     lists:foreach(
       fun(Host) ->
 	      ejabberd_hooks:add(local_send_to_resource_hook, 
@@ -111,9 +117,23 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({get, large_heap}, _From, State) ->
+    {reply, get_large_heap(), State};
+handle_call({set, large_heap, NewValue}, _From, State) ->
+    MonSettings = erlang:system_monitor(self(), [{large_heap, NewValue}]),
+    OldLH = get_large_heap(MonSettings),
+    NewLH = get_large_heap(),
+    {reply, {lh_changed, OldLH, NewLH}, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
+
+get_large_heap() ->
+    MonSettings = erlang:system_monitor(),
+    get_large_heap(MonSettings).
+get_large_heap(MonSettings) ->
+    {_MonitorPid, Options} = MonSettings,
+    proplists:get_value(large_heap, Options).
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -167,7 +187,7 @@ process_large_heap(Pid, Info) ->
 		  JIDs /= [] ->
 	    DetailedInfo = detailed_info(Pid),
 	    Body = io_lib:format(
-		     "(~w) The process ~w is consuming too much memory: ~w.~n"
+		     "(~w) The process ~w is consuming too much memory:~n~p~n"
 		     "~s",
 		     [node(), Pid, Info, DetailedInfo]),
 	    From = exmpp_jid:make_jid(undefined, Host, <<"watchdog">>),
@@ -310,14 +330,25 @@ process_command1(From, To, Body) ->
 process_command2(["kill", SNode, SPid], From, To) ->
     Node = list_to_atom(SNode),
     remote_command(Node, [kill, SPid], From, To);
+process_command2(["showlh", SNode], From, To) ->
+    Node = list_to_atom(SNode),
+    remote_command(Node, [showlh], From, To);
+process_command2(["setlh", SNode, NewValueString], From, To) ->
+    Node = list_to_atom(SNode),
+    NewValue = list_to_integer(NewValueString),
+    remote_command(Node, [setlh, NewValue], From, To);
 process_command2(["help"], From, To) ->
     send_message(To, From, help());
 process_command2(_, From, To) ->
     send_message(To, From, help()).
 
+
 help() ->
     "Commands:\n"
-	"  kill <node> <pid>".
+	"  kill <node> <pid>\n"
+	"  showlh <node>\n"
+	"  setlh <node> <integer>".
+
 
 remote_command(Node, Args, From, To) ->
     Message =
@@ -332,6 +363,12 @@ remote_command(Node, Args, From, To) ->
 process_remote_command([kill, SPid]) ->
     exit(list_to_pid(SPid), kill),
     "ok";
+process_remote_command([showlh]) ->
+    Res = gen_server:call(ejabberd_system_monitor, {get, large_heap}),
+    io_lib:format("Current large heap: ~p", [Res]);
+process_remote_command([setlh, NewValue]) ->
+    {lh_changed, OldLH, NewLH} = gen_server:call(ejabberd_system_monitor, {set, large_heap, NewValue}),
+    io_lib:format("Result of set large heap: ~p --> ~p", [OldLH, NewLH]);
 process_remote_command(_) ->
     throw(unknown_command).
 

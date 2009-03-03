@@ -357,6 +357,8 @@ process_term(Term, State) ->
 	    add_option({domain_balancing_component_number, Domain}, N, State);
 	{watchdog_admins, Admins} ->
 	    add_option(watchdog_admins, Admins, State);
+	{watchdog_large_heap, LH} ->
+	    add_option(watchdog_large_heap, LH, State);
 	{registration_timeout, Timeout} ->
 	    add_option(registration_timeout, Timeout, State);
 	{loglevel, Loglevel} ->
