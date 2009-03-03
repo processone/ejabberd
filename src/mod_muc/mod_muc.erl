@@ -38,6 +38,7 @@
 	 store_room/3,
 	 restore_room/2,
 	 forget_room/2,
+	 create_room/5,
 	 process_iq_disco_items/4,
 	 can_use_nick/3]).
 
@@ -104,6 +105,13 @@ room_destroyed(Host, Room, Pid, ServerHost) when is_binary(Host),
     catch gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
 	{room_destroyed, {Room, Host}, Pid},
     ok.
+
+%% @doc Create a room.
+%% If Opts = default, the default room options are used.
+%% Else use the passed options as defined in mod_muc_room.
+create_room(Host, Name, From, Nick, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    gen_server:call(Proc, {create, Name, From, Nick, Opts}).
 
 store_room(Host, Name, Opts) when is_binary(Host), is_binary(Name) ->
     F = fun() ->
@@ -212,7 +220,28 @@ init([Host, Opts]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
-    {stop, normal, ok, State}.
+    {stop, normal, ok, State};
+
+handle_call({create, Room, From, Nick, Opts},
+	    _From,
+	    #state{host = Host,
+		   server_host = ServerHost,
+		   access = Access,
+		   default_room_opts = DefOpts,
+		   history_size = HistorySize,
+		   room_shaper = RoomShaper} = State) ->
+    ?DEBUG("MUC: create new room '~s'~n", [Room]),
+    NewOpts = case Opts of
+		  default -> DefOpts;
+		  _ -> Opts
+	      end,
+    {ok, Pid} = mod_muc_room:start(
+		  Host, ServerHost, Access,
+		  Room, HistorySize,
+		  RoomShaper, From,
+		  Nick, NewOpts),
+    register_room(Host, Room, Pid),
+    {reply, ok, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
