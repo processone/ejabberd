@@ -39,7 +39,7 @@
 
 -module(mod_pubsub).
 -author('christophe.romain@process-one.net').
--version('1.12-02').
+-version('1.12-03').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
