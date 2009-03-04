@@ -97,6 +97,7 @@ get_caps({U, S, R}) ->
 
 %% clear_caps removes user caps from database
 clear_caps(JID) ->
+    R = exmpp_jid:lresource(JID),
     BJID = exmpp_jid:jid_to_binary(JID),
     BUID = exmpp_jid:bare_jid_to_binary(JID),
     catch mnesia:dirty_delete({user_caps, BJID}),
@@ -233,7 +234,7 @@ handle_cast({note_caps, From,
 	[] ->
 	    % only store resource of caps aware external contacts
 	    BUID = exmpp_jid:bare_jid_to_binary(From),
-	    mnesia:dirty_write(#user_caps_resources{uid = BUID, resource = list_to_binary(R)})
+	    mnesia:dirty_write(#user_caps_resources{uid = BUID, resource = list_to_binary(R)});
 	_ -> 
 	    ok
     end,

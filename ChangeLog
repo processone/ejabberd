@@ -1,3 +1,7 @@
+2009-03-04  Badlop  <badlop@process-one.net>
+
+	* src/mod_caps.erl: Fix two small compilation errors
+
 2009-03-04  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Add roster subscriptions handling
