@@ -929,30 +929,25 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 		   end,
 	    case {IQType, Name} of
 		{set, 'create'} ->
-		    case Configuration of
-			[#xmlel{name = 'configure', children = Config}] ->
-			    %% Get the type of the node
-			    Type = case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', "") of
-				       [] -> hd(Plugins);
-				       T -> T
-				   end,
-			    %% we use Plugins list matching because we do not want to allocate
-			    %% atoms for non existing type, this prevent atom allocation overflow
-			    case lists:member(Type, Plugins) of
-				false ->
-				    {error, extended_error(
-					      'feature-not-implemented',
-					      unsupported, "create-nodes")};
-				true ->
-				    create_node(Host, ServerHost, Node, From,
-						Type, Access, Config)
-			    end;
-			_ ->
-			    %% this breaks backward compatibility!
-			    %% can not create node without <configure/>
-			    %% but this is the new spec anyway
-			    ?INFO_MSG("Node ~p ; invalid configuration: ~p", [Node, Configuration]),
-			    {error, 'bad-request'}
+		    Config = case Configuration of
+			[#xmlel{name = 'configure', children = C}] -> C;
+			_ -> []
+		    end,
+		    %% Get the type of the node
+		    Type = case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', "") of
+				[] -> hd(Plugins);
+				T -> T
+			    end,
+		    %% we use Plugins list matching because we do not want to allocate
+		    %% atoms for non existing type, this prevent atom allocation overflow
+		    case lists:member(Type, Plugins) of
+			false ->
+			    {error, extended_error(
+					'feature-not-implemented',
+					unsupported, "create-nodes")};
+			true ->
+			    create_node(Host, ServerHost, Node, From,
+					Type, Access, Config)
 		    end;
 		{set, 'publish'} ->
 		    case exmpp_xml:remove_cdata_from_list(Els) of
