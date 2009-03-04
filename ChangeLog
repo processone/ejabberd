@@ -1,3 +1,8 @@
+2009-03-04  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Allow node creation without configure
+	item
+
 2009-03-03  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Add roster subscriptions handling

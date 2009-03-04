@@ -920,30 +920,25 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 		   end,
 	    case {IQType, Name} of
 		{set, "create"} ->
-		    case Configuration of
-			[{xmlelement, "configure", _, Config}] ->
-			    %% Get the type of the node
-			    Type = case xml:get_attr_s("type", Attrs) of
-				       [] -> hd(Plugins);
-				       T -> T
-				   end,
-			    %% we use Plugins list matching because we do not want to allocate
-			    %% atoms for non existing type, this prevent atom allocation overflow
-			    case lists:member(Type, Plugins) of
-				false ->
-				    {error, extended_error(
-					      ?ERR_FEATURE_NOT_IMPLEMENTED,
-					      unsupported, "create-nodes")};
-				true ->
-				    create_node(Host, ServerHost, Node, From,
-						Type, Access, Config)
-			    end;
-			_ ->
-			    %% this breaks backward compatibility!
-			    %% can not create node without <configure/>
-			    %% but this is the new spec anyway
-			    ?INFO_MSG("Node ~p ; invalid configuration: ~p", [Node, Configuration]),
-			    {error, ?ERR_BAD_REQUEST}
+		    Config = case Configuration of
+			[{xmlelement, "configure", _, C}] -> C;
+			_ -> []
+		    end,
+		    %% Get the type of the node
+		    Type = case xml:get_attr_s("type", Attrs) of
+				[] -> hd(Plugins);
+				T -> T
+			    end,
+		    %% we use Plugins list matching because we do not want to allocate
+		    %% atoms for non existing type, this prevent atom allocation overflow
+		    case lists:member(Type, Plugins) of
+			false ->
+			    {error, extended_error(
+					?ERR_FEATURE_NOT_IMPLEMENTED,
+					unsupported, "create-nodes")};
+			true ->
+			    create_node(Host, ServerHost, Node, From,
+					Type, Access, Config)
 		    end;
 		{set, "publish"} ->
 		    case xml:remove_cdata(Els) of
