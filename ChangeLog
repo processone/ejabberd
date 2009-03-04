@@ -1,5 +1,15 @@
 2009-03-04  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_auth.erl: If anonymous auth is enabled, when
+	checking if the account already exists in other auth methods, take
+	into account if the auth method failed (EJAB-882)
+	* src/ejabberd_auth_anonymous.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_auth_pam.erl: Likewise
+
 	* src/mod_caps.erl: Fix two small compilation errors
 
 2009-03-04  Christophe Romain <christophe.romain@process-one.net>

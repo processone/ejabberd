@@ -128,8 +128,13 @@ get_password_s(_User, _Server) ->
 %%     User = string()
 %%     Server = string()
 
+%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
-    extauth:is_user_exists(User, Server).
+    try extauth:is_user_exists(User, Server) of
+	Res -> Res
+    catch
+	_:Error -> {error, Error}
+    end.
 
 %% @spec (User, Server) -> {error, not_allowed}
 %%     User = string()

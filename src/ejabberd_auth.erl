@@ -92,10 +92,10 @@ plain_password_required(Server) when is_list(Server) ->
 
 check_password(User, Server, Password)
   when is_list(User), is_list(Server), is_list(Password) ->
-    lists:any(
-      fun(M) ->
-	      M:check_password(User, Server, Password)
-      end, auth_modules(Server)).
+    case check_password_with_authmodule(User, Server, Password) of
+	{true, _AuthModule} -> true;
+	false -> false
+    end.
 
 %% @spec (User, Server, Password, StreamID, Digest) -> bool()
 %%     User = string()
@@ -108,10 +108,11 @@ check_password(User, Server, Password)
 check_password(User, Server, Password, StreamID, Digest)
   when is_list(User), is_list(Server), is_list(Password),
   is_list(StreamID), is_list(Digest) ->
-    lists:any(
-      fun(M) ->
-	      M:check_password(User, Server, Password, StreamID, Digest)
-      end, auth_modules(Server)).
+    case check_password_with_authmodule(User, Server, Password,
+					StreamID, Digest) of
+	{true, _AuthModule} -> true;
+	false -> false
+    end.
 
 %% @spec (User, Server, Password) -> {true, AuthModule} | false
 %%     User = string()
@@ -125,15 +126,7 @@ check_password(User, Server, Password, StreamID, Digest)
 
 check_password_with_authmodule(User, Server, Password)
   when is_list(User), is_list(Server), is_list(Password) ->
-    Res = lists:dropwhile(
-	    fun(M) ->
-		    not apply(M, check_password,
-			      [User, Server, Password])
-	    end, auth_modules(Server)),
-    case Res of
-	[] -> false;
-	[AuthMod | _] -> {true, AuthMod}
-    end.
+    check_password_loop(auth_modules(Server), [User, Server, Password]).
 
 %% @spec (User, Server, Password, StreamID, Digest) -> {true, AuthModule} | false
 %%     User = string()
@@ -149,14 +142,17 @@ check_password_with_authmodule(User, Server, Password)
 check_password_with_authmodule(User, Server, Password, StreamID, Digest)
   when is_list(User), is_list(Server), (is_list(Password) orelse Password == 'undefined'),
   is_list(StreamID), (is_list(Digest) orelse Digest == 'undefined')->
-    Res = lists:dropwhile(
-	    fun(M) ->
-		    not apply(M, check_password,
-			      [User, Server, Password, StreamID, Digest])
-	    end, auth_modules(Server)),
-    case Res of
-	[] -> false;
-	[AuthMod | _] -> {true, AuthMod}
+    check_password_loop(auth_modules(Server), [User, Server, Password,
+					       StreamID, Digest]).
+
+check_password_loop([], _Args) ->
+    false;
+check_password_loop([AuthModule | AuthModules], Args) ->
+    case apply(AuthModule, check_password, Args) of
+	true ->
+	    {true, AuthModule};
+	false ->
+	    check_password_loop(AuthModules, Args)
     end.
 
 %% @spec (User, Server, Password) -> ok | {error, ErrorType}
@@ -347,7 +343,7 @@ is_user_exists(User, Server) when is_list(User), is_list(Server) ->
 	      M:is_user_exists(User, Server)
       end, auth_modules(Server)).
 
-%% @spec (Module, User, Server) -> bool
+%% @spec (Module, User, Server) -> true | false | maybe
 %%     Module = authmodule()
 %%     User = string()
 %%     Server = string()
@@ -356,10 +352,24 @@ is_user_exists(User, Server) when is_list(User), is_list(Server) ->
 
 is_user_exists_in_other_modules(Module, User, Server)
   when is_list(User), is_list(Server) ->
-    lists:any(
-      fun(M) ->
-	      M:is_user_exists(User, Server)
-      end, auth_modules(Server)--[Module]).
+    is_user_exists_in_other_modules_loop(
+      auth_modules(Server)--[Module],
+      User, Server).
+is_user_exists_in_other_modules_loop([], _User, _Server) ->
+    false;
+is_user_exists_in_other_modules_loop([AuthModule|AuthModules], User, Server) ->
+    case AuthModule:is_user_exists(User, Server) of
+	true ->
+	    true;
+	false ->
+	    is_user_exists_in_other_modules_loop(AuthModules, User, Server);
+	{error, Error} ->
+	    ?DEBUG("The authentication module ~p returned an error~nwhen "
+		   "checking user ~p in server ~p~nError message: ~p",
+		   [AuthModule, User, Server, Error]),
+	    maybe
+    end.
+
 
 %% @spec (User, Server) -> ok | error | {error, not_allowed}
 %%     User = string()

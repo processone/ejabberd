@@ -125,9 +125,11 @@ get_password(_User, _Server) ->
 get_password_s(_User, _Server) ->
     "".
 
-%% @spec (User, Server) -> bool()
+%% @spec (User, Server) -> true | false | {error, Error}
 %%     User = string()
 %%     Server = string()
+%% TODO: Improve this function to return an error instead of 'false' when
+%% connection to PAM failed
 
 is_user_exists(User, Server) ->
     Service = get_pam_service(Server),

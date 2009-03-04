@@ -234,7 +234,10 @@ check_password(User, Server, _Password, _StreamID, _Digest) ->
     %% they however are "reserved")
     case ejabberd_auth:is_user_exists_in_other_modules(?MODULE, 
 						       User, Server) of
+	%% If user exists in other module, reject anonnymous authentication
 	true  -> false;
+	%% If we are not sure whether the user exists in other module, reject anon auth
+	maybe  -> false;
 	false -> login(User, Server)
     end.
 

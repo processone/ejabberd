@@ -73,11 +73,18 @@ check_password(User, Server, Password) ->
 	LUser = exmpp_stringprep:nodeprep(User),
 	Username = ejabberd_odbc:escape(LUser),
 	LServer = exmpp_stringprep:nameprep(Server),
-	case catch odbc_queries:get_password(LServer, Username) of
+	try odbc_queries:get_password(LServer, Username) of
 	    {selected, ["password"], [{Password}]} ->
-		Password /= "";
-	    _ ->
-		false
+		    Password /= ""; %% Password is correct, and not empty
+		{selected, ["password"], [{_Password2}]} ->
+		    false; %% Password is not correct
+		{selected, ["password"], []} ->
+		    false; %% Account does not exist
+		{error, _Error} ->
+		    false %% Typical error is that table doesn't exist
+	    catch
+		_:_ ->
+		    false %% Typical error is database not accessible
 	end
     catch
 	_ ->
@@ -96,7 +103,8 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	LUser = exmpp_stringprep:nodeprep(User),
 	Username = ejabberd_odbc:escape(LUser),
 	LServer = exmpp_stringprep:nameprep(Server),
-	case catch odbc_queries:get_password(LServer, Username) of
+	try odbc_queries:get_password(LServer, Username) of
+		%% Account exists, check if password is valid
 	    {selected, ["password"], [{Passwd}]} ->
 		DigRes = if
 		    Digest /= "" ->
@@ -109,8 +117,13 @@ check_password(User, Server, Password, StreamID, Digest) ->
 		    true ->
 			(Passwd == Password) and (Password /= "")
 		end;
-	    _ ->
-		false
+		{selected, ["password"], []} ->
+		    false; %% Account does not exist
+		{error, _Error} ->
+		    false %% Typical error is that table doesn't exist
+	    catch
+		_:_ ->
+		    false %% Typical error is database not accessible
 	end
     catch
 	_ ->
@@ -277,16 +290,22 @@ get_password_s(User, Server) ->
 %%     User = string()
 %%     Server = string()
 
+%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	Username = ejabberd_odbc:escape(LUser),
 	LServer = exmpp_stringprep:nameprep(Server),
-	case catch odbc_queries:get_password(LServer, Username) of
+	try odbc_queries:get_password(LServer, Username) of
 	    {selected, ["password"], [{_Password}]} ->
-		true;
-	    _ ->
-		false
+		    true; %% Account exists
+		{selected, ["password"], []} ->
+		    false; %% Account does not exist
+		{error, Error} ->
+		    {error, Error} %% Typical error is that table doesn't exist
+	    catch
+		_:B ->
+		    {error, B} %% Typical error is database not accessible
 	end
     catch
 	_ ->
