@@ -2012,7 +2012,7 @@ get_subscriptions(Host, Node, JID) ->
 		     if
 			 not RetrieveFeature ->
 			     %% Service does not support manage subscriptions
-			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "manage-affiliations")};
+			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "manage-subscriptions")};
 			 Affiliation /= {result, owner} ->
 			     %% Entity is not an owner
 			     {error, ?ERR_FORBIDDEN};
