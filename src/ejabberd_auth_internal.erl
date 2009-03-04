@@ -225,6 +225,7 @@ get_password_s(User, Server) ->
 	    []
     end.
 
+%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -234,8 +235,8 @@ is_user_exists(User, Server) ->
 	    false;
 	[_] ->
 	    true;
-	_ ->
-	    false
+	Other ->
+	    {error, Other}
     end.
 
 %% @spec (User, Server) -> ok

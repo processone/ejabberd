@@ -57,6 +57,7 @@ start(_Host) ->
 plain_password_required() ->
     false.
 
+%% @spec (User, Server, Password) -> true | false | {error, Error}
 check_password(User, Server, Password) ->
     case jlib:nodeprep(User) of
 	error ->
@@ -64,14 +65,22 @@ check_password(User, Server, Password) ->
 	LUser ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:get_password(LServer, Username) of
+	    try odbc_queries:get_password(LServer, Username) of
 		{selected, ["password"], [{Password}]} ->
-		    Password /= "";
-		_ ->
-		    false
+		    Password /= ""; %% Password is correct, and not empty
+		{selected, ["password"], [{_Password2}]} ->
+		    false; %% Password is not correct
+		{selected, ["password"], []} ->
+		    false; %% Account does not exist
+		{error, _Error} ->
+		    false %% Typical error is that table doesn't exist
+	    catch
+		_:_ ->
+		    false %% Typical error is database not accessible
 	    end
     end.
 
+%% @spec (User, Server, Password, StreamID, Digest) -> true | false | {error, Error}
 check_password(User, Server, Password, StreamID, Digest) ->
     case jlib:nodeprep(User) of
 	error ->
@@ -79,7 +88,8 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	LUser ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:get_password(LServer, Username) of
+	    try odbc_queries:get_password(LServer, Username) of
+		%% Account exists, check if password is valid
 		{selected, ["password"], [{Passwd}]} ->
 		    DigRes = if
 				 Digest /= "" ->
@@ -92,8 +102,13 @@ check_password(User, Server, Password, StreamID, Digest) ->
 		       true ->
 			    (Passwd == Password) and (Password /= "")
 		    end;
-		_ ->
-		    false
+		{selected, ["password"], []} ->
+		    false; %% Account does not exist
+		{error, _Error} ->
+		    false %% Typical error is that table doesn't exist
+	    catch
+		_:_ ->
+		    false %% Typical error is database not accessible
 	    end
     end.
 
@@ -204,6 +219,7 @@ get_password_s(User, Server) ->
 	    end
     end.
 
+%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     case jlib:nodeprep(User) of
 	error ->
@@ -211,11 +227,16 @@ is_user_exists(User, Server) ->
 	LUser ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    LServer = jlib:nameprep(Server),
-	    case catch odbc_queries:get_password(LServer, Username) of
+	    try odbc_queries:get_password(LServer, Username) of
 		{selected, ["password"], [{_Password}]} ->
-		    true;
-		_ ->
-		    false
+		    true; %% Account exists
+		{selected, ["password"], []} ->
+		    false; %% Account does not exist
+		{error, Error} ->
+		    {error, Error} %% Typical error is that table doesn't exist
+	    catch
+		_:B ->
+		    {error, B} %% Typical error is database not accessible
 	    end
     end.
 
