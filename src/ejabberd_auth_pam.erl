@@ -80,6 +80,8 @@ get_password(_User, _Server) ->
 get_password_s(_User, _Server) ->
     "".
 
+%% @spec (User, Server) -> true | false | {error, Error}
+%% TODO: Improve this function to return an error instead of 'false' when connection to PAM failed
 is_user_exists(User, Host) ->
     Service = get_pam_service(Host),
     case catch epam:acct_mgmt(Service, User) of

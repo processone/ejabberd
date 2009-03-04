@@ -80,20 +80,21 @@ plain_password_required(Server) ->
 %% @spec (User::string(), Server::string(), Password::string()) ->
 %%     true | false
 check_password(User, Server, Password) ->
-    lists:any(
-      fun(M) ->
-	      M:check_password(User, Server, Password)
-      end, auth_modules(Server)).
+    case check_password_with_authmodule(User, Server, Password) of
+	{true, _AuthModule} -> true;
+	false -> false
+    end.
 
 %% @doc Check if the user and password can login in server.
 %% @spec (User::string(), Server::string(), Password::string(),
 %%        StreamID::string(), Digest::string()) ->
 %%     true | false
 check_password(User, Server, Password, StreamID, Digest) ->
-    lists:any(
-      fun(M) ->
-	      M:check_password(User, Server, Password, StreamID, Digest)
-      end, auth_modules(Server)).
+    case check_password_with_authmodule(User, Server, Password,
+					StreamID, Digest) of
+	{true, _AuthModule} -> true;
+	false -> false
+    end.
 
 %% @doc Check if the user and password can login in server.
 %% The user can login if at least an authentication method accepts the user
@@ -106,26 +107,22 @@ check_password(User, Server, Password, StreamID, Digest) ->
 %%                 | ejabberd_auth_internal | ejabberd_auth_ldap
 %%                 | ejabberd_auth_odbc | ejabberd_auth_pam
 check_password_with_authmodule(User, Server, Password) ->
-    Res = lists:dropwhile(
-	    fun(M) ->
-		    not apply(M, check_password,
-			      [User, Server, Password])
-	    end, auth_modules(Server)),
-    case Res of
-	[] -> false;
-	[AuthMod | _] -> {true, AuthMod}
-    end.
+    check_password_loop(auth_modules(Server), [User, Server, Password]).
 
 check_password_with_authmodule(User, Server, Password, StreamID, Digest) ->
-    Res = lists:dropwhile(
-	    fun(M) ->
-		    not apply(M, check_password,
-			      [User, Server, Password, StreamID, Digest])
-	    end, auth_modules(Server)),
-    case Res of
-	[] -> false;
-	[AuthMod | _] -> {true, AuthMod}
+    check_password_loop(auth_modules(Server), [User, Server, Password,
+					       StreamID, Digest]).
+
+check_password_loop([], _Args) ->
+    false;
+check_password_loop([AuthModule | AuthModules], Args) ->
+    case apply(AuthModule, check_password, Args) of
+	true ->
+	    {true, AuthModule};
+	false ->
+	    check_password_loop(AuthModules, Args)
     end.
+
 
 %% @spec (User::string(), Server::string(), Password::string()) ->
 %%       ok | {error, ErrorType}
@@ -261,11 +258,26 @@ is_user_exists(User, Server) ->
 
 %% Check if the user exists in all authentications module except the module
 %% passed as parameter
+%% @spec (Module::atom(), User, Server) -> true | false | maybe
 is_user_exists_in_other_modules(Module, User, Server) ->
-    lists:any(
-      fun(M) ->
-	      M:is_user_exists(User, Server)
-      end, auth_modules(Server)--[Module]).
+    is_user_exists_in_other_modules_loop(
+      auth_modules(Server)--[Module],
+      User, Server).
+is_user_exists_in_other_modules_loop([], _User, _Server) ->
+    false;
+is_user_exists_in_other_modules_loop([AuthModule|AuthModules], User, Server) ->
+    case AuthModule:is_user_exists(User, Server) of
+	true ->
+	    true;
+	false ->
+	    is_user_exists_in_other_modules_loop(AuthModules, User, Server);
+	{error, Error} ->
+	    ?DEBUG("The authentication module ~p returned an error~nwhen "
+		   "checking user ~p in server ~p~nError message: ~p",
+		   [AuthModule, User, Server, Error]),
+	    maybe
+    end.
+
 
 %% @spec (User, Server) -> ok | error | {error, not_allowed}
 %% @doc Remove user.
