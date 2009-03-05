@@ -1,3 +1,8 @@
+2009-03-05  Badlop  <badlop@process-one.net>
+
+	* doc/guide.tex: Require OpenSSL 0.9.8f or higher (EJAB-877)
+	* doc/guide.html: Likewise
+
 2009-03-04  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_auth.erl: If anonymous auth is enabled, when
