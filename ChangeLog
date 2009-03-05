@@ -1,5 +1,10 @@
 2009-03-05  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_app.erl: In a Windows machine, explicitly add the
+	nameservers, as it seems Erlang does not do itself (EJAB-860)
+	* src/win32_dns.erl: Get name servers from Windows registy (thanks
+	to Geoff Cant)
+
 	* doc/guide.tex: Require OpenSSL 0.9.8f or higher (EJAB-877)
 	* doc/guide.html: Likewise
 
