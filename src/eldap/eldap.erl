@@ -595,7 +595,7 @@ send_command(Command, From, S) ->
     case gen_tcp:send(S#eldap.fd, Bytes) of
     ok ->
 	Timer = erlang:start_timer(?CMD_TIMEOUT, self(), {cmd_timeout, Id}),
-	New_dict = dict:store(Id, [{Timer, From, Name}], S#eldap.dict),
+	New_dict = dict:store(Id, [{Timer, Command, From, Name}], S#eldap.dict),
 	{ok, S#eldap{id = Id, dict = New_dict}};
     Error ->
 	Error
@@ -730,7 +730,7 @@ check_bind_reply(Other, _From) ->
 
 get_op_rec(Id, Dict) ->
     case dict:find(Id, Dict) of
-	{ok, [{Timer, From, Name}|Res]} ->
+	{ok, [{Timer, _Command, From, Name}|Res]} ->
 	    {Timer, From, Name, Res};
 	error ->
 	    throw({error, unkown_id})
@@ -792,8 +792,15 @@ check_tag(Data) ->
 
 close_and_retry(S) ->
     catch gen_tcp:close(S#eldap.fd),
+    Queue = dict:fold(
+	      fun(_Id, [{Timer, Command, From, _Name}|_], Q) ->
+		      cancel_timer(Timer),
+		      queue:in_r({Command, From}, Q);
+		 (_, _, Q) ->
+		      Q
+	      end, S#eldap.req_q, S#eldap.dict),
     erlang:send_after(?RETRY_TIMEOUT, self(), {timeout, retry_connect}),
-    S#eldap{fd = null}.
+    S#eldap{fd=null, req_q=Queue, dict=dict:new()}.
 
 %%-----------------------------------------------------------------------
 %% Sort out timed out commands
@@ -801,7 +808,7 @@ close_and_retry(S) ->
 cmd_timeout(Timer, Id, S) ->
     Dict = S#eldap.dict,
     case dict:find(Id, Dict) of
-	{ok, [{Timer, From, Name}|Res]} ->
+	{ok, [{Timer, _Command, From, Name}|Res]} ->
 	    case Name of
 		searchRequest ->
 		    {Res1, Ref1} = polish(Res),
