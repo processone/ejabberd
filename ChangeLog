@@ -1,5 +1,8 @@
 2009-03-06  Badlop  <badlop@process-one.net>
 
+	* src/eldap/eldap.erl: implemented queue for pending
+	queries (thanks to Evgeniy Khramtsov)
+
 	* src/eldap/eldap.erl: Close a connection on tcp_error (thanks to
 	Evgeniy Khramtsov)
 
