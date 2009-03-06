@@ -1,3 +1,9 @@
+2009-03-06  Badlop  <badlop@process-one.net>
+
+	* src/eldap/Makefile.in: added +optimize and +driver compilation
+	options (thanks to Evgeniy Khramtsov)
+	* src/eldap/Makefile.win32: Likewise
+
 2009-03-05  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_app.erl: In a Windows machine, explicitly add the
