@@ -82,7 +82,7 @@ add(Hook, Host, Module, Function, Seq) ->
 delete(Hook, Function, Seq) when is_function(Function) ->
     delete(Hook, global, undefined, Function, Seq).
 
-delete(Hook, Host, Function, Seq) when is_function(Seq) ->
+delete(Hook, Host, Function, Seq) when is_function(Function) ->
     delete(Hook, Host, undefined, Function, Seq);
 
 %% @spec (Hook::atom(), Module::atom(), Function::atom(), Seq::integer()) -> ok
