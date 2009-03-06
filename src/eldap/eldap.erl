@@ -517,22 +517,13 @@ handle_info({tcp, _Socket, Data}, StateName, S)
 handle_info({tcp_closed, _Socket}, Fsm_state, S) ->
     ?WARNING_MSG("LDAP server closed the connection: ~s:~p~nIn State: ~p",
 	  [S#eldap.host, S#eldap.port ,Fsm_state]),
-    F = fun(_Id, [{Timer, From, _Name}|_]) ->
-		gen_fsm:reply(From, {error, tcp_closed}),
-		cancel_timer(Timer)
-	end,
-    dict:map(F, S#eldap.dict),
-    {ok, NextState, NewS} = connect_bind(S#eldap{fd = null,
-						 dict = dict:new(),
-						 bind_q=queue:new()}),
+    {ok, NextState, NewS} = close_and_rebind(S, tcp_closed),
     {next_state, NextState, NewS};
 
 handle_info({tcp_error, _Socket, Reason}, Fsm_state, S) ->
     ?DEBUG("eldap received tcp_error: ~p~nIn State: ~p", [Reason, Fsm_state]),
-    %% XXX wouldn't it be safer to try reconnect ?
-    %% if we were waiting a result, we may mait forever
-    %% cause request is probably lost....
-    {next_state, Fsm_state, S};
+    {ok, NextState, NewS} = close_and_rebind(S, tcp_error),
+    {next_state, NextState, NewS};
 
 %%
 %% Timers
@@ -1006,3 +997,13 @@ bump_id(#eldap{id = Id}) when Id > ?MAX_TRANSACTION_ID ->
     ?MIN_TRANSACTION_ID;
 bump_id(#eldap{id = Id}) ->
     Id + 1.
+
+close_and_rebind(State, Err) ->
+    F = fun(_Id, [{Timer, From, _Name}|_]) ->
+		gen_fsm:reply(From, {error, Err}),
+		cancel_timer(Timer)
+	end,
+    dict:map(F, State#eldap.dict),
+    connect_bind(State#eldap{fd = null,
+			     dict = dict:new(),
+			     bind_q=queue:new()}).
