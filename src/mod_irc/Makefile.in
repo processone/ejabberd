@@ -9,12 +9,15 @@ LIBS = @LIBS@ @LIBICONV@
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
+# Assume Linux-style dynamic library flags
+DYNAMIC_LIB_CFLAGS = -fpic -shared
 ifeq ($(shell uname),Darwin)
-	DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
-else
-	# Assume Linux-style dynamic library flags
-	DYNAMIC_LIB_CFLAGS = -fpic -shared
+    DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
 endif
+ifeq ($(shell uname),SunOs)
+    DYNAMIC_LIB_CFLAGS = -KPIC -G -z text
+endif
+
 
 EFLAGS += -I ..
 EFLAGS += -pz ..

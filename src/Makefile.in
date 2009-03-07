@@ -114,11 +114,13 @@ COOKIEFILE = $(SPOOLDIR)/.erlang.cookie
 # /var/log/ejabberd/
 LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
 
-ifeq ($(shell uname),Darwin)
-DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
-else
 # Assume Linux-style dynamic library flags
 DYNAMIC_LIB_CFLAGS = -fpic -shared
+ifeq ($(shell uname),Darwin)
+    DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
+endif
+ifeq ($(shell uname),SunOs)
+    DYNAMIC_LIB_CFLAGS = -KPIC -G -z text
 endif
 
 all: $(ERLSHLIBS) compile-beam all-recursive
