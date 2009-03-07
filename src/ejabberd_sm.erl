@@ -422,34 +422,13 @@ do_route(From, To, Packet) ->
 		    {Pass, _Subsc} =
 			case exmpp_presence:get_type(Packet) of
 			    'subscribe' ->
-				Reason = exmpp_presence:get_status(Packet),
-				{ejabberd_hooks:run_fold(
-				   roster_in_subscription,
-				   exmpp_jid:ldomain(To),
-				   false,
-				   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, subscribe, Reason]),
-				 true};
+				{true, true};
 			    'subscribed' ->
-				{ejabberd_hooks:run_fold(
-				   roster_in_subscription,
-				   exmpp_jid:ldomain(To),
-				   false,
-				   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, subscribed, <<>>]),
-				 true};
+				{true, true};
 			    'unsubscribe' ->
-				{ejabberd_hooks:run_fold(
-				   roster_in_subscription,
-				   exmpp_jid:ldomain(To),
-				   false,
-				   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, unsubscribe, <<>>]),
-				 true};
+				{true, true};
 			    'unsubscribed' ->
-				{ejabberd_hooks:run_fold(
-				   roster_in_subscription,
-				   exmpp_jid:ldomain(To),
-				   false,
-				   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, unsubscribed, <<>>]),
-				 true};
+				{true, true};
 			    _ ->
 				{true, false}
 			end,

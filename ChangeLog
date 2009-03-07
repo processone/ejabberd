@@ -1,5 +1,9 @@
 2009-03-07  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_c2s.erl: Enforce privacy rules also for
+	subscription requests (EJAB-300)
+	* src/ejabberd_sm.erl: Likewise
+
 	* src/mod_privacy.erl: Temporary workaround to inconsistency
 	* src/mod_privacy_odbc.erl: Likewise
 
