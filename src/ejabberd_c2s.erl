@@ -1103,13 +1103,22 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			Attrs1 = lists:keydelete("type", 1, Attrs),
 			{true, [{"type", "unavailable"} | Attrs1], StateData};
 		    "subscribe" ->
-			{true, Attrs, StateData};
+			Reason = xml:get_path_s(Packet,[{elem,"status"},cdata]),
+			SRes = check_privacy_subs(in, subscribe, From, To,
+						  Packet, Reason, StateData),
+			{SRes, Attrs, StateData};
 		    "subscribed" ->
-			{true, Attrs, StateData};
+			SRes = check_privacy_subs(in, subscribed, From, To,
+						  Packet, "", StateData),
+			{SRes, Attrs, StateData};
 		    "unsubscribe" ->
-			{true, Attrs, StateData};
+			SRes = check_privacy_subs(in, unsubscribe, From, To,
+						  Packet, "", StateData),
+			{SRes, Attrs, StateData};
 		    "unsubscribed" ->
-			{true, Attrs, StateData};
+			SRes = check_privacy_subs(in, unsubscribed, From, To,
+						  Packet, "", StateData),
+			{SRes, Attrs, StateData};
 		    _ ->
 			case ejabberd_hooks:run_fold(
 			       privacy_check_packet, StateData#state.server,
@@ -1640,6 +1649,36 @@ check_privacy_route(From, StateData, FromRoute, To, Packet) ->
 	    ok;
 	allow ->
 	    ejabberd_router:route(FromRoute, To, Packet)
+    end.
+
+%% Check privacy rules for subscription requests and call the roster storage
+check_privacy_subs(Dir, Type, From, To, Packet, Reason, StateData) ->
+    case is_privacy_allow(From, To, Dir, Packet, StateData) of
+	true ->
+	    ejabberd_hooks:run_fold(
+	      roster_in_subscription,
+	      To#jid.lserver,
+	      false,
+	      [To#jid.user, To#jid.server, From, Type, Reason]),
+	    true;
+	false ->
+	    false
+    end.
+
+%% Check if privacy rules allow this delivery, then push to roster
+is_privacy_allow(From, To, Dir, Packet, StateData) ->
+    case ejabberd_hooks:run_fold(
+	   privacy_check_packet, StateData#state.server,
+	   allow,
+	   [StateData#state.user,
+	    StateData#state.server,
+	    StateData#state.privacy_list,
+	    {From, To, Packet},
+	    Dir]) of
+	deny ->
+	    false;
+	allow ->
+	    true
     end.
 
 presence_broadcast(StateData, From, JIDSet, Packet) ->
