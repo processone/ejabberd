@@ -654,27 +654,14 @@ is_ptype_match(Item, PType) ->
     end.
 
 
+%% TODO: Investigate this: sometimes Value has binaries, other times has strings
 is_type_match(Type, Value, JID, Subscription, Groups) ->
     case Type of
 	jid ->
-	    case Value of
-		{undefined, Server, undefined} ->
-		    case JID of
-			{_, Server, _} ->
-			    true;
-			_ ->
-			    false
-		    end;
-		{User, Server, undefined} ->
-		    case JID of
-			{User, Server, _} ->
-			    true;
-			_ ->
-			    false
-		    end;
-		_ ->
-		    Value == JID
-	    end;
+		{User, Server, Resource} = Value,
+		    ((User == undefined) orelse (User == []) orelse (User == exmpp_jid:lnode(JID)))
+		    andalso ((Server == undefined) orelse (Server == []) orelse (Server == exmpp_jid:ldomain(JID)))
+		    andalso ((Resource == undefined) orelse (Resource == []) orelse (Resource == exmpp_jid:lresource(JID)));
 	subscription ->
 	    Value == Subscription;
 	group ->
