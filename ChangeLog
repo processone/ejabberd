@@ -1,5 +1,12 @@
 2009-03-07  Badlop  <badlop@process-one.net>
 
+	* src/Makefile.in: In SunOS, use different C flags (thanks to
+	Thomas)(EJAB-438)
+	* src/ejabberd_zlib/Makefile.in: Likewise
+	* src/mod_irc/Makefile.in: Likewise
+	* src/stringprep/Makefile.in: Likewise
+	* src/tls/Makefile.in: Likewise
+
 	* src/ejabberd_c2s.erl: Enforce privacy rules also for
 	subscription requests (EJAB-300)
 	* src/ejabberd_sm.erl: Likewise
