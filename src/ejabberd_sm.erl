@@ -381,36 +381,13 @@ do_route(From, To, Packet) ->
 		    {Pass, _Subsc} =
 			case xml:get_attr_s("type", Attrs) of
 			    "subscribe" ->
-				Reason = xml:get_path_s(
-					   Packet,
-					   [{elem, "status"}, cdata]),
-				{ejabberd_hooks:run_fold(
-				   roster_in_subscription,
-				   LServer,
-				   false,
-				   [User, Server, From, subscribe, Reason]),
-				 true};
+				{true, true};
 			    "subscribed" ->
-				{ejabberd_hooks:run_fold(
-				   roster_in_subscription,
-				   LServer,
-				   false,
-				   [User, Server, From, subscribed, ""]),
-				 true};
+				{true, true};
 			    "unsubscribe" ->
-				{ejabberd_hooks:run_fold(
-				   roster_in_subscription,
-				   LServer,
-				   false,
-				   [User, Server, From, unsubscribe, ""]),
-				 true};
+				{true, true};
 			    "unsubscribed" ->
-				{ejabberd_hooks:run_fold(
-				   roster_in_subscription,
-				   LServer,
-				   false,
-				   [User, Server, From, unsubscribed, ""]),
-				 true};
+				{true, true};
 			    _ ->
 				{true, false}
 			end,
