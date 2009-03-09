@@ -40,6 +40,10 @@ typedef struct {
 typedef unsigned __int32 uint32_t;
 #endif
 
+#ifndef SSL_OP_NO_TICKET
+#define SSL_OP_NO_TICKET 0
+#endif
+
 /*
  * str_hash is based on the public domain code from
  * http://www.burtleburtle.net/bob/hash/doobs.html
