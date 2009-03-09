@@ -299,7 +299,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GCC
 \item Libexpat 1.95 or higher
 \item Erlang/OTP R10B-9 or higher.
-\item OpenSSL 0.9.8f or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
+\item OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 \item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
@@ -488,7 +488,7 @@ To compile \ejabberd{} on a Microsoft Windows system, you need:
 \item
 \footahref{http://www.gnu.org/software/libiconv/}{GNU Iconv 1.9.2}
 (optional)
-\item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL 0.9.8f or higher}
+\item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL 0.9.8d or higher}
 (to enable SSL connections)
 \item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
 \end{itemize}
@@ -1672,7 +1672,7 @@ if you define several domains in ejabberd.cfg (see section \ref{hostnames}),
 you probably want that each virtual host uses a different configuration of database, authentication and storage,
 so that usernames do not conflict and mix between different virtual hosts.
 For that purpose, the options described in the next sections
-must be set inside a \term{host\_cofig} for each vhost (see section \ref{virtualhost}).
+must be set inside a \term{host\_config} for each vhost (see section \ref{virtualhost}).
 For example:
 \begin{verbatim}
 {host_config, "public.example.org", [
@@ -3246,7 +3246,7 @@ Options:
 \iqdiscitem{In-Band Registration (\ns{jabber:iq:register})}
 \end{description}
 
-This module reads also another option defined globably for the server:
+This module reads also another option defined globally for the server:
 \term{\{registration\_timeout, Timeout\}}. \ind{options!registratimeout}
 This option limits the frequency of registration from a given IP or username.
 So, a user can't register a new account from the same IP address or JID during
@@ -3837,7 +3837,7 @@ The more interesting ones are:
   Store internal Mnesia database to a binary backup file.
 \titem {restore ejabberd.backup}
   Restore immediately from a binary backup file the internal Mnesia database.
-  This will comsume quite some memory for big servers.
+  This will consume quite some memory for big servers.
 \titem {install-fallback ejabberd.backup}
   The binary backup file is installed as fallback:
   it will be used to restore the database at the next ejabberd start.
@@ -3867,9 +3867,9 @@ This file includes detailed information about each configurable option.
 The \term{ejabberdctl} script returns a numerical status code.
 Success is represented by \term{0},
 error is represented by \term{1},
-and other codes may be used for specifical results.
+and other codes may be used for specific results.
 This can be used by other scripts to determine automatically
-if a command succedded or failed,
+if a command succeeded or failed,
 for example using: \term{echo \$?}
 
 

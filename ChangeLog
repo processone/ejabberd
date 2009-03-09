@@ -1,5 +1,10 @@
 2009-03-09  Badlop  <badlop@process-one.net>
 
+	* src/tls/tls_drv.c: Fix to support OpenSSL older than
+	0.9.8f (EJAB-877)(thanks to Jonathan Schleifer)
+	* doc/guide.tex: It is again supported OpenSSL older than 0.9.8f
+	* doc/guide.html: Likewise
+
 	* src/mod_proxy65/mod_proxy65_service.erl: if an ip option is not
 	defined, the module takes an IP address of a local
 	hostname (thanks to Evgeniy Khramtsov)

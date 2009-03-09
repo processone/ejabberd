@@ -331,7 +331,7 @@ GNU Make
 </LI><LI CLASS="li-itemize">GCC
 </LI><LI CLASS="li-itemize">Libexpat 1.95 or higher
 </LI><LI CLASS="li-itemize">Erlang/OTP R10B-9 or higher.
-</LI><LI CLASS="li-itemize">OpenSSL 0.9.8f or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
+</LI><LI CLASS="li-itemize">OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 </LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
 </LI><LI CLASS="li-itemize">Erlang mysql library. Optional. For MySQL authentication or storage. See section <A HREF="#compilemysql">3.2.1</A>.
 </LI><LI CLASS="li-itemize">Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section <A HREF="#compilepgsql">3.2.3</A>.
@@ -455,7 +455,7 @@ MS Visual C++ 6.0 Compiler
 </LI><LI CLASS="li-itemize"><A HREF="http://sourceforge.net/project/showfiles.php?group_id=10127&package_id=11277">Expat 2.0.0 or higher</A>
 </LI><LI CLASS="li-itemize"><A HREF="http://www.gnu.org/software/libiconv/">GNU Iconv 1.9.2</A>
 (optional)
-</LI><LI CLASS="li-itemize"><A HREF="http://www.slproweb.com/products/Win32OpenSSL.html">Shining Light OpenSSL 0.9.8f or higher</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://www.slproweb.com/products/Win32OpenSSL.html">Shining Light OpenSSL 0.9.8d or higher</A>
 (to enable SSL connections)
 </LI><LI CLASS="li-itemize"><A HREF="http://www.zlib.net/">Zlib 1.2.3 or higher</A>
 </LI></UL><P> <A NAME="windowscom"></A> </P><!--TOC subsubsection Compilation-->
@@ -1305,7 +1305,7 @@ if you define several domains in ejabberd.cfg (see section <A HREF="#hostnames">
 you probably want that each virtual host uses a different configuration of database, authentication and storage,
 so that usernames do not conflict and mix between different virtual hosts.
 For that purpose, the options described in the next sections
-must be set inside a <TT>host_cofig</TT> for each vhost (see section <A HREF="#virtualhost">3.1.2</A>).
+must be set inside a <TT>host_config</TT> for each vhost (see section <A HREF="#virtualhost">3.1.2</A>).
 For example:
 </P><PRE CLASS="verbatim">{host_config, "public.example.org", [
   {odbc_server, {pgsql, "localhost", "database-public-example-org", "ejabberd", "password"}},
@@ -2510,7 +2510,7 @@ In the body you can set a newline with the characters: <CODE>\n</CODE>
 list of JIDs which will be notified each time a new account is registered.
 </DD><DT CLASS="dt-description"><B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for In-Band Registration (<TT>jabber:iq:register</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
-</DD></DL><P>This module reads also another option defined globably for the server:
+</DD></DL><P>This module reads also another option defined globally for the server:
 <TT>{registration_timeout, Timeout}</TT>. 
 This option limits the frequency of registration from a given IP or username.
 So, a user can&#X2019;t register a new account from the same IP address or JID during
@@ -2976,7 +2976,7 @@ they are automatically renamed to <TT>"*-old.log"</TT>. See section <A HREF="#lo
 Store internal Mnesia database to a binary backup file.
 </DD><DT CLASS="dt-description"><B><TT>restore ejabberd.backup</TT></B></DT><DD CLASS="dd-description">
 Restore immediately from a binary backup file the internal Mnesia database.
-This will comsume quite some memory for big servers.
+This will consume quite some memory for big servers.
 </DD><DT CLASS="dt-description"><B><TT>install-fallback ejabberd.backup</TT></B></DT><DD CLASS="dd-description">
 The binary backup file is installed as fallback:
 it will be used to restore the database at the next ejabberd start.
@@ -2998,9 +2998,9 @@ This allows to administer a remote node.</P><P>The <TT>ejabberdctl</TT> script c
 This file includes detailed information about each configurable option.</P><P>The <TT>ejabberdctl</TT> script returns a numerical status code.
 Success is represented by <TT>0</TT>,
 error is represented by <TT>1</TT>,
-and other codes may be used for specifical results.
+and other codes may be used for specific results.
 This can be used by other scripts to determine automatically
-if a command succedded or failed,
+if a command succeeded or failed,
 for example using: <TT>echo $?</TT></P><P> <A NAME="erlangconfiguration"></A> </P><!--TOC subsection Erlang Runtime System-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc63">4.1.2</A>&#XA0;&#XA0;<A HREF="#erlangconfiguration">Erlang Runtime System</A></H3><!--SEC END --><P> <A NAME="erlangconfiguration"></A> </P><P><TT>ejabberd</TT> is an Erlang/OTP application that runs inside an Erlang runtime system.
 This system is configured using environment variables and command line parameters.
