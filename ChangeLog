@@ -1,3 +1,9 @@
+2009-03-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_proxy65/mod_proxy65_service.erl: if an ip option is not
+	defined, the module takes an IP address of a local
+	hostname (thanks to Evgeniy Khramtsov)
+
 2009-03-07  Badlop  <badlop@process-one.net>
 
 	* src/Makefile.in: In SunOS, use different C flags (thanks to
