@@ -1,3 +1,10 @@
+2009-03-09  Badlop  <badlop@process-one.net>
+
+	* src/tls/tls_drv.c: Fix to support OpenSSL older than
+	0.9.8f (EJAB-877)(thanks to Jonathan Schleifer)
+	* doc/guide.tex: It is again supported OpenSSL older than 0.9.8f
+	* doc/guide.html: Likewise
+
 2009-03-07  Badlop  <badlop@process-one.net>
 
 	* src/Makefile.in: In SunOS, use different C flags (thanks to
