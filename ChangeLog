@@ -1,3 +1,10 @@
+2009-03-10  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix PEP with other domains and s2s
+	(EJAB-825). Also fixes send last published items in subscription.
+
+	* src/mod_pubsub/node_default.erl: minor typo fix
+
 2009-03-09  Badlop  <badlop@process-one.net>
 
 	* src/tls/tls_drv.c: Fix to support OpenSSL older than
