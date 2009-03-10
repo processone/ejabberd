@@ -534,7 +534,7 @@ handle_cast({presence, User, Server, Resources, JID}, State) ->
 	    _ ->
 		ok
 	end
-    end, tree_action(Host, get_nodes, [Owner, JID])),
+    end, tree_action(Host, get_nodes, [Owner])),
     {noreply, State};
 
 handle_cast({remove_user, LUser, LServer}, State) ->
