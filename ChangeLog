@@ -1,3 +1,8 @@
+2009-03-10  Badlop  <badlop@process-one.net>
+
+	* src/tls/tls_drv.c: Fix encryption problem for ejabberd_http
+	after timeout (thanks to Alexey Shchepin)(EJAB-880)
+
 2009-03-10  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Fix PEP with other domains and s2s
