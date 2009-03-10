@@ -525,7 +525,8 @@ handle_cast({presence, User, Server, Resources, JID}, State) ->
 				authorize -> false; % likewise
 				roster ->
 				    Grps = get_option(Options, roster_groups_allowed, []),
-				    element(2, get_roster_info(User, Server, LJID, Grps))
+				    {OU, OS, _} = Owner,
+				    element(2, get_roster_info(OU, OS, LJID, Grps))
 			    end,
 			    if Subscribed ->
 				send_last_item(Owner, Node, LJID);
