@@ -307,7 +307,7 @@ subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED('not-allowed', "closed-node")};
-	(AccessModel == authorize) and (not Whitelisted) ->
+	(AccessModel == authorize) -> % TODO: to be done
 	    %% Node has authorize access model
 	    {error, 'forbidden'};
 	%%MustPay ->
@@ -437,7 +437,7 @@ publish_item(Host, Node, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 	    {error, 'forbidden'};
 	true ->
 	    PubId = {SubKey, now()}, %% TODO, uses {now(),PublisherKey} for sorting (EJAB-824)
-	    %% TODO: check creation, presence, roster (EJAB-663)
+	    %% TODO: check creation, presence, roster
 	    Item = case get_item(Host, Node, ItemId) of
 		       {result, OldItem} ->
 			   OldItem#pubsub_item{modification = PubId,
