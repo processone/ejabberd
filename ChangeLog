@@ -1,5 +1,7 @@
 2009-03-10  Badlop  <badlop@process-one.net>
 
+	* doc/release_notes_2.0.4.txt: Added file for new release
+
 	* src/tls/tls_drv.c: Fix encryption problem for ejabberd_http
 	after timeout (thanks to Alexey Shchepin)(EJAB-880)
 
