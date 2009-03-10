@@ -56,7 +56,7 @@
 
 %% exports for hooks
 -export([presence_probe/3,
-	 in_subscription/6,
+	 out_subscription/4,
 	 remove_user/2,
 	 disco_local_identity/5,
 	 disco_local_features/5,
@@ -164,7 +164,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
-    ejabberd_hooks:add(roster_in_subscription, ServerHost, ?MODULE, in_subscription, 50),
+    ejabberd_hooks:add(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     lists:foreach(
@@ -413,21 +413,29 @@ disco_sm_items(Acc, _From, To, Node, _Lang) ->
 %% presence hooks handling functions
 %%
 
-presence_probe(#jid{lserver = Host} = JID, JID, Pid) ->
+presence_probe(#jid{luser = User, lserver = Server, lresource = Resource} = JID, JID, _Pid) ->
+    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
+    gen_server:cast(Proc, {presence, JID}),
+    gen_server:cast(Proc, {presence, User, Server, [Resource], JID});
+presence_probe(#jid{luser = User, lserver = Server, lresource = Resource}, #jid{lserver = Host} = JID, _Pid) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:cast(Proc, {presence, JID, Pid});
-presence_probe(_, _, _) ->
-    ok.
+    gen_server:cast(Proc, {presence, User, Server, [Resource], JID}).
 
 %% -------
 %% subscription hooks handling functions
 %%
-in_subscription(Acc, User, Server, JID, subscribed, _) ->
+
+out_subscription(User, Server, JID, subscribed) ->
+    Owner = jlib:make_jid(User, Server, ""),
+    {PUser, PServer, PResource} = jlib:jid_tolower(JID),
+    PResources = case PResource of
+	[] -> user_resources(PUser, PServer);
+	_ -> [PResource]
+    end,
     Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
-    gen_server:cast(Proc, {subscribed, User, Server, JID}),
-    Acc;
-in_subscription(Acc, _, _, _, _, _) ->
-    Acc.
+    gen_server:cast(Proc, {presence, PUser, PServer, PResources, Owner});
+out_subscription(_, _, _, _) ->
+    ok.
 
 %% -------
 %% user remove hook handling function
@@ -466,11 +474,9 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 %% @private
-handle_cast({presence, JID, Pid}, State) ->
+handle_cast({presence, JID}, State) ->
     %% A new resource is available. send last published items
-    LJID = jlib:jid_tolower(JID),
     Host = State#state.host,
-    ServerHost = State#state.server_host,
     %% for each node From is subscribed to
     %% and if the node is so configured, send the last published item to From
     lists:foreach(fun(Type) ->
@@ -492,64 +498,28 @@ handle_cast({presence, JID, Pid}, State) ->
 		ok
 	    end, Subscriptions)
     end, State#state.plugins),
-    %% and send to From last PEP events published by its contacts
-    case catch ejabberd_c2s:get_subscribed(Pid) of
-	Contacts when is_list(Contacts) ->
-	    lists:foreach(
-		fun({User, Server, _}) ->
-		    Owner = {User, Server, ""},
-		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
-			case get_option(Options, send_last_published_item) of
-			    on_sub_and_presence ->
-				case is_caps_notify(ServerHost, Node, LJID) of
-				    true ->
-					Subscribed = case get_option(Options, access_model) of
-					    open -> true;
-					    presence -> true;
-					    whitelist -> false; % subscribers are added manually
-					    authorize -> false; % likewise
-					    roster ->
-						Grps = get_option(Options, roster_groups_allowed, []),
-						element(2, get_roster_info(User, Server, LJID, Grps))
-					end,
-					if Subscribed ->
-					    send_last_item(Owner, Node, LJID);
-					true ->
-					    ok
-					end;
-				    false ->
-					ok
-				end;
-			    _ ->
-				ok
-			end
-		    end, tree_action(Host, get_nodes, [Owner]))
-		end, Contacts);
-	_ ->
-	    ok
-    end,
     {noreply, State};
 
-handle_cast({subscribed, User, Server, JID}, State) ->
-    %% and send last PEP events published by JID
-    Owner = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+handle_cast({presence, User, Server, Resources, JID}, State) ->
+    %% A new resource is available. send last published PEP items
+    Owner = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
     Host = State#state.host,
     ServerHost = State#state.server_host,
     lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, options = Options}) ->
 	case get_option(Options, send_last_published_item) of
 	    on_sub_and_presence ->
 		lists:foreach(fun(Resource) ->
-		    LJID = jlib:jid_tolower(jlib:make_jid(User, Server, Resource)),
+		    LJID = {User, Server, Resource},
 		    case is_caps_notify(ServerHost, Node, LJID) of
 			true ->
 			    Subscribed = case get_option(Options, access_model) of
-				open -> true;
-				presence -> true;
-				whitelist -> false; % subscribers are added manually
-				authorize -> false; % likewise
-				roster ->
-				    Grps = get_option(Options, roster_groups_allowed, []),
-				    element(2, get_roster_info(User, Server, LJID, Grps))
+				    open -> true;
+				    presence -> true;
+				    whitelist -> false; % subscribers are added manually
+				    authorize -> false; % likewise
+				    roster ->
+					Grps = get_option(Options, roster_groups_allowed, []),
+					element(2, get_roster_info(User, Server, LJID, Grps))
 			    end,
 			    if Subscribed ->
 				send_last_item(Owner, Node, LJID);
@@ -559,11 +529,11 @@ handle_cast({subscribed, User, Server, JID}, State) ->
 			false ->
 			    ok
 		    end
-		end, user_resources(User, Server));
+		end, Resources);
 	    _ ->
 		ok
 	end
-    end, tree_action(Host, get_nodes, [Owner])),
+    end, tree_action(Host, get_nodes, [Owner, JID])),
     {noreply, State};
 
 handle_cast({remove_user, LUser, LServer}, State) ->
@@ -630,7 +600,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
-    ejabberd_hooks:delete(roster_in_subscription, ServerHost, ?MODULE, in_subscription, 50),
+    ejabberd_hooks:delete(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
     lists:foreach(fun({NS,Mod}) ->
 			  gen_iq_handler:remove_iq_handler(Mod, ServerHost, NS)
