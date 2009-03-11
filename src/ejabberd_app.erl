@@ -191,6 +191,6 @@ maybe_add_nameservers() ->
     end.
 
 add_windows_nameservers() ->
-    IPTs = win32_dns_test:get_nameservers(),
+    IPTs = win32_dns:get_nameservers(),
     ?INFO_MSG("Adding machine's DNS IPs to Erlang system:~n~p", [IPTs]),
     lists:foreach(fun(IPT) -> inet_db:add_ns(IPT) end, IPTs).
