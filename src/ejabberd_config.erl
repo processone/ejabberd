@@ -375,6 +375,10 @@ process_term(Term, State) ->
 	    add_option(watchdog_large_heap, LH, State);
 	{registration_timeout, Timeout} ->
 	    add_option(registration_timeout, Timeout, State);
+	{captcha_cmd, Cmd} ->
+	    add_option(captcha_cmd, Cmd, State);
+	{captcha_host, Host} ->
+	    add_option(captcha_host, Host, State);
 	{loglevel, Loglevel} ->
 	    ejabberd_loglevel:set(Loglevel),
 	    State;

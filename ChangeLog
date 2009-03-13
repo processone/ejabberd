@@ -1,3 +1,13 @@
+2009-03-13  Evgeniy Khramtsov <ekhramtsov@process-one.net>
+
+	* src/ejabberd_captcha.erl: XEP-158 (CAPTCHA Forms).
+	* src/ejabberd_config.erl: likewise.
+	* src/ejabberd_sup.erl: likewise.
+	* src/jlib.hrl: likewise.
+	* src/web/ejabberd_http.erl: likewise.
+	* src/mod_muc/mod_muc_room.erl: CAPTCHA support.
+	* src/mod_muc/mod_muc_room.hrl: likewise.
+
 2009-03-10  Badlop  <badlop@process-one.net>
 
 	* doc/release_notes_2.0.4.txt: Added file for new release
