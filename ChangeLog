@@ -7,6 +7,7 @@
 	* src/web/ejabberd_http.erl: likewise.
 	* src/mod_muc/mod_muc_room.erl: CAPTCHA support.
 	* src/mod_muc/mod_muc_room.hrl: likewise.
+	* tools/captcha.sh: sample CAPTCHA script.
 
 2009-03-10  Badlop  <badlop@process-one.net>
 
