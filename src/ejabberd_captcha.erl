@@ -37,6 +37,15 @@
 -record(state, {}).
 -record(captcha, {id, pid, key, tref, args}).
 
+-define(T(S),
+	case catch mnesia:transaction(fun() -> S end) of
+	    {atomic, Res} ->
+		Res;
+	    {_, Reason} ->
+		?ERROR_MSG("mnesia transaction failed: ~p", [Reason]),
+		{error, Reason}
+	end).
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -50,15 +59,121 @@ start_link() ->
 create_captcha(Id, SID, From, To, Lang, Args)
   when is_list(Id), is_list(Lang), is_list(SID),
        is_record(From, jid), is_record(To, jid) ->
-    gen_server:call(?MODULE, {create_captcha, Id, SID, From, To, Lang, Args}).
+    case create_image() of
+	{ok, Type, Key, Image} ->
+	    B64Image = jlib:encode_base64(binary_to_list(Image)),
+	    JID = jlib:jid_to_string(From),
+	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
+	    Data = {xmlelement, "data",
+		    [{"xmlns", ?NS_BOB}, {"cid", CID},
+		     {"max-age", "0"}, {"type", Type}],
+		    [{xmlcdata, B64Image}]},
+	    Captcha =
+		{xmlelement, "captcha", [{"xmlns", ?NS_CAPTCHA}],
+		 [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+		   [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}),
+		    ?VFIELD("hidden", "from", {xmlcdata, jlib:jid_to_string(To)}),
+		    ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
+		    ?VFIELD("hidden", "sid", {xmlcdata, SID}),
+		    {xmlelement, "field", [{"var", "ocr"}],
+		     [{xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
+		       [{xmlelement, "uri", [{"type", Type}],
+			 [{xmlcdata, "cid:" ++ CID}]}]}]}]}]},
+	    Body = {xmlelement, "body", [],
+		    [{xmlcdata, ?CAPTCHA_BODY(Lang, JID, get_url(Id))}]},
+	    OOB = {xmlelement, "x", [{"xmlns", ?NS_OOB}],
+		   [{xmlelement, "url", [], [{xmlcdata, get_url(Id)}]}]},
+	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
+	    ?T(mnesia:write(#captcha{id=Id, pid=self(), key=Key,
+				     tref=Tref, args=Args})),
+	    {ok, [Body, OOB, Captcha, Data]};
+	_Err ->
+	    error
+    end.
 
 process_reply({xmlelement, "captcha", _, _} = El) ->
-    gen_server:call(?MODULE, {process_reply, El});
+    case xml:get_subtag(El, "x") of
+	false ->
+	    {error, malformed};
+	Xdata ->
+	    Fields = jlib:parse_xdata_submit(Xdata),
+	    [Id | _] = proplists:get_value("challenge", Fields, [none]),
+	    [OCR | _] = proplists:get_value("ocr", Fields, [none]),
+	    ?T(case mnesia:read(captcha, Id, write) of
+		   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
+		       mnesia:delete({captcha, Id}),
+		       erlang:cancel_timer(Tref),
+		       if OCR == Key ->
+			       Pid ! {captcha_succeed, Args},
+			       ok;
+			  true ->
+			       Pid ! {captcha_failed, Args},
+			       {error, bad_match}
+		       end;
+		   _ ->
+		       {error, not_found}
+	       end)
+    end;
 process_reply(_) ->
     {error, malformed}.
 
-process(_Handlers, Request) when is_record(Request, request) ->
-    gen_server:call(?MODULE, Request).
+process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
+    case mnesia:dirty_read(captcha, Id) of
+	[#captcha{}] ->
+	    Form =
+		{xmlelement, "div", [{"align", "center"}],
+		 [{xmlelement, "form", [{"action", get_url(Id)},
+					{"name", "captcha"},
+					{"method", "POST"}],
+		   [{xmlelement, "img", [{"src", get_url(Id ++ "/image")}], []},
+		    {xmlelement, "br", [], []},
+		    {xmlcdata, ?CAPTCHA_TEXT(Lang)},
+		    {xmlelement, "br", [], []},
+		    {xmlelement, "input", [{"type", "text"},
+					   {"name", "key"},
+					   {"size", "10"}], []},
+		    {xmlelement, "br", [], []},
+		    {xmlelement, "input", [{"type", "submit"},
+					   {"name", "enter"},
+					   {"value", "OK"}], []}]}]},
+	    ejabberd_web:make_xhtml([Form]);
+	_ ->
+	    ejabberd_web:error(not_found)
+    end;
+
+process(_Handlers, #request{method='GET', path=[_, Id, "image"]}) ->
+    case mnesia:dirty_read(captcha, Id) of
+	[#captcha{key=Key}] ->
+	    case create_image(Key) of
+		{ok, Type, _, Img} ->
+		    {200,
+		     [{"Content-Type", Type},
+		      {"Cache-Control", "no-cache"},
+		      {"Last-Modified", httpd_util:rfc1123_date()}],
+		     Img};
+		_ ->
+		    ejabberd_web:error(not_found)
+	    end;
+	_ ->
+	    ejabberd_web:error(not_found)
+    end;
+
+process(_Handlers, #request{method='POST', q=Q, path=[_, Id]}) ->
+    ?T(case mnesia:read(captcha, Id, write) of
+	   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
+	       mnesia:delete({captcha, Id}),
+	       erlang:cancel_timer(Tref),
+	       Input = proplists:get_value("key", Q, none),
+	       if Input == Key ->
+		       Pid ! {captcha_succeed, Args},
+		       ejabberd_web:make_xhtml([]);
+		  true ->
+		       Pid ! {captcha_failed, Args},
+		       ejabberd_web:error(not_allowed)
+	       end;
+	   _ ->
+	       ejabberd_web:error(not_found)
+       end).
 
 %%====================================================================
 %% gen_server callbacks
@@ -70,127 +185,6 @@ init([]) ->
     mnesia:add_table_copy(captcha, node(), ram_copies),
     {ok, #state{}}.
 
-handle_call({create_captcha, Id, SID, From, To, Lang, Args}, {Pid, _}, State) ->
-    Reply =
-	case create_image() of
-	    {ok, Type, Key, Image} ->
-		B64Image = jlib:encode_base64(binary_to_list(Image)),
-		JID = jlib:jid_to_string(From),
-		CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
-		Data = {xmlelement, "data",
-			[{"xmlns", ?NS_BOB}, {"cid", CID},
-			 {"max-age", "0"}, {"type", Type}],
-			[{xmlcdata, B64Image}]},
-		Captcha =
-		    {xmlelement, "captcha", [{"xmlns", ?NS_CAPTCHA}],
-		     [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-		       [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}),
-			?VFIELD("hidden", "from", {xmlcdata, jlib:jid_to_string(To)}),
-			?VFIELD("hidden", "challenge", {xmlcdata, Id}),
-			?VFIELD("hidden", "sid", {xmlcdata, SID}),
-			{xmlelement, "field", [{"var", "ocr"}],
-			 [{xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
-			   [{xmlelement, "uri", [{"type", Type}],
-			     [{xmlcdata, "cid:" ++ CID}]}]}]}]}]},
-		Body = {xmlelement, "body", [],
-			[{xmlcdata, ?CAPTCHA_BODY(Lang, JID, get_url(Id))}]},
-		OOB = {xmlelement, "x", [{"xmlns", ?NS_OOB}],
-		       [{xmlelement, "url", [], [{xmlcdata, get_url(Id)}]}]},
-		Tref = erlang:send_after(?CAPTCHA_LIFETIME, self(), {remove_id, Id}),
-		mnesia:dirty_write(#captcha{id=Id, pid=Pid, key=Key,
-					    tref=Tref, args=Args}),
-		{ok, [Body, OOB, Captcha, Data]};
-	    _Err ->
-		error
-	end,
-    {reply, Reply, State};
-
-handle_call({process_reply, Challenge}, _, State) ->
-    Reply = case xml:get_subtag(Challenge, "x") of
-		false ->
-		    {error, malformed};
-		Xdata ->
-		    Fields = jlib:parse_xdata_submit(Xdata),
-		    [Id | _] = proplists:get_value("challenge", Fields, [none]),
-		    [OCR | _] = proplists:get_value("ocr", Fields, [none]),
-		    case mnesia:dirty_read(captcha, Id) of
-			[#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
-			    mnesia:dirty_delete(captcha, Id),
-			    erlang:cancel_timer(Tref),
-			    if OCR == Key ->
-				    Pid ! {captcha_succeed, Args},
-				    ok;
-			       true ->
-				    Pid ! {captcha_failed, Args},
-				    {error, bad_match}
-			    end;
-			_ ->
-			    {error, not_found}
-		    end
-	    end,
-    {reply, Reply, State};
-
-handle_call(#request{method='GET', lang=Lang, path=[_, Id]}, _, State) ->
-    Reply = case mnesia:dirty_read(captcha, Id) of
-		[#captcha{}] ->
-		    Form =
-			{xmlelement, "div", [{"align", "center"}],
-			 [{xmlelement, "form", [{"action", get_url(Id)},
-						{"name", "captcha"},
-						{"method", "POST"}],
-			   [{xmlelement, "img", [{"src", get_url(Id ++ "/image")}], []},
-			    {xmlelement, "br", [], []},
-			    {xmlcdata, ?CAPTCHA_TEXT(Lang)},
-			    {xmlelement, "br", [], []},
-			    {xmlelement, "input", [{"type", "text"},
-						   {"name", "key"},
-						   {"size", "10"}], []},
-			    {xmlelement, "br", [], []},
-			    {xmlelement, "input", [{"type", "submit"},
-						   {"name", "enter"},
-						   {"value", "OK"}], []}]}]},
-		    ejabberd_web:make_xhtml([Form]);
-		_ ->
-		    ejabberd_web:error(not_found)
-	    end,
-    {reply, Reply, State};
-
-handle_call(#request{method='GET', path=[_, Id, "image"]}, _, State) ->
-    Reply = case mnesia:dirty_read(captcha, Id) of
-		[#captcha{key=Key}] ->
-		    case create_image(Key) of
-			{ok, Type, _, Img} ->
-			    {200,
-			     [{"Content-Type", Type},
-			      {"Cache-Control", "no-cache"},
-			      {"Last-Modified", httpd_util:rfc1123_date()}],
-			     Img};
-			_ ->
-			    ejabberd_web:error(not_found)
-		    end;
-		_ ->
-		    ejabberd_web:error(not_found)
-	    end,
-    {reply, Reply, State};
-
-handle_call(#request{method='POST', q=Q, path=[_, Id]}, _, State) ->
-    Reply = case mnesia:dirty_read(captcha, Id) of
-		[#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
-		    mnesia:dirty_delete(captcha, Id),
-		    erlang:cancel_timer(Tref),
-		    Input = proplists:get_value("key", Q, none),
-		    if Input == Key ->
-			    Pid ! {captcha_succeed, Args},
-			    ejabberd_web:make_xhtml([]);
-		       true ->
-			    Pid ! {captcha_failed, Args},
-			    ejabberd_web:error(not_allowed)
-		    end;
-		_ ->
-		    ejabberd_web:error(not_found)
-	    end,
-    {reply, Reply, State};
-
 handle_call(_Request, _From, State) ->
     {reply, bad_request, State}.
 
@@ -198,16 +192,14 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info({remove_id, Id}, State) ->
-    F = fun() ->
-		case mnesia:read(captcha, Id, write) of
-		    [#captcha{args=Args, pid=Pid}] ->
-			Pid ! {captcha_failed, Args},
-			mnesia:delete({captcha, Id});
-		    _ ->
-			ok
-		end
-	end,
-    mnesia:transaction(F),
+    ?DEBUG("captcha ~p timed out", [Id]),
+    ?T(case mnesia:read(captcha, Id, write) of
+	   [#captcha{args=Args, pid=Pid}] ->
+	       Pid ! {captcha_failed, Args},
+	       mnesia:delete({captcha, Id});
+	   _ ->
+	       ok
+       end),
     {noreply, State};
 
 handle_info(_Info, State) ->
