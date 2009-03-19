@@ -1,3 +1,8 @@
+2009-03-19  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberdctl.template: Allow more environment variable overrides
+	in ejabberdctl (thanks to Brian Cully)(EJAB-891)
+
 2009-03-13  Evgeniy Khramtsov <ekhramtsov@process-one.net>
 
 	* src/ejabberd_captcha.erl: XEP-158 (CAPTCHA Forms).
