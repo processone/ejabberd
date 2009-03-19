@@ -1,3 +1,8 @@
+2009-03-19  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/ejabberdctl.template: Allow more environment variable overrides
+	in ejabberdctl (thanks to Brian Cully)(EJAB-891)
+
 2009-03-10  Badlop  <badlop@process-one.net>
 
 	* doc/release_notes_2.0.4.txt: Added file for new release
