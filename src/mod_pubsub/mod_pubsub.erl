@@ -75,7 +75,7 @@
 	 unsubscribe_node/5,
 	 publish_item/6,
 	 delete_item/4,
-	 get_configure/4,
+	 get_configure/5,
 	 set_configure/5,
 	 get_items/3,
 	 tree_action/3,
@@ -675,7 +675,7 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			#iq{type = IQType, xmlns = ?NS_PUBSUB_OWNER,
 			    lang = Lang, sub_el = SubEl} = IQ ->
 			    Res =
-				case iq_pubsub_owner(Host, From, IQType, SubEl, Lang) of
+				case iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) of
 				    {result, IQRes} ->
 					jlib:iq_to_xml(
 					  IQ#iq{type = result,
@@ -849,7 +849,7 @@ iq_local(From, To, #iq{type = Type,
 	    LOwner = jlib:jid_tolower(jlib:jid_remove_resource(From)),
 	    Res = case XMLNS of
 		      ?NS_PUBSUB -> iq_pubsub(LOwner, ServerHost, From, Type, SubEl, Lang);
-		      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, From, Type, SubEl, Lang)
+		      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, ServerHost, From, Type, SubEl, Lang)
 		  end,
 	    case Res of
 		{result, IQRes} -> IQ#iq{type = result, sub_el = IQRes};
@@ -862,7 +862,7 @@ iq_sm(From, To, #iq{type = Type, sub_el = SubEl, xmlns = XMLNS, lang = Lang} = I
     LOwner = jlib:jid_tolower(jlib:jid_remove_resource(To)),
     Res = case XMLNS of
 	      ?NS_PUBSUB -> iq_pubsub(LOwner, ServerHost, From, Type, SubEl, Lang);
-	      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, From, Type, SubEl, Lang)
+	      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, ServerHost, From, Type, SubEl, Lang)
 	  end,
     case Res of
 	{result, IQRes} -> IQ#iq{type = result, sub_el = IQRes};
@@ -981,7 +981,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 	    {error, ?ERR_BAD_REQUEST}
     end.
 
-iq_pubsub_owner(Host, From, IQType, SubEl, Lang) ->
+iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
     {xmlelement, _, _, SubEls} = SubEl,
     Action = xml:remove_cdata(SubEls),
     case Action of
@@ -992,7 +992,7 @@ iq_pubsub_owner(Host, From, IQType, SubEl, Lang) ->
 		   end,
 	    case {IQType, Name} of
 		{get, "configure"} ->
-		    get_configure(Host, Node, From, Lang);
+		    get_configure(Host, ServerHost, Node, From, Lang);
 		{set, "configure"} ->
 		    set_configure(Host, Node, From, Els, Lang);
 		{get, "default"} ->
@@ -1187,6 +1187,20 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 
 -define(LISTXFIELD(Label, Var, Val, Opts),
 	?XFIELDOPT("list-single", Label, Var, Val, Opts)).
+
+-define(LISTMXFIELD(Label, Var, Vals, Opts),
+	{xmlelement, "field", [{"type", "list-multi"},
+			       {"label", translate:translate(Lang, Label)},
+			       {"var", Var}],
+	 lists:map(fun(Opt) ->
+			    {xmlelement, "option", [],
+			     [{xmlelement, "value", [],
+			       [{xmlcdata, Opt}]}]}
+		    end, Opts) ++
+	 lists:map(fun(Val) ->
+			    {xmlelement, "value", [],
+			     [{xmlcdata, Val}]}
+		    end, Vals)}).
 
 %% @spec (Host::host(), ServerHost::host(), Node::pubsubNode(), Owner::jid(), NodeType::nodeType()) ->
 %%		  {error, Reason::stanzaError()} |
@@ -1399,7 +1413,11 @@ subscribe_node(Host, Node, From, JID) ->
 				 get_roster_info(OUser, OServer,
 						 Subscriber, AllowedGroups);
 			     _ ->
-				 {true, true}
+				 case Subscriber of
+				     {"", "", ""} -> {false, false};
+				     {U, S, _} -> get_roster_info(U, S, Subscriber,
+								  AllowedGroups)
+				 end
 			 end,
 		     if
 			 not SubscribeFeature ->
@@ -2310,7 +2328,7 @@ broadcast_config_notification(Host, Node, Lang) ->
 			    Content = case get_option(Options, deliver_payloads) of
 				true ->
 				    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-				     get_configure_xfields(Type, Options, Lang, Owners)}];
+				     get_configure_xfields(Type, Options, Lang, Owners, [])}];
 				false ->
 				    []
 			    end,
@@ -2414,11 +2432,12 @@ is_caps_notify(Host, Node, LJID) ->
 %%<li>The service does not support node configuration.</li>
 %%<li>The service does not support retrieval of default node configuration.</li>
 %%</ul>
-get_configure(Host, Node, From, Lang) ->
+get_configure(Host, ServerHost, Node, From, Lang) ->
     Action =
 	fun(#pubsub_node{options = Options, owners = Owners, type = Type}) ->
 		case node_call(Type, get_affiliation, [Host, Node, From]) of
 		    {result, owner} ->
+			Groups = ejabberd_hooks:run_fold(roster_groups, ServerHost, [], [ServerHost]),
 			{result,
 			 [{xmlelement, "pubsub",
 			   [{"xmlns", ?NS_PUBSUB_OWNER}],
@@ -2426,7 +2445,7 @@ get_configure(Host, Node, From, Lang) ->
 			     [{"node", node_to_string(Node)}],
 			     [{xmlelement, "x",
 			       [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-			       get_configure_xfields(Type, Options, Lang, Owners)
+			       get_configure_xfields(Type, Options, Lang, Owners, Groups)
 			      }]}]}]};
 		    _ ->
 			{error, ?ERR_FORBIDDEN}
@@ -2440,7 +2459,7 @@ get_default(Host, Node, _From, Lang) ->
     {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
 		[{xmlelement, "default", [],
 		    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-			get_configure_xfields(Type, Options, Lang, [])
+		        get_configure_xfields(Type, Options, Lang, [], [])
 		}]}]}]}.
 
 %% Get node option
@@ -2512,7 +2531,11 @@ max_items(Options) ->
 		    atom_to_list(get_option(Options, Var)),
 		    [atom_to_list(O) || O <- Opts])).
 
-get_configure_xfields(_Type, Options, Lang, _Owners) ->
+-define(LISTM_CONFIG_FIELD(Label, Var, Opts),
+	?LISTMXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
+		     get_option(Options, Var), Opts)).
+
+get_configure_xfields(_Type, Options, Lang, _Owners, Groups) ->
     [?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NODE_CONFIG),
      ?BOOL_CONFIG_FIELD("Deliver payloads with event notifications", deliver_payloads),
      ?BOOL_CONFIG_FIELD("Deliver event notifications", deliver_notifications),
@@ -2526,11 +2549,7 @@ get_configure_xfields(_Type, Options, Lang, _Owners) ->
      ?ALIST_CONFIG_FIELD("Specify the access model", access_model,
 			 [open, authorize, presence, roster, whitelist]),
      %% XXX: change to list-multi, include current roster groups as options
-     {xmlelement, "field", [{"type", "text-multi"},
-			    {"label", translate:translate(Lang, "Roster groups allowed to subscribe")},
-			    {"var", "pubsub#roster_groups_allowed"}],
-      [{xmlelement, "value", [], [{xmlcdata, Value}]} ||
-	  Value <- get_option(Options, roster_groups_allowed, [])]},
+     ?LISTM_CONFIG_FIELD("Roster groups allowed to subscribe", roster_groups_allowed, Groups),
      ?ALIST_CONFIG_FIELD("Specify the publisher model", publish_model,
 			 [publishers, subscribers, open]),
      ?INTEGER_CONFIG_FIELD("Max payload size in bytes", max_payload_size),
@@ -2637,8 +2656,8 @@ set_xoption([], NewOpts) ->
     NewOpts;
 set_xoption([{"FORM_TYPE", _} | Opts], NewOpts) ->
     set_xoption(Opts, NewOpts);
-set_xoption([{"pubsub#roster_groups_allowed", _Value} | Opts], NewOpts) ->
-    ?SET_LIST_XOPT(roster_groups_allowed, []);  % XXX: waiting for EJAB-659 to be solved
+set_xoption([{"pubsub#roster_groups_allowed", Value} | Opts], NewOpts) ->
+    ?SET_LIST_XOPT(roster_groups_allowed, Value);
 set_xoption([{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(deliver_payloads, Val);
 set_xoption([{"pubsub#deliver_notifications", [Val]} | Opts], NewOpts) ->
