@@ -1,3 +1,8 @@
+2009-03-20  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: implement roster acces model (thanks
+	to Andy Skelton)(EJAB-780)
+
 2009-03-19  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/ejabberdctl.template: Allow more environment variable overrides

@@ -76,7 +76,7 @@
 	 unsubscribe_node/5,
 	 publish_item/6,
 	 delete_item/4,
-	 get_configure/4,
+	 get_configure/5,
 	 set_configure/5,
 	 get_items/3,
 	 tree_action/3,
@@ -682,7 +682,7 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			#iq{type = IQType, ns = ?NS_PUBSUB_OWNER,
 			    lang = Lang, payload = SubEl} ->
 			    Res =
-				case iq_pubsub_owner(Host, From, IQType, SubEl, Lang) of
+				case iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) of
 				    {result, IQRes} ->
 					exmpp_iq:result(Packet, IQRes);
 				    {error, Error} ->
@@ -855,7 +855,7 @@ iq_local(From, To, #iq{type = Type,
 	    LOwner = jlib:short_prepd_bare_jid(From),
 	    Res = case XMLNS of
 		      ?NS_PUBSUB -> iq_pubsub(LOwner, ServerHost, From, Type, SubEl, Lang);
-		      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, From, Type, SubEl, Lang)
+		      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, ServerHost, From, Type, SubEl, Lang)
 		  end,
 	    case Res of
 		{result, []}      -> exmpp_iq:result(IQ_Rec);
@@ -869,7 +869,7 @@ iq_sm(From, To, #iq{type = Type, payload = SubEl, ns = XMLNS, lang = Lang} = IQ_
     LOwner = jlib:short_prepd_bare_jid(To),
     Res = case XMLNS of
 	      ?NS_PUBSUB -> iq_pubsub(LOwner, ServerHost, From, Type, SubEl, Lang);
-	      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, From, Type, SubEl, Lang)
+	      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, ServerHost, From, Type, SubEl, Lang)
 	  end,
     case Res of
 	{result, []}      -> exmpp_iq:result(IQ_Rec);
@@ -988,7 +988,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 	    {error, 'bad-request'}
     end.
 
-iq_pubsub_owner(Host, From, IQType, SubEl, Lang) ->
+iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
     SubEls = SubEl#xmlel.children,
     Action = exmpp_xml:remove_cdata_from_list(SubEls),
     case Action of
@@ -999,7 +999,7 @@ iq_pubsub_owner(Host, From, IQType, SubEl, Lang) ->
 		   end,
 	    case {IQType, Name} of
 		{get, 'configure'} ->
-		    get_configure(Host, Node, From, Lang);
+		    get_configure(Host, ServerHost, Node, From, Lang);
 		{set, 'configure'} ->
 		    set_configure(Host, Node, From, Els, Lang);
 		{get, 'default'} ->
@@ -1187,6 +1187,21 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 
 -define(LISTXFIELD(Label, Var, Val, Opts),
 	?XFIELDOPT("list-single", Label, Var, Val, Opts)).
+
+-define(LISTMXFIELD(Label, Var, Vals, Opts),
+	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [?XMLATTR('type', Type),
+			       ?XMLATTR('label', translate:translate(Lang, Label)),
+			       ?XMLATTR('var', Var)], children =
+	 lists:map(fun(Opt) ->
+			   #xmlel{ns = ?NS_DATA_FORMS, name = 'option', children =
+			    [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
+			      [#xmlcdata{cdata = list_to_binary(Opt)}]}]}
+		   end, Opts) ++
+	 lists:map(fun(Val) ->
+			    #xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = 
+			     [#xmlcdata{cdata = list_to_binary(Val)}]}
+		   end, Vals)
+	}).
 
 %% @spec (Host::host(), ServerHost::host(), Node::pubsubNode(), Owner::jid(), NodeType::nodeType()) ->
 %%		  {error, Reason::stanzaError()} |
@@ -1400,7 +1415,11 @@ subscribe_node(Host, Node, From, JID) ->
 				 get_roster_info(OUser, OServer,
 						 Subscriber, AllowedGroups);
 			     _ ->
-				 {true, true}
+				 case Subscriber of
+				     {"", "", ""} -> {false, false};
+				     {U, S, _} -> get_roster_info(U, S, Subscriber,
+								  AllowedGroups)
+				 end
 			 end,
 		     if
 			 not SubscribeFeature ->
@@ -2318,7 +2337,7 @@ broadcast_config_notification(Host, Node, Lang) ->
 			    Content = case get_option(Options, deliver_payloads) of
 				true ->
 				    [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
-				     get_configure_xfields(Type, Options, Lang, Owners)}];
+				     get_configure_xfields(Type, Options, Lang, Owners, [])}];
 				 false ->
 				     []
 			    end,
@@ -2421,18 +2440,19 @@ is_caps_notify(Host, Node, LJID) ->
 %%<li>The service does not support node configuration.</li>
 %%<li>The service does not support retrieval of default node configuration.</li>
 %%</ul>
-get_configure(Host, Node, From, Lang) ->
+get_configure(Host, ServerHost, Node, From, Lang) ->
     Action =
 	fun(#pubsub_node{options = Options, owners = Owners, type = Type}) ->
 		case node_call(Type, get_affiliation, [Host, Node, From]) of
 		    {result, owner} ->
+			Groups = ejabberd_hooks:run_fold(roster_groups, ServerHost, [], [ServerHost]),
 			{result,
 			 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
 			   [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'configure', attrs =
 			     [?XMLATTR('node', node_to_string(Node))], children =
 			     [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
 			       [?XMLATTR('type', <<"form">>)], children =
-			       get_configure_xfields(Type, Options, Lang, Owners)
+			       get_configure_xfields(Type, Options, Lang, Owners, Groups)
 			      }]}]}]};
 		    _ ->
 			{error, 'forbidden'}
@@ -2446,7 +2466,7 @@ get_default(Host, Node, _From, Lang) ->
     {result, [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
 		[#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'default', children =
 		    [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
-			get_configure_xfields(Type, Options, Lang, [])
+			get_configure_xfields(Type, Options, Lang, [], [])
 		}]}]}]}.
 
 %% Get node option
@@ -2518,7 +2538,11 @@ max_items(Options) ->
 		    atom_to_list(get_option(Options, Var)),
 		    [atom_to_list(O) || O <- Opts])).
 
-get_configure_xfields(_Type, Options, Lang, _Owners) ->
+-define(LISTM_CONFIG_FIELD(Label, Var, Opts),
+	?LISTMXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
+		     get_option(Options, Var), Opts)).
+
+get_configure_xfields(_Type, Options, Lang, _Owners, Groups) ->
     [?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NODE_CONFIG_s),
      ?BOOL_CONFIG_FIELD("Deliver payloads with event notifications", deliver_payloads),
      ?BOOL_CONFIG_FIELD("Deliver event notifications", deliver_notifications),
@@ -2532,11 +2556,7 @@ get_configure_xfields(_Type, Options, Lang, _Owners) ->
      ?ALIST_CONFIG_FIELD("Specify the access model", access_model,
 			 [open, authorize, presence, roster, whitelist]),
      %% XXX: change to list-multi, include current roster groups as options
-     #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [?XMLATTR('type', <<"text-multi">>),
-			    ?XMLATTR('label', translate:translate(Lang, "Roster groups allowed to subscribe")),
-			    ?XMLATTR('var', <<"pubsub#roster_groups_allowed">>)], children =
-      [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = list_to_binary(Value)}]} ||
-	  Value <- get_option(Options, roster_groups_allowed, [])]},
+     ?LISTM_CONFIG_FIELD("Roster groups allowed to subscribe", roster_groups_allowed, Groups),
      ?ALIST_CONFIG_FIELD("Specify the publisher model", publish_model,
 			 [publishers, subscribers, open]),
      ?INTEGER_CONFIG_FIELD("Max payload size in bytes", max_payload_size),
@@ -2643,8 +2663,8 @@ set_xoption([], NewOpts) ->
     NewOpts;
 set_xoption([{"FORM_TYPE", _} | Opts], NewOpts) ->
     set_xoption(Opts, NewOpts);
-set_xoption([{"pubsub#roster_groups_allowed", _Value} | Opts], NewOpts) ->
-    ?SET_LIST_XOPT(roster_groups_allowed, []);  % XXX: waiting for EJAB-659 to be solved
+set_xoption([{"pubsub#roster_groups_allowed", Value} | Opts], NewOpts) ->
+    ?SET_LIST_XOPT(roster_groups_allowed, Value);
 set_xoption([{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(deliver_payloads, Val);
 set_xoption([{"pubsub#deliver_notifications", [Val]} | Opts], NewOpts) ->
