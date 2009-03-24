@@ -14,6 +14,8 @@
  * Workaround for EI encode_string bug
  */
 
+int x_fix_buff(ei_x_buff* x, int szneeded);
+
 #define put8(s,n) do { \
   (s)[0] = (char)((n) & 0xff); \
   (s) += 1; \
