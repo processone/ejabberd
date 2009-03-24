@@ -62,6 +62,7 @@
 
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
+-include("mod_privacy.hrl").
 
 -record(session, {sid, usr, us, priority, info}).
 -record(state, {}).
@@ -422,13 +423,38 @@ do_route(From, To, Packet) ->
 		    {Pass, _Subsc} =
 			case exmpp_presence:get_type(Packet) of
 			    'subscribe' ->
-				{true, true};
+				Reason = exmpp_presence:get_status(Packet),
+				{is_privacy_allow(From, To, Packet) andalso
+				 ejabberd_hooks:run_fold(
+				   roster_in_subscription,
+				   exmpp_jid:ldomain(To),
+				   false,
+				   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, subscribe, Reason]),
+				 true};
 			    'subscribed' ->
-				{true, true};
+				{is_privacy_allow(From, To, Packet) andalso
+				 ejabberd_hooks:run_fold(
+				   roster_in_subscription,
+				   exmpp_jid:ldomain(To),
+				   false,
+				   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, subscribed, <<>>]),
+				 true};
 			    'unsubscribe' ->
-				{true, true};
+				{is_privacy_allow(From, To, Packet) andalso
+				 ejabberd_hooks:run_fold(
+				   roster_in_subscription,
+				   exmpp_jid:ldomain(To),
+				   false,
+				   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, unsubscribe, <<>>]),
+				 true};
 			    'unsubscribed' ->
-				{true, true};
+				{is_privacy_allow(From, To, Packet) andalso
+				 ejabberd_hooks:run_fold(
+				   roster_in_subscription,
+				   exmpp_jid:ldomain(To),
+				   false,
+				   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, unsubscribed, <<>>]),
+				 true};
 			    _ ->
 				{true, false}
 			end,
@@ -489,6 +515,31 @@ do_route(From, To, Packet) ->
 		    Pid ! {route, From, To, Packet}
 	    end
     end.
+
+%% The default list applies to the user as a whole,
+%% and is processed if there is no active list set
+%% for the target session/resource to which a stanza is addressed,
+%% or if there are no current sessions for the user.
+is_privacy_allow(From, To, Packet) ->
+    User = exmpp_jid:lnode(To), 
+    Server = exmpp_jid:ldomain(To),
+    PrivacyList = ejabberd_hooks:run_fold(privacy_get_user_list, Server,
+					  #userlist{}, [User, Server]),
+    is_privacy_allow(From, To, Packet, PrivacyList).
+
+%% Check if privacy rules allow this delivery
+%% Function copied from ejabberd_c2s.erl
+is_privacy_allow(From, To, Packet, PrivacyList) ->
+    User = exmpp_jid:lnode(To), 
+    Server = exmpp_jid:ldomain(To),
+    allow == ejabberd_hooks:run_fold(
+	       privacy_check_packet, Server,
+	       allow,
+	       [User,
+		Server,
+		PrivacyList,
+		{From, To, Packet},
+		in]).
 
 route_message(From, To, Packet) ->
     LUser = exmpp_jid:lnode(To),

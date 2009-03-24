@@ -1039,21 +1039,16 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			  'unavailable'),
 			{true, Attrs1, StateData};
 		    'subscribe' ->
-			Reason = exmpp_presence:get_status(Packet),
-			SRes = check_privacy_subs(in, subscribe, From, To,
-						  Packet, Reason, StateData),
+			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
 			{SRes, Attrs, StateData};
 		    'subscribed' ->
-			SRes = check_privacy_subs(in, subscribed, From, To,
-						  Packet, <<>>, StateData),
+			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
 			{SRes, Attrs, StateData};
 		    'unsubscribe' ->
-			SRes = check_privacy_subs(in, unsubscribe, From, To,
-						  Packet, <<>>, StateData),
+			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
 			{SRes, Attrs, StateData};
 		    'unsubscribed' ->
-			SRes = check_privacy_subs(in, unsubscribed, From, To,
-						  Packet, <<>>, StateData),
+			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
 			{SRes, Attrs, StateData};
 		    _ ->
 			case ejabberd_hooks:run_fold(
@@ -1580,35 +1575,18 @@ check_privacy_route(From, StateData, FromRoute, To, Packet) ->
 	    ejabberd_router:route(FromRoute, To, Packet)
     end.
 
-%% Check privacy rules for subscription requests and call the roster storage
-check_privacy_subs(Dir, Type, From, To, Packet, Reason, StateData) ->
-    case is_privacy_allow(From, To, Dir, Packet, StateData) of
-	true ->
-	    ejabberd_hooks:run_fold(
-	      roster_in_subscription,
-	      exmpp_jid:ldomain(To),
-	      false,
-	      [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From, Type, Reason]),
-	    true;
-	false ->
-	    false
-    end.
-
-%% Check if privacy rules allow this delivery, then push to roster
-is_privacy_allow(From, To, Dir, Packet, StateData) ->
-    case ejabberd_hooks:run_fold(
-	   privacy_check_packet, StateData#state.server,
-	   allow,
-	   [StateData#state.user,
-	    StateData#state.server,
-	    StateData#state.privacy_list,
-	    {From, To, Packet},
-	    Dir]) of
-	deny ->
-	    false;
-	allow ->
-	    true
-    end.
+%% Check if privacy rules allow this delivery
+is_privacy_allow(From, To, Packet, PrivacyList) ->
+    User = exmpp_jid:lnode(To), 
+    Server = exmpp_jid:ldomain(To),
+    allow == ejabberd_hooks:run_fold(
+	       privacy_check_packet, Server,
+	       allow,
+	       [User,
+		Server,
+		PrivacyList,
+		{From, To, Packet},
+		in]).
 
 presence_broadcast(StateData, From, JIDSet, Packet) ->
     lists:foreach(fun({U, S, R}) ->
