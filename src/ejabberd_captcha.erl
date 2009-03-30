@@ -16,7 +16,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--export([create_captcha/6, process_reply/1, process/2]).
+-export([create_captcha/6, build_captcha_html/2, check_captcha/2,
+	 process_reply/1, process/2]).
 
 -include("jlib.hrl").
 -include("ejabberd.hrl").
@@ -91,6 +92,60 @@ create_captcha(Id, SID, From, To, Lang, Args)
 	    error
     end.
 
+%% @spec (Id::string(), Lang::string()) -> {FormEl, {ImgEl, TextEl, IdEl, KeyEl}} | captcha_not_found
+%% where FormEl = xmlelement()
+%%       ImgEl = xmlelement()
+%%       TextEl = xmlelement()
+%%       IdEl = xmlelement()
+%%       KeyEl = xmlelement()
+build_captcha_html(Id, Lang) ->
+    case mnesia:dirty_read(captcha, Id) of
+	[#captcha{}] ->
+	    ImgEl = {xmlelement, "img", [{"src", get_url(Id ++ "/image")}], []},
+	    TextEl = {xmlcdata, ?CAPTCHA_TEXT(Lang)},
+	    IdEl = {xmlelement, "input", [{"type", "hidden"},
+					  {"name", "id"},
+					  {"value", Id}], []},
+	    KeyEl = {xmlelement, "input", [{"type", "text"},
+					   {"name", "key"},
+					   {"size", "10"}], []},
+	    FormEl = {xmlelement, "form", [{"action", get_url(Id)},
+					   {"name", "captcha"},
+					   {"method", "POST"}],
+		      [ImgEl,
+		       {xmlelement, "br", [], []},
+		       TextEl,
+		       {xmlelement, "br", [], []},
+		       IdEl,
+		       KeyEl,
+		       {xmlelement, "br", [], []},
+		       {xmlelement, "input", [{"type", "submit"},
+					      {"name", "enter"},
+					      {"value", "OK"}], []}
+		      ]},
+	    {FormEl, {ImgEl, TextEl, IdEl, KeyEl}};
+	_ ->
+	    captcha_not_found
+    end.
+
+%% @spec (Id::string(), ProvidedKey::string()) -> captcha_valid | captcha_non_valid | captcha_not_found
+check_captcha(Id, ProvidedKey) ->
+    ?T(case mnesia:read(captcha, Id, write) of
+	   [#captcha{pid=Pid, args=Args, key=StoredKey, tref=Tref}] ->
+	       mnesia:delete({captcha, Id}),
+	       erlang:cancel_timer(Tref),
+	       if StoredKey == ProvidedKey ->
+		       Pid ! {captcha_succeed, Args},
+		       captcha_valid;
+		  true ->
+		       Pid ! {captcha_failed, Args},
+		       captcha_non_valid
+	       end;
+	   _ ->
+	       captcha_not_found
+       end).
+
+
 process_reply({xmlelement, "captcha", _, _} = El) ->
     case xml:get_subtag(El, "x") of
 	false ->
@@ -117,27 +172,15 @@ process_reply({xmlelement, "captcha", _, _} = El) ->
 process_reply(_) ->
     {error, malformed}.
 
+
 process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
-    case mnesia:dirty_read(captcha, Id) of
-	[#captcha{}] ->
+    case build_captcha_html(Id, Lang) of
+	{FormEl, _} when is_tuple(FormEl) ->
 	    Form =
 		{xmlelement, "div", [{"align", "center"}],
-		 [{xmlelement, "form", [{"action", get_url(Id)},
-					{"name", "captcha"},
-					{"method", "POST"}],
-		   [{xmlelement, "img", [{"src", get_url(Id ++ "/image")}], []},
-		    {xmlelement, "br", [], []},
-		    {xmlcdata, ?CAPTCHA_TEXT(Lang)},
-		    {xmlelement, "br", [], []},
-		    {xmlelement, "input", [{"type", "text"},
-					   {"name", "key"},
-					   {"size", "10"}], []},
-		    {xmlelement, "br", [], []},
-		    {xmlelement, "input", [{"type", "submit"},
-					   {"name", "enter"},
-					   {"value", "OK"}], []}]}]},
+		 [FormEl]},
 	    ejabberd_web:make_xhtml([Form]);
-	_ ->
+	captcha_not_found ->
 	    ejabberd_web:error(not_found)
     end;
 
@@ -158,22 +201,22 @@ process(_Handlers, #request{method='GET', path=[_, Id, "image"]}) ->
 	    ejabberd_web:error(not_found)
     end;
 
-process(_Handlers, #request{method='POST', q=Q, path=[_, Id]}) ->
-    ?T(case mnesia:read(captcha, Id, write) of
-	   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
-	       mnesia:delete({captcha, Id}),
-	       erlang:cancel_timer(Tref),
-	       Input = proplists:get_value("key", Q, none),
-	       if Input == Key ->
-		       Pid ! {captcha_succeed, Args},
-		       ejabberd_web:make_xhtml([]);
-		  true ->
-		       Pid ! {captcha_failed, Args},
-		       ejabberd_web:error(not_allowed)
-	       end;
-	   _ ->
-	       ejabberd_web:error(not_found)
-       end).
+process(_Handlers, #request{method='POST', q=Q, lang=Lang, path=[_, Id]}) ->
+    ProvidedKey = proplists:get_value("key", Q, none),
+    case check_captcha(Id, ProvidedKey) of
+	captcha_valid ->
+	    Form =
+		{xmlelement, "p", [],
+		 [{xmlcdata,
+		   translate:translate(Lang, "The captcha is valid.")
+		  }]},
+	    ejabberd_web:make_xhtml([Form]);
+	captcha_non_valid ->
+	    ejabberd_web:error(not_allowed);
+	captcha_not_found ->
+	    ejabberd_web:error(not_found)
+    end.
+
 
 %%====================================================================
 %% gen_server callbacks
