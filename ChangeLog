@@ -1,3 +1,7 @@
+2009-04-01  Badlop  <badlop@process-one.net>
+
+	* doc/release_notes_2.0.5.txt: Added file for new release
+
 2009-03-24  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_sm.erl: Partially retract SVN r1976
