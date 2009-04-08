@@ -371,25 +371,25 @@ handle_info({route_chan, Channel, Resource,
     From = StateData#state.user,
     To = exmpp_jid:make_jid(lists:concat([Channel, "%", StateData#state.server]),
 		       StateData#state.host, StateData#state.nick),
-    case exmpp_iq:xmlel_to_iq(El) of
+    _ = case exmpp_iq:xmlel_to_iq(El) of
 	#iq{kind = request, ns = ?NS_MUC_ADMIN} = IQ_Rec ->
 	    iq_admin(StateData, Channel, From, To, IQ_Rec);
 	#iq{kind = request, ns = ?NS_SOFT_VERSION} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001VERSION\001\r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = exmpp_iq:error(El, 'feature-not-implemented'),
 	    ejabberd_router:route(To, From, Err);
 	#iq{kind = request, ns = ?NS_TIME_OLD} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001TIME\001\r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = exmpp_iq:error(El, 'feature-not-implemented'),
 	    ejabberd_router:route(To, From, Err);
 	#iq{kind = request, ns = ?NS_VCARD} ->
 	    Res = io_lib:format("WHOIS ~s \r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = exmpp_iq:error(El, 'feature-not-implemented'),
 	    ejabberd_router:route(To, From, Err);
 	#iq{} ->

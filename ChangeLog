@@ -1,3 +1,7 @@
+2009-04-08  Badlop  <badlop@process-one.net>
+
+	* src/mod_irc/mod_irc_connection.erl: Fix compilation warnings.
+
 2009-04-01  Badlop  <badlop@process-one.net>
 
 	* doc/release_notes_2.0.5.txt: Added file for new release
