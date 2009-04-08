@@ -797,12 +797,12 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 					?ERRT_FORBIDDEN(
 					   Lang,
 					   "Only moderators and participants "
-					   "are allowed to change subject in this room");
+					   "are allowed to change the subject in this room");
 				    _ ->
 					?ERRT_FORBIDDEN(
 					   Lang,
 					   "Only moderators "
-					   "are allowed to change subject in this room")
+					   "are allowed to change the subject in this room")
 				end,
 			    ejabberd_router:route(
 			      StateData#state.jid,
@@ -910,7 +910,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					StateData;
 				    {true, _, _} ->
 					Lang = xml:get_attr_s("xml:lang", Attrs),
-					ErrText = "Nickname is already in use by another occupant",
+					ErrText = "That nickname is already in use by another occupant",
 					Err = jlib:make_error_reply(
 						Packet,
 						?ERRT_CONFLICT(Lang, ErrText)),
@@ -921,7 +921,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					  From, Err),
 					StateData;
 				    {_, false, _} ->
-					ErrText = "Nickname is registered by another person",
+					ErrText = "That nickname is registered by another person",
 					Err = jlib:make_error_reply(
 						Packet,
 						?ERRT_CONFLICT(Lang, ErrText)),
@@ -1492,7 +1492,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			    ErrText = "You have been banned from this room",
 			    ?ERRT_FORBIDDEN(Lang, ErrText);
 			_ ->
-			    ErrText = "Membership required to enter this room",
+			    ErrText = "Membership is required to enter this room",
 			    ?ERRT_REGISTRATION_REQUIRED(Lang, ErrText)
 		    end),
 	    ejabberd_router:route( % TODO: s/Nick/""/
@@ -1500,7 +1500,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	      From, Err),
 	    StateData;
 	{_, true, _, _} ->
-	    ErrText = "Nickname is already in use by another occupant",
+	    ErrText = "That nickname is already in use by another occupant",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
 	    ejabberd_router:route(
 	      % TODO: s/Nick/""/
@@ -1508,7 +1508,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	      From, Err),
 	    StateData;
 	{_, _, false, _} ->
-	    ErrText = "Nickname is registered by another person",
+	    ErrText = "That nickname is registered by another person",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
 	    ejabberd_router:route(
 	      % TODO: s/Nick/""/
@@ -1554,7 +1554,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			    NewState#state{robots = Robots}
 		    end;
 		nopass ->
-		    ErrText = "Password required to enter this room",
+		    ErrText = "A password is required to enter this room",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
 		    ejabberd_router:route( % TODO: s/Nick/""/
@@ -2818,7 +2818,7 @@ get_config(Lang, StateData, From) ->
 	 ?BOOLXFIELD("Default users as participants",
 		     "members_by_default",
 		     Config#config.members_by_default),
-	 ?BOOLXFIELD("Allow users to change subject",
+	 ?BOOLXFIELD("Allow users to change the subject",
 		     "muc#roomconfig_changesubject",
 		     Config#config.allow_change_subj),
 	 ?BOOLXFIELD("Allow users to send private messages",

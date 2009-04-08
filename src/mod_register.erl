@@ -241,7 +241,7 @@ try_register(User, Server, Password, Source, Lang) ->
 			    end;
 			false ->
 			    ErrText = "Users are not allowed to register "
-				"accounts so fast",
+				"accounts so quickly",
 			    {error, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)}
 		    end
 	    end
