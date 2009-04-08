@@ -1,5 +1,8 @@
 2009-04-08  Badlop  <badlop@process-one.net>
 
+	* src/mod_pubsub/mod_pubsub.erl: Announce PubSub features in the
+	server JID only if PEP is enabled (EJAB-905)
+
 	* src/mod_muc/mod_muc.erl: English fixes (thanks to Glenn Sieb)
 	* src/mod_muc/mod_muc_log.erl: Likewise
 	* src/mod_muc/mod_muc_room.erl: Likewise
