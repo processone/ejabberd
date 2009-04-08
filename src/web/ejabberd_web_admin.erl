@@ -1804,7 +1804,7 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 	   end,
     [?XC('h1', ?T("Backup of ") ++ atom_to_list(Node))] ++
 	ResS ++
-	[?XCT('p', "Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
+	[?XCT('p', "Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
      ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
 	  [?XAE('table', [],
 		[?XE('tbody',

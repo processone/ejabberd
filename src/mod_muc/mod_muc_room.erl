@@ -793,13 +793,13 @@ process_groupchat_message(From, #xmlel{name = 'message'} = Packet,
 					  exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
 					    {Lang, translate:translate(Lang,
 						"Only moderators and participants "
-						"are allowed to change subject in this room")}));
+						"are allowed to change the subject in this room")}));
 				    _ ->
 					exmpp_stanza:reply_with_error(Packet,
 					  exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
 					    {Lang, translate:translate(Lang,
 						"Only moderators "
-						"are allowed to change subject in this room")}))
+						"are allowed to change the subject in this room")}))
 				end,
 			    ejabberd_router:route(
 			      StateData#state.jid,
@@ -909,7 +909,7 @@ process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 					StateData;
 				    {true, _, _} ->
 					Lang = exmpp_stanza:get_lang(Packet),
-					ErrText = "Nickname is already in use by another occupant",
+					ErrText = "That nickname is already in use by another occupant",
 					Err = exmpp_stanza:reply_with_error(Packet,
 					  exmpp_stanza:error(Packet#xmlel.ns, 'conflict',
 					    {Lang, translate:translate(Lang, ErrText)})),
@@ -920,7 +920,7 @@ process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 					  From, Err),
 					StateData;
 				    {_, false, _} ->
-					ErrText = "Nickname is registered by another person",
+					ErrText = "That nickname is registered by another person",
 					Err = exmpp_stanza:reply_with_error(Packet,
 					  exmpp_stanza:error(Packet#xmlel.ns, 'conflict',
 					    {Lang, translate:translate(Lang, ErrText)})),
@@ -1482,7 +1482,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			      'forbidden',
 			      {Lang, translate:translate(Lang, ErrText)});
 			_ ->
-			    ErrText = "Membership required to enter this room",
+			    ErrText = "Membership is required to enter this room",
 			    exmpp_stanza:error(Packet#xmlel.ns,
 			      'registration-required',
 			      {Lang, translate:translate(Lang, ErrText)})
@@ -1492,7 +1492,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	      From, Err),
 	    StateData;
 	{_, true, _, _} ->
-	    ErrText = "Nickname is already in use by another occupant",
+	    ErrText = "That nickname is already in use by another occupant",
 	    Err = exmpp_stanza:reply_with_error(Packet, 
 	      exmpp_stanza:error(Packet#xmlel.ns,
 		'conflict',
@@ -1503,7 +1503,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	      From, Err),
 	    StateData;
 	{_, _, false, _} ->
-	    ErrText = "Nickname is registered by another person",
+	    ErrText = "That nickname is registered by another person",
 	    Err = exmpp_stanza:reply_with_error(Packet, 
 	      ?ERR(Packet, 'conflict', Lang, ErrText)),
 	    ejabberd_router:route(
@@ -1553,7 +1553,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			    NewState
 		    end;
 		nopass ->
-		    ErrText = "Password required to enter this room",
+		    ErrText = "The password is required to enter this room",
 		    Err = exmpp_stanza:reply_with_error(
 			    Packet, ?ERR(Packet, 'not-authorized', Lang, ErrText)),
 		    ejabberd_router:route( % TODO: s/Nick/""/
@@ -2817,7 +2817,7 @@ get_config(Lang, StateData, From) ->
          ?BOOLXFIELD("Default users as participants",
                  "members_by_default",
                  Config#config.members_by_default),
-         ?BOOLXFIELD("Allow users to change subject",
+         ?BOOLXFIELD("Allow users to change the subject",
                  "muc#roomconfig_changesubject",
                  Config#config.allow_change_subj),
          ?BOOLXFIELD("Allow users to send private messages",

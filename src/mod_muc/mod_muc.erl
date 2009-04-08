@@ -719,7 +719,7 @@ iq_set_register_info(Host, From, Nick, Lang) when is_binary(Host), is_binary(Nic
 	{atomic, ok} ->
 	    ok;
 	{atomic, false} ->
-	    ErrText = "Specified nickname is already registered",
+	    ErrText = "That nickname is registered by another person",
         %%TODO: Always in the jabber:client namespace?
 	    {error,exmpp_stanza:error(?NS_JABBER_CLIENT, 
                                   'conflict', 

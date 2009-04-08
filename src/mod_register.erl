@@ -233,7 +233,7 @@ try_register(User, Server, Password, Source, Lang) ->
 			    end;
 			false ->
 			    ErrText = "Users are not allowed to register "
-				"accounts so fast",
+				"accounts so quickly",
                             {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'resource-constraint', {Lang, ErrText})}
 		    end
 	    end
