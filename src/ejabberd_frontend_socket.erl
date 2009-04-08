@@ -94,8 +94,9 @@ start(Module, SockMod, Socket, Opts) ->
 	    todo
     end.
 
-starttls(FsmRef, TLSOpts) ->
-    %gen_server:call(FsmRef, {starttls, TLSOpts}),
+starttls(FsmRef, _TLSOpts) ->
+    %% TODO: Frontend improvements planned by Aleksey
+    %%gen_server:call(FsmRef, {starttls, TLSOpts}),
     FsmRef.
 
 starttls(FsmRef, TLSOpts, Data) ->
@@ -137,8 +138,9 @@ close(FsmRef) ->
 sockname(FsmRef) ->
     gen_server:call(FsmRef, sockname).
 
-peername(FsmRef) ->
-    %gen_server:call(FsmRef, peername).
+peername(_FsmRef) ->
+    %% TODO: Frontend improvements planned by Aleksey
+    %%gen_server:call(FsmRef, peername).
     {ok, {{0, 0, 0, 0}, 0}}.
 
 

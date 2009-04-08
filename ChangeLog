@@ -1,5 +1,8 @@
 2009-04-08  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_frontend_socket.erl: Fix compilation warnings and
+	add TODO comments.
+
 	* src/mod_irc/mod_irc_connection.erl: Fix compilation warnings.
 
 2009-04-08  Evgeniy Khramtsov <ekhramtsov@process-one.net>
