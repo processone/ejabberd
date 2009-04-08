@@ -158,9 +158,6 @@ init([ServerHost, Opts]) ->
     Access = gen_mod:get_opt(access_createnode, Opts, all),
     ServerHostB = list_to_binary(ServerHost),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB_s),
-    ejabberd_hooks:add(disco_local_identity, ServerHostB, ?MODULE, disco_local_identity, 75),
-    ejabberd_hooks:add(disco_local_features, ServerHostB, ?MODULE, disco_local_features, 75),
-    ejabberd_hooks:add(disco_local_items, ServerHostB, ?MODULE, disco_local_items, 75),
     ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
@@ -173,12 +170,25 @@ init([ServerHost, Opts]) ->
 	      gen_iq_handler:add_iq_handler(
 		Mod, ServerHostB, NS, ?MODULE, Fun, IQDisc)
       end,
-      [{?NS_PUBSUB, ejabberd_local, iq_local},
-       {?NS_PUBSUB_OWNER, ejabberd_local, iq_local},
-       {?NS_PUBSUB, ejabberd_sm, iq_sm},
+      [{?NS_PUBSUB, ejabberd_sm, iq_sm},
        {?NS_PUBSUB_OWNER, ejabberd_sm, iq_sm}]),
     ejabberd_router:register_route(Host),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
+    case lists:member("pep", Plugins) of
+	true ->
+	    ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
+	    ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
+	    ejabberd_hooks:add(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
+	    lists:foreach(
+	      fun({NS,Mod,Fun}) ->
+		      gen_iq_handler:add_iq_handler(
+			Mod, ServerHost, NS, ?MODULE, Fun, IQDisc)
+	      end,
+	      [{?NS_PUBSUB, ejabberd_local, iq_local},
+	       {?NS_PUBSUB_OWNER, ejabberd_local, iq_local}]);
+	false ->
+	    ok
+    end,
     update_database(Host),
     ets:new(gen_mod:get_module_proc(Host, pubsub_state), [set, named_table]),
     ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {nodetree, NodeTree}),
