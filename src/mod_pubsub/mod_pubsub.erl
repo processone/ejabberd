@@ -540,7 +540,7 @@ handle_cast({presence, User, Server, Resources, JID}, State) ->
 	    _ ->
 		ok
 	end
-    end, tree_action(Host, get_nodes, [Owner, JID]))
+    end, tree_action(ServerHost, get_nodes, [Owner, JID])),
     {noreply, State};
 
 handle_cast({remove_user, LUser, LServer}, State) ->
@@ -2542,7 +2542,7 @@ max_items(Options) ->
 	?LISTMXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
 		     get_option(Options, Var), Opts)).
 
-get_configure_xfields(_Type, Options, Lang, _Owners, Groups) ->
+get_configure_xfields(Type, Options, Lang, _Owners, Groups) ->
     [?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NODE_CONFIG_s),
      ?BOOL_CONFIG_FIELD("Deliver payloads with event notifications", deliver_payloads),
      ?BOOL_CONFIG_FIELD("Deliver event notifications", deliver_notifications),
