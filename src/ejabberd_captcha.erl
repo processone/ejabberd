@@ -85,9 +85,13 @@ create_captcha(Id, SID, From, To, Lang, Args)
 	    OOB = {xmlelement, "x", [{"xmlns", ?NS_OOB}],
 		   [{xmlelement, "url", [], [{xmlcdata, get_url(Id)}]}]},
 	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
-	    ?T(mnesia:write(#captcha{id=Id, pid=self(), key=Key,
-				     tref=Tref, args=Args})),
-	    {ok, [Body, OOB, Captcha, Data]};
+	    case ?T(mnesia:write(#captcha{id=Id, pid=self(), key=Key,
+					  tref=Tref, args=Args})) of
+		ok ->
+		    {ok, [Body, OOB, Captcha, Data]};
+		_Err ->
+		    error
+	    end;
 	_Err ->
 	    error
     end.
@@ -236,13 +240,13 @@ handle_cast(_Msg, State) ->
 
 handle_info({remove_id, Id}, State) ->
     ?DEBUG("captcha ~p timed out", [Id]),
-    ?T(case mnesia:read(captcha, Id, write) of
-	   [#captcha{args=Args, pid=Pid}] ->
-	       Pid ! {captcha_failed, Args},
-	       mnesia:delete({captcha, Id});
-	   _ ->
-	       ok
-       end),
+    _ = ?T(case mnesia:read(captcha, Id, write) of
+	       [#captcha{args=Args, pid=Pid}] ->
+		   Pid ! {captcha_failed, Args},
+		   mnesia:delete({captcha, Id});
+	       _ ->
+		   ok
+	   end),
     {noreply, State};
 
 handle_info(_Info, State) ->
