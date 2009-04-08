@@ -370,27 +370,27 @@ handle_info({route_chan, Channel, Resource,
     From = StateData#state.user,
     To = jlib:make_jid(lists:concat([Channel, "%", StateData#state.server]),
 		       StateData#state.host, StateData#state.nick),
-    case jlib:iq_query_info(El) of
+    _ = case jlib:iq_query_info(El) of
 	#iq{xmlns = ?NS_MUC_ADMIN} = IQ ->
 	    iq_admin(StateData, Channel, From, To, IQ);
 	#iq{xmlns = ?NS_VERSION} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001VERSION\001\r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
 	#iq{xmlns = ?NS_TIME} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001TIME\001\r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
 	#iq{xmlns = ?NS_VCARD} ->
 	    Res = io_lib:format("WHOIS ~s \r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
