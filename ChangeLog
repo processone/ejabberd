@@ -1,3 +1,7 @@
+2009-04-09  Badlop  <badlop@process-one.net>
+
+	* src/msgs/pl.po: Fix some translations (thanks to Andrzej Smyk)
+
 2009-04-08  Badlop  <badlop@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Announce PubSub features in the
