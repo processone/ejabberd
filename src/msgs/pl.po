@@ -921,7 +921,7 @@ msgstr "Wiadomości offline"
 
 #: mod_proxy65/mod_proxy65_service.erl:192
 msgid "ejabberd SOCKS5 Bytestreams module"
-msgstr "Mudł SOCKS5 Bytestreams"
+msgstr "Moduł SOCKS5 Bytestreams"
 
 #: mod_pubsub/mod_pubsub.erl:753
 msgid "Publish-Subscribe"
@@ -1447,7 +1447,7 @@ msgstr "Transakcje uruchomione ponownie"
 
 #: web/ejabberd_web_admin.erl:1883
 msgid "Transactions Logged:"
-msgstr "Transakcje logowane"
+msgstr "Transakcje zalogowane"
 
 #: web/ejabberd_web_admin.erl:1906
 msgid "Update "
