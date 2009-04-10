@@ -169,7 +169,7 @@ init([ServerHost, Opts]) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc),
     ejabberd_router:register_route(Host),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
-    case lists:member("pep", Plugins) of
+    case lists:member(?PEPNODE, Plugins) of
 	true ->
 	    ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
 	    ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
@@ -603,7 +603,7 @@ terminate(_Reason, #state{host = Host,
 			  plugins = Plugins}) ->
     terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
     ejabberd_router:unregister_route(Host),
-    case lists:member("pep", Plugins) of
+    case lists:member(?PEPNODE, Plugins) of
 	true ->
 	    ejabberd_hooks:delete(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
 	    ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
