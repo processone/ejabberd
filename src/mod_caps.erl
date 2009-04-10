@@ -213,6 +213,8 @@ init([Host, _Opts]) ->
 			 {type, bag},
 			 {attributes, record_info(fields, user_caps_resources)}]),
     mnesia:delete_table(user_caps_default),
+    mnesia:clear_table(user_caps),
+    mnesia:clear_table(user_caps_resources),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 30),
     ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
     {ok, #state{host = Host}}.
