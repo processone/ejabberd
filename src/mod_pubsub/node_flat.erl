@@ -16,7 +16,7 @@
 %%% This software is copyright 2006-2009, ProcessOne.
 %%%
 %%% @copyright 2006-2009 ProcessOne
-%%% @author Christophe romain <christophe.romain@process-one.net>
+%%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
 %%% @end
@@ -82,7 +82,7 @@ options() ->
      {roster_groups_allowed, []},
      {publish_model, publishers},
      {max_payload_size, ?MAX_PAYLOAD_SIZE},
-     {send_last_published_item, never},
+     {send_last_published_item, on_sub_and_presence},
      {deliver_notifications, true},
      {presence_based_delivery, false}].
 
@@ -168,7 +168,7 @@ get_items(Host, Node, JID, AccessModel, PresenceSubscription, RosterGroup, SubId
 
 get_item(Host, Node, ItemId) ->
     node_default:get_item(Host, Node, ItemId).
-       
+
 get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
     node_default:get_item(Host, Node, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 

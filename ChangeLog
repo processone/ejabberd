@@ -1,3 +1,12 @@
+2009-03-20  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_caps.erl: Better handling of presence hook and caps clean
+	* src/ejabberd_c2s.erl: Likewise
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: Improve invalid-payload check, send
+	last published item to new resource only, thread message sending.
+
 2009-04-09  Badlop  <badlop@process-one.net>
 
 	* src/msgs/pl.po: Fix some translations (thanks to Andrzej Smyk)
