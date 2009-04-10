@@ -186,10 +186,9 @@ receive_packet(From, To, {xmlelement, "presence", Attrs, Els}) ->
     "unsubscribed" ->
 	ok;
     "unavailable" ->
-	mod_caps:clear_caps(From);
+	clear_caps(From);
     _ ->
-	Caps = mod_caps:read_caps(Els),
-	mod_caps:note_caps(To#jid.lserver, From, Caps)
+	note_caps(To#jid.lserver, From, read_caps(Els))
     end;
 receive_packet(_, _, _) ->
     ok.
