@@ -157,6 +157,7 @@ init([ServerHost, Opts]) ->
     ?DEBUG("pubsub init ~p ~p",[ServerHost,Opts]),
     Host = gen_mod:get_opt_host(ServerHost, Opts, "pubsub.@HOST@"),
     Access = gen_mod:get_opt(access_createnode, Opts, all),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
@@ -164,14 +165,8 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
     ejabberd_hooks:add(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    lists:foreach(
-      fun({NS,Mod,Fun}) ->
-	      gen_iq_handler:add_iq_handler(
-		Mod, ServerHost, NS, ?MODULE, Fun, IQDisc)
-      end,
-      [{?NS_PUBSUB, ejabberd_sm, iq_sm},
-       {?NS_PUBSUB_OWNER, ejabberd_sm, iq_sm}]),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc),
     ejabberd_router:register_route(Host),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     case lists:member("pep", Plugins) of
@@ -179,13 +174,8 @@ init([ServerHost, Opts]) ->
 	    ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
 	    ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
 	    ejabberd_hooks:add(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
-	    lists:foreach(
-	      fun({NS,Mod,Fun}) ->
-		      gen_iq_handler:add_iq_handler(
-			Mod, ServerHost, NS, ?MODULE, Fun, IQDisc)
-	      end,
-	      [{?NS_PUBSUB, ejabberd_local, iq_local},
-	       {?NS_PUBSUB_OWNER, ejabberd_local, iq_local}]);
+	    gen_iq_handler:add_iq_handler(ejabberd_local, ServerHost, ?NS_PUBSUB, ?MODULE, iq_local, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_local, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_local, IQDisc);
 	false ->
 	    ok
     end,
@@ -613,21 +603,24 @@ terminate(_Reason, #state{host = Host,
 			  plugins = Plugins}) ->
     terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
     ejabberd_router:unregister_route(Host),
-    ejabberd_hooks:delete(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
-    ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
-    ejabberd_hooks:delete(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
+    case lists:member("pep", Plugins) of
+	true ->
+	    ejabberd_hooks:delete(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
+	    ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
+	    ejabberd_hooks:delete(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
+	    gen_iq_handler:remove_iq_handler(ejabberd_local, ServerHost, ?NS_PUBSUB),
+	    gen_iq_handler:remove_iq_handler(ejabberd_local, ServerHost, ?NS_PUBSUB_OWNER);
+	false ->
+	    ok
+    end,
     ejabberd_hooks:delete(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
     ejabberd_hooks:delete(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
-    lists:foreach(fun({NS,Mod}) ->
-			  gen_iq_handler:remove_iq_handler(Mod, ServerHost, NS)
-		  end, [{?NS_PUBSUB, ejabberd_local},
-			{?NS_PUBSUB_OWNER, ejabberd_local},
-			{?NS_PUBSUB, ejabberd_sm},
-			{?NS_PUBSUB_OWNER, ejabberd_sm}]),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER),
     mod_disco:unregister_feature(ServerHost, ?NS_PUBSUB),
     ok.
 
@@ -1553,12 +1546,12 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			PayloadSize > PayloadMaxSize ->
 			    %% Entity attempts to publish very large payload
 			    {error, extended_error(?ERR_NOT_ACCEPTABLE, "payload-too-big")};
-			PayloadCount =/= 1 ->
-			    %% Entity attempts to publish item with multiple payload elements
-			    {error, extended_error(?ERR_BAD_REQUEST, "invalid-payload")};
-			Payload == "" -> %% TODO better use PayloadSize == 0 ?
+			PayloadCount == 0 ->
 			    %% Publisher attempts to publish to payload node with no payload
 			    {error, extended_error(?ERR_BAD_REQUEST, "payload-required")};
+			PayloadCount > 1 ->
+			    %% Entity attempts to publish item with multiple payload elements
+			    {error, extended_error(?ERR_BAD_REQUEST, "invalid-payload")};
 			(DeliverPayloads == 0) and (PersistItems == 0) and (PayloadSize > 0) ->
 			    %% Publisher attempts to publish to transient notification node with item
 			    {error, extended_error(?ERR_BAD_REQUEST, "item-forbidden")};

@@ -1126,16 +1126,6 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			    allow ->
 				LFrom = jlib:jid_tolower(From),
 				LBFrom = jlib:jid_remove_resource(LFrom),
-				%% Note contact availability
-				case xml:get_attr_s("type", Attrs) of
-				    "unavailable" ->
-					%mod_caps:clear_caps(From);
-					% caps clear disabled cause it breaks things
-					ok;
-				    _ ->
-					Caps = mod_caps:read_caps(Els),
-					mod_caps:note_caps(StateData#state.server, From, Caps)
-				end,
 				case ?SETS:is_element(
 					LFrom, StateData#state.pres_a) orelse
 				    ?SETS:is_element(

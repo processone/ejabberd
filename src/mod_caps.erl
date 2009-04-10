@@ -51,6 +51,10 @@
 	 code_change/3
 	]).
 
+%% hook handlers
+-export([receive_packet/3,
+	 receive_packet/4]).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
@@ -165,6 +169,34 @@ stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, stop).
 
+receive_packet(From, To, {xmlelement, "presence", Attrs, Els}) ->
+    case xml:get_attr_s("type", Attrs) of
+    "probe" ->
+	ok;
+    "error" ->
+	ok;
+    "invisible" ->
+	ok;
+    "subscribe" ->
+	ok;
+    "subscribed" ->
+	ok;
+    "unsubscribe" ->
+	ok;
+    "unsubscribed" ->
+	ok;
+    "unavailable" ->
+	mod_caps:clear_caps(From);
+    _ ->
+	Caps = mod_caps:read_caps(Els),
+	mod_caps:note_caps(To#jid.lserver, From, Caps)
+    end;
+receive_packet(_, _, _) ->
+    ok.
+
+receive_packet(_JID, From, To, Packet) ->
+    receive_packet(From, To, Packet).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -181,6 +213,8 @@ init([Host, _Opts]) ->
 			 {type, bag},
 			 {attributes, record_info(fields, user_caps_resources)}]),
     mnesia:delete_table(user_caps_default),
+    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 30),
+    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
     {ok, #state{host = Host}}.
 
 maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
@@ -359,7 +393,10 @@ handle_disco_response(From, To, IQ) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    Host = State#state.host,
+    ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, receive_packet, 30),
+    ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
