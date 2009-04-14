@@ -767,7 +767,7 @@ htmlize2(S1, NoFollow) ->
     S2 = element(2, regexp:gsub(S1, "\\&", "\\&amp;")),
     S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
     S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
-    S5 = element(2, regexp:gsub(S4, "(http|https|ftp|mailto|xmpp)://[^] )\'\"}]+",
+    S5 = element(2, regexp:gsub(S4, "((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+",
 				link_regexp(NoFollow))),
     %% Remove 'right-to-left override' unicode character 0x202e
     element(2, regexp:gsub(S5, [226,128,174], "[RLO]")).

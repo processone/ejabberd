@@ -1,3 +1,8 @@
+2009-04-14  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_log.erl: Linkify also xmpp:..., as it was
+	done previously (thanks to Konstantin Khomoutov)(EJAB-850)
+
 2009-03-20  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_caps.erl: Better handling of presence hook and caps clean
