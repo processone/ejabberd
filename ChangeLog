@@ -1,5 +1,10 @@
 2009-04-14  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Explain that the recommended Erlang/OTP version
+	is R12B-5, and R13 is not supported yet.
+	* doc/guide.html: Likewise
+	* README: Likewise
+
 	* src/mod_muc/mod_muc_log.erl: Linkify also xmpp:..., as it was
 	done previously (thanks to Konstantin Khomoutov)(EJAB-850)
 
