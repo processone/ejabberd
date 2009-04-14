@@ -171,8 +171,8 @@ receive_packet(From, To, Packet) when ?IS_PRESENCE(Packet) ->
 	ok;
     'subscribe' ->
 	ok;
-%    'subscribed' ->  % this my be useless, to be checked
-%	ok;
+    'subscribed' ->
+	ok;
     'unsubscribe' ->
 	ok;
     'unsubscribed' ->
