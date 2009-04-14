@@ -179,8 +179,8 @@ receive_packet(From, To, {xmlelement, "presence", Attrs, Els}) ->
 	ok;
     "subscribe" ->
 	ok;
-%    "subscribed" ->  % this my be useless, to be checked
-%	ok;
+    "subscribed" ->
+	ok;
     "unsubscribe" ->
 	ok;
     "unsubscribed" ->
