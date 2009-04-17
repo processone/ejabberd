@@ -216,7 +216,8 @@
 	 get_tags_commands/0,
 	 register_commands/1,
 	 unregister_commands/1,
-	 execute_command/2
+	 execute_command/2,
+	 execute_command/4
 	]).
 
 -include("ejabberd_commands.hrl").
@@ -225,7 +226,7 @@
 
 init() ->
     ets:new(ejabberd_commands, [named_table, set, public,
-			       {keypos, #ejabberd_commands.name}]).
+				{keypos, #ejabberd_commands.name}]).
 
 %% @spec ([ejabberd_commands()]) -> ok
 %% @doc Register ejabberd commands.
@@ -256,9 +257,9 @@ unregister_commands(Commands) ->
 list_commands() ->
     Commands = ets:match(ejabberd_commands,
 			 #ejabberd_commands{name = '$1',
-					   args = '$2',
-					   desc = '$3',
-					   _ = '_'}),
+					    args = '$2',
+					    desc = '$3',
+					    _ = '_'}),
     [{A, B, C} || [A, B, C] <- Commands].
 
 %% @spec (Name::atom()) -> {Args::[aterm()], Result::rterm()} | {error, command_unknown}
@@ -266,9 +267,9 @@ list_commands() ->
 get_command_format(Name) ->
     Matched = ets:match(ejabberd_commands,
 			#ejabberd_commands{name = Name,
-					  args = '$1',
-					  result = '$2',
-					  _ = '_'}),
+					   args = '$1',
+					   result = '$2',
+					   _ = '_'}),
     case Matched of
 	[] ->
 	    {error, command_unknown};
@@ -287,11 +288,24 @@ get_command_definition(Name) ->
 %% @spec (Name::atom(), Arguments) -> ResultTerm | {error, command_unknown}
 %% @doc Execute a command.
 execute_command(Name, Arguments) ->
+    execute_command([], noauth, Name, Arguments).
+
+%% @spec (AccessCommands, AuthList, Name::atom(), Arguments) -> ResultTerm | {error, Error}
+%% where 
+%%       AccessCommands = [{Access, CommandNames, Arguments}]
+%%       Auth = {user, string()}, {server, string()}, {password, string()} | noauth
+%%       Method = atom()
+%%       Arguments = [...]
+%%       Error = command_unknown | account_unprivileged | invalid_account_data | no_auth_provided
+execute_command(AccessCommands, Auth, Name, Arguments) ->
     case ets:lookup(ejabberd_commands, Name) of
 	[Command] ->
-	    execute_command2(Command, Arguments);
-	[] ->
-	    {error, command_unknown}
+	    try check_access_commands(AccessCommands, Auth, Name, Command, Arguments) of
+		ok -> execute_command2(Command, Arguments)
+	    catch
+		{error, Error} -> {error, Error}
+	    end;
+	[] -> {error, command_unknown}
     end.
 
 execute_command2(Command, Arguments) ->
@@ -326,3 +340,86 @@ get_tags_commands() ->
 	     orddict:new(),
 	     CommandTags),
     orddict:to_list(Dict).
+
+
+%% -----------------------------
+%% Access verification
+%% -----------------------------
+
+%% At least one AccessCommand must be satisfied
+%% @spec (AccessCommands, Auth, Method, Command, Arguments) -> ok
+%% where 
+%%       AccessCommands =  [ {Access, CommandNames, Arguments} ]
+%%       Auth = {User::string(), Server::string(), Password::string()}
+%%       Method = atom()
+%%       Arguments = [...]
+%% It may throw {error, Error} where
+%% Error = account_unprivileged | invalid_account_data | no_auth_provided
+check_access_commands([], _Auth, _Method, _Command, _Arguments) ->
+    ok;
+check_access_commands(AccessCommands, Auth, Method, Command, Arguments) ->
+    {ok, User, Server} = check_auth(Auth),
+    AccessCommandsAllowed =
+	lists:filter(
+	  fun({Access, Commands, ArgumentRestrictions}) ->
+		  case check_access(Access, User, Server) of
+		      true ->
+			  check_access_command(Commands, Command, ArgumentRestrictions,
+					       Method, Arguments);
+		      false ->
+			  false
+		  end
+	  end,
+	  AccessCommands),
+    case AccessCommandsAllowed of
+	[] -> throw({error, account_unprivileged});
+	L when is_list(L) -> ok
+    end.
+
+check_auth(noauth) ->
+    throw({error, no_auth_provided});
+check_auth({User, Server, Password}) ->
+    %% Check the account exists and password is valid
+    AccountPass = ejabberd_auth:get_password_s(User, Server),
+    AccountPassMD5 = get_md5(AccountPass),
+    case Password of
+	AccountPass -> {ok, User, Server};
+	AccountPassMD5 -> {ok, User, Server};
+	_ -> throw({error, invalid_account_data})
+    end.
+
+get_md5(AccountPass) ->
+    lists:flatten([io_lib:format("~.16B", [X])
+		   || X <- binary_to_list(crypto:md5(AccountPass))]).
+
+check_access(Access, User, Server) ->
+    %% Check this user has access permission
+    case acl:match_rule(global, Access, jlib:make_jid(User, Server, "")) of
+	allow -> true;
+	deny -> false
+    end.
+
+check_access_command(Commands, Command, ArgumentRestrictions, Method, Arguments) ->
+    case Commands==all orelse lists:member(Method, Commands) of
+	true -> check_access_arguments(Command, ArgumentRestrictions, Arguments);
+	false -> false
+    end.
+
+check_access_arguments(Command, ArgumentRestrictions, Arguments) ->
+    ArgumentsTagged = tag_arguments(Command#ejabberd_commands.args, Arguments),
+    lists:all(
+      fun({ArgName, ArgAllowedValue}) ->
+	      %% If the call uses the argument, check the value is acceptable
+	      case lists:keysearch(ArgName, 1, ArgumentsTagged) of
+		  {value, {ArgName, ArgValue}} -> ArgValue == ArgAllowedValue;
+		  false -> true
+	      end
+      end, ArgumentRestrictions).
+
+tag_arguments(ArgsDefs, Args) ->
+    lists:zipwith(
+      fun({ArgName, _ArgType}, ArgValue) -> 
+	      {ArgName, ArgValue}
+      end, 
+      ArgsDefs,
+      Args).
