@@ -26,6 +26,7 @@
 2009-03-20  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_caps.erl: Better handling of presence hook and caps clean
+	(thanks to Jonathan Schleifer)(EJAB-707)
 	* src/ejabberd_c2s.erl: Likewise
 	* src/mod_pubsub/mod_pubsub.erl: Likewise
 
