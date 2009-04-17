@@ -1,5 +1,8 @@
 2009-04-17  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_commands.erl: API to restrict who can execute what
+	commands and arguments (EJAB-910)
+
 	* src/mod_caps.erl: Fix unbound variable
 
 2009-04-14  Badlop  <badlop@process-one.net>
