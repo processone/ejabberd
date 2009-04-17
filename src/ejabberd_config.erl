@@ -379,6 +379,8 @@ process_term(Term, State) ->
 	    add_option(captcha_cmd, Cmd, State);
 	{captcha_host, Host} ->
 	    add_option(captcha_host, Host, State);
+	{ejabberdctl_access_commands, ACs} ->
+	    add_option(ejabberdctl_access_commands, ACs, State);
 	{loglevel, Loglevel} ->
 	    ejabberd_loglevel:set(Loglevel),
 	    State;

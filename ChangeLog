@@ -1,5 +1,9 @@
 2009-04-17  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_ctl.erl: New option to require auth in ejabberdctl
+	and restrict what commands and arguments can execute (EJAB-910)
+	* src/ejabberd_config.erl: Likewise
+
 	* src/ejabberd_commands.erl: API to restrict who can execute what
 	commands and arguments (EJAB-910)
 

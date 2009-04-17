@@ -50,7 +50,7 @@
 -export([start/0,
 	 init/0,
 	 process/1,
-	 process2/1,
+	 process2/2,
 	 register_commands/3,
 	 unregister_commands/3]).
 
@@ -194,14 +194,20 @@ process(["help" | Mode]) ->
     end;
 
 process(Args) ->
-    {String, Code} = process2(Args),
+    AccessCommands = get_accesscommands(),
+    {String, Code} = process2(Args, AccessCommands),
     io:format(String),
     io:format("\n"),
     Code.
 
-%% @spec (Args::[string()]) -> {String::string(), Code::integer()}
-process2(Args) ->
-    case try_run_ctp(Args) of
+%% @spec (Args::[string()], AccessCommands) -> {String::string(), Code::integer()}
+process2(["--auth", User, Server, Pass | Args], AccessCommands) ->
+    process2(Args, {User, Server, Pass}, AccessCommands);
+process2(Args, AccessCommands) ->
+    process2(Args, noauth, AccessCommands).
+
+process2(Args, Auth, AccessCommands) ->
+    case try_run_ctp(Args, Auth, AccessCommands) of
 	{String, wrong_command_arguments}
 	when is_list(String) ->
 	    io:format(lists:flatten(["\n" | String]++["\n"])),
@@ -221,16 +227,22 @@ process2(Args) ->
 	    {"Erroneous result: " ++ io_lib:format("~p", [Other]), ?STATUS_ERROR}
     end.
 
+get_accesscommands() ->
+    case ejabberd_config:get_local_option(ejabberdctl_access_commands) of
+	ACs when is_list(ACs) -> ACs;
+	_ -> []
+    end.
+
 
 %%-----------------------------
 %% Command calling
 %%-----------------------------
 
-%% @spec (Args::[string()]) -> string() | integer() | {string(), integer()}
-try_run_ctp(Args) ->
+%% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()}
+try_run_ctp(Args, Auth, AccessCommands) ->
     try ejabberd_hooks:run_fold(ejabberd_ctl_process, false, [Args]) of
 	false when Args /= [] ->
-	    try_call_command(Args);
+	    try_call_command(Args, Auth, AccessCommands);
 	false ->
 	    print_usage(),
 	    {"", ?STATUS_USAGE};
@@ -247,9 +259,9 @@ try_run_ctp(Args) ->
 	    {io_lib:format("Error in ejabberd ctl process: '~p' ~p", [Error, Why]), ?STATUS_USAGE}
     end.
 
-%% @spec (Args::[string()]) -> string() | integer() | {string(), integer()}
-try_call_command(Args) ->
-    try call_command(Args) of
+%% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()}
+try_call_command(Args, Auth, AccessCommands) ->
+    try call_command(Args, Auth, AccessCommands) of
 	{error, command_unknown} ->
 	    {io_lib:format("Error: command ~p not known.", [hd(Args)]), ?STATUS_ERROR};
 	{error, wrong_number_parameters} ->
@@ -262,8 +274,8 @@ try_call_command(Args) ->
 	    {io_lib:format("Problem '~p ~p' occurred executing the command.~nStacktrace: ~p", [A, Why, Stack]), ?STATUS_ERROR}
     end.
 
-%% @spec (Args::[string()]) -> string() | integer() | {string(), integer()} | {error, ErrorType}
-call_command([CmdString | Args]) ->
+%% @spec (Args::[string()], Auth) -> string() | integer() | {string(), integer()} | {error, ErrorType}
+call_command([CmdString | Args], Auth, AccessCommands) ->
     {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
     Command = list_to_atom(CmdStringU),
     case ejabberd_commands:get_command_format(Command) of
@@ -272,7 +284,7 @@ call_command([CmdString | Args]) ->
 	{ArgsFormat, ResultFormat} ->
 	    case (catch format_args(Args, ArgsFormat)) of
 		ArgsFormatted when is_list(ArgsFormatted) ->
-		    Result = ejabberd_commands:execute_command(Command,
+		    Result = ejabberd_commands:execute_command(AccessCommands, Auth, Command,
 							       ArgsFormatted),
 		    format_result(Result, ResultFormat);
 		{'EXIT', {function_clause,[{lists,zip,[A1, A2]} | _]}} ->
@@ -316,6 +328,9 @@ format_arg(Arg, Format) ->
 %%-----------------------------
 %% Format result
 %%-----------------------------
+
+format_result({error, ErrorAtom}, _) ->
+    {io_lib:format("Error: ~p", [ErrorAtom]), make_status(error)};
 
 format_result(Atom, {_Name, atom}) ->
     io_lib:format("~p", [Atom]);
@@ -430,7 +445,9 @@ print_usage(HelpMode, MaxC, ShCode) ->
 	get_list_ctls(),
 
     ?PRINT(
-       ["Usage: ", ?B("ejabberdctl"), " [--node ", ?U("nodename"), "] ", ?U("command"), " [options]\n"
+       ["Usage: ", ?B("ejabberdctl"), " [--node ", ?U("nodename"), "] [--auth ",
+	?U("user"), " ", ?U("host"), " ", ?U("password"), "] ",
+	?U("command"), " [", ?U("options"), "]\n"
 	"\n"
 	"Available commands in this ejabberd node:\n"], []),
     print_usage_commands(HelpMode, MaxC, ShCode, AllCommands),
