@@ -1,3 +1,7 @@
+2009-04-17  Badlop  <badlop@process-one.net>
+
+	* src/mod_caps.erl: Fix unbound variable
+
 2009-04-14  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Explain that the recommended Erlang/OTP version

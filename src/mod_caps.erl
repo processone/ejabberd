@@ -180,7 +180,7 @@ receive_packet(From, To, Packet) when ?IS_PRESENCE(Packet) ->
     'unavailable' ->
 	clear_caps(From);
     _ ->
-	ServerString = binary_to_list(StateData#state.server),
+	ServerString = exmpp_jid:ldomain_as_list(To),
 	Els = Packet#xmlel.children,
 	note_caps(ServerString, From, read_caps(Els))
     end;
