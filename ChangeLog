@@ -1,5 +1,9 @@
 2009-04-17  Badlop  <badlop@process-one.net>
 
+	* doc/guide.tex: Document new ejabberdctl option. New section that
+	documents AccessCommands. (EJAB-910)
+	* doc/guide.html: Likewise
+
 	* src/ejabberd_ctl.erl: New option to require auth in ejabberdctl
 	and restrict what commands and arguments can execute (EJAB-910)
 	* src/ejabberd_config.erl: Likewise

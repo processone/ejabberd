@@ -3809,10 +3809,24 @@ Options:
 
 \makesection{ejabberdctl}{\term{ejabberdctl}}
 
-\makesubsection{commands}{Commands}
+With the \term{ejabberdctl} command line administration script 
+you can execute \term{ejabberdctl commands} (described in the next section, \ref{ectl-commands})
+and also many general \term{ejabberd commands} (described in section \ref{eja-commands}).
+This means you can start, stop and perform many other administrative tasks
+in a local or remote \ejabberd{} server (by providing the argument \term{--node NODENAME}).
 
-The \term{ejabberdctl} command line administration script allows to start, stop and perform
-many other administrative tasks in a local or remote \ejabberd{} server.
+The \term{ejabberdctl} script can be configured in the file \term{ejabberdctl.cfg}.
+This file includes detailed information about each configurable option. See section \ref{erlangconfiguration}.
+
+The \term{ejabberdctl} script returns a numerical status code.
+Success is represented by \term{0},
+error is represented by \term{1},
+and other codes may be used for specific results.
+This can be used by other scripts to determine automatically
+if a command succeeded or failed,
+for example using: \term{echo \$?}
+
+\makesubsection{ectl-commands}{ejabberdctl Commands}
 
 When \term{ejabberdctl} is executed without any parameter,
 it displays the available options. If there isn't an \ejabberd{} server running,
@@ -3824,53 +3838,44 @@ the available parameters are:
 \end{description}
 
 If there is an \ejabberd{} server running in the system,
-\term{ejabberdctl} shows all the available commands in that server.
-The more interesting ones are:
+\term{ejabberdctl} shows the \term{ejabberdctl commands} described bellow
+and all the \term{ejabberd commands} available in that server (see \ref{list-eja-commands}).
+
+The \term{ejabberdctl commands} are:
 \begin{description}
 \titem{help} Get help about ejabberdctl or any available command. Try \term{ejabberdctl help help}.
 \titem{status} Check the status of the \ejabberd{} server.
-\titem{stop} Stop the \ejabberd{} server which is running in the machine.
-\titem{reopen-log} Reopen the log files after they were renamed.
-  If the old files were not renamed before calling this command,
-  they are automatically renamed to \term{"*-old.log"}. See section \ref{logfiles}.
-\titem {backup ejabberd.backup}
-  Store internal Mnesia database to a binary backup file.
-\titem {restore ejabberd.backup}
-  Restore immediately from a binary backup file the internal Mnesia database.
-  This will consume quite some memory for big servers.
-\titem {install-fallback ejabberd.backup}
-  The binary backup file is installed as fallback:
-  it will be used to restore the database at the next ejabberd start.
-  Similar to \term{restore}, but requires less memory.
-\titem {dump ejabberd.dump}
-  Dump internal Mnesia database to a text file dump.
-\titem {load ejabberd.dump}
-  Restore immediately from a text file dump.
-  This is not recommended for big databases, as it will consume much time,
-  memory and processor. In that case it's preferable to use \term{backup} and \term{install-fallback}.
-%%More information about backuping can
-%%  be found in section~\ref{backup}.
-\titem{import-file, import-dir} \ind{migration from other software}
-  These options can be used to migrate from other \Jabber{}/XMPP servers. There
-  exist tutorials to \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
-\titem{delete-expired-messages} This option can be used to delete old messages
-  in offline storage. This might be useful when the number of offline messages
-  is very high.
+\titem{stop} Stop the \ejabberd{} server.
+\titem{restart} Restart the \ejabberd{} server.
+\titem{mnesia} Get information about the Mnesia database.
 \end{description}
 
-The \term{ejabberdctl} script also allows the argument \term{--node NODENAME}.
-This allows to administer a remote node.
+The \term{ejabberdctl} script can be restricted to require authentication
+and execute some \term{ejabberd commands}; see \ref{accesscommands}.
+Add the option to the file \term{ejabberd.cfg}.
+In this example there is no restriction:
+\begin{verbatim}
+{ejabberdctl_access_commands, []}.
+\end{verbatim}
 
-The \term{ejabberdctl} script can be configured in the file \term{ejabberdctl.cfg}.
-This file includes detailed information about each configurable option.
-
-The \term{ejabberdctl} script returns a numerical status code.
-Success is represented by \term{0},
-error is represented by \term{1},
-and other codes may be used for specific results.
-This can be used by other scripts to determine automatically
-if a command succeeded or failed,
-for example using: \term{echo \$?}
+If account \term{robot1@example.org} is registered in \ejabberd{} with password \term{abcdef}
+(which MD5 is E8B501798950FC58AAD83C8C14978E),
+and \term{ejabberd.cfg} contains this setting:
+\begin{verbatim}
+{hosts, ["example.org"]}.
+{acl, bots, {user, "robot1", "example.org"}}.
+{access, ctlaccess, [{allow, bots}]}.
+{ejabberdctl_access_commands, [ {ctlaccess, [registered_users, register], []} ]}.
+\end{verbatim}
+then you can do this in the shell:
+\begin{verbatim}
+$ ejabberdctl registered_users example.org
+Error: no_auth_provided
+$ ejabberdctl --auth robot1 example.org E8B501798950FC58AAD83C8C14978E registered_users example.org
+robot1
+testuser1
+testuser2
+\end{verbatim}
 
 
 \makesubsection{erlangconfiguration}{Erlang Runtime System}
@@ -3949,6 +3954,131 @@ The command line parameters:
 Note that some characters need to be escaped when used in shell scripts, for instance \verb|"| and \verb|{}|.
 You can find other options in the Erlang manual page (\shell{erl -man erl}).
 
+\makesection{eja-commands}{\ejabberd{} Commands}
+
+An \term{ejabberd command} is an abstract function identified by a name,
+with a defined number and type of calling arguments and type of result
+that is registered in the \term{ejabberd\_commands} service.
+Those commands can be defined in any Erlang module and executed using any valid frontend.
+
+\ejabberd{} includes a frontend to execute \term{ejabberd commands}: the script \term{ejabberdctl}.
+Other known frontends that can be installed to execute ejabberd commands in different ways are:
+\term{ejabberd\_xmlrpc} (XML-RPC service),
+\term{mod\_rest} (HTTP POST service),
+\term{mod\_shcommands} (ejabberd WebAdmin page).
+
+\makesubsection{list-eja-commands}{List of ejabberd Commands}
+
+\ejabberd{} includes a few ejabberd Commands by default.
+When more modules are installed, new commands may be available in the frontends.
+
+The easiest way to get a list of the available commands, and get help for them is to use
+the ejabberdctl script:
+\begin{verbatim}
+$ ejabberdctl help
+Usage: ejabberdctl [--node nodename] [--auth user host password] command [options]
+
+Available commands in this ejabberd node:
+  backup file                  Store the database to backup file
+  connected_users              List all established sessions
+  connected_users_number       Get the number of established sessions
+  delete_expired_messages      Delete expired offline messages from database
+  delete_old_messages days     Delete offline messages older than DAYS
+  ...
+\end{verbatim}
+
+The more interesting ones are:
+\begin{description}
+\titem{reopen-log} Reopen the log files after they were renamed.
+  If the old files were not renamed before calling this command,
+  they are automatically renamed to \term{"*-old.log"}. See section \ref{logfiles}.
+\titem {backup ejabberd.backup}
+  Store internal Mnesia database to a binary backup file.
+\titem {restore ejabberd.backup}
+  Restore immediately from a binary backup file the internal Mnesia database.
+  This will consume quite some memory for big servers.
+\titem {install-fallback ejabberd.backup}
+  The binary backup file is installed as fallback:
+  it will be used to restore the database at the next ejabberd start.
+  Similar to \term{restore}, but requires less memory.
+\titem {dump ejabberd.dump}
+  Dump internal Mnesia database to a text file dump.
+\titem {load ejabberd.dump}
+  Restore immediately from a text file dump.
+  This is not recommended for big databases, as it will consume much time,
+  memory and processor. In that case it's preferable to use \term{backup} and \term{install-fallback}.
+%%More information about backuping can
+%%  be found in section~\ref{backup}.
+\titem{import-file, import-dir} \ind{migration from other software}
+  These options can be used to migrate from other \Jabber{}/XMPP servers. There
+  exist tutorials to \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
+\titem{delete-expired-messages} This option can be used to delete old messages
+  in offline storage. This might be useful when the number of offline messages
+  is very high.
+\end{description}
+
+\makesubsection{accesscommands}{Restrict Execution with AccessCommands}
+
+The frontends can be configured to restrict access to certain commands.
+In that case, authentication information must be provided.
+In each frontend the \term{AccessCommands} option is defined
+in a different place. But in all cases the option syntax is the same:
+\begin{verbatim}
+AccessCommands = [ {Access, CommandNames, Arguments} ]
+Access = atom()
+CommandNames = all | [CommandName]
+CommandName = atom()
+Arguments = [{ArgumentName, ArgumentValue}]
+ArgumentName = atom()
+ArgumentValue = any()
+\end{verbatim}
+
+The default value is to not define any restriction: \term{[]}.
+If at least one restriction is defined, then the frontend expects 
+that authentication information is provided when executing a command.
+The authentication information is Username, Hostname and Password of a local Jabber account
+that has permission to execute the corresponding command.
+This means that the account must be registered in the local ejabberd,
+because the information will be verified.
+It is possible to provide the plaintext password or its MD5 sum.
+
+When one or several access restrictions are defined and the
+authentication information is provided,
+each restriction is verified until one matches completely:
+the account matches the Access rule,
+the command name is listed in CommandNames,
+and the provided arguments do not contradict Arguments.
+
+As an example to understand the syntax, let's suppose those options:
+\begin{verbatim}
+{hosts, ["example.org"]}.
+{acl, bots, {user, "robot1", "example.org"}}.
+{access, commaccess, [{allow, bots}]}.
+\end{verbatim}
+
+This list of access restrictions allows only \term{robot1@example.org} to execute all commands:
+\begin{verbatim}
+[{commaccess, all, []}]
+\end{verbatim}
+
+See another list of restrictions (the corresponding ACL and ACCESS are not shown):
+\begin{verbatim}
+[
+ %% This bot can execute all commands:
+ {bot, all, []},
+ %% This bot can only execute the command 'dump'. No argument restriction:
+ {bot_backups, [dump], []}
+ %% This bot can execute all commands,
+ %% but if a 'host' argument is provided, it must be "example.org":
+ {bot_all_example, all, [{host, "example.org"}]},
+ %% This bot can only execute the command 'register',
+ %% and if argument 'host' is provided, it must be "example.org":
+ {bot_reg_example, [register], [{host, "example.org"}]},
+ %% This bot can execute the commands 'register' and 'unregister',
+ %% if argument host is provided, it must be "test.org":
+ {_bot_reg_test, [register, unregister], [{host, "test.org"}]}
+]
+\end{verbatim}
 
 \makesection{webadmin}{Web Admin}
 \ind{web admin}
@@ -4408,8 +4538,8 @@ For example, the default configuration is:
 
 The log files grow continually, so it is recommended to rotate them periodically.
 To rotate the log files, rename the files and then reopen them.
-The ejabberd command \term{reopen-log} 
-(please refer to section \ref{commands})
+The ejabberdctl command \term{reopen-log} 
+(please refer to section \ref{ectl-commands})
 reopens the log files,
 and also renames the old ones if you didn't rename them.
 
