@@ -1,5 +1,8 @@
 2009-04-22  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_c2s.erl: Fix for SASL Anonymous connections not
+	stored or purged (thanks to Andy Skelton)(EJAB-912)
+
 	* src/mod_shared_roster.erl: Support in API to add 'all' as member
 	of a group (thanks to Martin Langhoff)(EJAB-916)
 

@@ -407,9 +407,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			  StateData#state.streamid, D) of
 			    {true, AuthModule} ->
 				?INFO_MSG(
-				  "(~w) Accepted legacy authentication for ~s",
+				  "(~w) Accepted legacy authentication for ~s by ~s",
 				  [StateData#state.socket,
-				    exmpp_jid:jid_to_binary(JID)]),
+				    exmpp_jid:jid_to_binary(JID), AuthModule]),
 				SID = {now(), self()},
 				Conn = get_conn_type(StateData),
 				Info = [{ip, StateData#state.ip}, {conn, Conn},
@@ -513,12 +513,14 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		      StateData#state.socket),
 		    send_element(StateData, exmpp_server_sasl:success()),
 		    U = proplists:get_value(username, Props),
-		    ?INFO_MSG("(~w) Accepted authentication for ~s",
-			      [StateData#state.socket, U]),
+		    AuthModule = proplists:get_value(auth_module, Props),
+		    ?INFO_MSG("(~w) Accepted authentication for ~s by ~s",
+			      [StateData#state.socket, U, AuthModule]),
 		    fsm_next_state(wait_for_stream,
 				   StateData#state{
 				     streamid = new_id(),
 				     authenticated = true,
+				     auth_module = AuthModule,
 				     user = list_to_binary(U) });
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
@@ -628,8 +630,8 @@ wait_for_sasl_response({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		    send_element(StateData, exmpp_server_sasl:success()),
 		    U = proplists:get_value(username, Props),
 		    AuthModule = proplists:get_value(auth_module, Props),
-		    ?INFO_MSG("(~w) Accepted authentication for ~s",
-			      [StateData#state.socket, U]),
+		    ?INFO_MSG("(~w) Accepted authentication for ~s by ~s",
+			      [StateData#state.socket, U, AuthModule]),
 		    fsm_next_state(wait_for_stream,
 				   StateData#state{
 				     streamid = new_id(),
