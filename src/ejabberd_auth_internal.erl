@@ -84,14 +84,14 @@ check_password(User, Server, Password) ->
 	    false
     end.
 
-%% @spec (User, Server, Password, StreamID, Digest) -> bool()
+%% @spec (User, Server, Password, Digest, DigestGen) -> bool()
 %%     User = string()
 %%     Server = string()
 %%     Password = string()
-%%     StreamID = string()
 %%     Digest = string()
+%%     DigestGen = function()
 
-check_password(User, Server, Password, StreamID, Digest) ->
+check_password(User, Server, Password, Digest, DigestGen) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
@@ -99,7 +99,7 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	[#passwd{password = Passwd}] ->
 	    DigRes = if
 			 Digest /= "" ->
-			     Digest == sha:sha(StreamID ++ Passwd);
+			     Digest == DigestGen(Passwd);
 			 true ->
 			     false
 		     end,

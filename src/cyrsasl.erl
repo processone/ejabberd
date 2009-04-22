@@ -30,7 +30,7 @@
 -export([start/0,
 	 register_mechanism/3,
 	 listmech/1,
-	 server_new/6,
+	 server_new/7,
 	 server_start/3,
 	 server_step/2]).
 
@@ -53,7 +53,7 @@
 %% State of this process.
 
 -record(sasl_state, {service, myname, realm,
-		     get_password, check_password,
+		     get_password, check_password, check_password_digest,
 		     mech_mod, mech_state}).
 
 -export([behaviour_info/1]).
@@ -61,7 +61,7 @@
 %% @hidden
 
 behaviour_info(callbacks) ->
-    [{mech_new, 3}, {mech_step, 2}];
+    [{mech_new, 4}, {mech_step, 2}];
 behaviour_info(_Other) ->
     undefined.
 
@@ -157,12 +157,13 @@ listmech(Host) ->
 %%     CheckPassword = function()
 
 server_new(Service, ServerFQDN, UserRealm, _SecFlags,
-	   GetPassword, CheckPassword) ->
+	   GetPassword, CheckPassword, CheckPasswordDigest) ->
     #sasl_state{service = Service,
 		myname = ServerFQDN,
 		realm = UserRealm,
 		get_password = GetPassword,
-		check_password = CheckPassword}.
+		check_password = CheckPassword,
+		check_password_digest= CheckPasswordDigest}.
 
 %% @spec (State, Mech, ClientIn) -> Ok | Continue | Error
 %%     State = saslstate()
@@ -188,7 +189,8 @@ server_start(State, Mech, ClientIn) ->
 		    {ok, MechState} = Module:mech_new(
 					State#sasl_state.myname,
 					State#sasl_state.get_password,
-					State#sasl_state.check_password),
+					State#sasl_state.check_password,
+					State#sasl_state.check_password_digest),
 		    server_step(State#sasl_state{mech_mod = Module,
 						 mech_state = MechState},
 				ClientIn);

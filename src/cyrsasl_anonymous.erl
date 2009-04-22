@@ -27,7 +27,7 @@
 
 -module(cyrsasl_anonymous).
 
--export([start/1, stop/0, mech_new/3, mech_step/2]).
+-export([start/1, stop/0, mech_new/4, mech_step/2]).
 
 -behaviour(cyrsasl).
 
@@ -48,13 +48,13 @@ start(_Opts) ->
 stop() ->
     ok.
 
-%% @spec (Host, GetPassword, CheckPassword) -> {ok, State}
+%% @spec (Host, GetPassword, CheckPassword, CheckPasswordDigest) -> {ok, State}
 %%     Host = string()
 %%     GetPassword = function()
 %%     CheckPassword = function()
 %%     State = mechstate()
 
-mech_new(Host, _GetPassword, _CheckPassword) ->
+mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
     {ok, #state{server = Host}}.
 
 %% @spec (State, ClientIn) -> Ok | Error

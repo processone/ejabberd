@@ -91,14 +91,14 @@ check_password(User, Server, Password) ->
 	    false
     end.
 
-%% @spec (User, Server, Password, StreamID, Digest) -> bool()
+%% @spec (User, Server, Password, Digest, DigestGen) -> bool()
 %%     User = string()
 %%     Server = string()
 %%     Password = string()
-%%     StreamID = string()
 %%     Digest = string()
+%%     DigestGen = function()
 
-check_password(User, Server, Password, StreamID, Digest) ->
+check_password(User, Server, Password, Digest, DigestGen) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	Username = ejabberd_odbc:escape(LUser),
@@ -108,7 +108,7 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	    {selected, ["password"], [{Passwd}]} ->
 		DigRes = if
 		    Digest /= "" ->
-			Digest == sha:sha(StreamID ++ Passwd);
+				     Digest == DigestGen(Passwd);
 		    true ->
 			false
 		end,

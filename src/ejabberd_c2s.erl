@@ -257,6 +257,10 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 					  fun(U, P) ->
 						  ejabberd_auth:check_password_with_authmodule(
 						    U, Server, P)
+					  end,
+					  fun(U, P, D, DG) ->
+						  ejabberd_auth:check_password_with_authmodule(
+						    U, Server, P, D, DG)
 					  end),
 				    SASL_Mechs = [exmpp_server_sasl:feature(
 					cyrsasl:listmech(Server))],
@@ -402,9 +406,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		case acl:match_rule(ServerString,
 		  StateData#state.access, JID) of
 		    allow ->
+                        DGen = fun(PW) ->
+                             sha:sha(StateData#state.streamid ++ PW) end,
 			case ejabberd_auth:check_password_with_authmodule(
 			  U, ServerString, P,
-			  StateData#state.streamid, D) of
+			  D, DGen) of
 			    {true, AuthModule} ->
 				?INFO_MSG(
 				  "(~w) Accepted legacy authentication for ~s by ~s",

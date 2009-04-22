@@ -1,5 +1,22 @@
 2009-04-22  Badlop  <badlop@process-one.net>
 
+	* src/cyrsasl.erl: Change API of check_password: pass a function
+	to generate the digest (thanks to Graham Whitted)(EJAB-863)
+	* src/cyrsasl_anonymous.erl: Likewise
+	* src/cyrsasl_digest.erl: Likewise
+	* src/cyrsasl_plain.erl: Likewise
+	* src/ejabberd_auth.erl: Likewise
+	* src/ejabberd_auth_anonymous.erl: Likewise
+	* src/ejabberd_auth_external.erl: Likewise
+	* src/ejabberd_auth_internal.erl: Likewise
+	* src/ejabberd_auth_ldap.erl: Likewise
+	* src/ejabberd_auth_odbc.erl: Likewise
+	* src/ejabberd_auth_pam.erl: Likewise
+	* src/ejabberd_c2s.erl: Likewise
+
+	* src/ejabberd_c2s.erl: Fix for SASL Anonymous connections not
+	stored or purged (thanks to Andy Skelton)(EJAB-912)
+
 	* src/ejabberd_c2s.erl: Fix for SASL Anonymous connections not
 	stored or purged (thanks to Andy Skelton)(EJAB-912)
 

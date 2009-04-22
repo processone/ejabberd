@@ -11,14 +11,14 @@
 
 -export([start/1,
 	 stop/0,
-	 mech_new/3,
+	 mech_new/4,
 	 mech_step/2]).
 
 -include("ejabberd.hrl").
 
 -behaviour(cyrsasl).
 
-%% @type mechstate() = {state, Step, Nonce, Username, AuthzId, GetPassword, AuthModule, Host}
+%% @type mechstate() = {state, Step, Nonce, Username, AuthzId, GetPassword, CheckPassword, AuthModule, Host}
 %%     Step = 1 | 3 | 5
 %%     Nonce = string()
 %%     Username = string()
@@ -27,7 +27,7 @@
 %%     AuthModule = atom()
 %%     Host = string().
 
--record(state, {step, nonce, username, authzid, get_password, auth_module,
+-record(state, {step, nonce, username, authzid, get_password, check_password, auth_module,
 		host}).
 
 %% @spec (Opts) -> true
@@ -41,17 +41,18 @@ start(_Opts) ->
 stop() ->
     ok.
 
-%% @spec (Host, GetPassword, CheckPassword) -> {ok, State}
+%% @spec (Host, GetPassword, CheckPassword, CheckPasswordDigest) -> {ok, State}
 %%     Host = string()
 %%     GetPassword = function()
 %%     CheckPassword = function()
 %%     State = mechstate()
 
-mech_new(Host, GetPassword, _CheckPassword) ->
+mech_new(Host, GetPassword, _CheckPassword, CheckPasswordDigest) ->
     {ok, #state{step = 1,
 		nonce = randoms:get_string(),
 		host = Host,
-		get_password = GetPassword}}.
+		get_password = GetPassword,
+		check_password = CheckPasswordDigest}}.
 
 %% @spec (State, ClientIn) -> Ok | Continue | Error
 %%     State = mechstate()
@@ -91,10 +92,11 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 			{false, _} ->
 			    {error, 'not-authorized', UserName};
 			{Passwd, AuthModule} ->
-			    Response = response(KeyVals, UserName, Passwd,
-						Nonce, AuthzId, "AUTHENTICATE"),
-			    case proplists:get_value("response", KeyVals, "") of
-				Response ->
+				case (State#state.check_password)(UserName, Passwd,
+					proplists:get_value("response", KeyVals, ""),
+					fun(PW) -> response(KeyVals, UserName, PW, Nonce, AuthzId,
+						"AUTHENTICATE") end) of
+				{true, _} ->
 				    RspAuth = response(KeyVals,
 						       UserName, Passwd,
 						       Nonce, AuthzId, ""),
@@ -104,7 +106,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 						 auth_module = AuthModule,
 						 username = UserName,
 						 authzid = AuthzId}};
-				_ ->
+				{false, _} ->
 				    {error, 'not-authorized', UserName}
 			    end
 		    end

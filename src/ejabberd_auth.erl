@@ -97,19 +97,19 @@ check_password(User, Server, Password)
 	false -> false
     end.
 
-%% @spec (User, Server, Password, StreamID, Digest) -> bool()
+%% @spec (User, Server, Password, Digest, DigestGen) -> bool()
 %%     User = string()
 %%     Server = string()
 %%     Password = string()
-%%     StreamID = string()
 %%     Digest = string()
+%%     DigestGen = function()
 %% @doc Check if the user and password can login in server.
 
-check_password(User, Server, Password, StreamID, Digest)
+check_password(User, Server, Password, Digest, DigestGen)
   when is_list(User), is_list(Server), is_list(Password),
-  is_list(StreamID), is_list(Digest) ->
+  is_list(Digest), is_function(DigestGen) ->
     case check_password_with_authmodule(User, Server, Password,
-					StreamID, Digest) of
+					Digest, DigestGen) of
 	{true, _AuthModule} -> true;
 	false -> false
     end.
@@ -128,22 +128,22 @@ check_password_with_authmodule(User, Server, Password)
   when is_list(User), is_list(Server), is_list(Password) ->
     check_password_loop(auth_modules(Server), [User, Server, Password]).
 
-%% @spec (User, Server, Password, StreamID, Digest) -> {true, AuthModule} | false
+%% @spec (User, Server, Password, Digest, DigestGen) -> {true, AuthModule} | false
 %%     User = string()
 %%     Server = string()
 %%     Password = string() | undefined
-%%     StreamID = string()
 %%     Digest = string() | undefined
+%%     DigestGen = function()
 %%     AuthModule = authmodule()
 %% The password is 'undefined' if the client
 %% authenticates using the digest method as defined in 
 %% XEP-0078: Non-SASL Authentication
 
-check_password_with_authmodule(User, Server, Password, StreamID, Digest)
+check_password_with_authmodule(User, Server, Password, Digest, DigestGen)
   when is_list(User), is_list(Server), (is_list(Password) orelse Password == 'undefined'),
-  is_list(StreamID), (is_list(Digest) orelse Digest == 'undefined')->
+  is_function(DigestGen), (is_list(Digest) orelse Digest == 'undefined')->
     check_password_loop(auth_modules(Server), [User, Server, Password,
-					       StreamID, Digest]).
+					       Digest, DigestGen]).
 
 check_password_loop([], _Args) ->
     false;

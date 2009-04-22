@@ -64,12 +64,12 @@ start(_Host) ->
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.
 
-%% @spec (User, Server, Password, StreamID, Digest) -> bool()
+%% @spec (User, Server, Password, Digest, DigestGen) -> bool()
 %%     User = string()
 %%     Server = string()
 %%     Password = string()
-%%     StreamID = string()
 %%     Digest = string()
+%%     DigestGen = function()
 
 check_password(User, Server, Password, _StreamID, _Digest) ->
     check_password(User, Server, Password).
