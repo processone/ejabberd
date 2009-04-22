@@ -2612,11 +2612,16 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 			{?NS_DATA_FORMS, <<"cancel">>} ->
 			    {result, [], StateData};
 			{?NS_DATA_FORMS, <<"submit">>} ->
-			    case {check_allowed_log_change(XEl, StateData, From),
-					check_allowed_persistent_change(XEl, StateData, From)} of
-					{allow, allow} -> set_config(XEl, StateData);
-					_ -> {error, 'bad-request'}
-				end;
+			    case is_allowed_log_change(XEl, StateData, From)
+				andalso
+				is_allowed_persistent_change(XEl, StateData,
+							     From)
+				andalso
+				is_allowed_room_name_desc_limits(XEl,
+								 StateData) of
+				true -> set_config(XEl, StateData);
+				false -> {error, 'bad-request'}
+			    end;
 			_ ->
 			    {error, 'bad-request'}
 		    end;
@@ -2667,25 +2672,50 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 	    {error, ?ERR(SubEl, 'forbidden', Lang, ErrText)}
     end.
 
-check_allowed_log_change(XEl, StateData, From) ->
+is_allowed_log_change(XEl, StateData, From) ->
     case lists:keymember("muc#roomconfig_enablelogging", 1,
 			 jlib:parse_xdata_submit(XEl)) of
 	false ->
-	    allow;
+	    true;
 	true ->
-	    mod_muc_log:check_access_log(
-	      StateData#state.server_host, From)
+	    (allow == mod_muc_log:check_access_log(
+	      StateData#state.server_host, From))
     end.
 
-check_allowed_persistent_change(XEl, StateData, From) ->
+is_allowed_persistent_change(XEl, StateData, From) ->
     case lists:keymember("muc#roomconfig_persistentroom", 1,
 			 jlib:parse_xdata_submit(XEl)) of
 	false ->
-	    allow;
+	    true;
 	true ->
 		{_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = StateData#state.access,
 		acl:match_rule(StateData#state.server_host, AccessPersistent, From)
     end.
+
+%% Check if the Room Name and Room Description defined in the Data Form
+%% are conformant to the configured limits
+is_allowed_room_name_desc_limits(XEl, StateData) ->
+    IsNameAccepted =
+	case lists:keysearch("muc#roomconfig_roomname", 1,
+			     jlib:parse_xdata_submit(XEl)) of
+	    {value, {_, [N]}} ->
+		length(N) =< gen_mod:get_module_opt(StateData#state.server_host,
+						    mod_muc, max_room_name,
+						    infinite);
+	    _ ->
+		true
+	end,
+    IsDescAccepted =
+	case lists:keysearch("muc#roomconfig_roomdesc", 1,
+			     jlib:parse_xdata_submit(XEl)) of
+	    {value, {_, [D]}} ->
+		length(D) =< gen_mod:get_module_opt(StateData#state.server_host,
+						    mod_muc, max_room_desc,
+						    infinite);
+	    _ ->
+		true
+	end,
+    IsNameAccepted and IsDescAccepted.
 
 -define(XFIELD(Type, Label, Var, Val),
     #xmlel{name = 'field', 

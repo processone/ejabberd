@@ -2098,6 +2098,18 @@ number of rooms that any given user can join. The default value
 is 10. This option is used to prevent possible abuses. Note that
 this is a soft limit: some users can sometimes join more conferences
 in cluster configurations.
+</DD><DT CLASS="dt-description"><B><TT>max_room_id</TT></B></DT><DD CLASS="dd-description"> 
+This option defines the maximum number of characters that Room ID
+can have when creating a new room.
+The default value is to not limit: infinite.
+</DD><DT CLASS="dt-description"><B><TT>max_room_name</TT></B></DT><DD CLASS="dd-description"> 
+This option defines the maximum number of characters that Room Name
+can have when configuring the room.
+The default value is to not limit: infinite.
+</DD><DT CLASS="dt-description"><B><TT>max_room_desc</TT></B></DT><DD CLASS="dd-description"> 
+This option defines the maximum number of characters that Room Description
+can have when configuring the room.
+The default value is to not limit: infinite.
 </DD><DT CLASS="dt-description"><B><TT>min_message_interval</TT></B></DT><DD CLASS="dd-description"> 
 This option defines the minimum interval between two messages send
 by an occupant in seconds. This option is global and valid for all
@@ -2209,12 +2221,17 @@ and the default value of 20 history messages will be send to the users.
  ]}.
 </PRE></LI><LI CLASS="li-itemize">In the following example, MUC anti abuse options are used. An
 occupant cannot send more than one message every 0.4 seconds and cannot
-change its presence more than once every 4 seconds. No ACLs are
+change its presence more than once every 4 seconds.
+The length of Room IDs and Room Names are limited to 20 characters,
+and Room Description to 300 characters. No ACLs are
 defined, but some user restriction could be added as well:<PRE CLASS="verbatim">{modules,
  [
   ...
   {mod_muc, [{min_message_interval, 0.4},
-             {min_presence_interval, 4}]},
+             {min_presence_interval, 4},
+             {max_room_id, 20},
+             {max_room_name, 20},
+             {max_room_desc, 300}]},
   ...
  ]}.
 </PRE></LI><LI CLASS="li-itemize">This example shows how to use <TT>default_room_options</TT> to make sure

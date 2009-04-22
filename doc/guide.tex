@@ -2763,6 +2763,18 @@ Module options:
   is 10. This option is used to prevent possible abuses. Note that
   this is a soft limit: some users can sometimes join more conferences
   in cluster configurations.
+\titem{max\_room\_id} \ind{options!max\_room\_id}
+  This option defines the maximum number of characters that Room ID
+  can have when creating a new room.
+  The default value is to not limit: infinite.
+\titem{max\_room\_name} \ind{options!max\_room\_name}
+  This option defines the maximum number of characters that Room Name
+  can have when configuring the room.
+  The default value is to not limit: infinite.
+\titem{max\_room\_desc} \ind{options!max\_room\_desc}
+  This option defines the maximum number of characters that Room Description
+  can have when configuring the room.
+  The default value is to not limit: infinite.
 \titem{min\_message\_interval} \ind{options!min\_message\_interval}
   This option defines the minimum interval between two messages send
   by an occupant in seconds. This option is global and valid for all
@@ -2881,7 +2893,9 @@ Examples:
 
 \item In the following example, MUC anti abuse options are used. An
 occupant cannot send more than one message every 0.4 seconds and cannot
-change its presence more than once every 4 seconds. No ACLs are
+change its presence more than once every 4 seconds.
+The length of Room IDs and Room Names are limited to 20 characters,
+and Room Description to 300 characters. No ACLs are
 defined, but some user restriction could be added as well:
 
 \begin{verbatim}
@@ -2889,7 +2903,10 @@ defined, but some user restriction could be added as well:
  [
   ...
   {mod_muc, [{min_message_interval, 0.4},
-             {min_presence_interval, 4}]},
+             {min_presence_interval, 4},
+             {max_room_id, 20},
+             {max_room_name, 20},
+             {max_room_desc, 300}]},
   ...
  ]}.
 \end{verbatim}
