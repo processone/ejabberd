@@ -449,9 +449,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			   StateData#state.streamid, D) of
 			{true, AuthModule} ->
 			    ?INFO_MSG(
-			       "(~w) Accepted legacy authentication for ~s",
+			       "(~w) Accepted legacy authentication for ~s by ~p",
 			       [StateData#state.socket,
-				jlib:jid_to_string(JID)]),
+				jlib:jid_to_string(JID), AuthModule]),
 			    SID = {now(), self()},
 			    Conn = get_conn_type(StateData),
 			    Info = [{ip, StateData#state.ip}, {conn, Conn},
@@ -558,12 +558,14 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				 {xmlelement, "success",
 				  [{"xmlns", ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
-		    ?INFO_MSG("(~w) Accepted authentication for ~s",
-			      [StateData#state.socket, U]),
+		    AuthModule = xml:get_attr_s(auth_module, Props),
+		    ?INFO_MSG("(~w) Accepted authentication for ~s by ~p",
+			      [StateData#state.socket, U, AuthModule]),
 		    fsm_next_state(wait_for_stream,
 				   StateData#state{
 				     streamid = new_id(),
 				     authenticated = true,
+				     auth_module = AuthModule,
 				     user = U });
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
@@ -691,8 +693,8 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				  [{"xmlns", ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
 		    AuthModule = xml:get_attr_s(auth_module, Props),
-		    ?INFO_MSG("(~w) Accepted authentication for ~s",
-			      [StateData#state.socket, U]),
+		    ?INFO_MSG("(~w) Accepted authentication for ~s by ~p",
+			      [StateData#state.socket, U, AuthModule]),
 		    fsm_next_state(wait_for_stream,
 				   StateData#state{
 				     streamid = new_id(),
