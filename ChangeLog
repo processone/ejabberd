@@ -1,5 +1,8 @@
 2009-04-22  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_captcha.erl: If a problem appears while obtaining
+	the image, show error message (EJAB-895)
+
 	* src/Makefile.in: Install example script captcha.sh (EJAB-895)
 
 	* src/ejabberd.cfg.example: Add CAPTCHA options (EJAB-895)

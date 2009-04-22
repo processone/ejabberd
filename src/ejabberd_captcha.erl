@@ -283,6 +283,11 @@ create_image(Key) ->
 	    {ok, "image/jpeg", Key, Img};
 	{ok, <<$G, $I, $F, $8, X, $a, _/binary>> = Img} when X==$7; X==$9 ->
 	    {ok, "image/gif", Key, Img};
+	{error, enodata = Reason} ->
+	    ?ERROR_MSG("Failed to process output from \"~s\". "
+		       "Maybe ImageMagick's Convert program is not installed.",
+		       [Cmd]),
+	    {error, Reason};
 	{error, Reason} ->
 	    ?ERROR_MSG("Failed to process an output from \"~s\": ~p",
 		       [Cmd, Reason]),
