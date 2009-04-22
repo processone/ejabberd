@@ -1,5 +1,7 @@
 2009-04-22  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.cfg.example: Add CAPTCHA options (EJAB-895)
+
 	* doc/guide.tex: Add section to document how to setup CAPTCHA
 	support (EJAB-895)
 	* doc/guide.html: Likewise
