@@ -561,15 +561,28 @@ is_user_in_group({_U, S} = US, Group, Host) ->
 %% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
 add_user_to_group(Host, US, Group) ->
     {LUser, LServer} = US,
-    %% Push this new user to members of groups where this group is displayed
-    push_user_to_displayed(LUser, LServer, Group, both),
-    %% Push members of groups that are displayed to this group
-    push_displayed_to_user(LUser, LServer, Group, Host, both),
-    R = #sr_user{us = US, group_host = {Group, Host}},
-    F = fun() ->
-		mnesia:write(R)
-	end,
-    mnesia:transaction(F).
+    case regexp:match(LUser, "^@.+@$") of
+	{match,_,_} ->
+	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
+	    AllUsersOpt =
+		case LUser == "@all@" of
+		    true -> [{all_users, true}];
+		    false -> []
+		end,
+            mod_shared_roster:set_group_opts(
+	      Host, Group,
+	      GroupOpts ++ AllUsersOpt);
+	nomatch ->
+	    %% Push this new user to members of groups where this group is displayed
+	    push_user_to_displayed(LUser, LServer, Group, both),
+	    %% Push members of groups that are displayed to this group
+	    push_displayed_to_user(LUser, LServer, Group, Host, both),
+	    R = #sr_user{us = US, group_host = {Group, Host}},
+	    F = fun() ->
+			mnesia:write(R)
+	        end,
+	    mnesia:transaction(F)
+    end.
 
 push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
     GroupsOpts = groups_with_opts(LServer),
@@ -579,17 +592,29 @@ push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
 
 remove_user_from_group(Host, US, Group) ->
     GroupHost = {Group, Host},
-    R = #sr_user{us = US, group_host = GroupHost},
-    F = fun() ->
-		mnesia:delete_object(R)
-	end,
-    Result = mnesia:transaction(F),
     {LUser, LServer} = US,
-    %% Push removal of the old user to members of groups where the group that this user was members was displayed
-    push_user_to_displayed(LUser, LServer, Group, remove),
-    %% Push removal of members of groups that where displayed to the group which this user has left
-    push_displayed_to_user(LUser, LServer, Group, Host, remove),
-    Result.
+    case regexp:match(LUser, "^@.+@$") of
+	{match,_,_} ->
+	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
+	    NewGroupOpts =
+		case LUser of
+		    "@all@" ->
+			lists:filter(fun(X) -> X/={all_users,true} end, GroupOpts)
+		end,
+	    mod_shared_roster:set_group_opts(Host, Group, NewGroupOpts);
+	nomatch ->
+	    R = #sr_user{us = US, group_host = GroupHost},
+	    F = fun() ->
+			mnesia:delete_object(R)
+		end,
+	    Result = mnesia:transaction(F),
+	    %% Push removal of the old user to members of groups where the group that this user was members was displayed
+	    push_user_to_displayed(LUser, LServer, Group, remove),
+	    %% Push removal of members of groups that where displayed to the group which this user has left
+	    push_displayed_to_user(LUser, LServer, Group, Host, remove),
+	    Result
+    end.
+
 
 push_members_to_user(LUser, LServer, Group, Host, Subscription) ->
     GroupsOpts = groups_with_opts(LServer),

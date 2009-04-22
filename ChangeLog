@@ -1,3 +1,8 @@
+2009-04-22  Badlop  <badlop@process-one.net>
+
+	* src/mod_shared_roster.erl: Support in API to add 'all' as member
+	of a group (thanks to Martin Langhoff)(EJAB-916)
+
 2009-04-17  Badlop  <badlop@process-one.net>
 
 	* doc/guide.tex: Document new ejabberdctl option. New section that
