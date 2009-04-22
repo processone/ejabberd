@@ -1,3 +1,10 @@
+
+2009-04-23  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: improve send last published items
+	(not spawned as much) and allow to send last PEP items of our offline
+	contacts if configured for (fix discussion issue on standars ML)
+
 2009-04-22  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd.cfg.example: Fix English typos. Fix line length:
