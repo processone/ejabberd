@@ -147,7 +147,7 @@ check_password(User, Server, Password) ->
         end
     end.
 
-check_password(User, Server, Password, _StreamID, _Digest) ->
+check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
 
 set_password(_User, _Server, _Password) ->

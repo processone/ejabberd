@@ -11,14 +11,14 @@
 
 -export([start/1,
 	 stop/0,
-	 mech_new/3,
+	 mech_new/4,
 	 mech_step/2]).
 
 -include("ejabberd.hrl").
 
 -behaviour(cyrsasl).
 
--record(state, {step, nonce, username, authzid, get_password, auth_module,
+-record(state, {step, nonce, username, authzid, get_password, check_password, auth_module,
 		host}).
 
 start(_Opts) ->
@@ -27,11 +27,12 @@ start(_Opts) ->
 stop() ->
     ok.
 
-mech_new(Host, GetPassword, _CheckPassword) ->
+mech_new(Host, GetPassword, _CheckPassword, CheckPasswordDigest) ->
     {ok, #state{step = 1,
 		nonce = randoms:get_string(),
 		host = Host,
-		get_password = GetPassword}}.
+		get_password = GetPassword,
+		check_password = CheckPasswordDigest}}.
 
 mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
     {continue,
@@ -56,10 +57,11 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 			{false, _} ->
 			    {error, "not-authorized", UserName};
 			{Passwd, AuthModule} ->
-			    Response = response(KeyVals, UserName, Passwd,
-						Nonce, AuthzId, "AUTHENTICATE"),
-			    case xml:get_attr_s("response", KeyVals) of
-				Response ->
+				case (State#state.check_password)(UserName, Passwd,
+					xml:get_attr_s("response", KeyVals),
+					fun(PW) -> response(KeyVals, UserName, PW, Nonce, AuthzId,
+						"AUTHENTICATE") end) of
+				{true, _} ->
 				    RspAuth = response(KeyVals,
 						       UserName, Passwd,
 						       Nonce, AuthzId, ""),
@@ -69,7 +71,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 						 auth_module = AuthModule,
 						 username = UserName,
 						 authzid = AuthzId}};
-				_ ->
+				{false, _} ->
 				    {error, "not-authorized", UserName}
 			    end
 		    end

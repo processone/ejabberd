@@ -73,7 +73,7 @@ check_password(User, Server, Password) ->
 	    false
     end.
 
-check_password(User, Server, Password, StreamID, Digest) ->
+check_password(User, Server, Password, Digest, DigestGen) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
@@ -81,7 +81,7 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	[#passwd{password = Passwd}] ->
 	    DigRes = if
 			 Digest /= "" ->
-			     Digest == sha:sha(StreamID ++ Passwd);
+			     Digest == DigestGen(Passwd);
 			 true ->
 			     false
 		     end,

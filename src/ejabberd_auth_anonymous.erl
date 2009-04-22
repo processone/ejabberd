@@ -173,7 +173,7 @@ purge_hook(true, LUser, LServer) ->
 %% before allowing access
 check_password(User, Server, Password) ->
     check_password(User, Server, Password, undefined, undefined).
-check_password(User, Server, _Password, _StreamID, _Digest) ->
+check_password(User, Server, _Password, _Digest, _DigestGen) ->
     %% We refuse login for registered accounts (They cannot logged but
     %% they however are "reserved")
     case ejabberd_auth:is_user_exists_in_other_modules(?MODULE, 
@@ -226,7 +226,7 @@ get_password(User, Server) ->
     get_password(User, Server, "").
 
 get_password(User, Server, DefaultValue) ->
-    case anonymous_user_exist(User, Server) of
+    case anonymous_user_exist(User, Server) or login(User, Server) of
 	%% We return the default value if the user is anonymous
 	true ->
 	    DefaultValue;

@@ -55,7 +55,7 @@ start(_Host) ->
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.
 
-check_password(User, Server, Password, _StreamID, _Digest) ->
+check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
 
 check_password(User, Host, Password) ->

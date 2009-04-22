@@ -258,6 +258,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					  fun(U, P) ->
 						  ejabberd_auth:check_password_with_authmodule(
 						    U, Server, P)
+					  end,
+					  fun(U, P, D, DG) ->
+						  ejabberd_auth:check_password_with_authmodule(
+						    U, Server, P, D, DG)
 					  end),
 				    Mechs = lists:map(
 					      fun(S) ->
@@ -444,9 +448,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		(acl:match_rule(StateData#state.server,
 				StateData#state.access, JID) == allow) of
 		true ->
+                    DGen = fun(PW) ->
+                             sha:sha(StateData#state.streamid ++ PW) end,
 		    case ejabberd_auth:check_password_with_authmodule(
-			   U, StateData#state.server, P,
-			   StateData#state.streamid, D) of
+			   U, StateData#state.server, P, D, DGen) of
 			{true, AuthModule} ->
 			    ?INFO_MSG(
 			       "(~w) Accepted legacy authentication for ~s by ~p",

@@ -57,7 +57,7 @@ plain_password_required() ->
 check_password(User, Server, Password) ->
     extauth:check_password(User, Server, Password) andalso Password /= "".
 
-check_password(User, Server, Password, _StreamID, _Digest) ->
+check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
 
 set_password(User, Server, Password) ->

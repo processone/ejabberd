@@ -84,12 +84,12 @@ check_password(User, Server, Password) ->
     end.
 
 %% @doc Check if the user and password can login in server.
-%% @spec (User::string(), Server::string(), Password::string(),
-%%        StreamID::string(), Digest::string()) ->
+%% @spec (User::string(), Server::string(), Password::string()
+%%        Digest::string(), DigestGen::function()) ->
 %%     true | false
-check_password(User, Server, Password, StreamID, Digest) ->
+check_password(User, Server, Password, Digest, DigestGen) ->
     case check_password_with_authmodule(User, Server, Password,
-					StreamID, Digest) of
+					Digest, DigestGen) of
 	{true, _AuthModule} -> true;
 	false -> false
     end.
@@ -107,9 +107,9 @@ check_password(User, Server, Password, StreamID, Digest) ->
 check_password_with_authmodule(User, Server, Password) ->
     check_password_loop(auth_modules(Server), [User, Server, Password]).
 
-check_password_with_authmodule(User, Server, Password, StreamID, Digest) ->
+check_password_with_authmodule(User, Server, Password, Digest, DigestGen) ->
     check_password_loop(auth_modules(Server), [User, Server, Password,
-					       StreamID, Digest]).
+					       Digest, DigestGen]).
 
 check_password_loop([], _Args) ->
     false;
