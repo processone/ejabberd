@@ -460,8 +460,10 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		    Type = xml:get_attr_s("type", Attrs),
 		    case {Name, Type} of
 			{"presence", ""} ->
-			    case acl:match_rule(ServerHost, AccessCreate, From) of
-				allow ->
+			    case check_user_can_create_room(ServerHost,
+							    AccessCreate, From,
+							    Room) of
+				true ->
 				    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 				    {ok, Pid} = mod_muc_room:start(
 						  Host, ServerHost, Access,
@@ -471,7 +473,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    register_room(Host, Room, Pid),
 				    mod_muc_room:route(Pid, From, Nick, Packet),
 				    ok;
-				_ ->
+				false ->
 				    Lang = xml:get_attr_s("xml:lang", Attrs),
 				    ErrText = "Room creation is denied by service policy",
 				    Err = jlib:make_error_reply(
@@ -493,7 +495,14 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	    end
     end.
 
-
+check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
+    case acl:match_rule(ServerHost, AccessCreate, From) of
+	allow ->
+	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, mod_muc,
+						      max_room_id, infinite));
+	_ ->
+	    false
+    end.
 
 
 load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
