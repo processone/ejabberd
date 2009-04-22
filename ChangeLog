@@ -1,5 +1,8 @@
 2009-04-22  Badlop  <badlop@process-one.net>
 
+	* src/mod_shared_roster.erl: Support in API to add 'all' as member
+	of a group (thanks to Martin Langhoff)(EJAB-916)
+
 	* src/ejabberd_captcha.erl: If a problem appears while obtaining
 	the image, show error message (EJAB-895)
 
