@@ -1,5 +1,11 @@
 2009-04-22  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd.cfg.example: Fix English typos. Fix line length:
+	max 80 characters per line. Remove trailing blankspaces. Added
+	markers for Vim fold, you may want to add to $HOME/.vimrc this
+	line: set modeline
+	* src/ejabberdctl.cfg.example: Likewise
+
 	* src/mod_muc/mod_muc.erl: Limit number of characters in Room ID,
 	Name and Description (EJAB-899)
 	* src/mod_muc/mod_muc_room.erl: Likewise
