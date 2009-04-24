@@ -39,7 +39,7 @@
 
 -module(mod_pubsub).
 -author('christophe.romain@process-one.net').
--version('1.12-03').
+-version('1.12-04').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -166,6 +166,14 @@ init([ServerHost, Opts]) ->
     PepOffline = gen_mod:get_opt(pep_sendlast_offline, Opts, false),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
+    {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
+    ets:new(gen_mod:get_module_proc(Host, pubsub_state), [set, named_table]),
+    ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {nodetree, NodeTree}),
+    ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {plugins, Plugins}),
+    ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
+    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {nodetree, NodeTree}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {plugins, Plugins}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
     ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
@@ -174,8 +182,6 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc),
-    ejabberd_router:register_route(Host),
-    {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
 	    ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
@@ -186,14 +192,8 @@ init([ServerHost, Opts]) ->
 	false ->
 	    ok
     end,
+    ejabberd_router:register_route(Host),
     update_database(Host),
-    ets:new(gen_mod:get_module_proc(Host, pubsub_state), [set, named_table]),
-    ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {nodetree, NodeTree}),
-    ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {plugins, Plugins}),
-    ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
-    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {nodetree, NodeTree}),
-    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {plugins, Plugins}),
-    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
     init_nodes(Host, ServerHost),
     State = #state{host = Host,
 		server_host = ServerHost,
