@@ -369,7 +369,7 @@ send_loop(State) ->
 			    case S of
 			    ServerHost -> %% local contact, so we may have pep items
 				PeerJID = exmpp_jlib:make_jid(U, S, R),
-				handle_cast({presence, User, Server, [Resource], PeerJID}, State);
+				self() ! {presence, User, Server, [Resource], PeerJID};
 			    _ -> %% remote contact, no items available
 				ok
 			    end;
