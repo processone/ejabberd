@@ -34,6 +34,7 @@
 	 sql_query/2,
 	 sql_query_t/1,
 	 sql_transaction/2,
+	 sql_bloc/2,
 	 escape/1,
 	 escape_like/1,
 	 keep_alive/1]).
@@ -86,6 +87,11 @@ sql_transaction(Host, Queries) when is_list(Queries) ->
 sql_transaction(Host, F) ->
     gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
 		    {sql_transaction, F}, ?TRANSACTION_TIMEOUT).
+
+%% SQL bloc, based on a erlang anonymous function (F = fun)
+sql_bloc(Host, F) ->
+    gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
+		    {sql_bloc, F}, ?TRANSACTION_TIMEOUT).
 
 %% This function is intended to be used from inside an sql_transaction:
 sql_query_t(Query) ->
@@ -192,6 +198,17 @@ handle_call({sql_transaction, F}, _From, State) ->
 	Reply ->
 	    {reply, Reply, State}
     end;
+handle_call({sql_bloc, F}, _From, State) ->
+    case execute_bloc(State, F) of
+	% error returned by MySQL driver
+	{error, "query timed out"} ->
+	    {stop, timeout, State};
+	% error returned by MySQL driver
+	{error, "Failed sending data on socket"++_} = Reply ->
+	    {stop, closed, Reply, State};
+	Reply ->
+	    {reply, Reply, State}
+    end;
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -273,6 +290,17 @@ execute_transaction(State, F, NRestarts, _Reason) ->
 	    {aborted, Reason};
 	Res ->
 	    sql_query_internal(State, "commit;"),
+	    {atomic, Res}
+    end.
+
+execute_bloc(State, F) ->
+    put(?STATE_KEY, State),
+    case catch F() of
+	{aborted, Reason} ->
+	    {aborted, Reason};
+	{'EXIT', Reason} ->
+	    {aborted, Reason};
+	Res ->
 	    {atomic, Res}
     end.
 

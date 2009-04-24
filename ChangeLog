@@ -1,3 +1,10 @@
+2009-04-24  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/odbc/ejabberd_odbc.erl: allow to run query bloc as erlang
+	function without transaction
+
+	* src/mod_pubsub/mod_pubsub.erl: do not register handlers and hooks
+	while plugins and ets tables are not initialized.
 
 2009-04-23  Christophe Romain <christophe.romain@process-one.net>
 
