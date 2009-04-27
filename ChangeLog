@@ -1,5 +1,7 @@
 2009-04-27  Badlop  <badlop@process-one.net>
 
+	* src/win32_dns.erl: Fix problem parsing some win32 dns (EJAB-927)
+
 	* src/cyrsasl_digest.erl: Fix auth verification (EJAB-863)
 
 	* src/jlib.erl: Fix recursive call to speedup base64
