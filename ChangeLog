@@ -1,5 +1,7 @@
 2009-04-27  Badlop  <badlop@process-one.net>
 
+	* src/cyrsasl_digest.erl: Fix auth verification (EJAB-863)
+
 	* src/jlib.erl: Fix recursive call to speedup base64
 	decoding (thanks to Jeffrey Rogiers)(EJAB-333)
 
