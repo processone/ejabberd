@@ -1,3 +1,8 @@
+2009-04-27  Badlop  <badlop@process-one.net>
+
+	* src/jlib.erl: Fix recursive call to speedup base64
+	decoding (thanks to Jeffrey Rogiers)(EJAB-333)
+
 2009-04-24  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/odbc/ejabberd_odbc.erl: allow to run query bloc as erlang

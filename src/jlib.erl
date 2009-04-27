@@ -297,7 +297,7 @@ decode1_base64([Sextet1,Sextet2,$=,$=|Rest]) ->
 	(d(Sextet1) bsl 18) bor
 	(d(Sextet2) bsl 12),
     Octet1=Bits2x6 bsr 16,
-    [Octet1|decode_base64(Rest)];
+    [Octet1|decode1_base64(Rest)];
 decode1_base64([Sextet1,Sextet2,Sextet3,$=|Rest]) ->
     Bits3x6=
 	(d(Sextet1) bsl 18) bor
@@ -305,7 +305,7 @@ decode1_base64([Sextet1,Sextet2,Sextet3,$=|Rest]) ->
 	(d(Sextet3) bsl 6),
     Octet1=Bits3x6 bsr 16,
     Octet2=(Bits3x6 bsr 8) band 16#ff,
-    [Octet1,Octet2|decode_base64(Rest)];
+    [Octet1,Octet2|decode1_base64(Rest)];
 decode1_base64([Sextet1,Sextet2,Sextet3,Sextet4|Rest]) ->
     Bits4x6=
 	(d(Sextet1) bsl 18) bor
@@ -315,7 +315,7 @@ decode1_base64([Sextet1,Sextet2,Sextet3,Sextet4|Rest]) ->
     Octet1=Bits4x6 bsr 16,
     Octet2=(Bits4x6 bsr 8) band 16#ff,
     Octet3=Bits4x6 band 16#ff,
-    [Octet1,Octet2,Octet3|decode_base64(Rest)];
+    [Octet1,Octet2,Octet3|decode1_base64(Rest)];
 decode1_base64(_CatchAll) ->
     "".
 
