@@ -1,5 +1,8 @@
 2009-04-27  Badlop  <badlop@process-one.net>
 
+	* src/xml.erl: More verbose error reporting for
+	element_to_string (thanks to Magnus Henoch)(EJAB-301)
+
 	* src/translate.erl: Support additional files (EJAB-925)
 	* contrib/extract_translations/extract_translations.erl: Likewise
 	* contrib/extract_translations/prepare-translation.sh: Likewise

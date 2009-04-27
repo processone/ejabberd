@@ -47,12 +47,20 @@
 -endif.
 
 element_to_string(El) ->
+    case catch element_to_string_nocatch(El) of
+	{'EXIT', Reason} ->
+	    erlang:error({badxml, El, Reason});
+	Result ->
+	    Result
+    end.
+
+element_to_string_nocatch(El) ->
     case El of
 	{xmlelement, Name, Attrs, Els} ->
 	    if
 		Els /= [] ->
 		    [$<, Name, attrs_to_list(Attrs), $>,
-		     [element_to_string(E) || E <- Els],
+		     [element_to_string_nocatch(E) || E <- Els],
 		     $<, $/, Name, $>];
 	       true ->
 		    [$<, Name, attrs_to_list(Attrs), $/, $>]
