@@ -69,10 +69,13 @@ load_dir(Dir) ->
 			 end, Files),
 	    lists:foreach(
 	      fun(FN) ->
-		      L = ascii_tolower(
-                    list_to_binary(
-			          string:substr(FN, 1, string:len(FN) - 4))),
-		      load_file(L, Dir ++ "/" ++ FN)
+		      LP = string:substr(FN, 1, string:len(FN) - 4),
+		      L1 = case string:tokens(LP, ".") of
+			       [Language] -> Language;
+			       [Language, _Project] -> Language
+			   end,
+		      L2 = ascii_tolower(list_to_binary(L1)),
+		      load_file(L2, Dir ++ "/" ++ FN)
 	      end, MsgFiles),
 	    ok;
 	{error, Reason} ->

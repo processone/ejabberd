@@ -1,5 +1,9 @@
 2009-04-27  Badlop  <badlop@process-one.net>
 
+	* src/translate.erl: Support additional files (EJAB-925)
+	* contrib/extract_translations/extract_translations.erl: Likewise
+	* contrib/extract_translations/prepare-translation.sh: Likewise
+
 	* src/win32_dns.erl: Fix problem parsing some win32 dns (EJAB-927)
 
 	* src/cyrsasl_digest.erl: Fix auth verification (EJAB-863)
