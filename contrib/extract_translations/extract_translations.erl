@@ -68,7 +68,7 @@ process(Dir, File, Used) ->
 
 parse_file(Dir, File, Used) ->
     ets:delete_all_objects(vars),
-    case epp:parse_file(File, [Dir, filename:dirname(File)], []) of
+    case epp:parse_file(File, [Dir, filename:dirname(File) | code:get_path()], []) of
 	{ok, Forms} ->
 	    lists:foreach(
 	      fun(F) ->
@@ -80,6 +80,8 @@ parse_file(Dir, File, Used) ->
 
 parse_form(Dir, File, Form, Used) ->
     case Form of
+	%%{undefined, Something} ->
+        %% io:format("Undefined: ~p~n", [Something]);
 	{call,
 	 _,
 	 {remote, _, {atom, _, translate}, {atom, _, translate}},

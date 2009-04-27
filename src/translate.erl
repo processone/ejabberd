@@ -67,8 +67,12 @@ load_dir(Dir) ->
 			 end, Files),
 	    lists:foreach(
 	      fun(FN) ->
-		      L = ascii_tolower(
-			    string:substr(FN, 1, string:len(FN) - 4)),
+		      LP = ascii_tolower(
+			     string:substr(FN, 1, string:len(FN) - 4)),
+		      L = case string:tokens(LP, ".") of
+			      [Language] -> Language;
+			      [Language, _Project] -> Language
+			  end,
 		      load_file(L, Dir ++ "/" ++ FN)
 	      end, MsgFiles),
 	    ok;

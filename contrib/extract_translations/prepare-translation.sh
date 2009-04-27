@@ -3,16 +3,24 @@
 # Frontend for ejabberd's extract_translations.erl
 # by Badlop
 
+# How to create template files for a new language:
+# NEWLANG=zh
+# cp msgs/ejabberd.pot msgs/$NEWLANG.po
+# echo \{\"\",\"\"\}. > msgs/$NEWLANG.msg
+# ../../extract_translations/prepare-translation.sh -updateall
+
 prepare_dirs ()
 {
 	# Where is Erlang binary
 	ERL=`which erl`
 
-	EJA_DIR=`pwd`/..
+	EJA_SRC_DIR=$EJA_DIR/src/
+	EJA_MSGS_DIR=$EJA_SRC_DIR/msgs/
 	EXTRACT_DIR=$EJA_DIR/contrib/extract_translations/
 	EXTRACT_ERL=$EXTRACT_DIR/extract_translations.erl
 	EXTRACT_BEAM=$EXTRACT_DIR/extract_translations.beam
-	SRC_DIR=$EJA_DIR/src
+
+	SRC_DIR=$RUN_DIR/src
 	MSGS_DIR=$SRC_DIR/msgs
 
 	if !([[ -n $EJA_DIR ]])
@@ -74,14 +82,14 @@ extract_lang ()
 extract_lang_all ()
 {
 	cd $MSGS_DIR
-	for i in *.msg; do 
+	for i in $( ls *.msg ) ; do
 		extract_lang $i;
 	done
 
 	echo -e "File\tMissing\tLanguage\t\tLast translator"
 	echo -e "----\t-------\t--------\t\t---------------"
 	cd $MSGS_DIR
-	for i in *.msg; do 
+	for i in $( ls *.msg ) ; do
 		MISSING=`cat $i.translate | grep "\", \"\"}." | wc -l`
 		LANGUAGE=`grep "Language:" $i.translate | sed 's/% Language: //g'`
 		LASTAUTH=`grep "Author:" $i.translate | head -n 1 | sed 's/% Author: //g'`
@@ -140,11 +148,14 @@ find_unused_full ()
 
 extract_lang_srcmsg2po ()
 {
-	LANG_CODE=$1
+	LANG=$1
+	LANG_CODE=$LANG.$PROJECT
 	MSGS_PATH=$MSGS_DIR/$LANG_CODE.msg
 	PO_PATH=$MSGS_DIR/$LANG_CODE.po
 
-	$ERL -pa $EXTRACT_DIR -pa $SRC_DIR -noinput -noshell -s extract_translations -s init stop -extra -srcmsg2po . $MSGS_PATH >$PO_PATH.1
+	echo $MSGS_PATH
+
+	$ERL -pa $EXTRACT_DIR -pa $SRC_DIR -pa $EJA_SRC_DIR -pa /lib/ejabberd/include -noinput -noshell -s extract_translations -s init stop -extra -srcmsg2po . $MSGS_PATH >$PO_PATH.1
 	sed -e 's/ \[\]$/ \"\"/g;' $PO_PATH.1 > $PO_PATH.2
 	msguniq --sort-by-file $PO_PATH.2 --output-file=$PO_PATH
 	
@@ -153,7 +164,7 @@ extract_lang_srcmsg2po ()
 
 extract_lang_src2pot ()
 {
-	LANG_CODE=ejabberd
+	LANG_CODE=$PROJECT
 	MSGS_PATH=$MSGS_DIR/$LANG_CODE.msg
 	POT_PATH=$MSGS_DIR/$LANG_CODE.pot
 
@@ -163,19 +174,30 @@ extract_lang_src2pot ()
 	echo "" >>$MSGS_PATH
 
 	cd $SRC_DIR
-	$ERL -pa $EXTRACT_DIR -pa $SRC_DIR -noinput -noshell -s extract_translations -s init stop -extra -srcmsg2po . $MSGS_PATH >$POT_PATH.1
+	$ERL -pa $EXTRACT_DIR -pa $SRC_DIR -pa $EJA_SRC_DIR -pa /lib/ejabberd/include -noinput -noshell -s extract_translations -s init stop -extra -srcmsg2po . $MSGS_PATH >$POT_PATH.1
 	sed -e 's/ \[\]$/ \"\"/g;' $POT_PATH.1 > $POT_PATH.2
+
+	#msguniq --sort-by-file $POT_PATH.2 $EJA_MSGS_DIR --output-file=$POT_PATH
 	msguniq --sort-by-file $POT_PATH.2 --output-file=$POT_PATH
 
 	rm $POT_PATH.*
 	rm $MSGS_PATH
+
+	# If the project is a specific module, not the main ejabberd
+	if [[ $PROJECT != ejabberd ]] ; then
+	    # Remove from project.pot the strings that are already present in the general ejabberd
+	    EJABBERD_MSG_FILE=$EJA_MSGS_DIR/es.po # This is just some file with translated strings
+	    POT_PATH_TEMP=$POT_PATH.temp
+	    msgattrib --set-obsolete --only-file=$EJABBERD_MSG_FILE -o $POT_PATH_TEMP $POT_PATH
+	    mv $POT_PATH_TEMP $POT_PATH
+	fi
 }
 
 extract_lang_popot2po ()
 {
 	LANG_CODE=$1
 	PO_PATH=$MSGS_DIR/$LANG_CODE.po
-	POT_PATH=$MSGS_DIR/ejabberd.pot
+	POT_PATH=$MSGS_DIR/$PROJECT.pot
 
 	msgmerge $PO_PATH $POT_PATH >$PO_PATH.translate 2>/dev/null
 	mv $PO_PATH.translate $PO_PATH 
@@ -222,7 +244,7 @@ extract_lang_updateall ()
 	echo ""
 	echo -e "File Missing Language     Last translator"
 	echo -e "---- ------- --------     ---------------"
-	for i in *.msg; do 
+	for i in $( ls *.msg ) ; do
                 LANG_CODE=${i%.msg}
 		echo -n $LANG_CODE | awk '{printf "%-6s", $1 }'
 
@@ -266,43 +288,62 @@ translation_instructions ()
 	echo "  $MSGS_PATH"
 }
 
-prepare_dirs
-case "$1" in
-	-lang)
-		LANGU=$2
-		extract_lang $LANGU
+EJA_DIR=`pwd`/..
+RUN_DIR=`pwd`/..
+PROJECT=ejabberd
+
+while [ $# -ne 0 ] ; do
+    PARAM=$1
+    shift
+    case $PARAM in
+        --) break ;;
+	-project)
+		PROJECT=$1
 		shift
+		;;
+	-ejadir)
+		EJA_DIR=$1
+		shift
+		;;
+	-rundir)
+		RUN_DIR=$1
+		shift
+		;;
+	-lang)
+		LANGU=$1
+		prepare_dirs
+		extract_lang $LANGU
 		shift
 		;;
 	-langall)
+		prepare_dirs
 		extract_lang_all
-		shift
 		;;
 	-srcmsg2po)
-		LANG_CODE=$2
+		LANG_CODE=$1
+		prepare_dirs
 		extract_lang_srcmsg2po $LANG_CODE
-		shift
 		shift
 		;;
 	-popot2po)
-		LANG_CODE=$2
+		LANG_CODE=$1
+		prepare_dirs
 		extract_lang_popot2po $LANG_CODE
-		shift
 		shift
 		;;
 	-src2pot)
+		prepare_dirs
 		extract_lang_src2pot 
-		shift
 		;;
 	-po2msg)
-		LANG_CODE=$2
+		LANG_CODE=$1
+		prepare_dirs
 		extract_lang_po2msg $LANG_CODE
-		shift
 		shift
 		;;
 	-updateall)
+		prepare_dirs
 		extract_lang_updateall
-		shift
 		;;
 	*)
 		echo "Options:"
@@ -318,4 +359,5 @@ case "$1" in
 		echo "  ./prepare-translation.sh -lang es.msg"
 		exit 0
 		;;
-esac
+    esac
+done
