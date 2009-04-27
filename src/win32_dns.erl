@@ -27,6 +27,8 @@
 -module(win32_dns).
 -export([get_nameservers/0]).
 
+-include("ejabberd.hrl").
+
 -define(IF_KEY, "\\hklm\\system\\CurrentControlSet\\Services\\TcpIp\\Parameters\\Interfaces").
 -define(TOP_KEY, "\\hklm\\system\\CurrentControlSet\\Services\\TcpIp\\Parameters").
 
@@ -54,14 +56,27 @@ config_keys(R, Key) ->
     ok = win32reg:change_key(R, Key),
     [ {K,
        case win32reg:value(R, K) of
-           {ok, V} -> translate(K, V);
+           {ok, V} -> try_translate(K, V);
            _ -> undefined
        end
       } || K <- ["Domain", "DhcpDomain",
                  "NameServer", "DhcpNameServer", "SearchList"]].
 
+try_translate(K, V) ->
+    try translate(K, V) of
+	Res ->
+	    Res
+    catch
+	A:B ->
+	    ?ERROR_MSG("Error '~p' translating Win32 registry~n"
+		       "K: ~p~nV: ~p~nError: ~p", [A, K, V, B]),
+	    undefined
+    end.
+
 translate(NS, V) when NS =:= "NameServer"; NS =:= "DhcpNameServer" ->
-    IPsStrings = [string:tokens(IP, ".") || IP <- string:tokens(V, ",")],
+    %% The IPs may be separated by commas ',' or by spaces " "
+    %% The parts of an IP are separated by dots '.'
+    IPsStrings = [string:tokens(IP, ".") || IP <- string:tokens(V, " ,")],
     [ list_to_tuple([list_to_integer(String) || String <- IpStrings])
       || IpStrings <- IPsStrings];
 translate(_, V) -> V.
