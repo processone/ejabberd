@@ -31,7 +31,9 @@
 
 %% External exports
 -export([start_link/0,
+	 add/3,
 	 add/4,
+	 delete/3,
 	 delete/4,
 	 run/2,
 	 run_fold/3,
@@ -58,6 +60,14 @@
 start_link() ->
     gen_server:start_link({local, ejabberd_hooks}, ejabberd_hooks, [], []).
 
+%% @spec (Hook::atom(), Function::function(), Seq::integer()) -> ok
+%% @doc See add/4.
+add(Hook, Function, Seq) when is_function(Function) ->
+    add(Hook, global, undefined, Function, Seq).
+
+add(Hook, Host, Function, Seq) when is_function(Function) ->
+    add(Hook, Host, undefined, Function, Seq);
+
 %% @spec (Hook::atom(), Module::atom(), Function::atom(), Seq::integer()) -> ok
 %% @doc Add a module and function to this hook.
 %% The integer sequence is used to sort the calls: low number is called before high number.
@@ -67,6 +77,14 @@ add(Hook, Module, Function, Seq) ->
 add(Hook, Host, Module, Function, Seq) 
      when is_binary(Host) orelse is_atom(Host) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Module, Function, Seq}).
+
+%% @spec (Hook::atom(), Function::function(), Seq::integer()) -> ok
+%% @doc See del/4.
+delete(Hook, Function, Seq) when is_function(Function) ->
+    delete(Hook, global, undefined, Function, Seq).
+
+delete(Hook, Host, Function, Seq) when is_function(Function) ->
+    delete(Hook, Host, undefined, Function, Seq);
 
 %% @spec (Hook::atom(), Module::atom(), Function::atom(), Seq::integer()) -> ok
 %% @doc Delete a module and function from this hook.
@@ -202,7 +220,12 @@ code_change(_OldVsn, State, _Extra) ->
 run1([], _Hook, _Args) ->
     ok;
 run1([{_Seq, Module, Function} | Ls], Hook, Args) ->
-    case catch apply(Module, Function, Args) of
+    Res = if is_function(Function) ->
+		  catch apply(Function, Args);
+	     true ->
+		  catch apply(Module, Function, Args)
+	  end,
+    case Res of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nrunning hook: ~p",
 		       [Reason, {Hook, Args}]),
@@ -217,7 +240,12 @@ run1([{_Seq, Module, Function} | Ls], Hook, Args) ->
 run_fold1([], _Hook, Val, _Args) ->
     Val;
 run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
-    case catch apply(Module, Function, [Val | Args]) of
+    Res = if is_function(Function) ->
+		  catch apply(Function, [Val | Args]);
+	     true ->
+		  catch apply(Module, Function, [Val | Args])
+	  end,
+    case Res of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nrunning hook: ~p",
 		       [Reason, {Hook, Args}]),
