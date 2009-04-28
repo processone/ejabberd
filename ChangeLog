@@ -1,5 +1,7 @@
 2009-04-28  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_hooks.erl: Support distributed hooks (EJAB-829)
+
 	* src/ejabberd_hooks.erl: anonymous functions support.
 
 2009-04-27  Badlop  <badlop@process-one.net>
