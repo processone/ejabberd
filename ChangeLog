@@ -1,3 +1,7 @@
+2009-04-28  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_hooks.erl: Support distributed hooks (EJAB-829)
+
 2009-04-27  Badlop  <badlop@process-one.net>
 
 	* src/xml.erl: More verbose error reporting for
