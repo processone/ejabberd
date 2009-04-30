@@ -22,6 +22,8 @@
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 %%% 02111-1307 USA
 %%%
+%%% 2009, improvements from Process-One to support correct PEP handling
+%%% through s2s, use less memory, and speedup global caps handling
 %%%----------------------------------------------------------------------
 
 -module(mod_caps).
@@ -64,7 +66,7 @@
 -define(CAPS_QUERY_TIMEOUT, 60000). % 1mn without answer, consider client never answer
 
 -record(caps, {node, version, exts}).
--record(caps_features, {node_pair, features}).
+-record(caps_features, {node_pair, features = []}).
 -record(user_caps, {jid, caps}).
 -record(user_caps_resources, {uid, resource}).
 -record(state, {host,
@@ -190,19 +192,32 @@ receive_packet(_, _, _) ->
 receive_packet(_JID, From, To, Packet) ->
     receive_packet(From, To, Packet).
 
+jid_to_binary(JID) ->
+    list_to_binary(jlib:jid_to_string(JID)).
+
+caps_to_binary(#caps{node = Node, version = Version, exts = Exts}) ->
+    BExts = [list_to_binary(Ext) || Ext <- Exts],
+    #caps{node = list_to_binary(Node), version = list_to_binary(Version), exts = BExts}.
+
+node_to_binary(Node, SubNode) ->
+    {list_to_binary(Node), list_to_binary(SubNode)}.
+
+features_to_binary(L) -> [list_to_binary(I) || I <- L].
+binary_to_features(L) -> [binary_to_list(I) || I <- L].
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
 
 init([Host, _Opts]) ->
     mnesia:create_table(caps_features,
-			[{ram_copies, [node()]},
+			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, caps_features)}]),
     mnesia:create_table(user_caps,
-			[{disc_copies, [node()]},
+			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, user_caps)}]),
     mnesia:create_table(user_caps_resources,
-			[{disc_copies, [node()]},
+			[{ram_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, user_caps_resources)}]),
     mnesia:delete_table(user_caps_default),
@@ -214,26 +229,21 @@ init([Host, _Opts]) ->
 
 maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
     SubNodes = [Version | Exts],
-    F = fun() ->
-		%% Make sure that we have all nodes we need to know.
-		%% If a single one is missing, we wait for more disco
-		%% responses.
-		lists:foldl(fun(SubNode, Acc) ->
-				    case Acc of
-					fail -> fail;
-					_ ->
-					    case mnesia:read({caps_features, {Node, SubNode}}) of
-						[] -> fail;
-						[#caps_features{features = Features}] -> Features ++ Acc
-					    end
-				    end
-			    end, [], SubNodes)
-	end,
-    case mnesia:transaction(F) of
-	{atomic, fail} ->
-	    wait;
-	{atomic, Features} ->
-	    {ok, Features}
+    %% Make sure that we have all nodes we need to know.
+    %% If a single one is missing, we wait for more disco
+    %% responses.
+    case lists:foldl(fun(SubNode, Acc) ->
+			case Acc of
+			    fail -> fail;
+			    _ ->
+				case mnesia:dirty_read({caps_features, {Node, SubNode}}) of
+				    [] -> fail;
+				    [#caps_features{features = Features}] -> Features ++ Acc %% TODO binary
+				end
+			end
+		end, [], SubNodes) of
+	fail -> wait;
+	Features -> {ok, Features}
     end.
 
 timestamp() ->
@@ -243,7 +253,7 @@ timestamp() ->
 handle_call({get_features, Caps}, From, State) ->
     case maybe_get_features(Caps) of
 	{ok, Features} -> 
-	    {reply, Features, State};
+	    {reply, binary_to_features(Features), State};
 	wait ->
 	    gen_server:cast(self(), visit_feature_queries),
 	    Timeout = timestamp() + 10,
@@ -266,7 +276,7 @@ handle_cast({note_caps, From,
     S = exmpp_jid:ldomain(From),
     R = exmpp_jid:resource(From),
     BJID = exmpp_jid:jid_to_binary(From),
-    mnesia:dirty_write(#user_caps{jid = BJID, caps = Caps}),
+    mnesia:dirty_write(#user_caps{jid = BJID, caps = caps_to_binary(Caps)}),
     case ejabberd_sm:get_user_resources(U, S) of
 	[] ->
 	    % only store resource of caps aware external contacts
@@ -275,20 +285,19 @@ handle_cast({note_caps, From,
 	_ -> 
 	    ok
     end,
-    SubNodes = [Version | Exts],
     %% Now, find which of these are not already in the database.
-    Fun = fun() ->
-		  lists:foldl(fun(SubNode, Acc) ->
-				      case mnesia:read({caps_features, {Node, SubNode}}) of
-					  [] ->
-					      [SubNode | Acc];
-					  _ ->
-					      Acc
-				      end
-			      end, [], SubNodes)
-	  end,
-    case mnesia:transaction(Fun) of
-	{atomic, Missing} ->
+    SubNodes = [Version | Exts],
+    case lists:foldl(fun(SubNode, Acc) ->
+			case mnesia:dirty_read({caps_features, {Node, SubNode}}) of
+			    [] ->
+				[SubNode | Acc];
+			    _ ->
+				Acc
+			end
+		end, [], SubNodes) of
+	[] ->
+	    {noreply, State};
+	Missing ->
 	    %% For each unknown caps "subnode", we send a disco request.
 	    NewRequests = lists:foldl(
 		fun(SubNode, Dict) ->
@@ -302,30 +311,23 @@ handle_cast({note_caps, From,
 			  ejabberd_router:route(exmpp_jid:make_jid(Host),
 			    From, Stanza),
 			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID}),
-			  ?DICT:store(ID, {Node, SubNode}, Dict)
+			  ?DICT:store(ID, node_to_binary(Node, SubNode), Dict)
 		  end, Requests, Missing),
-	    {noreply, State#state{disco_requests = NewRequests}};
-	Error ->
-	    ?ERROR_MSG("Transaction failed: ~p", [Error]),
-	    {noreply, State}
+	    {noreply, State#state{disco_requests = NewRequests}}
     end;
 handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payload}},
 	    #state{disco_requests = Requests} = State) ->
     case {Type, Payload} of
 	{result, #xmlel{name = 'query', children = Els}} ->
 	    case ?DICT:find(ID, Requests) of
-		{ok, {Node, SubNode}} ->
+		{ok, BinaryNode} ->
 		    Features =
 			lists:flatmap(fun(#xmlel{name = 'feature'} = F) ->
 					      [exmpp_xml:get_attribute_as_list(F, 'var', "")];
 					 (_) ->
 					      []
 				      end, Els),
-		    mnesia:transaction(
-		      fun() ->
-			      mnesia:write(#caps_features{node_pair = {Node, SubNode},
-							  features = Features})
-		      end),
+		    mnesia:dirty_write(#caps_features{node_pair = BinaryNode, features = features_to_binary(Features)}),
 		    gen_server:cast(self(), visit_feature_queries);
 		error ->
 		    ?ERROR_MSG("ID '~s' matches no query", [ID])
@@ -333,13 +335,8 @@ handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payl
 	{error, _} ->
 	    %% XXX: if we get error, we cache empty feature not to probe the client continuously
 	    case ?DICT:find(ID, Requests) of
-		{ok, {Node, SubNode}} ->
-		    Features = [],
-		    mnesia:transaction(
-		      fun() ->
-			      mnesia:write(#caps_features{node_pair = {Node, SubNode},
-							  features = Features})
-		      end),
+		{ok, BinaryNode} ->
+		    mnesia:dirty_write(#caps_features{node_pair = BinaryNode}),
 		    gen_server:cast(self(), visit_feature_queries);
 		error ->
 		    ?ERROR_MSG("ID '~s' matches no query", [ID])

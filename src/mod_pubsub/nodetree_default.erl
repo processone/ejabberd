@@ -51,7 +51,7 @@
 	 get_nodes/2,
 	 get_nodes/1,
 	 get_subnodes/3,
-	 get_subnodes_tree/2,
+	 get_subnodes_tree/3,
 	 create_node/5,
 	 delete_node/2
 	]).
@@ -76,9 +76,10 @@ init(_Host, _ServerHost, _Opts) ->
 			 {attributes, record_info(fields, pubsub_node)}]),
     NodesFields = record_info(fields, pubsub_node),
     case mnesia:table_info(pubsub_node, attributes) of
-	[host_node, host_parent, info] -> ok;  % old schema, updated later by pubsub
 	NodesFields -> ok;
-	_ -> mnesia:transform_table(pubsub_node, ignore, NodesFields)
+	_ ->
+	    ok
+	    %% mnesia:transform_table(pubsub_state, ignore, StatesFields)
     end,
     ok.
 terminate(_Host, _ServerHost) ->
@@ -97,12 +98,11 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 set_node(_) ->
     {error, 'internal-server-error'}.
 
-get_node(Host, Node, _From) ->
-    get_node(Host, Node).
-
 %% @spec (Host, Node) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
 get_node(Host, Node) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
@@ -110,44 +110,48 @@ get_node(Host, Node) ->
 	Error -> Error
     end.
 
-get_nodes(Key, _From) ->
-    get_nodes(Key).
-
-%% @spec (Key) -> [pubsubNode()] | {error, Reason}
-%%     Key = mod_pubsub:host() | mod_pubsub:jid()
-get_nodes(Key) ->
-    mnesia:match_object(#pubsub_node{nodeid = {Key, '_'}, _ = '_'}).
+%% @spec (Host) -> [pubsubNode()] | {error, Reason}
+%%     Host = mod_pubsub:host() | mod_pubsub:jid()
+get_nodes(Host, _From) ->
+    get_nodes(Host).
+get_nodes(Host) ->
+    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}).
 
 %% @spec (Host, Node, From) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
 get_subnodes(Host, Node, _From) ->
-    mnesia:match_object(#pubsub_node{parentid = {Host, Node}, _ = '_'}).
+    get_subnodes(Host, Node).
+get_subnodes(Host, Node) ->
+    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, parent = Node, _ = '_'}).
 
 %% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
+get_subnodes_tree(Host, Node, _From) ->
+    get_subnodes_tree(Host, Node).
 get_subnodes_tree(Host, Node) ->
-    mnesia:foldl(fun(#pubsub_node{nodeid = {H, N}}, Acc) ->
+    mnesia:foldl(fun(#pubsub_node{nodeid = {H, N} = R}, Acc) ->
 			 case lists:prefix(Node, N) and (H == Host) of
-			     true -> [N | Acc];
+			     true -> [R | Acc];
 			     _ -> Acc
 			 end
 		 end, [], pubsub_node).
 
-%% @spec (Key, Node, Type, Owner, Options) -> ok | {error, Reason}
-%%     Key = mod_pubsub:host() | mod_pubsub:jid()
+%% @spec (Host, Node, Type, Owner, Options) -> ok | {error, Reason}
+%%     Host = mod_pubsub:host() | mod_pubsub:jid()
 %%     Node = mod_pubsub:pubsubNode()
 %%     NodeType = mod_pubsub:nodeType()
 %%     Owner = mod_pubsub:jid()
 %%     Options = list()
-create_node(Key, Node, Type, Owner, Options) ->
-    OwnerKey = jlib:short_prepd_bare_jid(Owner),
-    case mnesia:read({pubsub_node, {Key, Node}}) of
+create_node(Host, Node, Type, Owner, Options) ->
+    BJID = jlib:short_prepd_bare_jid(Owner),
+    case mnesia:read({pubsub_node, {Host, Node}}) of
 	[] ->
 	    {ParentNode, ParentExists} =
-		case Key of
+		case Host of
 		    {_U, _S, _R} ->
 			%% This is special case for PEP handling
 			%% PEP does not uses hierarchy
@@ -158,7 +162,7 @@ create_node(Key, Node, Type, Owner, Options) ->
 			[] -> 
 			    {[], true};
 			_ ->
-			    case mnesia:read({pubsub_node, {Key, Parent}}) of
+			    case mnesia:read({pubsub_node, {Host, Parent}}) of
 				[] -> {Parent, false};
 				_ -> {Parent, true}
 			    end
@@ -166,13 +170,14 @@ create_node(Key, Node, Type, Owner, Options) ->
 		end,
 	    case ParentExists of
 		true ->
-		    %% Service requires registration
-		    %%{error, ?ERR_REGISTRATION_REQUIRED};
-		    mnesia:write(#pubsub_node{nodeid = {Key, Node},
-					      parentid = {Key, ParentNode},
+		    NodeId = pubsub_index:new(node),
+		    mnesia:write(#pubsub_node{nodeid = {Host, Node},
+					      id = NodeId,
+					      parent = ParentNode,
 					      type = Type,
-					      owners = [OwnerKey],
-					      options = Options});
+					      owners = [BJID],
+					      options = Options}),
+		    {ok, NodeId};
 		false ->
 		    %% Requesting entity is prohibited from creating nodes
 		    {error, 'forbidden'}
@@ -182,12 +187,13 @@ create_node(Key, Node, Type, Owner, Options) ->
 	    {error, 'conflict'}
     end.
 
-%% @spec (Key, Node) -> [mod_pubsub:node()]
-%%     Key = mod_pubsub:host() | mod_pubsub:jid()
+%% @spec (Host, Node) -> [mod_pubsub:node()]
+%%     Host = mod_pubsub:host() | mod_pubsub:jid()
 %%     Node = mod_pubsub:pubsubNode()
-delete_node(Key, Node) ->
-    Removed = get_subnodes_tree(Key, Node),
-    lists:foreach(fun(N) ->
-			  mnesia:delete({pubsub_node, {Key, N}})
-		  end, Removed),
+delete_node(Host, Node) ->
+    Removed = get_subnodes_tree(Host, Node),
+    lists:foreach(fun(#pubsub_node{nodeid = {_, N}, id = I}) ->
+	    pubsub_index:free(node, I),
+	    mnesia:delete({pubsub_node, {Host, N}})
+	end, Removed),
     Removed.

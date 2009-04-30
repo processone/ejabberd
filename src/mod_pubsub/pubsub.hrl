@@ -77,24 +77,28 @@
 %%% @type affiliation() = none | owner | publisher | outcast.
 %%% @type subscription() = none | pending | unconfigured | subscribed.
 
+%%% internal pubsub index table
+-record(pubsub_index, {index, last, free}).
+
 %%% @type pubsubNode() = #pubsub_node{
 %%%    nodeid = {Host::host(), Node::pubsubNode()},
 %%%    parentid = {Host::host(), Node::pubsubNode()},
+%%%    nodeidx = int().
 %%%    type = nodeType(),
-%%%    owners = [ljid()],
-%%%    options = [nodeOption()]}.
+%%%    options = [nodeOption()]}
 %%% <p>This is the format of the <tt>nodes</tt> table. The type of the table
 %%% is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
 %%% <p>The <tt>parentid</tt> and <tt>type</tt> fields are indexed.</p>
 -record(pubsub_node, {nodeid,
-		      parentid = {},
-		      type = "",
+		      id,
+		      parent,
+		      type = "default",
 		      owners = [],
 		      options = []
 		     }).
 
 %%% @type pubsubState() = #pubsub_state{
-%%%    stateid = {ljid(), {Host::host(), Node::pubsubNode()}},
+%%%    stateid = {ljid(), pubsubNodeId()}},
 %%%    items = [ItemId::string()],
 %%%    affiliation = affiliation(),
 %%%    subscription = subscription()}.
@@ -106,11 +110,11 @@
 		       subscription = none
 }).
 
-%% @type pubsubItem() = #pubsub_item{
-%%        itemid = {ItemId::string(), {Host::host(),Node::pubsubNode()}},
-%%     creation = {ljid(), now()},
-%%     modification = {ljid(), now()},
-%%     payload = XMLContent::string()}.
+%%% @type pubsubItem() = #pubsub_item{
+%%%    itemid = {ItemId::string(), pubsubNodeId()}},
+%%%    creation = {ljid(), now()},
+%%%    modification = {ljid(), now()},
+%%%    payload = XMLContent::string()}.
 %%% <p>This is the format of the <tt>published items</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>disc</tt>,<tt>fragmented</tt>.</p>
 -record(pubsub_item, {itemid,

@@ -49,7 +49,7 @@
 	 get_nodes/2,
 	 get_nodes/1,
 	 get_subnodes/3,
-	 get_subnodes_tree/2,
+	 get_subnodes_tree/3,
 	 create_node/5,
 	 delete_node/2
 	]).
@@ -95,14 +95,13 @@ get_node(Host, Node, _From) ->
 get_node(Host, Node) ->
     #pubsub_node{nodeid = {Host, Node}}.
 
-get_nodes(Key, _From) ->
-    get_nodes(Key).
-
-%% @spec (Key) -> [pubsubNode()]
+%% @spec (Host) -> [pubsubNode()]
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Nodes list can not be determined.</p>
-get_nodes(_Key) ->
+get_nodes(Host, _From) ->
+    get_nodes(Host).
+get_nodes(_Host) ->
     [].
 
 %% @spec (Host, Node, From) -> [pubsubNode()]
@@ -110,13 +109,17 @@ get_nodes(_Key) ->
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
-get_subnodes(_Host, _Node, _From) ->
+get_subnodes(Host, Node, _From) ->
+    get_subnodes(Host, Node).
+get_subnodes(_Host, _Node) ->
     [].
 
 %% @spec (Host, Index) -> [pubsubNode()]
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
+get_subnodes_tree(Host, Node, _From) ->
+    get_subnodes_tree(Host, Node).
 get_subnodes_tree(_Host, _Node) ->
     [].
 
@@ -129,11 +132,11 @@ get_subnodes_tree(_Host, _Node) ->
 %% @doc <p>No node record is stored on database. Any valid node
 %% is considered as already created.</p>
 %% <p>default allowed nodes: /home/host/user/any/node/name</p>
-create_node(_Host, Node, _Type, Owner, _Options) ->
+create_node(Host, Node, _Type, Owner, _Options) ->
     UserName = exmpp_jid:lnode_as_list(Owner),
     UserHost = exmpp_jid:ldomain_as_list(Owner),
     case Node of
-	["home", UserHost, UserName | _] -> {error, 'conflict'};
+	["home", UserHost, UserName | _] -> {error, {virtual, {Host, Node}}};
 	_ -> {error, 'not-allowed'}
     end.
 
@@ -142,5 +145,5 @@ create_node(_Host, Node, _Type, Owner, _Options) ->
 %%     Node = mod_pubsub:pubsubNode()
 %% @doc <p>Virtual node tree does not handle parent/child.
 %% node deletion just affects the corresponding node.</p>
-delete_node(_Host, Node) ->
-    [Node].
+delete_node(Host, Node) ->
+    [get_node(Host, Node)].

@@ -1,3 +1,24 @@
+2009-04-30  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: API change for major optimization
+	* src/mod_pubsub/pubsub.hrl: Likewise
+	* src/mod_pubsub/nodetree_default.erl: Likewise
+	* src/mod_pubsub/nodetree_virtual.erl: Likewise
+	* src/mod_pubsub/node_mb.erl: Likewise
+	* src/mod_pubsub/node_dispatch.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+	* src/mod_pubsub/node_flat.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
+	* src/mod_pubsub/gen_pubsub_node.erl: Likewise
+	* src/mod_pubsub/gen_pubsub_nodetree.erl: Likewise
+
+	* src/mod_caps.erl: Reduce memory consumption and remove mnesia table
+
 2009-04-28  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_hooks.erl: Support distributed hooks (EJAB-829)
