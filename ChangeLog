@@ -17,6 +17,9 @@
 	* src/mod_pubsub/gen_pubsub_node.erl: Likewise
 	* src/mod_pubsub/gen_pubsub_nodetree.erl: Likewise
 
+	* src/mod_caps.erl: Reduce memory consumption and remove mnesia table
+	locking, improving performances
+
 2009-04-28  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_hooks.erl: Support distributed hooks (EJAB-829)
