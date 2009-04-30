@@ -343,7 +343,7 @@ handle_cast({disco_response, From, _To,
 	    %% XXX: if we get error, we cache empty feature not to probe the client continuously
 	    case ?DICT:find(ID, Requests) of
 		{ok, BinaryNode} ->
-		    mnesia:write(#caps_features{node_pair = BinaryNode}),
+		    mnesia:dirty_write(#caps_features{node_pair = BinaryNode}),
 		    gen_server:cast(self(), visit_feature_queries);
 		error ->
 		    ?ERROR_MSG("ID '~s' matches no query", [ID])
