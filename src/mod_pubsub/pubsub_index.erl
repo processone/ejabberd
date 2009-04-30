@@ -23,33 +23,43 @@
 %%% @end
 %%% ====================================================================
 
-%%% @private
-%%% @doc <p>The module <strong>{@module}</strong> defines the PubSub node
-%%% tree plugin behaviour. This behaviour is used to check that a PubSub 
-%%% node tree plugin respects the current ejabberd PubSub plugin API.</p>
+%% important note:
+%% new/1 and free/2 MUST be called inside a transaction bloc
 
--module(gen_pubsub_nodetree).
+-module(pubsub_index).
+-author('christophe.romain@process-one.net').
 
--export([behaviour_info/1]).
+-include("pubsub.hrl").
 
-%% @spec (Query::atom()) -> Callbacks | atom()
-%%	Callbacks = [{Function,Arity}]
-%%	Function = atom()
-%%	Arity = integer()
-%% @doc Behaviour definition
-behaviour_info(callbacks) ->
-	[{init, 3},
-	 {terminate, 2},
-	 {options, 0},
-	 {set_node, 1},
-	 {get_node, 3},
-	 {get_node, 2},
-	 {get_nodes, 2},
-	 {get_nodes, 1},
-	 {get_subnodes, 3},
-	 {get_subnodes_tree, 3},
-	 {create_node, 5},
-	 {delete_node, 2}
-	];
-behaviour_info(_Other) ->
-	undefined.
+-export([init/3, new/1, free/2]).
+
+init(_Host, _ServerHost, _Opts) ->
+    mnesia:create_table(pubsub_index,
+			[{disc_copies, [node()]},
+			 {attributes, record_info(fields, pubsub_index)}]).
+
+new(Index) ->
+    case mnesia:read({pubsub_index, Index}) of
+    [I] ->
+	case I#pubsub_index.free of
+	[] ->
+	    Id = I#pubsub_index.last + 1,
+	    mnesia:write(I#pubsub_index{last = Id}),
+	    Id;
+	[Id|Free] ->
+	    mnesia:write(I#pubsub_index{free = Free}),
+	    Id
+	end;
+    _ ->
+	mnesia:write(#pubsub_index{index = Index, last = 1, free = []}),
+	1
+    end.
+
+free(Index, Id) ->
+    case mnesia:read({pubsub_index, Index}) of
+    [I] ->
+	Free = I#pubsub_index.free,
+	mnesia:write(I#pubsub_index{free = [Id|Free]});
+    _ ->
+	ok
+    end.
