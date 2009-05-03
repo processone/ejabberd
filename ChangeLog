@@ -1,3 +1,7 @@
+2009-05-03  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc/mod_muc_room.erl: Fix badarg return (EJAB-899)
+
 2009-04-30  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: API change for major optimization

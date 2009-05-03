@@ -2689,7 +2689,7 @@ is_allowed_persistent_change(XEl, StateData, From) ->
 	    true;
 	true ->
 		{_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} = StateData#state.access,
-		acl:match_rule(StateData#state.server_host, AccessPersistent, From)
+		(allow == acl:match_rule(StateData#state.server_host, AccessPersistent, From))
     end.
 
 %% Check if the Room Name and Room Description defined in the Data Form
