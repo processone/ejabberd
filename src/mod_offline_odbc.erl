@@ -81,7 +81,7 @@ start(Host, Opts) ->
 init(Host, infinity) ->
     loop(Host, infinity);
 init(Host, MaxOfflineMsgs) 
-  when integer(MaxOfflineMsgs), MaxOfflineMsgs > 0 ->
+  when is_integer(MaxOfflineMsgs), MaxOfflineMsgs > 0 ->
     loop(Host, MaxOfflineMsgs).
 
 loop(Host, MaxOfflineMsgs) ->

@@ -277,7 +277,7 @@ do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
            [From, To, Packet, 8]),
     case find_connection(From, To) of
-	{atomic, Pid} when pid(Pid) ->
+	{atomic, Pid} when is_pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
             NewPacket1 = exmpp_stanza:set_sender(Packet, From),
             NewPacket = exmpp_stanza:set_recipient(NewPacket1, To),

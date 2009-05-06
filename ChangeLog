@@ -1,5 +1,16 @@
 2009-05-06  Badlop  <badlop@process-one.net>
 
+	* src/ejabberd_c2s.erl: Replace TYPE/1 with is_TYPE/1 (EJAB-922)
+	* src/ejabberd_logger_h.erl: 
+	* src/ejabberd_s2s.erl: 
+	* src/eldap/eldap.erl: 
+	* src/mod_offline.erl: 
+	* src/mod_offline_odbc.erl: 
+	* src/mod_roster.erl: 
+	* src/odbc/odbc_queries.erl: 
+	* src/p1_fsm.erl: 
+	* src/xml.erl: 
+
 	* src/Makefile.in: Prevent Erlang R13B compilation warning:
 	behaviour X undefined (EJAB-920)
 

@@ -846,7 +846,7 @@ get_in_pending_subscriptions(Ls, User, Server)
     JID = exmpp_jid:make_jid(User, Server),
     US = {exmpp_jid:lnode(JID), exmpp_jid:ldomain(JID)},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
-	Result when list(Result) ->
+	Result when is_list(Result) ->
 	    Ls ++ lists:map(
 		    fun(R) ->
 			    Message = R#roster.askmessage,

@@ -58,7 +58,7 @@ element_to_string(El) ->
 		    [$<, Name, attrs_to_list(Attrs), $/, $>]
 	       end;
 	%% We do not crypt CDATA binary, but we enclose it in XML CDATA
-	{xmlcdata, CData} when binary(CData) ->
+	{xmlcdata, CData} when is_binary(CData) ->
 	    ?ESCAPE_BINARY(CData);
 	%% We crypt list and possibly binaries if full XML usage is
 	%% disabled unsupported (implies a conversion to list).

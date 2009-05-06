@@ -663,7 +663,7 @@ limit_options([], Limits) ->
     Limits;
 %% Maximum number of messages allowed in the process message queue
 limit_options([{max_queue,N}|Options], Limits) 
-  when integer(N) ->
+  when is_integer(N) ->
     NewLimits = Limits#limits{max_queue=N},
     limit_options(Options, NewLimits);
 limit_options([_|Options], Limits) ->

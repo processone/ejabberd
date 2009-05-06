@@ -652,7 +652,7 @@ get_and_del_spool_msg_t(LServer, Username) ->
     [Result] = case ejabberd_odbc:sql_query(
 		    LServer,
 		    ["EXECUTE dbo.get_and_del_spool_msg '", Username, "'"]) of
-		   Rs when list(Rs) ->
+		   Rs when is_list(Rs) ->
 		     lists:filter(fun({selected, _Header, _Row}) ->
 					  true;
 				     ({updated, _N}) ->

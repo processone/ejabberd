@@ -1809,7 +1809,7 @@ resend_offline_messages(#state{user = UserB,
 				 StateData#state.server,
 				 [],
 				 [UserB, ServerB]) of
-	Rs when list(Rs) ->
+	Rs when is_list(Rs) ->
 	    lists:foreach(
 	      fun({route,
 		   From, To, Packet}) ->
