@@ -34,7 +34,8 @@ eprof_start() ->
     eprof:profile(pids()).
 
 eprof_stop() ->
-    eprof:stop().
+    catch eprof:stop(),
+    ok.
 
 pids() ->
     lists:zf(
