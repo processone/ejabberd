@@ -115,7 +115,6 @@
 	     nodetree_virtual,
 	     p1_fsm,
 	     p1_mnesia,
-	     ram_file_io_server,
 	     randoms,
 	     sha,
 	     shaper,

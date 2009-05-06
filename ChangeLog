@@ -1,3 +1,14 @@
+2009-05-06  Badlop  <badlop@process-one.net>
+
+	* src/ejabberd_loglevel.erl: Use dynamic_compile instead of
+	ram_file_io_server. Support definition of loglevels with integer
+	or atom. (thanks to Geoff Cant)(EJAB-919)
+	* src/dynamic_compile.erl: Added erlang module that converts
+	string to binary loadable code by Mats Cronqvist, Chris Newcombe,
+	and Jacob Vorreuter.
+	* src/ram_file_io_server.erl: Remove file not longer useful.
+	* src/ejabberd.app: Likewise
+
 2009-05-03  Badlop  <badlop@process-one.net>
 
 	* src/mod_muc/mod_muc_room.erl: Fix badarg return (EJAB-899)
