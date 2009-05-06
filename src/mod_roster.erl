@@ -677,7 +677,7 @@ get_in_pending_subscriptions(Ls, User, Server) ->
     JID = jlib:make_jid(User, Server, ""),
     US = {JID#jid.luser, JID#jid.lserver},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
-	Result when list(Result) ->
+	Result when is_list(Result) ->
     	    Ls ++ lists:map(
 		    fun(R) ->
 			    Message = R#roster.askmessage,

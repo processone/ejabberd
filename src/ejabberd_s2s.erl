@@ -249,7 +249,7 @@ do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
            [From, To, Packet, 8]),
     case find_connection(From, To) of
-	{atomic, Pid} when pid(Pid) ->
+	{atomic, Pid} when is_pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
 	    {xmlelement, Name, Attrs, Els} = Packet,
 	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),

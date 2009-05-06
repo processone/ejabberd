@@ -1894,7 +1894,7 @@ resend_offline_messages(#state{user = User,
 				 Server,
 				 [],
 				 [User, Server]) of
-	Rs when list(Rs) ->
+	Rs when is_list(Rs) ->
 	    lists:foreach(
 	      fun({route,
 		   From, To, {xmlelement, Name, Attrs, Els} = Packet}) ->

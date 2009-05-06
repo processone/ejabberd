@@ -143,14 +143,14 @@ close(Handle) ->
 %%%          {"telephoneNumber", ["545 555 00"]}]
 %%%     )
 %%% --------------------------------------------------------------------
-add(Handle, Entry, Attributes) when list(Entry),list(Attributes) ->
+add(Handle, Entry, Attributes) when is_list(Entry), is_list(Attributes) ->
     Handle1 = get_handle(Handle),
     gen_fsm:sync_send_event(Handle1, {add, Entry, add_attrs(Attributes)},
 			    ?CALL_TIMEOUT).
 
 %%% Do sanity check !
 add_attrs(Attrs) ->
-    F = fun({Type,Vals}) when list(Type),list(Vals) -> 
+    F = fun({Type,Vals}) when is_list(Type), is_list(Vals) -> 
 		%% Confused ? Me too... :-/
 		{'AddRequest_attributes',Type, Vals} 
 	end,
@@ -169,7 +169,7 @@ add_attrs(Attrs) ->
 %%%         "cn=Bill Valentine, ou=people, o=Bluetail AB, dc=bluetail, dc=com"
 %%%        )
 %%% --------------------------------------------------------------------
-delete(Handle, Entry) when list(Entry) ->
+delete(Handle, Entry) when is_list(Entry) ->
     Handle1 = get_handle(Handle),
     gen_fsm:sync_send_event(Handle1, {delete, Entry}, ?CALL_TIMEOUT).
 
@@ -184,7 +184,7 @@ delete(Handle, Entry) when list(Entry) ->
 %%%          add("description", ["LDAP hacker"])] 
 %%%        )
 %%% --------------------------------------------------------------------
-modify(Handle, Object, Mods) when list(Object), list(Mods) ->
+modify(Handle, Object, Mods) when is_list(Object), is_list(Mods) ->
     Handle1 = get_handle(Handle),
     gen_fsm:sync_send_event(Handle1, {modify, Object, Mods}, ?CALL_TIMEOUT).
 
@@ -193,9 +193,9 @@ modify(Handle, Object, Mods) when list(Object), list(Mods) ->
 %%% Example:
 %%%            replace("telephoneNumber", ["555 555 00"])
 %%%
-mod_add(Type, Values) when list(Type), list(Values)     -> m(add, Type, Values).
-mod_delete(Type, Values) when list(Type), list(Values)  -> m(delete, Type, Values).
-mod_replace(Type, Values) when list(Type), list(Values) -> m(replace, Type, Values).
+mod_add(Type, Values) when is_list(Type), is_list(Values)     -> m(add, Type, Values).
+mod_delete(Type, Values) when is_list(Type), is_list(Values)  -> m(delete, Type, Values).
+mod_replace(Type, Values) when is_list(Type), is_list(Values) -> m(replace, Type, Values).
 
 m(Operation, Type, Values) ->
     #'ModifyRequest_modification_SEQOF'{
@@ -217,7 +217,7 @@ m(Operation, Type, Values) ->
 %%%        )
 %%% --------------------------------------------------------------------
 modify_dn(Handle, Entry, NewRDN, DelOldRDN, NewSup) 
-  when list(Entry),list(NewRDN),atom(DelOldRDN),list(NewSup) ->
+  when is_list(Entry), is_list(NewRDN), is_atom(DelOldRDN), is_list(NewSup) ->
     Handle1 = get_handle(Handle),
     gen_fsm:sync_send_event(
       Handle1,
@@ -234,7 +234,7 @@ modify_dn(Handle, Entry, NewRDN, DelOldRDN, NewSup)
 %%%    "secret")
 %%% --------------------------------------------------------------------
 bind(Handle, RootDN, Passwd) 
-  when list(RootDN),list(Passwd) ->
+  when is_list(RootDN), is_list(Passwd) ->
     Handle1 = get_handle(Handle),
     gen_fsm:sync_send_event(Handle1, {bind, RootDN, Passwd}, ?CALL_TIMEOUT).
 
@@ -270,13 +270,13 @@ optional(Value) -> Value.
 %%%        []}}
 %%%
 %%% --------------------------------------------------------------------
-search(Handle, A) when record(A, eldap_search) ->
+search(Handle, A) when is_record(A, eldap_search) ->
     call_search(Handle, A);
-search(Handle, L) when list(L) ->
+search(Handle, L) when is_list(L) ->
     case catch parse_search_args(L) of
 	{error, Emsg}                  -> {error, Emsg};
 	{'EXIT', Emsg}                 -> {error, Emsg};
-	A when record(A, eldap_search) -> call_search(Handle, A)
+	A when is_record(A, eldap_search) -> call_search(Handle, A)
     end.
 
 call_search(Handle, A) ->
@@ -296,7 +296,7 @@ parse_search_args([{attributes, Attrs}|T],A) ->
     parse_search_args(T,A#eldap_search{attributes = Attrs});
 parse_search_args([{types_only, TypesOnly}|T],A) ->
     parse_search_args(T,A#eldap_search{types_only = TypesOnly});
-parse_search_args([{timeout, Timeout}|T],A) when integer(Timeout) ->
+parse_search_args([{timeout, Timeout}|T],A) when is_integer(Timeout) ->
     parse_search_args(T,A#eldap_search{timeout = Timeout});
 parse_search_args([{limit, Limit}|T],A) when is_integer(Limit) ->
     parse_search_args(T,A#eldap_search{limit = Limit});
@@ -315,9 +315,9 @@ wholeSubtree() -> wholeSubtree.
 %%%
 %%% Boolean filter operations
 %%%
-'and'(ListOfFilters) when list(ListOfFilters) -> {'and',ListOfFilters}.
-'or'(ListOfFilters)  when list(ListOfFilters) -> {'or', ListOfFilters}.
-'not'(Filter)        when tuple(Filter)       -> {'not',Filter}.
+'and'(ListOfFilters) when is_list(ListOfFilters) -> {'and',ListOfFilters}.
+'or'(ListOfFilters)  when is_list(ListOfFilters) -> {'or', ListOfFilters}.
+'not'(Filter)        when is_tuple(Filter)       -> {'not',Filter}.
 
 %%%
 %%% The following Filter parameters consist of an attribute
@@ -335,7 +335,7 @@ av_assert(Desc, Value) ->
 %%%
 %%% Filter to check for the presence of an attribute
 %%%
-present(Attribute) when list(Attribute) -> 
+present(Attribute) when is_list(Attribute) -> 
     {present, Attribute}.
 
 
@@ -354,15 +354,15 @@ present(Attribute) when list(Attribute) ->
 %%% Example: substrings("sn",[{initial,"To"},{any,"kv"},{final,"st"}])
 %%% will match entries containing:  'sn: Tornkvist'
 %%%
-substrings(Type, SubStr) when list(Type), list(SubStr) -> 
+substrings(Type, SubStr) when is_list(Type), is_list(SubStr) -> 
     Ss = {'SubstringFilter_substrings',v_substr(SubStr)},
     {substrings,#'SubstringFilter'{type = Type,
 				   substrings = Ss}}.
 
 
-get_handle(Pid) when pid(Pid)    -> Pid;
-get_handle(Atom) when atom(Atom) -> Atom;
-get_handle(Name) when list(Name) -> list_to_atom("eldap_" ++ Name).
+get_handle(Pid) when is_pid(Pid)    -> Pid;
+get_handle(Atom) when is_atom(Atom) -> Atom;
+get_handle(Name) when is_list(Name) -> list_to_atom("eldap_" ++ Name).
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
@@ -835,7 +835,7 @@ cmd_timeout(Timer, Id, S) ->
 polish(Entries) ->
     polish(Entries, [], []).
 
-polish([H|T], Res, Ref) when record(H, 'SearchResultEntry') ->
+polish([H|T], Res, Ref) when is_record(H, 'SearchResultEntry') ->
     ObjectName = H#'SearchResultEntry'.objectName,
     F = fun({_,A,V}) -> {A,V} end,
     Attrs = lists:map(F, H#'SearchResultEntry'.attributes),
@@ -913,7 +913,7 @@ v_filter({greaterOrEqual,AV}) -> {greaterOrEqual,AV};
 v_filter({lessOrEqual,AV})    -> {lessOrEqual,AV};
 v_filter({approxMatch,AV})    -> {approxMatch,AV};
 v_filter({present,A})         -> {present,A};
-v_filter({substrings,S}) when record(S,'SubstringFilter') -> {substrings,S};
+v_filter({substrings,S}) when is_record(S,'SubstringFilter') -> {substrings,S};
 v_filter(_Filter) -> throw({error,concat(["unknown filter: ",_Filter])}).
 
 v_modifications(Mods) ->
@@ -925,7 +925,7 @@ v_modifications(Mods) ->
 	end,
     lists:foreach(F, Mods).
 
-v_substr([{Key,Str}|T]) when list(Str),Key==initial;Key==any;Key==final ->
+v_substr([{Key,Str}|T]) when is_list(Str),Key==initial;Key==any;Key==final ->
     [{Key,Str}|v_substr(T)];
 v_substr([H|_]) ->
     throw({error,{substring_arg,H}});
@@ -940,11 +940,11 @@ v_bool(true)  -> true;
 v_bool(false) -> false;
 v_bool(_Bool) -> throw({error,concat(["not Boolean: ",_Bool])}).
 
-v_timeout(I) when integer(I), I>=0 -> I;
+v_timeout(I) when is_integer(I), I>=0 -> I;
 v_timeout(_I) -> throw({error,concat(["timeout not positive integer: ",_I])}).
 
 v_attributes(Attrs) ->
-    F = fun(A) when list(A) -> A;
+    F = fun(A) when is_list(A) -> A;
 	   (A) -> throw({error,concat(["attribute not String: ",A])})
 	end,
     lists:map(F,Attrs).
@@ -979,7 +979,7 @@ parse(Entries) ->
 
 get_integer(Key, List) ->
     case lists:keysearch(Key, 1, List) of
-	{value, {Key, Value}} when integer(Value) ->
+	{value, {Key, Value}} when is_integer(Value) ->
 	    Value;
 	{value, {Key, _Value}} ->
 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
@@ -989,7 +989,7 @@ get_integer(Key, List) ->
 
 get_list(Key, List) ->
     case lists:keysearch(Key, 1, List) of
-	{value, {Key, Value}} when list(Value) ->
+	{value, {Key, Value}} when is_list(Value) ->
 	    Value;
 	{value, {Key, _Value}} ->
 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
@@ -998,13 +998,13 @@ get_list(Key, List) ->
     end.
 
 get_hosts(Key, List) ->
-    lists:map(fun({Key1, {A,B,C,D}}) when integer(A),
-					  integer(B),
-					  integer(C),
-					  integer(D),
+    lists:map(fun({Key1, {A,B,C,D}}) when is_integer(A),
+					  is_integer(B),
+					  is_integer(C),
+					  is_integer(D),
 					  Key == Key1->
 		      {A,B,C,D};
-		 ({Key1, Value}) when list(Value),
+		 ({Key1, Value}) when is_list(Value),
 				      Key == Key1->
 		      Value;
 		 ({_Else, _Value}) ->
