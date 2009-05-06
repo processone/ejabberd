@@ -1,5 +1,8 @@
 2009-05-06  Badlop  <badlop@process-one.net>
 
+	* src/Makefile.in: Prevent Erlang R13B compilation warning:
+	behaviour X undefined (EJAB-920)
+
 	* src/ejabberd_loglevel.erl: Use dynamic_compile instead of
 	ram_file_io_server. Support definition of loglevels with integer
 	or atom. (thanks to Geoff Cant)(EJAB-919)
