@@ -59,9 +59,8 @@ start(normal, _Args) ->
     ejabberd_auth:start(),
     cyrsasl:start(),
     % Profiling
-    %eprof:start(),
-    %eprof:profile([self()]),
-    %fprof:trace(start, "/tmp/fprof"),
+    %ejabberd_debug:eprof_start(),
+    %fprof:trace([start, {file, "/tmp/fprof"}, {procs, ejabberd_debug:pids()}]),
     maybe_add_nameservers(),
     start_modules(),
     Sup;
@@ -77,6 +76,7 @@ prep_stop(State) ->
 
 %% All the processes were killed when this function is called
 stop(_State) ->
+    ejabberd_debug:stop(),
     ok.
 
 
