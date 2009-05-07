@@ -337,7 +337,7 @@ handle_cast({disco_response, From, _To,
 		    mnesia:dirty_write(#caps_features{node_pair = BinaryNode, features = features_to_binary(Features)}),
 		    gen_server:cast(self(), visit_feature_queries);
 		error ->
-		    ?ERROR_MSG("ID '~s' matches no query", [ID])
+		    ?DEBUG("ID '~s' matches no query", [ID])
 	    end;
 	{error, _} ->
 	    %% XXX: if we get error, we cache empty feature not to probe the client continuously
@@ -346,7 +346,7 @@ handle_cast({disco_response, From, _To,
 		    mnesia:dirty_write(#caps_features{node_pair = BinaryNode}),
 		    gen_server:cast(self(), visit_feature_queries);
 		error ->
-		    ?ERROR_MSG("ID '~s' matches no query", [ID])
+		    ?DEBUG("ID '~s' matches no query", [ID])
 	    end;
 	    %gen_server:cast(self(), visit_feature_queries),
 	    %?DEBUG("Error IQ reponse from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);

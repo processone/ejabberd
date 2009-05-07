@@ -179,6 +179,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
     ejabberd_hooks:add(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
+    ejabberd_hooks:add(anonymous_purge_hook, ServerHost, ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc),
     case lists:member(?PEPNODE, Plugins) of
@@ -409,69 +410,89 @@ send_loop(State) ->
 	%% and is not able to "store" events of remote users (via s2s)
 	%% this makes that hack only work for local domain by now
 	if State#state.pep_sendlast_offline ->
-	    case catch ejabberd_c2s:get_subscribed(Pid) of
-	    Contacts when is_list(Contacts) ->
-		{User, Server, Resource} = jlib:jid_tolower(JID),
-		lists:foreach(
-		    fun({U, S, R}) ->  %% local contacts
-			case ejabberd_sm:get_user_resources(U, S) of
-			[] -> %% offline
-			    case S of
-			    ServerHost -> %% local contact, so we may have pep items
-				PeerJID = jlib:make_jid(U, S, R),
-				self() ! {presence, User, Server, [Resource], PeerJID};
-			    _ -> %% remote contact, no items available
-				ok
-			    end;
-			_ -> %% online
-			    % this is already handled by presence probe
-			    ok
-			end;
-		    (_) ->  %% remote contacts
-			% we can not do anything in any cases
-			ok
-		end, Contacts);
+	    {User, Server, Resource} = jlib:jid_tolower(JID),
+	    case mod_caps:get_caps({User, Server, Resource}) of
+	    nothing ->
+		%% we don't have caps, no need to handle PEP items
+		ok;
 	    _ ->
-		ok
+		case catch ejabberd_c2s:get_subscribed(Pid) of
+		Contacts when is_list(Contacts) ->
+		    lists:foreach(
+			fun({U, S, R}) ->
+			    case S of
+				ServerHost ->  %% local contacts
+				    case ejabberd_sm:get_user_resources(U, S) of
+				    [] -> %% offline
+					PeerJID = jlib:make_jid(U, S, R),
+					self() ! {presence, User, Server, [Resource], PeerJID};
+				    _ -> %% online
+					% this is already handled by presence probe
+					ok
+				    end;
+				_ ->  %% remote contacts
+				    % we can not do anything in any cases
+				    ok
+			    end
+			end, Contacts);
+		_ ->
+		    ok
+		end
 	    end;
 	true ->
 	    ok
 	end,
 	send_loop(State);
     {presence, User, Server, Resources, JID} ->
-	Owner = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
-	Host = State#state.host,
-	ServerHost = State#state.server_host,
-	lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
-	    case get_option(Options, send_last_published_item) of
-		on_sub_and_presence ->
-		    lists:foreach(fun(Resource) ->
-			LJID = {User, Server, Resource},
-			case is_caps_notify(ServerHost, Node, LJID) of
-			    true ->
-				Subscribed = case get_option(Options, access_model) of
-					open -> true;
-					presence -> true;
-					whitelist -> false; % subscribers are added manually
-					authorize -> false; % likewise
-					roster ->
-					    Grps = get_option(Options, roster_groups_allowed, []),
-					    {OU, OS, _} = Owner,
-					    element(2, get_roster_info(OU, OS, LJID, Grps))
-				end,
-				if Subscribed ->
-				    send_items(Owner, Node, NodeId, Type, LJID, last);
-				true ->
-				    ok
-				end;
-			    false ->
-				ok
-			end
-		    end, Resources);
-		_ ->
-		    ok
-	    end
-	end, tree_action(Host, get_nodes, [Owner, JID])),
+	%% get resources caps and check if processing is needed
+	{HasCaps, ResourcesCaps} = lists:foldl(fun(Resource, {R, L}) ->
+		    case mod_caps:get_caps({User, Server, Resource}) of
+		    nothing -> {R, L};
+		    Caps -> {true, [{Resource, Caps} | L]}
+		    end
+		end, {false, []}, Resources),
+	case HasCaps of
+	    true ->
+		Host = State#state.host,
+		ServerHost = State#state.server_host,
+		Owner = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
+		lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
+		    case get_option(Options, send_last_published_item) of
+			on_sub_and_presence ->
+			    lists:foreach(fun({Resource, Caps}) ->
+				CapsNotify = case catch mod_caps:get_features(ServerHost, Caps) of
+					Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
+					_ -> false
+				    end,
+				case CapsNotify of
+				    true ->
+					LJID = {User, Server, Resource},
+					Subscribed = case get_option(Options, access_model) of
+						open -> true;
+						presence -> true;
+						whitelist -> false; % subscribers are added manually
+						authorize -> false; % likewise
+						roster ->
+						    Grps = get_option(Options, roster_groups_allowed, []),
+						    {OU, OS, _} = Owner,
+						    element(2, get_roster_info(OU, OS, LJID, Grps))
+					end,
+					if Subscribed ->
+					    send_items(Owner, Node, NodeId, Type, LJID, last);
+					true ->
+					    ok
+					end;
+				    false ->
+					ok
+				end
+			    end, ResourcesCaps);
+			_ ->
+			    ok
+		    end
+		end, tree_action(Host, get_nodes, [Owner, JID]));
+	    false ->
+		ok
+	end,
 	send_loop(State);
     stop ->
 	ok
@@ -535,7 +556,7 @@ disco_sm_features(Acc, From, To, Node, _Lang) ->
 
 disco_sm_items(Acc, From, To, [], _Lang) ->
     Host = To#jid.lserver,
-    case tree_action(Host, get_nodes, [Host, From]) of
+    case tree_action(Host, get_subnodes, [Host, [], From]) of
 	[] ->
 	    Acc;
 	Nodes ->
@@ -677,7 +698,7 @@ handle_cast({remove_user, LUser, LServer}, State) ->
     %% remove user's PEP nodes 
     lists:foreach(fun(#pubsub_node{nodeid={NodeKey, NodeName}}) ->
 	delete_node(NodeKey, NodeName, Owner)
-    end, tree_action(Host, get_nodes, [jlib:jid_tolower(Owner)])),
+    end, tree_action(Host, get_nodes, [jlib:jid_tolower(Owner), Owner])),
     %% remove user's nodes
     delete_node(Host, ["home", LServer, LUser], Owner),
     {noreply, State}; 
@@ -717,7 +738,6 @@ terminate(_Reason, #state{host = Host,
 			  nodetree = TreePlugin,
 			  plugins = Plugins,
 			  send_loop = SendLoop}) ->
-    terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
     ejabberd_router:unregister_route(Host),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
@@ -735,11 +755,12 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 50),
     ejabberd_hooks:delete(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(anonymous_purge_hook, ServerHost, ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER),
     mod_disco:unregister_feature(ServerHost, ?NS_PUBSUB),
     SendLoop ! stop,
-    ok.
+    terminate_plugins(Host, ServerHost, Plugins, TreePlugin).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -1748,23 +1769,24 @@ delete_item(_, "", _, _, _) ->
     %% Request does not specify a node
     {error, extended_error(?ERR_BAD_REQUEST, "node-required")};
 delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
-    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-		     Features = features(Type),
-		     PersistentFeature = lists:member("persistent-items", Features),
-		     DeleteFeature = lists:member("delete-items", Features),
-		     if
-			 %%->   iq_pubsub just does that matchs
-			 %%	%% Request does not specify an item
-			 %%	{error, extended_error(?ERR_BAD_REQUEST, "item-required")};
-			 not PersistentFeature ->
-			     %% Node does not support persistent items
-			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "persistent-items")};
-			 not DeleteFeature ->
-			     %% Service does not support item deletion
-			     {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "delete-items")};
-			 true ->
-			     node_call(Type, delete_item, [NodeId, Publisher, ItemId])
-		     end
+    Action = fun(#pubsub_node{options = Options, type = Type, id = NodeId}) ->
+		    Features = features(Type),
+		    PersistentFeature = lists:member("persistent-items", Features),
+		    DeleteFeature = lists:member("delete-items", Features),
+		    PublishModel = get_option(Options, publish_model),
+		    if
+			%%->   iq_pubsub just does that matchs
+			%%	%% Request does not specify an item
+			%%	{error, extended_error(?ERR_BAD_REQUEST, "item-required")};
+			not PersistentFeature ->
+			    %% Node does not support persistent items
+			    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "persistent-items")};
+			not DeleteFeature ->
+			    %% Service does not support item deletion
+			    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "delete-items")};
+			true ->
+			    node_call(Type, delete_item, [NodeId, Publisher, PublishModel, ItemId])
+		    end
 	     end,
     Reply = [],
     case transaction(Host, Node, Action, sync_dirty) of
@@ -1905,8 +1927,9 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 	    end
     end.
 
-%% @spec (Host, NodeId, Type LJID, Number) -> any()
+%% @spec (Host, Node, NodeId, Type LJID, Number) -> any()
 %%	 Host = pubsubHost()
+%%	 Node = pubsubNode()
 %%	 NodeId = pubsubNodeId()
 %%	 Type = pubsubNodeType()
 %%	 LJID = {U, S, []}

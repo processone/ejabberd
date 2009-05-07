@@ -56,7 +56,7 @@
 	 subscribe_node/7,
 	 unsubscribe_node/4,
 	 publish_item/6,
-	 delete_item/3,
+	 delete_item/4,
 	 remove_extra_items/3,
 	 get_entity_affiliations/2,
 	 get_node_affiliations/1,
@@ -482,23 +482,25 @@ remove_extra_items(NodeId, MaxItems, ItemIds) ->
     %% Return the new items list:
     {result, {NewItems, OldItems}}.
 
-%% @spec (NodeId, JID, ItemId) ->
+%% @spec (NodeId, Publisher, PublishModel, ItemId) ->
 %%		  {error, Reason::stanzaError()} |
 %%		  {result, []}
 %%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 JID = mod_pubsub:jid()
+%%	 Publisher = mod_pubsub:jid()
+%%	 PublishModel = atom()
 %%	 ItemId = string()
 %% @doc <p>Triggers item deletion.</p>
 %% <p>Default plugin: The user performing the deletion must be the node owner
-%% or a publisher.</p>
-delete_item(NodeId, Publisher, ItemId) ->
+%% or a publisher, or PublishModel being open.</p>
+delete_item(NodeId, Publisher, PublishModel, ItemId) ->
     SubKey = jlib:jid_tolower(Publisher),
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(NodeId, GenKey),
     #pubsub_state{affiliation = Affiliation, items = Items} = GenState,
     Allowed = (Affiliation == publisher) orelse (Affiliation == owner)
+	orelse (PublishModel == open)
 	orelse case get_item(NodeId, ItemId) of
-		   {result, #pubsub_item{creation = {GenKey, _}}} -> true;
+		   {result, #pubsub_item{creation = {_, GenKey}}} -> true;
 		   _ -> false
 	       end,
     if
@@ -554,7 +556,7 @@ get_entity_affiliations(_Host, Owner) ->
 		%% TODO check if Host needed
 	       #pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
     Tr = fun(#pubsub_state{stateid = {_, N}, affiliation = A}) ->
-		 {N, A}
+		 {get_nodename(N), A}
 	 end,
     {result, lists:map(Tr, States)}.
 
@@ -604,7 +606,7 @@ get_entity_subscriptions(_Host, Owner) ->
 	       #pubsub_state{stateid = {SubKey, '_'}, _ = '_'})
     end,
     Tr = fun(#pubsub_state{stateid = {J, N}, subscription = S}) ->
-		 {N, S, J}
+		 {get_nodename(N), S, J}
 	 end,
     {result, lists:map(Tr, States)}.
 
@@ -810,3 +812,11 @@ can_fetch_item(outcast,      _)             -> false;
 can_fetch_item(none,         subscribed)    -> true;
 can_fetch_item(none,         none)          -> false;
 can_fetch_item(_Affiliation, _Subscription) -> false.
+
+%% @spec (NodeId) -> Node
+%% @doc retreive pubsubNode() representation giving a NodeId
+get_nodename(NodeId) ->
+    case mnesia:index_read(pubsub_node, NodeId, #pubsub_node.id) of
+	[#pubsub_node{nodeid = {_, Node}}] -> Node;
+	_ -> []
+    end.
