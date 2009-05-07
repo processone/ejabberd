@@ -74,6 +74,7 @@ init(_Host, _ServerHost, _Opts) ->
     mnesia:create_table(pubsub_node,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, pubsub_node)}]),
+    mnesia:add_table_index(pubsub_node, id),
     NodesFields = record_info(fields, pubsub_node),
     case mnesia:table_info(pubsub_node, attributes) of
 	NodesFields -> ok;

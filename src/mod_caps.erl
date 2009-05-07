@@ -192,9 +192,6 @@ receive_packet(_, _, _) ->
 receive_packet(_JID, From, To, Packet) ->
     receive_packet(From, To, Packet).
 
-jid_to_binary(JID) ->
-    list_to_binary(jlib:jid_to_string(JID)).
-
 caps_to_binary(#caps{node = Node, version = Version, exts = Exts}) ->
     BExts = [list_to_binary(Ext) || Ext <- Exts],
     #caps{node = list_to_binary(Node), version = list_to_binary(Version), exts = BExts}.
@@ -330,7 +327,7 @@ handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payl
 		    mnesia:dirty_write(#caps_features{node_pair = BinaryNode, features = features_to_binary(Features)}),
 		    gen_server:cast(self(), visit_feature_queries);
 		error ->
-		    ?ERROR_MSG("ID '~s' matches no query", [ID])
+		    ?DEBUG("ID '~s' matches no query", [ID])
 	    end;
 	{error, _} ->
 	    %% XXX: if we get error, we cache empty feature not to probe the client continuously
@@ -339,7 +336,7 @@ handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payl
 		    mnesia:dirty_write(#caps_features{node_pair = BinaryNode}),
 		    gen_server:cast(self(), visit_feature_queries);
 		error ->
-		    ?ERROR_MSG("ID '~s' matches no query", [ID])
+		    ?DEBUG("ID '~s' matches no query", [ID])
 	    end;
 	    %gen_server:cast(self(), visit_feature_queries),
 	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:jid_to_list(From), SubEls]);

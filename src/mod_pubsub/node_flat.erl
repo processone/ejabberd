@@ -41,7 +41,7 @@
 	 subscribe_node/7,
 	 unsubscribe_node/4,
 	 publish_item/6,
-	 delete_item/3,
+	 delete_item/4,
 	 remove_extra_items/3,
 	 get_entity_affiliations/2,
 	 get_node_affiliations/1,
@@ -121,8 +121,8 @@ publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
 remove_extra_items(NodeId, MaxItems, ItemIds) ->
     node_default:remove_extra_items(NodeId, MaxItems, ItemIds).
 
-delete_item(NodeId, JID, ItemId) ->
-    node_default:delete_item(NodeId, JID, ItemId).
+delete_item(NodeId, Publisher, PublishModel, ItemId) ->
+    node_default:delete_item(NodeId, Publisher, PublishModel, ItemId).
 
 purge_node(NodeId, Owner) ->
     node_default:purge_node(NodeId, Owner).

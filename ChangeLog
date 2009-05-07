@@ -1,3 +1,38 @@
+2009-05-07  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_caps.erl: Set debug message to DEBUG (from debian patch,
+	thanks to Sergei Golovan)
+
+	* src/mod_pubsub/mod_pubsub.erl: Remove subscriptions when anonymous
+	user removed (EJAB-913) (thanks to Andy Skelton)
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix disco#items bug on root node,
+	and fix other minor typo from previous patch.
+
+	* src/mod_pubsub/mod_pubsub.erl: Avoid calling get_user_resources
+	on non local domain when pep_sendlast_offline is enabled
+
+	* src/mod_pubsub/mod_pubsub.erl: Reduce send_last_item load and number
+	of calls to get_caps
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix get_entity_* not returning node
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/nodetree_default.erl: Likewise
+
+	* src/mod_pubsub/mod_pubsub.erl: Retract policy should obey
+	pubsub#publish_model (EJAB-871) (thanks to Matthew Baron)
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_mb.erl: Likewise
+	* src/mod_pubsub/node_dispatch.erl: Likewise
+	* src/mod_pubsub/node_buddy.erl: Likewise
+	* src/mod_pubsub/node_private.erl: Likewise
+	* src/mod_pubsub/node_public.erl: Likewise
+	* src/mod_pubsub/node_default.erl: Likewise
+	* src/mod_pubsub/node_pep.erl: Likewise
+	* src/mod_pubsub/node_club.erl: Likewise
+	* src/mod_pubsub/node_flat.erl: Likewise
+	* src/mod_pubsub/node.template: Likewise
+
 2009-05-06  Badlop  <badlop@process-one.net>
 
 	* src/ejabberd_c2s.erl: Replace TYPE/1 with is_TYPE/1 (EJAB-922)

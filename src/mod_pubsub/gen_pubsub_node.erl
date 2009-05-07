@@ -49,7 +49,7 @@ behaviour_info(callbacks) ->
      {subscribe_node, 7},
      {unsubscribe_node, 4},
      {publish_item, 6},
-     {delete_item, 3},
+     {delete_item, 4},
      {remove_extra_items, 3},
      {get_node_affiliations, 1},
      {get_entity_affiliations, 2},

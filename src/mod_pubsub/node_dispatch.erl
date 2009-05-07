@@ -48,7 +48,7 @@
 	 subscribe_node/7,
 	 unsubscribe_node/4,
 	 publish_item/6,
-	 delete_item/3,
+	 delete_item/4,
 	 remove_extra_items/3,
 	 get_entity_affiliations/2,
 	 get_node_affiliations/1,
@@ -135,7 +135,7 @@ publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
 remove_extra_items(_NodeId, _MaxItems, ItemIds) ->
     {result, {ItemIds, []}}.
 
-delete_item(_NodeId, _JID, _ItemId) ->
+delete_item(_NodeId, _Publisher, _PublishModel, _ItemId) ->
     {error, 'item-not-found'}.
 
 purge_node(_NodeId, _Owner) ->
