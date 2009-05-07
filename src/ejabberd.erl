@@ -31,11 +31,12 @@
 	 get_so_path/0, get_bin_path/0]).
 
 start() ->
+    %%ejabberd_cover:start(),
     application:start(ejabberd).
 
 stop() ->
     application:stop(ejabberd).
-
+    %%ejabberd_cover:stop().
 
 get_so_path() ->
     case os:getenv("EJABBERD_SO_PATH") of
