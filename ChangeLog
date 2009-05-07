@@ -1,3 +1,11 @@
+2009-05-08  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Allow to get subscriptions on a given
+	node (EJAB-712); Improve XML schema validation on publish item;
+	Remove subscriptions of users whose authorization has been removed on
+	nodes with presence access model; Do not allow unsubscribed user to
+	subscribe node with presence access model.
+
 2009-05-08  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_app.erl: Better support for profiling.
