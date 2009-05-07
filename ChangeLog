@@ -1,3 +1,10 @@
+2009-05-08  Mickael Remond  <mremond@process-one.net>
+
+	* src/ejabberd_app.erl: Better support for profiling.
+	* src/ejabberd.erl: Likewise
+	* src/ejabberd_ctl.erl: Likewise
+	* src/ejabberd_debug.erl: Likewise
+
 2009-05-07  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_caps.erl: Set debug message to DEBUG (from debian patch,

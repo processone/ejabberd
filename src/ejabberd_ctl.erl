@@ -143,6 +143,7 @@ process(["status"]) ->
     end;
 
 process(["stop"]) ->
+    %%ejabberd_cover:stop(),
     init:stop(),
     ?STATUS_SUCCESS;
 
