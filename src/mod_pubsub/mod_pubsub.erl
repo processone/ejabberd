@@ -1428,7 +1428,7 @@ create_node(Host, ServerHost, [], Owner, Type, Access, Configuration) ->
 		{result, []} ->
 		    {result,
 		     [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
-		       [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = [?XMLATTR('node', node_to_string(NewNode))]}]}]};
+		       [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = nodeAttr(NewNode)}]}]};
 		Error -> Error
 	    end;
 	false ->
@@ -1477,7 +1477,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			end
 		end,
 	    Reply = [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
-		      [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = [?XMLATTR('node', node_to_string(Node))]}]}],
+		      [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = nodeAttr(Node)}]}],
 	    case transaction(CreateNode, transaction) of
 		{result, {Result, broadcast}} ->
 		    %%Lang = "en", %% TODO: fix
@@ -1752,7 +1752,9 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    end
 	    end,
     ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
-    Reply = [], %% TODO EJAB-909
+    Reply = [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
+		[#xmlel{ns = ?NS_PUBSUB, name = 'publish', attrs = nodeAttr(Node), children =
+		    [#xmlel{ns = ?NS_PUBSUB, name = 'item', attrs = itemAttr(ItemId)}]}]}],
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {TNode, {Result, broadcast, Removed}}} ->
 	    NodeId = TNode#pubsub_node.id,
@@ -1970,7 +1972,7 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 		    %% Generate the XML response (Item list), limiting the
 		    %% number of items sent to MaxItems:
 		    {result, [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
-				[#xmlel{ns = ?NS_PUBSUB, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children =
+				[#xmlel{ns = ?NS_PUBSUB, name = 'items', attrs = nodeAttr(Node), children =
 				    itemsEls(lists:sublist(SendItems, MaxItems))}]}]};
 		Error ->
 		    Error
@@ -2014,7 +2016,7 @@ send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
 	    []
     end,
     Stanza = event_stanza(
-		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children =
+		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
 		  itemsEls(ToSend)}]),
     ejabberd_router ! {route, service_jid(Host), exmpp_jid:make_jid(LU, LS, LR), Stanza}.
 
@@ -2082,7 +2084,7 @@ get_affiliations(Host, Node, JID) ->
 				    ?XMLATTR('affiliation', affiliation_to_string(Affiliation))]}]
 			 end, Affiliations),
 	    {result, [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
-		       [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'affiliations', attrs = [?XMLATTR('node', node_to_string(Node))], children =
+		       [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'affiliations', attrs = nodeAttr(Node), children =
 			 Entities}]}]};
 	Error ->
 	    Error
@@ -2253,7 +2255,7 @@ get_subscriptions(Host, Node, JID) ->
 				    ?XMLATTR('subid', SubId)]}]
 			 end, Subscriptions),
 	    {result, [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
-		       [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'subscriptions', attrs = [?XMLATTR('node', node_to_string(Node))], children =
+		       [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'subscriptions', attrs = nodeAttr(Node), children =
 			 Entities}]}]};
 	Error ->
 	    Error
@@ -2434,7 +2436,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, _From
 		false -> []
 	    end,
 	    Stanza = event_stanza(
-		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children =
+		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'item', attrs = itemAttr(ItemId), children = Content}]}]),
 	    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 	    case Removed of
@@ -2444,7 +2446,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, _From
 		    case get_option(Options, notify_retract) of
 			true ->
 			    RetractStanza = event_stanza(
-				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children = 
+				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children = 
 				[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'retract', attrs = itemAttr(RId)} || RId <- Removed]}]),
 			    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, RetractStanza);
 			_ ->
@@ -2469,7 +2471,7 @@ broadcast_retract_items(Host, Node, NodeId, Type, Options, ItemIds, ForceNotify)
 		    {result, false};
 		{result, Subs} ->
 		    Stanza = event_stanza(
-			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children = 
+			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children = 
 			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'retract', attrs = itemAttr(ItemId)} || ItemId <- ItemIds]}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 		    {result, true};
@@ -2489,7 +2491,7 @@ broadcast_purge_node(Host, Node, NodeId, Type, Options) ->
 		    {result, false};
 		{result, Subs} ->
 		    Stanza = event_stanza(
-			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'purge', attrs = [?XMLATTR('node', node_to_string(Node))]}]),
+			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'purge', attrs = nodeAttr(Node)}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 		    {result, true};
 		_ -> 
@@ -2508,7 +2510,7 @@ broadcast_removed_node(Host, Node, NodeId, Type, Options, Subs) ->
 		    {result, false};
 		_ ->
 		    Stanza = event_stanza(
-			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'delete', attrs = [?XMLATTR('node', node_to_string(Node))]}]),
+			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'delete', attrs = nodeAttr(Node)}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 		    {result, true}
 	    end;
@@ -2532,7 +2534,7 @@ broadcast_config_notification(Host, Node, NodeId, Type, Options, Lang) ->
 				[]
 		    end,
 		    Stanza = event_stanza(
-			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = [?XMLATTR('node', node_to_string(Node))], children =
+			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
 			    [#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'item', attrs = [?XMLATTR('id', <<"configuration">>)], children =
 			    Content}]}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
@@ -2667,7 +2669,7 @@ get_configure(Host, ServerHost, Node, From, Lang) ->
 			{result,
 			 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
 			   [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'configure', attrs =
-			     [?XMLATTR('node', node_to_string(Node))], children =
+			     nodeAttr(Node), children =
 			     [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
 			       [?XMLATTR('type', <<"form">>)], children =
 			       get_configure_xfields(Type, Options, Lang, Groups)
@@ -3094,7 +3096,7 @@ uniqid() ->
     lists:flatten(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
 
 % node attributes
-nodeAttr(Node) ->  %% TODO: to be used
+nodeAttr(Node) ->
     [?XMLATTR('node', node_to_string(Node))].
 
 % item attributes
