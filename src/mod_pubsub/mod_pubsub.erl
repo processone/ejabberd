@@ -55,6 +55,7 @@
 
 %% exports for hooks
 -export([presence_probe/3,
+	 in_subscription/6,
 	 out_subscription/4,
 	 remove_user/2,
 	 disco_local_identity/5,
@@ -179,6 +180,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:add(presence_probe_hook, ServerHostB, ?MODULE, presence_probe, 50),
+    ejabberd_hooks:add(roster_in_subscription, ServerHostB, ?MODULE, in_subscription, 50),
     ejabberd_hooks:add(roster_out_subscription, ServerHostB, ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHostB, ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, ServerHostB, ?MODULE, remove_user, 50),
@@ -446,6 +448,7 @@ send_loop(State) ->
 	end,
 	send_loop(State);
     {presence, User, Server, Resources, JID} ->
+?INFO_MSG("got presence probe ~s@~s~p ~p",[User,Server,Resources,jlib:jid_tolower(JID)]),
 	%% get resources caps and check if processing is needed
 	{HasCaps, ResourcesCaps} = lists:foldl(fun(Resource, {R, L}) ->
 		    case mod_caps:get_caps({User, Server, Resource}) of
@@ -466,6 +469,7 @@ send_loop(State) ->
 					Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
 					_ -> false
 				    end,
+?INFO_MSG("notify ~s ~s",[Node, CapsNotify]),
 				case CapsNotify of
 				    true ->
 					LJID = {User, Server, Resource},
@@ -641,6 +645,12 @@ out_subscription(User, Server, JID, subscribed) ->
     gen_server:cast(Proc, {presence, U, S, Rs, Owner});
 out_subscription(_, _, _, _) ->
     ok.
+in_subscription(_, User, Server, Subscriber, unsubscribed, _) ->
+    Owner = exmpp_jid:make_jid(User, Server, ""),
+    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
+    gen_server:cast(Proc, {unsubscribe, Subscriber, Owner});
+in_subscription(_, _, _, _, _, _) ->
+    ok.
 
 %% -------
 %% user remove hook handling function
@@ -710,6 +720,33 @@ handle_cast({remove_user, LUser, LServer}, State) ->
     delete_node(Host, ["home", LServer, LUser], Owner),
     {noreply, State}; 
 
+handle_cast({unsubscribe, Subscriber, Owner}, State) ->
+    Host = State#state.host,
+    BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    lists:foreach(fun(PType) ->
+	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Subscriber]),
+	lists:foreach(fun
+	    ({Node, subscribed, JID}) ->
+		Action = fun(#pubsub_node{options = Options, owners = Owners, type = Type, id = NodeId}) ->
+		    case get_option(Options, access_model) of
+			presence ->
+			    case lists:member(BJID, Owners) of
+				true ->
+				    node_call(Type, unsubscribe_node, [NodeId, Subscriber, JID, all]);
+				false ->
+				    ok
+			    end;
+			_ ->
+			    ok
+		    end
+		end,
+		transaction(Host, Node, Action, sync_dirty);
+	    (_) ->  
+		ok
+	end, Subscriptions)
+    end, State#state.plugins),
+    {noreply, State}; 
+
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -764,6 +801,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:delete(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:delete(presence_probe_hook, ServerHostB, ?MODULE, presence_probe, 50),
+    ejabberd_hooks:delete(roster_in_subscription, ServerHostB, ?MODULE, in_subscription, 50),
     ejabberd_hooks:delete(roster_out_subscription, ServerHostB, ?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHostB, ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, ServerHostB, ?MODULE, remove_user, 50),
@@ -1134,7 +1172,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, _Lang, Access, Plugins) ->
 			end, [], exmpp_xml:remove_cdata_from_list(Els)),
 		    get_items(Host, Node, From, SubId, MaxItems, ItemIDs);
 		{get, 'subscriptions'} ->
-		    get_subscriptions(Host, From, Plugins);
+		    get_subscriptions(Host, Node, From, Plugins);
 		{get, 'affiliations'} ->
 		    get_affiliations(Host, From, Plugins);
 		{get, "options"} ->
@@ -1550,39 +1588,42 @@ subscribe_node(Host, Node, From, JID) ->
 	    {undefined, undefined, undefined}
     end,
     SubId = uniqid(),
-    Action = fun(#pubsub_node{options = Options, type = Type, id = NodeId}) ->
-		     Features = features(Type),
-		     SubscribeFeature = lists:member("subscribe", Features),
-		     SubscribeConfig = get_option(Options, subscribe),
-		     AccessModel = get_option(Options, access_model),
-		     SendLast = get_option(Options, send_last_published_item),
-		     AllowedGroups = get_option(Options, roster_groups_allowed, []),
-		     {PresenceSubscription, RosterGroup} =
-			 case Host of
-			     {OUser, OServer, _} ->
-				 get_roster_info(OUser, OServer,
-						 Subscriber, AllowedGroups);
-			     _ ->
-				 case Subscriber of
-				     {"", "", ""} -> {false, false};
-				     {U, S, _} -> get_roster_info(U, S, Subscriber,
-								  AllowedGroups)
-				 end
-			 end,
-		     if
-			 not SubscribeFeature ->
-			     %% Node does not support subscriptions
-			     {error, extended_error('feature-not-implemented', unsupported, "subscribe")};
-			 not SubscribeConfig ->
-			     %% Node does not support subscriptions
-			     {error, extended_error('feature-not-implemented', unsupported, "subscribe")};
-			 true ->
-			     node_call(Type, subscribe_node,
-				       [NodeId, From, Subscriber,
+    Action = fun(#pubsub_node{options = Options, owners = [Owner|_], type = Type, id = NodeId}) ->
+		    Features = features(Type),
+		    SubscribeFeature = lists:member("subscribe", Features),
+		    SubscribeConfig = get_option(Options, subscribe),
+		    AccessModel = get_option(Options, access_model),
+		    SendLast = get_option(Options, send_last_published_item),
+		    AllowedGroups = get_option(Options, roster_groups_allowed, []),
+		    {PresenceSubscription, RosterGroup} =
+			case Host of
+			    {OUser, OServer, _} ->
+				get_roster_info(OUser, OServer,
+						Subscriber, AllowedGroups);
+			    _ ->
+				case Subscriber of
+				    {"", "", ""} ->
+					{false, false};
+				    _ ->
+					{OU, OS, _} = Owner,
+					get_roster_info(OU, OS,
+							Subscriber, AllowedGroups)
+				end
+			end,
+		    if
+			not SubscribeFeature ->
+			    %% Node does not support subscriptions
+			    {error, extended_error('feature-not-implemented', unsupported, "subscribe")};
+			not SubscribeConfig ->
+			    %% Node does not support subscriptions
+			    {error, extended_error('feature-not-implemented', unsupported, "subscribe")};
+			true ->
+			    node_call(Type, subscribe_node,
+					[NodeId, From, Subscriber,
 					AccessModel, SendLast,
 					PresenceSubscription, RosterGroup])
-		     end
-	     end,
+		    end
+	    end,
     Reply = fun(Subscription) ->
 		    %% TODO, this is subscription-notification, should depends on node features
 		    Fields =
@@ -1694,10 +1735,10 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			PayloadSize > PayloadMaxSize ->
 			    %% Entity attempts to publish very large payload
 			    {error, extended_error('not-acceptable', "payload-too-big")};
-			PayloadCount == 0 ->
+			(PayloadCount == 0) and (Payload == []) ->
 			    %% Publisher attempts to publish to payload node with no payload
 			    {error, extended_error('bad-request', "payload-required")};
-			PayloadCount > 1 ->
+			(PayloadCount > 1) or (PayloadCount == 0) ->
 			    %% Entity attempts to publish item with multiple payload elements
 			    {error, extended_error('bad-request', "invalid-payload")};
 			(DeliverPayloads == 0) and (PersistItems == 0) and (PayloadSize > 0) ->
@@ -2015,20 +2056,20 @@ get_affiliations(Host, JID, Plugins) when is_list(Plugins) ->
     end;
 get_affiliations(Host, Node, JID) ->
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-		     Features = features(Type),
-		     RetrieveFeature = lists:member("modify-affiliations", Features),
-		     Affiliation = node_call(Type, get_affiliation, [NodeId, JID]),
-		     if
-			 not RetrieveFeature ->
-			     %% Service does not support modify affiliations
-			     {error, extended_error('feature-not-implemented', unsupported, "modify-affiliations")};
-			 Affiliation /= {result, owner} ->
-			     %% Entity is not an owner
-			     {error, 'forbidden'};
-			 true ->
-			     node_call(Type, get_node_affiliations, [NodeId])
-		     end
-	     end,
+		    Features = features(Type),
+		    RetrieveFeature = lists:member("modify-affiliations", Features),
+		    {result, Affiliation} = node_call(Type, get_affiliation, [NodeId, JID]),
+		    if
+			not RetrieveFeature ->
+			    %% Service does not support modify affiliations
+			    {error, extended_error('feature-not-implemented', unsupported, "modify-affiliations")};
+			Affiliation /= owner ->
+			    %% Entity is not an owner
+			    {error, 'forbidden'};
+			true ->
+			    node_call(Type, get_node_affiliations, [NodeId])
+		    end
+	    end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {_, []}} ->
 	    {error, 'item-not-found'};
@@ -2116,14 +2157,15 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
     end.
 
 
-%% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
+%% @spec (Host, Node, JID, Plugins) -> {error, Reason} | {result, Response}
 %%	 Host = host()
+%%	 Node = pubsubNode()
 %%	 JID = jid()
 %%	 Plugins = [Plugin::string()]
 %%	 Reason = stanzaError()
 %%	 Response = [pubsubIQResponse()]
 %% @doc <p>Return the list of subscriptions as an XMPP response.</p>
-get_subscriptions(Host, JID, Plugins) when is_list(Plugins) ->
+get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
     Result = lists:foldl(
 	       fun(Type, {Status, Acc}) ->
 		       Features = features(Type),
@@ -2141,40 +2183,59 @@ get_subscriptions(Host, JID, Plugins) when is_list(Plugins) ->
     case Result of
 	{ok, Subscriptions} ->
 	    Entities = lists:flatmap(
-			 fun({_, none}) -> [];
-			    ({Node, Subscription}) ->
+			 fun({_, none}) ->
+				[];
+			    ({SubsNode, Subscription}) ->
+				case Node of
+				[] ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
-				   [?XMLATTR('node', node_to_string(Node)),
+				   [?XMLATTR('node', node_to_string(SubsNode)),
 				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
-			    ({_, none, _}) -> [];
-			    ({Node, Subscription, SubJID}) ->
+				SubsNode ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
-				   [?XMLATTR('node', node_to_string(Node)),
+				   [?XMLATTR('subscription', subscription_to_string(Subscription))]}];
+				_ ->
+				 []
+				end;
+			    ({_, none, _}) ->
+				[];
+			    ({SubsNode, Subscription, SubJID}) ->
+				case Node of
+				[] ->
+				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
+				   [?XMLATTR('node', node_to_string(SubsNode)),
 				    ?XMLATTR('jid', exmpp_jid:jid_to_binary(SubJID)),
-				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}]
+				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
+				SubsNode ->
+				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
+				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(SubJID)),
+				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
+				_ ->
+				 []
+				end
 			 end, lists:usort(lists:flatten(Subscriptions))),
 	    {result, [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 		       [#xmlel{ns = ?NS_PUBSUB, name = 'subscriptions', children =
 			 Entities}]}]};
 	{Error, _} ->
 	    Error
-    end;
+    end.
 get_subscriptions(Host, Node, JID) ->
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-		     Features = features(Type),
-		     RetrieveFeature = lists:member("manage-subscriptions", Features),
-		     Affiliation = node_call(Type, get_affiliation, [NodeId, JID]),
-		     if
-			 not RetrieveFeature ->
-			     %% Service does not support manage subscriptions
-			     {error, extended_error('feature-not-implemented', unsupported, "manage-subscriptions")};
-			 Affiliation /= {result, owner} ->
-			     %% Entity is not an owner
-			     {error, 'forbidden'};
-			 true ->
-			     node_call(Type, get_node_subscriptions, [NodeId])
-		     end
-	     end,
+		    Features = features(Type),
+		    RetrieveFeature = lists:member("manage-subscriptions", Features),
+		    {result, Affiliation} = node_call(Type, get_affiliation, [NodeId, JID]),
+		    if
+			not RetrieveFeature ->
+			    %% Service does not support manage subscriptions
+			    {error, extended_error('feature-not-implemented', unsupported, "manage-subscriptions")};
+			Affiliation /= owner ->
+			    %% Entity is not an owner
+			    {error, 'forbidden'};
+			true ->
+			    node_call(Type, get_node_subscriptions, [NodeId])
+		    end
+	    end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {_, []}} ->
 	    {error, 'item-not-found'};
