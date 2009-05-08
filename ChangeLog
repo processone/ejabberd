@@ -6,6 +6,9 @@
 	nodes with presence access model; Do not allow unsubscribed user to
 	subscribe node with presence access model.
 
+	* src/mod_pubsub/mod_pubsub.erl: Handle Example 90 of XEP-0060
+	(EJAB-909)
+
 2009-05-08  Mickael Remond  <mremond@process-one.net>
 
 	* src/ejabberd_app.erl: Better support for profiling.

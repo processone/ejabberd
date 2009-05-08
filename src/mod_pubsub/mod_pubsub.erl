@@ -570,8 +570,7 @@ disco_sm_items(Acc, From, To, [], _Lang) ->
 	    NodeItems = lists:map(
 			  fun(#pubsub_node{nodeid = {_, Node}}) ->
 				  {xmlelement, "item",
-				   [{"jid", SBJID},
-				    {"node", node_to_string(Node)}],
+				   [{"jid", SBJID}|nodeAttr(Node)],
 				   []}
 			  end, Nodes),
 	    {result, NodeItems ++ Items}
@@ -1419,7 +1418,7 @@ create_node(Host, ServerHost, [], Owner, Type, Access, Configuration) ->
 		{result, []} ->
 		    {result,
 		     [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
-		       [{xmlelement, "create", [{"node", node_to_string(NewNode)}], []}]}]};
+		       [{xmlelement, "create", nodeAttr(NewNode), []}]}]};
 		Error -> Error
 	    end;
 	false ->
@@ -1468,7 +1467,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			end
 		end,
 	    Reply = [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
-		      [{xmlelement, "create", [{"node", node_to_string(Node)}],
+		      [{xmlelement, "create", nodeAttr(Node),
 			[]}]}],
 	    case transaction(CreateNode, transaction) of
 		{result, {Result, broadcast}} ->
@@ -1617,9 +1616,8 @@ subscribe_node(Host, Node, From, JID) ->
     Reply = fun(Subscription) ->
 		    %% TODO, this is subscription-notification, should depends on node features
 		    Fields =
-			[{"node", node_to_string(Node)},
-			 {"jid", jlib:jid_to_string(Subscriber)},
-			 {"subscription", subscription_to_string(Subscription)}],
+			[{"jid", jlib:jid_to_string(Subscriber)},
+			 {"subscription", subscription_to_string(Subscription)}|nodeAttr(Node)],
 		    [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], 
 			[{xmlelement, "subscription",
 			    case Subscription of
@@ -1741,7 +1739,9 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    end
 	    end,
     ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
-    Reply = [], %% TODO EJAB-909
+    Reply = [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], 
+		[{xmlelement, "publish", nodeAttr(Node),
+		    [{xmlelement, "item", itemAttr(ItemId), []}]}]}],
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {TNode, {Result, broadcast, Removed}}} ->
 	    NodeId = TNode#pubsub_node.id,
@@ -1959,7 +1959,7 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 		    %% Generate the XML response (Item list), limiting the
 		    %% number of items sent to MaxItems:
 		    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
-				[{xmlelement, "items", [{"node", node_to_string(Node)}],
+				[{xmlelement, "items", nodeAttr(Node),
 				  itemsEls(lists:sublist(SendItems, MaxItems))}]}]};
 		Error ->
 		    Error
@@ -2003,7 +2003,7 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 	    []
     end,
     Stanza = event_stanza(
-	[{xmlelement, "items", [{"node", node_to_string(Node)}],
+	[{xmlelement, "items", nodeAttr(Node),
 	  itemsEls(ToSend)}]),
     ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza}.
 
@@ -2034,8 +2034,7 @@ get_affiliations(Host, JID, Plugins) when is_list(Plugins) ->
 			 fun({_, none}) -> [];
 			    ({Node, Affiliation}) ->
 				 [{xmlelement, "affiliation",
-				   [{"node", node_to_string(Node)},
-				    {"affiliation", affiliation_to_string(Affiliation)}],
+				   [{"affiliation", affiliation_to_string(Affiliation)}|nodeAttr(Node)],
 				   []}]
 			 end, lists:usort(lists:flatten(Affiliations))),
 	    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
@@ -2073,7 +2072,7 @@ get_affiliations(Host, Node, JID) ->
 				   []}]
 			 end, Affiliations),
 	    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
-		       [{xmlelement, "affiliations", [{"node", node_to_string(Node)}],
+		       [{xmlelement, "affiliations", nodeAttr(Node),
 			 Entities}]}]};
 	Error ->
 	    Error
@@ -2176,8 +2175,7 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				case Node of
 				[] ->
 				 [{xmlelement, "subscription",
-				   [{"node", node_to_string(SubsNode)},
-				    {"subscription", subscription_to_string(Subscription)}],
+				   [{"subscription", subscription_to_string(Subscription)}|nodeAttr(SubsNode)],
 				   []}];
 				SubsNode ->
 				 [{xmlelement, "subscription",
@@ -2192,9 +2190,8 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				case Node of
 				[] ->
 				 [{xmlelement, "subscription",
-				   [{"node", node_to_string(SubsNode)},
-				    {"jid", jlib:jid_to_string(SubJID)},
-				    {"subscription", subscription_to_string(Subscription)}],
+				   [{"jid", jlib:jid_to_string(SubJID)},
+				    {"subscription", subscription_to_string(Subscription)}|nodeAttr(SubsNode)],
 				   []}];
 				SubsNode ->
 				 [{xmlelement, "subscription",
@@ -2246,7 +2243,7 @@ get_subscriptions(Host, Node, JID) ->
 				   []}]
 			 end, Subscriptions),
 	    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
-		       [{xmlelement, "subscriptions", [{"node", node_to_string(Node)}],
+		       [{xmlelement, "subscriptions", nodeAttr(Node),
 			 Entities}]}]};
 	Error ->
 	    Error
@@ -2421,7 +2418,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, _From
 		false -> []
 	    end,
 	    Stanza = event_stanza(
-		[{xmlelement, "items", [{"node", node_to_string(Node)}],
+		[{xmlelement, "items", nodeAttr(Node),
 		    [{xmlelement, "item", itemAttr(ItemId), Content}]}]),
 	    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 	    case Removed of
@@ -2431,7 +2428,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, _From
 		    case get_option(Options, notify_retract) of
 			true ->
 			    RetractStanza = event_stanza(
-				[{xmlelement, "items", [{"node", node_to_string(Node)}],
+				[{xmlelement, "items", nodeAttr(Node),
 				    [{xmlelement, "retract", itemAttr(RId), []} || RId <- Removed]}]),
 			    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, RetractStanza);
 			_ ->
@@ -2456,7 +2453,7 @@ broadcast_retract_items(Host, Node, NodeId, Type, Options, ItemIds, ForceNotify)
 		    {result, false};
 		{result, Subs} ->
 		    Stanza = event_stanza(
-			[{xmlelement, "items", [{"node", node_to_string(Node)}],
+			[{xmlelement, "items", nodeAttr(Node),
 			    [{xmlelement, "retract", itemAttr(ItemId), []} || ItemId <- ItemIds]}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 		    {result, true};
@@ -2476,7 +2473,7 @@ broadcast_purge_node(Host, Node, NodeId, Type, Options) ->
 		    {result, false};
 		{result, Subs} ->
 		    Stanza = event_stanza(
-			[{xmlelement, "purge", [{"node", node_to_string(Node)}],
+			[{xmlelement, "purge", nodeAttr(Node),
 			    []}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 		    {result, true};
@@ -2496,7 +2493,7 @@ broadcast_removed_node(Host, Node, NodeId, Type, Options, Subs) ->
 		    {result, false};
 		_ ->
 		    Stanza = event_stanza(
-			[{xmlelement, "delete", [{"node", node_to_string(Node)}],
+			[{xmlelement, "delete", nodeAttr(Node),
 			    []}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 		    {result, true}
@@ -2521,7 +2518,7 @@ broadcast_config_notification(Host, Node, NodeId, Type, Options, Lang) ->
 			    []
 		    end,
 		    Stanza = event_stanza(
-			[{xmlelement, "items", [{"node", node_to_string(Node)}],
+			[{xmlelement, "items", nodeAttr(Node),
 			    [{xmlelement, "item", itemAttr("configuration"), Content}]}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, Options, Subs, Stanza),
 		    {result, true};
@@ -2655,8 +2652,7 @@ get_configure(Host, ServerHost, Node, From, Lang) ->
 			{result,
 			 [{xmlelement, "pubsub",
 			   [{"xmlns", ?NS_PUBSUB_OWNER}],
-			   [{xmlelement, "configure",
-			     [{"node", node_to_string(Node)}],
+			   [{xmlelement, "configure", nodeAttr(Node),
 			     [{xmlelement, "x",
 			       [{"xmlns", ?NS_XDATA}, {"type", "form"}],
 			       get_configure_xfields(Type, Options, Lang, Groups)
@@ -3083,7 +3079,7 @@ uniqid() ->
     {T1, T2, T3} = now(),
     lists:flatten(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
 
-% node attributes %%% TODO to be used
+% node attributes
 nodeAttr(Node) ->
     [{"node", node_to_string(Node)}].
 
