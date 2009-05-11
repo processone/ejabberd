@@ -35,6 +35,7 @@
 -export([read_caps/1,
 	 get_caps/1,
 	 note_caps/3,
+	 wait_caps/2,
 	 clear_caps/1,
 	 get_features/2,
 	 get_user_resources/2,
@@ -57,7 +58,8 @@
 
 %% hook handlers
 -export([receive_packet/3,
-	 receive_packet/4]).
+	 receive_packet/4,
+	 presence_probe/3]).
 
 -include("ejabberd.hrl").
 
@@ -92,12 +94,25 @@ read_caps([], Result) ->
     Result.
 
 %% get_caps reads user caps from database
-get_caps({U, S, R}) ->
+%% here we handle a simple retry loop, to avoid race condition
+%% when asking caps while we still did not called note_caps
+%% timeout is set to 10s
+%% this is to be improved, but without altering performances.
+%% if we did not get user presence 10s after getting presence_probe
+%% we assume it has no caps
+get_caps(LJID) ->
+    get_caps(LJID, 5).
+get_caps(_, 0) ->
+    nothing;
+get_caps({U, S, R}, Retry) ->
     BJID = exmpp_jid:jid_to_binary(U, S, R),
     case catch mnesia:dirty_read({user_caps, BJID}) of
-	[#user_caps{caps=Caps}] -> 
+	[#user_caps{caps=waiting}] ->
+	    timer:sleep(2000),
+	    get_caps({U, S, R}, Retry-1);
+	[#user_caps{caps=Caps}] ->
 	    Caps;
-	_ -> 
+	_ ->
 	    nothing
     end.
 
@@ -131,6 +146,13 @@ note_caps(Host, From, Caps) ->
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
 	    gen_server:cast(Proc, {note_caps, From, Caps})
     end.
+
+%% wait_caps should be called just before note_caps
+%% it allows to lock get_caps usage for code using presence_probe
+%% that may run before we get any chance to note_caps.
+wait_caps(Host, From) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    gen_server:cast(Proc, {wait_caps, From}).
 
 %% get_features returns a list of features implied by the given caps
 %% record (as extracted by read_caps).  It may block, and may signal a
@@ -192,6 +214,10 @@ receive_packet(_, _, _) ->
 receive_packet(_JID, From, To, Packet) ->
     receive_packet(From, To, Packet).
 
+presence_probe(From, To, _) ->
+    ServerString = exmpp_jid:ldomain_as_list(To),
+    wait_caps(ServerString, From).
+
 caps_to_binary(#caps{node = Node, version = Version, exts = Exts}) ->
     BExts = [list_to_binary(Ext) || Ext <- Exts],
     #caps{node = list_to_binary(Node), version = list_to_binary(Version), exts = BExts}.
@@ -218,10 +244,11 @@ init([Host, _Opts]) ->
 			 {type, bag},
 			 {attributes, record_info(fields, user_caps_resources)}]),
     mnesia:delete_table(user_caps_default),
-    mnesia:clear_table(user_caps),
-    mnesia:clear_table(user_caps_resources),
+    mnesia:clear_table(user_caps),            % clean in case of explicitely set to disc_copies
+    mnesia:clear_table(user_caps_resources),  % clean in case of explicitely set to disc_copies
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 30),
     ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
+    ejabberd_hooks:add(presence_probe_hook, Host, ?MODULE, presence_probe, 20),
     {ok, #state{host = Host}}.
 
 maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
@@ -273,15 +300,17 @@ handle_cast({note_caps, From,
     S = exmpp_jid:ldomain(From),
     R = exmpp_jid:resource(From),
     BJID = exmpp_jid:jid_to_binary(From),
-    mnesia:dirty_write(#user_caps{jid = BJID, caps = caps_to_binary(Caps)}),
-    case ejabberd_sm:get_user_resources(U, S) of
-	[] ->
-	    % only store resource of caps aware external contacts
-	    BUID = exmpp_jid:bare_jid_to_binary(From),
-	    mnesia:dirty_write(#user_caps_resources{uid = BUID, resource = list_to_binary(R)});
-	_ -> 
-	    ok
-    end,
+    mnesia:transaction(fun() ->
+	mnesia:dirty_write(#user_caps{jid = BJID, caps = caps_to_binary(Caps)}),
+	case ejabberd_sm:get_user_resources(U, S) of
+	    [] ->
+		% only store resource of caps aware external contacts
+		BUID = exmpp_jid:bare_jid_to_binary(From),
+		mnesia:dirty_write(#user_caps_resources{uid = BUID, resource = list_to_binary(R)});
+	    _ -> 
+		ok
+	end
+    end),
     %% Now, find which of these are not already in the database.
     SubNodes = [Version | Exts],
     case lists:foldl(fun(SubNode, Acc) ->
@@ -312,6 +341,10 @@ handle_cast({note_caps, From,
 		  end, Requests, Missing),
 	    {noreply, State#state{disco_requests = NewRequests}}
     end;
+handle_cast({wait_caps, From}, State) ->
+    BJID = exmpp_jid:jid_to_binary(From),
+    mnesia:dirty_write(#user_caps{jid = BJID, caps = waiting}),
+    {noreply, State};
 handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payload}},
 	    #state{disco_requests = Requests} = State) ->
     case {Type, Payload} of
@@ -384,6 +417,7 @@ terminate(_Reason, State) ->
     Host = State#state.host,
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, receive_packet, 30),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
+    ejabberd_hooks:delete(presence_probe_hook, Host, ?MODULE, presence_probe, 20),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

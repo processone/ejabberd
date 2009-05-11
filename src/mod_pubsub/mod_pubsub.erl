@@ -179,7 +179,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
-    ejabberd_hooks:add(presence_probe_hook, ServerHostB, ?MODULE, presence_probe, 50),
+    ejabberd_hooks:add(presence_probe_hook, ServerHostB, ?MODULE, presence_probe, 80),
     ejabberd_hooks:add(roster_in_subscription, ServerHostB, ?MODULE, in_subscription, 50),
     ejabberd_hooks:add(roster_out_subscription, ServerHostB, ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHostB, ?MODULE, remove_user, 50),
@@ -448,57 +448,59 @@ send_loop(State) ->
 	end,
 	send_loop(State);
     {presence, User, Server, Resources, JID} ->
-?INFO_MSG("got presence probe ~s@~s~p ~p",[User,Server,Resources,jlib:jid_tolower(JID)]),
 	%% get resources caps and check if processing is needed
-	{HasCaps, ResourcesCaps} = lists:foldl(fun(Resource, {R, L}) ->
-		    case mod_caps:get_caps({User, Server, Resource}) of
-		    nothing -> {R, L};
-		    Caps -> {true, [{Resource, Caps} | L]}
-		    end
-		end, {false, []}, Resources),
-	case HasCaps of
-	    true ->
-		Host = State#state.host,
-		ServerHost = State#state.server_host,
-		Owner = jlib:short_prepd_bare_jid(JID),
-		lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
-		    case get_option(Options, send_last_published_item) of
-			on_sub_and_presence ->
-			    lists:foreach(fun({Resource, Caps}) ->
-				CapsNotify = case catch mod_caps:get_features(ServerHost, Caps) of
-					Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
-					_ -> false
-				    end,
-?INFO_MSG("notify ~s ~s",[Node, CapsNotify]),
-				case CapsNotify of
-				    true ->
-					LJID = {User, Server, Resource},
-					Subscribed = case get_option(Options, access_model) of
-						open -> true;
-						presence -> true;
-						whitelist -> false; % subscribers are added manually
-						authorize -> false; % likewise
-						roster ->
-						    Grps = get_option(Options, roster_groups_allowed, []),
-						    {OU, OS, _} = Owner,
-						    element(2, get_roster_info(OU, OS, LJID, Grps))
+	%% get_caps may be blocked few seconds, get_caps as well
+	%% so we spawn the whole process not to block other queries
+	spawn(fun() ->
+	    {HasCaps, ResourcesCaps} = lists:foldl(fun(Resource, {R, L}) ->
+			case mod_caps:get_caps({User, Server, Resource}) of
+			nothing -> {R, L};
+			Caps -> {true, [{Resource, Caps} | L]}
+			end
+		    end, {false, []}, Resources),
+	    case HasCaps of
+		true ->
+		    Host = State#state.host,
+		    ServerHost = State#state.server_host,
+		    Owner = jlib:short_prepd_bare_jid(JID),
+		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
+			case get_option(Options, send_last_published_item) of
+			    on_sub_and_presence ->
+				lists:foreach(fun({Resource, Caps}) ->
+				    CapsNotify = case catch mod_caps:get_features(ServerHost, Caps) of
+					    Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
+					    _ -> false
 					end,
-					if Subscribed ->
-					    send_items(Owner, Node, NodeId, Type, LJID, last);
+				    case CapsNotify of
 					true ->
+					    LJID = {User, Server, Resource},
+					    Subscribed = case get_option(Options, access_model) of
+						    open -> true;
+						    presence -> true;
+						    whitelist -> false; % subscribers are added manually
+						    authorize -> false; % likewise
+						    roster ->
+							Grps = get_option(Options, roster_groups_allowed, []),
+							{OU, OS, _} = Owner,
+							element(2, get_roster_info(OU, OS, LJID, Grps))
+					    end,
+					    if Subscribed ->
+						send_items(Owner, Node, NodeId, Type, LJID, last);
+					    true ->
+						ok
+					    end;
+					false ->
 					    ok
-					end;
-				    false ->
-					ok
-				end
-			    end, ResourcesCaps);
-			_ ->
-			    ok
-		    end
-		end, tree_action(Host, get_nodes, [Owner, JID]));
-	    false ->
-		ok
-	end,
+				    end
+				end, ResourcesCaps);
+			    _ ->
+				ok
+			end
+		    end, tree_action(Host, get_nodes, [Owner, JID]));
+		false ->
+		    ok
+	    end
+	end),
 	send_loop(State);
     stop ->
 	ok
@@ -800,7 +802,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:delete(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:delete(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
-    ejabberd_hooks:delete(presence_probe_hook, ServerHostB, ?MODULE, presence_probe, 50),
+    ejabberd_hooks:delete(presence_probe_hook, ServerHostB, ?MODULE, presence_probe, 80),
     ejabberd_hooks:delete(roster_in_subscription, ServerHostB, ?MODULE, in_subscription, 50),
     ejabberd_hooks:delete(roster_out_subscription, ServerHostB, ?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHostB, ?MODULE, remove_user, 50),
