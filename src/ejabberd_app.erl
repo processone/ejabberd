@@ -61,7 +61,7 @@ start(normal, _Args) ->
     cyrsasl:start(),
     % Profiling
     %ejabberd_debug:eprof_start(),
-    %fprof:trace([start, {file, "/tmp/fprof"}, {procs, ejabberd_debug:pids()}]),
+    %ejabberd_debug:fprof_start(),
     maybe_add_nameservers(),
     start_modules(),
     ejabberd_listener:start_listeners(),
