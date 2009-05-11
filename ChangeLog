@@ -1,3 +1,9 @@
+2009-05-11  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_caps.erl: Prevent race condition when calling get_caps while
+	note_caps has not been handled yet (EJAB-934)
+	* src/mod_pubsub/mod_pubsub.erl: Likewise
+
 2009-05-08  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_pubsub/mod_pubsub.erl: Allow to get subscriptions on a given
