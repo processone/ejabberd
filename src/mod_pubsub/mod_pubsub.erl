@@ -736,10 +736,10 @@ handle_cast({unsubscribe, Subscriber, Owner}, State) ->
 				true ->
 				    node_call(Type, unsubscribe_node, [NodeId, Subscriber, JID, all]);
 				false ->
-				    ok
+				    {result, ok}
 			    end;
 			_ ->
-			    ok
+			    {result, ok}
 		    end
 		end,
 		transaction(Host, Node, Action, sync_dirty);
