@@ -1,3 +1,8 @@
+2009-05-12  Christophe Romain <christophe.romain@process-one.net>
+
+	* src/mod_pubsub/mod_pubsub.erl: Fix bad transaction returncode in
+	unsubscribe presence handler
+
 2009-05-11  Christophe Romain <christophe.romain@process-one.net>
 
 	* src/mod_caps.erl: Prevent race condition when calling get_caps while
