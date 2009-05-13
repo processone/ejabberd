@@ -26,16 +26,20 @@
 
 -module(ejabberd_debug).
 
--export([eprof_start/0, stop/0]).
+-export([eprof_start/0, fprof_start/0, stop/0]).
 -export([pids/0]).
 
 eprof_start() ->
     eprof:start(),
     eprof:profile(pids()).
 
+fprof_start() ->
+    fprof:trace([start, {file, "/tmp/fprof"}, {procs, pids()}]).
+
 %% Stop all profilers
 stop() ->
     catch eprof:stop(),
+    catch fprof:stop(),
     ok.
 
 pids() ->
