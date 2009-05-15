@@ -4202,19 +4202,64 @@ So, the name of the Erlang node changes
 if you change the name of the machine in which \ejabberd{} runs,
 or when you move \ejabberd{} to a different machine.
 
-So, if you want to change the computer hostname where \ejabberd{} is installed,
-you must follow these instructions:
+You have two ways to use the old Mnesia database in an ejabberd with new node name:
+put the old node name in \term{ejabberdctl.cfg},
+or convert the database to the new node name.
+
+Those example steps will backup, convert and load the Mnesia database.
+You need to have either the old Mnesia spool dir or a backup of Mnesia.
+If you already have a backup file of the old database, you can go directly to step 5.
+You also need to know the old node name and the new node name.
+If you don't know them, look for them by executing \term{ejabberdctl}
+or in the ejabberd log files.
+
+Before starting, setup some variables:
+\begin{verbatim}
+OLDNODE=ejabberd@oldmachine
+NEWNODE=ejabberd@newmachine
+OLDFILE=/tmp/old.backup
+NEWFILE=/tmp/new.backup
+\end{verbatim}
+
 \begin{enumerate}
-	\item In the old server, backup the Mnesia database using the Web Admin or \term{ejabberdctl}.
-	For example:
+\item Start ejabberd enforcing the old node name:
 \begin{verbatim}
-ejabberdctl backup /tmp/ejabberd-oldhost.backup
+ejabberdctl --node $OLDNODE start
 \end{verbatim}
-	\item In the new server, restore the backup file using the Web Admin or \term{ejabberdctl}.
-	For example:
+
+\item Generate a backup file:
 \begin{verbatim}
-ejabberdctl restore /tmp/ejabberd-oldhost.backup
+ejabberdctl --node $OLDNODE backup $OLDFILE
 \end{verbatim}
+
+\item Stop the old node:
+\begin{verbatim}
+ejabberdctl --node $OLDNODE stop
+\end{verbatim}
+
+\item Make sure there aren't files in the Mnesia spool dir. For example:
+\begin{verbatim}
+mkdir /var/lib/ejabberd/oldfiles
+mv /var/lib/ejabberd/*.* /var/lib/ejabberd/oldfiles/
+\end{verbatim}
+
+\item Start ejabberd. There isn't any need to specify the node name anymore:
+\begin{verbatim}
+ejabberdctl start
+\end{verbatim}
+
+\item Convert the backup to new node name:
+\begin{verbatim}
+ejabberdctl mnesia_change_nodename $OLDNODE $NEWNODE $OLDFILE $NEWFILE
+\end{verbatim}
+
+\item Import the new backup:
+\begin{verbatim}
+ejabberdctl restore $NEWFILE
+\end{verbatim}
+
+\item Check that the information of the old database is available: accounts, rosters...
+After you finish, remember to delete the temporary backup files from public directories.
 \end{enumerate}
 
 

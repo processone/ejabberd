@@ -3270,16 +3270,37 @@ so it stores the name of the Erlang node in it (see section <A HREF="#nodename">
 The name of an Erlang node includes the hostname of the computer.
 So, the name of the Erlang node changes
 if you change the name of the machine in which <TT>ejabberd</TT> runs,
-or when you move <TT>ejabberd</TT> to a different machine.</P><P>So, if you want to change the computer hostname where <TT>ejabberd</TT> is installed,
-you must follow these instructions:
-</P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
-	In the old server, backup the Mnesia database using the Web Admin or <TT>ejabberdctl</TT>.
-	For example:
-<PRE CLASS="verbatim">ejabberdctl backup /tmp/ejabberd-oldhost.backup
-</PRE>	</LI><LI CLASS="li-enumerate">In the new server, restore the backup file using the Web Admin or <TT>ejabberdctl</TT>.
-	For example:
-<PRE CLASS="verbatim">ejabberdctl restore /tmp/ejabberd-oldhost.backup
-</PRE></LI></OL><P> <A NAME="secure"></A> </P><!--TOC chapter Securing <TT>ejabberd</TT>-->
+or when you move <TT>ejabberd</TT> to a different machine.</P><P>You have two ways to use the old Mnesia database in an ejabberd with new node name:
+put the old node name in <TT>ejabberdctl.cfg</TT>,
+or convert the database to the new node name.</P><P>Those example steps will backup, convert and load the Mnesia database.
+You need to have either the old Mnesia spool dir or a backup of Mnesia.
+If you already have a backup file of the old database, you can go directly to step 5.
+You also need to know the old node name and the new node name.
+If you don&#X2019;t know them, look for them by executing <TT>ejabberdctl</TT>
+or in the ejabberd log files.</P><P>Before starting, setup some variables:
+</P><PRE CLASS="verbatim">OLDNODE=ejabberd@oldmachine
+NEWNODE=ejabberd@newmachine
+OLDFILE=/tmp/old.backup
+NEWFILE=/tmp/new.backup
+</PRE><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
+Start ejabberd enforcing the old node name:
+<PRE CLASS="verbatim">ejabberdctl --node $OLDNODE start
+</PRE></LI><LI CLASS="li-enumerate">Generate a backup file:
+<PRE CLASS="verbatim">ejabberdctl --node $OLDNODE backup $OLDFILE
+</PRE></LI><LI CLASS="li-enumerate">Stop the old node:
+<PRE CLASS="verbatim">ejabberdctl --node $OLDNODE stop
+</PRE></LI><LI CLASS="li-enumerate">Make sure there aren&#X2019;t files in the Mnesia spool dir. For example:
+<PRE CLASS="verbatim">mkdir /var/lib/ejabberd/oldfiles
+mv /var/lib/ejabberd/*.* /var/lib/ejabberd/oldfiles/
+</PRE></LI><LI CLASS="li-enumerate">Start ejabberd. There isn&#X2019;t any need to specify the node name anymore:
+<PRE CLASS="verbatim">ejabberdctl start
+</PRE></LI><LI CLASS="li-enumerate">Convert the backup to new node name:
+<PRE CLASS="verbatim">ejabberdctl mnesia_change_nodename $OLDNODE $NEWNODE $OLDFILE $NEWFILE
+</PRE></LI><LI CLASS="li-enumerate">Import the new backup:
+<PRE CLASS="verbatim">ejabberdctl restore $NEWFILE
+</PRE></LI><LI CLASS="li-enumerate">Check that the information of the old database is available: accounts, rosters...
+After you finish, remember to delete the temporary backup files from public directories.
+</LI></OL><P> <A NAME="secure"></A> </P><!--TOC chapter Securing <TT>ejabberd</TT>-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc70">Chapter&#XA0;5</A>&#XA0;&#XA0;<A HREF="#secure">Securing <TT>ejabberd</TT></A></H1><!--SEC END --><P> <A NAME="secure"></A> </P><P> <A NAME="firewall"></A> </P><!--TOC section Firewall Settings-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc71">5.1</A>&#XA0;&#XA0;<A HREF="#firewall">Firewall Settings</A></H2><!--SEC END --><P> <A NAME="firewall"></A> 
 </P><P>You need to take the following TCP ports in mind when configuring your firewall:
