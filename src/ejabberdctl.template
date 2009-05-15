@@ -79,7 +79,7 @@ else
     KERNEL_OPTS="-kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
 fi
 
-ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $KERNEL_OPTS"
+ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS $KERNEL_OPTS"
 
 # define additional environment variables
 if [ "$EJABBERDDIR" = "" ]; then
