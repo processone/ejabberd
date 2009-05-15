@@ -42,6 +42,7 @@
 	 dump_mnesia/1, load_mnesia/1,
 	 install_fallback_mnesia/1,
 	 dump_to_textfile/1,
+	 mnesia_change_nodename/4,
 	 restore/1 % Still used by some modules
 	]).
 
@@ -114,6 +115,12 @@ commands() ->
 			module = ?MODULE, function = delete_old_messages,
 			args = [{days, integer}], result = {res, rescode}},
 
+     #ejabberd_commands{name = mnesia_change_nodename, tags = [mnesia],
+			desc = "Change the erlang node name in a backup file",
+			module = ?MODULE, function = mnesia_change_nodename,
+			args = [{oldnodename, string}, {newnodename, string},
+				{oldbackup, string}, {newbackup, string}],
+			result = {res, restuple}},
      #ejabberd_commands{name = backup, tags = [mnesia],
 			desc = "Store the database to backup file",
 			module = ?MODULE, function = backup_mnesia,
@@ -376,3 +383,48 @@ install_fallback_mnesia(Path) ->
 	    {cannot_fallback, String}
     end.
 
+mnesia_change_nodename(FromString, ToString, Source, Target) ->
+    From = list_to_atom(FromString),
+    To = list_to_atom(ToString),
+    Switch =
+	fun
+	    (Node) when Node == From ->
+		io:format("     - Replacing nodename: '~p' with: '~p'~n", [From, To]),
+		To;
+	    (Node) when Node == To ->
+		%% throw({error, already_exists});
+		io:format("     - Node: '~p' will not be modified (it is already '~p')~n", [Node, To]),
+		Node;
+	    (Node) ->
+		io:format("     - Node: '~p' will not be modified (it is not '~p')~n", [Node, From]),
+		Node
+	end,
+    Convert =
+	fun
+	    ({schema, db_nodes, Nodes}, Acc) ->
+		io:format(" +++ db_nodes ~p~n", [Nodes]),
+		{[{schema, db_nodes, lists:map(Switch,Nodes)}], Acc};
+	    ({schema, version, Version}, Acc) ->
+		io:format(" +++ version: ~p~n", [Version]),
+		{[{schema, version, Version}], Acc};
+	    ({schema, cookie, Cookie}, Acc) ->
+		io:format(" +++ cookie: ~p~n", [Cookie]),
+		{[{schema, cookie, Cookie}], Acc};
+	    ({schema, Tab, CreateList}, Acc) ->
+		io:format("~n * Checking table: '~p'~n", [Tab]),
+		Keys = [ram_copies, disc_copies, disc_only_copies],
+		OptSwitch =
+		    fun({Key, Val}) ->
+			    case lists:member(Key, Keys) of
+				true ->
+				    io:format("   + Checking key: '~p'~n", [Key]),
+				    {Key, lists:map(Switch, Val)};
+				false-> {Key, Val}
+			    end
+		    end,
+		Res = {[{schema, Tab, lists:map(OptSwitch, CreateList)}], Acc},
+		Res;
+	    (Other, Acc) ->
+		{[Other], Acc}
+	end,
+    mnesia:traverse_backup(Source, Target, Convert, switched).
