@@ -78,7 +78,23 @@
 #ERL_MAX_ETS_TABLES=1400
 
 #.
-#' ERLANG_NODE
+#' ERL_OPTIONS: Additional Erlang options
+#
+# The next variable allows to specify additional options passed to erlang while
+# starting ejabberd. Some useful options are -noshell, -detached, -heart. When
+# ejabberd is started from an init.d script options -noshell and -detached are
+# added implicitly. See erl(1) for more info.
+#
+# It might be useful to add "-pa /usr/local/lib/ejabberd/ebin" if you
+# want to add local modules in this path.
+#
+# Default: ""
+#
+#ERL_OPTIONS=""
+
+#.
+#' ERLANG_NODE: Erlang node name
+#
 # The next variable allows to explicitly specify erlang node for ejabberd
 # It can be given in different formats:
 # ERLANG_NODE=ejabberd
@@ -94,4 +110,6 @@
 #
 #ERLANG_NODE=ejabberd
 
+#.
+#'
 # vim: foldmarker=#',#. foldmethod=marker:
