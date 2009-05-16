@@ -91,6 +91,8 @@
 -define(SEND_TIMEOUT, 30000).
 -define(MAX_TRANSACTION_ID, 65535).
 -define(MIN_TRANSACTION_ID, 0).
+%% Grace period after "soft" LDAP bind errors:
+-define(GRACEFUL_RETRY_TIMEOUT, 5000).
 
 -record(eldap, {version = ?LDAP_VERSION,
 		hosts,         % Possible hosts running LDAP servers
@@ -474,11 +476,14 @@ handle_info({tcp, _Socket, Data}, wait_bind_response, S) ->
     case catch recvd_wait_bind_response(Data, S) of
 	bound ->
 	    dequeue_commands(S);
-	{fail_bind, _Reason} ->
+	{fail_bind, Reason} ->
+	    report_bind_failure(S#eldap.host, S#eldap.port, Reason),
+	    {next_state, connecting, close_and_retry(S, ?GRACEFUL_RETRY_TIMEOUT)};
+	{'EXIT', Reason} ->
+	    report_bind_failure(S#eldap.host, S#eldap.port, Reason),
 	    {next_state, connecting, close_and_retry(S)};
-	{'EXIT', _Reason} ->
-	    {next_state, connecting, close_and_retry(S)};
-	{error, _Reason} ->
+	{error, Reason} ->
+	    report_bind_failure(S#eldap.host, S#eldap.port, Reason),
 	    {next_state, connecting, close_and_retry(S)}
     end;
 
@@ -790,7 +795,7 @@ check_tag(Data) ->
 	_ -> throw({error,decoded_tag})
     end.
 
-close_and_retry(S) ->
+close_and_retry(S, Timeout) ->
     catch gen_tcp:close(S#eldap.fd),
     Queue = dict:fold(
 	      fun(_Id, [{Timer, Command, From, _Name}|_], Q) ->
@@ -799,8 +804,15 @@ close_and_retry(S) ->
 		 (_, _, Q) ->
 		      Q
 	      end, S#eldap.req_q, S#eldap.dict),
-    erlang:send_after(?RETRY_TIMEOUT, self(), {timeout, retry_connect}),
+    erlang:send_after(Timeout, self(), {timeout, retry_connect}),
     S#eldap{fd=null, req_q=Queue, dict=dict:new()}.
+
+close_and_retry(S) ->
+    close_and_retry(S, ?RETRY_TIMEOUT).
+
+report_bind_failure(Host, Port, Reason) ->
+    ?WARNING_MSG("LDAP bind failed on ~s:~p~nReason: ~p",
+                               [Host, Port, Reason]).
 
 %%-----------------------------------------------------------------------
 %% Sort out timed out commands
@@ -864,8 +876,7 @@ connect_bind(S) ->
 							host = Host,
 							bind_timer = Timer}};
 		{error, Reason} ->
-		    ?ERROR_MSG("LDAP bind failed on ~s:~p~nReason: ~p",
-			       [Host, S#eldap.port, Reason]),
+		    report_bind_failure(Host, S#eldap.port, Reason),
 		    NewS = close_and_retry(S),
 		    {ok, connecting, NewS#eldap{host = Host}}
 	    end;
