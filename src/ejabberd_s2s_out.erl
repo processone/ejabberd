@@ -702,6 +702,42 @@ handle_event(_Event, StateName, StateData) ->
 
 %%----------------------------------------------------------------------
 %% Func: handle_sync_event/4
+%% Returns: The associated StateData for this connection
+%%   {reply, Reply, NextStateName, NextStateData}
+%%   Reply = {state_infos, [{InfoName::atom(), InfoValue::any()]
+%%----------------------------------------------------------------------
+handle_sync_event(get_state_infos, _From, StateName, StateData) ->
+    {Addr,Port} = try ejabberd_socket:peername(StateData#state.socket) of
+		      {ok, {A,P}} ->  {A,P};
+		      {error, _} -> {unknown,unknown}
+		  catch
+		      _:_ ->
+			  {unknown,unknown}
+		  end,
+    Infos = [
+	     {direction, out},
+	     {statename, StateName},
+	     {addr, Addr},
+	     {port, Port},
+	     {streamid, StateData#state.streamid},
+	     {use_v10, StateData#state.use_v10},
+	     {tls, StateData#state.tls},
+	     {tls_required, StateData#state.tls_required},
+	     {tls_enabled, StateData#state.tls_enabled},
+	     {tls_options, StateData#state.tls_options},
+	     {authenticated, StateData#state.authenticated},
+	     {db_enabled, StateData#state.db_enabled},
+	     {try_auth, StateData#state.try_auth},
+	     {myname, StateData#state.myname},
+	     {server, StateData#state.server},
+	     {delay_to_retry, StateData#state.delay_to_retry},
+	     {verify, StateData#state.verify}
+	    ],
+    Reply = {state_infos, Infos},
+    {reply,Reply,StateName,StateData};
+
+%%----------------------------------------------------------------------
+%% Func: handle_sync_event/4
 %% Returns: {next_state, NextStateName, NextStateData}            |
 %%          {next_state, NextStateName, NextStateData, Timeout}   |
 %%          {reply, Reply, NextStateName, NextStateData}          |

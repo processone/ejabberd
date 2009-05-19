@@ -500,6 +500,35 @@ stream_established(closed, StateData) ->
 %%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
+%%----------------------------------------------------------------------
+%% Func: handle_sync_event/4
+%% Returns: The associated StateData for this connection
+%%   {reply, Reply, NextStateName, NextStateData}
+%%   Reply = {state_infos, [{InfoName::atom(), InfoValue::any()]
+%%----------------------------------------------------------------------
+handle_sync_event(get_state_infos, _From, StateName, StateData) ->
+    SockMod = StateData#state.sockmod,
+    {Addr,Port} = try SockMod:peername(StateData#state.socket) of
+		      {ok, {A,P}} ->  {A,P};
+		      {error, _} -> {unknown,unknown}
+		  catch
+		      _:_ -> {unknown,unknown}
+		  end,
+    Infos = [
+	     {direction, in},
+	     {statename, StateName},
+	     {addr, Addr},
+	     {port, Port},
+	     {streamid, StateData#state.streamid},
+	     {tls, StateData#state.tls},
+	     {tls_enabled, StateData#state.tls_enabled},
+	     {tls_options, StateData#state.tls_options},
+	     {authenticated, StateData#state.authenticated},
+	     {shaper, StateData#state.shaper},
+	     {sockmod, SockMod}
+	    ],
+    Reply = {state_infos, Infos},
+    {reply,Reply,StateName,StateData};
 
 %%----------------------------------------------------------------------
 %% Func: handle_sync_event/4

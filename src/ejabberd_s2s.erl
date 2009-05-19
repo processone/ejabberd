@@ -46,6 +46,8 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
+%% ejabberd API
+-export([get_info_s2s_connections/1]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
@@ -520,3 +522,32 @@ allow_host(MyServer, S2SHost) ->
                 _ -> true %% The default s2s policy is allow
             end
     end.
+
+%% Get information about S2S connections of the specified type.
+%% @spec (Type) -> [Info]
+%% where Type = in | out
+%%       Info = [{InfoName::atom(), InfoValue::any()}]
+get_info_s2s_connections(Type) ->
+    ChildType = case Type of
+		    in -> ejabberd_s2s_in_sup;
+		    out -> ejabberd_s2s_out_sup
+		end,
+    Connections = supervisor:which_children(ChildType),
+    get_s2s_info(Connections,Type).
+
+get_s2s_info(Connections,Type)->
+    complete_s2s_info(Connections,Type,[]).
+complete_s2s_info([],_,Result)->
+    Result;
+complete_s2s_info([Connection|T],Type,Result)->
+    {_,PID,_,_}=Connection,
+    State = get_s2s_state(PID),
+    complete_s2s_info(T,Type,[State|Result]).
+
+get_s2s_state(S2sPid)->
+    Infos = case gen_fsm:sync_send_all_state_event(S2sPid,get_state_infos) of
+		{state_infos, Is} -> [{status, open} | Is];
+		{noproc,_} -> [{status, closed}]; %% Connection closed
+		{badrpc,_} -> [{status, error}]
+	    end,
+    [{s2s_pid, S2sPid} | Infos].
