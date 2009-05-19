@@ -26,10 +26,9 @@
 %%% @doc The module <strong>{@module}</strong> is the PubSub node tree plugin that
 %%% allow virtual nodes handling.
 %%% <p>PubSub node tree plugins are using the {@link gen_nodetree} behaviour.</p>
-%%% <p><strong>The API isn't stabilized yet</strong>. The pubsub plugin
-%%% development is still a work in progress. However, the system is already
-%%% useable and useful as is. Please, send us comments, feedback and
-%%% improvements.</p>
+%%% This plugin development is still a work in progress. Due to optimizations in
+%%% mod_pubsub, this plugin can not work anymore without altering functioning.
+%%% Please, send us comments, feedback and improvements.</p>
 
 -module(nodetree_virtual).
 -author('christophe.romain@process-one.net').
@@ -84,14 +83,13 @@ options() ->
 set_node(_NodeRecord) ->
     ok.
 
-get_node(Host, Node, _From) ->
-    get_node(Host, Node).
-
 %% @spec (Host, Node) -> pubsubNode()
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Node record contains default values.</p>
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
 get_node(Host, Node) ->
     #pubsub_node{nodeid = {Host, Node}}.
 

@@ -549,14 +549,21 @@ purge_node(NodeId, Owner) ->
 %% the default PubSub module. Otherwise, it should return its own affiliation,
 %% that will be added to the affiliation stored in the main
 %% <tt>pubsub_state</tt> table.</p>
-get_entity_affiliations(_Host, Owner) ->
+get_entity_affiliations(Host, Owner) ->
     GenKey = jlib:short_prepd_bare_jid(Owner),
-    States = mnesia:match_object(
-	       #pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
-    Tr = fun(#pubsub_state{stateid = {_, N}, affiliation = A}) ->
-	    {get_nodename(N), A}
-	 end,
-    {result, lists:map(Tr, States)}.
+    States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
+    Reply = lists:foldl(fun(#pubsub_state{stateid = {_, N}, affiliation = A}, Acc) ->
+	case mnesia:index_read(pubsub_node, N, #pubsub_node.id) of
+	    [#pubsub_node{nodeid = {H, _}} = Node] ->
+		case H of
+		    Host -> [{Node, A}|Acc];
+		    _ -> Acc
+		end;
+	    _ ->
+		Acc
+	end
+    end, [], States),
+    {result, Reply}.
 
 get_node_affiliations(NodeId) ->
     {result, States} = get_states(NodeId),
@@ -590,7 +597,7 @@ set_affiliation(NodeId, Owner, Affiliation) ->
 %% the default PubSub module. Otherwise, it should return its own affiliation,
 %% that will be added to the affiliation stored in the main
 %% <tt>pubsub_state</tt> table.</p>
-get_entity_subscriptions(_Host, Owner) ->
+get_entity_subscriptions(Host, Owner) ->
     {U, D, _} = SubKey = jlib:short_prepd_jid(Owner),
     GenKey = jlib:short_prepd_bare_jid(SubKey),
     States = case SubKey of
@@ -601,10 +608,18 @@ get_entity_subscriptions(_Host, Owner) ->
 	    ++ mnesia:match_object(
 	       #pubsub_state{stateid = {SubKey, '_'}, _ = '_'})
     end,
-    Tr = fun(#pubsub_state{stateid = {J, N}, subscription = S}) ->
-	    {get_nodename(N), S, J}
-	 end,
-    {result, lists:map(Tr, States)}.
+    Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscription = S}, Acc) ->
+	case mnesia:index_read(pubsub_node, N, #pubsub_node.id) of
+	    [#pubsub_node{nodeid = {H, _}} = Node] ->
+		case H of
+		    Host -> [{Node, S, J}|Acc];
+		    _ -> Acc
+		end;
+	    _ ->
+		Acc
+	end
+    end, [], States),
+    {result, Reply}.
 
 get_node_subscriptions(NodeId) ->
     {result, States} = get_states(NodeId),
@@ -808,10 +823,3 @@ can_fetch_item(none,         subscribed)    -> true;
 can_fetch_item(none,         none)          -> false;
 can_fetch_item(_Affiliation, _Subscription) -> false.
 
-%% @spec (NodeId) -> Node
-%% @doc retreive pubsubNode() representation giving a NodeId
-get_nodename(NodeId) ->
-    case mnesia:index_read(pubsub_node, NodeId, #pubsub_node.id) of
-	[#pubsub_node{nodeid = {_, Node}}] -> Node;
-	_ -> []
-    end.
