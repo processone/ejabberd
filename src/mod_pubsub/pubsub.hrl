@@ -82,8 +82,8 @@
 
 %%% @type pubsubNode() = #pubsub_node{
 %%%    nodeid = {Host::host(), Node::pubsubNode()},
-%%%    parentid = {Host::host(), Node::pubsubNode()},
-%%%    nodeidx = int().
+%%%    parentid = Node::pubsubNode(),
+%%%    nodeidx = int(). % can be anything you want
 %%%    type = nodeType(),
 %%%    options = [nodeOption()]}
 %%% <p>This is the format of the <tt>nodes</tt> table. The type of the table
@@ -98,7 +98,7 @@
 		     }).
 
 %%% @type pubsubState() = #pubsub_state{
-%%%    stateid = {ljid(), pubsubNodeId()}},
+%%%    stateid = {ljid(), nodeidx()}},
 %%%    items = [ItemId::string()],
 %%%    affiliation = affiliation(),
 %%%    subscription = subscription()}.
@@ -111,9 +111,9 @@
 }).
 
 %%% @type pubsubItem() = #pubsub_item{
-%%%    itemid = {ItemId::string(), pubsubNodeId()}},
-%%%    creation = {ljid(), now()},
-%%%    modification = {ljid(), now()},
+%%%    itemid = {ItemId::string(), nodeidx()}},
+%%%    creation = {now(), ljid()},
+%%%    modification = {now(), ljid()},
 %%%    payload = XMLContent::string()}.
 %%% <p>This is the format of the <tt>published items</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>disc</tt>,<tt>fragmented</tt>.</p>

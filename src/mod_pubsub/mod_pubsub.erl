@@ -225,9 +225,9 @@ init_plugins(Host, ServerHost, Opts) ->
 			      gen_mod:get_opt(nodetree, Opts, ?STDTREE)),
     ?DEBUG("** tree plugin is ~p",[TreePlugin]),
     TreePlugin:init(Host, ServerHost, Opts),
-    Plugins = lists:usort(gen_mod:get_opt(plugins, Opts, []) ++ [?STDNODE]),
-	PepMapping = lists:usort(gen_mod:get_opt(pep_mapping, Opts, [])), 
-	?DEBUG("** PEP Mapping : ~p~n",[PepMapping]),
+    Plugins = gen_mod:get_opt(plugins, Opts, [?STDNODE]),
+    PepMapping = gen_mod:get_opt(pep_mapping, Opts, []),
+    ?DEBUG("** PEP Mapping : ~p~n",[PepMapping]),
     lists:foreach(fun(Name) ->
 			  ?DEBUG("** init ~s plugin",[Name]),
 			  Plugin = list_to_atom(?PLUGIN_PREFIX ++ Name),
@@ -387,14 +387,10 @@ send_loop(State) ->
 	    lists:foreach(
 		fun({Node, subscribed, SubJID}) -> 
 		    if (SubJID == LJID) or (SubJID == BJID) ->
-			case tree_action(Host, get_node, [Host, Node, JID]) of
-			    #pubsub_node{options = Options, type = Type, id = NodeId} ->
-				case get_option(Options, send_last_published_item) of
-				    on_sub_and_presence ->
-					send_items(Host, Node, NodeId, Type, SubJID, last);
-				    _ ->
-					ok
-				end;
+			#pubsub_node{options = Options, type = Type, id = NodeId} = Node,
+			case get_option(Options, send_last_published_item) of
+			    on_sub_and_presence ->
+				send_items(Host, Node, NodeId, Type, SubJID, last);
 			    _ ->
 				ok
 			end;
@@ -700,19 +696,20 @@ handle_cast({remove_user, LUser, LServer}, State) ->
     lists:foreach(fun(PType) ->
 	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Owner]),
 	lists:foreach(fun
-	    ({Node, subscribed, JID}) ->
-		unsubscribe_node(Host, Node, Owner, JID, all);
-	    (_) ->  
+	    ({#pubsub_node{nodeid = {H, N}}, subscribed, JID}) ->
+		unsubscribe_node(H, N, Owner, JID, all);
+	    (_) ->
 		ok
-	end, Subscriptions)
+	end, Subscriptions),
+	{result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Owner]),
+	lists:foreach(fun
+	    ({#pubsub_node{nodeid = {H, N}}, owner}) ->
+		delete_node(H, N, Owner);
+	    (_) ->
+		ok
+	end, Affiliations)
     end, State#state.plugins),
-    %% remove user's PEP nodes 
-    lists:foreach(fun(#pubsub_node{nodeid={NodeKey, NodeName}}) ->
-	delete_node(NodeKey, NodeName, Owner)
-    end, tree_action(Host, get_nodes, [jlib:jid_tolower(Owner), Owner])),
-    %% remove user's nodes
-    delete_node(Host, ["home", LServer, LUser], Owner),
-    {noreply, State}; 
+    {noreply, State};
 
 handle_cast({unsubscribe, Subscriber, Owner}, State) ->
     Host = State#state.host,
@@ -721,20 +718,18 @@ handle_cast({unsubscribe, Subscriber, Owner}, State) ->
 	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Subscriber]),
 	lists:foreach(fun
 	    ({Node, subscribed, JID}) ->
-		Action = fun(#pubsub_node{options = Options, owners = Owners, type = Type, id = NodeId}) ->
-		    case get_option(Options, access_model) of
-			presence ->
-			    case lists:member(BJID, Owners) of
-				true ->
-				    node_call(Type, unsubscribe_node, [NodeId, Subscriber, JID, all]);
-				false ->
-				    {result, ok}
-			    end;
-			_ ->
-			    {result, ok}
-		    end
-		end,
-		transaction(Host, Node, Action, sync_dirty);
+		#pubsub_node{options = Options, owners = Owners, type = Type, id = NodeId} = Node,
+		case get_option(Options, access_model) of
+		    presence ->
+			case lists:member(BJID, Owners) of
+			    true ->
+				node_action(Host, Type, unsubscribe_node, [NodeId, Subscriber, JID, all]);
+			    false ->
+				{result, ok}
+			end;
+		    _ ->
+			{result, ok}
+		end;
 	    (_) ->  
 		ok
 	end, Subscriptions)
@@ -2036,7 +2031,7 @@ get_affiliations(Host, JID, Plugins) when is_list(Plugins) ->
 	{ok, Affiliations} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
-			    ({Node, Affiliation}) ->
+			    ({#pubsub_node{nodeid = {_, Node}}, Affiliation}) ->
 				 [{xmlelement, "affiliation",
 				   [{"affiliation", affiliation_to_string(Affiliation)}|nodeAttr(Node)],
 				   []}]
@@ -2175,7 +2170,7 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) ->
 				[];
-			    ({SubsNode, Subscription}) ->
+			    ({#pubsub_node{nodeid = {_, SubsNode}}, Subscription}) ->
 				case Node of
 				[] ->
 				 [{xmlelement, "subscription",
@@ -2190,7 +2185,7 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				end;
 			    ({_, none, _}) ->
 				[];
-			    ({SubsNode, Subscription, SubJID}) ->
+			    ({#pubsub_node{nodeid = {_, SubsNode}}, Subscription, SubJID}) ->
 				case Node of
 				[] ->
 				 [{xmlelement, "subscription",
