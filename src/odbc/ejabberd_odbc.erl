@@ -257,7 +257,7 @@ sql_query_internal(State, Query) ->
 		 mysql ->
 		     ?DEBUG("MySQL, Send query~n~p~n", [Query]),
 		     R = mysql_to_odbc(mysql_conn:fetch(State#state.db_ref, Query, self())),
-		     ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
+		     ?DEBUG("MySQL, Received result~n~p~n", [R]),
 		     R
 	     end,
     case Nested of
