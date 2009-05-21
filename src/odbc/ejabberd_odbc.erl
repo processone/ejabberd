@@ -71,7 +71,7 @@ start_link(Host, StartInterval) ->
 
 sql_query(Host, Query) ->
     Msg = {sql_query, Query},
-    sql_call(Host, Msg,).
+    sql_call(Host, Msg).
 
 %% SQL transaction based on a list of queries
 %% This function automatically
