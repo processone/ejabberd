@@ -66,6 +66,7 @@
 		servers,
 		backups,
 		port,
+		encrypt,
 		dn,
 		password,
 		base,
@@ -122,13 +123,15 @@ init(Host) ->
 		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
-		     State#state.password),
+		     State#state.password,
+		     State#state.encrypt),
     eldap_pool:start_link(State#state.bind_eldap_id,
 		     State#state.servers,
 		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
-		     State#state.password),
+		     State#state.password,
+		     State#state.encrypt),
     {ok, State}.
 
 plain_password_required() ->
@@ -354,8 +357,13 @@ parse_options(Host) ->
 		   undefined -> [];
 		   Backups -> Backups
 		   end,
+    LDAPEncrypt = ejabberd_config:get_local_option({ldap_encrypt, Host}),
     LDAPPort = case ejabberd_config:get_local_option({ldap_port, Host}) of
-		   undefined -> 389;
+		   undefined -> case LDAPEncrypt of
+				    tls -> ?LDAPS_PORT;
+				    starttls -> ?LDAP_PORT;
+				    _ -> ?LDAP_PORT
+				end;
 		   P -> P
 	       end,
     RootDN = case ejabberd_config:get_local_option({ldap_rootdn, Host}) of
@@ -390,6 +398,7 @@ parse_options(Host) ->
 	   servers = LDAPServers,
 	   backups = LDAPBackups,
 	   port = LDAPPort,
+	   encrypt = LDAPEncrypt,
 	   dn = RootDN,
 	   password = Password,
 	   base = LDAPBase,
