@@ -2057,12 +2057,15 @@ Parameters:
 \begin{description}
 \titem{ldap\_servers} \ind{options!ldap\_server}List of IP addresses or DNS names of your
 LDAP servers. This option is required.
+\titem{ldap\_encrypt} \ind{options!ldap\_encrypt}Type of connection encryption to the LDAP server.
+Allowed values are: \term{none}, \term{tls}.
+Note that STARTTLS is not supported.
+The default value is: \term{none}.
 \titem{ldap\_port} \ind{options!ldap\_port}Port to connect to your LDAP server.
-  The initial default value is~389, so it is used when nothing is set into the
-configuration file.
+The default port is~389 if encryption is disabled; and 636 if encryption is enabled.
 If you configure a value, it is stored in \ejabberd{}'s database.
 Then, if you remove that value from the configuration file,
-the value previously stored in the database will be used instead of the default 389.
+the value previously stored in the database will be used instead of the default port.
 \titem{ldap\_rootdn} \ind{options!ldap\_rootdn}Bind DN. The default value
   is~\term{""} which means `anonymous connection'.
 \titem{ldap\_password} \ind{options!ldap\_password}Bind password. The default
@@ -2137,8 +2140,10 @@ You can authenticate users against an LDAP directory. Available options are:
 Let's say \term{ldap.example.org} is the name of our LDAP server. We have
 users with their passwords in \term{"ou=Users,dc=example,dc=org"} directory.
 Also we have addressbook, which contains users emails and their additional
-infos in \term{"ou=AddressBook,dc=example,dc=org"} directory.  Corresponding
-authentication section should looks like this:
+infos in \term{"ou=AddressBook,dc=example,dc=org"} directory.
+The connection to the LDAP server is encrypted using TLS,
+and using the custom port 6123.
+Corresponding authentication section should looks like this:
 
 \begin{verbatim}
 %% Authentication method
@@ -2148,6 +2153,8 @@ authentication section should looks like this:
 %% Bind to LDAP server as "cn=Manager,dc=example,dc=org" with password "secret"
 {ldap_rootdn, "cn=Manager,dc=example,dc=org"}.
 {ldap_password, "secret"}.
+{ldap_encrypt, tls}.
+{ldap_port, 6123}.
 %% Define the user's base
 {ldap_base, "ou=Users,dc=example,dc=org"}.
 %% We want to authorize users from 'shadowAccount' object class only

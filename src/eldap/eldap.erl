@@ -42,6 +42,12 @@
 %%% Modified by Mickael Remond <mremond@process-one.net>
 %%% Now use ejabberd log mechanism
 
+%%% Modified by:
+%%%   Thomas Baden <roo@ham9.net> 2008 April 6th
+%%%   Andy Harb <Ahmad.N.Abou-Harb@jpl.nasa.gov> 2008 April 28th
+%%%   Anton Podavalov <a.podavalov@gmail.com> 2009 February 22th
+%%% Added LDAPS support, modeled off jungerl eldap.erl version.
+%%% NOTICE: STARTTLS is not supported.
 
 %%% --------------------------------------------------------------------
 -vc('$Id$ ').
@@ -61,7 +67,7 @@
 -include("ejabberd.hrl").
 
 %% External exports
--export([start_link/1, start_link/5]).
+-export([start_link/1, start_link/6]).
 
 -export([baseObject/0,singleLevel/0,wholeSubtree/0,close/1,
 	 equalityMatch/2,greaterOrEqual/2,lessOrEqual/2,
@@ -94,10 +100,17 @@
 %% Grace period after "soft" LDAP bind errors:
 -define(GRACEFUL_RETRY_TIMEOUT, 5000).
 
+-define(SUPPORTEDEXTENSION, "1.3.6.1.4.1.1466.101.120.7").
+-define(SUPPORTEDEXTENSIONSYNTAX, "1.3.6.1.4.1.1466.115.121.1.38").
+-define(STARTTLS, "1.3.6.1.4.1.1466.20037").
+
 -record(eldap, {version = ?LDAP_VERSION,
 		hosts,         % Possible hosts running LDAP servers
 		host = null,   % Connected Host LDAP server
 		port = 389,    % The LDAP server port
+		sockmod,       % SockMod (gen_tcp|tls)
+		tls = none,    % LDAP/LDAPS (none|starttls|tls)
+		tls_options = [],
 		fd = null,     % Socket filedescriptor.
 		rootdn = "",   % Name of the entry to bind as
 		passwd,        % Password for (above) entry
@@ -114,9 +127,9 @@ start_link(Name) ->
     Reg_name = list_to_atom("eldap_" ++ Name),
     gen_fsm:start_link({local, Reg_name}, ?MODULE, [], []).
 
-start_link(Name, Hosts, Port, Rootdn, Passwd) ->
+start_link(Name, Hosts, Port, Rootdn, Passwd, Encrypt) ->
     Reg_name = list_to_atom("eldap_" ++ Name),
-    gen_fsm:start_link({local, Reg_name}, ?MODULE, {Hosts, Port, Rootdn, Passwd}, []).
+    gen_fsm:start_link({local, Reg_name}, ?MODULE, {Hosts, Port, Rootdn, Passwd, Encrypt}, []).
 
 %%% --------------------------------------------------------------------
 %%% Get status of connection.
@@ -380,16 +393,34 @@ get_handle(Name) when is_list(Name) -> list_to_atom("eldap_" ++ Name).
 %%----------------------------------------------------------------------
 init([]) ->
     case get_config() of
-	{ok, Hosts, Rootdn, Passwd} ->
-	    init({Hosts, Rootdn, Passwd});
+	{ok, Hosts, Rootdn, Passwd, Encrypt} ->
+	    init({Hosts, Rootdn, Passwd, Encrypt});
 	{error, Reason} ->
 	    {stop, Reason}
     end;
-init({Hosts, Port, Rootdn, Passwd}) ->
+init({Hosts, Port, Rootdn, Passwd, Encrypt}) ->
+    catch ssl:start(),
+    {X1,X2,X3} = erlang:now(),
+    ssl:seed(integer_to_list(X1) ++ integer_to_list(X2) ++ integer_to_list(X3)),
+    PortTemp = case Port of
+		   undefined ->
+		       case Encrypt of
+			   tls ->
+			       ?LDAPS_PORT;
+			   starttls ->
+			       ?LDAP_PORT;
+			   _ ->
+			       ?LDAP_PORT
+		       end;
+		   PT -> PT
+	       end,
+    TLSOpts = [verify_none],
     {ok, connecting, #eldap{hosts = Hosts,
-			    port = Port,
+			    port = PortTemp,
 			    rootdn = Rootdn,
 			    passwd = Passwd,
+			    tls = Encrypt,
+			    tls_options = TLSOpts,
 			    id = 0,
 			    dict = dict:new(),
 			    req_q = queue:new()}, 0}.
@@ -438,7 +469,7 @@ active(Event, From, S) ->
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
 handle_event(close, _StateName, S) ->
-    catch gen_tcp:close(S#eldap.fd),
+    catch (S#eldap.sockmod):close(S#eldap.fd),
     {stop, normal, S};
 
 handle_event(_Event, StateName, S) ->
@@ -467,11 +498,13 @@ handle_sync_event(_Event, _From, StateName, S) ->
 %%
 %% Packets arriving in various states
 %%
-handle_info({tcp, _Socket, Data}, connecting, S) ->
+handle_info({Tag, _Socket, Data}, connecting, S)
+    when Tag == tcp; Tag == ssl ->
     ?DEBUG("tcp packet received when disconnected!~n~p", [Data]),
     {next_state, connecting, S};
 
-handle_info({tcp, _Socket, Data}, wait_bind_response, S) ->
+handle_info({Tag, _Socket, Data}, wait_bind_response, S)
+    when Tag == tcp; Tag == ssl ->
     cancel_timer(S#eldap.bind_timer),
     case catch recvd_wait_bind_response(Data, S) of
 	bound ->
@@ -487,8 +520,9 @@ handle_info({tcp, _Socket, Data}, wait_bind_response, S) ->
 	    {next_state, connecting, close_and_retry(S)}
     end;
 
-handle_info({tcp, _Socket, Data}, StateName, S)
-  when StateName == active orelse StateName == active_bind ->
+handle_info({Tag, _Socket, Data}, StateName, S)
+  when (StateName == active orelse StateName == active_bind) andalso
+       (Tag == tcp orelse Tag == ssl) ->
     case catch recvd_packet(Data, S) of
 	{response, Response, RequestType} ->
 	    NewS = case Response of
@@ -509,12 +543,14 @@ handle_info({tcp, _Socket, Data}, StateName, S)
 	    {next_state, StateName, S}
     end;
 
-handle_info({tcp_closed, _Socket}, Fsm_state, S) ->
+handle_info({Tag, _Socket}, Fsm_state, S)
+    when Tag == tcp_closed; Tag == ssl_closed ->
     ?WARNING_MSG("LDAP server closed the connection: ~s:~p~nIn State: ~p",
 	  [S#eldap.host, S#eldap.port ,Fsm_state]),
     {next_state, connecting, close_and_retry(S)};
 
-handle_info({tcp_error, _Socket, Reason}, Fsm_state, S) ->
+handle_info({Tag, _Socket, Reason}, Fsm_state, S)
+    when Tag == tcp_error; Tag == ssl_error ->
     ?DEBUG("eldap received tcp_error: ~p~nIn State: ~p", [Reason, Fsm_state]),
     {next_state, connecting, close_and_retry(S)};
 
@@ -597,7 +633,7 @@ send_command(Command, From, S) ->
 			     protocolOp = {Name, Request}},
     ?DEBUG("~p~n",[{Name, Request}]),
     {ok, Bytes} = asn1rt:encode('ELDAPv3', 'LDAPMessage', Message),
-    case gen_tcp:send(S#eldap.fd, Bytes) of
+    case (S#eldap.sockmod):send(S#eldap.fd, Bytes) of
     ok ->
 	Timer = erlang:start_timer(?CMD_TIMEOUT, self(), {cmd_timeout, Id}),
 	New_dict = dict:store(Id, [{Timer, Command, From, Name}], S#eldap.dict),
@@ -796,7 +832,7 @@ check_tag(Data) ->
     end.
 
 close_and_retry(S, Timeout) ->
-    catch gen_tcp:close(S#eldap.fd),
+    catch (S#eldap.sockmod):close(S#eldap.fd),
     Queue = dict:fold(
 	      fun(_Id, [{Timer, Command, From, _Name}|_], Q) ->
 		      cancel_timer(Timer),
@@ -863,16 +899,28 @@ polish([], Res, Ref) ->
 %%-----------------------------------------------------------------------
 connect_bind(S) ->
     Host = next_host(S#eldap.host, S#eldap.hosts),
-    TcpOpts = [{packet, asn1}, {active, true}, {keepalive, true},
-	       {send_timeout, ?SEND_TIMEOUT}, binary],
     ?INFO_MSG("LDAP connection on ~s:~p", [Host, S#eldap.port]),
-    case gen_tcp:connect(Host, S#eldap.port, TcpOpts) of
+    SocketData = case S#eldap.tls of
+		     tls ->
+			 SockMod = ssl,
+			 SslOpts = [{packet, asn1}, {active, true}, {keepalive, true},
+				    binary],
+			 ssl:connect(Host, S#eldap.port, SslOpts);
+		     %% starttls -> %% TODO: Implement STARTTLS;
+		     _ ->
+			 SockMod = gen_tcp,
+			 TcpOpts = [{packet, asn1}, {active, true}, {keepalive, true},
+				    {send_timeout, ?SEND_TIMEOUT}, binary],
+			 gen_tcp:connect(Host, S#eldap.port, TcpOpts)
+		 end,
+    case SocketData of
 	{ok, Socket} ->
-	    case bind_request(Socket, S) of
+	    case bind_request(Socket, S#eldap{sockmod = SockMod}) of
 		{ok, NewS} ->
 		    Timer = erlang:start_timer(?BIND_TIMEOUT, self(),
 					       {timeout, bind_timeout}),
 		    {ok, wait_bind_response, NewS#eldap{fd = Socket,
+							sockmod = SockMod,
 							host = Host,
 							bind_timer = Timer}};
 		{error, Reason} ->
@@ -896,7 +944,7 @@ bind_request(Socket, S) ->
 			     protocolOp = {bindRequest, Req}},
     ?DEBUG("Bind Request Message:~p~n",[Message]),
     {ok, Bytes} = asn1rt:encode('ELDAPv3', 'LDAPMessage', Message),
-    case gen_tcp:send(Socket, Bytes) of
+    case (S#eldap.sockmod):send(Socket, Bytes) of
 	ok -> {ok, S#eldap{id = Id}};
 	Error -> Error
     end.
@@ -970,8 +1018,8 @@ get_config() ->
     case file:consult(File) of
 	{ok, Entries} ->
 	    case catch parse(Entries) of
-		{ok, Hosts, Port, Rootdn, Passwd} ->
-		    {ok, Hosts, Port, Rootdn, Passwd};
+		{ok, Hosts, Port, Rootdn, Passwd, Encrypt} ->
+		    {ok, Hosts, Port, Rootdn, Passwd, Encrypt};
 		{error, Reason} ->
 		    {error, Reason};
 		{'EXIT', Reason} ->
@@ -986,7 +1034,8 @@ parse(Entries) ->
      get_hosts(host, Entries),
      get_integer(port, Entries),
      get_list(rootdn, Entries),
-     get_list(passwd, Entries)}.
+     get_list(passwd, Entries),
+     get_atom(encrypt, Entries)}.
 
 get_integer(Key, List) ->
     case lists:keysearch(Key, 1, List) of
@@ -1001,6 +1050,16 @@ get_integer(Key, List) ->
 get_list(Key, List) ->
     case lists:keysearch(Key, 1, List) of
 	{value, {Key, Value}} when is_list(Value) ->
+	    Value;
+	{value, {Key, _Value}} ->
+	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
+	false ->
+	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
+    end.
+
+get_atom(Key, List) ->
+    case lists:keysearch(Key, 1, List) of
+	{value, {Key, Value}} when atom(Value) ->
 	    Value;
 	{value, {Key, _Value}} ->
 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});

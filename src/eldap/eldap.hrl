@@ -19,6 +19,9 @@
 %%%
 %%%----------------------------------------------------------------------
 
+-define(LDAP_PORT, 389).
+-define(LDAPS_PORT, 636).
+
 -record(eldap_search, {scope = wholeSubtree,
 		       base = [],
 		       filter,

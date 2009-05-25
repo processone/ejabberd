@@ -234,17 +234,28 @@
 %% List of LDAP servers:
 %%{ldap_servers, ["localhost"]}.
 %%
-%% LDAP attribute that holds user ID:
-%%{ldap_uids, [{"mail", "%u@mail.example.org"}]}.
+%% Encryption of connection to LDAP servers:
+%%{ldap_encrypt, none}.
+%%{ldap_encrypt, tls}.
 %%
-%% Search base of LDAP directory:
-%%{ldap_base, "dc=example,dc=com"}.
+%% Port connect to LDAP servers:
+%%{ldap_port, 389}.
+%%{ldap_port, 636}.
 %%
 %% LDAP manager:
 %%{ldap_rootdn, "dc=example,dc=com"}.
 %%
 %% Password to LDAP manager:
 %%{ldap_password, "******"}.
+%%
+%% Search base of LDAP directory:
+%%{ldap_base, "dc=example,dc=com"}.
+%%
+%% LDAP attribute that holds user ID:
+%%{ldap_uids, [{"mail", "%u@mail.example.org"}]}.
+%%
+%% LDAP filter:
+%%{ldap_filter, "(objectClass=shadowAccount)"}.
 
 %%
 %% Anonymous login support:

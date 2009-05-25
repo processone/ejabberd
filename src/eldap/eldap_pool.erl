@@ -29,7 +29,7 @@
 
 %% API
 -export([
-	 start_link/6,
+	 start_link/7,
 	 bind/3,
 	 search/2
 	]).
@@ -45,12 +45,12 @@ bind(PoolName, DN, Passwd) ->
 search(PoolName, Opts) ->
     do_request(PoolName, {search, [Opts]}).
 
-start_link(Name, Hosts, Backups, Port, Rootdn, Passwd) ->
+start_link(Name, Hosts, Backups, Port, Rootdn, Passwd, Encrypt) ->
     PoolName = make_id(Name),
     pg2:create(PoolName),
     lists:foreach(fun(Host) ->
 			  ID = erlang:ref_to_list(make_ref()),
-			  case catch eldap:start_link(ID, [Host|Backups], Port, Rootdn, Passwd) of
+			  case catch eldap:start_link(ID, [Host|Backups], Port, Rootdn, Passwd, Encrypt) of
 			      {ok, Pid} ->
 				  pg2:join(PoolName, Pid);
 			      _ ->

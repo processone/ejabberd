@@ -1532,12 +1532,15 @@ create accounts, change password or edit vCard that is stored in LDAP.</P><P> <A
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>ldap_servers</TT></B></DT><DD CLASS="dd-description"> List of IP addresses or DNS names of your
 LDAP servers. This option is required.
+</DD><DT CLASS="dt-description"><B><TT>ldap_encrypt</TT></B></DT><DD CLASS="dd-description"> Type of connection encryption to the LDAP server.
+Allowed values are: <TT>none</TT>, <TT>tls</TT>.
+Note that STARTTLS is not supported.
+The default value is: <TT>none</TT>.
 </DD><DT CLASS="dt-description"><B><TT>ldap_port</TT></B></DT><DD CLASS="dd-description"> Port to connect to your LDAP server.
-The initial default value is&#XA0;389, so it is used when nothing is set into the
-configuration file.
+The default port is&#XA0;389 if encryption is disabled; and 636 if encryption is enabled.
 If you configure a value, it is stored in <TT>ejabberd</TT>&#X2019;s database.
 Then, if you remove that value from the configuration file,
-the value previously stored in the database will be used instead of the default 389.
+the value previously stored in the database will be used instead of the default port.
 </DD><DT CLASS="dt-description"><B><TT>ldap_rootdn</TT></B></DT><DD CLASS="dd-description"> Bind DN. The default value
 is&#XA0;<TT>""</TT> which means &#X2018;anonymous connection&#X2019;.
 </DD><DT CLASS="dt-description"><B><TT>ldap_password</TT></B></DT><DD CLASS="dd-description"> Bind password. The default
@@ -1592,14 +1595,18 @@ Example values:
 <H5 CLASS="paragraph"><!--SEC ANCHOR --><A HREF="#ldapcommonexample">Common example</A></H5><!--SEC END --><P> <A NAME="ldapcommonexample"></A> </P><P>Let&#X2019;s say <TT>ldap.example.org</TT> is the name of our LDAP server. We have
 users with their passwords in <TT>"ou=Users,dc=example,dc=org"</TT> directory.
 Also we have addressbook, which contains users emails and their additional
-infos in <TT>"ou=AddressBook,dc=example,dc=org"</TT> directory. Corresponding
-authentication section should looks like this:</P><PRE CLASS="verbatim">%% Authentication method
+infos in <TT>"ou=AddressBook,dc=example,dc=org"</TT> directory.
+The connection to the LDAP server is encrypted using TLS,
+and using the custom port 6123.
+Corresponding authentication section should looks like this:</P><PRE CLASS="verbatim">%% Authentication method
 {auth_method, ldap}.
 %% DNS name of our LDAP server
 {ldap_servers, ["ldap.example.org"]}.
 %% Bind to LDAP server as "cn=Manager,dc=example,dc=org" with password "secret"
 {ldap_rootdn, "cn=Manager,dc=example,dc=org"}.
 {ldap_password, "secret"}.
+{ldap_encrypt, tls}.
+{ldap_port, 6123}.
 %% Define the user's base
 {ldap_base, "ou=Users,dc=example,dc=org"}.
 %% We want to authorize users from 'shadowAccount' object class only

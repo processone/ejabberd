@@ -63,6 +63,7 @@
 		servers,
 		backups,
 		port,
+		encrypt,
 		dn,
 		base,
 		password,
@@ -183,7 +184,8 @@ init([Host, Opts]) ->
 		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
-		     State#state.password),
+		     State#state.password,
+		     State#state.encrypt),
     case State#state.search of
 	true ->
 	    ejabberd_router:register_route(State#state.myhost);
@@ -653,11 +655,22 @@ parse_options(Host, Opts) ->
 			  ejabberd_config:get_local_option({ldap_servers, Host});
 		      Backups -> Backups
 		  end,
-    LDAPPort = case gen_mod:get_opt(ldap_port, Opts, undefined) of
+    LDAPEncrypt = case gen_mod:get_opt(ldap_encrypt, Opts, undefined) of
+		      undefined ->
+			  ejabberd_config:get_local_option({ldap_encrypt, Host});
+		      E -> E
+	          end,
+    LDAPPortTemp = case gen_mod:get_opt(ldap_port, Opts, undefined) of
+		       undefined ->
+			   ejabberd_config:get_local_option({ldap_port, Host});
+		       PT -> PT
+	           end,
+    LDAPPort = case LDAPPortTemp of
 		   undefined ->
-		       case ejabberd_config:get_local_option({ldap_port, Host}) of
-			   undefined -> 389;
-			   P -> P
+		       case LDAPEncrypt of
+			   tls -> ?LDAPS_PORT;
+			   starttls -> ?LDAP_PORT;
+			   _ -> ?LDAP_PORT
 		       end;
 		   P -> P
 	       end,
@@ -727,6 +740,7 @@ parse_options(Host, Opts) ->
 	   servers = LDAPServers,
 	   backups = LDAPBackups,
 	   port = LDAPPort,
+	   encrypt = LDAPEncrypt,
 	   dn = RootDN,
 	   base = LDAPBase,
 	   password = Password,
