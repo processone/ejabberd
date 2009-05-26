@@ -27,11 +27,6 @@
 	{xmlelement, "field", [{"type", Type}, {"var", Var}],
 	 [{xmlelement, "value", [], [Value]}]}).
 
--define(CAPTCHA_BODY(Lang, Room, URL),
-	translate:translate(Lang, "Your messages to ") ++ Room
-	++ translate:translate(Lang, " are being blocked. To unblock them, visit ")
-	++ URL).
-
 -define(CAPTCHA_TEXT(Lang), translate:translate(Lang, "Enter the text you see")).
 -define(CAPTCHA_LIFETIME, 120000). % two minutes
 
@@ -76,12 +71,14 @@ create_captcha(Id, SID, From, To, Lang, Args)
 		    ?VFIELD("hidden", "from", {xmlcdata, jlib:jid_to_string(To)}),
 		    ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
 		    ?VFIELD("hidden", "sid", {xmlcdata, SID}),
-		    {xmlelement, "field", [{"var", "ocr"}],
+		    {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
 		     [{xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
 		       [{xmlelement, "uri", [{"type", Type}],
 			 [{xmlcdata, "cid:" ++ CID}]}]}]}]}]},
+	    BodyString1 = translate:translate(Lang, "Your messages to ~s are being blocked. To unblock them, visit ~s"),
+	    BodyString = io_lib:format(BodyString1, [JID, get_url(Id)]),
 	    Body = {xmlelement, "body", [],
-		    [{xmlcdata, ?CAPTCHA_BODY(Lang, JID, get_url(Id))}]},
+		    [{xmlcdata, BodyString}]},
 	    OOB = {xmlelement, "x", [{"xmlns", ?NS_OOB}],
 		   [{xmlelement, "url", [], [{xmlcdata, get_url(Id)}]}]},
 	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),

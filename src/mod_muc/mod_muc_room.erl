@@ -2768,8 +2768,7 @@ get_config(Lang, StateData, From) ->
 	end,
     Res =
 	[{xmlelement, "title", [],
-	  [{xmlcdata, translate:translate(Lang, "Configuration for ") ++
-	    jlib:jid_to_string(StateData#state.jid)}]},
+	  [{xmlcdata, io_lib:format(translate:translate(Lang, "Configuration of room ~s"), [jlib:jid_to_string(StateData#state.jid)])}]},
 	 {xmlelement, "field", [{"type", "hidden"},
 				{"var", "FORM_TYPE"}],
 	  [{xmlelement, "value", [],
