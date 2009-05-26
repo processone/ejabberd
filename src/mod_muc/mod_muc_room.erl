@@ -1620,7 +1620,8 @@ check_password(_ServiceAffiliation, Affiliation, Els, From, StateData) ->
     end.
 
 check_captcha(Affiliation, From, StateData) ->
-    case (StateData#state.config)#config.captcha_protected of
+    case (StateData#state.config)#config.captcha_protected
+	andalso ejabberd_captcha:is_feature_available() of
 	true when Affiliation == none ->
 	    case ?DICT:find(From, StateData#state.robots) of
 		{ok, passed} ->
@@ -2838,9 +2839,6 @@ get_config(Lang, StateData, From) ->
 	 ?BOOLXFIELD("Make room members-only",
 		     "muc#roomconfig_membersonly",
 		     Config#config.members_only),
-	 ?BOOLXFIELD("Make room captcha protected",
-		     "captcha_protected",
-		     Config#config.captcha_protected),
 	 ?BOOLXFIELD("Make room moderated",
 		     "muc#roomconfig_moderatedroom",
 		     Config#config.moderated),
@@ -2866,6 +2864,13 @@ get_config(Lang, StateData, From) ->
 		     "muc#roomconfig_allowvisitornickchange",
 		     Config#config.allow_visitor_nickchange)
 	] ++
+	case ejabberd_captcha:is_feature_available() of
+	    true ->
+	        [?BOOLXFIELD("Make room captcha protected",
+			     "captcha_protected",
+			     Config#config.captcha_protected)];
+	    false -> []
+	end ++
 	case mod_muc_log:check_access_log(
 	       StateData#state.server_host, From) of
 	    allow ->

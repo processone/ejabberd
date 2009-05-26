@@ -17,7 +17,7 @@
 	 terminate/2, code_change/3]).
 
 -export([create_captcha/6, build_captcha_html/2, check_captcha/2,
-	 process_reply/1, process/2]).
+	 process_reply/1, process/2, is_feature_available/0]).
 
 -include("jlib.hrl").
 -include("ejabberd.hrl").
@@ -227,6 +227,7 @@ init([]) ->
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, captcha)}]),
     mnesia:add_table_copy(captcha, node(), ram_copies),
+    check_captcha_setup(),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -359,3 +360,28 @@ return(Port, TRef, Result) ->
     end,
     catch port_close(Port),
     Result.
+
+is_feature_enabled() ->
+    case get_prog_name() of
+	"" -> false;
+	Prog when is_list(Prog) -> true
+    end.
+
+is_feature_available() ->
+    case is_feature_enabled() of
+	false -> false;
+	true ->
+	    case create_image() of
+		{ok, _, _, _} -> true;
+		_Error -> false
+	    end
+    end.
+
+check_captcha_setup() ->
+    case is_feature_enabled() andalso not is_feature_available() of
+	true ->
+	    ?CRITICAL_MSG("Captcha is enabled in the option captcha_cmd, "
+			  "but it can't generate images.", []);
+	false ->
+	    ok
+    end.
