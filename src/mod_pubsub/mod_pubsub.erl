@@ -167,12 +167,12 @@ init([ServerHost, Opts]) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     ServerHostB = list_to_binary(ServerHost),
     pubsub_index:init(Host, ServerHost, Opts),
+    ets:new(gen_mod:get_module_proc(Host, pubsub_state), [set, named_table]),
+    ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB_s),
-    ets:new(gen_mod:get_module_proc(Host, pubsub_state), [set, named_table]),
     ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {plugins, Plugins}),
-    ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {plugins, Plugins}),
     ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
@@ -3018,6 +3018,7 @@ tree_call(Host, Function, Args) ->
     end,
     catch apply(Module, Function, Args).
 tree_action(Host, Function, Args) ->
+    ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
     Fun = fun() -> tree_call(Host, Function, Args) end,
     catch mnesia:sync_dirty(Fun).
 
@@ -3037,7 +3038,8 @@ node_call(Type, Function, Args) ->
 	Result -> {result, Result} %% any other return value is forced as result
     end.
 
-node_action(_Host, Type, Function, Args) ->
+node_action(Host, Type, Function, Args) ->
+    ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
     transaction(fun() ->
 			node_call(Type, Function, Args)
 		end, sync_dirty).

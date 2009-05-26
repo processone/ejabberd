@@ -48,6 +48,7 @@
 	 set_node/1,
 	 get_node/3,
 	 get_node/2,
+	 get_node/1,
 	 get_nodes/2,
 	 get_nodes/1,
 	 get_subnodes/3,
@@ -106,6 +107,12 @@ get_node(Host, Node, _From) ->
     get_node(Host, Node).
 get_node(Host, Node) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
+	[Record] when is_record(Record, pubsub_node) -> Record;
+	[] -> {error, 'item-not-found'};
+	Error -> Error
+    end.
+get_node(NodeId) ->
+    case catch mnesia:index_read(pubsub_node, NodeId, #pubsub_node.id) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
 	[] -> {error, 'item-not-found'};
 	Error -> Error
