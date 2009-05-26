@@ -553,15 +553,14 @@ get_entity_affiliations(Host, Owner) ->
     SubKey = jlib:jid_tolower(Owner),
     GenKey = jlib:jid_remove_resource(SubKey),
     States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
+    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
+	    [{nodetree, N}] -> N;
+	    _ -> nodetree_default
+	end,
     Reply = lists:foldl(fun(#pubsub_state{stateid = {_, N}, affiliation = A}, Acc) ->
-	case mnesia:index_read(pubsub_node, N, #pubsub_node.id) of
-	    [#pubsub_node{nodeid = {H, _}} = Node] ->
-		case H of
-		    Host -> [{Node, A}|Acc];
-		    _ -> Acc
-		end;
-	    _ ->
-		Acc
+	case NodeTree:get_node(N) of
+	    #pubsub_node{nodeid = {Host, _}} = Node -> [{Node, A}|Acc];
+	    _ -> Acc
 	end
     end, [], States),
     {result, Reply}.
@@ -611,15 +610,14 @@ get_entity_subscriptions(Host, Owner) ->
 	    ++ mnesia:match_object(
 	       #pubsub_state{stateid = {SubKey, '_'}, _ = '_'})
     end,
+    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
+	    [{nodetree, N}] -> N;
+	    _ -> nodetree_default
+	end,
     Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscription = S}, Acc) ->
-	case mnesia:index_read(pubsub_node, N, #pubsub_node.id) of
-	    [#pubsub_node{nodeid = {H, _}} = Node] ->
-		case H of
-		    Host -> [{Node, S, J}|Acc];
-		    _ -> Acc
-		end;
-	    _ ->
-		Acc
+	case NodeTree:get_node(N) of
+	    #pubsub_node{nodeid = {Host, _}} = Node -> [{Node, S, J}|Acc];
+	    _ -> Acc
 	end
     end, [], States),
     {result, Reply}.
