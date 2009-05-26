@@ -114,6 +114,10 @@ start_link({SockMod, Socket}, Opts) ->
 	    {value, {request_handlers, H}} -> H;
 	    false -> []
         end ++
+	case lists:member(captcha, Opts) of
+            true -> [{["captcha"], ejabberd_captcha}];
+            false -> []
+        end ++
         case lists:member(web_admin, Opts) of
             true -> [{["admin"], ejabberd_web_admin}];
             false -> []

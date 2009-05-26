@@ -50,6 +50,7 @@
 
 -include("ejabberd.hrl").
 -include("mod_muc_room.hrl").
+-include("jlib.hrl"). %% Used for captcha
 
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
@@ -329,7 +330,8 @@ normal_state({route, From, undefined,
 	      (XMLNS == ?NS_MUC_ADMIN) or
 	      (XMLNS == ?NS_MUC_OWNER) or
 	      (XMLNS == ?NS_DISCO_INFO) or
-	      (XMLNS == ?NS_DISCO_ITEMS) ->
+	      (XMLNS == ?NS_DISCO_ITEMS) or
+	      (XMLNS == ?NS_CAPTCHA) ->
 	    Res1 = case XMLNS of
 		       ?NS_MUC_ADMIN ->
 			   process_iq_admin(From, Type, Lang, SubEl, StateData);
@@ -338,7 +340,9 @@ normal_state({route, From, undefined,
 		       ?NS_DISCO_INFO ->
 			   process_iq_disco_info(From, Type, Lang, StateData);
 		       ?NS_DISCO_ITEMS ->
-			   process_iq_disco_items(From, Type, Lang, StateData)
+			   process_iq_disco_items(From, Type, Lang, StateData);
+		       ?NS_CAPTCHA ->
+			   process_iq_captcha(From, Type, Lang, SubEl, StateData)
 		   end,
 	    {IQRes, NewStateData} =
 		case Res1 of
@@ -707,6 +711,30 @@ handle_info(process_room_queue, normal_state = StateName, StateData) ->
 	{empty, _} ->
 	    {next_state, StateName, StateData}
     end;
+handle_info({captcha_succeed, From}, normal_state, StateData) ->
+    NewState = case ?DICT:find(From, StateData#state.robots) of
+		   {ok, {Nick, Packet}} ->
+		       Robots = ?DICT:store(From, passed, StateData#state.robots),
+		       add_new_user(From, Nick, Packet, StateData#state{robots=Robots});
+		   _ ->
+		       StateData
+	       end,
+    {next_state, normal_state, NewState};
+handle_info({captcha_failed, From}, normal_state, StateData) ->
+    NewState = case ?DICT:find(From, StateData#state.robots) of
+		   {ok, {Nick, Packet}} ->
+		       Robots = ?DICT:erase(From, StateData#state.robots),
+		       Err = exmpp_stanza:reply_with_error(
+			    Packet, ?ERR(Packet, 'not-authorized', undefined, "")),
+		       ejabberd_router:route( % TODO: s/Nick/""/
+			 jid_replace_resource(
+			   StateData#state.jid, Nick),
+			 From, Err),
+		       StateData#state{robots=Robots};
+		   _ ->
+		       StateData
+	       end,
+    {next_state, normal_state, NewState};
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -1512,8 +1540,8 @@ add_new_user(From, Nick, Packet, StateData) ->
 	      From, Err),
 	    StateData;
 	{_, _, _, Role} ->
-	    case check_password(ServiceAffiliation, 
-		  exmpp_xml:get_child_elements(Packet), 
+	    case check_password(ServiceAffiliation, Affiliation,
+		  exmpp_xml:get_child_elements(Packet), From,
 		  StateData) of
 		true ->
 		    NewState =
@@ -1550,7 +1578,8 @@ add_new_user(From, Nick, Packet, StateData) ->
 			true ->
 			    NewState#state{just_created = false};
 			false ->
-			    NewState
+			    Robots = ?DICT:erase(From, StateData#state.robots),
+			    NewState#state{robots = Robots}
 		    end;
 		nopass ->
 		    ErrText = "The password is required to enter this room",
@@ -1561,6 +1590,29 @@ add_new_user(From, Nick, Packet, StateData) ->
 			StateData#state.jid, Nick),
 		      From, Err),
 		    StateData;
+		captcha_required ->
+		    ID = randoms:get_string(),
+		    SID = case exmpp_stanza:get_id(Packet) of undefined -> ""; SID1 -> SID1 end,
+		    RoomJID = StateData#state.jid,
+		    To = jid_replace_resource(RoomJID, Nick),
+		    case ejabberd_captcha:create_captcha(
+			   ID, SID, RoomJID, To, Lang, From) of
+			{ok, CaptchaEls} ->
+			    MsgPkt = {xmlelement, "message", [{"id", ID}], CaptchaEls},
+			    Robots = ?DICT:store(From,
+						 {Nick, Packet}, StateData#state.robots),
+			    ejabberd_router:route(RoomJID, From, MsgPkt),
+			    StateData#state{robots = Robots};
+			error ->
+			    ErrText = "Unable to generate a captcha",
+		            Err = exmpp_stanza:reply_with_error(
+			            Packet, ?ERR(Packet, 'internal-server-error', Lang, ErrText)),
+			    ejabberd_router:route( % TODO: s/Nick/""/
+			      jid_replace_resource(
+				StateData#state.jid, Nick),
+			      From, Err),
+			    StateData
+		    end;
 		_ ->
 		    ErrText = "Incorrect password",
 		    Err = exmpp_stanza:reply_with_error(
@@ -1573,13 +1625,13 @@ add_new_user(From, Nick, Packet, StateData) ->
 	   end
     end.
 
-check_password(owner, _Els, _StateData) ->
+check_password(owner, _Affiliation, _Els, _From, _StateData) ->
     %% Don't check pass if user is owner in MUC service (access_admin option)
     true;
-check_password(_ServiceAffiliation, Els, StateData) ->
+check_password(_ServiceAffiliation, Affiliation, Els, From, StateData) ->
     case (StateData#state.config)#config.password_protected of
 	false ->
-	    true;
+	    check_captcha(Affiliation, From, StateData);
 	true ->
 	    Pass = extract_password(Els),
 	    case Pass of
@@ -1590,9 +1642,23 @@ check_password(_ServiceAffiliation, Els, StateData) ->
 			Pass ->
 			    true;
 			_ ->
-			false
+			    false
 		    end
 	    end
+    end.
+
+check_captcha(Affiliation, From, StateData) ->
+    case (StateData#state.config)#config.captcha_protected
+	andalso ejabberd_captcha:is_feature_available() of
+	true when Affiliation == none ->
+	    case ?DICT:find(From, StateData#state.robots) of
+		{ok, passed} ->
+		    true;
+		_ ->
+		    captcha_required
+	    end;
+	_ ->
+	    true
     end.
 
 extract_password([]) ->
@@ -2758,8 +2824,9 @@ get_config(Lang, StateData, From) ->
 	end,
     Res =
 	[#xmlel{name = 'title', children = [ #xmlcdata{cdata =
-                translate:translate(Lang, "Configuration for ") ++
-                exmpp_jid:jid_to_list(StateData#state.jid)}]},
+	        io_lib:format(translate:translate(Lang, "Configuration of room ~s"),
+		    [exmpp_jid:jid_to_list(StateData#state.jid)])
+         }]},
     #xmlel{name = 'field', attrs = [?XMLATTR('type', <<"hidden">>),
                                   ?XMLATTR('var', <<"FORM_TYPE">>)],
            children = [#xmlel{name = 'value', children = [#xmlcdata{cdata = 
@@ -2865,9 +2932,14 @@ get_config(Lang, StateData, From) ->
          ?BOOLXFIELD("Allow visitors to change nickname",
                  "muc#roomconfig_allowvisitornickchange",
                  Config#config.allow_visitor_nickchange)
-        ] ++
-
-
+	] ++
+	case ejabberd_captcha:is_feature_available() of
+	    true ->
+	        [?BOOLXFIELD("Make room captcha protected",
+			     "captcha_protected",
+			     Config#config.captcha_protected)];
+	    false -> []
+	end ++
 	case mod_muc_log:check_access_log(
        StateData#state.server_host, From) of
 	    allow ->
@@ -2954,6 +3026,8 @@ set_xoption([{"members_by_default", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(members_by_default, Val);
 set_xoption([{"muc#roomconfig_membersonly", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(members_only, Val);
+set_xoption([{"captcha_protected", [Val]} | Opts], Config) ->
+    ?SET_BOOL_XOPT(captcha_protected, Val);
 set_xoption([{"muc#roomconfig_allowinvites", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_user_invites, Val);
 set_xoption([{"muc#roomconfig_passwordprotectedroom", [Val]} | Opts], Config) ->
@@ -3045,6 +3119,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      members_only -> StateData#state{config = (StateData#state.config)#config{members_only = Val}};
 	      allow_user_invites -> StateData#state{config = (StateData#state.config)#config{allow_user_invites = Val}};
 	      password_protected -> StateData#state{config = (StateData#state.config)#config{password_protected = Val}};
+	      captcha_protected -> StateData#state{config = (StateData#state.config)#config{captcha_protected = Val}};
 	      password -> StateData#state{config = (StateData#state.config)#config{password = Val}};
 	      anonymous -> StateData#state{config = (StateData#state.config)#config{anonymous = Val}};
 	      logging -> StateData#state{config = (StateData#state.config)#config{logging = Val}};
@@ -3087,6 +3162,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(members_only),
      ?MAKE_CONFIG_OPT(allow_user_invites),
      ?MAKE_CONFIG_OPT(password_protected),
+     ?MAKE_CONFIG_OPT(captcha_protected),
      ?MAKE_CONFIG_OPT(password),
      ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging),
@@ -3224,6 +3300,17 @@ process_iq_disco_items(From, get, _Lang, StateData) ->
 	    {result, UList, StateData};
 	_ ->
 	    {error, 'forbidden'}
+    end.
+
+process_iq_captcha(_From, get, _Lang, _SubEl, _StateData) ->
+    {error, 'not-allowed'};
+
+process_iq_captcha(_From, set, _Lang, SubEl, StateData) ->
+    case ejabberd_captcha:process_reply(SubEl) of
+	ok ->
+	    {result, [], StateData};
+	_ ->
+	    {error, 'not-acceptable'}
     end.
 
 get_title(StateData) ->

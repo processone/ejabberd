@@ -19,5 +19,11 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%% CAPTCHA related NSes.
+-define(NS_OOB, "jabber:x:oob").
+-define(NS_CAPTCHA, "urn:xmpp:captcha").
+-define(NS_MEDIA, "urn:xmpp:media-element").
+-define(NS_BOB, "urn:xmpp:bob").
+
 -record(rsm_in, {max, direction, id, index}).
 -record(rsm_out, {count, index, first, last}).
