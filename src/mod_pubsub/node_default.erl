@@ -701,9 +701,8 @@ del_state(NodeId, JID) ->
 %% ```get_items(NodeId, From) ->
 %%	   node_default:get_items(NodeId, From).'''</p>
 get_items(NodeId, _From) ->
-    Items = mnesia:match_object(
-	      #pubsub_item{itemid = {'_', NodeId}, _ = '_'}),
-    {result, Items}.
+    Items = mnesia:match_object(#pubsub_item{itemid = {'_', NodeId}, _ = '_'}),
+    {result, lists:reverse(lists:keysort(#pubsub_item.modification, Items))}.
 get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
     SubKey = jlib:jid_tolower(JID),
     GenKey = jlib:jid_remove_resource(SubKey),
