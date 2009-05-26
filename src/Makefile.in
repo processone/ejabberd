@@ -208,6 +208,7 @@ install: all
 	#
 	# Binary C programs
 	install -d $(PBINDIR)
+	install -m 750 $(O_USER) ../tools/captcha.sh $(PBINDIR)
 	$(INSTALL_EPAM)
 	#
 	# Binary system libraries

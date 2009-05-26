@@ -305,6 +305,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
 \item PAM library. Optional. For Pluggable Authentication Modules (PAM). See section \ref{pam}.
 \item GNU Iconv 1.8 or higher, for the IRC Transport (mod\_irc). Optional. Not needed on systems with GNU Libc. See section \ref{modirc}.
+\item ImageMagick's Convert program. Optional. For CAPTCHA challenges. See section \ref{captcha}.
 \end{itemize}
 
 \makesubsection{download}{Download Source Code}
@@ -393,7 +394,7 @@ The files and directories created are, by default:
 			\titem{include/} Erlang header files (*.hrl)
 			\titem{priv/} Additional files required at runtime
 				\begin{description}
-					\titem{bin/} Binary C programs
+					\titem{bin/} Executable programs
 					\titem{lib/} Binary system libraries (*.so)
 					\titem{msgs/} Translation files (*.msgs)
 				\end{description}
@@ -799,7 +800,7 @@ The available modules, their purpose and the options allowed by each one are:
     \texttt{shaper}, \texttt{service\_check\_from}
   \titem{\texttt{ejabberd\_http}}
     Handles incoming HTTP connections.\\
-    Options: \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
+    Options: \texttt{captcha}, \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
     \texttt{request\_handlers}, \texttt{tls}, \texttt{web\_admin}\\
 \end{description}
 
@@ -826,6 +827,8 @@ This is a detailed description of each option allowed by the listening modules:
     Note that you cannot define in a single \term{ejabberd\_service} components of
     different services: add an \term{ejabberd\_service} for each service,
     as seen in an example below.
+  \titem{captcha} \ind{options!http-captcha}
+    Simple web page that allows a user to fill a CAPTCHA challenge (see section \ref{captcha}).
   \titem{http\_bind} \ind{options!http\_bind}\ind{protocols!XEP-0206: HTTP Binding}\ind{JWChat}\ind{web-based Jabber client}
     This option enables HTTP Binding (\xepref{0124} and \xepref{0206}) support. HTTP Bind
     enables access via HTTP requests to \ejabberd{} from behind firewalls which
@@ -1496,6 +1499,51 @@ For example, to set Russian as default language:
 \end{verbatim}
 
 Appendix \ref{i18ni10n} provides more details about internationalization and localization.
+
+
+\makesubsection{captcha}{CAPTCHA}
+\ind{options!captcha}\ind{captcha}
+
+Some \ejabberd{} modules can be configured to require a CAPTCHA challenge on certain actions.
+If the client does not support CAPTCHA Forms (\xepref{0158}),
+a web link is provided so the user can fill the challenge in a web browser.
+
+An example script is provided that generates the image
+using ImageMagick's Convert program.
+
+The configurable options are:
+\begin{description}
+  \titem{\{captcha\_cmd, Path\}} 
+  Full path to a script that generates the image.
+  The default value is an empty string: \term{""}
+  \titem{\{captcha\_host, Host\}} 
+  Host part of the URL sent to the user.
+  You can include the port number.
+  The URL sent to the user is formed by: \term{http://Host/captcha/}
+  The default value is the first hostname configured.
+\end{description}
+
+Additionally, an \term{ejabberd\_http} listener must be enabled with the \term{captcha} option.
+See section \ref{listened-module}.
+
+Example configuration:
+\begin{verbatim}
+{hosts, ["example.org"]}.
+
+{captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
+{captcha_host, "example.org:5280"}.
+
+{listen,
+ [
+  ...
+  {5280, ejabberd_http, [
+                         captcha,
+                         ...
+                        ]
+  }
+
+]}.
+\end{verbatim}
 
 
 \makesubsection{includeconfigfile}{Include Additional Configuration Files}

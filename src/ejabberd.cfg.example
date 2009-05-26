@@ -150,7 +150,8 @@
   %%			   ]},
 
   {5280, ejabberd_http, [
-			 http_poll,
+			 captcha, 
+			 http_poll, 
 			 web_admin
 			]}
 
@@ -424,6 +425,20 @@
 %%  {access, register, [{deny, all}]}
 %% ]
 %%}.
+
+
+%%%.   =======
+%%%'   CAPTCHA
+
+%%
+%% Full path to a script that generates the image.
+%%
+%%{captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
+
+%%
+%% Host part of the URL sent to the user.
+%%
+%%{captcha_host, "example.org:5280"}.
 
 
 %%%.   ================
