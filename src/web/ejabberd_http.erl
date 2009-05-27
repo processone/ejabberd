@@ -472,10 +472,10 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
     Data = case lists:member(html, Headers) of
 	       true ->
 		   list_to_binary([?HTML_DOCTYPE,
-				   exmpp_xml:document_to_list(exmpp_xml:indent_document(XHTML, <<>>))]);
+				   exmpp_xml:document_to_list(XHTML)]);
 	       _ ->
 		   list_to_binary([?XHTML_DOCTYPE,
-				   exmpp_xml:document_to_list(exmpp_xml:indent_document(XHTML, <<>>))])
+				   exmpp_xml:document_to_list(XHTML)])
 	   end,
     Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
 		   {value, _} ->
