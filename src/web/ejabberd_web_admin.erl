@@ -309,7 +309,7 @@ html>body #container {
   font-family: Verdana, Arial, Helvetica, sans-serif; 
   font-size: 8pt;
   font-weight: bold;
-  background: #d47911;
+  border-top: 1px solid #d47911;
   width: 17em;
 }
 
@@ -325,7 +325,8 @@ html>body #container {
   display: block;
   padding: 3px 6px 3px 9px;
   border-left: 1em solid #ffc78c;
-  border-top: 1px solid #d47911;
+  border-right: 1px solid #d47911;
+  border-bottom: 1px solid #d47911;
   background: #ffe3c9;
   text-decoration: none;
 }
@@ -346,19 +347,19 @@ html>body #container {
 
 ul li #navhead a, ul li #navheadsub a, ul li #navheadsubsub a {
   text-align: center;
-  border-top: 2px solid #d47911;
-  border-bottom: 1px solid #d47911;
+  border-top: 1px solid #d47911;
+  border-bottom: 2px solid #d47911;
   background: #FED6A6;
 }
 
 #navheadsub, #navitemsub {
   border-left: 7px solid white;
-  margin-left: 2px solid #d47911;
+  margin-left: 2px;
 }
 
 #navheadsubsub, #navitemsubsub {
   border-left: 14px solid white;
-  margin-left: 4px solid #d47911;
+  margin-left: 4px;
 }
 
 #lastactivity li {
