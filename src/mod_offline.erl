@@ -574,11 +574,11 @@ user_queue(User, Server, Query, Lang) ->
 		    exmpp_xml:indent_document(Packet1, <<"  ">>),
 		    [?DEFAULT_NS], ?PREFIXED_NS),
 		  ?XE("tr",
-		      [?XAE("td", [{"class", "valign"}], [?INPUT("checkbox", "selected", ID)]),
-		       ?XAC("td", [{"class", "valign"}], Time),
-		       ?XAC("td", [{"class", "valign"}], SFrom),
-		       ?XAC("td", [{"class", "valign"}], STo),
-		       ?XAE("td", [{"class", "valign"}], [?XC("pre", FPacket)])]
+		      [?XAE("td", [?XMLATTR('class', <<"valign">>)], [?INPUT("checkbox", "selected", ID)]),
+		       ?XAC("td", [?XMLATTR('class', <<"valign">>)], Time),
+		       ?XAC("td", [?XMLATTR('class', <<"valign">>)], SFrom),
+		       ?XAC("td", [?XMLATTR('class', <<"valign">>)], STo),
+		       ?XAE("td", [?XMLATTR('class', <<"valign">>)], [?XC("pre", FPacket)])]
 		     )
 	  end, Msgs),
     [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
@@ -587,7 +587,7 @@ user_queue(User, Server, Query, Lang) ->
 	    ok -> [?XREST("Submitted")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 	      [?XE("table",
 		   [?XE("thead",
 			[?XE("tr",
@@ -601,7 +601,7 @@ user_queue(User, Server, Query, Lang) ->
 			if
 			    FMsgs == [] ->
 				[?XE("tr",
-				     [?XAC("td", [{"colspan", "4"}], " ")]
+				     [?XAC("td", [?XMLATTR('colspan', <<"4">>)], " ")]
 				    )];
 			    true ->
 				FMsgs

@@ -970,16 +970,16 @@ user_roster(User, Server, Query, Lang) ->
 					TDJID = build_contact_jid_td(R#roster.jid),
 					?XE("tr",
 					    [TDJID,
-					     ?XAC("td", [{"class", "valign"}],
+					     ?XAC("td", [?XMLATTR('class', <<"valign">>)],
 						  binary_to_list(R#roster.name)),
-					     ?XAC("td", [{"class", "valign"}],
+					     ?XAC("td", [?XMLATTR('class', <<"valign">>)],
 						  atom_to_list(R#roster.subscription)),
-					     ?XAC("td", [{"class", "valign"}],
+					     ?XAC("td", [?XMLATTR('class', <<"valign">>)],
 						  atom_to_list(Pending)),
-					     ?XAE("td", [{"class", "valign"}], Groups),
+					     ?XAE("td", [?XMLATTR('class', <<"valign">>)], Groups),
 					     if
 						 Pending == in ->
-						     ?XAE("td", [{"class", "valign"}],
+						     ?XAE("td", [?XMLATTR('class', <<"valign">>)],
 							  [?INPUTT("submit",
 								   "validate" ++
 								   ejabberd_web_admin:term_to_id(R#roster.jid),
@@ -987,7 +987,7 @@ user_roster(User, Server, Query, Lang) ->
 						 true ->
 						     ?X("td")
 					     end,
-					     ?XAE("td", [{"class", "valign"}],
+					     ?XAE("td", [?XMLATTR('class', <<"valign">>)],
 						  [?INPUTT("submit",
 							   "remove" ++
 							   ejabberd_web_admin:term_to_id(R#roster.jid),
@@ -1000,7 +1000,7 @@ user_roster(User, Server, Query, Lang) ->
 		error -> [?XREST("Bad format")];
 		nothing -> []
 	    end ++
-	    [?XAE("form", [{"action", ""}, {"method", "post"}],
+	    [?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 		  FItems ++
 		  [?P,
 		   ?INPUT("text", "newjid", ""), ?C(" "),
@@ -1010,7 +1010,7 @@ user_roster(User, Server, Query, Lang) ->
 	  _ ->
 	      [?XC("h1", ?T("Roster of ") ++ us_to_list({User, Server}))] ++
 	      [?CT("Bad format"), ?P] ++
-	      [?XAE("form", [{"action", ""}, {"method", "post"}],
+	      [?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 		    [?P,
 		     ?INPUT("text", "newjid", ""), ?C(" "),
 		     ?INPUTT("submit", "addjid", "Add Jabber ID")

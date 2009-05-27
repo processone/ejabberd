@@ -1228,13 +1228,13 @@ access_rules_to_xhtml(AccessRules, Lang) ->
 		fun({access, Name, Rules} = Access) ->
 			SName = atom_to_list(Name),
 			ID = term_to_id(Access),
-			?XE('trr',
+			?XE('tr',
 			    [?XE('td', [?INPUT("checkbox", "selected", ID)]),
 			     ?XE('td', [?AC(SName ++ "/", SName)]),
 			     ?XC('td', term_to_string(Rules))
 			    ]
 			   )
-		end, AccessRules) ++
+		end, lists:sort(AccessRules)) ++
 	      [?XE('tr',
 		   [?X('td'),
 		    ?XE('td', [?INPUT("text", "namenew", "")]),
@@ -1293,9 +1293,9 @@ access_rule_to_xhtml(Rules) ->
 		     SACL = atom_to_list(ACL),
 		     SAccess ++ "\s\t" ++ SACL ++ "\n"
 	     end, Rules),
-    ?XAC('textarea', [{"name", "rules"},
-		      {"rows", "16"},
-		      {"cols", "80"}],
+    ?XAC('textarea', [?XMLATTR('name', <<"rules">>),
+    ?XMLATTR('rows', <<"16">>),
+    ?XMLATTR('cols', <<"80">>)],
 	 Text).
 
 parse_access_rule(Text) ->

@@ -199,12 +199,12 @@ process_item(RosterItem, Host) ->
 
                     %% Remove pending out subscription
                     Mod:out_subscription(UserTo, ServerTo,
-                                         jlib:make_jid(UserFrom, ServerFrom, ""),
+                                         exmpp_jid:make_jid(UserFrom, ServerFrom),
                                          unsubscribe),
 
                     %% Remove pending in subscription
                     Mod:in_subscription(aaaa, UserFrom, ServerFrom,
-                                        jlib:make_jid(UserTo, ServerTo, ""),
+                                        exmpp_jid:make_jid(UserTo, ServerTo),
                                         unsubscribe, ""),
 
                     %% But we're still subscribed, so respond as such.
@@ -334,7 +334,7 @@ out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
 
     %% Remove pending out subscription
     {UserTo, ServerTo, _} = jlib:short_prepd_bare_jid(JIDTo),
-    JIDFrom = jlib:make_jid(UserFrom, UserTo, ""),
+    JIDFrom = exmpp_jid:make_jid(UserFrom, UserTo),
     Mod:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
 
     %% Remove pending in subscription
@@ -707,7 +707,7 @@ push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
 		   subscription = Subscription,
 		   ask = none,
 		   groups = [GroupName]},
-    push_item(User, Server, jlib:make_jid("", Server, ""), Item).
+    push_item(User, Server, exmpp_jid:make_jid(Server), Item).
 
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,
@@ -796,7 +796,7 @@ list_shared_roster_groups(Host, Query, Lang) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 	      [FGroups,
 	       ?BR,
 	       ?INPUTT("submit", "delete", "Delete Selected")
@@ -858,7 +858,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
     FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
     DescNL = length(element(2, regexp:split(Description, "\n"))),
     FGroup =
-	?XAE("table", [{"class", "withtextareas"}],
+	?XAE("table", [?XMLATTR('class', <<"withtextareas">>)],
 	     [?XE("tbody",
 		  [?XE("tr",
 		       [?XCT("td", "Name:"),
@@ -897,7 +897,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 	      [FGroup,
 	       ?BR,
 	       ?INPUTT("submit", "submit", "Submit")
