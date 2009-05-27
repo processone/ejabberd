@@ -28,13 +28,15 @@
 -author('alexey@process-one.net').
 
 %% API
--export([update/0, update_info/0]).
+-export([update/0, update/1, update_info/0]).
 
 -include("ejabberd.hrl").
 
 %%====================================================================
 %% API
 %%====================================================================
+
+%% Update all the modified modules
 update() ->
     case update_info() of
 	{ok, Dir, _UpdatedBeams, _Script, LowLevelScript, _Check} ->
@@ -48,48 +50,91 @@ update() ->
 	    {error, Reason}
     end.
 
-update_info() ->
-    Dir = filename:dirname(code:which(ejabberd)),
-    case file:list_dir(Dir) of
-	{ok, Files} ->
-	    Beams = [list_to_atom(filename:rootname(FN)) ||
-			FN <- Files, lists:suffix(".beam", FN)],
-	    UpdatedBeams =
-		lists:filter(
-		  fun(Module) ->
-			  {ok, {Module, NewVsn}} =
-			      beam_lib:version(code:which(Module)),
-			  case code:is_loaded(Module) of
-			      {file, _} ->
-				  Attrs = Module:module_info(attributes),
-				  {value, {vsn, CurVsn}} =
-				      lists:keysearch(vsn, 1, Attrs),
-				  NewVsn /= CurVsn;
-			      false ->
-				  false
-			  end
-		  end, Beams),
-	    ?INFO_MSG("beam files: ~p~n", [UpdatedBeams]),
-	    Script = make_script(UpdatedBeams),
-	    ?INFO_MSG("script: ~p~n", [Script]),
-	    LowLevelScript = make_low_level_script(UpdatedBeams, Script),
-	    ?INFO_MSG("low level script: ~p~n", [LowLevelScript]),
-	    Check =
-		release_handler_1:check_script(
-		  LowLevelScript,
+%% Update only the specified modules
+update(ModulesToUpdate) ->
+    case update_info() of
+	{ok, Dir, UpdatedBeamsAll, _Script, _LowLevelScript, _Check} ->
+	    UpdatedBeamsNow =
+		[A || A <- UpdatedBeamsAll, B <- ModulesToUpdate, A == B],
+	    {_, LowLevelScript, _} = build_script(Dir, UpdatedBeamsNow),
+	    Eval =
+		release_handler_1:eval_script(
+		  LowLevelScript, [],
 		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    ?INFO_MSG("check: ~p~n", [Check]),
-	    {ok, Dir, UpdatedBeams, Script, LowLevelScript, Check};
+	    ?INFO_MSG("eval: ~p~n", [Eval]),
+	    Eval;
 	{error, Reason} ->
 	    {error, Reason}
     end.
 
+%% Get information about the modified modules
+update_info() ->
+    Dir = filename:dirname(code:which(ejabberd)),
+    case file:list_dir(Dir) of
+	{ok, Files} ->
+	    update_info(Dir, Files);
+	{error, Reason} ->
+	    {error, Reason}
+    end.
 
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-%% From systools.hrl
+update_info(Dir, Files) ->
+    Beams = lists:sort(get_beams(Files)),
+    UpdatedBeams = get_updated_beams(Beams),
+    ?INFO_MSG("beam files: ~p~n", [UpdatedBeams]),
+    {Script, LowLevelScript, Check} = build_script(Dir, UpdatedBeams),
+    {ok, Dir, UpdatedBeams, Script, LowLevelScript, Check}.
+
+get_beams(Files) ->
+    [list_to_atom(filename:rootname(FN))
+     || FN <- Files, lists:suffix(".beam", FN)].
+
+%% Return only the beams that have different version
+get_updated_beams(Beams) ->
+    lists:filter(
+      fun(Module) ->
+	      NewVsn = get_new_version(Module),
+	      case code:is_loaded(Module) of
+		  {file, _} ->
+		      CurVsn = get_current_version(Module),
+		      (NewVsn /= CurVsn
+		       andalso NewVsn /= unknown_version);
+		  false ->
+		      false
+	      end
+      end, Beams).
+
+get_new_version(Module) ->
+    Path = code:which(Module),
+    VersionRes = beam_lib:version(Path),
+    case VersionRes of
+	{ok, {Module, NewVsn}} -> NewVsn;
+	%% If a m1.erl has -module("m2"):
+	_ -> unknown_version
+    end.
+
+get_current_version(Module) ->
+    Attrs = Module:module_info(attributes),
+    {value, {vsn, CurVsn}} = lists:keysearch(vsn, 1, Attrs),
+    CurVsn.
+
+%% @spec(Dir::string(), UpdatedBeams::[atom()]) -> {Script,LowLevelScript,Check}
+build_script(Dir, UpdatedBeams) ->
+    Script = make_script(UpdatedBeams),
+    ?INFO_MSG("script: ~p~n", [Script]),
+    LowLevelScript = make_low_level_script(UpdatedBeams, Script),
+    ?INFO_MSG("low level script: ~p~n", [LowLevelScript]),
+    Check =
+	release_handler_1:check_script(
+	  LowLevelScript,
+	  [{ejabberd, "", filename:join(Dir, "..")}]),
+    ?INFO_MSG("check: ~p~n", [Check]),
+    {Script, LowLevelScript, Check}.
+
+%% Copied from Erlang/OTP file: lib/sasl/src/systools.hrl
 -record(application, 
 	{name,			%% Name of the application, atom().
          type = permanent,	%% Application start type, atom().
