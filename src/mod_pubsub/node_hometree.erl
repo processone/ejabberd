@@ -38,7 +38,7 @@
 %%% useable and useful as is. Please, send us comments, feedback and
 %%% improvements.</p>
 
--module(node_default).
+-module(node_hometree).
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
