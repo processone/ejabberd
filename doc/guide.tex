@@ -3268,11 +3268,28 @@ Options:
 \titem{access\_createnode} \ind{options!access\_createnode}
   This option restricts which users are allowed to create pubsub nodes using
   ACL and ACCESS. The default value is \term{pubsub\_createnode}. % Not clear enough + do not use abbreviations.
-\titem{plugins} To specify which pubsub node plugins to use. If not defined, the default
+\titem{plugins} \ind{options!plugins}
+  To specify which pubsub node plugins to use. If not defined, the default
   pubsub plugin is always used.
-\titem{nodetree} To specify which nodetree to use. If not defined, the default pubsub
-  nodetree is used. Nodetrees are default and virtual. Only one nodetree can be used
+\titem{nodetree} \ind{options!nodetree}
+  To specify which nodetree to use. If not defined, the default pubsub
+  nodetree is used. Only one nodetree can be used per host,
   and is shared by all node plugins.
+\titem{pep\_sendlast\_offline} \ind{options!pep\_sendlast\_offline}
+  To specify whether or not we should get last published PEP items
+  from users in our roster which are offline when we connect. Value is true or false.
+  If not defined, pubsub assumes false so we only get last items of online contacts.
+\titem{last\_item\_cache} \ind{options!last\_item\_cache}
+  To specify whether or not pubsub should cache last items. Value is true
+  or false. If not defined, pubsub do not cache last items. On systems with not so many nodes,
+  caching last items speeds up pubsub and allows to raise user connection rate. The cost is memory
+  usage, as every item is stored in memory.
+\titem{pep\_mapping} \ind{pep\_mapping}
+  This allow to define a Key-Value list to choose defined node plugins on given PEP namespace.
+  The following example will use node\_tune instead of node\_pep for every PEP node with tune namespace:
+\begin{verbatim}
+  {mod_pubsub, [{pep_mapping, [{"http://jabber.org/protocol/tune", "tune"}]}]}
+\end{verbatim}
 %\titem{served\_hosts} \ind{options!served\_hosts}
 %  This option allows to create additional pubsub virtual hosts in a single module instance.
 \end{description}

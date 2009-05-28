@@ -59,7 +59,8 @@
 %% hook handlers
 -export([receive_packet/3,
 	 receive_packet/4,
-	 presence_probe/3]).
+	 presence_probe/3,
+	 remove_connection/3]).
 
 -include("ejabberd.hrl").
 
@@ -202,7 +203,20 @@ receive_packet(From, To, Packet) when ?IS_PRESENCE(Packet) ->
     'unsubscribed' ->
 	ok;
     'unavailable' ->
-	clear_caps(From);
+	{_, S1, _} = jlib:short_prepd_jid(From),
+	case jlib:short_prepd_jid(To) of
+	{_, S1, _} -> ok;
+	_ -> clear_caps(From)
+	end;
+	%% TODO: probe client, and clean only if no answers
+	%% as far as protocol does not allow inter-server communication to
+	%% let remote server handle it's own caps to decide which user is to be
+	%% notified, we must keep a cache of online status of external contacts
+	%% this is absolutely not scallable, but we have no choice for now
+	%% we can only use unavailable presence, but if remote user just remove a local user
+	%% from its roster, then it's considered as offline, so he does not receive local PEP
+	%% anymore until he login again.
+	%% This is tracked in EJAB-943
     _ ->
 	ServerString = exmpp_jid:ldomain_as_list(To),
 	Els = Packet#xmlel.children,
@@ -217,6 +231,9 @@ receive_packet(_JID, From, To, Packet) ->
 presence_probe(From, To, _) ->
     ServerString = exmpp_jid:ldomain_as_list(To),
     wait_caps(ServerString, From).
+
+remove_connection(_SID, JID, _Info) ->
+    clear_caps(JID).
 
 caps_to_binary(#caps{node = Node, version = Version, exts = Exts}) ->
     BExts = [list_to_binary(Ext) || Ext <- Exts],
@@ -249,6 +266,7 @@ init([Host, _Opts]) ->
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 30),
     ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
     ejabberd_hooks:add(presence_probe_hook, Host, ?MODULE, presence_probe, 20),
+    ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, remove_connection, 20),
     {ok, #state{host = Host}}.
 
 maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
@@ -418,6 +436,7 @@ terminate(_Reason, State) ->
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, receive_packet, 30),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
     ejabberd_hooks:delete(presence_probe_hook, Host, ?MODULE, presence_probe, 20),
+    ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, remove_connection, 20),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

@@ -38,7 +38,7 @@
 %%% useable and useful as is. Please, send us comments, feedback and
 %%% improvements.</p>
 
--module(node_default).
+-module(node_hometree).
 -author('christophe.romain@process-one.net').
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -804,7 +804,7 @@ del_items(NodeId, ItemIds) ->
 
 %% @doc <p>Return the name of the node if known: Default is to return
 %% node id.</p>
-get_item_name(_host, _Node, Id) ->
+get_item_name(_Host, _Node, Id) ->
     Id.
 
 %% @spec (Affiliation, Subscription) -> true | false

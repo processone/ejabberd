@@ -39,7 +39,7 @@
 
 -module(mod_pubsub).
 -author('christophe.romain@process-one.net').
--version('1.12-05').
+-version('1.12-06').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -49,8 +49,8 @@
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
 
--define(STDTREE, "default").
--define(STDNODE, "default").
+-define(STDTREE, "tree").
+-define(STDNODE, "flat").
 -define(PEPNODE, "pep").
 
 %% exports for hooks
@@ -78,6 +78,9 @@
 	 publish_item/6,
 	 delete_item/4,
 	 send_items/6,
+	 get_items/2,
+	 get_item/3,
+	 get_cached_item/2,
 	 broadcast_stanza/7,
 	 get_configure/5,
 	 set_configure/5,
@@ -120,7 +123,8 @@
 		host,
 		access,
 		pep_mapping = [],
-		pep_sendlast_offline,
+		pep_sendlast_offline = false,
+		last_item_cache = false,
 		nodetree = ?STDTREE,
 		plugins = [?STDNODE],
 		send_loop}).
@@ -165,17 +169,21 @@ init([ServerHost, Opts]) ->
     Access = gen_mod:get_opt(access_createnode, Opts, all),
     PepOffline = gen_mod:get_opt(pep_sendlast_offline, Opts, false),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    LastItemCache = gen_mod:get_opt(last_item_cache, Opts, false),
     ServerHostB = list_to_binary(ServerHost),
     pubsub_index:init(Host, ServerHost, Opts),
-    ets:new(gen_mod:get_module_proc(Host, pubsub_state), [set, named_table]),
-    ets:new(gen_mod:get_module_proc(ServerHost, pubsub_state), [set, named_table]),
+    ets:new(gen_mod:get_module_proc(Host, config), [set, named_table]),
+    ets:new(gen_mod:get_module_proc(ServerHostB, config), [set, named_table]),
+    ets:new(gen_mod:get_module_proc(Host, last_items), [set, named_table]),
+    ets:new(gen_mod:get_module_proc(ServerHostB, last_items), [set, named_table]),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB_s),
-    ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {nodetree, NodeTree}),
-    ets:insert(gen_mod:get_module_proc(Host, pubsub_state), {plugins, Plugins}),
-    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {nodetree, NodeTree}),
-    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {plugins, Plugins}),
-    ets:insert(gen_mod:get_module_proc(ServerHost, pubsub_state), {pep_mapping, PepMapping}),
+    ets:insert(gen_mod:get_module_proc(Host, config), {nodetree, NodeTree}),
+    ets:insert(gen_mod:get_module_proc(Host, config), {plugins, Plugins}),
+    ets:insert(gen_mod:get_module_proc(Host, config), {last_item_cache, LastItemCache}),
+    ets:insert(gen_mod:get_module_proc(ServerHostB, config), {nodetree, NodeTree}),
+    ets:insert(gen_mod:get_module_proc(ServerHostB, config), {plugins, Plugins}),
+    ets:insert(gen_mod:get_module_proc(ServerHostB, config), {pep_mapping, PepMapping}),
     ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
@@ -204,6 +212,7 @@ init([ServerHost, Opts]) ->
 		access = Access,
 		pep_mapping = PepMapping,
 		pep_sendlast_offline = PepOffline,
+		last_item_cache = LastItemCache,
 		nodetree = NodeTree,
 		plugins = Plugins},
     SendLoop = spawn(?MODULE, send_loop, [State]),
@@ -641,8 +650,8 @@ out_subscription(User, Server, JID, subscribed) ->
     gen_server:cast(Proc, {presence, U, S, Rs, Owner});
 out_subscription(_, _, _, _) ->
     ok.
-in_subscription(_, User, Server, Subscriber, unsubscribed, _) ->
-    Owner = exmpp_jid:make_jid(User, Server, ""),
+in_subscription(_, User, Server, Owner, unsubscribed, _) ->
+    Subscriber = exmpp_jid:make_jid(User, Server, ""),
     Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
     gen_server:cast(Proc, {unsubscribe, Subscriber, Owner});
 in_subscription(_, _, _, _, _, _) ->
@@ -1534,7 +1543,8 @@ delete_node(Host, Node, Owner) ->
 		NodeId = RNode#pubsub_node.id,
 		Type = RNode#pubsub_node.type,
 		Options = RNode#pubsub_node.options,
-		broadcast_removed_node(RH, RN, NodeId, Type, Options, RSubscriptions)
+		broadcast_removed_node(RH, RN, NodeId, Type, Options, RSubscriptions),
+		unset_cached_item(RH, NodeId)
 	    end, Removed),
 	    case Result of
 		default -> {result, Reply};
@@ -1756,6 +1766,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, jlib:short_prepd_jid(Publisher), Payload),
+	    set_cached_item(Host, NodeId, ItemId, Payload),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -1765,12 +1776,14 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_retract_items(Host, Node, NodeId, Type, Options, Removed),
+	    set_cached_item(Host, NodeId, ItemId, Payload),
 	    {result, Reply};
 	{result, {TNode, {Result, Removed}}} ->
 	    NodeId = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_retract_items(Host, Node, NodeId, Type, Options, Removed),
+	    set_cached_item(Host, NodeId, ItemId, Payload),
 	    {result, Result};
 	{result, {_, default}} ->
 	    {result, Reply};
@@ -1842,6 +1855,10 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_retract_items(Host, Node, NodeId, Type, Options, [ItemId], ForceNotify),
+	    case get_cached_item(Host, NodeId) of
+	    #pubsub_item{itemid = {ItemId, NodeId}, _ = '_'} -> unset_cached_item(Host, NodeId);
+	    _ -> ok
+	    end,
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -1895,6 +1912,7 @@ purge_node(Host, Node, Owner) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_purge_node(Host, Node, NodeId, Type, Options),
+	    unset_cached_item(Host, NodeId),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -1973,6 +1991,22 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 		    Error
 	    end
     end.
+get_items(Host, Node) ->
+    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
+	node_call(Type, get_items, [NodeId, service_jid(Host)])
+    end,
+    case transaction(Host, Node, Action, sync_dirty) of
+	{result, {_, Items}} -> Items;
+	Error -> Error
+    end.
+get_item(Host, Node, ItemId) ->
+    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
+	node_call(Type, get_item, [NodeId, ItemId])
+    end,
+    case transaction(Host, Node, Action, sync_dirty) of
+	{result, {_, Items}} -> Items;
+	Error -> Error
+    end.
 
 %% @spec (Host, Node, NodeId, Type, LJID, Number) -> any()
 %%	 Host = host()
@@ -1984,7 +2018,15 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
 send_items(Host, Node, NodeId, Type, LJID, last) ->
-    send_items(Host, Node, NodeId, Type, LJID, 1);
+    case get_cached_item(Host, NodeId) of
+	undefined ->
+	    send_items(Host, Node, NodeId, Type, LJID, 1);
+	LastItem ->
+	    Stanza = event_stanza(
+		[{xmlelement, "items", nodeAttr(Node),
+		itemsEls([LastItem])}]),
+	    ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza}
+    end;
 send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
 	{result, []} -> 
@@ -2909,25 +2951,67 @@ set_xoption([_ | Opts], NewOpts) ->
     % skip unknown field
     set_xoption(Opts, NewOpts).
 
+%%%% last item cache handling
+
+set_cached_item({_, ServerHost, _}, NodeId, ItemId, Payload) ->
+    set_cached_item(ServerHost, NodeId, ItemId, Payload);
+set_cached_item(Host, NodeId, ItemId, Payload) ->
+    case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
+    [{last_item_cache, true}] ->
+	ets:insert(gen_mod:get_module_proc(Host, last_items), {NodeId, {ItemId, Payload}});
+    _ ->
+	ok
+    end.
+unset_cached_item({_, ServerHost, _}, NodeId) ->
+    unset_cached_item(ServerHost, NodeId);
+unset_cached_item(Host, NodeId) ->
+    case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
+    [{last_item_cache, true}] ->
+	ets:delete(gen_mod:get_module_proc(Host, last_items), NodeId);
+    _ ->
+	ok
+    end.
+get_cached_item({_, ServerHost, _}, NodeId) ->
+    get_cached_item(ServerHost, NodeId);
+get_cached_item(Host, NodeId) ->
+    case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
+    [{last_item_cache, true}] ->
+	case ets:lookup(gen_mod:get_module_proc(Host, last_items), NodeId) of
+	[{NodeId, {ItemId, Payload}}] ->
+	    #pubsub_item{itemid = {ItemId, NodeId}, payload = Payload};
+	_ ->
+	    undefined
+	end;
+    _ ->
+	undefined
+    end.
+
 %%%% plugin handling
 
 plugins(Host) ->
-    case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), plugins) of
+    case ets:lookup(gen_mod:get_module_proc(Host, config), plugins) of
+    [{plugins, []}] -> [?STDNODE];
     [{plugins, PL}] -> PL;
     _ -> [?STDNODE]
     end.
-select_type(ServerHost, Host, Node, Type)->
-    ?DEBUG("SELECT_TYPE : ~p~n", [[ServerHost, Host, Node, Type]]),
-    case Host of
+select_type(ServerHost, Host, Node, Type) when is_list(ServerHost) ->
+    select_type(list_to_binary(ServerHost), Host, Node, Type);
+select_type(ServerHost, Host, Node, Type) ->
+    SelectedType = case Host of
     {_User, _Server, _Resource} -> 
-	case ets:lookup(gen_mod:get_module_proc(ServerHost, pubsub_state), pep_mapping) of
-	[{pep_mapping, PM}] -> ?DEBUG("SELECT_TYPE : ~p~n", [PM]), proplists:get_value(Node, PM, ?PEPNODE);
-	R -> ?DEBUG("SELECT_TYPE why ?: ~p~n", [R]), ?PEPNODE
+	case ets:lookup(gen_mod:get_module_proc(ServerHost, config), pep_mapping) of
+	[{pep_mapping, PM}] -> proplists:get_value(Node, PM, ?PEPNODE);
+	_ -> ?PEPNODE
 	end;
     _ -> 
 	Type
+    end,
+    ConfiguredTypes = plugins(ServerHost),
+    case lists:member(SelectedType, ConfiguredTypes) of
+    true -> SelectedType;
+    false -> hd(ConfiguredTypes)
     end.
-select_type(ServerHost, Host, Node) -> 
+select_type(ServerHost, Host, Node) ->
     select_type(ServerHost, Host, Node, hd(plugins(ServerHost))).
 
 features() ->
@@ -2997,7 +3081,7 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
     tree_call(Server, Function, Args);
 tree_call(Host, Function, Args) ->
     ?DEBUG("tree_call ~p ~p ~p",[Host, Function, Args]),
-    Module = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
+    Module = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	[{nodetree, N}] -> N;
 	_ -> list_to_atom(?TREE_PREFIX ++ ?STDTREE)
     end,

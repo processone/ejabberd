@@ -64,10 +64,10 @@
 
 
 init(Host, ServerHost, Opts) ->
-    node_default:init(Host, ServerHost, Opts).
+    node_hometree:init(Host, ServerHost, Opts).
 
 terminate(Host, ServerHost) ->
-    node_default:terminate(Host, ServerHost).
+    node_hometree:terminate(Host, ServerHost).
 
 options() ->
     [{node_type, flat},
@@ -87,9 +87,9 @@ options() ->
      {presence_based_delivery, false}].
 
 features() ->
-    node_default:features().
+    node_hometree:features().
 
-%% use same code as node_default, but do not limite node to
+%% use same code as node_hometree, but do not limite node to
 %% the home/localhost/user/... hierarchy
 %% any node is allowed
 create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
@@ -104,76 +104,76 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
     {result, Allowed}.
 
 create_node(NodeId, Owner) ->
-    node_default:create_node(NodeId, Owner).
+    node_hometree:create_node(NodeId, Owner).
 
 delete_node(Removed) ->
-    node_default:delete_node(Removed).
+    node_hometree:delete_node(Removed).
 
 subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
-    node_default:subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup).
+    node_hometree:subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup).
 
 unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
-    node_default:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
+    node_hometree:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
 
 publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
-    node_default:publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload).
+    node_hometree:publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload).
 
 remove_extra_items(NodeId, MaxItems, ItemIds) ->
-    node_default:remove_extra_items(NodeId, MaxItems, ItemIds).
+    node_hometree:remove_extra_items(NodeId, MaxItems, ItemIds).
 
 delete_item(NodeId, Publisher, PublishModel, ItemId) ->
-    node_default:delete_item(NodeId, Publisher, PublishModel, ItemId).
+    node_hometree:delete_item(NodeId, Publisher, PublishModel, ItemId).
 
 purge_node(NodeId, Owner) ->
-    node_default:purge_node(NodeId, Owner).
+    node_hometree:purge_node(NodeId, Owner).
 
 get_entity_affiliations(Host, Owner) ->
-    node_default:get_entity_affiliations(Host, Owner).
+    node_hometree:get_entity_affiliations(Host, Owner).
 
 get_node_affiliations(NodeId) ->
-    node_default:get_node_affiliations(NodeId).
+    node_hometree:get_node_affiliations(NodeId).
 
 get_affiliation(NodeId, Owner) ->
-    node_default:get_affiliation(NodeId, Owner).
+    node_hometree:get_affiliation(NodeId, Owner).
 
 set_affiliation(NodeId, Owner, Affiliation) ->
-    node_default:set_affiliation(NodeId, Owner, Affiliation).
+    node_hometree:set_affiliation(NodeId, Owner, Affiliation).
 
 get_entity_subscriptions(Host, Owner) ->
-    node_default:get_entity_subscriptions(Host, Owner).
+    node_hometree:get_entity_subscriptions(Host, Owner).
 
 get_node_subscriptions(NodeId) ->
-    node_default:get_node_subscriptions(NodeId).
+    node_hometree:get_node_subscriptions(NodeId).
 
 get_subscription(NodeId, Owner) ->
-    node_default:get_subscription(NodeId, Owner).
+    node_hometree:get_subscription(NodeId, Owner).
 
 set_subscription(NodeId, Owner, Subscription) ->
-    node_default:set_subscription(NodeId, Owner, Subscription).
+    node_hometree:set_subscription(NodeId, Owner, Subscription).
 
 get_states(NodeId) ->
-    node_default:get_states(NodeId).
+    node_hometree:get_states(NodeId).
 
 get_state(NodeId, JID) ->
-    node_default:get_state(NodeId, JID).
+    node_hometree:get_state(NodeId, JID).
 
 set_state(State) ->
-    node_default:set_state(State).
+    node_hometree:set_state(State).
 
 get_items(NodeId, From) ->
-    node_default:get_items(NodeId, From).
+    node_hometree:get_items(NodeId, From).
 
 get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    node_default:get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
+    node_hometree:get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 
 get_item(NodeId, ItemId) ->
-    node_default:get_item(NodeId, ItemId).
+    node_hometree:get_item(NodeId, ItemId).
 
 get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    node_default:get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
+    node_hometree:get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 
 set_item(Item) ->
-    node_default:set_item(Item).
+    node_hometree:set_item(Item).
 
 get_item_name(Host, Node, Id) ->
-    node_default:get_item_name(Host, Node, Id).
+    node_hometree:get_item_name(Host, Node, Id).

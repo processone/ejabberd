@@ -485,9 +485,11 @@
   {mod_privacy,  []},
   {mod_private,  []},
   %%{mod_proxy65,[]},
-  {mod_pubsub,   [ % requires mod_caps
+  {mod_pubsub,   [
 		  {access_createnode, pubsub_createnode},
-		  {plugins, ["default", "pep"]}
+		  {pep_sendlast_offline, false},
+		  {last_item_cache, false},
+		  {plugins, ["flat", "pep"]}  % pep requires mod_caps
 		 ]},
   {mod_register, [
 		  %%

@@ -119,10 +119,10 @@ features() ->
 
 create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
     node_pep:create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access).
-    
+
 create_node(NodeId, Owner) ->
-	 node_pep:create_node(NodeId, Owner).
-	
+    node_pep:create_node(NodeId, Owner).
+
 delete_node(Removed) ->
     node_pep:delete_node(Removed).
 
@@ -151,13 +151,13 @@ get_entity_affiliations(Host, Owner) ->
     node_pep:get_entity_affiliations(Host, Owner).
 
 get_node_affiliations(NodeId) ->
-	node_pep:get_node_affiliations(NodeId).
+    node_pep:get_node_affiliations(NodeId).
 
 get_affiliation(NodeId, Owner) ->
     node_pep:get_affiliation(NodeId, Owner).
 
 set_affiliation(NodeId, Owner, Affiliation) ->
-	node_pep:set_affiliation(NodeId, Owner, Affiliation).
+    node_pep:set_affiliation(NodeId, Owner, Affiliation).
 
 get_entity_subscriptions(Host, Owner) ->
     node_pep:get_entity_subscriptions(Host, Owner).

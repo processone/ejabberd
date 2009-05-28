@@ -33,7 +33,7 @@
 %%% useable and useful as is. Please, send us comments, feedback and
 %%% improvements.</p>
 
--module(nodetree_default).
+-module(nodetree_tree).
 -author('christophe.romain@process-one.net').
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -141,7 +141,7 @@ get_subnodes(Host, Node) ->
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
 get_subnodes_tree(Host, Node) ->
-    mnesia:foldl(fun(#pubsub_node{nodeid = {H, N} = R}, Acc) ->
+    mnesia:foldl(fun(#pubsub_node{nodeid = {H, N}} = R, Acc) ->
 			 case lists:prefix(Node, N) and (H == Host) of
 			     true -> [R | Acc];
 			     _ -> Acc
