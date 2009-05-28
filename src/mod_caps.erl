@@ -237,7 +237,6 @@ presence_probe(From, To, _) ->
     wait_caps(To#jid.lserver, From).
 
 remove_connection(_SID, JID, _Info) ->
-    ?INFO_MSG("clear ~p",[JID]),
     clear_caps(JID).
 
 jid_to_binary(JID) ->
