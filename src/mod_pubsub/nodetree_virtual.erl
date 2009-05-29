@@ -91,9 +91,9 @@ set_node(_NodeRecord) ->
 get_node(Host, Node, _From) ->
     get_node(Host, Node).
 get_node(Host, Node) ->
-    #pubsub_node{nodeid = {Host, Node}, id = {Host, Node}}.
-get_node(NodeId) ->
-    #pubsub_node{nodeid = NodeId, id = NodeId}.
+    #pubsub_node{nodeid = {Host, Node}, id = {Host, Node}, owners = [{"",Host,""}]}.
+get_node({Host, _} = NodeId) ->
+    #pubsub_node{nodeid = NodeId, id = NodeId, owners = [{"",Host,""}]}.
 
 %% @spec (Host) -> [pubsubNode()]
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
