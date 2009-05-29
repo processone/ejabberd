@@ -42,7 +42,7 @@
 	 create_node/2,
 	 delete_node/1,
 	 purge_node/2,
-	 subscribe_node/7,
+	 subscribe_node/8,
 	 unsubscribe_node/4,
 	 publish_item/6,
 	 delete_item/4,
@@ -53,8 +53,8 @@
 	 set_affiliation/3,
 	 get_entity_subscriptions/2,
 	 get_node_subscriptions/1,
-	 get_subscription/2,
-	 set_subscription/3,
+	 get_subscriptions/2,
+	 set_subscriptions/3,
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
@@ -144,10 +144,10 @@ delete_node(Removed) ->
     end.
 
 subscribe_node(NodeId, Sender, Subscriber, AccessModel,
-	       SendLast, PresenceSubscription, RosterGroup) ->
+	       SendLast, PresenceSubscription, RosterGroup, Options) ->
     node_hometree:subscribe_node(
       NodeId, Sender, Subscriber, AccessModel, SendLast,
-      PresenceSubscription, RosterGroup).
+      PresenceSubscription, RosterGroup, Options).
 
 unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
     case node_hometree:unsubscribe_node(NodeId, Sender, Subscriber, SubID) of
@@ -208,9 +208,16 @@ get_entity_subscriptions(_Host, Owner) ->
 	    [{nodetree, N}] -> N;
 	    _ -> nodetree_default
 	end,
-    Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscription = S}, Acc) ->
+    Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscriptions = Ss}, Acc) ->
 	case NodeTree:get_node(N) of
-	    #pubsub_node{nodeid = {{_, D, _}, _}} = Node -> [{Node, S, J}|Acc];
+	    #pubsub_node{nodeid = {{_, D, _}, _}} = Node ->
+			lists:foldl(fun({subscribed, SubID}, Acc2) ->
+					   [{Node, subscribed, SubID, J} | Acc2];
+					({pending, _SubID}, Acc2) ->
+					    [{Node, pending, J} | Acc2];
+					(S, Acc2) ->
+					    [{Node, S, J} | Acc2]
+				    end, Acc, Ss);
 	    _ -> Acc
 	end
     end, [], States),
@@ -224,11 +231,11 @@ get_node_subscriptions(NodeId) ->
     %% DO NOT REMOVE
     node_hometree:get_node_subscriptions(NodeId).
 
-get_subscription(NodeId, Owner) ->
-    node_hometree:get_subscription(NodeId, Owner).
+get_subscriptions(NodeId, Owner) ->
+    node_hometree:get_subscriptions(NodeId, Owner).
 
-set_subscription(NodeId, Owner, Subscription) ->
-    node_hometree:set_subscription(NodeId, Owner, Subscription).
+set_subscriptions(NodeId, Owner, Subscription) ->
+    node_hometree:set_subscriptions(NodeId, Owner, Subscription).
 
 get_states(NodeId) ->
     node_hometree:get_states(NodeId).

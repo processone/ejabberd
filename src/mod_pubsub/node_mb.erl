@@ -49,7 +49,7 @@
 	 create_node/2,
 	 delete_node/1,
 	 purge_node/2,
-	 subscribe_node/7,
+	 subscribe_node/8,
 	 unsubscribe_node/4,
 	 publish_item/6,
 	 delete_item/4,
@@ -60,8 +60,8 @@
 	 set_affiliation/3,
 	 get_entity_subscriptions/2,
 	 get_node_subscriptions/1,
-	 get_subscription/2,
-	 set_subscription/3,
+	 get_subscriptions/2,
+	 set_subscriptions/3,
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
@@ -126,10 +126,10 @@ delete_node(Removed) ->
     node_pep:delete_node(Removed).
 
 subscribe_node(NodeId, Sender, Subscriber, AccessModel,
-	       SendLast, PresenceSubscription, RosterGroup) ->
+	       SendLast, PresenceSubscription, RosterGroup, Options) ->
     node_pep:subscribe_node(
       NodeId, Sender, Subscriber, AccessModel, SendLast,
-      PresenceSubscription, RosterGroup).
+      PresenceSubscription, RosterGroup, Options).
 
 unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
     node_pep:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
@@ -164,11 +164,11 @@ get_entity_subscriptions(Host, Owner) ->
 get_node_subscriptions(NodeId) ->
     node_pep:get_node_subscriptions(NodeId).
 
-get_subscription(NodeId, Owner) ->
-    node_pep:get_subscription(NodeId, Owner).
+get_subscriptions(NodeId, Owner) ->
+    node_pep:get_subscriptions(NodeId, Owner).
 
-set_subscription(NodeId, Owner, Subscription) ->
-    node_pep:set_subscription(NodeId, Owner, Subscription).
+set_subscriptions(NodeId, Owner, Subscription) ->
+    node_pep:set_subscriptions(NodeId, Owner, Subscription).
 
 get_states(NodeId) ->
     node_pep:get_states(NodeId).
