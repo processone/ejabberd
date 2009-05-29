@@ -62,7 +62,7 @@
 %%% @type nodeType() = string().
 %%% <p>The <tt>nodeType</tt> is a string containing the name of the PubSub
 %%% plugin to use to manage a given node. For example, it can be
-%%% <tt>"default"</tt>, <tt>"collection"</tt> or <tt>"blog"</tt>.</p>
+%%% <tt>"flat"</tt>, <tt>"hometree"</tt> or <tt>"blog"</tt>.</p>
 
 %%% @type jid() = #jid{
 %%%    user = string(),
@@ -92,7 +92,7 @@
 -record(pubsub_node, {nodeid,
 		      id,
 		      parent,
-		      type = "default",
+		      type = "flat",
 		      owners = [],
 		      options = []
 		     }).
