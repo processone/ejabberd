@@ -552,7 +552,7 @@ purge_node(NodeId, Owner) ->
 get_entity_affiliations(Host, Owner) ->
     GenKey = jlib:short_prepd_bare_jid(Owner),
     States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
-    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
+    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	    [{nodetree, N}] -> N;
 	    _ -> nodetree_default
 	end,
@@ -607,7 +607,7 @@ get_entity_subscriptions(Host, Owner) ->
 	    ++ mnesia:match_object(
 	       #pubsub_state{stateid = {SubKey, '_'}, _ = '_'})
     end,
-    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, pubsub_state), nodetree) of
+    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	    [{nodetree, N}] -> N;
 	    _ -> nodetree_default
 	end,
