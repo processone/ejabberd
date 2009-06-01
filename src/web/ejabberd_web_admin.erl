@@ -1177,7 +1177,7 @@ string_to_spec("server_regexp", Val) ->
     {server_regexp, Val};
 string_to_spec("node_regexp", Val) ->
     JID = exmpp_jid:parse(Val),
-    U = exmpp_jid:lnode_as_list(JID),
+    U = exmpp_jid:prep_node_as_list(JID),
     S = exmpp_jid:prep_domain_as_list(JID),
     undefined = exmpp_jid:resource(JID),
     {node_regexp, U, S};
@@ -1187,7 +1187,7 @@ string_to_spec("server_glob", Val) ->
     {server_glob, Val};
 string_to_spec("node_glob", Val) ->
     JID = exmpp_jid:parse(Val),
-    U = exmpp_jid:lnode_as_list(JID),
+    U = exmpp_jid:prep_node_as_list(JID),
     S = exmpp_jid:prep_domain_as_list(JID),
     undefined = exmpp_jid:resource(JID),
     {node_glob, U, S};
@@ -1200,7 +1200,7 @@ string_to_spec("raw", Val) ->
 
 string_to_spec2(ACLName, Val) ->
     JID = exmpp_jid:parse(Val),
-    U = exmpp_jid:lnode_as_list(JID),
+    U = exmpp_jid:prep_node_as_list(JID),
     S = exmpp_jid:prep_domain_as_list(JID),
     undefined = exmpp_jid:resource(JID),
     case U of

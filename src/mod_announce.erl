@@ -829,7 +829,7 @@ announce_motd_delete(LServer) ->
 
 send_motd(JID) ->
     LServer = exmpp_jid:prep_domain_as_list(JID), 
-    LUser = exmpp_jid:lnode_as_list(JID), 
+    LUser = exmpp_jid:prep_node_as_list(JID), 
     case catch mnesia:dirty_read({motd, LServer}) of
 	[#motd{packet = Packet}] ->
 	    US = {LUser, LServer},

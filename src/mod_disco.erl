@@ -289,9 +289,9 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
 	    exmpp_iq:error(IQ_Rec, Error)
     end;
 process_sm_iq_items(From, To, #iq{type = set, payload = SubEl} = IQ_Rec) ->
-    LTo = exmpp_jid:lnode_as_list(To),
+    LTo = exmpp_jid:prep_node_as_list(To),
     ToServer = exmpp_jid:prep_domain_as_list(To),
-    LFrom = exmpp_jid:lnode_as_list(From),
+    LFrom = exmpp_jid:prep_node_as_list(From),
     LServer = exmpp_jid:prep_domain_as_list(From),
     Self = (LTo == LFrom) andalso (ToServer == LServer),
     Node = exmpp_xml:get_attribute_as_list(SubEl, 'node', ""),
@@ -314,9 +314,9 @@ get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
 get_sm_items(Acc, From, To, <<>>, _Lang) ->
-    LFrom = exmpp_jid:lnode_as_list(From),
+    LFrom = exmpp_jid:prep_node_as_list(From),
     LSFrom = exmpp_jid:prep_domain_as_list(From),
-    LTo = exmpp_jid:lnode_as_list(To),
+    LTo = exmpp_jid:prep_node_as_list(To),
     LSTo = exmpp_jid:prep_domain_as_list(To),
 
     Items = case Acc of
@@ -333,9 +333,9 @@ get_sm_items({result, _} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
 get_sm_items(empty, From, To, _Node, _Lang) ->
-    LFrom = exmpp_jid:lnode_as_list(From),
+    LFrom = exmpp_jid:prep_node_as_list(From),
     LSFrom = exmpp_jid:prep_domain_as_list(From),
-    LTo = exmpp_jid:lnode_as_list(To),
+    LTo = exmpp_jid:prep_node_as_list(To),
     LSTo = exmpp_jid:prep_domain_as_list(To),
     case {LFrom, LSFrom} of
 	{LTo, LSTo} ->
@@ -375,9 +375,9 @@ get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 get_sm_features(empty, From, To, _Node, _Lang) ->
-    LFrom = exmpp_jid:lnode_as_list(From),
+    LFrom = exmpp_jid:prep_node_as_list(From),
     LSFrom = exmpp_jid:prep_domain_as_list(From),
-    LTo = exmpp_jid:lnode_as_list(To),
+    LTo = exmpp_jid:prep_node_as_list(To),
     LSTo = exmpp_jid:prep_domain_as_list(To),
     case {LFrom, LSFrom} of
 	{LTo, LSTo} ->
@@ -404,9 +404,9 @@ get_user_resources(JID) ->
 
 
 get_publish_items(empty, From, To, Node, _Lang) ->
-    LFrom = exmpp_jid:lnode_as_list(From),
+    LFrom = exmpp_jid:prep_node_as_list(From),
     LSFrom = exmpp_jid:prep_domain_as_list(From),
-    LTo = exmpp_jid:lnode_as_list(To),
+    LTo = exmpp_jid:prep_node_as_list(To),
     LSTo = exmpp_jid:prep_domain_as_list(To),
     if
 	(LFrom == LTo) and (LSFrom == LSTo) ->

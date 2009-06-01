@@ -1563,7 +1563,7 @@ set_form(From, Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     Password = get_value("password", XData),
     Password = get_value("password-verify", XData),
     AccountJID = exmpp_jid:parse(AccountString),
-    User = exmpp_jid:lnode_as_list(AccountJID),
+    User = exmpp_jid:prep_node_as_list(AccountJID),
     Server = exmpp_jid:prep_domain_as_list(AccountJID),
     true = lists:member(Server, ?MYHOSTS),
     true = (Server == Host) orelse (get_permission_level(From) == global),
@@ -1576,7 +1576,7 @@ set_form(From, Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
     ASL2 = lists:map(
 	     fun(AccountString) ->
 		     JID = exmpp_jid:parse(AccountString),
-		     User = [_|_] = exmpp_jid:lnode_as_list(JID),
+		     User = [_|_] = exmpp_jid:prep_node_as_list(JID),
 		     Server = exmpp_jid:prep_domain_as_list(JID),
 		     true = (Server == Host) orelse (get_permission_level(From) == global),
 		     true = ejabberd_auth:is_user_exists(User, Server),
@@ -1589,7 +1589,7 @@ set_form(From, Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
 set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
-    LUser = [_|_] = exmpp_jid:lnode_as_list(JID),
+    LUser = [_|_] = exmpp_jid:prep_node_as_list(JID),
     LServer = exmpp_jid:prep_domain_as_list(JID), 
     true = (LServer == Host) orelse (get_permission_level(From) == global),
     %% Code copied from ejabberd_sm.erl
@@ -1608,7 +1608,7 @@ set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
 set_form(From, Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
-    User = [_|_] = exmpp_jid:lnode_as_list(JID),
+    User = [_|_] = exmpp_jid:prep_node_as_list(JID),
     Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
     Password = ejabberd_auth:get_password(User, Server),
@@ -1623,7 +1623,7 @@ set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
     JID = exmpp_jid:parse(AccountString),
-    User = [_|_] = exmpp_jid:lnode_as_list(JID),
+    User = [_|_] = exmpp_jid:prep_node_as_list(JID),
     Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
     true = ejabberd_auth:is_user_exists(User, Server),
@@ -1633,7 +1633,7 @@ set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
 set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
-    User = [_|_] = exmpp_jid:lnode_as_list(JID),
+    User = [_|_] = exmpp_jid:prep_node_as_list(JID),
     Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
@@ -1671,7 +1671,7 @@ set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
 set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
-    User = [_|_] = exmpp_jid:lnode_as_list(JID),
+    User = [_|_] = exmpp_jid:prep_node_as_list(JID),
     Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
 

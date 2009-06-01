@@ -67,7 +67,7 @@ process_sm_iq(From, To, #iq{type = Type} = IQ_Rec) ->
     end.
 
 process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
-    LUser = exmpp_jid:lnode_as_list(From),
+    LUser = exmpp_jid:prep_node_as_list(From),
     LServer = exmpp_jid:prep_domain_as_list(From),
     case catch get_data(LUser,
 			LServer,
@@ -82,7 +82,7 @@ process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
 
 
 process_iq_set(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
-    LUser = exmpp_jid:lnode_as_list(From),
+    LUser = exmpp_jid:prep_node_as_list(From),
     LServer = exmpp_jid:prep_domain_as_list(From),
     F = fun() ->
         lists:foreach(

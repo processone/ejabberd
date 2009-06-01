@@ -575,7 +575,7 @@ route_message(From, To, Packet) ->
 		'headline' ->
 		    bounce_offline_message(From, To, Packet);
 		_ ->
-		    case ejabberd_auth:is_user_exists(exmpp_jid:lnode_as_list(To), 
+		    case ejabberd_auth:is_user_exists(exmpp_jid:prep_node_as_list(To), 
                                               exmpp_jid:prep_domain_as_list(To)) of
 			true ->
 			    ejabberd_hooks:run(offline_message_hook,

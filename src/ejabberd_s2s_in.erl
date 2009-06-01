@@ -642,7 +642,7 @@ get_cert_domains(Cert) ->
 		      if
 			  D /= error ->
                   JID  = exmpp_jid:parse(D),
-			      case {exmpp_jid:lnode_as_list(JID),
+			      case {exmpp_jid:prep_node_as_list(JID),
                         exmpp_jid:prep_domain_as_list(JID),
                         exmpp_jid:lresource_as_list(JID)} of
 				      {undefined, LD, undefined} ->
@@ -678,7 +678,7 @@ get_cert_domains(Cert) ->
 					   'XmppAddr', XmppAddr) of
 					{ok, D} when is_binary(D) ->
                         JID2 = exmpp_jid:parse(binary_to_list(D)),  
-					    case {exmpp_jid:lnode_as_list(JID2),
+					    case {exmpp_jid:prep_node_as_list(JID2),
                               exmpp_jid:prep_domain_as_list(JID2),
                               exmpp_jid:lresource_as_list(JID2)} of
 						    { undefined, LD, undefined} ->
@@ -696,7 +696,7 @@ get_cert_domains(Cert) ->
 				    end;
 			       ({dNSName, D}) when is_list(D) ->
                     JID3 = exmpp_jid:parse(D),
-				    case {exmpp_jid:lnode_as_list(JID3),
+				    case {exmpp_jid:prep_node_as_list(JID3),
                           exmpp_jid:prep_domain_as_list(JID3),
                           exmpp_jid:lresource_as_list(JID3)} of
 					{undefined, LD, undefined} ->

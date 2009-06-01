@@ -254,7 +254,7 @@ process_vcard_ldap(To, IQ_Rec, Server) ->
 	set ->
             exmpp_iq:error(IQ_Rec, 'not-allowed');
 	get ->
-        LUser = exmpp_jid:lnode_as_list(To),
+        LUser = exmpp_jid:prep_node_as_list(To),
 	    LServer = State#state.serverhost,
 	    case ejabberd_auth:is_user_exists(LUser, LServer) of
 		true ->

@@ -169,7 +169,7 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 
 process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
-    LUser = exmpp_jid:lnode_as_list(To),
+    LUser = exmpp_jid:prep_node_as_list(To),
     LServer = exmpp_jid:prep_domain_as_list(To),
     US = {LUser, LServer},
     F = fun() ->

@@ -95,7 +95,7 @@ now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
 %%% Serve queries about user last online
 %%%
 process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
-    User = exmpp_jid:lnode_as_list(To),
+    User = exmpp_jid:prep_node_as_list(To),
     Server = exmpp_jid:prep_domain_as_list(To),
     {Subscription, _Groups} =
         ejabberd_hooks:run_fold(

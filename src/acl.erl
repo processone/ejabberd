@@ -231,7 +231,7 @@ match_acl(ACLName, JID, Host) ->
 	all -> true;
 	none -> false;
 	_ ->
-	    User = exmpp_jid:lnode_as_list(JID),
+	    User = exmpp_jid:prep_node_as_list(JID),
 	    Server = exmpp_jid:prep_domain_as_list(JID),
 	    Resource = exmpp_jid:lresource_as_list(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->

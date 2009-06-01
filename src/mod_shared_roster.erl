@@ -941,7 +941,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 			      _ ->
 				  try
 				      JID = exmpp_jid:parse(SJID),
-				      [{exmpp_jid:lnode_as_list(JID), exmpp_jid:prep_domain_as_list(JID)} | USs]
+				      [{exmpp_jid:prep_node_as_list(JID), exmpp_jid:prep_domain_as_list(JID)} | USs]
 				  catch
 				      _ ->
 					  error

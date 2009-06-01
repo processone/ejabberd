@@ -103,7 +103,7 @@ loop(Host, MaxOfflineMsgs) ->
 			      fun(M) ->
 				      Username =
 					  ejabberd_odbc:escape(
-					    exmpp_jid:lnode_as_list(M#offline_msg.to)),
+					    exmpp_jid:prep_node_as_list(M#offline_msg.to)),
 				      From = M#offline_msg.from,
 				      To = M#offline_msg.to,
 				      Packet0 = exmpp_stanza:set_jids(
@@ -169,7 +169,7 @@ store_packet(From, To, Packet) ->
 	(Type /= <<"headline">>) ->
 	    case check_event(From, To, Packet) of
 		true ->
-            LUser = exmpp_jid:lnode_as_list(To),
+            LUser = exmpp_jid:prep_node_as_list(To),
 		    TimeStamp = now(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
 		    gen_mod:get_module_proc(exmpp_jid:prep_domain_as_list(To), ?PROCNAME) !

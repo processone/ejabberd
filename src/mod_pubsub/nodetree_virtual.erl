@@ -134,7 +134,7 @@ get_subnodes_tree(_Host, _Node) ->
 %% is considered as already created.</p>
 %% <p>default allowed nodes: /home/host/user/any/node/name</p>
 create_node(Host, Node, _Type, Owner, _Options) ->
-    UserName = exmpp_jid:lnode_as_list(Owner),
+    UserName = exmpp_jid:prep_node_as_list(Owner),
     UserHost = exmpp_jid:prep_domain_as_list(Owner),
     case Node of
 	["home", UserHost, UserName | _] -> {error, {virtual, {Host, Node}}};

@@ -403,7 +403,7 @@ process_irc_register(Host, From, _To, _DefEnc,
 get_form(Host, From, [], Lang, DefEnc) ->
     User = exmpp_jid:node_as_list(From),
     Server = exmpp_jid:domain_as_list(From),
-    LUser = exmpp_jid:lnode_as_list(From),
+    LUser = exmpp_jid:prep_node_as_list(From),
     LServer = exmpp_jid:prep_domain_as_list(From),
     US = {LUser, LServer},
     Customs =
@@ -488,7 +488,7 @@ get_form(_Host, _, _, _Lang, _) ->
 
 
 set_form(Host, From, [], _Lang, XData) ->
-    LUser = exmpp_jid:lnode_as_list(From),
+    LUser = exmpp_jid:prep_node_as_list(From),
     LServer = exmpp_jid:prep_domain_as_list(From),
     US = {LUser, LServer},
     case {lists:keysearch("username", 1, XData),
@@ -534,7 +534,7 @@ set_form(_Host, _, _, _Lang, _XData) ->
 
 get_user_and_encoding(Host, From, IRCServer, DefEnc) ->
     User = exmpp_jid:node_as_list(From),
-    LUser = exmpp_jid:lnode_as_list(From),
+    LUser = exmpp_jid:prep_node_as_list(From),
     LServer = exmpp_jid:prep_domain_as_list(From),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
