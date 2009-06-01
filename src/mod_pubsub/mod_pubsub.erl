@@ -829,7 +829,7 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
     #xmlel{name = Name} = Packet,
     LNode = exmpp_jid:prep_node(To),
-    LRes = exmpp_jid:lresource(To),
+    LRes = exmpp_jid:prep_resource(To),
     case {LNode, LRes} of
 	{undefined, undefined} ->
 	    case Name of

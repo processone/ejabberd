@@ -384,7 +384,7 @@ short_bare_jid(JID) ->
 short_prepd_jid(JID) ->
     {exmpp_jid:prep_node(JID), 
      exmpp_jid:prep_domain(JID), 
-     exmpp_jid:lresource(JID)}.
+     exmpp_jid:prep_resource(JID)}.
 
 short_prepd_bare_jid(JID) ->
     short_prepd_jid(exmpp_jid:bare(JID)).

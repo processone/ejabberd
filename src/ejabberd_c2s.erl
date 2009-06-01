@@ -1920,7 +1920,7 @@ check_from(El, FromJID) ->
 	{value, SJID} ->
 	    try
 		JIDEl = exmpp_jid:parse(SJID),
-		case exmpp_jid:lresource(JIDEl) of 
+		case exmpp_jid:prep_resource(JIDEl) of 
 		    undefined ->
 			%% Matching JID: The stanza is ok
 			case exmpp_jid:compare_bare_jids(JIDEl, FromJID) of

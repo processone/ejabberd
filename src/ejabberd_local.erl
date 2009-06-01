@@ -304,7 +304,7 @@ do_route(From, To, Packet) ->
 	   [From, To, Packet, 8]),
     
     LNode = exmpp_jid:prep_node(To),
-    LResource = exmpp_jid:lresource(To),
+    LResource = exmpp_jid:prep_resource(To),
     if
 	LNode /= undefined ->
 	    ejabberd_sm:route(From, To, Packet);

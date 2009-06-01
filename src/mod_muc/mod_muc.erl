@@ -345,7 +345,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
     Room = exmpp_jid:prep_node(To),
-    Nick = exmpp_jid:lresource(To),
+    Nick = exmpp_jid:prep_resource(To),
     #xmlel{name = Name} = Packet,
     case Room of
 	'undefined' ->

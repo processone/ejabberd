@@ -161,7 +161,7 @@ get_user_resources(User, Server)
 get_user_ip(JID) when ?IS_JID(JID) ->
     USR = {exmpp_jid:prep_node(JID), 
            exmpp_jid:prep_domain(JID), 
-           exmpp_jid:lresource(JID)},
+           exmpp_jid:prep_resource(JID)},
     case mnesia:dirty_index_read(session, USR, #session.usr) of
 	[] ->
 	    undefined;
@@ -197,7 +197,7 @@ set_presence(SID, JID, Priority, Presence, Info) when ?IS_JID(JID) ->
            exmpp_jid:prep_domain(JID),
 		       [exmpp_jid:prep_node(JID), 
                 exmpp_jid:prep_domain(JID), 
-                exmpp_jid:lresource(JID), 
+                exmpp_jid:prep_resource(JID), 
                 Presence]).
 
 unset_presence(SID, JID, Status, Info) when ?IS_JID(JID)->
@@ -206,7 +206,7 @@ unset_presence(SID, JID, Status, Info) when ?IS_JID(JID)->
                exmpp_jid:prep_domain(JID),
 		       [exmpp_jid:prep_node(JID), 
                 exmpp_jid:prep_domain(JID), 
-                exmpp_jid:lresource(JID), 
+                exmpp_jid:prep_resource(JID), 
                 Status]).
 
 close_session_unset_presence(SID, JID, Status) when ?IS_JID(JID) ->
@@ -215,13 +215,13 @@ close_session_unset_presence(SID, JID, Status) when ?IS_JID(JID) ->
                exmpp_jid:prep_domain(JID),
 		       [exmpp_jid:prep_node(JID), 
                 exmpp_jid:prep_domain(JID), 
-                exmpp_jid:lresource(JID), 
+                exmpp_jid:prep_resource(JID), 
                 Status]).
 
 get_session_pid(JID) when ?IS_JID(JID) ->
     USR = {exmpp_jid:prep_node(JID), 
            exmpp_jid:prep_domain(JID), 
-           exmpp_jid:lresource(JID)},
+           exmpp_jid:prep_resource(JID)},
     case catch mnesia:dirty_index_read(session, USR, #session.usr) of
 	[#session{sid = {_, Pid}}] -> Pid;
 	_ -> none
@@ -388,7 +388,7 @@ set_session(SID, JID, Priority, Info) ->
     US = {exmpp_jid:prep_node(JID), exmpp_jid:prep_domain(JID)},
     USR = {exmpp_jid:prep_node(JID), 
            exmpp_jid:prep_domain(JID), 
-           exmpp_jid:lresource(JID)},
+           exmpp_jid:prep_resource(JID)},
     F = fun() ->
 		mnesia:write(#session{sid = SID,
 				      usr = USR,
@@ -416,7 +416,7 @@ clean_table_from_bad_node(Node) ->
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    case exmpp_jid:lresource(To) of
+    case exmpp_jid:prep_resource(To) of
 	undefined ->
 	    case Packet of
 		_ when ?IS_PRESENCE(Packet) ->
@@ -489,7 +489,7 @@ do_route(From, To, Packet) ->
 	_ ->
 	    USR = {exmpp_jid:prep_node(To),
                exmpp_jid:prep_domain(To),
-               exmpp_jid:lresource(To)},
+               exmpp_jid:prep_resource(To)},
 	    case mnesia:dirty_index_read(session, USR, #session.usr) of
 		[] ->
 		    case Packet of
@@ -637,7 +637,7 @@ check_for_sessions_to_replace(JID) ->
 check_existing_resources(JID) ->
     USR = {exmpp_jid:prep_node(JID),
            exmpp_jid:prep_domain(JID),
-           exmpp_jid:lresource(JID)},
+           exmpp_jid:prep_resource(JID)},
     %% A connection exist with the same resource. We replace it:
     SIDs = mnesia:dirty_select(
 	     session,

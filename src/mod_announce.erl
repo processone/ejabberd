@@ -133,7 +133,7 @@ stop(Host) ->
 
 %% Announcing via messages to a custom resource
 announce(From, To, Packet) ->
-    case {exmpp_jid:prep_node(To), exmpp_jid:lresource(To)} of
+    case {exmpp_jid:prep_node(To), exmpp_jid:prep_resource(To)} of
 	    {undefined, Res} ->
 	    Name = Packet#xmlel.name,
 	    Proc = gen_mod:get_module_proc(exmpp_jid:prep_domain_as_list(To), ?PROCNAME),
