@@ -65,7 +65,7 @@ process_command(From, To, Packet) ->
 	    case Packet#xmlel.name of
 		'message' ->
 		    case lists:any(fun(J) -> 
-                            exmpp_jid:compare_jids(J,From) 
+                            exmpp_jid:compare(J,From) 
                            end, get_admin_jids()) of
 			true ->
 			    Body = exmpp_xml:get_path(

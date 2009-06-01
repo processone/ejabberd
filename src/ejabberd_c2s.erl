@@ -1931,7 +1931,7 @@ check_from(El, FromJID) ->
 			end;
 		    _ ->
 			%% Matching JID: The stanza is ok
-			case exmpp_jid:compare_jids(JIDEl, FromJID) of
+			case exmpp_jid:compare(JIDEl, FromJID) of
 			    true ->
 				El;
 			    false ->
