@@ -103,7 +103,7 @@ stop(Host) ->
 
 
 process_iq(From, To, IQ_Rec) ->
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
 	true ->
 	    process_local_iq(From, To, IQ_Rec);
@@ -756,7 +756,7 @@ get_in_pending_subscriptions(Ls, User, Server)
         when is_binary(User), is_binary(Server) ->
     JID = exmpp_jid:make(User, Server),
     LUser = exmpp_jid:lnode(JID),
-    LServer = exmpp_jid:ldomain_as_list(JID),
+    LServer = exmpp_jid:prep_domain_as_list(JID),
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
 	{selected, ["username", "jid", "nick", "subscription", "ask",

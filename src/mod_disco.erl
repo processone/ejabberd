@@ -196,7 +196,7 @@ get_local_features(Acc, _From, To, <<>>, _Lang) ->
 		{result, Features} -> Features;
 		empty -> []
 	    end,
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     {result,
      ets:select(disco_features, [{{{'_', Host}}, [], ['$_']}]) ++ Feats};
 
@@ -239,7 +239,7 @@ get_local_services(Acc, _From, To, <<>>, _Lang) ->
 		{result, Its} -> Its;
 		empty -> []
 	    end,
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     {result,
      lists:usort(
        lists:map(fun domain_to_xml/1,
@@ -290,9 +290,9 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
     end;
 process_sm_iq_items(From, To, #iq{type = set, payload = SubEl} = IQ_Rec) ->
     LTo = exmpp_jid:lnode_as_list(To),
-    ToServer = exmpp_jid:ldomain_as_list(To),
+    ToServer = exmpp_jid:prep_domain_as_list(To),
     LFrom = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     Self = (LTo == LFrom) andalso (ToServer == LServer),
     Node = exmpp_xml:get_attribute_as_list(SubEl, 'node', ""),
     if
@@ -315,9 +315,9 @@ get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
 
 get_sm_items(Acc, From, To, <<>>, _Lang) ->
     LFrom = exmpp_jid:lnode_as_list(From),
-    LSFrom = exmpp_jid:ldomain_as_list(From),
+    LSFrom = exmpp_jid:prep_domain_as_list(From),
     LTo = exmpp_jid:lnode_as_list(To),
-    LSTo = exmpp_jid:ldomain_as_list(To),
+    LSTo = exmpp_jid:prep_domain_as_list(To),
 
     Items = case Acc of
 		{result, Its} -> Its;
@@ -334,9 +334,9 @@ get_sm_items({result, _} = Acc, _From, _To, _Node, _Lang) ->
 
 get_sm_items(empty, From, To, _Node, _Lang) ->
     LFrom = exmpp_jid:lnode_as_list(From),
-    LSFrom = exmpp_jid:ldomain_as_list(From),
+    LSFrom = exmpp_jid:prep_domain_as_list(From),
     LTo = exmpp_jid:lnode_as_list(To),
-    LSTo = exmpp_jid:ldomain_as_list(To),
+    LSTo = exmpp_jid:prep_domain_as_list(To),
     case {LFrom, LSFrom} of
 	{LTo, LSTo} ->
 	    {error, 'item-not-found'};
@@ -376,9 +376,9 @@ get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
 
 get_sm_features(empty, From, To, _Node, _Lang) ->
     LFrom = exmpp_jid:lnode_as_list(From),
-    LSFrom = exmpp_jid:ldomain_as_list(From),
+    LSFrom = exmpp_jid:prep_domain_as_list(From),
     LTo = exmpp_jid:lnode_as_list(To),
-    LSTo = exmpp_jid:ldomain_as_list(To),
+    LSTo = exmpp_jid:prep_domain_as_list(To),
     case {LFrom, LSFrom} of
 	{LTo, LSTo} ->
 	    {error, 'item-not-found'};
@@ -405,9 +405,9 @@ get_user_resources(JID) ->
 
 get_publish_items(empty, From, To, Node, _Lang) ->
     LFrom = exmpp_jid:lnode_as_list(From),
-    LSFrom = exmpp_jid:ldomain_as_list(From),
+    LSFrom = exmpp_jid:prep_domain_as_list(From),
     LTo = exmpp_jid:lnode_as_list(To),
-    LSTo = exmpp_jid:ldomain_as_list(To),
+    LSTo = exmpp_jid:prep_domain_as_list(To),
     if
 	(LFrom == LTo) and (LSFrom == LSTo) ->
 	    retrieve_disco_publish({LTo, LSTo}, binary_to_list(Node));

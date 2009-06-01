@@ -55,10 +55,10 @@ stop(Host) ->
     ok.
 
 log_user_send(From, To, Packet) ->
-    log_packet(From, To, Packet, exmpp_jid:ldomain_as_list(From)).
+    log_packet(From, To, Packet, exmpp_jid:prep_domain_as_list(From)).
 
 log_user_receive(_JID, From, To, Packet) ->
-    log_packet(From, To, Packet, exmpp_jid:ldomain_as_list(To)).
+    log_packet(From, To, Packet, exmpp_jid:prep_domain_as_list(To)).
 
 
 log_packet(From, To, Packet, Host) ->

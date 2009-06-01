@@ -88,7 +88,7 @@ process_iq(_From, _To, IQ_Rec) ->
 process_iq_get(_, From, _To, #iq{payload = SubEl},
 	       #userlist{name = Active}) ->
     LUser = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     case exmpp_xml:get_child_elements(SubEl) of
 	[] ->
 	    process_lists_get(LUser, LServer, Active);
@@ -247,7 +247,7 @@ list_to_action(S) ->
 
 process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
     LUser = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     case exmpp_xml:get_child_elements(SubEl) of
 	[#xmlel{name = Name} = Child] ->
 	    ListName = exmpp_xml:get_attribute_as_list(Child, 'name', false),

@@ -352,7 +352,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 			    drop
 		    end;
 		Rs ->
-            LDstDomain = exmpp_jid:ldomain_as_list(To),
+            LDstDomain = exmpp_jid:prep_domain_as_list(To),
 		    Value = case ejabberd_config:get_local_option(
 				   {domain_balancing, LDstDomain}) of
 				undefined -> now();

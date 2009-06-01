@@ -135,7 +135,7 @@ stop(Host) when is_list(Host) ->
 
 process_iq(From, To, IQ_Rec)
   when ?IS_JID(From), ?IS_JID(To), ?IS_IQ_RECORD(IQ_Rec) ->
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
 	true ->
 	    process_local_iq(From, To, IQ_Rec);

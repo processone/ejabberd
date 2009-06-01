@@ -96,7 +96,7 @@ now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
 %%%
 process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
     User = exmpp_jid:lnode_as_list(To),
-    Server = exmpp_jid:ldomain_as_list(To),
+    Server = exmpp_jid:prep_domain_as_list(To),
     {Subscription, _Groups} =
         ejabberd_hooks:run_fold(
           roster_get_jid_info, exmpp_jid:prep_domain(To),

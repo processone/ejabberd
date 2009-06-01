@@ -83,7 +83,7 @@ stop(Host) ->
 
 get_local_commands(Acc, _From, To, <<>>, Lang) ->
     Server = exmpp_jid:domain(To),
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     Display = gen_mod:get_module_opt(LServer, ?MODULE, report_commands_node, false),
     case Display of
 	false ->
@@ -114,7 +114,7 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
 %-------------------------------------------------------------------------
 
 get_sm_commands(Acc, _From, To, <<>>, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     Display = gen_mod:get_module_opt(LServer, ?MODULE, report_commands_node, false),
     case Display of
 	false ->

@@ -390,8 +390,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    % This is handled by C2S and S2S send_element functions.
 	    if
 		(To /= error) and (From /= error) ->
-		    LFrom = exmpp_jid:ldomain_as_list(From),
-		    LTo = exmpp_jid:ldomain_as_list(To),
+		    LFrom = exmpp_jid:prep_domain_as_list(From),
+		    LTo = exmpp_jid:prep_domain_as_list(To),
 		    if
 			StateData#state.authenticated ->
 			    case (LFrom == StateData#state.auth_domain)
@@ -643,7 +643,7 @@ get_cert_domains(Cert) ->
 			  D /= error ->
                   JID  = exmpp_jid:parse(D),
 			      case {exmpp_jid:lnode_as_list(JID),
-                        exmpp_jid:ldomain_as_list(JID),
+                        exmpp_jid:prep_domain_as_list(JID),
                         exmpp_jid:lresource_as_list(JID)} of
 				      {undefined, LD, undefined} ->
 				      [LD];
@@ -679,7 +679,7 @@ get_cert_domains(Cert) ->
 					{ok, D} when is_binary(D) ->
                         JID2 = exmpp_jid:parse(binary_to_list(D)),  
 					    case {exmpp_jid:lnode_as_list(JID2),
-                              exmpp_jid:ldomain_as_list(JID2),
+                              exmpp_jid:prep_domain_as_list(JID2),
                               exmpp_jid:lresource_as_list(JID2)} of
 						    { undefined, LD, undefined} ->
 						    case idna:domain_utf8_to_ascii(LD) of
@@ -697,7 +697,7 @@ get_cert_domains(Cert) ->
 			       ({dNSName, D}) when is_list(D) ->
                     JID3 = exmpp_jid:parse(D),
 				    case {exmpp_jid:lnode_as_list(JID3),
-                          exmpp_jid:ldomain_as_list(JID3),
+                          exmpp_jid:prep_domain_as_list(JID3),
                           exmpp_jid:lresource_as_list(JID3)} of
 					{undefined, LD, undefined} ->
 					    [LD];

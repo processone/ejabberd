@@ -68,7 +68,7 @@ process_sm_iq(From, To, #iq{type = Type} = IQ_Rec) ->
 
 process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
     LUser = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     case catch get_data(LUser,
 			LServer,
 			exmpp_xml:get_child_elements(SubEl)) of
@@ -83,7 +83,7 @@ process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
 
 process_iq_set(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
     LUser = exmpp_jid:lnode_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     F = fun() ->
         lists:foreach(
           fun(El) ->
@@ -107,7 +107,7 @@ check_packet(From, To, IQ_Rec, [F | R]) ->
     end.
 
 check_domain(From, _To, _IQ_Rec) ->
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
 	true -> ok;
 	false -> {error, 'not-allowed'}

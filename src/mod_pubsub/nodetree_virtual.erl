@@ -135,7 +135,7 @@ get_subnodes_tree(_Host, _Node) ->
 %% <p>default allowed nodes: /home/host/user/any/node/name</p>
 create_node(Host, Node, _Type, Owner, _Options) ->
     UserName = exmpp_jid:lnode_as_list(Owner),
-    UserHost = exmpp_jid:ldomain_as_list(Owner),
+    UserHost = exmpp_jid:prep_domain_as_list(Owner),
     case Node of
 	["home", UserHost, UserName | _] -> {error, {virtual, {Host, Node}}};
 	_ -> {error, 'not-allowed'}

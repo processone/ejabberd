@@ -184,7 +184,7 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 	end).
 
 get_sm_features(Acc, From, To, Node, _Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -199,7 +199,7 @@ get_sm_features(Acc, From, To, Node, _Lang) ->
     end.
 
 get_local_features(Acc, From, To, Node, _Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -255,7 +255,7 @@ get_local_features(Acc, From, To, Node, _Lang) ->
 %%%-----------------------------------------------------------------------
 
 adhoc_sm_items(Acc, From, To, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case acl:match_rule(LServer, configure, From) of
 	allow ->
 	    Items = case Acc of
@@ -274,7 +274,7 @@ adhoc_sm_items(Acc, From, To, Lang) ->
 %%%-----------------------------------------------------------------------
 
 get_sm_items(Acc, From, To, Node, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -312,7 +312,7 @@ get_user_resources(BareJID) ->
 %%%-----------------------------------------------------------------------
 
 adhoc_local_items(Acc, From, To, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case acl:match_rule(LServer, configure, From) of
 	allow ->
 	    Items = case Acc of
@@ -391,7 +391,7 @@ get_permission_level(JID) ->
 	end).
 
 get_local_items(Acc, From, To, <<>>, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -417,7 +417,7 @@ get_local_items(Acc, From, To, <<>>, Lang) ->
     end;
 
 get_local_items(Acc, From, To, Node, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -744,7 +744,7 @@ get_stopped_nodes(_Lang) ->
 	end).
 
 adhoc_local_commands(Acc, From, To, #adhoc_request{node = Node} = Request) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     LNode = tokenize(Node),
     case LNode of
 	["running nodes", _ENode, "DB"] ->
@@ -773,7 +773,7 @@ adhoc_local_commands(From, To,
 				    sessionid = SessionID,
 				    action = Action,
 				    xdata = XData} = Request) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     LNode = tokenize(Node),
     %% If the "action" attribute is not present, it is
     %% understood as "execute".  If there was no <actions/>
@@ -1564,7 +1564,7 @@ set_form(From, Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     Password = get_value("password-verify", XData),
     AccountJID = exmpp_jid:parse(AccountString),
     User = exmpp_jid:lnode_as_list(AccountJID),
-    Server = exmpp_jid:ldomain_as_list(AccountJID),
+    Server = exmpp_jid:prep_domain_as_list(AccountJID),
     true = lists:member(Server, ?MYHOSTS),
     true = (Server == Host) orelse (get_permission_level(From) == global),
     ejabberd_auth:try_register(User, Server, Password),
@@ -1577,7 +1577,7 @@ set_form(From, Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
 	     fun(AccountString) ->
 		     JID = exmpp_jid:parse(AccountString),
 		     User = [_|_] = exmpp_jid:lnode_as_list(JID),
-		     Server = exmpp_jid:ldomain_as_list(JID),
+		     Server = exmpp_jid:prep_domain_as_list(JID),
 		     true = (Server == Host) orelse (get_permission_level(From) == global),
 		     true = ejabberd_auth:is_user_exists(User, Server),
 		     {User, Server}
@@ -1590,7 +1590,7 @@ set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
     LUser = [_|_] = exmpp_jid:lnode_as_list(JID),
-    LServer = exmpp_jid:ldomain_as_list(JID), 
+    LServer = exmpp_jid:prep_domain_as_list(JID), 
     true = (LServer == Host) orelse (get_permission_level(From) == global),
     %% Code copied from ejabberd_sm.erl
     case exmpp_jid:lresource_as_list(JID) of
@@ -1609,7 +1609,7 @@ set_form(From, Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
     User = [_|_] = exmpp_jid:lnode_as_list(JID),
-    Server = exmpp_jid:ldomain_as_list(JID), 
+    Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
     Password = ejabberd_auth:get_password(User, Server),
     true = is_list(Password),
@@ -1624,7 +1624,7 @@ set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
     Password = get_value("password", XData),
     JID = exmpp_jid:parse(AccountString),
     User = [_|_] = exmpp_jid:lnode_as_list(JID),
-    Server = exmpp_jid:ldomain_as_list(JID), 
+    Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
     true = ejabberd_auth:is_user_exists(User, Server),
     ejabberd_auth:set_password(User, Server, Password),
@@ -1634,7 +1634,7 @@ set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
     User = [_|_] = exmpp_jid:lnode_as_list(JID),
-    Server = exmpp_jid:ldomain_as_list(JID), 
+    Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
     %% Code copied from web/ejabberd_web_admin.erl
@@ -1672,7 +1672,7 @@ set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
     User = [_|_] = exmpp_jid:lnode_as_list(JID),
-    Server = exmpp_jid:ldomain_as_list(JID), 
+    Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
     Resources = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID), 
@@ -1771,7 +1771,7 @@ adhoc_sm_commands(_Acc, From, To,
 				 xdata = XData} = Request) ->
     User = exmpp_jid:node_as_list(To),
     Server = exmpp_jid:domain_as_list(To),
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case acl:match_rule(LServer, configure, From) of
 	deny ->
 	    {error, 'forbidden'};

@@ -218,7 +218,7 @@ receive_packet(From, To, Packet) when ?IS_PRESENCE(Packet) ->
 	%% anymore until he login again.
 	%% This is tracked in EJAB-943
     _ ->
-	ServerString = exmpp_jid:ldomain_as_list(To),
+	ServerString = exmpp_jid:prep_domain_as_list(To),
 	Els = Packet#xmlel.children,
 	note_caps(ServerString, From, read_caps(Els))
     end;
@@ -229,7 +229,7 @@ receive_packet(_JID, From, To, Packet) ->
     receive_packet(From, To, Packet).
 
 presence_probe(From, To, _) ->
-    ServerString = exmpp_jid:ldomain_as_list(To),
+    ServerString = exmpp_jid:prep_domain_as_list(To),
     wait_caps(ServerString, From).
 
 remove_connection(_SID, JID, _Info) ->
@@ -424,7 +424,7 @@ handle_cast(visit_feature_queries, #state{feature_queries = FeatureQueries} = St
     {noreply, State#state{feature_queries = NewFeatureQueries}}.
 
 handle_disco_response(From, To, IQ_Rec) ->
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {disco_response, From, To, IQ_Rec}).
 

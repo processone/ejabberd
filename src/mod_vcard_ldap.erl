@@ -240,7 +240,7 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 process_sm_iq(_From, To, #iq{} = IQ_Rec) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case catch process_vcard_ldap(To, IQ_Rec, LServer) of
 	{'EXIT', _} ->
             exmpp_iq:error(IQ_Rec, 'internal-server-error');

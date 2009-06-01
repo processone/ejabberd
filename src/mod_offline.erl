@@ -162,7 +162,7 @@ store_packet(From, To, Packet) ->
 	    case check_event(From, To, Packet) of
 		true ->
             LUser = exmpp_jid:lnode_as_list(To),
-            LServer = exmpp_jid:ldomain_as_list(To),
+            LServer = exmpp_jid:prep_domain_as_list(To),
 		    TimeStamp = now(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
 		    gen_mod:get_module_proc(LServer, ?PROCNAME) !

@@ -113,7 +113,7 @@ check_packet(From, To, IQ_Rec, [F | R]) ->
     end.
 
 check_domain(From, _To, _IQ_Rec) ->
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
 	true -> ok;
 	false -> {error, 'not-allowed'}

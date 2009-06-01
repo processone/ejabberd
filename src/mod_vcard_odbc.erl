@@ -132,7 +132,7 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
     LUser = exmpp_jid:lnode_as_list(To),
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_vcard(LServer, Username) of
         {selected, ["vcard"], [{SVCARD}]} ->
@@ -153,7 +153,7 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
     end;
 process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
     User = exmpp_jid:node_as_list(From),
-    LServer = exmpp_jid:ldomain_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
         true ->
             set_vcard(User, LServer, Request),

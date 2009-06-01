@@ -88,7 +88,7 @@ unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
 
 process_iq(From, To, IQ) ->
     process_iq(From, To, IQ, {exmpp_jid:lnode_as_list(From),
-                              exmpp_jid:ldomain_as_list(From),
+                              exmpp_jid:prep_domain_as_list(From),
                               exmpp_jid:lresource_as_list(From)}).
 
 process_iq(From, To,
@@ -99,11 +99,11 @@ process_iq(From, To,
 	    UTag = exmpp_xml:get_element(SubEl, 'username'),
 	    PTag = exmpp_xml:get_element(SubEl, 'password'),
 	    RTag = exmpp_xml:get_element(SubEl, 'remove'),
-	    Server = exmpp_jid:ldomain_as_list(To),
+	    Server = exmpp_jid:prep_domain_as_list(To),
 	    if
 		(UTag /= undefined) and (RTag /= undefined) ->
 		    User = exmpp_xml:get_cdata_as_list(UTag),
-		    case {exmpp_jid:node_as_list(From), exmpp_jid:ldomain_as_list(From)} of
+		    case {exmpp_jid:node_as_list(From), exmpp_jid:prep_domain_as_list(From)} of
 		    {User, Server} ->
 			    ejabberd_auth:remove_user(User, Server),
                             exmpp_iq:result(IQ_Rec, SubEl);
@@ -138,7 +138,7 @@ process_iq(From, To,
 		    end;
 		(UTag == undefined) and (RTag /= undefined) ->
 		    case {exmpp_jid:node_as_list(From),
-                  exmpp_jid:ldomain_as_list(From),
+                  exmpp_jid:prep_domain_as_list(From),
                   exmpp_jid:resource_as_list(From)}of
 			{User, Server, Resource} ->
 			    ResIQ = exmpp_iq:result(IQ_Rec, SubEl),
@@ -158,7 +158,7 @@ process_iq(From, To,
 		(UTag /= undefined) and (PTag /= undefined) ->
 		    User = exmpp_xml:get_cdata_as_list(UTag),
 		    Password = exmpp_xml:get_cdata_as_list(PTag),
-		    case {exmpp_jid:node_as_list(From), exmpp_jid:ldomain_as_list(From)} of
+		    case {exmpp_jid:node_as_list(From), exmpp_jid:prep_domain_as_list(From)} of
 			{User, Server} ->
 			    try_set_password(User, Server, Password, IQ_Rec, SubEl);
 			_ ->
@@ -241,7 +241,7 @@ try_register(User, Server, Password, Source, Lang) ->
 
 
 send_welcome_message(JID) ->
-    Host = exmpp_jid:ldomain_as_list(JID),
+    Host = exmpp_jid:prep_domain_as_list(JID),
     case gen_mod:get_module_opt(Host, ?MODULE, welcome_message, {"", ""}) of
 	{"", ""} ->
 	    ok;
@@ -255,7 +255,7 @@ send_welcome_message(JID) ->
     end.
 
 send_registration_notifications(UJID) ->
-    Host = exmpp_jid:ldomain_as_list(UJID),
+    Host = exmpp_jid:prep_domain_as_list(UJID),
     case gen_mod:get_module_opt(Host, ?MODULE, registration_watchers, []) of
 	[] -> ok;
 	JIDs when is_list(JIDs) ->

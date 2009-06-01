@@ -136,7 +136,7 @@ announce(From, To, Packet) ->
     case {exmpp_jid:lnode(To), exmpp_jid:lresource(To)} of
 	    {undefined, Res} ->
 	    Name = Packet#xmlel.name,
-	    Proc = gen_mod:get_module_proc(exmpp_jid:ldomain_as_list(To), ?PROCNAME),
+	    Proc = gen_mod:get_module_proc(exmpp_jid:prep_domain_as_list(To), ?PROCNAME),
 	    case {Res, Name} of
 		{<<"announce/all">>, 'message'} ->
 		    Proc ! {announce_all, From, To, Packet},
@@ -221,7 +221,7 @@ disco_identity(Acc, _From, _To, Node, Lang) ->
 	end).
 
 disco_features(Acc, From, To, <<"announce">>, _Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -238,7 +238,7 @@ disco_features(Acc, From, To, <<"announce">>, _Lang) ->
     end;
 
 disco_features(Acc, From, To, Node, _Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -290,7 +290,7 @@ disco_features(Acc, From, To, Node, _Lang) ->
 	end).
 
 disco_items(Acc, From, To, <<>>, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     Server = exmpp_jid:domain(To),
 
     case gen_mod:is_loaded(LServer, mod_adhoc) of
@@ -314,7 +314,7 @@ disco_items(Acc, From, To, <<>>, Lang) ->
     end;
 
 disco_items(Acc, From, To, <<"announce">>, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -323,7 +323,7 @@ disco_items(Acc, From, To, <<"announce">>, Lang) ->
     end;
 
 disco_items(Acc, From, To, Node, _Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -361,7 +361,7 @@ disco_items(Acc, From, To, Node, _Lang) ->
 %%-------------------------------------------------------------------------
 
 announce_items(Acc, From, To, Lang) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     Server = exmpp_jid:domain(To),
     Access1 = gen_mod:get_module_opt(LServer, ?MODULE, access, none),
     Nodes1 = case acl:match_rule(LServer, Access1, From) of
@@ -408,7 +408,7 @@ commands_result(Allow, From, To, Request) ->
 
 
 announce_commands(Acc, From, To, #adhoc_request{ node = Node} = Request) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     LNode = tokenize(Node),
     F = fun() ->
 		Access = gen_mod:get_module_opt(global, ?MODULE, access, none),
@@ -463,7 +463,7 @@ announce_commands(From, To,
 				   #adhoc_response{status = canceled});
        XData == false, ActionIsExecute ->
 	    %% User requests form
-	    Elements = generate_adhoc_form(Lang, Node, exmpp_jid:ldomain_as_list(To)),
+	    Elements = generate_adhoc_form(Lang, Node, exmpp_jid:prep_domain_as_list(To)),
 	    adhoc:produce_response(
 	      Request,
 	      #adhoc_response{status = executing,
@@ -542,7 +542,7 @@ handle_adhoc_form(From, To,
 				 node = Node,
 				 sessionid = SessionID},
 		  Fields) ->
-    LServer = exmpp_jid:ldomain_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
     Confirm = case lists:keysearch("confirm", 1, Fields) of
 		  {value, {"confirm", ["true"]}} ->
 		      true;
@@ -664,7 +664,7 @@ get_title(Lang, <<?NS_ADMIN_s , "#delete-motd-allhosts">>) ->
 %%-------------------------------------------------------------------------
 
 announce_all(From, To, Packet) ->
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
@@ -695,7 +695,7 @@ announce_all_hosts_all(From, To, Packet) ->
     end.
 
 announce_online(From, To, Packet) ->
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
@@ -728,7 +728,7 @@ announce_online1(Sessions, Server, Packet) ->
       end, Sessions).
 
 announce_motd(From, To, Packet) ->
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
@@ -762,7 +762,7 @@ announce_motd(Host, Packet) ->
     mnesia:transaction(F).
 
 announce_motd_update(From, To, Packet) ->
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
@@ -791,7 +791,7 @@ announce_motd_update(LServer, Packet) ->
     mnesia:transaction(F).
 
 announce_motd_delete(From, To, Packet) ->
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     case acl:match_rule(Host, Access, From) of
 	deny ->
@@ -828,7 +828,7 @@ announce_motd_delete(LServer) ->
     mnesia:transaction(F).
 
 send_motd(JID) ->
-    LServer = exmpp_jid:ldomain_as_list(JID), 
+    LServer = exmpp_jid:prep_domain_as_list(JID), 
     LUser = exmpp_jid:lnode_as_list(JID), 
     case catch mnesia:dirty_read({motd, LServer}) of
 	[#motd{packet = Packet}] ->

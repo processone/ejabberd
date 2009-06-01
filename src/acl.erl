@@ -232,7 +232,7 @@ match_acl(ACLName, JID, Host) ->
 	none -> false;
 	_ ->
 	    User = exmpp_jid:lnode_as_list(JID),
-	    Server = exmpp_jid:ldomain_as_list(JID),
+	    Server = exmpp_jid:prep_domain_as_list(JID),
 	    Resource = exmpp_jid:lresource_as_list(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->
 			      case Spec of

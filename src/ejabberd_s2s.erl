@@ -303,8 +303,8 @@ do_route(From, To, Packet) ->
     end.
 
 find_connection(From, To) ->
-    MyServer = exmpp_jid:ldomain_as_list(From),
-    Server = exmpp_jid:ldomain_as_list(To),
+    MyServer = exmpp_jid:prep_domain_as_list(From),
+    Server = exmpp_jid:prep_domain_as_list(To),
     FromTo = {MyServer, Server},
     MaxS2SConnectionsNumber = max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
@@ -432,12 +432,12 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 %% service.
 %% --------------------------------------------------------------------
 is_service(From, To) ->
-    LFromDomain = exmpp_jid:ldomain_as_list(From),
+    LFromDomain = exmpp_jid:prep_domain_as_list(From),
     case ejabberd_config:get_local_option({route_subdomains, LFromDomain}) of
         s2s -> % bypass RFC 3920 10.3
             false;
         _ ->
-            LDstDomain = exmpp_jid:ldomain_as_list(To),
+            LDstDomain = exmpp_jid:prep_domain_as_list(To),
             P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
             lists:any(P, ?MYHOSTS)
     end.

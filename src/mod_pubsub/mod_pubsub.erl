@@ -521,12 +521,12 @@ identity(Host) ->
     #xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = Identity}.
 
 disco_local_identity(Acc, _From, To, <<>>, _Lang) ->
-    Acc ++ [identity(exmpp_jid:ldomain_as_list(To))];
+    Acc ++ [identity(exmpp_jid:prep_domain_as_list(To))];
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 disco_local_features(Acc, _From, To, <<>>, _Lang) ->
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     Feats = case Acc of
 	{result, I} -> I;
 	_ -> []
@@ -543,7 +543,7 @@ disco_local_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 disco_sm_identity(Acc, _From, To, <<>>, _Lang) ->
-    Acc ++ [identity(exmpp_jid:ldomain_as_list(To))];
+    Acc ++ [identity(exmpp_jid:prep_domain_as_list(To))];
 disco_sm_identity(Acc, From, To, Node, _Lang) ->
     LOwner = jlib:short_prepd_bare_jid(To),
     Acc ++ case node_disco_identity(LOwner, From, Node) of
@@ -567,7 +567,7 @@ disco_sm_features(Acc, From, To, Node, _Lang) ->
 
 disco_sm_items(Acc, From, To, <<>>, _Lang) ->
     %% TODO, use iq_disco_items(Host, [], From)
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     LJID = jlib:short_prepd_bare_jid(To),
     case tree_action(Host, get_subnodes, [Host, [], From]) of
 	[] ->
@@ -589,7 +589,7 @@ disco_sm_items(Acc, From, To, <<>>, _Lang) ->
 disco_sm_items(Acc, From, To, NodeB, _Lang) ->
     Node = binary_to_list(NodeB),
     %% TODO, use iq_disco_items(Host, Node, From)
-    Host = exmpp_jid:ldomain_as_list(To),
+    Host = exmpp_jid:prep_domain_as_list(To),
     LJID = jlib:short_prepd_bare_jid(To),
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
 	case node_call(Type, get_items, [NodeId, From]) of
@@ -625,13 +625,13 @@ disco_sm_items(Acc, From, To, NodeB, _Lang) ->
 
 presence_probe(JID, JID, Pid) ->
     {U, S, R} = jlib:short_prepd_jid(JID),
-    Host = S, % exmpp_jid:ldomain_as_list(JID),
+    Host = S, % exmpp_jid:prep_domain_as_list(JID),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {presence, JID, Pid}),
     gen_server:cast(Proc, {presence, U, S, [R], JID});
 presence_probe(Peer, JID, _Pid) ->
     {U, S, R} = jlib:short_prepd_jid(Peer),
-    Host = exmpp_jid:ldomain_as_list(JID),
+    Host = exmpp_jid:prep_domain_as_list(JID),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {presence, U, S, [R], JID}).
 
@@ -765,7 +765,7 @@ handle_info({route, From, To, Packet},
 	    #state{server_host = ServerHost,
 		   access = Access,
 		   plugins = Plugins} = State) ->
-    case catch do_route(ServerHost, Access, Plugins, exmpp_jid:ldomain_as_list(To), From, To, Packet) of
+    case catch do_route(ServerHost, Access, Plugins, exmpp_jid:prep_domain_as_list(To), From, To, Packet) of
 	{'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
 	_ -> ok
     end,
@@ -1048,8 +1048,8 @@ iq_disco_items(Host, Item, From) ->
     end.
 
 iq_local(From, To, #iq{type = Type, payload = SubEl, ns = XMLNS, lang = Lang} = IQ_Rec) ->
-    ServerHost = exmpp_jid:ldomain_as_list(To),
-    FromHost = exmpp_jid:ldomain_as_list(To),
+    ServerHost = exmpp_jid:prep_domain_as_list(To),
+    FromHost = exmpp_jid:prep_domain_as_list(To),
     %% Accept IQs to server only from our own users.
     if
 	FromHost /= ServerHost ->
@@ -1068,7 +1068,7 @@ iq_local(From, To, #iq{type = Type, payload = SubEl, ns = XMLNS, lang = Lang} = 
     end.
 
 iq_sm(From, To, #iq{type = Type, payload = SubEl, ns = XMLNS, lang = Lang} = IQ_Rec) ->
-    ServerHost = exmpp_jid:ldomain_as_list(To),
+    ServerHost = exmpp_jid:prep_domain_as_list(To),
     LOwner = jlib:short_prepd_bare_jid(To),
     Res = case XMLNS of
 	      ?NS_PUBSUB -> iq_pubsub(LOwner, ServerHost, From, Type, SubEl, Lang);
