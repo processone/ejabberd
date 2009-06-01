@@ -60,7 +60,7 @@ end,
     gen_server:start_link({local, ?MODULE}, ?MODULE, Opts, []).
 
 process_command(From, To, Packet) ->
-    case {exmpp_jid:lnode(To), exmpp_jid:lresource(To) } of
+    case {exmpp_jid:prep_node(To), exmpp_jid:lresource(To) } of
 	  {undefined, <<"watchdog">>} ->
 	    case Packet#xmlel.name of
 		'message' ->
@@ -217,7 +217,7 @@ get_admin_jids() ->
 	      fun(S) ->
 		      try
 			  JID = exmpp_jid:parse(S),
-			  [{exmpp_jid:lnode(JID), 
+			  [{exmpp_jid:prep_node(JID), 
                 exmpp_jid:prep_domain(JID), 
                 exmpp_jid:lresource(JID)}]
 		      catch

@@ -119,7 +119,7 @@ process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
 
 
 process_iq_get(From, To, IQ_Rec) ->
-    US = {exmpp_jid:lnode(From), exmpp_jid:prep_domain(From)},
+    US = {exmpp_jid:prep_node(From), exmpp_jid:prep_domain(From)},
     case catch ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
@@ -217,7 +217,7 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
 process_item_set(From, To, #xmlel{} = El) ->
     try
 	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
-    User = exmpp_jid:lnode(From),
+    User = exmpp_jid:prep_node(From),
     Server = exmpp_jid:prep_domain(From),
     LServer = binary_to_list(Server),
 	{U0, S0, R0} = LJID = jlib:short_prepd_jid(JID1),
@@ -755,7 +755,7 @@ process_item_attrs_ws(Item, []) ->
 get_in_pending_subscriptions(Ls, User, Server) 
         when is_binary(User), is_binary(Server) ->
     JID = exmpp_jid:make(User, Server),
-    LUser = exmpp_jid:lnode(JID),
+    LUser = exmpp_jid:prep_node(JID),
     LServer = exmpp_jid:prep_domain_as_list(JID),
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
@@ -1020,7 +1020,7 @@ user_roster(User, Server, Query, Lang) ->
 build_contact_jid_td({U, S, R}) ->
     %% Convert {U, S, R} into {jid, U, S, R, U, S, R}:
     ContactJID = exmpp_jid:make(U, S, R),
-    JIDURI = case {exmpp_jid:lnode(ContactJID), exmpp_jid:prep_domain(ContactJID)} of
+    JIDURI = case {exmpp_jid:prep_node(ContactJID), exmpp_jid:prep_domain(ContactJID)} of
 		 {undefined, _} -> "";
 		 {CUser, CServer} ->
 		     CUser_S = binary_to_list(CUser),

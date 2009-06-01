@@ -402,7 +402,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	{auth, _ID, set, {U, P, D, R}} ->
 	    try
 		JID = exmpp_jid:make(U, StateData#state.server, R),
-		UBinary = exmpp_jid:lnode(JID),
+		UBinary = exmpp_jid:prep_node(JID),
 		case acl:match_rule(ServerString,
 		  StateData#state.access, JID) of
 		    allow ->
@@ -1573,7 +1573,7 @@ check_privacy_route(From, StateData, FromRoute, To, Packet) ->
 
 %% Check if privacy rules allow this delivery
 is_privacy_allow(From, To, Packet, PrivacyList) ->
-    User = exmpp_jid:lnode(To), 
+    User = exmpp_jid:prep_node(To), 
     Server = exmpp_jid:prep_domain(To),
     allow == ejabberd_hooks:run_fold(
 	       privacy_check_packet, Server,

@@ -100,17 +100,17 @@ process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
     {Subscription, _Groups} =
         ejabberd_hooks:run_fold(
           roster_get_jid_info, exmpp_jid:prep_domain(To),
-          {none, []}, [exmpp_jid:lnode(To), exmpp_jid:prep_domain(To), From]),
+          {none, []}, [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To), From]),
     if
         (Subscription == both) or (Subscription == from) ->
             UserListRecord = ejabberd_hooks:run_fold(
                                privacy_get_user_list, exmpp_jid:prep_domain(To),
                                #userlist{},
-                               [exmpp_jid:lnode(To), exmpp_jid:prep_domain(To)]),
+                               [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To)]),
             case ejabberd_hooks:run_fold(
                    privacy_check_packet, exmpp_jid:prep_domain(To),
                                     allow,
-                   [exmpp_jid:lnode(To), exmpp_jid:prep_domain(To), UserListRecord,
+                   [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To), UserListRecord,
                     {From, To,
                      exmpp_presence:available()},
                     out]) of

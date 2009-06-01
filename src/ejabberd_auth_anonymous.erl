@@ -179,7 +179,7 @@ remove_connection(SID, LUser, LServer) when is_list(LUser), is_list(LServer) ->
 %% @doc Register connection.
 
 register_connection(SID, JID, Info) when ?IS_JID(JID) ->
-    LUser = exmpp_jid:lnode(JID),
+    LUser = exmpp_jid:prep_node(JID),
     LServer = exmpp_jid:prep_domain(JID),
     case proplists:get_value(auth_module, Info) of
         undefined ->
@@ -200,7 +200,7 @@ register_connection(SID, JID, Info) when ?IS_JID(JID) ->
 %% @doc Remove an anonymous user from the anonymous users table.
 
 unregister_connection(SID, JID, _) when ?IS_JID(JID) ->
-    LUser = exmpp_jid:lnode(JID),
+    LUser = exmpp_jid:prep_node(JID),
     LServer = exmpp_jid:prep_domain(JID),
     purge_hook(anonymous_user_exist(LUser, LServer),
 	       LUser, LServer),

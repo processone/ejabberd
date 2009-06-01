@@ -303,7 +303,7 @@ do_route(From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
     
-    LNode = exmpp_jid:lnode(To),
+    LNode = exmpp_jid:prep_node(To),
     LResource = exmpp_jid:lresource(To),
     if
 	LNode /= undefined ->

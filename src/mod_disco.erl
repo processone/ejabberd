@@ -392,13 +392,13 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
 
 
 get_user_resources(JID) ->
-    Rs = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID),
+    Rs = ejabberd_sm:get_user_resources(exmpp_jid:prep_node(JID),
                                         exmpp_jid:prep_domain(JID)),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
 			  ?XMLATTR('jid',
 			    exmpp_jid:jid_to_binary(exmpp_jid:full(JID, R))),
-			  ?XMLATTR('name', exmpp_jid:lnode(JID))
+			  ?XMLATTR('name', exmpp_jid:prep_node(JID))
 			]}
 	      end, lists:sort(Rs)).
 

@@ -2208,7 +2208,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 			  case catch (
 				 case E of
 				     {JID, affiliation, owner, _} ->
-                        case exmpp_jid:lnode(JID) of
+                        case exmpp_jid:prep_node(JID) of
                             <<>> ->
 					            SD;
                      %% TODO: <<>> or 'undefined' ?
@@ -3494,7 +3494,7 @@ add_to_log(Type, Data, StateData) ->
 %% Users number checking
 
 tab_add_online_user(JID, StateData) ->
-    LUser = exmpp_jid:lnode(JID),
+    LUser = exmpp_jid:prep_node(JID),
     LServer = exmpp_jid:prep_domain(JID),
     US = {LUser, LServer},
     Room = StateData#state.room,
@@ -3506,7 +3506,7 @@ tab_add_online_user(JID, StateData) ->
 
 
 tab_remove_online_user(JID, StateData) when ?IS_JID(JID) ->
- LUser = exmpp_jid:lnode(JID),
+ LUser = exmpp_jid:prep_node(JID),
  LServer = exmpp_jid:prep_domain(JID),
     tab_remove_online_user({LUser, LServer, none},StateData);
 
@@ -3519,7 +3519,7 @@ tab_remove_online_user({LUser, LServer,_}, StateData) ->
 	    #muc_online_users{us = US, room = Room, host = Host}).
 
 tab_count_user(JID) ->
-    LUser = exmpp_jid:lnode(JID),
+    LUser = exmpp_jid:prep_node(JID),
     LServer = exmpp_jid:prep_domain(JID),
     US = {LUser, LServer},
     case catch ets:select(

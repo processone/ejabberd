@@ -298,7 +298,7 @@ get_sm_items(Acc, From, To, Node, Lang) ->
     end.
 
 get_user_resources(BareJID) ->
-    Rs = ejabberd_sm:get_user_resources(exmpp_jid:lnode(BareJID), 
+    Rs = ejabberd_sm:get_user_resources(exmpp_jid:prep_node(BareJID), 
                                         exmpp_jid:prep_domain(BareJID)),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
@@ -306,7 +306,7 @@ get_user_resources(BareJID) ->
                          exmpp_jid:jid_to_binary(
                                   exmpp_jid:full(BareJID, R))),
 			    ?XMLATTR('name', 
-                         exmpp_jid:lnode(BareJID))]}
+                         exmpp_jid:prep_node(BareJID))]}
 	      end, lists:sort(Rs)).
 
 %%%-----------------------------------------------------------------------
@@ -1640,7 +1640,7 @@ set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     %% Code copied from web/ejabberd_web_admin.erl
     %% TODO: Update time format to XEP-0202: Entity Time
     FLast =
-	case ejabberd_sm:get_user_resources(exmpp_jid:lnode(User), 
+	case ejabberd_sm:get_user_resources(exmpp_jid:prep_node(User), 
                                        exmpp_jid:prep_domain(Server)) of
 	    [] ->
 		_US = {User, Server},
@@ -1675,7 +1675,7 @@ set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     Server = exmpp_jid:prep_domain_as_list(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
-    Resources = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID), 
+    Resources = ejabberd_sm:get_user_resources(exmpp_jid:prep_node(JID), 
                                                exmpp_jid:prep_domain(JID)),
     IPs1 = [ejabberd_sm:get_user_ip(exmpp_jid:full(JID,Resource)) 
                 || Resource <- Resources],
