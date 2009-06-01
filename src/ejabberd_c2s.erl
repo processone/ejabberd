@@ -838,7 +838,7 @@ session_established2(El, StateData) ->
 	To = exmpp_stanza:get_recipient(El),
 	ToJID = case To of
 		    undefined ->
-            exmpp_jid:jid_to_bare_jid(StateData#state.jid);
+            exmpp_jid:bare(StateData#state.jid);
 		    _ ->
 			exmpp_jid:parse_jid(To)
 		end,
@@ -1518,28 +1518,28 @@ presence_track(From, To, Packet, StateData) ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			     StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, subscribe]),
-	    check_privacy_route(From, StateData, exmpp_jid:jid_to_bare_jid(From),
+	    check_privacy_route(From, StateData, exmpp_jid:bare(From),
 				To, Packet),
 	    StateData;
 	'subscribed' ->
 	    ejabberd_hooks:run(roster_out_subscription,
 	             StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, subscribed]),
-	    check_privacy_route(From, StateData, exmpp_jid:jid_to_bare_jid(From),
+	    check_privacy_route(From, StateData, exmpp_jid:bare(From),
 				To, Packet),
 	    StateData;
 	'unsubscribe' ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			     StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, unsubscribe]),
-	    check_privacy_route(From, StateData, exmpp_jid:jid_to_bare_jid(From),
+	    check_privacy_route(From, StateData, exmpp_jid:bare(From),
 				To, Packet),
 	    StateData;
 	'unsubscribed' ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			     StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, unsubscribed]),
-	    check_privacy_route(From, StateData, exmpp_jid:jid_to_bare_jid(From),
+	    check_privacy_route(From, StateData, exmpp_jid:bare(From),
 				To, Packet),
 	    StateData;
 	'error' ->

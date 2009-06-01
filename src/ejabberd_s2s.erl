@@ -357,7 +357,7 @@ choose_pid(From, Pids) ->
     % Use sticky connections based on the JID of the sender (whithout
     % the resource to ensure that a muc room always uses the same
     % connection)
-    Pid = lists:nth(erlang:phash(exmpp_jid:jid_to_bare_jid(From), length(Pids1)),
+    Pid = lists:nth(erlang:phash(exmpp_jid:bare(From), length(Pids1)),
 		    Pids1),
     ?DEBUG("Using ejabberd_s2s_out ~p~n", [Pid]),
     Pid.

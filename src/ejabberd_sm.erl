@@ -678,7 +678,7 @@ check_max_sessions(JID) ->
 %% Defaults to infinity
 get_max_user_sessions(JID) ->
     case acl:match_rule(
-	   exmpp_jid:ldomain_as_list(JID), max_user_sessions, exmpp_jid:jid_to_bare_jid(JID)) of
+	   exmpp_jid:ldomain_as_list(JID), max_user_sessions, exmpp_jid:bare(JID)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_SESSIONS

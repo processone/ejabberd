@@ -284,14 +284,14 @@ process_item_set(From, To, #xmlel{} = El) ->
 			{U, S, R} = OldItem#roster.jid,
 			if IsTo ->
 				ejabberd_router:route(
-				  exmpp_jid:jid_to_bare_jid(From),
+				  exmpp_jid:bare(From),
 				  exmpp_jid:make(U, S, R),
 				  exmpp_presence:unsubscribe());
 			   true -> ok
 			end,
 			if IsFrom ->
 				ejabberd_router:route(
-				  exmpp_jid:jid_to_bare_jid(From),
+				  exmpp_jid:bare(From),
 				  exmpp_jid:make(U, S, R),
 				  exmpp_presence:unsubscribed());
 			   true -> ok

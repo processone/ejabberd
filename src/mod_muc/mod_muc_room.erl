@@ -2379,7 +2379,7 @@ find_changed_items(UJID, UAffiliation, URole,
 					      UJID,
 					      UAffiliation, URole,
 					      Items, Lang, StateData,
-					      [{exmpp_jid:jid_to_bare_jid(JID),
+					      [{exmpp_jid:bare(JID),
 						affiliation,
 						SAffiliation,
 						exmpp_xml:get_path(
