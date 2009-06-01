@@ -569,7 +569,7 @@ iq_disco_items(Host, From, Lang, none) when is_binary(Host) ->
 			     {true,
                   #xmlel{name = 'item',
                          attrs = [?XMLATTR('jid', 
-                                          exmpp_jid:jid_to_binary(Name,
+                                          exmpp_jid:to_binary(Name,
                                                                         Host)),
                                  ?XMLATTR('name',
                                           Desc)]}};

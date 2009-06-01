@@ -132,7 +132,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 				   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
-	      [Room, Host, exmpp_jid:jid_to_binary(Creator)]),
+	      [Room, Host, exmpp_jid:to_binary(Creator)]),
     {ok, normal_state, State1};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     process_flag(trap_exit, true),
@@ -585,11 +585,11 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
 	end}, StateData),
 
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
-	      [exmpp_jid:jid_to_binary(StateData#state.jid), Reason]),
+	      [exmpp_jid:to_binary(StateData#state.jid), Reason]),
     {stop, normal, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
-	      [exmpp_jid:jid_to_binary(StateData#state.jid)]),
+	      [exmpp_jid:to_binary(StateData#state.jid)]),
     handle_event({destroy, none}, StateName, StateData);
 
 handle_event({set_affiliations, Affiliations}, StateName, StateData) ->
@@ -984,7 +984,7 @@ process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 	(?DICT:to_list(StateData1#state.users) == []) of
 	true ->
 	    ?INFO_MSG("Destroyed MUC room ~s because it's temporary and empty", 
-		      [exmpp_jid:jid_to_binary(StateData#state.jid)]),
+		      [exmpp_jid:to_binary(StateData#state.jid)]),
 	    {stop, normal, StateData1};
 	_ ->
 	    {next_state, normal_state, StateData1}
@@ -1036,7 +1036,7 @@ decide_fate_message(error, Packet, From, StateData) ->
 	     %% If this is an error stanza and its condition matches a criteria
 	     true ->
 		 Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
-					[exmpp_jid:jid_to_binary(From)]),
+					[exmpp_jid:to_binary(From)]),
 		 {expulse_sender, Reason};
 	     false ->
 		 continue_delivery
@@ -1833,7 +1833,7 @@ send_new_presence(NJID, Reason, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [?XMLATTR('jid', exmpp_jid:jid_to_binary(RealJID)),
+			  [?XMLATTR('jid', exmpp_jid:to_binary(RealJID)),
 			   ?XMLATTR('affiliation', SAffiliation),
 			   ?XMLATTR('role', SRole)];
 		      _ ->
@@ -1889,7 +1889,7 @@ send_existing_presences(ToJID, StateData) ->
 			      ((StateData#state.config)#config.anonymous ==
 			       false) of
 			      true ->
-				  [?XMLATTR('jid', exmpp_jid:jid_to_binary(FromJID)),
+				  [?XMLATTR('jid', exmpp_jid:to_binary(FromJID)),
 				   ?XMLATTR('affiliation', 
                            affiliation_to_binary(FromAffiliation)),
 				   ?XMLATTR('role', role_to_binary(FromRole))];
@@ -1946,7 +1946,7 @@ send_nick_changing(JID, OldNick, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [?XMLATTR('jid', exmpp_jid:jid_to_binary(RealJID)),
+			  [?XMLATTR('jid', exmpp_jid:to_binary(RealJID)),
 			   ?XMLATTR('affiliation', SAffiliation),
 			   ?XMLATTR('role', SRole),
 			   ?XMLATTR('nick', Nick)];
@@ -1959,7 +1959,7 @@ send_nick_changing(JID, OldNick, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [?XMLATTR('jid', exmpp_jid:jid_to_binary(RealJID)),
+			  [?XMLATTR('jid', exmpp_jid:to_binary(RealJID)),
 			   ?XMLATTR('affiliation', SAffiliation),
 			   ?XMLATTR('role', SRole)];
 		      _ ->
@@ -2151,7 +2151,7 @@ items_with_affiliation(SAffiliation, StateData) ->
                attrs = [?XMLATTR('affiliation', 
                                  affiliation_to_binary(Affiliation)),
                         ?XMLATTR('jid',
-                                 exmpp_jid:jid_to_binary(N, D, R))],
+                                 exmpp_jid:to_binary(N, D, R))],
                children = [ #xmlel{name = 'reason',
                                    children = [#xmlcdata{cdata = Reason}]}]};
 
@@ -2161,7 +2161,7 @@ items_with_affiliation(SAffiliation, StateData) ->
                attrs = [?XMLATTR('affiliation', 
                                  affiliation_to_binary(Affiliation)),
                         ?XMLATTR('jid',
-                                 exmpp_jid:jid_to_binary(N, D, R))]}
+                                 exmpp_jid:to_binary(N, D, R))]}
       end, search_affiliation(SAffiliation, StateData)).
 
 user_to_item(#user{role = Role,
@@ -2174,7 +2174,7 @@ user_to_item(#user{role = Role,
       ?XMLATTR('role', role_to_binary(Role)),
       ?XMLATTR('affiliation', affiliation_to_binary(Affiliation)),
       ?XMLATTR('nick', Nick),
-      ?XMLATTR('jid', exmpp_jid:jid_to_binary(JID))]
+      ?XMLATTR('jid', exmpp_jid:to_binary(JID))]
      }.
 
 search_role(Role, StateData) ->
@@ -2201,7 +2201,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
     case find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, []) of
 	{result, Res} ->
 	    ?INFO_MSG("Processing MUC admin query from ~s in room ~s:~n ~p",
-		      [exmpp_jid:jid_to_binary(UJID), exmpp_jid:jid_to_binary(StateData#state.jid), Res]),
+		      [exmpp_jid:to_binary(UJID), exmpp_jid:to_binary(StateData#state.jid), Res]),
 	    NSD =
 		lists:foldl(
 		  fun(E, SD) ->
@@ -2693,7 +2693,7 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 		    end;
 		[#xmlel{name = 'destroy'} = SubEl1] ->
 		    ?INFO_MSG("Destroyed MUC room ~s by the owner ~s", 
-			      [exmpp_jid:jid_to_binary(StateData#state.jid), exmpp_jid:jid_to_binary(From)]),
+			      [exmpp_jid:to_binary(StateData#state.jid), exmpp_jid:to_binary(From)]),
 		    destroy_room(SubEl1, StateData);
 		Items ->
 		    process_admin_items_set(From, Items, Lang, StateData)
@@ -3289,7 +3289,7 @@ process_iq_disco_items(From, get, _Lang, StateData) ->
 		  fun({_LJID, Info}) ->
 			  Nick = Info#user.nick,
               #xmlel{name = 'item', attrs = [?XMLATTR('jid', 
-                                            exmpp_jid:jid_to_binary(
+                                            exmpp_jid:to_binary(
                                                     StateData#state.room,
                               				        StateData#state.host,
                             				        Nick)),
@@ -3371,7 +3371,7 @@ check_invitation(From, Els, Lang, StateData) ->
 	    [#xmlel{ns = ?NS_MUC_USER,
                 name = 'invite', 
 		        attrs = [?XMLATTR('from', 
-		                          exmpp_jid:jid_to_binary(From))],
+		                          exmpp_jid:to_binary(From))],
  		        children = [#xmlel{ns =?NS_MUC_USER, name = 'reason', 
 		                            children = [#xmlcdata{cdata = Reason} ]}] 
   		                    ++ ContinueEl}],
@@ -3391,8 +3391,8 @@ check_invitation(From, Els, Lang, StateData) ->
 		    io_lib:format(
 		      translate:translate(Lang,
 			"~s invites you to the room ~s"),
-		      [exmpp_jid:jid_to_binary(From),
-			exmpp_jid:jid_to_binary(StateData#state.room,
+		      [exmpp_jid:to_binary(From),
+			exmpp_jid:to_binary(StateData#state.room,
 			  StateData#state.host)
 		      ]), 
 		   case (StateData#state.config)#config.password_protected of
@@ -3417,7 +3417,7 @@ check_invitation(From, Els, Lang, StateData) ->
 		  children = IEl ++ PasswdEl},
 		#xmlel{ns = 'jabber:x:conference', name = 'x',
 		  attrs = [?XMLATTR('jid',
-		      exmpp_jid:jid_to_binary(
+		      exmpp_jid:to_binary(
 			StateData#state.room,
 			StateData#state.host)
 			)],
@@ -3454,7 +3454,7 @@ check_decline_invitation(Packet) ->
 %% The original stanza must be slightly modified.
 send_decline_invitation({Packet, XEl, DEl = #xmlel{name='decline'}, ToJID}, 
                             RoomJID, FromJID) ->
-    FromString = exmpp_jid:jid_to_binary(FromJID),
+    FromString = exmpp_jid:to_binary(FromJID),
 
     DEl1 = exmpp_xml:remove_attribute(DEl, 'to'),
     DEl2 = exmpp_xml:set_attribute(DEl1, 'from',FromString),

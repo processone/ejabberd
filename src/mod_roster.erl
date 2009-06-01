@@ -200,7 +200,7 @@ get_user_roster(Acc, {U, S} = US) when is_binary(U), is_binary(S) ->
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,
     Attrs1 = exmpp_xml:set_attribute_in_list([],
-      'jid', exmpp_jid:jid_to_binary(U, S, R)),
+      'jid', exmpp_jid:to_binary(U, S, R)),
     Attrs2 = case Item#roster.name of
 		 <<>> ->
 		     Attrs1;
@@ -853,8 +853,8 @@ get_in_pending_subscriptions(Ls, User, Server)
 			    {U0, S0, R0} = R#roster.jid,
 			    Pres1 = exmpp_presence:subscribe(),
 			    Pres2 = exmpp_stanza:set_jids(Pres1,
-			      exmpp_jid:jid_to_binary(U0, S0, R0),
-			      exmpp_jid:jid_to_binary(JID)),
+			      exmpp_jid:to_binary(U0, S0, R0),
+			      exmpp_jid:to_binary(JID)),
 			    exmpp_presence:set_status(Pres2, Message)
 		    end,
 		    lists:filter(

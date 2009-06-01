@@ -126,7 +126,7 @@ get_sm_commands(Acc, _From, To, <<>>, Lang) ->
 		    end,
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS,
 		      name = 'item', attrs =
-		      [?XMLATTR('jid', exmpp_jid:jid_to_binary(To)),
+		      [?XMLATTR('jid', exmpp_jid:to_binary(To)),
 		       ?XMLATTR('node', ?NS_ADHOC_s),
 		       ?XMLATTR('name', translate:translate(Lang, "Commands"))]
 		      }],

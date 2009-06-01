@@ -100,7 +100,7 @@ stop(Host) ->
 
 -define(NODEJID(To, Name, Node),
 	#xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-	 [?XMLATTR('jid', exmpp_jid:jid_to_binary(To)),
+	 [?XMLATTR('jid', exmpp_jid:to_binary(To)),
 	  ?XMLATTR('name', ?T(Lang, Name)),
 	  ?XMLATTR('node', Node)]}).
 
@@ -263,7 +263,7 @@ adhoc_sm_items(Acc, From, To, Lang) ->
 			empty -> []
 		    end,
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-		      [?XMLATTR('jid', exmpp_jid:jid_to_binary(To)),
+		      [?XMLATTR('jid', exmpp_jid:to_binary(To)),
 		       ?XMLATTR('name', ?T(Lang, "Configuration")),
 		       ?XMLATTR('node', <<"config">>)]}],
 	    {result, Items ++ Nodes};
@@ -303,7 +303,7 @@ get_user_resources(BareJID) ->
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
 		       [?XMLATTR('jid', 
-                         exmpp_jid:jid_to_binary(
+                         exmpp_jid:to_binary(
                                   exmpp_jid:full(BareJID, R))),
 			    ?XMLATTR('name', 
                          exmpp_jid:prep_node(BareJID))]}
@@ -382,7 +382,7 @@ get_permission_level(JID) ->
 	    allow ->
 		PermLev = get_permission_level(From),
 		case get_local_items({PermLev, LServer}, LNode,
-				     exmpp_jid:jid_to_binary(To), Lang) of
+				     exmpp_jid:to_binary(To), Lang) of
 		    {result, Res} ->
 			{result, Res};
 		    {error, Error} ->
@@ -407,7 +407,7 @@ get_local_items(Acc, From, To, <<>>, Lang) ->
 		allow ->
 		    PermLev = get_permission_level(From),
 		    case get_local_items({PermLev, LServer}, [],
-					 exmpp_jid:jid_to_binary(To), Lang) of
+					 exmpp_jid:to_binary(To), Lang) of
 			{result, Res} ->
 			    {result, Items ++ Res};
 			{error, _Error} ->
@@ -530,8 +530,8 @@ get_local_items({_, Host}, ["all users", [$@ | Diap]], _Server, _Lang) ->
 			   Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
 			   lists:map(fun({S, U}) ->
 					     #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-					      [?XMLATTR('jid', exmpp_jid:jid_to_binary(U, S)),
-					       ?XMLATTR('name', exmpp_jid:jid_to_binary(U, S))]}
+					      [?XMLATTR('jid', exmpp_jid:to_binary(U, S)),
+					       ?XMLATTR('name', exmpp_jid:to_binary(U, S))]}
 				     end, Sub)
 		       end of
 			       {'EXIT', _Reason} ->
@@ -623,8 +623,8 @@ get_online_vh_users(Host) ->
 	    SURs = lists:sort([{S, U, R} || {U, S, R} <- USRs]),
 	    lists:map(fun({S, U, R}) ->
 			      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-			       [?XMLATTR('jid', exmpp_jid:jid_to_binary(U, S, R)),
-				?XMLATTR('name', exmpp_jid:jid_to_binary(U, S))]}
+			       [?XMLATTR('jid', exmpp_jid:to_binary(U, S, R)),
+				?XMLATTR('name', exmpp_jid:to_binary(U, S))]}
 		      end, SURs)
     end.
 
@@ -638,8 +638,8 @@ get_all_vh_users(Host) ->
 		N when N =< 100 ->
 		    lists:map(fun({S, U}) ->
 				      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				       [?XMLATTR('jid', exmpp_jid:jid_to_binary(U, S)),
-					?XMLATTR('name', exmpp_jid:jid_to_binary(U, S))]}
+				       [?XMLATTR('jid', exmpp_jid:to_binary(U, S)),
+					?XMLATTR('name', exmpp_jid:to_binary(U, S))]}
 			      end, SUsers);
 		N ->
 		    NParts = trunc(math:sqrt(N * 0.618)) + 1,

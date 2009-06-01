@@ -224,7 +224,7 @@ value_to_binary(Type, Val) ->
     case Type of
 	jid ->
 	    {N, D, R} = Val,
-	    exmpp_jid:jid_to_binary(N, D, R);
+	    exmpp_jid:to_binary(N, D, R);
 	group -> Val;
 	subscription ->
 	    case Val of

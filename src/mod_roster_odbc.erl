@@ -160,7 +160,7 @@ get_roster(LUser, LServer) when is_binary(LUser), is_binary(LServer)->
 				       [];
 				   R ->
 				       {U2, S2, R2} = R#roster.jid,
-				       SJID = exmpp_jid:jid_to_binary(U2, S2, R2),
+				       SJID = exmpp_jid:to_binary(U2, S2, R2),
 				       Groups = lists:flatmap(
 						  fun({S, G}) when S == SJID ->
 							  [G];
@@ -179,7 +179,7 @@ get_roster(LUser, LServer) when is_binary(LUser), is_binary(LServer)->
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,
     Attrs1 = exmpp_xml:set_attribute_in_list([],
-      'jid', exmpp_jid:jid_to_binary(U, S, R)),
+      'jid', exmpp_jid:to_binary(U, S, R)),
     Attrs2 = case Item#roster.name of
 		 <<>> ->
 		     Attrs1;
@@ -222,7 +222,7 @@ process_item_set(From, To, #xmlel{} = El) ->
     LServer = binary_to_list(Server),
 	{U0, S0, R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(User),
-	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_binary(U0, S0, R0)),
+	SJID = ejabberd_odbc:escape(exmpp_jid:to_binary(U0, S0, R0)),
 	F = fun() ->
 		    {selected,
 		     ["username", "jid", "nick", "subscription",
@@ -426,7 +426,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 	LServer = binary_to_list(Server),
 	{N0,D0,R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(User),
-	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_binary(N0,D0,R0)),
+	SJID = ejabberd_odbc:escape(exmpp_jid:to_binary(N0,D0,R0)),
 	F = fun() ->
 		    Item =
 			case odbc_queries:get_roster_by_jid(LServer, Username, SJID) of
@@ -699,7 +699,7 @@ process_item_set_t(LUser, LServer, #xmlel{} = El) ->
 	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
 	{U0, S0, R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(LUser),
-	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_binary(U0, S0, R0)),
+	SJID = ejabberd_odbc:escape(exmpp_jid:to_binary(U0, S0, R0)),
 	Item = #roster{usj = {LUser, LServer, LJID},
 		       us = {LUser, LServer},
 		       jid = LJID},
@@ -768,8 +768,8 @@ get_in_pending_subscriptions(Ls, User, Server)
 			    {U0, S0, R0} = R#roster.jid,
 			    Pres1 = exmpp_presence:subscribe(),
 			    Pres2 = exmpp_stanza:set_jids(Pres1,
-			      exmpp_jid:jid_to_binary(U0, S0, R0),
-			      exmpp_jid:jid_to_binary(JID)),
+			      exmpp_jid:to_binary(U0, S0, R0),
+			      exmpp_jid:to_binary(JID)),
 			    exmpp_presence:set_status(Pres2, Message)
 		    end,
 		    lists:flatmap(
@@ -800,7 +800,7 @@ get_jid_info(_, User, Server, JID) when is_binary(User), is_binary(Server) ->
 	LServer = binary_to_list(Server),
 	LJID = {N, D, R} = jlib:short_prepd_jid(JID),
 	Username = ejabberd_odbc:escape(User),
-	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_binary(N, D, R)),
+	SJID = ejabberd_odbc:escape(exmpp_jid:to_binary(N, D, R)),
 	case catch odbc_queries:get_subscription(LServer, Username, SJID) of
 	    {selected, ["subscription"], [{SSubscription}]} ->
 		Subscription = case SSubscription of
@@ -823,7 +823,7 @@ get_jid_info(_, User, Server, JID) when is_binary(User), is_binary(Server) ->
 			{none, []};
 		    true ->
 			{LR_N, LR_D, LR_R} = LRJID,
-			SRJID = ejabberd_odbc:escape(exmpp_jid:jid_to_binary(LR_N, LR_D, LR_R)),
+			SRJID = ejabberd_odbc:escape(exmpp_jid:to_binary(LR_N, LR_D, LR_R)),
 			case catch odbc_queries:get_subscription(LServer, Username, SRJID) of
 			    {selected, ["subscription"], [{SSubscription}]} ->
 				Subscription = case SSubscription of
@@ -891,7 +891,7 @@ record_to_string(#roster{us = {User, _Server},
 			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
     {U, S, R} = JID,
-    SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_binary(U, S, R)),
+    SJID = ejabberd_odbc:escape(exmpp_jid:to_binary(U, S, R)),
     Nick = ejabberd_odbc:escape(Name),
     SSubscription = case Subscription of
 			both -> "B";
@@ -915,7 +915,7 @@ groups_to_string(#roster{us = {User, _Server},
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
     {U, S, R} = JID,
-    SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_binary(U, S, R)),
+    SJID = ejabberd_odbc:escape(exmpp_jid:to_binary(U, S, R)),
 
     %% Empty groups do not need to be converted to string to be inserted in
     %% the database

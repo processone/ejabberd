@@ -580,7 +580,7 @@ disco_sm_items(Acc, From, To, <<>>, _Lang) ->
 	    NodeItems = lists:map(
 			  fun(#pubsub_node{nodeid = {_, Node}}) ->
 				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(LJID)),
+				   [?XMLATTR('jid', exmpp_jid:to_binary(LJID)),
 				    ?XMLATTR('node', node_to_string(Node))]}
 			  end, Nodes),
 	    {result, NodeItems ++ Items}
@@ -606,7 +606,7 @@ disco_sm_items(Acc, From, To, NodeB, _Lang) ->
 				  %% "node" is forbidden by XEP-0060.
 				  {result, Name} = node_action(Host, Node, get_item_name, [NodeId, Id]),
 				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(LJID)),
+				   [?XMLATTR('jid', exmpp_jid:to_binary(LJID)),
 				    ?XMLATTR('name', Name)]}
 			  end, AllItems),
 		{result, NodeItems ++ Items};
@@ -1250,7 +1250,7 @@ send_authorization_request(#pubsub_node{owners = Owners, nodeid = {Host, Node}},
 					?XMLATTR('type', <<"jid-single">>),
 					?XMLATTR('label', translate:translate(Lang, "Subscriber Address"))], children =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
-		    [#xmlcdata{cdata = exmpp_jid:jid_to_binary(U, S, R)}]}]},
+		    [#xmlcdata{cdata = exmpp_jid:to_binary(U, S, R)}]}]},
 		 #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
 		  [?XMLATTR('var', <<"pubsub#allow">>),
 		   ?XMLATTR('type', <<"boolean">>),
@@ -1296,7 +1296,7 @@ send_authorization_approval(Host, JID, SNode, Subscription) ->
     Stanza = event_stanza(
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'subscription', attrs =
 		    [?XMLATTR('node', SNode),
-		     ?XMLATTR('jid', exmpp_jid:jid_to_binary(JID)),
+		     ?XMLATTR('jid', exmpp_jid:to_binary(JID)),
 		     ?XMLATTR('subscription', subscription_to_string(Subscription))]}]),
     ejabberd_router ! {route, service_jid(Host), JID, Stanza}.
  
@@ -1633,7 +1633,7 @@ subscribe_node(Host, Node, From, JID) ->
 		    %% TODO, this is subscription-notification, should depends on node features
 		    Fields =
 			[?XMLATTR('node', node_to_string(Node)),
-			 ?XMLATTR('jid', exmpp_jid:jid_to_binary(Subscriber)),
+			 ?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)),
 			 ?XMLATTR('subscription', subscription_to_string(Subscription))],
 		    [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 			[#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
@@ -2104,7 +2104,7 @@ get_affiliations(Host, Node, JID) ->
 			 fun({_, none}) -> [];
 			    ({{AU, AS, AR}, Affiliation}) ->
 				 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'affiliation', attrs =
-				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(AU, AS, AR)),
+				   [?XMLATTR('jid', exmpp_jid:to_binary(AU, AS, AR)),
 				    ?XMLATTR('affiliation', affiliation_to_string(Affiliation))]}]
 			 end, Affiliations),
 	    {result, [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
@@ -2230,11 +2230,11 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				[] ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
 				   [?XMLATTR('node', node_to_string(SubsNode)),
-				    ?XMLATTR('jid', exmpp_jid:jid_to_binary(SubJID)),
+				    ?XMLATTR('jid', exmpp_jid:to_binary(SubJID)),
 				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
 				SubsNode ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
-				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(SubJID)),
+				   [?XMLATTR('jid', exmpp_jid:to_binary(SubJID)),
 				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
 				_ ->
 				 []
@@ -2270,11 +2270,11 @@ get_subscriptions(Host, Node, JID) ->
 			 fun({_, none}) -> [];
 			    ({{AU, AS, AR}, Subscription}) ->
 				 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'subscription', attrs =
-				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(AU, AS, AR)),
+				   [?XMLATTR('jid', exmpp_jid:to_binary(AU, AS, AR)),
 				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
 			    ({{AU, AS, AR}, Subscription, SubId}) ->
 				 [#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'subscription', attrs =
-				   [?XMLATTR('jid', exmpp_jid:jid_to_binary(AU, AS, AR)),
+				   [?XMLATTR('jid', exmpp_jid:to_binary(AU, AS, AR)),
 				    ?XMLATTR('subscription', subscription_to_string(Subscription)),
 				    ?XMLATTR('subid', SubId)]}]
 			 end, Subscriptions),

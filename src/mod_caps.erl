@@ -106,7 +106,7 @@ get_caps(LJID) ->
 get_caps(_, 0) ->
     nothing;
 get_caps({U, S, R}, Retry) ->
-    BJID = exmpp_jid:jid_to_binary(U, S, R),
+    BJID = exmpp_jid:to_binary(U, S, R),
     case catch mnesia:dirty_read({user_caps, BJID}) of
 	[#user_caps{caps=waiting}] ->
 	    timer:sleep(2000),
@@ -120,7 +120,7 @@ get_caps({U, S, R}, Retry) ->
 %% clear_caps removes user caps from database
 clear_caps(JID) ->
     R = exmpp_jid:prep_resource(JID),
-    BJID = exmpp_jid:jid_to_binary(JID),
+    BJID = exmpp_jid:to_binary(JID),
     BUID = exmpp_jid:bare_jid_to_binary(JID),
     catch mnesia:dirty_delete({user_caps, BJID}),
     catch mnesia:dirty_delete_object(#user_caps_resources{uid = BUID, resource = list_to_binary(R)}),
@@ -317,7 +317,7 @@ handle_cast({note_caps, From,
     U = exmpp_jid:prep_node(From),
     S = exmpp_jid:prep_domain(From),
     R = exmpp_jid:resource(From),
-    BJID = exmpp_jid:jid_to_binary(From),
+    BJID = exmpp_jid:to_binary(From),
     mnesia:transaction(fun() ->
 	mnesia:dirty_write(#user_caps{jid = BJID, caps = caps_to_binary(Caps)}),
 	case ejabberd_sm:get_user_resources(U, S) of
@@ -360,7 +360,7 @@ handle_cast({note_caps, From,
 	    {noreply, State#state{disco_requests = NewRequests}}
     end;
 handle_cast({wait_caps, From}, State) ->
-    BJID = exmpp_jid:jid_to_binary(From),
+    BJID = exmpp_jid:to_binary(From),
     mnesia:dirty_write(#user_caps{jid = BJID, caps = waiting}),
     {noreply, State};
 handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payload}},
@@ -392,7 +392,7 @@ handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payl
 	    %gen_server:cast(self(), visit_feature_queries),
 	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:to_list(From), SubEls]);
 	{result, Payload} ->
-	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:jid_to_binary(From), Payload]);
+	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:to_binary(From), Payload]);
 	_ ->
 	    %% Can't do anything about errors
 	    ok
