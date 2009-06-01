@@ -146,7 +146,7 @@ process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) when is_binary(Hos
 can_use_nick(_Host, _JID, <<>>)  ->
     false;
 can_use_nick(Host, JID, Nick) when is_binary(Host), is_binary(Nick) ->
-    LUS = {exmpp_jid:lnode(JID), exmpp_jid:ldomain(JID)},
+    LUS = {exmpp_jid:lnode(JID), exmpp_jid:prep_domain(JID)},
     case catch mnesia:dirty_select(
 		 muc_registered,
 		 [{#muc_registered{us_host = '$1',
@@ -662,7 +662,7 @@ flush() ->
 
 iq_get_register_info(Host, From, Lang)  ->
     LUser = exmpp_jid:lnode(From),
-    LServer = exmpp_jid:ldomain(From),
+    LServer = exmpp_jid:prep_domain(From),
     LUS = {LUser, LServer},
     {Nick, Registered} =
 	case catch mnesia:dirty_read(muc_registered, {LUS, Host}) of
@@ -692,7 +692,7 @@ iq_get_register_info(Host, From, Lang)  ->
 
 iq_set_register_info(Host, From, Nick, Lang) when is_binary(Host), is_binary(Nick) ->
     LUser = exmpp_jid:lnode(From),
-    LServer = exmpp_jid:ldomain(From),
+    LServer = exmpp_jid:prep_domain(From),
     LUS = {LUser, LServer},
     F = fun() ->
 		case Nick of

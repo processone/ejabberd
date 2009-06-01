@@ -661,7 +661,7 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
 	jid ->
 		{User, Server, Resource} = Value,
 		    ((User == undefined) orelse (User == []) orelse (User == exmpp_jid:lnode(JID)))
-		    andalso ((Server == undefined) orelse (Server == []) orelse (Server == exmpp_jid:ldomain(JID)))
+		    andalso ((Server == undefined) orelse (Server == []) orelse (Server == exmpp_jid:prep_domain(JID)))
 		    andalso ((Resource == undefined) orelse (Resource == []) orelse (Resource == exmpp_jid:lresource(JID)));
 	subscription ->
 	    Value == Subscription;

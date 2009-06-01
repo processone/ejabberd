@@ -332,7 +332,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     case ejabberd_hooks:run_fold(filter_packet,
 				 {OrigFrom, OrigTo, OrigPacket}, []) of
 	{From, To, Packet} ->
-	    LDomain = exmpp_jid:ldomain(To),
+	    LDomain = exmpp_jid:prep_domain(To),
 	    case mnesia:dirty_read(route, LDomain) of
 		[] ->
 		    ejabberd_s2s:route(From, To, Packet);

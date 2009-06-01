@@ -702,7 +702,7 @@ announce_online(From, To, Packet) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'forbidden'),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    announce_online1(ejabberd_sm:get_vh_session_list(exmpp_jid:ldomain(To)),
+	    announce_online1(ejabberd_sm:get_vh_session_list(exmpp_jid:prep_domain(To)),
 			     exmpp_jid:domain_as_list(To),
 			     Packet)
     end.
@@ -837,7 +837,7 @@ send_motd(JID) ->
 		[#motd_users{}] ->
 		    ok;
 		_ ->
-		    Local = exmpp_jid:make(exmpp_jid:ldomain(JID)),
+		    Local = exmpp_jid:make(exmpp_jid:prep_domain(JID)),
 		    ejabberd_router:route(Local, JID, Packet),
 		    F = fun() ->
 				mnesia:write(#motd_users{us = US})

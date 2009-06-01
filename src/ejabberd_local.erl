@@ -76,7 +76,7 @@ start_link() ->
 process_iq(From, To, Packet) ->
     case exmpp_iq:xmlel_to_iq(Packet) of
 	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
-	    Host = exmpp_jid:ldomain(To),
+	    Host = exmpp_jid:prep_domain(To),
 	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ_Rec),
@@ -325,7 +325,7 @@ do_route(From, To, Packet) ->
 		<<"result">> -> ok;
 		_ ->
 		    ejabberd_hooks:run(local_send_to_resource_hook,
-				       exmpp_jid:ldomain(To),
+				       exmpp_jid:prep_domain(To),
 				       [From, To, Packet])
 	    end
 	end.

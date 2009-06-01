@@ -105,23 +105,23 @@ now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
 process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
     {Subscription, _Groups} =
 	ejabberd_hooks:run_fold(
-	  roster_get_jid_info, exmpp_jid:ldomain(To),
-	  {none, []}, [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), From]),
+	  roster_get_jid_info, exmpp_jid:prep_domain(To),
+	  {none, []}, [exmpp_jid:lnode(To), exmpp_jid:prep_domain(To), From]),
     if
 	(Subscription == both) or (Subscription == from) ->
 	    UserListRecord = ejabberd_hooks:run_fold(
-			       privacy_get_user_list, exmpp_jid:ldomain(To),
+			       privacy_get_user_list, exmpp_jid:prep_domain(To),
 			       #userlist{},
-			       [exmpp_jid:lnode(To), exmpp_jid:ldomain(To)]),
+			       [exmpp_jid:lnode(To), exmpp_jid:prep_domain(To)]),
 	    case ejabberd_hooks:run_fold(
-		   privacy_check_packet, exmpp_jid:ldomain(To),
+		   privacy_check_packet, exmpp_jid:prep_domain(To),
 		   allow,
-		   [exmpp_jid:lnode(To), exmpp_jid:ldomain(To), UserListRecord,
+		   [exmpp_jid:lnode(To), exmpp_jid:prep_domain(To), UserListRecord,
 		    {From, To,
 		     exmpp_presence:available()},
 		    out]) of
 		allow ->
-		    get_last(IQ_Rec, exmpp_jid:lnode(To), exmpp_jid:ldomain(To));
+		    get_last(IQ_Rec, exmpp_jid:lnode(To), exmpp_jid:prep_domain(To));
 		deny ->
 		    exmpp_iq:error(IQ_Rec, 'not-allowed')
 	    end;

@@ -218,7 +218,7 @@ get_admin_jids() ->
 		      try
 			  JID = exmpp_jid:parse(S),
 			  [{exmpp_jid:lnode(JID), 
-                exmpp_jid:ldomain(JID), 
+                exmpp_jid:prep_domain(JID), 
                 exmpp_jid:lresource(JID)}]
 		      catch
 			  _ ->

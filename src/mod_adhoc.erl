@@ -103,7 +103,7 @@ get_local_commands(Acc, _From, To, <<>>, Lang) ->
     end;
 
 get_local_commands(_Acc, From, To, ?NS_ADHOC_b, Lang) ->
-    ejabberd_hooks:run_fold(adhoc_local_items, exmpp_jid:ldomain(To), {result, []}, [From, To, Lang]);
+    ejabberd_hooks:run_fold(adhoc_local_items, exmpp_jid:prep_domain(To), {result, []}, [From, To, Lang]);
 
 get_local_commands(_Acc, _From, _To, <<"ping">>, _Lang) ->
     {result, []};
@@ -134,7 +134,7 @@ get_sm_commands(Acc, _From, To, <<>>, Lang) ->
     end;
 
 get_sm_commands(_Acc, From, To, ?NS_ADHOC_b, Lang) ->
-    ejabberd_hooks:run_fold(adhoc_sm_items, exmpp_jid:ldomain(To), {result, []}, [From, To, Lang]);
+    ejabberd_hooks:run_fold(adhoc_sm_items, exmpp_jid:prep_domain(To), {result, []}, [From, To, Lang]);
 
 get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -221,7 +221,7 @@ process_adhoc_request(From, To, IQ_Rec, Hook) ->
 	{error, Error} ->
             exmpp_iq:error(IQ_Rec, Error);
 	#adhoc_request{} = AdhocRequest ->
-	    case ejabberd_hooks:run_fold(Hook, exmpp_jid:ldomain(To), empty,
+	    case ejabberd_hooks:run_fold(Hook, exmpp_jid:prep_domain(To), empty,
 					 [From, To, AdhocRequest]) of
 		ignore ->
 		    ignore;

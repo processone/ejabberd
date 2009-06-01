@@ -231,7 +231,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		  %% The default is the standard behaviour in XEP-0114
 		  _ ->
 		      FromJID1 = exmpp_jid:parse(From),
-		      Server =  exmpp_jid:ldomain(FromJID1),
+		      Server =  exmpp_jid:prep_domain(FromJID1),
 			  case lists:member(Server, StateData#state.hosts) of
 				  true -> FromJID1;
 				  false -> error

@@ -1574,7 +1574,7 @@ check_privacy_route(From, StateData, FromRoute, To, Packet) ->
 %% Check if privacy rules allow this delivery
 is_privacy_allow(From, To, Packet, PrivacyList) ->
     User = exmpp_jid:lnode(To), 
-    Server = exmpp_jid:ldomain(To),
+    Server = exmpp_jid:prep_domain(To),
     allow == ejabberd_hooks:run_fold(
 	       privacy_check_packet, Server,
 	       allow,

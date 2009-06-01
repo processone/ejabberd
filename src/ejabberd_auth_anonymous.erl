@@ -180,7 +180,7 @@ remove_connection(SID, LUser, LServer) when is_list(LUser), is_list(LServer) ->
 
 register_connection(SID, JID, Info) when ?IS_JID(JID) ->
     LUser = exmpp_jid:lnode(JID),
-    LServer = exmpp_jid:ldomain(JID),
+    LServer = exmpp_jid:prep_domain(JID),
     case proplists:get_value(auth_module, Info) of
         undefined ->
             ok;
@@ -201,7 +201,7 @@ register_connection(SID, JID, Info) when ?IS_JID(JID) ->
 
 unregister_connection(SID, JID, _) when ?IS_JID(JID) ->
     LUser = exmpp_jid:lnode(JID),
-    LServer = exmpp_jid:ldomain(JID),
+    LServer = exmpp_jid:prep_domain(JID),
     purge_hook(anonymous_user_exist(LUser, LServer),
 	       LUser, LServer),
     remove_connection(SID, LUser, LServer).

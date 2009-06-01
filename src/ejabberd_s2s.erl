@@ -283,7 +283,7 @@ do_route(From, To, Packet) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
             NewPacket1 = exmpp_stanza:set_sender(Packet, From),
             NewPacket = exmpp_stanza:set_recipient(NewPacket1, To),
-	    MyServer = exmpp_jid:ldomain(From),
+	    MyServer = exmpp_jid:prep_domain(From),
 	    ejabberd_hooks:run(
 	      s2s_send_packet,
 	      MyServer,

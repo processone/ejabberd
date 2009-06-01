@@ -133,7 +133,7 @@ process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
     Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
 
     case ejabberd_hooks:run_fold(disco_local_items,
-				 exmpp_jid:ldomain(To),
+				 exmpp_jid:prep_domain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Items} ->
@@ -155,11 +155,11 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
     Identity = ejabberd_hooks:run_fold(disco_local_identity,
-				       exmpp_jid:ldomain(To),
+				       exmpp_jid:prep_domain(To),
 				       [],
 				       [From, To, Node, Lang]),
     case ejabberd_hooks:run_fold(disco_local_features,
-				 exmpp_jid:ldomain(To),
+				 exmpp_jid:prep_domain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Features} ->
@@ -274,7 +274,7 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
     case ejabberd_hooks:run_fold(disco_sm_items,
-				 exmpp_jid:ldomain(To),
+				 exmpp_jid:prep_domain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Items} ->
@@ -348,11 +348,11 @@ process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
     Identity = ejabberd_hooks:run_fold(disco_sm_identity,
-				       exmpp_jid:ldomain(To),
+				       exmpp_jid:prep_domain(To),
 				       [],
 				       [From, To, Node, Lang]),
     case ejabberd_hooks:run_fold(disco_sm_features,
-				 exmpp_jid:ldomain(To),
+				 exmpp_jid:prep_domain(To),
 				 empty,
 				 [From, To, Node, Lang]) of
 	{result, Features} ->
@@ -393,7 +393,7 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
 
 get_user_resources(JID) ->
     Rs = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID),
-                                        exmpp_jid:ldomain(JID)),
+                                        exmpp_jid:prep_domain(JID)),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
 			  ?XMLATTR('jid',

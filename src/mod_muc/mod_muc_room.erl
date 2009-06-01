@@ -3495,7 +3495,7 @@ add_to_log(Type, Data, StateData) ->
 
 tab_add_online_user(JID, StateData) ->
     LUser = exmpp_jid:lnode(JID),
-    LServer = exmpp_jid:ldomain(JID),
+    LServer = exmpp_jid:prep_domain(JID),
     US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
@@ -3507,7 +3507,7 @@ tab_add_online_user(JID, StateData) ->
 
 tab_remove_online_user(JID, StateData) when ?IS_JID(JID) ->
  LUser = exmpp_jid:lnode(JID),
- LServer = exmpp_jid:ldomain(JID),
+ LServer = exmpp_jid:prep_domain(JID),
     tab_remove_online_user({LUser, LServer, none},StateData);
 
 tab_remove_online_user({LUser, LServer,_}, StateData) ->
@@ -3520,7 +3520,7 @@ tab_remove_online_user({LUser, LServer,_}, StateData) ->
 
 tab_count_user(JID) ->
     LUser = exmpp_jid:lnode(JID),
-    LServer = exmpp_jid:ldomain(JID),
+    LServer = exmpp_jid:prep_domain(JID),
     US = {LUser, LServer},
     case catch ets:select(
 		 muc_online_users,

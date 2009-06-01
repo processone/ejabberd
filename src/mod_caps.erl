@@ -315,7 +315,7 @@ handle_cast({note_caps, From,
     %% lots of caps disco requests.
     %#jid{node = U, domain = S, resource = R} = From,
     U = exmpp_jid:lnode(From),
-    S = exmpp_jid:ldomain(From),
+    S = exmpp_jid:prep_domain(From),
     R = exmpp_jid:resource(From),
     BJID = exmpp_jid:jid_to_binary(From),
     mnesia:transaction(fun() ->

@@ -119,8 +119,8 @@ process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
 
 
 process_iq_get(From, To, IQ_Rec) ->
-    US = {exmpp_jid:lnode(From), exmpp_jid:ldomain(From)},
-    case catch ejabberd_hooks:run_fold(roster_get, exmpp_jid:ldomain(To), [], [US]) of
+    US = {exmpp_jid:lnode(From), exmpp_jid:prep_domain(From)},
+    case catch ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US]) of
 	Items when is_list(Items) ->
 	    XItems = lists:map(fun item_to_xml/1, Items),
 	    Result = #xmlel{ns = ?NS_ROSTER, name = 'query',
@@ -218,7 +218,7 @@ process_item_set(From, To, #xmlel{} = El) ->
     try
 	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
     User = exmpp_jid:lnode(From),
-    Server = exmpp_jid:ldomain(From),
+    Server = exmpp_jid:prep_domain(From),
     LServer = binary_to_list(Server),
 	{U0, S0, R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(User),
@@ -234,7 +234,7 @@ process_item_set(From, To, #xmlel{} = El) ->
 					   us = {User, Server},
 					   jid = LJID};
 			       [I] ->
-				   R = raw_to_record(exmpp_jid:ldomain(From), I),
+				   R = raw_to_record(exmpp_jid:prep_domain(From), I),
 				   case R of
 				       %% Bad JID in database:
 				       error ->
@@ -263,12 +263,12 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    %% If the item exist in shared roster, take the
 		    %% subscription information from there:
 		    Item3 = ejabberd_hooks:run_fold(roster_process_item,
-						    exmpp_jid:ldomain(From), Item2, [exmpp_jid:ldomain(From)]),
+						    exmpp_jid:prep_domain(From), Item2, [exmpp_jid:prep_domain(From)]),
 		    {Item, Item3}
 	    end,
 	case odbc_queries:sql_transaction(LServer, F) of
 	    {atomic, {OldItem, Item}} ->
-		push_item(exmpp_jid:node(From), exmpp_jid:ldomain(From), To, Item),
+		push_item(exmpp_jid:node(From), exmpp_jid:prep_domain(From), To, Item),
 		case Item#roster.subscription of
 		    remove ->
 			IsTo = case OldItem#roster.subscription of
@@ -774,7 +774,7 @@ get_in_pending_subscriptions(Ls, User, Server)
 		    end,
 		    lists:flatmap(
 		      fun(I) ->
-			      case raw_to_record(exmpp_jid:ldomain(JID), I) of
+			      case raw_to_record(exmpp_jid:prep_domain(JID), I) of
 				  %% Bad JID in database:
 				  error ->
 				      [];
@@ -1020,7 +1020,7 @@ user_roster(User, Server, Query, Lang) ->
 build_contact_jid_td({U, S, R}) ->
     %% Convert {U, S, R} into {jid, U, S, R, U, S, R}:
     ContactJID = exmpp_jid:make(U, S, R),
-    JIDURI = case {exmpp_jid:lnode(ContactJID), exmpp_jid:ldomain(ContactJID)} of
+    JIDURI = case {exmpp_jid:lnode(ContactJID), exmpp_jid:prep_domain(ContactJID)} of
 		 {undefined, _} -> "";
 		 {CUser, CServer} ->
 		     CUser_S = binary_to_list(CUser),

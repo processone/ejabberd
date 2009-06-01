@@ -299,7 +299,7 @@ get_sm_items(Acc, From, To, Node, Lang) ->
 
 get_user_resources(BareJID) ->
     Rs = ejabberd_sm:get_user_resources(exmpp_jid:lnode(BareJID), 
-                                        exmpp_jid:ldomain(BareJID)),
+                                        exmpp_jid:prep_domain(BareJID)),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
 		       [?XMLATTR('jid', 
@@ -1641,7 +1641,7 @@ set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     %% TODO: Update time format to XEP-0202: Entity Time
     FLast =
 	case ejabberd_sm:get_user_resources(exmpp_jid:lnode(User), 
-                                       exmpp_jid:ldomain(Server)) of
+                                       exmpp_jid:prep_domain(Server)) of
 	    [] ->
 		_US = {User, Server},
 		case get_last_info(User, Server) of
@@ -1676,13 +1676,13 @@ set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
     Resources = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID), 
-                                               exmpp_jid:ldomain(JID)),
+                                               exmpp_jid:prep_domain(JID)),
     IPs1 = [ejabberd_sm:get_user_ip(exmpp_jid:full(JID,Resource)) 
                 || Resource <- Resources],
     IPs = [inet_parse:ntoa(IP)++":"++integer_to_list(Port) || {IP, Port} <- IPs1],
 
     Items = ejabberd_hooks:run_fold(roster_get, 
-                                    exmpp_jid:ldomain(JID), 
+                                    exmpp_jid:prep_domain(JID), 
                                     [], 
                                     [{list_to_binary(User), list_to_binary(Server)}]),
     Rostersize = integer_to_list(erlang:length(Items)),
