@@ -1923,7 +1923,7 @@ check_from(El, FromJID) ->
 		case exmpp_jid:prep_resource(JIDEl) of 
 		    undefined ->
 			%% Matching JID: The stanza is ok
-			case exmpp_jid:compare_bare_jids(JIDEl, FromJID) of
+			case exmpp_jid:bare_compare(JIDEl, FromJID) of
 			    true ->
 				El;
 			   false ->

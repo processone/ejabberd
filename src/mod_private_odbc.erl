@@ -115,7 +115,7 @@ check_domain(From, _To, _IQ_Rec) ->
 
 % the iq can't be directed to another jid
 check_user(From, To, _IQ_Rec) ->
-    case exmpp_jid:compare_bare_jids(From, To) of
+    case exmpp_jid:bare_compare(From, To) of
 	true -> ok;
 	false -> {error, 'forbidden'}
     end.
