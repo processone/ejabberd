@@ -333,7 +333,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				    send_element(StateData,
 				      exmpp_xml:append_child(Header,
 					exmpp_stream:error('policy-violation',
-					  "en", "Use of STARTTLS required"))),
+					  {"en", "Use of STARTTLS required"}))),
 				    {stop, normal, StateData};
 				true ->
 				    send_element(StateData, Header),
@@ -598,7 +598,7 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 	    if
 		(SockMod == gen_tcp) and TLSRequired ->
 		    send_element(StateData, exmpp_stream:error(
-			'policy-violation', "en", "Use of STARTTLS required")),
+			'policy-violation', {"en", "Use of STARTTLS required"})),
 		    send_element(StateData, exmpp_stream:closing()),
 		    {stop, normal, StateData};
 		true ->

@@ -2213,7 +2213,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 					            SD;
                      %% TODO: <<>> or 'undefined' ?
                      %% TODO: double case on the E var, because 
-                     %%       exmpp_jid:lnode/1 can't be used in guards
+                     %%       exmpp_jid:prep_node/1 can't be used in guards
 					 %% If the provided JID does not have username,
 					 %% forget the affiliation completely
                             _ -> case E of 

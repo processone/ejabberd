@@ -433,7 +433,7 @@ send_loop(State) ->
 			    ServerHost ->  %% local contacts
 				case ejabberd_sm:get_user_resources(U, S) of
 				[] -> %% offline
-				    PeerJID = exmpp_jlib:make_jid(U, S, R),
+				    PeerJID = exmpp_jid:make(U, S, R),
 				    self() ! {presence, User, Server, [Resource], PeerJID};
 				_ -> %% online
 				    % this is already handled by presence probe
