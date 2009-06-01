@@ -163,8 +163,8 @@ process_iq(InitiatorJID, #iq{type = set, payload = SubEl, ns = ?NS_BYTESTREAMS} 
 	    case catch exmpp_jid:parse(exmpp_xml:get_cdata_as_string(ActivateEl)) of
 		TargetJID when ?IS_JID(TargetJID), SID /= "",
 		               length(SID) =< 128, TargetJID /= InitiatorJID ->
-		    Target = exmpp_jid:prepd_jid_to_list(TargetJID),
-		    Initiator = exmpp_jid:prepd_jid_to_list(InitiatorJID),
+		    Target = exmpp_jid:prep_to_list(TargetJID),
+		    Initiator = exmpp_jid:prep_to_list(InitiatorJID),
 		    SHA1 = sha:sha(SID ++ Initiator ++ Target),
 		    case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID, TargetJID, ServerHost) of
 			ok ->
