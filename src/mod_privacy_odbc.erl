@@ -445,7 +445,7 @@ parse_items([El = #xmlel{name = item} | Els], Res) ->
 			 case T of
 			     "jid" ->
 				 try
-				     JID = exmpp_jid:parse_jid(V),
+				     JID = exmpp_jid:parse(V),
 				     I1#listitem{
 				       type = jid,
 				       value = jlib:short_prepd_jid(JID)}
@@ -693,7 +693,7 @@ raw_to_item({SType, SValue, SAction, SOrder, SMatchAll, SMatchIQ,
 	    "n" ->
 		{none, none};
 	    "j" ->
-		JID = exmpp_jid:parse_jid(SValue),
+		JID = exmpp_jid:parse(SValue),
 		{jid, jlib:short_prepd_jid(JID)};
 	    "g" ->
 		{group, SValue};

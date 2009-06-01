@@ -195,7 +195,7 @@ process_offline(Server, To, #xmlel{children = Els}) ->
 					 exmpp_jid:make(Server);
 				     _ ->
 					 try
-					     exmpp_jid:parse_jid(FromS)
+					     exmpp_jid:parse(FromS)
 					 catch
 					     _ ->
 						 error

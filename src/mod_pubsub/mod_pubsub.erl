@@ -1310,7 +1310,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 		       {_, _, _} -> [SNode];
 		       _ -> string:tokens(SNode, "/")
 		   end,
-	    Subscriber = exmpp_jid:parse_jid(SSubscriber),
+	    Subscriber = exmpp_jid:parse(SSubscriber),
 	    Allow = case SAllow of
 			"1" -> true;
 			"true" -> true;
@@ -1587,7 +1587,7 @@ delete_node(Host, Node, Owner) ->
 %%</ul>
 subscribe_node(Host, Node, From, JID) ->
     Subscriber = try
-	jlib:short_prepd_jid(exmpp_jid:parse_jid(JID))
+	jlib:short_prepd_jid(exmpp_jid:parse(JID))
     catch
 	_:_ ->
 	    {undefined, undefined, undefined}
@@ -1684,7 +1684,7 @@ subscribe_node(Host, Node, From, JID) ->
 %%<li>The request specifies a subscription ID that is not valid or current.</li>
 %%</ul>
 unsubscribe_node(Host, Node, From, JID, SubId) when is_list(JID) ->
-    Subscriber = try jlib:short_prepd_jid(exmpp_jid:parse_jid(JID))
+    Subscriber = try jlib:short_prepd_jid(exmpp_jid:parse(JID))
     catch
 	_:_ ->
 	    {undefined, undefined, undefined}
@@ -2126,7 +2126,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 			  case El of
 			      #xmlel{name = 'affiliation', attrs = Attrs} ->
 				  JID = try
-				      exmpp_jid:parse_jid(
+				      exmpp_jid:parse(
 					exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""))
 				  catch
 				      _:_ -> error
@@ -2297,7 +2297,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 			  case El of
 			      #xmlel{name = 'subscription', attrs = Attrs} ->
 				  JID = try
-				      exmpp_jid:parse_jid(
+				      exmpp_jid:parse(
 					exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""))
 				  catch
 				      _:_ ->

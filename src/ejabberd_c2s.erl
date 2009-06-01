@@ -840,7 +840,7 @@ session_established2(El, StateData) ->
 		    undefined ->
             exmpp_jid:bare(StateData#state.jid);
 		    _ ->
-			exmpp_jid:parse_jid(To)
+			exmpp_jid:parse(To)
 		end,
 	NewEl = case exmpp_stanza:get_lang(El) of
 		    undefined ->
@@ -1919,7 +1919,7 @@ check_from(El, FromJID) ->
 	    El;
 	{value, SJID} ->
 	    try
-		JIDEl = exmpp_jid:parse_jid(SJID),
+		JIDEl = exmpp_jid:parse(SJID),
 		case exmpp_jid:lresource(JIDEl) of 
 		    undefined ->
 			%% Matching JID: The stanza is ok

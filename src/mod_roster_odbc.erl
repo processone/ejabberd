@@ -216,7 +216,7 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
 
 process_item_set(From, To, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:parse_jid(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
+	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
     User = exmpp_jid:lnode(From),
     Server = exmpp_jid:ldomain(From),
     LServer = binary_to_list(Server),
@@ -696,7 +696,7 @@ set_items(User, Server, #xmlel{children = Els}) when is_binary(User), is_binary(
 
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:parse_jid(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
+	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
 	{U0, S0, R0} = LJID = jlib:short_prepd_jid(JID1),
 	Username = ejabberd_odbc:escape(LUser),
 	SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_binary(U0, S0, R0)),
@@ -854,7 +854,7 @@ get_jid_info(_, User, Server, JID) when is_binary(User), is_binary(Server) ->
 raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 			_SServer, _SSubscribe, _SType}) when is_binary(LServer) ->
     try
-	JID = exmpp_jid:parse_jid(SJID),
+	JID = exmpp_jid:parse(SJID),
 	LJID = jlib:short_prepd_jid(JID),
 	Subscription = case SSubscription of
 			   "B" -> both;
@@ -1045,7 +1045,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 		    error;
 		{value, {_, SJID}} ->
 		    try
-			JID = exmpp_jid:parse_jid(SJID),
+			JID = exmpp_jid:parse(SJID),
 			user_roster_subscribe_jid(User, Server, JID),
 			ok
 		    catch

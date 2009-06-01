@@ -120,7 +120,7 @@ get_auth(Auth) ->
     case Auth of
 	{SJID, P} ->
 	    try
-		JID = exmpp_jid:parse_jid(SJID),
+		JID = exmpp_jid:parse(SJID),
                 U = exmpp_jid:node_as_list(JID),
                 S = exmpp_jid:domain_as_list(JID),
 		case ejabberd_auth:check_password(U, S, P) of
@@ -1176,7 +1176,7 @@ string_to_spec("user_regexp", Val) ->
 string_to_spec("server_regexp", Val) ->
     {server_regexp, Val};
 string_to_spec("node_regexp", Val) ->
-    JID = exmpp_jid:parse_jid(Val),
+    JID = exmpp_jid:parse(Val),
     U = exmpp_jid:lnode_as_list(JID),
     S = exmpp_jid:ldomain_as_list(JID),
     undefined = exmpp_jid:resource(JID),
@@ -1186,7 +1186,7 @@ string_to_spec("user_glob", Val) ->
 string_to_spec("server_glob", Val) ->
     {server_glob, Val};
 string_to_spec("node_glob", Val) ->
-    JID = exmpp_jid:parse_jid(Val),
+    JID = exmpp_jid:parse(Val),
     U = exmpp_jid:lnode_as_list(JID),
     S = exmpp_jid:ldomain_as_list(JID),
     undefined = exmpp_jid:resource(JID),
@@ -1199,7 +1199,7 @@ string_to_spec("raw", Val) ->
     NewSpec.
 
 string_to_spec2(ACLName, Val) ->
-    JID = exmpp_jid:parse_jid(Val),
+    JID = exmpp_jid:parse(Val),
     U = exmpp_jid:lnode_as_list(JID),
     S = exmpp_jid:ldomain_as_list(JID),
     undefined = exmpp_jid:resource(JID),
@@ -1402,7 +1402,7 @@ list_users_parse_query(Query, Host) ->
 	    {value, {_, Password}} =
 		lists:keysearch("newuserpassword", 1, Query),
 	    try
-		JID = exmpp_jid:parse_jid(Username++"@"++Host),
+		JID = exmpp_jid:parse(Username++"@"++Host),
                 User = exmpp_jid:node_as_list(JID),
                 Server = exmpp_jid:domain_as_list(JID),
 		case ejabberd_auth:try_register(User, Server, Password) of

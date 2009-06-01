@@ -940,7 +940,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 				  USs;
 			      _ ->
 				  try
-				      JID = exmpp_jid:parse_jid(SJID),
+				      JID = exmpp_jid:parse(SJID),
 				      [{exmpp_jid:lnode_as_list(JID), exmpp_jid:ldomain_as_list(JID)} | USs]
 				  catch
 				      _ ->

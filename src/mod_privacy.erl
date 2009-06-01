@@ -444,7 +444,7 @@ parse_items([El = #xmlel{name = item} | Els], Res) ->
 			 case T of
 			     "jid" ->
 				 try
-				     JID = exmpp_jid:parse_jid(V),
+				     JID = exmpp_jid:parse(V),
 				     I1#listitem{
 				       type = jid,
 				       value = jlib:short_prepd_jid(JID)}

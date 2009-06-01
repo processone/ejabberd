@@ -632,8 +632,8 @@ bounce_messages(Reason) ->
                       attrs = [?XMLATTR('code', <<"502">>)],
                       children = [#xmlcdata{cdata = Reason}]},
 	            Err = exmpp_stanza:reply_with_error(El, Error),
-		    From = exmpp_jid:parse_jid(exmpp_stanza:get_sender(El)),
-		    To = exmpp_jid:parse_jid(exmpp_stanza:get_recipient(El)),
+		    From = exmpp_jid:parse(exmpp_stanza:get_sender(El)),
+		    To = exmpp_jid:parse(exmpp_stanza:get_recipient(El)),
 		    ejabberd_router:route(To, From, Err)
 	    end,
 	    bounce_messages(Reason)

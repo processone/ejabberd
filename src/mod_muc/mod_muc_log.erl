@@ -271,7 +271,7 @@ build_filename_string(TimeStamp, OutDir, RoomJID, DirType, DirName, FileFormat) 
     {Fd, Fn, Fnrel}.
 
 get_room_name(RoomJID) ->
-    JID = exmpp_jid:parse_jid(RoomJID),
+    JID = exmpp_jid:parse(RoomJID),
     exmpp_jid:node_as_list(JID).
 
 %% calculate day before

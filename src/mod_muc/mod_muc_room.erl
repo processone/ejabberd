@@ -2294,7 +2294,7 @@ find_changed_items(UJID, UAffiliation, URole,
 		   Lang, StateData, Res) ->
     TJID = case exmpp_xml:get_attribute_as_binary(Item, 'jid',false) of
 	       S when S =/= false ->
-		   try exmpp_jid:parse_jid(S) of
+		   try exmpp_jid:parse(S) of
 		       J ->
 			   {value, J}
             catch
@@ -3344,7 +3344,7 @@ check_invitation(From, Els, Lang, StateData) ->
             _ -> 
                 throw({error, 'bad-request'})
             end,
-    JID = try exmpp_jid:parse_jid(exmpp_xml:get_attribute_as_binary(InviteEl,
+    JID = try exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(InviteEl,
                                                             'to',
                                                             false)) of
 	        JID1 -> JID1
@@ -3447,7 +3447,7 @@ check_decline_invitation(Packet) ->
     #xmlel{ns = ?NS_MUC_USER} = XEl = exmpp_xml:get_element(Packet, 'x'),
     DEl = exmpp_xml:get_element(XEl, 'decline'),
     ToString = exmpp_xml:get_attribute_as_binary(DEl, 'to', false),
-    ToJID = exmpp_jid:parse_jid(ToString),
+    ToJID = exmpp_jid:parse(ToString),
     {true, {Packet, XEl, DEl, ToJID}}.
 
 %% Send the decline to the inviter user.

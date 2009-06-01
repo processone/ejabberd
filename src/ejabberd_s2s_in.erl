@@ -371,7 +371,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error;
 		F ->
 		    try
-			exmpp_jid:parse_jid(F)
+			exmpp_jid:parse(F)
 		    catch
 			_Exception1 -> error
 		    end
@@ -381,7 +381,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    error;
 		T ->
 		    try
-			exmpp_jid:parse_jid(T)
+			exmpp_jid:parse(T)
 		    catch
 			_Exception2 -> error
 		    end
@@ -641,7 +641,7 @@ get_cert_domains(Cert) ->
 			  end,
 		      if
 			  D /= error ->
-                  JID  = exmpp_jid:parse_jid(D),
+                  JID  = exmpp_jid:parse(D),
 			      case {exmpp_jid:lnode_as_list(JID),
                         exmpp_jid:ldomain_as_list(JID),
                         exmpp_jid:lresource_as_list(JID)} of
@@ -677,7 +677,7 @@ get_cert_domains(Cert) ->
 				    case 'XmppAddr':decode(
 					   'XmppAddr', XmppAddr) of
 					{ok, D} when is_binary(D) ->
-                        JID2 = exmpp_jid:parse_jid(binary_to_list(D)),  
+                        JID2 = exmpp_jid:parse(binary_to_list(D)),  
 					    case {exmpp_jid:lnode_as_list(JID2),
                               exmpp_jid:ldomain_as_list(JID2),
                               exmpp_jid:lresource_as_list(JID2)} of
@@ -695,7 +695,7 @@ get_cert_domains(Cert) ->
 					    []
 				    end;
 			       ({dNSName, D}) when is_list(D) ->
-                    JID3 = exmpp_jid:parse_jid(D),
+                    JID3 = exmpp_jid:parse(D),
 				    case {exmpp_jid:lnode_as_list(JID3),
                           exmpp_jid:ldomain_as_list(JID3),
                           exmpp_jid:lresource_as_list(JID3)} of

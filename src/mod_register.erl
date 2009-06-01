@@ -266,7 +266,7 @@ send_registration_notifications(UJID) ->
 	    lists:foreach(
 	      fun(S) ->
                       try
-                          JID = exmpp_jid:parse_jid(S),
+                          JID = exmpp_jid:parse(S),
                           ejabberd_router:route(
                             exmpp_jid:make(Host),
                             JID,

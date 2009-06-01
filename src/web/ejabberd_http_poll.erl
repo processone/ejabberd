@@ -425,12 +425,12 @@ get_jid("from", ParsedPacket) ->
 	undefined ->
             exmpp_jid:make();
 	From ->
-	    exmpp_jid:parse_jid(From)
+	    exmpp_jid:parse(From)
     end;
 get_jid("to", ParsedPacket) ->
     case exmpp_stanza:get_recipient(ParsedPacket) of
 	undefined ->
             exmpp_jid:make();
 	From ->
-	    exmpp_jid:parse_jid(From)
+	    exmpp_jid:parse(From)
     end.

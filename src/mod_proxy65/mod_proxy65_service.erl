@@ -160,7 +160,7 @@ process_iq(InitiatorJID, #iq{type = set, payload = SubEl, ns = ?NS_BYTESTREAMS} 
 	allow ->
 	    ActivateEl = exmpp_xml:get_path(SubEl, [{element, 'activate'}]),
 	    SID = exmpp_xml:get_attribute_as_list(SubEl, 'sid', ""),
-	    case catch exmpp_jid:parse_jid(exmpp_xml:get_cdata_as_string(ActivateEl)) of
+	    case catch exmpp_jid:parse(exmpp_xml:get_cdata_as_string(ActivateEl)) of
 		TargetJID when ?IS_JID(TargetJID), SID /= "",
 		               length(SID) =< 128, TargetJID /= InitiatorJID ->
 		    Target = exmpp_jid:prepd_jid_to_list(TargetJID),

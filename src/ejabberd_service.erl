@@ -227,10 +227,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		  %% when accept packets from any address.
 		  %% In this case, the component can send packet of
 		  %% behalf of the server users.
-		  false -> exmpp_jid:parse_jid(From);
+		  false -> exmpp_jid:parse(From);
 		  %% The default is the standard behaviour in XEP-0114
 		  _ ->
-		      FromJID1 = exmpp_jid:parse_jid(From),
+		      FromJID1 = exmpp_jid:parse(From),
 		      Server =  exmpp_jid:ldomain(FromJID1),
 			  case lists:member(Server, StateData#state.hosts) of
 				  true -> FromJID1;
@@ -240,7 +240,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
     To = exmpp_stanza:get_recipient(El),
     ToJID = case To of
 		undefined -> error;
-		_ -> exmpp_jid:parse_jid(To)
+		_ -> exmpp_jid:parse(To)
 	    end,
     if ((El#xmlel.name == 'iq') or
 	(El#xmlel.name == 'message') or
