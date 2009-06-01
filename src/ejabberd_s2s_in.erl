@@ -644,7 +644,7 @@ get_cert_domains(Cert) ->
                   JID  = exmpp_jid:parse(D),
 			      case {exmpp_jid:prep_node_as_list(JID),
                         exmpp_jid:prep_domain_as_list(JID),
-                        exmpp_jid:lresource_as_list(JID)} of
+                        exmpp_jid:prep_resource_as_list(JID)} of
 				      {undefined, LD, undefined} ->
 				      [LD];
 				  _ ->
@@ -680,7 +680,7 @@ get_cert_domains(Cert) ->
                         JID2 = exmpp_jid:parse(binary_to_list(D)),  
 					    case {exmpp_jid:prep_node_as_list(JID2),
                               exmpp_jid:prep_domain_as_list(JID2),
-                              exmpp_jid:lresource_as_list(JID2)} of
+                              exmpp_jid:prep_resource_as_list(JID2)} of
 						    { undefined, LD, undefined} ->
 						    case idna:domain_utf8_to_ascii(LD) of
 							false ->
@@ -698,7 +698,7 @@ get_cert_domains(Cert) ->
                     JID3 = exmpp_jid:parse(D),
 				    case {exmpp_jid:prep_node_as_list(JID3),
                           exmpp_jid:prep_domain_as_list(JID3),
-                          exmpp_jid:lresource_as_list(JID3)} of
+                          exmpp_jid:prep_resource_as_list(JID3)} of
 					{undefined, LD, undefined} ->
 					    [LD];
 					_ ->

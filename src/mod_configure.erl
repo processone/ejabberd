@@ -1593,7 +1593,7 @@ set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     LServer = exmpp_jid:prep_domain_as_list(JID), 
     true = (LServer == Host) orelse (get_permission_level(From) == global),
     %% Code copied from ejabberd_sm.erl
-    case exmpp_jid:lresource_as_list(JID) of
+    case exmpp_jid:prep_resource_as_list(JID) of
 	undefined -> 
 	    SIDs = mnesia:dirty_select(session,
 				       [{#session{sid = '$1', usr = {LUser, LServer, '_'}, _ = '_'}, [], ['$1']}]),

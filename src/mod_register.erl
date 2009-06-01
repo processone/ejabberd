@@ -89,7 +89,7 @@ unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
 process_iq(From, To, IQ) ->
     process_iq(From, To, IQ, {exmpp_jid:prep_node_as_list(From),
                               exmpp_jid:prep_domain_as_list(From),
-                              exmpp_jid:lresource_as_list(From)}).
+                              exmpp_jid:prep_resource_as_list(From)}).
 
 process_iq(From, To,
 	   #iq{type = Type, lang = Lang, payload = SubEl} = IQ_Rec,
