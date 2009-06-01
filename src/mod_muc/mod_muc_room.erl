@@ -3533,7 +3533,7 @@ tab_count_user(JID) ->
     
     
 jid_replace_resource(JID, Resource) ->
-    exmpp_jid:bare_jid_to_jid(JID, Resource).
+    exmpp_jid:full(JID, Resource).
 
 
 

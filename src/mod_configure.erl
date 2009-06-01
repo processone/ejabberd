@@ -304,7 +304,7 @@ get_user_resources(BareJID) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
 		       [?XMLATTR('jid', 
                          exmpp_jid:jid_to_binary(
-                                  exmpp_jid:bare_jid_to_jid(BareJID, R))),
+                                  exmpp_jid:full(BareJID, R))),
 			    ?XMLATTR('name', 
                          exmpp_jid:lnode(BareJID))]}
 	      end, lists:sort(Rs)).
@@ -1677,7 +1677,7 @@ set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
 
     Resources = ejabberd_sm:get_user_resources(exmpp_jid:lnode(JID), 
                                                exmpp_jid:ldomain(JID)),
-    IPs1 = [ejabberd_sm:get_user_ip(exmpp_jid:bare_jid_to_jid(JID,Resource)) 
+    IPs1 = [ejabberd_sm:get_user_ip(exmpp_jid:full(JID,Resource)) 
                 || Resource <- Resources],
     IPs = [inet_parse:ntoa(IP)++":"++integer_to_list(Port) || {IP, Port} <- IPs1],
 

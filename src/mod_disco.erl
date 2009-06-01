@@ -397,7 +397,7 @@ get_user_resources(JID) ->
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
 			  ?XMLATTR('jid',
-			    exmpp_jid:jid_to_binary(exmpp_jid:bare_jid_to_jid(JID, R))),
+			    exmpp_jid:jid_to_binary(exmpp_jid:full(JID, R))),
 			  ?XMLATTR('name', exmpp_jid:lnode(JID))
 			]}
 	      end, lists:sort(Rs)).

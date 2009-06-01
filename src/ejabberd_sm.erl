@@ -465,7 +465,7 @@ do_route(From, To, Packet) ->
 			      fun({_, R}) ->
 				      do_route(
 					From,
-					exmpp_jid:bare_jid_to_jid(To, R),
+					exmpp_jid:full(To, R),
 					Packet)
 			      end, PResources);
 		       true ->
@@ -479,7 +479,7 @@ do_route(From, To, Packet) ->
 		    lists:foreach(
 		      fun(R) ->
 			      do_route(From,
-				       exmpp_jid:bare_jid_to_jid(To, R),
+				       exmpp_jid:full(To, R),
 				       Packet)
 		      end, get_user_resources(exmpp_jid:lnode(To), 
                                       exmpp_jid:ldomain(To)));
