@@ -707,7 +707,7 @@ remove_user(User, Server)
 %% Both or To, send a "unsubscribe" presence stanza.
 send_unsubscription_to_rosteritems(LUser, LServer) ->
     RosterItems = get_user_roster([], {LUser, LServer}),
-    From = jlib:make_jid({LUser, LServer, ""}),
+    From = exmpp_jid:make(LUser, LServer, ""),
     lists:foreach(fun(RosterItem) ->
 			  send_unsubscribing_presence(From, RosterItem)
 		  end,
@@ -725,16 +725,18 @@ send_unsubscribing_presence(From, Item) ->
 		 from -> true;
 		 _ -> false
 	     end,
+	{INode, IDom, IRes} = Item#roster.jid,
+	SendToJID = exmpp_jid:make(INode, IDom, IRes),
     if IsTo ->
 	    send_presence_type(
 	      jlib:jid_remove_resource(From),
-	      jlib:make_jid(Item#roster.jid), "unsubscribe");
+	      SendToJID, "unsubscribe");
        true -> ok
     end,
     if IsFrom ->
 	    send_presence_type(
 	      jlib:jid_remove_resource(From),
-	      jlib:make_jid(Item#roster.jid), "unsubscribed");
+	      SendToJID, "unsubscribed");
        true -> ok
     end,
     ok.
