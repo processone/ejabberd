@@ -92,7 +92,7 @@ export_roster(Server, Output) ->
       fun(Host, #roster{usj = {LUser, LServer, {N, D, Res} = _LJID}} = R)
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
-	      SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(N, D, Res)),
+	      SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, Res)),
 	      ItemVals = record_to_string(R),
 	      ItemGroups = groups_to_string(R),
 	      ["delete from rosterusers "
@@ -125,8 +125,8 @@ export_offline(Server, Output) ->
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      Packet0 = exmpp_stanza:set_jids(Packet,
-		exmpp_jid:jid_to_list(From),
-		exmpp_jid:jid_to_list(To)),
+		exmpp_jid:to_list(From),
+		exmpp_jid:to_list(To)),
 	      Packet1 = exmpp_xml:append_child(Packet0,
 		jlib:timestamp_to_xml(
                   calendar:now_to_universal_time(TimeStamp))),
@@ -313,7 +313,7 @@ record_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
 			 ask = Ask,
 			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(N, D, R)),
+    SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, R)),
     Nick = ejabberd_odbc:escape(Name),
     SSubscription = case Subscription of
 			both -> "B";
@@ -349,7 +349,7 @@ record_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
 groups_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(exmpp_jid:jid_to_list(N, D, R)),
+    SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, R)),
     [["("
       "'", Username, "',"
       "'", SJID, "',"

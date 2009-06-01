@@ -2777,8 +2777,8 @@ max_items(Options) ->
 
 -define(JLIST_CONFIG_FIELD(Label, Var, Opts),
 	?LISTXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
-		    exmpp_jid:jid_to_list(get_option(Options, Var)),
-		    [exmpp_jid:jid_to_list(O) || O <- Opts])).
+		    exmpp_jid:to_list(get_option(Options, Var)),
+		    [exmpp_jid:to_list(O) || O <- Opts])).
 
 -define(ALIST_CONFIG_FIELD(Label, Var, Opts),
 	?LISTXFIELD(Label, "pubsub#" ++ atom_to_list(Var),

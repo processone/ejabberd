@@ -1197,9 +1197,9 @@ build_contact_jid_td({U, S, R}) ->
 	     end,
     case JIDURI of
 	[] ->
-	    ?XAC('td', [?XMLATTR('class', <<"valign">>)], exmpp_jid:jid_to_list(ContactJID));
+	    ?XAC('td', [?XMLATTR('class', <<"valign">>)], exmpp_jid:to_list(ContactJID));
 	URI when is_list(URI) ->
-	    ?XAE('td', [?XMLATTR('class', <<"valign">>)], [?AC(JIDURI, exmpp_jid:jid_to_list(ContactJID))])
+	    ?XAE('td', [?XMLATTR('class', <<"valign">>)], [?AC(JIDURI, exmpp_jid:to_list(ContactJID))])
     end.
 
 %% @spec (User, Server, Items, Query) -> ok | nothing | error
@@ -1277,7 +1277,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 			      {U, S, R} = JID,
 			      UJID = exmpp_jid:make(User, Server),
 			      Attrs1 = exmpp_xml:set_attribute_in_list([],
-				'jid', exmpp_jid:jid_to_list(U, S, R)),
+				'jid', exmpp_jid:to_list(U, S, R)),
 			      Attrs2 = exmpp_xml:set_attribute_in_list(Attrs1,
 				'subscription', "remove"),
 			      Item = #xmlel{ns = ?NS_ROSTER, name = 'item',

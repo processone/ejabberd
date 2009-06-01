@@ -398,7 +398,7 @@ ldap_attribute_to_vcard(_, _) ->
            [?XMLATTR('type', <<"form">>)], children =
 	  [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 	    [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search users in ") ++
-	      exmpp_jid:jid_to_list(JID))}]},
+	      exmpp_jid:to_list(JID))}]},
 	   #xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
 	    [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Fill in fields to search "
 					    "for any matching Jabber User"))}]}
@@ -525,7 +525,7 @@ search_result(Lang, JID, State, Data) ->
     SearchReported = State#state.search_reported,
     Header = [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 	       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search Results for ") ++
-		 exmpp_jid:jid_to_list(JID))}]},
+		 exmpp_jid:to_list(JID))}]},
 	      #xmlel{ns = ?NS_DATA_FORMS, name = 'reported', children =
 	       [?TLFIELD(<<"text-single">>, "Jabber ID", <<"jid">>)] ++
 	       lists:map(

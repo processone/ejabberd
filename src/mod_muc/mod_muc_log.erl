@@ -795,7 +795,7 @@ get_room_info(RoomJID, Opts) ->
 	    {value, {_, SA}} -> SA;
 	    false -> ""
 	end,
-    #room{jid = exmpp_jid:jid_to_list(RoomJID),
+    #room{jid = exmpp_jid:to_list(RoomJID),
 	  title = Title,
 	  subject = Subject,
 	  subject_author = SubjectAuthor,

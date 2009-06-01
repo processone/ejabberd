@@ -59,7 +59,7 @@ create_captcha(Id, SID, From, To, Lang, Args)
     case create_image() of
 	{ok, Type, Key, Image} ->
 	    B64Image = jlib:encode_base64(binary_to_list(Image)),
-	    JID = exmpp_jid:jid_to_list(From),
+	    JID = exmpp_jid:to_list(From),
 	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
 	    Data = {xmlelement, "data",
 		    [{"xmlns", ?NS_BOB}, {"cid", CID},
@@ -70,7 +70,7 @@ create_captcha(Id, SID, From, To, Lang, Args)
 		 %% ?NS_DATA_FORMS is 'jabber:x:data'
 		 [{xmlelement, "x", [{"xmlns", "jabber:x:data"}, {"type", "form"}],
 		   [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}),
-		    ?VFIELD("hidden", "from", {xmlcdata, exmpp_jid:jid_to_list(To)}),
+		    ?VFIELD("hidden", "from", {xmlcdata, exmpp_jid:to_list(To)}),
 		    ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
 		    ?VFIELD("hidden", "sid", {xmlcdata, SID}),
 		    {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],

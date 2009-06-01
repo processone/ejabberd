@@ -747,7 +747,7 @@ item_to_raw(#listitem{type = Type,
 		{"n", ""};
 	    jid ->
 		{N0, D0, R0} = Value,
-		{"j", exmpp_jid:jid_to_list(N0, D0, R0)};
+		{"j", exmpp_jid:to_list(N0, D0, R0)};
 	    group ->
 		{"g", Value};
 	    subscription ->

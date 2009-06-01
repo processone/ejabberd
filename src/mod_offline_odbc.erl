@@ -440,7 +440,7 @@ user_queue_parse_query(Username, LServer, Query) ->
     end.
 
 us_to_list({User, Server}) ->
-    exmpp_jid:jid_to_list(User, Server).
+    exmpp_jid:to_list(User, Server).
 
 webadmin_user(Acc, User, Server, Lang) ->
     FQueueLen = try

@@ -262,7 +262,7 @@ send_registration_notifications(UJID) ->
 	    Body = lists:flatten(
 		     io_lib:format(
 		       "The user '~s' was just created on node ~w.",
-		       [exmpp_jid:jid_to_list(UJID), node()])),
+		       [exmpp_jid:to_list(UJID), node()])),
 	    lists:foreach(
 	      fun(S) ->
                       try

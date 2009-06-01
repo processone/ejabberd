@@ -567,8 +567,8 @@ user_queue(User, Server, Query, Lang) ->
 			   io_lib:format(
 			     "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 			     [Year, Month, Day, Hour, Minute, Second])),
-		  SFrom = exmpp_jid:jid_to_list(From),
-		  STo = exmpp_jid:jid_to_list(To),
+		  SFrom = exmpp_jid:to_list(From),
+		  STo = exmpp_jid:to_list(To),
 		  Packet1 = exmpp_stanza:set_jids(Packet, SFrom, STo),
 		  FPacket = exmpp_xml:node_to_list(
 		    exmpp_xml:indent_document(Packet1, <<"  ">>),
@@ -636,7 +636,7 @@ user_queue_parse_query(US, Query) ->
     end.
 
 us_to_list({User, Server}) ->
-    exmpp_jid:jid_to_list(User, Server).
+    exmpp_jid:to_list(User, Server).
 
 webadmin_user(Acc, User, Server, Lang) ->
     FQueueLen = try

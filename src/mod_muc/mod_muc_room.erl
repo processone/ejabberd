@@ -2825,7 +2825,7 @@ get_config(Lang, StateData, From) ->
     Res =
 	[#xmlel{name = 'title', children = [ #xmlcdata{cdata =
 	        io_lib:format(translate:translate(Lang, "Configuration of room ~s"),
-		    [exmpp_jid:jid_to_list(StateData#state.jid)])
+		    [exmpp_jid:to_list(StateData#state.jid)])
          }]},
     #xmlel{name = 'field', attrs = [?XMLATTR('type', <<"hidden">>),
                                   ?XMLATTR('var', <<"FORM_TYPE">>)],

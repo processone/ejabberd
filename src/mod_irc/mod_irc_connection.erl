@@ -871,7 +871,7 @@ process_userinfo(StateData, _Nick, From) ->
 		    "xmpp:~s"
 		    "\001\r\n",
 		    [FromUser,
-		     exmpp_jid:jid_to_list(StateData#state.user)])).
+		     exmpp_jid:to_list(StateData#state.user)])).
 
 
 process_topic(StateData, Chan, From, String) ->

@@ -390,7 +390,7 @@ handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payl
 		    ?DEBUG("ID '~s' matches no query", [ID])
 	    end;
 	    %gen_server:cast(self(), visit_feature_queries),
-	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:jid_to_list(From), SubEls]);
+	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:to_list(From), SubEls]);
 	{result, Payload} ->
 	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:jid_to_binary(From), Payload]);
 	_ ->

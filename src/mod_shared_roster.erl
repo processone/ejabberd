@@ -712,7 +712,7 @@ push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,
     Attrs1 = exmpp_xml:set_attribute_in_list([],
-      'jid', exmpp_jid:jid_to_list(U, S, R)),
+      'jid', exmpp_jid:to_list(U, S, R)),
     Attrs2 = case Item#roster.name of
 		 "" ->
 		     Attrs1;

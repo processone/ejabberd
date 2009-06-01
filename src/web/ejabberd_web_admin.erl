@@ -1483,10 +1483,10 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 	    )]).
 
 us_to_list({User, Server}) ->
-    exmpp_jid:jid_to_list(User, Server, undefined).
+    exmpp_jid:to_list(User, Server, undefined).
 
 su_to_list({Server, User}) ->
-    exmpp_jid:jid_to_list(User, Server, undefined).
+    exmpp_jid:to_list(User, Server, undefined).
 
 
 get_stats(global, Lang) ->
