@@ -394,7 +394,7 @@ get_md5(AccountPass) ->
 
 check_access(Access, User, Server) ->
     %% Check this user has access permission
-    case acl:match_rule(global, Access, jlib:make_jid(User, Server, "")) of
+    case acl:match_rule(Server, Access, jlib:make_jid(User, Server, "")) of
 	allow -> true;
 	deny -> false
     end.
