@@ -1117,7 +1117,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
     nothing.
 
 us_to_list({User, Server}) ->
-    exmpp_jid:bare_jid_to_list(User, Server).
+    exmpp_jid:bare_to_list(User, Server).
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].

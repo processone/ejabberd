@@ -996,4 +996,4 @@ get_opt(Opts, Opt, Default) ->
     end.
 
 us_to_list({User, Server}) ->
-    exmpp_jid:bare_jid_to_list(User, Server).
+    exmpp_jid:bare_to_list(User, Server).

@@ -1303,7 +1303,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 %%     Server = binary()
 
 us_to_list({User, Server}) ->
-    exmpp_jid:bare_jid_to_list(User, Server).
+    exmpp_jid:bare_to_list(User, Server).
 
 %% @spec (Acc, User, Server, Lang) -> New_Acc
 %%     Acc = [ejabberd_web:html()]
