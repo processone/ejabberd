@@ -121,14 +121,14 @@ get_caps({U, S, R}, Retry) ->
 clear_caps(JID) ->
     R = exmpp_jid:prep_resource(JID),
     BJID = exmpp_jid:to_binary(JID),
-    BUID = exmpp_jid:bare_jid_to_binary(JID),
+    BUID = exmpp_jid:bare_to_binary(JID),
     catch mnesia:dirty_delete({user_caps, BJID}),
     catch mnesia:dirty_delete_object(#user_caps_resources{uid = BUID, resource = list_to_binary(R)}),
     ok.
   
 %% give default user resource
 get_user_resources(U, S) ->
-    BUID = exmpp_jid:bare_jid_to_binary(U, S),
+    BUID = exmpp_jid:bare_to_binary(U, S),
     case catch mnesia:dirty_read({user_caps_resources, BUID}) of
 	{'EXIT', _} ->
 	    [];
@@ -323,7 +323,7 @@ handle_cast({note_caps, From,
 	case ejabberd_sm:get_user_resources(U, S) of
 	    [] ->
 		% only store resource of caps aware external contacts
-		BUID = exmpp_jid:bare_jid_to_binary(From),
+		BUID = exmpp_jid:bare_to_binary(From),
 		mnesia:dirty_write(#user_caps_resources{uid = BUID, resource = list_to_binary(R)});
 	    _ -> 
 		ok
