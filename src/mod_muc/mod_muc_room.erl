@@ -127,7 +127,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 				   access = Access,
 				   room = Room,
 				   history = lqueue_new(HistorySize),
-				   jid = exmpp_jid:make_jid(Room, Host),
+				   jid = exmpp_jid:make(Room, Host),
 				   just_created = true,
 				   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
@@ -142,7 +142,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 				  access = Access,
 				  room = Room,
 				  history = lqueue_new(HistorySize),
-				  jid = exmpp_jid:make_jid(Room, Host),
+				  jid = exmpp_jid:make(Room, Host),
 				  room_shaper = Shaper}),
     {ok, normal_state, State}.
 
@@ -1882,7 +1882,7 @@ send_existing_presences(ToJID, StateData) ->
 		      ok;
 		  _ ->
               {N,D,R} = LJID,
-		      FromAffiliation = get_affiliation(exmpp_jid:make_jid(N,D,R), 
+		      FromAffiliation = get_affiliation(exmpp_jid:make(N,D,R), 
                                                 StateData),
 		      ItemAttrs =
 			  case (Role == moderator) orelse
@@ -2632,7 +2632,7 @@ send_kickban_presence1(UJID, Reason, Code, StateData) ->
     {ok, #user{jid = _RealJID,
 	       nick = Nick}} = ?DICT:find(UJID, StateData#state.users),
     {N,D,R} = UJID,
-    Affiliation = get_affiliation(exmpp_jid:make_jid(N,D,R), StateData),
+    Affiliation = get_affiliation(exmpp_jid:make(N,D,R), StateData),
     SAffiliation = affiliation_to_binary(Affiliation),
     lists:foreach(
       fun({_LJID, Info}) ->

@@ -671,10 +671,10 @@ announce_all(From, To, Packet) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'forbidden'),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    Local = exmpp_jid:make_jid(exmpp_jid:domain(To)),
+	    Local = exmpp_jid:make(exmpp_jid:domain(To)),
 	    lists:foreach(
 	      fun({User, Server}) ->
-		      Dest = exmpp_jid:make_jid(User, Server),
+		      Dest = exmpp_jid:make(User, Server),
 		      ejabberd_router:route(Local, Dest, Packet)
 	      end, ejabberd_auth:get_vh_registered_users(Host))
     end.
@@ -686,10 +686,10 @@ announce_all_hosts_all(From, To, Packet) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'forbidden'),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    Local = exmpp_jid:make_jid(exmpp_jid:domain(To)),
+	    Local = exmpp_jid:make(exmpp_jid:domain(To)),
 	    lists:foreach(
 	      fun({User, Server}) ->
-		      Dest = exmpp_jid:make_jid(User, Server),
+		      Dest = exmpp_jid:make(User, Server),
 		      ejabberd_router:route(Local, Dest, Packet)
 	      end, ejabberd_auth:dirty_get_registered_users())
     end.
@@ -720,10 +720,10 @@ announce_all_hosts_online(From, To, Packet) ->
     end.
 
 announce_online1(Sessions, Server, Packet) ->
-    Local = exmpp_jid:make_jid(Server),
+    Local = exmpp_jid:make(Server),
     lists:foreach(
       fun({U, S, R}) ->
-	      Dest = exmpp_jid:make_jid(U, S, R),
+	      Dest = exmpp_jid:make(U, S, R),
 	      ejabberd_router:route(Local, Dest, Packet)
       end, Sessions).
 
@@ -837,7 +837,7 @@ send_motd(JID) ->
 		[#motd_users{}] ->
 		    ok;
 		_ ->
-		    Local = exmpp_jid:make_jid(exmpp_jid:ldomain(JID)),
+		    Local = exmpp_jid:make(exmpp_jid:ldomain(JID)),
 		    ejabberd_router:route(Local, JID, Packet),
 		    F = fun() ->
 				mnesia:write(#motd_users{us = US})

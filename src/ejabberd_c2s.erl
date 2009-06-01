@@ -241,7 +241,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		true ->
 		    Lang = exmpp_stream:get_lang(Opening),
 		    change_shaper(StateData,
-		      exmpp_jid:make_jid(ServerB)),
+		      exmpp_jid:make(ServerB)),
 		    case exmpp_stream:get_version(Opening) of
 			{1, 0} ->
 			    send_element(StateData, Header),
@@ -401,7 +401,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {U, P, D, R}} ->
 	    try
-		JID = exmpp_jid:make_jid(U, StateData#state.server, R),
+		JID = exmpp_jid:make(U, StateData#state.server, R),
 		UBinary = exmpp_jid:lnode(JID),
 		case acl:match_rule(ServerString,
 		  StateData#state.access, JID) of
@@ -421,7 +421,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				Info = [{ip, StateData#state.ip}, {conn, Conn},
 				  {auth_module, AuthModule}],
 				ejabberd_sm:open_session(
-				  SID, exmpp_jid:make_jid(U, StateData#state.server, R), Info),
+				  SID, exmpp_jid:make(U, StateData#state.server, R), Info),
 				Res = exmpp_server_legacy_auth:success(El),
 				send_element(StateData, Res),
 				change_shaper(StateData, JID),
@@ -692,7 +692,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	    Resource ->
 		Resource
 	end,
-	JID = exmpp_jid:make_jid(StateData#state.user, StateData#state.server, R),
+	JID = exmpp_jid:make(StateData#state.user, StateData#state.server, R),
 	Res = exmpp_server_binding:bind(El, JID),
 	send_element(StateData, Res),
 	fsm_next_state(wait_for_session,
@@ -1107,7 +1107,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		?DEBUG("broadcast~n~p~n", [Packet#xmlel.children]),
 		case Packet#xmlel.children of
 		    [{item, {U, S, R} = _IJIDShort, ISubscription}] ->
-			IJID = exmpp_jid:make_jid(U, 
+			IJID = exmpp_jid:make(U, 
                                       S, 
                                       R),
 			{false, Attrs,
@@ -1586,7 +1586,7 @@ is_privacy_allow(From, To, Packet, PrivacyList) ->
 
 presence_broadcast(StateData, From, JIDSet, Packet) ->
     lists:foreach(fun({U, S, R}) ->
-			  FJID = exmpp_jid:make_jid(U, S, R),
+			  FJID = exmpp_jid:make(U, S, R),
 			  case ejabberd_hooks:run_fold(
 				 privacy_check_packet, StateData#state.server,
 				 allow,
@@ -1607,7 +1607,7 @@ presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
       fun({U, S, R} = JID) ->
 	      case ?SETS:is_element(JID, T) of
 		  true ->
-		      FJID = exmpp_jid:make_jid(U, S, R),
+		      FJID = exmpp_jid:make(U, S, R),
 		      case ejabberd_hooks:run_fold(
 			     privacy_check_packet, StateData#state.server,
 			     allow,
@@ -1630,7 +1630,7 @@ presence_broadcast_to_trusted(StateData, From, T, A, Packet) ->
 presence_broadcast_first(From, StateData, Packet) ->
     Probe = exmpp_presence:probe(),
     ?SETS:fold(fun({U, S, R}, X) ->
-		       FJID = exmpp_jid:make_jid(U, S, R),
+		       FJID = exmpp_jid:make(U, S, R),
 		       ejabberd_router:route(
 			 From,
 			 FJID,
@@ -1645,7 +1645,7 @@ presence_broadcast_first(From, StateData, Packet) ->
 	true ->
 	    As = ?SETS:fold(
 		    fun({U, S, R} = JID, A) ->
-			    FJID = exmpp_jid:make_jid(U, S, R),
+			    FJID = exmpp_jid:make(U, S, R),
 			    case ejabberd_hooks:run_fold(
 				   privacy_check_packet, StateData#state.server,
 				   allow,
@@ -1869,7 +1869,7 @@ process_unauthenticated_stanza(StateData, El) when ?IS_IQ(El) ->
 		    ResIQ = exmpp_iq:error_without_original(El,
                       'service-unavailable'),
 		    Res1 = exmpp_stanza:set_sender(ResIQ,
-		      exmpp_jid:make_jid(StateData#state.server)),
+		      exmpp_jid:make(StateData#state.server)),
 		    Res2 = exmpp_stanza:remove_recipient(Res1),
 		    send_element(StateData, Res2);
 		_ ->

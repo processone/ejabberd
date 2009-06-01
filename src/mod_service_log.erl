@@ -63,13 +63,13 @@ log_user_receive(_JID, From, To, Packet) ->
 
 log_packet(From, To, Packet, Host) ->
     Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
-    ServerJID = exmpp_jid:make_jid(Host),
+    ServerJID = exmpp_jid:make(Host),
     FixedPacket = exmpp_stanza:set_jids(Packet, From, To),
     lists:foreach(
       fun(Logger) ->
 	      ejabberd_router:route(
 		ServerJID,
-		exmpp_jid:make_jid(Logger),
+		exmpp_jid:make(Logger),
 		#xmlel{name = 'route', children = [FixedPacket]})
       end, Loggers).
     

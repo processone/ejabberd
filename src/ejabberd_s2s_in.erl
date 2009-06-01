@@ -346,7 +346,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		    Conns = ?DICT:store({LFrom, LTo}, wait_for_verification,
 					StateData#state.connections),
 		    change_shaper(StateData, LTo,
-		      exmpp_jid:make_jid(LFrom)),
+		      exmpp_jid:make(LFrom)),
 		    {next_state,
 		     stream_established,
 		     StateData#state{connections = Conns,

@@ -119,7 +119,7 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
 	{undefined, Host, undefined} ->
 	    true; % pubsub service always allowed
 	_ ->
-	    JID = exmpp_jid:make_jid(User, Server, Resource),
+	    JID = exmpp_jid:make(User, Server, Resource),
 	    case acl:match_rule(ServerHost, Access, JID) of
 		allow ->
 		    case Host of 

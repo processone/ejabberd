@@ -77,7 +77,7 @@ process(["server", SHost | RPath], #request{auth = Auth} = Request) ->
 	    case get_auth(Auth) of
 		{User, Server} ->
 		    case acl:match_rule(
-			   Host, configure, exmpp_jid:make_jid(User, Server)) of
+			   Host, configure, exmpp_jid:make(User, Server)) of
 			deny ->
 			    ejabberd_web:error(not_allowed);
 			allow ->
@@ -99,7 +99,7 @@ process(RPath, #request{auth = Auth} = Request) ->
     case get_auth(Auth) of
 	{User, Server} ->
 	    case acl:match_rule(
-		   global, configure, exmpp_jid:make_jid(User, Server)) of
+		   global, configure, exmpp_jid:make(User, Server)) of
 		deny ->
 		    ejabberd_web:error(not_allowed);
 		allow ->

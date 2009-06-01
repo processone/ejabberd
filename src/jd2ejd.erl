@@ -115,7 +115,7 @@ process_xdb(_User, _Server, _El) ->
 xdb_data(_User, _Server, #xmlcdata{}) ->
     ok;
 xdb_data(User, Server, #xmlel{ns = NS} = El) ->
-    From = exmpp_jid:make_jid(User, Server),
+    From = exmpp_jid:make(User, Server),
     LServer = exmpp_stringprep:nameprep(Server),
     case NS of
 	?NS_LEGACY_AUTH ->
@@ -156,12 +156,12 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 		true ->
 		    catch mod_vcard_odbc:process_sm_iq(
 			    From,
-			    exmpp_jid:make_jid(Server),
+			    exmpp_jid:make(Server),
 			    #iq{kind = request, type = set, ns = ?NS_VCARD, payload = El, iq_ns = ?NS_JABBER_CLIENT});
 		false ->
 		    catch mod_vcard:process_sm_iq(
 			    From,
-			    exmpp_jid:make_jid(Server),
+			    exmpp_jid:make(Server),
 			    #iq{kind = request, type = set, ns = ?NS_VCARD, payload = El, iq_ns = ?NS_JABBER_CLIENT})
 	    end,
 	    ok;
@@ -173,7 +173,7 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 		"1" ->
 		    catch mod_private:process_sm_iq(
 			    From,
-			    exmpp_jid:make_jid(Server),
+			    exmpp_jid:make(Server),
 			    #iq{kind = request, type = set, ns = ?NS_PRIVATE,
 				iq_ns = ?NS_JABBER_CLIENT,
 				payload = #xmlel{name = 'query', children =
@@ -192,7 +192,7 @@ process_offline(Server, To, #xmlel{children = Els}) ->
 			  FromS = exmpp_stanza:get_sender(El),
 			  From = case FromS of
 				     undefined ->
-					 exmpp_jid:make_jid(Server);
+					 exmpp_jid:make(Server);
 				     _ ->
 					 try
 					     exmpp_jid:parse_jid(FromS)

@@ -301,14 +301,14 @@ process_item_set(From, To, #xmlel{} = El) ->
 			if IsTo ->
 				ejabberd_router:route(
 				  exmpp_jid:jid_to_bare_jid(From),
-				  exmpp_jid:make_jid(U, S, R),
+				  exmpp_jid:make(U, S, R),
 				  exmpp_presence:unsubscribe());
 			   true -> ok
 			end,
 			if IsFrom ->
 				ejabberd_router:route(
 				  exmpp_jid:jid_to_bare_jid(From),
-				  exmpp_jid:make_jid(U, S, R),
+				  exmpp_jid:make(U, S, R),
 				  exmpp_presence:unsubscribed());
 			   true -> ok
 			end,
@@ -384,8 +384,8 @@ process_item_els(Item, []) ->
 
 push_item(User, Server, From, Item)
   when is_binary(User), is_binary(Server), ?IS_JID(From) ->
-    ejabberd_sm:route(exmpp_jid:make_jid(),
-		      exmpp_jid:make_jid(User, Server),
+    ejabberd_sm:route(exmpp_jid:make(),
+		      exmpp_jid:make(User, Server),
 		      #xmlel{name = 'broadcast', children =
 		       [{item,
 			 Item#roster.jid,
@@ -411,7 +411,7 @@ push_item(User, Server, Resource, From, Item)
       "push" ++ randoms:get_string()),
     ejabberd_router:route(
       From,
-      exmpp_jid:make_jid(User, Server, Resource),
+      exmpp_jid:make(User, Server, Resource),
       ResIQ).
 
 %% @spec (Ignored, User, Server) -> Subscription_Lists
@@ -559,7 +559,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 			ok;
 		    _ ->
 			ejabberd_router:route(
-			  exmpp_jid:make_jid(User, Server), JID1,
+			  exmpp_jid:make(User, Server), JID1,
 			  exmpp_presence:AutoReply())
 		end,
 		case Push of
@@ -570,7 +570,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 				ok;
 			    true ->
 				push_item(User, Server,
-					  exmpp_jid:make_jid(User, Server), Item)
+					  exmpp_jid:make(User, Server), Item)
 			end,
 			true;
 		    none ->
@@ -843,7 +843,7 @@ process_item_attrs_ws(Item, []) ->
 
 get_in_pending_subscriptions(Ls, User, Server)
   when is_binary(User), is_binary(Server) ->
-    JID = exmpp_jid:make_jid(User, Server),
+    JID = exmpp_jid:make(User, Server),
     US = {exmpp_jid:lnode(JID), exmpp_jid:ldomain(JID)},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Result when is_list(Result) ->
@@ -1184,7 +1184,7 @@ user_roster(User, Server, Query, Lang) ->
 
 build_contact_jid_td({U, S, R}) ->
     %% Convert {U, S, R} into {jid, U, S, R, U, S, R}:
-    ContactJID = exmpp_jid:make_jid(U, S, R),
+    ContactJID = exmpp_jid:make(U, S, R),
     JIDURI = case {exmpp_jid:lnode(ContactJID), exmpp_jid:ldomain(ContactJID)} of
 		 {undefined, _} -> "";
 		 {CUser, CServer} ->
@@ -1245,7 +1245,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
-    UJID = exmpp_jid:make_jid(User, Server),
+    UJID = exmpp_jid:make(User, Server),
     ejabberd_router:route(
       UJID, JID, exmpp_presence:subscribe()).
 
@@ -1263,10 +1263,10 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 		     "validate" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 		  {value, _} ->
 		      {U, S, R} = JID,
-		      JID1 = exmpp_jid:make_jid(U, S, R),
+		      JID1 = exmpp_jid:make(U, S, R),
 		      out_subscription(
 			User, Server, JID1, subscribed),
-		      UJID = exmpp_jid:make_jid(User, Server),
+		      UJID = exmpp_jid:make(User, Server),
 		      ejabberd_router:route(
 			UJID, JID1, exmpp_presence:subscribed()),
 		      throw(submitted);
@@ -1275,7 +1275,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 			     "remove" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 			  {value, _} ->
 			      {U, S, R} = JID,
-			      UJID = exmpp_jid:make_jid(User, Server),
+			      UJID = exmpp_jid:make(User, Server),
 			      Attrs1 = exmpp_xml:set_attribute_in_list([],
 				'jid', exmpp_jid:jid_to_list(U, S, R)),
 			      Attrs2 = exmpp_xml:set_attribute_in_list(Attrs1,

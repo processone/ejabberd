@@ -190,7 +190,7 @@ process_large_heap(Pid, Info) ->
 		     "(~w) The process ~w is consuming too much memory:~n~p~n"
 		     "~s",
 		     [node(), Pid, Info, DetailedInfo]),
-	    From = exmpp_jid:make_jid(undefined, Host, <<"watchdog">>),
+	    From = exmpp_jid:make(undefined, Host, <<"watchdog">>),
 	    lists:foreach(
 	      fun(S) ->
 		      try

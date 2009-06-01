@@ -352,7 +352,7 @@ handle_cast({note_caps, From,
 			  Stanza = exmpp_iq:get(?NS_JABBER_CLIENT, Query, ID),
 			  ejabberd_local:register_iq_response_handler
 			    (list_to_binary(Host), ID, ?MODULE, handle_disco_response),
-			  ejabberd_router:route(exmpp_jid:make_jid(Host),
+			  ejabberd_router:route(exmpp_jid:make(Host),
 			    From, Stanza),
 			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID}),
 			  ?DICT:store(ID, node_to_binary(Node, SubNode), Dict)

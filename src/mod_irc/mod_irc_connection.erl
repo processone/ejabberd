@@ -252,7 +252,7 @@ handle_info({route_chan, Channel, Resource,
 		case exmpp_message:get_subject(El) of
 		    undefined ->
 			ejabberd_router:route(
-			  exmpp_jid:make_jid(
+			  exmpp_jid:make(
 			    lists:concat(
 			      [Channel, "%", StateData#state.server]),
 			    StateData#state.host, StateData#state.nick),
@@ -369,7 +369,7 @@ handle_info({route_chan, Channel, Resource,
 	     El},
 	    StateName, StateData) when ?IS_IQ(El) ->
     From = StateData#state.user,
-    To = exmpp_jid:make_jid(lists:concat([Channel, "%", StateData#state.server]),
+    To = exmpp_jid:make(lists:concat([Channel, "%", StateData#state.server]),
 		       StateData#state.host, StateData#state.nick),
     _ = case exmpp_iq:xmlel_to_iq(El) of
 	#iq{kind = request, ns = ?NS_MUC_ADMIN} = IQ_Rec ->
@@ -586,7 +586,7 @@ terminate(_Reason, _StateName, StateData) ->
     lists:foreach(
       fun(Chan) ->
 	      ejabberd_router:route(
-		exmpp_jid:make_jid(
+		exmpp_jid:make(
 		  lists:concat([Chan, "%", StateData#state.server]),
 		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
@@ -686,7 +686,7 @@ process_channel_list_user(StateData, Chan, User) ->
 	    _ -> {User1, <<"member">>, <<"participant">>}
 	end,
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, User2),
       StateData#state.user,
       #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
@@ -709,7 +709,7 @@ process_channel_topic(StateData, Chan, String) ->
     {ok, Msg, _} = regexp:sub(String, ".*332[^:]*:", ""),
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
-      exmpp_jid:make_jid(
+      exmpp_jid:make(
 	lists:concat([Chan, "%", StateData#state.server]),
 	StateData#state.host, ""),
       StateData#state.user,
@@ -734,7 +734,7 @@ process_channel_topic_who(StateData, Chan, String) ->
     Msg2 = filter_message(Msg1),
 
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
       exmpp_message:groupchat(Msg2)).
@@ -743,7 +743,7 @@ process_channel_topic_who(StateData, Chan, String) ->
 
 process_endofwhois(StateData, _String, Nick) ->
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Nick, "!", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
       exmpp_message:chat("End of WHOIS")).
@@ -751,7 +751,7 @@ process_endofwhois(StateData, _String, Nick) ->
 process_whois311(StateData, String, Nick, Ident, Irchost) ->
     {ok, Fullname, _} = regexp:sub(String, ".*311[^:]*:", ""),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Nick, "!", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
       exmpp_message:chat(lists:concat(
@@ -761,7 +761,7 @@ process_whois311(StateData, String, Nick, Ident, Irchost) ->
 process_whois312(StateData, String, Nick, Ircserver) ->
     {ok, Ircserverdesc, _} = regexp:sub(String, ".*312[^:]*:", ""),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Nick, "!", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
       exmpp_message:chat(lists:concat(["WHOIS: ", Nick, " use ",
@@ -770,7 +770,7 @@ process_whois312(StateData, String, Nick, Ircserver) ->
 process_whois319(StateData, String, Nick) ->
     {ok, Chanlist, _} = regexp:sub(String, ".*319[^:]*:", ""),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Nick, "!", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Nick, "!", StateData#state.server]),
 		    StateData#state.host, ""),
       StateData#state.user,
       exmpp_message:chat(lists:concat(["WHOIS: ", Nick, " is on ",
@@ -789,7 +789,7 @@ process_chanprivmsg(StateData, Chan, From, String) ->
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
       exmpp_message:groupchat(Msg2)).
@@ -807,7 +807,7 @@ process_channotice(StateData, Chan, From, String) ->
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
       exmpp_message:groupchat(Msg2)).
@@ -826,7 +826,7 @@ process_privmsg(StateData, _Nick, From, String) ->
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
+      exmpp_jid:make(lists:concat([FromUser, "!", StateData#state.server]),
 		    StateData#state.host, undefined),
       StateData#state.user,
       exmpp_message:chat(Msg2)).
@@ -843,7 +843,7 @@ process_notice(StateData, _Nick, From, String) ->
 	   end,
     Msg2 = filter_message(Msg1),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([FromUser, "!", StateData#state.server]),
+      exmpp_jid:make(lists:concat([FromUser, "!", StateData#state.server]),
 		    StateData#state.host, undefined),
       StateData#state.user,
       exmpp_message:chat(Msg2)).
@@ -879,7 +879,7 @@ process_topic(StateData, Chan, From, String) ->
     {ok, Msg, _} = regexp:sub(String, ".*TOPIC[^:]*:", ""),
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
       exmpp_message:groupchat(Msg1,
@@ -890,7 +890,7 @@ process_part(StateData, Chan, From, String) ->
     {ok, Msg, _} = regexp:sub(String, ".*PART[^:]*:", ""),    
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
       #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [?XMLATTR('type', <<"unavailable">>)], children =
@@ -923,7 +923,7 @@ process_quit(StateData, From, String) ->
 		  case ?SETS:is_member(FromUser, Ps) of
 		      true ->
 			  ejabberd_router:route(
-			    exmpp_jid:make_jid(
+			    exmpp_jid:make(
 			      lists:concat([Chan, "%", StateData#state.server]),
 			      StateData#state.host, FromUser),
 			    StateData#state.user,
@@ -947,7 +947,7 @@ process_join(StateData, Channel, From, _String) ->
     [FromUser | FromIdent] = string:tokens(From, "!"),
     Chan = lists:subtract(Channel, ":#"),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, FromUser),
       StateData#state.user,
       #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
@@ -973,7 +973,7 @@ process_join(StateData, Channel, From, _String) ->
 process_mode_o(StateData, Chan, _From, Nick, Affiliation, Role) ->
     %Msg = lists:last(string:tokens(String, ":")),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, Nick),
       StateData#state.user,
       #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', children =
@@ -986,12 +986,12 @@ process_kick(StateData, Chan, From, Nick, String) ->
     Msg = lists:last(string:tokens(String, ":")),
     Msg2 = Nick ++ " kicked by " ++ From ++ " (" ++ filter_message(Msg) ++ ")",
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, undefined),
       StateData#state.user,
       exmpp_message:groupchat(Msg2)),
     ejabberd_router:route(
-      exmpp_jid:make_jid(lists:concat([Chan, "%", StateData#state.server]),
+      exmpp_jid:make(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, Nick),
       StateData#state.user,
       #xmlel{ns = ?NS_JABBER_CLIENT, name = 'presence', attrs = [?XMLATTR('type', <<"unavailable">>)], children =
@@ -1011,7 +1011,7 @@ process_nick(StateData, From, NewNick) ->
 		  case ?SETS:is_member(FromUser, Ps) of
 		      true ->
 			  ejabberd_router:route(
-			    exmpp_jid:make_jid(
+			    exmpp_jid:make(
 			      lists:concat([Chan, "%", StateData#state.server]),
 			      StateData#state.host, FromUser),
 			    StateData#state.user,
@@ -1024,7 +1024,7 @@ process_nick(StateData, From, NewNick) ->
 				#xmlel{ns = ?NS_MUC_USER, name = 'status', attrs = [?XMLATTR('code', <<"303">>)]}
 			       ]}]}),
 			  ejabberd_router:route(
-			    exmpp_jid:make_jid(
+			    exmpp_jid:make(
 			      lists:concat([Chan, "%", StateData#state.server]),
 			      StateData#state.host, Nick),
 			    StateData#state.user,
@@ -1047,7 +1047,7 @@ process_error(StateData, String) ->
     lists:foreach(
       fun(Chan) ->
 	      ejabberd_router:route(
-		exmpp_jid:make_jid(
+		exmpp_jid:make(
 		  lists:concat([Chan, "%", StateData#state.server]),
 		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,

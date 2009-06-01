@@ -142,8 +142,8 @@ bounce_offline_message(From, To, Packet) ->
     stop.
 
 disconnect_removed_user(User, Server) ->
-    ejabberd_sm:route(exmpp_jid:make_jid(),
-		      exmpp_jid:make_jid(User, 
+    ejabberd_sm:route(exmpp_jid:make(),
+		      exmpp_jid:make(User, 
                                       Server),
                       #xmlel{name = 'broadcast',
                         children = [{exit, "User removed"}]}).

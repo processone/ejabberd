@@ -640,7 +640,7 @@ presence_probe(Peer, JID, _Pid) ->
 %%
 
 out_subscription(User, Server, JID, subscribed) ->
-    Owner = exmpp_jid:make_jid(User, Server, ""),
+    Owner = exmpp_jid:make(User, Server, ""),
     {U, S, R} = jlib:short_prepd_jid(JID),
     Rs = case R of
 	[] -> user_resources(U, S);
@@ -651,7 +651,7 @@ out_subscription(User, Server, JID, subscribed) ->
 out_subscription(_, _, _, _) ->
     ok.
 in_subscription(_, User, Server, Owner, unsubscribed, _) ->
-    Subscriber = exmpp_jid:make_jid(User, Server, ""),
+    Subscriber = exmpp_jid:make(User, Server, ""),
     Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
     gen_server:cast(Proc, {unsubscribe, Subscriber, Owner});
 in_subscription(_, _, _, _, _, _) ->
@@ -706,7 +706,7 @@ handle_cast({presence, User, Server, Resources, JID}, State) ->
 
 handle_cast({remove_user, LUser, LServer}, State) ->
     Host = State#state.host,
-    Owner = exmpp_jid:make_jid(LUser, LServer),
+    Owner = exmpp_jid:make(LUser, LServer),
     %% remove user's subscriptions
     lists:foreach(fun(PType) ->
 	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Owner]),
@@ -2042,7 +2042,7 @@ send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
     Stanza = event_stanza(
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
 		  itemsEls(ToSend)}]),
-    ejabberd_router ! {route, service_jid(Host), exmpp_jid:make_jid(LU, LS, LR), Stanza}.
+    ejabberd_router ! {route, service_jid(Host), exmpp_jid:make(LU, LS, LR), Stanza}.
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
 %%	 Host = host()
@@ -2411,8 +2411,8 @@ string_to_node(SNode) ->
 %% @doc <p>Generate pubsub service JID.</p>
 service_jid(Host) ->
     case Host of 
-    {U,S,_} -> exmpp_jid:make_jid(U, S);
-    _ -> exmpp_jid:make_jid(Host)
+    {U,S,_} -> exmpp_jid:make(U, S);
+    _ -> exmpp_jid:make(Host)
     end.
 
 %% @spec (LJID, Subscription, PresenceDelivery) -> boolean()
@@ -2629,7 +2629,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, Options, Subscriptions, Stanza) ->
 		    %% set the from address on the notification to the bare JID of the account owner
 		    %% Also, add "replyto" if entity has presence subscription to the account owner
 		    %% See XEP-0163 1.1 section 4.3.1
-		    Sender = exmpp_jid:make_jid(LUser, LServer),
+		    Sender = exmpp_jid:make(LUser, LServer),
 		    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
 		    case catch ejabberd_c2s:get_subscribed(C2SPid) of
 			Contacts when is_list(Contacts) ->
@@ -2642,7 +2642,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, Options, Subscriptions, Stanza) ->
 					end
 				    end, [], user_resources(U, S)),
 				    lists:foreach(fun(R) ->
-					ejabberd_router ! {route, Sender, exmpp_jid:make_jid(U, S, R), Stanza}
+					ejabberd_router ! {route, Sender, exmpp_jid:make(U, S, R), Stanza}
 				    end, Rs)
 				end)
 			    end, Contacts);

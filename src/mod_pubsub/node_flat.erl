@@ -99,7 +99,7 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
 	    true; % pubsub service always allowed
 	_ ->
 	    {LU, LS, LR} = LOwner,
-	    acl:match_rule(ServerHost, Access, exmpp_jid:make_jid(LU, LS, LR)) =:= allow
+	    acl:match_rule(ServerHost, Access, exmpp_jid:make(LU, LS, LR)) =:= allow
     end,
     {result, Allowed}.
 

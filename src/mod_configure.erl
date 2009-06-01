@@ -1743,7 +1743,7 @@ stop_node(From, Host, ENode, Action, XData) ->
 			[?XMLATTR('type', <<"submit">>)], children =
 			SubEls}]
 	     },
-	    To = exmpp_jid:make_jid(Host),
+	    To = exmpp_jid:make(Host),
 	    mod_announce:announce_commands(empty, From, To, Request)
     end,
     Time = timer:seconds(Delay),

@@ -372,7 +372,7 @@ from_old_jid(JID) ->
  Node = exmpp_jid:node(JID),
     Resource = exmpp_jid:resource(JID),
     Domain = exmpp_jid:domain(JID),
-    exmpp_jid:make_jid(Node,Domain,Resource).
+    exmpp_jid:make(Node,Domain,Resource).
 
 
 short_jid(JID) ->

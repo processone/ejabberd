@@ -408,14 +408,14 @@ new_connection(MyServer, Server, From, FromTo,
 
 max_s2s_connections_number({From, To}) ->
     case acl:match_rule(
-	   From, max_s2s_connections, exmpp_jid:make_jid(To)) of
+	   From, max_s2s_connections, exmpp_jid:make(To)) of
 	Max when is_integer(Max) -> Max;
 	_ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
     end.
 
 max_s2s_connections_number_per_node({From, To}) ->
     case acl:match_rule(
-	   From, max_s2s_connections_per_node, exmpp_jid:make_jid(To)) of
+	   From, max_s2s_connections_per_node, exmpp_jid:make(To)) of
 	Max when is_integer(Max) -> Max;
 	_ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
     end.

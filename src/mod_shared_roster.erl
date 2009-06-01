@@ -199,12 +199,12 @@ process_item(RosterItem, Host) ->
 
                     %% Remove pending out subscription
                     Mod:out_subscription(UserTo, ServerTo,
-                                         exmpp_jid:make_jid(UserFrom, ServerFrom),
+                                         exmpp_jid:make(UserFrom, ServerFrom),
                                          unsubscribe),
 
                     %% Remove pending in subscription
                     Mod:in_subscription(aaaa, UserFrom, ServerFrom,
-                                        exmpp_jid:make_jid(UserTo, ServerTo),
+                                        exmpp_jid:make(UserTo, ServerTo),
                                         unsubscribe, ""),
 
                     %% But we're still subscribed, so respond as such.
@@ -237,9 +237,9 @@ set_new_rosteritems(UserFrom, ServerFrom,
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
-    JIDTo = exmpp_jid:make_jid(UserTo, ServerTo),
+    JIDTo = exmpp_jid:make(UserTo, ServerTo),
 
-    JIDFrom = exmpp_jid:make_jid(UserFrom, ServerFrom),
+    JIDFrom = exmpp_jid:make(UserFrom, ServerFrom),
     RITo = build_roster_record(UserTo, ServerTo,
 			       UserFrom, ServerFrom, UserFrom,[]),
     set_item(UserTo, ServerTo, undefined, RITo),
@@ -268,8 +268,8 @@ set_item(User, Server, Resource, Item) ->
     ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
       "push" ++ randoms:get_string()),
     ejabberd_router:route(
-      exmpp_jid:make_jid(User, Server, Resource),
-      exmpp_jid:make_jid(Server),
+      exmpp_jid:make(User, Server, Resource),
+      exmpp_jid:make(Server),
       ResIQ).
 
 
@@ -334,7 +334,7 @@ out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
 
     %% Remove pending out subscription
     {UserTo, ServerTo, _} = jlib:short_prepd_bare_jid(JIDTo),
-    JIDFrom = exmpp_jid:make_jid(UserFrom, UserTo),
+    JIDFrom = exmpp_jid:make(UserFrom, UserTo),
     Mod:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
 
     %% Remove pending in subscription
@@ -684,7 +684,7 @@ push_item(User, Server, From, Item) ->
     %%  ejabberd_sm:route(jlib:make_jid("", "", ""),
     %%                    jlib:make_jid(User, Server, "")
     %% why?
-    ejabberd_sm:route(From, exmpp_jid:make_jid(User, Server),
+    ejabberd_sm:route(From, exmpp_jid:make(User, Server),
 		      #xmlel{name = 'broadcast', children =
                        [{item,
                          Item#roster.jid,
@@ -695,7 +695,7 @@ push_item(User, Server, From, Item) ->
       "push" ++ randoms:get_string()),
     lists:foreach(
       fun(Resource) ->
-	      JID = exmpp_jid:make_jid(User, Server, Resource),
+	      JID = exmpp_jid:make(User, Server, Resource),
 	      ejabberd_router:route(JID, JID, Stanza)
       end, ejabberd_sm:get_user_resources(list_to_binary(User), list_to_binary(Server))).
 
@@ -707,7 +707,7 @@ push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
 		   subscription = Subscription,
 		   ask = none,
 		   groups = [GroupName]},
-    push_item(User, Server, exmpp_jid:make_jid(Server), Item).
+    push_item(User, Server, exmpp_jid:make(Server), Item).
 
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,

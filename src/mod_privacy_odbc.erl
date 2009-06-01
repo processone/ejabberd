@@ -363,8 +363,8 @@ process_list_set(LUser, LServer, Name, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      exmpp_jid:make_jid(LUser, LServer),
-		      exmpp_jid:make_jid(LUser, LServer),
+		      exmpp_jid:make(LUser, LServer),
+		      exmpp_jid:make(LUser, LServer),
 		      #xmlel{name = 'broadcast', 
 			children=[{privacy_list,
 				   #userlist{name = Name, list = []},
@@ -395,8 +395,8 @@ process_list_set(LUser, LServer, Name, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      exmpp_jid:make_jid(LUser, LServer),
-		      exmpp_jid:make_jid(LUser, LServer),
+		      exmpp_jid:make(LUser, LServer),
+		      exmpp_jid:make(LUser, LServer),
 		      #xmlel{name = 'broadcast', 
 			children=[{privacy_list,
 				   #userlist{name = Name, list = List},

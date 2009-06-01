@@ -423,14 +423,14 @@ resend_message(Packet) ->
 get_jid("from", ParsedPacket) ->
     case exmpp_stanza:get_sender(ParsedPacket) of
 	undefined ->
-            exmpp_jid:make_jid();
+            exmpp_jid:make();
 	From ->
 	    exmpp_jid:parse_jid(From)
     end;
 get_jid("to", ParsedPacket) ->
     case exmpp_stanza:get_recipient(ParsedPacket) of
 	undefined ->
-            exmpp_jid:make_jid();
+            exmpp_jid:make();
 	From ->
 	    exmpp_jid:parse_jid(From)
     end.
