@@ -41,7 +41,6 @@
 	 get_sm_identity/5,
 	 get_sm_features/5,
 	 get_sm_items/5,
-	 get_publish_items/5,
 	 register_feature/2,
 	 unregister_feature/2,
 	 register_extra_domain/2,
@@ -50,15 +49,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(disco_publish, {owner_node, jid, name, node}).
-
 start(Host, Opts) ->
-    mnesia:create_table(disco_publish,
-			[{disc_only_copies, [node()]},
-			 {attributes, record_info(fields, disco_publish)},
-			 {type, bag}]),
-    mnesia:add_table_index(disco_publish, owner_node),
-
     ejabberd_local:refresh_iq_handlers(),
 
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -75,7 +66,6 @@ start(Host, Opts) ->
     register_feature(Host, "iq"),
     register_feature(Host, "presence"),
     register_feature(Host, "presence-invisible"),
-    register_feature(Host, "http://jabber.org/protocol/disco#publish"),
 
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
@@ -89,11 +79,9 @@ start(Host, Opts) ->
     ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_sm_items, 100),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 100),
     ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, get_sm_identity, 100),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_publish_items, 75),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_publish_items, 75),
     ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, get_sm_identity, 100),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 100),
     ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_sm_items, 100),
@@ -267,24 +255,7 @@ get_vh_services(Host) ->
 process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    #jid{luser = LTo, lserver = ToServer} = To,
-	    #jid{luser = LFrom, lserver = LServer} = From,
-	    Self = (LTo == LFrom) andalso (ToServer == LServer),
-	    Node = xml:get_tag_attr_s("node", SubEl),
-	    if
-		Self, Node /= [] ->
-		    %% Here, we treat disco publish attempts to your own JID.
-		    {xmlelement, _, _, Items} = SubEl,
-		    case process_disco_publish({LFrom, LServer}, Node, Items) of
-			ok ->
-			    IQ#iq{type = result, sub_el = []};
-			{error, Err} ->
-			    IQ#iq{type = error, sub_el = [SubEl, Err]}
-		    end;
-
-		true ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
-	    end;
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    Host = To#jid.lserver,
 	    Node = xml:get_tag_attr_s("node", SubEl),
@@ -384,8 +355,6 @@ get_sm_features(empty, From, To, _Node, _Lang) ->
 get_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-
-
 get_user_resources(User, Server) ->
     Rs = ejabberd_sm:get_user_resources(User, Server),
     lists:map(fun(R) ->
@@ -393,105 +362,3 @@ get_user_resources(User, Server) ->
 		       [{"jid", User ++ "@" ++ Server ++ "/" ++ R},
 			{"name", User}], []}
 	      end, lists:sort(Rs)).
-
-
-get_publish_items(empty,
-		  #jid{luser = LFrom, lserver = LSFrom},
-		  #jid{luser = LTo, lserver = LSTo} = _To,
-		  Node, _Lang) ->
-    if
-	(LFrom == LTo) and (LSFrom == LSTo) ->
-	    retrieve_disco_publish({LTo, LSTo}, Node);
-	true ->
-	    empty
-    end;
-get_publish_items(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
-
-process_disco_publish(User, Node, Items) ->
-    F = fun() ->
-		lists:foreach(
-		  fun({xmlelement, _Name, _Attrs, _SubEls} = Item) ->
-			  Action = xml:get_tag_attr_s("action", Item),
-			  Jid = xml:get_tag_attr_s("jid", Item),
-			  PNode = xml:get_tag_attr_s("node", Item),
-			  Name = xml:get_tag_attr_s("name", Item),
-			  ?INFO_MSG("Disco publish: ~p ~p ~p ~p ~p ~p~n",
-				    [User, Action, Node, Jid, PNode, Name]),
-
-			  %% The disco_publish table isn't strictly a "bag" table, as
-			  %% entries with same jid and node combination are considered
-			  %% the same, even if they have different names.  Therefore,
-			  %% we find a list of items to supersede.
-			  SupersededItems = mnesia:match_object(
-					      #disco_publish{owner_node = {User, Node},
-							     jid = Jid,
-							     node = PNode,
-							     _ = '_'}),
-			  case Action of
-			      "update" ->
-				  lists:map(
-				    fun(O) ->
-					    mnesia:delete_object(O)
-				    end, SupersededItems),
-				  mnesia:write(
-				    #disco_publish{owner_node = {User, Node},
-						   jid = Jid,
-						   name = Name,
-						   node = PNode});
-			      "remove" ->
-				  case SupersededItems of
-				      [] ->
-					  mnesia:abort({error, ?ERR_ITEM_NOT_FOUND});
-				      _ ->
-					  lists:map(
-					    fun(O) ->
-						    mnesia:delete_object(O)
-					    end, SupersededItems)
-				  end;
-			      _ ->
-				  %% invalid "action" attribute - return an error
-				  mnesia:abort({error, ?ERR_BAD_REQUEST})
-			  end;
-		     ({xmlcdata, _CDATA}) ->
-			  ok
-		  end, Items)
-	end,
-    case mnesia:transaction(F) of
-	{aborted, {error, _} = Error} ->
-	    Error;
-	{atomic, _} ->
-	    ok;
-	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end.
-
-retrieve_disco_publish(User, Node) ->
-    case catch mnesia:dirty_read({disco_publish, {User, Node}}) of
-	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-	[] ->
-	    empty;
-	Items ->
-	    {result,
-	     lists:map(
-	       fun(#disco_publish{jid = Jid,
-				  name = Name,
-				  node = PNode}) ->
-		       {xmlelement, "item",
-			lists:append([[{"jid", Jid}],
-				      case Name of
-					  "" ->
-					      [];
-					  _ ->
-					      [{"name", Name}]
-				      end,
-				      case PNode of
-					  "" ->
-					      [];
-					  _ ->
-					      [{"node", PNode}]
-				      end]), []}
-	       end, Items)}
-    end.
-
