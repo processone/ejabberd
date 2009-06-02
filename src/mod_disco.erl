@@ -41,7 +41,6 @@
 	 get_sm_identity/5,
 	 get_sm_features/5,
 	 get_sm_items/5,
-	 get_publish_items/5,
 	 register_feature/2,
 	 unregister_feature/2,
 	 register_extra_domain/2,
@@ -51,15 +50,8 @@
 
 -include("ejabberd.hrl").
 
--record(disco_publish, {owner_node, jid, name, node}).
-
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
-    mnesia:create_table(disco_publish,
-			[{disc_only_copies, [node()]},
-			 {attributes, record_info(fields, disco_publish)},
-			 {type, bag}]),
-    mnesia:add_table_index(disco_publish, owner_node),
 
     ejabberd_local:refresh_iq_handlers(),
 
@@ -77,7 +69,6 @@ start(Host, Opts) ->
     register_feature(Host, "iq"),
     register_feature(Host, "presence"),
     register_feature(Host, "presence-invisible"),
-    register_feature(Host, "http://jabber.org/protocol/disco#publish"),
 
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
@@ -91,12 +82,10 @@ start(Host, Opts) ->
     ejabberd_hooks:add(disco_sm_items, HostB, ?MODULE, get_sm_items, 100),
     ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 100),
     ejabberd_hooks:add(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 100),
-    ejabberd_hooks:add(disco_sm_items, HostB, ?MODULE, get_publish_items, 75),
     ok.
 
 stop(Host) ->
     HostB = list_to_binary(Host),
-    ejabberd_hooks:delete(disco_sm_items, HostB, ?MODULE, get_publish_items, 75),
     ejabberd_hooks:delete(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 100),
     ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 100),
     ejabberd_hooks:delete(disco_sm_items, HostB, ?MODULE, get_sm_items, 100),
@@ -288,27 +277,8 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
 	{error, Error} ->
 	    exmpp_iq:error(IQ_Rec, Error)
     end;
-process_sm_iq_items(From, To, #iq{type = set, payload = SubEl} = IQ_Rec) ->
-    LTo = exmpp_jid:prep_node_as_list(To),
-    ToServer = exmpp_jid:prep_domain_as_list(To),
-    LFrom = exmpp_jid:prep_node_as_list(From),
-    LServer = exmpp_jid:prep_domain_as_list(From),
-    Self = (LTo == LFrom) andalso (ToServer == LServer),
-    Node = exmpp_xml:get_attribute_as_list(SubEl, 'node', ""),
-    if
-	Self, Node /= [] ->
-	    %% Here, we treat disco publish attempts to your own JID.
-	    Items = SubEl#xmlel.children,
-	    case process_disco_publish({LFrom, LServer}, Node, Items) of
-		ok ->
-		    exmpp_iq:result(IQ_Rec);
-		{error, Err} ->
-		    exmpp_iq:error(IQ_Rec, Err)
-	    end;
-
-	true ->
-	    exmpp_iq:error(IQ_Rec, 'not-allowed')
-    end.
+process_sm_iq_items(_From, _To, #iq{type = set, payload = _SubEl} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
@@ -389,8 +359,6 @@ get_sm_features(empty, From, To, _Node, _Lang) ->
 get_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-
-
 get_user_resources(JID) ->
     Rs = ejabberd_sm:get_user_resources(exmpp_jid:prep_node(JID),
                                         exmpp_jid:prep_domain(JID)),
@@ -401,106 +369,3 @@ get_user_resources(JID) ->
 			  ?XMLATTR('name', exmpp_jid:prep_node(JID))
 			]}
 	      end, lists:sort(Rs)).
-
-
-get_publish_items(empty, From, To, Node, _Lang) ->
-    LFrom = exmpp_jid:prep_node_as_list(From),
-    LSFrom = exmpp_jid:prep_domain_as_list(From),
-    LTo = exmpp_jid:prep_node_as_list(To),
-    LSTo = exmpp_jid:prep_domain_as_list(To),
-    if
-	(LFrom == LTo) and (LSFrom == LSTo) ->
-	    retrieve_disco_publish({LTo, LSTo}, binary_to_list(Node));
-	true ->
-	    empty
-    end;
-get_publish_items(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
-
-process_disco_publish(User, Node, Items) ->
-    F = fun() ->
-		lists:foreach(
-		  fun(#xmlel{} = Item) ->
-			  Action = exmpp_xml:get_attribute_as_list(Item, 'action', ""),
-			  Jid = exmpp_xml:get_attribute_as_list(Item, 'jid', ""),
-			  PNode = exmpp_xml:get_attribute_as_list(Item, 'node', ""),
-			  Name = exmpp_xml:get_attribute_as_list(Item, 'name', ""),
-			  ?INFO_MSG("Disco publish: ~p ~p ~p ~p ~p ~p~n",
-				    [User, Action, Node, Jid, PNode, Name]),
-
-			  %% The disco_publish table isn't strictly a "bag" table, as
-			  %% entries with same jid and node combination are considered
-			  %% the same, even if they have different names.  Therefore,
-			  %% we find a list of items to supersede.
-			  SupersededItems = mnesia:match_object(
-					      #disco_publish{owner_node = {User, Node},
-							     jid = Jid,
-							     node = PNode,
-							     _ = '_'}),
-			  case Action of
-			      "update" ->
-				  lists:map(
-				    fun(O) ->
-					    mnesia:delete_object(O)
-				    end, SupersededItems),
-				  mnesia:write(
-				    #disco_publish{owner_node = {User, Node},
-						   jid = Jid,
-						   name = Name,
-						   node = PNode});
-			      "remove" ->
-				  case SupersededItems of
-				      [] ->
-					  mnesia:abort({error, 'item-not-found'});
-				      _ ->
-					  lists:map(
-					    fun(O) ->
-						    mnesia:delete_object(O)
-					    end, SupersededItems)
-				  end;
-			      _ ->
-				  %% invalid "action" attribute - return an error
-				  mnesia:abort({error, 'bad-request'})
-			  end;
-		     (#xmlcdata{}) ->
-			  ok
-		  end, Items)
-	end,
-    case mnesia:transaction(F) of
-	{aborted, {error, _} = Error} ->
-	    Error;
-	{atomic, _} ->
-	    ok;
-	_ ->
-	    {error, 'internal-server-error'}
-    end.
-
-retrieve_disco_publish(User, Node) ->
-    case catch mnesia:dirty_read({disco_publish, {User, Node}}) of
-	{'EXIT', _Reason} ->
-	    {error, 'internal-server-error'};
-	[] ->
-	    empty;
-	Items ->
-	    {result,
-	     lists:map(
-	       fun(#disco_publish{jid = Jid,
-				  name = Name,
-				  node = PNode}) ->
-		       #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-			lists:append([[?XMLATTR('jid', Jid)],
-				      case Name of
-					  "" ->
-					      [];
-					  _ ->
-					      [?XMLATTR('name', Name)]
-				      end,
-				      case PNode of
-					  "" ->
-					      [];
-					  _ ->
-					      [?XMLATTR('node', PNode)]
-				      end])}
-	       end, Items)}
-    end.
-
