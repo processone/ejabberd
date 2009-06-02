@@ -895,6 +895,11 @@ session_established({xmlstreamend, _Name}, StateData) ->
     send_text(StateData, ?STREAM_TRAILER),
     {stop, normal, StateData};
 
+session_established({xmlstreamerror, "XML stanza is too big" = E}, StateData) ->
+    Text = ?POLICY_VIOLATION_ERR(StateData#state.lang, E) ++ ?STREAM_TRAILER,
+    send_text(StateData, Text),
+    {stop, normal, StateData};
+
 session_established({xmlstreamerror, _}, StateData) ->
     send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
     {stop, normal, StateData};
