@@ -15,6 +15,7 @@
 {"A friendly name for the node","Легко запоминаемое имя для узла"}.
 {"All activity","Вся статистика"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Разрешить этому Jabber ID подписаться на данный узел?"}.
+{"Allow users to change the subject","Разрешить пользователям изменять тему"}.
 {"Allow users to query other users","Разрешить iq-запросы к пользователям"}.
 {"Allow users to send invites","Разрешить пользователям посылать приглашения"}.
 {"Allow users to send private messages","Разрешить приватные сообщения"}.
@@ -23,6 +24,7 @@
 {"All Users","Все пользователи"}.
 {"Announcements","Объявления"}.
 {"anyone","всем участникам"}.
+{"A password is required to enter this room","Чтобы войти в эту конференцию, нужен пароль"}.
 {"April","апреля"}.
 {"August","августа"}.
 {"Backup Management","Управление резервным копированием"}.
@@ -42,6 +44,7 @@
 {"City","Город"}.
 {"Commands","Команды"}.
 {"Conference room does not exist","Конференция не существует"}.
+{"Configuration of room ~s","Конфигурация комнаты ~s"}.
 {"Configuration","Конфигурация"}.
 {"Connected Resources:","Подключённые ресурсы:"}.
 {"Country","Страна"}.
@@ -71,6 +74,7 @@
 {"ejabberd vCard module","ejabberd vCard модуль"}.
 {"ejabberd virtual hosts","Виртуальные хосты ejabberd"}.
 {"ejabberd Web Admin","Web-интерфейс администрирования ejabberd"}.
+{"Elements","Элементы"}.
 {"Email","Электронная почта"}.
 {"Enable logging","Включить журналирование"}.
 {"Encodings","Кодировки"}.
@@ -81,8 +85,10 @@
 {"Enter path to jabberd14 spool dir","Введите путь к директории спула jabberd14"}.
 {"Enter path to jabberd14 spool file","Введите путь к файлу из спула jabberd14"}.
 {"Enter path to text file","Введите путь к текстовому файлу"}.
+{"Enter the text you see","Введите увиденный текст"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers","Введите имя пользователя и кодировки, которые будут использоваться при подключении к IRC-серверам"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
+{"Error","Ошибка"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Примеры: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","Фамилия"}.
 {"February","февраля"}.
@@ -117,6 +123,7 @@
 {"Invalid affiliation: ~s","Недопустимый ранг: ~s"}.
 {"Invalid role: ~s","Недопустимая роль: ~s"}.
 {"IP addresses","IP адреса"}.
+{"IP","IP"}.
 {"IRC Transport","IRC Транспорт"}.
 {"IRC Username","Имя пользователя IRC"}.
 {"is now known as","изменил(а) имя на"}.
@@ -139,6 +146,7 @@
 {"List of modules to start","Список запускаемых модулей"}.
 {"Low level update script","Низкоуровневый сценарий обновления"}.
 {"Make participants list public","Сделать список участников видимым всем"}.
+{"Make room captcha protected","Сделать комнату защищённой капчей"}.
 {"Make room members-only","Комната только для зарегистрированных участников"}.
 {"Make room moderated","Сделать комнату модерируемой"}.
 {"Make room password protected","Сделать комнату защищённой паролем"}.
@@ -149,12 +157,14 @@
 {"Max # of items to persist","Максимальное число сохраняемых публикаций"}.
 {"Max payload size in bytes","Максимальный размер полезной нагрузки в байтах"}.
 {"May","мая"}.
+{"Membership is required to enter this room","В эту конференцию могут входить только её члены"}.
 {"Members:","Члены:"}.
 {"Memory","Память"}.
 {"Message body","Тело сообщения"}.
 {"Middle Name","Отчество"}.
 {"Moderator privileges required","Требуются права модератора"}.
 {"moderators only","только модераторам"}.
+{"Modified modules","Изменённые модули"}.
 {"Modules at ","Модули на "}.
 {"Modules","Модули"}.
 {"Module","Модуль"}.
@@ -174,6 +184,7 @@
 {"No limit","Не ограничено"}.
 {"None","Нет"}.
 {"No resource provided","Не указан ресурс"}.
+{"Not Found","Не Найдено"}.
 {"Notify subscribers when items are removed from the node","Уведомлять подписчиков об удалении публикаций из сборника"}.
 {"Notify subscribers when the node configuration changes","Уведомлять подписчиков об изменении конфигурации сборника"}.
 {"Notify subscribers when the node is deleted","Уведомлять подписчиков об удалении сборника"}.
@@ -189,6 +200,8 @@
 {"Online Users","Подключённые пользователи"}.
 {"Online","Подключён"}.
 {"Only deliver notifications to available users","Доставлять уведомления только доступным пользователям"}.
+{"Only moderators and participants are allowed to change the subject in this room","Только модераторы и участники могут изменять тему в этой комнате"}.
+{"Only moderators are allowed to change the subject in this room","Только модераторы могут изменять тему в этой комнате"}.
 {"Only occupants are allowed to send messages to the conference","Только присутствующим разрешается посылать сообщения в конференцию"}.
 {"Only occupants are allowed to send queries to the conference","Только присутствующим разрешается посылать запросы в конференцию"}.
 {"Only service administrators are allowed to send service messages","Только администратор службы может посылать служебные сообщения"}.
@@ -209,6 +222,7 @@
 {"Period: ","Период"}.
 {"Persist items to storage","Сохранять публикации в хранилище"}.
 {"Ping","Пинг"}.
+{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Заметьте, что здесь производится резервное копирование только встроенной базы данных Mnesia. Если Вы также используете другое хранилище данных (например с помощью модуля ODBC), то его резервное копирование следует осуществлять отдельно."}.
 {"Pong","Понг"}.
 {"Port","Порт"}.
 {"Present real Jabber IDs to","Сделать реальные Jabber ID участников видимыми"}.
@@ -226,6 +240,7 @@
 {"Registered Users","Зарегистрированные пользователи"}.
 {"Registration in mod_irc for ","Регистрация в mod_irc для "}.
 {"Remote copy","не хранится локально"}.
+{"Remove All Offline Messages","Удалить все офлайновые сообщения"}.
 {"Remove User","Удалить пользователя"}.
 {"Remove","Удалить"}.
 {"Replaced by new connection","Заменено новым соединением"}.
@@ -239,6 +254,7 @@
 {"Restore","Восстановление из резервной копии"}.
 {"Room Configuration","Конфигурация комнаты"}.
 {"Room creation is denied by service policy","Cоздавать конференцию запрещено политикой службы"}.
+{"Room description","Описание комнаты"}.
 {"Room title","Название комнаты"}.
 {"Roster groups allowed to subscribe","Группы списка контактов, которым разрешена подписка"}.
 {"Roster of ","Ростер пользователя "}.
@@ -284,6 +300,9 @@
 {"Subscriber Address","Адрес подписчика"}.
 {"Subscription","Подписка"}.
 {"Sunday","Воскресенье"}.
+{"That nickname is already in use by another occupant","Этот псевдоним уже знят другим участником"}.
+{"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
+{"The captcha is valid.","Проверка капчи прошла успешна."}.
 {"the password is","пароль:"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке другому участнику"}.
 {"This participant is kicked from the room because he sent an error message","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"}.
@@ -300,6 +319,7 @@
 {"Transactions Logged:","Транзакции запротоколированные:"}.
 {"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.
+{"Unable to generate a captcha","Не получилось создать капчу"}.
 {"Update message of the day (don't send)","Обновить сообщение дня (не рассылать)"}.
 {"Update message of the day on all hosts (don't send)","Обновить сообщение дня на всех виртуальных серверах (не рассылать)"}.
 {"Update plan","План обновления"}.
@@ -309,6 +329,7 @@
 {"Uptime:","Время работы:"}.
 {"Use of STARTTLS required","Вы обязаны использовать STARTTLS"}.
 {"User Management","Управление пользователями"}.
+{"Users are not allowed to register accounts so quickly","Пользователи не могут регистрировать учётные записи так быстро"}.
 {"Users Last Activity","Статистика последнего подключения пользователей"}.
 {"Users","Пользователи"}.
 {"User ","Пользователь "}.
@@ -328,3 +349,4 @@
 {"You need an x:data capable client to register nickname","Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to search","Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Your contact offline message queue is full. The message has been discarded.","Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
+{"Your messages to ~s are being blocked. To unblock them, visit ~s","Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"}.

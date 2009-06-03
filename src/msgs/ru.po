@@ -22,17 +22,17 @@ msgid "Replaced by new connection"
 msgstr "Заменено новым соединением"
 
 #: ejabberd_captcha.erl:74 ejabberd_captcha.erl:106
-#, fuzzy
 msgid "Enter the text you see"
-msgstr "Введите путь к текстовому файлу"
+msgstr "Введите увиденный текст"
 
 #: ejabberd_captcha.erl:78
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
+"Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"
 
 #: ejabberd_captcha.erl:212
 msgid "The captcha is valid."
-msgstr ""
+msgstr "Проверка капчи прошла успешна."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -514,9 +514,8 @@ msgstr "Псевдоним"
 
 #: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_room.erl:924
 #: mod_muc/mod_muc_room.erl:1511
-#, fuzzy
 msgid "That nickname is registered by another person"
-msgstr "Псевдоним зарегистрирован кем-то другим"
+msgstr "Этот псевдоним зарегистрирован кем-то другим"
 
 #: mod_muc/mod_muc.erl:742
 msgid "You must fill in field \"Nickname\" in the form"
@@ -707,14 +706,12 @@ msgid "private, "
 msgstr "приватная, "
 
 #: mod_muc/mod_muc_room.erl:799
-#, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "Только модераторы и участники могут изменять тему в этой комнате"
 
 #: mod_muc/mod_muc_room.erl:804
-#, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Только модераторы могут изменять тему в этой комнате"
 
@@ -733,16 +730,14 @@ msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr "Посетителям запрещено изменять свои псевдонимы в этой комнате"
 
 #: mod_muc/mod_muc_room.erl:913 mod_muc/mod_muc_room.erl:1503
-#, fuzzy
 msgid "That nickname is already in use by another occupant"
-msgstr "Псевдоним занят кем-то из присутствующих"
+msgstr "Этот псевдоним уже знят другим участником"
 
 #: mod_muc/mod_muc_room.erl:1492
 msgid "You have been banned from this room"
 msgstr "Вам запрещено входить в эту конференцию"
 
 #: mod_muc/mod_muc_room.erl:1495
-#, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "В эту конференцию могут входить только её члены"
 
@@ -751,13 +746,12 @@ msgid "This room is not anonymous"
 msgstr "Эта комната не анонимная"
 
 #: mod_muc/mod_muc_room.erl:1557
-#, fuzzy
 msgid "A password is required to enter this room"
 msgstr "Чтобы войти в эту конференцию, нужен пароль"
 
 #: mod_muc/mod_muc_room.erl:1579
 msgid "Unable to generate a captcha"
-msgstr ""
+msgstr "Не получилось создать капчу"
 
 #: mod_muc/mod_muc_room.erl:1589
 msgid "Incorrect password"
@@ -792,14 +786,12 @@ msgid "Owner privileges required"
 msgstr "Требуются права владельца"
 
 #: mod_muc/mod_muc_room.erl:2772
-#, fuzzy
 msgid "Configuration of room ~s"
-msgstr "Конфигурация "
+msgstr "Конфигурация комнаты ~s"
 
 #: mod_muc/mod_muc_room.erl:2780 mod_muc/mod_muc_room.erl:3187
-#, fuzzy
 msgid "Room description"
-msgstr "Описание:"
+msgstr "Описание комнаты"
 
 #: mod_muc/mod_muc_room.erl:2787
 msgid "Make room persistent"
@@ -850,7 +842,6 @@ msgid "Default users as participants"
 msgstr "Сделать пользователей участниками по умолчанию"
 
 #: mod_muc/mod_muc_room.erl:2848
-#, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Разрешить пользователям изменять тему"
 
@@ -876,9 +867,8 @@ msgid "Allow visitors to change nickname"
 msgstr "Разрешить посетителям изменять псевдоним"
 
 #: mod_muc/mod_muc_room.erl:2869
-#, fuzzy
 msgid "Make room captcha protected"
-msgstr "Сделать комнату защищённой паролем"
+msgstr "Сделать комнату защищённой капчей"
 
 #: mod_muc/mod_muc_room.erl:2878
 msgid "Enable logging"
@@ -949,9 +939,8 @@ msgid "Offline Messages:"
 msgstr "Офлайновые сообщения:"
 
 #: mod_offline.erl:562 mod_offline_odbc.erl:447
-#, fuzzy
 msgid "Remove All Offline Messages"
-msgstr "Офлайновые сообщения"
+msgstr "Удалить все офлайновые сообщения"
 
 #: mod_proxy65/mod_proxy65_service.erl:209
 msgid "ejabberd SOCKS5 Bytestreams module"
@@ -1050,7 +1039,6 @@ msgid "Choose a username and password to register with this server"
 msgstr "Выберите имя пользователя и пароль для регистрации на этом сервере"
 
 #: mod_register.erl:243
-#, fuzzy
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Пользователи не могут регистрировать учётные записи так быстро"
 
@@ -1306,9 +1294,8 @@ msgid "Show Integral Table"
 msgstr "Показать интегральную таблицу"
 
 #: web/ejabberd_web_admin.erl:981
-#, fuzzy
 msgid "Not Found"
-msgstr "Узел не найден"
+msgstr "Не Найдено"
 
 #: web/ejabberd_web_admin.erl:996
 msgid "Node not found"
@@ -1398,7 +1385,7 @@ msgstr "Тип таблицы"
 
 #: web/ejabberd_web_admin.erl:1793
 msgid "Elements"
-msgstr ""
+msgstr "Элементы"
 
 #: web/ejabberd_web_admin.erl:1794
 msgid "Memory"
@@ -1406,14 +1393,13 @@ msgstr "Память"
 
 #: web/ejabberd_web_admin.erl:1811 web/ejabberd_web_admin.erl:1880
 msgid "Error"
-msgstr ""
+msgstr "Ошибка"
 
 #: web/ejabberd_web_admin.erl:1813
 msgid "Backup of "
 msgstr "Резервное копирование "
 
 #: web/ejabberd_web_admin.erl:1815
-#, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1498,9 +1484,8 @@ msgid "Update plan"
 msgstr "План обновления"
 
 #: web/ejabberd_web_admin.erl:1998
-#, fuzzy
 msgid "Modified modules"
-msgstr "Обновлённые модули"
+msgstr "Изменённые модули"
 
 #: web/ejabberd_web_admin.erl:1999
 msgid "Update script"
@@ -1520,7 +1505,7 @@ msgstr "Порт"
 
 #: web/ejabberd_web_admin.erl:2145
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 #: web/ejabberd_web_admin.erl:2146 web/ejabberd_web_admin.erl:2255
 msgid "Module"
@@ -1537,9 +1522,3 @@ msgstr "Удалить"
 #: web/ejabberd_web_admin.erl:2278
 msgid "Start"
 msgstr "Запустить"
-
-#~ msgid "Specified nickname is already registered"
-#~ msgstr "Указанный псевдоним уже зарегистрирован"
-
-#~ msgid "Size"
-#~ msgstr "Размер"
