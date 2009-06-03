@@ -14,8 +14,7 @@
 {"Administrator privileges required","I fåt des priviledjes di manaedjeu"}.
 {"A friendly name for the node","On no uzeu-ahessåve pol nuk"}.
 {"All activity","Dispoy todi"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Permete ki ci JID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"}.
-{"Allow users to change subject","Les uzeus polèt candjî l' tite"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Permete ki ci Jabber ID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"}.
 {"Allow users to query other users","Les uzeus polèt cweri ls ôtes uzeus"}.
 {"Allow users to send invites","Les uzeus polèt evoyî priyaedjes"}.
 {"Allow users to send private messages","Les uzeus polèt evoyî des messaedjes privés"}.
@@ -44,7 +43,6 @@
 {"Commands","Comandes"}.
 {"Conference room does not exist","Li såle di conferince n' egzistêye nén"}.
 {"Configuration","Apontiaedjes"}.
-{"Configuration for ","Apontiaedje po "}.
 {"Connected Resources:","Raloyî avou les rsoûces:"}.
 {"Country","Payis"}.
 {"CPU Time:","Tins CPU:"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","C' est nén possibe d' evoyî des messaedjes privés del sôre «groupchat»"}.
 {"It is not allowed to send private messages to the conference","On n' pout nén evoyî des messaedjes privés dins cisse conferince ci"}.
 {"Jabber ID","ID Jabber"}.
+{"Jabber ID ~s is invalid","Li Jabber ID ~s n' est nén valide"}.
 {"January","djanvî"}.
-{"Jabber ID ~s is invalid","Li JID ~s n' est nén valide"}.
 {"joins the room","arive sol såle"}.
 {"July","djulete"}.
 {"June","djun"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Nombe macsimoms di cayets permanints"}.
 {"Max payload size in bytes","Contnou macsimom en octets"}.
 {"May","may"}.
-{"Membership required to enter this room","I fåt esse mimbe po poleur intrer dins cisse såle ci"}.
 {"Members:","Mimbes:"}.
 {"Memory","Memwere"}.
 {"Message body","Coir do messaedje"}.
@@ -165,8 +162,6 @@
 {"Name","No"}.
 {"Name:","Pitit no:"}.
 {"Never","Måy"}.
-{"Nickname is already in use by another occupant","Li metou no est ddja eployî pa ene ôte sakî sol såle"}.
-{"Nickname is registered by another person","Li metou no est ddja edjîstré pa ene ôte sakî"}.
 {"Nickname","Metou no"}.
 {"Nickname Registration at ","Edjîstraedje di metou no amon "}.
 {"Nickname ~s does not exist in the room","Li metou no ~s n' egzistêye nén dins l' såle"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Uzeus raloyîs:"}.
 {"Online Users","Uzeus raloyîs"}.
 {"Only deliver notifications to available users","Seulmint evoyî des notifiaedje åzès uzeus disponibes"}.
-{"Only moderators and participants are allowed to change subject in this room","Seulmint les moderateus et les pårticipants polèt candjî l' sudjet dins cisse såle ci"}.
-{"Only moderators are allowed to change subject in this room","Seulmint les moderateus polèt candjî l' sudjet dins cisse såle ci"}.
 {"Only occupants are allowed to send messages to the conference","Seulmint les prezints polèt evoyî des messaedjes al conferince"}.
 {"Only occupants are allowed to send queries to the conference","Seulmint les prezints polèt evoyî des cweraedjes sol conferince"}.
 {"Only service administrators are allowed to send service messages","Seulmint les manaedjeus d' siervices polèt evoyî des messaedjes di siervice"}.
@@ -207,7 +200,6 @@
 {"Outgoing s2s Servers:","Sierveus s2s e rexhowe:"}.
 {"Owner privileges required","I fåt des priviledjes di prôpietaire"}.
 {"Packet","Paket"}.
-{"Password required to enter this room","I fåt dner on scret po poleur intrer dins cisse såle ci"}.
 {"Password:","Sicret:"}.
 {"Password","Sicret"}.
 {"Password Verification","Acertinaedje do scret"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Pôrt"}.
-{"Present real Jabber IDs to","Mostrer les vraiys JIDs a"}.
+{"Present real Jabber IDs to","Mostrer les vraiys Jabber IDs a"}.
 {"private, ","privé, "}.
 {"Publish-Subscribe","Eplaidaedje-abounmint"}.
 {"PubSub subscriber request","Dimande d' eplaidaedje-abounmint d' èn abouné"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Uzeus edjistrés:"}.
 {"Registered Users","Uzeus edjistrés"}.
 {"Registration in mod_irc for ","Edjîstraedje dins mod_irc po "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Notez ki ces tchuzes la vont seulmint fé ene copeye di såvrité del båze di dnêyes Mnesia costrûte å dvins do programe. Si vos eployîz ene difoûtrinne båze di dnêyes avou l' module ODBC, vos dvoz fé ene copeye di såvrité del båze SQL da vosse sepårumint."}.
 {"Remote copy","Copeye å lon"}.
 {"Remove","Oister"}.
 {"Remove User","Disfacer l' uzeu"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Mostrer crexhince"}.
 {"Shut Down Service","Arester siervice"}.
 {"~s invites you to the room ~s","~s vos preye sol såle ~s"}.
-{"Size","Grandeu"}.
-{"Specified nickname is already registered","Li no metou dné est ddja edjîstré"}.
 {"Specify the access model","Sipecifyî l' modele d' accès"}.
 {"Specify the publisher model","Dinez l' modele d' eplaideu"}.
 {"~s's Offline Messages Queue","messaedjes ki ratindèt el cawêye po ~s"}.
@@ -311,7 +300,6 @@
 {"Transactions Logged:","Transaccions wårdêyes e djournå:"}.
 {"Transactions Restarted:","Transaccions renondêyes:"}.
 {"Tuesday","mårdi"}.
-{"Updated modules","Modules metous a djoû"}.
 {"Update message of the day (don't send)","Mete a djoû l' messaedje do djoû (nén l' evoyî)"}.
 {"Update message of the day on all hosts (don't send)","Mete a djoû l' messaedje do djoû so tos les lodjoes (nén l' evoyî)"}.
 {"Update ","Metaedje a djoû "}.
@@ -321,7 +309,6 @@
 {"Uptime:","Tins dispoy l' enondaedje:"}.
 {"Use of STARTTLS required","L' eployaedje di STARTTL est oblidjî"}.
 {"User Management","Manaedjaedje des uzeus"}.
-{"Users are not allowed to register accounts so fast","Les noveas uzeus n' si polèt nén edjîstrer si raddimint"}.
 {"Users Last Activity","Dierinne activité des uzeus"}.
 {"Users","Uzeus"}.
 {"User ","Uzeu "}.

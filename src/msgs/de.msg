@@ -14,8 +14,7 @@
 {"Administrator privileges required","Administratorenrechte benötigt"}.
 {"A friendly name for the node","Ein passender Name für den Knoten"}.
 {"All activity","Alle Aktivitäten"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Erlauben Sie dieser JID das Abonnement dieses pubsub Knotens?"}.
-{"Allow users to change subject","Erlaube Benutzern das Thema zu ändern"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Erlauben Sie dieser Jabber ID das Abonnement dieses pubsub Knotens?"}.
 {"Allow users to query other users","Erlaube Benutzern andere Benutzer abzufragen"}.
 {"Allow users to send invites","Erlaube Benutzern Einladungen zu senden"}.
 {"Allow users to send private messages","Erlaube Benutzern private Nachrichten zu senden"}.
@@ -43,7 +42,6 @@
 {"City","Stadt"}.
 {"Commands","Befehle"}.
 {"Conference room does not exist","Konferenzraum existiert nicht"}.
-{"Configuration for ","Konfiguration für "}.
 {"Configuration","Konfiguration"}.
 {"Connected Resources:","Verbundene Resourcen"}.
 {"Country","Land"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Es ist nicht erlaubt private Nachrichten des Typs \"Gruppenchat\" zu senden"}.
 {"It is not allowed to send private messages to the conference","Es ist nicht erlaubt private Nachrichten an den Raum zu schicken"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s ist ungültig"}.
 {"January","Januar"}.
-{"Jabber ID ~s is invalid","JID ~s ist ungültig"}.
 {"joins the room","kommt in den Raum"}.
 {"July","Juli"}.
 {"June","Juni"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Maximale Anzahl dauerhaft zu speichernder Einträge"}.
 {"Max payload size in bytes","Maximale Nutzlastgrösse in Bytes"}.
 {"May","Mai"}.
-{"Membership required to enter this room","Um diesen Raum zu betreten müssen sie Mitglied sein"}.
 {"Members:","Mitglieder:"}.
 {"Memory","Speicher"}.
 {"Message body","Nachrichtentext"}.
@@ -165,8 +162,6 @@
 {"Name:","Name:"}.
 {"Name","Vorname"}.
 {"Never","Nie"}.
-{"Nickname is already in use by another occupant","Spitzname wird bereits von einem Teilnehmer genutzt"}.
-{"Nickname is registered by another person","Spitzname wurde bereits von jemand anderem registriert"}.
 {"Nickname Registration at ","Registrieren des Spitznamens "}.
 {"Nickname ~s does not exist in the room","Spitzname ~s existiert im Raum nicht"}.
 {"Nickname","Spitzname"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Angemeldete Benutzer:"}.
 {"Online Users","Angemeldete Benutzer"}.
 {"Only deliver notifications to available users","Benachrichtigungen nur an verfügbare Benutzer schicken"}.
-{"Only moderators and participants are allowed to change subject in this room","Nur Moderatoren und Teilnehmer dürfen das Thema in diesem Raum ändern"}.
-{"Only moderators are allowed to change subject in this room","Nur Moderatoren dürfen das Thema in diesem Raum ändern"}.
 {"Only occupants are allowed to send messages to the conference","Nur Teilnehmer dürfen Nachrichten an den Raum schicken"}.
 {"Only occupants are allowed to send queries to the conference","Nur Teilnehmer sind berechtig Anfragen an die Konferenz zu senden"}.
 {"Only service administrators are allowed to send service messages","Nur Service Administratoren sind berechtigt, Servicenachrichten zu senden"}.
@@ -209,7 +202,6 @@
 {"Packet","Paket"}.
 {"Password:","Passwort:"}.
 {"Password","Passwort"}.
-{"Password required to enter this room","Sie brauchen ein Passwort um diesen Raum zu betreten"}.
 {"Password Verification","Passwort bestätigen"}.
 {"Path to Dir","Pfad zum Verzeichnis"}.
 {"Path to File","Pfad zur Datei"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Registrierte Benutzer:"}.
 {"Registered Users","Registrierte Benutzer"}.
 {"Registration in mod_irc for ","Registrierung in mod_irc für "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Beachten sie, das diese Optionen nur die eingebaute Mnesia Datenbank sichert. Wenn sie das ODBC Modul verwenden, müssen sie die SQL Datenbank manuell sichern."}.
 {"Remote copy","Fernkopie"}.
 {"Remove","Entfernen"}.
 {"Remove User","Benutzer löschen"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Normale Tabelle anzeigen"}.
 {"Shut Down Service","Dienst herunterfahren"}.
 {"~s invites you to the room ~s","~s lädt sie in den Raum ~s ein"}.
-{"Size","Grösse"}.
-{"Specified nickname is already registered","Der angegebene Name ist bereits vergeben"}.
 {"Specify the access model","Geben Sie das Zugangsmodell an"}.
 {"Specify the publisher model","Geben Sie das Publikationsmodell an"}.
 {"~s's Offline Messages Queue","~s's Offline Nachrichten Warteschlange"}.
@@ -313,7 +302,6 @@
 {"Tuesday","Dienstag"}.
 {"Update","Aktualisieren"}.
 {"Update ","Aktualisierung "}.
-{"Updated modules","Aktualisierte Module"}.
 {"Update message of the day (don't send)","Aktualisiere Nachricht des Tages (nicht senden)"}.
 {"Update message of the day on all hosts (don't send)","Aktualisiere Nachricht des Tages auf allen Hosts (nicht senden)"}.
 {"Update plan","Aktualisierungsplan"}.
@@ -323,7 +311,6 @@
 {"User ","Benutzer "}.
 {"User","Benutzer"}.
 {"User Management","Benutzer Verwaltung"}.
-{"Users are not allowed to register accounts so fast","Benutzer dürfen Konten nicht so schnell registrieren"}.
 {"Users","Benutzer"}.
 {"Users Last Activity","Letzte Benutzeraktivität"}.
 {"Validate","Validieren"}.

@@ -14,8 +14,7 @@
 {"Administrator privileges required","Yönetim yetkileri gerekli"}.
 {"A friendly name for the node","Düğüm için dostane bir isim"}.
 {"All activity","Tüm aktivite"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Bu JID bu pubsub düğümüne üye olmasına izin verilsin mi?"}.
-{"Allow users to change subject","Kullanıcıların konu değiştirmesine izin ver"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Bu Jabber ID bu pubsub düğümüne üye olmasına izin verilsin mi?"}.
 {"Allow users to query other users","Kullanıcıların diğer kullanıcıları sorgulamalarına izin ver"}.
 {"Allow users to send invites","Kullanıcıların davetiye göndermelerine izin ver"}.
 {"Allow users to send private messages","Kullanıcıların özel mesaj göndermelerine izin ver"}.
@@ -44,7 +43,6 @@
 {"Commands","Komutlar"}.
 {"Conference room does not exist","Konferans odası bulunamadı"}.
 {"Configuration","Ayarlar"}.
-{"Configuration for ","Ayarlar : "}.
 {"Connected Resources:","Bağlı Kaynaklar:"}.
 {"Country","Ülke"}.
 {"CPU Time:","İşlemci Zamanı:"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages","Özel mesaj gönderilmesine izin verilmiyor"}.
 {"It is not allowed to send private messages to the conference","Konferansa özel mesajlar gönderilmesine izin verilmiyor"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s geçersiz"}.
 {"January","Ocak"}.
-{"Jabber ID ~s is invalid","JID ~s geçersiz"}.
 {"joins the room","odaya katıldı"}.
 {"July","Temmuz"}.
 {"June","Haziran"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Kalıcı hale getirilecek en fazla öğe sayısı"}.
 {"Max payload size in bytes","En fazla yük (payload) boyutu (bayt olarak)"}.
 {"May","Mayıs"}.
-{"Membership required to enter this room","Bu odaya girmek için üyelik gerekiyor"}.
 {"Members:","Üyeler:"}.
 {"Memory","Bellek"}.
 {"Message body","Mesajın gövdesi"}.
@@ -165,8 +162,6 @@
 {"Name:","İsim:"}.
 {"Name","İsim"}.
 {"Never","Asla"}.
-{"Nickname is already in use by another occupant","Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"}.
-{"Nickname is registered by another person","Takma isim başka biri tarafından kaydettirilmiş"}.
 {"Nickname Registration at ","Takma İsim Kaydı : "}.
 {"Nickname ~s does not exist in the room","~s takma ismi odada yok"}.
 {"Nickname","Takma isim"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Bağlı Kullanıcılar:"}.
 {"Online Users","Bağlı Kullanıcılar"}.
 {"Only deliver notifications to available users","Uyarıları sadece durumu uygun kullanıcılara ulaştır"}.
-{"Only moderators and participants are allowed to change subject in this room","Sadece moderatörlerin ve katılımcıların bu odanın konusunu değiştirmesine izin veriliyor"}.
-{"Only moderators are allowed to change subject in this room","Sadece moderatörlerin bu odanın konusunu değiştirmesine izin veriliyor"}.
 {"Only occupants are allowed to send messages to the conference","Sadece oda sakinlerinin konferansa mesaj göndermesine izin veriliyor"}.
 {"Only occupants are allowed to send queries to the conference","Sadece oda sakinlerinin konferansa sorgu göndermesine izin veriliyor"}.
 {"Only service administrators are allowed to send service messages","Sadece servis yöneticileri servis mesajı gönderebilirler"}.
@@ -209,7 +202,6 @@
 {"Packet","Paket"}.
 {"Password:","Parola:"}.
 {"Password","Parola"}.
-{"Password required to enter this room","Bu odaya girmek için parola gerekiyor"}.
 {"Password Verification","Parola Doğrulaması"}.
 {"Path to Dir","Dizinin Yolu"}.
 {"Path to File","Dosyanın Yolu"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Kapı (Port)"}.
-{"Present real Jabber IDs to","Gerçek JID'lerini göster :"}.
+{"Present real Jabber IDs to","Gerçek Jabber ID'lerini göster :"}.
 {"private, ","özel"}.
 {"Publish-Subscribe","Yayınla-Üye Ol"}.
 {"PubSub subscriber request","PubSub üye isteği"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Kayıtlı Kullanıcılar:"}.
 {"Registered Users","Kayıtlı Kullanıcılar"}.
 {"Registration in mod_irc for ","mod_irc'ye kayıt : "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Bu seçeneklerin sadece gömülü Mnesia veritabanını yedekleyeceğine dikkat edin. Eğer ODBC modülünü kullanıyorsanız, SQL veritabanınızı da ayrıca yedeklemeniz gerekiyor."}.
 {"Remote copy","Uzak kopyala"}.
 {"Remove","Kaldır"}.
 {"Remove User","Kullanıcıyı Kaldır"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Sıradan Tabloyu Göster"}.
 {"Shut Down Service","Servisi Kapat"}.
 {"~s invites you to the room ~s","~s sizi ~s odasına davet ediyor"}.
-{"Size","Boyut"}.
-{"Specified nickname is already registered","Belirtilen takma isim daha önce bir başkası tarafından kaydettirilmiş"}.
 {"Specify the access model","Erişim modelini belirtiniz"}.
 {"Specify the publisher model","Yayıncı modelini belirtiniz"}.
 {"~s's Offline Messages Queue","~s Kullanıcısının Mesaj Kuyruğu"}.
@@ -311,7 +300,6 @@
 {"Transactions Logged:","Kaydı Tutulan Hareketler (Transactions):"}.
 {"Transactions Restarted:","Tekrar Başlatılan Hareketler (Transactions):"}.
 {"Tuesday","Salı"}.
-{"Updated modules","Güncellenen modüller"}.
 {"Update ","Güncelle "}.
 {"Update","GÜncelle"}.
 {"Update message of the day (don't send)","Günün mesajını güncelle (gönderme)"}.
@@ -323,7 +311,6 @@
 {"User ","Kullanıcı "}.
 {"User","Kullanıcı"}.
 {"User Management","Kullanıcı Yönetimi"}.
-{"Users are not allowed to register accounts so fast","Kullanıcıların bu kadar hızlı hesap açmalarına izin verilmiyor"}.
 {"Users","Kullanıcılar"}.
 {"Users Last Activity","Kullanıcıların Son Aktiviteleri"}.
 {"Validate","Geçerli"}.

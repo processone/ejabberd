@@ -14,8 +14,7 @@
 {"Administrator privileges required","Jsou potřebná práva administrátora"}.
 {"A friendly name for the node","Přívětivé jméno pro uzel"}.
 {"All activity","Všechny aktivity"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Povolit tomuto JID odebírat tento pubsub uzel?"}.
-{"Allow users to change subject","Povolit uživatelům měnit téma místnosti"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Povolit tomuto Jabber ID odebírat tento pubsub uzel?"}.
 {"Allow users to query other users","Povolit uživatelům odesílat požadavky (query) ostatním uživatelům"}.
 {"Allow users to send invites","Povolit uživatelům posílání pozvánek"}.
 {"Allow users to send private messages","Povolit uživatelům odesílat soukromé zprávy"}.
@@ -43,7 +42,6 @@
 {"City","Město: "}.
 {"Commands","Příkazy"}.
 {"Conference room does not exist","Konferenční místnost neexistuje"}.
-{"Configuration for ","Konfigurace pro "}.
 {"Configuration","Konfigurace"}.
 {"Connected Resources:","Připojené zdroje:"}.
 {"Country","Země: "}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
 {"It is not allowed to send private messages to the conference","Není povoleno odesílat soukromé zprávy do konference"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s je neplatné"}.
 {"January",". ledna"}.
-{"Jabber ID ~s is invalid","JID ~s je neplatné"}.
 {"joins the room","vstoupil(a) do místnosti"}.
 {"July",". července"}.
 {"June",". června"}.
@@ -152,7 +150,6 @@
 {"Max payload size in bytes","Maximální náklad v bajtech"}.
 {"May",". května"}.
 {"Members:","Členové:"}.
-{"Membership required to enter this room","Pro vstup do místnosti musíte být členem"}.
 {"Memory","Paměť"}.
 {"Message body","Tělo zprávy"}.
 {"Middle Name","Druhé jméno: "}.
@@ -165,8 +162,6 @@
 {"Name:","Jméno:"}.
 {"Name","Jméno"}.
 {"Never","Nikdy"}.
-{"Nickname is already in use by another occupant","Přezdívka je již používána jiným členem"}.
-{"Nickname is registered by another person","Přezdívka je zaregistrována jinou osobou"}.
 {"Nickname","Prezdívka"}.
 {"Nickname Registration at ","Registrace prezdívky na "}.
 {"Nickname ~s does not exist in the room","Přezdívka ~s v místnosti neexistuje"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Online uživatelé:"}.
 {"Online Users","Online uživatelé"}.
 {"Only deliver notifications to available users","Doručovat upozornění jen právě přihlášeným uživatelům"}.
-{"Only moderators and participants are allowed to change subject in this room","Jen moderátoři a účastníci mají povoleno měnit téma této místnosti"}.
-{"Only moderators are allowed to change subject in this room","Jen moderátoři mají povoleno měnit téma místnosti"}.
 {"Only occupants are allowed to send messages to the conference","Jen členové mají povolené zasílat správy do konference"}.
 {"Only occupants are allowed to send queries to the conference","Jen členové mohou odesílat požadavky (query) do konference"}.
 {"Only service administrators are allowed to send service messages","Pouze správci služby mají povolené odesílání servisních zpráv"}.
@@ -209,7 +202,6 @@
 {"Packet","Paket"}.
 {"Password:","Heslo:"}.
 {"Password","Heslo"}.
-{"Password required to enter this room","Pro vstup do místnosti musíte zadat heslo"}.
 {"Password Verification","Ověření hesla"}.
 {"Path to Dir","Cesta k adresáři"}.
 {"Path to File","Cesta k souboru"}.
@@ -233,7 +225,6 @@
 {"Registered Users","Registrovaní uživatelé"}.
 {"Registered Users:","Registrovaní živatelé:"}.
 {"Registration in mod_irc for ","Registrace do mod_irc na "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Podotýkáme, že tato nastavení budou zálohována do zabudované databáze Mnesia. Pokud používáte ODBC modul, musíte zálohovat svoji SQL databázi samostatně."}.
 {"Remote copy","Vzdálená kopie"}.
 {"Remove","Odstranit"}.
 {"Remove User","Odstranit uživatele"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Zobrazit běžnou tabulku"}.
 {"Shut Down Service","Vypnout službu"}.
 {"~s invites you to the room ~s","~s vás zve do místnosti ~s"}.
-{"Size","Velikost"}.
-{"Specified nickname is already registered","Zadaná přezdívka je již zaregistrována"}.
 {"Specify the access model","Uveďte přístupový model"}.
 {"Specify the publisher model","Specifikovat model pro publikování"}.
 {"~s's Offline Messages Queue","Fronta offline zpráv uživatele ~s"}.
@@ -313,7 +302,6 @@
 {"Tuesday","Úterý"}.
 {"Update ","Aktualizovat "}.
 {"Update","Aktualizovat"}.
-{"Updated modules","Aktualizované moduly"}.
 {"Update message of the day (don't send)","Aktualizovat zprávu dne (neodesílat)"}.
 {"Update message of the day on all hosts (don't send)","Aktualizovat zprávu dne pro všechny hostitele (neodesílat)"}.
 {"Update plan","Aktualizovat plán"}.
@@ -321,7 +309,6 @@
 {"Uptime:","Čas běhu"}.
 {"Use of STARTTLS required","Je vyžadováno STARTTLS."}.
 {"User Management","Správa uživatelů"}.
-{"Users are not allowed to register accounts so fast","Je zakázáno registrovat účty v tak rychlém sledu"}.
 {"Users Last Activity","Poslední aktivita uživatele"}.
 {"Users","Uživatelé"}.
 {"User ","Uživatel "}.

@@ -13,8 +13,7 @@
 {"Administration","Quản trị"}.
 {"Administrator privileges required","Yêu cầu đặc quyền của nhà quản trị"}.
 {"All activity","Tất cả hoạt động"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Cho phép JID đăng ký nút môđun xuất bản đăng ký này không?"}.
-{"Allow users to change subject","Cho phép người sử dụng thay đổi chủ đề"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Cho phép Jabber ID đăng ký nút môđun xuất bản đăng ký này không?"}.
 {"Allow users to query other users","Cho phép người sử dụng hỏi người sử dụng khác"}.
 {"Allow users to send invites","Cho phép người sử dụng gửi lời mời"}.
 {"Allow users to send private messages","Cho phép người sử dụng gửi thư riêng"}.
@@ -41,7 +40,6 @@
 {"Commands","Lệnh"}.
 {"Conference room does not exist","Phòng họp không tồn tại"}.
 {"Configuration","Cấu hình"}.
-{"Configuration for ","Cấu hình cho "}.
 {"Connected Resources:","Tài Nguyên Được Kết Nối:"}.
 {"Country","Quốc gia"}.
 {"CPU Time:","Thời Gian CPU:"}.
@@ -118,8 +116,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Không được phép gửi những thư riêng loại \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Không được phép gửi những thư riêng đến phòng họp"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s không hợp lệ"}.
 {"January","Tháng Một"}.
-{"Jabber ID ~s is invalid","JID ~s không hợp lệ"}.
 {"joins the room","tham gia phòng này"}.
 {"July","Tháng Bảy"}.
 {"June","Tháng Sáu"}.
@@ -142,7 +140,6 @@
 {"Max # of items to persist","Số mục tối đa để lưu trữ"}.
 {"Max payload size in bytes","Kích thước dung lượng byte tối đa"}.
 {"May","Tháng Năm"}.
-{"Membership required to enter this room","Yêu cầu tư cách thành viên khi tham gia vào phòng này"}.
 {"Members:","Thành viên:"}.
 {"Memory","Bộ Nhớ"}.
 {"Message body","Thân thư"}.
@@ -157,8 +154,6 @@
 {"Name","Tên"}.
 {"Never","Không bao giờ"}.
 {"Nickname","Bí danh"}.
-{"Nickname is already in use by another occupant","Bí danh đang do một người tham dự khác sử dụng"}.
-{"Nickname is registered by another person","Một người khác đã đăng ký bí danh này rồi"}.
 {"Nickname Registration at ","Đăng Ký Bí Danh tại"}.
 {"Nickname ~s does not exist in the room","Bí danh ~s không tồn tại trong phòng này"}.
 {"No body provided for announce message","Không có nội dung trong thư thông báo"}.
@@ -185,8 +180,6 @@
 {"Online Users:","Người Sử Dụng Trực Tuyến:"}.
 {"Online Users","Người Sử Dụng Trực Tuyến"}.
 {"Only deliver notifications to available users","Chỉ gửi thông báo đến những người sử dụng hiện có"}.
-{"Only moderators and participants are allowed to change subject in this room","Chỉ có những người điều phối và những người tham gia được phép thay đổi chủ đề trong phòng này"}.
-{"Only moderators are allowed to change subject in this room","Chỉ có những người điều phối được phép thay đổi chủ đề trong phòng này"}.
 {"Only occupants are allowed to send messages to the conference","Chỉ có những đối tượng tham gia mới được phép gửi thư đến phòng họp"}.
 {"Only occupants are allowed to send queries to the conference","Chỉ có những đối tượng tham gia mới được phép gửi yêu cầu đến phòng họp"}.
 {"Only service administrators are allowed to send service messages","Chỉ có người quản trị dịch vụ mới được phép gửi những thư dịch vụ"}.
@@ -200,7 +193,6 @@
 {"Packet","Gói thông tin"}.
 {"Password:","Mật Khẩu:"}.
 {"Password","Mật Khẩu"}.
-{"Password required to enter this room","Yêu cầu nhập mật khẩu để vào phòng này"}.
 {"Password Verification","Kiểm Tra Mật Khẩu"}.
 {"Path to Dir","Đường Dẫn đến Thư Mục"}.
 {"Path to File","Đường dẫn đến Tập Tin"}.
@@ -210,7 +202,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Cổng"}.
-{"Present real Jabber IDs to","JID thực tế hiện hành đến"}.
+{"Present real Jabber IDs to","Jabber ID thực tế hiện hành đến"}.
 {"private, ","riêng,"}.
 {"Publish-Subscribe","Xuất Bản-Đăng Ký"}.
 {"PubSub subscriber request","Yêu cầu người đăng ký môđun Xuất Bản Đăng Ký"}.
@@ -224,7 +216,6 @@
 {"Registered Users:","Người Sử Dụng Đã Đăng Ký:"}.
 {"Registered Users","Người Sử Dụng Đã Đăng Ký"}.
 {"Registration in mod_irc for ","Đăng ký trong mod_irc cho "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Lưu ý rằng những tùy chọn này sẽ chỉ được sao lưu cơ sở dữ liệu bên trong Mnesia. Nếu bạn đang sử dụng môđun ODBC, bạn cũng cần sao lưu cơ sở dữ liệu SQL của bạn riêng biệt."}.
 {"Remote copy","Sao chép từ xa"}.
 {"Remove","Gỡ bỏ"}.
 {"Remove User","Gỡ Bỏ Người Sử Dụng"}.
@@ -262,8 +253,6 @@
 {"Show Ordinary Table","Hiển Thị Bảng Thường"}.
 {"Shut Down Service","Tắt Dịch Vụ"}.
 {"~s invites you to the room ~s","~s mời bạn vào phòng ~s"}.
-{"Size","Kích thước"}.
-{"Specified nickname is already registered","Bí danh xác định đã đăng ký rồi"}.
 {"Specify the access model","Xác định mô hình truy cập"}.
 {"Specify the publisher model","Xác định mô hình nhà xuất bản"}.
 {"~s's Offline Messages Queue","~s's Danh Sách Chờ Thư Ngoại Tuyến"}.
@@ -300,7 +289,6 @@
 {"Tuesday","Thứ Ba"}.
 {"Update ","Cập Nhật "}.
 {"Update","Cập Nhật"}.
-{"Updated modules","Môđun cập nhật"}.
 {"Update message of the day (don't send)","Cập nhật thư trong ngày (không gửi)"}.
 {"Update message of the day on all hosts (don't send)","Cập nhật thư trong ngày trên tất cả các máy chủ (không gửi)"}.
 {"Update plan","Kế hoạch cập nhật"}.

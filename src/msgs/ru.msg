@@ -14,7 +14,7 @@
 {"Administrator privileges required","Требуются права администратора"}.
 {"A friendly name for the node","Легко запоминаемое имя для узла"}.
 {"All activity","Вся статистика"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Разрешить этому JID подписаться на данный узел?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Разрешить этому Jabber ID подписаться на данный узел?"}.
 {"Allow users to query other users","Разрешить iq-запросы к пользователям"}.
 {"Allow users to send invites","Разрешить пользователям посылать приглашения"}.
 {"Allow users to send private messages","Разрешить приватные сообщения"}.
@@ -124,8 +124,8 @@
 {"It is not allowed to send private messages to the conference","Не разрешается посылать частные сообщения прямо в конференцию"}.
 {"It is not allowed to send private messages","Запрещено посылать приватные сообщения"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s недопустимый"}.
 {"January","января"}.
-{"Jabber ID ~s is invalid","JID ~s недопустимый"}.
 {"joins the room","вошёл(а) в комнату"}.
 {"July","июля"}.
 {"June","июня"}.
@@ -211,7 +211,7 @@
 {"Ping","Пинг"}.
 {"Pong","Понг"}.
 {"Port","Порт"}.
-{"Present real Jabber IDs to","Сделать реальные JID участников видимыми"}.
+{"Present real Jabber IDs to","Сделать реальные Jabber ID участников видимыми"}.
 {"private, ","приватная, "}.
 {"Publish-Subscribe","Публикация-Подписка"}.
 {"PubSub subscriber request","Запрос подписчика PubSub"}.
@@ -328,25 +328,3 @@
 {"You need an x:data capable client to register nickname","Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to search","Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Your contact offline message queue is full. The message has been discarded.","Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
-{"Only moderators and participants are allowed to change the subject in this room", "Только модераторы и участники могут изменять тему в этой комнате"}.
-{"Only moderators are allowed to change the subject in this room", "Только модераторы могут изменять тему в этой комнате"}.
-{"That nickname is already in use by another occupant", "Этот псевдоним уже знят другим участником"}.
-{"That nickname is registered by another person", "Этот псевдоним зарегистрирован кем-то другим"}.
-{"Membership is required to enter this room", "В эту конференцию могут входить только её члены"}.
-{"A password is required to enter this room", "Чтобы войти в эту конференцию, нужен пароль"}.
-{"Unable to generate a captcha", "Не получилось создать капчу"}.
-{"Configuration of room ~s", "Конфигурация комнаты ~s"}.
-{"Room description", "Описание комнаты"}.
-{"Allow users to change the subject", "Разрешить пользователям изменять тему"}.
-{"Make room captcha protected", "Сделать комнату защищённой капчей"}.
-{"Remove All Offline Messages", "Удалить все офлайновые сообщения"}.
-{"Not Found", "Не Найдено"}.
-{"Elements", "Элементы"}.
-{"Error", "Ошибка"}.
-{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.", "Заметьте, что здесь производится резервное копирование только встроенной базы данных Mnesia. Если Вы также используете другое хранилище данных (например с помощью модуля ODBC), то его резервное копирование следует осуществлять отдельно."}.
-{"Modified modules", "Изменённые модули"}.
-{"IP", "IP"}.
-{"Enter the text you see", "Введите увиденный текст"}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s", "Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"}.
-{"The captcha is valid.", "Проверка капчи прошла успешна."}.
-{"Users are not allowed to register accounts so quickly", "Пользователи не могут регистрировать учётные записи так быстро"}.

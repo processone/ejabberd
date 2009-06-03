@@ -14,8 +14,7 @@
 {"Administrator privileges required","Administratorprivilegier kreves"}.
 {"A friendly name for the node","Et vennlig navn for noden"}.
 {"All activity","All aktivitet"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Tillat denne JID å abonnere på denne pubsub noden?"}.
-{"Allow users to change subject","Tillat brukere å endre emne"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Tillat denne Jabber ID å abonnere på denne pubsub noden?"}.
 {"Allow users to query other users","Tillat brukere å sende forespørsel til andre brukere"}.
 {"Allow users to send invites","Tillat brukere å sende invitasjoner"}.
 {"Allow users to send private messages","Tillat brukere å sende private meldinger"}.
@@ -43,7 +42,6 @@
 {"City","By"}.
 {"Commands","Kommandoer"}.
 {"Conference room does not exist","Konferanserommet finnes ikke"}.
-{"Configuration for ","Konfigurasjon for "}.
 {"Configuration","Konfigurasjon"}.
 {"Connected Resources:","Tilkoblede Ressurser:"}.
 {"Country","Land"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Det er ikke tillatt å sende private meldinger med typen \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Det er ikke tillatt å sende private meldinger til konferansen"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Ugyldig Jabber ID ~s"}.
 {"January","januar"}.
-{"Jabber ID ~s is invalid","Ugyldig JID ~s"}.
 {"joins the room","kommer inn i rommet"}.
 {"July","juli"}.
 {"June","juni"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Høyeste # elementer som skal lagres"}.
 {"Max payload size in bytes","Største innholdsstørrelse i byte"}.
 {"May","mai"}.
-{"Membership required to enter this room","Du må være medlem for å gå inn i dette rommet"}.
 {"Members:","Medlemmer:"}.
 {"Memory","Minne"}.
 {"Message body","Meldingskropp"}.
@@ -165,8 +162,6 @@
 {"Name:","Navn:"}.
 {"Name","Navn"}.
 {"Never","Aldri"}.
-{"Nickname is already in use by another occupant","Kallenavnet er allerede i bruk av en annen bruker"}.
-{"Nickname is registered by another person","Kallenavnet er reservert av en annen person"}.
 {"Nickname","Kallenavn"}.
 {"Nickname Registration at ","Registrer Kallenavn på "}.
 {"Nickname ~s does not exist in the room","Kallenavn ~s eksisterer ikke i dette rommet"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Tilkoblede Brukere:"}.
 {"Online Users","Tilkoblede Brukere"}.
 {"Only deliver notifications to available users","Send kunngjøringer bare til tilgjengelige brukere"}.
-{"Only moderators and participants are allowed to change subject in this room","Bare redaktører og deltakere kan endre emnet i dette rommet"}.
-{"Only moderators are allowed to change subject in this room","Bare redaktører kan endre emnet i dette rommet"}.
 {"Only occupants are allowed to send messages to the conference","Bare deltakere får sende normale meldinger til konferansen"}.
 {"Only occupants are allowed to send queries to the conference","Bare deltakere er tillatt å sende forespørsler til konferansen"}.
 {"Only service administrators are allowed to send service messages","Bare tjeneste administratorer er tilatt å sende tjeneste meldinger"}.
@@ -209,7 +202,6 @@
 {"Packet","Pakke"}.
 {"Password:","Passord:"}.
 {"Password","Passord"}.
-{"Password required to enter this room","Passord kreves for å komme inn i dette rommet"}.
 {"Password Verification","Passord Bekreftelse"}.
 {"Path to Dir","Sti til Katalog"}.
 {"Path to File","Sti til Fil"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real Jabber IDs to","Presenter ekte JIDer til"}.
+{"Present real Jabber IDs to","Presenter ekte Jabber IDer til"}.
 {"private, ","privat, "}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub abonements forespørsel"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Registrerte Brukere:"}.
 {"Registered Users","Registrerte Brukere"}.
 {"Registration in mod_irc for ","Registrering i mod_irc for "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Merk at disse valgene vil bare sikkerhetskopiere den innebygde Mnesia databasen. Dersom du bruker ODBC modulen må du også ta backup av din SQL database."}.
 {"Remote copy","Lagres ikke lokalt"}.
 {"Remove","Fjern"}.
 {"Remove User","Fjern Bruker"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Vis Ordinær Tabell"}.
 {"Shut Down Service","Avslutt Tjeneste"}.
 {"~s invites you to the room ~s","~s inviterer deg til rommet ~s"}.
-{"Size","Størrelse"}.
-{"Specified nickname is already registered","Dette kallenavnet er allerede registrert"}.
 {"Specify the access model","Spesifiser aksess modellen"}.
 {"Specify the publisher model","Angi publiserings modell"}.
 {"~s's Offline Messages Queue","~ss kø for Frakoblede Meldinger"}.
@@ -311,7 +300,6 @@
 {"Transactions Logged:","Loggede Transasksjoner:"}.
 {"Transactions Restarted:","Omstartede Transasksjoner:"}.
 {"Tuesday","tirsdag"}.
-{"Updated modules","Oppdater moduler"}.
 {"Update message of the day (don't send)","Oppdater melding for dagen (ikke send)"}.
 {"Update message of the day on all hosts (don't send)","Oppdater melding for dagen på alle maskiner (ikke send)"}.
 {"Update ","Oppdater "}.
@@ -323,7 +311,6 @@
 {"User ","Bruker "}.
 {"User","Bruker"}.
 {"User Management","Bruker Behandling"}.
-{"Users are not allowed to register accounts so fast","Brukere får ikke lov til å registrere kontoer så fort"}.
 {"Users","Brukere"}.
 {"Users Last Activity","Brukers Siste Aktivitet"}.
 {"Validate","Bekrefte gyldighet"}.

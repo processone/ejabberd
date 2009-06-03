@@ -14,8 +14,7 @@
 {"Administrator privileges required","Необхідні права адміністратора"}.
 {"A friendly name for the node","Псевдонім для вузла"}.
 {"All activity","Вся статистика"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Чи дозволити цьому JID абонувати новини наданого вузла"}.
-{"Allow users to change subject","Дозволити користувачам змінювати тему"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Чи дозволити цьому Jabber ID абонувати новини наданого вузла"}.
 {"Allow users to query other users","Дозволити iq-запити до користувачів"}.
 {"Allow users to send invites","Дозволити користувачам надсилати запрошення"}.
 {"Allow users to send private messages","Дозволити приватні повідомлення"}.
@@ -43,7 +42,6 @@
 {"City","Місто"}.
 {"Commands","Команди"}.
 {"Conference room does not exist","Конференція не існує"}.
-{"Configuration for ","Конфігурація "}.
 {"Configuration","Конфігурація"}.
 {"Connected Resources:","Підключені ресурси:"}.
 {"Country","Країна"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages to the conference","Не дозволяється надсилати приватні повідомлення  в конференцію"}.
 {"It is not allowed to send private messages","Приватні повідомлення не дозволені"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s недопустимий"}.
 {"January","січня"}.
-{"Jabber ID ~s is invalid","JID ~s недопустимий"}.
 {"joins the room","увійшов(ла) в кімнату"}.
 {"July","липня"}.
 {"June","червня"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Максимальне число збережених публікацій"}.
 {"Max payload size in bytes","Максимальний розмір корисного навантаження в байтах"}.
 {"May","травня"}.
-{"Membership required to enter this room","В цю конференціию можуть входити тільки її члени"}.
 {"Members:","Члени:"}.
 {"Memory","Пам'ять"}.
 {"Message body","Тіло повідомлення"}.
@@ -165,8 +162,6 @@
 {"Name:","Назва:"}.
 {"Name","Назва"}.
 {"Never","Ніколи"}.
-{"Nickname is already in use by another occupant","Псевдонім зайнятий кимось з присутніх"}.
-{"Nickname is registered by another person","Псевдонім зареєстрований кимось іншим"}.
 {"Nickname Registration at ","Реєстрація псевдоніма на "}.
 {"Nickname ~s does not exist in the room","Псевдонім ~s в кімнаті відсутній"}.
 {"Nickname","Псевдонім"}.
@@ -194,8 +189,6 @@
 {"Online Users","Підключені користувачі"}.
 {"Online","Підключений"}.
 {"Only deliver notifications to available users","Доставляти повідомленнями тільки доступним користувачам"}.
-{"Only moderators and participants are allowed to change subject in this room","Тільки модератори та учасники можуть змінювати тему в цій кімнаті"}.
-{"Only moderators are allowed to change subject in this room","Тільки модератори можуть змінювати тему в цій кімнаті"}.
 {"Only occupants are allowed to send messages to the conference","Тільки присутнім дозволяється надсилати повідомленняя в конференцію"}.
 {"Only occupants are allowed to send queries to the conference","Тільки присутнім дозволяється відправляти запити в конференцію"}.
 {"Only service administrators are allowed to send service messages","Тільки адміністратор сервісу може надсилати службові повідомлення"}.
@@ -207,7 +200,6 @@
 {"Outgoing s2s Servers:","Вихідні s2s-сервери:"}.
 {"Owner privileges required","Необхідні права власника"}.
 {"Packet","Пакет"}.
-{"Password required to enter this room","Щоб зайти в цю конференцію, необхідний пароль"}.
 {"Password Verification","Перевірка Пароля"}.
 {"Password:","Пароль:"}.
 {"Password","Пароль"}.
@@ -219,7 +211,7 @@
 {"Ping","Пінг"}.
 {"Pong","Понг"}.
 {"Port","Порт"}.
-{"Present real Jabber IDs to","Зробити реальні JID учасників видимими"}.
+{"Present real Jabber IDs to","Зробити реальні Jabber ID учасників видимими"}.
 {"private, ","приватна, "}.
 {"Publish-Subscribe","Опублікувати-Абонувати"}.
 {"PubSub subscriber request","Запит на абонування PubSub"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Зареєстровані користувачі:"}.
 {"Registered Users","Зареєстровані користувачі"}.
 {"Registration in mod_irc for ","Реєстрація в mod_irc для "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Зауважте, що тут відбувається резервне копіювання тільки вбудованної бази даних Mnesia. Якщо Ви також використовуєте інше сховище для даних (наприклад за допомогою модуля ODBC), то його резервне копіювання потрібно робити окремо."}.
 {"Remote copy","не зберігаеться локально"}.
 {"Remove User","Видалити користувача"}.
 {"Remove","Видалити"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Показати звичайну таблицю"}.
 {"Shut Down Service","Відключити Сервіс"}.
 {"~s invites you to the room ~s","~s запрошує вас до кімнати ~s"}.
-{"Size","Розмір"}.
-{"Specified nickname is already registered","Вказаний псевдонім вже зареєстрований"}.
 {"Specify the access model","Визначити модель доступу"}.
 {"Specify the publisher model","Умови публікації"}.
 {"~s's Offline Messages Queue","Черга офлайнових повідомлень ~s"}.
@@ -311,7 +300,6 @@
 {"Transactions Logged:","Транзакції запротокольовані:"}.
 {"Transactions Restarted:","Транзакції перезапущені:"}.
 {"Tuesday","Вівторок"}.
-{"Updated modules","Поновлені модулі"}.
 {"Update message of the day (don't send)","Поновити повідомлення дня (не надсилати)"}.
 {"Update message of the day on all hosts (don't send)","Оновити повідомлення дня на всіх хостах (не надсилати)"}.
 {"Update plan","План поновлення"}.
@@ -321,7 +309,6 @@
 {"Uptime:","Час роботи:"}.
 {"Use of STARTTLS required","Ви мусите використовувати STARTTLS"}.
 {"User Management","Управління Користувачами"}.
-{"Users are not allowed to register accounts so fast","Користувачам не дозволено так часто реєструвати облікові записи"}.
 {"Users Last Activity","Статистика останнього підключення користувачів"}.
 {"Users","Користувачі"}.
 {"User ","Користувач "}.

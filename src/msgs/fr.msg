@@ -14,8 +14,7 @@
 {"Administrator privileges required","Les droits d'administrateur sont nécessaires"}.
 {"A friendly name for the node","Un nom convivial pour le noeud"}.
 {"All activity","Toute activité"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Autoriser ce JID à s'abonner à ce noeud pubsub"}.
-{"Allow users to change subject","Autoriser les utilisateurs à changer le sujet"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Autoriser ce Jabber ID à s'abonner à ce noeud pubsub"}.
 {"Allow users to query other users","Permettre aux utilisateurs d'envoyer des requêtes aux autres utilisateurs"}.
 {"Allow users to send invites","Permettre aux utilisateurs d'envoyer des invitations"}.
 {"Allow users to send private messages","Autoriser les utilisateurs à envoyer des messages privés"}.
@@ -44,7 +43,6 @@
 {"Commands","Commandes"}.
 {"Conference room does not exist","La salle de conférence n'existe pas"}.
 {"Configuration","Configuration"}.
-{"Configuration for ","Configuration pour "}.
 {"Connected Resources:","Ressources connectées:"}.
 {"Country","Pays"}.
 {"CPU Time:","Temps CPU:"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Il n'est pas permis d'envoyer des messages privés de type \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Il n'est pas permis d'envoyer des messages \"normaux\" à la conférence"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Le Jabber ID ~s n'est pas valide"}.
 {"January","Janvier"}.
-{"Jabber ID ~s is invalid","Le JID ~s n'est pas valide"}.
 {"joins the room","rejoint le salon"}.
 {"July","Juillet"}.
 {"June","Juin"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Nombre maximum d'éléments à stocker"}.
 {"Max payload size in bytes","Taille maximum pour le contenu du message en octet"}.
 {"May","Mai"}.
-{"Membership required to enter this room","Vous devez être membre pour accèder à ce salon"}.
 {"Members:","Membres:"}.
 {"Memory","Mémoire"}.
 {"Message body","Corps du message"}.
@@ -165,8 +162,6 @@
 {"Name:","Nom:"}.
 {"Name","Nom"}.
 {"Never","Jamais"}.
-{"Nickname is already in use by another occupant","Le pseudo est déjà utilisé par un autre occupant"}.
-{"Nickname is registered by another person","Le pseudo est enregistré par une autre personne"}.
 {"Nickname","Pseudo"}.
 {"Nickname Registration at ","Enregistrement d'un pseudo sur "}.
 {"Nickname ~s does not exist in the room","Le pseudo ~s n'existe pas dans ce salon"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Utilisateurs connectés:"}.
 {"Online Users","Utilisateurs en ligne"}.
 {"Only deliver notifications to available users","Envoyer les notifications uniquement aux utilisateurs disponibles"}.
-{"Only moderators and participants are allowed to change subject in this room","Seuls les modérateurs et les participants peuvent changer le sujet dans ce salon"}.
-{"Only moderators are allowed to change subject in this room","Seuls les modérateurs peuvent changer le sujet dans ce salon"}.
 {"Only occupants are allowed to send messages to the conference","Seuls les occupants peuvent envoyer des messages à la conférence"}.
 {"Only occupants are allowed to send queries to the conference","Seuls les occupants sont autorisés à envoyer des requêtes à la conférence"}.
 {"Only service administrators are allowed to send service messages","Seuls les administrateurs du service sont autoriser à envoyer des messages de service"}.
@@ -209,7 +202,6 @@
 {"Packet","Paquet"}.
 {"Password:","Mot de passe:"}.
 {"Password","Mot de passe"}.
-{"Password required to enter this room","Un mot de passe est nécessaire pour accèder à ce salon"}.
 {"Password Verification","Vérification du mot de passe"}.
 {"Path to Dir","Chemin vers le répertoire"}.
 {"Path to File","Chemin vers le fichier"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real Jabber IDs to","Rendre le JID réel visible pour"}.
+{"Present real Jabber IDs to","Rendre le Jabber ID réel visible pour"}.
 {"private, ","privé"}.
 {"Publish-Subscribe","Publication-Abonnement"}.
 {"PubSub subscriber request","Demande d'abonnement PubSub"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Utilisateurs enregistrés:"}.
 {"Registered Users","Utilisateurs enregistrés"}.
 {"Registration in mod_irc for ","Enregistrement du mod_irc pour "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ces options sauvegardent uniquement la base de données interne Mnesia. Si vous utilisez le module ODBC vous devez sauvegarde votre base SQL séparément."}.
 {"Remote copy","Copie distante"}.
 {"Remove","Enlever"}.
 {"Remove User","Supprimer l'utilisateur"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Montrer la table ordinaire"}.
 {"Shut Down Service","Arrêter le service"}.
 {"~s invites you to the room ~s","~s vous a invité dans la salle de discussion ~s"}.
-{"Size","Taille"}.
-{"Specified nickname is already registered","Le pseudo demandé est déjà enregistré"}.
 {"Specify the access model","Définir le modèle d'accès"}.
 {"Specify the publisher model","Définir le modèle de publication"}.
 {"~s's Offline Messages Queue","~s messages en file d'attente"}.
@@ -311,7 +300,6 @@
 {"Transactions Logged:","Transactions journalisées:"}.
 {"Transactions Restarted:","Transactions redémarrées:"}.
 {"Tuesday","Mardi"}.
-{"Updated modules","Modules mis à jours"}.
 {"Update message of the day (don't send)","Mise à jour du message du jour (pas d'envoi)"}.
 {"Update message of the day on all hosts (don't send)","Mettre à jour le message du jour sur tous les domaines (ne pas envoyer)"}.
 {"Update","Mettre à jour"}.
@@ -321,7 +309,6 @@
 {"Uptime:","Temps depuis le démarrage:"}.
 {"Use of STARTTLS required","L'utilisation de STARTTLS est impérative"}.
 {"User Management","Gestion des utilisateurs"}.
-{"Users are not allowed to register accounts so fast","Les utilisateurs ne sont pas autorisés à enregistrer des comptes si rapidement"}.
 {"Users Last Activity","Dernière activité des utilisateurs"}.
 {"Users","Utilisateurs"}.
 {"User ","Utilisateur "}.

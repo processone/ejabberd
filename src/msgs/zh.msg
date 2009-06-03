@@ -14,8 +14,7 @@
 {"Administrator privileges required","需要管理员权限"}.
 {"A friendly name for the node","该节点的友好名称"}.
 {"All activity","所有活动"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","允许该JID订阅该pubsub节点?"}.
-{"Allow users to change subject","允许用户更改主题"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","允许该Jabber ID订阅该pubsub节点?"}.
 {"Allow users to query other users","允许用户查询其它用户"}.
 {"Allow users to send invites","允许用户发送邀请"}.
 {"Allow users to send private messages","允许用户发送私聊消息"}.
@@ -43,7 +42,6 @@
 {"City","城市"}.
 {"Commands","命令"}.
 {"Conference room does not exist","会议室不存在"}.
-{"Configuration for ","配置 "}.
 {"Configuration","配 置"}.
 {"Connected Resources:","已连接资源"}.
 {"Country","国家"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages to the conference","不允许向会议发送私聊消息"}.
 {"It is not allowed to send private messages","不允许发送私聊消息"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s无效"}.
 {"January","一月"}.
-{"Jabber ID ~s is invalid","JID ~s无效"}.
 {"joins the room","加入房间"}.
 {"July","七月"}.
 {"June","六月"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","允许持久化的最大内容条目数"}.
 {"Max payload size in bytes","最大有效负载比特数"}.
 {"May","五月"}.
-{"Membership required to enter this room","进入此房间需要会员身份"}.
 {"Members:","会员:"}.
 {"Memory","内存"}.
 {"Message body","消息主体"}.
@@ -165,8 +162,6 @@
 {"Name:","名称:"}.
 {"Name","名称"}.
 {"Never","从未"}.
-{"Nickname is already in use by another occupant","昵称已被另一用户占用"}.
-{"Nickname is registered by another person","昵称已被另一人注册"}.
 {"Nickname Registration at ","昵称注册于 "}.
 {"Nickname ~s does not exist in the room","昵称~s不在该房间"}.
 {"Nickname","昵称"}.
@@ -194,8 +189,6 @@
 {"Online Users","在线用户"}.
 {"Online","在线"}.
 {"Only deliver notifications to available users","仅将通知发送给可发送的用户"}.
-{"Only moderators and participants are allowed to change subject in this room","只允许监管人和参与人更改此房间的主题"}.
-{"Only moderators are allowed to change subject in this room","只允许监管人更改此房间的主题"}.
 {"Only occupants are allowed to send messages to the conference","只允许占有者向会议发送消息"}.
 {"Only occupants are allowed to send queries to the conference","只允许占有者发出查询请求"}.
 {"Only service administrators are allowed to send service messages","只有服务管理员可以发送服务消息"}.
@@ -207,7 +200,6 @@
 {"Outgoing s2s Servers:","出站s2s服务器"}.
 {"Owner privileges required","需要持有人权限"}.
 {"Packet","数据包"}.
-{"Password required to enter this room","进入此房间需要密码"}.
 {"Password Verification","确认密码"}.
 {"Password:","密码："}.
 {"Password","密码"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","端口"}.
-{"Present real Jabber IDs to","将真实JID显示给"}.
+{"Present real Jabber IDs to","将真实Jabber ID显示给"}.
 {"private, ","保密"}.
 {"Publish-Subscribe","发布-订阅"}.
 {"PubSub subscriber request","PubSub订阅人请求"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","注册用户："}.
 {"Registered Users","注册用户"}.
 {"Registration in mod_irc for ","mod_irc中的注册是为 "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","注意：这些选项仅将备份内置的Mnesia数据库. 如果您在使用ODBC模块, 您还需要分别备份您的数据库."}.
 {"Remote copy","远程复制"}.
 {"Remove User","删除用户"}.
 {"Remove","移除"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","显示普通列表"}.
 {"Shut Down Service","关闭服务"}.
 {"~s invites you to the room ~s","~s邀请你到~s房间"}.
-{"Size","大小"}.
-{"Specified nickname is already registered","指定的名称已被注册"}.
 {"Specify the access model","指定访问模式"}.
 {"Specify the publisher model","指定发布人样式"}.
 {"~s's Offline Messages Queue","~s的离线消息队列"}.
@@ -311,7 +300,6 @@
 {"Transactions Logged:","记入日志的事务:"}.
 {"Transactions Restarted:","重启的事务:"}.
 {"Tuesday","星期二"}.
-{"Updated modules","更新模块"}.
 {"Update message of the day (don't send)","更新每日消息(不发送)"}.
 {"Update message of the day on all hosts (don't send)","更新所有主机上的每日消息(不发送)"}.
 {"Update plan","更新计划"}.
@@ -321,7 +309,6 @@
 {"Uptime:","正常运行时间:"}.
 {"Use of STARTTLS required","要求使用STARTTLS"}.
 {"User Management","用户管理"}.
-{"Users are not allowed to register accounts so fast","不允许用户注册帐户太快"}.
 {"Users Last Activity","用户上次活动"}.
 {"Users","用户"}.
 {"User ","用户 "}.

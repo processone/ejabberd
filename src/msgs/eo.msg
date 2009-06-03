@@ -14,8 +14,7 @@
 {"Administrator privileges required","Administrantaj rajtoj bezonata"}.
 {"A friendly name for the node","Kromnomo por ĉi tiu nodo"}.
 {"All activity","Ĉiu aktiveco"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun JID aboni al la jena PubAbo-nodo"}.
-{"Allow users to change subject","Permesu uzantojn ŝanĝi la temon"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo"}.
 {"Allow users to query other users","Permesu uzantojn informpeti aliajn uzantojn"}.
 {"Allow users to send invites","Permesu uzantojn sendi invitojn"}.
 {"Allow users to send private messages","Permesu uzantojn sendi privatajn mesaĝojn"}.
@@ -44,7 +43,6 @@
 {"Commands","Ordonoj"}.
 {"Conference room does not exist","Babilejo ne ekzistas"}.
 {"Configuration","Agordo"}.
-{"Configuration for ","Agordo de "}.
 {"Connected Resources:","Konektataj risurcoj:"}.
 {"Country","Lando"}.
 {"CPU Time:","CPU-tempo"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Malpermesas sendi mesaĝojn de tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Nur partoprenantoj rajtas sendi privatajn mesaĝojn al la babilejo"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s estas nevalida"}.
 {"January","Januaro"}.
-{"Jabber ID ~s is invalid","JID ~s estas nevalida"}.
 {"joins the room","eniras la babilejo"}.
 {"July","Julio"}.
 {"June","Junio"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Maksimuma kiomo de eroj en konservado"}.
 {"Max payload size in bytes","Maksimuma aĵo-grando je bajtoj"}.
 {"May","Majo"}.
-{"Membership required to enter this room","Membreco estas bezonata por eniri ĉi tiun babilejon"}.
 {"Members:","Membroj:"}.
 {"Memory","Memoro"}.
 {"Message body","Teksto de mesaĝo"}.
@@ -165,8 +162,6 @@
 {"Name:","Nomo:"}.
 {"Name","Nomo"}.
 {"Never","Neniam"}.
-{"Nickname is already in use by another occupant","Kaŝnomo estas jam uzata de alia partoprenanto"}.
-{"Nickname is registered by another person","Kaŝnomo estas registrita de alia persono"}.
 {"Nickname","Kaŝnomo"}.
 {"Nickname Registration at ","Kaŝnomo-registrado je "}.
 {"Nickname ~s does not exist in the room","Kaŝnomo ~s ne ekzistas en la babilejo"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Konektataj uzantoj:"}.
 {"Online Users","Konektataj Uzantoj"}.
 {"Only deliver notifications to available users","Nur liveru sciigojn al konektataj uzantoj"}.
-{"Only moderators and participants are allowed to change subject in this room","Nur moderigantoj kaj partoprenantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
-{"Only moderators are allowed to change subject in this room","Nur moderigantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
 {"Only occupants are allowed to send messages to the conference","Nur partoprenantoj rajtas sendi mesaĝojn al la babilejo"}.
 {"Only occupants are allowed to send queries to the conference","Nur partoprenantoj rajtas sendi informmendojn al la babilejoj"}.
 {"Only service administrators are allowed to send service messages","Nur servo-administrantoj rajtas sendi serv-mesaĝojn"}.
@@ -209,7 +202,6 @@
 {"Packet","Pakaĵo"}.
 {"Password:","Pasvorto:"}.
 {"Password","Pasvorto"}.
-{"Password required to enter this room","Pasvorto estas bezonata por eniri ĉi tiun babilejon"}.
 {"Password Verification","Pasvortkontrolo"}.
 {"Path to Dir","Vojo al dosierujo"}.
 {"Path to File","Voje de dosiero"}.
@@ -219,7 +211,7 @@
 {"Ping","Sondaĵo"}.
 {"Pong","Resondaĵo"}.
 {"Port","Pordo"}.
-{"Present real Jabber IDs to","Montru verajn JID-ojn al"}.
+{"Present real Jabber IDs to","Montru verajn Jabber ID-ojn al"}.
 {"private, ","privata, "}.
 {"Publish-Subscribe","Public-Abonado"}.
 {"PubSub subscriber request","PubAbo abonpeto"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Registritaj uzantoj:"}.
 {"Registered Users","Registritaj uzantoj"}.
 {"Registration in mod_irc for ","Registraĵo en mod_irc de "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Rimarku ke ĉi tiuj elektebloj nur sekurkopias la propran Mnesia-datumbazon. Se vi uzas la ODBC-modulon, vi ankaŭ devas sekurkopii tiujn SQL-datumbazoj aparte."}.
 {"Remote copy","Fora kopio"}.
 {"Remove","Forigu"}.
 {"Remove User","Forigu uzanton"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Montru ordinaran tabelon"}.
 {"Shut Down Service","Haltigu Servon"}.
 {"~s invites you to the room ~s","~s invitas vin al la babilejo ~s"}.
-{"Size","Grando"}.
-{"Specified nickname is already registered","Donita kaŝnomo jam estas registrita"}.
 {"Specify the access model","Specifu atingo-modelon"}.
 {"Specify the publisher model","Enmetu publikadan modelon"}.
 {"~s's Offline Messages Queue","Mesaĝo-atendovico de ~s"}.
@@ -311,7 +300,6 @@
 {"Transactions Logged:","Transakcioj protokolitaj"}.
 {"Transactions Restarted:","Transakcioj restartitaj"}.
 {"Tuesday","Mardo"}.
-{"Updated modules","Ĝisdatigitaj moduloj"}.
 {"Update ","Ĝisdatigu "}.
 {"Update","Ĝisdatigu"}.
 {"Update message of the day (don't send)","Ŝanĝu mesaĝon de la tago (ne sendu)"}.
@@ -321,7 +309,6 @@
 {"Uptime:","Daŭro de funkciado"}.
 {"Use of STARTTLS required","Uzo de STARTTLS bezonata"}.
 {"User Management","Uzanto-administrado"}.
-{"Users are not allowed to register accounts so fast","Ne estas permesata al uzantoj registri tiel rapide"}.
 {"Users Last Activity","Lasta aktiveco de uzanto"}.
 {"Users","Uzantoj"}.
 {"User ","Uzanto "}.

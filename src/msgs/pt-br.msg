@@ -14,8 +14,7 @@
 {"Administrator privileges required","Se necessita privilégios de administrador"}.
 {"A friendly name for the node","Um nome familiar para o nó"}.
 {"All activity","Toda la atividade"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Autorizar este JID para a inscrição neste tópico pubsub ?"}.
-{"Allow users to change subject","Permitir a usuários modificar o assunto"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Autorizar este Jabber ID para a inscrição neste tópico pubsub ?"}.
 {"Allow users to query other users","Permitir a usuários pesquisar informações sobre os demais"}.
 {"Allow users to send invites","Permitir a usuários envio de convites"}.
 {"Allow users to send private messages","Permitir a usuários enviarem mensagens privadas"}.
@@ -44,7 +43,6 @@
 {"Commands","Comandos"}.
 {"Conference room does not exist","La sala de conferencias não existe"}.
 {"Configuration","Configuração"}.
-{"Configuration for ","Configuração para "}.
 {"Connected Resources:","Recursos conectados:"}.
 {"Country","País"}.
 {"CPU Time:","Tempo de CPU"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","No está permitido enviar mensagens privados do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privados a la sala"}.
 {"Jabber ID","ID Jabber"}.
+{"Jabber ID ~s is invalid","O Jabber ID ~s não es válido"}.
 {"January","Janeiro"}.
-{"Jabber ID ~s is invalid","O JID ~s não es válido"}.
 {"joins the room","Entrar na sala"}.
 {"July","Julho"}.
 {"June","Junho"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Máximo # de elementos que persistem"}.
 {"Max payload size in bytes","Máximo tamanho do payload em bytes"}.
 {"May","Maio"}.
-{"Membership required to enter this room","Necessitas ser membro de esta sala para poder entrar"}.
 {"Members:","Miembros:"}.
 {"Memory","Memória"}.
 {"Message body","Corpo da mensagem"}.
@@ -166,8 +163,6 @@
 {"Name","Nome"}.
 {"Never","Nunca"}.
 {"Nickname","Apelido"}.
-{"Nickname is already in use by another occupant","O nick já está sendo usado por outro ocupante"}.
-{"Nickname is registered by another person","O nick já está registrado por outra pessoa"}.
 {"Nickname Registration at ","Registro do apelido em "}.
 {"Nickname ~s does not exist in the room","O nick ~s não existe em la sala"}.
 {"No body provided for announce message","Nenhum corpo de texto fornecido para anunciar mensagem"}.
@@ -194,8 +189,6 @@
 {"Online Users","Usuários conectados"}.
 {"Online Users:","Usuários online"}.
 {"Only deliver notifications to available users","Solo enviar notificações aos usuários disponíveis"}.
-{"Only moderators and participants are allowed to change subject in this room","Solo os moderadores y participantes podem cambiar o assunto de esta sala"}.
-{"Only moderators are allowed to change subject in this room","Solo os moderadores podem cambiar o assunto de esta sala"}.
 {"Only occupants are allowed to send messages to the conference","Solo os ocupantes podem enviar mensagens a la sala"}.
 {"Only occupants are allowed to send queries to the conference","Solo os ocupantes podem enviar consultas a la sala"}.
 {"Only service administrators are allowed to send service messages","Apenas administradores possuem permissão para enviar mensagens de serviço"}.
@@ -207,7 +200,6 @@
 {"Outgoing s2s Servers:","Servidores que partem de s2s"}.
 {"Owner privileges required","Se requere privilégios de proprietário da sala"}.
 {"Packet","Pacote"}.
-{"Password required to enter this room","Se necessita senha para entrar em esta sala"}.
 {"Password:","Senha:"}.
 {"Password","Senha"}.
 {"Password Verification","Verificação de Senha"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Porta"}.
-{"Present real Jabber IDs to","Tornar o JID real visível por"}.
+{"Present real Jabber IDs to","Tornar o Jabber ID real visível por"}.
 {"private, ","privado"}.
 {"Publish-Subscribe","Publicação de Tópico"}.
 {"PubSub subscriber request","PubSub requisição de assinante"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Usuários registrados"}.
 {"Registered Users","Usuários Registrados"}.
 {"Registration in mod_irc for ","Registro em mod_irc para"}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Observe que tais opções farão backup apenas da base de dados Mnesia. Caso você esteja utilizando o modulo ODBC, você precisará fazer backup de sua base de dados SQL separadamente."}.
 {"Remote copy","Copia remota"}.
 {"Remove","Borrar"}.
 {"Remove User","Remover usuário"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Mostrar Tabela Ordinária"}.
 {"Shut Down Service","Parar Serviço"}.
 {"~s invites you to the room ~s","~s convidou você para a sala ~s"}.
-{"Size","Tamanho"}.
-{"Specified nickname is already registered","O apelido especificado já está registrado"}.
 {"Specify the access model","Especificar os modelos de acesso"}.
 {"Specify the publisher model","Especificar o modelo do publicante"}.
 {"~s's Offline Messages Queue","~s's Fila de Mensagens Offline"}.
@@ -313,7 +302,6 @@
 {"Tuesday","Terça"}.
 {"Update ","Atualizar"}.
 {"Update","Atualizar"}.
-{"Updated modules","Módulos atualizados"}.
 {"Update message of the day (don't send)","Atualizar mensagem do dia (não enviar)"}.
 {"Update message of the day on all hosts (don't send)","Atualizar a mensagem do dia em todos os host (não enviar)"}.
 {"Update plan","Plano de Atualização"}.
@@ -321,7 +309,6 @@
 {"Uptime:","Uptime:"}.
 {"Use of STARTTLS required","É obrigatório usar STARTTLS"}.
 {"User Management","Gerenciamento de Usuários"}.
-{"Users are not allowed to register accounts so fast","Usuários ainda não podem registrar novas contas"}.
 {"Users Last Activity","Ultimas atividades dos usuários"}.
 {"Users","Usuários"}.
 {"User ","Usuário"}.

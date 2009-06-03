@@ -22,7 +22,6 @@
 {"City","Cidade"}.
 {"Conference room does not exist","A sala não existe"}.
 {"Configuration","Configuração"}.
-{"Configuration for ","Configuração para "}.
 {"Connected Resources:","Recursos conectados:"}.
 {"Country","País"}.
 {"Delete","Eliminar"}.
@@ -62,12 +61,11 @@
 {"IRC Username","Nome do utilizador de IRC"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privadas para a sala"}.
-{"Jabber ID ~s is invalid","O JID ~s não é válido"}.
+{"Jabber ID ~s is invalid","O Jabber ID ~s não é válido"}.
 {"Last Activity","Última actividade"}.
 {"Listened Ports at ","Portas em escuta em "}.
 {"List of modules to start","Lista de módulos a iniciar"}.
 {"Make room moderated","Tornar a sala moderada"}.
-{"Membership required to enter this room","É necessário ser membro desta sala para poder entrar"}.
 {"Memory","Memória"}.
 {"Middle Name","Segundo nome"}.
 {"Moderator privileges required","São necessários privilégios de moderador"}.
@@ -76,8 +74,6 @@
 {"Name","Nome"}.
 {"Never","Nunca"}.
 {"Nickname","Alcunha"}.
-{"Nickname is already in use by another occupant","A alcunha já está a ser usado por outro ocupante"}.
-{"Nickname is registered by another person","A alcunha já está registada por outra pessoa"}.
 {"Nickname Registration at ","Registo da alcunha em "}.
 {"Nickname ~s does not exist in the room","A alcunha ~s não existe na sala"}.
 {"Node ","Nodo"}.
@@ -88,8 +84,6 @@
 {"OK","OK"}.
 {"Online","Ligado"}.
 {"Online Users","Utilizadores ligados"}.
-{"Only moderators and participants are allowed to change subject in this room","Só os moderadores e os participantes podem mudar o tópico desta sala"}.
-{"Only moderators are allowed to change subject in this room","Só os moderadores podem mudar o tópico desta sala"}.
 {"Only occupants are allowed to send messages to the conference","Só os ocupantes podem enviar mensagens para a sala"}.
 {"Only occupants are allowed to send queries to the conference","Só os ocupantes podem enviar consultas para a sala"}.
 {"Only service administrators are allowed to send service messages","Só os administradores do serviço têm permissão para enviar mensagens de serviço"}.
@@ -100,7 +94,6 @@
 {"Packet","Pacote"}.
 {"Password:","Palavra-chave:"}.
 {"Password","Palavra-chave"}.
-{"Password required to enter this room","É necessária a palavra-chave para poder entrar nesta sala"}.
 {"Path to Dir","Caminho para o directório"}.
 {"Path to File","Caminho do ficheiro"}.
 {"Pending","Pendente"}.
@@ -123,8 +116,6 @@
 {"Running Nodes","Nodos a correr"}.
 {"~s access rule configuration","Configuração das Regra de Acesso ~s"}.
 {"Search users in ","Procurar utilizadores em "}.
-{"Size","Tamanho"}.
-{"Specified nickname is already registered","A alcunha especificada já está registada"}.
 {"Start Modules at ","Iniciar os módulos em "}.
 {"Start Modules","Iniciar módulos"}.
 {"Statistics","Estatísticas"}.

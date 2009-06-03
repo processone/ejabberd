@@ -15,7 +15,6 @@
 {"A friendly name for the node","Bijnaam voor deze knoop"}.
 {"All activity","Alle activiteit"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Deze gebruiker toestaan te abonneren op deze pubsub node?"}.
-{"Allow users to change subject","Gebruikers mogen het onderwerp veranderen"}.
 {"Allow users to query other users","Gebruikers mogen naar andere gebruikers verzoeken verzenden"}.
 {"Allow users to send invites","Gebruikers mogen uitnodigingen verzenden"}.
 {"Allow users to send private messages","Gebruikers mogen privéberichten verzenden"}.
@@ -43,7 +42,6 @@
 {"City","Plaats"}.
 {"Commands","Commando's"}.
 {"Conference room does not exist","De chatruimte bestaat niet"}.
-{"Configuration for ","Instellingen van "}.
 {"Configuration","Instellingen"}.
 {"Connected Resources:","Verbonden bronnen:"}.
 {"Country","Land"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Er mogen geen privéberichten van het type \"groupchat\" worden verzonden"}.
 {"It is not allowed to send private messages to the conference","Er mogen geen privéberichten naar de chatruimte worden verzonden"}.
 {"Jabber ID","Jabber ID"}.
-{"January","januari"}.
 {"Jabber ID ~s is invalid","De Jabber ID ~s is ongeldig"}.
+{"January","januari"}.
 {"joins the room","betrad de chatruimte"}.
 {"July","juli"}.
 {"June","juni"}.
@@ -152,7 +150,6 @@
 {"Max payload size in bytes","Maximumgrootte van bericht in bytes"}.
 {"May","mei"}.
 {"Members:","Groepsleden:"}.
-{"Membership required to enter this room","U moet lid zijn om deze chatruimte te kunnen betreden"}.
 {"Memory","Geheugen"}.
 {"Message body","Bericht"}.
 {"Middle Name","Tussennaam"}.
@@ -166,8 +163,6 @@
 {"Name","Naam"}.
 {"Never","Nooit"}.
 {"Nickname","Bijnaam"}.
-{"Nickname is already in use by another occupant","Deze bijnaam is al in gebruik door een andere aanwezige"}.
-{"Nickname is registered by another person","Deze bijnaam is al geregistreerd door iemand anders"}.
 {"Nickname Registration at ","Registratie van een bijnaam op "}.
 {"Nickname ~s does not exist in the room","De bijnaam ~s bestaat niet in deze chatruimte"}.
 {"No body provided for announce message","De mededeling bevat geen bericht"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Online gebruikers:"}.
 {"Online Users","Online gebruikers"}.
 {"Only deliver notifications to available users","Notificaties alleen verzenden naar online gebruikers"}.
-{"Only moderators and participants are allowed to change subject in this room","Alleen moderators en deelnemers mogen het onderwerp van deze chatruimte veranderen"}.
-{"Only moderators are allowed to change subject in this room","Alleen moderators mogen het onderwerp van deze chatruimte veranderen"}.
 {"Only occupants are allowed to send messages to the conference","Alleen aanwezigen mogen berichten naar de chatruimte verzenden"}.
 {"Only occupants are allowed to send queries to the conference","Alleen aanwezigen mogen verzoeken verzenden naar de chatruimte"}.
 {"Only service administrators are allowed to send service messages","Alleen beheerders van deze dienst mogen mededelingen verzenden naar alle chatruimtes"}.
@@ -207,7 +200,6 @@
 {"Outgoing s2s Servers:","Uitgaande s2s-verbindingen:"}.
 {"Owner privileges required","U hebt eigenaarsprivileges nodig"}.
 {"Packet","Pakket"}.
-{"Password required to enter this room","U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"}.
 {"Password Verification","Wachtwoord Bevestiging"}.
 {"Password:","Wachtwoord:"}.
 {"Password","Wachtwoord"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Geregistreerde gebruikers:"}.
 {"Registered Users","Geregistreerde gebruikers"}.
 {"Registration in mod_irc for ","Registratie van "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Merk op dat volgende opties enkel backups maken van de ingebouwde database Mnesia. Als u (een) andere database(s) gebruikt dan moet u daarvan (een) afzonderlijke backup(s) maken."}.
 {"Remote copy","Op andere nodes in de cluster"}.
 {"Remove User","Gebruiker verwijderen"}.
 {"Remove","Verwijderen"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Deel van tabel laten zien"}.
 {"Shut Down Service","Stop Service"}.
 {"~s invites you to the room ~s","~s nodigt je uit voor het groepsgesprek ~s"}.
-{"Size","Grootte"}.
-{"Specified nickname is already registered","De gekozen bijnaam is al geregistreerd"}.
 {"Specify the access model","Geef toegangsmodel"}.
 {"Specify the publisher model","Publicatietype opgeven"}.
 {"~s's Offline Messages Queue","offline berichten van ~s"}.
@@ -312,7 +301,6 @@
 {"Transactions Restarted:","Herstarte transacties:"}.
 {"Tuesday","dinsdag"}.
 {"Update","Bijwerken"}.
-{"Updated modules","Modules opwaarderen"}.
 {"Update message of the day (don't send)","Bericht van de dag bijwerken (niet verzenden)"}.
 {"Update message of the day on all hosts (don't send)","Verander bericht-van-de-dag op alle hosts (niet versturen)"}.
 {"Update ","Opwaarderen van "}.
@@ -323,7 +311,6 @@
 {"User ","Gebruiker "}.
 {"User","Gebruiker"}.
 {"User Management","Gebruikersbeheer"}.
-{"Users are not allowed to register accounts so fast","Het is gebruikers niet toegestaan zo snel achter elkaar te registreren"}.
 {"Users","Gebruikers"}.
 {"Users Last Activity","Laatste activiteit van gebruikers"}.
 {"Validate","Bevestigen"}.

@@ -14,8 +14,7 @@
 {"Administrator privileges required","管理者権限が必要です"}.
 {"A friendly name for the node","ノードの為のフレンドリネーム"}.
 {"All activity","全て"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","この JID をこの pubsubノードへ購読することを許可しますか？"}.
-{"Allow users to change subject","ユーザーによる件名の変更を許可する"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","この Jabber ID をこの pubsubノードへ購読することを許可しますか？"}.
 {"Allow users to query other users","ユーザーによる他のユーザーへの問い合わせを許可する"}.
 {"Allow users to send invites","ユーザーによる招待を許可する"}.
 {"Allow users to send private messages","ユーザーによるプライベートメッセージの送信を許可する"}.
@@ -43,7 +42,6 @@
 {"City","都道府県"}.
 {"Commands","コマンド"}.
 {"Conference room does not exist","カンファレンスルームは存在しません"}.
-{"Configuration for ","設定: "}.
 {"Configuration","設定"}.
 {"Connected Resources:","接続リソース:"}.
 {"Country","国"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages to the conference","カンファレンスルームにプライベートメッセージを送信することは出来ません"}.
 {"It is not allowed to send private messages","プライベートメッセージを送信することは許可されませんでした"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s は無効です"}.
 {"January","1月"}.
-{"Jabber ID ~s is invalid","JID ~s は無効です"}.
 {"joins the room","チャットルームに参加"}.
 {"July","7月"}.
 {"June","6月"}.
@@ -152,7 +150,6 @@
 {"Max payload size in bytes","最大ぺイロードサイズ(byte)"}.
 {"May","5月"}.
 {"Members:","メンバー:"}.
-{"Membership required to enter this room","チャットルームに入るにはメンバーでなければなりません"}.
 {"Memory","メモリ"}.
 {"Message body","本文"}.
 {"Middle Name","ミドルネーム"}.
@@ -166,8 +163,6 @@
 {"Name:","名前: "}.
 {"Never","無し"}.
 {"Nickname","ニックネーム"}.
-{"Nickname is already in use by another occupant","ニックネームは既に他の移住者によって使用されています"}.
-{"Nickname is registered by another person","ニックネームは他の人によって登録されています"}.
 {"Nickname Registration at ","ニックネーム登録: "}.
 {"Nickname ~s does not exist in the room","ニックネーム ~s はこのチャットルームに居ません"}.
 {"No body provided for announce message","アナウンスメッセージはありませんでした"}.
@@ -194,8 +189,6 @@
 {"Online Users:","オンラインユーザー:"}.
 {"Online Users","オンラインユーザー"}.
 {"Only deliver notifications to available users","有効なユーザーにのみ告知を送信する"}.
-{"Only moderators and participants are allowed to change subject in this room","モデレーターと参加者のみがチャットルームの件名を変更出来ます"}.
-{"Only moderators are allowed to change subject in this room","モデレーターのみがチャットルームの件名を変更出来ます"}.
 {"Only occupants are allowed to send messages to the conference","移住者のみがカンファレンスに"}.
 {"Only occupants are allowed to send queries to the conference","移住者のみがカンファレンスにクエリーを送信出来ます"}.
 {"Only service administrators are allowed to send service messages","カービス管理者のみがサービスメッセージを送信出来ます"}.
@@ -209,7 +202,6 @@
 {"Packet","パケット"}.
 {"Password:","パスワード"}.
 {"Password","パスワード"}.
-{"Password required to enter this room","チャットルームに入るにはパスワードが必要です"}.
 {"Password Verification","パスワード(確認)"}.
 {"Path to Dir","ディレクトリのパス"}.
 {"Path to File","ファイルパス"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","ポート"}.
-{"Present real Jabber IDs to","本当の JID を公開する"}.
+{"Present real Jabber IDs to","本当の Jabber ID を公開する"}.
 {"private, ","プライベート"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub 購読リクエスト"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","登録ユーザー:"}.
 {"Registered Users","登録ユーザー"}.
 {"Registration in mod_irc for ","mod_irc での登録: "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","これらのオプションは組み込みの Mnesiaデーターベースをバックアップのみを行うことに注意して下さい。もしも ODBCモジュールを使用している場合は SQLデーターベースのバックアップを別に行う必要があります。"}.
 {"Remote copy","リモートコピー"}.
 {"Remove User","ユーザーの削除"}.
 {"Remove","削除"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Ordinaryテーブルを表示"}.
 {"Shut Down Service","サービスを停止"}.
 {"~s invites you to the room ~s","~s はあなたをチャットルーム ~s に招待しています"}.
-{"Size","サイズ"}.
-{"Specified nickname is already registered","指定されたニックネームは既に登録されています"}.
 {"Specify the access model","アクセスモデルを設定する"}.
 {"Specify the publisher model","公開モデルを指定する"}.
 {"~s's Offline Messages Queue","~s's オフラインメッセージキュー"}.
@@ -311,7 +300,6 @@
 {"Transactions Logged:","トランザクションのログ: "}.
 {"Transactions Restarted:","トランザクションの再起動:"}.
 {"Tuesday","火曜日"}.
-{"Updated modules","モジュールを更新しました"}.
 {"Update message of the day (don't send)","お知らせメッセージを更新する(送信しない)"}.
 {"Update message of the day on all hosts (don't send)","全ホストのお知らせメッセージを更新する"}.
 {"Update plan","更新計画"}.
@@ -324,7 +312,6 @@
 {"User","ユーザー"}.
 {"User Management","ユーザー管理"}.
 {"Users","ユーザー"}.
-{"Users are not allowed to register accounts so fast","早すぎるユーザーアカウント登録は許可されませんでした"}.
 {"Users Last Activity","ユーザーの活動履歴"}.
 {"Validate","検証"}.
 {"vCard User Search","vCard ユーザー検索"}.

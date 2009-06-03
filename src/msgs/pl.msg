@@ -14,8 +14,7 @@
 {"Administrator privileges required","Wymagane prawa administratora"}.
 {"A friendly name for the node","Przyjazna nazwa węzła"}.
 {"All activity","Cała aktywność"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Pozwól temu JID na zapisanie się do tego noda pubsub"}.
-{"Allow users to change subject","Pozwól użytkownikom zmienić tytuł pokoju"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Pozwól temu Jabber ID na zapisanie się do tego noda pubsub"}.
 {"Allow users to query other users","Pozwól użytkownikom pobierać informacje o innych użytkownikach"}.
 {"Allow users to send invites","Pozwól użytkownikom wysyłać zaproszenia"}.
 {"Allow users to send private messages","Pozwól użytkownikom wysyłać prywatne wiadomości"}.
@@ -43,7 +42,6 @@
 {"City","Miasto: "}.
 {"Commands","Polecenia"}.
 {"Conference room does not exist","Pokój konferencyjny nie istnieje"}.
-{"Configuration for ","Konfiguracja dla "}.
 {"Configuration","Konfiguracja"}.
 {"Connected Resources:","Zasoby podłączone"}.
 {"Country","Państwo: "}.
@@ -69,7 +67,7 @@
 {"ejabberd IRC module","Moduł IRC"}.
 {"ejabberd MUC module","Moduł MUC"}.
 {"ejabberd Publish-Subscribe module","Moduł Publish-Subscribe"}.
-{"ejabberd SOCKS5 Bytestreams module","Mudł SOCKS5 Bytestreams"}.
+{"ejabberd SOCKS5 Bytestreams module","Moduł SOCKS5 Bytestreams"}.
 {"ejabberd vCard module","Erlang Jabber Server"}.
 {"ejabberd virtual hosts","wirtualne hosty ejabberda"}.
 {"ejabberd Web Admin","ejabberd: Panel Administracyjny"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages to the conference","Nie wolno wysyłac prywatnych wiadomości na konferencje"}.
 {"It is not allowed to send private messages","Wysyłanie prywatnych wiadomości jest zabronione"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s jest niepoprawny"}.
 {"January","Styczeń"}.
-{"Jabber ID ~s is invalid","JID ~s jest niepoprawny"}.
 {"joins the room","dołączył(a) się do pokoju"}.
 {"July","Lipiec"}.
 {"June","Czerwiec"}.
@@ -152,7 +150,6 @@
 {"Max payload size in bytes","Maksymalna wielkość powiadomienia w bajtach"}.
 {"May","Maj"}.
 {"Members:","Członkowie:"}.
-{"Membership required to enter this room","Aby wejść do pokoju wymagane jest jego członkostwo"}.
 {"Memory","Pamięć"}.
 {"Message body","Treść wiadomości"}.
 {"Middle Name","Nazwisko: "}.
@@ -165,8 +162,6 @@
 {"Name:","Nazwa:"}.
 {"Name","Nazwa"}.
 {"Never","Nigdy"}.
-{"Nickname is already in use by another occupant","Nick jest używany przez innego użytkownika"}.
-{"Nickname is registered by another person","Nick jest już zarejestrowany przez inną osobę"}.
 {"Nickname","Nick "}.
 {"Nickname Registration at ","Rejestracja nicka na "}.
 {"Nickname ~s does not exist in the room","Nick ~s nie istnieje w tym pokoju"}.
@@ -194,8 +189,6 @@
 {"Online Users:","Użytkownicy online:"}.
 {"Online Users","Użytkownicy zalogowani"}.
 {"Only deliver notifications to available users","Dostarczaj notyfikacje tylko do osiągalnych użytkowników"}.
-{"Only moderators and participants are allowed to change subject in this room","Tylko moderatorzy i wlasciciele mogą zmienić temat tego pokoju"}.
-{"Only moderators are allowed to change subject in this room","Tylko moderatorzy mogą zmienić temat tego pokoju"}.
 {"Only occupants are allowed to send messages to the conference","Tylko obecni mogą wysyłać wiadomości na konferencje"}.
 {"Only occupants are allowed to send queries to the conference","Tylko użytkownicy mogą wysyłać zapytania do pokoju konferencyjnego"}.
 {"Only service administrators are allowed to send service messages","Jedynie administrator może wysyłać wiadomości serwisowe"}.
@@ -209,7 +202,6 @@
 {"Packet","Pakiet "}.
 {"Password:","Hasło:"}.
 {"Password","Hasło"}.
-{"Password required to enter this room","Aby wejść do pokoju wymagane jest hasło"}.
 {"Password Verification","Weryfikacja hasła"}.
 {"Path to Dir","Ścieżka do katalogu"}.
 {"Path to File","Scieżka do pliku"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real Jabber IDs to","Kto może widzieć prawdziwe JID-y?"}.
+{"Present real Jabber IDs to","Kto może widzieć prawdziwe Jabber ID-y?"}.
 {"private, ","prywatny, "}.
 {"Publish-Subscribe","PubSub"}.
 {"PubSub subscriber request","Rządzanie subskrybenta PubSub"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Użytkownicy zarejestrowani:"}.
 {"Registered Users","Użytkownicy zarejestrowani"}.
 {"Registration in mod_irc for ","Rejestracja w mod_irc dla "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Te opcje backupują jedynie bazę Mnesia. Jeśli używasz modułu ODBC - musisz wykonać kopię SQL oddzielnie"}.
 {"Remote copy","Zdalna kopia"}.
 {"Remove User","Usuń użytkownika"}.
 {"Remove","Usuń "}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Pokaż zwykłą tabelę"}.
 {"Shut Down Service","Wyłączenie serwisu"}.
 {"~s invites you to the room ~s","~s zaprasza Cię do pokoju ~s"}.
-{"Size","Wielkość"}.
-{"Specified nickname is already registered","Podany nick jest już zarejestrowany"}.
 {"Specify the access model","Oznacz model dostępu"}.
 {"Specify the publisher model","Oznacz model publikującego"}.
 {"~s's Offline Messages Queue","~s skolejkowanych wiadomości offline"}.
@@ -308,11 +297,10 @@
 {"Traffic rate limit is exceeded","Limit transferu przekroczony"}.
 {"Transactions Aborted:","Transakcje anulowane"}.
 {"Transactions Committed:","Transakcje zakończone"}.
-{"Transactions Logged:","Transakcje logowane"}.
+{"Transactions Logged:","Transakcje zalogowane"}.
 {"Transactions Restarted:","Transakcje uruchomione ponownie"}.
 {"Tuesday","Wtorek"}.
 {"Update","Aktualizacja"}.
-{"Updated modules","Uaktualnione moduły"}.
 {"Update message of the day (don't send)","Zmień wiadomość dnia (nie wysyłaj)"}.
 {"Update message of the day on all hosts (don't send)","Odśwież wiadomośc dnia na wszystkich hostach (nie wysyłaj)"}.
 {"Update plan","Uaktualnij plan"}.
@@ -321,7 +309,6 @@
 {"Uptime:","Uptime"}.
 {"Use of STARTTLS required","Wymagane użycie STARTTLS"}.
 {"User Management","Zarządzanie użytkownikami"}.
-{"Users are not allowed to register accounts so fast","Nie możesz tak szybko rejestrować nowych kont"}.
 {"Users Last Activity","Ostatnia aktywność użytkowników"}.
 {"Users","Użytkownicy"}.
 {"User ","Użytkownik "}.

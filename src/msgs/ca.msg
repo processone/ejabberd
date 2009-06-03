@@ -14,8 +14,7 @@
 {"Administrator privileges required","Es necessita tenir privilegis d'administrador"}.
 {"A friendly name for the node","Un nom per al node"}.
 {"All activity","Tota l'activitat"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Permetre que aquesta JID es puga subscriure a aquest node pubsub"}.
-{"Allow users to change subject","Permetre que els usuaris canvien el tema"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Permetre que aquesta Jabber ID es puga subscriure a aquest node pubsub"}.
 {"Allow users to query other users","Permetre que els usuaris fagen peticions a altres usuaris"}.
 {"Allow users to send invites","Permetre que els usuaris envien invitacions"}.
 {"Allow users to send private messages","Permetre que els usuaris envien missatges privats"}.
@@ -44,7 +43,6 @@
 {"Commands","Comandaments"}.
 {"Conference room does not exist","La sala de conferències no existeix"}.
 {"Configuration","Configuració"}.
-{"Configuration for ","Configuració per a "}.
 {"Connected Resources:","Recursos connectats:"}.
 {"Country","Pais"}.
 {"CPU Time:","Temps de CPU"}.
@@ -126,8 +124,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","No està permés enviar missatges del tipus \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","No està permés l'enviament de missatges privats a la sala"}.
 {"Jabber ID","ID Jabber"}.
+{"Jabber ID ~s is invalid","El Jabber ID ~s no és vàlid"}.
 {"January","Gener"}.
-{"Jabber ID ~s is invalid","El JID ~s no és vàlid"}.
 {"joins the room","Entrar a la sala"}.
 {"July","Juliol"}.
 {"June","Juny"}.
@@ -151,7 +149,6 @@
 {"Max # of items to persist","Màxim # d'elements que persistixen"}.
 {"Max payload size in bytes","Màxim tamany del payload en bytes"}.
 {"May","Maig"}.
-{"Membership required to enter this room","Necessites ser membre d'aquesta sala per a poder entrar"}.
 {"Members:","Membre:"}.
 {"Memory","Memòria"}.
 {"Message body","Missatge"}.
@@ -165,8 +162,6 @@
 {"Name:","Nom:"}.
 {"Name","Nom"}.
 {"Never","Mai"}.
-{"Nickname is already in use by another occupant","El Nickname està siguent utilitzat per una altra persona"}.
-{"Nickname is registered by another person","El Nickname ja està registrat per una altra persona"}.
 {"Nickname","Nickname"}.
 {"Nickname Registration at ","Registre del Nickname en "}.
 {"Nickname ~s does not exist in the room","El Nickname ~s no existeix a la sala"}.
@@ -194,8 +189,6 @@
 {"Online Users","Usuaris conectats"}.
 {"Online Users:","Usuaris en línia:"}.
 {"Only deliver notifications to available users","Sols enviar notificacions als usuaris disponibles"}.
-{"Only moderators and participants are allowed to change subject in this room","Sols els moderadors i participants poden canviar l'assumpte d'aquesta sala"}.
-{"Only moderators are allowed to change subject in this room","Sols els moderadors poden canviar l'assumpte d'aquesta sala"}.
 {"Only occupants are allowed to send messages to the conference","Sols els ocupants poden enviar missatges a la sala"}.
 {"Only occupants are allowed to send queries to the conference","Sols els ocupants poden enviar solicituts a la sala"}.
 {"Only service administrators are allowed to send service messages","Sols els administradors del servei tenen permís per a enviar missatges de servei"}.
@@ -209,7 +202,6 @@
 {"Packet","Paquet"}.
 {"Password:","Password:"}.
 {"Password","Password"}.
-{"Password required to enter this room","Es necessita password per a entrar en aquesta sala"}.
 {"Password Verification","Verificació del Password"}.
 {"Path to Dir","Ruta al directori"}.
 {"Path to File","Ruta al fitxer"}.
@@ -219,7 +211,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real Jabber IDs to","Presentar JID's reals a"}.
+{"Present real Jabber IDs to","Presentar Jabber ID's reals a"}.
 {"private, ","privat"}.
 {"Publish-Subscribe","Publicar-subscriure't"}.
 {"PubSub subscriber request","Petició de PubSub subscriure"}.
@@ -233,7 +225,6 @@
 {"Registered Users:","Usuaris registrats:"}.
 {"Registered Users","Usuaris registrats"}.
 {"Registration in mod_irc for ","Registre en mod_irc per a"}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Recordar que estes opcions sols fan còpia de seguretat de la base de dades Mnesia. Si estàs utilitzant el mòdul d'ODBC també deus de fer una còpia de seguretat de la base de dades de SQL a part."}.
 {"Remote copy","Còpia remota"}.
 {"Remove","Borrar"}.
 {"Remove User","Eliminar usuari"}.
@@ -272,8 +263,6 @@
 {"Show Ordinary Table","Mostrar Taula Ordinaria"}.
 {"Shut Down Service","Apager el Servei"}.
 {"~s invites you to the room ~s","~s et convida a la sala ~s"}.
-{"Size","Tamany"}.
-{"Specified nickname is already registered","El Nickname especificat ja està registrat, busca-te'n un altre"}.
 {"Specify the access model","Especificar el model d'accés"}.
 {"Specify the publisher model","Especificar el model del publicant"}.
 {"~s's Offline Messages Queue","~s's cua de missatges offline"}.
@@ -313,7 +302,6 @@
 {"Tuesday","Dimarts"}.
 {"Update ","Actualitzar"}.
 {"Update","Actualitzar"}.
-{"Updated modules","Mòduls actualitzats"}.
 {"Update message of the day (don't send)","Actualitzar el missatge del dia (no enviar)"}.
 {"Update message of the day on all hosts (don't send)","Actualitza el missatge del dia en tots els hosts (no enviar)"}.
 {"Update plan","Pla d'actualització"}.
@@ -321,7 +309,6 @@
 {"Uptime:","Temps en marxa"}.
 {"Use of STARTTLS required","És obligatori utilitzar STARTTLS"}.
 {"User Management","Gestió d'Usuaris"}.
-{"Users are not allowed to register accounts so fast","Els usuarios no tenen permis per a crear comptes tan apresa"}.
 {"Users Last Activity","Última activitat d'usuari"}.
 {"Users","Usuaris"}.
 {"User ","Usuari "}.

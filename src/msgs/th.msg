@@ -13,8 +13,7 @@
 {"Administration of ","การดูแล "}.
 {"Administrator privileges required","ต้องมีสิทธิพิเศษของผู้ดูแลระบบ"}.
 {"All activity","กิจกรรมทั้งหมด"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","อนุญาตให้ JID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"}.
-{"Allow users to change subject","อนุญาตให้ผู้ใช้เปลี่ยนหัวข้อได้"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","อนุญาตให้ Jabber ID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"}.
 {"Allow users to query other users","อนุญาตให้ผู้ใช้ถามคำถามกับผู้ใช้คนอื่นๆ ได้"}.
 {"Allow users to send invites","อนุญาตให้ผู้ใช้ส่งคำเชิญถึงกันได้"}.
 {"Allow users to send private messages","อนุญาตให้ผู้ใช้ส่งข้อความส่วนตัว"}.
@@ -41,7 +40,6 @@
 {"Commands","คำสั่ง"}.
 {"Conference room does not exist","ไม่มีห้องประชุม"}.
 {"Configuration","การกำหนดค่า"}.
-{"Configuration for ","การกำหนดค่าสำหรับ "}.
 {"Connected Resources:","ทรัพยากรที่เชื่อมต่อ:"}.
 {"Country","ประเทศ"}.
 {"CPU Time:","เวลาการทำงานของ CPU:"}.
@@ -118,8 +116,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","ไม่อนุญาตให้ส่งข้อความส่วนตัวไปยัง \"กลุ่มสนทนา\""}.
 {"It is not allowed to send private messages to the conference","ไม่อนุญาตให้ส่งข้อความส่วนตัวไปยังห้องประชุม"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s ไม่ถูกต้อง"}.
 {"January","มกราคม"}.
-{"Jabber ID ~s is invalid","JID ~s ไม่ถูกต้อง"}.
 {"joins the room","เข้าห้องสนทนานี้"}.
 {"July","กรกฎาคม"}.
 {"June","มิถุนายน"}.
@@ -143,7 +141,6 @@
 {"Max payload size in bytes","ขนาดสูงสุดของส่วนของข้อมูล (payload) มีหน่วยเป็นไบต์"}.
 {"May","พฤษภาคม"}.
 {"Members:","สมาชิก:"}.
-{"Membership required to enter this room","ต้องเป็นสมาชิกจึงจะสามารถเข้าห้องนี้ได้"}.
 {"Memory","หน่วยความจำ"}.
 {"Message body","เนื้อหาของข้อความ"}.
 {"Middle Name","ชื่อกลาง"}.
@@ -157,8 +154,6 @@
 {"Name","ชื่อ"}.
 {"Never","ไม่เคย"}.
 {"Nickname","ชื่อเล่น"}.
-{"Nickname is already in use by another occupant","ชื่อเล่นถูกใช้งานอยู่โดยผู้ครอบครองห้อง"}.
-{"Nickname is registered by another person","ชื่อเล่นถูกลงทะเบียนใช้งานโดยบุคคลอื่น"}.
 {"Nickname Registration at ","การลงทะเบียนชื่อเล่นที่ "}.
 {"Nickname ~s does not exist in the room","ไม่มีชื่อเล่น ~s อยู่ในห้องนี้"}.
 {"No body provided for announce message","ไม่ได้ป้อนเนื้อหาสำหรับข้อความที่ประกาศ"}.
@@ -185,8 +180,6 @@
 {"Online Users:","ผู้ใช้ออนไลน์:"}.
 {"Online Users","ผู้ใช้ออนไลน์"}.
 {"Only deliver notifications to available users","ส่งการแจ้งเตือนถึงผู้ใช้ที่สามารถติดต่อได้เท่านั้น"}.
-{"Only moderators and participants are allowed to change subject in this room","ผู้ดูแลการสนทนาและผู้เข้าร่วมเท่านั้นที่ได้รับอนุญาตให้เปลี่ยนหัวข้อในห้องนี้"}.
-{"Only moderators are allowed to change subject in this room","ผู้ดูแลการสนทนาเท่านั้นที่ได้รับอนุญาตให้เปลี่ยนหัวข้อในห้องนี้"}.
 {"Only occupants are allowed to send messages to the conference","ผู้ครอบครองห้องเท่านั้นที่ได้รับอนุญาตให้ส่งข้อความไปยังห้องประชุม"}.
 {"Only occupants are allowed to send queries to the conference","ผู้ครอบครองห้องเท่านั้นที่ได้รับอนุญาตให้ส่งกระทู้ถามไปยังห้องประชุม"}.
 {"Only service administrators are allowed to send service messages","ผู้ดูแลด้านการบริการเท่านั้นที่ได้รับอนุญาตให้ส่งข้อความการบริการ"}.
@@ -200,7 +193,6 @@
 {"Packet","แพ็กเก็ต"}.
 {"Password:","รหัสผ่าน:"}.
 {"Password","รหัสผ่าน"}.
-{"Password required to enter this room","ต้องใส่รหัสผ่านเพื่อเข้าห้องนี้"}.
 {"Password Verification","การตรวจสอบรหัสผ่าน"}.
 {"Path to Dir","พาธไปยัง Dir"}.
 {"Path to File","พาธของไฟล์ข้อมูล"}.
@@ -210,7 +202,7 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","พอร์ท"}.
-{"Present real Jabber IDs to","แสดง JIDs ที่ถูกต้องแก่"}.
+{"Present real Jabber IDs to","แสดง Jabber IDs ที่ถูกต้องแก่"}.
 {"private, ","ส่วนตัว, "}.
 {"Publish-Subscribe","เผยแพร่-สมัครเข้าใช้งาน"}.
 {"PubSub subscriber request","คำร้องขอของผู้สมัครเข้าใช้งาน PubSub"}.
@@ -224,7 +216,6 @@
 {"Registered Users:","ผู้ใช้ที่ลงทะเบียน:"}.
 {"Registered Users","ผู้ใช้ที่ลงทะเบียน"}.
 {"Registration in mod_irc for ","การลงทะเบียนใน mod_irc สำหรับ"}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","โปรดทราบว่าตัวเลือกเหล่านี้จะสำรองข้อมูลในฐานข้อมูล builtin Mnesia เท่านั้น หากคุณใช้โมดูล ODBC คุณต้องสำรองข้อมูลของฐานข้อมูล SQL แยกต่างหากด้วย"}.
 {"Remote copy","คัดลอกระยะไกล"}.
 {"Remove","ลบ"}.
 {"Remove User","ลบผู้ใช้"}.
@@ -262,8 +253,6 @@
 {"Show Ordinary Table","แสดงตารางทั่วไป"}.
 {"Shut Down Service","ปิดการบริการ"}.
 {"~s invites you to the room ~s","~s เชิญคุณเข้าร่วมสนทนาในห้อง ~s"}.
-{"Size","ขนาด"}.
-{"Specified nickname is already registered","ชื่อเล่นที่ระบุได้รับการลงได้ทะเบียนแล้ว"}.
 {"Specify the access model","ระบุโมเดลการเข้าถึง"}.
 {"Specify the publisher model","ระบุโมเดลผู้เผยแพร่"}.
 {"~s's Offline Messages Queue","~s's ลำดับข้อความออฟไลน์"}.
@@ -300,7 +289,6 @@
 {"Tuesday","วันอังคาร"}.
 {"Update ","อัพเดต "}.
 {"Update","อัพเดต"}.
-{"Updated modules","โมดูลที่อัพเดต"}.
 {"Update message of the day (don't send)","อัพเดตข้อความของวัน (ไม่ต้องส่ง)"}.
 {"Update message of the day on all hosts (don't send)","อัพเดตข้อความของวันบนโฮสต์ทั้งหมด (ไม่ต้องส่ง) "}.
 {"Update plan","แผนการอัพเดต"}.
