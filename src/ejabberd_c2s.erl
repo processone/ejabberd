@@ -1263,7 +1263,12 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	end,
     if
 	Pass == exit ->
-	    catch send_text(StateData, ?STREAM_TRAILER),
+	    %% When Pass==exit, NewState contains a string instead of a #state{}
+	    Lang = StateData#state.lang,
+            catch send_text(StateData,
+			    xml:element_to_string(
+			      ?SERRT_CONFLICT(Lang, NewState))
+			    ++ ?STREAM_TRAILER),
 	    {stop, normal, StateData};
 	Pass ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
