@@ -153,22 +153,26 @@ process_reply({xmlelement, "captcha", _, _} = El) ->
 	    {error, malformed};
 	Xdata ->
 	    Fields = jlib:parse_xdata_submit(Xdata),
-	    [Id | _] = proplists:get_value("challenge", Fields, [none]),
-	    [OCR | _] = proplists:get_value("ocr", Fields, [none]),
-	    ?T(case mnesia:read(captcha, Id, write) of
-		   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
-		       mnesia:delete({captcha, Id}),
-		       erlang:cancel_timer(Tref),
-		       if OCR == Key ->
-			       Pid ! {captcha_succeed, Args},
-			       ok;
-			  true ->
-			       Pid ! {captcha_failed, Args},
-			       {error, bad_match}
-		       end;
-		   _ ->
-		       {error, not_found}
-	       end)
+	    case {proplists:get_value("challenge", Fields),
+		  proplists:get_value("ocr", Fields)} of
+		{[Id|_], [OCR|_]} ->
+		    ?T(case mnesia:read(captcha, Id, write) of
+			   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
+			       mnesia:delete({captcha, Id}),
+			       erlang:cancel_timer(Tref),
+			       if OCR == Key ->
+				       Pid ! {captcha_succeed, Args},
+				       ok;
+				  true ->
+				       Pid ! {captcha_failed, Args},
+				       {error, bad_match}
+			       end;
+			   _ ->
+			       {error, not_found}
+		       end);
+		_ ->
+		    {error, malformed}
+	    end
     end;
 process_reply(_) ->
     {error, malformed}.
