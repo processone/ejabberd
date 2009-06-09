@@ -32,7 +32,7 @@ msgstr ""
 
 #: ejabberd_captcha.erl:212
 msgid "The captcha is valid."
-msgstr "Проверка капчи прошла успешна."
+msgstr "Проверка капчи прошла успешно."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"

@@ -302,7 +302,7 @@
 {"Sunday","Воскресенье"}.
 {"That nickname is already in use by another occupant","Этот псевдоним уже знят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
-{"The captcha is valid.","Проверка капчи прошла успешна."}.
+{"The captcha is valid.","Проверка капчи прошла успешно."}.
 {"the password is","пароль:"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке другому участнику"}.
 {"This participant is kicked from the room because he sent an error message","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"}.
