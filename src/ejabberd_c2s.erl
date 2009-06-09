@@ -1186,6 +1186,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	end,
     if
 	Pass == exit ->
+	    %% When Pass==exit, NewState contains a string instead of a #state{}
+	    Lang = StateData#state.lang,
+	    catch send_element(StateData, exmpp_stream:error('undefined-condition', {Lang, NewState})),
 	    catch send_element(StateData, exmpp_stream:closing()),
 	    {stop, normal, StateData};
 	Pass ->
