@@ -150,30 +150,36 @@ check_captcha(Id, ProvidedKey) ->
 
 process_reply(El) ->
     case {exmpp_xml:element_matches(El, captcha),
-    exmpp_xml:get_element(El, x)} of
+	  exmpp_xml:get_element(El, x)} of
 	{false, _} ->
 	    {error, malformed};
 	{_, undefined} ->
 	    {error, malformed};
 	{true, Xdata} ->
 	    Fields = jlib:parse_xdata_submit(Xdata),
-	    [Id | _] = proplists:get_value("challenge", Fields, [none]),
-	    [OCR | _] = proplists:get_value("ocr", Fields, [none]),
-	    ?T(case mnesia:read(captcha, Id, write) of
-		   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
-		       mnesia:delete({captcha, Id}),
-		       erlang:cancel_timer(Tref),
-		       if OCR == Key ->
-			       Pid ! {captcha_succeed, Args},
-			       ok;
-			  true ->
-			       Pid ! {captcha_failed, Args},
-			       {error, bad_match}
-		       end;
-		   _ ->
-		       {error, not_found}
-	       end)
-    end.
+	    case {proplists:get_value("challenge", Fields),
+		  proplists:get_value("ocr", Fields)} of
+		{[Id|_], [OCR|_]} ->
+		    ?T(case mnesia:read(captcha, Id, write) of
+			   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
+			       mnesia:delete({captcha, Id}),
+			       erlang:cancel_timer(Tref),
+			       if OCR == Key ->
+				       Pid ! {captcha_succeed, Args},
+				       ok;
+				  true ->
+				       Pid ! {captcha_failed, Args},
+				       {error, bad_match}
+			       end;
+			   _ ->
+			       {error, not_found}
+		       end);
+		_ ->
+		    {error, malformed}
+	    end
+    end;
+process_reply(_) ->
+    {error, malformed}.
 
 
 process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
