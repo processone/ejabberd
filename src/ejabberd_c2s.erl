@@ -1911,6 +1911,8 @@ fsm_reply(Reply, StateName, StateData) ->
     {reply, Reply, StateName, StateData, ?C2S_OPEN_TIMEOUT}.
 
 %% Used by c2s blacklist plugins
+is_ip_blacklisted(undefined) ->
+    false;
 is_ip_blacklisted({IP,_Port}) ->
     ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).
 
