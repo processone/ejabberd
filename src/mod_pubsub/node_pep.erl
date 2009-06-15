@@ -76,8 +76,7 @@ terminate(Host, ServerHost) ->
     ok.
 
 options() ->
-    [{node_type, pep},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, false},
@@ -174,7 +173,7 @@ get_entity_affiliations(_Host, Owner) ->
     States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
     NodeTree = case ets:lookup(gen_mod:get_module_proc(D, config), nodetree) of
 	    [{nodetree, N}] -> N;
-	    _ -> nodetree_default
+	    _ -> nodetree_tree
 	end,
     Reply = lists:foldl(fun(#pubsub_state{stateid = {_, N}, affiliation = A}, Acc) ->
 	case NodeTree:get_node(N) of
@@ -206,7 +205,7 @@ get_entity_subscriptions(_Host, Owner) ->
     end,
     NodeTree = case ets:lookup(gen_mod:get_module_proc(D, config), nodetree) of
 	    [{nodetree, N}] -> N;
-	    _ -> nodetree_default
+	    _ -> nodetree_tree
 	end,
     Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscriptions = Ss}, Acc) ->
 	case NodeTree:get_node(N) of

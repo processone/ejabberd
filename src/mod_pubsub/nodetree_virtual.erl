@@ -47,6 +47,8 @@
 	 get_node/1,
 	 get_nodes/2,
 	 get_nodes/1,
+	 get_parentnodes/3,
+	 get_parentnodes_tree/3,
 	 get_subnodes/3,
 	 get_subnodes_tree/3,
 	 create_node/5,
@@ -102,6 +104,22 @@ get_node({Host, _} = NodeId) ->
 get_nodes(Host, _From) ->
     get_nodes(Host).
 get_nodes(_Host) ->
+    [].
+
+%% @spec (Host, Node, From) -> [pubsubNode()]
+%%     Host = mod_pubsub:host()
+%%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
+%% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
+get_parentnodes(_Host, _Node, _From) ->
+    [].
+
+%% @spec (Host, Node, From) -> [pubsubNode()]
+%%     Host = mod_pubsub:host()
+%%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
+%% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
+get_parentnodes_tree(_Host, _Node, _From) ->
     [].
 
 %% @spec (Host, Node, From) -> [pubsubNode()]

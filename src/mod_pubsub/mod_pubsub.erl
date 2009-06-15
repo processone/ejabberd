@@ -80,7 +80,7 @@
 	 get_items/2,
 	 get_item/3,
 	 get_cached_item/2,
-	 broadcast_stanza/7,
+	 broadcast_stanza/8,
 	 get_configure/5,
 	 set_configure/5,
 	 tree_action/3,
@@ -304,7 +304,7 @@ update_node_database(Host, ServerHost) ->
 				  mnesia:delete({pubsub_node, NodeId}),
 				  {[#pubsub_node{nodeid = NodeId,
 						id = NodeIdx,
-						parent = element(2, ParentId),
+						parents = [element(2, ParentId)],
 						owners = Owners,
 						options = Options} |
 				   RecList], NodeIdx + 1}
@@ -334,12 +334,12 @@ update_node_database(Host, ServerHost) ->
 		    #pubsub_node{
 			nodeid = NodeId,
 			id = 0,
-			parent = Parent,
+			parents = [Parent],
 			type = Type,
 			owners = Owners,
 			options = Options}
 		end,
-	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parent, type, owners, options]),
+	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parents, type, owners, options]),
 	    FNew = fun() ->
 		lists:foldl(fun(#pubsub_node{nodeid = NodeId} = PubsubNode, NodeIdx) ->
 		    mnesia:write(PubsubNode#pubsub_node{id = NodeIdx}),
@@ -371,6 +371,17 @@ update_node_database(Host, ServerHost) ->
 		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p",
 			       [Reason])
 	    end;
+	[nodeid, id, parent, type, owners, options] ->
+	    F = fun({pubsub_node, NodeId, Id, Parent, Type, Owners, Options}) ->
+		    #pubsub_node{
+			nodeid = NodeId,
+			id = Id,
+			parents = [Parent],
+			type = Type,
+			owners = Owners,
+			options = Options}
+		end,
+	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parents, type, owners, options]);
 	_ ->
 	    ok
     end.
@@ -1443,6 +1454,12 @@ replace_subscription_helper(_, OldSub, Acc) ->
 -define(STRINGXFIELD(Label, Var, Val),
 	?XFIELD("text-single", Label, Var, Val)).
 
+-define(STRINGMXFIELD(Label, Var, Vals),
+	{xmlelement, "field", [{"type", "text-multi"},
+				{"label", translate:translate(Lang, Label)},
+				{"var", Var}],
+			[{xmlelement, "value", [], [{xmlcdata, V}]} || V <- Vals]}).
+
 -define(XFIELDOPT(Type, Label, Var, Val, Opts),
 	{xmlelement, "field", [{"type", Type},
 			       {"label", translate:translate(Lang, Label)},
@@ -1601,10 +1618,14 @@ delete_node(_Host, [], _Owner) ->
     {error, ?ERR_NOT_ALLOWED};
 delete_node(Host, Node, Owner) ->
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
+		     SubsByDepth = get_collection_subscriptions(Host, Node),
 		     case node_call(Type, get_affiliation, [NodeId, Owner]) of
 			 {result, owner} ->
 			     Removed = tree_call(Host, delete_node, [Host, Node]),
-			     node_call(Type, delete_node, [Removed]);
+			     case node_call(Type, delete_node, [Removed]) of
+				{result, Res} -> {result, {SubsByDepth, Res}};
+				Error	 -> Error
+			     end;
 			 _ ->
 			     %% Entity is not an owner
 			     {error, ?ERR_FORBIDDEN}
@@ -1612,27 +1633,26 @@ delete_node(Host, Node, Owner) ->
 	     end,
     Reply = [],
     case transaction(Host, Node, Action, transaction) of
-	{result, {_, {Result, broadcast, Removed}}} ->
-	    lists:foreach(fun({RNode, RSubscriptions}) ->
+	{result, {_, {SubsByDepth, {Result, broadcast, Removed}}}} ->
+	    lists:foreach(fun({RNode, _RSubscriptions}) ->
 		{RH, RN} = RNode#pubsub_node.nodeid,
 		NodeId = RNode#pubsub_node.id,
 		Type = RNode#pubsub_node.type,
 		Options = RNode#pubsub_node.options,
-		broadcast_removed_node(RH, RN, NodeId, Type, Options, RSubscriptions),
-		unset_cached_item(RH, NodeId)
+		broadcast_removed_node(RH, RN, NodeId, Type, Options, SubsByDepth)
 	    end, Removed),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
 	    end;
-	{result, {_, {Result, _Removed}}} ->
+	{result, {_, {_, {Result, _Removed}}}} ->
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
 	    end;
-	{result, {_, default}} ->
+	{result, {_, {_, default}}} ->
 	    {result, Reply};
-	{result, {_, Result}} ->
+	{result, {_, {_, Result}}} ->
 	    {result, Result};
 	Error ->
 	    Error
@@ -2605,19 +2625,28 @@ service_jid(Host) ->
 
 %% @spec (LJID, PresenceDelivery) -> boolean()
 %%	LJID = jid()
+%%	NotifyType = items | nodes
+%%	Depth = integer()
 %%	NodeOptions = [{atom(), term()}]
 %%	SubOptions = [{atom(), term()}]
 %% @doc <p>Check if a notification must be delivered or not based on
 %% node and subscription options.</p>
-is_to_deliver(LJID, NodeOptions, SubOptions) ->
-    sub_to_deliver(LJID, SubOptions) andalso node_to_deliver(LJID, NodeOptions).
+is_to_deliver(LJID, NotifyType, Depth, NodeOptions, SubOptions) ->
+    sub_to_deliver(LJID, NotifyType, Depth, SubOptions)
+	andalso node_to_deliver(LJID, NodeOptions).
 
-sub_to_deliver(_LJID, SubOptions) ->
-    lists:all(fun sub_option_can_deliver/1, SubOptions).
+sub_to_deliver(_LJID, NotifyType, Depth, SubOptions) ->
+    lists:all(fun (Option) ->
+		      sub_option_can_deliver(NotifyType, Depth, Option)
+	      end, SubOptions).
 
-sub_option_can_deliver({deliver, false}) -> false;
-sub_option_can_deliver({expire, When})   -> now() < When;
-sub_option_can_deliver(_)		-> true.
+sub_option_can_deliver(items, _, {subscription_type, nodes}) -> false;
+sub_option_can_deliver(nodes, _, {subscription_type, items}) -> false;
+sub_option_can_deliver(_, _, {subscription_depth, all})      -> true;
+sub_option_can_deliver(_, Depth, {subscription_depth, D})    -> Depth < D;
+sub_option_can_deliver(_, _, {deliver, false})	       -> false;
+sub_option_can_deliver(_, _, {expire, When})		 -> now() < When;
+sub_option_can_deliver(_, _, _)			      -> true.
 
 node_to_deliver(LJID, NodeOptions) ->
     PresenceDelivery = get_option(NodeOptions, presence_based_delivery),
@@ -2652,11 +2681,8 @@ event_stanza(Els) ->
 
 broadcast_publish_item(Host, Node, NodeId, Type, NodeOptions, Removed, ItemId, _From, Payload) ->
     %broadcast(Host, Node, NodeId, NodeOptions, none, true, "items", ItemEls)
-    case node_action(Host, Type, get_node_subscriptions, [NodeId]) of
-	{result, []} -> 
-	    {result, false};
-	{result, Subs} ->
-	    SubOptions = get_options_for_subs(Host, Node, NodeId, Subs),
+    case get_collection_subscriptions(Host, Node) of
+	SubsByDepth when is_list(SubsByDepth) ->
 	    Content = case get_option(NodeOptions, deliver_payloads) of
 		true -> Payload;
 		false -> []
@@ -2665,7 +2691,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, NodeOptions, Removed, ItemId, _
 		[{xmlelement, "items", nodeAttr(Node),
 		    [{xmlelement, "item", itemAttr(ItemId), Content}]}]),
 	    broadcast_stanza(Host, Node, NodeId, Type,
-			     NodeOptions, SubOptions, Stanza),
+			     NodeOptions, SubsByDepth, items, Stanza),
 	    case Removed of
 		[] ->
 		    ok;
@@ -2676,8 +2702,8 @@ broadcast_publish_item(Host, Node, NodeId, Type, NodeOptions, Removed, ItemId, _
 				[{xmlelement, "items", nodeAttr(Node),
 				    [{xmlelement, "retract", itemAttr(RId), []} || RId <- Removed]}]),
 			    broadcast_stanza(Host, Node, NodeId, Type,
-					     NodeOptions, SubOptions,
-					     RetractStanza);
+					     NodeOptions, SubsByDepth,
+					     items, RetractStanza);
 			_ ->
 			    ok
 		    end
@@ -2695,16 +2721,13 @@ broadcast_retract_items(Host, Node, NodeId, Type, NodeOptions, ItemIds, ForceNot
     %broadcast(Host, Node, NodeId, NodeOptions, notify_retract, ForceNotify, "retract", RetractEls)
     case (get_option(NodeOptions, notify_retract) or ForceNotify) of
 	true ->
-	    case node_action(Host, Type, get_node_subscriptions, [NodeId]) of
-		{result, []} -> 
-		    {result, false};
-		{result, Subs} ->
-		    SubOptions = get_options_for_subs(Host, Node, NodeId, Subs),
+	    case get_collection_subscriptions(Host, Node) of
+		SubsByDepth when is_list(SubsByDepth) ->
 		    Stanza = event_stanza(
 			[{xmlelement, "items", nodeAttr(Node),
 			    [{xmlelement, "retract", itemAttr(ItemId), []} || ItemId <- ItemIds]}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
-				     NodeOptions, SubOptions, Stanza),
+				     NodeOptions, SubsByDepth, items, Stanza),
 		    {result, true};
 		_ ->
 		    {result, false}
@@ -2717,16 +2740,13 @@ broadcast_purge_node(Host, Node, NodeId, Type, NodeOptions) ->
     %broadcast(Host, Node, NodeId, NodeOptions, notify_retract, false, "purge", [])
     case get_option(NodeOptions, notify_retract) of
 	true ->
-	    case node_action(Host, Type, get_node_subscriptions, [NodeId]) of
-		{result, []} -> 
-		    {result, false};
-		{result, Subs} ->
-		    SubOptions = get_options_for_subs(Host, Node, NodeId, Subs),
+	    case get_collection_subscriptions(Host, Node) of
+		SubsByDepth when is_list(SubsByDepth) ->
 		    Stanza = event_stanza(
 			[{xmlelement, "purge", nodeAttr(Node),
 			    []}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
-				     NodeOptions, SubOptions, Stanza),
+				     NodeOptions, SubsByDepth, nodes, Stanza),
 		    {result, true};
 		_ -> 
 		    {result, false}
@@ -2735,20 +2755,19 @@ broadcast_purge_node(Host, Node, NodeId, Type, NodeOptions) ->
 	    {result, false}
     end.
 
-broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, Subs) ->
+broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
     %broadcast(Host, Node, NodeId, NodeOptions, notify_delete, false, "delete", [])
     case get_option(NodeOptions, notify_delete) of
 	true ->
-	    case Subs of
+	    case SubsByDepth of
 		[] -> 
 		    {result, false};
 		_ ->
-		    SubOptions = get_options_for_subs(Host, Node, NodeId, Subs),
 		    Stanza = event_stanza(
 			[{xmlelement, "delete", nodeAttr(Node),
 			    []}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
-				     NodeOptions, SubOptions, Stanza),
+				     NodeOptions, SubsByDepth, nodes, Stanza),
 		    {result, true}
 	    end;
 	_ ->
@@ -2759,11 +2778,8 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
     %broadcast(Host, Node, NodeId, NodeOptions, notify_config, false, "items", ConfigEls)
     case get_option(NodeOptions, notify_config) of
 	true ->
-	    case node_action(Host, Type, get_node_subscriptions, [NodeId]) of
-		{result, []} -> 
-		    {result, false};
-		{result, Subs} ->
-		    SubOptions = get_options_for_subs(Host, Node, NodeId, Subs),
+	    case get_collection_subscriptions(Host, Node) of
+		SubsByDepth when is_list(SubsByDepth) ->
 		    Content = case get_option(NodeOptions, deliver_payloads) of
 			true ->
 			    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
@@ -2775,13 +2791,35 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
 			[{xmlelement, "items", nodeAttr(Node),
 			    [{xmlelement, "item", itemAttr("configuration"), Content}]}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
-				     NodeOptions, SubOptions, Stanza),
+				     NodeOptions, SubsByDepth, nodes, Stanza),
 		    {result, true};
 		_ -> 
 		    {result, false}
 	    end;
 	_ ->
 	    {result, false}
+    end.
+
+get_collection_subscriptions(Host, Node) ->
+    case mnesia:transaction(fun tree_call/3,
+			    [Host, get_parentnodes_tree,
+			     [Host, Node, service_jid(Host)]]) of
+	{atomic, NodesByDepth} when is_list(NodesByDepth) ->
+	    lists:map(fun ({Depth, Nodes}) ->
+			      {Depth, [{N, get_node_subs(N)} || N <- Nodes]}
+		      end, NodesByDepth);
+	Other ->
+	    Other
+    end.
+
+get_node_subs(#pubsub_node{type   = Type,
+			   nodeid = {Host, Node},
+			   id     = NodeID}) ->
+    case node_action(Host, Type, get_node_subscriptions, [NodeID]) of
+	{result, Subs} ->
+	    get_options_for_subs(Host, Node, NodeID, Subs);
+	Other ->
+	    Other
     end.
 
 % TODO: merge broadcast code that way
@@ -2802,15 +2840,14 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
 %	    {result, false}
 %    end
 
-broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, Subs, Stanza) ->
+broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, Stanza) ->
     %AccessModel = get_option(NodeOptions, access_model),
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
     From = service_jid(Host),
     %% Handles explicit subscriptions
-    DeliverSubs = lists:filter(fun({LJID, _Node, SubOptions}) ->
-				       is_to_deliver(LJID, NodeOptions, SubOptions)
-			       end, Subs),
-    lists:foreach(fun({LJID, _Node, _SubOptions}) ->
+    FilteredSubsByDepth = depths_to_deliver(NotifyType, SubsByDepth),
+    NodesByJID = collate_subs_by_jid(FilteredSubsByDepth),
+    lists:foreach(fun ({LJID, Nodes}) ->
 			  LJIDs = case BroadcastAll of
 				      true ->
 					  {U, S, _} = LJID,
@@ -2818,10 +2855,11 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, Subs, Stanza) ->
 				      false ->
 					  [LJID]
 				  end,
+			  SHIMStanza = add_headers(Stanza, collection_shim(Node, Nodes)),
 			  lists:foreach(fun(To) ->
-						ejabberd_router ! {route, From, jlib:make_jid(To), Stanza}
+						ejabberd_router ! {route, From, jlib:make_jid(To), SHIMStanza}
 					end, LJIDs)
-		  end, DeliverSubs),
+		  end, NodesByJID),
     %% Handles implicit presence subscriptions
     case Host of
 	{LUser, LServer, LResource} ->
@@ -2868,6 +2906,37 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, Subs, Stanza) ->
 	_ ->
 	    ok
     end.
+
+depths_to_deliver(NotifyType, SubsByDepth) ->
+    NodesToDeliver =
+	fun (Depth, Node, Subs, Acc) ->
+		lists:foldl(fun ({LJID, _Node, SubOptions} = S, Acc2) ->
+				     case is_to_deliver(LJID, NotifyType, Depth,
+							Node#pubsub_node.options,
+							SubOptions) of
+					 true  -> [S | Acc2];
+					 false -> Acc2
+				     end
+			     end, Acc, Subs)
+	end,
+
+    DepthsToDeliver =
+	fun ({Depth, SubsByNode}, Acc) ->
+		lists:foldl(fun ({Node, Subs}, Acc2) ->
+				    NodesToDeliver(Depth, Node, Subs, Acc2)
+			    end, Acc, SubsByNode)
+	end,
+
+    lists:foldl(DepthsToDeliver, [], SubsByDepth).
+
+collate_subs_by_jid(SubsByDepth) ->
+    lists:foldl(fun ({JID, Node, _Options}, Acc) ->
+			OldNodes = case lists:keysearch(JID, 1, Acc) of
+				       {value, {JID, Nodes}} -> Nodes;
+				       false		 -> []
+				   end,
+			lists:keystore(JID, 1, Acc, {JID, [Node | OldNodes]})
+		end, [], SubsByDepth).
 
 %% If we don't know the resource, just pick first if any
 %% If no resource available, check if caps anyway (remote online)
@@ -3000,6 +3069,10 @@ max_items(Options) ->
 	?LISTMXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
 		     get_option(Options, Var), Opts)).
 
+-define(NLIST_CONFIG_FIELD(Label, Var),
+	?STRINGMXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
+		       [node_to_string(N) || N <- get_option(Options, Var)])).
+
 get_configure_xfields(_Type, Options, Lang, Groups) ->
     [?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NODE_CONFIG),
      ?BOOL_CONFIG_FIELD("Deliver payloads with event notifications", deliver_payloads),
@@ -3020,7 +3093,8 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
      ?INTEGER_CONFIG_FIELD("Max payload size in bytes", max_payload_size),
      ?ALIST_CONFIG_FIELD("When to send the last published item", send_last_published_item,
 			 [never, on_sub, on_sub_and_presence]),
-     ?BOOL_CONFIG_FIELD("Only deliver notifications to available users", presence_based_delivery)
+     ?BOOL_CONFIG_FIELD("Only deliver notifications to available users", presence_based_delivery),
+     ?NLIST_CONFIG_FIELD("The collections with which a node is affiliated", collection)
     ].
 
 %%<p>There are several reasons why the node configuration request might fail:</p>
@@ -3052,8 +3126,10 @@ set_configure(Host, Node, From, Els, Lang) ->
 							  end,
 						case set_xoption(XData, OldOpts) of
 						    NewOpts when is_list(NewOpts) ->
-							tree_call(Host, set_node, [N#pubsub_node{options = NewOpts}]),
-							{result, ok};
+							case tree_call(Host, set_node, [N#pubsub_node{options = NewOpts}]) of
+							    ok -> {result, ok};
+							    Err -> Err
+							end;
 						    Err ->
 							Err
 						end
@@ -3166,6 +3242,9 @@ set_xoption([{"pubsub#type", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(type, Value);
 set_xoption([{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(body_xslt, Value);
+set_xoption([{"pubsub#collection", Value} | Opts], NewOpts) ->
+    NewValue = [string_to_node(V) || V <- Value],
+    ?SET_LIST_XOPT(collection, NewValue);
 set_xoption([_ | Opts], NewOpts) ->
     % skip unknown field
     set_xoption(Opts, NewOpts).
@@ -3257,7 +3336,7 @@ features() ->
 	 "member-affiliation",   % RECOMMENDED
 	 %TODO "meta-data",   % RECOMMENDED
 	 % see plugin "modify-affiliations",   % OPTIONAL
-	 %TODO "multi-collection",   % OPTIONAL
+	 % see plugin "multi-collection",   % OPTIONAL
 	 % see plugin "multi-subscribe",   % OPTIONAL
 	 % see plugin "outcast-affiliation",   % RECOMMENDED
 	 % see plugin "persistent-items",   % RECOMMENDED
@@ -3395,3 +3474,10 @@ itemsEls(Items) ->
     lists:map(fun(#pubsub_item{itemid = {ItemId, _}, payload = Payload}) ->
 	{xmlelement, "item", itemAttr(ItemId), Payload}
     end, Items).
+
+add_headers({xmlelement, Name, Attrs, Els}, Headers) ->
+    {xmlelement, Name, Attrs, Els ++ Headers}.
+
+collection_shim(Node, Nodes) ->
+    [{xmlelement, "header", [{"name", "Collection"}],
+      [{xmlcdata, node_to_string(N)}]} || N <- Nodes -- [Node]].

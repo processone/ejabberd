@@ -132,8 +132,7 @@ terminate(_Host, _ServerHost) ->
 %%	  {send_last_published_item, never},
 %%	  {presence_based_delivery, false}]'''
 options() ->
-    [{node_type, default},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
@@ -597,7 +596,7 @@ get_entity_affiliations(Host, Owner) ->
     States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
     NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	    [{nodetree, N}] -> N;
-	    _ -> nodetree_default
+	    _ -> nodetree_tree
 	end,
     Reply = lists:foldl(fun(#pubsub_state{stateid = {_, N}, affiliation = A}, Acc) ->
 	case NodeTree:get_node(N) of
@@ -654,7 +653,7 @@ get_entity_subscriptions(Host, Owner) ->
     end,
     NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	    [{nodetree, N}] -> N;
-	    _ -> nodetree_default
+	    _ -> nodetree_tree
 	end,
     Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscriptions = Ss}, Acc) ->
 	case NodeTree:get_node(N) of
@@ -774,9 +773,10 @@ get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) -
     SubKey = jlib:jid_tolower(JID),
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(NodeId, GenKey),
+    SubState = get_state(NodeId, SubKey),
     Affiliation = GenState#pubsub_state.affiliation,
-    Subscription = GenState#pubsub_state.subscriptions,
-    Whitelisted = can_fetch_item(Affiliation, Subscription),
+    Subscriptions = SubState#pubsub_state.subscriptions,
+    Whitelisted = can_fetch_item(Affiliation, Subscriptions),
     if
 	%%SubID == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
@@ -796,7 +796,7 @@ get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) -
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
-	(AccessModel == authorize) -> % TODO: to be done
+	(AccessModel == authorize) and (not Whitelisted) ->
 	    %% Node has authorize access model
 	    {error, ?ERR_FORBIDDEN};
 	%%MustPay ->
@@ -887,8 +887,10 @@ can_fetch_item(owner,        _)             -> true;
 can_fetch_item(member,       _)             -> true;
 can_fetch_item(publisher,    _)             -> true;
 can_fetch_item(outcast,      _)             -> false;
-can_fetch_item(none,         subscribed)    -> true;
-can_fetch_item(none,         none)          -> false;
+can_fetch_item(none, Subscriptions) ->
+    lists:any(fun ({subscribed, _SubID}) -> true;
+                  (_)                    -> false
+              end, Subscriptions);
 can_fetch_item(_Affiliation, _Subscription) -> false.
 
 %% Returns the first item where Pred() is true in List

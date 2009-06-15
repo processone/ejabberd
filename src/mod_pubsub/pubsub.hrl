@@ -91,7 +91,7 @@
 %%% <p>The <tt>parentid</tt> and <tt>type</tt> fields are indexed.</p>
 -record(pubsub_node, {nodeid,
 		      id,
-		      parent,
+		      parents = [],
 		      type = "flat",
 		      owners = [],
 		      options = []

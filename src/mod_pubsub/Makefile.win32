@@ -4,7 +4,7 @@ include ..\Makefile.inc
 EFLAGS = -I .. -pz ..
 
 OUTDIR = ..
-BEAMS = ..\gen_pubsub_node.beam ..\gen_pubsub_nodetree.beam ..\mod_pubsub.beam ..\nodetree_default.beam ..\nodetree_virtual.beam ..\node_buddy.beam ..\node_club.beam ..\node_default.beam ..\node_dispatch.beam ..\node_pep.beam ..\node_private.beam ..\node_public.beam
+BEAMS = ..\gen_pubsub_node.beam ..\gen_pubsub_nodetree.beam ..\mod_pubsub.beam ..\nodetree_tree.beam ..\nodetree_virtual.beam ..\node_buddy.beam ..\node_club.beam ..\node_hometree.beam ..\node_dispatch.beam ..\node_pep.beam ..\node_private.beam ..\node_public.beam
 
 ALL : $(BEAMS)
 
@@ -20,8 +20,8 @@ $(OUTDIR)\gen_pubsub_nodetree.beam : gen_pubsub_nodetree.erl
 $(OUTDIR)\mod_pubsub.beam : mod_pubsub.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) mod_pubsub.erl
 
-$(OUTDIR)\nodetree_default.beam : nodetree_default.erl
-	erlc -W $(EFLAGS) -o $(OUTDIR) nodetree_default.erl
+$(OUTDIR)\nodetree_tree.beam : nodetree_tree.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) nodetree_tree.erl
 
 $(OUTDIR)\nodetree_virtual.beam : nodetree_virtual.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) nodetree_virtual.erl
@@ -32,8 +32,8 @@ $(OUTDIR)\node_buddy.beam : node_buddy.erl
 $(OUTDIR)\node_club.beam : node_club.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) node_club.erl
 
-$(OUTDIR)\node_default.beam : node_default.erl
-	erlc -W $(EFLAGS) -o $(OUTDIR) node_default.erl
+$(OUTDIR)\node_hometree.beam : node_hometree.erl
+	erlc -W $(EFLAGS) -o $(OUTDIR) node_hometree.erl
 
 $(OUTDIR)\node_dispatch.beam : node_dispatch.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) node_dispatch.erl

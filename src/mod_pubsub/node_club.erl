@@ -78,8 +78,7 @@ terminate(Host, ServerHost) ->
     node_hometree:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, club},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},

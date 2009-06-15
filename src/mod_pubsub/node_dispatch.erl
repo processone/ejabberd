@@ -76,8 +76,7 @@ terminate(Host, ServerHost) ->
     node_hometree:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, dispatch},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
@@ -129,7 +128,7 @@ publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
 			  node_hometree:publish_item(
 			    SubNode#pubsub_node.id, Publisher, Model,
 			    MaxItems, ItemId, Payload)
-		  end, nodetree_default:get_subnodes(NodeId, Publisher)).
+		  end, nodetree_tree:get_subnodes(NodeId, Publisher, Publisher)).
 
 remove_extra_items(_NodeId, _MaxItems, ItemIds) ->
     {result, {ItemIds, []}}.

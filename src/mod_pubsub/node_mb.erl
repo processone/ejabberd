@@ -81,8 +81,7 @@ terminate(Host, ServerHost) ->
     ok.
 
 options() ->
-    [{node_type, pep},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, false},
