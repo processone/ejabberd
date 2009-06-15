@@ -699,7 +699,7 @@ recvd_packet(Pkt, S) ->
 	    Answer = 
 	    case {Name, Op} of
 		{searchRequest, {searchResEntry, R}} when
-		record(R,'SearchResultEntry') ->
+		is_record(R,'SearchResultEntry') ->
 		    New_dict = dict:append(Id, R, Dict),
 		    {ok, S#eldap{dict = New_dict}};
 		{searchRequest, {searchResDone, Result}} ->
@@ -1059,7 +1059,7 @@ get_list(Key, List) ->
 
 get_atom(Key, List) ->
     case lists:keysearch(Key, 1, List) of
-	{value, {Key, Value}} when atom(Value) ->
+	{value, {Key, Value}} when is_atom(Value) ->
 	    Value;
 	{value, {Key, _Value}} ->
 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
