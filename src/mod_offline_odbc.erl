@@ -32,7 +32,7 @@
 -export([count_offline_messages/2]).
 
 -export([start/2,
-	 init/2,
+	 loop/2,
 	 stop/1,
 	 store_packet/3,
 	 pop_offline_messages/3,
@@ -57,6 +57,9 @@
 -define(DEFAULT_NS, ?NS_JABBER_CLIENT).
 -define(PREFIXED_NS, [{?NS_XMPP, ?NS_XMPP_pfx}]).
 
+%% default value for the maximum number of user messages
+-define(MAX_USER_MESSAGES, infinity).
+
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
     ejabberd_hooks:add(offline_message_hook, HostB,
@@ -73,22 +76,17 @@ start(Host, Opts) ->
 		       ?MODULE, webadmin_user, 50),
     ejabberd_hooks:add(webadmin_user_parse_query, HostB,
                        ?MODULE, webadmin_user_parse_query, 50),
-    MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
+    AccessMaxOfflineMsgs = gen_mod:get_opt(access_max_user_messages, Opts, max_user_offline_messages),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [Host, MaxOfflineMsgs])).
+	     spawn(?MODULE, loop, [Host, AccessMaxOfflineMsgs])).
 
-%% MaxOfflineMsgs is either infinity of integer > 0
-init(Host, infinity) ->
-    loop(Host, infinity);
-init(Host, MaxOfflineMsgs) 
-  when is_integer(MaxOfflineMsgs), MaxOfflineMsgs > 0 ->
-    loop(Host, MaxOfflineMsgs).
-
-loop(Host, MaxOfflineMsgs) ->
+loop(Host, AccessMaxOfflineMsgs) ->
     receive
 	#offline_msg{user = User} = Msg ->
 	    Msgs = receive_all(User, [Msg]),
 	    Len = length(Msgs),
+	    MaxOfflineMsgs = get_max_user_messages(AccessMaxOfflineMsgs,
+						   User, Host),
 
 	    %% Only count existing messages if needed:
 	    Count = if MaxOfflineMsgs =/= infinity ->
@@ -128,9 +126,18 @@ loop(Host, MaxOfflineMsgs) ->
 			    ok
 		    end
 	    end,
-	    loop(Host, MaxOfflineMsgs);
+	    loop(Host, AccessMaxOfflineMsgs);
 	_ ->
-	    loop(Host, MaxOfflineMsgs)
+	    loop(Host, AccessMaxOfflineMsgs)
+    end.
+
+%% Function copied from ejabberd_sm.erl:
+get_max_user_messages(AccessRule, LUser, Host) ->
+    case acl:match_rule(
+	   Host, AccessRule, jlib:make_jid(LUser, Host, "")) of
+	Max when is_integer(Max) -> Max;
+	infinity -> infinity;
+	_ -> ?MAX_USER_MESSAGES
     end.
 
 receive_all(Username, Msgs) ->
