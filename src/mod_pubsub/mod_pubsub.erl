@@ -33,6 +33,14 @@
 %%% This module uses version 1.12 of the specification as a base.
 %%% Most of the specification is implemented.
 %%% Functions concerning configuration should be rewritten.
+%%%
+%%% Support for subscription-options and multi-subscribe features was
+%%% added by Brian Cully <bjc@kublai.com>. Subscriptions and options are
+%%% stored in the pubsub_subscription table, with a link to them provided
+%%% by the subscriptions field of pubsub_state. For information on
+%%% subscription-options and mulit-subscribe see XEP-0060 sections 6.1.6,
+%%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
+%%% XEP-0060 section 12.18.
 
 %%% TODO
 %%% plugin: generate Reply (do not use broadcast atom anymore)
