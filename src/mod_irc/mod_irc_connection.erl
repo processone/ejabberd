@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_irc_connection.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -51,6 +51,7 @@
 -record(state, {socket, encoding, queue,
 		user, host, server, nick,
 		channels = dict:new(),
+		nickchannel,
 		inbuf = "", outbuf = ""}).
 
 %-define(DBGFSM, true).
@@ -217,15 +218,21 @@ handle_info({route_chan, Channel, Resource,
 			   _ ->
 			       Resource
 		       end,
-		S1 = ?SEND(io_lib:format("NICK ~s\r\n"
-					 "JOIN #~s\r\n",
-					 [Nick, Channel])),
+		S1 = if
+		    Nick /= StateData#state.nick ->
+			S11 = ?SEND(io_lib:format("NICK ~s\r\n", [Nick])),
+			% The server reply will change the copy of the
+			% nick in the state (or indicate a clash).
+			S11#state{nickchannel = Channel};
+		    true ->
+			StateData
+		     end,
 		case dict:is_key(Channel, S1#state.channels) of
 		    true ->
-			S1#state{nick = Nick};
+			S1;
 		    _ ->
-			S1#state{nick = Nick,
-				 channels =
+			S2 = ?SEND(io_lib:format("JOIN #~s\r\n", [Channel])),
+			S2#state{channels =
 				 dict:store(Channel, ?SETS:new(),
 					    S1#state.channels)}
 		end
@@ -471,6 +478,35 @@ handle_info({ircstring, [$P, $I, $N, $G, $  | ID]}, StateName, StateData) ->
     send_text(StateData, "PONG " ++ ID ++ "\r\n"),
     {next_state, StateName, StateData};
 
+handle_info({ircstring, [$: | String]}, wait_for_registration, StateData) ->
+    Words = string:tokens(String, " "),
+    {NewState, NewStateData} =
+	case Words of
+	    [_, "001" | _] ->
+		{stream_established, StateData};
+	    [_, "433" | _] ->
+		{error,
+		 {error, error_nick_in_use(StateData, String), StateData}};
+	    [_, [$4, _, _] | _] ->
+		{error,
+		 {error, error_unknown_num(StateData, String, "cancel"),
+		  StateData}};
+	    [_, [$5, _, _] | _] ->
+		{error,
+		 {error, error_unknown_num(StateData, String, "cancel"),
+		  StateData}};
+	    _ ->
+		?DEBUG("unknown irc command '~s'~n", [String]),
+		{wait_for_registration, StateData}
+	end,
+    % Note that we don't send any data at this stage.
+    if
+	NewState == error ->
+	    {stop, normal, NewStateData};
+	true ->
+	    {next_state, NewState, NewStateData}
+    end;
+
 handle_info({ircstring, [$: | String]}, _StateName, StateData) ->
     Words = string:tokens(String, " "),
     NewStateData =
@@ -495,6 +531,15 @@ handle_info({ircstring, [$: | String]}, _StateName, StateData) ->
 	    [_, "319", _, Nick | _ ] ->
 		process_whois319(StateData, String, Nick),
 		StateData;
+	    [_, "433" | _] ->
+		process_nick_in_use(StateData, String);
+	    % CODEPAGE isn't standard, so don't complain if it's not there.
+	    [_, "421", _, "CODEPAGE" | _] ->
+		StateData;
+	    [_, [$4, _, _] | _] ->
+		process_num_error(StateData, String);
+	    [_, [$5, _, _] | _] ->
+		process_num_error(StateData, String);
 	    [From, "PRIVMSG", [$# | Chan] | _] ->
 		process_chanprivmsg(StateData, Chan, From, String),
 		StateData;
@@ -581,7 +626,16 @@ handle_info({tcp_error, _Socket, _Reason}, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(_Reason, _StateName, StateData) ->
+terminate(_Reason, _StateName, FullStateData) ->
+    % Extract error message if there was one.
+    {Error, StateData} = case FullStateData of
+	{error, SError, SStateData} ->
+	    {SError, SStateData};
+	_ ->
+	    {{xmlelement, "error", [{"code", "502"}],
+	      [{xmlcdata, "Server Connect Failed"}]},
+	     FullStateData}
+	end,
     mod_irc:closed_connection(StateData#state.host,
 			      StateData#state.user,
 			      StateData#state.server),
@@ -594,8 +648,7 @@ terminate(_Reason, _StateName, StateData) ->
 		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
 		{xmlelement, "presence", [{"type", "error"}],
-		 [{xmlelement, "error", [{"code", "502"}],
-		   [{xmlcdata, "Server Connect Failed"}]}]})
+		 [Error]})
       end, dict:fetch_keys(StateData#state.channels)),
     case StateData#state.socket of
 	undefined ->
@@ -738,7 +791,6 @@ process_channel_topic_who(StateData, Chan, String) ->
 		   String
 	   end,
     Msg2 = filter_message(Msg1),
-
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, ""),
@@ -747,6 +799,45 @@ process_channel_topic_who(StateData, Chan, String) ->
        [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
 
 
+error_nick_in_use(_StateData, String) ->
+    {ok, Msg, _} = regexp:sub(String, ".*433 +[^ ]* +", ""),
+    Msg1 = filter_message(Msg),
+    {xmlelement, "error", [{"code", "409"}, {"type", "cancel"}],
+     [{xmlelement, "conflict", [{"xmlns", ?NS_STANZAS}], []},
+      {xmlelement, "text", [{"xmlns", ?NS_STANZAS}],
+       [{xmlcdata, Msg1}]}]}.
+
+process_nick_in_use(StateData, String) ->
+    % We can't use the jlib macro because we don't know the language of the
+    % message.
+    Error = error_nick_in_use(StateData, String),
+    case StateData#state.nickchannel of
+	undefined ->
+	    % Shouldn't happen with a well behaved server
+	    StateData;
+	Chan ->
+	    ejabberd_router:route(
+	      jlib:make_jid(
+		lists:concat([Chan, "%", StateData#state.server]),
+		StateData#state.host, StateData#state.nick),
+	      StateData#state.user,
+	      {xmlelement, "presence", [{"type", "error"}], [Error]}),
+	    StateData#state{nickchannel = undefined}
+    end.
+
+process_num_error(StateData, String) ->
+    Error = error_unknown_num(StateData, String, "continue"),
+    lists:foreach(
+      fun(Chan) ->
+	      ejabberd_router:route(
+		jlib:make_jid(
+		  lists:concat([Chan, "%", StateData#state.server]),
+		  StateData#state.host, StateData#state.nick),
+		StateData#state.user,
+		{xmlelement, "message", [{"type", "error"}],
+		 [Error]})
+      end, dict:fetch_keys(StateData#state.channels)),
+      StateData.
 
 process_endofwhois(StateData, _String, Nick) ->
     ejabberd_router:route(
@@ -876,7 +967,7 @@ process_version(StateData, _Nick, From) ->
 		    "\001\r\n",
 		    [FromUser, ?VERSION]) ++
       io_lib:format("NOTICE ~s :\001VERSION "
-		    ?EJABBERD_URI
+		    "http://ejabberd.jabberstudio.org/"
 		    "\001\r\n",
 		    [FromUser])).
 
@@ -1069,7 +1160,14 @@ process_nick(StateData, From, NewNick) ->
 			  Ps
 		  end
 	  end, StateData#state.channels),
-    StateData#state{channels = NewChans}.
+    if
+	FromUser == StateData#state.nick ->
+	    StateData#state{nick = Nick,
+			    nickchannel = undefined,
+			    channels = NewChans};
+	true ->
+	    StateData#state{channels = NewChans}
+    end.
 
 
 process_error(StateData, String) ->
@@ -1085,6 +1183,13 @@ process_error(StateData, String) ->
 		   [{xmlcdata, String}]}]})
       end, dict:fetch_keys(StateData#state.channels)).
 
+error_unknown_num(_StateData, String, Type) ->
+    {ok, Msg, _} = regexp:sub(String, ".*[45][0-9][0-9] +[^ ]* +", ""),
+    Msg1 = filter_message(Msg),
+    {xmlelement, "error", [{"code", "500"}, {"type", Type}],
+     [{xmlelement, "undefined-condition", [{"xmlns", ?NS_STANZAS}], []},
+      {xmlelement, "text", [{"xmlns", ?NS_STANZAS}],
+       [{xmlcdata, Msg1}]}]}.
 
 
 

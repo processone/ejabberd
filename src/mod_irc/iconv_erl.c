@@ -59,6 +59,7 @@ static int iconv_erl_control(ErlDrvData drv_data,
    ErlDrvBinary *b;
    char *from, *to, *string, *stmp, *rstring, *rtmp;
    iconv_t cd;
+   int invalid_utf8_as_latin1 = 0;
 
    ei_decode_version(buf, &index, &i);
    ei_decode_tuple_header(buf, &index, &i);
@@ -74,6 +75,15 @@ static int iconv_erl_control(ErlDrvData drv_data,
    stmp = string = malloc(size + 1); 
    ei_decode_string(buf, &index, string);
 
+   /* Special mode: parse as UTF-8 if possible; otherwise assume it's
+      Latin-1.  Makes no difference when encoding. */
+   if (strcmp(from, "utf-8+latin-1") == 0) {
+      from[5] = '\0';
+      invalid_utf8_as_latin1 = 1;
+   }
+   if (strcmp(to, "utf-8+latin-1") == 0) {
+      to[5] = '\0';
+   }
    cd = iconv_open(to, from);
 
    if (cd == (iconv_t) -1) {
@@ -95,6 +105,12 @@ static int iconv_erl_control(ErlDrvData drv_data,
    rtmp = rstring = malloc(avail);
    while (inleft > 0) {
       if (iconv(cd, &stmp, &inleft, &rtmp, &outleft) == (size_t) -1) {
+	 if (invalid_utf8_as_latin1 && (*stmp & 0x80) && outleft >= 2) {
+	    /* Encode one byte of (assumed) Latin-1 into two bytes of UTF-8 */
+	    *rtmp++ = 0xc0 | ((*stmp & 0xc0) >> 6);
+	    *rtmp++ = 0x80 | (*stmp & 0x3f);
+	    outleft -= 2;
+	 }
 	 stmp++;
 	 inleft--;
       }
