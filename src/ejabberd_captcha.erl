@@ -196,9 +196,7 @@ process_reply(El) ->
 		_ ->
 		    {error, malformed}
 	    end
-    end;
-process_reply(_) ->
-    {error, malformed}.
+    end.
 
 
 process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
