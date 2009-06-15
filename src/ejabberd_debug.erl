@@ -46,7 +46,7 @@ pids() ->
     lists:zf(
       fun(Pid) ->
 	      case process_info(Pid) of
-		  ProcessInfo when list(ProcessInfo) ->
+		  ProcessInfo when is_list(ProcessInfo) ->
 		      CurrentFunction = current_function(ProcessInfo),
 		      InitialCall = initial_call(ProcessInfo),
 		      RegisteredName = registered_name(ProcessInfo),
