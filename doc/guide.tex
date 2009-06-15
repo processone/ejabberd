@@ -3132,11 +3132,34 @@ online again. Thus it is very similar to how email works. Note that
 (see section~\ref{ejabberdctl}).
 
 \begin{description}
-  \titem{user\_max\_messages}\ind{options!user\_max\_messages}This option
-  is use to set a max number of offline messages per user (quota). Its
-  value can be either \term{infinity} or a strictly positive
-  integer. The default value is \term{infinity}.
+  \titem{access\_max\_user\_messages}\ind{options!access\_max\_user\_messages}
+  This option defines which access rule will be enforced to limit
+  the maximum number of offline messages that a user can have (quota).
+  When a user has too many offline messages, any new messages that he receive are discarded,
+  and a resource-constraint error is returned to the sender.
+  The default value is \term{max\_user\_offline\_messages}.
+  Then you can define an access rule with a syntax similar to 
+  \term{max\_user\_sessions} (see \ref{configmaxsessions}).
 \end{description}
+
+This example allows power users to have as much as 5000 offline messages,
+administrators up to 2000,
+and all the other users up to 100.
+\begin{verbatim}
+{acl, admin, {user, "admin1", "localhost"}}.
+{acl, admin, {user, "admin2", "example.org"}}.
+{acl, poweruser, {user, "bob", "example.org"}}.
+{acl, poweruser, {user, "jane", "example.org"}}.
+
+{access, max_user_offline_messages, [ {5000, poweruser}, {2000, admin}, {100, all} ]}.
+
+{modules,
+ [
+  ...
+  {mod_offline,  [ {access_max_user_messages, max_user_offline_messages} ]},
+  ...
+ ]}.
+\end{verbatim}
 
 
 \makesubsection{modprivacy}{\modprivacy{}}

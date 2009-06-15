@@ -30,7 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2,
-	 init/1,
+	 loop/1,
 	 stop/1,
 	 store_packet/3,
 	 resend_offline_messages/2,
@@ -52,6 +52,9 @@
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
+%% default value for the maximum number of user messages
+-define(MAX_USER_MESSAGES, infinity).
+
 start(Host, Opts) ->
     mnesia:create_table(offline_msg,
 			[{disc_only_copies, [node()]},
@@ -72,22 +75,18 @@ start(Host, Opts) ->
 		       ?MODULE, webadmin_user, 50),
     ejabberd_hooks:add(webadmin_user_parse_query, Host,
                        ?MODULE, webadmin_user_parse_query, 50),
-    MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
+    AccessMaxOfflineMsgs = gen_mod:get_opt(access_max_user_messages, Opts, max_user_offline_messages),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [MaxOfflineMsgs])).
+	     spawn(?MODULE, loop, [AccessMaxOfflineMsgs])).
 
-%% MaxOfflineMsgs is either infinity of integer > 0
-init(infinity) ->
-    loop(infinity);
-init(MaxOfflineMsgs) 
-  when is_integer(MaxOfflineMsgs), MaxOfflineMsgs > 0 ->
-    loop(MaxOfflineMsgs).
-
-loop(MaxOfflineMsgs) ->
+loop(AccessMaxOfflineMsgs) ->
     receive
 	#offline_msg{us=US} = Msg ->
 	    Msgs = receive_all(US, [Msg]),
 	    Len = length(Msgs),
+	    {User, Host} = US,
+	    MaxOfflineMsgs = get_max_user_messages(AccessMaxOfflineMsgs,
+						   User, Host),
 	    F = fun() ->
 			%% Only count messages if needed:
 			Count = if MaxOfflineMsgs =/= infinity ->
@@ -113,9 +112,18 @@ loop(MaxOfflineMsgs) ->
 			end
 		end,
 	    mnesia:transaction(F),
-	    loop(MaxOfflineMsgs);
+	    loop(AccessMaxOfflineMsgs);
 	_ ->
-	    loop(MaxOfflineMsgs)
+	    loop(AccessMaxOfflineMsgs)
+    end.
+
+%% Function copied from ejabberd_sm.erl:
+get_max_user_messages(AccessRule, LUser, Host) ->
+    case acl:match_rule(
+	   Host, AccessRule, jlib:make_jid(LUser, Host, "")) of
+	Max when is_integer(Max) -> Max;
+	infinity -> infinity;
+	_ -> ?MAX_USER_MESSAGES
     end.
 
 receive_all(US, Msgs) ->

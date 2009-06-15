@@ -2423,11 +2423,31 @@ sent to an offline user will be stored on the server until that user comes
 online again. Thus it is very similar to how email works. Note that
 <TT>ejabberdctl</TT> has a command to delete expired messages
 (see section&#XA0;<A HREF="#ejabberdctl">4.1</A>).</P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>user_max_messages</TT></B></DT><DD CLASS="dd-description">This option
-is use to set a max number of offline messages per user (quota). Its
-value can be either <TT>infinity</TT> or a strictly positive
-integer. The default value is <TT>infinity</TT>.
-</DD></DL><P> <A NAME="modprivacy"></A> </P><!--TOC subsection <TT>mod_privacy</TT>-->
+<B><TT>access_max_user_messages</TT></B></DT><DD CLASS="dd-description">
+This option defines which access rule will be enforced to limit
+the maximum number of offline messages that a user can have (quota).
+When a user has too many offline messages, any new messages that he receive are discarded,
+and a resource-constraint error is returned to the sender.
+The default value is <TT>max_user_offline_messages</TT>.
+Then you can define an access rule with a syntax similar to 
+<TT>max_user_sessions</TT> (see <A HREF="#configmaxsessions">3.1.5</A>).
+</DD></DL><P>This example allows power users to have as much as 5000 offline messages,
+administrators up to 2000,
+and all the other users up to 100.
+</P><PRE CLASS="verbatim">{acl, admin, {user, "admin1", "localhost"}}.
+{acl, admin, {user, "admin2", "example.org"}}.
+{acl, poweruser, {user, "bob", "example.org"}}.
+{acl, poweruser, {user, "jane", "example.org"}}.
+
+{access, max_user_offline_messages, [ {5000, poweruser}, {2000, admin}, {100, all} ]}.
+
+{modules,
+ [
+  ...
+  {mod_offline,  [ {access_max_user_messages, max_user_offline_messages} ]},
+  ...
+ ]}.
+</PRE><P> <A NAME="modprivacy"></A> </P><!--TOC subsection <TT>mod_privacy</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc48">3.3.11</A>&#XA0;&#XA0;<A HREF="#modprivacy"><TT>mod_privacy</TT></A></H3><!--SEC END --><P> <A NAME="modprivacy"></A> 
 </P><P>This module implements Blocking Communication (also known as Privacy Rules)
 as defined in section 10 from XMPP IM. If end users have support for it in
@@ -2538,12 +2558,27 @@ is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>access_createnode</TT></B></DT><DD CLASS="dd-description"> 
 This option restricts which users are allowed to create pubsub nodes using
-ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>plugins</TT></B></DT><DD CLASS="dd-description"> To specify which pubsub node plugins to use. If not defined, the default
+ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>plugins</TT></B></DT><DD CLASS="dd-description"> 
+To specify which pubsub node plugins to use. If not defined, the default
 pubsub plugin is always used.
-</DD><DT CLASS="dt-description"><B><TT>nodetree</TT></B></DT><DD CLASS="dd-description"> To specify which nodetree to use. If not defined, the default pubsub
-nodetree is used. Nodetrees are default and virtual. Only one nodetree can be used
+</DD><DT CLASS="dt-description"><B><TT>nodetree</TT></B></DT><DD CLASS="dd-description"> 
+To specify which nodetree to use. If not defined, the default pubsub
+nodetree is used. Only one nodetree can be used per host,
 and is shared by all node plugins.
-</DD></DL><P>Example:
+</DD><DT CLASS="dt-description"><B><TT>pep_sendlast_offline</TT></B></DT><DD CLASS="dd-description"> 
+To specify whether or not we should get last published PEP items
+from users in our roster which are offline when we connect. Value is true or false.
+If not defined, pubsub assumes false so we only get last items of online contacts.
+</DD><DT CLASS="dt-description"><B><TT>last_item_cache</TT></B></DT><DD CLASS="dd-description"> 
+To specify whether or not pubsub should cache last items. Value is true
+or false. If not defined, pubsub do not cache last items. On systems with not so many nodes,
+caching last items speeds up pubsub and allows to raise user connection rate. The cost is memory
+usage, as every item is stored in memory.
+</DD><DT CLASS="dt-description"><B><TT>pep_mapping</TT></B></DT><DD CLASS="dd-description"> 
+This allow to define a Key-Value list to choose defined node plugins on given PEP namespace.
+The following example will use node_tune instead of node_pep for every PEP node with tune namespace:
+<PRE CLASS="verbatim">  {mod_pubsub, [{pep_mapping, [{"http://jabber.org/protocol/tune", "tune"}]}]}
+</PRE></DD></DL><P>Example:
 </P><PRE CLASS="verbatim">{modules,
  [
   ...
