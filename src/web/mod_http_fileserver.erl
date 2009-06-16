@@ -8,7 +8,6 @@
 
 -module(mod_http_fileserver).
 -author('mmirra@process-one.net').
--vsn('').
 -define(ejabberd_debug, true).
 -compile([export_all]).
 
