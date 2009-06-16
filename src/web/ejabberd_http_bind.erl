@@ -73,14 +73,14 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(ID, Key) ->
+start(Sid, Key) ->
     mnesia:create_table(http_bind,
         		[{ram_copies, [node()]},
         		 {attributes, record_info(fields, http_bind)}]),
-    supervisor:start_child(ejabberd_http_bind_sup, [ID, Key]).
+    supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key]).
 
-start_link(ID, Key) ->
-    gen_fsm:start_link(?MODULE, [ID, Key], ?FSMOPTS).
+start_link(Sid, Key) ->
+    gen_fsm:start_link(?MODULE, [Sid, Key], ?FSMOPTS).
 
 send({http_bind, FsmRef}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
@@ -102,19 +102,19 @@ close({http_bind, FsmRef}) ->
 
 process_request(Data) ->
     case catch parse_request(Data) of
-	{ok, ID1, RID, Key, NewKey, Attrs, Packet} ->
+	{ok, {ParsedSid, Rid, Key, NewKey, Attrs, Packet}} ->
 	    XmppDomain = xml:get_attr_s("to",Attrs),
 	    if 
-		(ID1 == "") and (XmppDomain == "") ->
+		(ParsedSid == "") and (XmppDomain == "") ->
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='improper-addressing' "
 		     "xmlns='http://jabber.org/protocol/httpbind'/>"};
 		true ->
-	    ID = if
-		     (ID1 == "") ->
+	    Sid = if
+		     (ParsedSid == "") ->
 			 %% create new session
-			 NewID = sha:sha(term_to_binary({now(), make_ref()})),
-			 {ok, Pid} = start(NewID, Key),
+			 NewSid = sha:sha(term_to_binary({now(), make_ref()})),
+			 {ok, Pid} = start(NewSid, Key),
                          ?DEBUG("got pid: ~p", [Pid]),
 			 Wait = case
 				    string:to_integer(xml:get_attr_s("wait",Attrs))
@@ -145,7 +145,7 @@ process_request(Data) ->
 				end,
 			 mnesia:transaction(
 			   fun() ->
-				   mnesia:write(#http_bind{id = NewID,
+				   mnesia:write(#http_bind{id = NewSid,
 							   pid = Pid,
                                                            to = XmppDomain,
 							   wait = Wait,
@@ -158,7 +158,7 @@ process_request(Data) ->
                                                false
 				    end,
                          InPacket = Packet,
-			 NewID;
+			 NewSid;
 		     true ->
 			 %% old session
 			 Type = xml:get_attr_s("type",Attrs),
@@ -178,16 +178,16 @@ process_request(Data) ->
 			     true ->
 				 InPacket = Packet
 			 end,
-			 ID1
+			 ParsedSid
 		 end,
 %%		    ?DEBUG("~n InPacket: ~s ~n", [InPacket]),
-	    case http_put(ID, RID, Key, NewKey, Hold, InPacket, StreamStart) of
+	    case http_put(Sid, Rid, Key, NewKey, Hold, InPacket, StreamStart) of
 		{error, not_exists} ->
-		    ?DEBUG("no session associated with sid: ~p", [ID]),
+		    ?DEBUG("no session associated with sid: ~p", [Sid]),
 		    {404, ?HEADER, ""};
 		{error, bad_key} ->
 		    ?DEBUG("bad key: ~s", [Key]),
-		    case mnesia:dirty_read({http_bind, ID}) of
+		    case mnesia:dirty_read({http_bind, Sid}) of
 			[] ->
 			    {404, ?HEADER, ""};
 			[#http_bind{pid = FsmRef}] ->
@@ -195,8 +195,8 @@ process_request(Data) ->
 			    {404, ?HEADER, ""}		    
 		    end;
 		{error, polling_too_frequently} ->
-		    ?DEBUG("polling too frequently: ~p", [ID]),
-		    case mnesia:dirty_read({http_bind, ID}) of
+		    ?DEBUG("polling too frequently: ~p", [Sid]),
+		    case mnesia:dirty_read({http_bind, Sid}) of
 			[] -> %% unlikely! (?)
 			    {404, ?HEADER, ""};
 			[#http_bind{pid = FsmRef}] ->
@@ -206,28 +206,28 @@ process_request(Data) ->
 		{repeat, OutPacket} ->
 		    ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
 			   [OutPacket]),
-		    send_outpacket(ID, OutPacket);
+		    send_outpacket(Sid, OutPacket);
 		ok ->
-		    receive_loop(ID,ID1,RID,Wait,Hold,Attrs)
+		    receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs)
 	    end
 	    end;
 	_ ->
 	    {400, ?HEADER, ""}
     end.
 
-receive_loop(ID,ID1,RID,Wait,Hold,Attrs) ->
+receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
     receive
 	after 100 -> ok
 	end,
-    prepare_response(ID,ID1,RID,Wait,Hold,Attrs).
+    prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs).
 
-prepare_response(ID,ID1,RID,Wait,Hold,Attrs) ->
-    case http_get(ID,RID) of
+prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
+    case http_get(Sid,Rid) of
 	{error, not_exists} ->
-            ?DEBUG("no session associated with sid: ~s", ID),
+            ?DEBUG("no session associated with sid: ~s", Sid),
 	    {404, ?HEADER, ""};
 	{ok, keep_on_hold} ->
-	    receive_loop(ID,ID1,RID,Wait,Hold,Attrs);
+	    receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs);
 	{ok, cancel} ->
 	    %% actually it would be better if we could completely
 	    %% cancel this request, but then we would have to hack
@@ -236,8 +236,8 @@ prepare_response(ID,ID1,RID,Wait,Hold,Attrs) ->
 	{ok, OutPacket} ->
             ?DEBUG("OutPacket: ~s", [OutPacket]),
 	    if
-		ID == ID1 ->
-		    send_outpacket(ID, OutPacket);
+		Sid == ParsedSid ->
+		    send_outpacket(Sid, OutPacket);
 		true ->
 		    To = xml:get_attr_s("to",Attrs),
 		    OutEls = case xml_stream:parse_element(
@@ -274,7 +274,7 @@ prepare_response(ID,ID1,RID,Wait,Hold,Attrs) ->
 			       {xmlelement,"body",
 				[{"xmlns",
 				  "http://jabber.org/protocol/httpbind"},
-				 {"sid",ID},
+				 {"sid",Sid},
 				 {"wait", integer_to_list(Wait)},
 				 {"requests", integer_to_list(Hold+1)},
 				 {"inactivity", 
@@ -286,12 +286,12 @@ prepare_response(ID,ID1,RID,Wait,Hold,Attrs) ->
 	    end
     end.
     
-send_outpacket(ID, OutPacket) ->
+send_outpacket(Sid, OutPacket) ->
     case OutPacket of
 	"" ->
 	    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
 	"</stream:stream>" ->
-	    case mnesia:dirty_read({http_bind, ID}) of
+	    case mnesia:dirty_read({http_bind, Sid}) of
 		[#http_bind{pid = FsmRef}] ->
 		    gen_fsm:sync_send_all_state_event(FsmRef,stop)
 	    end,
@@ -356,7 +356,7 @@ send_outpacket(ID, OutPacket) ->
                                                 {error, _E} ->
                                                     null
                                             end,
-                            case mnesia:dirty_read({http_bind, ID}) of
+                            case mnesia:dirty_read({http_bind, Sid}) of
                                 [#http_bind{pid = FsmRef}] ->
                                     gen_fsm:sync_send_all_state_event(FsmRef,stop);
                                 _ ->
@@ -398,14 +398,14 @@ send_outpacket(ID, OutPacket) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([ID, Key]) ->
-    ?INFO_MSG("started: ~p", [{ID, Key}]),
+init([Sid, Key]) ->
+    ?INFO_MSG("started: ~p", [{Sid, Key}]),
     Opts = [], % TODO
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_bind, self()}, Opts),
 %    {ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_bind, self()}}, Opts),
 %    ejabberd_c2s:become_controller(C2SPid),
     Timer = erlang:start_timer(?MAX_INACTIVITY, self(), []),
-    {ok, loop, #state{id = ID,
+    {ok, loop, #state{id = Sid,
 		      key = Key,
 		      timer = Timer}}.
 
@@ -471,10 +471,10 @@ handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 
-handle_sync_event({http_put, RID, Key, NewKey, Hold, Packet, StartTo},
+handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StartTo},
 		  _From, StateName, StateData) ->
-    %% check if RID valid
-    RidAllow = case RID of
+    %% check if Rid valid
+    RidAllow = case Rid of
 		   error -> 
 		       false;
 		   _ ->
@@ -482,15 +482,15 @@ handle_sync_event({http_put, RID, Key, NewKey, Hold, Packet, StartTo},
 			   error -> 
 			       %% first request - nothing saved so far
 			       true;
-			   OldRID ->
+			   OldRid ->
 			       ?DEBUG("state.rid/cur rid: ~p/~p", 
-				      [OldRID, RID]),
+				      [OldRid, Rid]),
 			       if 
-				   (OldRID < RID) and 
-				   (RID =< (OldRID + Hold + 1)) ->
+				   (OldRid < Rid) and 
+				   (Rid =< (OldRid + Hold + 1)) ->
 				       true;
-				   (RID =< OldRID) and 
-				   (RID > OldRID - Hold - 1) ->
+				   (Rid =< OldRid) and 
+				   (Rid > OldRid - Hold - 1) ->
 				       repeat;
 				   true ->
 				       false
@@ -542,10 +542,10 @@ handle_sync_event({http_put, RID, Key, NewKey, Hold, Packet, StartTo},
 		    Reply = {error, not_exists},
 		    {reply, Reply, StateName, StateData};
 		repeat ->
-		    ?DEBUG("REPEATING ~p", [RID]),
+		    ?DEBUG("REPEATING ~p", [Rid]),
 		    [Out | _XS] = [El#hbr.out || 
 				      El <- StateData#state.req_list, 
-				      El#hbr.rid == RID],
+				      El#hbr.rid == Rid],
 		    case Out of 
 			[[] | OutPacket] ->
 			    Reply = {repeat, OutPacket};
@@ -564,14 +564,14 @@ handle_sync_event({http_put, RID, Key, NewKey, Hold, Packet, StartTo},
 		    ?DEBUG(" -- SaveKey: ~s~n", [SaveKey]),
 
 		    %% save request
-		    ReqList = [#hbr{rid=RID,
+		    ReqList = [#hbr{rid=Rid,
 				    key=StateData#state.key,
 				    in=StateData#state.input,
 				    out=StateData#state.output
 				   } | 
 			       [El || El <- StateData#state.req_list, 
-				      El#hbr.rid < RID, 
-				      El#hbr.rid > (RID - 1 - Hold)]
+				      El#hbr.rid < Rid, 
+				      El#hbr.rid > (Rid - 1 - Hold)]
 			      ],
 %%		    ?DEBUG("reqlist: ~p", [ReqList]),
 		    case StateData#state.waiting_input of
@@ -583,7 +583,7 @@ handle_sync_event({http_put, RID, Key, NewKey, Hold, Packet, StartTo},
 			    Reply = ok,
 			    {reply, Reply, StateName, 
 			     StateData#state{input = Input,
-					     rid = RID,
+					     rid = Rid,
 					     key = SaveKey,
 					     ctime = TNow,
 					     timer = Timer,
@@ -613,7 +613,7 @@ handle_sync_event({http_put, RID, Key, NewKey, Hold, Packet, StartTo},
 			     StateData#state{waiting_input = false,
 					     last_receiver = Receiver,
 					     input = "",
-					     rid = RID,
+					     rid = Rid,
 					     key = SaveKey,
 					     ctime = TNow,
 					     timer = Timer,
@@ -627,7 +627,7 @@ handle_sync_event({http_put, RID, Key, NewKey, Hold, Packet, StartTo},
 	    {reply, Reply, StateName, StateData}
     end;
 
-handle_sync_event({http_get, RID, Wait, Hold}, _From, StateName, StateData) ->
+handle_sync_event({http_get, Rid, Wait, Hold}, _From, StateName, StateData) ->
     {_,TSec,TMSec} = now(),
     TNow = TSec*1000*1000 + TMSec,
     cancel_timer(StateData#state.timer),
@@ -636,7 +636,7 @@ handle_sync_event({http_get, RID, Wait, Hold}, _From, StateName, StateData) ->
 	(Hold > 0) and 
 	(StateData#state.output == "") and 
 	((TNow - StateData#state.ctime) < (Wait*1000*1000)) and 
-	(StateData#state.rid == RID) and 
+	(StateData#state.rid == Rid) and 
 	(StateData#state.input /= "cancel") ->
 	    Output = StateData#state.output,
 	    ReqList = StateData#state.req_list,
@@ -653,13 +653,13 @@ handle_sync_event({http_get, RID, Wait, Hold}, _From, StateName, StateData) ->
 		    Reply = {ok, StateData#state.output}
 	    end,
 	    %% save request
-	    ReqList = [#hbr{rid=RID,
+	    ReqList = [#hbr{rid=Rid,
 			    key=StateData#state.key,
 			    in=StateData#state.input,
 			    out=StateData#state.output
 			   } | 
 		       [El || El <- StateData#state.req_list, 
-			      El#hbr.rid /= RID ] 
+			      El#hbr.rid /= Rid ] 
 		      ],
 	    Output = ""
     end,
@@ -716,9 +716,9 @@ terminate(_Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 
-http_put(ID, RID, Key, NewKey, Hold, Packet, Restart) ->
+http_put(Sid, Rid, Key, NewKey, Hold, Packet, Restart) ->
     ?DEBUG("http-put",[]),
-    case mnesia:dirty_read({http_bind, ID}) of
+    case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
             ?DEBUG("not found",[]),
 	    {error, not_exists};
@@ -727,20 +727,20 @@ http_put(ID, RID, Key, NewKey, Hold, Packet, Restart) ->
                 true ->
                     ?DEBUG("restart requested for ~s", [To]),
                     gen_fsm:sync_send_all_state_event(
-                      FsmRef, {http_put, RID, Key, NewKey, Hold, Packet, To});
+                      FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, To});
                 _ ->
                     gen_fsm:sync_send_all_state_event(
-                      FsmRef, {http_put, RID, Key, NewKey, Hold, Packet, ""})
+                      FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, ""})
             end
     end.
 
-http_get(ID,RID) ->
-    case mnesia:dirty_read({http_bind, ID}) of
+http_get(Sid,Rid) ->
+    case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
 	    {error, not_exists};
 	[#http_bind{pid = FsmRef, wait = Wait, hold = Hold}] ->
 	    gen_fsm:sync_send_all_state_event(FsmRef, 
-					      {http_get, RID, Wait, Hold})
+					      {http_get, Rid, Wait, Hold})
     end.
 
 
@@ -760,8 +760,8 @@ parse_request(Data) ->
                                   false
                           end
                   end, Els),
-	    ID = xml:get_attr_s("sid",Attrs),
-	    {RID,_X} = string:to_integer(xml:get_attr_s("rid",Attrs)),
+	    Sid = xml:get_attr_s("sid",Attrs),
+	    {Rid,_X} = string:to_integer(xml:get_attr_s("rid",Attrs)),
 	    Key = xml:get_attr_s("key",Attrs),
 	    NewKey = xml:get_attr_s("newkey",Attrs),
 	    Xmlns = xml:get_attr_s("xmlns",Attrs),
@@ -781,7 +781,7 @@ parse_request(Data) ->
 		Xmlns /= "http://jabber.org/protocol/httpbind" ->
 		    {error, bad_request};
 		true ->
-		    {ok, ID, RID, Key, NewKey, Attrs, Packet}
+		    {ok, {Sid, Rid, Key, NewKey, Attrs, Packet}}
 	    end;
 	{error, _Reason} ->
 	    {error, bad_request}
