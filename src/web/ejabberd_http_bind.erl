@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 683 2008-07-08 10:30:45Z cromain $
+%%% Id      : $Id: ejabberd_http_bind.erl 694 2008-07-15 13:27:03Z alexey $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/2,
+-export([start_link/3,
 	 init/1,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -47,6 +47,7 @@
 -record(state, {id,
 		rid = none,
 		key,
+		socket,
 		output = "",
 		input = "",
 		waiting_input = false,
@@ -91,17 +92,17 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Sid, Key) ->
+start(Sid, Key, IP) ->
     setup_database(),
-    supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key]).
+    supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key, IP]).
 
-start_link(Sid, Key) ->
-    gen_fsm:start_link(?MODULE, [Sid, Key], ?FSMOPTS).
+start_link(Sid, Key, IP) ->
+    gen_fsm:start_link(?MODULE, [Sid, Key, IP], ?FSMOPTS).
 
-send({http_bind, FsmRef}, Packet) ->
+send({http_bind, FsmRef, _IP}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
 
-setopts({http_bind, FsmRef}, Opts) ->
+setopts({http_bind, FsmRef, _IP}, Opts) ->
     case lists:member({active, once}, Opts) of
 	true ->
 	    gen_fsm:send_all_state_event(FsmRef, {activate, self()});
@@ -112,19 +113,14 @@ setopts({http_bind, FsmRef}, Opts) ->
 controlling_process(_Socket, _Pid) ->
     ok.
 
-close({http_bind, FsmRef}) ->
+close({http_bind, FsmRef, _IP}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, stop).
 
 sockname(_Socket) ->
     {ok, ?NULL_PEER}.
 
-peername({http_bind, FsmRef}) ->
-    case catch gen_fsm:sync_send_all_state_event(FsmRef, peername, 1000) of
-	{ok, IP} -> {ok, IP};
-	_ -> {ok, ?NULL_PEER}
-    end;
-peername(_) ->
-    {ok, ?NULL_PEER}.
+peername({http_bind, _FsmRef, IP}) ->
+    {ok, IP}.
 
 process_request(Data, IP) ->
     case catch parse_request(Data) of
@@ -137,7 +133,7 @@ process_request(Data, IP) ->
                 XmppDomain ->
                     %% create new session
                     Sid = sha:sha(term_to_binary({now(), make_ref()})),
-                    {ok, Pid} = start(Sid, ""),
+                    {ok, Pid} = start(Sid, "", IP),
                     ?DEBUG("got pid: ~p", [Pid]),
                     Wait = case
                                string:to_integer(xml:get_attr_s("wait",Attrs))
@@ -219,8 +215,8 @@ process_request(Data, IP) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Sid, Key]) ->
-    ?DEBUG("started: ~p", [{Sid, Key}]),
+init([Sid, Key, IP]) ->
+    ?DEBUG("started: ~p", [{Sid, Key, IP}]),
 
     %% Read c2s options from the first ejabberd_c2s configuration in
     %% the config file listen section
@@ -230,12 +226,12 @@ init([Sid, Key]) ->
     %% connector.
     Opts = ejabberd_c2s_config:get_c2s_limits(),
 
-    ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_bind, self()}, Opts),
-%    {ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_bind, self()}}, Opts),
-%    ejabberd_c2s:become_controller(C2SPid),
+    Socket = {http_bind, self(), IP},
+    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
     Timer = erlang:start_timer(?MAX_INACTIVITY, self(), []),
     {ok, loop, #state{id = Sid,
 		      key = Key,
+		      socket = Socket,
 		      timer = Timer}}.
 
 %%----------------------------------------------------------------------
@@ -272,7 +268,7 @@ handle_event({activate, From}, StateName, StateData) ->
 				     waiting_input = {From, ok}}};
 	Input ->
             Receiver = From,
-	    Receiver ! {tcp, {http_bind, self()}, list_to_binary(Input)},
+	    Receiver ! {tcp, StateData#state.socket, list_to_binary(Input)},
 	    {next_state, StateName, StateData#state{
 				     input = "",
 				     waiting_input = false,
@@ -495,7 +491,7 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo, IP},
                                         Payload
                                 end,
                             ?DEBUG("really sending now: ~s", [SendPacket]),
-			    Receiver ! {tcp, {http_bind, self()},
+			    Receiver ! {tcp, StateData#state.socket,
 					list_to_binary(SendPacket)},
 			    Reply = ok,
 			    {reply, Reply, StateName,
@@ -689,9 +685,9 @@ terminate(_Reason, _StateName, StateData) ->
 	false ->
 	    case StateData#state.last_receiver of
 		undefined -> ok;
-		Receiver -> Receiver ! {tcp_closed, {http_bind, self()}}
+		Receiver -> Receiver ! {tcp_closed, StateData#state.socket}
 	    end;
-	{Receiver, _Tag} -> Receiver ! {tcp_closed, {http_bind, self()}}
+	{Receiver, _Tag} -> Receiver ! {tcp_closed, StateData#state.socket}
     end,
     ok.
 
