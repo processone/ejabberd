@@ -8,8 +8,6 @@
 
 -module(mod_http_fileserver).
 -author('mmirra@process-one.net').
--define(ejabberd_debug, true).
--compile([export_all]).
 
 -behaviour(gen_mod).
 
@@ -17,6 +15,7 @@
 	 start/2,
 	 stop/1,
 	 process/2,
+	 loop/1,
 	 ctl_process/2
 	]).
 
@@ -24,6 +23,7 @@
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_ctl.hrl").
+-include_lib("kernel/include/file.hrl").
 
 %%%----------------------------------------------------------------------
 %%% REQUEST HANDLERS
@@ -71,6 +71,7 @@ serve(LocalPath) ->
             ?DEBUG("Delivering content.", []),
             {200,
              [{"Server", "ejabberd"},
+              {"Last-Modified", last_modified(FileName)},
               {"Content-type", content_type(FileName)}],
              FileContents};
         {error, Error} ->
@@ -130,6 +131,11 @@ content_type(Filename) ->
         ".xpi"  -> "application/x-xpinstall";
         _Else   -> "application/octet-stream"
     end.
+
+last_modified(FileName) ->
+    {ok, FileInfo} = file:read_file_info(FileName),
+    Then = FileInfo#file_info.mtime,
+    httpd_util:rfc1123_date(Then).
 
 open_file(Filename) ->
     case file:open(Filename, [append]) of
