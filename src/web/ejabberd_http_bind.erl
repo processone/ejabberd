@@ -4,12 +4,12 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 403 2007-10-20 15:36:13Z badlop $
+%%% Id      : $Id: ejabberd_http_bind.erl 405 2007-11-02 14:58:36Z mremond $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 403 $').
+-vsn('$Rev: 405 $').
 
 -behaviour(gen_fsm).
 
@@ -214,7 +214,15 @@ process_request(Data) ->
 %%----------------------------------------------------------------------
 init([Sid, Key]) ->
     ?DEBUG("started: ~p", [{Sid, Key}]),
-    Opts = [], % TODO
+
+    %% Read c2s options from the first ejabberd_c2s configuration in
+    %% the config file listen section
+    %% TODO: We should have different access and shaper values for
+    %% each connector. The default behaviour should be however to use
+    %% the default c2s restrictions if not defined for the current
+    %% connector.
+    Opts = ejabberd_c2s_config:get_c2s_limits(),
+
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_bind, self()}, Opts),
 %    {ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_bind, self()}}, Opts),
 %    ejabberd_c2s:become_controller(C2SPid),
