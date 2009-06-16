@@ -380,7 +380,7 @@
 {access, max_user_sessions, [{10, all}]}.
 
 %% Maximum number of offline messages that users can have:
-{access, max_user_offline_messages, [{5000, admin}, {100, all}]}, 
+{access, max_user_offline_messages, [{5000, admin}, {100, all}]}.
 
 %% This rule allows access only for local users:
 {access, local, [{allow, local}]}.
