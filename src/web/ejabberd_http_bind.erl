@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 674 2008-07-03 15:58:15Z cromain $
+%%% Id      : $Id: ejabberd_http_bind.erl 683 2008-07-08 10:30:45Z cromain $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -119,11 +119,9 @@ sockname(_Socket) ->
     {ok, ?NULL_PEER}.
 
 peername({http_bind, FsmRef}) ->
-    gen_fsm:send_all_state_event(FsmRef, {peername, self()}),
-    %% XXX should improve that, but sync call seems not possible
-    receive
-	{peername, PeerName} -> {ok, PeerName}
-	after 1000 -> {ok, ?NULL_PEER}
+    case catch gen_fsm:sync_send_all_state_event(FsmRef, peername, 1000) of
+	{ok, IP} -> {ok, IP};
+	_ -> {ok, ?NULL_PEER}
     end;
 peername(_) ->
     {ok, ?NULL_PEER}.
@@ -280,10 +278,6 @@ handle_event({activate, From}, StateName, StateData) ->
 				     waiting_input = false,
 				     last_receiver = Receiver}}
     end;
-
-handle_event({peername, From}, StateName, StateData) ->
-    From ! {peername, StateData#state.ip},
-    {next_state, StateName, StateData};
 
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -621,6 +615,10 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 					timer = Timer,
 					req_list = ReqList}}
     end;
+
+handle_sync_event(peername, _From, StateName, StateData) ->
+    Reply = {ok, StateData#state.ip},
+    {reply, Reply, StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
