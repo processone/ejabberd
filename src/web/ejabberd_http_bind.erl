@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 440 2007-12-06 22:36:21Z badlop $
+%%% Id      : $Id: ejabberd_http_bind.erl 449 2007-12-18 15:00:10Z alexey $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -50,6 +50,8 @@
 		waiting_input = false,
 		last_receiver,
 		last_poll,
+		http_receiver,
+		wait_timer,
 		ctime = 0,
 		timer,
                 pause=0,
@@ -72,7 +74,7 @@
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, 2000000). % don't poll faster than that or we will
-                               % shoot you (time in µsec)
+                               % shoot you (time in  sec)
 -define(MAX_WAIT, 3600). % max num of secs to keep a request on hold
 -define(MAX_INACTIVITY, 30000). % msecs to wait before terminating
                                 % idle sessions
@@ -283,8 +285,30 @@ handle_event(_Event, StateName, StateData) ->
 %%----------------------------------------------------------------------
 handle_sync_event({send, Packet}, _From, StateName, StateData) ->
     Output = [StateData#state.output | Packet],
-    Reply = ok,
-    {reply, Reply, StateName, StateData#state{output = Output}};
+    if
+	StateData#state.http_receiver /= undefined ->
+	    HTTPReply = case Output of
+			    [[]| OutPacket] ->
+				{ok, OutPacket};
+			    _ ->
+				{ok, Output}
+			end,
+	    gen_fsm:reply(StateData#state.http_receiver, HTTPReply),
+	    if
+		StateData#state.wait_timer /= undefined ->
+		    cancel_timer(StateData#state.wait_timer);
+		true ->
+		    ok
+	    end,
+	    Reply = ok,
+	    {reply, Reply, StateName,
+	     StateData#state{output = [],
+			     http_receiver = undefined,
+			     wait_timer = undefined}};
+	true ->
+	    Reply = ok,
+	    {reply, Reply, StateName, StateData#state{output = Output}}
+    end;
 
 handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
@@ -333,7 +357,7 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 			   "" ->
 			       true;
 			   OldKey ->
-			       NextKey = string:to_lower(
+			       NextKey = jlib:tolower(
 					   hex(binary_to_list(
 						 crypto:sha(Key)))),
 			       ?DEBUG("Key/OldKey/NextKey: ~s/~s/~s", 
@@ -464,18 +488,29 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 	    {reply, Reply, StateName, StateData}
     end;
 
-handle_sync_event({http_get, Rid, Wait, Hold}, _From, StateName, StateData) ->
+handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
     %% setup timer
     cancel_timer(StateData#state.timer),
-    if 
-        StateData#state.pause > 0 ->
-            Timer = erlang:start_timer(
+    Timer = if 
+		StateData#state.pause > 0 ->
+		    erlang:start_timer(
                       StateData#state.pause*1000, self(), []);
-        true ->
-            Timer = erlang:start_timer(
+		true ->
+		    erlang:start_timer(
                       ?MAX_INACTIVITY, self(), [])
+	    end,
+    if
+	StateData#state.http_receiver /= undefined ->
+	    gen_fsm:reply(StateData#state.http_receiver, {ok, empty});
+	true ->
+	    ok
     end,
-
+    if
+	StateData#state.wait_timer /= undefined ->
+	    cancel_timer(StateData#state.wait_timer);
+	true ->
+	    ok
+    end,
     {_,TSec,TMSec} = now(),
     TNow = TSec*1000*1000 + TMSec,
     if 
@@ -487,11 +522,25 @@ handle_sync_event({http_get, Rid, Wait, Hold}, _From, StateName, StateData) ->
         (StateData#state.pause == 0) ->
 	    Output = StateData#state.output,
 	    ReqList = StateData#state.req_list,
-	    Reply = {ok, keep_on_hold};
+	    WaitTimer = erlang:start_timer(Wait * 1000, self(), []),
+	    {next_state, StateName, StateData#state{
+				      input = "",
+				      output = Output,
+				      http_receiver = From,
+				      wait_timer = WaitTimer,
+				      timer = Timer,
+				      req_list = ReqList}};
 	(StateData#state.input == "cancel") ->
 	    Output = StateData#state.output,
 	    ReqList = StateData#state.req_list,
-	    Reply = {ok, cancel};
+	    Reply = {ok, cancel},
+	    {reply, Reply, StateName, StateData#state{
+					input = "",
+					output = Output, 
+					http_receiver = undefined,
+					wait_timer = undefined,
+					timer = Timer,
+					req_list = ReqList}};
 	true ->
 	    case StateData#state.output of
 		[[]| OutPacket] ->
@@ -508,13 +557,15 @@ handle_sync_event({http_get, Rid, Wait, Hold}, _From, StateName, StateData) ->
 		       [El || El <- StateData#state.req_list, 
 			      El#hbr.rid /= Rid ] 
 		      ],
-	    Output = ""
-    end,
-    {reply, Reply, StateName, StateData#state{
-				input = "",
-				output = Output, 
-				timer = Timer,
-				req_list = ReqList}};
+	    Output = "",
+	    {reply, Reply, StateName, StateData#state{
+					input = "",
+					output = Output, 
+					http_receiver = undefined,
+					wait_timer = undefined,
+					timer = Timer,
+					req_list = ReqList}}
+    end;
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
@@ -533,6 +584,18 @@ handle_info({timeout, Timer, _}, _StateName,
 	    #state{timer = Timer} = StateData) ->
     ?DEBUG("ding dong", []),
     {stop, normal, StateData};
+
+handle_info({timeout, Timer, _}, StateName,
+	    #state{wait_timer = Timer} = StateData) ->
+    if
+	StateData#state.http_receiver /= undefined ->
+	    gen_fsm:reply(StateData#state.http_receiver, {ok, empty}),
+	    {next_state, StateName,
+	     StateData#state{http_receiver = undefined,
+			     wait_timer = undefined}};
+	true ->
+	    {next_state, StateName, StateData}
+    end;
 
 handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -574,7 +637,7 @@ handle_http_put(Sid, Rid, Attrs, Payload, StreamStart) ->
                    [OutPacket]),
             send_outpacket(Sess, OutPacket);
         {ok, Sess} ->
-            receive_loop(Sess, Rid, Attrs, StreamStart)
+            prepare_response(Sess, Rid, Attrs, StreamStart)
     end.
 
 http_put(Sid, Rid, Attrs, Payload, StreamStart) ->
@@ -632,22 +695,17 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef}) ->
     end.
 
 
-receive_loop(Sess, Rid, Attrs, StreamStart) ->
-    receive
-	after 100 -> ok
-	end,
-    prepare_response(Sess, Rid, Attrs, StreamStart).
-
 prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess, 
                  Rid, Attrs, StreamStart) ->
-    case http_get(Sess, Rid) of
-	{ok, keep_on_hold} ->
-	    receive_loop(Sess, Rid, Attrs, StreamStart);
+    receive after 100 -> ok end,
+    case catch http_get(Sess, Rid) of
 	{ok, cancel} ->
 	    %% actually it would be better if we could completely
 	    %% cancel this request, but then we would have to hack
 	    %% ejabberd_http and I'm too lazy now
             {200, ?HEADER, "<body type='error' xmlns='"++?NS_HTTP_BIND++"'/>"};
+	{ok, empty} ->
+            {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
 	{ok, OutPacket} ->
             ?DEBUG("OutPacket: ~s", [OutPacket]),
 	    case StreamStart of
@@ -724,13 +782,15 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess,
                                  {"secure", "true"} %% we're always being secure
 				] ++ BOSH_attribs,OutEls})}
 		    end
-	    end
+	    end;
+	{'EXIT', _Reason} ->
+            {200, ?HEADER, "<body type='terminate' xmlns='"++?NS_HTTP_BIND++"'/>"}
     end.
 
 http_get(#http_bind{pid = FsmRef, wait = Wait, hold = Hold}, Rid) ->
-    gen_fsm:sync_send_all_state_event(FsmRef, 
-                                      {http_get, Rid, Wait, Hold}).
-    
+    gen_fsm:sync_send_all_state_event(
+      FsmRef, {http_get, Rid, Wait, Hold}, 2 * ?MAX_WAIT * 1000).
+
 send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
     case OutPacket of
 	"" ->
@@ -789,18 +849,18 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
                                      StreamError = true,
                                      []
                              end,
-                    if 
+                    if
                         StreamError ->
                             StreamErrCond = 
                                 case xml_stream:parse_element(
-                                       "<stream:stream>"++OutPacket) of
+                                       "<stream:stream>" ++ OutPacket) of
                                     El when element(1, El) == xmlelement ->
-										case xml:get_subtag(El, "stream:error") of
-											false ->
-												null;
-											{xmlelement, _, _, Cond} ->
-												Cond
-										end;
+					case xml:get_subtag(El, "stream:error") of
+					    false ->
+						null;
+					    {xmlelement, _, _, Cond} ->
+						Cond
+					end;
                                     {error, _E} ->
                                         null
                                 end,
@@ -844,7 +904,7 @@ parse_request(Data) ->
 		Xmlns /= ?NS_HTTP_BIND ->
 		    {error, bad_request};
 		true ->
-                    case list_to_integer(xml:get_attr_s("rid", Attrs)) of
+                    case catch list_to_integer(xml:get_attr_s("rid", Attrs)) of
                         {'EXIT', _} ->
                             {error, bad_request};
                         Rid ->
