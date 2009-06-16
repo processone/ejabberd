@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 273 2007-08-15 13:53:00Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 274 2007-08-15 13:54:05Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 273 $').
+-vsn('$Rev: 274 $').
 
 -behaviour(gen_fsm).
 
@@ -34,7 +34,7 @@
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
 
--record(http_bind, {id, pid, to, hold, wait}).
+-record(http_bind, {id, pid, to, hold, wait, version}).
 
 %% http binding request
 -record(hbr, {rid,
@@ -162,9 +162,9 @@ process_request(Data) ->
                                                       pid = Pid,
                                                       to = {XmppDomain, 
                                                             XmppVersion},
-                                                      version = Version,
                                                       wait = Wait,
-                                                      hold = Hold})
+                                                      hold = Hold,
+                                                      version = Version})
                       end),
                     handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, 
                                     Attrs, Packet, true)
