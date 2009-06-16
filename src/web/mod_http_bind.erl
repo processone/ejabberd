@@ -3,7 +3,7 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: mod_http_bind.erl 856 2009-01-13 17:11:02Z badlop $
+%%% Id      : $Id: mod_http_bind.erl 942 2009-04-22 15:25:31Z mremond $
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------
@@ -31,6 +31,9 @@
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
 
+%% Duplicated from ejabberd_http_bind.
+%% TODO: move to hrl file.
+-record(http_bind, {id, pid, to, hold, wait, version}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -69,6 +72,7 @@ process(_Path, _Request) ->
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
 start(_Host, _Opts) ->
+    setup_database(),
     HTTPBindSupervisor =
         {ejabberd_http_bind_sup,
          {ejabberd_tmp_sup, start_link,
@@ -95,4 +99,20 @@ stop(_Host) ->
             ok;
         {error, Error} ->
             {'EXIT', {terminate_child_error, Error}}
+    end.
+
+setup_database() ->
+    migrate_database(),
+    mnesia:create_table(http_bind,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, http_bind)}]).
+
+migrate_database() ->
+    case catch mnesia:table_info(http_bind, attributes) of
+        [id, pid, to, hold, wait, version] ->
+	    ok;
+        _ ->
+	    %% Since the stored information is not important, instead
+	    %% of actually migrating data, let's just destroy the table
+	    mnesia:delete_table(http_bind)
     end.
