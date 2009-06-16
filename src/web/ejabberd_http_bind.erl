@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 241 2007-08-03 12:13:13Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 243 2007-08-03 13:48:49Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 241 $').
+-vsn('$Rev: 243 $').
 
 -behaviour(gen_fsm).
 
@@ -226,8 +226,13 @@ receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
 prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
     case http_get(Sid, Rid) of
 	{error, not_exists} ->
-            ?DEBUG("no session associated with sid: ~s", [Sid]),
-	    {404, ?HEADER, ""};
+            case xml:get_attr_s("type", Attrs) of
+                "terminate" ->
+                    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
+                _ ->
+                    ?DEBUG("no session associated with sid: ~s", [Sid]),
+                    {404, ?HEADER, ""}
+            end;
 	{ok, keep_on_hold} ->
 	    receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart);
 	{ok, cancel} ->
