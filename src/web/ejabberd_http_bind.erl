@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 854 2009-01-12 23:37:40Z badlop $
+%%% Id      : $Id: ejabberd_http_bind.erl 885 2009-02-14 09:01:54Z badlop $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -60,7 +60,8 @@
 		pause=0,
 		unprocessed_req_list = [], % list of request that have been delayed for proper reordering
 		req_list = [], % list of requests (cache)
-		ip = ?NULL_PEER 
+		max_inactivity,
+		ip = ?NULL_PEER
 	       }).
 
 
@@ -233,6 +234,7 @@ init([Sid, Key, IP]) ->
     {ok, loop, #state{id = Sid,
 		      key = Key,
 		      socket = Socket,
+		      max_inactivity = ?MAX_INACTIVITY,
 		      timer = Timer}}.
 
 %%----------------------------------------------------------------------
@@ -304,7 +306,7 @@ handle_sync_event({send, Packet}, _From, StateName, StateData) ->
 			      StateData#state.pause*1000, self(), []);
 			true ->
 			    erlang:start_timer(
-			      ?MAX_INACTIVITY, self(), [])
+			      StateData#state.max_inactivity, self(), [])
 		    end,
 	    HTTPReply = case Output of
 			    [[]| OutPacket] ->
@@ -431,7 +433,7 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 			      StateData#state.pause*1000, self(), []);
 			true ->
 			    erlang:start_timer(
-			      ?MAX_INACTIVITY, self(), [])
+			      StateData#state.max_inactivity, self(), [])
 		    end,
 	    Output = StateData#state.output,
 	    ReqList = StateData#state.req_list,
@@ -456,7 +458,7 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 			      StateData#state.pause*1000, self(), []);
 			true ->
 			    erlang:start_timer(
-			      ?MAX_INACTIVITY, self(), [])
+			      StateData#state.max_inactivity, self(), [])
 		    end,
 	    case StateData#state.output of
 		[[]| OutPacket] ->
@@ -521,7 +523,7 @@ handle_info({timeout, WaitTimer, _}, StateName,
 			      StateData#state.pause*1000, self(), []);
 			true ->
 			    erlang:start_timer(
-			      ?MAX_INACTIVITY, self(), [])
+			      StateData#state.max_inactivity, self(), [])
 		    end,
 	    gen_fsm:reply(StateData#state.http_receiver, {ok, empty}),
 	    {next_state, StateName,
@@ -663,7 +665,7 @@ process_http_put({http_put, Rid, Attrs, Payload, Hold, StreamTo, IP},
 				      Pause*1000, self(), []);
 				true ->
 				    erlang:start_timer(
-				      ?MAX_INACTIVITY, self(), [])
+				      StateData#state.max_inactivity, self(), [])
 			    end,
 		    case StateData#state.waiting_input of
 			false ->
@@ -697,6 +699,7 @@ process_http_put({http_put, Rid, Attrs, Payload, Hold, StreamTo, IP},
                                     _ ->
                                         Payload
                                 end,
+                            MaxInactivity = get_max_inactivity(StreamTo, StateData#state.max_inactivity),
                             ?DEBUG("really sending now: ~s", [SendPacket]),
 			    Receiver ! {tcp, StateData#state.socket,
 					list_to_binary(SendPacket)},
@@ -712,6 +715,7 @@ process_http_put({http_put, Rid, Attrs, Payload, Hold, StreamTo, IP},
 								     pause = Pause,
 								     last_poll = LastPoll,
 								     req_list = ReqList,
+								     max_inactivity = MaxInactivity,
 								     ip = IP
 								    })
 		    end
@@ -804,7 +808,7 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef}) ->
     end.
 
 
-prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess, 
+prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold, to=To}=Sess, 
                  Rid, _, StreamStart) ->
     receive after 100 -> ok end,
     case catch http_get(Sess, Rid) of
@@ -872,6 +876,7 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess,
                                     _ ->
                                         [{"xmpp:version", Version}]
                                 end,
+                            MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 			    {200, ?HEADER,
 			     xml:element_to_string(
 			       {xmlelement,"body",
@@ -882,7 +887,7 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess,
 				 {"requests", integer_to_list(Hold+1)},
 				 {"inactivity", 
 				  integer_to_list(
-                                    trunc(?MAX_INACTIVITY/1000))},
+                                    trunc(MaxInactivity/1000))},
                                  {"maxpause",
                                   integer_to_list(?MAX_PAUSE)},
 				 {"polling", 
@@ -1075,6 +1080,17 @@ elements_to_string([]) ->
 elements_to_string([El | Els]) ->
     xml:element_to_string(El) ++ elements_to_string(Els).
 
+%% @spec (To, Default::integer()) -> integer()
+%% where To = [] | {Host::string(), Version::string()}
+get_max_inactivity({Host, _}, Default) ->
+    case gen_mod:get_module_opt(Host, mod_http_bind, max_inactivity, undefined) of
+	Seconds when is_integer(Seconds) ->
+	    Seconds * 1000;
+	undefined ->
+	    Default
+    end;
+get_max_inactivity(_, Default) ->
+    Default.
 
 remove_tag_attr(Attr, El) ->
     case El of
