@@ -75,17 +75,27 @@ process(_Path, _Request) ->
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
 start(_Host, _Opts) ->
-    supervisor:start_child(
-      ejabberd_sup,
-      {ejabberd_http_bind_sup,
-       {ejabberd_tmp_sup, start_link,
-        [ejabberd_http_bind_sup, ejabberd_http_bind]},
-       permanent,
-       infinity,
-       supervisor,
-       [ejabberd_tmp_sup]}),
-    ok.
+    HTTPBindSupervisor =
+        {ejabberd_http_bind_sup,
+         {ejabberd_tmp_sup, start_link,
+          [ejabberd_http_bind_sup, ejabberd_http_bind]},
+         permanent,
+         infinity,
+         supervisor,
+         [ejabberd_tmp_sup]},
+    case supervisor:start_child(ejabberd_sup, HTTPBindSupervisor) of
+        {ok, _Pid} ->
+            ok;
+        {ok, _Pid, _Info} ->
+            ok;
+        {error, Error} ->
+            {'EXIT', {start_child_error, Error}}
+    end.
 
 stop(_Host) ->
-    supervisor:terminate_child(ejabberd_sup, ejabberd_http_bind_sup),
-    ok.
+    case supervisor:terminate_child(ejabberd_sup, ejabberd_http_bind_sup) of
+        ok ->
+            ok;
+        {error, Error} ->
+            {'EXIT', {terminate_child_error, Error}}
+    end.
