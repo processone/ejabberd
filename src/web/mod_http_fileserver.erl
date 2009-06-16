@@ -52,9 +52,15 @@
 -define(STRING2LOWER, httpd_util).
 -endif.
 
--record(state, {host, docroot, accesslog, accesslogfd}).
+-record(state, {host, docroot, accesslog, accesslogfd, directory_indices}).
 
 -define(PROCNAME, ejabberd_mod_http_fileserver).
+
+%% Response is {DataSize, Code, [{HeaderKey, HeaderValue}], Data}
+-define(HTTP_ERR_FILE_NOT_FOUND, {-1, 404, [], "Not found"}).
+-define(HTTP_ERR_FORBIDDEN,      {-1, 403, [], "Forbidden"}).
+
+-compile(export_all).
 
 %%====================================================================
 %% gen_mod callbacks
@@ -100,11 +106,12 @@ start_link(Host, Opts) ->
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     try initialize(Host, Opts) of
-	{DocRoot, AccessLog, AccessLogFD} ->
+	{DocRoot, AccessLog, AccessLogFD, DirectoryIndices} ->
 	    {ok, #state{host = Host,
 			accesslog = AccessLog,
 			accesslogfd = AccessLogFD,
-			docroot = DocRoot}}
+			docroot = DocRoot,
+                        directory_indices = DirectoryIndices}}
     catch
 	throw:Reason ->
 	    {stop, Reason}
@@ -118,7 +125,8 @@ initialize(Host, Opts) ->
     check_docroot_is_readable(DRInfo, DocRoot),
     AccessLog = gen_mod:get_opt(accesslog, Opts, undefined),
     AccessLogFD = try_open_log(AccessLog, Host),
-    {DocRoot, AccessLog, AccessLogFD}.
+    DirectoryIndices = gen_mod:get_opt(directory_indices, Opts, []),
+    {DocRoot, AccessLog, AccessLogFD, DirectoryIndices}.
 
 check_docroot_defined(DocRoot, Host) ->
     case DocRoot of
@@ -168,7 +176,7 @@ try_open_log(FN, Host) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({serve, LocalPath}, _From, State) ->
-    Reply = serve(LocalPath, State#state.docroot),
+    Reply = serve(LocalPath, State#state.docroot, State#state.directory_indices),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -179,8 +187,8 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({add_to_log, Code, Request}, State) ->
-    add_to_log(State#state.accesslogfd, Code, Request),
+handle_cast({add_to_log, FileSize, Code, Request}, State) ->
+    add_to_log(State#state.accesslogfd, FileSize, Code, Request),
     {noreply, State};
 handle_cast(reopen_log, State) ->
     FD2 = reopen_log(State#state.accesslog, State#state.accesslogfd),
@@ -227,33 +235,45 @@ code_change(_OldVsn, State, _Extra) ->
 process(LocalPath, Request) ->
     ?DEBUG("Requested ~p", [LocalPath]),
     try gen_server:call(get_proc_name(Request#request.host), {serve, LocalPath}) of
-	Result ->
-	    {Code, _, _} = Result,
-	    add_to_log(Code, Request),
-	    Result
+	{FileSize, Code, Headers, Contents} ->
+	    add_to_log(FileSize, Code, Request),
+	    {Code, Headers, Contents}
     catch
 	exit:{noproc, _} -> 
 	    ejabberd_web:error(not_found)
     end.
 
-serve(LocalPath, DocRoot) ->
+serve(LocalPath, DocRoot, DirectoryIndices) ->
     FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
-    case file:read_file(FileName) of
-        {ok, FileContents} ->
-            ?DEBUG("Delivering content.", []),
-            {200,
-             [{"Server", "ejabberd"},
-              {"Last-Modified", last_modified(FileName)},
-              {"Content-Type", content_type(FileName)}],
-             FileContents};
-        {error, Error} ->
-            ?DEBUG("Delivering error: ~p", [Error]),
-            case Error of
-                eacces -> {403, [], "Forbidden"};
-                enoent -> {404, [], "Not found"};
-                _Else -> {404, [], atom_to_list(Error)}
-            end
+    case file:read_file_info(FileName) of
+        {error, enoent}                    -> ?HTTP_ERR_FILE_NOT_FOUND;
+        {error, eacces}                    -> ?HTTP_ERR_FORBIDDEN;
+        {ok, #file_info{type = directory}} -> serve_index(FileName, DirectoryIndices);
+        {ok, FileInfo}                     -> serve_file(FileInfo, FileName)
     end.
+
+%% Troll through the directory indices attempting to find one which
+%% works, if none can be found, return a 404.
+serve_index(_FileName, []) ->
+    ?HTTP_ERR_FILE_NOT_FOUND;
+serve_index(FileName, [Index | T]) ->
+    IndexFileName = filename:join([FileName] ++ [Index]),
+    case file:read_file_info(IndexFileName) of
+        {error, _Error}                    -> serve_index(FileName, T);
+        {ok, #file_info{type = directory}} -> serve_index(FileName, T);
+        {ok, FileInfo}                     -> serve_file(FileInfo, IndexFileName)
+    end.
+
+%% Assume the file exists if we got this far and attempt to read it in
+%% and serve it up.
+serve_file(FileInfo, FileName) ->
+    ?DEBUG("Delivering: ~s", [FileName]),
+    {ok, FileContents} = file:read_file(FileName),
+    {FileInfo#file_info.size,
+     200, [{"Server", "ejabberd"},
+           {"Last-Modified", last_modified(FileInfo)},
+           {"Content-Type", content_type(FileName)}],
+     FileContents}.
 
 %%----------------------------------------------------------------------
 %% Log file
@@ -279,16 +299,15 @@ reopen_log(FN, FD) ->
 reopen_log(Host) ->
     gen_server:cast(get_proc_name(Host), reopen_log).
 
-add_to_log(Code, Request) ->
+add_to_log(FileSize, Code, Request) ->
     gen_server:cast(get_proc_name(Request#request.host),
-		    {add_to_log, Code, Request}).
+		    {add_to_log, FileSize, Code, Request}).
 
-add_to_log(undefined, _Code, _Request) ->
+add_to_log(undefined, _FileSize, _Code, _Request) ->
     ok;
-add_to_log(File, Code, Request) ->
+add_to_log(File, FileSize, Code, Request) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
-    %% TODO: This IP address conversion supports only IPv4, not IPv6
-    IP = join(tuple_to_list(element(1, Request#request.ip)), "."),
+    IP = ip_to_string(element(1, Request#request.ip)),
     Path = join(Request#request.path, "/"),
     Query = case join(lists:map(fun(E) -> lists:concat([element(1, E), "=", element(2, E)]) end,
 				Request#request.q), "&") of
@@ -297,6 +316,8 @@ add_to_log(File, Code, Request) ->
 		String ->
 		    [$? | String]
 	    end,
+    UserAgent = find_header('User-Agent', Request#request.headers, "-"),
+    Referer = find_header('Referer', Request#request.headers, "-"),
     %% Pseudo Combined Apache log format:
     %% 127.0.0.1 - - [28/Mar/2007:18:41:55 +0200] "GET / HTTP/1.1" 302 303 "-" "tsung"
     %% TODO some fields are harcoded/missing:
@@ -304,12 +325,16 @@ add_to_log(File, Code, Request) ->
     %%   Month should be 3*letter, not integer 1..12
     %%   Missing time zone = (`+' | `-') 4*digit
     %%   Missing protocol version: HTTP/1.1
-    %%   Missing size of the object, not including response headers. If no content: "-"
-    %%   Missing Referer HTTP request header
-    %%   Missing User-Agent HTTP request header.
     %% For reference: http://httpd.apache.org/docs/2.2/logs.html
-    io:format(File, "~s - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p -1 \"-\" \"-\"~n",
-	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code]).
+    io:format(File, "~s - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p ~p ~p ~p~n",
+	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code,
+               FileSize, Referer, UserAgent]).
+
+find_header(Header, Headers, Default) ->
+    case lists:keysearch(Header, 1, Headers) of
+        {value, {_, Value}} -> Value;
+        false               -> Default
+    end.
 
 %%----------------------------------------------------------------------
 %% Utilities
@@ -340,7 +365,14 @@ content_type(Filename) ->
         _Else   -> "application/octet-stream"
     end.
 
-last_modified(FileName) ->
-    {ok, FileInfo} = file:read_file_info(FileName),
+last_modified(FileInfo) ->
     Then = FileInfo#file_info.mtime,
     httpd_util:rfc1123_date(Then).
+
+%% Convert IP address tuple to string representation. Accepts either
+%% IPv4 or IPv6 address tuples.
+ip_to_string(Address) when size(Address) == 4 ->
+    join(tuple_to_list(Address), ".");
+ip_to_string(Address) when size(Address) == 8 ->
+    Parts = lists:map(fun (Int) -> io_lib:format("~.16B", [Int]) end, tuple_to_list(Address)),
+    ?STRING2LOWER:to_lower(lists:flatten(join(Parts, ":"))).
