@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 950 2009-05-04 01:23:55Z mremond $
+%%% Id      : $Id: ejabberd_http_bind.erl 952 2009-05-06 17:29:39Z badlop $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -1070,7 +1070,7 @@ cancel_timer(Timer) ->
 	    ok
     end.
 
-hex(Bin) when binary(Bin) -> hex(binary_to_list(Bin));
+hex(Bin) when is_binary(Bin) -> hex(binary_to_list(Bin));
 hex([]) -> "";
 hex([H|T]) -> 
 	[A,B] = if 
