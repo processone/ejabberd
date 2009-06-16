@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 275 2007-08-15 13:57:51Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 276 2007-08-15 16:09:23Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 275 $').
+-vsn('$Rev: 276 $').
 
 -behaviour(gen_fsm).
 
@@ -43,7 +43,7 @@
 	      out}).
 
 -record(state, {id,
-		rid = error,
+		rid = none,
 		key,
 		output = "",
 		input = "",
@@ -70,8 +70,8 @@
 -define(NS_HTTP_BIND, "http://jabber.org/protocol/httpbind").
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
--define(MIN_POLLING, "2"). % don't poll faster than that or we will
-                           % shoot you
+-define(MIN_POLLING, 2000000). % don't poll faster than that or we will
+                               % shoot you (time in µsec)
 -define(MAX_WAIT, 3600).  % max num of secs to keep a request on hold
 -define(MAX_INACTIVITY, 30000). % msecs to wait before terminating
                                 % idle sessions
@@ -116,7 +116,7 @@ peername(_Socket) ->
 
 process_request(Data) ->
     case catch parse_request(Data) of
-	{ok, {"", Rid, Key, NewKey, Attrs, Packet}} ->
+	{ok, {"", Rid, Attrs, Payload}} ->
 	    case xml:get_attr_s("to",Attrs) of
                 "" ->
 		    {200, ?HEADER, "<body type='terminate' "
@@ -125,7 +125,7 @@ process_request(Data) ->
                 XmppDomain ->
                     %% create new session
                     Sid = sha:sha(term_to_binary({now(), make_ref()})),
-                    {ok, Pid} = start(Sid, Key),
+                    {ok, Pid} = start(Sid, ""),
                     ?DEBUG("got pid: ~p", [Pid]),
                     Wait = case
                                string:to_integer(xml:get_attr_s("wait",Attrs))
@@ -160,20 +160,26 @@ process_request(Data) ->
                             V -> V
                         end,
                     XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
-                    mnesia:transaction(
-                      fun() ->
-                              mnesia:write(#http_bind{id = Sid,
+                    case catch mnesia:transaction(
+                                 fun() ->
+                                         mnesia:write(
+                                           #http_bind{id = Sid,
                                                       pid = Pid,
                                                       to = {XmppDomain, 
                                                             XmppVersion},
-                                                      wait = Wait,
                                                       hold = Hold,
-                                                      version = Version})
-                      end),
-                    handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, 
-                                    Attrs, Packet, true)
+                                                      wait = Wait,
+                                                      version = Version
+                                                     })
+                                 end) of 
+                        {'EXIT', Reason} ->
+                            ?DEBUG("failed storing session: ~p", [Reason]);
+                        Foo ->
+                            ?DEBUG("foo: ~p", [Foo])
+                    end,
+                    handle_http_put(Sid, Rid, Attrs, Payload, true)
             end;
-        {ok, {Sid, Rid, Key, NewKey, Attrs, Packet}} ->
+        {ok, {Sid, Rid, Attrs, Payload1}} ->
             %% old session
             StreamStart =  
                 case xml:get_attr_s("xmpp:restart",Attrs) of
@@ -182,17 +188,14 @@ process_request(Data) ->
                     _ ->
                         false
                 end,
-            Wait = ?MAX_WAIT,
-            Hold = (?MAX_REQUESTS - 1),
-            InPacket = case xml:get_attr_s("type",Attrs) of
+            Payload2 = case xml:get_attr_s("type",Attrs) of
                            "terminate" ->
                                %% close stream
-                               Packet ++ "</stream:stream>";
+                               Payload1 ++ "</stream:stream>";
                            _ ->
-                               Packet
+                               Payload1
                        end,
-            handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, 
-                            InPacket, StreamStart);
+            handle_http_put(Sid, Rid, Attrs, Payload2, StreamStart);
         _ ->
             {400, ?HEADER, ""}
     end.
@@ -281,32 +284,29 @@ handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 
-handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StreamTo},
+handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 		  _From, StateName, StateData) ->
+    Key = xml:get_attr_s("key", Attrs),
+    NewKey = xml:get_attr_s("newkey", Attrs),
     %% check if Rid valid
-    RidAllow = case Rid of
-		   error -> 
-		       false;
-		   _ ->
-		       case StateData#state.rid of
-			   error -> 
-			       %% first request - nothing saved so far
-			       true;
-			   OldRid ->
-			       ?DEBUG("state.rid/cur rid: ~p/~p", 
-				      [OldRid, Rid]),
-			       if 
-				   (OldRid < Rid) and 
-				   (Rid =< (OldRid + Hold + 1)) ->
-				       true;
-				   (Rid =< OldRid) and 
-				   (Rid > OldRid - Hold - 1) ->
-				       repeat;
-				   true ->
-				       false
-			       end
-		       end
-	       end,
+    RidAllow =  case StateData#state.rid of
+                    none -> 
+                        %% first request - nothing saved so far
+                        true;
+                    OldRid ->
+                        ?DEBUG("state.rid/cur rid: ~p/~p", 
+                               [OldRid, Rid]),
+                        if 
+                            (OldRid < Rid) and 
+                            (Rid =< (OldRid + Hold + 1)) ->
+                                true;
+                            (Rid =< OldRid) and 
+                            (Rid > OldRid - Hold - 1) ->
+                                repeat;
+                            true ->
+                                false
+                        end
+                end,
     %% check if key valid
     KeyAllow = case RidAllow of
 		   repeat -> 
@@ -335,16 +335,15 @@ handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StreamTo},
     {_,TSec,TMSec} = now(),
     TNow = TSec*1000*1000 + TMSec,
     LastPoll = if 
-		   Packet == "" ->
+		   Payload == "" ->
 		       TNow;
 		   true ->
 		       0
 	       end,
-    {MinPoll, _} = string:to_integer(?MIN_POLLING),
     if
-	(Packet == "") and 
+	(Payload == "") and 
         (Hold == 0) and
-	(TNow - StateData#state.last_poll < MinPoll*1000*1000) ->
+	(TNow - StateData#state.last_poll < ?MIN_POLLING) ->
 	    Reply = {error, polling_too_frequently},
 	    {reply, Reply, StateName, StateData};
 	KeyAllow ->
@@ -390,7 +389,7 @@ handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StreamTo},
 			    cancel_timer(StateData#state.timer),
 			    Timer = erlang:start_timer(
 				      ?MAX_INACTIVITY, self(), []),
-			    Input = Packet ++ [StateData#state.input],
+			    Input = Payload ++ [StateData#state.input],
 			    Reply = ok,
 			    {reply, Reply, StateName, 
 			     StateData#state{input = Input,
@@ -408,15 +407,15 @@ handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StreamTo},
                                         ["<stream:stream to='", To, "' "
                                          "xmlns='"++?NS_CLIENT++"' "
                                          "xmlns:stream='"++?NS_STREAM++"'>"] 
-                                            ++ Packet;
+                                            ++ Payload;
                                     {To, Version} ->
                                         ["<stream:stream to='", To, "' "
                                          "xmlns='"++?NS_CLIENT++"' "
                                          "version='", Version, "' "
                                          "xmlns:stream='"++?NS_STREAM++"'>"] 
-                                            ++ Packet;
+                                            ++ Payload;
                                     _ ->
-                                        Packet
+                                        Payload
                                 end,
                             ?DEBUG("really sending now: ~s", [SendPacket]),
 			    Receiver ! {tcp, {http_bind, self()},
@@ -531,75 +530,85 @@ terminate(_Reason, _StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) ->
-    ?DEBUG("http-put",[]),
-    case mnesia:dirty_read({http_bind, Sid}) of
-	[] ->
-            ?DEBUG("not found",[]),
-	    {error, not_exists};
-	[#http_bind{pid = FsmRef,to={To, Version}}] ->
-            case StreamStart of
-                true ->
-                    ?DEBUG("restart requested for ~s", [To]),
-                    gen_fsm:sync_send_all_state_event(
-                      FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, {To, Version}});
-                _ ->
-                    gen_fsm:sync_send_all_state_event(
-                      FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, ""})
-            end
-    end.
-
-
-http_get(Sid,Rid) ->
-    case mnesia:dirty_read({http_bind, Sid}) of
-	[] ->
-	    {error, not_exists};
-	[#http_bind{pid = FsmRef, wait = Wait, hold = Hold}] ->
-	    gen_fsm:sync_send_all_state_event(FsmRef, 
-					      {http_get, Rid, Wait, Hold})
-    end.
-
-handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, 
-                Packet, StreamStart) ->
-    case http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) of
+handle_http_put(Sid, Rid, Attrs, Payload, StreamStart) ->
+    case http_put(Sid, Rid, Attrs, Payload, StreamStart) of
         {error, not_exists} ->
             ?DEBUG("no session associated with sid: ~p", [Sid]),
             {404, ?HEADER, ""};
-        {error, bad_key} ->
-            ?DEBUG("bad key: ~s", [Key]),
-            case mnesia:dirty_read({http_bind, Sid}) of
-                [] ->
-                    {404, ?HEADER, ""};
-                [#http_bind{pid = FsmRef}] ->
-                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-                    {404, ?HEADER, ""}		    
-            end;
-        {error, polling_too_frequently} ->
-            ?DEBUG("polling too frequently: ~p", [Sid]),
-            case mnesia:dirty_read({http_bind, Sid}) of
-                [] -> %% unlikely! (?)
-                    {404, ?HEADER, ""};
-                [#http_bind{pid = FsmRef}] ->
-                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-                    {403, ?HEADER, ""}		    
-            end;
-        {repeat, OutPacket} ->
+        {{error, Reason}, Sess} ->
+            handle_http_put_error(Reason, Sess);
+        {{repeat, OutPacket}, Sess} ->
             ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
                    [OutPacket]),
-            send_outpacket(Sid, OutPacket);
-        ok ->
-            receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart)
+            send_outpacket(Sess, OutPacket);
+        {ok, Sess} ->
+            receive_loop(Sess, Rid, Attrs, StreamStart)
+    end.
+
+http_put(Sid, Rid, Attrs, Payload, StreamStart) ->
+    ?DEBUG("http-put",[]),
+    case mnesia:dirty_read({http_bind, Sid}) of
+	[] ->
+            {error, not_exists};
+	[#http_bind{pid = FsmRef, hold=Hold, to={To, StreamVersion}}=Sess] ->
+            NewStream = 
+                case StreamStart of
+                    true ->
+                        {To, StreamVersion};
+                    _ ->
+                        ""
+                end,
+            {gen_fsm:sync_send_all_state_event(
+               FsmRef, {http_put, Rid, Attrs, Payload, Hold, NewStream}), Sess}
+    end.
+
+handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version}) 
+  when Version >= 0 ->
+    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+    case Reason of
+        not_exists ->
+            {200, ?HEADER, 
+             xml:element_to_string(
+               {xmlelement, "body",
+                [{"xmlns", ?NS_HTTP_BIND},
+                 {"type", "terminate"},
+                 {"condition", "item-not-found"}], []})};
+        bad_key ->
+            {200, ?HEADER, 
+             xml:element_to_string(
+               {xmlelement, "body",
+                [{"xmlns", ?NS_HTTP_BIND},
+                 {"type", "terminate"},
+                 {"condition", "item-not-found"}], []})};
+        polling_too_frequently ->
+            {200, ?HEADER, 
+             xml:element_to_string(
+               {xmlelement, "body",
+                [{"xmlns", ?NS_HTTP_BIND},
+                 {"type", "terminate"},
+                 {"condition", "policy-violation"}], []})}
+    end;
+handle_http_put_error(Reason, #http_bind{pid=FsmRef}) ->
+    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+    case Reason of 
+        not_exists -> %% bad rid
+            {404, ?HEADER, ""};
+        bad_key ->
+            {404, ?HEADER, ""};
+        polling_too_frequently ->
+            {403, ?HEADER, ""}		    
     end.
 
 
-receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
+receive_loop(Sess, Rid, Attrs, StreamStart) ->
     receive
 	after 100 -> ok
 	end,
-    prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart).
+    prepare_response(Sess, Rid, Attrs, StreamStart).
 
-prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
-    case http_get(Sid, Rid) of
+prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess, 
+                 Rid, Attrs, StreamStart) ->
+    case http_get(Sess, Rid) of
 	{error, not_exists} ->
             case xml:get_attr_s("type", Attrs) of
                 "terminate" ->
@@ -609,7 +618,7 @@ prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
                     {404, ?HEADER, ""}
             end;
 	{ok, keep_on_hold} ->
-	    receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart);
+	    receive_loop(Sess, Rid, Attrs, StreamStart);
 	{ok, cancel} ->
 	    %% actually it would be better if we could completely
 	    %% cancel this request, but then we would have to hack
@@ -619,7 +628,7 @@ prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
             ?DEBUG("OutPacket: ~s", [OutPacket]),
 	    case StreamStart of
                 false ->
-		    send_outpacket(Sid, OutPacket);
+		    send_outpacket(Sess, OutPacket);
 		true ->
 		    OutEls = 
                         case xml_stream:parse_element(
@@ -675,12 +684,15 @@ prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
 			       {xmlelement,"body",
 				[{"xmlns",
 				  ?NS_HTTP_BIND},
-				 {"sid",Sid},
+				 {"sid", Sid},
 				 {"wait", integer_to_list(Wait)},
 				 {"requests", integer_to_list(Hold+1)},
 				 {"inactivity", 
-				  integer_to_list(trunc(?MAX_INACTIVITY/1000))},
-				 {"polling", ?MIN_POLLING},
+				  integer_to_list(
+                                    trunc(?MAX_INACTIVITY/1000))},
+				 {"polling", 
+                                  integer_to_list(
+                                    trunc(?MIN_POLLING/1000000))},
                                  {"ver", ?BOSH_VERSION},
                                  {"from", From},
                                  {"secure", "true"} %% we're always being secure
@@ -688,16 +700,17 @@ prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
 		    end
 	    end
     end.
+
+http_get(#http_bind{pid = FsmRef, wait = Wait, hold = Hold}, Rid) ->
+    gen_fsm:sync_send_all_state_event(FsmRef, 
+                                      {http_get, Rid, Wait, Hold}).
     
-send_outpacket(Sid, OutPacket) ->
+send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
     case OutPacket of
 	"" ->
 	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
 	"</stream:stream>" ->
-	    case mnesia:dirty_read({http_bind, Sid}) of
-		[#http_bind{pid = FsmRef}] ->
-		    gen_fsm:sync_send_all_state_event(FsmRef,stop)
-	    end,
+            gen_fsm:sync_send_all_state_event(FsmRef,stop),
 	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
 	_ ->
 	    case xml_stream:parse_element("<body>" 
@@ -770,13 +783,8 @@ send_outpacket(Sid, OutPacket) ->
                                     {error, _E} ->
                                         null
                                 end,
-                            case mnesia:dirty_read({http_bind, Sid}) of
-                                [#http_bind{pid = FsmRef}] ->
-                                    gen_fsm:sync_send_all_state_event(FsmRef,
-                                                                      stop);
-                                _ ->
-                                    err %% hu?
-                            end,
+                            gen_fsm:sync_send_all_state_event(FsmRef,
+                                                              stop),
                             case StreamErrCond of
                                 null ->
                                     {200, ?HEADER,
@@ -808,38 +816,42 @@ parse_request(Data) ->
     case xml_stream:parse_element(Data) of
 	El when element(1, El) == xmlelement ->
 	    {xmlelement, Name, Attrs, Els} = El,
-            FixedEls = 
-                lists:filter(
-                  fun(I) -> 
-                          case I of 
-                              {xmlelement, _, _, _} ->
-                                  true;
-                              _ ->
-                                  false
-                          end
-                  end, Els),
-	    Sid = xml:get_attr_s("sid",Attrs),
-	    {Rid,_X} = string:to_integer(xml:get_attr_s("rid",Attrs)),
-	    Key = xml:get_attr_s("key",Attrs),
-	    NewKey = xml:get_attr_s("newkey",Attrs),
 	    Xmlns = xml:get_attr_s("xmlns",Attrs),
-            lists:map(fun(E) ->
-                              EXmlns = xml:get_tag_attr_s("xmlns",E),
-                              if 
-                                  EXmlns == ?NS_CLIENT ->
-                                      remove_tag_attr("xmlns",E);
-                                  true ->
-                                      ok
-                              end
-                      end, FixedEls),
-	    Packet = [xml:element_to_string(E) || E <- FixedEls],
 	    if 
 		Name /= "body" -> 
 		    {error, bad_request};
 		Xmlns /= ?NS_HTTP_BIND ->
 		    {error, bad_request};
 		true ->
-		    {ok, {Sid, Rid, Key, NewKey, Attrs, Packet}}
+                    case list_to_integer(xml:get_attr_s("rid", Attrs)) of
+                        {'EXIT', _} ->
+                            {error, bad_request};
+                        Rid ->
+                            FixedEls = 
+                                lists:filter(
+                                  fun(I) -> 
+                                          case I of 
+                                              {xmlelement, _, _, _} ->
+                                                  true;
+                                              _ ->
+                                                  false
+                                          end
+                                  end, Els),
+                            lists:map(
+                              fun(E) ->
+                                      EXmlns = xml:get_tag_attr_s("xmlns",E),
+                                      if 
+                                          EXmlns == ?NS_CLIENT ->
+                                              remove_tag_attr("xmlns",E);
+                                          true ->
+                                              ok
+                                      end
+                              end, FixedEls),
+                            Payload = [xml:element_to_string(E) || 
+                                          E <- FixedEls],
+                            Sid = xml:get_attr_s("sid",Attrs),
+                            {ok, {Sid, Rid, Attrs, Payload}}
+                    end
 	    end;
 	{error, _Reason} ->
 	    {error, bad_request}
