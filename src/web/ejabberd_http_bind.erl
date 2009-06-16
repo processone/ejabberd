@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 274 2007-08-15 13:54:05Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 275 2007-08-15 13:57:51Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 274 $').
+-vsn('$Rev: 275 $').
 
 -behaviour(gen_fsm).
 
@@ -154,7 +154,11 @@ process_request(Data) ->
                                            CHold
                                    end
                            end,
-                    Version = xml:get_attr_s("ver", Attrs),
+                    Version = 
+                        case list_to_float(xml:get_attr_s("ver", Attrs)) of
+                            {'EXIT', _} -> 0.0;
+                            V -> V
+                        end,
                     XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
                     mnesia:transaction(
                       fun() ->
