@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 239 2007-08-03 10:54:00Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 240 2007-08-03 12:05:14Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 239 $').
+-vsn('$Rev: 240 $').
 
 -behaviour(gen_fsm).
 
@@ -28,7 +28,7 @@
 	 close/1,
 	 process_request/1]).
 
-%%-define(ejabberd_debug, true).
+-define(ejabberd_debug, true).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -113,134 +113,123 @@ peername(_Socket) ->
 
 process_request(Data) ->
     case catch parse_request(Data) of
-	{ok, {ParsedSid, Rid, Key, NewKey, Attrs, Packet}} ->
-	    XmppDomain = xml:get_attr_s("to",Attrs),
-	    if 
-		(ParsedSid == "") and (XmppDomain == "") ->
+	{ok, {"", Rid, Key, NewKey, Attrs, Packet}} ->
+	    case xml:get_attr_s("to",Attrs) of
+                "" ->
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='improper-addressing' "
 		     "xmlns='http://jabber.org/protocol/httpbind'/>"};
-		true ->
-                    Sid = 
-                        if
-                            (ParsedSid == "") ->
-                                %% create new session
-                                NewSid = sha:sha(term_to_binary({now(), make_ref()})),
-                                {ok, Pid} = start(NewSid, Key),
-                                ?DEBUG("got pid: ~p", [Pid]),
-                                Wait = case
-                                           string:to_integer(xml:get_attr_s("wait",Attrs))
-                                           of
-                                           {error, _} ->
-                                               ?MAX_WAIT;
-                                           {CWait, _} ->
-                                               if 
-                                                   (CWait > ?MAX_WAIT) ->
-                                                       ?MAX_WAIT;
-                                                   true ->
-                                                       CWait
-                                               end
-                                       end,
-                                Hold = case
-                                           string:to_integer(
-                                             xml:get_attr_s("hold",Attrs))
-                                           of
-                                           {error, _} ->
-                                               (?MAX_REQUESTS - 1);
-                                           {CHold, _} ->
-                                               if 
-                                                   (CHold > (?MAX_REQUESTS - 1)) ->
-                                                       (?MAX_REQUESTS - 1);
-                                                   true ->
-                                                       CHold
-                                               end
-                                       end,
-                                XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
-                                mnesia:transaction(
-                                  fun() ->
-                                          mnesia:write(#http_bind{id = NewSid,
-                                                                  pid = Pid,
-                                                                  to = {XmppDomain, XmppVersion},
-                                                                  wait = Wait,
-                                                                  hold = Hold})
-                                  end),
-                                StreamStart = if
-                                                  (XmppDomain /= "") ->
-                                                      true;
-                                                  true ->
-                                                      false
-                                              end,
-                                InPacket = Packet,
-                                NewSid;
-                            true ->
-                                %% old session
-                                Type = xml:get_attr_s("type",Attrs),
-                                StreamStart =  
-                                    case xml:get_attr_s("xmpp:restart",Attrs) of
-                                        "true" ->
-                                            true;
-                                        _ ->
-                                            false
-                                    end,
-                                Wait = ?MAX_WAIT,
-                                Hold = (?MAX_REQUESTS - 1),
-                                if 
-                                    (Type == "terminate") ->
-                                        %% terminate session
-                                        InPacket = Packet ++ "</stream:stream>";
-                                    true ->
-                                        InPacket = Packet
-                                end,
-                                ParsedSid
-                        end,
-                    %%		    ?DEBUG("~n InPacket: ~s ~n", [InPacket]),
-                    case http_put(Sid, Rid, Key, NewKey, Hold, InPacket, StreamStart) of
-                        {error, not_exists} ->
-                            ?DEBUG("no session associated with sid: ~p", [Sid]),
-                            {404, ?HEADER, ""};
-                        {error, bad_key} ->
-                            ?DEBUG("bad key: ~s", [Key]),
-                            case mnesia:dirty_read({http_bind, Sid}) of
-                                [] ->
-                                    {404, ?HEADER, ""};
-                                [#http_bind{pid = FsmRef}] ->
-                                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-                                    {404, ?HEADER, ""}		    
-                            end;
-                        {error, polling_too_frequently} ->
-                            ?DEBUG("polling too frequently: ~p", [Sid]),
-                            case mnesia:dirty_read({http_bind, Sid}) of
-                                [] -> %% unlikely! (?)
-                                    {404, ?HEADER, ""};
-                                [#http_bind{pid = FsmRef}] ->
-                                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-                                    {403, ?HEADER, ""}		    
-                            end;
-                        {repeat, OutPacket} ->
-                            ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
-                                   [OutPacket]),
-                            send_outpacket(Sid, OutPacket);
-                        ok ->
-                            receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs)
-                    end
-	    end;
-	_ ->
-	    {400, ?HEADER, ""}
+                XmppDomain ->
+                    %% create new session
+                    Sid = sha:sha(term_to_binary({now(), make_ref()})),
+                    {ok, Pid} = start(Sid, Key),
+                    ?DEBUG("got pid: ~p", [Pid]),
+                    Wait = case
+                               string:to_integer(xml:get_attr_s("wait",Attrs))
+                               of
+                               {error, _} ->
+                                   ?MAX_WAIT;
+                               {CWait, _} ->
+                                   if 
+                                       (CWait > ?MAX_WAIT) ->
+                                           ?MAX_WAIT;
+                                       true ->
+                                           CWait
+                                   end
+                           end,
+                    Hold = case
+                               string:to_integer(
+                                 xml:get_attr_s("hold",Attrs))
+                               of
+                               {error, _} ->
+                                   (?MAX_REQUESTS - 1);
+                               {CHold, _} ->
+                                   if 
+                                       (CHold > (?MAX_REQUESTS - 1)) ->
+                                           (?MAX_REQUESTS - 1);
+                                       true ->
+                                           CHold
+                                   end
+                           end,
+                    XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
+                    mnesia:transaction(
+                      fun() ->
+                              mnesia:write(#http_bind{id = Sid,
+                                                      pid = Pid,
+                                                      to = {XmppDomain, XmppVersion},
+                                                      wait = Wait,
+                                                      hold = Hold})
+                      end),
+                    handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, Packet, true)
+            end;
+        {ok, {Sid, Rid, Key, NewKey, Attrs, Packet}} ->
+            %% old session
+            StreamStart =  
+                case xml:get_attr_s("xmpp:restart",Attrs) of
+                    "true" ->
+                        true;
+                    _ ->
+                        false
+                end,
+            Wait = ?MAX_WAIT,
+            Hold = (?MAX_REQUESTS - 1),
+            InPacket = case xml:get_attr_s("type",Attrs) of
+                           "terminate" ->
+                               %% close stream
+                               Packet ++ "</stream:stream>";
+                           _ ->
+                               Packet
+                       end,
+            handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, InPacket, StreamStart);
+        _ ->
+            {400, ?HEADER, ""}
     end.
 
-receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
+handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, Packet, StreamStart) ->
+    case http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) of
+        {error, not_exists} ->
+            ?DEBUG("no session associated with sid: ~p", [Sid]),
+            {404, ?HEADER, ""};
+        {error, bad_key} ->
+            ?DEBUG("bad key: ~s", [Key]),
+            case mnesia:dirty_read({http_bind, Sid}) of
+                [] ->
+                    {404, ?HEADER, ""};
+                [#http_bind{pid = FsmRef}] ->
+                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+                    {404, ?HEADER, ""}		    
+            end;
+        {error, polling_too_frequently} ->
+            ?DEBUG("polling too frequently: ~p", [Sid]),
+            case mnesia:dirty_read({http_bind, Sid}) of
+                [] -> %% unlikely! (?)
+                    {404, ?HEADER, ""};
+                [#http_bind{pid = FsmRef}] ->
+                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+                    {403, ?HEADER, ""}		    
+            end;
+        {repeat, OutPacket} ->
+            ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
+                   [OutPacket]),
+            send_outpacket(Sid, OutPacket);
+        ok ->
+            receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart)
+    end.
+
+
+receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
     receive
 	after 100 -> ok
 	end,
-    prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs).
+    prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart).
 
-prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
-    case http_get(Sid,Rid) of
+prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
+    case http_get(Sid, Rid) of
 	{error, not_exists} ->
             ?DEBUG("no session associated with sid: ~s", [Sid]),
 	    {404, ?HEADER, ""};
 	{ok, keep_on_hold} ->
-	    receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs);
+	    receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart);
 	{ok, cancel} ->
 	    %% actually it would be better if we could completely
 	    %% cancel this request, but then we would have to hack
@@ -248,16 +237,18 @@ prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
 	    {404, ?HEADER, ""}; 
 	{ok, OutPacket} ->
             ?DEBUG("OutPacket: ~s", [OutPacket]),
-	    if
-		Sid == ParsedSid ->
+	    case StreamStart of
+                false ->
 		    send_outpacket(Sid, OutPacket);
 		true ->
-		    To = xml:get_attr_s("to",Attrs),
 		    OutEls = case xml_stream:parse_element(
                                     OutPacket++"</stream:stream>") of
                                  El when element(1, El) == xmlelement ->
+                                     ?DEBUG("~p", [El]),
                                      {xmlelement, _, OutAttrs, Els} = El,
                                      AuthID = xml:get_attr_s("id", OutAttrs),
+                                     From = xml:get_attr_s("from", OutAttrs),
+                                     Version = xml:get_attr_s("version", OutAttrs),
                                      StreamError = false,
                                      case Els of
                                          [] ->
@@ -269,14 +260,12 @@ prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
                                      end;
                                  {error, _} ->
                                      AuthID = "",
+                                     From = "",
+                                     Version = "",
                                      StreamError = true,
                                      []
                              end,
 		    if
-			To == "" ->
-			    {200, ?HEADER, "<body type='terminate' "
-			     "condition='improper-addressing' "
-			     "xmlns='http://jabber.org/protocol/httpbind'/>"};
 			StreamError == true ->
 			    {200, ?HEADER, "<body type='terminate' "
 			     "condition='host-unknown' "
@@ -290,7 +279,7 @@ prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
                                     [] ->
                                         [];
                                     _ ->
-                                        [{"xmpp:version", "1.0"}]
+                                        [{"xmpp:version", Version}]
                                 end,
 			    {200, ?HEADER,
 			     xml:element_to_string(
@@ -304,7 +293,7 @@ prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
 				  integer_to_list(trunc(?MAX_INACTIVITY/1000))},
 				 {"polling", ?MIN_POLLING},
                                  {"ver", ?BOSH_VERSION},
-                                 {"from", To},
+                                 {"from", From},
                                  {"secure", "true"} %% we're always being secure
 				] ++ BOSH_attribs,OutEls})}
 		    end
@@ -745,18 +734,18 @@ terminate(_Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 
-http_put(Sid, Rid, Key, NewKey, Hold, Packet, Restart) ->
+http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) ->
     ?DEBUG("http-put",[]),
     case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
             ?DEBUG("not found",[]),
 	    {error, not_exists};
-	[#http_bind{pid = FsmRef,to=StreamTo}] ->
-            case Restart of
+	[#http_bind{pid = FsmRef,to={To, Version}}] ->
+            case StreamStart of
                 true ->
                     ?DEBUG("restart requested for ~s", [To]),
                     gen_fsm:sync_send_all_state_event(
-                      FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, StreamTo});
+                      FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, {To, Version}});
                 _ ->
                     gen_fsm:sync_send_all_state_event(
                       FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, ""})
