@@ -56,7 +56,7 @@ process(LocalPath, Request) ->
 
     Result = serve(LocalPath),
     case ets:lookup(mod_http_fileserver, accessfile) of
-	undefined ->
+	[] ->
 	    ok;
 	[{accessfile, AccessFile}] ->
 	    {Code, _, _} = Result,
@@ -114,7 +114,7 @@ log(File, Code, Request) ->
     % combined apache like log format :
     % 127.0.0.1 - - [28/Mar/2007:18:41:55 +0200] "GET / HTTP/1.1" 302 303 "-" "tsung"
     % XXX TODO some fields are harcoded/missing (reply size, user agent or referer for example)
-    io:format(File, "~p - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p -1 \"-\" \"-\"~n",
+    io:format(File, "~s - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p -1 \"-\" \"-\"~n",
 	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code]).
 
 content_type(Filename) ->
@@ -145,7 +145,7 @@ loop(Filename) ->
     receive
 	reopenlog ->
 	    case ets:lookup(mod_http_fileserver, accessfile) of
-		undefined ->
+		[] ->
 		    ok;
 		[{accessfile, AccessFile}] ->
 		    file:close(AccessFile),
@@ -198,7 +198,7 @@ stop(_Host) ->
 	    ok;
 	_ ->
 	    case ets:lookup(mod_http_fileserver, accessfile) of
-		undefined ->
+		[] ->
 		    ok;
 		[{accessfile, AccessFile}] ->
 		    mod_http_fileserver_server ! stop,
