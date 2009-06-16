@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 949 2009-05-04 01:16:36Z mremond $
+%%% Id      : $Id: ejabberd_http_bind.erl 950 2009-05-04 01:23:55Z mremond $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -99,7 +99,7 @@
 start(XMPPDomain, Sid, Key, IP) ->
     ?DEBUG("Starting session", []),
     case catch supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key, IP]) of
-	{ok, Pid} -> {ok, Pid};
+    	{ok, Pid} -> {ok, Pid};
 	_ -> check_bind_module(XMPPDomain),
              {error, "Cannot start HTTP bind session"}
     end.
@@ -424,15 +424,11 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 	(StateData#state.rid == Rid) and 
 	(StateData#state.input /= "cancel") and
         (StateData#state.pause == 0) ->
-	    Output = StateData#state.output,
-	    ReqList = StateData#state.req_list,
 	    WaitTimer = erlang:start_timer(Wait * 1000, self(), []),
 	    {next_state, StateName, StateData#state{
-				      output = Output,
 				      http_receiver = From,
 				      wait_timer = WaitTimer,
-				      timer = undefined,
-				      req_list = ReqList}};
+				      timer = undefined}};
 	(StateData#state.input == "cancel") ->
 	    if
 		StateData#state.timer /= undefined ->
@@ -448,16 +444,12 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 			    erlang:start_timer(
 			      StateData#state.max_inactivity, self(), [])
 		    end,
-	    Output = StateData#state.output,
-	    ReqList = StateData#state.req_list,
 	    Reply = {ok, cancel},
 	    {reply, Reply, StateName, StateData#state{
 					input = "",
-					output = Output, 
 					http_receiver = undefined,
 					wait_timer = undefined,
-					timer = Timer,
-					req_list = ReqList}};
+					timer = Timer}};
 	true ->
 	    if
 		StateData#state.timer /= undefined ->
@@ -488,10 +480,9 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 		       [El || El <- StateData#state.req_list, 
 			      El#hbr.rid /= Rid ] 
 		      ],
-	    Output = "",
 	    {reply, Reply, StateName, StateData#state{
 					input = "",
-					output = Output, 
+					output = "",
 					http_receiver = undefined,
 					wait_timer = undefined,
 					timer = Timer,
