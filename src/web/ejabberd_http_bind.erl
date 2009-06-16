@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 272 2007-08-15 12:11:06Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 273 2007-08-15 13:53:00Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 272 $').
+-vsn('$Rev: 273 $').
 
 -behaviour(gen_fsm).
 
@@ -154,6 +154,7 @@ process_request(Data) ->
                                            CHold
                                    end
                            end,
+                    Version = xml:get_attr_s("ver", Attrs),
                     XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
                     mnesia:transaction(
                       fun() ->
@@ -161,6 +162,7 @@ process_request(Data) ->
                                                       pid = Pid,
                                                       to = {XmppDomain, 
                                                             XmppVersion},
+                                                      version = Version,
                                                       wait = Wait,
                                                       hold = Hold})
                       end),
@@ -189,249 +191,6 @@ process_request(Data) ->
                             InPacket, StreamStart);
         _ ->
             {400, ?HEADER, ""}
-    end.
-
-handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, 
-                Packet, StreamStart) ->
-    case http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) of
-        {error, not_exists} ->
-            ?DEBUG("no session associated with sid: ~p", [Sid]),
-            {404, ?HEADER, ""};
-        {error, bad_key} ->
-            ?DEBUG("bad key: ~s", [Key]),
-            case mnesia:dirty_read({http_bind, Sid}) of
-                [] ->
-                    {404, ?HEADER, ""};
-                [#http_bind{pid = FsmRef}] ->
-                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-                    {404, ?HEADER, ""}		    
-            end;
-        {error, polling_too_frequently} ->
-            ?DEBUG("polling too frequently: ~p", [Sid]),
-            case mnesia:dirty_read({http_bind, Sid}) of
-                [] -> %% unlikely! (?)
-                    {404, ?HEADER, ""};
-                [#http_bind{pid = FsmRef}] ->
-                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-                    {403, ?HEADER, ""}		    
-            end;
-        {repeat, OutPacket} ->
-            ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
-                   [OutPacket]),
-            send_outpacket(Sid, OutPacket);
-        ok ->
-            receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart)
-    end.
-
-
-receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
-    receive
-	after 100 -> ok
-	end,
-    prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart).
-
-prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
-    case http_get(Sid, Rid) of
-	{error, not_exists} ->
-            case xml:get_attr_s("type", Attrs) of
-                "terminate" ->
-                    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
-                _ ->
-                    ?DEBUG("no session associated with sid: ~s", [Sid]),
-                    {404, ?HEADER, ""}
-            end;
-	{ok, keep_on_hold} ->
-	    receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart);
-	{ok, cancel} ->
-	    %% actually it would be better if we could completely
-	    %% cancel this request, but then we would have to hack
-	    %% ejabberd_http and I'm too lazy now
-            {200, ?HEADER, "<body type='error' xmlns='"++?NS_HTTP_BIND++"'/>"};
-	{ok, OutPacket} ->
-            ?DEBUG("OutPacket: ~s", [OutPacket]),
-	    case StreamStart of
-                false ->
-		    send_outpacket(Sid, OutPacket);
-		true ->
-		    OutEls = 
-                        case xml_stream:parse_element(
-                               OutPacket++"</stream:stream>") of
-                            El when element(1, El) == xmlelement ->
-                                ?DEBUG("~p", [El]),
-                                {xmlelement, _, OutAttrs, Els} = El,
-                                AuthID = xml:get_attr_s("id", OutAttrs),
-                                From = xml:get_attr_s("from", OutAttrs),
-                                Version = xml:get_attr_s("version", OutAttrs),
-                                StreamError = false,
-                                case Els of
-                                    [] ->
-                                        [];
-                                    [{xmlelement, "stream:features", 
-                                      StreamAttribs, StreamEls} 
-                                     | StreamTail] ->
-                                        [{xmlelement, "stream:features", 
-                                          [{"xmlns:stream",
-                                            ?NS_STREAM}
-                                          ] 
-                                          ++ StreamAttribs, 
-                                          StreamEls
-                                         }] ++ StreamTail;
-                                    Xml ->
-                                        Xml
-                                end;
-                            {error, _} ->
-                                AuthID = "",
-                                From = "",
-                                Version = "",
-                                StreamError = true,
-                                []
-                        end,
-		    if
-			StreamError == true ->
-			    {200, ?HEADER, "<body type='terminate' "
-			     "condition='host-unknown' "
-			     "xmlns='"++?NS_HTTP_BIND++"'/>"};
-			true ->
-                            BOSH_attribs = 
-                                [{"authid", AuthID},
-                                 {"xmlns:xmpp", ?NS_BOSH},
-                                 {"xmlns:stream", ?NS_STREAM}] ++
-                                case OutEls of 
-                                    [] ->
-                                        [];
-                                    _ ->
-                                        [{"xmpp:version", Version}]
-                                end,
-			    {200, ?HEADER,
-			     xml:element_to_string(
-			       {xmlelement,"body",
-				[{"xmlns",
-				  ?NS_HTTP_BIND},
-				 {"sid",Sid},
-				 {"wait", integer_to_list(Wait)},
-				 {"requests", integer_to_list(Hold+1)},
-				 {"inactivity", 
-				  integer_to_list(trunc(?MAX_INACTIVITY/1000))},
-				 {"polling", ?MIN_POLLING},
-                                 {"ver", ?BOSH_VERSION},
-                                 {"from", From},
-                                 {"secure", "true"} %% we're always being secure
-				] ++ BOSH_attribs,OutEls})}
-		    end
-	    end
-    end.
-    
-send_outpacket(Sid, OutPacket) ->
-    case OutPacket of
-	"" ->
-	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
-	"</stream:stream>" ->
-	    case mnesia:dirty_read({http_bind, Sid}) of
-		[#http_bind{pid = FsmRef}] ->
-		    gen_fsm:sync_send_all_state_event(FsmRef,stop)
-	    end,
-	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
-	_ ->
-	    case xml_stream:parse_element("<body>" 
-					  ++ OutPacket
-					  ++ "</body>") 
-		of
-		El when element(1, El) == xmlelement ->
-		    {xmlelement, _, _, OEls} = El,
-		    TypedEls = [xml:replace_tag_attr("xmlns",
-						     ?NS_CLIENT,OEl) ||
-				   OEl <- OEls],
-		    ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
-			   [xml:element_to_string(
-			      {xmlelement,"body",
-			       [{"xmlns",
-				 ?NS_HTTP_BIND}],
-			       TypedEls})]
-			  ),
-		    {200, ?HEADER,
-		     xml:element_to_string(
-		       {xmlelement,"body",
-			[{"xmlns",
-			  ?NS_HTTP_BIND}],
-			TypedEls})};
-		{error, _E} ->
-		    OutEls = case xml_stream:parse_element(
-                                    OutPacket++"</stream:stream>") of
-                                 SEl when element(1, SEl) == xmlelement ->
-                                     {xmlelement, _, _OutAttrs, SEls} = SEl,
-                                     StreamError = false,
-                                     case SEls of
-                                         [] ->
-                                             [];
-                                         [{xmlelement, 
-                                           "stream:features", 
-                                           StreamAttribs, StreamEls} | 
-                                          StreamTail] ->
-                                             TypedTail = 
-                                                 [xml:replace_tag_attr(
-                                                    "xmlns",
-                                                    ?NS_CLIENT,OEl) ||
-                                                            OEl <- StreamTail],
-                                             [{xmlelement, 
-                                               "stream:features", 
-                                               [{"xmlns:stream",
-                                                 ?NS_STREAM}] ++ 
-                                               StreamAttribs, StreamEls}] ++ 
-                                                 TypedTail;
-                                         Xml ->
-                                             Xml
-                                     end;
-                                 {error, _} ->
-                                     StreamError = true,
-                                     []
-                             end,
-                    if 
-                        StreamError ->
-                            StreamErrCond = 
-                                case xml_stream:parse_element(
-                                       "<stream:stream>"++OutPacket) of
-                                    El when element(1, El) == xmlelement ->
-                                        {xmlelement, _Tag, _Attr, Els} = El,
-                                        [{xmlelement, SE, _, Cond} | _] = Els,
-                                        if 
-                                            SE == "stream:error" ->
-                                                Cond;
-                                            true ->
-                                                null
-                                        end;
-                                    {error, _E} ->
-                                        null
-                                end,
-                            case mnesia:dirty_read({http_bind, Sid}) of
-                                [#http_bind{pid = FsmRef}] ->
-                                    gen_fsm:sync_send_all_state_event(FsmRef,
-                                                                      stop);
-                                _ ->
-                                    err %% hu?
-                            end,
-                            case StreamErrCond of
-                                null ->
-                                    {200, ?HEADER,
-                                     "<body type='terminate' "
-                                     "condition='internal-server-error' "
-                                     "xmlns='"++?NS_HTTP_BIND++"'/>"};
-                                _ ->
-                                    {200, ?HEADER,
-                                     "<body type='terminate' "
-                                     "condition='remote-stream-error' "
-                                     "xmlns='"++?NS_HTTP_BIND++"'>" ++
-                                     elements_to_string(StreamErrCond) ++
-                                     "</body>"}
-                            end;
-                        true ->
-                            {200, ?HEADER,
-                             xml:element_to_string(
-                               {xmlelement,"body",
-                                [{"xmlns",
-                                  ?NS_HTTP_BIND}],
-                                OutEls})}
-                    end
-	    end
     end.
 
 %%%----------------------------------------------------------------------
@@ -768,7 +527,6 @@ terminate(_Reason, _StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-
 http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) ->
     ?DEBUG("http-put",[]),
     case mnesia:dirty_read({http_bind, Sid}) of
@@ -787,6 +545,7 @@ http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) ->
             end
     end.
 
+
 http_get(Sid,Rid) ->
     case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
@@ -796,6 +555,248 @@ http_get(Sid,Rid) ->
 					      {http_get, Rid, Wait, Hold})
     end.
 
+handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, 
+                Packet, StreamStart) ->
+    case http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) of
+        {error, not_exists} ->
+            ?DEBUG("no session associated with sid: ~p", [Sid]),
+            {404, ?HEADER, ""};
+        {error, bad_key} ->
+            ?DEBUG("bad key: ~s", [Key]),
+            case mnesia:dirty_read({http_bind, Sid}) of
+                [] ->
+                    {404, ?HEADER, ""};
+                [#http_bind{pid = FsmRef}] ->
+                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+                    {404, ?HEADER, ""}		    
+            end;
+        {error, polling_too_frequently} ->
+            ?DEBUG("polling too frequently: ~p", [Sid]),
+            case mnesia:dirty_read({http_bind, Sid}) of
+                [] -> %% unlikely! (?)
+                    {404, ?HEADER, ""};
+                [#http_bind{pid = FsmRef}] ->
+                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+                    {403, ?HEADER, ""}		    
+            end;
+        {repeat, OutPacket} ->
+            ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
+                   [OutPacket]),
+            send_outpacket(Sid, OutPacket);
+        ok ->
+            receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart)
+    end.
+
+
+receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
+    receive
+	after 100 -> ok
+	end,
+    prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart).
+
+prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
+    case http_get(Sid, Rid) of
+	{error, not_exists} ->
+            case xml:get_attr_s("type", Attrs) of
+                "terminate" ->
+                    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
+                _ ->
+                    ?DEBUG("no session associated with sid: ~s", [Sid]),
+                    {404, ?HEADER, ""}
+            end;
+	{ok, keep_on_hold} ->
+	    receive_loop(Sid, Rid, Wait, Hold, Attrs, StreamStart);
+	{ok, cancel} ->
+	    %% actually it would be better if we could completely
+	    %% cancel this request, but then we would have to hack
+	    %% ejabberd_http and I'm too lazy now
+            {200, ?HEADER, "<body type='error' xmlns='"++?NS_HTTP_BIND++"'/>"};
+	{ok, OutPacket} ->
+            ?DEBUG("OutPacket: ~s", [OutPacket]),
+	    case StreamStart of
+                false ->
+		    send_outpacket(Sid, OutPacket);
+		true ->
+		    OutEls = 
+                        case xml_stream:parse_element(
+                               OutPacket++"</stream:stream>") of
+                            El when element(1, El) == xmlelement ->
+                                ?DEBUG("~p", [El]),
+                                {xmlelement, _, OutAttrs, Els} = El,
+                                AuthID = xml:get_attr_s("id", OutAttrs),
+                                From = xml:get_attr_s("from", OutAttrs),
+                                Version = xml:get_attr_s("version", OutAttrs),
+                                StreamError = false,
+                                case Els of
+                                    [] ->
+                                        [];
+                                    [{xmlelement, "stream:features", 
+                                      StreamAttribs, StreamEls} 
+                                     | StreamTail] ->
+                                        [{xmlelement, "stream:features", 
+                                          [{"xmlns:stream",
+                                            ?NS_STREAM}
+                                          ] 
+                                          ++ StreamAttribs, 
+                                          StreamEls
+                                         }] ++ StreamTail;
+                                    Xml ->
+                                        Xml
+                                end;
+                            {error, _} ->
+                                AuthID = "",
+                                From = "",
+                                Version = "",
+                                StreamError = true,
+                                []
+                        end,
+		    if
+			StreamError == true ->
+			    {200, ?HEADER, "<body type='terminate' "
+			     "condition='host-unknown' "
+			     "xmlns='"++?NS_HTTP_BIND++"'/>"};
+			true ->
+                            BOSH_attribs = 
+                                [{"authid", AuthID},
+                                 {"xmlns:xmpp", ?NS_BOSH},
+                                 {"xmlns:stream", ?NS_STREAM}] ++
+                                case OutEls of 
+                                    [] ->
+                                        [];
+                                    _ ->
+                                        [{"xmpp:version", Version}]
+                                end,
+			    {200, ?HEADER,
+			     xml:element_to_string(
+			       {xmlelement,"body",
+				[{"xmlns",
+				  ?NS_HTTP_BIND},
+				 {"sid",Sid},
+				 {"wait", integer_to_list(Wait)},
+				 {"requests", integer_to_list(Hold+1)},
+				 {"inactivity", 
+				  integer_to_list(trunc(?MAX_INACTIVITY/1000))},
+				 {"polling", ?MIN_POLLING},
+                                 {"ver", ?BOSH_VERSION},
+                                 {"from", From},
+                                 {"secure", "true"} %% we're always being secure
+				] ++ BOSH_attribs,OutEls})}
+		    end
+	    end
+    end.
+    
+send_outpacket(Sid, OutPacket) ->
+    case OutPacket of
+	"" ->
+	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
+	"</stream:stream>" ->
+	    case mnesia:dirty_read({http_bind, Sid}) of
+		[#http_bind{pid = FsmRef}] ->
+		    gen_fsm:sync_send_all_state_event(FsmRef,stop)
+	    end,
+	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
+	_ ->
+	    case xml_stream:parse_element("<body>" 
+					  ++ OutPacket
+					  ++ "</body>") 
+		of
+		El when element(1, El) == xmlelement ->
+		    {xmlelement, _, _, OEls} = El,
+		    TypedEls = [xml:replace_tag_attr("xmlns",
+						     ?NS_CLIENT,OEl) ||
+				   OEl <- OEls],
+		    ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
+			   [xml:element_to_string(
+			      {xmlelement,"body",
+			       [{"xmlns",
+				 ?NS_HTTP_BIND}],
+			       TypedEls})]
+			  ),
+		    {200, ?HEADER,
+		     xml:element_to_string(
+		       {xmlelement,"body",
+			[{"xmlns",
+			  ?NS_HTTP_BIND}],
+			TypedEls})};
+		{error, _E} ->
+		    OutEls = case xml_stream:parse_element(
+                                    OutPacket++"</stream:stream>") of
+                                 SEl when element(1, SEl) == xmlelement ->
+                                     {xmlelement, _, _OutAttrs, SEls} = SEl,
+                                     StreamError = false,
+                                     case SEls of
+                                         [] ->
+                                             [];
+                                         [{xmlelement, 
+                                           "stream:features", 
+                                           StreamAttribs, StreamEls} | 
+                                          StreamTail] ->
+                                             TypedTail = 
+                                                 [xml:replace_tag_attr(
+                                                    "xmlns",
+                                                    ?NS_CLIENT,OEl) ||
+                                                            OEl <- StreamTail],
+                                             [{xmlelement, 
+                                               "stream:features", 
+                                               [{"xmlns:stream",
+                                                 ?NS_STREAM}] ++ 
+                                               StreamAttribs, StreamEls}] ++ 
+                                                 TypedTail;
+                                         Xml ->
+                                             Xml
+                                     end;
+                                 {error, _} ->
+                                     StreamError = true,
+                                     []
+                             end,
+                    if 
+                        StreamError ->
+                            StreamErrCond = 
+                                case xml_stream:parse_element(
+                                       "<stream:stream>"++OutPacket) of
+                                    El when element(1, El) == xmlelement ->
+                                        {xmlelement, _Tag, _Attr, Els} = El,
+                                        [{xmlelement, SE, _, Cond} | _] = Els,
+                                        if 
+                                            SE == "stream:error" ->
+                                                Cond;
+                                            true ->
+                                                null
+                                        end;
+                                    {error, _E} ->
+                                        null
+                                end,
+                            case mnesia:dirty_read({http_bind, Sid}) of
+                                [#http_bind{pid = FsmRef}] ->
+                                    gen_fsm:sync_send_all_state_event(FsmRef,
+                                                                      stop);
+                                _ ->
+                                    err %% hu?
+                            end,
+                            case StreamErrCond of
+                                null ->
+                                    {200, ?HEADER,
+                                     "<body type='terminate' "
+                                     "condition='internal-server-error' "
+                                     "xmlns='"++?NS_HTTP_BIND++"'/>"};
+                                _ ->
+                                    {200, ?HEADER,
+                                     "<body type='terminate' "
+                                     "condition='remote-stream-error' "
+                                     "xmlns='"++?NS_HTTP_BIND++"'>" ++
+                                     elements_to_string(StreamErrCond) ++
+                                     "</body>"}
+                            end;
+                        true ->
+                            {200, ?HEADER,
+                             xml:element_to_string(
+                               {xmlelement,"body",
+                                [{"xmlns",
+                                  ?NS_HTTP_BIND}],
+                                OutEls})}
+                    end
+	    end
+    end.
 
 parse_request(Data) ->
     ?DEBUG("--- incoming data --- ~n~s~n --- END --- ",
