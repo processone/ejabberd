@@ -4,12 +4,12 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 282 2007-08-16 14:53:04Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 349 2007-08-30 13:39:57Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 282 $').
+-vsn('$Rev: 349 $').
 
 -behaviour(gen_fsm).
 
@@ -160,7 +160,8 @@ process_request(Data) ->
                                    end
                            end,
                     Version = 
-                        case list_to_float(xml:get_attr_s("ver", Attrs)) of
+                        case catch list_to_float(
+                                     xml:get_attr_s("ver", Attrs)) of
                             {'EXIT', _} -> 0.0;
                             V -> V
                         end,
