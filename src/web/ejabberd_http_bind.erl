@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 720 2008-09-17 15:52:58Z mremond $
+%%% Id      : $Id: ejabberd_http_bind.erl 827 2008-11-21 15:49:09Z jsautret $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -617,14 +617,15 @@ process_http_put({http_put, Rid, Attrs, Payload, Hold, StreamTo, IP},
 		    {reply, Reply, StateName, StateData};
 		repeat ->
 		    ?DEBUG("REPEATING ~p", [Rid]),
-		    [Out | _XS] = [El#hbr.out || 
+		    Reply = case [El#hbr.out ||
 				      El <- StateData#state.req_list, 
-				      El#hbr.rid == Rid],
-		    case Out of 
-			[[] | OutPacket] ->
-			    Reply = {repeat, OutPacket};
-			_ ->
-			    Reply = {repeat, Out}
+				     El#hbr.rid == Rid] of
+				[] ->
+				    {error, not_exists};
+				[ [[] | Out] | _XS] ->
+				    {repeat, Out};
+				[Out | _XS] ->
+				    {repeat, Out}
 		    end,
 		    {reply, Reply, StateName, 
 		     StateData#state{input = "cancel", last_poll = LastPoll}};
@@ -647,7 +648,7 @@ process_http_put({http_put, Rid, Attrs, Payload, Hold, StreamTo, IP},
 				      El#hbr.rid < Rid, 
 				      El#hbr.rid > (Rid - 1 - Hold)]
 			      ],
-%%		    ?DEBUG("reqlist: ~p", [ReqList]),
+		    ?DEBUG("reqlist: ~p", [ReqList]),
                     
                     %% setup next timer
 		    if
