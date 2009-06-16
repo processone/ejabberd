@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: $
+%%% Id      : $Id: ejabberd_http_bind.erl 123 2007-05-30 13:48:02Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('Revision: 1.4').
+-vsn('$Rev: 123 $').
 
 -behaviour(gen_fsm).
 
@@ -22,7 +22,8 @@
 	 terminate/3,
 	 send/2,
 	 setopts/2,
-     sockname/1, peername/1,
+         sockname/1, 
+         peername/1,
 	 controlling_process/2,
 	 close/1,
 	 process_request/1]).
@@ -605,7 +606,7 @@ handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StartTo},
                                         ["<stream:stream to='",
                                          StartTo, 
                                          "' xmlns='jabber:client' "
-                                         "version='1.0' "
+                                         %%"version='1.0' "
                                          "xmlns:stream='http://etherx.jabber.org/streams'>"] ++ Packet;
                                     true ->
                                         Packet
