@@ -4,12 +4,12 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 405 2007-11-02 14:58:36Z mremond $
+%%% Id      : $Id: ejabberd_http_bind.erl 408 2007-11-08 15:48:24Z badlop $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 405 $').
+-vsn('$Rev: 408 $').
 
 -behaviour(gen_fsm).
 
@@ -748,8 +748,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 		of
 		El when element(1, El) == xmlelement ->
 		    {xmlelement, _, _, OEls} = El,
-		    TypedEls = [xml:replace_tag_attr("xmlns",
-						     ?NS_CLIENT,OEl) ||
+		    TypedEls = [check_default_xmlns(OEl) ||
 				   OEl <- OEls],
 		    ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
 			   [xml:element_to_string(
@@ -778,10 +777,8 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
                                            StreamAttribs, StreamEls} | 
                                           StreamTail] ->
                                              TypedTail = 
-                                                 [xml:replace_tag_attr(
-                                                    "xmlns",
-                                                    ?NS_CLIENT,OEl) ||
-                                                            OEl <- StreamTail],
+                                                 [check_default_xmlns(OEl) ||
+						     OEl <- StreamTail],
                                              [{xmlelement, 
                                                "stream:features", 
                                                [{"xmlns:stream",
@@ -916,4 +913,13 @@ remove_tag_attr(Attr, El) ->
             {xmlelement, Name, Attrs1, Els};
         _ ->
             El
+    end.
+
+check_default_xmlns({xmlelement, Name, Attrs, Els} = El) ->
+    EXmlns = xml:get_tag_attr_s("xmlns", El),
+    if 
+	EXmlns == "" ->
+	    {xmlelement, Name, [{"xmlns", ?NS_CLIENT} | Attrs], Els};
+	true ->
+	    El
     end.
