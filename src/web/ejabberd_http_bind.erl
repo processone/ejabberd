@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 240 2007-08-03 12:05:14Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 241 2007-08-03 12:13:13Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 240 $').
+-vsn('$Rev: 241 $').
 
 -behaviour(gen_fsm).
 
@@ -28,7 +28,7 @@
 	 close/1,
 	 process_request/1]).
 
--define(ejabberd_debug, true).
+%%-define(ejabberd_debug, true).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
