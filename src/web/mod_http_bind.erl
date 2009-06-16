@@ -17,7 +17,8 @@
 
 -define(MOD_HTTP_BIND_VERSION, "1.0").
 -vsn(?MOD_HTTP_BIND_VERSION).
--define(ejabberd_debug, true).
+
+%%-define(ejabberd_debug, true).
 
 -behaviour(gen_mod).
 
@@ -43,7 +44,7 @@ process([], #request{method = 'POST',
 	       [{xmlcdata, "400 Bad Request"}]}};
 process([], #request{method = 'POST',
                      data = Data}) ->
-    ?DEBUG("Data: '~p'", [Data]),
+    ?DEBUG("Incoming data: ~s", [Data]),
     ejabberd_http_bind:process_request(Data);
 process([], #request{method = 'GET',
                      data = []}) ->
