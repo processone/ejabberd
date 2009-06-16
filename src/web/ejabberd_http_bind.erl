@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 959 2009-05-12 14:45:27Z mremond $
+%%% Id      : $Id: ejabberd_http_bind.erl 960 2009-05-12 16:35:36Z mremond $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -28,7 +28,7 @@
 	 close/1,
 	 process_request/2]).
 
-%%-define(ejabberd_debug, true).
+-define(ejabberd_debug, true).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -122,7 +122,7 @@ controlling_process(_Socket, _Pid) ->
     ok.
 
 close({http_bind, FsmRef, _IP}) ->
-    catch gen_fsm:sync_send_all_state_event(FsmRef, stop).
+    catch gen_fsm:sync_send_all_state_event(FsmRef, {stop, close}).
 
 sockname(_Socket) ->
     {ok, ?NULL_PEER}.
@@ -204,6 +204,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs, Payload, IP) ->
 	    V -> V
 	end,
     XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
+    ?DEBUG("Create session: ~p", [Sid]),
     mnesia:transaction(
       fun() ->
 	      mnesia:write(
@@ -334,9 +335,17 @@ handle_sync_event({send, Packet}, _From, StateName, StateData) ->
 	    {reply, Reply, StateName, StateData#state{output = Output}}
     end;
 
-handle_sync_event(stop, _From, _StateName, StateData) ->
+handle_sync_event({stop,close}, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
+handle_sync_event({stop,stream_closed}, _From, _StateName, StateData) ->
+    Reply = ok,
+    {stop, normal, Reply, StateData};
+handle_sync_event({stop,Reason}, _From, _StateName, StateData) ->
+    ?ERROR_MSG("Closing bind session ~p - Reason: ~p", [StateData#state.id, Reason]),
+    Reply = ok,
+    {stop, normal, Reply, StateData};
+
 
 %% HTTP PUT: Receive packets from the client
 handle_sync_event({http_put, Rid, Attrs, _Payload, Hold, _StreamTo, _IP}=Request,
@@ -408,6 +417,7 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 	(StateData#state.input /= "cancel") and
         (StateData#state.pause == 0) ->
 	    WaitTimer = erlang:start_timer(Wait * 1000, self(), []),
+	    cancel_timer(StateData#state.timer),
 	    {next_state, StateName, StateData#state{
 				      http_receiver = From,
 				      wait_timer = WaitTimer,
@@ -480,8 +490,8 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({timeout, Timer, _}, _StateName,
-	    #state{timer = Timer} = StateData) ->
-    ?DEBUG("Session timeout. Closing the HTTP bind Session.", []),
+	    #state{id=SID, timer = Timer} = StateData) ->
+    ?WARNING_MSG("Session timeout. Closing the HTTP bind session: ~p", [SID]),
     {stop, normal, StateData};
 
 handle_info({timeout, WaitTimer, _}, StateName,
@@ -515,7 +525,7 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
-    ?DEBUG("terminate: deleting session ~s", [StateData#state.id]),
+    ?DEBUG("terminate: Deleting session ~s", [StateData#state.id]),
     mnesia:transaction(
       fun() ->
 	      mnesia:delete({http_bind, StateData#state.id})
@@ -719,7 +729,7 @@ handle_http_put(Sid, Rid, Attrs, Payload, StreamStart, IP) ->
     end.
 
 http_put(Sid, Rid, Attrs, Payload, StreamStart, IP) ->
-    ?DEBUG("http-put",[]),
+    ?DEBUG("Looking for session: ~p", [Sid]),
     case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
             {error, not_exists};
@@ -737,7 +747,7 @@ http_put(Sid, Rid, Attrs, Payload, StreamStart, IP) ->
 
 handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
   when Version >= 0 ->
-    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+    gen_fsm:sync_send_all_state_event(FsmRef, {stop, {put_error,Reason}}),
     case Reason of
         not_exists ->
             {200, ?HEADER,
@@ -762,7 +772,7 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
                  {"condition", "policy-violation"}], []})}
     end;
 handle_http_put_error(Reason, #http_bind{pid=FsmRef}) ->
-    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+    gen_fsm:sync_send_all_state_event(FsmRef,{stop, {put_error_no_version, Reason}}),
     case Reason of
         not_exists -> %% bad rid
 	    ?ERROR_MSG("Closing HTTP bind session (Bad rid).", []),
@@ -881,7 +891,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 	"" ->
 	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
 	"</stream:stream>" ->
-            gen_fsm:sync_send_all_state_event(FsmRef,stop),
+            gen_fsm:sync_send_all_state_event(FsmRef,{stop,stream_closed}),
 	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
 	_ ->
 	    case xml_stream:parse_element("<body>"
@@ -950,7 +960,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
                                         null
                                 end,
                             gen_fsm:sync_send_all_state_event(FsmRef,
-                                                              stop),
+                                                              {stop, {stream_error,OutPacket}}),
                             case StreamErrCond of
                                 null ->
                                     {200, ?HEADER,
