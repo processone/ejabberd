@@ -3,7 +3,7 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: mod_http_bind.erl 156 2007-06-25 09:22:57Z cromain $
+%%% Id      : $Id: mod_http_bind.erl 412 2007-11-15 10:10:09Z mremond $
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------

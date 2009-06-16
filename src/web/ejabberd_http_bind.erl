@@ -4,12 +4,12 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 408 2007-11-08 15:48:24Z badlop $
+%%% Id      : $Id: ejabberd_http_bind.erl 430 2007-11-27 22:03:44Z badlop $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 408 $').
+-vsn('$Rev: 430 $ ').
 
 -behaviour(gen_fsm).
 
@@ -88,9 +88,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Sid, Key) ->
-    mnesia:create_table(http_bind,
-        		[{ram_copies, [node()]},
-        		 {attributes, record_info(fields, http_bind)}]),
+    setup_database(),
     supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key]).
 
 start_link(Sid, Key) ->
@@ -922,4 +920,20 @@ check_default_xmlns({xmlelement, Name, Attrs, Els} = El) ->
 	    {xmlelement, Name, [{"xmlns", ?NS_CLIENT} | Attrs], Els};
 	true ->
 	    El
+    end.
+
+setup_database() ->
+    migrate_database(),
+    mnesia:create_table(http_bind,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, http_bind)}]).
+
+migrate_database() ->
+    case mnesia:table_info(http_bind, attributes) of
+        [id, pid, to, hold, wait, version] ->
+	    ok;
+        _ ->
+	    %% Since the stored information is not important, instead
+	    %% of actually migrating data, let's just destroy the table
+	    mnesia:delete_table(http_bind)
     end.
