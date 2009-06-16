@@ -52,6 +52,9 @@
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
 
+%% TODO: Use exmpp library instead of including this
+-define(NS_STREAM, "http://etherx.jabber.org/streams").
+
 -record(http_bind, {id, pid, to, hold, wait, version}).
 
 -define(NULL_PEER, {{0, 0, 0, 0}, 0}).

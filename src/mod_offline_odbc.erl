@@ -134,7 +134,7 @@ loop(Host, AccessMaxOfflineMsgs) ->
 %% Function copied from ejabberd_sm.erl:
 get_max_user_messages(AccessRule, LUser, Host) ->
     case acl:match_rule(
-	   Host, AccessRule, jlib:make_jid(LUser, Host, "")) of
+	   Host, AccessRule, exmpp_jid:make(LUser, Host, "")) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_MESSAGES
