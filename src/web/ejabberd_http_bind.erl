@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 952 2009-05-06 17:29:39Z badlop $
+%%% Id      : $Id: ejabberd_http_bind.erl 953 2009-05-07 10:40:40Z alexey $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -589,9 +589,7 @@ process_http_put({http_put, Rid, Attrs, Payload, Hold, StreamTo, IP},
 		    "" ->
 			true;
 		    OldKey ->
-			NextKey = jlib:tolower(
-				    hex(binary_to_list(
-					  crypto:sha(Key)))),
+			NextKey = sha:sha(Key),
 			?DEBUG("Key/OldKey/NextKey: ~s/~s/~s", [Key, OldKey, NextKey]),
 			if
 			    OldKey == NextKey ->
@@ -1069,16 +1067,6 @@ cancel_timer(Timer) ->
     after 0 ->
 	    ok
     end.
-
-hex(Bin) when is_binary(Bin) -> hex(binary_to_list(Bin));
-hex([]) -> "";
-hex([H|T]) -> 
-	[A,B] = if 
-		H == 0 -> "00";
-		H < 16 -> [$0,element(H,{$1,$2,$3,$4,$5,$6,$7,$8,$9,$a,$b,$c,$d,$e,$f})];
-		true   -> erlang:integer_to_list(H,16)
-	end,
-	[A,B|hex(T)].
 
 elements_to_string([]) ->
     [];
