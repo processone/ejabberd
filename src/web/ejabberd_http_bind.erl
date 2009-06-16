@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 457 2007-12-21 19:55:21Z badlop $
+%%% Id      : $Id: ejabberd_http_bind.erl 674 2008-07-03 15:58:15Z cromain $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -22,11 +22,11 @@
 	 terminate/3,
 	 send/2,
 	 setopts/2,
-         sockname/1, 
-         peername/1,
+	 sockname/1, 
+	 peername/1,
 	 controlling_process/2,
 	 close/1,
-	 process_request/1]).
+	 process_request/2]).
 
 %%-define(ejabberd_debug, true).
 
@@ -35,6 +35,8 @@
 -include("ejabberd_http.hrl").
 
 -record(http_bind, {id, pid, to, hold, wait, version}).
+
+-define(NULL_PEER, {{0, 0, 0, 0}, 0}).
 
 %% http binding request
 -record(hbr, {rid,
@@ -54,8 +56,9 @@
 		wait_timer,
 		ctime = 0,
 		timer,
-                pause=0,
-		req_list = [] % list of requests
+		pause=0,
+		req_list = [], % list of requests
+		ip = ?NULL_PEER 
 	       }).
 
 
@@ -113,12 +116,19 @@ close({http_bind, FsmRef}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, stop).
 
 sockname(_Socket) ->
-    {ok, {{0, 0, 0, 0}, 0}}.
+    {ok, ?NULL_PEER}.
 
-peername(_Socket) ->
-    {ok, {{0, 0, 0, 0}, 0}}.
+peername({http_bind, FsmRef}) ->
+    gen_fsm:send_all_state_event(FsmRef, {peername, self()}),
+    %% XXX should improve that, but sync call seems not possible
+    receive
+	{peername, PeerName} -> {ok, PeerName}
+	after 1000 -> {ok, ?NULL_PEER}
+    end;
+peername(_) ->
+    {ok, ?NULL_PEER}.
 
-process_request(Data) ->
+process_request(Data, IP) ->
     case catch parse_request(Data) of
 	{ok, {"", Rid, Attrs, Payload}} ->
 	    case xml:get_attr_s("to",Attrs) of
@@ -177,7 +187,7 @@ process_request(Data) ->
                                            version = Version
                                           })
                       end),
-                    handle_http_put(Sid, Rid, Attrs, Payload, true)
+                    handle_http_put(Sid, Rid, Attrs, Payload, true, IP)
             end;
         {ok, {Sid, Rid, Attrs, Payload1}} ->
             %% old session
@@ -195,7 +205,7 @@ process_request(Data) ->
                            _ ->
                                Payload1
                        end,
-            handle_http_put(Sid, Rid, Attrs, Payload2, StreamStart);
+            handle_http_put(Sid, Rid, Attrs, Payload2, StreamStart, IP);
         _ ->
             {400, ?HEADER, ""}
     end.
@@ -271,6 +281,10 @@ handle_event({activate, From}, StateName, StateData) ->
 				     last_receiver = Receiver}}
     end;
 
+handle_event({peername, From}, StateName, StateData) ->
+    From ! {peername, StateData#state.ip},
+    {next_state, StateName, StateData};
+
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -329,7 +343,7 @@ handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 
-handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
+handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo, IP},
 		  _From, StateName, StateData) ->
     Key = xml:get_attr_s("key", Attrs),
     NewKey = xml:get_attr_s("newkey", Attrs),
@@ -466,7 +480,8 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 					     timer = Timer,
                                              pause = Pause,
 					     last_poll = LastPoll,
-					     req_list = ReqList
+					     req_list = ReqList,
+					     ip = IP
 					    }};
 			{Receiver, _Tag} ->
                             SendPacket = 
@@ -499,7 +514,8 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 					     timer = Timer,
                                              pause = Pause,
 					     last_poll = LastPoll,
-					     req_list = ReqList
+					     req_list = ReqList,
+					     ip = IP
 					    }}
 		    end
 	    end;
@@ -685,8 +701,8 @@ terminate(_Reason, _StateName, StateData) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-handle_http_put(Sid, Rid, Attrs, Payload, StreamStart) ->
-    case http_put(Sid, Rid, Attrs, Payload, StreamStart) of
+handle_http_put(Sid, Rid, Attrs, Payload, StreamStart, IP) ->
+    case http_put(Sid, Rid, Attrs, Payload, StreamStart, IP) of
         {error, not_exists} ->
             ?DEBUG("no session associated with sid: ~p", [Sid]),
             {404, ?HEADER, ""};
@@ -700,7 +716,7 @@ handle_http_put(Sid, Rid, Attrs, Payload, StreamStart) ->
             prepare_response(Sess, Rid, Attrs, StreamStart)
     end.
 
-http_put(Sid, Rid, Attrs, Payload, StreamStart) ->
+http_put(Sid, Rid, Attrs, Payload, StreamStart, IP) ->
     ?DEBUG("http-put",[]),
     case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
@@ -714,7 +730,7 @@ http_put(Sid, Rid, Attrs, Payload, StreamStart) ->
                         ""
                 end,
             {gen_fsm:sync_send_all_state_event(
-               FsmRef, {http_put, Rid, Attrs, Payload, Hold, NewStream}), Sess}
+               FsmRef, {http_put, Rid, Attrs, Payload, Hold, NewStream, IP}), Sess}
     end.
 
 handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version}) 

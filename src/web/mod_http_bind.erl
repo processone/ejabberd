@@ -3,7 +3,7 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: mod_http_bind.erl 669 2008-06-30 13:08:16Z jsautret $
+%%% Id      : $Id: mod_http_bind.erl 674 2008-07-03 15:58:15Z cromain $
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------
@@ -42,9 +42,10 @@ process([], #request{method = 'POST',
     {400, [], {xmlelement, "h1", [],
 	       [{xmlcdata, "400 Bad Request"}]}};
 process([], #request{method = 'POST',
-                     data = Data}) ->
+                     data = Data,
+                     ip = IP}) ->
     ?DEBUG("Incoming data: ~s", [Data]),
-    ejabberd_http_bind:process_request(Data);
+    ejabberd_http_bind:process_request(Data, IP);
 process([], #request{method = 'GET',
                      data = []}) ->
     Heading = "Ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
