@@ -3,13 +3,31 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: mod_http_bind.erl 942 2009-04-22 15:25:31Z mremond $
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License
+%%% along with this program; if not, write to the Free Software
+%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+%%% 02111-1307 USA
+%%%
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------
-%%% this module acts as a bridge to ejabberd_http_bind which implements
+%%% This module acts as a bridge to ejabberd_http_bind which implements
 %%% the real stuff, this is to handle the new pluggable architecture for
-%%% extending ejabberd's http service
+%%% extending ejabberd's http service.
 %%%----------------------------------------------------------------------
 
 -module(mod_http_bind).
