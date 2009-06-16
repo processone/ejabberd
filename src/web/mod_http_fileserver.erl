@@ -244,7 +244,7 @@ serve(LocalPath, DocRoot) ->
             {200,
              [{"Server", "ejabberd"},
               {"Last-Modified", last_modified(FileName)},
-              {"Content-type", content_type(FileName)}],
+              {"Content-Type", content_type(FileName)}],
              FileContents};
         {error, Error} ->
             ?DEBUG("Delivering error: ~p", [Error]),
