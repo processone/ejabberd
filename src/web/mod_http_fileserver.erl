@@ -25,6 +25,12 @@
 -include("ejabberd_ctl.hrl").
 -include_lib("kernel/include/file.hrl").
 
+-ifdef(SSL39).
+-define(STRING2LOWER, string).
+-else.
+-define(STRING2LOWER, httpd_util).
+-endif.
+
 %%%----------------------------------------------------------------------
 %%% REQUEST HANDLERS
 %%%----------------------------------------------------------------------
@@ -118,7 +124,7 @@ log(File, Code, Request) ->
 	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code]).
 
 content_type(Filename) ->
-    case string:to_lower(filename:extension(Filename)) of
+    case ?STRING2LOWER:to_lower(filename:extension(Filename)) of
         ".jpg"  -> "image/jpeg";
         ".jpeg" -> "image/jpeg";
         ".gif"  -> "image/gif";
