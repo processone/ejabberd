@@ -68,6 +68,7 @@
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
 \newcommand{\modecho}{\module{mod\_echo}}
+\newcommand{\modhttpbind}{\module{mod\_http\_bind}}
 \newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
 \newcommand{\modlast}{\module{mod\_last}}
 \newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
@@ -94,10 +95,13 @@
 \newcommand{\modversion}{\module{mod\_version}}
 
 %% Contributed modules
-\usepackage{ifthen}
-\newboolean{modhttpbind}
-\newcommand{\modhttpbind}{\module{mod\_http\_bind}}
-\include{contributed_modules}
+%\usepackage{ifthen}
+%\newboolean{modhttpbind}
+%\newcommand{\modhttpbind}{\module{mod\_http\_bind}}
+%\include{contributed_modules}
+%
+% Then in the document you can input the partial tex file with:
+%\ifthenelse{\boolean{modhttpbind}}{\input{mod_http_bind.tex}}{}
 
 %% Common options
 \newcommand{\iqdiscitem}[1]{\titem{iqdisc} \ind{options!iqdisc}This specifies
@@ -2647,7 +2651,70 @@ Example: Mirror, mirror, on the wall, who is the most beautiful
  ]}.
 \end{verbatim}
 
-\ifthenelse{\boolean{modhttpbind}}{\input{mod_http_bind.tex}}{}
+\makesubsection{modhttpbind}{\modhttpbind{}}
+\ind{modules!\modhttpbind{}}\ind{modhttpbind}
+
+This module implements XMPP over Bosh (formerly known as HTTP Binding)
+as defined in \xepref{0124} and \xepref{0206}.
+It extends ejabberd's built in HTTP service with a configurable
+resource at which this service will be hosted.
+
+To use HTTP-Binding, enable the module:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_http_bind, []},
+  ...
+]}.
+\end{verbatim}
+and add \verb|http_bind| in the HTTP service. For example:
+\begin{verbatim}
+{listen, 
+ [
+  ...
+  {5280, ejabberd_http, [
+                         http_bind,
+                         http_poll,
+                         web_admin
+                        ]
+  },
+  ...
+]}.
+\end{verbatim}
+With this configuration, the module will serve the requests sent to 
+\verb|http://example.org:5280/http-bind/|
+Remember that this page is not designed to be used by web browsers,
+it is used by Jabber clients that support XMPP over Bosh.
+
+If you want to set the service in a different URI path or use a different module, 
+you can configure it manually using the option \verb|request_handlers|. 
+For example:
+\begin{verbatim}
+{listen, 
+ [
+  ...
+  {5280, ejabberd_http, [
+                         {request_handlers, [{["http-bind"], mod_http_bind}]},
+                         http_poll,
+                         web_admin
+                        ]
+  },
+  ...
+]}.
+\end{verbatim}
+
+The maximum inactivity period is by default 30 seconds.
+This can be configured with the module option \term{max\_inactivity}.
+For example, to set 50 seconds:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_http_bind, [ {max_inactivity, 50} ]},
+  ...
+]}.
+\end{verbatim}
 
 \makesubsection{modhttpfileserver}{\modhttpfileserver{}}
 \ind{modules!\modhttpfileserver{}}\ind{modhttpfileserver}
