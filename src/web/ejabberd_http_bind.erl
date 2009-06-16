@@ -62,6 +62,8 @@
 -define(FSMOPTS, []).
 -endif.
 
+-define(BOSH_VERSION, "1.6").
+
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, "2"). % don't poll faster than that or we will shoot you
 -define(MAX_WAIT, 3600).     % max num of secs to keep a request on hold
