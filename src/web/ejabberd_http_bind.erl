@@ -64,11 +64,13 @@
 -endif.
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
--define(MIN_POLLING, "2"). % don't poll faster than that or we will shoot you
--define(MAX_WAIT, 3600).     % max num of secs to keep a request on hold
--define(MAX_INACTIVITY, 30000). % msecs to wait before terminating idle sessions
+-define(MIN_POLLING, "2"). % don't poll faster than that or we will
+                           % shoot you
+-define(MAX_WAIT, 3600).  % max num of secs to keep a request on hold
+-define(MAX_INACTIVITY, 30000). % msecs to wait before terminating
+                                % idle sessions
 -define(CT, {"Content-Type", "text/xml; charset=utf-8"}).
--define(HEADER, [?CT,{"X-Sponsored-By", "http://mabber.com"}]).
+-define(HEADER, [?CT]).
 
 
 %%%----------------------------------------------------------------------
@@ -230,7 +232,7 @@ receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
 prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
     case http_get(Sid,Rid) of
 	{error, not_exists} ->
-            ?DEBUG("no session associated with sid: ~s", Sid),
+            ?DEBUG("no session associated with sid: ~s", [Sid]),
 	    {404, ?HEADER, ""};
 	{ok, keep_on_hold} ->
 	    receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs);
