@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 453 2007-12-20 14:35:04Z alexey $
+%%% Id      : $Id: ejabberd_http_bind.erl 457 2007-12-21 19:55:21Z badlop $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -756,7 +756,7 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef}) ->
 
 
 prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess, 
-                 Rid, Attrs, StreamStart) ->
+                 Rid, _, StreamStart) ->
     receive after 100 -> ok end,
     case catch http_get(Sess, Rid) of
 	{ok, cancel} ->
