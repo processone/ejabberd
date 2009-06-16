@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 827 2008-11-21 15:49:09Z jsautret $
+%%% Id      : $Id: ejabberd_http_bind.erl 854 2009-01-12 23:37:40Z badlop $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -894,6 +894,8 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess,
 				] ++ BOSH_attribs,OutEls})}
 		    end
 	    end;
+	{'EXIT', {shutdown, _}} ->
+            {200, ?HEADER, "<body type='terminate' condition='system-shutdown' xmlns='"++?NS_HTTP_BIND++"'/>"};
 	{'EXIT', _Reason} ->
             {200, ?HEADER, "<body type='terminate' xmlns='"++?NS_HTTP_BIND++"'/>"}
     end.
